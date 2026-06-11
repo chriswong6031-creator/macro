@@ -116,6 +116,10 @@ def build_features() -> pd.DataFrame:
     put("payrolls", series.get("payrolls"), ffill_limit=40)
     put("indpro", series.get("indpro" if "indpro" in series else "industrial_prod"), ffill_limit=40)
     # derived fallbacks when the published composite series is unavailable
+    effr = store.read("nyfed", "effr")
+    if effr is not None:
+        f["fed_funds"] = f["fed_funds"].combine_first(
+            effr.iloc[:, 0].reindex(idx).ffill(limit=5))
     f["spread_2s10s"] = f["spread_2s10s"].combine_first(f["us10y"] - f["us2y"])
     f["tips_nominal_spread"] = f["us10y"] - f["us10y_real"]
     f["breakeven_10y"] = f["breakeven_10y"].combine_first(f["tips_nominal_spread"])
@@ -124,10 +128,16 @@ def build_features() -> pd.DataFrame:
     f["rate_expectations_proxy"] = f["us2y"] - f["fed_funds"]
     f["zq_implied_rate"] = 100 - f["zq_front"]
 
-    # --- liquidity ($bn) ---------------------------------------------------------
+    # --- liquidity ($bn) — FRED merged with official NY Fed / Board sources -------
     walcl = series.get("fed_balance_sheet")
+    h41 = store.read("nyfed", "h41_assets")
+    if h41 is not None:
+        walcl = h41.iloc[:, 0].combine_first(walcl) if walcl is not None else h41.iloc[:, 0]
     put("walcl_bn", walcl / 1000 if walcl is not None else None, ffill_limit=7)  # weekly
     rrp = series.get("on_rrp")
+    nyrrp = store.read("nyfed", "rrp")
+    if nyrrp is not None:
+        rrp = nyrrp.iloc[:, 0].combine_first(rrp) if rrp is not None else nyrrp.iloc[:, 0]
     put("rrp_bn", rrp, ffill_limit=5)
     tga = store.read("treasury", "tga")
     put("tga_bn", tga.iloc[:, 0] / 1000 if tga is not None else None, ffill_limit=5)

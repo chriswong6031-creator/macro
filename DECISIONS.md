@@ -2,6 +2,25 @@
 
 Newest first. Each entry: what was decided, why, and what would change it.
 
+## 2026-06-10 — Phase 2e tuning
+
+**D15. Hysteresis/threshold tuning via grid sweep** (`scripts/tune.py`, 36
+combos, criteria: whipsaw <15%, episode fidelity 2008/2020/2021/2022, covid
+flip speed). Winner applied to config: z_threshold 0.25→0.45, hysteresis_days
+5→7, shock_override_z 0.7→0.85, us2y growth weight 1.0→0.5. Whipsaw fell
+20.4%→9.3% with 2008 Q4 share *improving* (55%→72%) and the covid shock
+override still flipping day-0. The 2Y-direction de-weight is principled, not
+just fitted: rising short rates signal growth when inflation is anchored but
+signal policy-chasing-inflation in supply shocks (2022), so it gets
+confirmation weight (0.5) like the econ series. Re-run the sweep after any
+component change.
+
+**D16. NY Fed / Board sources added for liquidity** (`collectors/nyfed.py`):
+ON RRP from the NY Fed Markets API (official source FRED derives from),
+EFFR likewise, and H4.1 total assets (`RESPPA_N.WW`, verified == WALCL) from
+the Board's Data Download Program zip. These are *primary* for RRP/EFFR going
+forward; FRED series remain merged-in when available.
+
 ## 2026-06-10 — initial build
 
 **D1. Dedicated git repo inside the project folder.** The parent home directory

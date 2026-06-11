@@ -36,6 +36,7 @@ class Adapter:
 
     name: str = "base"
     group: str = "misc"
+    stale_after_days: int = 5   # weekly/lagged sources override (COT: 12, H4.1: 10)
 
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
         """Return {series_name: DataFrame indexed by date}. Raise on failure."""
@@ -92,8 +93,10 @@ def _breaker_state() -> dict:
 
 
 def run_adapter(adapter: Adapter, full_history: bool = False,
-                stale_after_days: int = 5) -> FetchResult:
+                stale_after_days: int | None = None) -> FetchResult:
     """Execute one adapter with circuit breaker + graceful degradation."""
+    if stale_after_days is None:
+        stale_after_days = adapter.stale_after_days
     breaker = _breaker_state()
     fails = breaker.get(adapter.name, 0)
     if fails >= CIRCUIT_BREAKER_FAILS and not full_history:

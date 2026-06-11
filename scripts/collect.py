@@ -31,6 +31,7 @@ def all_adapters() -> dict:
         ("fred", "collectors.fred", "FredAdapter"),
         ("yahoo", "collectors.yahoo", "YahooAdapter"),
         ("treasury", "collectors.treasury", "TreasuryAdapter"),
+        ("nyfed", "collectors.nyfed", "NyFedAdapter"),
         ("breadth", "collectors.breadth", "BreadthAdapter"),
         ("cot", "collectors.cot", "CotAdapter"),
         ("cboe_putcall", "collectors.cboe", "PutCallAdapter"),

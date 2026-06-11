@@ -63,7 +63,8 @@ treasury:
   retries: 3
 
 cboe:
-  putcall_url: https://cdn.cboe.com/api/global/us_options/market_statistics/daily/
+  # put/call is COMPUTED from delayed chains (official stats CSVs moved behind
+  # an SPA in 2025/26); chain_url's _SPX is templated per underlying
   chain_url: https://cdn.cboe.com/api/global/delayed_quotes/options/_SPX.json
   retries: 3
   gex:
@@ -76,13 +77,13 @@ cot:
   socrata_url: https://publicreporting.cftc.gov/resource/6dca-aqww.json   # legacy futures-only
   zip_url_template: https://www.cftc.gov/files/dea/history/deacot{year}.zip
   retries: 3
-  markets:                        # CFTC contract market names (legacy report), matched on prefix
-    es_spx: "E-MINI S&P 500"
-    nasdaq: "NASDAQ MINI"
-    ust10y: "10-YEAR U.S. TREASURY NOTES"
-    dollar: "U.S. DOLLAR INDEX"
-    gold: "GOLD"
-    copper: "COPPER"
+  markets:                        # CFTC name prefixes (lists cover renames over time);
+    es_spx: ["E-MINI S&P 500 "]   # trailing space excludes ESG/sector minis
+    nasdaq: ["NASDAQ MINI", "NASDAQ-100 STOCK INDEX (MINI)"]
+    ust10y: ["UST 10Y NOTE", "10-YEAR U.S. TREASURY NOTES"]
+    dollar: ["USD INDEX", "U.S. DOLLAR INDEX"]
+    gold: ["GOLD - COMMODITY EXCHANGE"]
+    copper: ["COPPER- #1", "COPPER - COMMODITY EXCHANGE", "COPPER-GRADE #1"]
 
 sentiment:
   aaii_url: https://www.aaii.com/sentimentsurvey/sent_results
@@ -129,14 +130,14 @@ engine:
   scoring:
     slope_window: 20              # days for direction-of-change slope
     baseline_window: 60           # z-score the slope against this trailing window of slopes
-    z_threshold: 0.25             # |z| below this scores 0 (no signal)
+    z_threshold: 0.45             # |z| below this scores 0 (no signal); tuned 2026-06 (scripts/tune.py)
     min_components: 3             # fewer live components than this -> axis confidence = 0
 
   growth_axis:
     components:                   # name: {weight}; series construction in engine/axes.py
       copper_gold: {weight: 1.0}
       xly_xlp: {weight: 1.0}
-      us2y_direction: {weight: 1.0}
+      us2y_direction: {weight: 0.5}   # ambiguous when policy chases inflation (2022) — tuned down
       iwm_spy: {weight: 1.0}
       cyclical_defensive: {weight: 1.0}
       breadth_direction: {weight: 1.0}
@@ -157,8 +158,8 @@ engine:
     inflation_short_basket: [XLK, XLU]
 
   quad:
-    hysteresis_days: 5            # new quad must hold N consecutive days
-    shock_override_z: 0.7         # single-day |axis score| beyond this flips immediately
+    hysteresis_days: 7            # new quad must hold N consecutive days; tuned from 5 (whipsaw 20%->9%)
+    shock_override_z: 0.85        # single-day |axis score| beyond this flips immediately; tuned from 0.7
     recession_hy_oas_min: 5.0     # % level threshold
     recession_oas_widening_days: 20
     inflation_shock_pctile: 0.90  # inflation axis score vs own history

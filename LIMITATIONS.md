@@ -34,8 +34,24 @@ the consequence, not just the cause.
   current membership, not true NYSE breadth.
 - **COT data lags 3 days** (released Friday for Tuesday positioning) and the
   legacy report's spec categories are blunt instruments.
-- **AAII free access covers the current week only** unless scraping holds up;
-  NAAIM is a small-sample survey of active managers.
+- **AAII is currently 403-blocked for non-browser clients** (verified at
+  build time) — the adapter exists but the source is dead until a licit access
+  path appears; the weekly report runs without it. NAAIM works (full
+  since-inception history from their published workbook) but is a small-sample
+  survey of active managers, and the workbook link is rediscovered from the
+  page each week — a rename breaks it loudly, not silently.
+- **Put/call ratios are computed proxies, not the official CBOE series.** The
+  official market-statistics CSVs moved behind an SPA (verified at build
+  time); we compute index P/C from the SPX delayed chain and an equity proxy
+  from SPY+QQQ+IWM chains. Levels differ from the discontinued official
+  series; use them as their own time series, not against historical
+  official-ratio thresholds.
+- **Sector-flow shares-outstanding history starts at deployment.** SO is exact
+  (AUM/NAV from SSGA's same-dated fund data) but there is no free history, so
+  flow percentiles are meaningless until a few months of daily rows accrue.
+- **WGMI holdings URL is not yet configured** — CoinShares' site is an SPA
+  with no statically-discoverable holdings file. The coinshares adapter is
+  ready; set `holdings.watchlist.WGMI.url` in config when located.
 - **GEX is computed from delayed CBOE chains under the standard assumption
   (dealers long calls / short puts).** That is an assumption, not ground
   truth; readings near zero are especially ambiguous. Daily EOD cadence only —
