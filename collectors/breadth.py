@@ -123,7 +123,10 @@ class BreadthAdapter(Adapter):
         out["adv"] = (chg > 0).sum(axis=1)
         out["dec"] = (chg < 0).sum(axis=1)
         out["ad_line"] = (out["adv"] - out["dec"]).cumsum()
-        return out.dropna(subset=["pct_above_50"])
+        out = out.dropna(subset=["pct_above_50"])
+        # partial rows (e.g. an in-progress trading day where only a handful of
+        # tickers have printed) would poison every ratio — drop them
+        return out[out["n_members"] >= out["n_members"].rolling(20, min_periods=1).max() * 0.8]
 
     def constituents_checked(self, members: pd.DataFrame) -> pd.DataFrame:
         if members.empty or len(members) < 400:

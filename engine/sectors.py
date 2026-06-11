@@ -23,7 +23,8 @@ def rs_table(asof: pd.Timestamp | None = None) -> pd.DataFrame:
         closes = closes[closes.index <= asof]
 
     universe = (cfg["yahoo"]["tickers"]["sectors"]
-                + [t for t in ["SMH", "IWM", "RSP"] if t in closes.columns])
+                + [t for t in ["SMH", "IWM", "RSP", "QUAL", "MTUM", "USMV",
+                               "LQD", "GC=F"] if t in closes.columns])
     rows = []
     for t in universe:
         if t not in closes.columns or bench not in closes.columns:

@@ -52,7 +52,10 @@ def build_features() -> pd.DataFrame:
     if closes.empty:
         raise RuntimeError("no yahoo data in store — run collectors first")
 
-    idx = pd.bdate_range(closes.index.min(), closes.index.max())
+    # futures rows can be stamped one day ahead of the equity session — the
+    # frame ends on the last day the equity benchmark actually printed
+    end = closes["SPY"].last_valid_index() if "SPY" in closes else closes.index.max()
+    idx = pd.bdate_range(closes.index.min(), end)
     f = pd.DataFrame(index=idx)
 
     def put(name: str, s: pd.Series | None, ffill_limit: int | None = 5) -> None:
@@ -112,7 +115,14 @@ def build_features() -> pd.DataFrame:
     # direction only, ffill across the month is the honest representation)
     put("payrolls", series.get("payrolls"), ffill_limit=40)
     put("indpro", series.get("indpro" if "indpro" in series else "industrial_prod"), ffill_limit=40)
+    # derived fallbacks when the published composite series is unavailable
+    f["spread_2s10s"] = f["spread_2s10s"].combine_first(f["us10y"] - f["us2y"])
     f["tips_nominal_spread"] = f["us10y"] - f["us10y_real"]
+    f["breakeven_10y"] = f["breakeven_10y"].combine_first(f["tips_nominal_spread"])
+    # rate-cut pricing proxy (LOW CONFIDENCE — no free FedWatch API): negative
+    # values = market prices cuts over the next ~2y; ZQ front adds a 30d view
+    f["rate_expectations_proxy"] = f["us2y"] - f["fed_funds"]
+    f["zq_implied_rate"] = 100 - f["zq_front"]
 
     # --- liquidity ($bn) ---------------------------------------------------------
     walcl = series.get("fed_balance_sheet")

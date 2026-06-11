@@ -1,0 +1,211 @@
+{
+  "date": "2026-06-09",
+  "quad": "Q1",
+  "quad_name": "Goldilocks",
+  "label": "Q1",
+  "growth_score": 0.2,
+  "inflation_score": -0.333,
+  "growth_confidence": 0.12,
+  "inflation_confidence": 0.333,
+  "confidence": 0.227,
+  "liquidity_overlay": "unknown",
+  "cycle_tag": "unknown",
+  "transition_state": "STABLE",
+  "transition_flags": {
+    "flag_breadth_price": false,
+    "flag_credit_equity": false,
+    "flag_ratio_inflection": false,
+    "flag_inflation_basket": false,
+    "flag_confidence_decay": false,
+    "flag_gex": false
+  },
+  "confirming": [
+    "growth_copper_gold",
+    "growth_iwm_spy",
+    "growth_breadth_direction",
+    "inflation_oil_trend"
+  ],
+  "contradicting": [
+    "growth_xly_xlp",
+    "growth_cyclical_defensive"
+  ],
+  "flip_condition": {
+    "axis": "growth",
+    "component": "iwm_spy",
+    "z": 0.34,
+    "threshold": 0.25,
+    "margin": 0.09,
+    "note": "growth axis flips risk: iwm_spy slope z=0.34 is the closest supporter to its +/-0.25 cutoff"
+  },
+  "sector_rs": [
+    {
+      "ticker": "SMH",
+      "rs": 0.8018587878080731,
+      "mom_20d_pct": 2.86,
+      "mom_60d_pct": 36.74,
+      "above_200d_trend": true,
+      "pctile_252d": 98.0,
+      "rank": 1
+    },
+    {
+      "ticker": "XLK",
+      "rs": 0.24526152535971243,
+      "mom_20d_pct": 1.93,
+      "mom_60d_pct": 18.56,
+      "above_200d_trend": true,
+      "pctile_252d": 96.4,
+      "rank": 2
+    },
+    {
+      "ticker": "IWM",
+      "rs": 0.3867037429403386,
+      "mom_20d_pct": 0.2,
+      "mom_60d_pct": 3.76,
+      "above_200d_trend": true,
+      "pctile_252d": 92.1,
+      "rank": 3
+    },
+    {
+      "ticker": "RSP",
+      "rs": 0.28382064433351023,
+      "mom_20d_pct": 2.86,
+      "mom_60d_pct": -2.72,
+      "above_200d_trend": false,
+      "pctile_252d": 38.9,
+      "rank": 4
+    },
+    {
+      "ticker": "XLF",
+      "rs": 0.07117563252603734,
+      "mom_20d_pct": 2.81,
+      "mom_60d_pct": -3.35,
+      "above_200d_trend": false,
+      "pctile_252d": 9.5,
+      "rank": 5
+    },
+    {
+      "ticker": "XLRE",
+      "rs": 0.06101350242927461,
+      "mom_20d_pct": 1.21,
+      "mom_60d_pct": -3.98,
+      "above_200d_trend": false,
+      "pctile_252d": 38.1,
+      "rank": 6
+    },
+    {
+      "ticker": "XLI",
+      "rs": 0.23824707823323404,
+      "mom_20d_pct": 0.63,
+      "mom_60d_pct": -4.16,
+      "above_200d_trend": true,
+      "pctile_252d": 57.9,
+      "rank": 7
+    },
+    {
+      "ticker": "XLY",
+      "rs": 0.15720779413285732,
+      "mom_20d_pct": -2.64,
+      "mom_60d_pct": -6.15,
+      "above_200d_trend": false,
+      "pctile_252d": 3.2,
+      "rank": 8
+    },
+    {
+      "ticker": "XLB",
+      "rs": 0.0688827098549855,
+      "mom_20d_pct": -2.55,
+      "mom_60d_pct": -7.1,
+      "above_200d_trend": false,
+      "pctile_252d": 39.3,
+      "rank": 9
+    },
+    {
+      "ticker": "XLV",
+      "rs": 0.20971441541850508,
+      "mom_20d_pct": 8.39,
+      "mom_60d_pct": -7.15,
+      "above_200d_trend": false,
+      "pctile_252d": 25.4,
+      "rank": 10
+    },
+    {
+      "ticker": "XLE",
+      "rs": 0.07786446013179885,
+      "mom_20d_pct": 0.69,
+      "mom_60d_pct": -10.29,
+      "above_200d_trend": true,
+      "pctile_252d": 74.2,
+      "rank": 11
+    },
+    {
+      "ticker": "XLP",
+      "rs": 0.11410352061188024,
+      "mom_20d_pct": 1.18,
+      "mom_60d_pct": -10.56,
+      "above_200d_trend": false,
+      "pctile_252d": 18.7,
+      "rank": 12
+    },
+    {
+      "ticker": "XLC",
+      "rs": 0.15125161821215227,
+      "mom_20d_pct": -3.25,
+      "mom_60d_pct": -12.43,
+      "above_200d_trend": false,
+      "pctile_252d": 2.0,
+      "rank": 13
+    },
+    {
+      "ticker": "XLU",
+      "rs": 0.059670307673337815,
+      "mom_20d_pct": -2.27,
+      "mom_60d_pct": -15.49,
+      "above_200d_trend": false,
+      "pctile_252d": 4.0,
+      "rank": 14
+    }
+  ],
+  "preference_check": {
+    "quad": "Q1",
+    "preferred": [
+      "XLK",
+      "XLC",
+      "XLY",
+      "QUAL"
+    ],
+    "actual_ranks": {
+      "XLK": 2,
+      "XLC": 13,
+      "XLY": 8
+    },
+    "agreement": 0.33,
+    "disagreement_flag": true,
+    "note": "tape disagrees with framework-preferred sectors \u2014 treat as a transition signal"
+  },
+  "pair_ratios": {
+    "xly_xlp": {
+      "level": 1.3778,
+      "chg_20d_pct": -1.65
+    },
+    "xlk_xlu": {
+      "level": 4.1103,
+      "chg_20d_pct": 6.02
+    },
+    "hyg_lqd": {
+      "level": 0.7344,
+      "chg_20d_pct": -0.04
+    },
+    "sphb_splv": {
+      "level": 1.968,
+      "chg_20d_pct": 2.37
+    },
+    "vix_ratio": {
+      "level": 0.9324,
+      "chg_20d_pct": 9.05
+    },
+    "copper_gold": {
+      "level": 0.0015,
+      "chg_20d_pct": 6.71
+    }
+  }
+}
