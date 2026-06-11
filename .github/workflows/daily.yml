@@ -1,0 +1,71 @@
+name: daily
+on:
+  schedule:
+    - cron: "40 22 * * 1-5"   # 22:40 UTC weekdays, after US close; off-hour minute avoids scheduler congestion
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pipeline
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: restore breadth close cache
+        uses: actions/cache@v4
+        with:
+          path: data/breadth/_closes_cache.parquet
+          key: breadth-closes-${{ github.run_id }}
+          restore-keys: breadth-closes-
+      - name: run collectors (graceful degradation — never fails the build on one source)
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
+        run: python -m scripts.collect
+      - name: commit data
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/
+          git diff --cached --quiet || git commit -m "data: daily collection $(date -u +%F)"
+          git pull --rebase origin main
+          git push
+
+  engine:
+    needs: collect
+    if: always()            # a scraper failure must still produce a dashboard from cached data
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - run: git pull origin main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: run regime engine
+        run: python -m engine.run
+      # Phase 3 (after the validation checkpoint) adds here:
+      #   python -m scripts.build_site && python -m scripts.notify
+      - name: commit engine outputs
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/ site/ reports/
+          git diff --cached --quiet || git commit -m "engine: regime update $(date -u +%F)"
+          git pull --rebase origin main
+          git push

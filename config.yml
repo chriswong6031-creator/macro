@@ -1,0 +1,229 @@
+# =============================================================================
+# Macro Regime & Sector-Flow Dashboard — master configuration
+# ALL tunables live here. Nothing is hardcoded in /collectors or /engine.
+# =============================================================================
+
+storage:
+  data_dir: data
+  holdings_dir: data/holdings
+  archive_dir: data/archive
+  site_dir: site
+  reports_dir: reports
+  run_status_file: data/run_status.json
+
+# -----------------------------------------------------------------------------
+# Collectors
+# -----------------------------------------------------------------------------
+fred:
+  # group -> {series_id: column_name}. Stored one parquet per series under data/fred/.
+  api_url: https://api.stlouisfed.org/fred/series/observations
+  csv_url: https://fred.stlouisfed.org/graph/fredgraph.csv   # keyless fallback
+  retries: 4
+  backoff_base_s: 3
+  series:
+    rates:
+      DGS2: us2y
+      DGS10: us10y
+      T10Y2Y: spread_2s10s
+      DFII10: us10y_real
+      T10YIE: breakeven_10y
+      T5YIFR: breakeven_5y5y
+      DFF: fed_funds
+    credit:
+      BAMLH0A0HYM2: hy_oas        # rolling 3y window on FRED since Apr 2026 — cache forever
+      BAMLC0A0CM: ig_oas          # same caveat
+    risk:
+      VIXCLS: vix_close
+    liquidity:
+      WALCL: fed_balance_sheet    # weekly (Wed), $ millions
+      RRPONTSYD: on_rrp           # daily, $ billions
+    econ_confirm:
+      PAYEMS: payrolls            # monthly, thousands
+      INDPRO: industrial_prod     # monthly, index
+
+yahoo:
+  retries: 3
+  backoff_base_s: 5
+  batch_size: 80
+  # All EOD adjusted closes, one parquet per ticker under data/yahoo/.
+  tickers:
+    sectors: [XLB, XLC, XLE, XLF, XLI, XLK, XLP, XLRE, XLU, XLV, XLY]
+    extras: [SMH, IWM, RSP, SPY, QQQ]
+    factors: [MTUM, QUAL, USMV, SPHB, SPLV]
+    credit: [HYG, LQD]
+    vol: ["^VIX", "^VIX9D", "^VIX3M", "^MOVE"]
+    fx_commod: ["DX-Y.NYB", "CL=F", "HG=F", "GC=F"]
+    rate_pricing: ["ZQ=F"]        # 30-day fed funds front contract — LOW CONFIDENCE input
+
+treasury:
+  base_url: https://api.fiscaldata.treasury.gov/services/api/fiscal_service
+  tga_endpoint: /v1/accounting/dts/operating_cash_balance
+  debt_txn_endpoint: /v1/accounting/dts/public_debt_transactions
+  page_size: 10000
+  retries: 3
+
+cboe:
+  putcall_url: https://cdn.cboe.com/api/global/us_options/market_statistics/daily/
+  chain_url: https://cdn.cboe.com/api/global/delayed_quotes/options/_SPX.json
+  retries: 3
+  gex:
+    contract_multiplier: 100
+    pct_move: 0.01               # GEX expressed per 1% move
+    strike_window_pct: 0.25      # ignore strikes >25% from spot
+    max_expiry_days: 365
+
+cot:
+  socrata_url: https://publicreporting.cftc.gov/resource/6dca-aqww.json   # legacy futures-only
+  zip_url_template: https://www.cftc.gov/files/dea/history/deacot{year}.zip
+  retries: 3
+  markets:                        # CFTC contract market names (legacy report), matched on prefix
+    es_spx: "E-MINI S&P 500"
+    nasdaq: "NASDAQ MINI"
+    ust10y: "10-YEAR U.S. TREASURY NOTES"
+    dollar: "U.S. DOLLAR INDEX"
+    gold: "GOLD"
+    copper: "COPPER"
+
+sentiment:
+  aaii_url: https://www.aaii.com/sentimentsurvey/sent_results
+  naaim_url: https://naaim.org/programs/naaim-exposure-index/
+  retries: 2
+
+sponsors:
+  # Daily shares-outstanding + NAV for sector SPDRs -> flow = delta(SO) x NAV
+  sectorspdr_api: https://www.sectorspdrs.com/api/fundQuote/
+  sector_funds: [XLB, XLC, XLE, XLF, XLI, XLK, XLP, XLRE, XLU, XLV, XLY]
+  retries: 3
+  user_agent: "macro-dashboard/1.0 (personal research; contact via repo)"
+
+holdings:
+  # Watchlist of active/thematic funds tracked daily. Edit freely.
+  watchlist:
+    ARKK:
+      sponsor: ark
+      url: https://assets.ark-funds.com/fund-documents/funds-etf-csv/ARK_INNOVATION_ETF_ARKK_HOLDINGS.csv
+    ARKW:
+      sponsor: ark
+      url: https://assets.ark-funds.com/fund-documents/funds-etf-csv/ARK_NEXT_GENERATION_INTERNET_ETF_ARKW_HOLDINGS.csv
+    WGMI:
+      sponsor: coinshares
+      url: ""                     # resolved at runtime by collectors/holdings.py wgmi adapter
+  active_change_alert_pct: 20     # alert if manager add/cut >= 20% of position
+  active_change_window_d: 5
+  retries: 3
+
+fundamentals:
+  enabled: true                   # LOW CONFIDENCE module — engine must work without it
+  finnhub_key_env: FINNHUB_KEY    # optional, used only if set
+
+breadth:
+  constituents_url: https://en.wikipedia.org/wiki/List_of_S%26P_500_companies
+  lookback_days_live: 420         # enough for 200DMA + 252d NH/NL
+  ma_windows: [50, 200]
+  nhnl_window: 252
+
+# -----------------------------------------------------------------------------
+# Regime engine
+# -----------------------------------------------------------------------------
+engine:
+  scoring:
+    slope_window: 20              # days for direction-of-change slope
+    baseline_window: 60           # z-score the slope against this trailing window of slopes
+    z_threshold: 0.25             # |z| below this scores 0 (no signal)
+    min_components: 3             # fewer live components than this -> axis confidence = 0
+
+  growth_axis:
+    components:                   # name: {weight}; series construction in engine/axes.py
+      copper_gold: {weight: 1.0}
+      xly_xlp: {weight: 1.0}
+      us2y_direction: {weight: 1.0}
+      iwm_spy: {weight: 1.0}
+      cyclical_defensive: {weight: 1.0}
+      breadth_direction: {weight: 1.0}
+      payrolls_trend: {weight: 0.5}     # slow confirmation, lower weight
+      indpro_trend: {weight: 0.5}
+    cyclical_basket: [XLI, XLB, XLF, XLY]
+    defensive_basket: [XLP, XLU, XLV]
+
+  inflation_axis:
+    components:
+      breakeven_10y_direction: {weight: 1.0}
+      breakeven_5y5y_direction: {weight: 1.0}
+      energy_rs: {weight: 1.0}
+      oil_trend: {weight: 1.0}
+      inflation_beta_basket: {weight: 1.0}   # (XLE+XLB)/(XLK+XLU)
+      tips_nominal_momentum: {weight: 0.75}
+    inflation_long_basket: [XLE, XLB]
+    inflation_short_basket: [XLK, XLU]
+
+  quad:
+    hysteresis_days: 5            # new quad must hold N consecutive days
+    shock_override_z: 0.7         # single-day |axis score| beyond this flips immediately
+    recession_hy_oas_min: 5.0     # % level threshold
+    recession_oas_widening_days: 20
+    inflation_shock_pctile: 0.90  # inflation axis score vs own history
+
+  liquidity:
+    roc_window_d: 20              # ~4 trading weeks
+    expanding_threshold_bn: 25    # net-liq 4w change > +$25bn -> expanding
+    contracting_threshold_bn: -25
+
+  cycle:
+    curve_inversion_level: 0.0
+    oas_range_lookback_d: 504     # 2y
+    oas_low_third: 0.33
+    oas_high_third: 0.67
+
+  transition:
+    weakening_flags: 2
+    transitioning_flags: 3
+    breadth_price:
+      index_near_high_pct: 2.0    # index within 2% of 60d high
+      high_window_d: 60
+      breadth_drop_pts: 10        # %>50DMA falls >10pts
+      breadth_drop_window_d: 20
+    credit_equity:
+      ret_window_d: 20
+      oas_z_threshold: 1.0
+    ratio_inflection:
+      slope_window_d: 50
+    confidence_decay_window_d: 10
+    gex_flip_proximity_pct: 1.0   # spot within 1% of gamma flip
+
+  sector_preferences:             # framework-preferred sectors per quad
+    Q1: [XLK, XLC, XLY, QUAL]
+    Q2: [XLE, XLF, XLI, XLB, IWM]
+    Q3: [XLE, XLP, XLV, GC=F]
+    Q4: [XLU, XLP, XLV, LQD]
+
+  rs_ranking:
+    benchmark: SPY
+    momentum_windows: [20, 60]
+    trend_window: 200
+    percentile_lookback_d: 252
+
+# -----------------------------------------------------------------------------
+# Alerts (Phase 3 — rules defined now, wired after validation checkpoint)
+# -----------------------------------------------------------------------------
+alerts:
+  transition_state_change: true
+  axis_confidence_floor: 0.3
+  sector_rs_percentile_hi: 90
+  sector_rs_percentile_lo: 10
+  holdings_active_change_pct: 20
+  holdings_active_change_days: 5
+  net_liquidity_roc_sign_flip: true
+  hy_oas_1d_widening_z: 2.5
+  gex_flip_cross: true
+
+notify:
+  telegram:
+    enabled: true                 # needs TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID secrets
+  discord:
+    enabled: false                # needs DISCORD_WEBHOOK_URL secret
+
+validation:
+  start_date: "2007-01-01"
+  whipsaw_max_days: 10            # regime lasting < this counts as whipsaw
+  whipsaw_target_pct: 15
+  forward_return_window_d: 60

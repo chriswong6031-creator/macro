@@ -1,0 +1,90 @@
+"""Daily collection entrypoint.
+
+Usage:
+    python -m scripts.collect [--full-history] [--only fred,yahoo,...]
+
+Runs every adapter through the circuit-breaker runner. Never exits nonzero
+because one source broke — the engine consumes whatever is fresh and the
+dashboard surfaces staleness. Exits 1 only if EVERY source failed.
+"""
+from __future__ import annotations
+
+import argparse
+import logging
+import sys
+from dataclasses import asdict
+from datetime import datetime, timezone
+
+sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent.parent))
+
+from collectors.base import run_adapter, update_breaker  # noqa: E402
+from lib import store  # noqa: E402
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
+log = logging.getLogger("collect")
+
+
+def all_adapters() -> dict:
+    """Import lazily so one module's import-time failure can't kill the run."""
+    registry = {}
+    specs = [
+        ("fred", "collectors.fred", "FredAdapter"),
+        ("yahoo", "collectors.yahoo", "YahooAdapter"),
+        ("treasury", "collectors.treasury", "TreasuryAdapter"),
+        ("breadth", "collectors.breadth", "BreadthAdapter"),
+        ("cot", "collectors.cot", "CotAdapter"),
+        ("cboe_putcall", "collectors.cboe", "PutCallAdapter"),
+        ("cboe_gex", "collectors.cboe", "GexAdapter"),
+        ("sentiment_naaim", "collectors.sentiment", "NaaimAdapter"),
+        ("sentiment_aaii", "collectors.sentiment", "AaiiAdapter"),
+        ("sector_flows", "collectors.sponsors", "SectorFlowAdapter"),
+        ("holdings", "collectors.holdings", "HoldingsAdapter"),
+        ("fundamentals", "collectors.fundamentals", "FundamentalsAdapter"),
+    ]
+    for key, mod, cls in specs:
+        try:
+            m = __import__(mod, fromlist=[cls])
+            registry[key] = getattr(m, cls)
+        except Exception as e:  # noqa: BLE001
+            log.error("could not import %s.%s: %s", mod, cls, e)
+    return registry
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--full-history", action="store_true")
+    ap.add_argument("--only", default="")
+    args = ap.parse_args()
+
+    registry = all_adapters()
+    if args.only:
+        keep = {s.strip() for s in args.only.split(",")}
+        registry = {k: v for k, v in registry.items() if k in keep}
+
+    results = []
+    for key, cls in registry.items():
+        log.info("=== running %s ===", key)
+        try:
+            adapter = cls()
+        except Exception as e:  # noqa: BLE001
+            log.error("init %s failed: %s", key, e)
+            continue
+        res = run_adapter(adapter, full_history=args.full_history)
+        res.source = key
+        results.append(res)
+        log.info("%s -> %s (%d rows, last %s)%s", key, res.status, res.rows,
+                 res.last_date, f" err={res.error}" if res.error else "")
+
+    status = store.read_status()
+    status["last_run"] = datetime.now(timezone.utc).isoformat()
+    status["sources"] = {r.source: asdict(r) for r in results}
+    status["circuit_breaker"] = update_breaker(results)
+    store.write_status(status)
+
+    ok = sum(1 for r in results if r.status in ("ok", "stale"))
+    log.info("collection done: %d/%d sources usable", ok, len(results))
+    return 0 if ok > 0 else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
