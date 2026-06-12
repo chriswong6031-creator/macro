@@ -88,6 +88,13 @@ the consequence, not just the cause.
   liquidity is therefore up to 4 business days stale by Friday. The dashboard
   flags this rather than hiding it.
 
+- **Seasonality is weak evidence by construction** — ~28 observations per
+  calendar month per ETF, no significance testing. It's displayed as context
+  with its sample size and deliberately excluded from the heat score.
+- **The heat score describes confirmation, not future returns** — its own
+  calibration (shown in every tooltip) found the hottest band *under*performed
+  forward; treat high heat as hold/trim territory. See DECISIONS D31.
+
 ## Engine
 
 - **Quad boundaries are scores around zero**; hysteresis (5d / ±0.7 shock)

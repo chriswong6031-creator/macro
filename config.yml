@@ -203,6 +203,28 @@ engine:
     trend_window: 200
     percentile_lookback_d: 252
 
+  confluence:                     # transparent checklist weights (sum path to 100)
+    regime_aligned_risk_on: 25    # in current regime's preferred list + risk-on dial
+    regime_aligned: 18
+    regime_neutral: 8
+    tape_leading: 25              # confirmed RS uptrend, not extended
+    tape_improving: 15            # momentum up, trend unconfirmed (watch, don't buy)
+    tape_weakening: 10
+    tape_lagging: 4
+    tape_extended: 12             # leading but stretched
+    tech_above200: 10
+    tech_above50: 7
+    tech_macd: 5
+    tech_rsi_sweet: 8             # rsi in the healthy-trend zone
+    tech_rsi_ok: 4
+    rsi_sweet_lo: 45
+    rsi_sweet_hi: 70
+    rsi_overbought: 75
+    crowding_soft_pctile: 85
+    crowding_soft_penalty: 5
+    crowding_hard_pctile: 92
+    crowding_hard_penalty: 10
+
 # -----------------------------------------------------------------------------
 # Alerts (Phase 3 — rules defined now, wired after validation checkpoint)
 # -----------------------------------------------------------------------------

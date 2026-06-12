@@ -2,6 +2,30 @@
 
 Newest first. Each entry: what was decided, why, and what would change it.
 
+## 2026-06-12 (3rd pass) — technicals, seasonality, heat board
+
+**D31. The confluence ("heat") score is calibrated, and the calibration is
+INVERTED — so the UI sells it as a confirmation gauge, not a buy signal.**
+Scoring regime fit + rotation stage + technicals − crowding across 2007-2026
+(weekly-sampled, fwd 63d excess vs SPY): band 70+ hit 46.7% (avg −0.57%),
+band 0-39 hit 50.0% (avg +0.19%); monotonic worse at 126d (70+: 41%, −1.22%).
+"Everything confirmed" = late. The heat tooltip shows each band's measured
+record; OVERHEATED explicitly reads "hold/trim, don't initiate". This is the
+generalized form of the don't-chase finding (D23) and the answer to "how much
+trust": the trust level is printed, and for chasing it's negative.
+
+**D32. Technicals (RSI/MACD/MAs/52w) and monthly seasonality are computed from
+stored closes for sectors + gold/oil/copper/dollar.** Seasonality is displayed
+as context but EXCLUDED from the calibrated score (scoring history with
+full-sample monthly stats would peek at the future). Trigger-distance metrics
+(how much more outperformance until the 200d RS cross, and % progress from the
+recent low) quantify "how close is this watchlist name to confirming".
+
+**D33. No LLM in the scoring path.** The user suggested AI might be needed;
+a transparent, calibrated checklist is more trustworthy here: every sub-score
+is visible, every claim carries its measured base rate, and nothing changes
+between runs without a config diff.
+
 ## 2026-06-12 (later) — now-focused front page
 
 **D28. Q-codes removed from all user-facing surfaces.** A user read "Q1

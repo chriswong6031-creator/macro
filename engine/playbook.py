@@ -292,16 +292,65 @@ def _trigger_lines(latest_flags: dict, flip: dict, pending: dict | None,
     return lines[:4]
 
 
+HEAT_BANDS = {
+    "70+": ("OVERHEATED", "everything is confirmed — which historically meant late: "
+            "this band UNDERperformed the index going forward. Hold with tight stops "
+            "or trim; don't initiate here."),
+    "55-69": ("HOT", "confirmed strength. Fine to hold; fresh entries showed no "
+              "historical edge — prefer pullbacks that hold the trend."),
+    "40-54": ("NEUTRAL", "mixed picture, no statistical lean either way."),
+    "0-39": ("COLD", "washed out. Historically this band mildly mean-reverts upward, "
+             "but timing is unreliable — wait for the confirmation trigger."),
+}
+
+
 def build_playbook(f: pd.DataFrame, regime: pd.DataFrame, closes: pd.DataFrame,
                    latest: dict) -> dict:
+    from engine.technicals import (_score_components, band_for, calibrate,
+                                   season_line, seasonality, snapshot)
     quad = latest["quad"]
     prefs = config.load()["engine"]["sector_preferences"]
+    bench = config.load()["engine"]["rs_ranking"]["benchmark"]
     stages = stage_table(closes)
     trans = transition_stats(regime["quad"])
     evidence = risk_evidence(closes, regime)
     dial = exposure_dial(latest, evidence)
+    heat_cal = calibrate(closes, regime)
 
     aligned = set(prefs.get(quad, [])) & set(stages.index)
+
+    # --- enrich each sector with technicals, seasonality, heat, trigger gap ----
+    month = int(closes.index.max().month)
+    nxt_month = month % 12 + 1
+    enriched: list[dict] = []
+    tech_by_ticker: dict[str, dict] = {}
+    for t, row in stages.iterrows():
+        close = closes[t].dropna()
+        tech = snapshot(close)
+        seas = seasonality(close)
+        heat = _score_components(t in aligned, dial["score"], row["stage"],
+                                 bool(row["extended"]), tech, row["pctile_252d"])
+        band = band_for(heat["score"])
+        cal = heat_cal.get(band)
+        rec = {**row.to_dict(), "ticker": t, **{f"tech_{k}": v for k, v in tech.items()},
+               "heat": heat["score"], "heat_parts": heat, "heat_band": band,
+               "heat_label": HEAT_BANDS[band][0], "heat_note": HEAT_BANDS[band][1],
+               "heat_cal": cal,
+               "season_this": season_line(seas, month),
+               "season_next": season_line(seas, nxt_month)}
+        # distance to the buy trigger for names below their RS trend
+        if not row["above_trend"]:
+            rs = (closes[t] / closes[bench]).dropna()
+            ma200 = rs.rolling(200).mean()
+            gap = float((ma200.iloc[-1] / rs.iloc[-1] - 1) * 100)
+            lo60 = float(rs.iloc[-60:].min())
+            denom = float(ma200.iloc[-1]) - lo60
+            progress = float((rs.iloc[-1] - lo60) / denom * 100) if denom > 0 else None
+            rec["trigger_gap_pct"] = round(gap, 1)
+            rec["trigger_progress_pct"] = round(min(max(progress, 0), 100), 0) \
+                if progress is not None else None
+        enriched.append(rec)
+        tech_by_ticker[t] = rec
 
     leaders, avoid = [], []
     for t, row in stages.iterrows():
@@ -310,13 +359,23 @@ def build_playbook(f: pd.DataFrame, regime: pd.DataFrame, closes: pd.DataFrame,
             trend_note = (f"3-month RS {row['mom_60d_pct']:+.1f}%"
                           if row["mom_60d_pct"] > 0 else
                           f"rebuilding after a soft 3 months ({row['mom_60d_pct']:+.1f}%)")
+            rec = tech_by_ticker.get(t, {})
+            tech_bits = []
+            if rec.get("tech_rsi14") is not None:
+                tech_bits.append(f"RSI {rec['tech_rsi14']:.0f}")
+            if rec.get("tech_above200") and rec.get("tech_above50"):
+                tech_bits.append("above both moving averages")
+            elif rec.get("tech_above200"):
+                tech_bits.append("above its 200-day average")
+            tech_txt = (" Tech: " + ", ".join(tech_bits) + "." if tech_bits else "")
+            season_txt = f" {rec['season_this']}." if rec.get("season_this") else ""
             leaders.append({
                 "ticker": t, "name": row["name"],
                 "aligned": is_aligned, "mom_60d_pct": row["mom_60d_pct"],
                 "why": (f"Established uptrend vs the market, short-term momentum positive "
                         f"({row['mom_20d_pct']:+.1f}% over 20d; {trend_note})"
                         + (" — and the current regime historically favored it."
-                           if is_aligned else ".")),
+                           if is_aligned else ".") + tech_txt + season_txt),
             })
         elif row["extended"]:
             avoid.append({"ticker": t, "name": row["name"], "call": "DON'T CHASE",
@@ -357,13 +416,23 @@ def build_playbook(f: pd.DataFrame, regime: pd.DataFrame, closes: pd.DataFrame,
         for t in prefs.get(next_quad, []):
             if t in stages.index and stages.loc[t, "stage"] in ("improving", "lagging"):
                 row = stages.loc[t]
+                rec = tech_by_ticker.get(t, {})
+                trigger_txt = ""
+                if rec.get("trigger_gap_pct") is not None:
+                    trigger_txt = (f" Trigger distance: needs {rec['trigger_gap_pct']:+.1f}% "
+                                   f"more outperformance vs the market to confirm")
+                    if rec.get("trigger_progress_pct") is not None:
+                        trigger_txt += (f" — already {rec['trigger_progress_pct']:.0f}% of the "
+                                        f"way there from its recent low")
+                    trigger_txt += "."
+                season_txt = f" Seasonality: {rec['season_next']}." if rec.get("season_next") else ""
                 watchlist.append({
                     "ticker": t, "name": row["name"],
                     "why": (f"Historically favored if the regime shifts to "
                             f"{QUAD_SHORT[next_quad]}. Currently {row['stage']} "
-                            f"({row['mom_20d_pct']:+.1f}% 20d RS). Execution rule the data "
-                            f"supports: do NOT buy in anticipation — wait until its RS "
-                            f"crosses above its 200-day trend.")})
+                            f"({row['mom_20d_pct']:+.1f}% 20d RS). Don't buy in "
+                            f"anticipation — wait for the trend cross.{trigger_txt}"
+                            f"{season_txt}")})
 
     pending = None
     last = regime.dropna(subset=["quad"]).iloc[-1]
@@ -420,6 +489,25 @@ def build_playbook(f: pd.DataFrame, regime: pd.DataFrame, closes: pd.DataFrame,
                   "meaning": QUAD_MEANING.get(k, ""), "prob_pct": round(v * 100)}
                  for k, v in sorted(nxt.items(), key=lambda kv: -kv[1])]
 
+    # commodities & macro tape: technicals + seasonality, no heat score (no
+    # RS-vs-SPY stage or regime alignment is meaningful for these)
+    commodities = []
+    for t, label in [("GC=F", "Gold"), ("CL=F", "Crude Oil"),
+                     ("HG=F", "Copper"), ("DX-Y.NYB", "US Dollar")]:
+        if t not in closes.columns:
+            continue
+        c = closes[t].dropna()
+        if len(c) < 300:
+            continue
+        from engine.technicals import season_line as _sl
+        from engine.technicals import seasonality as _seas
+        from engine.technicals import snapshot as _snap
+        tech = _snap(c)
+        seas = _seas(c)
+        commodities.append({"ticker": t, "name": label, **tech,
+                            "season_this": _sl(seas, month),
+                            "mom_60d_pct": round(float(c.pct_change(60).iloc[-1] * 100), 1)})
+
     return {
         "headline": headline,
         "dial": dial,
@@ -434,7 +522,9 @@ def build_playbook(f: pd.DataFrame, regime: pd.DataFrame, closes: pd.DataFrame,
         "regime_age_note": age_note,
         "watchlist": watchlist[:4],
         "triggers": triggers,
-        "stages": stages.reset_index().to_dict(orient="records"),
+        "stages": enriched,
+        "heat_calibration": heat_cal,
+        "commodities": commodities,
         "evidence": evidence,
         "honesty": ("Sector picks vs the index showed no stable edge in our 2000-2026 backtest "
                     "(results flip between decades) — so sector calls here are risk filters and "

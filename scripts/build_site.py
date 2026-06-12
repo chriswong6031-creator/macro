@@ -269,14 +269,51 @@ STAGE_STYLE = {
     "weakening": ("#38301a", "#d8b75a"), "lagging": ("#3a2020", "#e08080"),
 }
 
+HEAT_COLORS = {"70+": "#e07b30", "55-69": "#3f8f5f",
+               "40-54": "#4a5160", "0-39": "#3a4860"}
+
+
+def _compact_season(line: str | None) -> tuple[str, str]:
+    """'Jun: -0.4% avg, up 46% of years (n=28)' -> ('-0.4% (46%)', full)"""
+    if not line:
+        return "—", "Not enough history for a seasonal read."
+    try:
+        avg = line.split(":")[1].split("avg")[0].strip()
+        hit = line.split("up ")[1].split("%")[0]
+        return f"{avg} ({hit}%)", line
+    except (IndexError, ValueError):
+        return line, line
+
 
 def sector_rows(playbook: dict | None) -> list[dict]:
     if not playbook or not playbook.get("stages"):
         return []
-    rows = sorted(playbook["stages"], key=lambda r: -r["mom_60d_pct"])
+    rows = sorted(playbook["stages"], key=lambda r: -r["heat"])
     for r in rows:
         bg, fg = STAGE_STYLE.get(r["stage"], ("#2a2f3a", "#d7dce3"))
         r["stage_color"], r["stage_fg"] = bg, fg
+        r["heat_color"] = HEAT_COLORS.get(r["heat_band"], "#4a5160")
+        parts = r.get("heat_parts", {})
+        cal = r.get("heat_cal")
+        cal_txt = (f" Historical reality-check for the {r['heat_band']} band: beat the "
+                   f"index {cal['hit_pct']}% of the time over the next 3 months "
+                   f"(avg {cal['avg_excess_pct']:+}%, n={cal['n']})." if cal else "")
+        r["heat_tip"] = (f"Heat {r['heat']}/100 = regime fit {parts.get('regime')} "
+                         f"+ tape {parts.get('tape')} + technicals {parts.get('technicals')} "
+                         f"+ crowding {parts.get('crowding')}. {r['heat_label']}: "
+                         f"{r['heat_note']}{cal_txt}")
+        tech_bits = [f"RSI {r['tech_rsi14']:.0f}" if r.get("tech_rsi14") is not None else "RSI —",
+                     ("✓" if r.get("tech_above200") else "✗") + "200d",
+                     ("✓" if r.get("tech_above50") else "✗") + "50d"]
+        r["tech_str"] = " · ".join(tech_bits)
+        r["tech_ok"] = bool(r.get("tech_above200")) and bool(r.get("tech_above50"))
+        r["season_str"], r["season_tip"] = _compact_season(r.get("season_this"))
+        if r.get("trigger_gap_pct") is not None:
+            r["trigger_str"] = f"+{r['trigger_gap_pct']}%"
+            if r.get("trigger_progress_pct") is not None:
+                r["trigger_str"] += f" ({r['trigger_progress_pct']:.0f}% there)"
+        else:
+            r["trigger_str"] = "—"
     return rows
 
 
@@ -325,9 +362,12 @@ def main() -> int:
     confirming, contradicting = component_chips(latest)
     generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
 
+    import calendar
     html = env.get_template("dashboard.html.j2").render(
         latest=latest,
         pb=latest.get("playbook"),
+        month_name=calendar.month_name[pd.Timestamp(latest["date"]).month],
+        commodities=(latest.get("playbook") or {}).get("commodities", []),
         components_confirming=confirming,
         components_contradicting=contradicting,
         flip_plain=flip_plain_text(latest),

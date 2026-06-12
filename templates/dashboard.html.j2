@@ -77,7 +77,14 @@
                letter-spacing: normal; box-shadow: 0 6px 18px rgba(0,0,0,.5);
                pointer-events: none; white-space: normal; }
   .help:hover .tip { display: block; }
-  th .help .tip { bottom: auto; top: 140%; }
+  th .help .tip, .help.below .tip { bottom: auto; top: 140%; }
+  .tip-map { width: 360px !important; }
+  .qgrid { display: grid; grid-template-columns: 58px 1fr 1fr; gap: 4px; margin: 8px 0; }
+  .qax { color: var(--muted); font-size: 10.5px; align-self: center; text-align: center; }
+  .qcell { border-radius: 6px; padding: 7px 6px; text-align: center; color: #fff;
+           font-weight: 700; font-size: 11px; line-height: 1.25; }
+  .qcell small { font-weight: 400; opacity: .85; }
+  .qcell.qcur { outline: 2px solid #fff; }
 
   .dial { display: flex; gap: 4px; margin: 8px 0 12px; }
   .dial span { flex: 1; text-align: center; padding: 6px 2px; border-radius: 6px;
@@ -149,7 +156,23 @@
     <div class="topline">
       <h1>Macro Regime Dashboard</h1>
       <span class="badge quad-{{ latest.quad }}">{{ latest.quad_name }}</span>
-      {{ help("The market 'weather' right now — NOT a calendar quarter. Four regimes based on whether growth and inflation are rising or falling: GOLDILOCKS (green) = growth up, inflation down — historically the friendliest for stocks. REFLATION (yellow) = both heating up — favors energy, banks, industrials. STAGFLATION (red) = inflation up, growth rolling over — historically the most dangerous. GROWTH SCARE (blue) = both falling — favors defensives and bonds. The label changes only after 7 straight days of evidence (or one extreme shock day).") }}
+      <span class="help">?<span class="tip tip-map">
+        <b>The four market regimes</b> — combinations of growth and inflation direction.
+        (Sometimes written Q1–Q4, but these are <b>quadrants, NOT calendar quarters</b>.)
+        <span class="qgrid">
+          <span class="qax"></span>
+          <span class="qax">inflation falling ↓</span>
+          <span class="qax">inflation rising ↑</span>
+          <span class="qax">growth<br>rising ↑</span>
+          <span class="qcell{{ ' qcur' if latest.quad == 'Q1' }}" style="background:var(--q1)">GOLDILOCKS<br><small>best for tech & quality</small></span>
+          <span class="qcell{{ ' qcur' if latest.quad == 'Q2' }}" style="background:var(--q2);color:#1a1a1a">REFLATION<br><small>cyclicals, energy, banks</small></span>
+          <span class="qax">growth<br>falling ↓</span>
+          <span class="qcell{{ ' qcur' if latest.quad == 'Q4' }}" style="background:var(--q4)">GROWTH SCARE<br><small>defensives & bonds</small></span>
+          <span class="qcell{{ ' qcur' if latest.quad == 'Q3' }}" style="background:var(--q3)">STAGFLATION<br><small>the dangerous one</small></span>
+        </span>
+        The label changes only after 7 straight days of evidence (or one extreme shock day),
+        so it doesn't flip-flop. Today's regime is outlined in white.
+      </span></span>
       <span class="badge state-{{ latest.transition_state }}">{{ latest.transition_state }}</span>
       {{ help("The transition radar — is the current regime ending? STABLE: no warning signs, trust the label. WEAKENING: 2+ warning signals — stop adding regime-dependent bets. TRANSITIONING: 3+ warnings — the regime is probably ending before the label flips; reduce risk now. NEW REGIME: the label just changed this week.") }}
       <span class="kv">signal agreement <b>{{ (latest.confidence * 100) | round | int }}%</b></span>
@@ -347,26 +370,68 @@
     </table>
   </div>
 
-  <!-- ======================= SECTORS ======================= -->
-  <div class="panel span6">
-    <h2>Sector scoreboard
-      {{ help("Every sector vs the S&P 500 (so 'up' means beating the market). Sorted by 3-month relative momentum.") }}
+  <!-- ======================= SECTOR HEAT BOARD ======================= -->
+  <div class="panel span12">
+    <h2>Sector heat board — regime × tape × technicals × seasonality
+      {{ help("One row per sector, everything that matters in one place. HEAT (0-100) measures how CONFIRMED a sector's strength is right now: regime fit + rotation stage + technicals, minus crowding. Important: heat describes the present, not the future — our 2007-2026 backtest shows the hottest band (70+) actually UNDERPERFORMED over the following months (everything-confirmed usually means late). So: high heat = hold/trim territory, never a fresh-entry signal; the buy workflow is the watchlist + trigger column.") }}
     </h2>
     <table>
       <tr>
         <th class="l">sector</th>
-        <th>stage {{ help("Rotation cycle position, from its trend vs the market: IMPROVING = momentum turning up, trend not yet confirmed (historically too early to buy!). LEADING = confirmed uptrend. WEAKENING = above trend, losing momentum. LAGGING = downtrend. Healthy sequence: improving → leading → weakening → lagging.") }}</th>
-        <th>1mo {{ help("20-trading-day change in its ratio vs SPY — short-term relative momentum.") }}</th>
-        <th>3mo {{ help("60-trading-day change vs SPY — the medium-term trend the playbook keys off.") }}</th>
-        <th>year pos. {{ help("Where today's relative strength sits within its past year: 95 = near its yearly high vs the market (strong but possibly stretched), 5 = near its yearly low.") }}</th>
+        <th class="l" style="min-width:130px">heat {{ help("The confluence gauge. Hover each row's bar for its exact arithmetic and the measured historical track record of its band — that track record IS the trust level you asked for, and for high heat it argues against chasing.") }}</th>
+        <th>stage {{ help("Rotation cycle position vs the market: IMPROVING = momentum up, trend unconfirmed (too early — historically a losing entry). LEADING = confirmed uptrend. WEAKENING = above trend, losing steam. LAGGING = downtrend.") }}</th>
+        <th>3mo RS {{ help("60-trading-day change vs SPY — the medium-term relative trend.") }}</th>
+        <th>technicals {{ help("RSI(14): &lt;30 oversold, 45-70 healthy trend zone, &gt;75 overbought. ✓/✗200d and ✓/✗50d: whether price is above its 200-day and 50-day moving averages — the most basic trend filters.") }}</th>
+        <th>{{ month_name }} tendency {{ help("This instrument's average return in this calendar month across its whole history, and how often the month was positive. Weak evidence by nature — context, never a signal on its own (and deliberately excluded from the heat score).") }}</th>
+        <th>to trigger {{ help("For sectors below their long-term relative trend: how much more outperformance vs SPY is needed for the trend to cross (= the data-backed buy confirmation), and how far along it already is from its recent low. Small gap + high progress = watch closely.") }}</th>
       </tr>
       {% for r in sector_rows %}
       <tr>
         <td class="l"><b>{{ r.ticker }}</b> <span class="muted">{{ r.name }}</span></td>
+        <td class="l">
+          <span class="help" style="width:auto;height:auto;border:none;margin:0;border-radius:6px">
+            <span style="display:inline-flex;align-items:center;gap:7px;cursor:help">
+              <span style="display:inline-block;width:64px;height:9px;background:var(--panel2);border-radius:5px;overflow:hidden"><i style="display:block;height:100%;width:{{ r.heat }}%;background:{{ r.heat_color }}"></i></span>
+              <b>{{ r.heat }}</b>
+              <span class="muted" style="font-size:11px">{{ r.heat_label }}</span>
+            </span>
+            <span class="tip">{{ r.heat_tip }}</span>
+          </span>
+        </td>
         <td><span class="pill" style="background:{{ r.stage_color }};color:{{ r.stage_fg }}">{{ r.stage }}</span></td>
-        <td class="{{ 'pos' if r.mom_20d_pct > 0 else 'neg' }}">{{ "%+.1f" | format(r.mom_20d_pct) }}%</td>
         <td class="{{ 'pos' if r.mom_60d_pct > 0 else 'neg' }}">{{ "%+.1f" | format(r.mom_60d_pct) }}%</td>
-        <td>{{ r.pctile_252d | round | int }}</td>
+        <td class="{{ 'pos' if r.tech_ok else '' }}" style="font-size:12px">{{ r.tech_str }}</td>
+        <td>
+          <span class="help" style="width:auto;height:auto;border:none;margin:0">
+            <span style="cursor:help">{{ r.season_str }}</span>
+            <span class="tip">{{ r.season_tip }}</span>
+          </span>
+        </td>
+        <td>{{ r.trigger_str }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <div class="panel span6">
+    <h2>Commodities & macro tape
+      {{ help("The non-equity instruments the regime engine watches, with their technicals and seasonal tendency. No heat score here — regime alignment and rotation stages are equity-sector concepts.") }}
+    </h2>
+    <table>
+      <tr><th class="l">instrument</th><th>trend</th><th>RSI</th><th>off 52w high</th><th>3mo</th><th>{{ "seasonal" }}</th></tr>
+      {% for c in commodities %}
+      <tr>
+        <td class="l"><b>{{ c.name }}</b></td>
+        <td>{{ "✓" if c.above200 else "✗" }}200d {{ "✓" if c.above50 else "✗" }}50d</td>
+        <td>{{ c.rsi14 | round | int if c.rsi14 is not none else "—" }}</td>
+        <td class="{{ 'neg' if c.off_52w_high_pct < -10 else '' }}">{{ "%+.1f" | format(c.off_52w_high_pct) }}%</td>
+        <td class="{{ 'pos' if c.mom_60d_pct > 0 else 'neg' }}">{{ "%+.1f" | format(c.mom_60d_pct) }}%</td>
+        <td>
+          <span class="help" style="width:auto;height:auto;border:none;margin:0">
+            <span style="cursor:help">{{ (c.season_this or "—").split(":")[1].split("avg")[0].strip() if c.season_this else "—" }}</span>
+            <span class="tip">{{ c.season_this or "Not enough history." }}</span>
+          </span>
+        </td>
       </tr>
       {% endfor %}
     </table>
@@ -449,5 +514,14 @@
   </div>
 
 </div>
+<script>
+  // tooltips near the top of the viewport open downward so they stay on screen
+  document.addEventListener('mouseover', function (e) {
+    var h = e.target.closest('.help');
+    if (!h) return;
+    if (h.getBoundingClientRect().top < 330) h.classList.add('below');
+    else h.classList.remove('below');
+  });
+</script>
 </body>
 </html>
