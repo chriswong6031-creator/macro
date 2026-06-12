@@ -110,14 +110,33 @@ def chart_credit_breadth(f: pd.DataFrame) -> str:
     return _html(fig)
 
 
+def _crowd_words(p: float, lo_word: str, hi_word: str,
+                 lo_verdict: str, hi_verdict: str) -> tuple[str, str]:
+    """Percentile -> (label, verdict) in plain language. The vocabulary differs
+    per input (long/short, cash/all-in, calm/panic) but the shape is shared."""
+    if p >= 95:
+        return f"extreme {hi_word}", f"{hi_verdict} — most extreme in our records; contrarian alert"
+    if p >= 85:
+        return f"crowded {hi_word}", f"{hi_verdict} — crowded; late to join"
+    if p >= 60:
+        return f"leaning {hi_word}", "above normal, nothing extreme"
+    if p > 40:
+        return "normal", "nothing notable"
+    if p > 15:
+        return f"leaning {lo_word}", "below normal, nothing extreme"
+    if p > 5:
+        return f"crowded {lo_word}", f"{lo_verdict} — stretched; squeezes start here"
+    return f"extreme {lo_word}", f"{lo_verdict} — most extreme in our records; reversal fuel"
+
+
 def positioning_rows(f: pd.DataFrame) -> list[dict]:
     rows: list[dict] = []
 
-    def pctile(s: pd.Series) -> str:
+    def pctile(s: pd.Series) -> float | None:
         s = s.dropna()
         if len(s) < 50:
-            return "n/a"
-        return f"{(s.rank(pct=True).iloc[-1] * 100):.0f}"
+            return None
+        return float(s.rank(pct=True).iloc[-1] * 100)
 
     cot_meta = {
         "cot_es_spx": ("S&P 500 futures speculators",
@@ -138,52 +157,84 @@ def positioning_rows(f: pd.DataFrame) -> list[dict]:
         df = store.read("cot", key)
         if df is not None and "net_spec_pct_oi" in df.columns and len(df):
             s = df["net_spec_pct_oi"]
-            rows.append({"name": label, "tip": tip, "value": f"{s.iloc[-1]:+.1f}%",
-                         "pctile": pctile(s), "asof": str(df.index.max().date())})
+            p = pctile(s)
+            word, verdict = _crowd_words(p, "short", "long",
+                                         "everyone is already short",
+                                         "everyone is already long") if p is not None \
+                else ("history building", "")
+            rows.append({"name": label, "pct": p, "label": word, "verdict": verdict,
+                         "left": "crowded short", "right": "crowded long",
+                         "tip": tip + f" Today: {s.iloc[-1]:+.1f}% of open contracts"
+                                + (f", {p:.0f}th percentile of 30 years" if p is not None else "")
+                                + f" (as of {df.index.max().date()}, 3-day reporting lag).",
+                         })
     naaim = store.read("sentiment", "naaim")
     if naaim is not None and len(naaim):
         s = naaim.iloc[:, 0]
-        rows.append({"name": "Active managers' equity exposure",
-                     "tip": "NAAIM weekly survey: how invested professional active managers are "
+        p = pctile(s)
+        word, verdict = _crowd_words(p, "cautious", "invested",
+                                     "managers are hiding in cash",
+                                     "managers are nearly all-in") if p is not None \
+            else ("history building", "")
+        rows.append({"name": "Pro fund managers", "pct": p, "label": word, "verdict": verdict,
+                     "left": "all cash", "right": "all-in",
+                     "tip": "NAAIM weekly survey of professional active managers' stock exposure "
                             "(0 = all cash, 100 = fully invested, >100 = leveraged). Extremes are "
-                            "contrarian: >95th percentile = managers all-in.",
-                     "value": f"{s.iloc[-1]:.0f}",
-                     "pctile": pctile(s), "asof": str(naaim.index.max().date())})
+                            f"contrarian. Today: {s.iloc[-1]:.0f}"
+                            + (f", {p:.0f}th percentile since 2006" if p is not None else "")
+                            + f" (as of {naaim.index.max().date()}).",
+                     })
     pc = store.read("cboe", "putcall")
-    if pc is not None and len(pc):
-        for col, label, tip in [
-            ("index_pc_ratio", "S&P index put/call ratio",
-             "Volume of bearish (put) vs bullish (call) S&P index options traded today, computed "
-             "from CBOE's chain. Above ~1.2 = heavy hedging/fear; below ~0.8 = complacency. "
-             "History builds from June 2026, so the percentile matures over time."),
-            ("equity_pc_ratio", "Stock-ETF put/call ratio",
-             "Same idea using SPY+QQQ+IWM options — closer to what retail and fast money are doing."),
-        ]:
-            if col in pc.columns:
-                s = pc[col]
-                rows.append({"name": label, "tip": tip, "value": f"{s.iloc[-1]:.2f}",
-                             "pctile": pctile(s), "asof": str(pc.index.max().date())})
+    if pc is not None and len(pc) and "index_pc_ratio" in pc.columns:
+        v = float(pc["index_pc_ratio"].iloc[-1])
+        if v >= 1.3:
+            word, verdict = "heavy hedging", "lots of downside protection being bought — fear elevated"
+        elif v >= 1.0:
+            word, verdict = "guarded", "more puts than calls — mild caution"
+        elif v >= 0.8:
+            word, verdict = "balanced", "nothing notable"
+        else:
+            word, verdict = "complacent", "very few hedges — markets unprepared for bad news"
+        rows.append({"name": "Options hedging mood", "pct": None, "label": word,
+                     "verdict": verdict, "left": "", "right": "",
+                     "tip": "Put/call volume ratio on S&P index options, computed from CBOE's "
+                            "chain: bearish bets ÷ bullish bets traded today. Above ~1.3 = heavy "
+                            f"hedging; below ~0.8 = complacency. Today: {v:.2f} "
+                            f"(as of {pc.index.max().date()}). A young series — labels are based "
+                            "on standard thresholds until enough history accrues.",
+                     })
     gex = store.read("cboe", "gex")
     if gex is not None and len(gex):
         g = gex.iloc[-1]
-        flip = (f"{g['spot_vs_flip_pct']:+.1f}% from flip"
-                if pd.notna(g.get("spot_vs_flip_pct")) else "no near flip")
-        rows.append({"name": "Options dealers' stabilizer (GEX)",
-                     "tip": "Estimated dealer gamma exposure, computed from the S&P options chain "
-                            "under the standard assumption (dealers long calls, short puts). "
-                            "POSITIVE = dealers trade against moves, dampening swings. NEGATIVE = "
-                            "their hedging amplifies moves — expect bigger, faster swings both ways. "
-                            "An estimate, not ground truth.",
-                     "value": f"{g['net_gex_bn']:+.0f}bn",
-                     "pctile": flip, "asof": str(gex.index.max().date())})
+        pos = g["net_gex_bn"] > 0
+        near = pd.notna(g.get("spot_vs_flip_pct")) and abs(g["spot_vs_flip_pct"]) < 2
+        word = "dampening swings" if pos else "amplifying swings"
+        verdict = ("market-makers' hedging absorbs moves — calmer tape likely" if pos else
+                   "market-makers' hedging adds fuel to moves — expect bigger swings both ways")
+        if near:
+            verdict += " (and we're near the tipping point — it can flip any day)"
+        rows.append({"name": "Market-maker effect", "pct": None, "label": word,
+                     "verdict": verdict, "left": "", "right": "",
+                     "tip": "Estimated dealer gamma (GEX) from the S&P options chain, standard "
+                            "assumption (dealers long calls/short puts). Positive = their hedging "
+                            "dampens market moves; negative = it amplifies them. Today: "
+                            f"{g['net_gex_bn']:+.0f}bn per 1% move "
+                            f"(as of {gex.index.max().date()}). An estimate, not ground truth.",
+                     })
     vr = f["vix_ratio"].dropna()
     if len(vr):
-        rows.append({"name": "Fear now vs fear later (VIX ratio)",
-                     "tip": "VIX (30-day expected volatility) divided by VIX3M (3-month). Below ~0.9 "
-                            "= calm, normal. Near or above 1.0 = the market fears the immediate "
-                            "future more than the distant one — the classic stress signature.",
-                     "value": f"{vr.iloc[-1]:.3f}",
-                     "pctile": pctile(vr), "asof": str(vr.index[-1].date())})
+        p = pctile(vr)
+        if p is not None:
+            word, verdict = _crowd_words(p, "calm", "stressed",
+                                         "unusually calm conditions",
+                                         "near-term fear is spiking")
+            rows.append({"name": "Fear gauge", "pct": p, "label": word, "verdict": verdict,
+                         "left": "calm", "right": "panic",
+                         "tip": "VIX (30-day expected volatility) ÷ VIX3M (3-month). Below ~0.9 = "
+                                "calm; near/above 1.0 = the market fears the immediate future more "
+                                f"than the distant one — the classic stress signature. Today: "
+                                f"{vr.iloc[-1]:.3f}, {p:.0f}th percentile since 2006.",
+                         })
     return rows
 
 
@@ -203,7 +254,7 @@ COMPONENT_SHORT = {
 def component_chips(latest: dict) -> tuple[list[str], list[str]]:
     def label(raw: str) -> str:
         axis, _, comp = raw.partition("_")
-        return f"{'G' if axis == 'growth' else 'I'} · {COMPONENT_SHORT.get(comp, comp)}"
+        return f"{'growth' if axis == 'growth' else 'inflation'} · {COMPONENT_SHORT.get(comp, comp)}"
     return ([label(c) for c in latest.get("confirming", [])],
             [label(c) for c in latest.get("contradicting", [])])
 
@@ -215,9 +266,9 @@ def flip_plain_text(latest: dict) -> str:
         return ("No single indicator is close to flipping — the regime call isn't "
                 "hanging on one thread right now.")
     plain = COMPONENT_PLAIN.get(fc["component"], fc["component"])
-    return (f"Watch {plain}: it's the {fc['axis']}-dial supporter closest to its cutoff "
-            f"(signal strength {fc['z']} vs the ±{fc['threshold']} threshold). "
-            f"If it fades, the {fc['axis']} dial — and possibly the regime — flips.")
+    return (f"Watch {plain} — of everything supporting the current call, it's the one "
+            f"closest to flipping sides. If it fades, the {fc['axis']} dial (and "
+            f"possibly the regime) goes with it.")
 
 
 INTERNALS_META = {

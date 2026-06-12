@@ -131,6 +131,18 @@
            background: linear-gradient(90deg, #e07070 0%, #4a5160 50%, #5fbf7f 100%); opacity:.9; }
   .gauge i { position: absolute; top: -4px; width: 4px; height: 18px; background: #fff;
              border-radius: 2px; }
+  /* crowding gauge: both ENDS are danger zones */
+  .pgauge { position: relative; height: 9px; border-radius: 5px; margin: 4px 0 2px;
+            background: linear-gradient(90deg, #3f78d8 0%, #4a5160 28%, #4a5160 72%, #d04545 100%);
+            opacity: .9; min-width: 130px; }
+  .pgauge i { position: absolute; top: -3px; width: 4px; height: 15px; background: #fff;
+              border-radius: 2px; }
+  .pends { display: flex; justify-content: space-between; font-size: 10px;
+           color: var(--muted); }
+  .plabel { display: inline-block; padding: 1px 9px; border-radius: 10px; font-size: 12px;
+            font-weight: 600; background: var(--panel2); }
+  .plabel-hot { color: #e08080; } .plabel-cold { color: #9fc0e8; }
+  .plabel-norm { color: var(--muted); }
 
   /* regime lifespan bar */
   .lifebar { position: relative; height: 16px; border-radius: 8px; overflow: hidden;
@@ -410,7 +422,7 @@
       {{ help("Simple ratios between two assets; each answers a question about investor mood. Direction over the last 20 days matters more than the level. Green = moved in the risk-friendly direction.") }}
     </h2>
     <table>
-      <tr><th class="l">gauge</th><th>20d change</th><th class="l">what it's saying</th></tr>
+      <tr><th class="l">gauge</th><th>past month</th><th class="l">what it's saying</th></tr>
       {% for r in internals %}
       <tr>
         <td class="l">{{ r.label }} {{ help(r.tip) }}</td>
@@ -450,7 +462,7 @@
           <span class="lad" style="background:#38301a;color:#d8b75a">3. WEAKENING — still above trend but losing steam. Tighten stops.</span>
           <span class="lad" style="background:#3a2020;color:#e08080">4. LAGGING — downtrend. Avoid until it improves again.</span>
         </span></span></th>
-        <th>3mo RS {{ help("60-trading-day change vs SPY — the medium-term relative trend.") }}</th>
+        <th>3mo vs market {{ help("How much it beat or trailed the S&P 500 over the past 60 trading days — the medium-term relative trend the playbook keys off.") }}</th>
         <th>technicals <span class="help">?<span class="tip">
           <b>RSI(14)</b> — a 0-100 momentum thermometer:
           <span class="scale">
@@ -535,23 +547,27 @@
 
   <!-- ======================= POSITIONING ======================= -->
   <div class="panel span6">
-    <h2>Who's positioned how
-      {{ help("What different investor groups are doing — futures speculators (weekly, 3-day lag), active managers (NAAIM), the options market. The percentile column is the key: near 100 = most crowded in decades (contrarian warning), near 0 = washed out.") }}
+    <h2>Who's positioned how — the crowd meter
+      {{ help("What different investor groups are currently doing, shown as a position on each dial. The middle is normal; the ENDS are the danger zones — when a marker sits at either extreme, that trade is crowded and prone to violent reversal. Hover each name for the underlying numbers.") }}
     </h2>
     <table>
-      <tr><th class="l">input</th><th>latest</th><th>percentile <span class="help">?<span class="tip">
-        <b>Percentile</b> — where today's reading sits in ALL the history we store:
-        <span class="scale">
-          <span style="background:#3f78d8">WASHED OUT</span>
-          <span style="background:#4a5160">NORMAL</span>
-          <span style="background:#a33">CROWDED</span>
-        </span>
-        <span class="sl"><span>0</span><span>10</span><span>90</span><span>100</span></span>
-        The ends are contrarian zones: when everyone is already positioned one way
-        (≥90 or ≤10), the trade is crowded and prone to reversal. 50 = perfectly normal.
-      </span></span></th><th>as of</th></tr>
+      <tr><th class="l">who / what</th><th class="l" style="min-width:150px">where they stand</th><th class="l">what it means</th></tr>
       {% for p in positioning %}
-      <tr><td class="l">{{ p.name }} {{ help(p.tip) }}</td><td>{{ p.value }}</td><td>{{ p.pctile }}</td><td class="muted">{{ p.asof }}</td></tr>
+      <tr>
+        <td class="l">{{ p.name }} {{ help(p.tip) }}</td>
+        <td class="l">
+          {% if p.pct is not none %}
+            <div class="pgauge"><i style="left: {{ p.pct | round(1) }}%"></i></div>
+            <div class="pends"><span>{{ p.left }}</span><span>{{ p.right }}</span></div>
+          {% else %}
+            <span class="plabel {{ 'plabel-hot' if 'amplif' in p.label or 'hedg' in p.label or 'complacent' in p.label else 'plabel-norm' }}">{{ p.label }}</span>
+          {% endif %}
+        </td>
+        <td class="l muted">
+          {% if p.pct is not none %}<b style="color:var(--text)">{{ p.label }}</b>{% if p.verdict %} — {{ p.verdict }}{% endif %}
+          {% else %}{{ p.verdict }}{% endif %}
+        </td>
+      </tr>
       {% endfor %}
     </table>
   </div>

@@ -278,7 +278,7 @@
         "name": "Industrials",
         "aligned": false,
         "mom_60d_pct": -4.35,
-        "why": "Established uptrend vs the market, short-term momentum positive (+1.5% over 20d; rebuilding after a soft 3 months (-4.3%)). Tech: RSI 54, above both moving averages. Jun: -0.4% avg, up 46% of years (n=28)."
+        "why": "Established uptrend vs the market, short-term momentum positive (+1.5% vs the market this month; rebuilding after a soft 3 months (-4.3%)). Tech: RSI 54, above both moving averages. Jun: -0.4% avg, up 46% of years (n=28)."
       }
     ],
     "avoid": [
@@ -286,13 +286,13 @@
         "ticker": "XLC",
         "name": "Communications",
         "call": "REGIME-TAPE CONFLICT",
-        "why": "The regime map favors it but the market is selling it (-3.4% 20d RS). Tape wins \u2014 stand aside until it stabilizes above trend."
+        "why": "The regime map favors it but the market is selling it (-3.4% vs the market this month). Tape wins \u2014 stand aside until it stabilizes above trend."
       },
       {
         "ticker": "XLF",
         "name": "Financials",
         "call": "TOO EARLY",
-        "why": "Momentum just turned up (+3.8% 20d) but it's still below its long-term trend vs the market. Tempting \u2014 and historically a losing entry (-0.73%/3m avg). Wait for the trend line to actually break."
+        "why": "Momentum just turned up (+3.8% this month) but it's still below its long-term trend vs the market. Tempting \u2014 and historically a losing entry (-0.73%/3m avg). Wait for the trend line to actually break."
       },
       {
         "ticker": "XLK",
@@ -304,7 +304,7 @@
         "ticker": "XLP",
         "name": "Consumer Staples",
         "call": "TOO EARLY",
-        "why": "Momentum just turned up (+1.3% 20d) but it's still below its long-term trend vs the market. Tempting \u2014 and historically a losing entry (-0.73%/3m avg). Wait for the trend line to actually break."
+        "why": "Momentum just turned up (+1.3% this month) but it's still below its long-term trend vs the market. Tempting \u2014 and historically a losing entry (-0.73%/3m avg). Wait for the trend line to actually break."
       }
     ],
     "momentum_tilt": {
@@ -371,12 +371,12 @@
       {
         "ticker": "XLF",
         "name": "Financials",
-        "why": "Historically favored if the regime shifts to Reflation. Currently improving (+3.8% 20d RS). Don't buy in anticipation \u2014 wait for the trend cross. Trigger distance: needs +7.4% more outperformance vs the market to confirm \u2014 already 42% of the way there from its recent low. Seasonality: Jul: +1.9% avg, up 67% of years (n=27)."
+        "why": "Historically favored if the regime shifts to Reflation. Currently improving (+3.8% vs the market this month). Don't buy in anticipation \u2014 wait for the trend cross. Trigger distance: needs +7.4% more outperformance vs the market to confirm \u2014 already 42% of the way there from its recent low. Seasonality: Jul: +1.9% avg, up 67% of years (n=27)."
       },
       {
         "ticker": "XLB",
         "name": "Materials",
-        "why": "Historically favored if the regime shifts to Reflation. Currently lagging (-1.0% 20d RS). Don't buy in anticipation \u2014 wait for the trend cross. Trigger distance: needs +0.4% more outperformance vs the market to confirm \u2014 already 90% of the way there from its recent low. Seasonality: Jul: +1.5% avg, up 52% of years (n=27)."
+        "why": "Historically favored if the regime shifts to Reflation. Currently lagging (-1.0% vs the market this month). Don't buy in anticipation \u2014 wait for the trend cross. Trigger distance: needs +0.4% more outperformance vs the market to confirm \u2014 already 90% of the way there from its recent low. Seasonality: Jul: +1.5% avg, up 52% of years (n=27)."
       }
     ],
     "triggers": [

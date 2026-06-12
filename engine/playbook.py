@@ -373,7 +373,7 @@ def build_playbook(f: pd.DataFrame, regime: pd.DataFrame, closes: pd.DataFrame,
                 "ticker": t, "name": row["name"],
                 "aligned": is_aligned, "mom_60d_pct": row["mom_60d_pct"],
                 "why": (f"Established uptrend vs the market, short-term momentum positive "
-                        f"({row['mom_20d_pct']:+.1f}% over 20d; {trend_note})"
+                        f"({row['mom_20d_pct']:+.1f}% vs the market this month; {trend_note})"
                         + (" — and the current regime historically favored it."
                            if is_aligned else ".") + tech_txt + season_txt),
             })
@@ -386,7 +386,7 @@ def build_playbook(f: pd.DataFrame, regime: pd.DataFrame, closes: pd.DataFrame,
                                   f"over 3 months. Wait for a pullback that holds the trend.")})
         elif row["stage"] == "improving":
             avoid.append({"ticker": t, "name": row["name"], "call": "TOO EARLY",
-                          "why": (f"Momentum just turned up ({row['mom_20d_pct']:+.1f}% 20d) but "
+                          "why": (f"Momentum just turned up ({row['mom_20d_pct']:+.1f}% this month) but "
                                   f"it's still below its long-term trend vs the market. Tempting — "
                                   f"and historically a losing entry "
                                   f"({SECTOR_EVIDENCE['dont_anticipate']['avg_excess_pct']}%/3m avg). "
@@ -394,7 +394,7 @@ def build_playbook(f: pd.DataFrame, regime: pd.DataFrame, closes: pd.DataFrame,
         elif is_aligned and row["stage"] in ("weakening", "lagging"):
             avoid.append({"ticker": t, "name": row["name"], "call": "REGIME-TAPE CONFLICT",
                           "why": (f"The regime map favors it but the market is selling it "
-                                  f"({row['mom_20d_pct']:+.1f}% 20d RS). Tape wins — stand aside "
+                                  f"({row['mom_20d_pct']:+.1f}% vs the market this month). Tape wins — stand aside "
                                   f"until it stabilizes above trend.")})
     leaders.sort(key=lambda x: (not x["aligned"], -x["mom_60d_pct"]))
 
@@ -430,7 +430,7 @@ def build_playbook(f: pd.DataFrame, regime: pd.DataFrame, closes: pd.DataFrame,
                     "ticker": t, "name": row["name"],
                     "why": (f"Historically favored if the regime shifts to "
                             f"{QUAD_SHORT[next_quad]}. Currently {row['stage']} "
-                            f"({row['mom_20d_pct']:+.1f}% 20d RS). Don't buy in "
+                            f"({row['mom_20d_pct']:+.1f}% vs the market this month). Don't buy in "
                             f"anticipation — wait for the trend cross.{trigger_txt}"
                             f"{season_txt}")})
 

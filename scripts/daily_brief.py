@@ -120,17 +120,9 @@ def crowd_extremes() -> list[str]:
         log.warning("positioning unavailable: %s", e)
         return []
     for r in rows:
-        try:
-            p = float(r["pctile"])
-        except (TypeError, ValueError):
-            continue
-        if p >= 90:
-            out.append(f"**{r['name']}** is in its {p:.0f}th percentile — among the most "
-                       f"crowded readings on record. Crowded trades reverse hard; don't "
-                       f"join late.")
-        elif p <= 10:
-            out.append(f"**{r['name']}** is in its {p:.0f}th percentile — washed out. "
-                       f"Everyone who wanted to sell likely has; squeezes start here.")
+        label = r.get("label", "")
+        if label.startswith(("extreme", "crowded")) and r.get("verdict"):
+            out.append(f"**{r['name']}**: {label} — {r['verdict']}.")
     return out
 
 
