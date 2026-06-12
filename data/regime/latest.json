@@ -253,21 +253,5 @@
       "chg_20d_pct": 7.37
     }
   },
-  "alerts": [
-    {
-      "rule": "net_liquidity_roc_flip",
-      "severity": "warn",
-      "message": "Net liquidity 4-week RoC flipped negative (contracting): +7bn -> -0bn"
-    },
-    {
-      "rule": "gex_flip_cross",
-      "severity": "warn",
-      "message": "GEX: net GEX changed sign (net +19bn, spot vs flip -8.4%)"
-    },
-    {
-      "rule": "sector_rs_cross_high",
-      "severity": "info",
-      "message": "XLK RS vs SPY crossed above 90th pctile of 90d (now 93)"
-    }
-  ]
+  "alerts": []
 }

@@ -153,6 +153,17 @@ def hy_oas_widening(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
     return None
 
 
+def circuit_breaker_open(hist: pd.DataFrame, f: pd.DataFrame) -> list[Alert]:
+    """Fires once, the day a source's breaker opens (count == threshold);
+    higher counts mean it already fired, reset-to-zero means recovered."""
+    from collectors.base import CIRCUIT_BREAKER_FAILS
+    breaker = store.read_status().get("circuit_breaker", {})
+    return [Alert("circuit_breaker_open", "warn",
+                  f"Source '{src}' marked dead after {n} consecutive failures — "
+                  f"collector skipped until it recovers; affected signals degrade")
+            for src, n in breaker.items() if n == CIRCUIT_BREAKER_FAILS]
+
+
 def gex_flip_cross(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
     if not config.load()["alerts"]["gex_flip_cross"]:
         return None
@@ -182,7 +193,8 @@ def evaluate(f: pd.DataFrame) -> list[Alert]:
     alerts: list[Alert] = []
     rules = [transition_state_change, net_liquidity_roc_flip, hy_oas_widening,
              gex_flip_cross]
-    multi = [axis_confidence_floor, sector_rs_percentile_cross, holdings_active_changes]
+    multi = [axis_confidence_floor, sector_rs_percentile_cross,
+             holdings_active_changes, circuit_breaker_open]
     for rule in rules:
         try:
             a = rule(hist, f)
