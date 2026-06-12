@@ -331,13 +331,35 @@ def holdings_rows() -> list[dict]:
     return sorted(out, key=lambda r: -abs(r["pct"]))[:20]
 
 
+def _fmt_money_mn(v: float) -> str:
+    """$ millions -> human string: 1234 -> +$1.2B, -87 -> -$87M."""
+    if pd.isna(v):
+        return "—"
+    sign = "+" if v >= 0 else "−"
+    a = abs(v)
+    if a >= 1000:
+        return f"{sign}${a / 1000:.1f}B"
+    return f"{sign}${a:.0f}M"
+
+
 def flows_html_table() -> str | None:
+    from engine.playbook import SECTOR_NAMES
     ft = flows_table()
     if ft is None or ft.dropna(how="all").empty:
         return None
-    recent = ft.dropna(how="all").tail(10).round(0)
-    recent.index = [str(d.date()) for d in recent.index]
-    return recent.to_html(border=0, classes="", na_rep="—")
+    recent = ft.dropna(how="all").tail(10)
+    recent.columns = [SECTOR_NAMES.get(c.replace("_flow_mn", ""),
+                                       c.replace("_flow_mn", ""))
+                      for c in recent.columns]
+    rows = ["<table><tr><th class='l'>date</th>"
+            + "".join(f"<th>{c}</th>" for c in recent.columns) + "</tr>"]
+    for d, r in recent.iterrows():
+        cells = "".join(
+            f"<td class='{'pos' if v >= 0 else 'neg'}'>{_fmt_money_mn(v)}</td>"
+            if pd.notna(v) else "<td>—</td>" for v in r)
+        rows.append(f"<tr><td class='l muted'>{d.date()}</td>{cells}</tr>")
+    rows.append("</table>")
+    return "".join(rows)
 
 
 def health_rows() -> list[dict]:

@@ -63,8 +63,10 @@ jobs:
       - run: pip install -r requirements.txt
       - name: run regime engine
         run: python -m engine.run
-      - name: build dashboard
-        run: python -m scripts.build_site
+      - name: build dashboard + daily brief
+        run: |
+          python -m scripts.build_site
+          python -m scripts.daily_brief
       - name: notify (telegram/discord; skips when secrets absent)
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}

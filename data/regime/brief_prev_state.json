@@ -1,0 +1,67 @@
+{
+ "date": "2026-06-11",
+ "quad": "Q1",
+ "quad_name": "Goldilocks",
+ "growth_score": 0.462,
+ "inflation_score": -0.652,
+ "confidence": 0.518,
+ "transition_state": "STABLE",
+ "posture": "CONSTRUCTIVE",
+ "stages": {
+  "XLB": {
+   "stage": "lagging",
+   "heat": 37,
+   "progress": 90.0
+  },
+  "XLC": {
+   "stage": "lagging",
+   "heat": 33,
+   "progress": 17.0
+  },
+  "XLE": {
+   "stage": "weakening",
+   "heat": 36,
+   "progress": null
+  },
+  "XLF": {
+   "stage": "improving",
+   "heat": 53,
+   "progress": 42.0
+  },
+  "XLI": {
+   "stage": "leading",
+   "heat": 58,
+   "progress": null
+  },
+  "XLK": {
+   "stage": "leading",
+   "heat": 52,
+   "progress": null
+  },
+  "XLP": {
+   "stage": "improving",
+   "heat": 53,
+   "progress": 74.0
+  },
+  "XLRE": {
+   "stage": "improving",
+   "heat": 53,
+   "progress": 95.0
+  },
+  "XLU": {
+   "stage": "lagging",
+   "heat": 25,
+   "progress": 37.0
+  },
+  "XLV": {
+   "stage": "improving",
+   "heat": 53,
+   "progress": 66.0
+  },
+  "XLY": {
+   "stage": "lagging",
+   "heat": 37,
+   "progress": 17.0
+  }
+ }
+}

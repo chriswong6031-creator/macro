@@ -79,6 +79,17 @@
   .help:hover .tip { display: block; }
   th .help .tip, .help.below .tip { bottom: auto; top: 140%; }
   .tip-map { width: 360px !important; }
+  /* structured tooltip building blocks */
+  .tip table { width: 100%; margin: 6px 0 2px; font-size: 11.5px; }
+  .tip th, .tip td { padding: 3px 6px; border-bottom: 1px solid #3a4150; }
+  .tip .lad { display: block; padding: 3px 8px; border-radius: 5px; margin: 3px 0;
+              font-size: 11.5px; }
+  .tip .scale { display: flex; height: 12px; border-radius: 6px; overflow: hidden;
+                margin: 6px 0 2px; font-size: 9.5px; font-weight: 700; }
+  .tip .scale span { flex: 1; display: flex; align-items: center; justify-content: center;
+                     color: #fff; }
+  .tip .sl { display: flex; justify-content: space-between; font-size: 10px;
+             color: var(--muted); margin-bottom: 4px; }
   .qgrid { display: grid; grid-template-columns: 58px 1fr 1fr; gap: 4px; margin: 8px 0; }
   .qax { color: var(--muted); font-size: 10.5px; align-self: center; text-align: center; }
   .qcell { border-radius: 6px; padding: 7px 6px; text-align: center; color: #fff;
@@ -174,16 +185,56 @@
         so it doesn't flip-flop. Today's regime is outlined in white.
       </span></span>
       <span class="badge state-{{ latest.transition_state }}">{{ latest.transition_state }}</span>
-      {{ help("The transition radar — is the current regime ending? STABLE: no warning signs, trust the label. WEAKENING: 2+ warning signals — stop adding regime-dependent bets. TRANSITIONING: 3+ warnings — the regime is probably ending before the label flips; reduce risk now. NEW REGIME: the label just changed this week.") }}
+      <span class="help">?<span class="tip">
+        <b>The transition radar</b> — is the current regime ending? It escalates as warning
+        signals stack up:
+        <span class="lad" style="background:#2a2f3a">⚪ <b>STABLE</b> — no warnings. Trust the regime label.</span>
+        <span class="lad" style="background:#5a4a1d">🟠 <b>WEAKENING</b> — 2+ warnings. Stop adding regime-dependent bets.</span>
+        <span class="lad" style="background:#5e3a17">🔶 <b>TRANSITIONING</b> — 3+ warnings. The regime is likely ending before the label flips — reduce risk now.</span>
+        <span class="lad" style="background:#5e2222">🚨 <b>NEW REGIME</b> — the label changed within the last week.</span>
+        The warnings: thinning participation, nervous credit, risk-ratios turning, inflation
+        trades turning, signal disagreement, fragile options positioning.
+      </span></span>
       <span class="kv">signal agreement <b>{{ (latest.confidence * 100) | round | int }}%</b></span>
-      {{ help("How many of the underlying indicators point the same way. Above ~45%: well-supported. 30-45%: moderate. Below 30%: indicators disagree — expect chop and trust the transition radar more than the label.") }}
+      <span class="help">?<span class="tip">
+        <b>Signal agreement</b> — how many of the ~14 underlying indicators point the
+        same way. Today: <b>{{ (latest.confidence * 100) | round | int }}%</b>.
+        <span class="scale">
+          <span style="background:#a33">MIXED</span>
+          <span style="background:#7a6a22">OK</span>
+          <span style="background:#2e7d46">SOLID</span>
+        </span>
+        <span class="sl"><span>0%</span><span>30%</span><span>45%</span><span>100%</span></span>
+        <b>Mixed</b>: the indicators disagree — expect chop, size down, trust the radar
+        more than the label. <b>OK</b>: usable with caution. <b>Solid</b>: the regime
+        call is well-supported.
+      </span></span>
       <span class="kv">Fed liquidity <b>{{ latest.liquidity_overlay }}</b></span>
-      {{ help("Money the Fed system is adding to or draining from markets (balance sheet minus reverse-repo minus Treasury account, 4-week trend). EXPANDING has historically been the single most reliable tailwind for stocks (~73% positive months in our backtest). CONTRACTING is a persistent headwind.") }}
+      <span class="help">?<span class="tip">
+        <b>Fed liquidity</b> — net money flowing into or out of the financial system
+        (Fed balance sheet − reverse-repo parking − the government's checking account),
+        measured as a 4-week trend.
+        <table>
+          <tr><th></th><th>meaning</th><th>history says</th></tr>
+          <tr><td>🟢 <b>expanding</b></td><td>money tide rising</td><td>the most reliable tailwind we tested: stocks up ~73% of months</td></tr>
+          <tr><td>⚪ <b>neutral</b></td><td>roughly flat</td><td>no signal</td></tr>
+          <tr><td>🔴 <b>contracting</b></td><td>money draining</td><td>persistent headwind — be choosier</td></tr>
+        </table>
+      </span></span>
       <span class="kv">cycle <b>{{ latest.cycle_tag }}</b></span>
-      {{ help("Rough position in the multi-year business cycle (yield curve + credit spreads + breadth). EARLY: recovering after stress — usually the best risk/reward. MID: expansion cruising. LATE: keep one eye on the exit. Context only.") }}
+      <span class="help">?<span class="tip">
+        <b>Business-cycle position</b> — the multi-year backdrop (from the yield curve,
+        credit spreads and market breadth). Slower-moving than the regime.
+        <table>
+          <tr><td>🌱 <b>early</b></td><td>recovering after stress — historically the best risk/reward</td></tr>
+          <tr><td>☀️ <b>mid</b></td><td>expansion cruising — normal conditions</td></tr>
+          <tr><td>🌇 <b>late</b></td><td>curve inverted/flattening, breadth thinning — enjoy it, but keep one eye on the exit</td></tr>
+        </table>
+        Context only — it sizes your patience, not your trades.
+      </span></span>
       <span style="flex:1"></span>
+      <a class="navbtn" href="brief.html">📰 Daily brief</a>
       <a class="navbtn" href="history.html">📈 History & charts</a>
-      <a class="navbtn" href="weekly.html">📋 Weekly report</a>
     </div>
     <details class="howto">
       <summary>New here? How to read this page in 60 seconds</summary>
@@ -378,10 +429,41 @@
     <table>
       <tr>
         <th class="l">sector</th>
-        <th class="l" style="min-width:130px">heat {{ help("The confluence gauge. Hover each row's bar for its exact arithmetic and the measured historical track record of its band — that track record IS the trust level you asked for, and for high heat it argues against chasing.") }}</th>
-        <th>stage {{ help("Rotation cycle position vs the market: IMPROVING = momentum up, trend unconfirmed (too early — historically a losing entry). LEADING = confirmed uptrend. WEAKENING = above trend, losing steam. LAGGING = downtrend.") }}</th>
+        <th class="l" style="min-width:130px">heat <span class="help">?<span class="tip">
+          <b>Heat</b> = how CONFIRMED a sector's strength is (regime fit + trend stage +
+          technicals − crowding). Hover each bar for its exact arithmetic.
+          <table>
+            <tr><th>band</th><th>read it as</th><th>measured 3-month record*</th></tr>
+            <tr><td style="color:#e07b30"><b>70+ OVERHEATED</b></td><td>late — hold/trim, don't start</td><td>beat market 47% (−0.6% avg)</td></tr>
+            <tr><td style="color:#6fce8f"><b>55-69 HOT</b></td><td>confirmed — hold, buy pullbacks</td><td>49% (−0.3%)</td></tr>
+            <tr><td><b>40-54 NEUTRAL</b></td><td>mixed, no lean</td><td>49% (−0.1%)</td></tr>
+            <tr><td style="color:#9fc0e8"><b>0-39 COLD</b></td><td>washed out — wait for trigger</td><td>50% (+0.2%)</td></tr>
+          </table>
+          *vs the index, every week 2007-2026. Note the inversion: hot sectors were
+          usually LATE. That measured record is the trust level — and it argues
+          against chasing.
+        </span></span></th>
+        <th>stage <span class="help">?<span class="tip">
+          <b>The rotation cycle</b> — every sector travels this loop vs the market:
+          <span class="lad" style="background:#2b3340;color:#9fc0e8">1. IMPROVING — momentum turns up, trend not yet confirmed. <b>Too early</b>: buying here lost money historically.</span>
+          <span class="lad" style="background:#1d3326;color:#6fce8f">2. LEADING — confirmed uptrend. The healthy zone.</span>
+          <span class="lad" style="background:#38301a;color:#d8b75a">3. WEAKENING — still above trend but losing steam. Tighten stops.</span>
+          <span class="lad" style="background:#3a2020;color:#e08080">4. LAGGING — downtrend. Avoid until it improves again.</span>
+        </span></span></th>
         <th>3mo RS {{ help("60-trading-day change vs SPY — the medium-term relative trend.") }}</th>
-        <th>technicals {{ help("RSI(14): &lt;30 oversold, 45-70 healthy trend zone, &gt;75 overbought. ✓/✗200d and ✓/✗50d: whether price is above its 200-day and 50-day moving averages — the most basic trend filters.") }}</th>
+        <th>technicals <span class="help">?<span class="tip">
+          <b>RSI(14)</b> — a 0-100 momentum thermometer:
+          <span class="scale">
+            <span style="background:#3f78d8">OVERSOLD</span>
+            <span style="background:#4a5160">SOFT</span>
+            <span style="background:#2e7d46">HEALTHY</span>
+            <span style="background:#a33">HOT</span>
+          </span>
+          <span class="sl"><span>0</span><span>30</span><span>45</span><span>70</span><span>100</span></span>
+          <b>✓/✗ 200d and 50d</b>: whether price is above its 200-day (long-term) and
+          50-day (medium-term) average — the most basic "is it in an uptrend" filters.
+          Green row = both ✓.
+        </span></span></th>
         <th>{{ month_name }} tendency {{ help("This instrument's average return in this calendar month across its whole history, and how often the month was positive. Weak evidence by nature — context, never a signal on its own (and deliberately excluded from the heat score).") }}</th>
         <th>to trigger {{ help("For sectors below their long-term relative trend: how much more outperformance vs SPY is needed for the trend to cross (= the data-backed buy confirmation), and how far along it already is from its recent low. Small gap + high progress = watch closely.") }}</th>
       </tr>
@@ -457,7 +539,17 @@
       {{ help("What different investor groups are doing — futures speculators (weekly, 3-day lag), active managers (NAAIM), the options market. The percentile column is the key: near 100 = most crowded in decades (contrarian warning), near 0 = washed out.") }}
     </h2>
     <table>
-      <tr><th class="l">input</th><th>latest</th><th>percentile {{ help("Where today's reading sits in all stored history: 99 = more extreme than 99% of readings — crowded trades tend to reverse eventually. 50 = normal.") }}</th><th>as of</th></tr>
+      <tr><th class="l">input</th><th>latest</th><th>percentile <span class="help">?<span class="tip">
+        <b>Percentile</b> — where today's reading sits in ALL the history we store:
+        <span class="scale">
+          <span style="background:#3f78d8">WASHED OUT</span>
+          <span style="background:#4a5160">NORMAL</span>
+          <span style="background:#a33">CROWDED</span>
+        </span>
+        <span class="sl"><span>0</span><span>10</span><span>90</span><span>100</span></span>
+        The ends are contrarian zones: when everyone is already positioned one way
+        (≥90 or ≤10), the trade is crowded and prone to reversal. 50 = perfectly normal.
+      </span></span></th><th>as of</th></tr>
       {% for p in positioning %}
       <tr><td class="l">{{ p.name }} {{ help(p.tip) }}</td><td>{{ p.value }}</td><td>{{ p.pctile }}</td><td class="muted">{{ p.asof }}</td></tr>
       {% endfor %}
@@ -509,8 +601,8 @@
       {% endfor %}
     </table>
     <p class="muted">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated {{ generated_utc }} UTC · <a href="history.html">history & charts</a> ·
-       <a href="weekly.html">weekly deep-dive</a> · <a href="validation_timeline.html">full 2007→ backtest</a></p>
+       Generated {{ generated_utc }} UTC · <a href="brief.html">daily brief</a> ·
+       <a href="history.html">history & charts</a> · <a href="validation_timeline.html">full 2007→ backtest</a></p>
   </div>
 
 </div>
