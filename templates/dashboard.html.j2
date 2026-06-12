@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Macro Regime Dashboard — {{ latest.date }}</title>
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1115; --panel: #181b21; --panel2: #1e222a; --text: #d7dce3;
+    --muted: #8b93a1; --line: #2a2f3a;
+    --q1: #2e9e4f; --q2: #d4a017; --q3: #d04545; --q4: #3f78d8;
+    --warn: #e0a030; --act: #e05555; --ok: #3da564;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system,
+         "Segoe UI", Roboto, Helvetica, sans-serif; margin: 0; padding: 18px; }
+  a { color: #7aa7e0; text-decoration: none; }
+  h1 { font-size: 20px; margin: 0 0 2px; }
+  h2 { font-size: 15px; margin: 0 0 10px; color: var(--muted);
+       text-transform: uppercase; letter-spacing: .06em; }
+  .grid { display: grid; gap: 14px; grid-template-columns: repeat(12, 1fr); }
+  .panel { background: var(--panel); border: 1px solid var(--line);
+           border-radius: 10px; padding: 14px 16px; }
+  .span12 { grid-column: span 12; } .span8 { grid-column: span 8; }
+  .span6 { grid-column: span 6; } .span4 { grid-column: span 4; }
+  @media (max-width: 900px) { .span8, .span6, .span4 { grid-column: span 12; } }
+  .badge { display: inline-block; padding: 3px 12px; border-radius: 14px;
+           font-weight: 600; font-size: 13px; }
+  .quad-Q1 { background: var(--q1); color: #fff; }
+  .quad-Q2 { background: var(--q2); color: #1a1a1a; }
+  .quad-Q3 { background: var(--q3); color: #fff; }
+  .quad-Q4 { background: var(--q4); color: #fff; }
+  .state-STABLE { background: #2a2f3a; color: var(--text); }
+  .state-WEAKENING { background: var(--warn); color: #1a1a1a; }
+  .state-TRANSITIONING { background: #e07b30; color: #1a1a1a; }
+  .state-NEW_REGIME { background: var(--act); color: #fff; }
+  .kv { color: var(--muted); } .kv b { color: var(--text); font-weight: 600; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { text-align: right; padding: 4px 8px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 500; }
+  th:first-child, td:first-child { text-align: left; }
+  .pos { color: #5fbf7f; } .neg { color: #e07070; }
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px; }
+  .pill-ok { background: #1d3326; color: #6fce8f; }
+  .pill-stale { background: #38301a; color: #d8b75a; }
+  .pill-failed, .pill-dead { background: #3a2020; color: #e08080; }
+  .alert { padding: 8px 12px; border-radius: 8px; margin: 6px 0;
+           background: var(--panel2); border-left: 3px solid var(--muted); }
+  .alert-act { border-left-color: var(--act); }
+  .alert-warn { border-left-color: var(--warn); }
+  .muted { color: var(--muted); }
+  .chart { width: 100%; }
+  .topline { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+  .conf-bar { height: 8px; border-radius: 4px; background: var(--panel2);
+              width: 120px; display: inline-block; vertical-align: middle; }
+  .conf-fill { height: 8px; border-radius: 4px; background: var(--ok); }
+  ul.compact { margin: 4px 0; padding-left: 18px; }
+  ul.compact li { margin: 2px 0; }
+</style>
+</head>
+<body>
+<div class="grid">
+
+  <div class="panel span12">
+    <div class="topline">
+      <h1>Macro Regime Dashboard</h1>
+      <span class="badge quad-{{ latest.quad }}">{{ latest.label }} — {{ latest.quad_name }}</span>
+      <span class="badge state-{{ latest.transition_state }}">{{ latest.transition_state }}</span>
+      <span class="kv">confidence <b>{{ (latest.confidence * 100) | round | int }}%</b>
+        <span class="conf-bar"><span class="conf-fill" style="width: {{ [latest.confidence * 100, 100] | min | round | int }}%"></span></span>
+      </span>
+      <span class="kv">liquidity <b>{{ latest.liquidity_overlay }}</b></span>
+      <span class="kv">cycle <b>{{ latest.cycle_tag }}</b></span>
+      <span class="kv muted">as of {{ latest.date }} · generated {{ generated_utc }} UTC</span>
+    </div>
+  </div>
+
+  {% if latest.alerts %}
+  <div class="panel span12">
+    <h2>Fired alerts (today)</h2>
+    {% for a in latest.alerts %}
+      <div class="alert alert-{{ a.severity }}"><b>{{ a.rule }}</b> — {{ a.message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="panel span6">
+    <h2>Growth axis {{ "%+.2f" | format(latest.growth_score) }} · conf {{ (latest.growth_confidence * 100) | round | int }}%</h2>
+    <h2>Inflation axis {{ "%+.2f" | format(latest.inflation_score) }} · conf {{ (latest.inflation_confidence * 100) | round | int }}%</h2>
+    <p class="kv">confirming: <b>{{ latest.confirming | join(", ") or "—" }}</b></p>
+    <p class="kv">contradicting: <b>{{ latest.contradicting | join(", ") or "—" }}</b></p>
+    <p class="kv">flip risk: <b>{{ latest.flip_condition.note if latest.flip_condition else "—" }}</b></p>
+    {% if latest.preference_check %}
+    <p class="kv">framework vs tape: <b>{{ latest.preference_check.note }}</b>
+      {% if latest.preference_check.actual_ranks %}
+        ({% for t, r in latest.preference_check.actual_ranks.items() %}{{ t }}#{{ r }}{{ ", " if not loop.last }}{% endfor %})
+      {% endif %}
+    </p>
+    {% endif %}
+  </div>
+
+  <div class="panel span6">
+    <h2>Pair ratios (20d change)</h2>
+    <table>
+      <tr><th>pair</th><th>level</th><th>20d %</th></tr>
+      {% for name, v in latest.pair_ratios.items() %}
+      <tr><td>{{ name }}</td><td>{{ v.level }}</td>
+          <td class="{{ 'pos' if v.chg_20d_pct > 0 else 'neg' }}">{{ "%+.2f" | format(v.chg_20d_pct) }}%</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <div class="panel span12">
+    <h2>Regime history — SPY with quad bands (2y) · <a href="validation_timeline.html">full 2007→ timeline</a></h2>
+    <div class="chart">{{ chart_regime | safe }}</div>
+  </div>
+
+  <div class="panel span6">
+    <h2>Sector relative strength vs SPY</h2>
+    <table>
+      <tr><th>rank</th><th>ticker</th><th>20d mom</th><th>60d mom</th><th>252d pctile</th><th>trend</th></tr>
+      {% for r in latest.sector_rs %}
+      <tr>
+        <td>{{ r.rank }}</td><td><b>{{ r.ticker }}</b></td>
+        <td class="{{ 'pos' if r.mom_20d_pct > 0 else 'neg' }}">{{ "%+.1f" | format(r.mom_20d_pct) }}%</td>
+        <td class="{{ 'pos' if r.mom_60d_pct > 0 else 'neg' }}">{{ "%+.1f" | format(r.mom_60d_pct) }}%</td>
+        <td>{{ r.pctile_252d }}</td>
+        <td>{{ "▲" if r.above_200d_trend else "▼" }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <div class="panel span6">
+    <h2>Axis scores (2y)</h2>
+    <div class="chart">{{ chart_axes | safe }}</div>
+  </div>
+
+  <div class="panel span6">
+    <h2>Net liquidity (WALCL − RRP − TGA, $bn)</h2>
+    <div class="chart">{{ chart_liquidity | safe }}</div>
+  </div>
+
+  <div class="panel span6">
+    <h2>Credit & breadth</h2>
+    <div class="chart">{{ chart_credit_breadth | safe }}</div>
+  </div>
+
+  <div class="panel span6">
+    <h2>Positioning & vol context</h2>
+    <table>
+      <tr><th>input</th><th>latest</th><th>pctile*</th><th>as of</th></tr>
+      {% for p in positioning %}
+      <tr><td>{{ p.name }}</td><td>{{ p.value }}</td><td>{{ p.pctile }}</td><td class="muted">{{ p.asof }}</td></tr>
+      {% endfor %}
+    </table>
+    <p class="muted">*percentile of full stored history. COT lags 3 days by release schedule.
+       GEX/put-call are computed from delayed chains (see LIMITATIONS).</p>
+  </div>
+
+  <div class="panel span6">
+    <h2>Holdings tracker — active decisions (flow-normalized)</h2>
+    {% if holdings_changes %}
+      <table>
+        <tr><th>fund</th><th>position</th><th>active chg</th><th>window</th></tr>
+        {% for h in holdings_changes %}
+        <tr><td>{{ h.fund }}</td><td>{{ h.position }}</td>
+            <td class="{{ 'pos' if h.pct > 0 else 'neg' }}">{{ "%+.1f" | format(h.pct) }}%</td>
+            <td class="muted">{{ h.window }}</td></tr>
+        {% endfor %}
+      </table>
+    {% else %}
+      <p class="muted">No active changes ≥ {{ holdings_threshold }}% detected in the
+      current window (or insufficient snapshots yet — the tracker needs a few
+      trading days of history).</p>
+    {% endif %}
+  </div>
+
+  <div class="panel span12">
+    <h2>Sector ETF flows (ΔSO × NAV, $mn) — accruing since 2026-06</h2>
+    {% if flows_html %}
+      {{ flows_html | safe }}
+    {% else %}
+      <p class="muted">Flow history accrues one row per trading day from first deployment;
+      table appears once ≥2 snapshots exist per fund.</p>
+    {% endif %}
+  </div>
+
+  <div class="panel span12">
+    <h2>Data health</h2>
+    <table>
+      <tr><th>source</th><th>status</th><th>rows</th><th>last data</th><th>note</th></tr>
+      {% for s in health %}
+      <tr>
+        <td>{{ s.name }}</td>
+        <td><span class="pill pill-{{ s.status }}">{{ s.status }}</span></td>
+        <td>{{ s.rows }}</td><td>{{ s.last_date or "—" }}</td>
+        <td class="muted">{{ s.error or "" }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    <p class="muted">Stale sources degrade the affected signal's confidence; they never crash the run.
+       Low-confidence inputs by design: rate-cut proxy, earnings-revision module. See LIMITATIONS.md.</p>
+  </div>
+
+</div>
+</body>
+</html>

@@ -38,10 +38,17 @@ class FredAdapter(Adapter):
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
         frames: dict[str, pd.DataFrame] = {}
         errors: list[str] = []
+        consecutive_fails = 0
         for sid, col in self._all_series().items():
+            if consecutive_fails >= 3 and not frames:
+                # endpoint is down, not one bad series — stop burning retries
+                errors.append("aborted remaining series: endpoint down")
+                break
             try:
                 frames[sid] = self._fetch_one(sid, col)
+                consecutive_fails = 0
             except Exception as e:  # noqa: BLE001 — partial success allowed
+                consecutive_fails += 1
                 errors.append(f"{sid}: {e}")
         if not frames:
             raise RuntimeError(f"all FRED series failed: {errors}")

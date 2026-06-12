@@ -6,6 +6,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: pipeline
@@ -59,8 +61,14 @@ jobs:
       - run: pip install -r requirements.txt
       - name: run regime engine
         run: python -m engine.run
-      # Phase 3 (after the validation checkpoint) adds here:
-      #   python -m scripts.build_site && python -m scripts.notify
+      - name: build dashboard
+        run: python -m scripts.build_site
+      - name: notify (telegram/discord; skips when secrets absent)
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python -m scripts.notify
       - name: commit engine outputs
         run: |
           git config user.name "dashboard-bot"
@@ -69,3 +77,20 @@ jobs:
           git diff --cached --quiet || git commit -m "engine: regime update $(date -u +%F)"
           git pull --rebase origin main
           git push
+      - name: upload pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/
+
+  publish:
+    # GitHub Pages can't serve a /site folder from a branch — deploy the
+    # artifact instead (repo Settings -> Pages -> Source: GitHub Actions)
+    needs: engine
+    if: always()
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

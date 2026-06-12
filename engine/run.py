@@ -59,6 +59,9 @@ def run() -> dict:
     elif bool(row.get("inflation_shock", False)):
         label = f"{quad}/Inflation-shock"
 
+    from engine.alerts import evaluate, log_and_dedup
+    fired = log_and_dedup(evaluate(f), asof)
+
     confirming, contradicting = confirming_contradicting(full, asof)
     table = rs_table(asof)
     latest = {
@@ -81,6 +84,8 @@ def run() -> dict:
         "sector_rs": table.reset_index().to_dict(orient="records"),
         "preference_check": preference_check(quad, table),
         "pair_ratios": pair_ratios_snapshot(f),
+        "alerts": [{"rule": a.rule, "severity": a.severity, "message": a.message}
+                   for a in fired],
     }
     with open(p / "latest.json", "w") as fh:
         json.dump(latest, fh, indent=2, default=str)

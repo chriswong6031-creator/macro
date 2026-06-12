@@ -1,13 +1,13 @@
 {
-  "date": "2026-06-09",
+  "date": "2026-06-11",
   "quad": "Q1",
   "quad_name": "Goldilocks",
   "label": "Q1",
-  "growth_score": 0.0,
+  "growth_score": 0.4,
   "inflation_score": -0.333,
-  "growth_confidence": 0.0,
+  "growth_confidence": 0.3,
   "inflation_confidence": 0.333,
-  "confidence": 0.167,
+  "confidence": 0.317,
   "liquidity_overlay": "neutral",
   "cycle_tag": "unknown",
   "transition_state": "STABLE",
@@ -16,194 +16,196 @@
     "flag_credit_equity": false,
     "flag_ratio_inflection": false,
     "flag_inflation_basket": false,
-    "flag_confidence_decay": false,
+    "flag_confidence_decay": true,
     "flag_gex": false
   },
   "confirming": [
     "growth_copper_gold",
+    "growth_iwm_spy",
+    "growth_breadth_direction",
     "inflation_oil_trend"
   ],
   "contradicting": [
     "growth_cyclical_defensive"
   ],
   "flip_condition": {
-    "axis": "growth",
-    "component": "copper_gold",
-    "z": 0.92,
+    "axis": "inflation",
+    "component": "oil_trend",
+    "z": -0.73,
     "threshold": 0.45,
-    "margin": 0.47,
-    "note": "growth axis flips risk: copper_gold slope z=0.92 is the closest supporter to its +/-0.45 cutoff"
+    "margin": 0.28,
+    "note": "inflation axis flips risk: oil_trend slope z=-0.73 is the closest supporter to its +/-0.45 cutoff"
   },
   "sector_rs": [
     {
       "ticker": "SMH",
-      "rs": 0.8018587878080731,
-      "mom_20d_pct": 2.86,
-      "mom_60d_pct": 36.74,
+      "rs": 0.8260816581812888,
+      "mom_20d_pct": 7.12,
+      "mom_60d_pct": 39.24,
       "above_200d_trend": true,
-      "pctile_252d": 98.0,
+      "pctile_252d": 98.8,
       "rank": 1
     },
     {
       "ticker": "XLK",
-      "rs": 0.24526152535971243,
-      "mom_20d_pct": 1.93,
-      "mom_60d_pct": 18.56,
+      "rs": 0.2483327969647883,
+      "mom_20d_pct": 4.24,
+      "mom_60d_pct": 19.2,
       "above_200d_trend": true,
-      "pctile_252d": 96.4,
+      "pctile_252d": 97.6,
       "rank": 2
     },
     {
       "ticker": "MTUM",
-      "rs": 0.42280715018524195,
-      "mom_20d_pct": 1.93,
-      "mom_60d_pct": 14.82,
+      "rs": 0.432403499163596,
+      "mom_20d_pct": 5.1,
+      "mom_60d_pct": 16.53,
       "above_200d_trend": true,
-      "pctile_252d": 98.4,
+      "pctile_252d": 99.6,
       "rank": 3
     },
     {
       "ticker": "IWM",
-      "rs": 0.3867037429403386,
-      "mom_20d_pct": 0.2,
-      "mom_60d_pct": 3.76,
+      "rs": 0.3936374970423894,
+      "mom_20d_pct": 3.37,
+      "mom_60d_pct": 5.31,
       "above_200d_trend": true,
-      "pctile_252d": 92.1,
+      "pctile_252d": 100.0,
       "rank": 4
     },
     {
       "ticker": "QUAL",
-      "rs": 0.29050946158801383,
-      "mom_20d_pct": 2.0,
-      "mom_60d_pct": -1.47,
-      "above_200d_trend": false,
-      "pctile_252d": 23.4,
+      "rs": 0.29264258165073553,
+      "mom_20d_pct": 2.97,
+      "mom_60d_pct": -0.57,
+      "above_200d_trend": true,
+      "pctile_252d": 48.4,
       "rank": 5
     },
     {
       "ticker": "RSP",
-      "rs": 0.28382064433351023,
-      "mom_20d_pct": 2.86,
-      "mom_60d_pct": -2.72,
+      "rs": 0.28430654579208536,
+      "mom_20d_pct": 4.0,
+      "mom_60d_pct": -2.57,
       "above_200d_trend": false,
-      "pctile_252d": 38.9,
+      "pctile_252d": 43.3,
       "rank": 6
     },
     {
       "ticker": "XLF",
-      "rs": 0.07117563252603734,
-      "mom_20d_pct": 2.81,
-      "mom_60d_pct": -3.35,
+      "rs": 0.07132400541552981,
+      "mom_20d_pct": 3.83,
+      "mom_60d_pct": -3.23,
       "above_200d_trend": false,
-      "pctile_252d": 9.5,
+      "pctile_252d": 10.3,
       "rank": 7
     },
     {
       "ticker": "XLRE",
-      "rs": 0.06101350242927461,
-      "mom_20d_pct": 1.21,
-      "mom_60d_pct": -3.98,
+      "rs": 0.06088700603766217,
+      "mom_20d_pct": 2.23,
+      "mom_60d_pct": -4.01,
       "above_200d_trend": false,
-      "pctile_252d": 38.1,
+      "pctile_252d": 37.3,
       "rank": 8
     },
     {
       "ticker": "XLI",
-      "rs": 0.23824707823323404,
-      "mom_20d_pct": 0.63,
-      "mom_60d_pct": -4.16,
+      "rs": 0.2374078176887452,
+      "mom_20d_pct": 1.5,
+      "mom_60d_pct": -4.35,
       "above_200d_trend": true,
-      "pctile_252d": 57.9,
+      "pctile_252d": 54.4,
       "rank": 9
     },
     {
-      "ticker": "XLY",
-      "rs": 0.15720779413285732,
-      "mom_20d_pct": -2.64,
-      "mom_60d_pct": -6.15,
+      "ticker": "XLB",
+      "rs": 0.06942637245542074,
+      "mom_20d_pct": -1.01,
+      "mom_60d_pct": -5.8,
       "above_200d_trend": false,
-      "pctile_252d": 3.2,
+      "pctile_252d": 45.6,
       "rank": 10
     },
     {
-      "ticker": "XLB",
-      "rs": 0.0688827098549855,
-      "mom_20d_pct": -2.55,
-      "mom_60d_pct": -7.1,
+      "ticker": "XLV",
+      "rs": 0.2088619528006711,
+      "mom_20d_pct": 5.68,
+      "mom_60d_pct": -6.24,
       "above_200d_trend": false,
-      "pctile_252d": 39.3,
+      "pctile_252d": 22.6,
       "rank": 11
     },
     {
-      "ticker": "XLV",
-      "rs": 0.20971441541850508,
-      "mom_20d_pct": 8.39,
-      "mom_60d_pct": -7.15,
+      "ticker": "XLY",
+      "rs": 0.15763934275687366,
+      "mom_20d_pct": -1.43,
+      "mom_60d_pct": -6.64,
       "above_200d_trend": false,
-      "pctile_252d": 25.4,
+      "pctile_252d": 4.4,
       "rank": 12
     },
     {
-      "ticker": "LQD",
-      "rs": 0.14708636518227697,
-      "mom_20d_pct": 0.2,
-      "mom_60d_pct": -9.12,
+      "ticker": "XLP",
+      "rs": 0.11557958619925113,
+      "mom_20d_pct": 1.27,
+      "mom_60d_pct": -8.2,
       "above_200d_trend": false,
-      "pctile_252d": 8.3,
+      "pctile_252d": 29.4,
       "rank": 13
     },
     {
-      "ticker": "USMV",
-      "rs": 0.12967913087857255,
-      "mom_20d_pct": 1.88,
-      "mom_60d_pct": -9.54,
+      "ticker": "LQD",
+      "rs": 0.14785296083709895,
+      "mom_20d_pct": 1.43,
+      "mom_60d_pct": -8.43,
       "above_200d_trend": false,
-      "pctile_252d": 8.3,
+      "pctile_252d": 9.1,
       "rank": 14
     },
     {
-      "ticker": "XLE",
-      "rs": 0.07786446013179885,
-      "mom_20d_pct": 0.69,
-      "mom_60d_pct": -10.29,
-      "above_200d_trend": true,
-      "pctile_252d": 74.2,
+      "ticker": "USMV",
+      "rs": 0.1296356513279051,
+      "mom_20d_pct": 2.04,
+      "mom_60d_pct": -8.8,
+      "above_200d_trend": false,
+      "pctile_252d": 7.9,
       "rank": 15
     },
     {
-      "ticker": "XLP",
-      "rs": 0.11410352061188024,
-      "mom_20d_pct": 1.18,
-      "mom_60d_pct": -10.56,
-      "above_200d_trend": false,
-      "pctile_252d": 18.7,
+      "ticker": "XLE",
+      "rs": 0.07742354990212998,
+      "mom_20d_pct": -0.27,
+      "mom_60d_pct": -10.9,
+      "above_200d_trend": true,
+      "pctile_252d": 70.6,
       "rank": 16
     },
     {
       "ticker": "XLC",
-      "rs": 0.15125161821215227,
-      "mom_20d_pct": -3.25,
-      "mom_60d_pct": -12.43,
+      "rs": 0.15197354324233545,
+      "mom_20d_pct": -3.38,
+      "mom_60d_pct": -11.6,
       "above_200d_trend": false,
-      "pctile_252d": 2.0,
+      "pctile_252d": 2.8,
       "rank": 17
     },
     {
       "ticker": "XLU",
-      "rs": 0.059670307673337815,
-      "mom_20d_pct": -2.27,
-      "mom_60d_pct": -15.49,
+      "rs": 0.05970776221803423,
+      "mom_20d_pct": -0.78,
+      "mom_60d_pct": -14.66,
       "above_200d_trend": false,
-      "pctile_252d": 4.0,
+      "pctile_252d": 4.4,
       "rank": 18
     },
     {
       "ticker": "GC=F",
-      "rs": 5.7797979384765945,
-      "mom_20d_pct": -9.45,
-      "mom_60d_pct": -24.44,
+      "rs": 5.746719989145776,
+      "mom_20d_pct": -9.19,
+      "mom_60d_pct": -23.13,
       "above_200d_trend": false,
-      "pctile_252d": 31.0,
+      "pctile_252d": 30.2,
       "rank": 19
     }
   ],
@@ -218,7 +220,7 @@
     "actual_ranks": {
       "XLK": 2,
       "XLC": 17,
-      "XLY": 10,
+      "XLY": 12,
       "QUAL": 5
     },
     "agreement": 0.5,
@@ -227,28 +229,45 @@
   },
   "pair_ratios": {
     "xly_xlp": {
-      "level": 1.3778,
-      "chg_20d_pct": -1.65
+      "level": 1.3639,
+      "chg_20d_pct": -2.33
     },
     "xlk_xlu": {
-      "level": 4.1103,
-      "chg_20d_pct": 6.02
+      "level": 4.1591,
+      "chg_20d_pct": 4.04
     },
     "hyg_lqd": {
-      "level": 0.7344,
-      "chg_20d_pct": -0.04
+      "level": 0.7329,
+      "chg_20d_pct": -0.24
     },
     "sphb_splv": {
-      "level": 1.968,
-      "chg_20d_pct": 2.37
+      "level": 1.9846,
+      "chg_20d_pct": 2.32
     },
     "vix_ratio": {
-      "level": 0.9324,
-      "chg_20d_pct": 9.05
+      "level": 0.9076,
+      "chg_20d_pct": 9.63
     },
     "copper_gold": {
       "level": 0.0015,
-      "chg_20d_pct": 6.71
+      "chg_20d_pct": 7.37
     }
-  }
+  },
+  "alerts": [
+    {
+      "rule": "net_liquidity_roc_flip",
+      "severity": "warn",
+      "message": "Net liquidity 4-week RoC flipped negative (contracting): +7bn -> -0bn"
+    },
+    {
+      "rule": "gex_flip_cross",
+      "severity": "warn",
+      "message": "GEX: net GEX changed sign (net +19bn, spot vs flip -8.4%)"
+    },
+    {
+      "rule": "sector_rs_cross_high",
+      "severity": "info",
+      "message": "XLK RS vs SPY crossed above 90th pctile of 90d (now 93)"
+    }
+  ]
 }

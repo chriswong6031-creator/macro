@@ -78,7 +78,12 @@ def main() -> int:
 
     status = store.read_status()
     status["last_run"] = datetime.now(timezone.utc).isoformat()
-    status["sources"] = {r.source: asdict(r) for r in results}
+    # merge: a partial --only run must not wipe the health of sources it skipped
+    sources = status.get("sources", {})
+    for r in results:
+        sources[r.source] = {**asdict(r),
+                             "checked_at": datetime.now(timezone.utc).isoformat()}
+    status["sources"] = sources
     status["circuit_breaker"] = update_breaker(results)
     store.write_status(status)
 

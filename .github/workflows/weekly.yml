@@ -6,6 +6,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: pipeline
@@ -27,12 +29,33 @@ jobs:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: |
           python -m scripts.collect --only cot,sentiment_naaim,sentiment_aaii,fundamentals
-          # Phase 3 adds: python -m scripts.weekly_report
+          python -m engine.run
+          python -m scripts.weekly_report
+      - name: notify weekly summary
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python -m scripts.notify
       - name: commit
         run: |
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/ reports/
+          git add data/ reports/ site/
           git diff --cached --quiet || git commit -m "weekly: deep-dive $(date -u +%F)"
           git pull --rebase origin main
           git push
+      - name: upload pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/
+
+  publish:
+    needs: weekly-report
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

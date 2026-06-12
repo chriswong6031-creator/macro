@@ -2,6 +2,40 @@
 
 Newest first. Each entry: what was decided, why, and what would change it.
 
+## 2026-06-11 — Phase 3 (outputs & alerts)
+
+**D17. Alerts compare states, not levels.** Every rule is a day-over-day (or
+window) *change* test against stored history, logged to
+`data/alerts/alerts_log.parquet` keyed by (date, rule, message) — re-running a
+day is idempotent and cannot double-send. Severity (act/warn/info) only orders
+the message. Rules covered: transition state change, axis confidence crossing
+below floor, sector RS 90d-percentile crossings, holdings active change,
+net-liquidity RoC sign flip, HY OAS 1d widening z, GEX flip-cross.
+
+**D18. Notify reads, never computes.** `scripts/notify.py` consumes
+latest.json + run_status.json only; a notify crash cannot affect data, and
+missing secrets skip the channel with exit 0 (the dashboard is the fallback
+surface). Telegram uses HTML parse mode (MarkdownV2 escaping is a bug farm).
+
+**D19. Dashboard is a single static page** (jinja2 + plotly-CDN, dark theme),
+built from stored outputs only — it renders even when every scraper is down.
+Charts capped at 2y windows to keep the page <250KB; the full 2007→ timeline
+stays on its own validation page.
+
+**D20. GitHub Pages via Actions artifact.** Pages-from-branch can only serve
+root or /docs; the spec's /site layout is kept by deploying with
+actions/upload-pages-artifact + deploy-pages. One-time repo setting required:
+Settings → Pages → Source = "GitHub Actions".
+
+**D21. FRED fail-fast.** Three consecutive series failures with zero successes
+aborts the remaining series (observed: the keyless endpoint can be down for
+hours; without this a daily run burns 45+ min of Actions minutes in retries).
+
+**D22. Weekly rotation-type test.** "Which rotation is underway" = highest
+average 20d RS momentum among the four quad preference baskets; disagreement
+with the classifier quad is explicitly surfaced as a transition signal
+(it fired on build day: Q1 regime, Q4-consistent leadership).
+
 ## 2026-06-10 — Phase 2e tuning
 
 **D15. Hysteresis/threshold tuning via grid sweep** (`scripts/tune.py`, 36
