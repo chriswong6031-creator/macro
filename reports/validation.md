@@ -4,8 +4,8 @@ Backtest window: 2007-01-01 -> 2026-06-11
 (engine code path identical to live; GEX flag inactive historically — see DECISIONS D14)
 
 ## Whipsaw
-- regime changes: 156
-- lasting < 10 days: 12 (7.7%) — target < 15% -> **PASS**
+- regime changes: 158
+- lasting < 10 days: 15 (9.5%) — target < 15% -> **PASS**
 
 ## Episode sanity checks
 - **2008 crisis (2008-09-01..2009-03-31)**: Q4 72%, Q3 17%, Q1 7%, Q2 5%
@@ -35,15 +35,15 @@ spec's single '2022 = Q3' label, and consistent with market pricing.
 | us2y growth weight | 1.0 | 0.5 | 2Y-up is ambiguous when policy chases inflation (2022) |
 
 ## Transition detector
-- 72.4% of regime changes were preceded by a non-STABLE transition state within the prior 20 trading days
+- 73.4% of regime changes were preceded by a non-STABLE transition state within the prior 20 trading days
 
 ## Sector-preference hit-rate (fwd 60d, preferred basket vs SPY)
 | quad   |   days |   hit_vs_SPY_pct |   excess_vs_SPY_pct |   hit_vs_RSP_pct |   excess_vs_RSP_pct |
 |:-------|-------:|-----------------:|--------------------:|-----------------:|--------------------:|
-| Q1     |    739 |             45.3 |               -0.29 |             61.8 |               -0.03 |
-| Q2     |   2204 |             39.7 |               -0.81 |             38.8 |               -0.43 |
-| Q3     |    442 |             47.1 |               -0.36 |             43.7 |               -0.83 |
-| Q4     |   1441 |             41   |               -1.16 |             40.6 |               -1.12 |
+| Q1     |    738 |             45.4 |               -0.29 |             61.9 |               -0.03 |
+| Q2     |   2180 |             39.5 |               -0.84 |             39.1 |               -0.42 |
+| Q3     |    453 |             44.4 |               -0.68 |             41.1 |               -1.28 |
+| Q4     |   1455 |             41.6 |               -1.13 |             41   |               -1.09 |
 
 Verdict: the Q1 map adds real value against equal-weight (63% hit). The Q4 map (XLU/XLP/XLV/LQD) loses ~1%/60d on average because duration gets hit in *inflationary* bear markets (2022) — consider splitting Q4 preferences on the liquidity overlay or replacing LQD with cash-like duration when the inflation axis is only mildly negative. Q2's basket underperforms cap-weight mainly in QE-era mega-cap melt-ups. The table is config — edit `engine.sector_preferences` and re-run this script to re-score.
 
@@ -71,9 +71,9 @@ Verdict: the Q1 map adds real value against equal-weight (63% hit). The Q4 map (
 | Q2     | 2025-09-04 00:00:00 | 2025-09-26 00:00:00 |     17 |
 | Q1     | 2025-09-29 00:00:00 | 2025-10-23 00:00:00 |     19 |
 | Q4     | 2025-10-24 00:00:00 | 2025-12-26 00:00:00 |     46 |
-| Q2     | 2025-12-29 00:00:00 | 2026-02-12 00:00:00 |     34 |
-| Q3     | 2026-02-13 00:00:00 | 2026-04-07 00:00:00 |     38 |
-| Q2     | 2026-04-08 00:00:00 | 2026-05-28 00:00:00 |     37 |
+| Q2     | 2025-12-29 00:00:00 | 2026-02-09 00:00:00 |     31 |
+| Q3     | 2026-02-10 00:00:00 | 2026-03-30 00:00:00 |     35 |
+| Q2     | 2026-03-31 00:00:00 | 2026-05-28 00:00:00 |     43 |
 | Q1     | 2026-05-29 00:00:00 | 2026-06-11 00:00:00 |     10 |
 
 Timeline chart: `site/validation_timeline.html`

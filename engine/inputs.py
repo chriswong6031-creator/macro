@@ -62,8 +62,13 @@ def build_features() -> pd.DataFrame:
         if s is None or s.empty:
             f[name] = np.nan
             return
-        s = s[~s.index.duplicated(keep="last")].sort_index().reindex(idx)
-        f[name] = s.ffill(limit=ffill_limit) if ffill_limit else s
+        s = s[~s.index.duplicated(keep="last")].sort_index()
+        # fill on the union first: monthly series stamped on weekends/holidays
+        # (e.g. PAYEMS on a Sunday the 1st) must survive the business-day reindex
+        union = idx.union(s.index)
+        s = s.reindex(union)
+        s = s.ffill(limit=ffill_limit) if ffill_limit else s
+        f[name] = s.reindex(idx)
 
     # --- price levels & ratios -------------------------------------------------
     for t in ["SPY", "IWM", "RSP", "QQQ", "XLY", "XLP", "XLE", "XLK", "XLU",
@@ -113,8 +118,10 @@ def build_features() -> pd.DataFrame:
             f[col] = f[col].combine_first(s)
     # monthly econ confirmations: step-fill forward (released with lag; we use
     # direction only, ffill across the month is the honest representation)
-    put("payrolls", series.get("payrolls"), ffill_limit=40)
-    put("indpro", series.get("indpro" if "indpro" in series else "industrial_prod"), ffill_limit=40)
+    # 60 bdays: INDPRO is stamped on the reference month but published ~6 weeks
+    # later, so the previous print must carry until its successor arrives
+    put("payrolls", series.get("payrolls"), ffill_limit=60)
+    put("indpro", series.get("indpro" if "indpro" in series else "industrial_prod"), ffill_limit=60)
     # derived fallbacks when the published composite series is unavailable
     effr = store.read("nyfed", "effr")
     if effr is not None:

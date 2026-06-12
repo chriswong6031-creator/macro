@@ -2,6 +2,29 @@
 
 Newest first. Each entry: what was decided, why, and what would change it.
 
+## 2026-06-12 (later) — now-focused front page
+
+**D28. Q-codes removed from all user-facing surfaces.** A user read "Q1
+Goldilocks" as calendar-quarter Q1 (it was June). Regime names (Goldilocks /
+Reflation / Stagflation / Growth scare) are now the only user-visible labels;
+Q1–Q4 remain internal identifiers. The quad-badge tooltip says explicitly
+"NOT a calendar quarter".
+
+**D29. Front page restructured around NOW; history moved to history.html.**
+Order: where-we-are-in-this-regime (lifespan bar: age vs the distribution of
+all same-regime stints since 2007, survival %, median remaining, phase note) →
+what's-likely-next (transition base-rate bars + accumulation watchlist +
+announce-signals) → how-to-trade-it (dial + leaders + don'ts) → supporting
+evidence. The 2y/3y charts and lifespan base-rate table live on history.html.
+
+**D30. Monthly econ series fill bug fixed.** PAYEMS/INDPRO are stamped on the
+1st of the reference month; when that's a weekend the business-day reindex
+dropped the print entirely, silencing the econ confirmations for stretches
+(found because payrolls voted NaN on a day it shouldn't have). Fill now happens
+on the union index before reindexing, and the monthly ffill window is 60
+bdays to cover INDPRO's ~6-week publication lag. Whipsaw after fix: 9.5%
+(still PASS); signal agreement rose 51%→56% with payrolls voting again.
+
 ## 2026-06-12 — UX overhaul + playbook (conclusions layer)
 
 **D23. The playbook only claims what the data supports.** Before building the

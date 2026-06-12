@@ -43,8 +43,8 @@ def _html(fig: go.Figure) -> str:
                        config={"displayModeBar": False})
 
 
-def chart_regime(f: pd.DataFrame, hist: pd.DataFrame) -> str:
-    two_y = f.index.max() - pd.Timedelta(days=730)
+def chart_regime(f: pd.DataFrame, hist: pd.DataFrame, days: int = 730) -> str:
+    two_y = f.index.max() - pd.Timedelta(days=days)
     spy = f.loc[two_y:, "SPY"].dropna()
     sub = hist.loc[two_y:]
     fig = go.Figure()
@@ -61,8 +61,8 @@ def chart_regime(f: pd.DataFrame, hist: pd.DataFrame) -> str:
     return _html(fig)
 
 
-def chart_axes(hist: pd.DataFrame) -> str:
-    two_y = hist.index.max() - pd.Timedelta(days=730)
+def chart_axes(hist: pd.DataFrame, days: int = 730) -> str:
+    two_y = hist.index.max() - pd.Timedelta(days=days)
     sub = hist.loc[two_y:]
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=sub.index, y=sub["growth_score"], name="growth",
@@ -322,9 +322,10 @@ def main() -> int:
 
     env = Environment(loader=FileSystemLoader(config.ROOT / "templates"))
     env.filters["min"] = lambda seq: min(seq)
-    tpl = env.get_template("dashboard.html.j2")
     confirming, contradicting = component_chips(latest)
-    html = tpl.render(
+    generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
+
+    html = env.get_template("dashboard.html.j2").render(
         latest=latest,
         pb=latest.get("playbook"),
         components_confirming=confirming,
@@ -332,9 +333,7 @@ def main() -> int:
         flip_plain=flip_plain_text(latest),
         internals=internals_rows(latest),
         sector_rows=sector_rows(latest.get("playbook")),
-        generated_utc=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
-        chart_regime=chart_regime(f, hist),
-        chart_axes=chart_axes(hist),
+        generated_utc=generated,
         chart_liquidity=chart_liquidity(f),
         chart_credit_breadth=chart_credit_breadth(f),
         positioning=positioning_rows(f),
@@ -346,6 +345,29 @@ def main() -> int:
     out = site / "index.html"
     out.write_text(html)
     log.info("wrote %s (%.0f KB)", out, out.stat().st_size / 1024)
+
+    # --- history page: the longer-window charts + lifespan base rates ----------
+    from engine.playbook import QUAD_SHORT, transition_stats
+    trans = transition_stats(hist["quad"])
+    lifespan_rows = []
+    for q in ("Q1", "Q2", "Q3", "Q4"):
+        nxt = trans["matrix"].get(q, {})
+        nxt_str = ", ".join(f"{QUAD_SHORT.get(k, k)} {v:.0%}" for k, v in
+                            sorted(nxt.items(), key=lambda kv: -kv[1])[:2]) or "—"
+        lifespan_rows.append({"name": QUAD_SHORT[q],
+                              "n": trans["n_by_quad"].get(q, "—"),
+                              "median": trans["median_days"].get(q, "—"),
+                              "next": nxt_str})
+    hist_html = env.get_template("history.html.j2").render(
+        latest=latest,
+        generated_utc=generated,
+        chart_regime=chart_regime(f, hist, days=1095),
+        chart_axes=chart_axes(hist, days=1095),
+        lifespan_rows=lifespan_rows,
+    )
+    out2 = site / "history.html"
+    out2.write_text(hist_html)
+    log.info("wrote %s (%.0f KB)", out2, out2.stat().st_size / 1024)
     return 0
 
 

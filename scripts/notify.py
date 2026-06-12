@@ -56,9 +56,13 @@ def health_line() -> str:
 def build_message(latest: dict, html: bool = True) -> str:
     b, e = ("<b>", "</b>") if html else ("**", "**")
     quad = latest["quad"]
+    label = latest["quad_name"]
+    if "/Recession" in latest.get("label", ""):
+        label += " ⚠ RECESSION SIGNAL"
+    elif "/Inflation-shock" in latest.get("label", ""):
+        label += " ⚠ INFLATION SHOCK"
     lines = [
-        f"{QUAD_EMOJI.get(quad, '')} {b}{latest['label']} — {latest['quad_name']}{e} "
-        f"({latest['date']})",
+        f"{QUAD_EMOJI.get(quad, '')} {b}{label}{e} ({latest['date']})",
         f"confidence {latest['confidence']:.0%} | liquidity {latest['liquidity_overlay']} "
         f"| cycle {latest['cycle_tag']} | "
         f"{STATE_EMOJI.get(latest['transition_state'], '')} {latest['transition_state']}",

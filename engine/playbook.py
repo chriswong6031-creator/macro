@@ -51,6 +51,9 @@ QUAD_MEANING = {
     "Q3": "Stagflation — inflation rising while growth rolls over",
     "Q4": "Growth scare — growth and inflation both falling",
 }
+# user-facing names — the Q-codes collide with calendar quarters in users' minds
+QUAD_SHORT = {"Q1": "Goldilocks", "Q2": "Reflation",
+              "Q3": "Stagflation", "Q4": "Growth scare"}
 
 EXTENDED_PCTILE = 92
 
@@ -120,7 +123,8 @@ def quad_segments(quad: pd.Series) -> pd.DataFrame:
 
 def transition_stats(quad: pd.Series) -> dict:
     seg = quad_segments(quad)
-    out: dict = {"matrix": {}, "median_days": {}, "n_segments": len(seg)}
+    out: dict = {"matrix": {}, "median_days": {}, "n_by_quad": {},
+                 "n_segments": len(seg)}
     for q in ("Q1", "Q2", "Q3", "Q4"):
         nxt = seg["quad"].shift(-1)[seg["quad"] == q].dropna()
         if len(nxt):
@@ -128,6 +132,7 @@ def transition_stats(quad: pd.Series) -> dict:
         dur = seg.loc[seg["quad"] == q, "days"]
         if len(dur):
             out["median_days"][q] = int(dur.median())
+            out["n_by_quad"][q] = int(len(dur))
     cur = seg.iloc[-1]
     out["current"] = {"quad": cur["quad"], "age_days": int(cur["days"]),
                       "median_days": out["median_days"].get(cur["quad"])}
@@ -206,7 +211,8 @@ def exposure_dial(latest: dict, evidence: dict) -> dict:
     if quad in ("Q1", "Q2") and state == "STABLE":
         score += 1
         ev = evidence.get("risk_on_stable")
-        reasons.append(("+", f"Risk-on regime ({quad}) with no transition warnings"
+        reasons.append(("+", f"Risk-friendly regime ({QUAD_SHORT[quad]}) with no transition "
+                        "warnings"
                         + (f" — in this condition the S&P averaged "
                            f"+{ev['fwd21_avg_pct']}%/month, {ev['fwd21_hit_pct']}% positive"
                            if ev else "")))
@@ -257,7 +263,8 @@ def _trigger_lines(latest_flags: dict, flip: dict, pending: dict | None,
                    next_quad: str | None) -> list[str]:
     lines = []
     if pending and pending.get("quad"):
-        lines.append(f"A regime change to {pending['quad']} is already counting down: "
+        pname = QUAD_SHORT.get(str(pending["quad"]), pending["quad"])
+        lines.append(f"A regime change to {pname} is already counting down: "
                      f"{pending['days']} of {pending['need']} confirmation days done.")
     if flip and flip.get("component"):
         plain = COMPONENT_PLAIN.get(flip["component"], flip["component"])
@@ -280,7 +287,8 @@ def _trigger_lines(latest_flags: dict, flip: dict, pending: dict | None,
             "Q4": "credit spreads widening and defensives taking leadership",
             "Q1": "inflation expectations cooling while breadth holds up",
         }
-        lines.append(f"For a shift to {next_quad}, watch for {watch_by_quad[next_quad]}.")
+        lines.append(f"For a shift to {QUAD_SHORT[next_quad]}, watch for "
+                     f"{watch_by_quad[next_quad]}.")
     return lines[:4]
 
 
@@ -351,10 +359,11 @@ def build_playbook(f: pd.DataFrame, regime: pd.DataFrame, closes: pd.DataFrame,
                 row = stages.loc[t]
                 watchlist.append({
                     "ticker": t, "name": row["name"],
-                    "why": (f"Historically favored if the regime shifts to {next_quad}. "
-                            f"Currently {row['stage']} ({row['mom_20d_pct']:+.1f}% 20d RS). "
-                            f"Execution rule the data supports: do NOT buy in anticipation — "
-                            f"wait until its RS crosses above its 200-day trend.")})
+                    "why": (f"Historically favored if the regime shifts to "
+                            f"{QUAD_SHORT[next_quad]}. Currently {row['stage']} "
+                            f"({row['mom_20d_pct']:+.1f}% 20d RS). Execution rule the data "
+                            f"supports: do NOT buy in anticipation — wait until its RS "
+                            f"crosses above its 200-day trend.")})
 
     pending = None
     last = regime.dropna(subset=["quad"]).iloc[-1]
@@ -367,12 +376,49 @@ def build_playbook(f: pd.DataFrame, regime: pd.DataFrame, closes: pd.DataFrame,
 
     headline = (f"{QUAD_MEANING[quad]}. Posture: {dial['posture']} — {dial['meaning']}.")
 
+    # --- regime progress: where are we in this regime's typical lifespan? -----
     cur = trans["current"]
+    seg = quad_segments(regime["quad"])
+    durs = seg.loc[seg["quad"] == quad, "days"].to_numpy()
+    progress = None
+    if len(durs) >= 8:
+        age = cur["age_days"]
+        t33, t66, p90 = (float(np.percentile(durs, p)) for p in (33, 66, 90))
+        pct_longer = float((durs > age).mean() * 100)
+        longer = durs[durs > age]
+        med_remaining = int(np.median(longer) - age) if len(longer) else None
+        phase = ("early" if age < t33 else "mid" if age < t66
+                 else "late" if age <= p90 else "overdue")
+        phase_note = {
+            "early": "still young — regime-aligned positions have historical room to run",
+            "mid": "mid-life — ride it, but keep the next-shift watchlist warm",
+            "late": "older than most — tighten stops on regime-dependent positions "
+                    "and take the transition radar seriously",
+            "overdue": "has outlived nearly all its predecessors — treat every "
+                       "warning flag as live",
+        }[phase]
+        progress = {
+            "age_days": int(age), "median_days": int(np.median(durs)),
+            "pct_longer": round(pct_longer, 0),
+            "median_remaining_days": med_remaining,
+            "phase": phase, "phase_note": phase_note,
+            "bar_pct": round(min(age / p90, 1.0) * 100, 1),
+            "zone_early_pct": round(t33 / p90 * 100, 1),
+            "zone_mid_pct": round(t66 / p90 * 100, 1),
+            "n_history": int(len(durs)),
+        }
+
     age_note = None
     if cur.get("median_days") and nxt:
-        age_note = (f"This {quad} stint is {cur['age_days']} trading days old "
-                    f"(historical median: {cur['median_days']}). When {quad} ended, it went to: "
-                    + ", ".join(f"{k} {v:.0%}" for k, v in sorted(nxt.items(), key=lambda kv: -kv[1])))
+        age_note = (f"This {QUAD_SHORT[quad]} stretch is {cur['age_days']} trading days old "
+                    f"(historical median: {cur['median_days']}). When {QUAD_SHORT[quad]} ended, "
+                    f"it went to: "
+                    + ", ".join(f"{QUAD_SHORT.get(k, k)} {v:.0%}"
+                                for k, v in sorted(nxt.items(), key=lambda kv: -kv[1])))
+
+    next_list = [{"code": k, "name": QUAD_SHORT.get(k, k),
+                  "meaning": QUAD_MEANING.get(k, ""), "prob_pct": round(v * 100)}
+                 for k, v in sorted(nxt.items(), key=lambda kv: -kv[1])]
 
     return {
         "headline": headline,
@@ -381,7 +427,10 @@ def build_playbook(f: pd.DataFrame, regime: pd.DataFrame, closes: pd.DataFrame,
         "avoid": avoid[:4],
         "momentum_tilt": momentum_tilt,
         "next_quad": next_quad,
+        "next_quad_name": QUAD_SHORT.get(next_quad, next_quad) if next_quad else None,
         "next_quad_probs": nxt,
+        "next_list": next_list,
+        "progress": progress,
         "regime_age_note": age_note,
         "watchlist": watchlist[:4],
         "triggers": triggers,
