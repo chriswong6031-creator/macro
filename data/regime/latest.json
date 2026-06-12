@@ -3,38 +3,42 @@
   "quad": "Q1",
   "quad_name": "Goldilocks",
   "label": "Q1",
-  "growth_score": 0.4,
-  "inflation_score": -0.333,
-  "growth_confidence": 0.3,
-  "inflation_confidence": 0.333,
-  "confidence": 0.317,
+  "growth_score": 0.455,
+  "inflation_score": -0.652,
+  "growth_confidence": 0.364,
+  "inflation_confidence": 0.652,
+  "confidence": 0.508,
   "liquidity_overlay": "neutral",
-  "cycle_tag": "unknown",
+  "cycle_tag": "mid",
   "transition_state": "STABLE",
   "transition_flags": {
     "flag_breadth_price": false,
     "flag_credit_equity": false,
     "flag_ratio_inflection": false,
     "flag_inflation_basket": false,
-    "flag_confidence_decay": true,
+    "flag_confidence_decay": false,
     "flag_gex": false
   },
   "confirming": [
     "growth_copper_gold",
+    "growth_us2y_direction",
     "growth_iwm_spy",
     "growth_breadth_direction",
-    "inflation_oil_trend"
+    "inflation_breakeven_10y_direction",
+    "inflation_breakeven_5y5y_direction",
+    "inflation_oil_trend",
+    "inflation_tips_nominal_momentum"
   ],
   "contradicting": [
     "growth_cyclical_defensive"
   ],
   "flip_condition": {
-    "axis": "inflation",
-    "component": "oil_trend",
-    "z": -0.73,
+    "axis": "growth",
+    "component": "breadth_direction",
+    "z": 0.5,
     "threshold": 0.45,
-    "margin": 0.28,
-    "note": "inflation axis flips risk: oil_trend slope z=-0.73 is the closest supporter to its +/-0.45 cutoff"
+    "margin": 0.05,
+    "note": "growth axis flips risk: breadth_direction slope z=0.5 is the closest supporter to its +/-0.45 cutoff"
   },
   "sector_rs": [
     {

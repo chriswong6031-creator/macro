@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-06-12T00:33:51.614218+00:00",
+  "last_run": "2026-06-12T03:15:02.294514+00:00",
   "sources": {
     "cot": {
       "source": "cot",
@@ -12,12 +12,12 @@
     },
     "fred": {
       "source": "fred",
-      "status": "failed",
-      "rows": 0,
-      "last_date": null,
-      "error": "RuntimeError: all FRED series failed: ['DGS2: HTTP 504', 'DGS10: HTTP 504', 'T10Y2Y: HTTP 504', 'aborted remaining series: endpoint down']",
+      "status": "ok",
+      "rows": 102576,
+      "last_date": "2026-06-11",
+      "error": null,
       "notes": [],
-      "checked_at": "2026-06-12T00:33:51.614237+00:00"
+      "checked_at": "2026-06-12T03:15:02.294530+00:00"
     },
     "yahoo": {
       "source": "yahoo",
@@ -132,6 +132,6 @@
     "sector_flows": 0,
     "holdings": 0,
     "fundamentals": 0,
-    "fred": 1
+    "fred": 0
   }
 }

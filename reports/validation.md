@@ -1,11 +1,11 @@
 # Regime classifier validation (Phase 2e)
 
-Backtest window: 2007-01-01 -> 2026-06-09
+Backtest window: 2007-01-01 -> 2026-06-11
 (engine code path identical to live; GEX flag inactive historically — see DECISIONS D14)
 
 ## Whipsaw
-- regime changes: 162
-- lasting < 10 days: 15 (9.3%) — target < 15% -> **PASS**
+- regime changes: 156
+- lasting < 10 days: 12 (7.7%) — target < 15% -> **PASS**
 
 ## Episode sanity checks
 - **2008 crisis (2008-09-01..2009-03-31)**: Q4 72%, Q3 17%, Q1 7%, Q2 5%
@@ -35,21 +35,27 @@ spec's single '2022 = Q3' label, and consistent with market pricing.
 | us2y growth weight | 1.0 | 0.5 | 2Y-up is ambiguous when policy chases inflation (2022) |
 
 ## Transition detector
-- 72.8% of regime changes were preceded by a non-STABLE transition state within the prior 20 trading days
+- 72.4% of regime changes were preceded by a non-STABLE transition state within the prior 20 trading days
 
 ## Sector-preference hit-rate (fwd 60d, preferred basket vs SPY)
 | quad   |   days |   hit_vs_SPY_pct |   excess_vs_SPY_pct |   hit_vs_RSP_pct |   excess_vs_RSP_pct |
 |:-------|-------:|-----------------:|--------------------:|-----------------:|--------------------:|
-| Q1     |    800 |             47.1 |               -0.24 |             62.9 |                0.15 |
-| Q2     |   2171 |             40   |               -0.8  |             38.8 |               -0.45 |
-| Q3     |    501 |             47.7 |                0.14 |             44.9 |               -0.33 |
-| Q4     |   1352 |             41.5 |               -1.03 |             42.1 |               -1.01 |
+| Q1     |    739 |             45.3 |               -0.29 |             61.8 |               -0.03 |
+| Q2     |   2204 |             39.7 |               -0.81 |             38.8 |               -0.43 |
+| Q3     |    442 |             47.1 |               -0.36 |             43.7 |               -0.83 |
+| Q4     |   1441 |             41   |               -1.16 |             40.6 |               -1.12 |
 
 Verdict: the Q1 map adds real value against equal-weight (63% hit). The Q4 map (XLU/XLP/XLV/LQD) loses ~1%/60d on average because duration gets hit in *inflationary* bear markets (2022) — consider splitting Q4 preferences on the liquidity overlay or replacing LQD with cash-like duration when the inflation axis is only mildly negative. Q2's basket underperforms cap-weight mainly in QE-era mega-cap melt-ups. The table is config — edit `engine.sector_preferences` and re-run this script to re-score.
 
 ## Regime segments (last 25)
 | quad   | start               | end                 |   days |
 |:-------|:--------------------|:--------------------|-------:|
+| Q3     | 2023-08-16 00:00:00 | 2023-10-30 00:00:00 |     54 |
+| Q4     | 2023-10-31 00:00:00 | 2023-11-17 00:00:00 |     14 |
+| Q1     | 2023-11-20 00:00:00 | 2024-01-22 00:00:00 |     46 |
+| Q3     | 2024-01-23 00:00:00 | 2024-02-28 00:00:00 |     27 |
+| Q2     | 2024-02-29 00:00:00 | 2024-04-22 00:00:00 |     38 |
+| Q3     | 2024-04-23 00:00:00 | 2024-05-08 00:00:00 |     12 |
 | Q4     | 2024-05-09 00:00:00 | 2024-05-17 00:00:00 |      7 |
 | Q1     | 2024-05-20 00:00:00 | 2024-06-07 00:00:00 |     15 |
 | Q4     | 2024-06-10 00:00:00 | 2024-07-17 00:00:00 |     28 |
@@ -58,22 +64,16 @@ Verdict: the Q1 map adds real value against equal-weight (63% hit). The Q4 map (
 | Q1     | 2024-09-30 00:00:00 | 2024-10-08 00:00:00 |      7 |
 | Q2     | 2024-10-09 00:00:00 | 2024-12-03 00:00:00 |     40 |
 | Q1     | 2024-12-04 00:00:00 | 2025-01-10 00:00:00 |     28 |
-| Q2     | 2025-01-13 00:00:00 | 2025-02-07 00:00:00 |     20 |
-| Q1     | 2025-02-10 00:00:00 | 2025-03-13 00:00:00 |     24 |
-| Q3     | 2025-03-14 00:00:00 | 2025-04-08 00:00:00 |     18 |
-| Q4     | 2025-04-09 00:00:00 | 2025-05-21 00:00:00 |     31 |
-| Q1     | 2025-05-22 00:00:00 | 2025-06-13 00:00:00 |     17 |
-| Q2     | 2025-06-16 00:00:00 | 2025-07-14 00:00:00 |     21 |
-| Q1     | 2025-07-15 00:00:00 | 2025-08-07 00:00:00 |     18 |
-| Q4     | 2025-08-08 00:00:00 | 2025-09-03 00:00:00 |     19 |
-| Q2     | 2025-09-04 00:00:00 | 2025-09-19 00:00:00 |     12 |
-| Q1     | 2025-09-22 00:00:00 | 2025-10-23 00:00:00 |     24 |
-| Q4     | 2025-10-24 00:00:00 | 2025-11-13 00:00:00 |     15 |
-| Q2     | 2025-11-14 00:00:00 | 2025-11-24 00:00:00 |      7 |
-| Q3     | 2025-11-25 00:00:00 | 2026-01-09 00:00:00 |     34 |
-| Q2     | 2026-01-12 00:00:00 | 2026-01-27 00:00:00 |     12 |
-| Q3     | 2026-01-28 00:00:00 | 2026-04-09 00:00:00 |     52 |
-| Q2     | 2026-04-10 00:00:00 | 2026-04-16 00:00:00 |      5 |
-| Q1     | 2026-04-17 00:00:00 | 2026-06-09 00:00:00 |     38 |
+| Q2     | 2025-01-13 00:00:00 | 2025-02-19 00:00:00 |     28 |
+| Q4     | 2025-02-20 00:00:00 | 2025-06-23 00:00:00 |     88 |
+| Q2     | 2025-06-24 00:00:00 | 2025-08-08 00:00:00 |     34 |
+| Q4     | 2025-08-11 00:00:00 | 2025-09-03 00:00:00 |     18 |
+| Q2     | 2025-09-04 00:00:00 | 2025-09-26 00:00:00 |     17 |
+| Q1     | 2025-09-29 00:00:00 | 2025-10-23 00:00:00 |     19 |
+| Q4     | 2025-10-24 00:00:00 | 2025-12-26 00:00:00 |     46 |
+| Q2     | 2025-12-29 00:00:00 | 2026-02-12 00:00:00 |     34 |
+| Q3     | 2026-02-13 00:00:00 | 2026-04-07 00:00:00 |     38 |
+| Q2     | 2026-04-08 00:00:00 | 2026-05-28 00:00:00 |     37 |
+| Q1     | 2026-05-29 00:00:00 | 2026-06-11 00:00:00 |     10 |
 
 Timeline chart: `site/validation_timeline.html`
