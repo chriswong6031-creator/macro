@@ -35,10 +35,10 @@
   "flip_condition": {
     "axis": "growth",
     "component": "breadth_direction",
-    "z": 0.5,
+    "z": 0.51,
     "threshold": 0.45,
-    "margin": 0.05,
-    "note": "growth axis flips risk: breadth_direction slope z=0.5 is the closest supporter to its +/-0.45 cutoff"
+    "margin": 0.06,
+    "note": "growth axis flips risk: breadth_direction slope z=0.51 is the closest supporter to its +/-0.45 cutoff"
   },
   "sector_rs": [
     {
@@ -205,11 +205,11 @@
     },
     {
       "ticker": "GC=F",
-      "rs": 5.746719989145776,
-      "mom_20d_pct": -9.19,
-      "mom_60d_pct": -23.13,
+      "rs": 5.726794545752375,
+      "mom_20d_pct": -9.51,
+      "mom_60d_pct": -23.4,
       "above_200d_trend": false,
-      "pctile_252d": 30.2,
+      "pctile_252d": 28.6,
       "rank": 19
     }
   ],
@@ -254,8 +254,14 @@
     },
     "copper_gold": {
       "level": 0.0015,
-      "chg_20d_pct": 7.37
+      "chg_20d_pct": 8.32
     }
   },
-  "alerts": []
+  "alerts": [
+    {
+      "rule": "circuit_breaker_open",
+      "severity": "warn",
+      "message": "Source 'sentiment_aaii' marked dead after 3 consecutive failures \u2014 collector skipped until it recovers; affected signals degrade"
+    }
+  ]
 }
