@@ -60,21 +60,28 @@ GitHub scheduler jitter.
 
 ## How to read the dashboard
 
-- **Header**: quad badge + transition state are the two things that matter.
-  Confidence below ~30% means the axes are mixed — expect chop, trust the
-  transition state more than the label. Liquidity overlay modifies risk
-  appetite *within* the quad (Q1 + contracting = fragile goldilocks).
-- **Axis panel**: confirming vs contradicting components, and the single most
-  fragile input ("flip risk") — the explicit what-would-change-my-mind.
-- **Framework vs tape**: when preferred sectors for the quad aren't actually
-  leading, that disagreement is itself a transition signal.
-- **Sector RS table**: ranked by 60d RS momentum vs SPY. ▲/▼ = above/below
-  the 200d RS trend.
-- **Positioning**: percentiles of full stored history; >90 or <10 are
-  contrarian flags, detailed in the weekly report.
-- **Data health footer**: stale sources degrade confidence, they never crash
-  the run. fred:failed with recent `last data` just means the live endpoint
-  was down that day.
+Every metric on the page has a hover-? tooltip; the "New here?" expander at
+the top gives a 60-second orientation. The flow:
+
+- **Header**: regime badge + transition radar are the two things that matter.
+  Signal agreement below ~30% means the indicators disagree — expect chop and
+  trust the radar more than the label.
+- **Playbook panel**: the conclusions layer. An exposure dial
+  (DEFENSIVE→AGGRESSIVE) built only from conditions that held up in both
+  halves of the 2007–2026 backtest, confirmed sector leadership, an
+  evidence-backed avoid list (don't chase extended leaders: 44.7% hit rate;
+  don't buy below-trend bounces: negative in every variant tested), the
+  probable next regime from historical transition odds, and what would change
+  the picture. Sector calls are risk filters, not return predictions — the
+  panel says so itself.
+- **The two dials**: growth and inflation gauges with the indicators voting
+  for/against, the weakest link, and whether the tape agrees with the regime.
+- **Sector scoreboard**: rotation stage per sector (improving → leading →
+  weakening → lagging) plus relative momentum and year-position.
+- **Positioning**: who's crowded where; percentiles near 100 or 0 are
+  contrarian context, detailed in the weekly report.
+- **Data health footer**: stale sources degrade confidence, never crash the
+  run. `blocked` = known, documented limitation (AAII), not a malfunction.
 
 ## Alerts and what they mean
 

@@ -64,6 +64,15 @@ def build_message(latest: dict, html: bool = True) -> str:
         f"{STATE_EMOJI.get(latest['transition_state'], '')} {latest['transition_state']}",
         f"G {latest['growth_score']:+.2f} / I {latest['inflation_score']:+.2f}",
     ]
+    pb = latest.get("playbook") or {}
+    if pb.get("dial"):
+        lines.append(f"{b}posture: {pb['dial']['posture']}{e} — {pb['dial']['meaning']}")
+    if pb.get("leaders"):
+        lines.append(f"{b}confirmed leaders{e}: "
+                     + ", ".join(x["ticker"] for x in pb["leaders"]))
+    if pb.get("avoid"):
+        lines.append("avoid: " + ", ".join(f"{x['ticker']} ({x['call'].lower()})"
+                                           for x in pb["avoid"]))
     rs = latest.get("sector_rs", [])
     if rs:
         top = ", ".join(f"{r['ticker']} {r['mom_20d_pct']:+.1f}%" for r in rs[:5])

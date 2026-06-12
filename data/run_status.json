@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-06-12T03:46:25.286752+00:00",
+  "last_run": "2026-06-12T09:05:26.478389+00:00",
   "sources": {
     "cot": {
       "source": "cot",
@@ -84,12 +84,12 @@
     },
     "sentiment_aaii": {
       "source": "sentiment_aaii",
-      "status": "failed",
+      "status": "blocked",
       "rows": 0,
       "last_date": null,
-      "error": "HTTPError: 403 Client Error: Forbidden for url: https://www.aaii.com/sentimentsurvey/sent_results",
+      "error": "AAII blocks non-browser clients (403) \u2014 known limitation, not used by the regime engine",
       "notes": [],
-      "checked_at": "2026-06-12T03:46:25.286861+00:00"
+      "checked_at": "2026-06-12T09:05:26.478437+00:00"
     },
     "sector_flows": {
       "source": "sector_flows",

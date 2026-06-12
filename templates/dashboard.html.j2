@@ -1,3 +1,6 @@
+{% macro help(text) -%}
+<span class="help">?<span class="tip">{{ text }}</span></span>
+{%- endmacro %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,12 +22,14 @@
   h1 { font-size: 20px; margin: 0 0 2px; }
   h2 { font-size: 15px; margin: 0 0 10px; color: var(--muted);
        text-transform: uppercase; letter-spacing: .06em; }
+  h3 { font-size: 13px; margin: 14px 0 6px; color: var(--text); }
   .grid { display: grid; gap: 14px; grid-template-columns: repeat(12, 1fr); }
   .panel { background: var(--panel); border: 1px solid var(--line);
            border-radius: 10px; padding: 14px 16px; }
   .span12 { grid-column: span 12; } .span8 { grid-column: span 8; }
   .span6 { grid-column: span 6; } .span4 { grid-column: span 4; }
   @media (max-width: 900px) { .span8, .span6, .span4 { grid-column: span 12; } }
+
   .badge { display: inline-block; padding: 3px 12px; border-radius: 14px;
            font-weight: 600; font-size: 13px; }
   .quad-Q1 { background: var(--q1); color: #fff; }
@@ -36,15 +41,20 @@
   .state-TRANSITIONING { background: #e07b30; color: #1a1a1a; }
   .state-NEW_REGIME { background: var(--act); color: #fff; }
   .kv { color: var(--muted); } .kv b { color: var(--text); font-weight: 600; }
+
   table { border-collapse: collapse; width: 100%; font-size: 13px; }
   th, td { text-align: right; padding: 4px 8px; border-bottom: 1px solid var(--line); }
   th { color: var(--muted); font-weight: 500; }
   th:first-child, td:first-child { text-align: left; }
+  td.l, th.l { text-align: left; }
   .pos { color: #5fbf7f; } .neg { color: #e07070; }
+
   .pill { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px; }
   .pill-ok { background: #1d3326; color: #6fce8f; }
   .pill-stale { background: #38301a; color: #d8b75a; }
   .pill-failed, .pill-dead { background: #3a2020; color: #e08080; }
+  .pill-blocked { background: #2b2b33; color: #a8a8c0; }
+
   .alert { padding: 8px 12px; border-radius: 8px; margin: 6px 0;
            background: var(--panel2); border-left: 3px solid var(--muted); }
   .alert-act { border-left-color: var(--act); }
@@ -52,156 +62,359 @@
   .muted { color: var(--muted); }
   .chart { width: 100%; }
   .topline { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
-  .conf-bar { height: 8px; border-radius: 4px; background: var(--panel2);
-              width: 120px; display: inline-block; vertical-align: middle; }
-  .conf-fill { height: 8px; border-radius: 4px; background: var(--ok); }
-  ul.compact { margin: 4px 0; padding-left: 18px; }
-  ul.compact li { margin: 2px 0; }
+
+  /* hover help */
+  .help { display: inline-flex; align-items: center; justify-content: center;
+          width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--muted);
+          color: var(--muted); font-size: 10px; font-weight: 600; cursor: help;
+          position: relative; vertical-align: middle; margin-left: 5px; flex: none; }
+  .help .tip { display: none; position: absolute; bottom: 140%; left: 50%;
+               transform: translateX(-50%); width: 290px; background: #262b35;
+               border: 1px solid #3a4150; padding: 9px 11px; border-radius: 8px;
+               z-index: 60; font-size: 12px; line-height: 1.45; color: var(--text);
+               text-align: left; font-weight: 400; text-transform: none;
+               letter-spacing: normal; box-shadow: 0 6px 18px rgba(0,0,0,.5);
+               pointer-events: none; white-space: normal; }
+  .help:hover .tip { display: block; }
+  th .help .tip { bottom: auto; top: 140%; }
+
+  /* exposure dial */
+  .dial { display: flex; gap: 4px; margin: 8px 0 12px; }
+  .dial span { flex: 1; text-align: center; padding: 6px 2px; border-radius: 6px;
+               background: var(--panel2); color: var(--muted); font-size: 11px;
+               font-weight: 600; letter-spacing: .04em; }
+  .dial .active-DEFENSIVE { background: var(--act); color: #fff; }
+  .dial .active-CAREFUL { background: #e07b30; color: #1a1a1a; }
+  .dial .active-NEUTRAL { background: #4a5160; color: #fff; }
+  .dial .active-CONSTRUCTIVE { background: #3f8f5f; color: #fff; }
+  .dial .active-AGGRESSIVE { background: var(--ok); color: #fff; }
+  @media (max-width: 520px) { .dial span { font-size: 8.5px; padding: 5px 1px; } }
+  .reason { margin: 4px 0; padding-left: 24px; position: relative; }
+  .reason b.sig { position: absolute; left: 0; width: 17px; text-align: center;
+                  border-radius: 4px; font-size: 12px; }
+  .sig-p { background: #1d3326; color: #6fce8f; } .sig-m { background: #3a2020; color: #e08080; }
+  .sig-i { background: #2b2f3a; color: #9fb4d8; }
+
+  .card { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px;
+          padding: 10px 12px; margin: 6px 0; }
+  .card b.tk { font-size: 14px; }
+  .calltag { float: right; font-size: 11px; font-weight: 700; padding: 1px 8px;
+             border-radius: 9px; }
+  .tag-lead { background: #1d3326; color: #6fce8f; }
+  .tag-avoid { background: #3a2020; color: #e08080; }
+  .tag-watch { background: #2b3340; color: #9fc0e8; }
+
+  .chip { display: inline-block; padding: 2px 9px; margin: 2px 3px 2px 0;
+          border-radius: 10px; font-size: 12px; background: var(--panel2); }
+  .chip-pos { border: 1px solid #2e6e44; color: #6fce8f; }
+  .chip-neg { border: 1px solid #6e2e2e; color: #e08080; }
+
+  .gauge { position: relative; height: 10px; border-radius: 5px; margin: 6px 0 2px;
+           background: linear-gradient(90deg, #e07070 0%, #4a5160 50%, #5fbf7f 100%); opacity:.9; }
+  .gauge i { position: absolute; top: -4px; width: 4px; height: 18px; background: #fff;
+             border-radius: 2px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; font-size: 12px; }
+  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px;
+              margin-right: 5px; vertical-align: -1px; }
+  details.howto { margin-top: 10px; }
+  details.howto summary { cursor: pointer; color: #7aa7e0; font-size: 13px; }
+  details.howto div { background: var(--panel2); border-radius: 8px; padding: 12px 14px;
+                      margin-top: 8px; font-size: 13px; line-height: 1.6; }
+  ul.compact { margin: 4px 0; padding-left: 18px; } ul.compact li { margin: 3px 0; }
 </style>
 </head>
 <body>
 <div class="grid">
 
+  <!-- ======================= HEADER ======================= -->
   <div class="panel span12">
     <div class="topline">
       <h1>Macro Regime Dashboard</h1>
-      <span class="badge quad-{{ latest.quad }}">{{ latest.label }} — {{ latest.quad_name }}</span>
+      <span class="badge quad-{{ latest.quad }}">{{ latest.quad_name }}</span>
+      {{ help("The market 'weather'. Four regimes based on whether growth and inflation are rising or falling: GOLDILOCKS (green) = growth up, inflation down — historically the friendliest for stocks. REFLATION (yellow) = both heating up — favors energy, banks, industrials. STAGFLATION (red) = inflation up while growth rolls over — historically the most dangerous. GROWTH SCARE (blue) = both falling — favors defensives and bonds. The label changes only after 7 straight days of evidence (or one extreme shock day), so it doesn't flip-flop.") }}
       <span class="badge state-{{ latest.transition_state }}">{{ latest.transition_state }}</span>
-      <span class="kv">confidence <b>{{ (latest.confidence * 100) | round | int }}%</b>
-        <span class="conf-bar"><span class="conf-fill" style="width: {{ [latest.confidence * 100, 100] | min | round | int }}%"></span></span>
-      </span>
-      <span class="kv">liquidity <b>{{ latest.liquidity_overlay }}</b></span>
+      {{ help("The transition radar — is the current regime ending? STABLE: no warning signs, trust the label. WEAKENING: 2+ warning signals (e.g. fewer stocks participating, credit getting nervous) — stop adding regime-dependent bets. TRANSITIONING: 3+ warnings — the regime is probably ending before the label flips; reduce risk now. NEW REGIME: the label just changed this week.") }}
+      <span class="kv">signal agreement <b>{{ (latest.confidence * 100) | round | int }}%</b></span>
+      {{ help("How many of the underlying indicators point the same way. Above ~45%: well-supported, trust it. 30-45%: moderate. Below 30%: the indicators disagree — expect choppy markets and trust the transition radar more than the regime label.") }}
+      <span class="kv">Fed liquidity <b>{{ latest.liquidity_overlay }}</b></span>
+      {{ help("Money the Fed system is adding to or draining from markets (balance sheet minus reverse-repo minus Treasury account, 4-week trend). EXPANDING has historically been the single most reliable tailwind for stocks in our backtest (~73% positive months). CONTRACTING is a persistent headwind. NEUTRAL: flat, no signal.") }}
       <span class="kv">cycle <b>{{ latest.cycle_tag }}</b></span>
-      <span class="kv muted">as of {{ latest.date }} · generated {{ generated_utc }} UTC</span>
+      {{ help("Rough position in the multi-year business cycle, estimated from the yield curve, credit spreads and market breadth. EARLY: recovering after stress — usually the best risk/reward. MID: expansion cruising. LATE: curve inverted/flattening, credit calm but breadth thinning — enjoy it but keep one eye on the exit. Context only, not a trade signal.") }}
+      <span class="kv muted">data through {{ latest.date }}</span>
     </div>
+    <details class="howto">
+      <summary>New here? How to read this page in 60 seconds</summary>
+      <div>
+        <b>1.</b> The colored badge above is the market regime — the "weather". The second badge is the transition radar — whether that weather is about to change. These two are the headline.<br>
+        <b>2.</b> The <b>Playbook</b> panel below turns everything into plain English: how much risk the conditions support, which sectors have confirmed leadership, what to avoid, and what would change the picture. Every claim shows the historical stats behind it.<br>
+        <b>3.</b> Everything else on the page is the supporting evidence. Hover any <span class="help">?</span> for an explanation. Colors: <span class="pos">green = risk-friendly / rising</span>, <span class="neg">red = risk-hostile / falling</span>.<br>
+        <b>4.</b> This is a context machine, not a crystal ball — it tells you the environment and the odds, never a guaranteed outcome.
+      </div>
+    </details>
   </div>
+
+  <!-- ======================= PLAYBOOK ======================= -->
+  {% if pb %}
+  <div class="panel span12">
+    <h2>Playbook — what the data says to do
+      {{ help("The conclusions layer. Built from three measured inputs: (1) index-level risk conditions that held up in both halves of a 2007-2026 backtest, (2) each sector's rotation stage (where its trend vs the market is and where it's heading), (3) the regime's own historical transition odds. Each call cites its evidence.") }}
+    </h2>
+    <p style="font-size:14.5px; margin:6px 0 2px;"><b>{{ pb.headline }}</b></p>
+
+    <div class="dial">
+      {% for p in ["DEFENSIVE","CAREFUL","NEUTRAL","CONSTRUCTIVE","AGGRESSIVE"] %}
+        <span class="{{ 'active-' + p if pb.dial.posture == p }}">{{ p }}</span>
+      {% endfor %}
+    </div>
+    {% for sign, r in pb.dial.reasons %}
+      <div class="reason"><b class="sig sig-{{ {'+':'p','-':'m','i':'i'}[sign] }}">{{ {'+':'+','-':'−','i':'i'}[sign] }}</b> {{ r }}</div>
+    {% endfor %}
+    {% if pb.regime_age_note %}
+      <p class="muted" style="margin:8px 0 0">{{ pb.regime_age_note }}
+      {{ help("Based on every regime stint since 2007 in this exact classifier. Age vs the median tells you whether this regime is young or due; the percentages are simple historical frequencies of what came next — odds, not prophecy.") }}</p>
+    {% endif %}
+
+    <div class="grid" style="margin-top:12px">
+      <div class="span4">
+        <h3>✅ Confirmed leadership — where participation is real
+          {{ help("Sectors in an established uptrend vs the market (above their 200-day relative-strength trend) with momentum still positive, and not yet stretched. This is descriptive — where the market's money already is — not a return prediction: our backtest found no stable sector-picking edge at monthly horizons. Use it to place exposure you already intend to take.") }}
+        </h3>
+        {% for x in pb.leaders %}
+          <div class="card"><span class="calltag tag-lead">LEADER</span>
+            <b class="tk">{{ x.ticker }}</b> · {{ x.name }}<br>
+            <span class="muted">{{ x.why }}</span></div>
+        {% else %}
+          <p class="muted">No sector currently qualifies — leadership is either stretched or unconfirmed. That itself is information: stay close to the index.</p>
+        {% endfor %}
+        {% if pb.momentum_tilt.tickers %}
+          <p class="muted" style="font-size:12px">Longer-horizon tilt: <b>
+            {%- for t in pb.momentum_tilt.tickers %}{{ t.ticker }}{{ ", " if not loop.last }}{% endfor -%}
+          </b> {{ help(pb.momentum_tilt.note) }}</p>
+        {% endif %}
+      </div>
+      <div class="span4">
+        <h3>🚫 Avoid right now — the evidence-backed don'ts
+          {{ help("The strongest findings in our sector backtest were about what NOT to do: chasing stretched leaders lost money 55% of the time, and buying sectors below their long-term trend on the first bounce lost in every variant tested. These warnings carry more statistical weight than any buy signal on this page.") }}
+        </h3>
+        {% for x in pb.avoid %}
+          <div class="card"><span class="calltag tag-avoid">{{ x.call }}</span>
+            <b class="tk">{{ x.ticker }}</b> · {{ x.name }}<br>
+            <span class="muted">{{ x.why }}</span></div>
+        {% else %}
+          <p class="muted">Nothing currently triggers the avoid rules.</p>
+        {% endfor %}
+      </div>
+      <div class="span4">
+        <h3>👀 Next rotation watch
+          {{ help("If the regime shifts (the percentages above show the historical odds of each path), these are the sectors that historically benefited from the most likely next regime — shown only while they're NOT yet in confirmed uptrends. The execution rule the data supports: don't buy in anticipation; wait for the relative-strength trend to actually turn.") }}
+        </h3>
+        {% for x in pb.watchlist %}
+          <div class="card"><span class="calltag tag-watch">WATCH</span>
+            <b class="tk">{{ x.ticker }}</b> · {{ x.name }}<br>
+            <span class="muted">{{ x.why }}</span></div>
+        {% else %}
+          <p class="muted">No clean accumulation candidates for the likely next regime yet.</p>
+        {% endfor %}
+        <h3>What would change this picture</h3>
+        <ul class="compact muted">
+          {% for t in pb.triggers %}<li>{{ t }}</li>{% endfor %}
+        </ul>
+      </div>
+    </div>
+    <p class="muted" style="font-size:12px; margin-top:8px">⚖️ {{ pb.honesty }}</p>
+  </div>
+  {% endif %}
 
   {% if latest.alerts %}
   <div class="panel span12">
-    <h2>Fired alerts (today)</h2>
+    <h2>Fired alerts (today)
+      {{ help("Alerts fire only when something CHANGES — a warning level escalating, a crossing, a sign flip — never just because a level is high. They're rare by design; read every one.") }}
+    </h2>
     {% for a in latest.alerts %}
       <div class="alert alert-{{ a.severity }}"><b>{{ a.rule }}</b> — {{ a.message }}</div>
     {% endfor %}
   </div>
   {% endif %}
 
+  <!-- ======================= SIGNALS ======================= -->
   <div class="panel span6">
-    <h2>Growth axis {{ "%+.2f" | format(latest.growth_score) }} · conf {{ (latest.growth_confidence * 100) | round | int }}%</h2>
-    <h2>Inflation axis {{ "%+.2f" | format(latest.inflation_score) }} · conf {{ (latest.inflation_confidence * 100) | round | int }}%</h2>
-    <p class="kv">confirming: <b>{{ latest.confirming | join(", ") or "—" }}</b></p>
-    <p class="kv">contradicting: <b>{{ latest.contradicting | join(", ") or "—" }}</b></p>
-    <p class="kv">flip risk: <b>{{ latest.flip_condition.note if latest.flip_condition else "—" }}</b></p>
+    <h2>The two dials behind the regime
+      {{ help("The regime label comes from two scores, each between -1 and +1, built from market prices (which lead) plus a small weight on economic data (which confirms). Growth score above zero + inflation score below zero = Goldilocks, and so on. The white marker shows today's value.") }}
+    </h2>
+    <p style="margin:8px 0 0"><b>Growth: {{ "RISING" if latest.growth_score >= 0 else "FALLING" }}</b>
+      <span class="muted">({{ "%+.2f" | format(latest.growth_score) }} of ±1 · agreement {{ (latest.growth_confidence * 100) | round | int }}%)</span>
+      {{ help("Is the economy's growth impulse improving or deteriorating, as priced by markets right now: copper vs gold, consumer discretionary vs staples, small caps vs large, cyclical vs defensive sectors, the 2-year yield, and how many stocks are in uptrends — confirmed slowly by payrolls and industrial production.") }}
+    </p>
+    <div class="gauge"><i style="left: {{ ((latest.growth_score + 1) / 2 * 100) | round(1) }}%"></i></div>
+    <p style="margin:10px 0 0"><b>Inflation pressure: {{ "RISING" if latest.inflation_score >= 0 else "FALLING" }}</b>
+      <span class="muted">({{ "%+.2f" | format(latest.inflation_score) }} of ±1 · agreement {{ (latest.inflation_confidence * 100) | round | int }}%)</span>
+      {{ help("Is inflation pressure building or cooling, as priced by markets: bond-market inflation expectations (10-year and long-horizon), oil, energy-sector strength, and inflation-winner vs inflation-loser sector baskets.") }}
+    </p>
+    <div class="gauge"><i style="left: {{ ((latest.inflation_score + 1) / 2 * 100) | round(1) }}%"></i></div>
+
+    <h3>What's voting for this regime
+      {{ help("Each chip is one indicator inside the two dials. Green chips currently point WITH the regime call; red chips point AGAINST it. Lots of red = the regime is on shaky ground (that's also what drags 'signal agreement' down).") }}
+    </h3>
+    <div>
+      {% for c in components_confirming %}<span class="chip chip-pos">{{ c }}</span>{% endfor %}
+      {% for c in components_contradicting %}<span class="chip chip-neg">{{ c }}</span>{% endfor %}
+      {% if not components_confirming and not components_contradicting %}<span class="muted">all quiet</span>{% endif %}
+    </div>
+
+    <h3>Weakest link
+      {{ help("Of everything currently supporting the regime call, this indicator is closest to flipping sides — the single thing most likely to change the picture. A pre-computed 'what would change my mind'.") }}
+    </h3>
+    <p class="muted">{{ flip_plain }}</p>
+
     {% if latest.preference_check %}
-    <p class="kv">framework vs tape: <b>{{ latest.preference_check.note }}</b>
+    <h3>Does the market agree with the regime?
+      {{ help("The regime implies certain sectors should lead (e.g. tech in Goldilocks). This line checks whether they actually ARE leading. Agreement strengthens the regime call. Disagreement is an early warning — when the tape stops cooperating with the story, the story is often about to change.") }}
+    </h3>
+    <p class="muted">{{ latest.preference_check.note }}
       {% if latest.preference_check.actual_ranks %}
-        ({% for t, r in latest.preference_check.actual_ranks.items() %}{{ t }}#{{ r }}{{ ", " if not loop.last }}{% endfor %})
+        ({% for t, r in latest.preference_check.actual_ranks.items() %}{{ t }} is #{{ r }}{{ ", " if not loop.last }}{% endfor %} of {{ latest.sector_rs | length }})
       {% endif %}
     </p>
     {% endif %}
   </div>
 
+  <!-- ======================= INTERNALS ======================= -->
   <div class="panel span6">
-    <h2>Pair ratios (20d change)</h2>
+    <h2>Market internals — risk appetite gauges
+      {{ help("Simple ratios between two assets. Each one answers a question about investor mood. Direction over the last 20 days matters more than the level. Green = moved in the risk-friendly direction.") }}
+    </h2>
     <table>
-      <tr><th>pair</th><th>level</th><th>20d %</th></tr>
-      {% for name, v in latest.pair_ratios.items() %}
-      <tr><td>{{ name }}</td><td>{{ v.level }}</td>
-          <td class="{{ 'pos' if v.chg_20d_pct > 0 else 'neg' }}">{{ "%+.2f" | format(v.chg_20d_pct) }}%</td></tr>
+      <tr><th class="l">gauge</th><th>20d change</th><th class="l">what it's saying</th></tr>
+      {% for r in internals %}
+      <tr>
+        <td class="l">{{ r.label }} {{ help(r.tip) }}</td>
+        <td class="{{ 'pos' if r.good else 'neg' }}">{{ "%+.2f" | format(r.chg) }}%</td>
+        <td class="l muted">{{ r.verdict }}</td>
+      </tr>
       {% endfor %}
     </table>
   </div>
 
+  <!-- ======================= CHARTS ======================= -->
   <div class="panel span12">
-    <h2>Regime history — SPY with quad bands (2y) · <a href="validation_timeline.html">full 2007→ timeline</a></h2>
+    <h2>Two years of regimes over the S&P 500
+      {{ help("The S&P 500 with the regime active at each time shaded behind it. This is how the classifier actually behaved — including the 2007-2026 backtest on the full-history page linked at right.") }}
+      · <a href="validation_timeline.html">full 2007→ history & validation</a>
+    </h2>
     <div class="chart">{{ chart_regime | safe }}</div>
+    <div class="legend">
+      <span><i style="background:var(--q1)"></i><b>Goldilocks</b> — growth ↑ inflation ↓ (best for tech/quality)</span>
+      <span><i style="background:var(--q2)"></i><b>Reflation</b> — growth ↑ inflation ↑ (cyclicals/energy/banks)</span>
+      <span><i style="background:var(--q3)"></i><b>Stagflation</b> — growth ↓ inflation ↑ (historically the dangerous one)</span>
+      <span><i style="background:var(--q4)"></i><b>Growth scare</b> — growth ↓ inflation ↓ (defensives/bonds)</span>
+    </div>
   </div>
 
+  <!-- ======================= SECTORS ======================= -->
   <div class="panel span6">
-    <h2>Sector relative strength vs SPY</h2>
+    <h2>Sector scoreboard
+      {{ help("Every sector vs the S&P 500 (so 'up' means beating the market, not just going up). Sorted by 3-month relative momentum.") }}
+    </h2>
     <table>
-      <tr><th>rank</th><th>ticker</th><th>20d mom</th><th>60d mom</th><th>252d pctile</th><th>trend</th></tr>
-      {% for r in latest.sector_rs %}
       <tr>
-        <td>{{ r.rank }}</td><td><b>{{ r.ticker }}</b></td>
+        <th class="l">sector</th>
+        <th>stage {{ help("Where it sits in the rotation cycle, based on its trend vs the market: IMPROVING = momentum turning up but trend not yet confirmed (historically too early to buy!). LEADING = confirmed uptrend. WEAKENING = above trend but losing momentum. LAGGING = downtrend. The healthy sequence is improving → leading → weakening → lagging.") }}</th>
+        <th>1mo {{ help("20-trading-day change in its ratio vs SPY — short-term relative momentum.") }}</th>
+        <th>3mo {{ help("60-trading-day change vs SPY — the medium-term trend most of the playbook keys off.") }}</th>
+        <th>year pos. {{ help("Where today's relative strength sits within its own past year: 95 = near its yearly high vs the market (strong but possibly stretched), 5 = near its yearly low.") }}</th>
+      </tr>
+      {% for r in sector_rows %}
+      <tr>
+        <td class="l"><b>{{ r.ticker }}</b> <span class="muted">{{ r.name }}</span></td>
+        <td><span class="pill" style="background:{{ r.stage_color }};color:{{ r.stage_fg }}">{{ r.stage }}</span></td>
         <td class="{{ 'pos' if r.mom_20d_pct > 0 else 'neg' }}">{{ "%+.1f" | format(r.mom_20d_pct) }}%</td>
         <td class="{{ 'pos' if r.mom_60d_pct > 0 else 'neg' }}">{{ "%+.1f" | format(r.mom_60d_pct) }}%</td>
-        <td>{{ r.pctile_252d }}</td>
-        <td>{{ "▲" if r.above_200d_trend else "▼" }}</td>
+        <td>{{ r.pctile_252d | round | int }}</td>
       </tr>
       {% endfor %}
     </table>
   </div>
 
   <div class="panel span6">
-    <h2>Axis scores (2y)</h2>
+    <h2>The two dials over time
+      {{ help("History of the growth (green) and inflation (red) scores. Crossings of the zero line are where regimes change. Persistent readings near ±0.5 are strong regimes; hovering near zero means a mixed, choppy environment.") }}
+    </h2>
     <div class="chart">{{ chart_axes | safe }}</div>
   </div>
 
   <div class="panel span6">
-    <h2>Net liquidity (WALCL − RRP − TGA, $bn)</h2>
+    <h2>Fed liquidity — the money tide
+      {{ help("Top: net money in the system (Fed balance sheet minus reverse-repo parking minus the Treasury's checking account), in billions. Bottom: its 4-week change — the impulse. Green bars above the dotted line = expanding (historically the most reliable tailwind in our backtest); red below = contracting.") }}
+    </h2>
     <div class="chart">{{ chart_liquidity | safe }}</div>
   </div>
 
   <div class="panel span6">
-    <h2>Credit & breadth</h2>
+    <h2>Credit stress & market breadth
+      {{ help("Top: the extra yield junk-bond investors demand (HY OAS) — the market's best early smoke detector; rising = stress building. Below ~4% is calm. Bottom: % of S&P 500 stocks above their 50-day average — how broad participation is. Strong indexes with collapsing breadth are fragile.") }}
+    </h2>
     <div class="chart">{{ chart_credit_breadth | safe }}</div>
   </div>
 
+  <!-- ======================= POSITIONING ======================= -->
   <div class="panel span6">
-    <h2>Positioning & vol context</h2>
+    <h2>Who's positioned how
+      {{ help("What different investor groups are doing — futures speculators (weekly CFTC data, 3 days delayed), active managers (NAAIM survey), and the options market. The percentile column is the key: near 100 = most crowded/extreme in decades (contrarian warning), near 0 = most washed-out.") }}
+    </h2>
     <table>
-      <tr><th>input</th><th>latest</th><th>pctile*</th><th>as of</th></tr>
+      <tr><th class="l">input</th><th>latest</th><th>percentile {{ help("Where today's reading sits in the full history we store: 99 = more extreme than 99% of all readings — crowded trades tend to reverse. 50 = perfectly normal.") }}</th><th>as of</th></tr>
       {% for p in positioning %}
-      <tr><td>{{ p.name }}</td><td>{{ p.value }}</td><td>{{ p.pctile }}</td><td class="muted">{{ p.asof }}</td></tr>
+      <tr><td class="l">{{ p.name }} {{ help(p.tip) }}</td><td>{{ p.value }}</td><td>{{ p.pctile }}</td><td class="muted">{{ p.asof }}</td></tr>
       {% endfor %}
     </table>
-    <p class="muted">*percentile of full stored history. COT lags 3 days by release schedule.
-       GEX/put-call are computed from delayed chains (see LIMITATIONS).</p>
   </div>
 
+  <!-- ======================= HOLDINGS / FLOWS ======================= -->
   <div class="panel span6">
-    <h2>Holdings tracker — active decisions (flow-normalized)</h2>
+    <h2>Star fund managers' real moves
+      {{ help("Tracks daily holdings files of the watchlist funds (ARK etc.) and strips out mechanical changes from investor inflows/outflows. What's left is genuine manager decisions — actual conviction adds and cuts, visible the day after they trade.") }}
+    </h2>
     {% if holdings_changes %}
       <table>
-        <tr><th>fund</th><th>position</th><th>active chg</th><th>window</th></tr>
+        <tr><th class="l">fund</th><th class="l">position</th><th>active chg</th><th>window</th></tr>
         {% for h in holdings_changes %}
-        <tr><td>{{ h.fund }}</td><td>{{ h.position }}</td>
+        <tr><td class="l">{{ h.fund }}</td><td class="l">{{ h.position }}</td>
             <td class="{{ 'pos' if h.pct > 0 else 'neg' }}">{{ "%+.1f" | format(h.pct) }}%</td>
             <td class="muted">{{ h.window }}</td></tr>
         {% endfor %}
       </table>
     {% else %}
-      <p class="muted">No active changes ≥ {{ holdings_threshold }}% detected in the
-      current window (or insufficient snapshots yet — the tracker needs a few
-      trading days of history).</p>
+      <p class="muted">No significant manager moves detected in the current window (needs a few trading days of snapshots).</p>
     {% endif %}
-  </div>
 
-  <div class="panel span12">
-    <h2>Sector ETF flows (ΔSO × NAV, $mn) — accruing since 2026-06</h2>
+    <h2 style="margin-top:16px">Where ETF money is flowing
+      {{ help("Daily money moving in/out of each sector's main ETF, estimated from share creations and redemptions (ΔShares × price). Positive = money entering the sector. History builds from June 2026 — patterns get meaningful after a few weeks.") }}
+    </h2>
     {% if flows_html %}
       {{ flows_html | safe }}
     {% else %}
-      <p class="muted">Flow history accrues one row per trading day from first deployment;
-      table appears once ≥2 snapshots exist per fund.</p>
+      <p class="muted">Collecting — needs at least two daily snapshots per fund.</p>
     {% endif %}
   </div>
 
+  <!-- ======================= HEALTH ======================= -->
   <div class="panel span12">
-    <h2>Data health</h2>
+    <h2>Data health
+      {{ help("Every data source this dashboard depends on. OK = fresh. STALE = no new data lately (signal confidence is automatically reduced). FAILED = today's fetch broke (yesterday's data still used). BLOCKED = a known, documented limitation — not a malfunction. DEAD = failed 3+ days running and given up until it recovers.") }}
+    </h2>
     <table>
-      <tr><th>source</th><th>status</th><th>rows</th><th>last data</th><th>note</th></tr>
+      <tr><th class="l">source</th><th class="l">status</th><th>rows</th><th>last data</th><th class="l">note</th></tr>
       {% for s in health %}
       <tr>
-        <td>{{ s.name }}</td>
-        <td><span class="pill pill-{{ s.status }}">{{ s.status }}</span></td>
+        <td class="l">{{ s.name }}</td>
+        <td class="l"><span class="pill pill-{{ s.status }}">{{ s.status }}</span></td>
         <td>{{ s.rows }}</td><td>{{ s.last_date or "—" }}</td>
-        <td class="muted">{{ s.error or "" }}</td>
+        <td class="l muted">{{ s.error or "" }}</td>
       </tr>
       {% endfor %}
     </table>
-    <p class="muted">Stale sources degrade the affected signal's confidence; they never crash the run.
-       Low-confidence inputs by design: rate-cut proxy, earnings-revision module. See LIMITATIONS.md.</p>
+    <p class="muted">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
+       Generated {{ generated_utc }} UTC · <a href="weekly.html">weekly deep-dive</a> · <a href="validation_timeline.html">full backtest</a></p>
   </div>
 
 </div>

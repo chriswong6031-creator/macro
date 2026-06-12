@@ -37,6 +37,8 @@ class Adapter:
     name: str = "base"
     group: str = "misc"
     stale_after_days: int = 5   # weekly/lagged sources override (COT: 12, H4.1: 10)
+    expected_failure: str | None = None  # set to a reason string when a source is
+    # known-broken (e.g. bot-blocked); failures then report status 'blocked'
 
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
         """Return {series_name: DataFrame indexed by date}. Raise on failure."""
@@ -119,6 +121,10 @@ def run_adapter(adapter: Adapter, full_history: bool = False,
         return FetchResult(adapter.name, status, rows=rows,
                            last_date=str(last.date()) if last is not None else None)
     except Exception as e:  # noqa: BLE001 — degrade, never crash the run
+        if adapter.expected_failure:
+            log.info("adapter %s blocked (known): %s", adapter.name, e)
+            return FetchResult(adapter.name, "blocked",
+                               error=adapter.expected_failure)
         log.error("adapter %s failed: %s\n%s", adapter.name, e, traceback.format_exc(limit=3))
         return FetchResult(adapter.name, "failed", error=f"{type(e).__name__}: {e}")
 

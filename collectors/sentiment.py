@@ -56,6 +56,8 @@ class AaiiAdapter(Adapter):
     name = "sentiment_aaii"
     group = "sentiment"
     stale_after_days = 12  # weekly (Thursday)
+    expected_failure = ("AAII blocks non-browser clients (403) — known limitation, "
+                        "not used by the regime engine")
 
     def __init__(self) -> None:
         self.cfg = config.load()["sentiment"]

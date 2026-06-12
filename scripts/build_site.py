@@ -119,39 +119,164 @@ def positioning_rows(f: pd.DataFrame) -> list[dict]:
             return "n/a"
         return f"{(s.rank(pct=True).iloc[-1] * 100):.0f}"
 
-    for key, label in [("cot_es_spx", "COT ES net spec %OI"),
-                       ("cot_ust10y", "COT 10Y net spec %OI"),
-                       ("cot_dollar", "COT DXY net spec %OI"),
-                       ("cot_gold", "COT gold net spec %OI")]:
+    cot_meta = {
+        "cot_es_spx": ("S&P 500 futures speculators",
+                       "Net bets of speculative futures traders on the S&P 500, as % of all open "
+                       "contracts (CFTC weekly data). Deeply negative + low percentile = everyone's "
+                       "already short — fuel for squeezes. Very high = crowded long."),
+        "cot_ust10y": ("10-yr Treasury futures speculators",
+                       "Speculators' net position in 10-year Treasury futures. Extreme shorts have "
+                       "historically preceded falling yields (bond rallies), and vice versa."),
+        "cot_dollar": ("US Dollar futures speculators",
+                       "Speculators' net position on the dollar index. Extremes tend to mark dollar "
+                       "turning points, which matter for commodities and foreign earnings."),
+        "cot_gold": ("Gold futures speculators",
+                     "Speculators' net position in gold futures. Near the 100th percentile = the "
+                     "most crowded gold trade in decades — vulnerable to shakeouts."),
+    }
+    for key, (label, tip) in cot_meta.items():
         df = store.read("cot", key)
         if df is not None and "net_spec_pct_oi" in df.columns and len(df):
             s = df["net_spec_pct_oi"]
-            rows.append({"name": label, "value": f"{s.iloc[-1]:+.1f}%",
+            rows.append({"name": label, "tip": tip, "value": f"{s.iloc[-1]:+.1f}%",
                          "pctile": pctile(s), "asof": str(df.index.max().date())})
     naaim = store.read("sentiment", "naaim")
     if naaim is not None and len(naaim):
         s = naaim.iloc[:, 0]
-        rows.append({"name": "NAAIM exposure", "value": f"{s.iloc[-1]:.0f}",
+        rows.append({"name": "Active managers' equity exposure",
+                     "tip": "NAAIM weekly survey: how invested professional active managers are "
+                            "(0 = all cash, 100 = fully invested, >100 = leveraged). Extremes are "
+                            "contrarian: >95th percentile = managers all-in.",
+                     "value": f"{s.iloc[-1]:.0f}",
                      "pctile": pctile(s), "asof": str(naaim.index.max().date())})
     pc = store.read("cboe", "putcall")
     if pc is not None and len(pc):
-        for col, label in [("index_pc_ratio", "SPX put/call (computed)"),
-                           ("equity_pc_ratio", "Equity put/call proxy")]:
+        for col, label, tip in [
+            ("index_pc_ratio", "S&P index put/call ratio",
+             "Volume of bearish (put) vs bullish (call) S&P index options traded today, computed "
+             "from CBOE's chain. Above ~1.2 = heavy hedging/fear; below ~0.8 = complacency. "
+             "History builds from June 2026, so the percentile matures over time."),
+            ("equity_pc_ratio", "Stock-ETF put/call ratio",
+             "Same idea using SPY+QQQ+IWM options — closer to what retail and fast money are doing."),
+        ]:
             if col in pc.columns:
                 s = pc[col]
-                rows.append({"name": label, "value": f"{s.iloc[-1]:.2f}",
+                rows.append({"name": label, "tip": tip, "value": f"{s.iloc[-1]:.2f}",
                              "pctile": pctile(s), "asof": str(pc.index.max().date())})
     gex = store.read("cboe", "gex")
     if gex is not None and len(gex):
         g = gex.iloc[-1]
         flip = (f"{g['spot_vs_flip_pct']:+.1f}% from flip"
                 if pd.notna(g.get("spot_vs_flip_pct")) else "no near flip")
-        rows.append({"name": "Net GEX (computed)", "value": f"{g['net_gex_bn']:+.0f}bn",
+        rows.append({"name": "Options dealers' stabilizer (GEX)",
+                     "tip": "Estimated dealer gamma exposure, computed from the S&P options chain "
+                            "under the standard assumption (dealers long calls, short puts). "
+                            "POSITIVE = dealers trade against moves, dampening swings. NEGATIVE = "
+                            "their hedging amplifies moves — expect bigger, faster swings both ways. "
+                            "An estimate, not ground truth.",
+                     "value": f"{g['net_gex_bn']:+.0f}bn",
                      "pctile": flip, "asof": str(gex.index.max().date())})
     vr = f["vix_ratio"].dropna()
     if len(vr):
-        rows.append({"name": "VIX/VIX3M", "value": f"{vr.iloc[-1]:.3f}",
+        rows.append({"name": "Fear now vs fear later (VIX ratio)",
+                     "tip": "VIX (30-day expected volatility) divided by VIX3M (3-month). Below ~0.9 "
+                            "= calm, normal. Near or above 1.0 = the market fears the immediate "
+                            "future more than the distant one — the classic stress signature.",
+                     "value": f"{vr.iloc[-1]:.3f}",
                      "pctile": pctile(vr), "asof": str(vr.index[-1].date())})
+    return rows
+
+
+COMPONENT_SHORT = {
+    "copper_gold": "copper vs gold", "xly_xlp": "consumer confidence trade",
+    "us2y_direction": "2-yr yield", "iwm_spy": "small caps",
+    "cyclical_defensive": "cyclical sectors", "breadth_direction": "market breadth",
+    "payrolls_trend": "payrolls", "indpro_trend": "industrial production",
+    "breakeven_10y_direction": "10-yr inflation expectations",
+    "breakeven_5y5y_direction": "long-run inflation expectations",
+    "energy_rs": "energy sector", "oil_trend": "oil",
+    "inflation_beta_basket": "inflation-winners basket",
+    "tips_nominal_momentum": "TIPS spread",
+}
+
+
+def component_chips(latest: dict) -> tuple[list[str], list[str]]:
+    def label(raw: str) -> str:
+        axis, _, comp = raw.partition("_")
+        return f"{'G' if axis == 'growth' else 'I'} · {COMPONENT_SHORT.get(comp, comp)}"
+    return ([label(c) for c in latest.get("confirming", [])],
+            [label(c) for c in latest.get("contradicting", [])])
+
+
+def flip_plain_text(latest: dict) -> str:
+    from engine.playbook import COMPONENT_PLAIN
+    fc = latest.get("flip_condition") or {}
+    if not fc.get("component"):
+        return ("No single indicator is close to flipping — the regime call isn't "
+                "hanging on one thread right now.")
+    plain = COMPONENT_PLAIN.get(fc["component"], fc["component"])
+    return (f"Watch {plain}: it's the {fc['axis']}-dial supporter closest to its cutoff "
+            f"(signal strength {fc['z']} vs the ±{fc['threshold']} threshold). "
+            f"If it fades, the {fc['axis']} dial — and possibly the regime — flips.")
+
+
+INTERNALS_META = {
+    "xly_xlp": ("Shoppers: wants vs needs", False,
+                "Consumer-discretionary stocks vs consumer-staples stocks. Rising = people are "
+                "buying TVs and vacations, not just groceries — confidence. Falling = belt-tightening."),
+    "xlk_xlu": ("Tech vs utilities", False,
+                "The market's boldest sector vs its sleepiest. Rising = growth appetite; "
+                "falling = safety-seeking."),
+    "hyg_lqd": ("Junk bonds vs quality bonds", False,
+                "Risky-company bonds vs blue-chip bonds. Rising = credit investors relaxed; "
+                "falling = they're getting picky — often an early warning."),
+    "sphb_splv": ("Daring vs defensive stocks", False,
+                  "The most volatile S&P stocks vs the calmest. The purest read on whether "
+                  "fund managers are playing offense or defense."),
+    "vix_ratio": ("Panic gauge (now vs later)", True,
+                  "Near-term fear vs 3-month fear. Rising toward 1.0 = stress building right now; "
+                  "comfortably below 0.9 = calm."),
+    "copper_gold": ("Copper vs gold", False,
+                    "The economist's metal vs the doomsday metal. Rising = bets on real economic "
+                    "activity; falling = safety-seeking. Historically leads bond yields."),
+}
+
+
+def internals_rows(latest: dict) -> list[dict]:
+    out = []
+    for key, v in latest.get("pair_ratios", {}).items():
+        meta = INTERNALS_META.get(key)
+        if not meta:
+            continue
+        label, invert, tip = meta
+        chg = v["chg_20d_pct"]
+        good = (chg < 0) if invert else (chg > 0)
+        verdict = {
+            ("xly_xlp", True): "consumers confident", ("xly_xlp", False): "consumers cautious",
+            ("xlk_xlu", True): "growth appetite", ("xlk_xlu", False): "safety-seeking",
+            ("hyg_lqd", True): "credit relaxed", ("hyg_lqd", False): "credit getting picky",
+            ("sphb_splv", True): "playing offense", ("sphb_splv", False): "playing defense",
+            ("vix_ratio", True): "calm", ("vix_ratio", False): "near-term stress building",
+            ("copper_gold", True): "growth optimism", ("copper_gold", False): "defensive bid",
+        }.get((key, good), "")
+        out.append({"label": label, "tip": tip, "chg": chg, "good": good,
+                    "verdict": verdict})
+    return out
+
+
+STAGE_STYLE = {
+    "improving": ("#2b3340", "#9fc0e8"), "leading": ("#1d3326", "#6fce8f"),
+    "weakening": ("#38301a", "#d8b75a"), "lagging": ("#3a2020", "#e08080"),
+}
+
+
+def sector_rows(playbook: dict | None) -> list[dict]:
+    if not playbook or not playbook.get("stages"):
+        return []
+    rows = sorted(playbook["stages"], key=lambda r: -r["mom_60d_pct"])
+    for r in rows:
+        bg, fg = STAGE_STYLE.get(r["stage"], ("#2a2f3a", "#d7dce3"))
+        r["stage_color"], r["stage_fg"] = bg, fg
     return rows
 
 
@@ -198,8 +323,15 @@ def main() -> int:
     env = Environment(loader=FileSystemLoader(config.ROOT / "templates"))
     env.filters["min"] = lambda seq: min(seq)
     tpl = env.get_template("dashboard.html.j2")
+    confirming, contradicting = component_chips(latest)
     html = tpl.render(
         latest=latest,
+        pb=latest.get("playbook"),
+        components_confirming=confirming,
+        components_contradicting=contradicting,
+        flip_plain=flip_plain_text(latest),
+        internals=internals_rows(latest),
+        sector_rows=sector_rows(latest.get("playbook")),
         generated_utc=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
         chart_regime=chart_regime(f, hist),
         chart_axes=chart_axes(hist),

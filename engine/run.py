@@ -87,6 +87,13 @@ def run() -> dict:
         "alerts": [{"rule": a.rule, "severity": a.severity, "message": a.message}
                    for a in fired],
     }
+    from engine.inputs import yahoo_closes
+    from engine.playbook import build_playbook
+    try:
+        latest["playbook"] = build_playbook(f, regime, yahoo_closes(), latest)
+    except Exception as e:  # noqa: BLE001 — conclusions are additive, never fatal
+        log.error("playbook failed: %s", e)
+        latest["playbook"] = None
     with open(p / "latest.json", "w") as fh:
         json.dump(latest, fh, indent=2, default=str)
     log.info("regime %s (%s) conf=%.2f liq=%s cycle=%s transition=%s",

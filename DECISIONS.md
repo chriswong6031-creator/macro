@@ -2,6 +2,39 @@
 
 Newest first. Each entry: what was decided, why, and what would change it.
 
+## 2026-06-12 — UX overhaul + playbook (conclusions layer)
+
+**D23. The playbook only claims what the data supports.** Before building the
+recommendations layer, every candidate entry rule was backtested
+(`scripts/research_playbook.py`, 2000→2026, weekly-sampled, split-half).
+Findings that drove the design: (a) sector picks vs the index have NO stable
+monthly-horizon edge — per-quad sector results flip sign between sample halves;
+(b) chasing extended leaders lost (44.7% hit, −0.6%/3m); (c) buying
+below-trend bounces lost in every variant (−0.2..−1.2%/3m); (d) top-3 12-month
+relative momentum held 3–6m is the only mild persistent tilt (+0.27%, 51%);
+(e) index-level conditions ARE robust in both halves: liquidity-expanding
+(~+1.3–2.0%/21d, 72–74% positive), Q3 weakest quad, risk-off quads ~30% deeper
+3-month drawdowns, warning-state separation pre-2017. The playbook therefore
+leads with an exposure dial (robust), frames sector calls as confirmed
+leadership + evidence-backed don'ts, and prints its own caveat. Sector-bucket
+stats are constants in `engine/playbook.py` (re-run the research script after
+engine changes); index-level stats recompute live from the classifier's history.
+
+**D24. Rotation stages use the standard RRG quadrant logic** (RS vs its 200d
+trend × 20d RS momentum → improving/leading/weakening/lagging). 'Improving' is
+surfaced as a WATCH/too-early state, never a buy — that's what the evidence
+says (see D23c).
+
+**D25. Tooltips are CSS-only** (no JS) and every metric on the dashboard
+carries one. Quad bands got a labeled legend. All panel titles renamed to plain
+English with the technical term in the tooltip.
+
+**D26. AAII reports status 'blocked', not 'failed'** (`expected_failure` on the
+adapter) — a permanent, documented limitation shouldn't look like a breakage.
+
+**D27. pages.yml deploys site/ on push** so locally-rebuilt dashboards go live
+immediately instead of waiting for the next scheduled run.
+
 ## 2026-06-11 — Phase 3 (outputs & alerts)
 
 **D17. Alerts compare states, not levels.** Every rule is a day-over-day (or
