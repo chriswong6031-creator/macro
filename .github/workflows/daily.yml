@@ -34,7 +34,9 @@ jobs:
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
           FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
-        run: python -m scripts.collect
+        run: |
+          if [ -n "$FRED_API_KEY" ]; then echo "::notice::FRED_API_KEY present — using official API"; else echo "::warning::FRED_API_KEY ABSENT — check repo Settings > Secrets and variables > Actions > Repository secrets"; fi
+          python -m scripts.collect
       - name: commit data
         run: |
           git config user.name "dashboard-bot"
