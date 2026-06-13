@@ -1,14 +1,14 @@
 {
-  "last_run": "2026-06-13T02:51:49.626539+00:00",
+  "last_run": "2026-06-13T07:54:03.902922+00:00",
   "sources": {
     "cot": {
       "source": "cot",
       "status": "ok",
-      "rows": 433,
+      "rows": 7,
       "last_date": "2026-06-09",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-13T01:40:55.881685+00:00"
+      "checked_at": "2026-06-13T07:54:03.903002+00:00"
     },
     "fred": {
       "source": "fred",
@@ -17,61 +17,61 @@
       "last_date": "2026-06-12",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-12T21:07:21.750252+00:00"
+      "checked_at": "2026-06-13T07:54:03.902955+00:00"
     },
     "yahoo": {
       "source": "yahoo",
       "status": "ok",
-      "rows": 223104,
+      "rows": 868,
       "last_date": "2026-06-13",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-13T01:41:26.289867+00:00"
+      "checked_at": "2026-06-13T07:54:03.902970+00:00"
     },
     "treasury": {
       "source": "treasury",
       "status": "ok",
-      "rows": 12,
-      "last_date": "2026-06-10",
+      "rows": 14,
+      "last_date": "2026-06-11",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-12T03:46:25.286812+00:00"
+      "checked_at": "2026-06-13T07:54:03.902980+00:00"
     },
     "nyfed": {
       "source": "nyfed",
       "status": "ok",
-      "rows": 1267,
-      "last_date": "2026-06-11",
+      "rows": 1226,
+      "last_date": "2026-06-10",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-12T03:46:25.286821+00:00"
+      "checked_at": "2026-06-13T07:54:03.902988+00:00"
     },
     "breadth": {
       "source": "breadth",
       "status": "ok",
-      "rows": 728,
+      "rows": 263,
       "last_date": "2026-06-12",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-13T01:49:22.983176+00:00"
+      "checked_at": "2026-06-13T07:54:03.902995+00:00"
     },
     "cboe_putcall": {
       "source": "cboe_putcall",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-06-12",
+      "last_date": "2026-06-13",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-12T03:46:25.286842+00:00"
+      "checked_at": "2026-06-13T07:54:03.903009+00:00"
     },
     "cboe_gex": {
       "source": "cboe_gex",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-06-12",
+      "last_date": "2026-06-13",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-12T03:46:25.286848+00:00"
+      "checked_at": "2026-06-13T07:54:03.903016+00:00"
     },
     "sentiment_naaim": {
       "source": "sentiment_naaim",
@@ -80,43 +80,43 @@
       "last_date": "2026-06-10",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-12T03:46:25.286855+00:00"
+      "checked_at": "2026-06-13T07:54:03.903023+00:00"
     },
     "sentiment_aaii": {
       "source": "sentiment_aaii",
-      "status": "blocked",
+      "status": "dead",
       "rows": 0,
       "last_date": null,
-      "error": "AAII blocks non-browser clients (403) \u2014 known limitation, not used by the regime engine",
+      "error": "circuit open (3 consecutive failures)",
       "notes": [],
-      "checked_at": "2026-06-12T09:05:26.478437+00:00"
+      "checked_at": "2026-06-13T07:54:03.903030+00:00"
     },
     "sector_flows": {
       "source": "sector_flows",
       "status": "ok",
       "rows": 11,
-      "last_date": "2026-06-10",
+      "last_date": "2026-06-11",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-12T03:46:25.286869+00:00"
+      "checked_at": "2026-06-13T07:54:03.903036+00:00"
     },
     "holdings": {
       "source": "holdings",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-06-12",
+      "last_date": "2026-06-13",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-12T03:46:25.286875+00:00"
+      "checked_at": "2026-06-13T07:54:03.903043+00:00"
     },
     "fundamentals": {
       "source": "fundamentals",
       "status": "ok",
-      "rows": 5757,
-      "last_date": "2026-06-12",
+      "rows": 5758,
+      "last_date": "2026-06-13",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-12T03:46:25.286881+00:00"
+      "checked_at": "2026-06-13T07:54:03.903063+00:00"
     },
     "coinmetrics": {
       "source": "coinmetrics",
@@ -125,25 +125,25 @@
       "last_date": "2026-06-12",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-13T02:51:49.626569+00:00"
+      "checked_at": "2026-06-13T07:54:03.903076+00:00"
     },
     "okx": {
       "source": "okx",
       "status": "ok",
-      "rows": 274,
+      "rows": 214,
       "last_date": "2026-06-13",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-13T01:31:13.894499+00:00"
+      "checked_at": "2026-06-13T07:54:03.903096+00:00"
     },
     "deribit": {
       "source": "deribit",
       "status": "ok",
-      "rows": 5,
+      "rows": 6,
       "last_date": "2026-06-13",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-13T02:51:49.626581+00:00"
+      "checked_at": "2026-06-13T07:54:03.903102+00:00"
     },
     "feargreed": {
       "source": "feargreed",
@@ -152,7 +152,7 @@
       "last_date": "2026-06-13",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-13T02:51:49.626584+00:00"
+      "checked_at": "2026-06-13T07:54:03.903108+00:00"
     },
     "coingecko": {
       "source": "coingecko",
@@ -161,7 +161,7 @@
       "last_date": "2026-06-13",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-13T01:31:13.894510+00:00"
+      "checked_at": "2026-06-13T07:54:03.903114+00:00"
     },
     "defillama": {
       "source": "defillama",
@@ -170,34 +170,61 @@
       "last_date": "2026-06-13",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-13T02:51:49.626587+00:00"
+      "checked_at": "2026-06-13T07:54:03.903120+00:00"
     },
     "mempool": {
       "source": "mempool",
       "status": "ok",
-      "rows": 1176,
+      "rows": 34,
       "last_date": "2026-06-13",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-13T01:31:13.894516+00:00"
+      "checked_at": "2026-06-13T07:54:03.903126+00:00"
     },
     "bgeo": {
       "source": "bgeo",
       "status": "ok",
-      "rows": 11867,
+      "rows": 18,
       "last_date": "2026-06-12",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-13T01:33:38.032622+00:00"
+      "checked_at": "2026-06-13T07:54:03.903083+00:00"
     },
     "coinbase": {
       "source": "coinbase",
       "status": "ok",
-      "rows": 7,
+      "rows": 10,
       "last_date": "2026-06-13",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-13T02:51:49.626576+00:00"
+      "checked_at": "2026-06-13T07:54:03.903089+00:00"
+    },
+    "sector_holdings": {
+      "source": "sector_holdings",
+      "status": "ok",
+      "rows": 1,
+      "last_date": "2026-06-13",
+      "error": null,
+      "notes": [],
+      "checked_at": "2026-06-13T07:54:03.903050+00:00"
+    },
+    "stock_prices": {
+      "source": "stock_prices",
+      "status": "ok",
+      "rows": 2420,
+      "last_date": "2026-06-12",
+      "error": null,
+      "notes": [],
+      "checked_at": "2026-06-13T07:54:03.903057+00:00"
+    },
+    "stock_fundamentals": {
+      "source": "stock_fundamentals",
+      "status": "ok",
+      "rows": 1,
+      "last_date": "2026-06-13",
+      "error": null,
+      "notes": [],
+      "checked_at": "2026-06-13T07:54:03.903070+00:00"
     }
   },
   "circuit_breaker": {
@@ -222,6 +249,9 @@
     "defillama": 0,
     "mempool": 0,
     "bgeo": 0,
-    "coinbase": 0
+    "coinbase": 0,
+    "sector_holdings": 0,
+    "stock_prices": 0,
+    "stock_fundamentals": 0
   }
 }
