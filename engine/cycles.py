@@ -366,6 +366,20 @@ LADDER_SCORE = {"DECLINE": -80, "ROLLING OVER": -40, "TOP WATCH": -10,
                 "BOTTOM WATCH": 10, "TURN SIGNALED": 45, "FRESH BUY": 80,
                 "RALLY ON": 55, "COUNTERTREND BOUNCE": -25}
 
+# Liquidity conviction modifier — the US net-liquidity regime (engine.regime.
+# liquidity_overlay) is the repo's strongest adversarially-validated ORTHOGONAL
+# factor. Measured on the ACTUAL ladder buy setups (scripts/research_liquidity_
+# ladder.py, 141-instrument walk-forward): liquidity-EXPANDING vs CONTRACTING
+# lifts the forward hit-rate on FRESH BUY / TURN SIGNALED by ~+6pp (21d) / ~+8pp
+# (63d) and shaves ~2.3pp off the bad-case drawdown — surviving split-half +
+# ex-2020-21-QE + by asset class, equities strongest (crypto tracks it too). It is
+# an ODDS edge, not a bigger expected gain, so it only NUDGES the conviction SCORE
+# on buy setups — never the calibrated state key (calibration JSON keeps matching).
+# Contracting is the slightly larger move (the caution side is the actionable one).
+LIQ_TAILWIND = 8        # expanding-liquidity bonus on a buy setup
+LIQ_HEADWIND = 12       # contracting-liquidity penalty on a buy setup
+LIQ_NUDGE_STATES = ("FRESH BUY", "TURN SIGNALED")   # the measured buy states
+
 # Plain, direction-explicit display for every internal state. The bottom and
 # top "turns" are deliberately named as mirror images (BOTTOMING = buy setup,
 # TOPPING = sell setup) so the symmetry is obvious. Internal keys above stay
@@ -597,11 +611,17 @@ def regime_state(cyc: dict, mtf: dict) -> dict:
             "label": REGIME_DISPLAY[regime]["label"], "why": "; ".join(why)}
 
 
-def ladder_state(cyc: dict, mtf: dict, early: dict | None = None) -> dict:
+def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
+                 liquidity: str | None = None) -> dict:
     """Combine cycle position + multi-timeframe indicators into one state,
     with a plain next-step line. The higher-timeframe regime (weekly + 3-day +
     investor cycle) gates and can RE-LABEL the daily signal: a daily buy setup
-    inside a bearish regime is a counter-trend bounce, not a buy."""
+    inside a bearish regime is a counter-trend bounce, not a buy.
+
+    `liquidity` is the live US net-liquidity regime
+    ("expanding"/"contracting"/"neutral"; from engine.regime.liquidity_overlay) —
+    an orthogonal macro tailwind/headwind that surfaces as context on every state
+    and nudges the conviction score on buy setups only (see LIQ_TAILWIND)."""
     if not cyc or not mtf.get("D"):
         return {}
     early = early or {}
@@ -801,6 +821,41 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None) -> dict:
                          + "; ".join(early["signals"]) + "。这些信号会在确认之前预判"
                          "高点——属于保护利润的提示，而非卖出触发信号。")
 
+    # ── Liquidity regime (macro conviction modifier) ─────────────────────────
+    # Orthogonal to trend/vol and the repo's strongest validated factor. An ODDS
+    # edge: surfaced as context on every state, it only nudges the conviction
+    # SCORE on buy setups (expanding = tailwind, contracting = caution). US net
+    # liquidity drives crypto too (BTC tracks it). See LIQ_TAILWIND for the record.
+    liq_regime = liquidity if liquidity in ("expanding", "contracting", "neutral") else None
+    liq_effect = None
+    liq_line = liq_line_zh = ""
+    if liq_regime:
+        buy_setup = state in LIQ_NUDGE_STATES
+        if liq_regime == "expanding":
+            if buy_setup:
+                score += LIQ_TAILWIND
+            liq_effect = "tailwind" if buy_setup else "supportive"
+            liq_line = ("Macro tailwind: US net liquidity is expanding — buy setups have "
+                        "historically had better odds (~+6pp hit at 21d) and shallower dips "
+                        "in this regime. An odds edge, not a bigger expected gain.")
+            liq_line_zh = ("宏观顺风：美国净流动性正在扩张——在该环境下买入形态历史上"
+                           "胜率更高（21 日约 +6 个百分点）、回撤更浅。这是概率优势，"
+                           "并非更大的预期收益。")
+        elif liq_regime == "contracting":
+            if buy_setup:
+                score -= LIQ_HEADWIND
+            liq_effect = "headwind" if buy_setup else "cautionary"
+            liq_line = ("Macro headwind: US net liquidity is contracting — buy setups have "
+                        "historically had worse odds and deeper drawdowns here, so demand "
+                        "extra confirmation and smaller size. An odds edge, not a forecast.")
+            liq_line_zh = ("宏观逆风：美国净流动性正在收缩——在此环境下买入形态历史上"
+                           "胜率更低、回撤更深，因此应要求更多确认并降低仓位。"
+                           "这是概率优势，并非预测。")
+        else:  # neutral
+            liq_effect = "neutral"
+            liq_line = "US net liquidity is neutral right now — no macro tilt either way on the odds."
+            liq_line_zh = "美国净流动性目前中性——对概率没有方向性影响。"
+
     disp = STATE_DISPLAY[state]
     plain = cycle_plain(cyc)
     entry = entry_timing(state, cyc, mtf)
@@ -846,6 +901,17 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None) -> dict:
     points.append(f"Bigger picture is {REGIME_DISPLAY[reg]['label'].lower()} "
                   f"({reg_word} for a daily long)")
     points_zh.append(f"大局为{reg_label_zh}（对日线多头而言属{reg_word_zh}）")
+    if liq_effect:
+        _liq_word = {"expanding": "expanding", "contracting": "contracting",
+                     "neutral": "neutral"}[liq_regime]
+        _liq_word_zh = {"expanding": "扩张", "contracting": "收缩", "neutral": "中性"}[liq_regime]
+        _eff = {"tailwind": "a tailwind", "headwind": "a headwind",
+                "supportive": "supportive backdrop", "cautionary": "caution",
+                "neutral": "no macro tilt"}[liq_effect]
+        _eff_zh = {"tailwind": "顺风", "headwind": "逆风", "supportive": "偏支持",
+                   "cautionary": "需谨慎", "neutral": "无方向性影响"}[liq_effect]
+        points.append(f"Macro: US net liquidity {_liq_word} — {_eff} on the odds")
+        points_zh.append(f"宏观：美国净流动性{_liq_word_zh}——对概率属{_eff_zh}")
     if cyc.get("failed_cycle"):
         age = f" ({cyc['failed_age']}d ago)" if cyc.get("failed_age") else ""
         age_zh = f"（{cyc['failed_age']} 天前）" if cyc.get("failed_age") else ""
@@ -886,7 +952,9 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None) -> dict:
             "early_dir": early.get("dir") if early_note else None,
             "why_zh": why_zh or why, "next_zh": nxt_zh or nxt,
             "regime_line_zh": regime_line_zh, "summary_line_zh": summary_line_zh,
-            "points_zh": points_zh, "early_note_zh": early_note_zh}
+            "points_zh": points_zh, "early_note_zh": early_note_zh,
+            "liq_regime": liq_regime, "liq_effect": liq_effect,
+            "liq_line": liq_line, "liq_line_zh": liq_line_zh}
 
 
 # ----------------------------------------------------- signal age / strength ----
@@ -1225,11 +1293,15 @@ def entry_quality_fields(eq: dict, state: str | None = None) -> dict:
 
 
 def analyze(close: pd.Series, high: pd.Series | None = None,
-            kind: str = "equity") -> dict:
+            kind: str = "equity", liquidity: str | None = None) -> dict:
+    """`liquidity` = live US net-liquidity regime ("expanding"/"contracting"/
+    "neutral", from engine.regime.liquidity_overlay), threaded into the ladder as
+    an orthogonal macro conviction modifier. None => no liquidity context (keeps
+    every existing caller working unchanged)."""
     cyc = cycle_state(close, high, kind)
     mtf = mtf_snapshot(close, kind)
     early = early_signals(close, cyc, mtf)
-    lad = ladder_state(cyc, mtf, early)
+    lad = ladder_state(cyc, mtf, early, liquidity=liquidity)
     if lad:
         age = signal_age(close, lad["state"], high, kind)
         if age:

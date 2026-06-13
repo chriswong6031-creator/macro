@@ -144,13 +144,20 @@ def report(df: pd.DataFrame, reg: pd.Series, h: int) -> None:
         print(_line("    liq contracting", _stats(s[s["liq"] == "contracting"], h)))
 
     print("\n[3] Split-half robustness (must hold in BOTH halves)")
-    mid = buys["date"].quantile(0.5)
-    for lab, m in (("pre " + str(mid.date()), buys["date"] < mid),
-                   ("post " + str(mid.date()), buys["date"] >= mid)):
-        half = buys[m]
-        print(f"  -- {lab} (n={len(half)}) --")
-        print(_line("    liq expanding", _stats(half[half["liq"] == "expanding"], h)))
-        print(_line("    liq contracting", _stats(half[half["liq"] == "contracting"], h)))
+    # split WITHIN the known-liquidity window only — the price panel runs back to
+    # 1963 but net-liquidity starts 2010, so a naive median split puts the whole
+    # first half in the pre-liquidity (unknown) era and shows no samples.
+    known = buys[buys["liq"].isin(("expanding", "contracting"))]
+    mid = known["date"].quantile(0.5)
+    for lab, m in (("pre " + str(mid.date()), known["date"] < mid),
+                   ("post " + str(mid.date()), known["date"] >= mid)):
+        half = known[m]
+        e, c = half[half["liq"] == "expanding"], half[half["liq"] == "contracting"]
+        se, sc = _stats(e, h), _stats(c, h)
+        edge = f"  ->{se['hit']-sc['hit']:+.1f}pp" if (se and sc) else ""
+        print(f"  -- {lab} (n={len(half)}){edge} --")
+        print(_line("    liq expanding", se))
+        print(_line("    liq contracting", sc))
 
     print("\n[4] *** 2020-2021 QE EXCLUDED *** (single-episode artifact test)")
     keep = buys[~buys["date"].between(*QE)]
@@ -165,6 +172,12 @@ def report(df: pd.DataFrame, reg: pd.Series, h: int) -> None:
         print(f"  -- {cls} --")
         print(_line("    liq expanding", _stats(p[p["liq"] == "expanding"], h)))
         print(_line("    liq contracting", _stats(p[p["liq"] == "contracting"], h)))
+
+    if se and sc:
+        print(f"\nVERDICT (fwd {h}d): on the ACTUAL ladder buy setups, liquidity-expanding "
+              f"beats contracting by {se['hit']-sc['hit']:+.1f}pp hit and "
+              f"{se['dd_p10']-sc['dd_p10']:+.1f}pp shallower bad-case dip — an ODDS edge "
+              f"(avg return {sc['avg']}%→{se['avg']}% is in-family, not the headline).")
 
 
 if __name__ == "__main__":
