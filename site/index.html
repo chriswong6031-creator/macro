@@ -1,17 +1,23 @@
 <!-- bitcoin-vector-landing-hub -->
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>Market Intelligence</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box}
+html:not([data-lang="zh"]) .l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Heiti SC",Inter,sans-serif}
+.lang-btn{position:fixed;top:18px;right:20px;font:inherit;cursor:pointer;background:#fff;
+ border:1px solid #EAECF0;border-radius:8px;padding:5px 12px;color:#6F6F6F;font-weight:700;z-index:30}
 body{margin:0;min-height:100vh;background:#F7F8FA;color:#344054;
  font-family:Inter,sans-serif;display:flex;flex-direction:column;align-items:center;
  padding:56px 20px 60px}
 .h{text-align:center;margin-bottom:36px}
 .h h1{font-size:40px;font-weight:800;color:#0B1733;letter-spacing:-.03em;margin:0 0 8px}
 .h p{color:#6F6F6F;font-size:17px;margin:0}
-.cards{display:grid;grid-template-columns:1fr 1fr;gap:24px;width:100%;max-width:880px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px;width:100%;max-width:1120px}
 @media(max-width:720px){.cards{grid-template-columns:1fr}}
 /* combined alert feed */
 .feed{width:100%;max-width:880px;margin-top:30px}
@@ -31,8 +37,11 @@ body{margin:0;min-height:100vh;background:#F7F8FA;color:#344054;
 .ha-src.s-vector{background:#E8EEFF;color:#285FFF}
 .ha-head{flex:1;min-width:200px;font-weight:600;color:#0B1733;font-size:14px}
 .ha-when{font-size:12px;color:#A0A0A0;font-weight:600}
-.ha-detail{padding:0 0 13px 21px;font-size:13px;color:#6F6F6F;line-height:1.6}
+.ha-detail{padding:0 0 13px 21px;font-size:13px;color:#344054;line-height:1.6}
 .ha-detail a{font-weight:700;white-space:nowrap}
+.ha-what{margin:7px 0 9px;padding-top:8px;border-top:1px solid #EAECF0;
+ font-size:12.5px;color:#6F6F6F;line-height:1.55}
+.ha-open{display:inline-block;color:#285FFF;font-weight:700}
 .ha-empty{padding:18px;text-align:center;color:#A0A0A0;font-size:14px}
 .c{background:#fff;border:1px solid #EAECF0;border-radius:20px;padding:30px;
  text-decoration:none;color:inherit;transition:transform .15s,box-shadow .15s;display:block}
@@ -45,55 +54,58 @@ body{margin:0;min-height:100vh;background:#F7F8FA;color:#344054;
 .stat.on{background:#E8EEFF;color:#285FFF} .stat.off{background:#FDEBEB;color:#D30B0B}
 .go{margin-top:18px;font-weight:700;color:#285FFF;font-size:14px}
 .foot{margin-top:40px;color:#A0A0A0;font-size:12px;text-align:center}
+.site-footer{width:100%;max-width:880px;margin:30px auto 0;padding-top:22px;
+ border-top:1px solid #EAECF0;text-align:center;line-height:1.6}
+.site-footer .made{display:block;font-size:13.5px;font-weight:700;color:#0B1733;letter-spacing:.2px}
+.site-footer .dev{display:block;margin-top:1px;font-size:12px;color:#6F6F6F}
 </style></head><body>
-<div class="h"><h1>Market Intelligence</h1>
-<p>Two dashboards, one zero-cost data engine.</p></div>
+<button class="lang-btn">中文</button>
+<div class="h"><h1><span class="l-en">Market Intelligence</span><span class="l-zh">市场情报</span></h1>
+<p><span class="l-en">Market regime dashboards, one zero-cost data engine.</span><span class="l-zh">市场周期仪表盘，一套零成本数据引擎。</span></p></div>
 <div class="cards">
   <a class="c" href="macro.html">
     <div class="ico">🌍</div>
-    <h2>Macro Vector</h2>
-    <p>Regime, liquidity &amp; sector-flow read across the global business cycle.</p>
-    <span class="stat">Goldilocks</span>
-    <div class="go">Open Macro Vector →</div>
+    <h2><span class="l-en">Macro Vector</span><span class="l-zh">宏观向量</span></h2>
+    <p><span class="l-en">Regime, liquidity &amp;amp; sector-flow read across the global business cycle.</span><span class="l-zh">纵观全球商业周期的市场状态、流动性与板块资金流向解读。</span></p>
+    <span class="stat"><span class="l-en">Goldilocks</span><span class="l-zh">理想增长</span></span>
+    <div class="go"><span class="l-en">Open Macro Vector →</span><span class="l-zh">打开宏观向量 →</span></div>
+  </a>
+  <a class="c" href="china.html">
+    <div class="ico">🇨🇳</div>
+    <h2><span class="l-en">China A-Shares</span><span class="l-zh">中国A股</span></h2>
+    <p><span class="l-en">Regime, sector rotation &amp;amp; cycle read for the Mainland A-share market.</span><span class="l-zh">中国A股市场的周期状态、板块轮动与周期解读。</span></p>
+    <span class="stat"><span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></span>
+    <div class="go"><span class="l-en">Open China A-Shares →</span><span class="l-zh">打开中国A股 →</span></div>
   </a>
   <a class="c" href="vector.html">
     <div class="ico">₿</div>
-    <h2>Bitcoin Vector</h2>
-    <p>Risk regime, momentum, structure &amp; backtested allocation for Bitcoin.</p>
-    <span class="stat off">Risk OFF · 41</span>
-    <span class="stat">Momentum -1.0</span>
-    <div class="go">Open Bitcoin Vector →</div>
+    <h2><span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span></h2>
+    <p><span class="l-en">Risk regime, momentum, structure &amp;amp; backtested allocation for Bitcoin.</span><span class="l-zh">比特币的风险状态、动量、结构与经回测的仓位策略。</span></p>
+    <span class="stat off"><span class="l-en">Risk</span><span class="l-zh">风险</span> <span class="l-en">OFF</span><span class="l-zh">关闭</span> · 41</span>
+    <span class="stat"><span class="l-en">Momentum</span><span class="l-zh">动量</span> -1.0</span>
+    <div class="go"><span class="l-en">Open Bitcoin Vector →</span><span class="l-zh">打开比特币向量 →</span></div>
   </a>
 </div>
 <div class="feed">
-  <div class="feed-h"><h3>Latest Alerts</h3>
-    <span class="n">12 major · from both feeds · <a href="vector.html#timeline">full Vector timeline →</a></span></div>
+  <div class="feed-h"><h3><span class="l-en">Latest Alerts</span><span class="l-zh">最新警报</span></h3>
+    <span class="n">12 <span class="l-en">major · from both feeds ·</span><span class="l-zh">条重要 · 来自两个数据源 ·</span> <a href="vector.html#timeline"><span class="l-en">full Vector timeline →</span><span class="l-zh">完整向量时间线 →</span></a></span></div>
   <div class="feed-card"><details class="ha-item">
   <summary>
     <span class="ha-dot d-medium"></span>
     <span class="ha-src s-macro">Macro Vector</span>
-    <span class="ha-head">Net liquidity 4-week RoC flipped negative (contracting): +1bn -> -44bn</span>
-    <span class="ha-when">Jun 12</span>
+    <span class="ha-head">💧 Fed liquidity tide changed direction</span>
+    <span class="ha-when">Jun 11</span>
   </summary>
-  <div class="ha-detail">Net liquidity 4-week RoC flipped negative (contracting): +1bn -> -44bn <a href="macro.html">Open →</a></div>
+  <div class="ha-detail">Net liquidity 4-week RoC flipped negative (contracting): +7bn -> -0bn<div class="ha-what">Net liquidity is the cash the Fed leaves sloshing through markets (balance sheet − reverse-repo − the Treasury’s account). Its 4-week trend just flipped sign. Rising liquidity has historically been a tailwind for stocks; falling is a headwind. Use it to lean more or less cautious — it’s not a buy/sell button.</div><a class="ha-open" href="macro.html#liquidity">Open scorecard →</a></div>
 </details>
 <details class="ha-item">
   <summary>
     <span class="ha-dot d-medium"></span>
     <span class="ha-src s-macro">Macro Vector</span>
-    <span class="ha-head">Net liquidity 4-week RoC flipped negative (contracting): +7bn -> -0bn</span>
+    <span class="ha-head">🧲 Options “gravity” flipped — bigger swings more likely</span>
     <span class="ha-when">Jun 11</span>
   </summary>
-  <div class="ha-detail">Net liquidity 4-week RoC flipped negative (contracting): +7bn -> -0bn <a href="macro.html">Open →</a></div>
-</details>
-<details class="ha-item">
-  <summary>
-    <span class="ha-dot d-medium"></span>
-    <span class="ha-src s-macro">Macro Vector</span>
-    <span class="ha-head">GEX: net GEX changed sign (net +19bn, spot vs flip -8.4%)</span>
-    <span class="ha-when">Jun 11</span>
-  </summary>
-  <div class="ha-detail">GEX: net GEX changed sign (net +19bn, spot vs flip -8.4%) <a href="macro.html">Open →</a></div>
+  <div class="ha-detail">GEX: net GEX changed sign (net +19bn, spot vs flip -8.4%)<div class="ha-what">Dealer gamma (GEX) measures how options hedging pushes the market around. Positive gamma damps moves (calmer); negative amplifies them (sharper swings, both ways). This flag means that backdrop just changed — expect the market to move more freely until it flips back.</div><a class="ha-open" href="macro.html#positioning">Open scorecard →</a></div>
 </details>
 <details class="ha-item">
   <summary>
@@ -102,7 +114,7 @@ body{margin:0;min-height:100vh;background:#F7F8FA;color:#344054;
     <span class="ha-head">Structure Shift: Bearish trigger</span>
     <span class="ha-when">May 30 · 00:00 UTC</span>
   </summary>
-  <div class="ha-detail">Structure oscillator now -0.91 (constructive → broken). <a href="vector.html#structure">Open →</a></div>
+  <div class="ha-detail">Structure oscillator now -0.91 (constructive → broken).<a class="ha-open" href="vector.html#structure">Open →</a></div>
 </details>
 <details class="ha-item">
   <summary>
@@ -111,7 +123,7 @@ body{margin:0;min-height:100vh;background:#F7F8FA;color:#344054;
     <span class="ha-head">Momentum turned Bearish</span>
     <span class="ha-when">May 25 · 00:00 UTC</span>
   </summary>
-  <div class="ha-detail">Momentum score -0.41 (neutral → bear); ±0.5 is the trigger band. <a href="vector.html#momentum">Open →</a></div>
+  <div class="ha-detail">Momentum score -0.41 (neutral → bear); ±0.5 is the trigger band.<a class="ha-open" href="vector.html#momentum">Open →</a></div>
 </details>
 <details class="ha-item">
   <summary>
@@ -120,7 +132,7 @@ body{margin:0;min-height:100vh;background:#F7F8FA;color:#344054;
     <span class="ha-head">Fundamentals turned negative</span>
     <span class="ha-when">May 25 · 00:00 UTC</span>
   </summary>
-  <div class="ha-detail">BFI entered the negative zone (40/60 bands); now 39. <a href="vector.html#bfi">Open →</a></div>
+  <div class="ha-detail">BFI entered the negative zone (40/60 bands); now 39.<a class="ha-open" href="vector.html#bfi">Open →</a></div>
 </details>
 <details class="ha-item">
   <summary>
@@ -129,7 +141,7 @@ body{margin:0;min-height:100vh;background:#F7F8FA;color:#344054;
     <span class="ha-head">Allocation changed to 0% BTC</span>
     <span class="ha-when">May 19 · 00:00 UTC</span>
   </summary>
-  <div class="ha-detail">Optimal strategy moved 50% → 0% BTC (momentum × risk grid). <a href="vector.html#allocation">Open →</a></div>
+  <div class="ha-detail">Optimal strategy moved 50% → 0% BTC (momentum × risk grid).<a class="ha-open" href="vector.html#allocation">Open →</a></div>
 </details>
 <details class="ha-item">
   <summary>
@@ -138,7 +150,7 @@ body{margin:0;min-height:100vh;background:#F7F8FA;color:#344054;
     <span class="ha-head">Risk Off Signal changed to: High Risk</span>
     <span class="ha-when">May 18 · 00:00 UTC</span>
   </summary>
-  <div class="ha-detail">Risk Index crossed the 25 threshold to 29 (rising). BTC $76,944. <a href="vector.html#risk">Open →</a></div>
+  <div class="ha-detail">Risk Index crossed the 25 threshold to 29 (rising). BTC $76,944.<a class="ha-open" href="vector.html#risk">Open →</a></div>
 </details>
 <details class="ha-item">
   <summary>
@@ -147,7 +159,7 @@ body{margin:0;min-height:100vh;background:#F7F8FA;color:#344054;
     <span class="ha-head">Momentum cooled to neutral</span>
     <span class="ha-when">May 18 · 00:00 UTC</span>
   </summary>
-  <div class="ha-detail">Momentum score -0.05 (bull → neutral); ±0.5 is the trigger band. <a href="vector.html#momentum">Open →</a></div>
+  <div class="ha-detail">Momentum score -0.05 (bull → neutral); ±0.5 is the trigger band.<a class="ha-open" href="vector.html#momentum">Open →</a></div>
 </details>
 <details class="ha-item">
   <summary>
@@ -156,7 +168,7 @@ body{margin:0;min-height:100vh;background:#F7F8FA;color:#344054;
     <span class="ha-head">Allocation changed to 50% BTC</span>
     <span class="ha-when">May 14 · 00:00 UTC</span>
   </summary>
-  <div class="ha-detail">Optimal strategy moved 100% → 50% BTC (momentum × risk grid). <a href="vector.html#allocation">Open →</a></div>
+  <div class="ha-detail">Optimal strategy moved 100% → 50% BTC (momentum × risk grid).<a class="ha-open" href="vector.html#allocation">Open →</a></div>
 </details>
 <details class="ha-item">
   <summary>
@@ -165,7 +177,7 @@ body{margin:0;min-height:100vh;background:#F7F8FA;color:#344054;
     <span class="ha-head">Market mode changed to Tactical</span>
     <span class="ha-when">May 09 · 00:00 UTC</span>
   </summary>
-  <div class="ha-detail">Trend efficiency shifted the regime Strategic → Tactical. <a href="vector.html#allocation">Open →</a></div>
+  <div class="ha-detail">Trend efficiency shifted the regime Strategic → Tactical.<a class="ha-open" href="vector.html#allocation">Open →</a></div>
 </details>
 <details class="ha-item">
   <summary>
@@ -174,8 +186,22 @@ body{margin:0;min-height:100vh;background:#F7F8FA;color:#344054;
     <span class="ha-head">Momentum turned Bullish</span>
     <span class="ha-when">May 07 · 00:00 UTC</span>
   </summary>
-  <div class="ha-detail">Momentum score +0.71 (neutral → bull); ±0.5 is the trigger band. <a href="vector.html#momentum">Open →</a></div>
+  <div class="ha-detail">Momentum score +0.71 (neutral → bull); ±0.5 is the trigger band.<a class="ha-open" href="vector.html#momentum">Open →</a></div>
+</details>
+<details class="ha-item">
+  <summary>
+    <span class="ha-dot d-medium"></span>
+    <span class="ha-src s-vector">Bitcoin Vector</span>
+    <span class="ha-head">Allocation changed to 100% BTC</span>
+    <span class="ha-when">May 06 · 00:00 UTC</span>
+  </summary>
+  <div class="ha-detail">Optimal strategy moved 50% → 100% BTC (momentum × risk grid).<a class="ha-open" href="vector.html#allocation">Open →</a></div>
 </details></div>
 </div>
-<div class="foot">Built 2026-06-13 07:56 UTC · mechanical, backtested, free public data · not investment advice</div>
+<div class="foot"><span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-06-13 08:14 UTC · <span class="l-en">mechanical, backtested, free public data · not investment advice</span><span class="l-zh">机械化 · 经回测 · 免费公开数据 · 非投资建议</span></div>
+<footer class="site-footer">
+  <span class="made"><span class="l-en">Made with ❤️ in Canada</span><span class="l-zh">用 ❤️ 在加拿大制作</span></span>
+  <span class="dev"><span class="l-en">Developed by</span><span class="l-zh">开发者</span> Chris Wong</span>
+</footer>
+<script src="theme.js"></script>
 </body></html>

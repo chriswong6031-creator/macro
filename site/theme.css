@@ -19,6 +19,7 @@
   --g-cold: #4d8df0; --g-hot: #e0a23c; --g-mid: #3a4150;
   --chart-bg: transparent;
   --card-shadow: 0 1px 0 rgba(255,255,255,.02);
+  --popover-shadow: 0 6px 18px rgba(0,0,0,.5);
 }
 html[data-theme="light"] {
   /* Light palette tuned to match the Bitcoin Vector dashboard: airy #F7F8FA
@@ -34,7 +35,42 @@ html[data-theme="light"] {
   --g-cold: #285fff; --g-hot: #c2841f; --g-mid: #cdd5e0;
   --chart-bg: #11151c;            /* keep dark-rendered Plotly charts legible */
   --card-shadow: 0 1px 3px rgba(20,30,50,.07);
+  /* soft, light popover shadow — the dark theme's heavy 50%-black drop shadow
+     reads as a murky grey halo on the white light-mode tooltips */
+  --popover-shadow: 0 4px 10px rgba(20,30,50,.06), 0 12px 28px rgba(20,30,50,.14);
 }
+/* ---- Chinese mode: Asia colour convention -----------------------------------
+   In Asia red = up/bullish, green = down/bearish — the inverse of the West. So
+   in zh mode we SWAP the up/down pair and flip the green/red quadrants
+   (Goldilocks -> red, Stagflation -> green); gold (Reflation) and blue
+   (Growth-scare) already read right and stay. Status colours (--ok/--warn/--act,
+   data-health, alert severity) encode health/danger, NOT price direction, so
+   they are deliberately left alone. Because every tinted badge, gauge, quad tile
+   and .pos/.neg already resolves these vars at paint time (mtf.js re-reads them
+   on `langchange`), the whole UI recolours instantly.
+   Specificity note: html[data-theme="light"] and html[data-lang="zh"] tie at
+   (0,1,1); the dual-attribute selector (0,2,1) below pins the light+zh combo. */
+html[data-lang="zh"] {
+  --up: #e06464; --down: #45b873;        /* swapped: red now = up */
+  --q1: #d04545;                         /* Goldilocks -> red */
+  --q3: #2e9e4f;                         /* Stagflation -> green */
+}
+html[data-theme="light"][data-lang="zh"] {
+  --up: #cf4040; --down: #1f9a55;
+  --q1: #c12f2f;
+  --q3: #1f8b41;
+}
+/* ---- language visibility toggle (dual-emit text) ---------------------------- */
+html:not([data-lang="zh"]) .l-zh { display: none; }
+html[data-lang="zh"] .l-en { display: none; }
+/* CJK type: pick up a native sans so Chinese renders cleanly, and drop the
+   wide tracking we use on Latin all-caps headings (looks wrong on Hanzi). */
+html[data-lang="zh"] body {
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Noto Sans CJK SC", "Microsoft JhengHei", "Heiti SC", sans-serif;
+}
+html[data-lang="zh"] h2 { letter-spacing: 0; }
+
 a { color: var(--link); }
 
 /* Inter as the primary typeface on every page. The `html body` selector has
@@ -42,8 +78,19 @@ a { color: var(--link); }
    shorthand, so it swaps the family while leaving their font-size/line-height
    untouched. Antialiasing matches Vector's crisp rendering. */
 html body { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
-  Roboto, Helvetica, Arial, sans-serif;
+  Roboto, Helvetica, Arial, sans-serif; font-size: 15px;
   -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+/* ---- Vector polish: airier cards + a little more headline hierarchy ---------
+   Bitcoin Vector breathes more than this data-dense dashboard. These nudge (not
+   restructure) toward its feel; `html body …` out-specifies each page's own
+   element rules so no (i18n-heavy) template edits are needed. Both themes. */
+html body .grid { gap: 18px; }
+html body .panel { border-radius: 14px; padding: 16px 18px; }
+html body .actcol, html body .mtf-card, html body .card { border-radius: 12px; }
+html body h1 { font-size: 24px; }
+html body .badge { font-size: 14px; padding: 4px 13px; }
+html body .prob .pc { font-size: 18px; font-weight: 700; }
 
 /* buttons */
 .navbtn { background: var(--panel2); border: 1px solid var(--line); color: var(--link);
@@ -57,7 +104,7 @@ html body { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
 /* ---- tinted semantic badges -------------------------------------------------
    Any element with one of these classes is tinted from its --c base color. */
 .st-FRESH_BUY, .st-TURN_SIGNALED, .st-RALLY_ON, .st-BOTTOM_WATCH, .st-TOP_WATCH,
-.st-ROLLING_OVER, .st-DECLINE,
+.st-ROLLING_OVER, .st-DECLINE, .st-COUNTERTREND_BOUNCE,
 .state-STABLE, .state-WEAKENING, .state-TRANSITIONING, .state-NEW_REGIME,
 .pill-ok, .pill-stale, .pill-failed, .pill-dead, .pill-blocked,
 .tag-lead, .tag-avoid, .tag-watch, .chip-pos, .chip-neg,
@@ -72,7 +119,7 @@ html body { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
 .st-TURN_SIGNALED, .st-BOTTOM_WATCH, .tag-watch, .sig-i,
 .urgpill.urg-imminent, .urgpill.urg-soon, .state-NEW_REGIME { --c: var(--info); }
 .st-TOP_WATCH, .pill-stale, .urgpill.urg-caution, .state-WEAKENING { --c: var(--warn); }
-.st-ROLLING_OVER, .state-TRANSITIONING { --c: var(--orange); }
+.st-ROLLING_OVER, .st-COUNTERTREND_BOUNCE, .state-TRANSITIONING { --c: var(--orange); }
 .st-DECLINE, .pill-failed, .pill-dead, .tag-avoid, .chip-neg, .sig-m,
 .urgpill.urg-exit, .urgpill.urg-avoid { --c: var(--down); }
 .pill-blocked, .state-STABLE, .urgpill.urg-hold, .urgpill.urg-later { --c: var(--muted); }
@@ -105,3 +152,27 @@ html body { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
 .mtf-v { font-size: 13px; font-weight: 700; text-align: right; display: flex;
   flex-direction: column; align-items: flex-end; line-height: 1.1; }
 .mtf-v small { font-size: 9.5px; font-weight: 400; color: var(--muted); }
+
+/* ---- site footer (shared signature, themed via vars) ---- */
+.site-footer {
+  max-width: 1500px;
+  margin: 44px auto 16px;
+  padding: 22px 16px 4px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+  line-height: 1.6;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+.site-footer .made {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: .2px;
+}
+.site-footer .dev {
+  display: block;
+  margin-top: 1px;
+  font-size: 12px;
+  color: var(--muted);
+}

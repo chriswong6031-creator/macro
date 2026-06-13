@@ -1,11 +1,12 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Technology (XLK) — cycle & holdings</title>
-<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="../theme.css">
 <style>
   * { box-sizing:border-box; }
@@ -62,7 +63,7 @@
                transform:translateX(-50%); width:300px; background:var(--panel);
                border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60;
                font-size:12px; line-height:1.45; color:var(--text); font-weight:400;
-               box-shadow:0 6px 18px rgba(0,0,0,.5); pointer-events:none; }
+               box-shadow:var(--popover-shadow); pointer-events:none; }
   .help:hover .tip { display:block; }
   table { border-collapse:collapse; width:100%; font-size:13px; }
   th,td { text-align:left; padding:4px 8px; border-bottom:1px solid var(--line); }
@@ -74,44 +75,45 @@
 <body>
   <div class="panel">
     <div class="topline">
-      <h1>Technology <span class="muted">(XLK)</span></h1>
-      <span class="state st-TURN_SIGNALED">BOTTOMING</span>
+      <h1><span class="l-en">Technology</span><span class="l-zh">科技</span> <span class="muted">(XLK)</span></h1>
+      <span class="state st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
       <span style="flex:1"></span>
-      <a class="navbtn" href="../index.html">← Dashboard</a>
+      <a class="navbtn" href="../index.html"><span class="l-en">← Dashboard</span><span class="l-zh">← 仪表盘</span></a>
+      <button class="lang-btn">中文</button>
       <button class="theme-btn">☀️ Light</button>
     </div>
     
     <div class="entrybar urg-imminent">
-      <span class="entrytag">BUY SOON</span>
-      <span>Setup almost complete — likely buy trigger in ~1–3 trading days if it closes back above its 10-day average.</span>
+      <span class="entrytag"><span class="l-en">BUY SOON</span><span class="l-zh">即将买入</span></span>
+      <span><span class="l-en">Setup almost complete — likely buy trigger in ~1–3 trading days if it closes back above its 10-day average.</span><span class="l-zh">形态接近完成——若收盘重新站上 10 日均线，预计将在约 1–3 个交易日内出现买入触发。</span></span>
     </div>
     
     <ul class="points">
-      <li>Bigger picture is mixed (no clear trend for a daily long)</li><li>Swing low printed (buyers rejected the low)</li><li>Still below the 10-day average</li><li>Prior cycle topped early (a tiring-trend hint)</li>
+      <li><span class="l-en">Bigger picture is mixed (no clear trend for a daily long)</span><span class="l-zh">大局为混合（对日线多头而言属趋势不明）</span></li><li><span class="l-en">Swing low printed (buyers rejected the low)</span><span class="l-zh">摆动低点已现（买方拒绝了该低点）</span></li><li><span class="l-en">Still below the 10-day average</span><span class="l-zh">仍位于 10 日均线之下</span></li><li><span class="l-en">Prior cycle topped early (a tiring-trend hint)</span><span class="l-zh">上一周期见顶偏早（趋势走弱的暗示）</span></li>
     </ul>
     
     <div class="cyclebox">
-      <div><b>📅 Daily cycle: day 52 of a typical 36–42 trading days</b> — overdue — past the typical window, so a low could form any day
-        <span class="help">?<span class="tip">The DAILY cycle is the short rhythm — equities tend to bottom every ~36-42 trading days. 'Day N' counts trading days since the last daily low. Past ~42 (overdue) means a fresh low could come any day.</span></span></div>
-      <div><b>🗓 Weekly (investor) cycle: week 11 of a typical 16–26 weeks</b> — mid — the bigger up-leg is maturing
-        <span class="help">?<span class="tip">The WEEKLY (investor) cycle is the bigger rhythm — ~16-26 weeks, containing several daily cycles. It sets the tide the daily cycles swim in; early weeks = more upside room, late weeks = treat rallies cautiously.</span></span></div>
-      <div class="muted">The last cycle peaked in its FIRST half ('left-translated') — weak cycles top early, so this hints the bigger trend is tiring.</div>
+      <div><b>📅 <span class="l-en">Daily cycle: day 52 of a typical 36–42 trading days</span><span class="l-zh">日线周期：第 52 天，典型周期为 36–42 个交易日</span></b> — <span class="l-en">overdue — past the typical window, so a low could form any day</span><span class="l-zh">逾期——已超过典型窗口，低点随时可能形成</span>
+        <span class="help">?<span class="tip"><span class="l-en">The DAILY cycle is the short rhythm — equities tend to bottom every ~36-42 trading days. 'Day N' counts trading days since the last daily low. Past ~42 (overdue) means a fresh low could come any day.</span><span class="l-zh">日线周期是短节奏 — 股市通常每约 36-42 个交易日筑底一次。“第 N 天”指自上次日线低点以来的交易日数。超过约 42 天（已逾期）意味着新低随时可能出现。</span></span></span></div>
+      <div><b>🗓 <span class="l-en">Weekly (investor) cycle: week 11 of a typical 16–26 weeks</span><span class="l-zh">周线（投资者）周期：第 11 周，典型周期为 16–26 周</span></b> — <span class="l-en">mid — the bigger up-leg is maturing</span><span class="l-zh">中期——更大的上行段正在成熟</span>
+        <span class="help">?<span class="tip"><span class="l-en">The WEEKLY (investor) cycle is the bigger rhythm — ~16-26 weeks, containing several daily cycles. It sets the tide the daily cycles swim in; early weeks = more upside room, late weeks = treat rallies cautiously.</span><span class="l-zh">周线（投资者）周期是更大的节奏 — 约 16-26 周，包含数个日线周期。它决定了日线周期所处的大势；早期周次=上行空间更大，晚期周次=对反弹保持谨慎。</span></span></span></div>
+      <div class="muted"><span class="l-en">The last cycle peaked in its FIRST half ('left-translated') — weak cycles top early, so this hints the bigger trend is tiring.</span><span class="l-zh">上一周期在前半段见顶（“左移”）——弱周期见顶偏早，这暗示更大的趋势正在走弱。</span></div>
     </div>
     
-    <details style="margin-top:8px"><summary>full reasoning</summary>
-      <p class="muted" style="margin:6px 0">Buyers rejected the 2026-05-19 low (swing low printed) but price hasn't reclaimed its 10-day average — first box ticked, not all. Last cycle was left-translated (topped early) — a bearish structural tell. Next: Confirmation = a close above the 10-day average with the average turning up.</p>
+    <details style="margin-top:8px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>
+      <p class="muted" style="margin:6px 0"><span class="l-en">Buyers rejected the 2026-05-19 low (swing low printed) but price hasn't reclaimed its 10-day average — first box ticked, not all. Last cycle was left-translated (topped early) — a bearish structural tell.</span><span class="l-zh">买方拒绝了 2026-05-19 的低点（摆动低点已现），但价格尚未收复 10 日均线——第一项条件达成，并非全部。 上一周期为左移结构（见顶偏早）——属于看空的结构性信号。</span> <span class="l-en">Next:</span><span class="l-zh">下一步：</span> <span class="l-en">Confirmation = a close above the 10-day average with the average turning up.</span><span class="l-zh">确认 = 收盘站上 10 日均线且均线开始向上。</span></p>
     </details>
   </div>
 
   <div class="panel">
-    <h2>Momentum across timeframes
-      <span class="help">?<span class="tip">Daily / 3-day / weekly views of the same ETF. Weekly is the tide, 3-day the wave, daily the ripple — signals are strongest when all three agree. RSI & StochRSI gauges show oversold→overbought; the MACD bars show momentum's trajectory and the estimated days to its next cross.</span></span>
+    <h2><span class="l-en">Momentum across timeframes</span><span class="l-zh">跨周期动量</span>
+      <span class="help">?<span class="tip"><span class="l-en">Daily / 3-day / weekly views of the same ETF. Weekly is the tide, 3-day the wave, daily the ripple — signals are strongest when all three agree. RSI & StochRSI gauges show oversold→overbought; the MACD bars show momentum's trajectory and the estimated days to its next cross.</span><span class="l-zh">同一只 ETF 的日线／3 日／周线视角。周线是潮汐，3 日是波浪，日线是涟漪 — 三者一致时信号最强。RSI 与 StochRSI 表盘显示超卖→超买；MACD 柱状图显示动量轨迹及距下次交叉的预估天数。</span></span></span>
     </h2>
     <div data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 56.0, "rsi5": 52.0, "stoch": 14.0, "spark_rsi": [72.5, 68.2, 65.7, 69.9, 71.2, 72.9, 76.7, 75.0, 76.9, 79.7, 82.4, 83.6, 78.9, 72.2, 52.2, 56.1, 52.1, 47.5, 54.3, 55.8], "spark_stoch": [52.6, 31.9, 7.5, 7.2, 16.8, 29.3, 41.2, 47.8, 54.8, 60.0, 77.2, 91.1, 91.3, 70.1, 36.8, 16.3, 4.2, 4.2, 6.3, 13.9], "spark_hist": [0.751, 0.301, -0.137, -0.224, -0.242, -0.194, 0.083, 0.139, 0.254, 0.511, 0.879, 1.148, 1.056, 0.672, -0.504, -1.043, -1.618, -2.229, -2.14, -1.932]}, "3D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 1.7, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 66.0, "rsi5": 60.0, "stoch": 13.0, "spark_rsi": [37.3, 38.2, 44.2, 53.2, 58.3, 64.9, 67.2, 71.5, 69.5, 71.7, 76.5, 79.2, 79.7, 80.1, 81.6, 84.1, 87.4, 64.6, 61.1, 65.6], "spark_stoch": [6.1, 3.8, 18.8, 52.1, 83.4, 100.0, 100.0, 100.0, 98.1, 98.1, 98.1, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 73.9, 40.6, 13.0], "spark_hist": [-1.017, -1.077, -0.853, -0.294, 0.333, 1.127, 1.744, 2.395, 2.605, 2.779, 3.216, 3.652, 3.771, 3.665, 3.567, 3.676, 4.213, 3.113, 1.946, 1.549]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 45.3, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 72.0, "rsi5": 71.0, "stoch": 83.0, "spark_rsi": [57.0, 52.6, 50.2, 52.2, 48.9, 46.6, 45.9, 43.6, 36.7, 47.2, 55.8, 66.3, 70.1, 71.1, 77.7, 78.0, 79.6, 83.1, 70.2, 72.1], "spark_stoch": [20.6, 11.9, 4.4, 5.0, 5.0, 5.0, 0.0, 0.0, 0.0, 14.6, 41.0, 74.4, 93.2, 100.0, 100.0, 100.0, 100.0, 100.0, 90.8, 82.9], "spark_hist": [-0.89, -1.151, -1.4, -1.44, -1.564, -1.688, -1.74, -1.805, -2.107, -1.816, -1.13, 0.096, 1.222, 1.955, 3.163, 3.776, 4.19, 4.864, 4.292, 3.93]}}'></div>
   </div>
 
   <div class="panel">
-    <h2>Chart</h2>
+    <h2><span class="l-en">Chart</span><span class="l-zh">图表</span></h2>
     <div class="tv">
       <div class="tradingview-widget-container">
         <div id="tv_main"></div>
@@ -122,30 +124,28 @@
   </div>
 
   <div class="panel">
-    <h2>Top 10 holdings — each analyzed on its own cycle
-      <span class="help">?<span class="tip">Every holding gets the same treatment as the ETF: daily-cycle position, multi-timeframe momentum, and a ladder state. The states carry measured base rates (table at the bottom). Weight = % of the ETF this stock represents — the top names drive the fund.</span></span>
+    <h2><span class="l-en">Top 10 holdings — each analyzed on its own cycle</span><span class="l-zh">前 10 大持仓 — 各自按其周期分析</span>
+      <span class="help">?<span class="tip"><span class="l-en">Every holding gets the same treatment as the ETF: daily-cycle position, multi-timeframe momentum, and a ladder state. The states carry measured base rates (table at the bottom). Weight = % of the ETF this stock represents — the top names drive the fund.</span><span class="l-zh">每只持仓都与 ETF 同样处理：日线周期位置、跨周期动量及阶梯状态。各状态附有实测基准胜率（见底部表格）。权重=该股票占 ETF 的百分比 — 前几大成分股主导基金走势。</span></span></span>
     </h2>
     
     <div class="card">
       <div class="topline">
         <a href="../stock.html#NVDA"><b style="font-size:15px">NVDA</b></a>
         <span class="muted">Nvidia Corp</span>
-        <span class="muted">13.23% of fund</span>
-        <span class="state st-BOTTOM_WATCH">NEARING A LOW</span>
-        <span class="urgpill urg-later">WAIT</span>
+        <span class="muted">13.23%<span class="l-en"> of fund</span><span class="l-zh"> 占基金</span></span>
+        <span class="state st-BOTTOM_WATCH"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
+        <span class="urgpill urg-later"><span class="l-en">WAIT</span><span class="l-zh">等待</span></span>
         <span style="flex:1"></span>
-        <span class="muted" style="font-size:12px">daily cycle day 27/~42</span>
+        <span class="muted" style="font-size:12px"><span class="l-en">daily cycle day</span><span class="l-zh">日线周期第</span> 27/~42<span class="l-en"></span><span class="l-zh"> 天</span></span>
       </div>
       <ul class="points sm">
-        <li>Bigger picture is mixed (no clear trend for a daily long)</li><li>Swing low printed (buyers rejected the low)</li><li>Still below the 10-day average</li>
+        <li><span class="l-en">Bigger picture is mixed (no clear trend for a daily long)</span><span class="l-zh">大局为混合（对日线多头而言属趋势不明）</span></li><li><span class="l-en">Swing low printed (buyers rejected the low)</span><span class="l-zh">摆动低点已现（买方拒绝了该低点）</span></li><li><span class="l-en">Still below the 10-day average</span><span class="l-zh">仍位于 10 日均线之下</span></li>
       </ul>
       
       
-      <p class="muted" style="font-size:12px; margin:4px 0">fwd P/E <b>16.1</b> · rev growth <b>85.2%</b> · margin <b>63.0%</b> <span class="help">?<span class="tip">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span></span></p>
-      
       <div data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 45.0, "rsi5": 41.0, "stoch": 14.0, "spark_rsi": [64.7, 61.7, 59.9, 61.9, 57.8, 53.7, 53.3, 51.0, 52.6, 49.4, 60.4, 58.8, 51.1, 54.4, 44.0, 46.9, 46.5, 41.2, 45.1, 45.4], "spark_stoch": [79.0, 65.1, 43.5, 39.9, 34.9, 26.9, 12.7, 3.7, 2.0, 2.0, 15.4, 24.9, 27.0, 24.5, 13.1, 16.3, 10.1, 10.1, 11.5, 14.0], "spark_hist": [1.845, 1.256, 0.641, 0.332, -0.205, -0.87, -1.342, -1.779, -1.919, -2.163, -1.414, -1.02, -1.283, -1.161, -1.932, -2.128, -2.201, -2.657, -2.542, -2.333]}, "3D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": true, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 51.0, "rsi5": 39.0, "stoch": 8.0, "spark_rsi": [46.7, 38.8, 47.5, 48.0, 54.4, 59.6, 61.1, 59.3, 65.4, 55.6, 59.8, 64.2, 69.3, 60.7, 57.9, 56.5, 60.9, 58.0, 52.7, 51.3], "spark_stoch": [18.6, 10.2, 27.0, 34.5, 64.6, 81.1, 96.8, 97.3, 97.3, 85.1, 80.7, 79.2, 91.4, 89.0, 78.1, 58.5, 54.9, 42.1, 28.3, 8.0], "spark_hist": [-1.246, -1.985, -1.562, -1.161, -0.168, 1.127, 2.091, 2.435, 3.383, 2.852, 2.951, 3.575, 4.787, 4.289, 3.363, 2.373, 2.313, 1.737, 0.542, -0.502]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 1.5, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 56.0, "rsi5": 50.0, "stoch": 58.0, "spark_rsi": [59.5, 54.8, 52.8, 57.4, 48.3, 48.7, 50.5, 45.4, 42.2, 49.4, 56.2, 62.4, 65.1, 58.4, 65.0, 68.3, 62.1, 59.7, 56.3, 56.4], "spark_stoch": [28.4, 30.3, 24.7, 35.9, 26.4, 24.5, 7.5, 7.5, 6.3, 14.0, 40.9, 74.3, 93.6, 90.2, 90.1, 90.1, 91.9, 81.0, 65.7, 58.4], "spark_hist": [-1.149, -1.329, -1.606, -1.314, -1.929, -2.23, -2.199, -2.593, -3.075, -2.621, -1.512, 0.07, 1.453, 1.589, 2.626, 3.746, 3.568, 2.948, 1.973, 1.199]}}'></div>
-      <details style="margin-top:6px"><summary>full reasoning</summary>
-        <p class="muted" style="margin:5px 0">Mixed structure. Next: Watch the 10-day average and cycle-day count.</p>
+      <details style="margin-top:6px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>
+        <p class="muted" style="margin:5px 0"><span class="l-en">Mixed structure.</span><span class="l-zh">结构混合。</span> <span class="l-en">Next:</span><span class="l-zh">下一步：</span> <span class="l-en">Watch the 10-day average and cycle-day count.</span><span class="l-zh">关注 10 日均线与周期天数。</span></p>
       </details>
     </div>
     
@@ -153,22 +153,20 @@
       <div class="topline">
         <a href="../stock.html#AAPL"><b style="font-size:15px">AAPL</b></a>
         <span class="muted">Apple Inc</span>
-        <span class="muted">11.53% of fund</span>
-        <span class="state st-BOTTOM_WATCH">NEARING A LOW</span>
-        <span class="urgpill urg-soon">WATCH</span>
+        <span class="muted">11.53%<span class="l-en"> of fund</span><span class="l-zh"> 占基金</span></span>
+        <span class="state st-BOTTOM_WATCH"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
+        <span class="urgpill urg-soon"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span>
         <span style="flex:1"></span>
-        <span class="muted" style="font-size:12px">daily cycle day 52/~42</span>
+        <span class="muted" style="font-size:12px"><span class="l-en">daily cycle day</span><span class="l-zh">日线周期第</span> 52/~42<span class="l-en"></span><span class="l-zh"> 天</span></span>
       </div>
       <ul class="points sm">
-        <li>Bigger picture is mixed (no clear trend for a daily long)</li><li>Swing low printed (buyers rejected the low)</li><li>Still below the 10-day average</li>
+        <li><span class="l-en">Bigger picture is mixed (no clear trend for a daily long)</span><span class="l-zh">大局为混合（对日线多头而言属趋势不明）</span></li><li><span class="l-en">Swing low printed (buyers rejected the low)</span><span class="l-zh">摆动低点已现（买方拒绝了该低点）</span></li><li><span class="l-en">Still below the 10-day average</span><span class="l-zh">仍位于 10 日均线之下</span></li>
       </ul>
       
       
-      <p class="muted" style="font-size:12px; margin:4px 0">fwd P/E <b>30.3</b> · rev growth <b>16.6%</b> · margin <b>27.0%</b> <span class="help">?<span class="tip">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span></span></p>
-      
       <div data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 44.0, "rsi5": 29.0, "stoch": 7.0, "spark_rsi": [76.0, 71.7, 72.5, 74.7, 76.4, 78.6, 77.6, 79.1, 80.0, 79.0, 67.2, 73.7, 65.9, 66.6, 60.8, 53.4, 42.7, 43.8, 48.2, 44.1], "spark_stoch": [98.1, 90.3, 85.3, 82.2, 90.1, 96.9, 96.4, 96.4, 96.4, 95.9, 62.6, 46.2, 17.0, 18.8, 1.8, 1.8, 0.0, 1.0, 5.9, 7.2], "spark_hist": [1.776, 1.374, 1.049, 0.923, 0.893, 0.991, 0.887, 0.851, 0.804, 0.615, 0.008, 0.104, -0.246, -0.48, -0.938, -1.632, -2.765, -3.341, -3.337, -3.508]}, "3D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 0.8, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 56.0, "rsi5": 41.0, "stoch": 31.0, "spark_rsi": [44.5, 41.0, 47.8, 46.3, 51.1, 54.8, 58.5, 58.7, 56.5, 61.9, 65.5, 67.9, 70.2, 70.5, 74.2, 74.9, 70.3, 72.3, 55.4, 55.7], "spark_stoch": [15.5, 6.0, 17.3, 21.2, 44.6, 65.4, 89.0, 98.7, 95.8, 95.8, 95.8, 100.0, 100.0, 100.0, 100.0, 100.0, 94.6, 90.9, 58.6, 31.2], "spark_hist": [-2.075, -2.285, -1.7, -1.39, -0.665, 0.217, 1.194, 1.778, 1.884, 2.456, 3.151, 3.758, 4.275, 4.395, 4.829, 4.928, 4.38, 4.05, 2.231, 0.925]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 8.2, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 59.0, "rsi5": 48.0, "stoch": 78.0, "spark_rsi": [53.5, 62.4, 50.1, 54.0, 53.8, 50.4, 46.8, 45.8, 46.3, 50.4, 52.9, 57.7, 58.1, 62.3, 67.3, 69.7, 72.3, 73.3, 69.6, 58.7], "spark_stoch": [10.2, 33.0, 38.5, 39.3, 27.1, 27.5, 17.3, 6.6, 1.6, 9.6, 23.8, 47.0, 62.9, 81.8, 91.2, 99.8, 100.0, 100.0, 95.5, 77.8], "spark_hist": [-3.653, -2.328, -2.878, -2.6, -2.397, -2.65, -3.209, -3.591, -3.646, -3.082, -2.317, -1.13, -0.306, 0.774, 2.217, 3.425, 4.504, 5.095, 4.828, 3.294]}}'></div>
-      <details style="margin-top:6px"><summary>full reasoning</summary>
-        <p class="muted" style="margin:5px 0">Day 52 of a typical 36-42-day cycle — inside the window where lows usually form, and short-term momentum is washed out. No confirmed turn yet. Last cycle was left-translated (topped early) — a bearish structural tell. Next: Wait for the turn: a move above the low candle's high, then a close back above the 10-day average.</p>
+      <details style="margin-top:6px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>
+        <p class="muted" style="margin:5px 0"><span class="l-en">Day 52 of a typical 36-42-day cycle — inside the window where lows usually form, and short-term momentum is washed out. No confirmed turn yet. Last cycle was left-translated (topped early) — a bearish structural tell.</span><span class="l-zh">典型 36-42 天周期的第 52 天——处于低点通常形成的窗口内，且短期动量已被洗净。尚无确认的转向。 上一周期为左移结构（见顶偏早）——属于看空的结构性信号。</span> <span class="l-en">Next:</span><span class="l-zh">下一步：</span> <span class="l-en">Wait for the turn: a move above the low candle's high, then a close back above the 10-day average.</span><span class="l-zh">等待转向：先上破低点 K 线的高点，再收盘重新站上 10 日均线。</span></p>
       </details>
     </div>
     
@@ -176,22 +174,20 @@
       <div class="topline">
         <a href="../stock.html#MSFT"><b style="font-size:15px">MSFT</b></a>
         <span class="muted">Microsoft Corp</span>
-        <span class="muted">7.7% of fund</span>
-        <span class="state st-DECLINE">DOWNTREND</span>
-        <span class="urgpill urg-avoid">AVOID</span>
+        <span class="muted">7.7%<span class="l-en"> of fund</span><span class="l-zh"> 占基金</span></span>
+        <span class="state st-DECLINE"><span class="l-en">DOWNTREND</span><span class="l-zh">下跌趋势</span></span>
+        <span class="urgpill urg-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span>
         <span style="flex:1"></span>
-        <span class="muted" style="font-size:12px">daily cycle day 21/~42</span>
+        <span class="muted" style="font-size:12px"><span class="l-en">daily cycle day</span><span class="l-zh">日线周期第</span> 21/~42<span class="l-en"></span><span class="l-zh"> 天</span></span>
       </div>
       <ul class="points sm">
-        <li>Bigger picture is mixed (no clear trend for a daily long)</li><li>⚠ Failed cycle — price broke below the low that began this cycle (3d ago)</li><li>Still below the 10-day average</li>
+        <li><span class="l-en">Bigger picture is mixed (no clear trend for a daily long)</span><span class="l-zh">大局为混合（对日线多头而言属趋势不明）</span></li><li><span class="l-en">⚠ Failed cycle — price broke below the low that began this cycle (3d ago)</span><span class="l-zh">⚠ 失败周期——价格跌破了启动本周期的低点（3 天前）</span></li><li><span class="l-en">Still below the 10-day average</span><span class="l-zh">仍位于 10 日均线之下</span></li>
       </ul>
       
       
-      <p class="muted" style="font-size:12px; margin:4px 0">fwd P/E <b>20.2</b> · rev growth <b>18.3%</b> · margin <b>39.0%</b> <span class="help">?<span class="tip">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span></span></p>
-      
       <div data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 37.0, "rsi5": 19.0, "stoch": 0.0, "spark_rsi": [57.9, 58.8, 54.2, 56.4, 55.5, 55.1, 52.9, 50.1, 59.9, 70.1, 73.3, 60.2, 52.8, 53.1, 47.7, 45.5, 42.0, 39.6, 36.9, 37.2], "spark_stoch": [25.0, 51.4, 65.8, 72.7, 70.1, 72.8, 62.8, 47.1, 57.8, 74.8, 100.0, 83.2, 53.7, 24.7, 8.2, 4.3, 0.0, 0.0, 0.0, 0.2], "spark_hist": [-1.313, -0.613, -0.573, -0.327, -0.262, -0.279, -0.476, -0.825, -0.123, 1.773, 3.486, 3.104, 1.756, 0.807, -0.617, -1.849, -3.111, -4.171, -5.103, -5.42]}, "3D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 0.5, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 41.0, "rsi5": 29.0, "stoch": 18.0, "spark_rsi": [25.2, 27.7, 29.6, 30.1, 36.2, 52.1, 53.5, 53.6, 53.6, 48.8, 51.8, 46.4, 52.3, 51.9, 51.2, 54.8, 60.2, 49.3, 42.8, 40.8], "spark_stoch": [6.7, 9.1, 21.0, 36.1, 61.9, 81.8, 100.0, 100.0, 99.9, 94.2, 92.1, 83.7, 87.8, 87.9, 93.2, 94.8, 96.8, 84.9, 51.6, 18.2], "spark_hist": [-2.44, -2.359, -1.759, -1.015, 0.367, 3.721, 6.091, 7.485, 8.139, 7.596, 7.459, 6.284, 6.235, 5.923, 5.404, 5.409, 6.104, 4.697, 2.375, 0.405]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 9.4, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 42.0, "rsi5": 36.0, "stoch": 74.0, "spark_rsi": [34.5, 29.2, 29.2, 28.7, 27.9, 35.0, 32.2, 29.5, 25.4, 32.2, 31.7, 48.3, 48.8, 46.3, 46.5, 48.5, 47.8, 56.7, 47.5, 41.8], "spark_stoch": [3.3, 3.3, 0.1, 0.1, 0.1, 11.0, 17.7, 20.3, 9.2, 13.0, 20.2, 53.5, 76.4, 96.4, 93.0, 92.7, 94.9, 98.2, 88.7, 74.3], "spark_hist": [-7.904, -10.487, -11.528, -11.735, -11.467, -9.568, -8.614, -8.298, -9.107, -7.897, -6.695, -2.074, 1.262, 2.85, 3.945, 5.054, 5.514, 7.706, 6.689, 4.185]}}'></div>
-      <details style="margin-top:6px"><summary>full reasoning</summary>
-        <p class="muted" style="margin:5px 0">Failed cycle — price broke below the low that started this cycle, which historically means the larger trend is rolling over (~80% of cases). Next: Stand aside until a new daily cycle low forms and confirms.</p>
+      <details style="margin-top:6px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>
+        <p class="muted" style="margin:5px 0"><span class="l-en">Failed cycle — price broke below the low that started this cycle, which historically means the larger trend is rolling over (~80% of cases).</span><span class="l-zh">失败周期——价格跌破了启动本周期的低点，历史上这通常意味着更大的趋势正在掉头向下（约 80% 的情形）。</span> <span class="l-en">Next:</span><span class="l-zh">下一步：</span> <span class="l-en">Stand aside until a new daily cycle low forms and confirms.</span><span class="l-zh">观望，直至新的日线周期低点形成并确认。</span></p>
       </details>
     </div>
     
@@ -199,22 +195,20 @@
       <div class="topline">
         <a href="../stock.html#MU"><b style="font-size:15px">MU</b></a>
         <span class="muted">Micron Technology Inc</span>
-        <span class="muted">7.25% of fund</span>
-        <span class="state st-TOP_WATCH">NEARING A HIGH</span>
-        <span class="urgpill urg-caution">TAKE PROFITS</span>
+        <span class="muted">7.25%<span class="l-en"> of fund</span><span class="l-zh"> 占基金</span></span>
+        <span class="state st-TOP_WATCH"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span>
+        <span class="urgpill urg-caution"><span class="l-en">TAKE PROFITS</span><span class="l-zh">止盈</span></span>
         <span style="flex:1"></span>
-        <span class="muted" style="font-size:12px">daily cycle day 52/~42</span>
+        <span class="muted" style="font-size:12px"><span class="l-en">daily cycle day</span><span class="l-zh">日线周期第</span> 52/~42<span class="l-en"></span><span class="l-zh"> 天</span></span>
       </div>
       <ul class="points sm">
-        <li>Bigger picture is bullish (with-trend for a daily long)</li><li>Swing low printed (buyers rejected the low)</li><li>Back above the 10-day average, and it's turning up</li>
+        <li><span class="l-en">Bigger picture is bullish (with-trend for a daily long)</span><span class="l-zh">大局为看多（对日线多头而言属顺势）</span></li><li><span class="l-en">Swing low printed (buyers rejected the low)</span><span class="l-zh">摆动低点已现（买方拒绝了该低点）</span></li><li><span class="l-en">Back above the 10-day average, and it's turning up</span><span class="l-zh">重新站上 10 日均线之上，且均线开始向上</span></li>
       </ul>
       
       
-      <p class="muted" style="font-size:12px; margin:4px 0">fwd P/E <b>8.8</b> · rev growth <b>196.3%</b> · margin <b>41.0%</b> <span class="help">?<span class="tip">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span></span></p>
-      
       <div data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 61.0, "rsi5": 57.0, "stoch": 16.0, "spark_rsi": [66.3, 59.6, 61.3, 64.4, 66.9, 65.1, 74.9, 76.5, 75.7, 78.0, 80.7, 81.8, 82.4, 69.7, 55.2, 60.8, 59.6, 55.5, 62.1, 60.8], "spark_stoch": [42.3, 16.5, 2.5, 8.1, 17.4, 22.2, 35.6, 47.7, 61.2, 65.2, 76.2, 89.1, 99.0, 81.4, 48.0, 21.6, 12.3, 12.7, 14.2, 15.7], "spark_hist": [14.654, 5.823, 0.394, -1.594, -1.518, -2.78, 5.148, 11.238, 13.443, 16.41, 20.746, 23.375, 23.906, 16.718, 1.942, -2.957, -7.696, -14.023, -11.538, -11.179]}, "3D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 5.0, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 70.0, "rsi5": 65.0, "stoch": 31.0, "spark_rsi": [49.5, 51.4, 53.0, 59.6, 64.9, 62.8, 66.5, 70.1, 68.5, 77.6, 82.3, 84.3, 67.3, 71.4, 76.6, 79.0, 81.8, 69.7, 71.3, 70.1], "spark_stoch": [13.2, 2.9, 8.5, 24.5, 46.3, 61.9, 75.1, 83.8, 93.4, 97.4, 97.4, 100.0, 83.8, 71.4, 63.7, 74.3, 83.3, 68.4, 54.0, 30.8], "spark_hist": [-9.299, -11.218, -11.564, -8.722, -3.984, -1.791, 1.44, 5.448, 6.88, 14.933, 25.63, 34.188, 29.461, 29.521, 35.907, 42.097, 49.88, 42.895, 38.211, 31.244]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 79.0, "rsi5": 79.0, "stoch": 77.0, "spark_rsi": [88.0, 80.6, 82.0, 83.2, 77.7, 65.3, 71.8, 71.0, 56.8, 58.0, 64.6, 68.0, 71.6, 74.9, 84.0, 80.6, 81.5, 87.2, 75.1, 78.6], "spark_stoch": [100.0, 89.6, 81.1, 74.4, 65.9, 41.0, 23.8, 17.7, 17.7, 9.6, 9.7, 21.8, 36.3, 47.3, 68.6, 81.9, 92.9, 92.9, 83.8, 77.4], "spark_hist": [15.87, 14.18, 12.998, 12.138, 9.435, 4.023, 3.431, 2.117, -3.57, -6.916, -5.721, -2.997, 1.007, 5.846, 21.096, 27.552, 31.19, 45.16, 43.901, 47.396]}}'></div>
-      <details style="margin-top:6px"><summary>full reasoning</summary>
-        <p class="muted" style="margin:5px 0">Late in the daily cycle (day 52 of ~36-42) — odds favor a dip into the next cycle low from here even with the trend intact. Next: Let the next daily cycle low form before adding; watch for the swing-low setup.</p>
+      <details style="margin-top:6px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>
+        <p class="muted" style="margin:5px 0"><span class="l-en">Late in the daily cycle (day 52 of ~36-42) — odds favor a dip into the next cycle low from here even with the trend intact.</span><span class="l-zh">处于日线周期晚期（约 36-42 天中的第 52 天）——即便趋势完好，从此处概率上仍倾向于回落至下一个周期低点。</span> <span class="l-en">Next:</span><span class="l-zh">下一步：</span> <span class="l-en">Let the next daily cycle low form before adding; watch for the swing-low setup.</span><span class="l-zh">在加仓前先让下一个日线周期低点形成；留意摆动低点形态。</span></p>
       </details>
     </div>
     
@@ -222,22 +216,20 @@
       <div class="topline">
         <a href="../stock.html#AMD"><b style="font-size:15px">AMD</b></a>
         <span class="muted">Advanced Micro Devices</span>
-        <span class="muted">5.15% of fund</span>
-        <span class="state st-TURN_SIGNALED">BOTTOMING</span>
-        <span class="urgpill urg-imminent">BUY SOON ~99d</span>
+        <span class="muted">5.15%<span class="l-en"> of fund</span><span class="l-zh"> 占基金</span></span>
+        <span class="state st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
+        <span class="urgpill urg-imminent"><span class="l-en">BUY SOON</span><span class="l-zh">即将买入</span> ~99d</span>
         <span style="flex:1"></span>
-        <span class="muted" style="font-size:12px">daily cycle day 52/~42</span>
+        <span class="muted" style="font-size:12px"><span class="l-en">daily cycle day</span><span class="l-zh">日线周期第</span> 52/~42<span class="l-en"></span><span class="l-zh"> 天</span></span>
       </div>
       <ul class="points sm">
-        <li>Bigger picture is mixed (no clear trend for a daily long)</li><li>Swing low printed (buyers rejected the low)</li><li>Back above the 10-day average</li>
+        <li><span class="l-en">Bigger picture is mixed (no clear trend for a daily long)</span><span class="l-zh">大局为混合（对日线多头而言属趋势不明）</span></li><li><span class="l-en">Swing low printed (buyers rejected the low)</span><span class="l-zh">摆动低点已现（买方拒绝了该低点）</span></li><li><span class="l-en">Back above the 10-day average</span><span class="l-zh">重新站上 10 日均线之上</span></li>
       </ul>
-      <p class="early">⚡ Early reversal building (heads-up): StochRSI popped out of oversold. These anticipate a low BEFORE full confirmation — earlier entry, but a higher false-alarm rate, so treat as a heads-up to watch closely, not a trigger yet.</p>
-      
-      <p class="muted" style="font-size:12px; margin:4px 0">fwd P/E <b>39.0</b> · rev growth <b>37.8%</b> · margin <b>13.0%</b> <span class="help">?<span class="tip">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span></span></p>
+      <p class="early"><span class="l-en">⚡ Early reversal building (heads-up): StochRSI popped out of oversold. These anticipate a low BEFORE full confirmation — earlier entry, but a higher false-alarm rate, so treat as a heads-up to watch closely, not a trigger yet.</span><span class="l-zh">⚡ 反转正在提前酝酿（heads-up）：StochRSI popped out of oversold。这些信号会在完全确认之前预判低点——入场更早，但误报率更高，因此应视为密切关注的提示，而非触发信号。</span></p>
       
       <div data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": true, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 99.0, "stoch_cross_up": true, "stoch_cross_dn": false, "rsi14": 60.0, "rsi5": 61.0, "stoch": 20.0, "spark_rsi": [67.3, 66.2, 63.8, 69.6, 69.9, 72.6, 77.1, 74.1, 76.7, 76.0, 73.7, 75.2, 77.8, 70.6, 54.5, 58.8, 55.3, 50.4, 56.9, 60.5], "spark_stoch": [31.2, 20.1, 0.0, 11.1, 22.8, 39.7, 54.0, 62.1, 70.1, 68.2, 72.9, 76.7, 86.6, 78.2, 49.5, 22.2, 7.2, 7.2, 9.0, 20.1], "spark_hist": [3.459, 0.479, -2.284, -2.179, -2.288, -1.505, 0.978, 1.538, 2.834, 2.949, 2.058, 1.688, 2.27, 0.841, -4.168, -5.994, -8.191, -11.015, -10.283, -8.163]}, "3D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 2.5, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 73.0, "rsi5": 69.0, "stoch": 19.0, "spark_rsi": [47.8, 47.7, 54.1, 59.5, 64.3, 71.8, 73.0, 81.7, 77.2, 77.7, 84.0, 86.4, 78.6, 80.4, 81.9, 84.9, 85.1, 70.4, 67.2, 72.8], "spark_stoch": [21.2, 40.2, 67.2, 89.7, 100.0, 100.0, 100.0, 100.0, 96.1, 92.7, 92.7, 96.6, 93.3, 88.2, 84.3, 89.4, 92.9, 72.6, 40.9, 18.9], "spark_hist": [-1.919, -1.42, -0.116, 1.64, 3.627, 6.695, 8.657, 13.445, 14.999, 15.377, 18.95, 22.567, 21.884, 21.535, 21.137, 22.638, 22.191, 16.755, 11.067, 10.162]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 62.3, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 75.0, "rsi5": 75.0, "stoch": 78.0, "spark_rsi": [58.7, 51.0, 50.7, 48.8, 48.8, 46.7, 47.0, 49.6, 49.8, 54.9, 62.2, 68.8, 77.6, 78.8, 85.0, 77.0, 79.9, 82.5, 72.1, 75.2], "spark_stoch": [30.3, 21.6, 6.5, 0.0, 0.0, 0.0, 0.6, 5.5, 10.9, 24.4, 45.8, 73.7, 93.0, 100.0, 100.0, 93.0, 88.5, 86.3, 82.0, 77.9], "spark_hist": [-0.59, -2.62, -3.999, -5.274, -5.945, -6.688, -6.865, -6.216, -5.534, -3.907, -0.996, 2.94, 9.608, 13.998, 21.926, 23.583, 25.922, 28.838, 25.623, 24.732]}}'></div>
-      <details style="margin-top:6px"><summary>full reasoning</summary>
-        <p class="muted" style="margin:5px 0">A new cycle low likely formed 17 day(s) ago (2026-05-19 @ 414.05): swing low in, price back above the 10-day average — but the weekly timeframe hasn't turned yet, so conviction is partial. Next: Either wait for the weekly to turn, or size half until it does.</p>
+      <details style="margin-top:6px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>
+        <p class="muted" style="margin:5px 0"><span class="l-en">A new cycle low likely formed 17 day(s) ago (2026-05-19 @ 414.05): swing low in, price back above the 10-day average — but the weekly timeframe hasn't turned yet, so conviction is partial.</span><span class="l-zh">新的周期低点可能已在 17 天前形成 （2026-05-19 @ 414.05）：摆动低点已现，价格重新站上 10 日均线——但周线周期尚未转向，因此信心仅为部分。</span> <span class="l-en">Next:</span><span class="l-zh">下一步：</span> <span class="l-en">Either wait for the weekly to turn, or size half until it does.</span><span class="l-zh">可等待周线转向，或在其转向前先建半仓。</span></p>
       </details>
     </div>
     
@@ -245,22 +237,20 @@
       <div class="topline">
         <a href="../stock.html#AVGO"><b style="font-size:15px">AVGO</b></a>
         <span class="muted">Broadcom Inc</span>
-        <span class="muted">4.86% of fund</span>
-        <span class="state st-DECLINE">DOWNTREND</span>
-        <span class="urgpill urg-avoid">AVOID</span>
+        <span class="muted">4.86%<span class="l-en"> of fund</span><span class="l-zh"> 占基金</span></span>
+        <span class="state st-DECLINE"><span class="l-en">DOWNTREND</span><span class="l-zh">下跌趋势</span></span>
+        <span class="urgpill urg-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span>
         <span style="flex:1"></span>
-        <span class="muted" style="font-size:12px">daily cycle day 17/~42</span>
+        <span class="muted" style="font-size:12px"><span class="l-en">daily cycle day</span><span class="l-zh">日线周期第</span> 17/~42<span class="l-en"></span><span class="l-zh"> 天</span></span>
       </div>
       <ul class="points sm">
-        <li>Bigger picture is mixed (no clear trend for a daily long)</li><li>⚠ Failed cycle — price broke below the low that began this cycle (5d ago)</li><li>Still below the 10-day average</li>
+        <li><span class="l-en">Bigger picture is mixed (no clear trend for a daily long)</span><span class="l-zh">大局为混合（对日线多头而言属趋势不明）</span></li><li><span class="l-en">⚠ Failed cycle — price broke below the low that began this cycle (5d ago)</span><span class="l-zh">⚠ 失败周期——价格跌破了启动本周期的低点（5 天前）</span></li><li><span class="l-en">Still below the 10-day average</span><span class="l-zh">仍位于 10 日均线之下</span></li>
       </ul>
       
       
-      <p class="muted" style="font-size:12px; margin:4px 0">fwd P/E <b>19.7</b> · rev growth <b>47.9%</b> · margin <b>39.0%</b> <span class="help">?<span class="tip">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span></span></p>
-      
       <div data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 41.0, "rsi5": 34.0, "stoch": 7.0, "spark_rsi": [58.7, 56.5, 52.2, 54.8, 53.3, 53.1, 56.5, 56.4, 58.5, 65.9, 69.8, 74.8, 73.3, 48.1, 39.9, 43.3, 42.3, 37.8, 42.2, 41.4], "spark_stoch": [17.1, 17.1, 0.9, 5.1, 7.2, 9.0, 12.9, 20.8, 34.0, 57.9, 81.2, 99.5, 97.9, 64.6, 31.2, 3.2, 5.5, 5.5, 6.2, 7.2], "spark_hist": [-2.122, -2.698, -3.692, -3.844, -4.084, -4.179, -3.641, -3.236, -2.619, -0.907, 0.956, 3.352, 4.419, 0.888, -3.61, -5.659, -7.03, -8.885, -8.786, -8.53]}, "3D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": true, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 49.0, "rsi5": 40.0, "stoch": 2.0, "spark_rsi": [42.4, 42.4, 44.5, 56.3, 63.2, 66.8, 67.5, 71.0, 64.6, 66.7, 65.2, 66.6, 67.7, 64.7, 63.2, 66.1, 75.4, 49.8, 47.3, 49.3], "spark_stoch": [38.3, 35.1, 24.0, 49.1, 74.2, 100.0, 100.0, 100.0, 92.6, 87.5, 80.8, 83.1, 84.3, 83.7, 79.7, 77.3, 84.7, 60.5, 33.3, 2.3], "spark_hist": [-2.055, -2.275, -1.927, 0.745, 4.287, 7.515, 9.401, 11.404, 10.931, 10.715, 9.691, 8.873, 8.154, 6.664, 4.999, 4.323, 7.01, 2.021, -2.276, -4.401]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 0.7, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 53.0, "rsi5": 40.0, "stoch": 59.0, "spark_rsi": [50.6, 51.0, 48.9, 51.0, 47.3, 50.5, 48.1, 44.9, 42.5, 47.1, 61.0, 66.7, 69.0, 68.6, 69.8, 68.2, 64.4, 69.7, 53.6, 52.8], "spark_stoch": [7.7, 8.2, 9.7, 10.3, 5.9, 9.5, 7.4, 7.4, 2.3, 11.3, 44.6, 77.9, 100.0, 99.4, 99.4, 97.4, 91.4, 91.2, 73.4, 59.3], "spark_hist": [-7.976, -7.839, -8.01, -7.377, -7.567, -6.715, -6.467, -6.806, -7.324, -6.439, -1.955, 3.15, 7.172, 9.158, 10.395, 10.209, 8.72, 9.26, 5.044, 1.719]}}'></div>
-      <details style="margin-top:6px"><summary>full reasoning</summary>
-        <p class="muted" style="margin:5px 0">Failed cycle — price broke below the low that started this cycle, which historically means the larger trend is rolling over (~80% of cases). Next: Stand aside until a new daily cycle low forms and confirms.</p>
+      <details style="margin-top:6px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>
+        <p class="muted" style="margin:5px 0"><span class="l-en">Failed cycle — price broke below the low that started this cycle, which historically means the larger trend is rolling over (~80% of cases).</span><span class="l-zh">失败周期——价格跌破了启动本周期的低点，历史上这通常意味着更大的趋势正在掉头向下（约 80% 的情形）。</span> <span class="l-en">Next:</span><span class="l-zh">下一步：</span> <span class="l-en">Stand aside until a new daily cycle low forms and confirms.</span><span class="l-zh">观望，直至新的日线周期低点形成并确认。</span></p>
       </details>
     </div>
     
@@ -268,22 +258,20 @@
       <div class="topline">
         <a href="../stock.html#INTC"><b style="font-size:15px">INTC</b></a>
         <span class="muted">Intel Corp</span>
-        <span class="muted">3.55% of fund</span>
-        <span class="state st-TURN_SIGNALED">BOTTOMING</span>
-        <span class="urgpill urg-imminent">BUY SOON ~2d</span>
+        <span class="muted">3.55%<span class="l-en"> of fund</span><span class="l-zh"> 占基金</span></span>
+        <span class="state st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
+        <span class="urgpill urg-imminent"><span class="l-en">BUY SOON</span><span class="l-zh">即将买入</span> ~2d</span>
         <span style="flex:1"></span>
-        <span class="muted" style="font-size:12px">daily cycle day 52/~42</span>
+        <span class="muted" style="font-size:12px"><span class="l-en">daily cycle day</span><span class="l-zh">日线周期第</span> 52/~42<span class="l-en"></span><span class="l-zh"> 天</span></span>
       </div>
       <ul class="points sm">
-        <li>Bigger picture is mixed (no clear trend for a daily long)</li><li>Swing low printed (buyers rejected the low)</li><li>Back above the 10-day average, and it's turning up</li>
+        <li><span class="l-en">Bigger picture is mixed (no clear trend for a daily long)</span><span class="l-zh">大局为混合（对日线多头而言属趋势不明）</span></li><li><span class="l-en">Swing low printed (buyers rejected the low)</span><span class="l-zh">摆动低点已现（买方拒绝了该低点）</span></li><li><span class="l-en">Back above the 10-day average, and it's turning up</span><span class="l-zh">重新站上 10 日均线之上，且均线开始向上</span></li>
       </ul>
       
       
-      <p class="muted" style="font-size:12px; margin:4px 0">fwd P/E <b>80.8</b> · rev growth <b>7.2%</b> · margin <b>-6.0%</b> <span class="help">?<span class="tip">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span></span></p>
-      
       <div data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": true, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 1.5, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 62.0, "rsi5": 73.0, "stoch": 50.0, "spark_rsi": [62.3, 61.7, 63.3, 67.9, 67.4, 68.2, 70.2, 68.0, 66.8, 59.2, 53.5, 52.1, 56.3, 55.3, 43.7, 53.0, 51.1, 50.4, 57.8, 62.4], "spark_stoch": [0.0, 0.0, 2.1, 10.2, 18.1, 24.9, 28.4, 29.2, 27.4, 15.7, 7.1, 0.0, 7.8, 13.7, 13.7, 17.6, 21.0, 29.4, 35.4, 49.6], "spark_hist": [0.108, -0.881, -1.421, -1.295, -1.304, -1.281, -1.086, -1.138, -1.283, -1.817, -2.508, -3.002, -2.946, -2.907, -3.618, -3.241, -3.052, -2.892, -2.061, -0.996]}, "3D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 71.0, "rsi5": 70.0, "stoch": 15.0, "spark_rsi": [51.1, 51.2, 61.7, 71.0, 75.6, 77.6, 73.2, 81.5, 85.2, 85.5, 88.4, 90.2, 76.9, 79.6, 79.9, 80.1, 67.5, 60.6, 64.2, 70.6], "spark_stoch": [0.5, 1.2, 32.4, 65.3, 98.0, 100.0, 94.4, 94.4, 94.4, 100.0, 100.0, 100.0, 88.7, 79.7, 70.9, 70.5, 46.1, 21.6, 4.0, 15.2], "spark_hist": [-0.796, -0.8, -0.382, 0.429, 1.292, 1.955, 2.098, 3.085, 4.282, 4.825, 5.736, 6.635, 6.008, 5.848, 5.383, 4.749, 3.138, 1.26, 0.371, 0.764]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 71.0, "rsi5": 69.0, "stoch": 42.0, "spark_rsi": [68.9, 73.1, 64.6, 59.3, 61.2, 57.0, 60.2, 56.6, 55.2, 64.4, 73.9, 77.3, 82.8, 86.9, 90.5, 76.1, 78.6, 74.6, 64.2, 71.3], "spark_stoch": [52.1, 64.2, 64.3, 50.2, 23.7, 9.4, 13.4, 6.5, 6.5, 17.2, 50.5, 83.8, 100.0, 100.0, 100.0, 86.4, 75.1, 60.1, 48.9, 42.0], "spark_hist": [0.506, 0.716, 0.527, 0.169, -0.011, -0.305, -0.365, -0.545, -0.716, -0.36, 0.611, 1.54, 2.895, 4.635, 7.038, 7.07, 7.335, 6.679, 4.805, 4.866]}}'></div>
-      <details style="margin-top:6px"><summary>full reasoning</summary>
-        <p class="muted" style="margin:5px 0">A new cycle low likely formed 5 day(s) ago (2026-06-05 @ 99.17): swing low in, price back above the 10-day average — but the weekly timeframe hasn't turned yet, so conviction is partial. Last cycle was left-translated (topped early) — a bearish structural tell. Next: Either wait for the weekly to turn, or size half until it does.</p>
+      <details style="margin-top:6px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>
+        <p class="muted" style="margin:5px 0"><span class="l-en">A new cycle low likely formed 5 day(s) ago (2026-06-05 @ 99.17): swing low in, price back above the 10-day average — but the weekly timeframe hasn't turned yet, so conviction is partial. Last cycle was left-translated (topped early) — a bearish structural tell.</span><span class="l-zh">新的周期低点可能已在 5 天前形成 （2026-06-05 @ 99.17）：摆动低点已现，价格重新站上 10 日均线——但周线周期尚未转向，因此信心仅为部分。 上一周期为左移结构（见顶偏早）——属于看空的结构性信号。</span> <span class="l-en">Next:</span><span class="l-zh">下一步：</span> <span class="l-en">Either wait for the weekly to turn, or size half until it does.</span><span class="l-zh">可等待周线转向，或在其转向前先建半仓。</span></p>
       </details>
     </div>
     
@@ -291,22 +279,20 @@
       <div class="topline">
         <a href="../stock.html#CSCO"><b style="font-size:15px">CSCO</b></a>
         <span class="muted">Cisco Systems Inc</span>
-        <span class="muted">3.12% of fund</span>
-        <span class="state st-TURN_SIGNALED">BOTTOMING</span>
-        <span class="urgpill urg-imminent">BUY SOON ~3d</span>
+        <span class="muted">3.12%<span class="l-en"> of fund</span><span class="l-zh"> 占基金</span></span>
+        <span class="state st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
+        <span class="urgpill urg-imminent"><span class="l-en">BUY SOON</span><span class="l-zh">即将买入</span> ~3d</span>
         <span style="flex:1"></span>
-        <span class="muted" style="font-size:12px">daily cycle day 67/~42</span>
+        <span class="muted" style="font-size:12px"><span class="l-en">daily cycle day</span><span class="l-zh">日线周期第</span> 67/~42<span class="l-en"></span><span class="l-zh"> 天</span></span>
       </div>
       <ul class="points sm">
-        <li>Bigger picture is mixed (no clear trend for a daily long)</li><li>Swing low printed (buyers rejected the low)</li><li>Still below the 10-day average</li>
+        <li><span class="l-en">Bigger picture is mixed (no clear trend for a daily long)</span><span class="l-zh">大局为混合（对日线多头而言属趋势不明）</span></li><li><span class="l-en">Swing low printed (buyers rejected the low)</span><span class="l-zh">摆动低点已现（买方拒绝了该低点）</span></li><li><span class="l-en">Still below the 10-day average</span><span class="l-zh">仍位于 10 日均线之下</span></li>
       </ul>
       
       
-      <p class="muted" style="font-size:12px; margin:4px 0">fwd P/E <b>25.4</b> · rev growth <b>12.0%</b> · margin <b>20.0%</b> <span class="help">?<span class="tip">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span></span></p>
-      
       <div data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 59.0, "rsi5": 48.0, "stoch": 7.0, "spark_rsi": [88.5, 88.7, 79.4, 76.9, 79.5, 80.9, 75.8, 76.8, 74.2, 75.7, 76.5, 81.1, 77.4, 79.8, 63.0, 65.4, 59.3, 56.9, 60.2, 59.0], "spark_stoch": [100.0, 100.0, 87.4, 71.3, 58.9, 60.8, 59.4, 55.0, 35.6, 23.3, 12.0, 24.6, 28.5, 36.0, 20.1, 17.0, 4.3, 4.3, 4.6, 7.5], "spark_hist": [2.357, 2.616, 2.372, 1.977, 1.815, 1.699, 1.34, 1.063, 0.698, 0.475, 0.296, 0.52, 0.464, 0.552, -0.032, -0.313, -0.79, -1.221, -1.306, -1.405]}, "3D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 3.6, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 70.0, "rsi5": 65.0, "stoch": 39.0, "spark_rsi": [59.6, 50.1, 53.4, 60.4, 57.7, 60.7, 66.9, 65.4, 66.0, 69.4, 68.3, 74.9, 84.3, 77.9, 80.4, 77.6, 81.3, 72.6, 69.0, 70.3], "spark_stoch": [23.2, 21.8, 21.5, 41.1, 63.8, 91.2, 91.2, 97.1, 95.5, 95.5, 96.4, 98.1, 98.1, 93.8, 90.0, 82.8, 85.3, 74.4, 60.0, 39.0], "spark_hist": [-0.089, -0.239, -0.215, 0.098, 0.191, 0.364, 0.771, 0.927, 0.995, 1.16, 1.151, 1.515, 2.843, 3.245, 3.672, 3.583, 3.878, 3.386, 2.644, 2.106]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": true, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 86.0, "rsi5": 94.0, "stoch": 99.0, "spark_rsi": [63.8, 72.2, 55.3, 58.4, 58.8, 57.2, 56.6, 55.1, 58.8, 57.8, 62.7, 67.8, 70.8, 73.5, 77.3, 86.6, 87.2, 87.2, 87.6, 86.5], "spark_stoch": [27.1, 54.2, 52.0, 39.4, 12.9, 16.5, 12.8, 6.0, 9.6, 12.4, 27.2, 44.9, 70.4, 88.9, 97.3, 100.0, 100.0, 100.0, 100.0, 98.9], "spark_hist": [-0.227, 0.254, 0.008, -0.025, -0.056, -0.153, -0.253, -0.373, -0.311, -0.311, -0.116, 0.246, 0.61, 0.961, 1.403, 2.956, 3.876, 4.202, 4.207, 3.889]}}'></div>
-      <details style="margin-top:6px"><summary>full reasoning</summary>
-        <p class="muted" style="margin:5px 0">Buyers rejected the 2026-05-08 low (swing low printed) but price hasn't reclaimed its 10-day average — first box ticked, not all. Last cycle was left-translated (topped early) — a bearish structural tell. Next: Confirmation = a close above the 10-day average with the average turning up.</p>
+      <details style="margin-top:6px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>
+        <p class="muted" style="margin:5px 0"><span class="l-en">Buyers rejected the 2026-05-08 low (swing low printed) but price hasn't reclaimed its 10-day average — first box ticked, not all. Last cycle was left-translated (topped early) — a bearish structural tell.</span><span class="l-zh">买方拒绝了 2026-05-08 的低点（摆动低点已现），但价格尚未收复 10 日均线——第一项条件达成，并非全部。 上一周期为左移结构（见顶偏早）——属于看空的结构性信号。</span> <span class="l-en">Next:</span><span class="l-zh">下一步：</span> <span class="l-en">Confirmation = a close above the 10-day average with the average turning up.</span><span class="l-zh">确认 = 收盘站上 10 日均线且均线开始向上。</span></p>
       </details>
     </div>
     
@@ -314,22 +300,20 @@
       <div class="topline">
         <a href="../stock.html#LRCX"><b style="font-size:15px">LRCX</b></a>
         <span class="muted">Lam Research Corp</span>
-        <span class="muted">2.93% of fund</span>
-        <span class="state st-TURN_SIGNALED">BOTTOMING</span>
-        <span class="urgpill urg-imminent">BUY SOON ~3d</span>
+        <span class="muted">2.93%<span class="l-en"> of fund</span><span class="l-zh"> 占基金</span></span>
+        <span class="state st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
+        <span class="urgpill urg-imminent"><span class="l-en">BUY SOON</span><span class="l-zh">即将买入</span> ~3d</span>
         <span style="flex:1"></span>
-        <span class="muted" style="font-size:12px">daily cycle day 31/~42</span>
+        <span class="muted" style="font-size:12px"><span class="l-en">daily cycle day</span><span class="l-zh">日线周期第</span> 31/~42<span class="l-en"></span><span class="l-zh"> 天</span></span>
       </div>
       <ul class="points sm">
-        <li>Bigger picture is mixed (no clear trend for a daily long)</li><li>Swing low printed (buyers rejected the low)</li><li>Back above the 10-day average, and it's turning up</li>
+        <li><span class="l-en">Bigger picture is mixed (no clear trend for a daily long)</span><span class="l-zh">大局为混合（对日线多头而言属趋势不明）</span></li><li><span class="l-en">Swing low printed (buyers rejected the low)</span><span class="l-zh">摆动低点已现（买方拒绝了该低点）</span></li><li><span class="l-en">Back above the 10-day average, and it's turning up</span><span class="l-zh">重新站上 10 日均线之上，且均线开始向上</span></li>
       </ul>
       
       
-      <p class="muted" style="font-size:12px; margin:4px 0">fwd P/E <b>46.0</b> · rev growth <b>23.8%</b> · margin <b>31.0%</b> <span class="help">?<span class="tip">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span></span></p>
-      
       <div data-mtf='{"D": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 69.0, "rsi5": 76.0, "stoch": 59.0, "spark_rsi": [57.1, 53.6, 51.2, 59.1, 62.6, 63.6, 68.8, 66.6, 66.0, 66.1, 65.3, 71.0, 73.5, 68.5, 51.4, 58.5, 59.4, 57.0, 67.7, 68.5], "spark_stoch": [62.2, 43.7, 17.4, 19.6, 34.2, 56.2, 73.5, 82.5, 88.5, 85.4, 83.1, 88.3, 93.5, 92.5, 59.5, 37.1, 23.2, 31.3, 44.9, 58.8], "spark_hist": [0.974, -0.358, -1.574, -1.164, -0.299, 0.357, 1.754, 2.193, 2.183, 1.959, 1.528, 2.158, 2.905, 2.62, 0.049, -0.354, -0.556, -1.134, 1.025, 2.46]}, "3D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 75.0, "rsi5": 82.0, "stoch": 90.0, "spark_rsi": [62.8, 46.4, 53.6, 55.6, 66.3, 66.6, 65.7, 63.5, 60.1, 61.8, 71.2, 70.7, 71.4, 59.9, 67.0, 69.4, 68.7, 72.1, 68.3, 74.5], "spark_stoch": [26.6, 19.0, 18.8, 19.0, 41.9, 56.9, 68.6, 72.8, 72.0, 75.1, 81.3, 91.3, 99.3, 84.0, 78.8, 75.2, 85.0, 90.8, 83.9, 89.6], "spark_hist": [-3.482, -5.217, -5.001, -4.365, -1.359, 0.567, 1.488, 1.564, 0.927, 0.693, 2.953, 3.999, 4.488, 2.751, 3.388, 4.298, 4.339, 5.171, 4.621, 6.345]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 77.0, "rsi5": 83.0, "stoch": 86.0, "spark_rsi": [83.5, 81.6, 82.4, 83.9, 75.8, 57.2, 61.1, 65.3, 58.2, 60.1, 69.8, 70.5, 70.5, 65.8, 72.5, 68.9, 72.2, 74.1, 68.3, 76.6], "spark_stoch": [91.7, 86.6, 88.9, 89.6, 75.5, 46.0, 18.8, 14.4, 15.6, 14.4, 19.9, 34.8, 48.0, 43.4, 46.5, 44.4, 52.4, 63.6, 71.0, 85.6], "spark_hist": [6.196, 5.785, 5.287, 5.059, 3.7, 0.209, -1.426, -1.599, -2.956, -3.446, -0.923, 0.724, 1.494, 0.954, 2.707, 2.821, 3.807, 4.782, 3.919, 6.944]}}'></div>
-      <details style="margin-top:6px"><summary>full reasoning</summary>
-        <p class="muted" style="margin:5px 0">A new cycle low likely formed 17 day(s) ago (2026-05-19 @ 273.38): swing low in, price back above the 10-day average — but the weekly timeframe hasn't turned yet, so conviction is partial. Next: Either wait for the weekly to turn, or size half until it does.</p>
+      <details style="margin-top:6px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>
+        <p class="muted" style="margin:5px 0"><span class="l-en">A new cycle low likely formed 17 day(s) ago (2026-05-19 @ 273.38): swing low in, price back above the 10-day average — but the weekly timeframe hasn't turned yet, so conviction is partial.</span><span class="l-zh">新的周期低点可能已在 17 天前形成 （2026-05-19 @ 273.38）：摆动低点已现，价格重新站上 10 日均线——但周线周期尚未转向，因此信心仅为部分。</span> <span class="l-en">Next:</span><span class="l-zh">下一步：</span> <span class="l-en">Either wait for the weekly to turn, or size half until it does.</span><span class="l-zh">可等待周线转向，或在其转向前先建半仓。</span></p>
       </details>
     </div>
     
@@ -337,104 +321,107 @@
       <div class="topline">
         <a href="../stock.html#AMAT"><b style="font-size:15px">AMAT</b></a>
         <span class="muted">Applied Materials Inc</span>
-        <span class="muted">2.84% of fund</span>
-        <span class="state st-TURN_SIGNALED">BOTTOMING</span>
-        <span class="urgpill urg-imminent">BUY SOON ~3d</span>
+        <span class="muted">2.84%<span class="l-en"> of fund</span><span class="l-zh"> 占基金</span></span>
+        <span class="state st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
+        <span class="urgpill urg-imminent"><span class="l-en">BUY SOON</span><span class="l-zh">即将买入</span> ~3d</span>
         <span style="flex:1"></span>
-        <span class="muted" style="font-size:12px">daily cycle day 32/~42</span>
+        <span class="muted" style="font-size:12px"><span class="l-en">daily cycle day</span><span class="l-zh">日线周期第</span> 32/~42<span class="l-en"></span><span class="l-zh"> 天</span></span>
       </div>
       <ul class="points sm">
-        <li>Bigger picture is mixed (no clear trend for a daily long)</li><li>Swing low printed (buyers rejected the low)</li><li>Back above the 10-day average, and it's turning up</li>
+        <li><span class="l-en">Bigger picture is mixed (no clear trend for a daily long)</span><span class="l-zh">大局为混合（对日线多头而言属趋势不明）</span></li><li><span class="l-en">Swing low printed (buyers rejected the low)</span><span class="l-zh">摆动低点已现（买方拒绝了该低点）</span></li><li><span class="l-en">Back above the 10-day average, and it's turning up</span><span class="l-zh">重新站上 10 日均线之上，且均线开始向上</span></li>
       </ul>
       
       
-      <p class="muted" style="font-size:12px; margin:4px 0">fwd P/E <b>34.9</b> · rev growth <b>11.4%</b> · margin <b>29.0%</b> <span class="help">?<span class="tip">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span></span></p>
-      
       <div data-mtf='{"D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 74.0, "rsi5": 83.0, "stoch": 79.0, "spark_rsi": [61.7, 52.2, 49.8, 56.3, 56.6, 58.1, 64.4, 61.5, 61.9, 62.0, 64.4, 71.9, 73.9, 74.1, 54.0, 62.7, 64.1, 63.3, 72.2, 74.0], "spark_stoch": [73.0, 54.8, 27.3, 16.4, 26.5, 43.0, 59.2, 69.0, 76.5, 71.8, 81.8, 91.0, 100.0, 100.0, 72.4, 56.9, 40.2, 49.9, 62.4, 78.9], "spark_hist": [2.093, 0.032, -1.815, -1.732, -1.643, -1.312, 0.302, 0.758, 0.98, 0.973, 1.314, 3.37, 5.035, 5.73, 2.603, 2.843, 3.126, 2.823, 5.853, 8.183]}, "3D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 76.0, "rsi5": 83.0, "stoch": 65.0, "spark_rsi": [55.6, 56.4, 58.1, 66.0, 67.7, 65.6, 66.5, 70.5, 58.9, 60.7, 64.3, 67.8, 68.6, 65.2, 66.3, 69.4, 75.0, 63.5, 69.5, 76.2], "spark_stoch": [10.5, 8.7, 4.9, 20.4, 37.3, 48.5, 49.3, 64.5, 56.8, 51.9, 38.0, 57.9, 75.7, 77.7, 74.0, 75.1, 86.9, 73.1, 64.8, 64.8], "spark_hist": [-4.032, -4.86, -4.946, -2.602, -0.588, 0.105, 0.588, 2.077, 0.471, -0.236, 0.325, 1.735, 2.632, 2.189, 1.917, 2.509, 5.064, 3.764, 5.278, 10.14]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 83.0, "rsi5": 92.0, "stoch": 79.0, "spark_rsi": [79.8, 79.9, 84.1, 86.2, 84.4, 63.4, 66.6, 69.2, 62.4, 64.5, 72.2, 71.4, 73.9, 65.2, 71.3, 71.4, 70.2, 72.5, 72.8, 82.5], "spark_stoch": [90.2, 85.4, 90.2, 95.1, 96.6, 63.2, 34.5, 13.2, 13.2, 11.5, 16.8, 29.4, 42.6, 32.8, 32.6, 29.1, 36.1, 38.9, 56.4, 78.8], "spark_hist": [7.582, 6.725, 7.643, 8.879, 8.7, 4.788, 2.832, 2.118, -0.043, -1.009, 1.359, 2.274, 3.669, 2.221, 3.798, 4.3, 3.767, 3.997, 3.731, 10.26]}}'></div>
-      <details style="margin-top:6px"><summary>full reasoning</summary>
-        <p class="muted" style="margin:5px 0">A new cycle low likely formed 17 day(s) ago (2026-05-19 @ 406.4): swing low in, price back above the 10-day average — but the weekly timeframe hasn't turned yet, so conviction is partial. Next: Either wait for the weekly to turn, or size half until it does.</p>
+      <details style="margin-top:6px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>
+        <p class="muted" style="margin:5px 0"><span class="l-en">A new cycle low likely formed 17 day(s) ago (2026-05-19 @ 406.4): swing low in, price back above the 10-day average — but the weekly timeframe hasn't turned yet, so conviction is partial.</span><span class="l-zh">新的周期低点可能已在 17 天前形成 （2026-05-19 @ 406.4）：摆动低点已现，价格重新站上 10 日均线——但周线周期尚未转向，因此信心仅为部分。</span> <span class="l-en">Next:</span><span class="l-zh">下一步：</span> <span class="l-en">Either wait for the weekly to turn, or size half until it does.</span><span class="l-zh">可等待周线转向，或在其转向前先建半仓。</span></p>
       </details>
     </div>
     
   </div>
 
   <div class="panel">
-    <h2>How much to trust these states — measured, not promised
-      <span class="help">?<span class="tip">Every trading day since 2000, across sector ETFs and large stocks, we computed the same ladder state from data available at the time and measured what price did over the next month. These are those base rates. They are tendencies with real spread around them — position sizing beats certainty.</span></span>
+    <h2><span class="l-en">How much to trust these states — measured, not promised</span><span class="l-zh">这些状态有多可信 — 实测得出，而非承诺</span>
+      <span class="help">?<span class="tip"><span class="l-en">Every trading day since 2000, across sector ETFs and large stocks, we computed the same ladder state from data available at the time and measured what price did over the next month. These are those base rates. They are tendencies with real spread around them — position sizing beats certainty.</span><span class="l-zh">自 2000 年以来的每个交易日，针对各行业 ETF 与大型股票，我们用当时可得的数据计算出相同的阶梯状态，并测量此后一个月的价格表现。以下即为这些基准胜率。它们是带有实际离散度的倾向 — 仓位管理胜过确定性。</span></span></span>
     </h2>
     
     <table>
-      <tr><th>state</th><th>samples</th><th>up next month</th><th>avg next month</th></tr>
+      <tr><th><span class="l-en">state</span><span class="l-zh">状态</span></th><th><span class="l-en">samples</span><span class="l-zh">样本数</span></th><th><span class="l-en">up next month</span><span class="l-zh">下月上涨</span></th><th><span class="l-en">avg next month</span><span class="l-zh">下月均值</span></th></tr>
       
       <tr>
-        <td><span class="state st-DECLINE">DOWNTREND · AVOID</span></td>
+        <td><span class="state st-DECLINE"><span class="l-en">DOWNTREND</span><span class="l-zh">下跌趋势</span> · <span class="l-en">AVOID</span><span class="l-zh">回避</span></span></td>
         <td>8555</td>
         <td>60.8%</td>
         <td class="pos">+2.37%</td>
       </tr>
       
       <tr>
-        <td><span class="state st-BOTTOM_WATCH">NEARING A LOW · GET READY</span></td>
+        <td><span class="state st-BOTTOM_WATCH"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span> · <span class="l-en">GET READY</span><span class="l-zh">准备</span></span></td>
         <td>10391</td>
         <td>58.8%</td>
         <td class="pos">+1.56%</td>
       </tr>
       
       <tr>
-        <td><span class="state st-TURN_SIGNALED">BOTTOMING · BUY SETUP</span></td>
+        <td><span class="state st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span> · <span class="l-en">BUY SETUP</span><span class="l-zh">买入预备</span></span></td>
         <td>15606</td>
         <td>57.9%</td>
         <td class="pos">+1.27%</td>
       </tr>
       
       <tr>
-        <td><span class="state st-FRESH_BUY">BUY ZONE · BUY</span></td>
+        <td><span class="state st-FRESH_BUY"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span> · <span class="l-en">BUY</span><span class="l-zh">买入</span></span></td>
         <td>5280</td>
         <td>57.4%</td>
         <td class="pos">+1.13%</td>
       </tr>
       
       <tr>
-        <td><span class="state st-RALLY_ON">UPTREND · HOLD</span></td>
+        <td><span class="state st-RALLY_ON"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span> · <span class="l-en">HOLD</span><span class="l-zh">持有</span></span></td>
         <td>11764</td>
         <td>59.1%</td>
         <td class="pos">+1.36%</td>
       </tr>
       
       <tr>
-        <td><span class="state st-TOP_WATCH">NEARING A HIGH · TAKE PROFITS</span></td>
+        <td><span class="state st-TOP_WATCH"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span> · <span class="l-en">TAKE PROFITS</span><span class="l-zh">止盈</span></span></td>
         <td>8740</td>
         <td>58.0%</td>
         <td class="pos">+1.06%</td>
       </tr>
       
       <tr>
-        <td><span class="state st-ROLLING_OVER">TOPPING · SELL SETUP</span></td>
+        <td><span class="state st-ROLLING_OVER"><span class="l-en">TOPPING</span><span class="l-zh">做顶中</span> · <span class="l-en">SELL SETUP</span><span class="l-zh">卖出预备</span></span></td>
         <td>2910</td>
         <td>57.5%</td>
         <td class="pos">+1.09%</td>
       </tr>
       
       <tr>
-        <td><span class="state st-COUNTERTREND_BOUNCE">COUNTER-TREND BOUNCE · HIGH-RISK · NIMBLE ONLY</span></td>
+        <td><span class="state st-COUNTERTREND_BOUNCE"><span class="l-en">COUNTER-TREND BOUNCE</span><span class="l-zh">逆势反弹</span> · <span class="l-en">HIGH-RISK · NIMBLE ONLY</span><span class="l-zh">HIGH-RISK · NIMBLE ONLY</span></span></td>
         <td>9362</td>
         <td>59.6%</td>
         <td class="pos">+1.38%</td>
       </tr>
       
     </table>
-    <p style="margin:10px 0 0"><b>Read the table before trusting any state.</b>
-      <span class="muted">What it shows: stocks drift up over a month from EVERY state
+    <p style="margin:10px 0 0"><b><span class="l-en">Read the table before trusting any state.</span><span class="l-zh">相信任何状态之前，先读这张表。</span></b>
+      <span class="muted"><span class="l-en">What it shows: stocks drift up over a month from EVERY state
       (that's the market's long upward bias), the spread between states is small, and the
       "scary" states measured slightly BETTER forward returns than the buy states —
       markets mean-revert, and waiting for full confirmation costs part of the bounce.
       So use the ladder for <b>structure</b>: where you are in the cycle, what would
       confirm a turn, and exactly where you're wrong (the invalidation price) — and use
       position size, not certainty, to express conviction. It is not a return predictor,
-      and the table proves we checked.</span></p>
+      and the table proves we checked.</span><span class="l-zh">它说明了什么：从每一种状态出发，股票在一个月内平均都会上行
+      （这是市场长期的向上偏向），各状态之间的差距很小，而那些“吓人”的状态实测的远期收益
+      反而略优于买入状态 — 市场会均值回归，等待完全确认会损失一部分反弹。
+      所以请把阶梯用于<b>结构判断</b>：你处于周期的哪个位置、什么信号能确认转向，
+      以及你在哪里就错了（失效价位）— 然后用仓位大小、而非确定性来表达信念。
+      它不是收益预测器，这张表正证明我们核查过了。</span></span></p>
     
     
-    <p class="early" style="margin-top:10px">⚡ <b>Do the early (pre-emptive) signals actually help?</b>
+    <p class="early" style="margin-top:10px">⚡ <span class="l-en"><b>Do the early (pre-emptive) signals actually help?</b>
       We measured it the same way. When a "nearing a low" reading ALSO had an early bullish signal
       (RSI divergence / histogram turning / StochRSI pop), the next month was up
       <b>57.8%</b> of the time (avg +1.16%, n=384) —
@@ -442,15 +429,28 @@
       So on average the early signals did <b>not</b> beat simply waiting — they fire sooner and catch the
       occasional sharp V-bottom, but at a higher false-alarm rate. Use them to know <i>when to pay
       attention</i>, then still require confirmation before committing. That's the honest tradeoff,
-      measured rather than assumed.</p>
+      measured rather than assumed.</span><span class="l-zh"><b>这些提前（预判）信号真的有用吗？</b>
+      我们用同样的方法做了测量。当一次“接近低点”的读数同时伴有提前的看多信号
+      （RSI 背离／柱状图转向／StochRSI 跳升）时，此后一个月上涨的概率为
+      <b>57.8%</b>（均值 +1.16%，n=384）—
+      而没有此信号时为 <b>58.8%</b>（均值 +1.58%，n=10007）。
+      所以平均而言，提前信号并<b>未</b>胜过单纯等待 — 它们触发更早，能抓住偶尔出现的尖锐 V 型底，
+      但误报率也更高。用它们来判断<i>何时该留意</i>，然后在投入之前仍需要确认。
+      这就是诚实的取舍 — 实测得出，而非臆断。</span></p>
     
     
-    <p class="muted" style="font-size:12px">Cycle methodology after graddhy.com / thefinancialtap.com: equity daily cycles
+    <p class="muted" style="font-size:12px"><span class="l-en">Cycle methodology after graddhy.com / thefinancialtap.com: equity daily cycles
        typically run 36-42 trading days trough-to-trough; timing bands catch roughly 70% of lows, so ~3 in 10 arrive
-       early or late — that's why confirmation (swing low, 10-day average) gates every buy state. Charts by TradingView.</p>
+       early or late — that's why confirmation (swing low, 10-day average) gates every buy state. Charts by TradingView.</span><span class="l-zh">周期方法论参考 graddhy.com / thefinancialtap.com：股票日线周期
+       通常为 36-42 个交易日（谷底到谷底）；时间窗能捕捉约 70% 的低点，故约十分之三会提前或滞后出现 —
+       这正是为何每个买入状态都以确认（摆动低点、10 日均线）为前提。图表由 TradingView 提供。</span></p>
   </div>
 
 <script src="../mtf.js"></script>
 <script src="../theme.js"></script>
+<footer class="site-footer">
+  <span class="made">Made with ❤️ in Canada</span>
+  <span class="dev">Developed by Chris Wong</span>
+</footer>
 </body>
 </html>
