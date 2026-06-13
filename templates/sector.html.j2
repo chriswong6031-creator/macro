@@ -1,5 +1,8 @@
-{% macro help(text) -%}
-<span class="help">?<span class="tip">{{ text }}</span></span>
+{% macro help(en, zh='') -%}
+<span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
+{%- endmacro %}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
 <!DOCTYPE html>
 <html lang="en">
@@ -7,7 +10,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ s.name }} ({{ s.fund }}) — cycle & holdings</title>
-<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="../theme.css">
 <style>
   * { box-sizing:border-box; }
@@ -64,7 +67,7 @@
                transform:translateX(-50%); width:300px; background:var(--panel);
                border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60;
                font-size:12px; line-height:1.45; color:var(--text); font-weight:400;
-               box-shadow:0 6px 18px rgba(0,0,0,.5); pointer-events:none; }
+               box-shadow:var(--popover-shadow); pointer-events:none; }
   .help:hover .tip { display:block; }
   table { border-collapse:collapse; width:100%; font-size:13px; }
   th,td { text-align:left; padding:4px 8px; border-bottom:1px solid var(--line); }
@@ -76,15 +79,16 @@
 <body>
   <div class="panel">
     <div class="topline">
-      <h1>{{ s.name }} <span class="muted">({{ s.fund }})</span></h1>
-      <span class="state st-{{ s.ladder.state | replace(" ", "_") }}">{{ s.ladder.label }}</span>
+      <h1>{{ td(s.name) }} <span class="muted">({{ s.fund }})</span></h1>
+      <span class="state st-{{ s.ladder.state | replace(" ", "_") }}">{{ td(s.ladder.label) }}</span>
       <span style="flex:1"></span>
-      <a class="navbtn" href="../index.html">← Dashboard</a>
+      <a class="navbtn" href="../index.html">{{ t('← Dashboard', '← 仪表盘') }}</a>
+      <button class="lang-btn">中文</button>
       <button class="theme-btn">☀️ Light</button>
     </div>
     {% set e = s.ladder.entry %}
     <div class="entrybar urg-{{ e.urgency }}">
-      <span class="entrytag">{{ e.tag }}</span>
+      <span class="entrytag">{{ td(e.tag) }}</span>
       <span>{{ e.text }}</span>
     </div>
     {% if s.ladder.early_note %}<p class="early">{{ s.ladder.early_note }}</p>{% endif %}
@@ -94,26 +98,26 @@
     {% set cp = s.ladder.cycle_plain %}
     <div class="cyclebox">
       <div><b>📅 {{ cp.daily_line }}</b> — {{ cp.daily_phase }}
-        {{ help("The DAILY cycle is the short rhythm — equities tend to bottom every ~36-42 trading days. 'Day N' counts trading days since the last daily low. Past ~42 (overdue) means a fresh low could come any day.") }}</div>
+        {{ help("The DAILY cycle is the short rhythm — equities tend to bottom every ~36-42 trading days. 'Day N' counts trading days since the last daily low. Past ~42 (overdue) means a fresh low could come any day.", "日线周期是短节奏 — 股市通常每约 36-42 个交易日筑底一次。“第 N 天”指自上次日线低点以来的交易日数。超过约 42 天（已逾期）意味着新低随时可能出现。") }}</div>
       {% if cp.weekly_line %}<div><b>🗓 {{ cp.weekly_line }}</b> — {{ cp.weekly_phase }}
-        {{ help("The WEEKLY (investor) cycle is the bigger rhythm — ~16-26 weeks, containing several daily cycles. It sets the tide the daily cycles swim in; early weeks = more upside room, late weeks = treat rallies cautiously.") }}</div>{% endif %}
+        {{ help("The WEEKLY (investor) cycle is the bigger rhythm — ~16-26 weeks, containing several daily cycles. It sets the tide the daily cycles swim in; early weeks = more upside room, late weeks = treat rallies cautiously.", "周线（投资者）周期是更大的节奏 — 约 16-26 周，包含数个日线周期。它决定了日线周期所处的大势；早期周次=上行空间更大，晚期周次=对反弹保持谨慎。") }}</div>{% endif %}
       {% if cp.translation %}<div class="muted">{{ cp.translation }}</div>{% endif %}
     </div>
-    {% if s.cycle.failed_cycle %}<p class="neg" style="margin:6px 0 0">⚠ Failed cycle: price is below the low that started this cycle — historically the larger trend is rolling over in ~80% of such cases.</p>{% endif %}
-    <details style="margin-top:8px"><summary>full reasoning</summary>
-      <p class="muted" style="margin:6px 0">{{ s.ladder.why }} Next: {{ s.ladder.next }}</p>
+    {% if s.cycle.failed_cycle %}<p class="neg" style="margin:6px 0 0">⚠ {{ t('Failed cycle: price is below the low that started this cycle — historically the larger trend is rolling over in ~80% of such cases.', '周期失败：价格已跌破启动本周期的低点 — 历史上约 80% 的此类情形中，更大的趋势正在转向。') }}</p>{% endif %}
+    <details style="margin-top:8px"><summary>{{ t('full reasoning', '完整推理') }}</summary>
+      <p class="muted" style="margin:6px 0">{{ s.ladder.why }} {{ t('Next:', '下一步：') }} {{ s.ladder.next }}</p>
     </details>
   </div>
 
   <div class="panel">
-    <h2>Momentum across timeframes
-      {{ help("Daily / 3-day / weekly views of the same ETF. Weekly is the tide, 3-day the wave, daily the ripple — signals are strongest when all three agree. RSI & StochRSI gauges show oversold→overbought; the MACD bars show momentum's trajectory and the estimated days to its next cross.") }}
+    <h2>{{ t('Momentum across timeframes', '跨周期动量') }}
+      {{ help("Daily / 3-day / weekly views of the same ETF. Weekly is the tide, 3-day the wave, daily the ripple — signals are strongest when all three agree. RSI & StochRSI gauges show oversold→overbought; the MACD bars show momentum's trajectory and the estimated days to its next cross.", "同一只 ETF 的日线／3 日／周线视角。周线是潮汐，3 日是波浪，日线是涟漪 — 三者一致时信号最强。RSI 与 StochRSI 表盘显示超卖→超买；MACD 柱状图显示动量轨迹及距下次交叉的预估天数。") }}
     </h2>
     <div data-mtf='{{ s.mtf_json }}'></div>
   </div>
 
   <div class="panel">
-    <h2>Chart</h2>
+    <h2>{{ t('Chart', '图表') }}</h2>
     <div class="tv">
       <div class="tradingview-widget-container">
         <div id="tv_main"></div>
@@ -124,63 +128,68 @@
   </div>
 
   <div class="panel">
-    <h2>Top 10 holdings — each analyzed on its own cycle
-      {{ help("Every holding gets the same treatment as the ETF: daily-cycle position, multi-timeframe momentum, and a ladder state. The states carry measured base rates (table at the bottom). Weight = % of the ETF this stock represents — the top names drive the fund.") }}
+    <h2>{{ t('Top 10 holdings — each analyzed on its own cycle', '前 10 大持仓 — 各自按其周期分析') }}
+      {{ help("Every holding gets the same treatment as the ETF: daily-cycle position, multi-timeframe momentum, and a ladder state. The states carry measured base rates (table at the bottom). Weight = % of the ETF this stock represents — the top names drive the fund.", "每只持仓都与 ETF 同样处理：日线周期位置、跨周期动量及阶梯状态。各状态附有实测基准胜率（见底部表格）。权重=该股票占 ETF 的百分比 — 前几大成分股主导基金走势。") }}
     </h2>
     {% for h in s.holdings %}
     <div class="card">
       <div class="topline">
         <a href="../stock.html#{{ h.ticker }}"><b style="font-size:15px">{{ h.ticker }}</b></a>
         <span class="muted">{{ h.name }}</span>
-        <span class="muted">{{ h.weight_pct }}% of fund</span>
-        <span class="state st-{{ h.ladder.state | replace(" ", "_") }}">{{ h.ladder.label }}</span>
-        <span class="urgpill urg-{{ h.ladder.entry.urgency }}">{{ h.ladder.entry.tag }}{% if h.ladder.entry.days_hi and h.ladder.entry.urgency == 'imminent' %} ~{{ h.ladder.entry.days_hi }}d{% endif %}</span>
+        <span class="muted">{{ h.weight_pct }}%{{ t(' of fund', ' 占基金') }}</span>
+        <span class="state st-{{ h.ladder.state | replace(" ", "_") }}">{{ td(h.ladder.label) }}</span>
+        <span class="urgpill urg-{{ h.ladder.entry.urgency }}">{{ td(h.ladder.entry.tag) }}{% if h.ladder.entry.days_hi and h.ladder.entry.urgency == 'imminent' %} ~{{ h.ladder.entry.days_hi }}d{% endif %}</span>
         <span style="flex:1"></span>
-        <span class="muted" style="font-size:12px">daily cycle day {{ h.cycle.dc_day }}/~{{ h.cycle.dc_band[1] }}</span>
+        <span class="muted" style="font-size:12px">{{ t('daily cycle day', '日线周期第') }} {{ h.cycle.dc_day }}/~{{ h.cycle.dc_band[1] }}{{ t('', ' 天') }}</span>
       </div>
       <ul class="points sm">
         {% for p in h.ladder.points[:3] %}<li>{{ p }}</li>{% endfor %}
       </ul>
       {% if h.ladder.early_note %}<p class="early">{{ h.ladder.early_note }}</p>{% endif %}
       {% if h.fundamentals and (h.fundamentals.fwd_pe or h.fundamentals.rev_growth) %}
-      <p class="muted" style="font-size:12px; margin:4px 0">{% if h.fundamentals.fwd_pe %}fwd P/E <b>{{ h.fundamentals.fwd_pe | round(1) }}</b>{% endif %}{% if h.fundamentals.rev_growth %} · rev growth <b>{{ (h.fundamentals.rev_growth * 100) | round(1) }}%</b>{% endif %}{% if h.fundamentals.profit_margin %} · margin <b>{{ (h.fundamentals.profit_margin * 100) | round(0) }}%</b>{% endif %} {{ help("Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.") }}</p>
+      <p class="muted" style="font-size:12px; margin:4px 0">{% if h.fundamentals.fwd_pe %}{{ t('fwd P/E', '预期市盈率') }} <b>{{ h.fundamentals.fwd_pe | round(1) }}</b>{% endif %}{% if h.fundamentals.rev_growth %} · {{ t('rev growth', '营收增长') }} <b>{{ (h.fundamentals.rev_growth * 100) | round(1) }}%</b>{% endif %}{% if h.fundamentals.profit_margin %} · {{ t('margin', '利润率') }} <b>{{ (h.fundamentals.profit_margin * 100) | round(0) }}%</b>{% endif %} {{ help("Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.", "来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。") }}</p>
       {% endif %}
       <div data-mtf='{{ h.mtf_json }}'></div>
-      <details style="margin-top:6px"><summary>full reasoning</summary>
-        <p class="muted" style="margin:5px 0">{{ h.ladder.why }} Next: {{ h.ladder.next }}</p>
+      <details style="margin-top:6px"><summary>{{ t('full reasoning', '完整推理') }}</summary>
+        <p class="muted" style="margin:5px 0">{{ h.ladder.why }} {{ t('Next:', '下一步：') }} {{ h.ladder.next }}</p>
       </details>
     </div>
     {% endfor %}
   </div>
 
   <div class="panel">
-    <h2>How much to trust these states — measured, not promised
-      {{ help("Every trading day since 2000, across sector ETFs and large stocks, we computed the same ladder state from data available at the time and measured what price did over the next month. These are those base rates. They are tendencies with real spread around them — position sizing beats certainty.") }}
+    <h2>{{ t('How much to trust these states — measured, not promised', '这些状态有多可信 — 实测得出，而非承诺') }}
+      {{ help("Every trading day since 2000, across sector ETFs and large stocks, we computed the same ladder state from data available at the time and measured what price did over the next month. These are those base rates. They are tendencies with real spread around them — position sizing beats certainty.", "自 2000 年以来的每个交易日，针对各行业 ETF 与大型股票，我们用当时可得的数据计算出相同的阶梯状态，并测量此后一个月的价格表现。以下即为这些基准胜率。它们是带有实际离散度的倾向 — 仓位管理胜过确定性。") }}
     </h2>
     {% if calibration %}
     <table>
-      <tr><th>state</th><th>samples</th><th>up next month</th><th>avg next month</th></tr>
+      <tr><th>{{ t('state', '状态') }}</th><th>{{ t('samples', '样本数') }}</th><th>{{ t('up next month', '下月上涨') }}</th><th>{{ t('avg next month', '下月均值') }}</th></tr>
       {% for st in ladder_order %}{% if calibration.get(st) %}
       <tr>
-        <td><span class="state st-{{ st | replace(" ", "_") }}">{{ state_display[st].label }} · {{ state_display[st].action }}</span></td>
+        <td><span class="state st-{{ st | replace(" ", "_") }}">{{ td(state_display[st].label) }} · {{ td(state_display[st].action) }}</span></td>
         <td>{{ calibration[st].n }}</td>
         <td>{{ calibration[st].hit_pct }}%</td>
         <td class="{{ 'pos' if calibration[st].avg_fwd_pct > 0 else 'neg' }}">{{ "%+.2f" | format(calibration[st].avg_fwd_pct) }}%</td>
       </tr>
       {% endif %}{% endfor %}
     </table>
-    <p style="margin:10px 0 0"><b>Read the table before trusting any state.</b>
-      <span class="muted">What it shows: stocks drift up over a month from EVERY state
+    <p style="margin:10px 0 0"><b>{{ t('Read the table before trusting any state.', '相信任何状态之前，先读这张表。') }}</b>
+      <span class="muted"><span class="l-en">What it shows: stocks drift up over a month from EVERY state
       (that's the market's long upward bias), the spread between states is small, and the
       "scary" states measured slightly BETTER forward returns than the buy states —
       markets mean-revert, and waiting for full confirmation costs part of the bounce.
       So use the ladder for <b>structure</b>: where you are in the cycle, what would
       confirm a turn, and exactly where you're wrong (the invalidation price) — and use
       position size, not certainty, to express conviction. It is not a return predictor,
-      and the table proves we checked.</span></p>
+      and the table proves we checked.</span><span class="l-zh">它说明了什么：从每一种状态出发，股票在一个月内平均都会上行
+      （这是市场长期的向上偏向），各状态之间的差距很小，而那些“吓人”的状态实测的远期收益
+      反而略优于买入状态 — 市场会均值回归，等待完全确认会损失一部分反弹。
+      所以请把阶梯用于<b>结构判断</b>：你处于周期的哪个位置、什么信号能确认转向，
+      以及你在哪里就错了（失效价位）— 然后用仓位大小、而非确定性来表达信念。
+      它不是收益预测器，这张表正证明我们核查过了。</span></span></p>
     {% if calibration.get("BOTTOM WATCH +early-bull") and calibration.get("BOTTOM WATCH no-early") %}
     {% set ew = calibration["BOTTOM WATCH +early-bull"] %}{% set nw = calibration["BOTTOM WATCH no-early"] %}
-    <p class="early" style="margin-top:10px">⚡ <b>Do the early (pre-emptive) signals actually help?</b>
+    <p class="early" style="margin-top:10px">⚡ <span class="l-en"><b>Do the early (pre-emptive) signals actually help?</b>
       We measured it the same way. When a "nearing a low" reading ALSO had an early bullish signal
       (RSI divergence / histogram turning / StochRSI pop), the next month was up
       <b>{{ ew.hit_pct }}%</b> of the time (avg {{ "%+.2f" | format(ew.avg_fwd_pct) }}%, n={{ ew.n }}) —
@@ -188,15 +197,28 @@
       So on average the early signals did <b>not</b> beat simply waiting — they fire sooner and catch the
       occasional sharp V-bottom, but at a higher false-alarm rate. Use them to know <i>when to pay
       attention</i>, then still require confirmation before committing. That's the honest tradeoff,
-      measured rather than assumed.</p>
+      measured rather than assumed.</span><span class="l-zh"><b>这些提前（预判）信号真的有用吗？</b>
+      我们用同样的方法做了测量。当一次“接近低点”的读数同时伴有提前的看多信号
+      （RSI 背离／柱状图转向／StochRSI 跳升）时，此后一个月上涨的概率为
+      <b>{{ ew.hit_pct }}%</b>（均值 {{ "%+.2f" | format(ew.avg_fwd_pct) }}%，n={{ ew.n }}）—
+      而没有此信号时为 <b>{{ nw.hit_pct }}%</b>（均值 {{ "%+.2f" | format(nw.avg_fwd_pct) }}%，n={{ nw.n }}）。
+      所以平均而言，提前信号并<b>未</b>胜过单纯等待 — 它们触发更早，能抓住偶尔出现的尖锐 V 型底，
+      但误报率也更高。用它们来判断<i>何时该留意</i>，然后在投入之前仍需要确认。
+      这就是诚实的取舍 — 实测得出，而非臆断。</span></p>
     {% endif %}
-    {% else %}<p class="muted">Calibration pending — regenerates with the weekly run.</p>{% endif %}
-    <p class="muted" style="font-size:12px">Cycle methodology after graddhy.com / thefinancialtap.com: equity daily cycles
+    {% else %}<p class="muted">{{ t('Calibration pending — regenerates with the weekly run.', '校准待定 — 将随每周运行重新生成。') }}</p>{% endif %}
+    <p class="muted" style="font-size:12px"><span class="l-en">Cycle methodology after graddhy.com / thefinancialtap.com: equity daily cycles
        typically run 36-42 trading days trough-to-trough; timing bands catch roughly 70% of lows, so ~3 in 10 arrive
-       early or late — that's why confirmation (swing low, 10-day average) gates every buy state. Charts by TradingView.</p>
+       early or late — that's why confirmation (swing low, 10-day average) gates every buy state. Charts by TradingView.</span><span class="l-zh">周期方法论参考 graddhy.com / thefinancialtap.com：股票日线周期
+       通常为 36-42 个交易日（谷底到谷底）；时间窗能捕捉约 70% 的低点，故约十分之三会提前或滞后出现 —
+       这正是为何每个买入状态都以确认（摆动低点、10 日均线）为前提。图表由 TradingView 提供。</span></p>
   </div>
 
 <script src="../mtf.js"></script>
 <script src="../theme.js"></script>
+<footer class="site-footer">
+  <span class="made">Made with ❤️ in Canada</span>
+  <span class="dev">Developed by Chris Wong</span>
+</footer>
 </body>
 </html>

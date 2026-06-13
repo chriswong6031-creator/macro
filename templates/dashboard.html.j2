@@ -1,5 +1,8 @@
-{% macro help(text) -%}
-<span class="help">?<span class="tip">{{ text }}</span></span>
+{% macro help(en, zh='') -%}
+<span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
+{%- endmacro %}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
 <!DOCTYPE html>
 <html lang="en">
@@ -7,7 +10,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Macro Regime Dashboard — {{ latest.date }}</title>
-<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 <style>
@@ -45,10 +48,30 @@
 
   .pill { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px; }
 
-  .alert { padding: 8px 12px; border-radius: 8px; margin: 6px 0;
-           background: var(--panel2); border-left: 3px solid var(--muted); }
+  .alert { display: block; padding: 10px 13px; border-radius: 8px; margin: 8px 0;
+           background: var(--panel2); border-left: 3px solid var(--muted);
+           color: var(--text); transition: transform .12s, box-shadow .12s; }
+  a.alert:hover { transform: translateX(2px); box-shadow: 0 3px 14px rgba(0,0,0,.22); }
   .alert-act { border-left-color: var(--act); }
   .alert-warn { border-left-color: var(--warn); }
+  .alert-info { border-left-color: var(--info); }
+  .alert-head { display: flex; align-items: baseline; gap: 8px; }
+  .alert-ico { font-size: 15px; flex: none; line-height: 1; }
+  .alert-head b { font-size: 13.5px; color: var(--text); }
+  .alert-jump { margin-left: auto; font-size: 11px; font-weight: 700;
+                color: var(--link); flex: none; white-space: nowrap; }
+  .alert-detail { margin: 6px 0 0; font-size: 12.5px; color: var(--text);
+                  font-variant-numeric: tabular-nums; }
+  .alert-what { margin: 6px 0 0; padding-top: 6px; border-top: 1px solid var(--line);
+                font-size: 12px; color: var(--muted); line-height: 1.5; }
+  /* deep-linked panel flash: when an alert jumps here, pulse a glow once */
+  .panel { scroll-margin-top: 16px; }
+  @keyframes panelflash {
+    0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--link) 0%, transparent); }
+    12%  { box-shadow: 0 0 0 4px color-mix(in srgb, var(--link) 60%, transparent); }
+    100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--link) 0%, transparent); }
+  }
+  .panel.flash { animation: panelflash 2.4s ease-out 1; border-color: var(--link); }
   .muted { color: var(--muted); }
   .chart { width: 100%; }
   .topline { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
@@ -63,7 +86,7 @@
                padding: 9px 11px; border-radius: 8px;
                z-index: 60; font-size: 12px; line-height: 1.45; color: var(--text);
                text-align: left; font-weight: 400; text-transform: none;
-               letter-spacing: normal; box-shadow: 0 6px 18px rgba(0,0,0,.5);
+               letter-spacing: normal; box-shadow: var(--popover-shadow);
                pointer-events: none; white-space: normal; }
   .help:hover .tip { display: block; }
   th .help .tip, .help.below .tip { bottom: auto; top: 140%; }
@@ -181,11 +204,12 @@
 <div class="grid">
 
   <!-- ======================= HEADER ======================= -->
-  <div class="panel span12">
+  <div class="panel span12" id="regime-radar">
     <div class="topline">
-      <h1>Macro Regime Dashboard</h1>
-      <span class="badge quad-{{ latest.quad }}">{{ latest.quad_name }}</span>
+      <h1>{{ t('Macro Regime Dashboard', '宏观周期仪表盘') }}</h1>
+      <span class="badge quad-{{ latest.quad }}">{{ td(latest.quad_name) }}</span>
       <span class="help">?<span class="tip tip-map">
+        <span class="l-en">
         <b>The four market regimes</b> — combinations of growth and inflation direction.
         (Sometimes written Q1–Q4, but these are <b>quadrants, NOT calendar quarters</b>.)
         <span class="qgrid">
@@ -201,9 +225,28 @@
         </span>
         The label changes only after 7 straight days of evidence (or one extreme shock day),
         so it doesn't flip-flop. Today's regime is outlined in white.
+        </span>
+        <span class="l-zh">
+        <b>四种市场周期</b> — 增长方向与通胀方向的组合。
+        （有时写作 Q1–Q4，但这是<b>象限，而非日历季度</b>。）
+        <span class="qgrid">
+          <span class="qax"></span>
+          <span class="qax">通胀下行 ↓</span>
+          <span class="qax">通胀上行 ↑</span>
+          <span class="qax">增长<br>上行 ↑</span>
+          <span class="qcell{{ ' qcur' if latest.quad == 'Q1' }}" style="background:var(--q1)">理想增长<br><small>最利好科技与质量</small></span>
+          <span class="qcell{{ ' qcur' if latest.quad == 'Q2' }}" style="background:var(--q2);color:#1a1a1a">再通胀<br><small>周期股、能源、银行</small></span>
+          <span class="qax">增长<br>下行 ↓</span>
+          <span class="qcell{{ ' qcur' if latest.quad == 'Q4' }}" style="background:var(--q4)">增长恐慌<br><small>防御板块与债券</small></span>
+          <span class="qcell{{ ' qcur' if latest.quad == 'Q3' }}" style="background:var(--q3)">滞胀<br><small>最危险的那一种</small></span>
+        </span>
+        标签只有在连续 7 天证据一致（或单日极端冲击）后才会改变，
+        因此不会反复横跳。今日周期以白色边框标出。
+        </span>
       </span></span>
-      <span class="badge state-{{ latest.transition_state }}">{{ latest.transition_state }}</span>
+      <span class="badge state-{{ latest.transition_state }}">{{ td(latest.transition_state) }}</span>
       <span class="help">?<span class="tip">
+        <span class="l-en">
         <b>The transition radar</b> — is the current regime ending? It escalates as warning
         signals stack up:
         <span class="lad lad-tint" style="--c:var(--muted)">⚪ <b>STABLE</b> — no warnings. Trust the regime label.</span>
@@ -212,9 +255,19 @@
         <span class="lad lad-tint" style="--c:var(--down)">🚨 <b>NEW REGIME</b> — the label changed within the last week.</span>
         The warnings: thinning participation, nervous credit, risk-ratios turning, inflation
         trades turning, signal disagreement, fragile options positioning.
+        </span>
+        <span class="l-zh">
+        <b>转换雷达</b> — 当前周期是否正在结束？随着预警信号累积而升级：
+        <span class="lad lad-tint" style="--c:var(--muted)">⚪ <b>稳定</b> — 无预警。信任周期标签。</span>
+        <span class="lad lad-tint" style="--c:var(--warn)">🟠 <b>走弱</b> — 2 个以上预警。停止加注依赖周期的押注。</span>
+        <span class="lad lad-tint" style="--c:var(--orange)">🔶 <b>转换中</b> — 3 个以上预警。周期很可能在标签翻转之前就已结束 — 立即降低风险。</span>
+        <span class="lad lad-tint" style="--c:var(--down)">🚨 <b>新周期</b> — 标签在过去一周内已改变。</span>
+        预警包括：参与度变薄、信用市场紧张、风险比率反转、通胀交易反转、信号分歧、期权仓位脆弱。
+        </span>
       </span></span>
-      <span class="kv">signal agreement <b>{{ (latest.confidence * 100) | round | int }}%</b></span>
+      <span class="kv">{{ t('signal agreement', '信号一致度') }} <b>{{ (latest.confidence * 100) | round | int }}%</b></span>
       <span class="help">?<span class="tip">
+        <span class="l-en">
         <b>Signal agreement</b> — how many of the ~14 underlying indicators point the
         same way. Today: <b>{{ (latest.confidence * 100) | round | int }}%</b>.
         <span class="scale">
@@ -226,9 +279,23 @@
         <b>Mixed</b>: the indicators disagree — expect chop, size down, trust the radar
         more than the label. <b>OK</b>: usable with caution. <b>Solid</b>: the regime
         call is well-supported.
+        </span>
+        <span class="l-zh">
+        <b>信号一致度</b> — 约 14 个底层指标中有多少指向同一方向。
+        今日：<b>{{ (latest.confidence * 100) | round | int }}%</b>。
+        <span class="scale">
+          <span style="background:var(--down)">分歧</span>
+          <span style="background:var(--warn)">尚可</span>
+          <span style="background:var(--up)">扎实</span>
+        </span>
+        <span class="sl"><span>0%</span><span>30%</span><span>45%</span><span>100%</span></span>
+        <b>分歧</b>：指标互相矛盾 — 预期震荡，缩小仓位，相信雷达多于标签。
+        <b>尚可</b>：可用，但需谨慎。<b>扎实</b>：周期判断有充分支撑。
+        </span>
       </span></span>
-      <span class="kv">Fed liquidity <b>{{ latest.liquidity_overlay }}</b></span>
+      <span class="kv">{{ t('Fed liquidity', '美联储流动性') }} <b>{{ td(latest.liquidity_overlay) }}</b></span>
       <span class="help">?<span class="tip">
+        <span class="l-en">
         <b>Fed liquidity</b> — net money flowing into or out of the financial system
         (Fed balance sheet − reverse-repo parking − the government's checking account),
         measured as a 4-week trend.
@@ -238,9 +305,21 @@
           <tr><td>⚪ <b>neutral</b></td><td>roughly flat</td><td>no signal</td></tr>
           <tr><td>🔴 <b>contracting</b></td><td>money draining</td><td>persistent headwind — be choosier</td></tr>
         </table>
+        </span>
+        <span class="l-zh">
+        <b>美联储流动性</b> — 净流入或流出金融系统的资金
+        （美联储资产负债表 − 逆回购停泊 − 政府活期账户），以 4 周趋势衡量。
+        <table>
+          <tr><th></th><th>含义</th><th>历史显示</th></tr>
+          <tr><td>🟢 <b>扩张</b></td><td>资金潮上涨</td><td>我们测试过最可靠的顺风：股市约 73% 的月份上涨</td></tr>
+          <tr><td>⚪ <b>中性</b></td><td>大致持平</td><td>无信号</td></tr>
+          <tr><td>🔴 <b>收缩</b></td><td>资金流失</td><td>持续逆风 — 需更挑剔</td></tr>
+        </table>
+        </span>
       </span></span>
-      <span class="kv">cycle <b>{{ latest.cycle_tag }}</b></span>
+      <span class="kv">{{ t('cycle', '商业周期') }} <b>{{ td(latest.cycle_tag) }}</b></span>
       <span class="help">?<span class="tip">
+        <span class="l-en">
         <b>Business-cycle position</b> — the multi-year backdrop (from the yield curve,
         credit spreads and market breadth). Slower-moving than the regime.
         <table>
@@ -249,31 +328,59 @@
           <tr><td>🌇 <b>late</b></td><td>curve inverted/flattening, breadth thinning — enjoy it, but keep one eye on the exit</td></tr>
         </table>
         Context only — it sizes your patience, not your trades.
+        </span>
+        <span class="l-zh">
+        <b>商业周期位置</b> — 多年期的大背景（来自收益率曲线、信用利差与市场广度）。
+        比周期标签变化更慢。
+        <table>
+          <tr><td>🌱 <b>早期</b></td><td>压力后复苏 — 历史上风险回报最佳</td></tr>
+          <tr><td>☀️ <b>中期</b></td><td>扩张平稳推进 — 正常环境</td></tr>
+          <tr><td>🌇 <b>晚期</b></td><td>曲线倒挂／走平，广度变薄 — 享受它，但留意出口</td></tr>
+        </table>
+        仅作背景参考 — 它决定你的耐心，而非你的交易。
+        </span>
       </span></span>
       <span style="flex:1"></span>
-      <a class="navbtn" href="stock.html">🔎 Any stock</a>
-      <a class="navbtn" href="brief.html">📰 Daily brief</a>
-      <a class="navbtn" href="history.html">📈 History & charts</a>
-      <button class="theme-btn">☀️ Light</button>
+      <a class="navbtn" href="stock.html">{{ t('🔎 Any stock', '🔎 任意股票') }}</a>
+      <a class="navbtn" href="brief.html">{{ t('📰 Daily brief', '📰 每日简报') }}</a>
+      <a class="navbtn" href="history.html">{{ t('📈 History & charts', '📈 历史与图表') }}</a>
+      <button class="lang-btn">中文</button>
+      <button class="theme-btn">☀️ {{ t('Light', '浅色') }}</button>
     </div>
     <details class="howto">
-      <summary>New here? How to read this page in 60 seconds</summary>
+      <summary>{{ t('New here? How to read this page in 60 seconds', '初次访问？60 秒读懂本页') }}</summary>
       <div>
+        <span class="l-en">
         <b>1.</b> The colored badge is the market regime — the "weather" (not a calendar quarter!). The second badge is the transition radar — whether that weather is about to change.<br>
         <b>2.</b> <b>Where we are</b> shows how far along this regime likely is. <b>What's likely next</b> gives the historical odds of each path and what to do about it. <b>How to trade it</b> turns today's conditions into a posture and concrete names.<br>
         <b>3.</b> Everything below that is supporting evidence. Hover any <span class="help">?</span> for a plain-English explanation. <span class="pos">Green = risk-friendly</span>, <span class="neg">red = risk-hostile</span>.<br>
         <b>4.</b> This is a context machine with measured odds, not a crystal ball.
+        </span>
+        <span class="l-zh">
+        <b>1.</b> 彩色徽章是市场周期 — 即"天气"（不是日历季度！）。第二个徽章是转换雷达 — 这种天气是否即将改变。<br>
+        <b>2.</b> <b>我们身处何处</b>显示当前周期大致走到哪一步。<b>接下来可能发生什么</b>给出每条路径的历史概率及应对方式。<b>如何交易</b>把今日条件转化为持仓姿态与具体标的。<br>
+        <b>3.</b> 其下的所有内容都是佐证。将鼠标悬停在任意 <span class="help">?</span> 上可获得通俗解释。<span class="pos">绿色 = 风险友好</span>，<span class="neg">红色 = 风险敌对</span>。<br>
+        <b>4.</b> 这是一台带有量化概率的背景分析机器，而非水晶球。
+        </span>
       </div>
     </details>
   </div>
 
-  {% if latest.alerts %}
+  {% if alerts %}
   <div class="panel span12">
-    <h2>Fired alerts (today)
-      {{ help("Alerts fire only when something CHANGES — a warning level escalating, a crossing, a sign flip — never just because a level is high. They're rare by design; read every one.") }}
+    <h2>{{ t('Fired alerts (today)', '已触发警报（今日）') }}
+      {{ help("Alerts fire only when something CHANGES — a warning level escalating, a crossing, a sign flip — never just because a level is high. They're rare by design; read every one. Click any alert to jump to the scorecard it came from.", "警报只在某物发生变化时触发 — 预警级别升级、出现交叉、符号翻转 — 绝不仅因某个水平偏高而触发。它们刻意设计得稀少；每一条都要读。点击任意警报可跳转到其来源的计分卡。") }}
     </h2>
-    {% for a in latest.alerts %}
-      <div class="alert alert-{{ a.severity }}"><b>{{ a.rule }}</b> — {{ a.message }}</div>
+    {% for a in alerts %}
+      <a class="alert alert-{{ a.severity }}" {% if a.anchor %}href="#{{ a.anchor }}"{% endif %}>
+        <div class="alert-head">
+          <span class="alert-ico">{{ a.icon }}</span>
+          <b><span class="l-en">{{ a.plain_en }}</span><span class="l-zh">{{ a.plain_zh }}</span></b>
+          {% if a.anchor %}<span class="alert-jump">{{ t('View scorecard ↓', '查看计分卡 ↓') }}</span>{% endif %}
+        </div>
+        <div class="alert-detail"><span class="l-en">{{ a.message }}</span><span class="l-zh">{{ a.message_zh or a.message }}</span></div>
+        <div class="alert-what"><span class="l-en">{{ a.what_en }}</span><span class="l-zh">{{ a.what_zh }}</span></div>
+      </a>
     {% endfor %}
   </div>
   {% endif %}
@@ -281,57 +388,57 @@
   <!-- ======================= ACTION BOARD ======================= -->
   {% if action_board %}
   <div class="panel span12">
-    <h2>⚡ What to act on now
-      {{ help("Your at-a-glance starting point. Built from each sector's own price cycle (and standout individual stocks): what's a confirmed buy today, what's setting up to buy within a few days, what to take profits on, and what to leave alone. 'Days' are rough trajectory estimates, not promises. Click any name for the full breakdown.") }}
+    <h2>⚡ {{ t('What to act on now', '当前可操作') }}
+      {{ help("Your at-a-glance starting point. Built from each sector's own price cycle (and standout individual stocks): what's a confirmed buy today, what's setting up to buy within a few days, what to take profits on, and what to leave alone. 'Days' are rough trajectory estimates, not promises. Click any name for the full breakdown.", "你的一眼总览起点。基于每个板块自身的价格周期（及表现突出的个股）：今日已确认的买入、几天内即将构筑的买入、需止盈的、以及该放手不管的。'天数'是粗略的轨迹估计，并非承诺。点击任意名称查看完整拆解。") }}
     </h2>
     <div class="actiongrid">
       <div class="actcol act-buy">
-        <div class="acth">🟢 BUY ZONE — confirmed now</div>
+        <div class="acth">🟢 {{ t('BUY ZONE — confirmed now', '买入区 — 已确认') }}</div>
         {% for x in action_board.buy_now %}
-          <a class="actitem" href="sectors/{{ x.ticker }}.html"><b>{{ x.name }}</b> <span class="muted">{{ x.ticker }}</span><span class="acttag">{{ x.label }}</span></a>
-        {% else %}<p class="muted sm">None today — nothing has fully confirmed a fresh cycle low.</p>{% endfor %}
+          <a class="actitem" href="sectors/{{ x.ticker }}.html"><b>{{ td(x.name) }}</b> <span class="muted">{{ x.ticker }}</span><span class="acttag">{{ td(x.label) }}</span></a>
+        {% else %}<p class="muted sm">{{ t('None today — nothing has fully confirmed a fresh cycle low.', '今日无 — 尚无标的完全确认新的周期低点。') }}</p>{% endfor %}
       </div>
       <div class="actcol act-soon">
-        <div class="acth">🔵 SETTING UP — buy soon</div>
+        <div class="acth">🔵 {{ t('SETTING UP — buy soon', '构筑中 — 即将买入') }}</div>
         {% for x in action_board.buy_soon %}
-          <a class="actitem" href="sectors/{{ x.ticker }}.html"><b>{{ x.name }}</b> <span class="muted">{{ x.ticker }}</span>{% if x.days is not none %}<span class="acteta">~{{ x.days }}d</span>{% endif %}</a>
-        {% else %}<p class="muted sm">No imminent setups.</p>{% endfor %}
+          <a class="actitem" href="sectors/{{ x.ticker }}.html"><b>{{ td(x.name) }}</b> <span class="muted">{{ x.ticker }}</span>{% if x.days is not none %}<span class="acteta">~{{ x.days }}d</span>{% endif %}</a>
+        {% else %}<p class="muted sm">{{ t('No imminent setups.', '暂无临近的构筑。') }}</p>{% endfor %}
       </div>
       <div class="actcol act-trim">
-        <div class="acth">🟠 TAKE PROFITS / topping</div>
+        <div class="acth">🟠 {{ t('TAKE PROFITS / topping', '止盈／做顶') }}</div>
         {% for x in action_board.take_profits %}
-          <a class="actitem" href="sectors/{{ x.ticker }}.html"><b>{{ x.name }}</b> <span class="muted">{{ x.ticker }}</span><span class="acttag">{{ x.label }}</span></a>
-        {% else %}<p class="muted sm">Nothing topping.</p>{% endfor %}
+          <a class="actitem" href="sectors/{{ x.ticker }}.html"><b>{{ td(x.name) }}</b> <span class="muted">{{ x.ticker }}</span><span class="acttag">{{ td(x.label) }}</span></a>
+        {% else %}<p class="muted sm">{{ t('Nothing topping.', '无标的做顶。') }}</p>{% endfor %}
       </div>
       <div class="actcol act-hold">
-        <div class="acth">⚪ HOLD / avoid</div>
+        <div class="acth">⚪ {{ t('HOLD / avoid', '持有／回避') }}</div>
         {% for x in action_board.hold %}
-          <a class="actitem" href="sectors/{{ x.ticker }}.html"><b>{{ x.name }}</b> <span class="muted">hold — don't chase</span></a>
+          <a class="actitem" href="sectors/{{ x.ticker }}.html"><b>{{ td(x.name) }}</b> <span class="muted">{{ t("hold — don't chase", '持有 — 勿追高') }}</span></a>
         {% endfor %}
         {% for x in action_board.avoid %}
-          <a class="actitem" href="sectors/{{ x.ticker }}.html"><b>{{ x.name }}</b> <span class="muted">{{ "wait" if x.tag == "WAIT" else "avoid" }}</span></a>
+          <a class="actitem" href="sectors/{{ x.ticker }}.html"><b>{{ td(x.name) }}</b> <span class="muted">{{ t("wait", '等待') if x.tag == "WAIT" else t("avoid", '回避') }}</span></a>
         {% endfor %}
       </div>
     </div>
     {% if action_board.notable %}
     <div class="notable">
-      <span class="muted" style="font-size:12px">Standout individual stocks (from sector top-10s):</span>
+      <span class="muted" style="font-size:12px">{{ t('Standout individual stocks (from sector top-10s):', '表现突出的个股（来自各板块前十大持仓）：') }}</span>
       {% for n in action_board.notable %}
-        <a class="chip {{ 'chip-pos' if n.urgency in ('now','imminent') else 'chip-neg' }}" href="stock.html#{{ n.ticker }}">{{ n.ticker }} · {{ n.label }}{% if n.urgency == 'imminent' and n.days %} (~{{ n.days }}d){% endif %}</a>
+        <a class="chip {{ 'chip-pos' if n.urgency in ('now','imminent') else 'chip-neg' }}" href="stock.html#{{ n.ticker }}">{{ n.ticker }} · {{ td(n.label) }}{% if n.urgency == 'imminent' and n.days %} (~{{ n.days }}d){% endif %}</a>
       {% endfor %}
     </div>
     {% endif %}
-    <p class="muted" style="font-size:11.5px; margin-top:8px">⚠ Cycle-timing signals are about <i>where in the price cycle</i> a sector is — most useful combined with the regime read above. Our calibration shows these states don't beat buy-and-hold on average return; their value is structure and risk placement (entry + a defined exit), not certainty.</p>
+    <p class="muted" style="font-size:11.5px; margin-top:8px">⚠ {{ t("Cycle-timing signals are about <i>where in the price cycle</i> a sector is — most useful combined with the regime read above. Our calibration shows these states don't beat buy-and-hold on average return; their value is structure and risk placement (entry + a defined exit), not certainty.", "周期择时信号关乎一个板块<i>处于价格周期的哪个位置</i> — 与上方的周期判读结合使用最有价值。我们的校准显示这些状态在平均回报上并不能跑赢买入持有；它们的价值在于结构与风险摆位（入场 + 明确的出场），而非确定性。") }}</p>
   </div>
   {% endif %}
 
   <!-- ======================= NOW ======================= -->
   {% if pb %}
   <div class="panel span6">
-    <h2>Where we are in this regime
-      {{ help("Compares this regime's age against every " + latest.quad_name + " period since 2007 in this exact classifier. Regimes don't die of old age — but the older one gets relative to history, the more weight every warning flag deserves.") }}
+    <h2>{{ t('Where we are in this regime', '我们身处此周期何处') }}
+      {{ help("Compares this regime's age against every " + latest.quad_name + " period since 2007 in this exact classifier. Regimes don't die of old age — but the older one gets relative to history, the more weight every warning flag deserves.", "将此周期的年龄与自 2007 年以来本分类器中每一段 " + latest.quad_name + " 周期对比。周期不会因年老而自然消亡 — 但相对历史越老，每一面预警旗都越值得加重看待。") }}
     </h2>
-    <p style="font-size:14.5px; margin: 2px 0 6px"><b>{{ pb.headline.split('. Posture')[0] }}.</b></p>
+    <p style="font-size:14.5px; margin: 2px 0 6px"><b>{{ t(pb.quad_meaning.en, pb.quad_meaning.zh) }}.</b></p>
     {% if pb.progress %}
     <div class="lifebar">
       <div class="zone" style="left:0; width:{{ pb.progress.zone_early_pct }}%; background:color-mix(in srgb, var(--up) 35%, var(--panel))"></div>
@@ -339,42 +446,50 @@
       <div class="zone" style="left:{{ pb.progress.zone_mid_pct }}%; width:{{ 100 - pb.progress.zone_mid_pct }}%; background:color-mix(in srgb, var(--down) 35%, var(--panel))"></div>
       <div class="marker" style="left:{{ pb.progress.bar_pct }}%"></div>
     </div>
-    <div class="lifelabels"><span>young</span><span>mid-life</span><span>old</span></div>
+    <div class="lifelabels"><span>{{ t('young', '年轻') }}</span><span>{{ t('mid-life', '中年') }}</span><span>{{ t('old', '年老') }}</span></div>
     <p style="margin:10px 0 4px"><b>{{ pb.progress.phase | upper }}</b> — {{ pb.progress.phase_note }}.</p>
     <p class="muted" style="margin:4px 0">
+      <span class="l-en">
       {{ pb.progress.age_days }} trading days in, vs a median of {{ pb.progress.median_days }}
       across {{ pb.progress.n_history }} past {{ latest.quad_name }} periods.
       {{ pb.progress.pct_longer | round | int }}% of them lasted longer than this one has so far{% if pb.progress.median_remaining_days %} —
       and those that did typically ran another ~{{ pb.progress.median_remaining_days }} trading days
       (≈{{ (pb.progress.median_remaining_days / 5) | round(1) }} weeks){% endif %}.
-      {{ help("Historical base rates from this classifier's own 2007-present history — odds and typical paths, not predictions. A young regime + STABLE radar = let winners run. An old regime + warnings = the odds of a shift compound.") }}
+      </span>
+      <span class="l-zh">
+      已运行 {{ pb.progress.age_days }} 个交易日，对比 {{ pb.progress.n_history }} 段过往 {{ td(latest.quad_name) }} 周期的中位数 {{ pb.progress.median_days }} 个交易日。
+      其中 {{ pb.progress.pct_longer | round | int }}% 比当前这一段持续得更久{% if pb.progress.median_remaining_days %} —
+      而那些更久的通常还会再运行约 {{ pb.progress.median_remaining_days }} 个交易日
+      （≈{{ (pb.progress.median_remaining_days / 5) | round(1) }} 周）{% endif %}。
+      </span>
+      {{ help("Historical base rates from this classifier's own 2007-present history — odds and typical paths, not predictions. A young regime + STABLE radar = let winners run. An old regime + warnings = the odds of a shift compound.", "来自本分类器自身 2007 年至今历史的基础概率 — 是概率与典型路径，而非预测。年轻周期 + 稳定雷达 = 让赢家继续奔跑。年老周期 + 预警 = 转变的概率层层叠加。") }}
     </p>
     {% else %}
-    <p class="muted">Not enough regime history for lifespan statistics yet.</p>
+    <p class="muted">{{ t('Not enough regime history for lifespan statistics yet.', '周期历史尚不足以做寿命统计。') }}</p>
     {% endif %}
   </div>
 
   <!-- ======================= NEXT ======================= -->
   <div class="panel span6">
-    <h2>What's likely next — and how to trade it
-      {{ help("Simple historical frequencies: across every " + latest.quad_name + " period since 2007, which regime came next. These are base rates, not forecasts — but they tell you which playbook to keep warm. The watch names below are NOT buys yet; the evidence says anticipating rotations loses money — wait for the trend to confirm.") }}
+    <h2>{{ t("What's likely next — and how to trade it", '接下来可能发生什么 — 以及如何交易') }}
+      {{ help("Simple historical frequencies: across every " + latest.quad_name + " period since 2007, which regime came next. These are base rates, not forecasts — but they tell you which playbook to keep warm. The watch names below are NOT buys yet; the evidence says anticipating rotations loses money — wait for the trend to confirm.", "简单的历史频率：自 2007 年以来每一段 " + latest.quad_name + " 周期之后，接下来出现的是哪个周期。这些是基础概率，而非预测 — 但能告诉你该把哪套剧本备着。下方的观察标的目前还不是买入；证据表明提前押注轮动会亏钱 — 等趋势确认。") }}
     </h2>
     {% for n in pb.next_list %}
     <div class="prob">
-      <span class="nm">{{ n.name }}</span>
+      <span class="nm">{{ td(n.name) }}</span>
       <span class="bar"><i style="width:{{ n.prob_pct }}%; background: var(--q{{ n.code[1] }})"></i></span>
       <span class="pc">{{ n.prob_pct }}%</span>
     </div>
     {% endfor %}
     {% if pb.watchlist %}
-      <h3>Accumulation watchlist for that shift</h3>
+      <h3>{{ t('Accumulation watchlist for that shift', '为该转变准备的吸筹观察名单') }}</h3>
       {% for x in pb.watchlist %}
-        <div class="card"><span class="calltag tag-watch">WATCH — DON'T BUY YET</span>
+        <div class="card"><span class="calltag tag-watch">{{ td("WATCH — DON'T BUY YET") }}</span>
           <b class="tk">{{ x.ticker }}</b> · {{ x.name }}<br>
           <span class="muted">{{ x.why }}</span></div>
       {% endfor %}
     {% endif %}
-    <h3>The signals that would announce the shift</h3>
+    <h3>{{ t('The signals that would announce the shift', '将预告该转变的信号') }}</h3>
     <ul class="compact muted">
       {% for t in pb.triggers %}<li>{{ t }}</li>{% endfor %}
     </ul>
@@ -382,12 +497,12 @@
 
   <!-- ======================= TRADE IT ======================= -->
   <div class="panel span12">
-    <h2>How to trade the current regime
-      {{ help("Built from conditions that held up in both halves of a 2007-2026 backtest. The dial is the headline: how much risk current conditions support. Sector calls below it are risk filters and confirmation tools — our research found no stable 'this sector will outperform' signal at monthly horizons, so anyone selling you that is curve-fitting.") }}
+    <h2>{{ t('How to trade the current regime', '如何交易当前周期') }}
+      {{ help("Built from conditions that held up in both halves of a 2007-2026 backtest. The dial is the headline: how much risk current conditions support. Sector calls below it are risk filters and confirmation tools — our research found no stable 'this sector will outperform' signal at monthly horizons, so anyone selling you that is curve-fitting.", "基于在 2007–2026 回测前后两半都站得住脚的条件构建。刻度盘是核心：当前条件支持多大的风险。其下的板块判断是风险过滤器与确认工具 — 我们的研究在月度时间尺度上未发现稳定的'某板块将跑赢'信号，所以任何向你兜售此类信号的人都是在过拟合。") }}
     </h2>
     <div class="dial">
       {% for p in ["DEFENSIVE","CAREFUL","NEUTRAL","CONSTRUCTIVE","AGGRESSIVE"] %}
-        <span class="{{ 'active-' + p if pb.dial.posture == p }}">{{ p }}</span>
+        <span class="{{ 'active-' + p if pb.dial.posture == p }}">{{ td(p) }}</span>
       {% endfor %}
     </div>
     {% for sign, r in pb.dial.reasons %}
@@ -396,32 +511,32 @@
 
     <div class="grid" style="margin-top:12px">
       <div class="span6">
-        <h3>✅ Confirmed leadership — where participation is real
-          {{ help("Sectors in an established uptrend vs the market with momentum still positive and not yet stretched. Descriptive — where the market's money already is. Use it to place exposure you already intend to take.") }}
+        <h3>✅ {{ t('Confirmed leadership — where participation is real', '已确认的领先 — 参与度真实之处') }}
+          {{ help("Sectors in an established uptrend vs the market with momentum still positive and not yet stretched. Descriptive — where the market's money already is. Use it to place exposure you already intend to take.", "相对市场处于既定上涨趋势、动量仍为正且尚未过度拉伸的板块。这是描述性的 — 市场资金已经在哪里。用它来摆放你本就打算建立的敞口。") }}
         </h3>
         {% for x in pb.leaders %}
-          <div class="card"><span class="calltag tag-lead">LEADER</span>
+          <div class="card"><span class="calltag tag-lead">{{ t('LEADER', '领先') }}</span>
             <b class="tk">{{ x.ticker }}</b> · {{ x.name }}<br>
             <span class="muted">{{ x.why }}</span></div>
         {% else %}
-          <p class="muted">No sector currently qualifies — leadership is either stretched or unconfirmed. That itself is information: stay close to the index.</p>
+          <p class="muted">{{ t('No sector currently qualifies — leadership is either stretched or unconfirmed. That itself is information: stay close to the index.', '当前无板块合格 — 领先地位要么已过度拉伸，要么尚未确认。这本身就是信息：紧贴指数。') }}</p>
         {% endfor %}
         {% if pb.momentum_tilt.tickers %}
-          <p class="muted" style="font-size:12px">Longer-horizon tilt: <b>
+          <p class="muted" style="font-size:12px">{{ t('Longer-horizon tilt:', '较长时间尺度倾斜：') }} <b>
             {%- for t in pb.momentum_tilt.tickers %}{{ t.ticker }}{{ ", " if not loop.last }}{% endfor -%}
           </b> {{ help(pb.momentum_tilt.note) }}</p>
         {% endif %}
       </div>
       <div class="span6">
-        <h3>🚫 Avoid right now — the evidence-backed don'ts
-          {{ help("The strongest findings in our sector backtest were about what NOT to do: chasing stretched leaders lost 55% of the time; buying below-trend bounces lost in every variant tested. These warnings carry more statistical weight than any buy signal on this page.") }}
+        <h3>🚫 {{ t("Avoid right now — the evidence-backed don'ts", '现在回避 — 有证据支撑的禁忌') }}
+          {{ help("The strongest findings in our sector backtest were about what NOT to do: chasing stretched leaders lost 55% of the time; buying below-trend bounces lost in every variant tested. These warnings carry more statistical weight than any buy signal on this page.", "我们板块回测中最强的发现都是关于不该做什么：追逐过度拉伸的领先股有 55% 的时间亏钱；买入趋势下方的反弹在测试的每个变体中都亏钱。这些警告比本页任何买入信号都带有更大的统计权重。") }}
         </h3>
         {% for x in pb.avoid %}
-          <div class="card"><span class="calltag tag-avoid">{{ x.call }}</span>
+          <div class="card"><span class="calltag tag-avoid">{{ td(x.call) }}</span>
             <b class="tk">{{ x.ticker }}</b> · {{ x.name }}<br>
             <span class="muted">{{ x.why }}</span></div>
         {% else %}
-          <p class="muted">Nothing currently triggers the avoid rules.</p>
+          <p class="muted">{{ t('Nothing currently triggers the avoid rules.', '当前没有任何标的触发回避规则。') }}</p>
         {% endfor %}
       </div>
     </div>
@@ -430,42 +545,42 @@
   {% endif %}
 
   <!-- ======================= SIGNALS ======================= -->
-  <div class="panel span6">
-    <h2>The two dials behind the regime
-      {{ help("The regime label comes from two scores between -1 and +1, built from market prices (which lead) plus a small weight on economic data (which confirms). Growth above zero + inflation below zero = Goldilocks, and so on. The white marker is today.") }}
+  <div class="panel span6" id="dials">
+    <h2>{{ t('The two dials behind the regime', '周期背后的两个刻度盘') }}
+      {{ help("The regime label comes from two scores between -1 and +1, built from market prices (which lead) plus a small weight on economic data (which confirms). Growth above zero + inflation below zero = Goldilocks, and so on. The white marker is today.", "周期标签来自两个介于 -1 与 +1 之间的分数，由市场价格（领先）加上经济数据（确认）的小幅权重构建。增长高于零 + 通胀低于零 = 理想增长，以此类推。白色标记代表今日。") }}
     </h2>
-    <p style="margin:8px 0 0"><b>Growth: {{ "RISING" if latest.growth_score >= 0 else "FALLING" }}</b>
-      <span class="muted">({{ "%+.2f" | format(latest.growth_score) }} of ±1 · agreement {{ (latest.growth_confidence * 100) | round | int }}%)</span>
-      {{ help("Is the economy's growth impulse improving or deteriorating, as priced by markets: copper vs gold, consumer discretionary vs staples, small vs large caps, cyclical vs defensive sectors, the 2-year yield, breadth — confirmed slowly by payrolls and industrial production.") }}
+    <p style="margin:8px 0 0"><b>{{ t('Growth:', '增长：') }} {{ t("RISING", '上行') if latest.growth_score >= 0 else t("FALLING", '下行') }}</b>
+      <span class="muted">({{ "%+.2f" | format(latest.growth_score) }} {{ t('of ±1 · agreement', '／±1 · 一致度') }} {{ (latest.growth_confidence * 100) | round | int }}%)</span>
+      {{ help("Is the economy's growth impulse improving or deteriorating, as priced by markets: copper vs gold, consumer discretionary vs staples, small vs large caps, cyclical vs defensive sectors, the 2-year yield, breadth — confirmed slowly by payrolls and industrial production.", "经济的增长动能正在改善还是恶化，以市场定价衡量：铜对黄金、可选消费对必需消费、小盘对大盘、周期板块对防御板块、2 年期收益率、市场广度 — 由非农就业与工业产出缓慢确认。") }}
     </p>
     <div class="gauge"><i style="left: {{ ((latest.growth_score + 1) / 2 * 100) | round(1) }}%"></i></div>
-    <p style="margin:10px 0 0"><b>Inflation pressure: {{ "RISING" if latest.inflation_score >= 0 else "FALLING" }}</b>
-      <span class="muted">({{ "%+.2f" | format(latest.inflation_score) }} of ±1 · agreement {{ (latest.inflation_confidence * 100) | round | int }}%)</span>
-      {{ help("Is inflation pressure building or cooling, as priced by markets: bond-market inflation expectations, oil, energy-sector strength, and inflation-winner vs inflation-loser sector baskets.") }}
+    <p style="margin:10px 0 0"><b>{{ t('Inflation pressure:', '通胀压力：') }} {{ t("RISING", '上行') if latest.inflation_score >= 0 else t("FALLING", '下行') }}</b>
+      <span class="muted">({{ "%+.2f" | format(latest.inflation_score) }} {{ t('of ±1 · agreement', '／±1 · 一致度') }} {{ (latest.inflation_confidence * 100) | round | int }}%)</span>
+      {{ help("Is inflation pressure building or cooling, as priced by markets: bond-market inflation expectations, oil, energy-sector strength, and inflation-winner vs inflation-loser sector baskets.", "通胀压力正在累积还是降温，以市场定价衡量：债市通胀预期、原油、能源板块强度，以及通胀受益板块对通胀受损板块的组合。") }}
     </p>
     <div class="gauge"><i style="left: {{ ((latest.inflation_score + 1) / 2 * 100) | round(1) }}%"></i></div>
 
-    <h3>What's voting for this regime
-      {{ help("Each chip is one indicator inside the two dials. Green chips point WITH the regime call; red chips point AGAINST it. Lots of red = shaky ground (and lower 'signal agreement').") }}
+    <h3>{{ t("What's voting for this regime", '哪些指标在为此周期投票') }}
+      {{ help("Each chip is one indicator inside the two dials. Green chips point WITH the regime call; red chips point AGAINST it. Lots of red = shaky ground (and lower 'signal agreement').", "每个标签代表两个刻度盘中的一个指标。绿色标签与周期判断同向；红色标签与之反向。红色越多 = 根基越不稳（且'信号一致度'越低）。") }}
     </h3>
     <div>
       {% for c in components_confirming %}<span class="chip chip-pos">{{ c }}</span>{% endfor %}
       {% for c in components_contradicting %}<span class="chip chip-neg">{{ c }}</span>{% endfor %}
-      {% if not components_confirming and not components_contradicting %}<span class="muted">all quiet</span>{% endif %}
+      {% if not components_confirming and not components_contradicting %}<span class="muted">{{ t('all quiet', '一切平静') }}</span>{% endif %}
     </div>
 
-    <h3>Weakest link
-      {{ help("Of everything currently supporting the regime call, this indicator is closest to flipping sides — the single thing most likely to change the picture.") }}
+    <h3>{{ t('Weakest link', '最薄弱环节') }}
+      {{ help("Of everything currently supporting the regime call, this indicator is closest to flipping sides — the single thing most likely to change the picture.", "在当前支撑周期判断的所有指标中，这一个最接近倒戈 — 是最有可能改变全局的单一因素。") }}
     </h3>
     <p class="muted">{{ flip_plain }}</p>
 
     {% if latest.preference_check %}
-    <h3>Does the market agree with the regime?
-      {{ help("The regime implies certain sectors should lead. This checks whether they actually ARE. Agreement strengthens the call; disagreement is an early warning — when the tape stops cooperating with the story, the story is often about to change.") }}
+    <h3>{{ t('Does the market agree with the regime?', '市场是否认同此周期？') }}
+      {{ help("The regime implies certain sectors should lead. This checks whether they actually ARE. Agreement strengthens the call; disagreement is an early warning — when the tape stops cooperating with the story, the story is often about to change.", "此周期暗示某些板块应当领先。这里检验它们是否真的在领先。一致会强化判断；分歧则是早期预警 — 当盘面不再配合剧情时，剧情往往即将改变。") }}
     </h3>
     <p class="muted">{{ latest.preference_check.note }}
       {% if latest.preference_check.actual_ranks %}
-        ({% for t, r in latest.preference_check.actual_ranks.items() %}{{ t }} is #{{ r }}{{ ", " if not loop.last }}{% endfor %} of {{ latest.sector_rs | length }})
+        <span class="l-en">({% for t, r in latest.preference_check.actual_ranks.items() %}{{ t }} is #{{ r }}{{ ", " if not loop.last }}{% endfor %} of {{ latest.sector_rs | length }})</span><span class="l-zh">（{% for t, r in latest.preference_check.actual_ranks.items() %}{{ t }} 排名第 {{ r }}{{ "，" if not loop.last }}{% endfor %}，共 {{ latest.sector_rs | length }} 个）</span>
       {% endif %}
     </p>
     {% endif %}
@@ -473,11 +588,11 @@
 
   <!-- ======================= INTERNALS ======================= -->
   <div class="panel span6">
-    <h2>Market internals — risk appetite gauges
-      {{ help("Simple ratios between two assets; each answers a question about investor mood. Direction over the last 20 days matters more than the level. Green = moved in the risk-friendly direction.") }}
+    <h2>{{ t('Market internals — risk appetite gauges', '市场内部结构 — 风险偏好计') }}
+      {{ help("Simple ratios between two assets; each answers a question about investor mood. Direction over the last 20 days matters more than the level. Green = moved in the risk-friendly direction.", "两类资产之间的简单比率；每一个都回答一个关于投资者情绪的问题。过去 20 天的方向比绝对水平更重要。绿色 = 朝风险友好的方向移动。") }}
     </h2>
     <table>
-      <tr><th class="l">gauge</th><th>past month</th><th class="l">what it's saying</th></tr>
+      <tr><th class="l">{{ t('gauge', '指标') }}</th><th>{{ t('past month', '过去一月') }}</th><th class="l">{{ t("what it's saying", '它在说什么') }}</th></tr>
       {% for r in internals %}
       <tr>
         <td class="l">{{ r.label }} {{ help(r.tip) }}</td>
@@ -489,14 +604,15 @@
   </div>
 
   <!-- ======================= SECTOR HEAT BOARD ======================= -->
-  <div class="panel span12">
-    <h2>Sector heat board — regime × tape × technicals × seasonality
-      {{ help("One row per sector, everything that matters in one place. HEAT (0-100) measures how CONFIRMED a sector's strength is right now: regime fit + rotation stage + technicals, minus crowding. Important: heat describes the present, not the future — our 2007-2026 backtest shows the hottest band (70+) actually UNDERPERFORMED over the following months (everything-confirmed usually means late). So: high heat = hold/trim territory, never a fresh-entry signal; the buy workflow is the watchlist + trigger column.") }}
+  <div class="panel span12" id="sectors">
+    <h2>{{ t('Sector heat board — regime × tape × technicals × seasonality', '板块热度榜 — 周期 × 盘面 × 技术 × 季节性') }}
+      {{ help("One row per sector, everything that matters in one place. HEAT (0-100) measures how CONFIRMED a sector's strength is right now: regime fit + rotation stage + technicals, minus crowding. Important: heat describes the present, not the future — our 2007-2026 backtest shows the hottest band (70+) actually UNDERPERFORMED over the following months (everything-confirmed usually means late). So: high heat = hold/trim territory, never a fresh-entry signal; the buy workflow is the watchlist + trigger column.", "每个板块一行，把重要的一切放在一处。热度（0–100）衡量一个板块的强势此刻有多被确认：周期契合度 + 轮动阶段 + 技术面，减去拥挤度。重要：热度描述的是现在，而非未来 — 我们 2007–2026 的回测显示最热的区间（70+）在随后几个月反而跑输（万事俱备通常意味着已晚）。因此：高热度 = 持有／减仓区，绝非新建仓信号；买入流程靠观察名单 + 触发列。") }}
     </h2>
     <table>
       <tr>
-        <th class="l">sector</th>
-        <th class="l" style="min-width:130px">heat <span class="help">?<span class="tip">
+        <th class="l">{{ t('sector', '板块') }}</th>
+        <th class="l" style="min-width:130px">{{ t('heat', '热度') }} <span class="help">?<span class="tip">
+          <span class="l-en">
           <b>Heat</b> = how CONFIRMED a sector's strength is (regime fit + trend stage +
           technicals − crowding). Hover each bar for its exact arithmetic.
           <table>
@@ -509,16 +625,40 @@
           *vs the index, every week 2007-2026. Note the inversion: hot sectors were
           usually LATE. That measured record is the trust level — and it argues
           against chasing.
+          </span>
+          <span class="l-zh">
+          <b>热度</b> = 一个板块的强势有多被确认（周期契合度 + 趋势阶段 +
+          技术面 − 拥挤度）。将鼠标悬停在每个条上可查看其精确算式。
+          <table>
+            <tr><th>区间</th><th>解读为</th><th>实测 3 个月记录*</th></tr>
+            <tr><td style="color:var(--orange)"><b>70+ 过热</b></td><td>已晚 — 持有／减仓，勿入场</td><td>跑赢市场 47%（平均 −0.6%）</td></tr>
+            <tr><td style="color:var(--up)"><b>55-69 偏热</b></td><td>已确认 — 持有，回调时买入</td><td>49%（−0.3%）</td></tr>
+            <tr><td><b>40-54 中性</b></td><td>混合，无倾向</td><td>49%（−0.1%）</td></tr>
+            <tr><td style="color:var(--info)"><b>0-39 偏冷</b></td><td>已洗盘 — 等待触发</td><td>50%（+0.2%）</td></tr>
+          </table>
+          *对比指数，2007–2026 每一周。注意这种反转：偏热的板块通常都已晚。
+          这份实测记录就是可信度 — 它反对追高。
+          </span>
         </span></span></th>
-        <th>stage <span class="help">?<span class="tip">
+        <th>{{ t('stage', '阶段') }} <span class="help">?<span class="tip">
+          <span class="l-en">
           <b>The rotation cycle</b> — every sector travels this loop vs the market:
           <span class="lad lad-tint" style="--c:var(--info)">1. IMPROVING — momentum turns up, trend not yet confirmed. <b>Too early</b>: buying here lost money historically.</span>
           <span class="lad lad-tint" style="--c:var(--up)">2. LEADING — confirmed uptrend. The healthy zone.</span>
           <span class="lad lad-tint" style="--c:var(--warn)">3. WEAKENING — still above trend but losing steam. Tighten stops.</span>
           <span class="lad lad-tint" style="--c:var(--down)">4. LAGGING — downtrend. Avoid until it improves again.</span>
+          </span>
+          <span class="l-zh">
+          <b>轮动周期</b> — 每个板块相对市场都会走完这个循环：
+          <span class="lad lad-tint" style="--c:var(--info)">1. 改善 — 动量转上，趋势尚未确认。<b>过早</b>：历史上在这里买入会亏钱。</span>
+          <span class="lad lad-tint" style="--c:var(--up)">2. 领先 — 已确认上涨趋势。健康区。</span>
+          <span class="lad lad-tint" style="--c:var(--warn)">3. 走弱 — 仍在趋势上方但动能减弱。收紧止损。</span>
+          <span class="lad lad-tint" style="--c:var(--down)">4. 落后 — 下跌趋势。回避，直到再度改善。</span>
+          </span>
         </span></span></th>
-        <th>3mo vs market {{ help("How much it beat or trailed the S&P 500 over the past 60 trading days — the medium-term relative trend the playbook keys off.") }}</th>
-        <th>technicals <span class="help">?<span class="tip">
+        <th>{{ t('3mo vs market', '3 月对比市场') }} {{ help("How much it beat or trailed the S&P 500 over the past 60 trading days — the medium-term relative trend the playbook keys off.", "过去 60 个交易日内它跑赢或落后标普 500 多少 — 剧本所依据的中期相对趋势。") }}</th>
+        <th>{{ t('technicals', '技术面') }} <span class="help">?<span class="tip">
+          <span class="l-en">
           <b>RSI(14)</b> — a 0-100 momentum thermometer:
           <span class="scale">
             <span style="background:var(--g-cold)">OVERSOLD</span>
@@ -530,25 +670,39 @@
           <b>✓/✗ 200d and 50d</b>: whether price is above its 200-day (long-term) and
           50-day (medium-term) average — the most basic "is it in an uptrend" filters.
           Green row = both ✓.
+          </span>
+          <span class="l-zh">
+          <b>RSI(14)</b> — 一个 0–100 的动量温度计：
+          <span class="scale">
+            <span style="background:var(--g-cold)">超卖</span>
+            <span style="background:var(--muted)">疲软</span>
+            <span style="background:var(--up)">健康</span>
+            <span style="background:var(--down)">过热</span>
+          </span>
+          <span class="sl"><span>0</span><span>30</span><span>45</span><span>70</span><span>100</span></span>
+          <b>✓/✗ 200日 与 50日</b>：价格是否高于其 200 日（长期）与
+          50 日（中期）均线 — 最基本的"是否处于上涨趋势"过滤器。
+          绿色行 = 两者皆 ✓。
+          </span>
         </span></span></th>
-        <th>{{ month_name }} tendency {{ help("This instrument's average return in this calendar month across its whole history, and how often the month was positive. Weak evidence by nature — context, never a signal on its own (and deliberately excluded from the heat score).") }}</th>
-        <th>to trigger {{ help("For sectors below their long-term relative trend: how much more outperformance vs SPY is needed for the trend to cross (= the data-backed buy confirmation), and how far along it already is from its recent low. Small gap + high progress = watch closely.") }}</th>
-        <th>cycle timing {{ help("From the sector's own price cycle (click the sector name for the full drill-down): where it sits in its ~36-42 trading-day cycle and how many of its top-10 holdings are in a buy setup (BOTTOMING or BUY ZONE). The per-state historical base rates live on the drill-down page.") }}</th>
+        <th><span class="l-en">{{ month_name }} tendency</span><span class="l-zh">{{ month_name }} 月倾向</span> {{ help("This instrument's average return in this calendar month across its whole history, and how often the month was positive. Weak evidence by nature — context, never a signal on its own (and deliberately excluded from the heat score).", "该标的在此日历月内贯穿其全部历史的平均回报，以及该月为正的频率。本质上是弱证据 — 仅作背景，绝不单独作为信号（并已刻意排除在热度分数之外）。") }}</th>
+        <th>{{ t('to trigger', '距触发') }} {{ help("For sectors below their long-term relative trend: how much more outperformance vs SPY is needed for the trend to cross (= the data-backed buy confirmation), and how far along it already is from its recent low. Small gap + high progress = watch closely.", "对于低于其长期相对趋势的板块：还需相对 SPY 多跑赢多少趋势才会交叉（= 有数据支撑的买入确认），以及从近期低点起已走了多远。差距小 + 进度高 = 密切观察。") }}</th>
+        <th>{{ t('cycle timing', '周期择时') }} {{ help("From the sector's own price cycle (click the sector name for the full drill-down): where it sits in its ~36-42 trading-day cycle and how many of its top-10 holdings are in a buy setup (BOTTOMING or BUY ZONE). The per-state historical base rates live on the drill-down page.", "来自板块自身的价格周期（点击板块名称查看完整下钻）：它处于约 36–42 个交易日周期的哪个位置，以及其前十大持仓中有多少处于买入构筑（筑底中或买入区）。各状态的历史基础概率见下钻页面。") }}</th>
       </tr>
       {% for r in sector_rows %}
       <tr>
-        <td class="l"><a href="sectors/{{ r.ticker }}.html"><b>{{ r.ticker }}</b></a> <span class="muted">{{ r.name }}</span></td>
+        <td class="l"><a href="sectors/{{ r.ticker }}.html"><b>{{ r.ticker }}</b></a> <span class="muted">{{ td(r.name) }}</span></td>
         <td class="l">
           <span class="help" style="width:auto;height:auto;border:none;margin:0;border-radius:6px">
             <span style="display:inline-flex;align-items:center;gap:7px;cursor:help">
               <span style="display:inline-block;width:64px;height:9px;background:var(--panel2);border-radius:5px;overflow:hidden"><i style="display:block;height:100%;width:{{ r.heat }}%;background:{{ r.heat_color }}"></i></span>
               <b>{{ r.heat }}</b>
-              <span class="muted" style="font-size:11px">{{ r.heat_label }}</span>
+              <span class="muted" style="font-size:11px">{{ td(r.heat_label) }}</span>
             </span>
             <span class="tip">{{ r.heat_tip }}</span>
           </span>
         </td>
-        <td><span class="pill stg-{{ r.stage }}">{{ r.stage }}</span></td>
+        <td><span class="pill stg-{{ r.stage }}">{{ td(r.stage) }}</span></td>
         <td class="{{ 'pos' if r.mom_60d_pct > 0 else 'neg' }}">{{ "%+.1f" | format(r.mom_60d_pct) }}%</td>
         <td class="{{ 'pos' if r.tech_ok else '' }}" style="font-size:12px">{{ r.tech_str }}</td>
         <td>
@@ -560,25 +714,25 @@
         <td>{{ r.trigger_str }}</td>
         <td>
           {% if r.timing_state %}
-            <span class="pill st-{{ r.timing_state | replace(' ', '_') }}">{{ r.timing_label }}</span>
+            <span class="pill st-{{ r.timing_state | replace(' ', '_') }}">{{ td(r.timing_label) }}</span>
             <div class="muted" style="font-size:11px">{{ r.timing_note }}</div>
           {% else %}—{% endif %}
         </td>
       </tr>
       {% endfor %}
     </table>
-    <p class="muted" style="font-size:12px">Click any sector for its full drill-down: cycle position, multi-timeframe momentum, and each top-10 holding analyzed individually.</p>
+    <p class="muted" style="font-size:12px">{{ t('Click any sector for its full drill-down: cycle position, multi-timeframe momentum, and each top-10 holding analyzed individually.', '点击任意板块查看完整下钻：周期位置、多时间尺度动量，以及逐一分析的每个前十大持仓。') }}</p>
   </div>
 
   <div class="panel span6">
-    <h2>Commodities & macro tape
-      {{ help("The non-equity instruments the regime engine watches, with their technicals and seasonal tendency. No heat score here — regime alignment and rotation stages are equity-sector concepts.") }}
+    <h2>{{ t('Commodities & macro tape', '大宗商品与宏观盘面') }}
+      {{ help("The non-equity instruments the regime engine watches, with their technicals and seasonal tendency. No heat score here — regime alignment and rotation stages are equity-sector concepts.", "周期引擎所关注的非股票类标的，及其技术面与季节性倾向。这里没有热度分数 — 周期契合度与轮动阶段是股票板块的概念。") }}
     </h2>
     <table>
-      <tr><th class="l">instrument</th><th>trend</th><th>RSI</th><th>off 52w high</th><th>3mo</th><th>{{ "seasonal" }}</th></tr>
+      <tr><th class="l">{{ t('instrument', '标的') }}</th><th>{{ t('trend', '趋势') }}</th><th>RSI</th><th>{{ t('off 52w high', '距52周高') }}</th><th>{{ t('3mo', '3月') }}</th><th>{{ t('seasonal', '季节性') }}</th></tr>
       {% for c in commodities %}
       <tr>
-        <td class="l"><b>{{ c.name }}</b></td>
+        <td class="l"><b>{{ td(c.name) }}</b></td>
         <td>{{ "✓" if c.above200 else "✗" }}200d {{ "✓" if c.above50 else "✗" }}50d</td>
         <td>{{ c.rsi14 | round | int if c.rsi14 is not none else "—" }}</td>
         <td class="{{ 'neg' if c.off_52w_high_pct < -10 else '' }}">{{ "%+.1f" | format(c.off_52w_high_pct) }}%</td>
@@ -586,7 +740,7 @@
         <td>
           <span class="help" style="width:auto;height:auto;border:none;margin:0">
             <span style="cursor:help">{{ (c.season_this or "—").split(":")[1].split("avg")[0].strip() if c.season_this else "—" }}</span>
-            <span class="tip">{{ c.season_this or "Not enough history." }}</span>
+            <span class="tip">{{ c.season_this or t("Not enough history.", "历史数据不足。") }}</span>
           </span>
         </td>
       </tr>
@@ -594,27 +748,27 @@
     </table>
   </div>
 
-  <div class="panel span6">
-    <h2>Fed liquidity — the money tide
-      {{ help("Top: net money in the system (Fed balance sheet minus reverse-repo minus the Treasury's account), in billions. Bottom: its 4-week change — the impulse. Green above the dotted line = expanding (historically the most reliable tailwind); red below = contracting.") }}
+  <div class="panel span6" id="liquidity">
+    <h2>{{ t('Fed liquidity — the money tide', '美联储流动性 — 资金潮') }}
+      {{ help("Top: net money in the system (Fed balance sheet minus reverse-repo minus the Treasury's account), in billions. Bottom: its 4-week change — the impulse. Green above the dotted line = expanding (historically the most reliable tailwind); red below = contracting.", "上方：系统内的净资金（美联储资产负债表减逆回购减财政部账户），单位十亿。下方：其 4 周变化 — 即动能。虚线之上为绿色 = 扩张（历史上最可靠的顺风）；下方为红色 = 收缩。") }}
     </h2>
     <div class="chart">{{ chart_liquidity | safe }}</div>
   </div>
 
-  <div class="panel span6">
-    <h2>Credit stress & market breadth
-      {{ help("Top: the extra yield junk-bond investors demand — the market's best early smoke detector; rising = stress building; below ~4% is calm. Bottom: % of S&P 500 stocks above their 50-day average — participation. Strong indexes with collapsing breadth are fragile.") }}
+  <div class="panel span6" id="credit">
+    <h2>{{ t('Credit stress & market breadth', '信用压力与市场广度') }}
+      {{ help("Top: the extra yield junk-bond investors demand — the market's best early smoke detector; rising = stress building; below ~4% is calm. Bottom: % of S&P 500 stocks above their 50-day average — participation. Strong indexes with collapsing breadth are fragile.", "上方：垃圾债投资者要求的额外收益率 — 市场最好的早期烟雾探测器；上行 = 压力累积；低于约 4% 为平静。下方：标普 500 中高于其 50 日均线的股票占比 — 即参与度。指数走强而广度崩塌则脆弱。") }}
     </h2>
     <div class="chart">{{ chart_credit_breadth | safe }}</div>
   </div>
 
   <!-- ======================= POSITIONING ======================= -->
-  <div class="panel span6">
-    <h2>Who's positioned how — the crowd meter
-      {{ help("What different investor groups are currently doing, shown as a position on each dial. The middle is normal; the ENDS are the danger zones — when a marker sits at either extreme, that trade is crowded and prone to violent reversal. Hover each name for the underlying numbers.") }}
+  <div class="panel span6" id="positioning">
+    <h2>{{ t("Who's positioned how — the crowd meter", '谁如何持仓 — 拥挤度计') }}
+      {{ help("What different investor groups are currently doing, shown as a position on each dial. The middle is normal; the ENDS are the danger zones — when a marker sits at either extreme, that trade is crowded and prone to violent reversal. Hover each name for the underlying numbers.", "不同投资者群体当前在做什么，以每个刻度盘上的位置呈现。中间为正常；两端是危险区 — 当标记落在任一极端时，该交易已拥挤且易发生剧烈反转。将鼠标悬停在每个名称上可查看底层数字。") }}
     </h2>
     <table>
-      <tr><th class="l">who / what</th><th class="l" style="min-width:150px">where they stand</th><th class="l">what it means</th></tr>
+      <tr><th class="l">{{ t('who / what', '谁／什么') }}</th><th class="l" style="min-width:150px">{{ t('where they stand', '当前位置') }}</th><th class="l">{{ t('what it means', '含义') }}</th></tr>
       {% for p in positioning %}
       <tr>
         <td class="l">{{ p.name }} {{ help(p.tip) }}</td>
@@ -636,13 +790,13 @@
   </div>
 
   <!-- ======================= HOLDINGS / FLOWS ======================= -->
-  <div class="panel span12">
-    <h2>Star fund managers' real moves
-      {{ help("Daily holdings of the watchlist funds (ARK etc.) with mechanical flow effects stripped out — what's left is genuine manager conviction, visible the day after they trade.") }}
+  <div class="panel span12" id="holdings">
+    <h2>{{ t("Star fund managers' real moves", '明星基金经理的真实动作') }}
+      {{ help("Daily holdings of the watchlist funds (ARK etc.) with mechanical flow effects stripped out — what's left is genuine manager conviction, visible the day after they trade.", "观察名单基金（ARK 等）的每日持仓，已剔除机械性的资金流影响 — 剩下的是真正的经理人信念，在他们交易后的次日可见。") }}
     </h2>
     {% if holdings_changes %}
       <table>
-        <tr><th class="l">fund</th><th class="l">position</th><th>active chg</th><th>window</th></tr>
+        <tr><th class="l">{{ t('fund', '基金') }}</th><th class="l">{{ t('position', '仓位') }}</th><th>{{ t('active chg', '主动变动') }}</th><th>{{ t('window', '窗口') }}</th></tr>
         {% for h in holdings_changes %}
         <tr><td class="l">{{ h.fund }}</td><td class="l">{{ h.position }}</td>
             <td class="{{ 'pos' if h.pct > 0 else 'neg' }}">{{ "%+.1f" | format(h.pct) }}%</td>
@@ -650,26 +804,26 @@
         {% endfor %}
       </table>
     {% else %}
-      <p class="muted">No significant manager moves in the current window (needs a few trading days of snapshots).</p>
+      <p class="muted">{{ t('No significant manager moves in the current window (needs a few trading days of snapshots).', '当前窗口内无显著的经理人动作（需要数个交易日的快照）。') }}</p>
     {% endif %}
 
-    <h2 style="margin-top:16px">Where ETF money is flowing
-      {{ help("Daily money in/out of each sector's main ETF, from share creations/redemptions (ΔShares × price). Positive = money entering. History builds from June 2026.") }}
+    <h2 style="margin-top:16px">{{ t('Where ETF money is flowing', 'ETF 资金流向何处') }}
+      {{ help("Daily money in/out of each sector's main ETF, from share creations/redemptions (ΔShares × price). Positive = money entering. History builds from June 2026.", "每个板块主力 ETF 的每日资金进出，来自份额的申购／赎回（份额变动 × 价格）。正值 = 资金进入。历史自 2026 年 6 月起累积。") }}
     </h2>
     {% if flows_html %}
       {{ flows_html | safe }}
     {% else %}
-      <p class="muted">Collecting — needs at least two daily snapshots per fund.</p>
+      <p class="muted">{{ t('Collecting — needs at least two daily snapshots per fund.', '采集中 — 每只基金至少需要两个每日快照。') }}</p>
     {% endif %}
   </div>
 
   <!-- ======================= HEALTH ======================= -->
-  <div class="panel span12">
-    <h2>Data health
-      {{ help("Every data source this dashboard depends on. OK = fresh. STALE = no new data lately (signal confidence reduced automatically). FAILED = today's fetch broke (yesterday's data still used). BLOCKED = a known, documented limitation — not a malfunction. DEAD = failed 3+ runs and paused until it recovers.") }}
+  <div class="panel span12" id="health">
+    <h2>{{ t('Data health', '数据健康度') }}
+      {{ help("Every data source this dashboard depends on. OK = fresh. STALE = no new data lately (signal confidence reduced automatically). FAILED = today's fetch broke (yesterday's data still used). BLOCKED = a known, documented limitation — not a malfunction. DEAD = failed 3+ runs and paused until it recovers.", "本仪表盘所依赖的每个数据源。OK = 新鲜。STALE = 近期无新数据（信号置信度已自动下调）。FAILED = 今日抓取失败（仍沿用昨日数据）。BLOCKED = 已知且有记录的限制 — 并非故障。DEAD = 连续 3 次以上失败，已暂停直至恢复。") }}
     </h2>
     <table>
-      <tr><th class="l">source</th><th class="l">status</th><th>rows</th><th>last data</th><th class="l">note</th></tr>
+      <tr><th class="l">{{ t('source', '数据源') }}</th><th class="l">{{ t('status', '状态') }}</th><th>{{ t('rows', '行数') }}</th><th>{{ t('last data', '最新数据') }}</th><th class="l">{{ t('note', '备注') }}</th></tr>
       {% for s in health %}
       <tr>
         <td class="l">{{ s.name }}</td>
@@ -679,9 +833,11 @@
       </tr>
       {% endfor %}
     </table>
-    <p class="muted">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
+    <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
        Generated {{ generated_utc }} UTC · <a href="brief.html">daily brief</a> ·
-       <a href="history.html">history & charts</a> · <a href="validation_timeline.html">full 2007→ backtest</a></p>
+       <a href="history.html">history & charts</a> · <a href="validation_timeline.html">full 2007→ backtest</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
+       生成于 {{ generated_utc }} UTC · <a href="brief.html">每日简报</a> ·
+       <a href="history.html">历史与图表</a> · <a href="validation_timeline.html">完整 2007→ 回测</a></span></p>
   </div>
 
 </div>
@@ -700,6 +856,51 @@
     else if (r.left + r.width / 2 - half < 0) h.classList.add('edge-left');
   });
 </script>
+<script>
+  // Deep-link highlight: when an alert links to a scorecard (#liquidity, #credit,
+  // …), smooth-scroll to that panel and pulse a glow so it's obvious which card
+  // the alert came from — whether arriving from the landing hub (page load with
+  // a #hash) or clicking an alert on this page.
+  (function () {
+    function flash(id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      el.classList.remove('flash');
+      void el.offsetWidth;            // restart the animation on a re-click
+      el.classList.add('flash');
+      setTimeout(function () { el.classList.remove('flash'); }, 2600);
+    }
+    function fromHash() {
+      var id = (location.hash || '').replace('#', '');
+      if (id && document.getElementById(id)) setTimeout(function () { flash(id); }, 60);
+    }
+    window.addEventListener('load', fromHash);
+    window.addEventListener('hashchange', fromHash);
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest('a.alert[href^="#"]');
+      if (!a) return;
+      var id = a.getAttribute('href').slice(1);
+      // re-clicking when the hash is already set won't fire hashchange — flash now
+      if (location.hash === '#' + id) { e.preventDefault(); flash(id); }
+    });
+  })();
+</script>
+<script>
+/* Chinese-mode chart recolour + relabel map (baked chart colours are constants).
+   Colour pairs are symmetric so the same map flips both ways; charts always
+   render on dark slate so only these green/red + quad green/red hexes swap. */
+window.__CHART_SWAP__ = {
+  colors: {"#5fbf7f":"#e07070","#e07070":"#5fbf7f","#2e9e4f":"#d04545","#d04545":"#2e9e4f"},
+  labels: {"growth":"增长","inflation":"通胀","net liquidity":"净流动性","4w RoC":"4周变化",
+           "HY OAS %":"高收益债利差 %","% S&P500 > 50DMA":"标普500 高于50日均线 %"}
+};
+</script>
 <script src="theme.js"></script>
+<script src="chart_i18n.js"></script>
+<footer class="site-footer">
+  <span class="made">Made with ❤️ in Canada</span>
+  <span class="dev">Developed by Chris Wong</span>
+</footer>
 </body>
 </html>
