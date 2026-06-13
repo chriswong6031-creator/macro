@@ -1,16 +1,10 @@
-{% macro help(en, zh='') -%}
-<span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
-{%- endmacro %}
-{% macro t(en, zh='') -%}
-<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
-{%- endmacro %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Stock analyzer — cycle & momentum</title>
-<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   * { box-sizing:border-box; }
@@ -20,14 +14,6 @@
   .points { margin:6px 0; padding-left:18px; } .points li { margin:2px 0; }
   .cyclebox { margin:8px 0; padding:9px 12px; border-radius:9px; background:var(--panel2);
               font-size:13px; line-height:1.6; }
-  .regline { margin:-2px -4px 6px; padding:6px 9px; border-radius:7px;
-             border-left:3px solid var(--muted); }
-  .regline.rl-bear { border-left-color:var(--down);
-             background:color-mix(in srgb, var(--down) 12%, var(--panel2)); }
-  .regline.rl-bull { border-left-color:var(--up);
-             background:color-mix(in srgb, var(--up) 12%, var(--panel2)); }
-  .regline.rl-neutral { border-left-color:var(--muted);
-             background:color-mix(in srgb, var(--muted) 10%, var(--panel2)); }
   .entrybar { display:flex; gap:10px; align-items:flex-start; margin:10px 0 8px;
               padding:9px 12px; border-radius:9px; background:var(--panel2);
               border-left:4px solid var(--muted); font-size:14px; }
@@ -59,7 +45,7 @@
   #q:focus { border-color:var(--link); }
   #sugg { position:absolute; top:104%; left:0; right:0; background:var(--panel);
           border:1px solid var(--line); border-radius:10px; z-index:50; max-height:330px;
-          overflow:auto; display:none; box-shadow:var(--popover-shadow); }
+          overflow:auto; display:none; box-shadow:0 10px 24px rgba(0,0,0,.4); }
   #sugg div { padding:8px 13px; cursor:pointer; display:flex; gap:10px; align-items:center; }
   #sugg div:hover, #sugg div.sel { background:var(--panel2); }
   #sugg b { min-width:58px; }
@@ -76,21 +62,18 @@
 <body>
   <div class="panel">
     <div class="topline">
-      <h1>🔎 {{ t('Stock analyzer', '个股分析') }}</h1>
+      <h1>🔎 Stock analyzer</h1>
       <div class="searchwrap">
         <input id="q" placeholder="Search any S&amp;P 500 stock, ETF, commodity or crypto… (e.g. AAPL, Energy, Bitcoin)" autocomplete="off">
         <div id="sugg"></div>
       </div>
-      <a class="navbtn" href="index.html">{{ t('← Dashboard', '← 仪表盘') }}</a>
-      <button class="lang-btn">中文</button>
+      <a class="navbtn" href="index.html">← Dashboard</a>
       <button class="theme-btn">☀️ Light</button>
     </div>
-    <p class="muted" style="margin:8px 0 0">{{ t('Every name gets the same treatment as the sector pages:
+    <p class="muted" style="margin:8px 0 0">Every name gets the same treatment as the sector pages:
       cycle position (daily + weekly), three-timeframe momentum visuals, a clear entry/exit call,
-      and the signal\'s measured track record. Library refreshes nightly; covers the S&amp;P 500,
-      all tracked ETFs, commodities and crypto.',
-      '每个标的都享有与板块页面相同的分析：周期位置（日线＋周线）、三周期动量视觉图、明确的进出场判断，
-      以及该信号的实测历史表现。标的库每晚刷新，覆盖标普500、所有跟踪的 ETF、大宗商品与加密货币。') }}</p>
+      and the signal's measured track record. Library refreshes nightly; covers the S&amp;P 500,
+      all tracked ETFs, commodities and crypto.</p>
   </div>
 
   <div id="result">
@@ -101,41 +84,29 @@
         <span style="flex:1"></span>
         <span id="r_asof" class="muted"></span>
       </div>
-      <p id="r_summary" class="muted" style="margin:2px 0 6px; font-size:13.5px"></p>
       <div id="r_entry" class="entrybar"><span class="entrytag" id="r_tag"></span><span id="r_entrytext"></span></div>
       <p id="r_early" class="early" style="display:none"></p>
       <ul id="r_points" class="points"></ul>
       <div id="r_cyclebox" class="cyclebox"></div>
       <p id="r_flags" class="neg" style="margin:4px 0"></p>
-      <details><summary>{{ t('full reasoning', '完整推理') }}</summary><p class="muted" id="r_why" style="margin:6px 0"></p></details>
+      <details><summary>full reasoning</summary><p class="muted" id="r_why" style="margin:6px 0"></p></details>
     </div>
     <div class="panel">
-      <h2>{{ t('Momentum across timeframes', '跨周期动量') }}</h2>
+      <h2>Momentum across timeframes</h2>
       <div id="r_mtf"></div>
     </div>
     <div class="panel">
-      <h2>{{ t('Chart', '图表') }}</h2>
+      <h2>Chart</h2>
       <div id="tvbox"></div>
     </div>
     <div class="panel">
-      <h2>{{ t('How much to trust the state — measured 2000→2026', '这个状态有多可信 — 实测 2000→2026') }}</h2>
+      <h2>How much to trust the state — measured 2000→2026</h2>
       <table id="r_cal"></table>
-      <p class="muted" style="font-size:12px; margin-top:8px">{{ t(
-        'Stocks drift up over a month from
-        every state (the market\'s long upward bias); the spread between states is small, and the
+      <p class="muted" style="font-size:12px; margin-top:8px">Stocks drift up over a month from
+        every state (the market's long upward bias); the spread between states is small, and the
         "scary" states measured slightly better forward returns — markets mean-revert and full
         confirmation costs part of the bounce. Use the state for <b>structure</b> (cycle position,
-        confirmation checklist, invalidation level) and size positions instead of seeking certainty.
-        <b>Typical dip</b> = the median worst drop over the next month; <b>bad-case dip</b> = the
-        worst 1-in-10 month (10th percentile) — the drawdown lens matters more than average return for
-        risk states like COUNTER-TREND BOUNCE, since the danger is the path, not the endpoint. (Measured
-        on equities at a 1-month horizon — crypto tails are fatter, so treat these as a floor on the risk.)',
-        '从任何状态出发，股票在一个月内都倾向于上涨（市场长期向上的偏向）；各状态之间的差距很小，而那些
-        "吓人"的状态实测前瞻收益反而略好 — 市场会均值回归，等到完全确认时已错过部分反弹。请把状态用于
-        <b>结构判断</b>（周期位置、确认清单、失效价位）并据此控制仓位，而非追求确定性。
-        <b>典型回撤</b> = 未来一个月最大跌幅的中位数；<b>最坏回撤</b> = 十分之一的最差月份（第10百分位）—
-        对于逆势反弹这类风险状态，回撤视角比平均收益更重要，因为危险在于过程，而非终点。（基于股票的一个月
-        周期实测 — 加密货币的尾部更肥，故请将其视为风险下限。）') }}</p>
+        confirmation checklist, invalidation level) and size positions instead of seeking certainty.</p>
     </div>
   </div>
 
@@ -144,36 +115,9 @@
 (function () {
   var idx = [], cal = null, sel = -1, items = [];
   var q = document.getElementById('q'), sugg = document.getElementById('sugg');
-  // language-aware micro-strings for the JS-rendered scaffolding (the deep
-  // per-stock analysis prose comes from the nightly JSON and stays English)
-  function lang() { return document.documentElement.getAttribute('data-lang') || 'en'; }
-  var T = {
-    en: { asof: 'data through', notlib: 'NOT IN LIBRARY',
-          notlibmsg: 'Not in the nightly library (S&P 500 + tracked ETFs/commodities/crypto). Add it in one line: config.yml → stock_search.extra_tickers.',
-          season: 'Seasonality', failed: '⚠ Failed cycle — price is below the low that started this cycle; the larger trend is usually rolling over.',
-          next: 'Next:', cu: ' just crossed up', cd: ' just crossed down',
-          bullx: ' bars to bull cross', bearx: ' bars to bear cross',
-          ph: 'Search any S&P 500 stock, ETF, commodity or crypto… (e.g. AAPL, Energy, Bitcoin)',
-          th_state: 'state', th_n: 'samples', th_up: 'up next month', th_avg: 'avg next month',
-          th_dipm: 'typical dip', th_dipb: 'bad-case dip' },
-    zh: { asof: '数据截至', notlib: '不在库中',
-          notlibmsg: '不在每晚更新的标的库中（标普500 ＋ 跟踪的 ETF／大宗商品／加密货币）。一行即可添加：config.yml → stock_search.extra_tickers。',
-          season: '季节性', failed: '⚠ 失败周期 — 价格已跌破启动本周期的低点；此时更大的趋势通常正在转向下行。',
-          next: '下一步：', cu: ' 刚上穿', cd: ' 刚下穿',
-          bullx: ' 根K线后金叉', bearx: ' 根K线后死叉',
-          ph: '搜索任意标普500股票、ETF、大宗商品或加密货币…（例如 AAPL、Energy、Bitcoin）',
-          th_state: '状态', th_n: '样本数', th_up: '下月上涨', th_avg: '下月均值',
-          th_dipm: '典型回撤', th_dipb: '最坏回撤' } };
-  function L(k) { return (T[lang()] || T.en)[k]; }
   // internal state -> friendly "LABEL · ACTION" (mirrors engine/cycles.STATE_DISPLAY)
   var DISP = {{ state_display_json | safe }};
-  function dlabel(s) { var d = DISP[s]; if (!d) return s; return lang() === 'zh' ? (d.label_zh || d.label) : d.label; }
-  function disp(s) {
-    var d = DISP[s]; if (!d) return s;
-    return lang() === 'zh' ? (d.label_zh || d.label) + ' · ' + (d.action_zh || d.action)
-                           : d.label + ' · ' + d.action;
-  }
-  q.placeholder = L('ph');
+  function disp(s) { return DISP[s] ? DISP[s].label + ' · ' + DISP[s].action : s; }
 
   fetch('stockdata/index.json').then(r => r.json()).then(d => { idx = d; fromHash(); });
   fetch('stockdata/calibration.json').then(r => r.ok ? r.json() : null)
@@ -229,9 +173,9 @@
   function tf(label, m) {
     if (!m || m.rsi14 == null) return '';
     var macd = m.macd_pos ? '🟢' : '🔴';
-    var note = m.macd_cross_up ? L('cu') : m.macd_cross_dn ? L('cd')
-      : m.macd_approaching_up ? ' ≈' + m.macd_bars_to_cross + L('bullx')
-      : m.macd_approaching_dn ? ' ≈' + m.macd_bars_to_cross + L('bearx') : '';
+    var note = m.macd_cross_up ? ' just crossed up' : m.macd_cross_dn ? ' just crossed down'
+      : m.macd_approaching_up ? ' ≈' + m.macd_bars_to_cross + ' bars to bull cross'
+      : m.macd_approaching_dn ? ' ≈' + m.macd_bars_to_cross + ' bars to bear cross' : '';
     return '<span><b>' + label + '</b> · RSI ' + m.rsi14 + ' · Stoch ' + m.stoch +
            ' · MACD ' + macd + note + '</span>';
   }
@@ -244,11 +188,13 @@
     }).then(render).catch(function () {
       document.getElementById('result').style.display = 'block';
       document.getElementById('r_name').textContent = t;
-      document.getElementById('r_state').textContent = L('notlib');
+      document.getElementById('r_state').textContent = 'NOT IN LIBRARY';
       document.getElementById('r_state').className = 'state';
       document.getElementById('r_entry').style.display = 'none';
       document.getElementById('r_points').innerHTML = '';
-      document.getElementById('r_cyclebox').innerHTML = L('notlibmsg');
+      document.getElementById('r_cyclebox').innerHTML =
+        'Not in the nightly library (S&P 500 + tracked ETFs/commodities/crypto). ' +
+        'Add it in one line: config.yml → stock_search.extra_tickers.';
     });
   }
 
@@ -256,10 +202,9 @@
     document.getElementById('result').style.display = 'block';
     document.getElementById('r_name').textContent = d.name + ' (' + d.ticker + ')';
     var st = document.getElementById('r_state');
-    st.textContent = dlabel(d.ladder.state) || d.ladder.label;
+    st.textContent = (d.ladder.label || d.ladder.state);
     st.className = 'state st-' + d.ladder.state.replace(/ /g, '_');
-    document.getElementById('r_summary').textContent = d.ladder.summary_line || '';
-    document.getElementById('r_asof').textContent = L('asof') + ' ' + d.asof;
+    document.getElementById('r_asof').textContent = 'data through ' + d.asof;
 
     var e = d.ladder.entry || {};
     var eb = document.getElementById('r_entry');
@@ -272,16 +217,10 @@
       (d.ladder.points || []).map(function (p) { return '<li>' + p + '</li>'; }).join('');
 
     var cp = d.ladder.cycle_plain || {};
-    var reg = d.ladder.regime || 'neutral';
-    var regEmoji = reg === 'bear' ? '🔻' : reg === 'bull' ? '🟢' : '⚪';
-    var cyc = '';
-    if (d.ladder.regime_line)
-      cyc += '<div class="regline rl-' + reg + '"><b>' + regEmoji + ' ' +
-             d.ladder.regime_line + '</b></div>';
-    cyc += '<div><b>📅 ' + (cp.daily_line || '') + '</b> — ' + (cp.daily_phase || '') + '</div>';
+    var cyc = '<div><b>📅 ' + (cp.daily_line || '') + '</b> — ' + (cp.daily_phase || '') + '</div>';
     if (cp.weekly_line) cyc += '<div><b>🗓 ' + cp.weekly_line + '</b> — ' + (cp.weekly_phase || '') + '</div>';
     if (cp.translation) cyc += '<div class="muted">' + cp.translation + '</div>';
-    if (d.season_this) cyc += '<div class="muted">' + L('season') + ' — ' + d.season_this +
+    if (d.season_this) cyc += '<div class="muted">Seasonality — ' + d.season_this +
       (d.season_next ? '; ' + d.season_next : '') + '.</div>';
     document.getElementById('r_cyclebox').innerHTML = cyc;
 
@@ -289,21 +228,18 @@
     if (d.ladder.early_note) { early.textContent = d.ladder.early_note; early.style.display = 'block'; }
     else { early.style.display = 'none'; }
 
-    document.getElementById('r_flags').textContent = d.cycle.failed_cycle ? L('failed') : '';
-    document.getElementById('r_why').textContent = d.ladder.why + ' ' + L('next') + ' ' + d.ladder.next;
+    document.getElementById('r_flags').textContent = d.cycle.failed_cycle ?
+      '⚠ Failed cycle — price is below the low that started this cycle; the larger trend is usually rolling over.' : '';
+    document.getElementById('r_why').textContent = d.ladder.why + ' Next: ' + d.ladder.next;
     window.renderMTF(document.getElementById('r_mtf'), d.mtf);
 
-    var cs = '<tr><th>' + L('th_state') + '</th><th>' + L('th_n') + '</th><th>' + L('th_up') +
-             '</th><th>' + L('th_avg') + '</th><th>' + L('th_dipm') + '</th><th>' + L('th_dipb') + '</th></tr>';
+    var cs = '<tr><th>state</th><th>samples</th><th>up next month</th><th>avg next month</th></tr>';
     if (cal) {
       Object.keys(cal).forEach(function (s) {
         var v = cal[s];
-        var dipMed = v.dd_med_pct != null ? v.dd_med_pct + '%' : '—';
-        var dipBad = v.dd_p10_pct != null ? v.dd_p10_pct + '%' : '—';
         cs += '<tr><td><span class="state st-' + s.replace(/ /g, '_') + '">' + disp(s) + '</span></td><td>' +
               v.n + '</td><td>' + v.hit_pct + '%</td><td class="' +
-              (v.avg_fwd_pct > 0 ? 'pos' : 'neg') + '">' + v.avg_fwd_pct + '%</td>' +
-              '<td class="neg">' + dipMed + '</td><td class="neg">' + dipBad + '</td></tr>';
+              (v.avg_fwd_pct > 0 ? 'pos' : 'neg') + '">' + v.avg_fwd_pct + '%</td></tr>';
       });
     }
     document.getElementById('r_cal').innerHTML = cs;
@@ -322,21 +258,11 @@
     var h = (location.hash || '').slice(1);
     if (h) load(decodeURIComponent(h));
   });
-  // re-render scaffolding + labels in the new language when it flips
-  document.addEventListener('langchange', function () {
-    q.placeholder = L('ph');
-    var h = (location.hash || '').slice(1);
-    if (h) load(decodeURIComponent(h));
-  });
 })();
 </script>
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
 <p class="muted" style="font-size:12px">Generated {{ generated_utc }} UTC · charts by TradingView ·
 methodology &amp; caveats: see any sector page footer.</p>
-<footer class="site-footer">
-  <span class="made">Made with ❤️ in Canada</span>
-  <span class="dev">Developed by Chris Wong</span>
-</footer>
 </body>
 </html>
