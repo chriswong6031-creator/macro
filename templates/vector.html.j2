@@ -47,6 +47,20 @@ a{color:var(--blue);text-decoration:none}
 .nav-links{display:flex;align-items:center;gap:2px;flex-wrap:wrap}
 a.nav-link{padding:7px 11px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;white-space:nowrap;transition:color .18s,background .18s}
 a.nav-link:hover,a.nav-link.active{color:var(--ink);background:#eef1f6}
+html[data-theme="dark"] a.nav-link:hover,html[data-theme="dark"] a.nav-link.active{background:#222732}
+/* Bitcoin Vector dropdown — Allocation lives under here instead of as a top-level
+   pill. CSS-only (hover + focus-within for keyboard); ::after bridges the gap so
+   the menu doesn't close when the cursor crosses into it. */
+.nav-dd{position:relative;display:inline-flex}
+.nav-dd>a.nav-link .caret{display:inline-block;margin-left:3px;font-size:9px;opacity:.6;transition:transform .2s}
+.nav-dd:hover>a.nav-link .caret,.nav-dd:focus-within>a.nav-link .caret{transform:rotate(180deg)}
+.nav-dd::after{content:"";position:absolute;left:0;right:0;top:100%;height:9px}
+.nav-dd-menu{position:absolute;top:calc(100% + 7px);left:0;min-width:218px;background:var(--card);border:1px solid var(--grid);border-radius:13px;box-shadow:0 12px 34px rgba(16,24,40,.14);padding:6px;opacity:0;visibility:hidden;transform:translateY(-6px);transition:opacity .18s ease,transform .18s ease,visibility .18s;z-index:70}
+.nav-dd:hover>.nav-dd-menu,.nav-dd:focus-within>.nav-dd-menu{opacity:1;visibility:visible;transform:translateY(0)}
+.nav-dd-menu a{display:block;padding:9px 12px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--text);text-decoration:none;white-space:nowrap;transition:background .15s,color .15s}
+.nav-dd-menu a .d{display:block;font-size:11.5px;font-weight:400;color:var(--muted);margin-top:2px}
+.nav-dd-menu a:hover,.nav-dd-menu a.active{background:#eef1f6;color:var(--ink)}
+html[data-theme="dark"] .nav-dd-menu a:hover,html[data-theme="dark"] .nav-dd-menu a.active{background:#222732}
 .lang-toggle{display:inline-flex;position:relative;background:#eef1f6;border:1px solid var(--grid);border-radius:999px;padding:3px;cursor:pointer;flex:none}
 .lang-toggle .pill{position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);border-radius:999px;background:var(--blue);transition:transform .34s cubic-bezier(.34,1.4,.5,1)}
 html[data-lang="zh"] .lang-toggle .pill{transform:translateX(100%)}
@@ -197,8 +211,13 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
     <div class="nav-links">
       <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
       <a class="nav-link" href="macro.html">📊 {{ t('Macro', '宏观') }}</a>
-      <a class="nav-link active" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }}</a>
-      <a class="nav-link" href="vector_allocation.html">◎ {{ t('Allocation', '仓位策略') }}</a>
+      <div class="nav-dd">
+        <a class="nav-link active" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }} <span class="caret">▾</span></a>
+        <div class="nav-dd-menu" role="menu">
+          <a class="active" href="vector.html">{{ t('Overview', '总览') }}<span class="d">{{ t('Market state · risk · momentum', '市场状态 · 风险 · 动量') }}</span></a>
+          <a href="vector_allocation.html">◎ {{ t('Allocation strategy', '仓位策略') }}<span class="d">{{ t('BTC · ETH · alts · cash', 'BTC · ETH · 山寨 · 现金') }}</span></a>
+        </div>
+      </div>
       <a class="nav-link" href="commodities.html">◆ {{ t('Commodity Vector', '大宗商品向量') }}</a>
     </div>
     <div class="nav-ctrls">
