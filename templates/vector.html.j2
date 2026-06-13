@@ -10,7 +10,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script>try{var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>Bitcoin Vector — {{ as_of }}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -53,6 +53,20 @@ html[data-lang="zh"] .lang-toggle .pill{transform:translateX(100%)}
 .lang-toggle .opt{position:relative;z-index:1;min-width:28px;text-align:center;padding:3px 9px;font-size:11.5px;font-weight:600;color:var(--muted);transition:color .25s;user-select:none}
 html:not([data-lang="zh"]) .lang-toggle .en-opt{color:#fff}
 html[data-lang="zh"] .lang-toggle .zh-opt{color:#fff}
+.nav-ctrls{display:flex;align-items:center;gap:10px;flex:none}
+/* dark mode — toggled by html[data-theme="dark"]; light is the default. Page is
+   var-based, so overriding the palette re-themes it (accents blue/red kept). */
+html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280;--r1:#1b2740;--r2:#243352}
+html[data-theme="dark"] body{-webkit-font-smoothing:antialiased}
+/* animated dark/light switch — light default = knob right + sun; dark = left + moon */
+.theme-switch{width:56px;height:27px;border-radius:999px;background:#eef1f6;border:1px solid var(--grid);position:relative;cursor:pointer;padding:0;flex:none}
+html[data-theme="dark"] .theme-switch{background:#222732}
+.theme-switch .ic{position:absolute;top:50%;transform:translateY(-50%);font-size:10.5px;opacity:.5;line-height:1}
+.theme-switch .ic.sun{left:8px}.theme-switch .ic.moon{right:8px}
+.theme-switch .knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 5px rgba(0,0,0,.3);transform:translateX(29px);transition:transform .34s cubic-bezier(.34,1.45,.5,1),background .3s}
+.theme-switch .knob::before{content:"☀️"}
+html[data-theme="dark"] .theme-switch .knob{transform:translateX(0);background:#e8c15a}
+html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 /* layout */
 .grid{display:grid;gap:18px}
 .cols-2{grid-template-columns:1.15fr .85fr}
@@ -185,10 +199,13 @@ html[data-lang="zh"] .lang-toggle .zh-opt{color:#fff}
       <a class="nav-link active" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }}</a>
       <a class="nav-link" href="commodities.html">◆ {{ t('Commodity Vector', '大宗商品向量') }}</a>
     </div>
-    <div class="lang-toggle" role="group" aria-label="Language">
-      <span class="pill"></span>
-      <span class="opt en-opt" data-l="en">EN</span>
-      <span class="opt zh-opt" data-l="zh">中文</span>
+    <div class="nav-ctrls">
+      <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
     </div>
   </div>
 </div>
@@ -436,6 +453,8 @@ html[data-lang="zh"] .lang-toggle .zh-opt{color:#fff}
         <b style="color:{{ mr_color.get(mr,'var(--muted)') }}"> · {{ t(mr_label.get(mr,'—'), mr_zh.get(mr,'—')) }}</b>
         {% if macro.score is not none %}<span class="faint" style="font-size:13px"> ({{ '%+0.2f'|format(macro.score) }})</span>{% endif %}</h3>
       <div class="mini"><div class="lab"><span>{{ t('Net liquidity (WALCL−RRP−TGA)','净流动性（WALCL−RRP−TGA）') }}</span><span><b>{{ ('$%.2fT'|format(macro.net_liq_bn/1000)) if macro.net_liq_bn is not none else '—' }}</b>{% if macro.net_liq_roc is not none %} <span class="faint" style="color:{{ 'var(--blue)' if macro.net_liq_roc>=0 else 'var(--r3)' }}">({{ '%+0.1f'|format(macro.net_liq_roc) }}% 13w)</span>{% endif %}</span></div></div>
+      {% if macro.global_m2_yoy is not none %}
+      <div class="mini"><div class="lab"><span>{{ t('Global M2 growth (US+China)','全球 M2 增速（美+中）') }}</span><span><b style="color:{{ 'var(--blue)' if macro.global_m2_yoy>=5 else 'var(--r3)' }}">{{ macro.global_m2_yoy }}% YoY</b> <span class="faint">({{ td((macro.global_liq_regime or '')|capitalize) }})</span></span></div></div>{% endif %}
       <div class="mini"><div class="lab"><span>{{ t('10y real yield','10 年期实际收益率') }}</span><span><b>{{ ('%.2f%%'|format(macro.real_yield)) if macro.real_yield is not none else '—' }}</b></span></div></div>
       <div class="mini"><div class="lab"><span>{{ t('HY credit spread (OAS)','高收益信用利差') }}</span><span><b>{{ ('%.2f%%'|format(macro.hy_oas)) if macro.hy_oas is not none else '—' }}</b></span></div></div>
       <div class="mini"><div class="lab"><span>{{ t('VIX / Dollar (DXY)','VIX / 美元指数') }}</span><span><b>{{ macro.vix if macro.vix is not none else '—' }}</b> / {{ macro.dxy if macro.dxy is not none else '—' }}</span></div></div>
