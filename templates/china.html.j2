@@ -1,0 +1,193 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{% macro help(en, zh='') -%}
+<span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ t('China A-Share Regime', '中国A股周期') }} — {{ latest.date }}</title>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system,
+         "Segoe UI", Roboto, Helvetica, sans-serif; margin: 0; padding: 18px; }
+  @media (min-width: 1100px) { body { padding: 26px max(40px, calc((100vw - 1500px) / 2)); } }
+  html[data-lang="zh"] body { font-family: "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",-apple-system,sans-serif; }
+  a { text-decoration: none; color: var(--link); }
+  h1 { font-size: 21px; margin: 0 0 2px; color: var(--text); }
+  h2 { font-size: 13px; margin: 0 0 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .topbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .topbar .sp { flex: 1; }
+  .navbtn { display: inline-block; padding: 5px 11px; border-radius: 9px; background: var(--panel);
+            border: 1px solid var(--line); color: var(--text); font-size: 13px; font-weight: 600; }
+  .navbtn:hover { border-color: var(--info); }
+  .lang-btn, .theme-btn { font: inherit; cursor: pointer; background: var(--panel); border: 1px solid var(--line);
+            border-radius: 9px; padding: 5px 11px; color: var(--muted); font-weight: 700; }
+  .grid { display: grid; gap: 14px; grid-template-columns: repeat(12, 1fr); }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 15px 17px; }
+  .span12 { grid-column: span 12; } .span8 { grid-column: span 8; }
+  .span6 { grid-column: span 6; } .span4 { grid-column: span 4; }
+  @media (max-width: 900px) { .span8, .span6, .span4 { grid-column: span 12; } }
+
+  /* regime hero */
+  .hero { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; }
+  .quad-badge { font-size: 22px; font-weight: 800; padding: 8px 18px; border-radius: 13px; color: #fff; }
+  .quad-Q1 { background: var(--q1); } .quad-Q2 { background: var(--q2); color: #1a1a1a; }
+  .quad-Q3 { background: var(--q3); } .quad-Q4 { background: var(--q4); }
+  .metric { display: flex; flex-direction: column; gap: 1px; }
+  .metric .v { font-size: 18px; font-weight: 700; color: var(--text); }
+  .metric .k { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .chip { display: inline-block; padding: 3px 11px; border-radius: 12px; font-weight: 600; font-size: 12.5px;
+          background: color-mix(in srgb, var(--c, var(--muted)) 16%, var(--panel));
+          color: color-mix(in srgb, var(--c, var(--muted)) 82%, var(--text)); }
+  .c-up { --c: var(--up); } .c-down { --c: var(--down); } .c-warn { --c: var(--warn); }
+  .c-info { --c: var(--info); } .c-muted { --c: var(--muted); }
+
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { text-align: right; padding: 5px 8px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 500; }
+  th:first-child, td:first-child, td.l, th.l { text-align: left; }
+  .pos { color: var(--up); } .neg { color: var(--down); }
+  .lad { display: inline-block; padding: 1px 9px; border-radius: 10px; font-size: 11.5px; font-weight: 700;
+         background: color-mix(in srgb, var(--c, var(--muted)) 16%, var(--panel));
+         color: color-mix(in srgb, var(--c, var(--muted)) 82%, var(--text)); }
+  .lad.up { --c: var(--up); } .lad.down { --c: var(--down); } .lad.flat { --c: var(--muted); }
+  .agechip { font-size: 10.5px; font-weight: 700; color: var(--muted); white-space: nowrap; margin-left: 5px; }
+  .note { font-size: 12.5px; color: var(--muted); line-height: 1.6; }
+  .mtf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  .mtf-card .mtf-name { font-weight: 700; font-size: 13.5px; margin-bottom: 6px; color: var(--text); }
+  .foot { margin-top: 26px; color: var(--muted); font-size: 12px; text-align: center; line-height: 1.7; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>{{ t('China A-Share Regime', '中国A股周期') }}</h1>
+  <span class="sp"></span>
+  <a class="navbtn" href="china_stock.html">{{ t('🔎 A-share search', '🔎 个股搜索') }}</a>
+  <a class="navbtn" href="china_brief.html">{{ t('📰 Brief', '📰 简报') }}</a>
+  <a class="navbtn" href="china_history.html">{{ t('📈 History', '📈 历史') }}</a>
+  <a class="navbtn" href="index.html">{{ t('🏠 Home', '🏠 首页') }}</a>
+  <a class="navbtn" href="macro.html">{{ t('🌍 US Macro', '🌍 美国宏观') }}</a>
+  <a class="navbtn" href="vector.html">{{ t('₿ Bitcoin', '₿ 比特币') }}</a>
+  <button class="lang-btn">中文</button>
+  <button class="theme-btn">☀️ {{ t('Light', '浅色') }}</button>
+</div>
+
+<div class="grid">
+
+  <!-- regime hero -->
+  <div class="panel span8">
+    <h2>{{ t('Market Regime', '市场周期') }} · {{ latest.date }}</h2>
+    <div class="hero">
+      <span class="quad-badge quad-{{ latest.quad }}">{{ td(latest.quad_name) }}</span>
+      <div class="metric"><span class="v {{ 'pos' if latest.growth_score>=0 else 'neg' }}">{{ '%+.2f'|format(latest.growth_score) }}</span><span class="k">{{ t('Growth', '增长') }}</span></div>
+      <div class="metric"><span class="v {{ 'pos' if latest.inflation_score>=0 else 'neg' }}">{{ '%+.2f'|format(latest.inflation_score) }}</span><span class="k">{{ t('Inflation', '通胀') }}</span></div>
+      <div class="metric"><span class="v">{{ (latest.confidence*100)|round|int }}%</span><span class="k">{{ t('Confidence', '置信度') }}</span></div>
+      <div class="metric"><span class="chip c-info">{{ t('PBoC', '央行') }} {{ td(latest.liquidity_overlay) }}</span><span class="k">{{ t('Liquidity', '流动性') }}</span></div>
+      <div class="metric"><span class="chip c-muted">{{ td(latest.cycle_tag) }}</span><span class="k">{{ t('Cycle', '周期阶段') }}</span></div>
+    </div>
+    {% if latest.confirming %}<p class="note" style="margin:12px 0 0">{{ t('Confirming', '确认') }}: {{ latest.confirming|join(', ') }}{% if latest.contradicting %} · {{ t('Contradicting', '矛盾') }}: {{ latest.contradicting|join(', ') }}{% endif %}</p>{% endif %}
+  </div>
+
+  <!-- benchmark cycle card -->
+  {% if benchmark %}
+  <div class="panel span4">
+    <h2>{{ td(benchmark.name) }}</h2>
+    <div style="font-size:20px;font-weight:800">{{ '%.2f'|format(benchmark.price) }} <span class="{{ 'pos' if benchmark.chg>=0 else 'neg' }}" style="font-size:14px">{{ '%+.2f'|format(benchmark.chg) }}%</span></div>
+    <div style="margin:4px 0 8px"><span class="lad {{ 'up' if benchmark.dir=='up' else ('down' if benchmark.dir=='down' else 'flat') }}">{{ td(benchmark.label or benchmark.state) }}</span></div>
+    <div class="mtf" data-mtf='{{ benchmark.mtf_json }}'></div>
+  </div>
+  {% endif %}
+
+  <!-- honest calibration framing -->
+  <div class="panel span12">
+    <h2>{{ t('How to read this', '如何解读') }}</h2>
+    <p class="note">{{ t(
+      'Calibrated 2008→2026 (split-half). Two signals survive both halves: the <b>Growth-scare</b> quad is the market\'s best contrarian-bottom (it has the highest forward return, ~70% hit), and an <b>expanding</b> PBoC stance (M2 accelerating) is a measurable tailwind. The other quads are flat-to-negative forward and partly regime-unstable — treat the regime as a risk-context map, not an allocation rule. The cycle ladder below is a drawdown/structure tool, never a standalone buy trigger.',
+      '校准区间 2008→2026（折半验证）。两个信号在两个子区间均成立：<b>增长恐慌</b>象限是最佳的逆向抄底区（前瞻收益最高，命中率约70%），而<b>扩张</b>的央行立场（M2加速）是可衡量的顺风。其余象限前瞻收益平淡或为负、且部分周期不稳定——请将市场周期视作风险背景图，而非配置规则。下方的周期阶梯是回撤/结构工具，绝非独立买入信号。') }}</p>
+  </div>
+
+  <!-- sector rotation board -->
+  <div class="panel span8">
+    <h2>{{ t('Sector Rotation', '板块轮动') }} <span class="note" style="text-transform:none">· {{ t('RS vs CSI 300', '相对沪深300') }}</span></h2>
+    <table>
+      <thead><tr>
+        <th class="l">{{ t('Sector', '板块') }}</th>
+        <th>{{ t('Rank', '排名') }}</th>
+        <th>{{ t('20d RS', '20日相对') }}</th>
+        <th>{{ t('60d RS', '60日相对') }}</th>
+        <th>{{ t('200d', '200日') }}</th>
+        <th>{{ t('%ile', '分位') }}</th>
+        <th class="l">{{ t('Cycle state', '周期状态') }}</th>
+      </tr></thead>
+      <tbody>
+      {% for s in sectors %}
+        <tr>
+          <td class="l"><a href="sectors/{{ s.ticker }}.html">{{ td(s.name) }}</a></td>
+          <td>{{ s.rank if s.rank is not none else '—' }}</td>
+          <td class="{{ 'pos' if (s.mom20 or 0)>=0 else 'neg' }}">{{ '%+.1f'|format(s.mom20) if s.mom20 is not none else '—' }}</td>
+          <td class="{{ 'pos' if (s.mom60 or 0)>=0 else 'neg' }}">{{ '%+.1f'|format(s.mom60) if s.mom60 is not none else '—' }}</td>
+          <td>{{ '↑' if s.above200 else '↓' }}</td>
+          <td>{{ s.pctile|round|int if s.pctile is not none else '—' }}</td>
+          <td class="l"><span class="lad {{ 'up' if s.dir=='up' else ('down' if s.dir=='down' else 'flat') }}">{{ td(s.label or s.state) }}</span>{% if s.age_short %}<span class="agechip" title="when this signal last crossed">⏱ {{ t(s.age_short, s.age_short_zh) }}</span>{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- breadth + cross-market ratios -->
+  <div class="panel span4">
+    <h2>{{ t('Breadth & Ratios', '宽度与比价') }}</h2>
+    {% if breadth %}
+    <p class="note" style="margin:0 0 8px">{{ t('Large-cap breadth', '大盘宽度') }} ({{ breadth.n_members }} {{ t('names', '只') }})</p>
+    <table>
+      <tr><td class="l">{{ t('% above 50-day', '50日上方占比') }}</td><td>{{ breadth.pct_above_50 }}% <span class="note">({{ '%+.0f'|format(breadth.pct50_chg20) }})</span></td></tr>
+      <tr><td class="l">{{ t('% above 200-day', '200日上方占比') }}</td><td>{{ breadth.pct_above_200 }}%</td></tr>
+      <tr><td class="l">{{ t('New highs − lows', '新高−新低') }}</td><td>{{ breadth.nh }} − {{ breadth.nl }}</td></tr>
+      <tr><td class="l">{{ t('A-D line (20d)', '腾落线(20日)') }}</td><td class="{{ 'pos' if breadth.ad_trend=='up' else 'neg' }}">{{ '↑' if breadth.ad_trend=='up' else '↓' }}</td></tr>
+    </table>
+    {% endif %}
+    {% if pair %}
+    <p class="note" style="margin:12px 0 4px">{{ t('Key ratios (20d %)', '关键比价(20日%)') }}</p>
+    <table>
+      {% if pair.cyc_def %}<tr><td class="l">{{ t('Cyclical / Defensive', '周期 / 防御') }}</td><td class="{{ 'pos' if pair.cyc_def.chg_20d_pct>=0 else 'neg' }}">{{ '%+.1f'|format(pair.cyc_def.chg_20d_pct) }}</td></tr>{% endif %}
+      {% if pair.smallcap_largecap %}<tr><td class="l">{{ t('Small / Large cap', '小盘 / 大盘') }}</td><td class="{{ 'pos' if pair.smallcap_largecap.chg_20d_pct>=0 else 'neg' }}">{{ '%+.1f'|format(pair.smallcap_largecap.chg_20d_pct) }}</td></tr>{% endif %}
+      {% if pair.usdcny %}<tr><td class="l">{{ t('USD / CNY', '美元 / 人民币') }}</td><td class="{{ 'neg' if pair.usdcny.chg_20d_pct>=0 else 'pos' }}">{{ '%+.1f'|format(pair.usdcny.chg_20d_pct) }}</td></tr>{% endif %}
+    </table>
+    {% endif %}
+  </div>
+
+  <!-- MTF cards for the leaders -->
+  <div class="panel span12">
+    <h2>{{ t('Cycle Detail — Sector Leaders', '周期详情 — 领先板块') }}</h2>
+    <div class="mtf-grid">
+      {% for s in sectors[:6] %}
+      <div class="mtf-card">
+        <div class="mtf-name"><a href="sectors/{{ s.ticker }}.html">{{ td(s.name) }}</a> <span class="lad {{ 'up' if s.dir=='up' else ('down' if s.dir=='down' else 'flat') }}">{{ td(s.label or s.state) }}</span></div>
+        <div class="mtf" data-mtf='{{ s.mtf_json }}'></div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+
+<div class="foot">
+  {{ t('Built', '生成于') }} {{ built }} ·
+  {{ t('Free public data (yfinance + Eastmoney), mechanical &amp; backtested · not investment advice',
+        '免费公开数据（yfinance + 东方财富），机械化并经回测 · 非投资建议') }}<br>
+  {{ t('Sector ETFs ~5y history (display-grade RS); regime &amp; ladder calibrated on the deep 2006–2026 panel.',
+        '板块ETF约5年历史（展示级相对强弱）；周期与阶梯基于2006–2026深度样本校准。') }}
+</div>
+
+<script src="theme.js"></script>
+<script src="mtf.js"></script>
+</body>
+</html>
