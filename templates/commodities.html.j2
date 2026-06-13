@@ -586,10 +586,10 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
             <span class="tl-node n-{{ e.severity }}"></span>
             <span class="tl-chip f-{{ e.filter }}">{{ e.label }}</span>
             {% if e.asset_label %}<span class="tl-asset">{{ td(e.asset_label) }}</span>{% endif %}
-            <span class="tl-head">{{ e.headline }}</span>
+            <span class="tl-head">{{ t(e.headline, e.headline_zh) }}</span>
             <span class="tl-time">{{ e.time }}</span>
           </summary>
-          <div class="tl-detail">{{ e.detail }}
+          <div class="tl-detail">{{ t(e.detail, e.detail_zh) }}
             {% if e.news %}
             <div class="tl-news">
               <div class="tl-news-h">📰 {{ t('Context — news, not a signal', '背景 — 新闻，非信号') }}{% if e.news.likely_cause and e.news.likely_cause.cause != 'unknown' %} · {{ t('likely:', '可能：') }} <b>{{ e.news.likely_cause.cause|replace('_',' ') }}</b>{% endif %}</div>

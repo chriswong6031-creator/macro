@@ -35,6 +35,13 @@ log = logging.getLogger(__name__)
 LABEL = {"gold": "Gold", "silver": "Silver", "copper": "Copper", "oil": "Oil"}
 UNIT = {"gold": "$/oz", "silver": "$/oz", "copper": "$/lb", "oil": "$/bbl"}
 
+# Chinese siblings (Asia red=up convention is handled in CSS, not here — these are
+# just translations). The site ships both languages inline (l-en/l-zh spans) and the
+# active one shows; events carry headline_zh/detail_zh built at source (composed
+# sentences can't be looked up after the fact). Mirrors engine/btc_alerts.py.
+LABEL_ZH = {"gold": "黄金", "silver": "白银", "copper": "铜", "oil": "原油"}
+UNIT_ZH = {"gold": "美元/盎司", "silver": "美元/盎司", "copper": "美元/磅", "oil": "美元/桶"}
+
 # how to READ a residual shock per asset (from the calibration verdicts — stable facts)
 SHOCK_READ = {
     "gold": "Historically PERSISTS (central-bank-style bids have carried forward).",
@@ -42,16 +49,43 @@ SHOCK_READ = {
     "copper": "Historically PERSISTS (structural demand carries forward).",
     "oil": "Historically FADES — war/supply premia mean-revert.",
 }
+SHOCK_READ_ZH = {
+    "gold": "历史上会持续（央行式买盘往往延续）。",
+    "silver": "急跌后往往反弹；上行冲击则更嘈杂。",
+    "copper": "历史上会持续（结构性需求往往延续）。",
+    "oil": "历史上会消退 — 战争/供给溢价均值回归。",
+}
+
+# every state-machine token -> Chinese (graceful EN fallback for anything unmapped)
+STATE_ZH = {
+    "bull": "看多", "bear": "看空", "neutral": "中性",
+    "constructive": "向好", "broken": "破位",
+    "up": "上升", "down": "下降", "flat": "走平",
+    "tailwind": "顺风", "headwind": "逆风",
+    "high_risk": "高风险", "low_risk": "低风险",
+    "crowded_long": "多头拥挤", "crowded_short": "空头拥挤",
+    "silver_cheap": "白银偏便宜", "silver_rich": "白银偏贵",
+    "exogenous_bid": "外生买盘", "exogenous_pressure": "外生压力",
+    "Reflation": "再通胀", "Stagflation": "滞胀", "Goldilocks": "理想增长",
+    "Deflation-scare": "通缩担忧", "Neutral": "中性",
+}
 
 
-def _ev(asset, type_, ts, severity, headline, detail, context, to_state) -> dict:
+def _z(tok) -> str:
+    """Token -> Chinese, falling back to the de-underscored English token."""
+    return STATE_ZH.get(tok, str(tok).replace("_", " "))
+
+
+def _ev(asset, type_, ts, severity, headline, detail, context, to_state,
+        headline_zh="", detail_zh="") -> dict:
     ts = pd.Timestamp(ts)
     bucket = ts.strftime("%Y-%m-%dT%H:%M")
     a = asset or "complex"
     return {"id": f"commodity:{a}:{type_}:{bucket}:{to_state}", "ts": ts.isoformat(),
             "source": "commodity", "asset": a, "type": type_, "severity": severity,
-            "headline": headline, "detail": detail, "context": context,
-            "anchor": "#timeline"}
+            "headline": headline, "detail": detail,
+            "headline_zh": headline_zh or headline, "detail_zh": detail_zh or detail,
+            "context": context, "anchor": "#timeline"}
 
 
 def _transitions(state: pd.Series):
@@ -69,11 +103,16 @@ def _transitions(state: pd.Series):
 def _asset_events(asset: str, df: pd.DataFrame) -> list[dict]:
     out: list[dict] = []
     lab, unit = LABEL[asset], UNIT[asset]
+    lab_zh, unit_zh = LABEL_ZH[asset], UNIT_ZH[asset]
     close = df["close"]
 
     def px(ts):
         v = close.get(ts, float("nan"))
         return f"{lab} {v:,.2f} {unit}" if pd.notna(v) else lab
+
+    def px_zh(ts):
+        v = close.get(ts, float("nan"))
+        return f"{lab_zh} {v:,.2f} {unit_zh}" if pd.notna(v) else lab_zh
 
     # residual SHOCK — the headline commodity signal
     if "shock_state" in df.columns:
@@ -87,7 +126,10 @@ def _asset_events(asset: str, df: pd.DataFrame) -> list[dict]:
                            f"{lab} moved beyond what its macro drivers explain "
                            f"(shock z {z:+.1f}). {SHOCK_READ[asset]} {px(ts)}.",
                            {"shock_z": round(float(z), 2) if pd.notna(z) else None,
-                            "state": to}, to))
+                            "state": to}, to,
+                           headline_zh=f"{lab_zh}：检测到{_z(to)}",
+                           detail_zh=f"{lab_zh}的走势超出其宏观驱动可解释的范围"
+                           f"（冲击 z {z:+.1f}）。{SHOCK_READ_ZH[asset]} {px_zh(ts)}。"))
 
     # risk regime
     if "risk_regime" in df.columns:
@@ -98,7 +140,10 @@ def _asset_events(asset: str, df: pd.DataFrame) -> list[dict]:
                            f"{lab} risk turned {word}",
                            f"Risk Index {'rose through' if to=='high_risk' else 'fell back below'} "
                            f"the threshold to {ri:.0f}. {px(ts)}.",
-                           {"risk_index": round(float(ri)) if pd.notna(ri) else None}, to))
+                           {"risk_index": round(float(ri)) if pd.notna(ri) else None}, to,
+                           headline_zh=f"{lab_zh}风险转为{'升高' if to=='high_risk' else '平静'}",
+                           detail_zh=f"风险指数{'上穿' if to=='high_risk' else '回落跌破'}"
+                           f"阈值至 {ri:.0f}。{px_zh(ts)}。"))
 
     # macro driver tailwind/headwind
     if "driver_state" in df.columns:
@@ -108,7 +153,9 @@ def _asset_events(asset: str, df: pd.DataFrame) -> list[dict]:
             sc = df["driver_score"].get(ts, float("nan"))
             out.append(_ev(asset, "driver_shift", ts, "medium",
                            f"{lab} macro backdrop turned {to}",
-                           f"Driver axis {sc:+.2f} ({frm} → {to}).", {"driver_score": round(float(sc), 2)}, to))
+                           f"Driver axis {sc:+.2f} ({frm} → {to}).", {"driver_score": round(float(sc), 2)}, to,
+                           headline_zh=f"{lab_zh}宏观背景转为{_z(to)}",
+                           detail_zh=f"驱动因素轴 {sc:+.2f}（{_z(frm)} → {_z(to)}）。"))
 
     # 12-month trend flip
     if "ts_trend" in df.columns:
@@ -116,21 +163,26 @@ def _asset_events(asset: str, df: pd.DataFrame) -> list[dict]:
             if to == "flat":
                 continue
             note = " (oil mean-reverts — read as contrarian)" if asset == "oil" else ""
+            note_zh = "（原油均值回归 — 应作逆向解读）" if asset == "oil" else ""
             out.append(_ev(asset, "trend_flip", ts, "medium",
                            f"{lab} 12-month trend turned {to}",
                            f"Trailing-year time-series momentum flipped {frm} → {to}{note}. {px(ts)}.",
-                           {"ts_trend": to}, to))
+                           {"ts_trend": to}, to,
+                           headline_zh=f"{lab_zh} 12 个月趋势转为{_z(to)}",
+                           detail_zh=f"过去一年的时间序列动量翻转 {_z(frm)} → {_z(to)}{note_zh}。{px_zh(ts)}。"))
 
     # momentum & structure
-    for col, type_, label in [("momentum_state", "momentum", "Momentum"),
-                              ("structure_state", "structure", "Structure")]:
+    for col, type_, label, label_zh in [("momentum_state", "momentum", "Momentum", "动量"),
+                                        ("structure_state", "structure", "Structure", "结构")]:
         if col in df.columns:
             for ts, frm, to in _transitions(df[col]):
                 if to == "neutral":
                     continue
                 out.append(_ev(asset, type_, ts, "medium",
                                f"{lab} {label.lower()} → {to}",
-                               f"{label} state {frm} → {to}. {px(ts)}.", {}, to))
+                               f"{label} state {frm} → {to}. {px(ts)}.", {}, to,
+                               headline_zh=f"{lab_zh}{label_zh} → {_z(to)}",
+                               detail_zh=f"{label_zh}状态 {_z(frm)} → {_z(to)}。{px_zh(ts)}。"))
 
     # allocation step
     if "alloc_optimal" in df.columns:
@@ -139,7 +191,9 @@ def _asset_events(asset: str, df: pd.DataFrame) -> list[dict]:
             out.append(_ev(asset, "allocation", ts, "medium",
                            f"{lab} allocation → {pct}%",
                            f"Optimal strategy moved {int(float(frm)*100)}% → {pct}% (momentum × risk).",
-                           {"alloc_pct": pct}, str(to)))
+                           {"alloc_pct": pct}, str(to),
+                           headline_zh=f"{lab_zh}配置 → {pct}%",
+                           detail_zh=f"最优策略从 {int(float(frm)*100)}% 调整为 {pct}%（动量 × 风险）。"))
 
     # COT crowding onset
     if "pos_state" in df.columns:
@@ -149,7 +203,10 @@ def _asset_events(asset: str, df: pd.DataFrame) -> list[dict]:
             out.append(_ev(asset, "positioning", ts, "info",
                            f"{lab} COT {to.replace('_', ' ')}",
                            f"Speculative net positioning reached {to.replace('_',' ')} "
-                           f"({df['pos_pctile'].get(ts, float('nan')):.0f}th %ile, 3y).", {}, to))
+                           f"({df['pos_pctile'].get(ts, float('nan')):.0f}th %ile, 3y).", {}, to,
+                           headline_zh=f"{lab_zh} COT {_z(to)}",
+                           detail_zh=f"投机净持仓达到{_z(to)}"
+                           f"（3 年期第 {df['pos_pctile'].get(ts, float('nan')):.0f} 百分位）。"))
 
     # gold/silver value extreme (metals)
     if "gsr_state" in df.columns:
@@ -160,7 +217,10 @@ def _asset_events(asset: str, df: pd.DataFrame) -> list[dict]:
                            f"{lab}: gold/silver ratio {to.replace('_', ' ')}",
                            f"GSR at {df['gsr_pctile'].get(ts, float('nan')):.0f}th %ile (3y) — "
                            f"{'silver cheap vs gold' if to=='silver_cheap' else 'silver rich vs gold'}.",
-                           {}, to))
+                           {}, to,
+                           headline_zh=f"{lab_zh}：金银比{_z(to)}",
+                           detail_zh=f"金银比处于 3 年期第 {df['gsr_pctile'].get(ts, float('nan')):.0f} 百分位 — "
+                           f"{'白银相对黄金便宜' if to=='silver_cheap' else '白银相对黄金偏贵'}。"))
     return out
 
 
@@ -176,7 +236,9 @@ def daily_state_events(results: dict) -> list[dict]:
             sev = "high" if to in ("Reflation", "Deflation-scare") else "medium"
             out.append(_ev(None, "complex_regime", ts, sev,
                            f"Commodity complex → {to}",
-                           f"The dollar × growth quadrant shifted {frm} → {to}.", {}, to))
+                           f"The dollar × growth quadrant shifted {frm} → {to}.", {}, to,
+                           headline_zh=f"大宗商品综合体 → {_z(to)}",
+                           detail_zh=f"美元 × 增长象限从 {_z(frm)} 切换为 {_z(to)}。"))
     return out
 
 
@@ -193,7 +255,10 @@ def risk_extreme_events(results: dict, cfg: dict) -> list[dict]:
                            f"{LABEL[asset]}: capitulation watch",
                            f"Risk Index held ≥ {lvl} for {ndays} days — at sustained "
                            f"extremes the gauge is contrarian (near-capitulation).",
-                           {"risk_index": round(float(df['risk_index'].get(ts)))}, "extreme"))
+                           {"risk_index": round(float(df['risk_index'].get(ts)))}, "extreme",
+                           headline_zh=f"{LABEL_ZH[asset]}：投降式抛售观察",
+                           detail_zh=f"风险指数连续 {ndays} 天 ≥ {lvl} — 在持续极值处"
+                           f"该指标为逆向信号（接近投降）。"))
     return out
 
 
@@ -256,6 +321,7 @@ def shock_events(hourly: pd.DataFrame | None, asset: str, cfg: dict) -> list[dic
     rN = close.pct_change(n)              # the move the state machine actually triggers on
     r24 = close.pct_change(24)            # broader context
     lab, unit = LABEL[asset], UNIT[asset]
+    lab_zh, unit_zh = LABEL_ZH[asset], UNIT_ZH[asset]
     out = []
     for ts, frm, to in _transitions(states):
         if to == "normal":  # the all-clear is implied by 'stabilizing' — no card
@@ -271,17 +337,24 @@ def shock_events(hourly: pd.DataFrame | None, asset: str, cfg: dict) -> list[dic
                "direction": direction, "state": to}
         # emit 'stabilizing' too (as info) so its transition commits — keeps the
         # persisted sentinel state fresh and avoids missing a later re-entry into shock.
+        dir_zh = "上行" if direction == "up" else "下行"
         if to == "stabilizing":
             out.append(_ev(asset, "price_shock", ts, "info",
                            f"{lab} price shock stabilizing",
-                           f"{lab} {c:,.2f} {unit} — the acute move is settling.", ctx, to))
+                           f"{lab} {c:,.2f} {unit} — the acute move is settling.", ctx, to,
+                           headline_zh=f"{lab_zh}价格冲击趋稳",
+                           detail_zh=f"{lab_zh} {c:,.2f} {unit_zh} — 剧烈波动正在平息。"))
         else:
             word = "extended move" if to == "extended" else "price shock"
+            word_zh = "延伸性波动" if to == "extended" else "价格冲击"
             sev = "high" if to == "extended" else "medium"
             out.append(_ev(asset, "price_shock", ts, sev,
                            f"{lab} intraday {word} ({direction})",
                            f"{lab} {c:,.2f} {unit} — an acute {direction} move "
-                           f"({mv:+.1f}% / {n}h, {c24:+.1f}% / 24h).", ctx, to))
+                           f"({mv:+.1f}% / {n}h, {c24:+.1f}% / 24h).", ctx, to,
+                           headline_zh=f"{lab_zh}日内{word_zh}（{dir_zh}）",
+                           detail_zh=f"{lab_zh} {c:,.2f} {unit_zh} — 一次剧烈的{dir_zh}波动"
+                           f"（{mv:+.1f}% / {n}小时，{c24:+.1f}% / 24小时）。"))
     return out
 
 
