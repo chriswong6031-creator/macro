@@ -557,6 +557,14 @@ def main() -> int:
     out2 = site / "history.html"
     out2.write_text(hist_html)
     log.info("wrote %s (%.0f KB)", out2, out2.stat().st_size / 1024)
+
+    # stock search: analyzer page + nightly library
+    if config.load().get("stock_search", {}).get("enabled"):
+        (site / "stock.html").write_text(
+            env.get_template("stock.html.j2").render(
+                state_styles=STATE_STYLES, generated_utc=generated))
+        from scripts.build_stock_library import main as build_library
+        build_library()
     return 0
 
 

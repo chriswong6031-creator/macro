@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stock analyzer — cycle & momentum</title>
+<style>
+  :root { --bg:#0f1115; --panel:#181b21; --panel2:#1e222a; --text:#d7dce3;
+          --muted:#8b93a1; --line:#2a2f3a; }
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,
+         "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  a { color:#7aa7e0; text-decoration:none; }
+  h1 { font-size:20px; margin:0; }
+  h2 { font-size:14px; margin:0 0 10px; color:var(--muted); text-transform:uppercase;
+       letter-spacing:.06em; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+           padding:14px 16px; margin-bottom:14px; }
+  .topline { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+  .navbtn { background:var(--panel2); border:1px solid var(--line); color:#7aa7e0;
+            padding:5px 14px; border-radius:8px; font-size:13px; }
+  .muted { color:var(--muted); } .pos { color:#5fbf7f; } .neg { color:#e07070; }
+  .state { display:inline-block; padding:2px 11px; border-radius:12px; font-weight:700;
+           font-size:12.5px; }
+  
+  .st-FRESH_BUY { background: #1d4a2c; color: #7fe0a0; }
+  
+  .st-TURN_SIGNALED { background: #1d3a4a; color: #8fd0f0; }
+  
+  .st-RALLY_ON { background: #1d3326; color: #6fce8f; }
+  
+  .st-BOTTOM_WATCH { background: #2b3340; color: #9fc0e8; }
+  
+  .st-TOP_WATCH { background: #38301a; color: #d8b75a; }
+  
+  .st-ROLLING_OVER { background: #4a2c1a; color: #e0a070; }
+  
+  .st-DECLINE { background: #3a2020; color: #e08080; }
+  
+  .searchwrap { position:relative; flex:1; min-width:260px; max-width:460px; }
+  #q { width:100%; padding:10px 14px; border-radius:10px; border:1px solid var(--line);
+       background:var(--panel2); color:var(--text); font-size:15px; outline:none; }
+  #q:focus { border-color:#4a6a9a; }
+  #sugg { position:absolute; top:104%; left:0; right:0; background:#20242d;
+          border:1px solid #3a4150; border-radius:10px; z-index:50; max-height:330px;
+          overflow:auto; display:none; box-shadow:0 10px 24px rgba(0,0,0,.5); }
+  #sugg div { padding:8px 13px; cursor:pointer; display:flex; gap:10px; align-items:center; }
+  #sugg div:hover, #sugg div.sel { background:#2a3140; }
+  #sugg b { min-width:58px; }
+  #sugg small { color:var(--muted); flex:1; }
+  .mtf { display:flex; gap:14px; flex-wrap:wrap; font-size:12.5px; color:var(--muted);
+         margin-top:8px; }
+  .mtf b { color:var(--text); }
+  table { border-collapse:collapse; width:100%; font-size:13px; }
+  th,td { text-align:left; padding:4px 8px; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:500; }
+  #result { display:none; }
+</style>
+</head>
+<body>
+  <div class="panel">
+    <div class="topline">
+      <h1>🔎 Stock analyzer</h1>
+      <div class="searchwrap">
+        <input id="q" placeholder="Search any S&amp;P 500 stock, ETF, commodity or crypto… (e.g. AAPL, Energy, Bitcoin)" autocomplete="off">
+        <div id="sugg"></div>
+      </div>
+      <a class="navbtn" href="index.html">← Dashboard</a>
+    </div>
+    <p class="muted" style="margin:8px 0 0">Every name gets the same treatment as the sector pages:
+      cycle position (daily + investor cycle), three-timeframe momentum, and a signal state whose
+      historical track record is shown below it. Library refreshes nightly with the close;
+      covers the S&amp;P 500, all tracked ETFs, commodities and crypto.</p>
+  </div>
+
+  <div id="result">
+    <div class="panel">
+      <div class="topline">
+        <h1 id="r_name"></h1>
+        <span id="r_state" class="state"></span>
+        <span id="r_cyc" class="muted"></span>
+        <span style="flex:1"></span>
+        <span id="r_asof" class="muted"></span>
+      </div>
+      <p id="r_why" style="margin:10px 0 2px; font-weight:600"></p>
+      <p id="r_next" class="muted" style="margin:4px 0"></p>
+      <p id="r_flags" class="neg" style="margin:4px 0"></p>
+      <div class="mtf" id="r_mtf"></div>
+      <p class="muted" id="r_extra" style="margin:8px 0 0"></p>
+    </div>
+    <div class="panel">
+      <h2>Chart</h2>
+      <div id="tvbox"></div>
+    </div>
+    <div class="panel">
+      <h2>How much to trust the state — measured 2000→2026</h2>
+      <table id="r_cal"></table>
+      <p class="muted" style="font-size:12px; margin-top:8px">Stocks drift up over a month from
+        every state (the market's long upward bias); the spread between states is small, and the
+        "scary" states measured slightly better forward returns — markets mean-revert and full
+        confirmation costs part of the bounce. Use the state for <b>structure</b> (cycle position,
+        confirmation checklist, invalidation level) and size positions instead of seeking certainty.</p>
+    </div>
+  </div>
+
+<script src="https://s3.tradingview.com/tv.js"></script>
+<script>
+(function () {
+  var idx = [], cal = null, sel = -1, items = [];
+  var q = document.getElementById('q'), sugg = document.getElementById('sugg');
+
+  fetch('stockdata/index.json').then(r => r.json()).then(d => { idx = d; fromHash(); });
+  fetch('stockdata/calibration.json').then(r => r.ok ? r.json() : null)
+    .then(d => { cal = d; }).catch(() => {});
+
+  function fromHash() {
+    var t = decodeURIComponent((location.hash || '').slice(1));
+    if (t) load(t);
+  }
+  window.addEventListener('hashchange', fromHash);
+
+  q.addEventListener('input', function () {
+    var v = q.value.trim().toLowerCase();
+    sel = -1;
+    if (!v) { sugg.style.display = 'none'; return; }
+    items = idx.filter(function (x) {
+      return x.t.toLowerCase().indexOf(v) === 0 ||
+             x.n.toLowerCase().indexOf(v) >= 0 || x.s.toLowerCase().indexOf(v) >= 0;
+    }).sort(function (a, b) {
+      var ae = a.t.toLowerCase() === v ? -1 : 0, be = b.t.toLowerCase() === v ? -1 : 0;
+      if (ae !== be) return ae - be;
+      var ap = a.t.toLowerCase().indexOf(v) === 0 ? 0 : 1,
+          bp = b.t.toLowerCase().indexOf(v) === 0 ? 0 : 1;
+      return ap - bp || a.t.localeCompare(b.t);
+    }).slice(0, 12);
+    sugg.innerHTML = items.map(function (x, i) {
+      return '<div data-i="' + i + '"><b>' + x.t + '</b><small>' + x.n +
+             (x.s ? ' · ' + x.s : '') + '</small><span class="muted" style="font-size:11px">' +
+             x.st + '</span></div>';
+    }).join('');
+    sugg.style.display = items.length ? 'block' : 'none';
+  });
+  q.addEventListener('keydown', function (e) {
+    if (sugg.style.display === 'none') return;
+    var divs = sugg.querySelectorAll('div');
+    if (e.key === 'ArrowDown') { sel = Math.min(sel + 1, divs.length - 1); e.preventDefault(); }
+    else if (e.key === 'ArrowUp') { sel = Math.max(sel - 1, 0); e.preventDefault(); }
+    else if (e.key === 'Enter') { pick(sel >= 0 ? sel : 0); e.preventDefault(); return; }
+    else if (e.key === 'Escape') { sugg.style.display = 'none'; return; }
+    divs.forEach(function (d, i) { d.classList.toggle('sel', i === sel); });
+  });
+  sugg.addEventListener('mousedown', function (e) {
+    var d = e.target.closest('div[data-i]');
+    if (d) pick(+d.dataset.i);
+  });
+  function pick(i) {
+    if (!items[i]) return;
+    sugg.style.display = 'none';
+    q.value = items[i].t;
+    location.hash = encodeURIComponent(items[i].t);
+  }
+
+  function tf(label, m) {
+    if (!m || m.rsi14 == null) return '';
+    var macd = m.macd_pos ? '🟢' : '🔴';
+    var note = m.macd_cross_up ? ' just crossed up' : m.macd_cross_dn ? ' just crossed down'
+      : m.macd_approaching_up ? ' ≈' + m.macd_bars_to_cross + ' bars to bull cross'
+      : m.macd_approaching_dn ? ' ≈' + m.macd_bars_to_cross + ' bars to bear cross' : '';
+    return '<span><b>' + label + '</b> · RSI ' + m.rsi14 + ' · Stoch ' + m.stoch +
+           ' · MACD ' + macd + note + '</span>';
+  }
+
+  function load(t) {
+    var safe = t.replace('=', '_').replace('^', '_');
+    fetch('stockdata/' + safe + '.json').then(function (r) {
+      if (!r.ok) throw new Error('not in library');
+      return r.json();
+    }).then(render).catch(function () {
+      document.getElementById('result').style.display = 'block';
+      document.getElementById('r_name').textContent = t;
+      document.getElementById('r_state').textContent = 'NOT IN LIBRARY';
+      document.getElementById('r_state').className = 'state';
+      document.getElementById('r_why').textContent =
+        'This ticker is not in the nightly library (S&P 500 + tracked ETFs/commodities/crypto).';
+      document.getElementById('r_next').textContent =
+        'It can be added in one line: config.yml → stock_search.extra_tickers.';
+    });
+  }
+
+  function render(d) {
+    document.getElementById('result').style.display = 'block';
+    document.getElementById('r_name').textContent = d.name + ' (' + d.ticker + ')';
+    var st = document.getElementById('r_state');
+    st.textContent = d.ladder.state;
+    st.className = 'state st-' + d.ladder.state.replace(/ /g, '_');
+    document.getElementById('r_cyc').textContent =
+      'cycle day ' + d.cycle.dc_day + ' of ~' + d.cycle.dc_band[0] + '-' + d.cycle.dc_band[1] +
+      (d.cycle.ic_week != null ? ' · investor cycle week ' + d.cycle.ic_week + ' (' + d.cycle.ic_phase + ')' : '');
+    document.getElementById('r_asof').textContent = 'data through ' + d.asof;
+    document.getElementById('r_why').textContent = d.ladder.why;
+    document.getElementById('r_next').textContent = 'Next: ' + d.ladder.next;
+    var flags = [];
+    if (d.cycle.failed_cycle) flags.push('⚠ Failed cycle — price is below the low that started this cycle; the larger trend is usually rolling over.');
+    document.getElementById('r_flags').textContent = flags.join(' ');
+    document.getElementById('r_mtf').innerHTML =
+      tf('Daily', d.mtf.D) + tf('3-Day', d.mtf['3D']) + tf('Weekly', d.mtf.W);
+    var ex = [];
+    if (d.cycle.translation) ex.push('Last completed cycle was ' + d.cycle.translation + '-translated' +
+      (d.cycle.translation === 'right' ? ' (crested late — bullish structure).' :
+       d.cycle.translation === 'left' ? ' (crested early — bearish tell).' : '.'));
+    if (d.season_this) ex.push('Seasonality — ' + d.season_this + (d.season_next ? '; ' + d.season_next : '') + '.');
+    if (d.tech && d.tech.off_52w_high_pct != null) ex.push(d.tech.off_52w_high_pct + '% from its 52-week high.');
+    document.getElementById('r_extra').textContent = ex.join(' ');
+
+    var cs = '<tr><th>state</th><th>samples</th><th>up next month</th><th>avg next month</th></tr>';
+    if (cal) {
+      Object.keys(cal).forEach(function (s) {
+        var v = cal[s];
+        cs += '<tr><td><span class="state st-' + s.replace(/ /g, '_') + '">' + s + '</span></td><td>' +
+              v.n + '</td><td>' + v.hit_pct + '%</td><td class="' +
+              (v.avg_fwd_pct > 0 ? 'pos' : 'neg') + '">' + v.avg_fwd_pct + '%</td></tr>';
+      });
+    }
+    document.getElementById('r_cal').innerHTML = cs;
+
+    document.getElementById('tvbox').innerHTML = '<div id="tvchart"></div>';
+    try {
+      new TradingView.widget({container_id: 'tvchart', symbol: d.ticker.replace('-USD', 'USD'),
+        interval: 'D', theme: 'dark', style: '1', height: 430, width: '100%',
+        hide_side_toolbar: true, allow_symbol_change: true,
+        studies: ['RSI@tv-basicstudies', 'MACD@tv-basicstudies']});
+    } catch (e) { /* chart is garnish — analysis above stands alone */ }
+  }
+})();
+</script>
+<p class="muted" style="font-size:12px">Generated 2026-06-13 01:50 UTC · charts by TradingView ·
+methodology &amp; caveats: see any sector page footer.</p>
+</body>
+</html>

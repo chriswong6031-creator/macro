@@ -96,7 +96,7 @@
     {% for h in s.holdings %}
     <div class="card">
       <div class="topline">
-        <b style="font-size:15px">{{ h.ticker }}</b>
+        <a href="../stock.html#{{ h.ticker }}"><b style="font-size:15px">{{ h.ticker }}</b></a>
         <span class="muted">{{ h.name }}</span>
         <span class="muted">{{ h.weight_pct }}% of fund</span>
         <span class="state st-{{ h.ladder.state | replace(" ", "_") }}">{{ h.ladder.state }}</span>

@@ -206,9 +206,13 @@ mempool:
 
 breadth:
   constituents_url: https://en.wikipedia.org/wiki/List_of_S%26P_500_companies
-  lookback_days_live: 420         # enough for 200DMA + 252d NH/NL
+  lookback_days_live: 1100        # ~3y: 200DMA/NH-NL plus cycle analysis for stock search
   ma_windows: [50, 200]
   nhnl_window: 252
+
+stock_search:
+  enabled: true
+  extra_tickers: []               # any extra symbols to include in the search library
 
 # -----------------------------------------------------------------------------
 # Regime engine

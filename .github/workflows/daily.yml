@@ -61,6 +61,12 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt
+      - name: restore breadth close cache (stock search library needs constituent closes)
+        uses: actions/cache@v4
+        with:
+          path: data/breadth/_closes_cache.parquet
+          key: breadth-closes-engine-${{ github.run_id }}
+          restore-keys: breadth-closes-
       - name: run regime engine
         run: python -m engine.run
       - name: build dashboard + daily brief
