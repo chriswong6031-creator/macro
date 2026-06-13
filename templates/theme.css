@@ -3,6 +3,12 @@
    Badges/pills/tags are TINTED from one base color via color-mix() so they
    auto-adapt: dark tint + light text in dark mode, light tint + dark text in
    light mode. Nothing hard-codes a dark background. */
+
+/* Inter — the typeface used by the Bitcoin Vector dashboard and the landing
+   hub. Loaded here (theme.css is linked by every page) and applied to <body>
+   below so the whole site shares one font; each page keeps its own
+   font-size/line-height. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 :root {
   --bg: #0f1115; --panel: #181b21; --panel2: #1e222a; --text: #d7dce3;
   --muted: #8b93a1; --line: #2a2f3a;
@@ -30,6 +36,14 @@ html[data-theme="light"] {
   --card-shadow: 0 1px 3px rgba(20,30,50,.07);
 }
 a { color: var(--link); }
+
+/* Inter as the primary typeface on every page. The `html body` selector has
+   higher specificity than each page's own `body { font: 14px/1.5 -apple-system… }`
+   shorthand, so it swaps the family while leaving their font-size/line-height
+   untouched. Antialiasing matches Vector's crisp rendering. */
+html body { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
+  Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 
 /* buttons */
 .navbtn { background: var(--panel2); border: 1px solid var(--line); color: var(--link);
