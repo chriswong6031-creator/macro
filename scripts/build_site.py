@@ -23,6 +23,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from collectors.holdings import active_changes  # noqa: E402
 from collectors.sponsors import flows_table  # noqa: E402
+from engine.i18n import t as T  # noqa: E402
+from engine.i18n import tr as TR  # noqa: E402
 from engine.inputs import build_features  # noqa: E402
 from lib import config, store  # noqa: E402
 
@@ -30,12 +32,18 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_site")
 
 QUAD_COLORS = {"Q1": "#2e9e4f", "Q2": "#d4a017", "Q3": "#d04545", "Q4": "#3f78d8"}
-# Charts always render on their own dark slate surface so they stay legible in
-# BOTH themes (a light-mode chart of dark-tuned lines would be invisible on
-# white). The .chart/.tv wrapper rounds the corners to match.
+# Charts render on a TRANSPARENT surface so they sit on whatever card colour the
+# active theme provides (white in light mode, dark panel in dark) — no more
+# dark-slate rectangles inside white cards. Font + gridlines default to a neutral
+# mid-grey that stays legible on either background; theme.js then re-themes them
+# crisply for the active theme on load and on toggle (Plotly.relayout). The one
+# near-white trace (SPY, below) is recoloured to a neutral slate so it stays
+# visible on white too. The .chart/.tv wrapper rounds the corners to match.
 PLOT_LAYOUT = dict(
-    template="plotly_dark", paper_bgcolor="#12161d",
-    plot_bgcolor="#12161d", font={"size": 11},
+    template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)",
+    plot_bgcolor="rgba(0,0,0,0)", font={"size": 11, "color": "#8b93a1"},
+    xaxis={"gridcolor": "rgba(128,138,160,0.16)", "zerolinecolor": "rgba(128,138,160,0.28)"},
+    yaxis={"gridcolor": "rgba(128,138,160,0.16)", "zerolinecolor": "rgba(128,138,160,0.28)"},
     margin={"l": 45, "r": 15, "t": 10, "b": 30}, height=300,
     legend={"orientation": "h", "y": 1.08},
 )
@@ -52,7 +60,7 @@ def chart_regime(f: pd.DataFrame, hist: pd.DataFrame, days: int = 730) -> str:
     sub = hist.loc[two_y:]
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=spy.index, y=spy, name="SPY",
-                             line={"color": "#d7dce3", "width": 1.3}))
+                             line={"color": "#64748b", "width": 1.5}))
     q = sub["quad"].dropna()
     if not q.empty:
         seg_id = (q != q.shift()).cumsum()
@@ -114,22 +122,35 @@ def chart_credit_breadth(f: pd.DataFrame) -> str:
 
 
 def _crowd_words(p: float, lo_word: str, hi_word: str,
-                 lo_verdict: str, hi_verdict: str) -> tuple[str, str]:
+                 lo_verdict: str, hi_verdict: str,
+                 lo_word_zh: str, hi_word_zh: str,
+                 lo_verdict_zh: str, hi_verdict_zh: str) -> tuple[T, T]:
     """Percentile -> (label, verdict) in plain language. The vocabulary differs
-    per input (long/short, cash/all-in, calm/panic) but the shape is shared."""
+    per input (long/short, cash/all-in, calm/panic) but the shape is shared.
+    Returns bilingual T(...) markup for both label and verdict."""
     if p >= 95:
-        return f"extreme {hi_word}", f"{hi_verdict} — most extreme in our records; contrarian alert"
+        return (T(f"extreme {hi_word}", f"极度{hi_word_zh}"),
+                T(f"{hi_verdict} — most extreme in our records; contrarian alert",
+                  f"{hi_verdict_zh} — 我们记录中最极端；反向预警"))
     if p >= 85:
-        return f"crowded {hi_word}", f"{hi_verdict} — crowded; late to join"
+        return (T(f"crowded {hi_word}", f"拥挤{hi_word_zh}"),
+                T(f"{hi_verdict} — crowded; late to join",
+                  f"{hi_verdict_zh} — 拥挤；加入已晚"))
     if p >= 60:
-        return f"leaning {hi_word}", "above normal, nothing extreme"
+        return (T(f"leaning {hi_word}", f"偏向{hi_word_zh}"),
+                T("above normal, nothing extreme", "高于正常，但不极端"))
     if p > 40:
-        return "normal", "nothing notable"
+        return (T("normal", "正常"), T("nothing notable", "无显著"))
     if p > 15:
-        return f"leaning {lo_word}", "below normal, nothing extreme"
+        return (T(f"leaning {lo_word}", f"偏向{lo_word_zh}"),
+                T("below normal, nothing extreme", "低于正常，但不极端"))
     if p > 5:
-        return f"crowded {lo_word}", f"{lo_verdict} — stretched; squeezes start here"
-    return f"extreme {lo_word}", f"{lo_verdict} — most extreme in our records; reversal fuel"
+        return (T(f"crowded {lo_word}", f"拥挤{lo_word_zh}"),
+                T(f"{lo_verdict} — stretched; squeezes start here",
+                  f"{lo_verdict_zh} — 已拉伸；逼空由此开始"))
+    return (T(f"extreme {lo_word}", f"极度{lo_word_zh}"),
+            T(f"{lo_verdict} — most extreme in our records; reversal fuel",
+              f"{lo_verdict_zh} — 我们记录中最极端；反转燃料"))
 
 
 def positioning_rows(f: pd.DataFrame) -> list[dict]:
@@ -142,34 +163,45 @@ def positioning_rows(f: pd.DataFrame) -> list[dict]:
         return float(s.rank(pct=True).iloc[-1] * 100)
 
     cot_meta = {
-        "cot_es_spx": ("S&P 500 futures speculators",
+        "cot_es_spx": (T("S&P 500 futures speculators", "标普500 期货投机者"),
                        "Net bets of speculative futures traders on the S&P 500, as % of all open "
                        "contracts (CFTC weekly data). Deeply negative + low percentile = everyone's "
-                       "already short — fuel for squeezes. Very high = crowded long."),
-        "cot_ust10y": ("10-yr Treasury futures speculators",
+                       "already short — fuel for squeezes. Very high = crowded long.",
+                       "投机性期货交易者在标普500上的净头寸，占全部未平仓合约的百分比（CFTC 周度数据）。"
+                       "深度为负 + 低百分位 = 大家都已做空 — 逼空燃料。极高 = 拥挤做多。"),
+        "cot_ust10y": (T("10-yr Treasury futures speculators", "10年期美债 期货投机者"),
                        "Speculators' net position in 10-year Treasury futures. Extreme shorts have "
-                       "historically preceded falling yields (bond rallies), and vice versa."),
-        "cot_dollar": ("US Dollar futures speculators",
+                       "historically preceded falling yields (bond rallies), and vice versa.",
+                       "投机者在10年期美债期货上的净头寸。历史上极端做空往往先于收益率下行（债券上涨），反之亦然。"),
+        "cot_dollar": (T("US Dollar futures speculators", "美元 期货投机者"),
                        "Speculators' net position on the dollar index. Extremes tend to mark dollar "
-                       "turning points, which matter for commodities and foreign earnings."),
-        "cot_gold": ("Gold futures speculators",
+                       "turning points, which matter for commodities and foreign earnings.",
+                       "投机者在美元指数上的净头寸。极端值往往标志美元的转折点，对大宗商品与海外盈利至关重要。"),
+        "cot_gold": (T("Gold futures speculators", "黄金 期货投机者"),
                      "Speculators' net position in gold futures. Near the 100th percentile = the "
-                     "most crowded gold trade in decades — vulnerable to shakeouts."),
+                     "most crowded gold trade in decades — vulnerable to shakeouts.",
+                     "投机者在黄金期货上的净头寸。接近第100百分位 = 数十年来最拥挤的黄金交易 — 易遭洗盘。"),
     }
-    for key, (label, tip) in cot_meta.items():
+    for key, (label, tip_en, tip_zh) in cot_meta.items():
         df = store.read("cot", key)
         if df is not None and "net_spec_pct_oi" in df.columns and len(df):
             s = df["net_spec_pct_oi"]
             p = pctile(s)
             word, verdict = _crowd_words(p, "short", "long",
                                          "everyone is already short",
-                                         "everyone is already long") if p is not None \
-                else ("history building", "")
+                                         "everyone is already long",
+                                         "做空", "做多",
+                                         "大家都已做空",
+                                         "大家都已做多") if p is not None \
+                else (T("history building", "历史积累中"), T("", ""))
             rows.append({"name": label, "pct": p, "label": word, "verdict": verdict,
-                         "left": "crowded short", "right": "crowded long",
-                         "tip": tip + f" Today: {s.iloc[-1]:+.1f}% of open contracts"
-                                + (f", {p:.0f}th percentile of 30 years" if p is not None else "")
-                                + f" (as of {df.index.max().date()}, 3-day reporting lag).",
+                         "left": T("crowded short", "拥挤做空"), "right": T("crowded long", "拥挤做多"),
+                         "tip": T(tip_en + f" Today: {s.iloc[-1]:+.1f}% of open contracts"
+                                  + (f", {p:.0f}th percentile of 30 years" if p is not None else "")
+                                  + f" (as of {df.index.max().date()}, 3-day reporting lag).",
+                                  tip_zh + f" 今日：占未平仓合约 {s.iloc[-1]:+.1f}%"
+                                  + (f"，30年内第 {p:.0f} 百分位" if p is not None else "")
+                                  + f"（截至 {df.index.max().date()}，报告延迟3天）。"),
                          })
     naaim = store.read("sentiment", "naaim")
     if naaim is not None and len(naaim):
@@ -177,52 +209,78 @@ def positioning_rows(f: pd.DataFrame) -> list[dict]:
         p = pctile(s)
         word, verdict = _crowd_words(p, "cautious", "invested",
                                      "managers are hiding in cash",
-                                     "managers are nearly all-in") if p is not None \
-            else ("history building", "")
-        rows.append({"name": "Pro fund managers", "pct": p, "label": word, "verdict": verdict,
-                     "left": "all cash", "right": "all-in",
-                     "tip": "NAAIM weekly survey of professional active managers' stock exposure "
-                            "(0 = all cash, 100 = fully invested, >100 = leveraged). Extremes are "
-                            f"contrarian. Today: {s.iloc[-1]:.0f}"
-                            + (f", {p:.0f}th percentile since 2006" if p is not None else "")
-                            + f" (as of {naaim.index.max().date()}).",
+                                     "managers are nearly all-in",
+                                     "谨慎", "重仓",
+                                     "基金经理躲入现金",
+                                     "基金经理几乎满仓") if p is not None \
+            else (T("history building", "历史积累中"), T("", ""))
+        rows.append({"name": T("Pro fund managers", "专业基金经理"), "pct": p,
+                     "label": word, "verdict": verdict,
+                     "left": T("all cash", "全现金"), "right": T("all-in", "满仓"),
+                     "tip": T("NAAIM weekly survey of professional active managers' stock exposure "
+                              "(0 = all cash, 100 = fully invested, >100 = leveraged). Extremes are "
+                              f"contrarian. Today: {s.iloc[-1]:.0f}"
+                              + (f", {p:.0f}th percentile since 2006" if p is not None else "")
+                              + f" (as of {naaim.index.max().date()}).",
+                              "NAAIM 对专业主动型管理者股票敞口的周度调查"
+                              "（0 = 全现金，100 = 满仓，>100 = 加杠杆）。极端值具反向意义。"
+                              f"今日：{s.iloc[-1]:.0f}"
+                              + (f"，2006年以来第 {p:.0f} 百分位" if p is not None else "")
+                              + f"（截至 {naaim.index.max().date()}）。"),
                      })
     pc = store.read("cboe", "putcall")
     if pc is not None and len(pc) and "index_pc_ratio" in pc.columns:
         v = float(pc["index_pc_ratio"].iloc[-1])
         if v >= 1.3:
-            word, verdict = "heavy hedging", "lots of downside protection being bought — fear elevated"
+            word = T("heavy hedging", "大量对冲")
+            verdict = T("lots of downside protection being bought — fear elevated",
+                        "大量买入下行保护 — 恐慌升高")
         elif v >= 1.0:
-            word, verdict = "guarded", "more puts than calls — mild caution"
+            word = T("guarded", "警惕")
+            verdict = T("more puts than calls — mild caution", "看跌多于看涨 — 轻度谨慎")
         elif v >= 0.8:
-            word, verdict = "balanced", "nothing notable"
+            word = T("balanced", "均衡")
+            verdict = T("nothing notable", "无显著")
         else:
-            word, verdict = "complacent", "very few hedges — markets unprepared for bad news"
-        rows.append({"name": "Options hedging mood", "pct": None, "label": word,
+            word = T("complacent", "自满")
+            verdict = T("very few hedges — markets unprepared for bad news",
+                        "极少对冲 — 市场对坏消息毫无防备")
+        rows.append({"name": T("Options hedging mood", "期权对冲情绪"), "pct": None, "label": word,
                      "verdict": verdict, "left": "", "right": "",
-                     "tip": "Put/call volume ratio on S&P index options, computed from CBOE's "
-                            "chain: bearish bets ÷ bullish bets traded today. Above ~1.3 = heavy "
-                            f"hedging; below ~0.8 = complacency. Today: {v:.2f} "
-                            f"(as of {pc.index.max().date()}). A young series — labels are based "
-                            "on standard thresholds until enough history accrues.",
+                     "tip": T("Put/call volume ratio on S&P index options, computed from CBOE's "
+                              "chain: bearish bets ÷ bullish bets traded today. Above ~1.3 = heavy "
+                              f"hedging; below ~0.8 = complacency. Today: {v:.2f} "
+                              f"(as of {pc.index.max().date()}). A young series — labels are based "
+                              "on standard thresholds until enough history accrues.",
+                              "标普指数期权的看跌/看涨成交量比，由 CBOE 期权链计算："
+                              "今日看空押注 ÷ 看多押注。高于约1.3 = 大量对冲；低于约0.8 = 自满。"
+                              f"今日：{v:.2f}（截至 {pc.index.max().date()}）。"
+                              "这是一个较新的序列 — 在积累足够历史前，标签基于标准阈值。"),
                      })
     gex = store.read("cboe", "gex")
     if gex is not None and len(gex):
         g = gex.iloc[-1]
         pos = g["net_gex_bn"] > 0
         near = pd.notna(g.get("spot_vs_flip_pct")) and abs(g["spot_vs_flip_pct"]) < 2
-        word = "dampening swings" if pos else "amplifying swings"
-        verdict = ("market-makers' hedging absorbs moves — calmer tape likely" if pos else
-                   "market-makers' hedging adds fuel to moves — expect bigger swings both ways")
+        word = T("dampening swings", "抑制波动") if pos else T("amplifying swings", "放大波动")
+        verdict_en = ("market-makers' hedging absorbs moves — calmer tape likely" if pos else
+                      "market-makers' hedging adds fuel to moves — expect bigger swings both ways")
+        verdict_zh = ("做市商对冲吸收波动 — 盘面可能更平静" if pos else
+                      "做市商对冲为波动添柴 — 预期双向波动更大")
         if near:
-            verdict += " (and we're near the tipping point — it can flip any day)"
-        rows.append({"name": "Market-maker effect", "pct": None, "label": word,
-                     "verdict": verdict, "left": "", "right": "",
-                     "tip": "Estimated dealer gamma (GEX) from the S&P options chain, standard "
-                            "assumption (dealers long calls/short puts). Positive = their hedging "
-                            "dampens market moves; negative = it amplifies them. Today: "
-                            f"{g['net_gex_bn']:+.0f}bn per 1% move "
-                            f"(as of {gex.index.max().date()}). An estimate, not ground truth.",
+            verdict_en += " (and we're near the tipping point — it can flip any day)"
+            verdict_zh += "（且我们已接近临界点 — 随时可能反转）"
+        rows.append({"name": T("Market-maker effect", "做市商效应"), "pct": None, "label": word,
+                     "verdict": T(verdict_en, verdict_zh), "left": "", "right": "",
+                     "tip": T("Estimated dealer gamma (GEX) from the S&P options chain, standard "
+                              "assumption (dealers long calls/short puts). Positive = their hedging "
+                              "dampens market moves; negative = it amplifies them. Today: "
+                              f"{g['net_gex_bn']:+.0f}bn per 1% move "
+                              f"(as of {gex.index.max().date()}). An estimate, not ground truth.",
+                              "由标普期权链估算的做市商 gamma（GEX），采用标准假设"
+                              "（做市商持有多头看涨/空头看跌）。正值 = 其对冲抑制市场波动；"
+                              f"负值 = 放大波动。今日：每1%波动 {g['net_gex_bn']:+.0f}十亿 "
+                              f"（截至 {gex.index.max().date()}）。这是估算，并非真实值。"),
                      })
     vr = f["vix_ratio"].dropna()
     if len(vr):
@@ -230,13 +288,20 @@ def positioning_rows(f: pd.DataFrame) -> list[dict]:
         if p is not None:
             word, verdict = _crowd_words(p, "calm", "stressed",
                                          "unusually calm conditions",
-                                         "near-term fear is spiking")
-            rows.append({"name": "Fear gauge", "pct": p, "label": word, "verdict": verdict,
-                         "left": "calm", "right": "panic",
-                         "tip": "VIX (30-day expected volatility) ÷ VIX3M (3-month). Below ~0.9 = "
-                                "calm; near/above 1.0 = the market fears the immediate future more "
-                                f"than the distant one — the classic stress signature. Today: "
-                                f"{vr.iloc[-1]:.3f}, {p:.0f}th percentile since 2006.",
+                                         "near-term fear is spiking",
+                                         "平静", "紧张",
+                                         "异常平静的环境",
+                                         "近期恐慌正在飙升")
+            rows.append({"name": T("Fear gauge", "恐慌指标"), "pct": p, "label": word,
+                         "verdict": verdict,
+                         "left": T("calm", "平静"), "right": T("panic", "恐慌"),
+                         "tip": T("VIX (30-day expected volatility) ÷ VIX3M (3-month). Below ~0.9 = "
+                                  "calm; near/above 1.0 = the market fears the immediate future more "
+                                  f"than the distant one — the classic stress signature. Today: "
+                                  f"{vr.iloc[-1]:.3f}, {p:.0f}th percentile since 2006.",
+                                  "VIX（30天预期波动率）÷ VIX3M（3个月）。低于约0.9 = 平静；"
+                                  "接近/高于1.0 = 市场对近期的恐惧超过对远期 — 经典的压力特征。"
+                                  f"今日：{vr.iloc[-1]:.3f}，2006年以来第 {p:.0f} 百分位。"),
                          })
     return rows
 
@@ -253,11 +318,26 @@ COMPONENT_SHORT = {
     "tips_nominal_momentum": "TIPS spread",
 }
 
+COMPONENT_SHORT_ZH = {
+    "copper_gold": "铜对黄金", "xly_xlp": "消费信心交易",
+    "us2y_direction": "2年期收益率", "iwm_spy": "小盘股",
+    "cyclical_defensive": "周期性板块", "breadth_direction": "市场广度",
+    "payrolls_trend": "非农就业", "indpro_trend": "工业生产",
+    "breakeven_10y_direction": "10年期通胀预期",
+    "breakeven_5y5y_direction": "长期通胀预期",
+    "energy_rs": "能源板块", "oil_trend": "原油",
+    "inflation_beta_basket": "通胀受益篮子",
+    "tips_nominal_momentum": "TIPS 利差",
+}
+
 
 def component_chips(latest: dict) -> tuple[list[str], list[str]]:
     def label(raw: str) -> str:
         axis, _, comp = raw.partition("_")
-        return f"{'growth' if axis == 'growth' else 'inflation'} · {COMPONENT_SHORT.get(comp, comp)}"
+        en_prefix = "growth" if axis == "growth" else "inflation"
+        zh_prefix = "增长" if axis == "growth" else "通胀"
+        return T(f"{en_prefix} · {COMPONENT_SHORT.get(comp, comp)}",
+                 f"{zh_prefix} · {COMPONENT_SHORT_ZH.get(comp, comp)}")
     return ([label(c) for c in latest.get("confirming", [])],
             [label(c) for c in latest.get("contradicting", [])])
 
@@ -266,33 +346,42 @@ def flip_plain_text(latest: dict) -> str:
     from engine.playbook import COMPONENT_PLAIN
     fc = latest.get("flip_condition") or {}
     if not fc.get("component"):
-        return ("No single indicator is close to flipping — the regime call isn't "
-                "hanging on one thread right now.")
+        return T("No single indicator is close to flipping — the regime call isn't "
+                 "hanging on one thread right now.",
+                 "没有单一指标接近翻转 — 当前的周期判断目前并非系于一线。")
     plain = COMPONENT_PLAIN.get(fc["component"], fc["component"])
-    return (f"Watch {plain} — of everything supporting the current call, it's the one "
-            f"closest to flipping sides. If it fades, the {fc['axis']} dial (and "
-            f"possibly the regime) goes with it.")
+    return T(f"Watch {plain} — of everything supporting the current call, it's the one "
+             f"closest to flipping sides. If it fades, the {fc['axis']} dial (and "
+             f"possibly the regime) goes with it.",
+             f"关注 {plain} — 在支撑当前判断的所有因素中，它最接近翻转。"
+             f"若其转弱，{fc['axis']} 刻度（乃至周期）也会随之改变。")
 
 
 INTERNALS_META = {
-    "xly_xlp": ("Shoppers: wants vs needs", False,
-                "Consumer-discretionary stocks vs consumer-staples stocks. Rising = people are "
-                "buying TVs and vacations, not just groceries — confidence. Falling = belt-tightening."),
-    "xlk_xlu": ("Tech vs utilities", False,
-                "The market's boldest sector vs its sleepiest. Rising = growth appetite; "
-                "falling = safety-seeking."),
-    "hyg_lqd": ("Junk bonds vs quality bonds", False,
-                "Risky-company bonds vs blue-chip bonds. Rising = credit investors relaxed; "
-                "falling = they're getting picky — often an early warning."),
-    "sphb_splv": ("Daring vs defensive stocks", False,
-                  "The most volatile S&P stocks vs the calmest. The purest read on whether "
-                  "fund managers are playing offense or defense."),
-    "vix_ratio": ("Panic gauge (now vs later)", True,
-                  "Near-term fear vs 3-month fear. Rising toward 1.0 = stress building right now; "
-                  "comfortably below 0.9 = calm."),
-    "copper_gold": ("Copper vs gold", False,
-                    "The economist's metal vs the doomsday metal. Rising = bets on real economic "
-                    "activity; falling = safety-seeking. Historically leads bond yields."),
+    "xly_xlp": (T("Shoppers: wants vs needs", "购物者：想要 vs 必需"), False,
+                T("Consumer-discretionary stocks vs consumer-staples stocks. Rising = people are "
+                  "buying TVs and vacations, not just groceries — confidence. Falling = belt-tightening.",
+                  "可选消费股 vs 必需消费股。上升 = 人们在买电视和度假，不只是买杂货 — 信心。下降 = 勒紧裤带。")),
+    "xlk_xlu": (T("Tech vs utilities", "科技 vs 公用事业"), False,
+                T("The market's boldest sector vs its sleepiest. Rising = growth appetite; "
+                  "falling = safety-seeking.",
+                  "市场最大胆的板块 vs 最沉闷的板块。上升 = 增长偏好；下降 = 寻求安全。")),
+    "hyg_lqd": (T("Junk bonds vs quality bonds", "垃圾债 vs 优质债"), False,
+                T("Risky-company bonds vs blue-chip bonds. Rising = credit investors relaxed; "
+                  "falling = they're getting picky — often an early warning.",
+                  "高风险公司债 vs 蓝筹债。上升 = 信用投资者放松；下降 = 他们开始挑剔 — 往往是早期预警。")),
+    "sphb_splv": (T("Daring vs defensive stocks", "进取股 vs 防御股"), False,
+                  T("The most volatile S&P stocks vs the calmest. The purest read on whether "
+                    "fund managers are playing offense or defense.",
+                    "标普中波动最大的股票 vs 最平稳的股票。最纯粹地反映基金经理在打进攻还是防守。")),
+    "vix_ratio": (T("Panic gauge (now vs later)", "恐慌指标（现在 vs 之后）"), True,
+                  T("Near-term fear vs 3-month fear. Rising toward 1.0 = stress building right now; "
+                    "comfortably below 0.9 = calm.",
+                    "近期恐慌 vs 3个月恐慌。升向1.0 = 压力正在累积；稳稳低于0.9 = 平静。")),
+    "copper_gold": (T("Copper vs gold", "铜 vs 黄金"), False,
+                    T("The economist's metal vs the doomsday metal. Rising = bets on real economic "
+                      "activity; falling = safety-seeking. Historically leads bond yields.",
+                      "经济学家的金属 vs 末日金属。上升 = 押注真实经济活动；下降 = 寻求安全。历史上领先债券收益率。")),
 }
 
 
@@ -306,12 +395,18 @@ def internals_rows(latest: dict) -> list[dict]:
         chg = v["chg_20d_pct"]
         good = (chg < 0) if invert else (chg > 0)
         verdict = {
-            ("xly_xlp", True): "consumers confident", ("xly_xlp", False): "consumers cautious",
-            ("xlk_xlu", True): "growth appetite", ("xlk_xlu", False): "safety-seeking",
-            ("hyg_lqd", True): "credit relaxed", ("hyg_lqd", False): "credit getting picky",
-            ("sphb_splv", True): "playing offense", ("sphb_splv", False): "playing defense",
-            ("vix_ratio", True): "calm", ("vix_ratio", False): "near-term stress building",
-            ("copper_gold", True): "growth optimism", ("copper_gold", False): "defensive bid",
+            ("xly_xlp", True): T("consumers confident", "消费者有信心"),
+            ("xly_xlp", False): T("consumers cautious", "消费者谨慎"),
+            ("xlk_xlu", True): T("growth appetite", "增长偏好"),
+            ("xlk_xlu", False): T("safety-seeking", "寻求安全"),
+            ("hyg_lqd", True): T("credit relaxed", "信用放松"),
+            ("hyg_lqd", False): T("credit getting picky", "信用趋于挑剔"),
+            ("sphb_splv", True): T("playing offense", "打进攻"),
+            ("sphb_splv", False): T("playing defense", "打防守"),
+            ("vix_ratio", True): T("calm", "平静"),
+            ("vix_ratio", False): T("near-term stress building", "近期压力累积"),
+            ("copper_gold", True): T("growth optimism", "增长乐观"),
+            ("copper_gold", False): T("defensive bid", "防御性买盘"),
         }.get((key, good), "")
         out.append({"label": label, "tip": tip, "chg": chg, "good": good,
                     "verdict": verdict})
@@ -326,7 +421,7 @@ HEAT_COLORS = {"70+": "var(--orange)", "55-69": "var(--up)",
 def _compact_season(line: str | None) -> tuple[str, str]:
     """'Jun: -0.4% avg, up 46% of years (n=28)' -> ('-0.4% (46%)', full)"""
     if not line:
-        return "—", "Not enough history for a seasonal read."
+        return "—", T("Not enough history for a seasonal read.", "历史数据不足，无法做季节性判断。")
     try:
         avg = line.split(":")[1].split("avg")[0].strip()
         hit = line.split("up ")[1].split("%")[0]
@@ -382,20 +477,31 @@ def sector_rows(playbook: dict | None, timing: dict | None = None) -> list[dict]
             r["timing_state"] = tm["state"]
             r["timing_label"] = tm.get("label", tm["state"])
             r["timing_style"] = tm["state_style"]
-            r["timing_note"] = (f"day {tm['dc_day']} of its cycle; "
-                                f"{tm['buy_zone']}/{tm['n_holdings']} top holdings in a buy setup")
+            r["timing_note"] = T(
+                f"day {tm['dc_day']} of its cycle; "
+                f"{tm['buy_zone']}/{tm['n_holdings']} top holdings in a buy setup",
+                f"周期第 {tm['dc_day']} 天；"
+                f"{tm['buy_zone']}/{tm['n_holdings']} 个重仓处于买入预备")
         else:
             r["timing_state"] = None
         r["heat_color"] = HEAT_COLORS.get(r["heat_band"], "var(--muted)")
         parts = r.get("heat_parts", {})
         cal = r.get("heat_cal")
-        cal_txt = (f" Historical reality-check for the {r['heat_band']} band: beat the "
-                   f"index {cal['hit_pct']}% of the time over the next 3 months "
-                   f"(avg {cal['avg_excess_pct']:+}%, n={cal['n']})." if cal else "")
-        r["heat_tip"] = (f"Heat {r['heat']}/100 = regime fit {parts.get('regime')} "
-                         f"+ tape {parts.get('tape')} + technicals {parts.get('technicals')} "
-                         f"+ crowding {parts.get('crowding')}. {r['heat_label']}: "
-                         f"{r['heat_note']}{cal_txt}")
+        cal_txt_en = (f" Historical reality-check for the {r['heat_band']} band: beat the "
+                      f"index {cal['hit_pct']}% of the time over the next 3 months "
+                      f"(avg {cal['avg_excess_pct']:+}%, n={cal['n']})." if cal else "")
+        cal_txt_zh = (f" 对 {r['heat_band']} 区间的历史回测：未来3个月内跑赢"
+                      f"指数 {cal['hit_pct']}% 的时间"
+                      f"（平均 {cal['avg_excess_pct']:+}%，n={cal['n']}）。" if cal else "")
+        r["heat_tip"] = T(
+            f"Heat {r['heat']}/100 = regime fit {parts.get('regime')} "
+            f"+ tape {parts.get('tape')} + technicals {parts.get('technicals')} "
+            f"+ crowding {parts.get('crowding')}. {r['heat_label']}: "
+            f"{r['heat_note']}{cal_txt_en}",
+            f"热度 {r['heat']}/100 = 周期契合 {parts.get('regime')} "
+            f"+ 盘面 {parts.get('tape')} + 技术面 {parts.get('technicals')} "
+            f"+ 拥挤度 {parts.get('crowding')}。{TR(r['heat_label'])}："
+            f"{r.get('heat_note_zh', r['heat_note'])}{cal_txt_zh}")
         tech_bits = [f"RSI {r['tech_rsi14']:.0f}" if r.get("tech_rsi14") is not None else "RSI —",
                      ("✓" if r.get("tech_above200") else "✗") + "200d",
                      ("✓" if r.get("tech_above50") else "✗") + "50d"]
@@ -423,6 +529,26 @@ def holdings_rows() -> list[dict]:
             out.append({"fund": fund, "position": pos, "pct": row["active_chg_pct"],
                         "window": f"{row['window_start']}..{row['window_end']}"})
     return sorted(out, key=lambda r: -abs(r["pct"]))[:20]
+
+
+def accumulation_rows() -> list[dict]:
+    """Decomposed sector-ETF accumulation signals for the dashboard panel: each
+    holding's weight change split into a price part and a residual ('active'), with
+    the stock's cycle state attached. See engine/holdings_signals.py."""
+    from engine.holdings_signals import all_accumulation_signals
+    from engine.playbook import SECTOR_NAMES
+    n = config.load()["holdings_signals"].get("panel_top_n", 12)
+    rows = []
+    for s in all_accumulation_signals()[:n]:
+        rows.append({
+            "fund": s["fund"], "sector": SECTOR_NAMES.get(s["fund"], s["fund"]),
+            "ticker": s["ticker"], "name": s["name"],
+            "raw_change": s["raw_change"], "active_change": s["active_change"],
+            "active_pct": s["active_pct"],
+            "flow_str": _fmt_money_mn(s["est_flow_mn"]) if s.get("est_flow_mn") is not None else "—",
+            "direction": s["direction"], "confirmed": s["confirmed"],
+            "ladder": s["ladder"], "window": f"{s['t0']}..{s['t1']}"})
+    return rows
 
 
 def _fmt_money_mn(v: float) -> str:
@@ -461,6 +587,7 @@ STATE_STYLES = {
     "RALLY ON": ("#1d3326", "#6fce8f"), "BOTTOM WATCH": ("#2b3340", "#9fc0e8"),
     "TOP WATCH": ("#38301a", "#d8b75a"), "ROLLING OVER": ("#4a2c1a", "#e0a070"),
     "DECLINE": ("#3a2020", "#e08080"),
+    "COUNTERTREND BOUNCE": ("#3a2e1a", "#e0b070"),
 }
 BUY_ZONE_STATES = ("FRESH BUY", "TURN SIGNALED")
 
@@ -472,6 +599,7 @@ def build_sector_pages(env: Environment, site: Path, generated: str) -> dict:
 
     from collectors.sector_holdings import latest_fundamentals, latest_top10
     from engine.cycles import LADDER, STATE_DISPLAY, analyze
+    from engine.holdings_signals import accumulation_signals
     from engine.playbook import SECTOR_NAMES
 
     cal_path = config.data_dir() / "regime" / "ladder_calibration.json"
@@ -517,7 +645,7 @@ def build_sector_pages(env: Environment, site: Path, generated: str) -> dict:
         buy_zone = sum(1 for h in holdings if h["ladder"]["state"] in BUY_ZONE_STATES)
         s = {"fund": fund, "name": SECTOR_NAMES.get(fund, fund),
              "mtf_json": _json2.dumps(res.get("mtf", {})), **res,
-             "holdings": holdings}
+             "holdings": holdings, "accumulation": accumulation_signals(fund)}
         html = tpl.render(s=s, state_styles=STATE_STYLES, calibration=calibration,
                           ladder_order=LADDER, state_display=STATE_DISPLAY,
                           generated_utc=generated)
@@ -552,6 +680,8 @@ def main() -> int:
 
     env = Environment(loader=FileSystemLoader(config.ROOT / "templates"))
     env.filters["min"] = lambda seq: min(seq)
+    from engine import i18n
+    env.globals.update(td=i18n.td, tr=i18n.tr, zip=zip)  # bilingual helpers for templates
     confirming, contradicting = component_chips(latest)
     generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
 
@@ -562,12 +692,14 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — drill-downs are additive, never fatal
         log.error("sector pages failed: %s", e)
     # copy shared static assets (theme + visual widgets) into the site
-    for asset in ("theme.css", "theme.js", "mtf.js"):
+    for asset in ("theme.css", "theme.js", "mtf.js", "chart_i18n.js"):
         src = config.ROOT / "templates" / asset
         if src.exists():
             (site / asset).write_text(src.read_text())
+    from engine.alerts import alert_views
     html = env.get_template("dashboard.html.j2").render(
         latest=latest,
+        alerts=alert_views(latest.get("alerts", [])),
         pb=latest.get("playbook"),
         month_name=calendar.month_name[pd.Timestamp(latest["date"]).month],
         commodities=(latest.get("playbook") or {}).get("commodities", []),
@@ -584,6 +716,7 @@ def main() -> int:
         positioning=positioning_rows(f),
         holdings_changes=holdings_rows(),
         holdings_threshold=config.load()["holdings"]["active_change_alert_pct"],
+        accumulation=accumulation_rows(),
         flows_html=flows_html_table(),
         health=health_rows(),
     )

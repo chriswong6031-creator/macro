@@ -34,6 +34,8 @@ fred:
       BAMLC0A0CM: ig_oas          # same caveat
     risk:
       VIXCLS: vix_close
+    dollar:
+      DTWEXBGS: broad_dollar      # broad trade-weighted USD (2006->); better commodity driver than DXY for copper/oil (EM/China weight)
     liquidity:
       WALCL: fed_balance_sheet    # weekly (Wed), $ millions
       RRPONTSYD: on_rrp           # daily, $ billions
@@ -85,6 +87,8 @@ cot:
     dollar: ["USD INDEX", "U.S. DOLLAR INDEX"]
     gold: ["GOLD - COMMODITY EXCHANGE"]
     copper: ["COPPER- #1", "COPPER - COMMODITY EXCHANGE", "COPPER-GRADE #1"]
+    silver: ["SILVER - COMMODITY EXCHANGE"]   # COMEX 5000oz (1986->); excludes CBOT mini contracts
+    oil: ["CRUDE OIL, LIGHT 'SWEET' - NEW YORK", "CRUDE OIL, LIGHT SWEET - NEW YORK", "CRUDE OIL, LIGHT SWEET-WTI - ICE"]   # WTI: NYMEX physical (1986-2022) spliced to ICE Europe WTI (2014->) via per-date max-OI dedup; net_spec_pct_oi normalizes the contract handoff
     bitcoin: ["BITCOIN - C"]      # CME contract; prefix excludes BITCOIN CASH / MICRO BITCOIN
 
 sentiment:
@@ -114,6 +118,21 @@ holdings:
   active_change_alert_pct: 20     # alert if manager add/cut >= 20% of position
   active_change_window_d: 5
   retries: 3
+
+holdings_signals:
+  # Accumulation/anomaly detection on the sector-SPDR top-10 holdings. Each
+  # holding's weight change is decomposed into a price part and a residual
+  # ("active_change", in percentage points) = weight growth beyond what the
+  # stock's price move explains. On these PASSIVE index funds the residual is
+  # index-reconstitution / float flow, NOT discretionary conviction (see D70 /
+  # LIMITATIONS.md). Thresholds are UNCALIBRATED — only one snapshot exists today;
+  # tune once a few weeks of daily snapshots accumulate.
+  lookback_days: 5                # compare latest snapshot to one ~5 days earlier
+  active_change_pp: 0.15          # min |residual weight change| (pp) to flag
+  active_change_pct: 8            # OR min |residual vs price-implied weight| (%)
+  alert_pp: 0.25                  # higher bar to fire an alert (vs merely listing)
+  min_price_history: 60           # rows of stock history needed for the cycle read
+  panel_top_n: 12                 # rows shown in the dashboard Accumulation Watch panel
 
 fundamentals:
   enabled: true                   # LOW CONFIDENCE module — engine must work without it
@@ -147,7 +166,7 @@ bgeo:
   base_url: https://bitcoin-data.com
   retries: 2                      # don't burn quota on retries
   window_start: "2022-06-13"      # free tier serves last ~4y only
-  daily_request_budget: 12        # of 15/day per IP — leave 3 spare
+  daily_request_budget: 13        # of 15/day per IP — leave 2 spare (added coinbase-premium)
   page_size: 5000
   # priority order: first entries fetched first when quota is tight
   metrics:                        # endpoint -> column name
@@ -165,6 +184,7 @@ bgeo:
     open-interest-futures: open_interest_futures
     etf-flow-btc: etf_flow_btc
     bitcoin-dominance: btc_dominance
+    coinbase-premium-index: coinbase_premium   # US institutional demand (Coinbase−Binance); lowest priority → skipped first under quota
 
 coinbase:
   spot_url: https://api.coinbase.com/v2/prices/BTC-USD/spot
@@ -185,6 +205,8 @@ deribit:
   options_url: https://www.deribit.com/api/v2/public/get_book_summary_by_currency
   dvol_earliest: "2021-03-01"
   retries: 3
+  term_tenors_d: [7, 30, 90, 180]   # ATM IV term-structure standardized tenors
+  skew_target_d: 30                 # 25-delta skew/RR measured at the ~30d expiry
 
 feargreed:
   url: https://api.alternative.me/fng/
@@ -326,6 +348,7 @@ alerts:
   sector_rs_percentile_lo: 10
   holdings_active_change_pct: 20
   holdings_active_change_days: 5
+  sector_holdings_accumulation: true   # decomposed sector-ETF weight-change signal
   net_liquidity_roc_sign_flip: true
   hy_oas_1d_widening_z: 2.5
   gex_flip_cross: true
@@ -345,6 +368,142 @@ validation:
   whipsaw_max_days: 10            # regime lasting < this counts as whipsaw
   whipsaw_target_pct: 15
   forward_return_window_d: 60
+
+# =============================================================================
+# Commodity Vector (Section 5). Self-contained block, like `vector:`. Core four —
+# gold, silver, oil (WTI), copper. Price + COT already collected 1995/2000-> and
+# macro drivers come from the shared FRED/Yahoo store (see
+# research/COMMODITY_DATA_AUDIT.md). The asset-agnostic price layer mirrors
+# `vector:`; the driver axis + residual shock engine + COT positioning are
+# commodity-specific. House rule: mechanical backtestable core; the news/LLM
+# event layer is deferred (annotation-only, never a scoring input).
+# =============================================================================
+commodities:
+  assets:                          # name: [yahoo price ticker, cot store-series, class]
+    gold:   ["GC=F", cot_gold,   precious]
+    silver: ["SI=F", cot_silver, precious]
+    copper: ["HG=F", cot_copper, industrial]
+    oil:    ["CL=F", cot_oil,    energy]
+
+  drivers:                         # shared macro series: name -> [store-group, store-name]
+    real_yield:    [fred, DFII10]        # 10y TIPS real yield — the gold/silver anchor
+    dxy:           [yahoo, "DX-Y.NYB"]   # US Dollar Index (1971->; gold/silver dollar driver)
+    broad_dollar:  [fred, DTWEXBGS]      # broad trade-weighted USD (2006->); copper/oil driver (measured: corr -0.57/-0.46 vs DXY -0.47/-0.32)
+    breakeven10:   [fred, T10YIE]        # 10y inflation breakeven
+    breakeven5y5y: [fred, T5YIFR]
+    us10y:         [fred, DGS10]
+    us2y:          [fred, DGS2]
+    fed_balance:   [fred, WALCL]         # Fed balance sheet (net-liquidity proxy)
+    indpro:        [fred, INDPRO]        # industrial production (growth)
+    vix:           [fred, VIXCLS]
+
+  momentum:                        # ported price vote-ensemble -> [-1,+1]
+    smooth_days: 3
+    rsi_bull: 55
+    rsi_bear: 45
+    votes: {ema_trend: 1.0, ema_cross: 1.0, macd_hist: 1.0, sma200: 1.0, roc20: 1.0, rsi_zone: 1.0}
+    trigger: 0.5
+    exit: 0.25
+    confirm_days: 3
+
+  structure:                       # structure-shift oscillator [-1,+1]
+    swing_window_d: 20
+    breakout_lookback_d: 60
+    confirm_days: 3
+    trigger: 0.5
+    exit: 0.25
+
+  trend:                           # 12-month time-series momentum (TSMOM) — the canonical
+    lookback_d: 252                # commodity factor. MEASURED: metals trend (gold up-trend
+    confirm_days: 5                # +7.8%/126d 75% hit vs +3.3% down), oil MEAN-REVERTS
+    scale: 0.30                    # (calibration tags oil INVERTED -> present as contrarian);
+                                   # bounded score = tanh(12m_return / scale)
+
+  risk:                            # saturating composite -> 0..100, threshold 25
+    threshold: 25
+    exit_threshold: 15
+    deadband: 0.10
+    vol_window_d: 30
+    vol_pctile_lookback_d: 1260    # ~5y (commodities have deep history)
+    drawdown_window_d: 90
+    drawdown_full_stress: 0.30
+    weights:                       # on-chain swapped for COT positioning stress
+      vol_pctile: 1.0
+      drawdown: 1.0
+      momentum_deterioration: 0.75
+      positioning_stress: 0.5      # crowded-long COT = downside risk
+    oscillator_delta_d: 10
+    oscillator_scale: 30
+
+  gauges:
+    vol_low_pctile: 0.30
+    vol_high_pctile: 0.75
+    flow_low_pctile: 0.30
+    flow_high_pctile: 0.75
+
+  driver_axis:                     # macro tailwind/headwind: per-asset orientation*weight
+    change_window_d: 40            # driver direction = sign of N-day change (smoothed)
+    smooth_days: 5
+    weights:                       # sign = effect of a RISING driver on the commodity price
+      gold:   {real_yield: -1.0, dxy: -1.0, breakeven10: 0.5, fed_balance: 0.5}
+      silver: {real_yield: -1.0, dxy: -1.0, breakeven10: 0.5, indpro: 0.5}
+      copper: {broad_dollar: -1.0, indpro: 1.0, real_yield: -0.5, us10y: 0.3}  # broad$ > DXY for copper (measured)
+      oil:    {broad_dollar: -1.0, breakeven10: 0.5, indpro: 0.5}              # broad$ > DXY for oil (measured)
+    trigger: 0.34                  # |score| above -> tailwind / headwind regime
+    exit: 0.15
+
+  residual:                        # exogenous-bid detector (the decoupling shock engine)
+    return_window_d: 21            # horizon for actual & model-predicted returns
+    drivers:                       # which driver CHANGES feed the regression, per asset
+      gold:   [real_yield, dxy]
+      silver: [real_yield, dxy]
+      copper: [broad_dollar, indpro]
+      oil:    [broad_dollar]
+    min_train_d: 504               # >=2y before first fit (expanding, refit monthly — causal)
+    refit_every_d: 21
+    z_lookback_d: 252              # rolling std for the shock z-score
+    shock_z: 1.5                   # |z| above -> shock flag
+    decoupling_corr_window_d: 252
+    decoupling_corr_max: 0.2       # |rolling corr to primary driver| below -> decoupled
+
+  positioning:                     # COT spec extremes — ROLLING window (oil handoff, audit §2.3)
+    pctile_lookback_d: 756         # ~3y rolling absorbs the 2022 oil NYMEX->ICE level shift
+    crowded_long_pctile: 0.85
+    crowded_short_pctile: 0.15
+
+  cross_asset:                     # commodity-complex macro-regime quadrant
+    ratio_window_d: 60
+    dollar_trend_window_d: 60
+    growth_proxy: copper_gold      # copper/gold ratio = market-implied growth/rates
+
+  gold_silver_ratio:               # precious-metals value/mean-reversion (gold/silver)
+    pctile_lookback_d: 756         # ~3y rolling. MEASURED: high GSR (silver cheap) -> silver
+    high_pctile: 0.80              # +11.7%/126d vs +3.5% at low GSR; mild same-direction gold
+    low_pctile: 0.20
+
+  brent_wti:                       # oil energy-microstructure (Brent BZ=F vs WTI CL=F, both stored)
+    spread_pctile_lookback_d: 504  # MEASURED: spread WIDENING -> WTI +8.2%/126d vs -1.8% narrowing
+    change_window_d: 60
+
+  allocation:                      # strategy grids on (momentum, risk)
+    variants:
+      conservative: {mom_full: 0.6, risk_full: 15, mom_half: 0.5, risk_half: 25}
+      moderate:     {mom_full: 0.5, risk_full: 25, mom_half: 0.0, risk_half: 40}
+      aggressive:   {mom_full: 0.3, risk_full: 40, mom_half: -0.2, risk_half: 60}
+      optimal:      {mom_full: 0.5, risk_full: 25, mom_half: 0.0, risk_half: 50}
+    confirm_days: 2
+
+  tactical:
+    efficiency_window_d: 30
+    strategic_min_efficiency: 0.35
+    strategic_max_risk: 40
+
+  calibration:
+    start_date: "2001-01-01"       # Yahoo commodity history 2000->
+    split_date: "2013-01-01"       # split-half robustness boundary
+    forward_days: [21, 63, 126]
+    whipsaw_max_days: 10
+    whipsaw_target_pct: 15
 
 # -----------------------------------------------------------------------------
 # Bitcoin Vector signal engine (Phase 2). Architecture reverse-engineered from
@@ -427,6 +586,13 @@ vector:
       aggressive:   {mom_full: 0.3, risk_full: 40, mom_half: -0.2, risk_half: 60}
       optimal:      {mom_full: 0.5, risk_full: 25, mom_half: 0.0, risk_half: 50}  # re-tuned by calibration sweep
     confirm_days: 2               # whipsaw guard on allocation changes
+    # Tier-1b blend: fold the CALIBRATION-CONFIRMED deep-history valuation tails
+    # into the (momentum, risk) grid as contrarian overrides. Gated — the
+    # allocation backtest must not degrade (see reports/vector-calibration.md).
+    use_valuation_overlay: true
+    deep_value_z: 0.0            # MVRV-Z below this = accumulation FLOOR (>=0.5)
+    deep_value_nupl: 0.0        # ...or NUPL below this (corroborating, collinear)
+    overvalued_mayer: 2.4       # Mayer above this = distribution CAP (<=0.5)
 
   btc_vs_alts:
     rs_window_d: 30               # relative-strength window across BTC/ETH/alts
@@ -436,6 +602,90 @@ vector:
     efficiency_window_d: 30       # |net move| / sum(|daily moves|): high = trending
     strategic_min_efficiency: 0.35
     strategic_max_risk: 40
+
+  # --- Tier-1 accuracy upgrade (research/VECTOR_ACCURACY_UPGRADE.md) ---------
+  # New STANDALONE axes — measured before being blended into the composites.
+  valuation:                      # MVRV-Z / NUPL valuation axis (2010-> depth)
+    z_window_d: 1460              # rolling std window for MVRV-Z (4y ~ one cycle;
+                                  # ETF-era responsive vs. an expanding all-history std)
+    z_min_periods_d: 365
+    z_over: 3.5                   # enter "overvalued"
+    z_over_exit: 2.0              # leave overvalued only back below this
+    z_under: 0.0                  # enter "undervalued"
+    z_under_exit: 0.8             # leave undervalued only back above this
+    pctile_lookback_d: 1460
+    reserve_risk_pctile_lookback_d: 1460   # Reserve Risk percentile (checkonchain 2010->)
+    nupl_euphoria: 0.65           # NUPL bands (Glassnode-style)
+    nupl_capitulation: 0.0
+
+  miner:                          # hash ribbons + Puell (2010-> depth)
+    hash_fast_d: 30
+    hash_slow_d: 60
+    puell_window_d: 365
+    puell_min_periods_d: 180
+    puell_low: 0.5                # <- miner capitulation / bottoming zone
+    puell_high: 4.0              #  -> miner euphoria / topping zone
+
+  cost_basis:
+    mayer_window_d: 200           # Mayer Multiple = close / SMA200
+    sth_ffill_limit_d: 5
+
+  extreme:                        # contrarian capitulation/euphoria overlay (votes)
+    sip_capitulation: 0.50        # supply-in-profit FRACTION (in_profit / supply)
+    sip_euphoria: 0.95
+    fg_capitulation: 25           # Fear & Greed index
+    fg_euphoria: 80
+    min_votes: 2                  # >=N agreeing sub-signals to flag the extreme
+
+  options:                        # Deribit options-structure layer (Tier-2)
+    # DVOL + VRP are calibratable (DVOL history 2021->); the per-strike structure
+    # snapshot (skew/term/maxpain/GEX) accumulates forward = context until depth.
+    dvol_pctile_lookback_d: 730
+    dvol_low_pctile: 0.25         # complacency band
+    dvol_high_pctile: 0.80        # fear/elevated band
+    rv_window_d: 30               # realized vol window matched to DVOL's 30d horizon
+    vrp_smooth_d: 5               # VRP = DVOL - realized vol, smoothed
+
+  leverage:                       # leverage/liquidation layer (Tier-2, ~2yr depth)
+    # aggregate OI summed over consistently-present major venues (bgeo gives 15;
+    # the bundled aggregate col goes NaN, so we sum a fixed core basket ourselves)
+    oi_venues: [open_interest_futures_binance, open_interest_futures_bybit,
+                open_interest_futures_okx, open_interest_futures_bitget,
+                open_interest_futures_deribit, open_interest_futures_bitmex,
+                open_interest_futures_gateIo, open_interest_futures_kucoin,
+                open_interest_futures_huobi]
+    pctile_lookback_d: 730
+    change_window_d: 14           # OI / price change horizon for the divergence
+    funding_z_window_d: 180       # funding extremity window
+    stress_oi_pctile_w: 1.0       # leverage_stress = weighted mean of scaled parts
+    stress_funding_w: 1.0
+    stress_oi_rise_w: 0.5
+
+  macro:                          # Tier-3 macro liquidity / risk-appetite overlay
+    # net liquidity = WALCL - RRP - TGA ($bn, D10 normalization); BTC tracks its
+    # RATE OF CHANGE (~months lead) more than its level. Deep history (BTC 2014->)
+    # so this can be a real strategic signal, not just confirmation.
+    netliq_roc_window_d: 91       # 13-week rate of change
+    netliq_roc_scale: 0.03        # tanh scale for the liquidity driver
+    yield_chg_window_d: 63        # ~quarter real-yield change
+    yield_chg_scale: 0.4          # tanh scale (real yield in %; 0.4 = 40bp)
+    dxy_roc_window_d: 63
+    dxy_roc_scale: 0.04
+    pctile_lookback_d: 1460       # credit/vix percentile window (~4y)
+    weights:                      # macro_score = weighted mean, + = BTC tailwind
+      liquidity: 1.0
+      real_yield: 0.8
+      credit: 0.8
+      vix: 0.6
+      dxy: 0.6
+    enter: 0.2                    # macro_regime hysteresis: Tailwind/Headwind
+    exit: 0.1
+
+  onchain:                        # CryptoQuant-style on-chain regime (reproduced free)
+    premium_smooth_d: 7           # Coinbase Premium = US institutional-demand proxy
+    ssr_window_d: 365             # SSR oscillator z-score window (stablecoin dry powder)
+    mpi_window_d: 365             # Miner Position Index = miner outflow USD / 365d MA
+    mpi_min_periods_d: 120
 
   calibration:
     start_date: "2015-01-01"      # price-signal backtests (Yahoo BTC 2014-09->)
@@ -476,3 +726,140 @@ home:
     max_items: 12
     dedup_window_days: 5                            # collapse identical headlines within N days
     macro_label: "Macro Vector"                    # renamed from "Macro Dashboard"
+
+# =============================================================================
+# China A-share Macro Regime Dashboard (Section 3). Self-contained block, like
+# `vector:`. Two data planes (both free, verified 2026-06-13 — see
+# research/CHINA_DATA_AUDIT.md):
+#   Plane A  prices/sectors/stocks via yfinance       -> group `china`
+#   Plane B  macro via Eastmoney datacenter JSON       -> group `china_macro`
+# Sector membership + breadth universe are CURATED here (no free Chinese-ETF
+# holdings feed comparable to SSGA); yfinance validates coverage at collect time.
+# =============================================================================
+china:
+  # -- Plane A: prices (group=china) ------------------------------------------
+  yahoo:
+    retries: 3
+    backoff_base_s: 5
+    batch_size: 60
+    benchmark: "510300.SS"          # CSI 300 ETF — sector RS benchmark (ETF-to-ETF, same ~5y basis)
+    market_index: "000001.SS"       # Shanghai Composite — deep-history (1997->) ladder-calibration anchor
+    indices:                        # ticker: display name
+      "000001.SS": Shanghai Composite
+      "399001.SZ": Shenzhen Component
+      "510300.SS": CSI 300
+      "510050.SS": SSE 50
+      "510500.SS": CSI 500
+      "159915.SZ": ChiNext
+      "588000.SS": STAR 50
+    fx:
+      "CNY=X": USDCNY
+    sector_etfs:                    # ticker: [plain name, representative-constituent TradingView symbol]
+      "512800.SS": [Banks, "SSE:601398"]
+      "512880.SS": [Securities & Brokers, "SSE:600030"]
+      "512690.SS": [Baijiu & Liquor, "SSE:600519"]
+      "159928.SZ": [Consumer Staples, "SSE:600887"]
+      "512170.SS": [Healthcare, "SSE:600276"]
+      "159992.SZ": [Innovative Drugs, "SZSE:300760"]
+      "512760.SS": [Semiconductors, "SSE:688981"]
+      "515000.SS": [Technology, "SZSE:002230"]
+      "515030.SS": [New-Energy Vehicle, "SZSE:300750"]
+      "515790.SS": [Solar & Photovoltaic, "SSE:601012"]
+      "512660.SS": [Defense & Military, "SSE:600760"]
+      "512400.SS": [Nonferrous Metals, "SSE:601899"]
+      "515220.SS": [Coal, "SSE:601088"]
+      "512200.SS": [Real Estate, "SSE:600048"]
+      "515250.SS": [Automobiles, "SZSE:002594"]
+      "512980.SS": [Media, "SZSE:002027"]
+
+  # -- Plane B: macro via Eastmoney datacenter JSON (group=china_macro) --------
+  # Report-name -> column parsing lives in collectors/china_macro.py (logic, not
+  # a tunable); this list toggles which series the collector attempts. Each
+  # degrades independently (circuit breaker), and history is archived forever.
+  macro:
+    base_url: https://datacenter-web.eastmoney.com/api/data/v1/get
+    referer: https://data.eastmoney.com/
+    retries: 3
+    page_size: 600                  # monthly series ~ <300 rows of history
+    enabled: [pmi, cpi, ppi, money_supply, lpr, indpro]   # social_financing/bond_yield deferred (fiddlier hosts)
+  hsgt:                             # Stock Connect cumulative net (northbound frozen since Aug-2024 — labeled)
+    url: https://push2his.eastmoney.com/api/qt/kamt.kline/get
+    retries: 3
+
+  # -- Breadth / drill-down universe: curated large-cap A-shares by sector -----
+  # Doubles as breadth denominator + per-sector drill-down holdings + stock-search
+  # seed. ~6-8 blue chips/sector; bad/delisted tickers are dropped at collect time
+  # (coverage is logged). This is a large-cap (CSI300-style) breadth gauge.
+  constituents:
+    Banks: ["601398.SS","601288.SS","601939.SS","601988.SS","600036.SS","601166.SS","600000.SS","000001.SZ"]
+    Securities & Brokers: ["600030.SS","601995.SS","601688.SS","600999.SS","601211.SS","000776.SZ"]
+    Baijiu & Liquor: ["600519.SS","000858.SZ","000568.SZ","600809.SS","002304.SZ","000799.SZ"]
+    Consumer Staples: ["600887.SS","603288.SS","000895.SZ","600600.SS","603899.SS"]
+    Healthcare: ["600276.SS","300760.SZ","603259.SS","000538.SZ","600196.SS","002821.SZ"]
+    Semiconductors: ["688981.SS","603986.SS","002371.SZ","688012.SS","603501.SS","688041.SS"]
+    Technology: ["002230.SZ","000725.SZ","002415.SZ","002475.SZ","300059.SZ","600588.SS"]
+    New-Energy Vehicle: ["300750.SZ","002594.SZ","300014.SZ","002460.SZ","600884.SS"]
+    Solar & Photovoltaic: ["601012.SS","300274.SZ","002129.SZ","688599.SS","002459.SZ"]
+    Defense & Military: ["600760.SS","000768.SZ","600893.SS","002179.SZ","600038.SS"]
+    Nonferrous Metals: ["601899.SS","603993.SS","600547.SS","000831.SZ","600111.SS"]
+    Coal: ["601088.SS","600188.SS","601225.SS","000983.SZ","601898.SS"]
+    Real Estate: ["600048.SS","000002.SZ","001979.SZ","600606.SS","000069.SZ"]
+    Automobiles: ["600104.SS","601238.SS","000625.SZ","600660.SS","601633.SS"]
+    Media: ["002027.SZ","300413.SZ","002624.SZ","300033.SZ"]
+
+  breadth:
+    lookback_days_live: 1100        # ~3y for 200DMA/NH-NL + cycle analysis on the search library
+    ma_windows: [50, 200]
+    nhnl_window: 252
+    min_coverage: 0.6               # fail the run if < this fraction of curated names resolve
+
+  # -- Engine tunables (mirror of `engine:`, China inputs) ---------------------
+  engine:
+    scoring: {slope_window: 20, baseline_window: 60, z_threshold: 0.45, min_components: 2}
+    growth_axis:
+      # weights tuned 2026-06-13 by split-half forward-return discrimination
+      # (scripts/calibrate_china.py diagnostic): components whose return relationship
+      # FLIPS sign across sub-periods are demoted; stable ones kept at full weight.
+      components:
+        pmi_mfg: {weight: 1.0}            # NBS manufacturing PMI vs 50 — stable contrarian
+        pmi_nonmfg: {weight: 0.5}         # rarely <50 pre-2016 (can't fully validate) -> half
+        indpro_trend: {weight: 0.25}      # FLIPS (+0.96 pre / -3.60 post) -> demoted from 0.75
+        cyclical_defensive: {weight: 1.0} # stable contrarian (post-2019 only)
+        smallcap_largecap: {weight: 0.25} # FLIPS / ~0 edge -> demoted from 1.0
+        breadth_direction: {weight: 0.5}  # ~0 measured edge + short history -> demoted from 1.0
+      cyclical_basket: ["512880.SS","512400.SS","515250.SS","512200.SS","515030.SS"]
+      defensive_basket: ["512800.SS","159928.SZ","512170.SS"]
+    inflation_axis:
+      components:
+        cpi_direction: {weight: 1.0}      # stable (-3.5 pre / -1.1 post)
+        ppi_direction: {weight: 1.5}      # STRONGEST + most stable signal (-14.3 / -2.1) -> upweighted
+        inflation_beta_basket: {weight: 0.25}  # FLIPS (-2.0 / +1.2) -> demoted from 1.0
+      inflation_long_basket: ["512400.SS","515220.SS"]   # nonferrous + coal
+      inflation_short_basket: ["512760.SS","515000.SS"]  # semis + tech
+    liquidity:
+      components:
+        m2_growth: {weight: 1.0}          # M2 YoY direction
+        lpr_easing: {weight: 1.0}         # falling LPR -> expanding
+      roc_window_d: 20
+    quad:
+      hysteresis_days: 7
+      shock_override_z: 0.85
+    cycle:
+      index_near_high_pct: 3.0
+      high_window_d: 60
+    sector_preferences:                   # framework-preferred China sectors per quad
+      Goldilocks:  ["512760.SS","515000.SS","512690.SS","515250.SS"]   # growth+ infl-: tech/semis/consumer
+      Reflation:   ["512400.SS","515220.SS","512880.SS","512200.SS"]   # growth+ infl+: commodities/brokers/property
+      Stagflation: ["512400.SS","515220.SS","512800.SS","159928.SZ"]   # growth- infl+: materials/banks/staples
+      Growth-scare: ["512800.SS","159928.SZ","512170.SS"]              # growth- infl-: banks/staples/healthcare
+    rs_ranking:
+      benchmark: "510300.SS"
+      momentum_windows: [20, 60]
+      trend_window: 200
+      percentile_lookback_d: 252
+    calibration:
+      start_date: "2005-01-01"
+      split_date: "2016-01-01"            # split-half robustness boundary
+      forward_days: [21, 63]
+      ladder_fwd: 21                       # forward window for the ladder walk
+      ladder_step: 10                      # walk every N days (10 keeps CI lean; per-state n still ample)

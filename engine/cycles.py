@@ -407,6 +407,21 @@ IC_PHASE_PLAIN = {
     "overdue": "overdue — the bigger cycle is stretched, expect more volatility",
 }
 
+# Parallel Chinese phase descriptors (same keys; English fallback at call sites).
+DC_PHASE_PLAIN_ZH = {
+    "new": "全新——新周期刚刚启动",
+    "mid": "周期中段——趋势运行中",
+    "approaching_band": "接近低点通常形成的时间窗口",
+    "in_band": "处于低点应当出现的时间窗口内",
+    "stretched": "逾期——已超过典型窗口，低点随时可能形成",
+}
+IC_PHASE_PLAIN_ZH = {
+    "early": "早期——更大的上行段仍有充足空间",
+    "mid": "中期——更大的上行段正在成熟",
+    "late": "晚期——更大的周期已趋于老化",
+    "overdue": "逾期——更大的周期已被拉伸，预计波动加剧",
+}
+
 
 def cycle_plain(cyc: dict) -> dict:
     """Human-readable daily vs weekly cycle context — kept distinct so users
@@ -415,21 +430,33 @@ def cycle_plain(cyc: dict) -> dict:
     out = {
         "daily_line": f"Daily cycle: day {cyc.get('dc_day', '?')} of a typical {lo}–{hi} trading days",
         "daily_phase": DC_PHASE_PLAIN.get(cyc.get("dc_phase"), ""),
+        "daily_line_zh": f"日线周期：第 {cyc.get('dc_day', '?')} 天，典型周期为 {lo}–{hi} 个交易日",
+        "daily_phase_zh": DC_PHASE_PLAIN_ZH.get(cyc.get("dc_phase"),
+                                                DC_PHASE_PLAIN.get(cyc.get("dc_phase"), "")),
     }
     if cyc.get("ic_week") is not None:
         ic_lo, ic_hi = cyc.get("ic_band", IC_BAND_W)
         out["weekly_line"] = (f"Weekly (investor) cycle: week {cyc['ic_week']} of a typical "
                               f"{ic_lo}–{ic_hi} weeks")
         out["weekly_phase"] = IC_PHASE_PLAIN.get(cyc.get("ic_phase"), "")
+        out["weekly_line_zh"] = (f"周线（投资者）周期：第 {cyc['ic_week']} 周，典型周期为 "
+                                 f"{ic_lo}–{ic_hi} 周")
+        out["weekly_phase_zh"] = IC_PHASE_PLAIN_ZH.get(cyc.get("ic_phase"),
+                                                       IC_PHASE_PLAIN.get(cyc.get("ic_phase"), ""))
     tr = cyc.get("translation")
     if tr == "left":
         out["translation"] = ("The last cycle peaked in its FIRST half ('left-translated') — "
                               "weak cycles top early, so this hints the bigger trend is tiring.")
+        out["translation_zh"] = ("上一周期在前半段见顶（“左移”）——弱周期见顶偏早，"
+                                 "这暗示更大的趋势正在走弱。")
     elif tr == "right":
         out["translation"] = ("The last cycle peaked in its SECOND half ('right-translated') — "
                               "strong cycles top late, a healthy-uptrend sign.")
+        out["translation_zh"] = ("上一周期在后半段见顶（“右移”）——强周期见顶偏晚，"
+                                 "属于健康上涨趋势的信号。")
     elif tr == "middle":
         out["translation"] = "The last cycle peaked mid-way — a neutral, balanced structure."
+        out["translation_zh"] = "上一周期在中段见顶——结构中性、均衡。"
     return out
 
 
@@ -446,16 +473,23 @@ def entry_timing(state: str, cyc: dict, mtf: dict) -> dict:
         return {"tag": "BOUNCE — HIGH RISK", "urgency": "caution",
                 "text": "Counter-trend bounce inside a bearish bigger picture. For nimble "
                         f"traders only — small size, tight stop below {inval}. If the daily "
-                        "low fails it cascades toward the larger cycle low; not an investment buy."}
+                        "low fails it cascades toward the larger cycle low; not an investment buy.",
+                "text_zh": "处于看空大局中的逆势反弹。仅限灵活交易者——小仓位、"
+                           f"将止损紧贴 {inval} 下方。若日线低点失守，将向更大周期低点蔓延；"
+                           "并非投资性买入。"}
     if state == "FRESH BUY":
         return {"tag": "BUY NOW", "urgency": "now",
                 "text": "Confirmed cycle low — the entry window is open now, "
-                        f"with a clear exit if it closes back below {cyc.get('cand_price') or cyc.get('dcl_price')}."}
+                        f"with a clear exit if it closes back below {cyc.get('cand_price') or cyc.get('dcl_price')}.",
+                "text_zh": "周期低点已确认——入场窗口现已开启，"
+                           f"若收盘重新跌破 {cyc.get('cand_price') or cyc.get('dcl_price')} 则明确离场。"}
     if state == "TURN SIGNALED":
         lo, hi = (1, max(2, round(btc))) if btc else (1, 3)
         return {"tag": "BUY SOON", "urgency": "imminent", "days_lo": lo, "days_hi": hi,
                 "text": f"Setup almost complete — likely buy trigger in ~{lo}–{hi} trading days "
-                        "if it closes back above its 10-day average."}
+                        "if it closes back above its 10-day average.",
+                "text_zh": f"形态接近完成——若收盘重新站上 10 日均线，预计将在约 {lo}–{hi} 个交易日内"
+                           "出现买入触发。"}
     if state == "BOTTOM WATCH":
         if cyc.get("dc_phase") in ("approaching_band", "in_band", "stretched"):
             lo = max(lo_band - dc, 0)
@@ -466,33 +500,44 @@ def entry_timing(state: str, cyc: dict, mtf: dict) -> dict:
             rng = f"~{lo}–{hi}" if lo != hi else f"~{hi}"
             return {"tag": "WATCH", "urgency": "soon", "days_lo": lo, "days_hi": hi,
                     "text": f"A cycle low is due in roughly {rng} trading days — watch for the "
-                            "turn, don't front-run it."}
+                            "turn, don't front-run it.",
+                    "text_zh": f"周期低点预计在约 {rng} 个交易日内出现——等待转向，切勿抢跑。"}
         # early/mid-cycle dip below the 10-day average — NOT the cycle low yet
         far = max(lo_band - dc, 2)
         return {"tag": "WAIT", "urgency": "later", "days_lo": far, "days_hi": hi_band - dc,
                 "text": f"A normal mid-cycle dip below the 10-day average — the real cycle low "
                         f"isn't due for ~{far}+ trading days. Wait for support to hold, or for "
-                        "the next low to set up."}
+                        "the next low to set up.",
+                "text_zh": f"这是跌破 10 日均线的正常周期中段回调——真正的周期低点要到约 {far}+ "
+                           "个交易日后才会到来。等待支撑站稳，或等下一个低点构筑成形。"}
     if state == "RALLY ON":
         late = dc >= lo_band - 8
         return {"tag": "HOLD", "urgency": "hold",
                 "text": ("Trend intact — hold. Late in the cycle, so don't add here; a pullback is due."
-                         if late else "Trend intact — hold; add on dips toward the 10-day average.")}
+                         if late else "Trend intact — hold; add on dips toward the 10-day average."),
+                "text_zh": ("趋势完好——持有。已处周期晚期，此处不宜加仓；回调即将到来。"
+                            if late else "趋势完好——持有；可在回调至 10 日均线附近时加仓。")}
     if state == "TOP WATCH":
         return {"tag": "TAKE PROFITS", "urgency": "caution",
                 "text": "Stretched/late — protect gains and don't start new positions; "
-                        "let the next low set up first."}
+                        "let the next low set up first.",
+                "text_zh": "已拉伸／晚期——保护利润，不要新开仓；先等下一个低点构筑成形。"}
     if state == "ROLLING OVER":
         return {"tag": "SELL / REDUCE", "urgency": "exit",
-                "text": "Momentum rolled over and the 10-day average is lost — reduce or tighten stops."}
+                "text": "Momentum rolled over and the 10-day average is lost — reduce or tighten stops.",
+                "text_zh": "动量已掉头向下且失守 10 日均线——减仓或收紧止损。"}
     return {"tag": "AVOID", "urgency": "avoid",
-            "text": "Downtrend — stand aside until a new cycle low forms and confirms."}
+            "text": "Downtrend — stand aside until a new cycle low forms and confirms.",
+            "text_zh": "下跌趋势——观望，直至新的周期低点形成并确认。"}
 
 
 REGIME_DISPLAY = {
-    "bull": {"label": "BULLISH", "word": "with-trend"},
-    "neutral": {"label": "MIXED", "word": "no clear trend"},
-    "bear": {"label": "BEARISH", "word": "counter-trend"},
+    "bull": {"label": "BULLISH", "word": "with-trend",
+             "label_zh": "看多", "word_zh": "顺势"},
+    "neutral": {"label": "MIXED", "word": "no clear trend",
+                "label_zh": "混合", "word_zh": "趋势不明"},
+    "bear": {"label": "BEARISH", "word": "counter-trend",
+             "label_zh": "看空", "word_zh": "逆势"},
 }
 
 
@@ -568,6 +613,7 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None) -> dict:
     lo_b, hi_b = cyc.get("dc_band", DC_BAND)
     dc_early = cyc.get("dc_early", DC_EARLY)
     state, why, nxt = None, "", ""
+    why_zh, nxt_zh = "", ""
     late = cyc["dc_phase"] in ("approaching_band", "in_band", "stretched")
     # a late-cycle decline hunts the NEXT low via the candidate trough
     cand_confirmed = bool(late and cyc.get("cand_swing") and cyc["above_ma10"])
@@ -577,6 +623,9 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None) -> dict:
         why = ("Failed cycle — price broke below the low that started this cycle, "
                "which historically means the larger trend is rolling over (~80% of cases).")
         nxt = "Stand aside until a new daily cycle low forms and confirms."
+        why_zh = ("失败周期——价格跌破了启动本周期的低点，"
+                  "历史上这通常意味着更大的趋势正在掉头向下（约 80% 的情形）。")
+        nxt_zh = "观望，直至新的日线周期低点形成并确认。"
     elif cand_confirmed and (d.get("macd_cross_up") or d.get("macd_pos")
                              or d.get("macd_approaching_up")):
         state = "FRESH BUY" if weekly_ok else "TURN SIGNALED"
@@ -585,31 +634,52 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None) -> dict:
                "above the 10-day average"
                + (" — and the weekly timeframe agrees." if weekly_ok else
                   " — but the weekly timeframe hasn't turned yet, so conviction is partial."))
+        why_zh = (f"新的周期低点可能已在 {cyc['cand_age']} 天前形成 "
+                  f"（{cyc['cand_dcl']} @ {cyc['cand_price']}）：摆动低点已现，价格重新"
+                  "站上 10 日均线"
+                  + ("——且周线周期也一致确认。" if weekly_ok else
+                     "——但周线周期尚未转向，因此信心仅为部分。"))
         nxt = (f"The cleanest setup cycle logic offers — entry with a defined exit: "
                f"invalidation = a close below {cyc['cand_price']}.") if weekly_ok else \
               "Either wait for the weekly to turn, or size half until it does."
+        nxt_zh = (f"周期逻辑所能给出的最干净形态——入场并设有明确离场："
+                  f"失效点 = 收盘跌破 {cyc['cand_price']}。") if weekly_ok else \
+                 "可等待周线转向，或在其转向前先建半仓。"
     elif late and cyc.get("cand_swing") and not cyc["above_ma10"]:
         state = "TURN SIGNALED"
         why = (f"Buyers rejected the {cyc['cand_dcl']} low (swing low printed) but price "
                "hasn't reclaimed its 10-day average — first box ticked, not all.")
+        why_zh = (f"买方拒绝了 {cyc['cand_dcl']} 的低点（摆动低点已现），但价格"
+                  "尚未收复 10 日均线——第一项条件达成，并非全部。")
         nxt = "Confirmation = a close above the 10-day average with the average turning up."
+        nxt_zh = "确认 = 收盘站上 10 日均线且均线开始向上。"
         if d.get("macd_approaching_up") and d.get("macd_bars_to_cross"):
             nxt += f" Daily momentum is ~{d['macd_bars_to_cross']:.0f} bars from its bullish cross."
+            nxt_zh += f" 日线动量距其看多交叉约 {d['macd_bars_to_cross']:.0f} 根 K 线。"
     elif late and not cyc["above_ma10"]:
         state = "BOTTOM WATCH"
         why = (f"Day {cyc['dc_day']} of a typical {lo_b}-{hi_b}-day cycle — "
                "inside the window where lows usually form"
                + (", and short-term momentum is washed out" if (d.get("rsi5") or 50) < 30 else "")
                + ". No confirmed turn yet.")
+        why_zh = (f"典型 {lo_b}-{hi_b} 天周期的第 {cyc['dc_day']} 天——"
+                  "处于低点通常形成的窗口内"
+                  + ("，且短期动量已被洗净" if (d.get("rsi5") or 50) < 30 else "")
+                  + "。尚无确认的转向。")
         nxt = ("Wait for the turn: a move above the low candle's high, then a close back "
                "above the 10-day average.")
+        nxt_zh = "等待转向：先上破低点 K 线的高点，再收盘重新站上 10 日均线。"
         if d.get("macd_approaching_up") and d.get("macd_bars_to_cross"):
             nxt += f" Daily momentum is ~{d['macd_bars_to_cross']:.0f} bars from a bullish cross."
+            nxt_zh += f" 日线动量距看多交叉约 {d['macd_bars_to_cross']:.0f} 根 K 线。"
     elif d.get("macd_cross_dn") and not cyc["above_ma10"] and cyc["dc_day"] > dc_early:
         state = "ROLLING OVER"
         why = "Daily momentum just crossed down and price lost its 10-day average mid-cycle."
+        why_zh = "日线动量刚刚向下交叉，且价格在周期中段失守 10 日均线。"
         nxt = ("Trim or tighten stops; next likely support is the daily-cycle timing band "
                f"(~day {lo_b}-{hi_b}, now day {cyc['dc_day']}).")
+        nxt_zh = ("减仓或收紧止损；下一个可能的支撑是日线周期的时间窗口 "
+                  f"（约第 {lo_b}-{hi_b} 天，现为第 {cyc['dc_day']} 天）。")
     elif cyc["swing_low"] and cyc["dc_day"] <= dc_early and cyc["above_ma10"] \
             and (d.get("macd_cross_up") or d.get("macd_pos")):
         state = "FRESH BUY" if weekly_ok else "TURN SIGNALED"
@@ -617,9 +687,16 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None) -> dict:
                "10-day average, daily momentum positive"
                + (" — and the weekly timeframe agrees." if weekly_ok else
                   " — but the weekly timeframe hasn't turned yet, so conviction is partial."))
+        why_zh = (f"新的日线周期，第 {cyc['dc_day']} 天：摆动低点已现，价格重新站上 "
+                  "10 日均线，日线动量为正"
+                  + ("——且周线周期也一致确认。" if weekly_ok else
+                     "——但周线周期尚未转向，因此信心仅为部分。"))
         nxt = ("The highest-odds window by cycle logic; invalidation = a close below "
                f"the cycle low ({cyc['dcl_price']}).") if weekly_ok else \
               "Either wait for the weekly to turn, or size half until it does."
+        nxt_zh = ("按周期逻辑胜率最高的窗口；失效点 = 收盘跌破"
+                  f"周期低点（{cyc['dcl_price']}）。") if weekly_ok else \
+                 "可等待周线转向，或在其转向前先建半仓。"
     elif cyc["above_ma10"] and cyc["ma10_rising"] and not late:
         hot = []
         if (d.get("rsi14") or 50) > 70:
@@ -630,23 +707,34 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None) -> dict:
             state = "TOP WATCH"
             why = (f"Mid-cycle (day {cyc['dc_day']}) and short-term overbought "
                    f"({', '.join(hot)}).")
+            why_zh = (f"周期中段（第 {cyc['dc_day']} 天）且短期超买 "
+                      f"（{', '.join(hot)}）。")
             nxt = ("Not a short signal — just don't add here; pullbacks to the 10-day "
                    "average are normal.")
+            nxt_zh = "并非做空信号——只是此处不宜加仓；回调至 10 日均线属于正常现象。"
         else:
             state = "RALLY ON"
             why = (f"Day {cyc['dc_day']} of the cycle, trend intact above a rising 10-day average"
                    + (", weekly aligned." if weekly_ok else ", weekly still mixed."))
+            why_zh = (f"周期第 {cyc['dc_day']} 天，趋势完好并位于向上的 10 日均线之上"
+                      + ("，周线一致。" if weekly_ok else "，周线仍为混合。"))
             nxt = ("Hold; first warning would be losing the 10-day average, bigger warning is a "
                    "daily momentum cross down.")
+            nxt_zh = "持有；首个预警是失守 10 日均线，更大的预警是日线动量向下交叉。"
     elif late and cyc["above_ma10"]:
         state = "TOP WATCH"
         why = (f"Late in the daily cycle (day {cyc['dc_day']} of ~{lo_b}-{hi_b}) — "
                "odds favor a dip into the next cycle low from here even with the trend intact.")
+        why_zh = (f"处于日线周期晚期（约 {lo_b}-{hi_b} 天中的第 {cyc['dc_day']} 天）——"
+                  "即便趋势完好，从此处概率上仍倾向于回落至下一个周期低点。")
         nxt = "Let the next daily cycle low form before adding; watch for the swing-low setup."
+        nxt_zh = "在加仓前先让下一个日线周期低点形成；留意摆动低点形态。"
     else:
         state = "RALLY ON" if cyc["above_ma10"] else "BOTTOM WATCH"
         why = "Mixed structure."
+        why_zh = "结构混合。"
         nxt = "Watch the 10-day average and cycle-day count."
+        nxt_zh = "关注 10 日均线与周期天数。"
 
     # ── Regime gate ─────────────────────────────────────────────────────────
     # A bullish daily setup INSIDE a bearish higher-timeframe regime is a
@@ -666,14 +754,25 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None) -> dict:
                  "investor cycle."
                + (" The daily cycle has already failed (broke its own start low)."
                   if cyc.get("failed_cycle") else ""))
+        why_zh = ("短期来看，正在形成日线筑底形态——但大局看空（"
+                  + (regime["why"] or "weekly / investor timeframe pointing down")
+                  + "）。此处的反弹属于逆势：与周线周期低点不对齐的日线周期低点往往"
+                    "呈左移结构并最终失败，随后向更大周期低点蔓延——这正是在下行的"
+                    "投资者周期中买入日线低点的陷阱。"
+                  + ("日线周期已经失败（跌破其自身的起始低点）。"
+                     if cyc.get("failed_cycle") else ""))
         nxt = ("Nimble traders only — small size, tight stop below "
                f"{inval}. Not an investment buy; wait for the weekly timeframe to actually "
                "turn up (or a fresh investor-cycle low to confirm) before trusting it.")
+        nxt_zh = ("仅限灵活交易者——小仓位、将止损紧贴 "
+                  f"{inval} 下方。并非投资性买入；在采信之前，请等待周线周期真正"
+                  "转向上行（或出现新的投资者周期低点予以确认）。")
 
     score = LADDER_SCORE[state]
     if cyc.get("translation") == "left":
         score -= 10
         why += " Last cycle was left-translated (topped early) — a bearish structural tell."
+        why_zh += " 上一周期为左移结构（见顶偏早）——属于看空的结构性信号。"
     if state in ("FRESH BUY", "RALLY ON") and cyc.get("translation") == "right":
         score += 5
 
@@ -681,6 +780,7 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None) -> dict:
     # without changing the calibrated state. A bullish early read in BOTTOM WATCH
     # nudges the score and re-frames the action toward "watch closely".
     early_note = ""
+    early_note_zh = ""
     if early.get("dir") == "up" and state in ("BOTTOM WATCH", "TURN SIGNALED",
                                               "DECLINE", "COUNTERTREND BOUNCE"):
         score += 12 if early.get("tier") == "anticipated" else 6
@@ -688,11 +788,18 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None) -> dict:
                       + "; ".join(early["signals"]) + ". These anticipate a low BEFORE "
                       "full confirmation — earlier entry, but a higher false-alarm rate, so "
                       "treat as a heads-up to watch closely, not a trigger yet.")
+        early_note_zh = ("⚡ 反转正在提前酝酿（" + early["tier"] + "）："
+                         + "; ".join(early["signals"]) + "。这些信号会在完全确认之前"
+                         "预判低点——入场更早，但误报率更高，因此应视为密切关注的"
+                         "提示，而非触发信号。")
     elif early.get("dir") == "down" and state in ("TOP WATCH", "RALLY ON"):
         score -= 12 if early.get("tier") == "anticipated" else 6
         early_note = ("⚡ Early topping signs (" + early["tier"] + "): "
                       + "; ".join(early["signals"]) + ". These anticipate a high BEFORE "
                       "confirmation — a heads-up to protect gains, not a sell trigger yet.")
+        early_note_zh = ("⚡ 提前出现的做顶迹象（" + early["tier"] + "）："
+                         + "; ".join(early["signals"]) + "。这些信号会在确认之前预判"
+                         "高点——属于保护利润的提示，而非卖出触发信号。")
 
     disp = STATE_DISPLAY[state]
     plain = cycle_plain(cyc)
@@ -702,43 +809,70 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None) -> dict:
     # plus how long the current move has been running ("ongoing" context).
     reg = regime["regime"]
     reg_word = REGIME_DISPLAY[reg]["word"]
+    reg_word_zh = REGIME_DISPLAY[reg].get("word_zh", reg_word)
+    reg_label_zh = REGIME_DISPLAY[reg].get("label_zh", REGIME_DISPLAY[reg]["label"])
     bits = []
+    bits_zh = []
     if cyc.get("ic_week") is not None:
         bits.append(f"investor cycle week {cyc['ic_week']}")
+        bits_zh.append(f"投资者周期第 {cyc['ic_week']} 周")
     if cyc.get("ic_failed"):
         bits.append("failed")
+        bits_zh.append("已失败")
     if cyc.get("failed_age"):
         bits.append(f"daily cycle broke its start low {cyc['failed_age']}d ago")
+        bits_zh.append(f"日线周期于 {cyc['failed_age']} 天前跌破其起始低点")
     elif cyc.get("dc_day") is not None:
         bits.append(f"daily cycle day {cyc['dc_day']}")
+        bits_zh.append(f"日线周期第 {cyc['dc_day']} 天")
     dur = " · ".join(bits)
+    dur_zh = " · ".join(bits_zh)
     regime_line = (f"Bigger picture: {REGIME_DISPLAY[reg]['label']}"
                    + (f" — {regime['why']}" if regime.get("why") else "")
                    + (f" ({dur})." if dur else "."))
+    regime_line_zh = (f"大局：{reg_label_zh}"
+                      + (f" — {regime['why']}" if regime.get("why") else "")
+                      + (f"（{dur_zh}）。" if dur_zh else "。"))
     tactical_label = disp["label"]
+    tactical_label_zh = disp.get("label_zh", tactical_label)
     summary_line = (f"Short-term (daily): {tactical_label.lower()}. "
                     f"Bigger picture ({reg_word}): {REGIME_DISPLAY[reg]['label'].lower()}.")
+    summary_line_zh = (f"短期（日线）：{tactical_label_zh}。"
+                       f"大局（{reg_word_zh}）：{reg_label_zh}。")
 
     # concise bullet points (the headline facts); full prose lives in `why`
     points = []
+    points_zh = []
     points.append(f"Bigger picture is {REGIME_DISPLAY[reg]['label'].lower()} "
                   f"({reg_word} for a daily long)")
+    points_zh.append(f"大局为{reg_label_zh}（对日线多头而言属{reg_word_zh}）")
     if cyc.get("failed_cycle"):
         age = f" ({cyc['failed_age']}d ago)" if cyc.get("failed_age") else ""
+        age_zh = f"（{cyc['failed_age']} 天前）" if cyc.get("failed_age") else ""
         points.append(f"⚠ Failed cycle — price broke below the low that began this cycle{age}")
+        points_zh.append(f"⚠ 失败周期——价格跌破了启动本周期的低点{age_zh}")
     if cyc.get("swing_low") or cyc.get("cand_swing"):
         points.append("Swing low printed (buyers rejected the low)")
+        points_zh.append("摆动低点已现（买方拒绝了该低点）")
     points.append(("Back above" if cyc.get("above_ma10") else "Still below")
                   + " the 10-day average"
                   + (", and it's turning up" if cyc.get("ma10_rising") and cyc.get("above_ma10") else ""))
+    points_zh.append(("重新站上" if cyc.get("above_ma10") else "仍位于")
+                     + " 10 日均线"
+                     + ("之上，且均线开始向上" if cyc.get("ma10_rising") and cyc.get("above_ma10")
+                        else ("之上" if cyc.get("above_ma10") else "之下")))
     if d.get("macd_cross_up"):
         points.append("Daily momentum just crossed up")
+        points_zh.append("日线动量刚刚向上交叉")
     elif d.get("macd_cross_dn"):
         points.append("Daily momentum just crossed down")
+        points_zh.append("日线动量刚刚向下交叉")
     elif d.get("macd_approaching_up") and d.get("macd_bars_to_cross"):
         points.append(f"Daily momentum ~{d['macd_bars_to_cross']:.0f} bars from turning up")
+        points_zh.append(f"日线动量距转为向上约 {d['macd_bars_to_cross']:.0f} 根 K 线")
     if plain.get("translation") and cyc.get("translation") == "left":
         points.append("Prior cycle topped early (a tiring-trend hint)")
+        points_zh.append("上一周期见顶偏早（趋势走弱的暗示）")
 
     return {"state": state, "label": disp["label"], "action": disp["action"],
             "dir": disp["dir"], "score": int(np.clip(score, -100, 100)),
@@ -749,7 +883,10 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None) -> dict:
             "points": points, "entry": entry, "cycle_plain": plain,
             "early_note": early_note,
             "early_tier": early.get("tier") if early_note else None,
-            "early_dir": early.get("dir") if early_note else None}
+            "early_dir": early.get("dir") if early_note else None,
+            "why_zh": why_zh or why, "next_zh": nxt_zh or nxt,
+            "regime_line_zh": regime_line_zh, "summary_line_zh": summary_line_zh,
+            "points_zh": points_zh, "early_note_zh": early_note_zh}
 
 
 def analyze(close: pd.Series, high: pd.Series | None = None,

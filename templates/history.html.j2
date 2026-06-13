@@ -1,5 +1,8 @@
-{% macro help(text) -%}
-<span class="help">?<span class="tip">{{ text }}</span></span>
+{% macro help(en, zh='') -%}
+<span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
+{%- endmacro %}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
 <!DOCTYPE html>
 <html lang="en">
@@ -7,7 +10,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Regime History — {{ latest.date }}</title>
-<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 <style>
@@ -34,7 +37,7 @@
                border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60;
                font-size:12px; line-height:1.45; color:var(--text); text-align:left;
                font-weight:400; text-transform:none; letter-spacing:normal;
-               box-shadow:0 6px 18px rgba(0,0,0,.5); pointer-events:none; }
+               box-shadow:var(--popover-shadow); pointer-events:none; }
   .help:hover .tip { display:block; }
   table { border-collapse:collapse; width:100%; font-size:13px; }
   th,td { text-align:right; padding:4px 8px; border-bottom:1px solid var(--line); }
@@ -45,48 +48,61 @@
 <body>
   <div class="panel">
     <div class="topline">
-      <h1>Regime history & charts</h1>
-      <span class="muted">data through {{ latest.date }}</span>
+      <h1>{{ t('Regime history & charts', '周期历史与图表') }}</h1>
+      <span class="muted">{{ t('data through', '数据截至') }} {{ latest.date }}</span>
       <span style="flex:1"></span>
-      <a class="navbtn" href="index.html">← Back to dashboard</a>
-      <a class="navbtn" href="validation_timeline.html">Full 2007→ backtest</a>
+      <a class="navbtn" href="index.html">{{ t('← Back to dashboard', '← 返回仪表盘') }}</a>
+      <a class="navbtn" href="validation_timeline.html">{{ t('Full 2007→ backtest', '2007→ 完整回测') }}</a>
+      <button class="lang-btn">中文</button>
       <button class="theme-btn">☀️ Light</button>
     </div>
   </div>
 
   <div class="panel">
-    <h2>Three years of regimes over the S&P 500
-      {{ help("The S&P 500 with the regime active at each time shaded behind it — how the classifier actually behaved in real conditions. For the full 2007-onward record including the validation stats, use the backtest link above.") }}
+    <h2>{{ t('Three years of regimes over the S&P 500', '标普500 三年周期叠加') }}
+      {{ help("The S&P 500 with the regime active at each time shaded behind it — how the classifier actually behaved in real conditions. For the full 2007-onward record including the validation stats, use the backtest link above.", "标普500 走势，并以底色标出每个时段所处的周期 — 展示分类器在真实环境中的实际表现。如需自 2007 年起的完整记录及验证统计，请使用上方的回测链接。") }}
     </h2>
     {{ chart_regime | safe }}
     <div class="legend">
-      <span><i style="background:var(--q1)"></i><b>Goldilocks</b> — growth ↑ inflation ↓ (best for tech/quality)</span>
-      <span><i style="background:var(--q2)"></i><b>Reflation</b> — growth ↑ inflation ↑ (cyclicals/energy/banks)</span>
-      <span><i style="background:var(--q3)"></i><b>Stagflation</b> — growth ↓ inflation ↑ (historically the dangerous one)</span>
-      <span><i style="background:var(--q4)"></i><b>Growth scare</b> — growth ↓ inflation ↓ (defensives/bonds)</span>
+      <span><i style="background:var(--q1)"></i><b>{{ t('Goldilocks', '理想增长（金发女孩）') }}</b> — {{ t('growth ↑ inflation ↓ (best for tech/quality)', '增长 ↑ 通胀 ↓（最利好科技／质量股）') }}</span>
+      <span><i style="background:var(--q2)"></i><b>{{ t('Reflation', '再通胀') }}</b> — {{ t('growth ↑ inflation ↑ (cyclicals/energy/banks)', '增长 ↑ 通胀 ↑（周期股／能源／银行）') }}</span>
+      <span><i style="background:var(--q3)"></i><b>{{ t('Stagflation', '滞胀') }}</b> — {{ t('growth ↓ inflation ↑ (historically the dangerous one)', '增长 ↓ 通胀 ↑（历史上最危险的一种）') }}</span>
+      <span><i style="background:var(--q4)"></i><b>{{ t('Growth scare', '增长恐慌') }}</b> — {{ t('growth ↓ inflation ↓ (defensives/bonds)', '增长 ↓ 通胀 ↓（防御股／债券）') }}</span>
     </div>
   </div>
 
   <div class="panel">
-    <h2>The two dials over time
-      {{ help("History of the growth (green) and inflation (red) scores. Zero-line crossings are where regimes change; persistent readings near ±0.5 are strong regimes; hovering near zero = mixed, choppy environment.") }}
+    <h2>{{ t('The two dials over time', '两大指标随时间变化') }}
+      {{ help("History of the growth (green) and inflation (red) scores. Zero-line crossings are where regimes change; persistent readings near ±0.5 are strong regimes; hovering near zero = mixed, choppy environment.", "增长（绿）与通胀（红）评分的历史走势。穿越零轴处即周期切换；持续接近 ±0.5 的读数代表强周期；徘徊在零附近 = 混杂、震荡的环境。") }}
     </h2>
     {{ chart_axes | safe }}
   </div>
 
   <div class="panel">
-    <h2>Regime lifespans — the base rates behind "what's next"
-      {{ help("Every regime period since 2007 in this classifier: how many there were, how long they typically lasted, and where they went when they ended. These are the base rates the front page's odds come from.") }}
+    <h2>{{ t('Regime lifespans — the base rates behind "what\'s next"', '周期存续期 — “下一步”背后的基准概率') }}
+      {{ help("Every regime period since 2007 in this classifier: how many there were, how long they typically lasted, and where they went when they ended. These are the base rates the front page's odds come from.", "本分类器自 2007 年以来的每一个周期时段：共出现多少次、通常持续多久，以及结束后转向何处。首页的概率即来自这些基准概率。") }}
     </h2>
     <table>
-      <tr><th>regime</th><th>periods</th><th>median length (days)</th><th>most common next</th></tr>
+      <tr><th>{{ t('regime', '周期') }}</th><th>{{ t('periods', '次数') }}</th><th>{{ t('median length (days)', '存续中位数（天）') }}</th><th>{{ t('most common next', '最常见的下一周期') }}</th></tr>
       {% for row in lifespan_rows %}
-      <tr><td>{{ row.name }}</td><td>{{ row.n }}</td><td>{{ row.median }}</td><td>{{ row.next }}</td></tr>
+      <tr><td>{{ td(row.name) }}</td><td>{{ row.n }}</td><td>{{ row.median }}</td><td>{{ row.next }}</td></tr>
       {% endfor %}
     </table>
   </div>
 
-  <p class="muted">Generated {{ generated_utc }} UTC</p>
+  <p class="muted">{{ t('Generated', '生成于') }} {{ generated_utc }} UTC</p>
+<script>
+window.__CHART_SWAP__ = {
+  colors: {"#5fbf7f":"#e07070","#e07070":"#5fbf7f","#2e9e4f":"#d04545","#d04545":"#2e9e4f"},
+  labels: {"growth":"增长","inflation":"通胀","net liquidity":"净流动性","4w RoC":"4周变化",
+           "HY OAS %":"高收益债利差 %","% S&P500 > 50DMA":"标普500 高于50日均线 %"}
+};
+</script>
 <script src="theme.js"></script>
+<script src="chart_i18n.js"></script>
+<footer class="site-footer">
+  <span class="made">Made with ❤️ in Canada</span>
+  <span class="dev">Developed by Chris Wong</span>
+</footer>
 </body>
 </html>
