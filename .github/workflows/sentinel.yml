@@ -40,6 +40,11 @@ jobs:
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/vector data/coinbase/btc_hourly.parquet site/vector.html site/index.html
-          git diff --cached --quiet || git commit -m "vector: flash-crash alert $(date -u +%FT%H:%MZ)"
-          git pull --rebase origin main
-          git push
+          git diff --cached --quiet && exit 0
+          git commit -m "vector: flash-crash alert $(date -u +%FT%H:%MZ)"
+          for i in 1 2 3 4 5; do
+            if git pull --rebase -X theirs origin main && git push; then exit 0; fi
+            git rebase --abort 2>/dev/null || true
+            echo "vector-sentinel push attempt $i lost a race; retrying"; sleep $((i * 3))
+          done
+          echo "::warning::vector-sentinel could not push after 5 attempts (non-fatal — recomputed next run)"
