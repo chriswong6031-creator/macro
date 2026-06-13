@@ -55,7 +55,7 @@ def test_ladder_states_sane() -> None:
     c = synth_cycles(period=40)
     st = ladder_state(cycle_state(c), mtf_snapshot(c))
     assert st["state"] in ("BOTTOM WATCH", "TURN SIGNALED", "FRESH BUY", "RALLY ON",
-                           "TOP WATCH", "ROLLING OVER", "DECLINE")
+                           "TOP WATCH", "ROLLING OVER", "DECLINE", "COUNTERTREND BOUNCE")
     assert -100 <= st["score"] <= 100
     assert st["why"] and st["next"]
 

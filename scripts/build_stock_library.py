@@ -44,7 +44,11 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
     c = close.dropna()
     if len(c) < 300:
         return None
-    res = analyze(c, high)
+    # crypto trades 7 days/week — its cycle clock runs longer in calendar days
+    # than an equity's, so it gets the crypto cycle preset (Yahoo crypto tickers
+    # carry the -USD suffix: BTC-USD, ETH-USD, SOL-USD …).
+    kind = "crypto" if ticker.endswith("-USD") else "equity"
+    res = analyze(c, high, kind=kind)
     if not res.get("ladder"):
         return None
     month = int(c.index.max().month)

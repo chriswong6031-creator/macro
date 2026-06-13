@@ -39,6 +39,21 @@ IC_BAND_W = (16, 26)      # investor cycle, weeks
 TROUGH_WINDOW = 10        # local-minimum half-window for trough detection
 TROUGH_MIN_GAP = 18       # merge troughs closer than this (days)
 
+# Per-asset-class cycle clock. Crypto trades 7 days/week with no gaps, so its
+# daily cycle runs MUCH longer in calendar days than an equity's (the cycle-
+# analyst convention — graddhy / thefinancialtap — is ~8-10 weeks for BTC vs
+# 36-42 trading days for equities/gold). Applying the equity band to BTC made
+# it read as "stretched / bottoming" far too early, and `3B` (3 business days)
+# silently mishandles weekend bars — crypto uses 3-CALENDAR-day bars instead.
+CYCLE_PRESETS = {
+    "equity": {"dc_band": (36, 42), "dc_early": 12, "ic_band_w": (16, 26), "tf3": "3B"},
+    "crypto": {"dc_band": (56, 70), "dc_early": 18, "ic_band_w": (24, 40), "tf3": "3D"},
+}
+
+
+def _preset(kind: str) -> dict:
+    return CYCLE_PRESETS.get(kind, CYCLE_PRESETS["equity"])
+
 
 # ------------------------------------------------------------ indicators ----
 
@@ -115,12 +130,15 @@ def _tf_state(close: pd.Series) -> dict:
     }
 
 
-def mtf_snapshot(close: pd.Series) -> dict:
-    """Daily / 3-day / weekly indicator states."""
+def mtf_snapshot(close: pd.Series, kind: str = "equity") -> dict:
+    """Daily / 3-day / weekly indicator states. The 3-day bar respects the
+    asset's trading calendar (business days for equities, calendar days for
+    24/7 crypto)."""
     daily = close.dropna()
+    tf3 = _preset(kind)["tf3"]
     return {
         "D": _tf_state(daily),
-        "3D": _tf_state(daily.resample("3B").last().dropna()) if len(daily) > 150 else {},
+        "3D": _tf_state(daily.resample(tf3).last().dropna()) if len(daily) > 150 else {},
         "W": _tf_state(daily.resample("W-FRI").last().dropna()) if len(daily) > 300 else {},
     }
 
@@ -151,11 +169,14 @@ def find_troughs(close: pd.Series, window: int = TROUGH_WINDOW,
     return [c.index[i] for i in merged]
 
 
-def cycle_state(close: pd.Series, high: pd.Series | None = None) -> dict:
+def cycle_state(close: pd.Series, high: pd.Series | None = None,
+                kind: str = "equity") -> dict:
     """Daily + investor cycle position for one instrument."""
     c = close.dropna()
     if len(c) < 260:
         return {}
+    p = _preset(kind)
+    dc_band, dc_early, ic_band_w = p["dc_band"], p["dc_early"], p["ic_band_w"]
     troughs = find_troughs(c)
     if not troughs:
         return {}
@@ -166,7 +187,7 @@ def cycle_state(close: pd.Series, high: pd.Series | None = None) -> dict:
     # candidate for the NEXT cycle low: the lowest bar of the recent decline.
     # Only meaningful once the cycle is old enough that a new low is due.
     cand_day = cand_price = cand_swing = cand_age = None
-    if dc_day >= DC_BAND[0] - 10:
+    if dc_day >= dc_band[0] - 10:
         recent = c.iloc[-25:]
         cand_ts = recent.idxmin()
         cand_price = float(recent.min())
@@ -189,6 +210,14 @@ def cycle_state(close: pd.Series, high: pd.Series | None = None) -> dict:
                            "left" if crest_pos < 0.45 else "middle")
 
     failed = bool(c.iloc[-1] < dcl_price)
+    # how long the failure has been in force: bars since price first closed
+    # below the low that birthed this cycle (drives the "failed N days ago" line)
+    failed_age = None
+    if failed:
+        seg = c.loc[last_dcl:]
+        below = seg[seg < dcl_price]
+        if len(below):
+            failed_age = int(len(seg.loc[below.index[0]:]) - 1)
 
     # swing low off the lowest candle of the current decline (uses highs if given)
     swing_low = None
@@ -210,30 +239,31 @@ def cycle_state(close: pd.Series, high: pd.Series | None = None) -> dict:
     ic_week = int(len(w.loc[wt[-1]:]) - 1) if wt else None
     ic_failed = bool(wt and w.iloc[-1] < float(w.loc[wt[-1]])) if wt else False
 
-    if dc_day < DC_EARLY:
+    if dc_day < dc_early:
         dc_phase = "new"
-    elif dc_day < DC_BAND[0] - 8:
+    elif dc_day < dc_band[0] - 8:
         dc_phase = "mid"
-    elif dc_day < DC_BAND[0]:
+    elif dc_day < dc_band[0]:
         dc_phase = "approaching_band"
-    elif dc_day <= DC_BAND[1]:
+    elif dc_day <= dc_band[1]:
         dc_phase = "in_band"
     else:
         dc_phase = "stretched"
 
     ic_phase = None
     if ic_week is not None:
-        ic_phase = ("early" if ic_week <= 6 else "mid" if ic_week <= 13 else
-                    "late" if ic_week <= IC_BAND_W[1] else "overdue")
+        ic_late = round(ic_band_w[1] * 0.5)
+        ic_phase = ("early" if ic_week <= 6 else "mid" if ic_week <= ic_late else
+                    "late" if ic_week <= ic_band_w[1] else "overdue")
 
     return {
-        "dc_day": dc_day, "dc_band": DC_BAND, "dc_phase": dc_phase,
+        "dc_day": dc_day, "dc_band": dc_band, "dc_early": dc_early, "dc_phase": dc_phase,
         "last_dcl": str(last_dcl.date()), "dcl_price": round(dcl_price, 2),
         "cand_dcl": cand_day, "cand_price": round(cand_price, 2) if cand_price else None,
         "cand_swing": cand_swing, "cand_age": cand_age,
-        "translation": translation, "failed_cycle": failed,
+        "translation": translation, "failed_cycle": failed, "failed_age": failed_age,
         "swing_low": swing_low, "above_ma10": above_ma10, "ma10_rising": ma10_rising,
-        "ic_week": ic_week, "ic_phase": ic_phase, "ic_failed": ic_failed,
+        "ic_week": ic_week, "ic_band": ic_band_w, "ic_phase": ic_phase, "ic_failed": ic_failed,
         "n_troughs": len(troughs),
     }
 
@@ -330,24 +360,36 @@ def early_signals(close: pd.Series, cyc: dict, mtf: dict) -> dict:
 # ----------------------------------------------------------- signal ladder ----
 
 LADDER = ["DECLINE", "BOTTOM WATCH", "TURN SIGNALED", "FRESH BUY",
-          "RALLY ON", "TOP WATCH", "ROLLING OVER"]
+          "RALLY ON", "TOP WATCH", "ROLLING OVER", "COUNTERTREND BOUNCE"]
 
 LADDER_SCORE = {"DECLINE": -80, "ROLLING OVER": -40, "TOP WATCH": -10,
                 "BOTTOM WATCH": 10, "TURN SIGNALED": 45, "FRESH BUY": 80,
-                "RALLY ON": 55}
+                "RALLY ON": 55, "COUNTERTREND BOUNCE": -25}
 
 # Plain, direction-explicit display for every internal state. The bottom and
 # top "turns" are deliberately named as mirror images (BOTTOMING = buy setup,
 # TOPPING = sell setup) so the symmetry is obvious. Internal keys above stay
 # fixed so the calibration JSON keeps matching. action = one-word call.
 STATE_DISPLAY = {
-    "DECLINE":       {"label": "DOWNTREND",     "action": "AVOID",        "dir": "down"},
-    "BOTTOM WATCH":  {"label": "NEARING A LOW",  "action": "GET READY",    "dir": "down"},
-    "TURN SIGNALED": {"label": "BOTTOMING",      "action": "BUY SETUP",    "dir": "up"},
-    "FRESH BUY":     {"label": "BUY ZONE",       "action": "BUY",          "dir": "up"},
-    "RALLY ON":      {"label": "UPTREND",        "action": "HOLD",         "dir": "up"},
-    "TOP WATCH":     {"label": "NEARING A HIGH", "action": "TAKE PROFITS", "dir": "up"},
-    "ROLLING OVER":  {"label": "TOPPING",        "action": "SELL SETUP",   "dir": "down"},
+    "DECLINE":       {"label": "DOWNTREND",     "action": "AVOID",        "dir": "down",
+                      "label_zh": "下跌趋势", "action_zh": "回避"},
+    "BOTTOM WATCH":  {"label": "NEARING A LOW",  "action": "GET READY",    "dir": "down",
+                      "label_zh": "接近低点", "action_zh": "准备"},
+    "TURN SIGNALED": {"label": "BOTTOMING",      "action": "BUY SETUP",    "dir": "up",
+                      "label_zh": "筑底中", "action_zh": "买入预备"},
+    "FRESH BUY":     {"label": "BUY ZONE",       "action": "BUY",          "dir": "up",
+                      "label_zh": "买入区", "action_zh": "买入"},
+    "RALLY ON":      {"label": "UPTREND",        "action": "HOLD",         "dir": "up",
+                      "label_zh": "上涨趋势", "action_zh": "持有"},
+    "TOP WATCH":     {"label": "NEARING A HIGH", "action": "TAKE PROFITS", "dir": "up",
+                      "label_zh": "接近高点", "action_zh": "止盈"},
+    "ROLLING OVER":  {"label": "TOPPING",        "action": "SELL SETUP",   "dir": "down",
+                      "label_zh": "做顶中", "action_zh": "卖出预备"},
+    # daily bottoming setup INSIDE a bearish higher-timeframe regime: a real
+    # bounce may come, but it's counter-trend and high-risk — never a "buy".
+    "COUNTERTREND BOUNCE": {"label": "COUNTER-TREND BOUNCE",
+                            "action": "HIGH-RISK · NIMBLE ONLY", "dir": "caution",
+                            "label_zh": "逆势反弹", "action_zh": "高风险 · 仅限灵活操作"},
 }
 
 # Daily-cycle phase -> plain-language descriptor (answers "are we overextended?")
@@ -375,8 +417,9 @@ def cycle_plain(cyc: dict) -> dict:
         "daily_phase": DC_PHASE_PLAIN.get(cyc.get("dc_phase"), ""),
     }
     if cyc.get("ic_week") is not None:
+        ic_lo, ic_hi = cyc.get("ic_band", IC_BAND_W)
         out["weekly_line"] = (f"Weekly (investor) cycle: week {cyc['ic_week']} of a typical "
-                              f"{IC_BAND_W[0]}–{IC_BAND_W[1]} weeks")
+                              f"{ic_lo}–{ic_hi} weeks")
         out["weekly_phase"] = IC_PHASE_PLAIN.get(cyc.get("ic_phase"), "")
     tr = cyc.get("translation")
     if tr == "left":
@@ -398,6 +441,12 @@ def entry_timing(state: str, cyc: dict, mtf: dict) -> dict:
     dc = cyc.get("dc_day", 0)
     btc = d.get("macd_bars_to_cross")
 
+    if state == "COUNTERTREND BOUNCE":
+        inval = cyc.get("cand_price") or cyc.get("dcl_price")
+        return {"tag": "BOUNCE — HIGH RISK", "urgency": "caution",
+                "text": "Counter-trend bounce inside a bearish bigger picture. For nimble "
+                        f"traders only — small size, tight stop below {inval}. If the daily "
+                        "low fails it cascades toward the larger cycle low; not an investment buy."}
     if state == "FRESH BUY":
         return {"tag": "BUY NOW", "urgency": "now",
                 "text": "Confirmed cycle low — the entry window is open now, "
@@ -440,15 +489,84 @@ def entry_timing(state: str, cyc: dict, mtf: dict) -> dict:
             "text": "Downtrend — stand aside until a new cycle low forms and confirms."}
 
 
+REGIME_DISPLAY = {
+    "bull": {"label": "BULLISH", "word": "with-trend"},
+    "neutral": {"label": "MIXED", "word": "no clear trend"},
+    "bear": {"label": "BEARISH", "word": "counter-trend"},
+}
+
+
+def regime_state(cyc: dict, mtf: dict) -> dict:
+    """The DOMINANT higher-timeframe context — bull / neutral / bear — built
+    from the weekly + 3-day MACD and the investor-cycle health. This is the
+    'regime' the daily-timeframe 'tactical' signal lives inside: a daily buy
+    setup means very different things in a bull vs a bear regime. Kept separate
+    so the UI can say 'short-term up, bigger picture down' instead of collapsing
+    a genuinely two-dimensional read into one misleading label."""
+    if not cyc:
+        return {"regime": "neutral", "score": 0.0, "why": ""}
+    w, t3 = mtf.get("W", {}), mtf.get("3D", {})
+    why = []
+    s = 0.0
+    # weekly momentum dominates
+    if w:
+        if w.get("macd_cross_dn"):
+            s -= 2.0; why.append("weekly momentum just crossed down")
+        elif w.get("macd_cross_up"):
+            s += 2.0; why.append("weekly momentum just crossed up")
+        elif w.get("macd_pos"):
+            s += 1.0; why.append("weekly momentum positive")
+            if w.get("macd_approaching_dn"):
+                s -= 0.5; why.append("but rolling toward a weekly cross-down")
+        elif w.get("macd_approaching_up"):
+            s += 0.5; why.append("weekly momentum curling up")
+        else:
+            s -= 1.0; why.append("weekly momentum negative")
+    # 3-day confirms / tempers
+    if t3:
+        if t3.get("macd_cross_dn"):
+            s -= 1.0; why.append("3-day crossed down")
+        elif t3.get("macd_cross_up"):
+            s += 1.0; why.append("3-day crossed up")
+        elif t3.get("macd_pos"):
+            s += 0.5
+        else:
+            s -= 0.5
+    # investor cycle health is the structural backbone
+    if cyc.get("ic_failed"):
+        s -= 2.0; why.append("investor cycle failed (broke its start low)")
+    icp = cyc.get("ic_phase")
+    if icp == "early":
+        s += 1.0
+    elif icp == "late":
+        s -= 1.0
+    elif icp == "overdue":
+        s -= 1.5; why.append("investor cycle overdue")
+    if cyc.get("translation") == "left":
+        s -= 1.0; why.append("last cycle left-translated (topped early)")
+    elif cyc.get("translation") == "right":
+        s += 0.5
+
+    regime = "bear" if s <= -1.5 else "bull" if s >= 1.5 else "neutral"
+    return {"regime": regime, "score": round(s, 1),
+            "label": REGIME_DISPLAY[regime]["label"], "why": "; ".join(why)}
+
+
 def ladder_state(cyc: dict, mtf: dict, early: dict | None = None) -> dict:
     """Combine cycle position + multi-timeframe indicators into one state,
-    with a plain next-step line. Weekly timeframe gates the daily signal."""
+    with a plain next-step line. The higher-timeframe regime (weekly + 3-day +
+    investor cycle) gates and can RE-LABEL the daily signal: a daily buy setup
+    inside a bearish regime is a counter-trend bounce, not a buy."""
     if not cyc or not mtf.get("D"):
         return {}
     early = early or {}
     d, w = mtf["D"], mtf.get("W", {})
-    weekly_ok = bool(w.get("macd_pos") or w.get("macd_approaching_up")) and not cyc["ic_failed"]
+    regime = regime_state(cyc, mtf)
+    # full conviction only in a bull regime; otherwise the daily setup is partial
+    weekly_ok = regime["regime"] == "bull"
 
+    lo_b, hi_b = cyc.get("dc_band", DC_BAND)
+    dc_early = cyc.get("dc_early", DC_EARLY)
     state, why, nxt = None, "", ""
     late = cyc["dc_phase"] in ("approaching_band", "in_band", "stretched")
     # a late-cycle decline hunts the NEXT low via the candidate trough
@@ -479,7 +597,7 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None) -> dict:
             nxt += f" Daily momentum is ~{d['macd_bars_to_cross']:.0f} bars from its bullish cross."
     elif late and not cyc["above_ma10"]:
         state = "BOTTOM WATCH"
-        why = (f"Day {cyc['dc_day']} of a typical {DC_BAND[0]}-{DC_BAND[1]}-day cycle — "
+        why = (f"Day {cyc['dc_day']} of a typical {lo_b}-{hi_b}-day cycle — "
                "inside the window where lows usually form"
                + (", and short-term momentum is washed out" if (d.get("rsi5") or 50) < 30 else "")
                + ". No confirmed turn yet.")
@@ -487,12 +605,12 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None) -> dict:
                "above the 10-day average.")
         if d.get("macd_approaching_up") and d.get("macd_bars_to_cross"):
             nxt += f" Daily momentum is ~{d['macd_bars_to_cross']:.0f} bars from a bullish cross."
-    elif d.get("macd_cross_dn") and not cyc["above_ma10"] and cyc["dc_day"] > DC_EARLY:
+    elif d.get("macd_cross_dn") and not cyc["above_ma10"] and cyc["dc_day"] > dc_early:
         state = "ROLLING OVER"
         why = "Daily momentum just crossed down and price lost its 10-day average mid-cycle."
         nxt = ("Trim or tighten stops; next likely support is the daily-cycle timing band "
-               f"(~day {DC_BAND[0]}-{DC_BAND[1]}, now day {cyc['dc_day']}).")
-    elif cyc["swing_low"] and cyc["dc_day"] <= DC_EARLY and cyc["above_ma10"] \
+               f"(~day {lo_b}-{hi_b}, now day {cyc['dc_day']}).")
+    elif cyc["swing_low"] and cyc["dc_day"] <= dc_early and cyc["above_ma10"] \
             and (d.get("macd_cross_up") or d.get("macd_pos")):
         state = "FRESH BUY" if weekly_ok else "TURN SIGNALED"
         why = (f"New daily cycle, day {cyc['dc_day']}: swing low in, price back above the "
@@ -522,13 +640,35 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None) -> dict:
                    "daily momentum cross down.")
     elif late and cyc["above_ma10"]:
         state = "TOP WATCH"
-        why = (f"Late in the daily cycle (day {cyc['dc_day']} of ~{DC_BAND[0]}-{DC_BAND[1]}) — "
+        why = (f"Late in the daily cycle (day {cyc['dc_day']} of ~{lo_b}-{hi_b}) — "
                "odds favor a dip into the next cycle low from here even with the trend intact.")
         nxt = "Let the next daily cycle low form before adding; watch for the swing-low setup."
     else:
         state = "RALLY ON" if cyc["above_ma10"] else "BOTTOM WATCH"
         why = "Mixed structure."
         nxt = "Watch the 10-day average and cycle-day count."
+
+    # ── Regime gate ─────────────────────────────────────────────────────────
+    # A bullish daily setup INSIDE a bearish higher-timeframe regime is a
+    # counter-trend bounce, not a buy. A failed daily cycle AND a failed
+    # investor cycle hard-caps it regardless of the regime score — a failed
+    # cycle can produce a bounce, never an investment buy.
+    bullish_tactical = state in ("FRESH BUY", "TURN SIGNALED")
+    hard_fail = bool(cyc.get("failed_cycle") and cyc.get("ic_failed"))
+    if bullish_tactical and (regime["regime"] == "bear" or hard_fail):
+        inval = cyc.get("cand_price") or cyc.get("dcl_price")
+        state = "COUNTERTREND BOUNCE"
+        why = ("Short-term, a daily bottoming setup is forming — but the bigger picture is "
+               "bearish (" + (regime["why"] or "weekly / investor timeframe pointing down")
+               + "). A bounce here is COUNTER-TREND: daily-cycle lows that don't line up with "
+                 "a weekly-cycle low tend to be left-translated and fail, then cascade toward "
+                 "the larger cycle low — exactly the trap of buying a daily low in a falling "
+                 "investor cycle."
+               + (" The daily cycle has already failed (broke its own start low)."
+                  if cyc.get("failed_cycle") else ""))
+        nxt = ("Nimble traders only — small size, tight stop below "
+               f"{inval}. Not an investment buy; wait for the weekly timeframe to actually "
+               "turn up (or a fresh investor-cycle low to confirm) before trusting it.")
 
     score = LADDER_SCORE[state]
     if cyc.get("translation") == "left":
@@ -541,7 +681,8 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None) -> dict:
     # without changing the calibrated state. A bullish early read in BOTTOM WATCH
     # nudges the score and re-frames the action toward "watch closely".
     early_note = ""
-    if early.get("dir") == "up" and state in ("BOTTOM WATCH", "TURN SIGNALED", "DECLINE"):
+    if early.get("dir") == "up" and state in ("BOTTOM WATCH", "TURN SIGNALED",
+                                              "DECLINE", "COUNTERTREND BOUNCE"):
         score += 12 if early.get("tier") == "anticipated" else 6
         early_note = ("⚡ Early reversal building (" + early["tier"] + "): "
                       + "; ".join(early["signals"]) + ". These anticipate a low BEFORE "
@@ -557,10 +698,34 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None) -> dict:
     plain = cycle_plain(cyc)
     entry = entry_timing(state, cyc, mtf)
 
+    # ── Two-axis summary: TACTICAL (this daily state) vs REGIME (bigger picture),
+    # plus how long the current move has been running ("ongoing" context).
+    reg = regime["regime"]
+    reg_word = REGIME_DISPLAY[reg]["word"]
+    bits = []
+    if cyc.get("ic_week") is not None:
+        bits.append(f"investor cycle week {cyc['ic_week']}")
+    if cyc.get("ic_failed"):
+        bits.append("failed")
+    if cyc.get("failed_age"):
+        bits.append(f"daily cycle broke its start low {cyc['failed_age']}d ago")
+    elif cyc.get("dc_day") is not None:
+        bits.append(f"daily cycle day {cyc['dc_day']}")
+    dur = " · ".join(bits)
+    regime_line = (f"Bigger picture: {REGIME_DISPLAY[reg]['label']}"
+                   + (f" — {regime['why']}" if regime.get("why") else "")
+                   + (f" ({dur})." if dur else "."))
+    tactical_label = disp["label"]
+    summary_line = (f"Short-term (daily): {tactical_label.lower()}. "
+                    f"Bigger picture ({reg_word}): {REGIME_DISPLAY[reg]['label'].lower()}.")
+
     # concise bullet points (the headline facts); full prose lives in `why`
     points = []
+    points.append(f"Bigger picture is {REGIME_DISPLAY[reg]['label'].lower()} "
+                  f"({reg_word} for a daily long)")
     if cyc.get("failed_cycle"):
-        points.append("⚠ Failed cycle — price broke below the low that began this cycle")
+        age = f" ({cyc['failed_age']}d ago)" if cyc.get("failed_age") else ""
+        points.append(f"⚠ Failed cycle — price broke below the low that began this cycle{age}")
     if cyc.get("swing_low") or cyc.get("cand_swing"):
         points.append("Swing low printed (buyers rejected the low)")
     points.append(("Back above" if cyc.get("above_ma10") else "Still below")
@@ -578,15 +743,19 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None) -> dict:
     return {"state": state, "label": disp["label"], "action": disp["action"],
             "dir": disp["dir"], "score": int(np.clip(score, -100, 100)),
             "why": why, "next": nxt, "weekly_ok": weekly_ok,
+            "regime": reg, "regime_label": REGIME_DISPLAY[reg]["label"],
+            "regime_why": regime.get("why", ""), "regime_score": regime.get("score"),
+            "regime_line": regime_line, "summary_line": summary_line,
             "points": points, "entry": entry, "cycle_plain": plain,
             "early_note": early_note,
             "early_tier": early.get("tier") if early_note else None,
             "early_dir": early.get("dir") if early_note else None}
 
 
-def analyze(close: pd.Series, high: pd.Series | None = None) -> dict:
-    cyc = cycle_state(close, high)
-    mtf = mtf_snapshot(close)
+def analyze(close: pd.Series, high: pd.Series | None = None,
+            kind: str = "equity") -> dict:
+    cyc = cycle_state(close, high, kind)
+    mtf = mtf_snapshot(close, kind)
     early = early_signals(close, cyc, mtf)
     lad = ladder_state(cyc, mtf, early)
     return {"cycle": cyc, "mtf": mtf, "early": early, "ladder": lad}
@@ -595,19 +764,24 @@ def analyze(close: pd.Series, high: pd.Series | None = None) -> dict:
 # ------------------------------------------------------------- calibration ----
 
 def calibrate_ladder(price_panel: dict[str, pd.Series], fwd: int = 21,
-                     step: int = 5) -> dict:
-    """Historical forward returns by ladder state. price_panel: name -> close.
-    Heavy-ish (re-evaluates state along history) — run by the validation
-    pipeline, cached to data/regime/ladder_calibration.json."""
+                     step: int = 5, dd_bad: float = -0.10) -> dict:
+    """Per-state forward record by ladder state. price_panel: name -> close.
+    Tracks BOTH endpoint return AND forward DRAWDOWN (max adverse excursion over
+    the next `fwd` days) — the drawdown lens is the honest one for risk states
+    (D43: avg return is U-shaped/misleading; the path matters), and is what
+    actually quantifies a counter-trend-bounce knife-catch. Heavy-ish
+    (re-evaluates state along history); cached to ladder_calibration.json."""
     # extra buckets isolate the pre-emptive layer's measured edge: the same
     # BOTTOM-WATCH context with vs without an early bullish read.
     extra = ["BOTTOM WATCH +early-bull", "BOTTOM WATCH no-early"]
-    buckets: dict[str, list[float]] = {s: [] for s in LADDER + extra}
+    # each bucket holds (endpoint_return, forward_drawdown) pairs
+    buckets: dict[str, list[tuple[float, float]]] = {s: [] for s in LADDER + extra}
     for name, close in price_panel.items():
         c = close.dropna()
         if len(c) < 600:
             continue
         fwd_ret = c.pct_change(fwd).shift(-fwd)
+        cv = c.to_numpy()
         # walk weekly through history; a trailing 600-day window is all the
         # cycle/indicator math needs and keeps the walk-forward tractable
         for i in range(300, len(c) - fwd, step):
@@ -615,6 +789,7 @@ def calibrate_ladder(price_panel: dict[str, pd.Series], fwd: int = 21,
             try:
                 cyc = cycle_state(sub)
                 mtf = {"D": _tf_state(sub),
+                       "3D": _tf_state(sub.resample("3B").last().dropna()),
                        "W": _tf_state(sub.resample("W-FRI").last().dropna())}
                 early = early_signals(sub, cyc, mtf)
                 st = ladder_state(cyc, mtf, early)
@@ -625,15 +800,24 @@ def calibrate_ladder(price_panel: dict[str, pd.Series], fwd: int = 21,
             v = fwd_ret.iloc[i]
             if pd.isna(v):
                 continue
-            buckets[st["state"]].append(float(v))
+            # forward max-drawdown = worst close-to-low over the next `fwd` days
+            dd = float(cv[i + 1: i + 1 + fwd].min() / cv[i] - 1.0)
+            rec = (float(v), dd)
+            buckets[st["state"]].append(rec)
             if st["state"] == "BOTTOM WATCH":
                 key = "BOTTOM WATCH +early-bull" if early.get("dir") == "up" \
                     else "BOTTOM WATCH no-early"
-                buckets[key].append(float(v))
+                buckets[key].append(rec)
     out = {}
     for s, vals in buckets.items():
         if len(vals) >= 40:
-            a = np.array(vals)
+            a = np.array([r for r, _ in vals])
+            dds = np.array([d for _, d in vals])
             out[s] = {"n": len(a), "hit_pct": round(100 * (a > 0).mean(), 1),
-                      "avg_fwd_pct": round(100 * a.mean(), 2)}
+                      "avg_fwd_pct": round(100 * a.mean(), 2),
+                      # drawdown lens: typical dip, bad-case (10th pctile) dip,
+                      # and how often the next month draws down past dd_bad
+                      "dd_med_pct": round(100 * float(np.median(dds)), 2),
+                      "dd_p10_pct": round(100 * float(np.percentile(dds, 10)), 2),
+                      "dd_bad_pct": round(100 * float((dds <= dd_bad).mean()), 1)}
     return out
