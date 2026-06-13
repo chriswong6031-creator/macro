@@ -173,12 +173,52 @@ def test_real_orientation_crosscheck():
         assert cj > 0.9, f"JPY-vs-USD (1/USDJPY) vs 1/DEXJPUS should track (corr={cj:.2f})"
 
 
+def test_calibrate_peg_mask_excises_zones():
+    from scripts import calibrate_forex as CAL
+    idx = _idx(120)
+    close = pd.Series(np.linspace(0.0060, 0.0067, 120), index=idx)   # USD/JPY canonical = 1/quote ~166..149
+    meta = {"invert": True, "peg": {"kind": "intervention", "watch": [150, 162]}}
+    m = CAL.peg_mask(close, meta)
+    quote = 1.0 / close
+    inzone = (quote >= 150) & (quote <= 162)
+    assert (~m[inzone]).all() and m[~inzone].all(), "intervention zone rows must be excised"
+    assert not CAL.peg_mask(close, {"peg": {"kind": "managed"}}).any(), "managed -> all excised"
+    assert CAL.peg_mask(close, {}).all(), "no peg -> all kept"
+
+
+def test_calibrate_pair_signs_inverted_and_normalizes():
+    """A factor that negatively predicts forward returns -> INVERTED + negative weight;
+    weights normalize to sum|w| = 1."""
+    from scripts import calibrate_forex as CAL
+    cal = config.load()["forex"]["calibration"]
+    idx = pd.date_range("2010-01-01", periods=3200, freq="B")   # spans the 2015 split boundary
+    rng = np.random.default_rng(11)
+    n = len(idx)
+    # persistent AR(1) factor x; future returns are DRIVEN negatively by it, so x[t]
+    # robustly anti-predicts forward returns at every horizon (an INVERTED factor).
+    x = np.zeros(n)
+    e = rng.normal(0, 0.3, n)
+    for i in range(1, n):
+        x[i] = 0.98 * x[i - 1] + e[i]
+    xs = pd.Series(np.tanh(x), index=idx)
+    r = (-0.4 * xs.shift(1)).fillna(0.0) + rng.normal(0, 0.002, n)
+    close = np.exp(pd.Series(r, index=idx).cumsum())
+    sig = pd.DataFrame({"close": close, "ts_momentum": xs, "structure": 0.0,
+                        "risk_index": 50.0, "carry_score": 0.0, "riskoff": 0.0,
+                        "shock_z": 0.0}, index=idx)
+    out = CAL.calibrate_pair("X", sig, {"base": "X", "invert": False}, cal)
+    assert abs(sum(abs(w) for w in out["weights"].values()) - 1.0) < 1e-6, "weights must sum-|w| to 1"
+    assert out["signals"]["trend"]["verdict"] == "INVERTED"
+    assert out["weights"]["trend"] < 0, "INVERTED factor must carry a negative (sign-flipped) weight"
+
+
 if __name__ == "__main__":
     for fn in [test_orthogonalize_strips_dollar_beta, test_carry_sign_and_vol_penalty,
                test_riskoff_factor_archetype_sign, test_factor_panel_naive_bullish_bounds,
                test_conviction_bounds_action_and_framing, test_conviction_peg_intervention_caps,
                test_conviction_managed_forces_flat, test_em_carry_context_has_no_carry_factor,
-               test_dollar_master_regime_is_valid_and_dir_matches, test_real_orientation_crosscheck]:
+               test_dollar_master_regime_is_valid_and_dir_matches, test_real_orientation_crosscheck,
+               test_calibrate_peg_mask_excises_zones, test_calibrate_pair_signs_inverted_and_normalizes]:
         fn()
         print(f"PASS {fn.__name__}")
     print("all forex engine tests passed")

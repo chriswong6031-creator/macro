@@ -11,21 +11,21 @@
       "quote": 1.1573,
       "chg": -1.2,
       "action": "FLAT",
-      "score": -0.2
+      "score": 14.3
     },
     "USDJPY": {
       "label": "USD/JPY",
       "quote": 160.185,
       "chg": 1.1,
       "action": "SHORT",
-      "score": -37.6
+      "score": -40.0
     },
     "AUDUSD": {
       "label": "AUD/USD",
       "quote": 0.7049,
       "chg": -2.3,
       "action": "FLAT",
-      "score": 17.9
+      "score": 0.5
     }
   }
 }

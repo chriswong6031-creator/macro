@@ -95,6 +95,22 @@ reference per pair (and `1/USDJPY` vs `1/DEXJPUS` for inverted pairs).
 outage) — positioning populates on the next successful collect; REER value + real-rate
 factors + the full pair board + MTF + alerts are Phase 3.
 
+**D-FX7. Phase 2 calibration is PRIOR-ANCHORED, not raw-IC (the overfitting guard).**
+`calibrate_forex.py` measures each naive-bullish factor's Spearman IC vs forward
+base-vs-USD returns over [21,63,126]d, split-half (split 2015), peg windows excised.
+First attempt = raw IC weights → a single weak factor (AUDUSD `risk`, |IC|=0.09) ballooned
+to 87% of the weight after normalization, and noise-level ICs (|0.03|) got labeled
+CONFIRMED. That's exactly the short-FX-history overfit the review warned about. So the
+shipped method keeps the STABLE prior magnitude and uses measurement only to (a) flip the
+sign of robustly-INVERTED factors (same sign both halves, |IC|≥0.06), (b) halve
+DIRECTIONAL ones, (c) down-weight CONTEXT to 0.25× prior. `score_reliable` (lifts the
+×0.6 confidence damp) requires ≥2 robust factors — the active EUR/JPY/AUD each have only 1,
+so they stay dampened (honest). Findings that survived: USD/JPY trend CONFIRMED (yen
+trends), GBP riskoff CONFIRMED (pro-cyclical), carry INVERTED across EUR/GBP/CAD/CHF (the
+forward-premium puzzle). The score is scale-invariant (100·Σwf/Σ|w|) so only relative
+weights matter. Caveat that remains: a Gaussian split-half can't price the carry crash
+tail (LIMITATIONS.md) — verdicts are honest over-this-sample, not regime-proof.
+
 ## 2026-06-13 — Section 4 (HK) enrichment: native features ported from China/US
 
 After a verified viability research pass (4-cluster workflow + web checks), added the

@@ -1,0 +1,463 @@
+{
+  "meta": {
+    "split": "2015-01-01",
+    "horizons": [
+      21,
+      63,
+      126
+    ],
+    "note": "IC = Spearman rank corr of naive-bullish factor vs forward base-vs-USD return; peg windows excised."
+  },
+  "assets": {
+    "EURUSD": {
+      "span": "2004-01-01..2026-06-12",
+      "rows": 5823,
+      "weights": {
+        "trend": -0.3761,
+        "structure": 0.0427,
+        "carry": -0.1709,
+        "riskoff": 0.1538,
+        "positioning": 0.1709,
+        "risk": 0.0513,
+        "shock": 0.0342
+      },
+      "score_reliable": false,
+      "signals": {
+        "trend": {
+          "verdict": "INVERTED",
+          "ic_full": -0.069,
+          "ic_pre": -0.073,
+          "ic_post": -0.056
+        },
+        "structure": {
+          "verdict": "CONTEXT",
+          "ic_full": 0.03,
+          "ic_pre": 0.048,
+          "ic_post": -0.008
+        },
+        "carry": {
+          "verdict": "DIRECTIONAL",
+          "ic_full": -0.121,
+          "ic_pre": -0.217,
+          "ic_post": 0.01
+        },
+        "riskoff": {
+          "verdict": "DIRECTIONAL",
+          "ic_full": 0.052,
+          "ic_pre": 0.032,
+          "ic_post": 0.086
+        },
+        "positioning": {
+          "verdict": "UNMEASURED",
+          "ic_full": null,
+          "ic_pre": null,
+          "ic_post": null
+        },
+        "risk": {
+          "verdict": "CONTEXT",
+          "ic_full": -0.014,
+          "ic_pre": 0.01,
+          "ic_post": -0.067
+        },
+        "shock": {
+          "verdict": "CONTEXT",
+          "ic_full": -0.0,
+          "ic_pre": -0.031,
+          "ic_post": 0.016
+        }
+      }
+    },
+    "USDJPY": {
+      "span": "2004-01-01..2026-06-13",
+      "rows": 5824,
+      "weights": {
+        "trend": 0.3761,
+        "structure": 0.0427,
+        "carry": 0.0855,
+        "riskoff": 0.1538,
+        "positioning": 0.1709,
+        "risk": -0.1026,
+        "shock": 0.0684
+      },
+      "score_reliable": false,
+      "signals": {
+        "trend": {
+          "verdict": "CONFIRMED",
+          "ic_full": 0.156,
+          "ic_pre": 0.217,
+          "ic_post": 0.048
+        },
+        "structure": {
+          "verdict": "CONTEXT",
+          "ic_full": -0.004,
+          "ic_pre": 0.003,
+          "ic_post": -0.018
+        },
+        "carry": {
+          "verdict": "CONTEXT",
+          "ic_full": -0.017,
+          "ic_pre": -0.104,
+          "ic_post": 0.035
+        },
+        "riskoff": {
+          "verdict": "DIRECTIONAL",
+          "ic_full": 0.049,
+          "ic_pre": 0.077,
+          "ic_post": 0.019
+        },
+        "positioning": {
+          "verdict": "UNMEASURED",
+          "ic_full": null,
+          "ic_pre": null,
+          "ic_post": null
+        },
+        "risk": {
+          "verdict": "DIRECTIONAL",
+          "ic_full": -0.049,
+          "ic_pre": -0.147,
+          "ic_post": 0.069
+        },
+        "shock": {
+          "verdict": "DIRECTIONAL",
+          "ic_full": 0.042,
+          "ic_pre": 0.095,
+          "ic_post": 0.0
+        }
+      }
+    },
+    "AUDUSD": {
+      "span": "2006-05-16..2026-06-13",
+      "rows": 5223,
+      "weights": {
+        "trend": 0.1325,
+        "structure": 0.0602,
+        "carry": 0.1205,
+        "riskoff": 0.1084,
+        "positioning": 0.241,
+        "risk": -0.2892,
+        "shock": 0.0482
+      },
+      "score_reliable": false,
+      "signals": {
+        "trend": {
+          "verdict": "CONTEXT",
+          "ic_full": 0.017,
+          "ic_pre": 0.045,
+          "ic_post": -0.029
+        },
+        "structure": {
+          "verdict": "CONTEXT",
+          "ic_full": -0.007,
+          "ic_pre": 0.036,
+          "ic_post": -0.083
+        },
+        "carry": {
+          "verdict": "CONTEXT",
+          "ic_full": 0.004,
+          "ic_pre": -0.249,
+          "ic_post": 0.021
+        },
+        "riskoff": {
+          "verdict": "CONTEXT",
+          "ic_full": -0.027,
+          "ic_pre": -0.011,
+          "ic_post": -0.026
+        },
+        "positioning": {
+          "verdict": "UNMEASURED",
+          "ic_full": null,
+          "ic_pre": null,
+          "ic_post": null
+        },
+        "risk": {
+          "verdict": "INVERTED",
+          "ic_full": -0.091,
+          "ic_pre": -0.152,
+          "ic_post": -0.06
+        },
+        "shock": {
+          "verdict": "CONTEXT",
+          "ic_full": 0.003,
+          "ic_pre": 0.1,
+          "ic_post": -0.069
+        }
+      }
+    },
+    "GBPUSD": {
+      "span": "2004-01-01..2026-06-12",
+      "rows": 5835,
+      "weights": {
+        "trend": -0.2543,
+        "structure": 0.0289,
+        "carry": -0.2312,
+        "riskoff": 0.2081,
+        "positioning": 0.1156,
+        "risk": -0.1387,
+        "shock": 0.0231
+      },
+      "score_reliable": true,
+      "signals": {
+        "trend": {
+          "verdict": "INVERTED",
+          "ic_full": -0.088,
+          "ic_pre": -0.115,
+          "ic_post": -0.068
+        },
+        "structure": {
+          "verdict": "CONTEXT",
+          "ic_full": -0.022,
+          "ic_pre": 0.01,
+          "ic_post": -0.054
+        },
+        "carry": {
+          "verdict": "INVERTED",
+          "ic_full": -0.161,
+          "ic_pre": -0.307,
+          "ic_post": -0.109
+        },
+        "riskoff": {
+          "verdict": "CONFIRMED",
+          "ic_full": 0.109,
+          "ic_pre": 0.131,
+          "ic_post": 0.089
+        },
+        "positioning": {
+          "verdict": "UNMEASURED",
+          "ic_full": null,
+          "ic_pre": null,
+          "ic_post": null
+        },
+        "risk": {
+          "verdict": "INVERTED",
+          "ic_full": -0.067,
+          "ic_pre": -0.015,
+          "ic_post": -0.122
+        },
+        "shock": {
+          "verdict": "CONTEXT",
+          "ic_full": -0.035,
+          "ic_pre": -0.015,
+          "ic_post": -0.048
+        }
+      }
+    },
+    "USDCAD": {
+      "span": "2004-01-01..2026-06-13",
+      "rows": 5839,
+      "weights": {
+        "trend": 0.0846,
+        "structure": -0.0769,
+        "carry": -0.3077,
+        "riskoff": 0.0692,
+        "positioning": 0.1538,
+        "risk": -0.1846,
+        "shock": -0.1231
+      },
+      "score_reliable": true,
+      "signals": {
+        "trend": {
+          "verdict": "CONTEXT",
+          "ic_full": 0.037,
+          "ic_pre": 0.15,
+          "ic_post": -0.184
+        },
+        "structure": {
+          "verdict": "DIRECTIONAL",
+          "ic_full": -0.046,
+          "ic_pre": 0.036,
+          "ic_post": -0.166
+        },
+        "carry": {
+          "verdict": "INVERTED",
+          "ic_full": -0.203,
+          "ic_pre": -0.345,
+          "ic_post": -0.148
+        },
+        "riskoff": {
+          "verdict": "CONTEXT",
+          "ic_full": 0.013,
+          "ic_pre": 0.054,
+          "ic_post": -0.029
+        },
+        "positioning": {
+          "verdict": "UNMEASURED",
+          "ic_full": null,
+          "ic_pre": null,
+          "ic_post": null
+        },
+        "risk": {
+          "verdict": "INVERTED",
+          "ic_full": -0.069,
+          "ic_pre": -0.039,
+          "ic_post": -0.104
+        },
+        "shock": {
+          "verdict": "INVERTED",
+          "ic_full": -0.114,
+          "ic_pre": -0.122,
+          "ic_post": -0.118
+        }
+      }
+    },
+    "USDCHF": {
+      "span": "2004-01-01..2026-06-13",
+      "rows": 5837,
+      "weights": {
+        "trend": -0.2543,
+        "structure": -0.1156,
+        "carry": -0.2312,
+        "riskoff": 0.052,
+        "positioning": 0.1156,
+        "risk": -0.1387,
+        "shock": -0.0925
+      },
+      "score_reliable": true,
+      "signals": {
+        "trend": {
+          "verdict": "INVERTED",
+          "ic_full": -0.156,
+          "ic_pre": -0.169,
+          "ic_post": -0.139
+        },
+        "structure": {
+          "verdict": "INVERTED",
+          "ic_full": -0.121,
+          "ic_pre": -0.077,
+          "ic_post": -0.177
+        },
+        "carry": {
+          "verdict": "INVERTED",
+          "ic_full": -0.073,
+          "ic_pre": -0.045,
+          "ic_post": -0.15
+        },
+        "riskoff": {
+          "verdict": "CONTEXT",
+          "ic_full": -0.034,
+          "ic_pre": -0.02,
+          "ic_post": -0.058
+        },
+        "positioning": {
+          "verdict": "UNMEASURED",
+          "ic_full": null,
+          "ic_pre": null,
+          "ic_post": null
+        },
+        "risk": {
+          "verdict": "INVERTED",
+          "ic_full": -0.073,
+          "ic_pre": -0.053,
+          "ic_post": -0.108
+        },
+        "shock": {
+          "verdict": "INVERTED",
+          "ic_full": -0.14,
+          "ic_pre": -0.057,
+          "ic_post": -0.204
+        }
+      }
+    },
+    "USDMXN": {
+      "span": "2004-01-01..2026-06-13",
+      "rows": 5845,
+      "weights": {
+        "trend": -0.3308,
+        "structure": -0.1504,
+        "riskoff": 0.0677,
+        "positioning": 0.1504,
+        "risk": -0.1805,
+        "shock": -0.1203
+      },
+      "score_reliable": true,
+      "signals": {
+        "trend": {
+          "verdict": "INVERTED",
+          "ic_full": -0.081,
+          "ic_pre": -0.178,
+          "ic_post": -0.053
+        },
+        "structure": {
+          "verdict": "INVERTED",
+          "ic_full": -0.096,
+          "ic_pre": -0.146,
+          "ic_post": -0.062
+        },
+        "riskoff": {
+          "verdict": "CONTEXT",
+          "ic_full": -0.019,
+          "ic_pre": 0.007,
+          "ic_post": -0.051
+        },
+        "positioning": {
+          "verdict": "UNMEASURED",
+          "ic_full": null,
+          "ic_pre": null,
+          "ic_post": null
+        },
+        "risk": {
+          "verdict": "INVERTED",
+          "ic_full": -0.107,
+          "ic_pre": -0.127,
+          "ic_post": -0.097
+        },
+        "shock": {
+          "verdict": "INVERTED",
+          "ic_full": -0.086,
+          "ic_pre": -0.104,
+          "ic_post": -0.079
+        }
+      }
+    },
+    "USDBRL": {
+      "span": "2004-01-01..2026-06-13",
+      "rows": 5406,
+      "weights": {
+        "trend": 0.2619,
+        "structure": 0.0595,
+        "riskoff": 0.1071,
+        "positioning": 0.2381,
+        "risk": -0.2857,
+        "shock": 0.0476
+      },
+      "score_reliable": false,
+      "signals": {
+        "trend": {
+          "verdict": "DIRECTIONAL",
+          "ic_full": 0.064,
+          "ic_pre": 0.145,
+          "ic_post": -0.01
+        },
+        "structure": {
+          "verdict": "CONTEXT",
+          "ic_full": 0.028,
+          "ic_pre": 0.032,
+          "ic_post": 0.018
+        },
+        "riskoff": {
+          "verdict": "CONTEXT",
+          "ic_full": -0.036,
+          "ic_pre": -0.074,
+          "ic_post": 0.003
+        },
+        "positioning": {
+          "verdict": "UNMEASURED",
+          "ic_full": null,
+          "ic_pre": null,
+          "ic_post": null
+        },
+        "risk": {
+          "verdict": "INVERTED",
+          "ic_full": -0.093,
+          "ic_pre": -0.076,
+          "ic_post": -0.119
+        },
+        "shock": {
+          "verdict": "CONTEXT",
+          "ic_full": -0.002,
+          "ic_pre": -0.007,
+          "ic_post": 0.001
+        }
+      }
+    }
+  }
+}

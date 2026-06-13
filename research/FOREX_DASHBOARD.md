@@ -109,9 +109,12 @@ fx_rates_short,fx_rates_long,fx_reer}`, `fred.series.credit.BAMLEMCBPIOAS`, and
 - **Phase 1 — dollar master + 3-pair board** ✅ — EUR/USD, USD/JPY, AUD/USD; dollar-smile
   hero; risk-context conviction; orthogonalization; carry; peg override; bilingual page;
   10 FX tests (136 total green). Un-calibrated (prior weights, dampened confidence).
-- **Phase 2 — calibration** — `calibrate_forex.py`: split-half (split 2015) forward-return
-  ranking → signed measured weights + CONFIRMED/DIRECTIONAL/INVERTED/CONTEXT verdicts +
-  hit/whipsaw rates; excise peg windows.
+- **Phase 2 — calibration** ✅ — `calibrate_forex.py`: split-half (split 2015) Spearman-IC
+  of each factor vs forward base-vs-USD returns, peg windows excised → PRIOR-ANCHORED
+  signed weights (flip robustly-INVERTED, halve DIRECTIONAL, down-weight CONTEXT — NOT raw
+  IC, which overfits) + per-factor verdict glyphs on the page. `score_reliable` needs ≥2
+  robust factors; report in `reports/forex-calibration.md`. Findings: USD/JPY trend
+  CONFIRMED, GBP riskoff CONFIRMED, carry INVERTED (forward-premium puzzle). See D-FX7.
 - **Phase 3 — full board + depth** — GBP/CAD/CHF + EM tiles; REER value + real-rate
   factors; MTF confluence; alerts/timeline; carry + positioning tables.
 - **Phase 4 — integration** — cross-page nav links + hub card across all sections;

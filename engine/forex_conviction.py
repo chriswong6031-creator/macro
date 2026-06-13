@@ -139,7 +139,9 @@ def conviction(pair: str, sig: pd.DataFrame, meta: dict, calib: dict | None = No
             return {}
         calib = calib if calib is not None else load_calibration()
         acal = calib.get("assets", {}).get(pair, {}) or {}
-        reliable = acal.get("score_reliable", False)          # no calibration yet in Phase 1
+        reliable = acal.get("score_reliable", False)          # un-calibrated -> False
+        sig_verdicts = acal.get("signals", {}) or {}
+        calibrated = bool(acal)
         weights = asset_weights(pair, meta, calib)
         base = meta.get("base", pair)
 
@@ -161,7 +163,8 @@ def conviction(pair: str, sig: pd.DataFrame, meta: dict, calib: dict | None = No
                          "group": FX_FACTOR_GROUP.get(k, "Other"),
                          "value": round(v, 3), "weight": round(w, 3),
                          "contribution": round(contrib, 4),
-                         "reading": r_en, "reading_zh": r_zh})
+                         "reading": r_en, "reading_zh": r_zh,
+                         "verdict": (sig_verdicts.get(k, {}) or {}).get("verdict")})
         if den == 0:
             return {}
         score = float(np.clip(100.0 * num / den, -100, 100))
@@ -210,6 +213,7 @@ def conviction(pair: str, sig: pd.DataFrame, meta: dict, calib: dict | None = No
         return {
             "score": round(score, 1), "action": fx_en, "action_zh": fx_zh, "action_css": fx_css,
             "stance": stance, "confidence": confidence, "reliable": bool(reliable),
+            "calibrated": calibrated,
             "factors": rows, "groups": group_list, "cycle": cyc,
             "headline": head, "headline_zh": head_zh, "sub": sub, "sub_zh": sub_zh,
             "framing": FRAMING[0], "framing_zh": FRAMING[1],

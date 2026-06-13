@@ -94,8 +94,14 @@ html[data-theme="dark"] .verdict-box{background:#11151c}
 .framing{font-size:12px;color:var(--faint);margin-top:8px;font-style:italic}
 /* factor breakdown */
 .fgrp{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:12px 0 6px}
-.frow{display:grid;grid-template-columns:128px 1fr 52px;align-items:center;gap:10px;margin:5px 0;font-size:12.5px}
-.flabel{color:var(--text)}.fwt{color:var(--faint);text-align:right;font-variant-numeric:tabular-nums}
+.frow{display:grid;grid-template-columns:124px 1fr 58px;align-items:center;gap:10px;margin:5px 0;font-size:12.5px}
+.flabel{color:var(--text)}.fwt{color:var(--faint);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.vg{font-weight:700;margin-left:4px;font-size:12px}
+.vg.confirmed{color:var(--green)}.vg.inverted{color:var(--indigo)}.vg.directional{color:#9a6a10}.vg.context,.vg.unmeasured{color:var(--faint)}
+.calbadge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:600;margin-left:6px}
+.calbadge.on{background:rgba(26,127,67,.12);color:var(--green)}
+.calbadge.soft{background:#eef1f6;color:var(--muted)}
+html[data-theme="dark"] .calbadge.soft{background:#222732}
 .fbar{position:relative;height:14px;background:#eef1f6;border-radius:7px;overflow:hidden}
 html[data-theme="dark"] .fbar{background:#222732}
 .fbar .mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--faint);opacity:.5}
@@ -197,6 +203,8 @@ table.tbl th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:
         <div class="rc-head"><span class="l-en">{{ c.headline }}</span><span class="l-zh">{{ c.headline_zh }}</span></div>
         <span class="chip {{ c.action_css }}">{{ t(c.action, c.action_zh) }}</span>
         <span class="score-n">{{ t('score', '评分') }} {{ '%+.0f'|format(c.score) }} · {{ t('confidence', '信心') }} {{ '%.0f'|format(c.confidence*100) }}%</span>
+        {% if c.reliable %}<span class="calbadge on" title="≥2 factors held sign in both halves">{{ t('measured', '已校准') }}</span>
+        {% elif c.calibrated %}<span class="calbadge soft" title="weights measured but <2 robust factors; confidence dampened">{{ t('measured signs · dampened', '已测符号 · 折减') }}</span>{% endif %}
         <div class="sub" style="margin-top:8px"><span class="l-en">{{ c.sub }}</span><span class="l-zh">{{ c.sub_zh }}</span></div>
         {% if c.peg %}<span class="flag warn">⚑ <span class="l-en">{{ c.peg.note[0] }}</span><span class="l-zh">{{ c.peg.note[1] }}</span></span>{% endif %}
         <div class="framing"><span class="l-en">{{ c.framing }}</span><span class="l-zh">{{ c.framing_zh }}</span></div>
@@ -208,7 +216,7 @@ table.tbl th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:
         <div class="frow">
           <span class="flabel">{{ t(r.label, r.label_zh) }}</span>
           {{ fbar(r.value) }}
-          <span class="fwt">×{{ '%.2f'|format(r.weight) }}</span>
+          <span class="fwt">×{{ '%.2f'|format(r.weight) }}{% if r.verdict %}<span class="vg {{ r.verdict.split()[0]|lower }}" title="{{ r.verdict }}">{{ {'CONFIRMED':'✓','INVERTED':'⇄','DIRECTIONAL':'~','CONTEXT':'·','UNMEASURED':'–'}.get(r.verdict,'') }}</span>{% endif %}</span>
         </div>
         {% endfor %}
       {% endfor %}
@@ -234,10 +242,10 @@ table.tbl th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:
     <h2>{{ t('How to read this · and what it is not', '如何解读 · 以及它不是什么') }}</h2>
     <div class="note">
       <p>{{ t('Each pair is scored by a multi-factor conviction engine — the same machinery as the Commodity Vector — over its DOLLAR-ORTHOGONALIZED residual: trend &amp; structure (idiosyncratic, ex-dollar), carry (foreign minus US short rate, vol-penalized), risk appetite (the global risk-off composite times the currency\'s archetype beta — havens rally, risk currencies fall in stress), the per-pair risk index, residual shocks, and COT positioning when available. The score maps to a LONG / SHORT / FLAT bias on the BASE currency vs USD.', '每个货币对由一个多因子信心引擎评分 — 与大宗商品向量同一套机制 — 基于其剥离美元后的残差：趋势与结构（特异、去美元）、套息（外币减美国短端利率，按波动折减）、风险偏好（全球避险综合乘以货币原型贝塔 — 避险货币上涨、风险货币在压力下下跌）、单货币对风险指数、残差冲击，以及（可用时）COT持仓。评分映射为基础货币对美元的做多/做空/观望倾向。') }}</p>
-      <p><b>{{ t('Honesty bar.', '诚信底线。') }}</b> {{ t('FX violates uncovered interest parity (the carry "puzzle"), and carry has fat-tailed crash risk that clusters with equity crises (1998 / 2008 / 2015 / 2020 / 2024). So these are RISK-CONTEXT reads, not trade signals or measured alpha. This is Phase 1: it ships BEFORE split-half calibration, so weights are a documented prior and confidence is deliberately dampened. Pegs &amp; intervention zones (USD/JPY MoF, SNB, managed USD/CNH) cap or flatten the verdict.', '外汇违反无抛补利率平价（套息“谜题”），且套息具有与股市危机同步聚集的肥尾崩盘风险（1998/2008/2015/2020/2024）。因此这些是风险背景解读，而非交易信号或已测得的超额收益。这是第一阶段：在前后半段校准之前发布，故权重为有据的先验，信心被刻意压低。挂钩与干预区间（美元/日元财务省、瑞士央行、受管理的美元/离岸人民币）会限制或抹平结论。') }}</p>
+      <p><b>{{ t('Honesty bar.', '诚信底线。') }}</b> {{ t('FX violates uncovered interest parity (the carry "puzzle"), and carry has fat-tailed crash risk that clusters with equity crises (1998 / 2008 / 2015 / 2020 / 2024). So these are RISK-CONTEXT reads, not trade signals or measured alpha. Weights are MEASURED by split-half forward-return calibration (Spearman IC, split 2015, peg windows excised) — the glyph on each factor marks its verdict: ✓ CONFIRMED (held sign in both halves), ⇄ INVERTED (robustly predicts the opposite — e.g. the carry forward-premium puzzle), ~ DIRECTIONAL (full sample only), · CONTEXT (weak). Most FX factors land DIRECTIONAL or CONTEXT, so confidence stays dampened until a pair has ≥2 robust factors. Pegs &amp; intervention zones (USD/JPY MoF, SNB, managed USD/CNH) cap or flatten the verdict.', '外汇违反无抛补利率平价（套息“谜题”），且套息具有与股市危机同步聚集的肥尾崩盘风险（1998/2008/2015/2020/2024）。因此这些是风险背景解读，而非交易信号或已测得的超额收益。权重由前后半段远期收益校准测得（Spearman IC，2015分割，剔除挂钩窗口）— 每个因子的字形标注其判定：✓ 已确认（两半段同号）、⇄ 反向（稳健预测相反方向，如套息远期溢价之谜）、~ 有方向（仅全样本）、· 背景（弱）。多数外汇因子落入有方向或背景，故在某货币对具备≥2个稳健因子前信心保持折减。挂钩与干预区间（美元/日元财务省、瑞士央行、受管理的美元/离岸人民币）会限制或抹平结论。') }}</p>
       <p><b>{{ t('Data.', '数据。') }}</b> {{ t('Free / keyless: Yahoo FX spot, FRED policy &amp; short rates + broad-dollar legs, CFTC Commitments of Traders.', '免费/无密钥：Yahoo外汇即期、FRED政策与短端利率+广义美元分项、CFTC交易商持仓报告。') }}
       {% if not cot_ok %}<span class="flag info">ℹ {{ t('COT positioning is temporarily unavailable (CFTC endpoint outage); it populates on the next successful collection.', 'COT持仓暂不可用（CFTC接口故障）；将在下次成功采集时填充。') }}</span>{% endif %}</p>
-      <p class="meta-foot">{{ t('Coming next: split-half calibration (measured signed weights + confidence), REER value &amp; real-rate factors, the full pair board (GBP, CAD, CHF, EM tiles), positioning + carry tables, MTF confluence, and an alert timeline.', '后续：前后半段校准（已测得的带符号权重+信心）、REER估值与实际利率因子、完整货币对面板（英镑、加元、瑞郎、新兴市场）、持仓+套息表、多周期共振、警报时间线。') }}</p>
+      <p class="meta-foot">{{ t('Coming next: REER value &amp; real-rate factors, the full pair board (GBP, CAD, CHF, EM tiles), positioning + carry tables, MTF confluence, and an alert timeline.', '后续：REER估值与实际利率因子、完整货币对面板（英镑、加元、瑞郎、新兴市场）、持仓+套息表、多周期共振、警报时间线。') }}</p>
       <p class="meta-foot">{{ t('History', '历史') }} {{ cal_span }} · {{ t('built', '构建于') }} {{ built }}</p>
     </div>
   </div>

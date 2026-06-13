@@ -371,9 +371,17 @@ Forex Vector` entry in DECISIONS.md.
   FLAT); `USD/JPY` near the MoF zone (≈150–162) is capped; `USD/CHF` carries 2015 SNB
   gap risk. Backtests over peg eras are unrepresentative; Phase-2 calibration must
   excise those windows or it will confirm a dangerously high carry weight.
-- **Phase 1 is un-calibrated.** Weights are a documented prior and confidence is
-  dampened ×0.6 (`score_reliable=False`). Verdicts are regime/risk-context reads, not
-  measured forward-return strength, until `calibrate_forex` runs.
+- **Calibration is deliberately conservative.** `calibrate_forex` measures each
+  factor's Spearman IC vs forward base-vs-USD returns, split-half (split 2015), peg
+  windows excised. It does NOT replace the prior with raw-IC weights (that overfits
+  short FX history and lets one noisy factor dominate) — it keeps the stable prior
+  magnitude and uses the measurement only to FLIP signs of robustly-INVERTED factors
+  and down-weight unstable ones. FX ICs are tiny (|IC| below ~0.04 is noise), so most
+  factors land DIRECTIONAL/CONTEXT; a pair shows full confidence only with ≥2 factors
+  that held sign in both halves — otherwise confidence stays dampened ×0.6. The
+  measured carry sign comes out INVERTED for several pairs (the forward-premium
+  puzzle), which is honest for this sample but horizon/regime-dependent. A Gaussian
+  split-half still cannot fully price the carry crash tail — see the carry note above.
 - **Carry data is coarse and partial.** No free clean daily cross-currency 2y exists,
   so carry uses policy/short rates (some monthly, lagged 2–5 months). This is fine for
   step-function policy rates (ffill is correct) but means carry is slow; EM (MXN/BRL/
