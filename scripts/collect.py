@@ -51,6 +51,10 @@ def all_adapters() -> dict:
         ("china_macro", "collectors.china_macro", "ChinaMacroAdapter"),
         ("china_breadth", "collectors.china_breadth", "ChinaBreadthAdapter"),
         ("china_universe", "collectors.china_universe", "ChinaUniverseAdapter"),  # broad A-share SEARCH set (decoupled from breadth)
+        ("china_margin", "collectors.china_margin", "ChinaMarginAdapter"),     # 融资融券 crowd meter
+        ("china_connect", "collectors.china_connect", "ChinaConnectAdapter"),  # 沪深港通 flows (repairs connect_flow)
+        ("china_flows", "collectors.china_flows", "ChinaFlowsAdapter"),        # AH premium / limit-up / ETF shares
+        ("china_credit", "collectors.china_credit", "ChinaCreditAdapter"),     # 社融 TSF (mofcom, legacy-SSL)
         # Hong Kong / Hang Seng dashboard — see research/HK_DATA_AUDIT.md
         # (macro is reused from china_macro; HK only adds prices + breadth)
         ("hk_prices", "collectors.hk_prices", "HkPriceAdapter"),

@@ -18,11 +18,15 @@
     var n = parseFloat(m);
     return isFinite(n) ? n : null;
   }
+  function headerRow(table) {
+    // a real <thead> wins; otherwise the first tbody row is the header (legacy tables)
+    return (table.tHead && table.tHead.rows[0]) || (table.tBodies[0] && table.tBodies[0].rows[0]);
+  }
   function dataRows(table) {
     var body = table.tBodies[0];
     if (!body) return [];
     var rows = Array.prototype.slice.call(body.rows);
-    return rows.slice(1); // row 0 is the header
+    return table.tHead ? rows : rows.slice(1); // <thead> → every tbody row is data; else row 0 is the header
   }
   function isNumericCol(rows, i) {
     var seen = 0;
@@ -56,7 +60,7 @@
   }
 
   function enhance(table) {
-    var header = table.tBodies[0] && table.tBodies[0].rows[0];
+    var header = headerRow(table);
     if (!header) return;
     var rows = dataRows(table);
 
@@ -114,11 +118,14 @@
     input.addEventListener('input', apply);
   }
 
-  document.addEventListener('DOMContentLoaded', function () {
+  function initAll() {
     Array.prototype.forEach.call(document.querySelectorAll('table'), function (t) {
       if (t.closest('.tip')) return;           // skip tooltip tables
       if (dataRows(t).length < 2) return;       // nothing to sort
       enhance(t);
     });
-  });
+  }
+  // run now if the DOM is already parsed (script added late / bfcache), else wait
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initAll);
+  else initAll();
 })();
