@@ -198,6 +198,71 @@
   details.howto div { background: var(--panel2); border-radius: 8px; padding: 12px 14px;
                       margin-top: 8px; font-size: 13px; line-height: 1.6; }
   ul.compact { margin: 4px 0; padding-left: 18px; } ul.compact li { margin: 3px 0; }
+
+  /* ---- Regime Time Machine -------------------------------------------------- */
+  #time-machine .tm-wrap { position: relative; margin: 4px 0 2px; }
+  .tm-canvas { display: block; width: 100%; height: 56px; cursor: ew-resize;
+               border-radius: 8px; touch-action: none; }
+  .tm-range { -webkit-appearance: none; appearance: none; width: 100%; height: 16px;
+              background: transparent; margin: 2px 0 0; cursor: ew-resize; }
+  .tm-range::-webkit-slider-runnable-track { height: 4px; border-radius: 2px;
+              background: var(--line); }
+  .tm-range::-moz-range-track { height: 4px; border-radius: 2px; background: var(--line); }
+  .tm-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none;
+              width: 16px; height: 16px; margin-top: -6px; border-radius: 50%;
+              background: var(--text); border: 2px solid var(--panel);
+              box-shadow: 0 1px 4px rgba(0,0,0,.35); }
+  .tm-range::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%;
+              background: var(--text); border: 2px solid var(--panel); }
+  .tm-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 7px;
+                 margin: 8px 0 12px; }
+  .tm-presets { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+  .tm-btn { font: inherit; font-size: 12px; font-weight: 600; color: var(--text);
+            background: var(--panel2); border: 1px solid var(--line); border-radius: 7px;
+            padding: 5px 11px; cursor: pointer; transition: border-color .12s, background .12s; }
+  .tm-btn:hover { border-color: var(--link); }
+  .tm-play { display: inline-flex; align-items: center; gap: 7px; }
+  .tm-play-ico { width: 0; height: 0; border-style: solid; border-width: 6px 0 6px 10px;
+                 border-color: transparent transparent transparent var(--text);
+                 transition: none; }
+  .tm-play.is-playing .tm-play-ico { width: 9px; height: 11px; border: none;
+                 border-left: 3px solid var(--text); border-right: 3px solid var(--text); }
+  .tm-readout { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px;
+                padding: 12px 14px; }
+  .tm-asof { display: flex; align-items: baseline; gap: 10px; margin-bottom: 9px; }
+  .tm-date { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums;
+             letter-spacing: .01em; }
+  .tm-state-tag { font-size: 11px; font-weight: 700; text-transform: uppercase;
+                  letter-spacing: .05em; padding: 2px 8px; border-radius: 10px; }
+  .tm-state-tag.is-live { color: color-mix(in srgb, var(--up) 85%, var(--text));
+                  background: color-mix(in srgb, var(--up) 16%, var(--panel)); }
+  .tm-state-tag.is-hist { color: var(--muted);
+                  background: color-mix(in srgb, var(--muted) 16%, var(--panel)); }
+  .tm-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .tm-gauges { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 22px; margin: 12px 0 4px; }
+  @media (max-width: 640px) { .tm-gauges { grid-template-columns: 1fr; } }
+  .tm-glabel { display: flex; justify-content: space-between; font-size: 12.5px;
+               font-weight: 600; margin-bottom: 2px; font-variant-numeric: tabular-nums; }
+  .tm-flags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .tm-flag { font-size: 11.5px; font-weight: 600; padding: 2px 9px; border-radius: 10px;
+             background: color-mix(in srgb, var(--c) 16%, var(--panel));
+             color: color-mix(in srgb, var(--c) 82%, var(--text)); }
+  .tm-nowarn { font-size: 12px; color: var(--muted); }
+
+  /* ---- Sortable / filterable data tables ------------------------------------ */
+  table.sortable th.th-sort { cursor: pointer; user-select: none; }
+  table.sortable th.th-sort:hover { color: var(--text); }
+  table.sortable th .sarrow { font-size: 9px; opacity: .32; margin-left: 3px;
+                              font-weight: 700; }
+  table.sortable th.sorted { color: var(--text); }
+  table.sortable th.sorted .sarrow { opacity: .9; color: var(--link); }
+  .tbl-filter { margin: 2px 0 9px; }
+  .tbl-filter input { font: inherit; font-size: 12.5px; color: var(--text);
+    background: var(--panel2); border: 1px solid var(--line); border-radius: 7px;
+    padding: 5px 11px; width: 210px; max-width: 100%; }
+  .tbl-filter input:focus { outline: none; border-color: var(--link); }
+  .tbl-filter .cnt { color: var(--muted); font-size: 11.5px; margin-left: 9px;
+                     font-variant-numeric: tabular-nums; }
 </style>
 </head>
 <body>
@@ -364,6 +429,54 @@
         </span>
       </div>
     </details>
+  </div>
+
+  <!-- ===================== REGIME TIME MACHINE ===================== -->
+  <div class="panel span12" id="time-machine">
+    <h2>{{ t('⏳ Regime time machine', '⏳ 周期时光机') }}
+      {{ help("Drag the playhead across ~28 years of history and the readout below rewinds the regime CORE to that day — quadrant, growth/inflation scores, signal agreement, liquidity, business-cycle position and the warning flags that were firing. (Sector, holdings & playbook panels lower down aren't stored historically, so they always show today.) Hit ▶ to play the regime forward through time and watch the quad ribbon flip at every major turn — 2008, 2020, 2022.", "拖动播放头横扫约 28 年历史，下方读数会把周期核心回退到那一天 — 象限、增长／通胀分数、信号一致度、流动性、商业周期位置，以及当天触发的预警旗。（下方的板块、持仓与剧本面板不作历史存储，故始终显示今日。）点击 ▶ 让周期随时间向前播放，看周期色带在每个重大转折处翻转 — 2008、2020、2022。") }}
+    </h2>
+    <div class="tm-wrap">
+      <canvas id="tm-canvas" class="tm-canvas"></canvas>
+      <input id="tm-range" class="tm-range" type="range" min="0" max="0" value="0"
+             aria-label="Scrub regime history">
+    </div>
+    <div class="tm-controls">
+      <button class="tm-btn tm-play" id="tm-play" aria-label="play/pause"
+              title="Play / pause through time">
+        <span class="tm-play-ico"></span>
+      </button>
+      <span class="tm-presets">
+        <button class="tm-btn" data-tm-jump="now">{{ t('Now', '现在') }}</button>
+        <button class="tm-btn" data-tm-jump="2022-06-16">{{ t('2022 bear', '2022 熊市') }}</button>
+        <button class="tm-btn" data-tm-jump="2020-03-23">{{ t('2020 COVID', '2020 疫情') }}</button>
+        <button class="tm-btn" data-tm-jump="2008-11-20">{{ t('2008 GFC', '2008 金融危机') }}</button>
+      </span>
+    </div>
+    <div class="tm-readout">
+      <div class="tm-asof">
+        <span class="tm-date" id="tm-date">—</span>
+        <span class="tm-state-tag is-live" id="tm-tag">—</span>
+      </div>
+      <div class="tm-badges">
+        <span class="badge" id="tm-quad">—</span>
+        <span class="badge" id="tm-trans">—</span>
+        <span class="kv">{{ t('agreement', '一致度') }} <b id="tm-conf">—</b></span>
+        <span class="kv">{{ t('cycle', '商业周期') }} <b id="tm-cyc">—</b></span>
+        <span class="kv">{{ t('liquidity', '流动性') }} <b id="tm-liq">—</b></span>
+      </div>
+      <div class="tm-gauges">
+        <div class="tm-gauge">
+          <div class="tm-glabel"><span>{{ t('Growth', '增长') }}</span><span class="muted" id="tm-g-v">—</span></div>
+          <div class="gauge"><i id="tm-g-i" style="left:50%"></i></div>
+        </div>
+        <div class="tm-gauge">
+          <div class="tm-glabel"><span>{{ t('Inflation', '通胀') }}</span><span class="muted" id="tm-i-v">—</span></div>
+          <div class="gauge"><i id="tm-i-i" style="left:50%"></i></div>
+        </div>
+      </div>
+      <div class="tm-flags" id="tm-flags"></div>
+    </div>
   </div>
 
   {% if alerts %}
@@ -692,7 +805,7 @@
       {% for r in sector_rows %}
       <tr>
         <td class="l"><a href="sectors/{{ r.ticker }}.html"><b>{{ r.ticker }}</b></a> <span class="muted">{{ td(r.name) }}</span></td>
-        <td class="l">
+        <td class="l" data-sort="{{ r.heat }}">
           <span class="help" style="width:auto;height:auto;border:none;margin:0;border-radius:6px">
             <span style="display:inline-flex;align-items:center;gap:7px;cursor:help">
               <span style="display:inline-block;width:64px;height:9px;background:var(--panel2);border-radius:5px;overflow:hidden"><i style="display:block;height:100%;width:{{ r.heat }}%;background:{{ r.heat_color }}"></i></span>
@@ -703,7 +816,7 @@
           </span>
         </td>
         <td><span class="pill stg-{{ r.stage }}">{{ td(r.stage) }}</span></td>
-        <td class="{{ 'pos' if r.mom_60d_pct > 0 else 'neg' }}">{{ "%+.1f" | format(r.mom_60d_pct) }}%</td>
+        <td class="{{ 'pos' if r.mom_60d_pct > 0 else 'neg' }}" data-sort="{{ r.mom_60d_pct }}">{{ "%+.1f" | format(r.mom_60d_pct) }}%</td>
         <td class="{{ 'pos' if r.tech_ok else '' }}" style="font-size:12px">{{ r.tech_str }}</td>
         <td>
           <span class="help" style="width:auto;height:auto;border:none;margin:0">
@@ -932,6 +1045,9 @@ window.__CHART_SWAP__ = {
 </script>
 <script src="theme.js"></script>
 <script src="chart_i18n.js"></script>
+<script src="timemachine.js"></script>
+<script src="tablesort.js"></script>
+<script src="charts.js"></script>
 <footer class="site-footer">
   <span class="made">Made with ❤️ in Canada</span>
   <span class="dev">Developed by Chris Wong</span>

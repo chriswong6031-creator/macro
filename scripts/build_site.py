@@ -54,6 +54,46 @@ def _html(fig: go.Figure) -> str:
                        config={"displayModeBar": False})
 
 
+def _range_selector() -> dict:
+    return dict(
+        buttons=[
+            dict(count=1, label="1M", step="month", stepmode="backward"),
+            dict(count=3, label="3M", step="month", stepmode="backward"),
+            dict(count=6, label="6M", step="month", stepmode="backward"),
+            dict(count=1, label="YTD", step="year", stepmode="todate"),
+            dict(count=1, label="1Y", step="year", stepmode="backward"),
+            dict(step="all", label="All"),
+        ],
+        bgcolor="rgba(128,138,160,0.14)", activecolor="rgba(120,167,224,0.55)",
+        bordercolor="rgba(128,138,160,0.30)", borderwidth=1,
+        font={"size": 10, "color": "#8b93a1"},
+        x=0, xanchor="left", y=1.0, yanchor="bottom",
+    )
+
+
+def _apply_range(fig: go.Figure, *, subplot: bool = False, has_legend: bool = False,
+                 height: int = 300) -> None:
+    """Add 1M…All range-selector buttons to the (date) x-axis and make room for
+    them. Colours are theme-neutral — the buttons are baked at build time and do
+    not re-theme on toggle, so they must read on both light and dark cards. The
+    companion charts.js rescales the y-axis to the visible window on zoom (it
+    leaves fixed-range axes, e.g. the ±1 score chart, alone)."""
+    if subplot:
+        # make_subplots(shared_xaxes=True) makes the TOP x-axis FOLLOW the bottom
+        # (xaxis.matches='x2'); a rangeselector on a follower axis is inert — the
+        # button click gets overridden back. Flip the link so the TOP axis drives
+        # (bottom follows it), then the selector sits at the top AND works.
+        fig.update_xaxes(matches=None, row=1, col=1)
+        fig.update_xaxes(matches="x", row=2, col=1)
+        fig.update_xaxes(rangeselector=_range_selector(), row=1, col=1)
+    else:
+        fig.update_xaxes(rangeselector=_range_selector())
+    top = 58 if has_legend else 40
+    fig.update_layout(margin={"l": 45, "r": 15, "t": top, "b": 30}, height=height)
+    if has_legend:
+        fig.update_layout(legend={"orientation": "h", "y": 1.26, "x": 0, "xanchor": "left"})
+
+
 def chart_regime(f: pd.DataFrame, hist: pd.DataFrame, days: int = 730) -> str:
     two_y = f.index.max() - pd.Timedelta(days=days)
     spy = f.loc[two_y:, "SPY"].dropna()
@@ -69,6 +109,7 @@ def chart_regime(f: pd.DataFrame, hist: pd.DataFrame, days: int = 730) -> str:
                           fillcolor=QUAD_COLORS.get(seg.iloc[0], "#888"),
                           opacity=0.16, line_width=0)
     fig.update_layout(**PLOT_LAYOUT, showlegend=False)
+    _apply_range(fig, height=300)
     return _html(fig)
 
 
@@ -82,7 +123,10 @@ def chart_axes(hist: pd.DataFrame, days: int = 730) -> str:
                              line={"color": "#e07070", "width": 1.2}))
     fig.add_hline(y=0, line={"color": "#666", "width": 0.6})
     fig.update_layout(**PLOT_LAYOUT)
-    fig.update_yaxes(range=[-1.05, 1.05])
+    # autorange=False is what charts.js keys off to LEAVE this axis fixed on zoom —
+    # the ±1 band is the meaning here, so it must not rescale to the visible slice
+    fig.update_yaxes(range=[-1.05, 1.05], autorange=False)
+    _apply_range(fig, has_legend=True, height=300)
     return _html(fig)
 
 
@@ -104,6 +148,7 @@ def chart_liquidity(f: pd.DataFrame) -> str:
                                                            "dash": "dot"}, row=2, col=1)
     layout = {**PLOT_LAYOUT, "height": 340}
     fig.update_layout(**layout, showlegend=False)
+    _apply_range(fig, subplot=True, height=340)
     return _html(fig)
 
 
@@ -118,6 +163,7 @@ def chart_credit_breadth(f: pd.DataFrame) -> str:
                              line={"color": "#9b8de0", "width": 1.2}), row=2, col=1)
     layout = {**PLOT_LAYOUT, "height": 340}
     fig.update_layout(**layout)
+    _apply_range(fig, subplot=True, has_legend=True, height=340)
     return _html(fig)
 
 
@@ -668,6 +714,38 @@ def health_rows() -> list[dict]:
             for k, v in sorted(sources.items())]
 
 
+def regime_timeline(hist: pd.DataFrame) -> dict:
+    """Compact columnar JSON of the classified regime history for the client-side
+    "Time Machine" scrubber (timemachine.js). Only days with a settled quad label
+    (≈1999→today) are shipped; everything is parallel arrays keyed by day index so
+    the browser can rewind the whole regime core to any past date. The six warning
+    flags are packed into one bitmask per day (decoded against `flag_order`)."""
+    h = hist[hist["quad"].notna()].copy()
+
+    def r3(col: str) -> list:
+        return [None if pd.isna(v) else round(float(v), 3) for v in h[col]]
+
+    flag_cols = ["flag_breadth_price", "flag_credit_equity", "flag_ratio_inflection",
+                 "flag_inflation_basket", "flag_confidence_decay", "flag_gex"]
+    masks = sum((h[c].astype(bool).astype(int) * (1 << i)) for i, c in enumerate(flag_cols))
+
+    return {
+        "dates": [d.strftime("%Y-%m-%d") for d in h.index],
+        "quad":  h["quad"].fillna("").tolist(),
+        "g":     r3("growth_score"),
+        "i":     r3("inflation_score"),
+        "conf":  r3("regime_confidence"),
+        "liq":   h["liquidity"].fillna("unknown").tolist(),
+        "cyc":   h["cycle"].fillna("unknown").tolist(),
+        "trans": h["transition_state"].fillna("STABLE").tolist(),
+        "rec":   [int(bool(v)) for v in h["recession"]],
+        "shock": [int(bool(v)) for v in h["inflation_shock"]],
+        "flags": [int(v) for v in masks],
+        "flag_order": ["breadth_price", "credit_equity", "ratio_inflection",
+                       "inflation_basket", "confidence_decay", "gex"],
+    }
+
+
 def main() -> int:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     site.mkdir(parents=True, exist_ok=True)
@@ -676,6 +754,9 @@ def main() -> int:
         latest = json.load(fh)
     hist = pd.read_parquet(config.data_dir() / "regime" / "regime_history.parquet")
     hist.index = pd.to_datetime(hist.index)
+    # client-side "Time Machine": ship the classified regime history as compact JSON
+    (site / "regime_timeline.json").write_text(
+        json.dumps(regime_timeline(hist), separators=(",", ":")))
     f = build_features()
 
     env = Environment(loader=FileSystemLoader(config.ROOT / "templates"))
@@ -692,7 +773,8 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — drill-downs are additive, never fatal
         log.error("sector pages failed: %s", e)
     # copy shared static assets (theme + visual widgets) into the site
-    for asset in ("theme.css", "theme.js", "mtf.js", "chart_i18n.js"):
+    for asset in ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
+                  "tablesort.js", "charts.js"):
         src = config.ROOT / "templates" / asset
         if src.exists():
             (site / asset).write_text(src.read_text())
