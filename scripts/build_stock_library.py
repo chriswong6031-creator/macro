@@ -39,8 +39,23 @@ ETF_LABELS = {**SECTOR_NAMES,
               "BTC-USD": "Bitcoin", "ETH-USD": "Ethereum", "SOL-USD": "Solana"}
 
 
+def current_liquidity() -> str | None:
+    """The live US net-liquidity regime ("expanding"/"contracting"/"neutral")
+    the engine last classified (regime/latest.json `liquidity_overlay`). Threaded
+    into analyze() as the orthogonal macro conviction modifier on buy setups;
+    None when unavailable so the ladder simply omits the liquidity context."""
+    p = config.data_dir() / "regime" / "latest.json"
+    if not p.exists():
+        return None
+    try:
+        liq = json.loads(p.read_text()).get("liquidity_overlay")
+    except Exception:  # noqa: BLE001
+        return None
+    return liq if liq in ("expanding", "contracting", "neutral") else None
+
+
 def _one(ticker: str, close: pd.Series, high: pd.Series | None,
-         name: str, sector: str) -> dict | None:
+         name: str, sector: str, liquidity: str | None = None) -> dict | None:
     c = close.dropna()
     if len(c) < 300:
         return None
@@ -48,7 +63,9 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
     # than an equity's, so it gets the crypto cycle preset (Yahoo crypto tickers
     # carry the -USD suffix: BTC-USD, ETH-USD, SOL-USD …).
     kind = "crypto" if ticker.endswith("-USD") else "equity"
-    res = analyze(c, high, kind=kind)
+    # US net-liquidity is a single macro regime that applies to every US-listed
+    # name — and to crypto (BTC tracks it) — so the same live label conditions all.
+    res = analyze(c, high, kind=kind, liquidity=liquidity)
     if not res.get("ladder"):
         return None
     month = int(c.index.max().month)
@@ -126,10 +143,12 @@ def main() -> int:
     outdir = site / "stockdata"
     outdir.mkdir(parents=True, exist_ok=True)
 
+    liq = current_liquidity()
+    log.info("net-liquidity regime for library: %s", liq or "unknown")
     index, built, failed = [], 0, 0
     for ticker, close, high, name, sector in universe():
         try:
-            rec = _one(ticker, close, high, name, sector)
+            rec = _one(ticker, close, high, name, sector, liquidity=liq)
         except Exception as e:  # noqa: BLE001 — one bad ticker must not kill the library
             log.debug("library %s failed: %s", ticker, e)
             rec = None

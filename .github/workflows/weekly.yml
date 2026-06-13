@@ -44,16 +44,25 @@ jobs:
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/ reports/ site/
-          git diff --cached --quiet || git commit -m "weekly: deep-dive $(date -u +%F)"
-          git pull --rebase origin main
-          git push
+          if git diff --cached --quiet; then echo "no weekly changes"; exit 0; fi
+          git commit -m "weekly: deep-dive $(date -u +%F)"
+          for i in 1 2 3 4 5; do
+            if git pull --rebase -X theirs origin main && git push; then
+              echo "pushed weekly outputs on attempt $i"; exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "weekly push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+          done
+          echo "::warning::could not push weekly outputs after 5 attempts (non-fatal — site still deploys via artifact)"
       - name: upload pages artifact
+        if: always()   # deploy must not hinge on the commit-push above succeeding
         uses: actions/upload-pages-artifact@v3
         with:
           path: site/
 
   publish:
     needs: weekly-report
+    if: always()
     runs-on: ubuntu-latest
     environment:
       name: github-pages

@@ -849,9 +849,13 @@ def build_sector_pages(env: Environment, site: Path, generated: str) -> dict:
     from engine.cycles import LADDER, STATE_DISPLAY, analyze
     from engine.holdings_signals import accumulation_signals
     from engine.playbook import SECTOR_NAMES
+    from scripts.build_stock_library import current_liquidity
 
     cal_path = config.data_dir() / "regime" / "ladder_calibration.json"
     calibration = _json.loads(cal_path.read_text()) if cal_path.exists() else None
+    # live US net-liquidity regime — the orthogonal macro conviction modifier
+    # threaded into every per-sector / per-stock ladder read (None => omitted).
+    liq = current_liquidity()
     tpl = env.get_template("sector.html.j2")
     outdir = site / "sectors"
     outdir.mkdir(parents=True, exist_ok=True)
@@ -863,7 +867,7 @@ def build_sector_pages(env: Environment, site: Path, generated: str) -> dict:
         etf = store.read("yahoo", fund)
         if etf is None:
             continue
-        res = analyze(etf["close"])
+        res = analyze(etf["close"], liquidity=liq)
         if not res.get("ladder"):
             continue
         holdings = []
@@ -874,7 +878,7 @@ def build_sector_pages(env: Environment, site: Path, generated: str) -> dict:
                 df = store.read("stocks", tick)
                 if df is None or len(df) < 300:
                     continue
-                h = analyze(df["close"], df.get("high"))
+                h = analyze(df["close"], df.get("high"), liquidity=liq)
                 if not h.get("ladder"):
                     continue
                 h["mtf_json"] = _json2.dumps(h.get("mtf", {}))
