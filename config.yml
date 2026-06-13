@@ -51,7 +51,8 @@ yahoo:
   # All EOD adjusted closes, one parquet per ticker under data/yahoo/.
   tickers:
     sectors: [XLB, XLC, XLE, XLF, XLI, XLK, XLP, XLRE, XLU, XLV, XLY]
-    extras: [SMH, IWM, RSP, SPY, QQQ, "^DJI"]
+    extras: [SMH, IWM, RSP, SPY, QQQ, "^DJI", "^RUT", IJH]   # ^RUT = true Russell 2000 index level; IJH = S&P MidCap 400 (mid-cap leg of the size spectrum)
+    style: [IWF, IWD]             # Russell 1000 Growth / Value — style-rotation read (growth vs value leadership)
     factors: [MTUM, QUAL, USMV, SPHB, SPLV]
     credit: [HYG, LQD]
     vol: ["^VIX", "^VIX9D", "^VIX3M", "^MOVE"]
@@ -273,6 +274,17 @@ mempool:
 breadth:
   constituents_url: https://en.wikipedia.org/wiki/List_of_S%26P_500_companies
   lookback_days_live: 1100        # ~3y: 200DMA/NH-NL plus cycle analysis for stock search
+  ma_windows: [50, 200]
+  nhnl_window: 252
+
+# Small-cap participation, computed exactly like S&P 500 breadth but over the
+# S&P SmallCap 600 — a free, well-defined small-cap universe (Wikipedia, same
+# table shape as the S&P 500 list) that tracks the Russell 2000 closely in
+# aggregate breadth. The true IWM (Russell 2000) holdings feed is iShares
+# Akamai-bot-blocked, so the S&P 600 is the honest zero-cost proxy.
+smallcap_breadth:
+  constituents_url: https://en.wikipedia.org/wiki/List_of_S%26P_600_companies
+  lookback_days_live: 1100
   ma_windows: [50, 200]
   nhnl_window: 252
 
@@ -849,6 +861,15 @@ vector:
     accel_window_d: 90            # 3-month change of the YoY impulse
     expanding_thresh: 5.0         # global M2 YoY above this = liquidity tailwind
 
+  alt_cycle:                      # altcoin-cycle / ETH allocation (allocation page)
+    btc_season_line: 0.05         # ETH/BTC below = deep BTC-season
+    alt_season_line: 0.07         # ETH/BTC above = alt-season confirmed
+    ethbtc_ma_d: 350              # ~50-week ETH/BTC moving average
+    slope_window_d: 56            # 8-week ETH/BTC slope
+    pctile_lookback_d: 1095       # 3y ETH/BTC percentile
+    btc_season_max: 25            # alt-season score <25 = BTC season
+    alt_season_min: 75            # >75 = alt season
+
   calibration:
     start_date: "2015-01-01"      # price-signal backtests (Yahoo BTC 2014-09->)
     split_date: "2021-01-01"      # split-half robustness boundary
@@ -1027,3 +1048,204 @@ china:
       forward_days: [21, 63]
       ladder_fwd: 21                       # forward window for the ladder walk
       ladder_step: 10                      # walk every N days (10 keeps CI lean; per-state n still ample)
+
+# ============================================================================
+# Section 4 — Hong Kong / Hang Seng dashboard.  Full clone of the US/China
+# regime dashboard, re-thought for HK: see research/HK_DATA_AUDIT.md.
+# HK is ~2x more globally sensitive than the Mainland, so the engine has THREE
+# legs — China fundamentals (reused china_macro), a PRIMARY global-risk overlay,
+# and HK-internal price structure (H-share leadership, HS-TECH tilt, breadth).
+# Sectors are DEEP synthetic baskets of curated constituents (15-25y history),
+# not the thin HK sector-ETF complex.
+# ============================================================================
+hk:
+  # -- Plane A: prices (group=hk) ---------------------------------------------
+  yahoo:
+    retries: 3
+    backoff_base_s: 5
+    batch_size: 60
+    benchmark: "^HSI"               # Hang Seng Index — sector-RS benchmark + market anchor (1986->)
+    market_index: "^HSI"            # deep-history ladder-calibration anchor
+    indices:                        # ticker: display name
+      "^HSI": Hang Seng Index
+      "^HSCE": HSCEI (H-shares)
+      "^HSCC": HS China-Affiliated
+    tech_proxy: "3033.HK"           # HS TECH proxy (^HSTECH not on Yahoo): CSOP HS TECH ETF (2020->)
+    etf_proxies:                    # ticker: display name (search/reference)
+      "3033.HK": HS TECH ETF
+      "2800.HK": Tracker Fund (HSI)
+    fx:
+      "HKD=X": USDHKD               # peg-distance capital-flow gauge (7.75 strong <-> 7.85 weak)
+    extras:                         # global-risk factor not already collected elsewhere
+      "EEM": MSCI EM ETF
+
+  # -- Sectors = deep synthetic baskets of curated constituents ---------------
+  # Each sector is an equal-weight basket (engine.indicators.basket_index) over
+  # these names; RS-ranked vs ^HSI. Doubles as breadth universe + drill-down +
+  # stock-search seed. ~6/sector, mostly 2000-2006-> history (probed 2026-06-13).
+  # tv = a representative constituent's TradingView symbol for the sector chart.
+  sectors:
+    "Internet & Tech":      {tv: "HKEX:700",  members: ["0700.HK","9988.HK","3690.HK","9618.HK","1810.HK","9888.HK","1024.HK","0992.HK","0981.HK"]}
+    "Financials & Banks":   {tv: "HKEX:1398", members: ["1398.HK","0939.HK","3988.HK","0005.HK","2388.HK","3328.HK","1288.HK"]}
+    "Insurance":            {tv: "HKEX:2318", members: ["2318.HK","1299.HK","2628.HK","2601.HK","0966.HK"]}
+    "Energy":               {tv: "HKEX:883",  members: ["0883.HK","0857.HK","0386.HK","1088.HK","0934.HK"]}
+    "Materials":            {tv: "HKEX:2600", members: ["2600.HK","0358.HK","1378.HK","3993.HK","0486.HK"]}
+    "Property":             {tv: "HKEX:16",   members: ["0016.HK","1109.HK","0688.HK","0823.HK","0017.HK","1997.HK","0012.HK"]}
+    "Consumer":             {tv: "HKEX:2020", members: ["2020.HK","2331.HK","1929.HK","6862.HK","0291.HK","0288.HK","2319.HK","1044.HK"]}
+    "Healthcare & Pharma":  {tv: "HKEX:1093", members: ["1093.HK","1177.HK","2269.HK","2359.HK","6160.HK","1099.HK"]}
+    "Auto & EV":            {tv: "HKEX:1211", members: ["1211.HK","2015.HK","9868.HK","0175.HK","2238.HK"]}
+    "Telecom & Utilities":  {tv: "HKEX:941",  members: ["0941.HK","0762.HK","0728.HK","0002.HK","0003.HK","1038.HK","0006.HK"]}
+    "Gaming & Leisure":     {tv: "HKEX:27",   members: ["0027.HK","1928.HK","0880.HK","2282.HK"]}
+    "Exchange & Diversified": {tv: "HKEX:388", members: ["0388.HK","0001.HK","0019.HK","0066.HK","0083.HK"]}
+
+  # human names for the curated constituents (search library + drill-down labels)
+  names:
+    "0700.HK": Tencent
+    "9988.HK": Alibaba
+    "3690.HK": Meituan
+    "9618.HK": JD.com
+    "1810.HK": Xiaomi
+    "9888.HK": Baidu
+    "1024.HK": Kuaishou
+    "0992.HK": Lenovo
+    "0981.HK": SMIC
+    "1398.HK": ICBC
+    "0939.HK": China Construction Bank
+    "3988.HK": Bank of China
+    "0005.HK": HSBC
+    "2388.HK": BOC Hong Kong
+    "3328.HK": Bank of Communications
+    "1288.HK": Agricultural Bank of China
+    "2318.HK": Ping An Insurance
+    "1299.HK": AIA Group
+    "2628.HK": China Life
+    "2601.HK": China Pacific Insurance
+    "0966.HK": China Taiping
+    "0883.HK": CNOOC
+    "0857.HK": PetroChina
+    "0386.HK": Sinopec
+    "1088.HK": China Shenhua
+    "0934.HK": Sinopec Kantons
+    "2600.HK": Aluminum Corp of China
+    "0358.HK": Jiangxi Copper
+    "1378.HK": China Hongqiao
+    "3993.HK": CMOC Group
+    "0486.HK": RUSAL
+    "0016.HK": Sun Hung Kai Properties
+    "1109.HK": China Resources Land
+    "0688.HK": China Overseas Land
+    "0823.HK": Link REIT
+    "0017.HK": New World Development
+    "1997.HK": Wharf REIC
+    "0012.HK": Henderson Land
+    "2020.HK": Anta Sports
+    "2331.HK": Li Ning
+    "1929.HK": Chow Tai Fook
+    "6862.HK": Haidilao
+    "0291.HK": China Resources Beer
+    "0288.HK": WH Group
+    "2319.HK": Mengniu Dairy
+    "1044.HK": Hengan International
+    "1093.HK": CSPC Pharmaceutical
+    "1177.HK": Sino Biopharmaceutical
+    "2269.HK": WuXi Biologics
+    "2359.HK": WuXi AppTec
+    "6160.HK": BeiGene
+    "1099.HK": Sinopharm
+    "1211.HK": BYD
+    "2015.HK": Li Auto
+    "9868.HK": XPeng
+    "0175.HK": Geely Auto
+    "2238.HK": Guangzhou Auto
+    "0941.HK": China Mobile
+    "0762.HK": China Unicom
+    "0728.HK": China Telecom
+    "0002.HK": CLP Holdings
+    "0003.HK": HK & China Gas
+    "1038.HK": CK Infrastructure
+    "0006.HK": Power Assets
+    "0027.HK": Galaxy Entertainment
+    "1928.HK": Sands China
+    "0880.HK": SJM Holdings
+    "2282.HK": MGM China
+    "0388.HK": HKEX
+    "0001.HK": CK Hutchison
+    "0019.HK": Swire Pacific
+    "0066.HK": MTR Corporation
+    "0083.HK": Sino Land
+
+  # -- Global Risk Overlay (the PRIMARY HK driver) ----------------------------
+  # Composite risk-on/off from factors mostly already in the store. sign = +1 if
+  # RISING-is-risk-on, -1 if RISING-is-risk-off. copper_gold is computed in code
+  # from yahoo HG=F / GC=F. Framed as a CONCURRENT risk state, not a forecast.
+  global_factors:
+    slope_window: 20
+    baseline_window: 60
+    z_threshold: 0.40
+    risk_on_z: 0.30                 # composite z above this = Risk ON; below -this = Risk OFF
+    components:
+      dxy:    {group: yahoo, ticker: "DX-Y.NYB", sign: -1, weight: 1.0}
+      vix:    {group: yahoo, ticker: "^VIX",     sign: -1, weight: 1.0, use_log: true}
+      spy:    {group: yahoo, ticker: "SPY",      sign: 1.0, weight: 1.0}
+      copper_gold: {sign: 1.0, weight: 1.0}      # HG=F / GC=F (global cyclical pulse)
+      usdcny: {group: china, ticker: "CNY=X",    sign: -1, weight: 0.75}
+      eem:    {group: hk,    ticker: "EEM",      sign: 1.0, weight: 1.0}
+    peg:                            # USD/HKD convertibility band (HKD=X)
+      strong: 7.75                  # strong-side = inflow/easing
+      weak: 7.85                    # weak-side = outflow/HSI headwind (HKMA defends)
+      pressure_pct: 25.0            # within this % of the band toward weak-end = outflow pressure
+
+  breadth:
+    lookback_days_live: 1100        # ~3y for 200DMA/NH-NL + cycle analysis on the search library
+    ma_windows: [50, 200]
+    nhnl_window: 252
+    min_coverage: 0.6
+
+  # -- Engine tunables (mirror of china.engine, HK inputs) --------------------
+  engine:
+    scoring: {slope_window: 20, baseline_window: 60, z_threshold: 0.45, min_components: 2}
+    growth_axis:
+      components:
+        pmi_mfg: {weight: 1.0}            # China NBS PMI vs 50 (HSI earnings are China-driven)
+        hshare_hsi: {weight: 1.0}         # HSCEI/HSI ratio — H-share leadership = China-cyclical risk appetite
+        tech_hsi: {weight: 0.75}          # HS-TECH/HSI ratio — growth tilt (proxy ETF, 2020->)
+        cyclical_defensive: {weight: 1.0} # HK cyclical/defensive basket
+        breadth_direction: {weight: 0.5}  # % above 50d direction
+        global_growth: {weight: 0.75}     # copper/gold (global cyclical pulse; HK 2x sensitive)
+      cyclical_basket: ["1211.HK","0016.HK","2600.HK","2388.HK","0388.HK","0175.HK"]   # auto/property/materials/financials
+      defensive_basket: ["0002.HK","0003.HK","0941.HK","0291.HK","1044.HK","0006.HK"]  # utilities/telecom/staples
+    inflation_axis:
+      components:
+        cpi_direction: {weight: 1.0}      # China CPI YoY direction
+        ppi_direction: {weight: 1.5}      # China PPI YoY direction (the stable Mainland signal -> upweighted)
+        inflation_beta_basket: {weight: 0.5}  # HK energy+materials vs tech
+      inflation_long_basket: ["0883.HK","0857.HK","1088.HK","2600.HK","0358.HK"]   # energy + materials
+      inflation_short_basket: ["0700.HK","9988.HK","3690.HK","1810.HK"]            # internet/tech
+    liquidity:                            # DUAL: PBoC (China M2) + Fed-via-peg (HKD distance + southbound)
+      components:
+        m2_growth: {weight: 1.0}          # China M2 YoY direction (PBoC stance)
+        peg_pressure: {weight: 1.0}       # HKD toward weak-end = tightening/outflow
+        southbound: {weight: 0.75}        # southbound Stock-Connect flow direction (mainland into HK)
+      roc_window_d: 20
+    quad:
+      hysteresis_days: 7
+      shock_override_z: 0.85
+    cycle:
+      index_near_high_pct: 3.0
+      high_window_d: 60
+    sector_preferences:                   # framework-preferred HK sectors per quad (keyed by sector name)
+      Goldilocks:   ["Internet & Tech","Healthcare & Pharma","Consumer","Auto & EV"]   # growth+ infl-
+      Reflation:    ["Energy","Materials","Financials & Banks","Property"]             # growth+ infl+
+      Stagflation:  ["Energy","Materials","Telecom & Utilities","Insurance"]           # growth- infl+
+      Growth-scare: ["Telecom & Utilities","Financials & Banks","Insurance","Healthcare & Pharma"]  # growth- infl-
+    rs_ranking:
+      benchmark: "^HSI"
+      momentum_windows: [20, 60]
+      trend_window: 200
+      percentile_lookback_d: 252
+    calibration:
+      start_date: "2005-01-01"
+      split_date: "2016-01-01"
+      forward_days: [21, 63]
+      ladder_fwd: 21
+      ladder_step: 10

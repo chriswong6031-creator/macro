@@ -1,0 +1,170 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>Bitcoin Vector — Allocation Strategy</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+<style>
+:root{
+  --blue:{{C.blue}}; --indigo:{{C.indigo}}; --r2:{{C.r2}}; --r3:{{C.r3}}; --ink:{{C.ink}};
+  --text:{{C.text}}; --muted:{{C.muted}}; --faint:{{C.faint}}; --red:{{C.red}}; --amber:{{C.amber}};
+  --grid:{{C.grid}}; --card:{{C.card}}; --bg:{{C.bg}};
+}
+*{box-sizing:border-box}
+html:not([data-lang="zh"]) .l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 0 14px;border-bottom:1px solid var(--grid);margin-bottom:24px;position:sticky;top:0;background:var(--bg);z-index:20}
+.brand{font-weight:800;font-size:20px;color:var(--ink);letter-spacing:-.02em}
+.brand .gn{color:var(--blue)}
+.nav{display:flex;align-items:center;gap:2px;flex-wrap:wrap}
+.nav a{padding:7px 11px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none}
+.nav a:hover,.nav a.active{color:var(--ink);background:#eef1f6}
+.lang-btn{font:inherit;cursor:pointer;background:none;border:1px solid var(--grid);border-radius:8px;padding:4px 11px;color:var(--muted)}
+.grid{display:grid;gap:18px}
+.cols-2{grid-template-columns:1.05fr .95fr}
+.cols-4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:900px){.cols-2,.cols-4{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:22px}
+.card h3{margin:0 0 14px;font-size:18px;font-weight:700;color:var(--ink)}
+.sub{color:var(--muted);font-size:13px} .faint{color:var(--faint)}
+.section-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:30px 4px 12px}
+.h1{font-size:30px;font-weight:800;color:var(--ink);letter-spacing:-.02em;margin:6px 0 2px}
+.allocbar{height:52px;border-radius:12px;overflow:hidden;display:flex;font-weight:700;color:#fff;margin:10px 0 4px}
+.allocbar div{display:flex;align-items:center;justify-content:center;font-size:13px;min-width:0}
+.seg-btc{background:linear-gradient(90deg,#6888fb,var(--blue))}
+.seg-eth{background:linear-gradient(90deg,#7d72e0,var(--indigo))}
+.seg-alts{background:linear-gradient(90deg,#f5c97a,var(--amber))}
+.seg-cash{background:linear-gradient(90deg,#cfd4dc,#9aa4b2)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:middle}
+.mini{margin-top:4px}
+.mini .lab{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);padding:5px 0;border-top:1px solid var(--grid)}
+.mini .lab b{color:var(--ink)}
+.gtable{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+.gtable td,.gtable th{padding:9px 8px;border:1px solid var(--grid);text-align:center}
+.gtable th{background:var(--bg);color:var(--muted);font-weight:600;font-size:12px}
+.gtable td.rh{text-align:left;font-weight:700;color:var(--ink);background:var(--bg)}
+.gtable td.cur{background:#E8EEFF;font-weight:700;color:var(--ink);outline:2px solid var(--blue)}
+.gauge{height:10px;border-radius:6px;background:linear-gradient(90deg,#6888fb 0%,#cfd4dc 50%,var(--amber) 100%);position:relative;margin:10px 0 4px}
+.gauge .pin{position:absolute;top:-4px;width:4px;height:18px;border-radius:2px;background:var(--ink);transform:translateX(-50%)}
+.score .s{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.score .s>div{background:var(--bg);border-radius:10px;padding:11px;text-align:center}
+.score .k{font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600}
+.score .v{font-size:19px;font-weight:800;color:var(--ink)}
+.chip{display:inline-block;padding:4px 11px;border-radius:9px;font-weight:700;font-size:13px}
+.foot{margin-top:34px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">₿ Bitcoin <span class="gn">Vector</span></div>
+    <div class="nav">
+      <a href="index.html">{{ t('Home','首页') }}</a>
+      <a href="macro.html">{{ t('Macro','宏观') }}</a>
+      <a href="vector.html">{{ t('Bitcoin Vector','比特币向量') }}</a>
+      <a class="active" href="vector_allocation.html">{{ t('Allocation','仓位策略') }}</a>
+      <button class="lang-btn">中文</button>
+    </div>
+  </div>
+
+  <div class="section-title">{{ t('Allocation Strategy · in depth','仓位策略 · 深度') }}</div>
+  <div class="h1">{{ t('How much Bitcoin — and Ethereum — to hold right now','当前应配置多少比特币 — 以及以太坊') }}</div>
+  <div class="sub" style="margin-bottom:18px">{{ t('As of','截至') }} {{ as_of }} · BTC {{ '$%s'|format('{:,.0f}'.format(price)) }}</div>
+
+  <!-- ===== recommended split ===== -->
+  <div class="grid cols-2">
+    <div class="card">
+      {% set rmap = {'bull':'var(--blue)','bear':'var(--r3)','neutral':'var(--muted)'} %}
+      <h3>{{ t('Recommended split','建议配置') }}
+        <b style="color:{{ rmap.get(grid.regime_key,'var(--muted)') }}"> · {{ td((regime or 'neutral')|capitalize) }} {{ t('regime','格局') }} × {{ td(alt.bucket or 'Mixed') }}</b></h3>
+      <div class="allocbar">
+        {% if grid.btc %}<div class="seg-btc" style="flex:{{ grid.btc }}">BTC {{ grid.btc }}%</div>{% endif %}
+        {% if grid.eth %}<div class="seg-eth" style="flex:{{ grid.eth }}">ETH {{ grid.eth }}%</div>{% endif %}
+        {% if grid.alts %}<div class="seg-alts" style="flex:{{ grid.alts }}">{{ t('Alts','山寨') }} {{ grid.alts }}%</div>{% endif %}
+        {% if grid.cash %}<div class="seg-cash" style="flex:{{ grid.cash }}">{{ t('Cash','现金') }} {{ grid.cash }}%</div>{% endif %}
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--blue)"></i>Bitcoin</span><span><i style="background:var(--indigo)"></i>Ethereum</span>
+        <span><i style="background:var(--amber)"></i>{{ t('Altcoins','山寨币') }}</span><span><i style="background:#9aa4b2"></i>{{ t('Cash / stables','现金 / 稳定币') }}</span>
+      </div>
+      {% if verdict and verdict.sub %}<div class="sub" style="margin-top:14px;color:var(--ink)">{{ t(verdict.sub, verdict.sub_zh) }}</div>{% endif %}
+      <div class="sub faint" style="margin-top:10px;font-size:12px">{{ t('Keyed to the cycle regime (from the shared cycle-ladder engine) × the alt-season read × risk. Cash dominates in a bear/counter-trend regime regardless of alt-season — the "nimble only, not an investment buy" message. A regime overlay, NOT a precise entry timer.', '取决于周期格局（来自共享的周期阶梯引擎）× 山寨季读数 × 风险。无论山寨季如何，熊市/逆势格局下以现金为主 — 即“仅适合灵活短线、并非投资买入”。这是格局叠加，而非精确入场计时。') }}</div>
+    </div>
+    <div class="card">
+      <h3>{{ t('Where are we in the alt cycle?','处于山寨周期何处？') }}</h3>
+      {% set sb = {'BTC season':'var(--blue)','Alt season':'var(--amber)','Mixed':'var(--muted)'} %}
+      <div style="display:flex;align-items:baseline;gap:10px">
+        <span class="chip" style="background:{{ sb.get(alt.bucket,'var(--bg)') }};color:#fff">{{ td(alt.bucket or '—') }}</span>
+        {% if alt.score is not none %}<span class="faint">{{ t('Alt-season score','山寨季评分') }} {{ alt.score|int }}/100</span>{% endif %}
+      </div>
+      {% if alt.score is not none %}<div class="gauge"><div class="pin" style="left:{{ alt.score }}%"></div></div>
+      <div class="legend"><span>{{ t('BTC season','BTC 季') }} (&lt;25)</span><span style="margin-left:auto">{{ t('Alt season','山寨季') }} (&gt;75)</span></div>{% endif %}
+      <div class="mini">
+        <div class="lab"><span>{{ t('ETH/BTC ratio','ETH/BTC 比率') }}</span><span><b>{{ alt.ethbtc if alt.ethbtc is not none else '—' }}</b>{% if alt.ethbtc_pctile is not none %} <span class="faint">({{ alt.ethbtc_pctile|int }}%ile)</span>{% endif %}</span></div>
+        <div class="lab"><span>{{ t('ETH/BTC 8-week trend','ETH/BTC 8 周趋势') }}</span><span><b style="color:{{ 'var(--blue)' if alt.slope and alt.slope>=0 else 'var(--r3)' }}">{{ ('%+0.1f%%'|format(alt.slope)) if alt.slope is not none else '—' }}</b> · {{ t('above 50w MA','高于 50 周均线') if alt.above_ma else t('below 50w MA','低于 50 周均线') }}</span></div>
+        <div class="lab"><span>{{ t('BTC dominance','BTC 占比') }}</span><span><b>{{ ('%.1f%%'|format(alt.dom)) if alt.dom is not none else '—' }}</b>{% if alt.ethdom is not none %} <span class="faint">· ETH {{ '%.1f%%'|format(alt.ethdom) }}</span>{% endif %}</span></div>
+      </div>
+      <div class="sub faint" style="margin-top:10px;font-size:12px">{{ t('ETH/BTC is the deep, calibratable alt proxy (2017→): 0.07 = alt-season confirmed, sub-0.05 = deep BTC-season. ETH leads alts, so ETH gets weight before pure alts do. Dominance/score are current context (CoinGecko snapshot).', 'ETH/BTC 是历史最久、可校准的山寨代理（2017 起）：0.07 = 确认山寨季，低于 0.05 = 深度 BTC 季。ETH 领先山寨，故 ETH 先于纯山寨获得配置。占比/评分为当前背景（CoinGecko 快照）。') }}</div>
+    </div>
+  </div>
+
+  <!-- ===== ETH/BTC chart ===== -->
+  <div class="section-title">{{ t('ETH/BTC ratio · the alt-cycle clock','ETH/BTC 比率 · 山寨周期时钟') }}</div>
+  <div class="card">{{ chart_ethbtc|safe }}
+    <div class="sub" style="margin-top:8px">{{ t('A multi-year base below 0.05 turning up off the 50-week MA is the early alt-season bell; a break above 0.07 confirms it. We are well below 0.05 and falling — no alt season in sight.', '在 0.05 下方多年筑底并自 50 周均线上翻，是山寨季的早期信号；突破 0.07 则确认。当前远低于 0.05 且仍在下行 — 暂无山寨季迹象。') }}</div>
+  </div>
+
+  <!-- ===== the full grid ===== -->
+  <div class="section-title">{{ t('Allocation grid · cycle regime × alt-season','配置矩阵 · 周期格局 × 山寨季') }}</div>
+  <div class="card">
+    <table class="gtable">
+      <tr><th></th><th>{{ t('BTC season','BTC 季') }}</th><th>{{ t('Mixed','混合') }}</th><th>{{ t('Alt season','山寨季') }}</th></tr>
+      {% set rows = [('bull','Bull / risk-on','牛市 / 风险偏好'),('neutral','Neutral','中性'),('bear','Bear / counter-trend','熊市 / 逆势')] %}
+      {% set g = {'bull':{'btc':'70·20·0·10','mixed':'50·30·15·5','alt':'30·30·35·5'},'neutral':{'btc':'55·15·0·30','mixed':'45·20·5·30','alt':'35·25·20·20'},'bear':{'btc':'25·5·0·70','mixed':'25·10·0·65','alt':'30·15·5·50'}} %}
+      {% for rk, rl, rzh in rows %}
+      <tr><td class="rh">{{ t(rl, rzh) }}</td>
+        {% for sk in ['btc','mixed','alt'] %}<td class="{{ 'cur' if (rk==grid.regime_key and sk==grid.season_key) else '' }}">{{ g[rk][sk] }}</td>{% endfor %}
+      </tr>{% endfor %}
+    </table>
+    <div class="sub faint" style="margin-top:8px;font-size:12px">{{ t('Cells are BTC·ETH·Alts·Cash %. Highlighted = current. Rules: alts only when alt-season AND not bear; ETH leads alts; cash dominates bear regardless of season. The % grid is judgment (labelled context), not a backtested optimum.', '单元格为 BTC·ETH·山寨·现金 %。高亮 = 当前。规则：仅在山寨季且非熊市时配置山寨；ETH 领先山寨；熊市无论季节均以现金为主。该 % 矩阵为判断（背景），而非回测最优。') }}</div>
+  </div>
+
+  <!-- ===== BTC strategy variants + backtests ===== -->
+  <div class="section-title">{{ t('Bitcoin allocation variants · backtested vs HODL','比特币仓位变体 · 相对 HODL 回测') }}</div>
+  <div class="grid cols-4">
+    {% set vzh = {'conservative':'保守','moderate':'稳健','aggressive':'进取','optimal':'最优'} %}
+    {% for v in ['conservative','moderate','aggressive','optimal'] %}{% set c = cards[v] %}
+    <div class="card">
+      <h3 style="margin-bottom:8px">{{ t(v|capitalize, vzh[v]) }}</h3>
+      <div class="score"><div class="s">
+        <div><div class="k">CAGR</div><div class="v">{{ c.cagr }}%</div></div>
+        <div><div class="k">Sharpe</div><div class="v">{{ c.sharpe }}</div></div>
+        <div><div class="k">MaxDD</div><div class="v">{{ c.maxdd }}%</div></div>
+        <div><div class="k">{{ t('In mkt','在场') }}</div><div class="v">{{ c.in_market }}%</div></div>
+      </div></div>
+    </div>{% endfor %}
+  </div>
+  <div class="card" style="margin-top:18px">
+    <div class="sub">{{ t('All four BTC variants are a (momentum × risk-index) grid with a calibration-confirmed valuation overlay: MVRV-Z below 0 floors the allocation (accumulate the bottom), Mayer above 2.4 / Reserve-Risk above 0.02 caps it (trim the cycle top). Every variant beat buy-and-hold on Sharpe AND drawdown across 2015→ (HODL MaxDD −84%). Conservative trades return for the lowest drawdown; Optimal is the re-tuned best risk/reward. The macro overlay (net liquidity, global M2) was tested and kept OUT of the tactical sizing — it is a strategic context, not a timer.', '四个比特币变体均为（动量 × 风险指数）矩阵，并叠加经校准确认的估值层：MVRV-Z 低于 0 设置仓位下限（低位累积），Mayer 高于 2.4 / 储备风险高于 0.02 设置上限（顶部减仓）。2015 年以来每个变体在夏普与回撤上均优于买入持有（HODL 最大回撤 −84%）。保守型以收益换取最小回撤；最优型为重新调校后的最佳风险收益。宏观叠加（净流动性、全球 M2）经测试后被排除在战术仓位之外 — 它是战略背景，而非计时器。') }}</div>
+  </div>
+
+  <div class="foot">
+    {{ t('Mechanical, backtested, free public data. Not investment advice. Allocation grids and the 0.05/0.07 ETH/BTC lines are conventions/judgment, not optimized; ~1.5–2 clean ETH/BTC cycles = low confidence. Built','机械化 · 经回测 · 免费公开数据。非投资建议。配置矩阵与 0.05/0.07 的 ETH/BTC 线为惯例/判断，非优化结果；约 1.5–2 个完整 ETH/BTC 周期 = 低置信度。生成于') }} {{ built }}.
+  </div>
+</div>
+<script>
+document.querySelector('.lang-btn')?.addEventListener('click',function(){
+  var h=document.documentElement, z=h.getAttribute('data-lang')==='zh';
+  h.setAttribute('data-lang', z?'en':'zh'); try{localStorage.setItem('lang', z?'en':'zh');}catch(e){}
+});
+</script>
+</body></html>

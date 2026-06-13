@@ -2,6 +2,29 @@
 
 Newest first. Each entry: what was decided, why, and what would change it.
 
+## 2026-06-13 — Vector allocation deep-dive page + alt-cycle ETH
+
+**D-vec-ALLOC. New allocation deep-dive page (vector_allocation.html) with an
+altcoin-cycle / ETH allocation overlay.** engine/alt_cycle.py: ethbtc_signal
+(ETH/BTC ratio = the deep, calibratable alt proxy 2017→, 0.05 = deep BTC-season /
+0.07 = alt-season confirmed), alt_season_score (0-100 blend of ETH/BTC pctile +
+slope + dominance context; dominance/TOTAL from CoinGecko snapshot = context
+only), and a BTC/ETH/alts/cash ALLOC_GRID keyed to cycle regime × alt-season
+(rules: alts only when alt-season AND not bear; ETH leads alts; cash dominates
+bear regardless — the "nimble only" message). scripts/build_vector
+build_allocation_page() + chart_ethbtc() write site/vector_allocation.html (runs
+in main(), wrapped so it can't break the main build); new
+templates/vector_allocation.html.j2 (self-contained light theme, bilingual);
+nav link added. config vector.alt_cycle. LIVE READ (coherent with the cycle/macro
+read): ETH/BTC 0.0262 @13th pctile, falling, below 50w MA → deep BTC-season
+(score 20); regime bear → **25 BTC / 5 ETH / 0 alts / 70 cash** — matches the
+stock analyzer's cash-heavy "not an investment buy". Page also explains the 4 BTC
+variants + backtest scorecards. Honest caveats surfaced: the % grid + 0.05/0.07
+lines are judgment/convention (not optimized), ~1.5-2 ETH/BTC cycles = low
+confidence, regime overlay not an entry timer. STILL TODO (user ask): the
+short/mid side-by-side layout tidy on the main page (the confluence banner
+already tidies the top-level read).
+
 ## 2026-06-13 — Vector MTF cycle-ladder + confluence verdict (reconcile bounce vs bigger picture)
 
 **D-vec-MTF. The Vector now REUSES the macro cycle-ladder/MTF engine and resolves

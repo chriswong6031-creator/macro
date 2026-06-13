@@ -181,7 +181,8 @@ def cross_asset(sig_close: pd.Series) -> list[dict]:
     crypto. Reads the shared macro parquet store (free)."""
     groups = [
         ("Index", [("S&P 500", "yahoo", "SPY"), ("Nasdaq", "yahoo", "QQQ"),
-                   ("Dow Jones", "yahoo", "_DJI"), ("DXY", "yahoo", "DX-Y.NYB")]),
+                   ("Russell 2000", "yahoo", "_RUT"), ("Dow Jones", "yahoo", "_DJI"),
+                   ("DXY", "yahoo", "DX-Y.NYB")]),
         ("Commodities", [("Gold", "yahoo", "GC_F"), ("Silver", "yahoo", "SI_F"),
                          ("Brent Oil", "yahoo", "BZ_F")]),
         ("Crypto", [("BTC", None, None), ("ETH", "yahoo", "ETH-USD"),
@@ -656,6 +657,63 @@ def _r(v, n=2):
     return round(float(v), n) if v is not None and pd.notna(v) else None
 
 
+def chart_ethbtc(ratio: pd.Series, ma: pd.Series | None, cfg: dict) -> str:
+    d = _tail(ratio, 365 * 5)
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=d.index, y=d.values, name="ETH/BTC",
+                             line={"color": C["blue"], "width": 1.6}))
+    if ma is not None:
+        fig.add_trace(go.Scatter(x=d.index, y=ma.reindex(d.index).values, name="50w MA",
+                                 line={"color": C["faint"], "dash": "dot", "width": 1.2}))
+    for lvl, lbl, col in ((cfg["btc_season_line"], "0.05 · deep BTC-season", C["red"]),
+                          (cfg["alt_season_line"], "0.07 · alt-season", C["blue"])):
+        fig.add_hline(y=lvl, line={"color": col, "dash": "dash", "width": 1},
+                      annotation_text=lbl, annotation_font_size=10)
+    fig.update_layout(**{**PLOT, "height": 300})
+    return _html(fig)
+
+
+def build_allocation_page(env, site: Path, sig: pd.DataFrame, cards: dict,
+                          mtf_a: dict, verdict: dict) -> None:
+    """The allocation deep-dive page: strategy variants + backtests, AND the
+    altcoin-cycle / ETH allocation keyed to (cycle regime x alt-season x risk)."""
+    from engine import alt_cycle
+    cfg = config.load()["vector"]["alt_cycle"]
+    close = sig["close"]
+    last = sig.iloc[-1]
+    eth = _series("yahoo", "ETH-USD")
+    eb = alt_cycle.ethbtc_signal(eth, close, cfg)
+    cg = store.read("coingecko", "global_market")
+    dom = float(cg["btc_dominance_pct"].iloc[-1]) if cg is not None and not cg.empty else None
+    ethdom = float(cg["eth_dominance_pct"].iloc[-1]) if cg is not None and not cg.empty else None
+    score, bucket = alt_cycle.alt_season_score(eb, dom, cfg)
+    lad = mtf_a.get("ladder") or {}
+    regime = lad.get("regime")
+    grid = alt_cycle.alloc_grid(regime, bucket)
+    pvm = {
+        "as_of": sig.index.max().strftime("%b %d, %Y"),
+        "built": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+        "price": close.iloc[-1],
+        "grid": grid, "regime": regime, "regime_label": lad.get("regime_label"),
+        "regime_label_zh": lad.get("regime_label_zh"), "verdict": verdict,
+        "alloc_pct": round(100 * last["alloc_optimal"]),
+        "cards": cards,
+        "alt": {
+            "ethbtc": _r(eb.get("level"), 4) if eb else None,
+            "ethbtc_pctile": eb.get("pctile") if eb else None,
+            "above_ma": eb.get("above_ma") if eb else None,
+            "slope": _r(100 * eb["slope"], 1) if eb.get("slope") is not None else None,
+            "season": eb.get("season") if eb else None,
+            "score": score, "bucket": bucket,
+            "dom": _r(dom, 1), "ethdom": _r(ethdom, 1),
+        },
+        "chart_ethbtc": chart_ethbtc(eb["ratio"], eb.get("ma"), cfg) if eb else "",
+    }
+    html = env.get_template("vector_allocation.html.j2").render(**pvm, C=C)
+    (site / "vector_allocation.html").write_text(html)
+    log.info("wrote %s/vector_allocation.html (%d KB)", site, len(html) // 1024)
+
+
 def main() -> int:
     # self-sufficient: recompute signals every build (daily freshness) and
     # persist them. The heavy calibration (verdicts/backtests in calibration.json)
@@ -872,6 +930,10 @@ def main() -> int:
     site = Path(config.load()["storage"]["site_dir"])
     (site / "vector.html").write_text(html)
     log.info("wrote %s/vector.html (%d KB)", site, len(html) // 1024)
+    try:
+        build_allocation_page(env, site, sig, cards, mtf_a, verdict)
+    except Exception as e:  # noqa: BLE001 — never let the sub-page break the main build
+        log.error("allocation page failed (%s)", e)
     build_landing(site, vm)
     return 0
 
