@@ -147,8 +147,12 @@ etf_holdings:
   # browser); Vanguard NOT supported (no free daily feed). Invesco: idType=cusip is
   # reliable (idType=ticker 500s for all but flagship QQQ).
   retries: 3
-  active_change_alert_pct: 15     # |flow-normalized share change| (% of position) to flag
-  active_change_window_d: 5       # compare latest snapshot to one ~5 snapshots back
+  # Tuned for INDEX/thematic ETFs (measured 2026-06-13 on backfilled Global X data):
+  # these rebalance over weeks, not days, so a 5-day/15% bar (set for fast ARK funds)
+  # surfaced nothing. A ~40-snapshot (≈8-week) rolling window at a 5% flow-normalized
+  # change captures the actual index-reconstitution / float-flow decisions.
+  active_change_alert_pct: 5      # |flow-normalized share change| (% of position) to flag
+  active_change_window_d: 40      # compare latest snapshot to ~40 snapshots back (≈8 weeks)
   min_position_pct: 0.20          # ignore tiny <0.2%-weight positions (noise)
   page_top_n: 40                  # rows on the ETFs page
   universe:
@@ -172,6 +176,23 @@ etf_holdings:
     URA:  {sponsor: globalx, name: "Global X Uranium", category: "Uranium"}
     LIT:  {sponsor: globalx, name: "Global X Lithium & Battery Tech", category: "Lithium / Battery"}
     COPX: {sponsor: globalx, name: "Global X Copper Miners", category: "Copper Miners"}
+    # Global X serves DATED daily holdings (assets.globalxetfs.com/.../<fund>_full-holdings_YYYYMMDD.csv),
+    # so these are both forward-collected AND backfillable (scripts/backfill_etf.py). Verified 2026-06-13.
+    SIL:  {sponsor: globalx, name: "Global X Silver Miners", category: "Silver Miners"}
+    MLPX: {sponsor: globalx, name: "Global X MLP & Energy Infrastructure", category: "Energy Infra"}
+    PAVE: {sponsor: globalx, name: "Global X U.S. Infrastructure Dev", category: "Infrastructure"}
+    BOTZ: {sponsor: globalx, name: "Global X Robotics & AI", category: "Robotics / AI"}
+    BUG:  {sponsor: globalx, name: "Global X Cybersecurity", category: "Cybersecurity"}
+    CLOU: {sponsor: globalx, name: "Global X Cloud Computing", category: "Cloud"}
+    HERO: {sponsor: globalx, name: "Global X Video Games & Esports", category: "Gaming / Esports"}
+    # --- Roundhill (recon D72: one dated master CSV, backfillable to 2024; these hold
+    #     mostly clean US equities — the swap/options income funds are deliberately skipped) -
+    MEME: {sponsor: roundhill, name: "Roundhill MEME", category: "Meme / Retail"}
+    METV: {sponsor: roundhill, name: "Roundhill Ball Metaverse", category: "Metaverse"}
+    CHAT: {sponsor: roundhill, name: "Roundhill Generative AI & Tech", category: "AI"}
+    BETZ: {sponsor: roundhill, name: "Roundhill Sports Betting & iGaming", category: "Sports Betting"}
+    MARS: {sponsor: roundhill, name: "Roundhill Space", category: "Space"}
+    OZEM: {sponsor: roundhill, name: "Roundhill GLP-1 & Weight Loss", category: "Obesity / GLP-1"}
     # iShares/BlackRock (IVV/IWM/EFA...) and Invesco non-flagship: Akamai/consent
     # walls block direct HTTP (recon 2026-06-13, D71) — need a headless browser, so
     # they are intentionally NOT seeded. Vanguard publishes no free daily feed.
