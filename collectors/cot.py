@@ -54,8 +54,12 @@ class CotAdapter(Adapter):
             last = store.last_date(self.group, f"cot_{key}")
             if last:
                 start = str(last)
+        # SoQL escapes a single quote by doubling it — WTI's older CFTC name
+        # carries a literal apostrophe (CRUDE OIL, LIGHT 'SWEET') that would
+        # otherwise break the WHERE clause.
         clause = " OR ".join(
-            f"starts_with(market_and_exchange_names, '{p}')" for p in prefixes)
+            "starts_with(market_and_exchange_names, '{}')".format(p.replace("'", "''"))
+            for p in prefixes)
         where = (f"({clause}) AND "
                  f"report_date_as_yyyy_mm_dd > '{start}T00:00:00.000'")
         r = self.http_get(self.cfg["socrata_url"], retries=self.cfg["retries"],

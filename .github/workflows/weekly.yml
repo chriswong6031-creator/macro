@@ -33,6 +33,10 @@ jobs:
           python -m engine.run
           python -m scripts.build_site
           python -m scripts.daily_brief
+          python -m scripts.calibrate_china    # weekly: refresh China regime/ladder forward-return calibration
+          python -m scripts.build_china        # after build_site, before build_vector (hub)
+          python -m scripts.calibrate_commodities  # weekly: refresh commodity split-half forward verdicts
+          python -m scripts.build_commodities      # after build_site/build_china, before build_vector (hub)
           python -m scripts.calibrate_vector   # weekly: refresh vector forward-return verdicts + backtests
           python -m scripts.build_vector       # after build_site: macro->macro.html, hub->index.html
       - name: commit

@@ -1,0 +1,331 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><span class="l-en">A-Share analyzer</span><span class="l-zh">A股分析</span> — cycle &amp; momentum</title>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,
+         "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1100px)/2)); } }
+  html[data-lang="zh"] body { font-family: "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",-apple-system,sans-serif; }
+  .points { margin:6px 0; padding-left:18px; } .points li { margin:2px 0; }
+  .cyclebox { margin:8px 0; padding:9px 12px; border-radius:9px; background:var(--panel2);
+              font-size:13px; line-height:1.6; }
+  .regline { margin:-2px -4px 6px; padding:6px 9px; border-radius:7px;
+             border-left:3px solid var(--muted); }
+  .regline.rl-bear { border-left-color:var(--down);
+             background:color-mix(in srgb, var(--down) 12%, var(--panel2)); }
+  .regline.rl-bull { border-left-color:var(--up);
+             background:color-mix(in srgb, var(--up) 12%, var(--panel2)); }
+  .regline.rl-neutral { border-left-color:var(--muted);
+             background:color-mix(in srgb, var(--muted) 10%, var(--panel2)); }
+  .entrybar { display:flex; gap:10px; align-items:flex-start; margin:10px 0 8px;
+              padding:9px 12px; border-radius:9px; background:var(--panel2);
+              border-left:4px solid var(--muted); font-size:14px; }
+  .entrytag { font-weight:800; font-size:12px; letter-spacing:.04em; white-space:nowrap;
+              padding:3px 9px; border-radius:7px; background:var(--panel); color:var(--text); border:1px solid var(--line); }
+  .urg-now .entrytag { background:var(--up); color:#fff; } .urg-now { border-left-color:var(--up); }
+  .urg-imminent .entrytag { background:var(--g-cold); color:#fff; } .urg-imminent { border-left-color:var(--g-cold); }
+  .urg-soon { border-left-color:var(--g-cold); } .urg-later { border-left-color:var(--muted); }
+  .urg-hold { border-left-color:var(--muted); }
+  .urg-caution .entrytag { background:var(--warn); color:#1a1a1a; } .urg-caution { border-left-color:var(--warn); }
+  .urg-exit .entrytag { background:var(--down); color:#fff; } .urg-exit { border-left-color:var(--down); }
+  .urg-avoid { border-left-color:var(--down); }
+  .early { margin:6px 0; padding:8px 12px; border-radius:8px;
+           background:color-mix(in srgb, var(--g-cold) 14%, var(--panel2));
+           border-left:3px solid var(--g-cold); font-size:13px; color:var(--text); }
+  .agewhen { margin:6px 0; padding:7px 11px; border-radius:8px; background:var(--panel2);
+             border-left:3px solid var(--link); font-size:13px; color:var(--text); }
+  a { text-decoration:none; }
+  h1 { font-size:20px; margin:0; }
+  h2 { font-size:14px; margin:0 0 10px; color:var(--muted); text-transform:uppercase;
+       letter-spacing:.06em; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+           padding:14px 16px; margin-bottom:14px; }
+  .topline { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+  .navbtn { display:inline-block; padding:5px 11px; border-radius:9px; background:var(--panel2);
+            border:1px solid var(--line); color:var(--text); font-size:13px; font-weight:600; }
+  .muted { color:var(--muted); }
+  .state { display:inline-block; padding:2px 11px; border-radius:12px; font-weight:700;
+           font-size:12.5px; }
+  .searchwrap { position:relative; flex:1; min-width:260px; max-width:460px; }
+  #q { width:100%; padding:10px 14px; border-radius:10px; border:1px solid var(--line);
+       background:var(--panel2); color:var(--text); font-size:15px; outline:none; }
+  #q:focus { border-color:var(--link); }
+  #sugg { position:absolute; top:104%; left:0; right:0; background:var(--panel);
+          border:1px solid var(--line); border-radius:10px; z-index:50; max-height:330px;
+          overflow:auto; display:none; box-shadow:var(--popover-shadow); }
+  #sugg div { padding:8px 13px; cursor:pointer; display:flex; gap:10px; align-items:center; }
+  #sugg div:hover, #sugg div.sel { background:var(--panel2); }
+  #sugg b { min-width:78px; }
+  #sugg small { color:var(--muted); flex:1; }
+  .mtf { display:flex; gap:14px; flex-wrap:wrap; font-size:12.5px; color:var(--muted);
+         margin-top:8px; }
+  .mtf b { color:var(--text); }
+  table { border-collapse:collapse; width:100%; font-size:13px; }
+  th,td { text-align:left; padding:4px 8px; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:500; }
+  #result { display:none; }
+</style>
+</head>
+<body>
+  <div class="panel">
+    <div class="topline">
+      <h1>🔎 <span class="l-en">A-Share analyzer</span><span class="l-zh">A股分析</span></h1>
+      <div class="searchwrap">
+        <input id="q" placeholder="搜索任意 A 股 / 板块ETF / 指数… (e.g. 600519, 茅台 ticker, Banks)" autocomplete="off">
+        <div id="sugg"></div>
+      </div>
+      <a class="navbtn" href="china.html"><span class="l-en">← China A-Shares</span><span class="l-zh">← 中国A股</span></a>
+      <a class="navbtn" href="index.html"><span class="l-en">🏠 Home</span><span class="l-zh">🏠 首页</span></a>
+      <button class="lang-btn">中文</button>
+      <button class="theme-btn">☀️ <span class="l-en">Light</span><span class="l-zh">浅色</span></button>
+    </div>
+    <p class="muted" style="margin:8px 0 0"><span class="l-en">Every name gets the same treatment as the sector board:
+      cycle position (daily + weekly), three-timeframe momentum visuals, a clear entry/exit call, and the
+      signal's measured track record. Library refreshes nightly; covers the curated A-share large-caps,
+      the sector ETFs and the broad indices.</span><span class="l-zh">每个标的都享有与板块面板相同的分析：周期位置（日线＋周线）、三周期动量视觉图、明确的进出场判断，
+      以及该信号的实测历史表现。标的库每晚刷新，覆盖精选的 A 股大盘股、板块 ETF 与宽基指数。</span></p>
+  </div>
+
+  <div id="result">
+    <div class="panel">
+      <div class="topline">
+        <h1 id="r_name"></h1>
+        <span id="r_state" class="state"></span>
+        <span style="flex:1"></span>
+        <span id="r_asof" class="muted"></span>
+      </div>
+      <p id="r_summary" class="muted" style="margin:2px 0 6px; font-size:13.5px"></p>
+      <div id="r_entry" class="entrybar"><span class="entrytag" id="r_tag"></span><span id="r_entrytext"></span></div>
+      <p id="r_age" class="agewhen" style="display:none"></p>
+      <p id="r_early" class="early" style="display:none"></p>
+      <ul id="r_points" class="points"></ul>
+      <div id="r_cyclebox" class="cyclebox"></div>
+      <p id="r_flags" class="neg" style="margin:4px 0"></p>
+      <details><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary><p class="muted" id="r_why" style="margin:6px 0"></p></details>
+    </div>
+    <div class="panel">
+      <h2><span class="l-en">Momentum across timeframes</span><span class="l-zh">跨周期动量</span></h2>
+      <div id="r_mtf"></div>
+    </div>
+    <div class="panel">
+      <h2><span class="l-en">Chart</span><span class="l-zh">图表</span></h2>
+      <div id="tvbox"></div>
+    </div>
+    <div class="panel">
+      <h2><span class="l-en">How much to trust the state — measured 2008→2026</span><span class="l-zh">这个状态有多可信 — 实测 2008→2026</span></h2>
+      <table id="r_cal"></table>
+      <p class="muted" style="font-size:12px; margin-top:8px"><span class="l-en">A-shares drift up over a month from every state (the market's long upward bias); the spread between
+        states is small, and the "scary" states measured slightly better forward returns — markets mean-revert
+        and full confirmation costs part of the bounce. Use the state for <b>structure</b> (cycle position,
+        confirmation checklist, invalidation level) and size positions instead of seeking certainty.
+        <b>Typical dip</b> = median worst drop over the next month; <b>bad-case dip</b> = the worst 1-in-10
+        month (10th percentile) — the drawdown lens matters more than average return for risk states.</span><span class="l-zh">从任何状态出发，A 股在一个月内都倾向于上涨（市场长期向上的偏向）；各状态之间的差距很小，而那些
+        "吓人"的状态实测前瞻收益反而略好 — 市场会均值回归，等到完全确认时已错过部分反弹。请把状态用于
+        <b>结构判断</b>（周期位置、确认清单、失效价位）并据此控制仓位，而非追求确定性。
+        <b>典型回撤</b> = 未来一个月最大跌幅的中位数；<b>最坏回撤</b> = 十分之一的最差月份（第10百分位）—
+        对于风险状态，回撤视角比平均收益更重要。</span></p>
+    </div>
+  </div>
+
+<script src="https://s3.tradingview.com/tv.js"></script>
+<script>
+(function () {
+  var idx = [], cal = null, sel = -1, items = [];
+  var q = document.getElementById('q'), sugg = document.getElementById('sugg');
+  function lang() { return document.documentElement.getAttribute('data-lang') || 'en'; }
+  var T = {
+    en: { asof: 'data through', notlib: 'NOT IN LIBRARY',
+          notlibmsg: 'Not in the nightly library (curated A-share large-caps + sector ETFs + indices). Add it in one line: config.yml → china.constituents.',
+          season: 'Seasonality', failed: '⚠ Failed cycle — price is below the low that started this cycle; the larger trend is usually rolling over.',
+          next: 'Next:', cu: ' just crossed up', cd: ' just crossed down',
+          bullx: ' bars to bull cross', bearx: ' bars to bear cross',
+          ph: 'Search any A-share / sector ETF / index… (e.g. 600519, Banks)',
+          th_state: 'state', th_n: 'samples', th_up: 'up next month', th_avg: 'avg next month',
+          th_dipm: 'typical dip', th_dipb: 'bad-case dip' },
+    zh: { asof: '数据截至', notlib: '不在库中',
+          notlibmsg: '不在每晚更新的标的库中（精选 A 股大盘股 ＋ 板块 ETF ＋ 指数）。一行即可添加：config.yml → china.constituents。',
+          season: '季节性', failed: '⚠ 失败周期 — 价格已跌破启动本周期的低点；此时更大的趋势通常正在转向下行。',
+          next: '下一步：', cu: ' 刚上穿', cd: ' 刚下穿',
+          bullx: ' 根K线后金叉', bearx: ' 根K线后死叉',
+          ph: '搜索任意 A 股 / 板块ETF / 指数…（例如 600519、Banks）',
+          th_state: '状态', th_n: '样本数', th_up: '下月上涨', th_avg: '下月均值',
+          th_dipm: '典型回撤', th_dipb: '最坏回撤' } };
+  function L(k) { return (T[lang()] || T.en)[k]; }
+  function lz(en, zh) { return lang() === 'zh' && zh ? zh : (en || ''); }
+  var DISP = {"DECLINE": {"label": "DOWNTREND", "action": "AVOID", "dir": "down", "label_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "action_zh": "\u56de\u907f"}, "BOTTOM WATCH": {"label": "NEARING A LOW", "action": "GET READY", "dir": "down", "label_zh": "\u63a5\u8fd1\u4f4e\u70b9", "action_zh": "\u51c6\u5907"}, "TURN SIGNALED": {"label": "BOTTOMING", "action": "BUY SETUP", "dir": "up", "label_zh": "\u7b51\u5e95\u4e2d", "action_zh": "\u4e70\u5165\u9884\u5907"}, "FRESH BUY": {"label": "BUY ZONE", "action": "BUY", "dir": "up", "label_zh": "\u4e70\u5165\u533a", "action_zh": "\u4e70\u5165"}, "RALLY ON": {"label": "UPTREND", "action": "HOLD", "dir": "up", "label_zh": "\u4e0a\u6da8\u8d8b\u52bf", "action_zh": "\u6301\u6709"}, "TOP WATCH": {"label": "NEARING A HIGH", "action": "TAKE PROFITS", "dir": "up", "label_zh": "\u63a5\u8fd1\u9ad8\u70b9", "action_zh": "\u6b62\u76c8"}, "ROLLING OVER": {"label": "TOPPING", "action": "SELL SETUP", "dir": "down", "label_zh": "\u505a\u9876\u4e2d", "action_zh": "\u5356\u51fa\u9884\u5907"}, "COUNTERTREND BOUNCE": {"label": "COUNTER-TREND BOUNCE", "action": "HIGH-RISK \u00b7 NIMBLE ONLY", "dir": "caution", "label_zh": "\u9006\u52bf\u53cd\u5f39", "action_zh": "\u9ad8\u98ce\u9669 \u00b7 \u4ec5\u9650\u7075\u6d3b\u64cd\u4f5c"}};
+  function dlabel(s) { var d = DISP[s]; if (!d) return s; return lang() === 'zh' ? (d.label_zh || d.label) : d.label; }
+  function disp(s) {
+    var d = DISP[s]; if (!d) return s;
+    return lang() === 'zh' ? (d.label_zh || d.label) + ' · ' + (d.action_zh || d.action)
+                           : d.label + ' · ' + d.action;
+  }
+  q.placeholder = L('ph');
+
+  fetch('chinastockdata/index.json').then(r => r.json()).then(d => { idx = d; fromHash(); });
+  fetch('chinastockdata/calibration.json').then(r => r.ok ? r.json() : null)
+    .then(d => { cal = d; }).catch(() => {});
+
+  function fromHash() {
+    var t = decodeURIComponent((location.hash || '').slice(1));
+    if (t) load(t);
+  }
+  window.addEventListener('hashchange', fromHash);
+
+  q.addEventListener('input', function () {
+    var v = q.value.trim().toLowerCase();
+    sel = -1;
+    if (!v) { sugg.style.display = 'none'; return; }
+    items = idx.filter(function (x) {
+      return x.t.toLowerCase().indexOf(v) === 0 ||
+             x.n.toLowerCase().indexOf(v) >= 0 || x.s.toLowerCase().indexOf(v) >= 0;
+    }).sort(function (a, b) {
+      var ae = a.t.toLowerCase() === v ? -1 : 0, be = b.t.toLowerCase() === v ? -1 : 0;
+      if (ae !== be) return ae - be;
+      var ap = a.t.toLowerCase().indexOf(v) === 0 ? 0 : 1,
+          bp = b.t.toLowerCase().indexOf(v) === 0 ? 0 : 1;
+      return ap - bp || a.t.localeCompare(b.t);
+    }).slice(0, 12);
+    sugg.innerHTML = items.map(function (x, i) {
+      return '<div data-i="' + i + '"><b>' + x.t + '</b><small>' + x.n +
+             (x.s ? ' · ' + x.s : '') + '</small><span class="muted" style="font-size:11px">' +
+             disp(x.st) + '</span></div>';
+    }).join('');
+    sugg.style.display = items.length ? 'block' : 'none';
+  });
+  q.addEventListener('keydown', function (e) {
+    if (sugg.style.display === 'none') return;
+    var divs = sugg.querySelectorAll('div');
+    if (e.key === 'ArrowDown') { sel = Math.min(sel + 1, divs.length - 1); e.preventDefault(); }
+    else if (e.key === 'ArrowUp') { sel = Math.max(sel - 1, 0); e.preventDefault(); }
+    else if (e.key === 'Enter') { pick(sel >= 0 ? sel : 0); e.preventDefault(); return; }
+    else if (e.key === 'Escape') { sugg.style.display = 'none'; return; }
+    divs.forEach(function (d, i) { d.classList.toggle('sel', i === sel); });
+  });
+  sugg.addEventListener('mousedown', function (e) {
+    var d = e.target.closest('div[data-i]');
+    if (d) pick(+d.dataset.i);
+  });
+  function pick(i) {
+    if (!items[i]) return;
+    sugg.style.display = 'none';
+    q.value = items[i].t;
+    location.hash = encodeURIComponent(items[i].t);
+  }
+
+  function load(t) {
+    var safe = t.replace('=', '_').replace('^', '_');
+    fetch('chinastockdata/' + safe + '.json').then(function (r) {
+      if (!r.ok) throw new Error('not in library');
+      return r.json();
+    }).then(render).catch(function () {
+      document.getElementById('result').style.display = 'block';
+      document.getElementById('r_name').textContent = t;
+      document.getElementById('r_state').textContent = L('notlib');
+      document.getElementById('r_state').className = 'state';
+      document.getElementById('r_entry').style.display = 'none';
+      document.getElementById('r_points').innerHTML = '';
+      document.getElementById('r_cyclebox').innerHTML = L('notlibmsg');
+    });
+  }
+
+  function render(d) {
+    document.getElementById('result').style.display = 'block';
+    document.getElementById('r_name').textContent = d.name + ' (' + d.ticker + ')';
+    var st = document.getElementById('r_state');
+    st.textContent = dlabel(d.ladder.state) || d.ladder.label;
+    st.className = 'state st-' + d.ladder.state.replace(/ /g, '_');
+    document.getElementById('r_summary').textContent = lz(d.ladder.summary_line, d.ladder.summary_line_zh);
+    document.getElementById('r_asof').textContent = L('asof') + ' ' + d.asof;
+
+    var e = d.ladder.entry || {};
+    var eb = document.getElementById('r_entry');
+    eb.style.display = 'flex';
+    eb.className = 'entrybar urg-' + (e.urgency || 'hold');
+    document.getElementById('r_tag').textContent = e.tag || '';
+    document.getElementById('r_entrytext').textContent = lz(e.text, e.text_zh);
+
+    var ageEl = document.getElementById('r_age');
+    if (d.ladder.age_line) {
+      ageEl.textContent = lz(d.ladder.age_line, d.ladder.age_line_zh);
+      ageEl.style.display = 'block';
+    } else { ageEl.style.display = 'none'; }
+
+    var pts = (lang() === 'zh' && d.ladder.points_zh && d.ladder.points_zh.length)
+      ? d.ladder.points_zh : (d.ladder.points || []);
+    document.getElementById('r_points').innerHTML =
+      pts.map(function (p) { return '<li>' + p + '</li>'; }).join('');
+
+    var cp = d.ladder.cycle_plain || {};
+    var reg = d.ladder.regime || 'neutral';
+    var regEmoji = reg === 'bear' ? '🔻' : reg === 'bull' ? '🟢' : '⚪';
+    var cyc = '';
+    if (d.ladder.regime_line)
+      cyc += '<div class="regline rl-' + reg + '"><b>' + regEmoji + ' ' +
+             lz(d.ladder.regime_line, d.ladder.regime_line_zh) + '</b></div>';
+    cyc += '<div><b>📅 ' + lz(cp.daily_line, cp.daily_line_zh) + '</b> — ' + lz(cp.daily_phase, cp.daily_phase_zh) + '</div>';
+    if (cp.weekly_line) cyc += '<div><b>🗓 ' + lz(cp.weekly_line, cp.weekly_line_zh) + '</b> — ' + lz(cp.weekly_phase, cp.weekly_phase_zh) + '</div>';
+    if (cp.translation) cyc += '<div class="muted">' + lz(cp.translation, cp.translation_zh) + '</div>';
+    if (d.season_this) cyc += '<div class="muted">' + L('season') + ' — ' + d.season_this +
+      (d.season_next ? '; ' + d.season_next : '') + '.</div>';
+    document.getElementById('r_cyclebox').innerHTML = cyc;
+
+    var early = document.getElementById('r_early');
+    if (d.ladder.early_note) { early.textContent = lz(d.ladder.early_note, d.ladder.early_note_zh); early.style.display = 'block'; }
+    else { early.style.display = 'none'; }
+
+    document.getElementById('r_flags').textContent = d.cycle.failed_cycle ? L('failed') : '';
+    document.getElementById('r_why').textContent = lz(d.ladder.why, d.ladder.why_zh) + ' ' + L('next') + ' ' + lz(d.ladder.next, d.ladder.next_zh);
+    window.renderMTF(document.getElementById('r_mtf'), d.mtf);
+
+    var cs = '<tr><th>' + L('th_state') + '</th><th>' + L('th_n') + '</th><th>' + L('th_up') +
+             '</th><th>' + L('th_avg') + '</th><th>' + L('th_dipm') + '</th><th>' + L('th_dipb') + '</th></tr>';
+    if (cal) {
+      Object.keys(cal).forEach(function (s) {
+        var v = cal[s];
+        var dipMed = v.dd_med_pct != null ? v.dd_med_pct + '%' : '—';
+        var dipBad = v.dd_p10_pct != null ? v.dd_p10_pct + '%' : '—';
+        cs += '<tr><td><span class="state st-' + s.replace(/ /g, '_') + '">' + disp(s) + '</span></td><td>' +
+              v.n + '</td><td>' + v.hit_pct + '%</td><td class="' +
+              (v.avg_fwd_pct > 0 ? 'pos' : 'neg') + '">' + v.avg_fwd_pct + '%</td>' +
+              '<td class="neg">' + dipMed + '</td><td class="neg">' + dipBad + '</td></tr>';
+      });
+    }
+    document.getElementById('r_cal').innerHTML = cs;
+
+    document.getElementById('tvbox').innerHTML = '<div id="tvchart"></div>';
+    try {
+      new TradingView.widget({container_id: 'tvchart', symbol: d.tv || d.ticker,
+        interval: 'D', theme: (localStorage.getItem('theme') === 'light' ? 'light' : 'dark'),
+        style: '1', height: 430, width: '100%',
+        hide_side_toolbar: true, allow_symbol_change: true,
+        studies: ['RSI@tv-basicstudies', 'MACD@tv-basicstudies']});
+    } catch (e) { /* chart is garnish — analysis above stands alone */ }
+  }
+  document.addEventListener('themechange', function () {
+    var h = (location.hash || '').slice(1);
+    if (h) load(decodeURIComponent(h));
+  });
+  document.addEventListener('langchange', function () {
+    q.placeholder = L('ph');
+    var h = (location.hash || '').slice(1);
+    if (h) load(decodeURIComponent(h));
+  });
+})();
+</script>
+<script src="mtf.js"></script>
+<script src="theme.js"></script>
+<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-13 09:39 UTC UTC · <span class="l-en">charts by TradingView · curated A-share universe, not exhaustive</span><span class="l-zh">图表由 TradingView 提供 · 精选 A 股范围，非全市场</span></p>
+<footer class="site-footer">
+  <span class="made"><span class="l-en">Made with ❤️ in Canada</span><span class="l-zh">用 ❤️ 在加拿大制作</span></span>
+  <span class="dev"><span class="l-en">Developed by</span><span class="l-zh">开发者</span> Chris Wong</span>
+</footer>
+</body>
+</html>

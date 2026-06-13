@@ -3,6 +3,41 @@
 Update this file whenever a weakness is discovered or fixed. Every item lists
 the consequence, not just the cause.
 
+## China A-share dashboard
+
+- **Macro is a scraper plane (Eastmoney), not a clean API.** PMI/CPI/PPI/M2/
+  industrial-production come from Eastmoney's datacenter JSON — free and verified,
+  but a layout/endpoint change can silently drop a series. Each is circuit-breaker
+  isolated and archived forever (the datacenter only serves recent history), so a
+  gap self-heals, but the macro layer is structurally more fragile than FRED.
+- **China macro history is short and regime-unstable.** Monthly series start
+  ~2006–08, so the regime is calibrated on ~18 years vs the US's decades, across a
+  market reshaped by the 2007/2015 bubbles and heavy policy intervention. Only the
+  **Growth-scare** quad (contrarian) and **expanding-liquidity** overlay survive
+  split-half robustness; Goldilocks/Stagflation flip between halves and ship as
+  *context, not allocation rules* (stated on the dashboard + brief).
+- **No real ETF holdings — sector membership is curated.** There is no free
+  Chinese-ETF holdings feed comparable to SSGA's XLSX, so each sector's
+  constituents are a hand-curated large-cap list in `config.yml` (also the breadth
+  denominator). This makes breadth a **large-cap (CSI300-style) gauge**, and the
+  sector drill-down shows *representative* names, not the ETF's true holdings.
+- **Sector-ETF RS is display-grade (~5y history).** The 16 mainland sector ETFs
+  mostly launched 2019–21, so their relative-strength ranks are short-history; the
+  ladder/regime are calibrated on the **deep** stock/index panel (1997–2026), and
+  the sector ETFs are rendered through the same engine but not independently
+  calibrated. Labeled on the page footer.
+- **Stock Connect northbound froze Aug-2024 + southbound parsing is imperfect.**
+  Regulators curtailed real-time northbound disclosure, so `northbound_cum` goes
+  flat (expected, not a bug); the southbound leg parsing is best-effort and
+  non-load-bearing. Connect flows are context only, not a regime input.
+- **SHIBOR series is shallow** (the rates report returns only a short recent
+  window), so the liquidity overlay anchors on M2-YoY; SHIBOR is a secondary tilt.
+- **Constituent stock names are tickers** (no free Chinese-name map wired yet) —
+  the A-share search matches by ticker/sector, not company name in either language.
+- **Global cross-border factors are NOT yet in the China regime** (deferred by the
+  user). Measured separately (research): global risk/dollar factors drive Hong Kong
+  ~2× more than A-shares; the overlay is a planned follow-on, not in v1.
+
 ## Bitcoin Vector alerts
 
 - **"Real-time" is honest near-real-time (~15–45 min), price-only intraday.**
@@ -119,6 +154,44 @@ the consequence, not just the cause.
   alerts rather than crashing.
 - **N-PORT validation is quarterly with ~60d lag** — it validates the scraper,
   never the live signal.
+- **Sector-ETF accumulation signal (Accumulation Watch) is a PASSIVE-fund
+  residual, not manager conviction.** `engine/holdings_signals.py` decomposes
+  each top-10 holding's weight change into a price part and a residual
+  (`active_change`). On the sector SPDRs — which are passive, market-cap-weighted
+  index funds — that residual is index reconstitution / float-weight flow (forced
+  index-fund buying), NOT a discretionary manager favoring a name. The
+  conviction interpretation only applies to the *active* funds planned for the
+  Phase-2 top-200 page. Further caveats: (1) top-10 holdings only, so accumulation
+  outside the top 10 is invisible; (2) stored weights are rounded to 0.01% — the
+  noise floor is ~0.01pp, well below the 0.15pp flag threshold but worth knowing;
+  (3) `r_fund` uses the ETF's market close as a proxy for NAV (tiny premium/discount
+  on liquid SPDRs); (4) the estimated $-flow (active_change × AUM) is approximate;
+  (5) thresholds are UNCALIBRATED — only one snapshot exists at launch (2026-06-11),
+  so signals are empty until ≥2 daily snapshots accumulate and thresholds should be
+  re-tuned once weeks of residual history exist. See DECISIONS D70.
+- **Top-200 ETF flow radar (etfs.html) coverage is sponsor-limited — ~30-40% of
+  top-200 AUM, but a large share of the fund COUNT.** The broad `etf_holdings`
+  universe uses share-based flow-normalized active decisions, which need full daily
+  holdings WITH shares. VERIFIED free server-fetchable feeds (recon 2026-06-13):
+  **SPDR/State Street** (daily XLSX incl. Shares Held), **ARK** (CSV), **Invesco**
+  (the `dng-api.invesco.com` cache JSON — use `idType=cusip`; `idType=ticker` 500s
+  for all but the flagship QQQ), and **Global X** (dated full-holdings CSV; walk back
+  a few business days on 404). BLOCKED and intentionally NOT seeded: **iShares/
+  BlackRock** (~30% of top-200 AUM — Akamai Bot Manager serves a consent-wall HTML
+  body under a deceptive `text/csv` header even with consent cookies; needs a headless
+  browser — `_fetch_ishares` is retained for that future path), **Schwab** (403/JS),
+  and **Invesco non-flagship pages**. **Vanguard** (~25-29% of AUM) publishes no free
+  daily holdings feed (month-end + quarterly N-PORT only) — do not fake a daily signal
+  for it. ProShares was evaluated and dropped: its consolidated CSV is mostly
+  leveraged swap/futures funds with no stock-level conviction signal. A degraded
+  third-party layer (stockanalysis.com scrape) could cover the wall-blocked mega-caps
+  later, clearly labelled non-official. Same passive-vs-active honesty caveat as the
+  sector signal applies; signals need ≥2 daily snapshots per fund. See DECISIONS D71.
+- **Volume-surge confirmation activates late.** Stock volume is now captured by
+  `StockPriceAdapter`, but parquets written before this change have no `volume`
+  column — the 📊 surge marker stays dark until either a `--full-history` backfill
+  runs or ~25 daily snapshots with volume accrue. It is a confirmation enhancer,
+  never required for a signal.
 - **Earnings-revision breadth has no good free source.** The module is a
   best-effort mix of sparse yfinance analyst fields, optional Finnhub free
   tier, and a price-derived proxy. It is excluded from the regime engine by

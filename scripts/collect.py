@@ -40,10 +40,15 @@ def all_adapters() -> dict:
         ("sentiment_aaii", "collectors.sentiment", "AaiiAdapter"),
         ("sector_flows", "collectors.sponsors", "SectorFlowAdapter"),
         ("holdings", "collectors.holdings", "HoldingsAdapter"),
+        ("etf_holdings", "collectors.etf_holdings", "EtfHoldingsAdapter"),
         ("sector_holdings", "collectors.sector_holdings", "SectorHoldingsAdapter"),
         ("stock_prices", "collectors.sector_holdings", "StockPriceAdapter"),
         ("fundamentals", "collectors.fundamentals", "FundamentalsAdapter"),
         ("stock_fundamentals", "collectors.sector_holdings", "StockFundamentalsAdapter"),
+        # China A-share dashboard — see research/CHINA_DATA_AUDIT.md
+        ("china_prices", "collectors.china_prices", "ChinaPriceAdapter"),
+        ("china_macro", "collectors.china_macro", "ChinaMacroAdapter"),
+        ("china_breadth", "collectors.china_breadth", "ChinaBreadthAdapter"),
         # crypto (Bitcoin Vector) — see research/VECTOR_DATA_AUDIT.md
         ("coinmetrics", "collectors.coinmetrics", "CoinMetricsAdapter"),
         ("bgeo", "collectors.bgeo", "BgeoAdapter"),

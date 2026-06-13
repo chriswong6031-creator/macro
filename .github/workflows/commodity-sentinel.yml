@@ -1,0 +1,53 @@
+name: commodity-sentinel
+on:
+  schedule:
+    - cron: "*/30 * * * *"   # every 30 min (Actions cron is best-effort ~15-45 min)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: commodity-sentinel
+  cancel-in-progress: false
+
+jobs:
+  shock:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: commodity shock sentinel (price-only, ~30 min cadence)
+        id: sentinel
+        run: |
+          set +e
+          python -m scripts.commodity_sentinel
+          echo "rc=$?" >> "$GITHUB_OUTPUT"
+          exit 0
+      # Commit ONLY on a shock-state change (no heartbeat spam). The state is
+      # recomputed deterministically from hourly bars each run; the sentinel
+      # re-fetches recent bars live, so it never needs persisted state to know
+      # the CURRENT state, only to detect a transition. Rebuild ONLY commodities.html
+      # (+ data) — deliberately NOT build_vector/index.html: the rendered hub blob is
+      # also written by vector-sentinel + daily, and committing it here would make
+      # `git pull --rebase` conflict on the per-run timestamp line. The home hub feed
+      # picks up the new alert on the next daily run; the commodities timeline updates now.
+      - name: rebuild commodities + commit (only on shock-state change)
+        if: steps.sentinel.outputs.rc == '10'
+        run: |
+          python -m scripts.build_commodities
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/commodity site/commodities.html
+          git diff --cached --quiet && exit 0
+          git commit -m "commodity: shock alert $(date -u +%FT%H:%MZ)"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && exit 0
+            echo "push attempt $i failed; retrying"; sleep $((i*3))
+          done
+          exit 1

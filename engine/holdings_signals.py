@@ -169,6 +169,27 @@ def _ladder_for(ticker: str, min_hist: int) -> dict | None:
             "urgency": lad["entry"]["urgency"], "tag": lad["entry"]["tag"]}
 
 
+def volume_surge(ticker: str, recent: int = 5, base: int = 20) -> dict | None:
+    """Is the stock trading on rising volume? Ratio of the last `recent` days'
+    average volume to the prior `base` days' average. Volume is captured by
+    StockPriceAdapter going forward (older parquets lack it until a full-history
+    backfill), so this returns None until enough volume history exists — a
+    confirmation enhancer, never required."""
+    px = store.read("stocks", str(ticker).replace(".", "-"))
+    if px is None or "volume" not in px.columns:
+        return None
+    v = pd.to_numeric(px["volume"], errors="coerce").dropna()
+    if len(v) < recent + base:
+        return None
+    recent_avg = v.iloc[-recent:].mean()
+    base_avg = v.iloc[-(recent + base):-recent].mean()
+    if not base_avg or base_avg <= 0:
+        return None
+    ratio = float(recent_avg / base_avg)
+    x = config.load()["holdings_signals"].get("volume_surge_x", 1.5)
+    return {"ratio": round(ratio, 2), "surging": ratio >= x}
+
+
 def accumulation_signals(fund: str) -> list[dict]:
     """Holdings whose residual weight change clears the config threshold, each
     enriched with the stock's cycle state. `confirmed` = accumulating AND the
@@ -198,6 +219,7 @@ def accumulation_signals(fund: str) -> list[dict]:
             "est_flow_mn": float(row["est_flow_mn"]) if pd.notna(row["est_flow_mn"]) else None,
             "t0": row["t0"], "t1": row["t1"],
             "direction": direction, "ladder": ladder, "confirmed": confirmed,
+            "vol": volume_surge(str(tk)),
         })
     return sorted(out, key=lambda r: -abs(r["active_change"]))
 
@@ -212,3 +234,94 @@ def all_accumulation_signals() -> list[dict]:
         except Exception as e:  # noqa: BLE001 — one fund must not kill the rest
             log.error("accumulation_signals %s failed: %s", fund, e)
     return sorted(out, key=lambda r: -abs(r["active_change"]))
+
+
+# --------------------------------------------------------------------------- #
+# Phase 2 — broad ETF universe. SHARE-BASED flow-normalized active decisions
+# (collectors.holdings.active_changes_dir): needs no per-stock prices, so it
+# scales across the whole universe. On ACTIVE funds (ARK) the signal is genuine
+# manager conviction; on PASSIVE index/sector ETFs it is index reconstitution /
+# rebalance flow — the page labels each honestly. See D71.
+# --------------------------------------------------------------------------- #
+
+def etf_signals(etf: str, *, base_dir=None, is_active: bool = False,
+                meta: dict | None = None) -> list[dict]:
+    """Flagged holdings for one ETF from full-holdings snapshots: positions whose
+    flow-normalized share change clears `active_change_alert_pct` and whose weight
+    clears `min_position_pct`, each tagged active/passive + (where the stock has
+    price history) its cycle state."""
+    from pathlib import Path
+
+    from collectors.holdings import active_changes_dir
+    cfg = config.load()["etf_holdings"]
+    thresh = cfg.get("active_change_alert_pct", 15)
+    min_w = cfg.get("min_position_pct", 0.20)
+    window = cfg.get("active_change_window_d", 5)
+    min_hist = config.load()["holdings_signals"].get("min_price_history", 60)
+    meta = meta or {}
+
+    base = Path(base_dir or config.data_dir() / "etf_holdings") / etf
+    ch = active_changes_dir(base, window)
+    if ch is None or ch.empty:
+        return []
+    snaps = sorted(base.glob("*.parquet"))
+    latest = pd.read_parquet(snaps[-1]).copy()
+    # weight + name columns differ by sponsor (etf_holdings: weight_pct/name;
+    # ARK watchlist: weight/company) — resolve both.
+    wcol = next((c for c in latest.columns if "weight" in c.lower()), None)
+    ncol = next((c for c in latest.columns if c.lower() in ("name", "company")), None)
+    if wcol:
+        latest["_w"] = pd.to_numeric(
+            latest[wcol].astype(str).str.replace(r"[,%$]", "", regex=True), errors="coerce")
+        wmap = latest.groupby("ticker")["_w"].last()
+    else:
+        wmap = pd.Series(dtype=float)
+    nmap = latest.groupby("ticker")[ncol].last() if ncol else pd.Series(dtype=str)
+
+    out = []
+    for tk, row in ch.iterrows():
+        pct = row["active_chg_pct"]
+        if pd.isna(pct) or abs(pct) < thresh:
+            continue
+        w = wmap.get(tk)
+        if w is not None and pd.notna(w) and abs(float(w)) < min_w:
+            continue
+        ladder = _ladder_for(str(tk), min_hist)
+        direction = "accumulating" if pct > 0 else "trimming"
+        confirmed = bool(direction == "accumulating" and ladder
+                         and (ladder["state"] in BULLISH_STATES
+                              or ladder["urgency"] in ("now", "imminent", "soon")))
+        out.append({
+            "etf": etf, "etf_name": meta.get("name", etf),
+            "category": meta.get("category", ""), "is_active": is_active,
+            "ticker": str(tk), "name": str(nmap.get(tk, "")).title(),
+            "weight_pct": float(w) if w is not None and pd.notna(w) else None,
+            "active_chg_pct": float(pct),
+            "active_share_chg": float(row["active_share_chg"]),
+            "window": f"{row['window_start']}..{row['window_end']}",
+            "direction": direction, "ladder": ladder, "confirmed": confirmed,
+            "vol": volume_surge(str(tk)),
+        })
+    return out
+
+
+def top_etf_accumulation(n: int | None = None) -> list[dict]:
+    """Biggest flow-normalized share decisions across the whole ETF universe —
+    the passive index/sector funds (data/etf_holdings) plus the active ARK
+    watchlist (data/holdings) — flattened and magnitude-sorted for the page."""
+    cfg = config.load()
+    n = n or cfg["etf_holdings"].get("page_top_n", 40)
+    out: list[dict] = []
+    for etf, spec in cfg["etf_holdings"].get("universe", {}).items():
+        try:
+            out.extend(etf_signals(etf, is_active=False, meta=spec))
+        except Exception as e:  # noqa: BLE001 — one fund must not kill the rest
+            log.error("etf_signals %s failed: %s", etf, e)
+    holdings_dir = config.ROOT / cfg["storage"]["holdings_dir"]
+    for etf in cfg["holdings"].get("watchlist", {}):
+        try:
+            out.extend(etf_signals(etf, base_dir=holdings_dir, is_active=True,
+                                   meta={"name": etf, "category": "Active / Thematic"}))
+        except Exception as e:  # noqa: BLE001
+            log.error("etf_signals %s (watchlist) failed: %s", etf, e)
+    return sorted(out, key=lambda r: -abs(r["active_chg_pct"]))[:n]

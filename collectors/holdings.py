@@ -101,11 +101,17 @@ class HoldingsAdapter(Adapter):
         return df.dropna(subset=["shares"])
 
 
-def active_changes(ticker: str, window_d: int | None = None) -> pd.DataFrame | None:
-    """Flow-normalized manager decisions over the last N snapshots."""
-    cfg = config.load()["holdings"]
-    window_d = window_d or cfg["active_change_window_d"]
-    d = config.ROOT / config.load()["storage"]["holdings_dir"] / ticker
+def active_changes_dir(d, window_d: int) -> pd.DataFrame | None:
+    """Flow-normalized share decisions from per-day snapshots in directory `d`.
+
+    Isolates the manager's (or index's) actual share decisions from mechanical
+    creation/redemption pass-through: expected_shares(t) = shares(t-1)·SO(t)/SO(t-1),
+    where the fund SO ratio is proxied by the total share growth of positions
+    common to both snapshots. Sponsor-agnostic, so any collector that writes
+    snapshots with a `ticker`+`shares` schema (holdings/, etf_holdings/) reuses it.
+    """
+    from pathlib import Path
+    d = Path(d)
     if not d.exists():
         return None
     snaps = sorted(d.glob("*.parquet"))[-(window_d + 1):]
@@ -113,9 +119,11 @@ def active_changes(ticker: str, window_d: int | None = None) -> pd.DataFrame | N
         return None
     first = pd.read_parquet(snaps[0]).set_index("ticker")["shares"]
     last = pd.read_parquet(snaps[-1]).set_index("ticker")["shares"]
-    # fund-level SO ratio proxied by total share growth of common positions
+    # collapse any duplicate tickers, drop non-numeric (cash/'-')
+    first = pd.to_numeric(first, errors="coerce").groupby(level=0).sum()
+    last = pd.to_numeric(last, errors="coerce").groupby(level=0).sum()
     common = first.index.intersection(last.index)
-    if common.empty:
+    if common.empty or first[common].sum() == 0:
         return None
     so_ratio = last[common].sum() / first[common].sum()
     expected = first * so_ratio
@@ -124,3 +132,11 @@ def active_changes(ticker: str, window_d: int | None = None) -> pd.DataFrame | N
     out = pd.DataFrame({"active_share_chg": diff, "active_chg_pct": pct})
     out["window_start"], out["window_end"] = snaps[0].stem, snaps[-1].stem
     return out.sort_values("active_chg_pct")
+
+
+def active_changes(ticker: str, window_d: int | None = None) -> pd.DataFrame | None:
+    """Flow-normalized manager decisions over the last N snapshots (ARK watchlist)."""
+    cfg = config.load()["holdings"]
+    window_d = window_d or cfg["active_change_window_d"]
+    d = config.ROOT / config.load()["storage"]["holdings_dir"] / ticker
+    return active_changes_dir(d, window_d)

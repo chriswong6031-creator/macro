@@ -16,6 +16,11 @@
   .early { margin:6px 0; padding:8px 12px; border-radius:8px;
            background:color-mix(in srgb, var(--g-cold) 14%, var(--panel2));
            border-left:3px solid var(--g-cold); font-size:13px; }
+  .agewhen { margin:6px 0; padding:7px 11px; border-radius:8px; background:var(--panel2);
+             border-left:3px solid var(--link); font-size:13px; color:var(--text); }
+  .agechip { font-size:11px; font-weight:700; padding:2px 7px; border-radius:9px;
+             background:var(--panel); color:var(--muted); border:1px solid var(--line);
+             white-space:nowrap; }
   /* entry call bar + urgency colors */
   .entrybar { display:flex; gap:10px; align-items:flex-start; margin:10px 0 8px;
               padding:9px 12px; border-radius:9px; background:var(--panel2);
@@ -73,20 +78,45 @@
 </style>
 </head>
 <body>
+<nav class="site-nav">
+  <div class="nav-links">
+    <a class="nav-link" href="../index.html">🏠 <span class="l-en">Home</span><span class="l-zh">首页</span></a>
+    <a class="nav-link" href="../macro.html">📊 <span class="l-en">Macro</span><span class="l-zh">宏观</span></a>
+    <a class="nav-link" href="../vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span></a>
+    <a class="nav-link" href="../etfs.html">🐳 <span class="l-en">ETF flows</span><span class="l-zh">ETF 资金流</span></a>
+    <a class="nav-link" href="../china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国A股</span></a>
+    <a class="nav-link" href="../commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span></a>
+    <a class="nav-link" href="../brief.html">📰 <span class="l-en">Brief</span><span class="l-zh">简报</span></a>
+    <a class="nav-link" href="../history.html">📈 <span class="l-en">History</span><span class="l-zh">历史</span></a>
+  </div>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
   <div class="panel">
     <div class="topline">
       <h1><span class="l-en">Technology</span><span class="l-zh">科技</span> <span class="muted">(XLK)</span></h1>
       <span class="state st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-      <span style="flex:1"></span>
-      <a class="navbtn" href="../index.html"><span class="l-en">← Dashboard</span><span class="l-zh">← 仪表盘</span></a>
-      <button class="lang-btn">中文</button>
-      <button class="theme-btn">☀️ Light</button>
     </div>
     
     <div class="entrybar urg-imminent">
       <span class="entrytag"><span class="l-en">BUY SOON</span><span class="l-zh">即将买入</span></span>
       <span><span class="l-en">Setup almost complete — likely buy trigger in ~1–3 trading days if it closes back above its 10-day average.</span><span class="l-zh">形态接近完成——若收盘重新站上 10 日均线，预计将在约 1–3 个交易日内出现买入触发。</span></span>
     </div>
+    <p class="agewhen"><span class="l-en">⏱ BOTTOMING signal triggered 13 trading days ago (~2026-05-26), switching from NEARING A HIGH. Signal strength: mild (score +35/100).</span><span class="l-zh">⏱ 筑底中信号于 13 个交易日前触发（约 2026-05-26），自接近高点切换而来。 信号强度：温和（评分 +35/100）。</span></p>
     
     <ul class="points">
       <li><span class="l-en">Bigger picture is mixed (no clear trend for a daily long)</span><span class="l-zh">大局为混合（对日线多头而言属趋势不明）</span></li><li><span class="l-en">Swing low printed (buyers rejected the low)</span><span class="l-zh">摆动低点已现（买方拒绝了该低点）</span></li><li><span class="l-en">Still below the 10-day average</span><span class="l-zh">仍位于 10 日均线之下</span></li><li><span class="l-en">Prior cycle topped early (a tiring-trend hint)</span><span class="l-zh">上一周期见顶偏早（趋势走弱的暗示）</span></li>
@@ -137,6 +167,7 @@
         <span class="muted">13.23%<span class="l-en"> of fund</span><span class="l-zh"> 占基金</span></span>
         <span class="state st-BOTTOM_WATCH"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
         <span class="urgpill urg-later"><span class="l-en">WAIT</span><span class="l-zh">等待</span></span>
+        <span class="agechip" title="when this signal last crossed">⏱ <span class="l-en">5d ago</span><span class="l-zh">5天前</span></span>
         <span style="flex:1"></span>
         <span class="muted" style="font-size:12px"><span class="l-en">daily cycle day</span><span class="l-zh">日线周期第</span> 27/~42<span class="l-en"></span><span class="l-zh"> 天</span></span>
       </div>
@@ -144,8 +175,6 @@
         <li><span class="l-en">Bigger picture is mixed (no clear trend for a daily long)</span><span class="l-zh">大局为混合（对日线多头而言属趋势不明）</span></li><li><span class="l-en">Swing low printed (buyers rejected the low)</span><span class="l-zh">摆动低点已现（买方拒绝了该低点）</span></li><li><span class="l-en">Still below the 10-day average</span><span class="l-zh">仍位于 10 日均线之下</span></li>
       </ul>
       
-      
-      <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>16.1</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>85.2%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>63.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
       
       <div data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 45.0, "rsi5": 41.0, "stoch": 14.0, "spark_rsi": [64.7, 61.7, 59.9, 61.9, 57.8, 53.7, 53.3, 51.0, 52.6, 49.4, 60.4, 58.8, 51.1, 54.4, 44.0, 46.9, 46.5, 41.2, 45.1, 45.4], "spark_stoch": [79.0, 65.1, 43.5, 39.9, 34.9, 26.9, 12.7, 3.7, 2.0, 2.0, 15.4, 24.9, 27.0, 24.5, 13.1, 16.3, 10.1, 10.1, 11.5, 14.0], "spark_hist": [1.845, 1.256, 0.641, 0.332, -0.205, -0.87, -1.342, -1.779, -1.919, -2.163, -1.414, -1.02, -1.283, -1.161, -1.932, -2.128, -2.201, -2.657, -2.542, -2.333]}, "3D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": true, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 51.0, "rsi5": 39.0, "stoch": 8.0, "spark_rsi": [46.7, 38.8, 47.5, 48.0, 54.4, 59.6, 61.1, 59.3, 65.4, 55.6, 59.8, 64.2, 69.3, 60.7, 57.9, 56.5, 60.9, 58.0, 52.7, 51.3], "spark_stoch": [18.6, 10.2, 27.0, 34.5, 64.6, 81.1, 96.8, 97.3, 97.3, 85.1, 80.7, 79.2, 91.4, 89.0, 78.1, 58.5, 54.9, 42.1, 28.3, 8.0], "spark_hist": [-1.246, -1.985, -1.562, -1.161, -0.168, 1.127, 2.091, 2.435, 3.383, 2.852, 2.951, 3.575, 4.787, 4.289, 3.363, 2.373, 2.313, 1.737, 0.542, -0.502]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 1.5, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 56.0, "rsi5": 50.0, "stoch": 58.0, "spark_rsi": [59.5, 54.8, 52.8, 57.4, 48.3, 48.7, 50.5, 45.4, 42.2, 49.4, 56.2, 62.4, 65.1, 58.4, 65.0, 68.3, 62.1, 59.7, 56.3, 56.4], "spark_stoch": [28.4, 30.3, 24.7, 35.9, 26.4, 24.5, 7.5, 7.5, 6.3, 14.0, 40.9, 74.3, 93.6, 90.2, 90.1, 90.1, 91.9, 81.0, 65.7, 58.4], "spark_hist": [-1.149, -1.329, -1.606, -1.314, -1.929, -2.23, -2.199, -2.593, -3.075, -2.621, -1.512, 0.07, 1.453, 1.589, 2.626, 3.746, 3.568, 2.948, 1.973, 1.199]}}'></div>
       <details style="margin-top:6px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>
@@ -160,6 +189,7 @@
         <span class="muted">11.53%<span class="l-en"> of fund</span><span class="l-zh"> 占基金</span></span>
         <span class="state st-BOTTOM_WATCH"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
         <span class="urgpill urg-soon"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span>
+        <span class="agechip" title="when this signal last crossed">⏱ <span class="l-en">today</span><span class="l-zh">今日</span></span>
         <span style="flex:1"></span>
         <span class="muted" style="font-size:12px"><span class="l-en">daily cycle day</span><span class="l-zh">日线周期第</span> 52/~42<span class="l-en"></span><span class="l-zh"> 天</span></span>
       </div>
@@ -167,8 +197,6 @@
         <li><span class="l-en">Bigger picture is mixed (no clear trend for a daily long)</span><span class="l-zh">大局为混合（对日线多头而言属趋势不明）</span></li><li><span class="l-en">Swing low printed (buyers rejected the low)</span><span class="l-zh">摆动低点已现（买方拒绝了该低点）</span></li><li><span class="l-en">Still below the 10-day average</span><span class="l-zh">仍位于 10 日均线之下</span></li>
       </ul>
       
-      
-      <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>30.3</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>16.6%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>27.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
       
       <div data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 44.0, "rsi5": 29.0, "stoch": 7.0, "spark_rsi": [76.0, 71.7, 72.5, 74.7, 76.4, 78.6, 77.6, 79.1, 80.0, 79.0, 67.2, 73.7, 65.9, 66.6, 60.8, 53.4, 42.7, 43.8, 48.2, 44.1], "spark_stoch": [98.1, 90.3, 85.3, 82.2, 90.1, 96.9, 96.4, 96.4, 96.4, 95.9, 62.6, 46.2, 17.0, 18.8, 1.8, 1.8, 0.0, 1.0, 5.9, 7.2], "spark_hist": [1.776, 1.374, 1.049, 0.923, 0.893, 0.991, 0.887, 0.851, 0.804, 0.615, 0.008, 0.104, -0.246, -0.48, -0.938, -1.632, -2.765, -3.341, -3.337, -3.508]}, "3D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 0.8, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 56.0, "rsi5": 41.0, "stoch": 31.0, "spark_rsi": [44.5, 41.0, 47.8, 46.3, 51.1, 54.8, 58.5, 58.7, 56.5, 61.9, 65.5, 67.9, 70.2, 70.5, 74.2, 74.9, 70.3, 72.3, 55.4, 55.7], "spark_stoch": [15.5, 6.0, 17.3, 21.2, 44.6, 65.4, 89.0, 98.7, 95.8, 95.8, 95.8, 100.0, 100.0, 100.0, 100.0, 100.0, 94.6, 90.9, 58.6, 31.2], "spark_hist": [-2.075, -2.285, -1.7, -1.39, -0.665, 0.217, 1.194, 1.778, 1.884, 2.456, 3.151, 3.758, 4.275, 4.395, 4.829, 4.928, 4.38, 4.05, 2.231, 0.925]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 8.2, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 59.0, "rsi5": 48.0, "stoch": 78.0, "spark_rsi": [53.5, 62.4, 50.1, 54.0, 53.8, 50.4, 46.8, 45.8, 46.3, 50.4, 52.9, 57.7, 58.1, 62.3, 67.3, 69.7, 72.3, 73.3, 69.6, 58.7], "spark_stoch": [10.2, 33.0, 38.5, 39.3, 27.1, 27.5, 17.3, 6.6, 1.6, 9.6, 23.8, 47.0, 62.9, 81.8, 91.2, 99.8, 100.0, 100.0, 95.5, 77.8], "spark_hist": [-3.653, -2.328, -2.878, -2.6, -2.397, -2.65, -3.209, -3.591, -3.646, -3.082, -2.317, -1.13, -0.306, 0.774, 2.217, 3.425, 4.504, 5.095, 4.828, 3.294]}}'></div>
       <details style="margin-top:6px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>
@@ -183,6 +211,7 @@
         <span class="muted">7.7%<span class="l-en"> of fund</span><span class="l-zh"> 占基金</span></span>
         <span class="state st-DECLINE"><span class="l-en">DOWNTREND</span><span class="l-zh">下跌趋势</span></span>
         <span class="urgpill urg-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span>
+        <span class="agechip" title="when this signal last crossed">⏱ <span class="l-en">3d ago</span><span class="l-zh">3天前</span></span>
         <span style="flex:1"></span>
         <span class="muted" style="font-size:12px"><span class="l-en">daily cycle day</span><span class="l-zh">日线周期第</span> 21/~42<span class="l-en"></span><span class="l-zh"> 天</span></span>
       </div>
@@ -190,8 +219,6 @@
         <li><span class="l-en">Bigger picture is mixed (no clear trend for a daily long)</span><span class="l-zh">大局为混合（对日线多头而言属趋势不明）</span></li><li><span class="l-en">⚠ Failed cycle — price broke below the low that began this cycle (3d ago)</span><span class="l-zh">⚠ 失败周期——价格跌破了启动本周期的低点（3 天前）</span></li><li><span class="l-en">Still below the 10-day average</span><span class="l-zh">仍位于 10 日均线之下</span></li>
       </ul>
       
-      
-      <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>20.2</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>18.3%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>39.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
       
       <div data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 37.0, "rsi5": 19.0, "stoch": 0.0, "spark_rsi": [57.9, 58.8, 54.2, 56.4, 55.5, 55.1, 52.9, 50.1, 59.9, 70.1, 73.3, 60.2, 52.8, 53.1, 47.7, 45.5, 42.0, 39.6, 36.9, 37.2], "spark_stoch": [25.0, 51.4, 65.8, 72.7, 70.1, 72.8, 62.8, 47.1, 57.8, 74.8, 100.0, 83.2, 53.7, 24.7, 8.2, 4.3, 0.0, 0.0, 0.0, 0.2], "spark_hist": [-1.313, -0.613, -0.573, -0.327, -0.262, -0.279, -0.476, -0.825, -0.123, 1.773, 3.486, 3.104, 1.756, 0.807, -0.617, -1.849, -3.111, -4.171, -5.103, -5.42]}, "3D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 0.5, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 41.0, "rsi5": 29.0, "stoch": 18.0, "spark_rsi": [25.2, 27.7, 29.6, 30.1, 36.2, 52.1, 53.5, 53.6, 53.6, 48.8, 51.8, 46.4, 52.3, 51.9, 51.2, 54.8, 60.2, 49.3, 42.8, 40.8], "spark_stoch": [6.7, 9.1, 21.0, 36.1, 61.9, 81.8, 100.0, 100.0, 99.9, 94.2, 92.1, 83.7, 87.8, 87.9, 93.2, 94.8, 96.8, 84.9, 51.6, 18.2], "spark_hist": [-2.44, -2.359, -1.759, -1.015, 0.367, 3.721, 6.091, 7.485, 8.139, 7.596, 7.459, 6.284, 6.235, 5.923, 5.404, 5.409, 6.104, 4.697, 2.375, 0.405]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 9.4, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 42.0, "rsi5": 36.0, "stoch": 74.0, "spark_rsi": [34.5, 29.2, 29.2, 28.7, 27.9, 35.0, 32.2, 29.5, 25.4, 32.2, 31.7, 48.3, 48.8, 46.3, 46.5, 48.5, 47.8, 56.7, 47.5, 41.8], "spark_stoch": [3.3, 3.3, 0.1, 0.1, 0.1, 11.0, 17.7, 20.3, 9.2, 13.0, 20.2, 53.5, 76.4, 96.4, 93.0, 92.7, 94.9, 98.2, 88.7, 74.3], "spark_hist": [-7.904, -10.487, -11.528, -11.735, -11.467, -9.568, -8.614, -8.298, -9.107, -7.897, -6.695, -2.074, 1.262, 2.85, 3.945, 5.054, 5.514, 7.706, 6.689, 4.185]}}'></div>
       <details style="margin-top:6px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>
@@ -206,6 +233,7 @@
         <span class="muted">7.25%<span class="l-en"> of fund</span><span class="l-zh"> 占基金</span></span>
         <span class="state st-TOP_WATCH"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span>
         <span class="urgpill urg-caution"><span class="l-en">TAKE PROFITS</span><span class="l-zh">止盈</span></span>
+        <span class="agechip" title="when this signal last crossed">⏱ <span class="l-en">1d ago</span><span class="l-zh">1天前</span></span>
         <span style="flex:1"></span>
         <span class="muted" style="font-size:12px"><span class="l-en">daily cycle day</span><span class="l-zh">日线周期第</span> 52/~42<span class="l-en"></span><span class="l-zh"> 天</span></span>
       </div>
@@ -213,8 +241,6 @@
         <li><span class="l-en">Bigger picture is bullish (with-trend for a daily long)</span><span class="l-zh">大局为看多（对日线多头而言属顺势）</span></li><li><span class="l-en">Swing low printed (buyers rejected the low)</span><span class="l-zh">摆动低点已现（买方拒绝了该低点）</span></li><li><span class="l-en">Back above the 10-day average, and it's turning up</span><span class="l-zh">重新站上 10 日均线之上，且均线开始向上</span></li>
       </ul>
       
-      
-      <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>8.8</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>196.3%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>41.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
       
       <div data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 61.0, "rsi5": 57.0, "stoch": 16.0, "spark_rsi": [66.3, 59.6, 61.3, 64.4, 66.9, 65.1, 74.9, 76.5, 75.7, 78.0, 80.7, 81.8, 82.4, 69.7, 55.2, 60.8, 59.6, 55.5, 62.1, 60.8], "spark_stoch": [42.3, 16.5, 2.5, 8.1, 17.4, 22.2, 35.6, 47.7, 61.2, 65.2, 76.2, 89.1, 99.0, 81.4, 48.0, 21.6, 12.3, 12.7, 14.2, 15.7], "spark_hist": [14.654, 5.823, 0.394, -1.594, -1.518, -2.78, 5.148, 11.238, 13.443, 16.41, 20.746, 23.375, 23.906, 16.718, 1.942, -2.957, -7.696, -14.023, -11.538, -11.179]}, "3D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 5.0, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 70.0, "rsi5": 65.0, "stoch": 31.0, "spark_rsi": [49.5, 51.4, 53.0, 59.6, 64.9, 62.8, 66.5, 70.1, 68.5, 77.6, 82.3, 84.3, 67.3, 71.4, 76.6, 79.0, 81.8, 69.7, 71.3, 70.1], "spark_stoch": [13.2, 2.9, 8.5, 24.5, 46.3, 61.9, 75.1, 83.8, 93.4, 97.4, 97.4, 100.0, 83.8, 71.4, 63.7, 74.3, 83.3, 68.4, 54.0, 30.8], "spark_hist": [-9.299, -11.218, -11.564, -8.722, -3.984, -1.791, 1.44, 5.448, 6.88, 14.933, 25.63, 34.188, 29.461, 29.521, 35.907, 42.097, 49.88, 42.895, 38.211, 31.244]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 79.0, "rsi5": 79.0, "stoch": 77.0, "spark_rsi": [88.0, 80.6, 82.0, 83.2, 77.7, 65.3, 71.8, 71.0, 56.8, 58.0, 64.6, 68.0, 71.6, 74.9, 84.0, 80.6, 81.5, 87.2, 75.1, 78.6], "spark_stoch": [100.0, 89.6, 81.1, 74.4, 65.9, 41.0, 23.8, 17.7, 17.7, 9.6, 9.7, 21.8, 36.3, 47.3, 68.6, 81.9, 92.9, 92.9, 83.8, 77.4], "spark_hist": [15.87, 14.18, 12.998, 12.138, 9.435, 4.023, 3.431, 2.117, -3.57, -6.916, -5.721, -2.997, 1.007, 5.846, 21.096, 27.552, 31.19, 45.16, 43.901, 47.396]}}'></div>
       <details style="margin-top:6px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>
@@ -229,6 +255,7 @@
         <span class="muted">5.15%<span class="l-en"> of fund</span><span class="l-zh"> 占基金</span></span>
         <span class="state st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
         <span class="urgpill urg-imminent"><span class="l-en">BUY SOON</span><span class="l-zh">即将买入</span> ~99d</span>
+        <span class="agechip" title="when this signal last crossed">⏱ <span class="l-en">5d ago</span><span class="l-zh">5天前</span></span>
         <span style="flex:1"></span>
         <span class="muted" style="font-size:12px"><span class="l-en">daily cycle day</span><span class="l-zh">日线周期第</span> 52/~42<span class="l-en"></span><span class="l-zh"> 天</span></span>
       </div>
@@ -236,8 +263,6 @@
         <li><span class="l-en">Bigger picture is mixed (no clear trend for a daily long)</span><span class="l-zh">大局为混合（对日线多头而言属趋势不明）</span></li><li><span class="l-en">Swing low printed (buyers rejected the low)</span><span class="l-zh">摆动低点已现（买方拒绝了该低点）</span></li><li><span class="l-en">Back above the 10-day average</span><span class="l-zh">重新站上 10 日均线之上</span></li>
       </ul>
       <p class="early"><span class="l-en">⚡ Early reversal building (heads-up): StochRSI popped out of oversold. These anticipate a low BEFORE full confirmation — earlier entry, but a higher false-alarm rate, so treat as a heads-up to watch closely, not a trigger yet.</span><span class="l-zh">⚡ 反转正在提前酝酿（heads-up）：StochRSI popped out of oversold。这些信号会在完全确认之前预判低点——入场更早，但误报率更高，因此应视为密切关注的提示，而非触发信号。</span></p>
-      
-      <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>39.0</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>37.8%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>13.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
       
       <div data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": true, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 99.0, "stoch_cross_up": true, "stoch_cross_dn": false, "rsi14": 60.0, "rsi5": 61.0, "stoch": 20.0, "spark_rsi": [67.3, 66.2, 63.8, 69.6, 69.9, 72.6, 77.1, 74.1, 76.7, 76.0, 73.7, 75.2, 77.8, 70.6, 54.5, 58.8, 55.3, 50.4, 56.9, 60.5], "spark_stoch": [31.2, 20.1, 0.0, 11.1, 22.8, 39.7, 54.0, 62.1, 70.1, 68.2, 72.9, 76.7, 86.6, 78.2, 49.5, 22.2, 7.2, 7.2, 9.0, 20.1], "spark_hist": [3.459, 0.479, -2.284, -2.179, -2.288, -1.505, 0.978, 1.538, 2.834, 2.949, 2.058, 1.688, 2.27, 0.841, -4.168, -5.994, -8.191, -11.015, -10.283, -8.163]}, "3D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 2.5, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 73.0, "rsi5": 69.0, "stoch": 19.0, "spark_rsi": [47.8, 47.7, 54.1, 59.5, 64.3, 71.8, 73.0, 81.7, 77.2, 77.7, 84.0, 86.4, 78.6, 80.4, 81.9, 84.9, 85.1, 70.4, 67.2, 72.8], "spark_stoch": [21.2, 40.2, 67.2, 89.7, 100.0, 100.0, 100.0, 100.0, 96.1, 92.7, 92.7, 96.6, 93.3, 88.2, 84.3, 89.4, 92.9, 72.6, 40.9, 18.9], "spark_hist": [-1.919, -1.42, -0.116, 1.64, 3.627, 6.695, 8.657, 13.445, 14.999, 15.377, 18.95, 22.567, 21.884, 21.535, 21.137, 22.638, 22.191, 16.755, 11.067, 10.162]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 62.3, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 75.0, "rsi5": 75.0, "stoch": 78.0, "spark_rsi": [58.7, 51.0, 50.7, 48.8, 48.8, 46.7, 47.0, 49.6, 49.8, 54.9, 62.2, 68.8, 77.6, 78.8, 85.0, 77.0, 79.9, 82.5, 72.1, 75.2], "spark_stoch": [30.3, 21.6, 6.5, 0.0, 0.0, 0.0, 0.6, 5.5, 10.9, 24.4, 45.8, 73.7, 93.0, 100.0, 100.0, 93.0, 88.5, 86.3, 82.0, 77.9], "spark_hist": [-0.59, -2.62, -3.999, -5.274, -5.945, -6.688, -6.865, -6.216, -5.534, -3.907, -0.996, 2.94, 9.608, 13.998, 21.926, 23.583, 25.922, 28.838, 25.623, 24.732]}}'></div>
       <details style="margin-top:6px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>
@@ -252,6 +277,7 @@
         <span class="muted">4.86%<span class="l-en"> of fund</span><span class="l-zh"> 占基金</span></span>
         <span class="state st-DECLINE"><span class="l-en">DOWNTREND</span><span class="l-zh">下跌趋势</span></span>
         <span class="urgpill urg-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span>
+        <span class="agechip" title="when this signal last crossed">⏱ <span class="l-en">5d ago</span><span class="l-zh">5天前</span></span>
         <span style="flex:1"></span>
         <span class="muted" style="font-size:12px"><span class="l-en">daily cycle day</span><span class="l-zh">日线周期第</span> 17/~42<span class="l-en"></span><span class="l-zh"> 天</span></span>
       </div>
@@ -259,8 +285,6 @@
         <li><span class="l-en">Bigger picture is mixed (no clear trend for a daily long)</span><span class="l-zh">大局为混合（对日线多头而言属趋势不明）</span></li><li><span class="l-en">⚠ Failed cycle — price broke below the low that began this cycle (5d ago)</span><span class="l-zh">⚠ 失败周期——价格跌破了启动本周期的低点（5 天前）</span></li><li><span class="l-en">Still below the 10-day average</span><span class="l-zh">仍位于 10 日均线之下</span></li>
       </ul>
       
-      
-      <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>19.7</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>47.9%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>39.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
       
       <div data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 41.0, "rsi5": 34.0, "stoch": 7.0, "spark_rsi": [58.7, 56.5, 52.2, 54.8, 53.3, 53.1, 56.5, 56.4, 58.5, 65.9, 69.8, 74.8, 73.3, 48.1, 39.9, 43.3, 42.3, 37.8, 42.2, 41.4], "spark_stoch": [17.1, 17.1, 0.9, 5.1, 7.2, 9.0, 12.9, 20.8, 34.0, 57.9, 81.2, 99.5, 97.9, 64.6, 31.2, 3.2, 5.5, 5.5, 6.2, 7.2], "spark_hist": [-2.122, -2.698, -3.692, -3.844, -4.084, -4.179, -3.641, -3.236, -2.619, -0.907, 0.956, 3.352, 4.419, 0.888, -3.61, -5.659, -7.03, -8.885, -8.786, -8.53]}, "3D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": true, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 49.0, "rsi5": 40.0, "stoch": 2.0, "spark_rsi": [42.4, 42.4, 44.5, 56.3, 63.2, 66.8, 67.5, 71.0, 64.6, 66.7, 65.2, 66.6, 67.7, 64.7, 63.2, 66.1, 75.4, 49.8, 47.3, 49.3], "spark_stoch": [38.3, 35.1, 24.0, 49.1, 74.2, 100.0, 100.0, 100.0, 92.6, 87.5, 80.8, 83.1, 84.3, 83.7, 79.7, 77.3, 84.7, 60.5, 33.3, 2.3], "spark_hist": [-2.055, -2.275, -1.927, 0.745, 4.287, 7.515, 9.401, 11.404, 10.931, 10.715, 9.691, 8.873, 8.154, 6.664, 4.999, 4.323, 7.01, 2.021, -2.276, -4.401]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 0.7, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 53.0, "rsi5": 40.0, "stoch": 59.0, "spark_rsi": [50.6, 51.0, 48.9, 51.0, 47.3, 50.5, 48.1, 44.9, 42.5, 47.1, 61.0, 66.7, 69.0, 68.6, 69.8, 68.2, 64.4, 69.7, 53.6, 52.8], "spark_stoch": [7.7, 8.2, 9.7, 10.3, 5.9, 9.5, 7.4, 7.4, 2.3, 11.3, 44.6, 77.9, 100.0, 99.4, 99.4, 97.4, 91.4, 91.2, 73.4, 59.3], "spark_hist": [-7.976, -7.839, -8.01, -7.377, -7.567, -6.715, -6.467, -6.806, -7.324, -6.439, -1.955, 3.15, 7.172, 9.158, 10.395, 10.209, 8.72, 9.26, 5.044, 1.719]}}'></div>
       <details style="margin-top:6px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>
@@ -275,6 +299,7 @@
         <span class="muted">3.55%<span class="l-en"> of fund</span><span class="l-zh"> 占基金</span></span>
         <span class="state st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
         <span class="urgpill urg-imminent"><span class="l-en">BUY SOON</span><span class="l-zh">即将买入</span> ~2d</span>
+        <span class="agechip" title="when this signal last crossed">⏱ <span class="l-en">10d ago</span><span class="l-zh">10天前</span></span>
         <span style="flex:1"></span>
         <span class="muted" style="font-size:12px"><span class="l-en">daily cycle day</span><span class="l-zh">日线周期第</span> 52/~42<span class="l-en"></span><span class="l-zh"> 天</span></span>
       </div>
@@ -282,8 +307,6 @@
         <li><span class="l-en">Bigger picture is mixed (no clear trend for a daily long)</span><span class="l-zh">大局为混合（对日线多头而言属趋势不明）</span></li><li><span class="l-en">Swing low printed (buyers rejected the low)</span><span class="l-zh">摆动低点已现（买方拒绝了该低点）</span></li><li><span class="l-en">Back above the 10-day average, and it's turning up</span><span class="l-zh">重新站上 10 日均线之上，且均线开始向上</span></li>
       </ul>
       
-      
-      <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>80.8</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>7.2%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>-6.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
       
       <div data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": true, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 1.5, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 62.0, "rsi5": 73.0, "stoch": 50.0, "spark_rsi": [62.3, 61.7, 63.3, 67.9, 67.4, 68.2, 70.2, 68.0, 66.8, 59.2, 53.5, 52.1, 56.3, 55.3, 43.7, 53.0, 51.1, 50.4, 57.8, 62.4], "spark_stoch": [0.0, 0.0, 2.1, 10.2, 18.1, 24.9, 28.4, 29.2, 27.4, 15.7, 7.1, 0.0, 7.8, 13.7, 13.7, 17.6, 21.0, 29.4, 35.4, 49.6], "spark_hist": [0.108, -0.881, -1.421, -1.295, -1.304, -1.281, -1.086, -1.138, -1.283, -1.817, -2.508, -3.002, -2.946, -2.907, -3.618, -3.241, -3.052, -2.892, -2.061, -0.996]}, "3D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 71.0, "rsi5": 70.0, "stoch": 15.0, "spark_rsi": [51.1, 51.2, 61.7, 71.0, 75.6, 77.6, 73.2, 81.5, 85.2, 85.5, 88.4, 90.2, 76.9, 79.6, 79.9, 80.1, 67.5, 60.6, 64.2, 70.6], "spark_stoch": [0.5, 1.2, 32.4, 65.3, 98.0, 100.0, 94.4, 94.4, 94.4, 100.0, 100.0, 100.0, 88.7, 79.7, 70.9, 70.5, 46.1, 21.6, 4.0, 15.2], "spark_hist": [-0.796, -0.8, -0.382, 0.429, 1.292, 1.955, 2.098, 3.085, 4.282, 4.825, 5.736, 6.635, 6.008, 5.848, 5.383, 4.749, 3.138, 1.26, 0.371, 0.764]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 71.0, "rsi5": 69.0, "stoch": 42.0, "spark_rsi": [68.9, 73.1, 64.6, 59.3, 61.2, 57.0, 60.2, 56.6, 55.2, 64.4, 73.9, 77.3, 82.8, 86.9, 90.5, 76.1, 78.6, 74.6, 64.2, 71.3], "spark_stoch": [52.1, 64.2, 64.3, 50.2, 23.7, 9.4, 13.4, 6.5, 6.5, 17.2, 50.5, 83.8, 100.0, 100.0, 100.0, 86.4, 75.1, 60.1, 48.9, 42.0], "spark_hist": [0.506, 0.716, 0.527, 0.169, -0.011, -0.305, -0.365, -0.545, -0.716, -0.36, 0.611, 1.54, 2.895, 4.635, 7.038, 7.07, 7.335, 6.679, 4.805, 4.866]}}'></div>
       <details style="margin-top:6px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>
@@ -298,6 +321,7 @@
         <span class="muted">3.12%<span class="l-en"> of fund</span><span class="l-zh"> 占基金</span></span>
         <span class="state st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
         <span class="urgpill urg-imminent"><span class="l-en">BUY SOON</span><span class="l-zh">即将买入</span> ~3d</span>
+        <span class="agechip" title="when this signal last crossed">⏱ <span class="l-en">3d ago</span><span class="l-zh">3天前</span></span>
         <span style="flex:1"></span>
         <span class="muted" style="font-size:12px"><span class="l-en">daily cycle day</span><span class="l-zh">日线周期第</span> 67/~42<span class="l-en"></span><span class="l-zh"> 天</span></span>
       </div>
@@ -305,8 +329,6 @@
         <li><span class="l-en">Bigger picture is mixed (no clear trend for a daily long)</span><span class="l-zh">大局为混合（对日线多头而言属趋势不明）</span></li><li><span class="l-en">Swing low printed (buyers rejected the low)</span><span class="l-zh">摆动低点已现（买方拒绝了该低点）</span></li><li><span class="l-en">Still below the 10-day average</span><span class="l-zh">仍位于 10 日均线之下</span></li>
       </ul>
       
-      
-      <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>25.4</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>12.0%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>20.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
       
       <div data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 59.0, "rsi5": 48.0, "stoch": 7.0, "spark_rsi": [88.5, 88.7, 79.4, 76.9, 79.5, 80.9, 75.8, 76.8, 74.2, 75.7, 76.5, 81.1, 77.4, 79.8, 63.0, 65.4, 59.3, 56.9, 60.2, 59.0], "spark_stoch": [100.0, 100.0, 87.4, 71.3, 58.9, 60.8, 59.4, 55.0, 35.6, 23.3, 12.0, 24.6, 28.5, 36.0, 20.1, 17.0, 4.3, 4.3, 4.6, 7.5], "spark_hist": [2.357, 2.616, 2.372, 1.977, 1.815, 1.699, 1.34, 1.063, 0.698, 0.475, 0.296, 0.52, 0.464, 0.552, -0.032, -0.313, -0.79, -1.221, -1.306, -1.405]}, "3D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 3.6, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 70.0, "rsi5": 65.0, "stoch": 39.0, "spark_rsi": [59.6, 50.1, 53.4, 60.4, 57.7, 60.7, 66.9, 65.4, 66.0, 69.4, 68.3, 74.9, 84.3, 77.9, 80.4, 77.6, 81.3, 72.6, 69.0, 70.3], "spark_stoch": [23.2, 21.8, 21.5, 41.1, 63.8, 91.2, 91.2, 97.1, 95.5, 95.5, 96.4, 98.1, 98.1, 93.8, 90.0, 82.8, 85.3, 74.4, 60.0, 39.0], "spark_hist": [-0.089, -0.239, -0.215, 0.098, 0.191, 0.364, 0.771, 0.927, 0.995, 1.16, 1.151, 1.515, 2.843, 3.245, 3.672, 3.583, 3.878, 3.386, 2.644, 2.106]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": true, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 86.0, "rsi5": 94.0, "stoch": 99.0, "spark_rsi": [63.8, 72.2, 55.3, 58.4, 58.8, 57.2, 56.6, 55.1, 58.8, 57.8, 62.7, 67.8, 70.8, 73.5, 77.3, 86.6, 87.2, 87.2, 87.6, 86.5], "spark_stoch": [27.1, 54.2, 52.0, 39.4, 12.9, 16.5, 12.8, 6.0, 9.6, 12.4, 27.2, 44.9, 70.4, 88.9, 97.3, 100.0, 100.0, 100.0, 100.0, 98.9], "spark_hist": [-0.227, 0.254, 0.008, -0.025, -0.056, -0.153, -0.253, -0.373, -0.311, -0.311, -0.116, 0.246, 0.61, 0.961, 1.403, 2.956, 3.876, 4.202, 4.207, 3.889]}}'></div>
       <details style="margin-top:6px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>
@@ -321,6 +343,7 @@
         <span class="muted">2.93%<span class="l-en"> of fund</span><span class="l-zh"> 占基金</span></span>
         <span class="state st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
         <span class="urgpill urg-imminent"><span class="l-en">BUY SOON</span><span class="l-zh">即将买入</span> ~3d</span>
+        <span class="agechip" title="when this signal last crossed">⏱ <span class="l-en">2d ago</span><span class="l-zh">2天前</span></span>
         <span style="flex:1"></span>
         <span class="muted" style="font-size:12px"><span class="l-en">daily cycle day</span><span class="l-zh">日线周期第</span> 31/~42<span class="l-en"></span><span class="l-zh"> 天</span></span>
       </div>
@@ -328,8 +351,6 @@
         <li><span class="l-en">Bigger picture is mixed (no clear trend for a daily long)</span><span class="l-zh">大局为混合（对日线多头而言属趋势不明）</span></li><li><span class="l-en">Swing low printed (buyers rejected the low)</span><span class="l-zh">摆动低点已现（买方拒绝了该低点）</span></li><li><span class="l-en">Back above the 10-day average, and it's turning up</span><span class="l-zh">重新站上 10 日均线之上，且均线开始向上</span></li>
       </ul>
       
-      
-      <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>46.0</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>23.8%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>31.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
       
       <div data-mtf='{"D": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 69.0, "rsi5": 76.0, "stoch": 59.0, "spark_rsi": [57.1, 53.6, 51.2, 59.1, 62.6, 63.6, 68.8, 66.6, 66.0, 66.1, 65.3, 71.0, 73.5, 68.5, 51.4, 58.5, 59.4, 57.0, 67.7, 68.5], "spark_stoch": [62.2, 43.7, 17.4, 19.6, 34.2, 56.2, 73.5, 82.5, 88.5, 85.4, 83.1, 88.3, 93.5, 92.5, 59.5, 37.1, 23.2, 31.3, 44.9, 58.8], "spark_hist": [0.974, -0.358, -1.574, -1.164, -0.299, 0.357, 1.754, 2.193, 2.183, 1.959, 1.528, 2.158, 2.905, 2.62, 0.049, -0.354, -0.556, -1.134, 1.025, 2.46]}, "3D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 75.0, "rsi5": 82.0, "stoch": 90.0, "spark_rsi": [62.8, 46.4, 53.6, 55.6, 66.3, 66.6, 65.7, 63.5, 60.1, 61.8, 71.2, 70.7, 71.4, 59.9, 67.0, 69.4, 68.7, 72.1, 68.3, 74.5], "spark_stoch": [26.6, 19.0, 18.8, 19.0, 41.9, 56.9, 68.6, 72.8, 72.0, 75.1, 81.3, 91.3, 99.3, 84.0, 78.8, 75.2, 85.0, 90.8, 83.9, 89.6], "spark_hist": [-3.482, -5.217, -5.001, -4.365, -1.359, 0.567, 1.488, 1.564, 0.927, 0.693, 2.953, 3.999, 4.488, 2.751, 3.388, 4.298, 4.339, 5.171, 4.621, 6.345]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 77.0, "rsi5": 83.0, "stoch": 86.0, "spark_rsi": [83.5, 81.6, 82.4, 83.9, 75.8, 57.2, 61.1, 65.3, 58.2, 60.1, 69.8, 70.5, 70.5, 65.8, 72.5, 68.9, 72.2, 74.1, 68.3, 76.6], "spark_stoch": [91.7, 86.6, 88.9, 89.6, 75.5, 46.0, 18.8, 14.4, 15.6, 14.4, 19.9, 34.8, 48.0, 43.4, 46.5, 44.4, 52.4, 63.6, 71.0, 85.6], "spark_hist": [6.196, 5.785, 5.287, 5.059, 3.7, 0.209, -1.426, -1.599, -2.956, -3.446, -0.923, 0.724, 1.494, 0.954, 2.707, 2.821, 3.807, 4.782, 3.919, 6.944]}}'></div>
       <details style="margin-top:6px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>
@@ -344,6 +365,7 @@
         <span class="muted">2.84%<span class="l-en"> of fund</span><span class="l-zh"> 占基金</span></span>
         <span class="state st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
         <span class="urgpill urg-imminent"><span class="l-en">BUY SOON</span><span class="l-zh">即将买入</span> ~3d</span>
+        <span class="agechip" title="when this signal last crossed">⏱ <span class="l-en">4d ago</span><span class="l-zh">4天前</span></span>
         <span style="flex:1"></span>
         <span class="muted" style="font-size:12px"><span class="l-en">daily cycle day</span><span class="l-zh">日线周期第</span> 32/~42<span class="l-en"></span><span class="l-zh"> 天</span></span>
       </div>
@@ -351,8 +373,6 @@
         <li><span class="l-en">Bigger picture is mixed (no clear trend for a daily long)</span><span class="l-zh">大局为混合（对日线多头而言属趋势不明）</span></li><li><span class="l-en">Swing low printed (buyers rejected the low)</span><span class="l-zh">摆动低点已现（买方拒绝了该低点）</span></li><li><span class="l-en">Back above the 10-day average, and it's turning up</span><span class="l-zh">重新站上 10 日均线之上，且均线开始向上</span></li>
       </ul>
       
-      
-      <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>34.9</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>11.4%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>29.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
       
       <div data-mtf='{"D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 74.0, "rsi5": 83.0, "stoch": 79.0, "spark_rsi": [61.7, 52.2, 49.8, 56.3, 56.6, 58.1, 64.4, 61.5, 61.9, 62.0, 64.4, 71.9, 73.9, 74.1, 54.0, 62.7, 64.1, 63.3, 72.2, 74.0], "spark_stoch": [73.0, 54.8, 27.3, 16.4, 26.5, 43.0, 59.2, 69.0, 76.5, 71.8, 81.8, 91.0, 100.0, 100.0, 72.4, 56.9, 40.2, 49.9, 62.4, 78.9], "spark_hist": [2.093, 0.032, -1.815, -1.732, -1.643, -1.312, 0.302, 0.758, 0.98, 0.973, 1.314, 3.37, 5.035, 5.73, 2.603, 2.843, 3.126, 2.823, 5.853, 8.183]}, "3D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 76.0, "rsi5": 83.0, "stoch": 65.0, "spark_rsi": [55.6, 56.4, 58.1, 66.0, 67.7, 65.6, 66.5, 70.5, 58.9, 60.7, 64.3, 67.8, 68.6, 65.2, 66.3, 69.4, 75.0, 63.5, 69.5, 76.2], "spark_stoch": [10.5, 8.7, 4.9, 20.4, 37.3, 48.5, 49.3, 64.5, 56.8, 51.9, 38.0, 57.9, 75.7, 77.7, 74.0, 75.1, 86.9, 73.1, 64.8, 64.8], "spark_hist": [-4.032, -4.86, -4.946, -2.602, -0.588, 0.105, 0.588, 2.077, 0.471, -0.236, 0.325, 1.735, 2.632, 2.189, 1.917, 2.509, 5.064, 3.764, 5.278, 10.14]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 83.0, "rsi5": 92.0, "stoch": 79.0, "spark_rsi": [79.8, 79.9, 84.1, 86.2, 84.4, 63.4, 66.6, 69.2, 62.4, 64.5, 72.2, 71.4, 73.9, 65.2, 71.3, 71.4, 70.2, 72.5, 72.8, 82.5], "spark_stoch": [90.2, 85.4, 90.2, 95.1, 96.6, 63.2, 34.5, 13.2, 13.2, 11.5, 16.8, 29.4, 42.6, 32.8, 32.6, 29.1, 36.1, 38.9, 56.4, 78.8], "spark_hist": [7.582, 6.725, 7.643, 8.879, 8.7, 4.788, 2.832, 2.118, -0.043, -1.009, 1.359, 2.274, 3.669, 2.221, 3.798, 4.3, 3.767, 3.997, 3.731, 10.26]}}'></div>
       <details style="margin-top:6px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>

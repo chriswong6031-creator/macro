@@ -41,6 +41,28 @@ First-time setup needs history: `scripts.collect --full-history`, plus
 `scripts.fetch_archive` (archived OAS) — or just dispatch the **backfill**
 workflow once after pushing to GitHub.
 
+## China A-share dashboard (Section 3)
+
+A full clone of this dashboard for Mainland A-shares — same regime engine,
+sector rotation, ETF/constituent drill-downs, history, daily brief and
+single-stock search — reachable from the landing hub (🇨🇳 card) and bilingual
+(EN ↔ 中文). Two free data planes: **yfinance** (indices/sector-ETFs/stocks) and
+**Eastmoney** JSON (PMI/CPI/PPI/M2/industrial-production + Stock-Connect). The
+regime is calibrated + tuned on 2008→2026 (only the **Growth-scare** quad and
+**expanding-PBoC-liquidity** overlay survive split-half robustness — shipped as
+risk context, not allocation rules). Data sources: [research/CHINA_DATA_AUDIT.md](research/CHINA_DATA_AUDIT.md);
+honest caveats in [LIMITATIONS.md](LIMITATIONS.md).
+
+```bash
+.venv/bin/python -m scripts.collect --full-history --only china_prices,china_macro,china_breadth
+.venv/bin/python -m scripts.calibrate_china       # split-half forward-return + ladder calibration
+.venv/bin/python -m scripts.build_china           # -> site/china.html + sectors/ + search + history + brief
+```
+
+`build_china` runs after `build_site` and before `build_vector` (which writes
+the hub last); it's self-sufficient and returns 0 on any engine error, so it can
+never break the macro/vector site.
+
 ## GitHub setup (one-time)
 
 1. Create a repo, `git remote add origin …`, push `main`.
