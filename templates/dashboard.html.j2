@@ -96,9 +96,10 @@
   .help.edge-right .tip { left: auto; right: 0; transform: none; }
   .help.edge-left .tip { left: 0; right: auto; transform: none; }
   .tip-map { width: 360px !important; }
-  .tip-seas { width: 350px !important; box-sizing: border-box; padding: 11px 14px; }
+  .tip-seas { width: 368px !important; box-sizing: border-box; padding: 11px 14px; }
   .tip.tip-seas table { table-layout: fixed; width: 100%; margin: 0; }
-  .tip.tip-seas th, .tip.tip-seas td { padding: 2px 5px; font-size: 11px; white-space: nowrap; }
+  .tip.tip-seas th, .tip.tip-seas td { padding: 2px 6px; font-size: 11px; white-space: nowrap; text-align: right; }
+  .tip.tip-seas th:first-child, .tip.tip-seas td:first-child { text-align: left; }
   /* structured tooltip building blocks */
   .tip table { width: 100%; margin: 6px 0 2px; font-size: 11.5px; }
   .tip th, .tip td { padding: 3px 6px; border-bottom: 1px solid var(--line); }
@@ -230,6 +231,15 @@
             background: var(--panel2); border: 1px solid var(--line); border-radius: 7px;
             padding: 5px 11px; cursor: pointer; transition: border-color .12s, background .12s; }
   .tm-btn:hover { border-color: var(--link); }
+  .gobtn { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px;
+           font-weight: 600; text-decoration: none; color: #fff; white-space: nowrap;
+           padding: 7px 14px; border-radius: 9px; background: var(--info);
+           border: 1px solid transparent; box-shadow: 0 1px 3px rgba(20,30,50,.14);
+           transition: transform .13s ease, box-shadow .13s ease, background .13s ease; }
+  .gobtn:hover { background: var(--link); transform: translateY(-1px);
+                 box-shadow: 0 4px 12px rgba(20,30,50,.20); }
+  .gobtn .a { transition: transform .13s ease; }
+  .gobtn:hover .a { transform: translateX(3px); }
   .tm-play { display: inline-flex; align-items: center; gap: 7px; }
   .tm-play-ico { width: 0; height: 0; border-style: solid; border-width: 6px 0 6px 10px;
                  border-color: transparent transparent transparent var(--text);
@@ -514,7 +524,7 @@
   {% if alerts %}
   <div class="panel span12">
     <h2>{{ t('Fired alerts (today)', '已触发警报（今日）') }}
-      {{ help("Alerts fire only when something CHANGES — a warning level escalating, a crossing, a sign flip — never just because a level is high. They're rare by design; read every one. Click any alert to jump to the scorecard it came from.", "警报只在某物发生变化时触发 — 预警级别升级、出现交叉、符号翻转 — 绝不仅因某个水平偏高而触发。它们刻意设计得稀少；每一条都要读。点击任意警报可跳转到其来源的计分卡。") }}
+      <span class="help">?<span class="tip"><span class="l-en">Alerts fire only when something <b>changes</b> — never just because a level is high:<span class="lad lad-tint" style="--c:var(--warn)"><b>Escalation</b> — a warning level steps up.</span><span class="lad lad-tint" style="--c:var(--info)"><b>Crossing</b> — a key line is crossed.</span><span class="lad lad-tint" style="--c:var(--orange)"><b>Sign flip</b> — a reading changes direction.</span>Rare by design — read every one. Click one to jump to the scorecard it came from.</span><span class="l-zh">警报只在某物<b>变化</b>时触发 — 绝不仅因水平偏高：<span class="lad lad-tint" style="--c:var(--warn)"><b>升级</b> — 预警级别上升。</span><span class="lad lad-tint" style="--c:var(--info)"><b>交叉</b> — 关键线被穿越。</span><span class="lad lad-tint" style="--c:var(--orange)"><b>符号翻转</b> — 读数改变方向。</span>刻意稀少 — 每条都读。点击可跳转到其来源计分卡。</span></span></span>
     </h2>
     {% for a in alerts %}
       <a class="alert alert-{{ a.severity }}" {% if a.anchor %}href="#{{ a.anchor }}"{% endif %}>
@@ -619,7 +629,7 @@
   {% if action_board %}
   <div class="panel span12">
     <h2>⚡ {{ t('What to act on now', '当前可操作') }}
-      {{ help("Your at-a-glance starting point. Built from each sector's own price cycle (and standout individual stocks): what's a confirmed buy today, what's setting up to buy within a few days, what to take profits on, and what to leave alone. 'Days' are rough trajectory estimates, not promises. Click any name for the full breakdown.", "你的一眼总览起点。基于每个板块自身的价格周期（及表现突出的个股）：今日已确认的买入、几天内即将构筑的买入、需止盈的、以及该放手不管的。'天数'是粗略的轨迹估计，并非承诺。点击任意名称查看完整拆解。") }}
+      <span class="help">?<span class="tip"><span class="l-en">Your at-a-glance start, from each sector's price cycle (and standout stocks):<span class="lad lad-tint" style="--c:var(--up)"><b>Buy now</b> — confirmed today.</span><span class="lad lad-tint" style="--c:var(--info)"><b>Setting up</b> — a buy within a few days.</span><span class="lad lad-tint" style="--c:var(--warn)"><b>Take profits</b> — extended; trim.</span><span class="lad lad-tint" style="--c:var(--muted)"><b>Leave alone</b> — no edge.</span>'Days' are rough estimates, not promises. Click a name for the full breakdown.</span><span class="l-zh">你的一眼总览起点，基于每个板块的价格周期（及突出个股）：<span class="lad lad-tint" style="--c:var(--up)"><b>立即买入</b> — 今日已确认。</span><span class="lad lad-tint" style="--c:var(--info)"><b>构筑中</b> — 几天内的买入。</span><span class="lad lad-tint" style="--c:var(--warn)"><b>止盈</b> — 已拉伸；减仓。</span><span class="lad lad-tint" style="--c:var(--muted)"><b>放手不管</b> — 无优势。</span>'天数'是粗略估计，并非承诺。点击名称查看完整拆解。</span></span></span>
     </h2>
     <div class="actiongrid">
       <div class="actcol act-buy">
@@ -692,7 +702,7 @@
       而那些更久的通常还会再运行约 {{ pb.progress.median_remaining_days }} 个交易日
       （≈{{ (pb.progress.median_remaining_days / 5) | round(1) }} 周）{% endif %}。
       </span>
-      {{ help("Historical base rates from this classifier's own 2007-present history — odds and typical paths, not predictions. A young regime + STABLE radar = let winners run. An old regime + warnings = the odds of a shift compound.", "来自本分类器自身 2007 年至今历史的基础概率 — 是概率与典型路径，而非预测。年轻周期 + 稳定雷达 = 让赢家继续奔跑。年老周期 + 预警 = 转变的概率层层叠加。") }}
+      <span class="help">?<span class="tip"><span class="l-en">Historical base rates from 2007-present — odds and typical paths, not predictions:<span class="lad lad-tint" style="--c:var(--up)"><b>Young regime + STABLE radar</b> — let winners run.</span><span class="lad lad-tint" style="--c:var(--down)"><b>Old regime + warnings</b> — the odds of a shift compound.</span></span><span class="l-zh">来自本分类器 2007 年至今历史的基础概率 — 概率与典型路径，而非预测：<span class="lad lad-tint" style="--c:var(--up)"><b>年轻周期 + 稳定雷达</b> — 让赢家继续奔跑。</span><span class="lad lad-tint" style="--c:var(--down)"><b>年老周期 + 预警</b> — 转变概率层层叠加。</span></span></span></span>
     </p>
     {% else %}
     <p class="muted">{{ t('Not enough regime history for lifespan statistics yet.', '周期历史尚不足以做寿命统计。') }}</p>
@@ -759,7 +769,7 @@
       </div>
       <div class="span6">
         <h3>🚫 {{ t("Avoid right now — the evidence-backed don'ts", '现在回避 — 有证据支撑的禁忌') }}
-          {{ help("The strongest findings in our sector backtest were about what NOT to do: chasing stretched leaders lost 55% of the time; buying below-trend bounces lost in every variant tested. These warnings carry more statistical weight than any buy signal on this page.", "我们板块回测中最强的发现都是关于不该做什么：追逐过度拉伸的领先股有 55% 的时间亏钱；买入趋势下方的反弹在测试的每个变体中都亏钱。这些警告比本页任何买入信号都带有更大的统计权重。") }}
+          <span class="help">?<span class="tip"><span class="l-en">The strongest backtest findings are about what <b>NOT</b> to do — they carry more weight than any buy signal here:<table><tr><th style="text-align:left">don't</th><th style="text-align:right">measured</th></tr><tr><td style="text-align:left">chase stretched leaders</td><td style="text-align:right;color:var(--down)">lost 55% of the time</td></tr><tr><td style="text-align:left">buy below-trend bounces</td><td style="text-align:right;color:var(--down)">lost in every test</td></tr></table></span><span class="l-zh">板块回测中最强的发现都是关于<b>不该</b>做什么 — 比本页任何买入信号都更有分量：<table><tr><th style="text-align:left">不要</th><th style="text-align:right">实测</th></tr><tr><td style="text-align:left">追过度拉伸的领先股</td><td style="text-align:right;color:var(--down)">55% 的时间亏钱</td></tr><tr><td style="text-align:left">买趋势下方的反弹</td><td style="text-align:right;color:var(--down)">每个测试都亏</td></tr></table></span></span></span>
         </h3>
         {% for x in pb.avoid %}
           <div class="card"><span class="calltag tag-avoid">{{ td(x.call) }}</span>
@@ -777,21 +787,21 @@
   <!-- ======================= SIGNALS ======================= -->
   <div class="panel span6" id="dials">
     <h2>{{ t('The two dials behind the regime', '周期背后的两个刻度盘') }}
-      {{ help("The regime label comes from two scores between -1 and +1, built from market prices (which lead) plus a small weight on economic data (which confirms). Growth above zero + inflation below zero = Goldilocks, and so on. The white marker is today.", "周期标签来自两个介于 -1 与 +1 之间的分数，由市场价格（领先）加上经济数据（确认）的小幅权重构建。增长高于零 + 通胀低于零 = 理想增长，以此类推。白色标记代表今日。") }}
+      <span class="help">?<span class="tip"><span class="l-en">Two market-priced scores from −1 to +1 (prices lead; economic data confirms). Where growth and inflation cross sets the regime:<div class="qgrid"><span></span><span class="qax">growth −</span><span class="qax">growth +</span><span class="qax">infl +</span><span class="qcell" style="background:var(--q3)">Stagflation</span><span class="qcell" style="background:var(--q2)">Reflation</span><span class="qax">infl −</span><span class="qcell" style="background:var(--q4)">Growth-scare</span><span class="qcell" style="background:var(--q1)">Goldilocks</span></div>The white dot on the map is today.</span><span class="l-zh">两个由市场定价、介于 −1 与 +1 的分数（价格领先；经济数据确认）。增长与通胀的交叉点决定周期：<div class="qgrid"><span></span><span class="qax">增长 −</span><span class="qax">增长 +</span><span class="qax">通胀 +</span><span class="qcell" style="background:var(--q3)">滞胀</span><span class="qcell" style="background:var(--q2)">再通胀</span><span class="qax">通胀 −</span><span class="qcell" style="background:var(--q4)">增长恐慌</span><span class="qcell" style="background:var(--q1)">理想增长</span></div>地图上的白点代表今日。</span></span></span>
     </h2>
     <p style="margin:8px 0 0"><b>{{ t('Growth:', '增长：') }} {{ t("RISING", '上行') if latest.growth_score >= 0 else t("FALLING", '下行') }}</b>
       <span class="muted">({{ "%+.2f" | format(latest.growth_score) }} {{ t('of ±1 · agreement', '／±1 · 一致度') }} {{ (latest.growth_confidence * 100) | round | int }}%)</span>
-      {{ help("Is the economy's growth impulse improving or deteriorating, as priced by markets: copper vs gold, consumer discretionary vs staples, small vs large caps, cyclical vs defensive sectors, the 2-year yield, breadth — confirmed slowly by payrolls and industrial production.", "经济的增长动能正在改善还是恶化，以市场定价衡量：铜对黄金、可选消费对必需消费、小盘对大盘、周期板块对防御板块、2 年期收益率、市场广度 — 由非农就业与工业产出缓慢确认。") }}
+      <span class="help">?<span class="tip"><span class="l-en">Is the growth impulse improving or deteriorating, as priced by markets:<div style="margin:6px 0 2px"><span class="chip">copper vs gold</span><span class="chip">discretionary vs staples</span><span class="chip">small vs large caps</span><span class="chip">cyclical vs defensive</span><span class="chip">2-year yield</span><span class="chip">breadth</span></div>Confirmed slowly by payrolls and industrial production.</span><span class="l-zh">增长动能正在改善还是恶化，以市场定价衡量：<div style="margin:6px 0 2px"><span class="chip">铜 vs 金</span><span class="chip">可选 vs 必需</span><span class="chip">小盘 vs 大盘</span><span class="chip">周期 vs 防御</span><span class="chip">2年期收益率</span><span class="chip">市场广度</span></div>由非农就业与工业产出缓慢确认。</span></span></span>
     </p>
     <div class="gauge"><i style="left: {{ ((latest.growth_score + 1) / 2 * 100) | round(1) }}%"></i></div>
     <p style="margin:10px 0 0"><b>{{ t('Inflation pressure:', '通胀压力：') }} {{ t("RISING", '上行') if latest.inflation_score >= 0 else t("FALLING", '下行') }}</b>
       <span class="muted">({{ "%+.2f" | format(latest.inflation_score) }} {{ t('of ±1 · agreement', '／±1 · 一致度') }} {{ (latest.inflation_confidence * 100) | round | int }}%)</span>
-      {{ help("Is inflation pressure building or cooling, as priced by markets: bond-market inflation expectations, oil, energy-sector strength, and inflation-winner vs inflation-loser sector baskets.", "通胀压力正在累积还是降温，以市场定价衡量：债市通胀预期、原油、能源板块强度，以及通胀受益板块对通胀受损板块的组合。") }}
+      <span class="help">?<span class="tip"><span class="l-en">Is inflation pressure building or cooling, as priced by markets:<div style="margin:6px 0 2px"><span class="chip">inflation expectations</span><span class="chip">oil</span><span class="chip">energy-sector strength</span><span class="chip">inflation winners vs losers</span></div></span><span class="l-zh">通胀压力正在累积还是降温，以市场定价衡量：<div style="margin:6px 0 2px"><span class="chip">通胀预期</span><span class="chip">原油</span><span class="chip">能源板块强度</span><span class="chip">通胀受益 vs 受损</span></div></span></span></span>
     </p>
     <div class="gauge"><i style="left: {{ ((latest.inflation_score + 1) / 2 * 100) | round(1) }}%"></i></div>
 
     <h3>{{ t("What's voting for this regime", '哪些指标在为此周期投票') }}
-      {{ help("Each chip is one indicator inside the two dials. Green chips point WITH the regime call; red chips point AGAINST it. Lots of red = shaky ground (and lower 'signal agreement').", "每个标签代表两个刻度盘中的一个指标。绿色标签与周期判断同向；红色标签与之反向。红色越多 = 根基越不稳（且'信号一致度'越低）。") }}
+      <span class="help">?<span class="tip"><span class="l-en">Each chip is one indicator inside the two dials.<span class="lad lad-tint" style="--c:var(--up)"><b>Green</b> — points WITH the regime call (confirming).</span><span class="lad lad-tint" style="--c:var(--down)"><b>Red</b> — points AGAINST it (contradicting).</span>Lots of red = shaky ground, and lower 'signal agreement'.</span><span class="l-zh">每个标签代表两个刻度盘中的一个指标。<span class="lad lad-tint" style="--c:var(--up)"><b>绿色</b> — 与周期判断同向（确认）。</span><span class="lad lad-tint" style="--c:var(--down)"><b>红色</b> — 与之反向（矛盾）。</span>红色越多 = 根基越不稳，且'信号一致度'越低。</span></span></span>
     </h3>
     <div>
       {% for c in components_confirming %}<span class="chip chip-pos">{{ c }}</span>{% endfor %}
@@ -862,7 +872,7 @@
   <!-- ======================= SECTOR HEAT BOARD ======================= -->
   <div class="panel span12" id="sectors">
     <h2>{{ t('Sector heat board — regime × tape × technicals × seasonality', '板块热度榜 — 周期 × 盘面 × 技术 × 季节性') }}
-      {{ help("One row per sector, everything that matters in one place. HEAT (0-100) measures how CONFIRMED a sector's strength is right now: regime fit + rotation stage + technicals, minus crowding. Important: heat describes the present, not the future — our 2007-2026 backtest shows the hottest band (70+) actually UNDERPERFORMED over the following months (everything-confirmed usually means late). So: high heat = hold/trim territory, never a fresh-entry signal; the buy workflow is the watchlist + trigger column.", "每个板块一行，把重要的一切放在一处。热度（0–100）衡量一个板块的强势此刻有多被确认：周期契合度 + 轮动阶段 + 技术面，减去拥挤度。重要：热度描述的是现在，而非未来 — 我们 2007–2026 的回测显示最热的区间（70+）在随后几个月反而跑输（万事俱备通常意味着已晚）。因此：高热度 = 持有／减仓区，绝非新建仓信号；买入流程靠观察名单 + 触发列。") }}
+      <span class="help">?<span class="tip"><span class="l-en">One row per sector, everything in one place. <b>Heat (0-100)</b> = how confirmed a sector's strength is right now:<div style="margin:5px 0;font-size:11.5px"><span class="chip">regime fit</span> + <span class="chip">rotation stage</span> + <span class="chip">technicals</span> − <span class="chip">crowding</span></div>Heat describes the PRESENT, not the future — our 2007-2026 backtest shows the hottest band (70+) actually UNDERperformed next. So high heat = hold/trim, never a fresh-entry signal; buy via the watchlist + trigger column.</span><span class="l-zh">每个板块一行，重要的一切放在一处。<b>热度（0-100）</b> = 此刻强势有多被确认：<div style="margin:5px 0;font-size:11.5px"><span class="chip">周期契合</span> + <span class="chip">轮动阶段</span> + <span class="chip">技术面</span> − <span class="chip">拥挤度</span></div>热度描述现在，而非未来 — 2007-2026 回测显示最热区间（70+）随后反而跑输。故高热度 = 持有／减仓，绝非新建仓信号；买入靠观察名单 + 触发列。</span></span></span>
     </h2>
     <table>
       <tr>
@@ -1006,14 +1016,14 @@
 
   <div class="panel span6" id="liquidity">
     <h2>{{ t('Fed liquidity — the money tide', '美联储流动性 — 资金潮') }}
-      {{ help("Top: net money in the system (Fed balance sheet minus reverse-repo minus the Treasury's account), in billions. Bottom: its 4-week change — the impulse. Green above the dotted line = expanding (historically the most reliable tailwind); red below = contracting.", "上方：系统内的净资金（美联储资产负债表减逆回购减财政部账户），单位十亿。下方：其 4 周变化 — 即动能。虚线之上为绿色 = 扩张（历史上最可靠的顺风）；下方为红色 = 收缩。") }}
+      <span class="help">?<span class="tip"><span class="l-en"><b>Top — net liquidity</b> (the money tide), $bn:<div style="margin:5px 0;font-size:11.5px"><span class="chip">Fed balance sheet</span> − <span class="chip">reverse repo</span> − <span class="chip">Treasury account</span></div><b>Bottom — its 4-week change</b> (the impulse). Green above the dotted line = expanding (historically the most reliable tailwind); red below = contracting.</span><span class="l-zh"><b>上方 — 净流动性</b>（资金潮），单位十亿美元：<div style="margin:5px 0;font-size:11.5px"><span class="chip">美联储资产负债表</span> − <span class="chip">逆回购</span> − <span class="chip">财政部账户</span></div><b>下方 — 其 4 周变化</b>（动能）。虚线之上为绿色 = 扩张（历史上最可靠的顺风）；下方为红色 = 收缩。</span></span></span>
     </h2>
     <div class="chart">{{ chart_liquidity | safe }}</div>
   </div>
 
   <div class="panel span6" id="credit">
     <h2>{{ t('Credit stress & market breadth', '信用压力与市场广度') }}
-      {{ help("Top: the extra yield junk-bond investors demand — the market's best early smoke detector; rising = stress building; below ~4% is calm. Bottom: % of S&P 500 stocks above their 50-day average — participation. Strong indexes with collapsing breadth are fragile.", "上方：垃圾债投资者要求的额外收益率 — 市场最好的早期烟雾探测器；上行 = 压力累积；低于约 4% 为平静。下方：标普 500 中高于其 50 日均线的股票占比 — 即参与度。指数走强而广度崩塌则脆弱。") }}
+      <span class="help">?<span class="tip"><span class="l-en"><b>Top — HY credit spread:</b> the extra yield junk-bond investors demand; the market's best early smoke detector.<span class="scale"><span style="background:var(--up)">CALM</span><span style="background:var(--warn)">NORMAL</span><span style="background:var(--down)">STRESS</span></span><span class="sl"><span>0</span><span>~4%</span><span>~6%</span><span>8%+</span></span><b>Bottom — breadth:</b> % of S&P 500 above their 50-day average. A strong index with collapsing breadth is fragile.</span><span class="l-zh"><b>上方 — 高收益信用利差：</b>垃圾债投资者要求的额外收益率；市场最好的早期烟雾探测器。<span class="scale"><span style="background:var(--up)">平静</span><span style="background:var(--warn)">正常</span><span style="background:var(--down)">压力</span></span><span class="sl"><span>0</span><span>~4%</span><span>~6%</span><span>8%+</span></span><b>下方 — 广度：</b>标普 500 中高于 50 日均线的占比。指数走强而广度崩塌则脆弱。</span></span></span>
     </h2>
     <div class="chart">{{ chart_credit_breadth | safe }}</div>
   </div>
@@ -1021,7 +1031,7 @@
   <!-- ======================= POSITIONING ======================= -->
   <div class="panel span6" id="positioning">
     <h2>{{ t("Who's positioned how — the crowd meter", '谁如何持仓 — 拥挤度计') }}
-      {{ help("What different investor groups are currently doing, shown as a position on each dial. The middle is normal; the ENDS are the danger zones — when a marker sits at either extreme, that trade is crowded and prone to violent reversal. Hover each name for the underlying numbers.", "不同投资者群体当前在做什么，以每个刻度盘上的位置呈现。中间为正常；两端是危险区 — 当标记落在任一极端时，该交易已拥挤且易发生剧烈反转。将鼠标悬停在每个名称上可查看底层数字。") }}
+      <span class="help">?<span class="tip"><span class="l-en">Where each investor group sits on its dial. Both <b>ENDS</b> are danger zones — an extreme reading means the trade is crowded and prone to a violent reversal.<span class="scale"><span style="background:var(--g-cold)">CROWDED SHORT</span><span style="background:var(--g-mid)">NORMAL</span><span style="background:var(--down)">CROWDED LONG</span></span><span class="sl"><span>extreme</span><span>neutral</span><span>extreme</span></span>Hover each name for the underlying numbers.</span><span class="l-zh">每个投资者群体在其刻度盘上的位置。<b>两端</b>都是危险区 — 极端读数意味着该交易已拥挤、易剧烈反转。<span class="scale"><span style="background:var(--g-cold)">极度做空</span><span style="background:var(--g-mid)">正常</span><span style="background:var(--down)">极度做多</span></span><span class="sl"><span>极端</span><span>中性</span><span>极端</span></span>悬停每个名称可查看底层数字。</span></span></span>
     </h2>
     <table>
       <tr><th class="l">{{ t('who / what', '谁／什么') }}</th><th class="l" style="min-width:150px">{{ t('where they stand', '当前位置') }}</th><th class="l">{{ t('what it means', '含义') }}</th></tr>
@@ -1081,9 +1091,12 @@
 
   <!-- ======================= HOLDINGS / FLOWS ======================= -->
   <div class="panel span12" id="holdings">
-    <h2>{{ t("Star fund managers' real moves", '明星基金经理的真实动作') }}
-      {{ help("Daily holdings of the watchlist funds (ARK etc.) with mechanical flow effects stripped out — what's left is genuine manager conviction, visible the day after they trade.", "观察名单基金（ARK 等）的每日持仓，已剔除机械性的资金流影响 — 剩下的是真正的经理人信念，在他们交易后的次日可见。") }}
-    </h2>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <h2 style="margin:0">{{ t("Star fund managers' real moves", '明星基金经理的真实动作') }}
+      {{ help("Daily holdings of the watchlist funds (ARK etc.) with mechanical flow effects stripped out — what's left is genuine manager conviction, visible the day after they trade.", "观察名单基金（ARK 等）的每日持仓，已剔除机械性的资金流影响 — 剩下的是真正的经理人信念，在他们交易后的次日可见。") }}</h2>
+      <span style="flex:1"></span>
+      <a class="gobtn" href="etfs.html">🐳 {{ t('Full ETF flow radar', '完整 ETF 资金雷达') }} <span class="a">→</span></a>
+    </div>
     {% if holdings_changes %}
       <table>
         <tr><th class="l">{{ t('fund', '基金') }}</th><th class="l">{{ t('position', '仓位') }}</th><th>{{ t('active chg', '主动变动') }}</th><th>{{ t('window', '窗口') }}</th></tr>
@@ -1110,7 +1123,7 @@
   <!-- ======================= HEALTH ======================= -->
   <div class="panel span12" id="health">
     <h2>{{ t('Data health', '数据健康度') }}
-      {{ help("Every data source this dashboard depends on. OK = fresh. STALE = no new data lately (signal confidence reduced automatically). FAILED = today's fetch broke (yesterday's data still used). BLOCKED = a known, documented limitation — not a malfunction. DEAD = failed 3+ runs and paused until it recovers.", "本仪表盘所依赖的每个数据源。OK = 新鲜。STALE = 近期无新数据（信号置信度已自动下调）。FAILED = 今日抓取失败（仍沿用昨日数据）。BLOCKED = 已知且有记录的限制 — 并非故障。DEAD = 连续 3 次以上失败，已暂停直至恢复。") }}
+      <span class="help">?<span class="tip"><span class="l-en">Every data source this dashboard depends on:<span class="lad lad-tint" style="--c:var(--up)"><b>OK</b> — fresh.</span><span class="lad lad-tint" style="--c:var(--warn)"><b>STALE</b> — no new data lately; signal confidence is auto-reduced.</span><span class="lad lad-tint" style="--c:var(--orange)"><b>FAILED</b> — today's fetch broke; yesterday's data still used.</span><span class="lad lad-tint" style="--c:var(--info)"><b>BLOCKED</b> — a known, documented limit, not a malfunction.</span><span class="lad lad-tint" style="--c:var(--down)"><b>DEAD</b> — failed 3+ runs; paused until it recovers.</span></span><span class="l-zh">本仪表盘所依赖的每个数据源：<span class="lad lad-tint" style="--c:var(--up)"><b>OK</b> — 新鲜。</span><span class="lad lad-tint" style="--c:var(--warn)"><b>STALE</b> — 近期无新数据；信号置信度已自动下调。</span><span class="lad lad-tint" style="--c:var(--orange)"><b>FAILED</b> — 今日抓取失败；仍沿用昨日数据。</span><span class="lad lad-tint" style="--c:var(--info)"><b>BLOCKED</b> — 已知且有记录的限制，并非故障。</span><span class="lad lad-tint" style="--c:var(--down)"><b>DEAD</b> — 连续 3 次以上失败，已暂停直至恢复。</span></span></span></span>
     </h2>
     <table>
       <tr><th class="l">{{ t('source', '数据源') }}</th><th class="l">{{ t('status', '状态') }}</th><th>{{ t('rows', '行数') }}</th><th>{{ t('last data', '最新数据') }}</th><th class="l">{{ t('note', '备注') }}</th></tr>
