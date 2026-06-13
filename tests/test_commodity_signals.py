@@ -13,6 +13,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine import commodity_signals as S  # noqa: E402
+from engine import commodity_mtf as M  # noqa: E402
 from lib import config  # noqa: E402
 
 CFG = config.load()["commodities"]
@@ -142,12 +143,136 @@ def test_complex_regime_labels() -> None:
     assert {"gold_silver", "copper_gold", "oil_gold"} <= set(cx.columns)
 
 
+# ---------------------------------------------------------------------------- #
+# MTF cycle-ladder + confluence (engine.commodity_mtf) — the ported macro
+# momentum/technical methodology.
+# ---------------------------------------------------------------------------- #
+def test_mtf_ladder_shape_and_equity_preset() -> None:
+    df = _price(n=1400)                                  # > 1200 so ME populates
+    a = M.mtf_ladder(df["close"], df["high"])
+    assert {"cycle", "mtf", "ladder"} <= set(a)
+    assert {"D", "3D", "W", "2W", "ME"} <= set(a["mtf"])  # all five timeframes
+    # equity preset (36-42 trading-day daily cycle), NOT crypto's (56-70)
+    assert a["cycle"]["dc_band"] == (36, 42)
+
+
+def test_mtf_ladder_short_series_omits_monthly() -> None:
+    df = _price(n=700)                                   # 600 < n < 1200
+    a = M.mtf_ladder(df["close"], df["high"])
+    assert "2W" in a["mtf"] and "ME" not in a["mtf"]
+
+
+def test_mtf_ladder_degrades_to_empty() -> None:
+    df = _price(n=80)                                    # < 260 -> no cycle state
+    assert M.mtf_ladder(df["close"], df["high"]) == {}
+
+
+def test_confluence_verdict_keys_and_grade() -> None:
+    df = _price(n=1400, trend=0.0005)
+    a = M.mtf_ladder(df["close"], df["high"])
+    v = M.confluence_verdict(a, "gold", df.iloc[-1], {})
+    assert v["grade"] in {"CAUTION", "AVOID", "TREND-FOLLOW", "BUY-THE-DIP", "WAIT"}
+    assert {"short_sign", "mid_sign", "long_sign", "per_tf",
+            "driver_lean", "trend_lean", "calibrated_note"} <= set(v)
+    assert set(v["per_tf"]) == {"D", "3D", "W", "2W", "ME"}
+
+
+def test_confluence_trend_polarity_is_per_asset() -> None:
+    # an UP 12-month trend must lean BULLISH for gold (with-sign) but BEARISH for
+    # oil (calibration: oil mean-reverts) — the honesty hinge of the port.
+    df = _price(n=1400, trend=0.0008)
+    a = M.mtf_ladder(df["close"], df["high"])
+    last_up = pd.Series({"ts_momentum": 0.8, "ts_trend": "up", "driver_score": 0.5})
+    v_gold = M.confluence_verdict(a, "gold", last_up, {})
+    v_oil = M.confluence_verdict(a, "oil", last_up, {})
+    assert v_gold["trend_lean"] > 0          # gold reads trend with-sign
+    assert v_oil["trend_lean"] < 0           # oil reads trend INVERTED
+    assert v_oil["calibrated_note"]          # and says so honestly
+
+
+def test_confluence_driver_polarity_gold_inverted() -> None:
+    # a supportive macro backdrop (positive driver_score) must lean BEARISH for
+    # gold (contrarian) and BULLISH for copper (directional).
+    df = _price(n=1400)
+    a = M.mtf_ladder(df["close"], df["high"])
+    last = pd.Series({"driver_score": 0.7})
+    assert M.confluence_verdict(a, "gold", last, {})["driver_lean"] < 0
+    assert M.confluence_verdict(a, "copper", last, {})["driver_lean"] > 0
+    assert M.confluence_verdict(a, "silver", last, {})["driver_lean"] == 0  # context-only
+
+
+def test_confluence_empty_on_empty() -> None:
+    assert M.confluence_verdict({}, "gold", None, {}) == {}
+
+
+def test_verdict_polarity_mapping() -> None:
+    assert M._verdict_polarity("CONFIRMED", 0) == 1
+    assert M._verdict_polarity("DIRECTIONAL (one half weak)", 0) == 1
+    assert M._verdict_polarity("INVERTED", 0) == -1
+    assert M._verdict_polarity("CONTEXT-ONLY", 9) == 0
+    assert M._verdict_polarity(None, -1) == -1            # falls back when absent
+    assert M._verdict_polarity("", 1) == 1
+
+
+def test_polarity_derives_from_live_calibration() -> None:
+    # the LIVE verdict overrides the hardcoded fallback: if calibration says gold's
+    # driver is CONFIRMED (with-sign), a positive driver leans BULLISH — even though
+    # the fallback table has gold inverted. Proves no hardcoded drift.
+    df = _price(n=1400)
+    a = M.mtf_ladder(df["close"], df["high"])
+    last = pd.Series({"driver_score": 0.7})
+    cal = {"signals": {"driver_score": {"verdict": "CONFIRMED"}}}
+    assert M.confluence_verdict(a, "gold", last, cal)["driver_lean"] > 0   # live wins
+    assert M.confluence_verdict(a, "gold", last, {})["driver_lean"] < 0    # fallback
+
+
+def test_trend_nan_falls_back_to_ts_trend() -> None:
+    # NaN ts_momentum (early history) must fall back to the categorical ts_trend,
+    # not silently zero out the lean.
+    df = _price(n=1400)
+    a = M.mtf_ladder(df["close"], df["high"])
+    last = pd.Series({"ts_momentum": np.nan, "ts_trend": "up"})
+    assert M.confluence_verdict(a, "gold", last, {})["trend_lean"] > 0
+
+
+def test_fallback_polarity_matches_live_calibration() -> None:
+    # belt-and-suspenders against drift in the FALLBACK table itself: if the stored
+    # calibration is present, the hardcoded tables must still agree with it.
+    import json
+    from lib import config as _cfg
+    cpath = _cfg.data_dir() / "commodity" / "calibration.json"
+    if not cpath.exists():
+        return  # fresh checkout / no calibration yet — fallback is all there is
+    calib = json.loads(cpath.read_text())
+    for asset in ["gold", "silver", "copper", "oil"]:
+        sigs = calib.get("assets", {}).get(asset, {}).get("signals", {})
+        dv = sigs.get("driver_score", {}).get("verdict")
+        tv = sigs.get("ts_momentum", {}).get("verdict")
+        if dv:
+            assert M._verdict_polarity(dv, 99) == M._DRIVER_POLARITY[asset], \
+                f"{asset} driver fallback {M._DRIVER_POLARITY[asset]} != live '{dv}'"
+        if tv:
+            assert M._verdict_polarity(tv, 99) == M._TREND_POLARITY[asset], \
+                f"{asset} trend fallback {M._TREND_POLARITY[asset]} != live '{tv}'"
+
+
 if __name__ == "__main__":
     for fn in [test_momentum_bounds_and_direction, test_risk_index_range_and_regime,
                test_driver_axis_orientation, test_positioning_states_and_rolling,
                test_residual_flags_exogenous_bid, test_residual_is_causal,
                test_ts_momentum_bounds_and_direction, test_gsr_and_brent_wti,
-               test_complex_regime_labels]:
+               test_complex_regime_labels,
+               test_mtf_ladder_shape_and_equity_preset,
+               test_mtf_ladder_short_series_omits_monthly,
+               test_mtf_ladder_degrades_to_empty,
+               test_confluence_verdict_keys_and_grade,
+               test_confluence_trend_polarity_is_per_asset,
+               test_confluence_driver_polarity_gold_inverted,
+               test_confluence_empty_on_empty,
+               test_verdict_polarity_mapping,
+               test_polarity_derives_from_live_calibration,
+               test_trend_nan_falls_back_to_ts_trend,
+               test_fallback_polarity_matches_live_calibration]:
         fn()
         print(f"PASS {fn.__name__}")
     print("all commodity signal tests passed")

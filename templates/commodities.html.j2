@@ -148,6 +148,42 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 .catbl td.a{font-weight:700;color:var(--ink)} .catbl td.r,.catbl th.r{text-align:right}
 .catbl tr:last-child td{border-bottom:none}
 .tip{border-bottom:1px dashed var(--faint);cursor:help}
+/* ===== conviction verdict ===== */
+.conv{border-width:2px}
+.conv-head{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.conv-badge{font-size:22px;font-weight:800;letter-spacing:-.01em;padding:10px 18px;border-radius:13px;color:#fff;white-space:nowrap}
+.conv-sbuy{background:#0f8a4f} .conv-buy{background:#3aa66f} .conv-hold{background:#8a93a1}
+.conv-sell{background:#e0744b} .conv-ssell{background:var(--red)}
+.conv-score{font-size:34px;font-weight:800;color:var(--ink);line-height:1}
+.conv-score small{font-size:15px;color:var(--faint);font-weight:600}
+.conv-meta{display:flex;flex-direction:column;gap:3px}
+.conv-cmeta{font-size:12.5px;color:var(--muted);font-weight:600}
+.conv-ctx{display:inline-block;font-size:11px;font-weight:700;padding:1px 8px;border-radius:6px;background:#FFF2D9;color:#9a6a00;margin-left:6px}
+.conv-narr{margin-top:12px;font-size:14px;color:var(--text);line-height:1.55}
+/* diverging conviction meter (-100..+100) */
+.conv-meter{position:relative;height:12px;border-radius:7px;background:linear-gradient(90deg,color-mix(in srgb,var(--red) 22%,var(--card)),var(--grid) 48%,var(--grid) 52%,color-mix(in srgb,var(--green) 22%,var(--card)));margin:16px 0 6px}
+.conv-meter .mk{position:absolute;top:-3px;width:4px;height:18px;border-radius:3px;background:var(--ink);transform:translateX(-50%)}
+.conv-meter .zero{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--faint);opacity:.5}
+.conv-scale{display:flex;justify-content:space-between;font-size:10.5px;color:var(--faint);font-weight:600}
+/* cycle position */
+.conv-cycle{margin-top:16px;padding:13px 15px;border:1px solid var(--grid);border-radius:12px;background:var(--bg)}
+.cyc-row{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;gap:10px;flex-wrap:wrap}
+.cyc-leg{font-weight:800;color:var(--ink)} .cyc-leg.bull{color:var(--green)} .cyc-leg.bear{color:var(--red)}
+.cyc-bar{position:relative;height:9px;border-radius:5px;background:var(--grid);margin:9px 0 5px;overflow:hidden}
+.cyc-prog{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:linear-gradient(90deg,var(--r3),var(--blue))}
+.cyc-prog.od{background:linear-gradient(90deg,var(--amber),var(--red))}
+/* factor breakdown */
+.fgrp{margin-top:16px}
+.fgrp-h{display:flex;justify-content:space-between;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:12px 0 6px;border-bottom:1px solid var(--grid);padding-bottom:5px}
+.frow{display:grid;grid-template-columns:148px 1fr 84px;align-items:center;gap:10px;padding:4px 0;font-size:13px}
+.frow .fl{color:var(--ink);font-weight:600}
+.frow .fl .fr{display:block;font-size:11px;font-weight:500;color:var(--muted)}
+.fbar{position:relative;height:14px;background:var(--bg);border-radius:4px}
+.fbar .fmid{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--grid)}
+.fbar .ff{position:absolute;top:0;bottom:0;border-radius:3px}
+.fbar .ff.pos{background:var(--green)} .fbar .ff.neg{background:var(--red)}
+.frow .fw{font-size:11px;color:var(--faint);text-align:right;font-weight:600}
+@media(max-width:600px){.frow{grid-template-columns:120px 1fr 60px}}
 /* alert timeline */
 .tl-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
 .tlf{padding:6px 14px;border-radius:9px;background:var(--grid);color:var(--muted);font-weight:700;font-size:13px;cursor:pointer;border:none}
@@ -301,12 +337,125 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
       </div>
     </div>
 
+    <!-- ===================== CONVICTION VERDICT (centerpiece) ===================== -->
+    {% if a.conviction and a.conviction.action %}
+    {% set cv = a.conviction %}
+    {% set glab = {'Trend & Cycle':('Trend & Cycle','趋势与周期'),'Macro backdrop':('Macro backdrop','宏观背景'),'Dollar & Carry':('Dollar & Carry','美元与利率套利'),'Risk & Liquidity':('Risk & Liquidity','风险与流动性'),'Value & Positioning':('Value & Positioning','价值与持仓'),'Shocks':('Shocks / disruptions','冲击/扰动')} %}
+    {% set fmax = (cv.factors|map(attribute='contribution')|map('abs')|list|max) %}
+    {% set fmax = fmax if (fmax and fmax > 0) else 0.001 %}
+    <div class="card conv" style="margin-top:18px">
+      <h2>{{ t('Conviction — what to do now', '操作裁决 — 当前该怎么做') }}</h2>
+      <div class="conv-head">
+        <div class="conv-badge conv-{{ cv.action_css }}">{{ t(cv.action, cv.action_zh) }}</div>
+        <div class="conv-meta">
+          <div class="conv-score">{{ '%+d'|format(cv.score|round|int) }}<small> / 100</small></div>
+          <div class="conv-cmeta">{{ t('conviction · confidence','信心 · 置信度') }} {{ (cv.confidence*100)|round|int }}%{% if not cv.reliable %}<span class="conv-ctx">{{ t('CONTEXT — weak calibration','参考 — 校准较弱') }}</span>{% endif %}</div>
+        </div>
+      </div>
+      <div class="conv-narr">{{ t(cv.sub, cv.sub_zh) }}</div>
+      <div class="conv-meter"><div class="zero"></div><div class="mk" style="left:{{ ((cv.score+100)/2)|round(1) }}%"></div></div>
+      <div class="conv-scale"><span>{{ t('Strong Sell','强烈卖出') }}</span><span>{{ t('Hold','持有') }}</span><span>{{ t('Strong Buy','强烈买入') }}</span></div>
+
+      {% if cv.cycle and cv.cycle.regime %}
+      {% set cy = cv.cycle %}
+      {% set cprog = [100, (cy.days_in / cy.median_len_d * 100)|round|int]|min if cy.median_len_d else 0 %}
+      <div class="conv-cycle">
+        <div class="cyc-row">
+          <span><span class="cyc-leg {{ cy.regime }}">{{ t(cy.regime|capitalize ~ ' leg', (('牛市' if cy.regime=='bull' else '熊市')) ~ '段') }}</span> · {{ t(cy.phase, cy.phase_zh) }}</span>
+          <span class="faint">{{ t('amplitude so far','至今幅度') }} {{ cy.amp_so_far }}% / {{ t('typical','典型') }} {{ cy.typical_amp }}%</span>
+        </div>
+        <div class="cyc-bar"><div class="cyc-prog {{ 'od' if cy.phase=='overdue' else '' }}" style="width:{{ cprog }}%"></div></div>
+        <div class="cyc-row">
+          <span class="faint">{{ cy.days_in }}{{ t('d in of a typical','天 / 典型') }} {{ cy.median_len_d }}{{ t('d','天') }}</span>
+          <span style="font-weight:700;color:var(--ink)">{% if cy.eta_days>0 %}~{{ cy.eta_days }}{{ t('d to a typical','天后达典型') }} {{ t(cy.next_event, cy.next_event_zh) }} <span class="faint" style="font-weight:500">({{ cy.eta_lo }}–{{ cy.eta_hi }}{{ t('d','天') }})</span>{% else %}{{ t('past the typical','已过典型') }} {{ t(cy.next_event, cy.next_event_zh) }} {{ t('window','窗口') }}{% endif %}</span>
+        </div>
+        {% if not cv.reliable %}<div class="sub faint" style="margin-top:8px;font-size:11.5px">{{ t('Timing is lower-confidence for this commodity (its conviction score is weakly calibrated) — treat the cycle window as rough context, not a precise forecast.', '该商品的时机置信度较低（其裁决分数校准较弱）——周期窗口仅作粗略参考，并非精确预测。') }}</div>{% endif %}
+      </div>
+      {% endif %}
+
+      <!-- factor breakdown, grouped, diverging bars (contribution = weight x reading) -->
+      {% for g in cv.groups %}
+      <div class="fgrp">
+        <div class="fgrp-h"><span>{{ t(glab.get(g.name,(g.name,g.name))[0], glab.get(g.name,(g.name,g.name))[1]) }} · {{ g.weight_pct }}%</span><span style="color:{{ 'var(--green)' if g.score>0 else ('var(--red)' if g.score<0 else 'var(--muted)') }}">{{ '%+0.0f'|format(g.score) }}</span></div>
+        {% for f in cv.factors if f.group == g.name %}
+        {% set w = (f.contribution|abs / fmax * 50)|round(1) %}
+        <div class="frow">
+          <div class="fl">{{ t(f.label, f.label_zh) }}<span class="fr">{{ t(f.reading, f.reading_zh) }}</span></div>
+          <div class="fbar"><div class="fmid"></div>
+            {% if f.contribution >= 0 %}<div class="ff pos" style="left:50%;width:{{ w }}%"></div>
+            {% else %}<div class="ff neg" style="right:50%;width:{{ w }}%"></div>{% endif %}
+          </div>
+          <div class="fw">w {{ '%+0.2f'|format(f.weight) }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+      <div class="sub faint" style="margin-top:12px;font-size:12px">{{ t('Conviction = a weighted blend of the factors below, each weight a MEASURED forward-return strength (negative = the factor is contrarian for this commodity, e.g. oil\'s 12-month trend mean-reverts). Bars show each factor\'s net contribution (weight × reading). Cycle timing is from this commodity\'s own 25-year bull/bear leg durations — an estimate, not a guarantee.', '裁决 = 下列因素的加权融合，每个权重均为实测的前瞻收益强度（负值=该因素对此商品为逆向，如原油12个月趋势均值回归）。条形显示各因素的净贡献（权重 × 读数）。周期时机来自该商品自身25年的牛熊段时长——为估算，并非保证。') }}</div>
+    </div>
+    {% endif %}
+
+    <!-- multi-timeframe confluence verdict (cycle regime vs short-term tape) -->
+    {% if a.verdict and a.verdict.headline %}
+    {% set vg = {'CAUTION':'var(--amber)','AVOID':'var(--red)','TREND-FOLLOW':'var(--blue)','BUY-THE-DIP':'var(--blue)','WAIT':'var(--muted)'} %}
+    {% set tfc = {'up':'var(--green)','down':'var(--red)','flat':'var(--grid)'} %}
+    {% set arr = {1:'↑',0:'→',-1:'↓'} %}
+    <div class="card" style="margin-top:18px">
+      <h2>{{ t('Multi-timeframe confluence', '多周期共振') }}</h2>
+      <div style="display:flex;align-items:baseline;gap:11px;flex-wrap:wrap;margin-top:4px">
+        <span style="font-weight:800;font-size:12px;padding:3px 10px;border-radius:8px;color:#fff;background:{{ vg.get(a.verdict.grade,'var(--muted)') }}">{{ t(a.verdict.grade, a.verdict.grade_zh) }}</span>
+        <b style="font-size:17px;color:var(--ink)">{{ t(a.verdict.headline, a.verdict.headline_zh) }}</b>
+      </div>
+      <div class="sub" style="margin-top:8px">{{ t(a.verdict.sub, a.verdict.sub_zh) }}</div>
+      {% if a.verdict.calibrated_note %}<div class="sub" style="margin-top:6px;color:var(--amber)">⚖ {{ t(a.verdict.calibrated_note, a.verdict.calibrated_note_zh) }}</div>{% endif %}
+      <div style="display:flex;align-items:center;gap:11px;margin-top:12px;flex-wrap:wrap">
+        <span class="faint" style="font-size:11px;text-transform:uppercase;letter-spacing:.04em">{{ t('Trend by timeframe','各周期趋势') }}</span>
+        {% for r in a.mtf_rows %}<span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)"><i style="width:9px;height:9px;border-radius:50%;background:{{ tfc.get(r.trend,'var(--grid)') }}"></i>{{ t(r.label, r.label_zh) }}</span>{% endfor %}
+        <span class="faint" style="font-size:12px">· {{ t('short','短') }} {{ arr[a.verdict.short_sign] }} · {{ t('mid','中') }} {{ arr[a.verdict.mid_sign] }} · {{ t('long','长') }} {{ arr[a.verdict.long_sign] }}</span>
+      </div>
+    </div>
+    {% endif %}
+
     <!-- price + risk + shock chart -->
     <div class="card" style="margin-top:18px">
       <h3>{{ t(a.label, a.zh) }} {{ t('price · Risk Index · residual shocks', '价格 · 风险指数 · 残差冲击') }}</h3>
       {{ a.chart|safe }}
       <div class="sub" style="margin-top:6px">{{ t('Blue ▲ = an unexplained bid (price above what its macro drivers predict); red ▼ = unexplained pressure. Red area = Risk Index (right axis).', '蓝色 ▲ = 无法解释的买盘（价格高于宏观驱动所预测）；红色 ▼ = 无法解释的压力。红色区域 = 风险指数（右轴）。') }}</div>
     </div>
+
+    <!-- multi-timeframe momentum & technicals (cycle ladder + 5-TF table) -->
+    {% if a.mtf_rows %}
+    <div class="section-title">{{ t('Multi-timeframe momentum & technicals', '多周期动量与技术指标') }}</div>
+    <div class="grid cols-2">
+      <div class="card">
+        <h3>{{ t('Cycle ladder','周期阶梯') }}{% if a.verdict.ladder_label %} · <span style="color:var(--blue)">{{ t(a.verdict.ladder_label, a.verdict.ladder_label_zh or a.verdict.ladder_label) }}</span>{% endif %}</h3>
+        {% if a.verdict.regime_label %}<div class="sub">{{ t('Bigger picture','大局') }}: <b>{{ t(a.verdict.regime_label, a.verdict.regime_label_zh or a.verdict.regime_label) }}</b></div>{% endif %}
+        {% if a.ladder.summary_line %}<div class="sub" style="margin-top:8px">{{ t(a.ladder.summary_line, a.ladder.summary_line_zh or a.ladder.summary_line) }}</div>{% endif %}
+        {% if a.ladder.entry_text %}<div class="sub" style="margin-top:8px">{{ t(a.ladder.entry_text, a.ladder.entry_text_zh or a.ladder.entry_text) }}</div>
+        {% elif a.ladder.next %}<div class="sub" style="margin-top:8px">{{ t(a.ladder.next, a.ladder.next_zh or a.ladder.next) }}</div>{% endif %}
+        <div class="sub faint" style="margin-top:10px;font-size:12px">{{ t('The same calibrated daily/weekly cycle engine the stock analyzer runs (graddhy / financial-tap methodology, equity preset). It is a timing / structure tool — trust the verdict above, which already applies this asset\'s measured calibration.', '与股票分析器相同的已校准日线/周线周期引擎（graddhy / financial-tap 方法，股票预设）。这是时机/结构工具 — 以上方裁决为准，其已纳入该品种的实测校准。') }}</div>
+      </div>
+      <div class="card">
+        <h3>{{ t('Momentum by timeframe','各周期动量') }}</h3>
+        {% set rc2 = {'up':'var(--green)','down':'var(--red)','flat':'var(--muted)'} %}
+        {% set mc = {'up':'var(--green)','pos':'var(--green)','down':'var(--red)','neg':'var(--red)'} %}
+        {% set mlab = {'up':'cross ↑','pos':'+','down':'cross ↓','neg':'−'} %}
+        {% set tarr = {'up':'↑','down':'↓','flat':'→'} %}
+        <table class="catbl">
+          <tr><th>{{ t('TF','周期') }}</th><th class="r">RSI</th><th class="r">{{ t('Stoch','随机') }}</th><th class="r">MACD</th><th class="r">{{ t('Trend','趋势') }}</th></tr>
+          {% for r in a.mtf_rows %}
+          <tr>
+            <td class="a">{{ t(r.label, r.label_zh) }}</td>
+            <td class="r" style="color:{{ 'var(--red)' if (r.rsi14 or 50)>=70 else ('var(--green)' if (r.rsi14 or 50)<=30 else 'var(--ink)') }}">{{ r.rsi14 if r.rsi14 is not none else '—' }}</td>
+            <td class="r" style="color:{{ 'var(--red)' if (r.stoch or 50)>=80 else ('var(--green)' if (r.stoch or 50)<=20 else 'var(--ink)') }}">{{ r.stoch if r.stoch is not none else '—' }}</td>
+            <td class="r" style="color:{{ mc.get(r.macd,'var(--muted)') }}">{{ mlab.get(r.macd,'—') }}</td>
+            <td class="r" style="color:{{ rc2.get(r.trend,'var(--muted)') }};font-weight:700">{{ tarr.get(r.trend,'→') }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+        <div class="sub faint" style="margin-top:10px;font-size:12px">{{ t('RSI / StochRSI / MACD across five timeframes (daily → monthly). RSI ≥70 / Stoch ≥80 = overbought (red); ≤30 / ≤20 = oversold (green). These are the universal tape; the verdict above applies this asset\'s calibrated meaning.', 'RSI / 随机RSI / MACD 跨五个周期（日线 → 月线）。RSI ≥70 / 随机 ≥80 = 超买（红）；≤30 / ≤20 = 超卖（绿）。这些是通用盘面；上方裁决已纳入该品种的校准含义。') }}</div>
+      </div>
+    </div>
+    {% endif %}
 
     <!-- signal cards -->
     <div class="section-title">{{ t('Signals · each with its measured verdict', '信号 · 各附实测评定') }}</div>
@@ -330,7 +479,10 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
         <h3>{{ t('Macro driver axis', '宏观驱动轴') }} {{ vbadge(a.verdicts.get('driver_score','')) }}</h3>
         {% set dc = {'tailwind':'var(--green)','headwind':'var(--red)','neutral':'var(--muted)'} %}
         <div class="sigline"><span class="l">{{ t('Backdrop','背景') }}</span><span class="r"><b style="color:{{ dc.get(a.driver_state,'var(--muted)') }}">{{ td(a.driver_state) }}</b> ({{ a.driver_score }})</span></div>
-        <div class="sub" style="margin-top:8px">{{ t(a.driver_interp[0], a.driver_interp[1]) }}</div>
+        {% if a.carry %}
+        <div class="sigline"><span class="l">{{ t('Term structure (carry)','期限结构（展期收益）') }}</span><span class="r"><b style="color:{{ 'var(--green)' if a.carry.state=='backwardation' else 'var(--red)' }}">{{ t('backwardation','现货升水') if a.carry.state=='backwardation' else t('contango','期货升水') }}</b> ({{ '%+.1f'|format(a.carry.roll_ann) }}%/yr)</span></div>
+        {% endif %}
+        <div class="sub" style="margin-top:8px">{{ t(a.driver_interp[0], a.driver_interp[1]) }}{% if a.carry %} {{ t('Roll yield = front (' ~ a.carry.front ~ ') vs second (' ~ a.carry.second ~ ') contract: positive (backwardation) earns carry for longs; negative (contango) bleeds.', '展期收益 = 近月（' ~ a.carry.front ~ '）对次月（' ~ a.carry.second ~ '）合约：正值（现货升水）对多头有利；负值（期货升水）则损耗。') }}{% endif %}</div>
       </div>
     </div>
     <div class="grid cols-3" style="margin-top:18px">
@@ -365,6 +517,17 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
         <div class="sigline"><span class="l">{{ t('Spread (3y %ile)','价差（3年百分位）') }}</span><span class="r"><b>{{ a.bw_pctile if a.bw_pctile is not none else '—' }}</b></span></div>
         <div class="sub" style="margin-top:8px">{{ t('CONFIRMED for oil: a WIDENING Brent−WTI spread preceded WTI +8.2%/126d vs −1.8% when narrowing — a free supply/logistics tell.', '原油确认：布伦特−WTI 价差走阔后 WTI 未来126天 +8.2%，收窄时为 −1.8% — 免费的供给/物流信号。') }}</div>
       </div>
+      {% if a.supply %}
+      <div class="card">
+        {% set sc = {'tightening':'var(--green)','loosening':'var(--red)','neutral':'var(--muted)'} %}
+        <h3>{{ t('EIA supply', 'EIA 供给') }}</h3>
+        <div class="sigline"><span class="l">{{ t('Crude stocks (5y %ile)','原油库存（5年百分位）') }}</span><span class="r"><b>{{ a.supply.stocks_pctile }}</b> <span class="faint">{{ a.supply.crude_stocks_mb }}M bbl</span></span></div>
+        <div class="sigline"><span class="l">{{ t('4-week change','4周变化') }}</span><span class="r"><b style="color:{{ 'var(--green)' if a.supply.draw else 'var(--red)' }}">{{ '%+.1f'|format(a.supply.stocks_chg_4w_mb) }}M</b> ({{ t('draw','去库') if a.supply.draw else t('build','累库') }})</span></div>
+        {% if a.supply.production_mbd is defined %}<div class="sigline"><span class="l">{{ t('Production / refinery','产量／炼厂') }}</span><span class="r"><b>{{ a.supply.production_mbd }}</b> Mb/d · {{ a.supply.refinery_util }}%</span></div>{% endif %}
+        <div class="sigline" style="border:none"><span class="l">{{ t('Supply state','供给状态') }}</span><span class="r"><b style="color:{{ sc.get(a.supply.state,'var(--muted)') }}">{{ t(a.supply.state, {'tightening':'收紧','loosening':'宽松','neutral':'中性'}.get(a.supply.state, a.supply.state)) }}</b></span></div>
+        <div class="sub" style="margin-top:8px">{{ t('Weekly Petroleum Status Report (EIA, free). Low stock percentile + a draw = tight supply (bullish oil); high + build = loose.', '每周石油状况报告（EIA，免费）。低库存百分位＋去库=供给收紧（利多油价）；高＋累库=宽松。') }}</div>
+      </div>
+      {% endif %}
       {% endif %}
     </div>
 
