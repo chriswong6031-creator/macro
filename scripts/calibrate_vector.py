@@ -293,6 +293,9 @@ def main() -> int:
         # VDD Multiple (spending-behaviour, checkonchain 2011-> deep). High = distribution.
         "vdd_multiple": {"bands": [0, 0.5, 0.87, 1.4, 2.9, 100], "shape": "extremes",
                          "labels": ["<.5", ".5-.87", ".87-1.4", "1.4-2.9", ">2.9"], "want": -1},
+        # Global (US+China) M2 YoY growth — broad-money tide, leads BTC ~10wk.
+        "global_m2_yoy": {"bands": [0, 5.5, 7, 8.5, 11, 20],
+                          "labels": ["<5.5", "5.5-7", "7-8.5", "8.5-11", ">11"], "want": 1},
     }
     for _k, _v in VAL_SIGNALS.items():
         if _k in df.columns:

@@ -46,15 +46,40 @@
 </style>
 </head>
 <body>
+<nav class="site-nav">
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
+    <a class="nav-link" href="macro.html">📊 {{ t('Macro', '宏观') }}</a>
+    <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }}</a>
+    <a class="nav-link" href="etfs.html">🐳 {{ t('ETF flows', 'ETF 资金流') }}</a>
+    <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国A股') }}</a>
+    <a class="nav-link" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }}</a>
+    <a class="nav-link" href="brief.html">📰 {{ t('Brief', '简报') }}</a>
+    <a class="nav-link active" href="history.html">📈 {{ t('History', '历史') }}</a>
+  </div>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
   <div class="panel">
     <div class="topline">
       <h1>{{ t('Regime history & charts', '周期历史与图表') }}</h1>
       <span class="muted">{{ t('data through', '数据截至') }} {{ latest.date }}</span>
       <span style="flex:1"></span>
-      <a class="navbtn" href="index.html">{{ t('← Back to dashboard', '← 返回仪表盘') }}</a>
       <a class="navbtn" href="validation_timeline.html">{{ t('Full 2007→ backtest', '2007→ 完整回测') }}</a>
-      <button class="lang-btn">中文</button>
-      <button class="theme-btn">☀️ Light</button>
     </div>
   </div>
 

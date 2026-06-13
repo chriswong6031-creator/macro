@@ -889,12 +889,333 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None) -> dict:
             "points_zh": points_zh, "early_note_zh": early_note_zh}
 
 
+# ----------------------------------------------------- signal age / strength ----
+
+SIGNAL_AGE_LOOKBACK = 45   # trading days we look back for the last state change
+
+
+def signal_age(close: pd.Series, current_state: str, high: pd.Series | None = None,
+               kind: str = "equity", max_lookback: int = SIGNAL_AGE_LOOKBACK) -> dict:
+    """How many trading days ago the signal last 'crossed' into `current_state`.
+
+    Re-runs the ladder backward over the SAME trailing 600-day window used by
+    calibrate_ladder, stopping at the first earlier day whose state differs from
+    today's headline state — so a freshly-flipped signal costs ~1-2 evals and only
+    a long-stable trend pays the full lookback. The current state is passed in
+    (the live, full-history one shown in the UI) and every past day is compared
+    against it, so the answer can never contradict the displayed label.
+
+    Deliberately kept OUT of ladder_state() — and thus out of the calibration
+    walk-forward — so it's computed exactly once per instrument, from analyze().
+
+    Returns {"days": int, "capped": bool, "prev_state": str|None, "date": str|None}:
+      days       trading days the signal has been in force (0 = it flipped today);
+      capped     True when it has held for the whole lookback (so "≥ max_lookback");
+      prev_state the state it replaced (None when capped / unknown);
+      date       approx calendar date the signal turned on (None when capped).
+    """
+    c = close.dropna()
+    n = len(c)
+    if n < 300 or not current_state:
+        return {}
+    h = high.dropna() if high is not None else None
+
+    def state_at(end: int) -> str | None:
+        sub = c.iloc[max(0, end - 600): end + 1]
+        if len(sub) < 260:
+            return None
+        hsub = h.reindex(sub.index) if h is not None else None
+        cyc = cycle_state(sub, hsub, kind)
+        if not cyc:
+            return None
+        mtf = mtf_snapshot(sub, kind)
+        early = early_signals(sub, cyc, mtf)
+        return (ladder_state(cyc, mtf, early) or {}).get("state")
+
+    days_ago = None
+    prev_state = None
+    for i in range(1, max_lookback + 1):
+        st = state_at(n - 1 - i)
+        if st is None:              # ran out of usable window — can't see further back
+            break
+        if st != current_state:
+            days_ago = i - 1        # the first `current_state` bar is i-1 days before today
+            prev_state = st
+            break
+    capped = days_ago is None
+    if capped:
+        days_ago = max_lookback
+    first_idx = n - 1 - days_ago
+    when = str(c.index[first_idx].date()) if (not capped and 0 <= first_idx < n) else None
+    return {"days": int(days_ago), "capped": bool(capped),
+            "prev_state": prev_state, "date": when}
+
+
+def _strength_word(score: int) -> tuple[str, str]:
+    """Qualitative read of the (transparent, already-calibrated) ladder score —
+    its MAGNITUDE is how decisive the signal is, regardless of direction."""
+    a = abs(int(score))
+    if a >= 70:
+        return ("strong", "强")
+    if a >= 40:
+        return ("moderate", "中等")
+    if a >= 15:
+        return ("mild", "温和")
+    return ("faint", "微弱")
+
+
+def signal_age_fields(state: str, score: int, age: dict) -> dict:
+    """Plain-language 'when did this signal cross / how strong is it' lines
+    (EN + ZH) plus a compact badge, built from signal_age() + the ladder score."""
+    disp = STATE_DISPLAY.get(state, {})
+    label = disp.get("label", state)
+    label_zh = disp.get("label_zh", label)
+    days = age["days"]
+    capped = age["capped"]
+    when = age.get("date")
+    prev = age.get("prev_state")
+    prev_label = STATE_DISPLAY.get(prev, {}).get("label", prev) if prev else None
+    prev_label_zh = STATE_DISPLAY.get(prev, {}).get("label_zh", prev_label) if prev else None
+    sword, sword_zh = _strength_word(score)
+
+    if capped:
+        wk = max(1, round(days / 5))
+        en = (f"⏱ This {label} reading has held for {days}+ trading days "
+              f"(over ~{wk} weeks) — an established trend, not a fresh signal.")
+        zh = (f"⏱ 当前的{label_zh}读数已持续 {days} 个交易日以上"
+              f"（约 {wk} 周以上）——属于既定趋势，并非新出现的信号。")
+        short, short_zh = f"{days}d+", f"{days}天+"
+    elif days == 0:
+        en = f"⏱ {label} signal just triggered today (fresh cross"
+        zh = f"⏱ {label_zh}信号于今日刚刚触发（全新交叉"
+        if prev_label:
+            en += f" from {prev_label}"
+            zh += f"，自{prev_label_zh}翻转"
+        en += ")."
+        zh += "）。"
+        short, short_zh = "today", "今日"
+    else:
+        unit = "trading day" if days == 1 else "trading days"
+        en = f"⏱ {label} signal triggered {days} {unit} ago"
+        zh = f"⏱ {label_zh}信号于 {days} 个交易日前触发"
+        if when:
+            en += f" (~{when})"
+            zh += f"（约 {when}）"
+        if prev_label:
+            en += f", switching from {prev_label}"
+            zh += f"，自{prev_label_zh}切换而来"
+        en += "."
+        zh += "。"
+        short, short_zh = f"{days}d ago", f"{days}天前"
+
+    en += f" Signal strength: {sword} (score {int(score):+d}/100)."
+    zh += f" 信号强度：{sword_zh}（评分 {int(score):+d}/100）。"
+    return {"age_days": days, "age_capped": capped, "prev_state": prev,
+            "signal_date": when, "strength": sword, "strength_zh": sword_zh,
+            "age_line": en, "age_line_zh": zh,
+            "age_short": short, "age_short_zh": short_zh}
+
+
+# ----------------------------------------------------- entry-quality score ----
+# A SIGNED −100..+100 "how good is THIS moment to enter" score (buy-setup
+# positive / sell-setup negative). It is NOT an alpha/return predictor — a 54k-
+# sample backtest (research/ENTRY_QUALITY.md, scripts.research_conviction) showed
+# buying near the cycle low CONTROLS RISK (forward drawdown ≈30% smaller at 0-6%
+# above the low vs chasing) but does NOT beat buying strength on return (trend
+# persistence wins at 1-3mo). So this scores ENTRY QUALITY / RISK-TIMING:
+# near the pivot + a fresh momentum turn + the low actually holding + with-trend.
+# Weights are evidence-led — proximity dominates, freshness is a staleness
+# guardrail, the "holding" filter stops it rewarding a falling knife.
+
+EQ_W_PROX, EQ_W_FRESH, EQ_W_MOM = 0.52, 0.30, 0.18
+
+
+def _eq_ramp(x: float, x0: float, x1: float, y0: float = 0.0, y1: float = 1.0) -> float:
+    if x1 == x0:
+        return y1 if x >= x1 else y0
+    return y0 + (y1 - y0) * float(np.clip((x - x0) / (x1 - x0), 0.0, 1.0))
+
+
+def _macd_cross_ages(hist: pd.Series) -> tuple[int | None, int | None]:
+    """Trading days since the most recent up-cross (≤0→>0) and down-cross."""
+    h = hist.dropna().to_numpy()
+    if len(h) < 3:
+        return None, None
+    pos = h > 0
+    up = dn = None
+    for k in range(len(h) - 1, 0, -1):
+        if up is None and pos[k] and not pos[k - 1]:
+            up = len(h) - 1 - k
+        if dn is None and not pos[k] and pos[k - 1]:
+            dn = len(h) - 1 - k
+        if up is not None and dn is not None:
+            break
+    return up, dn
+
+
+def _eq_proximity(pct: float, up: bool) -> float:
+    """Closeness to the pivot. Long: best just above the low (lifted, not chasing),
+    knife-discounted below it. Mirror (distance below the high) for the short side."""
+    p = pct if up else -pct
+    if p < -0.03:
+        return 0.15                                  # pivot broke — not holding
+    if p < 0.0:
+        return _eq_ramp(p, -0.03, 0.0, 0.5, 0.9)
+    if p < 0.03:
+        return _eq_ramp(p, 0.0, 0.03, 0.9, 1.0)      # the sweet spot
+    if p < 0.06:
+        return _eq_ramp(p, 0.03, 0.06, 1.0, 0.85)
+    return _eq_ramp(p, 0.06, 0.18, 0.85, 0.2)        # decays as it runs away
+
+
+def _eq_freshness(d: dict, cross_age: int | None, early_match: bool, up: bool) -> float:
+    """Flat for ~2 weeks after the cross, decays once stale (>~3-4 wks were the
+    worst band), with anticipation credit before the cross."""
+    crossed = d.get("macd_pos") if up else (not d.get("macd_pos"))
+    if crossed:
+        a = cross_age if cross_age is not None else 4
+        if a <= 12:
+            return 1.0
+        if a <= 30:
+            return 1.0 - 0.65 * (a - 12) / 18
+        return 0.35
+    appr = d.get("macd_approaching_up") if up else d.get("macd_approaching_dn")
+    curl = d.get("macd_curl_up") if up else d.get("macd_curl_dn")
+    btc = d.get("macd_bars_to_cross")
+    if appr and btc:
+        return 0.5 + 0.3 * _eq_ramp(btc, 8, 0)       # closer to the cross → higher
+    if curl or early_match:
+        return 0.45
+    return 0.0
+
+
+def _eq_momentum(d: dict, up: bool) -> float:
+    r = d.get("rsi14") or 50
+    if up:
+        return 0.5 * float(bool(d.get("macd_pos"))) + 0.5 * float(40 <= r <= 62)
+    return 0.5 * float(not d.get("macd_pos")) + 0.5 * float(38 <= r <= 60)
+
+
+# the ladder owns DIRECTION; entry_quality only scores how good that entry is —
+# so its sign is anchored to the state, never allowed to flip against it.
+_EQ_BULLISH = {"FRESH BUY", "TURN SIGNALED", "RALLY ON", "BOTTOM WATCH",
+               "COUNTERTREND BOUNCE"}
+_EQ_BEARISH = {"TOP WATCH", "ROLLING OVER", "DECLINE"}
+
+
+def entry_quality(close: pd.Series, cyc: dict, mtf: dict, early: dict,
+                  regime: dict, state: str | None = None) -> dict:
+    """Signed entry-quality score in [-100, +100] (buy-setup positive). Cheap,
+    point-in-time — no backward walk. See the module banner for what it measures.
+    `state` is the ladder state: it anchors the SIGN so the score can never
+    contradict the displayed call (a TOP WATCH is never a 'buy-setup')."""
+    d = (mtf or {}).get("D", {})
+    if not d or not cyc:
+        return {}
+    c = close.dropna()
+    if len(c) < 60:
+        return {}
+    price = float(c.iloc[-1])
+    hist = macd_parts(c)["hist"]
+    up_age, dn_age = _macd_cross_ages(hist)
+
+    low = cyc.get("cand_price") or cyc.get("dcl_price") or price
+    pct_low = price / low - 1.0 if low else 0.0
+    look = max(25, int(cyc.get("dc_day") or 25))
+    hi = float(c.iloc[-look:].max())
+    pct_hi = price / hi - 1.0 if hi else 0.0
+
+    reg = (regime or {}).get("regime", "neutral")
+
+    # LONG (buy-setup) ----------------------------------------------------------
+    up_raw = (EQ_W_PROX * _eq_proximity(pct_low, True)
+              + EQ_W_FRESH * _eq_freshness(d, up_age, early.get("dir") == "up", True)
+              + EQ_W_MOM * _eq_momentum(d, True))
+    up_hold = np.clip(0.5 * float(bool(cyc.get("swing_low") or cyc.get("cand_swing")))
+                      + 0.3 * float(bool(cyc.get("above_ma10")))
+                      + 0.2 * float(bool(cyc.get("ma10_rising"))), 0, 1)
+    up_gate = {"bull": 1.0, "neutral": 0.8, "bear": 0.45}[reg]
+    if cyc.get("failed_cycle"):
+        up_gate *= 0.3
+    if cyc.get("ic_failed"):
+        up_gate *= 0.6
+    long_eq = up_gate * (0.55 + 0.45 * up_hold) * up_raw
+
+    # SHORT (sell/exit-setup) ---------------------------------------------------
+    dn_raw = (EQ_W_PROX * _eq_proximity(pct_hi, False)
+              + EQ_W_FRESH * _eq_freshness(d, dn_age, early.get("dir") == "down", False)
+              + EQ_W_MOM * _eq_momentum(d, False))
+    dn_hold = np.clip(0.5 * float(not cyc.get("above_ma10"))
+                      + 0.3 * float(not cyc.get("ma10_rising"))
+                      + 0.2 * float(early.get("dir") == "down"), 0, 1)
+    dn_gate = {"bear": 1.0, "neutral": 0.8, "bull": 0.45}[reg]
+    short_eq = dn_raw * dn_gate * (0.55 + 0.45 * dn_hold)
+
+    # anchor the SIGN to the ladder's direction; magnitude = entry quality
+    if state in _EQ_BEARISH:
+        score = -short_eq * 100
+    elif state in _EQ_BULLISH:
+        score = long_eq * 100
+    else:                                     # unknown/neutral — let the stronger side speak
+        score = (long_eq - short_eq) * 100
+    score = float(np.clip(score, -100, 100))
+    return {"score": round(score, 1), "long": round(long_eq * 100, 1),
+            "short": round(short_eq * 100, 1),
+            "pct_from_low": round(pct_low * 100, 1)}
+
+
+# qualitative grade for the signed score's magnitude (direction set by sign)
+def _eq_grade(score: float) -> tuple[str, str]:
+    a = abs(score)
+    if a >= 60:
+        return ("strong", "强")
+    if a >= 35:
+        return ("solid", "稳健")
+    if a >= 15:
+        return ("light", "偏弱")
+    return ("minimal", "微弱")
+
+
+def entry_quality_fields(eq: dict) -> dict:
+    """Concise badge text + one-line honest tooltip (EN+ZH)."""
+    s = eq["score"]
+    grade, grade_zh = _eq_grade(s)
+    if s >= 15:
+        dirn, dirn_zh, arrow = "buy-setup", "买入形态", "▲"
+    elif s <= -15:
+        dirn, dirn_zh, arrow = "sell/exit-setup", "卖出/离场形态", "▼"
+    else:
+        dirn, dirn_zh, arrow = "no clean setup", "无明确形态", "·"
+    badge = f"{arrow} {int(round(s)):+d}"
+    label = f"Entry quality: {grade} {dirn} ({int(round(s)):+d})"
+    label_zh = f"入场质量：{grade_zh}{dirn_zh}（{int(round(s)):+d}）"
+    tip = ("How well-timed & low-risk THIS entry is — near the cycle "
+           f"{'low' if s >= 0 else 'high'}, fresh momentum turn, with-trend. "
+           "Measured to cut drawdown (~30% tighter near the pivot), NOT a return forecast.")
+    tip_zh = ("衡量当前入场的时机与风险——贴近周期"
+              f"{'低点' if s >= 0 else '高点'}、动量新近转向、且顺势。"
+              "实测可降低回撤（贴近枢轴约小 30%），并非收益预测。")
+    return {"eq_score": s, "eq_grade": grade, "eq_grade_zh": grade_zh,
+            "eq_dir": "up" if s >= 15 else "down" if s <= -15 else "flat",
+            "eq_badge": badge, "eq_label": label, "eq_label_zh": label_zh,
+            "eq_tip": tip, "eq_tip_zh": tip_zh,
+            "eq_pct_from_low": eq.get("pct_from_low")}
+
+
 def analyze(close: pd.Series, high: pd.Series | None = None,
             kind: str = "equity") -> dict:
     cyc = cycle_state(close, high, kind)
     mtf = mtf_snapshot(close, kind)
     early = early_signals(close, cyc, mtf)
     lad = ladder_state(cyc, mtf, early)
+    if lad:
+        age = signal_age(close, lad["state"], high, kind)
+        if age:
+            lad.update(signal_age_fields(lad["state"], lad["score"], age))
+        regime = {"regime": lad.get("regime", "neutral")}
+        eq = entry_quality(close, cyc, mtf, early, regime)
+        if eq:
+            lad.update(entry_quality_fields(eq))
     return {"cycle": cyc, "mtf": mtf, "early": early, "ladder": lad}
 
 

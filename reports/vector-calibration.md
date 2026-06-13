@@ -35,6 +35,7 @@ House rule: a signal is trusted (labeled a *signal* in the UI) only if its forwa
 | cot_z | **EXTREMES — low <-1.5: +13.2%/90d 47.8% hit (n=224) [weak]; high >1.5: -5.8%/90d 35.3% hit (n=593) [TOP]** | -1 | 1 | -1 | -1 |
 | corr_spx | **DIRECTIONAL (one half weak)** | -1 | 1 | -1 | -1 |
 | vdd_multiple | **EXTREMES — low <.5: +8.0%/90d 43.6% hit (n=774) [weak]; high >2.9: +35.2%/90d 59.1% hit (n=154) [weak]** | 1 | 1 | 0 | -1 |
+| global_m2_yoy | **DIRECTIONAL (one half weak)** | 1 | 1 | -1 | 1 |
 
 ## Risk Index as a drawdown gauge
 
@@ -303,6 +304,16 @@ House rule: a signal is trusted (labeled a *signal* in the UI) only if its forwa
 | .87-1.4 | 1200 |     56.1 |      1.3  |      48.6 |       1.99 |      64.7 |      18.77 |
 | 1.4-2.9 |  912 |     57.8 |      2.77 |      65.6 |      15.92 |      61.3 |      41.06 |
 | >2.9    |  154 |     51.9 |      2.86 |      40.3 |       4.02 |      59.1 |      35.2  |
+
+### global_m2_yoy — forward returns by band (full sample)
+
+| band   |    n |   hit_7d |   mean_7d |   hit_30d |   mean_30d |   hit_90d |   mean_90d |
+|:-------|-----:|---------:|----------:|----------:|-----------:|----------:|-----------:|
+| <5.5   |  519 |     53.4 |      1.24 |      60.7 |       6.05 |      72.6 |      23.39 |
+| 5.5-7  | 1216 |     53   |      0.9  |      52.9 |       3.21 |      48.3 |       7.21 |
+| 7-8.5  |  742 |     54.3 |      2.06 |      56.3 |      11.31 |      61.8 |      41.14 |
+| 8.5-11 | 1310 |     54   |      0.54 |      56.5 |       3.53 |      59.7 |      15.75 |
+| >11    |  395 |     64.6 |      4.23 |      72.2 |      17.65 |      80.8 |      57.97 |
 
 ## Allocation backtest vs HODL
 

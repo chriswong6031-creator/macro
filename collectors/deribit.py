@@ -26,11 +26,15 @@ from __future__ import annotations
 import math
 from datetime import date, datetime, timedelta, timezone
 
+import logging
+
 import numpy as np
 import pandas as pd
 
 from collectors.base import Adapter
 from lib import config, store
+
+log = logging.getLogger(__name__)
 
 SQRT2 = math.sqrt(2.0)
 SQRT2PI = math.sqrt(2.0 * math.pi)
@@ -77,6 +81,65 @@ def _interp_iv_at_delta(deltas: list[float], ivs: list[float], target: float):
     if target < xs[0] or target > xs[-1]:
         return float("nan")  # don't extrapolate the tail IV
     return float(np.interp(target, xs, ys))
+
+
+def _skew_at_tenor(df: pd.DataFrame, S: float, target_d: float):
+    """Normalized 25-delta skew + risk reversal at the expiry nearest target_d.
+    Returns (rr_25d, skew_25d, tenor_d)."""
+    exp = min(df["expiry"].unique(),
+              key=lambda e: abs(df.loc[df["expiry"] == e, "tenor_d"].iloc[0] - target_d))
+    ge = df[(df["expiry"] == exp) & (df["iv"] > 0)]
+    if ge.empty:
+        return None, None, None
+    cc, pp = ge[ge["is_call"]], ge[~ge["is_call"]]
+    iv_25c = _interp_iv_at_delta(cc["delta"].tolist(), cc["iv"].tolist(), 0.25)
+    iv_25p = _interp_iv_at_delta(pp["delta"].tolist(), pp["iv"].tolist(), -0.25)
+    atm_t = float(ge.loc[(ge["K"] - S).abs().idxmin(), "iv"])
+    tenor = float(ge["tenor_d"].iloc[0])
+    if np.isfinite(iv_25c) and np.isfinite(iv_25p) and atm_t:
+        return iv_25c - iv_25p, (iv_25p - iv_25c) / atm_t, tenor
+    return None, None, tenor
+
+
+def compute_basis(rows: list[dict], now: datetime) -> dict:
+    """Annualized FUTURES BASIS term structure (the leverage-demand curve our
+    perp-funding signal is blind to). Steep contango = leveraged longs paying up
+    (late-cycle froth); flat/backwardation = deleveraging/capitulation. Uses
+    dated contracts >=20d to skip sub-week expiry noise."""
+    out: dict = {}
+    recs = []
+    for r in rows:
+        n = r.get("instrument_name", "")
+        if n.endswith("PERPETUAL"):
+            continue
+        parts = n.split("-")
+        if len(parts) < 2:
+            continue
+        try:
+            exp = datetime.strptime(parts[1], "%d%b%y").replace(hour=8, tzinfo=timezone.utc)
+        except ValueError:
+            continue
+        days = (exp - now).total_seconds() / 86400.0
+        F = pd.to_numeric(r.get("mark_price"), errors="coerce")
+        idx = pd.to_numeric(r.get("underlying_price") or r.get("estimated_delivery_price"),
+                            errors="coerce")
+        oi = pd.to_numeric(r.get("open_interest"), errors="coerce")
+        if days > 0 and pd.notna(F) and pd.notna(idx) and idx > 0:
+            recs.append({"days": days, "ann": (F / idx - 1) * (365 / days) * 100,
+                         "oi": 0.0 if pd.isna(oi) else float(oi)})
+    if not recs:
+        return out
+    d = pd.DataFrame(recs)
+    liquid = d[d["days"] >= 20].sort_values("days")
+    if liquid.empty:
+        return out
+    out["basis_front_ann"] = float(liquid.iloc[0]["ann"])           # nearest dated contract
+    w = liquid["oi"]
+    out["basis_ann"] = float((liquid["ann"] * w).sum() / w.sum()) if w.sum() > 0 else float(liquid["ann"].mean())
+    far = liquid[liquid["days"] >= 80]
+    if not far.empty:
+        out["basis_slope"] = float(far.iloc[0]["ann"]) - out["basis_front_ann"]  # contango steepness
+    return out
 
 
 def compute_structure(rows: list[dict], now: datetime, cfg: dict) -> dict:
@@ -138,22 +201,14 @@ def compute_structure(rows: list[dict], now: datetime, cfg: dict) -> dict:
         a90 = out.get("atm_iv_90d")
         out["term_slope_30_90"] = (a90 - a30) if (a30 and a90) else None
 
-    # ---- 25-delta skew / risk reversal at the target tenor ----
-    tgt = cfg["skew_target_d"]
-    near_exp = min(df["expiry"].unique(),
-                   key=lambda e: abs(df.loc[df["expiry"] == e, "tenor_d"].iloc[0] - tgt))
-    ge = df[(df["expiry"] == near_exp) & (df["iv"] > 0)]
-    cc, pp = ge[ge["is_call"]], ge[~ge["is_call"]]
-    iv_25c = _interp_iv_at_delta(cc["delta"].tolist(), cc["iv"].tolist(), 0.25)
-    iv_25p = _interp_iv_at_delta(pp["delta"].tolist(), pp["iv"].tolist(), -0.25)
-    atm_t = None
-    gt = ge.dropna(subset=["iv"])
-    if not gt.empty:
-        atm_t = float(gt.loc[(gt["K"] - S).abs().idxmin(), "iv"])
-    if np.isfinite(iv_25c) and np.isfinite(iv_25p):
-        out["rr_25d"] = iv_25c - iv_25p                       # <0 = downside fear
-        out["skew_25d"] = ((iv_25p - iv_25c) / atm_t) if atm_t else None  # >0 = put skew
-    out["skew_tenor_d"] = float(ge["tenor_d"].iloc[0]) if not ge.empty else None
+    # ---- 25-delta skew / risk reversal: main tenor + TERM STRUCTURE (7d vs 90d) ----
+    rr30, sk30, t30 = _skew_at_tenor(df, S, cfg["skew_target_d"])
+    out["rr_25d"], out["skew_25d"], out["skew_tenor_d"] = rr30, sk30, t30
+    _, sk7, _ = _skew_at_tenor(df, S, 7)
+    _, sk90, _ = _skew_at_tenor(df, S, 90)
+    out["skew_25d_7d"], out["skew_25d_90d"] = sk7, sk90
+    if sk7 is not None and sk90 is not None:
+        out["skew_term"] = sk7 - sk90    # >0 = acute near-term fear vs calm structural
 
     # ---- max pain (the single highest-OI expiry) ----
     by_oi = df.groupby("expiry")["oi"].sum()
@@ -241,5 +296,12 @@ class DeribitAdapter(Adapter):
         struct = compute_structure(rows, now, self.cfg)
         if not struct:
             return None
+        # futures basis term structure (one more call; merged into the snapshot)
+        try:
+            fr = self.http_get(self.cfg["options_url"], retries=self.cfg["retries"],
+                               params={"currency": "BTC", "kind": "future"}, timeout=60)
+            struct.update(compute_basis(fr.json().get("result") or [], now))
+        except Exception as e:  # noqa: BLE001 — basis is a bonus; never fail the snapshot
+            log.warning("deribit futures basis fetch failed: %s", e)
         today = pd.Timestamp(now.date())
         return pd.DataFrame({k: [v] for k, v in struct.items()}, index=[today])

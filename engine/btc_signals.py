@@ -540,7 +540,8 @@ def options(inputs: dict, cfg: dict) -> pd.DataFrame:
         o = snap.copy()
         o.index = pd.to_datetime(o.index)
         for c in ("skew_25d", "rr_25d", "term_slope_30_90", "atm_iv_30d",
-                  "put_call_oi_ratio", "max_pain", "gex_per_1pct_usd"):
+                  "put_call_oi_ratio", "max_pain", "gex_per_1pct_usd",
+                  "skew_term", "basis_front_ann", "basis_ann", "basis_slope"):
             if c in o.columns:
                 out[c] = o[c].reindex(idx).ffill()
     return out
@@ -649,6 +650,37 @@ def positioning(inputs: dict, cfg: dict) -> pd.DataFrame:
         c = cot.reindex(idx).ffill(limit=cfg["ffill_limit_d"])
         out["cot_net_pct"] = c
         out["cot_z"] = _zscore(c, cfg["z_window_d"])
+    return out
+
+
+def global_liquidity(inputs: dict, cfg: dict) -> pd.DataFrame:
+    """US + China M2 GROWTH impulse — the broad-money read our Fed-balance-sheet
+    net-liquidity lacks, and adds the PBoC dimension. Combined as a weighted
+    average of the two YoY growth rates (unit-free, no FX). EZ/JP/UK FRED M2 are
+    discontinued, so US+China are the two largest LIVE blocs. Money supply leads
+    BTC ~10 weeks → a slow strategic tide, not a trigger."""
+    idx = inputs["price"].index
+    out = pd.DataFrame(index=idx)
+    parts = {}
+    us = inputs.get("us_m2")
+    if us is not None:
+        u = us.copy()
+        u.index = pd.to_datetime(u.index)
+        parts["us"] = (u.pct_change(12) * 100).sort_index().reindex(idx, method="ffill")  # monthly YoY
+    cn = inputs.get("china_m2_yoy")
+    if cn is not None:
+        c = cn.copy()
+        c.index = pd.to_datetime(c.index)
+        parts["china"] = c.sort_index().reindex(idx, method="ffill")
+    if parts:
+        w = {"us": cfg["us_weight"], "china": 1 - cfg["us_weight"]}
+        dd = pd.DataFrame(parts)
+        ww = pd.Series({k: w[k] for k in dd.columns})
+        wsum = dd.notna().mul(ww, axis=1).sum(axis=1)
+        out["global_m2_yoy"] = dd.mul(ww, axis=1).sum(axis=1, min_count=1) / wsum.replace(0, np.nan)
+        out["global_m2_accel"] = out["global_m2_yoy"].diff(cfg["accel_window_d"])
+        out["global_liq_regime"] = np.where(out["global_m2_yoy"] > cfg["expanding_thresh"],
+                                            "expanding", "contracting")
     return out
 
 
@@ -924,12 +956,13 @@ def compute_all(inputs: dict | None = None) -> pd.DataFrame:
     po = positioning(inputs, cfg["positioning"])
     xa = cross_asset_corr(inputs, cfg["cross_asset"])
     bh = behaviour(inputs, cfg["cross_asset"])
+    gl = global_liquidity(inputs, cfg["global_liquidity"])
     # Tier-1b: blend the confirmed valuation tails into allocation (gated by the
     # allocation backtest below).
     al = allocation(mom["momentum"], rk["risk_index"], cfg["allocation"], va)
 
     out = pd.concat([inputs["price"][["close"]], mom, rk, bf, st, gg, al,
-                     va, mn, cb, ex, op, lv, ma, oc, im, cc, po, xa, bh], axis=1)
+                     va, mn, cb, ex, op, lv, ma, oc, im, cc, po, xa, bh, gl], axis=1)
     out["cycle_position"] = cycle_stage(mom["momentum"], rk["risk_index"])
     alt = btc_vs_alts(inputs, cfg["btc_vs_alts"])
     if alt is not None:

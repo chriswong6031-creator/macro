@@ -417,7 +417,11 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
       <div class="mini"><div class="lab"><span>{{ t('25Δ risk reversal','25Δ 风险逆转') }}</span><span><b style="color:{{ 'var(--r3)' if (options.rr_25d is not none and options.rr_25d<0) else 'var(--blue)' }}">{{ options.rr_25d if options.rr_25d is not none else '—' }}</b> <span class="faint">{{ t('(<0 = downside bid)','（<0 = 下行需求）') }}</span></span></div></div>
       <div class="mini"><div class="lab"><span>{{ t('Put/Call OI ratio','看跌/看涨 持仓比') }}</span><span><b>{{ options.put_call if options.put_call is not none else '—' }}</b></span></div></div>
       <div class="mini"><div class="lab"><span>{{ t('Max pain','最大痛点') }}</span><span><b>{{ ('$%s'|format('{:,.0f}'.format(options.max_pain))) if options.max_pain is not none else '—' }}</b></span></div></div>
-      <div class="sub" style="margin-top:10px">{{ t('Rebuilt from the free Deribit chain (what Laevitas sells). The per-strike snapshot accumulates daily — context until ~6–12mo of history enables calibration.', '基于免费的 Deribit 期权链重建（即 Laevitas 所售）。逐行权价快照每日累积 — 在约 6–12 个月历史前仅作背景。') }}</div>
+      {% if options.basis_ann is not none %}
+      <div class="mini"><div class="lab"><span>{{ t('Futures basis (annualized)','期货基差（年化）') }}</span><span><b style="color:{{ 'var(--r3)' if options.basis_ann>15 else ('var(--blue)' if options.basis_ann>=0 else 'var(--r3)') }}">{{ '%+0.1f'|format(options.basis_ann) }}%</b> <span class="faint">{{ t('(>15 froth, <0 stress)','（>15 过热，<0 承压）') }}</span></span></div></div>{% endif %}
+      {% if options.skew_term is not none %}
+      <div class="mini"><div class="lab"><span>{{ t('Skew term (7d−90d)','偏斜期限（7天−90天）') }}</span><span><b>{{ '%+0.3f'|format(options.skew_term) }}</b> <span class="faint">{{ t('(>0 = acute near-term fear)','（>0 = 近端急性恐慌）') }}</span></span></div></div>{% endif %}
+      <div class="sub" style="margin-top:10px">{{ t('Rebuilt from the free Deribit chain (what Laevitas sells) — now incl. the futures-basis curve (leverage demand) and the skew term structure (near-term vs structural fear). The per-strike snapshot accumulates daily — context until ~6–12mo of history enables calibration.', '基于免费的 Deribit 期权链重建（即 Laevitas 所售）— 现含期货基差曲线（杠杆需求）与偏斜期限结构（近端 vs 结构性恐慌）。逐行权价快照每日累积 — 在约 6–12 个月历史前仅作背景。') }}</div>
     </div>
   </div>
 

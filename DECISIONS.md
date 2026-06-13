@@ -2,6 +2,30 @@
 
 Newest first. Each entry: what was decided, why, and what would change it.
 
+## 2026-06-13 — Vector deferred-factor batch 2: global M2 + Deribit basis/skew-term
+
+**D-vec-FACT2. Picked up the three deferred factors; 2 of 3 shipped, 1 blocked.**
+(1) **Global (US+China) M2 growth** (`global_liquidity()`) — the broad-money tide
+our Fed-balance-sheet net-liquidity lacked. KEY FINDING: the synthesis's FRED
+foreign-M2 series are DISCONTINUED (JP ends 2017, CN 2019, EZ/UK 2023), so "global
+M2" isn't free as specced — pivoted to US M2 (FRED M2SL, seeded) + China M2-YoY
+(Eastmoney `china_macro/money_supply`, already on disk), combined as a weighted
+average of YoY GROWTH rates (unit-free, no FX). CALIBRATION: DIRECTIONAL (full+pre
++1, post −1 weak — the 2022 QT decoupling, honest): >11% YoY → +58%/90d @81% hit
+(liquidity flood). config `vector.global_liquidity` (us_weight 0.4); surfaced in
+the macro panel. _Now 7.0% expanding = mild tailwind._ (2) **Deribit futures BASIS
+term structure + options SKEW term structure** (`compute_basis()` + `_skew_at_tenor()`
+at 7/30/90d in deribit.py): the leverage-demand curve + near-vs-structural fear our
+perp-funding/point-skew were blind to. Snapshot/context (no free history →
+accumulates forward, can't calibrate yet). _Now: basis +3.4% ann (mild contango,
+not froth), skew_term −0.02 (no acute fear)._ wired into engine options() +
+surfaced. (3) **bgeo CDD/Dormancy (bottoms-side behaviour)** — STILL BLOCKED (bgeo
+429 rate-limited all session); added `cdd` to the bgeo collector (budget 13→14, the
+lowest-priority slot) so it self-heals on the next run, deferred the engine signal
+until data exists (VDD from checkonchain already covers the tops/activity side).
+What would change it: a live free global-M2 feed (EZ/JP/UK), and the bgeo budget
+resetting to seed CDD.
+
 ## 2026-06-13 — Vector new-factor hunt: 4 orthogonal axes added (research/VECTOR_NEW_FACTORS.md)
 
 **D-vec-FACT. A 6-agent hunt found the model saturated in valuation/trend but

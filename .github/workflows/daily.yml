@@ -30,6 +30,12 @@ jobs:
           path: data/breadth/_closes_cache.parquet
           key: breadth-closes-${{ github.run_id }}
           restore-keys: breadth-closes-
+      - name: restore china breadth close cache
+        uses: actions/cache@v4
+        with:
+          path: data/china_breadth/_closes_cache.parquet
+          key: china-breadth-closes-${{ github.run_id }}
+          restore-keys: china-breadth-closes-
       - name: run collectors (graceful degradation — never fails the build on one source)
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
@@ -73,6 +79,16 @@ jobs:
         run: |
           python -m scripts.build_site
           python -m scripts.daily_brief
+      - name: build china a-share dashboard
+        # after build_site, before build_vector (which writes the landing hub last):
+        # writes china.html + china_regime/latest.json so the hub picks up the China
+        # card. Self-sufficient; returns 0 on any error (can't break the macro/vector site).
+        run: python -m scripts.build_china
+      - name: build commodity vector dashboard
+        # after build_site/build_china, before build_vector (which writes the hub
+        # last): writes commodities.html + commodity/latest.json so the hub picks up
+        # the Commodity card. Self-sufficient; returns 0 on any engine error.
+        run: python -m scripts.build_commodities
       - name: build bitcoin vector + landing hub
         # MUST run after build_site: relocates the macro dashboard to macro.html
         # and installs the landing hub at index.html. Self-sufficient (recomputes

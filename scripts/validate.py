@@ -127,6 +127,45 @@ def timeline_chart(f: pd.DataFrame, regime: pd.DataFrame, segments: pd.DataFrame
                       hovermode="x unified", template="plotly_white")
     out_html.parent.mkdir(parents=True, exist_ok=True)
     fig.write_html(out_html, include_plotlyjs="cdn")
+    # append the shared site signature (this is a standalone Plotly page with no
+    # theme.css, so the footer + the language toggle carry their own styles inline)
+    _footer = (
+        '<footer style="max-width:1100px;margin:32px auto 16px;padding-top:20px;'
+        'border-top:1px solid #e6e8ec;text-align:center;line-height:1.6;'
+        'font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif">'
+        '<span style="display:block;font-size:13.5px;font-weight:600;color:#1c2430;'
+        'letter-spacing:.2px"><span class="l-en">Made with ❤️ in Canada</span>'
+        '<span class="l-zh">用 ❤️ 在加拿大制作</span></span>'
+        '<span style="display:block;margin-top:1px;font-size:12px;color:#5d6b7e">'
+        '<span class="l-en">Developed by Chris Wong</span>'
+        '<span class="l-zh">开发者 Chris Wong</span></span></footer>'
+    )
+    # instant EN<->中文 toggle, consistent with the rest of the site (standalone
+    # page, so the no-flash init + visibility CSS + button style are inline; the
+    # chart's title/series translate via the shared chart_i18n swap map)
+    _head = (
+        '<script>try{var l=localStorage.getItem("lang");'
+        'if(l)document.documentElement.setAttribute("data-lang",l);}catch(e){}</script>'
+        '<style>html:not([data-lang="zh"]) .l-zh{display:none}'
+        'html[data-lang="zh"] .l-en{display:none}'
+        'html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB",'
+        '"Microsoft YaHei","Noto Sans CJK SC",sans-serif}'
+        '.lang-btn{position:fixed;top:14px;right:16px;z-index:50;cursor:pointer;'
+        'background:#fff;border:1px solid #e6e8ec;border-radius:8px;padding:5px 12px;'
+        'font-weight:700;color:#5d6b7e}</style>'
+    )
+    _body = (
+        '<button class="lang-btn">中文</button>'
+        '<script>window.__CHART_SWAP__={colors:{},labels:{'
+        '"Regime classifier validation timeline 2007 -> present":"周期分类器验证时间线 2007 → 至今",'
+        '"transition":"转换","growth":"增长","inflation":"通胀"}};</script>'
+        '<script src="theme.js"></script><script src="chart_i18n.js"></script>'
+    )
+    html = out_html.read_text()
+    if "Made with" not in html:
+        html = html.replace("</head>", _head + "</head>", 1)
+        html = html.replace("</body>", _body + _footer + "</body>", 1)
+        out_html.write_text(html)
 
 
 def main() -> None:

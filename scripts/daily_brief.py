@@ -105,7 +105,10 @@ def what_changed(latest: dict, prev: dict | None) -> list[str]:
     from engine.alerts import alert_view
     for a in latest.get("alerts", []):
         v = alert_view(a.get("rule", ""), a.get("severity", "info"), a.get("message", ""))
-        out.append(f"{v['icon']} **{v['plain_en']}** — {v['message']}")
+        line = f"{v['icon']} **{v['plain_en']}** — {v['message']}"
+        if v.get("edge_en"):
+            line += f" _{v['edge_en']}_"
+        out.append(line)
     if not out:
         out.append("A quiet day — no regime, posture, rotation-stage or alert changes.")
     return out
@@ -155,7 +158,7 @@ def build_markdown(latest: dict, prev: dict | None) -> str:
 
     # 3. what to do
     md += ["## What to do with it", ""]
-    for sign, r in dial.get("reasons", []):
+    for sign, r, _rz in dial.get("reasons", []):
         icon = {"+": "✅", "-": "⚠️", "i": "ℹ️"}.get(sign, "•")
         md.append(f"- {icon} {r}")
     leaders = pb.get("leaders", [])
@@ -182,7 +185,7 @@ def build_markdown(latest: dict, prev: dict | None) -> str:
                                                   for x in pb["next_list"]) + ")."))
     for x in pb.get("watchlist", []):
         md.append(f"- 👀 **{x['name']}** ({x['ticker']}): {x['why']}")
-    for t in pb.get("triggers", []):
+    for t, _tz in pb.get("triggers", []):
         md.append(f"- 🔍 {t}")
     md += [""]
 
@@ -205,14 +208,47 @@ def render_html(md_text: str, title: str) -> str:
     body = markdown.markdown(md_text, extensions=["tables"])
     return f"""<!DOCTYPE html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>{title}</title>
-<script>try{{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);}}catch(e){{}}</script>
+<script>try{{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}}catch(e){{}}</script>
 <link rel="stylesheet" href="theme.css">
 <style>body{{background:var(--bg);color:var(--text);font:15px/1.65 -apple-system,'Segoe UI',sans-serif;
 max-width:760px;margin:0 auto;padding:24px}}h1,h2{{color:var(--text)}}h2{{margin-top:28px}}
 a{{color:#7aa7e0}}li{{margin:6px 0}}hr{{border:none;border-top:1px solid var(--line);margin:24px 0}}
 table{{border-collapse:collapse}}th,td{{padding:4px 9px;border-bottom:1px solid var(--line);text-align:left}}
 em{{color:var(--muted)}}</style>
-</head><body><p><a href="index.html">&larr; dashboard</a> · <button class="theme-btn">☀️ Light</button></p>{body}
+</head><body>
+<nav class="site-nav">
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 <span class="l-en">Home</span><span class="l-zh">首页</span></a>
+    <a class="nav-link" href="macro.html">📊 <span class="l-en">Macro</span><span class="l-zh">宏观</span></a>
+    <a class="nav-link" href="vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span></a>
+    <a class="nav-link" href="etfs.html">🐳 <span class="l-en">ETF flows</span><span class="l-zh">ETF 资金流</span></a>
+    <a class="nav-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国A股</span></a>
+    <a class="nav-link" href="commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span></a>
+    <a class="nav-link active" href="brief.html">📰 <span class="l-en">Brief</span><span class="l-zh">简报</span></a>
+    <a class="nav-link" href="history.html">📈 <span class="l-en">History</span><span class="l-zh">历史</span></a>
+  </div>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+{body}
+<footer class="site-footer">
+  <span class="made"><span class="l-en">Made with ❤️ in Canada</span><span class="l-zh">用 ❤️ 在加拿大制作</span></span>
+  <span class="dev"><span class="l-en">Developed by Chris Wong</span><span class="l-zh">开发者 Chris Wong</span></span>
+</footer>
 <script src="theme.js"></script></body></html>"""
 
 

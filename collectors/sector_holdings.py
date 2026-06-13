@@ -151,8 +151,9 @@ class StockPriceAdapter(Adapter):
                     time.sleep(self.ycfg["backoff_base_s"] * (2 ** attempt))
             for t in batch:
                 try:
-                    sub = df[t][["Close", "High", "Low"]].rename(
-                        columns={"Close": "close", "High": "high", "Low": "low"})
+                    cols = [c for c in ["Close", "High", "Low", "Volume"] if c in df[t].columns]
+                    sub = df[t][cols].rename(columns={"Close": "close", "High": "high",
+                                                      "Low": "low", "Volume": "volume"})
                     sub = sub.dropna(subset=["close"])
                     if not sub.empty:
                         frames[t] = sub
