@@ -71,6 +71,13 @@
     var box = document.querySelector('.nav-search');
     if (!box) return;
     var input = box.querySelector('input'), sugg = box.querySelector('.nav-sugg');
+    // lang-aware placeholder: English lives in the attribute, Chinese in
+    // data-ph-zh, swapped on langchange (never put dual-language <span> inside an
+    // attribute — the class="" quote breaks it)
+    var phEn = input.placeholder, phZh = input.getAttribute('data-ph-zh') || phEn;
+    function setPh() { input.placeholder = document.documentElement.getAttribute('data-lang') === 'zh' ? phZh : phEn; }
+    setPh();
+    document.addEventListener('langchange', setPh);
     var pfx = location.pathname.indexOf('/sectors/') > -1 ? '../' : '';
     var lib = [], rows = [], sel = -1;
     fetch(pfx + 'stockdata/index.json').then(function (r) { return r.json(); })

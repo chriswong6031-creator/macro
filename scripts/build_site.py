@@ -8,6 +8,7 @@ Usage: python -m scripts.build_site
 """
 from __future__ import annotations
 
+import calendar
 import json
 import logging
 import sys
@@ -54,6 +55,46 @@ def _html(fig: go.Figure) -> str:
                        config={"displayModeBar": False})
 
 
+def _range_selector() -> dict:
+    return dict(
+        buttons=[
+            dict(count=1, label="1M", step="month", stepmode="backward"),
+            dict(count=3, label="3M", step="month", stepmode="backward"),
+            dict(count=6, label="6M", step="month", stepmode="backward"),
+            dict(count=1, label="YTD", step="year", stepmode="todate"),
+            dict(count=1, label="1Y", step="year", stepmode="backward"),
+            dict(step="all", label="All"),
+        ],
+        bgcolor="rgba(128,138,160,0.14)", activecolor="rgba(120,167,224,0.55)",
+        bordercolor="rgba(128,138,160,0.30)", borderwidth=1,
+        font={"size": 10, "color": "#8b93a1"},
+        x=0, xanchor="left", y=1.0, yanchor="bottom",
+    )
+
+
+def _apply_range(fig: go.Figure, *, subplot: bool = False, has_legend: bool = False,
+                 height: int = 300) -> None:
+    """Add 1M…All range-selector buttons to the (date) x-axis and make room for
+    them. Colours are theme-neutral — the buttons are baked at build time and do
+    not re-theme on toggle, so they must read on both light and dark cards. The
+    companion charts.js rescales the y-axis to the visible window on zoom (it
+    leaves fixed-range axes, e.g. the ±1 score chart, alone)."""
+    if subplot:
+        # make_subplots(shared_xaxes=True) makes the TOP x-axis FOLLOW the bottom
+        # (xaxis.matches='x2'); a rangeselector on a follower axis is inert — the
+        # button click gets overridden back. Flip the link so the TOP axis drives
+        # (bottom follows it), then the selector sits at the top AND works.
+        fig.update_xaxes(matches=None, row=1, col=1)
+        fig.update_xaxes(matches="x", row=2, col=1)
+        fig.update_xaxes(rangeselector=_range_selector(), row=1, col=1)
+    else:
+        fig.update_xaxes(rangeselector=_range_selector())
+    top = 58 if has_legend else 40
+    fig.update_layout(margin={"l": 45, "r": 15, "t": top, "b": 30}, height=height)
+    if has_legend:
+        fig.update_layout(legend={"orientation": "h", "y": 1.26, "x": 0, "xanchor": "left"})
+
+
 def chart_regime(f: pd.DataFrame, hist: pd.DataFrame, days: int = 730) -> str:
     two_y = f.index.max() - pd.Timedelta(days=days)
     spy = f.loc[two_y:, "SPY"].dropna()
@@ -69,6 +110,7 @@ def chart_regime(f: pd.DataFrame, hist: pd.DataFrame, days: int = 730) -> str:
                           fillcolor=QUAD_COLORS.get(seg.iloc[0], "#888"),
                           opacity=0.16, line_width=0)
     fig.update_layout(**PLOT_LAYOUT, showlegend=False)
+    _apply_range(fig, height=300)
     return _html(fig)
 
 
@@ -82,7 +124,10 @@ def chart_axes(hist: pd.DataFrame, days: int = 730) -> str:
                              line={"color": "#e07070", "width": 1.2}))
     fig.add_hline(y=0, line={"color": "#666", "width": 0.6})
     fig.update_layout(**PLOT_LAYOUT)
-    fig.update_yaxes(range=[-1.05, 1.05])
+    # autorange=False is what charts.js keys off to LEAVE this axis fixed on zoom —
+    # the ±1 band is the meaning here, so it must not rescale to the visible slice
+    fig.update_yaxes(range=[-1.05, 1.05], autorange=False)
+    _apply_range(fig, has_legend=True, height=300)
     return _html(fig)
 
 
@@ -104,6 +149,7 @@ def chart_liquidity(f: pd.DataFrame) -> str:
                                                            "dash": "dot"}, row=2, col=1)
     layout = {**PLOT_LAYOUT, "height": 340}
     fig.update_layout(**layout, showlegend=False)
+    _apply_range(fig, subplot=True, height=340)
     return _html(fig)
 
 
@@ -118,6 +164,7 @@ def chart_credit_breadth(f: pd.DataFrame) -> str:
                              line={"color": "#9b8de0", "width": 1.2}), row=2, col=1)
     layout = {**PLOT_LAYOUT, "height": 340}
     fig.update_layout(**layout)
+    _apply_range(fig, subplot=True, has_legend=True, height=340)
     return _html(fig)
 
 
@@ -417,6 +464,22 @@ def internals_rows(latest: dict) -> list[dict]:
 HEAT_COLORS = {"70+": "var(--orange)", "55-69": "var(--up)",
                "40-54": "var(--muted)", "0-39": "var(--info)"}
 
+# Plain-English reading of each heat band for the hover tooltip — kept jargon-free
+# on purpose (the technical band-record table lives in the column header tooltip).
+HEAT_READ = {
+    "70+": ("running very hot — and a near-fully-confirmed sector is usually a late "
+            "one. Better to hold with tight stops or trim than to start a position here.",
+            "非常热 — 几乎全部确认的板块通常已经偏晚。与其此时建仓，不如持有并收紧止损或减仓。"),
+    "55-69": ("a healthy, confirmed uptrend. Fine to hold; buying it right here hasn't "
+              "paid off historically — prefer a pullback that holds the trend.",
+              "健康、已确认的上涨趋势。可以持有；历史上此时直接买入并不划算 — 优先选择守住趋势的回调。"),
+    "40-54": ("a mixed picture, with no clear edge in either direction.",
+              "图景混杂，任一方向都没有明显优势。"),
+    "0-39": ("beaten down and quiet. It tends to drift back up eventually, but the "
+             "timing is unreliable — wait for the buy trigger to confirm.",
+             "已被打压、走势清淡。最终往往会回升，但择时不可靠 — 等待买入触发信号确认。"),
+}
+
 
 def _compact_season(line: str | None) -> tuple[str, str]:
     """'Jun: -0.4% avg, up 46% of years (n=28)' -> ('-0.4% (46%)', full)"""
@@ -430,6 +493,94 @@ def _compact_season(line: str | None) -> tuple[str, str]:
         return line, line
 
 
+def _b(en: str, zh: str) -> str:
+    """Inline bilingual span (raw markup) for use inside composed tooltip HTML."""
+    return f'<span class="l-en">{en}</span><span class="l-zh">{zh}</span>'
+
+
+def _season_tooltip(seas: dict | None, month: int | None):
+    """Rich seasonality hover: a 12-month bar chart of average returns + a two-column
+    table (avg / % positive / years), with the current calendar month highlighted.
+    Colours use the theme's --up/--down vars so they follow the Asia red/green swap.
+    Falls back to a short note when there isn't enough history."""
+    from markupsafe import Markup
+    if not seas:
+        return T("Not enough history for a seasonal read.", "历史数据不足，无法做季节性判断。")
+    # latest.json is a JSON round-trip, which stringifies the int month keys
+    seas = {int(k): v for k, v in seas.items()}
+    month = int(month) if month is not None else None
+    months = range(1, 13)
+    vmax = max((abs(seas[m]["avg_pct"]) for m in months if m in seas), default=1.0) or 1.0
+
+    # --- bar chart: positive bars up (green), negative down (red) -------------
+    W, H = 320, 86
+    padL, padR, base_y, span, label_y = 8, 8, 40, 26, 80
+    slot = (W - padL - padR) / 12
+    bw = slot * 0.56
+    svg = [f'<line x1="{padL}" y1="{base_y}" x2="{W - padR}" y2="{base_y}" '
+           f'style="stroke:var(--line);stroke-width:1"/>']
+    for i, m in enumerate(months):
+        cx = padL + slot * (i + 0.5)
+        cur = (m == month)
+        if cur:                                    # faint full-height column tint
+            svg.append(f'<rect x="{cx - slot / 2:.1f}" y="6" width="{slot:.1f}" '
+                       f'height="{base_y + span:.1f}" rx="2" '
+                       f'style="fill:var(--text);opacity:.07"/>')
+        s = seas.get(m)
+        if s:
+            up = s["avg_pct"] >= 0
+            h = max(abs(s["avg_pct"]) / vmax * span, 1.0)
+            y = base_y - h if up else base_y
+            col = "var(--up)" if up else "var(--down)"
+            svg.append(f'<rect x="{cx - bw / 2:.1f}" y="{y:.1f}" width="{bw:.1f}" '
+                       f'height="{h:.1f}" rx="1.5" '
+                       f'style="fill:{col};opacity:{1 if cur else .55}"/>')
+        svg.append(                                    # numeric labels read in both languages
+            f'<text x="{cx:.1f}" y="{label_y}" text-anchor="middle" '
+            f'style="font-size:9px;fill:{"var(--text)" if cur else "var(--muted)"};'
+            f'font-weight:{700 if cur else 400}">{m}</text>')
+    chart = (f'<svg viewBox="0 0 {W} {H}" width="100%" style="display:block;'
+             f'margin:4px 0 6px;overflow:visible">{"".join(svg)}</svg>')
+
+    # --- two stacked 6-month tables, current month row highlighted ------------
+    def _col(rng) -> str:
+        rows = ['<colgroup><col style="width:32%"><col style="width:26%">'
+                '<col style="width:23%"><col style="width:19%"></colgroup>',
+                f'<tr><th style="text-align:left">{_b("Month", "月份")}</th>'
+                f'<th>{_b("Avg", "均值")}</th><th>{_b("Up", "收涨")}</th>'
+                f'<th>{_b("Yrs", "年数")}</th></tr>']
+        for m in rng:
+            s, cur = seas.get(m), (m == month)
+            tr = ' style="background:var(--panel2);font-weight:700"' if cur else ''
+            name = _b(calendar.month_abbr[m], f"{m}月")
+            if s:
+                cls = "pos" if s["avg_pct"] >= 0 else "neg"
+                rows.append(
+                    f'<tr{tr}><td style="text-align:left">{name}</td>'
+                    f'<td class="{cls}">{s["avg_pct"]:+.1f}%</td>'
+                    f'<td>{s["hit_pct"]:.0f}%</td>'
+                    f'<td class="muted">{s["n"]}</td></tr>')
+            else:
+                rows.append(f'<tr{tr}><td style="text-align:left">{name}</td>'
+                            f'<td class="muted">—</td><td class="muted">—</td>'
+                            f'<td class="muted">—</td></tr>')
+        return ('<table style="margin:0;flex:1 1 0;min-width:0">'
+                + "".join(rows) + "</table>")
+
+    tables = (f'<div style="display:flex;gap:10px">'
+              f'{_col(range(1, 7))}{_col(range(7, 13))}</div>')
+    title = ('<b style="font-size:12px;display:block;margin-bottom:1px">'
+             + _b("Seasonality — average return by month",
+                  "季节性 — 各月平均回报") + '</b>')
+    foot = ('<div class="muted" style="font-size:10.5px;margin-top:6px;line-height:1.4">'
+            + _b("Each month’s average return across this instrument’s full history, and "
+                 "how often it closed up. Weak evidence — background colour only, never a "
+                 "signal on its own (and left out of the heat score).",
+                 "该标的全部历史中每个月的平均回报及收涨频率。属于弱证据 — 仅作背景参考，"
+                 "绝不单独作为信号（且已排除在热度分数之外）。") + '</div>')
+    return Markup(f"{title}{chart}{tables}{foot}")
+
+
 def action_board(sector_timing: dict, notable: list[dict]) -> dict:
     """Bucket sector + standout-stock cycle signals into an at-a-glance
     'what to act on now' board for the front page."""
@@ -440,6 +591,7 @@ def action_board(sector_timing: dict, notable: list[dict]) -> dict:
         item = {"ticker": fund, "name": SECTOR_NAMES.get(fund, fund),
                 "label": tm["label"], "tag": e.get("tag", ""),
                 "text": e.get("text", ""), "days": e.get("days_hi"),
+                "age_short": tm.get("age_short"), "age_short_zh": tm.get("age_short_zh"),
                 "style": tm.get("state_style")}
         u = e.get("urgency")
         if u == "now":
@@ -487,27 +639,34 @@ def sector_rows(playbook: dict | None, timing: dict | None = None) -> list[dict]
         r["heat_color"] = HEAT_COLORS.get(r["heat_band"], "var(--muted)")
         parts = r.get("heat_parts", {})
         cal = r.get("heat_cal")
-        cal_txt_en = (f" Historical reality-check for the {r['heat_band']} band: beat the "
-                      f"index {cal['hit_pct']}% of the time over the next 3 months "
-                      f"(avg {cal['avg_excess_pct']:+}%, n={cal['n']})." if cal else "")
-        cal_txt_zh = (f" 对 {r['heat_band']} 区间的历史回测：未来3个月内跑赢"
-                      f"指数 {cal['hit_pct']}% 的时间"
-                      f"（平均 {cal['avg_excess_pct']:+}%，n={cal['n']}）。" if cal else "")
+        read_en, read_zh = HEAT_READ.get(r["heat_band"],
+                                         (r["heat_note"], r.get("heat_note_zh", r["heat_note"])))
+        cal_txt_en = (f" History check: in the past, sectors scoring in this {r['heat_band']} "
+                      f"range went on to beat the market {cal['hit_pct']}% of the time over "
+                      f"the next 3 months (average {cal['avg_excess_pct']:+}%, across "
+                      f"{cal['n']} cases)." if cal else "")
+        cal_txt_zh = (f" 历史回测：过去得分落在 {r['heat_band']} 区间的板块，"
+                      f"未来 3 个月跑赢市场的概率为 {cal['hit_pct']}%"
+                      f"（平均 {cal['avg_excess_pct']:+}%，共 {cal['n']} 个样本）。" if cal else "")
         r["heat_tip"] = T(
-            f"Heat {r['heat']}/100 = regime fit {parts.get('regime')} "
-            f"+ tape {parts.get('tape')} + technicals {parts.get('technicals')} "
-            f"+ crowding {parts.get('crowding')}. {r['heat_label']}: "
-            f"{r['heat_note']}{cal_txt_en}",
-            f"热度 {r['heat']}/100 = 周期契合 {parts.get('regime')} "
-            f"+ 盘面 {parts.get('tape')} + 技术面 {parts.get('technicals')} "
-            f"+ 拥挤度 {parts.get('crowding')}。{TR(r['heat_label'])}："
-            f"{r.get('heat_note_zh', r['heat_note'])}{cal_txt_zh}")
+            f"Heat {r['heat']} out of 100 — how strong and confirmed this sector looks right "
+            f"now (0 = ice-cold, 100 = red-hot). It adds up four things: how well it fits the "
+            f"current market backdrop ({parts.get('regime')}), the health of its trend "
+            f"({parts.get('tape')}), its chart strength ({parts.get('technicals')}), and a "
+            f"crowding penalty when it's overstretched ({parts.get('crowding')}). "
+            f"Reading — {r['heat_label']}: {read_en}{cal_txt_en}",
+            f"热度 {r['heat']}/100 — 衡量该板块此刻有多强、有多被确认（0 = 冰冷，100 = 火热）。"
+            f"它由四部分相加：与当前市场环境的契合度（{parts.get('regime')}）、"
+            f"趋势的健康度（{parts.get('tape')}）、图表强度（{parts.get('technicals')}）、"
+            f"以及过度拉伸时的拥挤度扣分（{parts.get('crowding')}）。"
+            f"解读 — {TR(r['heat_label'])}：{read_zh}{cal_txt_zh}")
         tech_bits = [f"RSI {r['tech_rsi14']:.0f}" if r.get("tech_rsi14") is not None else "RSI —",
                      ("✓" if r.get("tech_above200") else "✗") + "200d",
                      ("✓" if r.get("tech_above50") else "✗") + "50d"]
         r["tech_str"] = " · ".join(tech_bits)
         r["tech_ok"] = bool(r.get("tech_above200")) and bool(r.get("tech_above50"))
-        r["season_str"], r["season_tip"] = _compact_season(r.get("season_this"))
+        r["season_str"], _ = _compact_season(r.get("season_this"))
+        r["season_tip"] = _season_tooltip(r.get("season_all"), r.get("season_month"))
         if r.get("trigger_gap_pct") is not None:
             r["trigger_str"] = f"+{r['trigger_gap_pct']}%"
             if r.get("trigger_progress_pct") is not None:
@@ -592,6 +751,20 @@ STATE_STYLES = {
 BUY_ZONE_STATES = ("FRESH BUY", "TURN SIGNALED")
 
 
+def build_etf_page(env: Environment, site: Path, generated: str) -> None:
+    """Render etfs.html — the broad-universe ETF flow radar (share-based
+    flow-normalized active decisions). See engine/holdings_signals.top_etf_accumulation."""
+    from engine.holdings_signals import top_etf_accumulation
+    try:
+        rows = top_etf_accumulation()
+    except Exception as e:  # noqa: BLE001
+        log.error("etf signals failed: %s", e)
+        rows = []
+    html = env.get_template("etfs.html.j2").render(etf_rows=rows, generated_utc=generated)
+    (site / "etfs.html").write_text(html)
+    log.info("wrote etfs.html (%d signal rows)", len(rows))
+
+
 def build_sector_pages(env: Environment, site: Path, generated: str) -> dict:
     """Render sectors/<FUND>.html drill-downs; return per-fund timing summary
     for the heat board."""
@@ -641,7 +814,9 @@ def build_sector_pages(env: Environment, site: Path, generated: str) -> dict:
                                     "sector": SECTOR_NAMES.get(fund, fund),
                                     "label": h["ladder"]["label"],
                                     "tag": h["ladder"]["entry"]["tag"], "urgency": urg,
-                                    "days": h["ladder"]["entry"].get("days_hi")})
+                                    "days": h["ladder"]["entry"].get("days_hi"),
+                                    "age_short": h["ladder"].get("age_short"),
+                                    "age_short_zh": h["ladder"].get("age_short_zh")})
         buy_zone = sum(1 for h in holdings if h["ladder"]["state"] in BUY_ZONE_STATES)
         s = {"fund": fund, "name": SECTOR_NAMES.get(fund, fund),
              "mtf_json": _json2.dumps(res.get("mtf", {})), **res,
@@ -656,6 +831,9 @@ def build_sector_pages(env: Environment, site: Path, generated: str) -> dict:
                            "entry": res["ladder"]["entry"],
                            "state_style": STATE_STYLES.get(res["ladder"]["state"]),
                            "dc_day": res["cycle"]["dc_day"],
+                           "age_short": res["ladder"].get("age_short"),
+                           "age_short_zh": res["ladder"].get("age_short_zh"),
+                           "age_days": res["ladder"].get("age_days"),
                            "buy_zone": buy_zone, "n_holdings": len(holdings)}
     log.info("wrote %d sector drill-down pages", len(summaries))
     return summaries, notable
@@ -668,6 +846,38 @@ def health_rows() -> list[dict]:
             for k, v in sorted(sources.items())]
 
 
+def regime_timeline(hist: pd.DataFrame) -> dict:
+    """Compact columnar JSON of the classified regime history for the client-side
+    "Time Machine" scrubber (timemachine.js). Only days with a settled quad label
+    (≈1999→today) are shipped; everything is parallel arrays keyed by day index so
+    the browser can rewind the whole regime core to any past date. The six warning
+    flags are packed into one bitmask per day (decoded against `flag_order`)."""
+    h = hist[hist["quad"].notna()].copy()
+
+    def r3(col: str) -> list:
+        return [None if pd.isna(v) else round(float(v), 3) for v in h[col]]
+
+    flag_cols = ["flag_breadth_price", "flag_credit_equity", "flag_ratio_inflection",
+                 "flag_inflation_basket", "flag_confidence_decay", "flag_gex"]
+    masks = sum((h[c].astype(bool).astype(int) * (1 << i)) for i, c in enumerate(flag_cols))
+
+    return {
+        "dates": [d.strftime("%Y-%m-%d") for d in h.index],
+        "quad":  h["quad"].fillna("").tolist(),
+        "g":     r3("growth_score"),
+        "i":     r3("inflation_score"),
+        "conf":  r3("regime_confidence"),
+        "liq":   h["liquidity"].fillna("unknown").tolist(),
+        "cyc":   h["cycle"].fillna("unknown").tolist(),
+        "trans": h["transition_state"].fillna("STABLE").tolist(),
+        "rec":   [int(bool(v)) for v in h["recession"]],
+        "shock": [int(bool(v)) for v in h["inflation_shock"]],
+        "flags": [int(v) for v in masks],
+        "flag_order": ["breadth_price", "credit_equity", "ratio_inflection",
+                       "inflation_basket", "confidence_decay", "gex"],
+    }
+
+
 def main() -> int:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     site.mkdir(parents=True, exist_ok=True)
@@ -676,6 +886,9 @@ def main() -> int:
         latest = json.load(fh)
     hist = pd.read_parquet(config.data_dir() / "regime" / "regime_history.parquet")
     hist.index = pd.to_datetime(hist.index)
+    # client-side "Time Machine": ship the classified regime history as compact JSON
+    (site / "regime_timeline.json").write_text(
+        json.dumps(regime_timeline(hist), separators=(",", ":")))
     f = build_features()
 
     env = Environment(loader=FileSystemLoader(config.ROOT / "templates"))
@@ -691,8 +904,13 @@ def main() -> int:
         sector_timing, notable = build_sector_pages(env, site, generated)
     except Exception as e:  # noqa: BLE001 — drill-downs are additive, never fatal
         log.error("sector pages failed: %s", e)
+    try:
+        build_etf_page(env, site, generated)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("etf page failed: %s", e)
     # copy shared static assets (theme + visual widgets) into the site
-    for asset in ("theme.css", "theme.js", "mtf.js", "chart_i18n.js"):
+    for asset in ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
+                  "stockdata.js", "watchlist.js", "auth.js", "tablesort.js", "charts.js"):
         src = config.ROOT / "templates" / asset
         if src.exists():
             (site / asset).write_text(src.read_text())
@@ -752,12 +970,28 @@ def main() -> int:
         import json as _json
 
         from engine.cycles import STATE_DISPLAY
+        sd_json = _json.dumps(STATE_DISPLAY)
         (site / "stock.html").write_text(
             env.get_template("stock.html.j2").render(
                 state_styles=STATE_STYLES, generated_utc=generated,
-                state_display_json=_json.dumps(STATE_DISPLAY)))
+                state_display_json=sd_json))
         from scripts.build_stock_library import main as build_library
         build_library()
+
+        # holdings watchlist: a pure client-state page over the same library
+        # (selection persists in the browser; signals re-resolve from index.json
+        # each load). Optional Supabase cloud sync is config-gated; blank => local-only.
+        wl = config.load().get("watchlist", {})
+        if wl.get("enabled", True):
+            sup = wl.get("supabase") or {}
+            sup_cfg = ({"url": sup["url"], "anonKey": sup["anon_key"]}
+                       if sup.get("url") and sup.get("anon_key") else None)
+            (site / "watchlist.html").write_text(
+                env.get_template("watchlist.html.j2").render(
+                    generated_utc=generated, state_display_json=sd_json,
+                    supabase_cfg_json=_json.dumps(sup_cfg),
+                    starters_json=_json.dumps(wl.get("suggested", []))))
+            log.info("wrote %s", site / "watchlist.html")
     return 0
 
 
