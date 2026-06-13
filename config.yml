@@ -161,11 +161,17 @@ etf_holdings:
     XME:  {sponsor: ssga, name: "SPDR S&P Metals & Mining", category: "Metals & Mining"}
     XSD:  {sponsor: ssga, name: "SPDR S&P Semiconductor", category: "Semiconductors"}
     XAR:  {sponsor: ssga, name: "SPDR S&P Aerospace & Defense", category: "Aerospace & Defense"}
-    # --- iShares / BlackRock (BEST-EFFORT: AJAX CSV, product-id keyed) ---------
-    IVV:  {sponsor: ishares, product_id: "239726", name: "iShares Core S&P 500", category: "US Large Cap"}
-    IWM:  {sponsor: ishares, product_id: "239710", name: "iShares Russell 2000", category: "US Small Cap"}
-    EFA:  {sponsor: ishares, product_id: "239623", name: "iShares MSCI EAFE", category: "Developed ex-US"}
-    # Invesco (e.g. QQQ) and Vanguard funds: add once a holdings URL is recon-verified.
+    # --- Invesco (VERIFIED: dng-api JSON; use cusip — idType=ticker 500s for many) -
+    QQQ:  {sponsor: invesco, name: "Invesco QQQ (Nasdaq-100)", category: "US Large Cap Growth"}   # flagship works by ticker
+    RSP:  {sponsor: invesco, cusip: "46137V357", name: "Invesco S&P 500 Equal Weight", category: "US Large Cap"}
+    # --- Global X (VERIFIED: dated full-holdings CSV; thematic, real equity names) -
+    URA:  {sponsor: globalx, name: "Global X Uranium", category: "Uranium"}
+    LIT:  {sponsor: globalx, name: "Global X Lithium & Battery Tech", category: "Lithium / Battery"}
+    COPX: {sponsor: globalx, name: "Global X Copper Miners", category: "Copper Miners"}
+    # iShares/BlackRock (IVV/IWM/EFA...) and Invesco non-flagship: Akamai/consent
+    # walls block direct HTTP (recon 2026-06-13, D71) — need a headless browser, so
+    # they are intentionally NOT seeded. Vanguard publishes no free daily feed.
+    # _fetch_ishares stays in the collector for a future headless/proxy path.
 
 fundamentals:
   enabled: true                   # LOW CONFIDENCE module — engine must work without it
@@ -268,6 +274,18 @@ breadth:
 stock_search:
   enabled: true
   extra_tickers: []               # any extra symbols to include in the search library
+
+watchlist:
+  enabled: true                   # client-side holdings watchlist page (needs stock_search)
+  # empty-state quick-add chips; only those present in the nightly library show
+  suggested: [SPY, QQQ, BTC-USD, GC=F]
+  # OPTIONAL cloud account sync (Supabase). Leave url/anon_key blank to ship a
+  # pure local-only watchlist (no accounts, no third-party calls). The anon key
+  # is PUBLIC by design — per-user isolation is enforced by RLS, not by secrecy.
+  # One-time setup: run templates/watchlist_supabase.sql in the Supabase SQL editor.
+  supabase:
+    url: ""                       # e.g. https://abcdxyz.supabase.co
+    anon_key: ""                  # the anon / publishable key (safe to commit)
 
 # -----------------------------------------------------------------------------
 # Regime engine
@@ -538,6 +556,53 @@ commodities:
     whipsaw_max_days: 10
     whipsaw_target_pct: 15
 
+  # --- Phase 5: alerts (daily state-change events) + intraday shock sentinel ---
+  alerts:
+    timeline_days: 60               # window shown on the commodities.html timeline
+    risk_extreme_level: 50          # Risk Index held >= this ...
+    risk_extreme_days: 21           # ... for this many days -> capitulation watch
+    shock:                          # SYMMETRIC intraday vol-shock state machine (per asset):
+      # commodities spike UP on supply shocks (oil/war) AND flush DOWN (gold/silver),
+      # so unlike BTC's crash-only machine this fires on a move in EITHER direction.
+      vol_window_h: 72              # trailing hourly realized-vol window
+      move_window_h: 6              # acute-move measurement window
+      enter_sigma: 3.0              # |move| this many sigma ...
+      enter_pct:                    # ... AND beyond this absolute % (per-asset; commodity
+        gold: 3.0                   #     vol << crypto, so thresholds are asset-specific)
+        silver: 5.0
+        copper: 4.0
+        oil: 5.0
+      extended_pct:                 # |24h move| beyond this -> escalate shock -> extended
+        gold: 5.0
+        silver: 8.0
+        copper: 6.0
+        oil: 9.0
+      stabilize_quiet_h: 12         # quiet hours -> stabilizing
+      normal_quiet_h: 48            # quiet hours -> back to normal
+      intraday_lookback_d: 60       # trailing hourly window the state machine runs over
+
+# =============================================================================
+# Commodity Vector — Phase 6 news/event ANNOTATION layer (engine/commodity_news.py).
+# DEFERRED · GATED · ANNOTATION-ONLY · DEFAULT OFF. Honest CONTEXT, never a scoring
+# input — the mechanical core never imports it. The upcoming-catalysts watch list
+# (OPEC/FOMC/EIA) is keyless and always rendered; headline-fetch (GDELT, keyless)
+# + the optional AI cause-classifier only run when `enabled` (and, for the LLM, when
+# `llm_classify` AND an ANTHROPIC_API_KEY are present).
+# =============================================================================
+commodity_news:
+  enabled: false                  # MASTER SWITCH — nothing fetches unless true
+  source: gdelt                   # only GDELT DOC 2.0 implemented (free, keyless)
+  lang: eng                       # GDELT sourcelang filter
+  max_records: 6                  # headlines fetched per event (keep small)
+  window_days: 3                  # +/- days around the event date (pinned query)
+  min_request_interval_s: 6       # GDELT pacing (>= its 5s/req rule + margin)
+  cache_dir: data/commodity/news_cache
+  cache_ttl_hours: 24
+  llm_classify: false             # OPTIONAL AI cause-classifier — off even if a key is present
+  llm_model: claude-haiku-4-5     # cheap; ~$0.0007/call
+  llm_min_confidence: high        # code-side gate: below this -> "unknown"
+  catalysts_horizon_days: 14      # upcoming OPEC/FOMC/EIA watch window (keyless, always on)
+
 # -----------------------------------------------------------------------------
 # Bitcoin Vector signal engine (Phase 2). Architecture reverse-engineered from
 # Swissblock's published panels — see research/VECTOR_SIGNAL_RECON.md.
@@ -626,6 +691,7 @@ vector:
     deep_value_z: 0.0            # MVRV-Z below this = accumulation FLOOR (>=0.5)
     deep_value_nupl: 0.0        # ...or NUPL below this (corroborating, collinear)
     overvalued_mayer: 2.4       # Mayer above this = distribution CAP (<=0.5)
+    overvalued_rr: 0.02         # Reserve Risk above this = distribution CAP (calibrated TOP)
 
   btc_vs_alts:
     rs_window_d: 30               # relative-strength window across BTC/ETH/alts
@@ -720,6 +786,31 @@ vector:
     mpi_window_d: 365             # Miner Position Index = miner outflow USD / 365d MA
     mpi_min_periods_d: 120
 
+  impulse:                        # Glassnode/Swissblock-style IMPULSE: z-scored
+    # ACCELERATION of momentum (2nd derivative via MACD-histogram), gated for
+    # chop by the Kaufman efficiency ratio, fused with a positioning impulse
+    # (funding+OI shock). Spots the START/exhaustion of moves, not the level.
+    accel_z_window_d: 90          # z-score window for the MACD-histogram (acceleration)
+    er_window_d: 10               # Kaufman efficiency ratio window (chop gate, 0..1)
+    pos_z_window_d: 60            # z-score window for funding/OI deltas
+    accel_w: 0.65                 # weight on the price-acceleration core
+    pos_w: 0.35                   # weight on the positioning impulse (when available)
+    extreme: 1.0                  # |impulse| beyond this = a strong thrust/exhaustion
+    participation_window_d: 14    # rolling % of positive-impulse days = breadth proxy
+
+  composite:                      # headline market-state synthesis thresholds
+    reserve_risk_top: 0.02        # reserve_risk above this = distribution (calibrated TOP)
+    bfi_strong: 60                # BFI above this = fundamentals confirm risk-on
+
+  scenarios:                      # short-term scenario probabilities (build_vector)
+    prob_horizon_d: 7             # forward horizon for the conditional base rate
+    prob_shrink_alpha: 10         # empirical-Bayes shrinkage toward the momentum marginal
+    prob_min_cell_n: 20           # below this, fall back to the marginal + label it
+    prob_floor: 0.30              # cap probabilities to [floor, ceil] (anti-overfit)
+    prob_ceil: 0.70
+    macro_tilt_pp: 5              # macro tailwind/headwind nudges the prob +/- this (pp)
+    atr_dvol_ref: 55              # DVOL ~= this -> ATR bands unscaled; higher widens them
+
   calibration:
     start_date: "2015-01-01"      # price-signal backtests (Yahoo BTC 2014-09->)
     split_date: "2021-01-01"      # split-half robustness boundary
@@ -756,6 +847,8 @@ home:
     macro_major_severities: [act, warn]            # homepage shows these macro tiers (skip info)
     macro_exclude_rules: [circuit_breaker_open]     # operational noise, not a market signal
     vector_major_severities: [high, medium]        # homepage shows these vector tiers
+    commodity_feed: data/commodity/alerts.jsonl
+    commodity_major_severities: [high]             # homepage shows commodity high-tier (shock/risk) only — medium is noisier
     max_items: 12
     dedup_window_days: 5                            # collapse identical headlines within N days
     macro_label: "Macro Vector"                    # renamed from "Macro Dashboard"

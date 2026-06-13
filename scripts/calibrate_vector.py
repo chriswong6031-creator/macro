@@ -280,6 +280,9 @@ def main() -> int:
         "reserve_risk": {"bands": [0, 0.0015, 0.0025, 0.005, 0.02, 1], "shape": "extremes",
                          "labels": ["<.0015", ".0015-.0025", ".0025-.005", ".005-.02", ">.02"],
                          "want": -1},
+        # Impulse (momentum acceleration, 2014-> deep). Positive = thrust/continuation.
+        "impulse": {"bands": [-3.01, -0.5, -0.15, 0.15, 0.5, 3.01],
+                    "labels": ["<-.5", "-.5--.15", "-.15-.15", ".15-.5", ">.5"], "want": 1},
     }
     for _k, _v in VAL_SIGNALS.items():
         if _k in df.columns:

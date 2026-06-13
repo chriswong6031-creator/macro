@@ -96,37 +96,78 @@ def scorecard(close: pd.Series, alloc: pd.Series) -> dict:
     }
 
 
-def env_probabilities(state: pd.Series, horizon: int = 7) -> dict:
-    """Empirical P(bull in `horizon` days | today's state) base rates."""
-    s = state.dropna()
-    binary = (s == "bull").astype(int)
-    fut = binary.shift(-horizon)
-    out = {}
-    for st in ("bull", "bear", "neutral"):
-        m = (s == st) & fut.notna()
-        out[st] = round(100 * fut[m].mean()) if m.sum() > 20 else None
-    now = s.iloc[-1]
-    p_bull = out.get(now)
-    return {"now": now, "p_bull_7d": p_bull,
-            "p_bear_7d": (100 - p_bull) if p_bull is not None else None}
+def _cond_up_prob(df: pd.DataFrame, cfg: dict, horizon: int):
+    """P(up over `horizon`d) conditioned on momentum_state x risk_regime, shrunk
+    toward the momentum marginal (empirical Bayes), nudged by the CONFIRMED macro
+    regime, and CAPPED to [floor, ceil] — the anti-overfit discipline for ~3
+    cycles (per the methodology research). Returns (prob, n_cell, cell, tilt_pp).
+    Replaces the momentum-only base rate: a high-risk bull and a low-risk bull no
+    longer get identical odds."""
+    close = df["close"]
+    fwd_up = (close.shift(-horizon) > close).astype(float)
+    mom = df.get("momentum_state")
+    if mom is None:
+        return None, 0, None, 0
+    valid = fwd_up.notna() & mom.notna()
+    now_mom = mom.iloc[-1]
+    mm = valid & (mom == now_mom)
+    base = fwd_up[valid].mean()
+    p_marg = fwd_up[mm].mean() if mm.sum() > cfg["prob_min_cell_n"] else base
+    p, n, cell = p_marg, 0, str(now_mom)
+    risk = df.get("risk_regime")
+    if risk is not None and pd.notna(risk.iloc[-1]):
+        now_risk = risk.iloc[-1]
+        cm = valid & (mom == now_mom) & (risk == now_risk)
+        n = int(cm.sum())
+        a = cfg["prob_shrink_alpha"]
+        p = (fwd_up[cm].sum() + a * p_marg) / (n + a) if n > 0 else p_marg
+        cell = f"{now_mom} / {str(now_risk).replace('_risk', '')} risk"
+        if n < cfg["prob_min_cell_n"]:
+            p = p_marg               # cell too thin -> fall back to the marginal
+    macro = df.get("macro_regime")
+    tilt = 0.0
+    if macro is not None and pd.notna(macro.iloc[-1]):
+        t = cfg["macro_tilt_pp"] / 100.0
+        tilt = t if macro.iloc[-1] == "tailwind" else (-t if macro.iloc[-1] == "headwind" else 0.0)
+    p = min(max(p + tilt, cfg["prob_floor"]), cfg["prob_ceil"])
+    return float(p), n, cell, round(100 * tilt)
 
 
-def scenarios_3d(close: pd.Series, high: pd.Series, low: pd.Series, state: str) -> dict:
-    """Mechanical 3-day scenarios: ATR-band targets + recent swing levels +
-    invalidation (Hawkeye/SEM idea). No look-ahead, no LLM prose."""
+def env_probabilities(df: pd.DataFrame, cfg: dict) -> dict:
+    """Mid-term P(up) conditioned on the full confirmed state (momentum x risk +
+    macro tilt), not momentum alone. Carries honest n + cell label."""
+    h = cfg["prob_horizon_d"]
+    p, n, cell, tilt = _cond_up_prob(df, cfg, h)
+    now = df["momentum_state"].iloc[-1] if "momentum_state" in df else None
+    if p is None:
+        return {"now": now, "p_bull_7d": None, "p_bear_7d": None}
+    return {"now": now, "p_bull_7d": round(100 * p), "p_bear_7d": round(100 * (1 - p)),
+            "n": n, "cell": cell, "macro_tilt": tilt, "horizon": h}
+
+
+def scenarios_3d(df: pd.DataFrame, cfg: dict, high: pd.Series, low: pd.Series) -> dict:
+    """3-day scenarios: ATR-band targets SCALED by forward vol (DVOL), swing
+    levels, invalidation; bull/bear probability from the SAME conditional model
+    (momentum x risk + macro), horizon 3 — not a momentum-only lookup."""
+    close = df["close"]
     tr = pd.concat([(high - low), (high - close.shift()).abs(),
                     (low - close.shift()).abs()], axis=1).max(axis=1)
     atr = tr.rolling(14).mean().iloc[-1]
+    dvol = df.get("dvol")          # forward vol widens/narrows the 3d cones
+    vscale = 1.0
+    if dvol is not None and pd.notna(dvol.iloc[-1]):
+        vscale = float(np.clip(dvol.iloc[-1] / cfg["atr_dvol_ref"], 0.6, 2.0))
     px = close.iloc[-1]
     swing_hi = high.rolling(20).max().iloc[-1]
     swing_lo = low.rolling(20).min().iloc[-1]
-    base_bull = 60 if state == "bull" else (40 if state == "neutral" else 25)
+    p, n, cell, _ = _cond_up_prob(df, cfg, 3)
+    bull = round(100 * p) if p is not None else 50
+    a1, a2, ai = 1.5 * vscale * atr, 2.5 * vscale * atr, 1.0 * atr
     return {
-        "bull_prob": base_bull, "bear_prob": 100 - base_bull,
-        "bull_target": px + 1.5 * atr, "bull_target2": max(swing_hi, px + 2.5 * atr),
-        "bull_invalid": px - 1.0 * atr,
-        "bear_target": px - 1.5 * atr, "bear_target2": min(swing_lo, px - 2.5 * atr),
-        "bear_invalid": px + 1.0 * atr,
+        "bull_prob": bull, "bear_prob": 100 - bull, "cell": cell, "n": n,
+        "vscale": round(vscale, 2),
+        "bull_target": px + a1, "bull_target2": max(swing_hi, px + a2), "bull_invalid": px - ai,
+        "bear_target": px - a1, "bear_target2": min(swing_lo, px - a2), "bear_invalid": px + ai,
     }
 
 
@@ -263,7 +304,8 @@ def build_landing(site: Path, vm: dict) -> None:
         log.info("relocated macro dashboard -> macro.html")
 
     macro = _macro_state()
-    hub = _hub_html(vm, macro, home_alert_feed(), _china_state(), _commodities_state())
+    hub = _hub_html(vm, macro, home_alert_feed(), _china_state(), _commodities_state(),
+                    _watchlist_state(), _etf_state())
     idx.write_text(hub)
     log.info("wrote landing hub -> index.html")
 
@@ -304,6 +346,20 @@ def _commodities_state() -> dict:
     except Exception:
         return {"label": "—", "date": "", "favored": [],
                 "present": (site / "commodities.html").exists()}
+
+
+def _watchlist_state() -> dict:
+    """The holdings watchlist is pure client state — no server-side signal — so
+    the card is gated purely on the page having been built this run."""
+    site = config.ROOT / config.load()["storage"]["site_dir"]
+    return {"present": (site / "watchlist.html").exists()}
+
+
+def _etf_state() -> dict:
+    """ETF flow radar card — gated purely on the page having been built this run
+    (signals are share-flow decisions, no single regime label to show)."""
+    site = config.ROOT / config.load()["storage"]["site_dir"]
+    return {"present": (site / "etfs.html").exists()}
 
 
 MACRO_SEV = {"act": "high", "warn": "medium", "info": "info"}
@@ -354,6 +410,24 @@ def home_alert_feed() -> list[dict]:
     except Exception as e:  # noqa: BLE001
         log.warning("home feed: vector alerts unavailable (%s)", e)
 
+    # --- commodity ---
+    try:
+        from engine import commodity_alerts
+        sevs = h.get("commodity_major_severities", ["high", "medium"])
+        for e in commodity_alerts.load_events():
+            if e["severity"] in sevs:
+                out.append({
+                    "source": "commodity", "source_label": "Commodity Vector",
+                    "ts": e["ts"], "date_only": (pd.Timestamp(e["ts"]).hour == 0
+                                                 and pd.Timestamp(e["ts"]).minute == 0),
+                    "severity": e["severity"], "type": e["type"], "headline": e["headline"],
+                    "detail": e["detail"], "what": "",
+                    "link": "commodities.html" + e.get("anchor", "#timeline"),
+                    "cta": "Open →", "dedupe": e["headline"],
+                })
+    except Exception as e:  # noqa: BLE001
+        log.warning("home feed: commodity alerts unavailable (%s)", e)
+
     out.sort(key=lambda x: x["ts"], reverse=True)
     # collapse identical headlines that re-fire within the dedup window (keep newest)
     win = pd.Timedelta(days=h.get("dedup_window_days", 5))
@@ -393,7 +467,8 @@ def _hub_alert_rows(alerts: list[dict]) -> str:
 
 
 def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = None,
-              commodities: dict | None = None) -> str:
+              commodities: dict | None = None, watchlist: dict | None = None,
+              etf: dict | None = None) -> str:
     # Bilingual via the i18n layer when present, identity fallback when absent.
     try:
         from engine.i18n import t as T, tr as TR
@@ -424,6 +499,24 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
     <p>{T('Regime, allocation &amp; shock-detection for gold, silver, oil &amp; copper.', '黄金、白银、原油与铜的周期、配置与冲击检测。')}</p>
     <span class="stat">{T(commodities['label'], TR(commodities['label']))}{(' · ' + fav) if fav else ''}</span>
     <div class="go">{T('Open Commodity Vector →', '打开大宗商品向量 →')}</div>
+  </a>""")
+    watchlist = watchlist or {"present": False}
+    watchlist_card = ("" if not watchlist.get("present") else f"""
+  <a class="c" href="watchlist.html">
+    <div class="ico">📋</div>
+    <h2>{T('Watchlist', '持仓清单')}</h2>
+    <p>{T('Track your own holdings — equities, ETFs, commodities and crypto — each with its live signal.', '跟踪你自己的持仓——股票、ETF、大宗商品与加密货币——每个都附带实时信号。')}</p>
+    <span class="stat">{T('Your holdings', '你的持仓')}</span>
+    <div class="go">{T('Open Watchlist →', '打开持仓清单 →')}</div>
+  </a>""")
+    etf = etf or {"present": False}
+    etf_card = ("" if not etf.get("present") else f"""
+  <a class="c" href="etfs.html">
+    <div class="ico">🐳</div>
+    <h2>{T('ETF Flow Radar', 'ETF 资金雷达')}</h2>
+    <p>{T('What funds are accumulating and trimming — flow-normalized share decisions across popular ETFs, tagged manager-conviction vs index-rebalance.', '基金在增持与减持什么——主流 ETF 经资金流标准化的份额决策，并标注“经理人信念”与“指数再平衡”。')}</p>
+    <span class="stat">{T('Manager and index flows', '经理人与指数资金流')}</span>
+    <div class="go">{T('Open ETF Flow Radar →', '打开 ETF 资金雷达 →')}</div>
   </a>""")
     return f"""{HUB_MARKER}
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
@@ -497,7 +590,7 @@ body{{margin:0;min-height:100vh;background:{C['bg']};color:{C['text']};
     <span class="stat {risk_cls}">{T('Risk', '风险')} {T(vm['risk_word'], TR(vm['risk_word']))} · {vm['risk_index']}</span>
     <span class="stat">{T('Momentum', '动量')} {vm['momentum']}</span>
     <div class="go">{T('Open Bitcoin Vector →', '打开比特币向量 →')}</div>
-  </a>{commodities_card}
+  </a>{commodities_card}{etf_card}{watchlist_card}
 </div>
 <div class="feed">
   <div class="feed-h"><h3>{T('Latest Alerts', '最新警报')}</h3>
@@ -671,14 +764,20 @@ def main() -> int:
             "ssr_osc": _r(last.get("ssr_oscillator"), 2),
             "mpi": _r(last.get("mpi"), 2),
         },
+        "impulse": {
+            "value": _r(last.get("impulse"), 2),
+            "state": last.get("impulse_state"),
+            "pos_pct": _r(last.get("impulse_pos_pct"), 0),
+            "er": _r(last.get("efficiency_ratio"), 2),
+        },
         "gauges": {
             "momentum": gauge_pos(last["momentum"], -1, 1),
             "risk": last["risk_index"],
             "vol": round(100 * last["vol_pctile"]) if pd.notna(last["vol_pctile"]) else 50,
             "flow": round(100 * last["flow_pctile"]) if pd.notna(last["flow_pctile"]) else 50,
         },
-        "env": env_probabilities(sig["momentum_state"]),
-        "scn": scenarios_3d(close, hi, lo, last["momentum_state"]),
+        "env": env_probabilities(sig, config.load()["vector"]["scenarios"]),
+        "scn": scenarios_3d(sig, config.load()["vector"]["scenarios"], hi, lo),
         "cards": cards,
         "cross": cross_asset(close),
         "calib": calib,

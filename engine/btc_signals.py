@@ -40,6 +40,11 @@ def _pctile(s: pd.Series, lookback: int) -> pd.Series:
     return s.rolling(lookback, min_periods=lookback // 4).rank(pct=True)
 
 
+def _zscore(s: pd.Series, n: int) -> pd.Series:
+    m = s.rolling(n, min_periods=max(20, n // 4))
+    return (s - m.mean()) / m.std().replace(0, np.nan)
+
+
 def _confirm(state: pd.Series, days: int) -> pd.Series:
     """A state change must hold `days` consecutive days before it takes effect."""
     if days <= 1:
@@ -343,6 +348,10 @@ def allocation(mom: pd.Series, risk_idx: pd.Series, cfg: dict,
         ov = pd.Series(False, index=mom.index)
         if "mayer" in val:
             ov = ov | (val["mayer"].reindex(mom.index) > cfg["overvalued_mayer"])
+        if "reserve_risk" in val and cfg.get("overvalued_rr"):
+            # calibrated TOP cap (>0.02 -> -42%/90d); neutral in-sample (momentum/
+            # risk already de-risk first) but a safety guard if they ever lag it.
+            ov = ov | (val["reserve_risk"].reindex(mom.index) > cfg["overvalued_rr"])
         deep_value, overvalued = dv.fillna(False), ov.fillna(False)
     for name, v in cfg["variants"].items():
         full = (mom > v["mom_full"]) & (risk_idx < v["risk_full"])
@@ -355,10 +364,13 @@ def allocation(mom: pd.Series, risk_idx: pd.Series, cfg: dict,
     return out
 
 
-def composite_state(out: pd.DataFrame) -> pd.Series:
-    """One actionable headline that fuses the axes (valuation/extreme first,
-    because those resolve the Risk Index's forward-return U-shape into a
-    direction): ACCUMULATE / DISTRIBUTE / RISK-OFF / RISK-ON / NEUTRAL."""
+def composite_state(out: pd.DataFrame, cfg: dict | None = None) -> pd.Series:
+    """One actionable headline that fuses ALL confirmed axes (valuation/extreme
+    first, because those resolve the Risk Index's forward-return U-shape into a
+    direction): ACCUMULATE / DISTRIBUTE / RISK-OFF / RISK-ON / NEUTRAL. Now
+    incorporates the CONFIRMED macro_regime + BFI and the reserve-risk TOP
+    (previously display-only) per the integration audit."""
+    cfg = cfg or {}
     idx = out.index
     state = pd.Series("NEUTRAL", index=idx)
     risk_hi = out.get("risk_regime", pd.Series("low_risk", index=idx)) == "high_risk"
@@ -366,11 +378,24 @@ def composite_state(out: pd.DataFrame) -> pd.Series:
     mom_bear = out.get("momentum_state", pd.Series("neutral", index=idx)) == "bear"
     extreme = out.get("market_extreme", pd.Series("normal", index=idx))
     val_state = out.get("valuation_state", pd.Series("fair", index=idx))
+    macro = out.get("macro_regime", pd.Series("neutral", index=idx))
+    bfi = out.get("bfi", pd.Series(np.nan, index=idx))
+    rr = out.get("reserve_risk", pd.Series(np.nan, index=idx))
+    rr_top = rr > cfg.get("reserve_risk_top", 0.02)
+    bfi_strong = bfi > cfg.get("bfi_strong", 60)
+
     # priority order (later assignments win): trend < risk-off < distribute < accumulate
     state[mom_bull & ~risk_hi] = "RISK-ON"
     state[mom_bear] = "RISK-OFF"
     state[risk_hi] = "RISK-OFF"
-    state[(extreme == "euphoria") | (val_state == "overvalued")] = "DISTRIBUTE"
+    # CONFIRMED confirmers: BFI>60 or macro tailwind upgrades a non-risk-off, non-bear
+    # tape to RISK-ON (fundamentals/liquidity backing the trend).
+    state[(bfi_strong | (macro == "tailwind")) & ~risk_hi & ~mom_bear] = "RISK-ON"
+    # macro headwind reinforces risk-off when momentum is weak.
+    state[(macro == "headwind") & ~mom_bull] = "RISK-OFF"
+    # distribution: euphoria / overvalued / reserve-risk TOP (the -42%/90d detector).
+    state[(extreme == "euphoria") | (val_state == "overvalued") | rr_top] = "DISTRIBUTE"
+    # accumulation wins outright (capitulation extremes resolve the risk U-shape).
     state[(extreme == "capitulation") | (val_state == "undervalued")] = "ACCUMULATE"
     return state.rename("composite_state")
 
@@ -580,6 +605,63 @@ def leverage(inputs: dict, cfg: dict) -> pd.DataFrame:
 
 
 # --------------------------------------------------------------------------- #
+# IMPULSE: acceleration of momentum (Glassnode/Swissblock-style early detector)
+# --------------------------------------------------------------------------- #
+def impulse(inputs: dict, cfg: dict) -> pd.DataFrame:
+    """The capability our model lacked. Swissblock's Impulse measures the
+    'exponential price structure' (the RATE OF TREND / acceleration), not the
+    level — it spots the START and EXHAUSTION of a move (research/
+    VECTOR_PROVIDER_RECON.md + the impulse research). Construction (single-asset,
+    free): z-scored MACD-histogram = the denoised 2nd derivative of price;
+    Kaufman efficiency ratio gates out chop (a MULTIPLIER, not a vote); a
+    positioning impulse (funding+OI shock) adds an orthogonal, often-earlier
+    input. winsorized to +/-3."""
+    close = inputs["price"]["close"]
+    idx = close.index
+    out = pd.DataFrame(index=idx)
+
+    macd = _ema(close, 12) - _ema(close, 26)
+    macd_hist = macd - _ema(macd, 9)
+    accel = _zscore(macd_hist, cfg["accel_z_window_d"])
+
+    n = cfg["er_window_d"]
+    er = (close.diff(n).abs() / close.diff().abs().rolling(n).sum().replace(0, np.nan)).clip(0, 1)
+
+    # weight-normalized mean that SKIPS missing parts, so the deep (2014->) accel
+    # core is never NaN-poisoned by the shallow (2023->) positioning impulse.
+    parts = pd.DataFrame({"accel": accel})
+    weights = {"accel": cfg["accel_w"]}
+    pos_parts = []
+    funding = inputs.get("funding")
+    if funding is not None:
+        pos_parts.append(_zscore(funding.reindex(idx).ffill(limit=3).diff(), cfg["pos_z_window_d"]))
+    oi_df = inputs.get("open_interest_df")
+    if oi_df is not None and not oi_df.empty:
+        oi = oi_df.copy()
+        oi.index = pd.to_datetime(oi.index)
+        oi_total = oi.reindex(idx).ffill(limit=5).sum(axis=1, min_count=1)
+        pos_parts.append(_zscore(oi_total.diff(), cfg["pos_z_window_d"]))
+    if pos_parts:
+        parts["pos"] = pd.concat(pos_parts, axis=1).mean(axis=1, skipna=True).clip(-3, 3)
+        weights["pos"] = cfg["pos_w"]
+    w = pd.Series(weights)
+    wsum = parts.notna().mul(w, axis=1).sum(axis=1)
+    core = parts.mul(w, axis=1).sum(axis=1, min_count=1) / wsum.replace(0, np.nan)
+
+    imp = (er * core).clip(-3, 3)
+    out["impulse"] = imp
+    db = 0.15
+    out["impulse_state"] = np.where(imp > db, "positive",
+                           np.where(imp < -db, "negative", "neutral"))
+    # breadth/participation proxy: rolling % of positive-impulse days (single-asset
+    # stand-in for Swissblock's "% of top-350 in negative impulse").
+    pw = cfg["participation_window_d"]
+    out["impulse_pos_pct"] = (imp > 0).rolling(pw, min_periods=pw // 2).mean() * 100
+    out["efficiency_ratio"] = er
+    return out
+
+
+# --------------------------------------------------------------------------- #
 # on-chain regime: Coinbase Premium / SSR oscillator / MPI (CryptoQuant-style)
 # --------------------------------------------------------------------------- #
 def onchain_regime(inputs: dict, cfg: dict) -> pd.DataFrame:
@@ -750,16 +832,17 @@ def compute_all(inputs: dict | None = None) -> pd.DataFrame:
     lv = leverage(inputs, cfg["leverage"])
     ma = macro_overlay(inputs, cfg["macro"])
     oc = onchain_regime(inputs, cfg["onchain"])
+    im = impulse(inputs, cfg["impulse"])
     # Tier-1b: blend the confirmed valuation tails into allocation (gated by the
     # allocation backtest below).
     al = allocation(mom["momentum"], rk["risk_index"], cfg["allocation"], va)
 
     out = pd.concat([inputs["price"][["close"]], mom, rk, bf, st, gg, al,
-                     va, mn, cb, ex, op, lv, ma, oc], axis=1)
+                     va, mn, cb, ex, op, lv, ma, oc, im], axis=1)
     out["cycle_position"] = cycle_stage(mom["momentum"], rk["risk_index"])
     alt = btc_vs_alts(inputs, cfg["btc_vs_alts"])
     if alt is not None:
         out["alt_cycle_leader"] = alt
     out["market_mode"] = tactical(inputs, rk["risk_index"], cfg["tactical"])
-    out["composite_state"] = composite_state(out)
+    out["composite_state"] = composite_state(out, cfg["composite"])
     return out

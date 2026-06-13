@@ -30,6 +30,7 @@ House rule: a signal is trusted (labeled a *signal* in the UI) only if its forwa
 | ssr_oscillator | **CONTEXT-ONLY** | 0 | 0 | 0 | 1 |
 | mpi | **INVERTED** | 1 | 0 | 1 | -1 |
 | reserve_risk | **EXTREMES — low <.0015: +18.6%/90d 68.6% hit (n=974) [weak]; high >.02: -42.5%/90d 4.2% hit (n=48) [TOP]** | 1 | 1 | -1 | -1 |
+| impulse | **CONFIRMED** | 1 | 1 | 1 | 1 |
 
 ## Risk Index as a drawdown gauge
 
@@ -249,6 +250,16 @@ House rule: a signal is trusted (labeled a *signal* in the UI) only if its forwa
 | .0025-.005  |  940 |     51.4 |      1.39 |      47.7 |       5.99 |      46   |      17.52 |
 | .005-.02    |  535 |     52.9 |      1.76 |      51   |      11.12 |      47.7 |      33.53 |
 | >.02        |   48 |     33.3 |     -1.14 |      10.4 |     -22.01 |       4.2 |     -42.55 |
+
+### impulse — forward returns by band (full sample)
+
+| band     |    n |   hit_7d |   mean_7d |   hit_30d |   mean_30d |   hit_90d |   mean_90d |
+|:---------|-----:|---------:|----------:|----------:|-----------:|----------:|-----------:|
+| <-.5     |  372 |     55.7 |      1.5  |      53.2 |       5.15 |      61.1 |      23.43 |
+| -.5--.15 |  602 |     51.6 |      0.46 |      55.7 |       7.2  |      59.1 |      19.99 |
+| -.15-.15 | 2038 |     52.7 |      0.62 |      55.4 |       4.57 |      58.6 |      18.63 |
+| .15-.5   |  576 |     59.2 |      2.36 |      62.3 |       8.85 |      61.5 |      27.11 |
+| >.5      |  594 |     59.8 |      3.68 |      63.8 |      10.44 |      66.2 |      32.64 |
 
 ## Allocation backtest vs HODL
 

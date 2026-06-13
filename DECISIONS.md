@@ -2,6 +2,63 @@
 
 Newest first. Each entry: what was decided, why, and what would change it.
 
+## 2026-06-13 — Vector IMPULSE + full-signal integration (research/VECTOR_IMPULSE_AND_INTEGRATION.md)
+
+**D-vec-IMP. Added an IMPULSE signal (the Glassnode/Swissblock capability we
+lacked) — CONFIRMED both halves.** A 5-agent research+audit workflow established
+their Impulse = the "exponential price structure" (rate-of-trend / ACCELERATION),
+spotting the START/EXHAUSTION of a move, not the level. engine `impulse()`:
+`efficiency_ratio × weighted_mean(zscore(MACD-hist,90d), zscore(Δfunding)+
+zscore(ΔOI))`, winsorized ±3. MACD-histogram = denoised 2nd derivative (inflection
+core); Kaufman ER is a MULTIPLIER not a vote (collapses to ~0 in chop, the
+dominant false-positive mode); funding+OI add an orthogonal positioning impulse
+(NaN-skipping mean so the deep 2014→ core isn't poisoned by 2023→ funding).
+CALIBRATION: CONFIRMED both halves — >0.5 → +3.7%/7d, +32.6%/90d @66%; <−0.5
+exhaustion bounces +1.5%/7d. 4th both-halves signal (w/ Risk Index, BFI, macro).
+config `vector.impulse`; own panel (state + breadth bar + ER chop gate).
+
+**D-vec-INT. The confirmed signals are now WIRED INTO the final outputs (audit
+found them display-only).** (1) `composite_state` headline now fuses macro_regime
++ BFI>60 + reserve_risk TOP (config `vector.composite`). (2) SCENARIO PROBABILITIES
+rebuilt: `_cond_up_prob` conditions P(up) on momentum_state × risk_regime (both
+CONFIRMED), empirical-Bayes shrunk toward the momentum marginal (α=10), macro
+tailwind/headwind tilt (±5pp), CAPPED [30,70] (anti-overfit for ~3 cycles); honest
+n+cell shown. env_probabilities (7d) + scenarios_3d (3d) both use it — replacing
+the momentum-only 60/40/25; a bear/high-risk tape now reads ~52% (contrarian
+U-shape), not 25%. scenarios_3d ATR bands scaled by DVOL. config `vector.scenarios`.
+(3) allocation: reserve_risk>0.02 added as a calibrated TOP safety cap (A/B:
+NEUTRAL in-sample = no regression; the macro gate was A/B-REJECTED again, CAGR
+51→41 — macro is strategic not tactical). What would change it: more cycles to
+de-shrink the probabilities; a working top-350 breadth feed for a true aggregate
+Impulse. Caveat held: no double-counting (impulse correlates w/ momentum → NOT a
+prob tilt; only orthogonal macro tilts), prior-dominated at ~3 cycles.
+
+## 2026-06-13 — Signal AGE + strength on every ladder state (macro)
+
+**D75 (macro). Every ladder signal now reports HOW MANY TRADING DAYS AGO it
+crossed into its current state, plus a plain-language strength read.** The UI
+previously showed only the live state ("BUY ZONE", "TOPPING", …) with no sense
+of whether it flipped today or three weeks ago, or how decisive it is. New
+`engine.cycles.signal_age()` re-runs the ladder BACKWARD over the same trailing
+600-day window `calibrate_ladder` uses, comparing each earlier day's state to
+today's headline state and stopping at the first day that differs — so a freshly
+flipped signal costs ~1–2 evals and only a long-stable trend pays the full 45-day
+lookback (≥45 → reported as "established trend, not a fresh signal"). The current
+state is passed IN (the live, full-history one shown in the UI) so the answer can
+never contradict the displayed label; full-vs-window agreement measured at 0/160
+on a sample. `signal_age_fields()` builds EN+ZH prose ("BUY ZONE signal triggered
+3 trading days ago (~2026-06-09), switching from NEARING A HIGH. Signal strength:
+strong (score +70/100).") + a compact `age_short` badge ("3d ago" / "今日" /
+"45d+"). Strength is the qualitative band of the EXISTING transparent ladder
+score's magnitude (≥70 strong / ≥40 moderate / ≥15 mild / else faint) — no new
+number invented. Wired into `analyze()` ONLY (not `ladder_state`), so the
+calibration walk-forward is untouched and it's computed exactly once per
+instrument. Surfaced on the stock analyzer, sector ETF + each top-10 holding, and
+the dashboard action board + standout-stock chips. Cost: ~+10s on the nightly
+stock-library build (533 names, early-exit walk). What would change it: if state
+churn made the 45-day cap bind often (measured max age 33 on the live universe, so
+caps are rare today) we'd raise the lookback or switch to event-anchored dating.
+
 ## 2026-06-13 — Vector i18n: bilingual restored as GRACEFUL-OPTIONAL
 
 **D-vec-I18N2. The Vector page is bilingual again, but the i18n dependency is now

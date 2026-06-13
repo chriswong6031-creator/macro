@@ -42,6 +42,17 @@ a{color:var(--blue);text-decoration:none}
 .nav a{margin-left:14px;font-weight:600;font-size:14px;color:var(--muted)}
 .nav a:hover{color:var(--blue)}
 .nav a.active{color:var(--ink)}
+/* unified menu — congruent with the macro dashboard nav (pill links + animated
+   EN/中文 toggle). Light-only by design, so no dark/light switch here. */
+.nav-links{display:flex;align-items:center;gap:2px;flex-wrap:wrap}
+a.nav-link{padding:7px 11px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;white-space:nowrap;transition:color .18s,background .18s}
+a.nav-link:hover,a.nav-link.active{color:var(--ink);background:#eef1f6}
+.lang-toggle{display:inline-flex;position:relative;background:#eef1f6;border:1px solid var(--grid);border-radius:999px;padding:3px;cursor:pointer;flex:none}
+.lang-toggle .pill{position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);border-radius:999px;background:var(--blue);transition:transform .34s cubic-bezier(.34,1.4,.5,1)}
+html[data-lang="zh"] .lang-toggle .pill{transform:translateX(100%)}
+.lang-toggle .opt{position:relative;z-index:1;min-width:28px;text-align:center;padding:3px 9px;font-size:11.5px;font-weight:600;color:var(--muted);transition:color .25s;user-select:none}
+html:not([data-lang="zh"]) .lang-toggle .en-opt{color:#fff}
+html[data-lang="zh"] .lang-toggle .zh-opt{color:#fff}
 /* layout */
 .grid{display:grid;gap:18px}
 .cols-2{grid-template-columns:1.15fr .85fr}
@@ -166,12 +177,16 @@ a{color:var(--blue);text-decoration:none}
 <body>
 <div class="topbar">
   <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;padding-top:0;padding-bottom:0;border:none;margin:0 auto">
-    <div class="brand"><span class="gn">●</span> Bitcoin <span style="color:var(--blue)">Vector</span></div>
-    <div class="nav">
-      <a href="index.html">{{ t('Home', '首页') }}</a>
-      <a href="macro.html">{{ t('Macro', '宏观') }}</a>
-      <a class="active" href="vector.html">{{ t('Bitcoin Vector', '比特币向量') }}</a>
-      <button class="lang-btn" style="font:inherit;cursor:pointer;background:none;border:1px solid var(--grid);border-radius:8px;padding:4px 11px;color:var(--muted)">中文</button>
+    <div class="nav-links">
+      <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
+      <a class="nav-link" href="macro.html">📊 {{ t('Macro', '宏观') }}</a>
+      <a class="nav-link active" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }}</a>
+      <a class="nav-link" href="commodities.html">◆ {{ t('Commodity Vector', '大宗商品向量') }}</a>
+    </div>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
     </div>
   </div>
 </div>
@@ -248,6 +263,7 @@ a{color:var(--blue);text-decoration:none}
               <div class="track"><div class="fill" style="width:{{ env.p_bull_7d }}%"></div></div>
               <span class="pct">{{ env.p_bull_7d }}%</span></div>
             {% else %}<div class="sub faint">{{ t('insufficient base-rate sample', '基准率样本不足') }}</div>{% endif %}
+            {% if env.cell %}<div class="sub faint" style="margin-top:6px;font-size:12px">{{ t('Conditioned on', '条件：') }} {{ env.cell }}{% if env.n %} (n={{ env.n }}){% endif %}{% if env.macro_tilt %}, {{ t('macro tilt', '宏观偏移') }} {{ '%+d'|format(env.macro_tilt) }}pp{% endif %} · {{ t('empirical-Bayes shrunk, capped 30–70%', '经验贝叶斯收缩，限定 30–70%') }}</div>{% endif %}
           </div>
         </div>
       </div>
@@ -256,6 +272,7 @@ a{color:var(--blue);text-decoration:none}
 
   <!-- ===================== SHORT-TERM SCENARIOS ===================== -->
   <div class="section-title">{{ t('Short term · Scenarios (3 days)', '短期 · 情景（3 天）') }}</div>
+  {% if scn.cell %}<div class="sub faint" style="margin:-6px 4px 10px;font-size:12px">{{ t('Odds conditioned on', '概率条件：') }} {{ scn.cell }}{% if scn.n %} (n={{ scn.n }}){% endif %} · {{ t('ATR bands ×', 'ATR 带宽 ×') }}{{ scn.vscale }} {{ t('by forward vol (DVOL)', '（按 DVOL 前瞻波动率）') }}</div>{% endif %}
   <div class="grid cols-2">
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center">
@@ -301,6 +318,27 @@ a{color:var(--blue);text-decoration:none}
       <div class="sub">{{ t('Bullish above +0.5, bearish below −0.5. State:', '高于 +0.5 看多，低于 −0.5 看空。状态：') }} <b>{{ td(momentum_state) }}</b>.</div></div>
     <div class="card"><h3>{{ t('Structure Shift', '结构转变') }} <span class="faint" style="font-size:14px">{{ structure }}</span></h3>{{ charts.structure|safe }}
       <div class="sub">{{ t('Constructive above +0.5, broken below −0.5. State:', '高于 +0.5 偏多，低于 −0.5 走坏。状态：') }} <b>{{ td(structure_state) }}</b>.</div></div>
+  </div>
+
+  <!-- ===================== IMPULSE ===================== -->
+  <div class="section-title">{{ t('Impulse · acceleration of the move (start & exhaustion)', '脉冲 · 走势加速度（启动与衰竭）') }}</div>
+  <div class="grid cols-2">
+    <div class="card">
+      <h3>{{ t('Impulse', '脉冲') }}
+        {% set ic = {'positive':'var(--blue)','negative':'var(--r3)','neutral':'var(--muted)'} %}
+        {% set iz = {'positive':'正向','negative':'负向','neutral':'中性'} %}
+        <b style="color:{{ ic.get(impulse.state,'var(--muted)') }}"> · {{ t((impulse.state or '—')|upper, iz.get(impulse.state,'—')) }}</b>
+        <span class="faint" style="font-size:14px"> {{ impulse.value if impulse.value is not none else '—' }}</span></h3>
+      {% if impulse.pos_pct is not none %}
+      <div class="mini"><div class="lab"><span>{{ t('Positive participation (14d)','正向占比（14 天）') }}</span><span><b>{{ impulse.pos_pct }}%</b></span></div>
+        <div class="bar"><div class="fill" style="width:{{ impulse.pos_pct }}%"></div></div></div>{% endif %}
+      <div class="mini"><div class="lab"><span>{{ t('Trend efficiency (chop gate)','趋势效率（震荡过滤）') }}</span><span><b>{{ impulse.er if impulse.er is not none else '—' }}</b> <span class="faint">{{ t('(0 = chop, 1 = clean trend)','（0 = 震荡，1 = 单边）') }}</span></span></div></div>
+      <div class="sub" style="margin-top:10px">{{ t('Glassnode/Swissblock-style: the z-scored ACCELERATION of momentum (MACD-histogram), gated by trend-efficiency so chop reads ~0, fused with a funding/OI positioning shock. It catches the START of a move and exhaustion — a level says “cheap”, Impulse says “selling force is burning out now.”', 'Glassnode/Swissblock 风格：动量的标准化加速度（MACD 柱），用趋势效率过滤震荡（震荡时约为 0），并融合资金费率/持仓的持仓冲击。它捕捉走势的启动与衰竭 — 估值说“便宜”，脉冲说“抛压此刻正在衰竭”。') }}</div>
+    </div>
+    <div class="card">
+      <h3>{{ t('Why it matters', '为何重要') }}</h3>
+      <div class="sub">{{ t('CALIBRATED & CONFIRMED in both split-halves (2014→) — one of only four signals to clear that bar (with the Risk Index, BFI and the macro overlay). Strong-positive impulse (>0.5) preceded +3.7%/7d and +32.6%/90d at 66% hit; the deeply-negative “exhaustion” band (<−0.5) bounced +1.5%/7d (selling force spent). It feeds the short-term scenario odds.', '在两个分半样本中均已校准且确认（2014 起）— 仅有的四个达标信号之一（另三为风险指数、BFI 与宏观叠加）。强正脉冲（>0.5）后 7 天 +3.7%、90 天 +32.6%、胜率 66%；深度负值“衰竭”区（<−0.5）后 7 天反弹 +1.5%（抛压耗尽）。它参与短期情景概率。') }}</div>
+    </div>
   </div>
 
   <!-- ===================== BFI ===================== -->
