@@ -2,60 +2,76 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Market Intelligence</title>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box}
-body{margin:0;min-height:100vh;background:#F7F8FA;color:#344054;
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
  font-family:Inter,sans-serif;display:flex;flex-direction:column;align-items:center;
- padding:56px 20px 60px}
+ padding:22px 20px 60px}
+/* top bar — theme + language toggles pinned to the right of the content column */
+.hub-top{width:100%;max-width:1120px;display:flex;justify-content:flex-end;
+ align-items:center;gap:10px;margin-bottom:22px}
 .h{text-align:center;margin-bottom:36px}
-.h h1{font-size:40px;font-weight:800;color:#0B1733;letter-spacing:-.03em;margin:0 0 8px}
-.h p{color:#6F6F6F;font-size:17px;margin:0}
+.h h1{font-size:40px;font-weight:800;color:var(--text);letter-spacing:-.03em;margin:0 0 8px}
+.h p{color:var(--muted);font-size:17px;margin:0}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px;width:100%;max-width:1120px}
 @media(max-width:720px){.cards{grid-template-columns:1fr}}
 /* combined alert feed */
 .feed{width:100%;max-width:880px;margin-top:30px}
 .feed-h{display:flex;align-items:baseline;justify-content:space-between;margin:0 4px 12px}
-.feed-h h3{font-size:16px;font-weight:800;color:#0B1733;margin:0}
-.feed-h .n{font-size:13px;color:#6F6F6F;font-weight:600}
-.feed-card{background:#fff;border:1px solid #EAECF0;border-radius:18px;padding:10px 22px}
-.ha-item{border-bottom:1px solid #EAECF0}
+.feed-h h3{font-size:16px;font-weight:800;color:var(--text);margin:0}
+.feed-h .n{font-size:13px;color:var(--muted);font-weight:600}
+.feed-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:10px 22px}
+.ha-item{border-bottom:1px solid var(--line)}
 .ha-item:last-child{border-bottom:none}
 .ha-item summary{display:flex;align-items:center;gap:11px;padding:13px 0;cursor:pointer;
  list-style:none;flex-wrap:wrap}
 .ha-item summary::-webkit-details-marker{display:none}
 .ha-dot{width:10px;height:10px;border-radius:50%;flex:none}
-.ha-dot.d-high{background:#D30B0B} .ha-dot.d-medium{background:#285FFF} .ha-dot.d-info{background:#A0A0A0}
+.ha-dot.d-high{background:var(--act)} .ha-dot.d-medium{background:var(--info)} .ha-dot.d-info{background:var(--muted)}
 .ha-src{font-size:11px;font-weight:700;padding:3px 9px;border-radius:7px}
-.ha-src.s-macro{background:#ECE9FB;color:#4559DC}
-.ha-src.s-vector{background:#E8EEFF;color:#285FFF}
-.ha-src.s-commodity{background:#FBF0DA;color:#F5AD42}
-.ha-head{flex:1;min-width:200px;font-weight:600;color:#0B1733;font-size:14px}
-.ha-when{font-size:12px;color:#A0A0A0;font-weight:600}
-.ha-detail{padding:0 0 13px 21px;font-size:13px;color:#344054;line-height:1.6}
+.ha-src.s-macro{background:color-mix(in srgb,#6366f1 16%,var(--panel));color:color-mix(in srgb,#6366f1 78%,var(--text))}
+.ha-src.s-vector{background:color-mix(in srgb,var(--info) 16%,var(--panel));color:color-mix(in srgb,var(--info) 80%,var(--text))}
+.ha-src.s-commodity{background:color-mix(in srgb,var(--warn) 18%,var(--panel));color:color-mix(in srgb,var(--warn) 82%,var(--text))}
+.ha-head{flex:1;min-width:200px;font-weight:600;color:var(--text);font-size:14px}
+.ha-when{font-size:12px;color:var(--muted);font-weight:600}
+.ha-detail{padding:0 0 13px 21px;font-size:13px;color:var(--text);line-height:1.6}
 .ha-detail a{font-weight:700;white-space:nowrap}
-.ha-what{margin:7px 0 9px;padding-top:8px;border-top:1px solid #EAECF0;
- font-size:12.5px;color:#6F6F6F;line-height:1.55}
-.ha-edge{margin:4px 0 9px;font-size:12px;color:#0B1733;line-height:1.5}
-.ha-edge b{color:#6F6F6F;font-weight:600}
-.ha-open{display:inline-block;color:#285FFF;font-weight:700}
-.ha-empty{padding:18px;text-align:center;color:#A0A0A0;font-size:14px}
-.c{background:#fff;border:1px solid #EAECF0;border-radius:20px;padding:30px;
- text-decoration:none;color:inherit;transition:transform .15s,box-shadow .15s;display:block}
-.c:hover{transform:translateY(-3px);box-shadow:0 12px 30px rgba(16,24,64,.10);border-color:#B8C6FA}
+.ha-what{margin:7px 0 9px;padding-top:8px;border-top:1px solid var(--line);
+ font-size:12.5px;color:var(--muted);line-height:1.55}
+.ha-edge{margin:4px 0 9px;font-size:12px;color:var(--text);line-height:1.5}
+.ha-edge b{color:var(--muted);font-weight:600}
+.ha-open{display:inline-block;color:var(--link);font-weight:700}
+.ha-empty{padding:18px;text-align:center;color:var(--muted);font-size:14px}
+.c{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:30px;
+ text-decoration:none;color:inherit;transition:transform .15s,box-shadow .15s,border-color .15s;display:block}
+.c:hover{transform:translateY(-3px);box-shadow:0 12px 30px rgba(16,24,64,.18);border-color:var(--link)}
 .c .ico{font-size:30px}
-.c h2{font-size:23px;font-weight:800;color:#0B1733;margin:14px 0 6px;letter-spacing:-.02em}
-.c p{color:#6F6F6F;font-size:14px;margin:0 0 18px;min-height:40px}
-.stat{display:inline-block;padding:6px 12px;border-radius:9px;background:#F7F8FA;
- font-weight:700;font-size:13px;margin-right:8px}
-.stat.on{background:#E8EEFF;color:#285FFF} .stat.off{background:#FDEBEB;color:#D30B0B}
-.go{margin-top:18px;font-weight:700;color:#285FFF;font-size:14px}
-.foot{margin-top:40px;color:#A0A0A0;font-size:12px;text-align:center}
+.c h2{font-size:23px;font-weight:800;color:var(--text);margin:14px 0 6px;letter-spacing:-.02em}
+.c p{color:var(--muted);font-size:14px;margin:0 0 18px;min-height:40px}
+.stat{display:inline-block;padding:6px 12px;border-radius:9px;background:var(--panel2);
+ color:var(--text);font-weight:700;font-size:13px;margin-right:8px}
+.stat.on{background:color-mix(in srgb,var(--info) 16%,var(--panel));color:color-mix(in srgb,var(--info) 80%,var(--text))}
+.stat.off{background:color-mix(in srgb,var(--act) 16%,var(--panel));color:color-mix(in srgb,var(--act) 80%,var(--text))}
+.go{margin-top:18px;font-weight:700;color:var(--link);font-size:14px}
+.foot{margin-top:40px;color:var(--muted);font-size:12px;text-align:center}
 .site-footer{width:100%;max-width:880px;margin:30px auto 0;padding-top:22px;
- border-top:1px solid #EAECF0;text-align:center;line-height:1.6}
-.site-footer .made{display:block;font-size:13.5px;font-weight:700;color:#0B1733;letter-spacing:.2px}
-.site-footer .dev{display:block;margin-top:1px;font-size:12px;color:#6F6F6F}
+ border-top:1px solid var(--line);text-align:center;line-height:1.6}
+.site-footer .made{display:block;font-size:13.5px;font-weight:700;color:var(--text);letter-spacing:.2px}
+.site-footer .dev{display:block;margin-top:1px;font-size:12px;color:var(--muted)}
 </style></head><body>
+<div class="hub-top">
+  <button class="theme-switch" aria-label="Toggle dark / light mode">
+    <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+  </button>
+  <div class="lang-toggle" role="group" aria-label="Language">
+    <span class="pill"></span>
+    <span class="opt en-opt" data-l="en">EN</span>
+    <span class="opt zh-opt" data-l="zh">中文</span>
+  </div>
+</div>
 <div class="h"><h1><span class="l-en">Market Intelligence</span><span class="l-zh">市场情报</span></h1>
 <p><span class="l-en">Market regime dashboards, one zero-cost data engine.</span><span class="l-zh">市场周期仪表盘，一套零成本数据引擎。</span></p></div>
 <div class="cards">
@@ -222,7 +238,7 @@ body{margin:0;min-height:100vh;background:#F7F8FA;color:#344054;
   <div class="ha-detail">Risk Index crossed the 25 threshold to 29 (rising). BTC $76,944.<div class="ha-what">Flips 20% of the time historically (whipsaw rate).</div><div class="ha-edge"><b>Conviction:</b> Proven edge — held up in both market halves.</div><a class="ha-open" href="vector.html#risk">Open →</a></div>
 </details></div>
 </div>
-<div class="foot"><span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-06-13 20:50 UTC · <span class="l-en">mechanical, backtested, free public data · not investment advice</span><span class="l-zh">机械化 · 经回测 · 免费公开数据 · 非投资建议</span></div>
+<div class="foot"><span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-06-13 22:25 UTC · <span class="l-en">mechanical, backtested, free public data · not investment advice</span><span class="l-zh">机械化 · 经回测 · 免费公开数据 · 非投资建议</span></div>
 <footer class="site-footer">
   <span class="made"><span class="l-en">Made with ❤️ in Canada</span><span class="l-zh">用 ❤️ 在加拿大制作</span></span>
   <span class="dev"><span class="l-en">Developed by</span><span class="l-zh">开发者</span> Chris Wong</span>
