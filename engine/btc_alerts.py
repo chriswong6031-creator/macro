@@ -37,14 +37,94 @@ ANCHOR = {"risk_regime": "#risk", "structure_shift": "#structure",
           "market_mode": "#allocation", "risk_extreme": "#risk",
           "flash_crash": "#flash"}
 
+# Conviction layer — every alert carries `tier` (act > watch > context, for
+# prioritisation) plus `edge`/`forward` notes derived from the real backtest in
+# data/vector/calibration.json: `signal` keys the verdict (CONFIRMED /
+# DIRECTIONAL / EXTREMES / CONTEXT) and `whipsaw` keys the historical flip rate.
+# This is the honesty fix — momentum/structure alerts get flagged "edge weakened
+# post-2021", risk_index/bfi get "proven edge", so loud ≠ trustworthy by default.
+# `tier` reflects actionability/time-horizon (a fast risk-off trigger outranks a
+# slow fundamentals gauge) and is independent of `edge`/`severity`.
+# NOTE: risk_extreme deliberately has signal=None — its contrarian-at-extremes
+# thesis is the OPPOSITE of risk_index's measured directional verdict, so it must
+# not borrow that "proven edge" label (it gets a bespoke honest note in _conviction).
+CONVICTION = {
+    "risk_regime":      {"tier": "act",     "signal": "risk_index", "whipsaw": "risk_regime"},
+    "risk_extreme":     {"tier": "watch",   "signal": None,         "whipsaw": None},
+    "flash_crash":      {"tier": "act",     "signal": None,         "whipsaw": None},
+    "fundamentals":     {"tier": "watch",   "signal": "bfi",        "whipsaw": None},
+    "structure_shift":  {"tier": "watch",   "signal": "structure",  "whipsaw": "structure_state"},
+    "momentum_trigger": {"tier": "watch",   "signal": "momentum",   "whipsaw": "momentum_state"},
+    "allocation_change":{"tier": "watch",   "signal": None,         "whipsaw": None},
+    "market_mode":      {"tier": "context", "signal": None,         "whipsaw": "market_mode"},
+    "leadership":       {"tier": "context", "signal": None,         "whipsaw": "alt_cycle_leader"},
+}
+_CALIB_CACHE: dict = {}
+
+
+def _calib() -> dict:
+    if "d" not in _CALIB_CACHE:
+        try:
+            p = config.data_dir() / "vector" / "calibration.json"
+            _CALIB_CACHE["d"] = json.loads(p.read_text()) if p.exists() else {}
+        except Exception:  # noqa: BLE001 — conviction is additive, never fatal
+            _CALIB_CACHE["d"] = {}
+    return _CALIB_CACHE["d"]
+
+
+def _edge_from_verdict(v: str) -> str:
+    if not v:
+        return ""
+    if v.startswith("CONFIRMED"):
+        return "Proven edge — held up in both market halves."
+    if v.startswith("DIRECTIONAL"):
+        return "Lower conviction — the edge weakened after 2021 (ETF era)."
+    if v.startswith("CONTEXT"):
+        return "Context only — no measured forward-return edge."
+    if v.startswith("EXTREMES"):
+        return v  # the verdict text itself carries the measured base rates
+    if v.startswith("INVERTED"):
+        return "Inverted edge — historically moved opposite to the naive read."
+    return v
+
+
+def _conviction(type_: str) -> dict:
+    c = CONVICTION.get(type_, {"tier": "watch", "signal": None, "whipsaw": None})
+    cal = _calib()
+    edge, forward = "", ""
+    sig = c["signal"]
+    if sig:
+        edge = _edge_from_verdict((cal.get("signals", {}).get(sig, {}) or {}).get("verdict", ""))
+    elif type_ == "allocation_change":
+        opt = (cal.get("allocation", {}) or {}).get("optimal", {})
+        if opt:
+            edge = "Strategy output — beat buy-and-hold in backtest."
+            forward = (f"Backtest: {opt.get('cagr')}% CAGR vs {opt.get('hodl_cagr')}% "
+                       f"buy-and-hold; max drawdown {opt.get('maxdd')}% vs "
+                       f"{opt.get('hodl_maxdd')}%.")
+    elif type_ == "risk_extreme":
+        edge = ("Contrarian at sustained extremes — suggestive, not proven; "
+                "high-risk bands show middling, regime-dependent forward returns.")
+    elif type_ == "flash_crash":
+        edge = "Real-time risk event — act on it, don't wait for confirmation."
+    wk = c["whipsaw"]
+    if wk:
+        w = (cal.get("whipsaw", {}) or {}).get(wk, {})
+        if w.get("pct") is not None:
+            note = f"Flips {w['pct']:.0f}% of the time historically (whipsaw rate)."
+            forward = f"{forward} {note}".strip()
+    return {"tier": c["tier"], "edge": edge.strip(), "forward": forward.strip()}
+
 
 def _ev(type_, ts, severity, headline, detail, context, to_state) -> dict:
     ts = pd.Timestamp(ts)
     bucket = ts.strftime("%Y-%m-%dT%H:%M")
+    conv = _conviction(type_)
     return {"id": f"{type_}:{bucket}:{to_state}", "ts": ts.isoformat(),
             "source": "vector", "type": type_, "severity": severity,
             "headline": headline, "detail": detail, "context": context,
-            "anchor": ANCHOR.get(type_, "")}
+            "anchor": ANCHOR.get(type_, ""),
+            "tier": conv["tier"], "edge": conv["edge"], "forward": conv["forward"]}
 
 
 # --------------------------------------------------------------------------- #
@@ -256,6 +336,10 @@ def compute_all_events(sig: pd.DataFrame | None = None) -> list[dict]:
     for e in existing:
         by_id.setdefault(e["id"], e)  # keep sentinel-only events; recompute wins on collision
     merged = sorted(by_id.values(), key=lambda e: e["ts"], reverse=True)
+    for e in merged:  # backfill conviction on older/sentinel events so the log is uniform
+        if "tier" not in e:
+            conv = _conviction(e.get("type", ""))
+            e["tier"], e["edge"], e["forward"] = conv["tier"], conv["edge"], conv["forward"]
     return merged
 
 

@@ -100,6 +100,8 @@ def build_message(latest: dict, html: bool = True) -> str:
             # deep-link straight to the scorecard the alert came from (if a public
             # site URL is configured). A bare URL renders clickably on both TG/Discord.
             line = f"{SEV_EMOJI.get(a['severity'], '')} {b}{v['plain_en']}{e}\n   {v['message']}"
+            if v.get("edge_en"):
+                line += f"\n   conviction: {v['edge_en']}"
             if site_url:
                 anchor = f"#{v['anchor']}" if v["anchor"] else ""
                 line += f"\n   → {site_url}/macro.html{anchor}"

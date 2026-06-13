@@ -175,20 +175,32 @@ def sector_holdings_accumulation(hist: pd.DataFrame, f: pd.DataFrame) -> list[Al
 
 
 def net_liquidity_roc_flip(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
-    if not config.load()["alerts"]["net_liquidity_roc_sign_flip"]:
+    acfg = config.load()["alerts"]
+    if not acfg["net_liquidity_roc_sign_flip"]:
         return None
     w = config.load()["engine"]["liquidity"]["roc_window_d"]
+    # quality gates (config-overridable; defaults mean no config change is needed):
+    #   deadband — ignore flips that land within ±N bn of zero (the "+7 -> -0bn"
+    #              non-event), and
+    #   confirm  — require the new sign to HOLD this many days, so a one-day
+    #              whipsaw across zero can't fire.
+    deadband = float(acfg.get("net_liquidity_roc_deadband_bn", 25.0))
+    confirm = max(1, int(acfg.get("net_liquidity_roc_confirm_days", 2)))
     roc = (f["net_liquidity_bn"] - f["net_liquidity_bn"].shift(w)).dropna()
-    if len(roc) < 2:
+    if len(roc) < confirm + 1:
         return None
-    y, t = roc.iloc[-2], roc.iloc[-1]
-    if np.sign(y) != np.sign(t) and t != 0:
+    t = roc.iloc[-1]
+    run = roc.iloc[-confirm:]              # the last `confirm` days
+    before = roc.iloc[-(confirm + 1)]      # the day just before that run
+    held = t != 0 and bool((np.sign(run) == np.sign(t)).all())
+    flipped = np.sign(before) != np.sign(t)   # opposite side, or flipping out of an exact 0
+    if held and flipped and abs(t) >= deadband:
         direction = "positive (expanding)" if t > 0 else "negative (contracting)"
         return Alert("net_liquidity_roc_flip", "warn",
-                     f"Net liquidity 4-week RoC flipped {direction}: "
-                     f"{y:+.0f}bn -> {t:+.0f}bn",
-                     message_zh=f"净流动性 4 周 RoC 转为 {direction}："
-                                f"{y:+.0f}bn -> {t:+.0f}bn")
+                     f"Net liquidity 4-week RoC flipped {direction} and held "
+                     f"{confirm}d: {before:+.0f}bn -> {t:+.0f}bn",
+                     message_zh=f"净流动性 4 周 RoC 转为{direction}并持续 {confirm} 天："
+                                f"{before:+.0f}bn -> {t:+.0f}bn")
     return None
 
 
@@ -227,18 +239,24 @@ def gex_flip_cross(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
     g = store.read("cboe", "gex")
     if g is None or len(g) < 2:
         return None
+    acfg = config.load()["alerts"]
+    g_deadband = float(acfg.get("gex_net_deadband_bn", 1.0))      # ignore sign flips near 0bn
+    flip_deadband = float(acfg.get("gex_flip_pct_deadband", 0.25))  # ignore hugging the flip
     y, t = g.iloc[-2], g.iloc[-1]
     crossed_flip = (pd.notna(y.get("spot_vs_flip_pct")) and pd.notna(t.get("spot_vs_flip_pct"))
-                    and np.sign(y["spot_vs_flip_pct"]) != np.sign(t["spot_vs_flip_pct"]))
+                    and np.sign(y["spot_vs_flip_pct"]) != np.sign(t["spot_vs_flip_pct"])
+                    and abs(t["spot_vs_flip_pct"]) >= flip_deadband)
     sign_change = (pd.notna(y.get("net_gex_bn")) and pd.notna(t.get("net_gex_bn"))
-                   and np.sign(y["net_gex_bn"]) != np.sign(t["net_gex_bn"]))
+                   and np.sign(y["net_gex_bn"]) != np.sign(t["net_gex_bn"])
+                   and abs(t["net_gex_bn"]) >= g_deadband)
     if crossed_flip or sign_change:
         what = "spot crossed the gamma flip" if crossed_flip else "net GEX changed sign"
+        ng, sf = t.get("net_gex_bn"), t.get("spot_vs_flip_pct")
+        ng_s = f"{ng:+.0f}bn" if pd.notna(ng) else "n/a"
+        sf_s = f"{sf:+.1f}%" if pd.notna(sf) else "n/a"
         return Alert("gex_flip_cross", "warn",
-                     f"GEX: {what} (net {t['net_gex_bn']:+.0f}bn, "
-                     f"spot vs flip {t.get('spot_vs_flip_pct', float('nan')):+.1f}%)",
-                     message_zh=f"GEX：{what}（净 {t['net_gex_bn']:+.0f}bn，"
-                                f"现价相对翻转点 {t.get('spot_vs_flip_pct', float('nan')):+.1f}%）")
+                     f"GEX: {what} (net {ng_s}, spot vs flip {sf_s})",
+                     message_zh=f"GEX：{what}（净 {ng_s}，现价相对翻转点 {sf_s}）")
     return None
 
 
@@ -464,13 +482,64 @@ ALERT_META: dict[str, dict] = {
 }
 
 
+# Conviction layer — how much WEIGHT each alert deserves, kept separate from the
+# copy blocks above. `tier` drives prioritisation (act > watch > context),
+# decoupled from the per-fire `severity`. `edge` is a one-line, grounded "how much
+# to trust this" note. The macro engine has no per-rule backtest, so these are
+# documented-reasoning calls — and they surface the post-2021 liquidity-edge decay
+# the Bitcoin Vector calibration actually measured (net_liq_roc: DIRECTIONAL,
+# post-half weak). The vector engine derives its own conviction from
+# data/vector/calibration.json (see engine/btc_alerts.py).
+_DEFAULT_CONVICTION = {"tier": "watch", "edge_en": "", "edge_zh": ""}
+
+ALERT_CONVICTION: dict[str, dict] = {
+    "transition_state_change": {"tier": "act",
+        "edge_en": "High — a regime shift re-prices everything downstream.",
+        "edge_zh": "高 — 周期转变会重新定价其下游的一切。"},
+    "hy_oas_widening": {"tier": "act",
+        "edge_en": "High — credit is the market's best early smoke detector.",
+        "edge_zh": "高 — 信用市场是最灵敏的早期烟雾探测器。"},
+    "net_liquidity_roc_flip": {"tier": "watch",
+        "edge_en": "Medium — a documented tail/headwind, but the liquidity edge "
+                   "weakened post-2021 (ETF era). Lean on it, don't trade it.",
+        "edge_zh": "中 — 有据可查的顺／逆风，但流动性优势在 2021 年后（ETF 时代）减弱。"
+                   "据此微调，而非直接交易。"},
+    "gex_flip_cross": {"tier": "watch",
+        "edge_en": "Medium — changes the volatility backdrop, not the direction.",
+        "edge_zh": "中 — 改变的是波动背景，而非方向。"},
+    "growth_confidence_floor": {"tier": "context",
+        "edge_en": "Context — a confidence drop, not a directional call. Size down.",
+        "edge_zh": "背景 — 这是置信度下降，而非方向判断。缩小仓位。"},
+    "inflation_confidence_floor": {"tier": "context",
+        "edge_en": "Context — a confidence drop, not a directional call. Size down.",
+        "edge_zh": "背景 — 这是置信度下降，而非方向判断。缩小仓位。"},
+    "sector_rs_cross_high": {"tier": "context",
+        "edge_en": "Context — descriptive rotation, not a timing signal.",
+        "edge_zh": "背景 — 描述性的轮动，而非择时信号。"},
+    "sector_rs_cross_low": {"tier": "context",
+        "edge_en": "Context — descriptive rotation, not a timing signal.",
+        "edge_zh": "背景 — 描述性的轮动，而非择时信号。"},
+    "holdings_active_change": {"tier": "context",
+        "edge_en": "Context — what an active manager did, not a recommendation.",
+        "edge_zh": "背景 — 主动经理的动作，并非建议。"},
+    "sector_holdings_accumulation": {"tier": "context",
+        "edge_en": "Context — passive index-flow, not discretionary conviction.",
+        "edge_zh": "背景 — 被动指数资金流，而非主动信念。"},
+    "circuit_breaker_open": {"tier": "context",
+        "edge_en": "Plumbing — data health, not a market signal.",
+        "edge_zh": "管线 — 数据健康度，而非市场信号。"},
+}
+
+
 def alert_view(rule: str, severity: str, message: str, message_zh: str = "") -> dict:
     """Enrich a stored alert (rule/severity/message) with plain-English copy, an
-    icon, and the dashboard panel anchor it deep-links to. Unknown rules fall
-    back to a generic explainer so a new rule still renders sensibly."""
+    icon, the dashboard panel anchor it deep-links to, and a conviction tier +
+    grounded edge note. Unknown rules fall back to generic defaults so a new rule
+    still renders sensibly."""
     return {"rule": rule, "severity": severity, "message": message,
             "message_zh": message_zh,
-            **ALERT_META.get(rule, _DEFAULT_META)}
+            **ALERT_META.get(rule, _DEFAULT_META),
+            **ALERT_CONVICTION.get(rule, _DEFAULT_CONVICTION)}
 
 
 def alert_views(alerts) -> list[dict]:
