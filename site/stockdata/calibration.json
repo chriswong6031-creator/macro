@@ -1,0 +1,37 @@
+{
+ "DECLINE": {
+  "n": 8556,
+  "hit_pct": 60.8,
+  "avg_fwd_pct": 2.37
+ },
+ "BOTTOM WATCH": {
+  "n": 10391,
+  "hit_pct": 58.8,
+  "avg_fwd_pct": 1.56
+ },
+ "TURN SIGNALED": {
+  "n": 16149,
+  "hit_pct": 58.9,
+  "avg_fwd_pct": 1.43
+ },
+ "FRESH BUY": {
+  "n": 14099,
+  "hit_pct": 57.7,
+  "avg_fwd_pct": 1.11
+ },
+ "RALLY ON": {
+  "n": 11763,
+  "hit_pct": 59.1,
+  "avg_fwd_pct": 1.36
+ },
+ "TOP WATCH": {
+  "n": 8739,
+  "hit_pct": 58.0,
+  "avg_fwd_pct": 1.06
+ },
+ "ROLLING OVER": {
+  "n": 2910,
+  "hit_pct": 57.5,
+  "avg_fwd_pct": 1.09
+ }
+}
