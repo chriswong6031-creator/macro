@@ -36,7 +36,43 @@ the consequence, not just the cause.
   the A-share search matches by ticker/sector, not company name in either language.
 - **Global cross-border factors are NOT yet in the China regime** (deferred by the
   user). Measured separately (research): global risk/dollar factors drive Hong Kong
-  ~2× more than A-shares; the overlay is a planned follow-on, not in v1.
+  ~2× more than A-shares; that overlay now ships in the **Hong Kong** dashboard.
+
+## Hong Kong / Hang Seng dashboard
+
+- **The fundamental read is China's, not HK's.** ~75% of HSI market cap is China
+  earnings, so the growth/inflation axes consume the Mainland PMI/CPI/PPI/M2
+  (`china_macro`). That is the right call for HSI, but it means HK macro stress that
+  is *not* China-sourced (e.g. a pure HKD-funding squeeze) only reaches the regime
+  through the price-based legs (peg distance, H-share leadership, breadth), not the
+  fundamentals.
+- **HS-TECH is proxied by an ETF (2020→).** `^HSTECH` is not on Yahoo, so the
+  HS-TECH/HSI growth-tilt component uses the CSOP HS-TECH ETF (3033.HK), which only
+  starts in 2020 — shorter than the other legs, so it drops out of the deep
+  pre-2020 classification (the axis renormalizes over what exists).
+- **Sectors are curated synthetic baskets, not float-cap indices.** HK sector-ETF
+  coverage is thin, so each "sector" is an **equal-weight basket** of ~6 curated
+  large-caps (`config.yml hk.sectors`). This gives deep history (most names
+  2000–2006→, *richer* than China's ~5y ETFs) but it is a large-cap basket, not a
+  reconstruction of the Hang Seng industry indices — labeled on the page.
+- **The global risk overlay is a CONCURRENT state, not a forecast.** Global factors
+  are coincident at weekly frequency (lead-lag ~0). The composite is honest as a
+  *risk regime gauge*; calibration (2000→2026) shows it differentiates HSI forward
+  returns monotonically (Risk-on +0.9%/21d 57% hit > Risk-off > Neutral) but that is
+  a base rate over a few thousand days, not a timing signal.
+- **Measured records (split-half, on the Hang Seng Index).** Unlike China (where
+  only Growth-scare survived), HK's quad ordering is **stable**: Goldilocks best
+  (+1.3%/21d, positive both halves), Stagflation worst (−0.9%, negative both); dual
+  liquidity (PBoC + Fed-via-peg) is monotone (expanding > contracting). Still framed
+  as risk context + the cycle ladder as a drawdown tool, never a standalone trigger.
+- **HK charts are drawn from our own stored prices, not a live symbol feed.** The
+  free TradingView *symbol* widget gates HKEX data behind a login ("only available
+  on TradingView"), so the HK stock-analyzer and sector pages render an
+  adjusted-close + 50/200-DMA chart from our nightly EOD store via TradingView
+  Lightweight Charts (open-source). Consequence: HK charts are EOD close only (no
+  intraday, no candles/volume — we don't store OHLC for constituents) and span ~2y;
+  the deeper cycle/MTF analysis is unaffected. China/US/crypto pages still use the
+  live TradingView widget (their exchanges aren't gated on the free tier).
 
 ## Bitcoin Vector alerts
 
@@ -197,6 +233,107 @@ the consequence, not just the cause.
   tier, and a price-derived proxy. It is excluded from the regime engine by
   design and marked LOW CONFIDENCE everywhere it appears. Paid fix:
   LSEG I/B/E/S or Zacks (hundreds of $/mo) would make it a real input.
+
+## Quant-factor expansion — conditions layer & factor engine
+
+(research/QUANT_FACTOR_EXPANSION.md — added to broaden the methodology beyond
+technical/momentum into the Fed-research feeds, option-implied risk, and
+cross-sectional equity factors.)
+
+- **The conditions/nowcast/risk-appetite layer is COMPLEMENTARY, not the
+  validated quad.** `engine/conditions.py` (Financial Conditions, recession risk,
+  growth/inflation nowcasts, equity VRP, RORO, stock-bond correlation) runs
+  *alongside* the split-half-validated growth/inflation regime and never alters
+  it — agreement strengthens conviction, divergence is a heads-up. Unlike the
+  quad it is **not independently split-half-backtested**; it is shipped as honest
+  context built from standard, free Fed/CBOE series.
+- **Nowcast & financial-conditions series get revised.** GDPNow, WEI, NFCI, the
+  Cleveland/Atlanta inflation nowcasts and the Sahm rule are model outputs that
+  Fed banks revise; a same-day read is the current vintage, not a final value.
+  The recession-risk composite is a transparent weighted blend, not a fitted
+  probit. The **term-premium-adjusted curve** is `2s10s + ACM 10y term premium` —
+  a heuristic to flag the 2019/2022-24 "inverted-but-no-recession" episodes, not
+  a calibrated model.
+- **Stock-bond correlation uses a yield-change proxy for Treasury returns**
+  (−Δ10y yield), ignoring convexity/level — fine for the correlation *sign*
+  (the "bonds aren't hedging" 2022-style regime), not a duration-accurate return.
+- **Inflation-nowcast annualization is jumpy.** Sticky/flexible CPI are monthly
+  %-change prints annualized over a 3-month smooth; the *flexible* leg swings
+  widely (energy) so its absolute annualized number is noisy — the signal is the
+  persistent-vs-transitory *comparison*, not the flexible level.
+- **CBOE SKEW is a tail-pricing gauge, weak as a standalone timing tool.** It is
+  a regime conditioner (how much the market pays for crash protection), not a
+  trigger; shipped as a percentile, not against historical absolute levels.
+
+### Cross-sectional equity factor engine (factors.html)
+
+- **Not a backtested alpha — a live cross-sectional ranking.** Factors are
+  winsorized cross-sectional z-scores over the S&P 1500 *as of today*. EDGAR
+  serves only **published** filings, so the live snapshot is point-in-time-honest
+  (no future data leaks in), but there is **no historical factor backtest** here —
+  the records are documented in the literature, not measured on our data. Factors
+  decay post-publication (~58%, McLean-Pontiff) and crowd; book/price is weak for
+  intangible-heavy firms; long-only *unlevered* low-beta/BAB is far weaker than
+  the levered academic Sharpe. Treat ranks as a research lens, not a buy list.
+- **Free fundamentals are sparse for some us-gaap tags.** Coverage on the S&P
+  1500 (recon 2026-06): Assets/CFO/NetIncome/equity ~90-100%, **GrossProfit only
+  ~40%** (many filers tag COGS instead), **dividends ~39% / buybacks ~72%**. So
+  *profitability* and *payout* rank fewer names than value/quality; the composite
+  requires ≥3 available legs. Payout uses **actual dividend + repurchase cash
+  flows** (not a shares-outstanding-change proxy, which would conflate buybacks
+  with issuance/dilution).
+- **The ticker→CIK map has a name-matching fallback.** SEC's
+  `company_tickers.json` (on www.sec.gov) rate-limits/403s hard; when unavailable
+  the collector matches the XBRL `entityName` against our universe company names
+  (normalized). That maps ~1340/1500 names and can mis-map a handful of ambiguous
+  names; ~160 stay unmapped until the exact file is reachable (cached 30 days once
+  fetched). CIK mappings spot-checked (AAPL/MSFT/JPM/NVDA/JNJ/WMT correct).
+- **US-GAAP tag ratios are noisier for non-standard reporters.** Banks, insurers
+  and REITs report on different templates, so their gross-profitability /
+  investment / book ratios are less comparable to industrials — no
+  sector-neutralization is applied in this first version.
+- **Market cap is approximate** (adjusted close × latest reported shares); the
+  "leadership" read (top- minus bottom-quintile trailing 63d return) is
+  descriptive of what has been rewarded, **not** a forecast.
+- **Fundamentals refresh weekly (cached); ranks recompute daily** with prices.
+  The fetch is ~25 EDGAR calls/run, paced under the 10 req/s fair-access limit
+  with a descriptive User-Agent (set your own contact in `config.yml edgar`).
+
+### Four-phase build-out (carry · EIA supply · short interest · insider)
+
+- **Commodity carry: the LIVE roll yield is exact; the reconstructed history is
+  approximate.** `collectors/commodity_carry.py` computes the front-vs-second
+  annualized roll yield from Yahoo DATED contracts. Today's reading is the true
+  nearest two contracts, but Yahoo DELISTS expired contracts, so for older dates
+  the engine falls back to the still-listed (more deferred) contracts — the
+  historical curve slope is therefore measured further out and is damped/
+  approximate. Dated contracts are also thinner than the continuous front. Treat
+  the backwardation/contango STATE and the live roll yield as the signal, the
+  history as context. Fetched weekly (the curve shape is slow).
+- **EIA supply is via the keyless dnav .xls download, not an API.** `collectors/
+  eia.py` parses EIA's "Download Series History" .xls (Weekly Petroleum Status).
+  Weekly (Wed release), revised, and a layout change to the .xls could break a
+  series (each is isolated; a failure leaves that series at its last value). The
+  supply "state" (low-stocks-percentile + draw = tightening) is a heuristic
+  context read on the oil page, not a calibrated signal.
+- **FINRA short interest is bi-monthly with a publication lag.** `collectors/
+  finra.py` pulls the consolidated (exchange-listed) short interest from the free
+  FINRA Query API. It settles twice a month and publishes ~8 business days later,
+  so days-to-cover is up to ~3 weeks stale. The factor uses days-to-cover (short
+  interest / avg daily volume) and short-as-%-of-shares (shares from EDGAR); the
+  high-DTC negative-return relationship (Hong-Li-Rajan-Sherman) is real but
+  decayed and crowded, and squeeze dynamics cut the other way — it is one
+  standalone factor leg, not in the core composite.
+- **Insider data is the most recent COMPLETED quarter, not real-time.** `collectors/
+  sec_insider.py` uses the SEC "Insider Transactions Data Sets" — a single
+  quarterly bulk zip — so a mid-quarter run still shows last quarter's Form-4s (a
+  slow conviction read; the panel labels the quarter). It keeps only open-market
+  purchases (code P) and sales (code S) — grants, option exercises and gifts are
+  excluded — and clustered BUYING is the more informative side. Small/illiquid
+  issuers are noisy. **sec.gov rate-limits / 403s hard** (the same wall as the
+  EDGAR `company_tickers.json`), so both the insider and EDGAR fetches can fail a
+  run; both degrade gracefully (cached value, or the panel simply hides) and
+  recover on a later run / a cleaner CI IP.
 
 ## Infrastructure
 

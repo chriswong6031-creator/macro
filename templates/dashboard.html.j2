@@ -281,6 +281,7 @@
     <a class="nav-link active" href="macro.html">📊 {{ t('Macro', '宏观') }}</a>
     <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }}</a>
     <a class="nav-link" href="etfs.html">🐳 {{ t('ETF flows', 'ETF 资金流') }}</a>
+    <a class="nav-link" href="factors.html">🧮 {{ t('Factors', '因子') }}</a>
     <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国A股') }}</a>
     <a class="nav-link" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }}</a>
     <a class="nav-link" href="brief.html">📰 {{ t('Brief', '简报') }}</a>
@@ -527,6 +528,90 @@
         {% if a.edge_en %}<div class="alert-edge"><b>{{ t('Conviction:', '可信度：') }}</b> <span class="l-en">{{ a.edge_en }}</span><span class="l-zh">{{ a.edge_zh or a.edge_en }}</span></div>{% endif %}
       </a>
     {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ============ MACRO NOWCAST · CONDITIONS · RISK APPETITE ============ -->
+  {% if latest.conditions %}
+  {% set C = latest.conditions %}
+  {% set FC = C.financial_conditions %}
+  {% set RC = C.recession %}
+  {% set GN = C.growth_nowcast %}
+  {% set IN = C.inflation_nowcast %}
+  {% set RA = C.risk_appetite %}
+  <div class="panel span12" id="conditions">
+    <h2>🛰️ {{ t('Macro nowcast · conditions · risk appetite', '宏观即时预测 · 金融条件 · 风险偏好') }}
+      {{ help("A complementary lens that runs ALONGSIDE the price-based quad and never alters it: the Fed-research feeds and option-implied risk that a markets-only model misses. Financial conditions (Chicago Fed NFCI — 105 inputs in one z-score), a 0–100 recession-risk score (Sahm rule + smoothed probability + Excess Bond Premium + a term-premium-ADJUSTED curve that strips the 2022–24 false inversion), real-time growth (Weekly Economic Index, GDPNow) and inflation (Atlanta sticky vs flexible CPI) nowcasts, and a cross-asset risk-appetite read (equity vol-risk-premium, VIX term structure, CBOE SKEW, the stock-bond correlation regime, a RORO composite). Free Fed/CBOE data — see research/QUANT_FACTOR_EXPANSION.md.", "一个与价格象限并行、绝不改变象限的补充视角：纯市场模型遗漏的美联储研究数据与期权隐含风险。金融条件（芝加哥联储 NFCI — 105 项输入合成一个 z 分数）、0–100 衰退风险评分（Sahm 法则 + 平滑概率 + 超额债券溢价 + 期限溢价调整后的收益率曲线，剔除 2022–24 的假性倒挂）、实时增长（周度经济指数、GDPNow）与通胀（亚特兰大黏性对弹性 CPI）即时预测，以及跨资产风险偏好（股票波动率风险溢价、VIX 期限结构、CBOE SKEW、股债相关性状态、RORO 综合）。免费美联储／CBOE 数据。") }}
+    </h2>
+    <p class="muted sm" style="margin:-4px 0 10px">{{ t('Complementary to the quad above — it does not change the regime label; agreement strengthens conviction, divergence is a heads-up.', '与上方象限互补 — 不改变周期标签；一致则增强信心，背离则为提醒。') }}</p>
+    <div class="grid">
+
+      <!-- Financial conditions -->
+      <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
+        <div style="font-weight:700;margin-bottom:6px">{{ t('Financial conditions', '金融条件') }} <span class="muted sm">NFCI</span></div>
+        {% if FC.nfci is not none %}
+        {% set fcolor = 'var(--up)' if FC.state=='loose' else ('var(--down)' if FC.state=='tight' else 'var(--muted)') %}
+        <div style="font-size:22px;font-weight:700;color:{{ fcolor }}">{{ '%+.2f'|format(FC.nfci) }}
+          <span class="badge" style="font-size:11px;vertical-align:middle">{{ t(FC.state, {'loose':'宽松','tight':'收紧','neutral':'中性'}.get(FC.state, FC.state)) }}{% if FC.trend %} · {{ t(FC.trend, {'tightening':'收紧中','loosening':'宽松中'}.get(FC.trend, FC.trend)) }}{% endif %}</span></div>
+        <div class="muted sm" style="margin-top:4px">{{ t('Looser than', '宽松程度位于') }} {{ ((1-FC.nfci_pctile)*100)|round|int if FC.nfci_pctile is not none else '—' }}% {{ t('of the last 5y · +tight / −loose', '近五年 · 正=收紧／负=宽松') }}</div>
+        {% if FC.subindices %}<div class="muted sm" style="margin-top:6px">{% for k,v in FC.subindices.items() %}{{ {'nfci_risk':'risk','nfci_credit':'credit','nfci_leverage':'leverage'}.get(k,k) }} {{ '%+.2f'|format(v) }}{% if not loop.last %} · {% endif %}{% endfor %}</div>{% endif %}
+        {% else %}<div class="muted">—</div>{% endif %}
+      </div>
+
+      <!-- Recession risk -->
+      <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
+        <div style="font-weight:700;margin-bottom:6px">{{ t('Recession risk', '衰退风险') }}</div>
+        {% if RC.score is not none %}
+        {% set rcolor = 'var(--down)' if RC.label=='high' else ('#d98a00' if RC.label=='elevated' else 'var(--up)') %}
+        <div style="font-size:22px;font-weight:700;color:{{ rcolor }}">{{ RC.score|round|int }}<span class="muted" style="font-size:13px">/100</span>
+          <span class="badge" style="font-size:11px;vertical-align:middle">{{ t(RC.label, {'low':'低','elevated':'偏高','high':'高'}.get(RC.label, RC.label)) }}</span></div>
+        <div style="height:7px;border-radius:4px;background:var(--line);margin:7px 0;overflow:hidden"><div style="height:100%;width:{{ RC.score|round|int }}%;background:{{ rcolor }}"></div></div>
+        <div class="muted sm">Sahm {{ '%.2f'|format(RC.sahm) if RC.sahm is not none else '—' }} · {{ t('prob','概率') }} {{ '%.0f'|format(RC.ny_fed_prob) if RC.ny_fed_prob is not none else '—' }}% · EBP {{ '%+.2f'|format(RC.ebp) if RC.ebp is not none else '—' }}</div>
+        {% if RC.curve_note %}<div class="muted sm" style="margin-top:5px">{{ t('Curve', '曲线') }} {{ '%+.2f'|format(RC.curve_raw) if RC.curve_raw is not none else '—' }} → {{ '%+.2f'|format(RC.curve_tp_adjusted) if RC.curve_tp_adjusted is not none else '—' }} {{ t('term-premium-adjusted', '期限溢价调整后') }}</div>{% endif %}
+        {% else %}<div class="muted">—</div>{% endif %}
+      </div>
+
+      <!-- Growth & inflation nowcast -->
+      <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
+        <div style="font-weight:700;margin-bottom:6px">{{ t('Growth & inflation nowcast', '增长与通胀即时预测') }}</div>
+        <div class="kv">{{ t('Weekly Economic Index', '周度经济指数') }} <b>{{ '%.1f'|format(GN.wei) if GN.wei is not none else '—' }}%</b>{% if GN.wei_trend %} <span class="muted sm">{{ t(GN.wei_trend, {'rising':'上行','falling':'下行'}.get(GN.wei_trend, GN.wei_trend)) }}</span>{% endif %}</div>
+        <div class="kv">{{ t('GDPNow (Atlanta Fed)', 'GDPNow') }} <b>{{ '%.1f'|format(GN.gdpnow) if GN.gdpnow is not none else '—' }}%</b></div>
+        {% if IN.sticky_ann is not none %}<div class="kv" style="margin-top:4px">{{ t('Sticky CPI (persistent)', '黏性 CPI（持续性）') }} <b>{{ '%.1f'|format(IN.sticky_ann) }}%</b>{% if IN.sticky_trend %} <span class="muted sm">{{ t(IN.sticky_trend, {'accelerating':'加速','cooling':'降温'}.get(IN.sticky_trend, IN.sticky_trend)) }}</span>{% endif %}</div>{% endif %}
+        {% if IN.flexible_ann is not none %}<div class="kv">{{ t('Flexible CPI (transitory)', '弹性 CPI（暂时性）') }} <b>{{ '%.1f'|format(IN.flexible_ann) }}%</b></div>{% endif %}
+        {% if IN.read %}<div class="muted sm" style="margin-top:5px">{{ t('Read:', '判读：') }} {{ t(IN.read, {'persistent (sticky-led)':'持续性（黏性主导）','transitory (flexible-led)':'暂时性（弹性主导）'}.get(IN.read, IN.read)) }}</div>{% endif %}
+      </div>
+
+      <!-- Risk appetite -->
+      <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
+        <div style="font-weight:700;margin-bottom:6px">{{ t('Risk appetite (cross-asset)', '风险偏好（跨资产）') }}</div>
+        {% if RA.roro is not none %}
+        {% set rocolor = 'var(--up)' if RA.roro_state=='risk-on' else ('var(--down)' if RA.roro_state=='risk-off' else 'var(--muted)') %}
+        <div class="kv">RORO <b style="color:{{ rocolor }}">{{ '%+.2f'|format(RA.roro) }}</b> <span class="badge" style="font-size:11px">{{ t(RA.roro_state, {'risk-on':'风险偏好','risk-off':'避险','neutral':'中性'}.get(RA.roro_state, RA.roro_state)) }}</span></div>
+        {% endif %}
+        {% if RA.vrp is not none %}<div class="kv">{{ t('Equity vol-risk-premium', '股票波动率风险溢价') }} <b>{{ '%+.1f'|format(RA.vrp) }}</b> <span class="muted sm">{{ ((RA.vrp_pctile or 0)*100)|round|int }}%ile</span></div>{% endif %}
+        {% if RA.vix_term is not none %}<div class="kv">{{ t('VIX term structure', 'VIX 期限结构') }} <b>{{ '%.2f'|format(RA.vix_term) }}</b> <span class="muted sm">{{ t('backwardation' if RA.vix_term>=1 else 'contango', '倒挂' if RA.vix_term>=1 else '正向') }}</span></div>{% endif %}
+        {% if RA.skew is not none %}<div class="kv">{{ t('CBOE SKEW (tail)', 'CBOE SKEW（尾部）') }} <b>{{ RA.skew|round|int }}</b> <span class="muted sm">{{ ((RA.skew_pctile or 0)*100)|round|int }}%ile</span></div>{% endif %}
+        {% if RA.stock_bond_corr is not none %}
+        {% set sbcolor = 'var(--down)' if 'breakdown' in (RA.stock_bond_regime or '') else 'var(--muted)' %}
+        <div class="kv">{{ t('Stock-bond corr', '股债相关性') }} <b style="color:{{ sbcolor }}">{{ '%+.2f'|format(RA.stock_bond_corr) }}</b> <span class="muted sm">{{ t('bonds not hedging' if 'breakdown' in (RA.stock_bond_regime or '') else ('bonds hedge' if 'diversifying' in (RA.stock_bond_regime or '') else 'mixed'), '债券未对冲' if 'breakdown' in (RA.stock_bond_regime or '') else ('债券对冲' if 'diversifying' in (RA.stock_bond_regime or '') else '混合')) }}</span></div>{% endif %}
+        {% if RA.vol_target_scalar is not none %}<div class="kv">{{ t('Vol-target exposure', '波动率目标敞口') }} <b>{{ '%.2f'|format(RA.vol_target_scalar) }}×</b></div>{% endif %}
+      </div>
+
+      <!-- factor leadership (cross-sectional equity factors) -->
+      {% if factor_leadership %}
+      <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 14px">
+        <div style="font-weight:700;margin-bottom:4px">{{ t('Equity factor leadership', '股票因子领先') }}
+          {{ help("Which cross-sectional factor (value, quality, profitability, low-vol…) has been rewarded over the trailing 63 days, measured as its top-quintile minus bottom-quintile return across the S&P 1500 — built from SEC EDGAR fundamentals. Quality/profitability leading with value & low-vol lagging is a classic risk-on, growth-led tape; the reverse leans defensive/late-cycle. Full breakdown on the Factors page.", "近 63 日哪个横截面因子（价值、质量、盈利、低波动…）获得回报，以标普 1500 顶部减底部五分位回报衡量，源自 SEC EDGAR 基本面。完整拆解见因子页。") }}
+          <a href="factors.html" class="muted sm" style="float:right">{{ t('Factors page →', '因子页 →') }}</a></div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">
+          {% for L in factor_leadership %}
+          <span class="badge" style="font-size:11px;border:1px solid var(--line);background:var(--panel);color:{{ 'var(--up)' if L.spread_pct>=0 else 'var(--down)' }}">{{ td(L.label) }} {{ '%+.1f'|format(L.spread_pct) }}%</span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
   </div>
   {% endif %}
 

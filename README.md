@@ -24,6 +24,39 @@ override) kills whipsaw. A separate transition detector (6 divergence flags →
 STABLE/WEAKENING/TRANSITIONING/NEW_REGIME) is designed to fire *before* the
 quad flips. Validation: [reports/validation.md](reports/validation.md).
 
+## Beyond the quad: conditions, nowcasts & equity factors
+
+A second, *complementary* layer brings in the non-technical signals quant and
+macro firms use — without touching the validated quad. See
+[research/QUANT_FACTOR_EXPANSION.md](research/QUANT_FACTOR_EXPANSION.md).
+
+- **Macro nowcast · conditions · risk-appetite panel** (`engine/conditions.py`,
+  on macro.html): a Chicago-Fed **NFCI** financial-conditions read; a 0–100
+  **recession-risk** score (Sahm rule + smoothed probability + the Fed Board
+  **Excess Bond Premium** + a **term-premium-adjusted curve** that strips the
+  2022–24 false inversion); real-time **growth** (Weekly Economic Index, GDPNow)
+  and **inflation** (Atlanta sticky-vs-flexible CPI) nowcasts; and an
+  option-implied **risk-appetite** read — equity volatility-risk-premium, VIX
+  term structure, CBOE **SKEW**, the **stock-bond correlation** regime, and a
+  cross-asset **RORO** composite. New alerts: NFCI tightening, Sahm trigger, EBP
+  spike, recession-band change. All free FRED/CBOE/Fed-Board data.
+- **Equity factor rankings** (`factors.html`, `engine/equity_factors.py`): the
+  cross-sectional factors quant-equity desks actually trade — **value, quality,
+  gross profitability, investment, shareholder yield, low-volatility and
+  betting-against-beta** — computed over the S&P 1500 from **SEC EDGAR XBRL**
+  fundamentals joined to prices (free, keyless), not proxied by a factor ETF.
+  A "what's working now" leadership read ties factor rotation back to the regime.
+  These are ranks/context, not a validated alpha — see the caveats in
+  [LIMITATIONS.md](LIMITATIONS.md).
+- **Four more free datasets** extend the above: **commodity roll-yield carry**
+  (backwardation/contango from dated Yahoo futures → Commodity Vector), **EIA
+  petroleum supply** (crude stocks vs 5y range, draws/builds, production →
+  oil page), a **FINRA short-interest** factor (days-to-cover, the least- vs
+  most-shorted cross-section), and **SEC Form-4 insider conviction** (net
+  open-market buying vs selling, on the Factors page). All keyless; caveats
+  (lags, reconstruction limits, sec.gov rate-limits) in
+  [LIMITATIONS.md](LIMITATIONS.md).
+
 ## Run locally
 
 ```bash
@@ -62,6 +95,36 @@ honest caveats in [LIMITATIONS.md](LIMITATIONS.md).
 `build_china` runs after `build_site` and before `build_vector` (which writes
 the hub last); it's self-sufficient and returns 0 on any engine error, so it can
 never break the macro/vector site.
+
+## Hong Kong / Hang Seng dashboard (Section 4)
+
+A full clone re-thought for Hong Kong — reachable from the landing hub (🇭🇰 card),
+bilingual (EN ↔ 中文). HK is ~2× more globally sensitive than the Mainland, so the
+regime stands on **three legs**: (1) China-driven fundamentals (reuses the
+`china_macro` plane — HSI earnings are China's), (2) a **primary Global Risk
+Overlay** (a dollar/VIX/US-equity/copper-gold/USD-CNY/EM composite + the HKD peg
+distance 7.75↔7.85, shown as the dashboard hero), and (3) HK-internal structure
+(H-share leadership, the HS-TECH tilt, breadth). **Sectors are deep synthetic
+baskets** of curated HK large-caps (15–25y history, richer than HK's thin sector
+ETFs), RS-ranked vs `^HSI`. Includes sector drill-downs, history, a daily brief and
+a single-stock analyzer/search over the HK universe. Calibrated 2000→2026
+(split-half): Goldilocks is the best quad and Stagflation the worst — both stable
+across halves — expanding dual-liquidity is a tailwind, and the global risk state
+differentiates HSI forward returns monotonically (Risk-on > Risk-off > Neutral).
+Data sources: [research/HK_DATA_AUDIT.md](research/HK_DATA_AUDIT.md); honest caveats
+in [LIMITATIONS.md](LIMITATIONS.md).
+
+```bash
+.venv/bin/python -m scripts.collect --full-history --only hk_prices,hk_breadth
+.venv/bin/python -m scripts.calibrate_hk          # quad + dual-liquidity + global-risk + ladder calibration
+.venv/bin/python -m scripts.build_hk              # -> site/hk.html + sectors/ + search + history + brief
+```
+
+`build_hk` runs after `build_site`/`build_china` and before `build_vector`;
+self-sufficient and returns 0 on any engine error (it can never break the rest of
+the site). Global-risk factors (DXY/VIX/SPY/copper/gold/USD-CNY/EEM) are read from
+the existing `yahoo`/`china`/`hk` store groups; only `EEM` + `HKD=X` are newly
+collected. Macro is reused from `china_macro` (no new scraper).
 
 ## GitHub setup (one-time)
 

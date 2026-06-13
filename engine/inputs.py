@@ -142,6 +142,44 @@ def build_features() -> pd.DataFrame:
     f["rate_expectations_proxy"] = f["us2y"] - f["fed_funds"]
     f["zq_implied_rate"] = 100 - f["zq_front"]
 
+    # --- Quant-factor expansion: Fed-research feeds (research/QUANT_FACTOR_EXPANSION.md)
+    # Financial-conditions indices (weekly) — a ready broad risk gauge.
+    for col in ["nfci", "anfci", "nfci_risk", "nfci_credit", "nfci_leverage", "stlfsi"]:
+        put(col, series.get(col), ffill_limit=7)
+    # Recession reads: Sahm + smoothed prob (monthly, ~6wk publication lag), ACM
+    # term premium (daily). 70 bdays carries a monthly print until its successor.
+    put("sahm", series.get("sahm"), ffill_limit=70)
+    put("recession_prob", series.get("recession_prob"), ffill_limit=70)
+    put("term_premium_10y", series.get("term_premium_10y"), ffill_limit=5)
+    # Real-time growth nowcasts: WEI (weekly), GDPNow (quarterly on FRED).
+    put("wei", series.get("wei"), ffill_limit=10)
+    put("gdpnow", series.get("gdpnow"), ffill_limit=95)
+    # Underlying-inflation indices (monthly): persistent (sticky) vs transitory (flexible).
+    for col in ["sticky_cpi", "core_sticky_cpi", "flex_cpi"]:
+        put(col, series.get(col), ffill_limit=45)
+    put("median_cpi", series.get("median_cpi"), ffill_limit=45)
+    # Household sentiment / inflation expectations (monthly).
+    put("umich_sentiment", series.get("umich_sentiment"), ffill_limit=45)
+    put("umich_infl_exp", series.get("umich_infl_exp"), ffill_limit=45)
+    # Fuller curve + 5y inflation leg.
+    for col in ["us3m", "us6m", "us5y", "us30y", "spread_10y3m", "breakeven_5y", "us5y_real"]:
+        put(col, series.get(col))
+    f["spread_10y3m"] = f["spread_10y3m"].combine_first(f["us10y"] - f["us3m"])
+    # term-premium-adjusted curve slope: strips the term-premium distortion that
+    # mechanically inverted the curve in 2019 and 2022-24 without a recession.
+    f["curve_tp_adj"] = f["spread_2s10s"] + f["term_premium_10y"].fillna(0)
+
+    # CBOE SKEW (tail-risk pricing) + EBP (credit risk appetite).
+    skew = store.read("cboe", "skew")
+    put("skew", skew["skew"] if skew is not None and "skew" in skew.columns else None)
+    ebp = store.read("fedboard", "ebp")
+    if ebp is not None:
+        put("ebp", ebp["ebp"] if "ebp" in ebp.columns else None, ffill_limit=45)
+        put("ebp_recession_prob", ebp["est_prob"] if "est_prob" in ebp.columns else None, ffill_limit=45)
+    else:
+        f["ebp"] = np.nan
+        f["ebp_recession_prob"] = np.nan
+
     # --- liquidity ($bn) — FRED merged with official NY Fed / Board sources -------
     walcl = series.get("fed_balance_sheet")
     h41 = store.read("nyfed", "h41_assets")

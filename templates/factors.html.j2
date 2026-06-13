@@ -1,0 +1,203 @@
+{% macro help(en, zh='') -%}
+<span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
+{%- endmacro %}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{% set FHELP = {
+  'value': ['Cheap on fundamentals — a blend of earnings yield, book/price, sales/price and cash-flow yield (the cross-section Fama-French/Dimensional trade). Volatile and regime-dependent; book/price is weak for intangible-heavy firms.', '基本面便宜 — 盈利收益率、市净率倒数、市销率倒数与现金流收益率的综合。'],
+  'profitability': ['Gross profitability = gross profit / total assets (Novy-Marx). About as powerful as book/price historically, and it tilts the OPPOSITE way (toward growthier, higher-quality names).', '毛利润率 = 毛利润／总资产（Novy-Marx）。'],
+  'quality': ['A quality composite: high ROE, LOW accruals (cash-backed earnings — Sloan), and low leverage. AQR Quality-Minus-Junk style; tends to hold up in drawdowns.', '质量综合：高 ROE、低应计、低杠杆（AQR QMJ 风格）。'],
+  'investment': ['Conservative investment = LOW asset growth (Fama-French CMA). Firms that grow the balance sheet aggressively tend to underperform.', '保守投资 = 低资产增长（Fama-French CMA）。'],
+  'payout': ['Net shareholder yield = (dividends + buybacks) / market cap. Total payout predicts returns where dividends alone do not. Sparse on free data.', '净股东收益率 =（股息＋回购）／市值。'],
+  'low_vol': ['The low-volatility anomaly: low trailing total volatility has historically delivered market-like returns with less risk (USMV/SPLV capture this).', '低波动异象：低历史波动率。'],
+  'low_beta': ['Betting-Against-Beta (Frazzini-Pedersen): low-beta stocks have had high risk-adjusted returns because leverage-constrained investors bid up high-beta names.', 'Betting-Against-Beta：低贝塔。'],
+  'accruals': ['Low accruals = earnings backed by cash flow, not estimates (Sloan). High-accrual earnings tend to reverse.', '低应计：盈利由现金流支撑。'],
+  'short_interest': ['Low short interest. High days-to-cover (short interest / avg daily volume, FINRA bi-monthly) negatively predicts the cross-section (Hong-Li-Rajan-Sherman) — leaders here are the LEAST shorted; the laggards are the crowded shorts.', '低做空。高回补天数（FINRA 双月）在横截面上负向预测。'],
+} %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ t('Equity factor rankings — value, quality, low-vol & more', '股票因子排名 — 价值、质量、低波动等') }}</title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,
+         "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1320px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:20px; margin:0; }
+  h2 { font-size:14px; margin:0 0 10px; color:var(--muted); text-transform:uppercase;
+       letter-spacing:.06em; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+           padding:14px 16px; margin-bottom:14px; }
+  .topline { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+  .muted { color:var(--muted); }
+  .sm { font-size:12px; }
+  table { border-collapse:collapse; width:100%; font-size:13px; }
+  th,td { text-align:left; padding:4px 7px; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:500; }
+  td.r, th.r { text-align:right; }
+  .pos { color:var(--up); } .neg { color:var(--down); }
+  .navbtn, .lang-btn, .theme-btn { font-size:12.5px; padding:5px 11px; border-radius:8px;
+    border:1px solid var(--line); background:var(--panel2); color:var(--text); cursor:pointer; }
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px;
+          height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted);
+          font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:5px; }
+  .help .tip { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%);
+               width:300px; background:var(--panel); border:1px solid var(--line); padding:9px 11px;
+               border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text);
+               font-weight:400; box-shadow:var(--popover-shadow); pointer-events:none; }
+  .help:hover .tip { display:block; }
+  .lead { display:flex; flex-direction:column; gap:6px; }
+  .leadrow { display:grid; grid-template-columns:150px 1fr 64px; align-items:center; gap:10px; }
+  .leadbar { height:14px; border-radius:7px; background:var(--panel2); position:relative; overflow:hidden; }
+  .leadbar > i { position:absolute; top:0; bottom:0; }
+  .cardgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(255px,1fr)); gap:14px; }
+  .fcard { background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:11px 12px; }
+  .fcard h3 { font-size:13px; margin:0 0 7px; display:flex; align-items:center; }
+  .fcard .badge { margin-left:auto; font-size:10.5px; padding:1px 7px; border-radius:8px;
+                  background:var(--panel); border:1px solid var(--line); color:var(--muted); }
+  .twocol { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  @media (max-width:760px){ .twocol{ grid-template-columns:1fr; } }
+  .zpos { color:var(--up); font-weight:600; } .zneg { color:var(--down); font-weight:600; }
+</style>
+</head>
+<body>
+  <div class="panel">
+    <div class="topline">
+      <h1>🧮 {{ t('Equity factor rankings', '股票因子排名') }}</h1>
+      <span class="muted sm">{{ t('value · quality · profitability · investment · payout · low-vol — across the S&P 1500', '价值 · 质量 · 盈利 · 投资 · 派息 · 低波动 — 覆盖标普 1500') }}</span>
+      <span style="flex:1"></span>
+      <a class="navbtn" href="macro.html">{{ t('← Dashboard', '← 仪表盘') }}</a>
+      <a class="navbtn" href="stock.html">{{ t('🔎 Any stock', '🔎 任意股票') }}</a>
+      <button class="lang-btn">中文</button>
+      <button class="theme-btn">☀️ {{ t('Light', '浅色') }}</button>
+    </div>
+    <p class="muted sm" style="margin:10px 0 0">{{ t(
+      "The cross-sectional factors quant equity desks actually trade — computed from SEC EDGAR fundamentals joined to prices, not proxied by an ETF. Each factor is a winsorized cross-sectional z-score (higher = more attractive on that factor); the composite is their equal-weight blend. These are RANKS and context, not a backtested alpha: factors decay and crowd, free fundamentals are sparse for some tags, book/price is weak for intangible-heavy firms, and every value is lagged to the filing period (no look-ahead).",
+      "量化股票交易台真正使用的横截面因子 — 由 SEC EDGAR 基本面与价格计算，而非用 ETF 代理。每个因子为去极值后的横截面 z 分数（越高 = 在该因子上越有吸引力）；综合为等权混合。这些是排名与背景，而非回测出的超额收益：因子会衰减与拥挤，免费基本面在部分科目上稀疏，市净率对无形资产密集的公司较弱，且所有数值滞后至申报期（无前视）。") }}</p>
+  </div>
+
+  <!-- Factor leadership -->
+  {% if fac.leadership %}
+  <div class="panel">
+    <h2>{{ t('What is working now', '当前哪种因子在起作用') }}
+      {{ help("For each factor, the trailing-63-day return of its top quintile MINUS its bottom quintile. Positive = that factor has been rewarded recently (descriptive, not a forecast). Compare against the regime above: e.g. value & low-vol leading often accompanies risk-off / late-cycle.", "每个因子最近 63 个交易日内：顶部五分位减底部五分位的回报。正值=该因子近期获得回报（描述性，非预测）。") }}
+    </h2>
+    <div class="lead">
+      {% set maxsp = (fac.leadership | map(attribute='spread_pct') | map('abs') | max) or 1 %}
+      {% for L in fac.leadership %}
+      <div class="leadrow">
+        <span>{{ t(L.label, fac.factor_labels.get(L.factor, L.label)) }}</span>
+        <span class="leadbar">
+          {% if L.spread_pct >= 0 %}<i style="left:50%;width:{{ (L.spread_pct/maxsp*50)|round(1) }}%;background:var(--up)"></i>
+          {% else %}<i style="right:50%;width:{{ (-L.spread_pct/maxsp*50)|round(1) }}%;background:var(--down)"></i>{% endif %}
+          <i style="left:50%;width:1px;background:var(--muted);opacity:.5"></i>
+        </span>
+        <span class="{{ 'zpos' if L.spread_pct>=0 else 'zneg' }}" style="text-align:right">{{ '%+.1f'|format(L.spread_pct) }}%</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Composite leaders / laggards -->
+  <div class="panel">
+    <h2>{{ t('Multi-factor composite', '多因子综合') }}
+      {{ help("Equal-weight blend of value, quality, profitability, investment, payout and low-vol z-scores (a name needs at least 3 of them). The closest single thing to a smart-beta 'multifactor' tilt over the S&P 1500.", "价值、质量、盈利、投资、派息与低波动 z 分数的等权混合（每只至少需 3 个）。") }}
+    </h2>
+    <div class="twocol">
+      <div>
+        <h3 class="sm pos" style="margin:0 0 6px">{{ t('Top composite', '综合最高') }}</h3>
+        <table>
+          <tr><th>{{ t('stock','个股') }}</th><th>{{ t('sector','板块') }}</th><th class="r">z</th><th class="r">{{ t('mkt cap','市值') }}</th></tr>
+          {% for x in fac.composite_top %}
+          <tr><td><a href="stock.html#{{ x.ticker }}"><b>{{ x.ticker }}</b></a> <span class="muted sm">{{ x.name[:22] }}</span></td>
+            <td class="muted sm">{{ td(x.sector) }}</td><td class="r zpos">{{ '%+.2f'|format(x.z) }}</td>
+            <td class="r muted sm">{{ ('$%.0fB'|format(x.mktcap_bn)) if x.mktcap_bn else '—' }}</td></tr>
+          {% endfor %}
+        </table>
+      </div>
+      <div>
+        <h3 class="sm neg" style="margin:0 0 6px">{{ t('Bottom composite', '综合最低') }}</h3>
+        <table>
+          <tr><th>{{ t('stock','个股') }}</th><th>{{ t('sector','板块') }}</th><th class="r">z</th><th class="r">{{ t('mkt cap','市值') }}</th></tr>
+          {% for x in fac.composite_bottom %}
+          <tr><td><a href="stock.html#{{ x.ticker }}"><b>{{ x.ticker }}</b></a> <span class="muted sm">{{ x.name[:22] }}</span></td>
+            <td class="muted sm">{{ td(x.sector) }}</td><td class="r zneg">{{ '%+.2f'|format(x.z) }}</td>
+            <td class="r muted sm">{{ ('$%.0fB'|format(x.mktcap_bn)) if x.mktcap_bn else '—' }}</td></tr>
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Insider conviction (SEC Form-4) -->
+  {% if fac.insider %}
+  <div class="panel">
+    <h2>{{ t('Insider conviction', '内部人信念') }} <span class="muted sm">{{ t('SEC Form-4 ·', 'SEC Form-4 ·') }} {{ fac.insider.quarter }}</span>
+      {{ help("Net OPEN-MARKET insider buying minus selling per company from SEC Form-4 filings (purchases code P, sales code S; grants and option exercises excluded). The SEC ships these as a quarterly bulk dataset, so this is the most recent COMPLETED quarter — a slow conviction read, not real-time. Clustered open-market BUYING is the more informative side (insiders buy for one reason; they sell for many).", "来自 SEC Form-4 的每家公司净公开市场内部人买入减卖出（买入代码 P、卖出 S；排除授予与期权行权）。SEC 按季度发布，故为最近一个完整季度 — 慢速信念信号，非实时。") }}
+    </h2>
+    <div class="twocol">
+      <div>
+        <h3 class="sm pos" style="margin:0 0 6px">{{ t('Biggest net BUYING', '最大净买入') }}</h3>
+        <table>
+          <tr><th>{{ t('stock','个股') }}</th><th>{{ t('sector','板块') }}</th><th class="r">{{ t('net $','净额') }}</th><th class="r">B/S</th></tr>
+          {% for x in fac.insider.top_buying %}
+          <tr><td><a href="stock.html#{{ x.ticker }}"><b>{{ x.ticker }}</b></a> <span class="muted sm">{{ x.name[:20] }}</span></td>
+            <td class="muted sm">{{ td(x.sector) }}</td><td class="r zpos">+${{ '%.1f'|format(x.net_usd_mn) }}M</td>
+            <td class="r muted sm">{{ x.buys }}/{{ x.sells }}</td></tr>
+          {% endfor %}
+        </table>
+      </div>
+      <div>
+        <h3 class="sm neg" style="margin:0 0 6px">{{ t('Biggest net SELLING', '最大净卖出') }}</h3>
+        <table>
+          <tr><th>{{ t('stock','个股') }}</th><th>{{ t('sector','板块') }}</th><th class="r">{{ t('net $','净额') }}</th><th class="r">B/S</th></tr>
+          {% for x in fac.insider.top_selling %}
+          <tr><td><a href="stock.html#{{ x.ticker }}"><b>{{ x.ticker }}</b></a> <span class="muted sm">{{ x.name[:20] }}</span></td>
+            <td class="muted sm">{{ td(x.sector) }}</td><td class="r zneg">−${{ '%.1f'|format(-x.net_usd_mn) }}M</td>
+            <td class="r muted sm">{{ x.buys }}/{{ x.sells }}</td></tr>
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Per-factor leaderboards -->
+  <div class="panel">
+    <h2>{{ t('Factor leaders', '各因子领先股') }}</h2>
+    <div class="cardgrid">
+      {% for f in fac.factors + ['low_beta','accruals','short_interest'] %}
+      {% if fac.leaders.get(f) %}
+      <div class="fcard">
+        <h3>{{ t(fac.factor_labels.get(f, f), fac.factor_labels.get(f, f)) }}
+          {% set h = FHELP.get(f) %}{% if h %}{{ help(h[0], h[1]) }}{% endif %}
+          <span class="badge">top {{ fac.leaders[f]|length }}</span></h3>
+        <table>
+          {% for x in fac.leaders[f][:10] %}
+          <tr><td><a href="stock.html#{{ x.ticker }}"><b>{{ x.ticker }}</b></a></td>
+            <td class="muted sm">{{ x.name[:18] }}</td>
+            <td class="r zpos">{{ '%+.2f'|format(x.z) }}</td></tr>
+          {% endfor %}
+        </table>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <p class="muted" style="font-size:12px;margin:0">{{ t(
+      "Source: SEC EDGAR XBRL 'frames' API (free, keyless) for FY" ~ (fac.fy or '') ~ " fundamentals, joined to the S&P 1500 price universe; " ~ fac.n ~ " names with a full composite as of " ~ fac.as_of ~ ". Fundamentals refresh weekly; ranks recompute daily with prices. Factors are decayed/crowded and free fundamentals are imperfect — treat as a research lens, not a buy list. See research/QUANT_FACTOR_EXPANSION.md and LIMITATIONS.md.",
+      "来源：SEC EDGAR XBRL ‘frames’ API（免费、无需密钥）的 FY" ~ (fac.fy or '') ~ " 基本面，与标普 1500 价格域连接；截至 " ~ fac.as_of ~ " 有 " ~ fac.n ~ " 只具备完整综合分。基本面每周刷新，排名随价格每日重算。因子已衰减／拥挤且免费基本面并不完美 — 视作研究视角，而非买入清单。") }}
+      {{ t('Generated', '生成于') }} {{ generated_utc }} UTC</p>
+  </div>
+  <script src="theme.js"></script>
+</body>
+</html>

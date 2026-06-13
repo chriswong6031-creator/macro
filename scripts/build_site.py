@@ -1,4 +1,4 @@
-"""Generate the static dashboard (site/index.html) from stored engine output.
+"""Generate the static dashboard (site/macro.html) from stored engine output.
 
 Reads regime/latest.json, regime_history.parquet, run_status.json and the
 parquet store — never refetches and never recomputes the classifier, so the
@@ -840,6 +840,42 @@ def build_etf_page(env: Environment, site: Path, generated: str) -> None:
     log.info("wrote etfs.html (%d signal rows)", len(rows))
 
 
+def build_factors_page(env: Environment, site: Path, generated: str) -> dict | None:
+    """Render factors.html — the cross-sectional equity factor rankings (SEC
+    EDGAR fundamentals x prices). Fundamentals fetch is cached weekly; ranks
+    recompute daily. Additive — any failure logs and skips the page entirely.
+    See research/QUANT_FACTOR_EXPANSION.md."""
+    if not config.load().get("edgar", {}).get("enabled"):
+        return None
+    from collectors.edgar import fetch_fundamentals
+    from engine.equity_factors import compute_factors
+    try:
+        fetch_fundamentals()                       # weekly-cached; no-op if fresh
+        try:
+            from collectors.finra import fetch_short_interest
+            fetch_short_interest()                 # Phase 3: bi-monthly short interest (cached)
+        except Exception as e:  # noqa: BLE001 — short interest is an optional factor leg
+            log.warning("finra short interest failed: %s", e)
+        try:
+            from collectors.sec_insider import fetch_insider
+            fetch_insider()                        # Phase 4: Form-4 insider buying (cached)
+        except Exception as e:  # noqa: BLE001 — insider panel is optional
+            log.warning("sec insider failed: %s", e)
+        fac = compute_factors()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("factor engine failed: %s", e)
+        return None
+    if not fac:
+        return None
+    fdir = site / "factordata"
+    fdir.mkdir(parents=True, exist_ok=True)
+    (fdir / "factors.json").write_text(json.dumps(fac, separators=(",", ":"), default=str))
+    html = env.get_template("factors.html.j2").render(fac=fac, generated_utc=generated)
+    (site / "factors.html").write_text(html)
+    log.info("wrote factors.html (%d names, FY%s)", fac.get("n"), fac.get("fy"))
+    return fac
+
+
 def build_sector_pages(env: Environment, site: Path, generated: str) -> dict:
     """Render sectors/<FUND>.html drill-downs; return per-fund timing summary
     for the heat board."""
@@ -993,6 +1029,12 @@ def main() -> int:
         build_etf_page(env, site, generated)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("etf page failed: %s", e)
+    factor_leadership = None
+    try:
+        _fac = build_factors_page(env, site, generated)
+        factor_leadership = (_fac or {}).get("leadership")
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("factors page failed: %s", e)
     # copy shared static assets (theme + visual widgets) into the site
     for asset in ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
                   "stockdata.js", "watchlist.js", "auth.js", "tablesort.js", "charts.js"):
@@ -1024,8 +1066,13 @@ def main() -> int:
         accumulation=accumulation_rows(),
         flows_html=flows_html_table(),
         health=health_rows(),
+        factor_leadership=factor_leadership,
     )
-    out = site / "index.html"
+    # Write the macro dashboard straight to macro.html. index.html is owned
+    # solely by build_vector.build_landing() (the landing hub) — keeping the raw
+    # dashboard out of index.html is what stops Home (-> index.html) from
+    # regressing to the dashboard when build_vector doesn't run after this.
+    out = site / "macro.html"
     out.write_text(html)
     log.info("wrote %s (%.0f KB)", out, out.stat().st_size / 1024)
 

@@ -43,6 +43,39 @@ fred:
     econ_confirm:
       PAYEMS: payrolls            # monthly, thousands
       INDPRO: industrial_prod     # monthly, index
+    # --- Quant-factor expansion (research/QUANT_FACTOR_EXPANSION.md) -----------
+    # All free on FRED; feed engine/conditions.py + the growth/inflation axes.
+    conditions:                   # Financial-conditions indices (Chicago/StL Fed)
+      NFCI: nfci                  # National Financial Conditions Index (weekly; +=tight)
+      ANFCI: anfci                # Adjusted NFCI (orthogonal to the business cycle)
+      NFCIRISK: nfci_risk         # risk subindex (vol + credit spreads)
+      NFCICREDIT: nfci_credit     # credit subindex
+      NFCILEVERAGE: nfci_leverage # leverage subindex (debt + equity)
+      STLFSI4: stlfsi             # St. Louis Fed Financial Stress Index (weekly)
+    recession:                    # forward + concurrent recession reads
+      SAHMREALTIME: sahm          # real-time Sahm rule (>=0.50 => recession underway)
+      RECPROUSM156N: recession_prob   # Chauvet-Piger smoothed recession probability (%)
+      THREEFYTP10: term_premium_10y   # NY Fed ACM 10y term premium (low/neg => curve inverts w/o recession)
+    nowcast:                      # real-time GROWTH nowcasts (lead the lagging PAYEMS/INDPRO)
+      GDPNOW: gdpnow              # Atlanta Fed GDPNow (quarterly SAAR, refreshed intra-quarter)
+      WEI: wei                    # Weekly Economic Index (Lewis-Mertens-Stock; weekly, YoY-scaled)
+    inflation_nowcast:            # underlying-inflation (persistent vs transitory split)
+      STICKCPIM157SFRBATL: sticky_cpi      # Atlanta sticky-price CPI index (persistent)
+      CORESTICKM157SFRBATL: core_sticky_cpi
+      FLEXCPIM157SFRBATL: flex_cpi         # flexible-price CPI index (transitory)
+      MEDCPIM158SFRBCLE: median_cpi        # Cleveland median CPI (1m annualized %)
+    survey:                       # consumer sentiment / household inflation expectations
+      UMCSENT: umich_sentiment    # UMich consumer sentiment (monthly)
+      MICH: umich_infl_exp        # UMich 1y inflation expectations (%)
+    curve:                        # fuller Treasury curve (engine only sampled 2y/10y)
+      DGS3MO: us3m                # the short leg of the NY Fed recession spread
+      DGS6MO: us6m
+      DGS5: us5y
+      DGS30: us30y
+      T10Y3M: spread_10y3m        # exact spread the NY Fed probit uses
+    inflation_extra:              # 5y inflation leg (second-tenor real-yield anchor)
+      T5YIE: breakeven_5y
+      DFII5: us5y_real
 
 yahoo:
   retries: 3
@@ -55,7 +88,7 @@ yahoo:
     style: [IWF, IWD]             # Russell 1000 Growth / Value — style-rotation read (growth vs value leadership)
     factors: [MTUM, QUAL, USMV, SPHB, SPLV]
     credit: [HYG, LQD]
-    vol: ["^VIX", "^VIX9D", "^VIX3M", "^MOVE"]
+    vol: ["^VIX", "^VIX9D", "^VIX3M", "^MOVE", "^VVIX"]   # ^VVIX = vol-of-vol (option-implied risk layer)
     fx_commod: ["DX-Y.NYB", "CL=F", "HG=F", "GC=F", "SI=F", "BZ=F"]
     rate_pricing: ["ZQ=F"]        # 30-day fed funds front contract — LOW CONFIDENCE input
     crypto: [BTC-USD, ETH-USD, SOL-USD]   # deep daily history (BTC 2014->); Coinbase = intraday-quality OHLC
@@ -72,11 +105,107 @@ cboe:
   # an SPA in 2025/26); chain_url's _SPX is templated per underlying
   chain_url: https://cdn.cboe.com/api/global/delayed_quotes/options/_SPX.json
   retries: 3
+  # SKEW = option-implied tail/crash pricing (CBOE CDN serves a clean daily CSV
+  # back to 1990 — no API key). Used by engine/conditions.py as a tail-risk gauge.
+  skew_url: https://cdn.cboe.com/api/global/us_indices/daily_prices/SKEW_History.csv
   gex:
     contract_multiplier: 100
     pct_move: 0.01               # GEX expressed per 1% move
     strike_window_pct: 0.25      # ignore strikes >25% from spot
     max_expiry_days: 365
+
+fedboard:
+  # Excess Bond Premium (Gilchrist-Zakrajšek): the component of corporate credit
+  # spreads NOT explained by default risk = a clean credit-risk-appetite / early-
+  # warning gauge that forecasts both activity and asset prices. Monthly CSV from
+  # the Fed Board (cols: date, gz_spread, ebp, est_prob), history from 1973.
+  ebp_url: https://www.federalreserve.gov/econres/notes/feds-notes/ebp_csv.csv
+  retries: 3
+
+# =============================================================================
+# Cross-sectional equity factor engine (research/QUANT_FACTOR_EXPANSION.md,
+# Tier 3). Fundamentals come from the SEC EDGAR XBRL "frames" API — free,
+# keyless, one call returns a us-gaap concept across EVERY filer for a period —
+# joined to the S&P 1500 price universe already in the breadth close caches.
+# Builds value / quality / profitability / investment / accruals / payout +
+# (price-only) low-vol & betting-against-beta factor ranks. NEW FEATURE: a
+# Factor Rankings page + a factor-leadership tile. House caveats apply (decay,
+# crowding, sparse free fundamentals, look-ahead lagged to the filing period).
+# =============================================================================
+edgar:
+  enabled: true
+  base_url: https://data.sec.gov/api/xbrl/frames/us-gaap
+  shares_url: https://data.sec.gov/api/xbrl/frames/dei   # dei:EntityCommonStockSharesOutstanding fallback
+  tickers_url: https://www.sec.gov/files/company_tickers.json
+  # SEC fair-access requires a descriptive UA with a contact. Replace the email
+  # with your own if you fork this. Rate limit is 10 req/s; we make ~20 calls/run.
+  user_agent: "macro-dashboard research (personal; contact via repo issues)"
+  retries: 3
+  latest_fy: 2025                  # most recent COMPLETE fiscal year on EDGAR; auto-walks-back if sparse
+  min_filers_ok: 800              # a frame with fewer than this is treated as not-yet-available
+  factors:
+    winsor_z: 3.0                 # clip cross-sectional z-scores at +/- this
+    low_vol_window_d: 252         # trailing window for idiosyncratic/total vol + beta
+    min_price_history_d: 150
+    page_top_n: 25                # rows per factor leaderboard on factors.html
+    # multi-factor composite = equal-weight mean of the available factor z's below
+    # (accruals is folded into `quality`; low_beta is a standalone leaderboard,
+    # left out of the blend as it is collinear with low_vol)
+    composite: [value, quality, profitability, investment, payout, low_vol]
+
+engine_equity_factors:
+  # leadership read: which factor's top-quintile has been beating its bottom-
+  # quintile over this trailing window (a coarse "what's working now" gauge).
+  leadership_window_d: 63
+
+# FINRA consolidated short interest (Phase 3 of the four-phase build-out). Free,
+# keyless FINRA Query API — bi-monthly exchange-listed short interest + days-to-
+# cover. Feeds a short_interest factor (high days-to-cover negatively predicts
+# the cross-section — Hong-Li-Rajan-Sherman). Fetched from build_factors.
+finra:
+  url: https://api.finra.org/data/group/otcMarket/name/consolidatedShortInterest
+  user_agent: "macro-dashboard research (personal; contact via repo issues)"
+  page_size: 5000               # FINRA caps a single response at 5000 rows
+  max_pages: 8                  # ~40k rows covers a full settlement snapshot
+  lookback_dates: 8             # candidate settlement dates to probe (newest-first)
+
+# SEC Form-4 insider transactions (Phase 4 of the four-phase build-out). The SEC
+# "Insider Transactions Data Sets" ship one zip per quarter (TSV: SUBMISSION +
+# NONDERIV_TRANS) covering EVERY Form 3/4/5 — so a single download aggregates net
+# OPEN-MARKET insider buying/selling per issuer. Surfaced as an "insider activity"
+# panel on the factors page (latest COMPLETED quarter — the bulk set is published
+# quarterly, so it is a slow conviction read, not real-time). Fetched from build_factors.
+sec_insider:
+  zip_url: https://www.sec.gov/files/structureddata/data/insider-transactions-data-sets/{q}_form345.zip
+  user_agent: "macro-dashboard research macro-dashboard@users.noreply.github.com"
+  retries: 3
+  lookback_quarters: 5          # probe the current quarter, then walk back to the latest published
+  open_market_codes: [P, S]     # P = open-market purchase, S = open-market sale (exclude grants/exercises)
+  min_trade_usd: 10000          # ignore de-minimis transactions
+  panel_top_n: 20               # rows on the insider buying/selling leaderboards
+
+# =============================================================================
+# EIA petroleum supply (Phase 2 of the four-phase build-out). The single biggest
+# missing oil supply-shock driver per COMMODITY_DATA_AUDIT. EIA's keyless dnav
+# "Download Series History" .xls endpoints (hist_xls/{ID}w.xls) — no API key —
+# give weekly U.S. crude/gasoline/distillate stocks, Cushing, production and
+# refinery utilization back to the 1980s/90s. Surfaced as a SUPPLY read on the
+# oil page in the Commodity Vector (stocks vs 5y range, production trend).
+# =============================================================================
+eia:
+  hist_xls_url: https://www.eia.gov/dnav/pet/hist_xls/{id}w.xls
+  user_agent: "Mozilla/5.0 (macro-dashboard research)"
+  retries: 3
+  series:                          # column_name -> EIA dnav series id
+    crude_stocks: WCESTUS1         # crude oil ending stocks excl SPR (kbbl)
+    cushing_stocks: W_EPC0_SAX_YCUOK_MBBL   # Cushing, OK crude stocks (kbbl)
+    gasoline_stocks: WGTSTUS1      # total motor gasoline stocks (kbbl)
+    distillate_stocks: WDISTUS1    # distillate fuel stocks (kbbl)
+    crude_production: WCRFPUS2     # field production of crude (kbbl/d)
+    refinery_util: WPULEUS3        # refiner % utilization of capacity
+  supply:                          # oil-page supply read
+    range_lookback_d: 1825         # 5y range for the stocks z / percentile
+    trend_window_d: 28             # ~4-week stocks/production change
 
 cot:
   socrata_url: https://publicreporting.cftc.gov/resource/6dca-aqww.json   # legacy futures-only
@@ -288,9 +417,22 @@ smallcap_breadth:
   ma_windows: [50, 200]
   nhnl_window: 252
 
+# S&P MidCap 400 — the mid-cap leg of the S&P Composite 1500. Same Wikipedia
+# table shape; its close matrix feeds the searchable stock library (large+mid+
+# small = ~1500 unique liquid US names, the practical "all US equities" set).
+midcap_breadth:
+  constituents_url: https://en.wikipedia.org/wiki/List_of_S%26P_400_companies
+  lookback_days_live: 1100
+  ma_windows: [50, 200]
+  nhnl_window: 252
+
 stock_search:
   enabled: true
-  extra_tickers: []               # any extra symbols to include in the search library
+  # Extra symbols searchable beyond the index universes (S&P 1500 + ETFs). Now
+  # actually collected nightly: the YahooAdapter pulls these into data/yahoo/,
+  # so any liquid US ticker listed here becomes searchable (fixes the prior
+  # dead hook that only worked if a parquet already happened to exist).
+  extra_tickers: []
 
 watchlist:
   enabled: true                   # client-side holdings watchlist page (needs stock_search)
@@ -406,6 +548,43 @@ engine:
     crowding_hard_pctile: 92
     crowding_hard_penalty: 10
 
+  # --- Quant-factor expansion: complementary nowcast / conditions / risk layer.
+  # ADDITIVE — engine/conditions.py runs alongside the validated quad, never
+  # alters it. See research/QUANT_FACTOR_EXPANSION.md.
+  conditions:
+    nfci_change_window_d: 65        # ~13 weeks: NFCI tightening/loosening trend
+    nfci_pctile_lookback_d: 1260    # ~5y percentile of the conditions level
+    recession:                      # composite 0..100 recession-risk score
+      weights: {sahm: 1.0, recession_prob: 0.8, ebp_prob: 0.8, curve: 1.0, ebp_level: 0.5}
+      sahm_full: 0.50               # Sahm >= this => recession underway (full stress)
+      curve_invert_level: 0.0       # term-premium-adjusted slope below this => inversion stress
+      curve_full_invert: -1.0       # ...and this deep => full curve stress
+      ebp_level_pctile_lookback_d: 2520  # ~10y percentile for the EBP level leg
+      elevated_score: 30            # >= => "elevated"
+      high_score: 55                # >= => "high"
+    inflation_nowcast:
+      smooth_months: 3              # 3-month average of the monthly sticky/flex prints
+    vrp:                            # equity volatility-risk-premium (implied - realized)
+      realized_window_d: 21
+      pctile_lookback_d: 504
+      stress_level: 0.0             # VRP below this (realized > implied) => vol stress
+    skew_pctile_lookback_d: 504     # CBOE SKEW percentile window
+    term_structure:                 # VIX9D/VIX vs VIX3M as risk-appetite
+      backwardation_ratio: 1.0      # vix/vix3m above this => backwardation (stress)
+    corr:                           # realized stock-bond correlation regime
+      window_d: 63
+      high: 0.30                    # above this => the 2022 'bonds don't hedge' regime
+      low: 0.0
+    roro:                           # cross-asset Risk-On/Risk-Off composite
+      z_window_d: 252
+      risk_on: 0.35                 # composite z above this => risk-on
+      risk_off: -0.35
+    vol_target:                     # exposure scalar for the playbook dial
+      target_vol_pct: 12.0          # annualized realized-vol target for SPX-like exposure
+      realized_window_d: 21
+      floor: 0.5                    # never scale exposure below/above these
+      cap: 1.5
+
 # -----------------------------------------------------------------------------
 # Alerts (Phase 3 — rules defined now, wired after validation checkpoint)
 # -----------------------------------------------------------------------------
@@ -424,6 +603,11 @@ alerts:
   gex_flip_cross: true
   gex_net_deadband_bn: 1.0             # ignore net-GEX sign flips within ±N bn of zero
   gex_flip_pct_deadband: 0.25          # ignore spot/flip crossings while hugging the flip (±N%)
+  # --- Quant-factor expansion (engine/conditions.py) alerts ---
+  conditions_recession_state_change: true   # recession-risk band crossed (low/elevated/high)
+  nfci_tightening_z: 0.65              # NFCI crossing above this (tight) fires once
+  sahm_trigger: 0.50                  # Sahm rule crossing >= this = labor-recession confirm
+  ebp_widening_z: 2.0                 # EBP 1-month change this many sigma = credit risk-off
 
 notify:
   # public base URL of the published site (e.g. https://user.github.io/repo).
@@ -556,6 +740,24 @@ commodities:
   brent_wti:                       # oil energy-microstructure (Brent BZ=F vs WTI CL=F, both stored)
     spread_pctile_lookback_d: 504  # MEASURED: spread WIDENING -> WTI +8.2%/126d vs -1.8% narrowing
     change_window_d: 60
+
+  # --- Phase 1 of the four-phase factor build-out: roll-yield CARRY -----------
+  # Backwardation (front > deferred) earns positive roll yield and is THE dominant
+  # long-run commodity return driver (research/QUANT_FACTOR_EXPANSION.md). Built
+  # from Yahoo DATED futures contracts (CLN26.NYM etc.); the engine reconstructs a
+  # continuous front-vs-second roll yield from the nearest live contracts.
+  carry:
+    contracts:                     # asset -> [root, yahoo exchange suffix]
+      oil:    ["CL", ".NYM"]
+      brent:  ["BZ", ".NYM"]
+      gold:   ["GC", ".CMX"]
+      silver: ["SI", ".CMX"]
+      copper: ["HG", ".CMX"]
+    months_back: 8                 # enumerate contract months from now-8 ...
+    months_fwd: 5                  # ... to now+5 (drop non-active months that don't quote)
+    history_d: 400                 # bdays of reconstructed carry to keep
+    pctile_lookback_d: 504         # ~2y percentile of the roll yield
+    backwardation_ann: 0.0         # ann roll yield above this => backwardation (positive carry)
 
   allocation:                      # strategy grids on (momentum, risk)
     variants:
@@ -966,10 +1168,18 @@ china:
     referer: https://data.eastmoney.com/
     retries: 3
     page_size: 600                  # monthly series ~ <300 rows of history
-    enabled: [pmi, cpi, ppi, money_supply, lpr, indpro]   # social_financing/bond_yield deferred (fiddlier hosts)
-  hsgt:                             # Stock Connect cumulative net (northbound frozen since Aug-2024 — labeled)
-    url: https://push2his.eastmoney.com/api/qt/kamt.kline/get
+    enabled: [pmi, cpi, ppi, money_supply, lpr, indpro, rmb_loan, fai, retail, customs, rrr]  # social_financing now via china_credit (mofcom legacy-SSL); bond_yield deferred (chinabond)
+  hsgt:                             # Stock Connect daily flows — Eastmoney datacenter RPT_MUTUAL_DEAL_HISTORY
+    # Replaces the dead push2his kamt.kline path (its northbound legs emit a constant synthetic
+    # placeholder — +8.4M RMB/day — since the 2024-08-16 regulatory curtailment). Southbound NET is
+    # fully live; northbound NET froze 2024-08-16 (turnover stays live, pre-freeze NET kept for history).
+    url: https://datacenter-web.eastmoney.com/api/data/v1/get
     retries: 3
+    page_size_full: 2000            # full backfill paginates (API caps each page at 2000 rows) back to 2014-11-17
+    page_size_recent: 90            # incremental run: trailing ~quarter of trading days (single page)
+    mutual_type:                    # combined legs (沪深港通合计)
+      southbound: "006"             # mainland -> HK (港股通): live net / turnover / holdings
+      northbound: "005"             # foreign -> A-shares (陆股通): turnover live, NET frozen 2024-08-16
 
   # -- Breadth / drill-down universe: curated large-cap A-shares by sector -----
   # Doubles as breadth denominator + per-sector drill-down holdings + stock-search
@@ -997,6 +1207,28 @@ china:
     ma_windows: [50, 200]
     nhnl_window: 252
     min_coverage: 0.6               # fail the run if < this fraction of curated names resolve
+
+  # -- A-share search universe (collectors/china_universe.py) ------------------
+  # DECOUPLED from `constituents` (the curated large-cap BREADTH/calibration gauge)
+  # so importing hundreds of searchable names never perturbs the calibrated regime
+  # engine. Mirrors the US design (breadth = S&P 500; search = + S&P 400/600 caches).
+  # Universe = top-N mainland A-shares by market cap from Sina's market-center feed
+  # (Chinese names included, verified 2026-06-13); English names + sectors are
+  # enriched once via yfinance get_info and cached. Closes come from yfinance (3y+,
+  # like breadth). Powers ONLY the search library (site/chinastockdata/), not
+  # breadth/quad. data/china_search/{closes,members}.parquet are committed (small)
+  # so the engine CI job has them via git pull — no fragile cross-job actions/cache.
+  search_universe:
+    enabled: true
+    size: 800                       # top-N A-shares by market cap -> searchable
+    min_mktcap_yi: 30               # liquidity floor (亿 RMB total market cap)
+    history_period: "5y"            # yfinance close history per name (engine needs >=300 rows)
+    enrich_per_run: 120             # max NEW yfinance get_info name/sector lookups per nightly run
+    sina:
+      url: https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeData
+      node: hs_a                    # Hu-Shen A-share board (Shanghai + Shenzhen; excludes Beijing)
+      page_size: 80                 # Sina max rows/page
+      referer: https://finance.sina.com.cn/
 
   # -- Engine tunables (mirror of `engine:`, China inputs) ---------------------
   engine:
@@ -1183,6 +1415,8 @@ hk:
     baseline_window: 60
     z_threshold: 0.40
     risk_on_z: 0.30                 # composite z above this = Risk ON; below -this = Risk OFF
+    min_factors: 3                  # need >= this many factors present, else risk_state = unknown
+                                    # (factors start at different dates: DXY 1971 .. EEM 2003)
     components:
       dxy:    {group: yahoo, ticker: "DX-Y.NYB", sign: -1, weight: 1.0}
       vix:    {group: yahoo, ticker: "^VIX",     sign: -1, weight: 1.0, use_log: true}
