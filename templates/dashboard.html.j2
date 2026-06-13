@@ -16,7 +16,7 @@
          "Segoe UI", Roboto, Helvetica, sans-serif; margin: 0; padding: 18px; }
   /* breathing room on wide desktops — content centered, never edge-to-edge */
   @media (min-width: 1100px) { body { padding: 26px max(40px, calc((100vw - 1500px) / 2)); } }
-  a { color: #7aa7e0; text-decoration: none; }
+  a { text-decoration: none; }
   h1 { font-size: 20px; margin: 0 0 2px; }
   h2 { font-size: 15px; margin: 0 0 10px; color: var(--muted);
        text-transform: uppercase; letter-spacing: .06em; }
@@ -30,30 +30,20 @@
 
   .badge { display: inline-block; padding: 3px 12px; border-radius: 14px;
            font-weight: 600; font-size: 13px; }
-  .quad-Q1 { background: var(--q1); color: #fff; }
-  .quad-Q2 { background: var(--q2); color: #1a1a1a; }
-  .quad-Q3 { background: var(--q3); color: #fff; }
-  .quad-Q4 { background: var(--q4); color: #fff; }
-  .state-STABLE { background: #2a2f3a; color: var(--text); }
-  .state-WEAKENING { background: var(--warn); color: #1a1a1a; }
-  .state-TRANSITIONING { background: #e07b30; color: #1a1a1a; }
-  .state-NEW_REGIME { background: var(--act); color: #fff; }
+  /* quad badge keeps its solid vivid colour; text contrast set per badge */
+  .quad-Q1, .quad-Q3, .quad-Q4 { color: #fff; }
+  .quad-Q2 { color: #1a1a1a; }
+  .quad-Q1 { background: var(--q1); } .quad-Q2 { background: var(--q2); }
+  .quad-Q3 { background: var(--q3); } .quad-Q4 { background: var(--q4); }
   .kv { color: var(--muted); } .kv b { color: var(--text); font-weight: 600; }
-  .navbtn { background: var(--panel2); border: 1px solid var(--line); color: #7aa7e0;
-            padding: 5px 14px; border-radius: 8px; font-size: 13px; }
 
   table { border-collapse: collapse; width: 100%; font-size: 13px; }
   th, td { text-align: right; padding: 4px 8px; border-bottom: 1px solid var(--line); }
   th { color: var(--muted); font-weight: 500; }
   th:first-child, td:first-child { text-align: left; }
   td.l, th.l { text-align: left; }
-  .pos { color: #5fbf7f; } .neg { color: #e07070; }
 
   .pill { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px; }
-  .pill-ok { background: #1d3326; color: #6fce8f; }
-  .pill-stale { background: #38301a; color: #d8b75a; }
-  .pill-failed, .pill-dead { background: #3a2020; color: #e08080; }
-  .pill-blocked { background: #2b2b33; color: #a8a8c0; }
 
   .alert { padding: 8px 12px; border-radius: 8px; margin: 6px 0;
            background: var(--panel2); border-left: 3px solid var(--muted); }
@@ -68,8 +58,9 @@
           color: var(--muted); font-size: 10px; font-weight: 600; cursor: help;
           position: relative; vertical-align: middle; margin-left: 5px; flex: none; }
   .help .tip { display: none; position: absolute; bottom: 140%; left: 50%;
-               transform: translateX(-50%); width: 290px; background: #262b35;
-               border: 1px solid #3a4150; padding: 9px 11px; border-radius: 8px;
+               transform: translateX(-50%); width: 290px;
+               background: var(--panel); border: 1px solid var(--line);
+               padding: 9px 11px; border-radius: 8px;
                z-index: 60; font-size: 12px; line-height: 1.45; color: var(--text);
                text-align: left; font-weight: 400; text-transform: none;
                letter-spacing: normal; box-shadow: 0 6px 18px rgba(0,0,0,.5);
@@ -82,7 +73,7 @@
   .tip-map { width: 360px !important; }
   /* structured tooltip building blocks */
   .tip table { width: 100%; margin: 6px 0 2px; font-size: 11.5px; }
-  .tip th, .tip td { padding: 3px 6px; border-bottom: 1px solid #3a4150; }
+  .tip th, .tip td { padding: 3px 6px; border-bottom: 1px solid var(--line); }
   .tip .lad { display: block; padding: 3px 8px; border-radius: 5px; margin: 3px 0;
               font-size: 11.5px; }
   .tip .scale { display: flex; height: 12px; border-radius: 6px; overflow: hidden;
@@ -103,30 +94,23 @@
                background: var(--panel2); color: var(--muted); font-size: 11px;
                font-weight: 600; letter-spacing: .04em; }
   .dial .active-DEFENSIVE { background: var(--act); color: #fff; }
-  .dial .active-CAREFUL { background: #e07b30; color: #1a1a1a; }
-  .dial .active-NEUTRAL { background: #4a5160; color: #fff; }
-  .dial .active-CONSTRUCTIVE { background: #3f8f5f; color: #fff; }
+  .dial .active-CAREFUL { background: var(--orange); color: #fff; }
+  .dial .active-NEUTRAL { background: var(--muted); color: #fff; }
+  .dial .active-CONSTRUCTIVE { background: var(--up); color: #fff; }
   .dial .active-AGGRESSIVE { background: var(--ok); color: #fff; }
   @media (max-width: 520px) { .dial span { font-size: 8.5px; padding: 5px 1px; } }
   .reason { margin: 4px 0; padding-left: 24px; position: relative; }
   .reason b.sig { position: absolute; left: 0; width: 17px; text-align: center;
                   border-radius: 4px; font-size: 12px; }
-  .sig-p { background: #1d3326; color: #6fce8f; } .sig-m { background: #3a2020; color: #e08080; }
-  .sig-i { background: #2b2f3a; color: #9fb4d8; }
 
   .card { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px;
           padding: 10px 12px; margin: 6px 0; }
   .card b.tk { font-size: 14px; }
   .calltag { float: right; font-size: 11px; font-weight: 700; padding: 1px 8px;
              border-radius: 9px; }
-  .tag-lead { background: #1d3326; color: #6fce8f; }
-  .tag-avoid { background: #3a2020; color: #e08080; }
-  .tag-watch { background: #2b3340; color: #9fc0e8; }
-
+  /* .tag-lead/avoid/watch and .chip-pos/neg colours come from theme.css */
   .chip { display: inline-block; padding: 2px 9px; margin: 2px 3px 2px 0;
-          border-radius: 10px; font-size: 12px; background: var(--panel2); }
-  .chip-pos { border: 1px solid #2e6e44; color: #6fce8f; }
-  .chip-neg { border: 1px solid #6e2e2e; color: #e08080; }
+          border-radius: 10px; font-size: 12px; border: 1px solid var(--line); }
 
   /* action board */
   .actiongrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
@@ -149,20 +133,20 @@
   .sm { font-size: 12px; margin: 4px 0; }
 
   .gauge { position: relative; height: 10px; border-radius: 5px; margin: 6px 0 2px;
-           background: linear-gradient(90deg, #e07070 0%, #4a5160 50%, #5fbf7f 100%); opacity:.9; }
-  .gauge i { position: absolute; top: -4px; width: 4px; height: 18px; background: #fff;
-             border-radius: 2px; }
+           background: linear-gradient(90deg, var(--down) 0%, var(--g-mid) 50%, var(--up) 100%); opacity:.9; }
+  .gauge i { position: absolute; top: -4px; width: 4px; height: 18px; background: var(--text);
+             border-radius: 2px; box-shadow: 0 0 0 1px var(--panel); }
   /* crowding gauge: both ENDS are danger zones */
   .pgauge { position: relative; height: 9px; border-radius: 5px; margin: 4px 0 2px;
-            background: linear-gradient(90deg, #3f78d8 0%, #4a5160 28%, #4a5160 72%, #d04545 100%);
+            background: linear-gradient(90deg, var(--g-cold) 0%, var(--g-mid) 28%, var(--g-mid) 72%, var(--down) 100%);
             opacity: .9; min-width: 130px; }
-  .pgauge i { position: absolute; top: -3px; width: 4px; height: 15px; background: #fff;
-              border-radius: 2px; }
+  .pgauge i { position: absolute; top: -3px; width: 4px; height: 15px; background: var(--text);
+              border-radius: 2px; box-shadow: 0 0 0 1px var(--panel); }
   .pends { display: flex; justify-content: space-between; font-size: 10px;
            color: var(--muted); }
   .plabel { display: inline-block; padding: 1px 9px; border-radius: 10px; font-size: 12px;
             font-weight: 600; background: var(--panel2); }
-  .plabel-hot { color: #e08080; } .plabel-cold { color: #9fc0e8; }
+  .plabel-hot { color: var(--down); } .plabel-cold { color: var(--info); }
   .plabel-norm { color: var(--muted); }
 
   /* regime lifespan bar */
@@ -170,7 +154,8 @@
              background: var(--panel2); margin: 8px 0 4px; }
   .lifebar .zone { position: absolute; top: 0; bottom: 0; }
   .lifebar .marker { position: absolute; top: -2px; bottom: -2px; width: 4px;
-                     background: #fff; border-radius: 2px; z-index: 5; }
+                     background: var(--text); border-radius: 2px; z-index: 5;
+                     box-shadow: 0 0 0 1px var(--panel); }
   .lifelabels { display: flex; justify-content: space-between; font-size: 11px;
                 color: var(--muted); }
 
@@ -186,7 +171,7 @@
   .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px;
               margin-right: 5px; vertical-align: -1px; }
   details.howto { margin-top: 10px; }
-  details.howto summary { cursor: pointer; color: #7aa7e0; font-size: 13px; }
+  details.howto summary { cursor: pointer; color: var(--link); font-size: 13px; }
   details.howto div { background: var(--panel2); border-radius: 8px; padding: 12px 14px;
                       margin-top: 8px; font-size: 13px; line-height: 1.6; }
   ul.compact { margin: 4px 0; padding-left: 18px; } ul.compact li { margin: 3px 0; }
@@ -221,10 +206,10 @@
       <span class="help">?<span class="tip">
         <b>The transition radar</b> — is the current regime ending? It escalates as warning
         signals stack up:
-        <span class="lad" style="background:#2a2f3a">⚪ <b>STABLE</b> — no warnings. Trust the regime label.</span>
-        <span class="lad" style="background:#5a4a1d">🟠 <b>WEAKENING</b> — 2+ warnings. Stop adding regime-dependent bets.</span>
-        <span class="lad" style="background:#5e3a17">🔶 <b>TRANSITIONING</b> — 3+ warnings. The regime is likely ending before the label flips — reduce risk now.</span>
-        <span class="lad" style="background:#5e2222">🚨 <b>NEW REGIME</b> — the label changed within the last week.</span>
+        <span class="lad lad-tint" style="--c:var(--muted)">⚪ <b>STABLE</b> — no warnings. Trust the regime label.</span>
+        <span class="lad lad-tint" style="--c:var(--warn)">🟠 <b>WEAKENING</b> — 2+ warnings. Stop adding regime-dependent bets.</span>
+        <span class="lad lad-tint" style="--c:var(--orange)">🔶 <b>TRANSITIONING</b> — 3+ warnings. The regime is likely ending before the label flips — reduce risk now.</span>
+        <span class="lad lad-tint" style="--c:var(--down)">🚨 <b>NEW REGIME</b> — the label changed within the last week.</span>
         The warnings: thinning participation, nervous credit, risk-ratios turning, inflation
         trades turning, signal disagreement, fragile options positioning.
       </span></span>
@@ -233,9 +218,9 @@
         <b>Signal agreement</b> — how many of the ~14 underlying indicators point the
         same way. Today: <b>{{ (latest.confidence * 100) | round | int }}%</b>.
         <span class="scale">
-          <span style="background:#a33">MIXED</span>
-          <span style="background:#7a6a22">OK</span>
-          <span style="background:#2e7d46">SOLID</span>
+          <span style="background:var(--down)">MIXED</span>
+          <span style="background:var(--warn)">OK</span>
+          <span style="background:var(--up)">SOLID</span>
         </span>
         <span class="sl"><span>0%</span><span>30%</span><span>45%</span><span>100%</span></span>
         <b>Mixed</b>: the indicators disagree — expect chop, size down, trust the radar
@@ -349,9 +334,9 @@
     <p style="font-size:14.5px; margin: 2px 0 6px"><b>{{ pb.headline.split('. Posture')[0] }}.</b></p>
     {% if pb.progress %}
     <div class="lifebar">
-      <div class="zone" style="left:0; width:{{ pb.progress.zone_early_pct }}%; background:#1d3326"></div>
-      <div class="zone" style="left:{{ pb.progress.zone_early_pct }}%; width:{{ pb.progress.zone_mid_pct - pb.progress.zone_early_pct }}%; background:#38301a"></div>
-      <div class="zone" style="left:{{ pb.progress.zone_mid_pct }}%; width:{{ 100 - pb.progress.zone_mid_pct }}%; background:#3a2020"></div>
+      <div class="zone" style="left:0; width:{{ pb.progress.zone_early_pct }}%; background:color-mix(in srgb, var(--up) 35%, var(--panel))"></div>
+      <div class="zone" style="left:{{ pb.progress.zone_early_pct }}%; width:{{ pb.progress.zone_mid_pct - pb.progress.zone_early_pct }}%; background:color-mix(in srgb, var(--warn) 35%, var(--panel))"></div>
+      <div class="zone" style="left:{{ pb.progress.zone_mid_pct }}%; width:{{ 100 - pb.progress.zone_mid_pct }}%; background:color-mix(in srgb, var(--down) 35%, var(--panel))"></div>
       <div class="marker" style="left:{{ pb.progress.bar_pct }}%"></div>
     </div>
     <div class="lifelabels"><span>young</span><span>mid-life</span><span>old</span></div>
@@ -516,10 +501,10 @@
           technicals − crowding). Hover each bar for its exact arithmetic.
           <table>
             <tr><th>band</th><th>read it as</th><th>measured 3-month record*</th></tr>
-            <tr><td style="color:#e07b30"><b>70+ OVERHEATED</b></td><td>late — hold/trim, don't start</td><td>beat market 47% (−0.6% avg)</td></tr>
-            <tr><td style="color:#6fce8f"><b>55-69 HOT</b></td><td>confirmed — hold, buy pullbacks</td><td>49% (−0.3%)</td></tr>
+            <tr><td style="color:var(--orange)"><b>70+ OVERHEATED</b></td><td>late — hold/trim, don't start</td><td>beat market 47% (−0.6% avg)</td></tr>
+            <tr><td style="color:var(--up)"><b>55-69 HOT</b></td><td>confirmed — hold, buy pullbacks</td><td>49% (−0.3%)</td></tr>
             <tr><td><b>40-54 NEUTRAL</b></td><td>mixed, no lean</td><td>49% (−0.1%)</td></tr>
-            <tr><td style="color:#9fc0e8"><b>0-39 COLD</b></td><td>washed out — wait for trigger</td><td>50% (+0.2%)</td></tr>
+            <tr><td style="color:var(--info)"><b>0-39 COLD</b></td><td>washed out — wait for trigger</td><td>50% (+0.2%)</td></tr>
           </table>
           *vs the index, every week 2007-2026. Note the inversion: hot sectors were
           usually LATE. That measured record is the trust level — and it argues
@@ -527,19 +512,19 @@
         </span></span></th>
         <th>stage <span class="help">?<span class="tip">
           <b>The rotation cycle</b> — every sector travels this loop vs the market:
-          <span class="lad" style="background:#2b3340;color:#9fc0e8">1. IMPROVING — momentum turns up, trend not yet confirmed. <b>Too early</b>: buying here lost money historically.</span>
-          <span class="lad" style="background:#1d3326;color:#6fce8f">2. LEADING — confirmed uptrend. The healthy zone.</span>
-          <span class="lad" style="background:#38301a;color:#d8b75a">3. WEAKENING — still above trend but losing steam. Tighten stops.</span>
-          <span class="lad" style="background:#3a2020;color:#e08080">4. LAGGING — downtrend. Avoid until it improves again.</span>
+          <span class="lad lad-tint" style="--c:var(--info)">1. IMPROVING — momentum turns up, trend not yet confirmed. <b>Too early</b>: buying here lost money historically.</span>
+          <span class="lad lad-tint" style="--c:var(--up)">2. LEADING — confirmed uptrend. The healthy zone.</span>
+          <span class="lad lad-tint" style="--c:var(--warn)">3. WEAKENING — still above trend but losing steam. Tighten stops.</span>
+          <span class="lad lad-tint" style="--c:var(--down)">4. LAGGING — downtrend. Avoid until it improves again.</span>
         </span></span></th>
         <th>3mo vs market {{ help("How much it beat or trailed the S&P 500 over the past 60 trading days — the medium-term relative trend the playbook keys off.") }}</th>
         <th>technicals <span class="help">?<span class="tip">
           <b>RSI(14)</b> — a 0-100 momentum thermometer:
           <span class="scale">
-            <span style="background:#3f78d8">OVERSOLD</span>
-            <span style="background:#4a5160">SOFT</span>
-            <span style="background:#2e7d46">HEALTHY</span>
-            <span style="background:#a33">HOT</span>
+            <span style="background:var(--g-cold)">OVERSOLD</span>
+            <span style="background:var(--muted)">SOFT</span>
+            <span style="background:var(--up)">HEALTHY</span>
+            <span style="background:var(--down)">HOT</span>
           </span>
           <span class="sl"><span>0</span><span>30</span><span>45</span><span>70</span><span>100</span></span>
           <b>✓/✗ 200d and 50d</b>: whether price is above its 200-day (long-term) and
@@ -563,7 +548,7 @@
             <span class="tip">{{ r.heat_tip }}</span>
           </span>
         </td>
-        <td><span class="pill" style="background:{{ r.stage_color }};color:{{ r.stage_fg }}">{{ r.stage }}</span></td>
+        <td><span class="pill stg-{{ r.stage }}">{{ r.stage }}</span></td>
         <td class="{{ 'pos' if r.mom_60d_pct > 0 else 'neg' }}">{{ "%+.1f" | format(r.mom_60d_pct) }}%</td>
         <td class="{{ 'pos' if r.tech_ok else '' }}" style="font-size:12px">{{ r.tech_str }}</td>
         <td>
@@ -575,7 +560,7 @@
         <td>{{ r.trigger_str }}</td>
         <td>
           {% if r.timing_state %}
-            <span class="pill" style="background:{{ r.timing_style[0] }};color:{{ r.timing_style[1] }}">{{ r.timing_label }}</span>
+            <span class="pill st-{{ r.timing_state | replace(' ', '_') }}">{{ r.timing_label }}</span>
             <div class="muted" style="font-size:11px">{{ r.timing_note }}</div>
           {% else %}—{% endif %}
         </td>

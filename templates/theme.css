@@ -1,29 +1,77 @@
 /* Shared theme + common components for every page. Single source of color
-   variables (dark default, light override) so the toggle works everywhere. */
+   variables (dark default, light override) so the toggle works everywhere.
+   Badges/pills/tags are TINTED from one base color via color-mix() so they
+   auto-adapt: dark tint + light text in dark mode, light tint + dark text in
+   light mode. Nothing hard-codes a dark background. */
 :root {
   --bg: #0f1115; --panel: #181b21; --panel2: #1e222a; --text: #d7dce3;
   --muted: #8b93a1; --line: #2a2f3a;
   --q1: #2e9e4f; --q2: #d4a017; --q3: #d04545; --q4: #3f78d8;
   --warn: #e0a030; --act: #e05555; --ok: #3da564;
-  --up: #3fae6a; --down: #d35454;
+  --up: #45b873; --down: #e06464; --orange: #e08b45;
+  --info: #5b9bf0; --link: #7aa7e0;
   --g-cold: #4d8df0; --g-hot: #e0a23c; --g-mid: #3a4150;
+  --chart-bg: transparent;
   --card-shadow: 0 1px 0 rgba(255,255,255,.02);
 }
 html[data-theme="light"] {
-  --bg: #f4f6f9; --panel: #ffffff; --panel2: #eef1f6; --text: #1c2430;
-  --muted: #5d6b7e; --line: #d8dee8;
+  --bg: #f5f7fa; --panel: #ffffff; --panel2: #eef1f6; --text: #1c2430;
+  --muted: #5d6b7e; --line: #dde3ec;
   --q1: #1f8b41; --q2: #b07d05; --q3: #c12f2f; --q4: #2f63c4;
   --warn: #b9791a; --act: #c43d3d; --ok: #2f8a52;
-  --up: #1f9a55; --down: #c33b3b;
+  --up: #1f9a55; --down: #cf4040; --orange: #c4781f;
+  --info: #2f6fd6; --link: #2f6fd6;
   --g-cold: #2f6fd6; --g-hot: #c2841f; --g-mid: #cdd5e0;
-  --card-shadow: 0 1px 3px rgba(20,30,50,.06);
+  --chart-bg: #11151c;            /* keep dark-rendered Plotly charts legible */
+  --card-shadow: 0 1px 3px rgba(20,30,50,.07);
 }
+a { color: var(--link); }
 
-/* theme toggle button */
+/* buttons */
+.navbtn { background: var(--panel2); border: 1px solid var(--line); color: var(--link);
+  padding: 5px 14px; border-radius: 8px; font-size: 13px; }
+.navbtn:hover { border-color: var(--link); }
 .theme-btn { background: var(--panel2); border: 1px solid var(--line);
   color: var(--muted); padding: 5px 11px; border-radius: 8px; font-size: 13px;
   cursor: pointer; line-height: 1; }
 .theme-btn:hover { color: var(--text); }
+
+/* ---- tinted semantic badges -------------------------------------------------
+   Any element with one of these classes is tinted from its --c base color. */
+.st-FRESH_BUY, .st-TURN_SIGNALED, .st-RALLY_ON, .st-BOTTOM_WATCH, .st-TOP_WATCH,
+.st-ROLLING_OVER, .st-DECLINE,
+.state-STABLE, .state-WEAKENING, .state-TRANSITIONING, .state-NEW_REGIME,
+.pill-ok, .pill-stale, .pill-failed, .pill-dead, .pill-blocked,
+.tag-lead, .tag-avoid, .tag-watch, .chip-pos, .chip-neg,
+.sig-p, .sig-m, .sig-i, .urgpill, .lad-tint {
+  background: color-mix(in srgb, var(--c, var(--muted)) 15%, var(--panel));
+  color: color-mix(in srgb, var(--c, var(--muted)) 80%, var(--text));
+  border-color: color-mix(in srgb, var(--c, var(--muted)) 30%, transparent);
+}
+/* base-color assignments */
+.st-FRESH_BUY, .st-RALLY_ON, .pill-ok, .tag-lead, .chip-pos, .sig-p,
+.urgpill.urg-now { --c: var(--up); }
+.st-TURN_SIGNALED, .st-BOTTOM_WATCH, .tag-watch, .sig-i,
+.urgpill.urg-imminent, .urgpill.urg-soon, .state-NEW_REGIME { --c: var(--info); }
+.st-TOP_WATCH, .pill-stale, .urgpill.urg-caution, .state-WEAKENING { --c: var(--warn); }
+.st-ROLLING_OVER, .state-TRANSITIONING { --c: var(--orange); }
+.st-DECLINE, .pill-failed, .pill-dead, .tag-avoid, .chip-neg, .sig-m,
+.urgpill.urg-exit, .urgpill.urg-avoid { --c: var(--down); }
+.pill-blocked, .state-STABLE, .urgpill.urg-hold, .urgpill.urg-later { --c: var(--muted); }
+
+.pos { color: var(--up); } .neg { color: var(--down); }
+
+/* rotation-stage pills (heat board) — tinted like the badges */
+.stg-improving, .stg-leading, .stg-weakening, .stg-lagging {
+  background: color-mix(in srgb, var(--c) 15%, var(--panel));
+  color: color-mix(in srgb, var(--c) 80%, var(--text));
+}
+.stg-improving { --c: var(--info); } .stg-leading { --c: var(--up); }
+.stg-weakening { --c: var(--warn); } .stg-lagging { --c: var(--down); }
+
+/* charts render on their own dark slate (set in build_site PLOT_LAYOUT); the
+   wrapper just rounds the corners so they sit cleanly in either theme */
+.chart, .tv { border-radius: 8px; overflow: hidden; }
 
 /* multi-timeframe visual cards */
 .mtf-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;

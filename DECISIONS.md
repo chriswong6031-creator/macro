@@ -2,6 +2,28 @@
 
 Newest first. Each entry: what was decided, why, and what would change it.
 
+## 2026-06-14 (3rd pass, macro) — light-mode color fix
+
+**D-macro-A. Badges/pills/tags are tinted from ONE base color via `color-mix()`,
+not hardcoded.** The "black buttons in light mode" were dark-bg badges
+(state-STABLE, the cycle-state STATE_STYLES, stage pills) that never adapted.
+templates/theme.css now does `background: color-mix(in srgb, var(--c) 15%,
+var(--panel)); color: color-mix(in srgb, var(--c) 80%, var(--text))` for every
+badge family, each class assigning a semantic `--c`
+(up/down/warn/orange/info/muted). Auto-adapts: dark tint + light text in dark
+mode, light tint + dark text in light mode. Removed all per-page `.st-*` CSS
+generation (theme.css owns it), the Python STATE_STYLES/STAGE_STYLE inline-hex
+usage (→ `.st-*`/`.stg-*` classes), and every hardcoded #7aa7e0 link / #fff
+gauge marker / dark tooltip bg (→ var(--link)/var(--text)/var(--panel)).
+HEAT_COLORS now emit CSS vars. (NB: D49–D55 numbers are taken by the parallel
+Bitcoin Vector session in this shared log; using neutral keys to avoid clash.)
+
+**D-macro-B. Plotly charts render on their own dark slate (#12161d) in both
+themes.** A light-mode chart of dark-tuned lines on a white panel was invisible;
+rather than maintain two renders, the charts keep one dark surface always
+(`.chart`/`.tv` round the corners). Token approach learned from the Bitcoin
+Vector dashboard (everything via var()).
+
 ## 2026-06-14 (2nd pass) — immediate value, visual momentum, theme
 
 **D49. Front-page Action Board.** New "⚡ What to act on now" panel at the top

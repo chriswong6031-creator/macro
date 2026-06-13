@@ -30,9 +30,12 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_site")
 
 QUAD_COLORS = {"Q1": "#2e9e4f", "Q2": "#d4a017", "Q3": "#d04545", "Q4": "#3f78d8"}
+# Charts always render on their own dark slate surface so they stay legible in
+# BOTH themes (a light-mode chart of dark-tuned lines would be invisible on
+# white). The .chart/.tv wrapper rounds the corners to match.
 PLOT_LAYOUT = dict(
-    template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)",
-    plot_bgcolor="rgba(0,0,0,0)", font={"size": 11},
+    template="plotly_dark", paper_bgcolor="#12161d",
+    plot_bgcolor="#12161d", font={"size": 11},
     margin={"l": 45, "r": 15, "t": 10, "b": 30}, height=300,
     legend={"orientation": "h", "y": 1.08},
 )
@@ -315,13 +318,9 @@ def internals_rows(latest: dict) -> list[dict]:
     return out
 
 
-STAGE_STYLE = {
-    "improving": ("#2b3340", "#9fc0e8"), "leading": ("#1d3326", "#6fce8f"),
-    "weakening": ("#38301a", "#d8b75a"), "lagging": ("#3a2020", "#e08080"),
-}
-
-HEAT_COLORS = {"70+": "#e07b30", "55-69": "#3f8f5f",
-               "40-54": "#4a5160", "0-39": "#3a4860"}
+# heat-bar fill uses theme-aware CSS variables (legible in both modes)
+HEAT_COLORS = {"70+": "var(--orange)", "55-69": "var(--up)",
+               "40-54": "var(--muted)", "0-39": "var(--info)"}
 
 
 def _compact_season(line: str | None) -> tuple[str, str]:
@@ -387,9 +386,7 @@ def sector_rows(playbook: dict | None, timing: dict | None = None) -> list[dict]
                                 f"{tm['buy_zone']}/{tm['n_holdings']} top holdings in a buy setup")
         else:
             r["timing_state"] = None
-        bg, fg = STAGE_STYLE.get(r["stage"], ("#2a2f3a", "#d7dce3"))
-        r["stage_color"], r["stage_fg"] = bg, fg
-        r["heat_color"] = HEAT_COLORS.get(r["heat_band"], "#4a5160")
+        r["heat_color"] = HEAT_COLORS.get(r["heat_band"], "var(--muted)")
         parts = r.get("heat_parts", {})
         cal = r.get("heat_cal")
         cal_txt = (f" Historical reality-check for the {r['heat_band']} band: beat the "

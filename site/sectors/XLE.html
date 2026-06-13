@@ -42,57 +42,33 @@
   .points.sm { font-size:12.5px; }
   .cyclebox { margin:8px 0; padding:9px 12px; border-radius:9px; background:var(--panel2);
               font-size:13px; line-height:1.6; }
-  a { color:#7aa7e0; text-decoration:none; }
+  a { text-decoration:none; }
   h1 { font-size:20px; margin:0; }
   h2 { font-size:14px; margin:0 0 10px; color:var(--muted); text-transform:uppercase;
        letter-spacing:.06em; }
   .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px;
            padding:14px 16px; margin-bottom:14px; }
   .topline { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
-  .navbtn { background:var(--panel2); border:1px solid var(--line); color:#7aa7e0;
-            padding:5px 14px; border-radius:8px; font-size:13px; }
   .muted { color:var(--muted); }
-  .pos { color:#5fbf7f; } .neg { color:#e07070; }
   .state { display:inline-block; padding:2px 11px; border-radius:12px; font-weight:700;
            font-size:12.5px; }
-  
-  .st-FRESH_BUY { background: #1d4a2c; color: #7fe0a0; }
-  
-  .st-TURN_SIGNALED { background: #1d3a4a; color: #8fd0f0; }
-  
-  .st-RALLY_ON { background: #1d3326; color: #6fce8f; }
-  
-  .st-BOTTOM_WATCH { background: #2b3340; color: #9fc0e8; }
-  
-  .st-TOP_WATCH { background: #38301a; color: #d8b75a; }
-  
-  .st-ROLLING_OVER { background: #4a2c1a; color: #e0a070; }
-  
-  .st-DECLINE { background: #3a2020; color: #e08080; }
-  
-  .scorebar { display:inline-block; width:90px; height:8px; background:var(--panel2);
-              border-radius:4px; overflow:hidden; vertical-align:middle; position:relative; }
-  .scorebar i { position:absolute; top:0; bottom:0; }
   .card { background:var(--panel2); border:1px solid var(--line); border-radius:10px;
           padding:12px 14px; margin:10px 0; }
-  .mtf { display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--muted);
-         margin-top:6px; }
-  .mtf b { color:var(--text); }
   .help { display:inline-flex; align-items:center; justify-content:center; width:15px;
           height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted);
           font-size:10px; font-weight:600; cursor:help; position:relative;
           vertical-align:middle; margin-left:5px; }
   .help .tip { display:none; position:absolute; top:140%; left:50%;
-               transform:translateX(-50%); width:300px; background:#262b35;
-               border:1px solid #3a4150; padding:9px 11px; border-radius:8px; z-index:60;
+               transform:translateX(-50%); width:300px; background:var(--panel);
+               border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60;
                font-size:12px; line-height:1.45; color:var(--text); font-weight:400;
                box-shadow:0 6px 18px rgba(0,0,0,.5); pointer-events:none; }
   .help:hover .tip { display:block; }
   table { border-collapse:collapse; width:100%; font-size:13px; }
   th,td { text-align:left; padding:4px 8px; border-bottom:1px solid var(--line); }
   th { color:var(--muted); font-weight:500; }
-  .tv { margin-top:8px; border-radius:8px; overflow:hidden; }
-  details summary { cursor:pointer; color:#7aa7e0; font-size:12.5px; margin-top:6px; }
+  .tv { margin-top:8px; overflow:hidden; }
+  details summary { cursor:pointer; color:var(--link); font-size:12.5px; margin-top:6px; }
 </style>
 </head>
 <body>
