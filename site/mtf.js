@@ -6,6 +6,20 @@
     var v = getComputedStyle(document.documentElement).getPropertyValue(n).trim();
     return v || fb;
   }
+  // language-aware micro-labels (re-rendered on langchange via hydrateMTF)
+  function lang() { return document.documentElement.getAttribute('data-lang') || 'en'; }
+  var WORDS = {
+    en: { oversold: 'oversold', overbought: 'overbought', neutral: 'neutral',
+          bullish: 'bullish', bearish: 'bearish',
+          cu: 'just crossed up', cd: 'just crossed down',
+          etaUp: 'd to ↑cross', etaDn: 'd to ↓cross',
+          DAILY: 'DAILY', '3D': '3-DAY', WEEKLY: 'WEEKLY' },
+    zh: { oversold: '超卖', overbought: '超买', neutral: '中性',
+          bullish: '看多', bearish: '看空',
+          cu: '刚上穿', cd: '刚下穿',
+          etaUp: '日后上穿', etaDn: '日后下穿',
+          DAILY: '日线', '3D': '3 日', WEEKLY: '周线' } };
+  function L(k) { return (WORDS[lang()] || WORDS.en)[k]; }
   // small helpers
   function spark(vals, w, h, color, lo, hi) {
     if (!vals || vals.length < 2) return '';
@@ -43,8 +57,7 @@
     // marker
     s += '<rect x="' + (mark - 1.5) + '" y="' + (barY - 2) + '" width="3" height="' + (barH + 4) + '" rx="1.5" fill="' + txt + '"/>';
     s += '</svg>';
-    var zoneWord = val <= loZ ? (kind === 'stoch' ? 'oversold' : 'oversold')
-                 : val >= hiZ ? 'overbought' : 'neutral';
+    var zoneWord = L(val <= loZ ? 'oversold' : val >= hiZ ? 'overbought' : 'neutral');
     return '<div class="mtf-row"><span class="mtf-k">' + label + '</span>' + s +
            '<span class="mtf-v">' + Math.round(val) + '<small>' + zoneWord + '</small></span></div>';
   }
@@ -70,12 +83,12 @@
            '" stroke="' + muted + '" stroke-width="0.6" stroke-dasharray="2 2"/>';
     }
     s += '</svg>';
-    var state = m.macd_pos ? 'bullish' : 'bearish';
+    var state = L(m.macd_pos ? 'bullish' : 'bearish');
     var eta = '';
-    if (m.macd_cross_up) eta = 'just crossed up';
-    else if (m.macd_cross_dn) eta = 'just crossed down';
-    else if (m.macd_approaching_up && m.macd_bars_to_cross) eta = '≈' + Math.round(m.macd_bars_to_cross) + 'd to ↑cross';
-    else if (m.macd_approaching_dn && m.macd_bars_to_cross) eta = '≈' + Math.round(m.macd_bars_to_cross) + 'd to ↓cross';
+    if (m.macd_cross_up) eta = L('cu');
+    else if (m.macd_cross_dn) eta = L('cd');
+    else if (m.macd_approaching_up && m.macd_bars_to_cross) eta = '≈' + Math.round(m.macd_bars_to_cross) + L('etaUp');
+    else if (m.macd_approaching_dn && m.macd_bars_to_cross) eta = '≈' + Math.round(m.macd_bars_to_cross) + L('etaDn');
     var dot = m.macd_pos ? pos : neg;
     return '<div class="mtf-row"><span class="mtf-k">MACD</span>' + s +
            '<span class="mtf-v" style="color:' + dot + '">' + (m.macd_pos ? '▲' : '▼') +
@@ -93,7 +106,7 @@
   window.renderMTF = function (el, mtf) {
     if (!el || !mtf) return;
     el.innerHTML = '<div class="mtf-grid">' +
-      card('DAILY', mtf.D) + card('3-DAY', mtf['3D']) + card('WEEKLY', mtf.W) + '</div>';
+      card(L('DAILY'), mtf.D) + card(L('3D'), mtf['3D']) + card(L('WEEKLY'), mtf.W) + '</div>';
   };
   // hydrate any server-rendered placeholders that carry data-mtf JSON
   window.hydrateMTF = function (root) {
