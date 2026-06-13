@@ -3,6 +3,38 @@
 Update this file whenever a weakness is discovered or fixed. Every item lists
 the consequence, not just the cause.
 
+## Crypto data sources (Bitcoin Vector)
+
+- **bitcoin-data.com (BGeometrics) free tier: 10 req/hour, 15/day PER IP, and
+  only the last ~4 years of history.** Consequence: on shared GitHub Actions
+  runner IPs, strangers' usage can eat our quota — metrics skipped that day
+  self-heal on the next run (each call covers the full gap since last stored
+  date). Every row ever pulled is archived forever (append-only parquet), so
+  the rolling window never erases our history. `exchange-netflow-btc` is
+  403-gated on the free tier (verified 2026-06-13) and excluded.
+- **Cohort/on-chain metrics have unequal depth**: SOPR 2011→ (checkonchain
+  one-time backfill, spliced; `data/archive/checkonchain/` holds provenance),
+  STH/LTH cohort series 2022→ only, bgeo funding 2023-07→, DVOL 2021→, ETF
+  flows 2024→. Consequence: deep calibration leans on price (2014→ Yahoo,
+  2015→ Coinbase) and CoinMetrics MVRV-family (2010→); one-cycle metrics are
+  confirmation inputs, not calibration anchors.
+- **checkonchain backfills parse embedded Plotly JSON from chart pages** — a
+  scrape, not an API. It is used once per series (then bgeo maintains it), but
+  re-runs may break silently if the site redesigns. Provenance JSON records
+  pull date and point count.
+- **OKX funding history only pages back ~3 months** (observed at build);
+  deep funding history comes from bgeo. Binance (HTTP 451) and Bybit (HTTP 403)
+  are US geo-blocked — also from CI — and must not be used.
+- **CoinGecko keyless /global has no history** — dominance history comes from
+  bgeo `bitcoin-dominance` (4y window); the CoinGecko snapshot keeps it alive
+  going forward. A gap between bgeo's window edge and snapshot start is
+  possible if the bgeo backfill is ever lost.
+- **Deribit options summary is a daily snapshot, not history** — put/call and
+  IV aggregates accumulate only from 2026-06-13 onward. DVOL has true history.
+- **Entity-adjusted metrics (exchange/whale clustering) have no free source.**
+  Our UTXO-based proxies will sometimes disagree with Glassnode/Swissblock's
+  entity-adjusted versions; signal-matching targets account for this.
+
 ## Data sources
 
 - **Everything Yahoo (yfinance) is an unofficial API.** It breaks several
@@ -94,6 +126,15 @@ the consequence, not just the cause.
 - **The heat score describes confirmation, not future returns** — its own
   calibration (shown in every tooltip) found the hottest band *under*performed
   forward; treat high heat as hold/trim territory. See DECISIONS D31.
+
+- **Cycle counts are interpretive.** Trough detection is mechanical, but real
+  cycles stretch, shorten and fail; the sources themselves put timing-band
+  accuracy at ~60-70%. The drill-down pages state this, and every buy state
+  requires price confirmation (swing low + 10-day MA) precisely because the
+  band alone is unreliable. Treat cycle-day counts as a probability lens, not
+  a schedule.
+- **Per-stock fundamentals are sparse, unofficial yfinance fields** refreshed
+  weekly — display-only context, never inputs to any signal.
 
 ## Engine
 

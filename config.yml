@@ -48,12 +48,13 @@ yahoo:
   # All EOD adjusted closes, one parquet per ticker under data/yahoo/.
   tickers:
     sectors: [XLB, XLC, XLE, XLF, XLI, XLK, XLP, XLRE, XLU, XLV, XLY]
-    extras: [SMH, IWM, RSP, SPY, QQQ]
+    extras: [SMH, IWM, RSP, SPY, QQQ, "^DJI"]
     factors: [MTUM, QUAL, USMV, SPHB, SPLV]
     credit: [HYG, LQD]
     vol: ["^VIX", "^VIX9D", "^VIX3M", "^MOVE"]
-    fx_commod: ["DX-Y.NYB", "CL=F", "HG=F", "GC=F"]
+    fx_commod: ["DX-Y.NYB", "CL=F", "HG=F", "GC=F", "SI=F", "BZ=F"]
     rate_pricing: ["ZQ=F"]        # 30-day fed funds front contract — LOW CONFIDENCE input
+    crypto: [BTC-USD, ETH-USD, SOL-USD]   # deep daily history (BTC 2014->); Coinbase = intraday-quality OHLC
 
 treasury:
   base_url: https://api.fiscaldata.treasury.gov/services/api/fiscal_service
@@ -84,6 +85,7 @@ cot:
     dollar: ["USD INDEX", "U.S. DOLLAR INDEX"]
     gold: ["GOLD - COMMODITY EXCHANGE"]
     copper: ["COPPER- #1", "COPPER - COMMODITY EXCHANGE", "COPPER-GRADE #1"]
+    bitcoin: ["BITCOIN - C"]      # CME contract; prefix excludes BITCOIN CASH / MICRO BITCOIN
 
 sentiment:
   aaii_url: https://www.aaii.com/sentimentsurvey/sent_results
@@ -116,6 +118,91 @@ holdings:
 fundamentals:
   enabled: true                   # LOW CONFIDENCE module — engine must work without it
   finnhub_key_env: FINNHUB_KEY    # optional, used only if set
+
+# -----------------------------------------------------------------------------
+# Crypto collectors (Bitcoin Vector). All free, all verified 2026-06-12/13 —
+# see research/VECTOR_DATA_AUDIT.md. Archive-forever policy: bgeo serves only a
+# rolling 4y window, so every pulled row is kept permanently (FRED-OAS pattern).
+# -----------------------------------------------------------------------------
+coinmetrics:
+  base_url: https://community-api.coinmetrics.io/v4/timeseries/asset-metrics
+  asset: btc
+  page_size: 10000
+  retries: 3
+  start_date: "2010-01-01"
+  # community-tier verified ONLY these (others 403): metric -> column name
+  metrics:
+    PriceUSD: price_usd
+    CapMrktCurUSD: mcap_usd
+    CapMVRVCur: mvrv            # realized cap = mcap/mvrv; NUPL = 1 - 1/mvrv
+    AdrActCnt: active_addresses
+    HashRate: hashrate
+    SplyCur: supply
+    TxCnt: tx_count
+    TxTfrCnt: transfer_count
+    IssTotUSD: issuance_usd
+    BlkCnt: block_count
+
+bgeo:
+  base_url: https://bitcoin-data.com
+  retries: 2                      # don't burn quota on retries
+  window_start: "2022-06-13"      # free tier serves last ~4y only
+  daily_request_budget: 12        # of 15/day per IP — leave 3 spare
+  page_size: 5000
+  # priority order: first entries fetched first when quota is tight
+  metrics:                        # endpoint -> column name
+    sopr: sopr
+    sth-sopr: sth_sopr
+    lth-sopr: lth_sopr
+    sth-realized-price: sth_realized_price
+    realized-price: realized_price
+    supply-profit: supply_in_profit
+    # exchange-netflow-btc: 403 on free tier (verified 2026-06-13) — flows are
+    # covered by etf_flow + stablecoins + miner_sell_pressure; exchange-reserve-btc
+    # is an untested candidate if a slot frees up
+    miner-sell-pressure: miner_sell_pressure
+    funding-rate: funding_rate
+    open-interest-futures: open_interest_futures
+    etf-flow-btc: etf_flow_btc
+    bitcoin-dominance: btc_dominance
+
+coinbase:
+  spot_url: https://api.coinbase.com/v2/prices/BTC-USD/spot
+  candles_url: https://api.exchange.coinbase.com/products/BTC-USD/candles
+  earliest: "2015-07-20"          # BTC-USD on Coinbase Exchange
+  hourly_earliest: "2016-01-01"   # hourly backfill floor (~92k rows)
+  pace_seconds: 0.25              # public limit ~10 req/s; stay well under
+  retries: 3
+
+okx:
+  funding_url: https://www.okx.com/api/v5/public/funding-rate-history
+  oi_url: https://www.okx.com/api/v5/rubik/stat/contracts/open-interest-volume
+  inst_id: BTC-USDT-SWAP
+  retries: 3
+
+deribit:
+  dvol_url: https://www.deribit.com/api/v2/public/get_volatility_index_data
+  options_url: https://www.deribit.com/api/v2/public/get_book_summary_by_currency
+  dvol_earliest: "2021-03-01"
+  retries: 3
+
+feargreed:
+  url: https://api.alternative.me/fng/
+  retries: 3
+
+coingecko:
+  global_url: https://api.coingecko.com/api/v3/global
+  retries: 3                      # keyless tier ~5-15 req/min; we make 1/day
+
+defillama:
+  stablecoins_url: https://stablecoins.llama.fi/stablecoincharts/all
+  retries: 3
+
+mempool:
+  fees_url: https://mempool.space/api/v1/fees/recommended
+  hashrate_url: https://mempool.space/api/v1/mining/hashrate/1m
+  hashrate_backfill_url: https://mempool.space/api/v1/mining/hashrate/3y
+  retries: 3
 
 breadth:
   constituents_url: https://en.wikipedia.org/wiki/List_of_S%26P_500_companies

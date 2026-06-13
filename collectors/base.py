@@ -110,7 +110,8 @@ def run_adapter(adapter: Adapter, full_history: bool = False,
         for series_name, df in frames.items():
             df = adapter.validate(series_name, df)
             merged = store.upsert(adapter.group, series_name, df,
-                                  outlier_col=df.columns[0] if len(df.columns) == 1 else None)
+                                  outlier_col=df.columns[0] if len(df.columns) == 1 else None,
+                                  normalize_index=getattr(adapter, "normalize_index", True))
             rows += len(df)
             last = max(filter(None, [last, merged.index.max()]))
         status = "ok"

@@ -1,14 +1,14 @@
 {
-  "last_run": "2026-06-12T21:07:21.750236+00:00",
+  "last_run": "2026-06-13T01:41:26.289847+00:00",
   "sources": {
     "cot": {
       "source": "cot",
       "status": "ok",
-      "rows": 6,
-      "last_date": "2026-06-02",
+      "rows": 433,
+      "last_date": "2026-06-09",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-12T03:46:25.286835+00:00"
+      "checked_at": "2026-06-13T01:40:55.881685+00:00"
     },
     "fred": {
       "source": "fred",
@@ -22,11 +22,11 @@
     "yahoo": {
       "source": "yahoo",
       "status": "ok",
-      "rows": 711,
-      "last_date": "2026-06-11",
+      "rows": 223104,
+      "last_date": "2026-06-13",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-12T03:46:25.286802+00:00"
+      "checked_at": "2026-06-13T01:41:26.289867+00:00"
     },
     "treasury": {
       "source": "treasury",
@@ -117,6 +117,87 @@
       "error": null,
       "notes": [],
       "checked_at": "2026-06-12T03:46:25.286881+00:00"
+    },
+    "coinmetrics": {
+      "source": "coinmetrics",
+      "status": "ok",
+      "rows": 59275,
+      "last_date": "2026-06-12",
+      "error": null,
+      "notes": [],
+      "checked_at": "2026-06-13T01:31:13.894493+00:00"
+    },
+    "okx": {
+      "source": "okx",
+      "status": "ok",
+      "rows": 274,
+      "last_date": "2026-06-13",
+      "error": null,
+      "notes": [],
+      "checked_at": "2026-06-13T01:31:13.894499+00:00"
+    },
+    "deribit": {
+      "source": "deribit",
+      "status": "ok",
+      "rows": 1908,
+      "last_date": "2026-06-13",
+      "error": null,
+      "notes": [],
+      "checked_at": "2026-06-13T01:31:13.894503+00:00"
+    },
+    "feargreed": {
+      "source": "feargreed",
+      "status": "ok",
+      "rows": 3051,
+      "last_date": "2026-06-13",
+      "error": null,
+      "notes": [],
+      "checked_at": "2026-06-13T01:31:13.894507+00:00"
+    },
+    "coingecko": {
+      "source": "coingecko",
+      "status": "ok",
+      "rows": 1,
+      "last_date": "2026-06-13",
+      "error": null,
+      "notes": [],
+      "checked_at": "2026-06-13T01:31:13.894510+00:00"
+    },
+    "defillama": {
+      "source": "defillama",
+      "status": "ok",
+      "rows": 3118,
+      "last_date": "2026-06-12",
+      "error": null,
+      "notes": [],
+      "checked_at": "2026-06-13T01:31:13.894514+00:00"
+    },
+    "mempool": {
+      "source": "mempool",
+      "status": "ok",
+      "rows": 1176,
+      "last_date": "2026-06-13",
+      "error": null,
+      "notes": [],
+      "checked_at": "2026-06-13T01:31:13.894516+00:00"
+    },
+    "bgeo": {
+      "source": "bgeo",
+      "status": "ok",
+      "rows": 11867,
+      "last_date": "2026-06-12",
+      "error": null,
+      "notes": [],
+      "checked_at": "2026-06-13T01:33:38.032622+00:00"
+    },
+    "coinbase": {
+      "source": "coinbase",
+      "status": "ok",
+      "rows": 95513,
+      "last_date": "2026-06-13",
+      "error": null,
+      "notes": [],
+      "checked_at": "2026-06-13T01:38:23.992051+00:00"
     }
   },
   "circuit_breaker": {
@@ -132,6 +213,15 @@
     "sector_flows": 0,
     "holdings": 0,
     "fundamentals": 0,
-    "fred": 0
+    "fred": 0,
+    "coinmetrics": 0,
+    "okx": 0,
+    "deribit": 0,
+    "feargreed": 0,
+    "coingecko": 0,
+    "defillama": 0,
+    "mempool": 0,
+    "bgeo": 0,
+    "coinbase": 0
   }
 }

@@ -2,6 +2,61 @@
 
 Newest first. Each entry: what was decided, why, and what would change it.
 
+## 2026-06-13 — Bitcoin Vector Phase 1 (crypto collectors)
+
+**D39. bgeo (bitcoin-data.com) runs under an explicit request budget** (12 of
+15/day, priority-ordered in config) with live X-RateLimit header tracking; the
+adapter stops cleanly at quota and returns partials — partial success IS
+success, skipped metrics self-heal next run because every call covers the gap
+since the last stored date. Archive-forever: the free tier serves a rolling 4y
+window, our parquet never forgets (FRED-OAS pattern). What would change it: a
+free API key that pins quota to the key instead of IP (untested), or repeated
+CI quota collisions → reshuffle metrics to CM/DefiLlama/checkonchain.
+
+**D40. Hourly candles are first-class storage.** store.upsert() gained
+normalize_index=False (adapter attr) so Coinbase hourly keeps intraday
+timestamps — required for flash-crash calibration and the intraday-vs-interday
+volatility split (Swissblock's "Key Risk Elements"). 91.5k rows, 2016→.
+
+**D41. Derived metrics are computed in the engine, never collected:** realized
+cap = mcap/MVRV, NUPL = 1 − 1/MVRV (exact identities on CoinMetrics community
+series), SSR = btc_mcap / DefiLlama stablecoin mcap. Rationale: fewer quota
+slots, one source of truth, derivations visible in code.
+
+## 2026-06-13 — holdings drill-down + cycle engine
+
+**D34. Cycle methodology implemented from graddhy.com / thefinancialtap.com**
+(user-directed sources): equity daily cycles 36–42 trading days trough-to-
+trough, investor cycle 16–26 weeks; swing low + close above the 10-day MA +
+MA turning up as DCL confirmation; right/left translation from crest position;
+failed cycle = break of the cycle's birth low. Timing bands catch only ~70% of
+lows per the sources — that miss rate is stated on every drill-down page.
+Trough detection = confirmed ±10-day local minima merged within 18 days; the
+hunt for the NEXT low uses a separate candidate trough (the cycle-start swing
+low goes stale, found in testing).
+
+**D35. The signal ladder is calibrated like everything else.** Seven states
+(DECLINE → BOTTOM WATCH → TURN SIGNALED → FRESH BUY → RALLY ON → TOP WATCH →
+ROLLING OVER) from cycle position × multi-timeframe MACD/RSI/StochRSI, with
+weekly gating daily. Walk-forward calibration (2000→, weekly steps, trailing
+600-day window) measures forward 21-day stats per state; the table ships on
+every sector page. Recalibrated weekly (scripts/recalibrate.py — ~10 min).
+
+**D36. "Approaching cross" proximity** = MACD histogram still on the wrong
+side of zero but moving monotonically toward it for 3 bars; bars-to-cross
+estimated from current slope. This is the "we're getting close to a buy"
+precision the user asked for — an early warning, explicitly not a signal.
+
+**D37. TradingView embeds are official free widgets** (advanced chart for the
+ETF, lazy-loaded mini-charts per holding — created only when a card opens, so
+pages don't load 10 iframes upfront). TradingView's indicator DATA has no
+public API; all signal math is computed locally from stored prices, which also
+keeps signals reproducible.
+
+**D38. Top-10 holdings tables bypass the time-series upsert** (10 rows share
+one date; the dedup-by-date guarantee would collapse them — found in testing).
+They merge-by-snapshot-date directly, like the ARK holdings files.
+
 ## 2026-06-12 (3rd pass) — technicals, seasonality, heat board
 
 **D31. The confluence ("heat") score is calibrated, and the calibration is
@@ -21,10 +76,12 @@ full-sample monthly stats would peek at the future). Trigger-distance metrics
 (how much more outperformance until the 200d RS cross, and % progress from the
 recent low) quantify "how close is this watchlist name to confirming".
 
-**D33. No LLM in the scoring path.** The user suggested AI might be needed;
-a transparent, calibrated checklist is more trustworthy here: every sub-score
-is visible, every claim carries its measured base rate, and nothing changes
-between runs without a config diff.
+**D33. ~~No LLM in the scoring path.~~ RESCINDED by user 2026-06-13.** LLM use
+is permitted anywhere it helps (commentary, scenario prose, analysis). Two
+engineering facts survive the rescission as facts, not policy: (a) LLM calls
+inside CI need an API key secret + per-run cost; (b) historical backtests can
+only run against mechanically-computed signals, so anything we want a measured
+track record for keeps a mechanical core — an LLM layer on top is fine.
 
 ## 2026-06-12 (later) — now-focused front page
 

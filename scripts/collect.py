@@ -40,7 +40,20 @@ def all_adapters() -> dict:
         ("sentiment_aaii", "collectors.sentiment", "AaiiAdapter"),
         ("sector_flows", "collectors.sponsors", "SectorFlowAdapter"),
         ("holdings", "collectors.holdings", "HoldingsAdapter"),
+        ("sector_holdings", "collectors.sector_holdings", "SectorHoldingsAdapter"),
+        ("stock_prices", "collectors.sector_holdings", "StockPriceAdapter"),
         ("fundamentals", "collectors.fundamentals", "FundamentalsAdapter"),
+        ("stock_fundamentals", "collectors.sector_holdings", "StockFundamentalsAdapter"),
+        # crypto (Bitcoin Vector) — see research/VECTOR_DATA_AUDIT.md
+        ("coinmetrics", "collectors.coinmetrics", "CoinMetricsAdapter"),
+        ("bgeo", "collectors.bgeo", "BgeoAdapter"),
+        ("coinbase", "collectors.coinbase", "CoinbaseAdapter"),
+        ("okx", "collectors.okx", "OkxAdapter"),
+        ("deribit", "collectors.deribit", "DeribitAdapter"),
+        ("feargreed", "collectors.crypto_misc", "FearGreedAdapter"),
+        ("coingecko", "collectors.crypto_misc", "CoinGeckoAdapter"),
+        ("defillama", "collectors.crypto_misc", "DefiLlamaAdapter"),
+        ("mempool", "collectors.crypto_misc", "MempoolAdapter"),
     ]
     for key, mod, cls in specs:
         try:

@@ -57,13 +57,17 @@ def _quarantine(group: str, name: str, rows: pd.DataFrame, reason: str) -> None:
     log.warning("quarantined %d rows of %s/%s: %s", len(rows), group, name, reason)
 
 
-def upsert(group: str, name: str, new: pd.DataFrame, outlier_col: str | None = None) -> pd.DataFrame:
+def upsert(group: str, name: str, new: pd.DataFrame, outlier_col: str | None = None,
+           normalize_index: bool = True) -> pd.DataFrame:
     """Merge new rows into the stored series. New values win on date collision;
-    rows present only on disk are always kept (append-only history guarantee)."""
+    rows present only on disk are always kept (append-only history guarantee).
+    normalize_index=False preserves intraday timestamps (hourly candles)."""
     if new is None or new.empty:
         raise ValueError(f"upsert called with empty frame for {group}/{name}")
     new = new.copy()
-    new.index = pd.to_datetime(new.index).normalize()
+    new.index = pd.to_datetime(new.index)
+    if normalize_index:
+        new.index = new.index.normalize()
     new = new[~new.index.duplicated(keep="last")].sort_index()
 
     old = read(group, name)
