@@ -59,8 +59,59 @@
     document.dispatchEvent(new CustomEvent('langchange', { detail: lg }));
   }
   window.toggleLang = function () { setLang(curLang() === 'zh' ? 'en' : 'zh'); };
+  window.setLang = setLang;
+  window.setTheme = setTheme;
+
+  /* ---- global stock search (unified macro nav) ----------------------------
+     The same autocomplete the analyzer uses, promoted into the nav bar: fetch
+     the nightly library (stockdata/index.json), suggest, and on pick bounce to
+     stock.html#TICKER (the analyzer routes off the hash). Path-depth aware so
+     it works from /sectors/ too. No-ops on pages without a .nav-search. */
+  function initNavSearch() {
+    var box = document.querySelector('.nav-search');
+    if (!box) return;
+    var input = box.querySelector('input'), sugg = box.querySelector('.nav-sugg');
+    var pfx = location.pathname.indexOf('/sectors/') > -1 ? '../' : '';
+    var lib = [], rows = [], sel = -1;
+    fetch(pfx + 'stockdata/index.json').then(function (r) { return r.json(); })
+      .then(function (d) { lib = d || []; }).catch(function () {});
+    function go(t) { location.href = pfx + 'stock.html#' + encodeURIComponent(t); }
+    function close() { sugg.classList.remove('show'); sugg.innerHTML = ''; rows = []; sel = -1; }
+    function paint() {
+      [].forEach.call(sugg.querySelectorAll('.row'), function (r, i) { r.classList.toggle('sel', i === sel); });
+    }
+    function search() {
+      var v = input.value.trim().toUpperCase();
+      if (!v) { close(); return; }
+      rows = lib.filter(function (x) {
+        return x.t.toUpperCase().indexOf(v) > -1 || (x.n || '').toUpperCase().indexOf(v) > -1;
+      }).slice(0, 8);
+      sel = -1;
+      if (!rows.length) { sugg.innerHTML = '<div class="empty">No match in the nightly library.</div>'; sugg.classList.add('show'); return; }
+      sugg.innerHTML = rows.map(function (x, i) {
+        var st = (x.st || '').replace(/ /g, '_');
+        return '<div class="row" data-i="' + i + '"><b>' + x.t + '</b><small>' + (x.n || '') + '</small>'
+             + (x.st ? '<span class="stt st-' + st + '">' + x.st + '</span>' : '') + '</div>';
+      }).join('');
+      sugg.classList.add('show');
+    }
+    input.addEventListener('input', search);
+    input.addEventListener('focus', function () { if (input.value.trim()) search(); });
+    input.addEventListener('keydown', function (e) {
+      if (!sugg.classList.contains('show')) return;
+      if (e.key === 'ArrowDown') { e.preventDefault(); sel = Math.min(sel + 1, rows.length - 1); paint(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); sel = Math.max(sel - 1, 0); paint(); }
+      else if (e.key === 'Enter') { e.preventDefault(); var pick = rows[sel] || rows[0]; if (pick) go(pick.t); }
+      else if (e.key === 'Escape') { close(); input.blur(); }
+    });
+    sugg.addEventListener('mousedown', function (e) {
+      var r = e.target.closest('.row'); if (!r) return; e.preventDefault(); go(rows[+r.dataset.i].t);
+    });
+    document.addEventListener('click', function (e) { if (!box.contains(e.target)) close(); });
+  }
 
   document.addEventListener('DOMContentLoaded', function () {
+    // legacy text buttons (Bitcoin Vector / hub / China — untouched pages)
     document.querySelectorAll('.theme-btn').forEach(function (b) {
       b.addEventListener('click', window.toggleTheme);
       b.innerHTML = curTheme() === 'light'
@@ -71,6 +122,14 @@
       b.addEventListener('click', window.toggleLang);
       b.textContent = curLang() === 'zh' ? 'EN' : '中文';
     });
+    // new animated toggles (macro nav) — visuals are pure-CSS off data-theme/lang
+    document.querySelectorAll('.theme-switch').forEach(function (b) {
+      b.addEventListener('click', window.toggleTheme);
+    });
+    document.querySelectorAll('.lang-toggle .opt').forEach(function (o) {
+      o.addEventListener('click', function () { setLang(o.getAttribute('data-l')); });
+    });
+    initNavSearch();
     themeCharts();
   });
   // charts may finish drawing after DOMContentLoaded; re-theme once more on load

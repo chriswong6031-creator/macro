@@ -170,6 +170,8 @@ html[data-lang="zh"] .lang-toggle .zh-opt{color:#fff}
 .tl-head{font-weight:600;color:var(--ink);font-size:14px;flex:1;min-width:200px}
 .tl-time{font-size:12px;color:var(--faint);font-weight:600}
 .tl-detail{padding:2px 0 12px;font-size:13px;color:var(--muted);line-height:1.6}
+.tl-edge{margin-top:7px;font-size:12px;color:var(--ink)}
+.tl-fwd{margin-top:3px;font-size:12px;color:var(--muted)}
 .tl-link{display:inline-block;margin-left:8px;font-weight:700;font-size:13px}
 .tl-item[hidden]{display:none}
 </style>
@@ -509,6 +511,8 @@ html[data-lang="zh"] .lang-toggle .zh-opt{color:#fff}
           </summary>
           <div class="tl-detail">
             {{ e.detail }}
+            {% if e.edge %}<div class="tl-edge"><b>{{ t('Conviction:', '可信度：') }}</b> {{ e.edge }}</div>{% endif %}
+            {% if e.forward %}<div class="tl-fwd">{{ e.forward }}</div>{% endif %}
             {% if e.anchor %}<a href="{{ e.anchor }}" class="tl-link">{{ t('View on dashboard →', '在仪表盘查看 →') }}</a>{% endif %}
           </div>
         </details>
