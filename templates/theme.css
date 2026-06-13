@@ -15,13 +15,17 @@
   --card-shadow: 0 1px 0 rgba(255,255,255,.02);
 }
 html[data-theme="light"] {
-  --bg: #f5f7fa; --panel: #ffffff; --panel2: #eef1f6; --text: #1c2430;
-  --muted: #5d6b7e; --line: #dde3ec;
+  /* Light palette tuned to match the Bitcoin Vector dashboard: airy #F7F8FA
+     canvas, white cards on a soft #EAECF0 grid, and the same vivid #285FFF
+     primary so links / buttons / accents read as one design family. The dark
+     theme (the :root block above) is intentionally left untouched. */
+  --bg: #f7f8fa; --panel: #ffffff; --panel2: #eef1f6; --text: #1c2430;
+  --muted: #5d6b7e; --line: #eaecf0;
   --q1: #1f8b41; --q2: #b07d05; --q3: #c12f2f; --q4: #2f63c4;
   --warn: #b9791a; --act: #c43d3d; --ok: #2f8a52;
   --up: #1f9a55; --down: #cf4040; --orange: #c4781f;
-  --info: #2f6fd6; --link: #2f6fd6;
-  --g-cold: #2f6fd6; --g-hot: #c2841f; --g-mid: #cdd5e0;
+  --info: #285fff; --link: #285fff;
+  --g-cold: #285fff; --g-hot: #c2841f; --g-mid: #cdd5e0;
   --chart-bg: #11151c;            /* keep dark-rendered Plotly charts legible */
   --card-shadow: 0 1px 3px rgba(20,30,50,.07);
 }
