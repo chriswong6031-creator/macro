@@ -539,6 +539,8 @@
   {% set GN = C.growth_nowcast %}
   {% set IN = C.inflation_nowcast %}
   {% set RA = C.risk_appetite %}
+  {% set DR = C.drawdown_risk %}
+  {% set CAP = C.capitulation %}
   <div class="panel span12" id="conditions">
     <h2>🛰️ {{ t('Macro nowcast · conditions · risk appetite', '宏观即时预测 · 金融条件 · 风险偏好') }}
       {{ help("A complementary lens that runs ALONGSIDE the price-based quad and never alters it: the Fed-research feeds and option-implied risk that a markets-only model misses. Financial conditions (Chicago Fed NFCI — 105 inputs in one z-score), a 0–100 recession-risk score (Sahm rule + smoothed probability + Excess Bond Premium + a term-premium-ADJUSTED curve that strips the 2022–24 false inversion), real-time growth (Weekly Economic Index, GDPNow) and inflation (Atlanta sticky vs flexible CPI) nowcasts, and a cross-asset risk-appetite read (equity vol-risk-premium, VIX term structure, CBOE SKEW, the stock-bond correlation regime, a RORO composite). Free Fed/CBOE data — see research/QUANT_FACTOR_EXPANSION.md.", "一个与价格象限并行、绝不改变象限的补充视角：纯市场模型遗漏的美联储研究数据与期权隐含风险。金融条件（芝加哥联储 NFCI — 105 项输入合成一个 z 分数）、0–100 衰退风险评分（Sahm 法则 + 平滑概率 + 超额债券溢价 + 期限溢价调整后的收益率曲线，剔除 2022–24 的假性倒挂）、实时增长（周度经济指数、GDPNow）与通胀（亚特兰大黏性对弹性 CPI）即时预测，以及跨资产风险偏好（股票波动率风险溢价、VIX 期限结构、CBOE SKEW、股债相关性状态、RORO 综合）。免费美联储／CBOE 数据。") }}
@@ -568,6 +570,13 @@
         <div style="height:7px;border-radius:4px;background:var(--line);margin:7px 0;overflow:hidden"><div style="height:100%;width:{{ RC.score|round|int }}%;background:{{ rcolor }}"></div></div>
         <div class="muted sm">Sahm {{ '%.2f'|format(RC.sahm) if RC.sahm is not none else '—' }} · {{ t('prob','概率') }} {{ '%.0f'|format(RC.ny_fed_prob) if RC.ny_fed_prob is not none else '—' }}% · EBP {{ '%+.2f'|format(RC.ebp) if RC.ebp is not none else '—' }}</div>
         {% if RC.curve_note %}<div class="muted sm" style="margin-top:5px">{{ t('Curve', '曲线') }} {{ '%+.2f'|format(RC.curve_raw) if RC.curve_raw is not none else '—' }} → {{ '%+.2f'|format(RC.curve_tp_adjusted) if RC.curve_tp_adjusted is not none else '—' }} {{ t('term-premium-adjusted', '期限溢价调整后') }}</div>{% endif %}
+        {% if DR and DR.score is not none %}
+        {% set dcolor = 'var(--down)' if DR.band in ('high','extreme') else ('#d98a00' if DR.band=='elevated' else 'var(--muted)') %}
+        <div class="kv" style="margin-top:7px;padding-top:7px;border-top:1px solid var(--line)">{{ t('Macro-stress (drawdown risk)', '宏观压力（回撤风险）') }}
+          {{ help("A LEAN 4-factor macro-stress composite (recession-risk + NFCI + Excess Bond Premium + HY credit spreads; the weak curve/VIX legs were dropped after measurement). It is a DRAWDOWN-RISK gauge, not a return forecast: at the HIGH band the S&P had a ~36% chance of a >10% drawdown over the next 3 months vs ~8% base rate — the cleanest drawdown discriminator we measured (beats quad==Q4 and net-liquidity). Returns still rebound, so this says 'size down / widen stops', not 'sell everything'.", "精简版四因子宏观压力综合（衰退风险＋NFCI＋超额债券溢价＋高收益信用利差；曲线/VIX 经测量后剔除）。这是回撤风险指标而非回报预测：在高位区，标普未来三个月出现 >10% 回撤的概率约 36%（基准约 8%）。") }}
+          <b style="float:right;color:{{ dcolor }}">{{ DR.score|round|int }}/100 · {{ t(DR.band, {'low':'低','elevated':'偏高','high':'高','extreme':'极高'}.get(DR.band, DR.band)) }}</b></div>
+        <div class="muted sm">{{ t('P(>10% drawdown / 3mo):', '三月内 >10% 回撤概率：') }} <b style="color:{{ dcolor }}">~{{ DR.dd10_prob_pct }}%</b> {{ t('vs ~8% base', '对比基准约 8%') }}</div>
+        {% endif %}
         {% else %}<div class="muted">—</div>{% endif %}
       </div>
 
@@ -595,6 +604,12 @@
         {% set sbcolor = 'var(--down)' if 'breakdown' in (RA.stock_bond_regime or '') else 'var(--muted)' %}
         <div class="kv">{{ t('Stock-bond corr', '股债相关性') }} <b style="color:{{ sbcolor }}">{{ '%+.2f'|format(RA.stock_bond_corr) }}</b> <span class="muted sm">{{ t('bonds not hedging' if 'breakdown' in (RA.stock_bond_regime or '') else ('bonds hedge' if 'diversifying' in (RA.stock_bond_regime or '') else 'mixed'), '债券未对冲' if 'breakdown' in (RA.stock_bond_regime or '') else ('债券对冲' if 'diversifying' in (RA.stock_bond_regime or '') else '混合')) }}</span></div>{% endif %}
         {% if RA.vol_target_scalar is not none %}<div class="kv">{{ t('Vol-target exposure', '波动率目标敞口') }} <b>{{ '%.2f'|format(RA.vol_target_scalar) }}×</b></div>{% endif %}
+        {% if CAP and CAP.active %}
+        <div class="kv" style="margin-top:6px;padding-top:6px;border-top:1px solid var(--line)">{{ t('Capitulation', '恐慌触底') }}
+          {{ help("A contrarian bounce gauge: counts how many of three panic signals are firing (volatility-risk-premium extreme = realized vol >> implied, VIX > 30, COT speculators washed out). MEASURED: when >=2 stack, the S&P returned +9.3% over the next 3 months, 86% positive (vs +2.8% base) with SHALLOWER drawdowns. It marks fear/capitulation, not a forecast — and it's silent in normal times.", "逆向触底指标：统计三个恐慌信号中有几个触发（波动率风险溢价极端＝已实现波动率远超隐含、VIX>30、COT 投机仓位被洗出）。实测：当 >=2 个叠加时，标普未来三月 +9.3%，86% 为正（基准 +2.8%）。") }}
+          <b style="float:right;color:var(--up)">{{ CAP.score }}/3 {% if CAP.strong %}⚑{% endif %}</b></div>
+        <div class="muted sm">{{ t('Historically a bounce setup:', '历史上的反弹布局：') }} <b style="color:var(--up)">+{{ CAP.measured_bounce_pct }}%/3mo</b>, {{ CAP.measured_hit_pct }}% {{ t('positive (vs +2.8% base)', '为正（基准 +2.8%）') }}</div>
+        {% endif %}
       </div>
 
       <!-- factor leadership (cross-sectional equity factors) -->

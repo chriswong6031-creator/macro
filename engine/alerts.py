@@ -346,6 +346,44 @@ def ebp_widening(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
     return None
 
 
+def drawdown_risk_high(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
+    """Macro-stress (drawdown-risk) gauge crossing into the high band. MEASURED:
+    P(>=10% drawdown in 63d) ~36% in this band vs ~8% base (research §6)."""
+    thr = config.load()["alerts"].get("drawdown_risk_high")
+    if thr is None:
+        return None
+    s = _conditions_frame(f).get("drawdown_risk")
+    if s is None:
+        return None
+    s = s.dropna()
+    if len(s) < 2 or not (s.iloc[-2] < thr <= s.iloc[-1]):
+        return None
+    return Alert("drawdown_risk_high", "act",
+                 f"Macro-stress gauge crossed into the HIGH band ({s.iloc[-1]:.0f}/100) — "
+                 f"P(>=10% drawdown in 3 months) ~36% vs ~8% base; size down, widen stops",
+                 message_zh=f"宏观压力指标进入高位区（{s.iloc[-1]:.0f}/100）— 未来三个月 >=10% 回撤"
+                            f"的概率约 36%（基准约 8%）；减小仓位、放宽止损")
+
+
+def capitulation_signal(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
+    """Capitulation gauge going STRONG (>=2 stacked signals). MEASURED contrarian
+    bounce: +9.3%/63d, 86% positive vs +2.8% base (research §6)."""
+    thr = config.load()["alerts"].get("capitulation_strong")
+    if thr is None:
+        return None
+    s = _conditions_frame(f).get("capitulation_score")
+    if s is None:
+        return None
+    s = s.dropna()
+    if len(s) < 2 or not (s.iloc[-2] < thr <= s.iloc[-1]):
+        return None
+    return Alert("capitulation_signal", "warn",
+                 f"Capitulation gauge fired ({int(s.iloc[-1])} of 3 panic signals) — historically a "
+                 f"contrarian setup: S&P +9.3%/3mo, 86% positive (vs +2.8% base). Fear, not forecast.",
+                 message_zh=f"恐慌触底指标触发（3 个恐慌信号中的 {int(s.iloc[-1])} 个）— 历史上的逆向布局："
+                            f"S&P 未来三月 +9.3%，86% 为正（基准 +2.8%）。是恐慌而非预测。")
+
+
 # --- runner ---------------------------------------------------------------------
 
 def evaluate(f: pd.DataFrame) -> list[Alert]:
@@ -356,7 +394,7 @@ def evaluate(f: pd.DataFrame) -> list[Alert]:
     alerts: list[Alert] = []
     rules = [transition_state_change, net_liquidity_roc_flip, hy_oas_widening,
              gex_flip_cross, conditions_recession_state_change, nfci_tightening,
-             sahm_trigger, ebp_widening]
+             sahm_trigger, ebp_widening, drawdown_risk_high, capitulation_signal]
     multi = [axis_confidence_floor, sector_rs_percentile_cross,
              holdings_active_changes, sector_holdings_accumulation,
              circuit_breaker_open]

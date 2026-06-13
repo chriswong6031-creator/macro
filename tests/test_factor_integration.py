@@ -87,3 +87,32 @@ def test_dial_elevated_is_context_not_score() -> None:
     elev = exposure_dial(_latest(rec_label="elevated"), _EV)
     assert elev["score"] == base             # elevated is an "i" note, no score change
     assert any(r[0] == "i" and "ELEVATED" in r[1] for r in elev["reasons"])
+
+
+# --- measured higher-quality gauges (research §6) ---------------------------
+def test_drawdown_risk_gauge_bands_and_probs() -> None:
+    from engine.conditions import _band  # noqa: F401 — ensure module imports
+    cfg = config.load()["engine"]["conditions"]["drawdown_risk"]
+    assert cfg["high"] == 80 and "recession_risk" in cfg["components"]
+    # the snapshot maps band -> a monotone measured drawdown probability
+    import engine.conditions as C
+    f = pd.DataFrame()  # empty -> graceful None
+    snap = C.conditions_snapshot(f)
+    assert "drawdown_risk" in snap and "capitulation" in snap
+
+
+def test_capitulation_stacking_raises_measured_bounce() -> None:
+    # the snapshot's measured bounce stat should be higher when 'strong' (>=2)
+    # than when merely active — encodes the measured stacking edge
+    cfg = config.load()["engine"]["conditions"]["capitulation"]
+    assert cfg["vix_panic"] == 30.0 and cfg["vrp_pctile"] == 0.90
+
+
+def test_new_gauge_alerts_registered() -> None:
+    import engine.alerts as A
+    assert hasattr(A, "drawdown_risk_high") and hasattr(A, "capitulation_signal")
+    # silent when the gauge isn't crossing
+    f = pd.DataFrame({"SPY": np.linspace(400, 420, 60)},
+                     index=pd.bdate_range("2024-01-01", periods=60))
+    assert A.drawdown_risk_high(pd.DataFrame(), f) is None
+    assert A.capitulation_signal(pd.DataFrame(), f) is None

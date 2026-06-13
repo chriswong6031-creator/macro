@@ -208,3 +208,60 @@ caveat (decay/crowding/look-ahead) the way the existing signals do.
 - SEC EDGAR XBRL APIs (`data.sec.gov/api/xbrl/frames`) · FINRA Equity Short Interest
 - McLean-Pontiff factor decay (JF 2016) · Arnott et al. "Reports of Value's Death…" (FAJ 2021)
 </content>
+
+---
+
+## §6 Higher-quality-signal research (measured edges + the kill list)
+
+After integrating the factors into the regime/dial, a 6-agent measurement sweep
+asked "how else can this data give higher-quality signals?" — every claim
+**measured** over 2007→2026 (weekly-decorrelated forward returns, split-half
+checked). Two new signals cleared the bar and shipped; several intuitive ideas
+**measured as fake** and are documented here so nobody rebuilds them.
+
+### Built (real measured edge)
+- **Macro-stress drawdown-risk gauge** (`engine/conditions.py drawdown_risk`,
+  on macro.html): a LEAN 4-factor composite — recession-risk + NFCI + Excess Bond
+  Premium + HY OAS (the curve & VIX legs were **dropped** because they tested
+  weak/coincident). MEASURED: P(≥10% drawdown in 63d) is monotone by band —
+  ~8% (base) → 26% (elevated) → 36% (high) → 38% (extreme). It beats `quad==Q4`
+  (~18%) and net-liquidity (an *anti*-signal). Honest framing: it is a
+  DRAWDOWN-RISK gauge, **not** a return forecast (risk-off rebounds) and **not** a
+  clean recession leader (it led in 2008 but lagged 2020/2022, and is credit-blind
+  to a 2022-style rates bear). Alert at the ≥80 crossing.
+- **Capitulation bounce gauge** (`engine/conditions.py capitulation`): counts how
+  many of three panic signals fire — VRP percentile >0.90 (realized ≫ implied),
+  VIX >30, COT spec washout (<10th pctile). MEASURED contrarian bounce: ≥1 signal
+  → +4.5%/63d, 75% positive; ≥2 stacked → **+9.3%/63d, 86% positive** with
+  *shallower* drawdowns (vs +2.8% base). Alert at ≥2. Fear, not forecast.
+
+### Measured but NOT built (proposed for later, real edge)
+- **Two-axis scenario odds**: conditioning forward-return odds on quad × NFCI
+  direction splits the Q1/Q2 hit-rate 13–20pp (loosening ~72% vs tightening ~55%,
+  holds in both sample halves) — already captured in the dial's NFCI rule; a
+  fuller scenario-odds panel is a medium-effort follow-up. **Do NOT** build the
+  full 24-cell quad × recession-band × NFCI grid: only ~8 of 24 cells exceed N=50.
+- **Value-vs-Growth tilt**: yield-rising → value (t=+3.0, holds in all four
+  sub-periods 2000→2026); Q1→value / Q4→growth (~1.9% spread). A low-effort tile
+  for factors.html.
+
+### KILL LIST — measured anti-signals (do NOT build)
+- **"Rotate to low-vol/quality when conditions tighten / recession-risk rises" is
+  BACKWARDS.** USMV/SPLV *under*perform when NFCI tightens (rel −1.0%/−0.75%,
+  t<−2.7) and high-beta SPHB *out*performs (+1.28%) — because risk-off rebounds.
+  Defensive factors only help on a *drawdown* basis, not return. (Consistent with
+  the dial's existing "risk-off rebounds, drawdowns deepen" note.)
+- **Multi-signal stock conviction screen — do not build a ranked buy-list.** The
+  cross-sectional factor composite's forward IC is **negative** (−0.05 to −0.11,
+  t −5 to −15) on the current universe, and the short-interest "edge" is **size in
+  disguise** (IC collapses to ~0 after size-neutralization, flips sign across
+  halves). Also fatally look-ahead-biased: only one short-interest settlement date
+  + a snapshot of fundamentals exist. factors.html stays **descriptive**, not a
+  buy-list, until dated point-in-time snapshots accumulate.
+- **EIA "tight crude stocks = bullish oil/energy" is BACKWARDS** — tight stocks
+  precede *worse* forward oil returns (draws follow price runs). **Oil COT
+  positioning** is flat (no edge). **VIX term-structure backwardation** and **CBOE
+  SKEW extremes** ≈ base rate (SKEW>0.90 gives +2.4%/63d = base). **Commodity
+  carry** as a signal is deferred — only ~1.5y of history exists.
+- **Don't make the drawdown gauge a "leader"** or add net-liquidity to it
+  (net-liquidity-falling drawdown prob 8% < 13% base = anti-signal).

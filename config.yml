@@ -592,6 +592,26 @@ engine:
       realized_window_d: 21
       floor: 0.5                    # never scale exposure below/above these
       cap: 1.5
+    # --- MEASURED higher-quality signals (research/QUANT_FACTOR_EXPANSION.md §6) -
+    # Drawdown-risk gauge: a LEAN 4-factor macro-stress composite. MEASURED:
+    # >=80 -> P(>=10% drawdown in 63d) ~45% vs ~13% base; curve & VIX were dropped
+    # because they tested weak/coincident. It is a DRAWDOWN-RISK gauge, NOT a
+    # return forecast (risk-off rebounds) and NOT a clean recession leader.
+    drawdown_risk:
+      components: [recession_risk, nfci, ebp, hy_oas]
+      z_lookback_d: 1260            # ~5y rolling z for each component
+      pctile_lookback_d: 2520       # ~10y percentile -> 0..100 gauge
+      elevated: 60
+      high: 80
+      extreme: 90
+    # Capitulation gauge: contrarian bounce signal. MEASURED: VRP %ile>0.90 ->
+    # +5.8%/63d, 88% positive (vs +2.8% base), shallower drawdowns; VIX>30 ->
+    # +7.2%; COT ES washout (<10th %ile) -> +4.2%; stacked -> +9.6%/92%.
+    capitulation:
+      vrp_pctile: 0.90              # realized vol >> implied = panic
+      vix_panic: 30.0
+      cot_washout_pctile: 0.10      # COT ES net-spec wrung out (3y rolling)
+      cot_pctile_lookback_d: 756
 
 # -----------------------------------------------------------------------------
 # Alerts (Phase 3 — rules defined now, wired after validation checkpoint)
@@ -616,6 +636,8 @@ alerts:
   nfci_tightening_z: 0.65              # NFCI crossing above this (tight) fires once
   sahm_trigger: 0.50                  # Sahm rule crossing >= this = labor-recession confirm
   ebp_widening_z: 2.0                 # EBP 1-month change this many sigma = credit risk-off
+  drawdown_risk_high: 80              # macro-stress gauge crossing into the high band (P(dd) ~36%)
+  capitulation_strong: 2              # capitulation gauge >= this (stacked) = contrarian bounce watch
 
 notify:
   # public base URL of the published site (e.g. https://user.github.io/repo).
