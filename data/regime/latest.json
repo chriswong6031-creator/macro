@@ -461,7 +461,70 @@
           "avg_excess_pct": 0.2
         },
         "season_this": "Jun: -0.6% avg, up 46% of years (n=28)",
-        "season_next": "Jul: +1.5% avg, up 52% of years (n=27)"
+        "season_next": "Jul: +1.5% avg, up 52% of years (n=27)",
+        "season_all": {
+          "1": {
+            "avg_pct": -0.87,
+            "hit_pct": 43.0,
+            "n": 28
+          },
+          "2": {
+            "avg_pct": 1.27,
+            "hit_pct": 61.0,
+            "n": 28
+          },
+          "3": {
+            "avg_pct": 1.31,
+            "hit_pct": 64.0,
+            "n": 28
+          },
+          "4": {
+            "avg_pct": 2.86,
+            "hit_pct": 68.0,
+            "n": 28
+          },
+          "5": {
+            "avg_pct": 0.19,
+            "hit_pct": 61.0,
+            "n": 28
+          },
+          "6": {
+            "avg_pct": -0.55,
+            "hit_pct": 46.0,
+            "n": 28
+          },
+          "7": {
+            "avg_pct": 1.53,
+            "hit_pct": 52.0,
+            "n": 27
+          },
+          "8": {
+            "avg_pct": -0.2,
+            "hit_pct": 44.0,
+            "n": 27
+          },
+          "9": {
+            "avg_pct": -2.43,
+            "hit_pct": 41.0,
+            "n": 27
+          },
+          "10": {
+            "avg_pct": 1.68,
+            "hit_pct": 56.0,
+            "n": 27
+          },
+          "11": {
+            "avg_pct": 3.62,
+            "hit_pct": 81.0,
+            "n": 27
+          },
+          "12": {
+            "avg_pct": 1.66,
+            "hit_pct": 67.0,
+            "n": 27
+          }
+        },
+        "season_month": 6
       },
       {
         "name": "Communications",
@@ -500,6 +563,69 @@
         },
         "season_this": "Jun: +1.3% avg, up 75% of years (n=8)",
         "season_next": "Jul: +2.4% avg, up 75% of years (n=8)",
+        "season_all": {
+          "1": {
+            "avg_pct": 4.19,
+            "hit_pct": 75.0,
+            "n": 8
+          },
+          "2": {
+            "avg_pct": -0.88,
+            "hit_pct": 25.0,
+            "n": 8
+          },
+          "3": {
+            "avg_pct": -0.79,
+            "hit_pct": 62.0,
+            "n": 8
+          },
+          "4": {
+            "avg_pct": 1.97,
+            "hit_pct": 62.0,
+            "n": 8
+          },
+          "5": {
+            "avg_pct": 2.59,
+            "hit_pct": 75.0,
+            "n": 8
+          },
+          "6": {
+            "avg_pct": 1.26,
+            "hit_pct": 75.0,
+            "n": 8
+          },
+          "7": {
+            "avg_pct": 2.38,
+            "hit_pct": 75.0,
+            "n": 8
+          },
+          "8": {
+            "avg_pct": 1.52,
+            "hit_pct": 62.0,
+            "n": 8
+          },
+          "9": {
+            "avg_pct": -2.03,
+            "hit_pct": 38.0,
+            "n": 8
+          },
+          "10": {
+            "avg_pct": -0.72,
+            "hit_pct": 50.0,
+            "n": 8
+          },
+          "11": {
+            "avg_pct": 3.5,
+            "hit_pct": 75.0,
+            "n": 8
+          },
+          "12": {
+            "avg_pct": -0.04,
+            "hit_pct": 62.0,
+            "n": 8
+          }
+        },
+        "season_month": 6,
         "trigger_gap_pct": 11.9,
         "trigger_progress_pct": 10.0
       },
@@ -539,7 +665,70 @@
           "avg_excess_pct": 0.04
         },
         "season_this": "Jun: +0.1% avg, up 54% of years (n=28)",
-        "season_next": "Jul: +0.1% avg, up 59% of years (n=27)"
+        "season_next": "Jul: +0.1% avg, up 59% of years (n=27)",
+        "season_all": {
+          "1": {
+            "avg_pct": 1.13,
+            "hit_pct": 50.0,
+            "n": 28
+          },
+          "2": {
+            "avg_pct": 1.6,
+            "hit_pct": 61.0,
+            "n": 28
+          },
+          "3": {
+            "avg_pct": 2.18,
+            "hit_pct": 71.0,
+            "n": 28
+          },
+          "4": {
+            "avg_pct": 3.19,
+            "hit_pct": 57.0,
+            "n": 28
+          },
+          "5": {
+            "avg_pct": 0.45,
+            "hit_pct": 46.0,
+            "n": 28
+          },
+          "6": {
+            "avg_pct": 0.15,
+            "hit_pct": 54.0,
+            "n": 28
+          },
+          "7": {
+            "avg_pct": 0.08,
+            "hit_pct": 59.0,
+            "n": 27
+          },
+          "8": {
+            "avg_pct": -0.38,
+            "hit_pct": 52.0,
+            "n": 27
+          },
+          "9": {
+            "avg_pct": -0.78,
+            "hit_pct": 52.0,
+            "n": 27
+          },
+          "10": {
+            "avg_pct": 1.01,
+            "hit_pct": 52.0,
+            "n": 27
+          },
+          "11": {
+            "avg_pct": 1.82,
+            "hit_pct": 59.0,
+            "n": 27
+          },
+          "12": {
+            "avg_pct": 0.97,
+            "hit_pct": 63.0,
+            "n": 27
+          }
+        },
+        "season_month": 6
       },
       {
         "name": "Financials",
@@ -578,6 +767,69 @@
         },
         "season_this": "Jun: -0.9% avg, up 39% of years (n=28)",
         "season_next": "Jul: +1.9% avg, up 67% of years (n=27)",
+        "season_all": {
+          "1": {
+            "avg_pct": -0.18,
+            "hit_pct": 54.0,
+            "n": 28
+          },
+          "2": {
+            "avg_pct": -0.97,
+            "hit_pct": 50.0,
+            "n": 28
+          },
+          "3": {
+            "avg_pct": 0.83,
+            "hit_pct": 43.0,
+            "n": 28
+          },
+          "4": {
+            "avg_pct": 2.65,
+            "hit_pct": 64.0,
+            "n": 28
+          },
+          "5": {
+            "avg_pct": 0.31,
+            "hit_pct": 57.0,
+            "n": 28
+          },
+          "6": {
+            "avg_pct": -0.86,
+            "hit_pct": 39.0,
+            "n": 28
+          },
+          "7": {
+            "avg_pct": 1.88,
+            "hit_pct": 67.0,
+            "n": 27
+          },
+          "8": {
+            "avg_pct": 0.25,
+            "hit_pct": 52.0,
+            "n": 27
+          },
+          "9": {
+            "avg_pct": -1.16,
+            "hit_pct": 44.0,
+            "n": 27
+          },
+          "10": {
+            "avg_pct": 2.02,
+            "hit_pct": 67.0,
+            "n": 27
+          },
+          "11": {
+            "avg_pct": 2.04,
+            "hit_pct": 67.0,
+            "n": 27
+          },
+          "12": {
+            "avg_pct": 1.18,
+            "hit_pct": 70.0,
+            "n": 27
+          }
+        },
+        "season_month": 6,
         "trigger_gap_pct": 6.4,
         "trigger_progress_pct": 49.0
       },
@@ -617,7 +869,70 @@
           "avg_excess_pct": 0.2
         },
         "season_this": "Jun: -0.4% avg, up 46% of years (n=28)",
-        "season_next": "Jul: +1.7% avg, up 74% of years (n=27)"
+        "season_next": "Jul: +1.7% avg, up 74% of years (n=27)",
+        "season_all": {
+          "1": {
+            "avg_pct": -0.43,
+            "hit_pct": 46.0,
+            "n": 28
+          },
+          "2": {
+            "avg_pct": 0.51,
+            "hit_pct": 57.0,
+            "n": 28
+          },
+          "3": {
+            "avg_pct": 1.02,
+            "hit_pct": 64.0,
+            "n": 28
+          },
+          "4": {
+            "avg_pct": 2.67,
+            "hit_pct": 64.0,
+            "n": 28
+          },
+          "5": {
+            "avg_pct": 0.67,
+            "hit_pct": 61.0,
+            "n": 28
+          },
+          "6": {
+            "avg_pct": -0.41,
+            "hit_pct": 46.0,
+            "n": 28
+          },
+          "7": {
+            "avg_pct": 1.66,
+            "hit_pct": 74.0,
+            "n": 27
+          },
+          "8": {
+            "avg_pct": 0.25,
+            "hit_pct": 59.0,
+            "n": 27
+          },
+          "9": {
+            "avg_pct": -1.06,
+            "hit_pct": 52.0,
+            "n": 27
+          },
+          "10": {
+            "avg_pct": 1.15,
+            "hit_pct": 59.0,
+            "n": 27
+          },
+          "11": {
+            "avg_pct": 3.46,
+            "hit_pct": 78.0,
+            "n": 27
+          },
+          "12": {
+            "avg_pct": 1.26,
+            "hit_pct": 70.0,
+            "n": 27
+          }
+        },
+        "season_month": 6
       },
       {
         "name": "Technology",
@@ -655,7 +970,70 @@
           "avg_excess_pct": 0.21
         },
         "season_this": "Jun: +0.8% avg, up 50% of years (n=28)",
-        "season_next": "Jul: +1.6% avg, up 67% of years (n=27)"
+        "season_next": "Jul: +1.6% avg, up 67% of years (n=27)",
+        "season_all": {
+          "1": {
+            "avg_pct": 1.06,
+            "hit_pct": 50.0,
+            "n": 28
+          },
+          "2": {
+            "avg_pct": -0.91,
+            "hit_pct": 54.0,
+            "n": 28
+          },
+          "3": {
+            "avg_pct": 1.29,
+            "hit_pct": 64.0,
+            "n": 28
+          },
+          "4": {
+            "avg_pct": 1.86,
+            "hit_pct": 64.0,
+            "n": 28
+          },
+          "5": {
+            "avg_pct": 2.15,
+            "hit_pct": 64.0,
+            "n": 28
+          },
+          "6": {
+            "avg_pct": 0.85,
+            "hit_pct": 50.0,
+            "n": 28
+          },
+          "7": {
+            "avg_pct": 1.63,
+            "hit_pct": 67.0,
+            "n": 27
+          },
+          "8": {
+            "avg_pct": 0.74,
+            "hit_pct": 56.0,
+            "n": 27
+          },
+          "9": {
+            "avg_pct": -1.98,
+            "hit_pct": 48.0,
+            "n": 27
+          },
+          "10": {
+            "avg_pct": 2.92,
+            "hit_pct": 67.0,
+            "n": 27
+          },
+          "11": {
+            "avg_pct": 2.67,
+            "hit_pct": 74.0,
+            "n": 27
+          },
+          "12": {
+            "avg_pct": 0.36,
+            "hit_pct": 56.0,
+            "n": 27
+          }
+        },
+        "season_month": 6
       },
       {
         "name": "Consumer Staples",
@@ -694,6 +1072,69 @@
         },
         "season_this": "Jun: -0.1% avg, up 43% of years (n=28)",
         "season_next": "Jul: +1.2% avg, up 63% of years (n=27)",
+        "season_all": {
+          "1": {
+            "avg_pct": -0.52,
+            "hit_pct": 46.0,
+            "n": 28
+          },
+          "2": {
+            "avg_pct": 0.21,
+            "hit_pct": 57.0,
+            "n": 28
+          },
+          "3": {
+            "avg_pct": 1.1,
+            "hit_pct": 64.0,
+            "n": 28
+          },
+          "4": {
+            "avg_pct": 1.25,
+            "hit_pct": 68.0,
+            "n": 28
+          },
+          "5": {
+            "avg_pct": 0.48,
+            "hit_pct": 61.0,
+            "n": 28
+          },
+          "6": {
+            "avg_pct": -0.11,
+            "hit_pct": 43.0,
+            "n": 28
+          },
+          "7": {
+            "avg_pct": 1.18,
+            "hit_pct": 63.0,
+            "n": 27
+          },
+          "8": {
+            "avg_pct": 0.5,
+            "hit_pct": 63.0,
+            "n": 27
+          },
+          "9": {
+            "avg_pct": -0.72,
+            "hit_pct": 44.0,
+            "n": 27
+          },
+          "10": {
+            "avg_pct": 1.47,
+            "hit_pct": 59.0,
+            "n": 27
+          },
+          "11": {
+            "avg_pct": 1.99,
+            "hit_pct": 74.0,
+            "n": 27
+          },
+          "12": {
+            "avg_pct": 0.53,
+            "hit_pct": 63.0,
+            "n": 27
+          }
+        },
+        "season_month": 6,
         "trigger_gap_pct": 2.3,
         "trigger_progress_pct": 75.0
       },
@@ -733,7 +1174,70 @@
           "avg_excess_pct": 0.2
         },
         "season_this": "Jun: +2.0% avg, up 91% of years (n=11)",
-        "season_next": "Jul: +3.3% avg, up 90% of years (n=10)"
+        "season_next": "Jul: +3.3% avg, up 90% of years (n=10)",
+        "season_all": {
+          "1": {
+            "avg_pct": 0.48,
+            "hit_pct": 55.0,
+            "n": 11
+          },
+          "2": {
+            "avg_pct": -0.3,
+            "hit_pct": 64.0,
+            "n": 11
+          },
+          "3": {
+            "avg_pct": 0.87,
+            "hit_pct": 55.0,
+            "n": 11
+          },
+          "4": {
+            "avg_pct": 0.98,
+            "hit_pct": 45.0,
+            "n": 11
+          },
+          "5": {
+            "avg_pct": 0.43,
+            "hit_pct": 73.0,
+            "n": 11
+          },
+          "6": {
+            "avg_pct": 2.04,
+            "hit_pct": 91.0,
+            "n": 11
+          },
+          "7": {
+            "avg_pct": 3.31,
+            "hit_pct": 90.0,
+            "n": 10
+          },
+          "8": {
+            "avg_pct": 0.65,
+            "hit_pct": 60.0,
+            "n": 10
+          },
+          "9": {
+            "avg_pct": -2.95,
+            "hit_pct": 30.0,
+            "n": 10
+          },
+          "10": {
+            "avg_pct": -0.9,
+            "hit_pct": 30.0,
+            "n": 10
+          },
+          "11": {
+            "avg_pct": 3.12,
+            "hit_pct": 64.0,
+            "n": 11
+          },
+          "12": {
+            "avg_pct": 0.47,
+            "hit_pct": 55.0,
+            "n": 11
+          }
+        },
+        "season_month": 6
       },
       {
         "name": "Utilities",
@@ -772,6 +1276,69 @@
         },
         "season_this": "Jun: -0.1% avg, up 54% of years (n=28)",
         "season_next": "Jul: +1.1% avg, up 67% of years (n=27)",
+        "season_all": {
+          "1": {
+            "avg_pct": -0.21,
+            "hit_pct": 46.0,
+            "n": 28
+          },
+          "2": {
+            "avg_pct": -0.99,
+            "hit_pct": 54.0,
+            "n": 28
+          },
+          "3": {
+            "avg_pct": 2.29,
+            "hit_pct": 75.0,
+            "n": 28
+          },
+          "4": {
+            "avg_pct": 2.27,
+            "hit_pct": 82.0,
+            "n": 28
+          },
+          "5": {
+            "avg_pct": 0.74,
+            "hit_pct": 61.0,
+            "n": 28
+          },
+          "6": {
+            "avg_pct": -0.05,
+            "hit_pct": 54.0,
+            "n": 28
+          },
+          "7": {
+            "avg_pct": 1.08,
+            "hit_pct": 67.0,
+            "n": 27
+          },
+          "8": {
+            "avg_pct": 0.35,
+            "hit_pct": 63.0,
+            "n": 27
+          },
+          "9": {
+            "avg_pct": 0.07,
+            "hit_pct": 63.0,
+            "n": 27
+          },
+          "10": {
+            "avg_pct": 1.22,
+            "hit_pct": 74.0,
+            "n": 27
+          },
+          "11": {
+            "avg_pct": 0.8,
+            "hit_pct": 59.0,
+            "n": 27
+          },
+          "12": {
+            "avg_pct": 0.97,
+            "hit_pct": 63.0,
+            "n": 27
+          }
+        },
+        "season_month": 6,
         "trigger_gap_pct": 7.6,
         "trigger_progress_pct": 41.0
       },
@@ -812,6 +1379,69 @@
         },
         "season_this": "Jun: +0.7% avg, up 57% of years (n=28)",
         "season_next": "Jul: +1.1% avg, up 63% of years (n=27)",
+        "season_all": {
+          "1": {
+            "avg_pct": 0.95,
+            "hit_pct": 61.0,
+            "n": 28
+          },
+          "2": {
+            "avg_pct": -0.19,
+            "hit_pct": 57.0,
+            "n": 28
+          },
+          "3": {
+            "avg_pct": 0.91,
+            "hit_pct": 61.0,
+            "n": 28
+          },
+          "4": {
+            "avg_pct": 1.29,
+            "hit_pct": 54.0,
+            "n": 28
+          },
+          "5": {
+            "avg_pct": 0.53,
+            "hit_pct": 68.0,
+            "n": 28
+          },
+          "6": {
+            "avg_pct": 0.74,
+            "hit_pct": 57.0,
+            "n": 28
+          },
+          "7": {
+            "avg_pct": 1.13,
+            "hit_pct": 63.0,
+            "n": 27
+          },
+          "8": {
+            "avg_pct": 0.16,
+            "hit_pct": 56.0,
+            "n": 27
+          },
+          "9": {
+            "avg_pct": -1.24,
+            "hit_pct": 41.0,
+            "n": 27
+          },
+          "10": {
+            "avg_pct": 0.74,
+            "hit_pct": 59.0,
+            "n": 27
+          },
+          "11": {
+            "avg_pct": 2.42,
+            "hit_pct": 78.0,
+            "n": 27
+          },
+          "12": {
+            "avg_pct": 1.54,
+            "hit_pct": 67.0,
+            "n": 27
+          }
+        },
+        "season_month": 6,
         "trigger_gap_pct": 4.7,
         "trigger_progress_pct": 60.0
       },
@@ -852,6 +1482,69 @@
         },
         "season_this": "Jun: -0.1% avg, up 54% of years (n=28)",
         "season_next": "Jul: +1.8% avg, up 70% of years (n=27)",
+        "season_all": {
+          "1": {
+            "avg_pct": 0.61,
+            "hit_pct": 50.0,
+            "n": 28
+          },
+          "2": {
+            "avg_pct": -0.39,
+            "hit_pct": 46.0,
+            "n": 28
+          },
+          "3": {
+            "avg_pct": 1.27,
+            "hit_pct": 54.0,
+            "n": 28
+          },
+          "4": {
+            "avg_pct": 2.51,
+            "hit_pct": 64.0,
+            "n": 28
+          },
+          "5": {
+            "avg_pct": 0.3,
+            "hit_pct": 61.0,
+            "n": 28
+          },
+          "6": {
+            "avg_pct": -0.09,
+            "hit_pct": 54.0,
+            "n": 28
+          },
+          "7": {
+            "avg_pct": 1.81,
+            "hit_pct": 70.0,
+            "n": 27
+          },
+          "8": {
+            "avg_pct": 0.07,
+            "hit_pct": 44.0,
+            "n": 27
+          },
+          "9": {
+            "avg_pct": -0.75,
+            "hit_pct": 44.0,
+            "n": 27
+          },
+          "10": {
+            "avg_pct": 1.53,
+            "hit_pct": 59.0,
+            "n": 27
+          },
+          "11": {
+            "avg_pct": 2.93,
+            "hit_pct": 78.0,
+            "n": 27
+          },
+          "12": {
+            "avg_pct": 1.16,
+            "hit_pct": 78.0,
+            "n": 27
+          }
+        },
+        "season_month": 6,
         "trigger_gap_pct": 9.3,
         "trigger_progress_pct": 14.0
       }
