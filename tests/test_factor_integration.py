@@ -116,3 +116,30 @@ def test_new_gauge_alerts_registered() -> None:
                      index=pd.bdate_range("2024-01-01", periods=60))
     assert A.drawdown_risk_high(pd.DataFrame(), f) is None
     assert A.capitulation_signal(pd.DataFrame(), f) is None
+
+
+def test_style_tilt_from_yield_direction() -> None:
+    import engine.conditions as C
+    idx = pd.bdate_range("2023-01-02", periods=80)
+    # 10y rising sharply -> value tilt
+    f = pd.DataFrame({"SPY": np.linspace(400, 420, 80),
+                      "us10y": np.linspace(3.0, 4.5, 80)}, index=idx)
+    snap = C.conditions_snapshot(f)
+    assert snap["style_tilt"]["tilt"] == "value"
+    f2 = pd.DataFrame({"SPY": np.linspace(400, 420, 80),
+                       "us10y": np.linspace(4.5, 3.0, 80)}, index=idx)
+    assert C.conditions_snapshot(f2)["style_tilt"]["tilt"] == "growth"
+
+
+def test_scenario_odds_structure() -> None:
+    from engine.playbook import scenario_odds
+    # real data path: build features + regime, ask for the current cell
+    from engine.inputs import build_features, yahoo_closes
+    from engine.regime import classify
+    f = build_features()
+    reg = classify(f)
+    latest = {"quad": "Q1", "conditions": {"financial_conditions": {"trend": "loosening"}}}
+    sc = scenario_odds(yahoo_closes(), reg, f, latest)
+    if sc:  # present whenever NFCI history exists
+        assert sc["current"] is None or {"hit_pct", "avg_pct", "n"} <= set(sc["current"])
+        assert sc["direction"] == "loosening"

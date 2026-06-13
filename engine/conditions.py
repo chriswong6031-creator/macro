@@ -147,6 +147,10 @@ def conditions_frame(f: pd.DataFrame) -> pd.DataFrame:
         spy_ret = spy.pct_change(fill_method=None)
         bond_ret = -us10y.diff()                      # Treasury price proxy: price up when yield falls
         out["stock_bond_corr"] = spy_ret.rolling(ccfg["window_d"]).corr(bond_ret)
+    # Value-vs-growth STYLE tilt driver (MEASURED §6: a rising 10y yield favours
+    # value over growth — t=+3.0, holds in all four 2000-2026 sub-periods).
+    if us10y is not None:
+        out["yield_chg_1m"] = us10y.diff(21)          # ~1-month 10y change (pp)
 
     # RORO cross-asset composite (risk-on positive) ---------------------------
     zw = cfg["roro"]["z_window_d"]
@@ -348,6 +352,17 @@ def conditions_snapshot(f: pd.DataFrame) -> dict:
     fired = [n for n, v in (("VRP extreme", (g("vrp_pctile") or 0) > cfg["capitulation"]["vrp_pctile"]),
                             ("VIX panic", (_last(_col(f, "vix")) or 0) > cfg["capitulation"]["vix_panic"]))
              if v]
+    # value-vs-growth style tilt (MEASURED §6: 10y rising -> value)
+    yc = g("yield_chg_1m")
+    style = {
+        "yield_chg_1m_bp": None if yc is None else round(yc * 100, 0),
+        "tilt": (None if yc is None else
+                 ("value" if yc > 0.10 else ("growth" if yc < -0.10 else "neutral"))),
+        "driver": "10y yield direction",
+        # measured: yield rising >10bp/mo -> value beat growth +0.84%/63d (t=+3.0)
+        "measured": "rising 10y -> value (+0.84%/63d, t=+3.0, all 4 sub-periods); Q1->value, Q4->growth",
+    }
+
     strong = bool(cap and cap >= 2)
     capitulation = {
         "score": None if cap is None else int(cap),
@@ -368,4 +383,5 @@ def conditions_snapshot(f: pd.DataFrame) -> dict:
         "risk_appetite": risk,
         "drawdown_risk": drawdown,
         "capitulation": capitulation,
+        "style_tilt": style,
     }

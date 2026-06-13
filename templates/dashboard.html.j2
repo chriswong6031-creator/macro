@@ -541,6 +541,8 @@
   {% set RA = C.risk_appetite %}
   {% set DR = C.drawdown_risk %}
   {% set CAP = C.capitulation %}
+  {% set ST = C.style_tilt %}
+  {% set SC = (latest.playbook or {}).scenario %}
   <div class="panel span12" id="conditions">
     <h2>🛰️ {{ t('Macro nowcast · conditions · risk appetite', '宏观即时预测 · 金融条件 · 风险偏好') }}
       {{ help("A complementary lens that runs ALONGSIDE the price-based quad and never alters it: the Fed-research feeds and option-implied risk that a markets-only model misses. Financial conditions (Chicago Fed NFCI — 105 inputs in one z-score), a 0–100 recession-risk score (Sahm rule + smoothed probability + Excess Bond Premium + a term-premium-ADJUSTED curve that strips the 2022–24 false inversion), real-time growth (Weekly Economic Index, GDPNow) and inflation (Atlanta sticky vs flexible CPI) nowcasts, and a cross-asset risk-appetite read (equity vol-risk-premium, VIX term structure, CBOE SKEW, the stock-bond correlation regime, a RORO composite). Free Fed/CBOE data — see research/QUANT_FACTOR_EXPANSION.md.", "一个与价格象限并行、绝不改变象限的补充视角：纯市场模型遗漏的美联储研究数据与期权隐含风险。金融条件（芝加哥联储 NFCI — 105 项输入合成一个 z 分数）、0–100 衰退风险评分（Sahm 法则 + 平滑概率 + 超额债券溢价 + 期限溢价调整后的收益率曲线，剔除 2022–24 的假性倒挂）、实时增长（周度经济指数、GDPNow）与通胀（亚特兰大黏性对弹性 CPI）即时预测，以及跨资产风险偏好（股票波动率风险溢价、VIX 期限结构、CBOE SKEW、股债相关性状态、RORO 综合）。免费美联储／CBOE 数据。") }}
@@ -623,6 +625,23 @@
           <span class="badge" style="font-size:11px;border:1px solid var(--line);background:var(--panel);color:{{ 'var(--up)' if L.spread_pct>=0 else 'var(--down)' }}">{{ td(L.label) }} {{ '%+.1f'|format(L.spread_pct) }}%</span>
           {% endfor %}
         </div>
+        {% if ST and ST.tilt %}
+        <div class="muted sm" style="margin-top:7px;padding-top:6px;border-top:1px solid var(--line)">{{ t('Value vs Growth style tilt:', '价值对成长风格倾向：') }}
+          <b style="color:{{ 'var(--up)' if ST.tilt=='value' else ('var(--down)' if ST.tilt=='growth' else 'var(--muted)') }}">{{ t(ST.tilt, {'value':'价值','growth':'成长','neutral':'中性'}.get(ST.tilt, ST.tilt)) }}</b>
+          ({{ t('10y', '十年期') }} {{ '%+.0f'|format(ST.yield_chg_1m_bp) if ST.yield_chg_1m_bp is not none else '—' }}bp/mo)
+          {{ help("MEASURED: a rising 10-year yield favours VALUE over growth — value beat growth by +0.8%/63d when the 10y rose >10bp/month (t=+3.0), and the pattern holds in all four 2000-2026 sub-periods. Q1 also favours value, Q4 growth. A tilt, not a trade signal.", "实测：上行的十年期收益率利好价值股 — 当十年期月内上行 >10bp 时，价值股 63 天内跑赢成长股 +0.8%（t=+3.0），且在 2000-2026 的四个子周期中均成立。") }}</div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <!-- scenario odds (quad x financial-conditions direction) -->
+      {% if SC and SC.current %}
+      <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 14px">
+        <div style="font-weight:700;margin-bottom:4px">{{ t('What happens next — scenario odds', '接下来会怎样 — 情景概率') }}
+          {{ help("Forward 1-month S&P odds conditioned on MORE than the quad alone — the quad's risk group × the direction of financial conditions (NFCI). MEASURED (research §6): adding the conditions-direction split moves the hit rate 13-20pp and holds in both halves of 2007-2026. These are base rates from history, not a forecast.", "在象限之外再加条件方向（NFCI）的标普未来一个月概率。实测：加入条件方向后，胜率变动 13-20 个百分点，并在 2007-2026 两个样本半区均成立。这是历史基础概率，而非预测。") }}</div>
+        <div class="muted sm">{{ t('In', '处于') }} <b>{{ td(SC.group) }}</b> {{ t('with conditions', '且金融条件') }} <b>{{ t(SC.direction, {'loosening':'宽松中','tightening':'收紧中'}.get(SC.direction, SC.direction)) }}</b>:
+          {{ t('S&P positive next month', '标普次月为正') }} <b style="color:var(--up)">{{ SC.current.hit_pct|round|int }}%</b> {{ t('of the time', '的概率') }} ({{ '%+.2f'|format(SC.current.avg_pct) }}% {{ t('avg', '平均') }}, n={{ SC.current.n }})
+          {% if SC.contrast %}— <span class="muted">{{ t('vs', '对比') }} <b>{{ SC.contrast.hit_pct|round|int }}%</b> {{ t('when', '当条件') }} {{ t(SC.contrast_direction, {'loosening':'宽松','tightening':'收紧'}.get(SC.contrast_direction, SC.contrast_direction)) }}</span>{% endif %}</div>
       </div>
       {% endif %}
 

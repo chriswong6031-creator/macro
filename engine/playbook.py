@@ -227,6 +227,48 @@ def risk_evidence(closes: pd.DataFrame, regime: pd.DataFrame,
     return {k: v for k, v in out.items() if v}
 
 
+def scenario_odds(closes: pd.DataFrame, regime: pd.DataFrame, f: pd.DataFrame,
+                  latest: dict) -> dict | None:
+    """Forward-return odds for the CURRENT state, conditioned on quad-risk-group ×
+    financial-conditions direction. MEASURED (research §6): the NFCI-direction
+    split is 13-20pp of hit-rate and holds in both sample halves. Returns the
+    current cell and the opposite-direction contrast."""
+    try:
+        from engine.conditions import conditions_frame
+        spy = closes["SPY"]
+        quad = regime["quad"].reindex(spy.index)
+        nfci_chg = conditions_frame(f).get("nfci_chg")
+        if nfci_chg is None:
+            return None
+        nfci_chg = nfci_chg.reindex(spy.index)
+        fwd21 = spy.pct_change(21).shift(-21)
+        weekly = pd.Series(False, index=spy.index)
+        weekly.iloc[::5] = True
+        risk_on = quad.isin(["Q1", "Q2"])
+
+        def cell(rmask: pd.Series, loosening: bool) -> dict | None:
+            lmask = (nfci_chg <= 0) if loosening else (nfci_chg > 0)
+            m = (rmask & lmask).fillna(False) & weekly & fwd21.notna()
+            if m.sum() < 40:
+                return None
+            return {"n": int(m.sum()), "hit_pct": round(100 * (fwd21[m] > 0).mean(), 0),
+                    "avg_pct": round(100 * fwd21[m].mean(), 2)}
+
+        cur_risk_on = latest["quad"] in ("Q1", "Q2")
+        fc = (latest.get("conditions") or {}).get("financial_conditions") or {}
+        cur_loose = fc.get("trend") != "tightening"
+        rmask = risk_on if cur_risk_on else ~risk_on
+        return {
+            "group": "risk-on quads (Q1/Q2)" if cur_risk_on else "risk-off quads (Q3/Q4)",
+            "direction": "loosening" if cur_loose else "tightening",
+            "current": cell(rmask, cur_loose),
+            "contrast": cell(rmask, not cur_loose),
+            "contrast_direction": "tightening" if cur_loose else "loosening",
+        }
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        return None
+
+
 # evidence constants measured in scripts/research_playbook.py (2000->2026 grid,
 # split-half checked) — recomputing the full grid daily is wasteful; re-run the
 # research script after any engine change and update if materially different
@@ -751,6 +793,7 @@ def build_playbook(f: pd.DataFrame, regime: pd.DataFrame, closes: pd.DataFrame,
     return {
         "headline": headline,
         "dial": dial,
+        "scenario": scenario_odds(closes, regime, f, latest),
         "leaders": leaders[:4],
         "avoid": avoid[:4],
         "momentum_tilt": momentum_tilt,
