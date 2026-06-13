@@ -3,6 +3,27 @@
 Update this file whenever a weakness is discovered or fixed. Every item lists
 the consequence, not just the cause.
 
+## Bitcoin Vector alerts
+
+- **"Real-time" is honest near-real-time (~15–45 min), price-only intraday.**
+  The flash-crash sentinel runs on a 30-min GitHub Actions cron, which is
+  best-effort (can slip to 45 min at busy times). On-chain, regime, momentum,
+  structure and allocation alerts refresh on the daily run only. Glassnode/
+  Swissblock's "real-time" is likely minute-level; the timeline footer states
+  ours plainly rather than implying a live feed.
+- **Flash-crash thresholds are provisional**, set from known episodes (covid,
+  Luna, FTX, Aug-2024 yen-carry) not a formal sweep: 6h drop must be ≥3.5σ AND
+  ≤−7%, or 24h ≤−12% (tail ≤−18%). They catch the genuine acute crashes
+  (~10 acute entries/yr) and ignore ordinary −3% grind days, but the exact
+  boundary is a judgement call documented in config `vector.alerts.flash`.
+- **The sentinel commits only on a flash-state change** (no per-eval heartbeat),
+  so the live site's "last evaluation" is the last *build* time, not the last
+  sentinel tick — the 30-min checks are invisible until something actually fires.
+- **Home-page combined feed is filtered, not exhaustive**: macro shows act+warn
+  (circuit-breaker operational alerts excluded), vector shows high+medium,
+  deduped within 5 days, capped at 12. The full, granular Vector feed is on
+  vector.html#timeline. Macro alerts are date-resolution (no intraday time).
+
 ## Crypto data sources (Bitcoin Vector)
 
 - **bitcoin-data.com (BGeometrics) free tier: 10 req/hour, 15/day PER IP, and

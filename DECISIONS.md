@@ -70,6 +70,39 @@ edge-right/edge-left anchoring), mirroring the existing top-edge flip — the
 rightmost "cycle timing" tooltip was overflowing. Desktop gets centered side
 padding (max-width container) above 1100px.
 
+## 2026-06-14 — Bitcoin Vector Phase 3 (alerts + timeline + home feed)
+
+**D49. The alert timeline is DERIVED, not a stateful append-log.**
+engine/btc_alerts.py recomputes the full event timeline deterministically from
+signal + hourly history each build (daily state changes + flash-crash state
+machine), so it's idempotent by construction — no double-fire risk. The only
+stateful piece is the intraday sentinel, which appends genuinely-new flash
+events; the daily recompute reproduces them from the now-stored candles (id =
+type:ts-bucket:to_state → natural dedup).
+
+**D50. Flash-crash machine needs ABSOLUTE drop floors, not sigma alone.** First
+cut (3σ over 6h) produced 800 false "crashes" — crypto fat tails make 3σ/6h
+routine. Fixed to: 6h move ≥3.5σ AND ≤−7%, OR 24h ≤−12% (tail ≤−18%). Now
+captures the real episodes (May-2021 −21%, Aug-2024 −18%, FTX/Celsius −18%,
+Luna −15%) at ~10 acute entries/yr and ignores −3% grind days. Thresholds in
+config `vector.alerts.flash`; provisional (episode-fit, not a formal sweep).
+
+**D51. Sentinel commits only on a flash-state CHANGE** (no 48×/day heartbeat
+spam). State is recomputed deterministically from a trailing 90-day candle
+window each run and the sentinel re-fetches the last 300h live, so it never
+needs persisted state to know the CURRENT state — only to detect a transition.
+Exit code 10 = changed (CI rebuilds + commits), 0 = quiet (nothing committed).
+
+**D52. The landing hub is "Market Intelligence" with a combined alert feed from
+both engines; "Macro Dashboard" renamed to "Macro Vector" on the hub.** Home
+shows MAJOR alerts only (macro act+warn minus operational circuit-breaker;
+vector high+medium), deduped within 5d, capped 12, each expandable with a
+deep-link into its source dashboard. The full granular Vector feed lives on
+vector.html#timeline. Cross-session note: tried to coordinate the "major" rule
+list with the macro session via send_message but it's unavailable in
+unsupervised mode — defaulted from reading engine/alerts.py directly (the macro
+feed data/alerts/alerts_log.parquet is live, written by engine/run.py).
+
 ## 2026-06-13 — Bitcoin Vector Phase 2 (signal engine + calibration)
 
 **D42. Signals are vote-ensembles + saturating composites, matching the

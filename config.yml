@@ -439,3 +439,36 @@ vector:
     forward_days: [7, 30, 90]
     whipsaw_max_days: 7
     whipsaw_target_pct: 15
+
+  # Alerts (Phase 3). Vector severity high|medium|info. Flash-crash thresholds
+  # provisional (calibrated against known episodes; see research/VECTOR_ALERTS_DESIGN.md).
+  alerts:
+    timeline_days: 45               # detailed timeline window on vector.html
+    flash:
+      vol_window_h: 72              # trailing hourly realized-vol window
+      drop_window_h: 6              # acute-drop measurement window
+      # Genuine flash crashes are ACUTE drops (covid -40%, FTX -20%, Aug-2024
+      # -15%) — absolute floors, not sigma alone (crypto fat tails make 3-sigma
+      # 6h moves routine, which produced 800 false events). Enter needs a
+      # statistical shock AND a real drop, or a big 24h fall outright.
+      enter_sigma: 3.5              # 6h move this many sigma...
+      enter_6h_pct: -7.0            # ...AND below this absolute 6h return %
+      enter_24h_pct: -12.0          # OR a big 24h drop on its own
+      tail_24h_pct: -18.0           # flash_crash -> tail_risk_event
+      stabilize_quiet_h: 12         # hours without a new 24h low -> stabilizing_price
+      normal_quiet_h: 48            # quiet hours -> back to normal
+      impulse_window_h: 48          # EMA-of-returns horizon for the Impulse sign
+    risk_extreme_days: 14           # risk_index >= threshold this many days -> capitulation watch
+    risk_extreme_level: 50
+
+# Home landing hub — combined alert feed from both dashboards
+home:
+  alerts:
+    macro_feed: data/alerts/alerts_log.parquet     # engine/alerts.py output
+    vector_feed: data/vector/alerts.jsonl
+    macro_major_severities: [act, warn]            # homepage shows these macro tiers (skip info)
+    macro_exclude_rules: [circuit_breaker_open]     # operational noise, not a market signal
+    vector_major_severities: [high, medium]        # homepage shows these vector tiers
+    max_items: 12
+    dedup_window_days: 5                            # collapse identical headlines within N days
+    macro_label: "Macro Vector"                    # renamed from "Macro Dashboard"

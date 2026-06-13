@@ -1,0 +1,45 @@
+name: vector-sentinel
+on:
+  schedule:
+    - cron: "*/30 * * * *"   # every 30 min (Actions cron is best-effort ~15-45 min)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sentinel
+  cancel-in-progress: false
+
+jobs:
+  flash-crash:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: flash-crash sentinel (price-only, ~30 min cadence)
+        id: sentinel
+        run: |
+          set +e
+          python -m scripts.vector_sentinel
+          echo "rc=$?" >> "$GITHUB_OUTPUT"
+          exit 0
+      # Commit ONLY on a flash-state change (design: no heartbeat spam). The
+      # state is recomputed deterministically from candle data each run — the
+      # sentinel re-fetches the last 300h live, so it never needs the persisted
+      # state to know the CURRENT state, only to detect a transition.
+      - name: rebuild vector + hub and commit (only on flash-state change)
+        if: steps.sentinel.outputs.rc == '10'
+        run: |
+          python -m scripts.build_vector
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/vector data/coinbase/btc_hourly.parquet site/vector.html site/index.html
+          git diff --cached --quiet || git commit -m "vector: flash-crash alert $(date -u +%FT%H:%MZ)"
+          git pull --rebase origin main
+          git push

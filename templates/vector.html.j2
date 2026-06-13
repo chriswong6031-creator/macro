@@ -115,6 +115,33 @@ a{color:var(--blue);text-decoration:none}
 .scn-line{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--grid);font-size:14px}
 .scn-line:last-child{border:none}
 .big{font-size:30px;font-weight:800;color:var(--ink);letter-spacing:-.02em}
+/* alert timeline */
+.tl-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.tlf{padding:6px 14px;border-radius:9px;background:var(--grid);color:var(--muted);
+ font-weight:700;font-size:13px;cursor:pointer;border:none}
+.tlf.active{background:var(--blue);color:#fff}
+.timeline{position:relative}
+.tl-day{margin-bottom:20px}
+.tl-date{font-size:12px;font-weight:700;color:var(--faint);text-transform:uppercase;
+ letter-spacing:.05em;margin:0 0 10px;position:sticky;top:64px;background:var(--card);padding:4px 0;z-index:5}
+.tl-item{border-left:2px solid var(--grid);padding:0 0 0 18px;margin-left:6px;position:relative}
+.tl-item summary{display:flex;align-items:center;gap:10px;padding:9px 0;cursor:pointer;
+ list-style:none;flex-wrap:wrap}
+.tl-item summary::-webkit-details-marker{display:none}
+.tl-node{position:absolute;left:-7px;top:15px;width:12px;height:12px;border-radius:50%;
+ background:var(--faint);border:2px solid var(--card)}
+.tl-node.n-high{background:var(--red)} .tl-node.n-medium{background:var(--blue)} .tl-node.n-info{background:var(--r3)}
+.tl-node.n-flash_crash{background:var(--red)} .tl-node.n-momentum_trigger{background:var(--indigo)}
+.tl-chip{font-size:11px;font-weight:700;padding:2px 9px;border-radius:7px;background:var(--grid);color:var(--muted)}
+.tl-chip.f-flash{background:var(--redfill);color:var(--red)}
+.tl-chip.f-risk{background:#FDEBEB;color:var(--red)}
+.tl-chip.f-structure{background:#E8EEFF;color:var(--blue)}
+.tl-chip.f-momentum{background:#ECE9FB;color:var(--indigo)}
+.tl-head{font-weight:600;color:var(--ink);font-size:14px;flex:1;min-width:200px}
+.tl-time{font-size:12px;color:var(--faint);font-weight:600}
+.tl-detail{padding:2px 0 12px;font-size:13px;color:var(--muted);line-height:1.6}
+.tl-link{display:inline-block;margin-left:8px;font-weight:700;font-size:13px}
+.tl-item[hidden]{display:none}
 </style>
 </head>
 <body>
@@ -285,6 +312,42 @@ a{color:var(--blue);text-decoration:none}
     {% endfor %}
   </div>
 
+  <!-- ===================== ALERT TIMELINE ===================== -->
+  <div class="section-title" id="timeline">Alert Timeline · last {{ timeline_days }} days
+    <span class="faint" style="font-weight:600;text-transform:none;letter-spacing:0"> · {{ n_alerts }} alerts</span></div>
+  <div class="card">
+    <div class="tl-filters">
+      {% for f,lab in [('all','All'),('flash','Flash Crash'),('risk','Risk'),('structure','Structure'),('momentum','Momentum'),('other','Other')] %}
+      <button class="tlf {{ 'active' if f=='all' else '' }}" data-f="{{ f }}">{{ lab }}</button>{% endfor %}
+    </div>
+    {% if timeline %}
+    <div class="timeline">
+      {% for day in timeline %}
+      <div class="tl-day">
+        <div class="tl-date">{{ day.daylabel }}</div>
+        {% for e in day.events %}
+        <details class="tl-item sev-{{ e.severity }}" data-f="{{ e.filter }}">
+          <summary>
+            <span class="tl-node n-{{ e.type }} n-{{ e.severity }}"></span>
+            <span class="tl-chip f-{{ e.filter }}">{{ e.label }}</span>
+            <span class="tl-head">{{ e.headline }}</span>
+            <span class="tl-time">{{ e.time }}</span>
+          </summary>
+          <div class="tl-detail">
+            {{ e.detail }}
+            {% if e.anchor %}<a href="{{ e.anchor }}" class="tl-link">View on dashboard →</a>{% endif %}
+          </div>
+        </details>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="sub faint" style="padding:10px 0">No alerts in the last {{ timeline_days }} days — markets quiet on every tracked signal.</div>
+    {% endif %}
+    <div class="sub faint" style="margin-top:14px">Near-real-time: flash-crash &amp; impulse update intraday (~15–45 min, price-only); on-chain &amp; regime signals update daily. Built {{ built }}.</div>
+  </div>
+
   <!-- ===================== CALIBRATION TRANSPARENCY ===================== -->
   <div class="section-title">How much to trust this · measured records</div>
   <div class="card">
@@ -313,5 +376,19 @@ a{color:var(--blue);text-decoration:none}
     Limitations: <a href="https://github.com/chriswong6031-creator/macro/blob/main/LIMITATIONS.md">LIMITATIONS.md</a>.
   </div>
 </div>
+<script>
+(function(){
+  var fil=document.querySelectorAll('.tlf'), items=document.querySelectorAll('.tl-item');
+  fil.forEach(function(b){b.addEventListener('click',function(){
+    fil.forEach(function(x){x.classList.remove('active')}); b.classList.add('active');
+    var f=b.dataset.f;
+    items.forEach(function(it){ it.hidden=!(f==='all'||it.dataset.f===f); });
+    document.querySelectorAll('.tl-day').forEach(function(d){
+      var any=[...d.querySelectorAll('.tl-item')].some(function(i){return !i.hidden});
+      d.style.display=any?'':'none';
+    });
+  });});
+})();
+</script>
 </body>
 </html>

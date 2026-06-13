@@ -261,7 +261,7 @@ def build_landing(site: Path, vm: dict) -> None:
         log.info("relocated macro dashboard -> macro.html")
 
     macro = _macro_state()
-    hub = _hub_html(vm, macro)
+    hub = _hub_html(vm, macro, home_alert_feed())
     idx.write_text(hub)
     log.info("wrote landing hub -> index.html")
 
@@ -276,8 +276,92 @@ def _macro_state() -> dict:
         return {"label": "—", "date": ""}
 
 
-def _hub_html(vm: dict, macro: dict) -> str:
+MACRO_SEV = {"act": "high", "warn": "medium", "info": "info"}
+
+
+def home_alert_feed() -> list[dict]:
+    """Normalize MAJOR alerts from both dashboards into one timeline for the hub.
+    Macro feed = data/alerts/alerts_log.parquet (date-resolution); vector feed =
+    data/vector/alerts.jsonl (timestamp-resolution). Both filtered to their
+    'major' severity tiers (config home.alerts), merged newest-first, capped."""
+    h = config.load()["home"]["alerts"]
+    out: list[dict] = []
+
+    # --- macro --- (config paths are repo-root-relative)
+    mp = Path(config.ROOT) / h["macro_feed"]
+    try:
+        mdf = pd.read_parquet(mp)
+        major = mdf[mdf["severity"].isin(h["macro_major_severities"])
+                    & ~mdf["rule"].isin(h.get("macro_exclude_rules", []))]
+        for _, r in major.iterrows():
+            out.append({
+                "source": "macro", "source_label": h["macro_label"],
+                "ts": pd.Timestamp(r["date"]).isoformat(), "date_only": True,
+                "severity": MACRO_SEV.get(r["severity"], "info"),
+                "type": r["rule"], "headline": _short(r["message"]),
+                "detail": r["message"], "link": "macro.html",
+            })
+    except Exception as e:  # noqa: BLE001
+        log.warning("home feed: macro alerts unavailable (%s)", e)
+
+    # --- vector ---
+    try:
+        from engine import btc_alerts
+        for e in btc_alerts.load_events():
+            if e["severity"] in h["vector_major_severities"]:
+                out.append({
+                    "source": "vector", "source_label": "Bitcoin Vector",
+                    "ts": e["ts"], "date_only": False, "severity": e["severity"],
+                    "type": e["type"], "headline": e["headline"],
+                    "detail": e["detail"], "link": "vector.html" + e.get("anchor", "#timeline"),
+                })
+    except Exception as e:  # noqa: BLE001
+        log.warning("home feed: vector alerts unavailable (%s)", e)
+
+    out.sort(key=lambda x: x["ts"], reverse=True)
+    # collapse identical headlines that re-fire within the dedup window (keep newest)
+    win = pd.Timedelta(days=h.get("dedup_window_days", 5))
+    seen: dict[str, pd.Timestamp] = {}
+    deduped = []
+    for a in out:
+        ts = pd.Timestamp(a["ts"])
+        key = a["headline"]
+        if key in seen and (seen[key] - ts) < win:
+            continue
+        seen[key] = ts
+        deduped.append(a)
+    return deduped[:h["max_items"]]
+
+
+def _short(msg: str, n: int = 72) -> str:
+    return msg if len(msg) <= n else msg[:n - 1].rsplit(" ", 1)[0] + "…"
+
+
+def _hub_alert_rows(alerts: list[dict]) -> str:
+    if not alerts:
+        return ('<div class="ha-empty">No major alerts right now — both engines '
+                'quiet on top-tier signals.</div>')
+    rows = []
+    for a in alerts:
+        ts = pd.Timestamp(a["ts"])
+        when = ts.strftime("%b %d") if a["date_only"] else ts.strftime("%b %d · %H:%M UTC")
+        src_cls = "s-macro" if a["source"] == "macro" else "s-vector"
+        rows.append(f"""<details class="ha-item">
+  <summary>
+    <span class="ha-dot d-{a['severity']}"></span>
+    <span class="ha-src {src_cls}">{a['source_label']}</span>
+    <span class="ha-head">{a['headline']}</span>
+    <span class="ha-when">{when}</span>
+  </summary>
+  <div class="ha-detail">{a['detail']} <a href="{a['link']}">Open →</a></div>
+</details>""")
+    return "\n".join(rows)
+
+
+def _hub_html(vm: dict, macro: dict, alerts: list[dict]) -> str:
     risk_cls = "on" if vm["risk_on"] else "off"
+    macro_label = config.load()["home"]["alerts"]["macro_label"]
+    n_major = len(alerts)
     return f"""{HUB_MARKER}
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -287,12 +371,33 @@ def _hub_html(vm: dict, macro: dict) -> str:
 *{{box-sizing:border-box}}
 body{{margin:0;min-height:100vh;background:{C['bg']};color:{C['text']};
  font-family:Inter,sans-serif;display:flex;flex-direction:column;align-items:center;
- justify-content:center;padding:40px 20px}}
-.h{{text-align:center;margin-bottom:40px}}
+ padding:56px 20px 60px}}
+.h{{text-align:center;margin-bottom:36px}}
 .h h1{{font-size:40px;font-weight:800;color:{C['ink']};letter-spacing:-.03em;margin:0 0 8px}}
 .h p{{color:{C['muted']};font-size:17px;margin:0}}
-.cards{{display:grid;grid-template-columns:1fr 1fr;gap:24px;width:100%;max-width:860px}}
+.cards{{display:grid;grid-template-columns:1fr 1fr;gap:24px;width:100%;max-width:880px}}
 @media(max-width:720px){{.cards{{grid-template-columns:1fr}}}}
+/* combined alert feed */
+.feed{{width:100%;max-width:880px;margin-top:30px}}
+.feed-h{{display:flex;align-items:baseline;justify-content:space-between;margin:0 4px 12px}}
+.feed-h h3{{font-size:16px;font-weight:800;color:{C['ink']};margin:0}}
+.feed-h .n{{font-size:13px;color:{C['muted']};font-weight:600}}
+.feed-card{{background:#fff;border:1px solid {C['grid']};border-radius:18px;padding:10px 22px}}
+.ha-item{{border-bottom:1px solid {C['grid']}}}
+.ha-item:last-child{{border-bottom:none}}
+.ha-item summary{{display:flex;align-items:center;gap:11px;padding:13px 0;cursor:pointer;
+ list-style:none;flex-wrap:wrap}}
+.ha-item summary::-webkit-details-marker{{display:none}}
+.ha-dot{{width:10px;height:10px;border-radius:50%;flex:none}}
+.ha-dot.d-high{{background:{C['red']}}} .ha-dot.d-medium{{background:{C['blue']}}} .ha-dot.d-info{{background:{C['faint']}}}
+.ha-src{{font-size:11px;font-weight:700;padding:3px 9px;border-radius:7px}}
+.ha-src.s-macro{{background:#ECE9FB;color:{C['indigo']}}}
+.ha-src.s-vector{{background:#E8EEFF;color:{C['blue']}}}
+.ha-head{{flex:1;min-width:200px;font-weight:600;color:{C['ink']};font-size:14px}}
+.ha-when{{font-size:12px;color:{C['faint']};font-weight:600}}
+.ha-detail{{padding:0 0 13px 21px;font-size:13px;color:{C['muted']};line-height:1.6}}
+.ha-detail a{{font-weight:700;white-space:nowrap}}
+.ha-empty{{padding:18px;text-align:center;color:{C['faint']};font-size:14px}}
 .c{{background:#fff;border:1px solid {C['grid']};border-radius:20px;padding:30px;
  text-decoration:none;color:inherit;transition:transform .15s,box-shadow .15s;display:block}}
 .c:hover{{transform:translateY(-3px);box-shadow:0 12px 30px rgba(16,24,64,.10);border-color:{C['r2']}}}
@@ -310,10 +415,10 @@ body{{margin:0;min-height:100vh;background:{C['bg']};color:{C['text']};
 <div class="cards">
   <a class="c" href="macro.html">
     <div class="ico">\U0001F30D</div>
-    <h2>Macro Dashboard</h2>
+    <h2>{macro_label}</h2>
     <p>Regime, liquidity &amp; sector-flow read across the global business cycle.</p>
     <span class="stat">{macro['label']}</span>
-    <div class="go">Open Macro Dashboard →</div>
+    <div class="go">Open {macro_label} →</div>
   </a>
   <a class="c" href="vector.html">
     <div class="ico">₿</div>
@@ -324,6 +429,11 @@ body{{margin:0;min-height:100vh;background:{C['bg']};color:{C['text']};
     <div class="go">Open Bitcoin Vector →</div>
   </a>
 </div>
+<div class="feed">
+  <div class="feed-h"><h3>Latest Alerts</h3>
+    <span class="n">{n_major} major · from both feeds · <a href="vector.html#timeline">full Vector timeline →</a></span></div>
+  <div class="feed-card">{_hub_alert_rows(alerts)}</div>
+</div>
 <div class="foot">Built {vm['built']} · mechanical, backtested, free public data · not investment advice</div>
 </body></html>"""
 
@@ -333,6 +443,31 @@ body{{margin:0;min-height:100vh;background:{C['bg']};color:{C['text']};
 # --------------------------------------------------------------------------- #
 def gauge_pos(value: float, lo: float, hi: float) -> float:
     return round(100 * min(max((value - lo) / (hi - lo), 0), 1), 1)
+
+
+TYPE_LABEL = {"flash_crash": "Flash", "risk_regime": "Risk", "structure_shift": "Structure",
+              "momentum_trigger": "Momentum", "allocation_change": "Allocation",
+              "fundamentals": "Fundamentals", "market_mode": "Mode",
+              "leadership": "Leadership", "risk_extreme": "Risk"}
+
+
+def _group_timeline(events: list[dict]) -> list[dict]:
+    """Group events by day (newest first) for the timeline UI, enriching each
+    with a display label/filter key and a parsed time."""
+    days: dict[str, list] = {}
+    for e in events:
+        ts = pd.Timestamp(e["ts"])
+        day = ts.strftime("%Y-%m-%d")
+        e = {**e, "label": TYPE_LABEL.get(e["type"], e["type"]),
+             "filter": "flash" if e["type"] == "flash_crash" else
+                       ("risk" if e["type"] in ("risk_regime", "risk_extreme") else
+                        ("structure" if e["type"] == "structure_shift" else
+                         ("momentum" if e["type"] == "momentum_trigger" else "other"))),
+             "time": ts.strftime("%H:%M UTC") if (ts.hour or ts.minute) else "",
+             "daylabel": ts.strftime("%a %b %d")}
+        days.setdefault(day, []).append(e)
+    return [{"day": d, "daylabel": evs[0]["daylabel"], "events": evs}
+            for d, evs in sorted(days.items(), reverse=True)]
 
 
 def main() -> int:
@@ -354,6 +489,12 @@ def main() -> int:
     calib = json.loads(cpath.read_text()) if cpath.exists() else {
         "meta": {"span": f"{sig.index.min().date()}..{sig.index.max().date()}"},
         "signals": {}, "risk_drawdown": {}}
+
+    # alert timeline (deterministic rebuild from signal + hourly history)
+    from engine import btc_alerts
+    acfg = config.load()["vector"]["alerts"]
+    all_events = btc_alerts.rebuild(sig)
+    timeline = _group_timeline(btc_alerts.recent(all_events, acfg["timeline_days"]))
     last = sig.iloc[-1]
     px = _series("coinbase", "btc_daily")
     close = sig["close"]
@@ -406,6 +547,9 @@ def main() -> int:
         "cards": cards,
         "cross": cross_asset(close),
         "calib": calib,
+        "timeline": timeline,
+        "timeline_days": acfg["timeline_days"],
+        "n_alerts": sum(len(d["events"]) for d in timeline),
         "charts": {
             "risk_strategy": chart_risk_vs_strategy(sig, eq, hodl),
             "momentum": chart_oscillator(sig["momentum"], close, "Momentum"),
