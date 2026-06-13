@@ -2,6 +2,46 @@
 
 Newest first. Each entry: what was decided, why, and what would change it.
 
+## 2026-06-13 — Vector conviction layer: label the no-edge state instead of a fake 53/47
+
+**D-vec-CONV. The mid/short scorecards now lead with an HONEST conviction state
+(TOSS-UP / LEAN / EDGE), not a bare ~53/47 probability bar.** User: "53:47 / 52:48
+looks odd, as if the system doesn't know what it's doing — give more accurate
+signals, OR if this IS the accurate read (genuine hesitation) add a MIXED/Undecided
+state." A workflow (10 agents: adversarial diagnosis + UX research + 3-lens design
+panel + judge + synthesis) confirmed the SECOND reading with hard data: the near-
+50/50 is an HONEST coin-flip, not a bug. MEASURED: BTC's unconditional 7d up-rate is
+54.1%; the current cell (bear-momentum / high-risk, **n=1351**) has a 7d up-rate of
+**51.9%** RAW (before any shrink/cap) — flatness arrives in the DATA. Across all
+reliable (n>300) cells the up-rate spans only **51.9-57.1%** — short-horizon BTC
+DIRECTION barely depends on the state; the predictive content is in DRAWDOWN and at
+30/90d (the calibration report already says this). So manufacturing more 7d
+separation = overfitting (un-capping [30,70], stacking collinear MVRV/NUPL/Mayer, or
+reading thin cells like bear/low_risk n=26 @23%); the right fix is to LABEL the
+no-edge state. **Build** (`_conviction` + `_conviction_why` + `_tape_sign` in
+build_vector, wired in the vm block where verdict+mtf_rows co-exist; bands in config
+`vector.scenarios.conv_band_pp: [3,7]`): TOSS-UP `|p-50|<=3` (grey, no direction
+word, a grey "bear-lean" chip for the tilt sign), LEAN `<=7` (washed-out tint, named
+driver), EDGE `>7` (full color) — but EDGE is gated: needs n>=300 AND verdict
+agreement AND a non-conflicting tape, and a non-reliable cell can't print an
+EDGE-sized lean (the n=26 noise guard). The technical tape (W/2W mid, D/3D short) is
+an orthogonal 2nd vote that only DEMOTES on conflict, never manufactures edge.
+**UI** (vector.html.j2, shared `convcard` macro so mid & short are byte-identical):
+a centered tug-of-war NEEDLE on a FLAT grey rail with a grey 47-53 dead-zone (the dot
+stays grey inside the zone, so 53% LOOKS like no-edge), the state word as the
+headline, the raw % as support, an honest one-liner ("bear-high: 7d ~53/47 over 1,351
+samples — a coin-flip; the edge is in the cycle, not the week"), and a DEFER line
+echoing the hero verdict ("↳ Defers to CAUTION — no edge to add"). Monochrome palette
+(bull=blue, bear=r3, toss=grey; no red — reserved for alerts). The short card keeps
+its ATR levels, reframed as "if it resolves up / if it resolves down" scenarios.
+**Result:** today both cards = TOSS-UP, reconciling the whole page top-to-bottom
+(Risk OFF / bearish → counter-trend bounce → week/3-day = coin-flip, don't trade it
+directionally). 13-case classifier unit test + 4 macro-branch render checks +
+`tests/test_vector_conviction.py` (5 tests). What would change it: a regime where a
+reliable cell genuinely clears ±7pp would surface a real EDGE; widening conv_band_pp
+would re-tier. The deeper upgrade (re-frame the cards onto the CONFIRMED drawdown/risk
+read the engine actually predicts) is noted but out of scope.
+
 ## 2026-06-13 — Forex Vector (Phase 0–1): dollar-first currency board
 
 A new section (`forex.html`) built after a research + adversarial-review workflow

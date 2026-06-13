@@ -1255,6 +1255,11 @@ vector:
     macro_tilt_pp: 5              # macro tailwind/headwind nudges the prob +/- this (pp)
     cycle_tilt_pp: 5             # halving-phase prior: accumulation +, markdown - (pp)
     atr_dvol_ref: 55              # DVOL ~= this -> ATR bands unscaled; higher widens them
+    conv_band_pp: [3, 7]          # conviction cuts (pp from 50%): TOSS-UP <=3, LEAN <=7, EDGE >7.
+                                  # Calibrated to the MEASURED reliable-cell up-rate spread
+                                  # (51.9-57.1% at 7d, n>300) so ~3pp from 50 = an honest coin-flip,
+                                  # not a confident call. EDGE also needs n>=300 + verdict + tape
+                                  # corroboration (see _conviction in build_vector.py; D-vec-CONV).
 
   # --- New-factor hunt (research/VECTOR_NEW_FACTORS.md): three orthogonal axes
   # the model lacked — time/cycle, positioning, cross-asset co-movement. ---------

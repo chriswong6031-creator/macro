@@ -165,15 +165,108 @@ def scenarios_3d(df: pd.DataFrame, cfg: dict, high: pd.Series, low: pd.Series) -
     px = close.iloc[-1]
     swing_hi = high.rolling(20).max().iloc[-1]
     swing_lo = low.rolling(20).min().iloc[-1]
-    p, n, cell, _ = _cond_up_prob(df, cfg, 3)
+    p, n, cell, tilt = _cond_up_prob(df, cfg, 3)
     bull = round(100 * p) if p is not None else 50
     a1, a2, ai = 1.5 * vscale * atr, 2.5 * vscale * atr, 1.0 * atr
     return {
-        "bull_prob": bull, "bear_prob": 100 - bull, "cell": cell, "n": n,
+        "bull_prob": bull, "bear_prob": 100 - bull, "cell": cell, "n": n, "tilt": tilt,
         "vscale": round(vscale, 2),
         "bull_target": px + a1, "bull_target2": max(swing_hi, px + a2), "bull_invalid": px - ai,
         "bear_target": px - a1, "bear_target2": min(swing_lo, px - a2), "bear_invalid": px + ai,
     }
+
+
+# --------------------------------------------------------------------------- #
+# conviction layer: turn a capped/shrunk directional prob into an HONEST state
+# (TOSS-UP / LEAN / EDGE). Calibrated to the MEASURED reliable-cell spread
+# (51.9-57.1% up-rate at 7d across n>300 cells) so ~3pp from 50% reads as a
+# coin-flip, NOT a confident call. The tape is an orthogonal 2nd vote that only
+# demotes on conflict — it never manufactures edge. (D-vec-CONV; see DECISIONS.)
+# --------------------------------------------------------------------------- #
+def _tape_sign(mtf_rows: list[dict], keys: set) -> int:
+    """Net technical-tape direction over the timeframes in `keys`: +1 up, -1 down,
+    0 mixed/flat. mid horizon ~ {W,2W}; short horizon ~ {D,3D}."""
+    s = 0
+    for r in mtf_rows:
+        if r.get("key") in keys:
+            t = r.get("trend")
+            s += 1 if t == "up" else (-1 if t == "down" else 0)
+    return 0 if s == 0 else (1 if s > 0 else -1)
+
+
+def _conviction(p_bull, n, tilt, tape_sign, verdict_sign, min_cell_n, bands=(3, 7)):
+    """Map a directional probability to a conviction state. TOSS-UP (|p-50|<=3) =
+    no edge / coin-flip; LEAN (<=7) = within the reliable cell spread, driver-backed;
+    EDGE (>7) = beyond the reliable ceiling (tilt-to-cap only) and only when
+    corroborated by the page verdict + a reliable cell + a non-conflicting tape.
+    A thin cell (n<min_cell_n) can never print an EDGE. Returns a render-ready dict."""
+    tilt = tilt or 0
+    if p_bull is None:
+        return {"state": "TOSS-UP", "dir": 0, "lean": 0, "conf": "thin", "n": n,
+                "tape": "neutral", "confirmed": False, "p_bull": 50, "p_bear": 50, "tilt": tilt}
+    lean = abs(p_bull - 50)
+    prob_dir = 1 if p_bull > 50 else (-1 if p_bull < 50 else 0)
+    toss_pp, edge_pp = bands
+    # (1) sample-size gate -> confidence tier; a thin cell can never print an EDGE
+    if n is None or n < min_cell_n:
+        conf, forced_tossup = "thin", True
+    elif n < 300:
+        conf, forced_tossup = "moderate", False
+    else:
+        conf, forced_tossup = "reliable", False
+    # (2) band on the directional distance from 50 (3-state, calibrated)
+    if forced_tossup or lean <= toss_pp:
+        state = "TOSS-UP"
+    elif lean <= edge_pp:
+        state = "LEAN"
+    else:
+        state = "EDGE"
+    # (2b) a non-reliable cell (n<300) cannot honestly claim an EDGE-sized (>7pp) move —
+    #      that is the overfit signature of a thin cell (e.g. bear/low_risk n=26 -> ~31%
+    #      after shrinkage); the swing isn't real, so show NO edge, not a confident bear.
+    if conf != "reliable" and lean > edge_pp:
+        state = "TOSS-UP"
+    # (3) technical tape = orthogonal 2nd vote: only modulates, never overrides
+    tape, confirmed = "neutral", False
+    if state != "TOSS-UP" and tape_sign != 0 and prob_dir != 0:
+        if tape_sign == prob_dir:
+            tape = "confirm"
+            confirmed = bool(tilt) and ((tilt > 0) == (prob_dir > 0))
+        else:
+            tape, state = "conflict", "LEAN"     # demote EDGE->LEAN on tape conflict
+    # (4) EDGE corroboration gate: needs verdict agreement + reliable cell + no conflict
+    if state == "EDGE" and not (verdict_sign == prob_dir and tape != "conflict" and conf == "reliable"):
+        state = "LEAN"
+    return {"state": state, "dir": prob_dir, "lean": lean, "conf": conf, "n": n,
+            "tape": tape, "confirmed": confirmed,
+            "p_bull": p_bull, "p_bear": 100 - p_bull, "tilt": tilt}
+
+
+def _conviction_why(c: dict, cell, n, horizon: int):
+    """Honest one-liner (EN, ZH). TOSS-UP names the cell, odds, sample, and points
+    to where the edge actually lives (the cycle, not the week)."""
+    cell_txt = (cell or "this regime").replace(" / ", "-").replace(" risk", "")
+    nfmt = f"{n:,}" if n else "—"
+    pb, pl = c["p_bear"], c["p_bull"]
+    near = "week" if horizon >= 7 else "next few days"
+    near_zh = "本周" if horizon >= 7 else "未来几天"
+    if c["state"] == "TOSS-UP":
+        en = (f"{cell_txt}: {horizon}d direction ~{pb}/{pl} over {nfmt} samples — a coin-flip. "
+              f"The edge is in the cycle, not the {near}.")
+        zh = (f"{cell_txt}：{horizon} 天方向约 {pb}/{pl}，样本 {nfmt} — 接近抛硬币。"
+              f"优势在周期，而非{near_zh}。")
+        return en, zh
+    dword, dword_zh = ("bull", "看多") if c["dir"] > 0 else ("bear", "看空")
+    drv = f"{c['tilt']:+d}pp macro+cycle tilt" if c["tilt"] else "the cell base-rate"
+    drv_zh = f"{c['tilt']:+d}pp 宏观+周期偏移" if c["tilt"] else "区间基准率"
+    tf, tf_zh = ("weekly", "周线") if horizon >= 7 else ("daily", "日线")
+    tape_en = (" Tape agrees." if c["tape"] == "confirm"
+               else (f" But the {tf} tape disagrees — nimble only." if c["tape"] == "conflict" else ""))
+    tape_zh = ("，盘面一致。" if c["tape"] == "confirm"
+               else (f"，但{tf_zh}盘面相反 — 仅适合灵活交易。" if c["tape"] == "conflict" else "。"))
+    en = f"{horizon}d lean {dword} — {nfmt} samples, {drv}.{tape_en}"
+    zh = f"{horizon} 天倾向{dword_zh} — 样本 {nfmt}，{drv_zh}{tape_zh}"
+    return en, zh
 
 
 def cross_asset(sig_close: pd.Series) -> list[dict]:
@@ -706,6 +799,11 @@ TYPE_LABEL = {"flash_crash": "Flash", "risk_regime": "Risk", "structure_shift": 
               "momentum_trigger": "Momentum", "allocation_change": "Allocation",
               "fundamentals": "Fundamentals", "market_mode": "Mode",
               "leadership": "Leadership", "risk_extreme": "Risk"}
+TYPE_LABEL_ZH = {"flash_crash": "闪崩", "risk_regime": "风险", "structure_shift": "结构",
+                 "momentum_trigger": "动量", "allocation_change": "配置",
+                 "fundamentals": "基本面", "market_mode": "模式",
+                 "leadership": "领涨", "risk_extreme": "风险"}
+_WD_ZH = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]  # Monday=0
 
 
 def _group_timeline(events: list[dict]) -> list[dict]:
@@ -716,14 +814,17 @@ def _group_timeline(events: list[dict]) -> list[dict]:
         ts = pd.Timestamp(e["ts"])
         day = ts.strftime("%Y-%m-%d")
         e = {**e, "label": TYPE_LABEL.get(e["type"], e["type"]),
+             "label_zh": TYPE_LABEL_ZH.get(e["type"], TYPE_LABEL.get(e["type"], e["type"])),
              "filter": "flash" if e["type"] == "flash_crash" else
                        ("risk" if e["type"] in ("risk_regime", "risk_extreme") else
                         ("structure" if e["type"] == "structure_shift" else
                          ("momentum" if e["type"] == "momentum_trigger" else "other"))),
              "time": ts.strftime("%H:%M UTC") if (ts.hour or ts.minute) else "",
-             "daylabel": ts.strftime("%a %b %d")}
+             "daylabel": ts.strftime("%a %b %d"),
+             "daylabel_zh": f"{ts.month}月{ts.day}日 {_WD_ZH[ts.weekday()]}"}
         days.setdefault(day, []).append(e)
-    return [{"day": d, "daylabel": evs[0]["daylabel"], "events": evs}
+    return [{"day": d, "daylabel": evs[0]["daylabel"],
+             "daylabel_zh": evs[0]["daylabel_zh"], "events": evs}
             for d, evs in sorted(days.items(), reverse=True)]
 
 
@@ -847,6 +948,25 @@ def main() -> int:
                          "rsi5": s.get("rsi5"), "stoch": s.get("stoch"), "macd": macd,
                          "trend": (verdict.get("per_tf") or {}).get(key, "flat")})
     lad = mtf_a.get("ladder") or {}
+
+    # conviction layer: classify the mid (7d) + short (3d) directional probs into
+    # an HONEST state (TOSS-UP / LEAN / EDGE) — computed here where verdict + mtf_rows
+    # co-exist, then attached to env/scn so the cards lead with the state, not a
+    # misleading 53/47 bar.
+    _scfg = config.load()["vector"]["scenarios"]
+    envd = env_probabilities(sig, _scfg)
+    scnd = scenarios_3d(sig, _scfg, hi, lo)
+    _min_n = _scfg["prob_min_cell_n"]
+    _bands = tuple(_scfg.get("conv_band_pp", (3, 7)))
+    envd["conv"] = _conviction(envd.get("p_bull_7d"), envd.get("n"), envd.get("tilt"),
+                               _tape_sign(mtf_rows, {"W", "2W"}), verdict.get("mid_sign", 0), _min_n, _bands)
+    envd["conv"]["why_en"], envd["conv"]["why_zh"] = _conviction_why(
+        envd["conv"], envd.get("cell"), envd.get("n"), 7)
+    scnd["conv"] = _conviction(scnd.get("bull_prob"), scnd.get("n"), scnd.get("tilt"),
+                               _tape_sign(mtf_rows, {"D", "3D"}), verdict.get("short_sign", 0), _min_n, _bands)
+    scnd["conv"]["why_en"], scnd["conv"]["why_zh"] = _conviction_why(
+        scnd["conv"], scnd.get("cell"), scnd.get("n"), 3)
+
     vm = {
         "as_of": sig.index.max().strftime("%b %d, %Y"),
         "built": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
@@ -973,8 +1093,8 @@ def main() -> int:
             "vol": round(100 * last["vol_pctile"]) if pd.notna(last["vol_pctile"]) else 50,
             "flow": round(100 * last["flow_pctile"]) if pd.notna(last["flow_pctile"]) else 50,
         },
-        "env": env_probabilities(sig, config.load()["vector"]["scenarios"]),
-        "scn": scenarios_3d(sig, config.load()["vector"]["scenarios"], hi, lo),
+        "env": envd,
+        "scn": scnd,
         "cards": cards,
         "cross": cross_asset(close),
         "calib": calib,

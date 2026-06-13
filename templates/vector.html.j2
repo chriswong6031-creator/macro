@@ -174,6 +174,27 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 .scn-line{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--grid);font-size:14px}
 .scn-line:last-child{border:none}
 .big{font-size:30px;font-weight:800;color:var(--ink);letter-spacing:-.02em}
+/* conviction layer (TOSS-UP / LEAN / EDGE) — honest no-edge labeling. Monochrome:
+   bull=blue, bear=r3 (lighter blue), toss-up=grey; no red (reserved for alerts). */
+.conv-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.conv-n{font-size:11px;color:var(--faint);font-weight:600;white-space:nowrap}
+.cw{font-size:31px;font-weight:800;letter-spacing:-.02em;line-height:1.08;margin-top:7px}
+.cw-toss{color:var(--muted)}
+.cw-lean.bull{color:color-mix(in srgb,var(--blue) 58%,var(--grid))}
+.cw-lean.bear{color:color-mix(in srgb,var(--r3) 60%,var(--grid))}
+.cw-edge.bull{color:var(--blue)} .cw-edge.bear{color:var(--r3)}
+.conv-tag{display:inline-block;padding:2px 8px;border-radius:7px;font-size:11.5px;font-weight:700;vertical-align:middle;margin-left:8px;background:var(--grid);color:var(--muted)}
+.conv-ok{margin-left:6px;color:var(--blue);font-weight:800;font-size:20px;vertical-align:middle}
+.conv-sub{font-size:13px;color:var(--muted);margin-top:2px}
+.needle{margin:15px 0 4px}
+.needle-axis{position:relative;height:14px;border-radius:8px;background:var(--grid)}
+.needle-dead{position:absolute;left:47%;width:6%;top:0;bottom:0;background:var(--muted);opacity:.32;border-radius:4px}
+.needle-tick{position:absolute;left:50%;top:-4px;bottom:-4px;width:2px;margin-left:-1px;background:var(--muted);opacity:.65}
+.needle-dot{position:absolute;top:50%;width:15px;height:15px;margin-left:-7.5px;transform:translateY(-50%);border-radius:50%;box-shadow:0 0 0 3px var(--card)}
+.needle-ends{display:flex;justify-content:space-between;font-size:11px;color:var(--faint);font-weight:600;margin-top:6px}
+.needle-num{color:var(--muted);font-weight:700}
+.conv-why{font-size:12.5px;color:var(--muted);margin-top:12px;line-height:1.5}
+.conv-defer{font-size:12px;margin-top:7px;font-weight:600;line-height:1.45}
 /* alert timeline */
 .tl-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
 .tlf{padding:6px 14px;border-radius:9px;background:var(--grid);color:var(--muted);
@@ -310,54 +331,63 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
     </div>
   </div>
 
+  {# ---- conviction card macro (shared by mid & short so they are byte-identical "same format") ---- #}
+  {% set gcol = {'CAUTION':'var(--amber)','AVOID':'var(--r3)','TREND-FOLLOW':'var(--blue)','BUY-THE-DIP':'var(--blue)','WAIT':'var(--muted)'} %}
+  {% set gcolor = gcol.get(verdict.grade,'var(--muted)') %}
+  {% macro convcard(c, title_en, title_zh, vsign, grade, grade_zh, gcolor) %}
+    {% set dword = 'bull' if c.dir>0 else 'bear' %}
+    {% set wcls = 'cw-toss' if c.state=='TOSS-UP' else (('cw-lean ' if c.state=='LEAN' else 'cw-edge ') ~ dword) %}
+    {% set inzone = c.lean <= 3 %}
+    {% set dottint = 'var(--muted)' if (c.state=='TOSS-UP' or inzone) else ('var(--blue)' if (c.state=='EDGE' and c.dir>0) else ('var(--r3)' if (c.state=='EDGE' and c.dir<0) else ('color-mix(in srgb,var(--blue) 58%,var(--grid))' if c.dir>0 else 'color-mix(in srgb,var(--r3) 60%,var(--grid))'))) %}
+    <div class="conv-head">
+      <span style="font-size:14px;font-weight:700;color:var(--ink)">{{ t(title_en, title_zh) }}</span>
+      <span class="conv-n">n={{ '{:,}'.format(c.n) if c.n else '—' }}</span>
+    </div>
+    <div class="cw {{ wcls }}">
+      {%- if c.state=='TOSS-UP' %}{{ t('Toss-up','势均力敌') }}
+      {%- elif c.state=='LEAN' %}{{ t('Lean ' ~ dword, '倾向看多' if c.dir>0 else '倾向看空') }}
+      {%- else %}{{ t('Edge ' ~ dword, '看多优势' if c.dir>0 else '看空优势') }}{% endif %}
+      {%- if c.state=='TOSS-UP' and c.dir!=0 %}<span class="conv-tag">{{ t(dword ~ '-lean', '略偏多' if c.dir>0 else '略偏空') }}</span>{% endif %}
+      {%- if c.confirmed %}<span class="conv-ok" title="tape + prob + tilt agree">✓</span>{% endif %}
+    </div>
+    <div class="conv-sub">{% if c.state=='TOSS-UP' %}{{ t('no edge · coin-flip','无优势 · 抛硬币') }}{% elif c.tape=='conflict' %}{{ t('tape disagrees — nimble only','盘面相反 — 仅适合灵活') }}{% else %}{{ t('within the reliable cell spread','处于可靠区间') }}{% endif %}</div>
+    <div class="needle">
+      <div class="needle-axis">
+        <div class="needle-dead"></div><div class="needle-tick"></div>
+        <div class="needle-dot" style="left:{{ c.p_bull }}%;background:{{ dottint }}"></div>
+      </div>
+      <div class="needle-ends"><span>{{ t('Bear','看空') }}</span><span class="needle-num">{{ c.p_bear }}% / {{ c.p_bull }}%</span><span>{{ t('Bull','看多') }}</span></div>
+    </div>
+    <div class="conv-why">{{ t(c.why_en, c.why_zh) }}</div>
+    <div class="conv-defer" style="color:{{ gcolor }}">↳ {{ t('Defers to','服从') }} <b>{{ t(grade, grade_zh) }}</b>
+      {%- if c.state=='TOSS-UP' %} — {{ t('no edge to add over the cycle read above','无法在上方周期判断之外提供优势') }}
+      {%- elif vsign != c.dir %} — {{ t('tape disagrees; nimble traders only','盘面相反；仅适合灵活交易者') }}
+      {%- else %} — {{ t('consistent with the bigger picture','与大局一致') }}{% endif %}</div>
+  {% endmacro %}
+
   <!-- ===================== MID & SHORT TERM (side by side, same format) ===================== -->
-  <div class="section-title">{{ t('Mid term & Short term · environment + 3-day scenarios', '中期与短期 · 环境 + 3 天情景') }}</div>
+  <div class="section-title">{{ t('Mid term & Short term · 7-day & 3-day direction', '中期与短期 · 7 天与 3 天方向') }}</div>
   <div class="grid cols-eq">
 
-    <!-- mid-term environment -->
-    <div class="card">
-      <h3>{{ t('Mid term · Environment', '中期 · 环境') }}</h3>
-      <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
-        <div>
-          <div class="sub">{{ t('Now', '当前') }}</div>
-          <span class="chip {{ 'chip-bull' if env.now=='bull' else ('chip-bear' if env.now=='bear' else 'chip-ghost') }}">{{ t(env.now|capitalize, tr(env.now)) }}</span>
-        </div>
-        <div style="flex:1;min-width:160px">
-          <div class="sub">{{ t('Probability next 7 days', '未来 7 天概率') }}</div>
-          {% if env.p_bull_7d is not none %}
-          <div class="prob"><span class="lab"><span class="chip chip-bear" style="padding:2px 8px">{{ t('Bear', '看空') }}</span></span>
-            <div class="track"><div class="fill bear" style="width:{{ env.p_bear_7d }}%"></div></div>
-            <span class="pct">{{ env.p_bear_7d }}%</span></div>
-          <div class="prob"><span class="lab"><span class="chip chip-bull" style="padding:2px 8px">{{ t('Bull', '看多') }}</span></span>
-            <div class="track"><div class="fill" style="width:{{ env.p_bull_7d }}%"></div></div>
-            <span class="pct">{{ env.p_bull_7d }}%</span></div>
-          {% else %}<div class="sub faint">{{ t('insufficient base-rate sample', '基准率样本不足') }}</div>{% endif %}
-          {% if env.cell %}<div class="sub faint" style="margin-top:6px;font-size:12px">{{ t('Conditioned on', '条件：') }} {{ env.cell }}{% if env.n %} (n={{ env.n }}){% endif %}{% if env.tilt %}, {{ t('macro+cycle tilt', '宏观+周期偏移') }} {{ '%+d'|format(env.tilt) }}pp{% endif %} · {{ t('empirical-Bayes shrunk, capped 30–70%', '经验贝叶斯收缩，限定 30–70%') }}</div>{% endif %}
-        </div>
-      </div>
-    </div>
+    <!-- mid term · 7-day direction (conviction) -->
+    <div class="card">{{ convcard(env.conv, 'Mid term · 7-day direction', '中期 · 7 天方向', verdict.mid_sign, verdict.grade, verdict.grade_zh, gcolor) }}</div>
 
-    <!-- short-term scenarios (bear + bull folded into ONE card to mirror the mid-term format) -->
+    <!-- short term · 3-day direction (conviction) + ATR scenario levels -->
     <div class="card">
-      <h3>{{ t('Short term · Scenarios (3 days)', '短期 · 情景（3 天）') }}</h3>
-      {% if scn.cell %}<div class="sub faint" style="margin:-2px 0 12px;font-size:12px">{{ t('Odds conditioned on', '概率条件：') }} {{ scn.cell }}{% if scn.n %} (n={{ scn.n }}){% endif %} · {{ t('ATR bands ×', 'ATR 带宽 ×') }}{{ scn.vscale }} {{ t('by forward vol (DVOL)', '（按 DVOL 前瞻波动率）') }}</div>{% endif %}
-      <div style="display:flex;gap:18px;flex-wrap:wrap">
+      {{ convcard(scn.conv, 'Short term · 3-day direction', '短期 · 3 天方向', verdict.short_sign, verdict.grade, verdict.grade_zh, gcolor) }}
+      <div style="border-top:1px solid var(--grid);margin-top:14px;padding-top:12px;display:flex;gap:18px;flex-wrap:wrap">
         <div style="flex:1;min-width:150px">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span class="chip chip-bear">{{ t('Bear', '看空') }}</span><span class="big">{{ scn.bear_prob }}%</span>
-          </div>
+          <div class="sub" style="font-weight:700;color:var(--ink)">{{ t('If it resolves down', '若向下') }}</div>
           <div class="scn-line"><span class="mut">{{ t('Target', '目标') }}</span><b class="down">{{ scn.bear_target|money }} → {{ scn.bear_target2|money }}</b></div>
           <div class="scn-line"><span class="mut">{{ t('Invalidation', '失效位') }}</span><b>{{ scn.bear_invalid|money }}</b></div>
         </div>
         <div style="flex:1;min-width:150px;border-left:1px solid var(--grid);padding-left:18px">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span class="chip chip-bull">{{ t('Bull', '看多') }}</span><span class="big">{{ scn.bull_prob }}%</span>
-          </div>
+          <div class="sub" style="font-weight:700;color:var(--ink)">{{ t('If it resolves up', '若向上') }}</div>
           <div class="scn-line"><span class="mut">{{ t('Target', '目标') }}</span><b class="up">{{ scn.bull_target|money }} → {{ scn.bull_target2|money }}</b></div>
           <div class="scn-line"><span class="mut">{{ t('Invalidation', '失效位') }}</span><b>{{ scn.bull_invalid|money }}</b></div>
         </div>
       </div>
-      <div class="sub" style="margin-top:10px">{{ t('A break of the 20-day swing low opens the lower ATR target; reclaiming the upper band targets the recent swing high.', '跌破 20 日摆动低点将打开更低的 ATR 目标；重新站上上轨则瞄准近期摆动高点。') }}</div>
+      <div class="sub" style="margin-top:10px">{{ t('ATR bands ×', 'ATR 带宽 ×') }}{{ scn.vscale }} {{ t('by forward vol — trade the level, not the bias; direction itself is a coin-flip.', '按前瞻波动率 — 交易关键位而非方向；方向本身接近抛硬币。') }}</div>
     </div>
 
   </div>
@@ -633,19 +663,19 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
     <div class="timeline">
       {% for day in timeline %}
       <div class="tl-day">
-        <div class="tl-date">{{ day.daylabel }}</div>
+        <div class="tl-date">{{ t(day.daylabel, day.daylabel_zh) }}</div>
         {% for e in day.events %}
         <details class="tl-item sev-{{ e.severity }}" data-f="{{ e.filter }}">
           <summary>
             <span class="tl-node n-{{ e.type }} n-{{ e.severity }}"></span>
-            <span class="tl-chip f-{{ e.filter }}">{{ e.label }}</span>
-            <span class="tl-head">{{ e.headline }}</span>
+            <span class="tl-chip f-{{ e.filter }}">{{ t(e.label, e.label_zh) }}</span>
+            <span class="tl-head">{{ t(e.headline, e.headline_zh) }}</span>
             <span class="tl-time">{{ e.time }}</span>
           </summary>
           <div class="tl-detail">
-            {{ e.detail }}
-            {% if e.edge %}<div class="tl-edge"><b>{{ t('Conviction:', '可信度：') }}</b> {{ e.edge }}</div>{% endif %}
-            {% if e.forward %}<div class="tl-fwd">{{ e.forward }}</div>{% endif %}
+            {{ t(e.detail, e.detail_zh) }}
+            {% if e.edge %}<div class="tl-edge"><b>{{ t('Conviction:', '可信度：') }}</b> {{ t(e.edge, e.edge_zh) }}</div>{% endif %}
+            {% if e.forward %}<div class="tl-fwd">{{ t(e.forward, e.forward_zh) }}</div>{% endif %}
             {% if e.anchor %}<a href="{{ e.anchor }}" class="tl-link">{{ t('View on dashboard →', '在仪表盘查看 →') }}</a>{% endif %}
           </div>
         </details>
