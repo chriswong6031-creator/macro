@@ -70,9 +70,10 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 /* layout */
 .grid{display:grid;gap:18px}
 .cols-2{grid-template-columns:1.15fr .85fr}
+.cols-eq{grid-template-columns:1fr 1fr}
 .cols-3{grid-template-columns:repeat(3,1fr)}
 .cols-4{grid-template-columns:repeat(4,1fr)}
-@media(max-width:900px){.cols-2,.cols-3,.cols-4{grid-template-columns:1fr}}
+@media(max-width:900px){.cols-2,.cols-eq,.cols-3,.cols-4{grid-template-columns:1fr}}
 .card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:22px}
 .card h2{margin:0 0 4px;font-size:13px;font-weight:700;color:var(--muted);
   text-transform:uppercase;letter-spacing:.04em}
@@ -272,64 +273,74 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
       </div>
     </div>
 
-    <div class="grid" style="gap:18px">
-      <!-- allocation -->
-      <div class="card">
-        <h2>{{ t('BTC Allocation · Optimal strategy', 'BTC 仓位 · 最优策略') }}</h2>
-        <div class="allocbar">
-          {% if alloc_pct > 0 %}<div class="btc" style="width:{{ alloc_pct }}%">{{ alloc_pct }}% BTC</div>{% endif %}
-          {% if alloc_pct < 100 %}<div class="cash" style="width:{{ 100-alloc_pct }}%">{{ 100-alloc_pct }}% {{ t('Cash', '现金') }}</div>{% endif %}
-        </div>
-        <div class="sub" style="margin-top:10px">{{ t('Market mode:', '市场模式：') }}
-          <span class="chip {{ 'chip-strategic' if market_mode=='Strategic' else 'chip-tactical' }}">{{ td(market_mode) }}</span>
-          · {{ t('BTC vs Alts leader:', 'BTC vs 山寨币 领先：') }} <b>{{ td(alt_leader) }}</b></div>
+    <!-- allocation (next to the long-term scorecard) -->
+    <div class="card">
+      <h2>{{ t('BTC Allocation · Optimal strategy', 'BTC 仓位 · 最优策略') }}</h2>
+      <div class="allocbar">
+        {% if alloc_pct > 0 %}<div class="btc" style="width:{{ alloc_pct }}%">{{ alloc_pct }}% BTC</div>{% endif %}
+        {% if alloc_pct < 100 %}<div class="cash" style="width:{{ 100-alloc_pct }}%">{{ 100-alloc_pct }}% {{ t('Cash', '现金') }}</div>{% endif %}
       </div>
-
-      <!-- mid-term environment -->
-      <div class="card">
-        <h2>{{ t('Mid term · Environment', '中期 · 环境') }}</h2>
-        <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
-          <div>
-            <div class="sub">{{ t('Now', '当前') }}</div>
-            <span class="chip {{ 'chip-bull' if env.now=='bull' else ('chip-bear' if env.now=='bear' else 'chip-ghost') }}">{{ t(env.now|capitalize, tr(env.now)) }}</span>
-          </div>
-          <div style="flex:1;min-width:160px">
-            <div class="sub">{{ t('Probability next 7 days', '未来 7 天概率') }}</div>
-            {% if env.p_bull_7d is not none %}
-            <div class="prob"><span class="lab"><span class="chip chip-bear" style="padding:2px 8px">{{ t('Bear', '看空') }}</span></span>
-              <div class="track"><div class="fill bear" style="width:{{ env.p_bear_7d }}%"></div></div>
-              <span class="pct">{{ env.p_bear_7d }}%</span></div>
-            <div class="prob"><span class="lab"><span class="chip chip-bull" style="padding:2px 8px">{{ t('Bull', '看多') }}</span></span>
-              <div class="track"><div class="fill" style="width:{{ env.p_bull_7d }}%"></div></div>
-              <span class="pct">{{ env.p_bull_7d }}%</span></div>
-            {% else %}<div class="sub faint">{{ t('insufficient base-rate sample', '基准率样本不足') }}</div>{% endif %}
-            {% if env.cell %}<div class="sub faint" style="margin-top:6px;font-size:12px">{{ t('Conditioned on', '条件：') }} {{ env.cell }}{% if env.n %} (n={{ env.n }}){% endif %}{% if env.tilt %}, {{ t('macro+cycle tilt', '宏观+周期偏移') }} {{ '%+d'|format(env.tilt) }}pp{% endif %} · {{ t('empirical-Bayes shrunk, capped 30–70%', '经验贝叶斯收缩，限定 30–70%') }}</div>{% endif %}
-          </div>
-        </div>
-      </div>
+      <div class="sub" style="margin-top:10px">{{ t('Market mode:', '市场模式：') }}
+        <span class="chip {{ 'chip-strategic' if market_mode=='Strategic' else 'chip-tactical' }}">{{ td(market_mode) }}</span>
+        · {{ t('BTC vs Alts leader:', 'BTC vs 山寨币 领先：') }} <b>{{ td(alt_leader) }}</b></div>
+      <a href="vector_allocation.html" style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;padding:11px 14px;border:1px solid var(--grid);border-radius:11px;background:var(--bg);text-decoration:none;color:var(--ink);font-weight:600;font-size:13.5px">
+        <span>◎ {{ t('Full allocation strategy — BTC · ETH · alts · cash', '完整仓位策略 — BTC · ETH · 山寨 · 现金') }}</span>
+        <span style="color:var(--blue);font-size:16px">→</span>
+      </a>
+      <div class="sub faint" style="margin-top:8px;font-size:12px">{{ t('The deep-dive page sizes ETH & altcoins by where we are in the alt-cycle (ETH/BTC ratio, alt-season).', '深度页面按所处山寨周期（ETH/BTC 比率、山寨季）配置 ETH 与山寨币。') }}</div>
     </div>
   </div>
 
-  <!-- ===================== SHORT-TERM SCENARIOS ===================== -->
-  <div class="section-title">{{ t('Short term · Scenarios (3 days)', '短期 · 情景（3 天）') }}</div>
-  {% if scn.cell %}<div class="sub faint" style="margin:-6px 4px 10px;font-size:12px">{{ t('Odds conditioned on', '概率条件：') }} {{ scn.cell }}{% if scn.n %} (n={{ scn.n }}){% endif %} · {{ t('ATR bands ×', 'ATR 带宽 ×') }}{{ scn.vscale }} {{ t('by forward vol (DVOL)', '（按 DVOL 前瞻波动率）') }}</div>{% endif %}
-  <div class="grid cols-2">
+  <!-- ===================== MID & SHORT TERM (side by side, same format) ===================== -->
+  <div class="section-title">{{ t('Mid term & Short term · environment + 3-day scenarios', '中期与短期 · 环境 + 3 天情景') }}</div>
+  <div class="grid cols-eq">
+
+    <!-- mid-term environment -->
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <span class="chip chip-bear">{{ t('Bear', '看空') }}</span><span class="big">{{ scn.bear_prob }}%</span>
+      <h3>{{ t('Mid term · Environment', '中期 · 环境') }}</h3>
+      <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+        <div>
+          <div class="sub">{{ t('Now', '当前') }}</div>
+          <span class="chip {{ 'chip-bull' if env.now=='bull' else ('chip-bear' if env.now=='bear' else 'chip-ghost') }}">{{ t(env.now|capitalize, tr(env.now)) }}</span>
+        </div>
+        <div style="flex:1;min-width:160px">
+          <div class="sub">{{ t('Probability next 7 days', '未来 7 天概率') }}</div>
+          {% if env.p_bull_7d is not none %}
+          <div class="prob"><span class="lab"><span class="chip chip-bear" style="padding:2px 8px">{{ t('Bear', '看空') }}</span></span>
+            <div class="track"><div class="fill bear" style="width:{{ env.p_bear_7d }}%"></div></div>
+            <span class="pct">{{ env.p_bear_7d }}%</span></div>
+          <div class="prob"><span class="lab"><span class="chip chip-bull" style="padding:2px 8px">{{ t('Bull', '看多') }}</span></span>
+            <div class="track"><div class="fill" style="width:{{ env.p_bull_7d }}%"></div></div>
+            <span class="pct">{{ env.p_bull_7d }}%</span></div>
+          {% else %}<div class="sub faint">{{ t('insufficient base-rate sample', '基准率样本不足') }}</div>{% endif %}
+          {% if env.cell %}<div class="sub faint" style="margin-top:6px;font-size:12px">{{ t('Conditioned on', '条件：') }} {{ env.cell }}{% if env.n %} (n={{ env.n }}){% endif %}{% if env.tilt %}, {{ t('macro+cycle tilt', '宏观+周期偏移') }} {{ '%+d'|format(env.tilt) }}pp{% endif %} · {{ t('empirical-Bayes shrunk, capped 30–70%', '经验贝叶斯收缩，限定 30–70%') }}</div>{% endif %}
+        </div>
       </div>
-      <div class="scn-line"><span class="mut">{{ t('Target', '目标') }}</span><b class="down">{{ scn.bear_target|money }} → {{ scn.bear_target2|money }}</b></div>
-      <div class="scn-line"><span class="mut">{{ t('Invalidation', '失效位') }}</span><b>{{ scn.bear_invalid|money }}</b></div>
-      <div class="sub" style="margin-top:8px">{{ t('A break of the 20-day swing low opens the lower ATR target.', '跌破 20 日摆动低点将打开更低的 ATR 目标。') }}</div>
     </div>
+
+    <!-- short-term scenarios (bear + bull folded into ONE card to mirror the mid-term format) -->
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <span class="chip chip-bull">{{ t('Bull', '看多') }}</span><span class="big">{{ scn.bull_prob }}%</span>
+      <h3>{{ t('Short term · Scenarios (3 days)', '短期 · 情景（3 天）') }}</h3>
+      {% if scn.cell %}<div class="sub faint" style="margin:-2px 0 12px;font-size:12px">{{ t('Odds conditioned on', '概率条件：') }} {{ scn.cell }}{% if scn.n %} (n={{ scn.n }}){% endif %} · {{ t('ATR bands ×', 'ATR 带宽 ×') }}{{ scn.vscale }} {{ t('by forward vol (DVOL)', '（按 DVOL 前瞻波动率）') }}</div>{% endif %}
+      <div style="display:flex;gap:18px;flex-wrap:wrap">
+        <div style="flex:1;min-width:150px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span class="chip chip-bear">{{ t('Bear', '看空') }}</span><span class="big">{{ scn.bear_prob }}%</span>
+          </div>
+          <div class="scn-line"><span class="mut">{{ t('Target', '目标') }}</span><b class="down">{{ scn.bear_target|money }} → {{ scn.bear_target2|money }}</b></div>
+          <div class="scn-line"><span class="mut">{{ t('Invalidation', '失效位') }}</span><b>{{ scn.bear_invalid|money }}</b></div>
+        </div>
+        <div style="flex:1;min-width:150px;border-left:1px solid var(--grid);padding-left:18px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span class="chip chip-bull">{{ t('Bull', '看多') }}</span><span class="big">{{ scn.bull_prob }}%</span>
+          </div>
+          <div class="scn-line"><span class="mut">{{ t('Target', '目标') }}</span><b class="up">{{ scn.bull_target|money }} → {{ scn.bull_target2|money }}</b></div>
+          <div class="scn-line"><span class="mut">{{ t('Invalidation', '失效位') }}</span><b>{{ scn.bull_invalid|money }}</b></div>
+        </div>
       </div>
-      <div class="scn-line"><span class="mut">{{ t('Target', '目标') }}</span><b class="up">{{ scn.bull_target|money }} → {{ scn.bull_target2|money }}</b></div>
-      <div class="scn-line"><span class="mut">{{ t('Invalidation', '失效位') }}</span><b>{{ scn.bull_invalid|money }}</b></div>
-      <div class="sub" style="margin-top:8px">{{ t('Reclaiming the upper ATR band targets the recent swing high.', '重新站上 ATR 上轨则瞄准近期摆动高点。') }}</div>
+      <div class="sub" style="margin-top:10px">{{ t('A break of the 20-day swing low opens the lower ATR target; reclaiming the upper band targets the recent swing high.', '跌破 20 日摆动低点将打开更低的 ATR 目标；重新站上上轨则瞄准近期摆动高点。') }}</div>
     </div>
+
   </div>
 
   <!-- ===================== RISK INDEX vs STRATEGY ===================== -->
