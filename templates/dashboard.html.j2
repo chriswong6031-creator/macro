@@ -18,6 +18,8 @@
   * { box-sizing: border-box; }
   body { background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system,
          "Segoe UI", Roboto, Helvetica, sans-serif; margin: 0; padding: 18px; }
+  /* breathing room on wide desktops — content centered, never edge-to-edge */
+  @media (min-width: 1100px) { body { padding: 26px max(40px, calc((100vw - 1500px) / 2)); } }
   a { color: #7aa7e0; text-decoration: none; }
   h1 { font-size: 20px; margin: 0 0 2px; }
   h2 { font-size: 15px; margin: 0 0 10px; color: var(--muted);
@@ -78,6 +80,9 @@
                pointer-events: none; white-space: normal; }
   .help:hover .tip { display: block; }
   th .help .tip, .help.below .tip { bottom: auto; top: 140%; }
+  /* keep tooltips on-screen near the right/left viewport edges */
+  .help.edge-right .tip { left: auto; right: 0; transform: none; }
+  .help.edge-left .tip { left: 0; right: auto; transform: none; }
   .tip-map { width: 360px !important; }
   /* structured tooltip building blocks */
   .tip table { width: 100%; margin: 6px 0 2px; font-size: 11.5px; }
@@ -479,7 +484,7 @@
         </span></span></th>
         <th>{{ month_name }} tendency {{ help("This instrument's average return in this calendar month across its whole history, and how often the month was positive. Weak evidence by nature — context, never a signal on its own (and deliberately excluded from the heat score).") }}</th>
         <th>to trigger {{ help("For sectors below their long-term relative trend: how much more outperformance vs SPY is needed for the trend to cross (= the data-backed buy confirmation), and how far along it already is from its recent low. Small gap + high progress = watch closely.") }}</th>
-        <th>cycle timing {{ help("From the sector's own price cycle (click the sector name for the full drill-down): where it sits in its ~36-42 trading-day cycle and how many of its top-10 holdings are currently in a buy state (FRESH BUY or TURN SIGNALED). The per-state historical base rates live on the drill-down page.") }}</th>
+        <th>cycle timing {{ help("From the sector's own price cycle (click the sector name for the full drill-down): where it sits in its ~36-42 trading-day cycle and how many of its top-10 holdings are in a buy setup (BOTTOMING or BUY ZONE). The per-state historical base rates live on the drill-down page.") }}</th>
       </tr>
       {% for r in sector_rows %}
       <tr>
@@ -506,7 +511,7 @@
         <td>{{ r.trigger_str }}</td>
         <td>
           {% if r.timing_state %}
-            <span class="pill" style="background:{{ r.timing_style[0] }};color:{{ r.timing_style[1] }}">{{ r.timing_state }}</span>
+            <span class="pill" style="background:{{ r.timing_style[0] }};color:{{ r.timing_style[1] }}">{{ r.timing_label }}</span>
             <div class="muted" style="font-size:11px">{{ r.timing_note }}</div>
           {% else %}—{% endif %}
         </td>
@@ -632,12 +637,18 @@
 
 </div>
 <script>
-  // tooltips near the top of the viewport open downward so they stay on screen
+  // keep tooltips on-screen: open downward near the top, and anchor to the
+  // nearest side when close to the left/right viewport edges
   document.addEventListener('mouseover', function (e) {
     var h = e.target.closest('.help');
     if (!h) return;
-    if (h.getBoundingClientRect().top < 330) h.classList.add('below');
-    else h.classList.remove('below');
+    var r = h.getBoundingClientRect();
+    h.classList.toggle('below', r.top < 330);
+    var tip = h.querySelector('.tip');
+    var half = ((tip && tip.offsetWidth) || 290) / 2 + 16;
+    h.classList.remove('edge-right', 'edge-left');
+    if (r.left + r.width / 2 + half > window.innerWidth) h.classList.add('edge-right');
+    else if (r.left + r.width / 2 - half < 0) h.classList.add('edge-left');
   });
 </script>
 </body>

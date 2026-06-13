@@ -13,6 +13,9 @@
   * { box-sizing:border-box; }
   body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,
          "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1200px)/2)); } }
+  .early { margin:6px 0; padding:8px 12px; border-radius:8px; background:#1c2740;
+           border-left:3px solid #6aa0e0; font-size:13px; }
   a { color:#7aa7e0; text-decoration:none; }
   h1 { font-size:20px; margin:0; }
   h2 { font-size:14px; margin:0 0 10px; color:var(--muted); text-transform:uppercase;
@@ -58,13 +61,14 @@
   <div class="panel">
     <div class="topline">
       <h1>{{ s.name }} <span class="muted">({{ s.fund }})</span></h1>
-      <span class="state st-{{ s.ladder.state | replace(" ", "_") }}">{{ s.ladder.state }}</span>
+      <span class="state st-{{ s.ladder.state | replace(" ", "_") }}">{{ s.ladder.label }} · {{ s.ladder.action }}</span>
       <span class="muted">cycle day {{ s.cycle.dc_day }} of ~{{ s.cycle.dc_band[0] }}-{{ s.cycle.dc_band[1] }}
         · investor cycle week {{ s.cycle.ic_week }} ({{ s.cycle.ic_phase }})</span>
       <span style="flex:1"></span>
       <a class="navbtn" href="../index.html">← Dashboard</a>
     </div>
     <p style="margin:10px 0 2px"><b>{{ s.ladder.why }}</b></p>
+    {% if s.ladder.early_note %}<p class="early">{{ s.ladder.early_note }}</p>{% endif %}
     <p class="muted" style="margin:4px 0">Next: {{ s.ladder.next }}</p>
     <div class="mtf">
       {% for tf in ["D","3D","W"] %}{% set m = s.mtf.get(tf, {}) %}{% if m %}
@@ -99,11 +103,12 @@
         <a href="../stock.html#{{ h.ticker }}"><b style="font-size:15px">{{ h.ticker }}</b></a>
         <span class="muted">{{ h.name }}</span>
         <span class="muted">{{ h.weight_pct }}% of fund</span>
-        <span class="state st-{{ h.ladder.state | replace(" ", "_") }}">{{ h.ladder.state }}</span>
+        <span class="state st-{{ h.ladder.state | replace(" ", "_") }}">{{ h.ladder.label }} · {{ h.ladder.action }}</span>
         <span class="scorebar"><i style="left:50%;width:{{ (h.ladder.score / 2) | abs }}%;{{ "right:50%;left:auto;" if h.ladder.score < 0 }}background:{{ "#5fbf7f" if h.ladder.score > 0 else "#e07070" }}"></i></span>
         <span class="muted">cycle day {{ h.cycle.dc_day }}</span>
       </div>
       <p style="margin:7px 0 2px">{{ h.ladder.why }}</p>
+      {% if h.ladder.early_note %}<p class="early">{{ h.ladder.early_note }}</p>{% endif %}
       <p class="muted" style="margin:3px 0">Next: {{ h.ladder.next }}</p>
       <div class="mtf">
         {% for tf in ["D","3D","W"] %}{% set m = h.mtf.get(tf, {}) %}{% if m %}
@@ -132,7 +137,7 @@
       <tr><th>state</th><th>samples</th><th>up next month</th><th>avg next month</th></tr>
       {% for st in ladder_order %}{% if calibration.get(st) %}
       <tr>
-        <td><span class="state st-{{ st | replace(" ", "_") }}">{{ st }}</span></td>
+        <td><span class="state st-{{ st | replace(" ", "_") }}">{{ state_display[st].label }} · {{ state_display[st].action }}</span></td>
         <td>{{ calibration[st].n }}</td>
         <td>{{ calibration[st].hit_pct }}%</td>
         <td class="{{ 'pos' if calibration[st].avg_fwd_pct > 0 else 'neg' }}">{{ "%+.2f" | format(calibration[st].avg_fwd_pct) }}%</td>
@@ -148,6 +153,18 @@
       confirm a turn, and exactly where you're wrong (the invalidation price) — and use
       position size, not certainty, to express conviction. It is not a return predictor,
       and the table proves we checked.</span></p>
+    {% if calibration.get("BOTTOM WATCH +early-bull") and calibration.get("BOTTOM WATCH no-early") %}
+    {% set ew = calibration["BOTTOM WATCH +early-bull"] %}{% set nw = calibration["BOTTOM WATCH no-early"] %}
+    <p class="early" style="margin-top:10px">⚡ <b>Do the early (pre-emptive) signals actually help?</b>
+      We measured it the same way. When a "nearing a low" reading ALSO had an early bullish signal
+      (RSI divergence / histogram turning / StochRSI pop), the next month was up
+      <b>{{ ew.hit_pct }}%</b> of the time (avg {{ "%+.2f" | format(ew.avg_fwd_pct) }}%, n={{ ew.n }}) —
+      versus <b>{{ nw.hit_pct }}%</b> (avg {{ "%+.2f" | format(nw.avg_fwd_pct) }}%, n={{ nw.n }}) without one.
+      So on average the early signals did <b>not</b> beat simply waiting — they fire sooner and catch the
+      occasional sharp V-bottom, but at a higher false-alarm rate. Use them to know <i>when to pay
+      attention</i>, then still require confirmation before committing. That's the honest tradeoff,
+      measured rather than assumed.</p>
+    {% endif %}
     {% else %}<p class="muted">Calibration pending — regenerates with the weekly run.</p>{% endif %}
     <p class="muted" style="font-size:12px">Cycle methodology after graddhy.com / thefinancialtap.com: equity daily cycles
        typically run 36-42 trading days trough-to-trough; timing bands catch roughly 70% of lows, so ~3 in 10 arrive

@@ -73,6 +73,7 @@ def _tf_state(close: pd.Series) -> dict:
     # estimate bars to the zero cross from its current slope
     h = hist.dropna()
     approaching_up = approaching_dn = False
+    macd_curl_up = macd_curl_dn = False
     bars_to_cross = None
     if len(h) >= 4:
         slope = (h.iloc[-1] - h.iloc[-4]) / 3
@@ -84,11 +85,24 @@ def _tf_state(close: pd.Series) -> dict:
         elif h.iloc[-1] > 0 and falling and slope < 0:
             approaching_dn = True
             bars_to_cross = float(np.clip(h.iloc[-1] / -slope, 0.5, 99))
+        # histogram trough/peak turn — Aspray's earliest pre-cross flag: a local
+        # min in the histogram while still below zero (1 confirming up-bar)
+        macd_curl_up = bool(h.iloc[-1] < 0 and h.iloc[-1] > h.iloc[-2] <= h.iloc[-3])
+        macd_curl_dn = bool(h.iloc[-1] > 0 and h.iloc[-1] < h.iloc[-2] >= h.iloc[-3])
+
+    # StochRSI popping out of oversold/overbought — the earliest oscillator heads-up
+    sclean = srsi.dropna()
+    stoch_cross_up = bool(len(sclean) >= 4 and sclean.iloc[-1] >= 20
+                          and (sclean.iloc[-4:-1] < 20).any())
+    stoch_cross_dn = bool(len(sclean) >= 4 and sclean.iloc[-1] <= 80
+                          and (sclean.iloc[-4:-1] > 80).any())
     return {
         "macd_pos": bool(hist.iloc[-1] > 0),
         "macd_cross_up": cross_up, "macd_cross_dn": cross_dn,
         "macd_approaching_up": approaching_up, "macd_approaching_dn": approaching_dn,
+        "macd_curl_up": macd_curl_up, "macd_curl_dn": macd_curl_dn,
         "macd_bars_to_cross": round(bars_to_cross, 1) if bars_to_cross else None,
+        "stoch_cross_up": stoch_cross_up, "stoch_cross_dn": stoch_cross_dn,
         "rsi14": round(float(r14.iloc[-1]), 0) if pd.notna(r14.iloc[-1]) else None,
         "rsi5": round(float(r5.iloc[-1]), 0) if pd.notna(r5.iloc[-1]) else None,
         "stoch": round(float(srsi.iloc[-1]), 0) if pd.notna(srsi.iloc[-1]) else None,
@@ -218,6 +232,95 @@ def cycle_state(close: pd.Series, high: pd.Series | None = None) -> dict:
     }
 
 
+# --------------------------------------------------- pre-emptive detection ----
+
+def _pivots(s: np.ndarray, k: int, kind: str) -> list[int]:
+    """Confirmed pivot indices: extremum of k bars each side. The last k bars
+    can't confirm yet (no look-ahead)."""
+    out = []
+    for i in range(k, len(s) - k):
+        seg = s[i - k: i + k + 1]
+        if (kind == "low" and s[i] == seg.min()) or (kind == "high" and s[i] == seg.max()):
+            out.append(i)
+    return out
+
+
+def rsi_divergence(close: pd.Series, k: int = 5, min_dist: int = 13,
+                   max_dist: int = 60, mag: float = 4.0) -> dict:
+    """Regular RSI(14) divergence between the two most recent confirmed pivots,
+    with the junk filters the research flagged as load-bearing: both legs near
+    the oscillator extreme, a minimum RSI magnitude, and a min/max pivot spacing.
+    Bullish = price lower-low while RSI higher-low (mirror for bearish)."""
+    c = close.dropna()
+    if len(c) < k * 3 + 30:
+        return {}
+    r = rsi(c, 14)
+    arr, rv = c.to_numpy(), r.to_numpy()
+    out: dict = {}
+    last = len(c) - 1
+
+    plo = _pivots(arr, k, "low")
+    if len(plo) >= 2:
+        p1, p2 = plo[-2], plo[-1]
+        if (min_dist <= p2 - p1 <= max_dist and last - p2 <= max_dist
+                and arr[p2] < arr[p1] and rv[p2] > rv[p1] + mag
+                and rv[p1] < 40 and rv[p2] < 48):
+            out["bull"] = True
+            out["bull_bars_ago"] = int(last - p2)
+
+    phi = _pivots(arr, k, "high")
+    if len(phi) >= 2:
+        p1, p2 = phi[-2], phi[-1]
+        if (min_dist <= p2 - p1 <= max_dist and last - p2 <= max_dist
+                and arr[p2] > arr[p1] and rv[p2] < rv[p1] - mag
+                and rv[p1] > 60 and rv[p2] > 52):
+            out["bear"] = True
+            out["bear_bars_ago"] = int(last - p2)
+    return out
+
+
+def early_signals(close: pd.Series, cyc: dict, mtf: dict) -> dict:
+    """Anticipatory tier — the pre-emptive layer that fires BEFORE full cycle
+    confirmation. Gated by cycle context so it can't scream 'buy' in free-fall:
+    bullish signals only count when a low is plausibly near (in/after the timing
+    band, or short-term washed out); bearish only when extended/late. Returned as
+    explicit named signals + a tier, never as a standalone buy. Calibrated
+    separately (see calibrate_ladder) so its real edge is measured, not assumed."""
+    d = mtf.get("D", {})
+    if not d or not cyc:
+        return {}
+    div = rsi_divergence(close)
+    late = cyc.get("dc_phase") in ("approaching_band", "in_band", "stretched")
+    washed = (d.get("rsi5") or 50) < 25 or (d.get("stoch") or 50) < 12
+    extended = cyc.get("dc_phase") in ("mid", "approaching_band", "in_band", "stretched") \
+        and cyc.get("above_ma10")
+    overbought = (d.get("rsi14") or 50) > 70 or (d.get("stoch") or 50) > 88
+
+    bull, bear = [], []
+    if (late or washed) and not cyc.get("failed_cycle"):
+        if div.get("bull"):
+            bull.append("RSI bullish divergence (price made a lower low, momentum didn't)")
+        if d.get("macd_curl_up"):
+            bull.append("MACD histogram turned up off a trough (pre-cross)")
+        if d.get("stoch_cross_up"):
+            bull.append("StochRSI popped out of oversold")
+    if extended and overbought:
+        if div.get("bear"):
+            bear.append("RSI bearish divergence (price made a higher high, momentum didn't)")
+        if d.get("macd_curl_dn"):
+            bear.append("MACD histogram rolled over off a peak (pre-cross)")
+        if d.get("stoch_cross_dn"):
+            bear.append("StochRSI dropped out of overbought")
+
+    if bull and not bear:
+        tier = "anticipated" if (div.get("bull") or len(bull) >= 2) else "heads-up"
+        return {"dir": "up", "tier": tier, "signals": bull, "n": len(bull)}
+    if bear and not bull:
+        tier = "anticipated" if (div.get("bear") or len(bear) >= 2) else "heads-up"
+        return {"dir": "down", "tier": tier, "signals": bear, "n": len(bear)}
+    return {}
+
+
 # ----------------------------------------------------------- signal ladder ----
 
 LADDER = ["DECLINE", "BOTTOM WATCH", "TURN SIGNALED", "FRESH BUY",
@@ -227,12 +330,27 @@ LADDER_SCORE = {"DECLINE": -80, "ROLLING OVER": -40, "TOP WATCH": -10,
                 "BOTTOM WATCH": 10, "TURN SIGNALED": 45, "FRESH BUY": 80,
                 "RALLY ON": 55}
 
+# Plain, direction-explicit display for every internal state. The bottom and
+# top "turns" are deliberately named as mirror images (BOTTOMING = buy setup,
+# TOPPING = sell setup) so the symmetry is obvious. Internal keys above stay
+# fixed so the calibration JSON keeps matching. action = one-word call.
+STATE_DISPLAY = {
+    "DECLINE":       {"label": "DOWNTREND",     "action": "AVOID",        "dir": "down"},
+    "BOTTOM WATCH":  {"label": "NEARING A LOW",  "action": "GET READY",    "dir": "down"},
+    "TURN SIGNALED": {"label": "BOTTOMING",      "action": "BUY SETUP",    "dir": "up"},
+    "FRESH BUY":     {"label": "BUY ZONE",       "action": "BUY",          "dir": "up"},
+    "RALLY ON":      {"label": "UPTREND",        "action": "HOLD",         "dir": "up"},
+    "TOP WATCH":     {"label": "NEARING A HIGH", "action": "TAKE PROFITS", "dir": "up"},
+    "ROLLING OVER":  {"label": "TOPPING",        "action": "SELL SETUP",   "dir": "down"},
+}
 
-def ladder_state(cyc: dict, mtf: dict) -> dict:
+
+def ladder_state(cyc: dict, mtf: dict, early: dict | None = None) -> dict:
     """Combine cycle position + multi-timeframe indicators into one state,
     with a plain next-step line. Weekly timeframe gates the daily signal."""
     if not cyc or not mtf.get("D"):
         return {}
+    early = early or {}
     d, w = mtf["D"], mtf.get("W", {})
     weekly_ok = bool(w.get("macd_pos") or w.get("macd_approaching_up")) and not cyc["ic_failed"]
 
@@ -324,15 +442,37 @@ def ladder_state(cyc: dict, mtf: dict) -> dict:
     if state in ("FRESH BUY", "RALLY ON") and cyc.get("translation") == "right":
         score += 5
 
-    return {"state": state, "score": int(np.clip(score, -100, 100)),
-            "why": why, "next": nxt, "weekly_ok": weekly_ok}
+    # pre-emptive (anticipatory) layer: enriches messaging in the watch states
+    # without changing the calibrated state. A bullish early read in BOTTOM WATCH
+    # nudges the score and re-frames the action toward "watch closely".
+    early_note = ""
+    if early.get("dir") == "up" and state in ("BOTTOM WATCH", "TURN SIGNALED", "DECLINE"):
+        score += 12 if early.get("tier") == "anticipated" else 6
+        early_note = ("⚡ Early reversal building (" + early["tier"] + "): "
+                      + "; ".join(early["signals"]) + ". These anticipate a low BEFORE "
+                      "full confirmation — earlier entry, but a higher false-alarm rate, so "
+                      "treat as a heads-up to watch closely, not a trigger yet.")
+    elif early.get("dir") == "down" and state in ("TOP WATCH", "RALLY ON"):
+        score -= 12 if early.get("tier") == "anticipated" else 6
+        early_note = ("⚡ Early topping signs (" + early["tier"] + "): "
+                      + "; ".join(early["signals"]) + ". These anticipate a high BEFORE "
+                      "confirmation — a heads-up to protect gains, not a sell trigger yet.")
+
+    disp = STATE_DISPLAY[state]
+    return {"state": state, "label": disp["label"], "action": disp["action"],
+            "dir": disp["dir"], "score": int(np.clip(score, -100, 100)),
+            "why": why, "next": nxt, "weekly_ok": weekly_ok,
+            "early_note": early_note,
+            "early_tier": early.get("tier") if early_note else None,
+            "early_dir": early.get("dir") if early_note else None}
 
 
 def analyze(close: pd.Series, high: pd.Series | None = None) -> dict:
     cyc = cycle_state(close, high)
     mtf = mtf_snapshot(close)
-    lad = ladder_state(cyc, mtf)
-    return {"cycle": cyc, "mtf": mtf, "ladder": lad}
+    early = early_signals(close, cyc, mtf)
+    lad = ladder_state(cyc, mtf, early)
+    return {"cycle": cyc, "mtf": mtf, "early": early, "ladder": lad}
 
 
 # ------------------------------------------------------------- calibration ----
@@ -342,7 +482,10 @@ def calibrate_ladder(price_panel: dict[str, pd.Series], fwd: int = 21,
     """Historical forward returns by ladder state. price_panel: name -> close.
     Heavy-ish (re-evaluates state along history) — run by the validation
     pipeline, cached to data/regime/ladder_calibration.json."""
-    buckets: dict[str, list[float]] = {s: [] for s in LADDER}
+    # extra buckets isolate the pre-emptive layer's measured edge: the same
+    # BOTTOM-WATCH context with vs without an early bullish read.
+    extra = ["BOTTOM WATCH +early-bull", "BOTTOM WATCH no-early"]
+    buckets: dict[str, list[float]] = {s: [] for s in LADDER + extra}
     for name, close in price_panel.items():
         c = close.dropna()
         if len(c) < 600:
@@ -353,14 +496,23 @@ def calibrate_ladder(price_panel: dict[str, pd.Series], fwd: int = 21,
         for i in range(300, len(c) - fwd, step):
             sub = c.iloc[max(0, i - 600):i + 1]
             try:
-                st = ladder_state(cycle_state(sub), {"D": _tf_state(sub),
-                                                     "W": _tf_state(sub.resample("W-FRI").last().dropna())})
+                cyc = cycle_state(sub)
+                mtf = {"D": _tf_state(sub),
+                       "W": _tf_state(sub.resample("W-FRI").last().dropna())}
+                early = early_signals(sub, cyc, mtf)
+                st = ladder_state(cyc, mtf, early)
             except Exception:  # noqa: BLE001
                 continue
-            if st.get("state"):
-                v = fwd_ret.iloc[i]
-                if pd.notna(v):
-                    buckets[st["state"]].append(float(v))
+            if not st.get("state"):
+                continue
+            v = fwd_ret.iloc[i]
+            if pd.isna(v):
+                continue
+            buckets[st["state"]].append(float(v))
+            if st["state"] == "BOTTOM WATCH":
+                key = "BOTTOM WATCH +early-bull" if early.get("dir") == "up" \
+                    else "BOTTOM WATCH no-early"
+                buckets[key].append(float(v))
     out = {}
     for s, vals in buckets.items():
         if len(vals) >= 40:

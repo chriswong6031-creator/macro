@@ -2,6 +2,38 @@
 
 Newest first. Each entry: what was decided, why, and what would change it.
 
+## 2026-06-14 — UX clarity + pre-emptive entry layer
+
+**D46. Ladder states got plain, direction-explicit display names** (internal
+keys unchanged so the calibration JSON still matches). DECLINE→"DOWNTREND·AVOID",
+BOTTOM WATCH→"NEARING A LOW·GET READY", TURN SIGNALED→"BOTTOMING·BUY SETUP",
+FRESH BUY→"BUY ZONE·BUY", RALLY ON→"UPTREND·HOLD", TOP WATCH→"NEARING A
+HIGH·TAKE PROFITS", ROLLING OVER→"TOPPING·SELL SETUP". A user couldn't tell
+direction from "turn signaled"; the bottom/top turns are now named as explicit
+mirror images (BOTTOMING=buy setup ↔ TOPPING=sell setup). `STATE_DISPLAY` in
+engine/cycles.py is the single source; flows to heat board, sector pages, stock
+search via the ladder dict + a JS copy.
+
+**D47. Pre-emptive entry detection added per research (Aspray histogram trough,
+RSI divergence with oversold-leg + magnitude + spacing filters, StochRSI pop
+out of oversold), exposed as an explicit ANTICIPATED/HEADS-UP tier — never a
+new calibrated buy state.** Gated by cycle context (bull signals only when a
+low is plausibly near; bear only when extended) so it can't scream buy in
+free-fall. CRITICAL honesty result: calibration (BOTTOM WATCH +early-bull vs
+no-early, 40 instruments, fwd 21d) showed the early signals did NOT beat
+waiting — 57.8%/+1.16% vs 58.8%/+1.58%. Consistent with the heat board (D31)
+and playbook (D23): anticipating doesn't raise average return, it trades a
+higher false-alarm rate for catching the occasional sharp V. Shipped with that
+measured comparison printed on the page; the early note frames it as "know when
+to watch, then still require confirmation". What would change it: a different
+horizon or a divergence-only (anticipated-tier-only) calibration might separate;
+left as future work.
+
+**D48. Tooltips flip horizontally near the right/left viewport edge** (JS adds
+edge-right/edge-left anchoring), mirroring the existing top-edge flip — the
+rightmost "cycle timing" tooltip was overflowing. Desktop gets centered side
+padding (max-width container) above 1100px.
+
 ## 2026-06-13 — Bitcoin Vector Phase 2 (signal engine + calibration)
 
 **D42. Signals are vote-ensembles + saturating composites, matching the

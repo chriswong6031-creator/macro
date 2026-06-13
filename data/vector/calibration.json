@@ -739,7 +739,7 @@
       "hodl_maxdd": -83.8,
       "time_in_market": 34.9,
       "total_return": 8594.0,
-      "hodl_total_return": 20152.0,
+      "hodl_total_return": 20115.0,
       "final_vs_hodl": 0.43
     },
     "moderate": {
@@ -753,8 +753,8 @@
       "hodl_maxdd": -83.8,
       "time_in_market": 56.4,
       "total_return": 33375.0,
-      "hodl_total_return": 20152.0,
-      "final_vs_hodl": 1.65
+      "hodl_total_return": 20115.0,
+      "final_vs_hodl": 1.66
     },
     "aggressive": {
       "cagr": 61.9,
@@ -767,8 +767,8 @@
       "hodl_maxdd": -83.8,
       "time_in_market": 64.1,
       "total_return": 24693.0,
-      "hodl_total_return": 20152.0,
-      "final_vs_hodl": 1.22
+      "hodl_total_return": 20115.0,
+      "final_vs_hodl": 1.23
     },
     "optimal": {
       "cagr": 65.2,
@@ -781,7 +781,7 @@
       "hodl_maxdd": -83.8,
       "time_in_market": 58.6,
       "total_return": 31215.0,
-      "hodl_total_return": 20152.0,
+      "hodl_total_return": 20115.0,
       "final_vs_hodl": 1.55
     }
   },

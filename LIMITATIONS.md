@@ -135,6 +135,14 @@ the consequence, not just the cause.
   a schedule.
 - **Per-stock fundamentals are sparse, unofficial yfinance fields** refreshed
   weekly — display-only context, never inputs to any signal.
+- **Pre-emptive ("early reversal") signals do not beat waiting on average.**
+  RSI divergence / MACD histogram trough / StochRSI pops fire earlier, but our
+  own calibration (BOTTOM WATCH +early-bull 57.8%/+1.16% vs no-early
+  58.8%/+1.58%, fwd 21d) shows no average edge — they trade a higher false-alarm
+  rate for catching the occasional sharp V-bottom. They are framed everywhere as
+  a "watch closely" heads-up, not a trigger, and the comparison is printed on
+  every drill-down. RSI-divergence repaints (the second pivot only confirms a
+  few bars after the actual low), so "anticipation" is partly hindsight.
 
 ## Engine
 

@@ -345,9 +345,10 @@ def sector_rows(playbook: dict | None, timing: dict | None = None) -> list[dict]
         tm = timing.get(r["ticker"])
         if tm:
             r["timing_state"] = tm["state"]
+            r["timing_label"] = tm.get("label", tm["state"])
             r["timing_style"] = tm["state_style"]
             r["timing_note"] = (f"day {tm['dc_day']} of its cycle; "
-                                f"{tm['buy_zone']}/{tm['n_holdings']} top holdings in a buy state")
+                                f"{tm['buy_zone']}/{tm['n_holdings']} top holdings in a buy setup")
         else:
             r["timing_state"] = None
         bg, fg = STAGE_STYLE.get(r["stage"], ("#2a2f3a", "#d7dce3"))
@@ -437,7 +438,7 @@ def build_sector_pages(env: Environment, site: Path, generated: str) -> dict:
     import json as _json
 
     from collectors.sector_holdings import latest_fundamentals, latest_top10
-    from engine.cycles import LADDER, analyze
+    from engine.cycles import LADDER, STATE_DISPLAY, analyze
     from engine.playbook import SECTOR_NAMES
 
     cal_path = config.data_dir() / "regime" / "ladder_calibration.json"
@@ -473,9 +474,12 @@ def build_sector_pages(env: Environment, site: Path, generated: str) -> dict:
         s = {"fund": fund, "name": SECTOR_NAMES.get(fund, fund), **res,
              "holdings": holdings}
         html = tpl.render(s=s, state_styles=STATE_STYLES, calibration=calibration,
-                          ladder_order=LADDER, generated_utc=generated)
+                          ladder_order=LADDER, state_display=STATE_DISPLAY,
+                          generated_utc=generated)
         (outdir / f"{fund}.html").write_text(html)
         summaries[fund] = {"state": res["ladder"]["state"],
+                           "label": res["ladder"]["label"],
+                           "action": res["ladder"]["action"],
                            "state_style": STATE_STYLES.get(res["ladder"]["state"]),
                            "dc_day": res["cycle"]["dc_day"],
                            "buy_zone": buy_zone, "n_holdings": len(holdings)}
@@ -560,9 +564,13 @@ def main() -> int:
 
     # stock search: analyzer page + nightly library
     if config.load().get("stock_search", {}).get("enabled"):
+        import json as _json
+
+        from engine.cycles import STATE_DISPLAY
         (site / "stock.html").write_text(
             env.get_template("stock.html.j2").render(
-                state_styles=STATE_STYLES, generated_utc=generated))
+                state_styles=STATE_STYLES, generated_utc=generated,
+                state_display_json=_json.dumps(STATE_DISPLAY)))
         from scripts.build_stock_library import main as build_library
         build_library()
     return 0

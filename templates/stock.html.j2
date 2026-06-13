@@ -10,6 +10,9 @@
   * { box-sizing:border-box; }
   body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,
          "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1100px)/2)); } }
+  .early { margin:6px 0; padding:8px 12px; border-radius:8px; background:#1c2740;
+           border-left:3px solid #6aa0e0; font-size:13px; color:var(--text); }
   a { color:#7aa7e0; text-decoration:none; }
   h1 { font-size:20px; margin:0; }
   h2 { font-size:14px; margin:0 0 10px; color:var(--muted); text-transform:uppercase;
@@ -71,6 +74,7 @@
         <span id="r_asof" class="muted"></span>
       </div>
       <p id="r_why" style="margin:10px 0 2px; font-weight:600"></p>
+      <p id="r_early" class="early" style="display:none"></p>
       <p id="r_next" class="muted" style="margin:4px 0"></p>
       <p id="r_flags" class="neg" style="margin:4px 0"></p>
       <div class="mtf" id="r_mtf"></div>
@@ -96,6 +100,9 @@
 (function () {
   var idx = [], cal = null, sel = -1, items = [];
   var q = document.getElementById('q'), sugg = document.getElementById('sugg');
+  // internal state -> friendly "LABEL · ACTION" (mirrors engine/cycles.STATE_DISPLAY)
+  var DISP = {{ state_display_json | safe }};
+  function disp(s) { return DISP[s] ? DISP[s].label + ' · ' + DISP[s].action : s; }
 
   fetch('stockdata/index.json').then(r => r.json()).then(d => { idx = d; fromHash(); });
   fetch('stockdata/calibration.json').then(r => r.ok ? r.json() : null)
@@ -124,7 +131,7 @@
     sugg.innerHTML = items.map(function (x, i) {
       return '<div data-i="' + i + '"><b>' + x.t + '</b><small>' + x.n +
              (x.s ? ' · ' + x.s : '') + '</small><span class="muted" style="font-size:11px">' +
-             x.st + '</span></div>';
+             disp(x.st) + '</span></div>';
     }).join('');
     sugg.style.display = items.length ? 'block' : 'none';
   });
@@ -179,13 +186,17 @@
     document.getElementById('result').style.display = 'block';
     document.getElementById('r_name').textContent = d.name + ' (' + d.ticker + ')';
     var st = document.getElementById('r_state');
-    st.textContent = d.ladder.state;
+    st.textContent = (d.ladder.label || d.ladder.state) +
+                     (d.ladder.action ? ' · ' + d.ladder.action : '');
     st.className = 'state st-' + d.ladder.state.replace(/ /g, '_');
     document.getElementById('r_cyc').textContent =
       'cycle day ' + d.cycle.dc_day + ' of ~' + d.cycle.dc_band[0] + '-' + d.cycle.dc_band[1] +
       (d.cycle.ic_week != null ? ' · investor cycle week ' + d.cycle.ic_week + ' (' + d.cycle.ic_phase + ')' : '');
     document.getElementById('r_asof').textContent = 'data through ' + d.asof;
     document.getElementById('r_why').textContent = d.ladder.why;
+    var early = document.getElementById('r_early');
+    if (d.ladder.early_note) { early.textContent = d.ladder.early_note; early.style.display = 'block'; }
+    else { early.style.display = 'none'; }
     document.getElementById('r_next').textContent = 'Next: ' + d.ladder.next;
     var flags = [];
     if (d.cycle.failed_cycle) flags.push('⚠ Failed cycle — price is below the low that started this cycle; the larger trend is usually rolling over.');
@@ -204,7 +215,7 @@
     if (cal) {
       Object.keys(cal).forEach(function (s) {
         var v = cal[s];
-        cs += '<tr><td><span class="state st-' + s.replace(/ /g, '_') + '">' + s + '</span></td><td>' +
+        cs += '<tr><td><span class="state st-' + s.replace(/ /g, '_') + '">' + disp(s) + '</span></td><td>' +
               v.n + '</td><td>' + v.hit_pct + '%</td><td class="' +
               (v.avg_fwd_pct > 0 ? 'pos' : 'neg') + '">' + v.avg_fwd_pct + '%</td></tr>';
       });

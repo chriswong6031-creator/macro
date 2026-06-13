@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-06-13T01:49:22.983159+00:00",
+  "last_run": "2026-06-13T02:51:49.626539+00:00",
   "sources": {
     "cot": {
       "source": "cot",
@@ -121,11 +121,11 @@
     "coinmetrics": {
       "source": "coinmetrics",
       "status": "ok",
-      "rows": 59275,
+      "rows": 60,
       "last_date": "2026-06-12",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-13T01:31:13.894493+00:00"
+      "checked_at": "2026-06-13T02:51:49.626569+00:00"
     },
     "okx": {
       "source": "okx",
@@ -139,11 +139,11 @@
     "deribit": {
       "source": "deribit",
       "status": "ok",
-      "rows": 1908,
+      "rows": 5,
       "last_date": "2026-06-13",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-13T01:31:13.894503+00:00"
+      "checked_at": "2026-06-13T02:51:49.626581+00:00"
     },
     "feargreed": {
       "source": "feargreed",
@@ -152,7 +152,7 @@
       "last_date": "2026-06-13",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-13T01:31:13.894507+00:00"
+      "checked_at": "2026-06-13T02:51:49.626584+00:00"
     },
     "coingecko": {
       "source": "coingecko",
@@ -166,11 +166,11 @@
     "defillama": {
       "source": "defillama",
       "status": "ok",
-      "rows": 3118,
-      "last_date": "2026-06-12",
+      "rows": 3119,
+      "last_date": "2026-06-13",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-13T01:31:13.894514+00:00"
+      "checked_at": "2026-06-13T02:51:49.626587+00:00"
     },
     "mempool": {
       "source": "mempool",
@@ -193,11 +193,11 @@
     "coinbase": {
       "source": "coinbase",
       "status": "ok",
-      "rows": 95513,
+      "rows": 7,
       "last_date": "2026-06-13",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-13T01:38:23.992051+00:00"
+      "checked_at": "2026-06-13T02:51:49.626576+00:00"
     }
   },
   "circuit_breaker": {
