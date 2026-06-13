@@ -231,6 +231,15 @@
             background: var(--panel2); border: 1px solid var(--line); border-radius: 7px;
             padding: 5px 11px; cursor: pointer; transition: border-color .12s, background .12s; }
   .tm-btn:hover { border-color: var(--link); }
+  .gobtn { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px;
+           font-weight: 600; text-decoration: none; color: #fff; white-space: nowrap;
+           padding: 7px 14px; border-radius: 9px; background: var(--info);
+           border: 1px solid transparent; box-shadow: 0 1px 3px rgba(20,30,50,.14);
+           transition: transform .13s ease, box-shadow .13s ease, background .13s ease; }
+  .gobtn:hover { background: var(--link); transform: translateY(-1px);
+                 box-shadow: 0 4px 12px rgba(20,30,50,.20); }
+  .gobtn .a { transition: transform .13s ease; }
+  .gobtn:hover .a { transform: translateX(3px); }
   .tm-play { display: inline-flex; align-items: center; gap: 7px; }
   .tm-play-ico { width: 0; height: 0; border-style: solid; border-width: 6px 0 6px 10px;
                  border-color: transparent transparent transparent var(--text);
@@ -997,9 +1006,12 @@
 
   <!-- ======================= HOLDINGS / FLOWS ======================= -->
   <div class="panel span12" id="holdings">
-    <h2>{{ t("Star fund managers' real moves", '明星基金经理的真实动作') }}
-      {{ help("Daily holdings of the watchlist funds (ARK etc.) with mechanical flow effects stripped out — what's left is genuine manager conviction, visible the day after they trade.", "观察名单基金（ARK 等）的每日持仓，已剔除机械性的资金流影响 — 剩下的是真正的经理人信念，在他们交易后的次日可见。") }}
-    </h2>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <h2 style="margin:0">{{ t("Star fund managers' real moves", '明星基金经理的真实动作') }}
+      {{ help("Daily holdings of the watchlist funds (ARK etc.) with mechanical flow effects stripped out — what's left is genuine manager conviction, visible the day after they trade.", "观察名单基金（ARK 等）的每日持仓，已剔除机械性的资金流影响 — 剩下的是真正的经理人信念，在他们交易后的次日可见。") }}</h2>
+      <span style="flex:1"></span>
+      <a class="gobtn" href="etfs.html">🐳 {{ t('Full ETF flow radar', '完整 ETF 资金雷达') }} <span class="a">→</span></a>
+    </div>
     {% if holdings_changes %}
       <table>
         <tr><th class="l">{{ t('fund', '基金') }}</th><th class="l">{{ t('position', '仓位') }}</th><th>{{ t('active chg', '主动变动') }}</th><th>{{ t('window', '窗口') }}</th></tr>
