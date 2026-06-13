@@ -81,6 +81,9 @@ def load_all() -> dict[str, pd.Series | pd.DataFrame | None]:
         "mvrv": mvrv,
         "mcap": mcap,
         "active_addresses": _col("coinmetrics", "active_addresses"),
+        "hashrate": _col("coinmetrics", "hashrate"),          # hash ribbons (2010->)
+        "issuance_usd": _col("coinmetrics", "issuance_usd"),  # Puell multiple (2010->)
+        "supply": _col("coinmetrics", "supply"),              # normalize supply_in_profit
         "sopr": _col("bgeo", "sopr"),
         "sth_sopr": _col("bgeo", "sth_sopr"),
         "lth_sopr": _col("bgeo", "lth_sopr"),
@@ -88,15 +91,29 @@ def load_all() -> dict[str, pd.Series | pd.DataFrame | None]:
         "realized_price": _col("bgeo", "realized_price"),
         "supply_in_profit": _col("bgeo", "supply_in_profit"),
         "miner_sell_pressure": _col("bgeo", "miner_sell_pressure"),
+        "miner_df": store.read("bgeo", "miner_sell_pressure"),  # outflow/reserve cols for MPI
+        "coinbase_premium": _col("bgeo", "coinbase_premium",
+                                 "coinbase_premium_coinbasePremiumIndex"),  # US institutional demand
         "funding": _col("bgeo", "funding_rate"),
         "open_interest": _col("bgeo", "open_interest_futures"),
+        "open_interest_df": store.read("bgeo", "open_interest_futures"),  # all 15 venue cols
         "etf_flow": _col("bgeo", "etf_flow_btc"),
         "btc_dominance": _col("bgeo", "btc_dominance"),
         "stablecoins": stables,
         "fear_greed": _col("sentiment_crypto", "fear_greed"),
+        "reserve_risk": _col("checkonchain", "reserve_risk"),  # deep cycle-bottom (2010->)
         "dvol": _col("deribit", "dvol", "dvol_close"),
+        "options_structure": store.read("deribit", "options_structure"),  # forward-accumulating snapshot
         "eth": _col("yahoo", "ETH-USD", None),
         "sol": _col("yahoo", "SOL-USD", None),
+        # Tier-3 macro overlay (shared macro parquet store; D10 net-liquidity inputs)
+        "walcl": _col("fred", "WALCL"),           # Fed balance sheet ($mn, weekly)
+        "rrp": _col("fred", "RRPONTSYD"),         # reverse repo ($bn)
+        "tga": _col("treasury", "tga"),           # Treasury general account ($mn)
+        "real_yield": _col("fred", "DFII10"),     # 10y real yield (%)
+        "hy_oas": _col("fred", "BAMLH0A0HYM2"),   # high-yield credit spread (%)
+        "vix": _col("fred", "VIXCLS"),
+        "dxy": _col("yahoo", "DX-Y.NYB", "close"),
     }
     # derived identities (D41)
     if mvrv is not None and mcap is not None:
@@ -105,4 +122,9 @@ def load_all() -> dict[str, pd.Series | pd.DataFrame | None]:
     if mcap is not None and stables is not None:
         ssr = (mcap / stables.reindex(mcap.index).ffill()).rename("ssr")
         d["ssr"] = ssr
+    # supply-in-profit as a FRACTION (bgeo gives it in BTC; CM supply normalizes).
+    sip, sup = d.get("supply_in_profit"), d.get("supply")
+    if sip is not None and sup is not None:
+        frac = (sip / sup.reindex(sip.index).ffill()).clip(0, 1)
+        d["supply_in_profit_pct"] = frac.rename("supply_in_profit_pct")
     return d

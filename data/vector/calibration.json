@@ -589,6 +589,2703 @@
         "post": 1,
         "want": 1
       }
+    },
+    "mvrv_z": {
+      "full": [
+        {
+          "band": "<0",
+          "n": 356,
+          "hit_7d": 58.7,
+          "mean_7d": 1.86,
+          "hit_30d": 68.0,
+          "mean_30d": 9.71,
+          "hit_90d": 71.9,
+          "mean_90d": 40.55
+        },
+        {
+          "band": "0-1",
+          "n": 1195,
+          "hit_7d": 53.7,
+          "mean_7d": 0.97,
+          "hit_30d": 57.1,
+          "mean_30d": 4.18,
+          "hit_90d": 51.0,
+          "mean_90d": 5.25
+        },
+        {
+          "band": "1-2",
+          "n": 1148,
+          "hit_7d": 52.4,
+          "mean_7d": 0.72,
+          "hit_30d": 55.6,
+          "mean_30d": 3.95,
+          "hit_90d": 67.7,
+          "mean_90d": 23.48
+        },
+        {
+          "band": "2-3.5",
+          "n": 948,
+          "hit_7d": 56.5,
+          "mean_7d": 1.84,
+          "hit_30d": 56.9,
+          "mean_30d": 10.2,
+          "hit_90d": 59.8,
+          "mean_90d": 36.62
+        },
+        {
+          "band": ">3.5",
+          "n": 277,
+          "hit_7d": 59.9,
+          "mean_7d": 4.67,
+          "hit_30d": 58.1,
+          "mean_30d": 14.54,
+          "hit_90d": 57.8,
+          "mean_90d": 27.15
+        }
+      ],
+      "pre": [
+        {
+          "band": "<0",
+          "n": 177,
+          "hit_7d": 64.4,
+          "mean_7d": 2.72,
+          "hit_30d": 75.7,
+          "mean_30d": 14.2,
+          "hit_90d": 92.1,
+          "mean_90d": 67.43
+        },
+        {
+          "band": "0-1",
+          "n": 560,
+          "hit_7d": 56.8,
+          "mean_7d": 1.66,
+          "hit_30d": 60.5,
+          "mean_30d": 7.4,
+          "hit_90d": 48.2,
+          "mean_90d": 5.4
+        },
+        {
+          "band": "1-2",
+          "n": 600,
+          "hit_7d": 52.7,
+          "mean_7d": 0.79,
+          "hit_30d": 57.7,
+          "mean_30d": 3.91,
+          "hit_90d": 69.5,
+          "mean_90d": 29.16
+        },
+        {
+          "band": "2-3.5",
+          "n": 441,
+          "hit_7d": 65.1,
+          "mean_7d": 4.11,
+          "hit_30d": 72.6,
+          "mean_30d": 22.95,
+          "hit_90d": 79.6,
+          "mean_90d": 82.38
+        },
+        {
+          "band": ">3.5",
+          "n": 156,
+          "hit_7d": 60.3,
+          "mean_7d": 5.94,
+          "hit_30d": 53.8,
+          "mean_30d": 16.21,
+          "hit_90d": 74.4,
+          "mean_90d": 47.48
+        }
+      ],
+      "post": [
+        {
+          "band": "<0",
+          "n": 179,
+          "hit_7d": 53.1,
+          "mean_7d": 1.01,
+          "hit_30d": 60.3,
+          "mean_30d": 5.27,
+          "hit_90d": 52.0,
+          "mean_90d": 13.98
+        },
+        {
+          "band": "0-1",
+          "n": 635,
+          "hit_7d": 51.0,
+          "mean_7d": 0.36,
+          "hit_30d": 53.9,
+          "mean_30d": 1.19,
+          "hit_90d": 53.9,
+          "mean_90d": 5.09
+        },
+        {
+          "band": "1-2",
+          "n": 548,
+          "hit_7d": 52.0,
+          "mean_7d": 0.65,
+          "hit_30d": 53.3,
+          "mean_30d": 3.99,
+          "hit_90d": 65.7,
+          "mean_90d": 17.26
+        },
+        {
+          "band": "2-3.5",
+          "n": 507,
+          "hit_7d": 49.1,
+          "mean_7d": -0.13,
+          "hit_30d": 43.2,
+          "mean_30d": -0.89,
+          "hit_90d": 42.6,
+          "mean_90d": -3.17
+        },
+        {
+          "band": ">3.5",
+          "n": 121,
+          "hit_7d": 59.5,
+          "mean_7d": 3.04,
+          "hit_30d": 63.6,
+          "mean_30d": 12.39,
+          "hit_90d": 36.4,
+          "mean_90d": 0.93
+        }
+      ],
+      "verdict": "EXTREMES \u2014 low <0: +40.5%/90d 71.9% hit (n=356) [BOTTOM]; high >3.5: +27.1%/90d 57.8% hit (n=277) [weak]",
+      "monotone": {
+        "full": 0,
+        "pre": 0,
+        "post": 0,
+        "want": -1,
+        "sample_mean_90d": 22.4
+      }
+    },
+    "nupl": {
+      "full": [
+        {
+          "band": "<0",
+          "n": 603,
+          "hit_7d": 56.7,
+          "mean_7d": 1.07,
+          "hit_30d": 63.2,
+          "mean_30d": 6.29,
+          "hit_90d": 66.5,
+          "mean_90d": 28.01
+        },
+        {
+          "band": "0-.25",
+          "n": 617,
+          "hit_7d": 58.0,
+          "mean_7d": 1.9,
+          "hit_30d": 67.7,
+          "mean_30d": 7.2,
+          "hit_90d": 58.3,
+          "mean_90d": 10.69
+        },
+        {
+          "band": ".25-.5",
+          "n": 1670,
+          "hit_7d": 52.9,
+          "mean_7d": 0.73,
+          "hit_30d": 53.4,
+          "mean_30d": 2.8,
+          "hit_90d": 60.7,
+          "mean_90d": 17.07
+        },
+        {
+          "band": ".5-.65",
+          "n": 1027,
+          "hit_7d": 53.7,
+          "mean_7d": 1.44,
+          "hit_30d": 54.1,
+          "mean_30d": 10.19,
+          "hit_90d": 58.0,
+          "mean_90d": 33.38
+        },
+        {
+          "band": ">.65",
+          "n": 265,
+          "hit_7d": 57.4,
+          "mean_7d": 4.19,
+          "hit_30d": 58.5,
+          "mean_30d": 13.03,
+          "hit_90d": 58.5,
+          "mean_90d": 25.77
+        }
+      ],
+      "pre": [
+        {
+          "band": "<0",
+          "n": 424,
+          "hit_7d": 58.3,
+          "mean_7d": 1.1,
+          "hit_30d": 64.4,
+          "mean_30d": 6.72,
+          "hit_90d": 72.6,
+          "mean_90d": 33.93
+        },
+        {
+          "band": "0-.25",
+          "n": 342,
+          "hit_7d": 61.4,
+          "mean_7d": 2.91,
+          "hit_30d": 69.6,
+          "mean_30d": 10.55,
+          "hit_90d": 55.6,
+          "mean_90d": 10.01
+        },
+        {
+          "band": ".25-.5",
+          "n": 921,
+          "hit_7d": 54.4,
+          "mean_7d": 0.97,
+          "hit_30d": 56.8,
+          "mean_30d": 3.56,
+          "hit_90d": 61.8,
+          "mean_90d": 21.32
+        },
+        {
+          "band": ".5-.65",
+          "n": 350,
+          "hit_7d": 60.0,
+          "mean_7d": 3.66,
+          "hit_30d": 68.0,
+          "mean_30d": 26.34,
+          "hit_90d": 78.9,
+          "mean_90d": 95.9
+        },
+        {
+          "band": ">.65",
+          "n": 155,
+          "hit_7d": 60.6,
+          "mean_7d": 5.99,
+          "hit_30d": 58.1,
+          "mean_30d": 18.29,
+          "hit_90d": 78.1,
+          "mean_90d": 48.77
+        }
+      ],
+      "post": [
+        {
+          "band": "<0",
+          "n": 179,
+          "hit_7d": 53.1,
+          "mean_7d": 1.01,
+          "hit_30d": 60.3,
+          "mean_30d": 5.27,
+          "hit_90d": 52.0,
+          "mean_90d": 13.98
+        },
+        {
+          "band": "0-.25",
+          "n": 275,
+          "hit_7d": 53.7,
+          "mean_7d": 0.63,
+          "hit_30d": 65.3,
+          "mean_30d": 2.83,
+          "hit_90d": 62.2,
+          "mean_90d": 11.67
+        },
+        {
+          "band": ".25-.5",
+          "n": 749,
+          "hit_7d": 51.0,
+          "mean_7d": 0.44,
+          "hit_30d": 49.2,
+          "mean_30d": 1.84,
+          "hit_90d": 59.2,
+          "mean_90d": 11.46
+        },
+        {
+          "band": ".5-.65",
+          "n": 677,
+          "hit_7d": 50.5,
+          "mean_7d": 0.3,
+          "hit_30d": 47.0,
+          "mean_30d": 1.84,
+          "hit_90d": 47.3,
+          "mean_90d": 1.06
+        },
+        {
+          "band": ">.65",
+          "n": 110,
+          "hit_7d": 52.7,
+          "mean_7d": 1.65,
+          "hit_30d": 59.1,
+          "mean_30d": 5.63,
+          "hit_90d": 30.9,
+          "mean_90d": -6.64
+        }
+      ],
+      "verdict": "EXTREMES \u2014 low <0: +28.0%/90d 66.5% hit (n=603) [weak]; high >.65: +25.8%/90d 58.5% hit (n=265) [weak]",
+      "monotone": {
+        "full": 0,
+        "pre": 0,
+        "post": -1,
+        "want": -1,
+        "sample_mean_90d": 22.4
+      }
+    },
+    "mayer": {
+      "full": [
+        {
+          "band": "<0.8",
+          "n": 625,
+          "hit_7d": 54.1,
+          "mean_7d": 0.95,
+          "hit_30d": 61.5,
+          "mean_30d": 4.08,
+          "hit_90d": 49.9,
+          "mean_90d": 12.03
+        },
+        {
+          "band": "0.8-1",
+          "n": 948,
+          "hit_7d": 51.6,
+          "mean_7d": 0.0,
+          "hit_30d": 54.0,
+          "mean_30d": 2.32,
+          "hit_90d": 53.3,
+          "mean_90d": 11.5
+        },
+        {
+          "band": "1-1.5",
+          "n": 1888,
+          "hit_7d": 55.7,
+          "mean_7d": 1.46,
+          "hit_30d": 57.9,
+          "mean_30d": 6.15,
+          "hit_90d": 68.3,
+          "mean_90d": 24.11
+        },
+        {
+          "band": "1.5-2.4",
+          "n": 566,
+          "hit_7d": 58.7,
+          "mean_7d": 3.82,
+          "hit_30d": 60.6,
+          "mean_30d": 18.69,
+          "hit_90d": 62.5,
+          "mean_90d": 53.36
+        },
+        {
+          "band": ">2.4",
+          "n": 62,
+          "hit_7d": 43.5,
+          "mean_7d": 2.27,
+          "hit_30d": 43.5,
+          "mean_30d": -1.92,
+          "hit_90d": 33.9,
+          "mean_90d": -13.95
+        }
+      ],
+      "pre": [
+        {
+          "band": "<0.8",
+          "n": 280,
+          "hit_7d": 56.8,
+          "mean_7d": 1.41,
+          "hit_30d": 68.6,
+          "mean_30d": 7.71,
+          "hit_90d": 64.6,
+          "mean_90d": 24.68
+        },
+        {
+          "band": "0.8-1",
+          "n": 415,
+          "hit_7d": 53.7,
+          "mean_7d": 0.18,
+          "hit_30d": 54.0,
+          "mean_30d": 2.63,
+          "hit_90d": 43.1,
+          "mean_90d": 6.71
+        },
+        {
+          "band": "1-1.5",
+          "n": 949,
+          "hit_7d": 59.6,
+          "mean_7d": 2.26,
+          "hit_30d": 66.0,
+          "mean_30d": 9.48,
+          "hit_90d": 79.2,
+          "mean_90d": 41.62
+        },
+        {
+          "band": "1.5-2.4",
+          "n": 417,
+          "hit_7d": 59.7,
+          "mean_7d": 4.33,
+          "hit_30d": 65.0,
+          "mean_30d": 23.95,
+          "hit_90d": 73.9,
+          "mean_90d": 74.34
+        },
+        {
+          "band": ">2.4",
+          "n": 38,
+          "hit_7d": 44.7,
+          "mean_7d": 4.65,
+          "hit_30d": 23.7,
+          "mean_30d": -10.57,
+          "hit_90d": 18.4,
+          "mean_90d": -31.82
+        }
+      ],
+      "post": [
+        {
+          "band": "<0.8",
+          "n": 345,
+          "hit_7d": 51.9,
+          "mean_7d": 0.57,
+          "hit_30d": 55.7,
+          "mean_30d": 1.09,
+          "hit_90d": 37.0,
+          "mean_90d": 0.92
+        },
+        {
+          "band": "0.8-1",
+          "n": 533,
+          "hit_7d": 50.0,
+          "mean_7d": -0.13,
+          "hit_30d": 54.0,
+          "mean_30d": 2.07,
+          "hit_90d": 62.3,
+          "mean_90d": 15.73
+        },
+        {
+          "band": "1-1.5",
+          "n": 939,
+          "hit_7d": 51.8,
+          "mean_7d": 0.66,
+          "hit_30d": 49.8,
+          "mean_30d": 2.77,
+          "hit_90d": 57.2,
+          "mean_90d": 6.41
+        },
+        {
+          "band": "1.5-2.4",
+          "n": 149,
+          "hit_7d": 55.7,
+          "mean_7d": 2.4,
+          "hit_30d": 48.3,
+          "mean_30d": 3.96,
+          "hit_90d": 30.9,
+          "mean_90d": -5.37
+        },
+        {
+          "band": ">2.4",
+          "n": 24,
+          "hit_7d": 41.7,
+          "mean_7d": -1.5,
+          "hit_30d": 75.0,
+          "mean_30d": 11.79,
+          "hit_90d": 58.3,
+          "mean_90d": 14.34
+        }
+      ],
+      "verdict": "EXTREMES \u2014 low <0.8: +12.0%/90d 49.9% hit (n=625) [weak]; high >2.4: -13.9%/90d 33.9% hit (n=62) [TOP]",
+      "monotone": {
+        "full": 1,
+        "pre": 1,
+        "post": 0,
+        "want": -1,
+        "sample_mean_90d": 22.4
+      }
+    },
+    "puell": {
+      "full": [
+        {
+          "band": "<0.5",
+          "n": 153,
+          "hit_7d": 54.9,
+          "mean_7d": 1.22,
+          "hit_30d": 64.7,
+          "mean_30d": 4.09,
+          "hit_90d": 59.5,
+          "mean_90d": 15.76
+        },
+        {
+          "band": "0.5-1",
+          "n": 1681,
+          "hit_7d": 54.1,
+          "mean_7d": 0.64,
+          "hit_30d": 59.2,
+          "mean_30d": 4.41,
+          "hit_90d": 62.8,
+          "mean_90d": 21.35
+        },
+        {
+          "band": "1-2",
+          "n": 1855,
+          "hit_7d": 55.1,
+          "mean_7d": 1.7,
+          "hit_30d": 55.6,
+          "mean_30d": 6.87,
+          "hit_90d": 60.1,
+          "mean_90d": 20.23
+        },
+        {
+          "band": "2-4",
+          "n": 397,
+          "hit_7d": 54.7,
+          "mean_7d": 2.41,
+          "hit_30d": 57.4,
+          "mean_30d": 14.94,
+          "hit_90d": 58.7,
+          "mean_90d": 47.89
+        },
+        {
+          "band": ">4",
+          "n": 23,
+          "hit_7d": 56.5,
+          "mean_7d": 10.54,
+          "hit_30d": 34.8,
+          "mean_30d": -3.22,
+          "hit_90d": 17.4,
+          "mean_90d": -33.4
+        }
+      ],
+      "pre": [
+        {
+          "band": "<0.5",
+          "n": 77,
+          "hit_7d": 49.4,
+          "mean_7d": 0.64,
+          "hit_30d": 58.4,
+          "mean_30d": 2.94,
+          "hit_90d": 83.1,
+          "mean_90d": 25.53
+        },
+        {
+          "band": "0.5-1",
+          "n": 870,
+          "hit_7d": 59.7,
+          "mean_7d": 1.35,
+          "hit_30d": 66.2,
+          "mean_30d": 8.05,
+          "hit_90d": 73.1,
+          "mean_90d": 35.2
+        },
+        {
+          "band": "1-2",
+          "n": 886,
+          "hit_7d": 57.2,
+          "mean_7d": 2.62,
+          "hit_30d": 61.1,
+          "mean_30d": 10.47,
+          "hit_90d": 61.3,
+          "mean_90d": 31.25
+        },
+        {
+          "band": "2-4",
+          "n": 263,
+          "hit_7d": 54.8,
+          "mean_7d": 2.88,
+          "hit_30d": 57.8,
+          "mean_30d": 19.67,
+          "hit_90d": 71.1,
+          "mean_90d": 73.74
+        },
+        {
+          "band": ">4",
+          "n": 23,
+          "hit_7d": 56.5,
+          "mean_7d": 10.54,
+          "hit_30d": 34.8,
+          "mean_30d": -3.22,
+          "hit_90d": 17.4,
+          "mean_90d": -33.4
+        }
+      ],
+      "post": [
+        {
+          "band": "<0.5",
+          "n": 76,
+          "hit_7d": 60.5,
+          "mean_7d": 1.82,
+          "hit_30d": 71.1,
+          "mean_30d": 5.25,
+          "hit_90d": 35.5,
+          "mean_90d": 5.86
+        },
+        {
+          "band": "0.5-1",
+          "n": 811,
+          "hit_7d": 48.0,
+          "mean_7d": -0.12,
+          "hit_30d": 51.5,
+          "mean_30d": 0.35,
+          "hit_90d": 50.3,
+          "mean_90d": 4.62
+        },
+        {
+          "band": "1-2",
+          "n": 969,
+          "hit_7d": 53.3,
+          "mean_7d": 0.85,
+          "hit_30d": 50.6,
+          "mean_30d": 3.58,
+          "hit_90d": 58.9,
+          "mean_90d": 10.15
+        },
+        {
+          "band": "2-4",
+          "n": 134,
+          "hit_7d": 54.5,
+          "mean_7d": 1.47,
+          "hit_30d": 56.7,
+          "mean_30d": 5.64,
+          "hit_90d": 34.3,
+          "mean_90d": -2.84
+        },
+        {
+          "band": ">4",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        }
+      ],
+      "verdict": "EXTREMES \u2014 low <0.5: +15.8%/90d 59.5% hit (n=153) [weak]",
+      "monotone": {
+        "full": 1,
+        "pre": 1,
+        "post": 0,
+        "want": -1,
+        "sample_mean_90d": 22.4
+      }
+    },
+    "sth_cb_ratio": {
+      "full": [
+        {
+          "band": "<-10%",
+          "n": 304,
+          "hit_7d": 54.2,
+          "mean_7d": 0.6,
+          "hit_30d": 58.9,
+          "mean_30d": 1.81,
+          "hit_90d": 35.3,
+          "mean_90d": -0.55
+        },
+        {
+          "band": "-10-0%",
+          "n": 341,
+          "hit_7d": 51.3,
+          "mean_7d": -0.02,
+          "hit_30d": 59.6,
+          "mean_30d": 3.34,
+          "hit_90d": 74.0,
+          "mean_90d": 25.59
+        },
+        {
+          "band": "0-20%",
+          "n": 621,
+          "hit_7d": 53.1,
+          "mean_7d": 1.17,
+          "hit_30d": 52.6,
+          "mean_30d": 4.53,
+          "hit_90d": 58.8,
+          "mean_90d": 9.29
+        },
+        {
+          "band": "20-50%",
+          "n": 196,
+          "hit_7d": 52.0,
+          "mean_7d": 0.97,
+          "hit_30d": 55.6,
+          "mean_30d": 3.69,
+          "hit_90d": 68.9,
+          "mean_90d": 13.76
+        },
+        {
+          "band": ">50%",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        }
+      ],
+      "pre": [
+        {
+          "band": "<-10%",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": "-10-0%",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": "0-20%",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": "20-50%",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": ">50%",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        }
+      ],
+      "post": [
+        {
+          "band": "<-10%",
+          "n": 304,
+          "hit_7d": 54.2,
+          "mean_7d": 0.6,
+          "hit_30d": 58.9,
+          "mean_30d": 1.81,
+          "hit_90d": 35.3,
+          "mean_90d": -0.55
+        },
+        {
+          "band": "-10-0%",
+          "n": 341,
+          "hit_7d": 51.3,
+          "mean_7d": -0.02,
+          "hit_30d": 59.6,
+          "mean_30d": 3.34,
+          "hit_90d": 74.0,
+          "mean_90d": 25.59
+        },
+        {
+          "band": "0-20%",
+          "n": 621,
+          "hit_7d": 53.1,
+          "mean_7d": 1.17,
+          "hit_30d": 52.6,
+          "mean_30d": 4.53,
+          "hit_90d": 58.8,
+          "mean_90d": 9.29
+        },
+        {
+          "band": "20-50%",
+          "n": 196,
+          "hit_7d": 52.0,
+          "mean_7d": 0.97,
+          "hit_30d": 55.6,
+          "mean_30d": 3.69,
+          "hit_90d": 68.9,
+          "mean_90d": 13.76
+        },
+        {
+          "band": ">50%",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        }
+      ],
+      "verdict": "EXTREMES \u2014 low <-10%: -0.6%/90d 35.3% hit (n=304) [weak]",
+      "monotone": {
+        "full": 0,
+        "pre": 0,
+        "post": 0,
+        "want": 1,
+        "sample_mean_90d": 22.4
+      }
+    },
+    "hash_ribbon_capit": {
+      "full": [
+        {
+          "band": "normal",
+          "n": 3445,
+          "hit_7d": 55.0,
+          "mean_7d": 1.57,
+          "hit_30d": 58.4,
+          "mean_30d": 7.27,
+          "hit_90d": 60.2,
+          "mean_90d": 23.42
+        },
+        {
+          "band": "capitulation",
+          "n": 737,
+          "hit_7d": 53.1,
+          "mean_7d": 0.31,
+          "hit_30d": 52.6,
+          "mean_30d": 2.45,
+          "hit_90d": 61.4,
+          "mean_90d": 17.48
+        }
+      ],
+      "pre": [
+        {
+          "band": "normal",
+          "n": 1937,
+          "hit_7d": 58.3,
+          "mean_7d": 2.33,
+          "hit_30d": 62.9,
+          "mean_30d": 10.6,
+          "hit_90d": 64.9,
+          "mean_90d": 36.29
+        },
+        {
+          "band": "capitulation",
+          "n": 255,
+          "hit_7d": 52.2,
+          "mean_7d": 0.24,
+          "hit_30d": 56.1,
+          "mean_30d": 4.94,
+          "hit_90d": 80.8,
+          "mean_90d": 32.42
+        }
+      ],
+      "post": [
+        {
+          "band": "normal",
+          "n": 1508,
+          "hit_7d": 50.8,
+          "mean_7d": 0.59,
+          "hit_30d": 52.6,
+          "mean_30d": 2.94,
+          "hit_90d": 53.9,
+          "mean_90d": 6.54
+        },
+        {
+          "band": "capitulation",
+          "n": 482,
+          "hit_7d": 53.6,
+          "mean_7d": 0.35,
+          "hit_30d": 50.6,
+          "mean_30d": 1.09,
+          "hit_90d": 49.8,
+          "mean_90d": 8.45
+        }
+      ],
+      "verdict": "CONTEXT-ONLY",
+      "monotone": {
+        "full": 0,
+        "pre": 0,
+        "post": 0,
+        "want": 1
+      }
+    },
+    "dvol": {
+      "full": [
+        {
+          "band": "<40",
+          "n": 220,
+          "hit_7d": 48.2,
+          "mean_7d": -0.67,
+          "hit_30d": 44.1,
+          "mean_30d": 0.27,
+          "hit_90d": 46.8,
+          "mean_90d": 8.4
+        },
+        {
+          "band": "40-55",
+          "n": 640,
+          "hit_7d": 52.0,
+          "mean_7d": 0.96,
+          "hit_30d": 59.1,
+          "mean_30d": 4.55,
+          "hit_90d": 65.0,
+          "mean_90d": 12.89
+        },
+        {
+          "band": "55-70",
+          "n": 479,
+          "hit_7d": 54.1,
+          "mean_7d": 0.47,
+          "hit_30d": 53.9,
+          "mean_30d": 2.88,
+          "hit_90d": 63.0,
+          "mean_90d": 10.77
+        },
+        {
+          "band": "70-90",
+          "n": 401,
+          "hit_7d": 48.9,
+          "mean_7d": 0.01,
+          "hit_30d": 38.4,
+          "mean_30d": -3.8,
+          "hit_90d": 18.7,
+          "mean_90d": -12.64
+        },
+        {
+          "band": ">90",
+          "n": 168,
+          "hit_7d": 47.0,
+          "mean_7d": -0.28,
+          "hit_30d": 47.0,
+          "mean_30d": 2.06,
+          "hit_90d": 71.4,
+          "mean_90d": 15.84
+        }
+      ],
+      "pre": [
+        {
+          "band": "<40",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": "40-55",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": "55-70",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": "70-90",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": ">90",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        }
+      ],
+      "post": [
+        {
+          "band": "<40",
+          "n": 220,
+          "hit_7d": 48.2,
+          "mean_7d": -0.67,
+          "hit_30d": 44.1,
+          "mean_30d": 0.27,
+          "hit_90d": 46.8,
+          "mean_90d": 8.4
+        },
+        {
+          "band": "40-55",
+          "n": 640,
+          "hit_7d": 52.0,
+          "mean_7d": 0.96,
+          "hit_30d": 59.1,
+          "mean_30d": 4.55,
+          "hit_90d": 65.0,
+          "mean_90d": 12.89
+        },
+        {
+          "band": "55-70",
+          "n": 479,
+          "hit_7d": 54.1,
+          "mean_7d": 0.47,
+          "hit_30d": 53.9,
+          "mean_30d": 2.88,
+          "hit_90d": 63.0,
+          "mean_90d": 10.77
+        },
+        {
+          "band": "70-90",
+          "n": 401,
+          "hit_7d": 48.9,
+          "mean_7d": 0.01,
+          "hit_30d": 38.4,
+          "mean_30d": -3.8,
+          "hit_90d": 18.7,
+          "mean_90d": -12.64
+        },
+        {
+          "band": ">90",
+          "n": 168,
+          "hit_7d": 47.0,
+          "mean_7d": -0.28,
+          "hit_30d": 47.0,
+          "mean_30d": 2.06,
+          "hit_90d": 71.4,
+          "mean_90d": 15.84
+        }
+      ],
+      "verdict": "EXTREMES \u2014 low <40: +8.4%/90d 46.8% hit (n=220) [weak]; high >90: +15.8%/90d 71.4% hit (n=168) [weak]",
+      "monotone": {
+        "full": 0,
+        "pre": 0,
+        "post": 0,
+        "want": -1,
+        "sample_mean_90d": 22.4
+      }
+    },
+    "vrp": {
+      "full": [
+        {
+          "band": "<-5",
+          "n": 203,
+          "hit_7d": 57.6,
+          "mean_7d": 1.05,
+          "hit_30d": 61.6,
+          "mean_30d": 3.81,
+          "hit_90d": 77.8,
+          "mean_90d": 17.23
+        },
+        {
+          "band": "-5-0",
+          "n": 160,
+          "hit_7d": 61.3,
+          "mean_7d": 2.06,
+          "hit_30d": 63.7,
+          "mean_30d": 5.58,
+          "hit_90d": 50.6,
+          "mean_90d": 9.07
+        },
+        {
+          "band": "0-5",
+          "n": 349,
+          "hit_7d": 49.0,
+          "mean_7d": 0.09,
+          "hit_30d": 53.6,
+          "mean_30d": 2.37,
+          "hit_90d": 38.8,
+          "mean_90d": 2.78
+        },
+        {
+          "band": "5-15",
+          "n": 712,
+          "hit_7d": 46.4,
+          "mean_7d": -0.5,
+          "hit_30d": 47.1,
+          "mean_30d": -0.13,
+          "hit_90d": 51.6,
+          "mean_90d": 3.85
+        },
+        {
+          "band": ">15",
+          "n": 484,
+          "hit_7d": 52.9,
+          "mean_7d": 0.88,
+          "hit_30d": 44.6,
+          "mean_30d": 1.45,
+          "hit_90d": 53.9,
+          "mean_90d": 7.2
+        }
+      ],
+      "pre": [
+        {
+          "band": "<-5",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": "-5-0",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": "0-5",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": "5-15",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": ">15",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        }
+      ],
+      "post": [
+        {
+          "band": "<-5",
+          "n": 203,
+          "hit_7d": 57.6,
+          "mean_7d": 1.05,
+          "hit_30d": 61.6,
+          "mean_30d": 3.81,
+          "hit_90d": 77.8,
+          "mean_90d": 17.23
+        },
+        {
+          "band": "-5-0",
+          "n": 160,
+          "hit_7d": 61.3,
+          "mean_7d": 2.06,
+          "hit_30d": 63.7,
+          "mean_30d": 5.58,
+          "hit_90d": 50.6,
+          "mean_90d": 9.07
+        },
+        {
+          "band": "0-5",
+          "n": 349,
+          "hit_7d": 49.0,
+          "mean_7d": 0.09,
+          "hit_30d": 53.6,
+          "mean_30d": 2.37,
+          "hit_90d": 38.8,
+          "mean_90d": 2.78
+        },
+        {
+          "band": "5-15",
+          "n": 712,
+          "hit_7d": 46.4,
+          "mean_7d": -0.5,
+          "hit_30d": 47.1,
+          "mean_30d": -0.13,
+          "hit_90d": 51.6,
+          "mean_90d": 3.85
+        },
+        {
+          "band": ">15",
+          "n": 484,
+          "hit_7d": 52.9,
+          "mean_7d": 0.88,
+          "hit_30d": 44.6,
+          "mean_30d": 1.45,
+          "hit_90d": 53.9,
+          "mean_90d": 7.2
+        }
+      ],
+      "verdict": "EXTREMES \u2014 low <-5: +17.2%/90d 77.8% hit (n=203) [weak]; high >15: +7.2%/90d 53.9% hit (n=484) [TOP]",
+      "monotone": {
+        "full": -1,
+        "pre": 0,
+        "post": -1,
+        "want": -1,
+        "sample_mean_90d": 22.4
+      }
+    },
+    "leverage_stress": {
+      "full": [
+        {
+          "band": "0-25",
+          "n": 639,
+          "hit_7d": 53.6,
+          "mean_7d": 1.29,
+          "hit_30d": 58.0,
+          "mean_30d": 4.27,
+          "hit_90d": 62.0,
+          "mean_90d": 12.65
+        },
+        {
+          "band": "25-50",
+          "n": 672,
+          "hit_7d": 51.9,
+          "mean_7d": 0.3,
+          "hit_30d": 53.1,
+          "mean_30d": 2.65,
+          "hit_90d": 59.7,
+          "mean_90d": 12.53
+        },
+        {
+          "band": "50-75",
+          "n": 129,
+          "hit_7d": 52.7,
+          "mean_7d": 0.65,
+          "hit_30d": 55.2,
+          "mean_30d": 4.78,
+          "hit_90d": 44.0,
+          "mean_90d": 3.29
+        },
+        {
+          "band": "75-100",
+          "n": 8,
+          "hit_7d": 75.0,
+          "mean_7d": 2.65,
+          "hit_30d": 100.0,
+          "mean_30d": 6.79,
+          "hit_90d": 62.5,
+          "mean_90d": 2.66
+        }
+      ],
+      "pre": [
+        {
+          "band": "0-25",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": "25-50",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": "50-75",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": "75-100",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        }
+      ],
+      "post": [
+        {
+          "band": "0-25",
+          "n": 639,
+          "hit_7d": 53.6,
+          "mean_7d": 1.29,
+          "hit_30d": 58.0,
+          "mean_30d": 4.27,
+          "hit_90d": 62.0,
+          "mean_90d": 12.65
+        },
+        {
+          "band": "25-50",
+          "n": 672,
+          "hit_7d": 51.9,
+          "mean_7d": 0.3,
+          "hit_30d": 53.1,
+          "mean_30d": 2.65,
+          "hit_90d": 59.7,
+          "mean_90d": 12.53
+        },
+        {
+          "band": "50-75",
+          "n": 129,
+          "hit_7d": 52.7,
+          "mean_7d": 0.65,
+          "hit_30d": 55.2,
+          "mean_30d": 4.78,
+          "hit_90d": 44.0,
+          "mean_90d": 3.29
+        },
+        {
+          "band": "75-100",
+          "n": 8,
+          "hit_7d": 75.0,
+          "mean_7d": 2.65,
+          "hit_30d": 100.0,
+          "mean_30d": 6.79,
+          "hit_90d": 62.5,
+          "mean_90d": 2.66
+        }
+      ],
+      "verdict": "EXTREMES \u2014 low 0-25: +12.7%/90d 62.0% hit (n=639) [weak]",
+      "monotone": {
+        "full": 0,
+        "pre": 0,
+        "post": 0,
+        "want": -1,
+        "sample_mean_90d": 22.4
+      }
+    },
+    "funding_z": {
+      "full": [
+        {
+          "band": "<-1",
+          "n": 151,
+          "hit_7d": 60.9,
+          "mean_7d": 1.25,
+          "hit_30d": 64.2,
+          "mean_30d": 3.15,
+          "hit_90d": 70.3,
+          "mean_90d": 18.46
+        },
+        {
+          "band": "-1-0",
+          "n": 393,
+          "hit_7d": 53.2,
+          "mean_7d": 0.45,
+          "hit_30d": 55.8,
+          "mean_30d": 1.77,
+          "hit_90d": 61.5,
+          "mean_90d": 9.77
+        },
+        {
+          "band": "0-1",
+          "n": 325,
+          "hit_7d": 53.7,
+          "mean_7d": 1.25,
+          "hit_30d": 60.6,
+          "mean_30d": 7.53,
+          "hit_90d": 54.3,
+          "mean_90d": 13.33
+        },
+        {
+          "band": "1-2",
+          "n": 104,
+          "hit_7d": 49.0,
+          "mean_7d": -0.43,
+          "hit_30d": 48.9,
+          "mean_30d": 3.55,
+          "hit_90d": 42.2,
+          "mean_90d": 4.49
+        },
+        {
+          "band": ">2",
+          "n": 39,
+          "hit_7d": 71.8,
+          "mean_7d": 2.69,
+          "hit_30d": 59.0,
+          "mean_30d": 3.1,
+          "hit_90d": 79.5,
+          "mean_90d": 24.32
+        }
+      ],
+      "pre": [
+        {
+          "band": "<-1",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": "-1-0",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": "0-1",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": "1-2",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": ">2",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        }
+      ],
+      "post": [
+        {
+          "band": "<-1",
+          "n": 151,
+          "hit_7d": 60.9,
+          "mean_7d": 1.25,
+          "hit_30d": 64.2,
+          "mean_30d": 3.15,
+          "hit_90d": 70.3,
+          "mean_90d": 18.46
+        },
+        {
+          "band": "-1-0",
+          "n": 393,
+          "hit_7d": 53.2,
+          "mean_7d": 0.45,
+          "hit_30d": 55.8,
+          "mean_30d": 1.77,
+          "hit_90d": 61.5,
+          "mean_90d": 9.77
+        },
+        {
+          "band": "0-1",
+          "n": 325,
+          "hit_7d": 53.7,
+          "mean_7d": 1.25,
+          "hit_30d": 60.6,
+          "mean_30d": 7.53,
+          "hit_90d": 54.3,
+          "mean_90d": 13.33
+        },
+        {
+          "band": "1-2",
+          "n": 104,
+          "hit_7d": 49.0,
+          "mean_7d": -0.43,
+          "hit_30d": 48.9,
+          "mean_30d": 3.55,
+          "hit_90d": 42.2,
+          "mean_90d": 4.49
+        },
+        {
+          "band": ">2",
+          "n": 39,
+          "hit_7d": 71.8,
+          "mean_7d": 2.69,
+          "hit_30d": 59.0,
+          "mean_30d": 3.1,
+          "hit_90d": 79.5,
+          "mean_90d": 24.32
+        }
+      ],
+      "verdict": "EXTREMES \u2014 low <-1: +18.5%/90d 70.3% hit (n=151) [weak]",
+      "monotone": {
+        "full": 0,
+        "pre": 0,
+        "post": 0,
+        "want": -1,
+        "sample_mean_90d": 22.4
+      }
+    },
+    "oi_price_divergence": {
+      "full": [
+        {
+          "band": "<-10%",
+          "n": 159,
+          "hit_7d": 58.5,
+          "mean_7d": 1.04,
+          "hit_30d": 58.5,
+          "mean_30d": 0.82,
+          "hit_90d": 70.4,
+          "mean_90d": 14.78
+        },
+        {
+          "band": "-10-0%",
+          "n": 511,
+          "hit_7d": 53.8,
+          "mean_7d": 1.31,
+          "hit_30d": 60.3,
+          "mean_30d": 5.26,
+          "hit_90d": 65.0,
+          "mean_90d": 14.15
+        },
+        {
+          "band": "0-10%",
+          "n": 621,
+          "hit_7d": 51.9,
+          "mean_7d": 0.56,
+          "hit_30d": 52.3,
+          "mean_30d": 3.67,
+          "hit_90d": 54.9,
+          "mean_90d": 10.13
+        },
+        {
+          "band": "10-25%",
+          "n": 151,
+          "hit_7d": 49.0,
+          "mean_7d": -0.23,
+          "hit_30d": 53.4,
+          "mean_30d": 0.93,
+          "hit_90d": 47.9,
+          "mean_90d": 7.34
+        },
+        {
+          "band": ">25%",
+          "n": 6,
+          "hit_7d": 16.7,
+          "mean_7d": -3.5,
+          "hit_30d": 0.0,
+          "mean_30d": -5.7,
+          "hit_90d": 33.3,
+          "mean_90d": -4.16
+        }
+      ],
+      "pre": [
+        {
+          "band": "<-10%",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": "-10-0%",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": "0-10%",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": "10-25%",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": ">25%",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        }
+      ],
+      "post": [
+        {
+          "band": "<-10%",
+          "n": 159,
+          "hit_7d": 58.5,
+          "mean_7d": 1.04,
+          "hit_30d": 58.5,
+          "mean_30d": 0.82,
+          "hit_90d": 70.4,
+          "mean_90d": 14.78
+        },
+        {
+          "band": "-10-0%",
+          "n": 511,
+          "hit_7d": 53.8,
+          "mean_7d": 1.31,
+          "hit_30d": 60.3,
+          "mean_30d": 5.26,
+          "hit_90d": 65.0,
+          "mean_90d": 14.15
+        },
+        {
+          "band": "0-10%",
+          "n": 621,
+          "hit_7d": 51.9,
+          "mean_7d": 0.56,
+          "hit_30d": 52.3,
+          "mean_30d": 3.67,
+          "hit_90d": 54.9,
+          "mean_90d": 10.13
+        },
+        {
+          "band": "10-25%",
+          "n": 151,
+          "hit_7d": 49.0,
+          "mean_7d": -0.23,
+          "hit_30d": 53.4,
+          "mean_30d": 0.93,
+          "hit_90d": 47.9,
+          "mean_90d": 7.34
+        },
+        {
+          "band": ">25%",
+          "n": 6,
+          "hit_7d": 16.7,
+          "mean_7d": -3.5,
+          "hit_30d": 0.0,
+          "mean_30d": -5.7,
+          "hit_90d": 33.3,
+          "mean_90d": -4.16
+        }
+      ],
+      "verdict": "EXTREMES \u2014 low <-10%: +14.8%/90d 70.4% hit (n=159) [weak]",
+      "monotone": {
+        "full": -1,
+        "pre": 0,
+        "post": -1,
+        "want": -1,
+        "sample_mean_90d": 22.4
+      }
+    },
+    "net_liq_roc": {
+      "full": [
+        {
+          "band": "<-2%",
+          "n": 1160,
+          "hit_7d": 53.6,
+          "mean_7d": 0.84,
+          "hit_30d": 54.7,
+          "mean_30d": 2.58,
+          "hit_90d": 52.2,
+          "mean_90d": 11.09
+        },
+        {
+          "band": "-2-0%",
+          "n": 836,
+          "hit_7d": 54.2,
+          "mean_7d": 1.6,
+          "hit_30d": 57.3,
+          "mean_30d": 7.99,
+          "hit_90d": 63.0,
+          "mean_90d": 19.38
+        },
+        {
+          "band": "0-2%",
+          "n": 770,
+          "hit_7d": 52.9,
+          "mean_7d": 1.24,
+          "hit_30d": 58.5,
+          "mean_30d": 6.44,
+          "hit_90d": 67.4,
+          "mean_90d": 26.84
+        },
+        {
+          "band": "2-5%",
+          "n": 641,
+          "hit_7d": 61.9,
+          "mean_7d": 2.56,
+          "hit_30d": 63.6,
+          "mean_30d": 10.97,
+          "hit_90d": 77.4,
+          "mean_90d": 45.26
+        },
+        {
+          "band": ">5%",
+          "n": 469,
+          "hit_7d": 58.8,
+          "mean_7d": 2.43,
+          "hit_30d": 69.1,
+          "mean_30d": 16.02,
+          "hit_90d": 72.3,
+          "mean_90d": 47.71
+        }
+      ],
+      "pre": [
+        {
+          "band": "<-2%",
+          "n": 760,
+          "hit_7d": 58.3,
+          "mean_7d": 1.31,
+          "hit_30d": 56.8,
+          "mean_30d": 3.18,
+          "hit_90d": 55.4,
+          "mean_90d": 15.02
+        },
+        {
+          "band": "-2-0%",
+          "n": 459,
+          "hit_7d": 50.8,
+          "mean_7d": 1.98,
+          "hit_30d": 58.0,
+          "mean_30d": 11.04,
+          "hit_90d": 64.1,
+          "mean_90d": 21.58
+        },
+        {
+          "band": "0-2%",
+          "n": 355,
+          "hit_7d": 50.7,
+          "mean_7d": 1.1,
+          "hit_30d": 60.8,
+          "mean_30d": 8.75,
+          "hit_90d": 68.2,
+          "mean_90d": 40.11
+        },
+        {
+          "band": "2-5%",
+          "n": 331,
+          "hit_7d": 66.8,
+          "mean_7d": 3.02,
+          "hit_30d": 63.7,
+          "mean_30d": 12.77,
+          "hit_90d": 75.5,
+          "mean_90d": 62.02
+        },
+        {
+          "band": ">5%",
+          "n": 264,
+          "hit_7d": 64.4,
+          "mean_7d": 4.44,
+          "hit_30d": 84.1,
+          "mean_30d": 26.03,
+          "hit_90d": 88.6,
+          "mean_90d": 82.91
+        }
+      ],
+      "post": [
+        {
+          "band": "<-2%",
+          "n": 400,
+          "hit_7d": 44.8,
+          "mean_7d": -0.05,
+          "hit_30d": 50.7,
+          "mean_30d": 1.44,
+          "hit_90d": 46.2,
+          "mean_90d": 3.63
+        },
+        {
+          "band": "-2-0%",
+          "n": 377,
+          "hit_7d": 58.4,
+          "mean_7d": 1.13,
+          "hit_30d": 56.4,
+          "mean_30d": 4.26,
+          "hit_90d": 61.7,
+          "mean_90d": 16.63
+        },
+        {
+          "band": "0-2%",
+          "n": 415,
+          "hit_7d": 54.9,
+          "mean_7d": 1.35,
+          "hit_30d": 56.5,
+          "mean_30d": 4.39,
+          "hit_90d": 66.6,
+          "mean_90d": 14.15
+        },
+        {
+          "band": "2-5%",
+          "n": 310,
+          "hit_7d": 56.8,
+          "mean_7d": 2.06,
+          "hit_30d": 63.4,
+          "mean_30d": 8.97,
+          "hit_90d": 79.6,
+          "mean_90d": 25.1
+        },
+        {
+          "band": ">5%",
+          "n": 205,
+          "hit_7d": 51.7,
+          "mean_7d": -0.17,
+          "hit_30d": 49.8,
+          "mean_30d": 3.13,
+          "hit_90d": 51.2,
+          "mean_90d": 2.39
+        }
+      ],
+      "verdict": "DIRECTIONAL (one half weak)",
+      "monotone": {
+        "full": 1,
+        "pre": 1,
+        "post": 0,
+        "want": 1
+      }
+    },
+    "macro_score": {
+      "full": [
+        {
+          "band": "<-.3",
+          "n": 604,
+          "hit_7d": 51.5,
+          "mean_7d": -0.02,
+          "hit_30d": 52.3,
+          "mean_30d": -0.12,
+          "hit_90d": 40.6,
+          "mean_90d": 1.4
+        },
+        {
+          "band": "-.3-.1",
+          "n": 817,
+          "hit_7d": 53.9,
+          "mean_7d": 1.22,
+          "hit_30d": 59.5,
+          "mean_30d": 5.16,
+          "hit_90d": 60.0,
+          "mean_90d": 17.52
+        },
+        {
+          "band": "-.1-.1",
+          "n": 942,
+          "hit_7d": 57.2,
+          "mean_7d": 1.82,
+          "hit_30d": 57.2,
+          "mean_30d": 7.94,
+          "hit_90d": 57.0,
+          "mean_90d": 20.67
+        },
+        {
+          "band": ".1-.3",
+          "n": 938,
+          "hit_7d": 54.1,
+          "mean_7d": 1.66,
+          "hit_30d": 58.4,
+          "mean_30d": 7.23,
+          "hit_90d": 62.2,
+          "mean_90d": 17.77
+        },
+        {
+          "band": ">.3",
+          "n": 881,
+          "hit_7d": 55.5,
+          "mean_7d": 1.57,
+          "hit_30d": 58.2,
+          "mean_30d": 9.7,
+          "hit_90d": 76.4,
+          "mean_90d": 48.78
+        }
+      ],
+      "pre": [
+        {
+          "band": "<-.3",
+          "n": 296,
+          "hit_7d": 58.8,
+          "mean_7d": 0.73,
+          "hit_30d": 61.1,
+          "mean_30d": 2.89,
+          "hit_90d": 55.1,
+          "mean_90d": 11.59
+        },
+        {
+          "band": "-.3-.1",
+          "n": 562,
+          "hit_7d": 53.4,
+          "mean_7d": 1.16,
+          "hit_30d": 58.4,
+          "mean_30d": 5.01,
+          "hit_90d": 61.4,
+          "mean_90d": 22.03
+        },
+        {
+          "band": "-.1-.1",
+          "n": 560,
+          "hit_7d": 58.8,
+          "mean_7d": 2.37,
+          "hit_30d": 58.0,
+          "mean_30d": 10.32,
+          "hit_90d": 67.1,
+          "mean_90d": 31.5
+        },
+        {
+          "band": ".1-.3",
+          "n": 386,
+          "hit_7d": 53.1,
+          "mean_7d": 1.85,
+          "hit_30d": 63.7,
+          "mean_30d": 13.67,
+          "hit_90d": 74.4,
+          "mean_90d": 35.97
+        },
+        {
+          "band": ">.3",
+          "n": 388,
+          "hit_7d": 65.5,
+          "mean_7d": 4.27,
+          "hit_30d": 72.7,
+          "mean_30d": 18.22,
+          "hit_90d": 75.5,
+          "mean_90d": 80.48
+        }
+      ],
+      "post": [
+        {
+          "band": "<-.3",
+          "n": 308,
+          "hit_7d": 44.5,
+          "mean_7d": -0.73,
+          "hit_30d": 43.8,
+          "mean_30d": -3.01,
+          "hit_90d": 26.6,
+          "mean_90d": -8.4
+        },
+        {
+          "band": "-.3-.1",
+          "n": 255,
+          "hit_7d": 54.9,
+          "mean_7d": 1.36,
+          "hit_30d": 62.0,
+          "mean_30d": 5.48,
+          "hit_90d": 57.0,
+          "mean_90d": 7.32
+        },
+        {
+          "band": "-.1-.1",
+          "n": 382,
+          "hit_7d": 55.0,
+          "mean_7d": 1.02,
+          "hit_30d": 56.1,
+          "mean_30d": 4.42,
+          "hit_90d": 40.9,
+          "mean_90d": 3.43
+        },
+        {
+          "band": ".1-.3",
+          "n": 552,
+          "hit_7d": 54.8,
+          "mean_7d": 1.52,
+          "hit_30d": 54.6,
+          "mean_30d": 2.64,
+          "hit_90d": 53.2,
+          "mean_90d": 4.34
+        },
+        {
+          "band": ">.3",
+          "n": 493,
+          "hit_7d": 47.7,
+          "mean_7d": -0.56,
+          "hit_30d": 46.3,
+          "mean_30d": 2.77,
+          "hit_90d": 77.1,
+          "mean_90d": 22.49
+        }
+      ],
+      "verdict": "CONFIRMED",
+      "monotone": {
+        "full": 1,
+        "pre": 1,
+        "post": 1,
+        "want": 1
+      }
+    },
+    "coinbase_premium_ema": {
+      "full": [
+        {
+          "band": "<-.3",
+          "n": 295,
+          "hit_7d": 46.1,
+          "mean_7d": 0.1,
+          "hit_30d": 60.0,
+          "mean_30d": 4.81,
+          "hit_90d": 64.8,
+          "mean_90d": 16.52
+        },
+        {
+          "band": "-.3-0",
+          "n": 223,
+          "hit_7d": 47.9,
+          "mean_7d": -0.45,
+          "hit_30d": 50.7,
+          "mean_30d": 3.1,
+          "hit_90d": 62.1,
+          "mean_90d": 16.81
+        },
+        {
+          "band": "0-.5",
+          "n": 260,
+          "hit_7d": 57.1,
+          "mean_7d": 1.71,
+          "hit_30d": 55.4,
+          "mean_30d": 5.39,
+          "hit_90d": 70.5,
+          "mean_90d": 19.12
+        },
+        {
+          "band": ".5-1.5",
+          "n": 263,
+          "hit_7d": 60.1,
+          "mean_7d": 1.98,
+          "hit_30d": 65.4,
+          "mean_30d": 7.09,
+          "hit_90d": 70.7,
+          "mean_90d": 18.39
+        },
+        {
+          "band": ">1.5",
+          "n": 421,
+          "hit_7d": 52.7,
+          "mean_7d": 0.45,
+          "hit_30d": 49.8,
+          "mean_30d": -0.32,
+          "hit_90d": 35.5,
+          "mean_90d": -5.88
+        }
+      ],
+      "pre": [
+        {
+          "band": "<-.3",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": "-.3-0",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": "0-.5",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": ".5-1.5",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": ">1.5",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        }
+      ],
+      "post": [
+        {
+          "band": "<-.3",
+          "n": 295,
+          "hit_7d": 46.1,
+          "mean_7d": 0.1,
+          "hit_30d": 60.0,
+          "mean_30d": 4.81,
+          "hit_90d": 64.8,
+          "mean_90d": 16.52
+        },
+        {
+          "band": "-.3-0",
+          "n": 223,
+          "hit_7d": 47.9,
+          "mean_7d": -0.45,
+          "hit_30d": 50.7,
+          "mean_30d": 3.1,
+          "hit_90d": 62.1,
+          "mean_90d": 16.81
+        },
+        {
+          "band": "0-.5",
+          "n": 260,
+          "hit_7d": 57.1,
+          "mean_7d": 1.71,
+          "hit_30d": 55.4,
+          "mean_30d": 5.39,
+          "hit_90d": 70.5,
+          "mean_90d": 19.12
+        },
+        {
+          "band": ".5-1.5",
+          "n": 263,
+          "hit_7d": 60.1,
+          "mean_7d": 1.98,
+          "hit_30d": 65.4,
+          "mean_30d": 7.09,
+          "hit_90d": 70.7,
+          "mean_90d": 18.39
+        },
+        {
+          "band": ">1.5",
+          "n": 421,
+          "hit_7d": 52.7,
+          "mean_7d": 0.45,
+          "hit_30d": 49.8,
+          "mean_30d": -0.32,
+          "hit_90d": 35.5,
+          "mean_90d": -5.88
+        }
+      ],
+      "verdict": "EXTREMES \u2014 low <-.3: +16.5%/90d 64.8% hit (n=295) [weak]; high >1.5: -5.9%/90d 35.5% hit (n=421) [TOP]",
+      "monotone": {
+        "full": -1,
+        "pre": 0,
+        "post": -1,
+        "want": 1,
+        "sample_mean_90d": 22.4
+      }
+    },
+    "ssr_oscillator": {
+      "full": [
+        {
+          "band": "<-1",
+          "n": 484,
+          "hit_7d": 52.3,
+          "mean_7d": 1.11,
+          "hit_30d": 50.4,
+          "mean_30d": 4.16,
+          "hit_90d": 55.6,
+          "mean_90d": 9.9
+        },
+        {
+          "band": "-1-.3",
+          "n": 316,
+          "hit_7d": 52.8,
+          "mean_7d": 0.94,
+          "hit_30d": 70.6,
+          "mean_30d": 8.91,
+          "hit_90d": 73.7,
+          "mean_90d": 17.39
+        },
+        {
+          "band": "-.3-.5",
+          "n": 516,
+          "hit_7d": 55.2,
+          "mean_7d": 1.31,
+          "hit_30d": 47.9,
+          "mean_30d": 0.8,
+          "hit_90d": 47.3,
+          "mean_90d": 3.5
+        },
+        {
+          "band": ".5-1.5",
+          "n": 1372,
+          "hit_7d": 52.1,
+          "mean_7d": 0.64,
+          "hit_30d": 51.8,
+          "mean_30d": 3.83,
+          "hit_90d": 54.4,
+          "mean_90d": 22.51
+        },
+        {
+          "band": ">1.5",
+          "n": 342,
+          "hit_7d": 48.5,
+          "mean_7d": 0.08,
+          "hit_30d": 56.8,
+          "mean_30d": 4.09,
+          "hit_90d": 43.0,
+          "mean_90d": 3.69
+        }
+      ],
+      "pre": [
+        {
+          "band": "<-1",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": "-1-.3",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": "-.3-.5",
+          "n": 285,
+          "hit_7d": 47.4,
+          "mean_7d": -0.33,
+          "hit_30d": 31.9,
+          "mean_30d": -5.19,
+          "hit_90d": 24.9,
+          "mean_90d": -11.41
+        },
+        {
+          "band": ".5-1.5",
+          "n": 691,
+          "hit_7d": 56.4,
+          "mean_7d": 1.87,
+          "hit_30d": 63.5,
+          "mean_30d": 10.79,
+          "hit_90d": 70.9,
+          "mean_90d": 47.37
+        },
+        {
+          "band": ">1.5",
+          "n": 64,
+          "hit_7d": 56.2,
+          "mean_7d": 2.4,
+          "hit_30d": 79.7,
+          "mean_30d": 14.09,
+          "hit_90d": 39.1,
+          "mean_90d": 0.32
+        }
+      ],
+      "post": [
+        {
+          "band": "<-1",
+          "n": 484,
+          "hit_7d": 52.3,
+          "mean_7d": 1.11,
+          "hit_30d": 50.4,
+          "mean_30d": 4.16,
+          "hit_90d": 55.6,
+          "mean_90d": 9.9
+        },
+        {
+          "band": "-1-.3",
+          "n": 316,
+          "hit_7d": 52.8,
+          "mean_7d": 0.94,
+          "hit_30d": 70.6,
+          "mean_30d": 8.91,
+          "hit_90d": 73.7,
+          "mean_90d": 17.39
+        },
+        {
+          "band": "-.3-.5",
+          "n": 231,
+          "hit_7d": 64.9,
+          "mean_7d": 3.34,
+          "hit_30d": 67.5,
+          "mean_30d": 8.19,
+          "hit_90d": 74.9,
+          "mean_90d": 21.9
+        },
+        {
+          "band": ".5-1.5",
+          "n": 681,
+          "hit_7d": 47.6,
+          "mean_7d": -0.62,
+          "hit_30d": 39.4,
+          "mean_30d": -3.54,
+          "hit_90d": 35.9,
+          "mean_90d": -5.24
+        },
+        {
+          "band": ">1.5",
+          "n": 278,
+          "hit_7d": 46.8,
+          "mean_7d": -0.46,
+          "hit_30d": 51.4,
+          "mean_30d": 1.77,
+          "hit_90d": 44.0,
+          "mean_90d": 4.55
+        }
+      ],
+      "verdict": "CONTEXT-ONLY",
+      "monotone": {
+        "full": 0,
+        "pre": 0,
+        "post": 0,
+        "want": 1
+      }
+    },
+    "mpi": {
+      "full": [
+        {
+          "band": "<0.7",
+          "n": 323,
+          "hit_7d": 49.7,
+          "mean_7d": 0.07,
+          "hit_30d": 56.7,
+          "mean_30d": 1.59,
+          "hit_90d": 58.8,
+          "mean_90d": 8.84
+        },
+        {
+          "band": "0.7-1",
+          "n": 255,
+          "hit_7d": 55.7,
+          "mean_7d": 0.48,
+          "hit_30d": 56.1,
+          "mean_30d": 3.2,
+          "hit_90d": 67.1,
+          "mean_90d": 15.14
+        },
+        {
+          "band": "1-1.5",
+          "n": 370,
+          "hit_7d": 51.6,
+          "mean_7d": 0.78,
+          "hit_30d": 55.7,
+          "mean_30d": 3.83,
+          "hit_90d": 63.5,
+          "mean_90d": 13.56
+        },
+        {
+          "band": "1.5-2.5",
+          "n": 255,
+          "hit_7d": 58.8,
+          "mean_7d": 1.95,
+          "hit_30d": 64.3,
+          "mean_30d": 8.59,
+          "hit_90d": 69.4,
+          "mean_90d": 19.37
+        },
+        {
+          "band": ">2.5",
+          "n": 140,
+          "hit_7d": 52.9,
+          "mean_7d": 1.35,
+          "hit_30d": 46.4,
+          "mean_30d": 2.13,
+          "hit_90d": 60.0,
+          "mean_90d": 11.0
+        }
+      ],
+      "pre": [
+        {
+          "band": "<0.7",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": "0.7-1",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": "1-1.5",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": "1.5-2.5",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": ">2.5",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        }
+      ],
+      "post": [
+        {
+          "band": "<0.7",
+          "n": 323,
+          "hit_7d": 49.7,
+          "mean_7d": 0.07,
+          "hit_30d": 56.7,
+          "mean_30d": 1.59,
+          "hit_90d": 58.8,
+          "mean_90d": 8.84
+        },
+        {
+          "band": "0.7-1",
+          "n": 255,
+          "hit_7d": 55.7,
+          "mean_7d": 0.48,
+          "hit_30d": 56.1,
+          "mean_30d": 3.2,
+          "hit_90d": 67.1,
+          "mean_90d": 15.14
+        },
+        {
+          "band": "1-1.5",
+          "n": 370,
+          "hit_7d": 51.6,
+          "mean_7d": 0.78,
+          "hit_30d": 55.7,
+          "mean_30d": 3.83,
+          "hit_90d": 63.5,
+          "mean_90d": 13.56
+        },
+        {
+          "band": "1.5-2.5",
+          "n": 255,
+          "hit_7d": 58.8,
+          "mean_7d": 1.95,
+          "hit_30d": 64.3,
+          "mean_30d": 8.59,
+          "hit_90d": 69.4,
+          "mean_90d": 19.37
+        },
+        {
+          "band": ">2.5",
+          "n": 140,
+          "hit_7d": 52.9,
+          "mean_7d": 1.35,
+          "hit_30d": 46.4,
+          "mean_30d": 2.13,
+          "hit_90d": 60.0,
+          "mean_90d": 11.0
+        }
+      ],
+      "verdict": "INVERTED",
+      "monotone": {
+        "full": 1,
+        "pre": 0,
+        "post": 1,
+        "want": -1
+      }
+    },
+    "reserve_risk": {
+      "full": [
+        {
+          "band": "<.0015",
+          "n": 974,
+          "hit_7d": 56.0,
+          "mean_7d": 1.49,
+          "hit_30d": 63.2,
+          "mean_30d": 6.23,
+          "hit_90d": 68.6,
+          "mean_90d": 18.62
+        },
+        {
+          "band": ".0015-.0025",
+          "n": 1685,
+          "hit_7d": 56.9,
+          "mean_7d": 1.18,
+          "hit_30d": 63.0,
+          "mean_30d": 6.11,
+          "hit_90d": 69.8,
+          "mean_90d": 25.51
+        },
+        {
+          "band": ".0025-.005",
+          "n": 940,
+          "hit_7d": 51.4,
+          "mean_7d": 1.39,
+          "hit_30d": 47.7,
+          "mean_30d": 5.99,
+          "hit_90d": 46.0,
+          "mean_90d": 17.52
+        },
+        {
+          "band": ".005-.02",
+          "n": 535,
+          "hit_7d": 52.9,
+          "mean_7d": 1.76,
+          "hit_30d": 51.0,
+          "mean_30d": 11.12,
+          "hit_90d": 47.7,
+          "mean_90d": 33.53
+        },
+        {
+          "band": ">.02",
+          "n": 48,
+          "hit_7d": 33.3,
+          "mean_7d": -1.14,
+          "hit_30d": 10.4,
+          "mean_30d": -22.01,
+          "hit_90d": 4.2,
+          "mean_90d": -42.55
+        }
+      ],
+      "pre": [
+        {
+          "band": "<.0015",
+          "n": 299,
+          "hit_7d": 63.9,
+          "mean_7d": 2.84,
+          "hit_30d": 70.9,
+          "mean_30d": 9.48,
+          "hit_90d": 73.6,
+          "mean_90d": 23.94
+        },
+        {
+          "band": ".0015-.0025",
+          "n": 973,
+          "hit_7d": 59.2,
+          "mean_7d": 1.68,
+          "hit_30d": 69.1,
+          "mean_30d": 9.29,
+          "hit_90d": 80.2,
+          "mean_90d": 38.5
+        },
+        {
+          "band": ".0025-.005",
+          "n": 512,
+          "hit_7d": 55.7,
+          "mean_7d": 2.41,
+          "hit_30d": 54.3,
+          "mean_30d": 10.29,
+          "hit_90d": 52.0,
+          "mean_90d": 33.2
+        },
+        {
+          "band": ".005-.02",
+          "n": 360,
+          "hit_7d": 53.9,
+          "mean_7d": 2.5,
+          "hit_30d": 54.2,
+          "mean_30d": 15.86,
+          "hit_90d": 54.4,
+          "mean_90d": 52.76
+        },
+        {
+          "band": ">.02",
+          "n": 48,
+          "hit_7d": 33.3,
+          "mean_7d": -1.14,
+          "hit_30d": 10.4,
+          "mean_30d": -22.01,
+          "hit_90d": 4.2,
+          "mean_90d": -42.55
+        }
+      ],
+      "post": [
+        {
+          "band": "<.0015",
+          "n": 675,
+          "hit_7d": 52.5,
+          "mean_7d": 0.89,
+          "hit_30d": 59.7,
+          "mean_30d": 4.72,
+          "hit_90d": 66.0,
+          "mean_90d": 15.9
+        },
+        {
+          "band": ".0015-.0025",
+          "n": 712,
+          "hit_7d": 53.8,
+          "mean_7d": 0.49,
+          "hit_30d": 54.6,
+          "mean_30d": 1.75,
+          "hit_90d": 55.6,
+          "mean_90d": 7.76
+        },
+        {
+          "band": ".0025-.005",
+          "n": 428,
+          "hit_7d": 46.3,
+          "mean_7d": 0.17,
+          "hit_30d": 39.7,
+          "mean_30d": 0.86,
+          "hit_90d": 38.8,
+          "mean_90d": -1.24
+        },
+        {
+          "band": ".005-.02",
+          "n": 175,
+          "hit_7d": 50.9,
+          "mean_7d": 0.25,
+          "hit_30d": 44.6,
+          "mean_30d": 1.36,
+          "hit_90d": 33.7,
+          "mean_90d": -6.03
+        },
+        {
+          "band": ">.02",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        }
+      ],
+      "verdict": "EXTREMES \u2014 low <.0015: +18.6%/90d 68.6% hit (n=974) [weak]; high >.02: -42.5%/90d 4.2% hit (n=48) [TOP]",
+      "monotone": {
+        "full": 1,
+        "pre": 1,
+        "post": -1,
+        "want": -1,
+        "sample_mean_90d": 22.4
+      }
     }
   },
   "risk_drawdown": {
@@ -729,60 +3426,60 @@
   },
   "allocation": {
     "conservative": {
-      "cagr": 47.7,
+      "cagr": 51.4,
       "hodl_cagr": 59.0,
-      "sharpe": 1.33,
+      "sharpe": 1.38,
       "hodl_sharpe": 1.03,
-      "sortino": 1.14,
+      "sortino": 1.34,
       "hodl_sortino": 1.37,
-      "maxdd": -27.4,
+      "maxdd": -28.8,
       "hodl_maxdd": -83.8,
-      "time_in_market": 34.9,
-      "total_return": 8594.0,
+      "time_in_market": 48.8,
+      "total_return": 11416.0,
       "hodl_total_return": 20115.0,
-      "final_vs_hodl": 0.43
+      "final_vs_hodl": 0.57
     },
     "moderate": {
-      "cagr": 66.2,
+      "cagr": 67.4,
       "hodl_cagr": 59.0,
-      "sharpe": 1.44,
+      "sharpe": 1.46,
+      "hodl_sharpe": 1.03,
+      "sortino": 1.69,
+      "hodl_sortino": 1.37,
+      "maxdd": -38.6,
+      "hodl_maxdd": -83.8,
+      "time_in_market": 68.1,
+      "total_return": 36367.0,
+      "hodl_total_return": 20115.0,
+      "final_vs_hodl": 1.8
+    },
+    "aggressive": {
+      "cagr": 64.4,
+      "hodl_cagr": 59.0,
+      "sharpe": 1.3,
       "hodl_sharpe": 1.03,
       "sortino": 1.55,
       "hodl_sortino": 1.37,
-      "maxdd": -38.2,
+      "maxdd": -48.0,
       "hodl_maxdd": -83.8,
-      "time_in_market": 56.4,
-      "total_return": 33375.0,
+      "time_in_market": 75.2,
+      "total_return": 29507.0,
       "hodl_total_return": 20115.0,
-      "final_vs_hodl": 1.66
-    },
-    "aggressive": {
-      "cagr": 61.9,
-      "hodl_cagr": 59.0,
-      "sharpe": 1.25,
-      "hodl_sharpe": 1.03,
-      "sortino": 1.4,
-      "hodl_sortino": 1.37,
-      "maxdd": -57.2,
-      "hodl_maxdd": -83.8,
-      "time_in_market": 64.1,
-      "total_return": 24693.0,
-      "hodl_total_return": 20115.0,
-      "final_vs_hodl": 1.23
+      "final_vs_hodl": 1.46
     },
     "optimal": {
-      "cagr": 65.2,
+      "cagr": 66.1,
       "hodl_cagr": 59.0,
-      "sharpe": 1.42,
+      "sharpe": 1.44,
       "hodl_sharpe": 1.03,
-      "sortino": 1.56,
+      "sortino": 1.69,
       "hodl_sortino": 1.37,
-      "maxdd": -42.0,
+      "maxdd": -42.4,
       "hodl_maxdd": -83.8,
-      "time_in_market": 58.6,
-      "total_return": 31215.0,
+      "time_in_market": 70.2,
+      "total_return": 33164.0,
       "hodl_total_return": 20115.0,
-      "final_vs_hodl": 1.55
+      "final_vs_hodl": 1.65
     }
   },
   "whipsaw": {

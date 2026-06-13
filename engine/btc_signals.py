@@ -102,6 +102,28 @@ def _hysteresis_bi(value: pd.Series, enter: float, exit_: float,
     return pd.Series(out, index=value.index)
 
 
+def _hysteresis_asym(s: pd.Series, hi_enter: float, hi_exit: float,
+                     lo_enter: float, lo_exit: float,
+                     labels=("low", "mid", "high")) -> pd.Series:
+    """Three-state hysteresis with INDEPENDENT high/low thresholds (valuation is
+    asymmetric — e.g. overvalued above z=3.5, undervalued below z=0). Requires
+    lo_enter < lo_exit < hi_exit < hi_enter."""
+    lo, mid, hi = labels
+    out, cur = [], mid
+    for v in s:
+        if np.isnan(v):
+            out.append(cur)
+            continue
+        if cur == hi:
+            cur = hi if v > hi_exit else (lo if v < lo_enter else mid)
+        elif cur == lo:
+            cur = lo if v < lo_exit else (hi if v > hi_enter else mid)
+        else:
+            cur = hi if v > hi_enter else (lo if v < lo_enter else mid)
+        out.append(cur)
+    return pd.Series(out, index=s.index)
+
+
 # --------------------------------------------------------------------------- #
 # momentum ensemble  [-1, +1]
 # --------------------------------------------------------------------------- #
@@ -308,14 +330,49 @@ def cycle_stage(mom: pd.Series, risk_idx: pd.Series) -> pd.Series:
     return pos.clip(0, 1).rename("cycle_position")
 
 
-def allocation(mom: pd.Series, risk_idx: pd.Series, cfg: dict) -> pd.DataFrame:
+def allocation(mom: pd.Series, risk_idx: pd.Series, cfg: dict,
+               val: pd.DataFrame | None = None) -> pd.DataFrame:
     out = pd.DataFrame(index=mom.index)
+    deep_value = overvalued = None
+    if val is not None and cfg.get("use_valuation_overlay"):
+        dv = pd.Series(False, index=mom.index)
+        if "mvrv_z" in val:
+            dv = dv | (val["mvrv_z"].reindex(mom.index) < cfg["deep_value_z"])
+        if "nupl" in val:
+            dv = dv | (val["nupl"].reindex(mom.index) < cfg["deep_value_nupl"])
+        ov = pd.Series(False, index=mom.index)
+        if "mayer" in val:
+            ov = ov | (val["mayer"].reindex(mom.index) > cfg["overvalued_mayer"])
+        deep_value, overvalued = dv.fillna(False), ov.fillna(False)
     for name, v in cfg["variants"].items():
         full = (mom > v["mom_full"]) & (risk_idx < v["risk_full"])
         half = (mom > v["mom_half"]) & (risk_idx < v["risk_half"])
         raw = pd.Series(np.where(full, 1.0, np.where(half, 0.5, 0.0)), index=mom.index)
+        if deep_value is not None:
+            raw = raw.mask(deep_value, raw.clip(lower=0.5))   # accumulate the bottom
+            raw = raw.mask(overvalued, raw.clip(upper=0.5))   # trim the cycle top
         out[f"alloc_{name}"] = _confirm(raw, cfg["confirm_days"])
     return out
+
+
+def composite_state(out: pd.DataFrame) -> pd.Series:
+    """One actionable headline that fuses the axes (valuation/extreme first,
+    because those resolve the Risk Index's forward-return U-shape into a
+    direction): ACCUMULATE / DISTRIBUTE / RISK-OFF / RISK-ON / NEUTRAL."""
+    idx = out.index
+    state = pd.Series("NEUTRAL", index=idx)
+    risk_hi = out.get("risk_regime", pd.Series("low_risk", index=idx)) == "high_risk"
+    mom_bull = out.get("momentum_state", pd.Series("neutral", index=idx)) == "bull"
+    mom_bear = out.get("momentum_state", pd.Series("neutral", index=idx)) == "bear"
+    extreme = out.get("market_extreme", pd.Series("normal", index=idx))
+    val_state = out.get("valuation_state", pd.Series("fair", index=idx))
+    # priority order (later assignments win): trend < risk-off < distribute < accumulate
+    state[mom_bull & ~risk_hi] = "RISK-ON"
+    state[mom_bear] = "RISK-OFF"
+    state[risk_hi] = "RISK-OFF"
+    state[(extreme == "euphoria") | (val_state == "overvalued")] = "DISTRIBUTE"
+    state[(extreme == "capitulation") | (val_state == "undervalued")] = "ACCUMULATE"
+    return state.rename("composite_state")
 
 
 def btc_vs_alts(inputs: dict, cfg: dict) -> pd.Series | None:
@@ -349,6 +406,326 @@ def tactical(inputs: dict, risk_idx: pd.Series, cfg: dict) -> pd.Series:
 
 
 # --------------------------------------------------------------------------- #
+# valuation axis: MVRV-Z, NUPL, Mayer (Tier-1 accuracy upgrade)
+# --------------------------------------------------------------------------- #
+def valuation(inputs: dict, cfg: dict) -> pd.DataFrame:
+    """The missing cycle anchor. MVRV-Z = (mcap - realized_cap) / rolling_std(mcap)
+    on a ~1-cycle window (ETF-era responsive). NUPL and Mayer are cheap orthogonal
+    cross-checks. All ~2010-> depth, so these are calibration anchors, not
+    confirmation. Emitted standalone — measured before any blend (§3 of the doc)."""
+    idx = inputs["price"].index
+    out = pd.DataFrame(index=idx)
+    mcap, rcap = inputs.get("mcap"), inputs.get("realized_cap")
+    if mcap is not None and rcap is not None:
+        m = mcap.reindex(idx).ffill()
+        r = rcap.reindex(idx).ffill()
+        std = m.rolling(cfg["z_window_d"], min_periods=cfg["z_min_periods_d"]).std()
+        z = ((m - r) / std.replace(0, np.nan)).rename("mvrv_z")
+        out["mvrv_z"] = z
+        out["mvrv_z_pctile"] = _pctile(z, cfg["pctile_lookback_d"]) * 100
+        out["valuation_state"] = _hysteresis_asym(
+            z, cfg["z_over"], cfg["z_over_exit"], cfg["z_under"], cfg["z_under_exit"],
+            labels=("undervalued", "fair", "overvalued"))
+    nupl = inputs.get("nupl")
+    if nupl is not None:
+        out["nupl"] = nupl.reindex(idx).ffill()
+    close = inputs["price"]["close"]
+    out["mayer"] = close / close.rolling(cfg.get("mayer_window_d", 200)).mean()
+    # Reserve Risk (checkonchain, 2010->): price vs the opportunity cost of HODLing.
+    # Low = high-conviction accumulation (cycle bottoms); high = euphoric distribution.
+    rr = inputs.get("reserve_risk")
+    if rr is not None:
+        r = rr.replace([np.inf, -np.inf], np.nan).reindex(idx).ffill(limit=5)
+        out["reserve_risk"] = r
+        out["reserve_risk_pctile"] = _pctile(r, cfg.get("reserve_risk_pctile_lookback_d", 1460)) * 100
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# miner cycle: hash ribbons + Puell multiple (Tier-1)
+# --------------------------------------------------------------------------- #
+def miner(inputs: dict, cfg: dict) -> pd.DataFrame:
+    """Hash Ribbons (SMA30<SMA60 hashrate = capitulation, cross-back = recovery)
+    and Puell (issuance_usd vs its 365d mean). Both are historically reliable
+    BOTTOM detectors with 2010-> depth."""
+    idx = inputs["price"].index
+    out = pd.DataFrame(index=idx)
+    hr = inputs.get("hashrate")
+    if hr is not None:
+        h = hr.reindex(idx).ffill()
+        ma_f = h.rolling(cfg["hash_fast_d"]).mean()
+        ma_s = h.rolling(cfg["hash_slow_d"]).mean()
+        capit = (ma_f < ma_s)
+        out["hash_ribbon_capit"] = capit.astype(float).where(ma_s.notna())
+        recovery = capit.shift(1).fillna(False) & (~capit)  # first cross back up
+        out["hash_ribbon"] = np.where(capit, "capitulation",
+                             np.where(recovery, "recovery", "normal"))
+    iss = inputs.get("issuance_usd")
+    if iss is not None:
+        i = iss.reindex(idx).ffill()
+        out["puell"] = i / i.rolling(cfg["puell_window_d"],
+                                     min_periods=cfg["puell_min_periods_d"]).mean()
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# cost-basis levels: STH realized price / realized price (Tier-1)
+# --------------------------------------------------------------------------- #
+def cost_basis(inputs: dict, cfg: dict) -> pd.DataFrame:
+    """STH realized price is the most-watched bull/bear pivot. Emit the level
+    (for the chart) and the distance ratio (signal candidate)."""
+    close = inputs["price"]["close"]
+    idx = close.index
+    out = pd.DataFrame(index=idx)
+    sth = inputs.get("sth_realized_price")
+    if sth is not None:
+        s = sth.reindex(idx).ffill(limit=cfg["sth_ffill_limit_d"])
+        out["sth_cost_basis"] = s
+        out["sth_cb_ratio"] = close / s - 1
+    rp = inputs.get("realized_price")
+    if rp is not None:
+        out["realized_price"] = rp.reindex(idx).ffill(limit=cfg["sth_ffill_limit_d"])
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# options structure: DVOL / VRP (calibratable) + Deribit snapshot (Tier-2)
+# --------------------------------------------------------------------------- #
+def options(inputs: dict, cfg: dict) -> pd.DataFrame:
+    """Forward-looking vol layer (research/VECTOR_PROVIDER_RECON.md). DVOL (the
+    Deribit 'crypto VIX', 2021-> history) and VRP (= DVOL - realized vol) are
+    calibratable signals; the per-strike structure snapshot (25d skew, term
+    slope, max pain, GEX) is forward-accumulating CONTEXT — emitted so the
+    dashboard can show it and it builds a backtestable history over time."""
+    close = inputs["price"]["close"]
+    idx = close.index
+    out = pd.DataFrame(index=idx)
+    dvol = inputs.get("dvol")
+    if dvol is not None:
+        dv = dvol.reindex(idx).ffill(limit=3)
+        out["dvol"] = dv
+        out["dvol_pctile"] = _pctile(dv, cfg["dvol_pctile_lookback_d"]) * 100
+        rv = close.pct_change().rolling(cfg["rv_window_d"]).std() * np.sqrt(365) * 100
+        out["realized_vol"] = rv
+        out["vrp"] = (dv - rv).ewm(span=cfg["vrp_smooth_d"], adjust=False).mean()
+    snap = inputs.get("options_structure")
+    if snap is not None and not snap.empty:
+        o = snap.copy()
+        o.index = pd.to_datetime(o.index)
+        for c in ("skew_25d", "rr_25d", "term_slope_30_90", "atm_iv_30d",
+                  "put_call_oi_ratio", "max_pain", "gex_per_1pct_usd"):
+            if c in o.columns:
+                out[c] = o[c].reindex(idx).ffill()
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# leverage / liquidation layer (Tier-2): OI crowding + funding stress
+# --------------------------------------------------------------------------- #
+def leverage(inputs: dict, cfg: dict) -> pd.DataFrame:
+    """The reflexive-leverage state CoinGlass sells, rebuilt from the 15-exchange
+    BGeometrics OI + aggregate funding we already store (research/
+    VECTOR_PROVIDER_RECON.md). oi_mcap_ratio = froth; oi_price_divergence = OI
+    building faster than price (crowded/leveraged); funding_z = positioning
+    extremity; leverage_stress blends them into a liquidation-cascade gauge.
+    ~2yr depth -> confirmation, not a calibration anchor."""
+    close = inputs["price"]["close"]
+    idx = close.index
+    out = pd.DataFrame(index=idx)
+
+    oi_df = inputs.get("open_interest_df")
+    oi_total = None
+    if oi_df is not None and not oi_df.empty:
+        core = [c for c in cfg["oi_venues"] if c in oi_df.columns]
+        if core:
+            oi = oi_df[core].copy()
+            oi.index = pd.to_datetime(oi.index)
+            oi = oi.reindex(idx).ffill(limit=5)
+            oi_total = oi.sum(axis=1, min_count=max(1, len(core) // 2))
+            out["oi_total_usd"] = oi_total
+            mcap = inputs.get("mcap")
+            if mcap is not None:
+                ratio = oi_total / mcap.reindex(idx).ffill()
+                out["oi_mcap_ratio"] = ratio
+                out["oi_mcap_pctile"] = _pctile(ratio, cfg["pctile_lookback_d"]) * 100
+            n = cfg["change_window_d"]
+            oi_chg = oi_total.pct_change(n)
+            out["oi_change"] = oi_chg
+            # OI rising while price isn't = leverage building into a stale move
+            out["oi_price_divergence"] = oi_chg - close.pct_change(n)
+
+    funding = inputs.get("funding")
+    funding_z = None
+    if funding is not None:
+        f = funding.reindex(idx).ffill(limit=3)
+        out["funding_rate"] = f
+        out["funding_annual_pct"] = f * 3 * 365 * 100  # 8h interval -> annualized %
+        w = cfg["funding_z_window_d"]
+        funding_z = (f - f.rolling(w, min_periods=60).mean()) / f.rolling(w, min_periods=60).std()
+        out["funding_z"] = funding_z
+
+    parts, weights = [], []
+    if "oi_mcap_pctile" in out:
+        parts.append(out["oi_mcap_pctile"] / 100); weights.append(cfg["stress_oi_pctile_w"])
+    if funding_z is not None:
+        parts.append((funding_z.abs() / 3).clip(0, 1)); weights.append(cfg["stress_funding_w"])
+    if "oi_change" in out:
+        parts.append(out["oi_change"].clip(0, 0.5) / 0.5); weights.append(cfg["stress_oi_rise_w"])
+    if parts:
+        stacked = pd.concat(parts, axis=1)
+        wsum = stacked.notna().mul(weights, axis=1).sum(axis=1)
+        out["leverage_stress"] = (stacked.mul(weights, axis=1).sum(axis=1, min_count=1)
+                                  / wsum.replace(0, np.nan) * 100).clip(0, 100)
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# on-chain regime: Coinbase Premium / SSR oscillator / MPI (CryptoQuant-style)
+# --------------------------------------------------------------------------- #
+def onchain_regime(inputs: dict, cfg: dict) -> pd.DataFrame:
+    """CryptoQuant's signature on-chain-demand metrics, reproduced from free data
+    (research/VECTOR_PROVIDER_RECON.md). Coinbase Premium = US/institutional
+    demand (Coinbase−Binance, via bgeo); SSR oscillator = stablecoin dry powder
+    (low SSR = buying power); MPI = miner distribution (outflow vs its 365d mean).
+    The wallet-labeled exchange Netflow/Whale-Ratio are CryptoQuant's true moat —
+    not reproduced; these three are the derivable ones."""
+    close = inputs["price"]["close"]
+    idx = close.index
+    out = pd.DataFrame(index=idx)
+
+    prem = inputs.get("coinbase_premium")
+    if prem is not None:
+        p = prem.reindex(idx).ffill(limit=3)
+        out["coinbase_premium"] = p
+        # EMA tames the brief dislocation spikes (±10%+) in the raw index
+        out["coinbase_premium_ema"] = _ema(p.clip(-5, 5), cfg["premium_smooth_d"])
+
+    ssr = inputs.get("ssr")
+    if ssr is not None:
+        s = ssr.reindex(idx).ffill(limit=5)
+        out["ssr"] = s
+        w = cfg["ssr_window_d"]
+        z = (s - s.rolling(w, min_periods=90).mean()) / s.rolling(w, min_periods=90).std()
+        out["ssr_oscillator"] = (-z).clip(-3, 3)  # high = low SSR = dry powder = bullish
+
+    md = inputs.get("miner_df")
+    col = "miner_sell_pressure_minerOutflowBtc"
+    if md is not None and col in md.columns:
+        of = md[col].copy()
+        of.index = pd.to_datetime(of.index)
+        outflow_usd = of.reindex(idx).ffill(limit=3) * close
+        ma = outflow_usd.rolling(cfg["mpi_window_d"], min_periods=cfg["mpi_min_periods_d"]).mean()
+        out["mpi"] = outflow_usd / ma.replace(0, np.nan)
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# macro liquidity / risk-appetite overlay (Tier-3)
+# --------------------------------------------------------------------------- #
+def macro_overlay(inputs: dict, cfg: dict) -> pd.DataFrame:
+    """Strategic macro tailwind/headwind for BTC, from data the macro dashboard
+    already collects (research/VECTOR_PROVIDER_RECON.md Tier-3). Net liquidity
+    (WALCL−RRP−TGA) RATE OF CHANGE is the headline driver — research-confirmed
+    BTC tracks the *change* in liquidity, not the level; real yields, HY credit
+    spreads, VIX and the dollar are the risk-appetite confirmers. Deep history
+    (BTC 2014->), so this can be a genuine strategic signal."""
+    idx = inputs["price"].index
+
+    def s(key):
+        v = inputs.get(key)
+        if v is None:
+            return None
+        if hasattr(v, "columns"):
+            v = v.iloc[:, 0]
+        v = v.copy()
+        v.index = pd.to_datetime(v.index)
+        return v.reindex(idx).ffill(limit=7)
+
+    out = pd.DataFrame(index=idx)
+    drivers = {}
+    walcl, rrp, tga = s("walcl"), s("rrp"), s("tga")
+    if walcl is not None and tga is not None:
+        netliq = walcl / 1000 - (rrp.fillna(0) if rrp is not None else 0) - tga / 1000
+        out["net_liquidity_bn"] = netliq
+        roc = netliq.pct_change(cfg["netliq_roc_window_d"])
+        out["net_liq_roc"] = roc * 100
+        drivers["liquidity"] = np.tanh(roc / cfg["netliq_roc_scale"])
+    ry = s("real_yield")
+    if ry is not None:
+        out["real_yield"] = ry
+        drivers["real_yield"] = -np.tanh(ry.diff(cfg["yield_chg_window_d"]) / cfg["yield_chg_scale"])
+    oas = s("hy_oas")
+    if oas is not None:
+        out["hy_oas"] = oas
+        drivers["credit"] = (0.5 - _pctile(oas, cfg["pctile_lookback_d"])) * 2
+    vix = s("vix")
+    if vix is not None:
+        out["vix"] = vix
+        drivers["vix"] = (0.5 - _pctile(vix, cfg["pctile_lookback_d"])) * 2
+    dxy = s("dxy")
+    if dxy is not None:
+        out["dxy"] = dxy
+        drivers["dxy"] = -np.tanh(dxy.pct_change(cfg["dxy_roc_window_d"]) / cfg["dxy_roc_scale"])
+
+    if drivers:
+        dd = pd.DataFrame(drivers)
+        w = cfg["weights"]
+        ww = pd.Series({k: w.get(k, 1.0) for k in dd.columns})
+        wsum = dd.notna().mul(ww, axis=1).sum(axis=1)
+        score = (dd.mul(ww, axis=1).sum(axis=1, min_count=1) / wsum.replace(0, np.nan)).clip(-1, 1)
+        out["macro_score"] = score
+        out["macro_regime"] = _hysteresis_tri(score, cfg["enter"], cfg["exit"],
+                                              labels=("headwind", "neutral", "tailwind"))
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# contrarian capitulation / euphoria overlay (Tier-1)
+# --------------------------------------------------------------------------- #
+def market_extreme(inputs: dict, val: pd.DataFrame, cfg: dict) -> pd.DataFrame:
+    """Vote of orthogonal extremes — NUPL, supply-in-profit, Fear&Greed, MVRV-Z.
+    >=min_votes in one tail flags a contrarian regime: this is what lets the
+    dashboard tell an early-bull pullback (risk-off) from a cycle-bottom
+    capitulation (accumulate) — the Risk Index calibration already shows the
+    forward-return U-shape this resolves."""
+    idx = inputs["price"].index
+    capit = pd.DataFrame(index=idx)
+    euph = pd.DataFrame(index=idx)
+
+    nupl = inputs.get("nupl")
+    if nupl is not None:
+        n = nupl.reindex(idx).ffill()
+        capit["nupl"] = n < cfg.get("nupl_capitulation", 0.0)
+        euph["nupl"] = n > cfg.get("nupl_euphoria", 0.65)
+    sip = inputs.get("supply_in_profit_pct")
+    if sip is not None:
+        s = sip.reindex(idx).ffill(limit=5)
+        capit["sip"] = s < cfg["sip_capitulation"]
+        euph["sip"] = s > cfg["sip_euphoria"]
+    fg = inputs.get("fear_greed")
+    if fg is not None:
+        f = fg.reindex(idx).ffill(limit=3)
+        capit["fg"] = f < cfg["fg_capitulation"]
+        euph["fg"] = f > cfg["fg_euphoria"]
+    if "mvrv_z" in val:
+        z = val["mvrv_z"]
+        capit["z"] = z < cfg.get("z_under", 0.0)
+        euph["z"] = z > cfg.get("z_over", 3.5)
+
+    out = pd.DataFrame(index=idx)
+    if capit.empty:
+        return out
+    cv = capit.sum(axis=1, min_count=1)
+    ev = euph.sum(axis=1, min_count=1)
+    navail = capit.notna().sum(axis=1).replace(0, np.nan)
+    out["extreme_score"] = ((ev - cv) / navail).clip(-1, 1)  # -1 capit .. +1 euph
+    mn = cfg["min_votes"]
+    out["market_extreme"] = np.where(cv >= mn, "capitulation",
+                            np.where(ev >= mn, "euphoria", "normal"))
+    return out
+
+
+# --------------------------------------------------------------------------- #
 # entry point
 # --------------------------------------------------------------------------- #
 def compute_all(inputs: dict | None = None) -> pd.DataFrame:
@@ -362,12 +739,27 @@ def compute_all(inputs: dict | None = None) -> pd.DataFrame:
     bf = bfi(inputs, cfg["bfi"])
     st = structure(inputs, cfg["structure"])
     gg = gauges(inputs, cfg["gauges"], cfg["risk"])
-    al = allocation(mom["momentum"], rk["risk_index"], cfg["allocation"])
+    # Tier-1 accuracy upgrade: standalone valuation / miner / cost-basis axes +
+    # contrarian overlay (research/VECTOR_ACCURACY_UPGRADE.md). Measured before
+    # being blended into the composites above.
+    va = valuation(inputs, cfg["valuation"])
+    mn = miner(inputs, cfg["miner"])
+    cb = cost_basis(inputs, cfg["cost_basis"])
+    ex = market_extreme(inputs, va, {**cfg["valuation"], **cfg["extreme"]})
+    op = options(inputs, cfg["options"])
+    lv = leverage(inputs, cfg["leverage"])
+    ma = macro_overlay(inputs, cfg["macro"])
+    oc = onchain_regime(inputs, cfg["onchain"])
+    # Tier-1b: blend the confirmed valuation tails into allocation (gated by the
+    # allocation backtest below).
+    al = allocation(mom["momentum"], rk["risk_index"], cfg["allocation"], va)
 
-    out = pd.concat([inputs["price"][["close"]], mom, rk, bf, st, gg, al], axis=1)
+    out = pd.concat([inputs["price"][["close"]], mom, rk, bf, st, gg, al,
+                     va, mn, cb, ex, op, lv, ma, oc], axis=1)
     out["cycle_position"] = cycle_stage(mom["momentum"], rk["risk_index"])
     alt = btc_vs_alts(inputs, cfg["btc_vs_alts"])
     if alt is not None:
         out["alt_cycle_leader"] = alt
     out["market_mode"] = tactical(inputs, rk["risk_index"], cfg["tactical"])
+    out["composite_state"] = composite_state(out)
     return out

@@ -41,6 +41,18 @@ CHARTS = {
         "series": "sopr",
         "column": "sopr",
     },
+    "reserve_risk": {
+        # Deep Reserve Risk (2010->) — a cycle-BOTTOM signal whose whole value is
+        # depth across cycles. bgeo's reserve-risk endpoint is only ~4y AND a
+        # different scale, so checkonchain is the single source. Used via bands/
+        # percentile (scale-invariant), so no splice needed. Early-2010 inf is
+        # cleaned on read in the engine.
+        "url": "https://charts.checkonchain.com/btconchain/lifespan/reserverisk/reserverisk_light.html",
+        "trace": "Reserve Risk",
+        "group": "checkonchain",
+        "series": "reserve_risk",
+        "column": "reserve_risk",
+    },
 }
 
 

@@ -44,22 +44,35 @@ def test_bgeo_generic_parser_single_and_multi() -> None:
 
 
 def test_deribit_options_aggregation() -> None:
-    rows = [
-        {"instrument_name": "BTC-26JUN26-100000-C", "open_interest": 100.0, "mark_iv": 50.0},
-        {"instrument_name": "BTC-26JUN26-100000-P", "open_interest": 50.0, "mark_iv": 60.0},
-        {"instrument_name": "BTC-25SEP26-80000-P", "open_interest": 0.0, "mark_iv": None},
-    ]
-    df = pd.DataFrame(rows)
-    df["open_interest"] = pd.to_numeric(df["open_interest"], errors="coerce").fillna(0.0)
-    df["mark_iv"] = pd.to_numeric(df["mark_iv"], errors="coerce")
-    is_put = df["instrument_name"].str.endswith("-P")
-    put_oi = float(df.loc[is_put, "open_interest"].sum())
-    call_oi = float(df.loc[~is_put, "open_interest"].sum())
-    w = df["open_interest"].where(df["mark_iv"].notna(), 0.0)
-    iv_w = float((df["mark_iv"].fillna(0) * w).sum() / w.sum())
-    assert put_oi == 50.0 and call_oi == 100.0
-    assert abs(put_oi / call_oi - 0.5) < 1e-9
-    assert abs(iv_w - (50 * 100 + 60 * 50) / 150) < 1e-9
+    """Exercise the real compute_structure: parsing, put/call OI, ATM IV term
+    structure (with tenor-range clamping), max pain, and BS greeks/GEX."""
+    from datetime import datetime, timezone
+    from collectors import deribit
+
+    now = datetime(2026, 6, 13, tzinfo=timezone.utc)
+    cfg = {"term_tenors_d": [7, 30, 90, 180], "skew_target_d": 30}
+    S = 64000.0
+    rows = []
+    for K, civ, piv, coi, poi in [(60000, 55, 62, 30, 10), (64000, 50, 58, 100, 80),
+                                  (68000, 48, 60, 40, 20)]:
+        rows.append({"instrument_name": f"BTC-26JUN26-{K}-C", "open_interest": coi,
+                     "mark_iv": civ, "underlying_price": S, "volume": 1})
+        rows.append({"instrument_name": f"BTC-26JUN26-{K}-P", "open_interest": poi,
+                     "mark_iv": piv, "underlying_price": S, "volume": 1})
+    rows.append({"instrument_name": "BTC-25SEP26-64000-C", "open_interest": 20,
+                 "mark_iv": 52, "underlying_price": S, "volume": 0})  # ~104d tenor
+    rows.append({"instrument_name": "BTC-BADNAME", "open_interest": 5, "mark_iv": 50,
+                 "underlying_price": S})  # must be skipped, not crash
+
+    s = deribit.compute_structure(rows, now, cfg)
+    assert s["underlying"] == S
+    call_oi, put_oi = 30 + 100 + 40 + 20, 10 + 80 + 20  # +20 = the SEP call
+    assert abs(s["put_call_oi_ratio"] - put_oi / call_oi) < 1e-9
+    assert s["atm_iv_7d"] is None          # 7d < nearest expiry (13d) -> no extrapolation
+    assert isinstance(s["atm_iv_30d"], float)   # 30d between 13d and 104d -> interpolated
+    assert s["atm_iv_180d"] is None        # 180d > 104d -> no extrapolation
+    assert s["max_pain"] in (60000.0, 64000.0, 68000.0)
+    assert isinstance(s["gex_per_1pct_usd"], float)
 
 
 def test_hourly_upsert_preserves_intraday() -> None:

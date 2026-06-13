@@ -133,6 +133,39 @@ holdings_signals:
   alert_pp: 0.25                  # higher bar to fire an alert (vs merely listing)
   min_price_history: 60           # rows of stock history needed for the cycle read
   panel_top_n: 12                 # rows shown in the dashboard Accumulation Watch panel
+  volume_surge_x: 1.5             # recent vs prior avg-volume ratio to flag a surge (📊)
+
+etf_holdings:
+  # Phase 2: broad "popular ETFs" universe. The collector writes FULL daily
+  # holdings (with Shares Held) per fund; the engine diffs consecutive snapshots
+  # with flow normalization (share-based active-decision) — no per-stock prices
+  # needed, so it scales to the whole universe. Edit the universe freely to grow
+  # toward the top ~200. Sponsor reliability: ssga/ark VERIFIED, ishares/invesco
+  # BEST-EFFORT (consent walls), vanguard NOT supported (no free daily feed).
+  retries: 3
+  active_change_alert_pct: 15     # |flow-normalized share change| (% of position) to flag
+  active_change_window_d: 5       # compare latest snapshot to one ~5 snapshots back
+  min_position_pct: 0.20          # ignore tiny <0.2%-weight positions (noise)
+  page_top_n: 40                  # rows on the ETFs page
+  universe:
+    # --- SPDR / State Street (VERIFIED: daily XLSX incl. Shares Held) ----------
+    SPY:  {sponsor: ssga, name: "SPDR S&P 500", category: "US Large Cap"}
+    DIA:  {sponsor: ssga, name: "SPDR Dow Jones Industrial", category: "US Large Cap"}
+    MDY:  {sponsor: ssga, name: "SPDR S&P MidCap 400", category: "US Mid Cap"}
+    XBI:  {sponsor: ssga, name: "SPDR S&P Biotech", category: "Biotech"}
+    XOP:  {sponsor: ssga, name: "SPDR S&P Oil & Gas E&P", category: "Energy"}
+    XHB:  {sponsor: ssga, name: "SPDR S&P Homebuilders", category: "Homebuilders"}
+    XRT:  {sponsor: ssga, name: "SPDR S&P Retail", category: "Retail"}
+    KRE:  {sponsor: ssga, name: "SPDR S&P Regional Banking", category: "Regional Banks"}
+    KBE:  {sponsor: ssga, name: "SPDR S&P Bank", category: "Banks"}
+    XME:  {sponsor: ssga, name: "SPDR S&P Metals & Mining", category: "Metals & Mining"}
+    XSD:  {sponsor: ssga, name: "SPDR S&P Semiconductor", category: "Semiconductors"}
+    XAR:  {sponsor: ssga, name: "SPDR S&P Aerospace & Defense", category: "Aerospace & Defense"}
+    # --- iShares / BlackRock (BEST-EFFORT: AJAX CSV, product-id keyed) ---------
+    IVV:  {sponsor: ishares, product_id: "239726", name: "iShares Core S&P 500", category: "US Large Cap"}
+    IWM:  {sponsor: ishares, product_id: "239710", name: "iShares Russell 2000", category: "US Small Cap"}
+    EFA:  {sponsor: ishares, product_id: "239623", name: "iShares MSCI EAFE", category: "Developed ex-US"}
+    # Invesco (e.g. QQQ) and Vanguard funds: add once a holdings URL is recon-verified.
 
 fundamentals:
   enabled: true                   # LOW CONFIDENCE module — engine must work without it

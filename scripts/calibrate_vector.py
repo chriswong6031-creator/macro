@@ -109,6 +109,25 @@ def monotone(table: pd.DataFrame, col: str) -> int:
     return 0
 
 
+def _extremes_verdict(table: pd.DataFrame, base: float, mcol: str, hcol: str,
+                      n_floor: int = 40) -> str:
+    """Characterize a U-shaped (valuation/miner) signal by its TAILS vs. the
+    full-sample forward return `base`. The actionable edge of these metrics is
+    the extreme band — a deep-value bottom or an over-extended top — not a
+    monotone gradient across the middle."""
+    parts = []
+    lo, hi = table.iloc[0], table.iloc[-1]
+    lo_m, lo_n, lo_h = lo.get(mcol), lo.get("n", 0), lo.get(hcol)
+    hi_m, hi_n, hi_h = hi.get(mcol), hi.get("n", 0), hi.get(hcol)
+    if lo_n >= n_floor and pd.notna(lo_m):
+        tag = "BOTTOM" if lo_m > base * 1.25 else "weak"
+        parts.append(f"low {lo['band']}: {lo_m:+.1f}%/90d {lo_h}% hit (n={lo_n}) [{tag}]")
+    if hi_n >= n_floor and pd.notna(hi_m):
+        tag = "TOP" if (hi_m < 0 or hi_m < base * 0.5) else "weak"
+        parts.append(f"high {hi['band']}: {hi_m:+.1f}%/90d {hi_h}% hit (n={hi_n}) [{tag}]")
+    return "EXTREMES — " + ("; ".join(parts) if parts else "tails too thin to judge")
+
+
 def rank_trend(table: pd.DataFrame, col: str, n_floor: int = 150) -> int:
     """Robust direction: Spearman sign between band order and `col`, ignoring
     bands thinner than n_floor (small-sample tails shouldn't veto a real trend).
@@ -213,6 +232,59 @@ def main() -> int:
         SIGNALS["bfi"] = {"bands": [-0.1, 40, 60, 100.1],
                           "labels": ["<40", "40-60", ">60"], "want": 1}
 
+    # Tier-1 accuracy-upgrade signals (standalone, MEASURED before any blend —
+    # research/VECTOR_ACCURACY_UPGRADE.md §4). Deep-history valuation/miner
+    # metrics (mvrv_z, nupl, mayer, puell) are the trustworthy anchors; the
+    # 2022-> cohort metric (sth_cb_ratio) is confirmation-only until another
+    # cycle accrues. hash_ribbon_capit is a 2-state flag — read its table, not
+    # the rank-trend verdict (rank-trend needs >=3 bands).
+    VAL_SIGNALS = {
+        "mvrv_z": {"bands": [-5, 0, 1, 2, 3.5, 100], "shape": "extremes",
+                   "labels": ["<0", "0-1", "1-2", "2-3.5", ">3.5"], "want": -1},
+        "nupl": {"bands": [-1, 0, 0.25, 0.5, 0.65, 1.1], "shape": "extremes",
+                 "labels": ["<0", "0-.25", ".25-.5", ".5-.65", ">.65"], "want": -1},
+        "mayer": {"bands": [0, 0.8, 1.0, 1.5, 2.4, 100], "shape": "extremes",
+                  "labels": ["<0.8", "0.8-1", "1-1.5", "1.5-2.4", ">2.4"], "want": -1},
+        "puell": {"bands": [0, 0.5, 1, 2, 4, 100], "shape": "extremes",
+                  "labels": ["<0.5", "0.5-1", "1-2", "2-4", ">4"], "want": -1},
+        "sth_cb_ratio": {"bands": [-1, -0.1, 0, 0.2, 0.5, 100], "shape": "extremes",
+                         "labels": ["<-10%", "-10-0%", "0-20%", "20-50%", ">50%"], "want": 1},
+        "hash_ribbon_capit": {"bands": [[0.0], [1.0]],
+                              "labels": ["normal", "capitulation"], "want": 1},
+        # Tier-2 options layer (DVOL/VRP history 2021-> => post-half only). DVOL
+        # is U-shaped (complacency vs. panic-bounce); VRP negative = vol underpriced.
+        "dvol": {"bands": [0, 40, 55, 70, 90, 500], "shape": "extremes",
+                 "labels": ["<40", "40-55", "55-70", "70-90", ">90"], "want": -1},
+        "vrp": {"bands": [-100, -5, 0, 5, 15, 100], "shape": "extremes",
+                "labels": ["<-5", "-5-0", "0-5", "5-15", ">15"], "want": -1},
+        # Tier-2 leverage layer (OI 2022->, funding 2023-> => confirmation-only).
+        "leverage_stress": {"bands": [-0.1, 25, 50, 75, 100.1], "shape": "extremes",
+                            "labels": ["0-25", "25-50", "50-75", "75-100"], "want": -1},
+        "funding_z": {"bands": [-10, -1, 0, 1, 2, 10], "shape": "extremes",
+                      "labels": ["<-1", "-1-0", "0-1", "1-2", ">2"], "want": -1},
+        "oi_price_divergence": {"bands": [-10, -0.1, 0, 0.1, 0.25, 10], "shape": "extremes",
+                                "labels": ["<-10%", "-10-0%", "0-10%", "10-25%", ">25%"], "want": -1},
+        # Tier-3 macro overlay (BTC 2014-> => deeper; judged monotone, not tails).
+        "net_liq_roc": {"bands": [-50, -2, 0, 2, 5, 50],
+                        "labels": ["<-2%", "-2-0%", "0-2%", "2-5%", ">5%"], "want": 1},
+        "macro_score": {"bands": [-1.01, -0.3, -0.1, 0.1, 0.3, 1.01],
+                        "labels": ["<-.3", "-.3-.1", "-.1-.1", ".1-.3", ">.3"], "want": 1},
+        # On-chain regime (CryptoQuant-style). SSR osc deep (2017->); premium/MPI 2022->.
+        "coinbase_premium_ema": {"bands": [-5, -0.3, 0, 0.5, 1.5, 5], "shape": "extremes",
+                                 "labels": ["<-.3", "-.3-0", "0-.5", ".5-1.5", ">1.5"], "want": 1},
+        "ssr_oscillator": {"bands": [-3.01, -1, -0.3, 0.5, 1.5, 3.01],
+                           "labels": ["<-1", "-1-.3", "-.3-.5", ".5-1.5", ">1.5"], "want": 1},
+        "mpi": {"bands": [0, 0.7, 1, 1.5, 2.5, 10],
+                "labels": ["<0.7", "0.7-1", "1-1.5", "1.5-2.5", ">2.5"], "want": -1},
+        # Reserve Risk (checkonchain 2010-> => deep). Low = accumulation, high = top.
+        "reserve_risk": {"bands": [0, 0.0015, 0.0025, 0.005, 0.02, 1], "shape": "extremes",
+                         "labels": ["<.0015", ".0015-.0025", ".0025-.005", ".005-.02", ">.02"],
+                         "want": -1},
+    }
+    for _k, _v in VAL_SIGNALS.items():
+        if _k in df.columns:
+            SIGNALS[_k] = _v
+
     report: dict = {"meta": {"span": f"{df.index.min().date()}..{df.index.max().date()}",
                              "rows": len(df), "split": cfg["split_date"]},
                     "signals": {}, "risk_drawdown": {}, "allocation": {}, "whipsaw": {}}
@@ -248,10 +320,22 @@ def main() -> int:
         # robustness verdict on the 90d column via rank-trend (tolerant of one
         # noisy small-sample band; the long horizon is where signal separates)
         hcol = f"mean_{horizons[-1]}d"
+        want = spec["want"]
         m_full = rank_trend(pd.DataFrame(entry["full"]), hcol)
         m_pre = rank_trend(pd.DataFrame(entry["pre"]), hcol)
         m_post = rank_trend(pd.DataFrame(entry["post"]), hcol)
-        want = spec["want"]
+        # Valuation/miner metrics are U-SHAPED (the signal is in the tails, not a
+        # monotone gradient — same reason the Risk Index is judged on drawdown).
+        # rank-trend would mislabel a real top/bottom call as INVERTED, so judge
+        # these on tail separation vs. the sample mean instead.
+        if spec.get("shape") == "extremes":
+            base = float(fwd.loc[df.index, horizons[-1]].mean() * 100)
+            full_t = pd.DataFrame(entry["full"])
+            entry["verdict"] = _extremes_verdict(full_t, base, hcol, f"hit_{horizons[-1]}d")
+            entry["monotone"] = {"full": m_full, "pre": m_pre, "post": m_post,
+                                 "want": want, "sample_mean_90d": round(base, 1)}
+            report["signals"][sig] = entry
+            continue
         if m_full == want and m_pre == want and m_post == want:
             verdict = "CONFIRMED"
         elif m_full == -want:
