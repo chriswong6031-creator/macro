@@ -76,14 +76,41 @@ def apply_hysteresis(g: pd.Series, i: pd.Series, hysteresis_days: int,
                          "pending_days": pending_days}, index=g.index)
 
 
+def _debounce(reg: pd.Series, n: int) -> pd.Series:
+    """Hysteresis: only flip the regime once a new state has held n consecutive
+    days — cuts whipsaw without changing the underlying RoC rule. 'unknown'
+    (warm-up) passes through. Off when n<=1."""
+    if n <= 1:
+        return reg
+    out = reg.copy()
+    confirmed, cand, run = reg.iloc[0], reg.iloc[0], 1
+    for i in range(1, len(reg)):
+        v = reg.iloc[i]
+        if v == "unknown":
+            out.iloc[i] = "unknown"
+            cand, run = "unknown", 1
+            continue
+        cand, run = (cand, run + 1) if v == cand else (v, 1)
+        if run >= n:
+            confirmed = cand
+        out.iloc[i] = confirmed if confirmed != "unknown" else v
+    return out
+
+
 def liquidity_overlay(f: pd.DataFrame) -> pd.Series:
     cfg = config.load()["engine"]["liquidity"]
-    roc = f["net_liquidity_bn"] - f["net_liquidity_bn"].shift(cfg["roc_window_d"])
+    # lag_bd de-biases the signal: WALCL is weekly (Wed, released Thu), so a
+    # same-day read is mildly look-ahead — a 3-bd lag is what a trader actually
+    # had, and was verified to move the measured edge <0.5pp (scripts/
+    # research_liquidity_gate*.py). persist_days adds optional hysteresis to cut
+    # whipsaw. Both default-tunable; absent config keys fall back here.
+    nl = f["net_liquidity_bn"].shift(int(cfg.get("lag_bd", 3)))
+    roc = nl - nl.shift(cfg["roc_window_d"])
     out = pd.Series("neutral", index=f.index)
     out[roc > cfg["expanding_threshold_bn"]] = "expanding"
     out[roc < cfg["contracting_threshold_bn"]] = "contracting"
     out[roc.isna()] = "unknown"
-    return out
+    return _debounce(out, int(cfg.get("persist_days", 0)))
 
 
 def cycle_tag(f: pd.DataFrame) -> pd.Series:
