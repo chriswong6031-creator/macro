@@ -336,11 +336,20 @@ def _compact_season(line: str | None) -> tuple[str, str]:
         return line, line
 
 
-def sector_rows(playbook: dict | None) -> list[dict]:
+def sector_rows(playbook: dict | None, timing: dict | None = None) -> list[dict]:
     if not playbook or not playbook.get("stages"):
         return []
+    timing = timing or {}
     rows = sorted(playbook["stages"], key=lambda r: -r["heat"])
     for r in rows:
+        tm = timing.get(r["ticker"])
+        if tm:
+            r["timing_state"] = tm["state"]
+            r["timing_style"] = tm["state_style"]
+            r["timing_note"] = (f"day {tm['dc_day']} of its cycle; "
+                                f"{tm['buy_zone']}/{tm['n_holdings']} top holdings in a buy state")
+        else:
+            r["timing_state"] = None
         bg, fg = STAGE_STYLE.get(r["stage"], ("#2a2f3a", "#d7dce3"))
         r["stage_color"], r["stage_fg"] = bg, fg
         r["heat_color"] = HEAT_COLORS.get(r["heat_band"], "#4a5160")
@@ -413,6 +422,67 @@ def flows_html_table() -> str | None:
     return "".join(rows)
 
 
+STATE_STYLES = {
+    "FRESH BUY": ("#1d4a2c", "#7fe0a0"), "TURN SIGNALED": ("#1d3a4a", "#8fd0f0"),
+    "RALLY ON": ("#1d3326", "#6fce8f"), "BOTTOM WATCH": ("#2b3340", "#9fc0e8"),
+    "TOP WATCH": ("#38301a", "#d8b75a"), "ROLLING OVER": ("#4a2c1a", "#e0a070"),
+    "DECLINE": ("#3a2020", "#e08080"),
+}
+BUY_ZONE_STATES = ("FRESH BUY", "TURN SIGNALED")
+
+
+def build_sector_pages(env: Environment, site: Path, generated: str) -> dict:
+    """Render sectors/<FUND>.html drill-downs; return per-fund timing summary
+    for the heat board."""
+    import json as _json
+
+    from collectors.sector_holdings import latest_fundamentals, latest_top10
+    from engine.cycles import LADDER, analyze
+    from engine.playbook import SECTOR_NAMES
+
+    cal_path = config.data_dir() / "regime" / "ladder_calibration.json"
+    calibration = _json.loads(cal_path.read_text()) if cal_path.exists() else None
+    tpl = env.get_template("sector.html.j2")
+    outdir = site / "sectors"
+    outdir.mkdir(parents=True, exist_ok=True)
+
+    summaries: dict[str, dict] = {}
+    for fund in config.load()["sponsors"]["sector_funds"]:
+        etf = store.read("yahoo", fund)
+        if etf is None:
+            continue
+        res = analyze(etf["close"])
+        if not res.get("ladder"):
+            continue
+        holdings = []
+        t10 = latest_top10(fund)
+        if t10 is not None:
+            for _, r in t10.iterrows():
+                tick = str(r["ticker"]).replace(".", "-")
+                df = store.read("stocks", tick)
+                if df is None or len(df) < 300:
+                    continue
+                h = analyze(df["close"], df.get("high"))
+                if not h.get("ladder"):
+                    continue
+                holdings.append({"ticker": tick,
+                                 "name": str(r.get("name", "")).title(),
+                                 "weight_pct": r["weight_pct"], **h,
+                                 "fundamentals": latest_fundamentals(tick)})
+        buy_zone = sum(1 for h in holdings if h["ladder"]["state"] in BUY_ZONE_STATES)
+        s = {"fund": fund, "name": SECTOR_NAMES.get(fund, fund), **res,
+             "holdings": holdings}
+        html = tpl.render(s=s, state_styles=STATE_STYLES, calibration=calibration,
+                          ladder_order=LADDER, generated_utc=generated)
+        (outdir / f"{fund}.html").write_text(html)
+        summaries[fund] = {"state": res["ladder"]["state"],
+                           "state_style": STATE_STYLES.get(res["ladder"]["state"]),
+                           "dc_day": res["cycle"]["dc_day"],
+                           "buy_zone": buy_zone, "n_holdings": len(holdings)}
+    log.info("wrote %d sector drill-down pages", len(summaries))
+    return summaries
+
+
 def health_rows() -> list[dict]:
     sources = store.read_status().get("sources", {})
     return [{"name": k, "status": v.get("status", "?"), "rows": v.get("rows", 0),
@@ -436,16 +506,22 @@ def main() -> int:
     generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
 
     import calendar
+    sector_timing = {}
+    try:
+        sector_timing = build_sector_pages(env, site, generated)
+    except Exception as e:  # noqa: BLE001 — drill-downs are additive, never fatal
+        log.error("sector pages failed: %s", e)
     html = env.get_template("dashboard.html.j2").render(
         latest=latest,
         pb=latest.get("playbook"),
         month_name=calendar.month_name[pd.Timestamp(latest["date"]).month],
         commodities=(latest.get("playbook") or {}).get("commodities", []),
+        sector_timing=sector_timing,
         components_confirming=confirming,
         components_contradicting=contradicting,
         flip_plain=flip_plain_text(latest),
         internals=internals_rows(latest),
-        sector_rows=sector_rows(latest.get("playbook")),
+        sector_rows=sector_rows(latest.get("playbook"), sector_timing),
         generated_utc=generated,
         chart_liquidity=chart_liquidity(f),
         chart_credit_breadth=chart_credit_breadth(f),

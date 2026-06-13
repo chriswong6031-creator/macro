@@ -28,7 +28,8 @@ jobs:
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: |
-          python -m scripts.collect --only cot,sentiment_naaim,sentiment_aaii,fundamentals
+          python -m scripts.collect --only cot,sentiment_naaim,sentiment_aaii,fundamentals,stock_fundamentals
+          python -m scripts.recalibrate
           python -m engine.run
           python -m scripts.build_site
           python -m scripts.daily_brief

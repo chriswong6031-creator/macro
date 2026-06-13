@@ -1,0 +1,175 @@
+{% macro help(text) -%}
+<span class="help">?<span class="tip">{{ text }}</span></span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ s.name }} ({{ s.fund }}) — cycle & holdings</title>
+<style>
+  :root { --bg:#0f1115; --panel:#181b21; --panel2:#1e222a; --text:#d7dce3;
+          --muted:#8b93a1; --line:#2a2f3a; }
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,
+         "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  a { color:#7aa7e0; text-decoration:none; }
+  h1 { font-size:20px; margin:0; }
+  h2 { font-size:14px; margin:0 0 10px; color:var(--muted); text-transform:uppercase;
+       letter-spacing:.06em; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+           padding:14px 16px; margin-bottom:14px; }
+  .topline { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+  .navbtn { background:var(--panel2); border:1px solid var(--line); color:#7aa7e0;
+            padding:5px 14px; border-radius:8px; font-size:13px; }
+  .muted { color:var(--muted); }
+  .pos { color:#5fbf7f; } .neg { color:#e07070; }
+  .state { display:inline-block; padding:2px 11px; border-radius:12px; font-weight:700;
+           font-size:12.5px; }
+  {% for st, (bg, fg) in state_styles.items() %}
+  .st-{{ st | replace(" ", "_") }} { background: {{ bg }}; color: {{ fg }}; }
+  {% endfor %}
+  .scorebar { display:inline-block; width:90px; height:8px; background:var(--panel2);
+              border-radius:4px; overflow:hidden; vertical-align:middle; position:relative; }
+  .scorebar i { position:absolute; top:0; bottom:0; }
+  .card { background:var(--panel2); border:1px solid var(--line); border-radius:10px;
+          padding:12px 14px; margin:10px 0; }
+  .mtf { display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--muted);
+         margin-top:6px; }
+  .mtf b { color:var(--text); }
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px;
+          height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted);
+          font-size:10px; font-weight:600; cursor:help; position:relative;
+          vertical-align:middle; margin-left:5px; }
+  .help .tip { display:none; position:absolute; top:140%; left:50%;
+               transform:translateX(-50%); width:300px; background:#262b35;
+               border:1px solid #3a4150; padding:9px 11px; border-radius:8px; z-index:60;
+               font-size:12px; line-height:1.45; color:var(--text); font-weight:400;
+               box-shadow:0 6px 18px rgba(0,0,0,.5); pointer-events:none; }
+  .help:hover .tip { display:block; }
+  table { border-collapse:collapse; width:100%; font-size:13px; }
+  th,td { text-align:left; padding:4px 8px; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:500; }
+  .tv { margin-top:8px; border-radius:8px; overflow:hidden; }
+  details summary { cursor:pointer; color:#7aa7e0; font-size:12.5px; margin-top:6px; }
+</style>
+</head>
+<body>
+  <div class="panel">
+    <div class="topline">
+      <h1>{{ s.name }} <span class="muted">({{ s.fund }})</span></h1>
+      <span class="state st-{{ s.ladder.state | replace(" ", "_") }}">{{ s.ladder.state }}</span>
+      <span class="muted">cycle day {{ s.cycle.dc_day }} of ~{{ s.cycle.dc_band[0] }}-{{ s.cycle.dc_band[1] }}
+        · investor cycle week {{ s.cycle.ic_week }} ({{ s.cycle.ic_phase }})</span>
+      <span style="flex:1"></span>
+      <a class="navbtn" href="../index.html">← Dashboard</a>
+    </div>
+    <p style="margin:10px 0 2px"><b>{{ s.ladder.why }}</b></p>
+    <p class="muted" style="margin:4px 0">Next: {{ s.ladder.next }}</p>
+    <div class="mtf">
+      {% for tf in ["D","3D","W"] %}{% set m = s.mtf.get(tf, {}) %}{% if m %}
+      <span><b>{{ {"D":"Daily","3D":"3-Day","W":"Weekly"}[tf] }}</b> ·
+        RSI {{ m.rsi14 }} · Stoch {{ m.stoch }} ·
+        MACD {{ "🟢" if m.macd_pos else "🔴" }}{% if m.macd_cross_up %} just crossed up{% elif m.macd_cross_dn %} just crossed down{% elif m.macd_approaching_up %} ≈{{ m.macd_bars_to_cross }} bars to bull cross{% elif m.macd_approaching_dn %} ≈{{ m.macd_bars_to_cross }} bars to bear cross{% endif %}</span>
+      {% endif %}{% endfor %}
+      {{ help("Three timeframes of the same instrument. The weekly sets the tide, the 3-day the wave, the daily the ripple — signals are strongest when they agree. 'Bars to cross' estimates when the MACD histogram reaches zero at its current pace — an 'about to turn' early warning, not a promise.") }}
+    </div>
+    {% if s.cycle.failed_cycle %}<p class="neg" style="margin:6px 0 0">⚠ Failed cycle: price is below the low that started this cycle — historically the larger trend is rolling over in ~80% of such cases.</p>{% endif %}
+    {% if s.cycle.translation %}<p class="muted" style="margin:6px 0 0">Last completed cycle was <b>{{ s.cycle.translation }}-translated</b>{{ " (crested late — bullish structure)" if s.cycle.translation == "right" else " (crested early — bearish tell)" if s.cycle.translation == "left" else "" }}.</p>{% endif %}
+  </div>
+
+  <div class="panel">
+    <h2>Chart</h2>
+    <div class="tv">
+      <div class="tradingview-widget-container">
+        <div id="tv_main"></div>
+        <script src="https://s3.tradingview.com/tv.js"></script>
+        <script>new TradingView.widget({"container_id":"tv_main","symbol":"{{ s.fund }}","interval":"D","theme":"dark","style":"1","height":440,"width":"100%","hide_side_toolbar":true,"allow_symbol_change":true,"studies":["RSI@tv-basicstudies","MACD@tv-basicstudies"]});</script>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Top 10 holdings — each analyzed on its own cycle
+      {{ help("Every holding gets the same treatment as the ETF: daily-cycle position, multi-timeframe momentum, and a ladder state. The states carry measured base rates (table at the bottom). Weight = % of the ETF this stock represents — the top names drive the fund.") }}
+    </h2>
+    {% for h in s.holdings %}
+    <div class="card">
+      <div class="topline">
+        <b style="font-size:15px">{{ h.ticker }}</b>
+        <span class="muted">{{ h.name }}</span>
+        <span class="muted">{{ h.weight_pct }}% of fund</span>
+        <span class="state st-{{ h.ladder.state | replace(" ", "_") }}">{{ h.ladder.state }}</span>
+        <span class="scorebar"><i style="left:50%;width:{{ (h.ladder.score / 2) | abs }}%;{{ "right:50%;left:auto;" if h.ladder.score < 0 }}background:{{ "#5fbf7f" if h.ladder.score > 0 else "#e07070" }}"></i></span>
+        <span class="muted">cycle day {{ h.cycle.dc_day }}</span>
+      </div>
+      <p style="margin:7px 0 2px">{{ h.ladder.why }}</p>
+      <p class="muted" style="margin:3px 0">Next: {{ h.ladder.next }}</p>
+      <div class="mtf">
+        {% for tf in ["D","3D","W"] %}{% set m = h.mtf.get(tf, {}) %}{% if m %}
+        <span><b>{{ tf }}</b> RSI {{ m.rsi14 }} · St {{ m.stoch }} · MACD {{ "🟢" if m.macd_pos else "🔴" }}{% if m.macd_approaching_up %} ≈{{ m.macd_bars_to_cross }}b↑{% elif m.macd_approaching_dn %} ≈{{ m.macd_bars_to_cross }}b↓{% endif %}</span>
+        {% endif %}{% endfor %}
+        {% if h.fundamentals %}
+        <span>{% if h.fundamentals.fwd_pe %}fwd P/E <b>{{ h.fundamentals.fwd_pe | round(1) }}</b>{% endif %}
+          {% if h.fundamentals.rev_growth %} · rev growth <b>{{ (h.fundamentals.rev_growth * 100) | round(1) }}%</b>{% endif %}
+          {% if h.fundamentals.profit_margin %} · margin <b>{{ (h.fundamentals.profit_margin * 100) | round(0) }}%</b>{% endif %}
+          {{ help("Best-effort valuation snapshot from free sources, refreshed weekly — LOW CONFIDENCE, often missing fields. Use as rough context only.") }}</span>
+        {% endif %}
+      </div>
+      <details><summary>chart</summary>
+        <div class="tradingview-widget-container" data-tvsym="{{ h.ticker }}"></div>
+      </details>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="panel">
+    <h2>How much to trust these states — measured, not promised
+      {{ help("Every trading day since 2000, across sector ETFs and large stocks, we computed the same ladder state from data available at the time and measured what price did over the next month. These are those base rates. They are tendencies with real spread around them — position sizing beats certainty.") }}
+    </h2>
+    {% if calibration %}
+    <table>
+      <tr><th>state</th><th>samples</th><th>up next month</th><th>avg next month</th></tr>
+      {% for st in ladder_order %}{% if calibration.get(st) %}
+      <tr>
+        <td><span class="state st-{{ st | replace(" ", "_") }}">{{ st }}</span></td>
+        <td>{{ calibration[st].n }}</td>
+        <td>{{ calibration[st].hit_pct }}%</td>
+        <td class="{{ 'pos' if calibration[st].avg_fwd_pct > 0 else 'neg' }}">{{ "%+.2f" | format(calibration[st].avg_fwd_pct) }}%</td>
+      </tr>
+      {% endif %}{% endfor %}
+    </table>
+    <p style="margin:10px 0 0"><b>Read the table before trusting any state.</b>
+      <span class="muted">What it shows: stocks drift up over a month from EVERY state
+      (that's the market's long upward bias), the spread between states is small, and the
+      "scary" states measured slightly BETTER forward returns than the buy states —
+      markets mean-revert, and waiting for full confirmation costs part of the bounce.
+      So use the ladder for <b>structure</b>: where you are in the cycle, what would
+      confirm a turn, and exactly where you're wrong (the invalidation price) — and use
+      position size, not certainty, to express conviction. It is not a return predictor,
+      and the table proves we checked.</span></p>
+    {% else %}<p class="muted">Calibration pending — regenerates with the weekly run.</p>{% endif %}
+    <p class="muted" style="font-size:12px">Cycle methodology after graddhy.com / thefinancialtap.com: equity daily cycles
+       typically run 36-42 trading days trough-to-trough; timing bands catch roughly 70% of lows, so ~3 in 10 arrive
+       early or late — that's why confirmation (swing low, 10-day average) gates every buy state. Charts by TradingView.</p>
+  </div>
+
+<script>
+  // lazy-create TradingView mini charts only when a card's <details> opens
+  document.querySelectorAll('details').forEach(function (d) {
+    d.addEventListener('toggle', function () {
+      if (!d.open) return;
+      var box = d.querySelector('[data-tvsym]');
+      if (!box || box.dataset.done) return;
+      box.dataset.done = '1';
+      var s = document.createElement('script');
+      s.src = 'https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js';
+      s.async = true;
+      s.text = JSON.stringify({symbol: box.dataset.tvsym, width: '100%', height: 200,
+                               dateRange: '6M', colorTheme: 'dark', isTransparent: true});
+      box.appendChild(s);
+    });
+  });
+</script>
+</body>
+</html>

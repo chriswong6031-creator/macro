@@ -1,0 +1,468 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Materials (XLB) — cycle & holdings</title>
+<style>
+  :root { --bg:#0f1115; --panel:#181b21; --panel2:#1e222a; --text:#d7dce3;
+          --muted:#8b93a1; --line:#2a2f3a; }
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,
+         "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  a { color:#7aa7e0; text-decoration:none; }
+  h1 { font-size:20px; margin:0; }
+  h2 { font-size:14px; margin:0 0 10px; color:var(--muted); text-transform:uppercase;
+       letter-spacing:.06em; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+           padding:14px 16px; margin-bottom:14px; }
+  .topline { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+  .navbtn { background:var(--panel2); border:1px solid var(--line); color:#7aa7e0;
+            padding:5px 14px; border-radius:8px; font-size:13px; }
+  .muted { color:var(--muted); }
+  .pos { color:#5fbf7f; } .neg { color:#e07070; }
+  .state { display:inline-block; padding:2px 11px; border-radius:12px; font-weight:700;
+           font-size:12.5px; }
+  
+  .st-FRESH_BUY { background: #1d4a2c; color: #7fe0a0; }
+  
+  .st-TURN_SIGNALED { background: #1d3a4a; color: #8fd0f0; }
+  
+  .st-RALLY_ON { background: #1d3326; color: #6fce8f; }
+  
+  .st-BOTTOM_WATCH { background: #2b3340; color: #9fc0e8; }
+  
+  .st-TOP_WATCH { background: #38301a; color: #d8b75a; }
+  
+  .st-ROLLING_OVER { background: #4a2c1a; color: #e0a070; }
+  
+  .st-DECLINE { background: #3a2020; color: #e08080; }
+  
+  .scorebar { display:inline-block; width:90px; height:8px; background:var(--panel2);
+              border-radius:4px; overflow:hidden; vertical-align:middle; position:relative; }
+  .scorebar i { position:absolute; top:0; bottom:0; }
+  .card { background:var(--panel2); border:1px solid var(--line); border-radius:10px;
+          padding:12px 14px; margin:10px 0; }
+  .mtf { display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--muted);
+         margin-top:6px; }
+  .mtf b { color:var(--text); }
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px;
+          height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted);
+          font-size:10px; font-weight:600; cursor:help; position:relative;
+          vertical-align:middle; margin-left:5px; }
+  .help .tip { display:none; position:absolute; top:140%; left:50%;
+               transform:translateX(-50%); width:300px; background:#262b35;
+               border:1px solid #3a4150; padding:9px 11px; border-radius:8px; z-index:60;
+               font-size:12px; line-height:1.45; color:var(--text); font-weight:400;
+               box-shadow:0 6px 18px rgba(0,0,0,.5); pointer-events:none; }
+  .help:hover .tip { display:block; }
+  table { border-collapse:collapse; width:100%; font-size:13px; }
+  th,td { text-align:left; padding:4px 8px; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:500; }
+  .tv { margin-top:8px; border-radius:8px; overflow:hidden; }
+  details summary { cursor:pointer; color:#7aa7e0; font-size:12.5px; margin-top:6px; }
+</style>
+</head>
+<body>
+  <div class="panel">
+    <div class="topline">
+      <h1>Materials <span class="muted">(XLB)</span></h1>
+      <span class="state st-RALLY_ON">RALLY ON</span>
+      <span class="muted">cycle day 17 of ~36-42
+        · investor cycle week 12 (mid)</span>
+      <span style="flex:1"></span>
+      <a class="navbtn" href="../index.html">← Dashboard</a>
+    </div>
+    <p style="margin:10px 0 2px"><b>Day 17 of the cycle, trend intact above a rising 10-day average, weekly still mixed.</b></p>
+    <p class="muted" style="margin:4px 0">Next: Hold; first warning would be losing the 10-day average, bigger warning is a daily momentum cross down.</p>
+    <div class="mtf">
+      
+      <span><b>Daily</b> ·
+        RSI 57.0 · Stoch 59.0 ·
+        MACD 🟢 just crossed up</span>
+      
+      <span><b>3-Day</b> ·
+        RSI 57.0 · Stoch 32.0 ·
+        MACD 🔴</span>
+      
+      <span><b>Weekly</b> ·
+        RSI 61.0 · Stoch 59.0 ·
+        MACD 🔴</span>
+      
+      <span class="help">?<span class="tip">Three timeframes of the same instrument. The weekly sets the tide, the 3-day the wave, the daily the ripple — signals are strongest when they agree. 'Bars to cross' estimates when the MACD histogram reaches zero at its current pace — an 'about to turn' early warning, not a promise.</span></span>
+    </div>
+    
+    <p class="muted" style="margin:6px 0 0">Last completed cycle was <b>right-translated</b> (crested late — bullish structure).</p>
+  </div>
+
+  <div class="panel">
+    <h2>Chart</h2>
+    <div class="tv">
+      <div class="tradingview-widget-container">
+        <div id="tv_main"></div>
+        <script src="https://s3.tradingview.com/tv.js"></script>
+        <script>new TradingView.widget({"container_id":"tv_main","symbol":"XLB","interval":"D","theme":"dark","style":"1","height":440,"width":"100%","hide_side_toolbar":true,"allow_symbol_change":true,"studies":["RSI@tv-basicstudies","MACD@tv-basicstudies"]});</script>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Top 10 holdings — each analyzed on its own cycle
+      <span class="help">?<span class="tip">Every holding gets the same treatment as the ETF: daily-cycle position, multi-timeframe momentum, and a ladder state. The states carry measured base rates (table at the bottom). Weight = % of the ETF this stock represents — the top names drive the fund.</span></span>
+    </h2>
+    
+    <div class="card">
+      <div class="topline">
+        <b style="font-size:15px">LIN</b>
+        <span class="muted">Linde Plc</span>
+        <span class="muted">14.65% of fund</span>
+        <span class="state st-FRESH_BUY">FRESH BUY</span>
+        <span class="scorebar"><i style="left:50%;width:42.5%;background:#5fbf7f"></i></span>
+        <span class="muted">cycle day 39</span>
+      </div>
+      <p style="margin:7px 0 2px">A new cycle low likely formed 24 day(s) ago (2026-05-08 @ 491.61): swing low in, price back above the 10-day average — and the weekly timeframe agrees.</p>
+      <p class="muted" style="margin:3px 0">Next: The cleanest setup cycle logic offers — entry with a defined exit: invalidation = a close below 491.61.</p>
+      <div class="mtf">
+        
+        <span><b>D</b> RSI 62.0 · St 82.0 · MACD 🟢</span>
+        
+        <span><b>3D</b> RSI 64.0 · St 64.0 · MACD 🔴 ≈1.0b↑</span>
+        
+        <span><b>W</b> RSI 63.0 · St 39.0 · MACD 🟢</span>
+        
+        
+      </div>
+      <details><summary>chart</summary>
+        <div class="tradingview-widget-container" data-tvsym="LIN"></div>
+      </details>
+    </div>
+    
+    <div class="card">
+      <div class="topline">
+        <b style="font-size:15px">NUE</b>
+        <span class="muted">Nucor Corp</span>
+        <span class="muted">6.62% of fund</span>
+        <span class="state st-TOP_WATCH">TOP WATCH</span>
+        <span class="scorebar"><i style="left:50%;width:5.0%;right:50%;left:auto;background:#e07070"></i></span>
+        <span class="muted">cycle day 17</span>
+      </div>
+      <p style="margin:7px 0 2px">Mid-cycle (day 17) and short-term overbought (RSI 73).</p>
+      <p class="muted" style="margin:3px 0">Next: Not a short signal — just don't add here; pullbacks to the 10-day average are normal.</p>
+      <div class="mtf">
+        
+        <span><b>D</b> RSI 73.0 · St 34.0 · MACD 🔴 ≈4.3b↑</span>
+        
+        <span><b>3D</b> RSI 80.0 · St 66.0 · MACD 🟢</span>
+        
+        <span><b>W</b> RSI 83.0 · St 100.0 · MACD 🟢</span>
+        
+        
+      </div>
+      <details><summary>chart</summary>
+        <div class="tradingview-widget-container" data-tvsym="NUE"></div>
+      </details>
+    </div>
+    
+    <div class="card">
+      <div class="topline">
+        <b style="font-size:15px">NEM</b>
+        <span class="muted">Newmont Corp</span>
+        <span class="muted">6.48% of fund</span>
+        <span class="state st-DECLINE">DECLINE</span>
+        <span class="scorebar"><i style="left:50%;width:45.0%;right:50%;left:auto;background:#e07070"></i></span>
+        <span class="muted">cycle day 17</span>
+      </div>
+      <p style="margin:7px 0 2px">Failed cycle — price broke below the low that started this cycle, which historically means the larger trend is rolling over (~80% of cases). Last cycle was left-translated (topped early) — a bearish structural tell.</p>
+      <p class="muted" style="margin:3px 0">Next: Stand aside until a new daily cycle low forms and confirms.</p>
+      <div class="mtf">
+        
+        <span><b>D</b> RSI 42.0 · St 35.0 · MACD 🔴 ≈23.9b↑</span>
+        
+        <span><b>3D</b> RSI 45.0 · St 11.0 · MACD 🔴</span>
+        
+        <span><b>W</b> RSI 47.0 · St 7.0 · MACD 🔴</span>
+        
+        
+      </div>
+      <details><summary>chart</summary>
+        <div class="tradingview-widget-container" data-tvsym="NEM"></div>
+      </details>
+    </div>
+    
+    <div class="card">
+      <div class="topline">
+        <b style="font-size:15px">FCX</b>
+        <span class="muted">Freeport Mcmoran Inc</span>
+        <span class="muted">5.8% of fund</span>
+        <span class="state st-TURN_SIGNALED">TURN SIGNALED</span>
+        <span class="scorebar"><i style="left:50%;width:22.5%;background:#5fbf7f"></i></span>
+        <span class="muted">cycle day 28</span>
+      </div>
+      <p style="margin:7px 0 2px">A new cycle low likely formed 17 day(s) ago (2026-05-19 @ 58.7): swing low in, price back above the 10-day average — but the weekly timeframe hasn't turned yet, so conviction is partial.</p>
+      <p class="muted" style="margin:3px 0">Next: Either wait for the weekly to turn, or size half until it does.</p>
+      <div class="mtf">
+        
+        <span><b>D</b> RSI 57.0 · St 31.0 · MACD 🔴 ≈1.6b↑</span>
+        
+        <span><b>3D</b> RSI 57.0 · St 55.0 · MACD 🟢</span>
+        
+        <span><b>W</b> RSI 61.0 · St 42.0 · MACD 🔴</span>
+        
+        
+      </div>
+      <details><summary>chart</summary>
+        <div class="tradingview-widget-container" data-tvsym="FCX"></div>
+      </details>
+    </div>
+    
+    <div class="card">
+      <div class="topline">
+        <b style="font-size:15px">STLD</b>
+        <span class="muted">Steel Dynamics Inc</span>
+        <span class="muted">4.7% of fund</span>
+        <span class="state st-TOP_WATCH">TOP WATCH</span>
+        <span class="scorebar"><i style="left:50%;width:5.0%;right:50%;left:auto;background:#e07070"></i></span>
+        <span class="muted">cycle day 17</span>
+      </div>
+      <p style="margin:7px 0 2px">Mid-cycle (day 17) and short-term overbought (RSI 75).</p>
+      <p class="muted" style="margin:3px 0">Next: Not a short signal — just don't add here; pullbacks to the 10-day average are normal.</p>
+      <div class="mtf">
+        
+        <span><b>D</b> RSI 75.0 · St 51.0 · MACD 🟢</span>
+        
+        <span><b>3D</b> RSI 77.0 · St 79.0 · MACD 🟢</span>
+        
+        <span><b>W</b> RSI 82.0 · St 100.0 · MACD 🟢</span>
+        
+        
+      </div>
+      <details><summary>chart</summary>
+        <div class="tradingview-widget-container" data-tvsym="STLD"></div>
+      </details>
+    </div>
+    
+    <div class="card">
+      <div class="topline">
+        <b style="font-size:15px">VMC</b>
+        <span class="muted">Vulcan Materials Co</span>
+        <span class="muted">4.53% of fund</span>
+        <span class="state st-RALLY_ON">RALLY ON</span>
+        <span class="scorebar"><i style="left:50%;width:30.0%;background:#5fbf7f"></i></span>
+        <span class="muted">cycle day 17</span>
+      </div>
+      <p style="margin:7px 0 2px">Day 17 of the cycle, trend intact above a rising 10-day average, weekly aligned.</p>
+      <p class="muted" style="margin:3px 0">Next: Hold; first warning would be losing the 10-day average, bigger warning is a daily momentum cross down.</p>
+      <div class="mtf">
+        
+        <span><b>D</b> RSI 56.0 · St 75.0 · MACD 🟢</span>
+        
+        <span><b>3D</b> RSI 52.0 · St 76.0 · MACD 🟢</span>
+        
+        <span><b>W</b> RSI 51.0 · St 73.0 · MACD 🔴 ≈0.6b↑</span>
+        
+        
+      </div>
+      <details><summary>chart</summary>
+        <div class="tradingview-widget-container" data-tvsym="VMC"></div>
+      </details>
+    </div>
+    
+    <div class="card">
+      <div class="topline">
+        <b style="font-size:15px">SHW</b>
+        <span class="muted">Sherwin Williams Co/The</span>
+        <span class="muted">4.45% of fund</span>
+        <span class="state st-FRESH_BUY">FRESH BUY</span>
+        <span class="scorebar"><i style="left:50%;width:35.0%;background:#5fbf7f"></i></span>
+        <span class="muted">cycle day 58</span>
+      </div>
+      <p style="margin:7px 0 2px">A new cycle low likely formed 8 day(s) ago (2026-06-02 @ 293.0): swing low in, price back above the 10-day average — and the weekly timeframe agrees. Last cycle was left-translated (topped early) — a bearish structural tell.</p>
+      <p class="muted" style="margin:3px 0">Next: The cleanest setup cycle logic offers — entry with a defined exit: invalidation = a close below 293.0.</p>
+      <div class="mtf">
+        
+        <span><b>D</b> RSI 56.0 · St 91.0 · MACD 🟢</span>
+        
+        <span><b>3D</b> RSI 49.0 · St 59.0 · MACD 🟢</span>
+        
+        <span><b>W</b> RSI 46.0 · St 41.0 · MACD 🔴 ≈4.2b↑</span>
+        
+        
+      </div>
+      <details><summary>chart</summary>
+        <div class="tradingview-widget-container" data-tvsym="SHW"></div>
+      </details>
+    </div>
+    
+    <div class="card">
+      <div class="topline">
+        <b style="font-size:15px">CRH</b>
+        <span class="muted">Crh Plc</span>
+        <span class="muted">4.4% of fund</span>
+        <span class="state st-RALLY_ON">RALLY ON</span>
+        <span class="scorebar"><i style="left:50%;width:30.0%;background:#5fbf7f"></i></span>
+        <span class="muted">cycle day 17</span>
+      </div>
+      <p style="margin:7px 0 2px">Mixed structure.</p>
+      <p class="muted" style="margin:3px 0">Next: Watch the 10-day average and cycle-day count.</p>
+      <div class="mtf">
+        
+        <span><b>D</b> RSI 51.0 · St 63.0 · MACD 🟢</span>
+        
+        <span><b>3D</b> RSI 47.0 · St 36.0 · MACD 🔴</span>
+        
+        <span><b>W</b> RSI 46.0 · St 57.0 · MACD 🔴 ≈5.5b↑</span>
+        
+        
+      </div>
+      <details><summary>chart</summary>
+        <div class="tradingview-widget-container" data-tvsym="CRH"></div>
+      </details>
+    </div>
+    
+    <div class="card">
+      <div class="topline">
+        <b style="font-size:15px">APD</b>
+        <span class="muted">Air Products + Chemicals Inc</span>
+        <span class="muted">4.37% of fund</span>
+        <span class="state st-TOP_WATCH">TOP WATCH</span>
+        <span class="scorebar"><i style="left:50%;width:5.0%;right:50%;left:auto;background:#e07070"></i></span>
+        <span class="muted">cycle day 39</span>
+      </div>
+      <p style="margin:7px 0 2px">Late in the daily cycle (day 39 of ~36-42) — odds favor a dip into the next cycle low from here even with the trend intact.</p>
+      <p class="muted" style="margin:3px 0">Next: Let the next daily cycle low form before adding; watch for the swing-low setup.</p>
+      <div class="mtf">
+        
+        <span><b>D</b> RSI 44.0 · St 71.0 · MACD 🔴 ≈1.4b↑</span>
+        
+        <span><b>3D</b> RSI 47.0 · St 10.0 · MACD 🔴</span>
+        
+        <span><b>W</b> RSI 50.0 · St 8.0 · MACD 🔴</span>
+        
+        
+      </div>
+      <details><summary>chart</summary>
+        <div class="tradingview-widget-container" data-tvsym="APD"></div>
+      </details>
+    </div>
+    
+    <div class="card">
+      <div class="topline">
+        <b style="font-size:15px">CTVA</b>
+        <span class="muted">Corteva Inc</span>
+        <span class="muted">4.15% of fund</span>
+        <span class="state st-DECLINE">DECLINE</span>
+        <span class="scorebar"><i style="left:50%;width:40.0%;right:50%;left:auto;background:#e07070"></i></span>
+        <span class="muted">cycle day 32</span>
+      </div>
+      <p style="margin:7px 0 2px">Failed cycle — price broke below the low that started this cycle, which historically means the larger trend is rolling over (~80% of cases).</p>
+      <p class="muted" style="margin:3px 0">Next: Stand aside until a new daily cycle low forms and confirms.</p>
+      <div class="mtf">
+        
+        <span><b>D</b> RSI 40.0 · St 22.0 · MACD 🔴 ≈7.6b↑</span>
+        
+        <span><b>3D</b> RSI 46.0 · St 8.0 · MACD 🔴</span>
+        
+        <span><b>W</b> RSI 50.0 · St 0.0 · MACD 🔴</span>
+        
+        
+      </div>
+      <details><summary>chart</summary>
+        <div class="tradingview-widget-container" data-tvsym="CTVA"></div>
+      </details>
+    </div>
+    
+  </div>
+
+  <div class="panel">
+    <h2>How much to trust these states — measured, not promised
+      <span class="help">?<span class="tip">Every trading day since 2000, across sector ETFs and large stocks, we computed the same ladder state from data available at the time and measured what price did over the next month. These are those base rates. They are tendencies with real spread around them — position sizing beats certainty.</span></span>
+    </h2>
+    
+    <table>
+      <tr><th>state</th><th>samples</th><th>up next month</th><th>avg next month</th></tr>
+      
+      <tr>
+        <td><span class="state st-DECLINE">DECLINE</span></td>
+        <td>8556</td>
+        <td>60.8%</td>
+        <td class="pos">+2.37%</td>
+      </tr>
+      
+      <tr>
+        <td><span class="state st-BOTTOM_WATCH">BOTTOM WATCH</span></td>
+        <td>10391</td>
+        <td>58.8%</td>
+        <td class="pos">+1.56%</td>
+      </tr>
+      
+      <tr>
+        <td><span class="state st-TURN_SIGNALED">TURN SIGNALED</span></td>
+        <td>16149</td>
+        <td>58.9%</td>
+        <td class="pos">+1.43%</td>
+      </tr>
+      
+      <tr>
+        <td><span class="state st-FRESH_BUY">FRESH BUY</span></td>
+        <td>14099</td>
+        <td>57.7%</td>
+        <td class="pos">+1.11%</td>
+      </tr>
+      
+      <tr>
+        <td><span class="state st-RALLY_ON">RALLY ON</span></td>
+        <td>11763</td>
+        <td>59.1%</td>
+        <td class="pos">+1.36%</td>
+      </tr>
+      
+      <tr>
+        <td><span class="state st-TOP_WATCH">TOP WATCH</span></td>
+        <td>8739</td>
+        <td>58.0%</td>
+        <td class="pos">+1.06%</td>
+      </tr>
+      
+      <tr>
+        <td><span class="state st-ROLLING_OVER">ROLLING OVER</span></td>
+        <td>2910</td>
+        <td>57.5%</td>
+        <td class="pos">+1.09%</td>
+      </tr>
+      
+    </table>
+    <p style="margin:10px 0 0"><b>Read the table before trusting any state.</b>
+      <span class="muted">What it shows: stocks drift up over a month from EVERY state
+      (that's the market's long upward bias), the spread between states is small, and the
+      "scary" states measured slightly BETTER forward returns than the buy states —
+      markets mean-revert, and waiting for full confirmation costs part of the bounce.
+      So use the ladder for <b>structure</b>: where you are in the cycle, what would
+      confirm a turn, and exactly where you're wrong (the invalidation price) — and use
+      position size, not certainty, to express conviction. It is not a return predictor,
+      and the table proves we checked.</span></p>
+    
+    <p class="muted" style="font-size:12px">Cycle methodology after graddhy.com / thefinancialtap.com: equity daily cycles
+       typically run 36-42 trading days trough-to-trough; timing bands catch roughly 70% of lows, so ~3 in 10 arrive
+       early or late — that's why confirmation (swing low, 10-day average) gates every buy state. Charts by TradingView.</p>
+  </div>
+
+<script>
+  // lazy-create TradingView mini charts only when a card's <details> opens
+  document.querySelectorAll('details').forEach(function (d) {
+    d.addEventListener('toggle', function () {
+      if (!d.open) return;
+      var box = d.querySelector('[data-tvsym]');
+      if (!box || box.dataset.done) return;
+      box.dataset.done = '1';
+      var s = document.createElement('script');
+      s.src = 'https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js';
+      s.async = true;
+      s.text = JSON.stringify({symbol: box.dataset.tvsym, width: '100%', height: 200,
+                               dateRange: '6M', colorTheme: 'dark', isTransparent: true});
+      box.appendChild(s);
+    });
+  });
+</script>
+</body>
+</html>

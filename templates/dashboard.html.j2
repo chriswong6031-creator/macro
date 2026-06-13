@@ -478,10 +478,11 @@
         </span></span></th>
         <th>{{ month_name }} tendency {{ help("This instrument's average return in this calendar month across its whole history, and how often the month was positive. Weak evidence by nature — context, never a signal on its own (and deliberately excluded from the heat score).") }}</th>
         <th>to trigger {{ help("For sectors below their long-term relative trend: how much more outperformance vs SPY is needed for the trend to cross (= the data-backed buy confirmation), and how far along it already is from its recent low. Small gap + high progress = watch closely.") }}</th>
+        <th>cycle timing {{ help("From the sector's own price cycle (click the sector name for the full drill-down): where it sits in its ~36-42 trading-day cycle and how many of its top-10 holdings are currently in a buy state (FRESH BUY or TURN SIGNALED). The per-state historical base rates live on the drill-down page.") }}</th>
       </tr>
       {% for r in sector_rows %}
       <tr>
-        <td class="l"><b>{{ r.ticker }}</b> <span class="muted">{{ r.name }}</span></td>
+        <td class="l"><a href="sectors/{{ r.ticker }}.html"><b>{{ r.ticker }}</b></a> <span class="muted">{{ r.name }}</span></td>
         <td class="l">
           <span class="help" style="width:auto;height:auto;border:none;margin:0;border-radius:6px">
             <span style="display:inline-flex;align-items:center;gap:7px;cursor:help">
@@ -502,9 +503,16 @@
           </span>
         </td>
         <td>{{ r.trigger_str }}</td>
+        <td>
+          {% if r.timing_state %}
+            <span class="pill" style="background:{{ r.timing_style[0] }};color:{{ r.timing_style[1] }}">{{ r.timing_state }}</span>
+            <div class="muted" style="font-size:11px">{{ r.timing_note }}</div>
+          {% else %}—{% endif %}
+        </td>
       </tr>
       {% endfor %}
     </table>
+    <p class="muted" style="font-size:12px">Click any sector for its full drill-down: cycle position, multi-timeframe momentum, and each top-10 holding analyzed individually.</p>
   </div>
 
   <div class="panel span6">
