@@ -6,7 +6,11 @@ split-half validated):
 
 1. INDEX-LEVEL RISK is where the regime earns its keep:
    - Fed liquidity expanding was the most robust bullish conditional in BOTH
-     halves of the sample (~+1.3-2.0%/21d, 72-74% positive, shallower drawdowns).
+     halves of the sample — but the robust part is the DIRECTION/odds (more
+     months positive than when contracting; shallower drawdowns), NOT the
+     average-return magnitude, which is fragile at the honest sample size
+     (net liquidity is a single macro series ≈ a few hundred episodes, not
+     asset-days). So the dial leads with the odds, not a point forecast.
    - Q3 (stagflation) was the weakest quad for forward returns in both halves.
    - Risk-off quads (Q3/Q4) ran materially deeper 3-month drawdowns; average
      returns there are flattered by rebounds — the ride is worse, not the mean.
@@ -225,20 +229,46 @@ def exposure_dial(latest: dict, evidence: dict) -> dict:
     reasons = []
 
     liq = latest["liquidity_overlay"]
+    ev_exp = evidence.get("liquidity_expanding")
+    ev_con = evidence.get("liquidity_contracting")
+    exp_hit = ev_exp["fwd21_hit_pct"] if ev_exp else None
+    con_hit = ev_con["fwd21_hit_pct"] if ev_con else None
+    # The robust edge here is DIRECTIONAL/odds, not the average-return magnitude:
+    # net liquidity is a single macro series (~= a few hundred episodes, not
+    # asset-days), and at that honest N the return gap is fragile while the
+    # hit-rate gap holds up. So lead with the odds and call it odds, not a point
+    # forecast — fwd21_avg_pct is deliberately dropped from this narrative (same
+    # drawdown/odds-over-avg-return lesson as the risk-off caveat below). The
+    # regime read itself is lagged 3 business days (regime.py:liquidity_overlay)
+    # — a trader's real-time info set, not look-ahead.
     if liq == "expanding":
         score += 1
-        ev = evidence.get("liquidity_expanding")
-        reasons.append(("+", "Fed liquidity is expanding — historically the single most "
-                        "reliable tailwind"
-                        + (f" (S&P +{ev['fwd21_avg_pct']}% avg next month, "
-                           f"{ev['fwd21_hit_pct']}% positive)" if ev else ""),
-                        "美联储流动性正在扩张 — 历来是最可靠的单一顺风因素"
-                        + (f"（S&P 次月平均 +{ev['fwd21_avg_pct']}%，"
-                           f"{ev['fwd21_hit_pct']}% 为正）" if ev else "")))
+        odds_en = ((f" (S&P positive next month ~{exp_hit}% of the time"
+                    + (f" vs ~{con_hit}% when contracting" if con_hit is not None else "")
+                    + " — odds, not a point forecast: one macro series ≈ a few "
+                      "hundred episodes, not asset-days; regime read lagged 3bd)")
+                   if exp_hit is not None else "")
+        odds_zh = ((f"（S&P 次月为正的概率约 {exp_hit}%"
+                    + (f"，收缩时约 {con_hit}%" if con_hit is not None else "")
+                    + " — 这是胜率而非点预测：单一宏观序列 ≈ 数百个事件而非资产日；"
+                      "周期读数滞后 3 个交易日）")
+                   if exp_hit is not None else "")
+        reasons.append(("+", "Fed liquidity is expanding — historically the most "
+                        "reliable directional tailwind" + odds_en,
+                        "美联储流动性正在扩张 — 历来是最可靠的方向性顺风" + odds_zh))
     elif liq == "contracting":
         score -= 1
-        reasons.append(("-", "Fed liquidity is contracting — a persistent headwind for risk assets",
-                        "美联储流动性正在收缩 — 对风险资产构成持续逆风"))
+        odds_en = ((f" (S&P positive next month only ~{con_hit}% of the time"
+                    + (f" vs ~{exp_hit}% when expanding" if exp_hit is not None else "")
+                    + " — odds, not a point forecast; regime read lagged 3bd)")
+                   if con_hit is not None else "")
+        odds_zh = ((f"（S&P 次月为正的概率仅约 {con_hit}%"
+                    + (f"，扩张时约 {exp_hit}%" if exp_hit is not None else "")
+                    + " — 这是胜率而非点预测；周期读数滞后 3 个交易日）")
+                   if con_hit is not None else "")
+        reasons.append(("-", "Fed liquidity is contracting — a persistent headwind "
+                        "for risk assets" + odds_en,
+                        "美联储流动性正在收缩 — 对风险资产构成持续逆风" + odds_zh))
 
     quad = latest["quad"]
     state = latest["transition_state"]
