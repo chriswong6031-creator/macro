@@ -1,0 +1,85 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><span class="l-en">ETF flow radar — what funds are accumulating</span><span class="l-zh">ETF 资金雷达 — 基金在增持什么</span></title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,
+         "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1200px)/2)); } }
+  a { text-decoration:none; }
+  h1 { font-size:20px; margin:0; }
+  h2 { font-size:14px; margin:0 0 10px; color:var(--muted); text-transform:uppercase;
+       letter-spacing:.06em; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+           padding:14px 16px; margin-bottom:14px; }
+  .topline { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+  .muted { color:var(--muted); }
+  .state { display:inline-block; padding:2px 11px; border-radius:12px; font-weight:700;
+           font-size:12.5px; }
+  table { border-collapse:collapse; width:100%; font-size:13px; }
+  th,td { text-align:left; padding:5px 8px; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:500; }
+  td.r, th.r { text-align:right; }
+  .pos { color:var(--up); } .neg { color:var(--down); }
+  .tag { display:inline-block; padding:1px 8px; border-radius:8px; font-size:11px;
+         font-weight:600; }
+  .tag-active { background:color-mix(in srgb,var(--info) 15%,var(--panel));
+                color:color-mix(in srgb,var(--info) 80%,var(--text)); }
+  .tag-passive { background:color-mix(in srgb,var(--muted) 15%,var(--panel));
+                 color:var(--muted); }
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px;
+          height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted);
+          font-size:10px; font-weight:600; cursor:help; position:relative;
+          vertical-align:middle; margin-left:5px; }
+  .help .tip { display:none; position:absolute; top:140%; left:50%;
+               transform:translateX(-50%); width:320px; background:var(--panel);
+               border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60;
+               font-size:12px; line-height:1.45; color:var(--text); font-weight:400;
+               box-shadow:var(--popover-shadow); pointer-events:none; }
+  .help:hover .tip { display:block; }
+  .navbtn, .lang-btn, .theme-btn { font-size:12.5px; padding:5px 11px; border-radius:8px;
+    border:1px solid var(--line); background:var(--panel2); color:var(--text); cursor:pointer; }
+</style>
+</head>
+<body>
+  <div class="panel">
+    <div class="topline">
+      <h1>🐳 <span class="l-en">ETF flow radar</span><span class="l-zh">ETF 资金雷达</span></h1>
+      <span class="muted"><span class="l-en">what funds are accumulating & trimming</span><span class="l-zh">基金在增持与减持什么</span></span>
+      <span style="flex:1"></span>
+      <a class="navbtn" href="macro.html"><span class="l-en">← Dashboard</span><span class="l-zh">← 仪表盘</span></a>
+      <a class="navbtn" href="stock.html"><span class="l-en">🔎 Any stock</span><span class="l-zh">🔎 任意股票</span></a>
+      <button class="lang-btn">中文</button>
+      <button class="theme-btn">☀️ <span class="l-en">Light</span><span class="l-zh">浅色</span></button>
+    </div>
+    <p class="muted" style="margin:10px 0 0"><span class="l-en">For each tracked ETF we diff its daily holdings and strip out mechanical creation/redemption flow, leaving the fund's actual SHARE decision per position (flow-normalized). A big positive number = the fund added to a name beyond what fund in/outflows explain.</span><span class="l-zh">对每只跟踪的 ETF，我们比对其每日持仓并剔除机械性的申购／赎回资金流，留下基金对每个仓位的真实“份额决策”（已按资金流标准化）。较大的正值=基金在该股上的增持超过了资金进出所能解释的部分。</span>
+      <span class="help">?<span class="tip"><span class="l-en">Two honest readings: on ACTIVELY managed funds (ARK etc.) a large active share change is genuine manager conviction. On PASSIVE index/sector funds (SPDR, iShares) there is no discretionary manager — the change is index reconstitution / float-weight rebalancing (forced index-fund buying). Both are real institutional flow; the tag tells you which. Where a holding has its own price history, its cycle state is shown (✅ = accumulation that also has a forming buy setup). Thresholds are uncalibrated and signals need ≥2 daily snapshots to appear.</span><span class="l-zh">两种诚实的解读：在主动管理基金（如 ARK）上，较大的主动份额变动是真实的经理人信念。在被动指数／板块基金（SPDR、iShares）上没有主动经理——变动来自指数再平衡／流通权重调整（被动强制买入）。两者都是真实的机构资金流；标签会告诉你属于哪种。若某持仓有自身价格历史，会显示其周期状态（✅=增持同时出现正在形成的买入形态）。阈值尚未校准，且信号需要≥2个每日快照才会出现。</span></span></span>
+    </p>
+  </div>
+
+  <div class="panel">
+    <h2><span class="l-en">Biggest fund share decisions</span><span class="l-zh">基金最大份额决策</span></h2>
+    
+    <p class="muted"><span class="l-en">Building — the collector writes one full-holdings snapshot per ETF per day; flow-normalized decisions appear once each fund has at least two snapshots. Coverage grows as the universe in config.yml is expanded toward the top ~200.</span><span class="l-zh">构建中 — 采集器每天为每只 ETF 写入一份完整持仓快照；当每只基金至少有两个快照后，按资金流标准化的决策即会显示。随着 config.yml 中的范围扩展至前约 200 只，覆盖面会增加。</span></p>
+    
+  </div>
+
+  <div class="panel">
+    <p class="muted" style="font-size:12px;margin:0"><span class="l-en">Coverage: SPDR / State Street, ARK, Invesco and Global X are verified daily holdings feeds (with shares). iShares and Schwab are blocked by anti-bot / consent walls, and Vanguard publishes no free daily feed, so those funds are absent — not a daily signal we can source cleanly. A fund missing here failed today's fetch and is skipped, never crashing the page. See LIMITATIONS.md.</span><span class="l-zh">覆盖范围：SPDR／道富、ARK、Invesco 与 Global X 为已验证的每日持仓数据（含份额）。iShares 与嘉信因反爬／同意墙被屏蔽，Vanguard 无免费每日数据，故这些基金缺失——无法干净地作为每日信号获取。此处缺失的基金为今日抓取失败并被跳过，绝不会使页面崩溃。详见 LIMITATIONS.md。</span>
+      <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-13 09:38 UTC</p>
+  </div>
+
+<script src="theme.js"></script>
+<footer class="site-footer">
+  <span class="made">Made with ❤️ in Canada</span>
+  <span class="dev">Developed by Chris Wong</span>
+</footer>
+</body>
+</html>

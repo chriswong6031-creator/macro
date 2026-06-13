@@ -1,0 +1,194 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Watchlist — your holdings &amp; their signals</title>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<script>
+  // engine + page config injected at build time (the watchlist is pure client
+  // state — these globals are the only server-provided inputs)
+  window.STATE_DISPLAY = {"DECLINE": {"label": "DOWNTREND", "action": "AVOID", "dir": "down", "label_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "action_zh": "\u56de\u907f"}, "BOTTOM WATCH": {"label": "NEARING A LOW", "action": "GET READY", "dir": "down", "label_zh": "\u63a5\u8fd1\u4f4e\u70b9", "action_zh": "\u51c6\u5907"}, "TURN SIGNALED": {"label": "BOTTOMING", "action": "BUY SETUP", "dir": "up", "label_zh": "\u7b51\u5e95\u4e2d", "action_zh": "\u4e70\u5165\u9884\u5907"}, "FRESH BUY": {"label": "BUY ZONE", "action": "BUY", "dir": "up", "label_zh": "\u4e70\u5165\u533a", "action_zh": "\u4e70\u5165"}, "RALLY ON": {"label": "UPTREND", "action": "HOLD", "dir": "up", "label_zh": "\u4e0a\u6da8\u8d8b\u52bf", "action_zh": "\u6301\u6709"}, "TOP WATCH": {"label": "NEARING A HIGH", "action": "TAKE PROFITS", "dir": "up", "label_zh": "\u63a5\u8fd1\u9ad8\u70b9", "action_zh": "\u6b62\u76c8"}, "ROLLING OVER": {"label": "TOPPING", "action": "SELL SETUP", "dir": "down", "label_zh": "\u505a\u9876\u4e2d", "action_zh": "\u5356\u51fa\u9884\u5907"}, "COUNTERTREND BOUNCE": {"label": "COUNTER-TREND BOUNCE", "action": "HIGH-RISK \u00b7 NIMBLE ONLY", "dir": "caution", "label_zh": "\u9006\u52bf\u53cd\u5f39", "action_zh": "\u9ad8\u98ce\u9669 \u00b7 \u4ec5\u9650\u7075\u6d3b\u64cd\u4f5c"}};
+  window.SUPABASE_CFG  = {"url": "https://fsldfzlxyavsuwqbceod.supabase.co", "anonKey": "sb_publishable_f33VG8fZuyIZPl_lZIDX3w_RFuuZtpv"};   // null => local-only build
+  window.WL_STARTERS   = ["SPY", "QQQ", "BTC-USD", "GC=F"];
+</script>
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,
+         "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1100px)/2)); } }
+  a { text-decoration:none; }
+  h1 { font-size:20px; margin:0; }
+  h2 { font-size:13px; margin:0 0 9px; color:var(--muted); text-transform:uppercase;
+       letter-spacing:.06em; }
+  .muted { color:var(--muted); }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+           padding:14px 16px; margin-bottom:14px; }
+  .topline { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+  /* ---- search (cloned from the analyzer) ---- */
+  .searchwrap { position:relative; flex:1; min-width:240px; max-width:460px; }
+  #wl_q { width:100%; padding:10px 14px; border-radius:10px; border:1px solid var(--line);
+       background:var(--panel2); color:var(--text); font-size:15px; outline:none; }
+  #wl_q:focus { border-color:var(--link); }
+  #wl_sugg { position:absolute; top:104%; left:0; right:0; background:var(--panel);
+          border:1px solid var(--line); border-radius:10px; z-index:50; max-height:330px;
+          overflow:auto; display:none; box-shadow:var(--popover-shadow); }
+  #wl_sugg div { padding:8px 13px; cursor:pointer; display:flex; gap:10px; align-items:center; }
+  #wl_sugg div:hover, #wl_sugg div.sel { background:var(--panel2); }
+  #wl_sugg b { min-width:58px; } #wl_sugg small { color:var(--muted); flex:1; }
+  .wl-sst { font-size:11px; white-space:nowrap; }
+  /* ---- sync / account bar ---- */
+  .wl-syncbar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .wl-pill { font-size:11.5px; font-weight:700; padding:3px 9px; border-radius:8px;
+             border:1px solid transparent; }
+  .wl-pill-synced { background:color-mix(in srgb,var(--up) 15%,var(--panel)); color:var(--up); }
+  .wl-pill-syncing { background:color-mix(in srgb,var(--info) 15%,var(--panel)); color:var(--info); }
+  .wl-pill-local, .wl-pill-offline { background:var(--panel2); color:var(--muted); }
+  .wl-in { padding:7px 11px; border-radius:8px; border:1px solid var(--line);
+           background:var(--panel2); color:var(--text); font-size:13px; outline:none; }
+  .wl-btn { background:var(--panel2); border:1px solid var(--line); color:var(--link);
+            padding:7px 13px; border-radius:8px; font-size:13px; cursor:pointer; }
+  .wl-btn:hover { border-color:var(--link); }
+  .wl-btn:disabled { opacity:.5; cursor:default; }
+  #wl_authbox, #wl_codestep, #wl_account { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  /* ---- controls ---- */
+  .wl-controls { display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin:2px 2px 14px; }
+  .wl-controls label { display:flex; gap:7px; align-items:center; font-size:13px; color:var(--muted); }
+  .wl-controls select { background:var(--panel2); color:var(--text); border:1px solid var(--line);
+            border-radius:8px; padding:5px 9px; font-size:13px; }
+  .wl-soonpill { color:var(--info); font-weight:700; font-size:13px; }
+  /* ---- cards ---- */
+  .wl-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:12px; }
+  .wl-card { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+             padding:12px 14px; border-left:3px solid transparent; }
+  .wl-card.wl-buysoon { border-left-color:var(--info);
+             background:color-mix(in srgb,var(--info) 5%,var(--panel)); }
+  .wl-card.wl-gone { opacity:.72; }
+  .wl-top { display:flex; align-items:center; gap:8px; }
+  .wl-name { color:var(--text); font-size:15px; flex:1; }
+  .wl-name b { font-weight:800; } .wl-cn { font-weight:400; font-size:12.5px; }
+  .wl-rm { background:transparent; border:0; color:var(--muted); cursor:pointer;
+           font-size:14px; line-height:1; padding:3px 7px; border-radius:7px; }
+  .wl-rm:hover { color:#fff; background:var(--down); }
+  .wl-sig { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:7px; }
+  .state { display:inline-block; padding:2px 10px; border-radius:11px; font-weight:700;
+           font-size:12px; border:1px solid transparent; }
+  .wl-action { font-size:12px; font-weight:600; }
+  .wl-sector { font-size:11.5px; margin-left:auto; }
+  .wl-enrich:not(:empty) { margin-top:9px; padding-top:9px; border-top:1px solid var(--line); }
+  .wl-summary { font-size:12.5px; margin:0 0 6px; line-height:1.5; }
+  .wl-entry { display:inline-flex; gap:7px; align-items:center; padding:4px 10px; border-radius:8px;
+              font-size:12px; border:1px solid transparent; margin:2px 0 6px; }
+  .wl-etag { font-weight:800; letter-spacing:.03em; }
+  .wl-px { font-size:12px; margin:2px 0 4px; }
+  .wl-mtf { margin-top:4px; }
+  /* ---- empty / chips / banner / toast ---- */
+  #wl_empty { display:none; }
+  .wl-chip { background:var(--panel2); border:1px solid var(--line); border-radius:8px;
+             padding:6px 11px; margin:5px 6px 0 0; cursor:pointer; color:var(--text); font-size:13px; }
+  .wl-chip:hover { border-color:var(--link); }
+  .wl-banner { display:none; margin-bottom:14px; padding:10px 14px; border-radius:9px;
+               font-size:13px; background:color-mix(in srgb,var(--warn) 14%,var(--panel));
+               border:1px solid color-mix(in srgb,var(--warn) 35%,transparent); color:var(--text); }
+  #wl_export { width:100%; min-height:54px; resize:vertical; }
+  .wl-toast { position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(20px);
+              background:var(--panel); color:var(--text); border:1px solid var(--line);
+              border-radius:10px; padding:10px 16px; font-size:13px; font-weight:600;
+              box-shadow:var(--popover-shadow); opacity:0; pointer-events:none; transition:.25s; z-index:90; }
+  .wl-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  .wl-toast.bad { border-color:var(--down); color:var(--down); }
+</style>
+</head>
+<body>
+  <div class="panel">
+    <div class="topline">
+      <h1>📋 <span class="l-en">Watchlist</span><span class="l-zh">持仓清单</span></h1>
+      <div class="searchwrap">
+        <input id="wl_q" autocomplete="off">
+        <div id="wl_sugg"></div>
+      </div>
+      <span id="wl_count"></span>
+      <span style="flex:1"></span>
+      <a class="navbtn" href="index.html"><span class="l-en">← Dashboard</span><span class="l-zh">← 仪表盘</span></a>
+      <a class="navbtn" href="stock.html"><span class="l-en">🔎 Analyzer</span><span class="l-zh">🔎 分析</span></a>
+      <button class="lang-btn">中文</button>
+      <button class="theme-btn">☀️ Light</button>
+    </div>
+    <p class="muted" style="margin:8px 0 0"><span class="l-en">Your holdings, each with its current signal from the analyzer — bottoming, buy-zone, uptrend
+       or avoid — plus momentum across timeframes. Saved in this browser; sign in to sync across
+       devices. Add equities, ETFs, commodities or crypto with the search above.</span><span class="l-zh">你的持仓，每个都带有来自分析器的当前信号——筑底、买入区、上涨趋势或回避——以及跨周期动量。
+       保存在本浏览器中；登录后可跨设备同步。用上方搜索添加股票、ETF、大宗商品或加密货币。</span></p>
+  </div>
+
+  <!-- sync / account bar (hidden entirely when Supabase isn't configured) -->
+  <div class="panel" id="wl_auth" style="display:none">
+    <div class="wl-syncbar">
+      <h2 style="margin:0"><span class="l-en">Account sync</span><span class="l-zh">账户同步</span></h2>
+      <span id="wl_syncpill" class="wl-pill wl-pill-local"></span>
+      <span style="flex:1"></span>
+      <button class="wl-btn" id="wl_signin"></button>
+      <div id="wl_authbox" style="display:none">
+        <input class="wl-in" id="wl_email" type="email">
+        <button class="wl-btn" id="wl_send"></button>
+        <span id="wl_sent" class="muted" style="display:none"></span>
+      </div>
+      <div id="wl_account" style="display:none">
+        <span class="muted" id="wl_who"></span>
+        <button class="wl-btn" id="wl_signout"></button>
+      </div>
+    </div>
+  </div>
+
+  <div id="wl_banner" class="wl-banner"></div>
+
+  <div class="wl-controls" id="wl_controls" style="display:none">
+    <label><span id="wl_sortlbl"></span>
+      <select id="wl_sort">
+        <option value="order"></option><option value="added"></option>
+        <option value="name"></option><option value="sector"></option><option value="signal"></option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="wl_buysoon"> <span id="wl_buysoonlbl"></span></label>
+  </div>
+
+  <div id="wl_list" class="wl-grid"></div>
+
+  <div class="panel" id="wl_empty">
+    <p class="muted" id="wl_emptymsg"></p>
+    <div id="wl_starters"></div>
+    <script>document.getElementById('wl_emptymsg').textContent =
+      (document.documentElement.getAttribute('data-lang')==='zh'
+        ? '清单为空。在上方搜索以添加持仓——股票、ETF、大宗商品或加密货币。'
+        : 'Your watchlist is empty. Search above to add a holding — equity, ETF, commodity or crypto.');</script>
+  </div>
+
+  <details class="panel">
+    <summary style="cursor:pointer; font-weight:600"><span class="l-en">Export / import (move to another device)</span><span class="l-zh">导出 / 导入（迁移到其他设备）</span></summary>
+    <p class="muted" style="font-size:12.5px; margin:8px 0"><span class="l-en">Your list lives in this browser. Copy a share link to open it on your phone, or paste a code to merge another list in. (Sign in above for automatic cross-device sync.)</span><span class="l-zh">你的清单保存在本浏览器中。复制分享链接即可在手机上打开，或粘贴代码以合并另一份清单。（在上方登录可自动跨设备同步。）</span></p>
+    <div style="display:flex; gap:8px; align-items:flex-start; flex-wrap:wrap; margin-bottom:8px">
+      <textarea class="wl-in" id="wl_export" readonly></textarea>
+    </div>
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+      <button class="wl-btn" id="wl_copylink"><span class="l-en">Copy share link</span><span class="l-zh">复制分享链接</span></button>
+      <input class="wl-in" id="wl_import" placeholder="paste code to import" style="flex:1; min-width:200px">
+      <button class="wl-btn" id="wl_importbtn"><span class="l-en">Import</span><span class="l-zh">导入</span></button>
+    </div>
+  </details>
+
+  <div id="wl_toast" class="wl-toast"></div>
+
+<script src="stockdata.js"></script>
+<script src="watchlist.js"></script>
+<script src="auth.js"></script>
+<script src="mtf.js"></script>
+<script src="theme.js"></script>
+<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-13 10:09 UTC ·
+  <span class="l-en">signals refresh nightly · mechanical, backtested, free public data · not investment advice</span><span class="l-zh">信号每晚刷新 · 机械化 · 经回测 · 免费公开数据 · 非投资建议</span></p>
+<footer class="site-footer">
+  <span class="made"><span class="l-en">Made with ❤️ in Canada</span><span class="l-zh">用 ❤️ 在加拿大制作</span></span>
+  <span class="dev"><span class="l-en">Developed by</span><span class="l-zh">开发者</span> Chris Wong</span>
+</footer>
+</body>
+</html>
