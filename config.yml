@@ -212,13 +212,13 @@ bgeo:
   daily_request_budget: 14        # of 15/day per IP — leave 1 spare (added coinbase-premium + cdd)
   page_size: 5000
   # priority order: first entries fetched first when quota is tight
-  metrics:                        # endpoint -> column name
+  metrics:                        # endpoint -> column name (first = fetched first when quota tight)
     sopr: sopr
     sth-sopr: sth_sopr
     lth-sopr: lth_sopr
     sth-realized-price: sth_realized_price
     realized-price: realized_price
-    supply-profit: supply_in_profit
+    bitcoin-dominance: btc_dominance   # promoted into the daily-fetched top-10 (API caps 10 req/hr → positions 11+ never run in a daily CI pass); feeds alts_rs + alt_cycle
     # exchange-netflow-btc: 403 on free tier (verified 2026-06-13) — flows are
     # covered by etf_flow + stablecoins + miner_sell_pressure; exchange-reserve-btc
     # is an untested candidate if a slot frees up
@@ -226,9 +226,8 @@ bgeo:
     funding-rate: funding_rate
     open-interest-futures: open_interest_futures
     etf-flow-btc: etf_flow_btc
-    bitcoin-dominance: btc_dominance
-    cdd: cdd                     # coin-days-destroyed -> dormancy/liveliness (bottoms-side
-                                 # behaviour signal, deferred until seeded; was 429 this run)
+    supply-profit: supply_in_profit   # demoted below the 10/hr cap: slow-moving fraction + already seeded, so daily skips don't lose history
+    cdd: cdd                     # coin-days-destroyed -> dormancy/liveliness (now seeded; tops up when quota allows)
     coinbase-premium-index: coinbase_premium   # US institutional demand (Coinbase−Binance); lowest priority → skipped first under quota
 
 coinbase:
