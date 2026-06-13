@@ -27,6 +27,7 @@ class Alert:
     rule: str
     severity: str
     message: str
+    message_zh: str = ""
 
 
 def _regime_history() -> pd.DataFrame | None:
@@ -57,7 +58,9 @@ def transition_state_change(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None
                "TRANSITIONING": "act", "NEW_REGIME": "act"}.get(cur["transition_state"], "info")
         return Alert("transition_state_change", sev,
                      f"Transition state {prev['transition_state']} -> {cur['transition_state']} "
-                     f"({int(cur['n_flags'])} flags active)")
+                     f"({int(cur['n_flags'])} flags active)",
+                     message_zh=f"转换状态 {prev['transition_state']} -> {cur['transition_state']}"
+                                f"（{int(cur['n_flags'])} 个预警激活）")
     return None
 
 
@@ -73,7 +76,9 @@ def axis_confidence_floor(hist: pd.DataFrame, f: pd.DataFrame) -> list[Alert]:
         if prev[col] >= floor > cur[col]:
             out.append(Alert(f"{axis}_confidence_floor", "warn",
                              f"{axis.capitalize()} axis confidence dropped below {floor:.0%}: "
-                             f"{prev[col]:.0%} -> {cur[col]:.0%}"))
+                             f"{prev[col]:.0%} -> {cur[col]:.0%}",
+                             message_zh=f"{axis.capitalize()} 轴一致度跌破 {floor:.0%}："
+                                        f"{prev[col]:.0%} -> {cur[col]:.0%}"))
     return out
 
 
@@ -97,10 +102,12 @@ def sector_rs_percentile_cross(hist: pd.DataFrame, f: pd.DataFrame) -> list[Aler
         y, t_ = pct.dropna().iloc[-2], pct.dropna().iloc[-1]
         if y < hi <= t_:
             out.append(Alert("sector_rs_cross_high", "info",
-                             f"{t} RS vs {bench} crossed above {hi}th pctile of 90d (now {t_:.0f})"))
+                             f"{t} RS vs {bench} crossed above {hi}th pctile of 90d (now {t_:.0f})",
+                             message_zh=f"{t} RS 相对 {bench} 上穿 90 天第 {hi} 百分位（现为 {t_:.0f}）"))
         elif y > lo >= t_:
             out.append(Alert("sector_rs_cross_low", "info",
-                             f"{t} RS vs {bench} crossed below {lo}th pctile of 90d (now {t_:.0f})"))
+                             f"{t} RS vs {bench} crossed below {lo}th pctile of 90d (now {t_:.0f})",
+                             message_zh=f"{t} RS 相对 {bench} 下穿 90 天第 {lo} 百分位（现为 {t_:.0f}）"))
     return out
 
 
@@ -119,7 +126,51 @@ def holdings_active_changes(hist: pd.DataFrame, f: pd.DataFrame) -> list[Alert]:
             out.append(Alert("holdings_active_change", "info",
                              f"{ticker}: manager {verb} {pos} by {row['active_chg_pct']:+.0f}% "
                              f"of position ({row['window_start']}..{row['window_end']}, "
-                             f"flow-normalized)"))
+                             f"flow-normalized)",
+                             message_zh=f"{ticker}：经理 {verb} {pos} 仓位 {row['active_chg_pct']:+.0f}%"
+                                        f"（{row['window_start']}..{row['window_end']}，"
+                                        f"已按资金流标准化）"))
+    return out
+
+
+def _fmt_flow_mn(mn: float) -> str:
+    """$ millions -> compact string: 1234 -> +$1.2B, -87 -> -$87M."""
+    sign = "+" if mn >= 0 else "-"
+    a = abs(mn)
+    return f"{sign}${a / 1000:.1f}B" if a >= 1000 else f"{sign}${a:.0f}M"
+
+
+def sector_holdings_accumulation(hist: pd.DataFrame, f: pd.DataFrame) -> list[Alert]:
+    """Fires when a sector-ETF holding's PRICE-DECOMPOSED weight change (residual
+    beyond what the stock's price move explains) clears the alert threshold. On
+    these passive index funds the residual is reconstitution/float flow, not
+    discretionary conviction — see engine/holdings_signals.py and D70."""
+    if not config.load()["alerts"].get("sector_holdings_accumulation", False):
+        return []
+    from engine.holdings_signals import all_accumulation_signals
+    alert_pp = config.load()["holdings_signals"].get("alert_pp", 0.25)
+    out = []
+    for s in all_accumulation_signals():
+        if abs(s["active_change"]) < alert_pp:
+            continue
+        verb, verb_zh = ("accumulating", "增持") if s["direction"] == "accumulating" \
+            else ("trimming", "减持")
+        flow = flow_zh = ""
+        if s.get("est_flow_mn") is not None:
+            f_str = _fmt_flow_mn(s["est_flow_mn"])
+            flow = f" (≈{f_str} est. rebalance flow)"
+            flow_zh = f"（≈{f_str} 估算再平衡资金流）"
+        cyc = cyc_zh = ""
+        if s.get("ladder"):
+            cyc = f" — cycle {s['ladder']['label']}·{s['ladder']['action']}"
+            cyc_zh = f" — 周期 {s['ladder']['label']}·{s['ladder']['action']}"
+        sev = "warn" if s.get("confirmed") else "info"
+        out.append(Alert(
+            "sector_holdings_accumulation", sev,
+            f"{s['fund']}: {s['ticker']} weight {s['active_change']:+.2f}pp beyond price"
+            f"{flow} ({verb}), {s['t0']}..{s['t1']}{cyc}",
+            message_zh=f"{s['fund']}：{s['ticker']} 权重较价格多变动 {s['active_change']:+.2f}pp"
+                       f"{flow_zh}（{verb_zh}），{s['t0']}..{s['t1']}{cyc_zh}"))
     return out
 
 
@@ -135,7 +186,9 @@ def net_liquidity_roc_flip(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
         direction = "positive (expanding)" if t > 0 else "negative (contracting)"
         return Alert("net_liquidity_roc_flip", "warn",
                      f"Net liquidity 4-week RoC flipped {direction}: "
-                     f"{y:+.0f}bn -> {t:+.0f}bn")
+                     f"{y:+.0f}bn -> {t:+.0f}bn",
+                     message_zh=f"净流动性 4 周 RoC 转为 {direction}："
+                                f"{y:+.0f}bn -> {t:+.0f}bn")
     return None
 
 
@@ -149,7 +202,9 @@ def hy_oas_widening(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
     if z > zmax:
         return Alert("hy_oas_widening", "act",
                      f"HY OAS 1-day widening {chg.iloc[-1]:+.2f}pp is {z:.1f} sigma "
-                     f"(level {oas.iloc[-1]:.2f}%)")
+                     f"(level {oas.iloc[-1]:.2f}%)",
+                     message_zh=f"HY OAS 单日走阔 {chg.iloc[-1]:+.2f}pp，达 {z:.1f} 个标准差"
+                                f"（水平 {oas.iloc[-1]:.2f}%）")
     return None
 
 
@@ -160,7 +215,9 @@ def circuit_breaker_open(hist: pd.DataFrame, f: pd.DataFrame) -> list[Alert]:
     breaker = store.read_status().get("circuit_breaker", {})
     return [Alert("circuit_breaker_open", "warn",
                   f"Source '{src}' marked dead after {n} consecutive failures — "
-                  f"collector skipped until it recovers; affected signals degrade")
+                  f"collector skipped until it recovers; affected signals degrade",
+                  message_zh=f"数据源 '{src}' 连续 {n} 次失败后被标记为中断 —"
+                             f"采集器暂停直至恢复；相关信号置信度下降")
             for src, n in breaker.items() if n == CIRCUIT_BREAKER_FAILS]
 
 
@@ -179,7 +236,9 @@ def gex_flip_cross(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
         what = "spot crossed the gamma flip" if crossed_flip else "net GEX changed sign"
         return Alert("gex_flip_cross", "warn",
                      f"GEX: {what} (net {t['net_gex_bn']:+.0f}bn, "
-                     f"spot vs flip {t.get('spot_vs_flip_pct', float('nan')):+.1f}%)")
+                     f"spot vs flip {t.get('spot_vs_flip_pct', float('nan')):+.1f}%)",
+                     message_zh=f"GEX：{what}（净 {t['net_gex_bn']:+.0f}bn，"
+                                f"现价相对翻转点 {t.get('spot_vs_flip_pct', float('nan')):+.1f}%）")
     return None
 
 
@@ -194,7 +253,8 @@ def evaluate(f: pd.DataFrame) -> list[Alert]:
     rules = [transition_state_change, net_liquidity_roc_flip, hy_oas_widening,
              gex_flip_cross]
     multi = [axis_confidence_floor, sector_rs_percentile_cross,
-             holdings_active_changes, circuit_breaker_open]
+             holdings_active_changes, sector_holdings_accumulation,
+             circuit_breaker_open]
     for rule in rules:
         try:
             a = rule(hist, f)
@@ -235,3 +295,192 @@ def recent_alerts(days: int = 7) -> pd.DataFrame:
     df = pd.read_parquet(p)
     cutoff = (pd.Timestamp.today() - pd.Timedelta(days=days)).date()
     return df[pd.to_datetime(df["date"]).dt.date >= cutoff]
+
+
+# --- presentation layer --------------------------------------------------------
+# Rule messages are precise but jargon-heavy. ALERT_META adds a plain-English
+# headline, an icon, a "what it means / how to use it" explainer, and the macro
+# dashboard panel ("scorecard") each alert deep-links to. `anchor` matches an
+# id="" on a panel in templates/dashboard.html.j2. This is the single source of
+# truth shared by the macro page (scripts/build_site.py) and the landing hub
+# (scripts/build_vector.py) — keep anchors in sync with the template.
+
+_DEFAULT_META = {
+    "icon": "🔔",
+    "plain_en": "Macro signal fired",
+    "plain_zh": "宏观信号触发",
+    "what_en": "An automated macro signal changed state. Open the dashboard for the "
+               "full read.",
+    "what_zh": "一个自动宏观信号发生了状态变化。打开仪表盘查看完整解读。",
+    "anchor": "",
+}
+
+ALERT_META: dict[str, dict] = {
+    "transition_state_change": {
+        "icon": "🧭",
+        "plain_en": "Regime radar moved — the market “weather” may be shifting",
+        "plain_zh": "转换雷达变动 — 市场“天气”可能正在转变",
+        "what_en": "Tracks whether the current market regime is holding or starting to "
+                   "break down, based on how many warning flags are stacking up. A change "
+                   "here is a cue to re-check your risk — not a trade on its own.",
+        "what_zh": "根据累积的预警旗数量，追踪当前市场周期是稳固还是开始瓦解。"
+                   "此处的变化是重新检视风险的提示 — 本身并非交易信号。",
+        "anchor": "regime-radar",
+    },
+    "net_liquidity_roc_flip": {
+        "icon": "💧",
+        "plain_en": "Fed liquidity tide changed direction",
+        "plain_zh": "美联储流动性潮汐转向",
+        "what_en": "Net liquidity is the cash the Fed leaves sloshing through markets "
+                   "(balance sheet − reverse-repo − the Treasury’s account). Its "
+                   "4-week trend just flipped sign. Rising liquidity has historically been "
+                   "a tailwind for stocks; falling is a headwind. Use it to lean more or "
+                   "less cautious — it’s not a buy/sell button.",
+        "what_zh": "净流动性是美联储留在市场中流动的资金（资产负债表 − 逆回购 − 财政部账户）。"
+                   "其 4 周趋势刚刚反向。历史上流动性上升对股市是顺风，下降是逆风。"
+                   "据此调整谨慎程度 — 它不是买卖按钮。",
+        "anchor": "liquidity",
+    },
+    "hy_oas_widening": {
+        "icon": "🚨",
+        "plain_en": "Credit stress spiked — the bond market got nervous",
+        "plain_zh": "信用压力骤升 — 债市转向紧张",
+        "what_en": "“HY OAS” is the extra yield investors demand to hold risky (junk) "
+                   "bonds — one of the market’s best early smoke detectors. A sharp "
+                   "one-day jump means credit investors are suddenly pricing more risk, "
+                   "often before stocks react. Worth taking seriously.",
+        "what_zh": "“高收益债利差”是投资者持有高风险（垃圾）债券所要求的额外收益率 —"
+                   "市场最灵敏的早期烟雾探测器之一。单日急升意味着信用投资者突然定价更高风险，"
+                   "往往早于股市反应。值得认真对待。",
+        "anchor": "credit",
+    },
+    "gex_flip_cross": {
+        "icon": "🧲",
+        "plain_en": "Options “gravity” flipped — bigger swings more likely",
+        "plain_zh": "期权“引力”反转 — 波动可能加大",
+        "what_en": "Dealer gamma (GEX) measures how options hedging pushes the market "
+                   "around. Positive gamma damps moves (calmer); negative amplifies them "
+                   "(sharper swings, both ways). This flag means that backdrop just "
+                   "changed — expect the market to move more freely until it flips back.",
+        "what_zh": "做市商 gamma（GEX）衡量期权对冲如何推动市场。正 gamma 抑制波动（更平静）；"
+                   "负 gamma 放大波动（双向更剧烈）。此信号表示该背景刚刚改变 —"
+                   "在它再次反转前，市场可能波动得更自由。",
+        "anchor": "positioning",
+    },
+    "growth_confidence_floor": {
+        "icon": "🎚️",
+        "plain_en": "Growth read got muddy — trust the regime label less",
+        "plain_zh": "增长信号变浑浊 — 降低对周期标签的信任",
+        "what_en": "The regime is built from two dials — growth direction and inflation "
+                   "direction. “Confidence” is how strongly the underlying indicators "
+                   "agree. The growth dial just fell below a usable threshold, so it’s "
+                   "now mixed. Lower confidence = size positions down and trust the radar "
+                   "more than the label.",
+        "what_zh": "周期由两个刻度盘构成 — 增长方向与通胀方向。“一致度”反映底层指标的"
+                   "认同程度。增长刻度盘刚跌破可用阈值，目前信号混杂。一致度低 ="
+                   "缩小仓位，相信雷达多于标签。",
+        "anchor": "dials",
+    },
+    "inflation_confidence_floor": {
+        "icon": "🎚️",
+        "plain_en": "Inflation read got muddy — trust the regime label less",
+        "plain_zh": "通胀信号变浑浊 — 降低对周期标签的信任",
+        "what_en": "The regime is built from two dials — growth direction and inflation "
+                   "direction. “Confidence” is how strongly the underlying indicators "
+                   "agree. The inflation dial just fell below a usable threshold, so it’s "
+                   "now mixed. Lower confidence = size positions down and trust the radar "
+                   "more than the label.",
+        "what_zh": "周期由两个刻度盘构成 — 增长方向与通胀方向。“一致度”反映底层指标的"
+                   "认同程度。通胀刻度盘刚跌破可用阈值，目前信号混杂。一致度低 ="
+                   "缩小仓位，相信雷达多于标签。",
+        "anchor": "dials",
+    },
+    "sector_rs_cross_high": {
+        "icon": "📈",
+        "plain_en": "A sector broke into leadership",
+        "plain_zh": "某板块跃升为领先",
+        "what_en": "One sector’s strength versus the market just pushed into the top of "
+                   "its recent range — it’s starting to lead. This describes where money "
+                   "is rotating, not an instant buy. Check the sector’s heat and trigger "
+                   "column before acting.",
+        "what_zh": "某板块相对市场的强度刚冲入其近期区间的顶部 — 开始领先。这描述的是资金"
+                   "轮动的方向，并非立即买入。行动前请查看该板块的热度与触发列。",
+        "anchor": "sectors",
+    },
+    "sector_rs_cross_low": {
+        "icon": "📉",
+        "plain_en": "A sector fell out of favor",
+        "plain_zh": "某板块失宠",
+        "what_en": "One sector’s strength versus the market just dropped to the bottom of "
+                   "its recent range — money is rotating out. Usually a reason to avoid or "
+                   "trim, not to bottom-fish; wait for it to base and trigger again.",
+        "what_zh": "某板块相对市场的强度刚跌至其近期区间的底部 — 资金正在流出。通常是回避或"
+                   "减仓的理由，而非抄底；等它筑底并再次触发。",
+        "anchor": "sectors",
+    },
+    "holdings_active_change": {
+        "icon": "🐳",
+        "plain_en": "A star fund manager made a notable move",
+        "plain_zh": "明星基金经理出现显著动作",
+        "what_en": "One of the tracked funds (ARK, etc.) meaningfully added to or cut a "
+                   "position, after stripping out mechanical fund-flow effects — so it "
+                   "reflects genuine conviction. It’s information about what active "
+                   "managers are doing, not a recommendation to copy it.",
+        "what_zh": "在剔除机械性资金流影响后，某只跟踪基金（如 ARK）显著加仓或减仓 —"
+                   "因此反映了真实的信念。这是关于主动经理动作的信息，并非照搬的建议。",
+        "anchor": "holdings",
+    },
+    "sector_holdings_accumulation": {
+        "icon": "🐳",
+        "plain_en": "A sector ETF is over-weighting a stock beyond its price move",
+        "plain_zh": "某板块 ETF 对个股的权重提升超过其价格涨幅",
+        "what_en": "Each sector SPDR’s top-10 weights are split into the part explained "
+                   "by the stock’s own price move and a residual — weight that grew "
+                   "MORE than price alone. A big residual means real buying flowed into "
+                   "the name beyond market drift. Important honesty note: these SPDRs are "
+                   "PASSIVE index funds, so the residual is index reconstitution / "
+                   "float-weight flow (forced index-fund buying), not a discretionary "
+                   "manager’s conviction. It’s a where-is-flow-being-forced signal, and a "
+                   "cue to check the stock’s own technical setup — not an instant buy.",
+        "what_zh": "每只板块 SPDR 的前十大权重被拆分为“由个股自身价格变动解释的部分”与“残差”"
+                   "——即权重增长超过价格涨幅的部分。残差较大意味着除市场漂移外，确有真实买盘流入"
+                   "该股。重要的诚实提示：这些 SPDR 是被动指数基金，故残差代表指数再平衡／流通权重"
+                   "调整带来的资金流（指数基金的被动强制买入），而非主动经理的信念。这是“资金被强制"
+                   "导向何处”的信号，也提示去核查该股自身的技术形态——并非立即买入。",
+        "anchor": "accumulation",
+    },
+    "circuit_breaker_open": {
+        "icon": "🔌",
+        "plain_en": "A data source went dark",
+        "plain_zh": "某数据源中断",
+        "what_en": "A feed this dashboard relies on failed several runs in a row, so it’s "
+                   "paused until it recovers. Any signals that depend on it automatically "
+                   "lose confidence until it’s back. This is a plumbing notice, not a "
+                   "market signal.",
+        "what_zh": "本仪表盘依赖的某个数据源连续多次失败，已暂停直至恢复。依赖它的信号会自动"
+                   "降低置信度，直到其恢复。这是系统管线提示，并非市场信号。",
+        "anchor": "health",
+    },
+}
+
+
+def alert_view(rule: str, severity: str, message: str, message_zh: str = "") -> dict:
+    """Enrich a stored alert (rule/severity/message) with plain-English copy, an
+    icon, and the dashboard panel anchor it deep-links to. Unknown rules fall
+    back to a generic explainer so a new rule still renders sensibly."""
+    return {"rule": rule, "severity": severity, "message": message,
+            "message_zh": message_zh,
+            **ALERT_META.get(rule, _DEFAULT_META)}
+
+
+def alert_views(alerts) -> list[dict]:
+    """Map a list of Alert objects or {rule,severity,message} dicts to enriched
+    view dicts, preserving order (callers pass them already severity-sorted)."""
+    out = []
+    for a in alerts:
+        if isinstance(a, Alert):
+            out.append(alert_view(a.rule, a.severity, a.message, a.message_zh))
+        else:
+            out.append(alert_view(a.get("rule", ""), a.get("severity", "info"),
+                                  a.get("message", ""), a.get("message_zh", "")))
+    return out

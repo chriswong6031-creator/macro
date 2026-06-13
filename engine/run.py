@@ -84,7 +84,8 @@ def run() -> dict:
         "sector_rs": table.reset_index().to_dict(orient="records"),
         "preference_check": preference_check(quad, table),
         "pair_ratios": pair_ratios_snapshot(f),
-        "alerts": [{"rule": a.rule, "severity": a.severity, "message": a.message}
+        "alerts": [{"rule": a.rule, "severity": a.severity, "message": a.message,
+                    "message_zh": a.message_zh}
                    for a in fired],
     }
     from engine.inputs import yahoo_closes

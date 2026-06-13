@@ -91,8 +91,19 @@ def build_message(latest: dict, html: bool = True) -> str:
                      f"(z {flip['z']} vs ±{flip['threshold']})")
     alerts = latest.get("alerts", [])
     if alerts:
+        from engine.alerts import alert_view
+        site_url = (config.load()["notify"].get("site_url") or "").rstrip("/")
         lines.append(f"{b}alerts{e}:")
-        lines += [f"{SEV_EMOJI.get(a['severity'], '')} {a['message']}" for a in alerts]
+        for a in alerts:
+            v = alert_view(a["rule"], a["severity"], a["message"])
+            # plain-English headline first, the precise numbers underneath, then a
+            # deep-link straight to the scorecard the alert came from (if a public
+            # site URL is configured). A bare URL renders clickably on both TG/Discord.
+            line = f"{SEV_EMOJI.get(a['severity'], '')} {b}{v['plain_en']}{e}\n   {v['message']}"
+            if site_url:
+                anchor = f"#{v['anchor']}" if v["anchor"] else ""
+                line += f"\n   → {site_url}/macro.html{anchor}"
+            lines.append(line)
     lines.append(health_line())
     return "\n".join(lines)
 

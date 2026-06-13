@@ -102,8 +102,10 @@ def what_changed(latest: dict, prev: dict | None) -> list[str]:
             out.append(f"{name} moved closer to its buy trigger "
                        f"({pg0:.0f}% → {pg1:.0f}% of the way there).")
 
+    from engine.alerts import alert_view
     for a in latest.get("alerts", []):
-        out.append(f"🔔 Alert fired: {a['message']}")
+        v = alert_view(a.get("rule", ""), a.get("severity", "info"), a.get("message", ""))
+        out.append(f"{v['icon']} **{v['plain_en']}** — {v['message']}")
     if not out:
         out.append("A quiet day — no regime, posture, rotation-stage or alert changes.")
     return out

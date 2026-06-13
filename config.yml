@@ -331,6 +331,10 @@ alerts:
   gex_flip_cross: true
 
 notify:
+  # public base URL of the published site (e.g. https://user.github.io/repo).
+  # When set, alert pings deep-link to the exact scorecard panel on macro.html.
+  # Leave blank to send alerts without a link.
+  site_url: "https://chriswong6031-creator.github.io/macro"
   telegram:
     enabled: true                 # needs TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID secrets
   discord:
