@@ -1,0 +1,47 @@
+{
+  "horizon_days": 63,
+  "n": 54030,
+  "buy": {
+    "light": {
+      "n": 12455,
+      "hit_pct": 62.5,
+      "avg_ret_pct": 4.74,
+      "avg_mae_pct": -7.88,
+      "reward_risk": 1.58
+    },
+    "solid": {
+      "n": 13683,
+      "hit_pct": 62.1,
+      "avg_ret_pct": 4.22,
+      "avg_mae_pct": -7.82,
+      "reward_risk": 1.51
+    },
+    "strong": {
+      "n": 10344,
+      "hit_pct": 62.1,
+      "avg_ret_pct": 3.07,
+      "avg_mae_pct": -7.13,
+      "reward_risk": 1.37
+    }
+  },
+  "sell": {
+    "light": {
+      "n": 4689,
+      "down_pct": 36.9,
+      "avg_ret_pct": 4.81,
+      "avg_mae_pct": -7.54
+    },
+    "solid": {
+      "n": 4965,
+      "down_pct": 33.1,
+      "avg_ret_pct": 6.91,
+      "avg_mae_pct": -8.5
+    },
+    "strong": {
+      "n": 4432,
+      "down_pct": 35.0,
+      "avg_ret_pct": 4.76,
+      "avg_mae_pct": -6.82
+    }
+  }
+}

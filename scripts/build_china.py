@@ -28,7 +28,23 @@ from lib import config, store  # noqa: E402
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_china")
 
-ASSETS = ("theme.css", "theme.js", "mtf.js", "chart_i18n.js")
+ASSETS = ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
+          "charts.js", "tablesort.js")
+
+
+def _range_selector() -> dict:
+    """1M…All range-selector buttons (theme-neutral; baked at build, charts.js
+    rescales the y-axis to the visible window on zoom)."""
+    return dict(
+        buttons=[dict(count=3, label="3M", step="month", stepmode="backward"),
+                 dict(count=6, label="6M", step="month", stepmode="backward"),
+                 dict(count=1, label="YTD", step="year", stepmode="todate"),
+                 dict(count=1, label="1Y", step="year", stepmode="backward"),
+                 dict(count=3, label="3Y", step="year", stepmode="backward"),
+                 dict(step="all", label="All")],
+        bgcolor="rgba(128,138,160,0.14)", activecolor="rgba(120,167,224,0.55)",
+        bordercolor="rgba(128,138,160,0.30)", borderwidth=1,
+        font={"size": 10, "color": "#8b93a1"}, x=0, xanchor="left", y=1.0, yanchor="bottom")
 
 QUAD_COLORS = {"Q1": "#2e9e4f", "Q2": "#d4a017", "Q3": "#d04545", "Q4": "#3f78d8"}
 PLOT_LAYOUT = dict(
@@ -44,7 +60,7 @@ def _chart_html(fig: go.Figure) -> str:
     return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
 
 
-def _chart_regime(px: pd.Series, hist: pd.DataFrame, days: int = 1095) -> str:
+def _chart_regime(px: pd.Series, hist: pd.DataFrame, days: int = 3650) -> str:
     cut = px.index.max() - pd.Timedelta(days=days)
     s = px.loc[cut:].dropna()
     sub = hist.loc[cut:]
@@ -57,10 +73,12 @@ def _chart_regime(px: pd.Series, hist: pd.DataFrame, days: int = 1095) -> str:
             fig.add_vrect(x0=seg.index.min(), x1=seg.index.max(),
                           fillcolor=QUAD_COLORS.get(seg.iloc[0], "#888"), opacity=0.16, line_width=0)
     fig.update_layout(**PLOT_LAYOUT, showlegend=False)
+    fig.update_xaxes(rangeselector=_range_selector())
+    fig.update_layout(margin={"l": 45, "r": 15, "t": 40, "b": 30})
     return _chart_html(fig)
 
 
-def _chart_axes(hist: pd.DataFrame, days: int = 1095) -> str:
+def _chart_axes(hist: pd.DataFrame, days: int = 3650) -> str:
     cut = hist.index.max() - pd.Timedelta(days=days)
     sub = hist.loc[cut:]
     fig = go.Figure()
@@ -70,8 +88,204 @@ def _chart_axes(hist: pd.DataFrame, days: int = 1095) -> str:
                              line={"color": "#e07070", "width": 1.2}))
     fig.add_hline(y=0, line={"color": "#666", "width": 0.6})
     fig.update_layout(**PLOT_LAYOUT)
-    fig.update_yaxes(range=[-1.05, 1.05])
+    fig.update_yaxes(range=[-1.05, 1.05], autorange=False)   # fixed ±1 band — charts.js leaves it alone
+    fig.update_xaxes(rangeselector=_range_selector())
+    fig.update_layout(margin={"l": 45, "r": 15, "t": 54, "b": 30}, legend={"orientation": "h", "y": 1.18})
     return _chart_html(fig)
+
+
+# ---- market-internals panel charts + view-models ------------------------------
+def _panel_line(series: dict, color: str, height: int = 200, zero: bool = False,
+                fill: bool = False, hline: float | None = None, hline_text: str = "") -> str:
+    """Single-line panel chart from an internals {dates, vals} dict."""
+    if not series or not series.get("dates"):
+        return ""
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=pd.to_datetime(series["dates"]), y=series["vals"], mode="lines",
+        line={"color": color, "width": 1.5},
+        fill="tozeroy" if fill else None,
+        fillcolor=("rgba(63,120,216,0.10)" if fill else None)))
+    if zero:
+        fig.add_hline(y=0, line={"color": "rgba(128,138,160,0.5)", "width": 0.8})
+    if hline is not None:
+        fig.add_hline(y=hline, line={"color": "#d04545", "width": 0.8, "dash": "dot"},
+                      annotation_text=hline_text, annotation_position="top left",
+                      annotation_font={"size": 10, "color": "#d04545"})
+    fig.update_layout(**{**PLOT_LAYOUT, "height": height}, showlegend=False)
+    return _chart_html(fig)
+
+
+def china_regime_timeline(hist: pd.DataFrame) -> dict:
+    """Compact columnar JSON for the client-side Time Machine (timemachine.js),
+    mirroring build_site.regime_timeline() over the China regime history. The China
+    engine doesn't track transition_state / recession / shock / warning flags, so
+    those keys carry safe defaults — timemachine.js degrades to 'no warnings'."""
+    h = hist[hist["quad"].notna()].copy()
+    n = len(h)
+
+    def r3(col: str) -> list:
+        return [None if pd.isna(v) else round(float(v), 3) for v in h[col]]
+
+    return {
+        "dates": [d.strftime("%Y-%m-%d") for d in h.index],
+        "quad":  h["quad"].fillna("").tolist(),
+        "g":     r3("growth_score"),
+        "i":     r3("inflation_score"),
+        "conf":  r3("regime_confidence"),
+        "liq":   h["liquidity"].fillna("unknown").tolist() if "liquidity" in h else ["unknown"] * n,
+        "cyc":   h["cycle"].fillna("unknown").tolist() if "cycle" in h else ["unknown"] * n,
+        "trans": ["STABLE"] * n, "rec": [0] * n, "shock": [0] * n, "flags": [0] * n,
+        "flag_order": [],
+    }
+
+
+def _lifespan_rows(quad: pd.Series) -> list[dict]:
+    """Per-quad base rates (count, median length, two most-common next quads)."""
+    from engine.playbook import QUAD_SHORT, transition_stats
+    trans = transition_stats(quad)
+    rows = []
+    for q in ("Q1", "Q2", "Q3", "Q4"):
+        nxt = trans["matrix"].get(q, {})
+        nxt_str = ", ".join(f"{QUAD_SHORT.get(k, k)} {v:.0%}" for k, v in
+                            sorted(nxt.items(), key=lambda kv: -kv[1])[:2]) or "—"
+        rows.append({"name": QUAD_SHORT[q], "n": trans["n_by_quad"].get(q, "—"),
+                     "median": trans["median_days"].get(q, "—"), "next": nxt_str})
+    return rows
+
+
+def _health_rows() -> list[dict]:
+    """Data-health for the China collectors, from data/run_status.json."""
+    sources = store.read_status().get("sources", {})
+    labels = {"china_prices": ("Prices / sectors", "价格 / 板块"),
+              "china_macro": ("Macro (PMI/CPI/credit)", "宏观 (PMI/CPI/信贷)"),
+              "china_breadth": ("Breadth", "市场宽度"),
+              "china_margin": ("Margin (融资融券)", "两融"),
+              "china_connect": ("Stock Connect (沪深港通)", "沪深港通"),
+              "china_flows": ("Sentiment / flows", "情绪 / 资金流"),
+              "china_credit": ("Social financing (社融)", "社会融资规模")}
+    rows = []
+    for key, (en, zh) in labels.items():
+        s = sources.get(key)
+        if not s:
+            continue
+        rows.append({"en": en, "zh": zh, "status": s.get("status", "?"),
+                     "rows": s.get("rows", 0), "last": s.get("last_date") or "—"})
+    return rows
+
+
+def _china_action_board(sectors: list[dict]) -> dict:
+    """Bucket the sector cards' cycle-entry calls into a 'what to act on' board —
+    the China analog of build_site.action_board (no per-stock notable branch)."""
+    buy_now, buy_soon, take_profits, hold, avoid = [], [], [], [], []
+    for s in sectors:
+        e = s.get("entry") or {}
+        item = {"ticker": s["ticker"], "name": s["name"], "label": s.get("label") or s.get("state"),
+                "tag": e.get("tag", ""), "days": e.get("days_hi"), "dir": s.get("dir")}
+        u = e.get("urgency")
+        if u == "now":
+            buy_now.append(item)
+        elif u in ("imminent", "soon"):
+            buy_soon.append(item)
+        elif u in ("caution", "exit"):
+            take_profits.append(item)
+        elif u == "hold":
+            hold.append(item)
+        else:
+            avoid.append(item)
+    buy_soon.sort(key=lambda x: (x["days"] if x["days"] is not None else 99))
+    return {"buy_now": buy_now, "buy_soon": buy_soon, "take_profits": take_profits,
+            "hold": hold, "avoid": avoid}
+
+
+def _internals_vm() -> dict:
+    """Market-internals panels (margin crowd-meter, southbound flow, credit/tape,
+    sentiment snapshots) + their plotly charts. Each piece is independently None-safe
+    so a missing source just drops its panel."""
+    from engine import china_internals as ci
+    vm: dict = {}
+    margin = ci.margin_meter()
+    if margin:
+        margin["chart_html"] = _panel_line(margin.get("chart"), "#e0a030", height=190,
+                                            hline=margin.get("peak"),
+                                            hline_text=f"2015 peak {margin.get('peak')}%")
+        vm["margin"] = margin
+    sb = ci.southbound_flow()
+    if sb:
+        sb["chart_html"] = _panel_line(sb.get("chart_cum"), "#3f78d8", height=190,
+                                       zero=True, fill=True)
+        vm["southbound"] = sb
+    credit = ci.credit_tape()
+    if credit:
+        if credit.get("impulse_chart"):
+            credit["impulse_html"] = _panel_line(credit["impulse_chart"], "#3f9fd8",
+                                                 height=180, zero=True)
+        if credit.get("scissors_chart"):
+            credit["scissors_html"] = _panel_line(credit["scissors_chart"], "#5fbf7f",
+                                                   height=180, zero=True)
+        if credit.get("loans_chart"):
+            credit["loans_html"] = _panel_line(credit["loans_chart"], "#8b93a1", height=160)
+        vm["credit"] = credit
+    flows = ci.flow_snaps()
+    if flows:
+        vm["flows"] = flows
+    turn = ci.market_turnover()
+    if turn:
+        turn["chart_html"] = _panel_line(turn.get("chart"), "#c08bd8", height=150,
+                                         hline=10000, hline_text="¥1T")
+        vm["turnover"] = turn
+    pboc = ci.pboc_policy()
+    if pboc:
+        vm["pboc"] = pboc
+    return vm
+
+
+def _leaderboard() -> dict | None:
+    """Stock-Connect 'smart money' leaderboard — today's most-active A-shares by foreign
+    (northbound) turnover + the HK names mainland (southbound) money net-bought/sold.
+    A build-time fetch (ephemeral top-N, no history needed); fully best-effort."""
+    import requests
+    UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+          "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
+    DC = "https://datacenter-web.eastmoney.com/api/data/v1/get"
+    H = {"User-Agent": UA, "Referer": "https://data.eastmoney.com/"}
+
+    def fetch(mt: str) -> list:
+        p = {"reportName": "RPT_MUTUAL_TOP10DEAL", "columns": "ALL", "pageSize": 10,
+             "sortColumns": "TRADE_DATE", "sortTypes": -1, "pageNumber": 1,
+             "filter": f'(MUTUAL_TYPE="{mt}")'}
+        r = requests.get(DC, params=p, headers=H, timeout=20)
+        return (r.json().get("result") or {}).get("data") or []
+
+    try:
+        nb = fetch("001") + fetch("003")    # northbound (foreign -> A-shares)
+        sb = fetch("002") + fetch("004")    # southbound (mainland -> HK)
+    except Exception as e:  # noqa: BLE001
+        log.warning("china leaderboard fetch failed: %s", e)
+        return None
+    if not nb and not sb:
+        return None
+
+    def latest(rows: list) -> list:
+        if not rows:
+            return []
+        d = max(x["TRADE_DATE"] for x in rows)
+        return [x for x in rows if x["TRADE_DATE"] == d]
+
+    def row(x: dict, field: str) -> dict:
+        return {"code": x.get("SECURITY_CODE"), "name": x.get("SECURITY_NAME"),
+                "chg": round(float(x.get("CHANGE_RATE") or 0), 2),
+                "val": round(float(x.get(field) or 0) / 1e8, 2)}   # 亿
+
+    nb, sb = latest(nb), latest(sb)
+    date = (nb or sb)[0]["TRADE_DATE"][:10] if (nb or sb) else None
+    nb.sort(key=lambda x: -(x.get("DEAL_AMT") or 0))                 # foreign turnover
+    sb.sort(key=lambda x: -(x.get("NET_BUY_AMT") or 0))             # mainland net
+    return {"date": date,
+            "nb": [row(x, "DEAL_AMT") for x in nb[:8]],
+            "sb_buy": [row(x, "NET_BUY_AMT") for x in sb[:6]],
+            "sb_sell": [row(x, "NET_BUY_AMT") for x in
+                        sorted(sb, key=lambda x: (x.get("NET_BUY_AMT") or 0))[:4]]}
 
 
 def _build_sector_pages(env) -> int:
@@ -172,7 +386,10 @@ def _sector_cards(latest: dict) -> list[dict]:
             "pctile": rs.get("pctile_252d"),
             "state": lad.get("state"), "label": lad.get("label"),
             "action": lad.get("action"), "dir": lad.get("dir"),
+            "entry": lad.get("entry"),     # cycle-entry call -> action board buckets
             "age_short": lad.get("age_short"), "age_short_zh": lad.get("age_short_zh"),
+            "eq_badge": lad.get("eq_badge"), "eq_dir": lad.get("eq_dir"),
+            "eq_tip": lad.get("eq_tip"),
             "why": lad.get("why"), "regime_label": lad.get("regime_label"),
             "dc_day": cyc.get("dc_day"), "dc_band": cyc.get("dc_band"),
             "ic_week": cyc.get("ic_week"), "ic_band": cyc.get("ic_band"),
@@ -226,22 +443,55 @@ def main() -> int:
         return 0
 
     try:
+        sectors = _sector_cards(latest)
         vm = {
             "latest": latest,
             "built": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
-            "sectors": _sector_cards(latest),
+            "sectors": sectors,
             "breadth": _breadth(),
             "benchmark": _benchmark_card(),
             "pair": latest.get("pair_ratios", {}),
             "pref": latest.get("preference_check", {}),
+            "actions": _china_action_board(sectors),
+            "health": _health_rows(),
         }
+        site = Path(config.load()["storage"]["site_dir"])
+        site.mkdir(parents=True, exist_ok=True)
+
+        # market-internals panels (margin / southbound / credit / sentiment) — None-safe
+        try:
+            vm["internals"] = _internals_vm()
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("china internals build failed (%s); skipping", e)
+            vm["internals"] = {}
+
+        # regime history -> Time Machine JSON + lifespan base rates on the main page
+        hist = store.read("china_regime", "regime_history")
+        if hist is not None and "quad" in hist.columns:
+            (site / "china_regime_timeline.json").write_text(
+                json.dumps(china_regime_timeline(hist), separators=(",", ":")))
+            vm["lifespan_rows"] = _lifespan_rows(hist["quad"])
+
+        # playbook — quad meaning, lifespan progress, next-quad odds, exposure dial
+        try:
+            from engine import china_playbook
+            vm["pb"] = china_playbook.build(latest, hist, vm["sectors"], vm.get("internals") or {})
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("china playbook build failed (%s); skipping", e)
+            vm["pb"] = None
+
+        # Stock-Connect smart-money leaderboard (best-effort build-time fetch)
+        try:
+            vm["leaderboard"] = _leaderboard()
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("china leaderboard failed (%s); skipping", e)
+            vm["leaderboard"] = None
+
         env = Environment(loader=FileSystemLoader(
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)
         from engine import i18n
         env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
         html = env.get_template("china.html.j2").render(**vm)
-        site = Path(config.load()["storage"]["site_dir"])
-        site.mkdir(parents=True, exist_ok=True)
         (site / "china.html").write_text(html)
         for a in ASSETS:
             src = Path(config.ROOT) / "templates" / a

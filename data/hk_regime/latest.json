@@ -7,7 +7,7 @@
   "growth_confidence": 0.167,
   "inflation_confidence": 1.0,
   "confidence": 0.583,
-  "liquidity_overlay": "contracting",
+  "liquidity_overlay": "neutral",
   "cycle_tag": "mid",
   "pending_quad": "Q2",
   "pending_days": 3,
@@ -79,8 +79,8 @@
       }
     ],
     "peg": {
-      "level": 7.8349,
-      "distance": 0.85,
+      "level": 7.8356,
+      "distance": 0.86,
       "state": "weak-side (outflow)"
     },
     "asof": "2026-06-12"

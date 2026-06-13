@@ -1,0 +1,405 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><span class="l-en">Hong Kong Regime</span><span class="l-zh">香港周期</span> — 2026-06-12</title>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system,
+         "Segoe UI", Roboto, Helvetica, sans-serif; margin: 0; padding: 18px; }
+  @media (min-width: 1100px) { body { padding: 26px max(40px, calc((100vw - 1500px) / 2)); } }
+  html[data-lang="zh"] body { font-family: "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",-apple-system,sans-serif; }
+  a { text-decoration: none; color: var(--link); }
+  h1 { font-size: 21px; margin: 0 0 2px; color: var(--text); }
+  h2 { font-size: 13px; margin: 0 0 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .topbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .topbar .sp { flex: 1; }
+  .navbtn { display: inline-block; padding: 5px 11px; border-radius: 9px; background: var(--panel);
+            border: 1px solid var(--line); color: var(--text); font-size: 13px; font-weight: 600; }
+  .navbtn:hover { border-color: var(--info); }
+  .lang-btn, .theme-btn { font: inherit; cursor: pointer; background: var(--panel); border: 1px solid var(--line);
+            border-radius: 9px; padding: 5px 11px; color: var(--muted); font-weight: 700; }
+  .grid { display: grid; gap: 14px; grid-template-columns: repeat(12, 1fr); }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 15px 17px; }
+  .span12 { grid-column: span 12; } .span8 { grid-column: span 8; }
+  .span6 { grid-column: span 6; } .span4 { grid-column: span 4; }
+  @media (max-width: 900px) { .span8, .span6, .span4 { grid-column: span 12; } }
+
+  /* regime hero */
+  .hero { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; }
+  .quad-badge { font-size: 22px; font-weight: 800; padding: 8px 18px; border-radius: 13px; color: #fff; }
+  .quad-Q1 { background: var(--q1); } .quad-Q2 { background: var(--q2); color: #1a1a1a; }
+  .quad-Q3 { background: var(--q3); } .quad-Q4 { background: var(--q4); }
+  .metric { display: flex; flex-direction: column; gap: 1px; }
+  .metric .v { font-size: 18px; font-weight: 700; color: var(--text); }
+  .metric .k { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .chip { display: inline-block; padding: 3px 11px; border-radius: 12px; font-weight: 600; font-size: 12.5px;
+          background: color-mix(in srgb, var(--c, var(--muted)) 16%, var(--panel));
+          color: color-mix(in srgb, var(--c, var(--muted)) 82%, var(--text)); }
+  .c-up { --c: var(--up); } .c-down { --c: var(--down); } .c-warn { --c: var(--warn); }
+  .c-info { --c: var(--info); } .c-muted { --c: var(--muted); }
+
+  /* global risk overlay (HK-specific) */
+  .risk-badge { font-size: 20px; font-weight: 800; padding: 7px 16px; border-radius: 12px;
+                background: color-mix(in srgb, var(--c, var(--muted)) 20%, var(--panel));
+                color: color-mix(in srgb, var(--c, var(--muted)) 88%, var(--text)); }
+  .peg-wrap { margin: 14px 0 4px; }
+  .peg-gauge { position: relative; height: 8px; border-radius: 5px; margin: 7px 0 4px;
+               background: linear-gradient(90deg, var(--up) 0%, color-mix(in srgb, var(--muted) 60%, var(--panel)) 50%, var(--down) 100%); }
+  .peg-marker { position: absolute; top: -4px; width: 4px; height: 16px; border-radius: 3px;
+                background: var(--text); transform: translateX(-50%); box-shadow: 0 0 0 2px var(--panel); }
+  .peg-ends { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--muted); }
+  .factor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 7px 14px; margin-top: 12px; }
+  .factor { display: flex; align-items: center; gap: 7px; font-size: 12.5px; }
+  .factor .dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto;
+                 background: color-mix(in srgb, var(--c, var(--muted)) 85%, transparent); }
+  .factor .fz { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--muted); font-weight: 600; }
+
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { text-align: right; padding: 5px 8px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 500; }
+  th:first-child, td:first-child, td.l, th.l { text-align: left; }
+  .pos { color: var(--up); } .neg { color: var(--down); }
+  .lad { display: inline-block; padding: 1px 9px; border-radius: 10px; font-size: 11.5px; font-weight: 700;
+         background: color-mix(in srgb, var(--c, var(--muted)) 16%, var(--panel));
+         color: color-mix(in srgb, var(--c, var(--muted)) 82%, var(--text)); }
+  .lad.up { --c: var(--up); } .lad.down { --c: var(--down); } .lad.flat { --c: var(--muted); }
+  .agechip { font-size: 10.5px; font-weight: 700; color: var(--muted); white-space: nowrap; margin-left: 5px; }
+  .note { font-size: 12.5px; color: var(--muted); line-height: 1.6; }
+  .mtf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  .mtf-card .mtf-name { font-weight: 700; font-size: 13.5px; margin-bottom: 6px; color: var(--text); }
+  .foot { margin-top: 26px; color: var(--muted); font-size: 12px; text-align: center; line-height: 1.7; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1><span class="l-en">Hong Kong Regime</span><span class="l-zh">香港周期</span></h1>
+  <span class="sp"></span>
+  <a class="navbtn" href="hk_stock.html"><span class="l-en">🔎 HK search</span><span class="l-zh">🔎 港股搜索</span></a>
+  <a class="navbtn" href="hk_brief.html"><span class="l-en">📰 Brief</span><span class="l-zh">📰 简报</span></a>
+  <a class="navbtn" href="hk_history.html"><span class="l-en">📈 History</span><span class="l-zh">📈 历史</span></a>
+  <a class="navbtn" href="index.html"><span class="l-en">🏠 Home</span><span class="l-zh">🏠 首页</span></a>
+  <a class="navbtn" href="macro.html"><span class="l-en">🌍 US Macro</span><span class="l-zh">🌍 美国宏观</span></a>
+  <a class="navbtn" href="china.html"><span class="l-en">🇨🇳 China</span><span class="l-zh">🇨🇳 中国</span></a>
+  <a class="navbtn" href="vector.html"><span class="l-en">₿ Bitcoin</span><span class="l-zh">₿ 比特币</span></a>
+  <button class="lang-btn">中文</button>
+  <button class="theme-btn">☀️ <span class="l-en">Light</span><span class="l-zh">浅色</span></button>
+</div>
+
+<div class="grid">
+
+  <!-- regime hero -->
+  <div class="panel span8">
+    <h2><span class="l-en">Market Regime</span><span class="l-zh">市场周期</span> · 2026-06-12</h2>
+    <div class="hero">
+      <span class="quad-badge quad-Q3"><span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></span>
+      <div class="metric"><span class="v pos">+0.25</span><span class="k"><span class="l-en">Growth</span><span class="l-zh">增长</span></span></div>
+      <div class="metric"><span class="v pos">+1.00</span><span class="k"><span class="l-en">Inflation</span><span class="l-zh">通胀</span></span></div>
+      <div class="metric"><span class="v">58%</span><span class="k"><span class="l-en">Confidence</span><span class="l-zh">置信度</span></span></div>
+      <div class="metric"><span class="chip c-info"><span class="l-en">Dual liquidity</span><span class="l-zh">双重流动性</span> <span class="l-en">neutral</span><span class="l-zh">中性</span></span><span class="k"><span class="l-en">Liquidity</span><span class="l-zh">流动性</span></span></div>
+      <div class="metric"><span class="chip c-muted"><span class="l-en">mid</span><span class="l-zh">中期</span></span><span class="k"><span class="l-en">Cycle</span><span class="l-zh">周期阶段</span></span></div>
+    </div>
+    <p class="note" style="margin:12px 0 0"><span class="l-en">Confirming</span><span class="l-zh">确认</span>: growth_hshare_hsi, growth_global_growth, inflation_cpi_direction, inflation_ppi_direction, inflation_inflation_beta_basket · <span class="l-en">Contradicting</span><span class="l-zh">矛盾</span>: growth_breadth_direction</p>
+  </div>
+
+  <!-- benchmark cycle card -->
+  
+  <div class="panel span4">
+    <h2><span class="l-en">Hang Seng Index</span><span class="l-zh">恒生指数</span></h2>
+    <div style="font-size:20px;font-weight:800">24718.10 <span class="pos" style="font-size:14px">+1.93%</span></div>
+    <div style="margin:4px 0 8px"><span class="lad down"><span class="l-en">DOWNTREND</span><span class="l-zh">下跌趋势</span></span></div>
+    <div class="mtf" data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": true, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 41.0, "rsi5": 46.0, "stoch": 13.0, "spark_rsi": [48.0, 43.8, 46.0, 43.8, 40.0, 44.3, 44.2, 40.1, 35.9, 39.6, 44.0, 54.4, 48.3, 43.3, 40.0, 36.8, 35.8, 34.2, 32.6, 41.3], "spark_stoch": [47.1, 24.4, 6.5, 4.7, 4.7, 7.4, 14.5, 14.7, 7.3, 6.4, 20.0, 51.4, 66.2, 65.9, 41.8, 22.3, 8.9, 1.5, 0.0, 13.3], "spark_hist": [-6.738, -46.982, -63.016, -80.085, -104.247, -100.457, -93.544, -101.712, -121.917, -116.531, -92.595, -30.996, -15.655, -28.46, -52.533, -83.143, -102.418, -117.605, -129.213, -97.63]}, "3D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 39.0, "rsi5": 25.0, "stoch": 4.0, "spark_rsi": [42.1, 42.7, 38.3, 42.3, 49.8, 50.2, 53.9, 49.7, 47.5, 48.5, 52.8, 54.6, 54.4, 47.9, 46.0, 43.3, 44.2, 42.7, 36.5, 38.6], "spark_stoch": [14.0, 10.8, 3.8, 8.9, 25.8, 45.6, 72.3, 77.5, 77.4, 65.9, 72.6, 86.1, 97.2, 86.0, 68.6, 46.1, 31.6, 15.7, 5.3, 3.9], "spark_hist": [-181.852, -182.499, -210.865, -193.951, -122.856, -67.403, -1.534, 12.553, 6.85, 10.223, 40.815, 71.186, 86.209, 54.035, 19.33, -20.674, -39.663, -58.097, -109.72, -125.601]}, "W": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 40.0, "rsi5": 24.0, "stoch": 5.0, "spark_rsi": [63.5, 55.8, 55.9, 54.5, 56.2, 48.4, 46.1, 44.6, 42.1, 43.8, 51.2, 53.4, 51.7, 49.7, 55.3, 51.1, 47.8, 44.2, 42.4, 40.4], "spark_stoch": [93.9, 74.9, 59.2, 35.1, 32.1, 19.1, 9.9, 0.0, 0.0, 2.7, 16.8, 34.5, 46.7, 44.4, 58.1, 64.3, 65.9, 39.5, 18.9, 5.5], "spark_hist": [7.736, -17.548, -37.234, -62.564, -66.288, -125.713, -179.534, -220.013, -258.26, -261.237, -202.277, -139.687, -106.441, -94.319, -43.608, -38.161, -56.542, -93.038, -125.795, -155.699]}}'></div>
+  </div>
+  
+
+  <!-- GLOBAL RISK OVERLAY — HK's primary high-frequency driver -->
+  
+  <div class="panel span12">
+    <h2><span class="l-en">Global Risk Overlay</span><span class="l-zh">全球风险开关</span> · <span class="l-en">HK's primary driver</span><span class="l-zh">香港主驱动</span></h2>
+    <div class="hero">
+      <span class="risk-badge c-muted"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
+      <div class="metric"><span class="v pos">+0.13</span><span class="k"><span class="l-en">Composite score</span><span class="l-zh">综合评分</span></span></div>
+      
+      <div class="metric" style="flex:1 1 280px;min-width:240px">
+        <div class="peg-wrap">
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <span class="v">7.8356</span>
+            <span class="chip c-muted"><span class="l-en">weak-side (outflow)</span><span class="l-zh">弱方（资金流出）</span></span>
+          </div>
+          <div class="peg-gauge"><span class="peg-marker" style="left:86%"></span></div>
+          <div class="peg-ends"><span><span class="l-en">7.75 strong / inflow</span><span class="l-zh">7.75 强方 / 流入</span></span><span><span class="l-en">7.85 weak / outflow</span><span class="l-zh">7.85 弱方 / 流出</span></span></div>
+        </div>
+        <span class="k"><span class="l-en">HKD peg band</span><span class="l-zh">港元联汇区间</span></span>
+      </div>
+      
+    </div>
+    
+    <div class="factor-grid">
+      
+      <div class="factor">
+        <span class="dot c-down"></span>
+        <span><span class="l-en">US Dollar (DXY)</span><span class="l-zh">美元指数（DXY）</span></span>
+        <span class="fz pos">+0.60</span>
+      </div>
+      
+      <div class="factor">
+        <span class="dot c-muted"></span>
+        <span><span class="l-en">Volatility (VIX)</span><span class="l-zh">波动率（VIX）</span></span>
+        <span class="fz neg">-0.12</span>
+      </div>
+      
+      <div class="factor">
+        <span class="dot c-muted"></span>
+        <span><span class="l-en">S&amp;P 500</span><span class="l-zh">标普500</span></span>
+        <span class="fz neg">-0.20</span>
+      </div>
+      
+      <div class="factor">
+        <span class="dot c-up"></span>
+        <span><span class="l-en">Copper / Gold</span><span class="l-zh">铜金比</span></span>
+        <span class="fz pos">+1.16</span>
+      </div>
+      
+      <div class="factor">
+        <span class="dot c-up"></span>
+        <span><span class="l-en">USD / CNY</span><span class="l-zh">美元兑人民币</span></span>
+        <span class="fz neg">-0.52</span>
+      </div>
+      
+      <div class="factor">
+        <span class="dot c-muted"></span>
+        <span><span class="l-en">EM equity (EEM)</span><span class="l-zh">新兴市场股票（EEM）</span></span>
+        <span class="fz pos">+0.08</span>
+      </div>
+      
+    </div>
+    
+    <p class="note" style="margin:13px 0 0"><span class="l-en">Hong Kong is ~2x more globally sensitive than the Mainland — this risk-on/off composite (dollar, volatility, US equity, copper/gold, USD-CNY, EM) plus the HKD peg is HK's primary high-frequency driver. It is a concurrent risk STATE, not a forecast.</span><span class="l-zh">香港对全球因素的敏感度约为内地的2倍——此风险开关综合指标（美元、波动率、美股、铜金比、美元兑人民币、新兴市场）加上港元联系汇率，是香港最主要的高频驱动。它是同步的风险状态，而非预测。</span></p>
+  </div>
+  
+
+  <!-- honest calibration framing -->
+  <div class="panel span12">
+    <h2><span class="l-en">How to read this</span><span class="l-zh">如何解读</span></h2>
+    <p class="note"><span class="l-en">The Hong Kong regime stands on <b>three legs</b>: (1) China-driven fundamentals (PMI, CPI, PPI, M2 — the Mainland sets HK's earnings cycle), (2) a <b>primary global risk overlay</b> (the dollar/VIX/US-equity/copper-gold/USD-CNY/EM composite plus the HKD peg shown above — HK is ~2x more globally sensitive than the Mainland), and (3) HK-internal structure (H-share leadership, the HS-TECH tilt, and breadth). Read it as a <b>risk-context map</b>, not an allocation rule — the cycle ladder below is a drawdown/structure tool, never a standalone buy trigger. HS-TECH is proxied by an ETF (2020→).</span><span class="l-zh">香港周期建立在<b>三条腿</b>之上：(1) 由中国驱动的基本面（PMI、CPI、PPI、M2——内地决定香港的盈利周期），(2) <b>主导性的全球风险开关</b>（上方所示的美元/波动率/美股/铜金比/美元兑人民币/新兴市场综合指标加港元联系汇率——香港对全球因素的敏感度约为内地的2倍），以及 (3) 香港内部结构（国企股领导力、恒生科技倾斜与市场宽度）。请将其视作<b>风险背景图</b>，而非配置规则——下方的周期阶梯是回撤/结构工具，绝非独立买入信号。恒生科技以ETF代理（2020年起）。</span></p>
+    <p class="note" style="margin-top:8px"><span class="l-en">Measured 2000→2026, split-half: all three legs carry a real, stable signal on HSI forward returns — <b>Goldilocks</b> is the best quad (+1.3%/21d, 64% hit, positive in both halves) and <b>Stagflation</b> the worst (−0.9%/21d, negative in both); <b>expanding</b> dual-liquidity (PBoC + peg + southbound) beats contracting (+0.5% vs −0.4%/21d); and the global overlay differentiates monotonically — <b>Risk-on +0.9%/21d (57% hit) &gt; Risk-off &gt; Neutral</b>. These are base rates, not predictions.</span><span class="l-zh">校准区间 2000→2026（折半验证）：三条腿对恒指前瞻收益均有真实且稳定的信号——<b>理想增长</b>是最佳象限（21日 +1.3%、命中率64%，两段均为正），<b>滞胀</b>最差（21日 −0.9%，两段均为负）；<b>扩张</b>的双重流动性（央行＋联汇＋南向）优于收缩（21日 +0.5% vs −0.4%）；全球风险开关呈单调区分——<b>风险偏好 21日 +0.9%（命中率57%）&gt; 风险规避 &gt; 中性</b>。以上为历史基准，而非预测。</span></p>
+  </div>
+
+  <!-- sector rotation board -->
+  <div class="panel span8">
+    <h2><span class="l-en">Sector Rotation</span><span class="l-zh">板块轮动</span> <span class="note" style="text-transform:none">· <span class="l-en">RS vs HSI</span><span class="l-zh">相对恒生指数</span></span></h2>
+    <table>
+      <thead><tr>
+        <th class="l"><span class="l-en">Sector</span><span class="l-zh">板块</span></th>
+        <th><span class="l-en">Rank</span><span class="l-zh">排名</span></th>
+        <th><span class="l-en">20d RS</span><span class="l-zh">20日相对</span></th>
+        <th><span class="l-en">60d RS</span><span class="l-zh">60日相对</span></th>
+        <th><span class="l-en">200d</span><span class="l-zh">200日</span></th>
+        <th><span class="l-en">%ile</span><span class="l-zh">分位</span></th>
+        <th class="l"><span class="l-en">Cycle state</span><span class="l-zh">周期状态</span></th>
+      </tr></thead>
+      <tbody>
+      
+        <tr>
+          <td class="l"><a href="sectors/hk-financials-banks.html"><span class="l-en">Financials &amp; Banks</span><span class="l-zh">金融与银行</span></a></td>
+          <td>1</td>
+          <td class="pos">+9.7</td>
+          <td class="pos">+21.4</td>
+          <td>↑</td>
+          <td>100</td>
+          <td class="l"><span class="lad up"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span><span class="agechip" title="when this signal last crossed">⏱ <span class="l-en">9d ago</span><span class="l-zh">9天前</span></span></td>
+        </tr>
+      
+        <tr>
+          <td class="l"><a href="sectors/hk-internet-tech.html"><span class="l-en">Internet &amp; Tech</span><span class="l-zh">互联网与科技</span></a></td>
+          <td>2</td>
+          <td class="pos">+3.2</td>
+          <td class="pos">+7.2</td>
+          <td>↓</td>
+          <td>42</td>
+          <td class="l"><span class="lad down"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span><span class="agechip" title="when this signal last crossed">⏱ <span class="l-en">1d ago</span><span class="l-zh">1天前</span></span></td>
+        </tr>
+      
+        <tr>
+          <td class="l"><a href="sectors/hk-exchange-diversified.html"><span class="l-en">Exchange &amp; Diversified</span><span class="l-zh">交易所与综合企业</span></a></td>
+          <td>3</td>
+          <td class="neg">-0.4</td>
+          <td class="pos">+6.4</td>
+          <td>↑</td>
+          <td>94</td>
+          <td class="l"><span class="lad flat"><span class="l-en">COUNTER-TREND BOUNCE</span><span class="l-zh">逆势反弹</span></span><span class="agechip" title="when this signal last crossed">⏱ <span class="l-en">today</span><span class="l-zh">今日</span></span></td>
+        </tr>
+      
+        <tr>
+          <td class="l"><a href="sectors/hk-property.html"><span class="l-en">Property</span><span class="l-zh">地产</span></a></td>
+          <td>4</td>
+          <td class="neg">-5.7</td>
+          <td class="pos">+2.9</td>
+          <td>↑</td>
+          <td>87</td>
+          <td class="l"><span class="lad flat"><span class="l-en">COUNTER-TREND BOUNCE</span><span class="l-zh">逆势反弹</span></span><span class="agechip" title="when this signal last crossed">⏱ <span class="l-en">today</span><span class="l-zh">今日</span></span></td>
+        </tr>
+      
+        <tr>
+          <td class="l"><a href="sectors/hk-insurance.html"><span class="l-en">Insurance</span><span class="l-zh">保险</span></a></td>
+          <td>5</td>
+          <td class="pos">+0.9</td>
+          <td class="pos">+1.7</td>
+          <td>↑</td>
+          <td>80</td>
+          <td class="l"><span class="lad up"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span><span class="agechip" title="when this signal last crossed">⏱ <span class="l-en">today</span><span class="l-zh">今日</span></span></td>
+        </tr>
+      
+        <tr>
+          <td class="l"><a href="sectors/hk-consumer.html"><span class="l-en">Consumer</span><span class="l-zh">消费</span></a></td>
+          <td>6</td>
+          <td class="pos">+2.7</td>
+          <td class="pos">+0.2</td>
+          <td>↑</td>
+          <td>83</td>
+          <td class="l"><span class="lad flat"><span class="l-en">COUNTER-TREND BOUNCE</span><span class="l-zh">逆势反弹</span></span><span class="agechip" title="when this signal last crossed">⏱ <span class="l-en">today</span><span class="l-zh">今日</span></span></td>
+        </tr>
+      
+        <tr>
+          <td class="l"><a href="sectors/hk-telecom-utilities.html"><span class="l-en">Telecom &amp; Utilities</span><span class="l-zh">电信与公用事业</span></a></td>
+          <td>7</td>
+          <td class="neg">-0.7</td>
+          <td class="pos">+0.0</td>
+          <td>↑</td>
+          <td>88</td>
+          <td class="l"><span class="lad flat"><span class="l-en">COUNTER-TREND BOUNCE</span><span class="l-zh">逆势反弹</span></span><span class="agechip" title="when this signal last crossed">⏱ <span class="l-en">2d ago</span><span class="l-zh">2天前</span></span></td>
+        </tr>
+      
+        <tr>
+          <td class="l"><a href="sectors/hk-energy.html"><span class="l-en">Energy</span><span class="l-zh">能源</span></a></td>
+          <td>8</td>
+          <td class="pos">+3.4</td>
+          <td class="neg">-5.7</td>
+          <td>↑</td>
+          <td>82</td>
+          <td class="l"><span class="lad down"><span class="l-en">DOWNTREND</span><span class="l-zh">下跌趋势</span></span><span class="agechip" title="when this signal last crossed">⏱ <span class="l-en">5d ago</span><span class="l-zh">5天前</span></span></td>
+        </tr>
+      
+        <tr>
+          <td class="l"><a href="sectors/hk-healthcare-pharma.html"><span class="l-en">Healthcare &amp; Pharma</span><span class="l-zh">医疗与制药</span></a></td>
+          <td>9</td>
+          <td class="neg">-2.4</td>
+          <td class="neg">-6.0</td>
+          <td>↓</td>
+          <td>16</td>
+          <td class="l"><span class="lad down"><span class="l-en">DOWNTREND</span><span class="l-zh">下跌趋势</span></span><span class="agechip" title="when this signal last crossed">⏱ <span class="l-en">12d ago</span><span class="l-zh">12天前</span></span></td>
+        </tr>
+      
+        <tr>
+          <td class="l"><a href="sectors/hk-gaming-leisure.html"><span class="l-en">Gaming &amp; Leisure</span><span class="l-zh">博彩与休闲</span></a></td>
+          <td>10</td>
+          <td class="pos">+1.3</td>
+          <td class="neg">-10.3</td>
+          <td>↓</td>
+          <td>5</td>
+          <td class="l"><span class="lad down"><span class="l-en">DOWNTREND</span><span class="l-zh">下跌趋势</span></span><span class="agechip" title="when this signal last crossed">⏱ <span class="l-en">5d ago</span><span class="l-zh">5天前</span></span></td>
+        </tr>
+      
+        <tr>
+          <td class="l"><a href="sectors/hk-auto-ev.html"><span class="l-en">Auto &amp; EV</span><span class="l-zh">汽车与新能源车</span></a></td>
+          <td>11</td>
+          <td class="neg">-6.3</td>
+          <td class="neg">-11.4</td>
+          <td>↓</td>
+          <td>2</td>
+          <td class="l"><span class="lad down"><span class="l-en">DOWNTREND</span><span class="l-zh">下跌趋势</span></span><span class="agechip" title="when this signal last crossed">⏱ <span class="l-en">6d ago</span><span class="l-zh">6天前</span></span></td>
+        </tr>
+      
+        <tr>
+          <td class="l"><a href="sectors/hk-materials.html"><span class="l-en">Materials</span><span class="l-zh">原材料</span></a></td>
+          <td>12</td>
+          <td class="neg">-3.2</td>
+          <td class="neg">-16.9</td>
+          <td>↑</td>
+          <td>55</td>
+          <td class="l"><span class="lad flat"><span class="l-en">COUNTER-TREND BOUNCE</span><span class="l-zh">逆势反弹</span></span><span class="agechip" title="when this signal last crossed">⏱ <span class="l-en">today</span><span class="l-zh">今日</span></span></td>
+        </tr>
+      
+      </tbody>
+    </table>
+  </div>
+
+  <!-- breadth + cross-market ratios -->
+  <div class="panel span4">
+    <h2><span class="l-en">Breadth & Ratios</span><span class="l-zh">宽度与比价</span></h2>
+    
+    <p class="note" style="margin:0 0 8px"><span class="l-en">Large-cap breadth</span><span class="l-zh">大盘宽度</span> (73 <span class="l-en">names</span><span class="l-zh">只</span>)</p>
+    <table>
+      <tr><td class="l"><span class="l-en">% above 50-day</span><span class="l-zh">50日上方占比</span></td><td>24.7% <span class="note">(-40)</span></td></tr>
+      <tr><td class="l"><span class="l-en">% above 200-day</span><span class="l-zh">200日上方占比</span></td><td>42.5%</td></tr>
+      <tr><td class="l"><span class="l-en">New highs − lows</span><span class="l-zh">新高−新低</span></td><td>3 − 1</td></tr>
+      <tr><td class="l"><span class="l-en">A-D line (20d)</span><span class="l-zh">腾落线(20日)</span></td><td class="neg">↓</td></tr>
+    </table>
+    
+    
+    <p class="note" style="margin:12px 0 4px"><span class="l-en">Key ratios (20d %)</span><span class="l-zh">关键比价(20日%)</span></p>
+    <table>
+      <tr><td class="l"><span class="l-en">H-shares / HSI</span><span class="l-zh">国企/恒指</span></td><td class="pos">+1.2</td></tr>
+      <tr><td class="l"><span class="l-en">HS-TECH / HSI</span><span class="l-zh">恒生科技/恒指</span></td><td class="pos">+0.2</td></tr>
+      <tr><td class="l"><span class="l-en">Cyclical / Defensive</span><span class="l-zh">周期/防御</span></td><td class="neg">-1.6</td></tr>
+      <tr><td class="l"><span class="l-en">USD / HKD (peg)</span><span class="l-zh">美元/港元（联汇）</span></td><td class="neg">+0.0</td></tr>
+    </table>
+    
+  </div>
+
+  <!-- MTF cards for the leaders -->
+  <div class="panel span12">
+    <h2><span class="l-en">Cycle Detail — Sector Leaders</span><span class="l-zh">周期详情 — 领先板块</span></h2>
+    <div class="mtf-grid">
+      
+      <div class="mtf-card">
+        <div class="mtf-name"><a href="sectors/hk-financials-banks.html"><span class="l-en">Financials &amp; Banks</span><span class="l-zh">金融与银行</span></a> <span class="lad up"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span></div>
+        <div class="mtf" data-mtf='{"D": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 67.0, "rsi5": 81.0, "stoch": 74.0, "spark_rsi": [59.1, 56.6, 60.7, 56.8, 54.3, 58.3, 55.6, 53.1, 46.0, 52.4, 54.4, 59.6, 55.7, 53.5, 55.3, 57.8, 57.0, 53.0, 55.5, 67.1], "spark_stoch": [42.7, 28.9, 22.9, 19.2, 16.8, 17.5, 17.1, 17.1, 4.2, 11.5, 26.7, 51.3, 57.2, 59.1, 55.6, 64.8, 74.7, 70.7, 67.3, 73.7], "spark_hist": [-0.004, -0.005, -0.004, -0.005, -0.006, -0.005, -0.006, -0.006, -0.009, -0.008, -0.007, -0.004, -0.003, -0.003, -0.003, -0.002, -0.001, -0.002, -0.002, 0.003]}, "3D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": true, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 70.0, "rsi5": 76.0, "stoch": 42.0, "spark_rsi": [56.0, 62.0, 65.0, 66.4, 66.9, 69.3, 73.4, 71.0, 70.9, 67.9, 69.6, 70.2, 69.0, 68.5, 69.5, 59.1, 66.2, 63.3, 62.3, 69.7], "spark_stoch": [25.4, 33.3, 58.4, 73.2, 85.7, 93.8, 100.0, 96.8, 93.6, 86.5, 84.8, 83.8, 85.2, 80.6, 73.3, 45.7, 38.4, 26.4, 33.9, 42.0], "spark_hist": [-0.008, -0.002, 0.004, 0.008, 0.011, 0.014, 0.018, 0.019, 0.018, 0.014, 0.013, 0.011, 0.008, 0.005, 0.003, -0.002, -0.002, -0.003, -0.004, -0.001]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 74.0, "rsi5": 84.0, "stoch": 84.0, "spark_rsi": [63.4, 64.3, 64.4, 64.8, 66.7, 58.4, 53.9, 58.8, 59.8, 66.7, 68.7, 70.6, 72.7, 68.1, 68.9, 70.5, 71.0, 67.5, 69.1, 73.8], "spark_stoch": [26.5, 31.6, 48.6, 67.2, 83.7, 71.2, 37.8, 17.2, 28.1, 61.4, 82.0, 100.0, 100.0, 91.8, 84.9, 81.0, 86.1, 83.7, 81.3, 84.4], "spark_hist": [-0.001, 0.002, 0.003, 0.003, 0.005, 0.001, -0.005, -0.005, -0.005, 0.001, 0.006, 0.011, 0.015, 0.014, 0.013, 0.012, 0.011, 0.008, 0.006, 0.008]}}'></div>
+      </div>
+      
+      <div class="mtf-card">
+        <div class="mtf-name"><a href="sectors/hk-internet-tech.html"><span class="l-en">Internet &amp; Tech</span><span class="l-zh">互联网与科技</span></a> <span class="lad down"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span></div>
+        <div class="mtf" data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 46.0, "rsi5": 35.0, "stoch": 2.0, "spark_rsi": [56.5, 53.9, 55.7, 57.6, 48.6, 56.6, 60.0, 57.6, 55.4, 59.5, 63.0, 72.2, 63.5, 59.3, 55.8, 48.6, 50.5, 47.9, 44.7, 46.3], "spark_stoch": [80.2, 58.0, 37.8, 38.9, 28.7, 31.2, 36.3, 53.2, 51.0, 50.1, 60.8, 81.4, 81.9, 69.4, 46.3, 25.3, 12.9, 2.7, 2.7, 1.9], "spark_hist": [0.008, 0.004, 0.001, 0.0, -0.004, -0.003, -0.001, -0.0, -0.001, 0.0, 0.003, 0.011, 0.011, 0.009, 0.005, -0.002, -0.005, -0.009, -0.013, -0.014]}, "3D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 2.2, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 49.0, "rsi5": 42.0, "stoch": 33.0, "spark_rsi": [36.0, 33.9, 34.3, 41.9, 39.6, 49.0, 48.7, 47.0, 46.0, 48.5, 54.9, 55.5, 52.7, 53.5, 53.9, 54.1, 66.4, 55.8, 50.5, 49.2], "spark_stoch": [28.1, 18.8, 23.4, 46.2, 64.2, 89.2, 91.6, 95.8, 90.3, 89.8, 93.4, 98.9, 95.7, 92.7, 90.2, 92.2, 95.3, 84.6, 60.9, 32.8], "spark_hist": [-0.021, -0.022, -0.021, -0.013, -0.01, 0.001, 0.008, 0.011, 0.012, 0.014, 0.021, 0.025, 0.024, 0.024, 0.023, 0.021, 0.03, 0.027, 0.02, 0.013]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": true, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 49.0, "rsi5": 48.0, "stoch": 90.0, "spark_rsi": [54.1, 46.1, 45.0, 41.9, 41.1, 37.6, 38.7, 35.3, 33.7, 32.0, 38.0, 45.4, 44.3, 42.6, 53.1, 50.3, 51.4, 53.7, 55.5, 48.8], "spark_stoch": [72.5, 49.7, 25.0, 0.0, 0.0, 0.0, 2.1, 2.1, 2.1, 0.0, 8.4, 27.1, 44.2, 51.9, 66.6, 78.3, 92.8, 92.8, 97.2, 90.4], "spark_hist": [-0.007, -0.014, -0.018, -0.024, -0.027, -0.032, -0.033, -0.035, -0.037, -0.038, -0.033, -0.022, -0.015, -0.01, 0.002, 0.008, 0.012, 0.017, 0.021, 0.017]}}'></div>
+      </div>
+      
+      <div class="mtf-card">
+        <div class="mtf-name"><a href="sectors/hk-exchange-diversified.html"><span class="l-en">Exchange &amp; Diversified</span><span class="l-zh">交易所与综合企业</span></a> <span class="lad flat"><span class="l-en">COUNTER-TREND BOUNCE</span><span class="l-zh">逆势反弹</span></span></div>
+        <div class="mtf" data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": true, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": true, "stoch_cross_dn": false, "rsi14": 41.0, "rsi5": 47.0, "stoch": 22.0, "spark_rsi": [58.6, 53.0, 51.4, 51.0, 48.0, 49.2, 42.6, 38.1, 38.0, 41.2, 41.0, 46.5, 46.0, 42.8, 39.2, 37.1, 33.2, 32.2, 30.1, 41.0], "spark_stoch": [19.9, 14.7, 4.4, 0.0, 0.0, 1.6, 1.6, 1.6, 0.0, 3.4, 7.1, 18.9, 26.7, 30.7, 21.6, 10.4, 2.7, 0.0, 0.0, 22.3], "spark_hist": [0.0, -0.002, -0.004, -0.006, -0.007, -0.008, -0.009, -0.011, -0.012, -0.011, -0.011, -0.009, -0.007, -0.006, -0.006, -0.007, -0.007, -0.008, -0.008, -0.006]}, "3D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 48.0, "rsi5": 37.0, "stoch": 3.0, "spark_rsi": [52.8, 52.7, 56.5, 61.8, 59.4, 62.3, 65.0, 63.6, 65.3, 64.8, 73.1, 67.4, 64.3, 59.1, 57.9, 50.2, 53.6, 49.6, 45.4, 48.0], "spark_stoch": [13.1, 7.7, 15.5, 25.2, 32.8, 39.6, 43.5, 52.6, 71.3, 86.1, 99.0, 91.2, 79.9, 57.0, 40.0, 18.9, 13.5, 5.0, 5.0, 3.1], "spark_hist": [-0.013, -0.013, -0.012, -0.008, -0.006, -0.004, -0.001, 0.0, 0.001, 0.002, 0.006, 0.007, 0.006, 0.003, -0.0, -0.005, -0.007, -0.01, -0.013, -0.014]}, "W": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": true, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 54.0, "rsi5": 36.0, "stoch": 0.0, "spark_rsi": [77.4, 79.1, 79.7, 80.1, 82.3, 66.7, 60.7, 63.4, 59.1, 61.5, 66.4, 64.9, 67.4, 66.1, 73.1, 67.9, 62.4, 57.1, 55.6, 53.6], "spark_stoch": [100.0, 100.0, 100.0, 100.0, 100.0, 77.4, 46.1, 18.8, 8.1, 9.4, 14.0, 22.2, 30.7, 30.2, 42.0, 42.6, 37.4, 17.3, 4.7, 0.0], "spark_hist": [0.011, 0.014, 0.016, 0.016, 0.017, 0.011, 0.005, 0.001, -0.003, -0.005, -0.003, -0.003, -0.002, -0.002, 0.003, 0.004, 0.001, -0.003, -0.007, -0.011]}}'></div>
+      </div>
+      
+      <div class="mtf-card">
+        <div class="mtf-name"><a href="sectors/hk-property.html"><span class="l-en">Property</span><span class="l-zh">地产</span></a> <span class="lad flat"><span class="l-en">COUNTER-TREND BOUNCE</span><span class="l-zh">逆势反弹</span></span></div>
+        <div class="mtf" data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": true, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 8.4, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 37.0, "rsi5": 37.0, "stoch": 11.0, "spark_rsi": [72.2, 56.9, 55.2, 53.3, 51.2, 54.4, 49.9, 45.1, 43.2, 47.2, 49.0, 46.1, 41.4, 39.0, 35.2, 32.9, 31.7, 31.2, 31.7, 37.1], "spark_stoch": [83.7, 65.0, 36.8, 9.3, 0.0, 4.2, 4.2, 4.2, 0.0, 3.9, 10.4, 13.6, 9.7, 3.2, 0.0, 0.0, 0.0, 0.0, 0.7, 11.2], "spark_hist": [0.008, 0.004, 0.0, -0.003, -0.005, -0.006, -0.007, -0.009, -0.01, -0.01, -0.009, -0.008, -0.009, -0.009, -0.01, -0.011, -0.011, -0.011, -0.01, -0.008]}, "3D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": true, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 46.0, "rsi5": 33.0, "stoch": 3.0, "spark_rsi": [42.6, 40.6, 41.8, 49.2, 49.5, 54.7, 55.7, 53.0, 57.6, 59.8, 69.1, 69.5, 69.8, 58.4, 59.0, 51.9, 53.1, 46.1, 43.3, 45.6], "spark_stoch": [6.1, 0.9, 1.8, 8.0, 15.2, 25.8, 31.1, 35.8, 47.0, 66.1, 87.5, 98.1, 100.0, 86.9, 74.6, 53.2, 39.3, 18.3, 6.3, 2.9], "spark_hist": [-0.016, -0.018, -0.019, -0.016, -0.013, -0.009, -0.006, -0.005, -0.002, 0.001, 0.007, 0.01, 0.012, 0.009, 0.007, 0.003, 0.0, -0.004, -0.008, -0.01]}, "W": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": true, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 50.0, "rsi5": 35.0, "stoch": 18.0, "spark_rsi": [73.1, 72.2, 74.4, 75.4, 78.1, 65.6, 55.7, 53.4, 47.9, 47.4, 54.6, 55.1, 55.8, 58.2, 68.3, 68.8, 60.7, 56.8, 50.4, 49.6], "spark_stoch": [100.0, 98.6, 98.6, 98.6, 100.0, 84.1, 55.5, 23.9, 6.6, 1.8, 7.8, 16.2, 25.3, 29.2, 43.5, 57.5, 60.3, 47.8, 29.4, 18.3], "spark_hist": [0.007, 0.01, 0.013, 0.014, 0.016, 0.013, 0.006, 0.0, -0.007, -0.011, -0.01, -0.009, -0.008, -0.006, 0.001, 0.006, 0.005, 0.003, -0.002, -0.006]}}'></div>
+      </div>
+      
+      <div class="mtf-card">
+        <div class="mtf-name"><a href="sectors/hk-insurance.html"><span class="l-en">Insurance</span><span class="l-zh">保险</span></a> <span class="lad up"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span></div>
+        <div class="mtf" data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": true, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 0.5, "stoch_cross_up": true, "stoch_cross_dn": false, "rsi14": 50.0, "rsi5": 72.0, "stoch": 79.0, "spark_rsi": [49.8, 47.3, 45.7, 42.1, 40.5, 41.6, 42.8, 38.8, 35.8, 38.6, 40.7, 40.7, 37.4, 32.9, 30.4, 29.7, 29.6, 37.9, 39.6, 49.8], "spark_stoch": [42.2, 31.0, 16.8, 6.7, 0.0, 1.5, 4.5, 4.5, 3.0, 3.3, 9.4, 17.8, 17.8, 11.6, 3.2, 0.0, 0.0, 21.0, 46.1, 79.5], "spark_hist": [0.002, -0.002, -0.005, -0.009, -0.012, -0.012, -0.012, -0.013, -0.014, -0.013, -0.012, -0.01, -0.009, -0.011, -0.012, -0.012, -0.012, -0.009, -0.006, -0.0]}, "3D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": true, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 47.0, "rsi5": 50.0, "stoch": 16.0, "spark_rsi": [41.2, 40.4, 43.9, 49.6, 49.2, 50.4, 47.7, 44.7, 50.8, 53.3, 59.9, 57.8, 50.8, 46.6, 46.1, 42.8, 44.9, 39.5, 41.9, 46.9], "spark_stoch": [8.6, 4.9, 10.2, 20.3, 32.6, 43.5, 44.1, 46.1, 63.2, 83.0, 100.0, 96.9, 83.2, 60.5, 40.1, 20.5, 14.0, 4.1, 7.9, 15.8], "spark_hist": [-0.044, -0.043, -0.039, -0.03, -0.023, -0.017, -0.014, -0.014, -0.009, -0.004, 0.005, 0.009, 0.007, 0.001, -0.003, -0.008, -0.009, -0.014, -0.015, -0.011]}, "W": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": true, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 49.0, "rsi5": 46.0, "stoch": 11.0, "spark_rsi": [81.3, 71.9, 67.9, 68.9, 63.6, 56.0, 51.8, 53.3, 47.5, 49.2, 55.1, 51.2, 49.4, 54.7, 59.9, 53.7, 49.8, 47.8, 44.0, 49.1], "spark_stoch": [100.0, 84.5, 62.4, 42.1, 27.4, 16.1, 3.2, 1.6, 1.6, 3.3, 9.1, 12.7, 12.9, 12.6, 25.9, 33.7, 30.2, 13.8, 4.2, 11.3], "spark_hist": [0.024, 0.022, 0.015, 0.011, 0.003, -0.009, -0.021, -0.027, -0.035, -0.038, -0.034, -0.033, -0.033, -0.028, -0.017, -0.016, -0.018, -0.021, -0.027, -0.024]}}'></div>
+      </div>
+      
+      <div class="mtf-card">
+        <div class="mtf-name"><a href="sectors/hk-consumer.html"><span class="l-en">Consumer</span><span class="l-zh">消费</span></a> <span class="lad flat"><span class="l-en">COUNTER-TREND BOUNCE</span><span class="l-zh">逆势反弹</span></span></div>
+        <div class="mtf" data-mtf='{"D": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 50.0, "rsi5": 66.0, "stoch": 78.0, "spark_rsi": [42.7, 38.0, 37.5, 39.7, 37.3, 33.7, 30.7, 28.6, 26.1, 36.0, 45.3, 42.8, 39.3, 37.3, 35.5, 36.3, 36.6, 40.7, 37.1, 49.8], "spark_stoch": [50.5, 26.2, 7.7, 4.9, 4.9, 4.9, 0.0, 0.0, 0.0, 12.4, 38.9, 63.2, 72.0, 64.9, 57.0, 53.4, 52.3, 61.5, 62.8, 77.8], "spark_hist": [-0.0, -0.001, -0.002, -0.002, -0.003, -0.003, -0.004, -0.005, -0.006, -0.005, -0.002, -0.001, -0.001, -0.001, -0.001, -0.001, -0.001, -0.0, -0.0, 0.002]}, "3D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": true, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 7.9, "stoch_cross_up": true, "stoch_cross_dn": false, "rsi14": 45.0, "rsi5": 50.0, "stoch": 36.0, "spark_rsi": [44.6, 48.7, 54.1, 55.9, 54.5, 53.9, 54.3, 48.6, 47.4, 46.8, 49.0, 49.7, 45.0, 42.3, 38.6, 33.3, 42.0, 37.7, 40.3, 44.7], "spark_stoch": [7.8, 10.9, 24.4, 37.1, 44.0, 44.5, 42.7, 39.7, 39.5, 37.5, 43.3, 48.7, 44.4, 27.0, 8.0, 0.0, 12.8, 19.6, 30.7, 35.9], "spark_hist": [-0.011, -0.009, -0.006, -0.004, -0.002, -0.001, -0.001, -0.002, -0.003, -0.004, -0.004, -0.003, -0.004, -0.005, -0.006, -0.009, -0.008, -0.008, -0.008, -0.006]}, "W": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": true, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 45.0, "rsi5": 42.0, "stoch": 10.0, "spark_rsi": [66.1, 71.4, 72.1, 71.4, 72.0, 58.9, 50.0, 50.4, 51.8, 57.7, 61.7, 53.6, 51.3, 48.7, 51.2, 48.0, 42.3, 40.2, 38.2, 44.9], "spark_stoch": [98.5, 100.0, 100.0, 98.5, 98.3, 72.9, 41.0, 8.6, 3.3, 15.0, 31.9, 34.6, 25.1, 7.5, 5.5, 3.5, 3.5, 0.0, 0.0, 9.5], "spark_hist": [0.002, 0.005, 0.007, 0.007, 0.007, 0.004, -0.001, -0.004, -0.005, -0.005, -0.003, -0.004, -0.005, -0.006, -0.006, -0.007, -0.009, -0.011, -0.012, -0.011]}}'></div>
+      </div>
+      
+    </div>
+  </div>
+
+</div>
+
+<div class="foot">
+  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-06-13 14:02 UTC ·
+  <span class="l-en">Free public data (yfinance), mechanical &amp; backtested · not investment advice</span><span class="l-zh">免费公开数据（yfinance），机械化并经回测 · 非投资建议</span><br>
+  <span class="l-en">HSI 1986→; sectors are deep synthetic baskets of curated HK large-caps; regime classified 2006→.</span><span class="l-zh">恒生指数始于1986年；板块为精选香港大盘股的深度合成篮子；周期分类始于2006年。</span>
+</div>
+
+<script src="theme.js"></script>
+<script src="mtf.js"></script>
+</body>
+</html>

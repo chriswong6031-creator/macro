@@ -40,7 +40,8 @@ def test_transition_no_change_silent() -> None:
 def test_liquidity_flip_fires() -> None:
     idx = pd.bdate_range("2024-01-01", periods=60)
     nl = pd.Series(np.linspace(0, 100, 60), index=idx)   # rising RoC
-    nl.iloc[-1] = nl.iloc[-21] - 5                        # today: 20d change negative
+    nl.iloc[-2:] = nl.iloc[-22] - 40                      # last 2 days: 20d change sharply negative,
+                                                          # holds >=confirm days and clears the deadband
     f = pd.DataFrame({"net_liquidity_bn": nl})
     a = net_liquidity_roc_flip(None, f)
     assert a is not None and "contracting" in a.message

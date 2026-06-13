@@ -57,25 +57,47 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
     }
 
 
+def _add_cache(out: list[tuple], seen: set[str], closes_path, meta_path, label: str) -> int:
+    """Append (ticker, close, None, name, sector) from a wide closes parquet + a
+    meta table (index=ticker, columns name/sector). Robust: a missing OR CORRUPT
+    parquet is logged and skipped, never fatal (one bad cache must not 404 the whole
+    search library in CI)."""
+    if not (closes_path.exists() and meta_path.exists()):
+        log.warning("%s cache missing (%s) — skipped", label, closes_path.name)
+        return 0
+    try:
+        closes = pd.read_parquet(closes_path)
+        meta = pd.read_parquet(meta_path)
+    except Exception as e:  # noqa: BLE001 — corrupt restored/committed parquet
+        log.warning("%s cache unreadable (%s) — skipped", label, e)
+        return 0
+    added = 0
+    for t in closes.columns:
+        if t in seen or t not in meta.index:
+            continue
+        out.append((t, closes[t], None, str(meta.loc[t, "name"]), str(meta.loc[t, "sector"])))
+        seen.add(t)
+        added += 1
+    log.info("china library universe: +%d from %s", added, label)
+    return added
+
+
 def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
     """(ticker, close, high|None, name, sector) for everything analyzable."""
     out: list[tuple] = []
     seen: set[str] = set()
     cy = config.load()["china"]["yahoo"]
+    dd = config.data_dir()
+
+    # broad SEARCH universe FIRST (top-N A-shares by mcap, real EN/中文 names + sectors)
+    # so its names win over the breadth cache's ticker-as-name fallback.
+    _add_cache(out, seen, dd / "china_search" / "closes.parquet",
+               dd / "china_search" / "members.parquet", "search_universe")
 
     # curated constituents from the breadth close cache (~3y window) + their sector
-    cache = config.data_dir() / "china_breadth" / "_closes_cache.parquet"
-    cons = config.data_dir() / "china_breadth" / "constituents.parquet"
-    if cache.exists() and cons.exists():
-        closes = pd.read_parquet(cache)
-        meta = pd.read_parquet(cons)
-        for t in closes.columns:
-            if t in seen or t not in meta.index:
-                continue
-            out.append((t, closes[t], None, str(meta.loc[t, "name"]), str(meta.loc[t, "sector"])))
-            seen.add(t)
-    else:
-        log.warning("china breadth close cache missing — library covers ETFs/indices only")
+    if not _add_cache(out, seen, dd / "china_breadth" / "_closes_cache.parquet",
+                      dd / "china_breadth" / "constituents.parquet", "breadth") and not out:
+        log.warning("no china stock caches available — library covers ETFs/indices only")
 
     # sector ETFs + broad indices from the china store (deeper history than the cache)
     labels = {**{k: (v[0], "Sector ETF") for k, v in cy["sector_etfs"].items()},

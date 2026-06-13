@@ -199,7 +199,7 @@ def build_markdown(latest: dict, prev: dict | None) -> str:
     md += ["---",
            "*Generated automatically from the day's data. Heat, odds and percentile "
            "figures are measured base rates from 2007-2026 history, not predictions. "
-           "Details and tooltips: [the dashboard](index.html).*"]
+           "Details and tooltips: [the dashboard](macro.html).*"]
     return "\n".join(md)
 
 

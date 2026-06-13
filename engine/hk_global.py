@@ -92,7 +92,13 @@ def composite(idx: pd.DatetimeIndex) -> pd.DataFrame:
         w = pd.Series(weights)[sc.columns]
         avail = sc.notna()
         wsum = avail.mul(w, axis=1).sum(axis=1)
-        out["global_score"] = sc.fillna(0).mul(w, axis=1).sum(axis=1) / wsum.replace(0, np.nan)
+        gscore = sc.fillna(0).mul(w, axis=1).sum(axis=1) / wsum.replace(0, np.nan)
+        # min-factor floor: below the floor the "composite" would be a 1-2 factor
+        # signal (the factors start at different dates — DXY 1971 .. EEM 2003), so
+        # NaN it out (-> 'unknown') rather than label a confident risk state off one
+        # series, mirroring score_axis's min_components guard.
+        min_f = int(g.get("min_factors", 3))
+        out["global_score"] = gscore.where(avail.sum(axis=1) >= min_f, np.nan)
     else:
         out["global_score"] = np.nan
 
@@ -118,9 +124,10 @@ def peg_frame(usdhkd: pd.Series) -> pd.DataFrame:
     lo, hi = p["strong"], p["weak"]
     dist = ((usdhkd - lo) / (hi - lo)).clip(0, 1)        # 0 = strong-side, 1 = weak-side
     pressure = dist                                       # higher = more outflow pressure
+    band = p["pressure_pct"] / 100.0                     # how close to a band edge counts as pressure
     state = pd.Series("mid-band", index=usdhkd.index)
-    state[dist >= (p["pressure_pct"] / 100.0 * 0 + 0.75)] = "weak-side (outflow)"
-    state[dist <= 0.25] = "strong-side (inflow)"
+    state[dist >= 1 - band] = "weak-side (outflow)"
+    state[dist <= band] = "strong-side (inflow)"
     state[usdhkd.isna()] = "unknown"
     return pd.DataFrame({"peg_distance": dist, "peg_pressure": pressure, "peg_state": state})
 
@@ -132,6 +139,10 @@ def snapshot(asof: pd.Timestamp | None = None) -> dict:
     if not series:
         return {"score": None, "state": "unknown", "factors": [], "peg": None}
     end = asof or min((s.index.max() for s in series.values()), default=None)
+    # truncate every factor series to `end` so the hero factor panel + peg are
+    # AS-OF consistent with the composite (no future-leak when asof is historical)
+    series = {k: v[v.index <= end] for k, v in series.items()}
+    series = {k: v for k, v in series.items() if not v.empty}
     idx = pd.bdate_range(min(s.index.min() for s in series.values()), end)
     comp = composite(idx)
     row = comp.dropna(subset=["global_score"]).iloc[-1] if not comp["global_score"].dropna().empty else None
@@ -154,6 +165,7 @@ def snapshot(asof: pd.Timestamp | None = None) -> dict:
     hkd = store.read("hk", "HKD=X")
     if hkd is not None and "close" in hkd.columns:
         u = hkd["close"].dropna()
+        u = u[u.index <= end]                            # as-of consistent with the composite
         pf = peg_frame(u)
         if not pf.empty:
             peg = {"level": round(float(u.iloc[-1]), 4),

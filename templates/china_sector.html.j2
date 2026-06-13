@@ -34,6 +34,12 @@
   .urg-exit .entrytag{background:var(--down);color:#fff;} .urg-exit{border-left-color:var(--down);}
   .agewhen { margin:6px 0; padding:7px 11px; border-radius:8px; background:var(--panel2); border-left:3px solid var(--link); font-size:13px; color:var(--text); }
   .agechip { font-size:11px; font-weight:700; padding:2px 7px; border-radius:9px; background:var(--panel); color:var(--muted); border:1px solid var(--line); white-space:nowrap; }
+  .eqbadge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:11px; font-size:12.5px; font-weight:700; white-space:nowrap; border:1px solid var(--line); }
+  .eqbadge.sm { font-size:11px; padding:2px 7px; border-radius:9px; }
+  .eqbadge .eqg { font-weight:500; opacity:.8; }
+  .eqbadge.eq-up { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
+  .eqbadge.eq-down { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
+  .eqbadge.eq-flat { background:var(--panel2); color:var(--muted); }
   .cyclebox { margin:8px 0; padding:9px 12px; border-radius:9px; background:var(--panel2); font-size:13px; line-height:1.6; }
   .card { background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:11px 13px; margin:9px 0; }
   .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:4px; }
@@ -47,6 +53,7 @@
     <div class="topline">
       <h1>{{ td(s.name) }} <span class="muted">({{ s.fund }})</span></h1>
       <span class="lad {{ 'up' if s.ladder.dir=='up' else ('down' if s.ladder.dir=='down' else 'flat') }}">{{ td(s.ladder.label) }}</span>
+      {% if s.ladder.eq_badge %}<span class="eqbadge eq-{{ s.ladder.eq_dir }}">{{ t('Entry','入场') }} {{ s.ladder.eq_badge }} <span class="eqg">{{ td(s.ladder.eq_grade) }}</span></span>{{ help(s.ladder.eq_tip, s.ladder.eq_tip_zh) }}{% endif %}
       <span style="flex:1"></span>
       <a class="navbtn" href="../china.html">{{ t('← China A-Shares', '← 中国A股') }}</a>
       <a class="navbtn" href="../china_stock.html">{{ t('🔎 Search', '🔎 搜索') }}</a>
@@ -93,6 +100,7 @@
         <span class="lad {{ 'up' if h.ladder.dir=='up' else ('down' if h.ladder.dir=='down' else 'flat') }}">{{ td(h.ladder.label) }}</span>
         <span class="muted" style="font-size:12px">{{ td(h.ladder.entry.tag) }}</span>
         {% if h.ladder.age_short %}<span class="agechip" title="when this signal last crossed">⏱ {{ t(h.ladder.age_short, h.ladder.age_short_zh) }}</span>{% endif %}
+        {% if h.ladder.eq_badge %}<span class="eqbadge sm eq-{{ h.ladder.eq_dir }}" title="{{ h.ladder.eq_tip }}">{{ h.ladder.eq_badge }}</span>{% endif %}
         <span style="flex:1"></span>
         <span class="muted" style="font-size:12px">{{ t('daily cycle day', '日线周期第') }} {{ h.cycle.dc_day }}/~{{ h.cycle.dc_band[1] }}{{ t('', ' 天') }}</span>
       </div>

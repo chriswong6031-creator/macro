@@ -286,33 +286,22 @@ def chart_bfi(df: pd.DataFrame, days: int = 365) -> str:
 
 
 # --------------------------------------------------------------------------- #
-# landing hub + macro relocation (post-processes the macro build's output;
-# never edits the parallel-owned build_site.py / macro templates)
+# landing hub (owns site/index.html exclusively). build_site.py writes the macro
+# dashboard straight to macro.html, so index.html is never the raw dashboard and
+# Home (-> index.html) can't regress to it — even if this step is skipped, the
+# committed hub stays in place.
 # --------------------------------------------------------------------------- #
 HUB_MARKER = "<!-- bitcoin-vector-landing-hub -->"
-MACRO_TITLE_HINT = "Macro Regime Dashboard"
-VECTOR_NAV = ('<a class="navbtn" href="index.html">🏠 Home</a>\n      '
-              '<a class="navbtn" href="china.html">🇨🇳 China A-Shares</a>\n      '
-              '<a class="navbtn" href="vector.html">₿ Bitcoin Vector</a>\n      '
-              '<a class="navbtn" href="commodities.html">◆ Commodities</a>\n      ')
 
 
 def build_landing(site: Path, vm: dict) -> None:
-    """Relocate the macro dashboard to macro.html and install the hub at
-    index.html. Idempotent: safe to run every build, after build_site.py."""
-    idx = site / "index.html"
-    if idx.exists() and HUB_MARKER not in idx.read_text() and MACRO_TITLE_HINT in idx.read_text()[:4000]:
-        macro_html = idx.read_text()
-        # add a Bitcoin Vector entry to the macro nav (before the first navbtn)
-        if 'href="vector.html"' not in macro_html and '<a class="navbtn"' in macro_html:
-            macro_html = macro_html.replace('<a class="navbtn"', VECTOR_NAV + '<a class="navbtn"', 1)
-        (site / "macro.html").write_text(macro_html)
-        log.info("relocated macro dashboard -> macro.html")
-
+    """Install the landing hub at index.html. Idempotent: safe to run every
+    build, independent of build_site.py ordering — the hub is rendered from the
+    stored engine state, not from any HTML file build_site emits."""
     macro = _macro_state()
     hub = _hub_html(vm, macro, home_alert_feed(), _china_state(), _commodities_state(),
-                    _watchlist_state(), _etf_state())
-    idx.write_text(hub)
+                    _watchlist_state(), _etf_state(), _hk_state())
+    (site / "index.html").write_text(hub)
     log.info("wrote landing hub -> index.html")
 
 
@@ -337,6 +326,19 @@ def _china_state() -> dict:
                 "present": (site / "china.html").exists()}
     except Exception:
         return {"label": "—", "date": "", "present": (site / "china.html").exists()}
+
+
+def _hk_state() -> dict:
+    """Hong Kong / Hang Seng regime for the hub card (written by build_hk, which
+    runs before build_vector). `present` gates the card so the hub still works if
+    the HK page wasn't built this run."""
+    site = config.ROOT / config.load()["storage"]["site_dir"]
+    try:
+        d = json.loads((config.data_dir() / "hk_regime" / "latest.json").read_text())
+        return {"label": d.get("quad_name", "—"), "date": d.get("date", ""),
+                "risk": d.get("risk_state", ""), "present": (site / "hk.html").exists()}
+    except Exception:
+        return {"label": "—", "date": "", "risk": "", "present": (site / "hk.html").exists()}
 
 
 def _commodities_state() -> dict:
@@ -479,7 +481,7 @@ def _hub_alert_rows(alerts: list[dict]) -> str:
 
 def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = None,
               commodities: dict | None = None, watchlist: dict | None = None,
-              etf: dict | None = None) -> str:
+              etf: dict | None = None, hk: dict | None = None) -> str:
     # Bilingual via the i18n layer when present, identity fallback when absent.
     try:
         from engine.i18n import t as T, tr as TR
@@ -501,13 +503,23 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
     <span class="stat">{T(china['label'], TR(china['label']))}</span>
     <div class="go">{T('Open China A-Shares →', '打开中国A股 →')}</div>
   </a>""")
+    hk = hk or {"present": False}
+    hk_risk = hk.get("risk", "")
+    hk_card = ("" if not hk.get("present") else f"""
+  <a class="c" href="hk.html">
+    <div class="ico">\U0001F1ED\U0001F1F0</div>
+    <h2>{T('Hong Kong', '香港')}</h2>
+    <p>{T('Regime, a primary global risk-on/off overlay, sector rotation & cycle read for the Hang Seng market.', '恒生市场的周期状态、以全球风险开关为主的叠加、板块轮动与周期解读。')}</p>
+    <span class="stat">{T(hk['label'], TR(hk['label']))}{(' · ' + T(hk_risk, TR(hk_risk))) if hk_risk else ''}</span>
+    <div class="go">{T('Open Hong Kong →', '打开香港 →')}</div>
+  </a>""")
     commodities = commodities or {"present": False}
     fav = ", ".join(commodities.get("favored", []))
     commodities_card = ("" if not commodities.get("present") else f"""
   <a class="c" href="commodities.html">
     <div class="ico">◆</div>
     <h2>{T('Commodity Vector', '大宗商品向量')}</h2>
-    <p>{T('Regime, allocation &amp; shock-detection for gold, silver, oil &amp; copper.', '黄金、白银、原油与铜的周期、配置与冲击检测。')}</p>
+    <p>{T('Regime, allocation & shock-detection for gold, silver, oil & copper.', '黄金、白银、原油与铜的周期、配置与冲击检测。')}</p>
     <span class="stat">{T(commodities['label'], TR(commodities['label']))}{(' · ' + fav) if fav else ''}</span>
     <div class="go">{T('Open Commodity Vector →', '打开大宗商品向量 →')}</div>
   </a>""")
@@ -593,14 +605,14 @@ body{{margin:0;min-height:100vh;background:{C['bg']};color:{C['text']};
   <a class="c" href="macro.html">
     <div class="ico">\U0001F30D</div>
     <h2>{T(macro_label, TR(macro_label))}</h2>
-    <p>{T('Regime, liquidity &amp; sector-flow read across the global business cycle.', '纵观全球商业周期的市场状态、流动性与板块资金流向解读。')}</p>
+    <p>{T('Regime, liquidity & sector-flow read across the global business cycle.', '纵观全球商业周期的市场状态、流动性与板块资金流向解读。')}</p>
     <span class="stat">{T(macro['label'], TR(macro['label']))}</span>
     <div class="go">{T(f"Open {macro_label} →", f"打开{TR(macro_label)} →")}</div>
-  </a>{china_card}
+  </a>{china_card}{hk_card}
   <a class="c" href="vector.html">
     <div class="ico">₿</div>
     <h2>{T('Bitcoin Vector', '比特币向量')}</h2>
-    <p>{T('Risk regime, momentum, structure &amp; backtested allocation for Bitcoin.', '比特币的风险状态、动量、结构与经回测的仓位策略。')}</p>
+    <p>{T('Risk regime, momentum, structure & backtested allocation for Bitcoin.', '比特币的风险状态、动量、结构与经回测的仓位策略。')}</p>
     <span class="stat {risk_cls}">{T('Risk', '风险')} {T(vm['risk_word'], TR(vm['risk_word']))} · {vm['risk_index']}</span>
     <span class="stat">{T('Momentum', '动量')} {vm['momentum']}</span>
     <div class="go">{T('Open Bitcoin Vector →', '打开比特币向量 →')}</div>

@@ -36,6 +36,37 @@ interface — engine modules `hk_inputs/hk_axes/hk_regime/hk_run/hk_global`, scr
 `build_hk/build_hk_library/calibrate_hk/hk_brief`, templates `hk*.j2`, wired into the
 hub (🇭🇰 card + `_hk_state`), nav and daily/weekly CI. Browser-verified bilingual.
 
+**D80. Adversarial review pass (3 dimensions, each finding independently verified) →
+5 confirmed defects fixed.** (1) The "dual liquidity" SOUTHBOUND leg was reading the
+DEAD `china_macro/connect_flow.southbound_cum` (100% NaN — a frozen legacy store), so
+the overlay silently ran on 2 legs while config/report/docstrings advertised 3 →
+repointed `hk_inputs` to the LIVE `china_connect/southbound` store (a parallel
+session's repaired collector; `southbound_cum` = cumsum of daily net flow, 2017→).
+The overlay is now genuinely 3-leg; recalibration kept it monotone and *widened* the
+edge (expanding +0.5% vs contracting −0.4%/21d). (2) `hk_global.composite` had no
+min-factor floor → a pre-1993 single/double-factor signal was mislabeled a confident
+6-factor risk_state in the raw parquet; added `min_factors: 3` (→ `unknown` below it,
+mirroring `score_axis.min_components`). (3) `hk_global.snapshot(asof)` truncated only
+the composite, not the factor panel/peg → a latent look-ahead on any historical call;
+now slices every factor series + the HKD series to `asof`. (4) peg weak-side threshold
+hard-coded `*0 + 0.75`, ignoring `pressure_pct` → made it `1 - pressure_pct/100`. 3
+findings correctly REFUTED (use_log heuristic = no numeric diff since all factors
+positive; "monotonic" wording defensible; the peg fix double-reported). Live read
+after fixes: Stagflation · neutral 3-leg liquidity · Neutral risk · HKD weak-side.
+
+**D81. HK charting → TradingView Lightweight Charts on our own EOD data (not the
+symbol widget).** The free `TradingView.widget()` symbol embed returns "This symbol
+is only available on TradingView" for HKEX tickers — HKEX data is gated behind a TV
+login, regardless of symbol format. Rather than shop for another live-quote provider
+(CORS/rate-limit/key headaches, against the repo's zero-cost static-data philosophy),
+the HK stock-analyzer (`hk_stock.html`) and the 12 sector drill-downs now draw an
+adjusted-close + 50/200-DMA area chart from OUR nightly stored closes using the
+open-source `lightweight-charts` lib (CDN, ~45KB). `build_hk_library.chart_series()`
+adds a compact columnar `chart:{t,c}` (~2y/504 pts) to each `hkstockdata/*.json`;
+sector pages embed the basket series via `s.chart_json`. MAs computed client-side.
+Trade-off: EOD close only (no intraday/candles/volume — we don't store OHLC for HK
+constituents). China/US/crypto keep the live TV widget (those exchanges aren't gated).
+
 ## 2026-06-13 — Entry-Quality score: a RISK-TIMING conviction, not an alpha leaderboard (macro)
 
 **D76 (macro). Added `engine.cycles.entry_quality()` — a SIGNED −100..+100 "how good

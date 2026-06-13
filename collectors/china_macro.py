@@ -10,7 +10,7 @@ plane, so every series:
 
 Stored under group `china_macro`, one parquet per series:
   pmi (mfg+nonmfg) · cpi · ppi · money_supply (M0/M1/M2 YoY) · indpro · rates
-  (SHIBOR tenors) · connect_flow (Stock Connect cumulative net).
+  (SHIBOR tenors) · connect_flow (Stock Connect daily flows, datacenter report).
 
 Deferred (fiddlier hosts, engine degrades without them): social financing
 (data.mofcom.gov.cn POST, legacy SSL) and CGB bond yields (chinabond).
@@ -38,10 +38,28 @@ DATACENTER = {
     "money_supply": ("RPT_ECONOMY_CURRENCY_SUPPLY", {"m2_yoy": "BASIC_CURRENCY_SAME",
                                                      "m1_yoy": "CURRENCY_SAME", "m0_yoy": "FREE_CASH_SAME"}),
     "indpro":       ("RPT_ECONOMY_INDUS_GROW",     {"indpro_yoy": "BASE_SAME"}),
+    # -- credit + macro-tape monthlies (verified 2026-06-13, same datacenter host) --
+    # new bank credit: the credit-cycle proxy (TSF/社融 itself is mofcom-only/legacy-SSL,
+    # so we lead the credit read with new RMB loans + the M1-M2 scissors derived downstream)
+    "rmb_loan":     ("RPT_ECONOMY_RMB_LOAN",       {"new_loans": "RMB_LOAN", "new_loans_yoy": "RMB_LOAN_SAME"}),
+    "fai":          ("RPT_ECONOMY_ASSET_INVEST",   {"fai_yoy": "BASE_SAME"}),          # fixed-asset investment, cumulative YoY
+    "retail":       ("RPT_ECONOMY_TOTAL_RETAIL",   {"retail_yoy": "RETAIL_TOTAL_SAME"}),  # retail sales YoY
+    "customs":      ("RPT_ECONOMY_CUSTOMS",        {"exports_yoy": "EXIT_BASE_SAME",   # trade YoY (EXIT=exports)
+                                                     "imports_yoy": "IMPORT_BASE_SAME"}),
+    # RRR (存款准备金率) policy events — big-bank reserve ratio + each change (cuts = easing)
+    "rrr":          ("RPT_ECONOMY_DEPOSIT_RESERVE", {"rrr_big": "INTEREST_RATE_BA", "rrr_change": "CHANGE_RATE_B"}),
 }
 # enabled-key aliases -> stored parquet name (config lists `lpr`; we store SHIBOR as `rates`)
 ALIASES = {"lpr": "rates"}
 SHIBOR_TENORS = {"3月(3M)": "rate_3m", "1年(1Y)": "rate_1y", "隔夜(O/N)": "rate_on"}
+
+# Stock Connect (沪深港通) daily flows — Eastmoney datacenter history report. Each row is
+# one trading day for a "combined" leg (MUTUAL_TYPE 006=southbound, 005=northbound).
+# NET/DEAL/BUY/SELL fields are 百万元 (1e6 RMB) -> /1e2 = 亿元; HOLD_MARKET_CAP is raw RMB
+# -> /1e8 = 亿元. Downstream uses (z-scores, cumulative sums) are scale-invariant, but we
+# normalise to 亿元 so the stored series is human-meaningful.
+CONNECT_REPORT = "RPT_MUTUAL_DEAL_HISTORY"
+CONNECT_FIELDS = {"net": "NET_DEAL_AMT", "turnover": "DEAL_AMT", "hold": "HOLD_MARKET_CAP"}
 
 
 class ChinaMacroAdapter(Adapter):
@@ -99,29 +117,57 @@ class ChinaMacroAdapter(Adapter):
         return wide
 
     def _connect_flow(self, full_history: bool) -> pd.DataFrame:
-        """Stock Connect cumulative net. NB: northbound (hk2sh/hk2sz) was frozen by
-        regulators in Aug-2024 — the series goes flat, which is expected, not a bug."""
-        lmt = 4000 if full_history else 60
-        params = {"fields1": "f1,f3,f5", "fields2": "f51,f52,f54,f56", "klt": 101, "lmt": lmt}
-        r = self.http_get(self.hsgt_cfg["url"], params=params, retries=self.hsgt_cfg["retries"],
-                          headers=self._headers(), timeout=30)
-        d = (r.json() or {}).get("data") or {}
+        """Stock Connect daily flows from the Eastmoney datacenter (RPT_MUTUAL_DEAL_HISTORY).
 
-        def leg(key: str) -> pd.Series:
-            rows = d.get(key) or []
-            recs = {}
-            for s in rows:
-                parts = str(s).split(",")
-                if len(parts) >= 2:
-                    try:
-                        recs[pd.to_datetime(parts[0])] = float(parts[-1])
-                    except ValueError:
-                        pass
-            return pd.Series(recs, dtype="float64")
+        Replaces the dead push2his kamt.kline path, whose northbound legs have emitted a
+        constant synthetic placeholder (+8.4M RMB/day) ever since the 2024-08-16 regulatory
+        curtailment. Combined legs: 006=southbound (mainland->HK), 005=northbound (foreign->A).
+          southbound  fully live — daily NET (净买额), turnover, and cumulative HK holdings.
+          northbound  NET disclosure frozen 2024-08-16 (recent rows null); we keep the live
+                      turnover (成交额) and the pre-freeze historical NET for back-history.
+        Columns, all 亿元: southbound_net/southbound_turnover/southbound_hold,
+        northbound_net (frozen since 2024-08-16) / northbound_turnover (still live)."""
+        hc = self.hsgt_cfg
+        page = hc["page_size_full"] if full_history else hc["page_size_recent"]
 
-        nb = leg("hk2sh").add(leg("hk2sz"), fill_value=0)   # northbound (foreign -> A-shares)
-        sb = leg("sh2hk").add(leg("sz2hk"), fill_value=0)   # southbound (mainland -> HK)
-        out = pd.DataFrame({"northbound_cum": nb, "southbound_cum": sb}).dropna(how="all").sort_index()
+        def leg(mutual_type: str) -> pd.DataFrame:
+            rows: list[dict] = []
+            page_no = 1
+            while True:
+                params = {"reportName": CONNECT_REPORT, "columns": "ALL", "pageSize": page,
+                          "sortColumns": "TRADE_DATE", "sortTypes": -1, "pageNumber": page_no,
+                          "filter": f'(MUTUAL_TYPE="{mutual_type}")'}
+                r = self.http_get(hc["url"], params=params, retries=hc["retries"],
+                                  headers=self._headers(), timeout=30)
+                result = (r.json() or {}).get("result") or {}
+                data = result.get("data") or []
+                rows.extend(data)
+                # full backfill walks every page (the API caps each page at 2000 rows);
+                # an incremental run is satisfied by the single newest page
+                if not full_history or not data or page_no >= (result.get("pages") or 1):
+                    break
+                page_no += 1
+            if not rows:
+                raise ValueError(f"type {mutual_type}: empty result")
+            raw = pd.DataFrame(rows)
+            out = pd.DataFrame(index=pd.to_datetime(raw["TRADE_DATE"]))
+            for stored, src in CONNECT_FIELDS.items():
+                if src in raw.columns:
+                    # assign by value — raw carries a RangeIndex that would NaN-align otherwise
+                    col = pd.to_numeric(raw[src], errors="coerce").to_numpy()
+                    out[stored] = col / (1e8 if stored == "hold" else 1e2)  # raw RMB / 百万元 -> 亿元
+            return out.sort_index()
+
+        codes = hc["mutual_type"]
+        sb = leg(codes["southbound"])
+        nb = leg(codes["northbound"])
+        out = pd.DataFrame({
+            "southbound_net":      sb.get("net"),
+            "southbound_turnover": sb.get("turnover"),
+            "southbound_hold":     sb.get("hold"),       # cumulative mainland-in-HK holdings (亿元)
+            "northbound_net":      nb.get("net"),         # historical only — null since 2024-08-16
+            "northbound_turnover": nb.get("turnover"),    # still live (direction frozen 2024-08-16)
+        }).dropna(how="all").sort_index()
         if out.empty:
             raise ValueError("connect_flow: nothing parsed")
         return out
@@ -144,7 +190,7 @@ class ChinaMacroAdapter(Adapter):
                 errors.append(f"{key}: {e}")
                 log.warning("china_macro series %s failed: %s", key, e)
 
-        # Stock Connect flows (best-effort context; northbound frozen since Aug-2024)
+        # Stock Connect daily flows (southbound live; northbound NET frozen 2024-08-16, turnover live)
         try:
             frames["connect_flow"] = self._connect_flow(full_history)
         except Exception as e:  # noqa: BLE001
