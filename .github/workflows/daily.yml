@@ -48,9 +48,19 @@ jobs:
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/
-          git diff --cached --quiet || git commit -m "data: daily collection $(date -u +%F)"
-          git pull --rebase origin main
-          git push
+          if git diff --cached --quiet; then echo "no data changes to commit"; exit 0; fi
+          git commit -m "data: daily collection $(date -u +%F)"
+          # best-effort push: losing a race with a concurrent push must NOT fail the
+          # pipeline (the data is collected; the next run re-syncs). Retry rebase+push,
+          # preferring our freshly-collected data on any conflict.
+          for i in 1 2 3 4 5; do
+            if git pull --rebase -X theirs origin main && git push; then
+              echo "pushed data on attempt $i"; exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "data push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+          done
+          echo "::warning::could not push collected data after 5 attempts (non-fatal)"
 
   engine:
     needs: collect
@@ -106,10 +116,20 @@ jobs:
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/ site/ reports/
-          git diff --cached --quiet || git commit -m "engine: regime update $(date -u +%F)"
-          git pull --rebase origin main
-          git push
+          if git diff --cached --quiet; then echo "no engine output changes"; exit 0; fi
+          git commit -m "engine: regime update $(date -u +%F)"
+          # best-effort push (see commit-data). The deploy below uses the uploaded
+          # artifact, so it never depends on this commit landing.
+          for i in 1 2 3 4 5; do
+            if git pull --rebase -X theirs origin main && git push; then
+              echo "pushed engine outputs on attempt $i"; exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "engine push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+          done
+          echo "::warning::could not push engine outputs after 5 attempts (non-fatal — site still deploys via artifact)"
       - name: upload pages artifact
+        if: always()   # deploy must not hinge on the commit-push above succeeding
         uses: actions/upload-pages-artifact@v3
         with:
           path: site/
