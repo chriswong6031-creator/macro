@@ -1,1369 +1,181 @@
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
+<!-- bitcoin-vector-landing-hub -->
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Macro Regime Dashboard — 2026-06-12</title>
-<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css">
-<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+<title>Market Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; }
-  body { background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system,
-         "Segoe UI", Roboto, Helvetica, sans-serif; margin: 0; padding: 18px; }
-  /* breathing room on wide desktops — content centered, never edge-to-edge */
-  @media (min-width: 1100px) { body { padding: 26px max(40px, calc((100vw - 1500px) / 2)); } }
-  a { text-decoration: none; }
-  h1 { font-size: 20px; margin: 0 0 2px; }
-  h2 { font-size: 15px; margin: 0 0 10px; color: var(--muted);
-       text-transform: uppercase; letter-spacing: .06em; }
-  h3 { font-size: 13px; margin: 14px 0 6px; color: var(--text); }
-  .grid { display: grid; gap: 14px; grid-template-columns: repeat(12, 1fr); }
-  .panel { background: var(--panel); border: 1px solid var(--line);
-           border-radius: 10px; padding: 14px 16px; }
-  .span12 { grid-column: span 12; } .span8 { grid-column: span 8; }
-  .span6 { grid-column: span 6; } .span4 { grid-column: span 4; }
-  @media (max-width: 900px) { .span8, .span6, .span4 { grid-column: span 12; } }
-
-  .badge { display: inline-block; padding: 3px 12px; border-radius: 14px;
-           font-weight: 600; font-size: 13px; }
-  /* quad badge keeps its solid vivid colour; text contrast set per badge */
-  .quad-Q1, .quad-Q3, .quad-Q4 { color: #fff; }
-  .quad-Q2 { color: #1a1a1a; }
-  .quad-Q1 { background: var(--q1); } .quad-Q2 { background: var(--q2); }
-  .quad-Q3 { background: var(--q3); } .quad-Q4 { background: var(--q4); }
-  .kv { color: var(--muted); } .kv b { color: var(--text); font-weight: 600; }
-
-  table { border-collapse: collapse; width: 100%; font-size: 13px; }
-  th, td { text-align: right; padding: 4px 8px; border-bottom: 1px solid var(--line); }
-  th { color: var(--muted); font-weight: 500; }
-  th:first-child, td:first-child { text-align: left; }
-  td.l, th.l { text-align: left; }
-
-  .pill { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px; }
-
-  .alert { padding: 8px 12px; border-radius: 8px; margin: 6px 0;
-           background: var(--panel2); border-left: 3px solid var(--muted); }
-  .alert-act { border-left-color: var(--act); }
-  .alert-warn { border-left-color: var(--warn); }
-  .muted { color: var(--muted); }
-  .chart { width: 100%; }
-  .topline { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
-
-  .help { display: inline-flex; align-items: center; justify-content: center;
-          width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--muted);
-          color: var(--muted); font-size: 10px; font-weight: 600; cursor: help;
-          position: relative; vertical-align: middle; margin-left: 5px; flex: none; }
-  .help .tip { display: none; position: absolute; bottom: 140%; left: 50%;
-               transform: translateX(-50%); width: 290px;
-               background: var(--panel); border: 1px solid var(--line);
-               padding: 9px 11px; border-radius: 8px;
-               z-index: 60; font-size: 12px; line-height: 1.45; color: var(--text);
-               text-align: left; font-weight: 400; text-transform: none;
-               letter-spacing: normal; box-shadow: 0 6px 18px rgba(0,0,0,.5);
-               pointer-events: none; white-space: normal; }
-  .help:hover .tip { display: block; }
-  th .help .tip, .help.below .tip { bottom: auto; top: 140%; }
-  /* keep tooltips on-screen near the right/left viewport edges */
-  .help.edge-right .tip { left: auto; right: 0; transform: none; }
-  .help.edge-left .tip { left: 0; right: auto; transform: none; }
-  .tip-map { width: 360px !important; }
-  /* structured tooltip building blocks */
-  .tip table { width: 100%; margin: 6px 0 2px; font-size: 11.5px; }
-  .tip th, .tip td { padding: 3px 6px; border-bottom: 1px solid var(--line); }
-  .tip .lad { display: block; padding: 3px 8px; border-radius: 5px; margin: 3px 0;
-              font-size: 11.5px; }
-  .tip .scale { display: flex; height: 12px; border-radius: 6px; overflow: hidden;
-                margin: 6px 0 2px; font-size: 9.5px; font-weight: 700; }
-  .tip .scale span { flex: 1; display: flex; align-items: center; justify-content: center;
-                     color: #fff; }
-  .tip .sl { display: flex; justify-content: space-between; font-size: 10px;
-             color: var(--muted); margin-bottom: 4px; }
-  .qgrid { display: grid; grid-template-columns: 58px 1fr 1fr; gap: 4px; margin: 8px 0; }
-  .qax { color: var(--muted); font-size: 10.5px; align-self: center; text-align: center; }
-  .qcell { border-radius: 6px; padding: 7px 6px; text-align: center; color: #fff;
-           font-weight: 700; font-size: 11px; line-height: 1.25; }
-  .qcell small { font-weight: 400; opacity: .85; }
-  .qcell.qcur { outline: 2px solid #fff; }
-
-  .dial { display: flex; gap: 4px; margin: 8px 0 12px; }
-  .dial span { flex: 1; text-align: center; padding: 6px 2px; border-radius: 6px;
-               background: var(--panel2); color: var(--muted); font-size: 11px;
-               font-weight: 600; letter-spacing: .04em; }
-  .dial .active-DEFENSIVE { background: var(--act); color: #fff; }
-  .dial .active-CAREFUL { background: var(--orange); color: #fff; }
-  .dial .active-NEUTRAL { background: var(--muted); color: #fff; }
-  .dial .active-CONSTRUCTIVE { background: var(--up); color: #fff; }
-  .dial .active-AGGRESSIVE { background: var(--ok); color: #fff; }
-  @media (max-width: 520px) { .dial span { font-size: 8.5px; padding: 5px 1px; } }
-  .reason { margin: 4px 0; padding-left: 24px; position: relative; }
-  .reason b.sig { position: absolute; left: 0; width: 17px; text-align: center;
-                  border-radius: 4px; font-size: 12px; }
-
-  .card { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px;
-          padding: 10px 12px; margin: 6px 0; }
-  .card b.tk { font-size: 14px; }
-  .calltag { float: right; font-size: 11px; font-weight: 700; padding: 1px 8px;
-             border-radius: 9px; }
-  /* .tag-lead/avoid/watch and .chip-pos/neg colours come from theme.css */
-  .chip { display: inline-block; padding: 2px 9px; margin: 2px 3px 2px 0;
-          border-radius: 10px; font-size: 12px; border: 1px solid var(--line); }
-
-  /* action board */
-  .actiongrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-  @media (max-width: 900px) { .actiongrid { grid-template-columns: 1fr 1fr; } }
-  @media (max-width: 560px) { .actiongrid { grid-template-columns: 1fr; } }
-  .actcol { background: var(--panel2); border: 1px solid var(--line);
-            border-radius: 10px; padding: 10px 12px; border-top: 3px solid var(--line); }
-  .act-buy { border-top-color: var(--up); } .act-soon { border-top-color: var(--g-cold); }
-  .act-trim { border-top-color: var(--warn); } .act-hold { border-top-color: var(--muted); }
-  .acth { font-size: 11.5px; font-weight: 700; letter-spacing: .03em; margin-bottom: 7px; }
-  .actitem { display: flex; align-items: center; gap: 6px; padding: 5px 0;
-             border-bottom: 1px solid var(--line); font-size: 13px; }
-  .actitem:last-child { border-bottom: none; }
-  .actitem b { color: var(--text); }
-  .acttag { margin-left: auto; font-size: 10.5px; color: var(--muted); }
-  .acteta { margin-left: auto; font-size: 11px; font-weight: 700; color: var(--g-cold);
-            background: color-mix(in srgb, var(--g-cold) 16%, transparent);
-            padding: 1px 7px; border-radius: 9px; }
-  .notable { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); }
-  .sm { font-size: 12px; margin: 4px 0; }
-
-  .gauge { position: relative; height: 10px; border-radius: 5px; margin: 6px 0 2px;
-           background: linear-gradient(90deg, var(--down) 0%, var(--g-mid) 50%, var(--up) 100%); opacity:.9; }
-  .gauge i { position: absolute; top: -4px; width: 4px; height: 18px; background: var(--text);
-             border-radius: 2px; box-shadow: 0 0 0 1px var(--panel); }
-  /* crowding gauge: both ENDS are danger zones */
-  .pgauge { position: relative; height: 9px; border-radius: 5px; margin: 4px 0 2px;
-            background: linear-gradient(90deg, var(--g-cold) 0%, var(--g-mid) 28%, var(--g-mid) 72%, var(--down) 100%);
-            opacity: .9; min-width: 130px; }
-  .pgauge i { position: absolute; top: -3px; width: 4px; height: 15px; background: var(--text);
-              border-radius: 2px; box-shadow: 0 0 0 1px var(--panel); }
-  .pends { display: flex; justify-content: space-between; font-size: 10px;
-           color: var(--muted); }
-  .plabel { display: inline-block; padding: 1px 9px; border-radius: 10px; font-size: 12px;
-            font-weight: 600; background: var(--panel2); }
-  .plabel-hot { color: var(--down); } .plabel-cold { color: var(--info); }
-  .plabel-norm { color: var(--muted); }
-
-  /* regime lifespan bar */
-  .lifebar { position: relative; height: 16px; border-radius: 8px; overflow: hidden;
-             background: var(--panel2); margin: 8px 0 4px; }
-  .lifebar .zone { position: absolute; top: 0; bottom: 0; }
-  .lifebar .marker { position: absolute; top: -2px; bottom: -2px; width: 4px;
-                     background: var(--text); border-radius: 2px; z-index: 5;
-                     box-shadow: 0 0 0 1px var(--panel); }
-  .lifelabels { display: flex; justify-content: space-between; font-size: 11px;
-                color: var(--muted); }
-
-  /* next-regime probability bars */
-  .prob { display: flex; align-items: center; gap: 10px; margin: 7px 0; }
-  .prob .nm { width: 110px; font-weight: 600; font-size: 13px; flex: none; }
-  .prob .bar { flex: 1; height: 14px; background: var(--panel2); border-radius: 7px;
-               overflow: hidden; }
-  .prob .bar i { display: block; height: 100%; border-radius: 7px; }
-  .prob .pc { width: 44px; text-align: right; font-weight: 600; flex: none; }
-
-  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; font-size: 12px; }
-  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px;
-              margin-right: 5px; vertical-align: -1px; }
-  details.howto { margin-top: 10px; }
-  details.howto summary { cursor: pointer; color: var(--link); font-size: 13px; }
-  details.howto div { background: var(--panel2); border-radius: 8px; padding: 12px 14px;
-                      margin-top: 8px; font-size: 13px; line-height: 1.6; }
-  ul.compact { margin: 4px 0; padding-left: 18px; } ul.compact li { margin: 3px 0; }
-</style>
-</head>
-<body>
-<div class="grid">
-
-  <!-- ======================= HEADER ======================= -->
-  <div class="panel span12">
-    <div class="topline">
-      <h1>Macro Regime Dashboard</h1>
-      <span class="badge quad-Q1">Goldilocks</span>
-      <span class="help">?<span class="tip tip-map">
-        <b>The four market regimes</b> — combinations of growth and inflation direction.
-        (Sometimes written Q1–Q4, but these are <b>quadrants, NOT calendar quarters</b>.)
-        <span class="qgrid">
-          <span class="qax"></span>
-          <span class="qax">inflation falling ↓</span>
-          <span class="qax">inflation rising ↑</span>
-          <span class="qax">growth<br>rising ↑</span>
-          <span class="qcell qcur" style="background:var(--q1)">GOLDILOCKS<br><small>best for tech & quality</small></span>
-          <span class="qcell" style="background:var(--q2);color:#1a1a1a">REFLATION<br><small>cyclicals, energy, banks</small></span>
-          <span class="qax">growth<br>falling ↓</span>
-          <span class="qcell" style="background:var(--q4)">GROWTH SCARE<br><small>defensives & bonds</small></span>
-          <span class="qcell" style="background:var(--q3)">STAGFLATION<br><small>the dangerous one</small></span>
-        </span>
-        The label changes only after 7 straight days of evidence (or one extreme shock day),
-        so it doesn't flip-flop. Today's regime is outlined in white.
-      </span></span>
-      <span class="badge state-STABLE">STABLE</span>
-      <span class="help">?<span class="tip">
-        <b>The transition radar</b> — is the current regime ending? It escalates as warning
-        signals stack up:
-        <span class="lad lad-tint" style="--c:var(--muted)">⚪ <b>STABLE</b> — no warnings. Trust the regime label.</span>
-        <span class="lad lad-tint" style="--c:var(--warn)">🟠 <b>WEAKENING</b> — 2+ warnings. Stop adding regime-dependent bets.</span>
-        <span class="lad lad-tint" style="--c:var(--orange)">🔶 <b>TRANSITIONING</b> — 3+ warnings. The regime is likely ending before the label flips — reduce risk now.</span>
-        <span class="lad lad-tint" style="--c:var(--down)">🚨 <b>NEW REGIME</b> — the label changed within the last week.</span>
-        The warnings: thinning participation, nervous credit, risk-ratios turning, inflation
-        trades turning, signal disagreement, fragile options positioning.
-      </span></span>
-      <span class="kv">signal agreement <b>52%</b></span>
-      <span class="help">?<span class="tip">
-        <b>Signal agreement</b> — how many of the ~14 underlying indicators point the
-        same way. Today: <b>52%</b>.
-        <span class="scale">
-          <span style="background:var(--down)">MIXED</span>
-          <span style="background:var(--warn)">OK</span>
-          <span style="background:var(--up)">SOLID</span>
-        </span>
-        <span class="sl"><span>0%</span><span>30%</span><span>45%</span><span>100%</span></span>
-        <b>Mixed</b>: the indicators disagree — expect chop, size down, trust the radar
-        more than the label. <b>OK</b>: usable with caution. <b>Solid</b>: the regime
-        call is well-supported.
-      </span></span>
-      <span class="kv">Fed liquidity <b>contracting</b></span>
-      <span class="help">?<span class="tip">
-        <b>Fed liquidity</b> — net money flowing into or out of the financial system
-        (Fed balance sheet − reverse-repo parking − the government's checking account),
-        measured as a 4-week trend.
-        <table>
-          <tr><th></th><th>meaning</th><th>history says</th></tr>
-          <tr><td>🟢 <b>expanding</b></td><td>money tide rising</td><td>the most reliable tailwind we tested: stocks up ~73% of months</td></tr>
-          <tr><td>⚪ <b>neutral</b></td><td>roughly flat</td><td>no signal</td></tr>
-          <tr><td>🔴 <b>contracting</b></td><td>money draining</td><td>persistent headwind — be choosier</td></tr>
-        </table>
-      </span></span>
-      <span class="kv">cycle <b>mid</b></span>
-      <span class="help">?<span class="tip">
-        <b>Business-cycle position</b> — the multi-year backdrop (from the yield curve,
-        credit spreads and market breadth). Slower-moving than the regime.
-        <table>
-          <tr><td>🌱 <b>early</b></td><td>recovering after stress — historically the best risk/reward</td></tr>
-          <tr><td>☀️ <b>mid</b></td><td>expansion cruising — normal conditions</td></tr>
-          <tr><td>🌇 <b>late</b></td><td>curve inverted/flattening, breadth thinning — enjoy it, but keep one eye on the exit</td></tr>
-        </table>
-        Context only — it sizes your patience, not your trades.
-      </span></span>
-      <span style="flex:1"></span>
-      <a class="navbtn" href="stock.html">🔎 Any stock</a>
-      <a class="navbtn" href="brief.html">📰 Daily brief</a>
-      <a class="navbtn" href="history.html">📈 History & charts</a>
-      <button class="theme-btn">☀️ Light</button>
-    </div>
-    <details class="howto">
-      <summary>New here? How to read this page in 60 seconds</summary>
-      <div>
-        <b>1.</b> The colored badge is the market regime — the "weather" (not a calendar quarter!). The second badge is the transition radar — whether that weather is about to change.<br>
-        <b>2.</b> <b>Where we are</b> shows how far along this regime likely is. <b>What's likely next</b> gives the historical odds of each path and what to do about it. <b>How to trade it</b> turns today's conditions into a posture and concrete names.<br>
-        <b>3.</b> Everything below that is supporting evidence. Hover any <span class="help">?</span> for a plain-English explanation. <span class="pos">Green = risk-friendly</span>, <span class="neg">red = risk-hostile</span>.<br>
-        <b>4.</b> This is a context machine with measured odds, not a crystal ball.
-      </div>
-    </details>
-  </div>
-
-  
-  <div class="panel span12">
-    <h2>Fired alerts (today)
-      <span class="help">?<span class="tip">Alerts fire only when something CHANGES — a warning level escalating, a crossing, a sign flip — never just because a level is high. They're rare by design; read every one.</span></span>
-    </h2>
-    
-      <div class="alert alert-warn"><b>circuit_breaker_open</b> — Source 'sentiment_aaii' marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</div>
-    
-      <div class="alert alert-info"><b>sector_rs_cross_low</b> — XLY RS vs SPY crossed below 10th pctile of 90d (now 10)</div>
-    
-  </div>
-  
-
-  <!-- ======================= ACTION BOARD ======================= -->
-  
-  <div class="panel span12">
-    <h2>⚡ What to act on now
-      <span class="help">?<span class="tip">Your at-a-glance starting point. Built from each sector's own price cycle (and standout individual stocks): what's a confirmed buy today, what's setting up to buy within a few days, what to take profits on, and what to leave alone. 'Days' are rough trajectory estimates, not promises. Click any name for the full breakdown.</span></span>
-    </h2>
-    <div class="actiongrid">
-      <div class="actcol act-buy">
-        <div class="acth">🟢 BUY ZONE — confirmed now</div>
-        
-          <a class="actitem" href="sectors/XLV.html"><b>Health Care</b> <span class="muted">XLV</span><span class="acttag">BUY ZONE</span></a>
-        
-      </div>
-      <div class="actcol act-soon">
-        <div class="acth">🔵 SETTING UP — buy soon</div>
-        
-          <a class="actitem" href="sectors/XLK.html"><b>Technology</b> <span class="muted">XLK</span><span class="acteta">~3d</span></a>
-        
-          <a class="actitem" href="sectors/XLP.html"><b>Consumer Staples</b> <span class="muted">XLP</span><span class="acteta">~3d</span></a>
-        
-          <a class="actitem" href="sectors/XLU.html"><b>Utilities</b> <span class="muted">XLU</span><span class="acteta">~3d</span></a>
-        
-      </div>
-      <div class="actcol act-trim">
-        <div class="acth">🟠 TAKE PROFITS / topping</div>
-        
-          <a class="actitem" href="sectors/XLF.html"><b>Financials</b> <span class="muted">XLF</span><span class="acttag">NEARING A HIGH</span></a>
-        
-          <a class="actitem" href="sectors/XLRE.html"><b>Real Estate</b> <span class="muted">XLRE</span><span class="acttag">NEARING A HIGH</span></a>
-        
-      </div>
-      <div class="actcol act-hold">
-        <div class="acth">⚪ HOLD / avoid</div>
-        
-          <a class="actitem" href="sectors/XLB.html"><b>Materials</b> <span class="muted">hold — don't chase</span></a>
-        
-          <a class="actitem" href="sectors/XLI.html"><b>Industrials</b> <span class="muted">hold — don't chase</span></a>
-        
-          <a class="actitem" href="sectors/XLY.html"><b>Consumer Discretionary</b> <span class="muted">hold — don't chase</span></a>
-        
-        
-          <a class="actitem" href="sectors/XLC.html"><b>Communications</b> <span class="muted">avoid</span></a>
-        
-          <a class="actitem" href="sectors/XLE.html"><b>Energy</b> <span class="muted">wait</span></a>
-        
-      </div>
-    </div>
-    
-    <div class="notable">
-      <span class="muted" style="font-size:12px">Standout individual stocks (from sector top-10s):</span>
-      
-        <a class="chip chip-pos" href="stock.html#LIN">LIN · BUY ZONE</a>
-      
-        <a class="chip chip-pos" href="stock.html#SHW">SHW · BUY ZONE</a>
-      
-        <a class="chip chip-pos" href="stock.html#LYV">LYV · BUY ZONE</a>
-      
-        <a class="chip chip-pos" href="stock.html#VLO">VLO · BUY ZONE</a>
-      
-        <a class="chip chip-pos" href="stock.html#BRK-B">BRK-B · BUY ZONE</a>
-      
-        <a class="chip chip-pos" href="stock.html#AXP">AXP · BUY ZONE</a>
-      
-        <a class="chip chip-pos" href="stock.html#GE">GE · BUY ZONE</a>
-      
-        <a class="chip chip-pos" href="stock.html#AMD">AMD · BUY ZONE</a>
-      
-        <a class="chip chip-pos" href="stock.html#INTC">INTC · BUY ZONE</a>
-      
-        <a class="chip chip-pos" href="stock.html#LRCX">LRCX · BUY ZONE</a>
-      
-    </div>
-    
-    <p class="muted" style="font-size:11.5px; margin-top:8px">⚠ Cycle-timing signals are about <i>where in the price cycle</i> a sector is — most useful combined with the regime read above. Our calibration shows these states don't beat buy-and-hold on average return; their value is structure and risk placement (entry + a defined exit), not certainty.</p>
-  </div>
-  
-
-  <!-- ======================= NOW ======================= -->
-  
-  <div class="panel span6">
-    <h2>Where we are in this regime
-      <span class="help">?<span class="tip">Compares this regime's age against every Goldilocks period since 2007 in this exact classifier. Regimes don't die of old age — but the older one gets relative to history, the more weight every warning flag deserves.</span></span>
-    </h2>
-    <p style="font-size:14.5px; margin: 2px 0 6px"><b>Goldilocks — growth improving while inflation cools.</b></p>
-    
-    <div class="lifebar">
-      <div class="zone" style="left:0; width:37.8%; background:color-mix(in srgb, var(--up) 35%, var(--panel))"></div>
-      <div class="zone" style="left:37.8%; width:20.0%; background:color-mix(in srgb, var(--warn) 35%, var(--panel))"></div>
-      <div class="zone" style="left:57.8%; width:42.2%; background:color-mix(in srgb, var(--down) 35%, var(--panel))"></div>
-      <div class="marker" style="left:24.4%"></div>
-    </div>
-    <div class="lifelabels"><span>young</span><span>mid-life</span><span>old</span></div>
-    <p style="margin:10px 0 4px"><b>EARLY</b> — still young — regime-aligned positions have historical room to run.</p>
-    <p class="muted" style="margin:4px 0">
-      11 trading days in, vs a median of 23
-      across 51 past Goldilocks periods.
-      78% of them lasted longer than this one has so far —
-      and those that did typically ran another ~14 trading days
-      (≈2.8 weeks).
-      <span class="help">?<span class="tip">Historical base rates from this classifier's own 2007-present history — odds and typical paths, not predictions. A young regime + STABLE radar = let winners run. An old regime + warnings = the odds of a shift compound.</span></span>
-    </p>
-    
-  </div>
-
-  <!-- ======================= NEXT ======================= -->
-  <div class="panel span6">
-    <h2>What's likely next — and how to trade it
-      <span class="help">?<span class="tip">Simple historical frequencies: across every Goldilocks period since 2007, which regime came next. These are base rates, not forecasts — but they tell you which playbook to keep warm. The watch names below are NOT buys yet; the evidence says anticipating rotations loses money — wait for the trend to confirm.</span></span>
-    </h2>
-    
-    <div class="prob">
-      <span class="nm">Reflation</span>
-      <span class="bar"><i style="width:62%; background: var(--q2)"></i></span>
-      <span class="pc">62%</span>
-    </div>
-    
-    <div class="prob">
-      <span class="nm">Growth scare</span>
-      <span class="bar"><i style="width:26%; background: var(--q4)"></i></span>
-      <span class="pc">26%</span>
-    </div>
-    
-    <div class="prob">
-      <span class="nm">Stagflation</span>
-      <span class="bar"><i style="width:12%; background: var(--q3)"></i></span>
-      <span class="pc">12%</span>
-    </div>
-    
-    
-      <h3>Accumulation watchlist for that shift</h3>
-      
-        <div class="card"><span class="calltag tag-watch">WATCH — DON'T BUY YET</span>
-          <b class="tk">XLF</b> · Financials<br>
-          <span class="muted">Historically favored if the regime shifts to Reflation. Currently improving (+4.9% vs the market this month). Don't buy in anticipation — wait for the trend cross. Trigger distance: needs +6.4% more outperformance vs the market to confirm — already 49% of the way there from its recent low. Seasonality: Jul: +1.9% avg, up 67% of years (n=27).</span></div>
-      
-    
-    <h3>The signals that would announce the shift</h3>
-    <ul class="compact muted">
-      <li>The most fragile support is how many S&P 500 stocks are in uptrends — if it rolls over, the growth signal flips.</li><li>Warning already active: risk-appetite ratios just turned against the regime.</li><li>For a shift to Reflation, watch for inflation expectations and energy turning up while growth holds.</li>
-    </ul>
-  </div>
-
-  <!-- ======================= TRADE IT ======================= -->
-  <div class="panel span12">
-    <h2>How to trade the current regime
-      <span class="help">?<span class="tip">Built from conditions that held up in both halves of a 2007-2026 backtest. The dial is the headline: how much risk current conditions support. Sector calls below it are risk filters and confirmation tools — our research found no stable 'this sector will outperform' signal at monthly horizons, so anyone selling you that is curve-fitting.</span></span>
-    </h2>
-    <div class="dial">
-      
-        <span class="">DEFENSIVE</span>
-      
-        <span class="">CAREFUL</span>
-      
-        <span class="active-NEUTRAL">NEUTRAL</span>
-      
-        <span class="">CONSTRUCTIVE</span>
-      
-        <span class="">AGGRESSIVE</span>
-      
-    </div>
-    
-      <div class="reason"><b class="sig sig-m">−</b> Fed liquidity is contracting — a persistent headwind for risk assets</div>
-    
-      <div class="reason"><b class="sig sig-p">+</b> Risk-friendly regime (Goldilocks) with no transition warnings — in this condition the S&P averaged +0.85%/month, 65.9% positive</div>
-    
-
-    <div class="grid" style="margin-top:12px">
-      <div class="span6">
-        <h3>✅ Confirmed leadership — where participation is real
-          <span class="help">?<span class="tip">Sectors in an established uptrend vs the market with momentum still positive and not yet stretched. Descriptive — where the market's money already is. Use it to place exposure you already intend to take.</span></span>
-        </h3>
-        
-          <div class="card"><span class="calltag tag-lead">LEADER</span>
-            <b class="tk">XLRE</b> · Real Estate<br>
-            <span class="muted">Established uptrend vs the market, short-term momentum positive (+4.2% vs the market this month; rebuilding after a soft 3 months (-3.4%)). Tech: RSI 62, above both moving averages. Jun: +2.0% avg, up 91% of years (n=11).</span></div>
-        
-          <div class="card"><span class="calltag tag-lead">LEADER</span>
-            <b class="tk">XLB</b> · Materials<br>
-            <span class="muted">Established uptrend vs the market, short-term momentum positive (+1.9% vs the market this month; rebuilding after a soft 3 months (-3.9%)). Tech: RSI 57, above both moving averages. Jun: -0.6% avg, up 46% of years (n=28).</span></div>
-        
-          <div class="card"><span class="calltag tag-lead">LEADER</span>
-            <b class="tk">XLI</b> · Industrials<br>
-            <span class="muted">Established uptrend vs the market, short-term momentum positive (+1.8% vs the market this month; rebuilding after a soft 3 months (-4.9%)). Tech: RSI 56, above both moving averages. Jun: -0.4% avg, up 46% of years (n=28).</span></div>
-        
-        
-          <p class="muted" style="font-size:12px">Longer-horizon tilt: <b>XLK, XLE, XLI</b> <span class="help">?<span class="tip">Top-3 by 12-month relative momentum — the only sector tilt with a persistent (if mild) historical edge: +0.27% avg vs SPY over ~6 months, 51.0% hit rate. A tilt, not a trade.</span></span></p>
-        
-      </div>
-      <div class="span6">
-        <h3>🚫 Avoid right now — the evidence-backed don'ts
-          <span class="help">?<span class="tip">The strongest findings in our sector backtest were about what NOT to do: chasing stretched leaders lost 55% of the time; buying below-trend bounces lost in every variant tested. These warnings carry more statistical weight than any buy signal on this page.</span></span>
-        </h3>
-        
-          <div class="card"><span class="calltag tag-avoid">REGIME-TAPE CONFLICT</span>
-            <b class="tk">XLC</b> · Communications<br>
-            <span class="muted">The regime map favors it but the market is selling it (-3.8% vs the market this month). Tape wins — stand aside until it stabilizes above trend.</span></div>
-        
-          <div class="card"><span class="calltag tag-avoid">TOO EARLY</span>
-            <b class="tk">XLF</b> · Financials<br>
-            <span class="muted">Momentum just turned up (+4.9% this month) but it's still below its long-term trend vs the market. Tempting — and historically a losing entry (-0.73%/3m avg). Wait for the trend line to actually break.</span></div>
-        
-          <div class="card"><span class="calltag tag-avoid">DON'T CHASE</span>
-            <b class="tk">XLK</b> · Technology<br>
-            <span class="muted">Leadership is real but stretched (RS at the 98th pctile of its year). Historically, buying here won only 44.7% of the time over 3 months. Wait for a pullback that holds the trend.</span></div>
-        
-          <div class="card"><span class="calltag tag-avoid">TOO EARLY</span>
-            <b class="tk">XLP</b> · Consumer Staples<br>
-            <span class="muted">Momentum just turned up (+1.9% this month) but it's still below its long-term trend vs the market. Tempting — and historically a losing entry (-0.73%/3m avg). Wait for the trend line to actually break.</span></div>
-        
-      </div>
-    </div>
-    <p class="muted" style="font-size:12px; margin-top:8px">⚖️ Sector picks vs the index showed no stable edge in our 2000-2026 backtest (results flip between decades) — so sector calls here are risk filters and confirmation tools, not return predictions. The exposure dial conditions are the statistically robust part.</p>
-  </div>
-  
-
-  <!-- ======================= SIGNALS ======================= -->
-  <div class="panel span6">
-    <h2>The two dials behind the regime
-      <span class="help">?<span class="tip">The regime label comes from two scores between -1 and +1, built from market prices (which lead) plus a small weight on economic data (which confirms). Growth above zero + inflation below zero = Goldilocks, and so on. The white marker is today.</span></span>
-    </h2>
-    <p style="margin:8px 0 0"><b>Growth: RISING</b>
-      <span class="muted">(+0.46 of ±1 · agreement 38%)</span>
-      <span class="help">?<span class="tip">Is the economy's growth impulse improving or deteriorating, as priced by markets: copper vs gold, consumer discretionary vs staples, small vs large caps, cyclical vs defensive sectors, the 2-year yield, breadth — confirmed slowly by payrolls and industrial production.</span></span>
-    </p>
-    <div class="gauge"><i style="left: 73.1%"></i></div>
-    <p style="margin:10px 0 0"><b>Inflation pressure: FALLING</b>
-      <span class="muted">(-0.65 of ±1 · agreement 65%)</span>
-      <span class="help">?<span class="tip">Is inflation pressure building or cooling, as priced by markets: bond-market inflation expectations, oil, energy-sector strength, and inflation-winner vs inflation-loser sector baskets.</span></span>
-    </p>
-    <div class="gauge"><i style="left: 17.4%"></i></div>
-
-    <h3>What's voting for this regime
-      <span class="help">?<span class="tip">Each chip is one indicator inside the two dials. Green chips point WITH the regime call; red chips point AGAINST it. Lots of red = shaky ground (and lower 'signal agreement').</span></span>
-    </h3>
-    <div>
-      <span class="chip chip-pos">growth · copper vs gold</span><span class="chip chip-pos">growth · small caps</span><span class="chip chip-pos">growth · market breadth</span><span class="chip chip-pos">growth · payrolls</span><span class="chip chip-pos">growth · industrial production</span><span class="chip chip-pos">inflation · 10-yr inflation expectations</span><span class="chip chip-pos">inflation · oil</span><span class="chip chip-pos">inflation · inflation-winners basket</span><span class="chip chip-pos">inflation · TIPS spread</span>
-      <span class="chip chip-neg">growth · cyclical sectors</span>
-      
-    </div>
-
-    <h3>Weakest link
-      <span class="help">?<span class="tip">Of everything currently supporting the regime call, this indicator is closest to flipping sides — the single thing most likely to change the picture.</span></span>
-    </h3>
-    <p class="muted">Watch how many S&P 500 stocks are in uptrends — of everything supporting the current call, it's the one closest to flipping sides. If it fades, the growth dial (and possibly the regime) goes with it.</p>
-
-    
-    <h3>Does the market agree with the regime?
-      <span class="help">?<span class="tip">The regime implies certain sectors should lead. This checks whether they actually ARE. Agreement strengthens the call; disagreement is an early warning — when the tape stops cooperating with the story, the story is often about to change.</span></span>
-    </h3>
-    <p class="muted">framework and tape agree
-      
-        (XLK is #2, XLC is #17, XLY is #11, QUAL is #5 of 19)
-      
-    </p>
-    
-  </div>
-
-  <!-- ======================= INTERNALS ======================= -->
-  <div class="panel span6">
-    <h2>Market internals — risk appetite gauges
-      <span class="help">?<span class="tip">Simple ratios between two assets; each answers a question about investor mood. Direction over the last 20 days matters more than the level. Green = moved in the risk-friendly direction.</span></span>
-    </h2>
-    <table>
-      <tr><th class="l">gauge</th><th>past month</th><th class="l">what it's saying</th></tr>
-      
-      <tr>
-        <td class="l">Shoppers: wants vs needs <span class="help">?<span class="tip">Consumer-discretionary stocks vs consumer-staples stocks. Rising = people are buying TVs and vacations, not just groceries — confidence. Falling = belt-tightening.</span></span></td>
-        <td class="neg">-1.32%</td>
-        <td class="l muted">consumers cautious</td>
-      </tr>
-      
-      <tr>
-        <td class="l">Tech vs utilities <span class="help">?<span class="tip">The market's boldest sector vs its sleepiest. Rising = growth appetite; falling = safety-seeking.</span></span></td>
-        <td class="pos">+3.29%</td>
-        <td class="l muted">growth appetite</td>
-      </tr>
-      
-      <tr>
-        <td class="l">Junk bonds vs quality bonds <span class="help">?<span class="tip">Risky-company bonds vs blue-chip bonds. Rising = credit investors relaxed; falling = they're getting picky — often an early warning.</span></span></td>
-        <td class="neg">-0.33%</td>
-        <td class="l muted">credit getting picky</td>
-      </tr>
-      
-      <tr>
-        <td class="l">Daring vs defensive stocks <span class="help">?<span class="tip">The most volatile S&P stocks vs the calmest. The purest read on whether fund managers are playing offense or defense.</span></span></td>
-        <td class="pos">+4.37%</td>
-        <td class="l muted">playing offense</td>
-      </tr>
-      
-      <tr>
-        <td class="l">Panic gauge (now vs later) <span class="help">?<span class="tip">Near-term fear vs 3-month fear. Rising toward 1.0 = stress building right now; comfortably below 0.9 = calm.</span></span></td>
-        <td class="pos">-0.09%</td>
-        <td class="l muted">calm</td>
-      </tr>
-      
-      <tr>
-        <td class="l">Copper vs gold <span class="help">?<span class="tip">The economist's metal vs the doomsday metal. Rising = bets on real economic activity; falling = safety-seeking. Historically leads bond yields.</span></span></td>
-        <td class="pos">+11.27%</td>
-        <td class="l muted">growth optimism</td>
-      </tr>
-      
-    </table>
-  </div>
-
-  <!-- ======================= SECTOR HEAT BOARD ======================= -->
-  <div class="panel span12">
-    <h2>Sector heat board — regime × tape × technicals × seasonality
-      <span class="help">?<span class="tip">One row per sector, everything that matters in one place. HEAT (0-100) measures how CONFIRMED a sector's strength is right now: regime fit + rotation stage + technicals, minus crowding. Important: heat describes the present, not the future — our 2007-2026 backtest shows the hottest band (70+) actually UNDERPERFORMED over the following months (everything-confirmed usually means late). So: high heat = hold/trim territory, never a fresh-entry signal; the buy workflow is the watchlist + trigger column.</span></span>
-    </h2>
-    <table>
-      <tr>
-        <th class="l">sector</th>
-        <th class="l" style="min-width:130px">heat <span class="help">?<span class="tip">
-          <b>Heat</b> = how CONFIRMED a sector's strength is (regime fit + trend stage +
-          technicals − crowding). Hover each bar for its exact arithmetic.
-          <table>
-            <tr><th>band</th><th>read it as</th><th>measured 3-month record*</th></tr>
-            <tr><td style="color:var(--orange)"><b>70+ OVERHEATED</b></td><td>late — hold/trim, don't start</td><td>beat market 47% (−0.6% avg)</td></tr>
-            <tr><td style="color:var(--up)"><b>55-69 HOT</b></td><td>confirmed — hold, buy pullbacks</td><td>49% (−0.3%)</td></tr>
-            <tr><td><b>40-54 NEUTRAL</b></td><td>mixed, no lean</td><td>49% (−0.1%)</td></tr>
-            <tr><td style="color:var(--info)"><b>0-39 COLD</b></td><td>washed out — wait for trigger</td><td>50% (+0.2%)</td></tr>
-          </table>
-          *vs the index, every week 2007-2026. Note the inversion: hot sectors were
-          usually LATE. That measured record is the trust level — and it argues
-          against chasing.
-        </span></span></th>
-        <th>stage <span class="help">?<span class="tip">
-          <b>The rotation cycle</b> — every sector travels this loop vs the market:
-          <span class="lad lad-tint" style="--c:var(--info)">1. IMPROVING — momentum turns up, trend not yet confirmed. <b>Too early</b>: buying here lost money historically.</span>
-          <span class="lad lad-tint" style="--c:var(--up)">2. LEADING — confirmed uptrend. The healthy zone.</span>
-          <span class="lad lad-tint" style="--c:var(--warn)">3. WEAKENING — still above trend but losing steam. Tighten stops.</span>
-          <span class="lad lad-tint" style="--c:var(--down)">4. LAGGING — downtrend. Avoid until it improves again.</span>
-        </span></span></th>
-        <th>3mo vs market <span class="help">?<span class="tip">How much it beat or trailed the S&P 500 over the past 60 trading days — the medium-term relative trend the playbook keys off.</span></span></th>
-        <th>technicals <span class="help">?<span class="tip">
-          <b>RSI(14)</b> — a 0-100 momentum thermometer:
-          <span class="scale">
-            <span style="background:var(--g-cold)">OVERSOLD</span>
-            <span style="background:var(--muted)">SOFT</span>
-            <span style="background:var(--up)">HEALTHY</span>
-            <span style="background:var(--down)">HOT</span>
-          </span>
-          <span class="sl"><span>0</span><span>30</span><span>45</span><span>70</span><span>100</span></span>
-          <b>✓/✗ 200d and 50d</b>: whether price is above its 200-day (long-term) and
-          50-day (medium-term) average — the most basic "is it in an uptrend" filters.
-          Green row = both ✓.
-        </span></span></th>
-        <th>June tendency <span class="help">?<span class="tip">This instrument's average return in this calendar month across its whole history, and how often the month was positive. Weak evidence by nature — context, never a signal on its own (and deliberately excluded from the heat score).</span></span></th>
-        <th>to trigger <span class="help">?<span class="tip">For sectors below their long-term relative trend: how much more outperformance vs SPY is needed for the trend to cross (= the data-backed buy confirmation), and how far along it already is from its recent low. Small gap + high progress = watch closely.</span></span></th>
-        <th>cycle timing <span class="help">?<span class="tip">From the sector's own price cycle (click the sector name for the full drill-down): where it sits in its ~36-42 trading-day cycle and how many of its top-10 holdings are in a buy setup (BOTTOMING or BUY ZONE). The per-state historical base rates live on the drill-down page.</span></span></th>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="sectors/XLB.html"><b>XLB</b></a> <span class="muted">Materials</span></td>
-        <td class="l">
-          <span class="help" style="width:auto;height:auto;border:none;margin:0;border-radius:6px">
-            <span style="display:inline-flex;align-items:center;gap:7px;cursor:help">
-              <span style="display:inline-block;width:64px;height:9px;background:var(--panel2);border-radius:5px;overflow:hidden"><i style="display:block;height:100%;width:63%;background:var(--up)"></i></span>
-              <b>63</b>
-              <span class="muted" style="font-size:11px">HOT</span>
-            </span>
-            <span class="tip">Heat 63/100 = regime fit 8 + tape 25 + technicals 30 + crowding 0. HOT: confirmed strength. Fine to hold; fresh entries showed no historical edge — prefer pullbacks that hold the trend. Historical reality-check for the 55-69 band: beat the index 53.8% of the time over the next 3 months (avg +0.2%, n=675).</span>
-          </span>
-        </td>
-        <td><span class="pill stg-leading">leading</span></td>
-        <td class="neg">-3.9%</td>
-        <td class="pos" style="font-size:12px">RSI 57 · ✓200d · ✓50d</td>
-        <td>
-          <span class="help" style="width:auto;height:auto;border:none;margin:0">
-            <span style="cursor:help">-0.6% (46%)</span>
-            <span class="tip">Jun: -0.6% avg, up 46% of years (n=28)</span>
-          </span>
-        </td>
-        <td>—</td>
-        <td>
-          
-            <span class="pill st-RALLY_ON">UPTREND</span>
-            <div class="muted" style="font-size:11px">day 17 of its cycle; 3/10 top holdings in a buy setup</div>
-          
-        </td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="sectors/XLI.html"><b>XLI</b></a> <span class="muted">Industrials</span></td>
-        <td class="l">
-          <span class="help" style="width:auto;height:auto;border:none;margin:0;border-radius:6px">
-            <span style="display:inline-flex;align-items:center;gap:7px;cursor:help">
-              <span style="display:inline-block;width:64px;height:9px;background:var(--panel2);border-radius:5px;overflow:hidden"><i style="display:block;height:100%;width:63%;background:var(--up)"></i></span>
-              <b>63</b>
-              <span class="muted" style="font-size:11px">HOT</span>
-            </span>
-            <span class="tip">Heat 63/100 = regime fit 8 + tape 25 + technicals 30 + crowding 0. HOT: confirmed strength. Fine to hold; fresh entries showed no historical edge — prefer pullbacks that hold the trend. Historical reality-check for the 55-69 band: beat the index 53.8% of the time over the next 3 months (avg +0.2%, n=675).</span>
-          </span>
-        </td>
-        <td><span class="pill stg-leading">leading</span></td>
-        <td class="neg">-4.9%</td>
-        <td class="pos" style="font-size:12px">RSI 56 · ✓200d · ✓50d</td>
-        <td>
-          <span class="help" style="width:auto;height:auto;border:none;margin:0">
-            <span style="cursor:help">-0.4% (46%)</span>
-            <span class="tip">Jun: -0.4% avg, up 46% of years (n=28)</span>
-          </span>
-        </td>
-        <td>—</td>
-        <td>
-          
-            <span class="pill st-RALLY_ON">UPTREND</span>
-            <div class="muted" style="font-size:11px">day 17 of its cycle; 3/10 top holdings in a buy setup</div>
-          
-        </td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="sectors/XLRE.html"><b>XLRE</b></a> <span class="muted">Real Estate</span></td>
-        <td class="l">
-          <span class="help" style="width:auto;height:auto;border:none;margin:0;border-radius:6px">
-            <span style="display:inline-flex;align-items:center;gap:7px;cursor:help">
-              <span style="display:inline-block;width:64px;height:9px;background:var(--panel2);border-radius:5px;overflow:hidden"><i style="display:block;height:100%;width:63%;background:var(--up)"></i></span>
-              <b>63</b>
-              <span class="muted" style="font-size:11px">HOT</span>
-            </span>
-            <span class="tip">Heat 63/100 = regime fit 8 + tape 25 + technicals 30 + crowding 0. HOT: confirmed strength. Fine to hold; fresh entries showed no historical edge — prefer pullbacks that hold the trend. Historical reality-check for the 55-69 band: beat the index 53.8% of the time over the next 3 months (avg +0.2%, n=675).</span>
-          </span>
-        </td>
-        <td><span class="pill stg-leading">leading</span></td>
-        <td class="neg">-3.4%</td>
-        <td class="pos" style="font-size:12px">RSI 62 · ✓200d · ✓50d</td>
-        <td>
-          <span class="help" style="width:auto;height:auto;border:none;margin:0">
-            <span style="cursor:help">+2.0% (91%)</span>
-            <span class="tip">Jun: +2.0% avg, up 91% of years (n=11)</span>
-          </span>
-        </td>
-        <td>—</td>
-        <td>
-          
-            <span class="pill st-TOP_WATCH">NEARING A HIGH</span>
-            <div class="muted" style="font-size:11px">day 19 of its cycle; 4/10 top holdings in a buy setup</div>
-          
-        </td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="sectors/XLF.html"><b>XLF</b></a> <span class="muted">Financials</span></td>
-        <td class="l">
-          <span class="help" style="width:auto;height:auto;border:none;margin:0;border-radius:6px">
-            <span style="display:inline-flex;align-items:center;gap:7px;cursor:help">
-              <span style="display:inline-block;width:64px;height:9px;background:var(--panel2);border-radius:5px;overflow:hidden"><i style="display:block;height:100%;width:53%;background:var(--muted)"></i></span>
-              <b>53</b>
-              <span class="muted" style="font-size:11px">NEUTRAL</span>
-            </span>
-            <span class="tip">Heat 53/100 = regime fit 8 + tape 15 + technicals 30 + crowding 0. NEUTRAL: mixed picture, no statistical lean either way. Historical reality-check for the 40-54 band: beat the index 50.8% of the time over the next 3 months (avg +0.21%, n=2913).</span>
-          </span>
-        </td>
-        <td><span class="pill stg-improving">improving</span></td>
-        <td class="neg">-2.6%</td>
-        <td class="pos" style="font-size:12px">RSI 65 · ✓200d · ✓50d</td>
-        <td>
-          <span class="help" style="width:auto;height:auto;border:none;margin:0">
-            <span style="cursor:help">-0.9% (39%)</span>
-            <span class="tip">Jun: -0.9% avg, up 39% of years (n=28)</span>
-          </span>
-        </td>
-        <td>+6.4% (49% there)</td>
-        <td>
-          
-            <span class="pill st-TOP_WATCH">NEARING A HIGH</span>
-            <div class="muted" style="font-size:11px">day 21 of its cycle; 2/10 top holdings in a buy setup</div>
-          
-        </td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="sectors/XLP.html"><b>XLP</b></a> <span class="muted">Consumer Staples</span></td>
-        <td class="l">
-          <span class="help" style="width:auto;height:auto;border:none;margin:0;border-radius:6px">
-            <span style="display:inline-flex;align-items:center;gap:7px;cursor:help">
-              <span style="display:inline-block;width:64px;height:9px;background:var(--panel2);border-radius:5px;overflow:hidden"><i style="display:block;height:100%;width:53%;background:var(--muted)"></i></span>
-              <b>53</b>
-              <span class="muted" style="font-size:11px">NEUTRAL</span>
-            </span>
-            <span class="tip">Heat 53/100 = regime fit 8 + tape 15 + technicals 30 + crowding 0. NEUTRAL: mixed picture, no statistical lean either way. Historical reality-check for the 40-54 band: beat the index 50.8% of the time over the next 3 months (avg +0.21%, n=2913).</span>
-          </span>
-        </td>
-        <td><span class="pill stg-improving">improving</span></td>
-        <td class="neg">-7.1%</td>
-        <td class="pos" style="font-size:12px">RSI 61 · ✓200d · ✓50d</td>
-        <td>
-          <span class="help" style="width:auto;height:auto;border:none;margin:0">
-            <span style="cursor:help">-0.1% (43%)</span>
-            <span class="tip">Jun: -0.1% avg, up 43% of years (n=28)</span>
-          </span>
-        </td>
-        <td>+2.3% (75% there)</td>
-        <td>
-          
-            <span class="pill st-TURN_SIGNALED">BOTTOMING</span>
-            <div class="muted" style="font-size:11px">day 58 of its cycle; 9/10 top holdings in a buy setup</div>
-          
-        </td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="sectors/XLV.html"><b>XLV</b></a> <span class="muted">Health Care</span></td>
-        <td class="l">
-          <span class="help" style="width:auto;height:auto;border:none;margin:0;border-radius:6px">
-            <span style="display:inline-flex;align-items:center;gap:7px;cursor:help">
-              <span style="display:inline-block;width:64px;height:9px;background:var(--panel2);border-radius:5px;overflow:hidden"><i style="display:block;height:100%;width:53%;background:var(--muted)"></i></span>
-              <b>53</b>
-              <span class="muted" style="font-size:11px">NEUTRAL</span>
-            </span>
-            <span class="tip">Heat 53/100 = regime fit 8 + tape 15 + technicals 30 + crowding 0. NEUTRAL: mixed picture, no statistical lean either way. Historical reality-check for the 40-54 band: beat the index 50.8% of the time over the next 3 months (avg +0.21%, n=2913).</span>
-          </span>
-        </td>
-        <td><span class="pill stg-improving">improving</span></td>
-        <td class="neg">-6.7%</td>
-        <td class="pos" style="font-size:12px">RSI 62 · ✓200d · ✓50d</td>
-        <td>
-          <span class="help" style="width:auto;height:auto;border:none;margin:0">
-            <span style="cursor:help">+0.7% (57%)</span>
-            <span class="tip">Jun: +0.7% avg, up 57% of years (n=28)</span>
-          </span>
-        </td>
-        <td>+4.7% (60% there)</td>
-        <td>
-          
-            <span class="pill st-FRESH_BUY">BUY ZONE</span>
-            <div class="muted" style="font-size:11px">day 31 of its cycle; 4/10 top holdings in a buy setup</div>
-          
-        </td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="sectors/XLU.html"><b>XLU</b></a> <span class="muted">Utilities</span></td>
-        <td class="l">
-          <span class="help" style="width:auto;height:auto;border:none;margin:0;border-radius:6px">
-            <span style="display:inline-flex;align-items:center;gap:7px;cursor:help">
-              <span style="display:inline-block;width:64px;height:9px;background:var(--panel2);border-radius:5px;overflow:hidden"><i style="display:block;height:100%;width:46%;background:var(--muted)"></i></span>
-              <b>46</b>
-              <span class="muted" style="font-size:11px">NEUTRAL</span>
-            </span>
-            <span class="tip">Heat 46/100 = regime fit 8 + tape 15 + technicals 23 + crowding 0. NEUTRAL: mixed picture, no statistical lean either way. Historical reality-check for the 40-54 band: beat the index 50.8% of the time over the next 3 months (avg +0.21%, n=2913).</span>
-          </span>
-        </td>
-        <td><span class="pill stg-improving">improving</span></td>
-        <td class="neg">-14.7%</td>
-        <td class="" style="font-size:12px">RSI 50 · ✓200d · ✗50d</td>
-        <td>
-          <span class="help" style="width:auto;height:auto;border:none;margin:0">
-            <span style="cursor:help">-0.1% (54%)</span>
-            <span class="tip">Jun: -0.1% avg, up 54% of years (n=28)</span>
-          </span>
-        </td>
-        <td>+7.6% (41% there)</td>
-        <td>
-          
-            <span class="pill st-TURN_SIGNALED">BOTTOMING</span>
-            <div class="muted" style="font-size:11px">day 36 of its cycle; 6/10 top holdings in a buy setup</div>
-          
-        </td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="sectors/XLK.html"><b>XLK</b></a> <span class="muted">Technology</span></td>
-        <td class="l">
-          <span class="help" style="width:auto;height:auto;border:none;margin:0;border-radius:6px">
-            <span style="display:inline-flex;align-items:center;gap:7px;cursor:help">
-              <span style="display:inline-block;width:64px;height:9px;background:var(--panel2);border-radius:5px;overflow:hidden"><i style="display:block;height:100%;width:45%;background:var(--muted)"></i></span>
-              <b>45</b>
-              <span class="muted" style="font-size:11px">NEUTRAL</span>
-            </span>
-            <span class="tip">Heat 45/100 = regime fit 18 + tape 12 + technicals 25 + crowding -10. NEUTRAL: mixed picture, no statistical lean either way. Historical reality-check for the 40-54 band: beat the index 50.8% of the time over the next 3 months (avg +0.21%, n=2913).</span>
-          </span>
-        </td>
-        <td><span class="pill stg-leading">leading</span></td>
-        <td class="pos">+19.3%</td>
-        <td class="pos" style="font-size:12px">RSI 56 · ✓200d · ✓50d</td>
-        <td>
-          <span class="help" style="width:auto;height:auto;border:none;margin:0">
-            <span style="cursor:help">+0.8% (50%)</span>
-            <span class="tip">Jun: +0.8% avg, up 50% of years (n=28)</span>
-          </span>
-        </td>
-        <td>—</td>
-        <td>
-          
-            <span class="pill st-TURN_SIGNALED">BOTTOMING</span>
-            <div class="muted" style="font-size:11px">day 52 of its cycle; 5/10 top holdings in a buy setup</div>
-          
-        </td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="sectors/XLE.html"><b>XLE</b></a> <span class="muted">Energy</span></td>
-        <td class="l">
-          <span class="help" style="width:auto;height:auto;border:none;margin:0;border-radius:6px">
-            <span style="display:inline-flex;align-items:center;gap:7px;cursor:help">
-              <span style="display:inline-block;width:64px;height:9px;background:var(--panel2);border-radius:5px;overflow:hidden"><i style="display:block;height:100%;width:36%;background:var(--info)"></i></span>
-              <b>36</b>
-              <span class="muted" style="font-size:11px">COLD</span>
-            </span>
-            <span class="tip">Heat 36/100 = regime fit 8 + tape 10 + technicals 18 + crowding 0. COLD: washed out. Historically this band mildly mean-reverts upward, but timing is unreliable — wait for the confirmation trigger. Historical reality-check for the 0-39 band: beat the index 48.7% of the time over the next 3 months (avg +0.04%, n=9141).</span>
-          </span>
-        </td>
-        <td><span class="pill stg-weakening">weakening</span></td>
-        <td class="neg">-11.8%</td>
-        <td class="" style="font-size:12px">RSI 48 · ✓200d · ✗50d</td>
-        <td>
-          <span class="help" style="width:auto;height:auto;border:none;margin:0">
-            <span style="cursor:help">+0.1% (54%)</span>
-            <span class="tip">Jun: +0.1% avg, up 54% of years (n=28)</span>
-          </span>
-        </td>
-        <td>—</td>
-        <td>
-          
-            <span class="pill st-BOTTOM_WATCH">NEARING A LOW</span>
-            <div class="muted" style="font-size:11px">day 10 of its cycle; 3/10 top holdings in a buy setup</div>
-          
-        </td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="sectors/XLY.html"><b>XLY</b></a> <span class="muted">Consumer Discretionary</span></td>
-        <td class="l">
-          <span class="help" style="width:auto;height:auto;border:none;margin:0;border-radius:6px">
-            <span style="display:inline-flex;align-items:center;gap:7px;cursor:help">
-              <span style="display:inline-block;width:64px;height:9px;background:var(--panel2);border-radius:5px;overflow:hidden"><i style="display:block;height:100%;width:30%;background:var(--info)"></i></span>
-              <b>30</b>
-              <span class="muted" style="font-size:11px">COLD</span>
-            </span>
-            <span class="tip">Heat 30/100 = regime fit 18 + tape 4 + technicals 8 + crowding 0. COLD: washed out. Historically this band mildly mean-reverts upward, but timing is unreliable — wait for the confirmation trigger. Historical reality-check for the 0-39 band: beat the index 48.7% of the time over the next 3 months (avg +0.04%, n=9141).</span>
-          </span>
-        </td>
-        <td><span class="pill stg-lagging">lagging</span></td>
-        <td class="neg">-6.0%</td>
-        <td class="" style="font-size:12px">RSI 48 · ✗200d · ✗50d</td>
-        <td>
-          <span class="help" style="width:auto;height:auto;border:none;margin:0">
-            <span style="cursor:help">-0.1% (54%)</span>
-            <span class="tip">Jun: -0.1% avg, up 54% of years (n=28)</span>
-          </span>
-        </td>
-        <td>+9.3% (14% there)</td>
-        <td>
-          
-            <span class="pill st-RALLY_ON">UPTREND</span>
-            <div class="muted" style="font-size:11px">day 17 of its cycle; 5/10 top holdings in a buy setup</div>
-          
-        </td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="sectors/XLC.html"><b>XLC</b></a> <span class="muted">Communications</span></td>
-        <td class="l">
-          <span class="help" style="width:auto;height:auto;border:none;margin:0;border-radius:6px">
-            <span style="display:inline-flex;align-items:center;gap:7px;cursor:help">
-              <span style="display:inline-block;width:64px;height:9px;background:var(--panel2);border-radius:5px;overflow:hidden"><i style="display:block;height:100%;width:26%;background:var(--info)"></i></span>
-              <b>26</b>
-              <span class="muted" style="font-size:11px">COLD</span>
-            </span>
-            <span class="tip">Heat 26/100 = regime fit 18 + tape 4 + technicals 4 + crowding 0. COLD: washed out. Historically this band mildly mean-reverts upward, but timing is unreliable — wait for the confirmation trigger. Historical reality-check for the 0-39 band: beat the index 48.7% of the time over the next 3 months (avg +0.04%, n=9141).</span>
-          </span>
-        </td>
-        <td><span class="pill stg-lagging">lagging</span></td>
-        <td class="neg">-12.4%</td>
-        <td class="" style="font-size:12px">RSI 38 · ✗200d · ✗50d</td>
-        <td>
-          <span class="help" style="width:auto;height:auto;border:none;margin:0">
-            <span style="cursor:help">+1.3% (75%)</span>
-            <span class="tip">Jun: +1.3% avg, up 75% of years (n=8)</span>
-          </span>
-        </td>
-        <td>+11.9% (10% there)</td>
-        <td>
-          
-            <span class="pill st-DECLINE">DOWNTREND</span>
-            <div class="muted" style="font-size:11px">day 31 of its cycle; 2/10 top holdings in a buy setup</div>
-          
-        </td>
-      </tr>
-      
-    </table>
-    <p class="muted" style="font-size:12px">Click any sector for its full drill-down: cycle position, multi-timeframe momentum, and each top-10 holding analyzed individually.</p>
-  </div>
-
-  <div class="panel span6">
-    <h2>Commodities & macro tape
-      <span class="help">?<span class="tip">The non-equity instruments the regime engine watches, with their technicals and seasonal tendency. No heat score here — regime alignment and rotation stages are equity-sector concepts.</span></span>
-    </h2>
-    <table>
-      <tr><th class="l">instrument</th><th>trend</th><th>RSI</th><th>off 52w high</th><th>3mo</th><th>seasonal</th></tr>
-      
-      <tr>
-        <td class="l"><b>Gold</b></td>
-        <td>✗200d ✗50d</td>
-        <td>37</td>
-        <td class="neg">-20.3%</td>
-        <td class="neg">-13.3%</td>
-        <td>
-          <span class="help" style="width:auto;height:auto;border:none;margin:0">
-            <span style="cursor:help">-0.7%</span>
-            <span class="tip">Jun: -0.7% avg, up 42% of years (n=26)</span>
-          </span>
-        </td>
-      </tr>
-      
-      <tr>
-        <td class="l"><b>Crude Oil</b></td>
-        <td>✓200d ✗50d</td>
-        <td>37</td>
-        <td class="neg">-25.4%</td>
-        <td class="neg">-12.5%</td>
-        <td>
-          <span class="help" style="width:auto;height:auto;border:none;margin:0">
-            <span style="cursor:help">+2.8%</span>
-            <span class="tip">Jun: +2.8% avg, up 65% of years (n=26)</span>
-          </span>
-        </td>
-      </tr>
-      
-      <tr>
-        <td class="l"><b>Copper</b></td>
-        <td>✓200d ✓50d</td>
-        <td>57</td>
-        <td class="">-2.6%</td>
-        <td class="pos">+16.6%</td>
-        <td>
-          <span class="help" style="width:auto;height:auto;border:none;margin:0">
-            <span style="cursor:help">-0.4%</span>
-            <span class="tip">Jun: -0.4% avg, up 58% of years (n=26)</span>
-          </span>
-        </td>
-      </tr>
-      
-      <tr>
-        <td class="l"><b>US Dollar</b></td>
-        <td>✓200d ✓50d</td>
-        <td>60</td>
-        <td class="">-0.7%</td>
-        <td class="neg">-0.3%</td>
-        <td>
-          <span class="help" style="width:auto;height:auto;border:none;margin:0">
-            <span style="cursor:help">-0.2%</span>
-            <span class="tip">Jun: -0.2% avg, up 45% of years (n=56)</span>
-          </span>
-        </td>
-      </tr>
-      
-    </table>
-  </div>
-
-  <div class="panel span6">
-    <h2>Fed liquidity — the money tide
-      <span class="help">?<span class="tip">Top: net money in the system (Fed balance sheet minus reverse-repo minus the Treasury's account), in billions. Bottom: its 4-week change — the impulse. Green above the dotted line = expanding (historically the most reliable tailwind); red below = contracting.</span></span>
-    </h2>
-    <div class="chart"><div style="height:340px; width:100%;">                            <div id="94bad882-b66c-4a31-a790-033cd06590fc" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("94bad882-b66c-4a31-a790-033cd06590fc")) {                    Plotly.newPlot(                        "94bad882-b66c-4a31-a790-033cd06590fc",                        [{"line":{"color":"#7aa7e0","width":1.3},"name":"net liquidity","x":["2024-06-12T00:00:00.000000","2024-06-13T00:00:00.000000","2024-06-14T00:00:00.000000","2024-06-17T00:00:00.000000","2024-06-18T00:00:00.000000","2024-06-19T00:00:00.000000","2024-06-20T00:00:00.000000","2024-06-21T00:00:00.000000","2024-06-24T00:00:00.000000","2024-06-25T00:00:00.000000","2024-06-26T00:00:00.000000","2024-06-27T00:00:00.000000","2024-06-28T00:00:00.000000","2024-07-01T00:00:00.000000","2024-07-02T00:00:00.000000","2024-07-03T00:00:00.000000","2024-07-04T00:00:00.000000","2024-07-05T00:00:00.000000","2024-07-08T00:00:00.000000","2024-07-09T00:00:00.000000","2024-07-10T00:00:00.000000","2024-07-11T00:00:00.000000","2024-07-12T00:00:00.000000","2024-07-15T00:00:00.000000","2024-07-16T00:00:00.000000","2024-07-17T00:00:00.000000","2024-07-18T00:00:00.000000","2024-07-19T00:00:00.000000","2024-07-22T00:00:00.000000","2024-07-23T00:00:00.000000","2024-07-24T00:00:00.000000","2024-07-25T00:00:00.000000","2024-07-26T00:00:00.000000","2024-07-29T00:00:00.000000","2024-07-30T00:00:00.000000","2024-07-31T00:00:00.000000","2024-08-01T00:00:00.000000","2024-08-02T00:00:00.000000","2024-08-05T00:00:00.000000","2024-08-06T00:00:00.000000","2024-08-07T00:00:00.000000","2024-08-08T00:00:00.000000","2024-08-09T00:00:00.000000","2024-08-12T00:00:00.000000","2024-08-13T00:00:00.000000","2024-08-14T00:00:00.000000","2024-08-15T00:00:00.000000","2024-08-16T00:00:00.000000","2024-08-19T00:00:00.000000","2024-08-20T00:00:00.000000","2024-08-21T00:00:00.000000","2024-08-22T00:00:00.000000","2024-08-23T00:00:00.000000","2024-08-26T00:00:00.000000","2024-08-27T00:00:00.000000","2024-08-28T00:00:00.000000","2024-08-29T00:00:00.000000","2024-08-30T00:00:00.000000","2024-09-02T00:00:00.000000","2024-09-03T00:00:00.000000","2024-09-04T00:00:00.000000","2024-09-05T00:00:00.000000","2024-09-06T00:00:00.000000","2024-09-09T00:00:00.000000","2024-09-10T00:00:00.000000","2024-09-11T00:00:00.000000","2024-09-12T00:00:00.000000","2024-09-13T00:00:00.000000","2024-09-16T00:00:00.000000","2024-09-17T00:00:00.000000","2024-09-18T00:00:00.000000","2024-09-19T00:00:00.000000","2024-09-20T00:00:00.000000","2024-09-23T00:00:00.000000","2024-09-24T00:00:00.000000","2024-09-25T00:00:00.000000","2024-09-26T00:00:00.000000","2024-09-27T00:00:00.000000","2024-09-30T00:00:00.000000","2024-10-01T00:00:00.000000","2024-10-02T00:00:00.000000","2024-10-03T00:00:00.000000","2024-10-04T00:00:00.000000","2024-10-07T00:00:00.000000","2024-10-08T00:00:00.000000","2024-10-09T00:00:00.000000","2024-10-10T00:00:00.000000","2024-10-11T00:00:00.000000","2024-10-14T00:00:00.000000","2024-10-15T00:00:00.000000","2024-10-16T00:00:00.000000","2024-10-17T00:00:00.000000","2024-10-18T00:00:00.000000","2024-10-21T00:00:00.000000","2024-10-22T00:00:00.000000","2024-10-23T00:00:00.000000","2024-10-24T00:00:00.000000","2024-10-25T00:00:00.000000","2024-10-28T00:00:00.000000","2024-10-29T00:00:00.000000","2024-10-30T00:00:00.000000","2024-10-31T00:00:00.000000","2024-11-01T00:00:00.000000","2024-11-04T00:00:00.000000","2024-11-05T00:00:00.000000","2024-11-06T00:00:00.000000","2024-11-07T00:00:00.000000","2024-11-08T00:00:00.000000","2024-11-11T00:00:00.000000","2024-11-12T00:00:00.000000","2024-11-13T00:00:00.000000","2024-11-14T00:00:00.000000","2024-11-15T00:00:00.000000","2024-11-18T00:00:00.000000","2024-11-19T00:00:00.000000","2024-11-20T00:00:00.000000","2024-11-21T00:00:00.000000","2024-11-22T00:00:00.000000","2024-11-25T00:00:00.000000","2024-11-26T00:00:00.000000","2024-11-27T00:00:00.000000","2024-11-28T00:00:00.000000","2024-11-29T00:00:00.000000","2024-12-02T00:00:00.000000","2024-12-03T00:00:00.000000","2024-12-04T00:00:00.000000","2024-12-05T00:00:00.000000","2024-12-06T00:00:00.000000","2024-12-09T00:00:00.000000","2024-12-10T00:00:00.000000","2024-12-11T00:00:00.000000","2024-12-12T00:00:00.000000","2024-12-13T00:00:00.000000","2024-12-16T00:00:00.000000","2024-12-17T00:00:00.000000","2024-12-18T00:00:00.000000","2024-12-19T00:00:00.000000","2024-12-20T00:00:00.000000","2024-12-23T00:00:00.000000","2024-12-24T00:00:00.000000","2024-12-25T00:00:00.000000","2024-12-26T00:00:00.000000","2024-12-27T00:00:00.000000","2024-12-30T00:00:00.000000","2024-12-31T00:00:00.000000","2025-01-01T00:00:00.000000","2025-01-02T00:00:00.000000","2025-01-03T00:00:00.000000","2025-01-06T00:00:00.000000","2025-01-07T00:00:00.000000","2025-01-08T00:00:00.000000","2025-01-09T00:00:00.000000","2025-01-10T00:00:00.000000","2025-01-13T00:00:00.000000","2025-01-14T00:00:00.000000","2025-01-15T00:00:00.000000","2025-01-16T00:00:00.000000","2025-01-17T00:00:00.000000","2025-01-20T00:00:00.000000","2025-01-21T00:00:00.000000","2025-01-22T00:00:00.000000","2025-01-23T00:00:00.000000","2025-01-24T00:00:00.000000","2025-01-27T00:00:00.000000","2025-01-28T00:00:00.000000","2025-01-29T00:00:00.000000","2025-01-30T00:00:00.000000","2025-01-31T00:00:00.000000","2025-02-03T00:00:00.000000","2025-02-04T00:00:00.000000","2025-02-05T00:00:00.000000","2025-02-06T00:00:00.000000","2025-02-07T00:00:00.000000","2025-02-10T00:00:00.000000","2025-02-11T00:00:00.000000","2025-02-12T00:00:00.000000","2025-02-13T00:00:00.000000","2025-02-14T00:00:00.000000","2025-02-17T00:00:00.000000","2025-02-18T00:00:00.000000","2025-02-19T00:00:00.000000","2025-02-20T00:00:00.000000","2025-02-21T00:00:00.000000","2025-02-24T00:00:00.000000","2025-02-25T00:00:00.000000","2025-02-26T00:00:00.000000","2025-02-27T00:00:00.000000","2025-02-28T00:00:00.000000","2025-03-03T00:00:00.000000","2025-03-04T00:00:00.000000","2025-03-05T00:00:00.000000","2025-03-06T00:00:00.000000","2025-03-07T00:00:00.000000","2025-03-10T00:00:00.000000","2025-03-11T00:00:00.000000","2025-03-12T00:00:00.000000","2025-03-13T00:00:00.000000","2025-03-14T00:00:00.000000","2025-03-17T00:00:00.000000","2025-03-18T00:00:00.000000","2025-03-19T00:00:00.000000","2025-03-20T00:00:00.000000","2025-03-21T00:00:00.000000","2025-03-24T00:00:00.000000","2025-03-25T00:00:00.000000","2025-03-26T00:00:00.000000","2025-03-27T00:00:00.000000","2025-03-28T00:00:00.000000","2025-03-31T00:00:00.000000","2025-04-01T00:00:00.000000","2025-04-02T00:00:00.000000","2025-04-03T00:00:00.000000","2025-04-04T00:00:00.000000","2025-04-07T00:00:00.000000","2025-04-08T00:00:00.000000","2025-04-09T00:00:00.000000","2025-04-10T00:00:00.000000","2025-04-11T00:00:00.000000","2025-04-14T00:00:00.000000","2025-04-15T00:00:00.000000","2025-04-16T00:00:00.000000","2025-04-17T00:00:00.000000","2025-04-18T00:00:00.000000","2025-04-21T00:00:00.000000","2025-04-22T00:00:00.000000","2025-04-23T00:00:00.000000","2025-04-24T00:00:00.000000","2025-04-25T00:00:00.000000","2025-04-28T00:00:00.000000","2025-04-29T00:00:00.000000","2025-04-30T00:00:00.000000","2025-05-01T00:00:00.000000","2025-05-02T00:00:00.000000","2025-05-05T00:00:00.000000","2025-05-06T00:00:00.000000","2025-05-07T00:00:00.000000","2025-05-08T00:00:00.000000","2025-05-09T00:00:00.000000","2025-05-12T00:00:00.000000","2025-05-13T00:00:00.000000","2025-05-14T00:00:00.000000","2025-05-15T00:00:00.000000","2025-05-16T00:00:00.000000","2025-05-19T00:00:00.000000","2025-05-20T00:00:00.000000","2025-05-21T00:00:00.000000","2025-05-22T00:00:00.000000","2025-05-23T00:00:00.000000","2025-05-26T00:00:00.000000","2025-05-27T00:00:00.000000","2025-05-28T00:00:00.000000","2025-05-29T00:00:00.000000","2025-05-30T00:00:00.000000","2025-06-02T00:00:00.000000","2025-06-03T00:00:00.000000","2025-06-04T00:00:00.000000","2025-06-05T00:00:00.000000","2025-06-06T00:00:00.000000","2025-06-09T00:00:00.000000","2025-06-10T00:00:00.000000","2025-06-11T00:00:00.000000","2025-06-12T00:00:00.000000","2025-06-13T00:00:00.000000","2025-06-16T00:00:00.000000","2025-06-17T00:00:00.000000","2025-06-18T00:00:00.000000","2025-06-19T00:00:00.000000","2025-06-20T00:00:00.000000","2025-06-23T00:00:00.000000","2025-06-24T00:00:00.000000","2025-06-25T00:00:00.000000","2025-06-26T00:00:00.000000","2025-06-27T00:00:00.000000","2025-06-30T00:00:00.000000","2025-07-01T00:00:00.000000","2025-07-02T00:00:00.000000","2025-07-03T00:00:00.000000","2025-07-04T00:00:00.000000","2025-07-07T00:00:00.000000","2025-07-08T00:00:00.000000","2025-07-09T00:00:00.000000","2025-07-10T00:00:00.000000","2025-07-11T00:00:00.000000","2025-07-14T00:00:00.000000","2025-07-15T00:00:00.000000","2025-07-16T00:00:00.000000","2025-07-17T00:00:00.000000","2025-07-18T00:00:00.000000","2025-07-21T00:00:00.000000","2025-07-22T00:00:00.000000","2025-07-23T00:00:00.000000","2025-07-24T00:00:00.000000","2025-07-25T00:00:00.000000","2025-07-28T00:00:00.000000","2025-07-29T00:00:00.000000","2025-07-30T00:00:00.000000","2025-07-31T00:00:00.000000","2025-08-01T00:00:00.000000","2025-08-04T00:00:00.000000","2025-08-05T00:00:00.000000","2025-08-06T00:00:00.000000","2025-08-07T00:00:00.000000","2025-08-08T00:00:00.000000","2025-08-11T00:00:00.000000","2025-08-12T00:00:00.000000","2025-08-13T00:00:00.000000","2025-08-14T00:00:00.000000","2025-08-15T00:00:00.000000","2025-08-18T00:00:00.000000","2025-08-19T00:00:00.000000","2025-08-20T00:00:00.000000","2025-08-21T00:00:00.000000","2025-08-22T00:00:00.000000","2025-08-25T00:00:00.000000","2025-08-26T00:00:00.000000","2025-08-27T00:00:00.000000","2025-08-28T00:00:00.000000","2025-08-29T00:00:00.000000","2025-09-01T00:00:00.000000","2025-09-02T00:00:00.000000","2025-09-03T00:00:00.000000","2025-09-04T00:00:00.000000","2025-09-05T00:00:00.000000","2025-09-08T00:00:00.000000","2025-09-09T00:00:00.000000","2025-09-10T00:00:00.000000","2025-09-11T00:00:00.000000","2025-09-12T00:00:00.000000","2025-09-15T00:00:00.000000","2025-09-16T00:00:00.000000","2025-09-17T00:00:00.000000","2025-09-18T00:00:00.000000","2025-09-19T00:00:00.000000","2025-09-22T00:00:00.000000","2025-09-23T00:00:00.000000","2025-09-24T00:00:00.000000","2025-09-25T00:00:00.000000","2025-09-26T00:00:00.000000","2025-09-29T00:00:00.000000","2025-09-30T00:00:00.000000","2025-10-01T00:00:00.000000","2025-10-02T00:00:00.000000","2025-10-03T00:00:00.000000","2025-10-06T00:00:00.000000","2025-10-07T00:00:00.000000","2025-10-08T00:00:00.000000","2025-10-09T00:00:00.000000","2025-10-10T00:00:00.000000","2025-10-13T00:00:00.000000","2025-10-14T00:00:00.000000","2025-10-15T00:00:00.000000","2025-10-16T00:00:00.000000","2025-10-17T00:00:00.000000","2025-10-20T00:00:00.000000","2025-10-21T00:00:00.000000","2025-10-22T00:00:00.000000","2025-10-23T00:00:00.000000","2025-10-24T00:00:00.000000","2025-10-27T00:00:00.000000","2025-10-28T00:00:00.000000","2025-10-29T00:00:00.000000","2025-10-30T00:00:00.000000","2025-10-31T00:00:00.000000","2025-11-03T00:00:00.000000","2025-11-04T00:00:00.000000","2025-11-05T00:00:00.000000","2025-11-06T00:00:00.000000","2025-11-07T00:00:00.000000","2025-11-10T00:00:00.000000","2025-11-11T00:00:00.000000","2025-11-12T00:00:00.000000","2025-11-13T00:00:00.000000","2025-11-14T00:00:00.000000","2025-11-17T00:00:00.000000","2025-11-18T00:00:00.000000","2025-11-19T00:00:00.000000","2025-11-20T00:00:00.000000","2025-11-21T00:00:00.000000","2025-11-24T00:00:00.000000","2025-11-25T00:00:00.000000","2025-11-26T00:00:00.000000","2025-11-27T00:00:00.000000","2025-11-28T00:00:00.000000","2025-12-01T00:00:00.000000","2025-12-02T00:00:00.000000","2025-12-03T00:00:00.000000","2025-12-04T00:00:00.000000","2025-12-05T00:00:00.000000","2025-12-08T00:00:00.000000","2025-12-09T00:00:00.000000","2025-12-10T00:00:00.000000","2025-12-11T00:00:00.000000","2025-12-12T00:00:00.000000","2025-12-15T00:00:00.000000","2025-12-16T00:00:00.000000","2025-12-17T00:00:00.000000","2025-12-18T00:00:00.000000","2025-12-19T00:00:00.000000","2025-12-22T00:00:00.000000","2025-12-23T00:00:00.000000","2025-12-24T00:00:00.000000","2025-12-25T00:00:00.000000","2025-12-26T00:00:00.000000","2025-12-29T00:00:00.000000","2025-12-30T00:00:00.000000","2025-12-31T00:00:00.000000","2026-01-01T00:00:00.000000","2026-01-02T00:00:00.000000","2026-01-05T00:00:00.000000","2026-01-06T00:00:00.000000","2026-01-07T00:00:00.000000","2026-01-08T00:00:00.000000","2026-01-09T00:00:00.000000","2026-01-12T00:00:00.000000","2026-01-13T00:00:00.000000","2026-01-14T00:00:00.000000","2026-01-15T00:00:00.000000","2026-01-16T00:00:00.000000","2026-01-19T00:00:00.000000","2026-01-20T00:00:00.000000","2026-01-21T00:00:00.000000","2026-01-22T00:00:00.000000","2026-01-23T00:00:00.000000","2026-01-26T00:00:00.000000","2026-01-27T00:00:00.000000","2026-01-28T00:00:00.000000","2026-01-29T00:00:00.000000","2026-01-30T00:00:00.000000","2026-02-02T00:00:00.000000","2026-02-03T00:00:00.000000","2026-02-04T00:00:00.000000","2026-02-05T00:00:00.000000","2026-02-06T00:00:00.000000","2026-02-09T00:00:00.000000","2026-02-10T00:00:00.000000","2026-02-11T00:00:00.000000","2026-02-12T00:00:00.000000","2026-02-13T00:00:00.000000","2026-02-16T00:00:00.000000","2026-02-17T00:00:00.000000","2026-02-18T00:00:00.000000","2026-02-19T00:00:00.000000","2026-02-20T00:00:00.000000","2026-02-23T00:00:00.000000","2026-02-24T00:00:00.000000","2026-02-25T00:00:00.000000","2026-02-26T00:00:00.000000","2026-02-27T00:00:00.000000","2026-03-02T00:00:00.000000","2026-03-03T00:00:00.000000","2026-03-04T00:00:00.000000","2026-03-05T00:00:00.000000","2026-03-06T00:00:00.000000","2026-03-09T00:00:00.000000","2026-03-10T00:00:00.000000","2026-03-11T00:00:00.000000","2026-03-12T00:00:00.000000","2026-03-13T00:00:00.000000","2026-03-16T00:00:00.000000","2026-03-17T00:00:00.000000","2026-03-18T00:00:00.000000","2026-03-19T00:00:00.000000","2026-03-20T00:00:00.000000","2026-03-23T00:00:00.000000","2026-03-24T00:00:00.000000","2026-03-25T00:00:00.000000","2026-03-26T00:00:00.000000","2026-03-27T00:00:00.000000","2026-03-30T00:00:00.000000","2026-03-31T00:00:00.000000","2026-04-01T00:00:00.000000","2026-04-02T00:00:00.000000","2026-04-03T00:00:00.000000","2026-04-06T00:00:00.000000","2026-04-07T00:00:00.000000","2026-04-08T00:00:00.000000","2026-04-09T00:00:00.000000","2026-04-10T00:00:00.000000","2026-04-13T00:00:00.000000","2026-04-14T00:00:00.000000","2026-04-15T00:00:00.000000","2026-04-16T00:00:00.000000","2026-04-17T00:00:00.000000","2026-04-20T00:00:00.000000","2026-04-21T00:00:00.000000","2026-04-22T00:00:00.000000","2026-04-23T00:00:00.000000","2026-04-24T00:00:00.000000","2026-04-27T00:00:00.000000","2026-04-28T00:00:00.000000","2026-04-29T00:00:00.000000","2026-04-30T00:00:00.000000","2026-05-01T00:00:00.000000","2026-05-04T00:00:00.000000","2026-05-05T00:00:00.000000","2026-05-06T00:00:00.000000","2026-05-07T00:00:00.000000","2026-05-08T00:00:00.000000","2026-05-11T00:00:00.000000","2026-05-12T00:00:00.000000","2026-05-13T00:00:00.000000","2026-05-14T00:00:00.000000","2026-05-15T00:00:00.000000","2026-05-18T00:00:00.000000","2026-05-19T00:00:00.000000","2026-05-20T00:00:00.000000","2026-05-21T00:00:00.000000","2026-05-22T00:00:00.000000","2026-05-25T00:00:00.000000","2026-05-26T00:00:00.000000","2026-05-27T00:00:00.000000","2026-05-28T00:00:00.000000","2026-05-29T00:00:00.000000","2026-06-01T00:00:00.000000","2026-06-02T00:00:00.000000","2026-06-03T00:00:00.000000","2026-06-04T00:00:00.000000","2026-06-05T00:00:00.000000","2026-06-08T00:00:00.000000","2026-06-09T00:00:00.000000","2026-06-10T00:00:00.000000","2026-06-11T00:00:00.000000","2026-06-12T00:00:00.000000"],"y":{"dtype":"f8","bdata":"ppvEIDARuECS7Xw\u002fFSW4QBBYObTIM7hAK4cW2e7Wt0AaL90kRtW3QDvfT43XzrdAy6FFtvPLt0B\u002farx0E7S3QNV46SYxkLdA+FPjpfuCt0AYBFYOzWy3QHw\u002fNV7aXLdAUrgehcuctkCIQWDl8H+3QArXo3A9g7dAJQaBlQOit0AlBoGVA6K3QMp2vp+60rdAIIXrURivt0B7FK5HIaO3QMh2vp+av7dArkfhevTIt0AaL90kBsO3QEJg5dBCnrdAdJMYBHaDt0DWeOkmEZq3QIpBYOXQmLdAbOf7qTGpt0Cmm8QgkJq3QCGwcmjxiLdA16NwPeqWt0DjpZvEIKy3QFK4HoWrqbdAgZVDi6yWt0DIdr6f+pO3QD0K16MwF7dA8\u002f3UeGmct0CPwvUo3MC3QOf7qfHyzLdAc2iR7Zzat0BzaJHtXNe3QBkEVg7Nv7dA5\u002fup8bK6t0CvR+F6lJ63QND3U+MllrdAVOOlm2Sst0DazvdTowC4QHe+nxpv5LdAUI2XbhLVt0AkBoGV49u3QDiJQWDlw7dA1XjpJnHIt0BQjZdu0sy3QBkEVg4tnrdA\u002fKnx0q15t0A3iUFgRVm3QOj7qfFSYbdAH4XrUZhct0AfhetRmFy3QFK4HoVLb7dAku18PzV0t0DIdr6fWqS3QClcj8J1pbdAL90kBgGht0CuR+F6FMW3QN0kBoE13rdAK4cW2S70t0CF61G4HuS3QI2XbhKDcLdA6Pup8fJ0t0DEILBy6Eu3QI\u002fC9SgcVLdARrbz\u002fRRNt0Dx0k1icBC3QFg5tMh2G7dA+n5qvPT8tkBt5\u002fupcRS3QMHKoUXW7rZABFYOLbJgtkDTTWIQ2AK3QArXo3Ad0LZAyXa+n7oVt0BANV66qRy3QClcj8J1GbdAL90kBmENt0AcWmQ7\u002fxu3QMUgsHLoNLdALrKd72cvt0Ausp3vZy+3QIts5\u002fvJLrdAdJMYBHZAt0AxCKwcOjy3QNNNYhCYP7dAoBov3aQwt0DcJAaB1Uq3QBFYObQoNbdA5tAi23lot0BI4XoU7la3QKwcWmR7NrdAL90kBoExt0B56SYxaDG3QFG4HoUrA7dAXI\u002fC9ciWt0CXbhKDAHW3QE+Nl25yjrdAf2q8dDNYt0DdJAaBVWu3QGZmZmZmb7dAZmZmZmZvt0C+nxovHUy3QOxRuB4lILdALbKd7+cwt0DqJjEIzK+3QLkehevxfLdAMgisHLpzt0DJdr6fGlC3QIcW2c53Q7dA8tJNYtBIt0BWDi2y3Ue3QCLb+X6qS7dA0iLb+Z5At0DSItv5nkC3QPYoXI+iPrdATDeJQYAmt0B1kxgEFii3QDQzMzPzHbdA3iQGgTVNt0B3vp8aD1m3QMUgsHLoNbdAGQRWDq1Ut0BBYOXQAna3QBBYObTIjLdAXrpJDGKUt0C8dJMYhCW3QHSTGAS2PLdA+n5qvLRBt0ArhxbZ7mS3QCgxCKx8h7dAWDm0yHZct0D9qfHSTVW3QMP1KFzvUbdABFYOLXJwt0CcxCCw0gi3QLpJDALL97ZA2\u002fl+apw6tkAlBoGVIxm2QAwCK4eWL7dAwMqhRdZMt0BeukkMAkC3QEW28\u002f20aLdAL90kBuGft0CZmZmZma23QFK4HoUrm7dALbKd74eGt0AQWDm0yIW3QC2yne\u002fnrrdAVOOlm2Sut0BBYOXQYpq3QEFg5dBimrdAkxgEVi6Rt0AHgZVDS5q3QA8tsp2vM7dA\u002fKnx0s1Ft0Dy0k1icDW3QCuHFtmOEbdAUrgehcv8tkDrUbgeReq2QGiR7Xw\u002fzbZAGi\u002fdJGYgt0BVDi2yXRy3QG7n+6kxGrdAL90kBqEMt0APLbKd7wG3QDEIrBx68bZA4E+Nl04Et0Dy0k1isDC3QBWuR+FaMLdAEFg5tKhAt0AQWDm0qEC3QIXrUbjeSbdAnMQgsDJSt0A5tMh2Pme3QEa28\u002f20b7dARrbz\u002fXRut0DRItv5nq63QO18PzV+t7dAEFg5tKiet0C28\u002f3UGFS3QJVDi2xnv7dAhxbZzhfSt0AW2c73c863QBKDwMoB0rdAaJHtfP\u002fSt0AdWmQ7H8W3QN9PjZeO5rdAsHJokc0huEAMAiuHtlm4QARWDi0yS7hAnMQgsFL7t0DXo3A96g+4QEjhehTOArhAarx0kxgkuEBaZDvfLzG4QGHl0CK7HbhAnMQgsLIuuEDz\u002fdR46Sa4QCGwcmjRF7hAJQaBleMHuEDMzMzMTC+3QEW28\u002f1UQrhApHA9ClcsuEDLoUW201a4QFtkO9+PZ7hA1njpJlF5uEAtsp3v50u4QCcxCKwcZLhAtch2vv+KuEATg8DKYZq4QMUgsHLoQLhAku18PxWWt0ArhxbZjpG3QOtRuB6FtLdAEoPAyiGot0BI4XoUjmK3QH0\u002fNV56XrdAVw4tsv1at0BvEoPAKpK3QIgW2c43rbdAxCCwckhct0Cmm8QgsEC3QKAaL90ElbZAdZMYBNZGt0DNzMzMDGO3QNz5fmo8ardAI9v5fqprt0BSuB6FK0i3QFTjpZvkardA0SLb+d5rt0BxPQrXA1y3QM\u002f3U+MFWLdAppvEINBht0DD9ShcL9u3QHE9CtfDt7dAN4lBYKV5t0B1kxgEtrG3QD81XroJordAKVyPwvWZt0ChRbbzPa+3QKFFtvM9r7dA\u002fKnx0i25t0Dl0CLb+a63QArXo3C927dAnxov3SR2t0Ai2\u002fl+CtK3QHsUrkch+bdAiBbZztfvt0A+CtejUBm4QIgW2c7XIrhAGy\u002fdJMb2t0BMN4lBwCS4QHsUrkeBM7hAkxgEVu5auEDeT42Xbky4QNNNYhAYyrdAyqFFthPTt0DhehSuJ8y3QOF6FK4nzLdA4qWbxEAguEAFgZVDK\u002f23QO18PzWe97dAokW2873kt0BkO99P7di3QI\u002fC9SgclrdAvp8aL31wtkDFILByKKG3QHe+nxoPordAN4lBYMXzt0A3iUFgxfO3QHWTGAQW3bdAQmDl0CLRt0Dwp8ZLl+u3QLByaJEtLrhA9P3UeOk1uEC28\u002f3U2AG4QJzEILCy97dAMQisHBoGuEDByqFFlgS4QNV46SZRALhAaJHtfD\u002fut0Dy0k1ikOW3QFK4HoWL9rdA0SLb+R4guED4U+OlGw+4QOBPjZeu7LdAc2iR7dy0t0Czne+nprO3QPT91HiJKrdAHVpkO18XuEBANV66Cey3QK0cWmT70rdAWmQ734\u002fEt0CJQWDlMLe3QDEIrBx6tbdATmIQWFmmt0AxCKwc2pW3QGzn+6nxtrdAO99Pjbext0BMN4lBwOS3QPYoXI\u002fixbdAJzEIrHyqt0B9PzVeWqm3QCuHFtnOj7dAx0s3iaFwt0BiEFg5VFe3QFCNl27yRLdAPN9PjddUt0BeukkMwkm3QI2XbhJDUrdAjZduEkNSt0BOYhBYOQS3QN0kBoE1IrdAnu+nxqsYt0BaZDvf7xq3QKjGSzdJDrdAAAAAAOAAt0AyCKwc+hS3QJLtfD9VCLdA3Pl+atz4tkCClUOLTGO2QJZDi2xng7ZAokW2832btkDx0k1icJK2QGIQWDm0krZAFtnO9\u002fOLtkArhxbZrrS2QOSlm8RAvbZA8tJNYvC9tkCQwvUo\u002fI22QEw3iUGAcrZAtch2vn8ktkBaZDvfj322QAwCK4fWerZAj8L1KFyDtkD6fmq8FHa2QEFg5dDCfrZA4XoUroeftkCd76fGS562QL6fGi89oLZAvp8aLz2gtkArhxbZ7nG2QFPjpZsEa7ZAWmQ73885tkDdJAaB9Ta2QKAaL93ENLZAPgrXo3AetkBjEFg5dDC2QJhuEoOgBbZAfT81XpoMtkAw3SQGIe61QK9H4XqU1rVAne+nxqvPtUDb+X5qPL+1QJZDi2zn6LVAW4\u002fC9UgGtkA730+Nd\u002f61QIcW2c438bVANV66SWzotUBmZmZmBvK1QJVDi2xH4LVAlUOLbEfgtUCUGARWbv+1QIPAyqHF7rVA16NwPcrztUBjEFg5VBS2QPYoXI8iE7ZAUI2XblIVtkCmm8QgMAe2QPt+ary0HLZAEFg5tKgPtkD4U+OlO\u002fW1QBsv3SSGErZAGy\u002fdJIYStkDTTWIQ2NS1QJqZmZkZ4bVAy6FFtvPqtUA5tMh2vvi1QBKDwMrhFrZA8tJNYhAgtkAW2c738xW2QCQGgZVDP7ZAkxgEVm5gtkCNl24Sw2+2QAAAAAAAcrZAku18P7X3tUBs5\u002fupkRK2QJHtfD8VNbZAYOXQIrtGtkBxPQrXA1K2QNejcD1KM7ZAlUOLbIdetkC8dJMY5I62QLx0kxjkjrZA+FPjpRtftkBZZDvfr0+2QB+F61E4brZAg8DKocUdtkCDwMqhxR22QB1aZDu\u002f3bZABVYOLRLJtkCamZmZGeq2QOf7qfFymbZAw\u002fUoXM+ktkCS7Xw\u002fNaO2QOOlm8TgjLZAXI\u002fC9YidtkAj2\u002fl+aqm2QPLSTWLQarZAmG4Sg0BQtkCYbhKDQFC2QDMzMzNTLrZA1XjpJhFOtkBQjZduEj62QNv5fmocM7ZAGQRWDm0HtkDJdr6feui1QPYoXI\u002fCAbZAZ2ZmZqbwtUBt5\u002fupsTS2QFK4HoUrL7ZAvXSTGOQttkBeukkMwj+2QAIrhxaZObZAvHSTGIRBtkBcj8L1CDe2QBbZzvfTF7ZAGARWDs1OtkCLbOf7iUK2QI7C9ShcTLZAjsL1KFxMtkB56SYxSEG2QMP1KFyvW7ZA4noUrudLtkCWQ4tsh1e2QH0\u002fNV5aXLZASOF6FE5PtkA\u002fNV66qY22QGQ730+NgLZAp8ZLN4mmtkC6SQwCy222QF\u002fl0CLbeLZAPzVeugmVtkBMN4lBQJm2QJ7vp8ZLorZAJQaBlQOKtkBmZmZmxoW2QNz5fmr8z7ZANl66SezMtkBGtvP9lM+2QML1KFwvTLZAMN0kBuFTtkDFILByaJO2QBWuR+F6jLZA5KWbxECYtkCcxCCwknG2QJDC9SickrZAtvP91Pi6tkCF61G4Psm2QCUGgZWDr7ZAkxgEVu6btkAv3SQGYXS2QHe+nxqv7bZAiUFg5fAKt0BiEFg5FCG3QHe+nxqvC7dAg8DKocUrt0AL16NwnWy3QAAAAACAdrdAOIlBYCVmt0BEi2znuy63QHe+nxoPGrdAQDVeugmVtkBeukkMYma2QDZeuknsSrZAxSCwcigjtkAv3SQGYSu2QN4kBoG1Q7ZAdZMYBHZptkB0kxgEFmW2QIGVQ4usSLZAyHa+n1pUtkDl0CLbGU+2QJMYBFZOWrZAeekmMQjStkC+nxovXbu2QCLb+X6KzrZAC9ejcB3VtkBSuB6FK+a2QN9PjZeO7bZAxSCwcsjdtkDsUbgeRei2QHNoke1cHbdAlBgEVg4kt0Coxks3CVG3QKrx0k1iL7dAikFg5VAFt0DpJjEIzBK3QBWuR+F6JLdA46WbxCD\u002ftkDjpZvEIP+2QP7UeOmGxrZAhetRuN7jtkD2KFyPgt22QDMzMzPTnLZAv58aLz3WtkCTGARWzsu2QHWTGAS257ZAMQisHNrptkBs5\u002fupMf22QHa+nxpv6bZAnxov3YT4tkAZBFYO7SO3QH0\u002fNV7aI7dARIts59sjt0A="},"type":"scatter","xaxis":"x","yaxis":"y"},{"marker":{"color":["#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#e07070","#e07070","#e07070","#5fbf7f","#5fbf7f","#5fbf7f","#e07070","#e07070","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#e07070","#5fbf7f","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#5fbf7f","#5fbf7f","#5fbf7f","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#e07070","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#e07070","#e07070","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#e07070","#e07070","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#5fbf7f","#5fbf7f","#5fbf7f","#e07070","#e07070","#e07070","#e07070","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#e07070","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#e07070","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#5fbf7f","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#e07070","#5fbf7f","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#e07070","#e07070","#e07070","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#e07070","#5fbf7f","#5fbf7f","#5fbf7f","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#5fbf7f","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#5fbf7f","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#e07070","#e07070","#e07070","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#e07070","#e07070","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#e07070","#5fbf7f","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#e07070","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#e07070","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#e07070","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#e07070","#5fbf7f","#e07070","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#5fbf7f","#e07070","#e07070"]},"name":"4w RoC","x":["2024-06-12T00:00:00.000000","2024-06-13T00:00:00.000000","2024-06-14T00:00:00.000000","2024-06-17T00:00:00.000000","2024-06-18T00:00:00.000000","2024-06-19T00:00:00.000000","2024-06-20T00:00:00.000000","2024-06-21T00:00:00.000000","2024-06-24T00:00:00.000000","2024-06-25T00:00:00.000000","2024-06-26T00:00:00.000000","2024-06-27T00:00:00.000000","2024-06-28T00:00:00.000000","2024-07-01T00:00:00.000000","2024-07-02T00:00:00.000000","2024-07-03T00:00:00.000000","2024-07-04T00:00:00.000000","2024-07-05T00:00:00.000000","2024-07-08T00:00:00.000000","2024-07-09T00:00:00.000000","2024-07-10T00:00:00.000000","2024-07-11T00:00:00.000000","2024-07-12T00:00:00.000000","2024-07-15T00:00:00.000000","2024-07-16T00:00:00.000000","2024-07-17T00:00:00.000000","2024-07-18T00:00:00.000000","2024-07-19T00:00:00.000000","2024-07-22T00:00:00.000000","2024-07-23T00:00:00.000000","2024-07-24T00:00:00.000000","2024-07-25T00:00:00.000000","2024-07-26T00:00:00.000000","2024-07-29T00:00:00.000000","2024-07-30T00:00:00.000000","2024-07-31T00:00:00.000000","2024-08-01T00:00:00.000000","2024-08-02T00:00:00.000000","2024-08-05T00:00:00.000000","2024-08-06T00:00:00.000000","2024-08-07T00:00:00.000000","2024-08-08T00:00:00.000000","2024-08-09T00:00:00.000000","2024-08-12T00:00:00.000000","2024-08-13T00:00:00.000000","2024-08-14T00:00:00.000000","2024-08-15T00:00:00.000000","2024-08-16T00:00:00.000000","2024-08-19T00:00:00.000000","2024-08-20T00:00:00.000000","2024-08-21T00:00:00.000000","2024-08-22T00:00:00.000000","2024-08-23T00:00:00.000000","2024-08-26T00:00:00.000000","2024-08-27T00:00:00.000000","2024-08-28T00:00:00.000000","2024-08-29T00:00:00.000000","2024-08-30T00:00:00.000000","2024-09-02T00:00:00.000000","2024-09-03T00:00:00.000000","2024-09-04T00:00:00.000000","2024-09-05T00:00:00.000000","2024-09-06T00:00:00.000000","2024-09-09T00:00:00.000000","2024-09-10T00:00:00.000000","2024-09-11T00:00:00.000000","2024-09-12T00:00:00.000000","2024-09-13T00:00:00.000000","2024-09-16T00:00:00.000000","2024-09-17T00:00:00.000000","2024-09-18T00:00:00.000000","2024-09-19T00:00:00.000000","2024-09-20T00:00:00.000000","2024-09-23T00:00:00.000000","2024-09-24T00:00:00.000000","2024-09-25T00:00:00.000000","2024-09-26T00:00:00.000000","2024-09-27T00:00:00.000000","2024-09-30T00:00:00.000000","2024-10-01T00:00:00.000000","2024-10-02T00:00:00.000000","2024-10-03T00:00:00.000000","2024-10-04T00:00:00.000000","2024-10-07T00:00:00.000000","2024-10-08T00:00:00.000000","2024-10-09T00:00:00.000000","2024-10-10T00:00:00.000000","2024-10-11T00:00:00.000000","2024-10-14T00:00:00.000000","2024-10-15T00:00:00.000000","2024-10-16T00:00:00.000000","2024-10-17T00:00:00.000000","2024-10-18T00:00:00.000000","2024-10-21T00:00:00.000000","2024-10-22T00:00:00.000000","2024-10-23T00:00:00.000000","2024-10-24T00:00:00.000000","2024-10-25T00:00:00.000000","2024-10-28T00:00:00.000000","2024-10-29T00:00:00.000000","2024-10-30T00:00:00.000000","2024-10-31T00:00:00.000000","2024-11-01T00:00:00.000000","2024-11-04T00:00:00.000000","2024-11-05T00:00:00.000000","2024-11-06T00:00:00.000000","2024-11-07T00:00:00.000000","2024-11-08T00:00:00.000000","2024-11-11T00:00:00.000000","2024-11-12T00:00:00.000000","2024-11-13T00:00:00.000000","2024-11-14T00:00:00.000000","2024-11-15T00:00:00.000000","2024-11-18T00:00:00.000000","2024-11-19T00:00:00.000000","2024-11-20T00:00:00.000000","2024-11-21T00:00:00.000000","2024-11-22T00:00:00.000000","2024-11-25T00:00:00.000000","2024-11-26T00:00:00.000000","2024-11-27T00:00:00.000000","2024-11-28T00:00:00.000000","2024-11-29T00:00:00.000000","2024-12-02T00:00:00.000000","2024-12-03T00:00:00.000000","2024-12-04T00:00:00.000000","2024-12-05T00:00:00.000000","2024-12-06T00:00:00.000000","2024-12-09T00:00:00.000000","2024-12-10T00:00:00.000000","2024-12-11T00:00:00.000000","2024-12-12T00:00:00.000000","2024-12-13T00:00:00.000000","2024-12-16T00:00:00.000000","2024-12-17T00:00:00.000000","2024-12-18T00:00:00.000000","2024-12-19T00:00:00.000000","2024-12-20T00:00:00.000000","2024-12-23T00:00:00.000000","2024-12-24T00:00:00.000000","2024-12-25T00:00:00.000000","2024-12-26T00:00:00.000000","2024-12-27T00:00:00.000000","2024-12-30T00:00:00.000000","2024-12-31T00:00:00.000000","2025-01-01T00:00:00.000000","2025-01-02T00:00:00.000000","2025-01-03T00:00:00.000000","2025-01-06T00:00:00.000000","2025-01-07T00:00:00.000000","2025-01-08T00:00:00.000000","2025-01-09T00:00:00.000000","2025-01-10T00:00:00.000000","2025-01-13T00:00:00.000000","2025-01-14T00:00:00.000000","2025-01-15T00:00:00.000000","2025-01-16T00:00:00.000000","2025-01-17T00:00:00.000000","2025-01-20T00:00:00.000000","2025-01-21T00:00:00.000000","2025-01-22T00:00:00.000000","2025-01-23T00:00:00.000000","2025-01-24T00:00:00.000000","2025-01-27T00:00:00.000000","2025-01-28T00:00:00.000000","2025-01-29T00:00:00.000000","2025-01-30T00:00:00.000000","2025-01-31T00:00:00.000000","2025-02-03T00:00:00.000000","2025-02-04T00:00:00.000000","2025-02-05T00:00:00.000000","2025-02-06T00:00:00.000000","2025-02-07T00:00:00.000000","2025-02-10T00:00:00.000000","2025-02-11T00:00:00.000000","2025-02-12T00:00:00.000000","2025-02-13T00:00:00.000000","2025-02-14T00:00:00.000000","2025-02-17T00:00:00.000000","2025-02-18T00:00:00.000000","2025-02-19T00:00:00.000000","2025-02-20T00:00:00.000000","2025-02-21T00:00:00.000000","2025-02-24T00:00:00.000000","2025-02-25T00:00:00.000000","2025-02-26T00:00:00.000000","2025-02-27T00:00:00.000000","2025-02-28T00:00:00.000000","2025-03-03T00:00:00.000000","2025-03-04T00:00:00.000000","2025-03-05T00:00:00.000000","2025-03-06T00:00:00.000000","2025-03-07T00:00:00.000000","2025-03-10T00:00:00.000000","2025-03-11T00:00:00.000000","2025-03-12T00:00:00.000000","2025-03-13T00:00:00.000000","2025-03-14T00:00:00.000000","2025-03-17T00:00:00.000000","2025-03-18T00:00:00.000000","2025-03-19T00:00:00.000000","2025-03-20T00:00:00.000000","2025-03-21T00:00:00.000000","2025-03-24T00:00:00.000000","2025-03-25T00:00:00.000000","2025-03-26T00:00:00.000000","2025-03-27T00:00:00.000000","2025-03-28T00:00:00.000000","2025-03-31T00:00:00.000000","2025-04-01T00:00:00.000000","2025-04-02T00:00:00.000000","2025-04-03T00:00:00.000000","2025-04-04T00:00:00.000000","2025-04-07T00:00:00.000000","2025-04-08T00:00:00.000000","2025-04-09T00:00:00.000000","2025-04-10T00:00:00.000000","2025-04-11T00:00:00.000000","2025-04-14T00:00:00.000000","2025-04-15T00:00:00.000000","2025-04-16T00:00:00.000000","2025-04-17T00:00:00.000000","2025-04-18T00:00:00.000000","2025-04-21T00:00:00.000000","2025-04-22T00:00:00.000000","2025-04-23T00:00:00.000000","2025-04-24T00:00:00.000000","2025-04-25T00:00:00.000000","2025-04-28T00:00:00.000000","2025-04-29T00:00:00.000000","2025-04-30T00:00:00.000000","2025-05-01T00:00:00.000000","2025-05-02T00:00:00.000000","2025-05-05T00:00:00.000000","2025-05-06T00:00:00.000000","2025-05-07T00:00:00.000000","2025-05-08T00:00:00.000000","2025-05-09T00:00:00.000000","2025-05-12T00:00:00.000000","2025-05-13T00:00:00.000000","2025-05-14T00:00:00.000000","2025-05-15T00:00:00.000000","2025-05-16T00:00:00.000000","2025-05-19T00:00:00.000000","2025-05-20T00:00:00.000000","2025-05-21T00:00:00.000000","2025-05-22T00:00:00.000000","2025-05-23T00:00:00.000000","2025-05-26T00:00:00.000000","2025-05-27T00:00:00.000000","2025-05-28T00:00:00.000000","2025-05-29T00:00:00.000000","2025-05-30T00:00:00.000000","2025-06-02T00:00:00.000000","2025-06-03T00:00:00.000000","2025-06-04T00:00:00.000000","2025-06-05T00:00:00.000000","2025-06-06T00:00:00.000000","2025-06-09T00:00:00.000000","2025-06-10T00:00:00.000000","2025-06-11T00:00:00.000000","2025-06-12T00:00:00.000000","2025-06-13T00:00:00.000000","2025-06-16T00:00:00.000000","2025-06-17T00:00:00.000000","2025-06-18T00:00:00.000000","2025-06-19T00:00:00.000000","2025-06-20T00:00:00.000000","2025-06-23T00:00:00.000000","2025-06-24T00:00:00.000000","2025-06-25T00:00:00.000000","2025-06-26T00:00:00.000000","2025-06-27T00:00:00.000000","2025-06-30T00:00:00.000000","2025-07-01T00:00:00.000000","2025-07-02T00:00:00.000000","2025-07-03T00:00:00.000000","2025-07-04T00:00:00.000000","2025-07-07T00:00:00.000000","2025-07-08T00:00:00.000000","2025-07-09T00:00:00.000000","2025-07-10T00:00:00.000000","2025-07-11T00:00:00.000000","2025-07-14T00:00:00.000000","2025-07-15T00:00:00.000000","2025-07-16T00:00:00.000000","2025-07-17T00:00:00.000000","2025-07-18T00:00:00.000000","2025-07-21T00:00:00.000000","2025-07-22T00:00:00.000000","2025-07-23T00:00:00.000000","2025-07-24T00:00:00.000000","2025-07-25T00:00:00.000000","2025-07-28T00:00:00.000000","2025-07-29T00:00:00.000000","2025-07-30T00:00:00.000000","2025-07-31T00:00:00.000000","2025-08-01T00:00:00.000000","2025-08-04T00:00:00.000000","2025-08-05T00:00:00.000000","2025-08-06T00:00:00.000000","2025-08-07T00:00:00.000000","2025-08-08T00:00:00.000000","2025-08-11T00:00:00.000000","2025-08-12T00:00:00.000000","2025-08-13T00:00:00.000000","2025-08-14T00:00:00.000000","2025-08-15T00:00:00.000000","2025-08-18T00:00:00.000000","2025-08-19T00:00:00.000000","2025-08-20T00:00:00.000000","2025-08-21T00:00:00.000000","2025-08-22T00:00:00.000000","2025-08-25T00:00:00.000000","2025-08-26T00:00:00.000000","2025-08-27T00:00:00.000000","2025-08-28T00:00:00.000000","2025-08-29T00:00:00.000000","2025-09-01T00:00:00.000000","2025-09-02T00:00:00.000000","2025-09-03T00:00:00.000000","2025-09-04T00:00:00.000000","2025-09-05T00:00:00.000000","2025-09-08T00:00:00.000000","2025-09-09T00:00:00.000000","2025-09-10T00:00:00.000000","2025-09-11T00:00:00.000000","2025-09-12T00:00:00.000000","2025-09-15T00:00:00.000000","2025-09-16T00:00:00.000000","2025-09-17T00:00:00.000000","2025-09-18T00:00:00.000000","2025-09-19T00:00:00.000000","2025-09-22T00:00:00.000000","2025-09-23T00:00:00.000000","2025-09-24T00:00:00.000000","2025-09-25T00:00:00.000000","2025-09-26T00:00:00.000000","2025-09-29T00:00:00.000000","2025-09-30T00:00:00.000000","2025-10-01T00:00:00.000000","2025-10-02T00:00:00.000000","2025-10-03T00:00:00.000000","2025-10-06T00:00:00.000000","2025-10-07T00:00:00.000000","2025-10-08T00:00:00.000000","2025-10-09T00:00:00.000000","2025-10-10T00:00:00.000000","2025-10-13T00:00:00.000000","2025-10-14T00:00:00.000000","2025-10-15T00:00:00.000000","2025-10-16T00:00:00.000000","2025-10-17T00:00:00.000000","2025-10-20T00:00:00.000000","2025-10-21T00:00:00.000000","2025-10-22T00:00:00.000000","2025-10-23T00:00:00.000000","2025-10-24T00:00:00.000000","2025-10-27T00:00:00.000000","2025-10-28T00:00:00.000000","2025-10-29T00:00:00.000000","2025-10-30T00:00:00.000000","2025-10-31T00:00:00.000000","2025-11-03T00:00:00.000000","2025-11-04T00:00:00.000000","2025-11-05T00:00:00.000000","2025-11-06T00:00:00.000000","2025-11-07T00:00:00.000000","2025-11-10T00:00:00.000000","2025-11-11T00:00:00.000000","2025-11-12T00:00:00.000000","2025-11-13T00:00:00.000000","2025-11-14T00:00:00.000000","2025-11-17T00:00:00.000000","2025-11-18T00:00:00.000000","2025-11-19T00:00:00.000000","2025-11-20T00:00:00.000000","2025-11-21T00:00:00.000000","2025-11-24T00:00:00.000000","2025-11-25T00:00:00.000000","2025-11-26T00:00:00.000000","2025-11-27T00:00:00.000000","2025-11-28T00:00:00.000000","2025-12-01T00:00:00.000000","2025-12-02T00:00:00.000000","2025-12-03T00:00:00.000000","2025-12-04T00:00:00.000000","2025-12-05T00:00:00.000000","2025-12-08T00:00:00.000000","2025-12-09T00:00:00.000000","2025-12-10T00:00:00.000000","2025-12-11T00:00:00.000000","2025-12-12T00:00:00.000000","2025-12-15T00:00:00.000000","2025-12-16T00:00:00.000000","2025-12-17T00:00:00.000000","2025-12-18T00:00:00.000000","2025-12-19T00:00:00.000000","2025-12-22T00:00:00.000000","2025-12-23T00:00:00.000000","2025-12-24T00:00:00.000000","2025-12-25T00:00:00.000000","2025-12-26T00:00:00.000000","2025-12-29T00:00:00.000000","2025-12-30T00:00:00.000000","2025-12-31T00:00:00.000000","2026-01-01T00:00:00.000000","2026-01-02T00:00:00.000000","2026-01-05T00:00:00.000000","2026-01-06T00:00:00.000000","2026-01-07T00:00:00.000000","2026-01-08T00:00:00.000000","2026-01-09T00:00:00.000000","2026-01-12T00:00:00.000000","2026-01-13T00:00:00.000000","2026-01-14T00:00:00.000000","2026-01-15T00:00:00.000000","2026-01-16T00:00:00.000000","2026-01-19T00:00:00.000000","2026-01-20T00:00:00.000000","2026-01-21T00:00:00.000000","2026-01-22T00:00:00.000000","2026-01-23T00:00:00.000000","2026-01-26T00:00:00.000000","2026-01-27T00:00:00.000000","2026-01-28T00:00:00.000000","2026-01-29T00:00:00.000000","2026-01-30T00:00:00.000000","2026-02-02T00:00:00.000000","2026-02-03T00:00:00.000000","2026-02-04T00:00:00.000000","2026-02-05T00:00:00.000000","2026-02-06T00:00:00.000000","2026-02-09T00:00:00.000000","2026-02-10T00:00:00.000000","2026-02-11T00:00:00.000000","2026-02-12T00:00:00.000000","2026-02-13T00:00:00.000000","2026-02-16T00:00:00.000000","2026-02-17T00:00:00.000000","2026-02-18T00:00:00.000000","2026-02-19T00:00:00.000000","2026-02-20T00:00:00.000000","2026-02-23T00:00:00.000000","2026-02-24T00:00:00.000000","2026-02-25T00:00:00.000000","2026-02-26T00:00:00.000000","2026-02-27T00:00:00.000000","2026-03-02T00:00:00.000000","2026-03-03T00:00:00.000000","2026-03-04T00:00:00.000000","2026-03-05T00:00:00.000000","2026-03-06T00:00:00.000000","2026-03-09T00:00:00.000000","2026-03-10T00:00:00.000000","2026-03-11T00:00:00.000000","2026-03-12T00:00:00.000000","2026-03-13T00:00:00.000000","2026-03-16T00:00:00.000000","2026-03-17T00:00:00.000000","2026-03-18T00:00:00.000000","2026-03-19T00:00:00.000000","2026-03-20T00:00:00.000000","2026-03-23T00:00:00.000000","2026-03-24T00:00:00.000000","2026-03-25T00:00:00.000000","2026-03-26T00:00:00.000000","2026-03-27T00:00:00.000000","2026-03-30T00:00:00.000000","2026-03-31T00:00:00.000000","2026-04-01T00:00:00.000000","2026-04-02T00:00:00.000000","2026-04-03T00:00:00.000000","2026-04-06T00:00:00.000000","2026-04-07T00:00:00.000000","2026-04-08T00:00:00.000000","2026-04-09T00:00:00.000000","2026-04-10T00:00:00.000000","2026-04-13T00:00:00.000000","2026-04-14T00:00:00.000000","2026-04-15T00:00:00.000000","2026-04-16T00:00:00.000000","2026-04-17T00:00:00.000000","2026-04-20T00:00:00.000000","2026-04-21T00:00:00.000000","2026-04-22T00:00:00.000000","2026-04-23T00:00:00.000000","2026-04-24T00:00:00.000000","2026-04-27T00:00:00.000000","2026-04-28T00:00:00.000000","2026-04-29T00:00:00.000000","2026-04-30T00:00:00.000000","2026-05-01T00:00:00.000000","2026-05-04T00:00:00.000000","2026-05-05T00:00:00.000000","2026-05-06T00:00:00.000000","2026-05-07T00:00:00.000000","2026-05-08T00:00:00.000000","2026-05-11T00:00:00.000000","2026-05-12T00:00:00.000000","2026-05-13T00:00:00.000000","2026-05-14T00:00:00.000000","2026-05-15T00:00:00.000000","2026-05-18T00:00:00.000000","2026-05-19T00:00:00.000000","2026-05-20T00:00:00.000000","2026-05-21T00:00:00.000000","2026-05-22T00:00:00.000000","2026-05-25T00:00:00.000000","2026-05-26T00:00:00.000000","2026-05-27T00:00:00.000000","2026-05-28T00:00:00.000000","2026-05-29T00:00:00.000000","2026-06-01T00:00:00.000000","2026-06-02T00:00:00.000000","2026-06-03T00:00:00.000000","2026-06-04T00:00:00.000000","2026-06-05T00:00:00.000000","2026-06-08T00:00:00.000000","2026-06-09T00:00:00.000000","2026-06-10T00:00:00.000000","2026-06-11T00:00:00.000000","2026-06-12T00:00:00.000000"],"y":{"dtype":"f8","bdata":"AMDKoUU2G0AAYDm0yHYOQACwcmiRXVBAAFYOLbIdOkAAqvHSTSI7QACwHoXrUQRAgFG4HoVLQsBAjZduEpNZwOD7qfHSRWHAYGiR7Xz7YcAAnu+nxgtcwMBDi2znC2PA8CYxCKwMdcCAZmZmZh5lwEAGgZVDU2fAYGq8dJNQYMCAbOf7qVliwIAcWmQ7f1XAwNjO91NzVcBAXI\u002fC9bhfwIA3iUFgZVTAAHnpJjEIV8CAPQrXozBcwIB0kxgEVkzAgOkmMQh0VMCAMjMzM2NKwIAgsHJokUnAACYGgZXDJcAAokW2870kQACkcD0K1xdAgN9PjZcORUDAmZmZmdFTQAAAAAAAznBAAPlT46W7NkAAvp8aL70wQAB9PzVeWmHAAMggsHJoFsAAO7TIdt4xwADHdr6f2j1AAPyp8dK9S0AAq\u002fHSTcI3QAAqhxbZTiLAAGZmZmamIMAAQNv5fmrUPwBcZDvfrzJAAH5qvHRTMkAAVOOlm\u002fRZQICF61G4nk1AANV46SZBTUDAgJVDi7xUQICwcmiRfUZAAPLSTWJQPEAAf2q8dJNBQABgukkMAh5AAMzMzMxMOsCAvp8aL4VQQIAFgZVDi03AAFyPwvUQWcAAsp3vpxZcwEAIrBxa1FrAQLgehevJWMAAUY2XbnI7wAC+nxovPTXAAACsHFpkA0AA76fGS3dHQIDEILBy6EhAAF6PwvXoKMAAgLx0kxjUv8BwPQrXI1nAAI\u002fC9Si8WcAAHVpkO\u002f9dwICR7Xw\u002fFV3AgML1KFzvX8AAJQaBlbdhwAApXI\u002fCjVfAQI\u002fC9SgUV8DAHoXrUThTwICXbhKDcFvAYOOlm8R8b8DAnxov3RxbwADRItv5gmTA4P\u002f\u002f\u002f\u002f\u002fTYcAg3SQGgRlhwMAgsHJo8WDA4E+Nl272ZsAgWDm0yEZowMDMzMzM6GfA4CqHFtmWZsDAVzm0yEZQwEDXo3A9ilHAAKAaL93kJsAAXrpJDOI3wADm0CLb+SrAgNejcD0aQEAAwvUoXK9HQICLbOf7GUxAQF66SQwCVUDAoUW28wVaQADVeOkmuWpAAK5H4XpUR0DAm8QgsFJYQAB4vp8ajzLAAIcW2c6HXkCAm8QgsOJWQAAEVg4tImBAgDEIrBwaTkAADAIrhzZLQAAcWmQ7\u002f09AABxaZDv\u002fT0AAMzMzM1M9QADEILByKEDAAAisHFqkJsDARbbz\u002fQxcQEAGgZVDE1NAAKvx0k1yREAAuB6F6\u002fE6QIAv3SQGgULAAKwcWmQ7LMAAqvHSTWIxQADz\u002fdR4KTpAALJyaJFtLkCAQDVeurlOQICZmZmZCVbAwNJNYhCgU8CAdr6fGpdZwIClm8QgIE3AAP\u002f\u002f\u002f\u002f8fPsAA76fGS1c2wIDQItv5vkzAALbIdr4fIUBAlUOLbHdVQMB46SYx+FZAAIxs5\u002ftpO8BAf2q8dNtVwABfukkMgkvAAJ7vp8bLLMAAUrgehbtAQAAbL90kVk9AAAIrhxaZNEAAtp3vp0YjQADx0k1iUDFAAJmZmZnpR0AALbKd7+dKwADJdr6fWkfAQDMzMzOvbcDw0CLb+UxwwADSItv5nj3AAG7n+6lxKMAAMjMzMzMkQAAssp3vBzRAAHe+nxrvRECAxCCwcmhAQADQ91PjJRtAQFyPwvVAWEAAJzEIrERSQMDMzMzMTFtAQArXo3BdUkAAGS\u002fdJOYyQIB0kxgE9k5AAEs3iUHwTUAA0SLb+RZSQIB6FK5HYU7AALByaJF9TkAAnMQgsNJOQACq8dJN3mpAoEW28\u002f10bEBACKwcWlRRwABWDi2y5V\u002fAAESLbOebP8AA\u002fKnx0hVTwCC4HoXrtWDAQI2XbhIfZMBgaJHtfCdjwIA\u002fNV66oWLAAAaBlUMvYMDAzvdT441fwMBPjZdugl\u002fAQAwCK4duVsBADAIrh25WwIBDi2zn01HAwBov3SQGUsAAlUOLbMdJQAAlBoGV80RAAKrx0k2CTEDAdJMYBKJjQGCTGARWVmdAoMQgsHKMZkDASQwCK9tgQGCPwvUo4GNAQAaBlUO3ZkAANV66SYhmQGC8dJMYrGhAIIts5\u002fshakCAPQrXo3RqQOD\u002f\u002f\u002f\u002f\u002fR2xAwPdT46UjbkBwPzVeupVyQEDfT42XqHBAgJHtfD9VZ0BACtejcMFoQICVQ4tsE2ZAIAaBlUObZ0CAwvUoXC9oQGDjpZvE6GVAYDm0yHYCYECAQWDl0NpbQEAEVg4tSl5A4E1iEFh5ZkAg2c73UwNiwIDvp8ZLD1xAgOOlm8R4V0Ag16NwPZpgQGBeukkMkmJAINejcD2GZkCAkxgEVlZZQMCd76fGk1BAgFTjpZukSEDAQ4ts58tTQEAK16NwZVFAQJHtfD91XsBAhxbZzk9cwMCfGi\u002fd5FvAAClcj8IhYcAgg8DKoWVnwOCjcD0KB2rAgPP91Hh9acBAtvP91LRgwEDn+6nxqlbAAPyp8dJ9RkDwqfHSTRpwwEBg5dAidXnAYOXQItv\u002fcMDgeOkmMUhwwKDvp8ZL8XDAQOF6FK4HbMBQjZduEr9xwBBWDi2yAXLAIARWDi3ocsCAarx0k5xswIDhehSuB0\u002fAgML1KFzfR8AA7FG4HlVDQAC+dJMYRC9AAO+nxksXN0AA\u002ftR46c5UQAC6SQwCw1FAAOgmMQgsH0AAyHjpJjEAQEA3iUFgvVRAgJVDi2wfXkBQZDvfT59xQKByaJHtnGJAANJNYhAYM0CAUbgehfNZQAArhxbZrmFAwMZLN4n1ZEBA3SQGgc1lQOB2vp8a32ZAQDVeuklYY0Cg76fGS5dpQKAaL90kNmpAALTIdr7vX0CgTWIQWJViQAAnMQisHFRAgCqHFtmuQEAA0SLb+Q5FQABcj8L1GElAQBBYObRAXEAA2c73U3tTQIB46SYxOE9AgF66SQziSkAAMN0kBoEGwADwp8ZL9z9AQLbz\u002fdQYdsCA7Xw\u002fNf5VwEAEVg4tclPAgIPAyqHFQsCAqMZLN4lHwACmm8QgsDnAgML1KFznVMDAItv5fvpRwIDx0k1iYEbAAOpRuB6FNsCA8dJNYuBLQABpke18T0JAAKjGSzf5TEAA8KfGSzdMQAANLbKd7z\u002fAADrfT43XLcAA+6nx0g0ywACwcmiRzTFAQNv5fmrMUUBAWmQ73z9eQCACK4cWw3dAAK5H4Xq0M0AAPN9PjZcxQGBoke18J2nAAHNoke3MQUAAlkOLbOctQACwxks3if0\u002fAMuhRbaDQ8DASQwCK79dwGC4HoXrDWDAAFpkO9\u002ffVsDAGi\u002fdJHZYwEAxCKwcylPAgOF6FK63VMAAiUFg5ZA7wAA5tMh2LkTAgOXQItuJTcBANV66SUxTwMB0kxgECmLAIAaBlUPPY8DA76fGS6tiwMDIdr6f+lvAwJ3vp8azV8AAarx0kzg\u002fQABSuB6Fo2jAYLbz\u002fdQ4Y8DgSzeJQdhpwKDvp8ZLS2TAYD0K16PQY8DgehSuR1FjwMB0kxgEAmPAIAaBlUOfYsBA5\u002fup8T5kwCA1XrpJLGXAAK5H4Xp8bcBAN4lBYCl2wBDZzvdTcXLAsJ3vp8bdcMBAhxbZzqtvwKBs5\u002fupvWvAgOkmMQhsacCgxCCwcghiwAArhxbZ8mLAgO18PzV6YcCgnxov3YhowCAIrBxa+GvAIDMzMzP3a8BgEFg5tJRkwECyne+numPAYDm0yHbyYsDA9ShcjwZjwOD3U+OlQ2DAQFTjpZtcXcBAfT81XoJawICHFtnOJ1bAAB6F61F4TkAAa7x0k3gxwIAnMQisPEjAwKWbxCAoVsBA4XoUru9WwICd76fGy1XAoJ3vp8bHYsAgsHJokZlhwECLbOf7CWfAYGIQWDksYMCAQ4ts54tgwIBBYOXQelPAoJduEoO8ZcAgBoGVQ3NnwCDfT42XTmPAwOf7qfHyW8DAILByaAlgwECLbOf7yWXAAC2yne+7ZsAAK4cW2cZlwCCF61G4\u002fmfAwHJoke00YsDAr3JokeVawMD1KFyPwlLAgEFg5dDKUMCAHoXrUThAwACQwvUonCbAABODwMohO8AA4NAi2\u002fn4PwB+PzVeGjBAAHA9CtfDQEAASQwCK6c+QIDfT42XtlBAAFCNl27SVEAAw\u002fUoXA80wIDgehSul0LAAHA9CteDM8AAyHa+nxoeQIBuEoPAOkdAAEa28\u002f0ER0CAwMqhRdZKQMCjcD0Kv1dAwP\u002f\u002f\u002f\u002f8\u002fWEBA4XoUrh9gQEAK16NwjV9AANEi2\u002fmePMAAQDEIrBzivwBBYOXQwj9AAN0kBoHFT0AAO99PjadKQIDjpZvE0EFAQOf7qfFSWkBAaJHtfBdfQEBoke18F19AoMQgsHJIYUDAr3JokaVbQIBqvHSTaGBAACUGgZWDQkAAxPUoXI8bQGDl0CLbtWdA4J3vp8ZjZkDAbhKDwFplQACq8dJNgkxAABsv3SSGSkAAyXa+n5pIQCAK16NwpWJAAP7UeOleYUCAZDvfTxVdQADJdr6fCkJAAJDtfD81\u002fL8AwcqhRfY8QAAxCKwcGkjAwPl+arw0UMAA2\u002fl+ajRUwIAOLbKd\u002f0XAABBYObQQUsDAyqFFtrdgwACNl24SAzzAAA4tsp2PRsAAVg4tsiFlwGC28\u002f3UPGPAoJvEILCGZ8BAYhBYOWxWwECwcmiRzVrAgDVeuklsWMDAoUW283VVwMDIdr6ftmDAwML1KFynVsCAMzMzMyNEwABQYOXQIg\u002fAAFBg5dAiD8AARrbz\u002ffQyQADc+X5qPCtAACTb+X6qK0CA3SQGgTVCQADZzvdTO1VAwJ8aL920WUAgiUFg5XxhQKCfGi\u002fd\u002fGFAgM73U+N1XEAAtMh2vk9PQIAoXI\u002fCvVJAQLgehetRVUCAEoPAyulXQIC4HoXrMVhAQLKd76e+VEAAVOOlm3xbQIC4HoXrJWBAYDVeuklMYUAAd76fGmdgQAAAZmZmZsa\u002fALfz\u002fdSYMkAAgZVDi9xLQMDMzMzMJFBAgJMYBFYuUEAAH4XrUTg1QABSuB6F01BAgDvfT42nRkBACKwcWixSQAD8fmq89CFAgGzn+6kRR0AAwCCwcugRwABOYhBYKVZAQI\u002fC9ShsXEAAMQisHLJfQEAK16NwNWBAoEOLbOe\u002fZEDgpZvEIJRjQEA5tMh2MmVAQF66SQzSYkBAsHJokVFsQOAoXI\u002fCxWhAALBH4XoU+j+A2\u002fl+agxDwIDrUbgeVVPAwPUoXI+aU8BAWDm0yM5ZwAC28\u002f3U0F3AAARWDi3yV8BArBxaZJtSwIDEILBy0FTAgDMzMzMDQMBAsp3vp9JjwMAehetRFGbAQLpJDALDU8BArkfhehRUwEBYObTITlfAAAAAAADwYsDA9ShcjwpiwEBWDi2yJV7AwJ8aL908VMCARbbz\u002feRIwGBmZmZmCmFAwMZLN4m1Z0AghxbZzmFwQFAOLbKdw3BAYIts5\u002fs9a0BgQWDl0OJpQABU46WbYGdA4E1iEFhBY0BADAIrh85mQICNl24Si1xAAFTjpZuYYkBgDAIrh2ZgQAAj2\u002fl+mkrAAAEAAADgOkAAeBSuR+EFwABqvHSTmDJAAPh+arx0DUAAGi\u002fdJEYvQABiO99PTSdAALPIdr4\u002fMEAAmG4Sg0AaQACAi2zn+8m\u002fALKd76eWRsA="},"type":"bar","xaxis":"x2","yaxis":"y2"}],                        {"template":{"data":{"barpolar":[{"marker":{"line":{"color":"rgb(17,17,17)","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"bar":[{"error_x":{"color":"#f2f5fa"},"error_y":{"color":"#f2f5fa"},"marker":{"line":{"color":"rgb(17,17,17)","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"carpet":[{"aaxis":{"endlinecolor":"#A2B1C6","gridcolor":"#506784","linecolor":"#506784","minorgridcolor":"#506784","startlinecolor":"#A2B1C6"},"baxis":{"endlinecolor":"#A2B1C6","gridcolor":"#506784","linecolor":"#506784","minorgridcolor":"#506784","startlinecolor":"#A2B1C6"},"type":"carpet"}],"choropleth":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"choropleth"}],"contourcarpet":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"contourcarpet"}],"contour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"contour"}],"heatmap":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"heatmap"}],"histogram2dcontour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2dcontour"}],"histogram2d":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2d"}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"mesh3d":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"mesh3d"}],"parcoords":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"parcoords"}],"pie":[{"automargin":true,"type":"pie"}],"scatter3d":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatter3d"}],"scattercarpet":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattercarpet"}],"scattergeo":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattergeo"}],"scattergl":[{"marker":{"line":{"color":"#283442"}},"type":"scattergl"}],"scattermapbox":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattermapbox"}],"scattermap":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattermap"}],"scatterpolargl":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolargl"}],"scatterpolar":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolar"}],"scatter":[{"marker":{"line":{"color":"#283442"}},"type":"scatter"}],"scatterternary":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterternary"}],"surface":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"surface"}],"table":[{"cells":{"fill":{"color":"#506784"},"line":{"color":"rgb(17,17,17)"}},"header":{"fill":{"color":"#2a3f5f"},"line":{"color":"rgb(17,17,17)"}},"type":"table"}]},"layout":{"annotationdefaults":{"arrowcolor":"#f2f5fa","arrowhead":0,"arrowwidth":1},"autotypenumbers":"strict","coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]],"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]},"colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#f2f5fa"},"geo":{"bgcolor":"rgb(17,17,17)","lakecolor":"rgb(17,17,17)","landcolor":"rgb(17,17,17)","showlakes":true,"showland":true,"subunitcolor":"#506784"},"hoverlabel":{"align":"left"},"hovermode":"closest","mapbox":{"style":"dark"},"paper_bgcolor":"rgb(17,17,17)","plot_bgcolor":"rgb(17,17,17)","polar":{"angularaxis":{"gridcolor":"#506784","linecolor":"#506784","ticks":""},"bgcolor":"rgb(17,17,17)","radialaxis":{"gridcolor":"#506784","linecolor":"#506784","ticks":""}},"scene":{"xaxis":{"backgroundcolor":"rgb(17,17,17)","gridcolor":"#506784","gridwidth":2,"linecolor":"#506784","showbackground":true,"ticks":"","zerolinecolor":"#C8D4E3"},"yaxis":{"backgroundcolor":"rgb(17,17,17)","gridcolor":"#506784","gridwidth":2,"linecolor":"#506784","showbackground":true,"ticks":"","zerolinecolor":"#C8D4E3"},"zaxis":{"backgroundcolor":"rgb(17,17,17)","gridcolor":"#506784","gridwidth":2,"linecolor":"#506784","showbackground":true,"ticks":"","zerolinecolor":"#C8D4E3"}},"shapedefaults":{"line":{"color":"#f2f5fa"}},"sliderdefaults":{"bgcolor":"#C8D4E3","bordercolor":"rgb(17,17,17)","borderwidth":1,"tickwidth":0},"ternary":{"aaxis":{"gridcolor":"#506784","linecolor":"#506784","ticks":""},"baxis":{"gridcolor":"#506784","linecolor":"#506784","ticks":""},"bgcolor":"rgb(17,17,17)","caxis":{"gridcolor":"#506784","linecolor":"#506784","ticks":""}},"title":{"x":0.05},"updatemenudefaults":{"bgcolor":"#506784","borderwidth":0},"xaxis":{"automargin":true,"gridcolor":"#283442","linecolor":"#506784","ticks":"","title":{"standoff":15},"zerolinecolor":"#283442","zerolinewidth":2},"yaxis":{"automargin":true,"gridcolor":"#283442","linecolor":"#506784","ticks":"","title":{"standoff":15},"zerolinecolor":"#283442","zerolinewidth":2}}},"xaxis":{"anchor":"y","domain":[0.0,1.0],"matches":"x2","showticklabels":false},"yaxis":{"anchor":"x","domain":[0.38899999999999996,1.0]},"xaxis2":{"anchor":"y2","domain":[0.0,1.0]},"yaxis2":{"anchor":"x2","domain":[0.0,0.32899999999999996]},"shapes":[{"line":{"color":"#5fbf7f","dash":"dot","width":0.5},"type":"line","x0":0,"x1":1,"xref":"x2 domain","y0":25,"y1":25,"yref":"y2"},{"line":{"color":"#e07070","dash":"dot","width":0.5},"type":"line","x0":0,"x1":1,"xref":"x2 domain","y0":-25,"y1":-25,"yref":"y2"}],"font":{"size":11},"margin":{"l":45,"r":15,"t":10,"b":30},"legend":{"orientation":"h","y":1.08},"paper_bgcolor":"#12161d","plot_bgcolor":"#12161d","height":340,"showlegend":false},                        {"displayModeBar": false, "responsive": true}                    )                };            </script>        </div></div>
-  </div>
-
-  <div class="panel span6">
-    <h2>Credit stress & market breadth
-      <span class="help">?<span class="tip">Top: the extra yield junk-bond investors demand — the market's best early smoke detector; rising = stress building; below ~4% is calm. Bottom: % of S&P 500 stocks above their 50-day average — participation. Strong indexes with collapsing breadth are fragile.</span></span>
-    </h2>
-    <div class="chart"><div style="height:340px; width:100%;">                            <div id="106e152c-342d-4a7e-83a3-3252b1b3fb3f" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("106e152c-342d-4a7e-83a3-3252b1b3fb3f")) {                    Plotly.newPlot(                        "106e152c-342d-4a7e-83a3-3252b1b3fb3f",                        [{"line":{"color":"#e0a030","width":1.2},"name":"HY OAS %","x":["2024-06-12T00:00:00.000000","2024-06-13T00:00:00.000000","2024-06-14T00:00:00.000000","2024-06-17T00:00:00.000000","2024-06-18T00:00:00.000000","2024-06-19T00:00:00.000000","2024-06-20T00:00:00.000000","2024-06-21T00:00:00.000000","2024-06-24T00:00:00.000000","2024-06-25T00:00:00.000000","2024-06-26T00:00:00.000000","2024-06-27T00:00:00.000000","2024-06-28T00:00:00.000000","2024-07-01T00:00:00.000000","2024-07-02T00:00:00.000000","2024-07-03T00:00:00.000000","2024-07-04T00:00:00.000000","2024-07-05T00:00:00.000000","2024-07-08T00:00:00.000000","2024-07-09T00:00:00.000000","2024-07-10T00:00:00.000000","2024-07-11T00:00:00.000000","2024-07-12T00:00:00.000000","2024-07-15T00:00:00.000000","2024-07-16T00:00:00.000000","2024-07-17T00:00:00.000000","2024-07-18T00:00:00.000000","2024-07-19T00:00:00.000000","2024-07-22T00:00:00.000000","2024-07-23T00:00:00.000000","2024-07-24T00:00:00.000000","2024-07-25T00:00:00.000000","2024-07-26T00:00:00.000000","2024-07-29T00:00:00.000000","2024-07-30T00:00:00.000000","2024-07-31T00:00:00.000000","2024-08-01T00:00:00.000000","2024-08-02T00:00:00.000000","2024-08-05T00:00:00.000000","2024-08-06T00:00:00.000000","2024-08-07T00:00:00.000000","2024-08-08T00:00:00.000000","2024-08-09T00:00:00.000000","2024-08-12T00:00:00.000000","2024-08-13T00:00:00.000000","2024-08-14T00:00:00.000000","2024-08-15T00:00:00.000000","2024-08-16T00:00:00.000000","2024-08-19T00:00:00.000000","2024-08-20T00:00:00.000000","2024-08-21T00:00:00.000000","2024-08-22T00:00:00.000000","2024-08-23T00:00:00.000000","2024-08-26T00:00:00.000000","2024-08-27T00:00:00.000000","2024-08-28T00:00:00.000000","2024-08-29T00:00:00.000000","2024-08-30T00:00:00.000000","2024-09-02T00:00:00.000000","2024-09-03T00:00:00.000000","2024-09-04T00:00:00.000000","2024-09-05T00:00:00.000000","2024-09-06T00:00:00.000000","2024-09-09T00:00:00.000000","2024-09-10T00:00:00.000000","2024-09-11T00:00:00.000000","2024-09-12T00:00:00.000000","2024-09-13T00:00:00.000000","2024-09-16T00:00:00.000000","2024-09-17T00:00:00.000000","2024-09-18T00:00:00.000000","2024-09-19T00:00:00.000000","2024-09-20T00:00:00.000000","2024-09-23T00:00:00.000000","2024-09-24T00:00:00.000000","2024-09-25T00:00:00.000000","2024-09-26T00:00:00.000000","2024-09-27T00:00:00.000000","2024-09-30T00:00:00.000000","2024-10-01T00:00:00.000000","2024-10-02T00:00:00.000000","2024-10-03T00:00:00.000000","2024-10-04T00:00:00.000000","2024-10-07T00:00:00.000000","2024-10-08T00:00:00.000000","2024-10-09T00:00:00.000000","2024-10-10T00:00:00.000000","2024-10-11T00:00:00.000000","2024-10-14T00:00:00.000000","2024-10-15T00:00:00.000000","2024-10-16T00:00:00.000000","2024-10-17T00:00:00.000000","2024-10-18T00:00:00.000000","2024-10-21T00:00:00.000000","2024-10-22T00:00:00.000000","2024-10-23T00:00:00.000000","2024-10-24T00:00:00.000000","2024-10-25T00:00:00.000000","2024-10-28T00:00:00.000000","2024-10-29T00:00:00.000000","2024-10-30T00:00:00.000000","2024-10-31T00:00:00.000000","2024-11-01T00:00:00.000000","2024-11-04T00:00:00.000000","2024-11-05T00:00:00.000000","2024-11-06T00:00:00.000000","2024-11-07T00:00:00.000000","2024-11-08T00:00:00.000000","2024-11-11T00:00:00.000000","2024-11-12T00:00:00.000000","2024-11-13T00:00:00.000000","2024-11-14T00:00:00.000000","2024-11-15T00:00:00.000000","2024-11-18T00:00:00.000000","2024-11-19T00:00:00.000000","2024-11-20T00:00:00.000000","2024-11-21T00:00:00.000000","2024-11-22T00:00:00.000000","2024-11-25T00:00:00.000000","2024-11-26T00:00:00.000000","2024-11-27T00:00:00.000000","2024-11-28T00:00:00.000000","2024-11-29T00:00:00.000000","2024-12-02T00:00:00.000000","2024-12-03T00:00:00.000000","2024-12-04T00:00:00.000000","2024-12-05T00:00:00.000000","2024-12-06T00:00:00.000000","2024-12-09T00:00:00.000000","2024-12-10T00:00:00.000000","2024-12-11T00:00:00.000000","2024-12-12T00:00:00.000000","2024-12-13T00:00:00.000000","2024-12-16T00:00:00.000000","2024-12-17T00:00:00.000000","2024-12-18T00:00:00.000000","2024-12-19T00:00:00.000000","2024-12-20T00:00:00.000000","2024-12-23T00:00:00.000000","2024-12-24T00:00:00.000000","2024-12-25T00:00:00.000000","2024-12-26T00:00:00.000000","2024-12-27T00:00:00.000000","2024-12-30T00:00:00.000000","2024-12-31T00:00:00.000000","2025-01-01T00:00:00.000000","2025-01-02T00:00:00.000000","2025-01-03T00:00:00.000000","2025-01-06T00:00:00.000000","2025-01-07T00:00:00.000000","2025-01-08T00:00:00.000000","2025-01-09T00:00:00.000000","2025-01-10T00:00:00.000000","2025-01-13T00:00:00.000000","2025-01-14T00:00:00.000000","2025-01-15T00:00:00.000000","2025-01-16T00:00:00.000000","2025-01-17T00:00:00.000000","2025-01-20T00:00:00.000000","2025-01-21T00:00:00.000000","2025-01-22T00:00:00.000000","2025-01-23T00:00:00.000000","2025-01-24T00:00:00.000000","2025-01-27T00:00:00.000000","2025-01-28T00:00:00.000000","2025-01-29T00:00:00.000000","2025-01-30T00:00:00.000000","2025-01-31T00:00:00.000000","2025-02-03T00:00:00.000000","2025-02-04T00:00:00.000000","2025-02-05T00:00:00.000000","2025-02-06T00:00:00.000000","2025-02-07T00:00:00.000000","2025-02-10T00:00:00.000000","2025-02-11T00:00:00.000000","2025-02-12T00:00:00.000000","2025-02-13T00:00:00.000000","2025-02-14T00:00:00.000000","2025-02-17T00:00:00.000000","2025-02-18T00:00:00.000000","2025-02-19T00:00:00.000000","2025-02-20T00:00:00.000000","2025-02-21T00:00:00.000000","2025-02-24T00:00:00.000000","2025-02-25T00:00:00.000000","2025-02-26T00:00:00.000000","2025-02-27T00:00:00.000000","2025-02-28T00:00:00.000000","2025-03-03T00:00:00.000000","2025-03-04T00:00:00.000000","2025-03-05T00:00:00.000000","2025-03-06T00:00:00.000000","2025-03-07T00:00:00.000000","2025-03-10T00:00:00.000000","2025-03-11T00:00:00.000000","2025-03-12T00:00:00.000000","2025-03-13T00:00:00.000000","2025-03-14T00:00:00.000000","2025-03-17T00:00:00.000000","2025-03-18T00:00:00.000000","2025-03-19T00:00:00.000000","2025-03-20T00:00:00.000000","2025-03-21T00:00:00.000000","2025-03-24T00:00:00.000000","2025-03-25T00:00:00.000000","2025-03-26T00:00:00.000000","2025-03-27T00:00:00.000000","2025-03-28T00:00:00.000000","2025-03-31T00:00:00.000000","2025-04-01T00:00:00.000000","2025-04-02T00:00:00.000000","2025-04-03T00:00:00.000000","2025-04-04T00:00:00.000000","2025-04-07T00:00:00.000000","2025-04-08T00:00:00.000000","2025-04-09T00:00:00.000000","2025-04-10T00:00:00.000000","2025-04-11T00:00:00.000000","2025-04-14T00:00:00.000000","2025-04-15T00:00:00.000000","2025-04-16T00:00:00.000000","2025-04-17T00:00:00.000000","2025-04-18T00:00:00.000000","2025-04-21T00:00:00.000000","2025-04-22T00:00:00.000000","2025-04-23T00:00:00.000000","2025-04-24T00:00:00.000000","2025-04-25T00:00:00.000000","2025-04-28T00:00:00.000000","2025-04-29T00:00:00.000000","2025-04-30T00:00:00.000000","2025-05-01T00:00:00.000000","2025-05-02T00:00:00.000000","2025-05-05T00:00:00.000000","2025-05-06T00:00:00.000000","2025-05-07T00:00:00.000000","2025-05-08T00:00:00.000000","2025-05-09T00:00:00.000000","2025-05-12T00:00:00.000000","2025-05-13T00:00:00.000000","2025-05-14T00:00:00.000000","2025-05-15T00:00:00.000000","2025-05-16T00:00:00.000000","2025-05-19T00:00:00.000000","2025-05-20T00:00:00.000000","2025-05-21T00:00:00.000000","2025-05-22T00:00:00.000000","2025-05-23T00:00:00.000000","2025-05-26T00:00:00.000000","2025-05-27T00:00:00.000000","2025-05-28T00:00:00.000000","2025-05-29T00:00:00.000000","2025-05-30T00:00:00.000000","2025-06-02T00:00:00.000000","2025-06-03T00:00:00.000000","2025-06-04T00:00:00.000000","2025-06-05T00:00:00.000000","2025-06-06T00:00:00.000000","2025-06-09T00:00:00.000000","2025-06-10T00:00:00.000000","2025-06-11T00:00:00.000000","2025-06-12T00:00:00.000000","2025-06-13T00:00:00.000000","2025-06-16T00:00:00.000000","2025-06-17T00:00:00.000000","2025-06-18T00:00:00.000000","2025-06-19T00:00:00.000000","2025-06-20T00:00:00.000000","2025-06-23T00:00:00.000000","2025-06-24T00:00:00.000000","2025-06-25T00:00:00.000000","2025-06-26T00:00:00.000000","2025-06-27T00:00:00.000000","2025-06-30T00:00:00.000000","2025-07-01T00:00:00.000000","2025-07-02T00:00:00.000000","2025-07-03T00:00:00.000000","2025-07-04T00:00:00.000000","2025-07-07T00:00:00.000000","2025-07-08T00:00:00.000000","2025-07-09T00:00:00.000000","2025-07-10T00:00:00.000000","2025-07-11T00:00:00.000000","2025-07-14T00:00:00.000000","2025-07-15T00:00:00.000000","2025-07-16T00:00:00.000000","2025-07-17T00:00:00.000000","2025-07-18T00:00:00.000000","2025-07-21T00:00:00.000000","2025-07-22T00:00:00.000000","2025-07-23T00:00:00.000000","2025-07-24T00:00:00.000000","2025-07-25T00:00:00.000000","2025-07-28T00:00:00.000000","2025-07-29T00:00:00.000000","2025-07-30T00:00:00.000000","2025-07-31T00:00:00.000000","2025-08-01T00:00:00.000000","2025-08-04T00:00:00.000000","2025-08-05T00:00:00.000000","2025-08-06T00:00:00.000000","2025-08-07T00:00:00.000000","2025-08-08T00:00:00.000000","2025-08-11T00:00:00.000000","2025-08-12T00:00:00.000000","2025-08-13T00:00:00.000000","2025-08-14T00:00:00.000000","2025-08-15T00:00:00.000000","2025-08-18T00:00:00.000000","2025-08-19T00:00:00.000000","2025-08-20T00:00:00.000000","2025-08-21T00:00:00.000000","2025-08-22T00:00:00.000000","2025-08-25T00:00:00.000000","2025-08-26T00:00:00.000000","2025-08-27T00:00:00.000000","2025-08-28T00:00:00.000000","2025-08-29T00:00:00.000000","2025-09-01T00:00:00.000000","2025-09-02T00:00:00.000000","2025-09-03T00:00:00.000000","2025-09-04T00:00:00.000000","2025-09-05T00:00:00.000000","2025-09-08T00:00:00.000000","2025-09-09T00:00:00.000000","2025-09-10T00:00:00.000000","2025-09-11T00:00:00.000000","2025-09-12T00:00:00.000000","2025-09-15T00:00:00.000000","2025-09-16T00:00:00.000000","2025-09-17T00:00:00.000000","2025-09-18T00:00:00.000000","2025-09-19T00:00:00.000000","2025-09-22T00:00:00.000000","2025-09-23T00:00:00.000000","2025-09-24T00:00:00.000000","2025-09-25T00:00:00.000000","2025-09-26T00:00:00.000000","2025-09-29T00:00:00.000000","2025-09-30T00:00:00.000000","2025-10-01T00:00:00.000000","2025-10-02T00:00:00.000000","2025-10-03T00:00:00.000000","2025-10-06T00:00:00.000000","2025-10-07T00:00:00.000000","2025-10-08T00:00:00.000000","2025-10-09T00:00:00.000000","2025-10-10T00:00:00.000000","2025-10-13T00:00:00.000000","2025-10-14T00:00:00.000000","2025-10-15T00:00:00.000000","2025-10-16T00:00:00.000000","2025-10-17T00:00:00.000000","2025-10-20T00:00:00.000000","2025-10-21T00:00:00.000000","2025-10-22T00:00:00.000000","2025-10-23T00:00:00.000000","2025-10-24T00:00:00.000000","2025-10-27T00:00:00.000000","2025-10-28T00:00:00.000000","2025-10-29T00:00:00.000000","2025-10-30T00:00:00.000000","2025-10-31T00:00:00.000000","2025-11-03T00:00:00.000000","2025-11-04T00:00:00.000000","2025-11-05T00:00:00.000000","2025-11-06T00:00:00.000000","2025-11-07T00:00:00.000000","2025-11-10T00:00:00.000000","2025-11-11T00:00:00.000000","2025-11-12T00:00:00.000000","2025-11-13T00:00:00.000000","2025-11-14T00:00:00.000000","2025-11-17T00:00:00.000000","2025-11-18T00:00:00.000000","2025-11-19T00:00:00.000000","2025-11-20T00:00:00.000000","2025-11-21T00:00:00.000000","2025-11-24T00:00:00.000000","2025-11-25T00:00:00.000000","2025-11-26T00:00:00.000000","2025-11-27T00:00:00.000000","2025-11-28T00:00:00.000000","2025-12-01T00:00:00.000000","2025-12-02T00:00:00.000000","2025-12-03T00:00:00.000000","2025-12-04T00:00:00.000000","2025-12-05T00:00:00.000000","2025-12-08T00:00:00.000000","2025-12-09T00:00:00.000000","2025-12-10T00:00:00.000000","2025-12-11T00:00:00.000000","2025-12-12T00:00:00.000000","2025-12-15T00:00:00.000000","2025-12-16T00:00:00.000000","2025-12-17T00:00:00.000000","2025-12-18T00:00:00.000000","2025-12-19T00:00:00.000000","2025-12-22T00:00:00.000000","2025-12-23T00:00:00.000000","2025-12-24T00:00:00.000000","2025-12-25T00:00:00.000000","2025-12-26T00:00:00.000000","2025-12-29T00:00:00.000000","2025-12-30T00:00:00.000000","2025-12-31T00:00:00.000000","2026-01-01T00:00:00.000000","2026-01-02T00:00:00.000000","2026-01-05T00:00:00.000000","2026-01-06T00:00:00.000000","2026-01-07T00:00:00.000000","2026-01-08T00:00:00.000000","2026-01-09T00:00:00.000000","2026-01-12T00:00:00.000000","2026-01-13T00:00:00.000000","2026-01-14T00:00:00.000000","2026-01-15T00:00:00.000000","2026-01-16T00:00:00.000000","2026-01-19T00:00:00.000000","2026-01-20T00:00:00.000000","2026-01-21T00:00:00.000000","2026-01-22T00:00:00.000000","2026-01-23T00:00:00.000000","2026-01-26T00:00:00.000000","2026-01-27T00:00:00.000000","2026-01-28T00:00:00.000000","2026-01-29T00:00:00.000000","2026-01-30T00:00:00.000000","2026-02-02T00:00:00.000000","2026-02-03T00:00:00.000000","2026-02-04T00:00:00.000000","2026-02-05T00:00:00.000000","2026-02-06T00:00:00.000000","2026-02-09T00:00:00.000000","2026-02-10T00:00:00.000000","2026-02-11T00:00:00.000000","2026-02-12T00:00:00.000000","2026-02-13T00:00:00.000000","2026-02-16T00:00:00.000000","2026-02-17T00:00:00.000000","2026-02-18T00:00:00.000000","2026-02-19T00:00:00.000000","2026-02-20T00:00:00.000000","2026-02-23T00:00:00.000000","2026-02-24T00:00:00.000000","2026-02-25T00:00:00.000000","2026-02-26T00:00:00.000000","2026-02-27T00:00:00.000000","2026-03-02T00:00:00.000000","2026-03-03T00:00:00.000000","2026-03-04T00:00:00.000000","2026-03-05T00:00:00.000000","2026-03-06T00:00:00.000000","2026-03-09T00:00:00.000000","2026-03-10T00:00:00.000000","2026-03-11T00:00:00.000000","2026-03-12T00:00:00.000000","2026-03-13T00:00:00.000000","2026-03-16T00:00:00.000000","2026-03-17T00:00:00.000000","2026-03-18T00:00:00.000000","2026-03-19T00:00:00.000000","2026-03-20T00:00:00.000000","2026-03-23T00:00:00.000000","2026-03-24T00:00:00.000000","2026-03-25T00:00:00.000000","2026-03-26T00:00:00.000000","2026-03-27T00:00:00.000000","2026-03-30T00:00:00.000000","2026-03-31T00:00:00.000000","2026-04-01T00:00:00.000000","2026-04-02T00:00:00.000000","2026-04-03T00:00:00.000000","2026-04-06T00:00:00.000000","2026-04-07T00:00:00.000000","2026-04-08T00:00:00.000000","2026-04-09T00:00:00.000000","2026-04-10T00:00:00.000000","2026-04-13T00:00:00.000000","2026-04-14T00:00:00.000000","2026-04-15T00:00:00.000000","2026-04-16T00:00:00.000000","2026-04-17T00:00:00.000000","2026-04-20T00:00:00.000000","2026-04-21T00:00:00.000000","2026-04-22T00:00:00.000000","2026-04-23T00:00:00.000000","2026-04-24T00:00:00.000000","2026-04-27T00:00:00.000000","2026-04-28T00:00:00.000000","2026-04-29T00:00:00.000000","2026-04-30T00:00:00.000000","2026-05-01T00:00:00.000000","2026-05-04T00:00:00.000000","2026-05-05T00:00:00.000000","2026-05-06T00:00:00.000000","2026-05-07T00:00:00.000000","2026-05-08T00:00:00.000000","2026-05-11T00:00:00.000000","2026-05-12T00:00:00.000000","2026-05-13T00:00:00.000000","2026-05-14T00:00:00.000000","2026-05-15T00:00:00.000000","2026-05-18T00:00:00.000000","2026-05-19T00:00:00.000000","2026-05-20T00:00:00.000000","2026-05-21T00:00:00.000000","2026-05-22T00:00:00.000000","2026-05-25T00:00:00.000000","2026-05-26T00:00:00.000000","2026-05-27T00:00:00.000000","2026-05-28T00:00:00.000000","2026-05-29T00:00:00.000000","2026-06-01T00:00:00.000000","2026-06-02T00:00:00.000000","2026-06-03T00:00:00.000000","2026-06-04T00:00:00.000000","2026-06-05T00:00:00.000000","2026-06-08T00:00:00.000000","2026-06-09T00:00:00.000000","2026-06-10T00:00:00.000000","2026-06-11T00:00:00.000000","2026-06-12T00:00:00.000000"],"y":{"dtype":"f8","bdata":"uB6F61G4CECamZmZmZkJQFK4HoXrUQpAFK5H4XoUCkDsUbgehesJQOxRuB6F6wlA16NwPQrXCUCuR+F6FK4JQIXrUbgehQlAhetRuB6FCUBxPQrXo3AJQK5H4XoUrglAcT0K16NwCUCuR+F6FK4JQNejcD0K1wlAAAAAAAAACkAAAAAAAAAKQClcj8L1KApAmpmZmZmZCUCuR+F6FK4JQFyPwvUoXAlAcT0K16NwCUCF61G4HoUJQArXo3A9CglApHA9CtejCEC4HoXrUbgIQLgehetRuAhAuB6F61G4CEBmZmZmZmYIQClcj8L1KAhAzczMzMzMCECkcD0K16MIQM3MzMzMzAhACtejcD0KCUCamZmZmZkJQAAAAAAAAApAzczMzMzMCkDD9Shcj8INQHE9CtejcA9AXI\u002fC9ShcDUCPwvUoXI8MQNejcD0K1wtA7FG4HoXrC0ApXI\u002fC9SgMQFK4HoXrUQxArkfhehSuC0B7FK5H4XoKQFK4HoXrUQpArkfhehSuCUAAAAAAAAAKQClcj8L1KApArkfhehSuCUCF61G4HoUJQDMzMzMzMwlAXI\u002fC9ShcCUCF61G4HoUJQDMzMzMzMwlACtejcD0KCUBcj8L1KFwJQHsUrkfhegpAzczMzMzMCkBSuB6F61EKQB+F61G4HgtA4XoUrkfhCkCuR+F6FK4LQIXrUbgehQtAH4XrUbgeC0D2KFyPwvUKQI\u002fC9ShcjwpAAAAAAAAACkCuR+F6FK4JQM3MzMzMzAhAMzMzMzMzCUAzMzMzMzMJQK5H4XoUrglAhetRuB6FCUAfhetRuB4JQB+F61G4HglAPQrXo3A9CECPwvUoXI8IQHsUrkfheghAUrgehetRCEAfhetRuB4HQJqZmZmZmQdA7FG4HoXrB0CF61G4HoUHQOxRuB6F6wdA16NwPQrXB0DD9Shcj8IHQHE9CtejcAdAMzMzMzMzB0AfhetRuB4HQArXo3A9CgdACtejcD0KB0Bcj8L1KFwHQJqZmZmZmQdAcT0K16NwB0AfhetRuB4HQI\u002fC9ShcjwZAzczMzMzMBkBmZmZmZmYGQArXo3A9CgdApHA9CtejBkD2KFyPwvUGQOF6FK5H4QZA7FG4HoXrBUDXo3A9CtcFQArXo3A9CgVACtejcD0KBUDhehSuR+EEQB+F61G4HgVAzczMzMzMBEDD9Shcj8IFQMP1KFyPwgVAhetRuB6FBUBcj8L1KFwFQOF6FK5H4QRA4XoUrkfhBEAfhetRuB4FQHE9CtejcAVAhetRuB6FBUCF61G4HoUFQMP1KFyPwgVAcT0K16NwBUBI4XoUrkcFQEjhehSuRwVASOF6FK5HBUBcj8L1KFwFQFyPwvUoXAVAXI\u002fC9ShcBUAfhetRuB4FQEjhehSuRwVAcT0K16NwBUCF61G4HoUFQAAAAAAAAAZA16NwPQrXBUBI4XoUrkcHQOF6FK5H4QZAzczMzMzMBkDhehSuR+EGQOF6FK5H4QZA4XoUrkfhBkC4HoXrUbgGQIXrUbgehQdAXI\u002fC9ShcB0Bcj8L1KFwHQArXo3A9CgdAexSuR+F6BkAUrkfhehQGQFK4HoXrUQZAuB6F61G4BkCPwvUoXI8GQHsUrkfhegZAzczMzMzMBkBmZmZmZmYGQMP1KFyPwgVA16NwPQrXBUAfhetRuB4FQB+F61G4HgVA4XoUrkfhBEC4HoXrUbgEQOF6FK5H4QRAzczMzMzMBEBI4XoUrkcFQEjhehSuRwVAcT0K16NwBUBcj8L1KFwFQHE9CtejcAVA16NwPQrXBUCuR+F6FK4FQIXrUbgehQVASOF6FK5HBUBcj8L1KFwFQEjhehSuRwVASOF6FK5HBUAzMzMzMzMFQDMzMzMzMwVA9ihcj8L1BED2KFyPwvUEQPYoXI\u002fC9QRAcT0K16NwBUBI4XoUrkcFQD0K16NwPQZAPQrXo3A9BkC4HoXrUbgGQHsUrkfhegZAexSuR+F6BkD2KFyPwvUGQIXrUbgehQdA7FG4HoXrB0AK16NwPQoHQOxRuB6F6wdAw\u002fUoXI\u002fCB0BI4XoUrkcJQMP1KFyPwglAmpmZmZmZCUAzMzMzMzMLQAAAAAAAAApAcT0K16NwCUDXo3A9CtcJQIXrUbgehQlAXI\u002fC9ShcCUCuR+F6FK4JQGZmZmZmZghAuB6F61G4CECF61G4HoUJQClcj8L1KApAw\u002fUoXI\u002fCC0BmZmZmZmYMQAAAAAAAAAxAXI\u002fC9ShcC0AK16NwPQoQQM3MzMzMzBFAcT0K16NwEkBI4XoUrkcSQHsUrkfhehFArkfhehSuEUAK16NwPQoRQI\u002fC9ShcjxBAXI\u002fC9ShcEECkcD0K16MQQBSuR+F6FBBAFK5H4XoUEECkcD0K16MQQOxRuB6F6w9AAAAAAAAADkDXo3A9CtcNQFyPwvUoXA1A16NwPQrXDUDsUbgehesNQIXrUbgehQ9APQrXo3A9DkDNzMzMzMwMQM3MzMzMzAxASOF6FK5HDUBcj8L1KFwNQBSuR+F6FAxAPQrXo3A9DEAzMzMzMzMJQLgehetRuAhAzczMzMzMCECamZmZmZkJQEjhehSuRwlArkfhehSuCUCamZmZmZkJQAAAAAAAAApAj8L1KFyPCkAzMzMzMzMLQDMzMzMzMwtA7FG4HoXrCUDXo3A9CtcJQMP1KFyPwglAexSuR+F6CkApXI\u002fC9SgKQIXrUbgehQlA16NwPQrXCUBxPQrXo3AJQLgehetRuAhA9ihcj8L1CED2KFyPwvUIQPYoXI\u002fC9QhAXI\u002fC9ShcCUBxPQrXo3AJQM3MzMzMzAhAXI\u002fC9ShcCUBI4XoUrkcJQEjhehSuRwlACtejcD0KCUD2KFyPwvUIQHsUrkfheghAUrgehetRCEBSuB6F61EIQClcj8L1KAhArkfhehSuB0BI4XoUrkcHQArXo3A9CgdAZmZmZmZmBkBmZmZmZmYGQOF6FK5H4QZAXI\u002fC9ShcB0CF61G4HoUHQFyPwvUoXAdAw\u002fUoXI\u002fCB0CamZmZmZkHQJqZmZmZmQdAAAAAAAAACEBI4XoUrkcHQHE9CtejcAdAH4XrUbgeB0AzMzMzMzMHQKRwPQrXowZAj8L1KFyPBkC4HoXrUbgGQI\u002fC9ShcjwZA4XoUrkfhBkAfhetRuB4HQOF6FK5H4QZACtejcD0KCUApXI\u002fC9SgIQNejcD0K1wdA16NwPQrXB0CamZmZmZkHQIXrUbgehQdAhetRuB6FB0BxPQrXo3AHQDMzMzMzMwdAH4XrUbgeB0AK16NwPQoHQArXo3A9CgdAMzMzMzMzB0CF61G4HoUHQJqZmZmZmQdACtejcD0KB0BmZmZmZmYGQD0K16NwPQZAPQrXo3A9BkAAAAAAAAAGQI\u002fC9ShcjwZAuB6F61G4BkBcj8L1KFwHQArXo3A9CgdAuB6F61G4BkCkcD0K16MGQLgehetRuAZA9ihcj8L1BkC4HoXrUbgGQD0K16NwPQZAUrgehetRBkAAAAAAAAAGQFK4HoXrUQZAUrgehetRBkCuR+F6FK4FQMP1KFyPwgVAhetRuB6FBUCuR+F6FK4FQJqZmZmZmQVAFK5H4XoUBkAAAAAAAAAGQOxRuB6F6wVAZmZmZmZmBkB7FK5H4XoGQHsUrkfhegZAZmZmZmZmBkAUrkfhehQGQI\u002fC9ShcjwZAuB6F61G4BkCamZmZmZkHQHE9CtejcAlAcT0K16NwCUDhehSuR+EIQJqZmZmZmQdAUrgehetRCEBSuB6F61EIQOxRuB6F6wdAw\u002fUoXI\u002fCB0AUrkfhehQIQK5H4XoUrgdACtejcD0KB0BmZmZmZmYGQI\u002fC9ShcjwZAFK5H4XoUBkDNzMzMzMwGQIXrUbgehQdAUrgehetRCEAK16NwPQoJQGZmZmZmZghACtejcD0KCUAzMzMzMzMJQClcj8L1KAhAKVyPwvUoCEApXI\u002fC9SgIQLgehetRuAhAj8L1KFyPCEAK16NwPQoJQJqZmZmZmQlAXI\u002fC9ShcCUBcj8L1KFwJQIXrUbgehQlAMzMzMzMzCUDNzMzMzMwIQAAAAAAAAAhAAAAAAAAACECamZmZmZkHQIXrUbgehQdAXI\u002fC9ShcB0AfhetRuB4HQArXo3A9CgdAzczMzMzMBkAfhetRuB4HQB+F61G4HgdASOF6FK5HB0AK16NwPQoHQEjhehSuRwdASOF6FK5HB0DXo3A9CtcHQOxRuB6F6wdAmpmZmZmZB0AzMzMzMzMHQArXo3A9CgdApHA9CtejBkC4HoXrUbgGQLgehetRuAZA4XoUrkfhBkD2KFyPwvUGQLgehetRuAZAexSuR+F6BkB7FK5H4XoGQKRwPQrXowZAexSuR+F6BkBSuB6F61EGQFK4HoXrUQZAFK5H4XoUBkDsUbgehesFQOxRuB6F6wVAAAAAAAAABkAUrkfhehQGQK5H4XoUrgVAMzMzMzMzBUAzMzMzMzMFQNejcD0K1wVAhetRuB6FBUAfhetRuB4FQHE9CtejcAVAhetRuB6FBUCuR+F6FK4FQMP1KFyPwgVAKVyPwvUoBkBmZmZmZmYGQHsUrkfhegZAzczMzMzMBkDhehSuR+EGQMP1KFyPwgdA9ihcj8L1BkC4HoXrUbgGQOF6FK5H4QZAuB6F61G4BkBcj8L1KFwHQJqZmZmZmQdAhetRuB6FB0CF61G4HoUHQOF6FK5H4QZACtejcD0KB0DhehSuR+EGQJqZmZmZmQdAw\u002fUoXI\u002fCB0CF61G4HoUHQNejcD0K1wdAzczMzMzMCEA9CtejcD0IQKRwPQrXowhAw\u002fUoXI\u002fCB0AAAAAAAAAIQArXo3A9CglAhetRuB6FCUB7FK5H4XoIQLgehetRuAhAXI\u002fC9ShcCUA9CtejcD0KQClcj8L1KApAw\u002fUoXI\u002fCCUCamZmZmZkJQClcj8L1KApA7FG4HoXrCUCF61G4HoUJQIXrUbgehQlAXI\u002fC9ShcCUCuR+F6FK4JQFyPwvUoXAtArkfhehSuC0A9CtejcD0KQEjhehSuRwlAXI\u002fC9ShcCUAK16NwPQoJQGZmZmZmZghA9ihcj8L1CECF61G4HoUHQDMzMzMzMwdAhetRuB6FB0CamZmZmZkHQLgehetRuAZAzczMzMzMBkDhehSuR+EGQKRwPQrXowZA9ihcj8L1BkDNzMzMzMwGQLgehetRuAZA4XoUrkfhBkDhehSuR+EGQLgehetRuAZAzczMzMzMBkCPwvUoXI8GQKRwPQrXowZAKVyPwvUoBkA9CtejcD0GQClcj8L1KAZAAAAAAAAABkBSuB6F61EGQHsUrkfhegZAUrgehetRBkCPwvUoXI8GQI\u002fC9ShcjwZAFK5H4XoUBkBmZmZmZmYGQKRwPQrXowZA4XoUrkfhBkBmZmZmZmYGQD0K16NwPQZA7FG4HoXrBUDsUbgehesFQMP1KFyPwgVArkfhehSuBUDD9Shcj8IFQMP1KFyPwgVAw\u002fUoXI\u002fCBUCuR+F6FK4FQAAAAAAAAAZA7FG4HoXrBUAUrkfhehQGQAAAAAAAAAZAPQrXo3A9BkBmZmZmZmYGQD0K16NwPQZAPQrXo3A9BkA="},"type":"scatter","xaxis":"x","yaxis":"y"},{"line":{"color":"#9b8de0","width":1.2},"name":"% S&P500 \u003e 50DMA","x":["2024-06-12T00:00:00.000000","2024-06-13T00:00:00.000000","2024-06-14T00:00:00.000000","2024-06-17T00:00:00.000000","2024-06-18T00:00:00.000000","2024-06-19T00:00:00.000000","2024-06-20T00:00:00.000000","2024-06-21T00:00:00.000000","2024-06-24T00:00:00.000000","2024-06-25T00:00:00.000000","2024-06-26T00:00:00.000000","2024-06-27T00:00:00.000000","2024-06-28T00:00:00.000000","2024-07-01T00:00:00.000000","2024-07-02T00:00:00.000000","2024-07-03T00:00:00.000000","2024-07-04T00:00:00.000000","2024-07-05T00:00:00.000000","2024-07-08T00:00:00.000000","2024-07-09T00:00:00.000000","2024-07-10T00:00:00.000000","2024-07-11T00:00:00.000000","2024-07-12T00:00:00.000000","2024-07-15T00:00:00.000000","2024-07-16T00:00:00.000000","2024-07-17T00:00:00.000000","2024-07-18T00:00:00.000000","2024-07-19T00:00:00.000000","2024-07-22T00:00:00.000000","2024-07-23T00:00:00.000000","2024-07-24T00:00:00.000000","2024-07-25T00:00:00.000000","2024-07-26T00:00:00.000000","2024-07-29T00:00:00.000000","2024-07-30T00:00:00.000000","2024-07-31T00:00:00.000000","2024-08-01T00:00:00.000000","2024-08-02T00:00:00.000000","2024-08-05T00:00:00.000000","2024-08-06T00:00:00.000000","2024-08-07T00:00:00.000000","2024-08-08T00:00:00.000000","2024-08-09T00:00:00.000000","2024-08-12T00:00:00.000000","2024-08-13T00:00:00.000000","2024-08-14T00:00:00.000000","2024-08-15T00:00:00.000000","2024-08-16T00:00:00.000000","2024-08-19T00:00:00.000000","2024-08-20T00:00:00.000000","2024-08-21T00:00:00.000000","2024-08-22T00:00:00.000000","2024-08-23T00:00:00.000000","2024-08-26T00:00:00.000000","2024-08-27T00:00:00.000000","2024-08-28T00:00:00.000000","2024-08-29T00:00:00.000000","2024-08-30T00:00:00.000000","2024-09-02T00:00:00.000000","2024-09-03T00:00:00.000000","2024-09-04T00:00:00.000000","2024-09-05T00:00:00.000000","2024-09-06T00:00:00.000000","2024-09-09T00:00:00.000000","2024-09-10T00:00:00.000000","2024-09-11T00:00:00.000000","2024-09-12T00:00:00.000000","2024-09-13T00:00:00.000000","2024-09-16T00:00:00.000000","2024-09-17T00:00:00.000000","2024-09-18T00:00:00.000000","2024-09-19T00:00:00.000000","2024-09-20T00:00:00.000000","2024-09-23T00:00:00.000000","2024-09-24T00:00:00.000000","2024-09-25T00:00:00.000000","2024-09-26T00:00:00.000000","2024-09-27T00:00:00.000000","2024-09-30T00:00:00.000000","2024-10-01T00:00:00.000000","2024-10-02T00:00:00.000000","2024-10-03T00:00:00.000000","2024-10-04T00:00:00.000000","2024-10-07T00:00:00.000000","2024-10-08T00:00:00.000000","2024-10-09T00:00:00.000000","2024-10-10T00:00:00.000000","2024-10-11T00:00:00.000000","2024-10-14T00:00:00.000000","2024-10-15T00:00:00.000000","2024-10-16T00:00:00.000000","2024-10-17T00:00:00.000000","2024-10-18T00:00:00.000000","2024-10-21T00:00:00.000000","2024-10-22T00:00:00.000000","2024-10-23T00:00:00.000000","2024-10-24T00:00:00.000000","2024-10-25T00:00:00.000000","2024-10-28T00:00:00.000000","2024-10-29T00:00:00.000000","2024-10-30T00:00:00.000000","2024-10-31T00:00:00.000000","2024-11-01T00:00:00.000000","2024-11-04T00:00:00.000000","2024-11-05T00:00:00.000000","2024-11-06T00:00:00.000000","2024-11-07T00:00:00.000000","2024-11-08T00:00:00.000000","2024-11-11T00:00:00.000000","2024-11-12T00:00:00.000000","2024-11-13T00:00:00.000000","2024-11-14T00:00:00.000000","2024-11-15T00:00:00.000000","2024-11-18T00:00:00.000000","2024-11-19T00:00:00.000000","2024-11-20T00:00:00.000000","2024-11-21T00:00:00.000000","2024-11-22T00:00:00.000000","2024-11-25T00:00:00.000000","2024-11-26T00:00:00.000000","2024-11-27T00:00:00.000000","2024-11-28T00:00:00.000000","2024-11-29T00:00:00.000000","2024-12-02T00:00:00.000000","2024-12-03T00:00:00.000000","2024-12-04T00:00:00.000000","2024-12-05T00:00:00.000000","2024-12-06T00:00:00.000000","2024-12-09T00:00:00.000000","2024-12-10T00:00:00.000000","2024-12-11T00:00:00.000000","2024-12-12T00:00:00.000000","2024-12-13T00:00:00.000000","2024-12-16T00:00:00.000000","2024-12-17T00:00:00.000000","2024-12-18T00:00:00.000000","2024-12-19T00:00:00.000000","2024-12-20T00:00:00.000000","2024-12-23T00:00:00.000000","2024-12-24T00:00:00.000000","2024-12-25T00:00:00.000000","2024-12-26T00:00:00.000000","2024-12-27T00:00:00.000000","2024-12-30T00:00:00.000000","2024-12-31T00:00:00.000000","2025-01-01T00:00:00.000000","2025-01-02T00:00:00.000000","2025-01-03T00:00:00.000000","2025-01-06T00:00:00.000000","2025-01-07T00:00:00.000000","2025-01-08T00:00:00.000000","2025-01-09T00:00:00.000000","2025-01-10T00:00:00.000000","2025-01-13T00:00:00.000000","2025-01-14T00:00:00.000000","2025-01-15T00:00:00.000000","2025-01-16T00:00:00.000000","2025-01-17T00:00:00.000000","2025-01-20T00:00:00.000000","2025-01-21T00:00:00.000000","2025-01-22T00:00:00.000000","2025-01-23T00:00:00.000000","2025-01-24T00:00:00.000000","2025-01-27T00:00:00.000000","2025-01-28T00:00:00.000000","2025-01-29T00:00:00.000000","2025-01-30T00:00:00.000000","2025-01-31T00:00:00.000000","2025-02-03T00:00:00.000000","2025-02-04T00:00:00.000000","2025-02-05T00:00:00.000000","2025-02-06T00:00:00.000000","2025-02-07T00:00:00.000000","2025-02-10T00:00:00.000000","2025-02-11T00:00:00.000000","2025-02-12T00:00:00.000000","2025-02-13T00:00:00.000000","2025-02-14T00:00:00.000000","2025-02-17T00:00:00.000000","2025-02-18T00:00:00.000000","2025-02-19T00:00:00.000000","2025-02-20T00:00:00.000000","2025-02-21T00:00:00.000000","2025-02-24T00:00:00.000000","2025-02-25T00:00:00.000000","2025-02-26T00:00:00.000000","2025-02-27T00:00:00.000000","2025-02-28T00:00:00.000000","2025-03-03T00:00:00.000000","2025-03-04T00:00:00.000000","2025-03-05T00:00:00.000000","2025-03-06T00:00:00.000000","2025-03-07T00:00:00.000000","2025-03-10T00:00:00.000000","2025-03-11T00:00:00.000000","2025-03-12T00:00:00.000000","2025-03-13T00:00:00.000000","2025-03-14T00:00:00.000000","2025-03-17T00:00:00.000000","2025-03-18T00:00:00.000000","2025-03-19T00:00:00.000000","2025-03-20T00:00:00.000000","2025-03-21T00:00:00.000000","2025-03-24T00:00:00.000000","2025-03-25T00:00:00.000000","2025-03-26T00:00:00.000000","2025-03-27T00:00:00.000000","2025-03-28T00:00:00.000000","2025-03-31T00:00:00.000000","2025-04-01T00:00:00.000000","2025-04-02T00:00:00.000000","2025-04-03T00:00:00.000000","2025-04-04T00:00:00.000000","2025-04-07T00:00:00.000000","2025-04-08T00:00:00.000000","2025-04-09T00:00:00.000000","2025-04-10T00:00:00.000000","2025-04-11T00:00:00.000000","2025-04-14T00:00:00.000000","2025-04-15T00:00:00.000000","2025-04-16T00:00:00.000000","2025-04-17T00:00:00.000000","2025-04-18T00:00:00.000000","2025-04-21T00:00:00.000000","2025-04-22T00:00:00.000000","2025-04-23T00:00:00.000000","2025-04-24T00:00:00.000000","2025-04-25T00:00:00.000000","2025-04-28T00:00:00.000000","2025-04-29T00:00:00.000000","2025-04-30T00:00:00.000000","2025-05-01T00:00:00.000000","2025-05-02T00:00:00.000000","2025-05-05T00:00:00.000000","2025-05-06T00:00:00.000000","2025-05-07T00:00:00.000000","2025-05-08T00:00:00.000000","2025-05-09T00:00:00.000000","2025-05-12T00:00:00.000000","2025-05-13T00:00:00.000000","2025-05-14T00:00:00.000000","2025-05-15T00:00:00.000000","2025-05-16T00:00:00.000000","2025-05-19T00:00:00.000000","2025-05-20T00:00:00.000000","2025-05-21T00:00:00.000000","2025-05-22T00:00:00.000000","2025-05-23T00:00:00.000000","2025-05-26T00:00:00.000000","2025-05-27T00:00:00.000000","2025-05-28T00:00:00.000000","2025-05-29T00:00:00.000000","2025-05-30T00:00:00.000000","2025-06-02T00:00:00.000000","2025-06-03T00:00:00.000000","2025-06-04T00:00:00.000000","2025-06-05T00:00:00.000000","2025-06-06T00:00:00.000000","2025-06-09T00:00:00.000000","2025-06-10T00:00:00.000000","2025-06-11T00:00:00.000000","2025-06-12T00:00:00.000000","2025-06-13T00:00:00.000000","2025-06-16T00:00:00.000000","2025-06-17T00:00:00.000000","2025-06-18T00:00:00.000000","2025-06-19T00:00:00.000000","2025-06-20T00:00:00.000000","2025-06-23T00:00:00.000000","2025-06-24T00:00:00.000000","2025-06-25T00:00:00.000000","2025-06-26T00:00:00.000000","2025-06-27T00:00:00.000000","2025-06-30T00:00:00.000000","2025-07-01T00:00:00.000000","2025-07-02T00:00:00.000000","2025-07-03T00:00:00.000000","2025-07-04T00:00:00.000000","2025-07-07T00:00:00.000000","2025-07-08T00:00:00.000000","2025-07-09T00:00:00.000000","2025-07-10T00:00:00.000000","2025-07-11T00:00:00.000000","2025-07-14T00:00:00.000000","2025-07-15T00:00:00.000000","2025-07-16T00:00:00.000000","2025-07-17T00:00:00.000000","2025-07-18T00:00:00.000000","2025-07-21T00:00:00.000000","2025-07-22T00:00:00.000000","2025-07-23T00:00:00.000000","2025-07-24T00:00:00.000000","2025-07-25T00:00:00.000000","2025-07-28T00:00:00.000000","2025-07-29T00:00:00.000000","2025-07-30T00:00:00.000000","2025-07-31T00:00:00.000000","2025-08-01T00:00:00.000000","2025-08-04T00:00:00.000000","2025-08-05T00:00:00.000000","2025-08-06T00:00:00.000000","2025-08-07T00:00:00.000000","2025-08-08T00:00:00.000000","2025-08-11T00:00:00.000000","2025-08-12T00:00:00.000000","2025-08-13T00:00:00.000000","2025-08-14T00:00:00.000000","2025-08-15T00:00:00.000000","2025-08-18T00:00:00.000000","2025-08-19T00:00:00.000000","2025-08-20T00:00:00.000000","2025-08-21T00:00:00.000000","2025-08-22T00:00:00.000000","2025-08-25T00:00:00.000000","2025-08-26T00:00:00.000000","2025-08-27T00:00:00.000000","2025-08-28T00:00:00.000000","2025-08-29T00:00:00.000000","2025-09-01T00:00:00.000000","2025-09-02T00:00:00.000000","2025-09-03T00:00:00.000000","2025-09-04T00:00:00.000000","2025-09-05T00:00:00.000000","2025-09-08T00:00:00.000000","2025-09-09T00:00:00.000000","2025-09-10T00:00:00.000000","2025-09-11T00:00:00.000000","2025-09-12T00:00:00.000000","2025-09-15T00:00:00.000000","2025-09-16T00:00:00.000000","2025-09-17T00:00:00.000000","2025-09-18T00:00:00.000000","2025-09-19T00:00:00.000000","2025-09-22T00:00:00.000000","2025-09-23T00:00:00.000000","2025-09-24T00:00:00.000000","2025-09-25T00:00:00.000000","2025-09-26T00:00:00.000000","2025-09-29T00:00:00.000000","2025-09-30T00:00:00.000000","2025-10-01T00:00:00.000000","2025-10-02T00:00:00.000000","2025-10-03T00:00:00.000000","2025-10-06T00:00:00.000000","2025-10-07T00:00:00.000000","2025-10-08T00:00:00.000000","2025-10-09T00:00:00.000000","2025-10-10T00:00:00.000000","2025-10-13T00:00:00.000000","2025-10-14T00:00:00.000000","2025-10-15T00:00:00.000000","2025-10-16T00:00:00.000000","2025-10-17T00:00:00.000000","2025-10-20T00:00:00.000000","2025-10-21T00:00:00.000000","2025-10-22T00:00:00.000000","2025-10-23T00:00:00.000000","2025-10-24T00:00:00.000000","2025-10-27T00:00:00.000000","2025-10-28T00:00:00.000000","2025-10-29T00:00:00.000000","2025-10-30T00:00:00.000000","2025-10-31T00:00:00.000000","2025-11-03T00:00:00.000000","2025-11-04T00:00:00.000000","2025-11-05T00:00:00.000000","2025-11-06T00:00:00.000000","2025-11-07T00:00:00.000000","2025-11-10T00:00:00.000000","2025-11-11T00:00:00.000000","2025-11-12T00:00:00.000000","2025-11-13T00:00:00.000000","2025-11-14T00:00:00.000000","2025-11-17T00:00:00.000000","2025-11-18T00:00:00.000000","2025-11-19T00:00:00.000000","2025-11-20T00:00:00.000000","2025-11-21T00:00:00.000000","2025-11-24T00:00:00.000000","2025-11-25T00:00:00.000000","2025-11-26T00:00:00.000000","2025-11-27T00:00:00.000000","2025-11-28T00:00:00.000000","2025-12-01T00:00:00.000000","2025-12-02T00:00:00.000000","2025-12-03T00:00:00.000000","2025-12-04T00:00:00.000000","2025-12-05T00:00:00.000000","2025-12-08T00:00:00.000000","2025-12-09T00:00:00.000000","2025-12-10T00:00:00.000000","2025-12-11T00:00:00.000000","2025-12-12T00:00:00.000000","2025-12-15T00:00:00.000000","2025-12-16T00:00:00.000000","2025-12-17T00:00:00.000000","2025-12-18T00:00:00.000000","2025-12-19T00:00:00.000000","2025-12-22T00:00:00.000000","2025-12-23T00:00:00.000000","2025-12-24T00:00:00.000000","2025-12-25T00:00:00.000000","2025-12-26T00:00:00.000000","2025-12-29T00:00:00.000000","2025-12-30T00:00:00.000000","2025-12-31T00:00:00.000000","2026-01-01T00:00:00.000000","2026-01-02T00:00:00.000000","2026-01-05T00:00:00.000000","2026-01-06T00:00:00.000000","2026-01-07T00:00:00.000000","2026-01-08T00:00:00.000000","2026-01-09T00:00:00.000000","2026-01-12T00:00:00.000000","2026-01-13T00:00:00.000000","2026-01-14T00:00:00.000000","2026-01-15T00:00:00.000000","2026-01-16T00:00:00.000000","2026-01-19T00:00:00.000000","2026-01-20T00:00:00.000000","2026-01-21T00:00:00.000000","2026-01-22T00:00:00.000000","2026-01-23T00:00:00.000000","2026-01-26T00:00:00.000000","2026-01-27T00:00:00.000000","2026-01-28T00:00:00.000000","2026-01-29T00:00:00.000000","2026-01-30T00:00:00.000000","2026-02-02T00:00:00.000000","2026-02-03T00:00:00.000000","2026-02-04T00:00:00.000000","2026-02-05T00:00:00.000000","2026-02-06T00:00:00.000000","2026-02-09T00:00:00.000000","2026-02-10T00:00:00.000000","2026-02-11T00:00:00.000000","2026-02-12T00:00:00.000000","2026-02-13T00:00:00.000000","2026-02-16T00:00:00.000000","2026-02-17T00:00:00.000000","2026-02-18T00:00:00.000000","2026-02-19T00:00:00.000000","2026-02-20T00:00:00.000000","2026-02-23T00:00:00.000000","2026-02-24T00:00:00.000000","2026-02-25T00:00:00.000000","2026-02-26T00:00:00.000000","2026-02-27T00:00:00.000000","2026-03-02T00:00:00.000000","2026-03-03T00:00:00.000000","2026-03-04T00:00:00.000000","2026-03-05T00:00:00.000000","2026-03-06T00:00:00.000000","2026-03-09T00:00:00.000000","2026-03-10T00:00:00.000000","2026-03-11T00:00:00.000000","2026-03-12T00:00:00.000000","2026-03-13T00:00:00.000000","2026-03-16T00:00:00.000000","2026-03-17T00:00:00.000000","2026-03-18T00:00:00.000000","2026-03-19T00:00:00.000000","2026-03-20T00:00:00.000000","2026-03-23T00:00:00.000000","2026-03-24T00:00:00.000000","2026-03-25T00:00:00.000000","2026-03-26T00:00:00.000000","2026-03-27T00:00:00.000000","2026-03-30T00:00:00.000000","2026-03-31T00:00:00.000000","2026-04-01T00:00:00.000000","2026-04-02T00:00:00.000000","2026-04-03T00:00:00.000000","2026-04-06T00:00:00.000000","2026-04-07T00:00:00.000000","2026-04-08T00:00:00.000000","2026-04-09T00:00:00.000000","2026-04-10T00:00:00.000000","2026-04-13T00:00:00.000000","2026-04-14T00:00:00.000000","2026-04-15T00:00:00.000000","2026-04-16T00:00:00.000000","2026-04-17T00:00:00.000000","2026-04-20T00:00:00.000000","2026-04-21T00:00:00.000000","2026-04-22T00:00:00.000000","2026-04-23T00:00:00.000000","2026-04-24T00:00:00.000000","2026-04-27T00:00:00.000000","2026-04-28T00:00:00.000000","2026-04-29T00:00:00.000000","2026-04-30T00:00:00.000000","2026-05-01T00:00:00.000000","2026-05-04T00:00:00.000000","2026-05-05T00:00:00.000000","2026-05-06T00:00:00.000000","2026-05-07T00:00:00.000000","2026-05-08T00:00:00.000000","2026-05-11T00:00:00.000000","2026-05-12T00:00:00.000000","2026-05-13T00:00:00.000000","2026-05-14T00:00:00.000000","2026-05-15T00:00:00.000000","2026-05-18T00:00:00.000000","2026-05-19T00:00:00.000000","2026-05-20T00:00:00.000000","2026-05-21T00:00:00.000000","2026-05-22T00:00:00.000000","2026-05-25T00:00:00.000000","2026-05-26T00:00:00.000000","2026-05-27T00:00:00.000000","2026-05-28T00:00:00.000000","2026-05-29T00:00:00.000000","2026-06-01T00:00:00.000000","2026-06-02T00:00:00.000000","2026-06-03T00:00:00.000000","2026-06-04T00:00:00.000000","2026-06-05T00:00:00.000000","2026-06-08T00:00:00.000000","2026-06-09T00:00:00.000000","2026-06-10T00:00:00.000000","2026-06-11T00:00:00.000000","2026-06-12T00:00:00.000000"],"y":{"dtype":"f8","bdata":"mpmZmZkZSkCamZmZmZlJQAAAAAAAgEdAAAAAAAAASUAAAAAAAIBKQAAAAAAAgEpAZmZmZmbmS0DNzMzMzExMQAAAAAAAAE9AmpmZmZmZSkBmZmZmZuZIQAAAAAAAgEpAzczMzMxMSUAzMzMzMzNGQJqZmZmZmUhAAAAAAACASEAAAAAAAIBIQDMzMzMzs0dAmpmZmZkZSEBmZmZmZmZHQGZmZmZm5kpAmpmZmZlZUECamZmZmdlRQGZmZmZmZlFAZmZmZmZmU0BmZmZmZiZTQAAAAAAAwFFAzczMzMxMUEDNzMzMzMxRQJqZmZmZWVFAzczMzMzMTUAzMzMzMzNPQAAAAAAAgFFAZmZmZmamUUCamZmZmVlRQJqZmZmZWVJAmpmZmZmZT0BmZmZmZmZLQM3MzMzMTEVAZmZmZmZmSEAAAAAAAABHQJqZmZmZGUtAMzMzMzMzTUDNzMzMzExLQJqZmZmZmU1AAAAAAAAATkAzMzMzM7NQQJqZmZmZWVFAMzMzMzNzUkAAAAAAAMBRQM3MzMzMzFJAZmZmZmYmUkAzMzMzM\u002fNTQDMzMzMzc1NAAAAAAABAU0BmZmZmZiZTQM3MzMzMjFNAMzMzMzNzVEAzMzMzM3NUQM3MzMzMzFFAmpmZmZlZUUAzMzMzM7NQQDMzMzMzM01AzczMzMwMUEBmZmZmZuZPQDMzMzMzs1BAMzMzMzOzUUAzMzMzM3NSQJqZmZmZGVNAMzMzMzNzU0BmZmZmZuZSQAAAAAAAQFVAMzMzMzPzU0BmZmZmZqZUQM3MzMzMjFRAzczMzMyMU0CamZmZmdlUQDMzMzMzM1VAzczMzMyMVUAAAAAAAEBUQDMzMzMzs1NAZmZmZmamUkDNzMzMzExTQDMzMzMzc1FAzczMzMzMUUAAAAAAAABTQAAAAAAAQFJAmpmZmZmZU0AzMzMzM3NUQAAAAAAAwFNAZmZmZmbmU0CamZmZmVlTQDMzMzMzs1NAmpmZmZkZUkAzMzMzM\u002fNQQGZmZmZmplBAmpmZmZkZUEAAAAAAAIBNQM3MzMzMzE5AZmZmZmZmTEAzMzMzM7NMQAAAAAAAAElAAAAAAAAASkAzMzMzM7NJQM3MzMzMzExAZmZmZmYmUEAAAAAAAMBQQAAAAAAAAFFAAAAAAADAUECamZmZmRlQQM3MzMzMTFBAMzMzMzOzTkBmZmZmZuZMQJqZmZmZGU5AzczMzMxMTECamZmZmZlNQJqZmZmZGVBAmpmZmZmZUEDNzMzMzMxRQM3MzMzMDFJAAAAAAABAUkAAAAAAAEBSQGZmZmZmZlJAzczMzMzMUUAAAAAAAMBQQAAAAAAAgFBAMzMzMzMzT0BmZmZmZuZOQAAAAAAAgE5AzczMzMxMTECamZmZmRlLQDMzMzMzs0pAZmZmZmZmSUBmZmZmZuZHQJqZmZmZmURAZmZmZmZmNUAAAAAAAAA3QAAAAAAAADxAAAAAAAAAPEBmZmZmZuZAQGZmZmZm5kBAzczMzMzMQECamZmZmZk8QAAAAAAAADVAMzMzMzMzNUAzMzMzMzM1QAAAAAAAADRAZmZmZmZmOkAAAAAAAAA6QAAAAAAAADpAzczMzMzMOkDNzMzMzMw6QDMzMzMzMzJAZmZmZmZmNEAzMzMzMzM6QGZmZmZm5kBAmpmZmZmZQ0CamZmZmZlFQJqZmZmZmUVAzczMzMxMS0AAAAAAAIBJQDMzMzMzM0tAmpmZmZkZS0AzMzMzMzNPQM3MzMzMzEtAMzMzMzMzSkAAAAAAAABNQDMzMzMzM0pAZmZmZmZmSEDNzMzMzMxIQDMzMzMzM0tAzczMzMxMS0AzMzMzMzNKQAAAAAAAgEpAZmZmZmZmS0AAAAAAAABJQGZmZmZmZkxAzczMzMxMTEDNzMzMzExMQGZmZmZm5k1AzczMzMxMTkCamZmZmZlNQGZmZmZm5kpAzczMzMxMS0AAAAAAAABLQAAAAAAAAEtAMzMzMzOzSEAAAAAAAIBLQM3MzMzMzEdAAAAAAACAREAzMzMzM7NGQAAAAAAAAEVAMzMzMzMzR0AAAAAAAIBEQM3MzMzMTEBAMzMzMzMzPkAAAAAAAAA7QM3MzMzMTEBAMzMzMzMzQ0DNzMzMzExCQJqZmZmZGURAAAAAAAAAQ0BmZmZmZuZAQGZmZmZm5kNAmpmZmZkZREAzMzMzMzNFQGZmZmZm5kNAMzMzMzMzQUAAAAAAAIBDQDMzMzMzM0RAZmZmZmbmREAzMzMzMzM\u002fQDMzMzMzMydAAAAAAAAAHEAzMzMzMzMXQM3MzMzMzC5AzczMzMzMLEAAAAAAAAAzQAAAAAAAADlAzczMzMzMOEDNzMzMzMw0QAAAAAAAADhAAAAAAAAAOEDNzMzMzMwuQM3MzMzMzDdAmpmZmZmZO0CamZmZmRlBQAl2Fb7cEEFATSV7c+YpQkALAox2uNtEQE+x8SvC9EVAyJhhnRyoRUCkYymTYFdNQA8aeedvcUxAlezNmafYSkCWMgl2Fb5MQH1cP\u002fRaVk9AnXmKjV8RUEDUPQsCjHZSQDJmWCcH6lFAFgQY7XC3UEAKvFCaSvZSQGkq2ZszT1RAaSrZmzNPVEBpKtmbM09UQE2CXYUvN1FATN8\u002fl3hEUECdeYqNXxFQQJ15io1fEVBAx68I0\u002ffPUkCdHKh7FgRRQNSa7RPVg1FAuX7otaw2UkAyZlgnB+pRQNQ9CwKMdlJA\u002fIowff9cUkAXpzXbJ6pRQMevCNP3z1JAdhW+3BADU0ALX26IAelTQBjtcLeVj1NAJh6R1OAoVEAYSlPJ3pxSQE7ImGGdHFNA1JrtE9WDUUDutvJx\u002fdBQQO628nH90FBAnRyoexYEUUBAl3hEUoNSQP0tTmu2T1NAkI6lTIJdUUB2cqDuWRBSQGjknb\u002fFaVJACrxQmkr2UkBcnNZsn6hUQBjtcLeVj1NAJh6R1OAoVEAmHpHU4ChUQJ5i41eE6VJAW1abkDHDUkBbVpuQMcNSQHYVvtwQA1NAF6c12yeqUUAl2FX4ckNSQFQPGnnnb09AkOuHXstqUEBNgl2FLzdRQPznEo9IalFAkOuHXstqUEAzCXYVvtxSQKyTA3XPglNAQJd4RFKDUkB2Fb7cEANTQGhBgNEOd1FAJDU4CrxQUUDbJ6oHjbxPQCt8uSEGpE1A2FX4ckMMSkA4Z55i41dMQGC0w91WPkxAlezNmafYSkCxTg7UPQtMQKRjKZNgV01AiAHpWMokTEDN9onqQSNPQO628nH90FBAs9qEjBnWT0DoEo9IanBOQBBgtMPdVk5AJJIaHAVeUEAkkhocBV5QQFQPGnnnb09AJdhV+HJDUkA\u002fUT1o5J1QQGeeYuNXhFBAWhBgtMPdUEBnnmLjV4RQQCSSGhwFXlBAJJIaHAVeUEArfLkhBqRNQPX9c4lHJE1AEGC0w91WTkAQYLTD3VZOQJd4RFKDo05A2uFuKx\u002fXTUBFmL5\u002fLvFMQNP3zyUekVBAfVw\u002f9FpWT0AdS5kEuwpNQERSg6PAC0tAOGeeYuNXTEB8FgQY7XBNQCt8uSEGpE1ADxp5529xTECylEmwq\u002fBNQLFODtQ9C0xAKfBCaSrZSUBu5eP6oddMQG7l4\u002fqh10xAiUckNTgKTkB8FgQY7XBNQMywTg7UPU1A9kOvZbUJT0Da4W4rH9dNQOfMU2z8ikxA58xTbPyKTEABox3utvJJQGmHu618XENAJ2TMsE4ORkAbvyJM3z9JQBu\u002fIkzfP0lANE+x8SvCREC8rXxcP\u002fRGQL458xQbv0pAe9DIO3+LS0BRPWjknb9JQA7UPQsCjEpAlezNmafYSkBu5eP6oddMQF4oTSV7c0hAGTOskwN1RUCSGhwFXihFQOO0ZvtE9URAd7jbysf1Q0B3uNvKx\u002fVDQITp++cSj0RA8J9LPCKpQ0CufFw\u002f9FpGQMnenHmKjUdAyiTYVfhySUAAAAAAAIBKQM3MzMzMzEZAmpmZmZkZRkAAAAAAAABDQGZmZmZmZkNAZmZmZmZmQkAzMzMzMzNAQGZmZmZm5kRAmpmZmZmZRUCamZmZmZlKQGZmZmZm5kxAZmZmZmbmTECamZmZmZlOQGZmZmZm5kpAzczMzMxMSkCamZmZmZlLQGZmZmZmZkxAAAAAAAAATEDNzMzMzExJQM3MzMzMTEhAMzMzMzOzS0AAAAAAAIBOQM3MzMzMzE1AZmZmZmbmTkBmZmZmZuZMQAAAAAAAAE5AMzMzMzMzTUAAAAAAAABNQDMzMzMzM09AMzMzMzMzT0AAAAAAAIBPQAAAAAAAgE9AzczMzMzMT0CamZmZmVlQQAAAAAAAgE9AMzMzMzOzTEAzMzMzM7NMQDMzMzMzM05AMzMzMzOzT0DNzMzMzAxRQAR1z4IAo09A71kQYLTDUUB2cqDuWRBSQFqzfaJ60FFAdc+CAKMdUUBNJXtz5ilSQGjknb\u002fFaVJATSV7c+YpUkBNJXtz5ilSQJ15io1fEVBAP\u002fRaVpuQUUD85xKPSGpRQMZpzfaJ6lBAP\u002fRaVpuQUUD3ylsSashQQBDQXN9fRk9AT6nuYq0iUED3ylsSashQQNYqolOqu1BAFdEp1V2sT0C7i7WK6BRRQPLJjhxsYlBAPQychedHUUC7i7WK6BRRQPzLKAhoLlFAF2sV0SnVUECOT3bkYBNPQFcRnVLdxU9AVxGdUt3FT0CwiRuf7EhQQNYqolOqu1BADWl75S0JUEAzCgKa63tQQAvPj+lh4E5Az4\u002fpYeAsT0CTUEPaXnlPQFSqu1iriFBA1JC2V96ST0BMDwNn4flOQO3IwSZufExA98pbEmpITUDOwvNjehhKQKC5vr+MgkZAHjnYxI1PRkBKdRdrFdFEQDtysIkbn0NAT6nuYq0iQECQ6WHgLDxAQJrr+8soCEFAIm2vvCWhQUD8yygIaK49QGpI2ytvSTxAh7S98paENEC6vr+MgoA4QMTAWXh+TDlA4sYnO3KwO0AjOqW6i7U2QP8yCgKa6zNAgrPw\u002fJgeNEC6vr+MgoA4QGBGQUBzfTtABs7C82N6PkAGzsLzY3o+QFmriE6p7kBABs7C82N6PkD7\u002fjIKAppIQEFAc31\u002fGUlAHjnYxI1PRkCDgOb6\u002fjJJQBkFAc31\u002fUpADwNn4fkxSkAUBDTX95dKQEcONnHjk05Az4\u002fpYeAsT0AzCgKa6\u002ftMQKGGtL3ylktAJAebuPHJS0DTw8BZeH5KQEtCDWl75UlAUUPaXnlLSkC\u002fv4yCgOZIQKaHgbPw\u002fEtAYEZBQHN9S0BLQg1pe+VJQFZEp1R3sUpApoeBs\u002fD8S0CXhBrS9spKQM7C82N6GEpAQUBzfX8ZSUDJwSZufLJJQCg7crCJG0dAbnyyIwebR0Cgub6\u002fjIJGQAoCmuv7y0lA8fyYHgbOR0CXhBrS9spKQKGGtL3ylktAdEp1F2sVTUB0SnUXaxVNQGpI2ytvSUxA6Mf0MHAWTEDtyMEmbnxMQB8GzsLzY0tA08PAWXh+SkCSg03c+GRKQMTAWXh+TElA6Mf0MHAWTEBgRkFAc31LQNPDwFl4fkpA98pbEmpITUAKAprr+8tJQKuITqnuYkxARw42ceOTTkA="},"type":"scatter","xaxis":"x2","yaxis":"y2"}],                        {"template":{"data":{"barpolar":[{"marker":{"line":{"color":"rgb(17,17,17)","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"bar":[{"error_x":{"color":"#f2f5fa"},"error_y":{"color":"#f2f5fa"},"marker":{"line":{"color":"rgb(17,17,17)","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"carpet":[{"aaxis":{"endlinecolor":"#A2B1C6","gridcolor":"#506784","linecolor":"#506784","minorgridcolor":"#506784","startlinecolor":"#A2B1C6"},"baxis":{"endlinecolor":"#A2B1C6","gridcolor":"#506784","linecolor":"#506784","minorgridcolor":"#506784","startlinecolor":"#A2B1C6"},"type":"carpet"}],"choropleth":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"choropleth"}],"contourcarpet":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"contourcarpet"}],"contour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"contour"}],"heatmap":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"heatmap"}],"histogram2dcontour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2dcontour"}],"histogram2d":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2d"}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"mesh3d":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"mesh3d"}],"parcoords":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"parcoords"}],"pie":[{"automargin":true,"type":"pie"}],"scatter3d":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatter3d"}],"scattercarpet":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattercarpet"}],"scattergeo":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattergeo"}],"scattergl":[{"marker":{"line":{"color":"#283442"}},"type":"scattergl"}],"scattermapbox":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattermapbox"}],"scattermap":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattermap"}],"scatterpolargl":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolargl"}],"scatterpolar":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolar"}],"scatter":[{"marker":{"line":{"color":"#283442"}},"type":"scatter"}],"scatterternary":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterternary"}],"surface":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"surface"}],"table":[{"cells":{"fill":{"color":"#506784"},"line":{"color":"rgb(17,17,17)"}},"header":{"fill":{"color":"#2a3f5f"},"line":{"color":"rgb(17,17,17)"}},"type":"table"}]},"layout":{"annotationdefaults":{"arrowcolor":"#f2f5fa","arrowhead":0,"arrowwidth":1},"autotypenumbers":"strict","coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]],"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]},"colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#f2f5fa"},"geo":{"bgcolor":"rgb(17,17,17)","lakecolor":"rgb(17,17,17)","landcolor":"rgb(17,17,17)","showlakes":true,"showland":true,"subunitcolor":"#506784"},"hoverlabel":{"align":"left"},"hovermode":"closest","mapbox":{"style":"dark"},"paper_bgcolor":"rgb(17,17,17)","plot_bgcolor":"rgb(17,17,17)","polar":{"angularaxis":{"gridcolor":"#506784","linecolor":"#506784","ticks":""},"bgcolor":"rgb(17,17,17)","radialaxis":{"gridcolor":"#506784","linecolor":"#506784","ticks":""}},"scene":{"xaxis":{"backgroundcolor":"rgb(17,17,17)","gridcolor":"#506784","gridwidth":2,"linecolor":"#506784","showbackground":true,"ticks":"","zerolinecolor":"#C8D4E3"},"yaxis":{"backgroundcolor":"rgb(17,17,17)","gridcolor":"#506784","gridwidth":2,"linecolor":"#506784","showbackground":true,"ticks":"","zerolinecolor":"#C8D4E3"},"zaxis":{"backgroundcolor":"rgb(17,17,17)","gridcolor":"#506784","gridwidth":2,"linecolor":"#506784","showbackground":true,"ticks":"","zerolinecolor":"#C8D4E3"}},"shapedefaults":{"line":{"color":"#f2f5fa"}},"sliderdefaults":{"bgcolor":"#C8D4E3","bordercolor":"rgb(17,17,17)","borderwidth":1,"tickwidth":0},"ternary":{"aaxis":{"gridcolor":"#506784","linecolor":"#506784","ticks":""},"baxis":{"gridcolor":"#506784","linecolor":"#506784","ticks":""},"bgcolor":"rgb(17,17,17)","caxis":{"gridcolor":"#506784","linecolor":"#506784","ticks":""}},"title":{"x":0.05},"updatemenudefaults":{"bgcolor":"#506784","borderwidth":0},"xaxis":{"automargin":true,"gridcolor":"#283442","linecolor":"#506784","ticks":"","title":{"standoff":15},"zerolinecolor":"#283442","zerolinewidth":2},"yaxis":{"automargin":true,"gridcolor":"#283442","linecolor":"#506784","ticks":"","title":{"standoff":15},"zerolinecolor":"#283442","zerolinewidth":2}}},"xaxis":{"anchor":"y","domain":[0.0,1.0],"matches":"x2","showticklabels":false},"yaxis":{"anchor":"x","domain":[0.53,1.0]},"xaxis2":{"anchor":"y2","domain":[0.0,1.0]},"yaxis2":{"anchor":"x2","domain":[0.0,0.47]},"font":{"size":11},"margin":{"l":45,"r":15,"t":10,"b":30},"legend":{"orientation":"h","y":1.08},"paper_bgcolor":"#12161d","plot_bgcolor":"#12161d","height":340},                        {"displayModeBar": false, "responsive": true}                    )                };            </script>        </div></div>
-  </div>
-
-  <!-- ======================= POSITIONING ======================= -->
-  <div class="panel span6">
-    <h2>Who's positioned how — the crowd meter
-      <span class="help">?<span class="tip">What different investor groups are currently doing, shown as a position on each dial. The middle is normal; the ENDS are the danger zones — when a marker sits at either extreme, that trade is crowded and prone to violent reversal. Hover each name for the underlying numbers.</span></span>
-    </h2>
-    <table>
-      <tr><th class="l">who / what</th><th class="l" style="min-width:150px">where they stand</th><th class="l">what it means</th></tr>
-      
-      <tr>
-        <td class="l">S&P 500 futures speculators <span class="help">?<span class="tip">Net bets of speculative futures traders on the S&P 500, as % of all open contracts (CFTC weekly data). Deeply negative + low percentile = everyone's already short — fuel for squeezes. Very high = crowded long. Today: -9.3% of open contracts, 15th percentile of 30 years (as of 2026-06-09, 3-day reporting lag).</span></span></td>
-        <td class="l">
-          
-            <div class="pgauge"><i style="left: 15.1%"></i></div>
-            <div class="pends"><span>crowded short</span><span>crowded long</span></div>
-          
-        </td>
-        <td class="l muted">
-          <b style="color:var(--text)">leaning short</b> — below normal, nothing extreme
-          
-        </td>
-      </tr>
-      
-      <tr>
-        <td class="l">10-yr Treasury futures speculators <span class="help">?<span class="tip">Speculators' net position in 10-year Treasury futures. Extreme shorts have historically preceded falling yields (bond rallies), and vice versa. Today: -16.4% of open contracts, 4th percentile of 30 years (as of 2026-06-09, 3-day reporting lag).</span></span></td>
-        <td class="l">
-          
-            <div class="pgauge"><i style="left: 3.7%"></i></div>
-            <div class="pends"><span>crowded short</span><span>crowded long</span></div>
-          
-        </td>
-        <td class="l muted">
-          <b style="color:var(--text)">extreme short</b> — everyone is already short — most extreme in our records; reversal fuel
-          
-        </td>
-      </tr>
-      
-      <tr>
-        <td class="l">US Dollar futures speculators <span class="help">?<span class="tip">Speculators' net position on the dollar index. Extremes tend to mark dollar turning points, which matter for commodities and foreign earnings. Today: +2.8% of open contracts, 39th percentile of 30 years (as of 2026-06-09, 3-day reporting lag).</span></span></td>
-        <td class="l">
-          
-            <div class="pgauge"><i style="left: 39.0%"></i></div>
-            <div class="pends"><span>crowded short</span><span>crowded long</span></div>
-          
-        </td>
-        <td class="l muted">
-          <b style="color:var(--text)">leaning short</b> — below normal, nothing extreme
-          
-        </td>
-      </tr>
-      
-      <tr>
-        <td class="l">Gold futures speculators <span class="help">?<span class="tip">Speculators' net position in gold futures. Near the 100th percentile = the most crowded gold trade in decades — vulnerable to shakeouts. Today: +52.2% of open contracts, 98th percentile of 30 years (as of 2026-06-09, 3-day reporting lag).</span></span></td>
-        <td class="l">
-          
-            <div class="pgauge"><i style="left: 98.2%"></i></div>
-            <div class="pends"><span>crowded short</span><span>crowded long</span></div>
-          
-        </td>
-        <td class="l muted">
-          <b style="color:var(--text)">extreme long</b> — everyone is already long — most extreme in our records; contrarian alert
-          
-        </td>
-      </tr>
-      
-      <tr>
-        <td class="l">Pro fund managers <span class="help">?<span class="tip">NAAIM weekly survey of professional active managers' stock exposure (0 = all cash, 100 = fully invested, >100 = leveraged). Extremes are contrarian. Today: 79, 63th percentile since 2006 (as of 2026-06-10).</span></span></td>
-        <td class="l">
-          
-            <div class="pgauge"><i style="left: 63.0%"></i></div>
-            <div class="pends"><span>all cash</span><span>all-in</span></div>
-          
-        </td>
-        <td class="l muted">
-          <b style="color:var(--text)">leaning invested</b> — above normal, nothing extreme
-          
-        </td>
-      </tr>
-      
-      <tr>
-        <td class="l">Options hedging mood <span class="help">?<span class="tip">Put/call volume ratio on S&P index options, computed from CBOE's chain: bearish bets ÷ bullish bets traded today. Above ~1.3 = heavy hedging; below ~0.8 = complacency. Today: 1.05 (as of 2026-06-12). A young series — labels are based on standard thresholds until enough history accrues.</span></span></td>
-        <td class="l">
-          
-            <span class="plabel plabel-norm">guarded</span>
-          
-        </td>
-        <td class="l muted">
-          more puts than calls — mild caution
-        </td>
-      </tr>
-      
-      <tr>
-        <td class="l">Market-maker effect <span class="help">?<span class="tip">Estimated dealer gamma (GEX) from the S&P options chain, standard assumption (dealers long calls/short puts). Positive = their hedging dampens market moves; negative = it amplifies them. Today: +18bn per 1% move (as of 2026-06-12). An estimate, not ground truth.</span></span></td>
-        <td class="l">
-          
-            <span class="plabel plabel-norm">dampening swings</span>
-          
-        </td>
-        <td class="l muted">
-          market-makers' hedging absorbs moves — calmer tape likely
-        </td>
-      </tr>
-      
-      <tr>
-        <td class="l">Fear gauge <span class="help">?<span class="tip">VIX (30-day expected volatility) ÷ VIX3M (3-month). Below ~0.9 = calm; near/above 1.0 = the market fears the immediate future more than the distant one — the classic stress signature. Today: 0.862, 31th percentile since 2006.</span></span></td>
-        <td class="l">
-          
-            <div class="pgauge"><i style="left: 31.1%"></i></div>
-            <div class="pends"><span>calm</span><span>panic</span></div>
-          
-        </td>
-        <td class="l muted">
-          <b style="color:var(--text)">leaning calm</b> — below normal, nothing extreme
-          
-        </td>
-      </tr>
-      
-    </table>
-  </div>
-
-  <!-- ======================= HOLDINGS / FLOWS ======================= -->
-  <div class="panel span12">
-    <h2>Star fund managers' real moves
-      <span class="help">?<span class="tip">Daily holdings of the watchlist funds (ARK etc.) with mechanical flow effects stripped out — what's left is genuine manager conviction, visible the day after they trade.</span></span>
-    </h2>
-    
-      <p class="muted">No significant manager moves in the current window (needs a few trading days of snapshots).</p>
-    
-
-    <h2 style="margin-top:16px">Where ETF money is flowing
-      <span class="help">?<span class="tip">Daily money in/out of each sector's main ETF, from share creations/redemptions (ΔShares × price). Positive = money entering. History builds from June 2026.</span></span>
-    </h2>
-    
-      <table><tr><th class='l'>date</th><th>Materials</th><th>Communications</th><th>Energy</th><th>Financials</th><th>Industrials</th><th>Technology</th><th>Consumer Staples</th><th>Real Estate</th><th>Utilities</th><th>Health Care</th><th>Consumer Discretionary</th></tr><tr><td class='l muted'>2026-06-10</td><td class='pos'>+$27M</td><td class='neg'>−$89M</td><td class='pos'>+$17M</td><td class='pos'>+$91M</td><td class='pos'>+$61M</td><td class='pos'>+$289M</td><td class='pos'>+$21M</td><td class='pos'>+$12M</td><td class='pos'>+$31M</td><td class='pos'>+$55M</td><td class='neg'>−$0M</td></tr></table>
-    
-  </div>
-
-  <!-- ======================= HEALTH ======================= -->
-  <div class="panel span12">
-    <h2>Data health
-      <span class="help">?<span class="tip">Every data source this dashboard depends on. OK = fresh. STALE = no new data lately (signal confidence reduced automatically). FAILED = today's fetch broke (yesterday's data still used). BLOCKED = a known, documented limitation — not a malfunction. DEAD = failed 3+ runs and paused until it recovers.</span></span>
-    </h2>
-    <table>
-      <tr><th class="l">source</th><th class="l">status</th><th>rows</th><th>last data</th><th class="l">note</th></tr>
-      
-      <tr>
-        <td class="l">bgeo</td>
-        <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>11867</td><td>2026-06-12</td>
-        <td class="l muted"></td>
-      </tr>
-      
-      <tr>
-        <td class="l">breadth</td>
-        <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>728</td><td>2026-06-12</td>
-        <td class="l muted"></td>
-      </tr>
-      
-      <tr>
-        <td class="l">cboe_gex</td>
-        <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>1</td><td>2026-06-12</td>
-        <td class="l muted"></td>
-      </tr>
-      
-      <tr>
-        <td class="l">cboe_putcall</td>
-        <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>1</td><td>2026-06-12</td>
-        <td class="l muted"></td>
-      </tr>
-      
-      <tr>
-        <td class="l">coinbase</td>
-        <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>7</td><td>2026-06-13</td>
-        <td class="l muted"></td>
-      </tr>
-      
-      <tr>
-        <td class="l">coingecko</td>
-        <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>1</td><td>2026-06-13</td>
-        <td class="l muted"></td>
-      </tr>
-      
-      <tr>
-        <td class="l">coinmetrics</td>
-        <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>60</td><td>2026-06-12</td>
-        <td class="l muted"></td>
-      </tr>
-      
-      <tr>
-        <td class="l">cot</td>
-        <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>433</td><td>2026-06-09</td>
-        <td class="l muted"></td>
-      </tr>
-      
-      <tr>
-        <td class="l">defillama</td>
-        <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>3119</td><td>2026-06-13</td>
-        <td class="l muted"></td>
-      </tr>
-      
-      <tr>
-        <td class="l">deribit</td>
-        <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>5</td><td>2026-06-13</td>
-        <td class="l muted"></td>
-      </tr>
-      
-      <tr>
-        <td class="l">feargreed</td>
-        <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>3051</td><td>2026-06-13</td>
-        <td class="l muted"></td>
-      </tr>
-      
-      <tr>
-        <td class="l">fred</td>
-        <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>102585</td><td>2026-06-12</td>
-        <td class="l muted"></td>
-      </tr>
-      
-      <tr>
-        <td class="l">fundamentals</td>
-        <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>5757</td><td>2026-06-12</td>
-        <td class="l muted"></td>
-      </tr>
-      
-      <tr>
-        <td class="l">holdings</td>
-        <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>1</td><td>2026-06-12</td>
-        <td class="l muted"></td>
-      </tr>
-      
-      <tr>
-        <td class="l">mempool</td>
-        <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>1176</td><td>2026-06-13</td>
-        <td class="l muted"></td>
-      </tr>
-      
-      <tr>
-        <td class="l">nyfed</td>
-        <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>1267</td><td>2026-06-11</td>
-        <td class="l muted"></td>
-      </tr>
-      
-      <tr>
-        <td class="l">okx</td>
-        <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>274</td><td>2026-06-13</td>
-        <td class="l muted"></td>
-      </tr>
-      
-      <tr>
-        <td class="l">sector_flows</td>
-        <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>11</td><td>2026-06-10</td>
-        <td class="l muted"></td>
-      </tr>
-      
-      <tr>
-        <td class="l">sentiment_aaii</td>
-        <td class="l"><span class="pill pill-blocked">blocked</span></td>
-        <td>0</td><td>—</td>
-        <td class="l muted">AAII blocks non-browser clients (403) — known limitation, not used by the regime engine</td>
-      </tr>
-      
-      <tr>
-        <td class="l">sentiment_naaim</td>
-        <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>1040</td><td>2026-06-10</td>
-        <td class="l muted"></td>
-      </tr>
-      
-      <tr>
-        <td class="l">treasury</td>
-        <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>12</td><td>2026-06-10</td>
-        <td class="l muted"></td>
-      </tr>
-      
-      <tr>
-        <td class="l">yahoo</td>
-        <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>223104</td><td>2026-06-13</td>
-        <td class="l muted"></td>
-      </tr>
-      
-    </table>
-    <p class="muted">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-06-13 03:56 UTC · <a href="brief.html">daily brief</a> ·
-       <a href="history.html">history & charts</a> · <a href="validation_timeline.html">full 2007→ backtest</a></p>
-  </div>
-
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:#F7F8FA;color:#344054;
+ font-family:Inter,sans-serif;display:flex;flex-direction:column;align-items:center;
+ padding:56px 20px 60px}
+.h{text-align:center;margin-bottom:36px}
+.h h1{font-size:40px;font-weight:800;color:#0B1733;letter-spacing:-.03em;margin:0 0 8px}
+.h p{color:#6F6F6F;font-size:17px;margin:0}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:24px;width:100%;max-width:880px}
+@media(max-width:720px){.cards{grid-template-columns:1fr}}
+/* combined alert feed */
+.feed{width:100%;max-width:880px;margin-top:30px}
+.feed-h{display:flex;align-items:baseline;justify-content:space-between;margin:0 4px 12px}
+.feed-h h3{font-size:16px;font-weight:800;color:#0B1733;margin:0}
+.feed-h .n{font-size:13px;color:#6F6F6F;font-weight:600}
+.feed-card{background:#fff;border:1px solid #EAECF0;border-radius:18px;padding:10px 22px}
+.ha-item{border-bottom:1px solid #EAECF0}
+.ha-item:last-child{border-bottom:none}
+.ha-item summary{display:flex;align-items:center;gap:11px;padding:13px 0;cursor:pointer;
+ list-style:none;flex-wrap:wrap}
+.ha-item summary::-webkit-details-marker{display:none}
+.ha-dot{width:10px;height:10px;border-radius:50%;flex:none}
+.ha-dot.d-high{background:#D30B0B} .ha-dot.d-medium{background:#285FFF} .ha-dot.d-info{background:#A0A0A0}
+.ha-src{font-size:11px;font-weight:700;padding:3px 9px;border-radius:7px}
+.ha-src.s-macro{background:#ECE9FB;color:#4559DC}
+.ha-src.s-vector{background:#E8EEFF;color:#285FFF}
+.ha-head{flex:1;min-width:200px;font-weight:600;color:#0B1733;font-size:14px}
+.ha-when{font-size:12px;color:#A0A0A0;font-weight:600}
+.ha-detail{padding:0 0 13px 21px;font-size:13px;color:#6F6F6F;line-height:1.6}
+.ha-detail a{font-weight:700;white-space:nowrap}
+.ha-empty{padding:18px;text-align:center;color:#A0A0A0;font-size:14px}
+.c{background:#fff;border:1px solid #EAECF0;border-radius:20px;padding:30px;
+ text-decoration:none;color:inherit;transition:transform .15s,box-shadow .15s;display:block}
+.c:hover{transform:translateY(-3px);box-shadow:0 12px 30px rgba(16,24,64,.10);border-color:#B8C6FA}
+.c .ico{font-size:30px}
+.c h2{font-size:23px;font-weight:800;color:#0B1733;margin:14px 0 6px;letter-spacing:-.02em}
+.c p{color:#6F6F6F;font-size:14px;margin:0 0 18px;min-height:40px}
+.stat{display:inline-block;padding:6px 12px;border-radius:9px;background:#F7F8FA;
+ font-weight:700;font-size:13px;margin-right:8px}
+.stat.on{background:#E8EEFF;color:#285FFF} .stat.off{background:#FDEBEB;color:#D30B0B}
+.go{margin-top:18px;font-weight:700;color:#285FFF;font-size:14px}
+.foot{margin-top:40px;color:#A0A0A0;font-size:12px;text-align:center}
+</style></head><body>
+<div class="h"><h1>Market Intelligence</h1>
+<p>Two dashboards, one zero-cost data engine.</p></div>
+<div class="cards">
+  <a class="c" href="macro.html">
+    <div class="ico">🌍</div>
+    <h2>Macro Vector</h2>
+    <p>Regime, liquidity &amp; sector-flow read across the global business cycle.</p>
+    <span class="stat">Goldilocks</span>
+    <div class="go">Open Macro Vector →</div>
+  </a>
+  <a class="c" href="vector.html">
+    <div class="ico">₿</div>
+    <h2>Bitcoin Vector</h2>
+    <p>Risk regime, momentum, structure &amp; backtested allocation for Bitcoin.</p>
+    <span class="stat off">Risk OFF · 41</span>
+    <span class="stat">Momentum -1.0</span>
+    <div class="go">Open Bitcoin Vector →</div>
+  </a>
 </div>
-<script>
-  // keep tooltips on-screen: open downward near the top, and anchor to the
-  // nearest side when close to the left/right viewport edges
-  document.addEventListener('mouseover', function (e) {
-    var h = e.target.closest('.help');
-    if (!h) return;
-    var r = h.getBoundingClientRect();
-    h.classList.toggle('below', r.top < 330);
-    var tip = h.querySelector('.tip');
-    var half = ((tip && tip.offsetWidth) || 290) / 2 + 16;
-    h.classList.remove('edge-right', 'edge-left');
-    if (r.left + r.width / 2 + half > window.innerWidth) h.classList.add('edge-right');
-    else if (r.left + r.width / 2 - half < 0) h.classList.add('edge-left');
-  });
-</script>
-<script src="theme.js"></script>
-</body>
-</html>
+<div class="feed">
+  <div class="feed-h"><h3>Latest Alerts</h3>
+    <span class="n">12 major · from both feeds · <a href="vector.html#timeline">full Vector timeline →</a></span></div>
+  <div class="feed-card"><details class="ha-item">
+  <summary>
+    <span class="ha-dot d-medium"></span>
+    <span class="ha-src s-macro">Macro Vector</span>
+    <span class="ha-head">Net liquidity 4-week RoC flipped negative (contracting): +7bn -> -0bn</span>
+    <span class="ha-when">Jun 11</span>
+  </summary>
+  <div class="ha-detail">Net liquidity 4-week RoC flipped negative (contracting): +7bn -> -0bn <a href="macro.html">Open →</a></div>
+</details>
+<details class="ha-item">
+  <summary>
+    <span class="ha-dot d-medium"></span>
+    <span class="ha-src s-macro">Macro Vector</span>
+    <span class="ha-head">GEX: net GEX changed sign (net +19bn, spot vs flip -8.4%)</span>
+    <span class="ha-when">Jun 11</span>
+  </summary>
+  <div class="ha-detail">GEX: net GEX changed sign (net +19bn, spot vs flip -8.4%) <a href="macro.html">Open →</a></div>
+</details>
+<details class="ha-item">
+  <summary>
+    <span class="ha-dot d-high"></span>
+    <span class="ha-src s-vector">Bitcoin Vector</span>
+    <span class="ha-head">Structure Shift: Bearish trigger</span>
+    <span class="ha-when">May 30 · 00:00 UTC</span>
+  </summary>
+  <div class="ha-detail">Structure oscillator now -0.91 (constructive → broken). <a href="vector.html#structure">Open →</a></div>
+</details>
+<details class="ha-item">
+  <summary>
+    <span class="ha-dot d-high"></span>
+    <span class="ha-src s-vector">Bitcoin Vector</span>
+    <span class="ha-head">Momentum turned Bearish</span>
+    <span class="ha-when">May 25 · 00:00 UTC</span>
+  </summary>
+  <div class="ha-detail">Momentum score -0.41 (neutral → bear); ±0.5 is the trigger band. <a href="vector.html#momentum">Open →</a></div>
+</details>
+<details class="ha-item">
+  <summary>
+    <span class="ha-dot d-medium"></span>
+    <span class="ha-src s-vector">Bitcoin Vector</span>
+    <span class="ha-head">Fundamentals turned negative</span>
+    <span class="ha-when">May 25 · 00:00 UTC</span>
+  </summary>
+  <div class="ha-detail">BFI entered the negative zone (40/60 bands); now 39. <a href="vector.html#bfi">Open →</a></div>
+</details>
+<details class="ha-item">
+  <summary>
+    <span class="ha-dot d-medium"></span>
+    <span class="ha-src s-vector">Bitcoin Vector</span>
+    <span class="ha-head">Allocation changed to 0% BTC</span>
+    <span class="ha-when">May 19 · 00:00 UTC</span>
+  </summary>
+  <div class="ha-detail">Optimal strategy moved 50% → 0% BTC (momentum × risk grid). <a href="vector.html#allocation">Open →</a></div>
+</details>
+<details class="ha-item">
+  <summary>
+    <span class="ha-dot d-high"></span>
+    <span class="ha-src s-vector">Bitcoin Vector</span>
+    <span class="ha-head">Risk Off Signal changed to: High Risk</span>
+    <span class="ha-when">May 18 · 00:00 UTC</span>
+  </summary>
+  <div class="ha-detail">Risk Index crossed the 25 threshold to 29 (rising). BTC $76,944. <a href="vector.html#risk">Open →</a></div>
+</details>
+<details class="ha-item">
+  <summary>
+    <span class="ha-dot d-medium"></span>
+    <span class="ha-src s-vector">Bitcoin Vector</span>
+    <span class="ha-head">Momentum cooled to neutral</span>
+    <span class="ha-when">May 18 · 00:00 UTC</span>
+  </summary>
+  <div class="ha-detail">Momentum score -0.05 (bull → neutral); ±0.5 is the trigger band. <a href="vector.html#momentum">Open →</a></div>
+</details>
+<details class="ha-item">
+  <summary>
+    <span class="ha-dot d-medium"></span>
+    <span class="ha-src s-vector">Bitcoin Vector</span>
+    <span class="ha-head">Allocation changed to 50% BTC</span>
+    <span class="ha-when">May 14 · 00:00 UTC</span>
+  </summary>
+  <div class="ha-detail">Optimal strategy moved 100% → 50% BTC (momentum × risk grid). <a href="vector.html#allocation">Open →</a></div>
+</details>
+<details class="ha-item">
+  <summary>
+    <span class="ha-dot d-medium"></span>
+    <span class="ha-src s-vector">Bitcoin Vector</span>
+    <span class="ha-head">Market mode changed to Tactical</span>
+    <span class="ha-when">May 09 · 00:00 UTC</span>
+  </summary>
+  <div class="ha-detail">Trend efficiency shifted the regime Strategic → Tactical. <a href="vector.html#allocation">Open →</a></div>
+</details>
+<details class="ha-item">
+  <summary>
+    <span class="ha-dot d-high"></span>
+    <span class="ha-src s-vector">Bitcoin Vector</span>
+    <span class="ha-head">Momentum turned Bullish</span>
+    <span class="ha-when">May 07 · 00:00 UTC</span>
+  </summary>
+  <div class="ha-detail">Momentum score +0.71 (neutral → bull); ±0.5 is the trigger band. <a href="vector.html#momentum">Open →</a></div>
+</details>
+<details class="ha-item">
+  <summary>
+    <span class="ha-dot d-medium"></span>
+    <span class="ha-src s-vector">Bitcoin Vector</span>
+    <span class="ha-head">Allocation changed to 100% BTC</span>
+    <span class="ha-when">May 06 · 00:00 UTC</span>
+  </summary>
+  <div class="ha-detail">Optimal strategy moved 50% → 100% BTC (momentum × risk grid). <a href="vector.html#allocation">Open →</a></div>
+</details></div>
+</div>
+<div class="foot">Built 2026-06-13 07:17 UTC · mechanical, backtested, free public data · not investment advice</div>
+</body></html>
