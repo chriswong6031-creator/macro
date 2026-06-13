@@ -183,9 +183,14 @@ html body .prob .pc { font-size: 18px; font-weight: 700; }
    by the html[data-theme] / html[data-lang] attributes (theme.js just flips
    those), so no JS rewrites their markup. The legacy .theme-btn / .lang-btn
    remain for pages we are NOT restyling (Bitcoin Vector, hub, China). */
-.site-nav { display: flex; align-items: center; gap: 10px; margin: 0 0 16px;
-  flex-wrap: wrap; }
-.site-nav .nav-links { display: flex; align-items: center; gap: 2px; flex: none; }
+/* 2-column grid so the controls (theme + language toggles) sit in a fixed
+   right-hand column that NEVER moves — the links wrap inside the left column and
+   the search drops to a full-width row below, so switching language (which
+   changes link-text widths) can't shift the toggles around. */
+.site-nav { display: grid; grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center; column-gap: 12px; row-gap: 9px; margin: 0 0 16px; }
+.site-nav .nav-links { grid-column: 1; grid-row: 1; display: flex; flex-wrap: wrap;
+  align-items: center; gap: 3px; min-width: 0; }
 .site-nav a.nav-link { padding: 7px 11px; border-radius: 9px; font-size: 13.5px;
   font-weight: 500; color: var(--muted); text-decoration: none; white-space: nowrap;
   transition: color .18s, background .18s; }
@@ -193,7 +198,7 @@ html body .prob .pc { font-size: 18px; font-weight: 700; }
   background: var(--panel2); }
 
 /* global stock search */
-.nav-search { position: relative; flex: 1 1 280px; min-width: 150px; max-width: 480px; }
+.nav-search { grid-column: 1 / -1; grid-row: 2; position: relative; min-width: 0; max-width: 480px; }
 .nav-search .mag { position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
   font-size: 12px; opacity: .65; pointer-events: none; }
 .nav-search input { width: 100%; box-sizing: border-box; padding: 8px 12px 8px 32px;
@@ -214,14 +219,20 @@ html body .prob .pc { font-size: 18px; font-weight: 700; }
   white-space: nowrap; }
 .nav-sugg .empty { padding: 11px 13px; color: var(--muted); font-size: 12.5px; }
 
-.site-nav .nav-ctrls { display: flex; align-items: center; gap: 10px; flex: none; }
+.site-nav .nav-ctrls { grid-column: 2; grid-row: 1; justify-self: end; align-self: start;
+  margin-top: 2px; display: flex; align-items: center; gap: 10px; }
 
 /* animated dark / light switch — slides on html[data-theme] */
 .theme-switch { width: 56px; height: 27px; border-radius: 999px; background: var(--panel2);
   border: 1px solid var(--line); position: relative; cursor: pointer; padding: 0; flex: none; }
 .theme-switch .ic { position: absolute; top: 50%; transform: translateY(-50%); font-size: 10.5px;
   opacity: .5; line-height: 1; }
-.theme-switch .ic.sun { left: 8px; } .theme-switch .ic.moon { right: 8px; }
+/* Place each static icon UNDER where the knob rests for its mode: the knob sits
+   left in dark (shows 🌙) and slides right in light (shows ☀️). So the moon goes
+   left and the sun goes right — the knob then covers the icon it duplicates,
+   leaving the OTHER icon visible. (Previously both were on the wrong side, so the
+   knob's ☀️ + the static ☀️ showed two suns in light mode.) */
+.theme-switch .ic.sun { right: 8px; } .theme-switch .ic.moon { left: 8px; }
 .theme-switch .knob { position: absolute; top: 2px; left: 2px; width: 22px; height: 22px;
   border-radius: 50%; background: #e8c15a; display: flex; align-items: center; justify-content: center;
   font-size: 11px; box-shadow: 0 2px 5px rgba(0,0,0,.3);
@@ -243,4 +254,17 @@ html[data-lang="zh"] .lang-toggle .pill { transform: translateX(100%); }
 html:not([data-lang="zh"]) .lang-toggle .en-opt { color: #fff; }
 html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
 
-@media (max-width: 760px) { .nav-search { order: 9; flex-basis: 100%; max-width: none; } }
+/* mobile: full-width search, and tighter links so the wrapped menu stays compact
+   (controls stay pinned in their own grid column regardless) */
+@media (max-width: 760px) { .nav-search { max-width: none; } }
+@media (max-width: 560px) {
+  /* one column: toggles get their own top-right row, the menu links wrap across
+     the FULL width below (instead of being squeezed beside the toggles), then
+     the search — so links stay readable and the toggles never float mid-list. */
+  .site-nav { grid-template-columns: 1fr; column-gap: 8px; row-gap: 8px; }
+  .site-nav .nav-ctrls { grid-column: 1; grid-row: 1; margin-top: 0; }
+  .site-nav .nav-links { grid-column: 1; grid-row: 2; }
+  .nav-search { grid-column: 1; grid-row: 3; }
+  .site-nav a.nav-link { padding: 6px 8px; font-size: 12.5px; }
+  .site-nav .nav-ctrls { gap: 7px; }
+}
