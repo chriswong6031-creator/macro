@@ -53,6 +53,14 @@ DATACENTER = {
 ALIASES = {"lpr": "rates"}
 SHIBOR_TENORS = {"3月(3M)": "rate_3m", "1年(1Y)": "rate_1y", "隔夜(O/N)": "rate_on"}
 
+# Stock Connect (沪深港通) daily flows — Eastmoney datacenter history report. Each row is
+# one trading day for a "combined" leg (MUTUAL_TYPE 006=southbound, 005=northbound).
+# NET/DEAL/BUY/SELL fields are 百万元 (1e6 RMB) -> /1e2 = 亿元; HOLD_MARKET_CAP is raw RMB
+# -> /1e8 = 亿元. Downstream uses (z-scores, cumulative sums) are scale-invariant, but we
+# normalise to 亿元 so the stored series is human-meaningful.
+CONNECT_REPORT = "RPT_MUTUAL_DEAL_HISTORY"
+CONNECT_FIELDS = {"net": "NET_DEAL_AMT", "turnover": "DEAL_AMT", "hold": "HOLD_MARKET_CAP"}
+
 
 class ChinaMacroAdapter(Adapter):
     name = "china_macro"
