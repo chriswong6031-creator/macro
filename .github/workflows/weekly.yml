@@ -33,6 +33,8 @@ jobs:
           python -m engine.run
           python -m scripts.build_site
           python -m scripts.daily_brief
+          python -m scripts.calibrate_vector   # weekly: refresh vector forward-return verdicts + backtests
+          python -m scripts.build_vector       # after build_site: macro->macro.html, hub->index.html
       - name: commit
         run: |
           git config user.name "dashboard-bot"

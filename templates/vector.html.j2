@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bitcoin Vector — {{ as_of }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+<style>
+:root{
+  --blue:{{C.blue}}; --indigo:{{C.indigo}}; --r1:{{C.r1}}; --r2:{{C.r2}}; --r3:{{C.r3}};
+  --r4:{{C.r4}}; --r5:{{C.r5}}; --ink:{{C.ink}}; --text:{{C.text}}; --muted:{{C.muted}};
+  --faint:{{C.faint}}; --red:{{C.red}}; --redfill:{{C.redfill}}; --amber:{{C.amber}};
+  --grid:{{C.grid}}; --card:{{C.card}}; --bg:{{C.bg}};
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;
+  font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:var(--blue);text-decoration:none}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
+/* top bar */
+.topbar{display:flex;align-items:center;justify-content:space-between;
+  padding:18px 0 14px;border-bottom:1px solid var(--grid);margin-bottom:24px;
+  position:sticky;top:0;background:var(--bg);z-index:20}
+.brand{font-weight:800;font-size:20px;color:var(--ink);letter-spacing:-.02em}
+.brand .gn{color:var(--blue)}
+.nav a{margin-left:14px;font-weight:600;font-size:14px;color:var(--muted)}
+.nav a:hover{color:var(--blue)}
+.nav a.active{color:var(--ink)}
+/* layout */
+.grid{display:grid;gap:18px}
+.cols-2{grid-template-columns:1.15fr .85fr}
+.cols-3{grid-template-columns:repeat(3,1fr)}
+.cols-4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:900px){.cols-2,.cols-3,.cols-4{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:22px}
+.card h2{margin:0 0 4px;font-size:13px;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.04em}
+.card h3{margin:0 0 14px;font-size:18px;font-weight:700;color:var(--ink)}
+.sub{color:var(--muted);font-size:13px}
+.mut{color:var(--muted)} .faint{color:var(--faint)}
+.section-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.05em;margin:30px 4px 12px}
+/* hero risk headline */
+.hero-state{font-size:64px;font-weight:800;color:var(--ink);line-height:1;letter-spacing:-.03em}
+.hero-state .on{color:var(--blue)} .hero-state .off{color:var(--r3)}
+.hero-dot{display:inline-block;width:18px;height:18px;border-radius:50%;
+  vertical-align:middle;margin-right:14px}
+.dot-on{background:var(--blue)} .dot-off{background:var(--r3)}
+.hero-meta{margin-top:10px;font-size:16px}
+.pill-price{font-weight:700;color:var(--ink)}
+.up{color:var(--blue)} .down{color:var(--r3)}
+/* gradient slider gauge */
+.slider{margin:18px 0 6px}
+.slider .track{position:relative;height:8px;border-radius:6px;
+  background:linear-gradient(90deg,var(--r1),var(--r2),var(--r4),var(--r5))}
+.slider .knob{position:absolute;top:50%;width:18px;height:18px;border-radius:50%;
+  background:#fff;border:3px solid var(--blue);transform:translate(-50%,-50%);box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.slider .labels{display:flex;justify-content:space-between;margin-top:8px;
+  font-size:12px;color:var(--muted);font-weight:600}
+.slider .labels span.cur{color:var(--ink)}
+/* small mini-gauge */
+.mini{margin-top:4px}
+.mini .bar{height:6px;border-radius:4px;background:var(--grid);position:relative;margin:6px 0}
+.mini .fill{position:absolute;height:100%;border-radius:4px;background:var(--blue)}
+.mini .lab{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.metric-row{display:flex;gap:0;margin-top:18px;border-top:1px solid var(--grid);padding-top:16px}
+.metric-row .m{flex:1;text-align:center}
+.metric-row .m .k{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+.metric-row .m .v{font-size:18px;font-weight:700;color:var(--ink);margin-top:2px}
+/* allocation bar */
+.allocbar{height:46px;border-radius:12px;overflow:hidden;display:flex;font-weight:700;color:#fff;margin-top:6px}
+.allocbar .btc{background:linear-gradient(90deg,var(--r4),var(--blue));display:flex;align-items:center;justify-content:center}
+.allocbar .cash{background:linear-gradient(90deg,#cfd4dc,#9aa4b2);display:flex;align-items:center;justify-content:center;color:#fff}
+/* chips */
+.chip{display:inline-block;padding:6px 14px;border-radius:10px;font-weight:700;font-size:14px}
+.chip-bull{background:var(--indigo);color:#fff} .chip-bear{background:var(--r2);color:#fff}
+.chip-ghost{background:var(--grid);color:var(--muted)}
+.chip-strategic{background:var(--blue);color:#fff} .chip-tactical{background:var(--redfill);color:var(--red)}
+/* probability bar */
+.prob{display:flex;align-items:center;gap:10px;margin:8px 0}
+.prob .lab{width:54px} .prob .track{flex:1;height:10px;border-radius:6px;background:var(--grid);overflow:hidden}
+.prob .fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--r3),var(--blue))}
+.prob .fill.bear{background:linear-gradient(90deg,var(--r1),var(--r3))}
+.prob .pct{width:42px;text-align:right;font-weight:700;color:var(--ink)}
+/* conviction dots */
+.dots{display:inline-flex;gap:6px}
+.dots i{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--r2);display:inline-block}
+.dots i.on{background:var(--blue);border-color:var(--blue)}
+.dots i.on.bear{background:var(--r2);border-color:var(--r2)}
+/* cross-asset table */
+.catbl{width:100%;border-collapse:collapse}
+.catbl td{padding:9px 4px;border-bottom:1px solid var(--grid);font-size:14px}
+.catbl td.a{font-weight:700;color:var(--ink)} .catbl td.r{text-align:right}
+.catbl tr:last-child td{border-bottom:none}
+.cat-h{font-weight:700;color:var(--ink);margin:2px 0 4px;font-size:15px}
+/* scorecard */
+.score{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.score .s{background:var(--bg);border-radius:10px;padding:12px;text-align:center}
+.score .s .k{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase}
+.score .s .v{font-size:20px;font-weight:800;color:var(--ink)}
+.score .s .h{font-size:11px;color:var(--faint);margin-top:2px}
+.variant-tabs{display:flex;gap:8px;margin-bottom:6px;flex-wrap:wrap}
+.variant-tabs .t{padding:6px 14px;border-radius:9px;background:var(--grid);color:var(--muted);
+  font-weight:700;font-size:13px;cursor:pointer;border:none}
+.variant-tabs .t.active{background:var(--blue);color:#fff}
+/* badges / verdict */
+.verdict{display:inline-block;padding:3px 9px;border-radius:7px;font-size:12px;font-weight:700}
+.v-conf{background:#E3F5E9;color:#1a7f43} .v-dir{background:#FFF2D9;color:#9a6a00}
+.v-ctx{background:var(--grid);color:var(--muted)}
+.tip{border-bottom:1px dashed var(--faint);cursor:help}
+.foot{margin-top:34px;padding-top:18px;border-top:1px solid var(--grid);
+  font-size:12px;color:var(--faint);line-height:1.7}
+.scn-line{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--grid);font-size:14px}
+.scn-line:last-child{border:none}
+.big{font-size:30px;font-weight:800;color:var(--ink);letter-spacing:-.02em}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;padding-top:0;padding-bottom:0;border:none;margin:0 auto">
+    <div class="brand"><span class="gn">●</span> Bitcoin <span style="color:var(--blue)">Vector</span></div>
+    <div class="nav">
+      <a href="index.html">Home</a>
+      <a href="macro.html">Macro</a>
+      <a class="active" href="vector.html">Bitcoin Vector</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- ===================== MARKET STATE HERO ===================== -->
+  <div class="grid cols-2">
+    <div class="card">
+      <h2>Market State · Long term</h2>
+      <div class="hero-state">
+        <span class="hero-dot {{ 'dot-on' if risk_on else 'dot-off' }}"></span>Risk
+        <span class="{{ 'on' if risk_on else 'off' }}">{{ risk_word }}</span>
+      </div>
+      <div class="hero-meta">
+        <span class="{{ 'up' if risk_on else 'down' }}">Risk Index {{ risk_index }}</span>
+        · <b>{{ risk_label }}</b>
+        · <span class="tip" title="Momentum vote-ensemble in [-1,+1]; ±0.5 = trigger">Momentum {{ momentum }} ({{ momentum_state }})</span>
+      </div>
+
+      <!-- cycle slider -->
+      <div class="slider">
+        <div class="track"><div class="knob" style="left:{{ cycle_pos }}%"></div></div>
+        <div class="labels">
+          {% for s in ['Defensive','Fragile','Recovery','Expansion'] %}
+          <span class="{{ 'cur' if s==cycle_stage else '' }}">{{ s }}</span>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- momentum / volatility / flow -->
+      <div class="metric-row">
+        <div class="m"><div class="k">Momentum</div><div class="v">{{ mom_strength }}</div></div>
+        <div class="m"><div class="k">Volatility</div><div class="v">{{ vol_state }}</div>
+          <div class="sub">{{ vol_side }}</div></div>
+        <div class="m"><div class="k">Flow</div><div class="v">{{ flow_state }}</div></div>
+      </div>
+    </div>
+
+    <div class="grid" style="gap:18px">
+      <!-- allocation -->
+      <div class="card">
+        <h2>BTC Allocation · Optimal strategy</h2>
+        <div class="allocbar">
+          {% if alloc_pct > 0 %}<div class="btc" style="width:{{ alloc_pct }}%">{{ alloc_pct }}% BTC</div>{% endif %}
+          {% if alloc_pct < 100 %}<div class="cash" style="width:{{ 100-alloc_pct }}%">{{ 100-alloc_pct }}% Cash</div>{% endif %}
+        </div>
+        <div class="sub" style="margin-top:10px">Market mode:
+          <span class="chip {{ 'chip-strategic' if market_mode=='Strategic' else 'chip-tactical' }}">{{ market_mode }}</span>
+          · BTC vs Alts leader: <b>{{ alt_leader }}</b></div>
+      </div>
+
+      <!-- mid-term environment -->
+      <div class="card">
+        <h2>Mid term · Environment</h2>
+        <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+          <div>
+            <div class="sub">Now</div>
+            <span class="chip {{ 'chip-bull' if env.now=='bull' else ('chip-bear' if env.now=='bear' else 'chip-ghost') }}">{{ env.now|capitalize }}</span>
+          </div>
+          <div style="flex:1;min-width:160px">
+            <div class="sub">Probability next 7 days</div>
+            {% if env.p_bull_7d is not none %}
+            <div class="prob"><span class="lab"><span class="chip chip-bear" style="padding:2px 8px">Bear</span></span>
+              <div class="track"><div class="fill bear" style="width:{{ env.p_bear_7d }}%"></div></div>
+              <span class="pct">{{ env.p_bear_7d }}%</span></div>
+            <div class="prob"><span class="lab"><span class="chip chip-bull" style="padding:2px 8px">Bull</span></span>
+              <div class="track"><div class="fill" style="width:{{ env.p_bull_7d }}%"></div></div>
+              <span class="pct">{{ env.p_bull_7d }}%</span></div>
+            {% else %}<div class="sub faint">insufficient base-rate sample</div>{% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== SHORT-TERM SCENARIOS ===================== -->
+  <div class="section-title">Short term · Scenarios (3 days)</div>
+  <div class="grid cols-2">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span class="chip chip-bear">Bear</span><span class="big">{{ scn.bear_prob }}%</span>
+      </div>
+      <div class="scn-line"><span class="mut">Target</span><b class="down">{{ scn.bear_target|money }} → {{ scn.bear_target2|money }}</b></div>
+      <div class="scn-line"><span class="mut">Invalidation</span><b>{{ scn.bear_invalid|money }}</b></div>
+      <div class="sub" style="margin-top:8px">A break of the 20-day swing low opens the lower ATR target.</div>
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span class="chip chip-bull">Bull</span><span class="big">{{ scn.bull_prob }}%</span>
+      </div>
+      <div class="scn-line"><span class="mut">Target</span><b class="up">{{ scn.bull_target|money }} → {{ scn.bull_target2|money }}</b></div>
+      <div class="scn-line"><span class="mut">Invalidation</span><b>{{ scn.bull_invalid|money }}</b></div>
+      <div class="sub" style="margin-top:8px">Reclaiming the upper ATR band targets the recent swing high.</div>
+    </div>
+  </div>
+
+  <!-- ===================== RISK INDEX vs STRATEGY ===================== -->
+  <div class="section-title">Risk Index vs Strategy · backtested</div>
+  <div class="card">
+    <h3>BTC price, Risk Index &amp; allocation</h3>
+    {{ charts.risk_strategy|safe }}
+    <div class="variant-tabs" style="margin-top:14px">
+      {% for v in ['conservative','moderate','aggressive','optimal'] %}
+      <span class="t {{ 'active' if v=='optimal' else '' }}">{{ v|capitalize }}</span>{% endfor %}
+    </div>
+    <div class="score">
+      <div class="s"><div class="k">CAGR</div><div class="v">{{ cards.optimal.cagr }}%</div><div class="h">HODL {{ cards.optimal.hodl_cagr }}%</div></div>
+      <div class="s"><div class="k">Sharpe</div><div class="v">{{ cards.optimal.sharpe }}</div><div class="h">HODL {{ cards.optimal.hodl_sharpe }}</div></div>
+      <div class="s"><div class="k">Max Drawdown</div><div class="v">{{ cards.optimal.maxdd }}%</div><div class="h">HODL {{ cards.optimal.hodl_maxdd }}%</div></div>
+      <div class="s"><div class="k">Time in market</div><div class="v">{{ cards.optimal.in_market }}%</div><div class="h">{{ cards.optimal.x_hodl }}× HODL</div></div>
+    </div>
+    <div class="sub" style="margin-top:10px">Long-only, acts next-day on the signal (no look-ahead). Every variant beats HODL's Sharpe ({{ cards.optimal.hodl_sharpe }}) and cuts max drawdown.</div>
+  </div>
+
+  <!-- ===================== MOMENTUM / STRUCTURE ===================== -->
+  <div class="section-title">Momentum &amp; Structure</div>
+  <div class="grid cols-2">
+    <div class="card"><h3>Momentum <span class="faint" style="font-size:14px">{{ momentum }}</span></h3>{{ charts.momentum|safe }}
+      <div class="sub">Bullish above +0.5, bearish below −0.5. State: <b>{{ momentum_state }}</b>.</div></div>
+    <div class="card"><h3>Structure Shift <span class="faint" style="font-size:14px">{{ structure }}</span></h3>{{ charts.structure|safe }}
+      <div class="sub">Constructive above +0.5, broken below −0.5. State: <b>{{ structure_state }}</b>.</div></div>
+  </div>
+
+  <!-- ===================== BFI ===================== -->
+  <div class="section-title">Bitcoin Fundamental Index</div>
+  <div class="grid cols-2">
+    <div class="card"><h3>BFI = Network Growth × Liquidity</h3>{{ charts.bfi|safe }}
+      <div class="sub">Positive above 60, negative below 40. Now: <b>{{ bfi }}</b> ({{ bfi_zone }}).</div></div>
+    <div class="card">
+      <h3>Fundamental gauges</h3>
+      {% for nm,val in [('Network Growth',network_growth),('Liquidity',liquidity),('BFI',bfi)] %}
+      <div class="mini"><div class="lab"><span>{{ nm }}</span><span><b>{{ val if val is not none else '—' }}</b></span></div>
+        <div class="bar"><div class="fill" style="width:{{ val if val is not none else 0 }}%"></div></div></div>
+      {% endfor %}
+      <div class="sub" style="margin-top:14px">Network Growth = active-address momentum percentile. Liquidity = realized-cap + stablecoin + ETF-flow composite. BFI never turned negative through the Feb–Mar 2025 stress in Swissblock's framing — a long-term anchor.</div>
+    </div>
+  </div>
+
+  <!-- ===================== CROSS-ASSET MAP ===================== -->
+  <div class="section-title">Cross-Asset Regime Map · Trend (3d) &amp; Conviction</div>
+  <div class="grid cols-3">
+    {% for g in cross %}
+    <div class="card">
+      <div class="cat-h">{{ g.group }}</div>
+      <table class="catbl">
+        {% for r in g.rows %}
+        <tr>
+          <td class="a">{{ r.label }}</td>
+          <td class="r"><span class="chip {{ 'chip-bull' if r.trend=='Bull' else ('chip-bear' if r.trend=='Bear' else 'chip-ghost') }}" style="padding:3px 10px">{{ r.trend }}</span></td>
+          <td class="r"><span class="dots">
+            {% for i in range(3) %}<i class="{{ 'on' if i<r.conv else '' }}{{ ' bear' if r.trend=='Bear' else '' }}"></i>{% endfor %}
+          </span></td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- ===================== CALIBRATION TRANSPARENCY ===================== -->
+  <div class="section-title">How much to trust this · measured records</div>
+  <div class="card">
+    <h3>Signal verdicts <span class="faint" style="font-size:13px;font-weight:600">forward outcomes, {{ calib.meta.span }}, split-half</span></h3>
+    <table class="catbl">
+      <tr><td class="a">Signal</td><td>Verdict</td><td class="a">What's measured</td></tr>
+      {% for sig,e in calib.signals.items() %}
+      <tr><td class="a">{{ sig }}</td>
+        <td><span class="verdict {{ 'v-conf' if 'CONFIRMED' in e.verdict else ('v-dir' if 'DIRECTIONAL' in e.verdict else 'v-ctx') }}">{{ e.verdict }}</span></td>
+        <td class="sub">forward-return monotonicity by band</td></tr>
+      {% endfor %}
+      {% if calib.risk_drawdown %}
+      <tr><td class="a">risk_index (as risk)</td>
+        <td><span class="verdict {{ 'v-conf' if 'CONFIRMED' in calib.risk_drawdown.verdict else 'v-dir' }}">{{ calib.risk_drawdown.verdict }}</span></td>
+        <td class="sub">forward 7-day drawdown by band (its real job)</td></tr>
+      {% endif %}
+    </table>
+    <div class="sub" style="margin-top:12px">House rule: a signal is labelled trustworthy only if its forward record holds in both halves of history. The Risk Index is judged on forward <b>drawdown</b> (not return) — at long horizons extreme risk marks capitulation, so it is contrarian there by design. Momentum on free data <b>leads</b> Swissblock's by ~2 weeks and matches their published <em>risk regime</em> 65–69% of days; their proprietary momentum uses entity-adjusted flows we can't replicate for free.</div>
+  </div>
+
+  <div class="foot">
+    Bitcoin Vector · built {{ built }} · data as of {{ as_of }}.
+    Independent reverse-engineering of Glassnode/Swissblock's Bitcoin Vector on free public data
+    (CoinMetrics, BGeometrics, Coinbase, Deribit, DefiLlama, mempool.space, Fear&amp;Greed).
+    Not investment advice. Signals are mechanical and backtested; every claim carries its measured record.
+    Limitations: <a href="https://github.com/chriswong6031-creator/macro/blob/main/LIMITATIONS.md">LIMITATIONS.md</a>.
+  </div>
+</div>
+</body>
+</html>

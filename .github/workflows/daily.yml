@@ -73,6 +73,12 @@ jobs:
         run: |
           python -m scripts.build_site
           python -m scripts.daily_brief
+      - name: build bitcoin vector + landing hub
+        # MUST run after build_site: relocates the macro dashboard to macro.html
+        # and installs the landing hub at index.html. Self-sufficient (recomputes
+        # signals); returns 0 even if the crypto engine errors, so it can never
+        # break the macro site.
+        run: python -m scripts.build_vector
       - name: notify (telegram/discord; skips when secrets absent)
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
