@@ -2,6 +2,312 @@
 
 Newest first. Each entry: what was decided, why, and what would change it.
 
+## 2026-06-13 — Vector dashboard DECOUPLED from i18n (now committable)
+
+**D-vec-I18N. The Vector page is made English-only & self-contained so it no
+longer depends on the (separately-owned, currently-reverted) i18n layer —
+resolving the hold-back in D-vec-GIT.** The page's only hard coupling was
+`engine.i18n` (the `td`/`tr` globals in build_vector + `T`/`TR` in `_hub_html`)
+plus a `chart_i18n.js` script. Fix: the template's `t(en, zh)` macro keeps its
+two-arg signature (so all ~140 call sites are untouched) but now emits only
+English; `td`/`tr` become identity globals; `_hub_html` defines local identity
+`T`/`TR`; dead bilingual scaffolding (lang toggle, `data-lang` JS, `.l-zh` CSS,
+chart_i18n.js) removed. **ACID-TESTED: `build_vector` builds with `engine/i18n.py`
+physically removed** — zero i18n dependency. Also surfaced Reserve Risk in the
+Valuation panel (TOP flag >0.02). The page renders English-only (verified in
+browser: 0 `.l-zh` spans, no visible Chinese, all 12 panels live). build_vector.py
+is co-owned (the macro session's hub China/Commodity cards live in `_hub_html`);
+those degrade gracefully (`present:False`, try/except, no untracked imports), so
+committing the file is CI-safe. What would change it: if the macro session
+re-adds a working i18n layer, the Vector page can opt back in (the `t` macro is
+the single re-point). STILL: the two agents share one tree on `main` — the
+build_vector.py edit race (the file changed mid-build between two runs) means
+this should still be serialized.
+
+## 2026-06-13 — China A-share dashboard (Section 3, full US-clone)
+
+**D71. China is a full clone of the macro dashboard on a two-plane free data
+stack, NOT a Vector-style allocation tool.** Plane A = yfinance over a `china:`
+config block (indices, 16 mainland sector ETFs, FX, 82 curated large-cap
+constituents) → group `china`/`china_breadth`. Plane B = Eastmoney datacenter
+JSON (PMI/CPI/PPI/M2/IndPro 2006-08→ monthly, SHIBOR, Stock-Connect) → group
+`china_macro`, archive-forever (scraper plane, circuit-breaker isolated per
+series). All live-verified — research/CHINA_DATA_AUDIT.md. Gotcha fixed:
+datacenter rows carry a RangeIndex that aligns to NaN against a DatetimeIndex —
+assign `.to_numpy()`. No free Chinese-ETF holdings feed → sector membership is
+CURATED in config (doubles as breadth universe + drill-down + search seed).
+
+**D72. The regime engine reuses the macro quad framework with China inputs.**
+engine/china_axes + china_regime + china_inputs + china_run mirror axes/regime/
+inputs/run; cycles.py + technicals.py reused AS-IS (the enriched bilingual
+ladder — entry/points/cycle_plain/why — is all produced inside ladder_state, so
+the sector + stock pages need no separate enrichment). Liquidity overlay = M2-YoY
+direction (PBoC stance); inflation axis is PPI-led (see D73).
+
+**D73. Axis weights tuned by split-half forward-return discrimination, like the
+US axes.** Per-component diagnostic (scripts/calibrate_china.py) found
+indpro_trend / smallcap_largecap / inflation_beta_basket / breadth_direction
+FLIP sign or show ~0 edge across sub-periods → demoted (0.25–0.5); ppi_direction
+is the strongest + most stable signal (eff −14.3/−2.1pp) → upweighted to 1.5;
+cpi/pmi_mfg/cyclical_defensive kept 1.0. Result: 3/4 quads now sign-stable both
+halves; only Stagflation flips (pre-2016 n=52 = the 2008 GFC, structural not
+noise). CALIBRATION (2008→2026, split-half): **Growth-scare = robust contrarian
+bottom** (+5–9%/63d, ~71% hit, both halves); Reflation = consistent mild fade;
+expanding-PBoC-liquidity = clean tailwind (+1.7 vs +0.6%/63d). Shipped as a
+risk-context map, not an allocation rule; the cycle ladder is a drawdown/
+structure tool (early-bull anticipatory layer has NEGATIVE edge, same as US).
+Ladder walk made `ladder_step`-configurable (10) for lean weekly CI.
+
+**D74. build_china is standalone + bilingual, runs after build_site / before
+build_vector** (which writes the hub last). It renders china.html + sector
+drill-downs (sectors/<FUND>.html) + china_history.html + china_stock.html
+(chinastockdata/, SSE:/SZSE: TradingView) + china_brief.html, returns 0 on ANY
+engine error (verified — can't break the macro/vector site). Hub: build_vector
+`_hub_html` gained a China card (gated on china.html present) + auto-fit grid
+(future-proofs the parallel Commodity card); both coexist. China sector pages
+use a decoupled china_sector.html.j2 clone (not a param of the parallel-owned
+sector.html.j2) to avoid contention.
+
+## 2026-06-13 — Vector Reserve Risk (deep cycle top/bottom signal)
+
+**D-vec-RR. Reserve Risk added from checkonchain (2010->), not bgeo.** bgeo's
+`reserve-risk` endpoint is only ~4y AND a different scale, so checkonchain is the
+single source (scripts/backfill_crypto.py `reserve_risk` spec, trace "Reserve
+Risk", stored data/checkonchain/reserve_risk.parquet). Used via bands/percentile
+(scale-invariant, so no splice); early-2010 `inf` cleaned on read in
+engine valuation(). CALIBRATION (deep, n=974 low band / n=48 top): **a powerful
+TOP detector — Reserve Risk >0.02 -> −42.6%/90d at 4.2% hit (96% of the time
+underwater 90d later)**; low (<0.0015) is the accumulation zone (+18.6%/90d).
+Latest 0.0011 = 16th pctile = accumulation. config
+`vector.valuation.reserve_risk_pctile_lookback_d`; emitted by valuation() as
+reserve_risk + reserve_risk_pctile. Refresh: run backfill_crypto periodically
+(checkonchain serves to today; not yet in a workflow). NOTE numbering: the
+shared DECISIONS log has a D70 collision (parallel macro session's holdings D70
+vs this session's on-chain D70) — cosmetic, both entries are complete.
+
+**D-vec-GIT. The parallel macro session's `git reset` orphaned this session's
+commit a807862; recovered.** Two agents share ONE working tree on `main`; the
+macro session reset `main` to a different lineage (107d12e, a revert of its own
+"i18n layer") which orphaned the Vector accuracy-upgrade commit. Recovered by
+re-committing from the (intact) working tree. The Vector dashboard SURFACING
+(build_vector.py vm + templates/vector.html.j2 panels) is intentionally HELD
+BACK from the commit because it now depends on the macro session's i18n layer
+(engine/i18n.py — untracked, reverted at HEAD); committing it would either
+re-introduce reverted code or commit a broken build. The substantive, i18n-
+independent engine/calibration/data work IS committed; the UI panels live in the
+working tree and build locally. What would change it: serialize the two agents,
+or decouple the Vector page from i18n.
+
+## 2026-06-13 — Sector-ETF holdings accumulation backbone (Phase 1)
+
+**D70. Weight-change anomaly detection = PRICE-DECOMPOSED residual, not raw Δweight.**
+New `engine/holdings_signals.py` splits each sector-SPDR top-10 holding's weight change
+between two daily snapshots into a price part and a residual:
+`w_price = w0·(1+r_stock)/(1+r_fund)`, `active_change = w1 − w_price` (percentage
+points). `r_fund` is the ETF's own close return; `r_stock` each holding's close return;
+both read from the existing `store` (yahoo/stocks). WHY decompose: the 11 sector SPDRs
+are PASSIVE, market-cap-weighted index funds — a holding's weight rises almost entirely
+because its price/market-cap rose vs peers, so a naive "weight went up" signal just
+re-detects price momentum (already covered by the cycle engine) and would mislead as
+"accumulation/conviction." The residual is the honest signal. HONEST CAVEAT carried
+through UI + ALERT_META + LIMITATIONS: on a passive fund the residual is index
+reconstitution / float-weight flow (forced index-fund buying), NOT a discretionary
+manager's conviction — that interpretation is reserved for the ACTIVE funds in the
+Phase-2 top-200 page, where the SAME `decompose` core becomes a true conviction signal
+(this is the design reason the engine is fund-agnostic). The math core `decompose` is a
+pure, unit-tested function; readers `weight_decomposition`/`accumulation_signals`/
+`all_accumulation_signals` sit on top. Confirmation layer reuses
+`engine.cycles.analyze` (the calibrated ladder) — `confirmed` = accumulating AND the
+stock is technically basing/turning up (BULLISH_STATES or urgency now/imminent/soon);
+volume confirmation deferred to Phase 2 (not stored — `StockPriceAdapter` keeps only
+close/high/low). New alert rule `sector_holdings_accumulation` (severity warn when
+confirmed, else info) + an "Accumulation Watch" dashboard panel (#accumulation) + a
+per-fund section on each sector drill-down. Config `holdings_signals` (lookback_days 5,
+active_change_pp 0.15, active_change_pct 8, alert_pp 0.25, min_price_history 60,
+panel_top_n 12) + `alerts.sector_holdings_accumulation` toggle. THRESHOLDS UNCALIBRATED
+— only one snapshot (2026-06-11) exists today; everything degrades gracefully
+(None/[]/"building" empty-state) until a second daily snapshot lands, after which
+thresholds should be tuned against a few weeks of residual history (consistent with the
+project's calibration discipline). Estimated $-flow = active_change × fund AUM (from
+data/flows) — labelled approximate. WHAT WOULD CHANGE IT: Phase-2 adds
+`collectors/etf_holdings.py` (generic multi-sponsor scraper, configurable top-200 list),
+a dedicated `etfs.html` page, and volume confirmation (extend StockPriceAdapter + one
+full-history backfill).
+
+## 2026-06-13 — Vector on-chain regime adds (CryptoQuant-style, measured)
+
+**D70. Coinbase Premium / SSR oscillator / MPI added and MEASURED — only
+Coinbase Premium survives, as a CONTRARIAN signal.** The three reproducible
+CryptoQuant-style demand metrics (their wallet-labeled Netflow/Whale-Ratio moat
+is NOT free, VECTOR_PROVIDER_RECON.md). Coinbase Premium = real Coinbase−Binance
+index via the bgeo `coinbase-premium-index` endpoint (2023→, seeded; config line
+re-applied after the parallel macro session reverted it — budget 12→13). SSR
+oscillator = −z-score of SSR (mcap/stablecoins, 2017→ deep); MPI = miner
+outflow-USD / 365d-MA (from bgeo miner_sell_pressure minerOutflowBtc, 2022→).
+engine `onchain_regime()`; config `vector.onchain`. CALIBRATION verdicts:
+**Coinbase Premium is CONTRARIAN at the extreme — premium >+1.5% (US FOMO) →
+−5.9%/90d at 36% hit = a measured TOP; 0 to +1.5% is the healthy-demand zone**
+(reframed shape:extremes; naive "higher=bullish" was INVERTED). **SSR oscillator
+= CONTEXT-ONLY** (no clean forward-return edge even at 2017→ depth). **MPI =
+INVERTED** on the 2022-26 sample (miner distribution coincided with continued
+upside — flagged loudly, not used as a bear signal). Surfaced on vector.html as
+an "On-Chain Demand" panel with the honest labels (premium = contrarian gauge
+w/ EUPHORIC-TOP flag >1.5%; SSR/MPI shown as context, not signals). House rule
+held: measure, demote failures to context, never overclaim. What would change
+it: more cycles of cohort data, or the paid CryptoQuant wallet-labeled flows.
+
+## 2026-06-13 — Vector Tier-3 macro liquidity / risk-appetite overlay
+
+**D68. Macro overlay added — and macro_score is a CONFIRMED signal (one of only
+three).** engine `macro_overlay()` rebuilds, in the Vector engine (standalone —
+reads the shared parquet store, doesn't import the macro engine), net liquidity
+(WALCL−RRP−TGA, D10 normalization) + its 13-week RATE OF CHANGE, plus real-yield
+change, HY-OAS percentile, VIX percentile and DXY momentum, blended (tanh/pctile
+→ [−1,+1], + = BTC tailwind) into `macro_score` + a `macro_regime`
+(tailwind/neutral/headwind) hysteresis. config `vector.macro`; btc_inputs loads
+walcl/rrp/tga/real_yield/hy_oas/vix/dxy. CALIBRATION (BTC 2014→, deep): **net_liq_roc
+monotone full sample** (liquidity expanding >5% → +47.7%/90d vs contracting <−2%
+→ +11.1%; post-half weak = QT-era noise); **macro_score CONFIRMED — robust in
+BOTH halves** (headwind <−0.3 → +1.4%/90d @41% hit; tailwind >+0.3 → +48.8%/90d
+@76% hit). Only risk_index + bfi + macro_score are confirmed-both-halves.
+
+**D69. Macro is kept STRATEGIC — NOT blended into the tactical allocation
+(gate failed).** A/B test of a macro-headwind cap (trim when macro_score<−0.3)
+REDUCED CAGR on all 4 variants with flat Sharpe/MaxDD — redundant with the
+(momentum, risk) timing + valuation overlay, and the headwind band isn't
+negative enough to sit out. So macro stays a standalone confirmed signal +
+strategic context panel on vector.html (net liquidity / real yield / HY-OAS /
+VIX-DXY + the measured headwind/tailwind record + TAILWIND/HEADWIND badge),
+deliberately separate from the tactical composite_state — different horizon
+(months vs days). What would change it: a longer-horizon allocation variant
+where the macro tide is the primary timing input.
+
+## 2026-06-13 — Vector leverage layer + Tier-1b blend + dashboard surfacing
+
+**D65. Leverage/liquidation layer rebuilt from the 15-exchange BGeometrics OI +
+aggregate funding we already store (what CoinGlass aggregates; their liquidation
+heatmap is MODELED, not raw — VECTOR_PROVIDER_RECON.md).** engine
+`leverage()`: oi_total (sum of a fixed core-venue basket — the bundled aggregate
+col goes NaN), oi_mcap_ratio/pctile (froth), oi_price_divergence (ΔOI−Δprice =
+crowding), funding_z, leverage_stress composite. Calibration (OI 2022→, funding
+2023→ ⇒ confirmation): **funding_z<−1 (crowded shorts) → +18%/90d @70% hit**;
+oi_price_divergence is directional (monotone −1 full+post — OI building faster
+than price drags returns); leverage_stress 50-75 = de-risk zone. config
+`vector.leverage`. A short-horizon RISK amplifier, not a trend signal.
+
+**D66. Tier-1b blend SHIPPED — gated on the allocation backtest, and it passed.**
+allocation() now takes the valuation frame and applies the calibration-confirmed
+deep-history tails as contrarian overrides: MVRV-Z<0 (or NUPL<0) = accumulation
+FLOOR (≥0.5), Mayer>2.4 = distribution CAP (≤0.5). Clean A/B (overlay off vs on,
+same code, 2015→): **CAGR and Sharpe up on ALL FOUR variants** (conservative
+47.7→51.4 CAGR/1.33→1.38 Sharpe; aggressive MaxDD −57→−48), cost = −1.4 MaxDD on
+conservative (deep-value zones can extend). Kept ON (`use_valuation_overlay`).
+Also added `composite_state()` — ACCUMULATE/DISTRIBUTE/RISK-OFF/RISK-ON/NEUTRAL,
+valuation+extremes winning over the Risk Index so the forward-return U-shape
+resolves into a direction; flips ~140× in 4288d (≈monthly, not whippy). What
+would change it: if a future variant's MaxDD degrades materially, gate per-variant.
+
+**D67. The new layers are surfaced on vector.html.** build_vector vm gained
+valuation/options/leverage sub-dicts + composite_state; templates/vector.html.j2
+got a hero Stance line and three bilingual panels (Valuation & Cycle · Options
+Structure · Leverage & Positioning) between BFI and Cross-Asset, each carrying
+its measured calibration record and honest depth caveat (options/leverage =
+confirmation-only; per-strike snapshot = context until history accrues).
+Verified in-browser (en+zh), no console errors. DVOL/skew/funding/OI all live.
+
+## 2026-06-13 — Bitcoin Vector Tier-2 options structure (Deribit)
+
+**D63. The options/funding layer is rebuilt from the FREE public Deribit API,
+not bought.** Provider recon (research/VECTOR_PROVIDER_RECON.md, 3 web agents):
+Laevitas/CoinGlass mostly repackage public data — Laevitas options analytics ≈
+a skin over Deribit (≈85% of BTC options OI; unauthenticated API), CoinGlass's
+signature liquidation heatmap is MODELED (OI × assumed leverage), not raw.
+CryptoQuant's wallet-labeled flows are the only real moat; none has a usable
+free API. Built `collectors/deribit.compute_structure()` — ONE
+`get_book_summary_by_currency` call → ATM IV term structure (7/30/90/180d), 25Δ
+skew/risk-reversal, put/call OI+vol ratios, max pain, gamma exposure, with
+Black-Scholes greeks computed locally (scipy-free, r=0, normal CDF via
+math.erf). Stored `deribit/options_structure` one row/day (accumulating —
+the chain has no free history, so the per-strike panel is CONTEXT until depth).
+GEX dealer-sign is the one modeling assumption (dealers long calls/short puts),
+labeled as such. config `deribit.{term_tenors_d,skew_target_d}` +
+`vector.options`.
+
+**D64. DVOL + VRP are the calibratable options signals (history 2021→); the
+structure snapshot is not yet.** engine `options()` adds dvol/dvol_pctile,
+realized_vol, vrp (= DVOL − realized vol). Calibration (shape:extremes,
+post-2021 ⇒ confirmation-only per house rule): **DVOL is a U-shaped risk gauge
+— the 70-90 band (elevated, not panic) is the danger zone, −12.6%/90d @18.7%
+hit (n=401); >90 panic bounces +15.8% @71.4%**. **VRP<−5 (realized overshooting
+implied) → +17.2%/90d @77.8% hit** = post-capitulation recovery tell. Both
+episode-autocorrelated and one-cycle deep → context, not anchors. What would
+change it: another cycle of history, or per-strike snapshot accrual enabling
+skew/term calibration.
+
+**D60. The signal is two-dimensional: TACTICAL (daily) × REGIME (higher TF) —
+expressed separately, never collapsed.** Diagnosis (user-reported, confirmed by
+running the engine on BTC/ETH/COIN): the old ladder collapsed a genuinely
+2-D read into one label, and a single noisy daily bit — `above_ma10` — swung the
+headline 125 pts (BTC = +45 "BOTTOMING·BUY SETUP" vs ETH = −80 "DOWNTREND·AVOID"
+while the two were structurally identical: both failed daily cycle, both failed
+investor cycle, both weekly MACD crossed down, both daily ~1 bar from an up-cross
+— BTC just happened to close a hair above its 10-day MA). Added
+`regime_state(cyc, mtf)` → bull/neutral/bear from weekly+3-day MACD + investor-
+cycle health + translation (score ≤ −1.5 bear, ≥ +1.5 bull). `weekly_ok` is now
+`regime == bull` (was a weak binary on weekly MACD sign). ladder output carries
+`regime`, `regime_line`, `summary_line` (short-term vs bigger-picture) + a
+duration/"failed N days ago" line. What would change it: real Swissblock series
+or a calibrated regime weighting.
+
+**D61. New calibrated state COUNTERTREND BOUNCE + failed-cycle hard veto.** A
+bullish daily setup (FRESH BUY / TURN SIGNALED) inside a BEAR regime — or with
+failed_cycle AND ic_failed regardless of regime — is re-labeled to a distinct
+state (score −25, action "HIGH-RISK · NIMBLE ONLY", tight-stop entry text), not
+a green buy. Made it a real LADDER state (internal key fixed, per D35 calibration
+discipline) so recalibrate() measures whether the bounce actually has forward-
+return edge — per the house rule that anticipation ≠ edge until measured. ~11%
+of the 533-name library lands here; bull/neutral setups (137 RALLY ON, 51 FRESH
+BUY, 93 TURN SIGNALED) are untouched (SPY = BOTTOMING in a MIXED regime stays a
+normal setup — the relabel is conditional on bear/hard-fail only).
+
+**D62. Per-asset-class cycle clock (crypto ≠ equity).** BTC trades 7d/wk with no
+gaps, so its daily cycle runs ~8–10 weeks (graddhy/thefinancialtap), not the
+36–42 trading-day equity band — applying the equity band made BTC read
+"stretched/bottoming" far too early (it showed dc_day 75 vs band 36–42).
+`CYCLE_PRESETS` keyed by `kind`: crypto = dc_band (56,70), ic (24,40), dc_early
+18, and 3-day bars resampled on `3D` CALENDAR days (equity `3B` business-day
+resample silently mishandles weekend crypto bars). `analyze(..., kind=)` threaded
+from build_stock_library (kind = crypto when ticker ends `-USD`). Trough geometry
+(window/gap) deliberately left shared so the change is isolated to labeling, not
+trough detection. What would change it: a proper crypto trough-window calibration.
+
+**D58. Tier-1 metrics are added as STANDALONE columns and MEASURED before any
+blend.** Diagnosis (research/VECTOR_ACCURACY_UPGRADE.md): the Vector had no
+valuation/cycle anchor — momentum & structure are 100% price-derived trend
+votes, which is exactly why they grade "DIRECTIONAL, one half weak" post-2021;
+and ~60% of collected calibration-grade series (MVRV, NUPL, hashrate,
+issuance, supply-in-profit, F&G…) never entered a calculation. Added
+engine/btc_signals.py `valuation()` (MVRV-Z on a rolling 4y std window for
+ETF-era responsiveness, NUPL, Mayer), `miner()` (hash ribbons + Puell),
+`cost_basis()` (STH realized-price level + ratio) and `market_extreme()`
+(capitulation/euphoria vote of NUPL/supply-in-profit/F&G/MVRV-Z). The existing
+momentum/risk/structure composites are left byte-for-byte unchanged so prior
+calibration stays comparable — blending the *confirmed* signals in is a gated
+follow-up, not this pass. config `vector.{valuation,miner,cost_basis,extreme}`.
+
+**D59. Valuation/miner metrics are U-SHAPED — judged on their TAILS, not
+monotone rank-trend.** The split-half calibration's monotone test mislabels a
+real top/bottom call as INVERTED (same reason the Risk Index is judged on
+drawdown, D43). Added an `_extremes_verdict` path (spec `shape: extremes`) that
+characterizes the low/high tail vs. the sample mean. Findings: **MVRV-Z <0 is
+the keeper — +40.5%/90d at 71.9% hit (n=356) vs. a 22.4% sample mean**, deepest
+history → the trustworthy deep-accumulation anchor. Mayer >2.4 is a genuine TOP
+flag (−13.9%/90d, 33.9% hit). NUPL<0 corroborates MVRV-Z (collinear, as
+predicted — pick ONE per axis when blending). Puell >4 is directionally right
+but n=23 (too thin to trust). Hash-ribbon CAPITULATION is CONTEXT-ONLY — the
+periods themselves don't carry higher avg forward return (the project's
+recurring "anticipation ≠ edge" result, honestly reproduced).
+
 ## 2026-06-14 (3rd pass, macro) — light-mode color fix
 
 **D-macro-A. Badges/pills/tags are tinted from ONE base color via `color-mix()`,
@@ -94,7 +400,10 @@ padding (max-width container) above 1100px.
 
 ## 2026-06-14 — Bitcoin Vector Phase 3 (alerts + timeline + home feed)
 
-**D49. The alert timeline is DERIVED, not a stateful append-log.**
+(Renumbered D54–D57 to deconflict from the macro session's parallel D49–D53 in
+this shared log — content unchanged.)
+
+**D54. The alert timeline is DERIVED, not a stateful append-log.**
 engine/btc_alerts.py recomputes the full event timeline deterministically from
 signal + hourly history each build (daily state changes + flash-crash state
 machine), so it's idempotent by construction — no double-fire risk. The only

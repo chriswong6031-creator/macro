@@ -245,7 +245,9 @@ def chart_bfi(df: pd.DataFrame, days: int = 365) -> str:
 HUB_MARKER = "<!-- bitcoin-vector-landing-hub -->"
 MACRO_TITLE_HINT = "Macro Regime Dashboard"
 VECTOR_NAV = ('<a class="navbtn" href="index.html">🏠 Home</a>\n      '
-              '<a class="navbtn" href="vector.html">₿ Bitcoin Vector</a>\n      ')
+              '<a class="navbtn" href="china.html">🇨🇳 China A-Shares</a>\n      '
+              '<a class="navbtn" href="vector.html">₿ Bitcoin Vector</a>\n      '
+              '<a class="navbtn" href="commodities.html">◆ Commodities</a>\n      ')
 
 
 def build_landing(site: Path, vm: dict) -> None:
@@ -261,7 +263,7 @@ def build_landing(site: Path, vm: dict) -> None:
         log.info("relocated macro dashboard -> macro.html")
 
     macro = _macro_state()
-    hub = _hub_html(vm, macro, home_alert_feed())
+    hub = _hub_html(vm, macro, home_alert_feed(), _china_state(), _commodities_state())
     idx.write_text(hub)
     log.info("wrote landing hub -> index.html")
 
@@ -274,6 +276,34 @@ def _macro_state() -> dict:
         return {"label": d.get("quad_name", "—"), "date": d.get("date", "")}
     except Exception:
         return {"label": "—", "date": ""}
+
+
+def _china_state() -> dict:
+    """China A-share regime for the hub card (written by build_china, which runs
+    before build_vector). `present` gates the card so the hub still works if the
+    China page wasn't built this run."""
+    site = config.ROOT / config.load()["storage"]["site_dir"]
+    try:
+        d = json.loads((config.data_dir() / "china_regime" / "latest.json").read_text())
+        return {"label": d.get("quad_name", "—"), "date": d.get("date", ""),
+                "present": (site / "china.html").exists()}
+    except Exception:
+        return {"label": "—", "date": "", "present": (site / "china.html").exists()}
+
+
+def _commodities_state() -> dict:
+    """Commodity-complex regime for the hub card (written by build_commodities,
+    which runs before build_vector). `present` gates the card so the hub still
+    works if the commodities page wasn't built this run."""
+    site = config.ROOT / config.load()["storage"]["site_dir"]
+    try:
+        d = json.loads((config.data_dir() / "commodity" / "latest.json").read_text())
+        return {"label": d.get("regime", "—"), "date": d.get("date", ""),
+                "favored": d.get("favored", []),
+                "present": (site / "commodities.html").exists()}
+    except Exception:
+        return {"label": "—", "date": "", "favored": [],
+                "present": (site / "commodities.html").exists()}
 
 
 MACRO_SEV = {"act": "high", "warn": "medium", "info": "info"}
@@ -291,15 +321,19 @@ def home_alert_feed() -> list[dict]:
     mp = Path(config.ROOT) / h["macro_feed"]
     try:
         mdf = pd.read_parquet(mp)
+        from engine.alerts import alert_view
         major = mdf[mdf["severity"].isin(h["macro_major_severities"])
                     & ~mdf["rule"].isin(h.get("macro_exclude_rules", []))]
         for _, r in major.iterrows():
+            v = alert_view(r["rule"], r["severity"], r["message"])
+            link = ("macro.html#" + v["anchor"]) if v["anchor"] else "macro.html"
             out.append({
                 "source": "macro", "source_label": h["macro_label"],
                 "ts": pd.Timestamp(r["date"]).isoformat(), "date_only": True,
                 "severity": MACRO_SEV.get(r["severity"], "info"),
-                "type": r["rule"], "headline": _short(r["message"]),
-                "detail": r["message"], "link": "macro.html",
+                "type": r["rule"], "headline": v["icon"] + " " + v["plain_en"],
+                "detail": r["message"], "what": v["what_en"], "link": link,
+                "cta": "Open scorecard →", "dedupe": r["message"],
             })
     except Exception as e:  # noqa: BLE001
         log.warning("home feed: macro alerts unavailable (%s)", e)
@@ -313,7 +347,9 @@ def home_alert_feed() -> list[dict]:
                     "source": "vector", "source_label": "Bitcoin Vector",
                     "ts": e["ts"], "date_only": False, "severity": e["severity"],
                     "type": e["type"], "headline": e["headline"],
-                    "detail": e["detail"], "link": "vector.html" + e.get("anchor", "#timeline"),
+                    "detail": e["detail"], "what": "",
+                    "link": "vector.html" + e.get("anchor", "#timeline"),
+                    "cta": "Open →", "dedupe": e["headline"],
                 })
     except Exception as e:  # noqa: BLE001
         log.warning("home feed: vector alerts unavailable (%s)", e)
@@ -325,16 +361,12 @@ def home_alert_feed() -> list[dict]:
     deduped = []
     for a in out:
         ts = pd.Timestamp(a["ts"])
-        key = a["headline"]
+        key = a.get("dedupe") or a["headline"]
         if key in seen and (seen[key] - ts) < win:
             continue
         seen[key] = ts
         deduped.append(a)
     return deduped[:h["max_items"]]
-
-
-def _short(msg: str, n: int = 72) -> str:
-    return msg if len(msg) <= n else msg[:n - 1].rsplit(" ", 1)[0] + "…"
 
 
 def _hub_alert_rows(alerts: list[dict]) -> str:
@@ -346,6 +378,8 @@ def _hub_alert_rows(alerts: list[dict]) -> str:
         ts = pd.Timestamp(a["ts"])
         when = ts.strftime("%b %d") if a["date_only"] else ts.strftime("%b %d · %H:%M UTC")
         src_cls = "s-macro" if a["source"] == "macro" else "s-vector"
+        what = f'<div class="ha-what">{a["what"]}</div>' if a.get("what") else ""
+        cta = a.get("cta", "Open →")
         rows.append(f"""<details class="ha-item">
   <summary>
     <span class="ha-dot d-{a['severity']}"></span>
@@ -353,15 +387,41 @@ def _hub_alert_rows(alerts: list[dict]) -> str:
     <span class="ha-head">{a['headline']}</span>
     <span class="ha-when">{when}</span>
   </summary>
-  <div class="ha-detail">{a['detail']} <a href="{a['link']}">Open →</a></div>
+  <div class="ha-detail">{a['detail']}{what}<a class="ha-open" href="{a['link']}">{cta}</a></div>
 </details>""")
     return "\n".join(rows)
 
 
-def _hub_html(vm: dict, macro: dict, alerts: list[dict]) -> str:
+def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = None,
+              commodities: dict | None = None) -> str:
+    # English-only, self-contained (no engine.i18n dependency): T/TR are identity.
+    def T(en, zh=""):
+        return en
+
+    def TR(en):
+        return en
     risk_cls = "on" if vm["risk_on"] else "off"
     macro_label = config.load()["home"]["alerts"]["macro_label"]
     n_major = len(alerts)
+    china = china or {"present": False}
+    china_card = ("" if not china.get("present") else f"""
+  <a class="c" href="china.html">
+    <div class="ico">\U0001F1E8\U0001F1F3</div>
+    <h2>{T('China A-Shares', '中国A股')}</h2>
+    <p>{T('Regime, sector rotation &amp; cycle read for the Mainland A-share market.', '中国A股市场的周期状态、板块轮动与周期解读。')}</p>
+    <span class="stat">{T(china['label'], TR(china['label']))}</span>
+    <div class="go">{T('Open China A-Shares →', '打开中国A股 →')}</div>
+  </a>""")
+    commodities = commodities or {"present": False}
+    fav = ", ".join(commodities.get("favored", []))
+    commodities_card = ("" if not commodities.get("present") else f"""
+  <a class="c" href="commodities.html">
+    <div class="ico">◆</div>
+    <h2>{T('Commodity Vector', '大宗商品向量')}</h2>
+    <p>{T('Regime, allocation &amp; shock-detection for gold, silver, oil &amp; copper.', '黄金、白银、原油与铜的周期、配置与冲击检测。')}</p>
+    <span class="stat">{T(commodities['label'], TR(commodities['label']))}{(' · ' + fav) if fav else ''}</span>
+    <div class="go">{T('Open Commodity Vector →', '打开大宗商品向量 →')}</div>
+  </a>""")
     return f"""{HUB_MARKER}
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -375,7 +435,7 @@ body{{margin:0;min-height:100vh;background:{C['bg']};color:{C['text']};
 .h{{text-align:center;margin-bottom:36px}}
 .h h1{{font-size:40px;font-weight:800;color:{C['ink']};letter-spacing:-.03em;margin:0 0 8px}}
 .h p{{color:{C['muted']};font-size:17px;margin:0}}
-.cards{{display:grid;grid-template-columns:1fr 1fr;gap:24px;width:100%;max-width:880px}}
+.cards{{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px;width:100%;max-width:1120px}}
 @media(max-width:720px){{.cards{{grid-template-columns:1fr}}}}
 /* combined alert feed */
 .feed{{width:100%;max-width:880px;margin-top:30px}}
@@ -395,8 +455,11 @@ body{{margin:0;min-height:100vh;background:{C['bg']};color:{C['text']};
 .ha-src.s-vector{{background:#E8EEFF;color:{C['blue']}}}
 .ha-head{{flex:1;min-width:200px;font-weight:600;color:{C['ink']};font-size:14px}}
 .ha-when{{font-size:12px;color:{C['faint']};font-weight:600}}
-.ha-detail{{padding:0 0 13px 21px;font-size:13px;color:{C['muted']};line-height:1.6}}
+.ha-detail{{padding:0 0 13px 21px;font-size:13px;color:{C['text']};line-height:1.6}}
 .ha-detail a{{font-weight:700;white-space:nowrap}}
+.ha-what{{margin:7px 0 9px;padding-top:8px;border-top:1px solid {C['grid']};
+ font-size:12.5px;color:{C['muted']};line-height:1.55}}
+.ha-open{{display:inline-block;color:{C['blue']};font-weight:700}}
 .ha-empty{{padding:18px;text-align:center;color:{C['faint']};font-size:14px}}
 .c{{background:#fff;border:1px solid {C['grid']};border-radius:20px;padding:30px;
  text-decoration:none;color:inherit;transition:transform .15s,box-shadow .15s;display:block}}
@@ -409,32 +472,41 @@ body{{margin:0;min-height:100vh;background:{C['bg']};color:{C['text']};
 .stat.on{{background:#E8EEFF;color:{C['blue']}}} .stat.off{{background:#FDEBEB;color:{C['red']}}}
 .go{{margin-top:18px;font-weight:700;color:{C['blue']};font-size:14px}}
 .foot{{margin-top:40px;color:{C['faint']};font-size:12px;text-align:center}}
+.site-footer{{width:100%;max-width:880px;margin:30px auto 0;padding-top:22px;
+ border-top:1px solid {C['grid']};text-align:center;line-height:1.6}}
+.site-footer .made{{display:block;font-size:13.5px;font-weight:700;color:{C['ink']};letter-spacing:.2px}}
+.site-footer .dev{{display:block;margin-top:1px;font-size:12px;color:{C['muted']}}}
 </style></head><body>
-<div class="h"><h1>Market Intelligence</h1>
-<p>Two dashboards, one zero-cost data engine.</p></div>
+<div class="h"><h1>{T('Market Intelligence', '市场情报')}</h1>
+<p>{T('Market regime dashboards, one zero-cost data engine.', '市场周期仪表盘，一套零成本数据引擎。')}</p></div>
 <div class="cards">
   <a class="c" href="macro.html">
     <div class="ico">\U0001F30D</div>
-    <h2>{macro_label}</h2>
-    <p>Regime, liquidity &amp; sector-flow read across the global business cycle.</p>
-    <span class="stat">{macro['label']}</span>
-    <div class="go">Open {macro_label} →</div>
-  </a>
+    <h2>{T(macro_label, TR(macro_label))}</h2>
+    <p>{T('Regime, liquidity &amp; sector-flow read across the global business cycle.', '纵观全球商业周期的市场状态、流动性与板块资金流向解读。')}</p>
+    <span class="stat">{T(macro['label'], TR(macro['label']))}</span>
+    <div class="go">{T(f"Open {macro_label} →", f"打开{TR(macro_label)} →")}</div>
+  </a>{china_card}
   <a class="c" href="vector.html">
     <div class="ico">₿</div>
-    <h2>Bitcoin Vector</h2>
-    <p>Risk regime, momentum, structure &amp; backtested allocation for Bitcoin.</p>
-    <span class="stat {risk_cls}">Risk {vm['risk_word']} · {vm['risk_index']}</span>
-    <span class="stat">Momentum {vm['momentum']}</span>
-    <div class="go">Open Bitcoin Vector →</div>
-  </a>
+    <h2>{T('Bitcoin Vector', '比特币向量')}</h2>
+    <p>{T('Risk regime, momentum, structure &amp; backtested allocation for Bitcoin.', '比特币的风险状态、动量、结构与经回测的仓位策略。')}</p>
+    <span class="stat {risk_cls}">{T('Risk', '风险')} {T(vm['risk_word'], TR(vm['risk_word']))} · {vm['risk_index']}</span>
+    <span class="stat">{T('Momentum', '动量')} {vm['momentum']}</span>
+    <div class="go">{T('Open Bitcoin Vector →', '打开比特币向量 →')}</div>
+  </a>{commodities_card}
 </div>
 <div class="feed">
-  <div class="feed-h"><h3>Latest Alerts</h3>
-    <span class="n">{n_major} major · from both feeds · <a href="vector.html#timeline">full Vector timeline →</a></span></div>
+  <div class="feed-h"><h3>{T('Latest Alerts', '最新警报')}</h3>
+    <span class="n">{n_major} {T('major · from both feeds ·', '条重要 · 来自两个数据源 ·')} <a href="vector.html#timeline">{T('full Vector timeline →', '完整向量时间线 →')}</a></span></div>
   <div class="feed-card">{_hub_alert_rows(alerts)}</div>
 </div>
-<div class="foot">Built {vm['built']} · mechanical, backtested, free public data · not investment advice</div>
+<div class="foot">{T('Built', '生成于')} {vm['built']} · {T('mechanical, backtested, free public data · not investment advice', '机械化 · 经回测 · 免费公开数据 · 非投资建议')}</div>
+<footer class="site-footer">
+  <span class="made">{T('Made with ❤️ in Canada', '用 ❤️ 在加拿大制作')}</span>
+  <span class="dev">{T('Developed by', '开发者')} Chris Wong</span>
+</footer>
+<script src="theme.js"></script>
 </body></html>"""
 
 
@@ -468,6 +540,11 @@ def _group_timeline(events: list[dict]) -> list[dict]:
         days.setdefault(day, []).append(e)
     return [{"day": d, "daylabel": evs[0]["daylabel"], "events": evs}
             for d, evs in sorted(days.items(), reverse=True)]
+
+
+def _r(v, n=2):
+    """Round a possibly-NaN/None scalar to n places, else None (template shows —)."""
+    return round(float(v), n) if v is not None and pd.notna(v) else None
 
 
 def main() -> int:
@@ -536,6 +613,61 @@ def main() -> int:
         "alt_leader": last.get("alt_cycle_leader", "BTC"),
         "market_mode": last["market_mode"],
         "alloc_pct": round(100 * last["alloc_optimal"]),
+        # ---- accuracy-upgrade layers (Tier 1/1b/2) ----
+        "composite_state": last.get("composite_state", "NEUTRAL"),
+        "valuation": {
+            "mvrv_z": _r(last.get("mvrv_z"), 2),
+            "mvrv_z_pctile": _r(last.get("mvrv_z_pctile"), 0),
+            "nupl": _r(last.get("nupl"), 2),
+            "mayer": _r(last.get("mayer"), 2),
+            "state": last.get("valuation_state"),
+            "extreme": last.get("market_extreme"),
+            "sth_cb_ratio": _r(100 * last["sth_cb_ratio"], 1) if pd.notna(last.get("sth_cb_ratio")) else None,
+            "sth_cost_basis": _r(last.get("sth_cost_basis"), 0),
+            "deep_value": bool(pd.notna(last.get("mvrv_z")) and last["mvrv_z"] < 0),
+            "overvalued": bool(pd.notna(last.get("mayer")) and last["mayer"] > 2.4),
+            "hash_ribbon": last.get("hash_ribbon"),
+            "puell": _r(last.get("puell"), 2),
+            "reserve_risk": _r(last.get("reserve_risk"), 5),
+            "reserve_risk_pctile": _r(last.get("reserve_risk_pctile"), 0),
+            "rr_top": bool(pd.notna(last.get("reserve_risk")) and last["reserve_risk"] > 0.02),
+        },
+        "options": {
+            "dvol": _r(last.get("dvol"), 1),
+            "dvol_pctile": _r(last.get("dvol_pctile"), 0),
+            "vrp": _r(last.get("vrp"), 1),
+            "skew_25d": _r(last.get("skew_25d"), 3),
+            "rr_25d": _r(last.get("rr_25d"), 1),
+            "term_slope": _r(last.get("term_slope_30_90"), 1),
+            "put_call": _r(last.get("put_call_oi_ratio"), 2),
+            "max_pain": _r(last.get("max_pain"), 0),
+            "atm_iv_30d": _r(last.get("atm_iv_30d"), 1),
+        },
+        "leverage": {
+            "oi_total": _r(last.get("oi_total_usd"), 0),
+            "oi_mcap_pctile": _r(last.get("oi_mcap_pctile"), 0),
+            "funding_annual": _r(last.get("funding_annual_pct"), 1),
+            "funding_z": _r(last.get("funding_z"), 1),
+            "oi_divergence": _r(100 * last["oi_price_divergence"], 1) if pd.notna(last.get("oi_price_divergence")) else None,
+            "stress": _r(last.get("leverage_stress"), 0),
+        },
+        "macro": {
+            "score": _r(last.get("macro_score"), 2),
+            "regime": last.get("macro_regime"),
+            "net_liq_bn": _r(last.get("net_liquidity_bn"), 0),
+            "net_liq_roc": _r(last.get("net_liq_roc"), 1),
+            "real_yield": _r(last.get("real_yield"), 2),
+            "hy_oas": _r(last.get("hy_oas"), 2),
+            "vix": _r(last.get("vix"), 1),
+            "dxy": _r(last.get("dxy"), 1),
+        },
+        "onchain": {
+            "premium": _r(last.get("coinbase_premium_ema"), 2),
+            "premium_hot": bool(pd.notna(last.get("coinbase_premium_ema")) and last["coinbase_premium_ema"] > 1.5),
+            "ssr": _r(last.get("ssr"), 1),
+            "ssr_osc": _r(last.get("ssr_oscillator"), 2),
+            "mpi": _r(last.get("mpi"), 2),
+        },
         "gauges": {
             "momentum": gauge_pos(last["momentum"], -1, 1),
             "risk": last["risk_index"],
@@ -560,6 +692,9 @@ def main() -> int:
 
     env = Environment(loader=FileSystemLoader(str(Path(__file__).resolve().parent.parent / "templates")),
                       autoescape=True)
+    # English-only, self-contained: the template's `td`/`tr` resolve to identity
+    # so the Vector page builds without the (separately-owned) i18n layer.
+    env.globals.update(td=lambda en: en, tr=lambda en: en)
     env.filters["money"] = lambda v: f"${v:,.0f}" if pd.notna(v) else "—"
     env.filters["money1"] = lambda v: f"${v/1000:,.1f}K" if pd.notna(v) else "—"
     html = env.get_template("vector.html.j2").render(**vm, C=C)
