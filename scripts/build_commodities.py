@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -91,6 +92,41 @@ TREND_INTERP = {
 def _html(fig: go.Figure) -> str:
     return fig.to_html(full_html=False, include_plotlyjs=False,
                        config={"displayModeBar": False, "responsive": True})
+
+
+# recent-disruptions tilt for the conviction engine's alerts factor (keyword-signed,
+# severity-weighted, recency-decayed) -> [-1, 1].
+_BULL_KW = ("(up)", "tailwind", "exogenous bid", "→ buy", "buy zone", "bottoming",
+            "low_risk", "low risk", "expansion", "intact", "confirmed", "silver cheap",
+            "widening", "accumulat", "turned tailwind", "rally")
+_BEAR_KW = ("(down)", "headwind", "exogenous pressure", "→ 0%", "high_risk", "high risk",
+            "topping", "rolling over", "broken", "silver rich", "narrowing", "→ sell",
+            "decline", "fragile", "washout", "crowded long")
+
+
+def _event_sign(e: dict) -> int:
+    h = (str(e.get("headline", "")) + " " + str(e.get("detail", ""))).lower()
+    pos = any(k in h for k in _BULL_KW)
+    neg = any(k in h for k in _BEAR_KW)
+    return 1 if (pos and not neg) else (-1 if (neg and not pos) else 0)
+
+
+def alert_tilt(events: list, asset: str, asof: pd.Timestamp, days: int = 30) -> float:
+    sev_w = {"high": 1.0, "medium": 0.5, "info": 0.15}
+    cutoff = asof - pd.Timedelta(days=days)
+    num = 0.0
+    for e in events:
+        if e.get("asset") != asset:
+            continue
+        ts = pd.Timestamp(e["ts"])
+        if ts < cutoff or ts > asof:
+            continue
+        s = _event_sign(e)
+        if not s:
+            continue
+        decay = math.exp(-(asof - ts).days / (days / 2.0))
+        num += s * sev_w.get(e.get("severity"), 0.3) * decay
+    return float(math.tanh(num / 2.0))
 
 
 def _r(v, n=2):
@@ -203,7 +239,58 @@ def backtest(close: pd.Series, alloc: pd.Series) -> dict:
 # --------------------------------------------------------------------------- #
 # view-model
 # --------------------------------------------------------------------------- #
-def asset_vm(asset: str, df: pd.DataFrame, calib: dict) -> dict:
+def _oil_supply_read() -> dict | None:
+    """EIA petroleum supply snapshot for the oil page (Phase 2 — crude stocks vs
+    5y range, 4-week draw/build, production trend, refinery utilization)."""
+    from lib import store
+    cs = store.read("eia", "crude_stocks")
+    if cs is None or cs.empty:
+        return None
+    scfg = config.load()["eia"]["supply"]
+    lb, tw = scfg["range_lookback_d"], scfg["trend_window_d"]
+    s = cs.iloc[:, 0]
+    pct = float(s.tail(lb // 7).rank(pct=True).iloc[-1])     # weekly series -> /7
+    chg4 = float(s.iloc[-1] - s.iloc[-min(4, len(s) - 1)])   # ~4 weekly prints
+    out = {"crude_stocks_mb": round(float(s.iloc[-1]) / 1000, 1),
+           "stocks_pctile": int(round(pct * 100)),
+           "stocks_chg_4w_mb": round(chg4 / 1000, 1),
+           "draw": chg4 < 0}
+    prod = store.read("eia", "crude_production")
+    if prod is not None and not prod.empty:
+        p = prod.iloc[:, 0]
+        out["production_mbd"] = round(float(p.iloc[-1]) / 1000, 2)
+        out["production_chg_4w"] = round(float(p.iloc[-1] - p.iloc[-min(4, len(p) - 1)]) / 1000, 2)
+    util = store.read("eia", "refinery_util")
+    if util is not None and not util.empty:
+        out["refinery_util"] = round(float(util.iloc[:, 0].iloc[-1]), 1)
+    # tightening = low stocks percentile AND drawing
+    out["state"] = ("tightening" if out["stocks_pctile"] < 40 and out["draw"]
+                    else ("loosening" if out["stocks_pctile"] > 60 and not out["draw"] else "neutral"))
+    return out
+
+
+def _carry_read(asset: str) -> dict | None:
+    """Roll-yield carry snapshot for an asset (Phase 1 — research/QUANT_FACTOR_EXPANSION.md)."""
+    p = config.data_dir() / "commodity_carry" / f"{asset}.parquet"
+    if not p.exists():
+        return None
+    df = pd.read_parquet(p)
+    if df.empty or "roll_yield_ann" not in df.columns:
+        return None
+    ccfg = config.load()["commodities"]["carry"]
+    ry = df["roll_yield_ann"]
+    last = float(ry.iloc[-1])
+    pct = float(ry.tail(ccfg["pctile_lookback_d"]).rank(pct=True).iloc[-1])
+    return {"roll_ann": round(last * 100, 1),
+            "state": "backwardation" if last > ccfg["backwardation_ann"] else "contango",
+            "pctile": int(round(pct * 100)),
+            "front": round(float(df["front"].iloc[-1]), 2),
+            "second": round(float(df["second"].iloc[-1]), 2)}
+
+
+def asset_vm(asset: str, df: pd.DataFrame, calib: dict, drivers: dict | None = None,
+             extras: dict | None = None, conv_calib: dict | None = None,
+             alert_tilt_val: float | None = None) -> dict:
     last = df.iloc[-1]
     close = df["close"]
     chg = _r(100 * (close.iloc[-1] / close.iloc[-22] - 1), 1)  # ~1-month
@@ -243,6 +330,58 @@ def asset_vm(asset: str, df: pd.DataFrame, calib: dict) -> dict:
     if asset == "oil" and "bw_change" in df:
         vm["bw_change"] = _r(last.get("bw_change"), 2)
         vm["bw_pctile"] = _r(last.get("bw_spread_pctile"), 0)
+    cy = _carry_read(asset)
+    if cy:
+        vm["carry"] = cy
+    if asset == "oil":
+        sup = _oil_supply_read()
+        if sup:
+            vm["supply"] = sup
+
+    # --- macro cycle-ladder + multi-timeframe technical confluence -------------
+    # Ported from engine.cycles via engine.commodity_mtf — the SAME calibrated
+    # daily/weekly cycle + RSI/StochRSI/MACD engine the stock analyzer runs (equity
+    # preset). The confluence verdict fuses this asset's measured calibration
+    # polarity (oil trend contrarian, gold driver contrarian, ...). The signals
+    # frame keeps only close, so feed close as the high series (commodity OHLC is
+    # synthesized from close anyway — see commodity_inputs.load_price).
+    from engine import commodity_mtf
+    mtf_a = commodity_mtf.mtf_ladder(close)
+    verdict = commodity_mtf.confluence_verdict(mtf_a, asset, last, cal_a)
+    _TF = (("D", "Daily", "日线"), ("3D", "3-Day", "3日"), ("W", "Weekly", "周线"),
+           ("2W", "Biweekly", "双周"), ("ME", "Monthly", "月线"))
+    mtf_rows = []
+    for key, lbl, lbl_zh in _TF:
+        s = (mtf_a.get("mtf") or {}).get(key) or {}
+        if not s:
+            continue
+        macd = ("up" if s.get("macd_cross_up") or s.get("macd_curl_up") else
+                "down" if s.get("macd_cross_dn") or s.get("macd_curl_dn") else
+                "pos" if s.get("macd_pos") else "neg")
+        mtf_rows.append({"key": key, "label": lbl, "label_zh": lbl_zh,
+                         "rsi14": s.get("rsi14"), "rsi5": s.get("rsi5"),
+                         "stoch": s.get("stoch"), "macd": macd,
+                         "trend": (verdict.get("per_tf") or {}).get(key, "flat")})
+    lad = mtf_a.get("ladder") or {}
+    vm["verdict"] = verdict
+    vm["mtf_rows"] = mtf_rows
+    vm["ladder"] = {
+        "summary_line": lad.get("summary_line"), "summary_line_zh": lad.get("summary_line_zh"),
+        "regime_line": lad.get("regime_line"), "regime_line_zh": lad.get("regime_line_zh"),
+        "next": lad.get("next"), "next_zh": lad.get("next_zh"),
+        "entry_text": (lad.get("entry") or {}).get("text"),
+        "entry_text_zh": (lad.get("entry") or {}).get("text_zh"),
+    }
+
+    # --- forward-looking multi-factor CONVICTION verdict ----------------------
+    # Strong Buy/Buy/Hold/Sell/Strong Sell, cycle position + time-to-turn, and a
+    # weighted factor breakdown (technicals + macro + carry/risk/liquidity + value
+    # + shocks/alerts), every weight a MEASURED forward-return strength.
+    if drivers is not None and extras is not None:
+        from engine import commodity_conviction
+        conv = commodity_conviction.conviction(asset, df, drivers, extras, mtf_a,
+                                               alert_tilt_val, conv_calib)
+        vm["conviction"] = conv
     return vm
 
 
@@ -274,29 +413,43 @@ def complex_vm(results: dict, calib: dict) -> dict:
 # main
 # --------------------------------------------------------------------------- #
 def main() -> int:
-    from engine import commodity_signals
+    from engine import commodity_signals, commodity_inputs, commodity_conviction
+    from engine import commodity_alerts
     try:
-        results = commodity_signals.compute_all()
+        inputs = commodity_inputs.load_all()
+        results = commodity_signals.compute_all(inputs)
     except Exception as e:  # noqa: BLE001 — never break the site build
         log.error("commodity engine failed (%s); skipping commodities page", e)
         return 0
+    drivers = next(iter(inputs.values()))["drivers"] if inputs else {}
+    extras = commodity_conviction.load_macro_extras()
+    conv_calib = commodity_conviction.load_calibration()
+    # roll-yield carry / term structure (Phase 1; weekly-cached, additive)
+    try:
+        from collectors.commodity_carry import fetch_carry
+        fetch_carry()
+    except Exception as e:  # noqa: BLE001 — additive, never break the page
+        log.warning("commodity carry fetch failed (%s)", e)
 
     outdir = config.data_dir() / "commodity"
     outdir.mkdir(parents=True, exist_ok=True)
     cpath = outdir / "calibration.json"
     calib = json.loads(cpath.read_text()) if cpath.exists() else {"assets": {}, "meta": {}}
 
-    assets = [asset_vm(a, results[a], calib) for a in ORDER if a in results]
-    cx = complex_vm(results, calib)
-
-    # alert timeline (deterministic rebuild from signals + any sentinel events)
-    from engine import commodity_alerts
+    # alerts rebuilt ONCE — feeds both the conviction disruptions-tilt and the timeline
     acfg = config.load()["commodities"]["alerts"]
     try:
         all_events = commodity_alerts.rebuild(results)
-    except Exception as e:  # noqa: BLE001 — timeline is optional, never break the page
+    except Exception as e:  # noqa: BLE001 — optional, never break the page
         log.warning("commodity alerts rebuild failed (%s)", e)
         all_events = commodity_alerts.load_events()
+    asof_ts = results["gold"].index.max()
+    tilts = {a: alert_tilt(all_events, a, asof_ts) for a in ORDER}
+
+    assets = [asset_vm(a, results[a], calib, drivers, extras, conv_calib, tilts.get(a))
+              for a in ORDER if a in results]
+    cx = complex_vm(results, calib)
+
     recent_events = commodity_alerts.recent(all_events, acfg["timeline_days"])
     timeline = _group_timeline(recent_events)
 
@@ -343,7 +496,10 @@ def main() -> int:
     latest = {"date": as_of, "regime": cx["regime"], "favored": cx["favored"],
               "assets": {a["key"]: {"label": a["label"], "price": a["price"], "chg": a["chg"],
                                     "alloc": a["alloc_pct"], "risk": a["risk_word"],
-                                    "trend": a["ts_trend"]} for a in assets}}
+                                    "trend": a["ts_trend"],
+                                    "action": (a.get("conviction") or {}).get("action"),
+                                    "conviction": (a.get("conviction") or {}).get("score")}
+                         for a in assets}}
     (outdir / "latest.json").write_text(json.dumps(latest, indent=2, default=str))
     return 0
 
