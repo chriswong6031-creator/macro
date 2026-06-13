@@ -258,20 +258,7 @@
       "chg_20d_pct": 11.18
     }
   },
-  "alerts": [
-    {
-      "rule": "holdings_active_change",
-      "severity": "info",
-      "message": "ARKK: manager cut BIDU by -56% of position (2026-06-11..2026-06-12, flow-normalized)",
-      "message_zh": "ARKK\uff1a\u7ecf\u7406 cut BIDU \u4ed3\u4f4d -56%\uff082026-06-11..2026-06-12\uff0c\u5df2\u6309\u8d44\u91d1\u6d41\u6807\u51c6\u5316\uff09"
-    },
-    {
-      "rule": "holdings_active_change",
-      "severity": "info",
-      "message": "ARKW: manager cut BIDU by -48% of position (2026-06-11..2026-06-12, flow-normalized)",
-      "message_zh": "ARKW\uff1a\u7ecf\u7406 cut BIDU \u4ed3\u4f4d -48%\uff082026-06-11..2026-06-12\uff0c\u5df2\u6309\u8d44\u91d1\u6d41\u6807\u51c6\u5316\uff09"
-    }
-  ],
+  "alerts": [],
   "playbook": {
     "headline": "Goldilocks \u2014 growth improving while inflation cools. Posture: CONSTRUCTIVE \u2014 lean long; normal position sizes in confirmed leaders.",
     "dial": {
@@ -1737,9 +1724,9 @@
       "vix_term_state": "contango (calm)",
       "skew": 142.6,
       "skew_pctile": 0.3194444444444444,
-      "stock_bond_corr": 0.6936367796179752,
+      "stock_bond_corr": 0.6936367796179748,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.4163673844839169,
+      "roro": 0.41636738448391547,
       "roro_state": "risk-on",
       "vol_target_scalar": 0.8172282208779413
     }
