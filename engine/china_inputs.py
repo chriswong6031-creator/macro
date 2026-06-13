@@ -100,13 +100,12 @@ def build_features() -> pd.DataFrame:
         put(col, br[col] if (br is not None and col in br.columns) else None)
 
     # --- Stock Connect (context; northbound direction frozen since 2024-08-16) --
-    # connect_flow now stores raw daily net (亿元); cumulate here. Southbound is live;
-    # northbound_cum freezes flat after 2024-08-16 (no NET disclosed beyond that).
-    cf = store.read("china_macro", "connect_flow")
-    if cf is not None:
-        for cum, net in [("southbound_cum", "southbound_net"), ("northbound_cum", "northbound_net")]:
-            if net in cf.columns:
-                put(cum, cf[net].dropna().cumsum(), ffill_limit=5)
+    # The `china_connect` store holds raw daily net per leg; cumulate here. Southbound
+    # is live; northbound_cum freezes flat after 2024-08-16 (no NET disclosed beyond that).
+    for cum, leg in [("southbound_cum", "southbound"), ("northbound_cum", "northbound")]:
+        cf = store.read("china_connect", leg)
+        if cf is not None and "net" in cf.columns:
+            put(cum, cf["net"].dropna().cumsum(), ffill_limit=5)
 
     return f
 

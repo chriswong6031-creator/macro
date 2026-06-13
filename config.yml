@@ -1168,17 +1168,9 @@ china:
     retries: 3
     page_size: 600                  # monthly series ~ <300 rows of history
     enabled: [pmi, cpi, ppi, money_supply, lpr, indpro, rmb_loan, fai, retail, customs, rrr]  # social_financing now via china_credit (mofcom legacy-SSL); bond_yield deferred (chinabond)
-  hsgt:                             # Stock Connect daily flows — Eastmoney datacenter RPT_MUTUAL_DEAL_HISTORY
-    # Replaces the dead push2his kamt.kline path (its northbound legs emit a constant synthetic
-    # placeholder — +8.4M RMB/day — since the 2024-08-16 regulatory curtailment). Southbound NET is
-    # fully live; northbound NET froze 2024-08-16 (turnover stays live, pre-freeze NET kept for history).
-    url: https://datacenter-web.eastmoney.com/api/data/v1/get
-    retries: 3
-    page_size_full: 2000            # full backfill paginates (API caps each page at 2000 rows) back to 2014-11-17
-    page_size_recent: 90            # incremental run: trailing ~quarter of trading days (single page)
-    mutual_type:                    # combined legs (沪深港通合计)
-      southbound: "006"             # mainland -> HK (港股通): live net / turnover / holdings
-      northbound: "005"             # foreign -> A-shares (陆股通): turnover live, NET frozen 2024-08-16
+  # Stock Connect (沪深港通) flows: see collectors/china_connect.py (group `china_connect`,
+  # RPT_MUTUAL_DEAL_HISTORY 006=southbound / 005=northbound). No tunables here — host +
+  # leg codes live in that module. Replaced the old hsgt/push2his kamt.kline path.
 
   # -- Breadth / drill-down universe: curated large-cap A-shares by sector -----
   # Doubles as breadth denominator + per-sector drill-down holdings + stock-search
