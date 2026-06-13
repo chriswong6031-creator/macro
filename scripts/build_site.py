@@ -618,8 +618,8 @@ def _season_tooltip(seas: dict | None, month: int | None):
 
     # --- two stacked 6-month tables, current month row highlighted ------------
     def _col(rng) -> str:
-        rows = ['<colgroup><col style="width:32%"><col style="width:26%">'
-                '<col style="width:23%"><col style="width:19%"></colgroup>',
+        rows = ['<colgroup><col style="width:28%"><col style="width:28%">'
+                '<col style="width:23%"><col style="width:21%"></colgroup>',
                 f'<tr><th style="text-align:left">{_b("Month", "月份")}</th>'
                 f'<th>{_b("Avg", "均值")}</th><th>{_b("Up", "收涨")}</th>'
                 f'<th>{_b("Yrs", "年数")}</th></tr>']
