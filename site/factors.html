@@ -1,0 +1,866 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><span class="l-en">Equity factor rankings — value, quality, low-vol & more</span><span class="l-zh">股票因子排名 — 价值、质量、低波动等</span></title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,
+         "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1320px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:20px; margin:0; }
+  h2 { font-size:14px; margin:0 0 10px; color:var(--muted); text-transform:uppercase;
+       letter-spacing:.06em; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+           padding:14px 16px; margin-bottom:14px; }
+  .topline { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+  .muted { color:var(--muted); }
+  .sm { font-size:12px; }
+  table { border-collapse:collapse; width:100%; font-size:13px; }
+  th,td { text-align:left; padding:4px 7px; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:500; }
+  td.r, th.r { text-align:right; }
+  .pos { color:var(--up); } .neg { color:var(--down); }
+  .navbtn, .lang-btn, .theme-btn { font-size:12.5px; padding:5px 11px; border-radius:8px;
+    border:1px solid var(--line); background:var(--panel2); color:var(--text); cursor:pointer; }
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px;
+          height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted);
+          font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:5px; }
+  .help .tip { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%);
+               width:300px; background:var(--panel); border:1px solid var(--line); padding:9px 11px;
+               border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text);
+               font-weight:400; box-shadow:var(--popover-shadow); pointer-events:none; }
+  .help:hover .tip { display:block; }
+  .lead { display:flex; flex-direction:column; gap:6px; }
+  .leadrow { display:grid; grid-template-columns:150px 1fr 64px; align-items:center; gap:10px; }
+  .leadbar { height:14px; border-radius:7px; background:var(--panel2); position:relative; overflow:hidden; }
+  .leadbar > i { position:absolute; top:0; bottom:0; }
+  .cardgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(255px,1fr)); gap:14px; }
+  .fcard { background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:11px 12px; }
+  .fcard h3 { font-size:13px; margin:0 0 7px; display:flex; align-items:center; }
+  .fcard .badge { margin-left:auto; font-size:10.5px; padding:1px 7px; border-radius:8px;
+                  background:var(--panel); border:1px solid var(--line); color:var(--muted); }
+  .twocol { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  @media (max-width:760px){ .twocol{ grid-template-columns:1fr; } }
+  .zpos { color:var(--up); font-weight:600; } .zneg { color:var(--down); font-weight:600; }
+</style>
+</head>
+<body>
+  <div class="panel">
+    <div class="topline">
+      <h1>🧮 <span class="l-en">Equity factor rankings</span><span class="l-zh">股票因子排名</span></h1>
+      <span class="muted sm"><span class="l-en">value · quality · profitability · investment · payout · low-vol — across the S&P 1500</span><span class="l-zh">价值 · 质量 · 盈利 · 投资 · 派息 · 低波动 — 覆盖标普 1500</span></span>
+      <span style="flex:1"></span>
+      <a class="navbtn" href="macro.html"><span class="l-en">← Dashboard</span><span class="l-zh">← 仪表盘</span></a>
+      <a class="navbtn" href="stock.html"><span class="l-en">🔎 Any stock</span><span class="l-zh">🔎 任意股票</span></a>
+      <button class="lang-btn">中文</button>
+      <button class="theme-btn">☀️ <span class="l-en">Light</span><span class="l-zh">浅色</span></button>
+    </div>
+    <p class="muted sm" style="margin:10px 0 0"><span class="l-en">The cross-sectional factors quant equity desks actually trade — computed from SEC EDGAR fundamentals joined to prices, not proxied by an ETF. Each factor is a winsorized cross-sectional z-score (higher = more attractive on that factor); the composite is their equal-weight blend. These are RANKS and context, not a backtested alpha: factors decay and crowd, free fundamentals are sparse for some tags, book/price is weak for intangible-heavy firms, and every value is lagged to the filing period (no look-ahead).</span><span class="l-zh">量化股票交易台真正使用的横截面因子 — 由 SEC EDGAR 基本面与价格计算，而非用 ETF 代理。每个因子为去极值后的横截面 z 分数（越高 = 在该因子上越有吸引力）；综合为等权混合。这些是排名与背景，而非回测出的超额收益：因子会衰减与拥挤，免费基本面在部分科目上稀疏，市净率对无形资产密集的公司较弱，且所有数值滞后至申报期（无前视）。</span></p>
+  </div>
+
+  <!-- Factor leadership -->
+  
+  <div class="panel">
+    <h2><span class="l-en">What is working now</span><span class="l-zh">当前哪种因子在起作用</span>
+      <span class="help">?<span class="tip"><span class="l-en">For each factor, the trailing-63-day return of its top quintile MINUS its bottom quintile. Positive = that factor has been rewarded recently (descriptive, not a forecast). Compare against the regime above: e.g. value & low-vol leading often accompanies risk-off / late-cycle.</span><span class="l-zh">每个因子最近 63 个交易日内：顶部五分位减底部五分位的回报。正值=该因子近期获得回报（描述性，非预测）。</span></span></span>
+    </h2>
+    <div class="lead">
+      
+      
+      <div class="leadrow">
+        <span><span class="l-en">Quality</span><span class="l-zh">Quality</span></span>
+        <span class="leadbar">
+          <i style="left:50%;width:14.9%;background:var(--up)"></i>
+          
+          <i style="left:50%;width:1px;background:var(--muted);opacity:.5"></i>
+        </span>
+        <span class="zpos" style="text-align:right">+11.2%</span>
+      </div>
+      
+      <div class="leadrow">
+        <span><span class="l-en">Low accruals</span><span class="l-zh">Low accruals</span></span>
+        <span class="leadbar">
+          <i style="left:50%;width:7.8%;background:var(--up)"></i>
+          
+          <i style="left:50%;width:1px;background:var(--muted);opacity:.5"></i>
+        </span>
+        <span class="zpos" style="text-align:right">+5.9%</span>
+      </div>
+      
+      <div class="leadrow">
+        <span><span class="l-en">Low short interest</span><span class="l-zh">Low short interest</span></span>
+        <span class="leadbar">
+          <i style="left:50%;width:7.5%;background:var(--up)"></i>
+          
+          <i style="left:50%;width:1px;background:var(--muted);opacity:.5"></i>
+        </span>
+        <span class="zpos" style="text-align:right">+5.7%</span>
+      </div>
+      
+      <div class="leadrow">
+        <span><span class="l-en">Investment</span><span class="l-zh">Investment</span></span>
+        <span class="leadbar">
+          <i style="left:50%;width:4.8%;background:var(--up)"></i>
+          
+          <i style="left:50%;width:1px;background:var(--muted);opacity:.5"></i>
+        </span>
+        <span class="zpos" style="text-align:right">+3.6%</span>
+      </div>
+      
+      <div class="leadrow">
+        <span><span class="l-en">Profitability</span><span class="l-zh">Profitability</span></span>
+        <span class="leadbar">
+          <i style="right:50%;width:21.5%;background:var(--down)"></i>
+          <i style="left:50%;width:1px;background:var(--muted);opacity:.5"></i>
+        </span>
+        <span class="zneg" style="text-align:right">-16.2%</span>
+      </div>
+      
+      <div class="leadrow">
+        <span><span class="l-en">Shareholder yield</span><span class="l-zh">Shareholder yield</span></span>
+        <span class="leadbar">
+          <i style="right:50%;width:23.8%;background:var(--down)"></i>
+          <i style="left:50%;width:1px;background:var(--muted);opacity:.5"></i>
+        </span>
+        <span class="zneg" style="text-align:right">-17.9%</span>
+      </div>
+      
+      <div class="leadrow">
+        <span><span class="l-en">Value</span><span class="l-zh">Value</span></span>
+        <span class="leadbar">
+          <i style="right:50%;width:29.3%;background:var(--down)"></i>
+          <i style="left:50%;width:1px;background:var(--muted);opacity:.5"></i>
+        </span>
+        <span class="zneg" style="text-align:right">-22.1%</span>
+      </div>
+      
+      <div class="leadrow">
+        <span><span class="l-en">Low volatility</span><span class="l-zh">Low volatility</span></span>
+        <span class="leadbar">
+          <i style="right:50%;width:36.4%;background:var(--down)"></i>
+          <i style="left:50%;width:1px;background:var(--muted);opacity:.5"></i>
+        </span>
+        <span class="zneg" style="text-align:right">-27.4%</span>
+      </div>
+      
+      <div class="leadrow">
+        <span><span class="l-en">Low beta (BAB)</span><span class="l-zh">Low beta (BAB)</span></span>
+        <span class="leadbar">
+          <i style="right:50%;width:50.0%;background:var(--down)"></i>
+          <i style="left:50%;width:1px;background:var(--muted);opacity:.5"></i>
+        </span>
+        <span class="zneg" style="text-align:right">-37.7%</span>
+      </div>
+      
+    </div>
+  </div>
+  
+
+  <!-- Composite leaders / laggards -->
+  <div class="panel">
+    <h2><span class="l-en">Multi-factor composite</span><span class="l-zh">多因子综合</span>
+      <span class="help">?<span class="tip"><span class="l-en">Equal-weight blend of value, quality, profitability, investment, payout and low-vol z-scores (a name needs at least 3 of them). The closest single thing to a smart-beta 'multifactor' tilt over the S&P 1500.</span><span class="l-zh">价值、质量、盈利、投资、派息与低波动 z 分数的等权混合（每只至少需 3 个）。</span></span></span>
+    </h2>
+    <div class="twocol">
+      <div>
+        <h3 class="sm pos" style="margin:0 0 6px"><span class="l-en">Top composite</span><span class="l-zh">综合最高</span></h3>
+        <table>
+          <tr><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">sector</span><span class="l-zh">板块</span></th><th class="r">z</th><th class="r"><span class="l-en">mkt cap</span><span class="l-zh">市值</span></th></tr>
+          
+          <tr><td><a href="stock.html#CARG"><b>CARG</b></a> <span class="muted sm">CarGurus</span></td>
+            <td class="muted sm"><span class="l-en">Communication Services</span><span class="l-zh">Communication Services</span></td><td class="r zpos">+1.75</td>
+            <td class="r muted sm">—</td></tr>
+          
+          <tr><td><a href="stock.html#GNL"><b>GNL</b></a> <span class="muted sm">Global Net Lease, Inc.</span></td>
+            <td class="muted sm"><span class="l-en">Real Estate</span><span class="l-zh">房地产</span></td><td class="r zpos">+1.73</td>
+            <td class="r muted sm">$2B</td></tr>
+          
+          <tr><td><a href="stock.html#DBX"><b>DBX</b></a> <span class="muted sm">Dropbox</span></td>
+            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zpos">+1.66</td>
+            <td class="r muted sm">—</td></tr>
+          
+          <tr><td><a href="stock.html#ABR"><b>ABR</b></a> <span class="muted sm">Arbor Realty Trust</span></td>
+            <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r zpos">+1.45</td>
+            <td class="r muted sm">$1B</td></tr>
+          
+          <tr><td><a href="stock.html#YELP"><b>YELP</b></a> <span class="muted sm">Yelp, Inc.</span></td>
+            <td class="muted sm"><span class="l-en">Communication Services</span><span class="l-zh">Communication Services</span></td><td class="r zpos">+1.41</td>
+            <td class="r muted sm">$1B</td></tr>
+          
+          <tr><td><a href="stock.html#KMPR"><b>KMPR</b></a> <span class="muted sm">Kemper Corporation</span></td>
+            <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r zpos">+1.36</td>
+            <td class="r muted sm">$2B</td></tr>
+          
+          <tr><td><a href="stock.html#NOG"><b>NOG</b></a> <span class="muted sm">Northern Oil and Gas, </span></td>
+            <td class="muted sm"><span class="l-en">Energy</span><span class="l-zh">能源</span></td><td class="r zpos">+1.34</td>
+            <td class="r muted sm">$2B</td></tr>
+          
+          <tr><td><a href="stock.html#BKNG"><b>BKNG</b></a> <span class="muted sm">Booking Holdings</span></td>
+            <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r zpos">+1.26</td>
+            <td class="r muted sm">$5B</td></tr>
+          
+          <tr><td><a href="stock.html#HOG"><b>HOG</b></a> <span class="muted sm">Harley-Davidson</span></td>
+            <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r zpos">+1.24</td>
+            <td class="r muted sm">$3B</td></tr>
+          
+          <tr><td><a href="stock.html#DXC"><b>DXC</b></a> <span class="muted sm">DXC Technology</span></td>
+            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zpos">+1.20</td>
+            <td class="r muted sm">$2B</td></tr>
+          
+          <tr><td><a href="stock.html#MGY"><b>MGY</b></a> <span class="muted sm">Magnolia Oil & Gas, Co</span></td>
+            <td class="muted sm"><span class="l-en">Energy</span><span class="l-zh">能源</span></td><td class="r zpos">+1.20</td>
+            <td class="r muted sm">—</td></tr>
+          
+          <tr><td><a href="stock.html#SAM"><b>SAM</b></a> <span class="muted sm">Boston Beer Company</span></td>
+            <td class="muted sm"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></td><td class="r zpos">+1.19</td>
+            <td class="r muted sm">—</td></tr>
+          
+          <tr><td><a href="stock.html#RNG"><b>RNG</b></a> <span class="muted sm">RingCentral, Inc.</span></td>
+            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zpos">+1.17</td>
+            <td class="r muted sm">—</td></tr>
+          
+          <tr><td><a href="stock.html#NAVI"><b>NAVI</b></a> <span class="muted sm">Navient</span></td>
+            <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r zpos">+1.13</td>
+            <td class="r muted sm">$1B</td></tr>
+          
+          <tr><td><a href="stock.html#AGNT"><b>AGNT</b></a> <span class="muted sm">eXp World Holdings, In</span></td>
+            <td class="muted sm"><span class="l-en">Real Estate</span><span class="l-zh">房地产</span></td><td class="r zpos">+1.12</td>
+            <td class="r muted sm">$1B</td></tr>
+          
+          <tr><td><a href="stock.html#AGO"><b>AGO</b></a> <span class="muted sm">Assured Guaranty Ltd.</span></td>
+            <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r zpos">+1.11</td>
+            <td class="r muted sm">$4B</td></tr>
+          
+          <tr><td><a href="stock.html#CART"><b>CART</b></a> <span class="muted sm">Maplebear Inc.</span></td>
+            <td class="muted sm"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></td><td class="r zpos">+1.09</td>
+            <td class="r muted sm">$10B</td></tr>
+          
+          <tr><td><a href="stock.html#PCRX"><b>PCRX</b></a> <span class="muted sm">Pacira BioSciences, In</span></td>
+            <td class="muted sm"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td><td class="r zpos">+1.06</td>
+            <td class="r muted sm">$1B</td></tr>
+          
+          <tr><td><a href="stock.html#CAG"><b>CAG</b></a> <span class="muted sm">Conagra Brands</span></td>
+            <td class="muted sm"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></td><td class="r zpos">+1.03</td>
+            <td class="r muted sm">$7B</td></tr>
+          
+          <tr><td><a href="stock.html#SYF"><b>SYF</b></a> <span class="muted sm">Synchrony Financial</span></td>
+            <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r zpos">+1.03</td>
+            <td class="r muted sm">$26B</td></tr>
+          
+          <tr><td><a href="stock.html#ADBE"><b>ADBE</b></a> <span class="muted sm">Adobe Inc.</span></td>
+            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zpos">+1.02</td>
+            <td class="r muted sm">$84B</td></tr>
+          
+          <tr><td><a href="stock.html#SCHL"><b>SCHL</b></a> <span class="muted sm">Scholastic Corporation</span></td>
+            <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r zpos">+1.01</td>
+            <td class="r muted sm">$1B</td></tr>
+          
+          <tr><td><a href="stock.html#OXM"><b>OXM</b></a> <span class="muted sm">Oxford Industries, Inc</span></td>
+            <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r zpos">+1.00</td>
+            <td class="r muted sm">$1B</td></tr>
+          
+          <tr><td><a href="stock.html#MLKN"><b>MLKN</b></a> <span class="muted sm">MillerKnoll, Inc.</span></td>
+            <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r zpos">+0.99</td>
+            <td class="r muted sm">$1B</td></tr>
+          
+          <tr><td><a href="stock.html#GPI"><b>GPI</b></a> <span class="muted sm">Group 1 Automotive, In</span></td>
+            <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r zpos">+0.99</td>
+            <td class="r muted sm">$4B</td></tr>
+          
+        </table>
+      </div>
+      <div>
+        <h3 class="sm neg" style="margin:0 0 6px"><span class="l-en">Bottom composite</span><span class="l-zh">综合最低</span></h3>
+        <table>
+          <tr><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">sector</span><span class="l-zh">板块</span></th><th class="r">z</th><th class="r"><span class="l-en">mkt cap</span><span class="l-zh">市值</span></th></tr>
+          
+          <tr><td><a href="stock.html#VIAV"><b>VIAV</b></a> <span class="muted sm">VIAVI Solutions</span></td>
+            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zneg">-2.28</td>
+            <td class="r muted sm">$12B</td></tr>
+          
+          <tr><td><a href="stock.html#ORCL"><b>ORCL</b></a> <span class="muted sm">Oracle Corporation</span></td>
+            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zneg">-1.99</td>
+            <td class="r muted sm">$529B</td></tr>
+          
+          <tr><td><a href="stock.html#FN"><b>FN</b></a> <span class="muted sm">Fabrinet</span></td>
+            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zneg">-1.74</td>
+            <td class="r muted sm">$22B</td></tr>
+          
+          <tr><td><a href="stock.html#HOOD"><b>HOOD</b></a> <span class="muted sm">Robinhood Markets</span></td>
+            <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r zneg">-1.71</td>
+            <td class="r muted sm">—</td></tr>
+          
+          <tr><td><a href="stock.html#ACMR"><b>ACMR</b></a> <span class="muted sm">ACM Research, Inc.</span></td>
+            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zneg">-1.67</td>
+            <td class="r muted sm">—</td></tr>
+          
+          <tr><td><a href="stock.html#TGTX"><b>TGTX</b></a> <span class="muted sm">TG Therapeutics, Inc.</span></td>
+            <td class="muted sm"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td><td class="r zneg">-1.49</td>
+            <td class="r muted sm">$8B</td></tr>
+          
+          <tr><td><a href="stock.html#AAON"><b>AAON</b></a> <span class="muted sm">AAON</span></td>
+            <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r zneg">-1.43</td>
+            <td class="r muted sm">$10B</td></tr>
+          
+          <tr><td><a href="stock.html#CLSK"><b>CLSK</b></a> <span class="muted sm">CleanSpark, Inc.</span></td>
+            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zneg">-1.43</td>
+            <td class="r muted sm">$4B</td></tr>
+          
+          <tr><td><a href="stock.html#STX"><b>STX</b></a> <span class="muted sm">Seagate Technology</span></td>
+            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zneg">-1.42</td>
+            <td class="r muted sm">$203B</td></tr>
+          
+          <tr><td><a href="stock.html#LIF"><b>LIF</b></a> <span class="muted sm">Life360</span></td>
+            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zneg">-1.41</td>
+            <td class="r muted sm">$4B</td></tr>
+          
+          <tr><td><a href="stock.html#TLN"><b>TLN</b></a> <span class="muted sm">Talen Energy</span></td>
+            <td class="muted sm"><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></td><td class="r zneg">-1.41</td>
+            <td class="r muted sm">$16B</td></tr>
+          
+          <tr><td><a href="stock.html#RCUS"><b>RCUS</b></a> <span class="muted sm">Arcus Biosciences, Inc</span></td>
+            <td class="muted sm"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td><td class="r zneg">-1.41</td>
+            <td class="r muted sm">$3B</td></tr>
+          
+          <tr><td><a href="stock.html#CVNA"><b>CVNA</b></a> <span class="muted sm">Carvana</span></td>
+            <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r zneg">-1.33</td>
+            <td class="r muted sm">—</td></tr>
+          
+          <tr><td><a href="stock.html#AVAV"><b>AVAV</b></a> <span class="muted sm">AeroVironment</span></td>
+            <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r zneg">-1.32</td>
+            <td class="r muted sm">$8B</td></tr>
+          
+          <tr><td><a href="stock.html#SITM"><b>SITM</b></a> <span class="muted sm">SiTime</span></td>
+            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zneg">-1.26</td>
+            <td class="r muted sm">$19B</td></tr>
+          
+          <tr><td><a href="stock.html#ASTH"><b>ASTH</b></a> <span class="muted sm">Astrana Health, Inc.</span></td>
+            <td class="muted sm"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td><td class="r zneg">-1.26</td>
+            <td class="r muted sm">$2B</td></tr>
+          
+          <tr><td><a href="stock.html#SANM"><b>SANM</b></a> <span class="muted sm">Sanmina Corporation</span></td>
+            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zneg">-1.25</td>
+            <td class="r muted sm">$14B</td></tr>
+          
+          <tr><td><a href="stock.html#LGND"><b>LGND</b></a> <span class="muted sm">Ligand Pharmaceuticals</span></td>
+            <td class="muted sm"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td><td class="r zneg">-1.24</td>
+            <td class="r muted sm">$5B</td></tr>
+          
+          <tr><td><a href="stock.html#DUOL"><b>DUOL</b></a> <span class="muted sm">Duolingo</span></td>
+            <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r zneg">-1.21</td>
+            <td class="r muted sm">—</td></tr>
+          
+          <tr><td><a href="stock.html#SNPS"><b>SNPS</b></a> <span class="muted sm">Synopsys</span></td>
+            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zneg">-1.21</td>
+            <td class="r muted sm">$87B</td></tr>
+          
+          <tr><td><a href="stock.html#ARWR"><b>ARWR</b></a> <span class="muted sm">Arrowhead Pharmaceutic</span></td>
+            <td class="muted sm"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td><td class="r zneg">-1.21</td>
+            <td class="r muted sm">$10B</td></tr>
+          
+          <tr><td><a href="stock.html#AXON"><b>AXON</b></a> <span class="muted sm">Axon Enterprise</span></td>
+            <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r zneg">-1.19</td>
+            <td class="r muted sm">$35B</td></tr>
+          
+          <tr><td><a href="stock.html#MARA"><b>MARA</b></a> <span class="muted sm">MARA Holdings, Inc.</span></td>
+            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zneg">-1.18</td>
+            <td class="r muted sm">$5B</td></tr>
+          
+          <tr><td><a href="stock.html#DOCN"><b>DOCN</b></a> <span class="muted sm">DigitalOcean</span></td>
+            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zneg">-1.15</td>
+            <td class="r muted sm">$16B</td></tr>
+          
+          <tr><td><a href="stock.html#CCOI"><b>CCOI</b></a> <span class="muted sm">Cogent Communications </span></td>
+            <td class="muted sm"><span class="l-en">Communication Services</span><span class="l-zh">Communication Services</span></td><td class="r zneg">-1.13</td>
+            <td class="r muted sm">$1B</td></tr>
+          
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Insider conviction (SEC Form-4) -->
+  
+
+  <!-- Per-factor leaderboards -->
+  <div class="panel">
+    <h2><span class="l-en">Factor leaders</span><span class="l-zh">各因子领先股</span></h2>
+    <div class="cardgrid">
+      
+      
+      <div class="fcard">
+        <h3><span class="l-en">Value</span><span class="l-zh">Value</span>
+          <span class="help">?<span class="tip"><span class="l-en">Cheap on fundamentals — a blend of earnings yield, book/price, sales/price and cash-flow yield (the cross-section Fama-French/Dimensional trade). Volatile and regime-dependent; book/price is weak for intangible-heavy firms.</span><span class="l-zh">基本面便宜 — 盈利收益率、市净率倒数、市销率倒数与现金流收益率的综合。</span></span></span>
+          <span class="badge">top 25</span></h3>
+        <table>
+          
+          <tr><td><a href="stock.html#FG"><b>FG</b></a></td>
+            <td class="muted sm">F&G Annuities & Li</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#KD"><b>KD</b></a></td>
+            <td class="muted sm">Kyndryl</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#SABR"><b>SABR</b></a></td>
+            <td class="muted sm">Sabre</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#KMPR"><b>KMPR</b></a></td>
+            <td class="muted sm">Kemper Corporation</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#ABG"><b>ABG</b></a></td>
+            <td class="muted sm">Asbury Automotive </td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#ABR"><b>ABR</b></a></td>
+            <td class="muted sm">Arbor Realty Trust</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#MAN"><b>MAN</b></a></td>
+            <td class="muted sm">ManpowerGroup</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#BKNG"><b>BKNG</b></a></td>
+            <td class="muted sm">Booking Holdings</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#EMBC"><b>EMBC</b></a></td>
+            <td class="muted sm">Embecta Corp.</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#CAG"><b>CAG</b></a></td>
+            <td class="muted sm">Conagra Brands</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+        </table>
+      </div>
+      
+      
+      
+      <div class="fcard">
+        <h3><span class="l-en">Quality</span><span class="l-zh">Quality</span>
+          <span class="help">?<span class="tip"><span class="l-en">A quality composite: high ROE, LOW accruals (cash-backed earnings — Sloan), and low leverage. AQR Quality-Minus-Junk style; tends to hold up in drawdowns.</span><span class="l-zh">质量综合：高 ROE、低应计、低杠杆（AQR QMJ 风格）。</span></span></span>
+          <span class="badge">top 25</span></h3>
+        <table>
+          
+          <tr><td><a href="stock.html#ENVA"><b>ENVA</b></a></td>
+            <td class="muted sm">Enova Internationa</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#NTNX"><b>NTNX</b></a></td>
+            <td class="muted sm">Nutanix</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#PTON"><b>PTON</b></a></td>
+            <td class="muted sm">Peloton Interactiv</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#AGX"><b>AGX</b></a></td>
+            <td class="muted sm">Argan, Inc.</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#ETSY"><b>ETSY</b></a></td>
+            <td class="muted sm">Etsy</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#LUMN"><b>LUMN</b></a></td>
+            <td class="muted sm">Lumen Technologies</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#VRSK"><b>VRSK</b></a></td>
+            <td class="muted sm">Verisk Analytics</td>
+            <td class="r zpos">+2.98</td></tr>
+          
+          <tr><td><a href="stock.html#SEZL"><b>SEZL</b></a></td>
+            <td class="muted sm">Sezzle</td>
+            <td class="r zpos">+2.93</td></tr>
+          
+          <tr><td><a href="stock.html#LZ"><b>LZ</b></a></td>
+            <td class="muted sm">LegalZoom.com, Inc</td>
+            <td class="r zpos">+2.92</td></tr>
+          
+          <tr><td><a href="stock.html#MRP"><b>MRP</b></a></td>
+            <td class="muted sm">Millrose Propertie</td>
+            <td class="r zpos">+2.90</td></tr>
+          
+        </table>
+      </div>
+      
+      
+      
+      <div class="fcard">
+        <h3><span class="l-en">Profitability</span><span class="l-zh">Profitability</span>
+          <span class="help">?<span class="tip"><span class="l-en">Gross profitability = gross profit / total assets (Novy-Marx). About as powerful as book/price historically, and it tilts the OPPOSITE way (toward growthier, higher-quality names).</span><span class="l-zh">毛利润率 = 毛利润／总资产（Novy-Marx）。</span></span></span>
+          <span class="badge">top 25</span></h3>
+        <table>
+          
+          <tr><td><a href="stock.html#YETI"><b>YETI</b></a></td>
+            <td class="muted sm">Yeti Holdings</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#CARG"><b>CARG</b></a></td>
+            <td class="muted sm">CarGurus</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#CHWY"><b>CHWY</b></a></td>
+            <td class="muted sm">Chewy</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#RNG"><b>RNG</b></a></td>
+            <td class="muted sm">RingCentral, Inc.</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#LZ"><b>LZ</b></a></td>
+            <td class="muted sm">LegalZoom.com, Inc</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#INSP"><b>INSP</b></a></td>
+            <td class="muted sm">Inspire Medical Sy</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#INDV"><b>INDV</b></a></td>
+            <td class="muted sm">Indivior</td>
+            <td class="r zpos">+2.94</td></tr>
+          
+          <tr><td><a href="stock.html#SFM"><b>SFM</b></a></td>
+            <td class="muted sm">Sprouts Farmers Ma</td>
+            <td class="r zpos">+2.91</td></tr>
+          
+          <tr><td><a href="stock.html#PEGA"><b>PEGA</b></a></td>
+            <td class="muted sm">Pegasystems</td>
+            <td class="r zpos">+2.85</td></tr>
+          
+          <tr><td><a href="stock.html#HIMS"><b>HIMS</b></a></td>
+            <td class="muted sm">Hims & Hers Health</td>
+            <td class="r zpos">+2.81</td></tr>
+          
+        </table>
+      </div>
+      
+      
+      
+      <div class="fcard">
+        <h3><span class="l-en">Investment</span><span class="l-zh">Investment</span>
+          <span class="help">?<span class="tip"><span class="l-en">Conservative investment = LOW asset growth (Fama-French CMA). Firms that grow the balance sheet aggressively tend to underperform.</span><span class="l-zh">保守投资 = 低资产增长（Fama-French CMA）。</span></span></span>
+          <span class="badge">top 25</span></h3>
+        <table>
+          
+          <tr><td><a href="stock.html#CPRI"><b>CPRI</b></a></td>
+            <td class="muted sm">Capri Holdings</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#WTRG"><b>WTRG</b></a></td>
+            <td class="muted sm">Essential Utilitie</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#WDC"><b>WDC</b></a></td>
+            <td class="muted sm">Western Digital</td>
+            <td class="r zpos">+2.87</td></tr>
+          
+          <tr><td><a href="stock.html#TDS"><b>TDS</b></a></td>
+            <td class="muted sm">Telephone and Data</td>
+            <td class="r zpos">+2.87</td></tr>
+          
+          <tr><td><a href="stock.html#GNL"><b>GNL</b></a></td>
+            <td class="muted sm">Global Net Lease, </td>
+            <td class="r zpos">+2.80</td></tr>
+          
+          <tr><td><a href="stock.html#MASI"><b>MASI</b></a></td>
+            <td class="muted sm">Masimo</td>
+            <td class="r zpos">+2.67</td></tr>
+          
+          <tr><td><a href="stock.html#HOG"><b>HOG</b></a></td>
+            <td class="muted sm">Harley-Davidson</td>
+            <td class="r zpos">+2.48</td></tr>
+          
+          <tr><td><a href="stock.html#FTV"><b>FTV</b></a></td>
+            <td class="muted sm">Fortive</td>
+            <td class="r zpos">+2.40</td></tr>
+          
+          <tr><td><a href="stock.html#SATS"><b>SATS</b></a></td>
+            <td class="muted sm">EchoStar</td>
+            <td class="r zpos">+2.31</td></tr>
+          
+          <tr><td><a href="stock.html#VIR"><b>VIR</b></a></td>
+            <td class="muted sm">Vir Biotechnology,</td>
+            <td class="r zpos">+2.24</td></tr>
+          
+        </table>
+      </div>
+      
+      
+      
+      <div class="fcard">
+        <h3><span class="l-en">Shareholder yield</span><span class="l-zh">Shareholder yield</span>
+          <span class="help">?<span class="tip"><span class="l-en">Net shareholder yield = (dividends + buybacks) / market cap. Total payout predicts returns where dividends alone do not. Sparse on free data.</span><span class="l-zh">净股东收益率 =（股息＋回购）／市值。</span></span></span>
+          <span class="badge">top 25</span></h3>
+        <table>
+          
+          <tr><td><a href="stock.html#KBH"><b>KBH</b></a></td>
+            <td class="muted sm">KB Home</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#CRBG"><b>CRBG</b></a></td>
+            <td class="muted sm">Corebridge Financi</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#EIG"><b>EIG</b></a></td>
+            <td class="muted sm">Employers Holdings</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#VRRM"><b>VRRM</b></a></td>
+            <td class="muted sm">Verra Mobility Cor</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#SPNT"><b>SPNT</b></a></td>
+            <td class="muted sm">SiriusPoint Ltd.</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#ABR"><b>ABR</b></a></td>
+            <td class="muted sm">Arbor Realty Trust</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#RWT"><b>RWT</b></a></td>
+            <td class="muted sm">Redwood Trust, Inc</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#AIG"><b>AIG</b></a></td>
+            <td class="muted sm">American Internati</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#BKNG"><b>BKNG</b></a></td>
+            <td class="muted sm">Booking Holdings</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#FCN"><b>FCN</b></a></td>
+            <td class="muted sm">FTI Consulting</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+        </table>
+      </div>
+      
+      
+      
+      <div class="fcard">
+        <h3><span class="l-en">Low volatility</span><span class="l-zh">Low volatility</span>
+          <span class="help">?<span class="tip"><span class="l-en">The low-volatility anomaly: low trailing total volatility has historically delivered market-like returns with less risk (USMV/SPLV capture this).</span><span class="l-zh">低波动异象：低历史波动率。</span></span></span>
+          <span class="badge">top 25</span></h3>
+        <table>
+          
+          <tr><td><a href="stock.html#TXNM"><b>TXNM</b></a></td>
+            <td class="muted sm">TXNM Energy</td>
+            <td class="r zpos">+2.21</td></tr>
+          
+          <tr><td><a href="stock.html#PRA"><b>PRA</b></a></td>
+            <td class="muted sm">ProAssurance Corpo</td>
+            <td class="r zpos">+2.12</td></tr>
+          
+          <tr><td><a href="stock.html#BRK-B"><b>BRK-B</b></a></td>
+            <td class="muted sm">Berkshire Hathaway</td>
+            <td class="r zpos">+1.57</td></tr>
+          
+          <tr><td><a href="stock.html#DUK"><b>DUK</b></a></td>
+            <td class="muted sm">Duke Energy</td>
+            <td class="r zpos">+1.55</td></tr>
+          
+          <tr><td><a href="stock.html#FE"><b>FE</b></a></td>
+            <td class="muted sm">FirstEnergy</td>
+            <td class="r zpos">+1.53</td></tr>
+          
+          <tr><td><a href="stock.html#WEC"><b>WEC</b></a></td>
+            <td class="muted sm">WEC Energy Group</td>
+            <td class="r zpos">+1.51</td></tr>
+          
+          <tr><td><a href="stock.html#ATO"><b>ATO</b></a></td>
+            <td class="muted sm">Atmos Energy</td>
+            <td class="r zpos">+1.49</td></tr>
+          
+          <tr><td><a href="stock.html#LNT"><b>LNT</b></a></td>
+            <td class="muted sm">Alliant Energy</td>
+            <td class="r zpos">+1.49</td></tr>
+          
+          <tr><td><a href="stock.html#EVRG"><b>EVRG</b></a></td>
+            <td class="muted sm">Evergy</td>
+            <td class="r zpos">+1.48</td></tr>
+          
+          <tr><td><a href="stock.html#PECO"><b>PECO</b></a></td>
+            <td class="muted sm">Phillips Edison & </td>
+            <td class="r zpos">+1.48</td></tr>
+          
+        </table>
+      </div>
+      
+      
+      
+      <div class="fcard">
+        <h3><span class="l-en">Low beta (BAB)</span><span class="l-zh">Low beta (BAB)</span>
+          <span class="help">?<span class="tip"><span class="l-en">Betting-Against-Beta (Frazzini-Pedersen): low-beta stocks have had high risk-adjusted returns because leverage-constrained investors bid up high-beta names.</span><span class="l-zh">Betting-Against-Beta：低贝塔。</span></span></span>
+          <span class="badge">top 25</span></h3>
+        <table>
+          
+          <tr><td><a href="stock.html#CF"><b>CF</b></a></td>
+            <td class="muted sm">CF Industries</td>
+            <td class="r zpos">+2.51</td></tr>
+          
+          <tr><td><a href="stock.html#KR"><b>KR</b></a></td>
+            <td class="muted sm">Kroger</td>
+            <td class="r zpos">+2.25</td></tr>
+          
+          <tr><td><a href="stock.html#APA"><b>APA</b></a></td>
+            <td class="muted sm">APA Corporation</td>
+            <td class="r zpos">+2.02</td></tr>
+          
+          <tr><td><a href="stock.html#OXY"><b>OXY</b></a></td>
+            <td class="muted sm">Occidental Petrole</td>
+            <td class="r zpos">+1.99</td></tr>
+          
+          <tr><td><a href="stock.html#AWK"><b>AWK</b></a></td>
+            <td class="muted sm">American Water Wor</td>
+            <td class="r zpos">+1.96</td></tr>
+          
+          <tr><td><a href="stock.html#ED"><b>ED</b></a></td>
+            <td class="muted sm">Consolidated Ediso</td>
+            <td class="r zpos">+1.89</td></tr>
+          
+          <tr><td><a href="stock.html#PARR"><b>PARR</b></a></td>
+            <td class="muted sm">Par Pacific Holdin</td>
+            <td class="r zpos">+1.87</td></tr>
+          
+          <tr><td><a href="stock.html#PBF"><b>PBF</b></a></td>
+            <td class="muted sm">PBF Energy</td>
+            <td class="r zpos">+1.87</td></tr>
+          
+          <tr><td><a href="stock.html#WTRG"><b>WTRG</b></a></td>
+            <td class="muted sm">Essential Utilitie</td>
+            <td class="r zpos">+1.81</td></tr>
+          
+          <tr><td><a href="stock.html#MUSA"><b>MUSA</b></a></td>
+            <td class="muted sm">Murphy USA</td>
+            <td class="r zpos">+1.80</td></tr>
+          
+        </table>
+      </div>
+      
+      
+      
+      <div class="fcard">
+        <h3><span class="l-en">Low accruals</span><span class="l-zh">Low accruals</span>
+          <span class="help">?<span class="tip"><span class="l-en">Low accruals = earnings backed by cash flow, not estimates (Sloan). High-accrual earnings tend to reverse.</span><span class="l-zh">低应计：盈利由现金流支撑。</span></span></span>
+          <span class="badge">top 25</span></h3>
+        <table>
+          
+          <tr><td><a href="stock.html#AGNT"><b>AGNT</b></a></td>
+            <td class="muted sm">eXp World Holdings</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#RNG"><b>RNG</b></a></td>
+            <td class="muted sm">RingCentral, Inc.</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#FTRE"><b>FTRE</b></a></td>
+            <td class="muted sm">Fortrea</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#NOG"><b>NOG</b></a></td>
+            <td class="muted sm">Northern Oil and G</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#ENVA"><b>ENVA</b></a></td>
+            <td class="muted sm">Enova Internationa</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#ENOV"><b>ENOV</b></a></td>
+            <td class="muted sm">Enovis</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#TALO"><b>TALO</b></a></td>
+            <td class="muted sm">Talos Energy, Inc.</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#MRP"><b>MRP</b></a></td>
+            <td class="muted sm">Millrose Propertie</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#AGX"><b>AGX</b></a></td>
+            <td class="muted sm">Argan, Inc.</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#CHE"><b>CHE</b></a></td>
+            <td class="muted sm">Chemed Corp.</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+        </table>
+      </div>
+      
+      
+      
+      <div class="fcard">
+        <h3><span class="l-en">Low short interest</span><span class="l-zh">Low short interest</span>
+          <span class="help">?<span class="tip"><span class="l-en">Low short interest. High days-to-cover (short interest / avg daily volume, FINRA bi-monthly) negatively predicts the cross-section (Hong-Li-Rajan-Sherman) — leaders here are the LEAST shorted; the laggards are the crowded shorts.</span><span class="l-zh">低做空。高回补天数（FINRA 双月）在横截面上负向预测。</span></span></span>
+          <span class="badge">top 25</span></h3>
+        <table>
+          
+          <tr><td><a href="stock.html#HOOD"><b>HOOD</b></a></td>
+            <td class="muted sm">Robinhood Markets</td>
+            <td class="r zpos">+1.78</td></tr>
+          
+          <tr><td><a href="stock.html#VGNT"><b>VGNT</b></a></td>
+            <td class="muted sm">Versigent PLC</td>
+            <td class="r zpos">+1.78</td></tr>
+          
+          <tr><td><a href="stock.html#OKTA"><b>OKTA</b></a></td>
+            <td class="muted sm">Okta, Inc.</td>
+            <td class="r zpos">+1.67</td></tr>
+          
+          <tr><td><a href="stock.html#F"><b>F</b></a></td>
+            <td class="muted sm">Ford Motor Company</td>
+            <td class="r zpos">+1.65</td></tr>
+          
+          <tr><td><a href="stock.html#ACMR"><b>ACMR</b></a></td>
+            <td class="muted sm">ACM Research, Inc.</td>
+            <td class="r zpos">+1.63</td></tr>
+          
+          <tr><td><a href="stock.html#SHAK"><b>SHAK</b></a></td>
+            <td class="muted sm">Shake Shack, Inc.</td>
+            <td class="r zpos">+1.56</td></tr>
+          
+          <tr><td><a href="stock.html#VSH"><b>VSH</b></a></td>
+            <td class="muted sm">Vishay Intertechno</td>
+            <td class="r zpos">+1.56</td></tr>
+          
+          <tr><td><a href="stock.html#CME"><b>CME</b></a></td>
+            <td class="muted sm">CME Group</td>
+            <td class="r zpos">+1.56</td></tr>
+          
+          <tr><td><a href="stock.html#BRC"><b>BRC</b></a></td>
+            <td class="muted sm">Brady Corporation</td>
+            <td class="r zpos">+1.50</td></tr>
+          
+          <tr><td><a href="stock.html#VICR"><b>VICR</b></a></td>
+            <td class="muted sm">Vicor Corporation</td>
+            <td class="r zpos">+1.47</td></tr>
+          
+        </table>
+      </div>
+      
+      
+    </div>
+  </div>
+
+  <div class="panel">
+    <p class="muted" style="font-size:12px;margin:0"><span class="l-en">Source: SEC EDGAR XBRL 'frames' API (free, keyless) for FY2025 fundamentals, joined to the S&P 1500 price universe; 1329 names with a full composite as of 2026-06-12. Fundamentals refresh weekly; ranks recompute daily with prices. Factors are decayed/crowded and free fundamentals are imperfect — treat as a research lens, not a buy list. See research/QUANT_FACTOR_EXPANSION.md and LIMITATIONS.md.</span><span class="l-zh">来源：SEC EDGAR XBRL ‘frames’ API（免费、无需密钥）的 FY2025 基本面，与标普 1500 价格域连接；截至 2026-06-12 有 1329 只具备完整综合分。基本面每周刷新，排名随价格每日重算。因子已衰减／拥挤且免费基本面并不完美 — 视作研究视角，而非买入清单。</span>
+      <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-13 20:46 UTC</p>
+  </div>
+  <script src="theme.js"></script>
+</body>
+</html>

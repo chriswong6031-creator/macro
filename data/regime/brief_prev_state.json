@@ -6,7 +6,7 @@
  "inflation_score": -0.652,
  "confidence": 0.518,
  "transition_state": "STABLE",
- "posture": "NEUTRAL",
+ "posture": "CONSTRUCTIVE",
  "stages": {
   "XLB": {
    "stage": "leading",
@@ -15,7 +15,7 @@
   },
   "XLC": {
    "stage": "lagging",
-   "heat": 26,
+   "heat": 33,
    "progress": 10.0
   },
   "XLE": {
@@ -35,7 +35,7 @@
   },
   "XLK": {
    "stage": "leading",
-   "heat": 45,
+   "heat": 52,
    "progress": null
   },
   "XLP": {
@@ -60,7 +60,7 @@
   },
   "XLY": {
    "stage": "lagging",
-   "heat": 30,
+   "heat": 37,
    "progress": 14.0
   }
  }

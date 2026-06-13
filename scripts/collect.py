@@ -34,9 +34,14 @@ def all_adapters() -> dict:
         ("nyfed", "collectors.nyfed", "NyFedAdapter"),
         ("breadth", "collectors.breadth", "BreadthAdapter"),
         ("smallcap_breadth", "collectors.smallcap_breadth", "SmallCapBreadthAdapter"),
+        ("midcap_breadth", "collectors.midcap_breadth", "MidCap400BreadthAdapter"),
         ("cot", "collectors.cot", "CotAdapter"),
         ("cboe_putcall", "collectors.cboe", "PutCallAdapter"),
         ("cboe_gex", "collectors.cboe", "GexAdapter"),
+        ("cboe_skew", "collectors.cboe_indices", "CboeSkewAdapter"),   # tail-risk index (research/QUANT_FACTOR_EXPANSION.md)
+        ("fedboard_ebp", "collectors.fedboard", "EbpAdapter"),         # Excess Bond Premium (credit risk-appetite)
+        ("eia", "collectors.eia", "EiaAdapter"),                       # petroleum supply (Weekly Petroleum Status)
+        # FINRA short interest (Phase 3) is ticker-indexed, fetched from build_factors (like EDGAR), not here.
         ("sentiment_naaim", "collectors.sentiment", "NaaimAdapter"),
         ("sentiment_aaii", "collectors.sentiment", "AaiiAdapter"),
         ("sector_flows", "collectors.sponsors", "SectorFlowAdapter"),
@@ -51,6 +56,10 @@ def all_adapters() -> dict:
         ("china_macro", "collectors.china_macro", "ChinaMacroAdapter"),
         ("china_breadth", "collectors.china_breadth", "ChinaBreadthAdapter"),
         ("china_universe", "collectors.china_universe", "ChinaUniverseAdapter"),  # broad A-share SEARCH set (decoupled from breadth)
+        ("china_margin", "collectors.china_margin", "ChinaMarginAdapter"),     # 融资融券 crowd meter
+        ("china_connect", "collectors.china_connect", "ChinaConnectAdapter"),  # 沪深港通 flows (repairs connect_flow)
+        ("china_flows", "collectors.china_flows", "ChinaFlowsAdapter"),        # AH premium / limit-up / ETF shares
+        ("china_credit", "collectors.china_credit", "ChinaCreditAdapter"),     # 社融 TSF (mofcom, legacy-SSL)
         # Hong Kong / Hang Seng dashboard — see research/HK_DATA_AUDIT.md
         # (macro is reused from china_macro; HK only adds prices + breadth)
         ("hk_prices", "collectors.hk_prices", "HkPriceAdapter"),

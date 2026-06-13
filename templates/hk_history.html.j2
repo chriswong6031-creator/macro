@@ -1,0 +1,109 @@
+{% macro help(en, zh='') -%}
+<span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
+{%- endmacro %}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ t('Hong Kong Regime History', '香港周期历史') }} — {{ latest.date }}</title>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,
+         "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  html[data-lang="zh"] body { font-family: "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",-apple-system,sans-serif; }
+  a { text-decoration:none; }
+  h1 { font-size:20px; margin:0; }
+  h2 { font-size:15px; margin:0 0 10px; color:var(--muted);
+       text-transform:uppercase; letter-spacing:.06em; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+           padding:14px 16px; margin-bottom:14px; }
+  .topline { display:flex; flex-wrap:wrap; align-items:center; gap:14px; }
+  .navbtn { display:inline-block; padding:5px 11px; border-radius:9px; background:var(--panel2);
+            border:1px solid var(--line); color:var(--text); font-size:13px; font-weight:600; }
+  .muted { color:var(--muted); }
+  .legend { display:flex; flex-wrap:wrap; gap:12px; margin-top:8px; font-size:12px; }
+  .legend i { display:inline-block; width:12px; height:12px; border-radius:3px;
+              margin-right:5px; vertical-align:-1px; }
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px;
+          height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted);
+          font-size:10px; font-weight:600; cursor:help; position:relative;
+          vertical-align:middle; margin-left:5px; flex:none; }
+  .help .tip { display:none; position:absolute; bottom:140%; left:50%;
+               transform:translateX(-50%); width:290px; background:var(--panel);
+               border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60;
+               font-size:12px; line-height:1.45; color:var(--text); text-align:left;
+               font-weight:400; text-transform:none; letter-spacing:normal;
+               box-shadow:var(--popover-shadow); pointer-events:none; }
+  .help:hover .tip { display:block; }
+  table { border-collapse:collapse; width:100%; font-size:13px; }
+  th,td { text-align:right; padding:4px 8px; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:500; }
+  th:first-child,td:first-child { text-align:left; }
+</style>
+</head>
+<body>
+  <div class="panel">
+    <div class="topline">
+      <h1>{{ t('Hong Kong regime history', '香港周期历史') }}</h1>
+      <span class="muted">{{ t('data through', '数据截至') }} {{ latest.date }}</span>
+      <span style="flex:1"></span>
+      <a class="navbtn" href="hk.html">{{ t('← Back to Hong Kong dashboard', '← 返回香港仪表盘') }}</a>
+      <button class="lang-btn">中文</button>
+      <button class="theme-btn">☀️ {{ t('Light', '浅色') }}</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>{{ t('Regimes over the Hang Seng Index', '恒生指数 周期叠加') }}
+      {{ help("The Hang Seng Index with the regime active at each time shaded behind it — how the classifier behaved in real conditions. Regime classification begins ~2006 (when the China macro series start); the chart shows the last 3 years over the Hang Seng Index.", "恒生指数走势，并以底色标出每个时段所处的周期 — 展示分类器在真实环境中的表现。周期分类自约 2006 年起（中国宏观数据起点）；图表显示恒生指数最近三年。") }}
+    </h2>
+    {{ chart_regime | safe }}
+    <div class="legend">
+      <span><i style="background:var(--q1)"></i><b>{{ t('Goldilocks', '理想增长') }}</b> — {{ t('growth ↑ inflation ↓ (tech/quality/consumer)', '增长 ↑ 通胀 ↓（科技／质量／消费）') }}</span>
+      <span><i style="background:var(--q2)"></i><b>{{ t('Reflation', '再通胀') }}</b> — {{ t('growth ↑ inflation ↑ (commodities/brokers/property)', '增长 ↑ 通胀 ↑（大宗／券商／地产）') }}</span>
+      <span><i style="background:var(--q3)"></i><b>{{ t('Stagflation', '滞胀') }}</b> — {{ t('growth ↓ inflation ↑ (materials/banks/staples)', '增长 ↓ 通胀 ↑（材料／银行／必需消费）') }}</span>
+      <span><i style="background:var(--q4)"></i><b>{{ t('Growth scare', '增长恐慌') }}</b> — {{ t('growth ↓ inflation ↓ — measured-best contrarian bottom', '增长 ↓ 通胀 ↓ — 实测最佳的逆向底部') }}</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>{{ t('The two dials over time', '两大指标随时间变化') }}
+      {{ help("History of the growth (green) and inflation (red) scores, plus a third dotted line — the global-risk composite (gold). Zero-line crossings are regime changes; persistent readings near ±0.5 are strong regimes; near zero = mixed. The global-risk line shows the risk-on/off backdrop that drives Hong Kong roughly twice as hard as mainland A-shares.", "增长（绿）与通胀（红）评分的历史走势，外加第三条虚线 — 全球风险综合指标（金色）。穿越零轴即周期切换；持续接近 ±0.5 代表强周期；接近零 = 混杂。全球风险线反映风险偏好的整体环境，其对香港的影响约为内地 A 股的两倍。") }}
+    </h2>
+    {{ chart_axes | safe }}
+  </div>
+
+  <div class="panel">
+    <h2>{{ t('Regime lifespans — base rates', '周期存续期 — 基准概率') }}
+      {{ help("Every regime period since ~2006 in this classifier: how many there were, how long they typically lasted, and where they went next. HK regimes are globally sensitive and shorter than the US — treat as context.", "本分类器自约 2006 年以来的每个周期时段：共出现多少次、通常持续多久、结束后转向何处。香港的周期受全球因素影响大、且比美国更短 — 仅作背景参考。") }}
+    </h2>
+    <table>
+      <tr><th>{{ t('regime', '周期') }}</th><th>{{ t('periods', '次数') }}</th><th>{{ t('median length (days)', '存续中位数（天）') }}</th><th>{{ t('most common next', '最常见的下一周期') }}</th></tr>
+      {% for row in lifespan_rows %}
+      <tr><td>{{ td(row.name) }}</td><td>{{ row.n }}</td><td>{{ row.median }}</td><td>{{ row.next }}</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <p class="muted">{{ t('Generated', '生成于') }} {{ generated_utc }} UTC</p>
+<script>
+window.__CHART_SWAP__ = {
+  colors: {"#5fbf7f":"#e07070","#e07070":"#5fbf7f","#2e9e4f":"#d04545","#d04545":"#2e9e4f"},
+  labels: {"growth":"增长","inflation":"通胀","global-risk":"全球风险","global risk":"全球风险"}
+};
+</script>
+<script src="theme.js"></script>
+<script src="chart_i18n.js"></script>
+<footer class="site-footer">
+  <span class="made">{{ t('Made with ❤️ in Canada', '用 ❤️ 在加拿大制作') }}</span>
+  <span class="dev">{{ t('Developed by', '开发者') }} Chris Wong</span>
+</footer>
+</body>
+</html>

@@ -2,6 +2,111 @@
 
 Newest first. Each entry: what was decided, why, and what would change it.
 
+## 2026-06-13 — Section 4: Hong Kong / Hang Seng dashboard
+
+**D77. HK sectors = deep SYNTHETIC baskets of curated constituents, not sector
+ETFs.** HK sector-ETF coverage is thin/short, but constituent stock history is deep
+(most names 2000–2006→). So each HK "sector" is an equal-weight `basket_index` over
+~6 curated large-caps (`config.yml hk.sectors`), RS-ranked vs `^HSI`. This gives
+15–25y of history for *every* sector — richer than China's ~5y ETFs and a genuine
+improvement over a literal ETF clone. Trade-off: it's a large-cap basket, not a
+float-cap reconstruction of the HSCI industry indices (labeled on the page). Changes
+if a free HK sector-index/holdings feed appears.
+
+**D78. The HK regime stands on THREE legs; the global risk overlay is PRIMARY.**
+Measured (memory `china-global-factors`): HK is ~2× more globally sensitive than the
+Mainland. So the engine = quad (growth×inflation) + **dual liquidity** (PBoC China-M2
+*and* Fed-via-peg = HKD distance + Stock-Connect southbound) + a **Global Risk
+Overlay** (`engine/hk_global.py`: a DXY/VIX/SPY/copper-gold/USD-CNY/EEM composite +
+the HKD peg, surfaced as the dashboard hero). Fundamentals reuse `china_macro` (HSI
+earnings are ~75% China) — *no new macro scraper*. Global factors are read from the
+existing `yahoo`/`china`/`hk` store groups; only `EEM` + `HKD=X` are newly collected.
+The overlay is framed as a CONCURRENT risk STATE, not a forecast (lead-lag ~0).
+
+**D79. Calibration result — HK quad ordering is split-half STABLE (unlike China).**
+2000→2026, on `^HSI`: Goldilocks best (+1.3%/21d, 64% hit, positive both halves),
+Stagflation worst (−0.9%/21d, negative both); expanding dual-liquidity > contracting
+(monotone); and the KEY test — the global risk state differentiates HSI forward
+returns monotonically (Risk-on +0.9%/21d 57% hit > Risk-off +0.3% > Neutral −0.2%).
+All three legs ship with their measured record on the page; the cycle ladder stays a
+drawdown/structure tool, never a standalone trigger (house rule). `^HSTECH` is not on
+Yahoo → HS-TECH proxied by the CSOP ETF 3033.HK (2020→, drops out of deep pre-2020
+classification via axis renormalization). Built as a full clone preserving the China
+interface — engine modules `hk_inputs/hk_axes/hk_regime/hk_run/hk_global`, scripts
+`build_hk/build_hk_library/calibrate_hk/hk_brief`, templates `hk*.j2`, wired into the
+hub (🇭🇰 card + `_hk_state`), nav and daily/weekly CI. Browser-verified bilingual.
+
+**D80. Adversarial review pass (3 dimensions, each finding independently verified) →
+5 confirmed defects fixed.** (1) The "dual liquidity" SOUTHBOUND leg was reading the
+DEAD `china_macro/connect_flow.southbound_cum` (100% NaN — a frozen legacy store), so
+the overlay silently ran on 2 legs while config/report/docstrings advertised 3 →
+repointed `hk_inputs` to the LIVE `china_connect/southbound` store (a parallel
+session's repaired collector; `southbound_cum` = cumsum of daily net flow, 2017→).
+The overlay is now genuinely 3-leg; recalibration kept it monotone and *widened* the
+edge (expanding +0.5% vs contracting −0.4%/21d). (2) `hk_global.composite` had no
+min-factor floor → a pre-1993 single/double-factor signal was mislabeled a confident
+6-factor risk_state in the raw parquet; added `min_factors: 3` (→ `unknown` below it,
+mirroring `score_axis.min_components`). (3) `hk_global.snapshot(asof)` truncated only
+the composite, not the factor panel/peg → a latent look-ahead on any historical call;
+now slices every factor series + the HKD series to `asof`. (4) peg weak-side threshold
+hard-coded `*0 + 0.75`, ignoring `pressure_pct` → made it `1 - pressure_pct/100`. 3
+findings correctly REFUTED (use_log heuristic = no numeric diff since all factors
+positive; "monotonic" wording defensible; the peg fix double-reported). Live read
+after fixes: Stagflation · neutral 3-leg liquidity · Neutral risk · HKD weak-side.
+
+**D81. HK charting → TradingView Lightweight Charts on our own EOD data (not the
+symbol widget).** The free `TradingView.widget()` symbol embed returns "This symbol
+is only available on TradingView" for HKEX tickers — HKEX data is gated behind a TV
+login, regardless of symbol format. Rather than shop for another live-quote provider
+(CORS/rate-limit/key headaches, against the repo's zero-cost static-data philosophy),
+the HK stock-analyzer (`hk_stock.html`) and the 12 sector drill-downs now draw an
+adjusted-close + 50/200-DMA area chart from OUR nightly stored closes using the
+open-source `lightweight-charts` lib (CDN, ~45KB). `build_hk_library.chart_series()`
+adds a compact columnar `chart:{t,c}` (~2y/504 pts) to each `hkstockdata/*.json`;
+sector pages embed the basket series via `s.chart_json`. MAs computed client-side.
+Trade-off: EOD close only (no intraday/candles/volume — we don't store OHLC for HK
+constituents). China/US/crypto keep the live TV widget (those exchanges aren't gated).
+
+## 2026-06-13 — Entry-Quality score: a RISK-TIMING conviction, not an alpha leaderboard (macro)
+
+**D76 (macro). Added `engine.cycles.entry_quality()` — a SIGNED −100..+100 "how good
+is THIS moment to enter" score (buy-setup positive / sell-exit negative), surfaced as
+a concise badge.** User asked for a multi-faceted buy-conviction score weighting time
+(closeness to the momentum cross — about-to-cross → just-crossed, decaying as days
+pass) and price (closeness to the bottom / a bottoming process arching up). Before
+building, a 54k-sample backtest (110 deep-history names, ~14y, all regimes;
+`scripts/research_conviction.py`, `research/ENTRY_QUALITY.md`) tested each lever in
+isolation. **Findings:** (1) **proximity-to-the-cycle-low is the dominant, robust
+lever — for RISK, not return**: forward-63d drawdown −7.0% at 0–3% above the low vs
+−10.5% chasing (>25% above), monotone; (2) **freshness is real but mainly a staleness
+penalty** (cross >20d old = worst band); (3) the visible "arch" (10d MA already rising)
+*underperforms* — it correlates with being later/higher, so swing-low/curl is used as a
+*knife-catch filter*, not a "wait for confirmation" gate; (4) **decisive & humbling:** a
+buy-near-the-low score *anti-correlates* with forward RETURN (rank-corr −0.05..−0.14),
+**even inside uptrends** — ordinary momentum/trend-persistence beats short-horizon
+mean-reversion. So the score is honestly scoped as **entry-quality / risk-timing**, NOT
+a return predictor (same lesson the ladder calibration already states). **Design:** sign
+is ANCHORED to the ladder state (`_EQ_BULLISH`/`_EQ_BEARISH`) so it can never contradict
+the displayed call (0/110 inconsistencies); magnitude =
+`gate × (0.55+0.45·hold) × (0.52·proximity + 0.30·freshness + 0.18·momentum)`; cheap
+point-in-time (MACD cross-age from the histogram, no backward walk). Wired into
+`analyze()` only (not the calibration walk). **UI:** concise badge + one-line honest
+tooltip ("entries near the pivot drew ~30% smaller drawdowns than chasers far above it —
+risk control, NOT a return forecast") on the stock analyzer, sector ETF header + holding
+rows, and the dashboard action board + standout chips; EN/ZH, both themes. **Calibration
+of the shipped engine** (`data/regime/entry_quality_calibration.json`): buy-setup forward-63d
+avg drawdown shrinks monotonically with quality (light −7.88% → solid −7.82% → strong
+−7.13%) while return falls (4.74% → 3.07%) — confirming "safer, not higher-returning".
+**Adversarially reviewed** (4-lens workflow, every finding skeptic-verified): 8 issues
+fixed — proximity-curve discontinuity at the −3% pivot edge made continuous, regime-gate
+`KeyError` made `.get`-safe, genuine RSI-0 no longer coerced to neutral, badge rounded
+once so arrow/grade/number never disagree, COUNTERTREND-BOUNCE magnitude capped to the
+"light" band (it's "NIMBLE ONLY"), and watch-state wording softened ("buy setting up" /
+"exit setting up"). What would change it: a different universe/period (small-caps, mean-
+reverting assets, bear-dominated) could shift the trend-vs-mean-reversion balance — re-run
+the walk before trusting the bands elsewhere; if a future regime label appears, the gate
+already degrades gracefully to neutral.
+
 ## 2026-06-13 — Vector allocation deep-dive page + alt-cycle ETH
 
 **D-vec-ALLOC. New allocation deep-dive page (vector_allocation.html) with an
@@ -21,9 +126,18 @@ read): ETH/BTC 0.0262 @13th pctile, falling, below 50w MA → deep BTC-season
 stock analyzer's cash-heavy "not an investment buy". Page also explains the 4 BTC
 variants + backtest scorecards. Honest caveats surfaced: the % grid + 0.05/0.07
 lines are judgment/convention (not optimized), ~1.5-2 ETH/BTC cycles = low
-confidence, regime overlay not an entry timer. STILL TODO (user ask): the
-short/mid side-by-side layout tidy on the main page (the confluence banner
-already tidies the top-level read).
+confidence, regime overlay not an entry timer.
+
+**D-vec-LAYOUT (done, follow-up). Top-of-page restructure per the user's tidy ask.**
+Block A (hero) is now LONG-TERM (left, larger via cols-2 1.15/.85) + the BTC
+allocation card next to it — the allocation card gained a prominent "Full
+allocation strategy — BTC · ETH · alts · cash →" link to vector_allocation.html.
+New Block B "Mid term & Short term" is a cols-eq (1fr 1fr, new class, added to the
+900px stack media query) of two equal peer cards in the SAME format: Mid term ·
+Environment (moved out of the hero right rail) + Short term · Scenarios with Bear
+& Bull FOLDED INTO ONE card (two halves split by a divider) so it mirrors the mid
+card's footprint. Removed the old standalone two-card short-term section.
+Verified: hero 645/477, mid&short 561/561 equal, stacks <900px, 0 console errors.
 
 ## 2026-06-13 — Vector MTF cycle-ladder + confluence verdict (reconcile bounce vs bigger picture)
 

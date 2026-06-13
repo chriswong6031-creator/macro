@@ -260,6 +260,92 @@ def gex_flip_cross(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
     return None
 
 
+# --- conditions layer (research/QUANT_FACTOR_EXPANSION.md) -----------------------
+
+def _conditions_frame(f: pd.DataFrame):
+    from engine.conditions import conditions_frame
+    return conditions_frame(f)
+
+
+def conditions_recession_state_change(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
+    """Fire when the recession-risk band (low/elevated/high) changes."""
+    if not config.load()["alerts"].get("conditions_recession_state_change", True):
+        return None
+    rc = config.load()["engine"]["conditions"]["recession"]
+    cf = _conditions_frame(f)
+    if "recession_risk" not in cf:
+        return None
+    s = cf["recession_risk"].dropna()
+    if len(s) < 2:
+        return None
+
+    def band(v: float) -> str:
+        return "high" if v >= rc["high_score"] else ("elevated" if v >= rc["elevated_score"] else "low")
+    prev, cur = band(s.iloc[-2]), band(s.iloc[-1])
+    if prev == cur:
+        return None
+    rising = s.iloc[-1] > s.iloc[-2]
+    sev = "act" if cur == "high" else ("warn" if rising else "info")
+    return Alert("conditions_recession_state_change", sev,
+                 f"Recession-risk band {prev} -> {cur} (score {s.iloc[-1]:.0f}/100)",
+                 message_zh=f"衰退风险等级 {prev} -> {cur}（评分 {s.iloc[-1]:.0f}/100）")
+
+
+def nfci_tightening(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
+    """Financial conditions crossing from loose/neutral into tight."""
+    thr = config.load()["alerts"].get("nfci_tightening_z")
+    if thr is None or "nfci" not in f.columns:
+        return None
+    s = f["nfci"].dropna()
+    if len(s) < 2:
+        return None
+    if s.iloc[-2] < thr <= s.iloc[-1]:
+        return Alert("nfci_tightening", "warn",
+                     f"Financial conditions tightened: NFCI crossed above {thr:+.2f} "
+                     f"(now {s.iloc[-1]:+.2f}) — broad risk-off",
+                     message_zh=f"金融条件收紧：NFCI 上穿 {thr:+.2f}（现 {s.iloc[-1]:+.2f}）— 广泛避险")
+    return None
+
+
+def sahm_trigger(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
+    """The Sahm rule crossing its 0.50 recession threshold (labor-side confirm)."""
+    thr = config.load()["alerts"].get("sahm_trigger")
+    if thr is None or "sahm" not in f.columns:
+        return None
+    s = f["sahm"].dropna()
+    if len(s) < 2:
+        return None
+    if s.iloc[-2] < thr <= s.iloc[-1]:
+        return Alert("sahm_trigger", "act",
+                     f"Sahm rule triggered ({s.iloc[-1]:.2f} >= {thr:.2f}) — labor market "
+                     f"signalling a recession is underway",
+                     message_zh=f"Sahm 法则触发（{s.iloc[-1]:.2f} >= {thr:.2f}）— 劳动力市场显示衰退已开始")
+    return None
+
+
+def ebp_widening(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
+    """Excess Bond Premium spiking — a credit-risk-appetite shock."""
+    zmax = config.load()["alerts"].get("ebp_widening_z")
+    if zmax is None or "ebp" not in f.columns:
+        return None
+    ebp = f["ebp"].dropna()
+    distinct = ebp[ebp.ne(ebp.shift())]   # monthly prints (de-dupe the ffill)
+    if len(distinct) < 24:
+        return None
+    chg = distinct.diff()
+    sd = chg.rolling(36).std().iloc[-1]
+    if not sd or pd.isna(sd):
+        return None
+    z = (chg.iloc[-1] - chg.rolling(36).mean().iloc[-1]) / sd
+    if z > zmax:
+        return Alert("ebp_widening", "warn",
+                     f"Excess Bond Premium jumped {chg.iloc[-1]:+.2f} ({z:.1f} sigma) — "
+                     f"credit risk-appetite deteriorating (level {distinct.iloc[-1]:+.2f})",
+                     message_zh=f"超额债券溢价跳升 {chg.iloc[-1]:+.2f}（{z:.1f} 个标准差）— "
+                                f"信用风险偏好恶化（水平 {distinct.iloc[-1]:+.2f}）")
+    return None
+
+
 # --- runner ---------------------------------------------------------------------
 
 def evaluate(f: pd.DataFrame) -> list[Alert]:
@@ -269,7 +355,8 @@ def evaluate(f: pd.DataFrame) -> list[Alert]:
         return []
     alerts: list[Alert] = []
     rules = [transition_state_change, net_liquidity_roc_flip, hy_oas_widening,
-             gex_flip_cross]
+             gex_flip_cross, conditions_recession_state_change, nfci_tightening,
+             sahm_trigger, ebp_widening]
     multi = [axis_confidence_floor, sector_rs_percentile_cross,
              holdings_active_changes, sector_holdings_accumulation,
              circuit_breaker_open]

@@ -28,6 +28,11 @@ class YahooAdapter(Adapter):
         out: list[str] = []
         for grp in self.cfg["tickers"].values():
             out.extend(grp)
+        # stock_search.extra_tickers must be collected here or they can never be
+        # searched (build_stock_library reads data/yahoo/<t>.parquet for them).
+        # Skip ^-prefixed index symbols — they belong in the tickers groups.
+        extra = config.load().get("stock_search", {}).get("extra_tickers", []) or []
+        out.extend(t for t in extra if not str(t).startswith("^"))
         return list(dict.fromkeys(out))
 
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:

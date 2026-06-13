@@ -84,7 +84,9 @@
   var playing = null;  // interval handle
 
   // ---- load ------------------------------------------------------------------
-  fetch('regime_timeline.json').then(function (r) {
+  // china (and any other market) can point at its own timeline via data-timeline;
+  // the macro page omits it and keeps the original filename.
+  fetch(root.getAttribute('data-timeline') || 'regime_timeline.json').then(function (r) {
     if (!r.ok) throw new Error('no timeline');
     return r.json();
   }).then(function (j) {

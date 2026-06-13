@@ -366,10 +366,11 @@ def calibrate_eq(df: pd.DataFrame) -> dict:
     print("ENGINE entry_quality CALIBRATION — does a higher BUY-setup score buy a")
     print("SMALLER forward drawdown (the validated 'safer entry' claim)?")
     out = {"horizon_days": 63, "n": int(len(df)), "buy": {}, "sell": {}}
-    buy = df[df.eq > 0]
+    eqs = df["eq"]   # NB: df.eq is the DataFrame.eq() METHOD — must use bracket access
+    buy = df[eqs > 0]
     print("\nBUY-setup (eq>0) bins — forward 63d:")
     for lo, hi, name in [(15, 35, "light"), (35, 60, "solid"), (60, 101, "strong")]:
-        m = buy[(buy.eq >= lo) & (buy.eq < hi)]
+        m = buy[(buy["eq"] >= lo) & (buy["eq"] < hi)]
         if len(m) < 40:
             continue
         rr = m.mfe63.mean() / abs(m.mae63.mean()) if m.mae63.mean() else float("nan")
@@ -379,7 +380,7 @@ def calibrate_eq(df: pd.DataFrame) -> dict:
                             "reward_risk": round(rr, 2)}
         print(f"  {name:>7} [{lo:>3}-{hi-1}] n={len(m):<5} hit {100*(m.ret63>0).mean():>5.1f}%  "
               f"ret {100*m.ret63.mean():>5.2f}%  MAE {100*m.mae63.mean():>6.2f}%  R:R {rr:.2f}")
-    sell = df[df.eq < 0].copy(); sell["mag"] = -sell.eq
+    sell = df[eqs < 0].copy(); sell["mag"] = -sell["eq"]
     print("\nSELL/EXIT-setup (eq<0) bins — forward 63d (down% = price fell):")
     for lo, hi, name in [(15, 35, "light"), (35, 60, "solid"), (60, 101, "strong")]:
         m = sell[(sell.mag >= lo) & (sell.mag < hi)]
@@ -394,7 +395,7 @@ def calibrate_eq(df: pd.DataFrame) -> dict:
     print("\nDrawdown monotonicity (avg |MAE| 63d should SHRINK as buy-quality rises):")
     prev = None
     for lo, hi, name in [(15, 35, "light"), (35, 60, "solid"), (60, 101, "strong")]:
-        m = buy[(buy.eq >= lo) & (buy.eq < hi)]
+        m = buy[(buy["eq"] >= lo) & (buy["eq"] < hi)]
         if len(m) < 40:
             continue
         v = 100 * m.mae63.mean()

@@ -115,24 +115,33 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
             out.append((t, df["close"], df.get("high"), nm, sec))
             seen.add(t)
 
-    # S&P 500 constituents from the breadth close cache (3y window)
-    cache = config.data_dir() / "breadth" / "_closes_cache.parquet"
-    cons = config.data_dir() / "breadth" / "constituents.parquet"
-    if cache.exists() and cons.exists():
+    # Index constituents from the breadth close caches (~3y window each). The
+    # S&P 500 + 400 + 600 together form the S&P Composite 1500 — ~1500 unique
+    # liquid US names, the practical "all US equities" search set (S&P 600 also
+    # serves as the free Russell 2000 small-cap proxy). Order is priority: a
+    # ticker is taken from the first cache that carries it, and data/stocks deep
+    # history above already won the ~110 holdings names.
+    for grp in ("breadth", "smallcap_breadth", "midcap_breadth"):
+        cache = config.data_dir() / grp / "_closes_cache.parquet"
+        cons = config.data_dir() / grp / "constituents.parquet"
+        if not (cache.exists() and cons.exists()):
+            log.warning("%s close cache missing — those constituents skipped", grp)
+            continue
         try:
             closes = pd.read_parquet(cache)
             meta = pd.read_parquet(cons)
         except Exception as e:  # noqa: BLE001 — corrupt restored cache must not crash build_site
-            log.warning("breadth cache unreadable (%s) — library covers stored tickers only", e)
-            closes, meta = pd.DataFrame(), pd.DataFrame()
+            log.warning("%s cache unreadable (%s) — those constituents skipped", grp, e)
+            continue
+        added = 0
         for t in closes.columns:
             if t in seen or t not in meta.index:
                 continue
             out.append((t, closes[t], None,
                         str(meta.loc[t, "name"]), str(meta.loc[t, "sector"])))
             seen.add(t)
-    else:
-        log.warning("breadth close cache missing — library covers stored tickers only")
+            added += 1
+        log.info("stock library universe: +%d from %s", added, grp)
 
     # ETFs / commodities / crypto from the yahoo store
     ycfg = config.load()["yahoo"]["tickers"]

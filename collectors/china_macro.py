@@ -10,7 +10,7 @@ plane, so every series:
 
 Stored under group `china_macro`, one parquet per series:
   pmi (mfg+nonmfg) · cpi · ppi · money_supply (M0/M1/M2 YoY) · indpro · rates
-  (SHIBOR tenors) · connect_flow (Stock Connect cumulative net).
+  (SHIBOR tenors). Stock Connect flows live in their own collector (china_connect).
 
 Deferred (fiddlier hosts, engine degrades without them): social financing
 (data.mofcom.gov.cn POST, legacy SSL) and CGB bond yields (chinabond).
@@ -38,6 +38,16 @@ DATACENTER = {
     "money_supply": ("RPT_ECONOMY_CURRENCY_SUPPLY", {"m2_yoy": "BASIC_CURRENCY_SAME",
                                                      "m1_yoy": "CURRENCY_SAME", "m0_yoy": "FREE_CASH_SAME"}),
     "indpro":       ("RPT_ECONOMY_INDUS_GROW",     {"indpro_yoy": "BASE_SAME"}),
+    # -- credit + macro-tape monthlies (verified 2026-06-13, same datacenter host) --
+    # new bank credit: the credit-cycle proxy (TSF/社融 itself is mofcom-only/legacy-SSL,
+    # so we lead the credit read with new RMB loans + the M1-M2 scissors derived downstream)
+    "rmb_loan":     ("RPT_ECONOMY_RMB_LOAN",       {"new_loans": "RMB_LOAN", "new_loans_yoy": "RMB_LOAN_SAME"}),
+    "fai":          ("RPT_ECONOMY_ASSET_INVEST",   {"fai_yoy": "BASE_SAME"}),          # fixed-asset investment, cumulative YoY
+    "retail":       ("RPT_ECONOMY_TOTAL_RETAIL",   {"retail_yoy": "RETAIL_TOTAL_SAME"}),  # retail sales YoY
+    "customs":      ("RPT_ECONOMY_CUSTOMS",        {"exports_yoy": "EXIT_BASE_SAME",   # trade YoY (EXIT=exports)
+                                                     "imports_yoy": "IMPORT_BASE_SAME"}),
+    # RRR (存款准备金率) policy events — big-bank reserve ratio + each change (cuts = easing)
+    "rrr":          ("RPT_ECONOMY_DEPOSIT_RESERVE", {"rrr_big": "INTEREST_RATE_BA", "rrr_change": "CHANGE_RATE_B"}),
 }
 # enabled-key aliases -> stored parquet name (config lists `lpr`; we store SHIBOR as `rates`)
 ALIASES = {"lpr": "rates"}
@@ -51,7 +61,6 @@ class ChinaMacroAdapter(Adapter):
 
     def __init__(self) -> None:
         self.cfg = config.load()["china"]["macro"]
-        self.hsgt_cfg = config.load()["china"]["hsgt"]
         self.enabled = [ALIASES.get(k, k) for k in self.cfg["enabled"]]
 
     def _headers(self) -> dict:
@@ -98,34 +107,6 @@ class ChinaMacroAdapter(Adapter):
             raise ValueError("rates: no SHIBOR tenors parsed")
         return wide
 
-    def _connect_flow(self, full_history: bool) -> pd.DataFrame:
-        """Stock Connect cumulative net. NB: northbound (hk2sh/hk2sz) was frozen by
-        regulators in Aug-2024 — the series goes flat, which is expected, not a bug."""
-        lmt = 4000 if full_history else 60
-        params = {"fields1": "f1,f3,f5", "fields2": "f51,f52,f54,f56", "klt": 101, "lmt": lmt}
-        r = self.http_get(self.hsgt_cfg["url"], params=params, retries=self.hsgt_cfg["retries"],
-                          headers=self._headers(), timeout=30)
-        d = (r.json() or {}).get("data") or {}
-
-        def leg(key: str) -> pd.Series:
-            rows = d.get(key) or []
-            recs = {}
-            for s in rows:
-                parts = str(s).split(",")
-                if len(parts) >= 2:
-                    try:
-                        recs[pd.to_datetime(parts[0])] = float(parts[-1])
-                    except ValueError:
-                        pass
-            return pd.Series(recs, dtype="float64")
-
-        nb = leg("hk2sh").add(leg("hk2sz"), fill_value=0)   # northbound (foreign -> A-shares)
-        sb = leg("sh2hk").add(leg("sz2hk"), fill_value=0)   # southbound (mainland -> HK)
-        out = pd.DataFrame({"northbound_cum": nb, "southbound_cum": sb}).dropna(how="all").sort_index()
-        if out.empty:
-            raise ValueError("connect_flow: nothing parsed")
-        return out
-
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
         page = self.cfg["page_size"] if not full_history else max(self.cfg["page_size"], 2000)
         frames: dict[str, pd.DataFrame] = {}
@@ -143,13 +124,6 @@ class ChinaMacroAdapter(Adapter):
             except Exception as e:  # noqa: BLE001 — per-series isolation
                 errors.append(f"{key}: {e}")
                 log.warning("china_macro series %s failed: %s", key, e)
-
-        # Stock Connect flows (best-effort context; northbound frozen since Aug-2024)
-        try:
-            frames["connect_flow"] = self._connect_flow(full_history)
-        except Exception as e:  # noqa: BLE001
-            errors.append(f"connect_flow: {e}")
-            log.warning("china_macro connect_flow failed: %s", e)
 
         if not frames:
             raise RuntimeError("china_macro: all series failed — " + " | ".join(errors))

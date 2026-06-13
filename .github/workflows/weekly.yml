@@ -24,11 +24,33 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt
+      # The library build (build_site) needs every S&P 1500 constituent close
+      # matrix present. Weekly does not re-collect them, so restore from the
+      # cache the daily run saved (caches are gitignored, not committed).
+      - name: restore breadth (S&P 500) close cache
+        uses: actions/cache@v4
+        with:
+          path: data/breadth/_closes_cache.parquet
+          key: breadth-closes-weekly-${{ github.run_id }}
+          restore-keys: breadth-closes-
+      - name: restore smallcap (S&P 600) close cache
+        uses: actions/cache@v4
+        with:
+          path: data/smallcap_breadth/_closes_cache.parquet
+          key: smallcap-closes-weekly-${{ github.run_id }}
+          restore-keys: smallcap-closes-
+      - name: restore midcap (S&P 400) close cache
+        uses: actions/cache@v4
+        with:
+          path: data/midcap_breadth/_closes_cache.parquet
+          key: midcap-closes-weekly-${{ github.run_id }}
+          restore-keys: midcap-closes-
       - name: weekly collect + recalibrate + build (resilient, self-diagnosing)
         # Same hardening as daily: each step runs isolated; a failure becomes a
         # ::error:: annotation (readable on the run page + via the public check-runs
         # API) + a traceback in the run Summary, but NEVER aborts the job — so one
-        # broken calibration/builder can't kill the whole weekly deploy.
+        # broken calibration/builder can't kill the whole weekly deploy. A failed
+        # calibration just leaves last week's (stale) calibration in place.
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: |
@@ -51,19 +73,38 @@ jobs:
           run_py "daily brief" scripts.daily_brief
           run_py "calibrate china" scripts.calibrate_china
           run_py "build china" scripts.build_china
-          run_py "rebuild china search library" scripts.build_china_library
+          run_py "calibrate hk" scripts.calibrate_hk
+          run_py "build hk" scripts.build_hk
           run_py "calibrate commodities" scripts.calibrate_commodities
+          run_py "research commodity conviction" scripts.research_commodity_conviction
           run_py "build commodities" scripts.build_commodities
           run_py "calibrate vector" scripts.calibrate_vector
           run_py "build vector + landing hub" scripts.build_vector
           exit 0
-      - name: commit
+      - name: rebuild stock-search libraries (resilient — guarantees the analyzers ship)
+        # build_china/build_hk swallow errors; rebuild the per-stock search JSON
+        # (site/chinastockdata, site/hkstockdata) directly from committed caches so
+        # the A-Share / HK analyzers always ship. Idempotent; non-fatal.
+        run: |
+          set +e
+          for mod in scripts.build_china_library scripts.build_hk_library; do
+            echo "::group::$mod"; python -m "$mod" > /tmp/lib.log 2>&1; rc=$?; cat /tmp/lib.log; echo "::endgroup::"
+            if [ "$rc" -ne 0 ]; then
+              echo "::error title=$mod failed (rc=$rc)::$(tail -n 2 /tmp/lib.log | tr '\n' ' ' | tail -c 600)"
+              { echo "### ❌ $mod failed (rc=$rc)"; echo '```'; tail -n 40 /tmp/lib.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
+          exit 0
+      - name: commit weekly outputs
         run: |
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/ reports/ site/
-          if git diff --cached --quiet; then echo "no weekly changes"; exit 0; fi
+          if git diff --cached --quiet; then echo "no weekly changes to commit"; exit 0; fi
           git commit -m "weekly: deep-dive $(date -u +%F)"
+          # best-effort push: losing a race with a concurrent push must NOT fail the
+          # pipeline (the deploy below uses the uploaded artifact). Retry rebase+push,
+          # preferring our freshly-built outputs on any conflict.
           for i in 1 2 3 4 5; do
             if git pull --rebase -X theirs origin main && git push; then
               echo "pushed weekly outputs on attempt $i"; exit 0
@@ -80,7 +121,7 @@ jobs:
 
   publish:
     needs: weekly-report
-    if: always()
+    if: always()            # deploy the artifact even if a builder/commit step warned
     runs-on: ubuntu-latest
     environment:
       name: github-pages

@@ -9,5 +9,6 @@ lxml>=5.0
 beautifulsoup4>=4.12
 tabulate>=0.9
 openpyxl>=3.1
+xlrd>=2.0.1       # collectors/eia.py — legacy .xls from EIA dnav (Weekly Petroleum Status)
 markdown>=3.5
 Pillow>=10.0      # scripts/digitize_swissblock.py — panel color-state extraction

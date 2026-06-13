@@ -95,6 +95,14 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — conclusions are additive, never fatal
         log.error("playbook failed: %s", e)
         latest["playbook"] = None
+    # complementary nowcast / conditions / risk-appetite layer (additive — never
+    # alters the validated quad; see research/QUANT_FACTOR_EXPANSION.md)
+    try:
+        from engine.conditions import conditions_snapshot
+        latest["conditions"] = conditions_snapshot(f)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("conditions layer failed: %s", e)
+        latest["conditions"] = None
     with open(p / "latest.json", "w") as fh:
         json.dump(latest, fh, indent=2, default=str)
     log.info("regime %s (%s) conf=%.2f liq=%s cycle=%s transition=%s",

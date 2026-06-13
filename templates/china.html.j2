@@ -12,6 +12,7 @@
 <title>{{ t('China A-Share Regime', '中国A股周期') }} — {{ latest.date }}</title>
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 <style>
   * { box-sizing: border-box; }
   body { background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system,
@@ -58,32 +59,159 @@
          color: color-mix(in srgb, var(--c, var(--muted)) 82%, var(--text)); }
   .lad.up { --c: var(--up); } .lad.down { --c: var(--down); } .lad.flat { --c: var(--muted); }
   .agechip { font-size: 10.5px; font-weight: 700; color: var(--muted); white-space: nowrap; margin-left: 5px; }
+  .eqmini { font-size: 10.5px; font-weight: 700; white-space: nowrap; margin-left: 5px; cursor: help; }
+  .eqmini.eq-up { color: var(--up); } .eqmini.eq-down { color: var(--down); } .eqmini.eq-flat { color: var(--muted); }
   .note { font-size: 12.5px; color: var(--muted); line-height: 1.6; }
   .mtf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
   .mtf-card .mtf-name { font-weight: 700; font-size: 13.5px; margin-bottom: 6px; color: var(--text); }
+
+  /* ---- Regime Time Machine (ported from the macro dashboard) ---------------- */
+  #time-machine .tm-wrap { position: relative; margin: 4px 0 2px; }
+  .tm-canvas { display: block; width: 100%; height: 56px; cursor: ew-resize; border-radius: 8px; touch-action: none; }
+  .tm-range { -webkit-appearance: none; appearance: none; width: 100%; height: 16px; background: transparent; margin: 2px 0 0; cursor: ew-resize; }
+  .tm-range::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: var(--line); }
+  .tm-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; margin-top: -6px; border-radius: 50%; background: var(--text); border: 2px solid var(--panel); box-shadow: 0 1px 4px rgba(0,0,0,.35); }
+  .tm-range::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--text); border: 2px solid var(--panel); }
+  .tm-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin: 8px 0 12px; }
+  .tm-presets { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+  .tm-btn { font: inherit; font-size: 12px; font-weight: 600; color: var(--text); background: var(--panel2); border: 1px solid var(--line); border-radius: 7px; padding: 5px 11px; cursor: pointer; }
+  .tm-btn:hover { border-color: var(--link); }
+  .tm-play { display: inline-flex; align-items: center; gap: 7px; }
+  .tm-play-ico { width: 0; height: 0; border-style: solid; border-width: 6px 0 6px 10px; border-color: transparent transparent transparent var(--text); }
+  .tm-play.is-playing .tm-play-ico { width: 9px; height: 11px; border: none; border-left: 3px solid var(--text); border-right: 3px solid var(--text); }
+  .tm-readout { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+  .tm-asof { display: flex; align-items: baseline; gap: 10px; margin-bottom: 9px; }
+  .tm-date { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .tm-state-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 2px 8px; border-radius: 10px; }
+  .tm-state-tag.is-live { color: color-mix(in srgb, var(--up) 85%, var(--text)); background: color-mix(in srgb, var(--up) 16%, var(--panel)); }
+  .tm-state-tag.is-hist { color: var(--muted); background: color-mix(in srgb, var(--muted) 16%, var(--panel)); }
+  .tm-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .tm-gauges { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 22px; margin: 12px 0 4px; }
+  @media (max-width: 640px) { .tm-gauges { grid-template-columns: 1fr; } }
+  .tm-glabel { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 600; margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+  .tm-flags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .tm-flag { font-size: 11.5px; font-weight: 600; padding: 2px 9px; border-radius: 10px; background: color-mix(in srgb, var(--c) 16%, var(--panel)); color: color-mix(in srgb, var(--c) 82%, var(--text)); }
+  .tm-nowarn { font-size: 12px; color: var(--muted); }
+  /* shared badge / kv / gauge primitives the time-machine readout needs */
+  .badge { display: inline-block; padding: 3px 11px; border-radius: 11px; font-weight: 700; font-size: 12.5px; }
+  .badge.quad-Q1 { background: var(--q1); color: #fff; } .badge.quad-Q2 { background: var(--q2); color: #1a1a1a; }
+  .badge.quad-Q3 { background: var(--q3); color: #fff; } .badge.quad-Q4 { background: var(--q4); color: #fff; }
+  .badge.state-STABLE { background: color-mix(in srgb, var(--muted) 16%, var(--panel)); color: color-mix(in srgb, var(--muted) 82%, var(--text)); }
+  .kv { font-size: 12.5px; color: var(--muted); } .kv b { color: var(--text); font-variant-numeric: tabular-nums; }
+  .gauge { position: relative; height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--down), var(--line) 50%, var(--up)); }
+  .gauge i { position: absolute; top: 50%; width: 12px; height: 12px; border-radius: 50%; background: var(--text); border: 2px solid var(--panel); transform: translate(-50%,-50%); }
+
+  /* ---- gauges / dials / tiles for the new internals panels ------------------ */
+  .dial { position: relative; height: 9px; border-radius: 5px; margin: 6px 0 3px;
+          background: linear-gradient(90deg, var(--up), var(--warn) 55%, var(--down)); }
+  .dial.rev { background: linear-gradient(90deg, var(--down), var(--warn) 45%, var(--up)); }
+  .dial i { position: absolute; top: -3px; width: 4px; height: 15px; border-radius: 2px; background: var(--text); transform: translateX(-50%); box-shadow: 0 0 0 2px var(--panel); }
+  .dial-ends { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--muted); }
+  .tiles { display: flex; flex-wrap: wrap; gap: 10px; margin: 4px 0 2px; }
+  .tile { flex: 1 1 90px; background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; min-width: 88px; }
+  .tile .tv { font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--text); }
+  .tile .tk { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+  .bignum { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
+  .sub { font-size: 11.5px; color: var(--muted); }
+  .chart { margin: 4px 0 2px; }
+  /* action board */
+  .act-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .act-col h3 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin: 0 0 6px; }
+  .act-col { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; }
+  .act-item { font-size: 12.5px; padding: 3px 0; border-bottom: 1px solid var(--line); }
+  .act-item:last-child { border-bottom: none; }
+  .act-item .an { font-weight: 600; color: var(--text); }
+  .act-item .at { font-size: 10.5px; color: var(--muted); }
+  .act-now h3 { color: var(--up); } .act-soon h3 { color: var(--info); }
+  .act-tp h3 { color: var(--warn); } .act-avoid h3 { color: var(--down); } .act-hold h3 { color: var(--muted); }
+
+  /* ---- regime hero: quad map + meaning + regime watch ----------------------- */
+  .herogauges { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 22px; max-width: 580px; margin: 16px 0 2px; }
+  .hg-l { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; margin-bottom: 6px; }
+  .hg-l .hv { font-variant-numeric: tabular-nums; }
+  .qmeaning { font-size: 14px; line-height: 1.55; margin: 14px 0 2px; color: var(--text); }
+  .regwatch { font-size: 13px; font-weight: 600; margin: 6px 0 0; padding: 7px 11px; border-radius: 9px;
+              background: color-mix(in srgb, var(--warn) 14%, var(--panel)); color: color-mix(in srgb, var(--warn) 88%, var(--text)); }
+  .qmap { display: grid; grid-template-columns: 78px 1fr 1fr; gap: 8px; margin: 16px 0 4px; }
+  .qmap .ax { font-size: 11px; color: var(--muted); display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.25; }
+  .qmap .cell { border-radius: 12px; padding: 16px 20px; color: #fff; font-weight: 700; font-size: 16.5px; opacity: .42;
+                display: flex; flex-direction: column; justify-content: center; min-height: 168px; transition: opacity .15s; }
+  .qmap .cell small { display: block; font-weight: 500; font-size: 12px; opacity: .92; margin-top: 6px; line-height: 1.4; }
+  .qmap .cell.cur { opacity: 1; box-shadow: inset 0 0 0 2px var(--text); }
+  @media (max-width: 900px) { .qmap .cell { min-height: 96px; font-size: 14px; } }
+  .qmap .q1 { background: var(--q1); } .qmap .q2 { background: var(--q2); color: #1a1a1a; }
+  .qmap .q3 { background: var(--q3); } .qmap .q4 { background: var(--q4); }
+
+  /* ---- playbook: lifespan bar + next-quad odds + exposure dial --------------- */
+  .lifebar { position: relative; height: 16px; border-radius: 8px; overflow: hidden; margin: 12px 0 3px; background: var(--panel2); }
+  .lifebar .zone { position: absolute; top: 0; height: 100%; }
+  .lifebar .marker { position: absolute; top: -2px; height: calc(100% + 4px); width: 3px; background: var(--text); border-radius: 2px; box-shadow: 0 0 0 1px var(--panel); }
+  .lifelabels { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--muted); }
+  .prob { display: flex; align-items: center; gap: 9px; margin: 7px 0; }
+  .prob .nm { flex: 0 0 96px; font-size: 12.5px; font-weight: 600; }
+  .prob .bar { flex: 1; height: 14px; background: var(--panel2); border-radius: 7px; overflow: hidden; }
+  .prob .bar i { display: block; height: 100%; border-radius: 7px; }
+  .prob .pc { flex: 0 0 38px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .pdial { display: flex; gap: 4px; margin: 6px 0 12px; }
+  .pdial span { flex: 1; text-align: center; font-size: 11.5px; font-weight: 700; padding: 7px 4px; border-radius: 8px;
+                background: var(--panel2); color: var(--muted); border: 1px solid var(--line); }
+  .pdial .on-def { background: color-mix(in srgb, var(--down) 80%, var(--panel)); color: #fff; border-color: transparent; }
+  .pdial .on-car { background: color-mix(in srgb, var(--warn) 75%, var(--panel)); color: #1a1a1a; border-color: transparent; }
+  .pdial .on-neu { background: color-mix(in srgb, var(--muted) 55%, var(--panel)); color: var(--text); border-color: transparent; }
+  .pdial .on-con { background: color-mix(in srgb, var(--up) 62%, var(--panel)); color: #fff; border-color: transparent; }
+  .pdial .on-agg { background: color-mix(in srgb, var(--up) 88%, var(--panel)); color: #fff; border-color: transparent; }
+  .reason { display: flex; align-items: flex-start; gap: 8px; font-size: 12.5px; margin: 5px 0; line-height: 1.45; }
+  .sig { flex: none; width: 17px; height: 17px; border-radius: 50%; font-size: 11px; font-weight: 800; line-height: 17px; text-align: center; }
+  .sig-p { background: color-mix(in srgb, var(--up) 22%, var(--panel)); color: var(--up); }
+  .sig-m { background: color-mix(in srgb, var(--down) 22%, var(--panel)); color: var(--down); }
+  .sig-i { background: color-mix(in srgb, var(--muted) 22%, var(--panel)); color: var(--muted); }
+  .pcard { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 7px 10px; margin: 6px 0; font-size: 12.5px; }
+  .pcard .tk { color: var(--text); }
+  .calltag { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 8px; margin-right: 6px; text-transform: uppercase; letter-spacing: .03em; }
+  .tag-pref { background: color-mix(in srgb, var(--info) 18%, var(--panel)); color: color-mix(in srgb, var(--info) 85%, var(--text)); }
+  .tag-lead { background: color-mix(in srgb, var(--up) 18%, var(--panel)); color: color-mix(in srgb, var(--up) 85%, var(--text)); }
+  .tag-avoid { background: color-mix(in srgb, var(--down) 18%, var(--panel)); color: color-mix(in srgb, var(--down) 85%, var(--text)); }
+  h3 { font-size: 12.5px; margin: 12px 0 6px; color: var(--text); }
+
+  /* ---- sortable tables (tablesort.js) --------------------------------------- */
+  table.sortable th.th-sort { cursor: pointer; user-select: none; }
+  table.sortable th.th-sort:hover { color: var(--text); }
+  table.sortable th .sarrow { font-size: 9px; opacity: .32; margin-left: 3px; font-weight: 700; }
+  table.sortable th.sorted { color: var(--text); }
+  table.sortable th.sorted .sarrow { opacity: .9; color: var(--link); }
   .foot { margin-top: 26px; color: var(--muted); font-size: 12px; text-align: center; line-height: 1.7; }
 </style>
 </head>
 <body>
 
-<div class="topbar">
-  <h1>{{ t('China A-Share Regime', '中国A股周期') }}</h1>
-  <span class="sp"></span>
-  <a class="navbtn" href="china_stock.html">{{ t('🔎 A-share search', '🔎 个股搜索') }}</a>
-  <a class="navbtn" href="china_brief.html">{{ t('📰 Brief', '📰 简报') }}</a>
-  <a class="navbtn" href="china_history.html">{{ t('📈 History', '📈 历史') }}</a>
-  <a class="navbtn" href="index.html">{{ t('🏠 Home', '🏠 首页') }}</a>
-  <a class="navbtn" href="macro.html">{{ t('🌍 US Macro', '🌍 美国宏观') }}</a>
-  <a class="navbtn" href="vector.html">{{ t('₿ Bitcoin', '₿ 比特币') }}</a>
-  <button class="lang-btn">中文</button>
-  <button class="theme-btn">☀️ {{ t('Light', '浅色') }}</button>
-</div>
+<nav class="site-nav">
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
+    <a class="nav-link" href="macro.html">📊 {{ t('US Macro', '美国宏观') }}</a>
+    <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin', '比特币') }}</a>
+    <a class="nav-link active" href="china.html">🇨🇳 {{ t('China A', '中国A股') }}</a>
+    <a class="nav-link" href="china_stock.html">🔎 {{ t('A-share search', '个股搜索') }}</a>
+    <a class="nav-link" href="china_brief.html">📰 {{ t('Brief', '简报') }}</a>
+    <a class="nav-link" href="china_history.html">📈 {{ t('History', '历史') }}</a>
+  </div>
+  <div class="nav-ctrls">
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
 
 <div class="grid">
 
   <!-- regime hero -->
   <div class="panel span8">
-    <h2>{{ t('Market Regime', '市场周期') }} · {{ latest.date }}</h2>
+    <h1>{{ t('China A-Share Regime', '中国A股周期') }}</h1>
+    <h2 style="margin-top:1px">{{ t('Market Regime', '市场周期') }} · {{ latest.date }}</h2>
     <div class="hero">
       <span class="quad-badge quad-{{ latest.quad }}">{{ td(latest.quad_name) }}</span>
       <div class="metric"><span class="v {{ 'pos' if latest.growth_score>=0 else 'neg' }}">{{ '%+.2f'|format(latest.growth_score) }}</span><span class="k">{{ t('Growth', '增长') }}</span></div>
@@ -92,7 +220,28 @@
       <div class="metric"><span class="chip c-info">{{ t('PBoC', '央行') }} {{ td(latest.liquidity_overlay) }}</span><span class="k">{{ t('Liquidity', '流动性') }}</span></div>
       <div class="metric"><span class="chip c-muted">{{ td(latest.cycle_tag) }}</span><span class="k">{{ t('Cycle', '周期阶段') }}</span></div>
     </div>
-    {% if latest.confirming %}<p class="note" style="margin:12px 0 0">{{ t('Confirming', '确认') }}: {{ latest.confirming|join(', ') }}{% if latest.contradicting %} · {{ t('Contradicting', '矛盾') }}: {{ latest.contradicting|join(', ') }}{% endif %}</p>{% endif %}
+    <div class="herogauges">
+      <div><div class="hg-l"><span>{{ t('Growth', '增长') }} <span class="muted" style="font-weight:400">{{ t('falling ↔ rising', '下行 ↔ 上行') }}</span></span><span class="hv {{ 'pos' if latest.growth_score>=0 else 'neg' }}">{{ '%+.2f'|format(latest.growth_score) }}</span></div><div class="gauge"><i style="left:{{ ((latest.growth_score+1)/2*100)|round(1) }}%"></i></div></div>
+      <div><div class="hg-l"><span>{{ t('Inflation', '通胀') }} <span class="muted" style="font-weight:400">{{ t('falling ↔ rising', '下行 ↔ 上行') }}</span></span><span class="hv {{ 'pos' if latest.inflation_score>=0 else 'neg' }}">{{ '%+.2f'|format(latest.inflation_score) }}</span></div><div class="gauge"><i style="left:{{ ((latest.inflation_score+1)/2*100)|round(1) }}%"></i></div></div>
+    </div>
+    {% if pb and pb.quad_meaning %}<p class="qmeaning">{{ t(pb.quad_meaning.en, pb.quad_meaning.zh) }}</p>{% endif %}
+    {% if latest.pending_quad in ['Q1','Q2','Q3','Q4'] and latest.pending_days %}
+    <p class="regwatch">⚠️ {{ t('Regime watch', '周期预警') }}: {{ t('evidence is building toward', '证据正在累积，指向') }}
+      <b>{{ td({'Q1':'Goldilocks','Q2':'Reflation','Q3':'Stagflation','Q4':'Growth scare'}[latest.pending_quad]) }}</b>
+      ({{ latest.pending_days }}{{ t(' day(s) so far; the label flips after 7)', ' 天；标签将在第 7 天翻转）') }}</p>
+    {% endif %}
+    <div class="qmap">
+      <span class="ax"></span>
+      <span class="ax">{{ t('inflation ↓', '通胀 ↓') }}</span>
+      <span class="ax">{{ t('inflation ↑', '通胀 ↑') }}</span>
+      <span class="ax">{{ t('growth ↑', '增长 ↑') }}</span>
+      <span class="cell q1{{ ' cur' if latest.quad=='Q1' }}">{{ t('Goldilocks', '理想增长') }}<small>{{ t('tech · quality · consumer', '科技 · 质量 · 消费') }}</small></span>
+      <span class="cell q2{{ ' cur' if latest.quad=='Q2' }}">{{ t('Reflation', '再通胀') }}<small>{{ t('cyclicals · brokers · materials', '周期 · 券商 · 材料') }}</small></span>
+      <span class="ax">{{ t('growth ↓', '增长 ↓') }}</span>
+      <span class="cell q4{{ ' cur' if latest.quad=='Q4' }}">{{ t('Growth scare', '增长恐慌') }}<small>{{ t('defensives · banks · staples', '防御 · 银行 · 必需消费') }}</small></span>
+      <span class="cell q3{{ ' cur' if latest.quad=='Q3' }}">{{ t('Stagflation', '滞胀') }}<small>{{ t('materials · banks · upstream', '材料 · 银行 · 上游') }}</small></span>
+    </div>
+    {% if latest.confirming %}<p class="note" style="margin:10px 0 0">{{ t('Confirming', '确认') }}: {{ latest.confirming|join(', ') }}{% if latest.contradicting %} · {{ t('Contradicting', '矛盾') }}: {{ latest.contradicting|join(', ') }}{% endif %}</p>{% endif %}
   </div>
 
   <!-- benchmark cycle card -->
@@ -102,6 +251,161 @@
     <div style="font-size:20px;font-weight:800">{{ '%.2f'|format(benchmark.price) }} <span class="{{ 'pos' if benchmark.chg>=0 else 'neg' }}" style="font-size:14px">{{ '%+.2f'|format(benchmark.chg) }}%</span></div>
     <div style="margin:4px 0 8px"><span class="lad {{ 'up' if benchmark.dir=='up' else ('down' if benchmark.dir=='down' else 'flat') }}">{{ td(benchmark.label or benchmark.state) }}</span></div>
     <div class="mtf" data-mtf='{{ benchmark.mtf_json }}'></div>
+  </div>
+  {% endif %}
+
+  <!-- ===================== REGIME TIME MACHINE ===================== -->
+  {% if lifespan_rows %}
+  <div class="panel span12" id="time-machine" data-timeline="china_regime_timeline.json">
+    <h2>{{ t('⏳ Regime time machine', '⏳ 周期时光机') }}
+      {{ help("Drag the playhead across ~20 years of A-share history and the readout rewinds the regime CORE to that day — quadrant, growth/inflation scores, agreement, PBoC liquidity and the business cycle. China’s engine doesn’t track transition/warning flags, so those stay blank. Hit ▶ to watch the quad ribbon flip at every major turn — 2008, the 2015 bubble, 2018, 2020.", "拖动播放头横扫约 20 年 A 股历史，下方读数会把周期核心回退到那一天 — 象限、增长／通胀分数、一致度、央行流动性与商业周期。中国引擎不追踪转换／预警旗，故此处留空。点击 ▶ 观看周期色带在每个重大转折处翻转 — 2008、2015 泡沫、2018、2020。") }}
+    </h2>
+    <div class="tm-wrap">
+      <canvas id="tm-canvas" class="tm-canvas"></canvas>
+      <input id="tm-range" class="tm-range" type="range" min="0" max="0" value="0" aria-label="Scrub regime history">
+    </div>
+    <div class="tm-controls">
+      <button class="tm-btn tm-play" id="tm-play" aria-label="play/pause" title="Play / pause"><span class="tm-play-ico"></span></button>
+      <span class="tm-presets">
+        <button class="tm-btn" data-tm-jump="now">{{ t('Now', '现在') }}</button>
+        <button class="tm-btn" data-tm-jump="2015-06-12">{{ t('2015 bubble', '2015 泡沫') }}</button>
+        <button class="tm-btn" data-tm-jump="2018-12-28">{{ t('2018 bear', '2018 熊市') }}</button>
+        <button class="tm-btn" data-tm-jump="2020-03-23">{{ t('2020 COVID', '2020 疫情') }}</button>
+      </span>
+    </div>
+    <div class="tm-readout">
+      <div class="tm-asof">
+        <span class="tm-date" id="tm-date">—</span>
+        <span class="tm-state-tag is-live" id="tm-tag">—</span>
+      </div>
+      <div class="tm-badges">
+        <span class="badge" id="tm-quad">—</span>
+        <span class="badge" id="tm-trans">—</span>
+        <span class="kv">{{ t('agreement', '一致度') }} <b id="tm-conf">—</b></span>
+        <span class="kv">{{ t('cycle', '商业周期') }} <b id="tm-cyc">—</b></span>
+        <span class="kv">{{ t('liquidity', '流动性') }} <b id="tm-liq">—</b></span>
+      </div>
+      <div class="tm-gauges">
+        <div class="tm-gauge">
+          <div class="tm-glabel"><span>{{ t('Growth', '增长') }}</span><span class="sub" id="tm-g-v">—</span></div>
+          <div class="gauge"><i id="tm-g-i" style="left:50%"></i></div>
+        </div>
+        <div class="tm-gauge">
+          <div class="tm-glabel"><span>{{ t('Inflation', '通胀') }}</span><span class="sub" id="tm-i-v">—</span></div>
+          <div class="gauge"><i id="tm-i-i" style="left:50%"></i></div>
+        </div>
+      </div>
+      <div class="tm-flags" id="tm-flags"></div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ===================== ACTION BOARD ===================== -->
+  {% if actions and (actions.buy_now or actions.buy_soon or actions.take_profits or actions.hold or actions.avoid) %}
+  <div class="panel span12">
+    <h2>⚡ {{ t('What to act on now — sectors', '当前可操作 — 板块') }}
+      {{ help("The 16 sector ETFs bucketed by the cycle ladder’s entry-timing call (same engine as the US action board). A structure/risk map, not an allocation rule — read alongside the calibration note below.", "16 个板块 ETF 按周期阶梯的入场时机分桶（与美国操作板同一引擎）。这是结构／风险图，而非配置规则 — 请结合下方校准说明阅读。") }}
+    </h2>
+    <div class="act-grid">
+      {% macro actcol(cls, title_en, title_zh, items) %}
+      {% if items %}
+      <div class="act-col {{ cls }}">
+        <h3>{{ t(title_en, title_zh) }} · {{ items|length }}</h3>
+        {% for it in items %}
+        <div class="act-item"><a class="an" href="sectors/{{ it.ticker }}.html">{{ td(it.name) }}</a>
+          <div class="at">{{ td(it.label) }}{% if it.days is not none %} · ~{{ it.days }}{{ t('d', '天') }}{% endif %}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endmacro %}
+      {{ actcol('act-now', 'Buy zone', '买入区', actions.buy_now) }}
+      {{ actcol('act-soon', 'Setting up', '即将到位', actions.buy_soon) }}
+      {{ actcol('act-tp', 'Take profits', '止盈', actions.take_profits) }}
+      {{ actcol('act-hold', 'Hold', '持有', actions.hold) }}
+      {{ actcol('act-avoid', 'Avoid', '回避', actions.avoid) }}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if pb %}
+  <!-- ===================== WHERE WE ARE ===================== -->
+  {% if pb.progress %}
+  <div class="panel span6">
+    <h2>{{ t('Where we are in this regime', '我们身处此周期何处') }}
+      {{ help("This regime's age vs every same-quad period since ~2006 in this classifier. Regimes don't die of old age, but the older one gets relative to history, the more weight each warning deserves. China regimes are short — context, not a forecast.", "当前周期的年龄对比本分类器自约 2006 年以来每一段同象限周期。周期不会因年老而消亡，但相对历史越老，每一面预警越值得加重。中国周期很短 — 仅作背景，而非预测。") }}
+    </h2>
+    <div class="lifebar">
+      <div class="zone" style="left:0;width:{{ pb.progress.zone_early_pct }}%;background:color-mix(in srgb,var(--up) 32%,var(--panel))"></div>
+      <div class="zone" style="left:{{ pb.progress.zone_early_pct }}%;width:{{ pb.progress.zone_mid_pct - pb.progress.zone_early_pct }}%;background:color-mix(in srgb,var(--warn) 32%,var(--panel))"></div>
+      <div class="zone" style="left:{{ pb.progress.zone_mid_pct }}%;width:{{ 100 - pb.progress.zone_mid_pct }}%;background:color-mix(in srgb,var(--down) 32%,var(--panel))"></div>
+      <div class="marker" style="left:{{ pb.progress.bar_pct }}%"></div>
+    </div>
+    <div class="lifelabels"><span>{{ t('young', '年轻') }}</span><span>{{ t('mid-life', '中年') }}</span><span>{{ t('old', '年老') }}</span></div>
+    <p style="margin:10px 0 4px"><b>{{ t(pb.progress.phase|upper, {'young':'年轻','mid':'中年','old':'年老'}[pb.progress.phase]) }}</b> — {{ t(pb.progress.phase_note, pb.progress.phase_note_zh) }}.</p>
+    <p class="note">{{ t(
+      pb.progress.age_days|string + ' trading days in, vs a median of ' + pb.progress.median_days|string + ' across ' + pb.progress.n_history|string + ' past ' + latest.quad_name + ' periods.',
+      '已运行 ' + pb.progress.age_days|string + ' 个交易日，对比 ' + pb.progress.n_history|string + ' 段过往同象限周期的中位数 ' + pb.progress.median_days|string + ' 个交易日。') }}
+      {% if pb.progress.pct_longer is not none %}{{ t(pb.progress.pct_longer|string + '% lasted longer than this so far' + (', and those typically ran ~' + pb.progress.median_remaining_days|string + ' more days.' if pb.progress.median_remaining_days else '.'), '其中 ' + pb.progress.pct_longer|string + '% 比当前持续更久' + ('，通常还会再运行约 ' + pb.progress.median_remaining_days|string + ' 个交易日。' if pb.progress.median_remaining_days else '。')) }}{% endif %}</p>
+  </div>
+  {% endif %}
+
+  <!-- ===================== WHAT'S NEXT ===================== -->
+  {% if pb.next_list %}
+  <div class="panel span6">
+    <h2>{{ t("What's likely next", '接下来可能发生什么') }}
+      {{ help("Historical frequencies: across every same-quad period in this classifier, which regime came next. Base rates, not forecasts — but they tell you which playbook to keep warm.", "历史频率：本分类器中每一段同象限周期之后，接下来出现的是哪个周期。是基础概率而非预测 — 但能告诉你该把哪套剧本备着。") }}
+    </h2>
+    {% for n in pb.next_list %}
+    <div class="prob">
+      <span class="nm">{{ t(n.name, n.name_zh) }}</span>
+      <span class="bar"><i style="width:{{ n.prob_pct }}%;background:var(--q{{ n.code[1] }})"></i></span>
+      <span class="pc">{{ n.prob_pct }}%</span>
+    </div>
+    {% endfor %}
+    <p class="note" style="margin-top:10px">{{ t(
+      'These are unconditional base rates from a short, regime-unstable history — keep the top path\'s playbook warm, but wait for the growth/inflation dials to actually cross before acting.',
+      '这些是来自一段短而不稳定历史的无条件基础概率 — 把最可能路径的剧本备着，但要等增长／通胀刻度盘真正穿越后再行动。') }}</p>
+  </div>
+  {% endif %}
+
+  <!-- ===================== HOW TO TRADE NOW ===================== -->
+  <div class="panel span12">
+    <h2>{{ t('How to trade the current regime', '如何交易当前周期') }}
+      {{ help("The dial is the headline: how much risk current conditions support, built from the quad's calibrated edge plus live internals (PBoC liquidity, margin crowding, southbound flow, the M1-M2 scissors). Sector names are risk filters — no stable monthly single-sector outperformance signal exists in China.", "刻度盘是核心：当前条件支持多大风险，由象限的校准优势加实时内部结构（央行流动性、两融拥挤度、南向资金、M1-M2 剪刀差）构建。板块名称是风险过滤器 — 中国不存在稳定的月度单一板块跑赢信号。") }}
+    </h2>
+    <div class="pdial">
+      {% set pmap = {'DEFENSIVE':'on-def','CAREFUL':'on-car','NEUTRAL':'on-neu','CONSTRUCTIVE':'on-con','AGGRESSIVE':'on-agg'} %}
+      {% set pzh = {'DEFENSIVE':'防御','CAREFUL':'谨慎','NEUTRAL':'中性','CONSTRUCTIVE':'积极','AGGRESSIVE':'进取'} %}
+      {% for p in ['DEFENSIVE','CAREFUL','NEUTRAL','CONSTRUCTIVE','AGGRESSIVE'] %}
+        <span class="{{ pmap[p] if pb.dial.posture==p }}">{{ t(p, pzh[p]) }}</span>
+      {% endfor %}
+    </div>
+    {% for sign, r_en, r_zh in pb.dial.reasons %}
+      <div class="reason"><span class="sig sig-{{ {'+':'p','-':'m','i':'i'}[sign] }}">{{ {'+':'+','-':'−','i':'i'}[sign] }}</span> <span>{{ t(r_en, r_zh) }}</span></div>
+    {% endfor %}
+
+    <div class="grid" style="margin-top:14px">
+      <div class="span4">
+        <h3>🎯 {{ t('Framework-preferred sectors', '框架偏好板块') }}{% if pb.pref_agreement is not none %} <span class="note" style="text-transform:none">· {{ t('tape agrees', '盘面一致') }} {{ (pb.pref_agreement*100)|round|int }}%</span>{% endif %}</h3>
+        {% for x in pb.preferred %}
+          <div class="pcard"><span class="calltag tag-pref">{{ t('PREFERRED', '偏好') }}</span><a class="tk" href="sectors/{{ x.ticker }}.html"><b>{{ td(x.name) }}</b></a>{% if x.rank %} <span class="note">{{ t('RS rank', '相对排名') }} #{{ x.rank }}/16</span>{% endif %}</div>
+        {% else %}<p class="note">—</p>{% endfor %}
+      </div>
+      <div class="span4">
+        <h3>✅ {{ t('Confirmed leaders', '已确认领先') }} <span class="note" style="text-transform:none">· {{ t('uptrend + momentum', '上涨趋势 + 动量') }}</span></h3>
+        {% for x in pb.leaders %}
+          <div class="pcard"><span class="calltag tag-lead">{{ t('LEADER', '领先') }}</span><a class="tk" href="sectors/{{ x.ticker }}.html"><b>{{ td(x.name) }}</b></a>{% if x.mom20 is not none %} <span class="pos">{{ '%+.1f'|format(x.mom20) }}</span>{% endif %}</div>
+        {% else %}<p class="note">{{ t('None confirmed — leadership unconfirmed or stretched. Stay close to the index.', '无确认领先 — 领先地位未确认或已过度拉伸。紧贴指数。') }}</p>{% endfor %}
+      </div>
+      <div class="span4">
+        <h3>🚫 {{ t('Avoid right now', '现在回避') }} <span class="note" style="text-transform:none">· {{ t('downtrend / topping', '下跌 / 见顶') }}</span></h3>
+        {% for x in pb.avoid %}
+          <div class="pcard"><span class="calltag tag-avoid">{{ t('AVOID', '回避') }}</span><a class="tk" href="sectors/{{ x.ticker }}.html"><b>{{ td(x.name) }}</b></a> <span class="note">{{ td(x.state) }}</span></div>
+        {% else %}<p class="note">{{ t('Nothing triggers the avoid rules.', '当前没有标的触发回避规则。') }}</p>{% endfor %}
+      </div>
+    </div>
+    <p class="note" style="margin-top:10px">⚖️ {{ t(pb.honesty.en, pb.honesty.zh) }}</p>
   </div>
   {% endif %}
 
@@ -115,8 +419,8 @@
 
   <!-- sector rotation board -->
   <div class="panel span8">
-    <h2>{{ t('Sector Rotation', '板块轮动') }} <span class="note" style="text-transform:none">· {{ t('RS vs CSI 300', '相对沪深300') }}</span></h2>
-    <table>
+    <h2>{{ t('Sector Rotation', '板块轮动') }} <span class="note" style="text-transform:none">· {{ t('RS vs CSI 300', '相对沪深300') }} · {{ t('click a header to sort', '点击表头排序') }}</span></h2>
+    <table class="sortable">
       <thead><tr>
         <th class="l">{{ t('Sector', '板块') }}</th>
         <th>{{ t('Rank', '排名') }}</th>
@@ -135,7 +439,7 @@
           <td class="{{ 'pos' if (s.mom60 or 0)>=0 else 'neg' }}">{{ '%+.1f'|format(s.mom60) if s.mom60 is not none else '—' }}</td>
           <td>{{ '↑' if s.above200 else '↓' }}</td>
           <td>{{ s.pctile|round|int if s.pctile is not none else '—' }}</td>
-          <td class="l"><span class="lad {{ 'up' if s.dir=='up' else ('down' if s.dir=='down' else 'flat') }}">{{ td(s.label or s.state) }}</span>{% if s.age_short %}<span class="agechip" title="when this signal last crossed">⏱ {{ t(s.age_short, s.age_short_zh) }}</span>{% endif %}</td>
+          <td class="l"><span class="lad {{ 'up' if s.dir=='up' else ('down' if s.dir=='down' else 'flat') }}">{{ td(s.label or s.state) }}</span>{% if s.age_short %}<span class="agechip" title="when this signal last crossed">⏱ {{ t(s.age_short, s.age_short_zh) }}</span>{% endif %}{% if s.eq_badge %}<span class="eqmini eq-{{ s.eq_dir }}" title="{{ s.eq_tip }}">{{ s.eq_badge }}</span>{% endif %}</td>
         </tr>
       {% endfor %}
       </tbody>
@@ -164,6 +468,185 @@
     {% endif %}
   </div>
 
+  {% set I = internals or {} %}
+
+  <!-- ===================== CROWD METER (margin / 融资融券) ===================== -->
+  {% if I.margin %}
+  <div class="panel span6">
+    <h2>{{ t('🔥 Margin crowd meter', '🔥 两融拥挤度') }} <span class="note" style="text-transform:none">· {{ t('融资融券 — the A-share COT', '融资融券 — A股的持仓拥挤度') }}</span>
+      {{ help("Financing balance as a % of free-float market cap — China’s self-normalizing retail-leverage gauge (the closest analog to US CFTC positioning). It peaked near 4.7% at the 2015 leverage-bubble top vs the percentile shown now. High percentile = crowded, leveraged retail; low = capitulated. The maintenance ratio is the system-wide margin-call distance; froth is margin trades as a share of turnover.", "融资余额占流通市值的比例 — 中国可自我归一化的散户杠杆指标（最接近美国 CFTC 持仓）。2015 杠杆牛顶部曾接近 4.7%。分位越高＝杠杆越拥挤；越低＝已出清。维持担保比例衡量全市场距强平的远近；换手占比为两融交易占成交额比重。") }}
+    </h2>
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span class="bignum {{ 'neg' if I.margin.pctile>=80 else ('pos' if I.margin.pctile<=25 else '') }}">{{ I.margin.fin_pct_float }}%</span>
+      <span class="sub">{{ t('financing / float', '融资 / 流通市值') }} · {{ t('pctile', '分位') }} <b style="color:var(--text)">{{ I.margin.pctile }}</b>{% if I.margin.chg_20d is not none %} · 20d {{ '%+.2f'|format(I.margin.chg_20d) }}{% endif %}</span>
+    </div>
+    <div class="dial"><i style="left:{{ I.margin.pctile }}%"></i></div>
+    <div class="dial-ends"><span>{{ t('capitulated', '已出清') }}</span><span>{{ t('peak', '峰值') }} {{ I.margin.peak }}% ({{ I.margin.peak_date }})</span><span>{{ t('crowded', '拥挤') }}</span></div>
+    <div class="tiles">
+      {% if I.margin.guarantee_ratio is defined %}<div class="tile"><div class="tv {{ 'neg' if I.margin.guarantee_ratio<160 else '' }}">{{ I.margin.guarantee_ratio }}%</div><div class="tk">{{ t('maint. ratio', '维持担保') }}</div></div>{% endif %}
+      {% if I.margin.trade_amt_ratio is defined %}<div class="tile"><div class="tv">{{ I.margin.trade_amt_ratio }}%</div><div class="tk">{{ t('% of turnover', '占成交额') }}</div></div>{% endif %}
+      {% if I.margin.net_fin_buy_20d is not none %}<div class="tile"><div class="tv {{ 'pos' if I.margin.net_fin_buy_20d>=0 else 'neg' }}">{{ '%+d'|format(I.margin.net_fin_buy_20d) }}</div><div class="tk">{{ t('20d net buy (亿)', '20日净买入(亿)') }}</div></div>{% endif %}
+    </div>
+    <div class="chart">{{ I.margin.chart_html | safe }}</div>
+  </div>
+  {% endif %}
+
+  <!-- ===================== SOUTHBOUND FLOW (南向资金) ===================== -->
+  {% if I.southbound %}
+  <div class="panel span6">
+    <h2>{{ t('🇭🇰 Southbound flow', '🇭🇰 南向资金') }} <span class="note" style="text-transform:none">· {{ t('mainland → Hong Kong', '内地 → 香港') }}</span>
+      {{ help("Net mainland buying of Hong Kong via Stock Connect — the live half of the Connect flows (northbound daily direction was discontinued by regulators in Aug-2024). The z-score is today’s net vs its trailing-year distribution; the chart is the 20-day cumulative net. Persistent southbound buying is a mainland risk-appetite tell.", "经港股通的内地净买入香港 — 互联互通中仍实时披露的一侧（北向每日方向于 2024 年 8 月被监管停披）。Z 值为当日净额相对近一年分布；图为 20 日累计净额。持续南下是内地风险偏好的信号。") }}
+    </h2>
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span class="bignum {{ 'pos' if I.southbound.net>=0 else 'neg' }}">{{ '{:+,.0f}'.format(I.southbound.net) }}</span>
+      <span class="sub">{{ t('today net', '今日净额') }} · z {{ '%+.2f'|format(I.southbound.net_z) }}</span>
+    </div>
+    <div class="tiles">
+      <div class="tile"><div class="tv {{ 'pos' if I.southbound.cum_20d>=0 else 'neg' }}">{{ '{:+,.0f}'.format(I.southbound.cum_20d) }}</div><div class="tk">{{ t('20d cumulative', '20日累计') }}</div></div>
+      <div class="tile"><div class="tv">{{ I.southbound.pos_days_20 }}/20</div><div class="tk">{{ t('net-buy days', '净买入天数') }}</div></div>
+      {% if I.southbound.hold_mktcap is defined %}<div class="tile"><div class="tv">¥{{ (I.southbound.hold_mktcap/10000)|round(1) }}{{ t('T', '万亿') }}</div><div class="tk">{{ t('holdings', '持仓市值') }}</div></div>{% endif %}
+    </div>
+    <div class="chart">{{ I.southbound.chart_html | safe }}</div>
+    <p class="note" style="margin:2px 0 0;font-size:11px">{{ t('Northbound daily direction discontinued Aug-2024 (turnover only).', '北向每日方向自 2024 年 8 月停止披露（仅余成交额）。') }}</p>
+  </div>
+  {% endif %}
+
+  <!-- ===================== CONNECT LEADERBOARD (smart money) ===================== -->
+  {% if leaderboard %}
+  <div class="panel span8">
+    <h2>{{ t('🌐 Connect leaderboard — smart money', '🌐 互联互通龙虎榜 — 聪明钱') }}
+      {{ help("Where cross-border money is concentrated today. Northbound = the A-shares foreign money traded most (turnover only — daily net was discontinued Aug-2024). Southbound = the HK names mainland money net-bought (green) or net-sold (red) — a live read on mainland risk appetite and which themes it is chasing offshore.", "今日跨境资金的集中之处。北向＝外资成交额最大的 A 股（仅成交额 — 每日净额自 2024 年 8 月停止）。南向＝内地资金净买入（涨色）或净卖出（跌色）的港股 — 实时反映内地的风险偏好及其在离岸追逐的主题。") }}
+    </h2>
+    <div class="grid" style="gap:18px">
+      <div class="span6">
+        <h3>{{ t('Northbound — most-active A-shares', '北向 — 最活跃 A 股') }} <span class="note" style="text-transform:none">· {{ t('foreign turnover', '外资成交额') }}</span></h3>
+        <table>
+          <thead><tr><th class="l">{{ t('Stock', '个股') }}</th><th>{{ t('Turnover 亿', '成交额 亿') }}</th><th>{{ t('Day', '当日') }}</th></tr></thead>
+          <tbody>
+          {% for x in leaderboard.nb %}
+          <tr><td class="l">{{ x.name }} <span class="note">{{ x.code }}</span></td><td>{{ '%.1f'|format(x.val) }}</td><td class="{{ 'pos' if x.chg>=0 else 'neg' }}">{{ '%+.1f'|format(x.chg) }}%</td></tr>
+          {% else %}<tr><td class="l note" colspan="3">—</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="span6">
+        <h3>{{ t('Southbound — mainland net (HK)', '南向 — 内地净额 (港股)') }} <span class="note" style="text-transform:none">· {{ t('net buy / sell', '净买/卖') }}</span></h3>
+        <table>
+          <thead><tr><th class="l">{{ t('Stock', '个股') }}</th><th>{{ t('Net 亿', '净额 亿') }}</th><th>{{ t('Day', '当日') }}</th></tr></thead>
+          <tbody>
+          {% for x in leaderboard.sb_buy %}
+          <tr><td class="l">{{ x.name }}</td><td class="pos">{{ '%+.1f'|format(x.val) }}</td><td class="{{ 'pos' if x.chg>=0 else 'neg' }}">{{ '%+.1f'|format(x.chg) }}%</td></tr>
+          {% endfor %}
+          {% for x in leaderboard.sb_sell %}{% if x.val < 0 %}
+          <tr><td class="l">{{ x.name }}</td><td class="neg">{{ '%+.1f'|format(x.val) }}</td><td class="{{ 'pos' if x.chg>=0 else 'neg' }}">{{ '%+.1f'|format(x.chg) }}%</td></tr>
+          {% endif %}{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <p class="note" style="margin:6px 0 0;font-size:11px">{{ t('as of', '截至') }} {{ leaderboard.date }}</p>
+  </div>
+  {% endif %}
+
+  <!-- ===================== PBoC POLICY (RRR / 存准率) ===================== -->
+  {% if I.pboc %}
+  <div class="panel span4">
+    <h2>{{ t('🏛️ PBoC policy — RRR', '🏛️ 央行政策 — 存准率') }}
+      {{ help("The reserve-requirement ratio (存款准备金率) is the PBoC's main liquidity lever — each CUT frees bank reserves to lend (easing, supportive for equities), each HIKE drains them. The 2-year net change shows the policy stance. Coloured by the Asia convention: easing/cut is the up-colour.", "存款准备金率是央行主要的流动性工具 — 每次下调释放银行可贷资金（宽松，利好股市），每次上调则回收。近两年累计变动显示政策立场。按亚洲习惯着色：宽松/降准为上涨色。") }}
+    </h2>
+    <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:4px">
+      <span class="bignum">{{ I.pboc.rrr_big }}%</span>
+      <span class="chip {{ 'c-up' if I.pboc.bias=='easing' else ('c-down' if I.pboc.bias=='tightening' else 'c-muted') }}">{{ t(I.pboc.bias, {'easing':'宽松','tightening':'收紧','neutral':'中性'}[I.pboc.bias]) }}</span>
+    </div>
+    <span class="sub">{{ t('big-bank reserve ratio', '大型银行存准率') }}{% if I.pboc.net_2y %} · {{ t('2y', '近2年') }} {{ '%+.2f'|format(I.pboc.net_2y) }}pp{% endif %}</span>
+    <table style="margin-top:10px">
+      <thead><tr><th class="l">{{ t('Date', '日期') }}</th><th>{{ t('Move', '变动') }}</th><th>{{ t('To', '至') }}</th></tr></thead>
+      <tbody>
+      {% for e in I.pboc.events %}
+      <tr><td class="l">{{ e.date }}</td><td class="{{ 'pos' if e.dir=='cut' else 'neg' }}">{{ t('cut', '降') if e.dir=='cut' else t('hike', '升') }} {{ '%.2f'|format(e.change|abs) }}pp</td><td>{{ e.level }}%</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- ===================== CREDIT & MACRO TAPE ===================== -->
+  {% if I.credit %}
+  <div class="panel span8">
+    <h2>{{ t('🏦 Credit impulse & macro tape', '🏦 信贷脉冲与宏观盘面') }}
+      {{ help("China's credit/liquidity pulse. The CREDIT IMPULSE (year-on-year change of trailing-12-month Total Social Financing 社融) is the single most-watched China macro lead — it turns up ~2 quarters before risk assets and commodities. The M1-M2 scissors (M1 YoY minus M2 YoY) is a faster animal-spirits gauge — above zero = money turning active. Tape tiles show the latest year-on-year for investment, retail and trade (arrow = vs 3 months ago).", "中国的信贷／流动性脉搏。信贷脉冲（滚动 12 个月社会融资规模的同比变化）是最受关注的中国宏观领先指标 — 通常领先风险资产与大宗商品约两个季度。M1-M2 剪刀差是更快的风险偏好指标 — 高于零＝资金活化。盘面磁贴显示投资、消费与贸易的最新同比（箭头＝相对三个月前）。") }}
+    </h2>
+    <div style="display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start">
+      {% if I.credit.credit_impulse is defined %}
+      <div style="flex:1 1 280px;min-width:250px">
+        <div style="display:flex;align-items:baseline;gap:10px">
+          <span class="bignum {{ 'pos' if I.credit.credit_impulse>=0 else 'neg' }}">{{ '%+.1f'|format(I.credit.credit_impulse) }}%</span>
+          <span class="sub">{{ t('credit impulse (社融脉冲)', '社融信贷脉冲') }}{% if I.credit.credit_impulse_6mo is not none %} · {{ t('was', '6月前') }} {{ '%+.1f'|format(I.credit.credit_impulse_6mo) }}%{% endif %}</span>
+        </div>
+        <div class="chart">{{ I.credit.impulse_html | safe }}</div>
+      </div>
+      {% endif %}
+      {% if I.credit.scissors is defined %}
+      <div style="flex:1 1 280px;min-width:250px">
+        <div style="display:flex;align-items:baseline;gap:10px">
+          <span class="bignum {{ 'pos' if I.credit.scissors>=0 else 'neg' }}">{{ '%+.1f'|format(I.credit.scissors) }}</span>
+          <span class="sub">{{ t('M1−M2 scissors (剪刀差, pp)', 'M1−M2 剪刀差 (pp)') }}</span>
+        </div>
+        <div class="chart">{{ I.credit.scissors_html | safe }}</div>
+      </div>
+      {% endif %}
+    </div>
+    <div class="tiles" style="margin-top:8px">
+      {% if I.credit.tsf_12m is defined %}<div class="tile"><div class="tv">¥{{ I.credit.tsf_12m }}{{ t('T', '万亿') }}</div><div class="tk">{{ t('TSF trailing-12m (社融)', '社融(滚动12月)') }}</div></div>{% endif %}
+      {% if I.credit.new_loans is defined %}<div class="tile"><div class="tv">¥{{ (I.credit.new_loans/10000)|round(2) }}{{ t('T', '万亿') }}</div><div class="tk">{{ t('new loans/mo', '当月新增贷款') }}{% if I.credit.new_loans_yoy is not none %} · {{ '%+.0f'|format(I.credit.new_loans_yoy) }}%{% endif %}</div></div>{% endif %}
+      {% if I.credit.tape %}{% for tp in I.credit.tape %}
+        {% set sp = tp.spark %}{% set up = (sp|length>=4 and sp[-1] >= sp[-4]) %}
+        <div class="tile" style="flex:1 1 76px;min-width:76px"><div class="tv {{ 'pos' if tp.val>=0 else 'neg' }}" style="font-size:14px">{{ '%+.1f'|format(tp.val) }}% <span class="sub">{{ '▲' if up else '▼' }}</span></div><div class="tk">{{ t(tp.en, tp.zh) }}</div></div>
+      {% endfor %}{% endif %}
+    </div>
+    {% if I.credit.tsf_mix %}
+    <p class="note" style="margin:8px 0 0">{{ t('Latest month 社融 mix (亿)', '当月社融结构(亿)') }}: {{ t('bank loans', '银行贷款') }} <b class="{{ 'pos' if I.credit.tsf_mix.bank>=0 else 'neg' }}">{{ '{:+,d}'.format(I.credit.tsf_mix.bank) }}</b> · {{ t('bonds', '债券') }} <b class="{{ 'pos' if I.credit.tsf_mix.bond>=0 else 'neg' }}">{{ '{:+,d}'.format(I.credit.tsf_mix.bond) }}</b> · {{ t('shadow', '影子') }} <b class="{{ 'pos' if I.credit.tsf_mix.shadow>=0 else 'neg' }}">{{ '{:+,d}'.format(I.credit.tsf_mix.shadow) }}</b> · {{ t('equity', '股票') }} <b class="{{ 'pos' if I.credit.tsf_mix.equity>=0 else 'neg' }}">{{ '{:+,d}'.format(I.credit.tsf_mix.equity) }}</b></p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- ===================== SENTIMENT THERMOMETER ===================== -->
+  {% if I.flows or I.turnover %}
+  <div class="panel span4">
+    <h2>{{ t('🌡️ Sentiment thermometer', '🌡️ 情绪温度计') }}
+      {{ help("Fast A-share sentiment. Two-market turnover (成交额) is the headline retail-mania gauge — '万亿成交' (trillion-yuan days) signal froth, sub-0.7T apathy. AH premium >100 means mainland A-shares trade richer than their HK twins. Limit-up vs limit-down counts and the seal rate (limit-ups that stayed sealed) are the purest daily speculation read — many limit-ups but a falling seal rate flags topping froth.", "快速的 A 股情绪。两市成交额是核心的散户狂热指标 — 万亿成交预示泡沫，低于 0.7 万亿为清淡。AH 溢价 >100 表示 A 股比港股孪生股更贵。涨停／跌停家数与封板率是最纯粹的日内投机读数 — 涨停多但封板率下降预示投机见顶。") }}
+    </h2>
+    {% if I.turnover %}
+    {% set tb = {'apathy':['c-muted','apathy','清淡'],'normal':['c-info','normal','正常'],'active':['c-warn','active','活跃'],'mania':['c-down','mania','狂热']}[I.turnover.band] %}
+    <div style="margin-bottom:8px">
+      <div style="display:flex;align-items:baseline;gap:8px">
+        <span class="bignum">¥{{ I.turnover.turnover_t }}{{ t('T', '万亿') }}</span>
+        <span class="chip {{ tb[0] }}">{{ t(tb[1], tb[2]) }}</span>
+      </div>
+      <span class="sub">{{ t('two-market turnover (成交额)', '两市成交额') }} · {{ t('pctile', '分位') }} {{ I.turnover.pctile }}</span>
+      <div class="chart">{{ I.turnover.chart_html | safe }}</div>
+    </div>
+    {% endif %}
+    {% if I.flows and I.flows.ah %}
+    <div style="margin-bottom:10px">
+      <span class="bignum {{ 'neg' if I.flows.ah.level>=140 else '' }}">{{ I.flows.ah.level }}</span>
+      <span class="sub">{{ t('AH premium', 'AH 溢价') }}{% if I.flows.ah.pctile is not none %} · {{ t('pctile', '分位') }} {{ I.flows.ah.pctile }}{% else %} · {{ t('building history', '历史积累中') }}{% endif %}</span>
+    </div>
+    {% endif %}
+    {% if I.flows.limit %}
+    <div class="tiles" style="margin:0 0 6px">
+      <div class="tile"><div class="tv pos">{{ I.flows.limit.zt }}</div><div class="tk">{{ t('limit-up 涨停', '涨停') }}</div></div>
+      <div class="tile"><div class="tv neg">{{ I.flows.limit.dt }}</div><div class="tk">{{ t('limit-down 跌停', '跌停') }}</div></div>
+      {% if I.flows.limit.seal_rate is not none %}<div class="tile"><div class="tv">{{ I.flows.limit.seal_rate }}%</div><div class="tk">{{ t('seal rate 封板率', '封板率') }}</div></div>{% endif %}
+    </div>
+    <p class="note" style="font-size:11px;margin:0">{{ t('as of', '截至') }} {{ I.flows.limit.date }} · {{ t('炸板', '炸板') }} {{ I.flows.limit.zb }}</p>
+    {% endif %}
+    {% if I.flows.etf %}
+    <p class="note" style="margin:8px 0 0">{% if I.flows.etf.building %}{{ t('ETF flow: building (needs a 2nd daily snapshot)', 'ETF 资金流：积累中（需第二个每日快照）') }}{% else %}{{ t('ETF net creation', 'ETF 净申购') }}: <b class="{{ 'pos' if I.flows.etf.net_creation>=0 else 'neg' }}">{{ '{:+,d}'.format(I.flows.etf.net_creation) }}</b> {{ t('shares', '份') }} ({{ I.flows.etf.up }}↑/{{ I.flows.etf.down }}↓){% endif %}</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
   <!-- MTF cards for the leaders -->
   <div class="panel span12">
     <h2>{{ t('Cycle Detail — Sector Leaders', '周期详情 — 领先板块') }}</h2>
@@ -177,6 +660,39 @@
     </div>
   </div>
 
+  <!-- ===================== REGIME LIFESPANS + DATA HEALTH ===================== -->
+  {% if lifespan_rows %}
+  <div class="panel span6">
+    <h2>{{ t('Regime lifespans — base rates', '周期存续期 — 基准概率') }}
+      {{ help("Every regime period since ~2006: how many there were, the median length, and the two most common next quads. China regimes are shorter and less stable than the US — context, not a forecast.", "自约 2006 年以来的每个周期时段：出现次数、存续期中位数，以及最常见的两个下一象限。中国周期比美国更短、更不稳定 — 仅作背景，而非预测。") }}
+    </h2>
+    <table>
+      <thead><tr><th class="l">{{ t('regime', '周期') }}</th><th>{{ t('periods', '次数') }}</th><th>{{ t('median days', '中位天数') }}</th><th class="l">{{ t('most common next', '最常见下一周期') }}</th></tr></thead>
+      <tbody>
+      {% for row in lifespan_rows %}
+        <tr><td class="l">{{ td(row.name) }}</td><td>{{ row.n }}</td><td>{{ row.median }}</td><td class="l">{{ row.next }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {% if health %}
+  <div class="panel span6">
+    <h2>{{ t('Data health', '数据健康度') }}
+      {{ help("Freshness of the China data feeds powering this page. ‘ok’ = updated within its expected cadence; rows = total stored history.", "驱动本页的中国数据源的新鲜度。‘ok’＝在预期更新周期内已更新；rows＝累计存储行数。") }}
+    </h2>
+    <table>
+      <thead><tr><th class="l">{{ t('source', '来源') }}</th><th>{{ t('status', '状态') }}</th><th>{{ t('rows', '行数') }}</th><th>{{ t('last', '最新') }}</th></tr></thead>
+      <tbody>
+      {% for h in health %}
+        <tr><td class="l">{{ t(h.en, h.zh) }}</td><td><span class="lad {{ 'up' if h.status=='ok' else ('warn' if h.status=='stale' else 'down') }}">{{ h.status }}</span></td><td>{{ '{:,}'.format(h.rows) }}</td><td>{{ h.last }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
 </div>
 
 <div class="foot">
@@ -187,7 +703,16 @@
         '板块ETF约5年历史（展示级相对强弱）；周期与阶梯基于2006–2026深度样本校准。') }}
 </div>
 
+<script>
+window.__CHART_SWAP__ = {
+  colors: {"#5fbf7f":"#e07070","#e07070":"#5fbf7f","#2e9e4f":"#d04545","#d04545":"#2e9e4f"},
+  labels: {}
+};
+</script>
 <script src="theme.js"></script>
+<script src="chart_i18n.js"></script>
 <script src="mtf.js"></script>
+<script src="timemachine.js"></script>
+<script src="tablesort.js"></script>
 </body>
 </html>

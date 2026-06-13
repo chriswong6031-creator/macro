@@ -6,4 +6,9 @@ __pycache__/
 site/_tmp/
 site/stockdata/
 site/chinastockdata/
+site/hkstockdata/
+data/breadth/_closes_cache.parquet
+data/smallcap_breadth/_closes_cache.parquet
+data/midcap_breadth/_closes_cache.parquet
 data/china_breadth/_closes_cache.parquet
+data/hk_breadth/_closes_cache.parquet

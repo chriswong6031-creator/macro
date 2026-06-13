@@ -248,4 +248,14 @@ LEX: dict[str, str] = {
     "Telecom & Utilities": "电信与公用事业",
     "Gaming & Leisure": "博彩与休闲",
     "Exchange & Diversified": "交易所与综合企业",
+    # HK global-risk factor labels (engine.hk_global.FACTOR_LABELS)
+    "US Dollar (DXY)": "美元指数（DXY）",
+    "Volatility (VIX)": "波动率（VIX）",
+    "Copper / Gold": "铜金比",
+    "USD / CNY": "美元兑人民币",
+    "EM equity (EEM)": "新兴市场股票（EEM）",
+    # HK peg states (risk_state Risk-on/Risk-off/Neutral already mapped above)
+    "weak-side (outflow)": "弱方（资金流出）",
+    "strong-side (inflow)": "强方（资金流入）",
+    "mid-band": "区间中部",
 }

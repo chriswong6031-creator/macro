@@ -30,12 +30,30 @@ jobs:
           path: data/breadth/_closes_cache.parquet
           key: breadth-closes-${{ github.run_id }}
           restore-keys: breadth-closes-
+      - name: restore smallcap (S&P 600) breadth close cache
+        uses: actions/cache@v4
+        with:
+          path: data/smallcap_breadth/_closes_cache.parquet
+          key: smallcap-closes-${{ github.run_id }}
+          restore-keys: smallcap-closes-
+      - name: restore midcap (S&P 400) breadth close cache
+        uses: actions/cache@v4
+        with:
+          path: data/midcap_breadth/_closes_cache.parquet
+          key: midcap-closes-${{ github.run_id }}
+          restore-keys: midcap-closes-
       - name: restore china breadth close cache
         uses: actions/cache@v4
         with:
           path: data/china_breadth/_closes_cache.parquet
           key: china-breadth-closes-${{ github.run_id }}
           restore-keys: china-breadth-closes-
+      - name: restore hk breadth close cache
+        uses: actions/cache@v4
+        with:
+          path: data/hk_breadth/_closes_cache.parquet
+          key: hk-breadth-closes-${{ github.run_id }}
+          restore-keys: hk-breadth-closes-
       - name: run collectors (graceful degradation — never fails the build on one source)
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
@@ -66,7 +84,7 @@ jobs:
     needs: collect
     if: always()            # a scraper failure must still produce a dashboard from cached data
     runs-on: ubuntu-latest
-    timeout-minutes: 40     # search libraries grew (US + China ~800); headroom vs the 20m cap
+    timeout-minutes: 40     # search libraries grew (US ~1500 + China ~800 + HK); headroom vs the 20m cap
     steps:
       - uses: actions/checkout@v4
         with:
@@ -83,6 +101,24 @@ jobs:
           path: data/breadth/_closes_cache.parquet
           key: breadth-closes-engine-${{ github.run_id }}
           restore-keys: breadth-closes-
+      - name: restore smallcap (S&P 600) breadth close cache (stock library needs constituent closes)
+        uses: actions/cache@v4
+        with:
+          path: data/smallcap_breadth/_closes_cache.parquet
+          key: smallcap-closes-engine-${{ github.run_id }}
+          restore-keys: smallcap-closes-
+      - name: restore midcap (S&P 400) breadth close cache (stock library needs constituent closes)
+        uses: actions/cache@v4
+        with:
+          path: data/midcap_breadth/_closes_cache.parquet
+          key: midcap-closes-engine-${{ github.run_id }}
+          restore-keys: midcap-closes-
+      - name: restore hk breadth close cache (hk stock search library needs constituent closes)
+        uses: actions/cache@v4
+        with:
+          path: data/hk_breadth/_closes_cache.parquet
+          key: hk-breadth-closes-engine-${{ github.run_id }}
+          restore-keys: hk-breadth-closes-
       - name: run regime engine + build dashboard + daily brief (resilient)
         # Self-diagnosing + deploy-resilient: each builder runs isolated; a failure
         # is surfaced as a ::error:: annotation (readable on the run page + via the
@@ -111,6 +147,11 @@ jobs:
         # writes china.html + china_regime/latest.json so the hub picks up the China
         # card. Self-sufficient; returns 0 on any error (can't break the macro/vector site).
         run: python -m scripts.build_china
+      - name: build hong kong / hang seng dashboard
+        # after build_site/build_china, before build_vector (which writes the hub
+        # last): writes hk.html + hk_regime/latest.json so the hub picks up the
+        # Hong Kong card. Self-sufficient; returns 0 on any engine error.
+        run: python -m scripts.build_hk
       - name: build commodity vector dashboard
         # after build_site/build_china, before build_vector (which writes the hub
         # last): writes commodities.html + commodity/latest.json so the hub picks up
@@ -123,19 +164,21 @@ jobs:
         # signals); returns 0 even if the crypto engine errors, so it can never
         # break the macro site.
         run: python -m scripts.build_vector
-      - name: rebuild china stock-search library (resilient — guarantees the analyzer ships)
-        # build_china renders its dashboard but SWALLOWS errors (returns 0), so a
-        # failure there silently 404s the per-stock A-Share search. This rebuilds the
-        # search JSON (site/chinastockdata) directly from the committed china_search
-        # data — independent of the dashboard render — and surfaces any failure as an
-        # annotation without aborting the deploy. Idempotent.
+      - name: rebuild stock-search libraries (resilient — guarantees the analyzers ship)
+        # build_china/build_hk render their dashboards but SWALLOW errors (return 0),
+        # so a failure there silently 404s the per-stock search. This rebuilds the
+        # search JSON (site/chinastockdata, site/hkstockdata) directly from the
+        # committed caches — independent of the dashboard render — and surfaces any
+        # failure as an annotation without aborting the deploy. Idempotent.
         run: |
           set +e
-          echo "::group::build_china_library"; python -m scripts.build_china_library > /tmp/lib.log 2>&1; rc=$?; cat /tmp/lib.log; echo "::endgroup::"
-          if [ "$rc" -ne 0 ]; then
-            echo "::error title=build_china_library failed (rc=$rc)::$(tail -n 2 /tmp/lib.log | tr '\n' ' ' | tail -c 600)"
-            { echo "### ❌ build_china_library failed (rc=$rc)"; echo '```'; tail -n 40 /tmp/lib.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
-          fi
+          for mod in scripts.build_china_library scripts.build_hk_library; do
+            echo "::group::$mod"; python -m "$mod" > /tmp/lib.log 2>&1; rc=$?; cat /tmp/lib.log; echo "::endgroup::"
+            if [ "$rc" -ne 0 ]; then
+              echo "::error title=$mod failed (rc=$rc)::$(tail -n 2 /tmp/lib.log | tr '\n' ' ' | tail -c 600)"
+              { echo "### ❌ $mod failed (rc=$rc)"; echo '```'; tail -n 40 /tmp/lib.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
           exit 0
       - name: notify (telegram/discord; skips when secrets absent)
         env:
