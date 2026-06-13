@@ -119,6 +119,8 @@ def load_all() -> dict[str, pd.Series | pd.DataFrame | None]:
         "cot_net_pct": _col("cot", "cot_bitcoin", "net_spec_pct_oi"),  # CME net-spec % of OI
         "spx": _col("yahoo", "SPY", "close"),
         "gold": _col("yahoo", "GC_F", "close"),
+        "us_m2": _col("fred", "M2SL", "us_m2"),                 # broad money (US, $bn)
+        "china_m2_yoy": _col("china_macro", "money_supply", "m2_yoy"),  # PBoC M2 growth %
     }
     # derived identities (D41)
     if mvrv is not None and mcap is not None:

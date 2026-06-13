@@ -751,6 +751,9 @@ def main() -> int:
             "put_call": _r(last.get("put_call_oi_ratio"), 2),
             "max_pain": _r(last.get("max_pain"), 0),
             "atm_iv_30d": _r(last.get("atm_iv_30d"), 1),
+            "skew_term": _r(last.get("skew_term"), 3),
+            "basis_ann": _r(last.get("basis_ann"), 1),
+            "basis_slope": _r(last.get("basis_slope"), 1),
         },
         "leverage": {
             "oi_total": _r(last.get("oi_total_usd"), 0),
@@ -769,6 +772,8 @@ def main() -> int:
             "hy_oas": _r(last.get("hy_oas"), 2),
             "vix": _r(last.get("vix"), 1),
             "dxy": _r(last.get("dxy"), 1),
+            "global_m2_yoy": _r(last.get("global_m2_yoy"), 1),
+            "global_liq_regime": last.get("global_liq_regime"),
         },
         "onchain": {
             "premium": _r(last.get("coinbase_premium_ema"), 2),

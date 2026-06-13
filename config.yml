@@ -39,6 +39,7 @@ fred:
     liquidity:
       WALCL: fed_balance_sheet    # weekly (Wed), $ millions
       RRPONTSYD: on_rrp           # daily, $ billions
+      M2SL: us_m2                 # US M2 broad money ($bn, monthly) — global-M2 leg
     econ_confirm:
       PAYEMS: payrolls            # monthly, thousands
       INDPRO: industrial_prod     # monthly, index
@@ -207,7 +208,7 @@ bgeo:
   base_url: https://bitcoin-data.com
   retries: 2                      # don't burn quota on retries
   window_start: "2022-06-13"      # free tier serves last ~4y only
-  daily_request_budget: 13        # of 15/day per IP — leave 2 spare (added coinbase-premium)
+  daily_request_budget: 14        # of 15/day per IP — leave 1 spare (added coinbase-premium + cdd)
   page_size: 5000
   # priority order: first entries fetched first when quota is tight
   metrics:                        # endpoint -> column name
@@ -225,6 +226,8 @@ bgeo:
     open-interest-futures: open_interest_futures
     etf-flow-btc: etf_flow_btc
     bitcoin-dominance: btc_dominance
+    cdd: cdd                     # coin-days-destroyed -> dormancy/liveliness (bottoms-side
+                                 # behaviour signal, deferred until seeded; was 429 this run)
     coinbase-premium-index: coinbase_premium   # US institutional demand (Coinbase−Binance); lowest priority → skipped first under quota
 
 coinbase:
@@ -838,6 +841,13 @@ vector:
     pctile_lookback_d: 730
     coupled_thresh: 0.45          # BTC-SPX corr above this = risk-asset coupling
     decoupled_thresh: 0.0         # below this = decoupled / diversifier regime
+
+  global_liquidity:               # US + China M2 growth impulse (the broad-money read
+    # our Fed-balance-sheet net-liquidity lacks; EZ/JP/UK FRED M2 are discontinued,
+    # so US+China = the two largest LIVE blocs). Money supply leads BTC ~10wk.
+    us_weight: 0.4                # US vs China weight (China M2 ~60% larger in USD)
+    accel_window_d: 90            # 3-month change of the YoY impulse
+    expanding_thresh: 5.0         # global M2 YoY above this = liquidity tailwind
 
   calibration:
     start_date: "2015-01-01"      # price-signal backtests (Yahoo BTC 2014-09->)
