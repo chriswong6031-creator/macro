@@ -36,10 +36,10 @@
   "flip_condition": {
     "axis": "growth",
     "component": "breadth_direction",
-    "z": 0.87,
+    "z": 0.89,
     "threshold": 0.45,
-    "margin": 0.42,
-    "note": "growth axis flips risk: breadth_direction slope z=0.87 is the closest supporter to its +/-0.45 cutoff"
+    "margin": 0.44,
+    "note": "growth axis flips risk: breadth_direction slope z=0.89 is the closest supporter to its +/-0.45 cutoff"
   },
   "sector_rs": [
     {
@@ -206,11 +206,11 @@
     },
     {
       "ticker": "GC=F",
-      "rs": 5.716076713641725,
-      "mom_20d_pct": -8.58,
-      "mom_60d_pct": -22.89,
+      "rs": 5.6825075834175935,
+      "mom_20d_pct": -9.12,
+      "mom_60d_pct": -23.35,
       "above_200d_trend": false,
-      "pctile_252d": 28.6,
+      "pctile_252d": 27.4,
       "rank": 19
     }
   ],
@@ -255,19 +255,24 @@
     },
     "copper_gold": {
       "level": 0.0015,
-      "chg_20d_pct": 11.27
+      "chg_20d_pct": 11.18
     }
   },
   "alerts": [
     {
-      "rule": "circuit_breaker_open",
+      "rule": "net_liquidity_roc_flip",
       "severity": "warn",
-      "message": "Source 'sentiment_aaii' marked dead after 3 consecutive failures \u2014 collector skipped until it recovers; affected signals degrade"
+      "message": "Net liquidity 4-week RoC flipped negative (contracting): +1bn -> -44bn"
     },
     {
-      "rule": "sector_rs_cross_low",
+      "rule": "holdings_active_change",
       "severity": "info",
-      "message": "XLY RS vs SPY crossed below 10th pctile of 90d (now 10)"
+      "message": "ARKK: manager cut BIDU by -56% of position (2026-06-11..2026-06-12, flow-normalized)"
+    },
+    {
+      "rule": "holdings_active_change",
+      "severity": "info",
+      "message": "ARKW: manager cut BIDU by -48% of position (2026-06-11..2026-06-12, flow-normalized)"
     }
   ],
   "playbook": {
@@ -855,56 +860,56 @@
       {
         "ticker": "GC=F",
         "name": "Gold",
-        "price": 4239.9,
+        "price": 4215.0,
         "above50": false,
         "above200": false,
-        "pct_vs_50dma": -7.6,
-        "pct_vs_200dma": -4.1,
-        "rsi14": 37.0,
+        "pct_vs_50dma": -8.1,
+        "pct_vs_200dma": -4.6,
+        "rsi14": 35.0,
         "macd_pos": false,
-        "off_52w_high_pct": -20.3,
+        "off_52w_high_pct": -20.7,
         "season_this": "Jun: -0.7% avg, up 42% of years (n=26)",
-        "mom_60d_pct": -13.3
+        "mom_60d_pct": -13.8
       },
       {
         "ticker": "CL=F",
         "name": "Crude Oil",
-        "price": 84.29,
+        "price": 84.88,
         "above50": false,
         "above200": true,
-        "pct_vs_50dma": -12.9,
-        "pct_vs_200dma": 14.8,
-        "rsi14": 37.0,
+        "pct_vs_50dma": -12.3,
+        "pct_vs_200dma": 15.6,
+        "rsi14": 38.0,
         "macd_pos": false,
-        "off_52w_high_pct": -25.4,
+        "off_52w_high_pct": -24.9,
         "season_this": "Jun: +2.8% avg, up 65% of years (n=26)",
-        "mom_60d_pct": -12.5
+        "mom_60d_pct": -11.9
       },
       {
         "ticker": "HG=F",
         "name": "Copper",
-        "price": 6.47,
+        "price": 6.43,
         "above50": true,
         "above200": true,
-        "pct_vs_50dma": 5.2,
-        "pct_vs_200dma": 17.0,
-        "rsi14": 57.0,
+        "pct_vs_50dma": 4.5,
+        "pct_vs_200dma": 16.3,
+        "rsi14": 55.0,
         "macd_pos": false,
-        "off_52w_high_pct": -2.6,
+        "off_52w_high_pct": -3.3,
         "season_this": "Jun: -0.4% avg, up 58% of years (n=26)",
-        "mom_60d_pct": 16.6
+        "mom_60d_pct": 15.8
       },
       {
         "ticker": "DX-Y.NYB",
         "name": "US Dollar",
-        "price": 99.81,
+        "price": 99.75,
         "above50": true,
         "above200": true,
         "pct_vs_50dma": 0.9,
-        "pct_vs_200dma": 1.2,
-        "rsi14": 60.0,
+        "pct_vs_200dma": 1.1,
+        "rsi14": 59.0,
         "macd_pos": true,
-        "off_52w_high_pct": -0.7,
+        "off_52w_high_pct": -0.8,
         "season_this": "Jun: -0.2% avg, up 45% of years (n=56)",
         "mom_60d_pct": -0.3
       }
