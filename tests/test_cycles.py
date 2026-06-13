@@ -10,8 +10,9 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine.cycles import (  # noqa: E402
-    analyze, cycle_state, find_troughs, ladder_state, mtf_snapshot,
-    signal_age, signal_age_fields,
+    _EQ_BEARISH, _EQ_BULLISH, _eq_grade, _eq_proximity, analyze, cycle_state,
+    early_signals, entry_quality, entry_quality_fields, find_troughs, ladder_state,
+    mtf_snapshot, signal_age, signal_age_fields, STATE_DISPLAY,
 )
 
 IDX = pd.bdate_range("2020-01-01", periods=520)
@@ -131,12 +132,73 @@ def test_analyze_attaches_age() -> None:
                                            "DOWNTREND", "HIGH", "LOW", "BOUNCE"))
 
 
+def test_eq_proximity_peaks_near_the_low() -> None:
+    """The dominant lever: proximity must peak just above the pivot and decay as
+    price runs away — and a broken pivot (below the low) is discounted."""
+    f = _eq_proximity
+    assert f(0.01, True) > f(0.10, True) > f(0.20, True)   # nearer the low = higher
+    assert f(0.02, True) >= 0.9                              # sweet spot near 1
+    assert f(-0.10, True) <= 0.2                             # deep below pivot = knife
+    # short side mirrors: 'near the high' (small negative pct) scores high
+    assert f(-0.01, False) > f(-0.10, False)
+    # the curve must be CONTINUOUS — no cliff at any breakpoint (esp. -0.03)
+    xs = [x / 1000 for x in range(-90, 260)]
+    for a, b in zip(xs, xs[1:]):
+        assert abs(f(b, True) - f(a, True)) < 0.05, f"jump near {b:.3f}"
+
+
+def test_eq_grade_bands() -> None:
+    assert _eq_grade(75)[0] == "strong"
+    assert _eq_grade(-45)[0] == "solid"
+    assert _eq_grade(20)[0] == "light"
+    assert _eq_grade(5)[0] == "minimal"
+
+
+def test_eq_sign_anchored_to_state() -> None:
+    """The score's SIGN must follow the ladder state, never contradict it."""
+    c = synth_cycles(period=40)
+    cyc = cycle_state(c)
+    mtf = mtf_snapshot(c)
+    early = early_signals(c, cyc, mtf)
+    reg = {"regime": "neutral"}
+    for st in _EQ_BULLISH:
+        eq = entry_quality(c, cyc, mtf, early, reg, state=st)
+        assert eq and eq["score"] >= 0, f"{st} should be >=0, got {eq}"
+    for st in _EQ_BEARISH:
+        eq = entry_quality(c, cyc, mtf, early, reg, state=st)
+        assert eq and eq["score"] <= 0, f"{st} should be <=0, got {eq}"
+
+
+def test_eq_every_state_classified() -> None:
+    """Every displayed ladder state is bullish or bearish (no silent fallback)."""
+    for st in STATE_DISPLAY:
+        assert st in _EQ_BULLISH or st in _EQ_BEARISH, f"{st} unclassified"
+
+
+def test_eq_thin_history_bows_out() -> None:
+    c = synth_cycles(period=40, n=120)
+    assert entry_quality(c, cycle_state(c) or {"x": 1}, {"D": {}}, {}, {"regime": "neutral"}) == {}
+
+
+def test_eq_fields_and_analyze() -> None:
+    fields = entry_quality_fields({"score": 58.0, "pct_from_low": 4.2})
+    assert fields["eq_dir"] == "up" and "+58" in fields["eq_badge"]
+    assert "drawdown" in fields["eq_tip"] and "return forecast" in fields["eq_tip"]
+    neg = entry_quality_fields({"score": -40.0, "pct_from_low": 1.0})
+    assert neg["eq_dir"] == "down" and neg["eq_badge"].startswith("▼")
+    res = analyze(synth_cycles(period=40))
+    assert "eq_score" in res["ladder"] and -100 <= res["ladder"]["eq_score"] <= 100
+
+
 if __name__ == "__main__":
     for fn in [test_trough_spacing, test_translation_right, test_translation_left,
                test_failed_cycle_flag, test_ladder_states_sane, test_decline_on_breakdown,
                test_signal_age_detects_recent_cross, test_signal_age_contract_holds,
                test_signal_age_thin_history, test_signal_age_fields_prose,
-               test_analyze_attaches_age]:
+               test_analyze_attaches_age, test_eq_proximity_peaks_near_the_low,
+               test_eq_grade_bands, test_eq_sign_anchored_to_state,
+               test_eq_every_state_classified, test_eq_thin_history_bows_out,
+               test_eq_fields_and_analyze]:
         fn()
         print(f"PASS {fn.__name__}")
     print("all cycle tests passed")

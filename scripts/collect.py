@@ -33,6 +33,7 @@ def all_adapters() -> dict:
         ("treasury", "collectors.treasury", "TreasuryAdapter"),
         ("nyfed", "collectors.nyfed", "NyFedAdapter"),
         ("breadth", "collectors.breadth", "BreadthAdapter"),
+        ("smallcap_breadth", "collectors.smallcap_breadth", "SmallCapBreadthAdapter"),
         ("cot", "collectors.cot", "CotAdapter"),
         ("cboe_putcall", "collectors.cboe", "PutCallAdapter"),
         ("cboe_gex", "collectors.cboe", "GexAdapter"),
@@ -49,6 +50,10 @@ def all_adapters() -> dict:
         ("china_prices", "collectors.china_prices", "ChinaPriceAdapter"),
         ("china_macro", "collectors.china_macro", "ChinaMacroAdapter"),
         ("china_breadth", "collectors.china_breadth", "ChinaBreadthAdapter"),
+        # Hong Kong / Hang Seng dashboard — see research/HK_DATA_AUDIT.md
+        # (macro is reused from china_macro; HK only adds prices + breadth)
+        ("hk_prices", "collectors.hk_prices", "HkPriceAdapter"),
+        ("hk_breadth", "collectors.hk_breadth", "HkBreadthAdapter"),
         # crypto (Bitcoin Vector) — see research/VECTOR_DATA_AUDIT.md
         ("coinmetrics", "collectors.coinmetrics", "CoinMetricsAdapter"),
         ("bgeo", "collectors.bgeo", "BgeoAdapter"),

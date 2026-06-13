@@ -1020,8 +1020,8 @@ def signal_age_fields(state: str, score: int, age: dict) -> dict:
 # A SIGNED −100..+100 "how good is THIS moment to enter" score (buy-setup
 # positive / sell-setup negative). It is NOT an alpha/return predictor — a 54k-
 # sample backtest (research/ENTRY_QUALITY.md, scripts.research_conviction) showed
-# buying near the cycle low CONTROLS RISK (forward drawdown ≈30% smaller at 0-6%
-# above the low vs chasing) but does NOT beat buying strength on return (trend
+# buying near the cycle low CONTROLS RISK (forward drawdown ≈30% smaller near the
+# low vs chasers far above it, >25%) but does NOT beat buying strength on return (trend
 # persistence wins at 1-3mo). So this scores ENTRY QUALITY / RISK-TIMING:
 # near the pivot + a fresh momentum turn + the low actually holding + with-trend.
 # Weights are evidence-led — proximity dominates, freshness is a staleness
@@ -1057,8 +1057,10 @@ def _eq_proximity(pct: float, up: bool) -> float:
     """Closeness to the pivot. Long: best just above the low (lifted, not chasing),
     knife-discounted below it. Mirror (distance below the high) for the short side."""
     p = pct if up else -pct
+    if p < -0.06:
+        return 0.15                                  # deep below the pivot — falling knife
     if p < -0.03:
-        return 0.15                                  # pivot broke — not holding
+        return _eq_ramp(p, -0.06, -0.03, 0.15, 0.5)  # ramp the knife discount in (continuous)
     if p < 0.0:
         return _eq_ramp(p, -0.03, 0.0, 0.5, 0.9)
     if p < 0.03:
@@ -1090,7 +1092,8 @@ def _eq_freshness(d: dict, cross_age: int | None, early_match: bool, up: bool) -
 
 
 def _eq_momentum(d: dict, up: bool) -> float:
-    r = d.get("rsi14") or 50
+    r = d.get("rsi14")
+    r = 50 if r is None else r   # genuine RSI 0 (max oversold) must NOT be coerced to neutral
     if up:
         return 0.5 * float(bool(d.get("macd_pos"))) + 0.5 * float(40 <= r <= 62)
     return 0.5 * float(not d.get("macd_pos")) + 0.5 * float(38 <= r <= 60)
@@ -1134,7 +1137,7 @@ def entry_quality(close: pd.Series, cyc: dict, mtf: dict, early: dict,
     up_hold = np.clip(0.5 * float(bool(cyc.get("swing_low") or cyc.get("cand_swing")))
                       + 0.3 * float(bool(cyc.get("above_ma10")))
                       + 0.2 * float(bool(cyc.get("ma10_rising"))), 0, 1)
-    up_gate = {"bull": 1.0, "neutral": 0.8, "bear": 0.45}[reg]
+    up_gate = {"bull": 1.0, "neutral": 0.8, "bear": 0.45}.get(reg, 0.8)
     if cyc.get("failed_cycle"):
         up_gate *= 0.3
     if cyc.get("ic_failed"):
@@ -1148,7 +1151,7 @@ def entry_quality(close: pd.Series, cyc: dict, mtf: dict, early: dict,
     dn_hold = np.clip(0.5 * float(not cyc.get("above_ma10"))
                       + 0.3 * float(not cyc.get("ma10_rising"))
                       + 0.2 * float(early.get("dir") == "down"), 0, 1)
-    dn_gate = {"bear": 1.0, "neutral": 0.8, "bull": 0.45}[reg]
+    dn_gate = {"bear": 1.0, "neutral": 0.8, "bull": 0.45}.get(reg, 0.8)
     short_eq = dn_raw * dn_gate * (0.55 + 0.45 * dn_hold)
 
     # anchor the SIGN to the ladder's direction; magnitude = entry quality
@@ -1158,6 +1161,10 @@ def entry_quality(close: pd.Series, cyc: dict, mtf: dict, early: dict,
         score = long_eq * 100
     else:                                     # unknown/neutral — let the stronger side speak
         score = (long_eq - short_eq) * 100
+    # a counter-trend bounce is explicitly high-risk ("NIMBLE ONLY") — never let it
+    # present as a strong/solid buy; cap its magnitude into the "light" band.
+    if state == "COUNTERTREND BOUNCE":
+        score = float(np.clip(score, -30, 30))
     score = float(np.clip(score, -100, 100))
     return {"score": round(score, 1), "long": round(long_eq * 100, 1),
             "short": round(short_eq * 100, 1),
@@ -1176,27 +1183,42 @@ def _eq_grade(score: float) -> tuple[str, str]:
     return ("minimal", "微弱")
 
 
-def entry_quality_fields(eq: dict) -> dict:
-    """Concise badge text + one-line honest tooltip (EN+ZH)."""
+def entry_quality_fields(eq: dict, state: str | None = None) -> dict:
+    """Concise badge text + one-line honest tooltip (EN+ZH). Direction wording is
+    state-aware so a watch/high-risk state never reads as a flat 'buy now', and
+    every display field is driven off the SAME rounded integer (`sr`) so the
+    arrow, grade, badge and label can never disagree at a boundary."""
     s = eq["score"]
-    grade, grade_zh = _eq_grade(s)
-    if s >= 15:
-        dirn, dirn_zh, arrow = "buy-setup", "买入形态", "▲"
-    elif s <= -15:
-        dirn, dirn_zh, arrow = "sell/exit-setup", "卖出/离场形态", "▼"
+    sr = int(round(s))
+    grade, grade_zh = _eq_grade(sr)
+    if sr >= 15:
+        arrow = "▲"
+        if state == "COUNTERTREND BOUNCE":
+            dirn, dirn_zh = "high-risk bounce", "高风险反弹"
+        elif state in ("BOTTOM WATCH", "TURN SIGNALED"):
+            dirn, dirn_zh = "buy setting up", "买入构筑中"
+        else:
+            dirn, dirn_zh = "buy-setup", "买入形态"
+    elif sr <= -15:
+        arrow = "▼"
+        if state == "TOP WATCH":
+            dirn, dirn_zh = "exit setting up", "离场构筑中"
+        else:
+            dirn, dirn_zh = "sell/exit-setup", "卖出/离场形态"
     else:
-        dirn, dirn_zh, arrow = "no clean setup", "无明确形态", "·"
-    badge = f"{arrow} {int(round(s)):+d}"
-    label = f"Entry quality: {grade} {dirn} ({int(round(s)):+d})"
-    label_zh = f"入场质量：{grade_zh}{dirn_zh}（{int(round(s)):+d}）"
+        arrow, dirn, dirn_zh = "·", "no clean setup", "无明确形态"
+    badge = f"{arrow} {sr:+d}"
+    label = f"Entry quality: {grade} {dirn} ({sr:+d})"
+    label_zh = f"入场质量：{grade_zh}{dirn_zh}（{sr:+d}）"
     tip = ("How well-timed & low-risk THIS entry is — near the cycle "
-           f"{'low' if s >= 0 else 'high'}, fresh momentum turn, with-trend. "
-           "Measured to cut drawdown (~30% tighter near the pivot), NOT a return forecast.")
+           f"{'low' if sr >= 0 else 'high'}, a fresh momentum turn, and with-trend. "
+           "Measured: entries near the pivot drew ~30% smaller drawdowns than chasers "
+           "far above it — risk control, NOT a return forecast.")
     tip_zh = ("衡量当前入场的时机与风险——贴近周期"
-              f"{'低点' if s >= 0 else '高点'}、动量新近转向、且顺势。"
-              "实测可降低回撤（贴近枢轴约小 30%），并非收益预测。")
+              f"{'低点' if sr >= 0 else '高点'}、动量新近转向、且顺势。"
+              "实测：贴近枢轴的入场，其回撤比远离枢轴的追高者约小 30%——这是风险控制，并非收益预测。")
     return {"eq_score": s, "eq_grade": grade, "eq_grade_zh": grade_zh,
-            "eq_dir": "up" if s >= 15 else "down" if s <= -15 else "flat",
+            "eq_dir": "up" if sr >= 15 else "down" if sr <= -15 else "flat",
             "eq_badge": badge, "eq_label": label, "eq_label_zh": label_zh,
             "eq_tip": tip, "eq_tip_zh": tip_zh,
             "eq_pct_from_low": eq.get("pct_from_low")}
@@ -1213,9 +1235,9 @@ def analyze(close: pd.Series, high: pd.Series | None = None,
         if age:
             lad.update(signal_age_fields(lad["state"], lad["score"], age))
         regime = {"regime": lad.get("regime", "neutral")}
-        eq = entry_quality(close, cyc, mtf, early, regime)
+        eq = entry_quality(close, cyc, mtf, early, regime, state=lad["state"])
         if eq:
-            lad.update(entry_quality_fields(eq))
+            lad.update(entry_quality_fields(eq, state=lad["state"]))
     return {"cycle": cyc, "mtf": mtf, "early": early, "ladder": lad}
 
 

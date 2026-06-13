@@ -238,9 +238,12 @@ def collect(step: int = 6, max_names: int = 110, tail: int = 0) -> pd.DataFrame:
             hist = macd_parts(sub)["hist"]
             up_age, dn_age = _cross_ages(hist)
             conv = conviction(sub, cyc, mtf, early, regime)
+            from engine.cycles import entry_quality as _eq
+            eqd = _eq(sub, cyc, mtf, early, regime, state=lad.get("state"))
             base = cv[i]
             rec = {
                 "conv": conv["score"], "lad": lad.get("score", 0),
+                "eq": eqd.get("score", 0.0) if eqd else 0.0,
                 "state": lad.get("state", ""),
                 "macd_pos": bool(d.get("macd_pos")),
                 "up_age": up_age if d.get("macd_pos") else np.nan,
@@ -349,6 +352,60 @@ def uptrend_test(df: pd.DataFrame) -> None:
     nl = bull[bull.pct_low < 0.06]
     for h in (42, 63):
         _band(nl[nl.macd_pos & nl.up_age.notna()], "up_age", [0, 3, 8, 16, 30, 99], h)
+
+
+EQ_CAL_PATH = "data/regime/entry_quality_calibration.json"
+
+
+def calibrate_eq(df: pd.DataFrame) -> dict:
+    """Calibrate the ENGINE's signed entry_quality. The honest yardstick is
+    drawdown / reward:risk, NOT raw return (the research showed near-the-low
+    controls risk, not return). Writes EQ_CAL_PATH for the record + cites it."""
+    import json
+    print("\n" + "=" * 78)
+    print("ENGINE entry_quality CALIBRATION — does a higher BUY-setup score buy a")
+    print("SMALLER forward drawdown (the validated 'safer entry' claim)?")
+    out = {"horizon_days": 63, "n": int(len(df)), "buy": {}, "sell": {}}
+    buy = df[df.eq > 0]
+    print("\nBUY-setup (eq>0) bins — forward 63d:")
+    for lo, hi, name in [(15, 35, "light"), (35, 60, "solid"), (60, 101, "strong")]:
+        m = buy[(buy.eq >= lo) & (buy.eq < hi)]
+        if len(m) < 40:
+            continue
+        rr = m.mfe63.mean() / abs(m.mae63.mean()) if m.mae63.mean() else float("nan")
+        out["buy"][name] = {"n": int(len(m)), "hit_pct": round(100 * (m.ret63 > 0).mean(), 1),
+                            "avg_ret_pct": round(100 * m.ret63.mean(), 2),
+                            "avg_mae_pct": round(100 * m.mae63.mean(), 2),
+                            "reward_risk": round(rr, 2)}
+        print(f"  {name:>7} [{lo:>3}-{hi-1}] n={len(m):<5} hit {100*(m.ret63>0).mean():>5.1f}%  "
+              f"ret {100*m.ret63.mean():>5.2f}%  MAE {100*m.mae63.mean():>6.2f}%  R:R {rr:.2f}")
+    sell = df[df.eq < 0].copy(); sell["mag"] = -sell.eq
+    print("\nSELL/EXIT-setup (eq<0) bins — forward 63d (down% = price fell):")
+    for lo, hi, name in [(15, 35, "light"), (35, 60, "solid"), (60, 101, "strong")]:
+        m = sell[(sell.mag >= lo) & (sell.mag < hi)]
+        if len(m) < 40:
+            continue
+        out["sell"][name] = {"n": int(len(m)), "down_pct": round(100 * (m.ret63 < 0).mean(), 1),
+                             "avg_ret_pct": round(100 * m.ret63.mean(), 2),
+                             "avg_mae_pct": round(100 * m.mae63.mean(), 2)}
+        print(f"  {name:>7} [{lo:>3}-{hi-1}] n={len(m):<5} down {100*(m.ret63<0).mean():>5.1f}%  "
+              f"ret {100*m.ret63.mean():>5.2f}%  MAE {100*m.mae63.mean():>6.2f}%")
+    # the headline honest claim: drawdown by buy-setup quality (monotone smaller?)
+    print("\nDrawdown monotonicity (avg |MAE| 63d should SHRINK as buy-quality rises):")
+    prev = None
+    for lo, hi, name in [(15, 35, "light"), (35, 60, "solid"), (60, 101, "strong")]:
+        m = buy[(buy.eq >= lo) & (buy.eq < hi)]
+        if len(m) < 40:
+            continue
+        v = 100 * m.mae63.mean()
+        arrow = "" if prev is None else (" ↓ smaller ✓" if v > prev else " ↑ LARGER ✗")
+        print(f"  {name:>7}: {v:6.2f}%{arrow}"); prev = v
+    import os
+    os.makedirs("data/regime", exist_ok=True)
+    with open(EQ_CAL_PATH, "w") as fh:
+        json.dump(out, fh, indent=2)
+    print(f"\nwrote {EQ_CAL_PATH}")
+    return out
 
 
 def _rankcorr(a: pd.Series, b: pd.Series) -> float:

@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "site",
+      "name": "macro-site",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8741", "--directory", "site"],
-      "port": 8741
+      "runtimeArgs": ["-m", "http.server", "8847", "--directory", "site"],
+      "port": 8847
     }
   ]
 }

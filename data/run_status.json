@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-06-13T08:29:21.174260+00:00",
+  "last_run": "2026-06-13T13:05:02.554362+00:00",
   "sources": {
     "cot": {
       "source": "cot",
@@ -22,11 +22,11 @@
     "yahoo": {
       "source": "yahoo",
       "status": "ok",
-      "rows": 223104,
+      "rows": 956,
       "last_date": "2026-06-13",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-13T01:41:26.289867+00:00"
+      "checked_at": "2026-06-13T13:04:07.433952+00:00"
     },
     "treasury": {
       "source": "treasury",
@@ -225,6 +225,33 @@
       "error": null,
       "notes": [],
       "checked_at": "2026-06-13T08:29:21.174328+00:00"
+    },
+    "hk_prices": {
+      "source": "hk_prices",
+      "status": "ok",
+      "rows": 39735,
+      "last_date": "2026-06-13",
+      "error": null,
+      "notes": [],
+      "checked_at": "2026-06-13T13:04:11.673479+00:00"
+    },
+    "hk_breadth": {
+      "source": "hk_breadth",
+      "status": "ok",
+      "rows": 711,
+      "last_date": "2026-06-12",
+      "error": null,
+      "notes": [],
+      "checked_at": "2026-06-13T13:05:02.554381+00:00"
+    },
+    "smallcap_breadth": {
+      "source": "smallcap_breadth",
+      "status": "ok",
+      "rows": 728,
+      "last_date": "2026-06-12",
+      "error": null,
+      "notes": [],
+      "checked_at": "2026-06-13T13:04:40.976840+00:00"
     }
   },
   "circuit_breaker": {
@@ -252,6 +279,9 @@
     "coinbase": 0,
     "china_macro": 0,
     "china_prices": 0,
-    "china_breadth": 0
+    "china_breadth": 0,
+    "hk_prices": 0,
+    "hk_breadth": 0,
+    "smallcap_breadth": 0
   }
 }

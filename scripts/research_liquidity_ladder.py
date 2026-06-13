@@ -25,20 +25,25 @@ Usage: .venv/bin/python -m scripts.research_liquidity_ladder
 """
 from __future__ import annotations
 
+import os
+import sys
+
 import numpy as np
 import pandas as pd
 
 from engine.cycles import cycle_state, early_signals, ladder_state, mtf_snapshot
 from scripts.research_liquidity_gate import EXP_THR, ROC_4W, net_liquidity
 from scripts.research_trend_gate import (
-    STEP, asset_class, fwd_drawdown, fwd_return, load_panel,
+    ROOT, asset_class, fwd_drawdown, fwd_return, load_panel,
 )
 
 BUY_STATES = ("FRESH BUY", "TURN SIGNALED")   # the green "buy" calls users act on
 WINDOW = 600          # trailing window the ladder math needs (matches calibrate_ladder)
 WARMUP = 300          # first evaluable index
+STEP = 10             # weekly-ish sampling; coarser than calibrate's 5 to keep runtime sane
 HORIZONS = (21, 63)
 QE = ("2020-03-01", "2021-12-31")
+CACHE = "/tmp/research_liq_ladder.parquet"   # local research artifact (not tracked)
 
 
 def liquidity_regime(nl: pd.Series) -> pd.Series:
@@ -56,12 +61,14 @@ def collect(panel: dict[str, pd.Series], reg: pd.Series) -> pd.DataFrame:
     """One row per (asset, weekly as-of) with the live ladder state, the
     liquidity regime that day, and forward return + drawdown at each horizon."""
     rows = []
-    for name, close in panel.items():
+    items = list(panel.items())
+    for n_i, (name, close) in enumerate(items, 1):
         c = close.dropna()
         if len(c) < WINDOW:
             continue
         kind = "crypto" if name.endswith("-USD") else "equity"
         cls = asset_class(name)
+        print(f"  [{n_i:>3}/{len(items)}] {name:<10} ({len(c)} bars)…", flush=True)
         # liquidity regime aligned onto this instrument's trading days
         lr = reg.reindex(reg.index.union(c.index)).ffill().reindex(c.index)
         fwd = {h: fwd_return(c, h) for h in HORIZONS}
@@ -164,12 +171,22 @@ if __name__ == "__main__":
     nl = net_liquidity()
     reg = liquidity_regime(nl)
     print(f"net-liquidity regime: {reg.index.min().date()}–{reg.index.max().date()}  "
-          f"episodes~{_episodes(reg)}  now={reg.dropna().iloc[-1]}")
-    panel = load_panel()
-    print(f"loaded {len(panel)} instruments; walking the ladder (this takes a few min)…")
-    df = collect(panel, reg)
+          f"episodes~{_episodes(reg)}  now={reg.dropna().iloc[-1]}", flush=True)
+
+    # `--report-only` re-reads the cached evaluations (instant), so the heavy
+    # ladder walk runs once and the report can be re-cut without re-walking.
+    if "--report-only" in sys.argv and os.path.exists(CACHE):
+        df = pd.read_parquet(CACHE)
+        print(f"loaded {len(df)} cached evaluations from {CACHE}", flush=True)
+    else:
+        panel = load_panel()
+        print(f"loaded {len(panel)} instruments; walking the ladder…", flush=True)
+        df = collect(panel, reg)
+        df.to_parquet(CACHE)
+        print(f"cached {len(df)} rows -> {CACHE}", flush=True)
+
     print(f"collected {len(df)} ladder evaluations across {df['asset'].nunique()} instruments, "
-          f"{df['date'].min().date()}–{df['date'].max().date()}")
+          f"{df['date'].min().date()}–{df['date'].max().date()}", flush=True)
     for h in HORIZONS:
         report(df, reg, h)
     print("\nNOTE: one macro series => effective N ≈ #episodes, NOT #asset-days. "

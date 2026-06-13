@@ -74,6 +74,11 @@ def build_features() -> pd.DataFrame:
     for t in ["SPY", "IWM", "RSP", "QQQ", "XLY", "XLP", "XLE", "XLK", "XLU",
               "HYG", "LQD", "SPHB", "SPLV"]:
         put(t, closes.get(t))
+    # US equity size & style: small (Russell 2000), mid (S&P 400), growth/value
+    put("RUT", closes.get("^RUT"))        # true Russell 2000 index level
+    put("IJH", closes.get("IJH"))         # S&P MidCap 400 — mid-cap leg
+    put("IWF", closes.get("IWF"))         # Russell 1000 Growth
+    put("IWD", closes.get("IWD"))         # Russell 1000 Value
     put("oil", closes.get("CL=F"))
     put("copper", closes.get("HG=F"))
     put("gold", closes.get("GC=F"))
@@ -86,7 +91,9 @@ def build_features() -> pd.DataFrame:
 
     f["copper_gold"] = f["copper"] / f["gold"]
     f["xly_xlp"] = f["XLY"] / f["XLP"]
-    f["iwm_spy"] = f["IWM"] / f["SPY"]
+    f["iwm_spy"] = f["IWM"] / f["SPY"]          # small caps vs large (risk appetite / breadth)
+    f["mid_spy"] = f["IJH"] / f["SPY"]          # mid caps vs large
+    f["growth_value"] = f["IWF"] / f["IWD"]     # growth vs value leadership (style rotation)
     f["energy_rs"] = f["XLE"] / f["SPY"]
     f["xlk_xlu"] = f["XLK"] / f["XLU"]
     f["sphb_splv"] = f["SPHB"] / f["SPLV"]
@@ -162,6 +169,15 @@ def build_features() -> pd.DataFrame:
     else:
         for col in ["pct_above_50", "pct_above_200", "nh", "nl", "ad_line"]:
             f[col] = np.nan
+    # small-cap participation (S&P 600) — same columns, sc_ prefix. Stays NaN
+    # through history until the collector has run; engine degrades gracefully.
+    scb = store.read("smallcap_breadth", "breadth")
+    for col in ["pct_above_50", "pct_above_200", "nh", "nl", "ad_line"]:
+        alias = f"sc_{col}"
+        if scb is not None and col in scb.columns:
+            put(alias, scb[col])
+        else:
+            f[alias] = np.nan
 
     # --- GEX (live only; NaN through history) --------------------------------------
     gex = store.read("cboe", "gex")

@@ -41,6 +41,15 @@
            border-left:3px solid var(--g-cold); font-size:13px; color:var(--text); }
   .agewhen { margin:6px 0; padding:7px 11px; border-radius:8px; background:var(--panel2);
              border-left:3px solid var(--link); font-size:13px; color:var(--text); }
+  .eqbadge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px;
+             border-radius:11px; font-size:12.5px; font-weight:700; cursor:help;
+             border:1px solid var(--line); white-space:nowrap; }
+  .eqbadge .eqg { font-weight:500; opacity:.8; }
+  .eqbadge.eq-up { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up);
+                   border-color:color-mix(in srgb,var(--up) 40%,transparent); }
+  .eqbadge.eq-down { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--down);
+                     border-color:color-mix(in srgb,var(--down) 40%,transparent); }
+  .eqbadge.eq-flat { background:var(--panel2); color:var(--muted); }
   a { text-decoration:none; }
   h1 { font-size:20px; margin:0; }
   h2 { font-size:14px; margin:0 0 10px; color:var(--muted); text-transform:uppercase;
@@ -112,6 +121,7 @@
       <div class="topline">
         <h1 id="r_name"></h1>
         <span id="r_state" class="state"></span>
+        <span id="r_eq" class="eqbadge" style="display:none"></span>
         <span style="flex:1"></span>
         <span id="r_asof" class="muted"></span>
       </div>
@@ -245,6 +255,16 @@
       ageEl.style.display = 'block';
     } else { ageEl.style.display = 'none'; }
 
+    var eqEl = document.getElementById('r_eq');
+    if (d.ladder.eq_badge) {
+      var grade = lang() === 'zh' ? (d.ladder.eq_grade_zh || d.ladder.eq_grade) : d.ladder.eq_grade;
+      eqEl.innerHTML = (lang() === 'zh' ? '入场 ' : 'Entry ') + d.ladder.eq_badge +
+                       ' <span class="eqg">' + grade + '</span>';
+      eqEl.className = 'eqbadge eq-' + (d.ladder.eq_dir || 'flat');
+      eqEl.title = lz(d.ladder.eq_tip, d.ladder.eq_tip_zh);
+      eqEl.style.display = 'inline-flex';
+    } else { eqEl.style.display = 'none'; }
+
     var pts = (lang() === 'zh' && d.ladder.points_zh && d.ladder.points_zh.length)
       ? d.ladder.points_zh : (d.ladder.points || []);
     document.getElementById('r_points').innerHTML =
@@ -313,7 +333,7 @@
 </script>
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
-<p class="muted" style="font-size:12px">Generated 2026-06-13 09:38 UTC · charts by TradingView ·
+<p class="muted" style="font-size:12px">Generated 2026-06-13 13:01 UTC · charts by TradingView ·
 methodology &amp; caveats: see any sector page footer.</p>
 <footer class="site-footer">
   <span class="made">Made with ❤️ in Canada</span>

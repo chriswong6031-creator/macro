@@ -162,6 +162,12 @@ def chart_credit_breadth(f: pd.DataFrame) -> str:
                              line={"color": "#e0a030", "width": 1.2}), row=1, col=1)
     fig.add_trace(go.Scatter(x=br.index, y=br, name="% S&P500 > 50DMA",
                              line={"color": "#9b8de0", "width": 1.2}), row=2, col=1)
+    # small-cap participation (S&P 600) overlaid — large strong / small weak = fragile,
+    # small leading = broadening. The gap between the two lines IS the divergence read.
+    scb = f.loc[two_y:, "sc_pct_above_50"].dropna()
+    if not scb.empty:
+        fig.add_trace(go.Scatter(x=scb.index, y=scb, name="% small-cap > 50DMA",
+                                 line={"color": "#4fb39a", "width": 1.2}), row=2, col=1)
     layout = {**PLOT_LAYOUT, "height": 340}
     fig.update_layout(**layout)
     _apply_range(fig, subplot=True, has_legend=True, height=340)
@@ -460,6 +466,74 @@ def internals_rows(latest: dict) -> list[dict]:
     return out
 
 
+def _chg20_pct(f: pd.DataFrame, col: str) -> float | None:
+    """20-trading-day percent change of a ratio/level, or None if too short."""
+    if col not in f.columns:
+        return None
+    s = f[col].dropna()
+    if len(s) < 21:
+        return None
+    return float(s.iloc[-1] / s.iloc[-21] - 1) * 100
+
+
+def size_style_rows(f: pd.DataFrame) -> list[dict]:
+    """US equity SIZE & STYLE tape. Size ratios (small/mid vs large) carry a
+    clean risk-on direction → coloured pos/neg. Growth-vs-value is regime-
+    dependent (no inherently 'good' side) → neutral tone, verdict carries the
+    read. Mirrors the 20-day-direction logic of the internals panel."""
+    specs = [
+        ("iwm_spy", T("Small caps vs large", "小盘对大盘"),
+         T("Russell 2000 vs S&P 500 (IWM/SPY)", "罗素2000 对 标普500 (IWM/SPY)"), "size",
+         T("small caps leading — broadening, risk-on", "小盘领先 — 扩散、风险偏好"),
+         T("large-cap-led — narrowing participation", "大盘主导 — 参与度收窄")),
+        ("mid_spy", T("Mid caps vs large", "中盘对大盘"),
+         T("S&P MidCap 400 vs S&P 500 (IJH/SPY)", "标普中盘400 对 标普500 (IJH/SPY)"), "size",
+         T("mid caps leading — broadening", "中盘领先 — 扩散"),
+         T("mega-cap-led — narrowing", "超大盘主导 — 收窄")),
+        ("growth_value", T("Growth vs value", "成长对价值"),
+         T("Russell 1000 Growth vs Value (IWF/IWD). Style rotation: growth tends "
+           "to lead in disinflation/slowdowns, value in reflation.",
+           "罗素1000 成长 对 价值 (IWF/IWD)。风格轮动：成长在去通胀/放缓中领先，价值在再通胀中领先。"), "style",
+         T("growth leadership", "成长领先"),
+         T("value leadership", "价值领先")),
+    ]
+    rows: list[dict] = []
+    for key, label, tip, kind, up_v, dn_v in specs:
+        chg = _chg20_pct(f, key)
+        if chg is None:
+            continue
+        up = chg >= 0
+        tone = "muted" if kind == "style" else ("pos" if up else "neg")
+        rows.append({"label": label, "tip": tip, "chg": chg, "tone": tone,
+                     "verdict": up_v if up else dn_v})
+    return rows
+
+
+def breadth_divergence(f: pd.DataFrame) -> dict | None:
+    """Small-cap (S&P 600) vs large-cap (S&P 500) participation: the gap between
+    % of each universe above its 50-day line. Large strong while small lags =
+    a narrow, fragile, mega-cap-led tape; small leading = healthy broadening."""
+    def last(col):
+        if col not in f.columns:
+            return None
+        s = f[col].dropna()
+        return float(s.iloc[-1]) if len(s) else None
+    lc, sc = last("pct_above_50"), last("sc_pct_above_50")
+    if lc is None or sc is None:
+        return None
+    gap = sc - lc
+    if gap >= 5:
+        verdict = T("small caps participating MORE than large caps — healthy, broad-based tape",
+                    "小盘参与度高于大盘 — 健康、广泛的盘面")
+    elif gap <= -5:
+        verdict = T("small caps lagging large caps — narrow, mega-cap-led advance (more fragile)",
+                    "小盘落后于大盘 — 狭窄、由超大盘主导的上涨（更脆弱）")
+    else:
+        verdict = T("small- and large-cap participation roughly in line",
+                    "小盘与大盘参与度大致一致")
+    return {"sc": sc, "lc": lc, "gap": gap, "verdict": verdict}
+
+
 # heat-bar fill uses theme-aware CSS variables (legible in both modes)
 HEAT_COLORS = {"70+": "var(--orange)", "55-69": "var(--up)",
                "40-54": "var(--muted)", "0-39": "var(--info)"}
@@ -592,7 +666,8 @@ def action_board(sector_timing: dict, notable: list[dict]) -> dict:
                 "label": tm["label"], "tag": e.get("tag", ""),
                 "text": e.get("text", ""), "days": e.get("days_hi"),
                 "age_short": tm.get("age_short"), "age_short_zh": tm.get("age_short_zh"),
-                "style": tm.get("state_style")}
+                "eq_badge": tm.get("eq_badge"), "eq_dir": tm.get("eq_dir"),
+                "eq_tip": tm.get("eq_tip"), "style": tm.get("state_style")}
         u = e.get("urgency")
         if u == "now":
             buy_now.append(item)
@@ -816,7 +891,10 @@ def build_sector_pages(env: Environment, site: Path, generated: str) -> dict:
                                     "tag": h["ladder"]["entry"]["tag"], "urgency": urg,
                                     "days": h["ladder"]["entry"].get("days_hi"),
                                     "age_short": h["ladder"].get("age_short"),
-                                    "age_short_zh": h["ladder"].get("age_short_zh")})
+                                    "age_short_zh": h["ladder"].get("age_short_zh"),
+                                    "eq_badge": h["ladder"].get("eq_badge"),
+                                    "eq_dir": h["ladder"].get("eq_dir"),
+                                    "eq_tip": h["ladder"].get("eq_tip")})
         buy_zone = sum(1 for h in holdings if h["ladder"]["state"] in BUY_ZONE_STATES)
         s = {"fund": fund, "name": SECTOR_NAMES.get(fund, fund),
              "mtf_json": _json2.dumps(res.get("mtf", {})), **res,
@@ -834,6 +912,9 @@ def build_sector_pages(env: Environment, site: Path, generated: str) -> dict:
                            "age_short": res["ladder"].get("age_short"),
                            "age_short_zh": res["ladder"].get("age_short_zh"),
                            "age_days": res["ladder"].get("age_days"),
+                           "eq_badge": res["ladder"].get("eq_badge"),
+                           "eq_dir": res["ladder"].get("eq_dir"),
+                           "eq_tip": res["ladder"].get("eq_tip"),
                            "buy_zone": buy_zone, "n_holdings": len(holdings)}
     log.info("wrote %d sector drill-down pages", len(summaries))
     return summaries, notable
@@ -927,6 +1008,8 @@ def main() -> int:
         components_contradicting=contradicting,
         flip_plain=flip_plain_text(latest),
         internals=internals_rows(latest),
+        size_style=size_style_rows(f),
+        breadth_div=breadth_divergence(f),
         sector_rows=sector_rows(latest.get("playbook"), sector_timing),
         generated_utc=generated,
         chart_liquidity=chart_liquidity(f),

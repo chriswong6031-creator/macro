@@ -155,6 +155,9 @@
   .actitem b { color: var(--text); }
   .acttag { margin-left: auto; font-size: 10.5px; color: var(--muted); }
   .actage { font-size: 10.5px; color: var(--muted); white-space: nowrap; }
+  .eqmini { font-size: 10.5px; font-weight: 700; white-space: nowrap; cursor: help; }
+  .eqmini.eq-up { color: var(--up); } .eqmini.eq-down { color: var(--down); }
+  .eqmini.eq-flat { color: var(--muted); }
   .acteta { margin-left: auto; font-size: 11px; font-weight: 700; color: var(--g-cold);
             background: color-mix(in srgb, var(--g-cold) 16%, transparent);
             padding: 1px 7px; border-radius: 9px; }
@@ -537,7 +540,7 @@
       <div class="actcol act-buy">
         <div class="acth">🟢 {{ t('BUY ZONE — confirmed now', '买入区 — 已确认') }}</div>
         {% for x in action_board.buy_now %}
-          <a class="actitem" href="sectors/{{ x.ticker }}.html"><b>{{ td(x.name) }}</b> <span class="muted">{{ x.ticker }}</span>{% if x.age_short %}<span class="actage">⏱ {{ t(x.age_short, x.age_short_zh) }}</span>{% endif %}<span class="acttag">{{ td(x.label) }}</span></a>
+          <a class="actitem" href="sectors/{{ x.ticker }}.html"><b>{{ td(x.name) }}</b> <span class="muted">{{ x.ticker }}</span>{% if x.age_short %}<span class="actage">⏱ {{ t(x.age_short, x.age_short_zh) }}</span>{% endif %}{% if x.eq_badge %}<span class="eqmini eq-{{ x.eq_dir }}" title="{{ x.eq_tip }}">{{ x.eq_badge }}</span>{% endif %}<span class="acttag">{{ td(x.label) }}</span></a>
         {% else %}<p class="muted sm">{{ t('None today — nothing has fully confirmed a fresh cycle low.', '今日无 — 尚无标的完全确认新的周期低点。') }}</p>{% endfor %}
       </div>
       <div class="actcol act-soon">
@@ -549,7 +552,7 @@
       <div class="actcol act-trim">
         <div class="acth">🟠 {{ t('TAKE PROFITS / topping', '止盈／做顶') }}</div>
         {% for x in action_board.take_profits %}
-          <a class="actitem" href="sectors/{{ x.ticker }}.html"><b>{{ td(x.name) }}</b> <span class="muted">{{ x.ticker }}</span>{% if x.age_short %}<span class="actage">⏱ {{ t(x.age_short, x.age_short_zh) }}</span>{% endif %}<span class="acttag">{{ td(x.label) }}</span></a>
+          <a class="actitem" href="sectors/{{ x.ticker }}.html"><b>{{ td(x.name) }}</b> <span class="muted">{{ x.ticker }}</span>{% if x.age_short %}<span class="actage">⏱ {{ t(x.age_short, x.age_short_zh) }}</span>{% endif %}{% if x.eq_badge %}<span class="eqmini eq-{{ x.eq_dir }}" title="{{ x.eq_tip }}">{{ x.eq_badge }}</span>{% endif %}<span class="acttag">{{ td(x.label) }}</span></a>
         {% else %}<p class="muted sm">{{ t('Nothing topping.', '无标的做顶。') }}</p>{% endfor %}
       </div>
       <div class="actcol act-hold">
@@ -566,7 +569,7 @@
     <div class="notable">
       <span class="muted" style="font-size:12px">{{ t('Standout individual stocks (from sector top-10s):', '表现突出的个股（来自各板块前十大持仓）：') }}</span>
       {% for n in action_board.notable %}
-        <a class="chip {{ 'chip-pos' if n.urgency in ('now','imminent') else 'chip-neg' }}" href="stock.html#{{ n.ticker }}">{{ n.ticker }} · {{ td(n.label) }}{% if n.urgency == 'imminent' and n.days %} (~{{ n.days }}d){% endif %}{% if n.age_short %} · ⏱{{ t(n.age_short, n.age_short_zh) }}{% endif %}</a>
+        <a class="chip {{ 'chip-pos' if n.urgency in ('now','imminent') else 'chip-neg' }}" href="stock.html#{{ n.ticker }}" {% if n.eq_tip %}title="{{ n.eq_tip }}"{% endif %}>{{ n.ticker }} · {{ td(n.label) }}{% if n.urgency == 'imminent' and n.days %} (~{{ n.days }}d){% endif %}{% if n.age_short %} · ⏱{{ t(n.age_short, n.age_short_zh) }}{% endif %}{% if n.eq_badge %} · {{ n.eq_badge }}{% endif %}</a>
       {% endfor %}
     </div>
     {% endif %}
@@ -743,6 +746,32 @@
       </tr>
       {% endfor %}
     </table>
+  </div>
+
+  <!-- ===================== US EQUITY SIZE & STYLE ===================== -->
+  <div class="panel span6" id="size-style">
+    <h2>{{ t('US equity — size &amp; style', '美股 — 规模与风格') }}
+      {{ help("Is the advance broad or narrow? Small caps (Russell 2000) and mid caps measured against the large-cap S&P 500: rising = participation broadening (risk-on); falling = a narrow, mega-cap-led tape. Growth vs value is the style rotation — growth tends to lead in disinflation and slowdowns, value in reflation. Direction over the last 20 trading days; size ratios are coloured by risk-on direction, growth/value is left neutral (no inherently good side).", "上涨是广泛还是狭窄？小盘（罗素2000）与中盘对大盘标普500衡量：上行 = 参与度扩散（风险偏好）；下行 = 狭窄、由超大盘主导的盘面。成长对价值是风格轮动 — 成长在去通胀与放缓中领先，价值在再通胀中领先。看过去20个交易日的方向；规模比率按风险偏好方向着色，成长／价值保持中性（无天然的好坏方向）。") }}
+    </h2>
+    <table>
+      <tr><th class="l">{{ t('lens', '维度') }}</th><th>{{ t('past month', '过去一月') }}</th><th class="l">{{ t("what it's saying", '它在说什么') }}</th></tr>
+      {% for r in size_style %}
+      <tr>
+        <td class="l">{{ r.label }} {{ help(r.tip) }}</td>
+        <td class="{{ r.tone }}">{{ "%+.2f" | format(r.chg) }}%</td>
+        <td class="l muted">{{ r.verdict }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% if breadth_div %}
+    <p class="muted" style="margin:10px 2px 0; font-size:13px; line-height:1.45">
+      {{ t('Small-cap participation', '小盘参与度') }}:
+      <b>{{ "%.0f" | format(breadth_div.sc) }}%</b>
+      {{ t('of S&P 600 small caps are above their 50-day line, vs', '的标普600小盘股高于其50日均线，对比') }}
+      <b>{{ "%.0f" | format(breadth_div.lc) }}%</b>
+      {{ t('for the S&P 500', '的标普500') }} — {{ breadth_div.verdict }}.
+    </p>
+    {% endif %}
   </div>
 
   <!-- ======================= SECTOR HEAT BOARD ======================= -->
