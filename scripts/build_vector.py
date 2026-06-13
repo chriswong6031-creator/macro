@@ -496,7 +496,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
   <a class="c" href="china.html">
     <div class="ico">\U0001F1E8\U0001F1F3</div>
     <h2>{T('China A-Shares', '中国A股')}</h2>
-    <p>{T('Regime, sector rotation &amp; cycle read for the Mainland A-share market.', '中国A股市场的周期状态、板块轮动与周期解读。')}</p>
+    <p>{T('Regime, sector rotation & cycle read for the Mainland A-share market.', '中国A股市场的周期状态、板块轮动与周期解读。')}</p>
     <span class="stat">{T(china['label'], TR(china['label']))}</span>
     <div class="go">{T('Open China A-Shares →', '打开中国A股 →')}</div>
   </a>""")
@@ -696,7 +696,24 @@ def main() -> int:
     hi = raw["high"].reindex(close.index).fillna(close)
     lo = raw["low"].reindex(close.index).fillna(close)
 
+    # Multi-timeframe cycle ladder (reuses the macro engine) + confluence verdict
+    from engine import btc_mtf
+    mtf_a = btc_mtf.mtf_ladder(close, hi)
     risk_on = last["risk_regime"] == "low_risk"
+    verdict = btc_mtf.confluence_verdict(mtf_a, last.get("composite_state"), risk_on)
+    _TF = (("D", "Daily"), ("3D", "3-Day"), ("W", "Weekly"), ("2W", "Biweekly"), ("ME", "Monthly"))
+    mtf_rows = []
+    for key, lbl in _TF:
+        s = (mtf_a.get("mtf") or {}).get(key) or {}
+        if not s:
+            continue
+        macd = ("up" if s.get("macd_cross_up") or s.get("macd_curl_up") else
+                ("down" if s.get("macd_cross_dn") or s.get("macd_curl_dn") else
+                 ("pos" if s.get("macd_pos") else "neg")))
+        mtf_rows.append({"key": key, "label": lbl, "rsi14": s.get("rsi14"),
+                         "rsi5": s.get("rsi5"), "stoch": s.get("stoch"), "macd": macd,
+                         "trend": (verdict.get("per_tf") or {}).get(key, "flat")})
+    lad = mtf_a.get("ladder") or {}
     vm = {
         "as_of": sig.index.max().strftime("%b %d, %Y"),
         "built": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
@@ -724,6 +741,18 @@ def main() -> int:
         "alloc_pct": round(100 * last["alloc_optimal"]),
         # ---- accuracy-upgrade layers (Tier 1/1b/2) ----
         "composite_state": last.get("composite_state", "NEUTRAL"),
+        "verdict": verdict,
+        "mtf_rows": mtf_rows,
+        "ladder": {
+            "state": lad.get("state"), "label": lad.get("label"), "label_zh": lad.get("label_zh"),
+            "action": lad.get("action"), "action_zh": lad.get("action_zh"),
+            "regime": lad.get("regime"), "regime_label": lad.get("regime_label"),
+            "regime_label_zh": lad.get("regime_label_zh"),
+            "summary_line": lad.get("summary_line"), "summary_line_zh": lad.get("summary_line_zh"),
+            "entry_text": (lad.get("entry") or {}).get("text"),
+            "entry_text_zh": (lad.get("entry") or {}).get("text_zh"),
+            "age_short": lad.get("age_short"), "strength": lad.get("strength"),
+        },
         "valuation": {
             "mvrv_z": _r(last.get("mvrv_z"), 2),
             "mvrv_z_pctile": _r(last.get("mvrv_z_pctile"), 0),

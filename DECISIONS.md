@@ -2,6 +2,30 @@
 
 Newest first. Each entry: what was decided, why, and what would change it.
 
+## 2026-06-13 — Vector MTF cycle-ladder + confluence verdict (reconcile bounce vs bigger picture)
+
+**D-vec-MTF. The Vector now REUSES the macro cycle-ladder/MTF engine and resolves
+the short-vs-long contradiction the user flagged.** Problem: the macro stock
+analyzer called BTC a "counter-trend bounce inside a bearish bigger picture,
+nimble only, not an investment buy", while the Vector showed mid/short-term
+higher bull odds — with no technicals/momentum confluence to reconcile them. New
+`engine/btc_mtf.py`: `mtf_ladder(close, high)` calls `engine.cycles.analyze(...,
+kind="crypto")` (the SAME calibrated DCL/ICL + MTF engine the stock analyzer runs
+— so they can't diverge) and EXTENDS the MTF to biweekly (`2W-MON`) + monthly
+(`ME`) → D/3D/W/2W/ME. `confluence_verdict()` rolls timeframes into ONE read:
+LONG (cycle regime + monthly + translation) is the governor, SHORT is the
+calibrated ladder tape (authoritative — catches the bounce the raw MACD misses);
+disagreement is NAMED ("Counter-trend bounce within a bearish bigger picture —
+CAUTION, nimble only"), reusing the ladder's verbatim entry text so Vector ==
+stock analyzer. Verified: current BTC → ladder COUNTERTREND BOUNCE / regime bear,
+verdict CAUTION, short +1 / mid −1 / long −1, all 5 timeframe trends down.
+Surfaced: a confluence-verdict banner in the hero + a "Multi-Timeframe Momentum &
+Technicals" panel (cycle-ladder card + a 5-timeframe RSI/StochRSI/MACD/trend
+table). Recomputed each build, persisted nowhere; {} on failure so it can't break
+the build. NEXT: side-by-side short/mid layout tidy + allocation deep-dive page
+(engine/alt_cycle.py: ETH/BTC ratio deep 2017→ = 0.0262 deep BTC-season; ETH/alts
+/cash grid keyed to cycle×alt-season×risk).
+
 ## 2026-06-13 — Vector deferred-factor batch 2: global M2 + Deribit basis/skew-term
 
 **D-vec-FACT2. Picked up the three deferred factors; 2 of 3 shipped, 1 blocked.**

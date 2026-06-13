@@ -232,6 +232,26 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
         <span class="faint" style="font-size:13px"> · {{ t('valuation + extremes resolve the risk U-shape into a direction', '估值 + 极值将风险 U 形解析为方向') }}</span>
       </div>
 
+      {# ---- multi-timeframe CONFLUENCE VERDICT (reconciles short bounce vs bigger picture) ---- #}
+      {% if verdict and verdict.headline %}
+      {% set vg = {'CAUTION':'var(--amber)','AVOID':'var(--r3)','TREND-FOLLOW':'var(--blue)','BUY-THE-DIP':'var(--blue)','WAIT':'var(--muted)'} %}
+      {% set tfc = {'up':'var(--blue)','down':'var(--r3)','flat':'var(--grid)'} %}
+      <div style="margin-top:14px;padding:13px 15px;border:1px solid var(--grid);border-radius:12px;background:var(--bg)">
+        <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+          <span style="font-weight:800;font-size:12px;letter-spacing:.04em;padding:3px 9px;border-radius:7px;color:#fff;background:{{ vg.get(verdict.grade,'var(--muted)') }}">{{ t(verdict.grade, verdict.grade_zh) }}</span>
+          <b style="font-size:16px;color:var(--ink)">{{ t(verdict.headline, verdict.headline_zh) }}</b>
+        </div>
+        <div class="sub" style="margin-top:7px">{{ t(verdict.sub, verdict.sub_zh) }}</div>
+        <div style="display:flex;align-items:center;gap:7px;margin-top:10px;flex-wrap:wrap">
+          <span class="faint" style="font-size:11px;text-transform:uppercase;letter-spacing:.04em">{{ t('Trend by timeframe','各周期趋势') }}</span>
+          {% set tlab = {'D':'D','3D':'3D','W':'W','2W':'2W','ME':'M'} %}
+          {% for r in mtf_rows %}
+          <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--muted)"><i style="width:9px;height:9px;border-radius:50%;background:{{ tfc.get(r.trend,'var(--grid)') }}"></i>{{ tlab.get(r.key, r.key) }}</span>
+          {% endfor %}
+          <span class="faint" style="font-size:11px"> · {{ t('short','短') }} {{ '↑' if verdict.short_sign>0 else ('↓' if verdict.short_sign<0 else '→') }} · {{ t('mid','中') }} {{ '↑' if verdict.mid_sign>0 else ('↓' if verdict.mid_sign<0 else '→') }} · {{ t('long','长') }} {{ '↑' if verdict.long_sign>0 else ('↓' if verdict.long_sign<0 else '→') }}</span>
+        </div>
+      </div>{% endif %}
+
       <!-- cycle slider -->
       <div class="slider">
         <div class="track"><div class="knob" style="left:{{ cycle_pos }}%"></div></div>
@@ -329,6 +349,39 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
     </div>
     <div class="sub" style="margin-top:10px">{{ t('Long-only, acts next-day on the signal (no look-ahead). Every variant beats HODL\'s Sharpe', '仅做多，信号次日生效（无前视）。每个变体的 Sharpe 均优于 HODL') }} ({{ cards.optimal.hodl_sharpe }}){{ t(' and cuts max drawdown.', '，且降低了最大回撤。') }}</div>
   </div>
+
+  <!-- ===================== MULTI-TIMEFRAME TECHNICALS ===================== -->
+  {% if mtf_rows %}
+  <div class="section-title">{{ t('Multi-Timeframe Momentum & Technicals · Daily → Monthly', '多周期动量与技术指标 · 日线 → 月线') }}</div>
+  <div class="grid cols-2">
+    <div class="card">
+      <h3>{{ t('Cycle ladder (shared with the stock analyzer)', '周期阶梯（与个股分析器一致）') }}
+        {% if ladder.regime %}<b style="color:{{ 'var(--r3)' if ladder.regime=='bear' else ('var(--blue)' if ladder.regime=='bull' else 'var(--muted)') }}"> · {{ td(ladder.regime_label or ladder.regime) }}</b>{% endif %}</h3>
+      {% if ladder.label %}<div class="mini"><div class="lab"><span>{{ t('Daily cycle state','日线周期状态') }}</span><span><b>{{ t(ladder.label, ladder.label_zh) }}</b>{% if ladder.age_short %} <span class="faint">· {{ td(ladder.age_short) }}</span>{% endif %}</span></div></div>{% endif %}
+      {% if ladder.summary_line %}<div class="sub" style="margin-top:8px">{{ t(ladder.summary_line, ladder.summary_line_zh) }}</div>{% endif %}
+      {% if ladder.entry_text %}<div class="sub" style="margin-top:6px;color:var(--ink)">{{ t(ladder.entry_text, ladder.entry_text_zh) }}</div>{% endif %}
+      <div class="sub faint" style="margin-top:8px;font-size:12px">{{ t('Same calibrated DCL/ICL cycle engine the Macro Dashboard runs on every asset (crypto preset: ~56–70d daily cycle).', '与宏观看板对每个资产运行的、同一套已校准的 DCL/ICL 周期引擎（加密预设：约 56–70 天日线周期）。') }}</div>
+    </div>
+    <div class="card">
+      <h3>{{ t('Technicals across timeframes', '跨周期技术指标') }}</h3>
+      {% set tfc = {'up':'var(--blue)','down':'var(--r3)','flat':'var(--muted)'} %}
+      {% set mz = {'up':'转多','down':'转空','pos':'多头','neg':'空头'} %}
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <tr style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.03em">
+          <td style="padding:5px 4px">{{ t('TF','周期') }}</td><td style="text-align:right">RSI</td><td style="text-align:right">StochRSI</td><td style="text-align:right">MACD</td><td style="text-align:right">{{ t('Trend','趋势') }}</td></tr>
+        {% set tlab = {'D':['Daily','日线'],'3D':['3-Day','3日'],'W':['Weekly','周线'],'2W':['Biweekly','双周'],'ME':['Monthly','月线']} %}
+        {% for r in mtf_rows %}
+        <tr style="border-top:1px solid var(--grid)">
+          <td style="padding:7px 4px;font-weight:600;color:var(--ink)">{{ t(tlab.get(r.key,[r.key,r.key])[0], tlab.get(r.key,[r.key,r.key])[1]) }}</td>
+          <td style="text-align:right;color:{{ 'var(--r3)' if r.rsi14 and r.rsi14>=70 else ('var(--blue)' if r.rsi14 and r.rsi14<=30 else 'var(--text)') }}">{{ r.rsi14 if r.rsi14 is not none else '—' }}</td>
+          <td style="text-align:right;color:{{ 'var(--r3)' if r.stoch and r.stoch>=80 else ('var(--blue)' if r.stoch and r.stoch<=20 else 'var(--text)') }}">{{ r.stoch if r.stoch is not none else '—' }}</td>
+          <td style="text-align:right;color:{{ 'var(--blue)' if r.macd in ('up','pos') else 'var(--r3)' }}">{{ t(r.macd|capitalize, mz.get(r.macd, r.macd)) }}</td>
+          <td style="text-align:right"><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:{{ tfc.get(r.trend,'var(--muted)') }}"></i></td>
+        </tr>{% endfor %}
+      </table>
+      <div class="sub faint" style="margin-top:8px;font-size:12px">{{ t('RSI red >70 / blue <30; StochRSI red >80 / blue <20. The trend dot is each timeframe’s MACD-trend direction — when short timeframes turn up while long ones stay red, it is a counter-trend bounce.', 'RSI 红 >70 / 蓝 <30；StochRSI 红 >80 / 蓝 <20。趋势圆点为各周期 MACD 趋势方向 — 当短周期转多而长周期仍为红时，即为逆势反弹。') }}</div>
+    </div>
+  </div>{% endif %}
 
   <!-- ===================== MOMENTUM / STRUCTURE ===================== -->
   <div class="section-title">{{ t('Momentum & Structure', '动量与结构') }}</div>
