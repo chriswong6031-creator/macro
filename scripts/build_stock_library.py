@@ -93,7 +93,11 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
     if hd.exists():
         for p in hd.glob("*.parquet"):
             fund = p.stem
-            df = pd.read_parquet(p)
+            try:
+                df = pd.read_parquet(p)
+            except Exception as e:  # noqa: BLE001 — one corrupt parquet must not 404 the library
+                log.warning("sector_holdings %s unreadable (%s) — skipped", p.name, e)
+                continue
             if "ticker" not in df.columns:  # e.g. the holdings_runs summary
                 continue
             for _, r in df.iterrows():
@@ -102,7 +106,11 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
     if d.exists():
         for p in sorted(d.glob("*.parquet")):
             t = p.stem
-            df = pd.read_parquet(p)
+            try:
+                df = pd.read_parquet(p)
+            except Exception as e:  # noqa: BLE001
+                log.warning("stocks %s unreadable (%s) — skipped", p.name, e)
+                continue
             nm, sec = names.get(t, (t, ""))
             out.append((t, df["close"], df.get("high"), nm, sec))
             seen.add(t)
@@ -111,8 +119,12 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
     cache = config.data_dir() / "breadth" / "_closes_cache.parquet"
     cons = config.data_dir() / "breadth" / "constituents.parquet"
     if cache.exists() and cons.exists():
-        closes = pd.read_parquet(cache)
-        meta = pd.read_parquet(cons)
+        try:
+            closes = pd.read_parquet(cache)
+            meta = pd.read_parquet(cons)
+        except Exception as e:  # noqa: BLE001 — corrupt restored cache must not crash build_site
+            log.warning("breadth cache unreadable (%s) — library covers stored tickers only", e)
+            closes, meta = pd.DataFrame(), pd.DataFrame()
         for t in closes.columns:
             if t in seen or t not in meta.index:
                 continue

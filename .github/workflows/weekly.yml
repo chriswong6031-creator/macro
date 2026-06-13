@@ -16,7 +16,7 @@ concurrency:
 jobs:
   weekly-report:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45     # weekly does collectors + all calibrations + every dashboard build
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -24,21 +24,39 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt
-      - name: weekly collectors (COT, sentiment refresh — the daily brief covers reporting)
+      - name: weekly collect + recalibrate + build (resilient, self-diagnosing)
+        # Same hardening as daily: each step runs isolated; a failure becomes a
+        # ::error:: annotation (readable on the run page + via the public check-runs
+        # API) + a traceback in the run Summary, but NEVER aborts the job — so one
+        # broken calibration/builder can't kill the whole weekly deploy.
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: |
-          python -m scripts.collect --only cot,sentiment_naaim,sentiment_aaii,fundamentals,stock_fundamentals
-          python -m scripts.recalibrate
-          python -m engine.run
-          python -m scripts.build_site
-          python -m scripts.daily_brief
-          python -m scripts.calibrate_china    # weekly: refresh China regime/ladder forward-return calibration
-          python -m scripts.build_china        # after build_site, before build_vector (hub)
-          python -m scripts.calibrate_commodities  # weekly: refresh commodity split-half forward verdicts
-          python -m scripts.build_commodities      # after build_site/build_china, before build_vector (hub)
-          python -m scripts.calibrate_vector   # weekly: refresh vector forward-return verdicts + backtests
-          python -m scripts.build_vector       # installs hub at index.html (build_site writes macro.html itself)
+          set +e
+          run_py() {
+            local label="$1"; shift
+            echo "::group::$label"
+            python -m "$@" > /tmp/step.log 2>&1; local rc=$?
+            cat /tmp/step.log
+            echo "::endgroup::"
+            if [ "$rc" -ne 0 ]; then
+              echo "::error title=$label failed (rc=$rc)::$(tail -n 2 /tmp/step.log | tr '\n' ' ' | tail -c 600)"
+              { echo "### ❌ $label failed (rc=$rc)"; echo '<details><summary>traceback</summary>'; echo; echo '```'; tail -n 60 /tmp/step.log; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"
+            fi
+          }
+          run_py "weekly collectors" scripts.collect --only cot,sentiment_naaim,sentiment_aaii,fundamentals,stock_fundamentals
+          run_py "recalibrate (macro)" scripts.recalibrate
+          run_py "regime engine (engine.run)" engine.run
+          run_py "macro dashboard (build_site)" scripts.build_site
+          run_py "daily brief" scripts.daily_brief
+          run_py "calibrate china" scripts.calibrate_china
+          run_py "build china" scripts.build_china
+          run_py "rebuild china search library" scripts.build_china_library
+          run_py "calibrate commodities" scripts.calibrate_commodities
+          run_py "build commodities" scripts.build_commodities
+          run_py "calibrate vector" scripts.calibrate_vector
+          run_py "build vector + landing hub" scripts.build_vector
+          exit 0
       - name: commit
         run: |
           git config user.name "dashboard-bot"

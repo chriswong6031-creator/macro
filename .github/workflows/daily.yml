@@ -66,7 +66,7 @@ jobs:
     needs: collect
     if: always()            # a scraper failure must still produce a dashboard from cached data
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40     # search libraries grew (US + China ~800); headroom vs the 20m cap
     steps:
       - uses: actions/checkout@v4
         with:
@@ -83,12 +83,29 @@ jobs:
           path: data/breadth/_closes_cache.parquet
           key: breadth-closes-engine-${{ github.run_id }}
           restore-keys: breadth-closes-
-      - name: run regime engine
-        run: python -m engine.run
-      - name: build dashboard + daily brief
+      - name: run regime engine + build dashboard + daily brief (resilient)
+        # Self-diagnosing + deploy-resilient: each builder runs isolated; a failure
+        # is surfaced as a ::error:: annotation (readable on the run page + via the
+        # public check-runs API) AND appended to the run Summary with its traceback,
+        # but NEVER aborts the job — so the site still deploys (via the always()
+        # artifact upload) and one broken builder can't 404 the whole dashboard.
         run: |
-          python -m scripts.build_site
-          python -m scripts.daily_brief
+          set +e
+          run_py() {
+            local label="$1"; local mod="$2"
+            echo "::group::$label"
+            python -m "$mod" > /tmp/step.log 2>&1; local rc=$?
+            cat /tmp/step.log
+            echo "::endgroup::"
+            if [ "$rc" -ne 0 ]; then
+              echo "::error title=$label failed (rc=$rc)::$(tail -n 2 /tmp/step.log | tr '\n' ' ' | tail -c 600)"
+              { echo "### ❌ $label failed (rc=$rc)"; echo '<details><summary>traceback</summary>'; echo; echo '```'; tail -n 60 /tmp/step.log; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"
+            fi
+          }
+          run_py "regime engine (engine.run)" engine.run
+          run_py "macro dashboard (build_site)" scripts.build_site
+          run_py "daily brief (daily_brief)" scripts.daily_brief
+          exit 0
       - name: build china a-share dashboard
         # after build_site, before build_vector (which writes the landing hub last):
         # writes china.html + china_regime/latest.json so the hub picks up the China
@@ -106,6 +123,20 @@ jobs:
         # signals); returns 0 even if the crypto engine errors, so it can never
         # break the macro site.
         run: python -m scripts.build_vector
+      - name: rebuild china stock-search library (resilient — guarantees the analyzer ships)
+        # build_china renders its dashboard but SWALLOWS errors (returns 0), so a
+        # failure there silently 404s the per-stock A-Share search. This rebuilds the
+        # search JSON (site/chinastockdata) directly from the committed china_search
+        # data — independent of the dashboard render — and surfaces any failure as an
+        # annotation without aborting the deploy. Idempotent.
+        run: |
+          set +e
+          echo "::group::build_china_library"; python -m scripts.build_china_library > /tmp/lib.log 2>&1; rc=$?; cat /tmp/lib.log; echo "::endgroup::"
+          if [ "$rc" -ne 0 ]; then
+            echo "::error title=build_china_library failed (rc=$rc)::$(tail -n 2 /tmp/lib.log | tr '\n' ' ' | tail -c 600)"
+            { echo "### ❌ build_china_library failed (rc=$rc)"; echo '```'; tail -n 40 /tmp/lib.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit 0
       - name: notify (telegram/discord; skips when secrets absent)
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
