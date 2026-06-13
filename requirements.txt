@@ -10,3 +10,4 @@ beautifulsoup4>=4.12
 tabulate>=0.9
 openpyxl>=3.1
 markdown>=3.5
+Pillow>=10.0      # scripts/digitize_swissblock.py — panel color-state extraction

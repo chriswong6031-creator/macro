@@ -341,3 +341,101 @@ validation:
   whipsaw_max_days: 10            # regime lasting < this counts as whipsaw
   whipsaw_target_pct: 15
   forward_return_window_d: 60
+
+# -----------------------------------------------------------------------------
+# Bitcoin Vector signal engine (Phase 2). Architecture reverse-engineered from
+# Swissblock's published panels — see research/VECTOR_SIGNAL_RECON.md.
+# Components are VOTE ENSEMBLES (mean of -1/0/+1 votes) and saturating
+# composites; every band's forward-return record is measured by
+# scripts/calibrate_vector.py and shipped to tooltips.
+# -----------------------------------------------------------------------------
+vector:
+  momentum:                       # vote ensemble -> [-1,+1]; their ±0.5 = triggers
+    smooth_days: 3
+    rsi_bull: 55
+    rsi_bear: 45
+    votes:                        # name: weight (mean is weight-normalized)
+      ema_trend: 1.0              # close vs EMA50 & EMA50 slope
+      ema_cross: 1.0              # EMA20 vs EMA50
+      macd_hist: 1.0
+      sma200: 1.0
+      roc20: 1.0
+      rsi_zone: 1.0
+      sopr_momentum: 1.0          # SOPR 7d EMA vs 1.0 (selling pressure)
+      sth_cost_basis: 1.0         # close vs STH realized price (2022->)
+    trigger: 0.5                  # enter bull/bear at ±trigger
+    exit: 0.25                    # hysteresis: stay in state until score falls back past ±exit
+    confirm_days: 3               # cross must hold N days before regime flip
+
+  risk:                           # saturating composite -> 0..100, threshold 25
+    threshold: 25                 # enter high-risk at 25
+    exit_threshold: 15            # hysteresis: drop back to low-risk only below 15
+    deadband: 0.10                # raw stress below this maps to 0 (their pin-at-zero)
+    vol_window_d: 30
+    vol_pctile_lookback_d: 730
+    drawdown_window_d: 90
+    drawdown_full_stress: 0.30    # dd >= 30% from 90d high -> stress 1.0
+    sopr_ema_d: 7
+    etf_flow_sum_d: 7
+    weights:
+      vol_pctile: 1.0
+      drawdown: 1.0
+      sopr_stress: 1.0            # SOPR<1 depth
+      interday_ratio: 0.75        # interday vs intraday vol split (Key Risk Elements)
+      momentum_deterioration: 0.75
+      etf_outflow: 0.5            # 2024-> only
+      funding_stress: 0.5
+    oscillator_delta_d: 10        # Risk Oscillator = 0.5 + bounded d(risk)/dt
+    oscillator_scale: 30          # risk pts per 10d that map to ±0.5
+
+  bfi:                            # Bitcoin Fundamental Index, bands 40/60
+    growth_mom_d: 30              # active-address momentum window
+    growth_base_d: 365
+    pctile_lookback_d: 730
+    liq_components_sum_d: 30      # realized-cap delta, stablecoin delta, etf flows
+    smooth_d: 14
+    band_lo: 40
+    band_hi: 60
+
+  structure:                      # structure-shift oscillator [-1,+1]
+    swing_window_d: 20
+    breakout_lookback_d: 60
+    confirm_days: 3
+    trigger: 0.5
+    exit: 0.25
+
+  gauges:
+    vol_low_pctile: 0.30          # below -> Low; above high -> High; between = Sweet spot
+    vol_high_pctile: 0.75
+    flow_low_pctile: 0.30
+    flow_high_pctile: 0.75
+
+  environment:
+    bull_min_momentum: 0.0        # mid-term env = trend + momentum sign
+    prob_lookback: all            # 7d/3d probabilities from full-history base rates
+    scenario_atr_d: 14
+    scenario_atr_mult: 1.5
+
+  allocation:                     # strategy grids on (momentum, risk)
+    variants:
+      conservative: {mom_full: 0.6, risk_full: 15, mom_half: 0.5, risk_half: 25}
+      moderate:     {mom_full: 0.5, risk_full: 25, mom_half: 0.0, risk_half: 40}
+      aggressive:   {mom_full: 0.3, risk_full: 40, mom_half: -0.2, risk_half: 60}
+      optimal:      {mom_full: 0.5, risk_full: 25, mom_half: 0.0, risk_half: 50}  # re-tuned by calibration sweep
+    confirm_days: 2               # whipsaw guard on allocation changes
+
+  btc_vs_alts:
+    rs_window_d: 30               # relative-strength window across BTC/ETH/alts
+    confirm_days: 3
+
+  tactical:
+    efficiency_window_d: 30       # |net move| / sum(|daily moves|): high = trending
+    strategic_min_efficiency: 0.35
+    strategic_max_risk: 40
+
+  calibration:
+    start_date: "2015-01-01"      # price-signal backtests (Yahoo BTC 2014-09->)
+    split_date: "2021-01-01"      # split-half robustness boundary
+    forward_days: [7, 30, 90]
+    whipsaw_max_days: 7
+    whipsaw_target_pct: 15

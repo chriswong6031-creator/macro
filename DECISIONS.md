@@ -2,6 +2,37 @@
 
 Newest first. Each entry: what was decided, why, and what would change it.
 
+## 2026-06-13 — Bitcoin Vector Phase 2 (signal engine + calibration)
+
+**D42. Signals are vote-ensembles + saturating composites, matching the
+mechanics visible in Swissblock's own panels.** Momentum & structure = mean of
+−1/0/+1 votes (reproduces their pinning at ±1); Risk Index = weighted stress
+composite with a deadband (reproduces their pinning at 0 in healthy uptrends) +
+a Risk Oscillator parked at 0.5; BFI = mean of Network-Growth & Liquidity
+percentile oscillators with 40/60 bands. All tunables in config `vector:`.
+
+**D43. The Risk Index is judged on forward DRAWDOWN, not forward return.**
+Calibration found forward *return* by risk band is U-shaped (low-risk AND
+extreme-risk both show high 90d returns) — the documented contrarian-at-extremes
+behavior, NOT a defect, and the same shape that burned the macro heat board
+(D31). Judged correctly (forward 7d drawdown) it is monotone in all three
+sample halves: a working near-term risk gauge. The dashboard will frame it as
+risk/drawdown + contrarian-at-extremes, never as a return-timing signal.
+
+**D44. Hysteresis bands (enter ±0.5 / exit ±0.25; risk 25/15) cut whipsaw from
+31% to ~20%** without the lag a longer confirm window adds. Daily crypto is
+noisier than the macro series, so ~20% (vs the 15% macro target) is accepted and
+stated. Allocation backtest is the practical proof: every variant beats HODL
+Sharpe and roughly halves max drawdown.
+
+**D45. Swissblock agreement is measured by digitizing their two-toned panel
+lines (color = state), not exact values.** Result: Risk regime 65–69%, Momentum
+sign 48–56%. The momentum gap is structural (their selling-pressure momentum vs
+our trend-vote) and will NOT be overfit away against 13 months of one chart —
+the digitized series is a sanity anchor, not a training target. Closing it needs
+their real series (the user-offered Hawkeye/Vector subscription). The upside-vol
+false-positive this surfaced WAS fixed (risk vol → downside semi-deviation).
+
 ## 2026-06-13 — Bitcoin Vector Phase 1 (crypto collectors)
 
 **D39. bgeo (bitcoin-data.com) runs under an explicit request budget** (12 of

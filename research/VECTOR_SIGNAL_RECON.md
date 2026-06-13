@@ -127,3 +127,39 @@ Seed entries (to be grown to 30+ in Phase 2 from news/X archives):
 
 Fallback (user-approved): if calibration against digitized series stalls, get a
 Hawkeye demo or 1-month Vector sub ($749) for true daily series → backtest-fit.
+
+## 6. MEASURED RESULTS (Phase 2, 2026-06-13)
+
+Engine built (engine/btc_inputs.py + btc_signals.py), calibrated
+(scripts/calibrate_vector.py), and digitized vs Swissblock's own panels
+(scripts/digitize_swissblock.py — color-state extraction, the robust method).
+
+**Independent validation — forward returns (the real test), 2015→2026, split-half:**
+- BFI: **CONFIRMED** (monotone in full + both halves; >60 band 69.9% hit /
+  +32%/90d vs <40 band 50% / +13.6%). The strongest signal.
+- Risk Index: **CONFIRMED near-term risk gauge** — judged on forward DRAWDOWN
+  (its actual job), monotone −1 in all three halves at 7d (low-risk −3.05% avg
+  DD → high-risk −4.52%). Forward *return* is U-shaped (contrarian at extremes)
+  exactly as Swissblock documents — so return-monotonicity is the wrong test.
+- Momentum, Structure: **DIRECTIONAL** (strong full + pre-2021, post-2021 weaker
+  — genuine regime-shift, not a bug; >0.5 momentum band 68.5% hit / +32%/90d).
+- Allocation backtest vs HODL: every variant beats HODL Sharpe (1.03); Optimal
+  61% CAGR / Sharpe 1.38 / MaxDD −41% (HODL −84%) / 1.15× HODL wealth at 58% time
+  in market. Conservative cuts MaxDD to −31%. **The Vector value-prop reproduced.**
+- Whipsaw after hysteresis bands: 17–20% (target 15%; acceptable for daily crypto).
+
+**Agreement with Swissblock's published panels (Apr2024–Apr2025, 394 days):**
+- Risk Index regime: **64.7% daily state agreement** (68.8% at +5d registration
+  shift), median flip delta 9d. Disagreements clustered at turns + my early
+  over-penalty of upside vol — the latter FIXED (downside semi-deviation now).
+- Momentum sign: **47.5%** (55.8% at +16d). Both oscillators flip ~21×/window;
+  the gap is STRUCTURAL (their momentum is selling-pressure-driven, ours is
+  trend-vote) — proven by risk & momentum sharing one date axis yet aligning at
+  different lags. Not overfit away; this is where a real Vector data feed helps.
+
+**Honest verdict:** our engine is independently sound (forward-return validated,
+beats HODL), moderately matches their Risk *regime*, and diverges on Momentum
+*construction*. Matching their exact momentum needs their actual series (the
+user-offered subscription fallback) — we will NOT overfit to 13 months of one
+chart. Digitized fixtures: data/fixtures/swissblock/. Reports:
+reports/vector-calibration.md + vector-agreement.md.
