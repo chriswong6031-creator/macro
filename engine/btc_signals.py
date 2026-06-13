@@ -383,6 +383,8 @@ def composite_state(out: pd.DataFrame, cfg: dict | None = None) -> pd.Series:
     rr = out.get("reserve_risk", pd.Series(np.nan, index=idx))
     rr_top = rr > cfg.get("reserve_risk_top", 0.02)
     bfi_strong = bfi > cfg.get("bfi_strong", 60)
+    cot_z = out.get("cot_z", pd.Series(np.nan, index=idx))
+    cot_crowded = cot_z > cfg.get("cot_crowded_z", 1.5)  # crowded spec long = contrarian top
 
     # priority order (later assignments win): trend < risk-off < distribute < accumulate
     state[mom_bull & ~risk_hi] = "RISK-ON"
@@ -393,8 +395,8 @@ def composite_state(out: pd.DataFrame, cfg: dict | None = None) -> pd.Series:
     state[(bfi_strong | (macro == "tailwind")) & ~risk_hi & ~mom_bear] = "RISK-ON"
     # macro headwind reinforces risk-off when momentum is weak.
     state[(macro == "headwind") & ~mom_bull] = "RISK-OFF"
-    # distribution: euphoria / overvalued / reserve-risk TOP (the -42%/90d detector).
-    state[(extreme == "euphoria") | (val_state == "overvalued") | rr_top] = "DISTRIBUTE"
+    # distribution: euphoria / overvalued / reserve-risk TOP / crowded CME spec long.
+    state[(extreme == "euphoria") | (val_state == "overvalued") | rr_top | cot_crowded] = "DISTRIBUTE"
     # accumulation wins outright (capitulation extremes resolve the risk U-shape).
     state[(extreme == "capitulation") | (val_state == "undervalued")] = "ACCUMULATE"
     return state.rename("composite_state")
@@ -601,6 +603,91 @@ def leverage(inputs: dict, cfg: dict) -> pd.DataFrame:
         wsum = stacked.notna().mul(weights, axis=1).sum(axis=1)
         out["leverage_stress"] = (stacked.mul(weights, axis=1).sum(axis=1, min_count=1)
                                   / wsum.replace(0, np.nan) * 100).clip(0, 100)
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# New-factor hunt: cycle clock / positioning / cross-asset correlation
+# (research/VECTOR_NEW_FACTORS.md — three orthogonal axes the model lacked)
+# --------------------------------------------------------------------------- #
+def cycle_clock(inputs: dict, cfg: dict) -> pd.DataFrame:
+    """The pure TIME axis the model completely lacked: where we are in the ~4yr
+    halving cycle. Deterministic (zero data dependency), maximally orthogonal to
+    every price/on-chain factor. A soft PRIOR (only n=3 completed cycles) — used
+    to tilt, never to trigger."""
+    idx = pd.to_datetime(inputs["price"].index)
+    hv = pd.to_datetime(pd.Index(cfg["halving_dates"])).sort_values()
+    pos = np.searchsorted(hv.values, idx.values, side="right") - 1
+    ds = np.where(pos >= 0,
+                  (idx.values - hv.values[np.clip(pos, 0, len(hv) - 1)]) / np.timedelta64(1, "D"),
+                  np.nan)
+    out = pd.DataFrame(index=inputs["price"].index)
+    out["days_since_halving"] = ds
+    out["cycle_pct"] = (pd.Series(ds, index=out.index) / cfg["cycle_len_d"]).clip(0, 1.4)
+    def _phase(p):
+        if pd.isna(p):
+            return "—"
+        if p < cfg["accumulation_end"]:
+            return "accumulation"
+        if p < cfg["markup_end"]:
+            return "markup"
+        if p < cfg["markdown_end"]:
+            return "markdown"
+        return "recovery"
+    out["cycle_phase"] = out["cycle_pct"].map(_phase)
+    return out
+
+
+def positioning(inputs: dict, cfg: dict) -> pd.DataFrame:
+    """CME COT net-spec positioning — already collected (cot_bitcoin) but never
+    wired in. The only REGULATED, real-money, weekly positioning input (everything
+    else is offshore perp/options). Crowded-spec extremes are contrarian."""
+    idx = inputs["price"].index
+    out = pd.DataFrame(index=idx)
+    cot = inputs.get("cot_net_pct")
+    if cot is not None:
+        c = cot.reindex(idx).ffill(limit=cfg["ffill_limit_d"])
+        out["cot_net_pct"] = c
+        out["cot_z"] = _zscore(c, cfg["z_window_d"])
+    return out
+
+
+def behaviour(inputs: dict, cfg: dict) -> pd.DataFrame:
+    """Spending-behaviour / coin-age axis — the single factor family the model
+    completely lacked. VDD Multiple (checkonchain 2011->) = Value-Days-Destroyed
+    vs a long baseline: HIGH (>~2.9) = old/long-dormant coins waking = LTH
+    distribution (tops); LOW (<~0.75) = dormant network = accumulation. Orthogonal
+    to the price-vs-cost-basis valuation cluster (same MVRV can have opposite VDD)."""
+    idx = inputs["price"].index
+    out = pd.DataFrame(index=idx)
+    vdd = inputs.get("vdd_multiple")
+    if vdd is not None:
+        v = vdd.replace([np.inf, -np.inf], np.nan).reindex(idx).ffill(limit=5)
+        out["vdd_multiple"] = v
+        out["vdd_pctile"] = _pctile(v, cfg["pctile_lookback_d"]) * 100
+    return out
+
+
+def cross_asset_corr(inputs: dict, cfg: dict) -> pd.DataFrame:
+    """BTC's rolling correlation REGIME to equities/gold/dollar — a 2nd-moment
+    (co-movement) signal the all-levels macro overlay cannot express. Tells us
+    WHAT BTC is being traded as: leveraged risk-asset (high SPX corr) vs
+    diversifier/digital-gold (decoupled)."""
+    close = inputs["price"]["close"]
+    idx = close.index
+    r = close.pct_change()
+    w = cfg["corr_window_d"]
+    out = pd.DataFrame(index=idx)
+    for name, key in (("spx", "spx"), ("gold", "gold"), ("dxy", "dxy")):
+        s = inputs.get(key)
+        if s is not None:
+            sr = s.reindex(idx).ffill(limit=3).pct_change()
+            out[f"corr_{name}"] = r.rolling(w).corr(sr)
+    if "corr_spx" in out:
+        out["corr_spx_pctile"] = _pctile(out["corr_spx"], cfg["pctile_lookback_d"]) * 100
+        out["risk_asset_regime"] = np.where(out["corr_spx"] > cfg["coupled_thresh"], "coupled",
+                                   np.where(out["corr_spx"] < cfg["decoupled_thresh"],
+                                            "decoupled", "mixed"))
     return out
 
 
@@ -833,12 +920,16 @@ def compute_all(inputs: dict | None = None) -> pd.DataFrame:
     ma = macro_overlay(inputs, cfg["macro"])
     oc = onchain_regime(inputs, cfg["onchain"])
     im = impulse(inputs, cfg["impulse"])
+    cc = cycle_clock(inputs, cfg["cycle_clock"])
+    po = positioning(inputs, cfg["positioning"])
+    xa = cross_asset_corr(inputs, cfg["cross_asset"])
+    bh = behaviour(inputs, cfg["cross_asset"])
     # Tier-1b: blend the confirmed valuation tails into allocation (gated by the
     # allocation backtest below).
     al = allocation(mom["momentum"], rk["risk_index"], cfg["allocation"], va)
 
     out = pd.concat([inputs["price"][["close"]], mom, rk, bf, st, gg, al,
-                     va, mn, cb, ex, op, lv, ma, oc, im], axis=1)
+                     va, mn, cb, ex, op, lv, ma, oc, im, cc, po, xa, bh], axis=1)
     out["cycle_position"] = cycle_stage(mom["momentum"], rk["risk_index"])
     alt = btc_vs_alts(inputs, cfg["btc_vs_alts"])
     if alt is not None:

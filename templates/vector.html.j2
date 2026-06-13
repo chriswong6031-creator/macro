@@ -265,7 +265,7 @@ html[data-lang="zh"] .lang-toggle .zh-opt{color:#fff}
               <div class="track"><div class="fill" style="width:{{ env.p_bull_7d }}%"></div></div>
               <span class="pct">{{ env.p_bull_7d }}%</span></div>
             {% else %}<div class="sub faint">{{ t('insufficient base-rate sample', '基准率样本不足') }}</div>{% endif %}
-            {% if env.cell %}<div class="sub faint" style="margin-top:6px;font-size:12px">{{ t('Conditioned on', '条件：') }} {{ env.cell }}{% if env.n %} (n={{ env.n }}){% endif %}{% if env.macro_tilt %}, {{ t('macro tilt', '宏观偏移') }} {{ '%+d'|format(env.macro_tilt) }}pp{% endif %} · {{ t('empirical-Bayes shrunk, capped 30–70%', '经验贝叶斯收缩，限定 30–70%') }}</div>{% endif %}
+            {% if env.cell %}<div class="sub faint" style="margin-top:6px;font-size:12px">{{ t('Conditioned on', '条件：') }} {{ env.cell }}{% if env.n %} (n={{ env.n }}){% endif %}{% if env.tilt %}, {{ t('macro+cycle tilt', '宏观+周期偏移') }} {{ '%+d'|format(env.tilt) }}pp{% endif %} · {{ t('empirical-Bayes shrunk, capped 30–70%', '经验贝叶斯收缩，限定 30–70%') }}</div>{% endif %}
           </div>
         </div>
       </div>
@@ -463,6 +463,32 @@ html[data-lang="zh"] .lang-toggle .zh-opt{color:#fff}
       <div class="mini"><div class="lab"><span>{{ t('SSR oscillator (stablecoin dry powder)','SSR 振荡器（稳定币场外资金）') }}</span><span><b>{{ onchain.ssr_osc if onchain.ssr_osc is not none else '—' }}</b> <span class="faint">{{ t('(high = more dry powder)','（高 = 场外资金更多）') }}</span></span></div></div>
       <div class="mini"><div class="lab"><span>{{ t('Miner Position Index (MPI)','矿工持仓指数（MPI）') }}</span><span><b>{{ onchain.mpi if onchain.mpi is not none else '—' }}</b></span></div></div>
       <div class="sub" style="margin-top:8px">{{ t('Both shown as CONTEXT, not signals: on our free-data sample the SSR oscillator had no clean forward-return edge, and MPI came out INVERTED (miner distribution coincided with continued upside). Kept honest rather than dropped. CryptoQuant\'s true moat — wallet-labeled exchange Netflow / Whale Ratio — is not reproducible free.', '两者仅作背景，而非信号：在我们的免费数据样本上，SSR 振荡器无明确前瞻收益优势，MPI 则呈反向（矿工派发与持续上涨同时出现）。如实保留而非删除。CryptoQuant 真正的护城河 — 带钱包标注的交易所净流量/巨鲸比率 — 无法免费复刻。') }}</div>
+    </div>
+  </div>
+
+  <!-- ===================== CYCLE / POSITIONING / CORRELATION ===================== -->
+  <div class="section-title">{{ t('Cycle Clock · Positioning · Cross-Asset Correlation', '周期时钟 · 持仓 · 跨资产相关性') }}</div>
+  <div class="grid cols-2">
+    <div class="card">
+      {% set ph = cycle.phase %}
+      {% set ph_color = {'accumulation':'var(--blue)','markup':'var(--blue)','markdown':'var(--r3)','recovery':'var(--ink)'} %}
+      {% set ph_zh = {'accumulation':'累积','markup':'上涨','markdown':'下跌','recovery':'复苏'} %}
+      <h3>{{ t('Halving cycle clock', '减半周期时钟') }}
+        <b style="color:{{ ph_color.get(ph,'var(--muted)') }}"> · {{ t((ph or '—')|upper, ph_zh.get(ph,'—')) }}</b></h3>
+      {% if cycle.pct is not none %}
+      <div class="mini"><div class="lab"><span>{{ t('Cycle progress (since halving)','周期进度（自减半起）') }}</span><span><b>{{ cycle.pct }}%</b> <span class="faint">({{ cycle.days }}d)</span></span></div>
+        <div class="bar"><div class="fill" style="width:{{ cycle.pct if cycle.pct<=100 else 100 }}%"></div></div></div>{% endif %}
+      {% if cycle.vdd is not none %}
+      <div class="mini"><div class="lab"><span>{{ t('Spending behaviour · VDD Multiple','支出行为 · VDD 倍数') }}</span><span><b>{{ cycle.vdd }}</b> <span class="faint">({{ cycle.vdd_pctile }}%ile · {{ t('>2.9 distribution, <0.75 dormant','>2.9 派发，<0.75 沉睡') }})</span></span></div></div>{% endif %}
+      <div class="sub" style="margin-top:8px">{{ t('The ~4-year time axis the model lacked. Calibrated (n=3 cycles, a soft PRIOR): the accumulation phase (post-halving) averaged +48%/90d at 81% hit; the markdown phase (mid-cycle) just +5%/90d at 43% hit. It tilts the scenario odds, never triggers.', '模型此前缺失的约 4 年时间轴。已校准（3 个周期，软先验）：累积期（减半后）90 天平均 +48%、胜率 81%；下跌期（周期中段）仅 +5%、胜率 43%。它用于微调情景概率，从不作为触发。') }}</div>
+    </div>
+    <div class="card">
+      <h3>{{ t('CME positioning & correlation', 'CME 持仓与相关性') }}
+        {% if positioning.crowded %}<b style="color:var(--r3)"> · {{ t('CROWDED LONG','多头拥挤') }}</b>{% endif %}</h3>
+      <div class="mini"><div class="lab"><span>{{ t('CME spec net (z-score)','CME 投机净持仓（z）') }}</span><span><b style="color:{{ 'var(--r3)' if positioning.crowded else 'var(--ink)' }}">{{ positioning.cot_z if positioning.cot_z is not none else '—' }}</b>{% if positioning.cot_net_pct is not none %} <span class="faint">({{ positioning.cot_net_pct }}% of OI)</span>{% endif %}</span></div></div>
+      <div class="mini"><div class="lab"><span>{{ t('BTC↔S&P 500 correlation (90d)','BTC↔标普 500 相关性（90 天）') }}</span><span><b>{{ correlation.spx if correlation.spx is not none else '—' }}</b> <span class="faint">{{ td((correlation.regime or '')|capitalize) }}</span></span></div></div>
+      <div class="mini"><div class="lab"><span>{{ t('BTC↔Gold correlation (90d)','BTC↔黄金 相关性（90 天）') }}</span><span><b>{{ correlation.gold if correlation.gold is not none else '—' }}</b></span></div></div>
+      <div class="sub" style="margin-top:8px">{{ t('CME net-spec (regulated, weekly) is the only real-money positioning input — crowded long (z>1.5) preceded −5.8%/90d at 35% hit (contrarian). Correlation tells what BTC trades as: coupled to equities (>0.4) averaged +13%/90d vs +33% when decoupled.', 'CME 投机净持仓（受监管、周度）是唯一的真实资金持仓输入 — 多头拥挤（z>1.5）后 90 天 −5.8%、胜率 35%（反向）。相关性显示 BTC 的交易属性：与股票耦合（>0.4）90 天平均 +13%，脱钩时 +33%。') }}</div>
     </div>
   </div>
 

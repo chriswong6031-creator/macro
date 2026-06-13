@@ -2,6 +2,66 @@
 
 Newest first. Each entry: what was decided, why, and what would change it.
 
+## 2026-06-13 — Vector new-factor hunt: 4 orthogonal axes added (research/VECTOR_NEW_FACTORS.md)
+
+**D-vec-FACT. A 6-agent hunt found the model saturated in valuation/trend but
+blind to four orthogonal axes — all now added + calibrated.** (1) **Halving
+Cycle Clock** (`cycle_clock()`, deterministic, the time axis we wholly lacked):
+accumulation phase +47.9%/90d @81% vs markdown +5.1%/90d @43% (n=3 = soft PRIOR)
+→ wired as a ±5pp tilt on scenario probabilities, not a trigger. (2) **CME COT
+positioning** (`positioning()` — `cot_bitcoin` was collected but idle): crowded
+spec long (z>1.5) → −5.8%/90d @35% = contrarian TOP → wired into composite_state
+DISTRIBUTE. (3) **Cross-asset correlation regime** (`cross_asset_corr()`, zero new
+data — Yahoo SPX/gold/DXY): coupled-to-equities (corr>0.4) +13%/90d vs decoupled
++33% → context. (4) **VDD Multiple** (`behaviour()`, checkonchain 2011-> deep, the
+spending-behaviour/coin-age axis): calibration HONEST — coincident with bull
+phases, NOT a clean top signal → DEMOTED to context gauge (measure, don't
+overclaim). config `vector.{cycle_clock,positioning,cross_asset}`; btc_inputs adds
+cot_net_pct/spx/gold + checkonchain vdd_multiple. LIVE READ: cycle=markdown (weak
+phase), COT z=+3.0 (crowded long → headline now DISTRIBUTE), corr 0.44 mixed, VDD
+0.36 dormant — a coherent late/distribution picture. What would change it: more
+cycles to de-soften the halving prior. DEFERRED (bgeo 429 rate-limited this
+session): CDD/Liveliness/Dormancy-Flow (bottoms side), Deribit futures basis +
+skew term structure, global-M2 lead.
+
+## 2026-06-13 — Alert quality gates + calibration-graded conviction
+
+**D-alert-Q1. Deadband + N-day confirmation on the noisy macro flip alerts.**
+`net_liquidity_roc_flip` now fires only when the 4-week RoC clears a ±25 bn
+deadband AND the new sign has held `confirm_days` (default 2) — killing the
+"+7bn → -0bn" non-event (a sign flip sitting on zero) the original alert
+surfaced, plus one-day whipsaws across zero. `gex_flip_cross` gets analogous
+deadbands (gex_net_deadband_bn=1.0, gex_flip_pct_deadband=0.25) and a NaN-safe
+message. Tradeoff: a deliberate ~1-day delay before a fresh flip fires, and a
+genuine flip whose magnitude stays inside the deadband won't fire. All four
+thresholds are config keys under `alerts:` with in-code defaults (behaviour
+unchanged if absent). What would change it: tune deadbands once we see the real
+firing cadence.
+
+**D-alert-Q2. Conviction layer — every alert carries a tier + grounded edge
+note, decoupled from per-fire severity.** Goal: rank by MEASURED edge, not
+loudness. Vector (engine/btc_alerts.py CONVICTION + _conviction) derives edge
+from data/vector/calibration.json: CONFIRMED signals (risk_index→risk_regime,
+bfi→fundamentals) read "proven edge"; DIRECTIONAL-degraded ones
+(momentum/structure) read "edge weakened post-2021 (ETF era)"; allocation shows
+its real backtest (66% vs 59% CAGR, −42% vs −84% drawdown); state alerts carry
+their historical whipsaw rate. risk_extreme is deliberately decoupled from
+risk_index's directional verdict (its contrarian-at-extremes thesis is the
+OPPOSITE of what that verdict measured) and gets an honest "suggestive, not
+proven" note. Macro (engine/alerts.py ALERT_CONVICTION) has no per-rule
+backtest, so tiers are documented-reasoning calls (HY OAS=act/high; net
+liquidity=watch/medium with the post-2021 caveat; confidence/RS/holdings=
+context). `tier`=actionability/horizon, `edge`=trust. What would change it:
+re-running the vector calibration (verdicts feed the labels directly).
+
+**D-alert-Q3. Surfacing.** Conviction renders in the Bitcoin Vector timeline
+(templates/vector.html.j2 tl-edge/tl-fwd), the macro dashboard alert card
+(templates/dashboard.html.j2 .alert-edge), the combined home-hub feed
+(scripts/build_vector.py home_alert_feed + _hub_alert_rows .ha-edge, all three
+sources), the daily brief (scripts/daily_brief.py), and the Telegram/Discord
+ping (scripts/notify.py). Engine logic landed in commit a4f8d20; render +
+config-doc + this entry followed.
+
 ## 2026-06-13 — Vector IMPULSE + full-signal integration (research/VECTOR_IMPULSE_AND_INTEGRATION.md)
 
 **D-vec-IMP. Added an IMPULSE signal (the Glassnode/Swissblock capability we
@@ -91,17 +151,32 @@ aggregate across the passive `etf_holdings` universe PLUS the active ARK watchli
 (read from `data/holdings/`, so ARKK/ARKW aren't double-collected). HONEST FRAMING
 carried to the page: on ACTIVE funds the signal is manager conviction; on PASSIVE
 index/sector funds it is index reconstitution / rebalance flow — tagged per row.
-Sponsor reliability (LIMITATIONS): **ssga VERIFIED** (SPDR daily XLSX has Shares Held —
-SPY parsed 504 rows live), **ark VERIFIED**, **ishares/invesco BEST-EFFORT** (consent
-walls — fail gracefully behind the circuit breaker), **vanguard UNSUPPORTED** (no free
-daily feed). New `etfs.html` page (ETF flow radar) + macro-nav link. Volume: extended
-`StockPriceAdapter` to keep a `volume` column + `volume_surge()` confirmation enhancer
-(📊 marker) — populates as daily snapshots accrue / on the next `--full-history`
-backfill (older parquets lack volume; helper returns None until enough exists). Config
-`etf_holdings.universe` (12 SSGA + 3 iShares seeded) is meant to grow toward 200 by
-editing config alone. THRESHOLDS UNCALIBRATED + needs ≥2 snapshots per fund to show.
-WHAT WOULD CHANGE IT: a working iShares/Invesco/Vanguard holdings path (would expand
-coverage); calibrating active_change_alert_pct once history accrues.
+Sponsor reliability — settled by a verify-backed recon Workflow (2026-06-13):
+VERIFIED + SEEDED — **ssga** (SPDR XLSX, SPY 504 rows live), **ark**, **invesco**
+(`dng-api.invesco.com/cache/v1` JSON — use `idType=cusip`; `idType=ticker` 500s for all
+but flagship QQQ; QQQ/RSP seeded), **globalx** (`assets.globalxetfs.com` dated
+full-holdings CSV, walk back on 404; URA/LIT/COPX seeded). BLOCKED + NOT seeded —
+**iShares** (Akamai Bot Manager returns a `text/csv`-headed HTML consent body even with
+consent cookies → needs a headless browser; `_fetch_ishares` retained for that path),
+**Schwab** (403/JS), **Vanguard** (no free daily feed — month-end/N-PORT only).
+**ProShares EVALUATED + DROPPED**: its one consolidated CSV is mostly leveraged
+swap/futures funds with no stock-level conviction signal (the agent's "highest ROI" was
+on fund-count, not signal-relevance — caught by adversarially inspecting the data).
+Coverage ≈30-40% of top-200 AUM but a large share of fund COUNT; the mega-cap walls
+(iShares ~30% / Vanguard ~25-29% of AUM) would need a degraded stockanalysis.com scrape
+layer (clearly labelled non-official) to cover. Live full-collector run wrote 17 valid
+snapshots (12 ssga + 2 invesco + 3 globalx). GOTCHA fixed: untickered foreign holdings
+stringify to `<NA>` under the pyarrow string dtype (not `nan`), so `_normalize`'s
+junk-ticker filter must include `<na>`. New `etfs.html` page (ETF flow radar) +
+macro-nav link + a landing-hub card (`build_vector._hub_html`, gated on the page).
+Volume: extended `StockPriceAdapter` to keep a `volume` column + `volume_surge()`
+confirmation enhancer (📊 marker) — populates as daily snapshots accrue / on the next
+`--full-history` backfill. Config `etf_holdings.universe` (12 SSGA + 2 Invesco + 3
+Global X seeded) grows toward 200 by editing config + adding sponsors we can fetch.
+THRESHOLDS UNCALIBRATED + needs ≥2 snapshots per fund to show.
+WHAT WOULD CHANGE IT: a headless-browser/proxy path for iShares/Schwab, or a
+stockanalysis.com degraded layer for the wall-blocked mega-caps (both would expand
+coverage); and calibrating active_change_alert_pct once history accrues.
 
 ## 2026-06-13 — Vector dashboard DECOUPLED from i18n (now committable)
 

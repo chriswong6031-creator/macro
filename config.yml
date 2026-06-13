@@ -140,8 +140,10 @@ etf_holdings:
   # holdings (with Shares Held) per fund; the engine diffs consecutive snapshots
   # with flow normalization (share-based active-decision) — no per-stock prices
   # needed, so it scales to the whole universe. Edit the universe freely to grow
-  # toward the top ~200. Sponsor reliability: ssga/ark VERIFIED, ishares/invesco
-  # BEST-EFFORT (consent walls), vanguard NOT supported (no free daily feed).
+  # toward the top ~200. Sponsor reliability (recon 2026-06-13, D71): ssga/ark/invesco
+  # /globalx VERIFIED; iShares/Schwab BLOCKED (Akamai/JS consent walls, need a headless
+  # browser); Vanguard NOT supported (no free daily feed). Invesco: idType=cusip is
+  # reliable (idType=ticker 500s for all but flagship QQQ).
   retries: 3
   active_change_alert_pct: 15     # |flow-normalized share change| (% of position) to flag
   active_change_window_d: 5       # compare latest snapshot to one ~5 snapshots back
@@ -284,8 +286,8 @@ watchlist:
   # is PUBLIC by design — per-user isolation is enforced by RLS, not by secrecy.
   # One-time setup: run templates/watchlist_supabase.sql in the Supabase SQL editor.
   supabase:
-    url: ""                       # e.g. https://abcdxyz.supabase.co
-    anon_key: ""                  # the anon / publishable key (safe to commit)
+    url: "https://fsldfzlxyavsuwqbceod.supabase.co"
+    anon_key: "sb_publishable_f33VG8fZuyIZPl_lZIDX3w_RFuuZtpv"   # publishable key — PUBLIC by design (RLS enforces isolation)
 
 # -----------------------------------------------------------------------------
 # Regime engine
@@ -401,8 +403,12 @@ alerts:
   holdings_active_change_days: 5
   sector_holdings_accumulation: true   # decomposed sector-ETF weight-change signal
   net_liquidity_roc_sign_flip: true
+  net_liquidity_roc_deadband_bn: 25    # ignore RoC flips within ±N bn of zero (kills "+7 -> -0bn" noise)
+  net_liquidity_roc_confirm_days: 2    # ...and require the new sign to HOLD N days before firing
   hy_oas_1d_widening_z: 2.5
   gex_flip_cross: true
+  gex_net_deadband_bn: 1.0             # ignore net-GEX sign flips within ±N bn of zero
+  gex_flip_pct_deadband: 0.25          # ignore spot/flip crossings while hugging the flip (±N%)
 
 notify:
   # public base URL of the published site (e.g. https://user.github.io/repo).
@@ -801,6 +807,7 @@ vector:
   composite:                      # headline market-state synthesis thresholds
     reserve_risk_top: 0.02        # reserve_risk above this = distribution (calibrated TOP)
     bfi_strong: 60                # BFI above this = fundamentals confirm risk-on
+    cot_crowded_z: 1.5            # CME spec net-long z above this = crowded (contrarian top)
 
   scenarios:                      # short-term scenario probabilities (build_vector)
     prob_horizon_d: 7             # forward horizon for the conditional base rate
@@ -809,7 +816,28 @@ vector:
     prob_floor: 0.30              # cap probabilities to [floor, ceil] (anti-overfit)
     prob_ceil: 0.70
     macro_tilt_pp: 5              # macro tailwind/headwind nudges the prob +/- this (pp)
+    cycle_tilt_pp: 5             # halving-phase prior: accumulation +, markdown - (pp)
     atr_dvol_ref: 55              # DVOL ~= this -> ATR bands unscaled; higher widens them
+
+  # --- New-factor hunt (research/VECTOR_NEW_FACTORS.md): three orthogonal axes
+  # the model lacked — time/cycle, positioning, cross-asset co-movement. ---------
+  cycle_clock:                    # halving-phase time prior (deterministic, FREE)
+    halving_dates: ["2012-11-28", "2016-07-09", "2020-05-11", "2024-04-20"]
+    cycle_len_d: 1458             # ~4y; cycle_pct = days_since_halving / this
+    # phase boundaries in cycle_pct (tops cluster ~0.27-0.38 historically, n=3)
+    accumulation_end: 0.22
+    markup_end: 0.42
+    markdown_end: 0.70
+
+  positioning:                    # CME COT net-spec (already collected, now wired)
+    z_window_d: 730               # ~2y z-score of net_spec_pct_oi (crowding extremes)
+    ffill_limit_d: 10             # weekly report -> carry forward
+
+  cross_asset:                    # BTC rolling correlation regime (2nd-moment, FREE)
+    corr_window_d: 90             # rolling Pearson window of daily returns
+    pctile_lookback_d: 730
+    coupled_thresh: 0.45          # BTC-SPX corr above this = risk-asset coupling
+    decoupled_thresh: 0.0         # below this = decoupled / diversifier regime
 
   calibration:
     start_date: "2015-01-01"      # price-signal backtests (Yahoo BTC 2014-09->)

@@ -129,6 +129,11 @@ def _cond_up_prob(df: pd.DataFrame, cfg: dict, horizon: int):
     if macro is not None and pd.notna(macro.iloc[-1]):
         t = cfg["macro_tilt_pp"] / 100.0
         tilt = t if macro.iloc[-1] == "tailwind" else (-t if macro.iloc[-1] == "headwind" else 0.0)
+    # halving-cycle prior (orthogonal): accumulation phase tilts up, markdown down
+    cyc = df.get("cycle_phase")
+    if cyc is not None and pd.notna(cyc.iloc[-1]) and cfg.get("cycle_tilt_pp"):
+        ct = cfg["cycle_tilt_pp"] / 100.0
+        tilt += ct if cyc.iloc[-1] == "accumulation" else (-ct if cyc.iloc[-1] == "markdown" else 0.0)
     p = min(max(p + tilt, cfg["prob_floor"]), cfg["prob_ceil"])
     return float(p), n, cell, round(100 * tilt)
 
@@ -142,7 +147,7 @@ def env_probabilities(df: pd.DataFrame, cfg: dict) -> dict:
     if p is None:
         return {"now": now, "p_bull_7d": None, "p_bear_7d": None}
     return {"now": now, "p_bull_7d": round(100 * p), "p_bear_7d": round(100 * (1 - p)),
-            "n": n, "cell": cell, "macro_tilt": tilt, "horizon": h}
+            "n": n, "cell": cell, "tilt": tilt, "horizon": h}  # tilt = macro + cycle prior
 
 
 def scenarios_3d(df: pd.DataFrame, cfg: dict, high: pd.Series, low: pd.Series) -> dict:
@@ -389,6 +394,7 @@ def home_alert_feed() -> list[dict]:
                 "severity": MACRO_SEV.get(r["severity"], "info"),
                 "type": r["rule"], "headline": v["icon"] + " " + v["plain_en"],
                 "detail": r["message"], "what": v["what_en"], "link": link,
+                "tier": v["tier"], "edge": v["edge_en"],
                 "cta": "Open scorecard →", "dedupe": r["message"],
             })
     except Exception as e:  # noqa: BLE001
@@ -403,7 +409,8 @@ def home_alert_feed() -> list[dict]:
                     "source": "vector", "source_label": "Bitcoin Vector",
                     "ts": e["ts"], "date_only": False, "severity": e["severity"],
                     "type": e["type"], "headline": e["headline"],
-                    "detail": e["detail"], "what": "",
+                    "detail": e["detail"], "what": e.get("forward", ""),
+                    "tier": e.get("tier", "watch"), "edge": e.get("edge", ""),
                     "link": "vector.html" + e.get("anchor", "#timeline"),
                     "cta": "Open →", "dedupe": e["headline"],
                 })
@@ -421,7 +428,8 @@ def home_alert_feed() -> list[dict]:
                     "ts": e["ts"], "date_only": (pd.Timestamp(e["ts"]).hour == 0
                                                  and pd.Timestamp(e["ts"]).minute == 0),
                     "severity": e["severity"], "type": e["type"], "headline": e["headline"],
-                    "detail": e["detail"], "what": "",
+                    "detail": e["detail"], "what": e.get("forward", ""),
+                    "tier": e.get("tier", "watch"), "edge": e.get("edge", ""),
                     "link": "commodities.html" + e.get("anchor", "#timeline"),
                     "cta": "Open →", "dedupe": e["headline"],
                 })
@@ -451,8 +459,10 @@ def _hub_alert_rows(alerts: list[dict]) -> str:
     for a in alerts:
         ts = pd.Timestamp(a["ts"])
         when = ts.strftime("%b %d") if a["date_only"] else ts.strftime("%b %d · %H:%M UTC")
-        src_cls = "s-macro" if a["source"] == "macro" else "s-vector"
+        src_cls = {"macro": "s-macro", "vector": "s-vector",
+                   "commodity": "s-commodity"}.get(a["source"], "s-vector")
         what = f'<div class="ha-what">{a["what"]}</div>' if a.get("what") else ""
+        edge = f'<div class="ha-edge"><b>Conviction:</b> {a["edge"]}</div>' if a.get("edge") else ""
         cta = a.get("cta", "Open →")
         rows.append(f"""<details class="ha-item">
   <summary>
@@ -461,7 +471,7 @@ def _hub_alert_rows(alerts: list[dict]) -> str:
     <span class="ha-head">{a['headline']}</span>
     <span class="ha-when">{when}</span>
   </summary>
-  <div class="ha-detail">{a['detail']}{what}<a class="ha-open" href="{a['link']}">{cta}</a></div>
+  <div class="ha-detail">{a['detail']}{what}{edge}<a class="ha-open" href="{a['link']}">{cta}</a></div>
 </details>""")
     return "\n".join(rows)
 
@@ -549,12 +559,15 @@ body{{margin:0;min-height:100vh;background:{C['bg']};color:{C['text']};
 .ha-src{{font-size:11px;font-weight:700;padding:3px 9px;border-radius:7px}}
 .ha-src.s-macro{{background:#ECE9FB;color:{C['indigo']}}}
 .ha-src.s-vector{{background:#E8EEFF;color:{C['blue']}}}
+.ha-src.s-commodity{{background:#FBF0DA;color:{C['amber']}}}
 .ha-head{{flex:1;min-width:200px;font-weight:600;color:{C['ink']};font-size:14px}}
 .ha-when{{font-size:12px;color:{C['faint']};font-weight:600}}
 .ha-detail{{padding:0 0 13px 21px;font-size:13px;color:{C['text']};line-height:1.6}}
 .ha-detail a{{font-weight:700;white-space:nowrap}}
 .ha-what{{margin:7px 0 9px;padding-top:8px;border-top:1px solid {C['grid']};
  font-size:12.5px;color:{C['muted']};line-height:1.55}}
+.ha-edge{{margin:4px 0 9px;font-size:12px;color:{C['ink']};line-height:1.5}}
+.ha-edge b{{color:{C['muted']};font-weight:600}}
 .ha-open{{display:inline-block;color:{C['blue']};font-weight:700}}
 .ha-empty{{padding:18px;text-align:center;color:{C['faint']};font-size:14px}}
 .c{{background:#fff;border:1px solid {C['grid']};border-radius:20px;padding:30px;
@@ -769,6 +782,23 @@ def main() -> int:
             "state": last.get("impulse_state"),
             "pos_pct": _r(last.get("impulse_pos_pct"), 0),
             "er": _r(last.get("efficiency_ratio"), 2),
+        },
+        "cycle": {
+            "pct": _r(100 * last["cycle_pct"], 0) if pd.notna(last.get("cycle_pct")) else None,
+            "phase": last.get("cycle_phase"),
+            "days": _r(last.get("days_since_halving"), 0),
+            "vdd": _r(last.get("vdd_multiple"), 2),
+            "vdd_pctile": _r(last.get("vdd_pctile"), 0),
+        },
+        "positioning": {
+            "cot_net_pct": _r(last.get("cot_net_pct"), 1),
+            "cot_z": _r(last.get("cot_z"), 2),
+            "crowded": bool(pd.notna(last.get("cot_z")) and last["cot_z"] > 1.5),
+        },
+        "correlation": {
+            "spx": _r(last.get("corr_spx"), 2),
+            "gold": _r(last.get("corr_gold"), 2),
+            "regime": last.get("risk_asset_regime"),
         },
         "gauges": {
             "momentum": gauge_pos(last["momentum"], -1, 1),

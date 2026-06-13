@@ -283,6 +283,16 @@ def main() -> int:
         # Impulse (momentum acceleration, 2014-> deep). Positive = thrust/continuation.
         "impulse": {"bands": [-3.01, -0.5, -0.15, 0.15, 0.5, 3.01],
                     "labels": ["<-.5", "-.5--.15", "-.15-.15", ".15-.5", ">.5"], "want": 1},
+        # New-factor hunt: halving clock (cyclical, n=3 prior), COT positioning, BTC-SPX corr.
+        "cycle_pct": {"bands": [-0.01, 0.22, 0.42, 0.70, 1.0, 1.41],
+                      "labels": ["accum", "markup", "markdown", "recovery", "late"], "want": -1},
+        "cot_z": {"bands": [-5, -1.5, -0.5, 0.5, 1.5, 5], "shape": "extremes",
+                  "labels": ["<-1.5", "-1.5--.5", "-.5-.5", ".5-1.5", ">1.5"], "want": -1},
+        "corr_spx": {"bands": [-1.01, 0, 0.2, 0.4, 1.01],
+                     "labels": ["<0", "0-.2", ".2-.4", ">.4"], "want": -1},
+        # VDD Multiple (spending-behaviour, checkonchain 2011-> deep). High = distribution.
+        "vdd_multiple": {"bands": [0, 0.5, 0.87, 1.4, 2.9, 100], "shape": "extremes",
+                         "labels": ["<.5", ".5-.87", ".87-1.4", "1.4-2.9", ">2.9"], "want": -1},
     }
     for _k, _v in VAL_SIGNALS.items():
         if _k in df.columns:

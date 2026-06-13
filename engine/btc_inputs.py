@@ -102,6 +102,7 @@ def load_all() -> dict[str, pd.Series | pd.DataFrame | None]:
         "stablecoins": stables,
         "fear_greed": _col("sentiment_crypto", "fear_greed"),
         "reserve_risk": _col("checkonchain", "reserve_risk"),  # deep cycle-bottom (2010->)
+        "vdd_multiple": _col("checkonchain", "vdd_multiple"),  # spending-behaviour axis (2011->)
         "dvol": _col("deribit", "dvol", "dvol_close"),
         "options_structure": store.read("deribit", "options_structure"),  # forward-accumulating snapshot
         "eth": _col("yahoo", "ETH-USD", None),
@@ -114,6 +115,10 @@ def load_all() -> dict[str, pd.Series | pd.DataFrame | None]:
         "hy_oas": _col("fred", "BAMLH0A0HYM2"),   # high-yield credit spread (%)
         "vix": _col("fred", "VIXCLS"),
         "dxy": _col("yahoo", "DX-Y.NYB", "close"),
+        # New-factor hunt: positioning + cross-asset (all on disk already)
+        "cot_net_pct": _col("cot", "cot_bitcoin", "net_spec_pct_oi"),  # CME net-spec % of OI
+        "spx": _col("yahoo", "SPY", "close"),
+        "gold": _col("yahoo", "GC_F", "close"),
     }
     # derived identities (D41)
     if mvrv is not None and mcap is not None:

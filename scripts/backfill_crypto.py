@@ -41,6 +41,17 @@ CHARTS = {
         "series": "sopr",
         "column": "sopr",
     },
+    "vdd_multiple": {
+        # Value-Days-Destroyed Multiple (2011->) — the SPENDING-BEHAVIOUR axis the
+        # model completely lacked (old coins waking = distribution). Orthogonal to
+        # the price-vs-cost-basis valuation cluster. checkonchain bands: >2.9 Hot
+        # (tops), <0.75 Cold (bottoms). No bgeo quota; used via z/percentile.
+        "url": "https://charts.checkonchain.com/btconchain/lifespan/vddmultiple/vddmultiple_light.html",
+        "trace": "VDD Multiple",
+        "group": "checkonchain",
+        "series": "vdd_multiple",
+        "column": "vdd_multiple",
+    },
     "reserve_risk": {
         # Deep Reserve Risk (2010->) — a cycle-BOTTOM signal whose whole value is
         # depth across cycles. bgeo's reserve-risk endpoint is only ~4y AND a
