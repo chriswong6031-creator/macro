@@ -2,6 +2,42 @@
 
 Newest first. Each entry: what was decided, why, and what would change it.
 
+## 2026-06-14 (2nd pass) — immediate value, visual momentum, theme
+
+**D49. Front-page Action Board.** New "⚡ What to act on now" panel at the top
+of the dashboard buckets every sector's cycle signal into BUY ZONE (confirmed) /
+SETTING UP (~N days) / TAKE PROFITS / HOLD-AVOID, plus standout individual
+stocks from the analyzed top-10s. Answers "what do I look at" on entry. Carries
+the same honesty caveat (cycle states don't beat buy-and-hold on average; value
+is structure + risk placement).
+
+**D50. entry_timing() — a ranged days-to-entry estimate.** From cycle band
+position + MACD bars-to-cross: BUY NOW / BUY SOON (~lo–hi d) / WATCH / WAIT /
+HOLD / TAKE PROFITS / SELL / AVOID. Phase-aware: a BOTTOM WATCH that's only
+early/mid-cycle says "mid-cycle dip, real low ~N+ days out" (WAIT), not a false
+"low imminent" — found an inconsistency in testing (XLE day-10 "nearing a low"
+contradicting a 26-day estimate) and fixed it.
+
+**D51. Visual MTF cards (templates/mtf.js, one renderer for sector + stock).**
+Per-timeframe RSI/StochRSI zoned gauges with a sparkline of the recent path, and
+a MACD histogram sparkline with the cross ETA. Replaced the dense text rows and
+the per-holding TradingView mini-chart dropdown (which showed little). Engine now
+emits compact recent series (spark_rsi/stoch/hist) in each tf state. SVG, theme-
+aware via CSS vars.
+
+**D52. Plain cycle language + bullets + expandable detail.** cycle_plain()
+labels DAILY vs WEEKLY(investor) cycle explicitly with phase words ("overdue —
+a low could form any day"), resolving "is cycle day 27 daily or weekly?".
+Translation explained in plain terms. Long why/next prose collapsed to bullet
+points with a "full reasoning" expander. The unreadable holdings score-bar was
+removed in favor of the urgency pill + explicit "daily cycle day N".
+
+**D53. Dark/light theme (templates/theme.css + theme.js).** Centralized all CSS
+color variables into one stylesheet (dark default, html[data-theme=light]
+override) linked by every page; inline no-flash init in <head>; toggle persisted
+in localStorage; TradingView + MTF widgets recolor on flip. Replaced each page's
+inline :root.
+
 ## 2026-06-14 — UX clarity + pre-emptive entry layer
 
 **D46. Ladder states got plain, direction-explicit display names** (internal

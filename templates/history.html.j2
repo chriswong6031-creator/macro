@@ -7,11 +7,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Regime History — {{ latest.date }}</title>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 <style>
-  :root { --bg:#0f1115; --panel:#181b21; --panel2:#1e222a; --text:#d7dce3;
-          --muted:#8b93a1; --line:#2a2f3a;
-          --q1:#2e9e4f; --q2:#d4a017; --q3:#d04545; --q4:#3f78d8; }
   * { box-sizing: border-box; }
   body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,
          "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
@@ -53,6 +52,7 @@
       <span style="flex:1"></span>
       <a class="navbtn" href="index.html">← Back to dashboard</a>
       <a class="navbtn" href="validation_timeline.html">Full 2007→ backtest</a>
+      <button class="theme-btn">☀️ Light</button>
     </div>
   </div>
 
@@ -89,5 +89,6 @@
   </div>
 
   <p class="muted">Generated {{ generated_utc }} UTC</p>
+<script src="theme.js"></script>
 </body>
 </html>

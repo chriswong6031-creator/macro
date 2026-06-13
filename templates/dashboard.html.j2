@@ -7,14 +7,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Macro Regime Dashboard — {{ latest.date }}</title>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 <style>
-  :root {
-    --bg: #0f1115; --panel: #181b21; --panel2: #1e222a; --text: #d7dce3;
-    --muted: #8b93a1; --line: #2a2f3a;
-    --q1: #2e9e4f; --q2: #d4a017; --q3: #d04545; --q4: #3f78d8;
-    --warn: #e0a030; --act: #e05555; --ok: #3da564;
-  }
   * { box-sizing: border-box; }
   body { background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system,
          "Segoe UI", Roboto, Helvetica, sans-serif; margin: 0; padding: 18px; }
@@ -131,6 +127,26 @@
           border-radius: 10px; font-size: 12px; background: var(--panel2); }
   .chip-pos { border: 1px solid #2e6e44; color: #6fce8f; }
   .chip-neg { border: 1px solid #6e2e2e; color: #e08080; }
+
+  /* action board */
+  .actiongrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  @media (max-width: 900px) { .actiongrid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px) { .actiongrid { grid-template-columns: 1fr; } }
+  .actcol { background: var(--panel2); border: 1px solid var(--line);
+            border-radius: 10px; padding: 10px 12px; border-top: 3px solid var(--line); }
+  .act-buy { border-top-color: var(--up); } .act-soon { border-top-color: var(--g-cold); }
+  .act-trim { border-top-color: var(--warn); } .act-hold { border-top-color: var(--muted); }
+  .acth { font-size: 11.5px; font-weight: 700; letter-spacing: .03em; margin-bottom: 7px; }
+  .actitem { display: flex; align-items: center; gap: 6px; padding: 5px 0;
+             border-bottom: 1px solid var(--line); font-size: 13px; }
+  .actitem:last-child { border-bottom: none; }
+  .actitem b { color: var(--text); }
+  .acttag { margin-left: auto; font-size: 10.5px; color: var(--muted); }
+  .acteta { margin-left: auto; font-size: 11px; font-weight: 700; color: var(--g-cold);
+            background: color-mix(in srgb, var(--g-cold) 16%, transparent);
+            padding: 1px 7px; border-radius: 9px; }
+  .notable { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+  .sm { font-size: 12px; margin: 4px 0; }
 
   .gauge { position: relative; height: 10px; border-radius: 5px; margin: 6px 0 2px;
            background: linear-gradient(90deg, #e07070 0%, #4a5160 50%, #5fbf7f 100%); opacity:.9; }
@@ -253,6 +269,7 @@
       <a class="navbtn" href="stock.html">🔎 Any stock</a>
       <a class="navbtn" href="brief.html">📰 Daily brief</a>
       <a class="navbtn" href="history.html">📈 History & charts</a>
+      <button class="theme-btn">☀️ Light</button>
     </div>
     <details class="howto">
       <summary>New here? How to read this page in 60 seconds</summary>
@@ -273,6 +290,53 @@
     {% for a in latest.alerts %}
       <div class="alert alert-{{ a.severity }}"><b>{{ a.rule }}</b> — {{ a.message }}</div>
     {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ======================= ACTION BOARD ======================= -->
+  {% if action_board %}
+  <div class="panel span12">
+    <h2>⚡ What to act on now
+      {{ help("Your at-a-glance starting point. Built from each sector's own price cycle (and standout individual stocks): what's a confirmed buy today, what's setting up to buy within a few days, what to take profits on, and what to leave alone. 'Days' are rough trajectory estimates, not promises. Click any name for the full breakdown.") }}
+    </h2>
+    <div class="actiongrid">
+      <div class="actcol act-buy">
+        <div class="acth">🟢 BUY ZONE — confirmed now</div>
+        {% for x in action_board.buy_now %}
+          <a class="actitem" href="sectors/{{ x.ticker }}.html"><b>{{ x.name }}</b> <span class="muted">{{ x.ticker }}</span><span class="acttag">{{ x.label }}</span></a>
+        {% else %}<p class="muted sm">None today — nothing has fully confirmed a fresh cycle low.</p>{% endfor %}
+      </div>
+      <div class="actcol act-soon">
+        <div class="acth">🔵 SETTING UP — buy soon</div>
+        {% for x in action_board.buy_soon %}
+          <a class="actitem" href="sectors/{{ x.ticker }}.html"><b>{{ x.name }}</b> <span class="muted">{{ x.ticker }}</span>{% if x.days is not none %}<span class="acteta">~{{ x.days }}d</span>{% endif %}</a>
+        {% else %}<p class="muted sm">No imminent setups.</p>{% endfor %}
+      </div>
+      <div class="actcol act-trim">
+        <div class="acth">🟠 TAKE PROFITS / topping</div>
+        {% for x in action_board.take_profits %}
+          <a class="actitem" href="sectors/{{ x.ticker }}.html"><b>{{ x.name }}</b> <span class="muted">{{ x.ticker }}</span><span class="acttag">{{ x.label }}</span></a>
+        {% else %}<p class="muted sm">Nothing topping.</p>{% endfor %}
+      </div>
+      <div class="actcol act-hold">
+        <div class="acth">⚪ HOLD / avoid</div>
+        {% for x in action_board.hold %}
+          <a class="actitem" href="sectors/{{ x.ticker }}.html"><b>{{ x.name }}</b> <span class="muted">hold — don't chase</span></a>
+        {% endfor %}
+        {% for x in action_board.avoid %}
+          <a class="actitem" href="sectors/{{ x.ticker }}.html"><b>{{ x.name }}</b> <span class="muted">{{ "wait" if x.tag == "WAIT" else "avoid" }}</span></a>
+        {% endfor %}
+      </div>
+    </div>
+    {% if action_board.notable %}
+    <div class="notable">
+      <span class="muted" style="font-size:12px">Standout individual stocks (from sector top-10s):</span>
+      {% for n in action_board.notable %}
+        <a class="chip {{ 'chip-pos' if n.urgency in ('now','imminent') else 'chip-neg' }}" href="stock.html#{{ n.ticker }}">{{ n.ticker }} · {{ n.label }}{% if n.urgency == 'imminent' and n.days %} (~{{ n.days }}d){% endif %}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <p class="muted" style="font-size:11.5px; margin-top:8px">⚠ Cycle-timing signals are about <i>where in the price cycle</i> a sector is — most useful combined with the regime read above. Our calibration shows these states don't beat buy-and-hold on average return; their value is structure and risk placement (entry + a defined exit), not certainty.</p>
   </div>
   {% endif %}
 
@@ -651,5 +715,6 @@
     else if (r.left + r.width / 2 - half < 0) h.classList.add('edge-left');
   });
 </script>
+<script src="theme.js"></script>
 </body>
 </html>

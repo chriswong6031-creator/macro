@@ -4,13 +4,28 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Stock analyzer — cycle & momentum</title>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
 <style>
-  :root { --bg:#0f1115; --panel:#181b21; --panel2:#1e222a; --text:#d7dce3;
-          --muted:#8b93a1; --line:#2a2f3a; }
   * { box-sizing:border-box; }
   body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,
          "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
   @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1100px)/2)); } }
+  .points { margin:6px 0; padding-left:18px; } .points li { margin:2px 0; }
+  .cyclebox { margin:8px 0; padding:9px 12px; border-radius:9px; background:var(--panel2);
+              font-size:13px; line-height:1.6; }
+  .entrybar { display:flex; gap:10px; align-items:flex-start; margin:10px 0 8px;
+              padding:9px 12px; border-radius:9px; background:var(--panel2);
+              border-left:4px solid var(--muted); font-size:14px; }
+  .entrytag { font-weight:800; font-size:12px; letter-spacing:.04em; white-space:nowrap;
+              padding:3px 9px; border-radius:7px; background:var(--panel); color:var(--text); border:1px solid var(--line); }
+  .urg-now .entrytag { background:var(--up); color:#fff; } .urg-now { border-left-color:var(--up); }
+  .urg-imminent .entrytag { background:var(--g-cold); color:#fff; } .urg-imminent { border-left-color:var(--g-cold); }
+  .urg-soon { border-left-color:var(--g-cold); } .urg-later { border-left-color:var(--muted); }
+  .urg-hold { border-left-color:var(--muted); }
+  .urg-caution .entrytag { background:var(--warn); color:#1a1a1a; } .urg-caution { border-left-color:var(--warn); }
+  .urg-exit .entrytag { background:var(--down); color:#fff; } .urg-exit { border-left-color:var(--down); }
+  .urg-avoid { border-left-color:var(--down); }
   .early { margin:6px 0; padding:8px 12px; border-radius:8px; background:#1c2740;
            border-left:3px solid #6aa0e0; font-size:13px; color:var(--text); }
   a { color:#7aa7e0; text-decoration:none; }
@@ -57,11 +72,12 @@
         <div id="sugg"></div>
       </div>
       <a class="navbtn" href="index.html">← Dashboard</a>
+      <button class="theme-btn">☀️ Light</button>
     </div>
     <p class="muted" style="margin:8px 0 0">Every name gets the same treatment as the sector pages:
-      cycle position (daily + investor cycle), three-timeframe momentum, and a signal state whose
-      historical track record is shown below it. Library refreshes nightly with the close;
-      covers the S&amp;P 500, all tracked ETFs, commodities and crypto.</p>
+      cycle position (daily + weekly), three-timeframe momentum visuals, a clear entry/exit call,
+      and the signal's measured track record. Library refreshes nightly; covers the S&amp;P 500,
+      all tracked ETFs, commodities and crypto.</p>
   </div>
 
   <div id="result">
@@ -69,16 +85,19 @@
       <div class="topline">
         <h1 id="r_name"></h1>
         <span id="r_state" class="state"></span>
-        <span id="r_cyc" class="muted"></span>
         <span style="flex:1"></span>
         <span id="r_asof" class="muted"></span>
       </div>
-      <p id="r_why" style="margin:10px 0 2px; font-weight:600"></p>
+      <div id="r_entry" class="entrybar"><span class="entrytag" id="r_tag"></span><span id="r_entrytext"></span></div>
       <p id="r_early" class="early" style="display:none"></p>
-      <p id="r_next" class="muted" style="margin:4px 0"></p>
+      <ul id="r_points" class="points"></ul>
+      <div id="r_cyclebox" class="cyclebox"></div>
       <p id="r_flags" class="neg" style="margin:4px 0"></p>
-      <div class="mtf" id="r_mtf"></div>
-      <p class="muted" id="r_extra" style="margin:8px 0 0"></p>
+      <details><summary>full reasoning</summary><p class="muted" id="r_why" style="margin:6px 0"></p></details>
+    </div>
+    <div class="panel">
+      <h2>Momentum across timeframes</h2>
+      <div id="r_mtf"></div>
     </div>
     <div class="panel">
       <h2>Chart</h2>
@@ -175,10 +194,11 @@
       document.getElementById('r_name').textContent = t;
       document.getElementById('r_state').textContent = 'NOT IN LIBRARY';
       document.getElementById('r_state').className = 'state';
-      document.getElementById('r_why').textContent =
-        'This ticker is not in the nightly library (S&P 500 + tracked ETFs/commodities/crypto).';
-      document.getElementById('r_next').textContent =
-        'It can be added in one line: config.yml → stock_search.extra_tickers.';
+      document.getElementById('r_entry').style.display = 'none';
+      document.getElementById('r_points').innerHTML = '';
+      document.getElementById('r_cyclebox').innerHTML =
+        'Not in the nightly library (S&P 500 + tracked ETFs/commodities/crypto). ' +
+        'Add it in one line: config.yml → stock_search.extra_tickers.';
     });
   }
 
@@ -186,30 +206,36 @@
     document.getElementById('result').style.display = 'block';
     document.getElementById('r_name').textContent = d.name + ' (' + d.ticker + ')';
     var st = document.getElementById('r_state');
-    st.textContent = (d.ladder.label || d.ladder.state) +
-                     (d.ladder.action ? ' · ' + d.ladder.action : '');
+    st.textContent = (d.ladder.label || d.ladder.state);
     st.className = 'state st-' + d.ladder.state.replace(/ /g, '_');
-    document.getElementById('r_cyc').textContent =
-      'cycle day ' + d.cycle.dc_day + ' of ~' + d.cycle.dc_band[0] + '-' + d.cycle.dc_band[1] +
-      (d.cycle.ic_week != null ? ' · investor cycle week ' + d.cycle.ic_week + ' (' + d.cycle.ic_phase + ')' : '');
     document.getElementById('r_asof').textContent = 'data through ' + d.asof;
-    document.getElementById('r_why').textContent = d.ladder.why;
+
+    var e = d.ladder.entry || {};
+    var eb = document.getElementById('r_entry');
+    eb.style.display = 'flex';
+    eb.className = 'entrybar urg-' + (e.urgency || 'hold');
+    document.getElementById('r_tag').textContent = e.tag || '';
+    document.getElementById('r_entrytext').textContent = e.text || '';
+
+    document.getElementById('r_points').innerHTML =
+      (d.ladder.points || []).map(function (p) { return '<li>' + p + '</li>'; }).join('');
+
+    var cp = d.ladder.cycle_plain || {};
+    var cyc = '<div><b>📅 ' + (cp.daily_line || '') + '</b> — ' + (cp.daily_phase || '') + '</div>';
+    if (cp.weekly_line) cyc += '<div><b>🗓 ' + cp.weekly_line + '</b> — ' + (cp.weekly_phase || '') + '</div>';
+    if (cp.translation) cyc += '<div class="muted">' + cp.translation + '</div>';
+    if (d.season_this) cyc += '<div class="muted">Seasonality — ' + d.season_this +
+      (d.season_next ? '; ' + d.season_next : '') + '.</div>';
+    document.getElementById('r_cyclebox').innerHTML = cyc;
+
     var early = document.getElementById('r_early');
     if (d.ladder.early_note) { early.textContent = d.ladder.early_note; early.style.display = 'block'; }
     else { early.style.display = 'none'; }
-    document.getElementById('r_next').textContent = 'Next: ' + d.ladder.next;
-    var flags = [];
-    if (d.cycle.failed_cycle) flags.push('⚠ Failed cycle — price is below the low that started this cycle; the larger trend is usually rolling over.');
-    document.getElementById('r_flags').textContent = flags.join(' ');
-    document.getElementById('r_mtf').innerHTML =
-      tf('Daily', d.mtf.D) + tf('3-Day', d.mtf['3D']) + tf('Weekly', d.mtf.W);
-    var ex = [];
-    if (d.cycle.translation) ex.push('Last completed cycle was ' + d.cycle.translation + '-translated' +
-      (d.cycle.translation === 'right' ? ' (crested late — bullish structure).' :
-       d.cycle.translation === 'left' ? ' (crested early — bearish tell).' : '.'));
-    if (d.season_this) ex.push('Seasonality — ' + d.season_this + (d.season_next ? '; ' + d.season_next : '') + '.');
-    if (d.tech && d.tech.off_52w_high_pct != null) ex.push(d.tech.off_52w_high_pct + '% from its 52-week high.');
-    document.getElementById('r_extra').textContent = ex.join(' ');
+
+    document.getElementById('r_flags').textContent = d.cycle.failed_cycle ?
+      '⚠ Failed cycle — price is below the low that started this cycle; the larger trend is usually rolling over.' : '';
+    document.getElementById('r_why').textContent = d.ladder.why + ' Next: ' + d.ladder.next;
+    window.renderMTF(document.getElementById('r_mtf'), d.mtf);
 
     var cs = '<tr><th>state</th><th>samples</th><th>up next month</th><th>avg next month</th></tr>';
     if (cal) {
@@ -225,13 +251,21 @@
     document.getElementById('tvbox').innerHTML = '<div id="tvchart"></div>';
     try {
       new TradingView.widget({container_id: 'tvchart', symbol: d.ticker.replace('-USD', 'USD'),
-        interval: 'D', theme: 'dark', style: '1', height: 430, width: '100%',
+        interval: 'D', theme: (localStorage.getItem('theme') === 'light' ? 'light' : 'dark'),
+        style: '1', height: 430, width: '100%',
         hide_side_toolbar: true, allow_symbol_change: true,
         studies: ['RSI@tv-basicstudies', 'MACD@tv-basicstudies']});
     } catch (e) { /* chart is garnish — analysis above stands alone */ }
   }
+  // recolor visuals when the theme flips
+  document.addEventListener('themechange', function () {
+    var h = (location.hash || '').slice(1);
+    if (h) load(decodeURIComponent(h));
+  });
 })();
 </script>
+<script src="mtf.js"></script>
+<script src="theme.js"></script>
 <p class="muted" style="font-size:12px">Generated {{ generated_utc }} UTC · charts by TradingView ·
 methodology &amp; caveats: see any sector page footer.</p>
 </body>

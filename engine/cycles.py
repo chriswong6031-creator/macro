@@ -96,6 +96,9 @@ def _tf_state(close: pd.Series) -> dict:
                           and (sclean.iloc[-4:-1] < 20).any())
     stoch_cross_dn = bool(len(sclean) >= 4 and sclean.iloc[-1] <= 80
                           and (sclean.iloc[-4:-1] > 80).any())
+    def _spark(s: pd.Series, n: int = 20, dec: int = 1) -> list:
+        return [round(float(x), dec) for x in s.dropna().iloc[-n:]]
+
     return {
         "macd_pos": bool(hist.iloc[-1] > 0),
         "macd_cross_up": cross_up, "macd_cross_dn": cross_dn,
@@ -106,6 +109,9 @@ def _tf_state(close: pd.Series) -> dict:
         "rsi14": round(float(r14.iloc[-1]), 0) if pd.notna(r14.iloc[-1]) else None,
         "rsi5": round(float(r5.iloc[-1]), 0) if pd.notna(r5.iloc[-1]) else None,
         "stoch": round(float(srsi.iloc[-1]), 0) if pd.notna(srsi.iloc[-1]) else None,
+        # compact recent series for client-side sparklines (gauges + histogram)
+        "spark_rsi": _spark(r14), "spark_stoch": _spark(srsi),
+        "spark_hist": _spark(hist, dec=3),
     }
 
 
@@ -344,6 +350,95 @@ STATE_DISPLAY = {
     "ROLLING OVER":  {"label": "TOPPING",        "action": "SELL SETUP",   "dir": "down"},
 }
 
+# Daily-cycle phase -> plain-language descriptor (answers "are we overextended?")
+DC_PHASE_PLAIN = {
+    "new": "fresh — a new cycle just started",
+    "mid": "mid-cycle — trending",
+    "approaching_band": "approaching the window where lows usually form",
+    "in_band": "inside the window where a low is due",
+    "stretched": "overdue — past the typical window, so a low could form any day",
+}
+IC_PHASE_PLAIN = {
+    "early": "early — lots of room left in the bigger up-leg",
+    "mid": "mid — the bigger up-leg is maturing",
+    "late": "late — the bigger cycle is getting old",
+    "overdue": "overdue — the bigger cycle is stretched, expect more volatility",
+}
+
+
+def cycle_plain(cyc: dict) -> dict:
+    """Human-readable daily vs weekly cycle context — kept distinct so users
+    always know which clock they're reading."""
+    lo, hi = cyc.get("dc_band", DC_BAND)
+    out = {
+        "daily_line": f"Daily cycle: day {cyc.get('dc_day', '?')} of a typical {lo}–{hi} trading days",
+        "daily_phase": DC_PHASE_PLAIN.get(cyc.get("dc_phase"), ""),
+    }
+    if cyc.get("ic_week") is not None:
+        out["weekly_line"] = (f"Weekly (investor) cycle: week {cyc['ic_week']} of a typical "
+                              f"{IC_BAND_W[0]}–{IC_BAND_W[1]} weeks")
+        out["weekly_phase"] = IC_PHASE_PLAIN.get(cyc.get("ic_phase"), "")
+    tr = cyc.get("translation")
+    if tr == "left":
+        out["translation"] = ("The last cycle peaked in its FIRST half ('left-translated') — "
+                              "weak cycles top early, so this hints the bigger trend is tiring.")
+    elif tr == "right":
+        out["translation"] = ("The last cycle peaked in its SECOND half ('right-translated') — "
+                              "strong cycles top late, a healthy-uptrend sign.")
+    elif tr == "middle":
+        out["translation"] = "The last cycle peaked mid-way — a neutral, balanced structure."
+    return out
+
+
+def entry_timing(state: str, cyc: dict, mtf: dict) -> dict:
+    """Actionable timing call + a rough days-to-entry estimate from cycle
+    position and the MACD cross trajectory. Clearly an estimate, ranged."""
+    d = mtf.get("D", {})
+    lo_band, hi_band = cyc.get("dc_band", DC_BAND)
+    dc = cyc.get("dc_day", 0)
+    btc = d.get("macd_bars_to_cross")
+
+    if state == "FRESH BUY":
+        return {"tag": "BUY NOW", "urgency": "now",
+                "text": "Confirmed cycle low — the entry window is open now, "
+                        f"with a clear exit if it closes back below {cyc.get('cand_price') or cyc.get('dcl_price')}."}
+    if state == "TURN SIGNALED":
+        lo, hi = (1, max(2, round(btc))) if btc else (1, 3)
+        return {"tag": "BUY SOON", "urgency": "imminent", "days_lo": lo, "days_hi": hi,
+                "text": f"Setup almost complete — likely buy trigger in ~{lo}–{hi} trading days "
+                        "if it closes back above its 10-day average."}
+    if state == "BOTTOM WATCH":
+        if cyc.get("dc_phase") in ("approaching_band", "in_band", "stretched"):
+            lo = max(lo_band - dc, 0)
+            hi = max(hi_band - dc, lo + 2)
+            if btc:
+                hi = min(hi, round(btc) + 3)
+                lo = min(lo, max(round(btc) - 1, 1))
+            rng = f"~{lo}–{hi}" if lo != hi else f"~{hi}"
+            return {"tag": "WATCH", "urgency": "soon", "days_lo": lo, "days_hi": hi,
+                    "text": f"A cycle low is due in roughly {rng} trading days — watch for the "
+                            "turn, don't front-run it."}
+        # early/mid-cycle dip below the 10-day average — NOT the cycle low yet
+        far = max(lo_band - dc, 2)
+        return {"tag": "WAIT", "urgency": "later", "days_lo": far, "days_hi": hi_band - dc,
+                "text": f"A normal mid-cycle dip below the 10-day average — the real cycle low "
+                        f"isn't due for ~{far}+ trading days. Wait for support to hold, or for "
+                        "the next low to set up."}
+    if state == "RALLY ON":
+        late = dc >= lo_band - 8
+        return {"tag": "HOLD", "urgency": "hold",
+                "text": ("Trend intact — hold. Late in the cycle, so don't add here; a pullback is due."
+                         if late else "Trend intact — hold; add on dips toward the 10-day average.")}
+    if state == "TOP WATCH":
+        return {"tag": "TAKE PROFITS", "urgency": "caution",
+                "text": "Stretched/late — protect gains and don't start new positions; "
+                        "let the next low set up first."}
+    if state == "ROLLING OVER":
+        return {"tag": "SELL / REDUCE", "urgency": "exit",
+                "text": "Momentum rolled over and the 10-day average is lost — reduce or tighten stops."}
+    return {"tag": "AVOID", "urgency": "avoid",
+            "text": "Downtrend — stand aside until a new cycle low forms and confirms."}
+
 
 def ladder_state(cyc: dict, mtf: dict, early: dict | None = None) -> dict:
     """Combine cycle position + multi-timeframe indicators into one state,
@@ -459,9 +554,31 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None) -> dict:
                       "confirmation — a heads-up to protect gains, not a sell trigger yet.")
 
     disp = STATE_DISPLAY[state]
+    plain = cycle_plain(cyc)
+    entry = entry_timing(state, cyc, mtf)
+
+    # concise bullet points (the headline facts); full prose lives in `why`
+    points = []
+    if cyc.get("failed_cycle"):
+        points.append("⚠ Failed cycle — price broke below the low that began this cycle")
+    if cyc.get("swing_low") or cyc.get("cand_swing"):
+        points.append("Swing low printed (buyers rejected the low)")
+    points.append(("Back above" if cyc.get("above_ma10") else "Still below")
+                  + " the 10-day average"
+                  + (", and it's turning up" if cyc.get("ma10_rising") and cyc.get("above_ma10") else ""))
+    if d.get("macd_cross_up"):
+        points.append("Daily momentum just crossed up")
+    elif d.get("macd_cross_dn"):
+        points.append("Daily momentum just crossed down")
+    elif d.get("macd_approaching_up") and d.get("macd_bars_to_cross"):
+        points.append(f"Daily momentum ~{d['macd_bars_to_cross']:.0f} bars from turning up")
+    if plain.get("translation") and cyc.get("translation") == "left":
+        points.append("Prior cycle topped early (a tiring-trend hint)")
+
     return {"state": state, "label": disp["label"], "action": disp["action"],
             "dir": disp["dir"], "score": int(np.clip(score, -100, 100)),
             "why": why, "next": nxt, "weekly_ok": weekly_ok,
+            "points": points, "entry": entry, "cycle_plain": plain,
             "early_note": early_note,
             "early_tier": early.get("tier") if early_note else None,
             "early_dir": early.get("dir") if early_note else None}

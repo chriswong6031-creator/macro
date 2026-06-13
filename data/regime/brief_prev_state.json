@@ -1,22 +1,22 @@
 {
- "date": "2026-06-11",
+ "date": "2026-06-12",
  "quad": "Q1",
  "quad_name": "Goldilocks",
  "growth_score": 0.462,
  "inflation_score": -0.652,
  "confidence": 0.518,
  "transition_state": "STABLE",
- "posture": "CONSTRUCTIVE",
+ "posture": "NEUTRAL",
  "stages": {
   "XLB": {
-   "stage": "lagging",
-   "heat": 37,
-   "progress": 90.0
+   "stage": "leading",
+   "heat": 63,
+   "progress": null
   },
   "XLC": {
    "stage": "lagging",
-   "heat": 33,
-   "progress": 17.0
+   "heat": 26,
+   "progress": 10.0
   },
   "XLE": {
    "stage": "weakening",
@@ -26,42 +26,42 @@
   "XLF": {
    "stage": "improving",
    "heat": 53,
-   "progress": 42.0
+   "progress": 49.0
   },
   "XLI": {
    "stage": "leading",
-   "heat": 58,
+   "heat": 63,
    "progress": null
   },
   "XLK": {
    "stage": "leading",
-   "heat": 52,
+   "heat": 45,
    "progress": null
   },
   "XLP": {
    "stage": "improving",
    "heat": 53,
-   "progress": 74.0
+   "progress": 75.0
   },
   "XLRE": {
-   "stage": "improving",
-   "heat": 53,
-   "progress": 95.0
+   "stage": "leading",
+   "heat": 63,
+   "progress": null
   },
   "XLU": {
-   "stage": "lagging",
-   "heat": 25,
-   "progress": 37.0
+   "stage": "improving",
+   "heat": 46,
+   "progress": 41.0
   },
   "XLV": {
    "stage": "improving",
    "heat": 53,
-   "progress": 66.0
+   "progress": 60.0
   },
   "XLY": {
    "stage": "lagging",
-   "heat": 37,
-   "progress": 17.0
+   "heat": 30,
+   "progress": 14.0
   }
  }
 }

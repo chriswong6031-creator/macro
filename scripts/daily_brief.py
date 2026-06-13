@@ -203,11 +203,15 @@ def render_html(md_text: str, title: str) -> str:
     body = markdown.markdown(md_text, extensions=["tables"])
     return f"""<!DOCTYPE html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>{title}</title>
-<style>body{{background:#0f1115;color:#d7dce3;font:15px/1.65 -apple-system,'Segoe UI',sans-serif;
-max-width:760px;margin:0 auto;padding:24px}}h1,h2{{color:#fff}}h2{{margin-top:28px}}
-a{{color:#7aa7e0}}li{{margin:6px 0}}hr{{border:none;border-top:1px solid #2a2f3a;margin:24px 0}}
-em{{color:#8b93a1}}</style>
-</head><body><p><a href="index.html">&larr; dashboard</a></p>{body}</body></html>"""
+<script>try{{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);}}catch(e){{}}</script>
+<link rel="stylesheet" href="theme.css">
+<style>body{{background:var(--bg);color:var(--text);font:15px/1.65 -apple-system,'Segoe UI',sans-serif;
+max-width:760px;margin:0 auto;padding:24px}}h1,h2{{color:var(--text)}}h2{{margin-top:28px}}
+a{{color:#7aa7e0}}li{{margin:6px 0}}hr{{border:none;border-top:1px solid var(--line);margin:24px 0}}
+table{{border-collapse:collapse}}th,td{{padding:4px 9px;border-bottom:1px solid var(--line);text-align:left}}
+em{{color:var(--muted)}}</style>
+</head><body><p><a href="index.html">&larr; dashboard</a> · <button class="theme-btn">☀️ Light</button></p>{body}
+<script src="theme.js"></script></body></html>"""
 
 
 def main() -> int:

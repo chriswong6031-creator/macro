@@ -336,6 +336,42 @@ def _compact_season(line: str | None) -> tuple[str, str]:
         return line, line
 
 
+def action_board(sector_timing: dict, notable: list[dict]) -> dict:
+    """Bucket sector + standout-stock cycle signals into an at-a-glance
+    'what to act on now' board for the front page."""
+    from engine.playbook import SECTOR_NAMES
+    buy_now, buy_soon, take_profits, hold, avoid = [], [], [], [], []
+    for fund, tm in sector_timing.items():
+        e = tm.get("entry") or {}
+        item = {"ticker": fund, "name": SECTOR_NAMES.get(fund, fund),
+                "label": tm["label"], "tag": e.get("tag", ""),
+                "text": e.get("text", ""), "days": e.get("days_hi"),
+                "style": tm.get("state_style")}
+        u = e.get("urgency")
+        if u == "now":
+            buy_now.append(item)
+        elif u in ("imminent", "soon"):
+            buy_soon.append(item)
+        elif u in ("caution", "exit"):
+            take_profits.append(item)
+        elif u == "hold":
+            hold.append(item)
+        else:
+            avoid.append(item)
+    buy_soon.sort(key=lambda x: (x["days"] if x["days"] is not None else 99))
+    # de-dup notable stocks, cap, sort buys-first then by days
+    seen, notable_clean = set(), []
+    order = {"now": 0, "imminent": 1, "exit": 2}
+    for n in sorted(notable, key=lambda x: (order.get(x["urgency"], 9),
+                                            x["days"] if x.get("days") is not None else 99)):
+        if n["ticker"] in seen:
+            continue
+        seen.add(n["ticker"])
+        notable_clean.append(n)
+    return {"buy_now": buy_now, "buy_soon": buy_soon, "take_profits": take_profits,
+            "hold": hold, "avoid": avoid, "notable": notable_clean[:10]}
+
+
 def sector_rows(playbook: dict | None, timing: dict | None = None) -> list[dict]:
     if not playbook or not playbook.get("stages"):
         return []
@@ -447,7 +483,9 @@ def build_sector_pages(env: Environment, site: Path, generated: str) -> dict:
     outdir = site / "sectors"
     outdir.mkdir(parents=True, exist_ok=True)
 
+    import json as _json2
     summaries: dict[str, dict] = {}
+    notable: list[dict] = []
     for fund in config.load()["sponsors"]["sector_funds"]:
         etf = store.read("yahoo", fund)
         if etf is None:
@@ -466,12 +504,22 @@ def build_sector_pages(env: Environment, site: Path, generated: str) -> dict:
                 h = analyze(df["close"], df.get("high"))
                 if not h.get("ladder"):
                     continue
+                h["mtf_json"] = _json2.dumps(h.get("mtf", {}))
                 holdings.append({"ticker": tick,
                                  "name": str(r.get("name", "")).title(),
                                  "weight_pct": r["weight_pct"], **h,
                                  "fundamentals": latest_fundamentals(tick)})
+                # collect decisive individual-stock signals for the front page
+                urg = h["ladder"]["entry"]["urgency"]
+                if urg in ("now", "imminent", "exit"):
+                    notable.append({"ticker": tick, "name": str(r.get("name", "")).title(),
+                                    "sector": SECTOR_NAMES.get(fund, fund),
+                                    "label": h["ladder"]["label"],
+                                    "tag": h["ladder"]["entry"]["tag"], "urgency": urg,
+                                    "days": h["ladder"]["entry"].get("days_hi")})
         buy_zone = sum(1 for h in holdings if h["ladder"]["state"] in BUY_ZONE_STATES)
-        s = {"fund": fund, "name": SECTOR_NAMES.get(fund, fund), **res,
+        s = {"fund": fund, "name": SECTOR_NAMES.get(fund, fund),
+             "mtf_json": _json2.dumps(res.get("mtf", {})), **res,
              "holdings": holdings}
         html = tpl.render(s=s, state_styles=STATE_STYLES, calibration=calibration,
                           ladder_order=LADDER, state_display=STATE_DISPLAY,
@@ -480,11 +528,12 @@ def build_sector_pages(env: Environment, site: Path, generated: str) -> dict:
         summaries[fund] = {"state": res["ladder"]["state"],
                            "label": res["ladder"]["label"],
                            "action": res["ladder"]["action"],
+                           "entry": res["ladder"]["entry"],
                            "state_style": STATE_STYLES.get(res["ladder"]["state"]),
                            "dc_day": res["cycle"]["dc_day"],
                            "buy_zone": buy_zone, "n_holdings": len(holdings)}
     log.info("wrote %d sector drill-down pages", len(summaries))
-    return summaries
+    return summaries, notable
 
 
 def health_rows() -> list[dict]:
@@ -510,17 +559,23 @@ def main() -> int:
     generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
 
     import calendar
-    sector_timing = {}
+    sector_timing, notable = {}, []
     try:
-        sector_timing = build_sector_pages(env, site, generated)
+        sector_timing, notable = build_sector_pages(env, site, generated)
     except Exception as e:  # noqa: BLE001 — drill-downs are additive, never fatal
         log.error("sector pages failed: %s", e)
+    # copy shared static assets (theme + visual widgets) into the site
+    for asset in ("theme.css", "theme.js", "mtf.js"):
+        src = config.ROOT / "templates" / asset
+        if src.exists():
+            (site / asset).write_text(src.read_text())
     html = env.get_template("dashboard.html.j2").render(
         latest=latest,
         pb=latest.get("playbook"),
         month_name=calendar.month_name[pd.Timestamp(latest["date"]).month],
         commodities=(latest.get("playbook") or {}).get("commodities", []),
         sector_timing=sector_timing,
+        action_board=action_board(sector_timing, notable),
         components_confirming=confirming,
         components_contradicting=contradicting,
         flip_plain=flip_plain_text(latest),
