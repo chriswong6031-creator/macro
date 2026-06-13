@@ -100,8 +100,9 @@ jobs:
         # the Commodity card. Self-sufficient; returns 0 on any engine error.
         run: python -m scripts.build_commodities
       - name: build bitcoin vector + landing hub
-        # MUST run after build_site: relocates the macro dashboard to macro.html
-        # and installs the landing hub at index.html. Self-sufficient (recomputes
+        # installs the landing hub at index.html (rendered from stored engine
+        # state, so ordering vs build_site no longer matters — build_site writes
+        # the macro dashboard straight to macro.html). Self-sufficient (recomputes
         # signals); returns 0 even if the crypto engine errors, so it can never
         # break the macro site.
         run: python -m scripts.build_vector

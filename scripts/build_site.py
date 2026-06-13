@@ -1,4 +1,4 @@
-"""Generate the static dashboard (site/index.html) from stored engine output.
+"""Generate the static dashboard (site/macro.html) from stored engine output.
 
 Reads regime/latest.json, regime_history.parquet, run_status.json and the
 parquet store — never refetches and never recomputes the classifier, so the
@@ -1025,7 +1025,11 @@ def main() -> int:
         flows_html=flows_html_table(),
         health=health_rows(),
     )
-    out = site / "index.html"
+    # Write the macro dashboard straight to macro.html. index.html is owned
+    # solely by build_vector.build_landing() (the landing hub) — keeping the raw
+    # dashboard out of index.html is what stops Home (-> index.html) from
+    # regressing to the dashboard when build_vector doesn't run after this.
+    out = site / "macro.html"
     out.write_text(html)
     log.info("wrote %s (%.0f KB)", out, out.stat().st_size / 1024)
 

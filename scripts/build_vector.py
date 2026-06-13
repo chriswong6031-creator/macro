@@ -286,33 +286,22 @@ def chart_bfi(df: pd.DataFrame, days: int = 365) -> str:
 
 
 # --------------------------------------------------------------------------- #
-# landing hub + macro relocation (post-processes the macro build's output;
-# never edits the parallel-owned build_site.py / macro templates)
+# landing hub (owns site/index.html exclusively). build_site.py writes the macro
+# dashboard straight to macro.html, so index.html is never the raw dashboard and
+# Home (-> index.html) can't regress to it — even if this step is skipped, the
+# committed hub stays in place.
 # --------------------------------------------------------------------------- #
 HUB_MARKER = "<!-- bitcoin-vector-landing-hub -->"
-MACRO_TITLE_HINT = "Macro Regime Dashboard"
-VECTOR_NAV = ('<a class="navbtn" href="index.html">🏠 Home</a>\n      '
-              '<a class="navbtn" href="china.html">🇨🇳 China A-Shares</a>\n      '
-              '<a class="navbtn" href="vector.html">₿ Bitcoin Vector</a>\n      '
-              '<a class="navbtn" href="commodities.html">◆ Commodities</a>\n      ')
 
 
 def build_landing(site: Path, vm: dict) -> None:
-    """Relocate the macro dashboard to macro.html and install the hub at
-    index.html. Idempotent: safe to run every build, after build_site.py."""
-    idx = site / "index.html"
-    if idx.exists() and HUB_MARKER not in idx.read_text() and MACRO_TITLE_HINT in idx.read_text()[:4000]:
-        macro_html = idx.read_text()
-        # add a Bitcoin Vector entry to the macro nav (before the first navbtn)
-        if 'href="vector.html"' not in macro_html and '<a class="navbtn"' in macro_html:
-            macro_html = macro_html.replace('<a class="navbtn"', VECTOR_NAV + '<a class="navbtn"', 1)
-        (site / "macro.html").write_text(macro_html)
-        log.info("relocated macro dashboard -> macro.html")
-
+    """Install the landing hub at index.html. Idempotent: safe to run every
+    build, independent of build_site.py ordering — the hub is rendered from the
+    stored engine state, not from any HTML file build_site emits."""
     macro = _macro_state()
     hub = _hub_html(vm, macro, home_alert_feed(), _china_state(), _commodities_state(),
                     _watchlist_state(), _etf_state())
-    idx.write_text(hub)
+    (site / "index.html").write_text(hub)
     log.info("wrote landing hub -> index.html")
 
 
