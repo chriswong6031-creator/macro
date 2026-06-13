@@ -380,6 +380,11 @@ def home_alert_feed() -> list[dict]:
     'major' severity tiers (config home.alerts), merged newest-first, capped."""
     h = config.load()["home"]["alerts"]
     out: list[dict] = []
+    try:
+        from engine.i18n import tr as _tr
+    except Exception:  # noqa: BLE001
+        def _tr(en):
+            return en
 
     # --- macro --- (config paths are repo-root-relative)
     mp = Path(config.ROOT) / h["macro_feed"]
@@ -393,12 +398,20 @@ def home_alert_feed() -> list[dict]:
             link = ("macro.html#" + v["anchor"]) if v["anchor"] else "macro.html"
             out.append({
                 "source": "macro", "source_label": h["macro_label"],
+                "source_label_zh": _tr(h["macro_label"]),
                 "ts": pd.Timestamp(r["date"]).isoformat(), "date_only": True,
                 "severity": MACRO_SEV.get(r["severity"], "info"),
-                "type": r["rule"], "headline": v["icon"] + " " + v["plain_en"],
-                "detail": r["message"], "what": v["what_en"], "link": link,
-                "tier": v["tier"], "edge": v["edge_en"],
-                "cta": "Open scorecard →", "dedupe": r["message"],
+                "type": r["rule"],
+                "headline": v["icon"] + " " + v["plain_en"],
+                "headline_zh": v["icon"] + " " + (v.get("plain_zh") or v["plain_en"]),
+                # the macro alert LOG stores only the English message (no message_zh
+                # column), so the numeric detail line falls back to English in zh mode
+                "detail": r["message"], "detail_zh": r["message"],
+                "what": v["what_en"], "what_zh": v.get("what_zh") or v["what_en"],
+                "link": link, "tier": v["tier"],
+                "edge": v["edge_en"], "edge_zh": v.get("edge_zh") or v["edge_en"],
+                "cta": "Open scorecard →", "cta_zh": "打开记分卡 →",
+                "dedupe": r["message"],
             })
     except Exception as e:  # noqa: BLE001
         log.warning("home feed: macro alerts unavailable (%s)", e)
@@ -410,12 +423,16 @@ def home_alert_feed() -> list[dict]:
             if e["severity"] in h["vector_major_severities"]:
                 out.append({
                     "source": "vector", "source_label": "Bitcoin Vector",
+                    "source_label_zh": "比特币向量",
                     "ts": e["ts"], "date_only": False, "severity": e["severity"],
-                    "type": e["type"], "headline": e["headline"],
-                    "detail": e["detail"], "what": e.get("forward", ""),
-                    "tier": e.get("tier", "watch"), "edge": e.get("edge", ""),
+                    "type": e["type"],
+                    "headline": e["headline"], "headline_zh": e.get("headline_zh") or e["headline"],
+                    "detail": e["detail"], "detail_zh": e.get("detail_zh") or e["detail"],
+                    "what": e.get("forward", ""), "what_zh": e.get("forward_zh", ""),
+                    "tier": e.get("tier", "watch"),
+                    "edge": e.get("edge", ""), "edge_zh": e.get("edge_zh", ""),
                     "link": "vector.html" + e.get("anchor", "#timeline"),
-                    "cta": "Open →", "dedupe": e["headline"],
+                    "cta": "Open →", "cta_zh": "打开 →", "dedupe": e["headline"],
                 })
     except Exception as e:  # noqa: BLE001
         log.warning("home feed: vector alerts unavailable (%s)", e)
@@ -428,13 +445,18 @@ def home_alert_feed() -> list[dict]:
             if e["severity"] in sevs:
                 out.append({
                     "source": "commodity", "source_label": "Commodity Vector",
+                    "source_label_zh": "大宗商品向量",
                     "ts": e["ts"], "date_only": (pd.Timestamp(e["ts"]).hour == 0
                                                  and pd.Timestamp(e["ts"]).minute == 0),
-                    "severity": e["severity"], "type": e["type"], "headline": e["headline"],
-                    "detail": e["detail"], "what": e.get("forward", ""),
-                    "tier": e.get("tier", "watch"), "edge": e.get("edge", ""),
+                    "severity": e["severity"], "type": e["type"],
+                    # commodity_alerts emits no zh headline/detail yet → English fallback
+                    "headline": e["headline"], "headline_zh": e.get("headline_zh") or e["headline"],
+                    "detail": e["detail"], "detail_zh": e.get("detail_zh") or e["detail"],
+                    "what": e.get("forward", ""), "what_zh": e.get("forward_zh", ""),
+                    "tier": e.get("tier", "watch"),
+                    "edge": e.get("edge", ""), "edge_zh": e.get("edge_zh", ""),
                     "link": "commodities.html" + e.get("anchor", "#timeline"),
-                    "cta": "Open →", "dedupe": e["headline"],
+                    "cta": "Open →", "cta_zh": "打开 →", "dedupe": e["headline"],
                 })
     except Exception as e:  # noqa: BLE001
         log.warning("home feed: commodity alerts unavailable (%s)", e)
@@ -454,27 +476,52 @@ def home_alert_feed() -> list[dict]:
     return deduped[:h["max_items"]]
 
 
+def _when_zh(ts: pd.Timestamp, date_only: bool) -> str:
+    """Chinese sibling of the feed's `when` label (`6月12日` / `6月12日 · 15:00 UTC`)."""
+    base = f"{ts.month}月{ts.day}日"
+    return base if date_only else f"{base} · {ts.strftime('%H:%M')} UTC"
+
+
 def _hub_alert_rows(alerts: list[dict]) -> str:
+    # Emit each text bilingually (dual <span class="l-en/l-zh">); theme.css shows the
+    # one matching the active data-lang. Each source supplies whatever zh it has and
+    # falls back to English otherwise (see home_alert_feed: commodity headlines/details
+    # and the macro numeric detail line have no zh at source).
+    try:
+        from engine.i18n import t as T
+    except Exception:  # noqa: BLE001
+        def T(en, zh=""):
+            return en
+
     if not alerts:
-        return ('<div class="ha-empty">No major alerts right now — both engines '
-                'quiet on top-tier signals.</div>')
+        return ('<div class="ha-empty">'
+                + str(T("No major alerts right now — both engines quiet on top-tier signals.",
+                        "目前没有重大警报 — 两个引擎在顶级信号上均保持平静。"))
+                + '</div>')
     rows = []
     for a in alerts:
         ts = pd.Timestamp(a["ts"])
         when = ts.strftime("%b %d") if a["date_only"] else ts.strftime("%b %d · %H:%M UTC")
         src_cls = {"macro": "s-macro", "vector": "s-vector",
                    "commodity": "s-commodity"}.get(a["source"], "s-vector")
-        what = f'<div class="ha-what">{a["what"]}</div>' if a.get("what") else ""
-        edge = f'<div class="ha-edge"><b>Conviction:</b> {a["edge"]}</div>' if a.get("edge") else ""
-        cta = a.get("cta", "Open →")
+        src = T(a["source_label"], a.get("source_label_zh") or a["source_label"])
+        head = T(a["headline"], a.get("headline_zh") or a["headline"])
+        detail = T(a["detail"], a.get("detail_zh") or a["detail"])
+        whenspan = T(when, _when_zh(ts, a["date_only"]))
+        what = (f'<div class="ha-what">{T(a["what"], a.get("what_zh") or a["what"])}</div>'
+                if a.get("what") else "")
+        edge = (f'<div class="ha-edge"><b>{T("Conviction:", "可信度：")}</b> '
+                f'{T(a["edge"], a.get("edge_zh") or a["edge"])}</div>'
+                if a.get("edge") else "")
+        cta = T(a.get("cta", "Open →"), a.get("cta_zh") or a.get("cta", "Open →"))
         rows.append(f"""<details class="ha-item">
   <summary>
     <span class="ha-dot d-{a['severity']}"></span>
-    <span class="ha-src {src_cls}">{a['source_label']}</span>
-    <span class="ha-head">{a['headline']}</span>
-    <span class="ha-when">{when}</span>
+    <span class="ha-src {src_cls}">{src}</span>
+    <span class="ha-head">{head}</span>
+    <span class="ha-when">{whenspan}</span>
   </summary>
-  <div class="ha-detail">{a['detail']}{what}{edge}<a class="ha-open" href="{a['link']}">{cta}</a></div>
+  <div class="ha-detail">{detail}{what}{edge}<a class="ha-open" href="{a['link']}">{cta}</a></div>
 </details>""")
     return "\n".join(rows)
 

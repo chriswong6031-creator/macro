@@ -255,7 +255,14 @@ LEX: dict[str, str] = {
     "USD / CNY": "美元兑人民币",
     "EM equity (EEM)": "新兴市场股票（EEM）",
     # HK peg states (risk_state Risk-on/Risk-off/Neutral already mapped above)
+    "easing": "宽松",
+    "tightening": "收紧",
     "weak-side (outflow)": "弱方（资金流出）",
     "strong-side (inflow)": "强方（资金流入）",
     "mid-band": "区间中部",
+    # Forex Vector — factor-group headers (research/FOREX_DASHBOARD.md)
+    "Trend & Structure": "趋势与结构",
+    "Carry & Rates": "套息与利率",
+    "Risk & Positioning": "风险与持仓",
+    "Shocks": "冲击",
 }

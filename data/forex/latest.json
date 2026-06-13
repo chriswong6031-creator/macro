@@ -1,0 +1,31 @@
+{
+  "date": "Jun 13, 2026",
+  "regime": "US growth premium",
+  "favored": [
+    "USD"
+  ],
+  "risk": "risk-on",
+  "pairs": {
+    "EURUSD": {
+      "label": "EUR/USD",
+      "quote": 1.1573,
+      "chg": -1.2,
+      "action": "FLAT",
+      "score": -0.2
+    },
+    "USDJPY": {
+      "label": "USD/JPY",
+      "quote": 160.185,
+      "chg": 1.1,
+      "action": "SHORT",
+      "score": -37.6
+    },
+    "AUDUSD": {
+      "label": "AUD/USD",
+      "quote": 0.7049,
+      "chg": -2.3,
+      "action": "FLAT",
+      "score": 17.9
+    }
+  }
+}

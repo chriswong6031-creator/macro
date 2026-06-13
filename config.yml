@@ -32,6 +32,7 @@ fred:
     credit:
       BAMLH0A0HYM2: hy_oas        # rolling 3y window on FRED since Apr 2026 — cache forever
       BAMLC0A0CM: ig_oas          # same caveat
+      BAMLEMCBPIOAS: em_oas       # ICE BofA EM corporate OAS — EM/RORO risk leg (Forex Vector)
     risk:
       VIXCLS: vix_close
     dollar:
@@ -76,6 +77,48 @@ fred:
     inflation_extra:              # 5y inflation leg (second-tenor real-yield anchor)
       T5YIE: breakeven_5y
       DFII5: us5y_real
+    # --- Forex Vector (research/FOREX_DASHBOARD.md) — all keyless via FRED ---------
+    fx_rates:                     # daily FX reference rates (H.10) — cross-check + deep history
+      DEXUSEU: fx_eur_usd         # USD per EUR  (EUR base, NOT inverted)
+      DEXJPUS: fx_jpy_usd         # JPY per USD  (invert for JPY-vs-USD)
+      DEXUSUK: fx_gbp_usd         # USD per GBP
+      DEXUSAL: fx_aud_usd         # USD per AUD
+      DEXCAUS: fx_cad_usd         # CAD per USD  (invert)
+      DEXSZUS: fx_chf_usd         # CHF per USD  (invert)
+      DEXMXUS: fx_mxn_usd         # MXN per USD  (invert)
+      DEXBZUS: fx_brl_usd         # BRL per USD  (invert)
+      DEXCHUS: fx_cny_usd         # CNY per USD  (invert; onshore)
+    fx_dollar_legs:               # broad-dollar advanced/EM split (master tile)
+      DTWEXAFEGS: broad_dollar_afe
+      DTWEXEMEGS: broad_dollar_eme
+    fx_rates_short:               # short/policy rates -> carry differential vs US (DFF).
+      DTB3: us3m                  # piecewise-constant => monthly cadence + ffill is correct
+      SOFR: sofr
+      ECBDFR: ez_short            # ECB deposit facility (daily, current)
+      ECBMRRFR: ez_mrr
+      IRSTCI01JPM156N: jp_short   # Japan immediate/call rate (monthly)
+      IR3TIB01AUM156N: au_short   # 3m interbank (monthly)
+      IR3TIB01GBM156N: gb_short
+      IR3TIB01CAM156N: ca_short
+      IR3TIB01CHM156N: ch_short
+    fx_rates_long:                # 10y govt yields -> term/real-rate differential (Phase 3)
+      IRLTLT01EZM156N: ez_10y
+      IRLTLT01JPM156N: jp_10y
+      IRLTLT01GBM156N: gb_10y
+      IRLTLT01AUM156N: au_10y
+      IRLTLT01CAM156N: ca_10y
+      IRLTLT01CHM156N: ch_10y
+    fx_reer:                      # BIS broad real effective exch rates -> value (Phase 3); monthly, lagged
+      RBUSBIS: reer_us
+      RBXMBIS: reer_ez
+      RBJPBIS: reer_jp
+      RBGBBIS: reer_gb
+      RBAUBIS: reer_au
+      RBCABIS: reer_ca
+      RBCHBIS: reer_ch
+      RBMXBIS: reer_mx
+      RBBRBIS: reer_br
+      RBCNBIS: reer_cn
 
 yahoo:
   retries: 3
@@ -90,6 +133,7 @@ yahoo:
     credit: [HYG, LQD]
     vol: ["^VIX", "^VIX9D", "^VIX3M", "^MOVE", "^VVIX"]   # ^VVIX = vol-of-vol (option-implied risk layer)
     fx_commod: ["DX-Y.NYB", "CL=F", "HG=F", "GC=F", "SI=F", "BZ=F"]
+    fx: ["EURUSD=X", "USDJPY=X", "GBPUSD=X", "AUDUSD=X", "USDCAD=X", "USDCHF=X", "USDMXN=X", "USDBRL=X", "CNH=X"]   # Forex Vector spot pairs (USDCNY=X collected under china; CNH=X = offshore yuan)
     rate_pricing: ["ZQ=F"]        # 30-day fed funds front contract — LOW CONFIDENCE input
     crypto: [BTC-USD, ETH-USD, SOL-USD]   # deep daily history (BTC 2014->); Coinbase = intraday-quality OHLC
 
@@ -221,6 +265,15 @@ cot:
     silver: ["SILVER - COMMODITY EXCHANGE"]   # COMEX 5000oz (1986->); excludes CBOT mini contracts
     oil: ["CRUDE OIL, LIGHT 'SWEET' - NEW YORK", "CRUDE OIL, LIGHT SWEET - NEW YORK", "CRUDE OIL, LIGHT SWEET-WTI - ICE"]   # WTI: NYMEX physical (1986-2022) spliced to ICE Europe WTI (2014->) via per-date max-OI dedup; net_spec_pct_oi normalizes the contract handoff
     bitcoin: ["BITCOIN - C"]      # CME contract; prefix excludes BITCOIN CASH / MICRO BITCOIN
+    # Forex Vector — CME currency futures (contrarian spec positioning). dollar (cot_dollar) above.
+    euro_fx: ["EURO FX - CHICAGO MERCANTILE EXCHANGE", "EURO FX"]
+    yen: ["JAPANESE YEN - CHICAGO MERCANTILE EXCHANGE", "JAPANESE YEN"]
+    pound: ["BRITISH POUND - CHICAGO MERCANTILE EXCHANGE", "BRITISH POUND STERLING", "BRITISH POUND"]
+    aussie: ["AUSTRALIAN DOLLAR - CHICAGO MERCANTILE EXCHANGE", "AUSTRALIAN DOLLAR"]
+    cad: ["CANADIAN DOLLAR - CHICAGO MERCANTILE EXCHANGE", "CANADIAN DOLLAR"]
+    swiss: ["SWISS FRANC - CHICAGO MERCANTILE EXCHANGE", "SWISS FRANC"]
+    peso: ["MEXICAN PESO - CHICAGO MERCANTILE EXCHANGE", "MEXICAN PESO"]
+    real: ["BRAZILIAN REAL - CHICAGO MERCANTILE EXCHANGE", "BRAZILIAN REAL"]
 
 sentiment:
   aaii_url: https://www.aaii.com/sentimentsurvey/sent_results
@@ -856,6 +909,143 @@ commodity_news:
   llm_min_confidence: high        # code-side gate: below this -> "unknown"
   catalysts_horizon_days: 14      # upcoming OPEC/FOMC/EIA watch window (keyless, always on)
 
+# =============================================================================
+# Forex Vector — currency signal board (research/FOREX_DASHBOARD.md).
+# A structural CLONE of the commodities section: same conviction()/factor_panel
+# engine, same -100..+100 scale + STRONG/weak bands, same split-half calibration.
+# Three FX-specific deviations: (1) DOLLAR-FIRST — a broad-dollar master tile,
+# and every pair's per-pair signal is scored on the dollar-ORTHOGONALIZED
+# residual so 8 USD pairs aren't one repeated dollar bet; (2) verdict headline is
+# RISK-CONTEXT (UIP failure + carry crash skew), LONG/SHORT-base secondary;
+# (3) pegs/intervention force HOLD. Every input is free/keyless. All signals are
+# CONTEXT, not alpha — see LIMITATIONS.md.
+# =============================================================================
+forex:
+  active: [EURUSD, USDJPY, AUDUSD]   # Phase-1 board; others collected + ready for later phases
+
+  # pair -> orientation + data wiring.
+  #   base    = the non-USD currency we score (LONG-base = long it vs USD)
+  #   invert  = yahoo symbol quotes USD as BASE (USD/xxx); take 1/price for base-vs-USD
+  #   short_rate = fx_rates_short column for the carry differential (US leg = fed_funds/DFF)
+  #   carry: context = no carry weight (no clean free front-end rate) — EM tiles
+  assets:
+    EURUSD: {yahoo: "EURUSD=X", fred: DEXUSEU, cot: cot_euro_fx, archetype: major,           base: EUR, invert: false, short_rate: ez_short, reer: reer_ez}
+    USDJPY: {yahoo: "USDJPY=X", fred: DEXJPUS, cot: cot_yen,     archetype: haven-funder,     base: JPY, invert: true,  short_rate: jp_short, reer: reer_jp, peg: {kind: intervention, watch: [150, 162]}}
+    AUDUSD: {yahoo: "AUDUSD=X", fred: DEXUSAL, cot: cot_aussie,  archetype: commodity-dollar, base: AUD, invert: false, short_rate: au_short, reer: reer_au, commodity: ["HG=F", "GC=F"]}
+    GBPUSD: {yahoo: "GBPUSD=X", fred: DEXUSUK, cot: cot_pound,   archetype: major,            base: GBP, invert: false, short_rate: gb_short, reer: reer_gb}
+    USDCAD: {yahoo: "USDCAD=X", fred: DEXCAUS, cot: cot_cad,     archetype: commodity-dollar, base: CAD, invert: true,  short_rate: ca_short, reer: reer_ca, commodity: ["CL=F"]}
+    USDCHF: {yahoo: "USDCHF=X", fred: DEXSZUS, cot: cot_swiss,   archetype: haven-funder,     base: CHF, invert: true,  short_rate: ch_short, reer: reer_ch, peg: {kind: snb}}
+    USDMXN: {yahoo: "USDMXN=X", fred: DEXMXUS, cot: cot_peso,    archetype: em,               base: MXN, invert: true,  carry: context, reer: reer_mx}
+    USDBRL: {yahoo: "USDBRL=X", fred: DEXBZUS, cot: cot_real,    archetype: em,               base: BRL, invert: true,  carry: context, reer: reer_br}
+    USDCNH: {yahoo: "CNH=X",    fred: DEXCHUS, cot: null,        archetype: em-managed,       base: CNH, invert: true,  carry: context, reer: reer_cn, peg: {kind: managed}}
+
+  drivers:                          # shared macro series: name -> [store-group, store-name]
+    dxy:          [yahoo, "DX-Y.NYB"]   # US Dollar Index (1971->)
+    broad_dollar: [fred, DTWEXBGS]      # broad trade-weighted USD (2006->)
+    broad_afe:    [fred, DTWEXAFEGS]    # advanced-economies leg
+    broad_eme:    [fred, DTWEXEMEGS]    # emerging-economies leg
+    us_short:     [fred, DFF]           # US policy (fed funds) — carry US leg
+    us2y:         [fred, DGS2]
+    us10y:        [fred, DGS10]
+    vix:          [fred, VIXCLS]
+    hy_oas:       [fred, BAMLH0A0HYM2]
+    em_oas:       [fred, BAMLEMCBPIOAS]
+    nfci:         [fred, NFCI]
+    copper:       [yahoo, "HG=F"]
+    gold:         [yahoo, "GC=F"]
+    oil:          [yahoo, "CL=F"]
+    spy:          [yahoo, SPY]
+    eem:          [hk, EEM]             # EM-equity risk proxy (already collected under hk)
+
+  dollar:                           # broad-dollar master tile + orthogonalization
+    legs: {broad: broad_dollar, advanced: broad_afe, emerging: broad_eme, index: dxy}
+    trend_window_d: 63              # ROC window for the dollar trend / smile read
+    beta_window_d: 252             # rolling regression of each pair on the broad dollar
+    beta_min_train_d: 252
+    dollar_day_z: 1.0              # |broad-dollar daily z| above this = a "dollar day" ...
+    dollar_day_haircut: 0.5       # ... shrink per-pair confidence by this (false-consensus guard)
+    risk:                          # the dollar-smile risk composite (hk_global-style, no HKD peg)
+      components: {vix: 1.0, hy_oas: 0.75, em_oas: 0.75, copper_gold: 1.0, spy: 1.0, eem: 0.75}
+      z_lookback_d: 252
+
+  momentum:                         # ported price vote-ensemble -> [-1,+1]
+    smooth_days: 3
+    rsi_bull: 55
+    rsi_bear: 45
+    votes: {ema_trend: 1.0, ema_cross: 1.0, macd_hist: 1.0, sma200: 1.0, roc20: 1.0, rsi_zone: 1.0}
+    trigger: 0.5
+    exit: 0.25
+    confirm_days: 3
+
+  structure:                        # structure-shift oscillator [-1,+1]
+    swing_window_d: 20
+    breakout_lookback_d: 60
+    confirm_days: 3
+    trigger: 0.5
+    exit: 0.25
+
+  trend:                            # 12-month time-series momentum (TSMOM)
+    lookback_d: 252
+    confirm_days: 5
+    scale: 0.12                     # FX moves << commodities -> smaller scale (tanh(12m_ret/scale))
+
+  risk:                             # saturating composite -> 0..100 (FX vol << commodities)
+    threshold: 25
+    exit_threshold: 15
+    deadband: 0.10
+    vol_window_d: 30
+    vol_pctile_lookback_d: 1260
+    drawdown_window_d: 90
+    drawdown_full_stress: 0.12      # 12% drawdown = full stress (FX-scaled)
+    weights: {vol_pctile: 1.0, drawdown: 1.0, momentum_deterioration: 0.75, positioning_stress: 0.5}
+    oscillator_delta_d: 10
+    oscillator_scale: 30
+
+  carry:                            # rate-differential carry: foreign short rate - US (DFF)
+    us_leg: us_short                # piecewise-constant policy rates => ffill correct, monthly OK
+    carry_to_vol: true             # risk-adjust by trailing FX realized vol (penalize fragile carry)
+    vol_window_d: 60
+    smooth_days: 5
+    pctile_lookback_d: 756
+    scale: 3.0                      # |annualized rate diff %| / scale -> bounded carry score
+
+  positioning:                      # COT spec extremes (contrarian), rolling percentile
+    pctile_lookback_d: 756
+    crowded_long_pctile: 0.85
+    crowded_short_pctile: 0.15
+
+  residual:                         # decoupling / exogenous-shock detector (intervention, geopolitics)
+    return_window_d: 21
+    drivers: [broad_dollar, us2y]   # default driver set; AUD/CAD add their commodity leg in-engine
+    min_train_d: 504
+    refit_every_d: 21
+    z_lookback_d: 252
+    shock_z: 1.5
+    decoupling_corr_window_d: 252
+    decoupling_corr_max: 0.2
+
+  conviction:                       # band mapping + hysteresis (reuse commodity engine)
+    bands: {strong: 60, weak: 20}   # |score| -> STRONG / weak / FLAT
+    hysteresis_confirm_days: 5
+
+  value:                            # REER mean-reversion (Phase 3; collected now)
+    pctile_lookback_d: 1260
+    high_pctile: 0.80
+    low_pctile: 0.20
+
+  calibration:
+    start_date: "2004-01-01"        # Yahoo FX-major history is deep; EM shorter
+    split_date: "2015-01-01"        # BOTH halves straddle a carry unwind (2008 | 2015 SNB,2020,2022,2024)
+    forward_days: [21, 63, 126]
+    exclude_peg_windows: true       # excise managed/intervention/SNB eras from weight calibration
+    whipsaw_max_days: 10
+    whipsaw_target_pct: 15
+
+  alerts:
+    timeline_days: 60
+    shock:                          # per-pair |move| % that flags an FX shock (lower vol than commods)
+      enter_pct: {EURUSD: 1.5, USDJPY: 2.0, GBPUSD: 1.8, AUDUSD: 2.0, USDCAD: 1.5, USDCHF: 1.8, USDMXN: 3.0, USDBRL: 3.5, USDCNH: 1.2}
+
 # -----------------------------------------------------------------------------
 # Bitcoin Vector signal engine (Phase 2). Architecture reverse-engineered from
 # Swissblock's published panels — see research/VECTOR_SIGNAL_RECON.md.
@@ -1338,8 +1528,9 @@ hk:
       "2800.HK": Tracker Fund (HSI)
     fx:
       "HKD=X": USDHKD               # peg-distance capital-flow gauge (7.75 strong <-> 7.85 weak)
-    extras:                         # global-risk factor not already collected elsewhere
-      "EEM": MSCI EM ETF
+    extras:                         # collected into the `hk` group but not treated as searchable indices
+      "EEM": MSCI EM ETF            # global-risk factor (EM equity)
+      "^HSIL": HSI Volatility (VHSI)  # HK's native VIX (HSI 30-day implied vol; ^VHSI not on Yahoo)
 
   # -- Sectors = deep synthetic baskets of curated constituents ---------------
   # Each sector is an equal-weight basket (engine.indicators.basket_index) over
@@ -1454,10 +1645,37 @@ hk:
       copper_gold: {sign: 1.0, weight: 1.0}      # HG=F / GC=F (global cyclical pulse)
       usdcny: {group: china, ticker: "CNY=X",    sign: -1, weight: 0.75}
       eem:    {group: hk,    ticker: "EEM",      sign: 1.0, weight: 1.0}
+      vhsi:   {group: hk,    ticker: "^HSIL",    sign: -1, weight: 0.75, use_log: true}  # HK's own fear gauge (VHSI)
     peg:                            # USD/HKD convertibility band (HKD=X)
       strong: 7.75                  # strong-side = inflow/easing
       weak: 7.85                    # weak-side = outflow/HSI headwind (HKMA defends)
       pressure_pct: 25.0            # within this % of the band toward weak-end = outflow pressure
+
+  # -- HKMA peg-funding mechanics (the actual liquidity drain when HKMA defends -
+  # the 7.85 weak-side peg). Keyless JSON API. See research/HK_DATA_AUDIT.md. -----
+  hkma:
+    base_url: https://api.hkma.gov.hk/public/market-data-and-statistics/daily-monetary-statistics
+    liquidity_segment: daily-figures-interbank-liquidity   # aggregate balance + O/N & 1m HIBOR + TWI + base rate + peg bands
+    hibor_segment: hk-interbank-ir-daily                   # multi-tenor HIBOR fixing (O/N..12m)
+    retries: 3
+
+  # -- AH premium — computed basket of dual-listed pairs (H-share in HK vs A-share
+  # in Shanghai/Shenzhen, FX-adjusted). A high premium = the A-share is dearer, so
+  # the HK-listed H-share is the cheaper way to own the same company. H-legs are HK
+  # constituents (hk_breadth cache); A-legs come from the china_search close store.
+  ah_pairs:                         # H-share (.HK) : A-share twin (.SS/.SZ)
+    "0939.HK": "601939.SS"          # China Construction Bank
+    "1398.HK": "601398.SS"          # ICBC
+    "3988.HK": "601988.SS"          # Bank of China
+    "1288.HK": "601288.SS"          # Agricultural Bank of China
+    "3328.HK": "601328.SS"          # Bank of Communications
+    "2318.HK": "601318.SS"          # Ping An Insurance
+    "2628.HK": "601628.SS"          # China Life
+    "2601.HK": "601601.SS"          # China Pacific Insurance
+    "0857.HK": "601857.SS"          # PetroChina
+    "0386.HK": "600028.SS"          # Sinopec
+    "1088.HK": "601088.SS"          # China Shenhua
+    "1211.HK": "002594.SZ"          # BYD
 
   breadth:
     lookback_days_live: 1100        # ~3y for 200DMA/NH-NL + cycle analysis on the search library
@@ -1485,12 +1703,17 @@ hk:
         inflation_beta_basket: {weight: 0.5}  # HK energy+materials vs tech
       inflation_long_basket: ["0883.HK","0857.HK","1088.HK","2600.HK","0358.HK"]   # energy + materials
       inflation_short_basket: ["0700.HK","9988.HK","3690.HK","1810.HK"]            # internet/tech
-    liquidity:                            # DUAL: PBoC (China M2) + Fed-via-peg (HKD distance + southbound)
+    liquidity:                            # DUAL: PBoC (China M2) + Fed-via-peg (HKD distance) + southbound
       components:
         m2_growth: {weight: 1.0}          # China M2 YoY direction (PBoC stance)
         peg_pressure: {weight: 1.0}       # HKD toward weak-end = tightening/outflow
         southbound: {weight: 0.75}        # southbound Stock-Connect flow direction (mainland into HK)
       roc_window_d: 20
+      # NOTE: an HKMA Aggregate-Balance leg was tested + MEASURED — it INVERTED the
+      # overlay's edge (calibration: contracting +0.78 > expanding +0.37 at 21d, vs the
+      # clean monotone expanding>contracting without it; peg-defense draining coincided
+      # with the 2022-25 recovery). So the Aggregate Balance ships as a descriptive
+      # PANEL only (engine/hk_inputs + the HKMA peg-funding panel), NOT a scored leg.
     quad:
       hysteresis_days: 7
       shock_override_z: 0.85

@@ -73,6 +73,22 @@ the consequence, not just the cause.
   intraday, no candles/volume — we don't store OHLC for constituents) and span ~2y;
   the deeper cycle/MTF analysis is unaffected. China/US/crypto pages still use the
   live TradingView widget (their exchanges aren't gated on the free tier).
+- **AH premium is a COMPUTED basket, not the official index.** The Hang Seng AH index
+  source is dead, so `engine/hk_ah.py` computes a 12-pair equal-weight basket from
+  dual-listed H-shares (HKD) vs A-share twins (CNY), FX-adjusted. It assumes 1:1
+  A/H share-equivalence and ignores share-class/float weighting, so the absolute level
+  differs from the official index — read the **trend + percentile**, not the level. ~3y
+  of history (bounded by the A-share close store starting 2021/the HK cache ~3y).
+- **VHSI (`^HSIL`) is correlated with US VIX** — both are in the Global Risk Overlay
+  (modest 0.75 weight on VHSI), so "fear" is mildly double-counted by design (HK-local
+  fear legitimately matters more for HK). It's also surfaced as a standalone hero gauge.
+- **HKMA Aggregate Balance is daily but the funding leg is a slow signal** — it moves on
+  peg-defense episodes, not day to day; the liquidity overlay reads its 63-day trend.
+  HIBOR 3m/12m tenors aren't in the liquidity endpoint (O/N + 1m only).
+- **Southbound flow starts 2017** (Stock-Connect era), so that liquidity leg renormalizes
+  in only from then; the China credit/RRR backdrop is monthly and lagged (a context
+  strip, not a high-frequency signal). The HK playbook/exposure-dial is a risk-context
+  map with measured odds, not a forecast.
 
 ## Bitcoin Vector alerts
 
@@ -334,6 +350,47 @@ cross-sectional equity factors.)
   EDGAR `company_tickers.json`), so both the insider and EDGAR fetches can fail a
   run; both degrade gracefully (cached value, or the panel simply hides) and
   recover on a later run / a cleaner CI IP.
+
+## Forex Vector (forex.html)
+
+Read this before trusting any currency verdict. The whole section ships as **risk
+context, not alpha** — see `research/FOREX_DASHBOARD.md` and the `## 2026-06-13 —
+Forex Vector` entry in DECISIONS.md.
+
+- **UIP failure / forward-premium puzzle.** Uncovered interest parity does not hold
+  and the Fama regression slope flipped sign at the short end post-2008. A static
+  "carry sign" can be wrong in the current regime, so the directional LONG/SHORT-base
+  label is SECONDARY to the risk-context headline, and carry's weight will come from
+  split-half calibration (Phase 2), never a hardcoded prior alone.
+- **Carry crash skew.** The carry factor is short global volatility / long funding
+  liquidity with a fat left tail that clusters with equity crises (1998 / 2008 / 2015
+  / 2020 / 2024). A Gaussian read overstates it; we vol-penalize carry and (Phase 2)
+  regime-condition it down as VIX/NFCI rise, but the tail cannot be removed — the
+  caveat ships inline on the carry tile.
+- **Pegs & intervention truncate the distribution.** `USD/CNH` is managed (forced
+  FLAT); `USD/JPY` near the MoF zone (≈150–162) is capped; `USD/CHF` carries 2015 SNB
+  gap risk. Backtests over peg eras are unrepresentative; Phase-2 calibration must
+  excise those windows or it will confirm a dangerously high carry weight.
+- **Phase 1 is un-calibrated.** Weights are a documented prior and confidence is
+  dampened ×0.6 (`score_reliable=False`). Verdicts are regime/risk-context reads, not
+  measured forward-return strength, until `calibrate_forex` runs.
+- **Carry data is coarse and partial.** No free clean daily cross-currency 2y exists,
+  so carry uses policy/short rates (some monthly, lagged 2–5 months). This is fine for
+  step-function policy rates (ffill is correct) but means carry is slow; EM (MXN/BRL/
+  CNH) have no usable free front-end rate at all → `carry: context`, no weight.
+- **COT positioning depends on CFTC uptime.** The contrarian positioning factor needs
+  the CFTC Socrata endpoint, which has outages (it was 503 at this build, so FX COT is
+  temporarily empty — the page flags this and the factor simply drops until the next
+  successful collect). COT is also as-of-Tuesday / released-Friday: a contrarian
+  MODIFIER, never a timing trigger.
+- **Residual / orthogonalization caveats.** Per-pair signals are computed on the
+  dollar-orthogonalized residual (rolling causal beta vs `DTWEXBGS`); the residual is a
+  derived index, not a tradeable instrument. `CNH=X` has no usable Yahoo history (one
+  current print) — its tile is China-proxy context only until backfilled from FRED.
+- **REER value & real-rate factors are Phase 3.** They are collected (BIS `RB*BIS`,
+  foreign CPI/10y) but NOT yet wired; REER is monthly and lagged and must never be
+  forward-filled into the daily factor (look-ahead).
+- **Everything Yahoo is an unofficial API** (same caveat as the rest of the site).
 
 ## Infrastructure
 

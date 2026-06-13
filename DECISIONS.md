@@ -2,6 +2,114 @@
 
 Newest first. Each entry: what was decided, why, and what would change it.
 
+## 2026-06-13 — Forex Vector (Phase 0–1): dollar-first currency board
+
+A new section (`forex.html`) built after a research + adversarial-review workflow
+(`research/FOREX_DASHBOARD.md`). It is a structural CLONE of the commodities section
+— same `factor_panel`-style stack, the same `[-100,+100]` conviction scale and bands,
+the same price layer (`engine/commodity_signals` `momentum/structure/risk/ts_momentum/
+positioning` imported as-is) — with FX-specific deviations decided below.
+
+**D-FX1. ★ Dollar-first / orthogonalized residual (not raw pairs, not a per-pair dollar
+factor).** ~89% of FX routes through USD, so 8 USD pairs share one dollar move. We score
+each pair on its broad-dollar-ORTHOGONALIZED residual (rolling causal beta vs `DTWEXBGS`,
+prior-window beta to avoid same-bar look-ahead) and put the dollar in a single board-level
+master tile — NOT also as a per-pair factor. Reason: keeping both would double-count the
+dollar (the review's top finding) and make the board print false 8-pair consensus on a
+dollar day. A **dollar-day haircut** (when `|daily z of broad-$|` > 1) shrinks per-pair
+confidence as a second guard. Trade-off: residual signals are less intuitive than raw
+pairs; mitigated by plotting the raw quote AND the ex-$ index together. Test:
+`test_orthogonalize_strips_dollar_beta` (residual β-to-dollar ≈ 0).
+
+**D-FX2. Carry from policy/short-rate differentials, labeled honestly; NOT a fake 2y.**
+The review confirmed there is no free, clean, daily cross-currency 2y on FRED. We use the
+foreign policy/short rate (ECB `ECBDFR` daily; JP/AU/GB/CA/CH `IR(ST/3TIB)…` monthly) minus
+US `DFF`. Crucially these are PIECEWISE-CONSTANT step functions, so monthly cadence +
+ffill is economically correct (the rate really is still that value) — the monthly-into-daily
+look-ahead concern only bites market prices (REER), not policy rates. Carry is vol-penalized
+(carry-to-vol haircut) so fragile high-vol carry is down-weighted. EM (MXN/BRL/CNH) have no
+free clean front-end rate → `carry: context` (no weight), surfaced as such on the tile.
+
+**D-FX3. Risk-context headline, LONG/SHORT-base secondary.** FX fails UIP (the Fama slope
+flipped post-2008) and carry has fat-tailed crash skew. A confident "STRONG LONG EUR" would
+be dishonest, so the verdict HEADLINES as a regime/risk-context read; the directional
+LONG/SHORT-base chip is secondary and the crash-skew caveat ships inline, not in a footnote.
+
+**D-FX4. Pegs/intervention override the verdict AND (later) calibration.** Managed `USD/CNH`
+→ forced FLAT; an `USD/JPY` MoF intervention watch zone (150–162) caps `|score|`; SNB history
+flagged. Phase-2 calibration must also EXCISE peg/intervention windows from the return
+windows (carry over a peg looks riskless until the discontinuous break). Test:
+`test_conviction_peg_intervention_caps`, `test_conviction_managed_forces_flat`.
+
+**D-FX5. Phase 1 ships before calibration.** Weights are a documented prior (`FX_PRIOR`),
+`score_reliable=False`, and confidence is dampened ×0.6 — honest about being un-measured.
+`split_date` is **2015-01-01** (not commodities' 2013) so BOTH halves straddle a carry
+unwind (2008 | 2015 SNB/2020/2022/2024). Forex orientation is the #1 silent-bug surface;
+`test_real_orientation_crosscheck` pins canonical base-vs-USD price to the FRED `DEX*`
+reference per pair (and `1/USDJPY` vs `1/DEXJPUS` for inverted pairs).
+
+**D-FX6. No new collector code — config-only data.** `yahoo.tickers.fx` + `fred.series.fx_*`
++ `cot.markets` (currency prefixes) drive the existing Yahoo/FRED/COT adapters unchanged.
+`build_forex.py` returns 0 on any engine error (never breaks the site), runs before
+`build_vector`. What would change it: COT was unavailable at build time (CFTC Socrata 503
+outage) — positioning populates on the next successful collect; REER value + real-rate
+factors + the full pair board + MTF + alerts are Phase 3.
+
+## 2026-06-13 — Section 4 (HK) enrichment: native features ported from China/US
+
+After a verified viability research pass (4-cluster workflow + web checks), added the
+HK-native, free-data features the China/US dashboards have but HK lacked. Everything
+below was confirmed to have a live free source before building.
+
+**D82. ★ HKMA peg-funding collector — the most HK-unique signal.** `collectors/hkma.py`
+pulls HKMA's keyless Open API (api.hkma.gov.hk daily-monetary-statistics): the
+**Aggregate Balance** (banks' settlement liquidity — it mechanically SHRINKS when the
+HKMA sells USD to defend the 7.85 weak-side peg, the real driver of HIBOR spikes/HSI
+funding headwinds) + HIBOR (O/N, 1m) + TWI + base rate. 6,263 rows back to 2002. The
+API caps page size at 100 → paginate by returned-count, not requested limit. Surfaced
+as an HKMA peg-funding PANEL on hk.html. ALSO tested as a 4th dual-liquidity leg
+(`hkma_funding`, agg-balance 63d direction) but the recalibration showed it **INVERTED
+the overlay's measured edge** (contracting +0.78 > expanding +0.37 at 21d, vs the clean
+monotone expanding +0.52 > contracting −0.41 without it — peg-defense draining coincided
+with the 2022-25 recovery) → DEMOTED to panel-only (house rule: don't ship a leg that
+hurts the measured edge). Live signal is real: Aggregate Balance drained ~70% YoY
+(173.5k→53.9k) = active peg defense.
+
+**D83. VHSI via Yahoo `^HSIL` (NOT `^VHSI`, which 404s).** HK's own VIX (HSI 30-day
+implied vol, 2003→). Added to the Global Risk Overlay as a 7th factor `vhsi`
+{sign:-1, weight:0.75} (config + FACTOR_LABELS) AND surfaced in the regime hero
+(level + percentile). Makes the fear gauge HK-direct, not borrowed US VIX.
+
+**D84. AH-premium COMPUTED basket (`engine/hk_ah.py`), not the official index.** The
+official Hang Seng AH index (china_flows/ah_premium) source is dead (eastmoney HSAHP
+ConnectionError; Sina gives 1 value/day). Instead compute per-pair from dual-listed
+H-shares (hk_breadth cache, HKD) vs A-share twins (china_search/closes, CNY),
+FX-adjusted by CNY/HKD = USDCNY/USDHKD. 12 pairs (config hk.ah_pairs), 726 days NOW,
+per-pair decomposable. Label "computed basket" + lean on trend/percentile (absolute
+level differs from the official index by share-class/float weighting). Live: +24% A-over-H,
+4th percentile of 3y (premium compressed 20pp/yr — the H/HK value gap has closed).
+
+**D85. Southbound flow panel + China backdrop reuse `china_internals` verbatim.** The
+southbound Connect flow (the #1 HK flow) and the China credit-impulse/RRR backdrop
+(HSI is ~75% China earnings) are rendered via `china_internals.southbound_flow()` /
+`credit_tape()` / `pboc_policy()` — shared stores, read HK-side. The China backdrop is
+a slim CONTEXT strip (monthly/lagged) so HK doesn't become a China-macro clone.
+
+**D86. HK playbook/exposure-dial (`engine/hk_playbook.py`) — port of china_playbook,
+NOT the US one.** Quad meaning + lifespan progress + next-quad odds + an exposure DIAL
+whose reasons are HK-grounded: quad (Goldilocks +1/Stagflation −1, both split-half
+stable), the global risk_state (Risk-on +1 — HK's measured headline edge), dual
+liquidity, the HKD peg state, and southbound. Live posture: DEFENSIVE.
+
+**D87. Time machine + sortable tables + range-selectors.** `hk_regime_timeline()`
+emits hk_regime_timeline.json; the `timemachine.js` scrubber on hk.html rewinds the
+regime core over ~20y (HK presets: 2015 rally / 2018 peak / 2020 COVID / 2021 HS-TECH
+top). Added timemachine/charts/tablesort.js to ASSETS + Plotly CDN to the page; sector
+board is now class="sortable"; the history charts gained 1M…All range-selectors.
+
+SKIPPED (verified non-viable for HK): US recession/nowcasts (FRED US-only), equity
+factor rankings (no free point-in-time HK fundamentals), commodity carry/EIA/FINRA.
+
 ## 2026-06-13 — Section 4: Hong Kong / Hang Seng dashboard
 
 **D77. HK sectors = deep SYNTHETIC baskets of curated constituents, not sector
