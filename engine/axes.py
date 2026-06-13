@@ -46,6 +46,8 @@ def _component_scores(f: pd.DataFrame, axis: str) -> pd.DataFrame:
             "breadth_direction": trend("pct_above_50", use_log=False),
             "payrolls_trend": monthly_sign("payrolls", 63),   # ~3 months of bdays
             "indpro_trend": monthly_sign("indpro", 252),      # yoy
+            "wei_trend": monthly_sign("wei", 65),             # 13-week growth-nowcast direction (2008->)
+            "gdpnow_trend": monthly_sign("gdpnow", 63),       # QoQ GDPNow direction (2011->)
         })
     if axis == "inflation":
         return pd.DataFrame({
@@ -55,6 +57,7 @@ def _component_scores(f: pd.DataFrame, axis: str) -> pd.DataFrame:
             "oil_trend": trend("oil"),
             "inflation_beta_basket": trend("infl_basket"),
             "tips_nominal_momentum": trend("tips_nominal_spread", use_log=False),
+            "sticky_cpi_direction": monthly_sign("sticky_cpi_3m", 63),  # persistent-inflation direction
         })
     raise ValueError(axis)
 

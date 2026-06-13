@@ -175,9 +175,13 @@ def transition_stats(quad: pd.Series) -> dict:
 
 # ------------------------------------------------------ measured evidence ----
 
-def risk_evidence(closes: pd.DataFrame, regime: pd.DataFrame) -> dict:
+def risk_evidence(closes: pd.DataFrame, regime: pd.DataFrame,
+                  f: pd.DataFrame | None = None) -> dict:
     """Index-level conditional stats for the exposure dial, computed from the
-    classifier's own history so the numbers shown are always current."""
+    classifier's own history so the numbers shown are always current. When the
+    feature frame `f` is supplied, also measures the conditions-layer edges
+    (NFCI financial conditions, recession-risk composite) so those dial rules
+    cite real forward-return stats, not assertions."""
     spy = closes["SPY"]
     quad = regime["quad"].reindex(spy.index)
     liq = regime["liquidity"].reindex(spy.index)
@@ -189,7 +193,7 @@ def risk_evidence(closes: pd.DataFrame, regime: pd.DataFrame) -> dict:
     dd63 = (spy.rolling(63).min().shift(-63) / spy - 1)
 
     def cond(mask: pd.Series) -> dict | None:
-        m = mask.fillna(False) & weekly & fwd21.notna()
+        m = mask.reindex(spy.index).fillna(False) & weekly & fwd21.notna()
         if m.sum() < 40:
             return None
         return {"n": int(m.sum()),
@@ -197,7 +201,7 @@ def risk_evidence(closes: pd.DataFrame, regime: pd.DataFrame) -> dict:
                 "fwd21_hit_pct": round(100 * (fwd21[m] > 0).mean(), 1),
                 "avg_worst_dd63_pct": round(100 * dd63[m].mean(), 2)}
 
-    return {k: v for k, v in {
+    out = {
         "liquidity_expanding": cond(liq == "expanding"),
         "liquidity_contracting": cond(liq == "contracting"),
         "quad_q3": cond(quad == "Q3"),
@@ -205,7 +209,22 @@ def risk_evidence(closes: pd.DataFrame, regime: pd.DataFrame) -> dict:
         "risk_off_quads": cond(quad.isin(["Q3", "Q4"])),
         "risk_on_stable": cond(quad.isin(["Q1", "Q2"]) & (state == "STABLE")),
         "risk_on_warning": cond(quad.isin(["Q1", "Q2"]) & (state != "STABLE")),
-    }.items() if v}
+    }
+    if f is not None:
+        try:
+            from engine.conditions import conditions_frame
+            rc = config.load()["engine"]["conditions"]["recession"]
+            cf = conditions_frame(f)
+            if "nfci_chg" in cf:
+                out["conditions_nfci_tightening"] = cond(cf["nfci_chg"] > 0)
+                out["conditions_nfci_loosening"] = cond(cf["nfci_chg"] <= 0)
+            if "recession_risk" in cf:
+                rr = cf["recession_risk"]
+                out["conditions_recession_high"] = cond(rr >= rc["high_score"])
+                out["conditions_recession_low"] = cond(rr < rc["elevated_score"])
+        except Exception:  # noqa: BLE001 — evidence is additive, never fatal
+            pass
+    return {k: v for k, v in out.items() if v}
 
 
 # evidence constants measured in scripts/research_playbook.py (2000->2026 grid,
@@ -295,6 +314,47 @@ def exposure_dial(latest: dict, evidence: dict) -> dict:
         score -= 1
         reasons.append(("-", "Growth-scare with credit confirming recession — the deep-drawdown zone",
                         "增长恐慌，且信贷确认衰退 — 处于深度回撤区"))
+
+    # --- conditions-layer rules (research/QUANT_FACTOR_EXPANSION.md) -------------
+    # Independent, often EARLIER signals than the price-based quad: the Fed-research
+    # recession composite (Sahm + Excess Bond Premium + term-premium-adjusted curve)
+    # and broad financial conditions (NFCI). Each cites its measured forward-return
+    # edge over the classifier's own 2007-> history (engine/playbook.risk_evidence).
+    cond_layer = latest.get("conditions") or {}
+    rec = (cond_layer.get("recession") or {})
+    if rec.get("label") == "high":
+        score -= 1
+        ev = evidence.get("conditions_recession_high")
+        evl = evidence.get("conditions_recession_low")
+        tail = (f" — S&P averaged {ev['fwd21_avg_pct']:+}%/month, {ev['fwd21_hit_pct']}% positive "
+                f"(vs +{evl['fwd21_avg_pct']}%, {evl['fwd21_hit_pct']}% when recession-risk is low) "
+                f"and ran a {ev['avg_worst_dd63_pct']}% worst 3-month drawdown"
+                if ev and evl else "")
+        reasons.append(("-", f"Recession-risk composite is HIGH ({rec.get('score', 0):.0f}/100: "
+                        f"Sahm + Excess Bond Premium + term-premium-adjusted curve)" + tail,
+                        f"衰退风险综合评分高（{rec.get('score', 0):.0f}/100：Sahm 法则＋超额债券溢价＋"
+                        f"期限溢价调整曲线）— 历史前瞻回报更弱、回撤更深"))
+    elif rec.get("label") == "elevated":
+        ev = evidence.get("conditions_recession_high")
+        reasons.append(("i", "Recession-risk composite is ELEVATED — an early warning that often "
+                        "leads the price-based recession tag; trim conviction, widen stops"
+                        + (f" (the high band ran {ev['avg_worst_dd63_pct']}% worst 3-month drawdowns)"
+                           if ev else ""),
+                        "衰退风险综合评分偏高 — 通常领先于价格端的衰退标签的早期预警；"
+                        "减少高信心押注、放宽止损"))
+    fc = (cond_layer.get("financial_conditions") or {})
+    if fc.get("trend") == "tightening" and (fc.get("nfci") or 0) > 0:
+        score -= 1
+        ev = evidence.get("conditions_nfci_tightening")
+        evl = evidence.get("conditions_nfci_loosening")
+        tail = (f" — S&P positive next month {ev['fwd21_hit_pct']}% of the time vs "
+                f"{evl['fwd21_hit_pct']}% when loosening" if ev and evl else "")
+        reasons.append(("-", "Financial conditions are tight AND tightening (Chicago Fed NFCI) — "
+                        "a broad risk-off backdrop beyond Fed liquidity alone" + tail,
+                        "金融条件偏紧且持续收紧（芝加哥联储 NFCI）— 超出单一美联储流动性的广泛避险背景"
+                        + (f"（次月为正概率 {ev['fwd21_hit_pct']}% vs 宽松时 {evl['fwd21_hit_pct']}%）"
+                           if ev and evl else "")))
+
     if quad in ("Q3", "Q4"):
         ev_on, ev_off = evidence.get("risk_on_quads"), evidence.get("risk_off_quads")
         if ev_on and ev_off:
@@ -435,7 +495,7 @@ def build_playbook(f: pd.DataFrame, regime: pd.DataFrame, closes: pd.DataFrame,
     bench = config.load()["engine"]["rs_ranking"]["benchmark"]
     stages = stage_table(closes)
     trans = transition_stats(regime["quad"])
-    evidence = risk_evidence(closes, regime)
+    evidence = risk_evidence(closes, regime, f)
     dial = exposure_dial(latest, evidence)
     heat_cal = calibrate(closes, regime)
 

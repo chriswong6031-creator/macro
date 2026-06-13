@@ -466,6 +466,11 @@ engine:
       breadth_direction: {weight: 1.0}
       payrolls_trend: {weight: 0.5}     # slow confirmation, lower weight
       indpro_trend: {weight: 0.5}
+      # real-time GROWTH nowcasts (research/QUANT_FACTOR_EXPANSION.md) — model-based
+      # confirmations that lead the lagging payrolls/INDPRO. Absent pre-2008/2011
+      # (axis renormalizes), so the 2008 episode is unchanged; they reinforce 2020.
+      wei_trend: {weight: 0.5}          # Weekly Economic Index direction (weekly, 2008->)
+      gdpnow_trend: {weight: 0.5}       # Atlanta Fed GDPNow direction (quarterly, 2011->)
     cyclical_basket: [XLI, XLB, XLF, XLY]
     defensive_basket: [XLP, XLU, XLV]
 
@@ -477,6 +482,9 @@ engine:
       oil_trend: {weight: 1.0}
       inflation_beta_basket: {weight: 1.0}   # (XLE+XLB)/(XLK+XLU)
       tips_nominal_momentum: {weight: 0.75}
+      # underlying-inflation confirmation: Atlanta sticky-price CPI direction — a
+      # real (not market-implied) persistent-inflation read (1967->, full history).
+      sticky_cpi_direction: {weight: 0.5}
     inflation_long_basket: [XLE, XLB]
     inflation_short_basket: [XLK, XLU]
 

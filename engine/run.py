@@ -90,19 +90,19 @@ def run() -> dict:
     }
     from engine.inputs import yahoo_closes
     from engine.playbook import build_playbook
-    try:
-        latest["playbook"] = build_playbook(f, regime, yahoo_closes(), latest)
-    except Exception as e:  # noqa: BLE001 — conclusions are additive, never fatal
-        log.error("playbook failed: %s", e)
-        latest["playbook"] = None
-    # complementary nowcast / conditions / risk-appetite layer (additive — never
-    # alters the validated quad; see research/QUANT_FACTOR_EXPANSION.md)
+    # conditions layer is computed FIRST so the exposure dial can consume the
+    # recession-risk + financial-conditions edges (research/QUANT_FACTOR_EXPANSION.md).
     try:
         from engine.conditions import conditions_snapshot
         latest["conditions"] = conditions_snapshot(f)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("conditions layer failed: %s", e)
         latest["conditions"] = None
+    try:
+        latest["playbook"] = build_playbook(f, regime, yahoo_closes(), latest)
+    except Exception as e:  # noqa: BLE001 — conclusions are additive, never fatal
+        log.error("playbook failed: %s", e)
+        latest["playbook"] = None
     with open(p / "latest.json", "w") as fh:
         json.dump(latest, fh, indent=2, default=str)
     log.info("regime %s (%s) conf=%.2f liq=%s cycle=%s transition=%s",

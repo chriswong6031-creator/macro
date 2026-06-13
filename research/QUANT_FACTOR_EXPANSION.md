@@ -4,6 +4,32 @@ Research dossier + feasibility matrix + build roadmap. Question that started it:
 *"Outside technical and momentum indicators, what else do quantitative and
 investment firms use — and which of it can we obtain and add to the dashboard?"*
 
+> **UPDATE — integrated into the regime + sector recs (validate-gated).** The new
+> factors are no longer just display/alerts; the validated ones now feed the
+> classification and the exposure dial. Every change was re-validated against the
+> 2007→2026 backtest (no degradation) or earns its place with a measured edge:
+>
+> - **Regime quad (engine/axes.py):** added real-time growth nowcasts — **Weekly
+>   Economic Index** + **GDPNow** direction (growth axis) and **sticky-CPI**
+>   direction (inflation axis), each weight 0.5 confirmations. Effect: whipsaw
+>   **10.6% → 6.0%**, 2008 (Q4 72%) and the recession-tag (58%) unchanged, the
+>   2022 Q2→Q3→Q4 path preserved, and covid's false-reflation days correctly
+>   reclassified as the growth collapse. Absent pre-2008/2011 so deep history is
+>   untouched (the axis renormalizes).
+> - **Exposure dial (engine/playbook.py) → drives sector buy/sell posture:** two
+>   new rules, each citing a MEASURED forward-return edge from the classifier's
+>   own history (engine/playbook.risk_evidence):
+>     - **Recession-risk composite HIGH** (Sahm + EBP + term-premium-adjusted
+>       curve ≥ 50/100): S&P −0.88%/mo, 53% positive, −14.8% worst 3-mo drawdown
+>       vs +1.11%/68%/−3.7% when low → −1 (often fires EARLIER than the price quad).
+>     - **NFCI tight AND tightening:** 62% positive vs 68% loosening → −1.
+> - **NOT wired (honesty):** RORO, equity VRP and the stock-bond correlation
+>   regime showed **no equity-direction edge** over the backtest (risk-off
+>   actually rebounds; the stock-bond "breakdown" regime had +1.39%/mo) — they
+>   stay as risk/portfolio CONTEXT on the dashboard, not dial inputs. Sector
+>   *selection* tilts are deliberately left out too: our backtest found no stable
+>   "this sector outperforms" signal, so we don't fabricate one.
+
 Method: 6 parallel web-research agents (one per factor family) against primary
 sources — Fama-French, Novy-Marx, Frazzini-Pedersen (BAB), AQR (QMJ, Style
 Premia), MSCI/BlackRock/Dimensional factor literature, and the Fed research

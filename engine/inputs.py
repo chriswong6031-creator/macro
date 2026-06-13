@@ -158,6 +158,10 @@ def build_features() -> pd.DataFrame:
     for col in ["sticky_cpi", "core_sticky_cpi", "flex_cpi"]:
         put(col, series.get(col), ffill_limit=45)
     put("median_cpi", series.get("median_cpi"), ffill_limit=45)
+    # 3-month-smoothed sticky CPI rate — the inflation axis reads its DIRECTION as a
+    # persistent-inflation confirmation (raw monthly prints are noisy).
+    if "sticky_cpi" in f:
+        f["sticky_cpi_3m"] = f["sticky_cpi"].rolling(63, min_periods=21).mean()
     # Household sentiment / inflation expectations (monthly).
     put("umich_sentiment", series.get("umich_sentiment"), ffill_limit=45)
     put("umich_infl_exp", series.get("umich_infl_exp"), ffill_limit=45)
