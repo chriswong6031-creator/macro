@@ -394,12 +394,15 @@ def _hub_alert_rows(alerts: list[dict]) -> str:
 
 def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = None,
               commodities: dict | None = None) -> str:
-    # English-only, self-contained (no engine.i18n dependency): T/TR are identity.
-    def T(en, zh=""):
-        return en
+    # Bilingual via the i18n layer when present, identity fallback when absent.
+    try:
+        from engine.i18n import t as T, tr as TR
+    except Exception:  # noqa: BLE001
+        def T(en, zh=""):
+            return en
 
-    def TR(en):
-        return en
+        def TR(en):
+            return en
     risk_cls = "on" if vm["risk_on"] else "off"
     macro_label = config.load()["home"]["alerts"]["macro_label"]
     n_major = len(alerts)
@@ -692,9 +695,14 @@ def main() -> int:
 
     env = Environment(loader=FileSystemLoader(str(Path(__file__).resolve().parent.parent / "templates")),
                       autoescape=True)
-    # English-only, self-contained: the template's `td`/`tr` resolve to identity
-    # so the Vector page builds without the (separately-owned) i18n layer.
-    env.globals.update(td=lambda en: en, tr=lambda en: en)
+    # Bilingual when the (separately-owned) i18n layer is present, identity
+    # fallback when it isn't — so the page builds either way (immune to i18n churn).
+    try:
+        from engine import i18n
+        _td, _tr = i18n.td, i18n.tr
+    except Exception:  # noqa: BLE001 — i18n layer absent -> English-only, still builds
+        _td = _tr = lambda en: en
+    env.globals.update(td=_td, tr=_tr)
     env.filters["money"] = lambda v: f"${v:,.0f}" if pd.notna(v) else "—"
     env.filters["money1"] = lambda v: f"${v/1000:,.1f}K" if pd.notna(v) else "—"
     html = env.get_template("vector.html.j2").render(**vm, C=C)

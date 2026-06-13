@@ -2,6 +2,50 @@
 
 Newest first. Each entry: what was decided, why, and what would change it.
 
+## 2026-06-13 — Vector i18n: bilingual restored as GRACEFUL-OPTIONAL
+
+**D-vec-I18N2. The Vector page is bilingual again, but the i18n dependency is now
+OPTIONAL (supersedes the English-only D-vec-I18N).** After the macro session
+re-landed the i18n layer (engine/i18n.py committed), the Vector page opts back in
+WITHOUT re-coupling: the template `t(en,zh)` macro emits both language spans
+(static zh is hardcoded at call sites, needs no engine.i18n) + the data-lang
+toggle/CSS/lang-btn/chart_i18n.js are restored; build_vector wires `td`/`tr`
+(main) and `T`/`TR` (_hub_html) via `try: from engine import i18n … except:
+identity`. So: i18n present → fully bilingual; i18n absent → English-only,
+**still builds (ACID-TESTED with engine/i18n.py removed)**. Best of both:
+bilingual now, immune to future i18n churn. Browser-verified: 187 l-zh spans,
+zh-mode shows 储备风险/宏观背景/链上需求 (all my panels translate), no console
+errors. What would change it: nothing — this is the stable end state for the
+i18n coupling regardless of what the macro session does with its layer.
+
+## 2026-06-13 — Top-200 ETF universe (Phase 2, follow-on to the D70 macro entry)
+
+**D71. Broad ETF universe uses the SHARE-BASED flow-normalized active-decision —
+NOT the price-decompose engine.** Phase-1 (D70 macro entry) decomposed sector-SPDR
+weights into price + residual, which needs each holding's price. The top-200 universe
+references thousands of names but `data/stocks/` only covers ~110, so price-decompose
+can't scale. Instead the new `collectors/etf_holdings.py` writes FULL daily holdings
+(incl. Shares Held) per fund to `data/etf_holdings/<TICKER>/<DATE>.parquet`, and the
+engine reuses the existing `collectors.holdings.active_changes_dir` (refactored out of
+`active_changes` to take a base dir): `expected_shares(t)=shares(t-1)·SO(t)/SO(t-1)`,
+`active=shares(t)−expected` — the canonical "what did the fund actually buy/sell",
+needing NO per-stock prices. `engine.holdings_signals.etf_signals`/`top_etf_accumulation`
+aggregate across the passive `etf_holdings` universe PLUS the active ARK watchlist
+(read from `data/holdings/`, so ARKK/ARKW aren't double-collected). HONEST FRAMING
+carried to the page: on ACTIVE funds the signal is manager conviction; on PASSIVE
+index/sector funds it is index reconstitution / rebalance flow — tagged per row.
+Sponsor reliability (LIMITATIONS): **ssga VERIFIED** (SPDR daily XLSX has Shares Held —
+SPY parsed 504 rows live), **ark VERIFIED**, **ishares/invesco BEST-EFFORT** (consent
+walls — fail gracefully behind the circuit breaker), **vanguard UNSUPPORTED** (no free
+daily feed). New `etfs.html` page (ETF flow radar) + macro-nav link. Volume: extended
+`StockPriceAdapter` to keep a `volume` column + `volume_surge()` confirmation enhancer
+(📊 marker) — populates as daily snapshots accrue / on the next `--full-history`
+backfill (older parquets lack volume; helper returns None until enough exists). Config
+`etf_holdings.universe` (12 SSGA + 3 iShares seeded) is meant to grow toward 200 by
+editing config alone. THRESHOLDS UNCALIBRATED + needs ≥2 snapshots per fund to show.
+WHAT WOULD CHANGE IT: a working iShares/Invesco/Vanguard holdings path (would expand
+coverage); calibrating active_change_alert_pct once history accrues.
+
 ## 2026-06-13 — Vector dashboard DECOUPLED from i18n (now committable)
 
 **D-vec-I18N. The Vector page is made English-only & self-contained so it no

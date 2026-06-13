@@ -1,12 +1,16 @@
-{# English-only, self-contained: `t(en, zh)` keeps its two-arg signature so every
-   call site is unchanged, but emits only English — the page no longer depends on
-   the i18n layer (engine.i18n / data-lang toggle). #}
-{% macro t(en, zh='') -%}{{ en }}{%- endmacro %}
+{# Bilingual but GRACEFULLY DEGRADING: the macro emits both language spans (static
+   zh is hardcoded at call sites, so it needs no engine.i18n). Only the dynamic
+   td/tr globals consult the glossary — build_vector wires those optionally, so
+   the page renders English-only if the i18n layer is ever absent. #}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>Bitcoin Vector — {{ as_of }}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -19,6 +23,12 @@
   --grid:{{C.grid}}; --card:{{C.card}}; --bg:{{C.bg}};
 }
 *{box-sizing:border-box}
+/* language toggle: dual-emit text, hide the inactive language (blue/red palette
+   is kept in zh mode — it encodes risk, not price direction). */
+html:not([data-lang="zh"]) .l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB",
+  "Microsoft YaHei","Noto Sans CJK SC","Microsoft JhengHei","Heiti SC",Inter,sans-serif}
 body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;
   font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
 a{color:var(--blue);text-decoration:none}
@@ -161,6 +171,7 @@ a{color:var(--blue);text-decoration:none}
       <a href="index.html">{{ t('Home', '首页') }}</a>
       <a href="macro.html">{{ t('Macro', '宏观') }}</a>
       <a class="active" href="vector.html">{{ t('Bitcoin Vector', '比特币向量') }}</a>
+      <button class="lang-btn" style="font:inherit;cursor:pointer;background:none;border:1px solid var(--grid);border-radius:8px;padding:4px 11px;color:var(--muted)">中文</button>
     </div>
   </div>
 </div>
@@ -526,6 +537,7 @@ window.__CHART_SWAP__ = {
 };
 </script>
 <script src="theme.js"></script>
+<script src="chart_i18n.js"></script>
 <footer class="site-footer">
   <span class="made">{{ t('Made with ❤️ in Canada', '用 ❤️ 在加拿大制作') }}</span>
   <span class="dev">{{ t('Developed by', '开发者') }} Chris Wong</span>
