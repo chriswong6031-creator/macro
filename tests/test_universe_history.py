@@ -57,3 +57,26 @@ def test_as_of_members_reconstructs_point_in_time(temp_ledger, monkeypatch):
 def test_as_of_empty_ledger():
     # no monkeypatch of _ledger_path here, but load returns None on a missing file in tmp
     assert uh.as_of_members("2026-01-01", ledger=pd.DataFrame(columns=uh.LEDGER_COLS)) == []
+
+
+def test_dropped_members_returns_inactive(temp_ledger, monkeypatch):
+    _constituents(monkeypatch, ["AAA", "BBB", "CCC"])
+    uh.update_membership("2026-01-01")
+    _constituents(monkeypatch, ["AAA", "BBB"])            # CCC dropped -> inactive
+    uh.update_membership("2026-02-01")
+    assert uh.dropped_members() == ["CCC"]
+    assert uh.dropped_members(ledger=pd.DataFrame(columns=uh.LEDGER_COLS)) == []
+
+
+def test_edgar_universe_retains_dropped(temp_ledger, monkeypatch, tmp_path):
+    # the EDGAR fundamentals universe must KEEP a name after it drops from the index,
+    # so the panel doesn't silently lose delisted fundamentals (survivorship).
+    _constituents(monkeypatch, ["AAA", "BBB", "CCC"])
+    uh.update_membership("2026-01-01")
+    _constituents(monkeypatch, ["AAA", "BBB"])
+    uh.update_membership("2026-02-01")
+    from collectors import edgar
+    from lib import config as _cfg
+    monkeypatch.setattr(_cfg, "data_dir", lambda: tmp_path)   # no breadth caches -> empty "current"
+    uni = edgar._universe_tickers()
+    assert "CCC" in uni                                       # dropped name retained for fundamentals

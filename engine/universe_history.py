@@ -108,3 +108,15 @@ def as_of_members(asof, group: str | None = None, ledger: pd.DataFrame | None = 
     if group:
         m &= led["group"] == group
     return sorted(led.loc[m, "ticker"].unique().tolist())
+
+
+def dropped_members(ledger: pd.DataFrame | None = None) -> list[str]:
+    """Tickers that were once index members but have since dropped out (active=False).
+    Retaining these in the EDGAR fundamentals universe keeps their data in the panel
+    going forward — the fundamentals half of the survivorship fix (the ledger records
+    WHEN names left; this keeps WHAT they last reported)."""
+    led = ledger if ledger is not None else load_ledger()
+    if led is None or led.empty or "active" not in led.columns:
+        return []
+    gone = led.loc[~led["active"].astype(bool), "ticker"]
+    return sorted(gone.astype(str).unique().tolist())

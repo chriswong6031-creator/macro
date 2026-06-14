@@ -167,12 +167,20 @@ def _latest_balance_shares(concept: str, year: int, base: str) -> dict[int, floa
 
 
 def _universe_tickers() -> list[str]:
-    """All S&P 1500 tickers present in the breadth close caches."""
+    """Current S&P 1500 tickers (breadth close caches) UNION names that have dropped
+    out of the index (the membership ledger marks them inactive) — so the panel
+    retains delisted names' fundamentals going forward (the fundamentals half of the
+    survivorship fix; pairs with engine/universe_history.py)."""
     tickers: set[str] = set()
     for grp in ("breadth", "smallcap_breadth", "midcap_breadth"):
         p = config.data_dir() / grp / "_closes_cache.parquet"
         if p.exists():
             tickers.update(pd.read_parquet(p, columns=None).columns)
+    try:                                   # additive — never fatal if the ledger is absent
+        from engine.universe_history import dropped_members
+        tickers.update(dropped_members())
+    except Exception:  # noqa: BLE001
+        pass
     return sorted(tickers)
 
 
