@@ -258,7 +258,7 @@ def _call_model(source_text: str, context: str, cfg: dict) -> tuple[str | None, 
     try:
         resp = client.messages.create(
             model=cfg.get("llm_model", "deepseek-v4-flash"),
-            max_tokens=int(cfg.get("max_tokens", 700)),
+            max_tokens=int(cfg.get("max_tokens", 1500)),
             system=CATALYST_SYSTEM,
             messages=[{"role": "user", "content": user}],
         )
