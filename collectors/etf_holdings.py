@@ -201,11 +201,10 @@ class EtfHoldingsAdapter(Adapter):
         raise RuntimeError(f"Global X: no holdings file in the last 6 days ({last_err})")
 
     # --- normalization ----------------------------------------------------------
-    BAD_TICKERS = {"", "-", "--", "nan", "none", "null", "<na>", "n/a", "cash"}
-
     @staticmethod
     def _normalize(df: pd.DataFrame, fund: str, asof: str, *, wcol: str | None = None,
                    scol: str | None = None, mcol: str | None = None) -> pd.DataFrame:
+        from collectors.holdings import is_non_equity_holding
         def num(s):
             return pd.to_numeric(
                 s.astype(str).str.replace(r"[,$%()]", "", regex=True).str.strip(),
@@ -217,11 +216,12 @@ class EtfHoldingsAdapter(Adapter):
             "shares": num(df[scol]) if scol and scol in df.columns else pd.NA,
             "market_value": num(df[mcol]) if mcol and mcol in df.columns else pd.NA,
         })
-        # share-based engine needs a real equity ticker + shares; drops cash, FX,
-        # untickered foreign names, and derivative rows (empty/'-'/<NA> ticker).
-        tk = out["ticker"].str.strip().str.lower()
-        out = (out[out["ticker"].notna() & ~tk.isin(EtfHoldingsAdapter.BAD_TICKERS)]
-               .dropna(subset=["shares"]))
+        # share-based engine needs a real equity ticker + shares; drop cash, FX,
+        # money-market, derivatives and untickered residue (shared predicate, so
+        # the collector and the diff engine agree on what counts as equity).
+        keep = [not is_non_equity_holding(t, n)
+                for t, n in zip(out["ticker"], out["name"])]
+        out = out[pd.Series(keep, index=out.index)].dropna(subset=["shares"])
         if out.empty:
             raise ValueError(f"{fund}: no equity/shared rows after normalization")
         out["as_of"] = asof

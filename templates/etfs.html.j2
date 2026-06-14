@@ -9,7 +9,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ t('ETF flow radar — what funds are accumulating', 'ETF 资金雷达 — 基金在增持什么') }}</title>
+<title>{{ t('Real fund moves — where managers are accumulating', '基金真实动作 — 经理人在增持什么') }}</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
@@ -53,10 +53,36 @@
 </style>
 </head>
 <body>
+{% macro flowrow(r) -%}
+      <tr>
+        <td class="l"><b>{{ r.etf }}</b> <span class="muted">{{ r.etf_name }}{% if r.category %} · {{ td(r.category) }}{% endif %}</span></td>
+        <td class="l"><a href="stock.html#{{ r.ticker }}"><b>{{ r.ticker }}</b></a> <span class="muted">{{ r.name }}</span></td>
+        <td class="l muted">{{ td(r.sector) if r.sector else "—" }}</td>
+        <td class="r muted">{% if r.weight_pct is not none %}{{ "%.2f" | format(r.weight_pct) }}%{% else %}—{% endif %}</td>
+        <td class="r {{ 'pos' if r.conviction_pp >= 0 else 'neg' }}"><b>{{ "%+.2f" | format(r.conviction_pp) }}pp</b></td>
+        <td class="r muted">{% if r.active_chg_pct is not none %}{{ "%+.0f" | format(r.active_chg_pct) }}%{% else %}—{% endif %}</td>
+        <td class="l">{% if r.is_active %}<span class="tag tag-active">{{ t('manager conviction', '经理人信念') }}</span>{% else %}<span class="tag tag-passive">{{ t('curated basket', '精选篮子') }}</span>{% endif %}</td>
+        <td class="l">{% if r.ladder %}<span class="state st-{{ r.ladder.state | replace(' ', '_') }}">{{ td(r.ladder.label) }}</span>{% if r.confirmed %} ✅{% endif %}{% else %}<span class="muted">—</span>{% endif %}{% if r.vol and r.vol.surging %} <span title="volume {{ r.vol.ratio }}× recent avg">📊</span>{% endif %}</td>
+        <td class="l muted">{{ r.window }}</td>
+      </tr>
+{%- endmacro %}
+{% macro flowhead() -%}
+      <tr>
+        <th class="l">{{ t('fund', '基金') }}</th>
+        <th class="l">{{ t('stock', '个股') }}</th>
+        <th class="l">{{ t('sector', '板块') }}</th>
+        <th class="r">{{ t('weight', '权重') }}</th>
+        <th class="r">{{ t('conviction Δwt', '信念权重Δ') }}{{ help("Conviction = the percentage POINTS of the fund's weight that the manager actively committed to this name, after stripping out price moves and fund in/outflows. We rank on this, NOT raw % change, so a 0.1%→0.2% double (big % but trivial size) never outranks a real add to an already-meaningful position. Positive = accumulating.", "信念 = 在剔除价格变动与基金申赎后，经理人主动投入该股的权重百分点。我们据此排序，而非原始百分比变化，因此 0.1%→0.2% 的翻倍（百分比大但仓位微不足道）绝不会盖过对已具规模仓位的真实增持。正值=增持。") }}</th>
+        <th class="r">{{ t('share Δ', '份额Δ') }}</th>
+        <th class="l">{{ t('type', '类型') }}</th>
+        <th class="l">{{ t('technical', '技术面') }}</th>
+        <th class="l">{{ t('window', '窗口') }}</th>
+      </tr>
+{%- endmacro %}
   <div class="panel">
     <div class="topline">
-      <h1>🐳 {{ t('ETF flow radar', 'ETF 资金雷达') }}</h1>
-      <span class="muted">{{ t('what funds are accumulating & trimming', '基金在增持与减持什么') }}</span>
+      <h1>🐳 {{ t('Real fund moves', '基金真实动作') }}</h1>
+      <span class="muted">{{ t('where thematic & active managers are putting real conviction', '主题与主动经理人真正下注之处') }}</span>
       <span style="flex:1"></span>
       <a class="navbtn" href="macro.html">{{ t('← Dashboard', '← 仪表盘') }}</a>
       <a class="navbtn" href="stock.html">{{ t('🔎 Any stock', '🔎 任意股票') }}</a>
@@ -64,47 +90,41 @@
       <button class="theme-btn">☀️ {{ t('Light', '浅色') }}</button>
     </div>
     <p class="muted" style="margin:10px 0 0">{{ t(
-      "For each tracked ETF we diff its daily holdings and strip out mechanical creation/redemption flow, leaving the fund's actual SHARE decision per position (flow-normalized). A big positive number = the fund added to a name beyond what fund in/outflows explain.",
-      "对每只跟踪的 ETF，我们比对其每日持仓并剔除机械性的申购／赎回资金流，留下基金对每个仓位的真实“份额决策”（已按资金流标准化）。较大的正值=基金在该股上的增持超过了资金进出所能解释的部分。") }}
-      {{ help("Two honest readings: on ACTIVELY managed funds (ARK etc.) a large active share change is genuine manager conviction. On PASSIVE index/sector funds (SPDR, iShares) there is no discretionary manager — the change is index reconstitution / float-weight rebalancing (forced index-fund buying). Both are real institutional flow; the tag tells you which. Where a holding has its own price history, its cycle state is shown (✅ = accumulation that also has a forming buy setup). Thresholds are uncalibrated and signals need ≥2 daily snapshots to appear.",
-      "两种诚实的解读：在主动管理基金（如 ARK）上，较大的主动份额变动是真实的经理人信念。在被动指数／板块基金（SPDR、iShares）上没有主动经理——变动来自指数再平衡／流通权重调整（被动强制买入）。两者都是真实的机构资金流；标签会告诉你属于哪种。若某持仓有自身价格历史，会显示其周期状态（✅=增持同时出现正在形成的买入形态）。阈值尚未校准，且信号需要≥2个每日快照才会出现。") }}
+      "For each fund we diff its daily holdings and strip out mechanical creation/redemption flow AND the price move, leaving the manager's actual conviction per name — measured in percentage POINTS of fund weight committed, not raw share %. We rank accumulation by that conviction, so a real add to a meaningful position beats a tiny position doubling. Cash, FX and money-market lines are excluded.",
+      "对每只基金，我们比对其每日持仓，剔除机械性的申购／赎回资金流以及价格变动，留下经理人对每只个股的真实信念——以投入的基金权重百分点衡量，而非原始份额百分比。我们按该信念对增持排序，因此对有意义仓位的真实增持会胜过微小仓位的翻倍。现金、外汇与货币市场科目已排除。") }}
+      {{ help("Universe = curated THEMATIC / industry funds (SPDR sector, Global X) plus ACTIVELY managed funds (ARK). Broad-index trackers (SPY/QQQ) are deliberately excluded — they just mirror the whole market, so their 'moves' are reconstitution noise, not a curated read. The 'type' tag tells you whether a move is a discretionary manager's conviction or a curated index basket. Where a holding has price history, its cycle state shows (✅ = accumulation that also has a forming buy setup). Needs ≥2 daily snapshots to appear.",
+      "范围 = 精选的主题／行业基金（SPDR 板块、Global X）加上主动管理基金（ARK）。宽基指数基金（SPY/QQQ）被刻意排除——它们只是镜像整个市场，其“动作”是再平衡噪音而非精选解读。“类型”标签会告诉你某动作是主动经理人的信念还是精选指数篮子。若持仓有价格历史，会显示其周期状态（✅=增持同时出现正在形成的买入形态）。需要≥2个每日快照才会显示。") }}
     </p>
   </div>
 
   <div class="panel">
-    <h2>{{ t('Biggest fund share decisions', '基金最大份额决策') }}</h2>
-    {% if etf_rows %}
+    <h2>{{ t('🟢 Accumulating — strongest conviction first', '🟢 增持中 — 信念最强者优先') }}</h2>
+    {% if accumulation %}
     <table>
-      <tr>
-        <th class="l">{{ t('ETF', '基金') }}</th>
-        <th class="l">{{ t('stock', '个股') }}</th>
-        <th class="r">{{ t('weight', '权重') }}</th>
-        <th class="r">{{ t('active chg', '主动变动') }}</th>
-        <th class="l">{{ t('signal', '信号') }}</th>
-        <th class="l">{{ t('technical', '技术面') }}</th>
-        <th class="l">{{ t('window', '窗口') }}</th>
-      </tr>
-      {% for r in etf_rows %}
-      <tr>
-        <td class="l"><b>{{ r.etf }}</b> <span class="muted">{{ r.etf_name }}{% if r.category %} · {{ td(r.category) }}{% endif %}</span></td>
-        <td class="l"><a href="stock.html#{{ r.ticker }}"><b>{{ r.ticker }}</b></a> <span class="muted">{{ r.name }}</span></td>
-        <td class="r muted">{% if r.weight_pct is not none %}{{ "%.2f" | format(r.weight_pct) }}%{% else %}—{% endif %}</td>
-        <td class="r {{ 'pos' if r.active_chg_pct >= 0 else 'neg' }}"><b>{{ "%+.0f" | format(r.active_chg_pct) }}%</b></td>
-        <td class="l">{% if r.is_active %}<span class="tag tag-active">{{ t('manager conviction', '经理人信念') }}</span>{% else %}<span class="tag tag-passive">{{ t('index / rebalance flow', '指数／再平衡资金流') }}</span>{% endif %}</td>
-        <td class="l">{% if r.ladder %}<span class="state st-{{ r.ladder.state | replace(' ', '_') }}">{{ td(r.ladder.label) }}</span>{% if r.confirmed %} ✅{% endif %}{% else %}<span class="muted">—</span>{% endif %}{% if r.vol and r.vol.surging %} <span title="volume {{ r.vol.ratio }}× recent avg">📊</span>{% endif %}</td>
-        <td class="l muted">{{ r.window }}</td>
-      </tr>
-      {% endfor %}
+      {{ flowhead() }}
+      {% for r in accumulation %}{{ flowrow(r) }}{% endfor %}
     </table>
     {% else %}
-    <p class="muted">{{ t('Building — the collector writes one full-holdings snapshot per ETF per day; flow-normalized decisions appear once each fund has at least two snapshots. Coverage grows as the universe in config.yml is expanded toward the top ~200.', '构建中 — 采集器每天为每只 ETF 写入一份完整持仓快照；当每只基金至少有两个快照后，按资金流标准化的决策即会显示。随着 config.yml 中的范围扩展至前约 200 只，覆盖面会增加。') }}</p>
+    <p class="muted">{{ t('Building — the collector writes one full-holdings snapshot per fund per day; conviction-ranked decisions appear once each fund has at least two snapshots.', '构建中 — 采集器每天为每只基金写入一份完整持仓快照；当每只基金至少有两个快照后，按信念排序的决策即会显示。') }}</p>
     {% endif %}
   </div>
 
+  {% if trims %}
+  <div class="panel">
+    <details>
+      <summary><b>{{ t('🔴 Trimming', '🔴 减持中') }}</b> <span class="muted">{{ t('— positions managers are actively cutting (secondary signal)', '— 经理人正在主动削减的仓位（次要信号）') }}</span></summary>
+      <table style="margin-top:10px">
+        {{ flowhead() }}
+        {% for r in trims %}{{ flowrow(r) }}{% endfor %}
+      </table>
+    </details>
+  </div>
+  {% endif %}
+
   <div class="panel">
     <p class="muted" style="font-size:12px;margin:0">{{ t(
-      "Coverage: SPDR / State Street, ARK, Invesco and Global X are verified daily holdings feeds (with shares). iShares and Schwab are blocked by anti-bot / consent walls, and Vanguard publishes no free daily feed, so those funds are absent — not a daily signal we can source cleanly. A fund missing here failed today's fetch and is skipped, never crashing the page. See LIMITATIONS.md.",
-      "覆盖范围：SPDR／道富、ARK、Invesco 与 Global X 为已验证的每日持仓数据（含份额）。iShares 与嘉信因反爬／同意墙被屏蔽，Vanguard 无免费每日数据，故这些基金缺失——无法干净地作为每日信号获取。此处缺失的基金为今日抓取失败并被跳过，绝不会使页面崩溃。详见 LIMITATIONS.md。") }}
+      "Coverage: SPDR / State Street, ARK and Global X are verified daily holdings feeds (with shares). iShares and Schwab are blocked by anti-bot / consent walls, and Vanguard publishes no free daily feed, so those funds are absent. A fund missing here failed today's fetch and is skipped, never crashing the page. See LIMITATIONS.md.",
+      "覆盖范围：SPDR／道富、ARK 与 Global X 为已验证的每日持仓数据（含份额）。iShares 与嘉信因反爬／同意墙被屏蔽，Vanguard 无免费每日数据，故这些基金缺失。此处缺失的基金为今日抓取失败并被跳过，绝不会使页面崩溃。详见 LIMITATIONS.md。") }}
       {{ t('Generated', '生成于') }} {{ generated_utc }} UTC</p>
   </div>
 

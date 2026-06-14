@@ -22,7 +22,6 @@ from plotly.subplots import make_subplots
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from collectors.holdings import active_changes  # noqa: E402
 from collectors.sponsors import flows_table  # noqa: E402
 from engine.i18n import t as T  # noqa: E402
 from engine.i18n import tr as TR  # noqa: E402
@@ -655,6 +654,108 @@ def _season_tooltip(seas: dict | None, month: int | None):
     return Markup(f"{title}{chart}{tables}{foot}")
 
 
+def _mini_svg(vals, color: str = "var(--link)", w: int = 260, h: int = 54,
+              baseline=None, dot: bool = True) -> str:
+    """A tiny theme-aware inline sparkline (area + line + last-point marker),
+    used both for the nowcast hover charts and the standout-stock cards. Pure
+    SVG so it needs no client JS and works offline. `vals` should already be a
+    clean numeric list. `baseline` draws a dashed reference line (0 = stall,
+    2 = the Fed's inflation target, …)."""
+    vals = [float(v) for v in vals if v is not None and v == v]
+    if len(vals) < 2:
+        return ""
+    lo, hi = min(vals), max(vals)
+    if baseline is not None:
+        lo, hi = min(lo, float(baseline)), max(hi, float(baseline))
+    rng = (hi - lo) or 1.0
+    n = len(vals)
+    pad = h * 0.10  # keep the line off the top/bottom edges
+
+    def xy(i, v):
+        return (i / (n - 1) * w, (h - pad) - ((v - lo) / rng) * (h - 2 * pad) + pad)
+
+    pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in (xy(i, v) for i, v in enumerate(vals)))
+    out = [f'<svg class="nch" viewBox="0 0 {w} {h}" preserveAspectRatio="none" '
+           f'width="100%" height="{h}">']
+    if baseline is not None:
+        by = (h - pad) - ((float(baseline) - lo) / rng) * (h - 2 * pad) + pad
+        out.append(f'<line x1="0" y1="{by:.1f}" x2="{w}" y2="{by:.1f}" '
+                   f'stroke="var(--muted)" stroke-width="0.8" stroke-dasharray="3 3" '
+                   f'opacity="0.55"/>')
+    out.append(f'<polyline points="0,{h} {pts} {w},{h}" fill="{color}" '
+               f'opacity="0.12" stroke="none"/>')
+    out.append(f'<polyline points="{pts}" fill="none" stroke="{color}" '
+               f'stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/>')
+    if dot:
+        lx, ly = xy(n - 1, vals[-1])
+        out.append(f'<circle cx="{lx:.1f}" cy="{ly:.1f}" r="2.6" fill="{color}"/>')
+    out.append("</svg>")
+    return "".join(out)
+
+
+def nowcast_history(f: "pd.DataFrame") -> dict:
+    """Per-metric historical mini-charts for the Macro-nowcast hover popovers.
+    Reuses the SAME transforms the dashboard headline numbers use (raw level for
+    WEI/GDPNow, the annualized-smoothed monthly print for sticky/flexible CPI) so
+    the last charted point matches the displayed value. Returns SVG + key stats
+    keyed by metric; metrics absent from the feature frame are simply omitted."""
+    from engine.conditions import _ann_monthly_pct
+    sm = config.load()["engine"]["conditions"]["inflation_nowcast"]["smooth_months"]
+    out: dict[str, dict] = {}
+
+    def _trend(distinct, lookback, kind, eps):
+        """Directional read over `lookback` distinct prints. `kind` decides the
+        vocabulary AND the favourability colour: a growth metric rising is
+        market-friendly (good), an inflation metric accelerating is not (bad).
+        Returns (word, dir) where dir in {good, bad, flat} drives the colour."""
+        if len(distinct) <= lookback:
+            return None, None
+        chg = float(distinct.iloc[-1]) - float(distinct.iloc[-1 - lookback])
+        if kind == "growth":
+            if chg > eps:
+                return "rising", "good"
+            if chg < -eps:
+                return "falling", "bad"
+        else:
+            if chg > eps:
+                return "accelerating", "bad"
+            if chg < -eps:
+                return "cooling", "good"
+        return "flat", "flat"
+
+    def pack(name, raw, color, baseline, keep, per_year, kind, lookback, eps, monthly=False):
+        if raw is None:
+            return
+        s = raw.dropna()
+        if monthly:                       # collapse ffilled daily rows to monthly prints
+            s = s[s.ne(s.shift())]
+        s = s.iloc[-keep:]
+        if len(s) < 3:
+            return
+        word, tdir = _trend(s, lookback, kind, eps)
+        out[name] = {
+            "svg": _mini_svg(list(s), color=color, baseline=baseline),
+            "lo": round(float(s.min()), 1), "hi": round(float(s.max()), 1),
+            "last": round(float(s.iloc[-1]), 1), "years": round(len(s) / per_year, 1),
+            "trend": word, "dir": tdir, "kind": kind, "baseline": baseline,
+        }
+
+    col = lambda c: f[c] if c in f.columns else None  # noqa: E731
+    pack("wei", col("wei"), "var(--link)", 0.0, 160, 52, "growth", 13, 0.08, monthly=True)
+    # GDPNow window stops short of the 2020 COVID -32%→+37% whipsaw, which would
+    # otherwise squash all post-pandemic detail into a flat line.
+    pack("gdpnow", col("gdpnow"), "var(--link)", 0.0, 20, 4, "growth", 1, 0.10, monthly=True)
+    sticky = col("sticky_cpi")
+    flex = col("flex_cpi")
+    if sticky is not None:
+        pack("sticky", _ann_monthly_pct(sticky, sm), "var(--orange)", 2.0, 84, 12,
+             "inflation", 3, 0.10, monthly=True)
+    if flex is not None:
+        pack("flexible", _ann_monthly_pct(flex, sm), "var(--orange)", 2.0, 84, 12,
+             "inflation", 3, 0.30, monthly=True)
+    return out
+
+
 def action_board(sector_timing: dict, notable: list[dict]) -> dict:
     """Bucket sector + standout-stock cycle signals into an at-a-glance
     'what to act on now' board for the front page."""
@@ -680,17 +781,33 @@ def action_board(sector_timing: dict, notable: list[dict]) -> dict:
         else:
             avoid.append(item)
     buy_soon.sort(key=lambda x: (x["days"] if x["days"] is not None else 99))
-    # de-dup notable stocks, cap, sort buys-first then by days
-    seen, notable_clean = set(), []
+    # ----- standout-stock ranking ------------------------------------------------
+    # Rank by the engine's OWN calibrated entry-quality (|eq_score|), not just the
+    # urgency bucket — a 'strong' fresh buy should outrank a 'minimal' one (the old
+    # code sorted on bucket+ETA only and never used the conviction it computed).
+    # Then prefer fresher signals. A soft conviction floor drops 'minimal' (<15)
+    # setups, but only while enough genuine ones remain so the strip never starves.
     order = {"now": 0, "imminent": 1, "exit": 2}
-    for n in sorted(notable, key=lambda x: (order.get(x["urgency"], 9),
-                                            x["days"] if x.get("days") is not None else 99)):
+
+    def _conv(n):
+        return abs(n.get("eq_score") or 0)
+
+    def _rank(n):
+        return (order.get(n["urgency"], 9), -_conv(n),
+                n.get("age_days") if n.get("age_days") is not None else 999,
+                n["days"] if n.get("days") is not None else 99)
+
+    CAP, FLOOR = 24, 15
+    strong = [n for n in notable if _conv(n) >= FLOOR]
+    pool = strong if len(strong) >= 6 else notable
+    seen, notable_clean = set(), []
+    for n in sorted(pool, key=_rank):
         if n["ticker"] in seen:
             continue
         seen.add(n["ticker"])
         notable_clean.append(n)
     return {"buy_now": buy_now, "buy_soon": buy_soon, "take_profits": take_profits,
-            "hold": hold, "avoid": avoid, "notable": notable_clean[:10]}
+            "hold": hold, "avoid": avoid, "notable": notable_clean[:CAP]}
 
 
 def sector_rows(playbook: dict | None, timing: dict | None = None) -> list[dict]:
@@ -761,17 +878,25 @@ def sector_rows(playbook: dict | None, timing: dict | None = None) -> list[dict]
 
 
 def holdings_rows() -> list[dict]:
-    cfg = config.load()["holdings"]
-    out = []
-    for fund in cfg["watchlist"]:
-        ch = active_changes(fund)
-        if ch is None or ch.empty:
-            continue
-        big = ch[ch["active_chg_pct"].abs() >= cfg["active_change_alert_pct"] / 2]
-        for pos, row in big.dropna(subset=["active_chg_pct"]).iterrows():
-            out.append({"fund": fund, "position": pos, "pct": row["active_chg_pct"],
-                        "window": f"{row['window_start']}..{row['window_end']}"})
-    return sorted(out, key=lambda r: -abs(r["pct"]))[:20]
+    """Compact teaser for the dashboard's "real fund moves" panel: the top
+    conviction-ranked ACCUMULATION decisions across the thematic/active fund
+    universe (same engine as the full radar at etfs.html). Conviction = pp of
+    fund weight committed, so a tiny-position double doesn't outrank a real add."""
+    from engine.holdings_signals import top_etf_accumulation
+    n = config.load()["holdings_signals"].get("panel_top_n", 12)
+    try:
+        acc = top_etf_accumulation().get("accumulation", [])[:n]
+    except Exception as e:  # noqa: BLE001 — panel is additive, never fatal
+        log.error("fund moves panel failed: %s", e)
+        return []
+    return [{
+        "fund": s["etf"], "fund_name": s.get("etf_name", s["etf"]),
+        "ticker": s["ticker"], "name": s["name"], "sector": s.get("sector", ""),
+        "weight_pct": s.get("weight_pct"), "conviction_pp": s.get("conviction_pp"),
+        "active_chg_pct": s.get("active_chg_pct"), "direction": s["direction"],
+        "is_active": s.get("is_active", False), "confirmed": s.get("confirmed", False),
+        "ladder": s.get("ladder"), "window": s.get("window", ""),
+    } for s in acc]
 
 
 def accumulation_rows() -> list[dict]:
@@ -835,18 +960,50 @@ STATE_STYLES = {
 BUY_ZONE_STATES = ("FRESH BUY", "TURN SIGNALED")
 
 
-def build_etf_page(env: Environment, site: Path, generated: str) -> None:
-    """Render etfs.html — the broad-universe ETF flow radar (share-based
-    flow-normalized active decisions). See engine/holdings_signals.top_etf_accumulation."""
-    from engine.holdings_signals import top_etf_accumulation
-    try:
-        rows = top_etf_accumulation()
-    except Exception as e:  # noqa: BLE001
-        log.error("etf signals failed: %s", e)
-        rows = []
-    html = env.get_template("etfs.html.j2").render(etf_rows=rows, generated_utc=generated)
+def _fund_flows_by_ticker(rows: list[dict]) -> dict[str, list[dict]]:
+    """Group every fund decision by the STOCK it touched, so each ticker's page
+    can answer "which thematic/active funds are buying or selling me". Sorted by
+    conviction magnitude within each ticker."""
+    by: dict[str, list[dict]] = {}
+    for r in rows:
+        by.setdefault(r["ticker"], []).append({
+            "fund": r["etf"], "fund_name": r.get("etf_name", r["etf"]),
+            "theme": r.get("category", ""), "is_active": r.get("is_active", False),
+            "direction": r["direction"], "conviction_pp": r.get("conviction_pp"),
+            "weight_pct": r.get("weight_pct"), "active_chg_pct": r.get("active_chg_pct"),
+            "window": r.get("window", ""),
+        })
+    for tk in by:
+        by[tk].sort(key=lambda m: -abs(m.get("conviction_pp") or 0))
+    return by
+
+
+def build_etf_page(env: Environment, site: Path, generated: str,
+                   rows: list[dict] | None = None) -> None:
+    """Render etfs.html — the "real fund moves" board: conviction-ranked,
+    accumulation-first holding decisions across the curated thematic/active ETF
+    universe. Also writes site/stockdata/fund_flows.json so each stock page can
+    show which funds bought/sold it. See engine/holdings_signals."""
+    from engine.holdings_signals import all_etf_signals, split_by_conviction
+    if rows is None:
+        try:
+            rows = all_etf_signals()
+        except Exception as e:  # noqa: BLE001
+            log.error("etf signals failed: %s", e)
+            rows = []
+    split = split_by_conviction(rows)
+    html = env.get_template("etfs.html.j2").render(
+        accumulation=split["accumulation"], trims=split["trims"],
+        generated_utc=generated)
     (site / "etfs.html").write_text(html)
-    log.info("wrote etfs.html (%d signal rows)", len(rows))
+    # per-stock feed (built before the stock library so it can be attached there)
+    outdir = site / "stockdata"
+    outdir.mkdir(parents=True, exist_ok=True)
+    (outdir / "fund_flows.json").write_text(
+        json.dumps(_fund_flows_by_ticker(rows), separators=(",", ":"), default=str))
+    log.info("wrote etfs.html (%d accumulation, %d trims) + fund_flows.json (%d names)",
+             len(split["accumulation"]), len(split["trims"]),
+             len({r["ticker"] for r in rows}))
 
 
 def build_factors_page(env: Environment, site: Path, generated: str) -> dict | None:
@@ -892,6 +1049,7 @@ def build_sector_pages(env: Environment, site: Path, generated: str) -> dict:
 
     from collectors.sector_holdings import latest_fundamentals, latest_top10
     from engine.conditions import sector_macro_beta
+    from engine import ticker_alerts
     from engine.cycles import LADDER, STATE_DISPLAY, analyze
     from engine.holdings_signals import accumulation_signals
     from engine.playbook import SECTOR_NAMES
@@ -904,6 +1062,13 @@ def build_sector_pages(env: Environment, site: Path, generated: str) -> dict:
     # read AND the accumulation overlay (so the overlay ladder matches the card).
     liq = current_liquidity()
     drag = current_macro()
+    # benchmark + feed window for each ETF's alert timeline (the ladder log itself
+    # is written by build_stock_library, where these ETFs also live — no re-write)
+    _spy = store.read("yahoo", "SPY")
+    _bench = _spy["close"] if _spy is not None else None
+    _acfg = config.load().get("alerts", {})
+    _adays = int(_acfg.get("ticker_timeline_days", 120))
+    _amax = int(_acfg.get("ticker_max_events", 50))
     tpl = env.get_template("sector.html.j2")
     outdir = site / "sectors"
     outdir.mkdir(parents=True, exist_ok=True)
@@ -939,25 +1104,56 @@ def build_sector_pages(env: Environment, site: Path, generated: str) -> dict:
                 # collect decisive individual-stock signals for the front page
                 urg = h["ladder"]["entry"]["urgency"]
                 if urg in ("now", "imminent", "exit"):
+                    lad = h["ladder"]
+                    closes = df["close"].dropna()
+                    px = float(closes.iloc[-1]) if len(closes) else None
+                    hi52 = float(closes.iloc[-252:].max()) if len(closes) else None
+                    off_high = (round((px / hi52 - 1) * 100, 1)
+                                if px and hi52 else None)
+                    # ~3 months of daily closes, thinned for a compact card sparkline
+                    tail = closes.iloc[-66:]
+                    spark = list(tail.iloc[::2].round(3)) if len(tail) > 4 else []
+                    sdir = lad.get("dir")
+                    scolor = ("var(--up)" if sdir == "up"
+                              else "var(--down)" if sdir == "down" else "var(--warn)")
                     notable.append({"ticker": tick, "name": str(r.get("name", "")).title(),
                                     "sector": SECTOR_NAMES.get(fund, fund),
-                                    "label": h["ladder"]["label"],
-                                    "tag": h["ladder"]["entry"]["tag"], "urgency": urg,
-                                    "days": h["ladder"]["entry"].get("days_hi"),
-                                    "age_short": h["ladder"].get("age_short"),
-                                    "age_short_zh": h["ladder"].get("age_short_zh"),
-                                    "eq_badge": h["ladder"].get("eq_badge"),
-                                    "eq_dir": h["ladder"].get("eq_dir"),
-                                    "eq_tip": h["ladder"].get("eq_tip")})
+                                    "label": lad["label"], "action": lad.get("action"),
+                                    "tag": lad["entry"]["tag"], "urgency": urg,
+                                    "days": lad["entry"].get("days_hi"),
+                                    "dir": sdir,
+                                    "price": round(px, 2) if px is not None else None,
+                                    "off_high": off_high,
+                                    "eq_score": lad.get("eq_score"),
+                                    "eq_grade": lad.get("eq_grade"),
+                                    "eq_grade_zh": lad.get("eq_grade_zh"),
+                                    "score": lad.get("score"),
+                                    "signal_date": lad.get("signal_date"),
+                                    "age_days": lad.get("age_days"),
+                                    "spark_svg": _mini_svg(spark, color=scolor, w=240, h=42,
+                                                           dot=True),
+                                    "age_short": lad.get("age_short"),
+                                    "age_short_zh": lad.get("age_short_zh"),
+                                    "eq_badge": lad.get("eq_badge"),
+                                    "eq_dir": lad.get("eq_dir"),
+                                    "eq_tip": lad.get("eq_tip")})
         buy_zone = sum(1 for h in holdings if h["ladder"]["state"] in BUY_ZONE_STATES)
         s = {"fund": fund, "name": SECTOR_NAMES.get(fund, fund),
              "mtf_json": _json2.dumps(res.get("mtf", {})), **res,
              "holdings": holdings,
              "accumulation": accumulation_signals(fund, liquidity=liq,
                                                   macro_drag=drag, macro_beta=beta)}
+        ec = etf["close"].dropna()
+        # technical snapshot for the at-a-glance signal-chip strip (same shape the
+        # stock analyzer reads from its JSON, so both pages render identical chips)
+        from engine.technicals import snapshot as _snap
+        s["tech"] = _snap(ec)
+        feed = ticker_alerts.build_feed(
+            fund, ec, etf.get("high"), _bench, res.get("ladder"),
+            str(ec.index.max().date()), days=_adays, max_events=_amax)
         html = tpl.render(s=s, state_styles=STATE_STYLES, calibration=calibration,
                           ladder_order=LADDER, state_display=STATE_DISPLAY,
-                          generated_utc=generated)
+                          alerts=feed, generated_utc=generated)
         (outdir / f"{fund}.html").write_text(html)
         summaries[fund] = {"state": res["ladder"]["state"],
                            "label": res["ladder"]["label"],
@@ -1083,6 +1279,7 @@ def main() -> int:
         flows_html=flows_html_table(),
         health=health_rows(),
         factor_leadership=factor_leadership,
+        nowcast_hist=nowcast_history(f),
     )
     # Write the macro dashboard straight to macro.html. index.html is owned
     # solely by build_vector.build_landing() (the landing hub) — keeping the raw
@@ -1093,17 +1290,16 @@ def main() -> int:
     log.info("wrote %s (%.0f KB)", out, out.stat().st_size / 1024)
 
     # --- history page: the longer-window charts + lifespan base rates ----------
-    from engine.playbook import QUAD_SHORT, transition_stats
+    from engine.playbook import QUAD_SHORT, next_quads_line, transition_stats
     trans = transition_stats(hist["quad"])
     lifespan_rows = []
     for q in ("Q1", "Q2", "Q3", "Q4"):
         nxt = trans["matrix"].get(q, {})
-        nxt_str = ", ".join(f"{QUAD_SHORT.get(k, k)} {v:.0%}" for k, v in
-                            sorted(nxt.items(), key=lambda kv: -kv[1])[:2]) or "—"
         lifespan_rows.append({"name": QUAD_SHORT[q],
                               "n": trans["n_by_quad"].get(q, "—"),
                               "median": trans["median_days"].get(q, "—"),
-                              "next": nxt_str})
+                              "next": next_quads_line(nxt),
+                              "next_zh": next_quads_line(nxt, zh=True)})
     hist_html = env.get_template("history.html.j2").render(
         latest=latest,
         generated_utc=generated,
@@ -1120,11 +1316,22 @@ def main() -> int:
         import json as _json
 
         from engine.cycles import STATE_DISPLAY
+        from engine import ticker_alerts as _ta
         sd_json = _json.dumps(STATE_DISPLAY)
         (site / "stock.html").write_text(
             env.get_template("stock.html.j2").render(
                 state_styles=STATE_STYLES, generated_utc=generated,
-                state_display_json=sd_json))
+                state_display_json=sd_json,
+                ticker_alert_meta_json=_json.dumps(_ta.edge_meta())))
+        # refresh the cached 中文 translations of the (English-sourced) company blurbs
+        # BEFORE building the library, so the per-stock JSON carries description_zh.
+        # Gated + cached + degrade-never-raise: a no-op without the configured key, and
+        # only new/changed blurbs hit the API (see scripts/translate_profiles.py).
+        try:
+            from scripts.translate_profiles import main as translate_profiles
+            translate_profiles()
+        except Exception as e:  # noqa: BLE001 — translation is optional, never break the build
+            log.warning("profile translation step failed (%s); blurbs stay English", e)
         from scripts.build_stock_library import main as build_library
         build_library()
 

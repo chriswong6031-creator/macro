@@ -334,24 +334,31 @@ holdings_signals:
   volume_surge_x: 1.5             # recent vs prior avg-volume ratio to flag a surge (📊)
 
 etf_holdings:
-  # Phase 2: broad "popular ETFs" universe. The collector writes FULL daily
+  # The "real fund moves" board (site/etfs.html). The collector writes FULL daily
   # holdings (with Shares Held) per fund; the engine diffs consecutive snapshots
   # with flow normalization (share-based active-decision) — no per-stock prices
-  # needed, so it scales to the whole universe. Edit the universe freely to grow
-  # toward the top ~200. Sponsor reliability (recon 2026-06-13, D71): ssga/ark/invesco
-  # /globalx VERIFIED; iShares/Schwab BLOCKED (Akamai/JS consent walls, need a headless
-  # browser); Vanguard NOT supported (no free daily feed). Invesco: idType=cusip is
-  # reliable (idType=ticker 500s for all but flagship QQQ).
+  # needed. The universe is deliberately THEMATIC / INDUSTRY funds only (not broad
+  # index trackers): a thematic basket reflects someone CURATING a slice of the
+  # market, so a position add is a meaningful read; a broad-index fund (SPY/QQQ/
+  # DIA) just mirrors the whole market and produces no actionable signal. Active
+  # funds (ARK) live in the `holdings.watchlist` block and are merged in. Sponsor
+  # reliability (recon 2026-06-13, D71): ssga/ark/invesco/globalx VERIFIED;
+  # iShares/Schwab BLOCKED (Akamai/JS consent walls); Vanguard NOT supported.
   retries: 3
   active_change_alert_pct: 15     # |flow-normalized share change| (% of position) to flag
   active_change_window_d: 5       # compare latest snapshot to one ~5 snapshots back
   min_position_pct: 0.20          # ignore tiny <0.2%-weight positions (noise)
-  page_top_n: 40                  # rows on the ETFs page
+  min_conviction_pp: 0.05         # ignore moves below 0.05pp of fund weight committed
+                                  # (a 0.1%->0.2% double is a big % but trivial conviction)
+  min_base_frac: 0.000001         # backstop: drop only positions whose prior base is a
+                                  # degenerate near-zero share of the fund (placeholder
+                                  # contra-lines / brand-new-from-zero) so the denominator
+                                  # can't explode the %. Real small positions are gated by
+                                  # min_position_pct (weight), not this share-fraction floor.
+  page_top_n: 40                  # accumulation rows on the radar page
+  trims_top_n: 12                 # secondary (de-emphasized) trim rows
   universe:
-    # --- SPDR / State Street (VERIFIED: daily XLSX incl. Shares Held) ----------
-    SPY:  {sponsor: ssga, name: "SPDR S&P 500", category: "US Large Cap"}
-    DIA:  {sponsor: ssga, name: "SPDR Dow Jones Industrial", category: "US Large Cap"}
-    MDY:  {sponsor: ssga, name: "SPDR S&P MidCap 400", category: "US Mid Cap"}
+    # --- SPDR / State Street thematic & industry (VERIFIED daily XLSX) ---------
     XBI:  {sponsor: ssga, name: "SPDR S&P Biotech", category: "Biotech"}
     XOP:  {sponsor: ssga, name: "SPDR S&P Oil & Gas E&P", category: "Energy"}
     XHB:  {sponsor: ssga, name: "SPDR S&P Homebuilders", category: "Homebuilders"}
@@ -361,17 +368,14 @@ etf_holdings:
     XME:  {sponsor: ssga, name: "SPDR S&P Metals & Mining", category: "Metals & Mining"}
     XSD:  {sponsor: ssga, name: "SPDR S&P Semiconductor", category: "Semiconductors"}
     XAR:  {sponsor: ssga, name: "SPDR S&P Aerospace & Defense", category: "Aerospace & Defense"}
-    # --- Invesco (VERIFIED: dng-api JSON; use cusip — idType=ticker 500s for many) -
-    QQQ:  {sponsor: invesco, name: "Invesco QQQ (Nasdaq-100)", category: "US Large Cap Growth"}   # flagship works by ticker
-    RSP:  {sponsor: invesco, cusip: "46137V357", name: "Invesco S&P 500 Equal Weight", category: "US Large Cap"}
     # --- Global X (VERIFIED: dated full-holdings CSV; thematic, real equity names) -
     URA:  {sponsor: globalx, name: "Global X Uranium", category: "Uranium"}
     LIT:  {sponsor: globalx, name: "Global X Lithium & Battery Tech", category: "Lithium / Battery"}
     COPX: {sponsor: globalx, name: "Global X Copper Miners", category: "Copper Miners"}
-    # iShares/BlackRock (IVV/IWM/EFA...) and Invesco non-flagship: Akamai/consent
-    # walls block direct HTTP (recon 2026-06-13, D71) — need a headless browser, so
-    # they are intentionally NOT seeded. Vanguard publishes no free daily feed.
-    # _fetch_ishares stays in the collector for a future headless/proxy path.
+    # Broad-index funds (SPY/DIA/MDY/QQQ/RSP) intentionally DROPPED — they track the
+    # whole market, so their "moves" are reconstitution noise, not a curated read.
+    # iShares/BlackRock and Invesco non-flagship are Akamai/consent-wall blocked
+    # (recon 2026-06-13, D71); _fetch_ishares stays for a future headless path.
 
 fundamentals:
   enabled: true                   # LOW CONFIDENCE module — engine must work without it
@@ -773,6 +777,9 @@ alerts:
   ebp_widening_z: 2.0                 # EBP 1-month change this many sigma = credit risk-off
   drawdown_risk_high: 80              # macro-stress gauge crossing into the high band (P(dd) ~36%)
   capitulation_strong: 2              # capitulation gauge >= this (stacked) = contrarian bounce watch
+  # --- per-ticker / per-ETF alert feed (engine/ticker_alerts.py) ---
+  ticker_timeline_days: 120           # window shown in each ticker / ETF alert feed
+  ticker_max_events: 50               # cap on events kept per feed (most-recent-first)
 
 notify:
   # public base URL of the published site (e.g. https://user.github.io/repo).
@@ -992,6 +999,27 @@ commodity_news:
   llm_model: claude-haiku-4-5     # cheap; ~$0.0007/call
   llm_min_confidence: high        # code-side gate: below this -> "unknown"
   catalysts_horizon_days: 14      # upcoming OPEC/FOMC/EIA watch window (keyless, always on)
+
+# =============================================================================
+# Company-profile translation (engine/translate.py + scripts/translate_profiles.py).
+# The single-stock analyzer's "Business profile" blurb is sourced English free text
+# (Wikipedia/SEC) — not a UI string, so it can't be dual-emitted like the rest of the
+# i18n. This OPTIONAL, GATED, CACHED pass machine-translates each blurb to 简体中文 once
+# (keyed by a hash of the English, so only new/changed text re-hits the API) and stores
+# it in data/profile/descriptions_zh.parquet; _load_profiles() joins it so the analyzer
+# can `lz()`-pick by language. DEFAULT OFF + degrade-never-raise: no key / disabled =>
+# the blurb simply stays English (today's behavior). Provider-agnostic (Anthropic-compatible
+# wire format): DeepSeek (cheap, 中文-native — the documented choice) or Anthropic.
+# =============================================================================
+profile_translation:
+  enabled: true                   # gate; still a no-op unless the api_key_env key is set
+  provider: deepseek              # deepseek | anthropic (label only; both use the anthropic SDK)
+  model: deepseek-chat            # DeepSeek V3.x chat; or e.g. claude-haiku-4-5 for anthropic
+  base_url: https://api.deepseek.com/anthropic   # omit / null for native Anthropic
+  api_key_env: DEEPSEEK_API_KEY   # which env var (or .env entry) holds the key
+  batch_size: 20                  # blurbs per request (short text; JSON-array contract, validated)
+  max_chars: 600                  # truncate pathologically long blurbs before sending
+  max_tokens: 4000                # response cap per batch
 
 # =============================================================================
 # Forex Vector — currency signal board (research/FOREX_DASHBOARD.md).
@@ -1235,6 +1263,16 @@ vector:
     deep_value_nupl: 0.0        # ...or NUPL below this (corroborating, collinear)
     overvalued_mayer: 2.4       # Mayer above this = distribution CAP (<=0.5)
     overvalued_rr: 0.02         # Reserve Risk above this = distribution CAP (calibrated TOP)
+
+  ensemble:                       # fixed-form orthogonalized gate-passed ensemble (D-vec-ENSEMBLE)
+    z_window_d: 365               # rolling z-score window for the signed-z axes + the score
+    beta_window_d: 252            # rolling-beta window for the causal orthogonalization (copied from forex; NOT tuned)
+    beta_min_train_d: 252         # min bars before a residual beta is estimable (raw z until then)
+    confirm_days: 7               # whipsaw confirmation on the 5-state stance (matches calibration.whipsaw_max_days)
+    # ensemble_weights left UNSET => equal-weight over orthogonalized axes (the robust 1/N default).
+    # The calibration promotion-gate measures whether OOF-IC reliability-tilting beats this OOS;
+    # only on a clean sweep (beat equal-weight + best-single + heuristic, both halves + folds) does
+    # the UI point the headline at the ensemble (report.ensemble_promotion.verdict).
 
   btc_vs_alts:
     rs_window_d: 30               # relative-strength window across BTC/ETH/alts

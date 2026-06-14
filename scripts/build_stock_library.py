@@ -22,6 +22,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from engine import ticker_alerts  # noqa: E402
 from engine.conditions import sector_macro_beta  # noqa: E402
 from engine.cycles import analyze  # noqa: E402
 from engine.playbook import SECTOR_NAMES  # noqa: E402
@@ -73,7 +74,9 @@ def current_macro() -> float | None:
 
 def _one(ticker: str, close: pd.Series, high: pd.Series | None,
          name: str, sector: str, liquidity: str | None = None,
-         macro_drag: float | None = None, macro_beta: float = 0.0) -> dict | None:
+         macro_drag: float | None = None, macro_beta: float = 0.0,
+         bench: pd.Series | None = None, alert_days: int = 120,
+         alert_max: int = 50) -> dict | None:
     c = close.dropna()
     if len(c) < 300:
         return None
@@ -89,9 +92,10 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
         return None
     month = int(c.index.max().month)
     seas = seasonality(c)
-    return {
+    asof = str(c.index.max().date())
+    rec = {
         "ticker": ticker, "name": name, "sector": sector,
-        "asof": str(c.index.max().date()),
+        "asof": asof,
         "history_days": int(len(c)),
         "tech": snapshot(c),
         "season_this": season_line(seas, month),
@@ -100,6 +104,14 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
         "season_next_zh": season_line(seas, month % 12 + 1, zh=True),
         **res,
     }
+    # per-ticker alert feed: a backfilled technical signal-change timeline with
+    # the ladder's standing read pinned on top (embedded so the client page,
+    # which fetches this JSON, renders it with no extra request). The ladder log
+    # is flushed once in main(), not per ticker.
+    rec["alerts"] = ticker_alerts.compact_feed(ticker_alerts.build_feed(
+        ticker, c, high, bench, res.get("ladder"), asof,
+        days=alert_days, max_events=alert_max))
+    return rec
 
 
 def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
@@ -189,6 +201,13 @@ def main() -> int:
     drag = current_macro()
     log.info("net-liquidity regime for library: %s · macro-risk: %s",
              liq or "unknown", "—" if drag is None else f"{drag:.2f}")
+    # benchmark for per-ticker relative-strength alerts + the feed window/caps
+    spy = store.read("yahoo", "SPY")
+    bench = spy["close"] if spy is not None else None
+    acfg = config.load().get("alerts", {})
+    a_days = int(acfg.get("ticker_timeline_days", 120))
+    a_max = int(acfg.get("ticker_max_events", 50))
+    ladder_rows: list[dict] = []
     # Phase-2 (research/STOCK_FUNDAMENTALS_PLAN.md): drip a capped batch of
     # per-stock profiles (SEC identity + Wikipedia descriptions) into
     # data/profile/ each build — resumable + capped so it never hammers SEC/
@@ -207,11 +226,22 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.warning("fundamental panels unavailable (%s) — library ships technicals only", e)
         fpanels = {}
+    # institutional flow per stock: which thematic/active funds are accumulating
+    # or trimming each name (written by build_site.build_etf_page just before this
+    # runs, so the per-stock page can show it). Additive — absent => no panel.
+    flows: dict[str, list] = {}
+    ff = outdir / "fund_flows.json"
+    if ff.exists():
+        try:
+            flows = json.loads(ff.read_text())
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("fund_flows.json unreadable (%s)", e)
     index, built, failed = [], 0, 0
     for ticker, close, high, name, sector in universe():
         try:
             rec = _one(ticker, close, high, name, sector, liquidity=liq,
-                       macro_drag=drag, macro_beta=sector_macro_beta(sector))
+                       macro_drag=drag, macro_beta=sector_macro_beta(sector),
+                       bench=bench, alert_days=a_days, alert_max=a_max)
         except Exception as e:  # noqa: BLE001 — one bad ticker must not kill the library
             log.debug("library %s failed: %s", ticker, e)
             rec = None
@@ -220,11 +250,20 @@ def main() -> int:
             continue
         if fpanels.get(ticker):
             rec.update(fpanels[ticker])
+        if flows.get(ticker):
+            rec["fund_flows"] = flows[ticker]
+        ladder_rows.append(ticker_alerts.ladder_row(ticker, rec.get("ladder"), rec.get("asof")))
         safe = ticker.replace("=", "_").replace("^", "_")
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
         index.append({"t": ticker, "n": name, "s": sector,
                       "st": rec["ladder"]["state"]})
         built += 1
+    # flush the accruing ladder-transition log in one idempotent, atomic write
+    try:
+        added = ticker_alerts.write_ladder_log_batch(ladder_rows)
+        log.info("ladder log: +%d new transitions", added)
+    except Exception as e:  # noqa: BLE001 — the log is additive, never fatal
+        log.warning("ladder log flush skipped (%s)", e)
     (outdir / "index.json").write_text(json.dumps(index))
     cal = config.data_dir() / "regime" / "ladder_calibration.json"
     if cal.exists():
