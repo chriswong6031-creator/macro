@@ -1474,6 +1474,46 @@
     {% endif %}
   </div>
 
+  <!-- ===================== MARKET BREADTH ===================== -->
+  {% if breadth_panel %}
+  <div class="panel span12" id="breadth">
+    <h2>{{ t('Market breadth — how many stocks are actually participating', '市场广度 — 究竟有多少股票在参与') }}
+      {{ help("Breadth across the full S&P Composite 1500 (large = S&P 500, mid = S&P 400, small = S&P 600): how many stocks are advancing, how many hold above their 50- and 200-day lines, and net new 52-week highs. A strong index riding on a shrinking number of stocks is fragile — broad participation confirms a move, thinning breadth is an early warning. The % above the 50-day line also feeds the regime model's growth axis, so this is the same breadth the model reads, just made legible.", "覆盖整个标普综合 1500（大盘 = 标普500、中盘 = 标普400、小盘 = 标普600）的广度：多少股票上涨、多少守在其 50 日与 200 日均线之上，以及净创 52 周新高。指数走强却只靠越来越少的股票支撑则脆弱 — 广泛参与确认走势，广度变薄是早期预警。高于 50 日线的占比也进入周期模型的增长轴，因此这与模型读取的是同一广度，只是更直观。") }}
+    </h2>
+    <p class="{{ breadth_panel.comp.tone }}" style="margin:0 2px 12px; font-size:14px; line-height:1.5">
+      {{ t('Participation looks', '参与度看起来') }} <b>{{ breadth_panel.comp.label }}</b> —
+      <b>{{ "%.0f" | format(breadth_panel.comp.pa50) }}%</b> {{ t('of the 1,500 are above their 50-day line', '的 1500 只股票高于其 50 日均线') }},
+      <b>{{ "%.0f" | format(breadth_panel.comp.pa200) }}%</b> {{ t('above their 200-day', '高于其 200 日均线') }};
+      {{ t('net new 52-week highs', '净创 52 周新高') }} <b>{{ "%+d" | format(breadth_panel.comp.net_nh) }}</b>.
+      <span class="muted">{{ breadth_panel.comp.verdict }}.</span>
+    </p>
+    <table>
+      <tr>
+        <th class="l">{{ t('size tier', '规模层级') }}</th>
+        <th class="l" style="min-width:170px">{{ t('advancing vs declining', '上涨对下跌') }}</th>
+        <th>{{ t('&gt; 50-day', '&gt; 50 日') }}</th>
+        <th>{{ t('&gt; 200-day', '&gt; 200 日') }}</th>
+        <th>{{ t('net new highs', '净新高') }}
+          {{ help("52-week highs minus 52-week lows today. Positive = expansion (healthy); negative = more stocks making new lows than highs (deteriorating).", "今日创 52 周新高减去创 52 周新低的数量。正 = 扩张（健康）；负 = 创新低的股票多于创新高（恶化）。") }}
+        </th>
+      </tr>
+      {% for tier in breadth_panel.tiers %}
+      <tr>
+        <td class="l"><b>{{ tier.label }}</b> <span class="muted">{{ tier.univ }}</span></td>
+        <td class="l">
+          <span class="pos">{{ tier.adv }}</span> <span class="muted">/</span> <span class="neg">{{ tier.dec }}</span>
+          {% if tier.adv_pct is not none %}<span class="bbar" title="{{ '%.0f' | format(tier.adv_pct) }}% advancing"><i style="width:{{ tier.adv_pct | round(0) }}%; background:var(--up)"></i><i style="width:{{ (100 - tier.adv_pct) | round(0) }}%; background:var(--down)"></i></span>{% endif %}
+        </td>
+        <td class="{{ 'pos' if tier.pa50 >= 50 else 'neg' }}">{{ "%.0f" | format(tier.pa50) }}%</td>
+        <td class="{{ 'pos' if (tier.pa200 or 0) >= 50 else 'neg' }}">{% if tier.pa200 is not none %}{{ "%.0f" | format(tier.pa200) }}%{% else %}—{% endif %}</td>
+        <td class="{{ 'pos' if tier.net_nh >= 0 else 'neg' }}">{{ "%+d" | format(tier.net_nh) }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    <p class="muted" style="margin:8px 2px 0; font-size:11px">{{ t('As of', '截至') }} {{ breadth_panel.asof }} · {{ t('daily breadth across S&P 1500 constituents', '覆盖标普 1500 成分股的每日广度') }}</p>
+  </div>
+  {% endif %}
+
   <!-- ======================= SECTOR HEAT BOARD ======================= -->
   <div class="panel span12" id="sectors">
     <h2>{{ t('Sector heat board — regime × tape × technicals × seasonality', '板块热度榜 — 周期 × 盘面 × 技术 × 季节性') }}

@@ -126,6 +126,11 @@ html body .prob .pc { font-size: 18px; font-weight: 700; }
 
 .pos { color: var(--up); } .neg { color: var(--down); }
 
+/* advancing/declining mini-bar (market-breadth scorecard) */
+.bbar { display:inline-flex; width:90px; height:7px; margin-left:8px; vertical-align:middle;
+  border:1px solid var(--line); border-radius:4px; overflow:hidden; background:var(--panel2); }
+.bbar i { display:block; height:100%; }
+
 /* rotation-stage pills (heat board) — tinted like the badges */
 .stg-improving, .stg-leading, .stg-weakening, .stg-lagging {
   background: color-mix(in srgb, var(--c) 15%, var(--panel));
