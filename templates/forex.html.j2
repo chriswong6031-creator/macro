@@ -61,6 +61,8 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 .grid{display:grid;gap:18px}
 .cols-2{grid-template-columns:1.05fr .95fr}.cols-3{grid-template-columns:repeat(3,1fr)}
 @media(max-width:900px){.cols-2,.cols-3{grid-template-columns:1fr}}
+.sec-head{font-size:12px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.05em;margin:24px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--grid)}
+.board-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(328px,1fr));gap:18px}
 .card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:22px}
 .card h2{margin:0 0 4px;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 .brand{font-weight:800;font-size:21px;color:var(--ink);letter-spacing:-.02em;margin:6px 0 2px}
@@ -77,6 +79,11 @@ html[data-theme="dark"] .pill{background:#222732}
 .flag{display:inline-block;padding:4px 10px;border-radius:8px;font-size:12px;font-weight:600;margin-top:10px}
 .flag.warn{background:rgba(245,173,66,.14);color:#9a6a10}
 .flag.info{background:rgba(40,95,255,.10);color:var(--blue)}
+.cnh-basis{margin:10px 0;padding:8px 11px;border-radius:8px;font-size:12.5px;line-height:1.5;background:#eef1f6}
+html[data-theme="dark"] .cnh-basis{background:#222732}
+.cnh-basis b{color:var(--ink)}
+.cnh-basis.s-outflow_stress{background:rgba(211,11,11,.12)}
+.cnh-basis.s-inflow{background:rgba(26,127,67,.12)}
 /* per-pair card */
 .pair-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .pair-name{font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
@@ -109,6 +116,18 @@ html[data-theme="dark"] .fbar{background:#222732}
 .fbar .fill.pos{background:var(--green);border-radius:0 7px 7px 0}
 .fbar .fill.neg{background:var(--red);border-radius:7px 0 0 7px}
 .carry-row{display:flex;gap:18px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--grid)}
+.mtf{margin-top:12px;padding-top:12px;border-top:1px solid var(--grid)}
+.mtf-row{display:grid;grid-template-columns:1.3fr 1fr 1fr .8fr .8fr;gap:6px;font-size:12px;padding:3px 0;align-items:center;font-variant-numeric:tabular-nums}
+.mtf-head{color:var(--muted);font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:.03em}
+.mtf-grade{color:var(--blue);font-weight:700}
+.macd-up,.tr-up,.macd-pos{color:var(--green)}.macd-down,.tr-down,.macd-neg{color:var(--red)}
+.timeline{margin-top:6px}
+.tl-day{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:14px 0 4px}
+.tl-ev{display:flex;align-items:baseline;gap:10px;padding:6px 0;border-bottom:1px solid var(--grid);font-size:13px}
+.tl-type{flex:none;min-width:62px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.02em}
+.tl-asset{flex:none;min-width:66px;color:var(--muted);font-size:12px}
+.tl-head{color:var(--text)}
+.sev-high .tl-type{color:var(--red)}.sev-medium .tl-type{color:#9a6a10}.sev-info .tl-type{color:var(--muted)}
 table.tbl{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
 table.tbl th,table.tbl td{padding:7px 8px;border-bottom:1px solid var(--grid);text-align:right}
 table.tbl th:first-child,table.tbl td:first-child{text-align:left}
@@ -132,6 +151,10 @@ table.tbl th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:
           <a href="vector_allocation.html">◎ {{ t('Allocation strategy', '仓位策略') }}<span class="d">{{ t('BTC · ETH · alts · cash', 'BTC · ETH · 山寨 · 现金') }}</span></a>
         </div>
       </div>
+      <a class="nav-link" href="etfs.html">🐳 {{ t('ETF flows', 'ETF 资金流') }}</a>
+      <a class="nav-link" href="factors.html">🧮 {{ t('Factors', '因子') }}</a>
+      <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国A股') }}</a>
+      <a class="nav-link" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }}</a>
       <a class="nav-link" href="commodities.html">◆ {{ t('Commodity Vector', '大宗商品向量') }}</a>
       <a class="nav-link active" href="forex.html">💱 {{ t('Forex Vector', '外汇向量') }}</a>
     </div>
@@ -184,8 +207,10 @@ table.tbl th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:
 
   <!-- ===================== PER-PAIR SIGNAL BOARD ===================== -->
   <h2 style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:24px 0 10px">{{ t('Currency board · idiosyncratic (ex-dollar) signals', '货币面板 · 特异（剥离美元）信号') }}</h2>
-  <div class="grid cols-3">
-  {% for p in pairs %}{% set c = p.conviction %}
+  {% for sec in sections %}
+  <div class="sec-head">{{ t(sec.label, sec.zh) }} <span class="faint">· {{ sec.pairs|length }}</span></div>
+  <div class="board-grid">
+  {% for p in sec.pairs %}{% set c = p.conviction %}
     <div class="card">
       <div class="pair-head">
         <div>
@@ -224,6 +249,15 @@ table.tbl th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:
       <div class="sub faint" style="margin:14px 0">{{ t('Conviction unavailable (insufficient data).', '暂无信心评分（数据不足）。') }}</div>
       {% endif %}
 
+      {% if p.cnh_basis is not none %}
+      <div class="cnh-basis s-{{ p.cnh_state or 'neutral' }}">
+        <b>{{ t('Offshore–onshore CNH basis', '离岸–在岸人民币基差') }}:</b> {{ '%+.0f'|format(p.cnh_basis) }} bps —
+        {% if p.cnh_state == 'outflow_stress' %}{{ t('offshore yuan notably weaker than the onshore fix — depreciation / capital-outflow pressure.', '离岸人民币明显弱于在岸中间价 — 贬值/资金外流压力。') }}
+        {% elif p.cnh_state == 'inflow' %}{{ t('offshore yuan stronger than onshore — inflow / risk-on.', '离岸人民币强于在岸 — 资金流入/偏好风险。') }}
+        {% else %}{{ t('broadly aligned with the onshore fix.', '与在岸中间价大体一致。') }}{% endif %}
+      </div>
+      {% endif %}
+
       <div class="carry-row">
         <div class="kpi">{{ t('Carry (rate diff)', '套息（利差）') }}<b>{% if p.carry_context %}—{% else %}{{ '%+.2f'|format(p.carry_diff) }}%{% endif %}</b></div>
         <div class="kpi">{{ t('Carry / vol', '套息/波动') }}<b>{% if p.carry_context %}—{% else %}{{ p.carry_to_vol }}{% endif %}</b></div>
@@ -232,10 +266,77 @@ table.tbl th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:
       </div>
       {% if p.carry_context %}<div class="sub faint" style="margin-top:6px">{{ t('Carry is CONTEXT-only — no clean free front-end rate for this currency.', '套息仅作背景 — 该货币无可靠的免费短端利率。') }}</div>{% endif %}
 
+      {% if p.mtf_rows %}
+      <div class="mtf">
+        <div class="fgrp">{{ t('Multi-timeframe (technical)', '多周期（技术面）') }}{% if p.verdict.grade %} · <span class="mtf-grade">{{ t(p.verdict.grade, p.verdict.grade_zh) }}</span>{% endif %}</div>
+        <div class="mtf-row mtf-head"><span>{{ t('TF', '周期') }}</span><span>RSI</span><span>Stoch</span><span>MACD</span><span>{{ t('Trend', '趋势') }}</span></div>
+        {% for m in p.mtf_rows %}
+        <div class="mtf-row">
+          <span>{{ t(m.label, m.label_zh) }}</span>
+          <span>{{ m.rsi14 if m.rsi14 is not none else '—' }}</span>
+          <span>{{ m.stoch if m.stoch is not none else '—' }}</span>
+          <span class="macd-{{ m.macd }}">{{ {'up':'↑','down':'↓','pos':'+','neg':'−'}.get(m.macd,'·') }}</span>
+          <span class="tr-{{ m.trend }}">{{ {'up':'▲','down':'▼','flat':'—'}.get(m.trend,'—') }}</span>
+        </div>
+        {% endfor %}
+        {% if p.verdict.headline %}<div class="sub" style="margin-top:6px"><span class="l-en">{{ p.verdict.headline }}</span><span class="l-zh">{{ p.verdict.headline_zh }}</span></div>{% endif %}
+        <div class="sub faint" style="margin-top:4px">{{ t('Pure technical confluence on the FX-calibrated cycle preset (measured ~35d daily / ~34wk intermediate cycle) — a tactical timing overlay, not a return-validated alpha.', '纯技术共振，采用外汇校准的周期预设（实测约35天日周期 / 约34周中期周期）— 战术择时叠加，非经收益验证的超额收益。') }}</div>
+      </div>
+      {% endif %}
+
       <div style="margin-top:14px">{{ p.chart | safe }}</div>
     </div>
   {% endfor %}
   </div>
+  {% endfor %}
+
+  <!-- ===================== CARRY & VALUATION TABLE ===================== -->
+  <div class="card" style="margin-top:20px">
+    <h2>{{ t('Carry &amp; valuation — cross-pair', '套息与估值 · 跨货币对') }}</h2>
+    <table class="tbl">
+      <thead><tr>
+        <th>{{ t('Pair', '货币对') }}</th>
+        <th>{{ t('Carry %', '套息 %') }}</th>
+        <th>{{ t('Carry/vol', '套息/波动') }}</th>
+        <th>{{ t('10y diff', '10年利差') }}</th>
+        <th>{{ t('REER gap %', 'REER偏离 %') }}</th>
+        <th>{{ t('$ beta', '美元贝塔') }}</th>
+      </tr></thead>
+      <tbody>
+      {% for r in carry_table %}
+        <tr>
+          <td>{{ r.label }}</td>
+          <td>{% if r.carry is none %}<span class="faint">—</span>{% else %}{{ '%+.2f'|format(r.carry) }}{% endif %}</td>
+          <td>{% if r.ctv is none %}<span class="faint">—</span>{% else %}{{ '%+.2f'|format(r.ctv) }}{% endif %}</td>
+          <td>{% if r.rate10 is none %}<span class="faint">—</span>{% else %}{{ '%+.2f'|format(r.rate10) }}{% endif %}</td>
+          <td>{% if r.reer_gap is none %}<span class="faint">—</span>{% else %}{{ '%+.1f'|format(r.reer_gap) }}{% endif %}</td>
+          <td>{{ r.beta }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <div class="sub faint" style="margin-top:8px">{{ t('Carry % = foreign minus US short rate (annualized). Carry/vol penalizes fragile high-vol carry. REER gap = real-effective rate vs its 5y mean (+ = rich → mean-reversion headwind). Carry has fat-tailed crash risk — see the honesty note below.', '套息 % = 外币减美国短端利率（年化）。套息/波动惩罚高波动的脆弱套息。REER偏离 = 实际有效汇率相对5年均值（+ = 偏贵 → 均值回归阻力）。套息具肥尾崩盘风险 — 见下方诚信说明。') }}</div>
+  </div>
+
+  <!-- ===================== ALERT TIMELINE ===================== -->
+  {% if timeline %}
+  <div class="card" style="margin-top:20px">
+    <h2>{{ t('Alert timeline', '警报时间线') }} <span class="faint">· {{ n_alerts }} {{ t('events · last', '事件 · 近') }} {{ timeline_days }}d</span></h2>
+    <div class="timeline">
+    {% for day in timeline %}
+      <div class="tl-day">{{ day.daylabel }}</div>
+      {% for e in day.events %}
+      <div class="tl-ev sev-{{ e.severity }}">
+        <span class="tl-type">{{ e.label }}</span>
+        <span class="tl-asset">{{ e.asset_label }}</span>
+        <span class="tl-head"><span class="l-en">{{ e.headline }}</span><span class="l-zh">{{ e.headline_zh }}</span></span>
+      </div>
+      {% endfor %}
+    {% endfor %}
+    </div>
+    <div class="sub faint" style="margin-top:10px">{{ t('Deterministic daily state-change events (no intraday — FX has no hourly feed here). All context, not trade signals.', '确定性的每日状态变化事件（无日内 — 此处外汇无小时级数据）。皆为背景，非交易信号。') }}</div>
+  </div>
+  {% endif %}
 
   <!-- ===================== METHODOLOGY / HONESTY ===================== -->
   <div class="card" style="margin-top:22px">

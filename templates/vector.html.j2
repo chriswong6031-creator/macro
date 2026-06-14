@@ -76,9 +76,7 @@ html[data-theme="dark"] body{-webkit-font-smoothing:antialiased}
 .theme-switch{width:56px;height:27px;border-radius:999px;background:#eef1f6;border:1px solid var(--grid);position:relative;cursor:pointer;padding:0;flex:none}
 html[data-theme="dark"] .theme-switch{background:#222732}
 .theme-switch .ic{position:absolute;top:50%;transform:translateY(-50%);font-size:10.5px;opacity:.5;line-height:1}
-/* knob covers the same-side icon it duplicates, leaving the OTHER visible (sun
-   right / moon left) — else light mode shows two suns */
-.theme-switch .ic.sun{right:8px}.theme-switch .ic.moon{left:8px}
+.theme-switch .ic.sun{left:8px}.theme-switch .ic.moon{right:8px}
 .theme-switch .knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 5px rgba(0,0,0,.3);transform:translateX(29px);transition:transform .34s cubic-bezier(.34,1.45,.5,1),background .3s}
 .theme-switch .knob::before{content:"☀️"}
 html[data-theme="dark"] .theme-switch .knob{transform:translateX(0);background:#e8c15a}
@@ -197,6 +195,31 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 .needle-num{color:var(--muted);font-weight:700}
 .conv-why{font-size:12.5px;color:var(--muted);margin-top:12px;line-height:1.5}
 .conv-defer{font-size:12px;margin-top:7px;font-weight:600;line-height:1.45}
+/* forward-risk (drawdown) layer — risk LEADS, direction demoted. Monochrome:
+   downside=r3, upside=faint blue, now/calm=grey; no red. */
+.risk-word{font-size:25px;font-weight:800;letter-spacing:-.01em;line-height:1.12;margin-top:6px}
+.risk-nums{font-size:13px;color:var(--ink);margin-top:5px}
+.risk-nums b{font-weight:800}
+.ddrail{margin:13px 0 2px}
+.ddrail-bar{position:relative;height:14px;border-radius:8px;background:var(--grid)}
+.dd-down{position:absolute;top:0;bottom:0;border-radius:8px 0 0 8px;background:linear-gradient(90deg,var(--r3),color-mix(in srgb,var(--r3) 18%,var(--grid)))}
+.dd-up{position:absolute;top:0;bottom:0;border-radius:0 8px 8px 0;background:color-mix(in srgb,var(--blue) 16%,var(--grid))}
+.dd-now{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--ink)}
+.dd-mk{position:absolute;top:50%;width:13px;height:13px;margin-left:-6.5px;transform:translateY(-50%);border-radius:50%;box-shadow:0 0 0 3px var(--card)}
+.dd-tail{background:var(--r3)} .dd-tail.thin{opacity:.45}
+.dd-typ{background:color-mix(in srgb,var(--r3) 50%,var(--grid))}
+.dd-calm{width:9px;height:9px;margin-left:-4.5px;background:var(--faint);box-shadow:0 0 0 2px var(--card)}
+.dd-uptick{width:9px;height:9px;margin-left:-4.5px;background:color-mix(in srgb,var(--blue) 55%,var(--grid))}
+.ddrail-lab{display:flex;justify-content:space-between;font-size:11px;margin-top:8px}
+.ddrail-lab .r3b{color:var(--r3);font-weight:700} .ddrail-lab .now{color:var(--muted)}
+.ddrail-lab .upf{color:color-mix(in srgb,var(--blue) 60%,var(--muted))}
+.dir-strip{display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:11px;border-top:1px solid var(--grid)}
+.dir-chip{font-size:12.5px;font-weight:700;color:var(--muted);white-space:nowrap}
+.mini-needle{position:relative;flex:1;max-width:120px;height:10px;border-radius:5px;background:var(--grid)}
+.mn-dead{position:absolute;left:47%;width:6%;top:0;bottom:0;background:var(--muted);opacity:.32;border-radius:3px}
+.mn-tick{position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--muted);opacity:.6}
+.mn-dot{position:absolute;top:50%;width:11px;height:11px;margin-left:-5.5px;transform:translateY(-50%);border-radius:50%;box-shadow:0 0 0 2px var(--card)}
+.dir-num{font-size:12px;color:var(--muted);font-weight:700;white-space:nowrap}
 /* alert timeline */
 .tl-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
 .tlf{padding:6px 14px;border-radius:9px;background:var(--grid);color:var(--muted);
@@ -226,6 +249,38 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 .tl-fwd{margin-top:3px;font-size:12px;color:var(--muted)}
 .tl-link{display:inline-block;margin-left:8px;font-weight:700;font-size:13px}
 .tl-item[hidden]{display:none}
+/* cycle time machine (vector_timemachine.js) */
+#vtm{padding:20px 22px}
+.vtm-wrap{position:relative;margin:2px 0}
+.vtm-canvas{display:block;width:100%;height:56px;cursor:ew-resize;border-radius:8px;touch-action:none}
+.vtm-range{-webkit-appearance:none;appearance:none;width:100%;height:16px;background:transparent;margin:2px 0 0;cursor:ew-resize}
+.vtm-range::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:var(--grid)}
+.vtm-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:16px;height:16px;margin-top:-6px;border-radius:50%;background:var(--ink);border:2px solid var(--card);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.vtm-range::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--ink);border:2px solid var(--card)}
+.vtm-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0 4px}
+.vtm-btn{font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;background:var(--bg);border:1px solid var(--grid);border-radius:8px;padding:5px 11px;color:var(--muted);transition:color .15s,border-color .15s}
+.vtm-btn:hover{color:var(--ink);border-color:var(--muted)}
+.vtm-play{display:inline-flex;align-items:center;justify-content:center;width:34px;padding:0}
+.vtm-play-ico{width:0;height:0;border-style:solid;border-width:6px 0 6px 10px;border-color:transparent transparent transparent var(--ink)}
+.vtm-play.is-playing .vtm-play-ico{width:9px;height:11px;border:none;border-left:3px solid var(--ink);border-right:3px solid var(--ink)}
+.vtm-presets{display:flex;gap:6px;flex-wrap:wrap}
+.vtm-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin:9px 2px 0}
+.vtm-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:middle}
+.vtm-readout{background:var(--bg);border:1px solid var(--grid);border-radius:12px;padding:14px 16px;margin-top:13px}
+.vtm-asof{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.vtm-date{font-size:20px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
+.vtm-tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 9px;border-radius:9px}
+.vtm-tag.is-live{color:var(--blue);background:color-mix(in srgb,var(--blue) 14%,var(--card))}
+.vtm-tag.is-hist{color:var(--muted);background:var(--grid)}
+.vtm-price{margin-left:auto;font-size:17px;font-weight:800;color:var(--ink)}
+.vtm-badges{display:flex;align-items:center;gap:9px 16px;flex-wrap:wrap;margin-top:13px;font-size:13px;color:var(--muted)}
+.vtm-badge{display:inline-block;padding:3px 11px;border-radius:10px;font-weight:700;font-size:12.5px;background:var(--grid);color:var(--ink)}
+.vtm-badges .kv b{color:var(--ink);font-weight:700}
+.vtm-gauge{margin-top:15px}
+.vtm-glabel{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:5px}
+.vtm-glabel span:last-child{font-weight:700;color:var(--ink)}
+.vtm-grail{position:relative;height:6px;border-radius:3px;background:linear-gradient(90deg,var(--blue),var(--grid) 50%,var(--r3))}
+.vtm-grail i{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;background:var(--ink);border:2px solid var(--card);transform:translate(-50%,-50%)}
 </style>
 </head>
 <body>
@@ -241,7 +296,12 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
           <a href="vector_allocation.html">◎ {{ t('Allocation strategy', '仓位策略') }}<span class="d">{{ t('BTC · ETH · alts · cash', 'BTC · ETH · 山寨 · 现金') }}</span></a>
         </div>
       </div>
+      <a class="nav-link" href="etfs.html">🐳 {{ t('ETF flows', 'ETF 资金流') }}</a>
+      <a class="nav-link" href="factors.html">🧮 {{ t('Factors', '因子') }}</a>
+      <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国A股') }}</a>
+      <a class="nav-link" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }}</a>
       <a class="nav-link" href="commodities.html">◆ {{ t('Commodity Vector', '大宗商品向量') }}</a>
+      <a class="nav-link" href="forex.html">💱 {{ t('Forex Vector', '外汇向量') }}</a>
     </div>
     <div class="nav-ctrls">
       <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
@@ -336,47 +396,65 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
   {# ---- conviction card macro (shared by mid & short so they are byte-identical "same format") ---- #}
   {% set gcol = {'CAUTION':'var(--amber)','AVOID':'var(--r3)','TREND-FOLLOW':'var(--blue)','BUY-THE-DIP':'var(--blue)','WAIT':'var(--muted)'} %}
   {% set gcolor = gcol.get(verdict.grade,'var(--muted)') %}
-  {% macro convcard(c, title_en, title_zh, vsign, grade, grade_zh, gcolor) %}
+  {% macro convcard(c, R, title_en, title_zh, vsign, grade, grade_zh, gcolor) %}
     {% set dword = 'bull' if c.dir>0 else 'bear' %}
-    {% set wcls = 'cw-toss' if c.state=='TOSS-UP' else (('cw-lean ' if c.state=='LEAN' else 'cw-edge ') ~ dword) %}
-    {% set inzone = c.lean <= 3 %}
-    {% set dottint = 'var(--muted)' if (c.state=='TOSS-UP' or inzone) else ('var(--blue)' if (c.state=='EDGE' and c.dir>0) else ('var(--r3)' if (c.state=='EDGE' and c.dir<0) else ('color-mix(in srgb,var(--blue) 58%,var(--grid))' if c.dir>0 else 'color-mix(in srgb,var(--r3) 60%,var(--grid))'))) %}
+    {% set dottint = 'var(--muted)' if (c.state=='TOSS-UP' or c.lean<=3) else ('var(--blue)' if (c.state=='EDGE' and c.dir>0) else ('var(--r3)' if (c.state=='EDGE' and c.dir<0) else ('color-mix(in srgb,var(--blue) 58%,var(--grid))' if c.dir>0 else 'color-mix(in srgb,var(--r3) 60%,var(--grid))'))) %}
     <div class="conv-head">
       <span style="font-size:14px;font-weight:700;color:var(--ink)">{{ t(title_en, title_zh) }}</span>
-      <span class="conv-n">n={{ '{:,}'.format(c.n) if c.n else '—' }}</span>
+      <span class="conv-n">{% if R and R.tail is not none %}n={{ '{:,}'.format(R.n) }}{% elif c.n %}n={{ '{:,}'.format(c.n) }}{% else %}—{% endif %}</span>
     </div>
-    <div class="cw {{ wcls }}">
-      {%- if c.state=='TOSS-UP' %}{{ t('Toss-up','势均力敌') }}
-      {%- elif c.state=='LEAN' %}{{ t('Lean ' ~ dword, '倾向看多' if c.dir>0 else '倾向看空') }}
-      {%- else %}{{ t('Edge ' ~ dword, '看多优势' if c.dir>0 else '看空优势') }}{% endif %}
-      {%- if c.state=='TOSS-UP' and c.dir!=0 %}<span class="conv-tag">{{ t(dword ~ '-lean', '略偏多' if c.dir>0 else '略偏空') }}</span>{% endif %}
-      {%- if c.confirmed %}<span class="conv-ok" title="tape + prob + tilt agree">✓</span>{% endif %}
+    {% if R and R.tail is not none %}
+    {# ---------- PRIMARY: forward drawdown / risk (the CONFIRMED quantity) ---------- #}
+    {% set rwc = {'CALM':'var(--muted)','ELEVATED':'var(--r3)','HIGH':'color-mix(in srgb,var(--r3) 80%,var(--ink))','EXTREME':'color-mix(in srgb,var(--r3) 80%,var(--ink))'} %}
+    <div class="risk-word" style="color:{{ rwc.get(R.word_en,'var(--r3)') }}">{{ t(R.head_en, R.head_zh) }}
+      {%- if R.contrarian %} <span class="conv-tag">{{ t('contrarian zone','逆势区') }}</span>{% endif %}
+      {%- if R.thin %} <span class="conv-tag">{{ t('thin sample','样本偏少') }}</span>{% endif %}
     </div>
-    <div class="conv-sub">{% if c.state=='TOSS-UP' %}{{ t('no edge · coin-flip','无优势 · 抛硬币') }}{% elif c.tape=='conflict' %}{{ t('tape disagrees — nimble only','盘面相反 — 仅适合灵活') }}{% else %}{{ t('within the reliable cell spread','处于可靠区间') }}{% endif %}</div>
-    <div class="needle">
-      <div class="needle-axis">
-        <div class="needle-dead"></div><div class="needle-tick"></div>
-        <div class="needle-dot" style="left:{{ c.p_bull }}%;background:{{ dottint }}"></div>
+    <div class="risk-nums">{{ t('Typical dip','常见回撤') }} <b>{{ R.avg }}%</b> <span class="faint">({{ t('calm','平静') }} {{ R.calm_avg }}%)</span> · {{ t('worst-case','极端') }} <b{% if R.thin %} class="faint"{% endif %}>{{ R.tail }}%</b> <span class="faint">({{ t('calm','平静') }} {{ R.calm_tail }}%)</span></div>
+    {% set scale = (1.25 * ([(R.tail|abs),(R.calm_tail|abs)]|max)) %}
+    {% set scale = scale if scale > 0 else 20 %}
+    <div class="ddrail">
+      <div class="ddrail-bar">
+        <div class="dd-down" style="left:0;width:70%"></div>
+        <div class="dd-up" style="left:70%;width:30%"></div>
+        <div class="dd-mk dd-calm" style="left:{{ (70 - 70*(R.calm_tail|abs)/scale)|round(1) }}%" title="calm baseline"></div>
+        <div class="dd-mk dd-typ" style="left:{{ (70 - 70*(R.avg|abs)/scale)|round(1) }}%"></div>
+        <div class="dd-mk dd-tail{% if R.thin %} thin{% endif %}" style="left:{{ (70 - 70*(R.tail|abs)/scale)|round(1) }}%"></div>
+        <div class="dd-mk dd-uptick" style="left:{{ (70 + 30*R.up/scale)|round(1) }}%"></div>
+        <div class="dd-now" style="left:70%"></div>
       </div>
-      <div class="needle-ends"><span>{{ t('Bear','看空') }}</span><span class="needle-num">{{ c.p_bear }}% / {{ c.p_bull }}%</span><span>{{ t('Bull','看多') }}</span></div>
+      <div class="ddrail-lab"><span class="r3b">{{ R.tail }}%</span><span class="mut">{{ R.avg }}%</span><span class="now">{{ t('now','当前') }}</span><span class="upf">+{{ R.up }}%</span></div>
     </div>
+    {# ---------- SECONDARY: demoted direction strip (the honest coin-flip) ---------- #}
+    <div class="dir-strip">
+      <span class="dir-chip">{% if c.state=='TOSS-UP' %}{{ t('Toss-up','势均力敌') }}{% elif c.state=='LEAN' %}{{ t('Lean ' ~ dword, '倾向看多' if c.dir>0 else '倾向看空') }}{% else %}{{ t('Edge ' ~ dword, '看多优势' if c.dir>0 else '看空优势') }}{% endif %}</span>
+      <div class="mini-needle"><div class="mn-dead"></div><div class="mn-tick"></div><div class="mn-dot" style="left:{{ c.p_bull }}%;background:{{ dottint }}"></div></div>
+      <span class="dir-num">{{ c.p_bear }}/{{ c.p_bull }}</span>
+    </div>
+    <div class="conv-sub">{{ t('direction is a coin-flip — drawdown above is the predicted quantity, direction is not','方向接近抛硬币 — 上方回撤才是可预测量，方向不是') }}</div>
+    <div class="conv-why">{{ t(R.main_en, R.main_zh) }}</div>
+    <div class="conv-why faint">{{ t(R.guard_en, R.guard_zh) }}</div>
+    {% else %}
+    {# ---------- fallback: conviction-led (no calibrated risk) ---------- #}
+    {% set wcls = 'cw-toss' if c.state=='TOSS-UP' else (('cw-lean ' if c.state=='LEAN' else 'cw-edge ') ~ dword) %}
+    <div class="cw {{ wcls }}">{% if c.state=='TOSS-UP' %}{{ t('Toss-up','势均力敌') }}{% elif c.state=='LEAN' %}{{ t('Lean ' ~ dword, '倾向看多' if c.dir>0 else '倾向看空') }}{% else %}{{ t('Edge ' ~ dword, '看多优势' if c.dir>0 else '看空优势') }}{% endif %}</div>
+    <div class="needle"><div class="needle-axis"><div class="needle-dead"></div><div class="needle-tick"></div><div class="needle-dot" style="left:{{ c.p_bull }}%;background:{{ dottint }}"></div></div>
+      <div class="needle-ends"><span>{{ t('Bear','看空') }}</span><span class="needle-num">{{ c.p_bear }}% / {{ c.p_bull }}%</span><span>{{ t('Bull','看多') }}</span></div></div>
     <div class="conv-why">{{ t(c.why_en, c.why_zh) }}</div>
-    <div class="conv-defer" style="color:{{ gcolor }}">↳ {{ t('Defers to','服从') }} <b>{{ t(grade, grade_zh) }}</b>
-      {%- if c.state=='TOSS-UP' %} — {{ t('no edge to add over the cycle read above','无法在上方周期判断之外提供优势') }}
-      {%- elif vsign != c.dir %} — {{ t('tape disagrees; nimble traders only','盘面相反；仅适合灵活交易者') }}
-      {%- else %} — {{ t('consistent with the bigger picture','与大局一致') }}{% endif %}</div>
+    {% endif %}
+    <div class="conv-defer" style="color:{{ gcolor }}">↳ {{ t('Defers to','服从') }} <b>{{ t(grade, grade_zh) }}</b> — {{ t('the near-term texture under that bigger-picture call','大局判断之下的近端纹理') }}</div>
   {% endmacro %}
 
   <!-- ===================== MID & SHORT TERM (side by side, same format) ===================== -->
-  <div class="section-title">{{ t('Mid term & Short term · 7-day & 3-day direction', '中期与短期 · 7 天与 3 天方向') }}</div>
+  <div class="section-title">{{ t('Mid term & Short term · near-term drawdown risk', '中期与短期 · 近端回撤风险') }}</div>
   <div class="grid cols-eq">
 
-    <!-- mid term · 7-day direction (conviction) -->
-    <div class="card">{{ convcard(env.conv, 'Mid term · 7-day direction', '中期 · 7 天方向', verdict.mid_sign, verdict.grade, verdict.grade_zh, gcolor) }}</div>
+    <!-- mid term · 7-day outlook (risk-led) -->
+    <div class="card">{{ convcard(env.conv, env.risk, 'Mid term · 7-day outlook', '中期 · 7 天展望', verdict.mid_sign, verdict.grade, verdict.grade_zh, gcolor) }}</div>
 
-    <!-- short term · 3-day direction (conviction) + ATR scenario levels -->
+    <!-- short term · 3-day outlook (risk-led) + ATR scenario levels -->
     <div class="card">
-      {{ convcard(scn.conv, 'Short term · 3-day direction', '短期 · 3 天方向', verdict.short_sign, verdict.grade, verdict.grade_zh, gcolor) }}
+      {{ convcard(scn.conv, scn.risk, 'Short term · 3-day outlook', '短期 · 3 天展望', verdict.short_sign, verdict.grade, verdict.grade_zh, gcolor) }}
       <div style="border-top:1px solid var(--grid);margin-top:14px;padding-top:12px;display:flex;gap:18px;flex-wrap:wrap">
         <div style="flex:1;min-width:150px">
           <div class="sub" style="font-weight:700;color:var(--ink)">{{ t('If it resolves down', '若向下') }}</div>
@@ -399,6 +477,14 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
   <div class="card">
     <h3>{{ t('BTC price, Risk Index & allocation', 'BTC 价格、风险指数与仓位') }}</h3>
     {{ charts.risk_strategy|safe }}
+    <div class="sub" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;font-size:12px">
+      <span style="opacity:.8">{{ t('Price shaded by allocation:', '价格按仓位着色：') }}</span>
+      <span><span style="display:inline-block;width:12px;height:11px;border-radius:2px;background:rgba(34,170,94,0.45);vertical-align:-1px;margin-right:5px"></span>{{ t('Fully in (100%)', '满仓（100%）') }}</span>
+      <span><span style="display:inline-block;width:12px;height:11px;border-radius:2px;background:rgba(245,173,66,0.55);vertical-align:-1px;margin-right:5px"></span>{{ t('Half (50%)', '半仓（50%）') }}</span>
+      <span><span style="display:inline-block;width:12px;height:11px;border-radius:2px;border:1px solid var(--grid);vertical-align:-1px;margin-right:5px"></span>{{ t('Out (0%)', '空仓（0%）') }}</span>
+      <span style="color:#1FA971;font-weight:600">▲ {{ t('buy / add', '买入 / 加仓') }}</span>
+      <span style="color:#D30B0B;font-weight:600">▼ {{ t('sell / trim', '卖出 / 减仓') }}</span>
+    </div>
     <div class="variant-tabs" style="margin-top:14px">
       {% set variant_zh = {'conservative':'保守','moderate':'稳健','aggressive':'进取','optimal':'最优'} %}
       {% for v in ['conservative','moderate','aggressive','optimal'] %}
@@ -411,6 +497,54 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
       <div class="s"><div class="k">{{ t('Time in market', '在场时间') }}</div><div class="v">{{ cards.optimal.in_market }}%</div><div class="h">{{ cards.optimal.x_hodl }}× HODL</div></div>
     </div>
     <div class="sub" style="margin-top:10px">{{ t('Long-only, acts next-day on the signal (no look-ahead). Every variant beats HODL\'s Sharpe', '仅做多，信号次日生效（无前视）。每个变体的 Sharpe 均优于 HODL') }} ({{ cards.optimal.hodl_sharpe }}){{ t(' and cuts max drawdown.', '，且降低了最大回撤。') }}</div>
+  </div>
+
+  <!-- ===================== CYCLE TIME MACHINE ===================== -->
+  <div class="section-title">{{ t('Cycle Time Machine · scrub 10+ years of point-in-time history', '周期时光机 · 回溯十余年实时历史') }}</div>
+  <div class="card" id="vtm" data-timeline="vector_timeline.json">
+    <div class="vtm-wrap">
+      <canvas id="vtm-canvas" class="vtm-canvas"></canvas>
+      <input id="vtm-range" class="vtm-range" type="range" min="0" max="0" value="0" aria-label="Scrub BTC cycle history">
+    </div>
+    <div class="vtm-legend">
+      <span><i style="background:#3b6fe0"></i>{{ t('Accumulation','吸筹') }}</span>
+      <span><i style="background:#1f9d57"></i>{{ t('Markup','拉升') }}</span>
+      <span><i style="background:#e0a43a"></i>{{ t('Recovery','修复') }}</span>
+      <span><i style="background:#cf4f4f"></i>{{ t('Markdown','派发下行') }}</span>
+    </div>
+    <div class="vtm-controls">
+      <button class="vtm-btn vtm-play" id="vtm-play" aria-label="Play"><span class="vtm-play-ico"></span></button>
+      <span class="vtm-presets">
+        <button class="vtm-btn" data-vtm-jump="now">{{ t('Now','当前') }}</button>
+        <button class="vtm-btn" data-vtm-jump="2017-12-17">{{ t('2017 top','2017 顶') }}</button>
+        <button class="vtm-btn" data-vtm-jump="2018-12-15">{{ t('2018 bottom','2018 底') }}</button>
+        <button class="vtm-btn" data-vtm-jump="2021-04-14">{{ t('2021 top','2021 顶') }}</button>
+        <button class="vtm-btn" data-vtm-jump="2022-11-09">{{ t('FTX crash','FTX 崩盘') }}</button>
+      </span>
+    </div>
+    <div class="vtm-readout">
+      <div class="vtm-asof">
+        <span class="vtm-date" id="vtm-date">—</span>
+        <span class="vtm-tag is-live" id="vtm-tag">—</span>
+        <span class="vtm-price" id="vtm-price">—</span>
+      </div>
+      <div class="vtm-badges">
+        <span class="vtm-badge" id="vtm-phase">—</span>
+        <span class="vtm-badge" id="vtm-regime">—</span>
+        <span class="vtm-badge" id="vtm-extreme" style="display:none">—</span>
+        <span class="kv">{{ t('cycle stage','周期阶段') }} <b id="vtm-stage">—</b></span>
+        <span class="kv">{{ t('ladder','阶梯') }} <b id="vtm-ladder">—</b></span>
+        <span class="kv">{{ t('momentum','动量') }} <b id="vtm-mom">—</b></span>
+        <span class="kv">{{ t('valuation','估值') }} <b id="vtm-val">—</b></span>
+        <span class="kv">{{ t('stance','立场') }} <b id="vtm-composite">—</b></span>
+        <span class="kv">{{ t('model alloc','模型仓位') }} <b id="vtm-alloc">—</b></span>
+      </div>
+      <div class="vtm-gauge">
+        <div class="vtm-glabel"><span>{{ t('Risk Index (0–100)','风险指数（0–100）') }}</span><span id="vtm-risk-v">—</span></div>
+        <div class="vtm-grail"><i id="vtm-risk-i" style="left:50%"></i></div>
+      </div>
+    </div>
+    <div class="sub faint" style="margin-top:11px;font-size:12px">{{ t('Every value is point-in-time — no look-ahead. Drag the playhead (or press play) and the cycle phase, stage, ladder state, regime, risk index, valuation, stance and the model\'s allocation all rewind to exactly what the dashboard showed that day. The ladder & regime are backtested by replaying the cycle engine on each day\'s history.','每个数值均为实时快照 — 无前视。拖动播放头（或点击播放），周期阶段、阶梯状态、格局、风险指数、估值、立场与模型仓位都会回溯到当天看板的真实状态。阶梯与格局通过对每日历史重放周期引擎回测得到。') }}</div>
   </div>
 
   <!-- ===================== MULTI-TIMEFRAME TECHNICALS ===================== -->
@@ -526,7 +660,14 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
       <div class="mini"><div class="lab"><span>{{ t('DVOL (crypto VIX)','DVOL（加密 VIX）') }}</span><span><b>{{ options.dvol if options.dvol is not none else '—' }}</b>{% if options.dvol_pctile is not none %} <span class="faint">({{ options.dvol_pctile }}%ile)</span>{% endif %}</span></div></div>
       <div class="mini"><div class="lab"><span>{{ t('Variance risk premium (IV−RV)','方差风险溢价（IV−RV）') }}</span><span><b>{{ options.vrp if options.vrp is not none else '—' }}</b></span></div></div>
       <div class="mini"><div class="lab"><span>{{ t('ATM IV 30d / term slope','平值 30 天 IV / 期限斜率') }}</span><span><b>{{ options.atm_iv_30d if options.atm_iv_30d is not none else '—' }}</b> / {{ options.term_slope if options.term_slope is not none else '—' }}</span></div></div>
+      {% if options.rv_cone_pctile is not none %}
+      <div class="mini"><div class="lab"><span>{{ t('Realized-vol cone (full history)','已实现波动锥（全历史）') }}</span><span><b>{{ options.rv_realized }}%</b> <span class="faint">({{ options.rv_cone_pctile }}%ile · {{ t('vol-of-vol','波动的波动') }} {{ options.vov_pctile }}%ile)</span></span></div></div>{% endif %}
+      {% if options.gamma_regime %}
+      {% set gr = {'long':['Long-gamma (pinning)','正Gamma（黏滞）','var(--blue)'],'short':['Short-gamma (amplifies)','负Gamma（放大）','var(--r3)']} %}
+      <div class="mini"><div class="lab"><span>{{ t('Dealer gamma regime / flip','做市商 Gamma 格局 / 翻转位') }}</span><span><b style="color:{{ gr.get(options.gamma_regime,['','','var(--muted)'])[2] }}">{{ t(gr.get(options.gamma_regime,['—'])[0], gr.get(options.gamma_regime,['—','—'])[1]) }}</b> <span class="faint">({{ t('flip','翻转') }} {{ options.gamma_flip|money if options.gamma_flip else '—' }} · {{ '%+0.1f'|format(options.dist_to_flip_pct) if options.dist_to_flip_pct is not none else '—' }}%)</span></span></div></div>{% endif %}
       <div class="sub" style="margin-top:10px">{{ t('Calibrated (2021→, confirmation-only): DVOL 70–90 is the bleed zone (−13%/90d); VRP below −5 (realized overshooting implied) marked recoveries (+17%/90d).', '已校准（2021 起，仅作确认）：DVOL 70–90 为失血区（90 天 −13%）；VRP 低于 −5（已实现超过隐含）标记反弹（90 天 +17%）。') }}</div>
+      <div class="sub faint" style="margin-top:6px;font-size:12px">{{ t('The realized-vol cone + vol-of-vol are full-history (2015→) — the only vol-regime read that survives BOTH calibration halves. U-shaped at 90d: a high vol-of-vol percentile (panic) preceded +37.7%/90d at 76% hit (capitulation bounce), a calm cone +24.8%/90d. A near-term risk gauge, not a direction call.','已实现波动锥与“波动的波动”为全历史（2015 起）— 唯一在两个校准半样本中均成立的波动状态读数。90 天呈 U 形：高“波动的波动”分位（恐慌）后 90 天 +37.7%、胜率 76%（投降式反弹），平静波动锥 90 天 +24.8%。为近端风险计，而非方向判断。') }}</div>
+      <div class="sub faint" style="margin-top:6px;font-size:12px">{{ t('Dealer gamma-flip = the spot where net dealer gamma crosses zero. ABOVE it (long-gamma) dealers hedge AGAINST the move → pinning / mean-reversion / suppressed vol; BELOW it (short-gamma) they hedge WITH the move → amplification / trend / vol expansion. A regime BOUNDARY, not a forecast — snapshot-only (no free options history) so it accrues forward rather than being back-calibrated.','做市商 Gamma 翻转位 = 净 Gamma 过零的现货价位。在其上方（正 Gamma），做市商逆势对冲 → 黏滞 / 均值回归 / 波动受抑；在其下方（负 Gamma），顺势对冲 → 放大 / 趋势 / 波动扩张。这是格局边界而非预测 — 仅快照（期权无免费历史），故向前累积而非回溯校准。') }}</div>
     </div>
     <div class="card">
       <h3>{{ t('Skew & positioning (snapshot)', '偏斜与持仓（快照）') }}</h3>
@@ -575,6 +716,12 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
       <div class="mini"><div class="lab"><span>{{ t('Net liquidity (WALCL−RRP−TGA)','净流动性（WALCL−RRP−TGA）') }}</span><span><b>{{ ('$%.2fT'|format(macro.net_liq_bn/1000)) if macro.net_liq_bn is not none else '—' }}</b>{% if macro.net_liq_roc is not none %} <span class="faint" style="color:{{ 'var(--blue)' if macro.net_liq_roc>=0 else 'var(--r3)' }}">({{ '%+0.1f'|format(macro.net_liq_roc) }}% 13w)</span>{% endif %}</span></div></div>
       {% if macro.global_m2_yoy is not none %}
       <div class="mini"><div class="lab"><span>{{ t('Global M2 growth (US+China)','全球 M2 增速（美+中）') }}</span><span><b style="color:{{ 'var(--blue)' if macro.global_m2_yoy>=5 else 'var(--r3)' }}">{{ macro.global_m2_yoy }}% YoY</b> <span class="faint">({{ td((macro.global_liq_regime or '')|capitalize) }})</span></span></div></div>{% endif %}
+      {% if macro.stbl_growth_z is not none %}
+      {% set sreg = {'expanding':'var(--blue)','contracting':'var(--r3)','neutral':'var(--muted)'} %}
+      <div class="mini"><div class="lab"><span>{{ t('Stablecoin tide (crypto-native liquidity)','稳定币潮汐（加密原生流动性）') }}</span><span><b style="color:{{ sreg.get(macro.stbl_regime,'var(--muted)') }}">{{ td((macro.stbl_regime or '')|capitalize) }}</b> <span class="faint">(z {{ '%+0.1f'|format(macro.stbl_growth_z) }} · ${{ macro.stbl_mcap_bn }}B)</span></span></div></div>{% endif %}
+      {% if macro.peg_state %}
+      {% set pst = {'stable':['Stable','稳定','var(--blue)'],'watch':['Watch','观察','var(--amber)'],'break':['BREAK','脱锚','var(--red)']} %}
+      <div class="mini"><div class="lab"><span>{{ t('Stablecoin peg health (USDT/USDC/DAI)','稳定币锚定健康（USDT/USDC/DAI）') }}</span><span><b style="color:{{ pst.get(macro.peg_state,['','','var(--muted)'])[2] }}">{{ t(pst.get(macro.peg_state,['—'])[0], pst.get(macro.peg_state,['—','—'])[1]) }}</b> <span class="faint">({{ t('max dev','最大偏离') }} {{ macro.peg_dev_bps }}bps)</span></span></div></div>{% endif %}
       <div class="mini"><div class="lab"><span>{{ t('10y real yield','10 年期实际收益率') }}</span><span><b>{{ ('%.2f%%'|format(macro.real_yield)) if macro.real_yield is not none else '—' }}</b></span></div></div>
       <div class="mini"><div class="lab"><span>{{ t('HY credit spread (OAS)','高收益信用利差') }}</span><span><b>{{ ('%.2f%%'|format(macro.hy_oas)) if macro.hy_oas is not none else '—' }}</b></span></div></div>
       <div class="mini"><div class="lab"><span>{{ t('VIX / Dollar (DXY)','VIX / 美元指数') }}</span><span><b>{{ macro.vix if macro.vix is not none else '—' }}</b> / {{ macro.dxy if macro.dxy is not none else '—' }}</span></div></div>
@@ -585,6 +732,8 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
       <div class="mini" style="margin-top:8px"><div class="lab"><span style="color:var(--r3)">{{ t('Headwind (score < −0.3)','逆风（评分 < −0.3）') }}</span><span><b>+1.4%</b> <span class="faint">/90d · 41% hit</span></span></div></div>
       <div class="mini"><div class="lab"><span style="color:var(--blue)">{{ t('Tailwind (score > +0.3)','顺风（评分 > +0.3）') }}</span><span><b>+48.8%</b> <span class="faint">/90d · 76% hit</span></span></div></div>
       <div class="sub" style="margin-top:10px">{{ t('It is a STRATEGIC (months-horizon) context gauge — kept separate from the tactical allocation, which it did not improve when tested as an overlay. Read it as the tide BTC swims in.', '这是战略层（数月维度）的背景指标 — 与战术仓位分开，因为作为叠加测试时并未改善回测。可将其理解为 BTC 所处的潮汐。') }}</div>
+      <div class="sub faint" style="margin-top:10px;font-size:12px">{{ t('Stablecoin tide = the GROWTH of total stablecoin supply (the pace new capital mints INTO crypto) — orthogonal to the fiat net-liquidity above. DIRECTIONAL (2018→, both-halves): an expanding tide (z 1–2) preceded +23%/90d at 76% hit; a contracting tide (z < −1, where we are now) preceded only +0.8%/90d at 42% hit — a measured headwind.','稳定币潮汐 = 稳定币总供给的增速（新资本铸入加密的速度）— 与上方法币净流动性正交。方向性（2018 起，两半样本）：扩张潮汐（z 1–2）后 90 天 +23%、胜率 76%；收缩潮汐（z < −1，即当前）后 90 天仅 +0.8%、胜率 42% — 一项实测逆风。') }}</div>
+      <div class="sub faint" style="margin-top:8px;font-size:12px">{{ t('Peg health is a separate COLLATERAL-SOLVENCY monitor (max deviation across USDT/USDC/DAI). HONEST caveat: the one major break (USDC at SVB, Mar-2023, ~390bps) was followed by a BTC RALLY (banking-crisis hedge), so a peg break is situational AWARENESS — not a confirmed BTC risk-off signal. Shown as context, not a directional input.','锚定健康是另一项抵押品偿付能力监测（USDT/USDC/DAI 的最大偏离）。诚实提示：唯一一次重大脱锚（USDC 于 SVB，2023 年 3 月，约 390bps）之后 BTC 反而上涨（作为银行危机对冲），故脱锚为情境感知 — 并非已确认的 BTC 避险信号。仅作背景，不作方向输入。') }}</div>
     </div>
   </div>
 
@@ -711,6 +860,24 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
     <div class="sub" style="margin-top:12px">{{ t('House rule: a signal is labelled trustworthy only if its forward record holds in both halves of history. The Risk Index is judged on forward', '内部准则：只有当一个信号的前瞻记录在历史的前后两半段都成立时，才会被标记为可信。风险指数以前瞻') }} <b>{{ t('drawdown', '回撤') }}</b> {{ t('(not return) — at long horizons extreme risk marks capitulation, so it is contrarian there by design. Momentum on free data', '（而非收益）来评判 — 在长周期下，极端风险标志着投降式抛售，因此其在该处的设计本就是逆向的。在免费数据上，动量') }} <b>{{ t('leads', '领先') }}</b> {{ t('Swissblock\'s by ~2 weeks and matches their published', 'Swissblock 约 2 周，并在 65–69% 的交易日与其公布的') }} <em>{{ t('risk regime', '风险周期') }}</em> {{ t('65–69% of days; their proprietary momentum uses entity-adjusted flows we can\'t replicate for free.', '相符；他们的专有动量使用了我们无法免费复现的实体调整资金流。') }}</div>
   </div>
 
+  {% set ep = calib.ensemble_promotion %}
+  {% if ep and ep.net_sharpe %}
+  <div class="card" style="margin-top:18px">
+    <h3>{{ t('Ensemble capstone · does combining beat the hand-tuned stance?', '集成总验 · 组合能否击败手调立场？') }}</h3>
+    <div class="sub">{{ t('We tested a principled, fixed-form ensemble (the gate-passed signals collapsed to 6 orthogonal axes, each oriented by its CALIBRATED expected-return map, de-correlated, equal-weight combined) against the hand-tuned Stance and the single best signal — net of cost, in both halves. The honest result:', '我们用一个有原则的固定形式集成（将通过校准的信号收敛为 6 个正交轴，各按其已校准的预期收益映射定向、去相关、等权组合）对比手调“立场”与单一最佳信号 — 扣除成本、在前后两半段中检验。诚实结论：') }}</div>
+    <div class="sub" style="margin-top:8px;font-weight:700;color:var(--ink)">{{ td(ep.verdict) }}</div>
+    <table class="catbl" style="margin-top:10px">
+      <tr><td class="a">{{ t('Read','读数') }}</td><td>{{ t('Net Sharpe (full)','净夏普（全样本）') }}</td><td>{{ t('pre-2021','2021 前') }}</td><td>{{ t('post-2021','2021 后') }}</td></tr>
+      {% set names = {'heuristic':['Hand-tuned Stance (shipped)','手调立场（已采用）'],'ensemble_eqw':['Orthogonalized ensemble','正交集成'],'best_single':['Best single signal','单一最佳信号']} %}
+      {% for key in ['heuristic','ensemble_eqw','best_single'] %}{% set row = ep.net_sharpe[key] %}
+      <tr><td class="a">{{ t(names[key][0], names[key][1]) }}{% if key=='best_single' %} <span class="faint">({{ ep.best_single }})</span>{% endif %}</td>
+        <td><b>{{ row.full }}</b></td><td>{{ row.pre }}</td><td>{{ row.post }}</td></tr>
+      {% endfor %}
+    </table>
+    <div class="sub faint" style="margin-top:10px;font-size:12px">{{ t('The ensemble (rank-IC', '该集成（秩 IC') }} {{ ep.ensemble_ic }}{{ t(' vs 90-day return) clearly beats the best single signal — de-redundancy + orthogonalization earn their keep — but does NOT beat the hand-tuned Stance in either half, so the Stance is KEPT and is now validated rather than just hand-set. We do not ship a worse model to look sophisticated (forecast-combination on ~3 cycles: equal-weight and best-single are brutal baselines). The ensemble research lives in the calibration report.', ' 对比 90 天收益）明显优于单一最佳信号 — 去冗余与正交化确有其值 — 但在任一半段均未击败手调“立场”，故保留“立场”，且其现已被验证而非仅靠手调。我们不会为了显得高级而采用更差的模型（约 3 个周期上的预测组合：等权与单一最佳是极难超越的基准）。集成研究详见校准报告。') }}</div>
+  </div>
+  {% endif %}
+
   <div class="foot">
     Bitcoin Vector · {{ t('built', '生成于') }} {{ built }} · {{ t('data as of', '数据截至') }} {{ as_of }}.
     {{ t('Independent reverse-engineering of Glassnode/Swissblock\'s Bitcoin Vector on free public data', '基于免费公开数据对 Glassnode/Swissblock 的 Bitcoin Vector 进行的独立逆向工程') }}
@@ -739,12 +906,14 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 window.__CHART_SWAP__ = {
   colors: {},
   labels: {"BTC Price":"BTC 价格","Optimal strategy":"最优策略","Allocation":"仓位",
+           "Buy / add":"买入 / 加仓","Sell / trim":"卖出 / 减仓",
            "Network Growth":"网络增长","Liquidity":"流动性","Momentum":"动量",
            "Structure Shift":"结构转变","Price $":"价格 $","Risk":"风险","Alloc":"仓位"}
 };
 </script>
 <script src="theme.js"></script>
 <script src="chart_i18n.js"></script>
+<script src="vector_timemachine.js"></script>
 <footer class="site-footer">
   <span class="made">{{ t('Made with ❤️ in Canada', '用 ❤️ 在加拿大制作') }}</span>
   <span class="dev">{{ t('Developed by', '开发者') }} Chris Wong</span>
