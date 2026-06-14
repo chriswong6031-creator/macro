@@ -238,6 +238,7 @@
     <a class="nav-link active" href="china.html">🇨🇳 {{ t('China A', '中国A股') }}</a>
     <a class="nav-link" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }}</a>
     <a class="nav-link" href="discovery.html">🏆 {{ t('Alpha leaders', '阿尔法领先股') }}</a>
+    <a class="nav-link" href="gex.html">🧲 {{ t('GEX magnets', 'Gamma磁吸') }}</a>
     <a class="nav-link" href="china_brief.html">📰 {{ t('Brief', '简报') }}</a>
     <a class="nav-link" href="china_history.html">📈 {{ t('History', '历史') }}</a>
   </div>
@@ -526,9 +527,9 @@
   <!-- ===================== TOP SETUPS (selection × timing) ===================== -->
   {% if setups and setups.buy %}
   <div class="panel span12" id="top-setups">
-    <h2>{{ t('⚡ Top setups — strong alpha meeting a constructive entry', '⚡ 顶级配置 — 强阿尔法叠加较佳入场') }}
-      <span class="note" style="text-transform:none">· {{ t('selection × timing', '选股 × 择时') }}</span>
-      {{ help("The actionable shortlist: names that rank high on <b>sector-neutral residual alpha</b> (the validated selection signal — strongest stock-specific momentum within their sector) AND sit at a <b>constructive point in their price cycle</b> (a fresh/near entry, or a pullback rather than an extended spike). <b>setup</b> = alpha z re-ranked by cycle timing (alpha dominates; timing is a tilt). This RE-RANKS the alpha leaders by WHEN — it is not a new statistical edge. A modest, regime-decayed signal: a research shortlist to size and confirm, NOT a buy list (research/CHINA_HK_STOCK_SIGNALS.md).", "可操作的精选名单：在<b>板块中性残差阿尔法</b>（已验证的选股信号 —— 板块内最强个股动量）上排名靠前，且当前处于<b>价格周期的较佳位置</b>（临近入场，或回调而非急涨过热）的股票。<b>setup</b>＝以周期择时对 alpha z 重新排序（alpha 主导，择时为微调）。这是按“何时”对阿尔法领先股重新排序，并非新的统计优势。温和、随周期衰减的信号：用于研究的精选名单（需自行定仓与确认），而非买入清单。") }}
+    <h2>{{ t('⚡ Top setups — mean-reversion entries on decent names', '⚡ 顶级配置 — 优质个股的均值回归入场') }}
+      <span class="note" style="text-transform:none">· {{ t('cycle + mean-reversion entry', '周期 + 均值回归入场') }}</span>
+      {{ help("The actionable shortlist — REVERSAL-led after the deep-history correction. On ~35 years of A-share data, cross-sectional MOMENTUM is NOT a validated edge; short-term <b>reversal</b> is (research/CHINA_HK_STOCK_SIGNALS.md, reports/china-residual-alpha-deep.md). So this surfaces decent-quality names (some residual relative strength) sitting at a <b>cycle-confirmed mean-reversion entry</b> — a recent <b>pullback</b>, not an extended spike. <b>setup</b> LEADS with the validated effects (the calibrated cycle entry + the pullback/reversal overlay); the residual is only a light quality tiebreaker (0.35×), NOT the ranking driver. An <b>extended</b> name is reversal RISK, not a buy. Mean-reversion context to size and confirm — not a buy list.", "可操作的精选名单 —— 经深度历史校正后改为均值回归主导。在约35年的A股数据上，横截面动量并非有效优势；短期<b>反转</b>才是（research/CHINA_HK_STOCK_SIGNALS.md、reports/china-residual-alpha-deep.md）。因此这里筛选出具备一定残差相对强度、且处于<b>周期确认的均值回归入场点</b>（近期<b>回调</b>而非急涨过热）的优质个股。<b>setup</b> 以已验证的效应为主（校准的周期入场＋回调/反转叠加）；残差仅作轻量质量加权（0.35×），并非排序主导。<b>extended</b>（急涨）个股是反转风险而非买入。用于定仓与确认的均值回归背景 —— 而非买入清单。") }}
     </h2>
     <table class="sortable">
       <thead><tr>
@@ -560,16 +561,16 @@
       {% for r in setups.laggards %}<a href="china_stock.html#{{ r.ticker }}" style="margin-right:14px;white-space:nowrap"><b>{{ r.ticker }}</b> <span class="note">{{ nm(r.name) }}</span> <span class="neg">{{ '%+.2f'|format(r.alpha) }}</span></a>{% endfor %}
     </p>
     {% endif %}
-    <p class="note" style="margin:8px 0 0;font-size:11px">{{ t('Selection (residual alpha) × timing (price cycle). A modest, regime-decayed signal — a shortlist to size and confirm, not a buy list. Cycle state is a drawdown/structure tool, not a timing oracle.', '选股（残差阿尔法）× 择时（价格周期）。温和、随周期衰减的信号 —— 用于精选与确认的名单，而非买入清单。周期状态是回撤/结构工具，而非择时神谕。') }}</p>
+    <p class="note" style="margin:8px 0 0;font-size:11px">{{ t('Cycle entry + mean-reversion (the validated A-share effects), with residual relative strength as a light quality tiebreaker. Deep-history corrected: A-shares mean-revert — momentum is not an edge. A shortlist to size and confirm, not a buy list; cycle state is a drawdown/structure tool, not a timing oracle.', '周期入场 + 均值回归（A股已验证的效应），残差相对强度仅作轻量质量加权。经深度历史校正：A股均值回归 —— 动量并非优势。用于定仓与确认的名单，而非买入清单；周期状态是回撤/结构工具，而非择时神谕。') }}</p>
   </div>
   {% endif %}
 
   <!-- ===================== ALPHA LEADERS (sector-neutral residual momentum) ===================== -->
   {% if alpha and alpha.top %}
   <div class="panel span12" id="alpha-leaders">
-    <h2>{{ t('🎯 Alpha leaders — strongest stock-specific momentum', '🎯 阿尔法领先股 — 最强个股特异动量') }}
+    <h2>{{ t('📊 Sector relative strength — read the mean-reversion flag', '📊 板块相对强度 — 关注均值回归标记') }}
       <span class="note" style="text-transform:none">· {{ t('sector-neutral residual · vs CSI 300', '板块中性残差 · 相对沪深300') }}{% if alpha.n %} · {{ alpha.n }} {{ t('names', '只') }}{% endif %}</span>
-      {{ help("Each stock's return with its MARKET and SECTOR beta stripped — <b>sector-neutral residual momentum</b> over a 12-1-month window. This ranks the names pulling ahead on their OWN stock-specific strength, not just riding the sector/market tide. <b>alpha z</b> = rank vs the whole A-share cross-section (0 = average, +2 = top of the pack); <b>sector rank</b> = place among its sector peers; <b>idio ann</b> = annualized beta-stripped return. The <b>entry</b> tag flags a leader that just spiked (“extended” = short-term reversal risk) vs one on a recent dip (“pullback” = constructive). Phase-0 validated on A-shares as a MODEST, regime-decayed edge — context for stock selection, NOT a standalone buy signal (research/CHINA_HK_STOCK_SIGNALS.md).", "每只股票剔除其市场与板块贝塔后的收益 —— <b>板块中性残差动量</b>（12-1 个月）。它排出依靠个股自身特定强度领先、而非仅随板块/大盘上涨的股票。<b>alpha z</b>＝相对全 A 股横截面的排名（0＝平均，+2＝最强一档）；<b>板块排名</b>＝在同板块内的位置；<b>年化残差</b>＝年化的剔除贝塔收益。<b>入场</b>标签标记刚急涨的领先股（“extended”＝短期反转风险）与近期回调者（“pullback”＝较佳入场）。第 0 阶段在 A 股验证为温和、随周期衰减的优势 —— 用于选股参考，而非独立买入信号。") }}
+      {{ help("Each stock's return with its MARKET and SECTOR beta stripped — <b>sector-neutral residual relative strength</b> over a 12-1-month window (rank vs the whole A-share cross-section; +2 = top of the pack). <b>IMPORTANT — deep-history correction:</b> on ~35 years of A-share data this momentum is NOT a validated edge — A-shares MEAN-REVERT, so do not read 'high alpha = buy' (research/CHINA_HK_STOCK_SIGNALS.md, reports/china-residual-alpha-deep.md). Read the <b>entry</b> flag instead: a leader that just spiked (“extended”) is a reversal RISK / fade candidate; a leader on a recent pullback (“pullback”) is the constructive MEAN-REVERSION entry — the validated effect. The alpha column is relative-strength CONTEXT (which names have shown strength), not a buy ranking.", "每只股票剔除其市场与板块贝塔后的收益 —— <b>板块中性残差相对强度</b>（12-1 个月；相对全 A 股横截面排名，+2＝最强一档）。<b>重要 —— 深度历史校正：</b>在约35年的A股数据上，该动量并非有效优势 —— A股<b>均值回归</b>，因此切勿把“高 alpha＝买入”（research/CHINA_HK_STOCK_SIGNALS.md、reports/china-residual-alpha-deep.md）。请改看<b>入场</b>标记：刚急涨的领先股（“extended”）是反转风险/做空候选；近期回调的领先股（“pullback”）才是有效的<b>均值回归</b>入场。alpha 列是相对强度<b>背景</b>（哪些个股表现出强势），并非买入排序。") }}
     </h2>
     <table class="sortable">
       <thead><tr>
@@ -595,7 +596,7 @@
       {% endfor %}
       </tbody>
     </table>
-    <p class="note" style="margin:6px 0 0;font-size:11px">{{ t('Sector-neutral residual momentum — a modest, regime-decayed edge (Phase-0 GO as a context leg). Each name’s return with its market AND sector beta removed, ranked within its sector. Stock-selection context, NOT a standalone buy list.', '板块中性残差动量 —— 温和、随周期衰减的优势（第 0 阶段判定为可作参考腿）。每只股票剔除其市场与板块贝塔后的收益，并在其板块内排序。用于选股参考，而非独立买入清单。') }}</p>
+    <p class="note" style="margin:6px 0 0;font-size:11px">{{ t('Sector-neutral residual relative strength. Deep-history corrected: A-share momentum is NOT a validated edge (35y, nothing clears FDR) — the robust effect is short-term REVERSAL, so the actionable read is the entry flag (pullback = mean-reversion buy; extended = fade risk), not the alpha ranking. Relative-strength context, not a buy list.', '板块中性残差相对强度。经深度历史校正：A股动量并非有效优势（35年，无一通过FDR）—— 稳健的效应是短期反转，因此可操作的解读是入场标记（pullback＝均值回归买入；extended＝做空风险），而非 alpha 排序。相对强度背景，而非买入清单。') }}</p>
   </div>
   {% endif %}
 

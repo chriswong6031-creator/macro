@@ -279,10 +279,12 @@ def _vm(snap: dict, fr: pd.DataFrame, calib: dict | None = None) -> dict:
     comp = csig.get("composite", {})
     comp_cond = comp.get("conditional", {}) or {}
     comp_hi = (comp_cond.get("terciles", {}) or {}).get("high", {}) or {}
-    calib_vm = ({} if not comp else {
+    # only surface the measured-edge box when there is a REAL high-tercile edge
+    # (a null high_edge_pp -> no claim; also avoids a None in the template arithmetic).
+    calib_vm = ({} if (not comp or comp_cond.get("high_edge_pp") is None) else {
         "verdict": comp.get("verdict"),
-        "hi_dd10": _r((comp_hi.get("p_dd10") or 0) * 100, 0),
-        "base_dd10": _r((comp_cond.get("base_p_dd10") or 0) * 100, 0),
+        "hi_dd10": _r((comp_hi.get("p_dd10") or 0) * 100, 1),
+        "base_dd10": _r((comp_cond.get("base_p_dd10") or 0) * 100, 1),
         "edge_pp": comp_cond.get("high_edge_pp"),
         "ic_recession": comp.get("ic_recession"),
         "span": comp.get("span"),
@@ -409,11 +411,16 @@ def main() -> int:
 
     calib = _load_calibration()
     vm = _vm(snap, fr, calib)
-    charts = {
-        "health": chart_health(fr), "curve_now": chart_curve_now(f), "spreads": chart_spreads(fr),
-        "credit": chart_credit(fr), "real": chart_real(fr), "move": chart_move(fr), "corr": chart_corr(fr),
-        "sovereign": chart_sovereign(fr),
-    }
+    _CHART_KEYS = ("health", "curve_now", "spreads", "credit", "real", "move", "corr", "sovereign")
+    try:
+        charts = {
+            "health": chart_health(fr), "curve_now": chart_curve_now(f), "spreads": chart_spreads(fr),
+            "credit": chart_credit(fr), "real": chart_real(fr), "move": chart_move(fr), "corr": chart_corr(fr),
+            "sovereign": chart_sovereign(fr),
+        }
+    except Exception as e:  # noqa: BLE001 — a single chart must never break the page
+        log.warning("bonds chart build failed (%s); rendering without charts", e)
+        charts = {k: "" for k in _CHART_KEYS}
 
     # alert timeline (deterministic, recomputed each build)
     acfg = config.load()["bonds"]["alerts"]
@@ -425,10 +432,12 @@ def main() -> int:
     recent = bonds_alerts.recent(events, acfg["timeline_days"])
     timeline = _group_timeline(recent)
 
-    as_of = snap.get("as_of") or fr.dropna(how="all").index.max().strftime("%Y-%m-%d")
-    as_of_disp = pd.Timestamp(as_of).strftime("%b %d, %Y")
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    span = f"{fr.index.min().date()}..{fr.index.max().date()}"
+    last_valid = fr.dropna(how="all").index.max()
+    as_of = snap.get("as_of") or (last_valid.strftime("%Y-%m-%d") if pd.notna(last_valid) else built[:10])
+    as_of_disp = pd.Timestamp(as_of).strftime("%b %d, %Y")
+    lo, hi = fr.index.min(), fr.index.max()
+    span = f"{lo.date()}..{hi.date()}" if pd.notna(lo) and pd.notna(hi) else "—"
 
     from engine.i18n import tr, td
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)

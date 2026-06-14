@@ -184,6 +184,9 @@ jobs:
         # before build_vector (which writes the hub last): writes the discovery
         # leaderboard. Self-sufficient; returns 0 on any engine error.
         run: python -m scripts.build_discovery
+      - name: GEX magnets board (build_gex_board)
+        # after build_site; live Cboe chains -> site/gex.html. Self-sufficient (returns 0 on engine error).
+        run: python -m scripts.build_gex_board
       - name: factor seasonality (build_seasonality)
         # after build_site, before build_vector: reads data/french/factors.parquet
         # (Ken French monthly factors, collected in the collect job) and writes
