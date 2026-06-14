@@ -1100,6 +1100,20 @@ def _load_breadth() -> dict | None:
     return {"groups": rows, "div_small_large": div, "as_of": as_of}
 
 
+def _load_factor_series() -> dict | None:
+    """Load factor portfolio return series (scripts.build_factor_series writes
+    site/factordata/factor_series.json — the heavier month-end walk). Degrade-never-raise."""
+    p = config.ROOT / "site" / "factordata" / "factor_series.json"
+    if not p.exists():
+        return None
+    try:
+        d = json.loads(p.read_text())
+        return d if d.get("factors") else None
+    except Exception as e:  # noqa: BLE001
+        log.warning("factor series unreadable: %s", e)
+        return None
+
+
 def build_factors_page(env: Environment, site: Path, generated: str) -> dict | None:
     """Render factors.html — the cross-sectional equity factor rankings (SEC
     EDGAR fundamentals x prices). Fundamentals fetch is cached weekly; ranks
@@ -1132,8 +1146,9 @@ def build_factors_page(env: Environment, site: Path, generated: str) -> dict | N
     (fdir / "factors.json").write_text(json.dumps(fac, separators=(",", ":"), default=str))
     ic = _load_ic_scorecard()                  # leak-free point-in-time IC (degrade-never-raise)
     breadth = _load_breadth()                  # market-member breadth context (degrade-never-raise)
+    series = _load_factor_series()             # factor portfolio return series (degrade-never-raise)
     html = env.get_template("factors.html.j2").render(
-        fac=fac, ic=ic, breadth=breadth, generated_utc=generated)
+        fac=fac, ic=ic, breadth=breadth, series=series, generated_utc=generated)
     (site / "factors.html").write_text(html)
     log.info("wrote factors.html (%d names, FY%s, ic=%s)", fac.get("n"), fac.get("fy"),
              "yes" if ic else "no")

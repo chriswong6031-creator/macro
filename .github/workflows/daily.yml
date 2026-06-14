@@ -142,6 +142,9 @@ jobs:
           # leak-free point-in-time IC scorecard -> data/edgar/ic_scorecard.json, read by
           # build_site's factors page. ~4s, only moves quarterly; additive (never blocks build_site).
           python -m scripts.factor_ic_scorecard --quick || echo "ic scorecard skipped (additive)"
+          # factor portfolio return series -> factordata/factor_series.json (read by the factors
+          # page). ~15s month-end walk; additive (never blocks build_site).
+          python -m scripts.build_factor_series || echo "factor series skipped (additive)"
           run_py "macro dashboard (build_site)" scripts.build_site
           run_py "daily brief (daily_brief)" scripts.daily_brief
           exit 0
