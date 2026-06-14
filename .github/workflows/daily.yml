@@ -178,6 +178,9 @@ jobs:
         # before build_vector (which writes the hub last): writes the discovery
         # leaderboard. Self-sufficient; returns 0 on any engine error.
         run: python -m scripts.build_discovery
+      - name: GEX magnets board (build_gex_board)
+        # after build_site; live Cboe chains -> site/gex.html. Self-sufficient (returns 0 on engine error).
+        run: python -m scripts.build_gex_board
       - name: build bitcoin vector + landing hub
         # installs the landing hub at index.html (rendered from stored engine
         # state, so ordering vs build_site no longer matters — build_site writes
