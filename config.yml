@@ -1395,6 +1395,27 @@ vector:
     n_trials: 65                  # honest UPPER-BOUND of independent strategy configs explored, for the Deflated Sharpe haircut — overestimate is conservative (de Prado); raise as you try more. +15 for the Point-4 conviction/brake sweep.
     cv_folds: 5                   # purged + embargoed walk-forward folds (embargo = max forward horizon) — the leak-free robustness gate complementing split_date (D-vec-GATES)
 
+  # --- GBT meta-label leaf (engine/meta_label.py; scripts/meta_label_btc.py) ---
+  # DEFAULT-OFF. A secondary HistGradientBoostingClassifier learns P(the primary
+  # allocation call is correct) over `horizon` days from context features, used to
+  # FILTER/SIZE — never direction. Fenced to this high-N layer (~3000 long calls)
+  # because GBT overfits on the ~10-episode macro layer. NOT wired into the live
+  # allocation: `enabled` must be flipped by a human only AFTER it proves out.
+  meta_label:
+    enabled: false                # leaf stays out of compute_all / the live grid
+    primary_variant: optimal      # which alloc_<variant> grid sets the SIDE
+    horizon: 30                   # forward label horizon (days) == the CV embargo
+    barrier_mult: 1.0             # triple-barrier width = mult · trailing σ · √horizon
+    vol_window: 30                # trailing window for the barrier vol (no look-ahead)
+    cv_folds: 6                   # purged + embargoed folds (reuses validation.purged_folds)
+    min_test_events: 20
+    min_train_events: 150
+    cost_bps: 10                  # one-way cost per unit |Δpos|; meta CAGR/Sharpe are NET of this
+    start_date: "2015-01-01"
+    min_sharpe_gain: 0.05         # verdict: meta must add ≥ this to the net Sharpe
+    maxdd_tolerance_pp: 2.0       # ...and not worsen MaxDD by more than this
+    dsr_floor: 0.90               # ...and clear this Deflated-Sharpe haircut
+
   # Alerts (Phase 3). Vector severity high|medium|info. Flash-crash thresholds
   # provisional (calibrated against known episodes; see research/VECTOR_ALERTS_DESIGN.md).
   alerts:
