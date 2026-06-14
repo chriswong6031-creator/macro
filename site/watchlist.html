@@ -37,8 +37,11 @@
           overflow:auto; display:none; box-shadow:var(--popover-shadow); }
   #wl_sugg div { padding:8px 13px; cursor:pointer; display:flex; gap:10px; align-items:center; }
   #wl_sugg div:hover, #wl_sugg div.sel { background:var(--panel2); }
-  #wl_sugg b { min-width:58px; } #wl_sugg small { color:var(--muted); flex:1; }
-  .wl-sst { font-size:11px; white-space:nowrap; }
+  #wl_sugg b { min-width:58px; flex:none; }
+  #wl_sugg small { color:var(--muted); flex:1 1 auto; min-width:0;
+                   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .wl-sst { font-size:11px; white-space:nowrap; flex:0 1 auto; min-width:0; max-width:42%;
+            overflow:hidden; text-overflow:ellipsis; text-align:right; }
   /* ---- sync / account bar ---- */
   .wl-syncbar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
   .wl-pill { font-size:11.5px; font-weight:700; padding:3px 9px; border-radius:8px;
@@ -84,6 +87,11 @@
   .wl-etag { font-weight:800; letter-spacing:.03em; }
   .wl-px { font-size:12px; margin:2px 0 4px; }
   .wl-mtf { margin-top:4px; }
+  /* the shared 3-up MTF strip is sized for the wide sector/analyzer pages; the
+     watchlist card (~310px) is too narrow for it, so stack the timeframe cards
+     (same single-column layout the strip already uses on mobile) — otherwise the
+     min-content of three gauges overflows and bleeds past the card edge */
+  .wl-card .mtf-grid { grid-template-columns:1fr; }
   /* ---- empty / chips / banner / toast ---- */
   #wl_empty { display:none; }
   .wl-chip { background:var(--panel2); border:1px solid var(--line); border-radius:8px;
@@ -184,7 +192,7 @@
 <script src="auth.js"></script>
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
-<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-14 10:06 UTC ·
+<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-14 11:04 UTC ·
   <span class="l-en">signals refresh nightly · mechanical, backtested, free public data · not investment advice</span><span class="l-zh">信号每晚刷新 · 机械化 · 经回测 · 免费公开数据 · 非投资建议</span></p>
 <footer class="site-footer">
   <span class="made"><span class="l-en">Made with ❤️ in Canada</span><span class="l-zh">用 ❤️ 在加拿大制作</span></span>

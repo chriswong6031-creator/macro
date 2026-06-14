@@ -16,6 +16,9 @@
   .early { margin:6px 0; padding:8px 12px; border-radius:8px;
            background:color-mix(in srgb, var(--g-cold) 14%, var(--panel2));
            border-left:3px solid var(--g-cold); font-size:13px; }
+  .macro-caution { margin:6px 0; padding:8px 12px; border-radius:8px;
+           background:color-mix(in srgb, var(--down) 10%, var(--panel2));
+           border-left:3px solid var(--down); font-size:13px; }
   .agewhen { margin:6px 0; padding:7px 11px; border-radius:8px; background:var(--panel2);
              border-left:3px solid var(--link); font-size:13px; color:var(--text); }
   .agechip { font-size:11px; font-weight:700; padding:2px 7px; border-radius:9px;
@@ -104,6 +107,7 @@
     <a class="nav-link" href="../etfs.html">🐳 <span class="l-en">ETF flows</span><span class="l-zh">ETF 资金流</span></a>
     <a class="nav-link" href="../china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国A股</span></a>
     <a class="nav-link" href="../commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span></a>
+    <a class="nav-link" href="../discovery.html">🏆 <span class="l-en">Alpha leaders</span><span class="l-zh">阿尔法领先股</span></a>
     <a class="nav-link" href="../brief.html">📰 <span class="l-en">Brief</span><span class="l-zh">简报</span></a>
     <a class="nav-link" href="../history.html">📈 <span class="l-en">History</span><span class="l-zh">历史</span></a>
   </div>
@@ -129,13 +133,569 @@
       <h1><span class="l-en">Utilities</span><span class="l-zh">公用事业</span> <span class="muted">(XLU)</span></h1>
       <span class="state st-COUNTERTREND_BOUNCE"><span class="l-en">COUNTER-TREND BOUNCE</span><span class="l-zh">逆势反弹</span></span>
       <span class="eqbadge eq-flat"><span class="l-en">Entry</span><span class="l-zh">入场</span> · +12 <span class="eqg"><span class="l-en">minimal</span><span class="l-zh">minimal</span></span></span><span class="help">?<span class="tip"><span class="l-en">How well-timed & low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.</span><span class="l-zh">衡量当前入场的时机与风险——贴近周期低点、动量新近转向、且顺势。实测：贴近枢轴的入场，其回撤比远离枢轴的追高者约小 30%——这是风险控制，并非收益预测。</span></span></span>
+      <span style="flex:1"></span>
+      <button class="af-toggle" id="af-btn" type="button" aria-label="Toggle alert feed" aria-expanded="false" aria-controls="af-feed">🔔 <span><span class="l-en">Alerts</span><span class="l-zh">警报</span></span><span class="af-badge">30</span> <span class="af-caret">▾</span></button>
     </div>
     
-    <div class="entrybar urg-caution">
-      <span class="entrytag"><span class="l-en">BOUNCE — HIGH RISK</span><span class="l-zh">反弹 — 高风险</span></span>
-      <span><span class="l-en">Counter-trend bounce inside a bearish bigger picture. For nimble traders only — small size, tight stop below 43.1. If the daily low fails it cascades toward the larger cycle low; not an investment buy.</span><span class="l-zh">处于看空大局中的逆势反弹。仅限灵活交易者——小仓位、将止损紧贴 43.1 下方。若日线低点失守，将向更大周期低点蔓延；并非投资性买入。</span></span>
+    
+    <div class="verdict urg-caution">
+      <span class="v-act"><span class="l-en">HIGH-RISK · NIMBLE ONLY</span><span class="l-zh">HIGH-RISK · NIMBLE ONLY</span></span>
+      <span class="v-tag"><span class="l-en">BOUNCE — HIGH RISK</span><span class="l-zh">反弹 — 高风险</span></span>
+      <span class="v-text"><span class="l-en">Counter-trend bounce inside a bearish bigger picture. For nimble traders only — small size, tight stop below 43.1. If the daily low fails it cascades toward the larger cycle low; not an investment buy.</span><span class="l-zh">处于看空大局中的逆势反弹。仅限灵活交易者——小仓位、将止损紧贴 43.1 下方。若日线低点失守，将向更大周期低点蔓延；并非投资性买入。</span></span>
+    </div>
+    
+    
+    <div class="sigstrip">
+      
+      <div class="sigchip up">
+        <span class="sc-k"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
+        <span class="sc-v">▲ 200d</span>
+        <span class="sc-s">+0.9%</span>
+      </div>
+      
+      <div class="sigchip up">
+        <span class="sc-k"><span class="l-en">Momentum</span><span class="l-zh">动量</span></span>
+        <span class="sc-v">MACD ＋ ↑</span>
+        <span class="sc-s"><span class="l-en">daily</span><span class="l-zh">日线</span></span>
+      </div>
+      
+      <div class="sigchip neutral">
+        <span class="sc-k">RSI</span>
+        <span class="sc-v">50</span>
+        <span class="sc-s"><span class="l-en">neutral</span><span class="l-zh">中性</span></span>
+      </div>
+      
+      <div class="sigchip neutral">
+        <span class="sc-k">Stoch</span>
+        <span class="sc-v">78</span>
+        <span class="sc-s"><span class="l-en">StochRSI</span><span class="l-zh">随机RSI</span></span>
+      </div>
+      
+      <div class="sigchip warn">
+        <span class="sc-k"><span class="l-en">Cycle</span><span class="l-zh">周期</span></span>
+        <span class="sc-v"><span class="l-en">Day</span><span class="l-zh">第</span> 36</span>
+        <span class="sc-s"><span class="l-en">of</span><span class="l-zh">/</span> 36–42</span>
+      </div>
+    </div>
+    
+    <div class="af" id="af-feed" hidden>
+      
+      <div class="af-pin dir-caution">
+        <div class="af-pin-h"><span class="af-pin-tag"><span class="l-en">Current signal</span><span class="l-zh">当前信号</span></span>
+          <span class="af-pin-title"><span class="l-en">DOWNTREND → COUNTER-TREND BOUNCE</span><span class="l-zh">下跌趋势 → 逆势反弹</span></span></div>
+        <p class="af-pin-d"><span class="l-en">HIGH-RISK · NIMBLE ONLY. Short-term, a daily bottoming setup is forming — but the bigger picture is bearish (weekly momentum negative). A bounce here is COUNTER-TREND: daily-cycle lows that don&#39;t line up with a weekly-cycle low tend to be left-translated and fail, then cascade toward the larger cycle low — exactly the trap of buying a daily low in a falling investor cycle. The daily cycle has already failed (broke its own start low)</span><span class="l-zh">HIGH-RISK · NIMBLE ONLY。短期来看，正在形成日线筑底形态——但大局看空（weekly momentum negative）。此处的反弹属于逆势：与周线周期低点不对齐的日线周期低点往往呈左移结构并最终失败，随后向更大周期低点蔓延——这正是在下行的投资者周期中买入日线低点的陷阱。日线周期已经失败（跌破其自身的起始低点）</span></p>
+      </div>
+      
+      <div class="af-filters">
+        
+        
+        <button class="aff active" type="button" data-f="all"><span class="l-en">All</span><span class="l-zh">全部</span></button>
+        <button class="aff " type="button" data-f="signal"><span class="l-en">Signal</span><span class="l-zh">信号</span></button>
+        <button class="aff " type="button" data-f="trend"><span class="l-en">Trend</span><span class="l-zh">趋势</span></button>
+        <button class="aff " type="button" data-f="momentum"><span class="l-en">Momentum</span><span class="l-zh">动量</span></button>
+        <button class="aff " type="button" data-f="strength"><span class="l-en">vs Market</span><span class="l-zh">相对强弱</span></button>
+        <button class="aff " type="button" data-f="cycle"><span class="l-en">Cycle</span><span class="l-zh">周期</span></button>
+      </div>
+      
+      <div class="af-day">
+        <div class="af-date"><span class="l-en">Jun 12, 2026</span><span class="l-zh">2026年6月12日</span></div>
+        
+        <details class="af-item" data-f="trend">
+          <summary>
+            <span class="af-node dir-up"></span>
+            <span class="af-chip f-trend"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
+            <span class="af-head"><span class="l-en">XLU reclaimed its 200-day average</span><span class="l-zh">XLU 收复200日均线</span></span>
+          </summary>
+          <div class="af-detail"><span class="l-en">Price closed back above the 200-day moving average — the classic bull dividing line. $44.53.</span><span class="l-zh">收盘重回200日均线 — 经典的多头分界线。$44.53。</span>
+            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Price vs the 200-day average — the classic bull / bear dividing line.</span><span class="l-zh">价格相对200日均线 — 经典的多空分界线。</span></div>
+            <div class="af-fwd"><span class="l-en">A backdrop filter; pair it with a cycle low or momentum cross to act.</span><span class="l-zh">作为背景过滤器；需配合周期低点或动量交叉再行动。</span></div>
+          </div>
+        </details>
+        
+      </div>
+      
+      <div class="af-day">
+        <div class="af-date"><span class="l-en">Jun 11, 2026</span><span class="l-zh">2026年6月11日</span></div>
+        
+        <details class="af-item" data-f="momentum">
+          <summary>
+            <span class="af-node dir-up"></span>
+            <span class="af-chip f-momentum"><span class="l-en">Momentum</span><span class="l-zh">动量</span></span>
+            <span class="af-head"><span class="l-en">XLU daily MACD crossed up</span><span class="l-zh">XLU 日线MACD上穿</span></span>
+          </summary>
+          <div class="af-detail"><span class="l-en">The daily MACD histogram turned positive — fast and noisy, context rather than a standalone trigger. $44.05.</span><span class="l-zh">日线MACD柱状图转正 — 快速且嘈杂，仅作背景。$44.05。</span>
+            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Daily MACD — fast and noisy; context, not a standalone trigger.</span><span class="l-zh">日线MACD — 快速且嘈杂；仅作背景，而非独立触发。</span></div>
+            <div class="af-fwd"><span class="l-en">Frequent by design — filter with the weekly cross and trend.</span><span class="l-zh">本就频繁 — 用周线交叉与趋势加以过滤。</span></div>
+          </div>
+        </details>
+        
+      </div>
+      
+      <div class="af-day">
+        <div class="af-date"><span class="l-en">Jun 8, 2026</span><span class="l-zh">2026年6月8日</span></div>
+        
+        <details class="af-item" data-f="trend">
+          <summary>
+            <span class="af-node dir-down"></span>
+            <span class="af-chip f-trend"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
+            <span class="af-head"><span class="l-en">XLU lost its 200-day average</span><span class="l-zh">XLU 跌破200日均线</span></span>
+          </summary>
+          <div class="af-detail"><span class="l-en">Price closed below the 200-day moving average — the classic bear dividing line. $43.52.</span><span class="l-zh">收盘跌破200日均线 — 经典的空头分界线。$43.52。</span>
+            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Price vs the 200-day average — the classic bull / bear dividing line.</span><span class="l-zh">价格相对200日均线 — 经典的多空分界线。</span></div>
+            <div class="af-fwd"><span class="l-en">A backdrop filter; pair it with a cycle low or momentum cross to act.</span><span class="l-zh">作为背景过滤器；需配合周期低点或动量交叉再行动。</span></div>
+          </div>
+        </details>
+        
+        <details class="af-item" data-f="strength">
+          <summary>
+            <span class="af-node dir-down"></span>
+            <span class="af-chip f-strength"><span class="l-en">vs Market</span><span class="l-zh">相对强弱</span></span>
+            <span class="af-head"><span class="l-en">XLU broke down vs the market</span><span class="l-zh">XLU 相对市场走弱</span></span>
+          </summary>
+          <div class="af-detail"><span class="l-en">Relative strength vs SPY crossed below the 10th percentile of the last 90 days — weakness often leads price. $43.52.</span><span class="l-zh">相对标普500的强弱下穿近90日的第10百分位 — 走弱常先于价格。$43.52。</span>
+            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Relative strength vs SPY — momentum persistence is one of the few robust equity factors.</span><span class="l-zh">相对标普500的强弱 — 动量持续性是少数稳健的股票因子之一。</span></div>
+            <div class="af-fwd"><span class="l-en">Leadership tends to persist; breakdowns warn before price does.</span><span class="l-zh">领先往往延续；走弱常先于价格发出警示。</span></div>
+          </div>
+        </details>
+        
+      </div>
+      
+      <div class="af-day">
+        <div class="af-date"><span class="l-en">Jun 5, 2026</span><span class="l-zh">2026年6月5日</span></div>
+        
+        <details class="af-item" data-f="trend">
+          <summary>
+            <span class="af-node dir-up"></span>
+            <span class="af-chip f-trend"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
+            <span class="af-head"><span class="l-en">XLU reclaimed its 200-day average</span><span class="l-zh">XLU 收复200日均线</span></span>
+          </summary>
+          <div class="af-detail"><span class="l-en">Price closed back above the 200-day moving average — the classic bull dividing line. $44.35.</span><span class="l-zh">收盘重回200日均线 — 经典的多头分界线。$44.35。</span>
+            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Price vs the 200-day average — the classic bull / bear dividing line.</span><span class="l-zh">价格相对200日均线 — 经典的多空分界线。</span></div>
+            <div class="af-fwd"><span class="l-en">A backdrop filter; pair it with a cycle low or momentum cross to act.</span><span class="l-zh">作为背景过滤器；需配合周期低点或动量交叉再行动。</span></div>
+          </div>
+        </details>
+        
+      </div>
+      
+      <div class="af-day">
+        <div class="af-date"><span class="l-en">Jun 1, 2026</span><span class="l-zh">2026年6月1日</span></div>
+        
+        <details class="af-item" data-f="trend">
+          <summary>
+            <span class="af-node dir-down"></span>
+            <span class="af-chip f-trend"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
+            <span class="af-head"><span class="l-en">XLU lost its 200-day average</span><span class="l-zh">XLU 跌破200日均线</span></span>
+          </summary>
+          <div class="af-detail"><span class="l-en">Price closed below the 200-day moving average — the classic bear dividing line. $43.10.</span><span class="l-zh">收盘跌破200日均线 — 经典的空头分界线。$43.10。</span>
+            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Price vs the 200-day average — the classic bull / bear dividing line.</span><span class="l-zh">价格相对200日均线 — 经典的多空分界线。</span></div>
+            <div class="af-fwd"><span class="l-en">A backdrop filter; pair it with a cycle low or momentum cross to act.</span><span class="l-zh">作为背景过滤器；需配合周期低点或动量交叉再行动。</span></div>
+          </div>
+        </details>
+        
+        <details class="af-item" data-f="momentum">
+          <summary>
+            <span class="af-node dir-down"></span>
+            <span class="af-chip f-momentum"><span class="l-en">Momentum</span><span class="l-zh">动量</span></span>
+            <span class="af-head"><span class="l-en">XLU daily MACD crossed down</span><span class="l-zh">XLU 日线MACD下穿</span></span>
+          </summary>
+          <div class="af-detail"><span class="l-en">The daily MACD histogram turned negative — fast and noisy, context rather than a standalone trigger. $43.10.</span><span class="l-zh">日线MACD柱状图转负 — 快速且嘈杂，仅作背景。$43.10。</span>
+            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Daily MACD — fast and noisy; context, not a standalone trigger.</span><span class="l-zh">日线MACD — 快速且嘈杂；仅作背景，而非独立触发。</span></div>
+            <div class="af-fwd"><span class="l-en">Frequent by design — filter with the weekly cross and trend.</span><span class="l-zh">本就频繁 — 用周线交叉与趋势加以过滤。</span></div>
+          </div>
+        </details>
+        
+      </div>
+      
+      <div class="af-day">
+        <div class="af-date"><span class="l-en">May 26, 2026</span><span class="l-zh">2026年5月26日</span></div>
+        
+        <details class="af-item" data-f="momentum">
+          <summary>
+            <span class="af-node dir-up"></span>
+            <span class="af-chip f-momentum"><span class="l-en">Momentum</span><span class="l-zh">动量</span></span>
+            <span class="af-head"><span class="l-en">XLU daily MACD crossed up</span><span class="l-zh">XLU 日线MACD上穿</span></span>
+          </summary>
+          <div class="af-detail"><span class="l-en">The daily MACD histogram turned positive — fast and noisy, context rather than a standalone trigger. $45.33.</span><span class="l-zh">日线MACD柱状图转正 — 快速且嘈杂，仅作背景。$45.33。</span>
+            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Daily MACD — fast and noisy; context, not a standalone trigger.</span><span class="l-zh">日线MACD — 快速且嘈杂；仅作背景，而非独立触发。</span></div>
+            <div class="af-fwd"><span class="l-en">Frequent by design — filter with the weekly cross and trend.</span><span class="l-zh">本就频繁 — 用周线交叉与趋势加以过滤。</span></div>
+          </div>
+        </details>
+        
+      </div>
+      
+      <div class="af-day">
+        <div class="af-date"><span class="l-en">May 20, 2026</span><span class="l-zh">2026年5月20日</span></div>
+        
+        <details class="af-item" data-f="momentum">
+          <summary>
+            <span class="af-node dir-up"></span>
+            <span class="af-chip f-momentum"><span class="l-en">Momentum</span><span class="l-zh">动量</span></span>
+            <span class="af-head"><span class="l-en">XLU StochRSI turned up from oversold</span><span class="l-zh">XLU StochRSI自超卖区上行</span></span>
+          </summary>
+          <div class="af-detail"><span class="l-en">StochRSI popped back above 20 — the earliest oscillator heads-up that downside momentum is easing. $44.51.</span><span class="l-zh">StochRSI重回20上方 — 下行动量趋缓的最早预警。$44.51。</span>
+            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">StochRSI turning up out of oversold — the earliest oscillator heads-up.</span><span class="l-zh">StochRSI自超卖区上行 — 最早的振荡指标预警。</span></div>
+            <div class="af-fwd"><span class="l-en">An early flag, not confirmation; it can fire repeatedly in a downtrend.</span><span class="l-zh">早期信号而非确认；下跌趋势中可能反复出现。</span></div>
+          </div>
+        </details>
+        
+      </div>
+      
+      <div class="af-day">
+        <div class="af-date"><span class="l-en">May 18, 2026</span><span class="l-zh">2026年5月18日</span></div>
+        
+        <details class="af-item" data-f="trend">
+          <summary>
+            <span class="af-node dir-up"></span>
+            <span class="af-chip f-trend"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
+            <span class="af-head"><span class="l-en">XLU reclaimed its 200-day average</span><span class="l-zh">XLU 收复200日均线</span></span>
+          </summary>
+          <div class="af-detail"><span class="l-en">Price closed back above the 200-day moving average — the classic bull dividing line. $43.94.</span><span class="l-zh">收盘重回200日均线 — 经典的多头分界线。$43.94。</span>
+            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Price vs the 200-day average — the classic bull / bear dividing line.</span><span class="l-zh">价格相对200日均线 — 经典的多空分界线。</span></div>
+            <div class="af-fwd"><span class="l-en">A backdrop filter; pair it with a cycle low or momentum cross to act.</span><span class="l-zh">作为背景过滤器；需配合周期低点或动量交叉再行动。</span></div>
+          </div>
+        </details>
+        
+      </div>
+      
+      <div class="af-day">
+        <div class="af-date"><span class="l-en">May 15, 2026</span><span class="l-zh">2026年5月15日</span></div>
+        
+        <details class="af-item" data-f="trend">
+          <summary>
+            <span class="af-node dir-down"></span>
+            <span class="af-chip f-trend"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
+            <span class="af-head"><span class="l-en">XLU lost its 200-day average</span><span class="l-zh">XLU 跌破200日均线</span></span>
+          </summary>
+          <div class="af-detail"><span class="l-en">Price closed below the 200-day moving average — the classic bear dividing line. $43.87.</span><span class="l-zh">收盘跌破200日均线 — 经典的空头分界线。$43.87。</span>
+            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Price vs the 200-day average — the classic bull / bear dividing line.</span><span class="l-zh">价格相对200日均线 — 经典的多空分界线。</span></div>
+            <div class="af-fwd"><span class="l-en">A backdrop filter; pair it with a cycle low or momentum cross to act.</span><span class="l-zh">作为背景过滤器；需配合周期低点或动量交叉再行动。</span></div>
+          </div>
+        </details>
+        
+      </div>
+      
+      <div class="af-day">
+        <div class="af-date"><span class="l-en">May 8, 2026</span><span class="l-zh">2026年5月8日</span></div>
+        
+        <details class="af-item" data-f="momentum">
+          <summary>
+            <span class="af-node dir-down"></span>
+            <span class="af-chip f-momentum"><span class="l-en">Momentum</span><span class="l-zh">动量</span></span>
+            <span class="af-head"><span class="l-en">XLU weekly MACD crossed down</span><span class="l-zh">XLU 周线MACD下穿</span></span>
+          </summary>
+          <div class="af-detail"><span class="l-en">The weekly MACD histogram turned negative — the slower, less-whippy momentum read.</span><span class="l-zh">周线MACD柱状图转负 — 更慢、更少来回的动量信号。</span>
+            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Weekly MACD — the slower, less-whippy momentum read.</span><span class="l-zh">周线MACD — 更慢、更少来回的动量信号。</span></div>
+            <div class="af-fwd"><span class="l-en">Higher-timeframe confirmation; daily noise resolves around it.</span><span class="l-zh">更高周期的确认；日线噪音围绕它收敛。</span></div>
+          </div>
+        </details>
+        
+      </div>
+      
+      <div class="af-day">
+        <div class="af-date"><span class="l-en">May 7, 2026</span><span class="l-zh">2026年5月7日</span></div>
+        
+        <details class="af-item" data-f="strength">
+          <summary>
+            <span class="af-node dir-down"></span>
+            <span class="af-chip f-strength"><span class="l-en">vs Market</span><span class="l-zh">相对强弱</span></span>
+            <span class="af-head"><span class="l-en">XLU broke down vs the market</span><span class="l-zh">XLU 相对市场走弱</span></span>
+          </summary>
+          <div class="af-detail"><span class="l-en">Relative strength vs SPY crossed below the 10th percentile of the last 90 days — weakness often leads price. $45.12.</span><span class="l-zh">相对标普500的强弱下穿近90日的第10百分位 — 走弱常先于价格。$45.12。</span>
+            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Relative strength vs SPY — momentum persistence is one of the few robust equity factors.</span><span class="l-zh">相对标普500的强弱 — 动量持续性是少数稳健的股票因子之一。</span></div>
+            <div class="af-fwd"><span class="l-en">Leadership tends to persist; breakdowns warn before price does.</span><span class="l-zh">领先往往延续；走弱常先于价格发出警示。</span></div>
+          </div>
+        </details>
+        
+      </div>
+      
+      <div class="af-day">
+        <div class="af-date"><span class="l-en">May 6, 2026</span><span class="l-zh">2026年5月6日</span></div>
+        
+        <details class="af-item" data-f="momentum">
+          <summary>
+            <span class="af-node dir-down"></span>
+            <span class="af-chip f-momentum"><span class="l-en">Momentum</span><span class="l-zh">动量</span></span>
+            <span class="af-head"><span class="l-en">XLU daily MACD crossed down</span><span class="l-zh">XLU 日线MACD下穿</span></span>
+          </summary>
+          <div class="af-detail"><span class="l-en">The daily MACD histogram turned negative — fast and noisy, context rather than a standalone trigger. $45.71.</span><span class="l-zh">日线MACD柱状图转负 — 快速且嘈杂，仅作背景。$45.71。</span>
+            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Daily MACD — fast and noisy; context, not a standalone trigger.</span><span class="l-zh">日线MACD — 快速且嘈杂；仅作背景，而非独立触发。</span></div>
+            <div class="af-fwd"><span class="l-en">Frequent by design — filter with the weekly cross and trend.</span><span class="l-zh">本就频繁 — 用周线交叉与趋势加以过滤。</span></div>
+          </div>
+        </details>
+        
+      </div>
+      
+      <div class="af-day">
+        <div class="af-date"><span class="l-en">Apr 30, 2026</span><span class="l-zh">2026年4月30日</span></div>
+        
+        <details class="af-item" data-f="momentum">
+          <summary>
+            <span class="af-node dir-up"></span>
+            <span class="af-chip f-momentum"><span class="l-en">Momentum</span><span class="l-zh">动量</span></span>
+            <span class="af-head"><span class="l-en">XLU daily MACD crossed up</span><span class="l-zh">XLU 日线MACD上穿</span></span>
+          </summary>
+          <div class="af-detail"><span class="l-en">The daily MACD histogram turned positive — fast and noisy, context rather than a standalone trigger. $46.85.</span><span class="l-zh">日线MACD柱状图转正 — 快速且嘈杂，仅作背景。$46.85。</span>
+            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Daily MACD — fast and noisy; context, not a standalone trigger.</span><span class="l-zh">日线MACD — 快速且嘈杂；仅作背景，而非独立触发。</span></div>
+            <div class="af-fwd"><span class="l-en">Frequent by design — filter with the weekly cross and trend.</span><span class="l-zh">本就频繁 — 用周线交叉与趋势加以过滤。</span></div>
+          </div>
+        </details>
+        
+      </div>
+      
+      <div class="af-day">
+        <div class="af-date"><span class="l-en">Apr 24, 2026</span><span class="l-zh">2026年4月24日</span></div>
+        
+        <details class="af-item" data-f="momentum">
+          <summary>
+            <span class="af-node dir-up"></span>
+            <span class="af-chip f-momentum"><span class="l-en">Momentum</span><span class="l-zh">动量</span></span>
+            <span class="af-head"><span class="l-en">XLU StochRSI turned up from oversold</span><span class="l-zh">XLU StochRSI自超卖区上行</span></span>
+          </summary>
+          <div class="af-detail"><span class="l-en">StochRSI popped back above 20 — the earliest oscillator heads-up that downside momentum is easing. $46.18.</span><span class="l-zh">StochRSI重回20上方 — 下行动量趋缓的最早预警。$46.18。</span>
+            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">StochRSI turning up out of oversold — the earliest oscillator heads-up.</span><span class="l-zh">StochRSI自超卖区上行 — 最早的振荡指标预警。</span></div>
+            <div class="af-fwd"><span class="l-en">An early flag, not confirmation; it can fire repeatedly in a downtrend.</span><span class="l-zh">早期信号而非确认；下跌趋势中可能反复出现。</span></div>
+          </div>
+        </details>
+        
+      </div>
+      
+      <div class="af-day">
+        <div class="af-date"><span class="l-en">Apr 22, 2026</span><span class="l-zh">2026年4月22日</span></div>
+        
+        <details class="af-item" data-f="cycle">
+          <summary>
+            <span class="af-node dir-up"></span>
+            <span class="af-chip f-cycle"><span class="l-en">Cycle</span><span class="l-zh">周期</span></span>
+            <span class="af-head"><span class="l-en">XLU printed a daily-cycle low</span><span class="l-zh">XLU 打出日线周期低点</span></span>
+          </summary>
+          <div class="af-detail"><span class="l-en">A confirmed local low — in this cycle framework the highest-odds long-entry window. $44.87.</span><span class="l-zh">一个已确认的局部低点 — 在本周期框架中做多胜率最高的入场窗口。$44.87。</span>
+            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Daily-cycle low — historically the highest-odds long-entry window in this framework.</span><span class="l-zh">日线周期低点 — 在本框架中历史上做多胜率最高的入场窗口。</span></div>
+            <div class="af-fwd"><span class="l-en">Confirm with a swing low and a reclaim of the 10-day average before sizing up.</span><span class="l-zh">加仓前以一个摆动低点并收复10日均线来确认。</span></div>
+          </div>
+        </details>
+        
+      </div>
+      
+      <div class="af-day">
+        <div class="af-date"><span class="l-en">Apr 16, 2026</span><span class="l-zh">2026年4月16日</span></div>
+        
+        <details class="af-item" data-f="momentum">
+          <summary>
+            <span class="af-node dir-down"></span>
+            <span class="af-chip f-momentum"><span class="l-en">Momentum</span><span class="l-zh">动量</span></span>
+            <span class="af-head"><span class="l-en">XLU daily MACD crossed down</span><span class="l-zh">XLU 日线MACD下穿</span></span>
+          </summary>
+          <div class="af-detail"><span class="l-en">The daily MACD histogram turned negative — fast and noisy, context rather than a standalone trigger. $46.35.</span><span class="l-zh">日线MACD柱状图转负 — 快速且嘈杂，仅作背景。$46.35。</span>
+            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Daily MACD — fast and noisy; context, not a standalone trigger.</span><span class="l-zh">日线MACD — 快速且嘈杂；仅作背景，而非独立触发。</span></div>
+            <div class="af-fwd"><span class="l-en">Frequent by design — filter with the weekly cross and trend.</span><span class="l-zh">本就频繁 — 用周线交叉与趋势加以过滤。</span></div>
+          </div>
+        </details>
+        
+      </div>
+      
+      <div class="af-day">
+        <div class="af-date"><span class="l-en">Apr 6, 2026</span><span class="l-zh">2026年4月6日</span></div>
+        
+        <details class="af-item" data-f="momentum">
+          <summary>
+            <span class="af-node dir-up"></span>
+            <span class="af-chip f-momentum"><span class="l-en">Momentum</span><span class="l-zh">动量</span></span>
+            <span class="af-head"><span class="l-en">XLU daily MACD crossed up</span><span class="l-zh">XLU 日线MACD上穿</span></span>
+          </summary>
+          <div class="af-detail"><span class="l-en">The daily MACD histogram turned positive — fast and noisy, context rather than a standalone trigger. $46.17.</span><span class="l-zh">日线MACD柱状图转正 — 快速且嘈杂，仅作背景。$46.17。</span>
+            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Daily MACD — fast and noisy; context, not a standalone trigger.</span><span class="l-zh">日线MACD — 快速且嘈杂；仅作背景，而非独立触发。</span></div>
+            <div class="af-fwd"><span class="l-en">Frequent by design — filter with the weekly cross and trend.</span><span class="l-zh">本就频繁 — 用周线交叉与趋势加以过滤。</span></div>
+          </div>
+        </details>
+        
+      </div>
+      
+      <div class="af-day">
+        <div class="af-date"><span class="l-en">Mar 26, 2026</span><span class="l-zh">2026年3月26日</span></div>
+        
+        <details class="af-item" data-f="strength">
+          <summary>
+            <span class="af-node dir-up"></span>
+            <span class="af-chip f-strength"><span class="l-en">vs Market</span><span class="l-zh">相对强弱</span></span>
+            <span class="af-head"><span class="l-en">XLU took relative-strength leadership</span><span class="l-zh">XLU 取得相对强弱领先</span></span>
+          </summary>
+          <div class="af-detail"><span class="l-en">Relative strength vs SPY crossed above the 90th percentile of the last 90 days — leadership tends to persist. $45.33.</span><span class="l-zh">相对标普500的强弱上穿近90日的第90百分位 — 领先往往延续。$45.33。</span>
+            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Relative strength vs SPY — momentum persistence is one of the few robust equity factors.</span><span class="l-zh">相对标普500的强弱 — 动量持续性是少数稳健的股票因子之一。</span></div>
+            <div class="af-fwd"><span class="l-en">Leadership tends to persist; breakdowns warn before price does.</span><span class="l-zh">领先往往延续；走弱常先于价格发出警示。</span></div>
+          </div>
+        </details>
+        
+      </div>
+      
+      <div class="af-day">
+        <div class="af-date"><span class="l-en">Mar 25, 2026</span><span class="l-zh">2026年3月25日</span></div>
+        
+        <details class="af-item" data-f="momentum">
+          <summary>
+            <span class="af-node dir-up"></span>
+            <span class="af-chip f-momentum"><span class="l-en">Momentum</span><span class="l-zh">动量</span></span>
+            <span class="af-head"><span class="l-en">XLU StochRSI turned up from oversold</span><span class="l-zh">XLU StochRSI自超卖区上行</span></span>
+          </summary>
+          <div class="af-detail"><span class="l-en">StochRSI popped back above 20 — the earliest oscillator heads-up that downside momentum is easing. $45.25.</span><span class="l-zh">StochRSI重回20上方 — 下行动量趋缓的最早预警。$45.25。</span>
+            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">StochRSI turning up out of oversold — the earliest oscillator heads-up.</span><span class="l-zh">StochRSI自超卖区上行 — 最早的振荡指标预警。</span></div>
+            <div class="af-fwd"><span class="l-en">An early flag, not confirmation; it can fire repeatedly in a downtrend.</span><span class="l-zh">早期信号而非确认；下跌趋势中可能反复出现。</span></div>
+          </div>
+        </details>
+        
+      </div>
+      
+      <div class="af-day">
+        <div class="af-date"><span class="l-en">Mar 24, 2026</span><span class="l-zh">2026年3月24日</span></div>
+        
+        <details class="af-item" data-f="strength">
+          <summary>
+            <span class="af-node dir-up"></span>
+            <span class="af-chip f-strength"><span class="l-en">vs Market</span><span class="l-zh">相对强弱</span></span>
+            <span class="af-head"><span class="l-en">XLU took relative-strength leadership</span><span class="l-zh">XLU 取得相对强弱领先</span></span>
+          </summary>
+          <div class="af-detail"><span class="l-en">Relative strength vs SPY crossed above the 90th percentile of the last 90 days — leadership tends to persist. $45.09.</span><span class="l-zh">相对标普500的强弱上穿近90日的第90百分位 — 领先往往延续。$45.09。</span>
+            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Relative strength vs SPY — momentum persistence is one of the few robust equity factors.</span><span class="l-zh">相对标普500的强弱 — 动量持续性是少数稳健的股票因子之一。</span></div>
+            <div class="af-fwd"><span class="l-en">Leadership tends to persist; breakdowns warn before price does.</span><span class="l-zh">领先往往延续；走弱常先于价格发出警示。</span></div>
+          </div>
+        </details>
+        
+      </div>
+      
+      <div class="af-day">
+        <div class="af-date"><span class="l-en">Mar 20, 2026</span><span class="l-zh">2026年3月20日</span></div>
+        
+        <details class="af-item" data-f="cycle">
+          <summary>
+            <span class="af-node dir-up"></span>
+            <span class="af-chip f-cycle"><span class="l-en">Cycle</span><span class="l-zh">周期</span></span>
+            <span class="af-head"><span class="l-en">XLU printed a daily-cycle low</span><span class="l-zh">XLU 打出日线周期低点</span></span>
+          </summary>
+          <div class="af-detail"><span class="l-en">A confirmed local low — in this cycle framework the highest-odds long-entry window. $44.34.</span><span class="l-zh">一个已确认的局部低点 — 在本周期框架中做多胜率最高的入场窗口。$44.34。</span>
+            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Daily-cycle low — historically the highest-odds long-entry window in this framework.</span><span class="l-zh">日线周期低点 — 在本框架中历史上做多胜率最高的入场窗口。</span></div>
+            <div class="af-fwd"><span class="l-en">Confirm with a swing low and a reclaim of the 10-day average before sizing up.</span><span class="l-zh">加仓前以一个摆动低点并收复10日均线来确认。</span></div>
+          </div>
+        </details>
+        
+      </div>
+      
+      <div class="af-day">
+        <div class="af-date"><span class="l-en">Mar 16, 2026</span><span class="l-zh">2026年3月16日</span></div>
+        
+        <details class="af-item" data-f="momentum">
+          <summary>
+            <span class="af-node dir-up"></span>
+            <span class="af-chip f-momentum"><span class="l-en">Momentum</span><span class="l-zh">动量</span></span>
+            <span class="af-head"><span class="l-en">XLU StochRSI turned up from oversold</span><span class="l-zh">XLU StochRSI自超卖区上行</span></span>
+          </summary>
+          <div class="af-detail"><span class="l-en">StochRSI popped back above 20 — the earliest oscillator heads-up that downside momentum is easing. $46.93.</span><span class="l-zh">StochRSI重回20上方 — 下行动量趋缓的最早预警。$46.93。</span>
+            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">StochRSI turning up out of oversold — the earliest oscillator heads-up.</span><span class="l-zh">StochRSI自超卖区上行 — 最早的振荡指标预警。</span></div>
+            <div class="af-fwd"><span class="l-en">An early flag, not confirmation; it can fire repeatedly in a downtrend.</span><span class="l-zh">早期信号而非确认；下跌趋势中可能反复出现。</span></div>
+          </div>
+        </details>
+        
+      </div>
+      
+      <div class="af-day">
+        <div class="af-date"><span class="l-en">Mar 12, 2026</span><span class="l-zh">2026年3月12日</span></div>
+        
+        <details class="af-item" data-f="strength">
+          <summary>
+            <span class="af-node dir-up"></span>
+            <span class="af-chip f-strength"><span class="l-en">vs Market</span><span class="l-zh">相对强弱</span></span>
+            <span class="af-head"><span class="l-en">XLU took relative-strength leadership</span><span class="l-zh">XLU 取得相对强弱领先</span></span>
+          </summary>
+          <div class="af-detail"><span class="l-en">Relative strength vs SPY crossed above the 90th percentile of the last 90 days — leadership tends to persist. $46.18.</span><span class="l-zh">相对标普500的强弱上穿近90日的第90百分位 — 领先往往延续。$46.18。</span>
+            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Relative strength vs SPY — momentum persistence is one of the few robust equity factors.</span><span class="l-zh">相对标普500的强弱 — 动量持续性是少数稳健的股票因子之一。</span></div>
+            <div class="af-fwd"><span class="l-en">Leadership tends to persist; breakdowns warn before price does.</span><span class="l-zh">领先往往延续；走弱常先于价格发出警示。</span></div>
+          </div>
+        </details>
+        
+      </div>
+      
+      <div class="af-day">
+        <div class="af-date"><span class="l-en">Mar 6, 2026</span><span class="l-zh">2026年3月6日</span></div>
+        
+        <details class="af-item" data-f="momentum">
+          <summary>
+            <span class="af-node dir-down"></span>
+            <span class="af-chip f-momentum"><span class="l-en">Momentum</span><span class="l-zh">动量</span></span>
+            <span class="af-head"><span class="l-en">XLU daily MACD crossed down</span><span class="l-zh">XLU 日线MACD下穿</span></span>
+          </summary>
+          <div class="af-detail"><span class="l-en">The daily MACD histogram turned negative — fast and noisy, context rather than a standalone trigger. $46.42.</span><span class="l-zh">日线MACD柱状图转负 — 快速且嘈杂，仅作背景。$46.42。</span>
+            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Daily MACD — fast and noisy; context, not a standalone trigger.</span><span class="l-zh">日线MACD — 快速且嘈杂；仅作背景，而非独立触发。</span></div>
+            <div class="af-fwd"><span class="l-en">Frequent by design — filter with the weekly cross and trend.</span><span class="l-zh">本就频繁 — 用周线交叉与趋势加以过滤。</span></div>
+          </div>
+        </details>
+        
+      </div>
+      
+      <div class="af-day">
+        <div class="af-date"><span class="l-en">Feb 27, 2026</span><span class="l-zh">2026年2月27日</span></div>
+        
+        <details class="af-item" data-f="cycle">
+          <summary>
+            <span class="af-node dir-up"></span>
+            <span class="af-chip f-cycle"><span class="l-en">Cycle</span><span class="l-zh">周期</span></span>
+            <span class="af-head"><span class="l-en">XLU made a new 52-week high</span><span class="l-zh">XLU 创52周新高</span></span>
+          </summary>
+          <div class="af-detail"><span class="l-en">Price reached a fresh 52-week high — a momentum / trend extreme the whole market watches. $47.40.</span><span class="l-zh">价格创出52周新高 — 全市场关注的动量/趋势极值。$47.40。</span>
+            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">New 52-week extreme — a momentum / trend signal the whole market watches.</span><span class="l-zh">创52周新高/新低 — 全市场关注的动量/趋势信号。</span></div>
+            <div class="af-fwd"><span class="l-en">New highs beget highs more often than not; new lows cut both ways.</span><span class="l-zh">新高往往延续；新低则两面皆有可能。</span></div>
+          </div>
+        </details>
+        
+      </div>
+      
+      <div class="af-day">
+        <div class="af-date"><span class="l-en">Feb 23, 2026</span><span class="l-zh">2026年2月23日</span></div>
+        
+        <details class="af-item" data-f="strength">
+          <summary>
+            <span class="af-node dir-up"></span>
+            <span class="af-chip f-strength"><span class="l-en">vs Market</span><span class="l-zh">相对强弱</span></span>
+            <span class="af-head"><span class="l-en">XLU took relative-strength leadership</span><span class="l-zh">XLU 取得相对强弱领先</span></span>
+          </summary>
+          <div class="af-detail"><span class="l-en">Relative strength vs SPY crossed above the 90th percentile of the last 90 days — leadership tends to persist. $46.36.</span><span class="l-zh">相对标普500的强弱上穿近90日的第90百分位 — 领先往往延续。$46.36。</span>
+            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Relative strength vs SPY — momentum persistence is one of the few robust equity factors.</span><span class="l-zh">相对标普500的强弱 — 动量持续性是少数稳健的股票因子之一。</span></div>
+            <div class="af-fwd"><span class="l-en">Leadership tends to persist; breakdowns warn before price does.</span><span class="l-zh">领先往往延续；走弱常先于价格发出警示。</span></div>
+          </div>
+        </details>
+        
+        <details class="af-item" data-f="cycle">
+          <summary>
+            <span class="af-node dir-up"></span>
+            <span class="af-chip f-cycle"><span class="l-en">Cycle</span><span class="l-zh">周期</span></span>
+            <span class="af-head"><span class="l-en">XLU made a new 52-week high</span><span class="l-zh">XLU 创52周新高</span></span>
+          </summary>
+          <div class="af-detail"><span class="l-en">Price reached a fresh 52-week high — a momentum / trend extreme the whole market watches. $46.36.</span><span class="l-zh">价格创出52周新高 — 全市场关注的动量/趋势极值。$46.36。</span>
+            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">New 52-week extreme — a momentum / trend signal the whole market watches.</span><span class="l-zh">创52周新高/新低 — 全市场关注的动量/趋势信号。</span></div>
+            <div class="af-fwd"><span class="l-en">New highs beget highs more often than not; new lows cut both ways.</span><span class="l-zh">新高往往延续；新低则两面皆有可能。</span></div>
+          </div>
+        </details>
+        
+      </div>
+      
+      <div class="af-day">
+        <div class="af-date"><span class="l-en">Feb 20, 2026</span><span class="l-zh">2026年2月20日</span></div>
+        
+        <details class="af-item" data-f="momentum">
+          <summary>
+            <span class="af-node dir-neutral"></span>
+            <span class="af-chip f-momentum"><span class="l-en">Momentum</span><span class="l-zh">动量</span></span>
+            <span class="af-head"><span class="l-en">XLU RSI reached overbought</span><span class="l-zh">XLU RSI进入超买</span></span>
+          </summary>
+          <div class="af-detail"><span class="l-en">RSI(14) crossed above 70 — stretched to the upside; context, not a timing trigger alone. $46.01.</span><span class="l-zh">RSI(14)上穿70 — 上行过度；仅作背景，单独不构成择时。$46.01。</span>
+            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">RSI extreme — stretched and mean-reversion-prone; not a timing trigger alone.</span><span class="l-zh">RSI极值 — 超买/超卖且易均值回归；单独不构成择时触发。</span></div>
+            <div class="af-fwd"><span class="l-en">Extremes can persist in strong trends — context, not a fade signal.</span><span class="l-zh">强趋势中极值可持续 — 仅作背景，而非反向信号。</span></div>
+          </div>
+        </details>
+        
+      </div>
+      
+      
     </div>
     <p class="agewhen"><span class="l-en">⏱ COUNTER-TREND BOUNCE signal triggered 2 trading days ago (~2026-06-10), switching from DOWNTREND. Signal strength: mild (score -25/100).</span><span class="l-zh">⏱ 逆势反弹信号于 2 个交易日前触发（约 2026-06-10），自下跌趋势切换而来。 信号强度：温和（评分 -25/100）。</span></p>
+    
     
     <ul class="points">
       <li><span class="l-en">Bigger picture is bearish (counter-trend for a daily long)</span><span class="l-zh">大局为看空（对日线多头而言属逆势）</span></li><li><span class="l-en">Macro: US net liquidity neutral — no macro tilt on the odds</span><span class="l-zh">宏观：美国净流动性中性——对概率属无方向性影响</span></li><li><span class="l-en">⚠ Failed cycle — price broke below the low that began this cycle (24d ago)</span><span class="l-zh">⚠ 失败周期——价格跌破了启动本周期的低点（24 天前）</span></li><li><span class="l-en">Swing low printed (buyers rejected the low)</span><span class="l-zh">摆动低点已现（买方拒绝了该低点）</span></li><li><span class="l-en">Back above the 10-day average</span><span class="l-zh">重新站上 10 日均线之上</span></li><li><span class="l-en">Daily momentum just crossed up</span><span class="l-zh">日线动量刚刚向上交叉</span></li>
@@ -191,137 +751,137 @@
       
       <tr>
         <td class="l"><a href="../stock.html#NEE"><b>NEE</b></a> <span class="muted">NextEra Energy</span></td>
-        <td><b class="pos">+1.48</b></td>
-        <td class="muted">1/60</td>
-        <td class="pos">+25%</td>
+        <td><b class="pos">+1.51</b></td>
+        <td class="muted">1/45</td>
+        <td class="pos">+27%</td>
         <td class="neg">-8.7%</td>
         <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
       </tr>
       
       <tr>
-        <td class="l"><a href="../stock.html#ORA"><b>ORA</b></a> <span class="muted">Ormat Technologies</span></td>
-        <td><b class="pos">+1.42</b></td>
-        <td class="muted">2/60</td>
-        <td class="pos">+38%</td>
-        <td class="pos">+4.0%</td>
-        <td class="l"><span class="alpha-entry ae-intact">intact</span></td>
-      </tr>
-      
-      <tr>
         <td class="l"><a href="../stock.html#ETR"><b>ETR</b></a> <span class="muted">Entergy</span></td>
-        <td><b class="pos">+1.24</b></td>
-        <td class="muted">3/60</td>
-        <td class="pos">+17%</td>
+        <td><b class="pos">+1.33</b></td>
+        <td class="muted">2/45</td>
+        <td class="pos">+20%</td>
         <td class="neg">-0.9%</td>
         <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
       </tr>
       
       <tr>
         <td class="l"><a href="../stock.html#CWEN-A"><b>CWEN-A</b></a> <span class="muted">Clearway Energy, Inc. (Class A)</span></td>
-        <td><b class="pos">+1.10</b></td>
-        <td class="muted">4/60</td>
-        <td class="pos">+24%</td>
+        <td><b class="pos">+1.12</b></td>
+        <td class="muted">3/45</td>
+        <td class="pos">+27%</td>
         <td class="pos">+0.0%</td>
         <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
       </tr>
       
       <tr>
         <td class="l"><a href="../stock.html#EIX"><b>EIX</b></a> <span class="muted">Edison International</span></td>
-        <td><b class="pos">+1.00</b></td>
-        <td class="muted">5/60</td>
-        <td class="pos">+18%</td>
+        <td><b class="pos">+1.03</b></td>
+        <td class="muted">4/45</td>
+        <td class="pos">+20%</td>
         <td class="pos">+3.5%</td>
         <td class="l"><span class="alpha-entry ae-intact">intact</span></td>
       </tr>
       
       <tr>
         <td class="l"><a href="../stock.html#AEP"><b>AEP</b></a> <span class="muted">American Electric Power</span></td>
-        <td><b class="pos">+0.86</b></td>
-        <td class="muted">6/60</td>
-        <td class="pos">+11%</td>
+        <td><b class="pos">+0.95</b></td>
+        <td class="muted">5/45</td>
+        <td class="pos">+13%</td>
         <td class="pos">+1.2%</td>
         <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
       </tr>
       
       <tr>
         <td class="l"><a href="../stock.html#NI"><b>NI</b></a> <span class="muted">NiSource</span></td>
-        <td><b class="pos">+0.80</b></td>
-        <td class="muted">7/60</td>
-        <td class="pos">+6%</td>
+        <td><b class="pos">+0.91</b></td>
+        <td class="muted">6/45</td>
+        <td class="pos">+9%</td>
         <td class="pos">+0.5%</td>
         <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
       </tr>
       
       <tr>
-        <td class="l"><a href="../stock.html#IDA"><b>IDA</b></a> <span class="muted">Idacorp</span></td>
-        <td><b class="pos">+0.79</b></td>
-        <td class="muted">8/60</td>
-        <td class="pos">+6%</td>
-        <td class="pos">+0.7%</td>
-        <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
-      </tr>
-      
-      <tr>
         <td class="l"><a href="../stock.html#PNW"><b>PNW</b></a> <span class="muted">Pinnacle West Capital</span></td>
-        <td><b class="pos">+0.71</b></td>
-        <td class="muted">9/60</td>
-        <td class="pos">+6%</td>
+        <td><b class="pos">+0.82</b></td>
+        <td class="muted">7/45</td>
+        <td class="pos">+8%</td>
         <td class="pos">+4.5%</td>
         <td class="l"><span class="alpha-entry ae-intact">intact</span></td>
       </tr>
       
       <tr>
-        <td class="l"><a href="../stock.html#NJR"><b>NJR</b></a> <span class="muted">New Jersey Resources</span></td>
-        <td><b class="pos">+0.71</b></td>
-        <td class="muted">10/60</td>
-        <td class="pos">+7%</td>
-        <td class="neg">-2.7%</td>
-        <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="../stock.html#NWE"><b>NWE</b></a> <span class="muted">NorthWestern Energy</span></td>
-        <td><b class="pos">+0.71</b></td>
-        <td class="muted">11/60</td>
-        <td class="pos">+9%</td>
-        <td class="pos">+0.4%</td>
-        <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="../stock.html#BKH"><b>BKH</b></a> <span class="muted">Black Hills Corporation</span></td>
-        <td><b class="pos">+0.70</b></td>
-        <td class="muted">12/60</td>
-        <td class="pos">+8%</td>
-        <td class="pos">+0.8%</td>
-        <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
-      </tr>
-      
-      <tr>
         <td class="l"><a href="../stock.html#MDU"><b>MDU</b></a> <span class="muted">MDU Resources Group, Inc.</span></td>
-        <td><b class="pos">+0.68</b></td>
-        <td class="muted">13/60</td>
-        <td class="pos">+9%</td>
+        <td><b class="pos">+0.75</b></td>
+        <td class="muted">8/45</td>
+        <td class="pos">+12%</td>
         <td class="neg">-6.1%</td>
         <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
       </tr>
       
       <tr>
         <td class="l"><a href="../stock.html#CWEN"><b>CWEN</b></a> <span class="muted">Clearway Energy, Inc. (Class C)</span></td>
-        <td><b class="pos">+0.68</b></td>
-        <td class="muted">14/60</td>
-        <td class="pos">+12%</td>
+        <td><b class="pos">+0.71</b></td>
+        <td class="muted">9/45</td>
+        <td class="pos">+14%</td>
         <td class="pos">+0.0%</td>
         <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
       </tr>
       
       <tr>
-        <td class="l"><a href="../stock.html#SWX"><b>SWX</b></a> <span class="muted">Southwest Gas Corp</span></td>
-        <td><b class="pos">+0.60</b></td>
-        <td class="muted">15/60</td>
+        <td class="l"><a href="../stock.html#EVRG"><b>EVRG</b></a> <span class="muted">Evergy</span></td>
+        <td><b class="pos">+0.66</b></td>
+        <td class="muted">10/45</td>
         <td class="pos">+6%</td>
-        <td class="pos">+1.2%</td>
+        <td class="pos">+2.7%</td>
         <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="../stock.html#NWN"><b>NWN</b></a> <span class="muted">NW Natural</span></td>
+        <td><b class="pos">+0.59</b></td>
+        <td class="muted">11/45</td>
+        <td class="pos">+7%</td>
+        <td class="pos">+0.5%</td>
+        <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="../stock.html#ED"><b>ED</b></a> <span class="muted">Consolidated Edison</span></td>
+        <td><b class="pos">+0.57</b></td>
+        <td class="muted">12/45</td>
+        <td class="pos">+6%</td>
+        <td class="pos">+1.6%</td>
+        <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="../stock.html#LNT"><b>LNT</b></a> <span class="muted">Alliant Energy</span></td>
+        <td><b class="pos">+0.53</b></td>
+        <td class="muted">13/45</td>
+        <td class="pos">+3%</td>
+        <td class="pos">+1.3%</td>
+        <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="../stock.html#CNP"><b>CNP</b></a> <span class="muted">CenterPoint Energy</span></td>
+        <td><b class="pos">+0.31</b></td>
+        <td class="muted">14/45</td>
+        <td class="pos">+1%</td>
+        <td class="pos">+2.5%</td>
+        <td class="l"><span class="alpha-entry ae-neutral">neutral</span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="../stock.html#AES"><b>AES</b></a> <span class="muted">AES Corporation</span></td>
+        <td><b class="pos">+0.29</b></td>
+        <td class="muted">15/45</td>
+        <td class="pos">+3%</td>
+        <td class="pos">+1.7%</td>
+        <td class="l"><span class="alpha-entry ae-neutral">neutral</span></td>
       </tr>
       
     </table>
@@ -351,6 +911,7 @@
       </ul>
       
       
+      
       <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>19.6</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>7.3%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>29.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
       
       <div data-mtf='{"D": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 45.0, "rsi5": 58.0, "stoch": 96.0, "spark_rsi": [47.6, 37.2, 40.5, 36.9, 41.4, 39.0, 37.1, 37.1, 36.3, 35.7, 29.1, 36.7, 34.5, 38.5, 41.2, 37.1, 40.0, 41.0, 40.3, 44.6], "spark_stoch": [27.3, 16.3, 4.2, 4.2, 11.6, 10.8, 11.3, 4.4, 1.0, 0.5, 0.0, 9.7, 16.6, 33.5, 56.5, 71.2, 83.8, 83.3, 92.5, 96.4], "spark_hist": [-0.21, -0.546, -0.668, -0.826, -0.793, -0.803, -0.821, -0.785, -0.741, -0.682, -0.812, -0.712, -0.669, -0.523, -0.339, -0.306, -0.2, -0.087, -0.013, 0.126]}, "3D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": true, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 25.6, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 43.0, "rsi5": 39.0, "stoch": 19.0, "spark_rsi": [59.1, 60.9, 63.0, 64.0, 64.8, 55.5, 57.3, 65.5, 66.0, 66.7, 61.5, 59.7, 61.5, 46.3, 43.2, 41.4, 34.6, 40.0, 39.6, 42.7], "spark_stoch": [16.2, 13.8, 25.5, 33.3, 39.5, 27.8, 17.8, 26.3, 58.7, 88.8, 83.4, 63.4, 48.0, 30.3, 17.9, 0.0, 0.0, 5.6, 10.7, 19.1], "spark_hist": [-0.245, -0.272, -0.233, -0.189, -0.153, -0.328, -0.396, -0.174, -0.034, 0.061, -0.006, -0.107, -0.135, -0.525, -0.859, -1.101, -1.466, -1.504, -1.474, -1.312]}, "W": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 47.0, "rsi5": 28.0, "stoch": 0.0, "spark_rsi": [65.7, 67.7, 72.4, 68.4, 70.8, 64.2, 66.4, 59.2, 61.8, 64.0, 65.2, 60.4, 64.8, 66.8, 58.6, 58.9, 50.1, 47.6, 46.7, 47.0], "spark_stoch": [62.9, 81.3, 95.6, 93.1, 90.3, 76.3, 72.9, 53.1, 48.8, 44.7, 54.9, 42.9, 38.0, 36.2, 33.2, 20.0, 0.9, 0.9, 0.0, 0.5], "spark_hist": [0.081, 0.332, 0.719, 0.797, 0.916, 0.739, 0.669, 0.349, 0.217, 0.2, 0.203, 0.025, 0.087, 0.191, -0.033, -0.192, -0.621, -0.989, -1.234, -1.342]}, "M": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 3.5, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 58.0, "rsi5": 50.0, "stoch": 62.0, "spark_rsi": [57.1, 50.9, 50.8, 50.0, 50.7, 46.9, 50.7, 50.0, 51.7, 53.4, 56.9, 62.2, 66.3, 58.7, 64.3, 68.3, 67.2, 70.1, 58.0, 57.6], "spark_stoch": [86.9, 71.9, 63.2, 53.8, 53.6, 35.4, 26.4, 15.1, 25.8, 31.7, 46.8, 69.5, 88.6, 86.9, 83.4, 83.4, 94.8, 98.3, 80.9, 61.9], "spark_hist": [1.979, 1.313, 0.809, 0.389, 0.138, -0.286, -0.317, -0.372, -0.296, -0.146, 0.161, 0.705, 1.339, 1.274, 1.629, 2.154, 2.288, 2.538, 1.836, 1.234]}}'></div>
@@ -376,6 +937,7 @@
       </ul>
       
       
+      
       <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>19.1</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>8.0%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>14.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
       
       <div data-mtf='{"D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 55.0, "rsi5": 64.0, "stoch": 95.0, "spark_rsi": [42.6, 51.3, 53.0, 50.7, 53.3, 54.6, 52.3, 50.5, 44.8, 42.8, 32.7, 40.2, 40.1, 45.4, 49.6, 44.7, 51.3, 55.0, 52.0, 54.6], "spark_stoch": [34.5, 45.7, 55.3, 68.7, 77.6, 85.8, 93.2, 87.3, 67.8, 39.7, 14.5, 12.0, 22.6, 42.0, 56.4, 63.3, 72.3, 79.8, 90.5, 94.9], "spark_hist": [-0.115, 0.0, 0.104, 0.134, 0.189, 0.237, 0.227, 0.189, 0.079, -0.022, -0.276, -0.324, -0.335, -0.249, -0.115, -0.105, 0.018, 0.167, 0.209, 0.274]}, "3D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": true, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 1.4, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 53.0, "rsi5": 58.0, "stoch": 61.0, "spark_rsi": [58.7, 61.2, 63.2, 62.1, 57.6, 54.1, 45.5, 50.0, 50.1, 56.6, 47.0, 49.7, 47.4, 52.2, 54.4, 49.0, 44.3, 49.7, 53.1, 53.0], "spark_stoch": [45.4, 37.5, 49.3, 51.4, 40.5, 20.6, 5.9, 5.8, 11.7, 26.5, 22.8, 24.3, 13.3, 23.9, 33.3, 36.2, 23.6, 20.2, 37.2, 60.7], "spark_hist": [0.39, 0.33, 0.318, 0.261, 0.117, -0.061, -0.374, -0.467, -0.514, -0.372, -0.502, -0.502, -0.544, -0.434, -0.291, -0.323, -0.46, -0.394, -0.246, -0.146]}, "W": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": true, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 53.0, "rsi5": 55.0, "stoch": 16.0, "spark_rsi": [49.9, 51.9, 62.1, 62.3, 67.4, 67.6, 68.4, 54.9, 59.0, 62.2, 61.4, 54.6, 52.1, 58.4, 48.1, 49.5, 54.7, 49.7, 50.8, 53.5], "spark_stoch": [50.9, 71.0, 91.7, 100.0, 100.0, 100.0, 100.0, 85.2, 72.8, 64.7, 70.3, 62.9, 47.8, 38.9, 25.4, 17.7, 13.2, 15.9, 18.0, 16.0], "spark_hist": [-0.245, -0.053, 0.382, 0.644, 0.972, 1.134, 1.207, 0.892, 0.778, 0.778, 0.707, 0.446, 0.182, 0.197, -0.128, -0.292, -0.216, -0.329, -0.359, -0.281]}, "M": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 62.0, "rsi5": 58.0, "stoch": 44.0, "spark_rsi": [71.1, 60.4, 61.9, 67.2, 68.7, 68.7, 66.7, 68.3, 70.4, 67.7, 69.9, 68.4, 64.2, 57.2, 59.7, 68.2, 66.7, 66.9, 60.1, 62.2], "spark_stoch": [96.7, 75.6, 57.0, 50.6, 64.4, 73.1, 66.6, 61.2, 64.2, 66.4, 70.6, 65.3, 55.9, 31.0, 16.3, 34.1, 58.2, 76.2, 55.7, 44.2], "spark_hist": [1.852, 1.218, 0.81, 0.864, 0.936, 0.875, 0.668, 0.56, 0.57, 0.398, 0.365, 0.219, -0.08, -0.57, -0.773, -0.363, -0.198, -0.128, -0.38, -0.448]}}'></div>
@@ -390,15 +952,16 @@
         <span class="muted">Duke Energy Corp</span>
         <span class="muted">7.08%<span class="l-en"> of fund</span><span class="l-zh"> 占基金</span></span>
         <span class="state st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-        <span class="urgpill urg-imminent"><span class="l-en">BUY SOON</span><span class="l-zh">即将买入</span> ~3d</span>
+        <span class="urgpill urg-now"><span class="l-en">HALF SIZE</span><span class="l-zh">半仓</span></span>
         <span class="agechip" title="when this signal last crossed">⏱ <span class="l-en">today</span><span class="l-zh">今日</span></span>
-        <span class="eqbadge sm eq-up" title="How well-timed & low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.">▲ +77</span>
+        <span class="eqbadge sm eq-up" title="How well-timed & low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.">▲ +76</span>
         <span style="flex:1"></span>
         <span class="muted" style="font-size:12px"><span class="l-en">daily cycle day</span><span class="l-zh">日线周期第</span> 36/~42<span class="l-en"></span><span class="l-zh"> 天</span></span>
       </div>
       <ul class="points sm">
         <li><span class="l-en">Bigger picture is mixed (no clear trend for a daily long)</span><span class="l-zh">大局为混合（对日线多头而言属趋势不明）</span></li><li><span class="l-en">Macro: US net liquidity neutral — no macro tilt on the odds</span><span class="l-zh">宏观：美国净流动性中性——对概率属无方向性影响</span></li><li><span class="l-en">Swing low printed (buyers rejected the low)</span><span class="l-zh">摆动低点已现（买方拒绝了该低点）</span></li>
       </ul>
+      
       
       
       <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>17.4</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>11.3%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>16.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
@@ -417,13 +980,14 @@
         <span class="state st-DECLINE"><span class="l-en">DOWNTREND</span><span class="l-zh">下跌趋势</span></span>
         <span class="urgpill urg-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span>
         <span class="agechip" title="when this signal last crossed">⏱ <span class="l-en">5d ago</span><span class="l-zh">5天前</span></span>
-        <span class="eqbadge sm eq-down" title="How well-timed & low-risk THIS entry is — near the cycle high, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.">▼ -58</span>
+        <span class="eqbadge sm eq-down" title="How well-timed & low-risk THIS entry is — near the cycle high, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.">▼ -43</span>
         <span style="flex:1"></span>
         <span class="muted" style="font-size:12px"><span class="l-en">daily cycle day</span><span class="l-zh">日线周期第</span> 17/~42<span class="l-en"></span><span class="l-zh"> 天</span></span>
       </div>
       <ul class="points sm">
         <li><span class="l-en">Bigger picture is bearish (counter-trend for a daily long)</span><span class="l-zh">大局为看空（对日线多头而言属逆势）</span></li><li><span class="l-en">Macro: US net liquidity neutral — no macro tilt on the odds</span><span class="l-zh">宏观：美国净流动性中性——对概率属无方向性影响</span></li><li><span class="l-en">⚠ Failed cycle — price broke below the low that began this cycle (5d ago)</span><span class="l-zh">⚠ 失败周期——价格跌破了启动本周期的低点（5 天前）</span></li>
       </ul>
+      
       
       
       <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>18.6</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>63.8%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>13.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
@@ -451,6 +1015,7 @@
       </ul>
       
       
+      
       <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>18.9</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>10.2%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>16.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
       
       <div data-mtf='{"D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 51.0, "rsi5": 62.0, "stoch": 88.0, "spark_rsi": [34.9, 42.0, 45.2, 45.1, 47.1, 52.1, 50.3, 47.0, 42.8, 40.4, 35.0, 44.3, 42.7, 46.5, 49.8, 44.6, 47.1, 49.0, 48.9, 50.9], "spark_stoch": [2.8, 11.5, 21.2, 34.0, 41.9, 52.8, 69.9, 76.7, 68.5, 49.5, 26.4, 29.3, 33.7, 56.0, 66.6, 70.2, 71.2, 69.7, 78.0, 87.7], "spark_hist": [-0.958, -0.876, -0.697, -0.548, -0.372, -0.111, 0.022, 0.025, -0.083, -0.21, -0.455, -0.365, -0.331, -0.189, 0.007, -0.012, 0.05, 0.145, 0.204, 0.287]}, "3D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": true, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 8.0, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 51.0, "rsi5": 50.0, "stoch": 31.0, "spark_rsi": [60.0, 63.6, 65.9, 68.7, 68.0, 68.1, 60.2, 64.9, 64.0, 64.4, 56.2, 58.4, 43.9, 51.1, 55.6, 48.8, 47.7, 51.3, 50.2, 51.5], "spark_stoch": [24.4, 14.7, 26.7, 42.0, 50.1, 54.1, 38.5, 32.8, 26.7, 35.8, 23.9, 18.3, 6.0, 15.6, 25.3, 31.9, 27.4, 21.9, 23.9, 30.9], "spark_hist": [0.038, -0.044, -0.028, 0.077, 0.087, 0.059, -0.167, -0.156, -0.195, -0.23, -0.458, -0.538, -1.026, -1.071, -0.896, -1.01, -1.092, -0.978, -0.913, -0.795]}, "W": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 54.0, "rsi5": 49.0, "stoch": 12.0, "spark_rsi": [59.6, 61.1, 71.8, 70.6, 74.2, 70.2, 71.6, 57.6, 62.1, 64.4, 67.5, 63.2, 64.2, 66.2, 57.1, 50.6, 57.3, 51.5, 54.1, 54.1], "spark_stoch": [28.6, 27.1, 53.5, 70.7, 91.0, 88.3, 89.8, 63.2, 48.5, 35.6, 50.5, 52.5, 52.1, 47.7, 33.3, 17.3, 9.5, 10.9, 16.3, 12.4], "spark_hist": [-0.422, -0.272, 0.449, 0.813, 1.25, 1.303, 1.342, 0.753, 0.586, 0.572, 0.719, 0.562, 0.455, 0.456, 0.016, -0.628, -0.635, -0.965, -1.007, -1.015]}, "M": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 4.4, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 65.0, "rsi5": 60.0, "stoch": 44.0, "spark_rsi": [64.7, 55.4, 60.3, 66.0, 67.9, 66.8, 62.0, 62.2, 68.4, 66.9, 67.9, 72.4, 74.6, 64.1, 66.7, 73.8, 70.8, 73.4, 63.9, 65.2], "spark_stoch": [89.4, 70.5, 65.1, 66.3, 84.3, 92.3, 80.4, 65.6, 69.2, 80.5, 94.7, 94.7, 98.5, 81.7, 68.1, 66.3, 74.6, 85.1, 58.6, 43.7], "spark_hist": [2.037, 1.378, 1.238, 1.582, 1.877, 1.868, 1.481, 1.131, 1.384, 1.344, 1.285, 1.607, 1.943, 1.453, 1.282, 1.984, 2.07, 2.316, 1.658, 1.232]}}'></div>
@@ -474,6 +1039,7 @@
       <ul class="points sm">
         <li><span class="l-en">Bigger picture is bearish (counter-trend for a daily long)</span><span class="l-zh">大局为看空（对日线多头而言属逆势）</span></li><li><span class="l-en">Macro: US net liquidity neutral — no macro tilt on the odds</span><span class="l-zh">宏观：美国净流动性中性——对概率属无方向性影响</span></li><li><span class="l-en">⚠ Failed cycle — price broke below the low that began this cycle (25d ago)</span><span class="l-zh">⚠ 失败周期——价格跌破了启动本周期的低点（25 天前）</span></li>
       </ul>
+      
       
       
       <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>16.7</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>-3.9%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>14.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
@@ -501,6 +1067,7 @@
       </ul>
       
       
+      
       <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>17.8</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>23.1%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>17.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
       
       <div data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": true, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 0.6, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 61.0, "rsi5": 69.0, "stoch": 49.0, "spark_rsi": [44.9, 68.9, 70.3, 68.1, 69.5, 65.9, 63.6, 63.2, 63.8, 64.7, 51.2, 58.6, 53.8, 57.7, 59.1, 52.6, 55.4, 57.3, 56.9, 61.4], "spark_stoch": [30.4, 50.6, 67.8, 97.1, 96.1, 90.5, 84.8, 76.7, 73.8, 75.0, 59.0, 52.2, 38.0, 46.5, 42.2, 32.9, 23.8, 21.1, 31.6, 49.3], "spark_hist": [-0.061, 0.272, 0.501, 0.591, 0.648, 0.606, 0.516, 0.421, 0.341, 0.279, 0.067, 0.038, -0.056, -0.056, -0.037, -0.122, -0.131, -0.106, -0.099, -0.021]}, "3D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 67.0, "rsi5": 78.0, "stoch": 94.0, "spark_rsi": [48.9, 52.4, 55.7, 57.2, 56.1, 53.8, 47.8, 53.8, 53.4, 55.2, 49.2, 54.4, 49.4, 66.2, 66.0, 64.8, 63.7, 64.8, 64.2, 67.2], "spark_stoch": [9.2, 16.3, 31.2, 42.3, 47.2, 44.7, 35.3, 41.1, 49.2, 66.1, 55.6, 61.1, 49.5, 72.2, 79.1, 97.0, 92.5, 90.4, 89.3, 93.8], "spark_hist": [-0.309, -0.29, -0.211, -0.131, -0.096, -0.107, -0.203, -0.165, -0.144, -0.1, -0.157, -0.108, -0.151, 0.204, 0.408, 0.489, 0.492, 0.488, 0.442, 0.452]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 65.0, "rsi5": 77.0, "stoch": 99.0, "spark_rsi": [54.0, 59.7, 68.0, 66.1, 59.1, 59.3, 59.2, 47.8, 51.7, 56.2, 59.3, 54.1, 54.5, 57.7, 51.8, 51.4, 63.7, 63.5, 63.4, 65.3], "spark_stoch": [46.7, 51.6, 74.4, 90.4, 82.2, 67.9, 56.6, 38.2, 25.8, 20.9, 39.7, 43.5, 40.6, 37.9, 34.0, 28.9, 41.5, 67.9, 94.7, 99.0], "spark_hist": [-0.195, -0.029, 0.33, 0.495, 0.429, 0.361, 0.286, -0.03, -0.143, -0.099, 0.015, -0.041, -0.074, -0.017, -0.12, -0.2, 0.126, 0.309, 0.393, 0.478]}, "M": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 68.0, "rsi5": 80.0, "stoch": 100.0, "spark_rsi": [57.5, 50.6, 52.8, 54.9, 54.0, 51.4, 55.5, 55.3, 57.9, 59.9, 62.4, 57.4, 62.7, 56.2, 58.3, 62.8, 60.2, 63.5, 66.8, 67.8], "spark_stoch": [99.8, 88.4, 80.0, 75.4, 79.1, 72.5, 71.6, 72.8, 87.8, 93.6, 100.0, 85.9, 85.9, 68.0, 70.1, 70.1, 80.5, 92.6, 92.6, 100.0], "spark_hist": [2.001, 1.649, 1.461, 1.38, 1.233, 0.98, 0.953, 0.879, 0.904, 0.958, 1.058, 0.905, 1.005, 0.786, 0.693, 0.811, 0.743, 0.812, 0.989, 1.088]}}'></div>
@@ -524,6 +1091,7 @@
       <ul class="points sm">
         <li><span class="l-en">Bigger picture is bearish (counter-trend for a daily long)</span><span class="l-zh">大局为看空（对日线多头而言属逆势）</span></li><li><span class="l-en">Macro: US net liquidity neutral — no macro tilt on the odds</span><span class="l-zh">宏观：美国净流动性中性——对概率属无方向性影响</span></li><li><span class="l-en">Swing low printed (buyers rejected the low)</span><span class="l-zh">摆动低点已现（买方拒绝了该低点）</span></li>
       </ul>
+      
       
       
       <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>21.9</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>12.0%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>13.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
@@ -551,6 +1119,7 @@
       </ul>
       
       
+      
       <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>13.5</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>43.4%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>12.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
       
       <div data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": true, "stoch_cross_dn": false, "rsi14": 47.0, "rsi5": 50.0, "stoch": 26.0, "spark_rsi": [35.1, 33.0, 31.6, 43.5, 48.7, 55.0, 61.0, 56.7, 56.8, 56.7, 51.1, 54.0, 49.9, 49.8, 45.1, 43.5, 42.8, 36.5, 45.4, 47.1], "spark_stoch": [0.0, 0.0, 0.0, 19.2, 46.8, 80.1, 94.3, 95.1, 90.3, 85.5, 79.2, 76.0, 68.3, 66.8, 56.7, 49.4, 28.8, 13.4, 12.1, 26.4], "spark_hist": [-2.013, -2.17, -2.261, -1.578, -0.711, 0.362, 1.578, 2.005, 2.201, 2.225, 1.789, 1.637, 1.197, 0.856, 0.285, -0.205, -0.543, -1.213, -1.063, -0.801]}, "3D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": true, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": true, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 46.0, "rsi5": 47.0, "stoch": 38.0, "spark_rsi": [42.2, 41.3, 41.9, 45.2, 46.8, 51.7, 45.2, 51.1, 45.3, 49.4, 45.8, 42.3, 39.1, 41.9, 49.2, 51.4, 50.1, 45.1, 40.3, 46.0], "spark_stoch": [60.8, 45.7, 35.3, 30.0, 30.5, 54.1, 54.2, 70.5, 54.9, 70.2, 53.2, 43.8, 17.7, 10.9, 34.5, 67.1, 88.6, 77.7, 48.4, 38.2], "spark_hist": [-0.286, -0.711, -0.85, -0.555, -0.155, 0.61, 0.418, 0.914, 0.538, 0.758, 0.448, -0.192, -1.011, -1.162, -0.377, 0.428, 0.798, 0.435, -0.435, -0.319]}, "W": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": true, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 44.0, "rsi5": 42.0, "stoch": 65.0, "spark_rsi": [39.4, 35.2, 49.8, 49.7, 51.2, 43.0, 43.2, 37.4, 43.5, 41.5, 43.8, 49.0, 49.5, 44.6, 40.9, 37.4, 47.4, 49.5, 44.1, 43.7], "spark_stoch": [5.5, 0.0, 33.3, 66.6, 99.9, 82.8, 66.3, 37.6, 38.6, 35.0, 48.3, 59.8, 76.5, 78.2, 61.3, 31.5, 36.2, 53.6, 72.0, 65.2], "spark_hist": [-3.303, -3.541, -2.088, -1.044, -0.144, -0.511, -0.662, -1.498, -1.301, -1.343, -1.027, -0.172, 0.477, 0.327, -0.222, -1.022, -0.362, 0.372, 0.129, -0.03]}, "M": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 52.0, "rsi5": 37.0, "stoch": 7.0, "spark_rsi": [88.0, 74.9, 79.5, 64.9, 59.5, 62.1, 67.8, 72.6, 74.4, 68.0, 69.0, 66.5, 63.5, 58.1, 57.3, 60.6, 53.7, 55.5, 56.1, 52.4], "spark_stoch": [56.5, 43.2, 36.0, 12.9, 9.9, 2.4, 10.2, 22.5, 37.4, 39.6, 38.6, 29.4, 24.1, 12.9, 4.7, 5.1, 5.1, 7.9, 6.6, 6.6], "spark_hist": [9.408, 8.768, 9.642, 7.308, 4.232, 2.632, 3.223, 5.313, 7.03, 6.236, 5.577, 4.094, 2.047, -0.752, -2.962, -3.501, -5.434, -6.16, -6.404, -7.25]}}'></div>
@@ -567,13 +1136,14 @@
         <span class="state st-RALLY_ON"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
         <span class="urgpill urg-hold"><span class="l-en">HOLD</span><span class="l-zh">持有</span></span>
         <span class="agechip" title="when this signal last crossed">⏱ <span class="l-en">3d ago</span><span class="l-zh">3天前</span></span>
-        <span class="eqbadge sm eq-up" title="How well-timed & low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.">▲ +38</span>
+        <span class="eqbadge sm eq-up" title="How well-timed & low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.">▲ +36</span>
         <span style="flex:1"></span>
         <span class="muted" style="font-size:12px"><span class="l-en">daily cycle day</span><span class="l-zh">日线周期第</span> 19/~42<span class="l-en"></span><span class="l-zh"> 天</span></span>
       </div>
       <ul class="points sm">
         <li><span class="l-en">Bigger picture is bearish (counter-trend for a daily long)</span><span class="l-zh">大局为看空（对日线多头而言属逆势）</span></li><li><span class="l-en">Macro: US net liquidity neutral — no macro tilt on the odds</span><span class="l-zh">宏观：美国净流动性中性——对概率属无方向性影响</span></li><li><span class="l-en">Swing low printed (buyers rejected the low)</span><span class="l-zh">摆动低点已现（买方拒绝了该低点）</span></li>
       </ul>
+      
       
       
       <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>15.2</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>7.9%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>11.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
@@ -692,6 +1262,26 @@
        这正是为何每个买入状态都以确认（摆动低点、10 日均线）为前提。图表由 TradingView 提供。</span></p>
   </div>
 
+<script>
+/* alert feed: toggle open/closed + filter chips (clone of the Vector timeline JS) */
+(function(){
+  var btn=document.getElementById('af-btn'), feed=document.getElementById('af-feed');
+  if(btn&&feed){btn.addEventListener('click',function(){
+    if(feed.hasAttribute('hidden')){feed.removeAttribute('hidden');btn.setAttribute('aria-expanded','true');}
+    else{feed.setAttribute('hidden','');btn.setAttribute('aria-expanded','false');}
+  });}
+  var fil=document.querySelectorAll('.aff'), items=document.querySelectorAll('.af-item');
+  fil.forEach(function(b){b.addEventListener('click',function(){
+    fil.forEach(function(x){x.classList.remove('active')}); b.classList.add('active');
+    var f=b.dataset.f;
+    items.forEach(function(it){ it.hidden=!(f==='all'||it.dataset.f===f); });
+    document.querySelectorAll('.af-day').forEach(function(dd){
+      var any=[].slice.call(dd.querySelectorAll('.af-item')).some(function(i){return !i.hidden});
+      dd.style.display=any?'':'none';
+    });
+  });});
+})();
+</script>
 <script src="../mtf.js"></script>
 <script src="../theme.js"></script>
 <footer class="site-footer">
