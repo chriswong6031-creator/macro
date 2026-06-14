@@ -291,6 +291,46 @@ def glide_path(score: pd.Series, confirm_days: int = 5,
     return pd.Series(wv[out], index=score.index)
 
 
+def redeploy_overlay(base_alloc: pd.Series, f=None, cf=None, cap_min: int = 2,
+                     gate_put: bool = True, min_hold: int = 42) -> pd.Series:
+    """PHASE 2 re-deploy leg. When the de-risk glide path has cut equity AND a
+    capitulation washout fires (capitulation_score >= cap_min: VRP-pctile>0.90 /
+    VIX>30 / COT washout), lift the weight to fully long and HOLD it there for
+    `min_hold` trading days to ride the recovery — BUT only inside a 'buyable
+    washout', i.e. when the dislocation Fed-put switch is PRESENT (gate_put=True;
+    put_absent=False). put_absent (recession OR sustained breakeven >=2.5%) marks
+    the 2000/2008/2022-style knives where buying the dip is catching a falling knife
+    (DISLOCATION_VALIDATION.md). The min_hold ride is what makes the leg pay (CAGR
+    +~1.8pp) WITHOUT raising whipsaw — snapping in-and-out churns; holding the
+    recovery doesn't. gate_put=False = the unconditional version (kept only for the
+    A/B that proves the put-conditioning earns its keep)."""
+    from engine.conditions import conditions_frame
+    if f is None:
+        from engine.inputs import build_features
+        f = build_features()
+    if cf is None:
+        cf = conditions_frame(f)
+    cap = cf.get("capitulation_score")
+    if cap is None:
+        return base_alloc
+    cap = cap.reindex(base_alloc.index, method="ffill").fillna(0)
+    buyable = cap >= cap_min
+    if gate_put:
+        from engine.dislocation import master_switch_frame
+        pa = master_switch_frame(f)["put_absent"].reindex(base_alloc.index, method="ffill").fillna(False)
+        buyable = buyable & (~pa)
+    trig = (buyable & (base_alloc < 1.0)).to_numpy()
+    out = base_alloc.to_numpy().copy()
+    hold = 0
+    for i in range(len(out)):
+        if trig[i]:
+            hold = min_hold
+        if hold > 0:
+            out[i] = 1.0
+            hold -= 1
+    return pd.Series(out, index=base_alloc.index)
+
+
 def voltarget_overlay(alloc: pd.Series, f=None, cf=None) -> pd.Series:
     """Optional Sharpe lever: scale the equity weight DOWN when realized vol is
     high (Moreira-Muir vol-managed sizing), capped at 1 for a long/flat book."""
@@ -304,6 +344,27 @@ def voltarget_overlay(alloc: pd.Series, f=None, cf=None) -> pd.Series:
         return alloc
     scal = cf["vol_target_scalar"].reindex(alloc.index).ffill().clip(0, 1).fillna(1.0)
     return (alloc * scal).clip(0, 1)
+
+
+def vector_alloc(close: pd.Series, f=None, regime=None, cf=None,
+                 confirm_days: int = 5, redeploy: bool = True) -> pd.Series:
+    """THE canonical S&P/Macro Vector allocation (Phase 1 de-risk core + Phase 2
+    Fed-put-gated re-deploy). 0-100 macro risk score -> graded hysteretic glide
+    path -> buyable-washout re-deploy. Long/flat in [0,1]. One call for the
+    dashboard + the live engine. Pass a prebuilt f/cf/regime to avoid recompute."""
+    from engine.conditions import conditions_frame
+    if f is None:
+        from engine.inputs import build_features
+        f = build_features()
+    if cf is None:
+        cf = conditions_frame(f)
+    if regime is None:
+        regime = store.read("regime", "regime_history")
+    rs = risk_score(f, regime, cf)
+    alloc = glide_path(rs, confirm_days=confirm_days).reindex(close.index, method="ffill").fillna(1.0)
+    if redeploy:
+        alloc = redeploy_overlay(alloc, f, cf, gate_put=True)
+    return alloc
 
 
 # --------------------------------------------------------------------------- #
