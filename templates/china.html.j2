@@ -555,6 +555,38 @@
   </div>
   {% endif %}
 
+  <!-- ===================== DEFENSIVE LOW-VOL (validated defensive tilt) ===================== -->
+  {% if lowvol and lowvol.sleeve %}
+  <div class="panel span12" id="defensive-lowvol">
+    <h2>{{ t('🛡 Defensive low-vol — lowest-volatility names', '🛡 防御低波 — 波动率最低个股') }}
+      <span class="note" style="text-transform:none">· {{ t('validated defensive tilt', '已验证的防御倾向') }}{% if lowvol.n %} · {{ lowvol.n }} {{ t('names', '只') }}{% endif %}</span>
+      {{ help("The validated A-share DEFENSIVE tilt — the low-volatility anomaly (reports/china-lowvol-phase0.md). Over ~35 years, the lowest-volatility quintile earned market-like returns (~27% vs ~28%) with a materially SHALLOWER drawdown (−57% vs −66% market, −71% high-vol) → a higher Sharpe (0.98 vs 0.88 market vs 0.76 high-vol), monotone across vol AND beta. It is NOT a long-short alpha (the Q1−Q5 spread is ~0) — it is risk-adjusted DEFENSIVE exposure: same return, LESS RISK, low turnover. These are the lowest trailing-volatility names (annualized σ), screened for ST/delisting, a market-cap floor, and a vol floor (which drops halted/flat-priced artifacts). The conservative complement to the aggressive Mean-reversion watch above — for risk-aware exposure, NOT return maximization.", "已验证的 A 股防御倾向 —— 低波动率异象（reports/china-lowvol-phase0.md）。约35年里，波动率最低的五分位组合获得与市场相近的收益（约27% 对 约28%），但回撤明显更浅（−57% 对 市场−66%、高波−71%）→ 更高的夏普（0.98 对 市场0.88 对 高波0.76），在波动率与贝塔上均单调。它并非多空阿尔法（Q1−Q5 价差约为0）—— 而是风险调整后的防御敞口：收益相近、风险更低、换手低。此处为滚动年化波动率最低的个股，已按 ST/退市、市值下限与波动率下限（剔除停牌/价格停滞的伪低波）筛选。它是上方激进的均值回归观察的稳健补充 —— 用于风险可控的敞口，而非收益最大化。") }}
+    </h2>
+    <p class="note" style="margin:0 0 12px;text-transform:none">{{ t('The lowest-volatility A-share names — historically market-like returns with shallower drawdowns (a defensive tilt). For risk-aware exposure, not return maximization.', '波动率最低的 A 股个股 —— 历史上收益与市场相近但回撤更浅（防御倾向）。用于风险可控的敞口，而非收益最大化。') }}{% if lowvol.screened %} <span class="muted">({{ t('screened out', '已筛除') }} {{ lowvol.screened.st }} ST/{{ t('delisting', '退市') }} + {{ lowvol.screened.flat }} {{ t('flat/halted', '停滞/停牌') }} + {{ lowvol.screened.illiquid }} {{ t('illiquid', '低流动') }})</span>{% endif %}</p>
+    <table class="sortable">
+      <thead><tr>
+        <th class="l">{{ t('Stock', '个股') }}</th>
+        <th class="l">{{ t('Sector', '板块') }}</th>
+        <th>{{ t('σ (ann)', '年化波动') }}</th>
+        <th>{{ t('beta', '贝塔') }}</th>
+        <th>{{ t('mkt cap', '市值') }}</th>
+      </tr></thead>
+      <tbody>
+      {% for r in lowvol.sleeve %}
+      <tr>
+        <td class="l"><a href="china_stock.html#{{ r.ticker }}"><b>{{ r.ticker }}</b></a> <span class="note">{{ nm(r.name) }}</span></td>
+        <td class="l note">{{ t(r.sector, SECZH.get(r.sector, r.sector)) }}</td>
+        <td><b>{{ '%.1f'|format(r.vol_pct_ann) }}%</b></td>
+        <td class="note">{{ '%.2f'|format(r.beta) if r.beta is not none else '—' }}</td>
+        <td class="note">{% if r.mktcap_yi %}{{ r.mktcap_yi|int }}亿{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <p class="note" style="margin:8px 0 0;font-size:11px">{{ t('Validated defensive tilt (low-vol anomaly: lowest-vol quintile Sharpe 0.98 vs 0.88 market, drawdown −57% vs −66%, 1990→2026). A risk-REDUCING sleeve, not a return-maximizer; low turnover. σ = trailing annualized volatility; beta to the equal-weight market.', '已验证的防御倾向（低波异象：最低波动五分位夏普0.98 对 市场0.88，回撤 −57% 对 −66%，1990→2026）。用于降低风险的持仓，而非收益最大化；换手低。σ＝滚动年化波动率；贝塔为相对等权市场。') }}</p>
+  </div>
+  {% endif %}
+
   <!-- ===================== ALPHA LEADERS (sector-neutral residual momentum) ===================== -->
   {% if alpha and alpha.top %}
   <div class="panel span12" id="alpha-leaders">

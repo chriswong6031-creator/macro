@@ -176,6 +176,43 @@ def compute_china_reversal() -> dict | None:
     return out
 
 
+def compute_china_lowvol() -> dict | None:
+    """The "Defensive (low-vol)" sleeve — the validated A-share defensive tilt (lowest
+    trailing annualized volatility, screened for ST/delisting + a market-cap + vol floor).
+    engine/china_lowvol.py; reports/china-lowvol-phase0.md. Best-effort: every failure
+    path degrades to None, never raises."""
+    from engine.china_lowvol import lowvol_sleeve
+    dd = config.data_dir()
+    cp = dd / "china_search" / "closes.parquet"
+    mp = dd / "china_search" / "members.parquet"
+    if not (cp.exists() and mp.exists()):
+        log.warning("china lowvol: search panel missing — skipped")
+        return None
+    try:
+        closes = pd.read_parquet(cp).sort_index()
+        closes = closes.loc[:, ~closes.columns.duplicated()]
+        members = pd.read_parquet(mp)
+    except Exception as e:  # noqa: BLE001 — corrupt committed parquet must not break the build
+        log.warning("china lowvol: panel unreadable (%s) — skipped", e)
+        return None
+    tkr_sector = {t: (s if s != JUNK_SECTOR else "—") for t, s in members["sector"].items()}
+    tkr_name = {t: str(n) for t, n in members["name"].items()}
+    tkr_name_zh = ({t: str(z) for t, z in members["name_zh"].items()}
+                   if "name_zh" in members.columns else {})
+    tkr_mktcap = ({t: float(v) for t, v in members["mktcap_yi"].items()}
+                  if "mktcap_yi" in members.columns else {})
+    try:
+        out = lowvol_sleeve(closes, tkr_sector, tkr_name, tkr_name_zh=tkr_name_zh,
+                            tkr_mktcap=tkr_mktcap)
+    except Exception as e:  # noqa: BLE001 — additive leg, never fatal
+        log.warning("china lowvol engine failed (%s) — skipped", e)
+        return None
+    if out:
+        log.info("china lowvol: %d names, %d in sleeve (screened %s)",
+                 out.get("n"), len(out.get("sleeve", [])), out.get("screened"))
+    return out
+
+
 def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
     """(ticker, close, high|None, name, sector) for everything analyzable."""
     out: list[tuple] = []

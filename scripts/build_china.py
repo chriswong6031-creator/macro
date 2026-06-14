@@ -523,6 +523,21 @@ def main() -> int:
             log.error("china reversal watch failed (%s); skipping", e)
             vm["reversal"] = None
 
+        # "Defensive (low-vol)" sleeve — the validated A-share defensive tilt (lowest
+        # trailing volatility; low-vol anomaly, reports/china-lowvol-phase0.md). The
+        # conservative complement to the aggressive Mean-reversion watch.
+        try:
+            from scripts.build_china_library import compute_china_lowvol
+            lv = compute_china_lowvol()
+            vm["lowvol"] = lv
+            if lv:
+                (site / "factordata").mkdir(parents=True, exist_ok=True)
+                (site / "factordata" / "china_lowvol.json").write_text(
+                    json.dumps(lv, separators=(",", ":"), default=str))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("china lowvol sleeve failed (%s); skipping", e)
+            vm["lowvol"] = None
+
         env = Environment(loader=FileSystemLoader(
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)
         from engine import i18n
