@@ -305,9 +305,13 @@ def run(persist: bool = True, root: Path | None = None, force: bool = False) -> 
         brief = synthesize(state, cfg)
         if persist:
             try:
+                payload = json.dumps(brief, indent=2, default=str)
                 out = root / "data" / "regime" / "master_brief.json"
                 out.parent.mkdir(parents=True, exist_ok=True)
-                out.write_text(json.dumps(brief, indent=2, default=str))
+                out.write_text(payload)
+                site = root / "site"          # client-fetched by the dashboard panel
+                if site.is_dir():
+                    (site / "master_brief.json").write_text(payload)
             except Exception as e:  # noqa: BLE001
                 log.warning("master_brief persist failed (%s)", e)
         return brief
@@ -320,7 +324,11 @@ if __name__ == "__main__":
     import sys
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     logging.basicConfig(level=logging.INFO)
-    b = run(persist=True, force=True)        # explicit invocation = on-demand, bypasses the gate
-    print(render_markdown(b) if b else "no brief (model/key unavailable)")
-    if b and b.get("degraded_reason"):
-        print(f"\n[degraded: {b['degraded_reason']}]")
+    force = "--force" in sys.argv            # ad-hoc run even when master_brain.enabled is false
+    b = run(persist=True, force=force)
+    if b is None:
+        print("master_brain disabled — set master_brain.enabled: true, or pass --force")
+    else:
+        print(render_markdown(b))
+        if b.get("degraded_reason"):
+            print(f"\n[degraded: {b['degraded_reason']}]")

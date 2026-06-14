@@ -1088,7 +1088,8 @@ def main() -> int:
         log.error("advanced page failed: %s", e)
     # copy shared static assets (theme + visual widgets) into the site
     for asset in ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
-                  "stockdata.js", "watchlist.js", "auth.js", "tablesort.js", "charts.js"):
+                  "stockdata.js", "watchlist.js", "auth.js", "tablesort.js", "charts.js",
+                  "masterbrief.js"):
         src = config.ROOT / "templates" / asset
         if src.exists():
             (site / asset).write_text(src.read_text())

@@ -967,7 +967,7 @@ catalyst_tone:
 # Runs on DeepSeek V4 Pro now; swap llm_model/llm_base_url/api_key_env to move to
 # Claude Opus later (e.g. llm_model: claude-opus-4-8, llm_base_url removed,
 # api_key_env: ANTHROPIC_API_KEY). Sends DERIVED state (no holdings) to the provider.
-# Run on-demand: `python -m engine.master_brain`.
+# Run on-demand: `python -m engine.master_brain --force` (pipeline step is gated by enabled).
 # =============================================================================
 master_brain:
   enabled: false                  # MASTER SWITCH — pipeline runs it only when true
