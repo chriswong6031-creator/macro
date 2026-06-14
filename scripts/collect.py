@@ -39,6 +39,7 @@ def all_adapters() -> dict:
         ("cboe_putcall", "collectors.cboe", "PutCallAdapter"),
         ("cboe_gex", "collectors.cboe", "GexAdapter"),
         ("cboe_skew", "collectors.cboe_indices", "CboeSkewAdapter"),   # tail-risk index (research/QUANT_FACTOR_EXPANSION.md)
+        ("cboe_vix_futures", "collectors.cboe_vix_futures", "CboeVixFuturesAdapter"),  # front VX settle -> VIX thin-quote sanitizer (engine/dislocation.py)
         ("fedboard_ebp", "collectors.fedboard", "EbpAdapter"),         # Excess Bond Premium (credit risk-appetite)
         ("eia", "collectors.eia", "EiaAdapter"),                       # petroleum supply (Weekly Petroleum Status)
         # FINRA short interest (Phase 3) is ticker-indexed, fetched from build_factors (like EDGAR), not here.

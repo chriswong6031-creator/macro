@@ -53,6 +53,9 @@ DEFAULTS = {
     "trend_ma_d": 200,
     "trend_slope_d": 21,
     "confirm_lookback_d": 15,    # Gate-2: a hook/thrust within ~3 weeks counts as a fresh confirm
+    # VIX thin-quote sanitizer (front VX future cross-check; cboe/vix_futures collector):
+    "vix_spot_future_max_ratio": 1.8,   # spot/front-future above this => likely a fictitious print
+    "vix_future_max_stale_d": 7,        # ignore the futures cross-check if the print is older than this
 }
 
 EVIDENCE = {
@@ -159,6 +162,39 @@ def _gate2(f: pd.DataFrame, verdict: str, vix_term: float | None, c: dict) -> di
             "recent_thrust": recent_thrust, "measured": measured}
 
 
+def _vix_sanitizer(vix: float | None, asof, c: dict) -> dict:
+    """Cross-check spot VIX against the front VIX future (cboe/vix_futures). On
+    5-Aug-2024 spot VIX printed ~65 intraday on thin SPX quotes while the front
+    future stayed <35. A spot/front ratio far beyond plausible backwardation =>
+    a likely fictitious print. Daily CLOSE VIX rarely triggers this (the artifact
+    is intraday), so the threshold is set high and real panics (COVID ~1.5x) pass."""
+    out = {"reliable": True, "front_future": None, "spot_vs_front": None, "note": None}
+    if vix is None:
+        return out
+    vf = store.read("cboe", "vix_futures")
+    if vf is None or "front_settle" not in vf.columns:
+        return out
+    s = vf["front_settle"].dropna()
+    if asof is not None:
+        s = s[s.index <= asof]
+    if s.empty:
+        return out
+    front = float(s.iloc[-1])
+    out["front_future"] = round(front, 2)
+    if asof is not None and (asof - s.index[-1]).days > c["vix_future_max_stale_d"]:
+        return out                                   # stale futures print -> no cross-check
+    if front <= 0:
+        return out
+    ratio = vix / front
+    out["spot_vs_front"] = round(ratio, 2)
+    if ratio > c["vix_spot_future_max_ratio"]:
+        out["reliable"] = False
+        out["note"] = (f"spot VIX {vix:.1f} is {(ratio - 1) * 100:.0f}% above the front VIX future "
+                       f"({front:.1f}) — beyond plausible backwardation; likely a thin-quote print, "
+                       "not corroborated by futures. VIX-panic trigger suppressed.")
+    return out
+
+
 def snapshot(f: pd.DataFrame, conditions: dict | None = None) -> dict:
     """latest-day dislocation read. `conditions` = the already-computed
     conditions_snapshot (so we reuse its capitulation gauge); recomputed-free."""
@@ -196,12 +232,13 @@ def snapshot(f: pd.DataFrame, conditions: dict | None = None) -> dict:
     dd = _last(spy / roll_max - 1.0)
     vix = _last(_col(f, "vix"))
     vix_term = _last(_col(f, "vix_ratio"))
+    san = _vix_sanitizer(vix, asof, c)               # thin-quote cross-check vs the front VX future
     vrp_pctile = ((conditions or {}).get("risk_appetite") or {}).get("vrp_pctile")
     cap = (conditions or {}).get("capitulation") or {}
     cap_active = bool(cap.get("active"))
     cap_strong = bool(cap.get("strong"))
 
-    vix_panic = vix is not None and vix > c["vix_panic"]
+    vix_panic = vix is not None and vix > c["vix_panic"] and san["reliable"]
     price_dip = dd is not None and dd <= -c["dip_pct"]
     vrp_extreme = vrp_pctile is not None and vrp_pctile > c["vrp_pctile_extreme"]
     backwardation = vix_term is not None and vix_term >= c["backwardation_ratio"]
@@ -253,6 +290,9 @@ def snapshot(f: pd.DataFrame, conditions: dict | None = None) -> dict:
             "spy_drawdown_pct": None if dd is None else round(dd * 100, 1),
             "vix": None if vix is None else round(vix, 1),
             "vix_term": None if vix_term is None else round(vix_term, 3),
+            "vix_front_future": san["front_future"],
+            "vix_vs_front": san["spot_vs_front"],
+            "vix_reliable": san["reliable"],
             "vrp_pctile": None if vrp_pctile is None else round(vrp_pctile, 2),
             "capitulation_active": cap_active,
             "capitulation_strong": cap_strong,
@@ -260,5 +300,6 @@ def snapshot(f: pd.DataFrame, conditions: dict | None = None) -> dict:
             "triggers": trigs,
         },
         "capitulation_caveat": cap_caveat,
+        "vix_caveat": san["note"],
         "evidence": EVIDENCE,
     }
