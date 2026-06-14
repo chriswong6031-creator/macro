@@ -343,7 +343,8 @@ def etf_signals(etf: str, *, base_dir=None, is_active: bool = False,
     liq, drag = _live_macro_context()
 
     base = Path(base_dir or config.data_dir() / "etf_holdings") / etf
-    ch = active_changes_dir(base, window, min_base_frac=min_base_frac)
+    ch = active_changes_dir(base, window, min_base_frac=min_base_frac,
+                            include_lifecycle=True)
     if ch is None or ch.empty:
         return []
     snaps = sorted(base.glob("*.parquet"))
@@ -359,26 +360,33 @@ def etf_signals(etf: str, *, base_dir=None, is_active: bool = False,
     else:
         wmap = pd.Series(dtype=float)
     nmap = latest.groupby("ticker")[ncol].last() if ncol else pd.Series(dtype=str)
+    # fully-exited positions are absent from `latest`, so resolve their name from the
+    # window-start snapshot active_changes_dir compared against.
+    prior = pd.read_parquet(snaps[-(window + 1)] if len(snaps) > window else snaps[0])
+    pncol = next((c for c in prior.columns if c.lower() in ("name", "company")), None)
+    pnmap = prior.groupby("ticker")[pncol].last() if pncol else pd.Series(dtype=str)
     theme = meta.get("category", "")
 
     out = []
     for tk, row in ch.iterrows():
         is_new = bool(row.get("is_new", False))
+        is_exit = bool(row.get("is_exit", False))
         pct = row["active_chg_pct"]
-        # Existing positions must clear the share-% threshold; a brand-new position
-        # has no % (undefined base) but is the strongest signal — let it through.
-        if not is_new and (pd.isna(pct) or abs(pct) < thresh):
+        # Existing positions must clear the share-% threshold; brand-new positions
+        # and full exits have no meaningful % but are the strongest signals — pass.
+        if not is_new and not is_exit and (pd.isna(pct) or abs(pct) < thresh):
             continue
-        w = wmap.get(tk)
-        # Conviction needs a real weight: a tiny position doubling (0.1%->0.2%) is
-        # a big % but trivial conviction, so we rank on percentage-POINTS of fund
-        # weight the manager actively committed, not the raw share %.
+        # Conviction needs a real weight (pp of fund committed) — a tiny position
+        # doubling (0.1%->0.2%) is a big % but trivial conviction. For exits the
+        # position is gone from `latest`, so use its carried PRIOR weight.
+        w = row.get("prior_weight_pct") if is_exit else wmap.get(tk)
         if w is None or pd.isna(w) or abs(float(w)) < min_w:
             continue
         w = float(w)
         if is_new:
-            # initiating a stake = full current weight committed (frac = 1).
-            conviction_pp, direction = round(w, 4), "accumulating"
+            conviction_pp, direction = round(w, 4), "accumulating"   # full weight in
+        elif is_exit:
+            conviction_pp, direction = round(-w, 4), "trimming"       # full weight out
         else:
             # active share of the CURRENT position (bounded), then expressed as pp
             # of fund weight: frac = (pct/100)/(1+pct/100); conviction_pp = w*frac.
@@ -392,14 +400,15 @@ def etf_signals(etf: str, *, base_dir=None, is_active: bool = False,
         confirmed = bool(direction == "accumulating" and ladder
                          and (ladder["state"] in BULLISH_STATES
                               or ladder["urgency"] in ("now", "imminent", "soon")))
+        name = nmap.get(tk) or pnmap.get(tk, "") if is_exit else nmap.get(tk, "")
         out.append({
             "etf": etf, "etf_name": meta.get("name", etf),
             "category": theme, "is_active": is_active,
-            "ticker": str(tk), "name": str(nmap.get(tk, "")).title(),
+            "ticker": str(tk), "name": str(name or "").title(),
             "sector": _sector_for(str(tk), theme),
             "weight_pct": w,
             "active_chg_pct": (None if is_new else float(pct)),
-            "conviction_pp": conviction_pp, "is_new": is_new,
+            "conviction_pp": conviction_pp, "is_new": is_new, "is_exit": is_exit,
             "active_share_chg": float(row["active_share_chg"]),
             "window": f"{row['window_start']}..{row['window_end']}",
             "direction": direction, "ladder": ladder, "confirmed": confirmed,

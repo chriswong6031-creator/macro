@@ -88,10 +88,13 @@ def seasonality(close: pd.Series, min_years: int = 10) -> dict:
     return out
 
 
-def season_line(seas: dict, month: int) -> str | None:
+def season_line(seas: dict, month: int, zh: bool = False) -> str | None:
     s = seas.get(month)
     if not s:
         return None
+    if zh:
+        return (f"{month}月：平均 {s['avg_pct']:+.1f}%，"
+                f"{s['hit_pct']:.0f}% 的年份上涨（n={s['n']}）")
     import calendar
     name = calendar.month_abbr[month]
     return f"{name}: {s['avg_pct']:+.1f}% avg, up {s['hit_pct']:.0f}% of years (n={s['n']})"

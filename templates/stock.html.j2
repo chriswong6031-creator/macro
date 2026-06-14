@@ -868,6 +868,7 @@
       var col = ' style="color:var(' + (acc ? '--up' : '--down') + ')"';
       var colR = ' style="text-align:right;color:var(' + (acc ? '--up' : '--down') + ')"';
       var dirTxt = m.is_new ? lz('★ initiated', '★ 新建仓')
+        : m.is_exit ? lz('✕ exited', '✕ 清仓')
         : acc ? lz('▲ buying', '▲ 买入') : lz('▼ trimming', '▼ 减持');
       var conv = (m.conviction_pp == null) ? '—'
         : (m.conviction_pp >= 0 ? '+' : '') + Number(m.conviction_pp).toFixed(2) + 'pp';

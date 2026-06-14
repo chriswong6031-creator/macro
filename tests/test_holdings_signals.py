@@ -293,6 +293,47 @@ def test_etf_signals_flags_new_position() -> None:
     assert n["conviction_pp"] == 1.2              # full current weight committed
 
 
+def test_etf_signals_flags_full_exit() -> None:
+    import tempfile
+    parent = Path(tempfile.mkdtemp())
+    d = parent / "FAKE4"
+    d.mkdir()
+    # GONE held a window ago (3% weight), fully sold by now => strongest negative
+    # signal: is_exit, conviction = -prior weight, name recovered from the prior snap.
+    t0 = pd.DataFrame({"ticker": ["BALLAST", "GONE"], "name": ["Ballast", "Gone Co"],
+                       "weight_pct": [60.0, 3.0], "shares": [1_000_000, 5000]})
+    t1 = pd.DataFrame({"ticker": ["BALLAST"], "name": ["Ballast"],
+                       "weight_pct": [60.0], "shares": [1_000_000]})
+    t0.to_parquet(d / "2026-06-06.parquet")
+    t1.to_parquet(d / "2026-06-11.parquet")
+    sigs = hs.etf_signals("FAKE4", base_dir=parent, is_active=False,
+                          meta={"name": "Fake", "category": "Test"})
+    by = {s["ticker"]: s for s in sigs}
+    assert "GONE" in by
+    g = by["GONE"]
+    assert g["is_exit"] is True and g["direction"] == "trimming"
+    assert g["conviction_pp"] == -3.0            # full prior weight sold out
+    assert g["weight_pct"] == 3.0 and g["name"] == "Gone Co"   # prior-snap name
+    assert hs.split_by_conviction(sigs)["trims"][0]["ticker"] == "GONE"
+
+
+def test_active_changes_dir_no_lifecycle_rows_by_default() -> None:
+    # the alert path uses the default (no lifecycle rows) so its semantics are
+    # unchanged — only the radar opts into new/exit via include_lifecycle=True.
+    import tempfile
+    from collectors.holdings import active_changes_dir
+    d = Path(tempfile.mkdtemp()) / "FUND"
+    d.mkdir()
+    pd.DataFrame({"ticker": ["A", "GONE"], "name": ["A", "G"],
+                  "shares": [1000, 500]}).to_parquet(d / "2026-06-06.parquet")
+    pd.DataFrame({"ticker": ["A", "NEWP"], "name": ["A", "N"],
+                  "shares": [1000, 500]}).to_parquet(d / "2026-06-11.parquet")
+    base = active_changes_dir(d, 5)
+    assert "GONE" not in base.index and "NEWP" not in base.index   # no lifecycle
+    life = active_changes_dir(d, 5, include_lifecycle=True)
+    assert "NEWP" in life.index and "GONE" in life.index
+
+
 if __name__ == "__main__":
     for fn in [test_decompose_price_only_zero_residual,
                test_decompose_accumulation_positive_residual,
@@ -308,7 +349,9 @@ if __name__ == "__main__":
                test_is_non_equity_holding,
                test_active_changes_dir_weeds_cash_and_tiny_base,
                test_etf_signals_conviction_ranks_weight_over_pct,
-               test_etf_signals_flags_new_position]:
+               test_etf_signals_flags_new_position,
+               test_etf_signals_flags_full_exit,
+               test_active_changes_dir_no_lifecycle_rows_by_default]:
         fn()
         print(f"PASS {fn.__name__}")
     print("all holdings-signal tests passed")

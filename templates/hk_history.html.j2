@@ -87,7 +87,7 @@
     <table>
       <tr><th>{{ t('regime', '周期') }}</th><th>{{ t('periods', '次数') }}</th><th>{{ t('median length (days)', '存续中位数（天）') }}</th><th>{{ t('most common next', '最常见的下一周期') }}</th></tr>
       {% for row in lifespan_rows %}
-      <tr><td>{{ td(row.name) }}</td><td>{{ row.n }}</td><td>{{ row.median }}</td><td>{{ row.next }}</td></tr>
+      <tr><td>{{ td(row.name) }}</td><td>{{ row.n }}</td><td>{{ row.median }}</td><td>{{ t(row.next, row.next_zh) }}</td></tr>
       {% endfor %}
     </table>
   </div>

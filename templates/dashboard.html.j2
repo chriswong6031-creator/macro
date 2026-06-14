@@ -201,6 +201,32 @@
   .lifelabels { display: flex; justify-content: space-between; font-size: 11px;
                 color: var(--muted); }
 
+  /* regime stance verdict: let-winners-run … look-for-a-change */
+  .stance { margin: 12px 0 2px; padding: 11px 13px; border-radius: 10px;
+            border: 1px solid var(--line); border-left: 3px solid var(--muted);
+            background: var(--panel2); }
+  .stance-run   { border-left-color: var(--up);
+                  background: color-mix(in srgb, var(--up) 7%, var(--panel2)); }
+  .stance-hold  { border-left-color: var(--warn);
+                  background: color-mix(in srgb, var(--warn) 7%, var(--panel2)); }
+  .stance-shift { border-left-color: var(--orange);
+                  background: color-mix(in srgb, var(--orange) 8%, var(--panel2)); }
+  .stance-reset { border-left-color: var(--info);
+                  background: color-mix(in srgb, var(--info) 9%, var(--panel2)); }
+  .stance-hd { display: flex; align-items: center; gap: 9px; }
+  .stance-ico { font-size: 17px; line-height: 1; flex: none; }
+  .stance-v { font-size: 15px; font-weight: 800; letter-spacing: .01em; }
+  .stance-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .stance-track { position: relative; height: 9px; border-radius: 5px; margin: 10px 0 0;
+                  background: linear-gradient(90deg, var(--up) 0%, var(--warn) 52%, var(--down) 100%);
+                  opacity: .9; }
+  .stance-track i { position: absolute; top: -4px; width: 4px; height: 17px;
+                    background: var(--text); border-radius: 2px; box-shadow: 0 0 0 2px var(--panel); }
+  .stance-ends { display: flex; justify-content: space-between; font-size: 10.5px;
+                 color: var(--muted); margin-top: 4px; }
+  .stance-meta { font-size: 11px; color: var(--muted); margin-top: 6px;
+                 font-variant-numeric: tabular-nums; }
+
   /* next-regime probability bars */
   .prob { display: flex; align-items: center; gap: 10px; margin: 7px 0; }
   .prob .nm { width: 110px; font-weight: 600; font-size: 13px; flex: none; }
@@ -1023,6 +1049,30 @@
     </div>
     <div class="lifelabels"><span>{{ t('young', '年轻') }}</span><span>{{ t('mid-life', '中年') }}</span><span>{{ t('old', '年老') }}</span></div>
     <p style="margin:10px 0 4px"><b>{{ t(pb.progress.phase | upper, tr(pb.progress.phase)) }}</b> — {{ t(pb.progress.phase_note, pb.progress.phase_note_zh) }}.</p>
+
+    {% if stance %}
+    {% set _sv = {
+      'run':   ('🟢', 'Let winners run', '让赢家继续奔跑', 'Trend intact — the odds of a regime shift are low.', '趋势完好 — 周期转变的概率较低。'),
+      'hold':  ('🟡', 'Stay with the trend — trail your stops', '跟随趋势 — 收紧移动止损', 'Warnings are building: stop ADDING regime-dependent bets, but no break yet.', '预警正在累积：停止加注依赖周期的押注，但尚未破位。'),
+      'shift': ('🟠', 'Start looking for a regime change', '开始留意周期转变', 'Shift odds are compounding — reduce risk before the label flips.', '转变概率层层叠加 — 在标签翻转前降低风险。'),
+      'reset': ('🔄', 'Regime just turned — reset', '周期刚刚转变 — 重置', 'The label changed within the last week: switch to the new playbook.', '标签在过去一周内已改变：切换到新剧本。')
+    } %}
+    {% set _s = _sv[stance.key] %}
+    <div class="stance stance-{{ stance.key }}">
+      <div class="stance-hd">
+        <span class="stance-ico">{{ _s[0] }}</span>
+        <div>
+          <div class="stance-v">{{ t(_s[1], _s[2]) }}</div>
+          <div class="stance-sub">{{ t(_s[3], _s[4]) }}</div>
+        </div>
+      </div>
+      <div class="stance-track"><i style="left:{{ stance.pos_pct }}%"></i></div>
+      <div class="stance-ends"><span>{{ t('let winners run', '让赢家奔跑') }}</span><span>{{ t('look for a change', '留意转变') }}</span></div>
+      <div class="stance-meta">{{ t(stance.age_word, {'young':'年轻','mid-life':'中年','old':'年老'}.get(stance.age_word, stance.age_word)) }} {{ td(latest.quad_name) }} · {{ t('radar', '雷达') }} {{ td(stance.radar) }}{% if stance.n_warn %} · {{ stance.n_warn }} {{ t('warning' if stance.n_warn == 1 else 'warnings', '预警') }}{% endif %}
+        {{ help("This verdict combines two things on this page: how far through its historical lifespan this regime is (the bar above), and the transition radar (top of page). STABLE → let winners run; WEAKENING → stop adding & trail stops; TRANSITIONING → look for a change; NEW REGIME → reset. An OLD regime makes every warning matter more. Base rates from 2007-present, not a prediction.", "此判断综合本页两件事：此周期已走过其历史寿命的多少（上方进度条），以及转换雷达（页面顶部）。稳定 → 让赢家奔跑；走弱 → 停止加注并收紧止损；转换中 → 留意转变；新周期 → 重置。年老的周期会让每个预警都更重要。基于 2007 年至今的基础概率，而非预测。") }}</div>
+    </div>
+    {% endif %}
+
     <p class="muted" style="margin:4px 0">
       <span class="l-en">
       {{ pb.progress.age_days }} trading days in, vs a median of {{ pb.progress.median_days }}

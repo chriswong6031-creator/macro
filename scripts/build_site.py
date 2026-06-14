@@ -756,6 +756,31 @@ def nowcast_history(f: "pd.DataFrame") -> dict:
     return out
 
 
+def regime_stance(latest: dict, pb: dict | None) -> dict | None:
+    """Turn the regime's AGE × the transition-radar STATE into a single actionable
+    verdict on the 'let winners run … look for a regime change' spectrum — the
+    methodology that used to live only inside a help tooltip. Radar state drives
+    the call (it already encodes the warning count); age modulates it (an old
+    regime makes the same warnings matter more)."""
+    prog = (pb or {}).get("progress") if pb else None
+    if not prog:
+        return None
+    ts = latest.get("transition_state") or "STABLE"
+    age_frac = max(0.0, min(1.0, (prog.get("bar_pct") or 50) / 100.0))
+    n_warn = sum(1 for v in (latest.get("transition_flags") or {}).values() if v)
+    # radar state -> (verdict bucket, marker base position on the 0..1 spectrum)
+    table = {"STABLE": ("run", 0.12), "WEAKENING": ("hold", 0.50),
+             "TRANSITIONING": ("shift", 0.80), "NEW_REGIME": ("reset", 0.93)}
+    key, base = table.get(ts, ("hold", 0.5))
+    pos = min(0.95, max(0.05, base + 0.12 * age_frac))
+    # an OLD regime that is already weakening tips over into 'look for a change'
+    if ts == "WEAKENING" and age_frac >= 0.75:
+        key, pos = "shift", min(0.95, pos + 0.12)
+    age_word = "young" if age_frac < 0.4 else ("mid-life" if age_frac < 0.72 else "old")
+    return {"key": key, "pos_pct": round(pos * 100), "radar": ts,
+            "age_word": age_word, "n_warn": n_warn}
+
+
 def action_board(sector_timing: dict, notable: list[dict]) -> dict:
     """Bucket sector + standout-stock cycle signals into an at-a-glance
     'what to act on now' board for the front page."""
@@ -971,7 +996,8 @@ def _fund_flows_by_ticker(rows: list[dict]) -> dict[str, list[dict]]:
             "theme": r.get("category", ""), "is_active": r.get("is_active", False),
             "direction": r["direction"], "conviction_pp": r.get("conviction_pp"),
             "weight_pct": r.get("weight_pct"), "active_chg_pct": r.get("active_chg_pct"),
-            "is_new": r.get("is_new", False), "window": r.get("window", ""),
+            "is_new": r.get("is_new", False), "is_exit": r.get("is_exit", False),
+            "window": r.get("window", ""),
         })
     for tk in by:
         by[tk].sort(key=lambda m: -abs(m.get("conviction_pp") or 0))
@@ -1280,6 +1306,7 @@ def main() -> int:
         health=health_rows(),
         factor_leadership=factor_leadership,
         nowcast_hist=nowcast_history(f),
+        stance=regime_stance(latest, latest.get("playbook")),
     )
     # Write the macro dashboard straight to macro.html. index.html is owned
     # solely by build_vector.build_landing() (the landing hub) — keeping the raw

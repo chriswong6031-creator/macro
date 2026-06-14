@@ -177,7 +177,191 @@ def _load_profiles() -> dict[str, dict]:
     out: dict[str, dict] = {}
     for t, row in df.iterrows():
         out[str(t)] = {c: (row[c] if pd.notna(row[c]) else None) for c in cols}
+    # join the cached 中文 translations of the (English-sourced) blurb, if any —
+    # written by scripts/translate_profiles.py; absent ⇒ the analyzer keeps English.
+    zp = config.data_dir() / "profile" / "descriptions_zh.parquet"
+    if zp.exists():
+        try:
+            zdf = pd.read_parquet(zp)
+            for t, row in zdf.iterrows():
+                if str(t) in out and pd.notna(row.get("description_zh")):
+                    out[str(t)]["description_zh"] = row["description_zh"]
+        except Exception:  # noqa: BLE001 — translation is optional, never block panels
+            pass
     return out
+
+
+def _load_statements() -> dict[str, list[dict]]:
+    """ticker -> list of per-fiscal-year statement dicts (ascending) from the
+    Phase-2 companyfacts collector (collectors/edgar_facts.py). Empty until run."""
+    p = config.data_dir() / "edgar" / "statements.parquet"
+    if not p.exists():
+        return {}
+    try:
+        df = pd.read_parquet(p)
+    except Exception:  # noqa: BLE001
+        return {}
+    if df.empty or "ticker" not in df.columns:
+        return {}
+    out: dict[str, list[dict]] = {}
+    for t, sub in df.sort_values("fy").groupby("ticker"):
+        out[str(t)] = sub.to_dict("records")
+    return out
+
+
+def _piotroski(rows: list[dict]) -> dict | None:
+    """Piotroski F-score: count of 9 fundamental-momentum signals that pass
+    (latest FY vs prior). Reports score out of however many were computable —
+    sparse filers get a smaller denominator rather than a wrong absolute."""
+    if len(rows) < 2:
+        return None
+    a, b = rows[-2], rows[-1]            # prior, latest
+
+    def n(r, k):
+        return _num(r.get(k))
+
+    def ratio(r, num, den):
+        x, y = n(r, num), n(r, den)
+        return x / y if (x is not None and y not in (None, 0)) else None
+
+    score, total = 0, 0
+    tests = [
+        (ratio(b, "ni", "assets"), None, "gt0"),                       # ROA > 0
+        (n(b, "cfo"), None, "gt0"),                                    # CFO > 0
+        (ratio(b, "ni", "assets"), ratio(a, "ni", "assets"), "gt"),   # ROA rising
+        (n(b, "cfo"), n(b, "ni"), "gt"),                              # accruals: CFO > NI
+        (ratio(a, "debt_lt", "assets"), ratio(b, "debt_lt", "assets"), "gt"),  # leverage falling
+        (ratio(b, "cur_assets", "cur_liab"), ratio(a, "cur_assets", "cur_liab"), "gt"),  # current ratio rising
+        (n(a, "shares"), n(b, "shares"), "gte"),                      # no dilution
+        (ratio(b, "gross_profit", "revenue"), ratio(a, "gross_profit", "revenue"), "gt"),  # margin rising
+        (ratio(b, "revenue", "assets"), ratio(a, "revenue", "assets"), "gt"),  # asset turnover rising
+    ]
+    for x, y, op in tests:
+        if x is None or (op in ("gt", "gte") and y is None):
+            continue
+        total += 1
+        if op == "gt0":
+            score += 1 if x > 0 else 0
+        elif op == "gt":
+            score += 1 if x > y else 0
+        elif op == "gte":
+            score += 1 if x >= y * 1.01 else 0
+    if total < 5:
+        return None
+    return {"score": score, "of": total}
+
+
+def _altman(latest: dict, mktcap: float | None) -> dict | None:
+    """Altman Z-score (classic, manufacturers) — distress < 1.81, grey 1.81-2.99,
+    safe > 2.99. Uses market cap for X4; labelled approximate for non-manufacturers."""
+    a = _num(latest.get("assets"))
+    if not a or not mktcap:
+        return None
+    ca, cl = _num(latest.get("cur_assets")), _num(latest.get("cur_liab"))
+    wc = (ca - cl) if (ca is not None and cl is not None) else None
+    legs = [(1.2, wc / a if wc is not None else None),
+            (1.4, _num(latest.get("retained_earnings")) and _num(latest.get("retained_earnings")) / a),
+            (3.3, _num(latest.get("op_income")) and _num(latest.get("op_income")) / a),
+            (0.6, mktcap / _num(latest.get("liabilities")) if _num(latest.get("liabilities")) else None),
+            (1.0, _num(latest.get("revenue")) and _num(latest.get("revenue")) / a)]
+    avail = [(c, x) for c, x in legs if x is not None]
+    if len(avail) < 4:
+        return None
+    z = sum(c * x for c, x in avail)
+    zone = "safe" if z > 2.99 else "grey" if z >= 1.81 else "distress"
+    return {"z": round(z, 2), "zone": zone}
+
+
+def _cagr(series: list) -> float | None:
+    s = [x for x in series if x is not None]
+    if len(series) < 2 or series[0] is None or series[-1] is None:
+        return None
+    if series[0] <= 0 or series[-1] <= 0:
+        return None
+    return round(((series[-1] / series[0]) ** (1 / (len(series) - 1)) - 1) * 100, 1)
+
+
+def _multiyear(rows: list[dict], mktcap: float | None) -> dict | None:
+    """Multi-year trend series + CAGRs + Piotroski/Altman from the statements rows."""
+    if not rows:
+        return None
+
+    def col(k):
+        return [_num(r.get(k)) for r in rows]
+
+    rev, ni, gp = col("revenue"), col("ni"), col("gross_profit")
+    cfo, capex, eps = col("cfo"), col("capex"), col("eps_diluted")
+
+    def margin(num, den):
+        return [round(n / d * 100, 1) if (n is not None and d) else None for n, d in zip(num, den)]
+
+    fcf = [(c - x) if (c is not None and x is not None) else None for c, x in zip(cfo, capex)]
+    block = {
+        "years": [int(r["fy"]) for r in rows],
+        "revenue": rev, "net_margin": margin(ni, rev), "gross_margin": margin(gp, rev),
+        "eps": eps, "fcf": fcf, "fcf_margin": margin(fcf, rev),
+        "rev_cagr": _cagr(rev), "eps_cagr": _cagr(eps),
+        "piotroski": _piotroski(rows), "altman": _altman(rows[-1], mktcap),
+    }
+    return block
+
+
+def _load_earnings() -> dict[str, dict]:
+    """ticker -> earnings row (next date + surprise history) from the Phase-2
+    earnings collector (collectors/equity_earnings.py). Empty until run."""
+    p = config.data_dir() / "earnings" / "earnings.parquet"
+    if not p.exists():
+        return {}
+    try:
+        df = pd.read_parquet(p)
+    except Exception:  # noqa: BLE001
+        return {}
+    out: dict[str, dict] = {}
+    for t, row in df.iterrows():
+        try:
+            surp = json.loads(row.get("surprises_json") or "[]")
+        except Exception:  # noqa: BLE001
+            surp = []
+        nd = row.get("next_date")
+        out[str(t)] = {
+            "next_date": nd if isinstance(nd, str) and nd not in ("nan", "") else None,
+            "next_time": row.get("next_time") if pd.notna(row.get("next_time")) else None,
+            "eps_forecast": _num(row.get("eps_forecast")), "surprises": surp,
+        }
+    return out
+
+
+def _earnings(row: dict | None) -> dict | None:
+    """Next-date + beat/miss summary for the Earnings panel. Days-to-earnings is
+    NOT baked (it would go stale in the static JSON) — the page computes the
+    countdown client-side from next_date."""
+    if not row:
+        return None
+    surp = [s for s in (row.get("surprises") or []) if _num(s.get("surprise_pct")) is not None]
+    if not row.get("next_date") and not surp:
+        return None
+    summary = None
+    if surp:                                 # Nasdaq returns most-recent first
+        beats = sum(1 for s in surp if s["surprise_pct"] > 0)
+        streak = 0
+        for s in surp:
+            if s["surprise_pct"] > 0:
+                streak += 1
+            else:
+                break
+        summary = {"beats": beats, "total": len(surp),
+                   "avg_surprise": _r(sum(s["surprise_pct"] for s in surp) / len(surp), 1),
+                   "streak": streak}
+    tmap = {"time-pre-market": "pre-market", "time-after-hours": "after-hours"}
+    return {
+        "next_date": row.get("next_date"),
+        "next_time": tmap.get(row.get("next_time")),
+        "eps_forecast": _r(row.get("eps_forecast"), 2),
+        "surprises": [{"qtr": s.get("qtr"), "eps": _r(s.get("eps"), 2),
+                       "consensus": _r(s.get("consensus"), 2),
+                       "surprise_pct": _r(s.get("surprise_pct"), 1)} for s in surp][:4],
+        "summary": summary,
+    }
 
 
 def _load_deep() -> dict[str, dict]:
@@ -316,6 +500,7 @@ def _profile(t, f, fac, M, arche, prof_row=None) -> dict:
         # identity + description from collectors/equity_profile.py (Phase 2) —
         # None until that collector has run (the panel guards for it)
         "description": pr.get("description"),
+        "description_zh": pr.get("description_zh"),  # cached 中文, if translate_profiles ran
         "sic_description": pr.get("sic_description"),
         "exchange": pr.get("exchange"),
         "hq": pr.get("hq"),
@@ -348,7 +533,7 @@ def _valuation(t, f, fac, M, deep) -> dict | None:
     }
 
 
-def _financials(t, f, deep) -> dict | None:
+def _financials(t, f, deep, multiyear=None) -> dict | None:
     rev, ni, ni_p = _num(f.get("revenue")), _num(f.get("ni")), _num(f.get("ni_prior"))
     eq, cfo, gp = _num(f.get("equity")), _num(f.get("cfo")), _num(f.get("gross_profit"))
     assets, assets_p = _num(f.get("assets")), _num(f.get("assets_prior"))
@@ -381,7 +566,7 @@ def _financials(t, f, deep) -> dict | None:
         # tiny 2-point sparkline series (prior, latest) — honest until companyfacts (Phase 2)
         "spark": {"ni": [_num(ni_p), _num(ni)] if (ni_p is not None and ni is not None) else None,
                   "assets": [_num(assets_p), _num(assets)] if (assets_p is not None and assets is not None) else None},
-        "multiyear": None,  # Phase 2: SEC companyfacts (rev/margins/EPS/FCF trend + Piotroski/Altman)
+        "multiyear": multiyear,  # SEC companyfacts trends + Piotroski/Altman (Phase 2)
     }
 
 
@@ -457,6 +642,8 @@ def panels() -> dict[str, dict]:
     insider = _load_insider(facts)
     deep = _load_deep()
     profiles = _load_profiles()
+    statements = _load_statements()
+    earnings = _load_earnings()
 
     M = _context_frame(fund, table)
     nm_top_thr = _num(M["net_margin"].quantile(2 / 3)) if "net_margin" in M else None
@@ -467,13 +654,16 @@ def panels() -> dict[str, dict]:
         ni = _num(f.get("ni"))
         net_margin = _num(M.loc[t, "net_margin"]) if t in M.index else None
         arche = _archetype(fac, ni, net_margin, nm_top_thr)
+        mcap = _num(M.loc[t, "mktcap"]) if t in M.index else None
+        my = _multiyear(statements.get(str(t)), mcap)
         blocks = {
             "profile": _profile(t, f, fac, M, arche, profiles.get(str(t))),
             "valuation": _valuation(t, f, fac, M, deep.get(t)),
-            "financials": _financials(t, f, deep.get(t)),
+            "financials": _financials(t, f, deep.get(t), my),
             "factors": _factors(t, fac, facts, M),
             "positioning": _positioning(t, f, short, insider.get(t)),
             "analyst": _analyst(t, deep.get(t)),
+            "earnings": _earnings(earnings.get(str(t))),
         }
         out[str(t)] = _clean({k: v for k, v in blocks.items() if v})
     log.info("stock_fundamentals: %d names with panels (factors %d, deep %d, short %s)",
