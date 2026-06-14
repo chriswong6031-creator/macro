@@ -86,6 +86,11 @@
   .wl-etag { font-weight:800; letter-spacing:.03em; }
   .wl-px { font-size:12px; margin:2px 0 4px; }
   .wl-mtf { margin-top:4px; }
+  /* the shared 3-up MTF strip is sized for the wide sector/analyzer pages; the
+     watchlist card (~310px) is too narrow for it, so stack the timeframe cards
+     (same single-column layout the strip already uses on mobile) — otherwise the
+     min-content of three gauges overflows and bleeds past the card edge */
+  .wl-card .mtf-grid { grid-template-columns:1fr; }
   /* ---- empty / chips / banner / toast ---- */
   #wl_empty { display:none; }
   .wl-chip { background:var(--panel2); border:1px solid var(--line); border-radius:8px;

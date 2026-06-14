@@ -41,12 +41,24 @@
   // warning flags, in the same order as flag_order in the JSON, with the tint each
   // should carry (matches the header's transition-radar language)
   var FLAGS = [
-    { key: 'breadth_price',    c: '--warn',   en: 'thinning participation',   zh: '参与度变薄' },
-    { key: 'credit_equity',    c: '--orange', en: 'nervous credit',           zh: '信用紧张' },
-    { key: 'ratio_inflection', c: '--warn',   en: 'risk-ratios turning',      zh: '风险比率反转' },
-    { key: 'inflation_basket', c: '--orange', en: 'inflation trades turning', zh: '通胀交易反转' },
-    { key: 'confidence_decay', c: '--warn',   en: 'signal disagreement',      zh: '信号分歧' },
-    { key: 'gex',              c: '--down',   en: 'fragile options',          zh: '期权脆弱' }
+    { key: 'breadth_price',    c: '--warn',   en: 'thinning participation',   zh: '参与度变薄',
+      den: 'Price is near its highs but FEWER stocks are joining the move — the rally rests on a shrinking handful of names. A classic late-stage warning.',
+      dzh: '价格接近高点，但参与上涨的股票越来越少 — 涨势由越来越少的个股支撑。典型的晚段预警。' },
+    { key: 'credit_equity',    c: '--orange', en: 'nervous credit',           zh: '信用紧张',
+      den: 'Stocks are still rising but corporate bonds are getting nervous (credit spreads widening). Credit usually smells trouble before equities do.',
+      dzh: '股票仍在上涨，但公司债开始紧张（信用利差走阔）。信用市场通常比股市更早嗅到麻烦。' },
+    { key: 'ratio_inflection', c: '--warn',   en: 'risk-ratios turning',      zh: '风险比率反转',
+      den: 'The leadership ratios that define this regime (cyclicals vs defensives, high-beta vs low-vol) are starting to roll over against the regime’s bias.',
+      dzh: '定义此周期的领先比率（周期股对防御股、高贝塔对低波动）开始逆周期偏好反转。' },
+    { key: 'inflation_basket', c: '--orange', en: 'inflation trades turning', zh: '通胀交易反转',
+      den: 'Inflation-sensitive trades (energy, metals, breakevens) are moving against what this regime assumes — the inflation story may be shifting.',
+      dzh: '通胀敏感交易（能源、金属、盈亏平衡通胀）正逆此周期的假设而动 — 通胀剧本可能正在改变。' },
+    { key: 'confidence_decay', c: '--warn',   en: 'signal disagreement',      zh: '信号分歧',
+      den: 'The underlying indicators agree with each other LESS than before — the regime’s evidence base is weakening even if the label hasn’t flipped yet.',
+      dzh: '底层指标之间的一致性正在下降 — 即使标签尚未翻转，此周期的证据基础正在减弱。' },
+    { key: 'gex',              c: '--down',   en: 'fragile options',          zh: '期权脆弱',
+      den: 'Dealer options positioning (gamma) has turned fragile — hedging flows now AMPLIFY moves instead of dampening them, so shocks travel further.',
+      dzh: '做市商期权仓位（gamma）转为脆弱 — 对冲流现在会放大而非抑制波动，冲击传导更远。' }
   ];
   var UI = {
     today:   { en: 'live · today',     zh: '实时 · 今日' },
@@ -59,6 +71,14 @@
   function L(o) { return o ? (o[lang()] || o.en) : ''; }
   function cssVar(n) { return getComputedStyle(docEl).getPropertyValue(n).trim(); }
   function quadColor(q) { return cssVar('--' + (q || '').toLowerCase()) || '#888'; }
+  // a warning chip with a hover definition (custom .tm-tip popover + native
+  // title= as a universal fallback). def is plain text; escape for both sinks.
+  function flagChip(cvar, label, def) {
+    var esc = String(def || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    var attr = esc.replace(/"/g, '&quot;');
+    return '<span class="tm-flag" tabindex="0" style="--c:var(' + cvar + ')" title="' + attr +
+      '">' + label + '<span class="tm-tip">' + esc + '</span></span>';
+  }
 
   // ---- DOM refs --------------------------------------------------------------
   var canvas = document.getElementById('tm-canvas');
@@ -177,17 +197,21 @@
     elIi.style.left = clampPct(inf) + '%';
     elIv.textContent = (inf >= 0 ? '+' : '') + (inf == null ? '—' : inf.toFixed(2)) + ' ' + L(UI.of1);
 
-    // warning flags firing on this day (decode the bitmask)
+    // warning flags firing on this day (decode the bitmask). Each chip carries a
+    // hover definition so the labels explain themselves (custom tip + title fallback).
     var mask = D.flags[idx] || 0, chips = '';
     for (var b = 0; b < FLAGS.length; b++) {
       if (mask & (1 << b)) {
-        chips += '<span class="tm-flag" style="--c:var(' + FLAGS[b].c + ')">' + L(FLAGS[b]) + '</span>';
+        chips += flagChip(FLAGS[b].c, L(FLAGS[b]),
+          (lang() === 'zh' ? FLAGS[b].dzh : FLAGS[b].den));
       }
     }
-    if (D.rec[idx]) chips = '<span class="tm-flag" style="--c:var(--down)">' +
-      (lang() === 'zh' ? '衰退确认' : 'recession') + '</span>' + chips;
-    if (D.shock[idx]) chips = '<span class="tm-flag" style="--c:var(--orange)">' +
-      (lang() === 'zh' ? '通胀冲击' : 'inflation shock') + '</span>' + chips;
+    if (D.rec[idx]) chips = flagChip('--down', lang() === 'zh' ? '衰退确认' : 'recession',
+      lang() === 'zh' ? '该日已正式确认处于美国经济衰退（NBER）。'
+        : 'This day was inside an officially-dated US recession (NBER).') + chips;
+    if (D.shock[idx]) chips = flagChip('--orange', lang() === 'zh' ? '通胀冲击' : 'inflation shock',
+      lang() === 'zh' ? '通胀数据出现极端单日意外，足以单独推动周期标签。'
+        : 'An extreme one-day inflation surprise — large enough to move the regime label on its own.') + chips;
     elFlags.innerHTML = chips || '<span class="tm-nowarn">⚪ ' + L(UI.nowarn) + '</span>';
   }
 
