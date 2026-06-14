@@ -504,6 +504,27 @@ def entry_timing(state: str, cyc: dict, mtf: dict) -> dict:
                 "text_zh": "周期低点已确认——入场窗口现已开启，"
                            f"若收盘重新跌破 {cyc.get('cand_price') or cyc.get('dcl_price')} 则明确离场。"}
     if state == "TURN SIGNALED":
+        # TURN SIGNALED is reached two ways. (b) Price has ALREADY reclaimed the
+        # 10-day average (the daily turn is in) but the weekly hasn't confirmed →
+        # a partial-conviction entry available now, NOT a pending trigger. The old
+        # "buy soon once it closes back above the average" copy contradicts itself
+        # here (it's already above), which is the lag the SNDK case exposed.
+        # (a) Swing low printed but not yet reclaimed → the genuine "buy on the
+        # reclaim" case, where that copy is correct.
+        if cyc.get("above_ma10"):
+            cl = cyc.get("cand_price") or cyc.get("dcl_price")
+            age = cyc.get("cand_age")
+            ago = f" ~{age} day(s) ago" if age else ""
+            ago_zh = f"约 {age} 天前" if age else "近期"
+            ref = f" @ {cl}" if cl else ""
+            return {"tag": "HALF SIZE", "tag_zh": "半仓", "urgency": "now",
+                    "text": (f"The daily turn is already in — a low formed{ago}{ref} and price is "
+                             "back above the 10-day average. What's missing is the weekly timeframe "
+                             "confirming, so this is a partial-conviction entry available now, not a "
+                             "pending trigger: take a half position here, or wait for the weekly to turn."),
+                    "text_zh": (f"日线转向已经完成——低点于{ago_zh}形成{ref}，且价格已重新站上 10 日均线。"
+                                "尚缺的是周线周期的确认，因此这是当下可用的部分信心入场，而非待触发信号："
+                                "可在此建半仓，或等待周线转向。")}
         lo, hi = (1, max(2, round(btc))) if btc else (1, 3)
         return {"tag": "BUY SOON", "tag_zh": "即将买入", "urgency": "imminent", "days_lo": lo, "days_hi": hi,
                 "text": f"Setup almost complete — likely buy trigger in ~{lo}–{hi} trading days "
@@ -815,6 +836,50 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
                   f"{inval} 下方。并非投资性买入；在采信之前，请等待周线周期真正"
                   "转向上行（或出现新的投资者周期低点予以确认）。")
 
+    # ── Extension / late-cross gate ──────────────────────────────────────────
+    # A daily buy setup is only a BOTTOMING entry while price is still near the
+    # low. A MACD signal-line cross is a LAGGING confirmation: after a vertical
+    # run it only fires once price is already extended and overbought, so the
+    # "fresh buy" is really a chase — the actual low was days ago. This mirrors
+    # the RALLY ON→TOP WATCH RSI>70 gate below; the buy branches sit ABOVE it in
+    # the elif chain and so skip it, which let an overbought name that prints a
+    # swing low + momentum cross be mislabeled BUY instead of "don't chase, wait
+    # for the pullback" (the SNDK case: day-68 stretched, +48% off the low, daily
+    # RSI 71 / 3-day 82 / weekly 81, yet read TURN SIGNALED on the lagging cross).
+    # Routes to the already-calibrated TOP WATCH, not a new state.
+    extended_gate = False
+    t3 = mtf.get("3D", {})
+    rsi_d = d.get("rsi14") or 50
+    rsi_3 = t3.get("rsi14") or 50
+    rsi_w = w.get("rsi14") or 50
+    if state in ("FRESH BUY", "TURN SIGNALED") and cyc.get("above_ma10") \
+            and (rsi_d > 70 or (rsi_3 > 70 and rsi_w > 70)):
+        extended_gate = True
+        state = "TOP WATCH"
+        cl = cyc.get("cand_price") or cyc.get("dcl_price")
+        age = cyc.get("cand_age")
+        ago = f" ~{age} day(s) ago" if age else ""
+        ago_zh = f"约 {age} 天前" if age else "近期"
+        ref = f" @ {cl}" if cl else ""
+        hot = f"daily RSI {rsi_d:.0f}"
+        hot_zh = f"日线 RSI {rsi_d:.0f}"
+        if rsi_3 > 70 and rsi_w > 70:
+            hot += f", 3-day {rsi_3:.0f} & weekly {rsi_w:.0f}"
+            hot_zh += f"、3 日 {rsi_3:.0f} 与周线 {rsi_w:.0f}"
+        why = (f"A daily bottoming setup did fire (swing low in, momentum turned up), but it's "
+               f"LATE — price is already extended above the cycle low (formed{ago}{ref}) and "
+               f"overbought ({hot}). A momentum cross is a LAGGING confirmation: after a vertical "
+               "run it only triggers once the move is mature, so the bottoming entry has already "
+               "passed. This is a chase, not a fresh buy.")
+        why_zh = (f"日线筑底形态确实已经触发（摆动低点出现、动量转向上行），但为时已晚——"
+                  f"价格已显著高于周期低点（{ago_zh}形成{ref}）且已超买（{hot_zh}）。"
+                  "动量交叉属于滞后确认：在垂直拉升之后，只有当走势已经成熟时才会触发，"
+                  "因此筑底入场早已错过。这是追高，而非新的买入。")
+        nxt = ("Don't initiate here. Wait for a pullback toward the 10-day average — or the next "
+               "daily-cycle low to set up — for a lower-risk entry; hold if you're already long.")
+        nxt_zh = ("此处不宜建仓。等待回调至 10 日均线附近——或下一个日线周期低点构筑成形——"
+                  "以获得风险更低的入场；若已持有则可继续持有。")
+
     score = LADDER_SCORE[state]
     if cyc.get("translation") == "left":
         score -= 10
@@ -916,6 +981,15 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
     disp = STATE_DISPLAY[state]
     plain = cycle_plain(cyc)
     entry = entry_timing(state, cyc, mtf)
+    if extended_gate:
+        # routed off a buy setup by the extension gate — the headline tag should
+        # read "don't chase", not the generic TOP WATCH "take profits"
+        entry = {"tag": "DON'T CHASE", "tag_zh": "勿追高", "urgency": "caution",
+                 "text": ("You missed the bottoming entry — the low already formed and price is now "
+                          f"extended and overbought ({hot}). Don't chase; wait for a pullback to the "
+                          "10-day average or the next cycle low. Hold if already long."),
+                 "text_zh": (f"已错过筑底入场——低点已经形成，目前价格已拉伸且超买（{hot_zh}）。"
+                             "不要追高；等待回调至 10 日均线或下一个周期低点。若已持有则继续持有。")}
 
     # ── Two-axis summary: TACTICAL (this daily state) vs REGIME (bigger picture),
     # plus how long the current move has been running ("ongoing" context).

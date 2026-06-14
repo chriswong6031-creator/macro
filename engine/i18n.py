@@ -103,6 +103,7 @@ LEX: dict[str, str] = {
     # entry-timing headlines
     "BUY NOW": "立即买入",
     "BUY SOON": "即将买入",
+    "HALF SIZE": "半仓",
     "WATCH": "观察",
     "WAIT": "等待",
     "SELL / REDUCE": "卖出／减仓",

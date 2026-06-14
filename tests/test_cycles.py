@@ -11,8 +11,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine.cycles import (  # noqa: E402
     _EQ_BEARISH, _EQ_BULLISH, _eq_grade, _eq_proximity, analyze, cycle_state,
-    early_signals, entry_quality, entry_quality_fields, find_troughs, ladder_state,
-    mtf_snapshot, signal_age, signal_age_fields, STATE_DISPLAY,
+    early_signals, entry_quality, entry_quality_fields, entry_timing, find_troughs,
+    ladder_state, mtf_snapshot, signal_age, signal_age_fields, STATE_DISPLAY,
 )
 
 IDX = pd.bdate_range("2020-01-01", periods=520)
@@ -190,6 +190,85 @@ def test_eq_fields_and_analyze() -> None:
     assert "eq_score" in res["ladder"] and -100 <= res["ladder"]["eq_score"] <= 100
 
 
+# ----------------------------------------------------- extension / late-cross ----
+
+def _extended_snapshot(rsi_d: float, rsi_3: float, rsi_w: float,
+                       above_ma10: bool = True, weekly_cross: bool = False) -> tuple[dict, dict]:
+    """SNDK-shaped cycle+mtf snapshot: a late, stretched daily cycle that printed
+    a swing low and reclaimed the 10-day average with the daily MACD just crossed
+    up — i.e. the cand-confirmed buy path. The RSI levels are the knob under test."""
+    cyc = {
+        "dc_day": 68, "dc_band": (36, 42), "dc_early": 12, "dc_phase": "stretched",
+        "last_dcl": "2026-03-01", "dcl_price": 527.33,
+        "cand_dcl": "2026-05-18", "cand_price": 1333.01, "cand_swing": True, "cand_age": 18,
+        "translation": "right", "failed_cycle": False, "failed_age": None,
+        "swing_low": True, "above_ma10": above_ma10, "ma10_rising": True,
+        "ic_week": 45, "ic_band": (16, 26), "ic_phase": "overdue", "ic_failed": False,
+        "n_troughs": 5,
+    }
+
+    def tf(rsi: float, cross_up: bool = False) -> dict:
+        return {"rsi14": rsi, "rsi5": rsi, "stoch": 55.0, "macd_pos": True,
+                "macd_cross_up": cross_up, "macd_cross_dn": False,
+                "macd_approaching_up": False, "macd_approaching_dn": False,
+                "macd_curl_up": False, "macd_curl_dn": False, "macd_bars_to_cross": None,
+                "stoch_cross_up": False, "stoch_cross_dn": False}
+
+    mtf = {"D": tf(rsi_d, cross_up=True), "3D": tf(rsi_3), "W": tf(rsi_w, cross_up=weekly_cross)}
+    return cyc, mtf
+
+
+def test_extension_gate_routes_overbought_buy_to_top_watch() -> None:
+    """The SNDK case: a stretched, extended fresh-cross that's overbought across
+    all timeframes must NOT read as a buy — it routes to TOP WATCH ('don't chase')."""
+    cyc, mtf = _extended_snapshot(71, 82, 81)
+    lad = ladder_state(cyc, mtf)
+    assert lad["state"] == "TOP WATCH", lad["state"]
+    assert lad["score"] <= 0, lad["score"]
+    assert lad["entry"]["tag"] == "DON'T CHASE", lad["entry"]
+    assert "chase" in lad["why"].lower() and "lagging" in lad["why"].lower()
+    assert "missed" in lad["entry"]["text"].lower()
+
+
+def test_extension_gate_fires_on_higher_tf_only() -> None:
+    """Daily not yet >70 but BOTH 3-day and weekly overbought is still a late
+    entry into an exhausted bigger trend — the gate fires on the HTF clause."""
+    cyc, mtf = _extended_snapshot(64, 82, 81)
+    assert ladder_state(cyc, mtf)["state"] == "TOP WATCH"
+
+
+def test_extension_gate_also_catches_fresh_buy() -> None:
+    """With the weekly turned (bull regime) the same overbought setup would be a
+    full FRESH BUY ('BUY NOW') — the gate must catch that too, not only the
+    weekly-unconfirmed TURN SIGNALED."""
+    clean_cyc, clean_mtf = _extended_snapshot(52, 58, 55, weekly_cross=True)
+    assert ladder_state(clean_cyc, clean_mtf)["state"] == "FRESH BUY"  # sanity
+    cyc, mtf = _extended_snapshot(71, 82, 81, weekly_cross=True)
+    assert ladder_state(cyc, mtf)["state"] == "TOP WATCH"
+
+
+def test_extension_gate_spares_a_clean_buy() -> None:
+    """A fresh turn with room to run (RSI mid-range) is left as the buy setup."""
+    cyc, mtf = _extended_snapshot(54, 60, 57)
+    assert ladder_state(cyc, mtf)["state"] in ("TURN SIGNALED", "FRESH BUY")
+
+
+def test_turn_signaled_text_not_self_contradictory_above_ma() -> None:
+    """Fix A: when price has ALREADY reclaimed the 10-day average, the TURN
+    SIGNALED copy must not tell the user to wait for it to 'close back above' —
+    that contradiction was the lag the SNDK card exposed. The genuine pre-reclaim
+    case keeps the original 'buy on the reclaim' copy."""
+    cyc, mtf = _extended_snapshot(54, 60, 57, above_ma10=True)
+    above = entry_timing("TURN SIGNALED", cyc, mtf)
+    assert above["tag"] == "HALF SIZE", above
+    assert "closes back above" not in above["text"]
+    assert "already in" in above["text"]
+    cyc_below, _ = _extended_snapshot(40, 45, 48, above_ma10=False)
+    below = entry_timing("TURN SIGNALED", cyc_below, mtf)
+    assert below["tag"] == "BUY SOON"
+    assert "closes back above" in below["text"]
+
+
 if __name__ == "__main__":
     for fn in [test_trough_spacing, test_translation_right, test_translation_left,
                test_failed_cycle_flag, test_ladder_states_sane, test_decline_on_breakdown,
@@ -198,7 +277,12 @@ if __name__ == "__main__":
                test_analyze_attaches_age, test_eq_proximity_peaks_near_the_low,
                test_eq_grade_bands, test_eq_sign_anchored_to_state,
                test_eq_every_state_classified, test_eq_thin_history_bows_out,
-               test_eq_fields_and_analyze]:
+               test_eq_fields_and_analyze,
+               test_extension_gate_routes_overbought_buy_to_top_watch,
+               test_extension_gate_fires_on_higher_tf_only,
+               test_extension_gate_also_catches_fresh_buy,
+               test_extension_gate_spares_a_clean_buy,
+               test_turn_signaled_text_not_self_contradictory_above_ma]:
         fn()
         print(f"PASS {fn.__name__}")
     print("all cycle tests passed")
