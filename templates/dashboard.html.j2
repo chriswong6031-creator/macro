@@ -889,6 +889,36 @@
         {% else %}<div class="muted">—</div>{% endif %}
       </div>
 
+      <!-- Systemic stress (OFR FSI decomposition) -->
+      {% set SS = C.systemic_stress %}
+      {% if SS and SS.ofr_fsi is not none %}
+      <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
+        <div style="font-weight:700;margin-bottom:6px">{{ t('Systemic stress', '系统性压力') }} <span class="muted sm">OFR FSI</span>
+          {{ help("The OFR Financial Stress Index — a daily gauge built from 33 global market variables. 0 = average stress since 2000; NEGATIVE = calmer than normal, POSITIVE = stressed. Unlike NFCI it splits the reading into five CHANNELS (credit, equity valuation, safe assets, funding, volatility) and three regions (US, other-advanced, EM), so you can see WHERE stress is coming from — the funding leg captures offshore-dollar / cross-currency-basis strain. It is a COINCIDENT gauge: it confirms and explains stress, it does not forecast it. Free OFR data — see research/DATA_SIGNAL_EXPANSION_2026.md.", "OFR 金融压力指数 — 由 33 个全球市场变量构成的每日指标。0＝2000 年以来的平均压力；负＝比平常更平静，正＝有压力。与 NFCI 不同，它把读数拆为五个渠道（信用、股票估值、避险资产、融资、波动）与三个地区（美国、其他发达、新兴市场），可看出压力来自何处 — 融资项捕捉离岸美元/交叉货币基差紧张。这是同步指标：确认并解释压力，而非预测。免费 OFR 数据。") }}</div>
+        {% set scolor = 'var(--down)' if SS.state in ('elevated','acute') else ('var(--up)' if SS.state=='calm' else 'var(--muted)') %}
+        <div style="font-size:22px;font-weight:700;color:{{ scolor }}">{{ '%+.2f'|format(SS.ofr_fsi) }}
+          <span class="badge" style="font-size:11px;vertical-align:middle">{{ t(SS.state, {'calm':'平静','normal':'一般','elevated':'偏高','acute':'急性'}.get(SS.state, SS.state)) }}{% if SS.trend %} · {{ t(SS.trend, {'rising':'上升中','easing':'缓和中'}.get(SS.trend, SS.trend)) }}{% endif %}</span></div>
+        <div class="muted sm" style="margin-top:4px">{{ t('More stressed than', '压力高于') }} {{ (SS.ofr_fsi_pctile*100)|round|int if SS.ofr_fsi_pctile is not none else '—' }}% {{ t('of the past 5 years', '的近五年') }}{% if SS.leading_driver %} · {{ t('led by', '主导渠道') }} {{ SS.leading_driver }}{% endif %}</div>
+        {% if SS.functional %}
+        <details class="jarg"><summary>{{ t('stress by channel', '分渠道压力') }}</summary>
+          <div class="jbody">
+            {% set _fl = {'credit': ('Credit', '信用', 'Corporate / credit-market stress.', '企业／信用市场压力。'),
+                          'equity_valuation': ('Equity valuation', '股票估值', 'Equity drawdown & valuation stress.', '股票回撤与估值压力。'),
+                          'safe_assets': ('Safe assets', '避险资产', 'Flight-to-safety demand for Treasuries.', '对国债的避险需求。'),
+                          'funding': ('Funding', '融资', 'Money-market & offshore-dollar (x-ccy basis) funding stress.', '货币市场与离岸美元（交叉货币基差）融资压力。'),
+                          'volatility': ('Volatility', '波动', 'Cross-asset implied / realized volatility.', '跨资产隐含／已实现波动。')} %}
+            {% for k,v in SS.functional.items() %}{% set m = _fl.get(k) %}{% if m %}
+            <div class="jrow"><span class="jk">{{ t(m[0], m[1]) }}</span><span class="jv">{{ t(m[2], m[3]) }}</span><span class="jn" style="color:{{ 'var(--down)' if v>0.05 else ('var(--up)' if v<-0.05 else 'var(--muted)') }}">{{ '%+.2f'|format(v) }}</span></div>
+            {% endif %}{% endfor %}
+            {% if SS.regional %}<div class="muted" style="font-size:10px;margin-top:5px">{{ t('By region', '分地区') }}: {% for k,v in SS.regional.items() %}{{ {'united_states':'US','other_advanced':t('Adv','发达'),'emerging_markets':'EM'}.get(k,k) }} {{ '%+.2f'|format(v) }}{% if not loop.last %} · {% endif %}{% endfor %}</div>{% endif %}
+            {% if SS.a2p2_spread_bps is not none or SS.cp_bill_spread_bps is not none %}
+            <div class="jrow" style="margin-top:5px"><span class="jk">{{ t('CP spreads', '商票利差') }}</span><span class="jv">{{ t('Commercial-paper credit-quality (A2/P2−AA) & funding (CP−bill) stress.', '商业票据信用质量（A2/P2−AA）与融资（票据−国库券）压力。') }}</span><span class="jn">{% if SS.a2p2_spread_bps is not none %}A2/P2 {{ SS.a2p2_spread_bps|round|int }}bp{% endif %}{% if SS.cp_bill_spread_bps is not none %} · {{ t('CP-bill', '票据') }} {{ SS.cp_bill_spread_bps|round|int }}bp{% endif %}</span></div>{% endif %}
+            <div class="muted" style="font-size:10px;margin-top:5px">{{ t('+ = stress contribution · − = calm. A coincident gauge that names the channel — not a timing trigger.', '正＝压力贡献 · 负＝平静。同步指标，用于指明渠道 — 非择时触发器。') }}</div>
+          </div>
+        </details>{% endif %}
+      </div>
+      {% endif %}
+
       <!-- Recession risk -->
       <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
         <div style="font-weight:700;margin-bottom:6px">{{ t('Recession risk', '衰退风险') }}
