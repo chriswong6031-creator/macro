@@ -107,6 +107,14 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("cross-asset layer failed: %s", e)
         latest["cross_asset"] = None
+    # Cross-asset risk budgeting (ERC/inverse-vol) + crisis stress-replay — the
+    # additive "size as uncorrelated bets / cap risk" view (engine/portfolio.py).
+    try:
+        from engine.portfolio import snapshot as portfolio_snapshot
+        latest["portfolio"] = portfolio_snapshot()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("portfolio layer failed: %s", e)
+        latest["portfolio"] = None
     try:
         latest["playbook"] = build_playbook(f, regime, yahoo_closes(), latest)
     except Exception as e:  # noqa: BLE001 — conclusions are additive, never fatal
