@@ -493,9 +493,10 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
         {% set dc = {'tailwind':'var(--green)','headwind':'var(--red)','neutral':'var(--muted)'} %}
         <div class="sigline"><span class="l">{{ t('Backdrop','背景') }}</span><span class="r"><b style="color:{{ dc.get(a.driver_state,'var(--muted)') }}">{{ td(a.driver_state) }}</b> ({{ a.driver_score }})</span></div>
         {% if a.carry %}
-        <div class="sigline"><span class="l">{{ t('Term structure (carry)','期限结构（展期收益）') }}</span><span class="r"><b style="color:{{ 'var(--green)' if a.carry.state=='backwardation' else 'var(--red)' }}">{{ t('backwardation','现货升水') if a.carry.state=='backwardation' else t('contango','期货升水') }}</b> ({{ '%+.1f'|format(a.carry.roll_ann) }}%/yr)</span></div>
+        <div class="sigline"><span class="l">{{ t('Term structure (carry)','期限结构（展期收益）') }}</span><span class="r"><b style="color:var(--muted)">{{ t('backwardation','现货升水') if a.carry.state=='backwardation' else t('contango','期货升水') }}</b> ({{ '%+.1f'|format(a.carry.roll_ann) }}%/yr{% if a.carry.deep %} · {{ a.carry.deep.deep_pctile }} {{ t('%ile of','百分位/') }} {{ a.carry.deep.deep_years }}y{% endif %})</span></div>
         {% endif %}
         <div class="sub" style="margin-top:8px">{{ t(a.driver_interp[0], a.driver_interp[1]) }}{% if a.carry %} {{ t('Roll yield = front (' ~ a.carry.front ~ ') vs second (' ~ a.carry.second ~ ') contract: positive (backwardation) earns carry for longs; negative (contango) bleeds.', '展期收益 = 近月（' ~ a.carry.front ~ '）对次月（' ~ a.carry.second ~ '）合约：正值（现货升水）对多头有利；负值（期货升水）则损耗。') }}{% endif %}</div>
+        {% if a.carry and a.carry.caveat_en %}<div class="sub" style="margin-top:6px;opacity:.85"><b>{{ t('Validated','已验证') }}:</b> {{ t(a.carry.caveat_en, a.carry.caveat_zh) }}</div>{% endif %}
       </div>
     </div>
     <div class="grid cols-3" style="margin-top:18px">
