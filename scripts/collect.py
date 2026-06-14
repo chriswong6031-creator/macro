@@ -130,6 +130,15 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("FRED vintages step failed: %s", e)
 
+    # Point-in-time index-membership ledger (go-forward survivorship fix): record
+    # who is in the S&P 1500 each run so the universe history compounds. Cheap,
+    # additive, never fatal. See engine/universe_history.py.
+    try:
+        from engine.universe_history import update_membership
+        update_membership(datetime.now(timezone.utc))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("universe membership step failed: %s", e)
+
     status = store.read_status()
     status["last_run"] = datetime.now(timezone.utc).isoformat()
     # merge: a partial --only run must not wipe the health of sources it skipped
