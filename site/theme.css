@@ -219,29 +219,6 @@ html body .prob .pc { font-size: 18px; font-weight: 700; }
   white-space: nowrap; }
 .nav-sugg .empty { padding: 11px 13px; color: var(--muted); font-size: 12.5px; }
 
-/* live filter box injected by tablesort.js on long sortable tables (sector
-   rotation, history, …). Mirrors the nav search — magnifier + rounded pill +
-   focus ring — and is fully theme-var driven so it adapts to dark / light. */
-.tbl-filter { position: relative; display: inline-flex; align-items: center; gap: 10px;
-  margin: 2px 0 11px; }
-.tbl-filter::before { content: "🔎"; position: absolute; left: 10px; top: 50%;
-  transform: translateY(-50%); font-size: 11px; opacity: .5; line-height: 1; pointer-events: none; }
-.tbl-filter input { font: inherit; font-size: 12.5px; color: var(--text);
-  background: var(--panel2); border: 1px solid var(--line); border-radius: 9px;
-  padding: 6px 12px 6px 31px; width: 230px; max-width: 100%;
-  -webkit-appearance: none; appearance: none;
-  transition: border-color .18s, box-shadow .18s, background .18s; }
-.tbl-filter input::placeholder { color: var(--muted); }
-.tbl-filter input:focus { outline: none; border-color: var(--link); background: var(--panel);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--link) 16%, transparent); }
-.tbl-filter input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none;
-  height: 13px; width: 13px; cursor: pointer; opacity: .45; background: var(--muted);
-  -webkit-mask: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M4 4 12 12 M12 4 4 12' stroke='black' stroke-width='2' stroke-linecap='round' fill='none'/></svg>") center / contain no-repeat;
-          mask: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M4 4 12 12 M12 4 4 12' stroke='black' stroke-width='2' stroke-linecap='round' fill='none'/></svg>") center / contain no-repeat; }
-.tbl-filter input::-webkit-search-cancel-button:hover { opacity: .8; }
-.tbl-filter .cnt { color: var(--muted); font-size: 11.5px; white-space: nowrap;
-  font-variant-numeric: tabular-nums; }
-
 .site-nav .nav-ctrls { grid-column: 2; grid-row: 1; justify-self: end; align-self: start;
   margin-top: 2px; display: flex; align-items: center; gap: 10px; }
 

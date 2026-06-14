@@ -246,7 +246,7 @@
     var eb = document.getElementById('r_entry');
     eb.style.display = 'flex';
     eb.className = 'entrybar urg-' + (e.urgency || 'hold');
-    document.getElementById('r_tag').textContent = e.tag || '';
+    document.getElementById('r_tag').textContent = lz(e.tag, e.tag_zh);
     document.getElementById('r_entrytext').textContent = lz(e.text, e.text_zh);
 
     var ageEl = document.getElementById('r_age');
@@ -280,8 +280,8 @@
     cyc += '<div><b>📅 ' + lz(cp.daily_line, cp.daily_line_zh) + '</b> — ' + lz(cp.daily_phase, cp.daily_phase_zh) + '</div>';
     if (cp.weekly_line) cyc += '<div><b>🗓 ' + lz(cp.weekly_line, cp.weekly_line_zh) + '</b> — ' + lz(cp.weekly_phase, cp.weekly_phase_zh) + '</div>';
     if (cp.translation) cyc += '<div class="muted">' + lz(cp.translation, cp.translation_zh) + '</div>';
-    if (d.season_this) cyc += '<div class="muted">' + L('season') + ' — ' + d.season_this +
-      (d.season_next ? '; ' + d.season_next : '') + '.</div>';
+    if (d.season_this) cyc += '<div class="muted">' + L('season') + ' — ' + lz(d.season_this, d.season_this_zh) +
+      (d.season_next ? '; ' + lz(d.season_next, d.season_next_zh) : '') + '.</div>';
     document.getElementById('r_cyclebox').innerHTML = cyc;
 
     var early = document.getElementById('r_early');
@@ -333,7 +333,7 @@
 </script>
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
-<p class="muted" style="font-size:12px">Generated 2026-06-14 07:10 UTC · charts by TradingView ·
+<p class="muted" style="font-size:12px">Generated 2026-06-14 09:05 UTC · charts by TradingView ·
 methodology &amp; caveats: see any sector page footer.</p>
 <footer class="site-footer">
   <span class="made">Made with ❤️ in Canada</span>
