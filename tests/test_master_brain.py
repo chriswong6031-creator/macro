@@ -98,8 +98,13 @@ def test_synthesize_unparseable():
 
 
 def test_run_disabled_returns_none():
-    assert mb.enabled() is False                # config ships default-off
-    assert mb.run(persist=False) is None        # gated unless force=True
+    orig = mb._cfg
+    mb._cfg = lambda: {"enabled": False}        # force disabled, independent of operational config
+    try:
+        assert mb.enabled() is False
+        assert mb.run(persist=False) is None    # gated unless force=True
+    finally:
+        mb._cfg = orig
 
 
 def test_render_markdown():

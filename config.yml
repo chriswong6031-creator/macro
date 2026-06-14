@@ -949,12 +949,12 @@ commodity_news:
 # Promotion of a field to a deterministic feature happens downstream, separately gated.
 # =============================================================================
 catalyst_tone:
-  enabled: false                  # MASTER SWITCH — nothing calls the model unless true
+  enabled: true                   # MASTER SWITCH — nothing calls the model unless true
   api_key_env: DEEPSEEK_API_KEY   # credential read from env / .env (gitignored)
   llm_base_url: https://api.deepseek.com/anthropic   # DeepSeek Anthropic-compat endpoint
   llm_model: deepseek-v4-flash    # cheap digest model ($0.14/$0.28 per 1M tok)
   llm_min_confidence: high        # code-side floor: below this every field -> "unknown"
-  max_tokens: 700                 # OUTPUT cap (the JSON record is tiny); input can be a full doc
+  max_tokens: 1500                 # OUTPUT cap (the JSON record is tiny); input can be a full doc
   max_doc_chars: 20000            # input doc is trimmed to the statement body + capped
   max_age_days: 120               # ignore FOMC statements older than this (stale context)
   cache_dir: data/catalyst/digest_cache   # one digest cached per meeting (never re-called)
@@ -973,7 +973,7 @@ catalyst_tone:
 # Run on-demand: `python -m engine.master_brain --force` (pipeline step is gated by enabled).
 # =============================================================================
 master_brain:
-  enabled: false                  # MASTER SWITCH — pipeline runs it only when true
+  enabled: true                   # MASTER SWITCH — pipeline runs it only when true
   api_key_env: DEEPSEEK_API_KEY
   llm_base_url: https://api.deepseek.com/anthropic
   llm_model: deepseek-v4-pro      # reasoning tier ($0.435/$0.87 per 1M tok)

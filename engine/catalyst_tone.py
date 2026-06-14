@@ -333,7 +333,11 @@ _FOMC_URL = "https://www.federalreserve.gov/newsevents/pressreleases/monetary{ym
 
 
 def _as_date(x: date | str | None) -> date | None:
-    if x is None or isinstance(x, date):
+    if x is None:
+        return None
+    if isinstance(x, datetime):          # datetime / pd.Timestamp -> pure date
+        return x.date()                  # (Timestamp subclasses date, so this MUST precede the date check)
+    if isinstance(x, date):
         return x
     try:
         return date.fromisoformat(str(x)[:10])

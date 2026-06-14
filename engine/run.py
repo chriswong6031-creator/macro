@@ -107,6 +107,17 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("catalyst tone layer failed: %s", e)
         latest["catalyst_tone"] = None
+    # Dislocation Gate-1: the Fed-put master switch that CONDITIONS the capitulation
+    # gauge (buyable washout vs falling-knife). Additive risk filter; reads the
+    # catalyst shock-reversibility leg when present (computed above). See
+    # engine/dislocation.py + research/DISLOCATION_VALIDATION.md.
+    try:
+        from engine.dislocation import snapshot as dislocation_snapshot
+        latest["dislocation"] = dislocation_snapshot(
+            f, latest.get("conditions"), latest.get("catalyst_tone"))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("dislocation layer failed: %s", e)
+        latest["dislocation"] = None
     # Cross-asset concentration: are the six markets secretly one liquidity/risk bet?
     # Additive leaf (engine/cross_asset.py) — reads the per-market price stores and
     # degrades to verdict="unknown" if too few are present.

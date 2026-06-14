@@ -100,8 +100,13 @@ def test_confidence_floor_passes_when_met():
 
 
 def test_digest_disabled_returns_none():
-    assert ct.enabled() is False             # config ships default-off
-    assert ct.digest_document(DOC, kind="fomc") is None
+    orig = ct._cfg
+    ct._cfg = lambda: {"enabled": False}     # force disabled, independent of operational config
+    try:
+        assert ct.enabled() is False
+        assert ct.digest_document(DOC, kind="fomc") is None
+    finally:
+        ct._cfg = orig
 
 
 def test_digest_degrades_without_key():
@@ -174,7 +179,12 @@ def test_html_to_statement_trims_body():
 
 
 def test_daily_snapshot_disabled():
-    assert ct.daily_snapshot("2026-06-18") is None   # config ships default-off
+    orig = ct._cfg
+    ct._cfg = lambda: {"enabled": False}
+    try:
+        assert ct.daily_snapshot("2026-06-18") is None
+    finally:
+        ct._cfg = orig
 
 
 def test_daily_snapshot_nothing_recent():
@@ -244,7 +254,12 @@ def test_dislocation_narrative_none_cases():
 # Stage 3b — dislocation-day event trigger (GDELT digest)
 # --------------------------------------------------------------------------- #
 def test_event_snapshot_disabled():
-    assert ct.event_snapshot("2026-06-14") is None              # config ships default-off
+    orig = ct._cfg
+    ct._cfg = lambda: {"enabled": False, "event_enabled": False}
+    try:
+        assert ct.event_snapshot("2026-06-14") is None
+    finally:
+        ct._cfg = orig
 
 
 def test_event_snapshot_no_headlines():
