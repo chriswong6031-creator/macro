@@ -206,6 +206,39 @@ def test_daily_snapshot_stubbed_compacts():
         ct._cfg, ct._recent_fomc, ct._cached_or_digest_fomc = orig_cfg, orig_recent, orig_dig
 
 
+# --------------------------------------------------------------------------- #
+# Stage 2 — dislocation narrative cross-check (additive; never changes verdict)
+# --------------------------------------------------------------------------- #
+def test_dislocation_narrative_corroborates():
+    from engine import dislocation as dz
+    n = dz._catalyst_narrative("buyable_washout",
+                               {"shock_reversible": "reversible", "confidence": "high",
+                                "doc_id": "fomc_x", "evidence": []})
+    assert n["agreement"] == "corroborates" and n["is_context_only"] is True
+    n2 = dz._catalyst_narrative("stand_aside",
+                                {"shock_reversible": "persistent", "confidence": "high"})
+    assert n2["agreement"] == "corroborates"
+
+
+def test_dislocation_narrative_diverges():
+    from engine import dislocation as dz
+    n = dz._catalyst_narrative("buyable_washout",
+                               {"shock_reversible": "persistent", "confidence": "high"})
+    assert n["agreement"] == "diverges" and "caution" in n["note"].lower()
+    n2 = dz._catalyst_narrative("stand_aside",
+                                {"shock_reversible": "reversible", "confidence": "medium"})
+    assert n2["agreement"] == "diverges"
+
+
+def test_dislocation_narrative_none_cases():
+    from engine import dislocation as dz
+    assert dz._catalyst_narrative("buyable_washout", None) is None          # no catalyst
+    assert dz._catalyst_narrative("buyable_washout",
+                                  {"shock_reversible": "unknown"}) is None   # gated/unknown
+    assert dz._catalyst_narrative("calm",
+                                  {"shock_reversible": "reversible"}) is None  # no live dislocation
+
+
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     failed = 0
