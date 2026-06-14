@@ -1,0 +1,233 @@
+{
+  "oil": {
+    "ic": {
+      "label": "WTI basis_1m (EIA deep)",
+      "n_obs": 9584,
+      "horizons": {
+        "21": {
+          "ic_overlap": -0.0831,
+          "t_hac": -3.749,
+          "p_hac": 0.0002,
+          "ic_indep": -0.0895,
+          "n_indep": 456,
+          "ic_first_half": -0.0622,
+          "ic_second_half": -0.1223,
+          "sign_consistent": true
+        },
+        "63": {
+          "ic_overlap": -0.1599,
+          "t_hac": -4.585,
+          "p_hac": 0.0,
+          "ic_indep": -0.2035,
+          "n_indep": 152,
+          "ic_first_half": -0.1064,
+          "ic_second_half": -0.2363,
+          "sign_consistent": true
+        },
+        "126": {
+          "ic_overlap": -0.214,
+          "t_hac": -4.486,
+          "p_hac": 0.0,
+          "ic_indep": -0.2725,
+          "n_indep": 76,
+          "ic_first_half": -0.1441,
+          "ic_second_half": -0.3144,
+          "sign_consistent": true
+        }
+      }
+    },
+    "timing_backtest": {
+      "years": 38.3,
+      "n": 9584,
+      "sharpe_net": -0.21,
+      "sharpe_buyhold": 0.296,
+      "cagr_net": -16.84,
+      "cagr_buyhold": 3.29,
+      "maxdd_net": -99.9,
+      "maxdd_buyhold": -93.9,
+      "long_frac": 0.402,
+      "dsr": {
+        "dsr": 0.0015,
+        "sr_daily": -0.013235,
+        "sr_annual": -0.21,
+        "sr0_daily": 0.016907,
+        "sr0_annual": 0.27,
+        "n_trials": 12,
+        "T": 9584,
+        "skew": -1.054,
+        "kurt": 52.436
+      },
+      "bootstrap": {
+        "sharpe_ci": [
+          -0.57,
+          -0.25,
+          0.08
+        ],
+        "maxdd_ci_pct": [
+          -100.0,
+          -100.0,
+          -96.9
+        ],
+        "sharpe_gt0_prob": 0.06,
+        "block": 63,
+        "B": 3000,
+        "n": 9584
+      },
+      "perm_null": {
+        "real_sharpe": -0.21,
+        "null_sharpe_p95": 0.156,
+        "skill_p": 0.768,
+        "B": 2000
+      }
+    },
+    "roll_carry_context": {
+      "mean_basis_1m": -0.00028,
+      "pct_backwardated": 0.443,
+      "fwd21_spot_when_backwardated_pct": 0.379,
+      "fwd21_spot_when_contango_pct": 1.322,
+      "n_bw": 4223,
+      "n_co": 5261
+    },
+    "incremental": {
+      "horizon": 63,
+      "n": 9458,
+      "ic_basis": -0.1563,
+      "ic_momentum": -0.059,
+      "corr_basis_momentum": 0.2508,
+      "partial_basis_given_mom": -0.1465,
+      "partial_mom_given_basis": -0.0207,
+      "ic_total_return_incl_carry": 0.1536
+    }
+  },
+  "metals_shallow": {
+    "gold": {
+      "asset": "gold",
+      "n": 351,
+      "span": "2025-02-07..2026-06-12",
+      "ic": {
+        "label": "gold (Yahoo carry, shallow)",
+        "n_obs": 351,
+        "horizons": {
+          "21": {
+            "ic_overlap": 0.2364,
+            "t_hac": 2.475,
+            "p_hac": 0.0133,
+            "ic_indep": 0.2676,
+            "n_indep": 16,
+            "ic_first_half": 0.248,
+            "ic_second_half": 0.4172,
+            "sign_consistent": true
+          },
+          "63": {
+            "ic_overlap": 0.0423,
+            "t_hac": 0.265,
+            "p_hac": 0.791,
+            "ic_indep": NaN,
+            "n_indep": 5,
+            "ic_first_half": -0.2203,
+            "ic_second_half": 0.4831,
+            "sign_consistent": false
+          },
+          "126": {
+            "ic_overlap": -0.437,
+            "t_hac": -3.025,
+            "p_hac": 0.0025,
+            "ic_indep": NaN,
+            "n_indep": 2,
+            "ic_first_half": -0.2958,
+            "ic_second_half": NaN,
+            "sign_consistent": false
+          }
+        }
+      }
+    },
+    "silver": {
+      "asset": "silver",
+      "n": 351,
+      "span": "2025-02-07..2026-06-12",
+      "ic": {
+        "label": "silver (Yahoo carry, shallow)",
+        "n_obs": 351,
+        "horizons": {
+          "21": {
+            "ic_overlap": -0.1911,
+            "t_hac": -1.732,
+            "p_hac": 0.0833,
+            "ic_indep": -0.3324,
+            "n_indep": 16,
+            "ic_first_half": -0.5277,
+            "ic_second_half": 0.1068,
+            "sign_consistent": false
+          },
+          "63": {
+            "ic_overlap": -0.3611,
+            "t_hac": -2.631,
+            "p_hac": 0.0085,
+            "ic_indep": NaN,
+            "n_indep": 5,
+            "ic_first_half": -0.7268,
+            "ic_second_half": 0.0157,
+            "sign_consistent": false
+          },
+          "126": {
+            "ic_overlap": -0.6675,
+            "t_hac": -2.62,
+            "p_hac": 0.0088,
+            "ic_indep": NaN,
+            "n_indep": 2,
+            "ic_first_half": -0.7835,
+            "ic_second_half": NaN,
+            "sign_consistent": false
+          }
+        }
+      }
+    },
+    "copper": {
+      "asset": "copper",
+      "n": 400,
+      "span": "2024-12-02..2026-06-12",
+      "ic": {
+        "label": "copper (Yahoo carry, shallow)",
+        "n_obs": 400,
+        "horizons": {
+          "21": {
+            "ic_overlap": 0.0043,
+            "t_hac": 0.045,
+            "p_hac": 0.9637,
+            "ic_indep": -0.0684,
+            "n_indep": 19,
+            "ic_first_half": 0.1764,
+            "ic_second_half": 0.0322,
+            "sign_consistent": true
+          },
+          "63": {
+            "ic_overlap": -0.111,
+            "t_hac": -0.737,
+            "p_hac": 0.4611,
+            "ic_indep": NaN,
+            "n_indep": 6,
+            "ic_first_half": 0.3865,
+            "ic_second_half": -0.3635,
+            "sign_consistent": false
+          },
+          "126": {
+            "ic_overlap": -0.2981,
+            "t_hac": -1.474,
+            "p_hac": 0.1406,
+            "ic_indep": NaN,
+            "n_indep": 3,
+            "ic_first_half": -0.1048,
+            "ic_second_half": 0.1718,
+            "sign_consistent": false
+          }
+        }
+      }
+    }
+  },
+  "verdict": "DISPLAY-ONLY (no robust edge)",
+  "verdict_notes": [
+    "63d IC overlap=-0.1599 (t_HAC=-4.585, p=0.0), halves -0.1064/-0.2363 sign-consistent=True",
+    "net Sharpe=-0.21 vs B&H 0.296; DSR=0.0015; perm-null skill p=0.768"
+  ],
+  "cost_bps": 8.0
+}
