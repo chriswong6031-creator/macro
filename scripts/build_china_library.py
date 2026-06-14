@@ -21,11 +21,15 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine.cycles import analyze  # noqa: E402
+from engine.residual_alpha import compute_residual_alpha  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("china_library")
+
+CSI300_ETF = "510300.SS"   # cap-weighted A-share market proxy for the residual-alpha leg
+JUNK_SECTOR = "A-share"    # yfinance fallback bucket → route to the engine's skip sentinel
 
 
 def tv_symbol(ticker: str) -> str:
@@ -82,6 +86,57 @@ def _add_cache(out: list[tuple], seen: set[str], closes_path, meta_path, label: 
     return added
 
 
+def compute_china_alpha() -> dict | None:
+    """Sector-neutral residual-momentum cross-section over the A-share top-800 panel.
+
+    Phase 0 (research/CHINA_HK_STOCK_SIGNALS.md) validated this as a GO ranking/context
+    leg: same engine as the US (engine/residual_alpha.py), pointed at
+    data/china_search/ with the CSI300 ETF as the market. Returns the JSON-able dict
+    (top / by_sector / per_ticker) with company names enriched, or None if data is
+    missing. Best-effort: every failure path degrades to None, never raises."""
+    dd = config.data_dir()
+    cp = dd / "china_search" / "closes.parquet"
+    mp = dd / "china_search" / "members.parquet"
+    if not (cp.exists() and mp.exists()):
+        log.warning("china alpha: search panel missing — skipped")
+        return None
+    try:
+        closes = pd.read_parquet(cp).sort_index()
+        closes = closes.loc[:, ~closes.columns.duplicated()]
+        members = pd.read_parquet(mp)
+    except Exception as e:  # noqa: BLE001 — corrupt committed parquet must not break the build
+        log.warning("china alpha: panel unreadable (%s) — skipped", e)
+        return None
+    # ticker→sector, routing the yfinance 'A-share' fallback bucket to the engine's
+    # skip sentinel '—' so those ~10 unclassified names don't pollute the cross-section
+    tkr_sector = {t: (s if s != JUNK_SECTOR else "—") for t, s in members["sector"].items()}
+    names = {t: str(n) for t, n in members["name"].items()}
+    mdf = store.read("china", CSI300_ETF)
+    if mdf is None or "close" not in mdf.columns:
+        log.warning("china alpha: no CSI300 (%s) market series — skipped", CSI300_ETF)
+        return None
+    market = mdf["close"].pct_change(fill_method=None)
+    try:
+        alpha = compute_residual_alpha(closes, market, tkr_sector)
+    except Exception as e:  # noqa: BLE001 — additive leg, never fatal
+        log.warning("china alpha engine failed (%s) — skipped", e)
+        return None
+    if not alpha:
+        return None
+    # the engine names default to the ticker when tkr_sector is injected — restore the
+    # real EN/中文 company names from members for the leaders/laggards display records
+    def _fix(recs):
+        for r in recs or []:
+            r["name"] = names.get(r.get("ticker"), r.get("name"))
+    _fix(alpha.get("top"))
+    for sec in (alpha.get("by_sector") or {}).values():
+        _fix(sec.get("leaders"))
+        _fix(sec.get("laggards"))
+    alpha["market"] = "CSI 300"
+    log.info("china alpha: %d names, %d sectors", alpha.get("n"), len(alpha.get("by_sector", {})))
+    return alpha
+
+
 def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
     """(ticker, close, high|None, name, sector) for everything analyzable."""
     out: list[tuple] = []
@@ -113,12 +168,60 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
     return out
 
 
-def main() -> int:
+def _setup_score(rec: dict) -> tuple[float, dict] | None:
+    """Confluence of the per-stock signals into one actionable 'setup' rank:
+    residual alpha (WHAT to own — the validated selection signal) refined by the
+    cycle entry (WHEN — timing) and the alpha reversal overlay. Alpha dominates the
+    score (~±3); cycle/overlay are small tilts (~±1). Honest: this RE-RANKS the alpha
+    leaders by timing, it is not a new statistical claim. None for names without alpha
+    (ETFs/indices/thin history)."""
+    a = rec.get("alpha") or {}
+    az = a.get("alpha")
+    if az is None:
+        return None
+    lad = rec.get("ladder") or {}
+    entry = lad.get("entry") or {}
+    urg, eqdir, ae = entry.get("urgency"), lad.get("eq_dir"), a.get("entry")
+    timing = 0.0
+    if urg in ("now", "imminent"):
+        timing += 0.8
+    elif urg == "soon":
+        timing += 0.4
+    elif urg in ("exit", "avoid"):
+        timing -= 0.8
+    if eqdir == "up":
+        timing += 0.3
+    elif eqdir == "down":
+        timing -= 0.3
+    if ae == "pullback":               # leader on a dip — constructive entry
+        timing += 0.4
+    elif ae == "extended":             # leader that just spiked — reversal risk
+        timing -= 0.4
+    row = {"ticker": rec["ticker"], "name": rec["name"], "sector": rec.get("sector"),
+           "alpha": az, "alpha_entry": ae, "state": lad.get("state"),
+           "label": lad.get("label"), "label_zh": lad.get("label_zh"),
+           "urgency": urg, "dir": lad.get("dir"), "eq_dir": eqdir,
+           "sector_rank": a.get("sector_rank"), "sector_n": a.get("sector_n"),
+           "setup": round(az + timing, 2)}
+    return az + timing, row
+
+
+def main(alpha: dict | None = None) -> dict | None:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     outdir = site / "chinastockdata"
     outdir.mkdir(parents=True, exist_ok=True)
 
-    index, built, failed = [], 0, 0
+    # sector-neutral residual-alpha leg — computed here if not passed in by build_china
+    if alpha is None:
+        alpha = compute_china_alpha()
+    alpha_pt = (alpha or {}).get("per_ticker", {})
+    if alpha:
+        fdir = site / "factordata"
+        fdir.mkdir(parents=True, exist_ok=True)
+        (fdir / "china_alpha.json").write_text(
+            json.dumps(alpha, separators=(",", ":"), default=str))
+
+    index, cand, built, failed = [], [], 0, 0
     for ticker, close, high, name, sector in universe():
         try:
             rec = _one(ticker, close, high, name, sector)
@@ -128,17 +231,39 @@ def main() -> int:
         if rec is None:
             failed += 1
             continue
+        if alpha_pt.get(ticker):            # additive: absent => no alpha panel for this name
+            rec["alpha"] = alpha_pt[ticker]
+            sc = _setup_score(rec)
+            if sc:
+                cand.append(sc)
         safe = ticker.replace("=", "_").replace("^", "_")
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
-        index.append({"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]})
+        idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
+        if rec.get("alpha", {}).get("alpha") is not None:
+            idx["a"] = rec["alpha"]["alpha"]          # alpha-z in the index for client ranking
+        index.append(idx)
         built += 1
     (outdir / "index.json").write_text(json.dumps(index))
     cal = config.data_dir() / "china_regime" / "ladder_calibration.json"
     if cal.exists():
         (outdir / "calibration.json").write_text(cal.read_text())
-    log.info("china library: %d analyzed, %d skipped (thin history)", built, failed)
-    return 0
+
+    # cross-sectional "Top setups" — selection (alpha) × timing (cycle), surfaced on
+    # china.html. Buys = strong alpha with constructive timing; laggards = weak alpha.
+    setups = None
+    if cand:
+        buys = [r for s, r in sorted(cand, key=lambda x: -x[0])
+                if r["alpha"] is not None and r["alpha"] >= 0.5][:12]
+        laggards = [r for s, r in sorted(cand, key=lambda x: x[0])
+                    if r["alpha"] is not None and r["alpha"] <= -0.3][:6]
+        setups = {"as_of": (alpha or {}).get("as_of"), "buy": buys, "laggards": laggards}
+        (site / "factordata" / "china_setups.json").write_text(
+            json.dumps(setups, separators=(",", ":"), default=str))
+    log.info("china library: %d analyzed, %d skipped (thin history), %d setups",
+             built, failed, len(cand))
+    return setups
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()
+    sys.exit(0)
