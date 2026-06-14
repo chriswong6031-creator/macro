@@ -1166,6 +1166,17 @@ vector:
     deep_value_nupl: 0.0        # ...or NUPL below this (corroborating, collinear)
     overvalued_mayer: 2.4       # Mayer above this = distribution CAP (<=0.5)
     overvalued_rr: 0.02         # Reserve Risk above this = distribution CAP (calibrated TOP)
+    # Point-4 — "size by conviction, cap risk" (was: conviction was a UI label only,
+    # a thin TOSS-UP and a strong EDGE both sized 1.0). The grid above sets DIRECTION;
+    # these scale SIZE. Code defaults match these values, so the keys are optional.
+    conviction_sizing: true      # scale the grid alloc by a continuous conviction multiplier
+    conviction_floor: 0.5        # a coin-flip (TOSS-UP) setup still sizes this fraction of the grid
+    conviction_toss: 0.05        # directional-confidence edge (cycle_position-0.5) <= this = TOSS-UP -> floor
+    conviction_edge: 0.30        # ...>= this = EDGE -> full grid size; linear LEAN ramp between
+    drawdown_brake: true         # ENFORCE a position cap that tightens as strategy equity goes underwater
+    dd_threshold: 0.20           # no brake until the strategy is >20% below its equity high-water mark
+    dd_decay: 1.5                # cut the cap by this per unit of drawdown beyond the threshold
+    dd_floor: 0.30               # never cap exposure below this fraction (keep a core position)
 
   btc_vs_alts:
     rs_window_d: 30               # relative-strength window across BTC/ETH/alts
