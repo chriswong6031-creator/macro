@@ -807,30 +807,50 @@ def action_board(sector_timing: dict, notable: list[dict]) -> dict:
             avoid.append(item)
     buy_soon.sort(key=lambda x: (x["days"] if x["days"] is not None else 99))
     # ----- standout-stock ranking ------------------------------------------------
-    # Rank by the engine's OWN calibrated entry-quality (|eq_score|), not just the
-    # urgency bucket — a 'strong' fresh buy should outrank a 'minimal' one (the old
-    # code sorted on bucket+ETA only and never used the conviction it computed).
-    # Then prefer fresher signals. A soft conviction floor drops 'minimal' (<15)
+    # Within each urgency tier, rank by the alpha-aware SETUP score (selection =
+    # sector-neutral residual momentum × timing = the calibrated cycle entry +
+    # reversal overlay; see engine/setups.py). This upgrades the old |eq_score|-only
+    # order so a sector-neutral LEADER on a fresh, constructive entry outranks an
+    # equally-timed laggard. setup_score is always set (timing-only fallback when a
+    # name has no residual), so every card ranks on the same scale. Then prefer
+    # fresher signals. A soft conviction floor still drops 'minimal' (|eq|<15) timing
     # setups, but only while enough genuine ones remain so the strip never starves.
     order = {"now": 0, "imminent": 1, "exit": 2}
 
     def _conv(n):
         return abs(n.get("eq_score") or 0)
 
+    def _decis(n):
+        # decisiveness in the tier's DIRECTION: buys want the highest setup first,
+        # exits want the most-negative (strongest sell) first.
+        ss = n.get("setup_score")
+        if ss is None:                                  # defensive — always set now
+            ss = (n.get("eq_score") or 0) / 100.0
+        return ss if n.get("urgency") == "exit" else -ss
+
     def _rank(n):
-        return (order.get(n["urgency"], 9), -_conv(n),
+        return (order.get(n["urgency"], 9), _decis(n),
                 n.get("age_days") if n.get("age_days") is not None else 999,
                 n["days"] if n.get("days") is not None else 99)
 
-    CAP, FLOOR = 24, 15
+    # A soft per-sector cap keeps one hot sector (e.g. all of XLK in a tech rip) from
+    # crowding out the board — the best names per sector fill first, then any spare
+    # slots backfill from the overflow (already in rank order).
+    CAP, FLOOR, PER_SECTOR = 24, 15, 5
     strong = [n for n in notable if _conv(n) >= FLOOR]
     pool = strong if len(strong) >= 6 else notable
-    seen, notable_clean = set(), []
+    seen, by_sec, picked, overflow = set(), {}, [], []
     for n in sorted(pool, key=_rank):
         if n["ticker"] in seen:
             continue
         seen.add(n["ticker"])
-        notable_clean.append(n)
+        sec = n.get("sector")
+        if by_sec.get(sec, 0) < PER_SECTOR:
+            by_sec[sec] = by_sec.get(sec, 0) + 1
+            picked.append(n)
+        else:
+            overflow.append(n)
+    notable_clean = (picked + overflow)[:CAP]
     return {"buy_now": buy_now, "buy_soon": buy_soon, "take_profits": take_profits,
             "hold": hold, "avoid": avoid, "notable": notable_clean[:CAP]}
 
@@ -1108,7 +1128,14 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
     from engine.cycles import LADDER, STATE_DISPLAY, analyze
     from engine.holdings_signals import accumulation_signals
     from engine.playbook import SECTOR_NAMES
+    from engine.setups import US_ALPHA_WEIGHT, timing_tilt
     from scripts.build_stock_library import current_liquidity, current_macro
+
+    # per-ticker sector-neutral residual alpha (already computed by build_alpha_data
+    # and passed in) — used to enrich the front-page "Standout individual stocks"
+    # cards with an alpha sector rank + reversal overlay and an alpha-aware setup
+    # score (selection × timing). Absent => cards fall back to pure cycle timing.
+    alpha_pt = (alpha or {}).get("per_ticker", {})
 
     cal_path = config.data_dir() / "regime" / "ladder_calibration.json"
     calibration = _json.loads(cal_path.read_text()) if cal_path.exists() else None
@@ -1171,6 +1198,17 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
                     sdir = lad.get("dir")
                     scolor = ("var(--up)" if sdir == "up"
                               else "var(--down)" if sdir == "down" else "var(--warn)")
+                    # alpha-aware setup score: selection (sector-neutral residual
+                    # momentum) × timing (cycle entry + reversal overlay). Falls back
+                    # to timing-only when the name has no residual, so EVERY card has
+                    # a setup_score on the same scale for ranking. NOT a new edge —
+                    # see engine/setups.py + research/US_STANDOUT_SETUP_SCORE.md.
+                    apt = alpha_pt.get(tick)
+                    az = apt.get("alpha") if apt else None
+                    a_entry = apt.get("entry") if apt else None
+                    tilt = timing_tilt(urg, lad.get("eq_dir"), a_entry)
+                    setup = round((US_ALPHA_WEIGHT * az + tilt) if az is not None
+                                  else tilt, 2)
                     notable.append({"ticker": tick, "name": str(r.get("name", "")).title(),
                                     "sector": SECTOR_NAMES.get(fund, fund),
                                     "label": lad["label"], "action": lad.get("action"),
@@ -1183,6 +1221,11 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
                                     "eq_grade": lad.get("eq_grade"),
                                     "eq_grade_zh": lad.get("eq_grade_zh"),
                                     "score": lad.get("score"),
+                                    "setup_score": setup,
+                                    "alpha_z": az,
+                                    "alpha_sector_rank": apt.get("sector_rank") if apt else None,
+                                    "alpha_sector_n": apt.get("sector_n") if apt else None,
+                                    "alpha_entry": a_entry,
                                     "signal_date": lad.get("signal_date"),
                                     "age_days": lad.get("age_days"),
                                     "spark_svg": _mini_svg(spark, color=scolor, w=240, h=42,
@@ -1317,6 +1360,16 @@ def main() -> int:
         src = config.ROOT / "templates" / asset
         if src.exists():
             (site / asset).write_text(src.read_text())
+    # broad "Top setups" board (selection × timing across the full S&P 1500),
+    # written by build_stock_library at the END of the prior build_site run —
+    # additive + graceful: absent (first run) => the board simply doesn't render.
+    top_setups = None
+    _sp = site / "factordata" / "setups.json"
+    if _sp.exists():
+        try:
+            top_setups = json.loads(_sp.read_text())
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("setups.json unreadable (%s)", e)
     from engine.alerts import alert_views
     html = env.get_template("dashboard.html.j2").render(
         latest=latest,
@@ -1326,6 +1379,7 @@ def main() -> int:
         commodities=(latest.get("playbook") or {}).get("commodities", []),
         sector_timing=sector_timing,
         action_board=action_board(sector_timing, notable),
+        top_setups=top_setups,
         components_confirming=confirming,
         components_contradicting=contradicting,
         flip_plain=flip_plain_text(latest),

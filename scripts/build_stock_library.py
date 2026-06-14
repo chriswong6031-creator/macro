@@ -26,6 +26,7 @@ from engine import ticker_alerts  # noqa: E402
 from engine.conditions import sector_macro_beta  # noqa: E402
 from engine.cycles import analyze  # noqa: E402
 from engine.playbook import SECTOR_NAMES  # noqa: E402
+from engine.setups import US_ALPHA_WEIGHT, rank_setups, setup_score  # noqa: E402
 from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
@@ -239,13 +240,16 @@ def main() -> int:
     # sector-neutral residual-alpha per-ticker scores (written by build_site.
     # build_alpha_data just before this runs). Additive — absent => no panel.
     alpha_pt: dict[str, dict] = {}
+    alpha_asof = None
     ap = site / "factordata" / "alpha.json"
     if ap.exists():
         try:
-            alpha_pt = (json.loads(ap.read_text()) or {}).get("per_ticker", {})
+            _aj = json.loads(ap.read_text()) or {}
+            alpha_pt = _aj.get("per_ticker", {})
+            alpha_asof = _aj.get("as_of")
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("alpha.json unreadable (%s)", e)
-    index, built, failed = [], 0, 0
+    index, cand, built, failed = [], [], 0, 0
     for ticker, close, high, name, sector in universe():
         try:
             rec = _one(ticker, close, high, name, sector, liquidity=liq,
@@ -261,13 +265,18 @@ def main() -> int:
             rec.update(fpanels[ticker])
         if flows.get(ticker):
             rec["fund_flows"] = flows[ticker]
-        if alpha_pt.get(ticker):
+        if alpha_pt.get(ticker):            # additive: absent => no alpha/setup for this name
             rec["alpha"] = alpha_pt[ticker]
+            sc = setup_score(rec, alpha_weight=US_ALPHA_WEIGHT)
+            if sc:
+                cand.append(sc)
         ladder_rows.append(ticker_alerts.ladder_row(ticker, rec.get("ladder"), rec.get("asof")))
         safe = ticker.replace("=", "_").replace("^", "_")
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
-        index.append({"t": ticker, "n": name, "s": sector,
-                      "st": rec["ladder"]["state"]})
+        idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
+        if rec.get("alpha", {}).get("alpha") is not None:
+            idx["a"] = rec["alpha"]["alpha"]          # alpha-z in the index for client ranking
+        index.append(idx)
         built += 1
     # flush the accruing ladder-transition log in one idempotent, atomic write
     try:
@@ -279,6 +288,18 @@ def main() -> int:
     cal = config.data_dir() / "regime" / "ladder_calibration.json"
     if cal.exists():
         (outdir / "calibration.json").write_text(cal.read_text())
+    # cross-sectional "Top setups" — selection (sector-neutral residual alpha) ×
+    # timing (cycle entry + reversal overlay), surfaced on the macro dashboard's
+    # "Standout individual stocks" board (read by build_site one build later, since
+    # build_library runs at the END of build_site). Buys = strong-alpha leaders on a
+    # constructive entry; laggards = weak alpha. Mirrors build_china_library.
+    if cand:
+        setups = rank_setups(cand, as_of=alpha_asof)
+        (site / "factordata").mkdir(parents=True, exist_ok=True)
+        (site / "factordata" / "setups.json").write_text(
+            json.dumps(setups, separators=(",", ":"), default=str))
+        log.info("wrote setups.json (%d buy, %d laggards, %d candidates)",
+                 len(setups["buy"]), len(setups["laggards"]), len(cand))
     log.info("stock library: %d analyzed, %d skipped (thin history)", built, failed)
     return 0
 

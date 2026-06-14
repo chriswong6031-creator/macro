@@ -22,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine.cycles import analyze  # noqa: E402
 from engine.residual_alpha import compute_residual_alpha  # noqa: E402
+from engine.setups import CN_ALPHA_WEIGHT, rank_setups, setup_score  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
 
@@ -171,47 +172,14 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
 
 
 def _setup_score(rec: dict) -> tuple[float, dict] | None:
-    """Actionable 'setup' rank, REVERSAL-led after the deep-history correction
-    (research/CHINA_HK_STOCK_SIGNALS.md / reports/china-residual-alpha-deep.md):
-    on ~35y of A-share data, cross-sectional momentum is NOT a validated edge —
-    short-term REVERSAL is. So the score LEADS with the validated effects — the
-    cycle-confirmed entry (the calibrated timing engine) and the mean-reversion
-    overlay (a decent name on a recent pullback is the buy; an extended one is
-    reversal RISK) — and keeps the residual relative-strength only as a light
-    QUALITY tiebreaker (0.35×), not the ranking driver. None for names without
-    a residual (ETFs/indices/thin history)."""
-    a = rec.get("alpha") or {}
-    az = a.get("alpha")
-    if az is None:
-        return None
-    lad = rec.get("ladder") or {}
-    entry = lad.get("entry") or {}
-    urg, eqdir, ae = entry.get("urgency"), lad.get("eq_dir"), a.get("entry")
-    timing = 0.0
-    if urg in ("now", "imminent"):                 # cycle entry — the calibrated timing engine
-        timing += 0.9
-    elif urg == "soon":
-        timing += 0.45
-    elif urg in ("exit", "avoid"):
-        timing -= 0.9
-    if eqdir == "up":
-        timing += 0.35
-    elif eqdir == "down":
-        timing -= 0.35
-    # the VALIDATED A-share edge is short-term reversal: a decent name on a recent
-    # pullback is the mean-reversion buy; an extended (just-spiked) name is reversal RISK
-    if ae == "pullback":
-        timing += 0.7
-    elif ae == "extended":
-        timing -= 0.7
-    score = 0.35 * az + timing          # momentum demoted to a light quality tiebreaker
-    row = {"ticker": rec["ticker"], "name": rec["name"], "sector": rec.get("sector"),
-           "alpha": az, "alpha_entry": ae, "state": lad.get("state"),
-           "label": lad.get("label"), "label_zh": lad.get("label_zh"),
-           "urgency": urg, "dir": lad.get("dir"), "eq_dir": eqdir,
-           "sector_rank": a.get("sector_rank"), "sector_n": a.get("sector_n"),
-           "setup": round(score, 2)}
-    return score, row
+    """Actionable 'setup' rank for an A-share name, REVERSAL-led after the
+    deep-history correction (research/CHINA_HK_STOCK_SIGNALS.md /
+    reports/china-residual-alpha-deep.md): on ~35y of A-share data, cross-sectional
+    momentum is NOT a validated edge — short-term REVERSAL is. So the residual is
+    demoted to a light QUALITY tiebreaker (CN_ALPHA_WEIGHT=0.35×) and the score
+    leads with the cycle-confirmed entry + the mean-reversion overlay. The blend is
+    the shared engine.setups (engine/setups.py documents the US-vs-China weight)."""
+    return setup_score(rec, alpha_weight=CN_ALPHA_WEIGHT)
 
 
 def main(alpha: dict | None = None) -> dict | None:
@@ -260,11 +228,7 @@ def main(alpha: dict | None = None) -> dict | None:
     # china.html. Buys = strong alpha with constructive timing; laggards = weak alpha.
     setups = None
     if cand:
-        buys = [r for s, r in sorted(cand, key=lambda x: -x[0])
-                if r["alpha"] is not None and r["alpha"] >= 0.5][:12]
-        laggards = [r for s, r in sorted(cand, key=lambda x: x[0])
-                    if r["alpha"] is not None and r["alpha"] <= -0.3][:6]
-        setups = {"as_of": (alpha or {}).get("as_of"), "buy": buys, "laggards": laggards}
+        setups = rank_setups(cand, as_of=(alpha or {}).get("as_of"))
         (site / "factordata" / "china_setups.json").write_text(
             json.dumps(setups, separators=(",", ":"), default=str))
     log.info("china library: %d analyzed, %d skipped (thin history), %d setups",
