@@ -195,6 +195,31 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 .needle-num{color:var(--muted);font-weight:700}
 .conv-why{font-size:12.5px;color:var(--muted);margin-top:12px;line-height:1.5}
 .conv-defer{font-size:12px;margin-top:7px;font-weight:600;line-height:1.45}
+/* forward-risk (drawdown) layer — risk LEADS, direction demoted. Monochrome:
+   downside=r3, upside=faint blue, now/calm=grey; no red. */
+.risk-word{font-size:25px;font-weight:800;letter-spacing:-.01em;line-height:1.12;margin-top:6px}
+.risk-nums{font-size:13px;color:var(--ink);margin-top:5px}
+.risk-nums b{font-weight:800}
+.ddrail{margin:13px 0 2px}
+.ddrail-bar{position:relative;height:14px;border-radius:8px;background:var(--grid)}
+.dd-down{position:absolute;top:0;bottom:0;border-radius:8px 0 0 8px;background:linear-gradient(90deg,var(--r3),color-mix(in srgb,var(--r3) 18%,var(--grid)))}
+.dd-up{position:absolute;top:0;bottom:0;border-radius:0 8px 8px 0;background:color-mix(in srgb,var(--blue) 16%,var(--grid))}
+.dd-now{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--ink)}
+.dd-mk{position:absolute;top:50%;width:13px;height:13px;margin-left:-6.5px;transform:translateY(-50%);border-radius:50%;box-shadow:0 0 0 3px var(--card)}
+.dd-tail{background:var(--r3)} .dd-tail.thin{opacity:.45}
+.dd-typ{background:color-mix(in srgb,var(--r3) 50%,var(--grid))}
+.dd-calm{width:9px;height:9px;margin-left:-4.5px;background:var(--faint);box-shadow:0 0 0 2px var(--card)}
+.dd-uptick{width:9px;height:9px;margin-left:-4.5px;background:color-mix(in srgb,var(--blue) 55%,var(--grid))}
+.ddrail-lab{display:flex;justify-content:space-between;font-size:11px;margin-top:8px}
+.ddrail-lab .r3b{color:var(--r3);font-weight:700} .ddrail-lab .now{color:var(--muted)}
+.ddrail-lab .upf{color:color-mix(in srgb,var(--blue) 60%,var(--muted))}
+.dir-strip{display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:11px;border-top:1px solid var(--grid)}
+.dir-chip{font-size:12.5px;font-weight:700;color:var(--muted);white-space:nowrap}
+.mini-needle{position:relative;flex:1;max-width:120px;height:10px;border-radius:5px;background:var(--grid)}
+.mn-dead{position:absolute;left:47%;width:6%;top:0;bottom:0;background:var(--muted);opacity:.32;border-radius:3px}
+.mn-tick{position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--muted);opacity:.6}
+.mn-dot{position:absolute;top:50%;width:11px;height:11px;margin-left:-5.5px;transform:translateY(-50%);border-radius:50%;box-shadow:0 0 0 2px var(--card)}
+.dir-num{font-size:12px;color:var(--muted);font-weight:700;white-space:nowrap}
 /* alert timeline */
 .tl-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
 .tlf{padding:6px 14px;border-radius:9px;background:var(--grid);color:var(--muted);
@@ -335,47 +360,65 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
   {# ---- conviction card macro (shared by mid & short so they are byte-identical "same format") ---- #}
   {% set gcol = {'CAUTION':'var(--amber)','AVOID':'var(--r3)','TREND-FOLLOW':'var(--blue)','BUY-THE-DIP':'var(--blue)','WAIT':'var(--muted)'} %}
   {% set gcolor = gcol.get(verdict.grade,'var(--muted)') %}
-  {% macro convcard(c, title_en, title_zh, vsign, grade, grade_zh, gcolor) %}
+  {% macro convcard(c, R, title_en, title_zh, vsign, grade, grade_zh, gcolor) %}
     {% set dword = 'bull' if c.dir>0 else 'bear' %}
-    {% set wcls = 'cw-toss' if c.state=='TOSS-UP' else (('cw-lean ' if c.state=='LEAN' else 'cw-edge ') ~ dword) %}
-    {% set inzone = c.lean <= 3 %}
-    {% set dottint = 'var(--muted)' if (c.state=='TOSS-UP' or inzone) else ('var(--blue)' if (c.state=='EDGE' and c.dir>0) else ('var(--r3)' if (c.state=='EDGE' and c.dir<0) else ('color-mix(in srgb,var(--blue) 58%,var(--grid))' if c.dir>0 else 'color-mix(in srgb,var(--r3) 60%,var(--grid))'))) %}
+    {% set dottint = 'var(--muted)' if (c.state=='TOSS-UP' or c.lean<=3) else ('var(--blue)' if (c.state=='EDGE' and c.dir>0) else ('var(--r3)' if (c.state=='EDGE' and c.dir<0) else ('color-mix(in srgb,var(--blue) 58%,var(--grid))' if c.dir>0 else 'color-mix(in srgb,var(--r3) 60%,var(--grid))'))) %}
     <div class="conv-head">
       <span style="font-size:14px;font-weight:700;color:var(--ink)">{{ t(title_en, title_zh) }}</span>
-      <span class="conv-n">n={{ '{:,}'.format(c.n) if c.n else '—' }}</span>
+      <span class="conv-n">{% if R and R.tail is not none %}n={{ '{:,}'.format(R.n) }}{% elif c.n %}n={{ '{:,}'.format(c.n) }}{% else %}—{% endif %}</span>
     </div>
-    <div class="cw {{ wcls }}">
-      {%- if c.state=='TOSS-UP' %}{{ t('Toss-up','势均力敌') }}
-      {%- elif c.state=='LEAN' %}{{ t('Lean ' ~ dword, '倾向看多' if c.dir>0 else '倾向看空') }}
-      {%- else %}{{ t('Edge ' ~ dword, '看多优势' if c.dir>0 else '看空优势') }}{% endif %}
-      {%- if c.state=='TOSS-UP' and c.dir!=0 %}<span class="conv-tag">{{ t(dword ~ '-lean', '略偏多' if c.dir>0 else '略偏空') }}</span>{% endif %}
-      {%- if c.confirmed %}<span class="conv-ok" title="tape + prob + tilt agree">✓</span>{% endif %}
+    {% if R and R.tail is not none %}
+    {# ---------- PRIMARY: forward drawdown / risk (the CONFIRMED quantity) ---------- #}
+    {% set rwc = {'CALM':'var(--muted)','ELEVATED':'var(--r3)','HIGH':'color-mix(in srgb,var(--r3) 80%,var(--ink))','EXTREME':'color-mix(in srgb,var(--r3) 80%,var(--ink))'} %}
+    <div class="risk-word" style="color:{{ rwc.get(R.word_en,'var(--r3)') }}">{{ t(R.head_en, R.head_zh) }}
+      {%- if R.contrarian %} <span class="conv-tag">{{ t('contrarian zone','逆势区') }}</span>{% endif %}
+      {%- if R.thin %} <span class="conv-tag">{{ t('thin sample','样本偏少') }}</span>{% endif %}
     </div>
-    <div class="conv-sub">{% if c.state=='TOSS-UP' %}{{ t('no edge · coin-flip','无优势 · 抛硬币') }}{% elif c.tape=='conflict' %}{{ t('tape disagrees — nimble only','盘面相反 — 仅适合灵活') }}{% else %}{{ t('within the reliable cell spread','处于可靠区间') }}{% endif %}</div>
-    <div class="needle">
-      <div class="needle-axis">
-        <div class="needle-dead"></div><div class="needle-tick"></div>
-        <div class="needle-dot" style="left:{{ c.p_bull }}%;background:{{ dottint }}"></div>
+    <div class="risk-nums">{{ t('Typical dip','常见回撤') }} <b>{{ R.avg }}%</b> <span class="faint">({{ t('calm','平静') }} {{ R.calm_avg }}%)</span> · {{ t('worst-case','极端') }} <b{% if R.thin %} class="faint"{% endif %}>{{ R.tail }}%</b> <span class="faint">({{ t('calm','平静') }} {{ R.calm_tail }}%)</span></div>
+    {% set scale = (1.25 * ([(R.tail|abs),(R.calm_tail|abs)]|max)) %}
+    {% set scale = scale if scale > 0 else 20 %}
+    <div class="ddrail">
+      <div class="ddrail-bar">
+        <div class="dd-down" style="left:0;width:70%"></div>
+        <div class="dd-up" style="left:70%;width:30%"></div>
+        <div class="dd-mk dd-calm" style="left:{{ (70 - 70*(R.calm_tail|abs)/scale)|round(1) }}%" title="calm baseline"></div>
+        <div class="dd-mk dd-typ" style="left:{{ (70 - 70*(R.avg|abs)/scale)|round(1) }}%"></div>
+        <div class="dd-mk dd-tail{% if R.thin %} thin{% endif %}" style="left:{{ (70 - 70*(R.tail|abs)/scale)|round(1) }}%"></div>
+        <div class="dd-mk dd-uptick" style="left:{{ (70 + 30*R.up/scale)|round(1) }}%"></div>
+        <div class="dd-now" style="left:70%"></div>
       </div>
-      <div class="needle-ends"><span>{{ t('Bear','看空') }}</span><span class="needle-num">{{ c.p_bear }}% / {{ c.p_bull }}%</span><span>{{ t('Bull','看多') }}</span></div>
+      <div class="ddrail-lab"><span class="r3b">{{ R.tail }}%</span><span class="mut">{{ R.avg }}%</span><span class="now">{{ t('now','当前') }}</span><span class="upf">+{{ R.up }}%</span></div>
     </div>
+    {# ---------- SECONDARY: demoted direction strip (the honest coin-flip) ---------- #}
+    <div class="dir-strip">
+      <span class="dir-chip">{% if c.state=='TOSS-UP' %}{{ t('Toss-up','势均力敌') }}{% elif c.state=='LEAN' %}{{ t('Lean ' ~ dword, '倾向看多' if c.dir>0 else '倾向看空') }}{% else %}{{ t('Edge ' ~ dword, '看多优势' if c.dir>0 else '看空优势') }}{% endif %}</span>
+      <div class="mini-needle"><div class="mn-dead"></div><div class="mn-tick"></div><div class="mn-dot" style="left:{{ c.p_bull }}%;background:{{ dottint }}"></div></div>
+      <span class="dir-num">{{ c.p_bear }}/{{ c.p_bull }}</span>
+    </div>
+    <div class="conv-sub">{{ t('direction is a coin-flip — drawdown above is the predicted quantity, direction is not','方向接近抛硬币 — 上方回撤才是可预测量，方向不是') }}</div>
+    <div class="conv-why">{{ t(R.main_en, R.main_zh) }}</div>
+    <div class="conv-why faint">{{ t(R.guard_en, R.guard_zh) }}</div>
+    {% else %}
+    {# ---------- fallback: conviction-led (no calibrated risk) ---------- #}
+    {% set wcls = 'cw-toss' if c.state=='TOSS-UP' else (('cw-lean ' if c.state=='LEAN' else 'cw-edge ') ~ dword) %}
+    <div class="cw {{ wcls }}">{% if c.state=='TOSS-UP' %}{{ t('Toss-up','势均力敌') }}{% elif c.state=='LEAN' %}{{ t('Lean ' ~ dword, '倾向看多' if c.dir>0 else '倾向看空') }}{% else %}{{ t('Edge ' ~ dword, '看多优势' if c.dir>0 else '看空优势') }}{% endif %}</div>
+    <div class="needle"><div class="needle-axis"><div class="needle-dead"></div><div class="needle-tick"></div><div class="needle-dot" style="left:{{ c.p_bull }}%;background:{{ dottint }}"></div></div>
+      <div class="needle-ends"><span>{{ t('Bear','看空') }}</span><span class="needle-num">{{ c.p_bear }}% / {{ c.p_bull }}%</span><span>{{ t('Bull','看多') }}</span></div></div>
     <div class="conv-why">{{ t(c.why_en, c.why_zh) }}</div>
-    <div class="conv-defer" style="color:{{ gcolor }}">↳ {{ t('Defers to','服从') }} <b>{{ t(grade, grade_zh) }}</b>
-      {%- if c.state=='TOSS-UP' %} — {{ t('no edge to add over the cycle read above','无法在上方周期判断之外提供优势') }}
-      {%- elif vsign != c.dir %} — {{ t('tape disagrees; nimble traders only','盘面相反；仅适合灵活交易者') }}
-      {%- else %} — {{ t('consistent with the bigger picture','与大局一致') }}{% endif %}</div>
+    {% endif %}
+    <div class="conv-defer" style="color:{{ gcolor }}">↳ {{ t('Defers to','服从') }} <b>{{ t(grade, grade_zh) }}</b> — {{ t('the near-term texture under that bigger-picture call','大局判断之下的近端纹理') }}</div>
   {% endmacro %}
 
   <!-- ===================== MID & SHORT TERM (side by side, same format) ===================== -->
-  <div class="section-title">{{ t('Mid term & Short term · 7-day & 3-day direction', '中期与短期 · 7 天与 3 天方向') }}</div>
+  <div class="section-title">{{ t('Mid term & Short term · near-term drawdown risk', '中期与短期 · 近端回撤风险') }}</div>
   <div class="grid cols-eq">
 
-    <!-- mid term · 7-day direction (conviction) -->
-    <div class="card">{{ convcard(env.conv, 'Mid term · 7-day direction', '中期 · 7 天方向', verdict.mid_sign, verdict.grade, verdict.grade_zh, gcolor) }}</div>
+    <!-- mid term · 7-day outlook (risk-led) -->
+    <div class="card">{{ convcard(env.conv, env.risk, 'Mid term · 7-day outlook', '中期 · 7 天展望', verdict.mid_sign, verdict.grade, verdict.grade_zh, gcolor) }}</div>
 
-    <!-- short term · 3-day direction (conviction) + ATR scenario levels -->
+    <!-- short term · 3-day outlook (risk-led) + ATR scenario levels -->
     <div class="card">
-      {{ convcard(scn.conv, 'Short term · 3-day direction', '短期 · 3 天方向', verdict.short_sign, verdict.grade, verdict.grade_zh, gcolor) }}
+      {{ convcard(scn.conv, scn.risk, 'Short term · 3-day outlook', '短期 · 3 天展望', verdict.short_sign, verdict.grade, verdict.grade_zh, gcolor) }}
       <div style="border-top:1px solid var(--grid);margin-top:14px;padding-top:12px;display:flex;gap:18px;flex-wrap:wrap">
         <div style="flex:1;min-width:150px">
           <div class="sub" style="font-weight:700;color:var(--ink)">{{ t('If it resolves down', '若向下') }}</div>

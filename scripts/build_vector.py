@@ -177,6 +177,102 @@ def scenarios_3d(df: pd.DataFrame, cfg: dict, high: pd.Series, low: pd.Series) -
 
 
 # --------------------------------------------------------------------------- #
+# forward-risk layer: the CONFIRMED quantity the engine actually predicts.
+# Short-horizon DIRECTION is a coin-flip (see conviction layer), but forward
+# DRAWDOWN is calibrated + both-halves-stable (data/vector/calibration.json ->
+# risk_drawdown). We lead the cards with the conditional forward drawdown (avg
+# dip + 5th-pctile tail) for the LIVE risk_index band, vs the calm-band baseline.
+# (D-vec-RISK; see DECISIONS.)
+# --------------------------------------------------------------------------- #
+_RISK_BANDS = [(0, 25), (25, 50), (50, 75), (75, 100)]
+_RISK_WORD = {"0-25": ("CALM", "平静"), "25-50": ("ELEVATED", "偏高"),
+              "50-75": ("HIGH", "偏高警戒"), "75-100": ("EXTREME", "极端")}
+
+
+def _band_of(ri: float):
+    """Right-closed band to match calibrate's pd.cut(include_lowest=True): the
+    first band is [0,25], the rest (lo,hi]; ri==50 -> '25-50'."""
+    for lo, hi in _RISK_BANDS:
+        if (lo == 0 and ri <= hi) or (lo < ri <= hi):
+            return (lo, hi)
+    return (75, 100)
+
+
+def _fwd_dd(close: pd.Series, ri: pd.Series, band, horizon: int, mask=None):
+    """Forward worst adverse excursion over a `horizon`-trading-day window,
+    conditioned on risk_index in `band` at window start (right-closed to reconcile
+    with calibration.json). Close-based. Returns avg dip + p05 tail + median pop."""
+    lo, hi = band
+    fwd_min = close.shift(-1).rolling(horizon).min().shift(-(horizon - 1))
+    fwd_max = close.shift(-1).rolling(horizon).max().shift(-(horizon - 1))
+    dd = 100 * (fwd_min / close - 1.0)   # worst dip over the window (<=0)
+    up = 100 * (fwd_max / close - 1.0)   # best pop over the window (>=0)
+    sel = ((ri >= lo) if lo == 0 else (ri > lo)) & (ri <= hi) & dd.notna()
+    if mask is not None:
+        sel &= mask
+    n = int(sel.sum())
+    if n < 20:
+        return None
+    return {"avg": round(float(dd[sel].mean()), 1), "tail": round(float(dd[sel].quantile(0.05)), 1),
+            "up": round(float(up[sel].median()), 1), "n": n}
+
+
+def forward_risk(df: pd.DataFrame, horizon: int) -> dict:
+    """Calibrated forward-drawdown read, conditioned on the LIVE risk_index band.
+    Carries the calm-band (0-25) baseline for excess-over-calm framing, a both-
+    halves (pre/post-2021) stability flag, and a thin-n flag — both drive UI
+    de-emphasis. 7d reconciles with calibration.json risk_drawdown; 3d is a DIRECT
+    window (never a sqrt/linear haircut)."""
+    if "risk_index" not in df:
+        return {"tail": None}
+    close, ri = df["close"], df["risk_index"]
+    band = _band_of(float(ri.iloc[-1]))
+    split = pd.Timestamp("2021-01-01")
+    pre, post = df.index < split, df.index >= split
+    cur = _fwd_dd(close, ri, band, horizon)
+    calm = _fwd_dd(close, ri, (0, 25), horizon)
+    pre_d = _fwd_dd(close, ri, band, horizon, mask=pre)
+    post_d = _fwd_dd(close, ri, band, horizon, mask=post)
+    if not cur:
+        return {"tail": None}
+    stable = bool(pre_d and post_d and
+                  abs(pre_d["tail"] - post_d["tail"]) <= max(6.0, 0.4 * abs(cur["tail"])))
+    n = cur["n"]
+    R = {"band": f"{band[0]}-{band[1]}", "horizon": horizon, "n": n,
+         "avg": cur["avg"], "tail": cur["tail"], "up": cur["up"],
+         "calm_avg": calm["avg"] if calm else None, "calm_tail": calm["tail"] if calm else None,
+         "thin": n < 150, "stable": stable}
+    R.update(_risk_lines(R))
+    return R
+
+
+def _risk_lines(R: dict) -> dict:
+    """Honest EN/ZH prose for the forward-risk read: the band state word + the
+    horizon-welded headline, the avg-vs-tail main line, and the band-gated guard
+    (contrarian/anti-extrapolation only for the high bands; near-term-only otherwise)."""
+    band, h, n = R["band"], R["horizon"], R["n"]
+    w_en, w_zh = _RISK_WORD.get(band, ("ELEVATED", "偏高"))
+    contrarian = band in ("50-75", "75-100")
+    avg, tail, cavg, ctail = R["avg"], R["tail"], R["calm_avg"], R["calm_tail"]
+    main_en = (f"Worst-case is the 1-in-20 dip, typical is the average — {n:,} windows in this "
+               f"risk band, confirmed in both pre/post-2021 halves. "
+               f"Worst-case {tail}% (calm {ctail}%) · typical {avg}% (calm {cavg}%), next {h} days.")
+    main_zh = (f"极端为二十中之一的回撤，常见为平均值 — 本风险区间 {n:,} 个窗口，2021 年前后两半均确认。"
+               f"极端 {tail}%（平静 {ctail}%）· 常见 {avg}%（平静 {cavg}%），未来 {h} 天。")
+    if contrarian:
+        guard_en = ("Near-term drawdown risk only. At the 90-day scale high risk historically marks "
+                    "bottoms — NOT a sell signal; see the cycle verdict.")
+        guard_zh = ("仅为近端回撤风险。在 90 天尺度上，高风险历史上往往标记底部 — 这不是卖出信号；请参见周期判断。")
+    else:
+        guard_en = (f"A near-term (next-{h}-day) drawdown read, not a cycle call. Risk grades "
+                    f"drawdown — it does not rank it perfectly across bands.")
+        guard_zh = f"近端（未来 {h} 天）回撤判断，并非周期判断。风险对回撤分级 — 并非在各区间严格排序。"
+    return {"word_en": w_en, "word_zh": w_zh, "contrarian": contrarian,
+            "head_en": f"{w_en} · next {h} days", "head_zh": f"{w_zh} · 未来 {h} 天",
+            "main_en": main_en, "main_zh": main_zh, "guard_en": guard_en, "guard_zh": guard_zh}
+
+
+# --------------------------------------------------------------------------- #
 # conviction layer: turn a capped/shrunk directional prob into an HONEST state
 # (TOSS-UP / LEAN / EDGE). Calibrated to the MEASURED reliable-cell spread
 # (51.9-57.1% up-rate at 7d across n>300 cells) so ~3pp from 50% reads as a
@@ -992,6 +1088,9 @@ def main() -> int:
                                _tape_sign(mtf_rows, {"D", "3D"}), verdict.get("short_sign", 0), _min_n, _bands)
     scnd["conv"]["why_en"], scnd["conv"]["why_zh"] = _conviction_why(
         scnd["conv"], scnd.get("cell"), scnd.get("n"), 3)
+    # forward-risk (the CONFIRMED quantity) — leads the cards; direction is secondary
+    envd["risk"] = forward_risk(sig, 7)
+    scnd["risk"] = forward_risk(sig, 3)
 
     vm = {
         "as_of": sig.index.max().strftime("%b %d, %Y"),

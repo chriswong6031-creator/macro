@@ -2,6 +2,39 @@
 
 Newest first. Each entry: what was decided, why, and what would change it.
 
+## 2026-06-13 — Vector cards re-framed onto forward DRAWDOWN (the confirmed quantity)
+
+**D-vec-RISK. The mid/short cards now LEAD with calibrated forward drawdown/risk;
+direction (the conviction toss-up) is demoted to a secondary strip.** Follow-up to
+D-vec-CONV: short-horizon DIRECTION is a coin-flip, but forward DRAWDOWN is the
+quantity the engine actually predicts and it is already calibrated + both-halves-
+stable in calibration.json -> risk_drawdown (avg dip + p05 tail by risk_index band,
+7d/30d/90d, split pre/post-2021). New `forward_risk(df, horizon)` in build_vector
+(+ `_band_of` right-closed to match calibrate's pd.cut, `_fwd_dd`, `_risk_lines`)
+computes the conditional forward worst-drawdown for the LIVE risk_index band at 3d
+(DIRECT window, no calibrated col -> never a sqrt haircut) and 7d, with the calm-band
+(0-25) baseline for excess-over-calm framing, a pre/post-2021 stability flag, and a
+thin-n flag. Wired as env.risk / scn.risk; reconciles with calibration.json to 2dp
+(7d band 25-50: helper avg -4.2 vs -4.17, tail -16.6 vs -16.61). UI: the shared
+convcard macro gains an R param and a risk-led layout — a band state word
+(CALM/ELEVATED/HIGH/EXTREME, the SAME 0-25/25-50/50-75/75-100 cuts as the verdict
+table so they can't disagree), horizon WELDED to the headline ("ELEVATED · next 7
+days") so a near-term dip can't read as a cycle call, a typical/worst-case line with
+the calm parenthetical, and a DRAWDOWN RAIL (downside=70% emphasized r3 half +
+faint-blue upside stub + a ringed grey calm-baseline dot whose gap to the live tail
+IS the excess-over-calm story). The TOSS-UP needle shrinks to a labeled coin-flip
+strip ("direction is a coin-flip — drawdown above is the predicted quantity"). HONESTY
+GUARDS (workflow honesty-review, 9 agents): the 90d CONTRARIAN FLIP (high risk marks
+bottoms at 90d) is fenced — the contrarian softener fires ONLY in bands 50-75/75-100;
+band 25-50 (current, the WORST 90d band post-2021) gets the plain near-term-only line.
+Non-monotone (avg dip -2.97/-4.17/-4.65/-4.40 — extreme < high) so it's a GRADED read,
+never "more risk = more drawdown". thin-n (75-100 n=98/33) de-emphasises the tail.
+Monochrome (downside r3, no red). Live: ELEVATED, 7d typical -4.2% (calm -3.0%) /
+worst -16.6% (calm -14.0%), stable. tests/test_vector_forward_risk.py (4 tests: band
+edges, calibration reconciliation, 3d-direct-window vol-time ratio, excess-over-calm).
+What would change it: a band genuinely clearing the calm spread shifts the state word;
+re-running calibrate updates the reconciliation target.
+
 ## 2026-06-13 — Vector conviction layer: label the no-edge state instead of a fake 53/47
 
 **D-vec-CONV. The mid/short scorecards now lead with an HONEST conviction state
