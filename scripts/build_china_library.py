@@ -169,12 +169,15 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
 
 
 def _setup_score(rec: dict) -> tuple[float, dict] | None:
-    """Confluence of the per-stock signals into one actionable 'setup' rank:
-    residual alpha (WHAT to own — the validated selection signal) refined by the
-    cycle entry (WHEN — timing) and the alpha reversal overlay. Alpha dominates the
-    score (~±3); cycle/overlay are small tilts (~±1). Honest: this RE-RANKS the alpha
-    leaders by timing, it is not a new statistical claim. None for names without alpha
-    (ETFs/indices/thin history)."""
+    """Actionable 'setup' rank, REVERSAL-led after the deep-history correction
+    (research/CHINA_HK_STOCK_SIGNALS.md / reports/china-residual-alpha-deep.md):
+    on ~35y of A-share data, cross-sectional momentum is NOT a validated edge —
+    short-term REVERSAL is. So the score LEADS with the validated effects — the
+    cycle-confirmed entry (the calibrated timing engine) and the mean-reversion
+    overlay (a decent name on a recent pullback is the buy; an extended one is
+    reversal RISK) — and keeps the residual relative-strength only as a light
+    QUALITY tiebreaker (0.35×), not the ranking driver. None for names without
+    a residual (ETFs/indices/thin history)."""
     a = rec.get("alpha") or {}
     az = a.get("alpha")
     if az is None:
@@ -183,27 +186,30 @@ def _setup_score(rec: dict) -> tuple[float, dict] | None:
     entry = lad.get("entry") or {}
     urg, eqdir, ae = entry.get("urgency"), lad.get("eq_dir"), a.get("entry")
     timing = 0.0
-    if urg in ("now", "imminent"):
-        timing += 0.8
+    if urg in ("now", "imminent"):                 # cycle entry — the calibrated timing engine
+        timing += 0.9
     elif urg == "soon":
-        timing += 0.4
+        timing += 0.45
     elif urg in ("exit", "avoid"):
-        timing -= 0.8
+        timing -= 0.9
     if eqdir == "up":
-        timing += 0.3
+        timing += 0.35
     elif eqdir == "down":
-        timing -= 0.3
-    if ae == "pullback":               # leader on a dip — constructive entry
-        timing += 0.4
-    elif ae == "extended":             # leader that just spiked — reversal risk
-        timing -= 0.4
+        timing -= 0.35
+    # the VALIDATED A-share edge is short-term reversal: a decent name on a recent
+    # pullback is the mean-reversion buy; an extended (just-spiked) name is reversal RISK
+    if ae == "pullback":
+        timing += 0.7
+    elif ae == "extended":
+        timing -= 0.7
+    score = 0.35 * az + timing          # momentum demoted to a light quality tiebreaker
     row = {"ticker": rec["ticker"], "name": rec["name"], "sector": rec.get("sector"),
            "alpha": az, "alpha_entry": ae, "state": lad.get("state"),
            "label": lad.get("label"), "label_zh": lad.get("label_zh"),
            "urgency": urg, "dir": lad.get("dir"), "eq_dir": eqdir,
            "sector_rank": a.get("sector_rank"), "sector_n": a.get("sector_n"),
-           "setup": round(az + timing, 2)}
-    return az + timing, row
+           "setup": round(score, 2)}
+    return score, row
 
 
 def main(alpha: dict | None = None) -> dict | None:

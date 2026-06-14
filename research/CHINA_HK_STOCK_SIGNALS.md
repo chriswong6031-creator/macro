@@ -31,7 +31,20 @@ are just the defaults). So the China leg is *wiring*, not new math. `cycles.py`,
 `ticker_alerts.py` are 100% price-only and already run on both markets. `holdings_signals.py`
 (ETF accumulation) does NOT port — no China/HK sector-SPDR-with-published-holdings analog.
 
-## Phase 0 — validate residual momentum on A-shares (DONE → GO as context leg)
+## Phase 0 — validate residual momentum on A-shares (5y GO → ⚠️ DEEP-HISTORY CORRECTION below)
+
+> **⚠️ CORRECTION (2026-06-14, `scripts/china_residual_alpha_deep.py`, `reports/china-residual-alpha-deep.md`).**
+> The deep-history fetch flagged below as the "power upgrade" was run — and it **overturns the 5-year
+> GO.** On a ~35-year / 400-rebalance panel, cross-sectional momentum (total AND residual) is **NOT a
+> validated A-share edge**: IC negative/zero at the shipped 12-1/fwd-21 config over the full (−0.009)
+> and modern-2010 (−0.001) eras, long-short Sharpe negative, **nothing clears BH-FDR**; only weakly
+> positive-but-insignificant at 6-1/fwd-63d. The robust, FDR-surviving effect is the **opposite —
+> short-term REVERSAL** (`rev_st|SN` t −2.7 to −5.0, survives FDR across full/modern/connect eras and
+> both market proxies). The 5-year result below was a **favourable-window artifact** (2021-26 happened
+> to reward momentum). **A-shares are a retail-driven, mean-reverting cross-section** — recent winners
+> give back, recent losers bounce. ⇒ the shipped momentum-leaders ranking **overclaims**; the validated
+> read is reversal / the cycle-confirmed pullback (mean-reversion) entry. UI copy + `_setup_score`
+> weights corrected accordingly (see build plan). The original 5-year analysis is kept below for the record.
 
 Harness `scripts/china_residual_alpha_phase0.py` mirrors the validated US harness
 (`scripts/residual_alpha_phase0.py`) exactly — same `score_panel` / `quintile_ls` /
@@ -75,9 +88,12 @@ REFINE if underpowered/mixed; KILL if residual IC ≤ 0.
 window — i.e. the exact thing `engine/residual_alpha.py` already computes. Reversal as the
 entry overlay; acceleration dropped. Phase-0 supports the *current* engine config directly.
 
-**Power upgrade (deferred):** a one-time deep-history fetch of A-share constituents (mirror
-`scripts/residual_alpha_fetch.py`) + point-in-time CSI membership would lift the rebalance
-count and kill survivorship — the path to a stronger-than-"context" claim.
+**Power upgrade (DONE — and it flipped the verdict, see the ⚠️ correction at the top of this
+section):** the one-time deep-history fetch (`scripts/china_residual_alpha_deep.py --fetch` → 800
+names × ~35y) lifted the rebalance count from 33 to ~400 and revealed the 5-year momentum read was a
+favourable-window artifact. Remaining unbought data: point-in-time CSI membership (kills survivorship —
+which would only *weaken* momentum further, since survivorship biases it up). The honest A-share edge is
+**mean-reversion**, so the next real build is a reversal/pullback-led signal, not a momentum one.
 
 ## Build plan & status
 
