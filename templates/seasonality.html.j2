@@ -5,6 +5,12 @@
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
 {% set ML = ['J','F','M','A','M','J','J','A','S','O','N','D'] %}
+{% macro mosaic(win) -%}
+<table class="mosaic"><thead><tr><th class="mosf">{{ t('Factor','因子') }}</th>{% for m in range(1,13) %}<th class="mosh" data-m="{{ m }}">{{ ML[m-1] }}</th>{% endfor %}</tr></thead><tbody>
+{% for f in seas.factors %}<tr><td class="mosf">{{ t(f.label_en, f.label_zh) }}{% if f.context_only %} <span class="ctx">{{ t('ref','参考') }}</span>{% endif %}</td>
+{% for m in range(1,13) %}{% set s=(f[win] or {}).get(m) %}{% if s %}{% set a=[(s.mean|abs)/3.0,0.82]|min %}<td class="mos" data-m="{{ m }}" style="background:{{ ('rgba(35,134,54,' ~ a|round(2) ~ ')') if s.mean>0 else ('rgba(218,54,51,' ~ a|round(2) ~ ')') }}" title="{{ ML[m-1] }} · mean {{ '%+.2f'|format(s.mean) }}% · median {{ '%+.2f'|format(s.median) }}% · up {{ s.hit|int }}% (n={{ s.n }})"><span class="mm">{{ '%+.1f'|format(s.mean) }}</span><span class="mh">{{ s.hit|int }}%</span></td>{% else %}<td class="mos muted" data-m="{{ m }}">·</td>{% endif %}{% endfor %}</tr>{% endfor %}
+</tbody></table>
+{%- endmacro %}
 {% macro monthbars(stats) -%}
 {% set vmax = (stats.values()|map(attribute='mean')|map('abs')|max) or 1 %}
 <svg viewBox="0 0 360 100" class="seasbars" preserveAspectRatio="xMidYMid meet">
@@ -55,6 +61,15 @@
   .seasbars { width:100%; height:auto; display:block; }
   .seasgrid[data-win="full"] .win-t30 { display:none; }
   .seasgrid[data-win="t30"] .win-full { display:none; }
+  .mosaic { border-collapse:separate; border-spacing:2px; font-size:11px; }
+  .mosaic th { color:var(--muted); font-weight:500; padding:2px 6px; text-align:center; }
+  .mosaic th.mosf, .mosaic td.mosf { text-align:left; white-space:nowrap; padding-right:12px; font-size:12.5px; }
+  .mosaic td.mos { width:46px; height:38px; text-align:center; border-radius:5px; color:var(--text); cursor:default; }
+  .mosaic td.mos .mm { display:block; font-size:12px; font-weight:600; font-variant-numeric:tabular-nums; }
+  .mosaic td.mos .mh { display:block; font-size:9px; opacity:.75; }
+  .mosaic td.mos.muted { background:var(--panel2); }
+  .mosaic .curm { outline:2px solid var(--text); outline-offset:-2px; }
+  .mosaic th.curm { outline:0; color:var(--text); font-weight:700; }
   .secthead { display:flex; align-items:baseline; gap:10px; margin:4px 0 8px; }
 </style>
 </head>
@@ -76,8 +91,8 @@
 
   <div class="panel">
     <div class="secthead">
-      <h2 style="margin:0">{{ t('Average return by calendar month', '按日历月份的平均回报') }}
-        {{ help('Each bar is that calendar month\'s average factor return across all years (green = positive, red = negative; bar height ∝ magnitude). Hover for mean, median and hit-rate (% of years that month was positive). The current month is shaded. Median + hit-rate sit alongside the mean because a single crisis month can swing a 30-year average.', '每根柱为该月历年平均因子回报（绿=正、红=负；高度∝幅度）。悬停查看均值、中位数与命中率（该月为正的年份比例）。当前月份已高亮。中位数与命中率与均值并列，因为单个危机月可大幅扭曲 30 年均值。') }}
+      <h2 style="margin:0">{{ t('Seasonality mosaic — mean return × hit-rate by month', '季节性矩阵 — 各月平均回报 × 命中率') }}
+        {{ help("A factor × calendar-month grid. The big number is that month's average factor return across all years (green = positive, red = negative; deeper = larger); the small number is the hit-rate (% of years that month was positive). Hover any cell for mean, median, hit-rate and sample size. The current month column is outlined. Median + hit-rate matter because a single crisis month can swing a 30-year average.", '因子 × 日历月份网格。大数为该月历年平均因子回报（绿=正、红=负；越深越大）；小数为命中率（该月为正的年份比例）。悬停查看均值、中位数、命中率与样本量。当前月份列已描边。中位数与命中率很重要，因为单个危机月可大幅扭曲 30 年均值。') }}
       </h2>
       <span style="flex:1"></span>
       <span class="seg" id="winseg">
@@ -85,17 +100,9 @@
         <button data-win="t30">{{ t('Trailing 30y', '近 30 年') }}</button>
       </span>
     </div>
-    <div class="cardgrid seasgrid" data-win="full" id="grid">
-      {% for f in seas.factors %}
-      <div class="fcard">
-        <h3>{{ t(f.label_en, f.label_zh) }}
-          <span class="badge">{{ t('since', '自') }} {{ f.start }}</span>
-          {% if f.context_only %}<span class="ctx">{{ t('reference', '参考') }}</span>{% endif %}
-        </h3>
-        <div class="win win-full">{{ monthbars(f.full) }}</div>
-        <div class="win win-t30">{% if f.trailing_30y %}{{ monthbars(f.trailing_30y) }}{% else %}<p class="muted sm">{{ t('not enough recent history', '近期历史不足') }}</p>{% endif %}</div>
-      </div>
-      {% endfor %}
+    <div class="seasgrid" data-win="full" id="grid" style="overflow-x:auto">
+      <div class="win win-full">{{ mosaic('full') }}</div>
+      <div class="win win-t30">{{ mosaic('trailing_30y') }}</div>
     </div>
   </div>
 
@@ -116,6 +123,7 @@
       });
       var cm=new Date().getMonth()+1;
       document.querySelectorAll('.mcol[data-m="'+cm+'"]').forEach(function(e){e.setAttribute('opacity','0.09');});
+      document.querySelectorAll('.mos[data-m="'+cm+'"], .mosh[data-m="'+cm+'"]').forEach(function(e){e.classList.add('curm');});
     })();
   </script>
   <script src="theme.js"></script>
