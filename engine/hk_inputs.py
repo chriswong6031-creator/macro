@@ -150,20 +150,15 @@ def build_features() -> pd.DataFrame:
         put(col, br[col] if (br is not None and col in br.columns) else None)
 
     # --- Stock-Connect SOUTHBOUND (mainland money into HK; HK-specific flow) ----
-    # Primary source is the `china_connect` store; the china_macro/connect_flow store
-    # (now also live off the datacenter report) is the fallback. Either way we build
-    # southbound_cum = cumulative daily net flow; its 20d change is the inflow(+)/
-    # outflow(−) direction the dual-liquidity overlay reads. Data starts 2014-11, so
-    # this leg renormalizes in from then (the overlay degrades gracefully meanwhile).
+    # From the `china_connect` store (raw daily net per leg). southbound_cum = cumulative
+    # daily net flow; its 20d change is the inflow(+)/outflow(−) direction the dual-
+    # liquidity overlay reads. Data starts 2014-11, so this leg renormalizes in from then
+    # (the overlay degrades gracefully meanwhile).
     sb = store.read("china_connect", "southbound")
     if sb is not None and "net" in sb.columns and not sb["net"].dropna().empty:
         put("southbound_cum", sb["net"].dropna().cumsum(), ffill_limit=5)
     else:
-        cf = store.read("china_macro", "connect_flow")   # fallback (datacenter report)
-        if cf is not None and "southbound_net" in cf.columns and not cf["southbound_net"].dropna().empty:
-            put("southbound_cum", cf["southbound_net"].dropna().cumsum(), ffill_limit=5)
-        else:
-            f["southbound_cum"] = np.nan
+        f["southbound_cum"] = np.nan
 
     return f
 

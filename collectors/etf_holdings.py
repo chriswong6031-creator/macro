@@ -47,6 +47,11 @@ INVESCO_API = ("https://dng-api.invesco.com/cache/v1/accounts/en_US/shareclasses
 # Global X: per-fund dated CSV; the on-page download link returns HTML, so hit the
 # dated assets.* URL directly and walk back a few business days on 404.
 GLOBALX_CSV = "https://assets.globalxetfs.com/funds/holdings/{fund}_full-holdings_{ymd}.csv"
+# Roundhill (Filepoint vendor): ONE dated master CSV covers ALL ~51 funds — filter the
+# `Account` column. Free, dated, backfillable to 2024 (recon D72). The server SOFT-404s
+# (HTTP 200 + an SPA page) for missing dates, so validate the body starts with "Date,Account".
+ROUNDHILL_MASTER = ("https://www.roundhillinvestments.com/assets/data/"
+                    "FilepointRoundhill.40RU.RU_Holdings_{mdy}.csv")
 
 OUT_COLS = ["ticker", "name", "weight_pct", "shares", "market_value", "as_of"]
 
@@ -199,6 +204,51 @@ class EtfHoldingsAdapter(Adapter):
             return self._normalize(df, ticker, asof, wcol=wcol, scol=scol,
                                    mcol=next((c for c in df.columns if "market_value" in c), None))
         raise RuntimeError(f"Global X: no holdings file in the last 6 days ({last_err})")
+
+    def _roundhill_master(self, mdy: str):
+        """Fetch + cache the dated Roundhill master holdings CSV (all funds). Returns
+        a DataFrame, or None when the date has no real file (the server soft-404s with
+        HTTP 200 + an SPA page, so we validate the body, not the status code)."""
+        cache = getattr(self, "_rh_cache", None)
+        if cache is None:
+            cache = self._rh_cache = {}
+        if mdy in cache:
+            return cache[mdy]
+        try:
+            r = self.http_get(ROUNDHILL_MASTER.format(mdy=mdy), retries=1, timeout=30,
+                              headers={"User-Agent": "Mozilla/5.0 (research)"})
+        except Exception:  # noqa: BLE001 — missing date; caller walks back
+            cache[mdy] = None
+            return None
+        if not r.text.lstrip().lower().startswith("date,account"):  # soft-404 guard
+            cache[mdy] = None
+            return None
+        cache[mdy] = pd.read_csv(io.StringIO(r.text))
+        return cache[mdy]
+
+    def _fetch_roundhill(self, ticker: str, spec: dict) -> pd.DataFrame:
+        last_err = None
+        for back in range(0, 6):
+            mdy = (date.today() - pd.Timedelta(days=back)).strftime("%m%d%Y")
+            master = self._roundhill_master(mdy)
+            if master is None:
+                continue
+            sub = master[master["Account"].astype(str).str.strip() == ticker]
+            if sub.empty:
+                last_err = ValueError(f"{ticker} not in Roundhill master {mdy}")
+                continue
+            asof = str(date.today())
+            try:
+                asof = str(pd.to_datetime(sub["Date"].iloc[0]).date())
+            except (ValueError, TypeError):
+                pass
+            df = sub.rename(columns={"StockTicker": "ticker", "SecurityName": "name",
+                                     "Weightings": "weight", "Shares": "shares",
+                                     "MarketValue": "market_value"})
+            df.columns = [str(c).strip().lower().replace(" ", "_") for c in df.columns]
+            return self._normalize(df, ticker, asof, wcol="weight", scol="shares",
+                                   mcol="market_value")
+        raise RuntimeError(f"Roundhill: no holdings for {ticker} in the last 6 days ({last_err})")
 
     # --- normalization ----------------------------------------------------------
     @staticmethod

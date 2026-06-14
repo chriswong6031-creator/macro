@@ -211,9 +211,49 @@ def _vix_sanitizer(vix: float | None, vix_high: float | None, asof, c: dict) -> 
     return out
 
 
-def snapshot(f: pd.DataFrame, conditions: dict | None = None) -> dict:
+def _catalyst_narrative(verdict: str, catalyst: dict | None) -> dict | None:
+    """NARRATIVE cross-check on Gate-1 (engine/catalyst_tone.py, LLM Tier-A).
+    The Fed-put switch answers buyable-washout vs knife from MACRO DATA; the LLM's
+    shock_reversible answers the same question from the actual CATALYST TEXT. This
+    surfaces agreement/divergence as CONTEXT only — it NEVER changes `verdict`.
+    None when there is no usable, confidence-passed reversibility read."""
+    if not catalyst:
+        return None
+    sr = catalyst.get("shock_reversible")
+    if sr not in ("reversible", "persistent"):       # unknown / gated / absent -> skip
+        return None
+    if verdict not in ("buyable_washout", "stand_aside"):
+        return None                                  # only meaningful when a dislocation is live
+    gate_says = "reversible" if verdict == "buyable_washout" else "persistent"
+    agree = sr == gate_says
+    if agree:
+        note = (f"Catalyst text corroborates the gate — reads as {sr.upper()}, matching the "
+                f"Fed-put switch ({verdict.replace('_', ' ')}).")
+    elif verdict == "buyable_washout":               # gate constructive, narrative cautious
+        note = ("Divergence — the Fed-put switch reads BUYABLE WASHOUT, but the catalyst text "
+                "reads PERSISTENT (structural). The validated gate governs; treat the narrative "
+                "as a caution flag worth a look.")
+    else:                                            # stand_aside, narrative constructive
+        note = ("Divergence — the Fed-put switch reads STAND ASIDE (knife), but the catalyst text "
+                "reads REVERSIBLE. The validated gate governs; the narrative is a watch-for-"
+                "stabilization hint, not a green light.")
+    return {
+        "shock_reversible": sr,
+        "confidence": catalyst.get("confidence"),
+        "agreement": "corroborates" if agree else "diverges",
+        "note": note,
+        "source_doc": catalyst.get("doc_id"),
+        "evidence": catalyst.get("evidence") or [],
+        "is_context_only": True,
+    }
+
+
+def snapshot(f: pd.DataFrame, conditions: dict | None = None,
+             catalyst: dict | None = None) -> dict:
     """latest-day dislocation read. `conditions` = the already-computed
-    conditions_snapshot (so we reuse its capitulation gauge); recomputed-free."""
+    conditions_snapshot (so we reuse its capitulation gauge); recomputed-free.
+    `catalyst` = the optional catalyst_tone daily_snapshot — a NARRATIVE cross-check
+    surfaced as context (`catalyst_narrative`); it never changes the verdict."""
     c = _cfg()
     spy = _col(f, "SPY")
     if spy is None:
@@ -300,6 +340,7 @@ def snapshot(f: pd.DataFrame, conditions: dict | None = None) -> dict:
         "put_reasons": reasons,
         "dislocation_active": dislocation_active,
         "gate2": _gate2(f, verdict, vix_term, c),
+        "catalyst_narrative": _catalyst_narrative(verdict, catalyst),  # context-only LLM cross-check
         "inputs": {
             "sahm": sahm,
             "breakeven_10y_1m": None if be21 is None else round(be21, 2),

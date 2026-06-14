@@ -10,7 +10,7 @@ plane, so every series:
 
 Stored under group `china_macro`, one parquet per series:
   pmi (mfg+nonmfg) · cpi · ppi · money_supply (M0/M1/M2 YoY) · indpro · rates
-  (SHIBOR tenors) · connect_flow (Stock Connect daily flows, datacenter report).
+  (SHIBOR tenors). Stock Connect flows live in their own collector (china_connect).
 
 Deferred (fiddlier hosts, engine degrades without them): social financing
 (data.mofcom.gov.cn POST, legacy SSL) and CGB bond yields (chinabond).
@@ -53,14 +53,6 @@ DATACENTER = {
 ALIASES = {"lpr": "rates"}
 SHIBOR_TENORS = {"3月(3M)": "rate_3m", "1年(1Y)": "rate_1y", "隔夜(O/N)": "rate_on"}
 
-# Stock Connect (沪深港通) daily flows — Eastmoney datacenter history report. Each row is
-# one trading day for a "combined" leg (MUTUAL_TYPE 006=southbound, 005=northbound).
-# NET/DEAL/BUY/SELL fields are 百万元 (1e6 RMB) -> /1e2 = 亿元; HOLD_MARKET_CAP is raw RMB
-# -> /1e8 = 亿元. Downstream uses (z-scores, cumulative sums) are scale-invariant, but we
-# normalise to 亿元 so the stored series is human-meaningful.
-CONNECT_REPORT = "RPT_MUTUAL_DEAL_HISTORY"
-CONNECT_FIELDS = {"net": "NET_DEAL_AMT", "turnover": "DEAL_AMT", "hold": "HOLD_MARKET_CAP"}
-
 
 class ChinaMacroAdapter(Adapter):
     name = "china_macro"
@@ -69,7 +61,6 @@ class ChinaMacroAdapter(Adapter):
 
     def __init__(self) -> None:
         self.cfg = config.load()["china"]["macro"]
-        self.hsgt_cfg = config.load()["china"]["hsgt"]
         self.enabled = [ALIASES.get(k, k) for k in self.cfg["enabled"]]
 
     def _headers(self) -> dict:
@@ -116,62 +107,6 @@ class ChinaMacroAdapter(Adapter):
             raise ValueError("rates: no SHIBOR tenors parsed")
         return wide
 
-    def _connect_flow(self, full_history: bool) -> pd.DataFrame:
-        """Stock Connect daily flows from the Eastmoney datacenter (RPT_MUTUAL_DEAL_HISTORY).
-
-        Replaces the dead push2his kamt.kline path, whose northbound legs have emitted a
-        constant synthetic placeholder (+8.4M RMB/day) ever since the 2024-08-16 regulatory
-        curtailment. Combined legs: 006=southbound (mainland->HK), 005=northbound (foreign->A).
-          southbound  fully live — daily NET (净买额), turnover, and cumulative HK holdings.
-          northbound  NET disclosure frozen 2024-08-16 (recent rows null); we keep the live
-                      turnover (成交额) and the pre-freeze historical NET for back-history.
-        Columns, all 亿元: southbound_net/southbound_turnover/southbound_hold,
-        northbound_net (frozen since 2024-08-16) / northbound_turnover (still live)."""
-        hc = self.hsgt_cfg
-        page = hc["page_size_full"] if full_history else hc["page_size_recent"]
-
-        def leg(mutual_type: str) -> pd.DataFrame:
-            rows: list[dict] = []
-            page_no = 1
-            while True:
-                params = {"reportName": CONNECT_REPORT, "columns": "ALL", "pageSize": page,
-                          "sortColumns": "TRADE_DATE", "sortTypes": -1, "pageNumber": page_no,
-                          "filter": f'(MUTUAL_TYPE="{mutual_type}")'}
-                r = self.http_get(hc["url"], params=params, retries=hc["retries"],
-                                  headers=self._headers(), timeout=30)
-                result = (r.json() or {}).get("result") or {}
-                data = result.get("data") or []
-                rows.extend(data)
-                # full backfill walks every page (the API caps each page at 2000 rows);
-                # an incremental run is satisfied by the single newest page
-                if not full_history or not data or page_no >= (result.get("pages") or 1):
-                    break
-                page_no += 1
-            if not rows:
-                raise ValueError(f"type {mutual_type}: empty result")
-            raw = pd.DataFrame(rows)
-            out = pd.DataFrame(index=pd.to_datetime(raw["TRADE_DATE"]))
-            for stored, src in CONNECT_FIELDS.items():
-                if src in raw.columns:
-                    # assign by value — raw carries a RangeIndex that would NaN-align otherwise
-                    col = pd.to_numeric(raw[src], errors="coerce").to_numpy()
-                    out[stored] = col / (1e8 if stored == "hold" else 1e2)  # raw RMB / 百万元 -> 亿元
-            return out.sort_index()
-
-        codes = hc["mutual_type"]
-        sb = leg(codes["southbound"])
-        nb = leg(codes["northbound"])
-        out = pd.DataFrame({
-            "southbound_net":      sb.get("net"),
-            "southbound_turnover": sb.get("turnover"),
-            "southbound_hold":     sb.get("hold"),       # cumulative mainland-in-HK holdings (亿元)
-            "northbound_net":      nb.get("net"),         # historical only — null since 2024-08-16
-            "northbound_turnover": nb.get("turnover"),    # still live (direction frozen 2024-08-16)
-        }).dropna(how="all").sort_index()
-        if out.empty:
-            raise ValueError("connect_flow: nothing parsed")
-        return out
-
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
         page = self.cfg["page_size"] if not full_history else max(self.cfg["page_size"], 2000)
         frames: dict[str, pd.DataFrame] = {}
@@ -189,13 +124,6 @@ class ChinaMacroAdapter(Adapter):
             except Exception as e:  # noqa: BLE001 — per-series isolation
                 errors.append(f"{key}: {e}")
                 log.warning("china_macro series %s failed: %s", key, e)
-
-        # Stock Connect daily flows (southbound live; northbound NET frozen 2024-08-16, turnover live)
-        try:
-            frames["connect_flow"] = self._connect_flow(full_history)
-        except Exception as e:  # noqa: BLE001
-            errors.append(f"connect_flow: {e}")
-            log.warning("china_macro connect_flow failed: %s", e)
 
         if not frames:
             raise RuntimeError("china_macro: all series failed — " + " | ".join(errors))

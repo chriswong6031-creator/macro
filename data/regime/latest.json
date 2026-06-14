@@ -3,20 +3,20 @@
   "quad": "Q1",
   "quad_name": "Goldilocks",
   "label": "Q1",
-  "growth_score": 0.533,
-  "inflation_score": -0.52,
-  "growth_confidence": 0.467,
-  "inflation_confidence": 0.416,
-  "confidence": 0.441,
+  "growth_score": 0.462,
+  "inflation_score": -0.652,
+  "growth_confidence": 0.385,
+  "inflation_confidence": 0.652,
+  "confidence": 0.518,
   "liquidity_overlay": "neutral",
   "cycle_tag": "mid",
-  "transition_state": "WEAKENING",
+  "transition_state": "STABLE",
   "transition_flags": {
     "flag_breadth_price": false,
     "flag_credit_equity": false,
     "flag_ratio_inflection": true,
     "flag_inflation_basket": false,
-    "flag_confidence_decay": true,
+    "flag_confidence_decay": false,
     "flag_gex": false
   },
   "confirming": [
@@ -25,24 +25,21 @@
     "growth_breadth_direction",
     "growth_payrolls_trend",
     "growth_indpro_trend",
-    "growth_wei_trend",
-    "growth_gdpnow_trend",
     "inflation_breakeven_10y_direction",
     "inflation_oil_trend",
     "inflation_inflation_beta_basket",
     "inflation_tips_nominal_momentum"
   ],
   "contradicting": [
-    "growth_cyclical_defensive",
-    "inflation_sticky_cpi_direction"
+    "growth_cyclical_defensive"
   ],
   "flip_condition": {
-    "axis": "inflation",
-    "component": "inflation_beta_basket",
-    "z": -0.64,
+    "axis": "growth",
+    "component": "breadth_direction",
+    "z": 0.9,
     "threshold": 0.45,
-    "margin": 0.19,
-    "note": "inflation axis flips risk: inflation_beta_basket slope z=-0.64 is the closest supporter to its +/-0.45 cutoff"
+    "margin": 0.45,
+    "note": "growth axis flips risk: breadth_direction slope z=0.9 is the closest supporter to its +/-0.45 cutoff"
   },
   "sector_rs": [
     {
@@ -261,169 +258,34 @@
       "chg_20d_pct": 11.18
     }
   },
-  "alerts": [],
-  "conditions": {
-    "financial_conditions": {
-      "nfci": -0.506,
-      "nfci_pctile": 0.23214285714285715,
-      "nfci_change_13w": -0.03799999999999998,
-      "state": "loose",
-      "trend": "loosening",
-      "subindices": {
-        "nfci_risk": -0.602,
-        "nfci_credit": -0.035,
-        "nfci_leverage": 0.453
-      },
-      "stlfsi": -0.8681
+  "alerts": [
+    {
+      "rule": "holdings_active_change",
+      "severity": "info",
+      "message": "ARKK: manager cut BIDU by -56% of position (2026-06-11..2026-06-12, flow-normalized)",
+      "message_zh": "ARKK\uff1a\u7ecf\u7406 cut BIDU \u4ed3\u4f4d -56%\uff082026-06-11..2026-06-12\uff0c\u5df2\u6309\u8d44\u91d1\u6d41\u6807\u51c6\u5316\uff09"
     },
-    "recession": {
-      "score": 8.767981087785952,
-      "label": "low",
-      "components": {
-        "sahm": 20.0,
-        "prob": 0.44,
-        "ebp_prob": 9.30245069395062,
-        "curve": 0.0,
-        "ebp_level": 16.30952380952381
-      },
-      "curve_raw": 0.39,
-      "curve_tp_adjusted": 1.1919,
-      "sahm": 0.1,
-      "ebp": -0.3914736491748761,
-      "ny_fed_prob": 0.44,
-      "curve_note": "raw and term-premium-adjusted curve agree"
-    },
-    "growth_nowcast": {
-      "wei": 2.9,
-      "wei_trend": "rising",
-      "gdpnow": 3.2906
-    },
-    "inflation_nowcast": {
-      "sticky_ann": 3.3161359677362334,
-      "sticky_trend": "accelerating",
-      "flexible_ann": 22.44469523310475,
-      "median_cpi": 3.66429024270862,
-      "umich_1y_exp": 4.7,
-      "read": "transitory (flexible-led)"
-    },
-    "risk_appetite": {
-      "vrp": 2.9962195773045615,
-      "vrp_pctile": 0.30357142857142855,
-      "vrp_state": "normal",
-      "realized_vol": 14.68378072787122,
-      "vix_term": 0.8620185328071865,
-      "vix_term_state": "contango (calm)",
-      "skew": 142.6,
-      "skew_pctile": 0.3194444444444444,
-      "stock_bond_corr": 0.6936367796179752,
-      "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.4163673844839169,
-      "roro_state": "risk-on",
-      "vol_target_scalar": 0.8172282208779413
-    },
-    "drawdown_risk": {
-      "score": 13.440746237015052,
-      "band": "low",
-      "dd10_prob_pct": 8,
-      "base_rate_pct": 8
-    },
-    "capitulation": {
-      "score": 1,
-      "active": true,
-      "strong": false,
-      "signals_firing": [],
-      "measured_bounce_pct": 4.5,
-      "measured_hit_pct": 75,
-      "base_rate_pct": 2.8
-    },
-    "style_tilt": {
-      "yield_chg_1m_bp": -2.0,
-      "tilt": "neutral",
-      "driver": "10y yield direction",
-      "measured": "rising 10y -> value (+0.84%/63d, t=+3.0, all 4 sub-periods); Q1->value, Q4->growth"
+    {
+      "rule": "holdings_active_change",
+      "severity": "info",
+      "message": "ARKW: manager cut BIDU by -48% of position (2026-06-11..2026-06-12, flow-normalized)",
+      "message_zh": "ARKW\uff1a\u7ecf\u7406 cut BIDU \u4ed3\u4f4d -48%\uff082026-06-11..2026-06-12\uff0c\u5df2\u6309\u8d44\u91d1\u6d41\u6807\u51c6\u5316\uff09"
     }
-  },
-  "macro_risk": {
-    "score": 0.1068,
-    "label": "low",
-    "components": {
-      "recession": 0.088,
-      "drawdown": 0.134,
-      "nfci": 0.0,
-      "liquidity": 0.0,
-      "transition": 0.5
-    }
-  },
-  "dislocation": {
-    "asof": "2026-06-12",
-    "verdict": "calm",
-    "headline": "No acute dislocation \u2014 markets are not in a stress washout.",
-    "fed_put": true,
-    "put_state": "put-present",
-    "put_reasons": [],
-    "dislocation_active": false,
-    "gate2": {
-      "state": "dormant",
-      "label": "Entry timer arms only inside a buyable washout.",
-      "measured": "Matched buyable washouts (2006+): waiting for the term un-inversion lifted hit 61\u219267%, median 63d return +2.2\u2192+4.6%, median drawdown \u22124.5\u2192\u22122.9%; the 1-in-10 tail was marginally worse. A confirm, not a bottom-caller."
-    },
-    "inputs": {
-      "sahm": 0.1,
-      "breakeven_10y_1m": 2.39,
-      "primary_trend": "up",
-      "spy_drawdown_pct": -2.3,
-      "vix": 17.7,
-      "vix_term": 0.862,
-      "vix_front_future": 17.97,
-      "vix_vs_front": 0.98,
-      "vix_reliable": true,
-      "vix_intraday_high": 19.9,
-      "vix_wick_pct": 12.3,
-      "vrp_pctile": 0.3,
-      "capitulation_active": true,
-      "capitulation_strong": false,
-      "capitulation_signals": [],
-      "triggers": []
-    },
-    "capitulation_caveat": null,
-    "vix_caveat": null,
-    "vix_wick_note": null,
-    "evidence": {
-      "robust": "Put-present washouts had ~4pp shallower MEDIAN 3-month drawdown than put-absent \u2014 the one effect whose 95% CI excludes zero ([+0.3, +6.3], episode block bootstrap, SPY 1997-2026).",
-      "sign_consistent": "Higher hit-rate and a shallower 1-year tail point the same way but their CIs span zero at ~10 effective crises \u2014 carried by leave-one-year-out (26/28 years) and BOTH split-halves, not significance.",
-      "caveat": "A drawdown / risk filter, not a return signal. In a Fed-put regime even knife-looking dips often recover; in a put-absent regime (recession or inflation-locked) the same capitulation signals caught the 2000/2008/2022 falling knife.",
-      "source": "scripts/research_dislocation.py \u00b7 research/DISLOCATION_VALIDATION.md"
-    }
-  },
+  ],
   "playbook": {
-    "headline": "Goldilocks \u2014 growth improving while inflation cools. Posture: NEUTRAL \u2014 no edge either way; core holdings only, no new conviction bets.",
+    "headline": "Goldilocks \u2014 growth improving while inflation cools. Posture: CONSTRUCTIVE \u2014 lean long; normal position sizes in confirmed leaders.",
     "dial": {
-      "score": 0,
-      "posture": "NEUTRAL",
-      "meaning": "no edge either way; core holdings only, no new conviction bets",
-      "meaning_zh": "\u53cc\u5411\u5747\u65e0\u4f18\u52bf\uff1b\u4ec5\u6301\u6838\u5fc3\u4ed3\u4f4d\uff0c\u4e0d\u65b0\u589e\u9ad8\u4fe1\u5fc3\u62bc\u6ce8",
+      "score": 1,
+      "posture": "CONSTRUCTIVE",
+      "meaning": "lean long; normal position sizes in confirmed leaders",
+      "meaning_zh": "\u504f\u591a\uff1b\u5728\u5df2\u786e\u8ba4\u7684\u9886\u6da8\u8005\u4e2d\u91c7\u7528\u5e38\u89c4\u4ed3\u4f4d",
       "reasons": [
         [
-          "i",
-          "Transition radar reads WEAKENING (2+ warning flags) \u2014 no action required yet, but stop adding regime-dependent risk",
-          "\u8f6c\u6362\u96f7\u8fbe\u663e\u793a\u8d70\u5f31\uff082 \u4e2a\u4ee5\u4e0a\u9884\u8b66\u6807\u5fd7\uff09\u2014 \u6682\u65e0\u9700\u64cd\u4f5c\uff0c\u4f46\u505c\u6b62\u589e\u52a0\u4f9d\u8d56\u5468\u671f\u7684\u98ce\u9669"
+          "+",
+          "Risk-friendly regime (Goldilocks) with no transition warnings \u2014 in this condition the S&P averaged +0.85%/month, 65.9% positive",
+          "\u5229\u597d\u98ce\u9669\u7684\u5468\u671f\uff08\u7406\u60f3\u589e\u957f\uff09\uff0c\u4e14\u65e0\u8f6c\u6362\u9884\u8b66 \u2014 \u5728\u6b64\u6761\u4ef6\u4e0b S&P \u5e73\u5747\u6708\u5ea6 +0.85%\uff0c65.9% \u4e3a\u6b63"
         ]
       ]
-    },
-    "scenario": {
-      "group": "risk-on quads (Q1/Q2)",
-      "direction": "loosening",
-      "current": {
-        "n": 609,
-        "hit_pct": 72.0,
-        "avg_pct": 1.23
-      },
-      "contrast": {
-        "n": 420,
-        "hit_pct": 58.0,
-        "avg_pct": 0.37
-      },
-      "contrast_direction": "tightening"
     },
     "leaders": [
       {
@@ -505,45 +367,45 @@
     "next_quad": "Q2",
     "next_quad_name": "Reflation",
     "next_quad_probs": {
-      "Q2": 0.59,
-      "Q4": 0.34,
-      "Q3": 0.08
+      "Q2": 0.62,
+      "Q4": 0.26,
+      "Q3": 0.12
     },
     "next_list": [
       {
         "code": "Q2",
         "name": "Reflation",
         "meaning": "Reflation \u2014 growth and inflation both heating up",
-        "prob_pct": 59
+        "prob_pct": 62
       },
       {
         "code": "Q4",
         "name": "Growth scare",
         "meaning": "Growth scare \u2014 growth and inflation both falling",
-        "prob_pct": 34
+        "prob_pct": 26
       },
       {
         "code": "Q3",
         "name": "Stagflation",
         "meaning": "Stagflation \u2014 inflation rising while growth rolls over",
-        "prob_pct": 8
+        "prob_pct": 12
       }
     ],
     "progress": {
       "age_days": 11,
-      "median_days": 26,
-      "pct_longer": 86.0,
-      "median_remaining_days": 22,
+      "median_days": 23,
+      "pct_longer": 78.0,
+      "median_remaining_days": 14,
       "phase": "early",
       "phase_note": "still young \u2014 regime-aligned positions have historical room to run",
       "phase_note_zh": "\u4ecd\u5904\u65e9\u671f \u2014 \u987a\u5e94\u5468\u671f\u7684\u4ed3\u4f4d\u5728\u5386\u53f2\u4e0a\u4ecd\u6709\u4e0a\u884c\u7a7a\u95f4",
-      "bar_pct": 15.6,
-      "zone_early_pct": 28.4,
-      "zone_mid_pct": 59.8,
-      "n_history": 117
+      "bar_pct": 24.4,
+      "zone_early_pct": 37.8,
+      "zone_mid_pct": 57.8,
+      "n_history": 51
     },
-    "regime_age_note": "This Goldilocks stretch is 11 trading days old (historical median: 26). When Goldilocks ended, it went to: Reflation 59%, Growth scare 34%, Stagflation 8%",
-    "regime_age_note_zh": "\u672c\u8f6e\u7406\u60f3\u589e\u957f\u5df2\u6301\u7eed 11 \u4e2a\u4ea4\u6613\u65e5 \uff08\u5386\u53f2\u4e2d\u4f4d\u6570\uff1a26\uff09\u3002\u5f53\u7406\u60f3\u589e\u957f\u7ed3\u675f\u65f6\uff0c\u5b83\u8f6c\u5411\u4e86\uff1a\u518d\u901a\u80c0 59%\u3001\u589e\u957f\u6050\u614c 34%\u3001\u6ede\u80c0 8%",
+    "regime_age_note": "This Goldilocks stretch is 11 trading days old (historical median: 23). When Goldilocks ended, it went to: Reflation 62%, Growth scare 26%, Stagflation 12%",
+    "regime_age_note_zh": "\u672c\u8f6e\u7406\u60f3\u589e\u957f\u5df2\u6301\u7eed 11 \u4e2a\u4ea4\u6613\u65e5 \uff08\u5386\u53f2\u4e2d\u4f4d\u6570\uff1a23\uff09\u3002\u5f53\u7406\u60f3\u589e\u957f\u7ed3\u675f\u65f6\uff0c\u5b83\u8f6c\u5411\u4e86\uff1a\u518d\u901a\u80c0 62%\u3001\u589e\u957f\u6050\u614c 26%\u3001\u6ede\u80c0 12%",
     "quad_meaning": {
       "en": "Goldilocks \u2014 growth improving while inflation cools",
       "zh": "\u7406\u60f3\u589e\u957f \u2014 \u589e\u957f\u6539\u5584\u3001\u901a\u80c0\u964d\u6e29"
@@ -558,16 +420,12 @@
     ],
     "triggers": [
       [
-        "The most fragile support is inflation-winner sectors vs inflation-loser sectors \u2014 if it rolls over, the inflation signal flips.",
-        "\u6700\u8106\u5f31\u7684\u652f\u6491\u662f\u901a\u80c0\u53d7\u76ca\u677f\u5757 vs \u901a\u80c0\u53d7\u635f\u677f\u5757 \u2014 \u82e5\u5176\u53cd\u8f6c\uff0cinflation \u4fe1\u53f7\u5c06\u7ffb\u8f6c\u3002"
+        "The most fragile support is how many S&P 500 stocks are in uptrends \u2014 if it rolls over, the growth signal flips.",
+        "\u6700\u8106\u5f31\u7684\u652f\u6491\u662f\u5904\u4e8e\u4e0a\u6da8\u8d8b\u52bf\u7684 S&P 500 \u4e2a\u80a1\u6570\u91cf \u2014 \u82e5\u5176\u53cd\u8f6c\uff0cgrowth \u4fe1\u53f7\u5c06\u7ffb\u8f6c\u3002"
       ],
       [
         "Warning already active: risk-appetite ratios just turned against the regime.",
         "\u9884\u8b66\u5df2\u6fc0\u6d3b\uff1a\u98ce\u9669\u504f\u597d\u6bd4\u7387\u521a\u8f6c\u4e3a\u4e0d\u5229\u4e8e\u5f53\u524d\u5468\u671f\u3002"
-      ],
-      [
-        "Warning already active: the signals behind the regime are losing agreement.",
-        "\u9884\u8b66\u5df2\u6fc0\u6d3b\uff1a\u652f\u6491\u5f53\u524d\u5468\u671f\u7684\u4fe1\u53f7\u4e00\u81f4\u5ea6\u6b63\u5728\u4e0b\u964d\u3002"
       ],
       [
         "For a shift to Reflation, watch for inflation expectations and energy turning up while growth holds.",
@@ -599,14 +457,17 @@
           "regime": 8,
           "tape": 25,
           "technicals": 30,
-          "crowding": 0,
-          "macro": 0
+          "crowding": 0
         },
         "heat_band": "55-69",
         "heat_label": "HOT",
         "heat_note": "confirmed strength. Fine to hold; fresh entries showed no historical edge \u2014 prefer pullbacks that hold the trend.",
         "heat_note_zh": "\u5f3a\u52bf\u5df2\u786e\u8ba4\u3002\u53ef\u4ee5\u6301\u6709\uff1b\u65b0\u5efa\u4ed3\u4f4d\u65e0\u5386\u53f2\u4f18\u52bf \u2014 \u4f18\u5148\u9009\u62e9\u5b88\u4f4f\u8d8b\u52bf\u7684\u56de\u8c03\u3002",
-        "heat_cal": null,
+        "heat_cal": {
+          "n": 680,
+          "hit_pct": 53.7,
+          "avg_excess_pct": 0.2
+        },
         "season_this": "Jun: -0.6% avg, up 46% of years (n=28)",
         "season_next": "Jul: +1.5% avg, up 52% of years (n=27)",
         "season_all": {
@@ -691,23 +552,22 @@
         "tech_rsi14": 38.0,
         "tech_macd_pos": false,
         "tech_off_52w_high_pct": -6.7,
-        "heat": 25,
+        "heat": 33,
         "heat_parts": {
-          "score": 25,
-          "regime": 18,
+          "score": 33,
+          "regime": 25,
           "tape": 4,
           "technicals": 4,
-          "crowding": 0,
-          "macro": -1
+          "crowding": 0
         },
         "heat_band": "0-39",
         "heat_label": "COLD",
         "heat_note": "washed out. Historically this band mildly mean-reverts upward, but timing is unreliable \u2014 wait for the confirmation trigger.",
         "heat_note_zh": "\u5df2\u8d85\u5356\u3002\u5386\u53f2\u4e0a\u8be5\u533a\u95f4\u5b58\u5728\u6e29\u548c\u7684\u5747\u503c\u4e0a\u884c\u56de\u5f52\uff0c\u4f46\u62e9\u65f6\u4e0d\u53ef\u9760 \u2014 \u7b49\u5f85\u786e\u8ba4\u89e6\u53d1\u4fe1\u53f7\u3002",
         "heat_cal": {
-          "n": 10741,
-          "hit_pct": 49.9,
-          "avg_excess_pct": 0.12
+          "n": 9160,
+          "hit_pct": 48.6,
+          "avg_excess_pct": 0.03
         },
         "season_this": "Jun: +1.3% avg, up 75% of years (n=8)",
         "season_next": "Jul: +2.4% avg, up 75% of years (n=8)",
@@ -801,17 +661,16 @@
           "regime": 8,
           "tape": 10,
           "technicals": 18,
-          "crowding": 0,
-          "macro": 0
+          "crowding": 0
         },
         "heat_band": "0-39",
         "heat_label": "COLD",
         "heat_note": "washed out. Historically this band mildly mean-reverts upward, but timing is unreliable \u2014 wait for the confirmation trigger.",
         "heat_note_zh": "\u5df2\u8d85\u5356\u3002\u5386\u53f2\u4e0a\u8be5\u533a\u95f4\u5b58\u5728\u6e29\u548c\u7684\u5747\u503c\u4e0a\u884c\u56de\u5f52\uff0c\u4f46\u62e9\u65f6\u4e0d\u53ef\u9760 \u2014 \u7b49\u5f85\u786e\u8ba4\u89e6\u53d1\u4fe1\u53f7\u3002",
         "heat_cal": {
-          "n": 10741,
-          "hit_pct": 49.9,
-          "avg_excess_pct": 0.12
+          "n": 9160,
+          "hit_pct": 48.6,
+          "avg_excess_pct": 0.03
         },
         "season_this": "Jun: +0.1% avg, up 54% of years (n=28)",
         "season_next": "Jul: +0.1% avg, up 59% of years (n=27)",
@@ -897,23 +756,22 @@
         "tech_rsi14": 65.0,
         "tech_macd_pos": true,
         "tech_off_52w_high_pct": -4.9,
-        "heat": 52,
+        "heat": 53,
         "heat_parts": {
-          "score": 52,
+          "score": 53,
           "regime": 8,
           "tape": 15,
           "technicals": 30,
-          "crowding": 0,
-          "macro": -1
+          "crowding": 0
         },
         "heat_band": "40-54",
         "heat_label": "NEUTRAL",
         "heat_note": "mixed picture, no statistical lean either way.",
         "heat_note_zh": "\u56fe\u666f\u6df7\u6742\uff0c\u7edf\u8ba1\u4e0a\u65e0\u660e\u663e\u503e\u5411\u3002",
         "heat_cal": {
-          "n": 2196,
-          "hit_pct": 47.9,
-          "avg_excess_pct": -0.16
+          "n": 2886,
+          "hit_pct": 50.9,
+          "avg_excess_pct": 0.22
         },
         "season_this": "Jun: -0.9% avg, up 39% of years (n=28)",
         "season_next": "Jul: +1.9% avg, up 67% of years (n=27)",
@@ -1007,14 +865,17 @@
           "regime": 8,
           "tape": 25,
           "technicals": 30,
-          "crowding": 0,
-          "macro": 0
+          "crowding": 0
         },
         "heat_band": "55-69",
         "heat_label": "HOT",
         "heat_note": "confirmed strength. Fine to hold; fresh entries showed no historical edge \u2014 prefer pullbacks that hold the trend.",
         "heat_note_zh": "\u5f3a\u52bf\u5df2\u786e\u8ba4\u3002\u53ef\u4ee5\u6301\u6709\uff1b\u65b0\u5efa\u4ed3\u4f4d\u65e0\u5386\u53f2\u4f18\u52bf \u2014 \u4f18\u5148\u9009\u62e9\u5b88\u4f4f\u8d8b\u52bf\u7684\u56de\u8c03\u3002",
-        "heat_cal": null,
+        "heat_cal": {
+          "n": 680,
+          "hit_pct": 53.7,
+          "avg_excess_pct": 0.2
+        },
         "season_this": "Jun: -0.4% avg, up 46% of years (n=28)",
         "season_next": "Jul: +1.7% avg, up 74% of years (n=27)",
         "season_all": {
@@ -1099,23 +960,22 @@
         "tech_rsi14": 56.0,
         "tech_macd_pos": false,
         "tech_off_52w_high_pct": -6.8,
-        "heat": 45,
+        "heat": 52,
         "heat_parts": {
-          "score": 45,
-          "regime": 18,
+          "score": 52,
+          "regime": 25,
           "tape": 12,
           "technicals": 25,
-          "crowding": -10,
-          "macro": 0
+          "crowding": -10
         },
         "heat_band": "40-54",
         "heat_label": "NEUTRAL",
         "heat_note": "mixed picture, no statistical lean either way.",
         "heat_note_zh": "\u56fe\u666f\u6df7\u6742\uff0c\u7edf\u8ba1\u4e0a\u65e0\u660e\u663e\u503e\u5411\u3002",
         "heat_cal": {
-          "n": 2196,
-          "hit_pct": 47.9,
-          "avg_excess_pct": -0.16
+          "n": 2886,
+          "hit_pct": 50.9,
+          "avg_excess_pct": 0.22
         },
         "season_this": "Jun: +0.8% avg, up 50% of years (n=28)",
         "season_next": "Jul: +1.6% avg, up 67% of years (n=27)",
@@ -1207,17 +1067,16 @@
           "regime": 8,
           "tape": 15,
           "technicals": 30,
-          "crowding": 0,
-          "macro": 0
+          "crowding": 0
         },
         "heat_band": "40-54",
         "heat_label": "NEUTRAL",
         "heat_note": "mixed picture, no statistical lean either way.",
         "heat_note_zh": "\u56fe\u666f\u6df7\u6742\uff0c\u7edf\u8ba1\u4e0a\u65e0\u660e\u663e\u503e\u5411\u3002",
         "heat_cal": {
-          "n": 2196,
-          "hit_pct": 47.9,
-          "avg_excess_pct": -0.16
+          "n": 2886,
+          "hit_pct": 50.9,
+          "avg_excess_pct": 0.22
         },
         "season_this": "Jun: -0.1% avg, up 43% of years (n=28)",
         "season_next": "Jul: +1.2% avg, up 63% of years (n=27)",
@@ -1311,14 +1170,17 @@
           "regime": 8,
           "tape": 25,
           "technicals": 30,
-          "crowding": 0,
-          "macro": 0
+          "crowding": 0
         },
         "heat_band": "55-69",
         "heat_label": "HOT",
         "heat_note": "confirmed strength. Fine to hold; fresh entries showed no historical edge \u2014 prefer pullbacks that hold the trend.",
         "heat_note_zh": "\u5f3a\u52bf\u5df2\u786e\u8ba4\u3002\u53ef\u4ee5\u6301\u6709\uff1b\u65b0\u5efa\u4ed3\u4f4d\u65e0\u5386\u53f2\u4f18\u52bf \u2014 \u4f18\u5148\u9009\u62e9\u5b88\u4f4f\u8d8b\u52bf\u7684\u56de\u8c03\u3002",
-        "heat_cal": null,
+        "heat_cal": {
+          "n": 680,
+          "hit_pct": 53.7,
+          "avg_excess_pct": 0.2
+        },
         "season_this": "Jun: +2.0% avg, up 91% of years (n=11)",
         "season_next": "Jul: +3.3% avg, up 90% of years (n=10)",
         "season_all": {
@@ -1409,17 +1271,16 @@
           "regime": 8,
           "tape": 15,
           "technicals": 23,
-          "crowding": 0,
-          "macro": 0
+          "crowding": 0
         },
         "heat_band": "40-54",
         "heat_label": "NEUTRAL",
         "heat_note": "mixed picture, no statistical lean either way.",
         "heat_note_zh": "\u56fe\u666f\u6df7\u6742\uff0c\u7edf\u8ba1\u4e0a\u65e0\u660e\u663e\u503e\u5411\u3002",
         "heat_cal": {
-          "n": 2196,
-          "hit_pct": 47.9,
-          "avg_excess_pct": -0.16
+          "n": 2886,
+          "hit_pct": 50.9,
+          "avg_excess_pct": 0.22
         },
         "season_this": "Jun: -0.1% avg, up 54% of years (n=28)",
         "season_next": "Jul: +1.1% avg, up 67% of years (n=27)",
@@ -1513,17 +1374,16 @@
           "regime": 8,
           "tape": 15,
           "technicals": 30,
-          "crowding": 0,
-          "macro": 0
+          "crowding": 0
         },
         "heat_band": "40-54",
         "heat_label": "NEUTRAL",
         "heat_note": "mixed picture, no statistical lean either way.",
         "heat_note_zh": "\u56fe\u666f\u6df7\u6742\uff0c\u7edf\u8ba1\u4e0a\u65e0\u660e\u663e\u503e\u5411\u3002",
         "heat_cal": {
-          "n": 2196,
-          "hit_pct": 47.9,
-          "avg_excess_pct": -0.16
+          "n": 2886,
+          "hit_pct": 50.9,
+          "avg_excess_pct": 0.22
         },
         "season_this": "Jun: +0.7% avg, up 57% of years (n=28)",
         "season_next": "Jul: +1.1% avg, up 63% of years (n=27)",
@@ -1611,23 +1471,22 @@
         "tech_rsi14": 48.0,
         "tech_macd_pos": false,
         "tech_off_52w_high_pct": -6.2,
-        "heat": 30,
+        "heat": 37,
         "heat_parts": {
-          "score": 30,
-          "regime": 18,
+          "score": 37,
+          "regime": 25,
           "tape": 4,
           "technicals": 8,
-          "crowding": 0,
-          "macro": 0
+          "crowding": 0
         },
         "heat_band": "0-39",
         "heat_label": "COLD",
         "heat_note": "washed out. Historically this band mildly mean-reverts upward, but timing is unreliable \u2014 wait for the confirmation trigger.",
         "heat_note_zh": "\u5df2\u8d85\u5356\u3002\u5386\u53f2\u4e0a\u8be5\u533a\u95f4\u5b58\u5728\u6e29\u548c\u7684\u5747\u503c\u4e0a\u884c\u56de\u5f52\uff0c\u4f46\u62e9\u65f6\u4e0d\u53ef\u9760 \u2014 \u7b49\u5f85\u786e\u8ba4\u89e6\u53d1\u4fe1\u53f7\u3002",
         "heat_cal": {
-          "n": 10741,
-          "hit_pct": 49.9,
-          "avg_excess_pct": 0.12
+          "n": 9160,
+          "hit_pct": 48.6,
+          "avg_excess_pct": 0.03
         },
         "season_this": "Jun: -0.1% avg, up 54% of years (n=28)",
         "season_next": "Jul: +1.8% avg, up 70% of years (n=27)",
@@ -1700,14 +1559,24 @@
     ],
     "heat_calibration": {
       "0-39": {
-        "n": 10741,
-        "hit_pct": 49.9,
-        "avg_excess_pct": 0.12
+        "n": 9160,
+        "hit_pct": 48.6,
+        "avg_excess_pct": 0.03
       },
       "40-54": {
-        "n": 2196,
-        "hit_pct": 47.9,
-        "avg_excess_pct": -0.16
+        "n": 2886,
+        "hit_pct": 50.9,
+        "avg_excess_pct": 0.22
+      },
+      "55-69": {
+        "n": 680,
+        "hit_pct": 53.7,
+        "avg_excess_pct": 0.2
+      },
+      "70+": {
+        "n": 199,
+        "hit_pct": 42.7,
+        "avg_excess_pct": -0.94
       }
     },
     "commodities": [
@@ -1770,73 +1639,109 @@
     ],
     "evidence": {
       "liquidity_expanding": {
-        "n": 378,
-        "fwd21_avg_pct": 1.17,
+        "n": 385,
+        "fwd21_avg_pct": 1.19,
         "fwd21_hit_pct": 71.4,
-        "avg_worst_dd63_pct": NaN
+        "avg_worst_dd63_pct": -4.91
       },
       "liquidity_contracting": {
-        "n": 272,
-        "fwd21_avg_pct": 0.62,
-        "fwd21_hit_pct": 62.5,
-        "avg_worst_dd63_pct": NaN
+        "n": 277,
+        "fwd21_avg_pct": 0.55,
+        "fwd21_hit_pct": 62.1,
+        "avg_worst_dd63_pct": -5.9
       },
       "quad_q3": {
-        "n": 187,
-        "fwd21_avg_pct": 0.11,
-        "fwd21_hit_pct": 57.8,
-        "avg_worst_dd63_pct": NaN
+        "n": 199,
+        "fwd21_avg_pct": 0.08,
+        "fwd21_hit_pct": 59.3,
+        "avg_worst_dd63_pct": -6.69
       },
       "risk_on_quads": {
-        "n": 1029,
-        "fwd21_avg_pct": 0.88,
-        "fwd21_hit_pct": 66.1,
-        "avg_worst_dd63_pct": NaN
-      },
-      "risk_off_quads": {
-        "n": 522,
+        "n": 815,
         "fwd21_avg_pct": 0.67,
         "fwd21_hit_pct": 63.4,
-        "avg_worst_dd63_pct": NaN
+        "avg_worst_dd63_pct": -5.06
+      },
+      "risk_off_quads": {
+        "n": 526,
+        "fwd21_avg_pct": 0.65,
+        "fwd21_hit_pct": 64.6,
+        "avg_worst_dd63_pct": -6.82
       },
       "risk_on_stable": {
-        "n": 804,
-        "fwd21_avg_pct": 0.93,
-        "fwd21_hit_pct": 67.2,
-        "avg_worst_dd63_pct": NaN
+        "n": 618,
+        "fwd21_avg_pct": 0.85,
+        "fwd21_hit_pct": 65.9,
+        "avg_worst_dd63_pct": -4.83
       },
       "risk_on_warning": {
-        "n": 225,
-        "fwd21_avg_pct": 0.69,
-        "fwd21_hit_pct": 62.2,
-        "avg_worst_dd63_pct": NaN
-      },
-      "conditions_nfci_tightening": {
-        "n": 717,
-        "fwd21_avg_pct": 0.54,
-        "fwd21_hit_pct": 60.7,
-        "avg_worst_dd63_pct": NaN
-      },
-      "conditions_nfci_loosening": {
-        "n": 834,
-        "fwd21_avg_pct": 1.04,
-        "fwd21_hit_pct": 69.1,
-        "avg_worst_dd63_pct": NaN
-      },
-      "conditions_recession_high": {
-        "n": 72,
-        "fwd21_avg_pct": -1.43,
-        "fwd21_hit_pct": 50.0,
-        "avg_worst_dd63_pct": NaN
-      },
-      "conditions_recession_low": {
-        "n": 1263,
-        "fwd21_avg_pct": 1.09,
-        "fwd21_hit_pct": 68.1,
-        "avg_worst_dd63_pct": NaN
+        "n": 197,
+        "fwd21_avg_pct": 0.1,
+        "fwd21_hit_pct": 55.8,
+        "avg_worst_dd63_pct": -5.8
       }
     },
     "honesty": "Sector picks vs the index showed no stable edge in our 2000-2026 backtest (results flip between decades) \u2014 so sector calls here are risk filters and confirmation tools, not return predictions. The exposure dial conditions are the statistically robust part.",
     "honesty_zh": "\u5728\u6211\u4eec 2000-2026 \u5e74\u7684\u56de\u6d4b\u4e2d\uff0c\u76f8\u5bf9\u6307\u6570\u7684\u677f\u5757\u9009\u62e9\u5e76\u65e0\u7a33\u5b9a\u4f18\u52bf \uff08\u7ed3\u679c\u5728\u4e0d\u540c\u5e74\u4ee3\u95f4\u53cd\u590d\u7ffb\u8f6c\uff09\u2014 \u56e0\u6b64\u8fd9\u91cc\u7684\u677f\u5757\u5224\u65ad\u662f\u98ce\u9669\u8fc7\u6ee4\u4e0e\u786e\u8ba4\u5de5\u5177\uff0c\u800c\u975e\u56de\u62a5\u9884\u6d4b\u3002\u4ed3\u4f4d\u523b\u5ea6\u76d8\u7684\u6761\u4ef6\u624d\u662f\u7edf\u8ba1\u4e0a\u7a33\u5065\u7684\u90e8\u5206\u3002"
+  },
+  "conditions": {
+    "financial_conditions": {
+      "nfci": -0.506,
+      "nfci_pctile": 0.23214285714285715,
+      "nfci_change_13w": -0.03799999999999998,
+      "state": "loose",
+      "trend": "loosening",
+      "subindices": {
+        "nfci_risk": -0.602,
+        "nfci_credit": -0.035,
+        "nfci_leverage": 0.453
+      },
+      "stlfsi": -0.8681
+    },
+    "recession": {
+      "score": 8.767981087785952,
+      "label": "low",
+      "components": {
+        "sahm": 20.0,
+        "prob": 0.44,
+        "ebp_prob": 9.30245069395062,
+        "curve": 0.0,
+        "ebp_level": 16.30952380952381
+      },
+      "curve_raw": 0.39,
+      "curve_tp_adjusted": 1.1919,
+      "sahm": 0.1,
+      "ebp": -0.3914736491748761,
+      "ny_fed_prob": 0.44,
+      "curve_note": "raw and term-premium-adjusted curve agree"
+    },
+    "growth_nowcast": {
+      "wei": 2.9,
+      "wei_trend": "rising",
+      "gdpnow": 3.2906
+    },
+    "inflation_nowcast": {
+      "sticky_ann": 3.3161359677362334,
+      "sticky_trend": "accelerating",
+      "flexible_ann": 22.44469523310475,
+      "median_cpi": 3.66429024270862,
+      "umich_1y_exp": 4.7,
+      "read": "transitory (flexible-led)"
+    },
+    "risk_appetite": {
+      "vrp": 2.9962195773045615,
+      "vrp_pctile": 0.30357142857142855,
+      "vrp_state": "normal",
+      "realized_vol": 14.68378072787122,
+      "vix_term": 0.8620185328071865,
+      "vix_term_state": "contango (calm)",
+      "skew": 142.6,
+      "skew_pctile": 0.3194444444444444,
+      "stock_bond_corr": 0.6936367796179752,
+      "stock_bond_regime": "breakdown (bonds not hedging)",
+      "roro": 0.4163673844839169,
+      "roro_state": "risk-on",
+      "vol_target_scalar": 0.8172282208779413
+    }
   }
 }

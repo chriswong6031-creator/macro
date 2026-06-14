@@ -29,6 +29,30 @@ def _series_json(s: pd.Series) -> dict:
     return {"x": [d.strftime("%Y-%m-%d") for d in s.index], "y": [round(float(v), 4) for v in s.values]}
 
 
+def _overlay_panel(o: dict) -> str:
+    """Render the LLM context/veto overlay panel (firewalled, advisory, never in the backtest)."""
+    discl = "Context overlay — advisory, never in the backtest, tracked forward."
+    if not o.get("enabled"):
+        return ('<div class="panel"><h2>LLM context / veto overlay '
+                '<span style="color:var(--mut);font-weight:400">· off</span></h2>'
+                '<p style="color:var(--mut);margin:0">No DeepSeek key configured — the mechanical recommendation '
+                'stands. When enabled, this firewalled layer digests the FOMC tone and, on a stress day, the '
+                'shock-reversibility read, and can <b>veto a buyable-washout redeploy</b> if the LLM judges the '
+                'shock a regime break (knife-vetoer). It is logged forward and <b>never enters the backtest or the '
+                'score</b>.</p></div>')
+    if o.get("veto"):
+        return ('<div class="panel" style="border-color:var(--red)">'
+                '<h2 style="color:var(--red)">⚠ LLM knife-veto active</h2>'
+                f'<p style="margin:0 0 6px">{o["veto_reason"]}</p>'
+                f'<p style="color:var(--mut);margin:0">Live recommendation '
+                f'<b style="color:var(--tx)">{round(o["overlay_weight"]*100)}% equity</b> '
+                f'(mechanical would redeploy to {round(o["mechanical_weight"]*100)}%). {discl}</p></div>')
+    return ('<div class="panel"><h2>LLM context / veto overlay</h2>'
+            f'<p style="margin:0 0 6px">{o["note"]}</p>'
+            f'<p style="color:var(--mut);margin:0">No veto — mechanical '
+            f'<b style="color:var(--tx)">{round(o["mechanical_weight"]*100)}% equity</b> stands. {discl}</p></div>')
+
+
 def build() -> str:
     from engine.inputs import build_features
     from engine.conditions import conditions_frame
@@ -52,6 +76,16 @@ def build() -> str:
     band = ("LOW — fully invested" if cur_score < 25 else "ELEVATED — trim" if cur_score < 50
             else "HIGH — de-risk" if cur_score < 75 else "EXTREME — defensive")
     asof = spy.index[-1].strftime("%Y-%m-%d")
+
+    # LLM context/veto overlay — firewalled, LIVE-ONLY (never in the backtest above).
+    # Knife-veto: if the engine is taking a buyable-washout redeploy but the LLM reads
+    # the shock as a regime break, defer the buy on the live recommendation.
+    from engine import spvector_overlay as sov
+    glide_w = float(ea.glide_path(rs).reindex(spy.index, method="ffill").fillna(1.0).iloc[-1])
+    redeploy_w = float(alloc.iloc[-1])
+    overlay = sov.live_overlay(glide_w, redeploy_w, snapshot=sov.context_snapshot())
+    sov.log_overlay(overlay, asof=asof)
+    overlay_panel = _overlay_panel(overlay)
 
     # weekly-ish downsample for chart payloads (every 5 trading days, aligned)
     st = 5
@@ -77,12 +111,19 @@ def build() -> str:
 
     payload = json.dumps({"eq": eq_j, "ho": ho_j, "al": al_j, "rs": sc_j, "dds": dds_j, "ddh": ddh_j})
     html = _TMPL.format(asof=asof, cur_score=f"{cur_score:.0f}", cur_w=f"{cur_w:.0f}", band=band,
-                        cards=cards, ep_rows=ep_rows,
+                        cards=cards, ep_rows=ep_rows, overlay_panel=overlay_panel,
                         nocarry=f"{sc['cagr_nocarry']:.1f}", years=f"{sc['years']:.0f}",
                         inmkt=f"{sc['time_in_market']:.0f}")
     html = html.replace("__PAYLOAD__", payload)   # JSON braces collide with .format -> replace separately
     out = config.ROOT / "site" / "spvector.html"
     out.write_text(html)
+    # persist a tiny state file for the landing-hub card (build_vector._spvector_state)
+    band_key = ("Low" if cur_score < 25 else "Elevated" if cur_score < 50
+                else "High" if cur_score < 75 else "Extreme")
+    (config.data_dir() / "regime").mkdir(parents=True, exist_ok=True)
+    (config.data_dir() / "regime" / "spvector_latest.json").write_text(json.dumps(
+        {"risk_score": round(cur_score, 1), "equity_weight": int(round(cur_w)),
+         "band": f"{band_key} risk", "asof": asof}))
     return str(out)
 
 
@@ -123,6 +164,8 @@ a{{color:var(--blue)}}
 </div>
 
 <div class="note b">Honest framing: the CAGR above includes the T-bill carry earned on the de-risked sleeve; net of carry (~{nocarry}% no-carry CAGR) it roughly matches buy &amp; hold. The robust, verified edge is the higher Sharpe and the ~40% shallower max drawdown. Stays ~{inmkt}% invested; it WILL lag the index in prolonged bulls — that give-up is the premium paid for crash protection, banked when the cycle breaks.</div>
+
+{overlay_panel}
 
 <div class="panel"><h2>Growth of $1 — Vector vs buy &amp; hold (log scale)</h2><div id="eqc" class="chart"></div></div>
 <div class="panel"><h2>Allocation &amp; macro risk score over time</h2><div id="alc" class="chart"></div></div>

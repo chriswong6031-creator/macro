@@ -12,4 +12,5 @@ openpyxl>=3.1
 xlrd>=2.0.1       # collectors/eia.py — legacy .xls from EIA dnav (Weekly Petroleum Status)
 markdown>=3.5
 Pillow>=10.0      # scripts/digitize_swissblock.py — panel color-state extraction
-anthropic>=0.40  # OPTIONAL gated LLM features (engine/translate.py profile 中文, commodity_news.py cause classifier); both degrade-never-raise if absent
+anthropic>=0.40        # LLM layer (catalyst_tone/master_brain) — DeepSeek via Anthropic-compat endpoint; layer is default-off, so this is only exercised when enabled
+scikit-learn>=1.4      # engine/meta_label.py ONLY — GBT (HistGradientBoostingClassifier) meta-label leaf; default-off, exercised by scripts/meta_label_btc.py

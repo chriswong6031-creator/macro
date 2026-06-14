@@ -145,6 +145,27 @@ def scorecard(close: pd.Series, alloc: pd.Series) -> dict:
     }
 
 
+def alloc_sizing(last: pd.Series, eq: pd.Series, acfg: dict) -> dict:
+    """Decompose the live optimal allocation into the Point-4 factors that now SIZE it,
+    so the % on the page is explained, not a bare number: the conviction multiplier
+    (from the directional-confidence cycle position, tiered TOSS-UP/LEAN/EDGE) and the
+    ENFORCED drawdown brake (its current cap + how far the strategy is underwater).
+    This is what closes the old 'conviction is just a label' gap on the dashboard."""
+    from engine import btc_signals
+    cp = float(last["cycle_position"]) if pd.notna(last.get("cycle_position")) else 0.5
+    dd = float(eq.iloc[-1] / eq.cummax().iloc[-1] - 1.0)
+    thr, decay = float(acfg.get("dd_threshold", 0.25)), float(acfg.get("dd_decay", 1.0))
+    floor = float(acfg.get("dd_floor", 0.40))
+    cap = min(1.0, max(floor, 1.0 - decay * max(0.0, (-dd) - thr)))
+    return {
+        "tier": btc_signals.conviction_tier(cp, acfg),
+        "mult": round(float(btc_signals.conviction_multiplier(cp, acfg)), 2),
+        "brake_active": bool(cap < 0.999),
+        "brake_cap": round(100 * cap),
+        "dd": round(100 * dd),
+    }
+
+
 def _cond_up_prob(df: pd.DataFrame, cfg: dict, horizon: int):
     """P(up over `horizon`d) conditioned on momentum_state x risk_regime, shrunk
     toward the momentum marginal (empirical Bayes), nudged by the CONFIRMED macro
@@ -709,7 +730,8 @@ def build_landing(site: Path, vm: dict) -> None:
     stored engine state, not from any HTML file build_site emits."""
     macro = _macro_state()
     hub = _hub_html(vm, macro, home_alert_feed(), _china_state(), _commodities_state(),
-                    _watchlist_state(), _etf_state(), _hk_state(), _forex_state(), _bonds_state())
+                    _watchlist_state(), _etf_state(), _hk_state(), _forex_state(),
+                    _bonds_state(), _spvector_state())
     (site / "index.html").write_text(hub)
     log.info("wrote landing hub -> index.html")
 
@@ -807,6 +829,21 @@ def _etf_state() -> dict:
     (signals are share-flow decisions, no single regime label to show)."""
     site = config.ROOT / config.load()["storage"]["site_dir"]
     return {"present": (site / "etfs.html").exists()}
+
+
+def _spvector_state() -> dict:
+    """S&P / Macro Vector card — gated on the page existing; shows the current macro
+    risk band + recommended equity weight from data/regime/spvector_latest.json when
+    build_spvector has run (static label otherwise)."""
+    site = config.ROOT / config.load()["storage"]["site_dir"]
+    present = (site / "spvector.html").exists()
+    try:
+        import json
+        d = json.loads((config.data_dir() / "regime" / "spvector_latest.json").read_text())
+        return {"label": d.get("band") or "Index ↔ T-bills",
+                "weight": d.get("equity_weight"), "present": present}
+    except Exception:  # noqa: BLE001
+        return {"label": "Index ↔ T-bills", "weight": None, "present": present}
 
 
 MACRO_SEV = {"act": "high", "warn": "medium", "info": "info"}
@@ -968,7 +1005,8 @@ def _hub_alert_rows(alerts: list[dict]) -> str:
 def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = None,
               commodities: dict | None = None, watchlist: dict | None = None,
               etf: dict | None = None, hk: dict | None = None,
-              forex: dict | None = None, bonds: dict | None = None) -> str:
+              forex: dict | None = None, bonds: dict | None = None,
+              spvector: dict | None = None) -> str:
     # Bilingual via the i18n layer when present, identity fallback when absent.
     try:
         from engine.i18n import t as T, tr as TR
@@ -1050,6 +1088,16 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
     <p>{T('What funds are accumulating and trimming — flow-normalized share decisions across popular ETFs, tagged manager-conviction vs index-rebalance.', '基金在增持与减持什么——主流 ETF 经资金流标准化的份额决策，并标注“经理人信念”与“指数再平衡”。')}</p>
     <span class="stat">{T('Manager and index flows', '经理人与指数资金流')}</span>
     <div class="go">{T('Open ETF Flow Radar →', '打开 ETF 资金雷达 →')}</div>
+  </a>""")
+    spvector = spvector or {"present": False}
+    sp_w = spvector.get("weight")
+    spvector_card = ("" if not spvector.get("present") else f"""
+  <a class="c" href="spvector.html">
+    <div class="ico">📈</div>
+    <h2>{T('S&P / Macro Vector', '标普宏观向量')}</h2>
+    <p>{T('Stay-in / step-out allocation for the broad US index vs T-bills — a backtested drawdown & Sharpe engine.', '美国大盘指数与短债之间的进出场配置——经回测、以回撤与夏普为目标的引擎。')}</p>
+    <span class="stat">{T(spvector['label'], TR(spvector['label']))}{(' · ' + str(int(sp_w)) + '% ' + T('equity', '股票')) if sp_w is not None else ''}</span>
+    <div class="go">{T('Open S&P / Macro Vector →', '打开标普宏观向量 →')}</div>
   </a>""")
     return f"""{HUB_MARKER}
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
@@ -1134,7 +1182,7 @@ body{{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
     <p>{T('Regime, liquidity & sector-flow read across the global business cycle.', '纵观全球商业周期的市场状态、流动性与板块资金流向解读。')}</p>
     <span class="stat">{T(macro['label'], TR(macro['label']))}</span>
     <div class="go">{T(f"Open {macro_label} →", f"打开{TR(macro_label)} →")}</div>
-  </a>{china_card}{hk_card}
+  </a>{spvector_card}{china_card}{hk_card}
   <a class="c" href="vector.html">
     <div class="ico">₿</div>
     <h2>{T('Bitcoin Vector', '比特币向量')}</h2>
@@ -1340,6 +1388,7 @@ def main() -> int:
 
     eq = alloc_equity(close, sig["alloc_optimal"])
     hodl = (1 + close.pct_change().fillna(0)).cumprod()
+    sizing = alloc_sizing(last, eq, config.load()["vector"]["allocation"])
     cards = {v: scorecard(close, sig[f"alloc_{v}"])
              for v in ("conservative", "moderate", "aggressive", "optimal")}
 
@@ -1419,6 +1468,7 @@ def main() -> int:
         "alt_leader": last.get("alt_cycle_leader", "BTC"),
         "market_mode": last["market_mode"],
         "alloc_pct": round(100 * last["alloc_optimal"]),
+        "alloc_sizing": sizing,
         # ---- accuracy-upgrade layers (Tier 1/1b/2) ----
         "composite_state": last.get("composite_state", "NEUTRAL"),
         "composite_context": last.get("composite_context", ""),
@@ -1600,6 +1650,11 @@ def main() -> int:
         build_timeline(site, sig)
     except Exception as e:  # noqa: BLE001 — never let the time-machine tape break the build
         log.error("timeline tape failed (%s)", e)
+    try:  # S&P / Macro Vector page + hub-card state (independent; never break the BTC build)
+        from scripts.build_spvector import build as _build_spvector
+        _build_spvector()
+    except Exception as e:  # noqa: BLE001
+        log.error("spvector page failed (%s)", e)
     build_landing(site, vm)
     return 0
 
