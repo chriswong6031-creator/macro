@@ -27,6 +27,19 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_crossasset")
 
 
+def _sparkline(vals, w: int = 180, h: int = 38, pad: int = 3) -> str:
+    """SVG polyline points for a tiny sparkline from a list of values."""
+    vals = [v for v in (vals or []) if v is not None]
+    if len(vals) < 2:
+        return ""
+    lo, hi = min(vals), max(vals)
+    rng = (hi - lo) or 1.0
+    n = len(vals)
+    return " ".join(f"{pad + i * (w - 2 * pad) / (n - 1):.1f},"
+                    f"{pad + (h - 2 * pad) * (1 - (v - lo) / rng):.1f}"
+                    for i, v in enumerate(vals))
+
+
 def main() -> int:
     from engine import cross_asset_trend as cat
     try:
@@ -38,6 +51,14 @@ def main() -> int:
         log.warning("cross-asset snapshot empty (need >=4 legs) — skipping page")
         return 0
 
+    # global central-bank liquidity (additive macro-driver leaf; None if FRED data absent)
+    try:
+        from engine import global_liquidity
+        liquidity = global_liquidity.snapshot()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("global liquidity snapshot failed: %s", e)
+        liquidity = None
+
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     from engine.i18n import td, tr
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
@@ -45,7 +66,8 @@ def main() -> int:
     html = env.get_template("crossasset.html.j2").render(
         as_of=snap.get("asof"), built=built, regime=snap.get("regime"),
         breadth=snap.get("breadth"), trend=snap.get("trend"), ratios=snap.get("ratios"),
-        carry=snap.get("carry"), correlation=snap.get("correlation"), note=snap.get("note"))
+        carry=snap.get("carry"), correlation=snap.get("correlation"), note=snap.get("note"),
+        liquidity=liquidity, liq_spark=(_sparkline(liquidity["spark"]) if liquidity else ""))
     site = config.ROOT / config.load()["storage"]["site_dir"]
     (site / "crossasset.html").write_text(html)
     log.info("wrote %s/crossasset.html (%d KB)", site, len(html) // 1024)
