@@ -288,7 +288,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
   <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;padding-top:0;padding-bottom:0;border:none;margin:0 auto">
     <div class="nav-links">
       <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
-      <a class="nav-link" href="macro.html">📊 {{ t('Macro', '宏观') }}</a>
+      <a class="nav-link" href="macro.html">📊 {{ t('US Macro', '美国宏观') }}</a>
       <div class="nav-dd">
         <a class="nav-link active" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }} <span class="caret">▾</span></a>
         <div class="nav-dd-menu" role="menu">
@@ -716,7 +716,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
       <div class="mini"><div class="lab"><span>{{ t('Net liquidity (WALCL−RRP−TGA)','净流动性（WALCL−RRP−TGA）') }}</span><span><b>{{ ('$%.2fT'|format(macro.net_liq_bn/1000)) if macro.net_liq_bn is not none else '—' }}</b>{% if macro.net_liq_roc is not none %} <span class="faint" style="color:{{ 'var(--blue)' if macro.net_liq_roc>=0 else 'var(--r3)' }}">({{ '%+0.1f'|format(macro.net_liq_roc) }}% 13w)</span>{% endif %}</span></div></div>
       {% if macro.global_m2_yoy is not none %}
       <div class="mini"><div class="lab"><span>{{ t('Global M2 growth (US+China)','全球 M2 增速（美+中）') }}</span><span><b style="color:{{ 'var(--blue)' if macro.global_m2_yoy>=5 else 'var(--r3)' }}">{{ macro.global_m2_yoy }}% YoY</b> <span class="faint">({{ td((macro.global_liq_regime or '')|capitalize) }})</span></span></div></div>{% endif %}
-      {% if macro.stbl_growth_z is not none %}
+      {% if macro.get('stbl_growth_z') is not none %}
       {% set sreg = {'expanding':'var(--blue)','contracting':'var(--r3)','neutral':'var(--muted)'} %}
       <div class="mini"><div class="lab"><span>{{ t('Stablecoin tide (crypto-native liquidity)','稳定币潮汐（加密原生流动性）') }}</span><span><b style="color:{{ sreg.get(macro.stbl_regime,'var(--muted)') }}">{{ td((macro.stbl_regime or '')|capitalize) }}</b> <span class="faint">(z {{ '%+0.1f'|format(macro.stbl_growth_z) }} · ${{ macro.stbl_mcap_bn }}B)</span></span></div></div>{% endif %}
       {% if macro.peg_state %}
