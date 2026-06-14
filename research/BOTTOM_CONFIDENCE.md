@@ -1,5 +1,23 @@
 # Bottom-Confidence score (multi-timeframe) — measured record + build plan
 
+> **STATUS: Phase 1 BUILT + validated (2026-06-14).** `engine.cycles.bottom_confidence`
+> + a Monthly timeframe in `mtf_snapshot`, surfaced as "🎯 Bottom Confidence 0-100" with a
+> per-timeframe breakdown on `stock.html`. Walk-forward calibration
+> (`scripts/calibrate_bottom_confidence.py` → `data/regime/bottom_confidence_calibration.json`,
+> 69,215 evals) CONFIRMS monotone separation — the score's own validation:
+>
+> | band | n | "low held" 21d | drawdown tail p10 |
+> |---|---:|---:|---:|
+> | 0–20 | 30,742 | **36.7%** | −13.3% |
+> | 20–40 | 25,120 | 65.4% | −11.2% |
+> | 40–60 | 9,976 | **74.6%** | −10.2% |
+> | 60+ | 3,377 | 73.1% | **−9.2%** |
+>
+> A high reading held the cycle low ~74% vs ~37% (2×) with a monotonically shallower
+> drawdown tail. Conservative formula: `entry_quality_long × (0.55 + 0.45·confluence)` —
+> confluence DISCOUNTS an unconfirmed turn, never inflates; counter-trend bounces capped ≤30.
+> Phase 2 (capitulation/washout factors) remains future work.
+
 **Question (user).** Backtests showed the `DECLINE` state has the *highest* forward
 return **and** the *deepest* drawdown. How do we reconcile that, and what factors
 let us **accurately time near bottoms** — ideally an explicit **confidence of an

@@ -16,9 +16,6 @@
   .early { margin:6px 0; padding:8px 12px; border-radius:8px;
            background:color-mix(in srgb, var(--g-cold) 14%, var(--panel2));
            border-left:3px solid var(--g-cold); font-size:13px; }
-  .macro-caution { margin:6px 0; padding:8px 12px; border-radius:8px;
-           background:color-mix(in srgb, var(--down) 10%, var(--panel2));
-           border-left:3px solid var(--down); font-size:13px; }
   .agewhen { margin:6px 0; padding:7px 11px; border-radius:8px; background:var(--panel2);
              border-left:3px solid var(--link); font-size:13px; color:var(--text); }
   .agechip { font-size:11px; font-weight:700; padding:2px 7px; border-radius:9px;
@@ -132,355 +129,13 @@
       <h1><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span> <span class="muted">(XLP)</span></h1>
       <span class="state st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
       <span class="eqbadge eq-up"><span class="l-en">Entry</span><span class="l-zh">入场</span> ▲ +76 <span class="eqg"><span class="l-en">strong</span><span class="l-zh">strong</span></span></span><span class="help">?<span class="tip"><span class="l-en">How well-timed & low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.</span><span class="l-zh">衡量当前入场的时机与风险——贴近周期低点、动量新近转向、且顺势。实测：贴近枢轴的入场，其回撤比远离枢轴的追高者约小 30%——这是风险控制，并非收益预测。</span></span></span>
-      <span style="flex:1"></span>
-      <button class="af-toggle" id="af-btn" type="button" aria-label="Toggle alert feed" aria-expanded="false" aria-controls="af-feed">🔔 <span><span class="l-en">Alerts</span><span class="l-zh">警报</span></span><span class="af-badge">18</span> <span class="af-caret">▾</span></button>
     </div>
     
-    
-    <div class="verdict urg-imminent">
-      <span class="v-act"><span class="l-en">BUY SETUP</span><span class="l-zh">买入预备</span></span>
-      <span class="v-tag"><span class="l-en">BUY SOON</span><span class="l-zh">即将买入</span></span>
-      <span class="v-text"><span class="l-en">Setup almost complete — likely buy trigger in ~1–3 trading days if it closes back above its 10-day average.</span><span class="l-zh">形态接近完成——若收盘重新站上 10 日均线，预计将在约 1–3 个交易日内出现买入触发。</span></span>
-    </div>
-    
-    
-    <div class="sigstrip">
-      
-      <div class="sigchip up">
-        <span class="sc-k"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
-        <span class="sc-v">▲ 200d</span>
-        <span class="sc-s">+6.1%</span>
-      </div>
-      
-      <div class="sigchip up">
-        <span class="sc-k"><span class="l-en">Momentum</span><span class="l-zh">动量</span></span>
-        <span class="sc-v">MACD ＋ ↑</span>
-        <span class="sc-s"><span class="l-en">daily</span><span class="l-zh">日线</span></span>
-      </div>
-      
-      <div class="sigchip neutral">
-        <span class="sc-k">RSI</span>
-        <span class="sc-v">61</span>
-        <span class="sc-s"><span class="l-en">neutral</span><span class="l-zh">中性</span></span>
-      </div>
-      
-      <div class="sigchip warn">
-        <span class="sc-k">Stoch</span>
-        <span class="sc-v">98</span>
-        <span class="sc-s"><span class="l-en">StochRSI</span><span class="l-zh">随机RSI</span></span>
-      </div>
-      
-      <div class="sigchip warn">
-        <span class="sc-k"><span class="l-en">Cycle</span><span class="l-zh">周期</span></span>
-        <span class="sc-v"><span class="l-en">Day</span><span class="l-zh">第</span> 58</span>
-        <span class="sc-s"><span class="l-en">of</span><span class="l-zh">/</span> 36–42</span>
-      </div>
-    </div>
-    
-    <div class="af" id="af-feed" hidden>
-      
-      <div class="af-pin dir-up">
-        <div class="af-pin-h"><span class="af-pin-tag"><span class="l-en">Current signal</span><span class="l-zh">当前信号</span></span>
-          <span class="af-pin-title"><span class="l-en">COUNTER-TREND BOUNCE → BOTTOMING</span><span class="l-zh">逆势反弹 → 筑底中</span></span></div>
-        <p class="af-pin-d"><span class="l-en">BUY SETUP. A new cycle low likely formed 8 day(s) ago (2026-06-02 @ 81.83): swing low in, price back above the 10-day average — but the weekly timeframe hasn&#39;t turned yet, so conviction is partial</span><span class="l-zh">买入预备。新的周期低点可能已在 8 天前形成 （2026-06-02 @ 81.83）：摆动低点已现，价格重新站上 10 日均线——但周线周期尚未转向，因此信心仅为部分</span></p>
-      </div>
-      
-      <div class="af-filters">
-        
-        
-        <button class="aff active" type="button" data-f="all"><span class="l-en">All</span><span class="l-zh">全部</span></button>
-        <button class="aff " type="button" data-f="signal"><span class="l-en">Signal</span><span class="l-zh">信号</span></button>
-        <button class="aff " type="button" data-f="trend"><span class="l-en">Trend</span><span class="l-zh">趋势</span></button>
-        <button class="aff " type="button" data-f="momentum"><span class="l-en">Momentum</span><span class="l-zh">动量</span></button>
-        <button class="aff " type="button" data-f="strength"><span class="l-en">vs Market</span><span class="l-zh">相对强弱</span></button>
-        <button class="aff " type="button" data-f="cycle"><span class="l-en">Cycle</span><span class="l-zh">周期</span></button>
-      </div>
-      
-      <div class="af-day">
-        <div class="af-date"><span class="l-en">Jun 10, 2026</span><span class="l-zh">2026年6月10日</span></div>
-        
-        <details class="af-item" data-f="momentum">
-          <summary>
-            <span class="af-node dir-up"></span>
-            <span class="af-chip f-momentum"><span class="l-en">Momentum</span><span class="l-zh">动量</span></span>
-            <span class="af-head"><span class="l-en">XLP daily MACD crossed up</span><span class="l-zh">XLP 日线MACD上穿</span></span>
-          </summary>
-          <div class="af-detail"><span class="l-en">The daily MACD histogram turned positive — fast and noisy, context rather than a standalone trigger. $85.49.</span><span class="l-zh">日线MACD柱状图转正 — 快速且嘈杂，仅作背景。$85.49。</span>
-            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Daily MACD — fast and noisy; context, not a standalone trigger.</span><span class="l-zh">日线MACD — 快速且嘈杂；仅作背景，而非独立触发。</span></div>
-            <div class="af-fwd"><span class="l-en">Frequent by design — filter with the weekly cross and trend.</span><span class="l-zh">本就频繁 — 用周线交叉与趋势加以过滤。</span></div>
-          </div>
-        </details>
-        
-      </div>
-      
-      <div class="af-day">
-        <div class="af-date"><span class="l-en">Jun 8, 2026</span><span class="l-zh">2026年6月8日</span></div>
-        
-        <details class="af-item" data-f="strength">
-          <summary>
-            <span class="af-node dir-down"></span>
-            <span class="af-chip f-strength"><span class="l-en">vs Market</span><span class="l-zh">相对强弱</span></span>
-            <span class="af-head"><span class="l-en">XLP broke down vs the market</span><span class="l-zh">XLP 相对市场走弱</span></span>
-          </summary>
-          <div class="af-detail"><span class="l-en">Relative strength vs SPY crossed below the 10th percentile of the last 90 days — weakness often leads price. $83.07.</span><span class="l-zh">相对标普500的强弱下穿近90日的第10百分位 — 走弱常先于价格。$83.07。</span>
-            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Relative strength vs SPY — momentum persistence is one of the few robust equity factors.</span><span class="l-zh">相对标普500的强弱 — 动量持续性是少数稳健的股票因子之一。</span></div>
-            <div class="af-fwd"><span class="l-en">Leadership tends to persist; breakdowns warn before price does.</span><span class="l-zh">领先往往延续；走弱常先于价格发出警示。</span></div>
-          </div>
-        </details>
-        
-        <details class="af-item" data-f="momentum">
-          <summary>
-            <span class="af-node dir-up"></span>
-            <span class="af-chip f-momentum"><span class="l-en">Momentum</span><span class="l-zh">动量</span></span>
-            <span class="af-head"><span class="l-en">XLP StochRSI turned up from oversold</span><span class="l-zh">XLP StochRSI自超卖区上行</span></span>
-          </summary>
-          <div class="af-detail"><span class="l-en">StochRSI popped back above 20 — the earliest oscillator heads-up that downside momentum is easing. $83.07.</span><span class="l-zh">StochRSI重回20上方 — 下行动量趋缓的最早预警。$83.07。</span>
-            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">StochRSI turning up out of oversold — the earliest oscillator heads-up.</span><span class="l-zh">StochRSI自超卖区上行 — 最早的振荡指标预警。</span></div>
-            <div class="af-fwd"><span class="l-en">An early flag, not confirmation; it can fire repeatedly in a downtrend.</span><span class="l-zh">早期信号而非确认；下跌趋势中可能反复出现。</span></div>
-          </div>
-        </details>
-        
-      </div>
-      
-      <div class="af-day">
-        <div class="af-date"><span class="l-en">May 26, 2026</span><span class="l-zh">2026年5月26日</span></div>
-        
-        <details class="af-item" data-f="momentum">
-          <summary>
-            <span class="af-node dir-down"></span>
-            <span class="af-chip f-momentum"><span class="l-en">Momentum</span><span class="l-zh">动量</span></span>
-            <span class="af-head"><span class="l-en">XLP daily MACD crossed down</span><span class="l-zh">XLP 日线MACD下穿</span></span>
-          </summary>
-          <div class="af-detail"><span class="l-en">The daily MACD histogram turned negative — fast and noisy, context rather than a standalone trigger. $83.63.</span><span class="l-zh">日线MACD柱状图转负 — 快速且嘈杂，仅作背景。$83.63。</span>
-            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Daily MACD — fast and noisy; context, not a standalone trigger.</span><span class="l-zh">日线MACD — 快速且嘈杂；仅作背景，而非独立触发。</span></div>
-            <div class="af-fwd"><span class="l-en">Frequent by design — filter with the weekly cross and trend.</span><span class="l-zh">本就频繁 — 用周线交叉与趋势加以过滤。</span></div>
-          </div>
-        </details>
-        
-      </div>
-      
-      <div class="af-day">
-        <div class="af-date"><span class="l-en">May 21, 2026</span><span class="l-zh">2026年5月21日</span></div>
-        
-        <details class="af-item" data-f="strength">
-          <summary>
-            <span class="af-node dir-down"></span>
-            <span class="af-chip f-strength"><span class="l-en">vs Market</span><span class="l-zh">相对强弱</span></span>
-            <span class="af-head"><span class="l-en">XLP broke down vs the market</span><span class="l-zh">XLP 相对市场走弱</span></span>
-          </summary>
-          <div class="af-detail"><span class="l-en">Relative strength vs SPY crossed below the 10th percentile of the last 90 days — weakness often leads price. $84.66.</span><span class="l-zh">相对标普500的强弱下穿近90日的第10百分位 — 走弱常先于价格。$84.66。</span>
-            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Relative strength vs SPY — momentum persistence is one of the few robust equity factors.</span><span class="l-zh">相对标普500的强弱 — 动量持续性是少数稳健的股票因子之一。</span></div>
-            <div class="af-fwd"><span class="l-en">Leadership tends to persist; breakdowns warn before price does.</span><span class="l-zh">领先往往延续；走弱常先于价格发出警示。</span></div>
-          </div>
-        </details>
-        
-      </div>
-      
-      <div class="af-day">
-        <div class="af-date"><span class="l-en">May 8, 2026</span><span class="l-zh">2026年5月8日</span></div>
-        
-        <details class="af-item" data-f="strength">
-          <summary>
-            <span class="af-node dir-down"></span>
-            <span class="af-chip f-strength"><span class="l-en">vs Market</span><span class="l-zh">相对强弱</span></span>
-            <span class="af-head"><span class="l-en">XLP broke down vs the market</span><span class="l-zh">XLP 相对市场走弱</span></span>
-          </summary>
-          <div class="af-detail"><span class="l-en">Relative strength vs SPY crossed below the 10th percentile of the last 90 days — weakness often leads price. $84.18.</span><span class="l-zh">相对标普500的强弱下穿近90日的第10百分位 — 走弱常先于价格。$84.18。</span>
-            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Relative strength vs SPY — momentum persistence is one of the few robust equity factors.</span><span class="l-zh">相对标普500的强弱 — 动量持续性是少数稳健的股票因子之一。</span></div>
-            <div class="af-fwd"><span class="l-en">Leadership tends to persist; breakdowns warn before price does.</span><span class="l-zh">领先往往延续；走弱常先于价格发出警示。</span></div>
-          </div>
-        </details>
-        
-      </div>
-      
-      <div class="af-day">
-        <div class="af-date"><span class="l-en">Apr 6, 2026</span><span class="l-zh">2026年4月6日</span></div>
-        
-        <details class="af-item" data-f="momentum">
-          <summary>
-            <span class="af-node dir-up"></span>
-            <span class="af-chip f-momentum"><span class="l-en">Momentum</span><span class="l-zh">动量</span></span>
-            <span class="af-head"><span class="l-en">XLP daily MACD crossed up</span><span class="l-zh">XLP 日线MACD上穿</span></span>
-          </summary>
-          <div class="af-detail"><span class="l-en">The daily MACD histogram turned positive — fast and noisy, context rather than a standalone trigger. $82.66.</span><span class="l-zh">日线MACD柱状图转正 — 快速且嘈杂，仅作背景。$82.66。</span>
-            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Daily MACD — fast and noisy; context, not a standalone trigger.</span><span class="l-zh">日线MACD — 快速且嘈杂；仅作背景，而非独立触发。</span></div>
-            <div class="af-fwd"><span class="l-en">Frequent by design — filter with the weekly cross and trend.</span><span class="l-zh">本就频繁 — 用周线交叉与趋势加以过滤。</span></div>
-          </div>
-        </details>
-        
-      </div>
-      
-      <div class="af-day">
-        <div class="af-date"><span class="l-en">Mar 27, 2026</span><span class="l-zh">2026年3月27日</span></div>
-        
-        <details class="af-item" data-f="strength">
-          <summary>
-            <span class="af-node dir-up"></span>
-            <span class="af-chip f-strength"><span class="l-en">vs Market</span><span class="l-zh">相对强弱</span></span>
-            <span class="af-head"><span class="l-en">XLP took relative-strength leadership</span><span class="l-zh">XLP 取得相对强弱领先</span></span>
-          </summary>
-          <div class="af-detail"><span class="l-en">Relative strength vs SPY crossed above the 90th percentile of the last 90 days — leadership tends to persist. $81.78.</span><span class="l-zh">相对标普500的强弱上穿近90日的第90百分位 — 领先往往延续。$81.78。</span>
-            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Relative strength vs SPY — momentum persistence is one of the few robust equity factors.</span><span class="l-zh">相对标普500的强弱 — 动量持续性是少数稳健的股票因子之一。</span></div>
-            <div class="af-fwd"><span class="l-en">Leadership tends to persist; breakdowns warn before price does.</span><span class="l-zh">领先往往延续；走弱常先于价格发出警示。</span></div>
-          </div>
-        </details>
-        
-        <details class="af-item" data-f="momentum">
-          <summary>
-            <span class="af-node dir-down"></span>
-            <span class="af-chip f-momentum"><span class="l-en">Momentum</span><span class="l-zh">动量</span></span>
-            <span class="af-head"><span class="l-en">XLP weekly MACD crossed down</span><span class="l-zh">XLP 周线MACD下穿</span></span>
-          </summary>
-          <div class="af-detail"><span class="l-en">The weekly MACD histogram turned negative — the slower, less-whippy momentum read.</span><span class="l-zh">周线MACD柱状图转负 — 更慢、更少来回的动量信号。</span>
-            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Weekly MACD — the slower, less-whippy momentum read.</span><span class="l-zh">周线MACD — 更慢、更少来回的动量信号。</span></div>
-            <div class="af-fwd"><span class="l-en">Higher-timeframe confirmation; daily noise resolves around it.</span><span class="l-zh">更高周期的确认；日线噪音围绕它收敛。</span></div>
-          </div>
-        </details>
-        
-      </div>
-      
-      <div class="af-day">
-        <div class="af-date"><span class="l-en">Mar 26, 2026</span><span class="l-zh">2026年3月26日</span></div>
-        
-        <details class="af-item" data-f="momentum">
-          <summary>
-            <span class="af-node dir-up"></span>
-            <span class="af-chip f-momentum"><span class="l-en">Momentum</span><span class="l-zh">动量</span></span>
-            <span class="af-head"><span class="l-en">XLP StochRSI turned up from oversold</span><span class="l-zh">XLP StochRSI自超卖区上行</span></span>
-          </summary>
-          <div class="af-detail"><span class="l-en">StochRSI popped back above 20 — the earliest oscillator heads-up that downside momentum is easing. $81.14.</span><span class="l-zh">StochRSI重回20上方 — 下行动量趋缓的最早预警。$81.14。</span>
-            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">StochRSI turning up out of oversold — the earliest oscillator heads-up.</span><span class="l-zh">StochRSI自超卖区上行 — 最早的振荡指标预警。</span></div>
-            <div class="af-fwd"><span class="l-en">An early flag, not confirmation; it can fire repeatedly in a downtrend.</span><span class="l-zh">早期信号而非确认；下跌趋势中可能反复出现。</span></div>
-          </div>
-        </details>
-        
-      </div>
-      
-      <div class="af-day">
-        <div class="af-date"><span class="l-en">Mar 20, 2026</span><span class="l-zh">2026年3月20日</span></div>
-        
-        <details class="af-item" data-f="cycle">
-          <summary>
-            <span class="af-node dir-up"></span>
-            <span class="af-chip f-cycle"><span class="l-en">Cycle</span><span class="l-zh">周期</span></span>
-            <span class="af-head"><span class="l-en">XLP printed a daily-cycle low</span><span class="l-zh">XLP 打出日线周期低点</span></span>
-          </summary>
-          <div class="af-detail"><span class="l-en">A confirmed local low — in this cycle framework the highest-odds long-entry window. $80.83.</span><span class="l-zh">一个已确认的局部低点 — 在本周期框架中做多胜率最高的入场窗口。$80.83。</span>
-            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Daily-cycle low — historically the highest-odds long-entry window in this framework.</span><span class="l-zh">日线周期低点 — 在本框架中历史上做多胜率最高的入场窗口。</span></div>
-            <div class="af-fwd"><span class="l-en">Confirm with a swing low and a reclaim of the 10-day average before sizing up.</span><span class="l-zh">加仓前以一个摆动低点并收复10日均线来确认。</span></div>
-          </div>
-        </details>
-        
-        <details class="af-item" data-f="momentum">
-          <summary>
-            <span class="af-node dir-neutral"></span>
-            <span class="af-chip f-momentum"><span class="l-en">Momentum</span><span class="l-zh">动量</span></span>
-            <span class="af-head"><span class="l-en">XLP RSI reached oversold</span><span class="l-zh">XLP RSI进入超卖</span></span>
-          </summary>
-          <div class="af-detail"><span class="l-en">RSI(14) crossed below 30 — washed out; context, not a timing trigger alone. $80.83.</span><span class="l-zh">RSI(14)下穿30 — 超卖；仅作背景，单独不构成择时。$80.83。</span>
-            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">RSI extreme — stretched and mean-reversion-prone; not a timing trigger alone.</span><span class="l-zh">RSI极值 — 超买/超卖且易均值回归；单独不构成择时触发。</span></div>
-            <div class="af-fwd"><span class="l-en">Extremes can persist in strong trends — context, not a fade signal.</span><span class="l-zh">强趋势中极值可持续 — 仅作背景，而非反向信号。</span></div>
-          </div>
-        </details>
-        
-      </div>
-      
-      <div class="af-day">
-        <div class="af-date"><span class="l-en">Feb 27, 2026</span><span class="l-zh">2026年2月27日</span></div>
-        
-        <details class="af-item" data-f="cycle">
-          <summary>
-            <span class="af-node dir-up"></span>
-            <span class="af-chip f-cycle"><span class="l-en">Cycle</span><span class="l-zh">周期</span></span>
-            <span class="af-head"><span class="l-en">XLP made a new 52-week high</span><span class="l-zh">XLP 创52周新高</span></span>
-          </summary>
-          <div class="af-detail"><span class="l-en">Price reached a fresh 52-week high — a momentum / trend extreme the whole market watches. $89.51.</span><span class="l-zh">价格创出52周新高 — 全市场关注的动量/趋势极值。$89.51。</span>
-            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">New 52-week extreme — a momentum / trend signal the whole market watches.</span><span class="l-zh">创52周新高/新低 — 全市场关注的动量/趋势信号。</span></div>
-            <div class="af-fwd"><span class="l-en">New highs beget highs more often than not; new lows cut both ways.</span><span class="l-zh">新高往往延续；新低则两面皆有可能。</span></div>
-          </div>
-        </details>
-        
-        <details class="af-item" data-f="momentum">
-          <summary>
-            <span class="af-node dir-neutral"></span>
-            <span class="af-chip f-momentum"><span class="l-en">Momentum</span><span class="l-zh">动量</span></span>
-            <span class="af-head"><span class="l-en">XLP RSI reached overbought</span><span class="l-zh">XLP RSI进入超买</span></span>
-          </summary>
-          <div class="af-detail"><span class="l-en">RSI(14) crossed above 70 — stretched to the upside; context, not a timing trigger alone. $89.51.</span><span class="l-zh">RSI(14)上穿70 — 上行过度；仅作背景，单独不构成择时。$89.51。</span>
-            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">RSI extreme — stretched and mean-reversion-prone; not a timing trigger alone.</span><span class="l-zh">RSI极值 — 超买/超卖且易均值回归；单独不构成择时触发。</span></div>
-            <div class="af-fwd"><span class="l-en">Extremes can persist in strong trends — context, not a fade signal.</span><span class="l-zh">强趋势中极值可持续 — 仅作背景，而非反向信号。</span></div>
-          </div>
-        </details>
-        
-      </div>
-      
-      <div class="af-day">
-        <div class="af-date"><span class="l-en">Feb 24, 2026</span><span class="l-zh">2026年2月24日</span></div>
-        
-        <details class="af-item" data-f="cycle">
-          <summary>
-            <span class="af-node dir-up"></span>
-            <span class="af-chip f-cycle"><span class="l-en">Cycle</span><span class="l-zh">周期</span></span>
-            <span class="af-head"><span class="l-en">XLP made a new 52-week high</span><span class="l-zh">XLP 创52周新高</span></span>
-          </summary>
-          <div class="af-detail"><span class="l-en">Price reached a fresh 52-week high — a momentum / trend extreme the whole market watches. $89.24.</span><span class="l-zh">价格创出52周新高 — 全市场关注的动量/趋势极值。$89.24。</span>
-            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">New 52-week extreme — a momentum / trend signal the whole market watches.</span><span class="l-zh">创52周新高/新低 — 全市场关注的动量/趋势信号。</span></div>
-            <div class="af-fwd"><span class="l-en">New highs beget highs more often than not; new lows cut both ways.</span><span class="l-zh">新高往往延续；新低则两面皆有可能。</span></div>
-          </div>
-        </details>
-        
-        <details class="af-item" data-f="momentum">
-          <summary>
-            <span class="af-node dir-up"></span>
-            <span class="af-chip f-momentum"><span class="l-en">Momentum</span><span class="l-zh">动量</span></span>
-            <span class="af-head"><span class="l-en">XLP StochRSI turned up from oversold</span><span class="l-zh">XLP StochRSI自超卖区上行</span></span>
-          </summary>
-          <div class="af-detail"><span class="l-en">StochRSI popped back above 20 — the earliest oscillator heads-up that downside momentum is easing. $89.24.</span><span class="l-zh">StochRSI重回20上方 — 下行动量趋缓的最早预警。$89.24。</span>
-            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">StochRSI turning up out of oversold — the earliest oscillator heads-up.</span><span class="l-zh">StochRSI自超卖区上行 — 最早的振荡指标预警。</span></div>
-            <div class="af-fwd"><span class="l-en">An early flag, not confirmation; it can fire repeatedly in a downtrend.</span><span class="l-zh">早期信号而非确认；下跌趋势中可能反复出现。</span></div>
-          </div>
-        </details>
-        
-      </div>
-      
-      <div class="af-day">
-        <div class="af-date"><span class="l-en">Feb 23, 2026</span><span class="l-zh">2026年2月23日</span></div>
-        
-        <details class="af-item" data-f="momentum">
-          <summary>
-            <span class="af-node dir-neutral"></span>
-            <span class="af-chip f-momentum"><span class="l-en">Momentum</span><span class="l-zh">动量</span></span>
-            <span class="af-head"><span class="l-en">XLP RSI reached overbought</span><span class="l-zh">XLP RSI进入超买</span></span>
-          </summary>
-          <div class="af-detail"><span class="l-en">RSI(14) crossed above 70 — stretched to the upside; context, not a timing trigger alone. $88.47.</span><span class="l-zh">RSI(14)上穿70 — 上行过度；仅作背景，单独不构成择时。$88.47。</span>
-            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">RSI extreme — stretched and mean-reversion-prone; not a timing trigger alone.</span><span class="l-zh">RSI极值 — 超买/超卖且易均值回归；单独不构成择时触发。</span></div>
-            <div class="af-fwd"><span class="l-en">Extremes can persist in strong trends — context, not a fade signal.</span><span class="l-zh">强趋势中极值可持续 — 仅作背景，而非反向信号。</span></div>
-          </div>
-        </details>
-        
-      </div>
-      
-      <div class="af-day">
-        <div class="af-date"><span class="l-en">Feb 19, 2026</span><span class="l-zh">2026年2月19日</span></div>
-        
-        <details class="af-item" data-f="momentum">
-          <summary>
-            <span class="af-node dir-down"></span>
-            <span class="af-chip f-momentum"><span class="l-en">Momentum</span><span class="l-zh">动量</span></span>
-            <span class="af-head"><span class="l-en">XLP daily MACD crossed down</span><span class="l-zh">XLP 日线MACD下穿</span></span>
-          </summary>
-          <div class="af-detail"><span class="l-en">The daily MACD histogram turned negative — fast and noisy, context rather than a standalone trigger. $87.18.</span><span class="l-zh">日线MACD柱状图转负 — 快速且嘈杂，仅作背景。$87.18。</span>
-            <div class="af-edge"><b><span class="l-en">Edge:</span><span class="l-zh">优势：</span></b> <span class="l-en">Daily MACD — fast and noisy; context, not a standalone trigger.</span><span class="l-zh">日线MACD — 快速且嘈杂；仅作背景，而非独立触发。</span></div>
-            <div class="af-fwd"><span class="l-en">Frequent by design — filter with the weekly cross and trend.</span><span class="l-zh">本就频繁 — 用周线交叉与趋势加以过滤。</span></div>
-          </div>
-        </details>
-        
-      </div>
-      
-      
+    <div class="entrybar urg-imminent">
+      <span class="entrytag"><span class="l-en">BUY SOON</span><span class="l-zh">即将买入</span></span>
+      <span><span class="l-en">Setup almost complete — likely buy trigger in ~1–3 trading days if it closes back above its 10-day average.</span><span class="l-zh">形态接近完成——若收盘重新站上 10 日均线，预计将在约 1–3 个交易日内出现买入触发。</span></span>
     </div>
     <p class="agewhen"><span class="l-en">⏱ BOTTOMING signal triggered 3 trading days ago (~2026-06-09), switching from COUNTER-TREND BOUNCE. Signal strength: moderate (score +45/100).</span><span class="l-zh">⏱ 筑底中信号于 3 个交易日前触发（约 2026-06-09），自逆势反弹切换而来。 信号强度：中等（评分 +45/100）。</span></p>
-    
     
     <ul class="points">
       <li><span class="l-en">Bigger picture is mixed (no clear trend for a daily long)</span><span class="l-zh">大局为混合（对日线多头而言属趋势不明）</span></li><li><span class="l-en">Macro: US net liquidity neutral — no macro tilt on the odds</span><span class="l-zh">宏观：美国净流动性中性——对概率属无方向性影响</span></li><li><span class="l-en">Swing low printed (buyers rejected the low)</span><span class="l-zh">摆动低点已现（买方拒绝了该低点）</span></li><li><span class="l-en">Back above the 10-day average, and it's turning up</span><span class="l-zh">重新站上 10 日均线之上，且均线开始向上</span></li><li><span class="l-en">Daily momentum just crossed up</span><span class="l-zh">日线动量刚刚向上交叉</span></li>
@@ -503,7 +158,7 @@
     <h2><span class="l-en">Momentum across timeframes</span><span class="l-zh">跨周期动量</span>
       <span class="help">?<span class="tip"><span class="l-en">Daily / 3-day / weekly views of the same ETF. Weekly is the tide, 3-day the wave, daily the ripple — signals are strongest when all three agree. RSI & StochRSI gauges show oversold→overbought; the MACD bars show momentum's trajectory and the estimated days to its next cross.</span><span class="l-zh">同一只 ETF 的日线／3 日／周线视角。周线是潮汐，3 日是波浪，日线是涟漪 — 三者一致时信号最强。RSI 与 StochRSI 表盘显示超卖→超买；MACD 柱状图显示动量轨迹及距下次交叉的预估天数。</span></span></span>
     </h2>
-    <div data-mtf='{"D": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 61.0, "rsi5": 76.0, "stoch": 98.0, "spark_rsi": [57.5, 64.0, 64.9, 60.2, 53.8, 54.6, 46.9, 52.7, 51.8, 43.2, 39.1, 38.2, 40.6, 40.0, 49.4, 47.3, 53.3, 59.9, 58.5, 61.0], "spark_stoch": [89.3, 90.1, 90.1, 88.6, 61.9, 37.3, 15.3, 19.5, 19.8, 19.8, 9.0, 0.0, 3.0, 5.2, 19.2, 27.6, 48.3, 67.6, 87.4, 97.8], "spark_hist": [0.142, 0.197, 0.23, 0.198, 0.107, 0.049, -0.07, -0.085, -0.104, -0.212, -0.329, -0.401, -0.406, -0.397, -0.282, -0.219, -0.101, 0.068, 0.156, 0.239]}, "3D": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 59.0, "rsi5": 66.0, "stoch": 66.0, "spark_rsi": [43.9, 47.3, 47.0, 50.7, 46.0, 45.5, 47.4, 53.3, 51.9, 54.4, 56.2, 58.1, 58.9, 62.3, 58.0, 55.9, 43.7, 50.9, 58.1, 59.2], "spark_stoch": [0.0, 3.0, 5.7, 11.6, 10.7, 9.6, 7.2, 15.3, 31.4, 51.3, 74.5, 90.1, 100.0, 100.0, 91.5, 78.7, 45.4, 33.4, 38.6, 66.3], "spark_hist": [-0.793, -0.801, -0.784, -0.688, -0.68, -0.657, -0.589, -0.433, -0.337, -0.225, -0.118, -0.019, 0.053, 0.148, 0.149, 0.114, -0.084, -0.106, 0.013, 0.104]}, "W": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": true, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 60.0, "rsi5": 69.0, "stoch": 52.0, "spark_rsi": [66.7, 75.4, 77.6, 70.5, 73.9, 59.4, 56.5, 48.0, 50.2, 50.5, 51.7, 51.9, 54.0, 56.5, 56.5, 57.8, 58.2, 51.1, 52.9, 59.8], "spark_stoch": [100.0, 100.0, 100.0, 92.7, 88.6, 68.7, 52.8, 24.5, 14.4, 7.9, 11.1, 12.2, 15.3, 20.7, 25.9, 30.1, 33.8, 28.2, 31.4, 51.6], "spark_hist": [0.673, 0.994, 1.24, 1.22, 1.27, 0.954, 0.627, 0.155, -0.104, -0.27, -0.343, -0.379, -0.346, -0.259, -0.202, -0.138, -0.09, -0.188, -0.215, -0.079]}}'></div>
+    <div data-mtf='{"D": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 61.0, "rsi5": 76.0, "stoch": 98.0, "spark_rsi": [57.5, 64.0, 64.9, 60.2, 53.8, 54.6, 46.9, 52.7, 51.8, 43.2, 39.1, 38.2, 40.6, 40.0, 49.4, 47.3, 53.3, 59.9, 58.5, 61.0], "spark_stoch": [89.3, 90.1, 90.1, 88.6, 61.9, 37.3, 15.3, 19.5, 19.8, 19.8, 9.0, 0.0, 3.0, 5.2, 19.2, 27.6, 48.3, 67.6, 87.4, 97.8], "spark_hist": [0.142, 0.197, 0.23, 0.198, 0.107, 0.049, -0.07, -0.085, -0.104, -0.212, -0.329, -0.401, -0.406, -0.397, -0.282, -0.219, -0.101, 0.068, 0.156, 0.239]}, "3D": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 59.0, "rsi5": 66.0, "stoch": 66.0, "spark_rsi": [43.9, 47.3, 47.0, 50.7, 46.0, 45.5, 47.4, 53.3, 51.9, 54.4, 56.2, 58.1, 58.9, 62.3, 58.0, 55.9, 43.7, 50.9, 58.1, 59.2], "spark_stoch": [0.0, 3.0, 5.7, 11.6, 10.7, 9.6, 7.2, 15.3, 31.4, 51.3, 74.5, 90.1, 100.0, 100.0, 91.5, 78.7, 45.4, 33.4, 38.6, 66.3], "spark_hist": [-0.793, -0.801, -0.784, -0.688, -0.68, -0.657, -0.589, -0.433, -0.337, -0.225, -0.118, -0.019, 0.053, 0.148, 0.149, 0.114, -0.084, -0.106, 0.013, 0.104]}, "W": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": true, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 60.0, "rsi5": 69.0, "stoch": 52.0, "spark_rsi": [66.7, 75.4, 77.6, 70.5, 73.9, 59.4, 56.5, 48.0, 50.2, 50.5, 51.7, 51.9, 54.0, 56.5, 56.5, 57.8, 58.2, 51.1, 52.9, 59.8], "spark_stoch": [100.0, 100.0, 100.0, 92.7, 88.6, 68.7, 52.8, 24.5, 14.4, 7.9, 11.1, 12.2, 15.3, 20.7, 25.9, 30.1, 33.8, 28.2, 31.4, 51.6], "spark_hist": [0.673, 0.994, 1.24, 1.22, 1.27, 0.954, 0.627, 0.155, -0.104, -0.27, -0.343, -0.379, -0.346, -0.259, -0.202, -0.138, -0.09, -0.188, -0.215, -0.079]}, "M": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 60.0, "rsi5": 62.0, "stoch": 42.0, "spark_rsi": [66.6, 58.3, 58.8, 64.1, 62.0, 62.2, 63.6, 60.5, 57.8, 59.4, 55.0, 50.5, 56.2, 53.9, 63.0, 70.1, 56.5, 59.1, 56.9, 60.3], "spark_stoch": [85.6, 65.1, 52.3, 44.0, 44.0, 45.2, 40.3, 34.0, 22.3, 11.3, 4.7, 4.7, 11.9, 19.0, 49.7, 71.1, 74.3, 58.4, 36.0, 42.4], "spark_hist": [0.807, 0.523, 0.314, 0.393, 0.334, 0.261, 0.234, 0.094, -0.102, -0.188, -0.377, -0.636, -0.598, -0.635, -0.279, 0.347, 0.217, 0.248, 0.14, 0.225]}}'></div>
   </div>
 
   <div class="panel">
@@ -536,136 +191,136 @@
       
       <tr>
         <td class="l"><a href="../stock.html#CASY"><b>CASY</b></a> <span class="muted">Casey's</span></td>
-        <td><b class="pos">+2.40</b></td>
+        <td><b class="pos">+2.51</b></td>
         <td class="muted">1/78</td>
-        <td class="pos">+67%</td>
+        <td class="pos">+73%</td>
         <td class="pos">+2.9%</td>
         <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
       </tr>
       
       <tr>
-        <td class="l"><a href="../stock.html#ANDE"><b>ANDE</b></a> <span class="muted">The Andersons, Inc.</span></td>
-        <td><b class="pos">+1.91</b></td>
-        <td class="muted">2/78</td>
-        <td class="pos">+70%</td>
-        <td class="pos">+0.6%</td>
-        <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="../stock.html#ADM"><b>ADM</b></a> <span class="muted">Archer Daniels Midland</span></td>
-        <td><b class="pos">+1.84</b></td>
-        <td class="muted">3/78</td>
-        <td class="pos">+56%</td>
-        <td class="neg">-2.3%</td>
-        <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="../stock.html#MO"><b>MO</b></a> <span class="muted">Altria</span></td>
-        <td><b class="pos">+1.52</b></td>
-        <td class="muted">4/78</td>
-        <td class="pos">+36%</td>
-        <td class="pos">+0.8%</td>
-        <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="../stock.html#PSMT"><b>PSMT</b></a> <span class="muted">PriceSmart</span></td>
-        <td><b class="pos">+1.50</b></td>
-        <td class="muted">5/78</td>
-        <td class="pos">+41%</td>
-        <td class="pos">+14.4%</td>
-        <td class="l"><span class="alpha-entry ae-extended">extended</span></td>
-      </tr>
-      
-      <tr>
         <td class="l"><a href="../stock.html#BG"><b>BG</b></a> <span class="muted">Bunge Global</span></td>
-        <td><b class="pos">+1.46</b></td>
-        <td class="muted">6/78</td>
-        <td class="pos">+50%</td>
+        <td><b class="pos">+1.99</b></td>
+        <td class="muted">2/78</td>
+        <td class="pos">+74%</td>
         <td class="pos">+1.9%</td>
         <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
       </tr>
       
       <tr>
-        <td class="l"><a href="../stock.html#COCO"><b>COCO</b></a> <span class="muted">The Vita Coco Company</span></td>
-        <td><b class="pos">+1.45</b></td>
+        <td class="l"><a href="../stock.html#KO"><b>KO</b></a> <span class="muted">Coca-Cola Company (The)</span></td>
+        <td><b class="pos">+1.88</b></td>
+        <td class="muted">3/78</td>
+        <td class="pos">+36%</td>
+        <td class="pos">+3.1%</td>
+        <td class="l"><span class="alpha-entry ae-intact">intact</span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="../stock.html#ANDE"><b>ANDE</b></a> <span class="muted">The Andersons, Inc.</span></td>
+        <td><b class="pos">+1.69</b></td>
+        <td class="muted">4/78</td>
+        <td class="pos">+69%</td>
+        <td class="pos">+0.6%</td>
+        <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="../stock.html#TGT"><b>TGT</b></a> <span class="muted">Target Corporation</span></td>
+        <td><b class="pos">+1.51</b></td>
+        <td class="muted">5/78</td>
+        <td class="pos">+49%</td>
+        <td class="pos">+11.1%</td>
+        <td class="l"><span class="alpha-entry ae-intact">intact</span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="../stock.html#ADM"><b>ADM</b></a> <span class="muted">Archer Daniels Midland</span></td>
+        <td><b class="pos">+1.50</b></td>
+        <td class="muted">6/78</td>
+        <td class="pos">+53%</td>
+        <td class="neg">-2.3%</td>
+        <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="../stock.html#WMT"><b>WMT</b></a> <span class="muted">Walmart</span></td>
+        <td><b class="pos">+1.32</b></td>
         <td class="muted">7/78</td>
-        <td class="pos">+84%</td>
+        <td class="pos">+38%</td>
+        <td class="neg">-7.8%</td>
+        <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="../stock.html#TSN"><b>TSN</b></a> <span class="muted">Tyson Foods</span></td>
+        <td><b class="pos">+1.31</b></td>
+        <td class="muted">8/78</td>
+        <td class="pos">+40%</td>
+        <td class="neg">-13.9%</td>
+        <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="../stock.html#PSMT"><b>PSMT</b></a> <span class="muted">PriceSmart</span></td>
+        <td><b class="pos">+1.30</b></td>
+        <td class="muted">9/78</td>
+        <td class="pos">+40%</td>
+        <td class="pos">+14.4%</td>
+        <td class="l"><span class="alpha-entry ae-extended">extended</span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="../stock.html#COCO"><b>COCO</b></a> <span class="muted">The Vita Coco Company</span></td>
+        <td><b class="pos">+1.26</b></td>
+        <td class="muted">10/78</td>
+        <td class="pos">+82%</td>
         <td class="pos">+8.4%</td>
         <td class="l"><span class="alpha-entry ae-intact">intact</span></td>
       </tr>
       
       <tr>
+        <td class="l"><a href="../stock.html#MNST"><b>MNST</b></a> <span class="muted">Monster Beverage</span></td>
+        <td><b class="pos">+1.23</b></td>
+        <td class="muted">11/78</td>
+        <td class="pos">+42%</td>
+        <td class="pos">+7.9%</td>
+        <td class="l"><span class="alpha-entry ae-intact">intact</span></td>
+      </tr>
+      
+      <tr>
         <td class="l"><a href="../stock.html#TR"><b>TR</b></a> <span class="muted">Tootsie Roll Industries, Inc.</span></td>
-        <td><b class="pos">+1.31</b></td>
-        <td class="muted">8/78</td>
-        <td class="pos">+34%</td>
+        <td><b class="pos">+1.12</b></td>
+        <td class="muted">12/78</td>
+        <td class="pos">+33%</td>
         <td class="neg">-3.9%</td>
         <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
       </tr>
       
       <tr>
         <td class="l"><a href="../stock.html#UNFI"><b>UNFI</b></a> <span class="muted">United Natural Foods Inc</span></td>
-        <td><b class="pos">+1.28</b></td>
-        <td class="muted">9/78</td>
+        <td><b class="pos">+1.12</b></td>
+        <td class="muted">13/78</td>
         <td class="pos">+66%</td>
         <td class="neg">-1.8%</td>
         <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
       </tr>
       
       <tr>
-        <td class="l"><a href="../stock.html#KO"><b>KO</b></a> <span class="muted">Coca-Cola Company (The)</span></td>
-        <td><b class="pos">+1.27</b></td>
-        <td class="muted">10/78</td>
-        <td class="pos">+21%</td>
-        <td class="pos">+3.1%</td>
-        <td class="l"><span class="alpha-entry ae-intact">intact</span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="../stock.html#MNST"><b>MNST</b></a> <span class="muted">Monster Beverage</span></td>
-        <td><b class="pos">+1.25</b></td>
-        <td class="muted">11/78</td>
-        <td class="pos">+34%</td>
-        <td class="pos">+7.9%</td>
-        <td class="l"><span class="alpha-entry ae-intact">intact</span></td>
+        <td class="l"><a href="../stock.html#CL"><b>CL</b></a> <span class="muted">Colgate-Palmolive</span></td>
+        <td><b class="pos">+1.05</b></td>
+        <td class="muted">14/78</td>
+        <td class="pos">+24%</td>
+        <td class="pos">+2.1%</td>
+        <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
       </tr>
       
       <tr>
         <td class="l"><a href="../stock.html#DAR"><b>DAR</b></a> <span class="muted">Darling Ingredients</span></td>
-        <td><b class="pos">+1.23</b></td>
-        <td class="muted">12/78</td>
-        <td class="pos">+52%</td>
-        <td class="neg">-8.6%</td>
-        <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="../stock.html#WMT"><b>WMT</b></a> <span class="muted">Walmart</span></td>
-        <td><b class="pos">+1.20</b></td>
-        <td class="muted">13/78</td>
-        <td class="pos">+28%</td>
-        <td class="neg">-7.8%</td>
-        <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="../stock.html#PEP"><b>PEP</b></a> <span class="muted">PepsiCo</span></td>
-        <td><b class="pos">+1.19</b></td>
-        <td class="muted">14/78</td>
-        <td class="pos">+23%</td>
-        <td class="neg">-2.2%</td>
-        <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="../stock.html#TSN"><b>TSN</b></a> <span class="muted">Tyson Foods</span></td>
-        <td><b class="pos">+1.06</b></td>
+        <td><b class="pos">+1.03</b></td>
         <td class="muted">15/78</td>
-        <td class="pos">+24%</td>
-        <td class="neg">-13.9%</td>
+        <td class="pos">+50%</td>
+        <td class="neg">-8.6%</td>
         <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
       </tr>
       
@@ -696,10 +351,9 @@
       </ul>
       
       
-      
       <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>36.8</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>7.3%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>3.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
       
-      <div data-mtf='{"D": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 47.0, "rsi5": 65.0, "stoch": 100.0, "spark_rsi": [57.2, 61.4, 63.2, 53.0, 35.5, 34.2, 32.0, 32.0, 33.0, 29.0, 27.6, 25.9, 36.5, 38.6, 41.4, 43.7, 41.9, 46.2, 46.0, 47.4], "spark_stoch": [75.4, 83.2, 86.8, 75.3, 43.3, 10.0, 0.0, 0.0, 1.1, 1.1, 1.1, 0.0, 9.5, 20.9, 34.8, 41.2, 49.6, 69.0, 86.1, 99.7], "spark_hist": [0.039, 0.142, 0.241, 0.064, -0.67, -1.174, -1.546, -1.706, -1.694, -1.797, -1.834, -1.848, -1.501, -1.132, -0.747, -0.384, -0.173, 0.102, 0.286, 0.445]}, "3D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": true, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 8.9, "stoch_cross_up": true, "stoch_cross_dn": false, "rsi14": 47.0, "rsi5": 47.0, "stoch": 39.0, "spark_rsi": [53.7, 56.5, 58.5, 60.4, 55.5, 55.8, 62.1, 62.5, 58.7, 61.7, 61.4, 62.0, 63.6, 62.1, 42.8, 41.0, 34.4, 44.1, 46.5, 47.2], "spark_stoch": [2.4, 8.0, 16.0, 23.7, 25.2, 29.3, 49.9, 74.6, 84.0, 84.3, 82.6, 92.9, 95.3, 93.4, 61.6, 28.2, 0.0, 11.0, 24.8, 39.4], "spark_hist": [-1.062, -0.957, -0.78, -0.569, -0.61, -0.62, -0.319, -0.122, -0.142, -0.029, 0.008, 0.027, 0.079, 0.041, -0.689, -1.225, -1.894, -1.862, -1.652, -1.417]}, "W": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": true, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 51.0, "rsi5": 43.0, "stoch": 16.0, "spark_rsi": [67.1, 76.1, 77.5, 61.2, 64.8, 59.8, 61.9, 53.8, 57.0, 59.3, 60.1, 60.7, 62.7, 64.1, 62.7, 63.6, 49.3, 44.9, 48.3, 50.6], "spark_stoch": [80.8, 83.3, 93.0, 70.7, 44.8, 11.5, 11.3, 3.9, 8.5, 12.3, 21.1, 26.2, 31.0, 36.5, 39.4, 40.7, 26.3, 13.8, 6.0, 16.0], "spark_hist": [0.704, 1.373, 1.849, 1.309, 1.166, 0.698, 0.485, -0.192, -0.415, -0.404, -0.368, -0.333, -0.192, -0.039, -0.051, -0.044, -0.802, -1.574, -1.822, -1.786]}}'></div>
+      <div data-mtf='{"D": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 47.0, "rsi5": 65.0, "stoch": 100.0, "spark_rsi": [57.2, 61.4, 63.2, 53.0, 35.5, 34.2, 32.0, 32.0, 33.0, 29.0, 27.6, 25.9, 36.5, 38.6, 41.4, 43.7, 41.9, 46.2, 46.0, 47.4], "spark_stoch": [75.4, 83.2, 86.8, 75.3, 43.3, 10.0, 0.0, 0.0, 1.1, 1.1, 1.1, 0.0, 9.5, 20.9, 34.8, 41.2, 49.6, 69.0, 86.1, 99.7], "spark_hist": [0.039, 0.142, 0.241, 0.064, -0.67, -1.174, -1.546, -1.706, -1.694, -1.797, -1.834, -1.848, -1.501, -1.132, -0.747, -0.384, -0.173, 0.102, 0.286, 0.445]}, "3D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": true, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 8.9, "stoch_cross_up": true, "stoch_cross_dn": false, "rsi14": 47.0, "rsi5": 47.0, "stoch": 39.0, "spark_rsi": [53.7, 56.5, 58.5, 60.4, 55.5, 55.8, 62.1, 62.5, 58.7, 61.7, 61.4, 62.0, 63.6, 62.1, 42.8, 41.0, 34.4, 44.1, 46.5, 47.2], "spark_stoch": [2.4, 8.0, 16.0, 23.7, 25.2, 29.3, 49.9, 74.6, 84.0, 84.3, 82.6, 92.9, 95.3, 93.4, 61.6, 28.2, 0.0, 11.0, 24.8, 39.4], "spark_hist": [-1.062, -0.957, -0.78, -0.569, -0.61, -0.62, -0.319, -0.122, -0.142, -0.029, 0.008, 0.027, 0.079, 0.041, -0.689, -1.225, -1.894, -1.862, -1.652, -1.417]}, "W": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": true, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 51.0, "rsi5": 43.0, "stoch": 16.0, "spark_rsi": [67.1, 76.1, 77.5, 61.2, 64.8, 59.8, 61.9, 53.8, 57.0, 59.3, 60.1, 60.7, 62.7, 64.1, 62.7, 63.6, 49.3, 44.9, 48.3, 50.6], "spark_stoch": [80.8, 83.3, 93.0, 70.7, 44.8, 11.5, 11.3, 3.9, 8.5, 12.3, 21.1, 26.2, 31.0, 36.5, 39.4, 40.7, 26.3, 13.8, 6.0, 16.0], "spark_hist": [0.704, 1.373, 1.849, 1.309, 1.166, 0.698, 0.485, -0.192, -0.415, -0.404, -0.368, -0.333, -0.192, -0.039, -0.051, -0.044, -0.802, -1.574, -1.822, -1.786]}, "M": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 1.0, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 67.0, "rsi5": 57.0, "stoch": 32.0, "spark_rsi": [88.3, 84.3, 86.9, 87.0, 69.2, 74.3, 75.1, 73.7, 73.8, 72.6, 76.0, 73.0, 77.7, 78.2, 81.4, 84.1, 79.2, 81.8, 64.0, 66.6], "spark_stoch": [100.0, 95.6, 94.0, 92.3, 66.1, 45.3, 25.9, 31.0, 28.1, 21.8, 25.9, 24.4, 33.4, 37.2, 53.4, 66.4, 69.4, 74.8, 46.8, 32.4], "spark_hist": [3.115, 3.136, 3.411, 3.361, 2.408, 2.196, 1.966, 1.564, 1.145, 0.672, 0.624, 0.337, 0.628, 0.742, 1.158, 1.808, 1.789, 2.052, 0.969, 0.452]}}'></div>
       <details style="margin-top:6px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>
         <p class="muted" style="margin:5px 0"><span class="l-en">Short-term, a daily bottoming setup is forming — but the bigger picture is bearish (weekly momentum negative; last cycle left-translated (topped early)). A bounce here is COUNTER-TREND: daily-cycle lows that don't line up with a weekly-cycle low tend to be left-translated and fail, then cascade toward the larger cycle low — exactly the trap of buying a daily low in a falling investor cycle. Last cycle was left-translated (topped early) — a bearish structural tell.</span><span class="l-zh">短期来看，正在形成日线筑底形态——但大局看空（weekly momentum negative; last cycle left-translated (topped early)）。此处的反弹属于逆势：与周线周期低点不对齐的日线周期低点往往呈左移结构并最终失败，随后向更大周期低点蔓延——这正是在下行的投资者周期中买入日线低点的陷阱。 上一周期为左移结构（见顶偏早）——属于看空的结构性信号。</span> <span class="l-en">Next:</span><span class="l-zh">下一步：</span> <span class="l-en">Nimble traders only — small size, tight stop below 113.06. Not an investment buy; wait for the weekly timeframe to actually turn up (or a fresh investor-cycle low to confirm) before trusting it.</span><span class="l-zh">仅限灵活交易者——小仓位、将止损紧贴 113.06 下方。并非投资性买入；在采信之前，请等待周线周期真正转向上行（或出现新的投资者周期低点予以确认）。</span></p>
       </details>
@@ -722,10 +376,9 @@
       </ul>
       
       
-      
       <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>43.4</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>21.5%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>3.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
       
-      <div data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": true, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 0.7, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 46.0, "rsi5": 56.0, "stoch": 73.0, "spark_rsi": [65.7, 72.1, 75.2, 66.0, 57.2, 50.4, 44.0, 44.2, 42.1, 34.2, 32.5, 35.3, 37.9, 41.4, 41.3, 42.3, 40.6, 46.1, 43.8, 46.3], "spark_stoch": [100.0, 100.0, 100.0, 88.8, 66.9, 36.8, 14.7, 3.5, 0.2, 0.2, 0.0, 2.2, 6.4, 13.4, 18.0, 21.5, 22.7, 34.1, 47.6, 72.8], "spark_hist": [3.996, 6.136, 8.227, 7.724, 5.396, 2.12, -1.781, -4.202, -6.148, -9.621, -12.016, -12.412, -11.542, -9.711, -8.052, -6.356, -5.287, -3.32, -2.318, -1.054]}, "3D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": true, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 48.0, "rsi5": 42.0, "stoch": 19.0, "spark_rsi": [53.8, 57.2, 60.6, 63.3, 51.3, 52.6, 56.1, 57.1, 54.0, 57.1, 56.9, 58.9, 63.9, 67.8, 55.9, 49.2, 42.4, 45.9, 48.1, 47.9], "spark_stoch": [6.3, 19.6, 40.0, 59.7, 47.6, 31.9, 20.2, 35.9, 39.8, 42.5, 42.1, 55.1, 71.5, 88.4, 76.0, 42.6, 9.3, 4.5, 12.0, 19.1], "spark_hist": [-1.966, -1.519, -0.14, 1.547, -0.79, -1.971, -1.58, -1.066, -1.635, -1.061, -0.838, -0.171, 1.84, 4.456, 2.783, -0.684, -5.596, -7.408, -7.554, -7.43]}, "W": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": true, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 50.0, "rsi5": 44.0, "stoch": 13.0, "spark_rsi": [52.3, 60.4, 62.3, 56.6, 59.7, 57.5, 58.8, 52.6, 54.3, 58.5, 55.6, 55.8, 57.4, 57.8, 57.1, 63.2, 58.6, 46.0, 48.6, 50.3], "spark_stoch": [90.4, 90.4, 90.4, 93.5, 90.4, 84.9, 87.4, 79.5, 75.1, 74.4, 65.4, 53.4, 41.9, 46.7, 50.5, 66.8, 67.5, 52.1, 23.7, 13.3], "spark_hist": [8.595, 12.142, 14.918, 13.813, 14.043, 12.632, 11.704, 8.141, 6.132, 6.433, 5.121, 3.995, 3.663, 3.249, 2.483, 4.28, 3.695, -1.63, -4.059, -4.862]}}'></div>
+      <div data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": true, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 0.7, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 46.0, "rsi5": 56.0, "stoch": 73.0, "spark_rsi": [65.7, 72.1, 75.2, 66.0, 57.2, 50.4, 44.0, 44.2, 42.1, 34.2, 32.5, 35.3, 37.9, 41.4, 41.3, 42.3, 40.6, 46.1, 43.8, 46.3], "spark_stoch": [100.0, 100.0, 100.0, 88.8, 66.9, 36.8, 14.7, 3.5, 0.2, 0.2, 0.0, 2.2, 6.4, 13.4, 18.0, 21.5, 22.7, 34.1, 47.6, 72.8], "spark_hist": [3.996, 6.136, 8.227, 7.724, 5.396, 2.12, -1.781, -4.202, -6.148, -9.621, -12.016, -12.412, -11.542, -9.711, -8.052, -6.356, -5.287, -3.32, -2.318, -1.054]}, "3D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": true, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 48.0, "rsi5": 42.0, "stoch": 19.0, "spark_rsi": [53.8, 57.2, 60.6, 63.3, 51.3, 52.6, 56.1, 57.1, 54.0, 57.1, 56.9, 58.9, 63.9, 67.8, 55.9, 49.2, 42.4, 45.9, 48.1, 47.9], "spark_stoch": [6.3, 19.6, 40.0, 59.7, 47.6, 31.9, 20.2, 35.9, 39.8, 42.5, 42.1, 55.1, 71.5, 88.4, 76.0, 42.6, 9.3, 4.5, 12.0, 19.1], "spark_hist": [-1.966, -1.519, -0.14, 1.547, -0.79, -1.971, -1.58, -1.066, -1.635, -1.061, -0.838, -0.171, 1.84, 4.456, 2.783, -0.684, -5.596, -7.408, -7.554, -7.43]}, "W": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": true, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 50.0, "rsi5": 44.0, "stoch": 13.0, "spark_rsi": [52.3, 60.4, 62.3, 56.6, 59.7, 57.5, 58.8, 52.6, 54.3, 58.5, 55.6, 55.8, 57.4, 57.8, 57.1, 63.2, 58.6, 46.0, 48.6, 50.3], "spark_stoch": [90.4, 90.4, 90.4, 93.5, 90.4, 84.9, 87.4, 79.5, 75.1, 74.4, 65.4, 53.4, 41.9, 46.7, 50.5, 66.8, 67.5, 52.1, 23.7, 13.3], "spark_hist": [8.595, 12.142, 14.918, 13.813, 14.043, 12.632, 11.704, 8.141, 6.132, 6.433, 5.121, 3.995, 3.663, 3.249, 2.483, 4.28, 3.695, -1.63, -4.059, -4.862]}, "M": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": true, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 59.0, "rsi5": 56.0, "stoch": 41.0, "spark_rsi": [79.9, 71.6, 74.8, 77.8, 65.5, 68.1, 70.4, 65.0, 60.0, 60.3, 58.5, 57.2, 57.4, 51.9, 58.5, 63.3, 61.7, 63.0, 56.7, 58.8], "spark_stoch": [90.0, 76.6, 65.8, 57.4, 40.7, 30.8, 17.2, 17.2, 11.3, 0.5, 0.5, 0.5, 0.3, 0.3, 8.7, 23.2, 35.9, 47.4, 41.4, 41.1], "spark_hist": [21.653, 17.521, 17.158, 19.534, 12.517, 9.557, 9.166, 4.216, -3.346, -8.633, -13.636, -17.865, -20.39, -25.065, -22.485, -15.987, -12.746, -9.62, -11.482, -11.065]}}'></div>
       <details style="margin-top:6px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>
         <p class="muted" style="margin:5px 0"><span class="l-en">Short-term, a daily bottoming setup is forming — but the bigger picture is bearish (weekly momentum just crossed down; last cycle left-translated (topped early)). A bounce here is COUNTER-TREND: daily-cycle lows that don't line up with a weekly-cycle low tend to be left-translated and fail, then cascade toward the larger cycle low — exactly the trap of buying a daily low in a falling investor cycle. Last cycle was left-translated (topped early) — a bearish structural tell.</span><span class="l-zh">短期来看，正在形成日线筑底形态——但大局看空（weekly momentum just crossed down; last cycle left-translated (topped early)）。此处的反弹属于逆势：与周线周期低点不对齐的日线周期低点往往呈左移结构并最终失败，随后向更大周期低点蔓延——这正是在下行的投资者周期中买入日线低点的陷阱。 上一周期为左移结构（见顶偏早）——属于看空的结构性信号。</span> <span class="l-en">Next:</span><span class="l-zh">下一步：</span> <span class="l-en">Nimble traders only — small size, tight stop below 946.11. Not an investment buy; wait for the weekly timeframe to actually turn up (or a fresh investor-cycle low to confirm) before trusting it.</span><span class="l-zh">仅限灵活交易者——小仓位、将止损紧贴 946.11 下方。并非投资性买入；在采信之前，请等待周线周期真正转向上行（或出现新的投资者周期低点予以确认）。</span></p>
       </details>
@@ -748,10 +401,9 @@
       </ul>
       
       
-      
       <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>21.1</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>7.4%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>19.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
       
-      <div data-mtf='{"D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 60.0, "rsi5": 72.0, "stoch": 97.0, "spark_rsi": [41.9, 44.2, 41.8, 45.1, 47.8, 50.6, 46.8, 57.4, 53.4, 48.0, 41.7, 43.0, 41.8, 43.4, 56.0, 52.9, 59.1, 59.7, 57.9, 60.2], "spark_stoch": [2.5, 8.4, 5.9, 14.3, 23.7, 46.1, 50.3, 68.4, 70.6, 71.3, 37.9, 16.0, 3.1, 6.7, 34.3, 57.7, 87.4, 90.3, 96.8, 96.8], "spark_hist": [-0.407, -0.39, -0.425, -0.347, -0.213, -0.046, -0.027, 0.281, 0.364, 0.252, -0.037, -0.177, -0.292, -0.305, 0.076, 0.224, 0.539, 0.736, 0.778, 0.845]}, "3D": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 55.0, "rsi5": 67.0, "stoch": 100.0, "spark_rsi": [38.5, 41.7, 40.2, 43.2, 41.5, 41.0, 39.9, 51.5, 49.0, 44.8, 48.9, 45.9, 42.8, 44.3, 47.7, 50.1, 42.8, 51.4, 54.6, 55.3], "spark_stoch": [0.0, 3.4, 5.2, 10.2, 10.0, 10.7, 7.3, 17.8, 36.5, 47.7, 60.6, 58.3, 56.7, 45.0, 48.4, 66.5, 59.8, 70.3, 74.5, 99.5], "spark_hist": [-1.652, -1.726, -1.776, -1.609, -1.507, -1.394, -1.296, -0.719, -0.422, -0.398, -0.185, -0.168, -0.288, -0.281, -0.122, 0.089, -0.096, 0.171, 0.501, 0.727]}, "W": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": true, "stoch_cross_dn": false, "rsi14": 53.0, "rsi5": 66.0, "stoch": 63.0, "spark_rsi": [54.6, 63.0, 63.9, 64.6, 70.3, 51.4, 48.3, 42.5, 41.2, 41.7, 44.3, 46.5, 49.4, 48.3, 47.3, 41.7, 45.8, 44.7, 48.9, 52.9], "spark_stoch": [86.6, 100.0, 100.0, 100.0, 100.0, 81.6, 60.3, 33.2, 23.2, 16.8, 18.4, 19.5, 23.4, 23.6, 24.5, 15.7, 12.8, 9.9, 34.5, 62.6], "spark_hist": [0.87, 1.631, 2.104, 2.354, 2.808, 2.093, 1.349, 0.409, -0.303, -0.708, -0.794, -0.692, -0.437, -0.308, -0.258, -0.516, -0.46, -0.448, -0.217, 0.146]}}'></div>
+      <div data-mtf='{"D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 60.0, "rsi5": 72.0, "stoch": 97.0, "spark_rsi": [41.9, 44.2, 41.8, 45.1, 47.8, 50.6, 46.8, 57.4, 53.4, 48.0, 41.7, 43.0, 41.8, 43.4, 56.0, 52.9, 59.1, 59.7, 57.9, 60.2], "spark_stoch": [2.5, 8.4, 5.9, 14.3, 23.7, 46.1, 50.3, 68.4, 70.6, 71.3, 37.9, 16.0, 3.1, 6.7, 34.3, 57.7, 87.4, 90.3, 96.8, 96.8], "spark_hist": [-0.407, -0.39, -0.425, -0.347, -0.213, -0.046, -0.027, 0.281, 0.364, 0.252, -0.037, -0.177, -0.292, -0.305, 0.076, 0.224, 0.539, 0.736, 0.778, 0.845]}, "3D": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 55.0, "rsi5": 67.0, "stoch": 100.0, "spark_rsi": [38.5, 41.7, 40.2, 43.2, 41.5, 41.0, 39.9, 51.5, 49.0, 44.8, 48.9, 45.9, 42.8, 44.3, 47.7, 50.1, 42.8, 51.4, 54.6, 55.3], "spark_stoch": [0.0, 3.4, 5.2, 10.2, 10.0, 10.7, 7.3, 17.8, 36.5, 47.7, 60.6, 58.3, 56.7, 45.0, 48.4, 66.5, 59.8, 70.3, 74.5, 99.5], "spark_hist": [-1.652, -1.726, -1.776, -1.609, -1.507, -1.394, -1.296, -0.719, -0.422, -0.398, -0.185, -0.168, -0.288, -0.281, -0.122, 0.089, -0.096, 0.171, 0.501, 0.727]}, "W": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": true, "stoch_cross_dn": false, "rsi14": 53.0, "rsi5": 66.0, "stoch": 63.0, "spark_rsi": [54.6, 63.0, 63.9, 64.6, 70.3, 51.4, 48.3, 42.5, 41.2, 41.7, 44.3, 46.5, 49.4, 48.3, 47.3, 41.7, 45.8, 44.7, 48.9, 52.9], "spark_stoch": [86.6, 100.0, 100.0, 100.0, 100.0, 81.6, 60.3, 33.2, 23.2, 16.8, 18.4, 19.5, 23.4, 23.6, 24.5, 15.7, 12.8, 9.9, 34.5, 62.6], "spark_hist": [0.87, 1.631, 2.104, 2.354, 2.808, 2.093, 1.349, 0.409, -0.303, -0.708, -0.794, -0.692, -0.437, -0.308, -0.258, -0.516, -0.46, -0.448, -0.217, 0.146]}, "M": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": true, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 49.0, "rsi5": 51.0, "stoch": 31.0, "spark_rsi": [66.9, 58.0, 57.6, 61.6, 59.0, 54.1, 58.1, 51.1, 46.6, 50.6, 48.6, 47.3, 45.9, 43.0, 49.7, 58.3, 45.9, 47.8, 46.1, 49.5], "spark_stoch": [84.5, 63.7, 57.3, 38.3, 30.7, 19.2, 15.5, 10.5, 10.5, 6.5, 9.7, 10.7, 4.2, 1.0, 12.0, 39.5, 44.6, 42.7, 21.9, 30.9], "spark_hist": [1.396, 0.841, 0.338, 0.417, 0.161, -0.502, -0.51, -1.214, -2.146, -2.27, -2.498, -2.702, -2.873, -3.175, -2.63, -1.199, -1.705, -1.715, -1.872, -1.498]}}'></div>
       <details style="margin-top:6px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>
         <p class="muted" style="margin:5px 0"><span class="l-en">A new cycle low likely formed 7 day(s) ago (2026-06-03 @ 140.19): swing low in, price back above the 10-day average — and the weekly timeframe agrees.</span><span class="l-zh">新的周期低点可能已在 7 天前形成 （2026-06-03 @ 140.19）：摆动低点已现，价格重新站上 10 日均线——且周线周期也一致确认。</span> <span class="l-en">Next:</span><span class="l-zh">下一步：</span> <span class="l-en">The cleanest setup cycle logic offers — entry with a defined exit: invalidation = a close below 140.19.</span><span class="l-zh">周期逻辑所能给出的最干净形态——入场并设有明确离场：失效点 = 收盘跌破 140.19。</span></p>
       </details>
@@ -774,10 +426,9 @@
       </ul>
       
       
-      
       <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>23.7</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>12.1%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>28.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
       
-      <div data-mtf='{"D": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 61.0, "rsi5": 67.0, "stoch": 86.0, "spark_rsi": [67.5, 69.1, 71.8, 68.5, 65.1, 66.5, 58.0, 63.7, 55.3, 47.5, 45.6, 44.5, 46.7, 37.7, 51.5, 51.7, 58.8, 65.6, 60.5, 60.8], "spark_stoch": [100.0, 100.0, 100.0, 92.5, 77.5, 65.8, 42.5, 39.4, 17.9, 15.3, 0.0, 0.0, 2.7, 2.7, 16.1, 27.1, 50.0, 68.8, 81.6, 86.3], "spark_hist": [0.277, 0.287, 0.317, 0.287, 0.221, 0.178, 0.067, 0.058, -0.038, -0.195, -0.317, -0.399, -0.416, -0.535, -0.418, -0.323, -0.136, 0.128, 0.216, 0.261]}, "3D": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 63.0, "rsi5": 65.0, "stoch": 71.0, "spark_rsi": [51.0, 55.7, 57.9, 59.7, 55.7, 50.7, 48.8, 55.8, 62.3, 59.4, 60.1, 64.5, 66.4, 68.2, 67.8, 62.4, 53.7, 57.1, 67.2, 63.4], "spark_stoch": [0.0, 6.2, 15.3, 26.7, 26.7, 17.6, 6.2, 9.0, 42.3, 68.6, 87.7, 87.7, 94.7, 100.0, 99.4, 89.4, 64.4, 46.0, 54.3, 71.1], "spark_hist": [-0.465, -0.47, -0.424, -0.353, -0.362, -0.442, -0.514, -0.421, -0.21, -0.121, -0.055, 0.08, 0.2, 0.3, 0.33, 0.25, 0.046, -0.03, 0.173, 0.215]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 66.0, "rsi5": 72.0, "stoch": 49.0, "spark_rsi": [68.0, 75.6, 74.0, 75.8, 78.2, 61.1, 62.7, 55.0, 57.1, 59.3, 60.8, 55.5, 57.6, 61.8, 61.2, 66.0, 67.2, 58.9, 59.9, 65.9], "spark_stoch": [70.3, 93.3, 97.9, 97.9, 97.9, 79.6, 61.1, 33.4, 28.7, 24.6, 27.3, 19.9, 12.8, 14.1, 22.3, 34.4, 42.2, 38.8, 36.4, 48.9], "spark_hist": [0.363, 0.728, 0.888, 1.005, 1.122, 0.834, 0.646, 0.309, 0.124, 0.046, 0.023, -0.123, -0.171, -0.087, -0.059, 0.096, 0.211, 0.095, 0.027, 0.164]}}'></div>
+      <div data-mtf='{"D": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 61.0, "rsi5": 67.0, "stoch": 86.0, "spark_rsi": [67.5, 69.1, 71.8, 68.5, 65.1, 66.5, 58.0, 63.7, 55.3, 47.5, 45.6, 44.5, 46.7, 37.7, 51.5, 51.7, 58.8, 65.6, 60.5, 60.8], "spark_stoch": [100.0, 100.0, 100.0, 92.5, 77.5, 65.8, 42.5, 39.4, 17.9, 15.3, 0.0, 0.0, 2.7, 2.7, 16.1, 27.1, 50.0, 68.8, 81.6, 86.3], "spark_hist": [0.277, 0.287, 0.317, 0.287, 0.221, 0.178, 0.067, 0.058, -0.038, -0.195, -0.317, -0.399, -0.416, -0.535, -0.418, -0.323, -0.136, 0.128, 0.216, 0.261]}, "3D": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 63.0, "rsi5": 65.0, "stoch": 71.0, "spark_rsi": [51.0, 55.7, 57.9, 59.7, 55.7, 50.7, 48.8, 55.8, 62.3, 59.4, 60.1, 64.5, 66.4, 68.2, 67.8, 62.4, 53.7, 57.1, 67.2, 63.4], "spark_stoch": [0.0, 6.2, 15.3, 26.7, 26.7, 17.6, 6.2, 9.0, 42.3, 68.6, 87.7, 87.7, 94.7, 100.0, 99.4, 89.4, 64.4, 46.0, 54.3, 71.1], "spark_hist": [-0.465, -0.47, -0.424, -0.353, -0.362, -0.442, -0.514, -0.421, -0.21, -0.121, -0.055, 0.08, 0.2, 0.3, 0.33, 0.25, 0.046, -0.03, 0.173, 0.215]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 66.0, "rsi5": 72.0, "stoch": 49.0, "spark_rsi": [68.0, 75.6, 74.0, 75.8, 78.2, 61.1, 62.7, 55.0, 57.1, 59.3, 60.8, 55.5, 57.6, 61.8, 61.2, 66.0, 67.2, 58.9, 59.9, 65.9], "spark_stoch": [70.3, 93.3, 97.9, 97.9, 97.9, 79.6, 61.1, 33.4, 28.7, 24.6, 27.3, 19.9, 12.8, 14.1, 22.3, 34.4, 42.2, 38.8, 36.4, 48.9], "spark_hist": [0.363, 0.728, 0.888, 1.005, 1.122, 0.834, 0.646, 0.309, 0.124, 0.046, 0.023, -0.123, -0.171, -0.087, -0.059, 0.096, 0.211, 0.095, 0.027, 0.164]}, "M": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 69.0, "rsi5": 75.0, "stoch": 69.0, "spark_rsi": [56.9, 53.4, 55.4, 65.5, 66.5, 67.5, 66.5, 64.5, 58.0, 59.7, 55.1, 59.2, 64.8, 59.1, 65.1, 71.3, 62.5, 65.0, 65.3, 68.6], "spark_stoch": [56.9, 25.0, 14.9, 23.6, 43.6, 63.0, 64.5, 61.2, 46.0, 35.2, 20.1, 22.1, 39.0, 49.9, 68.2, 74.5, 76.2, 68.9, 56.5, 69.0], "spark_hist": [0.487, 0.121, -0.064, 0.276, 0.508, 0.659, 0.664, 0.551, 0.243, 0.076, -0.199, -0.228, 0.002, -0.055, 0.193, 0.737, 0.691, 0.766, 0.754, 0.901]}}'></div>
       <details style="margin-top:6px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>
         <p class="muted" style="margin:5px 0"><span class="l-en">A new cycle low likely formed 6 day(s) ago (2026-06-04 @ 76.82): swing low in, price back above the 10-day average — and the weekly timeframe agrees.</span><span class="l-zh">新的周期低点可能已在 6 天前形成 （2026-06-04 @ 76.82）：摆动低点已现，价格重新站上 10 日均线——且周线周期也一致确认。</span> <span class="l-en">Next:</span><span class="l-zh">下一步：</span> <span class="l-en">The cleanest setup cycle logic offers — entry with a defined exit: invalidation = a close below 76.82.</span><span class="l-zh">周期逻辑所能给出的最干净形态——入场并设有明确离场：失效点 = 收盘跌破 76.82。</span></p>
       </details>
@@ -800,10 +451,9 @@
       </ul>
       
       
-      
       <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>20.2</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>9.1%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>27.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
       
-      <div data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": true, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 0.5, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 58.0, "rsi5": 68.0, "stoch": 68.0, "spark_rsi": [72.1, 73.4, 73.4, 67.8, 67.4, 68.0, 54.8, 55.5, 50.3, 48.6, 42.6, 44.2, 47.7, 46.4, 51.4, 48.1, 51.7, 57.6, 54.1, 58.5], "spark_stoch": [94.8, 91.3, 87.4, 80.0, 68.4, 57.8, 37.1, 19.9, 1.0, 1.0, 0.0, 1.6, 6.7, 10.8, 18.8, 19.7, 27.6, 37.8, 47.0, 68.3], "spark_hist": [2.823, 2.66, 2.383, 1.852, 1.362, 0.965, 0.135, -0.415, -1.013, -1.462, -2.016, -2.238, -2.152, -2.08, -1.744, -1.609, -1.307, -0.782, -0.568, -0.194]}, "3D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 7.0, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 59.0, "rsi5": 63.0, "stoch": 67.0, "spark_rsi": [44.1, 46.9, 41.3, 44.1, 45.9, 40.8, 38.7, 49.1, 47.9, 53.3, 54.8, 64.7, 66.0, 65.0, 65.2, 55.2, 51.2, 54.5, 57.7, 58.6], "spark_stoch": [0.0, 3.3, 3.3, 6.3, 8.5, 8.5, 5.5, 14.9, 37.1, 70.4, 88.8, 100.0, 100.0, 98.8, 97.8, 84.6, 67.6, 54.5, 57.6, 66.6], "spark_hist": [-2.574, -2.486, -2.795, -2.687, -2.383, -2.497, -2.636, -1.89, -1.416, -0.626, 0.03, 1.456, 2.448, 2.876, 3.007, 2.251, 1.324, 0.946, 0.93, 0.929]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 59.0, "rsi5": 65.0, "stoch": 58.0, "spark_rsi": [65.5, 67.3, 69.7, 65.2, 67.1, 51.9, 55.0, 47.9, 48.2, 44.6, 46.5, 44.7, 49.8, 51.4, 54.8, 65.3, 64.7, 55.5, 56.0, 59.5], "spark_stoch": [99.2, 99.2, 100.0, 94.6, 91.5, 70.2, 54.2, 24.0, 12.4, 0.5, 2.9, 2.5, 9.3, 15.9, 29.3, 49.9, 70.7, 73.4, 64.3, 58.5], "spark_hist": [2.632, 3.068, 3.463, 3.248, 3.131, 1.792, 1.114, -0.051, -0.793, -1.605, -1.917, -2.214, -1.903, -1.493, -0.884, 0.715, 1.62, 1.339, 1.123, 1.284]}}'></div>
+      <div data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": true, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 0.5, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 58.0, "rsi5": 68.0, "stoch": 68.0, "spark_rsi": [72.1, 73.4, 73.4, 67.8, 67.4, 68.0, 54.8, 55.5, 50.3, 48.6, 42.6, 44.2, 47.7, 46.4, 51.4, 48.1, 51.7, 57.6, 54.1, 58.5], "spark_stoch": [94.8, 91.3, 87.4, 80.0, 68.4, 57.8, 37.1, 19.9, 1.0, 1.0, 0.0, 1.6, 6.7, 10.8, 18.8, 19.7, 27.6, 37.8, 47.0, 68.3], "spark_hist": [2.823, 2.66, 2.383, 1.852, 1.362, 0.965, 0.135, -0.415, -1.013, -1.462, -2.016, -2.238, -2.152, -2.08, -1.744, -1.609, -1.307, -0.782, -0.568, -0.194]}, "3D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 7.0, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 59.0, "rsi5": 63.0, "stoch": 67.0, "spark_rsi": [44.1, 46.9, 41.3, 44.1, 45.9, 40.8, 38.7, 49.1, 47.9, 53.3, 54.8, 64.7, 66.0, 65.0, 65.2, 55.2, 51.2, 54.5, 57.7, 58.6], "spark_stoch": [0.0, 3.3, 3.3, 6.3, 8.5, 8.5, 5.5, 14.9, 37.1, 70.4, 88.8, 100.0, 100.0, 98.8, 97.8, 84.6, 67.6, 54.5, 57.6, 66.6], "spark_hist": [-2.574, -2.486, -2.795, -2.687, -2.383, -2.497, -2.636, -1.89, -1.416, -0.626, 0.03, 1.456, 2.448, 2.876, 3.007, 2.251, 1.324, 0.946, 0.93, 0.929]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 59.0, "rsi5": 65.0, "stoch": 58.0, "spark_rsi": [65.5, 67.3, 69.7, 65.2, 67.1, 51.9, 55.0, 47.9, 48.2, 44.6, 46.5, 44.7, 49.8, 51.4, 54.8, 65.3, 64.7, 55.5, 56.0, 59.5], "spark_stoch": [99.2, 99.2, 100.0, 94.6, 91.5, 70.2, 54.2, 24.0, 12.4, 0.5, 2.9, 2.5, 9.3, 15.9, 29.3, 49.9, 70.7, 73.4, 64.3, 58.5], "spark_hist": [2.632, 3.068, 3.463, 3.248, 3.131, 1.792, 1.114, -0.051, -0.793, -1.605, -1.917, -2.214, -1.903, -1.493, -0.884, 0.715, 1.62, 1.339, 1.123, 1.284]}, "M": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": true, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": true, "stoch_cross_dn": false, "rsi14": 66.0, "rsi5": 68.0, "stoch": 24.0, "spark_rsi": [78.1, 65.5, 70.1, 78.0, 79.2, 81.9, 83.5, 84.0, 69.7, 70.7, 67.2, 57.0, 62.0, 63.5, 69.3, 71.2, 60.3, 60.1, 64.1, 66.1], "spark_stoch": [99.1, 84.7, 74.9, 74.7, 90.1, 99.9, 100.0, 100.0, 78.1, 54.1, 23.7, 12.3, 9.1, 14.2, 29.3, 40.7, 36.7, 25.4, 16.7, 23.9], "spark_hist": [4.009, 3.211, 3.078, 4.293, 5.043, 5.933, 6.641, 6.793, 5.271, 4.082, 2.657, 0.433, -0.326, -0.676, 0.18, 1.01, 0.044, -0.748, -0.585, -0.175]}}'></div>
       <details style="margin-top:6px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>
         <p class="muted" style="margin:5px 0"><span class="l-en">A new cycle low likely formed 24 day(s) ago (2026-05-08 @ 170.99): swing low in, price back above the 10-day average — and the weekly timeframe agrees.</span><span class="l-zh">新的周期低点可能已在 24 天前形成 （2026-05-08 @ 170.99）：摆动低点已现，价格重新站上 10 日均线——且周线周期也一致确认。</span> <span class="l-en">Next:</span><span class="l-zh">下一步：</span> <span class="l-en">The cleanest setup cycle logic offers — entry with a defined exit: invalidation = a close below 170.99.</span><span class="l-zh">周期逻辑所能给出的最干净形态——入场并设有明确离场：失效点 = 收盘跌破 170.99。</span></p>
       </details>
@@ -826,10 +476,9 @@
       </ul>
       
       
-      
       <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>18.6</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>8.2%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>7.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
       
-      <div data-mtf='{"D": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": true, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 59.0, "rsi5": 57.0, "stoch": 69.0, "spark_rsi": [54.7, 61.7, 58.9, 61.9, 59.0, 60.5, 56.0, 61.9, 62.7, 53.0, 52.1, 52.2, 54.0, 51.3, 58.5, 54.8, 62.5, 68.0, 61.6, 58.9], "spark_stoch": [39.8, 31.5, 25.5, 41.8, 35.6, 39.3, 26.1, 37.7, 48.1, 45.0, 23.6, 0.4, 6.2, 6.2, 27.0, 31.5, 64.4, 76.6, 86.8, 69.2], "spark_hist": [-0.036, -0.031, -0.057, -0.043, -0.063, -0.064, -0.102, -0.064, -0.036, -0.102, -0.153, -0.183, -0.183, -0.201, -0.14, -0.128, -0.034, 0.101, 0.123, 0.101]}, "3D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": true, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 65.0, "rsi5": 76.0, "stoch": 95.0, "spark_rsi": [51.2, 48.9, 53.2, 55.4, 50.9, 48.9, 45.0, 49.9, 60.9, 60.7, 61.1, 61.0, 61.3, 60.7, 59.4, 59.0, 59.6, 60.7, 66.8, 64.5], "spark_stoch": [27.3, 31.9, 39.0, 44.3, 53.9, 54.0, 44.4, 45.2, 62.8, 86.8, 99.5, 99.3, 99.7, 98.4, 94.7, 90.1, 87.8, 90.4, 95.1, 95.3], "spark_hist": [-0.145, -0.136, -0.041, 0.065, 0.048, -0.005, -0.114, -0.091, 0.184, 0.341, 0.431, 0.461, 0.459, 0.42, 0.351, 0.278, 0.219, 0.182, 0.253, 0.252]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 60.0, "rsi5": 72.0, "stoch": 96.0, "spark_rsi": [50.2, 55.1, 61.8, 50.0, 56.5, 48.7, 41.7, 44.9, 49.5, 49.0, 52.3, 48.3, 49.2, 57.2, 57.6, 54.6, 57.4, 55.8, 57.7, 59.7], "spark_stoch": [99.0, 100.0, 100.0, 87.5, 81.9, 68.1, 59.4, 46.3, 46.6, 53.7, 59.0, 50.1, 43.2, 48.9, 64.3, 73.3, 80.6, 83.9, 95.9, 96.2], "spark_hist": [0.434, 0.639, 0.913, 0.811, 0.893, 0.706, 0.339, 0.182, 0.212, 0.211, 0.3, 0.233, 0.208, 0.426, 0.555, 0.539, 0.586, 0.547, 0.548, 0.578]}}'></div>
+      <div data-mtf='{"D": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": true, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 59.0, "rsi5": 57.0, "stoch": 69.0, "spark_rsi": [54.7, 61.7, 58.9, 61.9, 59.0, 60.5, 56.0, 61.9, 62.7, 53.0, 52.1, 52.2, 54.0, 51.3, 58.5, 54.8, 62.5, 68.0, 61.6, 58.9], "spark_stoch": [39.8, 31.5, 25.5, 41.8, 35.6, 39.3, 26.1, 37.7, 48.1, 45.0, 23.6, 0.4, 6.2, 6.2, 27.0, 31.5, 64.4, 76.6, 86.8, 69.2], "spark_hist": [-0.036, -0.031, -0.057, -0.043, -0.063, -0.064, -0.102, -0.064, -0.036, -0.102, -0.153, -0.183, -0.183, -0.201, -0.14, -0.128, -0.034, 0.101, 0.123, 0.101]}, "3D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": true, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 65.0, "rsi5": 76.0, "stoch": 95.0, "spark_rsi": [51.2, 48.9, 53.2, 55.4, 50.9, 48.9, 45.0, 49.9, 60.9, 60.7, 61.1, 61.0, 61.3, 60.7, 59.4, 59.0, 59.6, 60.7, 66.8, 64.5], "spark_stoch": [27.3, 31.9, 39.0, 44.3, 53.9, 54.0, 44.4, 45.2, 62.8, 86.8, 99.5, 99.3, 99.7, 98.4, 94.7, 90.1, 87.8, 90.4, 95.1, 95.3], "spark_hist": [-0.145, -0.136, -0.041, 0.065, 0.048, -0.005, -0.114, -0.091, 0.184, 0.341, 0.431, 0.461, 0.459, 0.42, 0.351, 0.278, 0.219, 0.182, 0.253, 0.252]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 60.0, "rsi5": 72.0, "stoch": 96.0, "spark_rsi": [50.2, 55.1, 61.8, 50.0, 56.5, 48.7, 41.7, 44.9, 49.5, 49.0, 52.3, 48.3, 49.2, 57.2, 57.6, 54.6, 57.4, 55.8, 57.7, 59.7], "spark_stoch": [99.0, 100.0, 100.0, 87.5, 81.9, 68.1, 59.4, 46.3, 46.6, 53.7, 59.0, 50.1, 43.2, 48.9, 64.3, 73.3, 80.6, 83.9, 95.9, 96.2], "spark_hist": [0.434, 0.639, 0.913, 0.811, 0.893, 0.706, 0.339, 0.182, 0.212, 0.211, 0.3, 0.233, 0.208, 0.426, 0.555, 0.539, 0.586, 0.547, 0.548, 0.578]}, "M": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 53.0, "rsi5": 63.0, "stoch": 84.0, "spark_rsi": [47.4, 42.1, 40.3, 48.8, 53.4, 53.7, 52.9, 53.4, 49.4, 45.1, 47.5, 41.3, 41.5, 37.8, 45.3, 49.7, 45.4, 50.6, 50.2, 52.7], "spark_stoch": [32.2, 7.3, 0.0, 12.2, 34.7, 57.7, 67.1, 67.0, 59.6, 46.4, 36.2, 22.2, 16.7, 4.5, 18.6, 40.7, 56.6, 67.5, 68.5, 84.4], "spark_hist": [-0.763, -1.225, -1.576, -1.346, -0.893, -0.554, -0.362, -0.204, -0.273, -0.511, -0.544, -0.855, -1.0, -1.243, -1.034, -0.647, -0.582, -0.26, -0.054, 0.202]}}'></div>
       <details style="margin-top:6px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>
         <p class="muted" style="margin:5px 0"><span class="l-en">A new cycle low likely formed 19 day(s) ago (2026-05-15 @ 60.44): swing low in, price back above the 10-day average — and the weekly timeframe agrees.</span><span class="l-zh">新的周期低点可能已在 19 天前形成 （2026-05-15 @ 60.44）：摆动低点已现，价格重新站上 10 日均线——且周线周期也一致确认。</span> <span class="l-en">Next:</span><span class="l-zh">下一步：</span> <span class="l-en">The cleanest setup cycle logic offers — entry with a defined exit: invalidation = a close below 60.44.</span><span class="l-zh">周期逻辑所能给出的最干净形态——入场并设有明确离场：失效点 = 收盘跌破 60.44。</span></p>
       </details>
@@ -852,10 +501,9 @@
       </ul>
       
       
-      
       <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>12.2</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>5.3%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>40.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
       
-      <div data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": true, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 54.0, "rsi5": 54.0, "stoch": 62.0, "spark_rsi": [64.1, 65.6, 66.3, 63.1, 64.1, 64.7, 57.1, 55.9, 55.2, 45.2, 42.0, 44.7, 49.2, 50.4, 56.5, 52.6, 53.6, 59.2, 51.8, 53.7], "spark_stoch": [45.2, 51.9, 56.7, 55.4, 58.4, 65.2, 63.6, 53.3, 37.0, 22.5, 10.6, 3.7, 13.5, 25.1, 41.3, 45.9, 51.4, 56.8, 56.8, 62.5], "spark_hist": [0.185, 0.261, 0.301, 0.254, 0.223, 0.19, 0.047, -0.076, -0.172, -0.39, -0.578, -0.639, -0.587, -0.513, -0.346, -0.287, -0.225, -0.079, -0.099, -0.077]}, "3D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": true, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 58.0, "rsi5": 53.0, "stoch": 35.0, "spark_rsi": [55.3, 58.6, 57.8, 60.5, 60.5, 53.6, 52.6, 58.9, 62.2, 71.7, 58.4, 60.0, 65.2, 65.6, 66.5, 60.7, 53.6, 59.2, 60.8, 57.7], "spark_stoch": [6.0, 17.9, 28.3, 37.4, 40.5, 33.1, 19.5, 19.9, 47.1, 79.1, 74.8, 58.2, 47.4, 59.0, 69.6, 61.2, 40.3, 27.5, 27.6, 34.7], "spark_hist": [-0.176, -0.15, -0.157, -0.103, -0.078, -0.194, -0.289, -0.206, -0.073, 0.333, 0.277, 0.266, 0.434, 0.515, 0.557, 0.412, 0.105, 0.075, 0.092, 0.001]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 2.1, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 59.0, "rsi5": 56.0, "stoch": 24.0, "spark_rsi": [59.7, 67.7, 71.0, 71.6, 74.0, 63.9, 66.6, 55.5, 61.8, 59.7, 62.7, 53.9, 59.2, 69.6, 56.5, 62.4, 63.3, 55.8, 59.0, 58.6], "spark_stoch": [88.8, 95.7, 100.0, 100.0, 100.0, 89.2, 81.0, 60.8, 57.7, 49.5, 56.5, 37.1, 28.8, 34.7, 39.0, 44.4, 33.9, 32.8, 29.4, 23.7], "spark_hist": [0.183, 0.484, 0.762, 0.911, 1.043, 0.904, 0.845, 0.536, 0.497, 0.385, 0.382, 0.139, 0.135, 0.597, 0.427, 0.595, 0.7, 0.43, 0.382, 0.291]}}'></div>
+      <div data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": true, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 54.0, "rsi5": 54.0, "stoch": 62.0, "spark_rsi": [64.1, 65.6, 66.3, 63.1, 64.1, 64.7, 57.1, 55.9, 55.2, 45.2, 42.0, 44.7, 49.2, 50.4, 56.5, 52.6, 53.6, 59.2, 51.8, 53.7], "spark_stoch": [45.2, 51.9, 56.7, 55.4, 58.4, 65.2, 63.6, 53.3, 37.0, 22.5, 10.6, 3.7, 13.5, 25.1, 41.3, 45.9, 51.4, 56.8, 56.8, 62.5], "spark_hist": [0.185, 0.261, 0.301, 0.254, 0.223, 0.19, 0.047, -0.076, -0.172, -0.39, -0.578, -0.639, -0.587, -0.513, -0.346, -0.287, -0.225, -0.079, -0.099, -0.077]}, "3D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": true, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 58.0, "rsi5": 53.0, "stoch": 35.0, "spark_rsi": [55.3, 58.6, 57.8, 60.5, 60.5, 53.6, 52.6, 58.9, 62.2, 71.7, 58.4, 60.0, 65.2, 65.6, 66.5, 60.7, 53.6, 59.2, 60.8, 57.7], "spark_stoch": [6.0, 17.9, 28.3, 37.4, 40.5, 33.1, 19.5, 19.9, 47.1, 79.1, 74.8, 58.2, 47.4, 59.0, 69.6, 61.2, 40.3, 27.5, 27.6, 34.7], "spark_hist": [-0.176, -0.15, -0.157, -0.103, -0.078, -0.194, -0.289, -0.206, -0.073, 0.333, 0.277, 0.266, 0.434, 0.515, 0.557, 0.412, 0.105, 0.075, 0.092, 0.001]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 2.1, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 59.0, "rsi5": 56.0, "stoch": 24.0, "spark_rsi": [59.7, 67.7, 71.0, 71.6, 74.0, 63.9, 66.6, 55.5, 61.8, 59.7, 62.7, 53.9, 59.2, 69.6, 56.5, 62.4, 63.3, 55.8, 59.0, 58.6], "spark_stoch": [88.8, 95.7, 100.0, 100.0, 100.0, 89.2, 81.0, 60.8, 57.7, 49.5, 56.5, 37.1, 28.8, 34.7, 39.0, 44.4, 33.9, 32.8, 29.4, 23.7], "spark_hist": [0.183, 0.484, 0.762, 0.911, 1.043, 0.904, 0.845, 0.536, 0.497, 0.385, 0.382, 0.139, 0.135, 0.597, 0.427, 0.595, 0.7, 0.43, 0.382, 0.291]}, "M": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 69.0, "rsi5": 71.0, "stoch": 58.0, "spark_rsi": [76.3, 65.5, 65.3, 69.5, 74.3, 72.3, 73.6, 71.2, 74.4, 78.5, 78.2, 58.2, 61.1, 60.6, 65.3, 71.2, 67.8, 72.8, 67.6, 69.4], "spark_stoch": [92.7, 85.5, 73.4, 65.1, 75.7, 81.7, 84.9, 74.7, 77.1, 82.2, 94.4, 66.1, 37.6, 8.8, 20.4, 37.1, 48.9, 61.2, 55.2, 57.8], "spark_hist": [1.501, 1.279, 1.046, 1.032, 1.248, 1.235, 1.215, 1.045, 1.045, 1.269, 1.293, 0.597, 0.243, -0.059, -0.023, 0.395, 0.464, 0.857, 0.81, 0.834]}}'></div>
       <details style="margin-top:6px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>
         <p class="muted" style="margin:5px 0"><span class="l-en">Late in the daily cycle (day 56 of ~36-42) — odds favor a dip into the next cycle low from here even with the trend intact.</span><span class="l-zh">处于日线周期晚期（约 36-42 天中的第 56 天）——即便趋势完好，从此处概率上仍倾向于回落至下一个周期低点。</span> <span class="l-en">Next:</span><span class="l-zh">下一步：</span> <span class="l-en">Let the next daily cycle low form before adding; watch for the swing-low setup.</span><span class="l-zh">在加仓前先让下一个日线周期低点形成；留意摆动低点形态。</span></p>
       </details>
@@ -878,10 +526,9 @@
       </ul>
       
       
-      
       <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>22.1</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>8.4%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>10.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
       
-      <div data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": true, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 0.5, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 54.0, "rsi5": 58.0, "stoch": 59.0, "spark_rsi": [56.9, 62.3, 62.5, 63.5, 63.8, 64.3, 60.0, 64.8, 65.9, 57.7, 50.2, 49.5, 38.1, 39.1, 52.0, 44.7, 49.9, 55.6, 53.9, 54.0], "spark_stoch": [85.7, 91.0, 91.0, 100.0, 100.0, 100.0, 86.7, 86.7, 86.7, 77.8, 44.5, 11.2, 0.0, 1.2, 17.9, 25.7, 38.7, 42.9, 53.9, 58.8], "spark_hist": [0.372, 0.429, 0.444, 0.446, 0.423, 0.389, 0.291, 0.297, 0.299, 0.176, -0.029, -0.178, -0.489, -0.653, -0.507, -0.556, -0.452, -0.231, -0.12, -0.043]}, "3D": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 55.0, "rsi5": 60.0, "stoch": 61.0, "spark_rsi": [43.3, 45.9, 44.2, 47.7, 44.0, 47.9, 42.3, 46.4, 49.1, 51.1, 53.7, 54.4, 58.6, 59.6, 57.8, 58.5, 45.1, 48.0, 55.1, 55.3], "spark_stoch": [0.0, 2.7, 3.6, 8.2, 6.2, 10.2, 5.6, 10.3, 16.6, 40.7, 66.3, 88.4, 97.7, 100.0, 96.7, 94.5, 66.8, 47.9, 41.5, 61.0], "spark_hist": [-1.359, -1.391, -1.415, -1.278, -1.261, -1.091, -1.125, -0.978, -0.764, -0.532, -0.282, -0.093, 0.161, 0.342, 0.398, 0.427, 0.082, -0.066, 0.052, 0.122]}, "W": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 56.0, "rsi5": 59.0, "stoch": 54.0, "spark_rsi": [66.6, 71.4, 73.6, 69.5, 73.6, 61.5, 53.5, 48.1, 47.0, 48.4, 47.2, 49.6, 48.6, 53.0, 53.5, 54.5, 58.6, 57.6, 54.1, 55.7], "spark_stoch": [100.0, 100.0, 100.0, 96.0, 95.9, 84.0, 67.8, 42.4, 27.7, 22.6, 14.9, 11.5, 5.4, 12.7, 17.6, 25.1, 32.1, 37.2, 44.1, 54.3], "spark_hist": [1.546, 1.989, 2.313, 2.296, 2.419, 2.006, 1.329, 0.583, 0.014, -0.307, -0.56, -0.612, -0.667, -0.513, -0.383, -0.255, -0.014, 0.097, 0.052, 0.066]}}'></div>
+      <div data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": true, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 0.5, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 54.0, "rsi5": 58.0, "stoch": 59.0, "spark_rsi": [56.9, 62.3, 62.5, 63.5, 63.8, 64.3, 60.0, 64.8, 65.9, 57.7, 50.2, 49.5, 38.1, 39.1, 52.0, 44.7, 49.9, 55.6, 53.9, 54.0], "spark_stoch": [85.7, 91.0, 91.0, 100.0, 100.0, 100.0, 86.7, 86.7, 86.7, 77.8, 44.5, 11.2, 0.0, 1.2, 17.9, 25.7, 38.7, 42.9, 53.9, 58.8], "spark_hist": [0.372, 0.429, 0.444, 0.446, 0.423, 0.389, 0.291, 0.297, 0.299, 0.176, -0.029, -0.178, -0.489, -0.653, -0.507, -0.556, -0.452, -0.231, -0.12, -0.043]}, "3D": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 55.0, "rsi5": 60.0, "stoch": 61.0, "spark_rsi": [43.3, 45.9, 44.2, 47.7, 44.0, 47.9, 42.3, 46.4, 49.1, 51.1, 53.7, 54.4, 58.6, 59.6, 57.8, 58.5, 45.1, 48.0, 55.1, 55.3], "spark_stoch": [0.0, 2.7, 3.6, 8.2, 6.2, 10.2, 5.6, 10.3, 16.6, 40.7, 66.3, 88.4, 97.7, 100.0, 96.7, 94.5, 66.8, 47.9, 41.5, 61.0], "spark_hist": [-1.359, -1.391, -1.415, -1.278, -1.261, -1.091, -1.125, -0.978, -0.764, -0.532, -0.282, -0.093, 0.161, 0.342, 0.398, 0.427, 0.082, -0.066, 0.052, 0.122]}, "W": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 56.0, "rsi5": 59.0, "stoch": 54.0, "spark_rsi": [66.6, 71.4, 73.6, 69.5, 73.6, 61.5, 53.5, 48.1, 47.0, 48.4, 47.2, 49.6, 48.6, 53.0, 53.5, 54.5, 58.6, 57.6, 54.1, 55.7], "spark_stoch": [100.0, 100.0, 100.0, 96.0, 95.9, 84.0, 67.8, 42.4, 27.7, 22.6, 14.9, 11.5, 5.4, 12.7, 17.6, 25.1, 32.1, 37.2, 44.1, 54.3], "spark_hist": [1.546, 1.989, 2.313, 2.296, 2.419, 2.006, 1.329, 0.583, 0.014, -0.307, -0.56, -0.612, -0.667, -0.513, -0.383, -0.255, -0.014, 0.097, 0.052, 0.066]}, "M": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 54.0, "rsi5": 56.0, "stoch": 54.0, "spark_rsi": [62.4, 55.5, 51.4, 55.6, 57.8, 56.6, 57.4, 54.7, 47.1, 47.4, 43.0, 40.7, 45.2, 43.8, 56.8, 63.6, 50.2, 50.7, 54.5, 53.9], "spark_stoch": [55.5, 27.0, 12.9, 5.0, 12.7, 18.9, 21.0, 17.2, 11.0, 4.2, 0.3, 0.3, 6.9, 11.6, 42.8, 69.3, 78.4, 61.6, 48.4, 53.8], "spark_hist": [1.26, 0.492, -0.295, -0.548, -0.57, -0.665, -0.689, -0.841, -1.343, -1.614, -1.994, -2.309, -2.202, -2.127, -1.241, -0.073, -0.234, -0.294, -0.025, 0.089]}}'></div>
       <details style="margin-top:6px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>
         <p class="muted" style="margin:5px 0"><span class="l-en">A new cycle low likely formed 7 day(s) ago (2026-06-03 @ 84.87): swing low in, price back above the 10-day average — and the weekly timeframe agrees.</span><span class="l-zh">新的周期低点可能已在 7 天前形成 （2026-06-03 @ 84.87）：摆动低点已现，价格重新站上 10 日均线——且周线周期也一致确认。</span> <span class="l-en">Next:</span><span class="l-zh">下一步：</span> <span class="l-en">The cleanest setup cycle logic offers — entry with a defined exit: invalidation = a close below 84.87.</span><span class="l-zh">周期逻辑所能给出的最干净形态——入场并设有明确离场：失效点 = 收盘跌破 84.87。</span></p>
       </details>
@@ -904,10 +551,9 @@
       </ul>
       
       
-      
       <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>35.9</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>26.9%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>23.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
       
-      <div data-mtf='{"D": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 72.0, "rsi5": 81.0, "stoch": 86.0, "spark_rsi": [73.0, 75.3, 66.2, 67.3, 65.0, 66.1, 67.4, 71.1, 65.6, 65.8, 68.1, 64.2, 66.2, 63.8, 66.4, 61.4, 65.7, 68.2, 70.0, 71.6], "spark_stoch": [94.5, 96.8, 89.5, 80.8, 69.2, 67.9, 66.9, 73.1, 53.3, 32.6, 14.7, 12.7, 16.0, 5.9, 13.4, 7.5, 22.5, 38.3, 67.8, 86.2], "spark_hist": [1.037, 1.042, 0.834, 0.673, 0.48, 0.341, 0.253, 0.277, 0.173, 0.079, 0.057, -0.041, -0.073, -0.147, -0.146, -0.231, -0.188, -0.107, -0.022, 0.061]}, "3D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 72.0, "rsi5": 84.0, "stoch": 95.0, "spark_rsi": [39.0, 41.5, 45.0, 49.7, 47.3, 51.1, 49.3, 51.5, 52.0, 48.7, 67.2, 66.4, 69.5, 64.0, 65.5, 66.3, 67.6, 66.0, 70.7, 71.7], "spark_stoch": [0.0, 2.2, 7.4, 16.9, 22.0, 27.4, 27.0, 51.1, 73.8, 89.5, 91.5, 90.4, 99.0, 93.0, 89.2, 84.9, 88.1, 87.7, 92.0, 94.8], "spark_hist": [-1.547, -1.497, -1.309, -1.001, -0.832, -0.581, -0.444, -0.278, -0.147, -0.138, 0.545, 0.92, 1.27, 1.276, 1.273, 1.235, 1.193, 1.051, 1.114, 1.123]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 73.0, "rsi5": 88.0, "stoch": 91.0, "spark_rsi": [72.9, 75.1, 71.4, 74.3, 76.1, 51.7, 54.1, 48.1, 45.2, 46.2, 52.2, 53.9, 56.3, 54.0, 66.2, 67.0, 66.3, 67.8, 69.4, 72.7], "spark_stoch": [89.2, 85.9, 65.9, 62.7, 64.0, 50.6, 31.9, 3.2, 3.2, 1.1, 8.3, 17.3, 27.7, 30.0, 43.6, 55.6, 68.9, 70.6, 80.5, 91.0], "spark_hist": [0.54, 0.565, 0.447, 0.456, 0.497, -0.162, -0.51, -0.959, -1.346, -1.517, -1.36, -1.154, -0.893, -0.775, -0.096, 0.365, 0.595, 0.767, 0.905, 1.127]}}'></div>
+      <div data-mtf='{"D": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 72.0, "rsi5": 81.0, "stoch": 86.0, "spark_rsi": [73.0, 75.3, 66.2, 67.3, 65.0, 66.1, 67.4, 71.1, 65.6, 65.8, 68.1, 64.2, 66.2, 63.8, 66.4, 61.4, 65.7, 68.2, 70.0, 71.6], "spark_stoch": [94.5, 96.8, 89.5, 80.8, 69.2, 67.9, 66.9, 73.1, 53.3, 32.6, 14.7, 12.7, 16.0, 5.9, 13.4, 7.5, 22.5, 38.3, 67.8, 86.2], "spark_hist": [1.037, 1.042, 0.834, 0.673, 0.48, 0.341, 0.253, 0.277, 0.173, 0.079, 0.057, -0.041, -0.073, -0.147, -0.146, -0.231, -0.188, -0.107, -0.022, 0.061]}, "3D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 72.0, "rsi5": 84.0, "stoch": 95.0, "spark_rsi": [39.0, 41.5, 45.0, 49.7, 47.3, 51.1, 49.3, 51.5, 52.0, 48.7, 67.2, 66.4, 69.5, 64.0, 65.5, 66.3, 67.6, 66.0, 70.7, 71.7], "spark_stoch": [0.0, 2.2, 7.4, 16.9, 22.0, 27.4, 27.0, 51.1, 73.8, 89.5, 91.5, 90.4, 99.0, 93.0, 89.2, 84.9, 88.1, 87.7, 92.0, 94.8], "spark_hist": [-1.547, -1.497, -1.309, -1.001, -0.832, -0.581, -0.444, -0.278, -0.147, -0.138, 0.545, 0.92, 1.27, 1.276, 1.273, 1.235, 1.193, 1.051, 1.114, 1.123]}, "W": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 73.0, "rsi5": 88.0, "stoch": 91.0, "spark_rsi": [72.9, 75.1, 71.4, 74.3, 76.1, 51.7, 54.1, 48.1, 45.2, 46.2, 52.2, 53.9, 56.3, 54.0, 66.2, 67.0, 66.3, 67.8, 69.4, 72.7], "spark_stoch": [89.2, 85.9, 65.9, 62.7, 64.0, 50.6, 31.9, 3.2, 3.2, 1.1, 8.3, 17.3, 27.7, 30.0, 43.6, 55.6, 68.9, 70.6, 80.5, 91.0], "spark_hist": [0.54, 0.565, 0.447, 0.456, 0.497, -0.162, -0.51, -0.959, -1.346, -1.517, -1.36, -1.154, -0.893, -0.775, -0.096, 0.365, 0.595, 0.767, 0.905, 1.127]}, "M": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 71.0, "rsi5": 76.0, "stoch": 57.0, "spark_rsi": [54.8, 50.8, 45.5, 53.6, 57.9, 59.6, 63.4, 61.3, 55.4, 59.4, 64.0, 63.2, 69.8, 70.9, 73.6, 76.2, 58.7, 62.0, 68.6, 71.0], "spark_stoch": [46.7, 48.8, 38.3, 36.2, 48.7, 73.7, 88.6, 92.3, 83.3, 76.6, 80.1, 91.9, 98.6, 98.6, 100.0, 100.0, 74.2, 51.5, 39.4, 56.9], "spark_hist": [-0.667, -0.614, -0.808, -0.518, -0.073, 0.303, 0.756, 0.905, 0.689, 0.735, 1.02, 1.096, 1.584, 1.888, 2.211, 2.552, 1.771, 1.438, 1.808, 2.196]}}'></div>
       <details style="margin-top:6px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>
         <p class="muted" style="margin:5px 0"><span class="l-en">A new cycle low likely formed 20 day(s) ago (2026-05-14 @ 85.82): swing low in, price back above the 10-day average — and the weekly timeframe agrees.</span><span class="l-zh">新的周期低点可能已在 20 天前形成 （2026-05-14 @ 85.82）：摆动低点已现，价格重新站上 10 日均线——且周线周期也一致确认。</span> <span class="l-en">Next:</span><span class="l-zh">下一步：</span> <span class="l-en">The cleanest setup cycle logic offers — entry with a defined exit: invalidation = a close below 85.82.</span><span class="l-zh">周期逻辑所能给出的最干净形态——入场并设有明确离场：失效点 = 收盘跌破 85.82。</span></p>
       </details>
@@ -930,10 +576,9 @@
       </ul>
       
       
-      
       <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>15.8</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>8.5%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>9.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
       
-      <div data-mtf='{"D": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 46.0, "rsi5": 62.0, "stoch": 97.0, "spark_rsi": [38.7, 38.6, 42.4, 40.2, 39.3, 44.5, 35.2, 40.8, 38.3, 35.0, 31.2, 32.6, 34.3, 33.6, 37.6, 35.3, 41.7, 46.0, 44.6, 46.2], "spark_stoch": [8.8, 9.1, 17.5, 21.1, 24.0, 32.5, 25.1, 30.6, 20.9, 20.9, 9.0, 3.5, 11.1, 17.0, 29.5, 32.3, 52.6, 70.0, 90.0, 97.0], "spark_hist": [-0.749, -0.701, -0.543, -0.472, -0.419, -0.242, -0.414, -0.355, -0.376, -0.486, -0.681, -0.718, -0.65, -0.575, -0.396, -0.317, -0.093, 0.176, 0.322, 0.456]}, "3D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": true, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 11.4, "stoch_cross_up": true, "stoch_cross_dn": false, "rsi14": 42.0, "rsi5": 43.0, "stoch": 24.0, "spark_rsi": [47.3, 53.2, 53.4, 48.7, 53.2, 50.5, 53.0, 51.3, 52.1, 53.5, 51.3, 42.8, 41.9, 44.6, 45.0, 41.2, 34.5, 35.6, 39.5, 42.2], "spark_stoch": [2.3, 11.0, 19.9, 21.8, 23.8, 21.9, 28.2, 25.7, 33.0, 41.7, 52.6, 38.2, 19.1, 7.8, 16.6, 16.6, 8.8, 2.0, 10.8, 24.2], "spark_hist": [-1.493, -1.376, -1.254, -1.386, -1.183, -1.161, -0.977, -0.914, -0.81, -0.651, -0.626, -1.007, -1.254, -1.246, -1.171, -1.247, -1.625, -1.735, -1.573, -1.286]}, "W": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": true, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 44.0, "rsi5": 35.0, "stoch": 6.0, "spark_rsi": [60.2, 71.0, 65.8, 64.7, 67.5, 58.2, 58.5, 49.6, 52.0, 55.0, 55.1, 55.6, 53.2, 55.0, 52.0, 46.5, 48.1, 42.3, 41.6, 44.5], "spark_stoch": [59.6, 79.0, 93.3, 85.1, 80.6, 70.7, 62.6, 39.4, 31.4, 26.9, 34.0, 34.6, 27.6, 23.4, 17.8, 12.2, 6.2, 2.5, 2.5, 5.6], "spark_hist": [0.169, 1.578, 2.078, 2.199, 2.435, 1.868, 1.408, 0.386, -0.125, -0.227, -0.314, -0.352, -0.535, -0.533, -0.715, -1.171, -1.335, -1.797, -2.065, -1.994]}}'></div>
+      <div data-mtf='{"D": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 46.0, "rsi5": 62.0, "stoch": 97.0, "spark_rsi": [38.7, 38.6, 42.4, 40.2, 39.3, 44.5, 35.2, 40.8, 38.3, 35.0, 31.2, 32.6, 34.3, 33.6, 37.6, 35.3, 41.7, 46.0, 44.6, 46.2], "spark_stoch": [8.8, 9.1, 17.5, 21.1, 24.0, 32.5, 25.1, 30.6, 20.9, 20.9, 9.0, 3.5, 11.1, 17.0, 29.5, 32.3, 52.6, 70.0, 90.0, 97.0], "spark_hist": [-0.749, -0.701, -0.543, -0.472, -0.419, -0.242, -0.414, -0.355, -0.376, -0.486, -0.681, -0.718, -0.65, -0.575, -0.396, -0.317, -0.093, 0.176, 0.322, 0.456]}, "3D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": true, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 11.4, "stoch_cross_up": true, "stoch_cross_dn": false, "rsi14": 42.0, "rsi5": 43.0, "stoch": 24.0, "spark_rsi": [47.3, 53.2, 53.4, 48.7, 53.2, 50.5, 53.0, 51.3, 52.1, 53.5, 51.3, 42.8, 41.9, 44.6, 45.0, 41.2, 34.5, 35.6, 39.5, 42.2], "spark_stoch": [2.3, 11.0, 19.9, 21.8, 23.8, 21.9, 28.2, 25.7, 33.0, 41.7, 52.6, 38.2, 19.1, 7.8, 16.6, 16.6, 8.8, 2.0, 10.8, 24.2], "spark_hist": [-1.493, -1.376, -1.254, -1.386, -1.183, -1.161, -0.977, -0.914, -0.81, -0.651, -0.626, -1.007, -1.254, -1.246, -1.171, -1.247, -1.625, -1.735, -1.573, -1.286]}, "W": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": true, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 44.0, "rsi5": 35.0, "stoch": 6.0, "spark_rsi": [60.2, 71.0, 65.8, 64.7, 67.5, 58.2, 58.5, 49.6, 52.0, 55.0, 55.1, 55.6, 53.2, 55.0, 52.0, 46.5, 48.1, 42.3, 41.6, 44.5], "spark_stoch": [59.6, 79.0, 93.3, 85.1, 80.6, 70.7, 62.6, 39.4, 31.4, 26.9, 34.0, 34.6, 27.6, 23.4, 17.8, 12.2, 6.2, 2.5, 2.5, 5.6], "spark_hist": [0.169, 1.578, 2.078, 2.199, 2.435, 1.868, 1.408, 0.386, -0.125, -0.227, -0.314, -0.352, -0.535, -0.533, -0.715, -1.171, -1.335, -1.797, -2.065, -1.994]}, "M": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 2.2, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 48.0, "rsi5": 44.0, "stoch": 61.0, "spark_rsi": [48.6, 41.5, 40.6, 43.2, 41.6, 33.1, 31.1, 33.2, 39.1, 48.1, 43.7, 48.0, 49.9, 47.2, 54.4, 63.0, 54.1, 55.7, 47.4, 48.4], "spark_stoch": [27.9, 8.3, 0.2, 5.2, 7.3, 7.3, 2.1, 2.9, 13.9, 37.3, 51.7, 65.2, 73.7, 84.9, 93.8, 95.2, 90.7, 83.1, 66.8, 60.9], "spark_hist": [-1.392, -2.111, -2.562, -2.566, -2.583, -3.342, -3.897, -3.911, -3.339, -2.126, -1.646, -0.879, -0.155, 0.103, 0.925, 2.431, 2.454, 2.562, 1.606, 1.033]}}'></div>
       <details style="margin-top:6px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>
         <p class="muted" style="margin:5px 0"><span class="l-en">Short-term, a daily bottoming setup is forming — but the bigger picture is bearish (weekly momentum negative; investor cycle failed (broke its start low)). A bounce here is COUNTER-TREND: daily-cycle lows that don't line up with a weekly-cycle low tend to be left-translated and fail, then cascade toward the larger cycle low — exactly the trap of buying a daily low in a falling investor cycle. The daily cycle has already failed (broke its own start low).</span><span class="l-zh">短期来看，正在形成日线筑底形态——但大局看空（weekly momentum negative; investor cycle failed (broke its start low)）。此处的反弹属于逆势：与周线周期低点不对齐的日线周期低点往往呈左移结构并最终失败，随后向更大周期低点蔓延——这正是在下行的投资者周期中买入日线低点的陷阱。日线周期已经失败（跌破其自身的起始低点）。</span> <span class="l-en">Next:</span><span class="l-zh">下一步：</span> <span class="l-en">Nimble traders only — small size, tight stop below 140.05. Not an investment buy; wait for the weekly timeframe to actually turn up (or a fresh investor-cycle low to confirm) before trusting it.</span><span class="l-zh">仅限灵活交易者——小仓位、将止损紧贴 140.05 下方。并非投资性买入；在采信之前，请等待周线周期真正转向上行（或出现新的投资者周期低点予以确认）。</span></p>
       </details>
@@ -951,21 +596,21 @@
       
       <tr>
         <td><span class="state st-DECLINE"><span class="l-en">DOWNTREND</span><span class="l-zh">下跌趋势</span> · <span class="l-en">AVOID</span><span class="l-zh">回避</span></span></td>
-        <td>8555</td>
+        <td>8556</td>
         <td>60.8%</td>
         <td class="pos">+2.37%</td>
       </tr>
       
       <tr>
         <td><span class="state st-BOTTOM_WATCH"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span> · <span class="l-en">GET READY</span><span class="l-zh">准备</span></span></td>
-        <td>10391</td>
+        <td>10390</td>
         <td>58.8%</td>
         <td class="pos">+1.56%</td>
       </tr>
       
       <tr>
         <td><span class="state st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span> · <span class="l-en">BUY SETUP</span><span class="l-zh">买入预备</span></span></td>
-        <td>15606</td>
+        <td>15607</td>
         <td>57.9%</td>
         <td class="pos">+1.27%</td>
       </tr>
@@ -979,16 +624,16 @@
       
       <tr>
         <td><span class="state st-RALLY_ON"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span> · <span class="l-en">HOLD</span><span class="l-zh">持有</span></span></td>
-        <td>11764</td>
-        <td>59.1%</td>
-        <td class="pos">+1.36%</td>
+        <td>15757</td>
+        <td>59.2%</td>
+        <td class="pos">+1.29%</td>
       </tr>
       
       <tr>
         <td><span class="state st-TOP_WATCH"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span> · <span class="l-en">TAKE PROFITS</span><span class="l-zh">止盈</span></span></td>
-        <td>8740</td>
-        <td>58.0%</td>
-        <td class="pos">+1.06%</td>
+        <td>4745</td>
+        <td>56.8%</td>
+        <td class="pos">+1.03%</td>
       </tr>
       
       <tr>
@@ -1000,7 +645,7 @@
       
       <tr>
         <td><span class="state st-COUNTERTREND_BOUNCE"><span class="l-en">COUNTER-TREND BOUNCE</span><span class="l-zh">逆势反弹</span> · <span class="l-en">HIGH-RISK · NIMBLE ONLY</span><span class="l-zh">HIGH-RISK · NIMBLE ONLY</span></span></td>
-        <td>9362</td>
+        <td>9363</td>
         <td>59.6%</td>
         <td class="pos">+1.38%</td>
       </tr>
@@ -1026,7 +671,7 @@
       We measured it the same way. When a "nearing a low" reading ALSO had an early bullish signal
       (RSI divergence / histogram turning / StochRSI pop), the next month was up
       <b>57.8%</b> of the time (avg +1.16%, n=384) —
-      versus <b>58.8%</b> (avg +1.58%, n=10007) without one.
+      versus <b>58.8%</b> (avg +1.58%, n=10006) without one.
       So on average the early signals did <b>not</b> beat simply waiting — they fire sooner and catch the
       occasional sharp V-bottom, but at a higher false-alarm rate. Use them to know <i>when to pay
       attention</i>, then still require confirmation before committing. That's the honest tradeoff,
@@ -1034,7 +679,7 @@
       我们用同样的方法做了测量。当一次“接近低点”的读数同时伴有提前的看多信号
       （RSI 背离／柱状图转向／StochRSI 跳升）时，此后一个月上涨的概率为
       <b>57.8%</b>（均值 +1.16%，n=384）—
-      而没有此信号时为 <b>58.8%</b>（均值 +1.58%，n=10007）。
+      而没有此信号时为 <b>58.8%</b>（均值 +1.58%，n=10006）。
       所以平均而言，提前信号并<b>未</b>胜过单纯等待 — 它们触发更早，能抓住偶尔出现的尖锐 V 型底，
       但误报率也更高。用它们来判断<i>何时该留意</i>，然后在投入之前仍需要确认。
       这就是诚实的取舍 — 实测得出，而非臆断。</span></p>
@@ -1047,26 +692,6 @@
        这正是为何每个买入状态都以确认（摆动低点、10 日均线）为前提。图表由 TradingView 提供。</span></p>
   </div>
 
-<script>
-/* alert feed: toggle open/closed + filter chips (clone of the Vector timeline JS) */
-(function(){
-  var btn=document.getElementById('af-btn'), feed=document.getElementById('af-feed');
-  if(btn&&feed){btn.addEventListener('click',function(){
-    if(feed.hasAttribute('hidden')){feed.removeAttribute('hidden');btn.setAttribute('aria-expanded','true');}
-    else{feed.setAttribute('hidden','');btn.setAttribute('aria-expanded','false');}
-  });}
-  var fil=document.querySelectorAll('.aff'), items=document.querySelectorAll('.af-item');
-  fil.forEach(function(b){b.addEventListener('click',function(){
-    fil.forEach(function(x){x.classList.remove('active')}); b.classList.add('active');
-    var f=b.dataset.f;
-    items.forEach(function(it){ it.hidden=!(f==='all'||it.dataset.f===f); });
-    document.querySelectorAll('.af-day').forEach(function(dd){
-      var any=[].slice.call(dd.querySelectorAll('.af-item')).some(function(i){return !i.hidden});
-      dd.style.display=any?'':'none';
-    });
-  });});
-})();
-</script>
 <script src="../mtf.js"></script>
 <script src="../theme.js"></script>
 <footer class="site-footer">

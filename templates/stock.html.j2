@@ -63,6 +63,24 @@
   .ae-extended { background:color-mix(in srgb,var(--warn) 22%,transparent); color:var(--text); border-color:color-mix(in srgb,var(--warn) 55%,transparent); }
   .ae-intact { background:color-mix(in srgb,var(--link) 14%,transparent); color:var(--link); }
   .ae-laggard,.ae-neutral { background:var(--panel2); color:var(--muted); }
+  .bcbox { margin:9px 0 6px; padding:9px 12px; border-radius:9px; background:var(--panel2);
+           border-left:4px solid var(--muted); cursor:help; }
+  .bc-head { display:flex; align-items:baseline; gap:9px; }
+  .bc-ttl { font-size:12px; font-weight:800; letter-spacing:.03em; text-transform:uppercase;
+            color:var(--muted); }
+  .bc-score { font-size:19px; font-weight:800; line-height:1; }
+  .bc-score .bc-max { font-size:11px; font-weight:600; opacity:.55; }
+  .bc-grade { font-size:12px; font-weight:600; opacity:.8; margin-left:auto; }
+  .bcg-strong, .bcg-solid { color:var(--up); }
+  .bcg-light { color:var(--warn); } .bcg-minimal { color:var(--muted); }
+  .bcbox.bc-strong, .bcbox.bc-solid { border-left-color:var(--up);
+            background:color-mix(in srgb, var(--up) 9%, var(--panel2)); }
+  .bcbox.bc-light { border-left-color:var(--warn); }
+  .bc-tf { margin-top:5px; font-size:12.5px; color:var(--text);
+           font-variant-numeric:tabular-nums; }
+  .bc-tf .bc-y { color:var(--up); font-weight:800; }
+  .bc-tf .bc-n { color:var(--muted); opacity:.65; }
+  .bc-hist { margin-top:5px; font-size:11.5px; color:var(--muted); }
   a { text-decoration:none; }
   h1 { font-size:20px; margin:0; }
   h2 { font-size:14px; margin:0 0 10px; color:var(--muted); text-transform:uppercase;
@@ -234,6 +252,8 @@
       <div id="r_sigstrip" class="sigstrip"></div>
       <!-- collapsible alert feed: ladder pinned on top + technical timeline -->
       <div id="af-feed" class="af" hidden><div id="r_affeed"></div></div>
+      <!-- bottom-confidence box (multi-TF, bottoming states only) -->
+      <div id="r_bc" class="bcbox" style="display:none"></div>
       <p id="r_age" class="agewhen" style="display:none"></p>
       <p id="r_early" class="early" style="display:none"></p>
       <p id="r_macro" class="macro-caution" style="display:none"></p>
@@ -356,6 +376,7 @@
 <script>
 (function () {
   var cal = null;  // calibration table data (the nav search bar drives navigation now)
+  var bcCal = null;  // bottom-confidence per-band held-rate calibration
   // language-aware micro-strings for the JS-rendered scaffolding (the deep
   // per-stock analysis prose comes from the nightly JSON and stays English)
   function lang() { return document.documentElement.getAttribute('data-lang') || 'en'; }
@@ -732,6 +753,12 @@
   }
   fetch('stockdata/calibration.json').then(r => r.ok ? r.json() : null)
     .then(d => { cal = d; }).catch(() => {});
+  fetch('stockdata/bc_calibration.json').then(r => r.ok ? r.json() : null)
+    .then(d => { bcCal = d; }).catch(() => {});
+  // historical "cycle-low held" rate for a bottom-confidence score's band
+  function bcBand(s) {
+    return s < 20 ? '0-20' : s < 40 ? '20-40' : s < 60 ? '40-60' : '60+';
+  }
 
   function fromHash() {
     var t = decodeURIComponent((location.hash || '').slice(1));
@@ -965,6 +992,34 @@
       eqEl.title = lz(d.ladder.eq_tip, d.ladder.eq_tip_zh);
       eqEl.style.display = 'inline-flex';
     } else { eqEl.style.display = 'none'; }
+
+    // Bottom Confidence (multi-timeframe) — only on bottoming states
+    var bcEl = document.getElementById('r_bc');
+    if (d.ladder.bc_score != null && d.ladder.bc_line) {
+      var bcg = lang() === 'zh' ? (d.ladder.bc_grade_zh || d.ladder.bc_grade) : d.ladder.bc_grade;
+      var bcLbl = lang() === 'zh' ? '底部信心' : 'Bottom confidence';
+      var tfHtml = lz(d.ladder.bc_line, d.ladder.bc_line_zh)
+        .replace(/✓/g, '<span class="bc-y">✓</span>').replace(/✗/g, '<span class="bc-n">✗</span>');
+      // measured historical "cycle-low held" rate for this score's band
+      var bcHist = '';
+      if (bcCal && bcCal.bands) {
+        var bnd = bcCal.bands[bcBand(d.ladder.bc_score)];
+        if (bnd && bnd.held_pct != null) {
+          bcHist = '<div class="bc-hist">📊 ' + (lang() === 'zh'
+            ? '历史上该档位守住周期低点约 ' + bnd.held_pct + '%（21日）'
+            : 'Historically this band held the cycle low ~' + bnd.held_pct + '% of the time (21d)') + '</div>';
+        }
+      }
+      bcEl.className = 'bcbox bc-' + (d.ladder.bc_grade || 'minimal');
+      bcEl.innerHTML =
+        '<div class="bc-head"><span class="bc-ttl">🎯 ' + bcLbl + '</span>' +
+        '<span class="bc-score ' + 'bcg-' + (d.ladder.bc_grade || 'minimal') + '">' +
+        d.ladder.bc_score + '<span class="bc-max">/100</span></span>' +
+        '<span class="bc-grade">' + bcg + '</span></div>' +
+        '<div class="bc-tf">' + tfHtml + '</div>' + bcHist;
+      bcEl.title = lz(d.ladder.bc_tip, d.ladder.bc_tip_zh);
+      bcEl.style.display = 'block';
+    } else { bcEl.style.display = 'none'; }
 
     var pts = (lang() === 'zh' && d.ladder.points_zh && d.ladder.points_zh.length)
       ? d.ladder.points_zh : (d.ladder.points || []);

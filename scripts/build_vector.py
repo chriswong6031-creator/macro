@@ -1284,13 +1284,27 @@ def build_allocation_page(env, site: Path, sig: pd.DataFrame, cards: dict,
     lad = mtf_a.get("ladder") or {}
     regime = lad.get("regime")
     grid = alt_cycle.alloc_grid(regime, bucket)
+    # Reconcile with vector.html's headline OPTIMAL STRATEGY: TOTAL crypto exposure =
+    # alloc_pct (the tactical risk gate, alloc_optimal); the alt-cycle grid only SPLITS
+    # that budget across BTC/ETH/alts. So when the gate is shut (alloc_pct=0) this page
+    # is 100% cash too — no more "100% cash here / 25% BTC there" incongruence.
+    alloc_pct = round(100 * last["alloc_optimal"]) if pd.notna(last.get("alloc_optimal")) else 0
+    _rs = grid["btc"] + grid["eth"] + grid["alts"]
+    if _rs > 0 and alloc_pct > 0:
+        _b = round(alloc_pct * grid["btc"] / _rs)
+        _e = round(alloc_pct * grid["eth"] / _rs)
+        _a = alloc_pct - _b - _e          # absorb rounding so crypto sums to alloc_pct
+    else:
+        _b = _e = _a = 0
+    rec = {"btc": _b, "eth": _e, "alts": _a, "cash": 100 - alloc_pct,
+           "regime_key": grid["regime_key"], "season_key": grid["season_key"]}
     pvm = {
         "as_of": sig.index.max().strftime("%b %d, %Y"),
         "built": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         "price": close.iloc[-1],
-        "grid": grid, "regime": regime, "regime_label": lad.get("regime_label"),
+        "grid": rec, "grid_full": grid, "regime": regime, "regime_label": lad.get("regime_label"),
         "regime_label_zh": lad.get("regime_label_zh"), "verdict": verdict,
-        "alloc_pct": round(100 * last["alloc_optimal"]),
+        "alloc_pct": alloc_pct,
         "cards": cards,
         "alt": {
             "ethbtc": _r(eb.get("level"), 4) if eb else None,
