@@ -268,6 +268,14 @@
     <div class="legend" id="fc-legend"></div>
   </div>
 
+  <div class="panel" id="fperf-section">
+    <h2>{{ t('Performance table', '表现一览') }}
+      {{ help("Every factor across horizons, watchlist-style. SCOPE toggles factor long-only portfolios vs the Q5−Q1 premium; VALUE toggles raw return, return vs the S&P, and σ (the move z-scored vs that series' own trailing year — fixed horizons only). Click a column to sort.", "各因子横跨时间跨度的自选股式表格。SCOPE 切换纯多头与 Q5−Q1 溢价；VALUE 切换原始回报、相对标普、σ（相对自身过去一年的 z，仅限定窗）。点击列排序。") }}
+    </h2>
+    <div class="chartbar"><span class="tabs" id="fp-scope" role="group"></span><span class="tabs" id="fp-mode" role="group"></span></div>
+    <div class="ts"><table id="fperf-table"></table></div>
+  </div>
+
   <div class="panel" id="sector-section">
     <h2>{{ t('Sector monitor — cap-weighted GICS vs S&P', '行业监测 — 市值加权 GICS 相对标普') }}
       {{ help("Each cap-weighted GICS sector's return RELATIVE to the S&P over each horizon, colored by how unusual that move is vs the sector's own trailing-year distribution (z). Deep color + |z|≥2 = an outsized rotation. The small number is the relative return; the big number is the z.", "每个市值加权 GICS 行业相对标普的回报（各时间跨度），按该走势相对其自身过去一年分布的异常程度（z）着色。颜色越深、|z|≥2 = 异常轮动。小字为相对回报，大字为 z。") }}
@@ -535,6 +543,31 @@
         return `<span class="lchip ${hidden[s.key]?'off':''}" data-k="${s.key}"><span class="ldot" style="background:${s.color}"></span>${s.label} <span class="lv">${v==null?'':(v>=0?'+':'')+v.toFixed(1)+'%'}</span></span>`;}).join('');
       el.querySelectorAll('.lchip').forEach(c=>c.onclick=()=>{hidden[c.dataset.k]=!hidden[c.dataset.k]; drawChart();}); }
     function tabs(elId,opts,active,cb){ const el=document.getElementById(elId); el.innerHTML=opts.map(([v,l])=>`<button data-v="${v}" class="${v==active?'on':''}">${l}</button>`).join(''); el.querySelectorAll('button').forEach(b=>b.onclick=()=>{el.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); cb(b.dataset.v);}); }
+    // ---- unified factor performance table (scope × mode × horizons, sortable) ----
+    const FCOLS=['1d','5d','20d','60d','MTD','YTD'];
+    const FMODES=[['raw','Raw'],['rel','vs S&P'],['sigma','σ']];
+    const FSCOPE=[['long','Factors (long-only)'],['spread','Q5−Q1 spread']];
+    let fscope=localStorage.getItem('fw-fp-scope')||'long', fmode=localStorage.getItem('fw-fp-mode')||'rel';
+    let fsort=JSON.parse(localStorage.getItem('fw-fp-sort')||'{"col":"20d","dir":-1}');
+    const fmtZ=x=>x==null?'—':(x>=0?'+':'')+x.toFixed(1)+'σ';
+    const cls2=x=>x==null?'muted':(x>=0?'pos':'neg');
+    function renderPerfTable(){
+      const data = fscope==='long'?D.long:D.spread;
+      const rows=Object.keys(data).map(f=>{ const lv=data[f]; const rl=ratio(lv);
+        const retSrc=(fscope==='long'&&fmode==='rel')?rl:lv; const zSrc=fscope==='long'?rl:lv;
+        const vals={}; FCOLS.forEach(c=>{ vals[c]= fmode==='sigma' ? (/^\d/.test(c)?winZ(zSrc,c):null) : winRet(retSrc,c); });
+        return {f,label:labels[f]||f,color:colorOf[f],vals}; });
+      const sc=fsort.col,dir=fsort.dir;
+      rows.sort((a,b)=>{ if(sc==='name') return a.label.localeCompare(b.label)*dir; const x=a.vals[sc],y=b.vals[sc]; if(x==null)return 1; if(y==null)return -1; return (x-y)*dir; });
+      const fmt=fmode==='sigma'?fmtZ:fmtPct;
+      const dotS=c=>`display:inline-block;width:9px;height:9px;border-radius:50%;background:${c};margin-right:7px`;
+      const th=c=>`<th class="hzc ${c===sc?'sel':''}" data-c="${c}" style="cursor:pointer">${c}${c===sc?(dir<0?' ▾':' ▴'):''}</th>`;
+      let html=`<thead><tr><th data-c="name" style="text-align:left;cursor:pointer">Factor${sc==='name'?(dir<0?' ▾':' ▴'):''}</th>${FCOLS.map(th).join('')}</tr></thead><tbody>`;
+      html+=rows.map(r=>`<tr><td style="text-align:left"><span style="${dotS(r.color)}"></span>${r.label}</td>${FCOLS.map(c=>`<td class="hzc ${cls2(r.vals[c])}">${r.vals[c]==null?'<span class="muted">—</span>':fmt(r.vals[c])}</td>`).join('')}</tr>`).join('');
+      if(fscope==='long'&&fmode==='raw'){ const bv={}; FCOLS.forEach(c=>bv[c]=winRet(bench,c)); html+=`<tr><td style="text-align:left"><span style="${dotS(cssv('--muted')||'#94a3b8')}"></span>S&amp;P 500</td>${FCOLS.map(c=>`<td class="hzc ${cls2(bv[c])}">${fmtPct(bv[c])}</td>`).join('')}</tr>`; }
+      const tbl=document.getElementById('fperf-table'); tbl.innerHTML=html+'</tbody>';
+      tbl.querySelectorAll('th[data-c]').forEach(h=>h.onclick=()=>{const c=h.dataset.c; if(c===fsort.col)fsort.dir*=-1; else fsort={col:c,dir:c==='name'?1:-1}; localStorage.setItem('fw-fp-sort',JSON.stringify(fsort)); renderPerfTable();});
+    }
     const HZ=['1d','5d','20d','60d','YTD'];
     function zbg(z){ if(z==null) return ''; const a=Math.min(Math.abs(z)/2.5,0.85).toFixed(2); return z>=0?`background:rgba(56,139,253,${a})`:`background:rgba(248,81,73,${a})`; }
     function drawSector(){
@@ -545,6 +578,9 @@
       document.getElementById('sector-monitor').innerHTML=html+'</tbody>';
     }
     function bootFc(){
+      tabs('fp-scope',FSCOPE,fscope,v=>{fscope=v; localStorage.setItem('fw-fp-scope',v); renderPerfTable();});
+      tabs('fp-mode',FMODES,fmode,v=>{fmode=v; localStorage.setItem('fw-fp-mode',v); renderPerfTable();});
+      renderPerfTable();
       tabs('fc-modes',MODES,mode,v=>{mode=v; drawChart();});
       const rel=document.getElementById('fc-ranges'); rel.innerHTML=RANGES.map(([l,v])=>`<button data-v="${v}" class="${v===range?'on':''}">${l}</button>`).join('')+`<input class="rangeN" type="number" min="5" max="600" placeholder="N">`;
       rel.querySelectorAll('button').forEach(b=>b.onclick=()=>{range=(b.dataset.v==='ytd')?'ytd':parseInt(b.dataset.v,10); rel.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); drawChart();});
