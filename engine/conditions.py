@@ -110,6 +110,16 @@ def conditions_frame(f: pd.DataFrame) -> pd.DataFrame:
     if ebp is not None:
         parts["ebp_level"] = (pct_rank_window(ebp, rc["ebp_level_pctile_lookback_d"]).clip(0, 1),
                               w["ebp_level"])
+    # Jobless-claims leg — Phase-0 validated vs NBER (research/CLAIMS_RECESSION_VALIDATION.md):
+    # YoY of the 4wk-MA claims level, recession-ward. Config-gated (weight 0 disables it);
+    # only joins when the column exists, so older / claims-free frames are unaffected.
+    w_claims = w.get("claims", 0.0)
+    claims4 = _col(f, "initial_claims_4wk")
+    if claims4 is None:
+        claims4 = _col(f, "initial_claims")
+    if claims4 is not None and w_claims > 0:
+        claims_yoy = claims4 / claims4.shift(rc.get("claims_yoy_window_d", 252)) - 1.0
+        parts["claims"] = ((claims_yoy / rc.get("claims_yoy_full", 0.40)).clip(0, 1), w_claims)
     if parts:
         # renormalize over AVAILABLE components per day: a NaN leg drops out of
         # both numerator and denominator instead of poisoning the whole sum.

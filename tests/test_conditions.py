@@ -115,9 +115,29 @@ def test_recession_score_high_when_sahm_and_inverted() -> None:
     f = _frame(sahm=0.9, recession_prob=70.0, ebp_recession_prob=0.6)
     f["spread_2s10s"] = -1.2
     f["curve_tp_adj"] = f["spread_2s10s"] + f["term_premium_10y"]
+    # a real recession has jobless claims surging too — keep the (now-wired) claims
+    # leg consistent so it supports rather than dilutes the high read
+    rng = np.arange(len(f), dtype=float)
+    surge = np.where(rng < len(f) - 252, 200.0, 200.0 + (rng - (len(f) - 252)) * 0.45)
+    f["initial_claims_4wk"] = pd.Series(surge, index=f.index)
     snap = conditions_snapshot(f)
     assert snap["recession"]["score"] > 55
     assert snap["recession"]["label"] == "high"
+
+
+def test_claims_leg_folds_into_recession_composite() -> None:
+    # Phase-0-validated claims leg is LIVE: surging claims must raise recession_risk
+    # vs flat claims, and surface as a 'claims' component. (research/CLAIMS_RECESSION_VALIDATION.md)
+    n = 400
+    rng = np.arange(n, dtype=float)
+    flat = _frame(n=n)                                   # default ~flat claims
+    surged = _frame(n=n)
+    surge = np.where(rng < n - 252, 200.0, 200.0 + (rng - (n - 252)) * 0.50)
+    surged["initial_claims_4wk"] = pd.Series(surge, index=surged.index)
+    base = conditions_snapshot(flat)["recession"]
+    hot = conditions_snapshot(surged)["recession"]
+    assert "claims" in hot["components"]
+    assert hot["score"] > base["score"]
 
 
 def test_term_premium_adjusted_curve_flags_false_inversion() -> None:
