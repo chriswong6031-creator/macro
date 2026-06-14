@@ -53,6 +53,7 @@ def all_adapters() -> dict:
         ("stock_prices", "collectors.sector_holdings", "StockPriceAdapter"),
         ("fundamentals", "collectors.fundamentals", "FundamentalsAdapter"),
         ("stock_fundamentals", "collectors.sector_holdings", "StockFundamentalsAdapter"),
+        ("edgar_13f", "collectors.edgar_13f", "Edgar13FAdapter"),  # curated super-investor 13F holdings (smart money)
         # China A-share dashboard — see research/CHINA_DATA_AUDIT.md
         ("china_prices", "collectors.china_prices", "ChinaPriceAdapter"),
         ("china_macro", "collectors.china_macro", "ChinaMacroAdapter"),

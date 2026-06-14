@@ -248,6 +248,40 @@ edgar:
     # left out of the blend as it is collinear with low_vol)
     composite: [value, quality, profitability, investment, payout, low_vol]
 
+# -----------------------------------------------------------------------------
+# Smart money — curated super-investor 13F-HR holdings (collectors/edgar_13f.py).
+# FREE + keyless from SEC EDGAR. A Dataroma/WhaleWisdom-style "who holds this"
+# CONTEXT layer (quarterly, ~45d lag, long-only US equity >= $100M; no shorts/
+# options/non-US). NEVER wired into any score/allocation. Reuses edgar.user_agent.
+# Tracked funds keyed by short slug -> {cik, name}; CIKs verified against live SEC.
+# -----------------------------------------------------------------------------
+smart_money:
+  enabled: true
+  # www.sec.gov/Archives ENFORCES SEC fair-access: the UA must carry a real
+  # contact email or it 403s (data.sec.gov is laxer). Set this to YOUR email.
+  user_agent: "Macro Dashboard 13F research longr2512@gmail.com"
+  history_quarters: 2          # snapshots kept per fund for the live quarter diff
+  backfill_quarters: 8         # --full-history depth
+  panel_top_n: 12              # holders shown per stock panel
+  funds:
+    berkshire:   {cik: 1067983, name: "Berkshire Hathaway (Buffett)"}
+    scion:       {cik: 1649339, name: "Scion Asset Mgmt (Burry)"}
+    pershing:    {cik: 1336528, name: "Pershing Square (Ackman)"}
+    appaloosa:   {cik: 1656456, name: "Appaloosa (Tepper)"}
+    baupost:     {cik: 1061768, name: "Baupost Group (Klarman)"}
+    thirdpoint:  {cik: 1040273, name: "Third Point (Loeb)"}
+    duquesne:    {cik: 1536411, name: "Duquesne Family Office (Druckenmiller)"}
+    lonepine:    {cik: 1061165, name: "Lone Pine Capital"}
+    tigerglobal: {cik: 1167483, name: "Tiger Global (Coleman)"}
+    himalaya:    {cik: 1709323, name: "Himalaya Capital (Li Lu)"}
+    akre:        {cik: 1112520, name: "Akre Capital Management"}
+    gates:       {cik: 1166559, name: "Gates Foundation Trust"}
+    viking:      {cik: 1103804, name: "Viking Global (Halvorsen)"}
+    valueact:    {cik: 1418814, name: "ValueAct Capital"}
+    icahn:       {cik: 921669,  name: "Icahn (Carl Icahn)"}
+    pabrai:      {cik: 1549575, name: "Dalal Street (Mohnish Pabrai)"}
+    fairholme:   {cik: 1056831, name: "Fairholme Capital (Berkowitz)"}
+
 engine_equity_factors:
   # leadership read: which factor's top-quintile has been beating its bottom-
   # quintile over this trailing window (a coarse "what's working now" gauge).
