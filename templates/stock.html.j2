@@ -708,8 +708,7 @@
       show('panel_fac', true);
     } else show('panel_fac', false);
 
-    if (isEquity) { el('r_gex').innerHTML = '<div class="stub">' + LF('gexsoon') + '</div>'; show('panel_gex', true); }
-    else show('panel_gex', false);
+    renderGex(d);
 
     if (pos && (pos.short || pos.insider)) {
       var html = '';
@@ -977,6 +976,30 @@
   var SMA = { 'new':['★ initiated','★ 新建仓','up'], add:['▲ added','▲ 加仓','up'],
               hold:['● holding','● 持有',''], trim:['▼ trimmed','▼ 减持','down'],
               exit:['✕ exited','✕ 清仓','down'] };
+  function renderGex(d) {
+    var g = d.gex;
+    if (!g || g.net_gex_bn == null) { show('panel_gex', false); return; }
+    function gx(v, nd, suf) { return v == null ? LF('na') : Number(v).toFixed(nd) + (suf || ''); }
+    var reg = g.gamma_regime === 'long' ? lz('Long gamma · pins / mean-revert', '多头Gamma · 磁吸/均值回归')
+            : g.gamma_regime === 'short' ? lz('Short gamma · trends / amplifies', '空头Gamma · 趋势/放大')
+            : lz('Neutral', '中性');
+    var rc = g.gamma_regime === 'long' ? 'pos' : g.gamma_regime === 'short' ? 'neg' : 'muted';
+    var chips = [
+      gchip(lz('regime', '体制'), '<span class="' + rc + '">' + reg + '</span>'),
+      gchip(lz('net GEX', '净GEX'), '<span class="' + ((g.net_gex_bn || 0) >= 0 ? 'pos' : 'neg') + '">' + (g.net_gex_bn >= 0 ? '+' : '') + gx(g.net_gex_bn, 2) + ' $bn</span>'),
+      gchip(lz('gamma flip', 'Gamma翻转'), gx(g.gamma_flip, 2) + (g.dist_to_flip_pct != null ? ' <span class="muted">(' + (g.dist_to_flip_pct >= 0 ? '+' : '') + gx(g.dist_to_flip_pct, 1) + '%)</span>' : '')),
+      gchip(lz('magnets', '磁吸'), '↑ ' + gx(g.magnet_up, 2) + ' · ↓ ' + gx(g.magnet_down, 2)),
+      gchip('IV30', g.iv30 != null ? gx(g.iv30 * 100, 1) + '%' : LF('na')),
+      gchip(lz('put/call OI', '认沽/认购OI'), gx(g.put_call_oi_ratio, 2))
+    ];
+    var conf = (g.tier === 'thin_chain' || (g.top_oi_share != null && g.top_oi_share > 0.35))
+      ? '<div style="margin:6px 0 2px"><span class="alpha-entry ae-laggard">' + lz('sign-assumption: low confidence', '符号假设：低置信') + '</span></div>' : '';
+    el('r_gex').innerHTML = '<div class="glance">' + chips.join('') + '</div>' + conf +
+      '<p class="srcline">' + lz('Dealer-gamma LEVELS from Cboe delayed chains — daily, not live flow. A vol-regime + levels map (long-gamma → pins/mean-reverts; short-gamma → trends/amplifies), NOT directional and NOT in this stock’s score. The dealer long-call/short-put sign is an assumption — fragile for single names.',
+        '来自 Cboe 延迟期权链的做市商Gamma价位 — 每日、非实时流动。波动率体制+价位地图，无方向性且不计入本股评分。做市商符号为假设，对个股脆弱。') + '</p>';
+    show('panel_gex', true);
+  }
+
   function renderSmartMoney(d) {
     var s = d && d.smart_money;
     var hold = (s && s.holders) || [];
