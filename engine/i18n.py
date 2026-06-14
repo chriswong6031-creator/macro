@@ -106,6 +106,7 @@ LEX: dict[str, str] = {
     "WATCH": "观察",
     "WAIT": "等待",
     "SELL / REDUCE": "卖出／减仓",
+    "BOUNCE — HIGH RISK": "反弹 — 高风险",
     # action-board conflict tags
     "WATCH — DON'T BUY YET": "观察 — 暂不买入",
     "DON'T CHASE": "勿追高",

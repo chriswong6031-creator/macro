@@ -53,6 +53,8 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
         "tech": snapshot(c),
         "season_this": season_line(seas, month),
         "season_next": season_line(seas, month % 12 + 1),
+        "season_this_zh": season_line(seas, month, zh=True),
+        "season_next_zh": season_line(seas, month % 12 + 1, zh=True),
         **res,
     }
 
