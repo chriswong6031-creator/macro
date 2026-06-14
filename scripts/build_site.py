@@ -1065,6 +1065,41 @@ def _load_ic_scorecard() -> dict | None:
     return ic
 
 
+def _load_breadth() -> dict | None:
+    """MARKET breadth context for the factors page — % of members above their 50d and
+    200d MAs across the S&P 500 / 400 / 600 caps (data/<grp>/breadth.parquet). This is
+    INDEX-member breadth, not factor-portfolio breadth. Degrade-never-raise."""
+    import pandas as _pd
+    groups = [("Large cap (S&P 500)", "大盘 (标普500)", "breadth"),
+              ("Mid cap (S&P 400)", "中盘 (标普400)", "midcap_breadth"),
+              ("Small cap (S&P 600)", "小盘 (标普600)", "smallcap_breadth")]
+    rows, by, as_of = [], {}, None
+    for label_en, label_zh, g in groups:
+        p = config.data_dir() / g / "breadth.parquet"
+        if not p.exists():
+            continue
+        try:
+            df = _pd.read_parquet(p)
+        except Exception:  # noqa: BLE001
+            continue
+        if df.empty or "pct_above_50" not in df.columns:
+            continue
+        last = df.iloc[-1]
+        r = {"label_en": label_en, "label_zh": label_zh, "group": g,
+             "p50": round(float(last["pct_above_50"]), 1),
+             "p200": round(float(last["pct_above_200"]), 1),
+             "n": int(last.get("n_members", 0) or 0)}
+        rows.append(r)
+        by[g] = r
+        as_of = df.index.max().strftime("%Y-%m-%d")
+    if not rows:
+        return None
+    # small-vs-large divergence on the COMMON window (small/mid only start 2023-07)
+    div = (round(by["smallcap_breadth"]["p50"] - by["breadth"]["p50"], 1)
+           if "smallcap_breadth" in by and "breadth" in by else None)
+    return {"groups": rows, "div_small_large": div, "as_of": as_of}
+
+
 def build_factors_page(env: Environment, site: Path, generated: str) -> dict | None:
     """Render factors.html — the cross-sectional equity factor rankings (SEC
     EDGAR fundamentals x prices). Fundamentals fetch is cached weekly; ranks
@@ -1096,7 +1131,9 @@ def build_factors_page(env: Environment, site: Path, generated: str) -> dict | N
     fdir.mkdir(parents=True, exist_ok=True)
     (fdir / "factors.json").write_text(json.dumps(fac, separators=(",", ":"), default=str))
     ic = _load_ic_scorecard()                  # leak-free point-in-time IC (degrade-never-raise)
-    html = env.get_template("factors.html.j2").render(fac=fac, ic=ic, generated_utc=generated)
+    breadth = _load_breadth()                  # market-member breadth context (degrade-never-raise)
+    html = env.get_template("factors.html.j2").render(
+        fac=fac, ic=ic, breadth=breadth, generated_utc=generated)
     (site / "factors.html").write_text(html)
     log.info("wrote factors.html (%d names, FY%s, ic=%s)", fac.get("n"), fac.get("fy"),
              "yes" if ic else "no")

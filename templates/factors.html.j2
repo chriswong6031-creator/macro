@@ -67,6 +67,9 @@
   .chip { display:inline-block; font-size:11px; padding:1px 7px; margin:0 4px 4px 0; border-radius:8px;
           background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
   sub { font-size:.72em; }
+  .bbar { display:inline-block; width:150px; max-width:42vw; height:11px; border-radius:6px;
+          background:var(--panel2); position:relative; overflow:hidden; vertical-align:middle; }
+  .bbar > i { position:absolute; left:0; top:0; bottom:0; border-radius:6px; }
 </style>
 </head>
 <body>
@@ -149,6 +152,31 @@
            '平均 |相关性| ' ~ ic.collinearity.mean_abs_corr_raw ~ ' 原始 → ' ~ ic.collinearity.mean_abs_corr_orth ~ ' 去相关后。') }}
       {% for p in ic.collinearity.top_pairs %}<span class="chip">{{ p.a }} ↔ {{ p.b }} · {{ p.corr }}</span>{% endfor %}
     </p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Market breadth (index-member participation, not factor breadth) -->
+  {% if breadth and breadth.groups %}
+  <div class="panel">
+    <h2>{{ t('Market breadth', '市场广度') }}
+      {{ help("Share of index members trading above their own 50-day AND 200-day moving averages, across the S&P 500 / 400 / 600 caps. This is MARKET-MEMBER participation (is the rally broad or narrow?), NOT factor-portfolio breadth. Above ~60% = broad; a small/large divergence flags where participation is rotating. Small & mid breadth history starts 2023-07 (the divergence is on that common window).", "指数成分中股价同时高于自身 50 日与 200 日均线的比例，覆盖标普 500／400／600。这是市场成分的参与度（涨势是广泛还是狭窄），并非因子组合广度。约 60% 以上=广泛；大小盘背离提示参与度在轮动。中小盘广度数据自 2023-07 起。") }}
+    </h2>
+    <table>
+      <tr><th>{{ t('index', '指数') }}</th><th class="r">{{ t('% > 50d MA', '% 高于50日线') }}</th><th class="r">{{ t('% > 200d MA', '% 高于200日线') }}</th><th class="r">{{ t('members', '成分数') }}</th></tr>
+      {% for g in breadth.groups %}
+      <tr>
+        <td>{{ t(g.label_en, g.label_zh) }}</td>
+        <td class="r"><span class="bbar"><i style="width:{{ g.p50 }}%;background:{{ 'var(--up)' if g.p50>=50 else 'var(--down)' }}"></i></span> <b class="{{ 'pos' if g.p50>=50 else 'neg' }}">{{ g.p50 }}%</b></td>
+        <td class="r"><span class="bbar"><i style="width:{{ g.p200 }}%;background:{{ 'var(--up)' if g.p200>=50 else 'var(--down)' }}"></i></span> <b class="{{ 'pos' if g.p200>=50 else 'neg' }}">{{ g.p200 }}%</b></td>
+        <td class="r muted sm">{{ g.n }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% if breadth.div_small_large is not none %}
+    <p class="muted sm" style="margin:8px 0 0">{{ t(
+      'Small-cap vs large-cap breadth: ' ~ ('%+.1f'|format(breadth.div_small_large)) ~ 'pp (small minus large, % above 50d). Positive = small-caps participating MORE than mega-caps — a broadening tape; negative = leadership narrowing to the top.',
+      '小盘相对大盘广度：' ~ ('%+.1f'|format(breadth.div_small_large)) ~ ' 个百分点（小盘减大盘，% 高于50日线）。正值=小盘参与度高于大盘（涨势扩散）；负值=领先向头部集中。') }}</p>
     {% endif %}
   </div>
   {% endif %}
