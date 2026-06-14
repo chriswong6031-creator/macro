@@ -2,6 +2,29 @@
 
 Newest first. Each entry: what was decided, why, and what would change it.
 
+## 2026-06-14 — Vector scheduled-catalyst (FOMC/jobs) gate + cross-asset-beta tested & skipped
+
+**D-vec-CAT. A 'don't size into the binary' event gate; and an honest skip of a weak
+factor.** Two Tier-2 candidates were tested empirically before building.
+(1) **Downside-vs-upside cross-asset beta — TESTED, NOT SHIPPED.** Thesis: BTC couples
+hard to equities on the way down, decouples up. Measured: downside β to SPX = 0.65 vs
+upside β = 0.64 (asymmetry ~0.03, roughly SYMMETRIC), and forward-30d drawdown by
+asymmetry quartile is weak + non-monotone. The 'fragile down / antifragile up' narrative
+isn't borne out for BTC → not shipped as a signal (don't ship weak factors). The spot-ETF
+flow factor (the other candidate) was found ALREADY BUILT (etf_flow_z, monotone, 30d
+rank-IC 0.209, +8.1%/30d on heavy inflows; shipped <2yr confirmation-grade).
+(2) **Catalyst window — BUILT.** build_vector.catalyst_window: deterministic calendar of
+the next scheduled macro BINARY (FOMC decision dates, Fed-published 2024-26 + 2027 est.;
+jobs report = first Friday). Returns next_event / days / imminent. When a binary is within
+`imminent_days` (config vector.catalyst, 3), the Kelly sizing card shows an amber 'expect a
+vol jump; the Kelly size models neither the gap nor the vol crush — don't size into it'
+gate. A new MODALITY (the Vector's only prior event was days_since_halving), free, and an
+honest risk-awareness gate, not a forecast. LIVE: FOMC in 3 days (imminent). tz-aware input
+handled; wrapped so it can't break the build. tests/test_vector_catalyst.py (3). 11 vector
+test files now green. The high-value factor roadmap is now substantially complete; remaining
+Tier-2 (CME basis, NRPL, 25Δ butterfly, funding term-structure) need new data pipes or are
+near-duplicates / marginal.
+
 ## 2026-06-14 — Vector conviction → capped fractional-Kelly position sizing
 
 **D-vec-KELLY. The conviction + forward-drawdown apparatus now outputs an actual "how

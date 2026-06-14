@@ -1278,6 +1278,9 @@ vector:
     dd_budget: 0.25               # max tolerable 90d portfolio drawdown -> position capped so band p05 tail x size <= this
     pos_max: 1.0                  # never lever past 100% (sizing is for a long-only BTC sleeve)
 
+  catalyst:                       # scheduled-binary (FOMC/jobs) event window (D-vec-CAT)
+    imminent_days: 3              # a binary within this many days = "don't size into it" gate on the Kelly read
+
   btc_vs_alts:
     rs_window_d: 30               # relative-strength window across BTC/ETH/alts
     confirm_days: 3

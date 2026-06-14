@@ -290,6 +290,45 @@ def kelly_sizing(sig: pd.DataFrame, cfg: dict) -> dict | None:
             "binding": "edge" if f_kelly <= f_tail else "tail", "n": int(len(r))}
 
 
+# FOMC decision dates (2nd meeting day) — Fed-published 2024-2026; 2027 estimated.
+_FOMC_DATES = ("2024-01-31", "2024-03-20", "2024-05-01", "2024-06-12", "2024-07-31",
+               "2024-09-18", "2024-11-07", "2024-12-18", "2025-01-29", "2025-03-19",
+               "2025-05-07", "2025-06-18", "2025-07-30", "2025-09-17", "2025-10-29",
+               "2025-12-10", "2026-01-28", "2026-03-18", "2026-04-29", "2026-06-17",
+               "2026-07-29", "2026-09-16", "2026-10-28", "2026-12-09", "2027-01-27",
+               "2027-03-17", "2027-05-05", "2027-06-16", "2027-07-28", "2027-09-22",
+               "2027-11-03", "2027-12-15")
+
+
+def _next_first_friday(today: pd.Timestamp):
+    for base in (today, today + pd.offsets.MonthBegin(1)):
+        first = pd.Timestamp(base.year, base.month, 1)
+        fri = first + pd.Timedelta(days=(4 - first.weekday()) % 7)   # first Friday
+        if fri >= today:
+            return fri
+    return None
+
+
+def catalyst_window(as_of, cfg: dict) -> dict | None:
+    """Next scheduled macro BINARY (FOMC decision / monthly jobs report) + a 'don't
+    size into the binary' gate. Deterministic calendar — FOMC dates are Fed-published,
+    NFP is the first Friday. Vol compresses into these and gaps out of them; the Kelly
+    size models neither the event jump nor the vol crush, so an imminent binary is an
+    honest sizing caveat, not a forecast. (D-vec-CAT)"""
+    today = pd.Timestamp(as_of)
+    today = (today.tz_localize(None) if today.tz is not None else today).normalize()
+    fomc = [pd.Timestamp(x) for x in _FOMC_DATES if pd.Timestamp(x) >= today]
+    events = {k: v for k, v in {"FOMC": fomc[0] if fomc else None,
+                                "Jobs report": _next_first_friday(today)}.items() if v is not None}
+    if not events:
+        return None
+    nxt = min(events, key=events.get)
+    d = events[nxt]
+    return {"next_event": nxt, "next_date": f"{d.strftime('%b')} {d.day}",
+            "days": int((d - today).days), "imminent": int((d - today).days) <= cfg.get("imminent_days", 3),
+            "fomc_days": int((fomc[0] - today).days) if fomc else None}
+
+
 def _risk_lines(R: dict) -> dict:
     """Honest EN/ZH prose for the forward-risk read: the band state word + the
     horizon-welded headline, the avg-vs-tail main line, and the band-gated guard
@@ -1276,6 +1315,11 @@ def main() -> int:
     envd["risk"] = forward_risk(sig, 7)
     scnd["risk"] = forward_risk(sig, 3)
     sizing = kelly_sizing(sig, config.load()["vector"].get("sizing", {}))  # D-vec-KELLY
+    try:
+        catalyst = catalyst_window(datetime.now(timezone.utc), config.load()["vector"].get("catalyst", {}))
+    except Exception as e:  # noqa: BLE001 — the calendar overlay must never break the build
+        log.warning("catalyst window failed (%s)", e)
+        catalyst = None
 
     vm = {
         "as_of": sig.index.max().strftime("%b %d, %Y"),
@@ -1437,6 +1481,7 @@ def main() -> int:
         "env": envd,
         "scn": scnd,
         "sizing": sizing,
+        "catalyst": catalyst,
         "cards": cards,
         "cross": cross_asset(close),
         "calib": calib,
