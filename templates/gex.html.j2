@@ -1,0 +1,165 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{% macro help(en, zh='') -%}
+<span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
+{%- endmacro %}
+{% macro card(lbl, zh, val, sub='') -%}
+<div class="gcard"><div class="muted" style="font-size:12px">{{ t(lbl, zh) }}</div><div class="gval">{{ val }}</div>{% if sub %}<div class="muted sm">{{ sub }}</div>{% endif %}</div>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ t('Dealer-gamma magnets — GEX levels', '做市商Gamma磁吸 — GEX价位') }}</title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1320px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:20px; margin:0; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:14px; }
+  .topline { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+  .muted { color:var(--muted); } .sm { font-size:12px; }
+  .pos { color:var(--up); } .neg { color:var(--down); }
+  .note { margin:8px 0 0; line-height:1.5; }
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:5px; }
+  .help .tip { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%); width:280px; background:var(--panel); border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text); font-weight:400; box-shadow:var(--popover-shadow); pointer-events:none; }
+  .help:hover .tip { display:block; }
+  .tabs { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 14px; }
+  .tabbtn { padding:7px 14px; font:inherit; font-size:13px; border:1px solid var(--line); background:var(--panel); color:var(--muted); border-radius:8px; cursor:pointer; }
+  .tabbtn.on { background:var(--panel2); color:var(--text); border-color:var(--muted); }
+  .hero { display:flex; flex-wrap:wrap; align-items:center; gap:18px; margin-bottom:14px; }
+  .regbadge { font-size:13px; font-weight:600; padding:5px 12px; border-radius:8px; border:1px solid var(--line); }
+  .reg-long { color:var(--up); border-color:var(--up); }
+  .reg-short { color:var(--down); border-color:var(--down); }
+  .reg-na { color:var(--muted); }
+  .heronum b { font-size:16px; } .heronum { font-size:13px; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; margin-bottom:14px; }
+  .gcard { background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:9px 11px; }
+  .gval { font-size:17px; font-weight:600; margin-top:2px; }
+  .lad { font-size:12px; }
+  .lad-row { display:grid; grid-template-columns:62px 1fr 64px; align-items:center; gap:8px; padding:2px 4px; border-radius:4px; }
+  .lad-row.mag { background:var(--panel2); }
+  .lad-k { text-align:right; font-variant-numeric:tabular-nums; } .lad-k b { color:var(--text); }
+  .lad-bar { position:relative; height:11px; border-radius:5px; background:var(--panel2); overflow:hidden; }
+  .lad-bar > i { position:absolute; top:0; bottom:0; } .lad-bar > i.mid { left:50%; width:1px; background:var(--muted); opacity:.5; }
+  .lad-v { text-align:right; font-variant-numeric:tabular-nums; }
+  .magtag { font-size:10px; padding:0 6px; border-radius:6px; border:1px solid var(--line); color:var(--muted); margin-left:6px; }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 {{ t('US Macro', '美国宏观') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu">
+        <a href="macro.html">📊 {{ t('Macro dashboard', '宏观仪表盘') }}</a>
+        <a href="spvector.html">📈 {{ t('S&P / Macro Vector', '标普宏观向量') }}</a>
+      </div>
+    </div>
+    <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }}</a>
+    <a class="nav-link" href="etfs.html">🐳 {{ t('ETF flows', 'ETF 资金流') }}</a>
+    <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国A股') }}</a>
+    <a class="nav-link" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }}</a>
+    <a class="nav-link" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }}</a>
+    <a class="nav-link" href="forex.html">💱 {{ t('Forex', '外汇') }}</a>
+    <a class="nav-link" href="bonds.html">🏛️ {{ t('Bonds', '债券') }}</a>
+    <a class="nav-link" href="discovery.html">🏆 {{ t('Alpha leaders', '阿尔法领先股') }}</a>
+    <a class="nav-link active" href="gex.html">🧲 {{ t('GEX magnets', 'Gamma磁吸') }}</a>
+  </div>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+<div class="panel">
+  <div class="topline">
+    <h1>🧲 {{ t('Dealer-gamma magnets', '做市商Gamma磁吸') }}</h1>
+    <span class="muted sm">{{ t('where dealer option-hedging concentrates — the walls, the flip, the pins', '做市商期权对冲集中之处 — 墙、翻转、磁吸点') }}</span>
+  </div>
+  <p class="muted sm note">{{ t(
+    "Daily, delayed Cboe levels — NOT live intraday flow. This is a VOL-REGIME + LEVELS MAP (where hedging concentrates), NOT a buy list and NOT directional: gamma tells you the CHARACTER of moves (long-gamma → dealers dampen, price pins/mean-reverts, lower realized vol; short-gamma → dealers amplify, moves trend, higher vol), not which way. The dealer long-call/short-put SIGN is an unobservable assumption — robust enough for indices, FRAGILE for single names (a covered-call ETF or heavy retail call-buying can flip the true sign). Magnet/flip strikes are levels to watch, never targets.",
+    "每日、延迟的 Cboe 价位 — 并非实时盘中流动。这是波动率体制 + 价位地图（对冲集中之处），并非买入清单、也无方向性：Gamma 揭示走势的“性质”（多头Gamma → 做市商抑制、价格磁吸/均值回归、已实现波动更低；空头Gamma → 做市商放大、走势趋势化、波动更高），而非方向。做市商“多头看涨/空头看跌”的符号是不可观测的假设 — 对指数稳健，对个股脆弱（卖备兑ETF或散户大量买看涨可翻转真实符号）。磁吸/翻转价位仅供观察，绝非目标价。") }}</p>
+</div>
+
+<div class="tabs">
+  {% for s in symbols %}<button class="tabbtn {{ 'on' if loop.first }}" data-k="{{ s.key }}">{{ t(s.label, s.zh) }}</button>{% endfor %}
+</div>
+
+{% for s in symbols %}
+<div class="panel sympanel" id="gx-{{ s.key }}" data-grp="sym"{% if not loop.first %} style="display:none"{% endif %}>
+  <div class="hero">
+    <span class="regbadge reg-{{ s.regime or 'na' }}">{{ t('Long gamma · pins / mean-revert', '多头Gamma · 磁吸/均值回归') if s.regime=='long' else t('Short gamma · trends / amplifies', '空头Gamma · 趋势/放大') if s.regime=='short' else t('Neutral', '中性') }}
+      {{ help('Long gamma (spot above the flip): dealers sell rallies / buy dips → price pins to high-OI strikes, lower realized vol. Short gamma (spot below the flip): dealers chase the move → trends amplify, higher realized vol. Regime, not direction.', '多头Gamma（现价在翻转价之上）：做市商高抛低吸 → 价格磁吸到高未平仓量行权价、波动更低。空头Gamma（现价在翻转价之下）：做市商追涨杀跌 → 趋势放大、波动更高。是体制，非方向。') }}</span>
+    <span class="heronum"><span class="muted sm">{{ t('Spot', '现价') }}</span> <b>{{ s.spot }}</b></span>
+    <span class="heronum"><span class="muted sm">{{ t('Net GEX', '净GEX') }}</span> <b class="{{ 'pos' if (s.net_gex_bn or 0)>=0 else 'neg' }}">{{ '%+.1f'|format(s.net_gex_bn) if s.net_gex_bn is not none else '—' }} $bn</b></span>
+    <span class="heronum"><span class="muted sm">{{ t('Gamma flip', 'Gamma翻转') }}</span> <b>{{ s.gamma_flip if s.gamma_flip is not none else '—' }}</b> <span class="muted sm">{{ ('(%+.1f%%)'|format(s.dist_to_flip_pct)) if s.dist_to_flip_pct is not none else '' }}</span></span>
+  </div>
+
+  <div class="cards">
+    {{ card('Magnet ↑', '上磁吸', s.magnet_up if s.magnet_up is not none else '—') }}
+    {{ card('Magnet ↓', '下磁吸', s.magnet_down if s.magnet_down is not none else '—') }}
+    {{ card('Charm anchor', 'Charm锚', s.charm_anchor if s.charm_anchor is not none else '—') }}
+    {{ card('IV30', 'IV30', ('%.1f%%'|format(s.iv30)) if s.iv30 is not none else '—') }}
+    {{ card('Put/call OI', '认沽/认购OI', s.put_call_oi_ratio if s.put_call_oi_ratio is not none else '—') }}
+    {{ card('Max pain', '最大痛点', s.max_pain if s.max_pain is not none else '—') }}
+  </div>
+
+  <div class="lad">
+    <div class="muted sm" style="margin-bottom:6px">{{ t('Dealer gamma by strike — the walls', '按行权价的做市商Gamma — 墙') }}
+      {{ help('Net dealer GEX summed at each strike (±8% of spot). Green = call-heavy (a wall above that resists / pins); red = put-heavy (a wall below). The tallest bars are the magnets; price tends to gravitate toward big positive-gamma strikes under long gamma.', '每个行权价（现价±8%）上做市商净GEX之和。绿=看涨为主（上方的墙，阻力/磁吸）；红=看跌为主（下方的墙）。最长的条即磁吸点；多头Gamma下价格倾向于被大正Gamma行权价吸引。') }}</div>
+    {% for r in s.ladder %}
+    <div class="lad-row {{ 'mag' if (r.strike == s.magnet_up or r.strike == s.magnet_down) }}">
+      <span class="lad-k">{% if r.strike == s.magnet_up or r.strike == s.magnet_down %}<b>{{ '%g'|format(r.strike) }}</b>{% else %}{{ '%g'|format(r.strike) }}{% endif %}</span>
+      <span class="lad-bar">{% if r.pct >= 0 %}<i style="left:50%;width:{{ (r.pct/2)|round(1) }}%;background:var(--up)"></i>{% else %}<i style="right:50%;width:{{ (-r.pct/2)|round(1) }}%;background:var(--down)"></i>{% endif %}<i class="mid"></i></span>
+      <span class="lad-v {{ 'pos' if r.net_gex_mn>=0 else 'neg' }}">{{ r.net_gex_mn }}{% if r.strike == s.magnet_up %}<span class="magtag">{{ t('mag↑','↑') }}</span>{% elif r.strike == s.magnet_down %}<span class="magtag">{{ t('mag↓','↓') }}</span>{% endif %}</span>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if not s.is_index %}
+  <p class="muted sm note">{{ t(
+    'Single-name caveat: the dealer-sign assumption is fragile here — concentration / covered-call / retail flow can flip it. Top-strike OI share ' ~ (s.top_oi_share if s.top_oi_share is not none else '—') ~ ', chain tier "' ~ s.tier ~ '". Read as loose context, not a level to trade against.',
+    '个股提示：此处做市商符号假设脆弱 — 集中度/备兑/散户流可将其翻转。最大行权价OI占比 ' ~ (s.top_oi_share if s.top_oi_share is not none else '—') ~ '，链路等级“' ~ s.tier ~ '”。仅作宽松背景，勿据此逆向交易。') }}</p>
+  {% endif %}
+</div>
+{% endfor %}
+
+<div class="panel">
+  <p class="muted" style="font-size:12px;margin:0">{{ t(
+    'Source: Cboe delayed option chains (free, keyless) → engine/gex_engine.py. Greeks computed dividend-adjusted; the gamma-flip is grid-reevaluated. Daily EOD levels, delayed — NOT live intraday flow (OI updates once per day). A regime + levels map, not predictive alpha. See LIMITATIONS.md.',
+    '来源：Cboe 延迟期权链（免费、无需密钥）→ engine/gex_engine.py。希腊字母经股息调整计算；Gamma翻转采用网格重估。每日延迟价位 — 并非实时盘中流动（OI每日更新一次）。体制+价位地图，而非预测性超额收益。') }}
+    {{ t('Generated', '生成于') }} {{ built }}</p>
+</div>
+
+<script>
+(function(){
+ document.querySelectorAll('.tabbtn').forEach(function(b){ b.addEventListener('click', function(){
+   document.querySelectorAll('.tabbtn').forEach(function(x){ x.classList.remove('on'); }); this.classList.add('on');
+   var k=this.dataset.k;
+   document.querySelectorAll('[data-grp="sym"]').forEach(function(p){ p.style.display = (p.id==='gx-'+k)?'':'none'; });
+ }); });
+})();
+</script>
+<script src="theme.js"></script>
+</body>
+</html>
