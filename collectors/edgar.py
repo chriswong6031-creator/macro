@@ -119,17 +119,24 @@ def _universe_names() -> dict[str, str]:
     return out
 
 
-def _latest_balance(concept: str, year: int) -> dict[int, float]:
-    """Most recent instantaneous value per CIK across the 4 quarter frames of a
-    year — covers all fiscal-year-ends (a Sep-FY firm lands in Q3I, a Dec-FY in
-    Q4I)."""
+def _latest_balance_dated(concept: str, year: int) -> dict[int, tuple[float, str]]:
+    """{cik: (val, end_date)} — most recent instantaneous value per CIK across the
+    4 quarter frames of a year (a Sep-FY firm lands in Q3I, a Dec-FY in Q4I). The
+    end date is what the point-in-time panel stamps as the period close."""
     base = _cfg()["base_url"]
     best: dict[int, tuple[float, str]] = {}
     for q in ("Q4I", "Q3I", "Q2I", "Q1I"):
         for cik, (val, end) in _frame(base, concept, f"CY{year}{q}", "USD").items():
             if cik not in best or end > best[cik][1]:
                 best[cik] = (val, end)
-    return {cik: v for cik, (v, _e) in best.items()}
+    return best
+
+
+def _latest_balance(concept: str, year: int) -> dict[int, float]:
+    """Most recent instantaneous value per CIK across the 4 quarter frames of a
+    year — covers all fiscal-year-ends (a Sep-FY firm lands in Q3I, a Dec-FY in
+    Q4I)."""
+    return {cik: v for cik, (v, _e) in _latest_balance_dated(concept, year).items()}
 
 
 def _annual(concept: str, year: int, unit: str = "USD") -> dict[int, float]:
@@ -305,3 +312,164 @@ def fetch_fundamentals(force: bool = False, max_age_days: int = 7) -> pd.DataFra
                     "n_tickers": int(len(df)), "n_universe": len(universe)}))
     log.info("edgar fundamentals: %d tickers, FY%d, %d cols", len(df), fy, df.shape[1])
     return df
+
+
+# --------------------------------------------------------------------------- #
+# Point-in-time PANEL — the leak-free upgrade.
+#
+# fetch_fundamentals() (above) overwrites a single latest-FY snapshot, so a factor
+# backtest run on it would use TODAY's restated numbers at every past date
+# (look-ahead) and only TODAY's listed tickers (survivorship). The panel fixes the
+# look-ahead fully: the EDGAR *frames* API serves any historical calendar period,
+# so we fetch one annual cross-section per fiscal year back to `panel_start_fy`
+# (XBRL was mandated ~2009) and stamp each row with `period_end` plus an
+# `asof_date` = period_end + `reporting_lag_days` — a CONSERVATIVE proxy for when
+# the 10-K was knowable (frames carry the period end but NOT the SEC `filed`
+# timestamp; the true filed date would need per-company companyfacts calls — a
+# later upgrade). `as_of_cross_section(date)` then returns exactly what was
+# knowable on `date`. Survivorship is only partially addressed: historical frames
+# DO include since-delisted filers, but the current company_tickers.json can't map
+# their CIK to a ticker (and free prices don't cover them), so the panel is still
+# current-universe tickers carrying their OWN historical fundamentals. The honest
+# go-forward survivorship fix is to accumulate point-in-time index membership from
+# now on (separate); this module removes the look-ahead, which is the larger bias.
+# --------------------------------------------------------------------------- #
+PANEL_NUMERIC = ["assets", "equity", "debt_lt", "shares", "ni", "gross_profit",
+                 "cfo", "dividends", "repurchases", "revenue", "assets_prior", "ni_prior"]
+
+
+def _panel_path():
+    p = config.data_dir() / "edgar" / "fundamentals_panel.parquet"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    return p
+
+
+def _panel_meta_path():
+    return config.data_dir() / "edgar" / "_panel_meta.json"
+
+
+def _panel_age_days() -> float | None:
+    mp = _panel_meta_path()
+    if not _panel_path().exists() or not mp.exists():
+        return None
+    try:
+        built = datetime.fromisoformat(json.loads(mp.read_text())["built"])
+        return (datetime.now(timezone.utc) - built).total_seconds() / 86400.0
+    except Exception:  # noqa: BLE001
+        return 999.0
+
+
+def _year_fundamentals(year: int) -> dict[int, dict]:
+    """{cik: {concept: val, ..., 'period_end': 'YYYY-MM-DD'}} for one fiscal year,
+    assembled from the frames API (balance scan + annual flows)."""
+    out: dict[int, dict] = {}
+    bal = {k: _latest_balance_dated(v, year) for k, v in BALANCE.items()}
+    for cik, (val, end) in bal["assets"].items():
+        out[cik] = {"assets": val, "period_end": end}
+    for key in ("equity", "debt_lt"):
+        for cik, (val, _e) in bal[key].items():
+            out.setdefault(cik, {})[key] = val
+    for cik, val in _shares(year).items():
+        out.setdefault(cik, {})["shares"] = val
+    for key, concept in FLOW.items():
+        for cik, val in _annual(concept, year).items():
+            out.setdefault(cik, {})[key] = val
+    rev: dict[int, float] = {}
+    for c in REVENUE_CONCEPTS:
+        for cik, val in _annual(c, year).items():
+            rev.setdefault(cik, val)
+    for cik, val in rev.items():
+        out.setdefault(cik, {})["revenue"] = val
+    return out
+
+
+def fetch_panel(force: bool = False, max_age_days: int = 7,
+                years: list[int] | None = None) -> pd.DataFrame:
+    """Build (or load cached) the point-in-time fundamentals panel — one row per
+    (ticker, fiscal_year) with period_end + asof_date, back to `panel_start_fy`.
+    Also refreshes the latest-FY `fundamentals.parquet` slice (back-compat). Pass
+    `years` to restrict the fetch (used by tests / partial backfills)."""
+    panel_p = _panel_path()
+    age = _panel_age_days()
+    if not force and age is not None and age < max_age_days:
+        log.info("edgar panel cache fresh (%.1fd) — skip fetch", age)
+        return pd.read_parquet(panel_p)
+
+    cfg = _cfg()
+    universe = _universe_tickers()
+    if not universe:
+        raise RuntimeError("no breadth close caches — run breadth collectors first")
+
+    latest_fy = int(cfg["latest_fy"])
+    for cand in (latest_fy, latest_fy - 1):
+        if len(_annual("NetIncomeLoss", cand)) >= cfg["min_filers_ok"]:
+            latest_fy = cand
+            break
+    start_fy = int(cfg.get("panel_start_fy", 2009))
+    lag = int(cfg.get("reporting_lag_days", 120))
+    yrs = years if years is not None else list(range(start_fy, latest_fy + 1))
+
+    tcik = _ticker_cik_map(universe, latest_fy)
+    cik_t = {c: t for t, c in tcik.items()}     # first ticker wins on dup CIK
+    log.info("edgar panel: %d universe, %d mapped, FY%d..%d (lag %dd)",
+             len(universe), len(tcik), min(yrs), max(yrs), lag)
+
+    by_year = {y: _year_fundamentals(y) for y in yrs}
+    rows = []
+    for y in yrs:
+        prior = by_year.get(y - 1, {})
+        for cik, rec in by_year[y].items():
+            t = cik_t.get(cik)
+            if t is None:
+                continue                        # delisted / unmapped — can't join to prices
+            row = {"ticker": t, "cik": cik, "fy": y}
+            for k in PANEL_NUMERIC:
+                if k not in ("assets_prior", "ni_prior"):
+                    row[k] = rec.get(k)
+            row["assets_prior"] = prior.get(cik, {}).get("assets")
+            row["ni_prior"] = prior.get(cik, {}).get("ni")
+            row["period_end"] = rec.get("period_end")
+            rows.append(row)
+
+    panel = pd.DataFrame(rows)
+    panel = panel.dropna(subset=["assets", "equity"], how="all")
+    panel["period_end"] = pd.to_datetime(panel["period_end"], errors="coerce")
+    panel["asof_date"] = panel["period_end"] + pd.Timedelta(days=lag)
+    panel = panel.dropna(subset=["period_end"]).sort_values(["ticker", "fy"]).reset_index(drop=True)
+    panel.to_parquet(panel_p)
+    _panel_meta_path().write_text(json.dumps({
+        "built": datetime.now(timezone.utc).isoformat(),
+        "fy_min": int(panel["fy"].min()), "fy_max": int(panel["fy"].max()),
+        "reporting_lag_days": lag, "n_rows": int(len(panel)),
+        "n_tickers": int(panel["ticker"].nunique()),
+    }))
+    log.info("edgar panel: %d rows, %d tickers, FY%d..%d",
+             len(panel), panel["ticker"].nunique(), panel["fy"].min(), panel["fy"].max())
+
+    # refresh the live latest-FY slice (back-compat with equity_factors live path)
+    latest = panel[panel["fy"] == panel["fy"].max()].set_index("ticker")
+    keep = ["cik"] + PANEL_NUMERIC
+    latest[keep].to_parquet(_cache_path())
+    (config.data_dir() / "edgar" / "_meta.json").write_text(json.dumps({
+        "built": datetime.now(timezone.utc).isoformat(), "fy": int(panel["fy"].max()),
+        "n_tickers": int(len(latest)), "n_universe": len(universe),
+        "panel": True}))
+    return panel
+
+
+def as_of_cross_section(asof, panel: pd.DataFrame | None = None) -> pd.DataFrame:
+    """Leak-free ticker-indexed fundamentals knowable at `asof`: per ticker, the
+    most recent fiscal year whose asof_date (period_end + reporting lag) is on or
+    before `asof`. This is the cross-section a point-in-time factor backtest must
+    use at each rebalance date so it never peeks at a not-yet-filed report."""
+    if panel is None:
+        p = _panel_path()
+        if not p.exists():
+            raise RuntimeError("no fundamentals_panel.parquet — run collectors.edgar fetch_panel")
+        panel = pd.read_parquet(p)
+    asof = pd.Timestamp(asof)
+    sub = panel[panel["asof_date"] <= asof]
+    if sub.empty:
+        return sub.set_index("ticker") if "ticker" in sub.columns else sub
+    idx = sub.groupby("ticker")["fy"].idxmax()
+    return sub.loc[idx].set_index("ticker")

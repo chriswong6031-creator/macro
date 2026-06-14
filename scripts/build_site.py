@@ -847,10 +847,10 @@ def build_factors_page(env: Environment, site: Path, generated: str) -> dict | N
     See research/QUANT_FACTOR_EXPANSION.md."""
     if not config.load().get("edgar", {}).get("enabled"):
         return None
-    from collectors.edgar import fetch_fundamentals
+    from collectors.edgar import fetch_panel
     from engine.equity_factors import compute_factors
     try:
-        fetch_fundamentals()                       # weekly-cached; no-op if fresh
+        fetch_panel()                              # point-in-time panel (weekly-cached); also writes the back-compat latest-FY fundamentals.parquet slice
         try:
             from collectors.finra import fetch_short_interest
             fetch_short_interest()                 # Phase 3: bi-monthly short interest (cached)
