@@ -1032,6 +1032,88 @@ def build_etf_page(env: Environment, site: Path, generated: str,
              len({r["ticker"] for r in rows}))
 
 
+_IC_LABELS = {
+    "value": "Value", "profitability": "Profitability", "quality": "Quality",
+    "investment": "Investment", "payout": "Payout", "low_vol": "Low volatility",
+    "low_beta": "Low beta", "accruals": "Accruals", "short_interest": "Low short interest",
+    "composite": "Composite", "composite_orth": "Composite (de-correlated)",
+}
+
+
+def _load_ic_scorecard() -> dict | None:
+    """Load the leak-free point-in-time IC scorecard (scripts.factor_ic_scorecard
+    writes data/edgar/ic_scorecard.json) for the factors page. This is the rigor
+    FactorWatch and most factor dashboards never show — IC + Newey-West t + BH-FDR.
+    Degrade-never-raise: missing/unreadable/stale → return None and the panel hides.
+    Read straight from the JSON; do NOT fork a slice into factors.json."""
+    p = config.data_dir() / "edgar" / "ic_scorecard.json"
+    if not p.exists():
+        return None
+    try:
+        ic = json.loads(p.read_text())
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("ic scorecard unreadable: %s", e)
+        return None
+    facs = ic.get("factors") or {}
+    if not facs:
+        return None
+    rows = [{"factor": k, "label_en": _IC_LABELS.get(k, k), **v} for k, v in facs.items()]
+    # mirror the report's order: best forward-IC information ratio first
+    rows.sort(key=lambda r: -(r["ic_ir_ann"] if r.get("ic_ir_ann") is not None else -9))
+    ic["rows"] = rows
+    ic["any_survive"] = any(r.get("survives_fdr") for r in rows)
+    return ic
+
+
+def _load_breadth() -> dict | None:
+    """MARKET breadth context for the factors page — % of members above their 50d and
+    200d MAs across the S&P 500 / 400 / 600 caps (data/<grp>/breadth.parquet). This is
+    INDEX-member breadth, not factor-portfolio breadth. Degrade-never-raise."""
+    import pandas as _pd
+    groups = [("Large cap (S&P 500)", "大盘 (标普500)", "breadth"),
+              ("Mid cap (S&P 400)", "中盘 (标普400)", "midcap_breadth"),
+              ("Small cap (S&P 600)", "小盘 (标普600)", "smallcap_breadth")]
+    rows, by, as_of = [], {}, None
+    for label_en, label_zh, g in groups:
+        p = config.data_dir() / g / "breadth.parquet"
+        if not p.exists():
+            continue
+        try:
+            df = _pd.read_parquet(p)
+        except Exception:  # noqa: BLE001
+            continue
+        if df.empty or "pct_above_50" not in df.columns:
+            continue
+        last = df.iloc[-1]
+        r = {"label_en": label_en, "label_zh": label_zh, "group": g,
+             "p50": round(float(last["pct_above_50"]), 1),
+             "p200": round(float(last["pct_above_200"]), 1),
+             "n": int(last.get("n_members", 0) or 0)}
+        rows.append(r)
+        by[g] = r
+        as_of = df.index.max().strftime("%Y-%m-%d")
+    if not rows:
+        return None
+    # small-vs-large divergence on the COMMON window (small/mid only start 2023-07)
+    div = (round(by["smallcap_breadth"]["p50"] - by["breadth"]["p50"], 1)
+           if "smallcap_breadth" in by and "breadth" in by else None)
+    return {"groups": rows, "div_small_large": div, "as_of": as_of}
+
+
+def _load_factor_series() -> dict | None:
+    """Load factor portfolio return series (scripts.build_factor_series writes
+    site/factordata/factor_series.json — the heavier month-end walk). Degrade-never-raise."""
+    p = config.ROOT / "site" / "factordata" / "factor_series.json"
+    if not p.exists():
+        return None
+    try:
+        d = json.loads(p.read_text())
+        return d if d.get("factors") else None
+    except Exception as e:  # noqa: BLE001
+        log.warning("factor series unreadable: %s", e)
+        return None
+
+
 def build_factors_page(env: Environment, site: Path, generated: str) -> dict | None:
     """Render factors.html — the cross-sectional equity factor rankings (SEC
     EDGAR fundamentals x prices). Fundamentals fetch is cached weekly; ranks
@@ -1062,9 +1144,14 @@ def build_factors_page(env: Environment, site: Path, generated: str) -> dict | N
     fdir = site / "factordata"
     fdir.mkdir(parents=True, exist_ok=True)
     (fdir / "factors.json").write_text(json.dumps(fac, separators=(",", ":"), default=str))
-    html = env.get_template("factors.html.j2").render(fac=fac, generated_utc=generated)
+    ic = _load_ic_scorecard()                  # leak-free point-in-time IC (degrade-never-raise)
+    breadth = _load_breadth()                  # market-member breadth context (degrade-never-raise)
+    series = _load_factor_series()             # factor portfolio return series (degrade-never-raise)
+    html = env.get_template("factors.html.j2").render(
+        fac=fac, ic=ic, breadth=breadth, series=series, generated_utc=generated)
     (site / "factors.html").write_text(html)
-    log.info("wrote factors.html (%d names, FY%s)", fac.get("n"), fac.get("fy"))
+    log.info("wrote factors.html (%d names, FY%s, ic=%s)", fac.get("n"), fac.get("fy"),
+             "yes" if ic else "no")
     return fac
 
 
