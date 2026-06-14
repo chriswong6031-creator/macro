@@ -835,10 +835,31 @@ STATE_STYLES = {
 BUY_ZONE_STATES = ("FRESH BUY", "TURN SIGNALED")
 
 
+def _fund_flows_by_ticker(rows: list[dict]) -> dict[str, list[dict]]:
+    """Group every fund decision by the STOCK it touched, so each ticker's page
+    can answer "which thematic/active funds are buying or selling me". Sorted by
+    conviction magnitude within each ticker."""
+    by: dict[str, list[dict]] = {}
+    for r in rows:
+        by.setdefault(r["ticker"], []).append({
+            "fund": r["etf"], "fund_name": r.get("etf_name", r["etf"]),
+            "theme": r.get("category", ""), "is_active": r.get("is_active", False),
+            "direction": r["direction"], "conviction_pp": r.get("conviction_pp"),
+            "weight_pct": r.get("weight_pct"), "active_chg_pct": r.get("active_chg_pct"),
+            "is_new": r.get("is_new", False), "is_exit": r.get("is_exit", False),
+            "window": r.get("window", ""),
+        })
+    for tk in by:
+        by[tk].sort(key=lambda m: -abs(m.get("conviction_pp") or 0))
+    return by
+
+
 def build_etf_page(env: Environment, site: Path, generated: str) -> None:
     """Render etfs.html — the "real fund moves" board: conviction-ranked,
     accumulation-first holding decisions across the curated thematic/active ETF
-    universe, with a smaller de-emphasized trims list. See engine/holdings_signals."""
+    universe, with a smaller de-emphasized trims list. Also writes
+    site/stockdata/fund_flows.json (before the stock library builds) so each stock
+    page can show which funds bought/sold it. See engine/holdings_signals."""
     from engine.holdings_signals import all_etf_signals, split_by_conviction
     try:
         rows = all_etf_signals()
@@ -850,8 +871,14 @@ def build_etf_page(env: Environment, site: Path, generated: str) -> None:
         accumulation=split["accumulation"], trims=split["trims"],
         generated_utc=generated)
     (site / "etfs.html").write_text(html)
-    log.info("wrote etfs.html (%d accumulation, %d trims)",
-             len(split["accumulation"]), len(split["trims"]))
+    # per-stock feed (built before the stock library so it can be attached there)
+    outdir = site / "stockdata"
+    outdir.mkdir(parents=True, exist_ok=True)
+    (outdir / "fund_flows.json").write_text(
+        json.dumps(_fund_flows_by_ticker(rows), separators=(",", ":"), default=str))
+    log.info("wrote etfs.html (%d accumulation, %d trims) + fund_flows.json (%d names)",
+             len(split["accumulation"]), len(split["trims"]),
+             len({r["ticker"] for r in rows}))
 
 
 def build_factors_page(env: Environment, site: Path, generated: str) -> dict | None:
