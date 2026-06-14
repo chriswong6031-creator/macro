@@ -29,6 +29,48 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("hk_library")
 
 
+def compute_hk_global_betas() -> dict | None:
+    """Per-stock global-risk beta cross-section — the honest per-name HK read (HK has
+    no residual-alpha edge; engine/hk_global_beta.py). Beta of each constituent to the
+    S&P 500 (overnight, US->HK transmission), conditioned on the live global risk_state.
+    Best-effort: every failure path degrades to None, never raises."""
+    from engine import hk_global, hk_global_beta
+    dd = config.data_dir()
+    cache = dd / "hk_breadth" / "_closes_cache.parquet"
+    cons = dd / "hk_breadth" / "constituents.parquet"
+    if not (cache.exists() and cons.exists()):
+        log.warning("hk global-beta: breadth cache missing — skipped")
+        return None
+    try:
+        closes = pd.read_parquet(cache).sort_index()
+        closes = closes.loc[:, ~closes.columns.duplicated()]
+        meta = pd.read_parquet(cons)
+    except Exception as e:  # noqa: BLE001 — corrupt committed parquet must not break the build
+        log.warning("hk global-beta: cache unreadable (%s) — skipped", e)
+        return None
+    names_cfg = config.load()["hk"].get("names", {})
+    tkr_name = {t: (str(meta.loc[t, "name"]) if str(meta.loc[t, "name"]) != t
+                    else names_cfg.get(t, t)) for t in meta.index}
+    tkr_sector = meta["sector"].to_dict()
+    spy = store.read("yahoo", "SPY")
+    if spy is None or "close" not in spy.columns:
+        log.warning("hk global-beta: no SPY factor series — skipped")
+        return None
+    factor = spy["close"].pct_change(fill_method=None).shift(1)   # overnight US->HK
+    try:
+        risk_state = hk_global.snapshot().get("state", "unknown")
+    except Exception:  # noqa: BLE001
+        risk_state = "unknown"
+    try:
+        out = hk_global_beta.compute_global_betas(closes, factor, risk_state, tkr_name, tkr_sector)
+    except Exception as e:  # noqa: BLE001 — additive leg, never fatal
+        log.warning("hk global-beta engine failed (%s) — skipped", e)
+        return None
+    if out:
+        log.info("hk global-beta: %d names, risk_state=%s", out.get("n"), risk_state)
+    return out
+
+
 def chart_series(close: pd.Series, n: int = 504) -> dict:
     """Compact columnar close history for the client-side chart (the last ~2y of
     daily closes). TradingView's free embed gates HKEX data behind a login, so the
@@ -101,10 +143,20 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
     return out
 
 
-def main() -> int:
+def main(betas: dict | None = None) -> dict | None:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     outdir = site / "hkstockdata"
     outdir.mkdir(parents=True, exist_ok=True)
+
+    # per-stock global-risk beta leg — computed here if not passed in by build_hk
+    if betas is None:
+        betas = compute_hk_global_betas()
+    beta_pt = (betas or {}).get("per_ticker", {})
+    if betas:
+        fdir = site / "factordata"
+        fdir.mkdir(parents=True, exist_ok=True)
+        (fdir / "hk_global_beta.json").write_text(
+            json.dumps(betas, separators=(",", ":"), default=str))
 
     index, built, failed = [], 0, 0
     for ticker, close, high, name, sector in universe():
@@ -116,17 +168,23 @@ def main() -> int:
         if rec is None:
             failed += 1
             continue
+        if beta_pt.get(ticker):             # additive: absent => no global-beta panel
+            rec["global_beta"] = beta_pt[ticker]
         safe = ticker.replace("=", "_").replace("^", "_")
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
-        index.append({"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]})
+        idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
+        if rec.get("global_beta", {}).get("beta") is not None:
+            idx["gb"] = rec["global_beta"]["beta"]
+        index.append(idx)
         built += 1
     (outdir / "index.json").write_text(json.dumps(index))
     cal = config.data_dir() / "hk_regime" / "ladder_calibration.json"
     if cal.exists():
         (outdir / "calibration.json").write_text(cal.read_text())
     log.info("hk library: %d analyzed, %d skipped (thin history)", built, failed)
-    return 0
+    return betas
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()
+    sys.exit(0)

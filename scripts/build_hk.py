@@ -446,6 +446,19 @@ def main() -> int:
             log.error("hk playbook build failed (%s); skipping", e)
             vm["pb"] = None
 
+        # per-stock GLOBAL-RISK BETA — the honest per-name HK read (HK has no residual
+        # stock-selection alpha; engine/hk_global_beta.py). Built here so the
+        # "amplifiers vs cushions" board renders server-side, and the betas embed into
+        # the stock library below. Conditioned on the live global risk_state.
+        betas = None
+        try:
+            from scripts import build_hk_library
+            betas = build_hk_library.main()
+            vm["betas"] = betas
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("hk global-beta / stock library build failed (%s); skipping", e)
+            vm["betas"] = None
+
         env = Environment(loader=FileSystemLoader(
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)
         from engine import i18n
@@ -458,18 +471,17 @@ def main() -> int:
                 (site / a).write_text(src.read_text())
         log.info("wrote %s/hk.html (%d KB, %d sectors)", site, len(html) // 1024, len(vm["sectors"]))
 
-        # HK stock search: build the per-ticker JSON library + render the search page
+        # HK stock search shell (the per-ticker library was built above, before the
+        # hk.html render, so its global-beta board could feed the page)
         try:
             from engine.cycles import STATE_DISPLAY
-            from scripts import build_hk_library
-            build_hk_library.main()
             stock_html = env.get_template("hk_stock.html.j2").render(
                 state_display_json=json.dumps(STATE_DISPLAY, default=str),
                 generated_utc=vm["built"])
             (site / "hk_stock.html").write_text(stock_html)
             log.info("wrote %s/hk_stock.html + hkstockdata/", site)
         except Exception as e:  # noqa: BLE001 — search is additive, never fatal
-            log.error("hk stock search build failed (%s); skipping", e)
+            log.error("hk stock search render failed (%s); skipping", e)
 
         # history page (regime-over-HSI + the dials + lifespan base rates)
         try:

@@ -119,6 +119,21 @@ count and kill survivorship — the path to a stronger-than-"context" claim.
   most levered to the validated risk-on/off overlay), NOT residual momentum. Name-count expansion
   won't change this — the residual is dead even with 447 rebalances; HK lacks idiosyncratic
   stock momentum, full stop.
+- **Phase 3b (Hong Kong global-risk-beta) — SHIPPED + verified.** The honest HK per-name read,
+  pivoting from selection to RISK EXPOSURE. `engine/hk_global_beta.py`: each constituent's causal
+  252d beta to global risk (S&P 500, lagged one day for the overnight US→HK transmission),
+  Vasicek-shrunk, ranked into **amplifiers** (high beta — global cyclicals: Baidu, copper miners,
+  CXO) vs **cushions** (low beta — domestic SOE energy/staples/telecom: CNOOC, PetroChina, China
+  Mobile), conditioned on the live `risk_state` into a tilt (favored / exposed / lag). Validated
+  (deep 40y panel, lagged-SPY, monthly): high-minus-low global-beta forward-21d is **+0.41% in
+  Risk-on, −0.74% in Risk-off** (the risk-off signal cleaner, t −1.3) — directionally correct,
+  modest → framed as risk CONTEXT for sizing within the validated regime, NOT a forecast or buy
+  list (beta is a descriptive exposure, not an alpha). Wired into `build_hk_library`
+  (`compute_hk_global_betas()` → `site/factordata/hk_global_beta.json`; per-stock `global_beta`
+  embedded in `hkstockdata`) and `build_hk` (reordered so the board renders server-side). UI:
+  **"Global-risk exposure — amplifiers vs cushions"** panel on hk.html (after the global-risk
+  overlay hero) + **"Global-risk beta"** panel on hk_stock.html. `engine/hk_global_beta.py` +
+  `tests/test_hk_global_beta.py` (4 tests); 359 tests green; browser-verified.
 - **Phase 4 (optional).** China fundamentals via Tushare/akshare (value/quality leg);
   per-stock northbound Stock-Connect holdings (a China-specific "smart money" signal with no
   US analog, free from Eastmoney — note `_leaderboard()` in build_china.py already hits the

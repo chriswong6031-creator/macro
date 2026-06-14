@@ -67,11 +67,21 @@
           overflow:auto; display:none; box-shadow:var(--popover-shadow); }
   #sugg div { padding:8px 13px; cursor:pointer; display:flex; gap:10px; align-items:center; }
   #sugg div:hover, #sugg div.sel { background:var(--panel2); }
-  #sugg b { min-width:78px; }
-  #sugg small { color:var(--muted); flex:1; }
+  #sugg b { min-width:78px; flex:none; }
+  #sugg small { color:var(--muted); flex:1 1 auto; min-width:0;
+                white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #sugg div span { flex:0 1 auto; min-width:0; max-width:40%;
+                   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:right; }
   .mtf { display:flex; gap:14px; flex-wrap:wrap; font-size:12.5px; color:var(--muted);
          margin-top:8px; }
   .mtf b { color:var(--text); }
+  .gb-tilt { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px;
+             border-radius:9px; border:1px solid var(--line); white-space:nowrap; }
+  .gb-favored { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up);
+                border-color:color-mix(in srgb,var(--up) 40%,transparent); }
+  .gb-exposed { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--down);
+                border-color:color-mix(in srgb,var(--down) 40%,transparent); }
+  .gb-lag,.gb-neutral { background:var(--panel2,var(--panel)); color:var(--muted); }
   table { border-collapse:collapse; width:100%; font-size:13px; }
   th,td { text-align:left; padding:4px 8px; border-bottom:1px solid var(--line); }
   th { color:var(--muted); font-weight:500; }
@@ -119,6 +129,13 @@
     <div class="panel">
       <h2>{{ t('Momentum across timeframes', '跨周期动量') }}</h2>
       <div id="r_mtf"></div>
+    </div>
+    <div class="panel" id="r_gbeta_panel" style="display:none">
+      <h2>{{ t('Global-risk beta', '全球风险贝塔') }} <span class="note" style="text-transform:none">· {{ t('amplifier vs cushion', '放大器 vs 缓冲') }}</span></h2>
+      <div id="r_gbeta" class="mtf"></div>
+      <p class="muted" style="font-size:12px; margin-top:8px">{{ t(
+        'This name\'s beta to global risk (S&P 500, lagged one day for the overnight US→HK transmission). HK has no idiosyncratic stock-selection edge, so the honest per-name read is RISK EXPOSURE: a high beta (<b>amplifier</b> — global cyclical) moves more with the risk-on/off regime; a low beta (<b>cushion</b> — domestic-defensive) moves less. The tag conditions on the live global risk state (favored / exposed / lags). Measured edge is modest — risk context for sizing within the validated regime, NOT a forecast or a buy signal. Beta is a descriptive exposure, not an alpha.',
+        '本股票对全球风险的贝塔（标普500，滞后一天以反映隔夜美→港传导）。香港没有特异选股优势，因此诚实的个股解读是风险敞口：高贝塔（<b>放大器</b>——全球周期股）随风险开关波动更大；低贝塔（<b>缓冲</b>——本地防御）波动更小。标签结合实时全球风险状态（占优／受冲击／滞后）。实测优势温和——用于在已验证状态内进行仓位管理的风险背景，而非预测或买入信号。贝塔是描述性敞口，并非阿尔法。') }}</p>
     </div>
     <div class="panel">
       <h2>{{ t('Chart', '图表') }}</h2>
@@ -294,6 +311,24 @@
     document.getElementById('r_flags').textContent = d.cycle.failed_cycle ? L('failed') : '';
     document.getElementById('r_why').textContent = lz(d.ladder.why, d.ladder.why_zh) + ' ' + L('next') + ' ' + lz(d.ladder.next, d.ladder.next_zh);
     window.renderMTF(document.getElementById('r_mtf'), d.mtf);
+
+    // Global-risk beta — the honest per-name HK read (additive; absent on indices/ETFs)
+    var gp = document.getElementById('r_gbeta_panel'), g = d.global_beta;
+    if (g && g.beta != null) {
+      var ROLE = {amplifier: ['Amplifier — moves more with global risk', '放大器 — 随全球风险波动更大'],
+                  cushion: ['Cushion — domestic-defensive', '缓冲 — 本地防御'],
+                  neutral: ['Neutral global-risk exposure', '全球风险敞口中性']};
+      var TILT = {favored: ['favored now', '当前占优'], exposed: ['exposed now', '当前受冲击'],
+                  lag: ['lags now', '当前滞后'], neutral: ['', '']};
+      var stat = function (lab, val) { return '<span>' + lab + ' <b>' + val + '</b></span>'; };
+      var html = stat(lz('global-risk β', '全球风险β'), g.beta.toFixed(2)) +
+                 stat(lz('percentile', '分位'), Math.round(g.beta_pct)) +
+                 '<span>' + lz(ROLE[g.role][0], ROLE[g.role][1]) + '</span>';
+      if (g.tilt && TILT[g.tilt] && g.tilt !== 'neutral')
+        html += '<span class="gb-tilt gb-' + g.tilt + '">' + lz(TILT[g.tilt][0], TILT[g.tilt][1]) + '</span>';
+      document.getElementById('r_gbeta').innerHTML = html;
+      gp.style.display = 'block';
+    } else { gp.style.display = 'none'; }
 
     var cs = '<tr><th>' + L('th_state') + '</th><th>' + L('th_n') + '</th><th>' + L('th_up') +
              '</th><th>' + L('th_avg') + '</th><th>' + L('th_dipm') + '</th><th>' + L('th_dipb') + '</th></tr>';
