@@ -196,6 +196,23 @@ html body .prob .pc { font-size: 18px; font-weight: 700; }
   transition: color .18s, background .18s; }
 .site-nav a.nav-link:hover, .site-nav a.nav-link.active { color: var(--text);
   background: var(--panel2); }
+/* nav dropdown (e.g. US Macro ▾ → dashboard + S&P / Macro Vector); mirrors the
+   inline Bitcoin-Vector dropdown some pages already ship, themed via theme vars */
+.site-nav .nav-dd { position: relative; display: inline-flex; }
+.site-nav .nav-dd > a.nav-link .caret { display: inline-block; margin-left: 3px;
+  font-size: 9px; opacity: .6; transition: transform .2s; }
+.site-nav .nav-dd:hover > a.nav-link .caret { transform: rotate(180deg); }
+.site-nav .nav-dd::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 9px; }
+.site-nav .nav-dd-menu { position: absolute; top: calc(100% + 7px); left: 0; z-index: 90;
+  min-width: 218px; background: var(--panel); border: 1px solid var(--line); border-radius: 13px;
+  box-shadow: var(--popover-shadow); padding: 6px; opacity: 0; visibility: hidden;
+  transform: translateY(-6px); transition: opacity .18s, transform .18s, visibility .18s; }
+.site-nav .nav-dd:hover > .nav-dd-menu, .site-nav .nav-dd:focus-within > .nav-dd-menu {
+  opacity: 1; visibility: visible; transform: translateY(0); }
+.site-nav .nav-dd-menu a { display: block; padding: 9px 12px; border-radius: 9px; font-size: 13.5px;
+  font-weight: 600; color: var(--muted); text-decoration: none; white-space: nowrap;
+  transition: color .18s, background .18s; }
+.site-nav .nav-dd-menu a:hover { color: var(--text); background: var(--panel2); }
 
 /* global stock search */
 .nav-search { grid-column: 1 / -1; grid-row: 2; position: relative; min-width: 0; max-width: 480px; }
