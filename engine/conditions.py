@@ -385,3 +385,170 @@ def conditions_snapshot(f: pd.DataFrame) -> dict:
         "capitulation": capitulation,
         "style_tilt": style,
     }
+
+
+# --- Macro-risk score (MRS) + per-sector sensitivity -------------------------
+# ONE deterministic risk-OFF gauge in [0,1] folded from the already-computed
+# conditions/regime legs, plus a coarse per-sector sensitivity. The overlay that
+# consumes these (engine.technicals sector heat + engine.cycles per-stock ladder)
+# is SUBTRACT-ONLY and framed as drawdown/sizing caution, never alpha — the
+# cross-sectional macro edge is unproven (research/DISLOCATION_VALIDATION.md).
+# MRS reads only already-lagged fields, so it adds no new look-ahead surface.
+# See research/MACRO_RISK_INTEGRATION.md.
+
+def _mrs_weights() -> dict:
+    w = (config.load()["engine"].get("macro_overlay") or {}).get("mrs_weights") or {}
+    # The `liquidity` leg (contracting half only) is KEPT deliberately: net-liquidity
+    # withdrawal is the single mechanism that most differentially hurts cyclicals,
+    # and the B-1 sign-check (scripts/research_macro_sector.py) only clears the
+    # split-half bar WITH it — removing it strips out the 2018/2022 QT episodes where
+    # the cross-sectional signal lives. Net liquidity ALSO has a uniform per-name
+    # ladder nudge (cycles.LIQ_HEADWIND); the MRS leg adds SECTOR differentiation on
+    # top of that — a small, bounded (~1pt), intentional overlap, not a bug.
+    return {"recession": w.get("recession", 1.0), "drawdown": w.get("drawdown", 1.0),
+            "nfci": w.get("nfci", 0.5), "liquidity": w.get("liquidity", 0.5),
+            "transition": w.get("transition", 0.25)}
+
+
+def _mrs_label(score: float | None) -> str | None:
+    if score is None:
+        return None
+    return ("severe" if score >= 0.75 else "elevated" if score >= 0.5
+            else "moderate" if score >= 0.25 else "low")
+
+
+def _mrs_transition_val(state) -> float:
+    return (1.0 if state in ("TRANSITIONING", "NEW_REGIME")
+            else 0.5 if state == "WEAKENING" else 0.0)
+
+
+def _combine_legs(legs: dict, w: dict):
+    """Weighted mean over AVAILABLE legs (renormalized), scalar or pandas. Each leg
+    is (value, available); an unavailable leg drops out of BOTH numerator and
+    denominator instead of poisoning the score."""
+    is_series = any(isinstance(v, pd.Series) for v, _a in legs.values())
+    if is_series:
+        num = sum(v.fillna(0.0) * a.astype(float) * w.get(n, 0.0)
+                  for n, (v, a) in legs.items())
+        den = sum(a.astype(float) * w.get(n, 0.0) for n, (_v, a) in legs.items())
+        return (num / den.replace(0, np.nan)).clip(0, 1)
+    num = den = 0.0
+    for n, (v, a) in legs.items():
+        if not a or v is None:
+            continue
+        num += w.get(n, 0.0) * float(v)
+        den += w.get(n, 0.0)
+    return (num / den) if den > 0 else None
+
+
+def macro_risk_score(latest: dict) -> dict:
+    """Aggregate macro-risk score MRS in [0,1] from a latest.json-shaped dict (the
+    dict-path helper). Higher => more macro risk. Pure function of already-lagged
+    fields — no new data, no look-ahead. Renormalizes over available legs. Returns
+    {score, label, components}.
+
+    NOTE: the engine persists latest['macro_risk'] via macro_risk_snapshot(f,
+    regime), NOT this function, because `latest` can mix legs across release dates
+    on a cadence-lag day (quad stale while conditions update). This helper is exact
+    for a date-coherent `latest` and is retained for dict-only consumers + tests."""
+    w = _mrs_weights()
+    cond = (latest or {}).get("conditions") or {}
+    legs: dict[str, tuple[float | None, bool]] = {}
+    rec = (cond.get("recession") or {}).get("score")
+    legs["recession"] = (None if rec is None else min(max(rec / 100.0, 0.0), 1.0),
+                         rec is not None)
+    dd = (cond.get("drawdown_risk") or {}).get("score")
+    legs["drawdown"] = (None if dd is None else min(max(dd / 100.0, 0.0), 1.0),
+                        dd is not None)
+    fc = cond.get("financial_conditions") or {}
+    nfci, nfci_pct = fc.get("nfci"), fc.get("nfci_pctile")
+    if nfci is not None and nfci_pct is not None:
+        tightening = fc.get("trend") == "tightening" and nfci > 0
+        legs["nfci"] = (min(max(nfci_pct if tightening else 0.0, 0.0), 1.0), True)
+    else:
+        legs["nfci"] = (None, False)
+    liq = (latest or {}).get("liquidity_overlay")
+    legs["liquidity"] = (1.0 if liq == "contracting" else 0.0, liq is not None)
+    tr = (latest or {}).get("transition_state")
+    legs["transition"] = (_mrs_transition_val(tr), tr is not None)
+
+    score = _combine_legs(legs, w)
+    comps = {n: (None if v is None else round(float(v), 3)) for n, (v, _a) in legs.items()}
+    return {"score": None if score is None else round(float(score), 4),
+            "label": _mrs_label(score), "components": comps}
+
+
+def _macro_risk_legs(f: pd.DataFrame, regime: pd.DataFrame):
+    """Daily (value, available) Series per MRS leg, from the causal conditions_frame
+    + regime labels. THE single source of truth for both the historical series and
+    the live snapshot, so they cannot drift. No look-ahead (conditions_frame is
+    causal; transition is an already-lagged label)."""
+    cf = conditions_frame(f)
+    idx = cf.index
+    legs: dict[str, tuple[pd.Series, pd.Series]] = {}
+    rr = cf["recession_risk"] if "recession_risk" in cf else None
+    if rr is not None:
+        legs["recession"] = ((rr / 100.0).clip(0, 1), rr.notna())
+    dd = cf["drawdown_risk"] if "drawdown_risk" in cf else None
+    if dd is not None:
+        legs["drawdown"] = ((dd / 100.0).clip(0, 1), dd.notna())
+    if {"nfci", "nfci_pctile", "nfci_chg"} <= set(cf.columns):
+        tightening = (cf["nfci_chg"] > 0) & (cf["nfci"] > 0)
+        # availability mirrors the scalar path: the leg needs BOTH the level and
+        # its 5y percentile (the latter warms up slowly), else the series would keep
+        # a zero leg in the denominator that the scalar drops.
+        legs["nfci"] = (cf["nfci_pctile"].where(tightening, 0.0).clip(0, 1),
+                        cf["nfci"].notna() & cf["nfci_pctile"].notna())
+    if "liquidity" in regime.columns:
+        liq = regime["liquidity"].reindex(idx)
+        legs["liquidity"] = ((liq == "contracting").astype(float), liq.notna())
+    if "transition_state" in regime.columns:
+        tr = regime["transition_state"].reindex(idx)
+        val = pd.Series(0.0, index=idx)
+        val = val.mask(tr == "WEAKENING", 0.5)
+        val = val.mask(tr.isin(("TRANSITIONING", "NEW_REGIME")), 1.0)
+        legs["transition"] = (val, tr.notna())
+    return legs, idx
+
+
+def macro_risk_series(f: pd.DataFrame, regime: pd.DataFrame) -> pd.Series:
+    """Daily MRS in [0,1] across history — what calibrate() folds into the honesty
+    bands. Shares _macro_risk_legs with macro_risk_snapshot, so the live value and
+    the bands cannot diverge."""
+    legs, idx = _macro_risk_legs(f, regime)
+    if not legs:
+        return pd.Series(index=idx, dtype=float)
+    return _combine_legs(legs, _mrs_weights())
+
+
+def macro_risk_snapshot(f: pd.DataFrame, regime: pd.DataFrame) -> dict:
+    """The LIVE macro-risk reading the engine persists to latest['macro_risk'].
+    Derived from the SAME series calibrate() uses (one coherent as-of date), so
+    live == calibrate by construction — unlike building it from a possibly
+    cadence-mismatched latest.json dict. Returns {score, label, components}."""
+    legs, _idx = _macro_risk_legs(f, regime)
+    series = macro_risk_series(f, regime).dropna()
+    if series.empty:
+        return {"score": None, "label": None, "components": {}}
+    last = series.index[-1]
+    score = float(series.iloc[-1])
+    comps = {n: (round(float(v.loc[last]), 3) if bool(a.loc[last]) else None)
+             for n, (v, a) in legs.items()}
+    return {"score": round(score, 4), "label": _mrs_label(score), "components": comps}
+
+
+def sector_macro_beta(key) -> float:
+    """Per-sector sensitivity to a risk-OFF macro reading, in [-1, +1]. Keyed by
+    SPDR ticker (sector pages) OR GICS / display sector name (stock library);
+    0.0 for anything not in the table (ETFs, factors, unknowns). The lookup is
+    case-insensitive on names so spelling variants still resolve."""
+    if not key:
+        return 0.0
+    tbl = config.load()["engine"]["confluence"].get("sector_macro_beta") or {}
+    if key in tbl:
+        return float(tbl[key])
+    lk = str(key).strip().lower()
+    for k, v in tbl.items():
+        if str(k).strip().lower() == lk:
+            return float(v)
+    return 0.0
