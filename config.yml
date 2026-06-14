@@ -69,6 +69,9 @@ fred:
       NFCICREDIT: nfci_credit     # credit subindex
       NFCILEVERAGE: nfci_leverage # leverage subindex (debt + equity)
       STLFSI4: stlfsi             # St. Louis Fed Financial Stress Index (weekly)
+    funding_stress:               # commercial-paper credit/funding stress (engine/conditions.systemic_stress)
+      RIFSPPNAAD90NB: aa_cp_90d   # 90d AA nonfinancial CP rate (top tier)
+      RIFSPPNA2P2D90NB: a2p2_cp_90d  # 90d A2/P2 nonfinancial CP rate (lower tier); A2/P2 spread = a2p2 - aa
     recession:                    # forward + concurrent recession reads
       SAHMREALTIME: sahm          # real-time Sahm rule (>=0.50 => recession underway)
       RECPROUSM156N: recession_prob   # Chauvet-Piger smoothed recession probability (%)
@@ -419,6 +422,16 @@ eia:
   supply:                          # oil-page supply read
     range_lookback_d: 1825         # 5y range for the stocks z / percentile
     trend_window_d: 28             # ~4-week stocks/production change
+
+# =============================================================================
+# OFR Financial Stress Index — daily 33-variable global stress with functional +
+# regional decomposition (keyless CSV). Feeds engine/conditions.systemic_stress;
+# the Funding leg embeds a free offshore-dollar / x-ccy-basis proxy and the EM leg
+# is genuinely additive vs the US-centric NFCI. See research/DATA_SIGNAL_EXPANSION_2026.md
+# =============================================================================
+ofr_fsi:                           # distinct from the OFR funding-rates collector (collectors/ofr.py, group "ofr")
+  fsi_url: https://www.financialresearch.gov/financial-stress-index/data/fsi.csv
+  retries: 4
 
 cot:
   socrata_url: https://publicreporting.cftc.gov/resource/6dca-aqww.json   # legacy futures-only
@@ -879,6 +892,12 @@ engine:
   conditions:
     nfci_change_window_d: 65        # ~13 weeks: NFCI tightening/loosening trend
     nfci_pctile_lookback_d: 1260    # ~5y percentile of the conditions level
+    systemic_stress:                # OFR FSI + commercial-paper spreads (research/DATA_SIGNAL_EXPANSION_2026.md)
+      fsi_pctile_lookback_d: 1260   # ~5y percentile of the OFR FSI level
+      fsi_change_window_d: 65       # ~13 weeks: FSI rising/easing trend
+      cp_pctile_lookback_d: 1260    # ~5y percentile of the CP spreads
+      elevated_pctile: 0.80         # FSI/CP percentile -> "elevated stress"
+      acute_pctile: 0.95            # FSI/CP percentile -> "acute stress"
     labor:                          # high-frequency real-activity nowcast (research/REAL_ACTIVITY_NOWCAST.md)
       claims_yoy_window_d: 252      # ~1y change of the 4wk-MA claims level (rising = labor cooling)
       claims_z_lookback_d: 756      # ~3y rolling z of the 4wk-MA claims level

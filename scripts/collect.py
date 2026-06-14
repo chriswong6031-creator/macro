@@ -44,6 +44,7 @@ def all_adapters() -> dict:
         ("sovereign", "collectors.sovereign", "SovereignAdapter"),     # ECB euro-area + JGB sovereign yields (Bonds Phase 5)
         ("frbsf_sentiment", "collectors.frbsf", "NewsSentimentAdapter"),  # SF Fed Daily News Sentiment (real-activity nowcast)
         ("eia", "collectors.eia", "EiaAdapter"),                       # petroleum supply (Weekly Petroleum Status)
+        ("ofr_fsi", "collectors.ofr_fsi", "OfrFsiAdapter"),            # OFR Financial Stress Index (functional + regional decomposition)
         # FINRA short interest (Phase 3) is ticker-indexed, fetched from build_factors (like EDGAR), not here.
         ("sentiment_naaim", "collectors.sentiment", "NaaimAdapter"),
         ("sentiment_aaii", "collectors.sentiment", "AaiiAdapter"),
