@@ -22,6 +22,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from engine.conditions import sector_macro_beta  # noqa: E402
 from engine.cycles import analyze  # noqa: E402
 from engine.playbook import SECTOR_NAMES  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
@@ -54,8 +55,24 @@ def current_liquidity() -> str | None:
     return liq if liq in ("expanding", "contracting", "neutral") else None
 
 
+def current_macro() -> float | None:
+    """The live aggregate macro-risk score (MRS, 0..1) the engine last computed
+    (regime/latest.json `macro_risk.score`). Threaded into analyze() as the
+    risk-OFF conviction modifier on buy setups (scaled per name by its sector
+    sensitivity); None when unavailable so the ladder omits the macro context."""
+    p = config.data_dir() / "regime" / "latest.json"
+    if not p.exists():
+        return None
+    try:
+        v = (json.loads(p.read_text()).get("macro_risk") or {}).get("score")
+    except Exception:  # noqa: BLE001
+        return None
+    return float(v) if isinstance(v, (int, float)) else None
+
+
 def _one(ticker: str, close: pd.Series, high: pd.Series | None,
-         name: str, sector: str, liquidity: str | None = None) -> dict | None:
+         name: str, sector: str, liquidity: str | None = None,
+         macro_drag: float | None = None, macro_beta: float = 0.0) -> dict | None:
     c = close.dropna()
     if len(c) < 300:
         return None
@@ -65,7 +82,8 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
     kind = "crypto" if ticker.endswith("-USD") else "equity"
     # US net-liquidity is a single macro regime that applies to every US-listed
     # name — and to crypto (BTC tracks it) — so the same live label conditions all.
-    res = analyze(c, high, kind=kind, liquidity=liquidity)
+    res = analyze(c, high, kind=kind, liquidity=liquidity,
+                  macro_drag=macro_drag, macro_beta=macro_beta)
     if not res.get("ladder"):
         return None
     month = int(c.index.max().month)
@@ -165,11 +183,14 @@ def main() -> int:
     outdir.mkdir(parents=True, exist_ok=True)
 
     liq = current_liquidity()
-    log.info("net-liquidity regime for library: %s", liq or "unknown")
+    drag = current_macro()
+    log.info("net-liquidity regime for library: %s · macro-risk: %s",
+             liq or "unknown", "—" if drag is None else f"{drag:.2f}")
     index, built, failed = [], 0, 0
     for ticker, close, high, name, sector in universe():
         try:
-            rec = _one(ticker, close, high, name, sector, liquidity=liq)
+            rec = _one(ticker, close, high, name, sector, liquidity=liq,
+                       macro_drag=drag, macro_beta=sector_macro_beta(sector))
         except Exception as e:  # noqa: BLE001 — one bad ticker must not kill the library
             log.debug("library %s failed: %s", ticker, e)
             rec = None

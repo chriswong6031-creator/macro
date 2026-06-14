@@ -151,15 +151,42 @@ def weight_decomposition(fund: str, lookback_days: int | None = None) -> pd.Data
     return dec
 
 
-def _ladder_for(ticker: str, min_hist: int) -> dict | None:
+def _live_macro_context() -> tuple[str | None, float | None]:
+    """(net-liquidity regime, macro-risk drag) from regime/latest.json; (None,None)
+    if unavailable. Lets the accumulation/ETF overlays pass the SAME macro context
+    into analyze() that the sector cards use, so the overlay ladder can no longer
+    disagree with the card for the same stock."""
+    import json
+    p = config.data_dir() / "regime" / "latest.json"
+    if not p.exists():
+        return None, None
+    try:
+        j = json.loads(p.read_text())
+    except Exception:  # noqa: BLE001
+        return None, None
+    liq = j.get("liquidity_overlay")
+    liq = liq if liq in ("expanding", "contracting", "neutral") else None
+    drag = (j.get("macro_risk") or {}).get("score")
+    return liq, (float(drag) if isinstance(drag, (int, float)) else None)
+
+
+def _ladder_for(ticker: str, min_hist: int, *, liquidity: str | None = None,
+                macro_drag: float | None = None, macro_beta: float = 0.0) -> dict | None:
     """The stock's calibrated cycle/ladder state — the 'is a buy signal forming?'
-    confirmation layer. Reuses engine.cycles.analyze; None if too little history."""
+    confirmation layer. Reuses engine.cycles.analyze; None if too little history.
+
+    Threads the live macro context (net-liquidity regime, macro-risk drag × this
+    name's sector beta) so this overlay ladder matches the sector-card ladder for
+    the same stock; defaults keep it a no-op. Crypto tickers (-USD) get the crypto
+    cycle preset, mirroring build_stock_library."""
     px = store.read("stocks", str(ticker).replace(".", "-"))
     if px is None or "close" not in px or len(px) < min_hist:
         return None
     try:
         from engine.cycles import analyze
-        lad = analyze(px["close"], px.get("high")).get("ladder")
+        kind = "crypto" if str(ticker).endswith("-USD") else "equity"
+        lad = analyze(px["close"], px.get("high"), kind=kind, liquidity=liquidity,
+                      macro_drag=macro_drag, macro_beta=macro_beta).get("ladder")
     except Exception as e:  # noqa: BLE001 — confirmation is additive, never fatal
         log.debug("cycle read failed for %s: %s", ticker, e)
         return None
@@ -190,21 +217,31 @@ def volume_surge(ticker: str, recent: int = 5, base: int = 20) -> dict | None:
     return {"ratio": round(ratio, 2), "surging": ratio >= x}
 
 
-def accumulation_signals(fund: str) -> list[dict]:
+def accumulation_signals(fund: str, *, liquidity: str | None = None,
+                         macro_drag: float | None = None,
+                         macro_beta: float | None = None) -> list[dict]:
     """Holdings whose residual weight change clears the config threshold, each
     enriched with the stock's cycle state. `confirmed` = accumulating AND the
-    stock is technically basing/turning up (the strongest combination)."""
+    stock is technically basing/turning up (the strongest combination).
+
+    `liquidity`/`macro_drag`/`macro_beta` are threaded into each holding's ladder
+    so the overlay matches the sector card. macro_beta defaults to the FUND's
+    sector sensitivity (all holdings sit in that sector)."""
     cfg = _cfg()
     pp = cfg.get("active_change_pp", 0.15)
     pct = cfg.get("active_change_pct", 8)
     min_hist = cfg.get("min_price_history", 60)
+    if macro_beta is None:
+        from engine.conditions import sector_macro_beta
+        macro_beta = sector_macro_beta(fund)
     dec = weight_decomposition(fund)
     if dec is None:
         return []
     flagged = dec[(dec["active_change"].abs() >= pp) | (dec["active_pct"].abs() >= pct)]
     out = []
     for tk, row in flagged.iterrows():
-        ladder = _ladder_for(str(tk), min_hist)
+        ladder = _ladder_for(str(tk), min_hist, liquidity=liquidity,
+                             macro_drag=macro_drag, macro_beta=macro_beta)
         direction = "accumulating" if row["active_change"] > 0 else "distributing"
         confirmed = bool(
             direction == "accumulating" and ladder
@@ -227,10 +264,11 @@ def accumulation_signals(fund: str) -> list[dict]:
 def all_accumulation_signals() -> list[dict]:
     """Flattened, magnitude-sorted accumulation signals across every sector SPDR."""
     funds = config.load()["sponsors"]["sector_funds"]
+    liq, drag = _live_macro_context()
     out: list[dict] = []
     for fund in funds:
         try:
-            out.extend(accumulation_signals(fund))
+            out.extend(accumulation_signals(fund, liquidity=liq, macro_drag=drag))
         except Exception as e:  # noqa: BLE001 — one fund must not kill the rest
             log.error("accumulation_signals %s failed: %s", fund, e)
     return sorted(out, key=lambda r: -abs(r["active_change"]))
@@ -259,6 +297,9 @@ def etf_signals(etf: str, *, base_dir=None, is_active: bool = False,
     window = cfg.get("active_change_window_d", 5)
     min_hist = config.load()["holdings_signals"].get("min_price_history", 60)
     meta = meta or {}
+    # match the sector cards' macro context; per-holding sector beta is unknown for
+    # the mixed ETF universe, so only the liquidity/drag context is threaded here.
+    liq, drag = _live_macro_context()
 
     base = Path(base_dir or config.data_dir() / "etf_holdings") / etf
     ch = active_changes_dir(base, window)
@@ -286,7 +327,7 @@ def etf_signals(etf: str, *, base_dir=None, is_active: bool = False,
         w = wmap.get(tk)
         if w is not None and pd.notna(w) and abs(float(w)) < min_w:
             continue
-        ladder = _ladder_for(str(tk), min_hist)
+        ladder = _ladder_for(str(tk), min_hist, liquidity=liq, macro_drag=drag)
         direction = "accumulating" if pct > 0 else "trimming"
         confirmed = bool(direction == "accumulating" and ladder
                          and (ladder["state"] in BULLISH_STATES

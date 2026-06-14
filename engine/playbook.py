@@ -532,6 +532,7 @@ def build_playbook(f: pd.DataFrame, regime: pd.DataFrame, closes: pd.DataFrame,
                    latest: dict) -> dict:
     from engine.technicals import (_score_components, band_for, calibrate,
                                    season_line, seasonality, snapshot)
+    from engine.conditions import macro_risk_series, sector_macro_beta
     quad = latest["quad"]
     prefs = config.load()["engine"]["sector_preferences"]
     bench = config.load()["engine"]["rs_ranking"]["benchmark"]
@@ -539,7 +540,16 @@ def build_playbook(f: pd.DataFrame, regime: pd.DataFrame, closes: pd.DataFrame,
     trans = transition_stats(regime["quad"])
     evidence = risk_evidence(closes, regime, f)
     dial = exposure_dial(latest, evidence)
-    heat_cal = calibrate(closes, regime)
+    # Macro-risk overlay (risk-OFF, per-sector). The live scalar drives each
+    # sector's heat penalty; the historical series keeps calibrate()'s honesty
+    # bands matching the live score. Additive — None/0 => pre-overlay behavior.
+    macro_drag = (latest.get("macro_risk") or {}).get("score")
+    try:
+        mrs_series = macro_risk_series(f, regime)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("macro_risk_series failed: %s", e)
+        mrs_series = None
+    heat_cal = calibrate(closes, regime, macro_series=mrs_series)
 
     aligned = set(prefs.get(quad, [])) & set(stages.index)
 
@@ -553,7 +563,8 @@ def build_playbook(f: pd.DataFrame, regime: pd.DataFrame, closes: pd.DataFrame,
         tech = snapshot(close)
         seas = seasonality(close)
         heat = _score_components(t in aligned, dial["score"], row["stage"],
-                                 bool(row["extended"]), tech, row["pctile_252d"])
+                                 bool(row["extended"]), tech, row["pctile_252d"],
+                                 macro_drag=macro_drag, macro_beta=sector_macro_beta(t))
         band = band_for(heat["score"])
         cal = heat_cal.get(band)
         rec = {**row.to_dict(), "ticker": t, **{f"tech_{k}": v for k, v in tech.items()},

@@ -723,17 +723,26 @@ def sector_rows(playbook: dict | None, timing: dict | None = None) -> list[dict]
         cal_txt_zh = (f" 历史回测：过去得分落在 {r['heat_band']} 区间的板块，"
                       f"未来 3 个月跑赢市场的概率为 {cal['hit_pct']}%"
                       f"（平均 {cal['avg_excess_pct']:+}%，共 {cal['n']} 个样本）。" if cal else "")
+        # macro-risk leg: shown only when non-zero so the pre-overlay tooltip is
+        # byte-identical. Can be a penalty (cyclical, risk-off) or a small credit
+        # (defensive) — phrased as an adjustment, and it keeps the parts reconciling
+        # to the displayed heat number (the honesty contract).
+        _mp = parts.get("macro") or 0
+        macro_en = (f", plus a macro-risk adjustment for an elevated macro-risk backdrop on a "
+                    f"macro-sensitive sector ({_mp:+d})" if _mp else "")
+        macro_zh = (f"，并计入宏观风险调整（{_mp:+d}，宏观风险升高且板块对宏观敏感时）"
+                    if _mp else "")
         r["heat_tip"] = T(
             f"Heat {r['heat']} out of 100 — how strong and confirmed this sector looks right "
-            f"now (0 = ice-cold, 100 = red-hot). It adds up four things: how well it fits the "
+            f"now (0 = ice-cold, 100 = red-hot). It adds up these parts: how well it fits the "
             f"current market backdrop ({parts.get('regime')}), the health of its trend "
             f"({parts.get('tape')}), its chart strength ({parts.get('technicals')}), and a "
-            f"crowding penalty when it's overstretched ({parts.get('crowding')}). "
+            f"crowding penalty when it's overstretched ({parts.get('crowding')}){macro_en}. "
             f"Reading — {r['heat_label']}: {read_en}{cal_txt_en}",
             f"热度 {r['heat']}/100 — 衡量该板块此刻有多强、有多被确认（0 = 冰冷，100 = 火热）。"
-            f"它由四部分相加：与当前市场环境的契合度（{parts.get('regime')}）、"
+            f"它由以下几部分相加：与当前市场环境的契合度（{parts.get('regime')}）、"
             f"趋势的健康度（{parts.get('tape')}）、图表强度（{parts.get('technicals')}）、"
-            f"以及过度拉伸时的拥挤度扣分（{parts.get('crowding')}）。"
+            f"以及过度拉伸时的拥挤度扣分（{parts.get('crowding')}）{macro_zh}。"
             f"解读 — {TR(r['heat_label'])}：{read_zh}{cal_txt_zh}")
         tech_bits = [f"RSI {r['tech_rsi14']:.0f}" if r.get("tech_rsi14") is not None else "RSI —",
                      ("✓" if r.get("tech_above200") else "✗") + "200d",
@@ -882,16 +891,19 @@ def build_sector_pages(env: Environment, site: Path, generated: str) -> dict:
     import json as _json
 
     from collectors.sector_holdings import latest_fundamentals, latest_top10
+    from engine.conditions import sector_macro_beta
     from engine.cycles import LADDER, STATE_DISPLAY, analyze
     from engine.holdings_signals import accumulation_signals
     from engine.playbook import SECTOR_NAMES
-    from scripts.build_stock_library import current_liquidity
+    from scripts.build_stock_library import current_liquidity, current_macro
 
     cal_path = config.data_dir() / "regime" / "ladder_calibration.json"
     calibration = _json.loads(cal_path.read_text()) if cal_path.exists() else None
-    # live US net-liquidity regime — the orthogonal macro conviction modifier
-    # threaded into every per-sector / per-stock ladder read (None => omitted).
+    # live US net-liquidity regime + aggregate macro-risk score — the orthogonal
+    # macro conviction modifiers threaded into every per-sector / per-stock ladder
+    # read AND the accumulation overlay (so the overlay ladder matches the card).
     liq = current_liquidity()
+    drag = current_macro()
     tpl = env.get_template("sector.html.j2")
     outdir = site / "sectors"
     outdir.mkdir(parents=True, exist_ok=True)
@@ -903,7 +915,8 @@ def build_sector_pages(env: Environment, site: Path, generated: str) -> dict:
         etf = store.read("yahoo", fund)
         if etf is None:
             continue
-        res = analyze(etf["close"], liquidity=liq)
+        beta = sector_macro_beta(fund)
+        res = analyze(etf["close"], liquidity=liq, macro_drag=drag, macro_beta=beta)
         if not res.get("ladder"):
             continue
         holdings = []
@@ -914,7 +927,8 @@ def build_sector_pages(env: Environment, site: Path, generated: str) -> dict:
                 df = store.read("stocks", tick)
                 if df is None or len(df) < 300:
                     continue
-                h = analyze(df["close"], df.get("high"), liquidity=liq)
+                h = analyze(df["close"], df.get("high"), liquidity=liq,
+                            macro_drag=drag, macro_beta=beta)
                 if not h.get("ladder"):
                     continue
                 h["mtf_json"] = _json2.dumps(h.get("mtf", {}))
@@ -938,7 +952,9 @@ def build_sector_pages(env: Environment, site: Path, generated: str) -> dict:
         buy_zone = sum(1 for h in holdings if h["ladder"]["state"] in BUY_ZONE_STATES)
         s = {"fund": fund, "name": SECTOR_NAMES.get(fund, fund),
              "mtf_json": _json2.dumps(res.get("mtf", {})), **res,
-             "holdings": holdings, "accumulation": accumulation_signals(fund)}
+             "holdings": holdings,
+             "accumulation": accumulation_signals(fund, liquidity=liq,
+                                                  macro_drag=drag, macro_beta=beta)}
         html = tpl.render(s=s, state_styles=STATE_STYLES, calibration=calibration,
                           ladder_order=LADDER, state_display=STATE_DISPLAY,
                           generated_utc=generated)

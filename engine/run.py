@@ -98,6 +98,27 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("conditions layer failed: %s", e)
         latest["conditions"] = None
+    # Macro-risk score (MRS, 0..1): one deterministic risk-OFF gauge folded from
+    # the conditions/regime legs above. Derived from macro_risk_series (one coherent
+    # as-of date) — NOT from the latest dict, whose legs can straddle two release
+    # dates on a cadence-lag day — so the live score matches the calibrate() bands
+    # by construction. Computed BEFORE the playbook so the sector heat + per-stock
+    # ladder overlays can read it. Additive, never fatal. See MACRO_RISK_INTEGRATION.
+    try:
+        from engine.conditions import macro_risk_snapshot
+        latest["macro_risk"] = macro_risk_snapshot(f, regime)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("macro-risk score failed: %s", e)
+        latest["macro_risk"] = None
+    # Dislocation Gate-1: the Fed-put master switch that CONDITIONS the capitulation
+    # gauge (buyable washout vs falling-knife). Additive risk filter, reuses the
+    # conditions snapshot. See engine/dislocation.py + research/DISLOCATION_VALIDATION.md.
+    try:
+        from engine.dislocation import snapshot as dislocation_snapshot
+        latest["dislocation"] = dislocation_snapshot(f, latest.get("conditions"))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("dislocation layer failed: %s", e)
+        latest["dislocation"] = None
     try:
         latest["playbook"] = build_playbook(f, regime, yahoo_closes(), latest)
     except Exception as e:  # noqa: BLE001 — conclusions are additive, never fatal
