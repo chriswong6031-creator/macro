@@ -2,6 +2,29 @@
 
 Newest first. Each entry: what was decided, why, and what would change it.
 
+## 2026-06-14 — Vector point-in-time: the "valuation regression refit" gap was a PHANTOM; proven causal + guarded
+
+**D-vec-PIT. Investigated the roadmap's "expanding-window refit of regression valuation
+bands" item — it does NOT exist in the live engine.** The roadmap (workflow-generated)
+claimed full-sample regression fits (difficulty-regression R²=0.944, Metcalfe log-log,
+NVTS thresholds) silently look-ahead-bias their bands. Verified by code inspection +
+empirically: those models were Tier-3 REJECTED and never built. The live valuation logic
+is ALREADY rolling/causal — MVRV-Z uses a rolling std + rolling percentile, Mayer a rolling
+200d MA, valuation_state a hysteresis on FIXED domain thresholds (Mayer>2.4 etc. — economic
+priors, not sample-fits), every `_pctile` a causal `rolling().rank(pct=True)`. The only
+non-rolling `.mean()/.std()` is inside `_zscore`, where the object is already a rolling
+window. EMPIRICAL AUDIT (the proof): recomputed compute_all on inputs truncated at
+2023-06-01 and compared the overlap ≤2023-02-01 vs the full run — **all 76 numeric signals
+AND every state signal are byte-identical at past dates** (0 look-ahead leaks >1%). So
+there was nothing to refit; the engine is point-in-time. DELIVERABLE (the durable form of
+the discipline): tests/test_vector_pit.py institutionalizes it — recompute-on-truncated ==
+full at past dates, for numerics (≤1% drift) + states (exact), failing on any future
+full-sample fit / forward window / leaked bar. REMAINING (narrow, separate, NOT done): the
+data-VINTAGE issue — FRED returns revised finals, so historical M2 / payrolls in the store
+are revised values not as-of vintages (ALFRED realtime_start would fix it). Impact is small
+(M2 revisions are minor; the market-priced macro inputs — yields/OAS/VIX/DXY — are final),
+so deferred as low-value/high-complexity vs the Tier-2 factor list.
+
 ## 2026-06-13 — Vector ensemble capstone: tested a principled ensemble, KEPT the heuristic (validated)
 
 **D-vec-ENSEMBLE. The deferred capstone — a fixed-form, orthogonalized, gate-passed
