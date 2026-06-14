@@ -718,12 +718,19 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
                   f"周期低点（{cyc['dcl_price']}）。") if weekly_ok else \
                  "可等待周线转向，或在其转向前先建半仓。"
     elif cyc["above_ma10"] and cyc["ma10_rising"] and not late:
-        hot = []
-        if (d.get("rsi14") or 50) > 70:
-            hot.append(f"RSI {d.get('rsi14'):.0f}")
-        if (d.get("stoch") or 50) > 90:
-            hot.append(f"StochRSI {d.get('stoch'):.0f}")
-        if hot:
+        # "Short-term overbought" is gated on RSI(14) — the standard 0-100 gauge.
+        # StochRSI SATURATES at 100 on any healthy momentum thrust (it measures
+        # where RSI sits within its own recent range, so the first leg up off a
+        # base pins it to 100), so used as a STANDALONE trigger it mislabels
+        # strong young uptrends as "nearing a high / take profits" — e.g. the
+        # MCD/JNJ June-2026 misfire read RSI 55 / 67 (mid-range, NOT overbought)
+        # yet StochRSI 100. So StochRSI may only CORROBORATE an already-overbought
+        # RSI here; on its own it can't flip a rising mid-cycle name off RALLY ON.
+        rsi14 = d.get("rsi14") or 50
+        if rsi14 > 70:
+            hot = [f"RSI {rsi14:.0f}"]
+            if (d.get("stoch") or 50) > 90:
+                hot.append(f"StochRSI {d.get('stoch'):.0f}")
             state = "TOP WATCH"
             why = (f"Mid-cycle (day {cyc['dc_day']}) and short-term overbought "
                    f"({', '.join(hot)}).")
