@@ -1135,6 +1135,21 @@
         {% else %}
           <p class="muted sm">{{ t('No scheduled catalysts in the window.', '窗口内无排定催化。') }}</p>
         {% endif %}
+        {% if prediction_markets and prediction_markets.events %}
+        <div class="section-title" style="margin-top:16px">{{ t('Market-implied odds', '市场隐含概率') }} <span class="muted" style="font-weight:400;text-transform:none">· {{ prediction_markets.source }}</span></div>
+        {% for e in prediction_markets.events %}
+        <div style="margin-bottom:9px">
+          <div class="sm" style="margin-bottom:2px"><b>{{ t(e.label_en, e.label_zh) }}</b>{% if e.end_date %} <span class="muted">{{ e.end_date }}</span>{% endif %}</div>
+          {% for o in e.outcomes[:3] %}
+          <div style="display:flex;align-items:baseline;gap:6px;font-size:12px;padding:1px 0">
+            <span style="flex:1;color:var(--muted)">{{ o.outcome }}</span>
+            <b>{{ o.prob }}%</b>{% if o.chg_pp is not none and o.chg_pp != 0 %}<span class="{{ 'pos' if o.chg_pp > 0 else 'neg' }}" style="font-size:11px">{{ '%+.1f'|format(o.chg_pp) }}</span>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+        <p class="muted" style="font-size:10px;margin:2px 0 0">{{ t('Crowd expectation, not a forecast.', '群体预期，非预测。') }}</p>
+        {% endif %}
       </div>
     </div>
     <p class="mn-disc">{{ t(macro_news_disclaimer, macro_news_disclaimer_zh) }}</p>
