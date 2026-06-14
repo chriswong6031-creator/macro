@@ -190,7 +190,7 @@
   .prob .bar i { display: block; height: 100%; border-radius: 7px; }
   .prob .pc { flex: 0 0 38px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
   .pdial { display: flex; gap: 4px; margin: 6px 0 12px; }
-  .pdial span { flex: 1; text-align: center; font-size: 11.5px; font-weight: 700; padding: 7px 4px; border-radius: 8px;
+  .pdial > span { flex: 1; text-align: center; font-size: 11.5px; font-weight: 700; padding: 7px 4px; border-radius: 8px;
                 background: var(--panel2); color: var(--muted); border: 1px solid var(--line); }
   .pdial .on-def { background: color-mix(in srgb, var(--down) 80%, var(--panel)); color: #fff; border-color: transparent; }
   .pdial .on-car { background: color-mix(in srgb, var(--warn) 75%, var(--panel)); color: #1a1a1a; border-color: transparent; }
@@ -520,6 +520,47 @@
   </div>
 
   {% set SECZH = {'Technology':'科技','Industrials':'工业','Basic Materials':'原材料','Financial Services':'金融','Consumer Cyclical':'可选消费','Healthcare':'医疗保健','Utilities':'公用事业','Consumer Defensive':'必需消费','Energy':'能源','Communication Services':'通信服务','Real Estate':'房地产'} %}
+
+  <!-- ===================== TOP SETUPS (selection × timing) ===================== -->
+  {% if setups and setups.buy %}
+  <div class="panel span12" id="top-setups">
+    <h2>{{ t('⚡ Top setups — mean-reversion entries on decent names', '⚡ 顶级配置 — 优质个股的均值回归入场') }}
+      <span class="note" style="text-transform:none">· {{ t('cycle + mean-reversion entry', '周期 + 均值回归入场') }}</span>
+      {{ help("The actionable shortlist — REVERSAL-led after the deep-history correction. On ~35 years of A-share data, cross-sectional MOMENTUM is NOT a validated edge; short-term <b>reversal</b> is (research/CHINA_HK_STOCK_SIGNALS.md, reports/china-residual-alpha-deep.md). So this surfaces decent-quality names (some residual relative strength) sitting at a <b>cycle-confirmed mean-reversion entry</b> — a recent <b>pullback</b>, not an extended spike. <b>setup</b> LEADS with the validated effects (the calibrated cycle entry + the pullback/reversal overlay); the residual is only a light quality tiebreaker (0.35×), NOT the ranking driver. An <b>extended</b> name is reversal RISK, not a buy. Mean-reversion context to size and confirm — not a buy list.", "可操作的精选名单 —— 经深度历史校正后改为均值回归主导。在约35年的A股数据上，横截面动量并非有效优势；短期<b>反转</b>才是（research/CHINA_HK_STOCK_SIGNALS.md、reports/china-residual-alpha-deep.md）。因此这里筛选出具备一定残差相对强度、且处于<b>周期确认的均值回归入场点</b>（近期<b>回调</b>而非急涨过热）的优质个股。<b>setup</b> 以已验证的效应为主（校准的周期入场＋回调/反转叠加）；残差仅作轻量质量加权（0.35×），并非排序主导。<b>extended</b>（急涨）个股是反转风险而非买入。用于定仓与确认的均值回归背景 —— 而非买入清单。") }}
+    </h2>
+    <table class="sortable">
+      <thead><tr>
+        <th class="l">{{ t('Stock', '个股') }}</th>
+        <th class="l">{{ t('Sector', '板块') }}</th>
+        <th>{{ t('alpha z', '阿尔法 z') }}</th>
+        <th>{{ t('sector rank', '板块排名') }}</th>
+        <th class="l">{{ t('cycle state', '周期状态') }}</th>
+        <th class="l">{{ t('entry', '入场') }}</th>
+        <th>{{ t('setup', '配置分') }}</th>
+      </tr></thead>
+      <tbody>
+      {% for r in setups.buy %}
+      <tr>
+        <td class="l"><a href="china_stock.html#{{ r.ticker }}"><b>{{ r.ticker }}</b></a> <span class="note">{{ nm(r.name) }}</span></td>
+        <td class="l note">{{ t(r.sector, SECZH.get(r.sector, r.sector)) }}</td>
+        <td><b class="{{ 'pos' if (r.alpha or 0)>=0 else 'neg' }}">{{ '%+.2f'|format(r.alpha) if r.alpha is not none else '—' }}</b></td>
+        <td class="note">{{ r.sector_rank }}/{{ r.sector_n }}</td>
+        <td class="l"><span class="lad {{ 'up' if r.dir=='up' else ('down' if r.dir=='down' else 'flat') }}">{{ td(r.label or r.state) }}</span></td>
+        <td class="l">{% if r.alpha_entry %}<span class="alpha-entry ae-{{ r.alpha_entry }}">{{ r.alpha_entry }}</span>{% endif %}</td>
+        <td><b>{{ '%+.2f'|format(r.setup) if r.setup is not none else '—' }}</b></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% if setups.laggards %}
+    <p class="note" style="margin:11px 0 5px;text-transform:none">{{ t('Weakest relative momentum (laggards) — distribution risk:', '相对动量最弱（落后股）— 派发风险：') }}</p>
+    <p style="margin:0;line-height:2">
+      {% for r in setups.laggards %}<a href="china_stock.html#{{ r.ticker }}" style="margin-right:14px;white-space:nowrap"><b>{{ r.ticker }}</b> <span class="note">{{ nm(r.name) }}</span> <span class="neg">{{ '%+.2f'|format(r.alpha) }}</span></a>{% endfor %}
+    </p>
+    {% endif %}
+    <p class="note" style="margin:8px 0 0;font-size:11px">{{ t('Cycle entry + mean-reversion (the validated A-share effects), with residual relative strength as a light quality tiebreaker. Deep-history corrected: A-shares mean-revert — momentum is not an edge. A shortlist to size and confirm, not a buy list; cycle state is a drawdown/structure tool, not a timing oracle.', '周期入场 + 均值回归（A股已验证的效应），残差相对强度仅作轻量质量加权。经深度历史校正：A股均值回归 —— 动量并非优势。用于定仓与确认的名单，而非买入清单；周期状态是回撤/结构工具，而非择时神谕。') }}</p>
+  </div>
+  {% endif %}
 
   <!-- ===================== MEAN-REVERSION WATCH (the validated A-share signal) ===================== -->
   {% if reversal and reversal.watch %}

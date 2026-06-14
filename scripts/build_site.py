@@ -807,30 +807,61 @@ def action_board(sector_timing: dict, notable: list[dict]) -> dict:
             avoid.append(item)
     buy_soon.sort(key=lambda x: (x["days"] if x["days"] is not None else 99))
     # ----- standout-stock ranking ------------------------------------------------
-    # Rank by the engine's OWN calibrated entry-quality (|eq_score|), not just the
-    # urgency bucket — a 'strong' fresh buy should outrank a 'minimal' one (the old
-    # code sorted on bucket+ETA only and never used the conviction it computed).
-    # Then prefer fresher signals. A soft conviction floor drops 'minimal' (<15)
+    # Within each urgency tier, rank by the alpha-aware SETUP score (selection =
+    # sector-neutral residual momentum × timing = the calibrated cycle entry +
+    # reversal overlay; see engine/setups.py). This upgrades the old |eq_score|-only
+    # order so a sector-neutral LEADER on a fresh, constructive entry outranks an
+    # equally-timed laggard. setup_score is always set (timing-only fallback when a
+    # name has no residual), so every card ranks on the same scale. Then prefer
+    # fresher signals. A soft conviction floor still drops 'minimal' (|eq|<15) timing
     # setups, but only while enough genuine ones remain so the strip never starves.
     order = {"now": 0, "imminent": 1, "exit": 2}
 
     def _conv(n):
         return abs(n.get("eq_score") or 0)
 
+    def _decis(n):
+        # decisiveness in the tier's DIRECTION: buys want the highest setup first,
+        # exits want the most-negative (strongest sell) first.
+        ss = n.get("setup_score")
+        if ss is None:                                  # defensive — always set now
+            ss = (n.get("eq_score") or 0) / 100.0
+        return ss if n.get("urgency") == "exit" else -ss
+
     def _rank(n):
-        return (order.get(n["urgency"], 9), -_conv(n),
+        # exact setup decisiveness leads; the factor composite breaks near-ties only
+        # (a crowded/decayed leg — it should settle ties, never override the setup).
+        return (order.get(n["urgency"], 9), _decis(n),
+                -(n.get("factor_z") or 0.0),
                 n.get("age_days") if n.get("age_days") is not None else 999,
                 n["days"] if n.get("days") is not None else 99)
 
-    CAP, FLOOR = 24, 15
+    from engine.setups import norm_company
+
+    # A soft per-sector cap keeps one hot sector (e.g. all of XLK in a tech rip) from
+    # crowding out the board — the best names per sector fill first, then any spare
+    # slots backfill from the overflow (already in rank order). Dual-class listings
+    # (GOOG + GOOGL) are collapsed to the best-ranked variant.
+    CAP, FLOOR, PER_SECTOR = 24, 15, 5
     strong = [n for n in notable if _conv(n) >= FLOOR]
     pool = strong if len(strong) >= 6 else notable
-    seen, notable_clean = set(), []
+    seen, seen_name, by_sec, picked, overflow = set(), set(), {}, [], []
     for n in sorted(pool, key=_rank):
         if n["ticker"] in seen:
             continue
+        nm = norm_company(n.get("name"))
+        if nm and nm in seen_name:                      # dual-class / multi-listing dupe
+            continue
         seen.add(n["ticker"])
-        notable_clean.append(n)
+        if nm:
+            seen_name.add(nm)
+        sec = n.get("sector")
+        if by_sec.get(sec, 0) < PER_SECTOR:
+            by_sec[sec] = by_sec.get(sec, 0) + 1
+            picked.append(n)
+        else:
+            overflow.append(n)
+    notable_clean = (picked + overflow)[:CAP]
     return {"buy_now": buy_now, "buy_soon": buy_soon, "take_profits": take_profits,
             "hold": hold, "avoid": avoid, "notable": notable_clean[:CAP]}
 
@@ -1096,6 +1127,38 @@ def build_alpha_data(site: Path) -> dict | None:
     return alpha
 
 
+def build_insider_data(site: Path) -> dict | None:
+    """Per-ticker insider-conviction map (net Form-4 buying as bps of market cap over
+    a trailing window + distinct-insider CLUSTER count) → factordata/insider_signals.
+    json, the CONFIRMER chip on the standout / Top-setups boards. Market cap is read
+    from the prior factors.json (slow-moving — a one-build lag is immaterial). Reuses
+    the validated net_mcap_bps construction (engine.equity_factors.insider_signals).
+    Additive + graceful: returns/writes nothing if the panel or caps are missing."""
+    from engine.equity_factors import insider_signals
+    mktcap = None
+    fp = site / "factordata" / "factors.json"
+    if fp.exists():
+        try:
+            tbl = (json.loads(fp.read_text()) or {}).get("table", [])
+            mktcap = pd.Series({r["ticker"]: (r.get("mktcap_bn") or 0) * 1e9
+                                for r in tbl if r.get("ticker") and r.get("mktcap_bn")})
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("insider mktcap load failed (%s)", e)
+    try:
+        sig = insider_signals(mktcap)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("insider signals failed: %s", e)
+        return None
+    if not sig:
+        return None
+    fdir = site / "factordata"
+    fdir.mkdir(parents=True, exist_ok=True)
+    (fdir / "insider_signals.json").write_text(
+        json.dumps(sig, separators=(",", ":"), default=str))
+    log.info("wrote insider_signals.json (%d names with 6mo Form-4 activity)", len(sig))
+    return sig
+
+
 def build_smartmoney_data(site: Path) -> dict | None:
     """Compute curated super-investor 13F holdings and write
     factordata/smartmoney.json (consumed by the per-stock "who holds this" panel +
@@ -1128,7 +1191,31 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
     from engine.cycles import LADDER, STATE_DISPLAY, analyze
     from engine.holdings_signals import accumulation_signals
     from engine.playbook import SECTOR_NAMES
+    from engine.setups import US_ALPHA_WEIGHT, timing_tilt
     from scripts.build_stock_library import current_liquidity, current_macro
+
+    # per-ticker sector-neutral residual alpha (already computed by build_alpha_data
+    # and passed in) — used to enrich the front-page "Standout individual stocks"
+    # cards with an alpha sector rank + reversal overlay and an alpha-aware setup
+    # score (selection × timing). Absent => cards fall back to pure cycle timing.
+    alpha_pt = (alpha or {}).get("per_ticker", {})
+    # confirmer legs on those same cards: a distinct-insider Form-4 BUY cluster
+    # (insider_signals.json, written by build_insider_data just above) and the
+    # cross-sectional factor composite (factors.json table) as a light tiebreaker.
+    # Both additive + graceful — absent => the card simply omits that chip.
+    insider_map: dict[str, dict] = {}
+    factor_z: dict[str, float] = {}
+    try:
+        _ip = site / "factordata" / "insider_signals.json"
+        if _ip.exists():
+            insider_map = json.loads(_ip.read_text()) or {}
+        _fp = site / "factordata" / "factors.json"
+        if _fp.exists():
+            for _r in (json.loads(_fp.read_text()) or {}).get("table", []):
+                if _r.get("ticker") and _r.get("composite") is not None:
+                    factor_z[_r["ticker"]] = _r["composite"]
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("standout confirmer maps unavailable (%s)", e)
 
     cal_path = config.data_dir() / "regime" / "ladder_calibration.json"
     calibration = _json.loads(cal_path.read_text()) if cal_path.exists() else None
@@ -1191,6 +1278,21 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
                     sdir = lad.get("dir")
                     scolor = ("var(--up)" if sdir == "up"
                               else "var(--down)" if sdir == "down" else "var(--warn)")
+                    # alpha-aware setup score: selection (sector-neutral residual
+                    # momentum) × timing (cycle entry + reversal overlay). Falls back
+                    # to timing-only when the name has no residual, so EVERY card has
+                    # a setup_score on the same scale for ranking. NOT a new edge —
+                    # see engine/setups.py + research/US_STANDOUT_SETUP_SCORE.md.
+                    apt = alpha_pt.get(tick)
+                    az = apt.get("alpha") if apt else None
+                    a_entry = apt.get("entry") if apt else None
+                    tilt = timing_tilt(urg, lad.get("eq_dir"), a_entry)
+                    setup = round((US_ALPHA_WEIGHT * az + tilt) if az is not None
+                                  else tilt, 2)
+                    # confirmers: an insider BUY cluster (>=2 distinct insiders net
+                    # buying, Form-4 6mo) + the factor composite (light tiebreaker)
+                    ins = insider_map.get(tick) or {}
+                    ins_buy = ins.get("buyers", 0) >= 2 and (ins.get("net_mn") or 0) > 0
                     notable.append({"ticker": tick, "name": str(r.get("name", "")).title(),
                                     "sector": SECTOR_NAMES.get(fund, fund),
                                     "label": lad["label"], "action": lad.get("action"),
@@ -1203,6 +1305,15 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
                                     "eq_grade": lad.get("eq_grade"),
                                     "eq_grade_zh": lad.get("eq_grade_zh"),
                                     "score": lad.get("score"),
+                                    "setup_score": setup,
+                                    "alpha_z": az,
+                                    "alpha_sector_rank": apt.get("sector_rank") if apt else None,
+                                    "alpha_sector_n": apt.get("sector_n") if apt else None,
+                                    "alpha_entry": a_entry,
+                                    "factor_z": factor_z.get(tick),
+                                    "insider_buyers": ins.get("buyers") if ins_buy else None,
+                                    "insider_bps": ins.get("bps") if ins_buy else None,
+                                    "insider_net_mn": ins.get("net_mn") if ins_buy else None,
                                     "signal_date": lad.get("signal_date"),
                                     "age_days": lad.get("age_days"),
                                     "spark_svg": _mini_svg(spark, color=scolor, w=240, h=42,
@@ -1360,6 +1471,10 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("alpha data failed: %s", e)
     try:
+        build_insider_data(site)               # confirmer-chip map; read by sector pages + library
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("insider data failed: %s", e)
+    try:
         build_smartmoney_data(site)               # 13F super-investor holdings (CONTEXT)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("smart-money data failed: %s", e)
@@ -1393,6 +1508,17 @@ def main() -> int:
         src = config.ROOT / "templates" / asset
         if src.exists():
             (site / asset).write_text(src.read_text())
+    # broad "Top setups" board (selection × timing across the full S&P 1500),
+    # written by build_stock_library at the END of the prior build_site run —
+    # additive + graceful: absent (first run) => the board simply doesn't render.
+    top_setups = None
+    _sp = site / "factordata" / "setups.json"
+    if _sp.exists():
+        try:
+            top_setups = json.loads(_sp.read_text())
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("setups.json unreadable (%s)", e)
+
     # Macro news & catalysts (LEAF, additive, never fatal). Catalysts (FOMC + jobs
     # report) are keyless and always on; filtered headlines + the optional LLM brief
     # only when macro_news.enabled. News NEVER feeds any score.
@@ -1431,6 +1557,7 @@ def main() -> int:
         commodities=(latest.get("playbook") or {}).get("commodities", []),
         sector_timing=sector_timing,
         action_board=action_board(sector_timing, notable),
+        top_setups=top_setups,
         components_confirming=confirming,
         components_contradicting=contradicting,
         flip_plain=flip_plain_text(latest),
