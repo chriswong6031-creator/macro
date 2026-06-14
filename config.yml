@@ -1607,8 +1607,28 @@ bonds:
     stressed_score: 40           # <  => "stressed" (between => "mixed")
   calibration:
     split_date: "2013-01-01"      # split-half boundary for the discriminative drawdown IC
+  sovereign:                   # euro all-AAA 10y FRAGMENTATION spread bands (pp); JGB 2s10s
+    frag_elevated: 0.5         # ALL-minus-AAA 10y above this => elevated periphery stress
+    frag_stress: 1.0           # ...above this => fragmentation stress
   alerts:
     timeline_days: 120             # durable (debounced) state-changes are sparse; show ~4mo
+
+# =============================================================================
+# Foreign sovereign yields (Bonds dashboard Phase 5) — ECB euro-area curve +
+# Japan MoF JGB. The euro ALL-minus-AAA 10y spread is a free daily BTP-Bund-
+# style fragmentation proxy; JGB 2s10s tracks post-YCC normalization.
+# =============================================================================
+sovereign:
+  retries: 3
+  ecb_url: https://data-api.ecb.europa.eu/service/data/YC
+  ecb_series:                      # name -> ECB YC key (G_N_A = AAA-rated; G_N_C = all govt)
+    ez_aaa_2y:  B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y
+    ez_aaa_10y: B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y
+    ez_all_10y: B.U2.EUR.4F.G_N_C.SV_C_YM.SR_10Y
+  mof_url: https://www.mof.go.jp/jgbs/reference/interest_rate/data/jgbcm_all.csv
+  jgb_tenors:                      # name -> Japanese column header in jgbcm_all.csv
+    jgb_2y: "2年"
+    jgb_10y: "10年"
 
 # Home landing hub — combined alert feed from both dashboards
 home:

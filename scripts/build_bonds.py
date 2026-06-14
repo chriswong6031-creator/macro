@@ -64,6 +64,10 @@ CORR_REGIME = {"diversifying": ("Diversifying — bonds hedge", "分散化 — �
                "breakdown": ("Breakdown — bonds not hedging", "失效 — 债券不对冲", C["red"])}
 TAX_COLOR = {"bull_steepener": C["green"], "bull_flattener": C["teal"],
              "bear_steepener": C["amber"], "bear_flattener": C["red"]}
+FRAG_STATE = {"calm": ("Calm", "平静", C["green"]), "elevated": ("Elevated", "升高", C["amber"]),
+              "stress": ("Stress", "压力", C["red"])}
+JGB_STATE = {"steep": ("Steepening", "陡峭化", C["amber"]), "flat": ("Flat", "平坦", C["muted"]),
+             "inverted": ("Inverted", "倒挂", C["red"])}
 LEG_LABEL = {"recession": ("Recession", "衰退"), "drawdown": ("Drawdown", "回撤"),
              "credit": ("Credit", "信用"), "rates_vol": ("Rates vol", "利率波动"),
              "plumbing": ("Plumbing", "资金管道")}
@@ -71,7 +75,7 @@ LEG_LABEL = {"recession": ("Recession", "衰退"), "drawdown": ("Drawdown", "回
 VERDICT_GLYPH = {"CONFIRMED": ("✓", "measured", "已校准"), "DIRECTIONAL": ("~", "directional", "有方向性"),
                  "CONTEXT": ("·", "context", "仅背景"), "INVERTED": ("⇄", "inverted", "反向"),
                  "UNMEASURED": ("", "", "")}
-LEG_CALIB_KEY = {"recession": "recession_risk", "drawdown": "drawdown_risk",
+LEG_CALIB_KEY = {"recession": "recession", "drawdown": "drawdown",
                  "credit": "credit", "rates_vol": "rates_vol", "plumbing": "plumbing"}
 
 
@@ -250,6 +254,22 @@ def chart_corr(fr: pd.DataFrame, years=12) -> str:
     return _html(fig)
 
 
+def chart_sovereign(fr: pd.DataFrame, years=14) -> str:
+    d = _tail_years(fr, years)
+    cfg = config.load()["bonds"]["sovereign"]
+    fig = go.Figure()
+    for lvl, lbl, col in ((cfg["frag_elevated"], "elevated", C["amber"]), (cfg["frag_stress"], "stress", C["red"])):
+        fig.add_hline(y=lvl, line={"color": col, "width": 1, "dash": "dash"}, annotation_text=lbl, annotation_font_size=9)
+    if "euro_frag" in d:
+        _line(fig, d.index, d["euro_frag"], "Euro frag (all−AAA 10y)", C["red"], n=2)
+    if "jgb_2s10s" in d:
+        _line(fig, d.index, d["jgb_2s10s"], "JGB 2s10s", C["indigo"], axis="y2", n=2)
+    fig.update_layout(**{**PLOT, "height": 270,
+                         "yaxis": {"title": "euro frag (pp)", "gridcolor": C["grid"]},
+                         "yaxis2": {"overlaying": "y", "side": "right", "showgrid": False, "title": "JGB 2s10s (pp)"}})
+    return _html(fig)
+
+
 # --------------------------------------------------------------------------- #
 # view-model (display-ready, from the snapshot)
 # --------------------------------------------------------------------------- #
@@ -278,6 +298,9 @@ def _vm(snap: dict, fr: pd.DataFrame, calib: dict | None = None) -> dict:
     mv = MOVE_BAND.get(mb, (mb or "—", mb or "—", C["muted"]))
     reg = xa.get("regime")
     rg = CORR_REGIME.get(reg, (reg or "—", reg or "—", C["muted"]))
+    sv = p.get("sovereign", {})
+    fs = FRAG_STATE.get(sv.get("frag_state"), ("—", "—", C["muted"]))
+    js = JGB_STATE.get(sv.get("jgb_state"), (sv.get("jgb_state") or "—", sv.get("jgb_state") or "—", C["muted"]))
     hl = snap.get("health_label")
 
     def pc(v, n=0):  # percent of a 0..1 fraction
@@ -333,6 +356,13 @@ def _vm(snap: dict, fr: pd.DataFrame, calib: dict | None = None) -> dict:
             "corr": _r(xa.get("stock_bond_corr"), 2), "regime_en": rg[0], "regime_zh": rg[1],
             "color": rg[2], "hedge_working": xa.get("hedge_working"),
         },
+        "sovereign": {
+            "euro_frag": _r(sv.get("euro_frag")), "bund_10y": _r(sv.get("bund_10y")),
+            "frag_en": fs[0], "frag_zh": fs[1], "frag_color": fs[2],
+            "frag_direction": sv.get("frag_direction"),
+            "frag_direction_zh": {"widening": "扩大", "tightening": "收窄"}.get(sv.get("frag_direction"), ""),
+            "jgb_2s10s": _r(sv.get("jgb_2s10s")), "jgb_en": js[0], "jgb_zh": js[1], "jgb_color": js[2],
+        },
         "drivers": snap.get("drivers_for") or {},
         "alarms": snap.get("alarms") or [],
     }
@@ -382,6 +412,7 @@ def main() -> int:
     charts = {
         "health": chart_health(fr), "curve_now": chart_curve_now(f), "spreads": chart_spreads(fr),
         "credit": chart_credit(fr), "real": chart_real(fr), "move": chart_move(fr), "corr": chart_corr(fr),
+        "sovereign": chart_sovereign(fr),
     }
 
     # alert timeline (deterministic, recomputed each build)

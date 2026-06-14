@@ -7,81 +7,81 @@
     "note": "Discriminative calibration: each signal (as STRESS) vs strictly-forward S&P drawdown + NBER recession. IC = Spearman(stress, forward dd-depth). CONFIRMED needs positive sign in full+both halves AND high-tercile dd10 > base. No look-ahead."
   },
   "signals": {
-    "recession_risk": {
+    "recession": {
       "desc": "Recession-risk composite (0-100)",
       "span": "1971-01-04..2026-03-17",
       "n": 14402,
-      "ic_dd_full": 0.17,
-      "ic_dd_pre": 0.208,
-      "ic_dd_post": 0.013,
-      "ic_recession": 0.434,
+      "ic_dd_full": 0.164,
+      "ic_dd_pre": 0.205,
+      "ic_dd_post": 0.007,
+      "ic_recession": 0.445,
       "verdict": "CONFIRMED",
       "conditional": {
         "terciles": {
           "low": {
             "n": 4801,
-            "p_dd10": 0.051,
+            "p_dd10": 0.053,
             "mean_dd_depth_pct": 3.7,
-            "p_recession": 0.094
+            "p_recession": 0.089
           },
           "mid": {
             "n": 4800,
-            "p_dd10": 0.112,
-            "mean_dd_depth_pct": 4.3,
-            "p_recession": 0.147
+            "p_dd10": 0.109,
+            "mean_dd_depth_pct": 4.2,
+            "p_recession": 0.138
           },
           "high": {
             "n": 4801,
-            "p_dd10": 0.205,
+            "p_dd10": 0.207,
             "mean_dd_depth_pct": 6.2,
-            "p_recession": 0.467
+            "p_recession": 0.48
           }
         },
         "base_p_dd10": 0.123,
-        "high_edge_pp": 8.2,
+        "high_edge_pp": 8.4,
         "high_p_dd10_ci": [
-          0.141,
-          0.204,
-          0.282
+          0.142,
+          0.205,
+          0.283
         ]
       }
     },
-    "drawdown_risk": {
+    "drawdown": {
       "desc": "Drawdown-risk gauge (0-100, already MEASURED)",
       "span": "1973-03-05..2026-03-17",
       "n": 13837,
-      "ic_dd_full": 0.25,
-      "ic_dd_pre": 0.288,
-      "ic_dd_post": 0.123,
-      "ic_recession": 0.554,
+      "ic_dd_full": 0.248,
+      "ic_dd_pre": 0.287,
+      "ic_dd_post": 0.117,
+      "ic_recession": 0.564,
       "verdict": "CONFIRMED",
       "conditional": {
         "terciles": {
           "low": {
             "n": 4613,
-            "p_dd10": 0.034,
+            "p_dd10": 0.033,
             "mean_dd_depth_pct": 3.4,
-            "p_recession": 0.028
+            "p_recession": 0.018
           },
           "mid": {
             "n": 4612,
-            "p_dd10": 0.095,
+            "p_dd10": 0.099,
             "mean_dd_depth_pct": 4.1,
-            "p_recession": 0.14
+            "p_recession": 0.144
           },
           "high": {
             "n": 4612,
-            "p_dd10": 0.251,
+            "p_dd10": 0.248,
             "mean_dd_depth_pct": 6.8,
-            "p_recession": 0.552
+            "p_recession": 0.558
           }
         },
         "base_p_dd10": 0.127,
-        "high_edge_pp": 12.4,
+        "high_edge_pp": 12.1,
         "high_p_dd10_ci": [
-          0.179,
-          0.25,
-          0.325
+          0.177,
+          0.247,
+          0.322
         ]
       }
     },
@@ -206,38 +206,38 @@
       "desc": "Bond-stress composite = 100 - health score (the headline)",
       "span": "1971-01-04..2026-03-17",
       "n": 14402,
-      "ic_dd_full": 0.237,
-      "ic_dd_pre": 0.285,
-      "ic_dd_post": 0.055,
-      "ic_recession": 0.529,
+      "ic_dd_full": 0.235,
+      "ic_dd_pre": 0.284,
+      "ic_dd_post": 0.046,
+      "ic_recession": 0.539,
       "verdict": "CONFIRMED",
       "conditional": {
         "terciles": {
           "low": {
             "n": 4801,
-            "p_dd10": 0.04,
-            "mean_dd_depth_pct": 3.5,
-            "p_recession": 0.065
+            "p_dd10": 0.033,
+            "mean_dd_depth_pct": 3.4,
+            "p_recession": 0.058
           },
           "mid": {
             "n": 4800,
-            "p_dd10": 0.098,
-            "mean_dd_depth_pct": 4.0,
-            "p_recession": 0.091
+            "p_dd10": 0.104,
+            "mean_dd_depth_pct": 4.1,
+            "p_recession": 0.089
           },
           "high": {
             "n": 4801,
-            "p_dd10": 0.23,
+            "p_dd10": 0.231,
             "mean_dd_depth_pct": 6.6,
-            "p_recession": 0.548
+            "p_recession": 0.557
           }
         },
         "base_p_dd10": 0.123,
-        "high_edge_pp": 10.7,
+        "high_edge_pp": 10.8,
         "high_p_dd10_ci": [
-          0.163,
-          0.231,
-          0.303
+          0.168,
+          0.23,
+          0.305
         ]
       }
     }
@@ -362,25 +362,25 @@
     }
   },
   "weights_measured": {
-    "recession_risk": 0.323,
-    "drawdown_risk": 0.323,
+    "recession": 0.323,
+    "drawdown": 0.323,
     "credit": 0.129,
     "rates_vol": 0.194,
     "plumbing": 0.032
   },
   "weights_prior": {
-    "recession_risk": 1.0,
-    "drawdown_risk": 1.0,
+    "recession": 1.0,
+    "drawdown": 1.0,
     "credit": 0.8,
     "rates_vol": 0.6,
     "plumbing": 0.4
   },
   "composite_vs_best_leg": {
-    "composite_ic": 0.237,
-    "best_leg": "drawdown_risk",
-    "best_leg_ic": 0.25,
+    "composite_ic": 0.235,
+    "best_leg": "drawdown",
+    "best_leg_ic": 0.248,
     "delta": -0.013,
-    "verdict": "best single leg (drawdown_risk) BEATS the composite"
+    "verdict": "best single leg (drawdown) BEATS the composite"
   },
   "probit_reliability": {
     "brier": 0.1651,

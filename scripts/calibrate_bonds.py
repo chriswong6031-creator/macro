@@ -58,9 +58,11 @@ SPLIT_DEFAULT = "2013-01-01"   # ~midpoint of the composite's live span
 
 # signals to validate, expressed as STRESS (higher = worse health), with a prior
 # weight (the live composite's) so we can emit measured-informed weights.
+# keys MATCH the health-composite leg keys (engine.bonds._health_weights reads
+# weights_measured by these names), value = (frame column, prior weight, label).
 STRESS_LEGS = {
-    "recession_risk": ("recession_risk", 1.0, "Recession-risk composite (0-100)"),
-    "drawdown_risk": ("drawdown_risk", 1.0, "Drawdown-risk gauge (0-100, already MEASURED)"),
+    "recession": ("recession_risk", 1.0, "Recession-risk composite (0-100)"),
+    "drawdown": ("drawdown_risk", 1.0, "Drawdown-risk gauge (0-100, already MEASURED)"),
     "credit": ("stress_credit", 0.8, "HY-OAS credit stress (0-100)"),
     "rates_vol": ("stress_rates_vol", 0.6, "MOVE rates-vol stress (0-100)"),
     "plumbing": ("stress_plumbing", 0.4, "SOFR-IORB funding stress (0-100)"),

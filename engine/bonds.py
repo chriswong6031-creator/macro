@@ -36,6 +36,7 @@ See research/BOND_HEALTH_DASHBOARD.md.
 """
 from __future__ import annotations
 
+import json
 import math
 
 import numpy as np
@@ -44,6 +45,25 @@ import pandas as pd
 from engine import conditions
 from engine.indicators import pct_rank_window
 from lib import config, store
+
+
+def _health_weights() -> dict:
+    """The health-composite leg weights. Prefer the MEASURED weights from the last
+    calibration (scripts/calibrate_bonds → data/bonds/calibration.json), which scale
+    each prior by its split-half verdict (CONFIRMED 1.0 · DIRECTIONAL 0.5 · CONTEXT
+    0.25); fall back to the documented config prior when no calibration exists. This
+    is the forex pattern — the live engine reads the calibration artifact, so the
+    weights auto-refresh each weekly calibrate→build and a leg that tests as CONTEXT
+    stops over-contributing. Keys: recession, drawdown, credit, rates_vol, plumbing."""
+    prior = config.load()["bonds"]["health"]["weights"]
+    try:
+        cal = json.loads((config.data_dir() / "bonds" / "calibration.json").read_text())
+        w = cal.get("weights_measured")
+        if w and set(w) >= set(prior):
+            return {k: float(w[k]) for k in prior}
+    except Exception:  # noqa: BLE001 — no/!valid calibration -> prior
+        pass
+    return prior
 
 
 # --- small helpers -----------------------------------------------------------
@@ -285,8 +305,19 @@ def bonds_frame(f: pd.DataFrame) -> pd.DataFrame:
         out["repo_spike_bp"] = (sofr99.iloc[:, 0].reindex(f.index).ffill(limit=5)
                                 - sofr.iloc[:, 0].reindex(f.index).ffill(limit=5)) * 100.0
 
+    # --- sovereign / global (euro-area fragmentation + JGB) ------------------
+    ez_all, ez_aaa = store.read("sovereign", "ez_all_10y"), store.read("sovereign", "ez_aaa_10y")
+    if ez_all is not None and ez_aaa is not None:
+        out["euro_frag"] = (ez_all.iloc[:, 0].reindex(f.index).ffill(limit=7)
+                            - ez_aaa.iloc[:, 0].reindex(f.index).ffill(limit=7))   # ALL-AAA 10y = BTP-Bund-style proxy
+        out["bund_10y"] = ez_aaa.iloc[:, 0].reindex(f.index).ffill(limit=7)        # euro core safe rate
+    j2, j10 = store.read("sovereign", "jgb_2y"), store.read("sovereign", "jgb_10y")
+    if j2 is not None and j10 is not None:
+        out["jgb_2s10s"] = (j10.iloc[:, 0].reindex(f.index).ffill(limit=7)
+                            - j2.iloc[:, 0].reindex(f.index).ffill(limit=7))
+
     # --- composite health score (0..100, higher = healthier) -----------------
-    w = bcfg["health"]["weights"]
+    w = _health_weights()           # MEASURED weights from calibration (prior fallback)
     legs: dict[str, tuple[pd.Series, float]] = {}
     if "recession_risk" in out:
         legs["recession"] = (out["recession_risk"].clip(0, 100), w["recession"])
@@ -395,6 +426,21 @@ def bonds_snapshot(f: pd.DataFrame, fr: pd.DataFrame | None = None) -> dict:
         "hedge_working": (None if sb is None else sb < ccfg["low"]),
     }
 
+    # --- sovereign / global (euro fragmentation + JGB) -----------------------
+    scfg = bcfg["sovereign"]
+    frag = _last(_col(fr, "euro_frag"))           # last AVAILABLE (foreign data lags the US frame)
+    jgb = _last(_col(fr, "jgb_2s10s"))
+    sovereign = {
+        "euro_frag": frag, "bund_10y": _last(_col(fr, "bund_10y")),
+        "frag_state": (None if frag is None else
+                       ("stress" if frag >= scfg["frag_stress"] else
+                        ("elevated" if frag >= scfg["frag_elevated"] else "calm"))),
+        "frag_direction": _dir_word(_col(fr, "euro_frag"), 20),
+        "jgb_2s10s": jgb,
+        "jgb_state": (None if jgb is None else
+                      ("steep" if jgb >= 0.5 else ("flat" if jgb >= 0.0 else "inverted"))),
+    }
+
     # --- cycle phase ---------------------------------------------------------
     phase = _cycle_phase(g("spread_10y3m"), g("hy_pctile"), hy_dir, bcfg["cycle"])
 
@@ -414,7 +460,7 @@ def bonds_snapshot(f: pd.DataFrame, fr: pd.DataFrame | None = None) -> dict:
         "drawdown_risk": g("drawdown_risk"),
         "pillars": {
             "curve": curve, "credit": credit, "real_inflation": real_inflation,
-            "stress": stress, "cross_asset": cross_asset,
+            "stress": stress, "cross_asset": cross_asset, "sovereign": sovereign,
         },
         "stress_legs": {k.replace("stress_", ""): g(k) for k in fr.columns
                         if k.startswith("stress_") and g(k) is not None},
@@ -464,6 +510,15 @@ def _alarms(s: dict) -> list[dict]:
         out.append({"key": "plumbing", "severity": "medium",
                     "en": "SOFR drifting above IORB — creeping reserve scarcity in the funding markets.",
                     "zh": "SOFR 持续高于准备金利率 — 资金市场准备金趋于稀缺。"})
+    sv = s["pillars"].get("sovereign", {})
+    if sv.get("frag_state") == "stress":
+        out.append({"key": "sovereign", "severity": "high",
+                    "en": f"Euro-area fragmentation stress — the all-minus-AAA 10y spread is at {sv.get('euro_frag')}pp (periphery pulling away from the core).",
+                    "zh": f"欧元区分化压力 — 全体减AAA的10年利差达 {sv.get('euro_frag')}pp（外围与核心拉开）。"})
+    elif sv.get("frag_state") == "elevated" and sv.get("frag_direction") == "widening":
+        out.append({"key": "sovereign", "severity": "medium",
+                    "en": "Euro periphery spreads widening from calm — watch for fragmentation.",
+                    "zh": "欧元区外围利差自平静水平扩大 — 留意分化风险。"})
     return out
 
 

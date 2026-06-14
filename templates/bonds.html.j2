@@ -275,6 +275,24 @@ html[data-theme="dark"] .measured-edge{background:rgba(26,127,67,.12)}
     </div>
   </div>
 
+  <!-- ===================== SOVEREIGN / GLOBAL ===================== -->
+  <div class="sec-head">{{ t('⑥ Sovereign & global rates', '⑥ 主权与全球利率') }}</div>
+  <div class="card">
+    <h2>{{ t('Euro-area fragmentation & the JGB curve', '欧元区分化与日债曲线') }}</h2>
+    <div style="margin:6px 0 4px">
+      <span class="band-chip" style="background:{{ vm.sovereign.frag_color }}">{{ t('Euro fragmentation', '欧元分化') }} · {{ t(vm.sovereign.frag_en, vm.sovereign.frag_zh) }}</span>
+      {% if vm.sovereign.frag_direction %}<span class="pill"><span class="l-en">{{ vm.sovereign.frag_direction }}</span><span class="l-zh">{{ vm.sovereign.frag_direction_zh }}</span></span>{% endif %}
+      {% if vm.sovereign.jgb_2s10s is not none %}<span class="band-chip" style="background:{{ vm.sovereign.jgb_color }};margin-left:6px">JGB 2s10s · {{ t(vm.sovereign.jgb_en, vm.sovereign.jgb_zh) }}</span>{% endif %}
+    </div>
+    <div class="kpis">
+      {{ kpi('Euro frag (all−AAA 10y)', '欧元分化（全体−AAA 10年）', vm.sovereign.euro_frag, 'pp') }}
+      {{ kpi('Bund 10y (euro core)', '德债10年（欧元核心）', vm.sovereign.bund_10y, '%') }}
+      {{ kpi('JGB 2s10s', '日债 2年/10年', vm.sovereign.jgb_2s10s, 'pp') }}
+    </div>
+    <div style="margin-top:14px">{{ charts.sovereign | safe }}</div>
+    <div class="sub faint" style="margin-top:6px">{{ t('Euro-area fragmentation = the ECB all-government minus AAA-rated 10y yield — a free, official, daily BTP-Bund-style proxy for periphery-vs-core stress (AAA ≈ the German Bund). JGB 2s10s tracks Japan\'s post-YCC normalization; a steep long end can repatriate Japanese capital and lift global duration supply.', '欧元区分化 = 欧洲央行全体政府债减AAA级的10年收益率——免费、官方、每日，类似意德利差的“外围对核心”压力代理（AAA≈德国国债）。日债2年/10年跟踪日本YCC退出后的正常化；长端陡峭可能促使日本资本回流并推高全球久期供给。') }}</div>
+  </div>
+
   <!-- ===================== CROSS-ASSET DRIVERS (AI hand-off) ===================== -->
   <div class="sec-head">{{ t('Cross-asset hand-off — what bonds imply for the other boards', '跨资产传导 · 债券对其他面板的含义') }}</div>
   <div class="card">
@@ -326,8 +344,8 @@ html[data-theme="dark"] .measured-edge{background:rgba(26,127,67,.12)}
     <div class="note">
       <p>{{ t('This board reads the bond market HEALTH-FIRST: what the Treasury curve, corporate credit, real yields, rates volatility and funding plumbing say about economic health, regime and cycle position — not a "trade the bond" vector. The health score is a transparent composite of the already-MEASURED recession-risk and drawdown-risk gauges (engine.conditions) plus the credit, rates-vol and funding stress reads.', '本面板以“健康”为先解读债券市场：美国国债曲线、公司信用、实际利率、利率波动与资金管道对经济健康、周期状态与所处阶段的判读——而非“交易债券”的向量。健康度评分是已测得的衰退风险与回撤风险（engine.conditions），加上信用、利率波动与资金压力读数的透明综合。') }}</p>
       <p><b>{{ t('Honesty bar.', '诚信底线。') }}</b> {{ t('Thresholds (curve, OAS distress, MOVE bands) are documented practitioner levels, NOT tuned to a backtest. scripts/calibrate_bonds.py MEASURES each leg vs strictly-forward S&P drawdowns + NBER recession, split-half: recession-risk, drawdown-risk and rates-vol are CONFIRMED, credit is DIRECTIONAL (strong pre-2013, faded through QE), funding-plumbing is CONTEXT (it rarely fires, so it rarely discriminates). The composite is CONFIRMED — but, honestly, it does NOT beat the drawdown-risk leg alone, so treat it as an explainable synthesis, not a better single predictor. The health-score weighting is kept as a conservative prior (measured-informed weights are reported in reports/bonds-calibration.md, adopted only if they hold on a refresh). All alerts are CONTEXT.', '阈值（曲线、OAS困境、MOVE分带）为有据的从业者水平，未对回测调参。scripts/calibrate_bonds.py 对每个分项相对严格向前的标普回撤与NBER衰退做前后半段测量：衰退风险、回撤风险与利率波动为已确认，信用为有方向（2013年前强、QE期间减弱），资金管道为仅背景（极少触发，故极少有区分力）。综合指标已确认 — 但诚实地说，它并不优于单独的回撤风险分项，故应视为可解释的综合，而非更优的单一预测。健康度权重保守地保留为先验（实测建议权重见 reports/bonds-calibration.md，仅在刷新后仍成立时采用）。所有警报皆为背景。') }}</p>
-      <p><b>{{ t('Data.', '数据。') }}</b> {{ t('Free / keyless: FRED (full Treasury curve, real yields, breakevens, ACM/Kim-Wright term premium, ICE BofA OAS, Moody\'s Baa/Aaa back to 1986, SOFR/IORB plumbing, Excess Bond Premium), Yahoo (MOVE, bond ETFs).', '免费/无密钥：FRED（完整国债曲线、实际利率、盈亏平衡通胀、ACM/Kim-Wright期限溢价、ICE美银OAS、追溯至1986年的穆迪Baa/Aaa、SOFR/准备金利率管道、超额债券溢价）、Yahoo（MOVE、债券ETF）。') }}</p>
-      <p class="meta-foot">{{ t('Coming next: daily foreign sovereign spreads (BTP-Bund, JGB) for the global-risk leg; adopting the measured leg weights once they hold across refreshes.', '后续：用于全球风险分项的每日外国主权利差（意德利差、日本国债）；待实测分项权重多次刷新后仍成立时予以采用。') }}</p>
+      <p><b>{{ t('Data.', '数据。') }}</b> {{ t('Free / keyless: FRED (full Treasury curve, real yields, breakevens, ACM/Kim-Wright term premium, ICE BofA OAS, Moody\'s Baa/Aaa back to 1986, SOFR/IORB plumbing, Excess Bond Premium), Yahoo (MOVE, bond ETFs), ECB Data Portal (euro-area AAA/all-government curve), Japan MoF (JGB, 1974→).', '免费/无密钥：FRED（完整国债曲线、实际利率、盈亏平衡通胀、ACM/Kim-Wright期限溢价、ICE美银OAS、追溯至1986年的穆迪Baa/Aaa、SOFR/准备金利率管道、超额债券溢价）、Yahoo（MOVE、债券ETF）、欧洲央行数据门户（欧元区AAA/全体政府债曲线）、日本财务省（日债，1974年起）。') }}</p>
+      <p class="meta-foot">{{ t('Leg weights are now the MEASURED (calibration-derived) weights, refreshed each weekly calibration. Further work: per-country BTP-Bund vs the euro-area aggregate proxy, EM sovereign (EMBI), and a richer cross-country curve-divergence read.', '分项权重现采用已校准（由校准得出）的权重，每周校准刷新。后续：相对欧元区总量代理的逐国意德利差、新兴市场主权（EMBI），以及更丰富的跨国曲线背离判读。') }}</p>
       <p class="meta-foot">{{ t('History', '历史') }} {{ span }} · {{ t('built', '构建于') }} {{ built }}</p>
     </div>
   </div>

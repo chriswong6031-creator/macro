@@ -1,0 +1,92 @@
+"""Finite-difference-verified greeks + GEX engine sanity.
+
+The greeks (gamma/vanna/charm) are checked against numerical derivatives of delta —
+the only honest way to pin the sign+scaling conventions the whole magnets layer
+rests on. Engine tests assert the economic behaviour (call-heavy -> +GEX, magnets
+at the max dollar-gamma strikes, fragility tiering).
+"""
+import math
+
+import numpy as np
+import pandas as pd
+import pytest
+
+from engine.greeks import bs_greeks
+from engine.gex_engine import compute_gex
+
+R, Q = 0.03, 0.01
+
+
+def _delta(S, K, T, sig, call):
+    return bs_greeks(S, K, T, sig, call, R, Q)[0]
+
+
+@pytest.mark.parametrize("call", [True, False])
+def test_gamma_is_dDelta_dS(call):
+    S, K, T, sig = 100.0, 105.0, 0.5, 0.2
+    _, gamma, _, _ = bs_greeks(S, K, T, sig, call, R, Q)
+    h = 1e-3 * S
+    fd = (_delta(S + h, K, T, sig, call) - _delta(S - h, K, T, sig, call)) / (2 * h)
+    assert abs(gamma - fd) < 1e-4, (gamma, fd)
+
+
+@pytest.mark.parametrize("call", [True, False])
+def test_vanna_is_dDelta_dSigma(call):
+    S, K, T, sig = 100.0, 105.0, 0.5, 0.2
+    _, _, vanna, _ = bs_greeks(S, K, T, sig, call, R, Q)
+    h = 1e-4
+    fd = (_delta(S, K, T, sig + h, call) - _delta(S, K, T, sig - h, call)) / (2 * h)
+    assert abs(vanna - fd) < 5e-4, (vanna, fd)
+
+
+@pytest.mark.parametrize("call", [True, False])
+def test_charm_is_dDelta_dt(call):
+    S, K, T, sig = 100.0, 105.0, 0.5, 0.2
+    _, _, _, charm = bs_greeks(S, K, T, sig, call, R, Q)
+    h = 1e-4
+    # charm = d delta / d calendar-time = - d delta / dT
+    fd = -(_delta(S, K, T + h, sig, call) - _delta(S, K, T - h, sig, call)) / (2 * h)
+    assert abs(charm - fd) < 5e-4, (charm, fd)
+
+
+def test_degenerate_nan():
+    assert all(math.isnan(x) for x in bs_greeks(100, 100, 0.0, 0.2, True))
+    assert all(math.isnan(x) for x in bs_greeks(100, 100, 0.5, 0.0, False))
+
+
+def _chain(call_oi, put_oi, S=100.0, iv=0.25, T=0.08):
+    rows = []
+    for k in range(80, 121, 2):
+        rows.append(dict(K=float(k), T=T, iv=iv, oi=call_oi, is_call=True))
+        rows.append(dict(K=float(k), T=T, iv=iv, oi=put_oi, is_call=False))
+    return pd.DataFrame(rows)
+
+
+def test_call_heavy_pos_gex_put_heavy_neg():
+    S = 100.0
+    assert compute_gex(_chain(1000, 10, S), S)["net_gex_bn"] > 0
+    assert compute_gex(_chain(10, 1000, S), S)["net_gex_bn"] < 0
+
+
+def test_magnets_at_max_dollar_gamma_strike():
+    S, rows = 100.0, []
+    for k in range(80, 121, 2):
+        oi = 8000 if k in (94, 110) else 100
+        rows.append(dict(K=float(k), T=0.08, iv=0.25, oi=oi, is_call=True))
+        rows.append(dict(K=float(k), T=0.08, iv=0.25, oi=oi, is_call=False))
+    g = compute_gex(pd.DataFrame(rows), S)
+    assert g["magnet_down"] == 94.0
+    assert g["magnet_up"] == 110.0
+
+
+def test_summary_keys_and_tiers():
+    S = 100.0
+    g = compute_gex(_chain(1000, 1000, S), S)
+    for k in ("net_gex_bn", "net_vex", "net_cex", "gamma_regime", "magnet_up",
+              "magnet_down", "charm_anchor", "iv30", "put_call_oi_ratio", "max_pain", "tier"):
+        assert k in g
+    assert g["tier"] in ("full", "thin_chain")
+    assert compute_gex(pd.DataFrame([]), S)["tier"] == "no_options"
+    few = [dict(K=100.0, T=0.08, iv=0.25, oi=100, is_call=True),
+           dict(K=105.0, T=0.08, iv=0.25, oi=100, is_call=False)]
+    assert compute_gex(pd.DataFrame(few), S)["tier"] == "no_options"   # <6 strikes

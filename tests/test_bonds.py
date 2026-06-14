@@ -196,7 +196,7 @@ def test_snapshot_structure_and_contract():
     for k in ["health_score", "health_label", "cycle_phase", "verdict_en", "verdict_zh",
               "pillars", "alarms", "drivers_for"]:
         assert k in snap, k
-    for p in ["curve", "credit", "real_inflation", "stress", "cross_asset"]:
+    for p in ["curve", "credit", "real_inflation", "stress", "cross_asset", "sovereign"]:
         assert p in snap["pillars"], p
     for d in ["forex", "commodities", "bitcoin", "equities"]:
         assert d in snap["drivers_for"], d
