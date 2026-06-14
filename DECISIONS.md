@@ -2,6 +2,32 @@
 
 Newest first. Each entry: what was decided, why, and what would change it.
 
+## 2026-06-13 — Vector Tier-1 factors: realized-vol cone + vol-of-vol, stablecoin liquidity tide
+
+**D-vec-RVCONE / D-vec-STBL. Two orthogonal, both-halves-clean factors from the factor
+roadmap (research/VECTOR_FACTOR_ROADMAP_2026.md), now MEASURED through the new stability
+gates before any blend.** Both effort-S (data already on disk).
+(1) **Realized-vol CONE + vol-of-vol** (engine.btc_signals.options): the RV series was
+trapped in the DVOL branch (~2021 only) — moved it to FULL history (close-based, 2015→)
+so realized_vol now feeds VRP with deep history, and added rv_cone_pctile (where current
+RV sits in its own ~3y distribution) + vol_of_vol + vov_pctile. The only vol-regime read
+that survives BOTH halves (DVOL can't reach back). MEASURED (calibrated EXTREMES, U-shaped
+like DVOL/risk_index): high vol-of-vol pctile preceded **+37.7%/90d at 76% hit** (n=826,
+capitulation bounce), calm cone +24.8%/90d — a near-term risk gauge, not a direction call.
+Not purged-CV-robust (U-shaped → mixed fold signs, expected). config options.rv_cone_lookback_d.
+(2) **Stablecoin supply-growth TIDE** (engine.btc_signals.stablecoin_tide): a z-scored,
+de-trended 30d growth rate of aggregate stablecoin mcap (data/defillama/stablecoins.parquet,
+2017→, already on disk but only used for the SSR *ratio*). Crypto-native liquidity —
+orthogonal to the FIAT net-liquidity/M2 overlay. MEASURED **DIRECTIONAL** (same tier as
+net_liq_roc/global_m2/macro_score): expanding tide (z 1–2) → +23%/90d at 76% hit;
+contracting (z < −1, **the live state**, z −1.8) → only +0.8%/90d at 42% — a measured
+headwind. config global_liquidity.stbl_growth_window_d/stbl_z_lookback_d. Both calibrated
+(SIGNALS in calibrate_vector, so they ride the both-halves + purged-CV + collinearity
+gates) and surfaced honestly in the options + macro panels with their records. NOT yet
+wired into the live risk_index/composite — that is the deferred ensemble capstone the
+gates unlock (measure-before-blend discipline). All 9 vector tests green; reconciliation
+intact. NEXT roadmap Tier-1: gamma-flip (Deribit recompute) + stablecoin peg-deviation veto.
+
 ## 2026-06-13 — Vector stability gates: purged CV, OOF probability calibration, collinearity, bootstrap CI
 
 **D-vec-GATES. Four compute-only methodology gates added to the calibration harness

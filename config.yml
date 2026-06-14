@@ -1276,6 +1276,7 @@ vector:
     dvol_high_pctile: 0.80        # fear/elevated band
     rv_window_d: 30               # realized vol window matched to DVOL's 30d horizon
     vrp_smooth_d: 5               # VRP = DVOL - realized vol, smoothed
+    rv_cone_lookback_d: 1095      # ~3y percentile window for the realized-vol CONE + vol-of-vol (full-history, both-halves-clean; D-vec-RVCONE)
 
   leverage:                       # leverage/liquidation layer (Tier-2, ~2yr depth)
     # aggregate OI summed over consistently-present major venues (bgeo gives 15;
@@ -1376,6 +1377,8 @@ vector:
     us_weight: 0.4                # US vs China weight (China M2 ~60% larger in USD)
     accel_window_d: 90            # 3-month change of the YoY impulse
     expanding_thresh: 5.0         # global M2 YoY above this = liquidity tailwind
+    stbl_growth_window_d: 30      # stablecoin supply growth window (the crypto-native liquidity TIDE; D-vec-STBL)
+    stbl_z_lookback_d: 365        # de-trend window for the stablecoin growth z-score (2017 hyper-growth vs 2024 base comparable)
 
   alt_cycle:                      # altcoin-cycle / ETH allocation (allocation page)
     btc_season_line: 0.05         # ETH/BTC below = deep BTC-season

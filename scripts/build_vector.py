@@ -1205,6 +1205,11 @@ def main() -> int:
             "skew_term": _r(last.get("skew_term"), 3),
             "basis_ann": _r(last.get("basis_ann"), 1),
             "basis_slope": _r(last.get("basis_slope"), 1),
+            # realized-vol cone + vol-of-vol (full history 2015->; D-vec-RVCONE)
+            "rv_realized": _r(last.get("rv_realized"), 0),
+            "rv_cone_pctile": _r(last.get("rv_cone_pctile"), 0),
+            "vol_of_vol": _r(last.get("vol_of_vol"), 1),
+            "vov_pctile": _r(last.get("vov_pctile"), 0),
         },
         "leverage": {
             "oi_total": _r(last.get("oi_total_usd"), 0),
@@ -1225,6 +1230,11 @@ def main() -> int:
             "dxy": _r(last.get("dxy"), 1),
             "global_m2_yoy": _r(last.get("global_m2_yoy"), 1),
             "global_liq_regime": last.get("global_liq_regime"),
+            # crypto-native liquidity TIDE: stablecoin supply growth (D-vec-STBL)
+            "stbl_mcap_bn": _r(last.get("stbl_mcap_bn"), 0),
+            "stbl_growth": _r(last.get("stbl_growth"), 1),
+            "stbl_growth_z": _r(last.get("stbl_growth_z"), 1),
+            "stbl_regime": last.get("stbl_regime"),
         },
         "onchain": {
             "premium": _r(last.get("coinbase_premium_ema"), 2),

@@ -527,14 +527,26 @@ def options(inputs: dict, cfg: dict) -> pd.DataFrame:
     close = inputs["price"]["close"]
     idx = close.index
     out = pd.DataFrame(index=idx)
+    # Realized-vol CONES + VOL-OF-VOL — full history (2014->), price-derived so it
+    # survives BOTH split-halves where the implied-vol stack (DVOL ~2021) cannot.
+    # rv_cone_pctile = where current RV sits in its own ~3y distribution (the cone
+    # position); vol_of_vol = RV's own rolling std (regime instability). Strengthens
+    # the DRAWDOWN/risk read, not 7d direction. (D-vec-RVCONE)
+    rvw = cfg.get("rv_window_d", 30)
+    cone_lb = cfg.get("rv_cone_lookback_d", 1095)
+    rv_full = close.pct_change().rolling(rvw).std() * np.sqrt(365) * 100
+    out["rv_realized"] = rv_full
+    out["rv_cone_pctile"] = _pctile(rv_full, cone_lb) * 100
+    vov = rv_full.rolling(rvw).std()
+    out["vol_of_vol"] = vov
+    out["vov_pctile"] = _pctile(vov, cone_lb) * 100
     dvol = inputs.get("dvol")
     if dvol is not None:
         dv = dvol.reindex(idx).ffill(limit=3)
         out["dvol"] = dv
         out["dvol_pctile"] = _pctile(dv, cfg["dvol_pctile_lookback_d"]) * 100
-        rv = close.pct_change().rolling(cfg["rv_window_d"]).std() * np.sqrt(365) * 100
-        out["realized_vol"] = rv
-        out["vrp"] = (dv - rv).ewm(span=cfg["vrp_smooth_d"], adjust=False).mean()
+        out["realized_vol"] = rv_full   # full-history RV (was DVOL-branch-only)
+        out["vrp"] = (dv - rv_full).ewm(span=cfg["vrp_smooth_d"], adjust=False).mean()
     snap = inputs.get("options_structure")
     if snap is not None and not snap.empty:
         o = snap.copy()
@@ -650,6 +662,33 @@ def positioning(inputs: dict, cfg: dict) -> pd.DataFrame:
         c = cot.reindex(idx).ffill(limit=cfg["ffill_limit_d"])
         out["cot_net_pct"] = c
         out["cot_z"] = _zscore(c, cfg["z_window_d"])
+    return out
+
+
+def stablecoin_tide(inputs: dict, cfg: dict) -> pd.DataFrame:
+    """Crypto-native liquidity TIDE: the GROWTH RATE of aggregate stablecoin supply
+    = the pace new capital is minted INTO crypto. Orthogonal to the FIAT net-liquidity
+    / global-M2 overlay (central-bank money) — this is money that already crossed into
+    crypto. A z-scored growth-impulse, de-trended so 2017 hyper-growth and the 2024
+    base are comparable. (D-vec-STBL) The deepest crypto-native-liquidity series (2017->);
+    NOT the SSR ratio / BFI leg that already use the level. Calibrated as a tide (want +1)."""
+    stbl = inputs.get("stablecoins")
+    idx = inputs["price"]["close"].index
+    out = pd.DataFrame(index=idx)
+    if stbl is None:
+        return out
+    s = stbl[stbl.columns[0]] if hasattr(stbl, "columns") else stbl
+    sm = s.reindex(idx).ffill()
+    gw = cfg.get("stbl_growth_window_d", 30)
+    lb = cfg.get("stbl_z_lookback_d", 365)
+    out["stbl_mcap_bn"] = (sm / 1e9).round(1)
+    g = sm.pct_change(gw) * 100
+    out["stbl_growth"] = g
+    mu = g.rolling(lb, min_periods=150).mean()
+    sd = g.rolling(lb, min_periods=150).std().replace(0, np.nan)
+    out["stbl_growth_z"] = ((g - mu) / sd).clip(-4, 4)
+    out["stbl_regime"] = np.where(out["stbl_growth_z"] > 0.5, "expanding",
+                          np.where(out["stbl_growth_z"] < -0.5, "contracting", "neutral"))
     return out
 
 
@@ -957,12 +996,13 @@ def compute_all(inputs: dict | None = None) -> pd.DataFrame:
     xa = cross_asset_corr(inputs, cfg["cross_asset"])
     bh = behaviour(inputs, cfg["cross_asset"])
     gl = global_liquidity(inputs, cfg["global_liquidity"])
+    sc = stablecoin_tide(inputs, cfg["global_liquidity"])  # crypto-native liquidity tide
     # Tier-1b: blend the confirmed valuation tails into allocation (gated by the
     # allocation backtest below).
     al = allocation(mom["momentum"], rk["risk_index"], cfg["allocation"], va)
 
     out = pd.concat([inputs["price"][["close"]], mom, rk, bf, st, gg, al,
-                     va, mn, cb, ex, op, lv, ma, oc, im, cc, po, xa, bh, gl], axis=1)
+                     va, mn, cb, ex, op, lv, ma, oc, im, cc, po, xa, bh, gl, sc], axis=1)
     out["cycle_position"] = cycle_stage(mom["momentum"], rk["risk_index"])
     alt = btc_vs_alts(inputs, cfg["btc_vs_alts"])
     if alt is not None:

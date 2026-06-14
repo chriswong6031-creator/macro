@@ -36,6 +36,9 @@ House rule: a signal is trusted (labeled a *signal* in the UI) only if its forwa
 | corr_spx | **CONFIRMED** | -1 | -1 | -1 | -1 |
 | vdd_multiple | **EXTREMES — low <.5: +8.0%/90d 43.6% hit (n=774) [weak]; high >2.9: +35.2%/90d 59.1% hit (n=154) [weak]** | 1 | 1 | 0 | -1 |
 | global_m2_yoy | **DIRECTIONAL (full only)** | 1 | 0 | -1 | 1 |
+| rv_cone_pctile | **EXTREMES — low 0-25: +24.8%/90d 70.6% hit (n=1206) [weak]; high 75-100: +30.3%/90d 64.0% hit (n=831) [weak]** | 0 | 0 | 0 | -1 |
+| vov_pctile | **EXTREMES — low 0-25: +12.5%/90d 53.0% hit (n=1159) [weak]; high 75-100: +37.7%/90d 75.5% hit (n=826) [weak]** | 1 | 1 | 0 | -1 |
+| stbl_growth_z | **DIRECTIONAL (one half weak)** | 1 | 0 | 1 | 1 |
 
 ## Risk Index as a drawdown gauge
 
@@ -315,6 +318,34 @@ House rule: a signal is trusted (labeled a *signal* in the UI) only if its forwa
 | 8.5-11 | 1310 |     54   |      0.54 |      56.5 |       3.53 |      59.7 |      15.75 |
 | >11    |  395 |     64.6 |      4.23 |      72.2 |      17.65 |      80.8 |      57.97 |
 
+### rv_cone_pctile — forward returns by band (full sample)
+
+| band   |    n |   hit_7d |   mean_7d |   hit_30d |   mean_30d |   hit_90d |   mean_90d |
+|:-------|-----:|---------:|----------:|----------:|-----------:|----------:|-----------:|
+| 0-25   | 1206 |     54.9 |      1.2  |      59.9 |       5.89 |      70.6 |      24.84 |
+| 25-50  | 1054 |     53.1 |      0.74 |      49.5 |       2.31 |      51.1 |      16.18 |
+| 50-75  |  895 |     56.4 |      1.44 |      57.5 |       8.14 |      56.3 |      23.9  |
+| 75-100 |  831 |     54.3 |      2.48 |      63.4 |      11.39 |      64   |      30.26 |
+
+### vov_pctile — forward returns by band (full sample)
+
+| band   |    n |   hit_7d |   mean_7d |   hit_30d |   mean_30d |   hit_90d |   mean_90d |
+|:-------|-----:|---------:|----------:|----------:|-----------:|----------:|-----------:|
+| 0-25   | 1159 |     55.1 |      1.31 |      51.9 |       3.48 |      53   |      12.54 |
+| 25-50  |  994 |     52.6 |      0.86 |      57.1 |       6.92 |      56.1 |      20.43 |
+| 50-75  |  978 |     55.1 |      1.63 |      60   |       6.64 |      63   |      28.12 |
+| 75-100 |  826 |     56.8 |      2.04 |      64.4 |      11.4  |      75.5 |      37.7  |
+
+### stbl_growth_z — forward returns by band (full sample)
+
+| band   |    n |   hit_7d |   mean_7d |   hit_30d |   mean_30d |   hit_90d |   mean_90d |
+|:-------|-----:|---------:|----------:|----------:|-----------:|----------:|-----------:|
+| <-1    |  372 |     43.3 |     -1.23 |      39.7 |      -3    |      41.9 |       0.76 |
+| -1-0   | 1558 |     53.3 |      0.95 |      54.4 |       4.45 |      55.5 |      17.27 |
+| 0-1    |  620 |     49.5 |      0.84 |      51.1 |       4.01 |      55.9 |      16.3  |
+| 1-2    |  228 |     72.8 |      4.22 |      78.1 |      14.14 |      75.9 |      23.38 |
+| >2     |  162 |     51.2 |      0.65 |      60.5 |       5.47 |      62.3 |      19.55 |
+
 ## Allocation backtest vs HODL (NET of 10.0bps one-way cost)
 
 `cagr` is net of transaction cost (the honest headline); `cagr_gross` and `cost_drag_pp` show the cost bite, `turnover_annual` the one-way turnover/yr driving it.
@@ -330,7 +361,7 @@ House rule: a signal is trusted (labeled a *signal* in the UI) only if its forwa
 
 ## Purged walk-forward CV (stability gate)
 
-6/27 signals **robust** under 5 embargoed folds (90d embargo = max horizon). Purged + embargoed walk-forward CV (embargo = max forward horizon) replaces the single split_date's leaky boundary. 'robust' = full-sample sign matches `want`, no fold flips, all-but-one folds agree. Stricter than pre/post; both are reported.
+6/30 signals **robust** under 5 embargoed folds (90d embargo = max horizon). Purged + embargoed walk-forward CV (embargo = max forward horizon) replaces the single split_date's leaky boundary. 'robust' = full-sample sign matches `want`, no fold flips, all-but-one folds agree. Stricter than pre/post; both are reported.
 
 | Signal | full | folds | want | robust |
 |---|--:|---|--:|:-:|
@@ -361,6 +392,9 @@ House rule: a signal is trusted (labeled a *signal* in the UI) only if its forwa
 | corr_spx | -1 | [0, -1, 1, -1, 1] | -1 | · |
 | vdd_multiple | +1 | [0, 1, 0, 1, -1] | -1 | · |
 | global_m2_yoy | +1 | [0, 0, 1, -1, -1] | +1 | · |
+| rv_cone_pctile | +0 | [-1, 1, 0, -1, 1] | -1 | · |
+| vov_pctile | +1 | [-1, 1, 0, 0, 1] | -1 | · |
+| stbl_growth_z | +1 | [0, 0, -1, 1, 0] | +1 | · |
 
 ## Probability calibration of the conviction layer (out-of-fold)
 
@@ -373,7 +407,7 @@ OOF 7d direction: **Brier 0.25** vs base 0.2483 (skill -0.007); Platt a=0.694, b
 
 ## Signal collinearity (orthogonalize before any blend)
 
-14 signals with **VIF≥5** (redundant): risk_index, momentum, bfi, mvrv_z, nupl, mayer, puell, sth_cb_ratio, ssr_oscillator, reserve_risk, cycle_pct, cot_z, corr_spx, global_m2_yoy. VIF>5 ≈ redundant (its forward info is already carried by other signals); the high-corr pairs name the cluster. This MEASURES the independent contribution the one-representative-per-axis rule asserts — orthogonalize before any blend.
+19 signals with **VIF≥5** (redundant): risk_index, momentum, structure, bfi, mvrv_z, nupl, mayer, puell, sth_cb_ratio, dvol, vrp, ssr_oscillator, reserve_risk, cycle_pct, cot_z, corr_spx, global_m2_yoy, rv_cone_pctile, stbl_growth_z. VIF>5 ≈ redundant (its forward info is already carried by other signals); the high-corr pairs name the cluster. This MEASURES the independent contribution the one-representative-per-axis rule asserts — orthogonalize before any blend.
 
 | a | b | \|corr\| |
 |---|---|--:|
@@ -385,8 +419,8 @@ OOF 7d direction: **Brier 0.25** vs base 0.2483 (skill -0.007); Platt a=0.694, b
 | nupl | reserve_risk | 0.87 |
 | momentum | sth_cb_ratio | 0.84 |
 | risk_index | momentum | 0.8 |
+| ssr_oscillator | stbl_growth_z | 0.8 |
 | momentum | structure | 0.78 |
-| nupl | mayer | 0.77 |
 
 ## Deflated Sharpe Ratio (multiple-testing haircut)
 
@@ -400,7 +434,7 @@ OOF 7d direction: **Brier 0.25** vs base 0.2483 (skill -0.007); Platt a=0.694, b
 
 ## Trial log
 
-As-of 2026-06-13: **50** declared independent trials (upper-bound); 28 signal families screened; allocation variants: conservative, moderate, aggressive, optimal; transaction cost 10.0bps one-way.
+As-of 2026-06-13: **50** declared independent trials (upper-bound); 31 signal families screened; allocation variants: conservative, moderate, aggressive, optimal; transaction cost 10.0bps one-way.
 
 ## Whipsaw
 

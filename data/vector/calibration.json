@@ -4248,6 +4248,443 @@
         "post": -1,
         "want": 1
       }
+    },
+    "rv_cone_pctile": {
+      "full": [
+        {
+          "band": "0-25",
+          "n": 1206,
+          "hit_7d": 54.9,
+          "mean_7d": 1.2,
+          "hit_30d": 59.9,
+          "mean_30d": 5.89,
+          "hit_90d": 70.6,
+          "mean_90d": 24.84
+        },
+        {
+          "band": "25-50",
+          "n": 1054,
+          "hit_7d": 53.1,
+          "mean_7d": 0.74,
+          "hit_30d": 49.5,
+          "mean_30d": 2.31,
+          "hit_90d": 51.1,
+          "mean_90d": 16.18
+        },
+        {
+          "band": "50-75",
+          "n": 895,
+          "hit_7d": 56.4,
+          "mean_7d": 1.44,
+          "hit_30d": 57.5,
+          "mean_30d": 8.14,
+          "hit_90d": 56.3,
+          "mean_90d": 23.9
+        },
+        {
+          "band": "75-100",
+          "n": 831,
+          "hit_7d": 54.3,
+          "mean_7d": 2.48,
+          "hit_30d": 63.4,
+          "mean_30d": 11.39,
+          "hit_90d": 64.0,
+          "mean_90d": 30.26
+        }
+      ],
+      "pre": [
+        {
+          "band": "0-25",
+          "n": 443,
+          "hit_7d": 61.9,
+          "mean_7d": 2.08,
+          "hit_30d": 70.2,
+          "mean_30d": 7.84,
+          "hit_90d": 80.4,
+          "mean_90d": 33.65
+        },
+        {
+          "band": "25-50",
+          "n": 505,
+          "hit_7d": 53.5,
+          "mean_7d": 1.03,
+          "hit_30d": 51.3,
+          "mean_30d": 3.82,
+          "hit_90d": 56.0,
+          "mean_90d": 22.32
+        },
+        {
+          "band": "50-75",
+          "n": 432,
+          "hit_7d": 51.2,
+          "mean_7d": 0.59,
+          "hit_30d": 58.1,
+          "mean_30d": 9.98,
+          "hit_90d": 68.5,
+          "mean_90d": 36.52
+        },
+        {
+          "band": "75-100",
+          "n": 526,
+          "hit_7d": 58.9,
+          "mean_7d": 3.7,
+          "hit_30d": 64.1,
+          "mean_30d": 14.36,
+          "hit_90d": 64.8,
+          "mean_90d": 39.73
+        }
+      ],
+      "post": [
+        {
+          "band": "0-25",
+          "n": 728,
+          "hit_7d": 48.5,
+          "mean_7d": 0.34,
+          "hit_30d": 51.6,
+          "mean_30d": 3.05,
+          "hit_90d": 63.0,
+          "mean_90d": 11.25
+        },
+        {
+          "band": "25-50",
+          "n": 529,
+          "hit_7d": 51.9,
+          "mean_7d": 0.19,
+          "hit_30d": 45.9,
+          "mean_30d": 0.02,
+          "hit_90d": 44.0,
+          "mean_90d": 3.14
+        },
+        {
+          "band": "50-75",
+          "n": 428,
+          "hit_7d": 59.8,
+          "mean_7d": 1.39,
+          "hit_30d": 53.5,
+          "mean_30d": 1.91,
+          "hit_90d": 39.6,
+          "mean_90d": -0.81
+        },
+        {
+          "band": "75-100",
+          "n": 305,
+          "hit_7d": 46.2,
+          "mean_7d": 0.38,
+          "hit_30d": 62.3,
+          "mean_30d": 6.26,
+          "hit_90d": 62.6,
+          "mean_90d": 13.77
+        }
+      ],
+      "verdict": "EXTREMES \u2014 low 0-25: +24.8%/90d 70.6% hit (n=1206) [weak]; high 75-100: +30.3%/90d 64.0% hit (n=831) [weak]",
+      "monotone": {
+        "full": 0,
+        "pre": 0,
+        "post": 0,
+        "want": -1,
+        "sample_mean_90d": 22.4
+      }
+    },
+    "vov_pctile": {
+      "full": [
+        {
+          "band": "0-25",
+          "n": 1159,
+          "hit_7d": 55.1,
+          "mean_7d": 1.31,
+          "hit_30d": 51.9,
+          "mean_30d": 3.48,
+          "hit_90d": 53.0,
+          "mean_90d": 12.54
+        },
+        {
+          "band": "25-50",
+          "n": 994,
+          "hit_7d": 52.6,
+          "mean_7d": 0.86,
+          "hit_30d": 57.1,
+          "mean_30d": 6.92,
+          "hit_90d": 56.1,
+          "mean_90d": 20.43
+        },
+        {
+          "band": "50-75",
+          "n": 978,
+          "hit_7d": 55.1,
+          "mean_7d": 1.63,
+          "hit_30d": 60.0,
+          "mean_30d": 6.64,
+          "hit_90d": 63.0,
+          "mean_90d": 28.12
+        },
+        {
+          "band": "75-100",
+          "n": 826,
+          "hit_7d": 56.8,
+          "mean_7d": 2.04,
+          "hit_30d": 64.4,
+          "mean_30d": 11.4,
+          "hit_90d": 75.5,
+          "mean_90d": 37.7
+        }
+      ],
+      "pre": [
+        {
+          "band": "0-25",
+          "n": 470,
+          "hit_7d": 57.7,
+          "mean_7d": 1.06,
+          "hit_30d": 52.1,
+          "mean_30d": 1.77,
+          "hit_90d": 51.5,
+          "mean_90d": 12.44
+        },
+        {
+          "band": "25-50",
+          "n": 446,
+          "hit_7d": 54.7,
+          "mean_7d": 1.9,
+          "hit_30d": 61.7,
+          "mean_30d": 9.49,
+          "hit_90d": 69.1,
+          "mean_90d": 30.57
+        },
+        {
+          "band": "50-75",
+          "n": 502,
+          "hit_7d": 54.2,
+          "mean_7d": 1.92,
+          "hit_30d": 58.6,
+          "mean_30d": 7.17,
+          "hit_90d": 67.3,
+          "mean_90d": 35.5
+        },
+        {
+          "band": "75-100",
+          "n": 459,
+          "hit_7d": 61.0,
+          "mean_7d": 3.07,
+          "hit_30d": 74.9,
+          "mean_30d": 19.75,
+          "hit_90d": 81.0,
+          "mean_90d": 54.85
+        }
+      ],
+      "post": [
+        {
+          "band": "0-25",
+          "n": 667,
+          "hit_7d": 51.9,
+          "mean_7d": 1.01,
+          "hit_30d": 50.1,
+          "mean_30d": 3.78,
+          "hit_90d": 52.5,
+          "mean_90d": 8.51
+        },
+        {
+          "band": "25-50",
+          "n": 514,
+          "hit_7d": 48.8,
+          "mean_7d": -0.57,
+          "hit_30d": 49.9,
+          "mean_30d": 0.9,
+          "hit_90d": 40.6,
+          "mean_90d": -0.77
+        },
+        {
+          "band": "50-75",
+          "n": 442,
+          "hit_7d": 54.0,
+          "mean_7d": 0.93,
+          "hit_30d": 58.5,
+          "mean_30d": 3.61,
+          "hit_90d": 55.0,
+          "mean_90d": 6.43
+        },
+        {
+          "band": "75-100",
+          "n": 367,
+          "hit_7d": 51.5,
+          "mean_7d": 0.75,
+          "hit_30d": 51.2,
+          "mean_30d": 0.95,
+          "hit_90d": 68.1,
+          "mean_90d": 15.07
+        }
+      ],
+      "verdict": "EXTREMES \u2014 low 0-25: +12.5%/90d 53.0% hit (n=1159) [weak]; high 75-100: +37.7%/90d 75.5% hit (n=826) [weak]",
+      "monotone": {
+        "full": 1,
+        "pre": 1,
+        "post": 0,
+        "want": -1,
+        "sample_mean_90d": 22.4
+      }
+    },
+    "stbl_growth_z": {
+      "full": [
+        {
+          "band": "<-1",
+          "n": 372,
+          "hit_7d": 43.3,
+          "mean_7d": -1.23,
+          "hit_30d": 39.7,
+          "mean_30d": -3.0,
+          "hit_90d": 41.9,
+          "mean_90d": 0.76
+        },
+        {
+          "band": "-1-0",
+          "n": 1558,
+          "hit_7d": 53.3,
+          "mean_7d": 0.95,
+          "hit_30d": 54.4,
+          "mean_30d": 4.45,
+          "hit_90d": 55.5,
+          "mean_90d": 17.27
+        },
+        {
+          "band": "0-1",
+          "n": 620,
+          "hit_7d": 49.5,
+          "mean_7d": 0.84,
+          "hit_30d": 51.1,
+          "mean_30d": 4.01,
+          "hit_90d": 55.9,
+          "mean_90d": 16.3
+        },
+        {
+          "band": "1-2",
+          "n": 228,
+          "hit_7d": 72.8,
+          "mean_7d": 4.22,
+          "hit_30d": 78.1,
+          "mean_30d": 14.14,
+          "hit_90d": 75.9,
+          "mean_90d": 23.38
+        },
+        {
+          "band": ">2",
+          "n": 162,
+          "hit_7d": 51.2,
+          "mean_7d": 0.65,
+          "hit_30d": 60.5,
+          "mean_30d": 5.47,
+          "hit_90d": 62.3,
+          "mean_90d": 19.55
+        }
+      ],
+      "pre": [
+        {
+          "band": "<-1",
+          "n": 43,
+          "hit_7d": 34.9,
+          "mean_7d": -6.66,
+          "hit_30d": 9.3,
+          "mean_30d": -21.39,
+          "hit_90d": 48.8,
+          "mean_90d": 8.06
+        },
+        {
+          "band": "-1-0",
+          "n": 655,
+          "hit_7d": 49.6,
+          "mean_7d": 0.48,
+          "hit_30d": 52.2,
+          "mean_30d": 3.46,
+          "hit_90d": 52.4,
+          "mean_90d": 12.63
+        },
+        {
+          "band": "0-1",
+          "n": 132,
+          "hit_7d": 61.4,
+          "mean_7d": 3.4,
+          "hit_30d": 65.2,
+          "mean_30d": 10.18,
+          "hit_90d": 77.3,
+          "mean_90d": 46.57
+        },
+        {
+          "band": "1-2",
+          "n": 27,
+          "hit_7d": 77.8,
+          "mean_7d": 6.47,
+          "hit_30d": 100.0,
+          "mean_30d": 28.91,
+          "hit_90d": 100.0,
+          "mean_90d": 31.05
+        },
+        {
+          "band": ">2",
+          "n": 3,
+          "hit_7d": 100.0,
+          "mean_7d": 11.08,
+          "hit_30d": 100.0,
+          "mean_30d": 11.03,
+          "hit_90d": 100.0,
+          "mean_90d": 27.02
+        }
+      ],
+      "post": [
+        {
+          "band": "<-1",
+          "n": 329,
+          "hit_7d": 44.4,
+          "mean_7d": -0.51,
+          "hit_30d": 43.8,
+          "mean_30d": -0.49,
+          "hit_90d": 41.0,
+          "mean_90d": -0.23
+        },
+        {
+          "band": "-1-0",
+          "n": 822,
+          "hit_7d": 53.0,
+          "mean_7d": 0.43,
+          "hit_30d": 51.6,
+          "mean_30d": 1.18,
+          "hit_90d": 53.4,
+          "mean_90d": 5.06
+        },
+        {
+          "band": "0-1",
+          "n": 479,
+          "hit_7d": 45.3,
+          "mean_7d": 0.03,
+          "hit_30d": 46.3,
+          "mean_30d": 1.69,
+          "hit_90d": 49.2,
+          "mean_90d": 4.09
+        },
+        {
+          "band": "1-2",
+          "n": 201,
+          "hit_7d": 72.1,
+          "mean_7d": 3.92,
+          "hit_30d": 75.1,
+          "mean_30d": 12.16,
+          "hit_90d": 72.6,
+          "mean_90d": 22.35
+        },
+        {
+          "band": ">2",
+          "n": 159,
+          "hit_7d": 50.3,
+          "mean_7d": 0.45,
+          "hit_30d": 59.7,
+          "mean_30d": 5.36,
+          "hit_90d": 61.6,
+          "mean_90d": 19.41
+        }
+      ],
+      "verdict": "DIRECTIONAL (one half weak)",
+      "monotone": {
+        "full": 1,
+        "pre": 0,
+        "post": 1,
+        "want": 1
+      }
     }
   },
   "risk_drawdown": {
@@ -4556,13 +4993,16 @@
       "reserve_risk",
       "risk_index",
       "risk_oscillator",
+      "rv_cone_pctile",
       "ssr_oscillator",
+      "stbl_growth_z",
       "sth_cb_ratio",
       "structure",
       "vdd_multiple",
+      "vov_pctile",
       "vrp"
     ],
-    "n_signal_families": 28,
+    "n_signal_families": 31,
     "note": "Point-in-time trial ledger (overwritten each run). n_trials_declared is an upper-bound count of independent strategy configs explored across the hunt, used to deflate the headline Sharpe. Raise it as you try more."
   },
   "cross_validation": {
@@ -4899,6 +5339,42 @@
         ],
         "robust": false,
         "want": 1
+      },
+      "rv_cone_pctile": {
+        "full": 0,
+        "folds": [
+          -1,
+          1,
+          0,
+          -1,
+          1
+        ],
+        "robust": false,
+        "want": -1
+      },
+      "vov_pctile": {
+        "full": 1,
+        "folds": [
+          -1,
+          1,
+          0,
+          0,
+          1
+        ],
+        "robust": false,
+        "want": -1
+      },
+      "stbl_growth_z": {
+        "full": 1,
+        "folds": [
+          0,
+          0,
+          -1,
+          1,
+          0
+        ],
+        "robust": false,
+        "want": 1
       }
     },
     "n_robust": 6,
@@ -4934,49 +5410,57 @@
   },
   "collinearity": {
     "vif": {
-      "mvrv_z": 90.5,
-      "nupl": 66.01,
-      "mayer": 62.35,
-      "sth_cb_ratio": 61.41,
-      "ssr_oscillator": 51.37,
-      "reserve_risk": 50.65,
-      "cycle_pct": 16.32,
-      "global_m2_yoy": 15.45,
-      "risk_index": 11.27,
-      "momentum": 9.3,
-      "puell": 9.23,
-      "cot_z": 8.02,
-      "corr_spx": 7.24,
-      "bfi": 5.03,
-      "structure": 4.79,
-      "dvol": 4.41,
-      "vdd_multiple": 4.36,
-      "net_liq_roc": 3.93,
-      "macro_score": 3.58,
-      "risk_oscillator": 3.2,
-      "coinbase_premium_ema": 2.49,
-      "leverage_stress": 2.44,
-      "mpi": 2.39,
-      "vrp": 2.3,
-      "impulse": 2.21,
-      "funding_z": 2.08,
-      "oi_price_divergence": 1.41
+      "mvrv_z": 92.42,
+      "mayer": 69.41,
+      "nupl": 67.36,
+      "sth_cb_ratio": 66.42,
+      "ssr_oscillator": 55.17,
+      "reserve_risk": 53.84,
+      "rv_cone_pctile": 19.27,
+      "cycle_pct": 16.38,
+      "global_m2_yoy": 15.66,
+      "risk_index": 13.41,
+      "momentum": 10.42,
+      "dvol": 10.22,
+      "vrp": 9.57,
+      "puell": 9.38,
+      "cot_z": 8.42,
+      "stbl_growth_z": 8.18,
+      "bfi": 7.9,
+      "corr_spx": 7.66,
+      "structure": 5.05,
+      "vdd_multiple": 4.82,
+      "net_liq_roc": 4.27,
+      "macro_score": 3.83,
+      "risk_oscillator": 3.37,
+      "coinbase_premium_ema": 2.51,
+      "mpi": 2.48,
+      "leverage_stress": 2.45,
+      "impulse": 2.28,
+      "funding_z": 2.1,
+      "vov_pctile": 1.67,
+      "oi_price_divergence": 1.45
     },
     "redundant": [
       "risk_index",
       "momentum",
+      "structure",
       "bfi",
       "mvrv_z",
       "nupl",
       "mayer",
       "puell",
       "sth_cb_ratio",
+      "dvol",
+      "vrp",
       "ssr_oscillator",
       "reserve_risk",
       "cycle_pct",
       "cot_z",
       "corr_spx",
-      "global_m2_yoy"
+      "global_m2_yoy",
+      "rv_cone_pctile",
+      "stbl_growth_z"
     ],
     "top_pairs": [
       {
@@ -5020,14 +5504,14 @@
         "corr": 0.8
       },
       {
+        "a": "ssr_oscillator",
+        "b": "stbl_growth_z",
+        "corr": 0.8
+      },
+      {
         "a": "momentum",
         "b": "structure",
         "corr": 0.78
-      },
-      {
-        "a": "nupl",
-        "b": "mayer",
-        "corr": 0.77
       }
     ],
     "note": "VIF>5 \u2248 redundant (its forward info is already carried by other signals); the high-corr pairs name the cluster. This MEASURES the independent contribution the one-representative-per-axis rule asserts \u2014 orthogonalize before any blend."

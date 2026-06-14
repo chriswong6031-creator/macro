@@ -400,6 +400,16 @@ def main() -> int:
         # Global (US+China) M2 YoY growth — broad-money tide, leads BTC ~10wk.
         "global_m2_yoy": {"bands": [0, 5.5, 7, 8.5, 11, 20],
                           "labels": ["<5.5", "5.5-7", "7-8.5", "8.5-11", ">11"], "want": 1},
+        # Tier-1 NEW factors (D-vec-RVCONE / D-vec-STBL). Realized-vol CONE + vol-of-vol
+        # are full-history 2015-> (both-halves-clean) — judged as U-shaped vol (extremes:
+        # low=complacency, high=panic-bounce). Stablecoin supply-growth z = the crypto-
+        # native liquidity TIDE 2018-> (monotone, want +1, like the M2/net-liq tides).
+        "rv_cone_pctile": {"bands": [-0.1, 25, 50, 75, 100.1], "shape": "extremes",
+                           "labels": ["0-25", "25-50", "50-75", "75-100"], "want": -1},
+        "vov_pctile": {"bands": [-0.1, 25, 50, 75, 100.1], "shape": "extremes",
+                       "labels": ["0-25", "25-50", "50-75", "75-100"], "want": -1},
+        "stbl_growth_z": {"bands": [-4.01, -1, 0, 1, 2, 4.01],
+                          "labels": ["<-1", "-1-0", "0-1", "1-2", ">2"], "want": 1},
     }
     for _k, _v in VAL_SIGNALS.items():
         if _k in df.columns:

@@ -648,7 +648,10 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
       <div class="mini"><div class="lab"><span>{{ t('DVOL (crypto VIX)','DVOL（加密 VIX）') }}</span><span><b>{{ options.dvol if options.dvol is not none else '—' }}</b>{% if options.dvol_pctile is not none %} <span class="faint">({{ options.dvol_pctile }}%ile)</span>{% endif %}</span></div></div>
       <div class="mini"><div class="lab"><span>{{ t('Variance risk premium (IV−RV)','方差风险溢价（IV−RV）') }}</span><span><b>{{ options.vrp if options.vrp is not none else '—' }}</b></span></div></div>
       <div class="mini"><div class="lab"><span>{{ t('ATM IV 30d / term slope','平值 30 天 IV / 期限斜率') }}</span><span><b>{{ options.atm_iv_30d if options.atm_iv_30d is not none else '—' }}</b> / {{ options.term_slope if options.term_slope is not none else '—' }}</span></div></div>
+      {% if options.rv_cone_pctile is not none %}
+      <div class="mini"><div class="lab"><span>{{ t('Realized-vol cone (full history)','已实现波动锥（全历史）') }}</span><span><b>{{ options.rv_realized }}%</b> <span class="faint">({{ options.rv_cone_pctile }}%ile · {{ t('vol-of-vol','波动的波动') }} {{ options.vov_pctile }}%ile)</span></span></div></div>{% endif %}
       <div class="sub" style="margin-top:10px">{{ t('Calibrated (2021→, confirmation-only): DVOL 70–90 is the bleed zone (−13%/90d); VRP below −5 (realized overshooting implied) marked recoveries (+17%/90d).', '已校准（2021 起，仅作确认）：DVOL 70–90 为失血区（90 天 −13%）；VRP 低于 −5（已实现超过隐含）标记反弹（90 天 +17%）。') }}</div>
+      <div class="sub faint" style="margin-top:6px;font-size:12px">{{ t('The realized-vol cone + vol-of-vol are full-history (2015→) — the only vol-regime read that survives BOTH calibration halves. U-shaped at 90d: a high vol-of-vol percentile (panic) preceded +37.7%/90d at 76% hit (capitulation bounce), a calm cone +24.8%/90d. A near-term risk gauge, not a direction call.','已实现波动锥与“波动的波动”为全历史（2015 起）— 唯一在两个校准半样本中均成立的波动状态读数。90 天呈 U 形：高“波动的波动”分位（恐慌）后 90 天 +37.7%、胜率 76%（投降式反弹），平静波动锥 90 天 +24.8%。为近端风险计，而非方向判断。') }}</div>
     </div>
     <div class="card">
       <h3>{{ t('Skew & positioning (snapshot)', '偏斜与持仓（快照）') }}</h3>
@@ -697,6 +700,9 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
       <div class="mini"><div class="lab"><span>{{ t('Net liquidity (WALCL−RRP−TGA)','净流动性（WALCL−RRP−TGA）') }}</span><span><b>{{ ('$%.2fT'|format(macro.net_liq_bn/1000)) if macro.net_liq_bn is not none else '—' }}</b>{% if macro.net_liq_roc is not none %} <span class="faint" style="color:{{ 'var(--blue)' if macro.net_liq_roc>=0 else 'var(--r3)' }}">({{ '%+0.1f'|format(macro.net_liq_roc) }}% 13w)</span>{% endif %}</span></div></div>
       {% if macro.global_m2_yoy is not none %}
       <div class="mini"><div class="lab"><span>{{ t('Global M2 growth (US+China)','全球 M2 增速（美+中）') }}</span><span><b style="color:{{ 'var(--blue)' if macro.global_m2_yoy>=5 else 'var(--r3)' }}">{{ macro.global_m2_yoy }}% YoY</b> <span class="faint">({{ td((macro.global_liq_regime or '')|capitalize) }})</span></span></div></div>{% endif %}
+      {% if macro.stbl_growth_z is not none %}
+      {% set sreg = {'expanding':'var(--blue)','contracting':'var(--r3)','neutral':'var(--muted)'} %}
+      <div class="mini"><div class="lab"><span>{{ t('Stablecoin tide (crypto-native liquidity)','稳定币潮汐（加密原生流动性）') }}</span><span><b style="color:{{ sreg.get(macro.stbl_regime,'var(--muted)') }}">{{ td((macro.stbl_regime or '')|capitalize) }}</b> <span class="faint">(z {{ '%+0.1f'|format(macro.stbl_growth_z) }} · ${{ macro.stbl_mcap_bn }}B)</span></span></div></div>{% endif %}
       <div class="mini"><div class="lab"><span>{{ t('10y real yield','10 年期实际收益率') }}</span><span><b>{{ ('%.2f%%'|format(macro.real_yield)) if macro.real_yield is not none else '—' }}</b></span></div></div>
       <div class="mini"><div class="lab"><span>{{ t('HY credit spread (OAS)','高收益信用利差') }}</span><span><b>{{ ('%.2f%%'|format(macro.hy_oas)) if macro.hy_oas is not none else '—' }}</b></span></div></div>
       <div class="mini"><div class="lab"><span>{{ t('VIX / Dollar (DXY)','VIX / 美元指数') }}</span><span><b>{{ macro.vix if macro.vix is not none else '—' }}</b> / {{ macro.dxy if macro.dxy is not none else '—' }}</span></div></div>
@@ -707,6 +713,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
       <div class="mini" style="margin-top:8px"><div class="lab"><span style="color:var(--r3)">{{ t('Headwind (score < −0.3)','逆风（评分 < −0.3）') }}</span><span><b>+1.4%</b> <span class="faint">/90d · 41% hit</span></span></div></div>
       <div class="mini"><div class="lab"><span style="color:var(--blue)">{{ t('Tailwind (score > +0.3)','顺风（评分 > +0.3）') }}</span><span><b>+48.8%</b> <span class="faint">/90d · 76% hit</span></span></div></div>
       <div class="sub" style="margin-top:10px">{{ t('It is a STRATEGIC (months-horizon) context gauge — kept separate from the tactical allocation, which it did not improve when tested as an overlay. Read it as the tide BTC swims in.', '这是战略层（数月维度）的背景指标 — 与战术仓位分开，因为作为叠加测试时并未改善回测。可将其理解为 BTC 所处的潮汐。') }}</div>
+      <div class="sub faint" style="margin-top:10px;font-size:12px">{{ t('Stablecoin tide = the GROWTH of total stablecoin supply (the pace new capital mints INTO crypto) — orthogonal to the fiat net-liquidity above. DIRECTIONAL (2018→, both-halves): an expanding tide (z 1–2) preceded +23%/90d at 76% hit; a contracting tide (z < −1, where we are now) preceded only +0.8%/90d at 42% hit — a measured headwind.','稳定币潮汐 = 稳定币总供给的增速（新资本铸入加密的速度）— 与上方法币净流动性正交。方向性（2018 起，两半样本）：扩张潮汐（z 1–2）后 90 天 +23%、胜率 76%；收缩潮汐（z < −1，即当前）后 90 天仅 +0.8%、胜率 42% — 一项实测逆风。') }}</div>
     </div>
   </div>
 
