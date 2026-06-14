@@ -407,6 +407,56 @@ def _validate_brief(parsed: dict) -> dict:
 # --------------------------------------------------------------------------- #
 # public: brief for one ticker
 # --------------------------------------------------------------------------- #
+_ZH_SCALARS = ("summary",)
+_ZH_LISTS = ("drivers", "risks", "catalysts")
+
+
+def _translate_brief(brief: dict, cfg: dict) -> None:
+    """Attach a Chinese version (brief['zh']) via the shared DeepSeek translator so the
+    #stock-brief panel can show the read under the 中文 toggle. Cheap V4-Flash pass;
+    degrade-never-raise with per-field English fallback. (Mirrors master_brain._translate_brief.)"""
+    if not cfg.get("translate_zh", True):
+        return
+    try:
+        from engine import translate as _tr
+        texts: list[str] = []
+        layout: list[tuple[str, int | None]] = []
+        for k in _ZH_SCALARS:
+            v = brief.get(k)
+            if isinstance(v, str) and v.strip():
+                layout.append((k, None)); texts.append(v)
+        for k in _ZH_LISTS:
+            for i, v in enumerate(brief.get(k) or []):
+                if isinstance(v, str) and v.strip():
+                    layout.append((k, i)); texts.append(v)
+        if not texts:
+            return
+        tcfg = {
+            "enabled": True,
+            "base_url": cfg.get("llm_base_url", "https://api.deepseek.com/anthropic"),
+            "api_key_env": cfg.get("api_key_env", "DEEPSEEK_API_KEY"),
+            "model": cfg.get("translate_model", "deepseek-v4-flash"),
+            "max_chars": 1500, "max_tokens": 3000, "batch_size": 24,
+        }
+        zh_list = _tr.translate_to_zh(texts, tcfg)
+        if not zh_list or all(x is None for x in zh_list):
+            return
+        zh: dict = {"summary": None,
+                    "drivers": [None] * len(brief.get("drivers") or []),
+                    "risks": [None] * len(brief.get("risks") or []),
+                    "catalysts": [None] * len(brief.get("catalysts") or [])}
+        for (k, i), t in zip(layout, zh_list):
+            if t is None:
+                continue
+            if i is None:
+                zh[k] = t
+            else:
+                zh[k][i] = t
+        brief["zh"] = zh
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("catalyst_stock zh translation failed (%s)", e)
+
+
 def brief_for_ticker(ticker: str, root: Path | None = None,
                      include_news: bool = True) -> dict | None:
     """Assemble PUBLIC context -> optional Flash news digest -> Pro reasoning brief.
@@ -457,6 +507,7 @@ def brief_for_ticker(ticker: str, root: Path | None = None,
             rec["degraded_reason"] = reason or "unparseable_reply"
             return rec
         rec.update(_validate_brief(parsed))
+        _translate_brief(rec, cfg)          # attach rec['zh'] for the 中文 toggle
         if reason:                          # parsed, but flag e.g. truncation
             rec["degraded_reason"] = reason
         return rec
