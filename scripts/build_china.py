@@ -142,15 +142,14 @@ def china_regime_timeline(hist: pd.DataFrame) -> dict:
 
 def _lifespan_rows(quad: pd.Series) -> list[dict]:
     """Per-quad base rates (count, median length, two most-common next quads)."""
-    from engine.playbook import QUAD_SHORT, transition_stats
+    from engine.playbook import QUAD_SHORT, next_quads_line, transition_stats
     trans = transition_stats(quad)
     rows = []
     for q in ("Q1", "Q2", "Q3", "Q4"):
         nxt = trans["matrix"].get(q, {})
-        nxt_str = ", ".join(f"{QUAD_SHORT.get(k, k)} {v:.0%}" for k, v in
-                            sorted(nxt.items(), key=lambda kv: -kv[1])[:2]) or "—"
         rows.append({"name": QUAD_SHORT[q], "n": trans["n_by_quad"].get(q, "—"),
-                     "median": trans["median_days"].get(q, "—"), "next": nxt_str})
+                     "median": trans["median_days"].get(q, "—"),
+                     "next": next_quads_line(nxt), "next_zh": next_quads_line(nxt, zh=True)})
     return rows
 
 
@@ -334,7 +333,7 @@ def _build_sector_pages(env) -> int:
 
 
 def _build_history(env, latest: dict, generated: str) -> None:
-    from engine.playbook import QUAD_SHORT, transition_stats
+    from engine.playbook import QUAD_SHORT, next_quads_line, transition_stats
     hist = store.read("china_regime", "regime_history")
     if hist is None or "quad" not in hist.columns:
         log.warning("china history: no regime_history; skipping history page")
@@ -346,10 +345,9 @@ def _build_history(env, latest: dict, generated: str) -> None:
     rows = []
     for q in ("Q1", "Q2", "Q3", "Q4"):
         nxt = trans["matrix"].get(q, {})
-        nxt_str = ", ".join(f"{QUAD_SHORT.get(k, k)} {v:.0%}" for k, v in
-                            sorted(nxt.items(), key=lambda kv: -kv[1])[:2]) or "—"
         rows.append({"name": QUAD_SHORT[q], "n": trans["n_by_quad"].get(q, "—"),
-                     "median": trans["median_days"].get(q, "—"), "next": nxt_str})
+                     "median": trans["median_days"].get(q, "—"),
+                     "next": next_quads_line(nxt), "next_zh": next_quads_line(nxt, zh=True)})
     html = env.get_template("china_history.html.j2").render(
         latest=latest, generated_utc=generated,
         chart_regime=_chart_regime(px, hist) if not px.empty else "", chart_axes=_chart_axes(hist),

@@ -1077,17 +1077,16 @@ def main() -> int:
     log.info("wrote %s (%.0f KB)", out, out.stat().st_size / 1024)
 
     # --- history page: the longer-window charts + lifespan base rates ----------
-    from engine.playbook import QUAD_SHORT, transition_stats
+    from engine.playbook import QUAD_SHORT, next_quads_line, transition_stats
     trans = transition_stats(hist["quad"])
     lifespan_rows = []
     for q in ("Q1", "Q2", "Q3", "Q4"):
         nxt = trans["matrix"].get(q, {})
-        nxt_str = ", ".join(f"{QUAD_SHORT.get(k, k)} {v:.0%}" for k, v in
-                            sorted(nxt.items(), key=lambda kv: -kv[1])[:2]) or "—"
         lifespan_rows.append({"name": QUAD_SHORT[q],
                               "n": trans["n_by_quad"].get(q, "—"),
                               "median": trans["median_days"].get(q, "—"),
-                              "next": nxt_str})
+                              "next": next_quads_line(nxt),
+                              "next_zh": next_quads_line(nxt, zh=True)})
     hist_html = env.get_template("history.html.j2").render(
         latest=latest,
         generated_utc=generated,

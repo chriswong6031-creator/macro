@@ -67,6 +67,18 @@ QUAD_SHORT = {"Q1": "Goldilocks", "Q2": "Reflation",
 # canonical Chinese for the short quad names + transition states, for composed prose
 QUAD_SHORT_ZH = {"Q1": "理想增长", "Q2": "再通胀",
                  "Q3": "滞胀", "Q4": "增长恐慌"}
+
+
+def next_quads_line(nxt: dict, zh: bool = False, top: int = 2) -> str:
+    """The 'most common next regimes' string (top-N by probability) in EN or 中文,
+    e.g. 'Growth scare 51%, Reflation 46%' / '增长恐慌 51%、再通胀 46%'. Shared by
+    every lifespan/base-rate table so both languages stay in lockstep."""
+    names = QUAD_SHORT_ZH if zh else QUAD_SHORT
+    sep = "、" if zh else ", "
+    pairs = sorted(nxt.items(), key=lambda kv: -kv[1])[:top]
+    return sep.join(f"{names.get(k, k)} {v:.0%}" for k, v in pairs) or "—"
+
+
 STATE_ZH = {"STABLE": "稳定", "WEAKENING": "走弱",
             "TRANSITIONING": "转换中", "NEW_REGIME": "新周期", "NEW REGIME": "新周期"}
 # rotation-stage words (matches glossary: leading/weakening/improving/lagging)
@@ -563,6 +575,8 @@ def build_playbook(f: pd.DataFrame, regime: pd.DataFrame, closes: pd.DataFrame,
                "heat_cal": cal,
                "season_this": season_line(seas, month),
                "season_next": season_line(seas, nxt_month),
+               "season_this_zh": season_line(seas, month, zh=True),
+               "season_next_zh": season_line(seas, nxt_month, zh=True),
                "season_all": seas, "season_month": month}
         # distance to the buy trigger for names below their RS trend
         if not row["above_trend"]:
@@ -603,7 +617,7 @@ def build_playbook(f: pd.DataFrame, regime: pd.DataFrame, closes: pd.DataFrame,
             tech_txt = (" Tech: " + ", ".join(tech_bits) + "." if tech_bits else "")
             tech_txt_zh = (" 技术面：" + "、".join(tech_bits_zh) + "。" if tech_bits_zh else "")
             season_txt = f" {rec['season_this']}." if rec.get("season_this") else ""
-            season_txt_zh = f" {rec['season_this']}。" if rec.get("season_this") else ""
+            season_txt_zh = f" {rec.get('season_this_zh') or rec['season_this']}。" if rec.get("season_this") else ""
             leaders.append({
                 "ticker": t, "name": row["name"],
                 "aligned": is_aligned, "mom_60d_pct": row["mom_60d_pct"],
@@ -689,7 +703,7 @@ def build_playbook(f: pd.DataFrame, regime: pd.DataFrame, closes: pd.DataFrame,
                     trigger_txt += "."
                     trigger_txt_zh += "。"
                 season_txt = f" Seasonality: {rec['season_next']}." if rec.get("season_next") else ""
-                season_txt_zh = f" 季节性：{rec['season_next']}。" if rec.get("season_next") else ""
+                season_txt_zh = f" 季节性：{rec.get('season_next_zh') or rec['season_next']}。" if rec.get("season_next") else ""
                 watchlist.append({
                     "ticker": t, "name": row["name"],
                     "why": (f"Historically favored if the regime shifts to "
@@ -788,6 +802,7 @@ def build_playbook(f: pd.DataFrame, regime: pd.DataFrame, closes: pd.DataFrame,
         seas = _seas(c)
         commodities.append({"ticker": t, "name": label, **tech,
                             "season_this": _sl(seas, month),
+                            "season_this_zh": _sl(seas, month, zh=True),
                             "mom_60d_pct": round(float(c.pct_change(60).iloc[-1] * 100), 1)})
 
     return {
