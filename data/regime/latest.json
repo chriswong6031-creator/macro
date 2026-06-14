@@ -36,10 +36,10 @@
   "flip_condition": {
     "axis": "growth",
     "component": "breadth_direction",
-    "z": 0.87,
+    "z": 0.9,
     "threshold": 0.45,
-    "margin": 0.42,
-    "note": "growth axis flips risk: breadth_direction slope z=0.87 is the closest supporter to its +/-0.45 cutoff"
+    "margin": 0.45,
+    "note": "growth axis flips risk: breadth_direction slope z=0.9 is the closest supporter to its +/-0.45 cutoff"
   },
   "sector_rs": [
     {
@@ -258,7 +258,20 @@
       "chg_20d_pct": 11.18
     }
   },
-  "alerts": [],
+  "alerts": [
+    {
+      "rule": "holdings_active_change",
+      "severity": "info",
+      "message": "ARKK: manager cut BIDU by -56% of position (2026-06-11..2026-06-12, flow-normalized)",
+      "message_zh": "ARKK\uff1a\u7ecf\u7406 cut BIDU \u4ed3\u4f4d -56%\uff082026-06-11..2026-06-12\uff0c\u5df2\u6309\u8d44\u91d1\u6d41\u6807\u51c6\u5316\uff09"
+    },
+    {
+      "rule": "holdings_active_change",
+      "severity": "info",
+      "message": "ARKW: manager cut BIDU by -48% of position (2026-06-11..2026-06-12, flow-normalized)",
+      "message_zh": "ARKW\uff1a\u7ecf\u7406 cut BIDU \u4ed3\u4f4d -48%\uff082026-06-11..2026-06-12\uff0c\u5df2\u6309\u8d44\u91d1\u6d41\u6807\u51c6\u5316\uff09"
+    }
+  ],
   "playbook": {
     "headline": "Goldilocks \u2014 growth improving while inflation cools. Posture: CONSTRUCTIVE \u2014 lean long; normal position sizes in confirmed leaders.",
     "dial": {

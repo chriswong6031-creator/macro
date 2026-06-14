@@ -1,10 +1,10 @@
-"""Stock Connect flows (沪深港通) — repairs the broken connect_flow panel.
+"""Stock Connect flows (沪深港通) — the canonical Stock Connect source.
 
-The repo's old data/china_macro/connect_flow.parquet (written by china_macro via
-push2his kamt.kline) is DEAD: northbound_cum is frozen at a constant placeholder and
-southbound_cum is entirely NaN (the kamt path no longer serves usable legs). This
-collector replaces it with the Eastmoney datacenter history report (keyless JSON,
-live-verified 2026-06-13), which still serves a clean daily series:
+Keyless Eastmoney datacenter history report (RPT_MUTUAL_DEAL_HISTORY, live-verified
+2026-06-13), paginated to the full daily history back to 2014-11-17. This is the SINGLE
+source for Stock Connect flows: the old china_macro._connect_flow path (push2his
+kamt.kline — long dead, northbound a frozen placeholder) has been removed in favour of
+this dedicated collector, which serves a clean daily series:
 
   southbound (MUTUAL_TYPE 006)  mainland buying Hong Kong — FULLY LIVE daily net,
                                 buy/sell, turnover, and cumulative mainland-in-HK
@@ -57,16 +57,26 @@ class ChinaConnectAdapter(Adapter):
         return {"User-Agent": _UA, "Referer": _REFERER}
 
     def _leg(self, mutual_type: str, full_history: bool) -> pd.DataFrame:
-        page_size = 4000 if full_history else 90
-        params = {"reportName": "RPT_MUTUAL_DEAL_HISTORY", "columns": "ALL",
-                  "pageSize": page_size, "sortColumns": "TRADE_DATE", "sortTypes": -1,
-                  "pageNumber": 1, "filter": f'(MUTUAL_TYPE="{mutual_type}")'}
-        r = self.http_get(_BASE, params=params, retries=self.retries,
-                          headers=self._headers(), timeout=30)
-        data = ((r.json() or {}).get("result") or {}).get("data") or []
-        if not data:
+        page_size = 2000 if full_history else 90   # API caps each page at 2000 rows
+        rows: list[dict] = []
+        page_no = 1
+        while True:
+            params = {"reportName": "RPT_MUTUAL_DEAL_HISTORY", "columns": "ALL",
+                      "pageSize": page_size, "sortColumns": "TRADE_DATE", "sortTypes": -1,
+                      "pageNumber": page_no, "filter": f'(MUTUAL_TYPE="{mutual_type}")'}
+            r = self.http_get(_BASE, params=params, retries=self.retries,
+                              headers=self._headers(), timeout=30)
+            result = (r.json() or {}).get("result") or {}
+            data = result.get("data") or []
+            rows.extend(data)
+            # full backfill walks every page back to 2014-11-17; an incremental run
+            # is satisfied by the single newest page
+            if not full_history or not data or page_no >= (result.get("pages") or 1):
+                break
+            page_no += 1
+        if not rows:
             raise ValueError(f"type {mutual_type}: empty result")
-        raw = pd.DataFrame(data)
+        raw = pd.DataFrame(rows)
         idx = pd.to_datetime(raw["TRADE_DATE"])
         out = pd.DataFrame(index=idx)
         for stored, (src, scale) in _FIELDS.items():
