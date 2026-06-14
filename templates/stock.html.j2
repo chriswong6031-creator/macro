@@ -149,6 +149,12 @@
   .kv { display:flex; justify-content:space-between; gap:10px; font-size:13px; padding:4px 0; border-bottom:1px solid var(--line); }
   .kv .kvk { color:var(--muted); } .kv .kvv { font-weight:700; }
   .grade { display:inline-block; min-width:18px; text-align:center; padding:1px 7px; border-radius:7px; font-weight:800; }
+  .myhdr { font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin:2px 0 4px; }
+  .myrow { display:grid; grid-template-columns:92px 116px 1fr; gap:10px; align-items:center; padding:3px 0; font-size:13px; }
+  .myrow .mylab { color:var(--muted); }
+  .myrow .myval { font-weight:700; font-size:12.5px; }
+  .hchip { display:inline-block; padding:2px 9px; border-radius:8px; font-weight:700; font-size:12.5px; margin-right:6px; cursor:help; }
+  @media (max-width:560px){ .myrow{ grid-template-columns:80px 90px 1fr; } }
 </style>
 </head>
 <body>
@@ -228,8 +234,9 @@
 
     <div class="panel" id="panel_fin" style="display:none">
       <h2>📊 {{ t('Financials &amp; growth', '财务与增长') }}
-        {{ help('From SEC EDGAR XBRL (latest fiscal year, lagged to the filing date). Margins and returns are point-in-time; growth is year-over-year where a prior-year figure exists. Multi-year trends, the Piotroski F-score and the Altman Z-score arrive in Phase 2 (SEC companyfacts).',
-          '来自SEC EDGAR XBRL（最新财年，滞后至申报日）。利润率与回报为时点值；在有上年数据时显示同比增长。多年趋势、Piotroski F分数与Altman Z分数将在第二阶段（SEC companyfacts）加入。') }}</h2>
+        {{ help('Latest fiscal year from SEC EDGAR XBRL; multi-year trends, growth (CAGR) and the Piotroski-F / Altman-Z health scores from SEC companyfacts. All lagged to the filing date. Diluted EPS is as-reported — not split-adjusted across years.',
+          '最新财年来自SEC EDGAR XBRL；多年趋势、增长（CAGR）与 Piotroski-F／Altman-Z 健康分数来自SEC companyfacts。均滞后至申报日。摊薄EPS为申报口径，未跨年做拆股调整。') }}</h2>
+      <div id="r_multiyear" style="margin-bottom:8px"></div>
       <div id="r_finrows"></div>
       <details><summary>{{ t('more metrics &amp; financial health', '更多指标与财务健康') }}</summary>
         <div id="r_finmore" style="margin-top:6px"></div>
@@ -412,6 +419,30 @@
       '<line x1="'+pad+'" y1="'+y(a).toFixed(1)+'" x2="'+(w-pad)+'" y2="'+y(b).toFixed(1)+'" stroke="'+col+'" stroke-width="1.6"/>' +
       '<circle cx="'+(w-pad)+'" cy="'+y(b).toFixed(1)+'" r="2.2" fill="'+col+'"/></svg>';
   }
+  function sparkN(arr, w) {
+    var pts = (arr || []).filter(function (x) { return x != null; });
+    if (pts.length < 2) return '';
+    w = w || 120; var h = 22, pad = 3, n = arr.length, step = (w - 2*pad) / (n - 1);
+    var lo = Math.min.apply(null, pts), hi = Math.max.apply(null, pts), rng = (hi - lo) || Math.abs(hi) || 1;
+    var d = '', first = true, lx = pad, ly = null;
+    for (var i = 0; i < n; i++) {
+      if (arr[i] == null) continue;
+      var x = pad + i*step, yy = (h - pad) - ((arr[i] - lo) / rng) * (h - 2*pad);
+      d += (first ? 'M' : 'L') + x.toFixed(1) + ' ' + yy.toFixed(1) + ' '; first = false; lx = x; ly = yy;
+    }
+    var up = pts[pts.length-1] >= pts[0], col = up ? 'var(--up)' : 'var(--down)';
+    return '<svg class="spark" width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'" aria-hidden="true">' +
+      '<path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="1.5"/>' +
+      (ly != null ? '<circle cx="'+lx.toFixed(1)+'" cy="'+ly.toFixed(1)+'" r="2" fill="'+col+'"/>' : '') + '</svg>';
+  }
+  function myRow(lab, series, fmtFn, cagr) {
+    var clean = (series || []).filter(function (x) { return x != null; });
+    if (!clean.length) return '';
+    var last = clean[clean.length - 1];
+    var cg = (cagr != null) ? ' <span class="' + (cagr > 0 ? 'pos' : 'neg') + '">' + (cagr > 0 ? '+' : '') + cagr + '%/yr</span>' : '';
+    return '<div class="myrow"><span class="mylab">' + lab + '</span>' + sparkN(series, 116) +
+           '<span class="myval">' + fmtFn(last) + cg + '</span></div>';
+  }
   function valbar(lab, cell, kind) {
     if (!cell || cell.v == null) return '';
     var v = kind === 'x' ? fmtX(cell.v) : fmtPct(cell.v, 1);
@@ -513,6 +544,20 @@
     } else show('panel_val', false);
 
     if (fin) {
+      // multi-year trend (SEC companyfacts) — sparklines + CAGR; falls back to the
+      // single-year rows below when companyfacts hasn't been collected for this name
+      var my = fin.multiyear;
+      if (my && my.years && my.years.length >= 2) {
+        var yspan = ' <span class="muted">(FY' + my.years[0] + '–' + my.years[my.years.length-1] + ')</span>';
+        var mrows = [
+          myRow(lz('Revenue','营收'), my.revenue, fmtNum, my.rev_cagr),
+          myRow(lz('Net margin','净利率'), my.net_margin, function (x){ return x.toFixed(1)+'%'; }, null),
+          myRow(lz('Diluted EPS','摊薄EPS'), my.eps, function (x){ return '$'+x.toFixed(2); }, my.eps_cagr),
+          myRow(lz('Free cash flow','自由现金流'), my.fcf, fmtNum, null)
+        ].join('');
+        el('r_multiyear').innerHTML = '<div class="myhdr">' + lz('Multi-year trend','多年趋势') + yspan + '</div>' + mrows;
+      } else { el('r_multiyear').innerHTML = ''; }
+
       el('r_finrows').innerHTML = FROWS.map(function (r) {
         return finrow(lz(r.en, r.zh), r.get(fin), r.fmt, r.chg ? r.chg(fin) : null, r.spark ? r.spark(fin) : null);
       }).join('');
@@ -521,7 +566,19 @@
       more.push(finrow(lz('Debt / assets','负债／资产'), fin.debt_to_assets, 'pct'));
       more.push(finrow(lz('Asset growth (YoY)','资产增长（同比）'), fin.asset_growth, 'pct'));
       more.push(finrow(lz('Accruals (lower = better)','应计（越低越好）'), fin.accruals == null ? null : fin.accruals * 100, 'pct'));
-      more.push('<div class="finrow"><span class="flab">' + LF('piotroski') + '</span><span class="fval muted">' + LF('ph2') + '</span><span class="fchg"></span></div>');
+      // Piotroski F + Altman Z health chips (real when companyfacts present, else stub)
+      var hz = [];
+      if (my && my.piotroski) {
+        var f = my.piotroski, fcol = (f.score >= Math.ceil(f.of*0.7)) ? 'var(--up)' : (f.score <= Math.floor(f.of*0.34)) ? 'var(--down)' : 'var(--muted)';
+        hz.push('<span class="hchip" style="color:'+fcol+';background:color-mix(in srgb,'+fcol+' 14%,transparent)" title="'+lz('Piotroski F — fundamental-momentum signals passing','Piotroski F — 通过的基本面动能信号')+'">F '+f.score+'/'+f.of+'</span>');
+      }
+      if (my && my.altman) {
+        var z = my.altman, zcol = z.zone==='safe' ? 'var(--up)' : z.zone==='distress' ? 'var(--down)' : 'var(--warn)';
+        var zlab = lz({safe:'safe',grey:'grey zone',distress:'distress'}[z.zone], {safe:'安全',grey:'灰色区',distress:'困境'}[z.zone]);
+        hz.push('<span class="hchip" style="color:'+zcol+';background:color-mix(in srgb,'+zcol+' 14%,transparent)" title="Altman Z — '+zlab+'">Z '+z.z+' · '+zlab+'</span>');
+      }
+      more.push('<div class="finrow"><span class="flab">' + LF('piotroski') + '</span><span class="fval">' +
+        (hz.length ? hz.join(' ') : '<span class="muted">'+LF('ph2')+'</span>') + '</span><span class="fchg"></span></div>');
       el('r_finmore').innerHTML = more.join('');
       show('panel_fin', true);
     } else show('panel_fin', false);
@@ -641,7 +698,7 @@
     var eb = document.getElementById('r_entry');
     eb.style.display = 'flex';
     eb.className = 'entrybar urg-' + (e.urgency || 'hold');
-    document.getElementById('r_tag').textContent = e.tag || '';
+    document.getElementById('r_tag').textContent = lz(e.tag, e.tag_zh);
     document.getElementById('r_entrytext').textContent = lz(e.text, e.text_zh);
 
     var ageEl = document.getElementById('r_age');
