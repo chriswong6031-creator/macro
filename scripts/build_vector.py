@@ -58,6 +58,17 @@ def _tail(obj, days: int):
     return obj.loc[obj.index >= cutoff]
 
 
+def _runs(s: pd.Series):
+    """Contiguous constant-value runs -> [(start, end, value), ...] so a price
+    panel can be shaded by a regime/state series (allocation level, ETF-flow
+    accumulation/distribution state, risk regime, …)."""
+    s = s.dropna()
+    if s.empty:
+        return []
+    grp = (s != s.shift()).cumsum()
+    return [(g.index[0], g.index[-1], g.iloc[0]) for _, g in s.groupby(grp)]
+
+
 # --------------------------------------------------------------------------- #
 # view-model computations
 # --------------------------------------------------------------------------- #
@@ -246,6 +257,39 @@ def forward_risk(df: pd.DataFrame, horizon: int) -> dict:
     return R
 
 
+def kelly_sizing(sig: pd.DataFrame, cfg: dict) -> dict | None:
+    """Conviction -> capped fractional-Kelly position size (D-vec-KELLY). The honest
+    'how much to hold' the conviction/forward-drawdown apparatus implies: the EDGE is
+    the calibrated forward-90d return of the CURRENT composite stance (direction is a
+    coin-flip, so the edge comes from the regime, not the 3-7d call); fractional-Kelly
+    f = kelly_frac · max(E,0)/σ² sizes on it; and the position is CAPPED so the 90d
+    worst-case dip (the calibration's forward-drawdown p05 tail for the live risk band)
+    stays inside a drawdown budget. The binding constraint (edge vs tail) is named.
+    Pure, conservative (half/quarter-Kelly), and 0 when the regime edge is non-positive."""
+    if "composite_state" not in sig or "close" not in sig:
+        return None
+    close = sig["close"]
+    fwd90 = close.shift(-90) / close - 1
+    cur = sig["composite_state"].iloc[-1]
+    r = fwd90.loc[sig.index[sig["composite_state"] == cur]].dropna()
+    R90 = forward_risk(sig, 90)
+    if len(r) < 50 or not R90 or R90.get("tail") is None:
+        return None
+    E, sd = float(r.mean()), float(r.std())
+    kf = cfg.get("kelly_frac", 0.5)
+    ddb = cfg.get("dd_budget", 0.25)
+    pos_max = cfg.get("pos_max", 1.0)
+    tail = abs(R90["tail"]) / 100.0
+    f_kelly = (kf * max(E, 0.0) / (sd * sd)) if sd else 0.0
+    f_tail = (ddb / tail) if tail else pos_max
+    size = max(0.0, min(f_kelly, f_tail, pos_max))
+    return {"size_pct": round(100 * size), "stance": cur,
+            "edge_90": round(100 * E, 1), "vol_90": round(100 * sd, 1),
+            "tail_90": round(R90["tail"]), "f_kelly": round(f_kelly, 2),
+            "f_tail": round(f_tail, 2), "kelly_frac": kf, "dd_budget": round(100 * ddb),
+            "binding": "edge" if f_kelly <= f_tail else "tail", "n": int(len(r))}
+
+
 def _risk_lines(R: dict) -> dict:
     """Honest EN/ZH prose for the forward-risk read: the band state word + the
     horizon-welded headline, the avg-vs-tail main line, and the band-gated guard
@@ -411,17 +455,54 @@ def _series(group: str, name: str) -> pd.Series | None:
 # charts
 # --------------------------------------------------------------------------- #
 def chart_risk_vs_strategy(df: pd.DataFrame, eq: pd.Series, hodl: pd.Series,
-                           days: int = 730) -> str:
-    d = _tail(df, days)
+                           days: int | None = None) -> str:
+    """Full-history (2015->) BTC price + backtested strategy, with the price panel
+    SHADED by the model's allocation (green = fully in / amber = half / clear =
+    out) and buy/sell markers at every allocation change — so you can read, at a
+    glance, when risk drove the model fully in or fully out. Log price axis;
+    1Y/2Y/5Y/All buttons rescale both axes. `days=None` = the whole record."""
+    d = df if days is None else _tail(df, days)
     eq, hodl = eq.reindex(d.index), hodl.reindex(d.index)
     fig = make_subplots(rows=3, cols=1, shared_xaxes=True, row_heights=[0.5, 0.28, 0.22],
                         vertical_spacing=0.04)
+
+    # --- allocation regime shading behind the price (the headline upgrade) ---
+    # Explicit shapes on row-1's axes (xref="x", yref="y domain" spans the full
+    # panel height on the log axis). add_vrect(row=,col=) defers and drops here.
+    shade = {1.0: "rgba(34,170,94,0.13)", 0.5: "rgba(245,173,66,0.15)"}  # 0.0 = clear
+    for start, end, lvl in _runs(d["alloc_optimal"]):
+        fc = shade.get(round(lvl, 1))
+        if fc:
+            fig.add_shape(type="rect", xref="x", yref="y domain",
+                          x0=start, x1=end, y0=0, y1=1,
+                          fillcolor=fc, line_width=0, layer="below")
+
     fig.add_trace(go.Scatter(x=d.index, y=d["close"], name="BTC Price",
                              line={"color": C["priceln"], "width": 1.4}), row=1, col=1)
     # strategy equity rescaled to price axis for visual overlay
     scale = d["close"].iloc[0] / eq.iloc[0]
-    fig.add_trace(go.Scatter(x=eq.index, y=eq * scale, name="Optimal strategy",
+    sx = eq * scale
+    fig.add_trace(go.Scatter(x=eq.index, y=sx, name="Optimal strategy",
                              line={"color": C["blue"], "width": 1.8}), row=1, col=1)
+
+    # --- buy/sell markers at allocation changes (▲ add when it steps up) ---
+    chg = d["alloc_optimal"].diff()
+    for mask, sym, col, nm, off in [
+        (chg > 0, "triangle-up", "#1FA971", "Buy / add", 0.90),
+        (chg < 0, "triangle-down", C["red"], "Sell / trim", 1.10),
+    ]:
+        idx = d.index[mask.fillna(False).to_numpy()]
+        if len(idx):
+            to = d["alloc_optimal"].reindex(idx)
+            fr = to - chg.reindex(idx)
+            txt = [f"{a:.0%} → {b:.0%}" for a, b in zip(fr, to)]
+            fig.add_trace(go.Scatter(
+                x=idx, y=d["close"].reindex(idx) * off, mode="markers", name=nm,
+                marker={"symbol": sym, "color": col, "size": 8,
+                        "line": {"width": 0.5, "color": "#fff"}},
+                text=txt, hovertemplate="%{x|%b %d %Y} · " + nm + " %{text}<extra></extra>",
+            ), row=1, col=1)
+
     # risk index two-tone (split at threshold 25)
     ri = d["risk_index"]
     fig.add_trace(go.Scatter(x=ri.index, y=ri.where(ri < 25), name="Risk (low)",
@@ -433,10 +514,34 @@ def chart_risk_vs_strategy(df: pd.DataFrame, eq: pd.Series, hodl: pd.Series,
                              line={"color": C["indigo"], "width": 1.2, "shape": "hv"},
                              fill="tozeroy", fillcolor="rgba(40,95,255,0.10)",
                              showlegend=False), row=3, col=1)
-    fig.update_yaxes(title_text="Price $", row=1, col=1)
+
+    # --- range buttons: precompute x+y so the LOG price axis rescales on zoom ---
+    now = d.index.max()
+    btns = []
+    for label, dd in [("1Y", 365), ("2Y", 730), ("5Y", 1825), ("All", None)]:
+        x0 = d.index.min() if dd is None else max(d.index.min(), now - pd.Timedelta(days=dd))
+        w = (d.index >= x0)
+        lo = float(min(d["close"][w].min(), sx[w].min()))
+        hi = float(max(d["close"][w].max(), sx[w].max()))
+        xr = [x0.strftime("%Y-%m-%d"), now.strftime("%Y-%m-%d")]
+        yr = [float(np.log10(lo * 0.88)), float(np.log10(hi * 1.14))]
+        btns.append({"label": label, "method": "relayout",
+                     "args": [{"xaxis.range": xr, "xaxis2.range": xr,
+                               "xaxis3.range": xr, "yaxis.range": yr}]})
+
+    fig.update_yaxes(title_text="Price $", type="log", row=1, col=1)
     fig.update_yaxes(title_text="Risk", range=[0, 100], row=2, col=1)
     fig.update_yaxes(title_text="Alloc", range=[-0.05, 1.05], row=3, col=1)
-    fig.update_layout(**{**PLOT, "height": 460})
+    fig.update_layout(
+        **{**PLOT, "height": 480, "margin": {"l": 48, "r": 52, "t": 44, "b": 28}},
+        updatemenus=[{
+            "type": "buttons", "direction": "right", "showactive": True,
+            "x": 1, "xanchor": "right", "y": 1.02, "yanchor": "bottom",
+            "bgcolor": "rgba(255,255,255,0.7)", "bordercolor": C["grid"],
+            "borderwidth": 1, "font": {"size": 10, "color": C["text"]},
+            "pad": {"t": 2, "b": 2, "l": 4, "r": 4}, "buttons": btns,
+        }],
+    )
     return _html(fig)
 
 
@@ -471,6 +576,37 @@ def chart_bfi(df: pd.DataFrame, days: int = 365) -> str:
     fig.add_hrect(y0=40, y1=60, fillcolor=C["grid"], opacity=0.5, line_width=0)
     fig.update_yaxes(range=[0, 100])
     fig.update_layout(**{**PLOT, "height": 240})
+    return _html(fig)
+
+
+def chart_etf_flow(df: pd.DataFrame) -> str:
+    """Swissblock's 'Risk Index & ETF Net Flows' (#9): BTC price shaded by the
+    spot-ETF accumulation (blue) / distribution (red) regime, with daily net-flow
+    bars + the 5-day net flow below. ETF era only (2024->)."""
+    d = df[df["etf_flow_btc"].notna()]
+    if d.empty:
+        return ""
+    fig = make_subplots(rows=2, cols=1, shared_xaxes=True, row_heights=[0.56, 0.44],
+                        vertical_spacing=0.05)
+    shade = {"accumulation": "rgba(40,95,255,0.11)", "distribution": "rgba(211,11,11,0.10)"}
+    for start, end, st in _runs(d["etf_flow_state"]):
+        fc = shade.get(st)
+        if fc:
+            fig.add_shape(type="rect", xref="x", yref="y domain", x0=start, x1=end,
+                          y0=0, y1=1, fillcolor=fc, line_width=0, layer="below")
+    fig.add_trace(go.Scatter(x=d.index, y=d["close"], name="BTC Price",
+                             line={"color": C["priceln"], "width": 1.5}), row=1, col=1)
+    flow = d["etf_flow_btc"]
+    colors = np.where(flow >= 0, C["blue"], C["red"]).tolist()
+    fig.add_trace(go.Bar(x=d.index, y=flow, name="Daily net flow",
+                         marker={"color": colors, "line": {"width": 0}},
+                         showlegend=False), row=2, col=1)
+    fig.add_trace(go.Scatter(x=d.index, y=d["etf_flow_sum"], name="5-day net flow",
+                             line={"color": C["indigo"], "width": 1.6}), row=2, col=1)
+    fig.add_hline(y=0, line={"color": C["faint"], "width": 1}, row=2, col=1)
+    fig.update_yaxes(title_text="Price $", type="log", row=1, col=1)
+    fig.update_yaxes(title_text="Net flow (BTC)", row=2, col=1)
+    fig.update_layout(**{**PLOT, "height": 340, "barmode": "relative"})
     return _html(fig)
 
 
@@ -1082,6 +1218,10 @@ def main() -> int:
     all_events = btc_alerts.rebuild(sig)
     timeline = _group_timeline(btc_alerts.recent(all_events, acfg["timeline_days"]))
     last = sig.iloc[-1]
+    # ETF flows lag the price tape by a few days -> read the last row that HAS them
+    _efl = sig[sig["etf_flow_sum"].notna()] if "etf_flow_sum" in sig.columns else sig.iloc[0:0]
+    etf_last = _efl.iloc[-1] if len(_efl) else last
+    etf_asof = _efl.index[-1].strftime("%b %-d") if len(_efl) else None
     px = _series("coinbase", "btc_daily")
     close = sig["close"]
     chg24 = round(100 * (close.iloc[-1] / close.iloc[-2] - 1), 2)
@@ -1135,6 +1275,7 @@ def main() -> int:
     # forward-risk (the CONFIRMED quantity) — leads the cards; direction is secondary
     envd["risk"] = forward_risk(sig, 7)
     scnd["risk"] = forward_risk(sig, 3)
+    sizing = kelly_sizing(sig, config.load()["vector"].get("sizing", {}))  # D-vec-KELLY
 
     vm = {
         "as_of": sig.index.max().strftime("%b %d, %Y"),
@@ -1250,6 +1391,20 @@ def main() -> int:
             "ssr_osc": _r(last.get("ssr_oscillator"), 2),
             "mpi": _r(last.get("mpi"), 2),
         },
+        "etf": {
+            "state": etf_last.get("etf_flow_state"),
+            "flow_z": _r(etf_last.get("etf_flow_z"), 2),
+            "asof": etf_asof,
+            "flow_5d_str": (f"{int(etf_last['etf_flow_sum']):+,} BTC"
+                            if pd.notna(etf_last.get("etf_flow_sum")) else "—"),
+            "daily_str": (f"${int(etf_last['etf_flow_usd_mn']):+,}M"
+                          if pd.notna(etf_last.get("etf_flow_usd_mn")) else "—"),
+            "cum_btc_str": (f"{int(etf_last['etf_flow_cum']):,} BTC"
+                            if pd.notna(etf_last.get("etf_flow_cum")) else "—"),
+            "cum_usd_bn": (_r(etf_last["etf_flow_cum"] * etf_last["close"] / 1e9, 1)
+                           if pd.notna(etf_last.get("etf_flow_cum")) else None),
+            "present": bool(len(_efl)),
+        },
         "impulse": {
             "value": _r(last.get("impulse"), 2),
             "state": last.get("impulse_state"),
@@ -1281,6 +1436,7 @@ def main() -> int:
         },
         "env": envd,
         "scn": scnd,
+        "sizing": sizing,
         "cards": cards,
         "cross": cross_asset(close),
         "calib": calib,
@@ -1292,6 +1448,7 @@ def main() -> int:
             "momentum": chart_oscillator(sig["momentum"], close, "Momentum"),
             "structure": chart_oscillator(sig["structure"], close, "Structure Shift"),
             "bfi": chart_bfi(sig),
+            "etf_flow": chart_etf_flow(sig) if "etf_flow_btc" in sig.columns else "",
         },
     }
 

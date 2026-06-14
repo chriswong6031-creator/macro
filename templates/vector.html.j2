@@ -288,7 +288,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
   <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;padding-top:0;padding-bottom:0;border:none;margin:0 auto">
     <div class="nav-links">
       <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
-      <a class="nav-link" href="macro.html">📊 {{ t('Macro', '宏观') }}</a>
+      <a class="nav-link" href="macro.html">📊 {{ t('US Macro', '美国宏观') }}</a>
       <div class="nav-dd">
         <a class="nav-link active" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }} <span class="caret">▾</span></a>
         <div class="nav-dd-menu" role="menu">
@@ -296,6 +296,10 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
           <a href="vector_allocation.html">◎ {{ t('Allocation strategy', '仓位策略') }}<span class="d">{{ t('BTC · ETH · alts · cash', 'BTC · ETH · 山寨 · 现金') }}</span></a>
         </div>
       </div>
+      <a class="nav-link" href="etfs.html">🐳 {{ t('ETF flows', 'ETF 资金流') }}</a>
+      <a class="nav-link" href="factors.html">🧮 {{ t('Factors', '因子') }}</a>
+      <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国A股') }}</a>
+      <a class="nav-link" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }}</a>
       <a class="nav-link" href="commodities.html">◆ {{ t('Commodity Vector', '大宗商品向量') }}</a>
       <a class="nav-link" href="forex.html">💱 {{ t('Forex Vector', '外汇向量') }}</a>
     </div>
@@ -381,6 +385,10 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
       <div class="sub" style="margin-top:10px">{{ t('Market mode:', '市场模式：') }}
         <span class="chip {{ 'chip-strategic' if market_mode=='Strategic' else 'chip-tactical' }}">{{ td(market_mode) }}</span>
         · {{ t('BTC vs Alts leader:', 'BTC vs 山寨币 领先：') }} <b>{{ td(alt_leader) }}</b></div>
+      {% if sizing %}
+      <div class="mini" style="margin-top:12px;border-top:1px solid var(--grid);padding-top:11px"><div class="lab" style="border:none;padding-top:0"><span>{{ t('Risk-budgeted Kelly size','风险预算 Kelly 仓位') }} <span class="faint" style="font-size:11px">({{ '½' if sizing.kelly_frac==0.5 else (sizing.kelly_frac|string) }}-Kelly, {{ sizing.dd_budget }}% {{ t('DD budget','回撤预算') }})</span></span><span><b style="font-size:17px;color:{{ 'var(--blue)' if sizing.size_pct>=40 else 'var(--r3)' }}">{{ sizing.size_pct }}%</b></span></div></div>
+      <div class="sub faint" style="margin-top:4px;font-size:12px">{{ t('Half-Kelly on the','半 Kelly 基于') }} <b>{{ '%+0.0f'|format(sizing.edge_90) }}%/90d</b> {{ t('regime edge (','格局优势（') }}{{ td(sizing.stance|capitalize) }}{{ t(', σ','，σ') }} {{ sizing.vol_90 }}%), {% if sizing.binding=='tail' %}{{ t('capped by the','受限于') }} {{ sizing.tail_90 }}% {{ t('worst-case 90d dip','90 天极端回撤') }}{% else %}{{ t('edge-limited (the tail cap would allow','受优势限制（尾部上限允许') }} {{ (sizing.f_tail*100)|round|int }}%){% endif %}. {{ t('Direction is a coin-flip, so the edge is the regime, not the week.','方向接近抛硬币，故优势来自格局而非本周。') }}</div>
+      {% endif %}
       <a href="vector_allocation.html" style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;padding:11px 14px;border:1px solid var(--grid);border-radius:11px;background:var(--bg);text-decoration:none;color:var(--ink);font-weight:600;font-size:13.5px">
         <span>◎ {{ t('Full allocation strategy — BTC · ETH · alts · cash', '完整仓位策略 — BTC · ETH · 山寨 · 现金') }}</span>
         <span style="color:var(--blue);font-size:16px">→</span>
@@ -712,7 +720,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
       <div class="mini"><div class="lab"><span>{{ t('Net liquidity (WALCL−RRP−TGA)','净流动性（WALCL−RRP−TGA）') }}</span><span><b>{{ ('$%.2fT'|format(macro.net_liq_bn/1000)) if macro.net_liq_bn is not none else '—' }}</b>{% if macro.net_liq_roc is not none %} <span class="faint" style="color:{{ 'var(--blue)' if macro.net_liq_roc>=0 else 'var(--r3)' }}">({{ '%+0.1f'|format(macro.net_liq_roc) }}% 13w)</span>{% endif %}</span></div></div>
       {% if macro.global_m2_yoy is not none %}
       <div class="mini"><div class="lab"><span>{{ t('Global M2 growth (US+China)','全球 M2 增速（美+中）') }}</span><span><b style="color:{{ 'var(--blue)' if macro.global_m2_yoy>=5 else 'var(--r3)' }}">{{ macro.global_m2_yoy }}% YoY</b> <span class="faint">({{ td((macro.global_liq_regime or '')|capitalize) }})</span></span></div></div>{% endif %}
-      {% if macro.stbl_growth_z is not none %}
+      {% if macro.get('stbl_growth_z') is not none %}
       {% set sreg = {'expanding':'var(--blue)','contracting':'var(--r3)','neutral':'var(--muted)'} %}
       <div class="mini"><div class="lab"><span>{{ t('Stablecoin tide (crypto-native liquidity)','稳定币潮汐（加密原生流动性）') }}</span><span><b style="color:{{ sreg.get(macro.stbl_regime,'var(--muted)') }}">{{ td((macro.stbl_regime or '')|capitalize) }}</b> <span class="faint">(z {{ '%+0.1f'|format(macro.stbl_growth_z) }} · ${{ macro.stbl_mcap_bn }}B)</span></span></div></div>{% endif %}
       {% if macro.peg_state %}
@@ -749,6 +757,32 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
       <div class="sub" style="margin-top:8px">{{ t('Both shown as CONTEXT, not signals: on our free-data sample the SSR oscillator had no clean forward-return edge, and MPI came out INVERTED (miner distribution coincided with continued upside). Kept honest rather than dropped. CryptoQuant\'s true moat — wallet-labeled exchange Netflow / Whale Ratio — is not reproducible free.', '两者仅作背景，而非信号：在我们的免费数据样本上，SSR 振荡器无明确前瞻收益优势，MPI 则呈反向（矿工派发与持续上涨同时出现）。如实保留而非删除。CryptoQuant 真正的护城河 — 带钱包标注的交易所净流量/巨鲸比率 — 无法免费复刻。') }}</div>
     </div>
   </div>
+
+  <!-- ===================== BTC SPOT-ETF NET FLOWS ===================== -->
+  {% if etf.present %}
+  <div class="section-title">{{ t('Spot-ETF Net Flows · the institutional bid (since 2024)', '现货 ETF 净流入 · 机构买盘（2024 起）') }}</div>
+  <div class="card">
+    <h3>{{ t('Risk Index & ETF Net Flows', '风险指数与 ETF 净流入') }}
+      {% set _st = etf.state %}
+      <b style="color:{{ 'var(--blue)' if _st=='accumulation' else ('var(--r3)' if _st=='distribution' else 'var(--muted)') }}"> · {{ (t('ACCUMULATION','吸筹') if _st=='accumulation' else (t('DISTRIBUTION','派发') if _st=='distribution' else t('NEUTRAL','中性'))) }}</b>
+      {% if etf.asof %}<span class="faint" style="font-size:12px;font-weight:400"> · {{ t('as of','截至') }} {{ etf.asof }}</span>{% endif %}
+    </h3>
+    {{ charts.etf_flow|safe }}
+    <div class="sub" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;font-size:12px">
+      <span style="opacity:.8">{{ t('Price shaded by flow regime:', '价格按资金流状态着色：') }}</span>
+      <span><span style="display:inline-block;width:12px;height:11px;border-radius:2px;background:rgba(40,95,255,0.45);vertical-align:-1px;margin-right:5px"></span>{{ t('Accumulation (net inflows)', '吸筹（净流入）') }}</span>
+      <span><span style="display:inline-block;width:12px;height:11px;border-radius:2px;background:rgba(211,11,11,0.4);vertical-align:-1px;margin-right:5px"></span>{{ t('Distribution (net outflows)', '派发（净流出）') }}</span>
+      <span style="color:var(--blue)">▮ {{ t('inflow day','流入日') }}</span>
+      <span style="color:var(--r3)">▮ {{ t('outflow day','流出日') }}</span>
+    </div>
+    <div class="score" style="margin-top:12px">
+      <div class="s"><div class="k">{{ t('5-day net flow','5 日净流入') }}</div><div class="v" style="font-size:18px">{{ etf.flow_5d_str }}</div><div class="h">z {{ '%+0.2f'|format(etf.flow_z) if etf.flow_z is not none else '—' }}</div></div>
+      <div class="s"><div class="k">{{ t('Latest day','最新一日') }}</div><div class="v" style="font-size:18px">{{ etf.daily_str }}</div><div class="h">{{ t('net flow','净流入') }}</div></div>
+      <div class="s"><div class="k">{{ t('Net since launch','上线以来净流入') }}</div><div class="v" style="font-size:18px">${{ etf.cum_usd_bn }}B</div><div class="h">{{ etf.cum_btc_str }}</div></div>
+    </div>
+    <div class="sub" style="margin-top:10px">{{ t('Measured (2024→, ETF era only — so CONFIRMATION-grade, not a both-halves anchor): strong net inflows (flow z 0.25–0.75) preceded +5.0%/30d and +12.2%/90d at 65% hit, while strong outflows (z below −0.75) preceded −2.9%/30d. The relationship is intuitive and DIRECTIONAL, but only ~2.4 years exist, so it confirms the risk read rather than leading it. Glassnode-sourced via BGeometrics, free.', '实测（2024 起，仅 ETF 时代 — 故为确认级，而非双半段锚点）：强净流入（资金流 z 0.25–0.75）后 30 天 +5.0%、90 天 +12.2%、胜率 65%；强净流出（z 低于 −0.75）后 30 天 −2.9%。关系直观且具方向性，但仅约 2.4 年样本，故用于确认风险判断而非领先。数据经 BGeometrics 源自 Glassnode，免费。') }}</div>
+  </div>
+  {% endif %}
 
   <!-- ===================== CYCLE / POSITIONING / CORRELATION ===================== -->
   <div class="section-title">{{ t('Cycle Clock · Positioning · Cross-Asset Correlation', '周期时钟 · 持仓 · 跨资产相关性') }}</div>
@@ -903,6 +937,7 @@ window.__CHART_SWAP__ = {
   colors: {},
   labels: {"BTC Price":"BTC 价格","Optimal strategy":"最优策略","Allocation":"仓位",
            "Buy / add":"买入 / 加仓","Sell / trim":"卖出 / 减仓",
+           "5-day net flow":"5 日净流入","Net flow (BTC)":"净流入（BTC）",
            "Network Growth":"网络增长","Liquidity":"流动性","Momentum":"动量",
            "Structure Shift":"结构转变","Price $":"价格 $","Risk":"风险","Alloc":"仓位"}
 };

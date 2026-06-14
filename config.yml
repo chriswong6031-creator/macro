@@ -1273,6 +1273,11 @@ vector:
     # verdict KEEP-HEURISTIC -> composite_state stays the headline; the ensemble is a transparency
     # card only. It is promoted to the live headline only if a future calibration sweeps all baselines.
 
+  sizing:                         # conviction -> capped fractional-Kelly position size (D-vec-KELLY)
+    kelly_frac: 0.5               # HALF-Kelly (full Kelly over-bets fat-tailed crypto; 0.25 = quarter)
+    dd_budget: 0.25               # max tolerable 90d portfolio drawdown -> position capped so band p05 tail x size <= this
+    pos_max: 1.0                  # never lever past 100% (sizing is for a long-only BTC sleeve)
+
   btc_vs_alts:
     rs_window_d: 30               # relative-strength window across BTC/ETH/alts
     confirm_days: 3
@@ -1366,6 +1371,14 @@ vector:
     ssr_window_d: 365             # SSR oscillator z-score window (stablecoin dry powder)
     mpi_window_d: 365             # Miner Position Index = miner outflow USD / 365d MA
     mpi_min_periods_d: 120
+
+  etf_flow:                       # US spot-ETF net flows (Swissblock #9; bgeo/Glassnode, 2024->)
+    smooth_d: 5                   # rolling-sum window = the weekly flow regime
+    min_periods_d: 3
+    z_window_d: 90                # extremity z-score trailing window (vs recent norm)
+    z_min_periods_d: 30
+    state_enter_z: 0.6            # accumulation/distribution hysteresis on the flow z
+    state_exit_z: 0.2
 
   impulse:                        # Glassnode/Swissblock-style IMPULSE: z-scored
     # ACCELERATION of momentum (2nd derivative via MACD-histogram), gated for

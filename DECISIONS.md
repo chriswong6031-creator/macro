@@ -2,6 +2,29 @@
 
 Newest first. Each entry: what was decided, why, and what would change it.
 
+## 2026-06-14 — Vector conviction → capped fractional-Kelly position sizing
+
+**D-vec-KELLY. The conviction + forward-drawdown apparatus now outputs an actual "how
+much to hold" — a half-Kelly position size capped by the worst-case-dip budget.**
+`build_vector.kelly_sizing(sig, cfg)`: the EDGE is the calibrated forward-90d return of
+the CURRENT composite stance (direction is a coin-flip, so the edge comes from the REGIME,
+not the 3-7d call — ACCUMULATE +33%/90d, RISK-ON +32%, RISK-OFF +18% contrarian-bounce,
+DISTRIBUTE +6.9%, NEUTRAL −9.7%); fractional-Kelly f = kelly_frac·max(E,0)/σ² sizes on it
+(σ = forward-90d return std); and the position is CAPPED so the 90d worst-case dip (the
+forward-drawdown p05 tail for the LIVE risk band, reusing forward_risk(sig,90)) stays
+inside a drawdown budget: f_tail = dd_budget/|tail|. size = clip(min(f_kelly, f_tail),
+0, pos_max); the binding constraint (edge vs tail) is named, and a non-positive regime
+edge → 0% (hold nothing). config vector.sizing (kelly_frac 0.5 = HALF-Kelly since full
+Kelly over-bets fat-tailed crypto; dd_budget 0.25; pos_max 1.0). LIVE: composite DISTRIBUTE,
+E +6.9%/90d (σ 53.5%), 90d band tail −51% → half-Kelly f 0.12 (EDGE-binding, not tail) →
+**12%** — honestly small in a distribution regime. Surfaced in the hero allocation card
+with the binding-constraint prose + the coin-flip caveat. tests/test_vector_kelly.py (3:
+positive-edge-sizes-up / negative-zeroes, size==binding-min, live-valid). NOTE: the deeper
+edge source could be the calibrated allocation strategy's own per-state return rather than
+the raw composite band — a refinement. Separately flagged (spawn_task): site/vector.html is
+~1.1MB pre-existing (the risk-strategy Plotly chart inlines 4288 pts at full float
+precision); rounding the chart data would cut it ~3x — NOT this change.
+
 ## 2026-06-14 — Vector point-in-time: the "valuation regression refit" gap was a PHANTOM; proven causal + guarded
 
 **D-vec-PIT. Investigated the roadmap's "expanding-window refit of regression valuation
