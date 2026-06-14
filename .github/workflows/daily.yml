@@ -125,6 +125,11 @@ jobs:
         # public check-runs API) AND appended to the run Summary with its traceback,
         # but NEVER aborts the job — so the site still deploys (via the always()
         # artifact upload) and one broken builder can't 404 the whole dashboard.
+        env:
+          # catalyst_tone (Tier-A FOMC/dislocation digest) runs INSIDE engine.run, so it
+          # needs the DeepSeek key here too — not only on the master_brain step below.
+          # No-op (degrades to neutral) when the secret is absent.
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           set +e
           run_py() {
