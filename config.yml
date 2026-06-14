@@ -301,6 +301,69 @@ engine_residual_alpha:
   min_sector: 6                   # min names for a sector to get its own leader list
   min_names: 20                   # min universe to compute at all
 
+# Theme Trac-lite: curated narrow thematic baskets for the discovery "Themes" tab.
+# Each basket is ranked by the mean sector-neutral alpha-z of its members + the
+# share sitting in the universe-wide top quintile (build_discovery.py). A CURRENT-
+# SNAPSHOT CONTEXT LENS over the existing residual-alpha — baskets are hand-curated,
+# overlap GICS sectors, and are NOT backtested as portfolios (that would be textbook
+# selection / multiple-testing bias). No LLM, no per-theme backtest. Every ticker is
+# verified present in data/universe/membership.parquet (S&P Composite 1500).
+themes:
+  nuclear_power:
+    name: "Nuclear & SMR Power"
+    tickers: [CEG, VST, TLN, NRG, TXNM, BWXT, GEV, ORA]
+  rare_earth_critical_min:
+    name: "Rare Earth & Critical Minerals"
+    tickers: [MP, ATI, CRS, MTRN, KALU, CENX, AA]
+  data_center_power:
+    name: "Data Center Power & Cooling"
+    tickers: [VRT, ETN, POWL, NXT, AEIS, NVT, HUBB]
+  memory_storage:
+    name: "Memory, HBM & Storage"
+    tickers: [MU, WDC, SNDK, STX, NTAP]
+  ai_semiconductors:
+    name: "AI Semiconductors"
+    tickers: [NVDA, AVGO, AMD, QCOM, MPWR, ANET, SMCI]
+  semicap_equipment:
+    name: "Semiconductor Equipment (WFE)"
+    tickers: [AMAT, LRCX, KLAC, ENTG, MKSI, ONTO, ACLS, COHU, FORM, ICHR]
+  cybersecurity:
+    name: "Cybersecurity"
+    tickers: [CRWD, PANW, FTNT, OKTA, QLYS, NSSC, YOU]
+  glp1_obesity:
+    name: "GLP-1 / Obesity"
+    tickers: [LLY, AMGN, HIMS, PFE, ZBH]
+  defense_aerospace:
+    name: "Defense & Aerospace"
+    tickers: [LMT, RTX, NOC, GD, LHX, HII, TDG, HWM, CW, KTOS, AVAV, LDOS, BA, AXON]
+  copper_steel_electrify:
+    name: "Copper, Steel & Electrification"
+    tickers: [FCX, NUE, STLD, CMC, WCC, ENS]
+  solar:
+    name: "Solar"
+    tickers: [FSLR, ENPH, SEDG, RUN]
+  robotics_automation:
+    name: "Robotics & Automation"
+    tickers: [ROK, ISRG, TER, CGNX, NOVT, TRMB, ZBRA, PTC]
+  fintech_payments:
+    name: "Fintech & Payments"
+    tickers: [V, MA, PYPL, XYZ, FISV, FOUR, GPN, HOOD, COIN, PAYO, RELY]
+  medical_devices:
+    name: "Medical Devices"
+    tickers: [SYK, BSX, MDT, EW, PODD, DXCM, TNDM, INSP, TMDX, RMD]
+  diagnostics_lifesci:
+    name: "Diagnostics & Life-Science Tools"
+    tickers: [TMO, DHR, A, IQV, ILMN, DGX, LH, NEO, VCYT, IDXX]
+  ag_fertilizer:
+    name: "Agriculture & Fertilizer"
+    tickers: [CF, MOS, CTVA, FMC, SMG, DE, AGCO]
+  space_satellite:
+    name: "Space & Satellites"
+    tickers: [IRDM, GD, LHX, RTX, HWM, BWXT]
+  grid_electrification:
+    name: "Grid & Electrification"
+    tickers: [NEE, AEP, D, PWR, PNR, GEV, XYL, ITRI]
+
 # FINRA consolidated short interest (Phase 3 of the four-phase build-out). Free,
 # keyless FINRA Query API — bi-monthly exchange-listed short interest + days-to-
 # cover. Feeds a short_interest factor (high days-to-cover negatively predicts

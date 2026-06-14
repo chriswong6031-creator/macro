@@ -23,6 +23,7 @@
   <td>{{ echip(r.entry) }}</td>
   {{ mom(r.total_mom) }}
   <td class="r muted sm">{{ ('#%d/%d'|format(r.sector_rank, r.sector_n)) if r.sector_rank else '—' }}</td>
+  <td class="r">{% if r.rs is not none %}<b>{{ r.rs|round|int }}</b>{% if r.rs3m is not none %} <span class="muted sm">{{ r.rs3m|round|int }}/{{ r.rs6m|round|int }}/{{ r.rs12m|round|int }}</span>{% endif %}{% else %}—{% endif %}</td>
   <td class="r muted sm">{{ ('$%.2f'|format(r.price)) if r.price is not none else '—' }}</td>
 </tr>
 {%- endmacro %}
@@ -33,6 +34,7 @@
   <td><div class="scorecell">{{ abar(r.alpha) }}<span class="znum band-{{ r.band }}">{{ '%+.2f'|format(r.alpha) }}</span></div></td>
   <td>{{ echip(r.entry) }}</td>
   {{ mom(r.total_mom) }}
+  <td class="r">{% if r.rs is not none %}<b>{{ r.rs|round|int }}</b>{% else %}—{% endif %}</td>
   <td class="r muted sm">{{ ('$%.2f'|format(r.price)) if r.price is not none else '—' }}</td>
 </tr>
 {%- endmacro %}
@@ -131,6 +133,7 @@
 <div class="tabs">
   <button class="tabbtn on" data-tab="global">{{ t('Global index', '全球指数') }}</button>
   <button class="tabbtn" data-tab="sectors">{{ t('Sectors', '板块') }}</button>
+  <button class="tabbtn" data-tab="themes">{{ t('Themes', '主题') }}</button>
   <button class="tabbtn" data-tab="sector">{{ t('Sector index', '板块明细') }}</button>
 </div>
 
@@ -145,7 +148,9 @@
       <tr><th>#</th><th>{{ t('stock', '个股') }}</th><th>{{ t('sector', '板块') }}</th>
         <th>{{ t('alpha z', '阿尔法 z') }}{{ help('Sector-neutral residual-momentum information ratio, winsorized to a cross-sectional z-score. Higher = stronger idiosyncratic (beta/sector-stripped) momentum within its GICS sector. This is the global, cross-sector-comparable score.', '板块中性残差动量信息比率的去极值横截面 z 分数。越高 = 在其 GICS 板块内的特质（剔除贝塔/板块）动量越强。此为可跨板块比较的全局评分。') }}</th>
         <th>{{ t('entry', '入场') }}{{ help('Short-term reversal overlay (NOT the score): a leader that just ran hot is extended (reversal risk); one on a recent pullback is constructive. Laggards/neutral otherwise.', '短期反转叠加项（非评分）：刚刚过热的领先股为 extended（反转风险）；近期回调的为 constructive。') }}</th>
-        <th class="r">{{ t('12-1 mom', '12-1 动量') }}</th><th class="r">{{ t('sector #', '板块排名') }}</th><th class="r">{{ t('price', '价格') }}</th></tr>
+        <th class="r">{{ t('12-1 mom', '12-1 动量') }}</th><th class="r">{{ t('sector #', '板块排名') }}</th>
+        <th class="r">{{ t('RS', '相对强度') }}{{ help('Relative strength 1-99: cross-sectional percentile of the trailing 12-1 return (the familiar IBD-style rating). A recognizable but SHALLOWER momentum lens — subordinate context, NOT the alpha score (which also strips market AND sector beta). The 3m/6m/12m sub-percentiles show whether RS is improving or fading.', '相对强度 1-99：12-1 趋势回报的横截面百分位（熟悉的 IBD 风格评级）。一个易懂但更浅的动量视角——从属背景，并非阿尔法评分（后者还剔除了市场与板块贝塔）。3/6/12 月分项显示 RS 在改善还是衰退。') }}</th>
+        <th class="r">{{ t('price', '价格') }}</th></tr>
     {% endset %}
     <div id="g-strong" data-grp="glist">
       <table>{{ thead }}{% for r in strongest %}{{ grow(r, loop.index) }}{% endfor %}</table>
@@ -176,6 +181,27 @@
   </div>
 </div>
 
+<!-- THEMES OVERVIEW -->
+<div id="tab-themes" data-grp="tab" style="display:none">
+  <div class="panel">
+    <h2>{{ t('Themes by alpha', '按阿尔法排序的主题') }}
+      {{ help('Curated narrow thematic baskets ranked by the MEAN sector-neutral alpha-z of their members, with the share sitting in the universe-wide top quintile. Membership is hand-curated (S&P 1500-verified), overlaps GICS sectors, and is CONTEXT — not a buy list. There is no per-theme backtest: hand-picked baskets ranked on a single snapshot would be selection / multiple-testing bias, so this is a current-snapshot lens, not validated alpha.', '人工策划的细分主题篮子，按其成分股的平均板块中性阿尔法 z 排序，并显示位于全域前五分位的占比。成分为人工策划（标普1500内核验）、跨 GICS 板块，仅作背景——非买入清单。无逐主题回测：对人工挑选篮子做单时点排名会带来选择/多重检验偏差，故此为当前快照视角，而非经验证的阿尔法。') }}</h2>
+    <p class="muted sm note">{{ t('Context, not a buy list. Themes are curated baskets, not backtested portfolios — they re-aggregate the existing sector-neutral alpha.', '仅作背景，非买入清单。主题为人工策划的篮子，未作组合回测——它们仅对既有的板块中性阿尔法重新聚合。') }}</p>
+    <table>
+      <tr><th>#</th><th>{{ t('theme', '主题') }}</th><th>{{ t('mean alpha', '平均阿尔法') }}</th><th class="r">{{ t('in top 20%', '位于前20%') }}</th><th class="r">{{ t('names', '只') }}</th></tr>
+      {% for h in themes %}
+      <tr>
+        <td class="rk">{{ loop.index }}</td>
+        <td>{{ td(h.theme) }}<div class="muted sm">{% for r in h.names[:7] %}<a href="stock.html#{{ r.ticker }}">{{ r.ticker }}</a>{% if not loop.last %} · {% endif %}{% endfor %}{% if h.names|length > 7 %} <span class="muted">+{{ h.names|length - 7 }}</span>{% endif %}</div></td>
+        <td><div class="scorecell">{{ abar(h.mean) }}<span class="znum band-{{ 'strong' if h.mean>=0.3 else 'lag' if h.mean<-0.3 else 'mid' }}">{{ '%+.2f'|format(h.mean) }}</span></div></td>
+        <td class="r muted sm">{{ h.intop }}/{{ h.n }} · {{ h.pct }}%</td>
+        <td class="r muted sm">{{ h.n }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+
 <!-- SECTOR INDEX (drill) -->
 <div id="tab-sector" data-grp="tab" style="display:none">
   <div class="panel">
@@ -188,14 +214,14 @@
         <div>
           <h3 class="pos">{{ t('Leaders', '领先') }} — {{ td(sec) }}</h3>
           <table>
-            <tr><th>#</th><th>{{ t('stock', '个股') }}</th><th>{{ t('alpha z', '阿尔法 z') }}</th><th>{{ t('entry', '入场') }}</th><th class="r">{{ t('12-1', '12-1') }}</th><th class="r">{{ t('price', '价格') }}</th></tr>
+            <tr><th>#</th><th>{{ t('stock', '个股') }}</th><th>{{ t('alpha z', '阿尔法 z') }}</th><th>{{ t('entry', '入场') }}</th><th class="r">{{ t('12-1', '12-1') }}</th><th class="r">{{ t('RS', '相对强度') }}</th><th class="r">{{ t('price', '价格') }}</th></tr>
             {% for r in by_sector[sec].leaders %}{{ srow(r) }}{% endfor %}
           </table>
         </div>
         <div>
           <h3 class="neg">{{ t('Laggards', '落后') }} — {{ td(sec) }}</h3>
           <table>
-            <tr><th>#</th><th>{{ t('stock', '个股') }}</th><th>{{ t('alpha z', '阿尔法 z') }}</th><th>{{ t('entry', '入场') }}</th><th class="r">{{ t('12-1', '12-1') }}</th><th class="r">{{ t('price', '价格') }}</th></tr>
+            <tr><th>#</th><th>{{ t('stock', '个股') }}</th><th>{{ t('alpha z', '阿尔法 z') }}</th><th>{{ t('entry', '入场') }}</th><th class="r">{{ t('12-1', '12-1') }}</th><th class="r">{{ t('RS', '相对强度') }}</th><th class="r">{{ t('price', '价格') }}</th></tr>
             {% for r in by_sector[sec].laggards %}{{ srow(r) }}{% endfor %}
           </table>
         </div>

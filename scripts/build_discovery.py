@@ -93,7 +93,9 @@ def _row(tk: str, rec: dict, ns: dict, px) -> dict:
             "resid_ann": rec.get("resid_ann"), "total_mom": rec.get("total_mom"),
             "rev_1m": rec.get("rev_1m"), "rev_pctile": rec.get("rev_pctile"),
             "sector_rank": rec.get("sector_rank"), "sector_n": rec.get("sector_n"),
-            "entry": rec.get("entry"), "price": _price(px, tk)}
+            "entry": rec.get("entry"), "price": _price(px, tk),
+            "rs": rec.get("rs"), "rs3m": rec.get("rs3m"),
+            "rs6m": rec.get("rs6m"), "rs12m": rec.get("rs12m")}
 
 
 def main() -> int:
@@ -132,6 +134,24 @@ def main() -> int:
          for s, v in agg.items()],
         key=lambda x: x["mean"], reverse=True)
 
+    # Themes overview — curated narrow baskets ranked by mean sector-neutral alpha-z
+    # + share in the universe-wide top quintile (same q_cut as Sectors). A current
+    # snapshot context lens over the EXISTING alpha; baskets are NOT backtested.
+    theme_cfg = config.load().get("themes", {}) or {}
+    by_tk = {r["ticker"]: r for r in rows}
+    themes = []
+    for slug, spec in theme_cfg.items():
+        mem = [by_tk[tk] for tk in spec.get("tickers", []) if tk in by_tk]
+        if not mem:
+            continue
+        mean = sum(r["alpha"] for r in mem) / len(mem)
+        intop = sum(1 for r in mem if r["alpha"] >= q_cut)
+        themes.append({"slug": slug, "theme": spec.get("name", slug), "n": len(mem),
+                       "mean": round(mean, 2), "intop": intop,
+                       "pct": round(100 * intop / len(mem)),
+                       "names": sorted(mem, key=lambda r: r["alpha"], reverse=True)})
+    themes.sort(key=lambda x: x["mean"], reverse=True)
+
     # Sector drill — reuse alpha.json by_sector (already leaders/laggards with sector_rank);
     # enrich each row with a position band + last price.
     def _enrich(lst):
@@ -150,7 +170,7 @@ def main() -> int:
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     env.globals.update(td=td, tr=tr)
     html = env.get_template("discovery.html.j2").render(
-        strongest=strongest, weakest=weakest, sectors=sectors,
+        strongest=strongest, weakest=weakest, sectors=sectors, themes=themes,
         by_sector=by_sector, sector_order=sector_order, entry_meta=ENTRY_META,
         as_of=alpha.get("as_of"), windows=alpha.get("windows") or {},
         n=alpha.get("n"), built=built)
