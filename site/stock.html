@@ -39,6 +39,9 @@
   .early { margin:6px 0; padding:8px 12px; border-radius:8px;
            background:color-mix(in srgb, var(--g-cold) 14%, var(--panel2));
            border-left:3px solid var(--g-cold); font-size:13px; color:var(--text); }
+  .macro-caution { margin:6px 0; padding:8px 12px; border-radius:8px;
+           background:color-mix(in srgb, var(--down) 10%, var(--panel2));
+           border-left:3px solid var(--down); font-size:13px; color:var(--text); }
   .agewhen { margin:6px 0; padding:7px 11px; border-radius:8px; background:var(--panel2);
              border-left:3px solid var(--link); font-size:13px; color:var(--text); }
   .eqbadge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px;
@@ -50,6 +53,12 @@
   .eqbadge.eq-down { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--down);
                      border-color:color-mix(in srgb,var(--down) 40%,transparent); }
   .eqbadge.eq-flat { background:var(--panel2); color:var(--muted); }
+  .alpha-entry { display:inline-block; font-size:11.5px; font-weight:700; padding:2px 9px;
+                 border-radius:9px; border:1px solid var(--line); }
+  .ae-pullback { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
+  .ae-extended { background:color-mix(in srgb,var(--warn) 22%,transparent); color:var(--text); border-color:color-mix(in srgb,var(--warn) 55%,transparent); }
+  .ae-intact { background:color-mix(in srgb,var(--link) 14%,transparent); color:var(--link); }
+  .ae-laggard,.ae-neutral { background:var(--panel2); color:var(--muted); }
   .bcbox { margin:9px 0 6px; padding:9px 12px; border-radius:9px; background:var(--panel2);
            border-left:4px solid var(--muted); cursor:help; }
   .bc-head { display:flex; align-items:baseline; gap:9px; }
@@ -104,6 +113,81 @@
   #stock-brief .sb-list { margin:4px 0 0 18px; padding:0; }
   #stock-brief .sb-list li { margin:3px 0; }
   #stock-brief .sb-foot { margin-top:12px; color:var(--muted); font-size:12px; }
+  /* tooltip (the help() macro) — mirrors the dashboard's inline rules; stock.html
+     never used help() before, so these were missing and the tip leaked as text */
+  .help { display: inline-flex; align-items: center; justify-content: center;
+          width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--muted);
+          color: var(--muted); font-size: 10px; font-weight: 600; cursor: help;
+          position: relative; vertical-align: middle; margin-left: 5px; flex: none; }
+  .help .tip { display: none; position: absolute; bottom: 140%; left: 50%;
+               transform: translateX(-50%); width: 290px;
+               background: var(--panel); border: 1px solid var(--line);
+               padding: 9px 11px; border-radius: 8px;
+               z-index: 60; font-size: 12px; line-height: 1.45; color: var(--text);
+               text-align: left; font-weight: 400; text-transform: none;
+               letter-spacing: normal; box-shadow: var(--popover-shadow);
+               pointer-events: none; white-space: normal; }
+  .help:hover .tip { display: block; }
+  .help.edge-left .tip { left: 0; right: auto; transform: none; }
+  /* ---- fundamentals suite (Phase 1) ---- */
+  .arch { display:inline-flex; align-items:center; gap:5px; padding:3px 11px; border-radius:11px;
+          font-size:12.5px; font-weight:700; cursor:help; border:1px solid var(--line); white-space:nowrap; }
+  .arch.a-quality_compounder { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up);
+          border-color:color-mix(in srgb,var(--up) 40%,transparent); }
+  .arch.a-dividend_defensive { background:color-mix(in srgb,var(--link) 16%,transparent); color:var(--link);
+          border-color:color-mix(in srgb,var(--link) 40%,transparent); }
+  .arch.a-deep_value { background:color-mix(in srgb,var(--g-cold) 16%,transparent); color:var(--g-cold);
+          border-color:color-mix(in srgb,var(--g-cold) 40%,transparent); }
+  .arch.a-high_beta_momentum { background:color-mix(in srgb,var(--warn) 18%,transparent); color:var(--warn);
+          border-color:color-mix(in srgb,var(--warn) 45%,transparent); }
+  .arch.a-speculative_unprofitable { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--down);
+          border-color:color-mix(in srgb,var(--down) 40%,transparent); }
+  .arch.a-mixed { background:var(--panel2); color:var(--muted); }
+  .glance { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 2px; }
+  .gchip { padding:5px 11px; border-radius:9px; background:var(--panel2); border:1px solid var(--line);
+           font-size:12px; line-height:1.35; min-width:92px; }
+  .gchip .gk { color:var(--muted); display:block; font-size:10px; text-transform:uppercase; letter-spacing:.05em; }
+  .gchip .gv { font-weight:700; font-size:14px; }
+  .gchip.dashed { border-style:dashed; opacity:.7; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .chip { padding:3px 9px; border-radius:8px; background:var(--panel2); border:1px solid var(--line); font-size:12px; }
+  .srcline { color:var(--muted); font-size:11px; margin:8px 0 0; }
+  .stub { color:var(--muted); font-size:13px; padding:11px 13px; border-radius:8px;
+          background:var(--panel2); border:1px dashed var(--line); }
+  .valbar { display:grid; grid-template-columns:148px 72px 1fr; gap:10px; align-items:center; margin:6px 0; }
+  .valbar .vlab { color:var(--muted); font-size:12.5px; }
+  .valbar .vval { font-weight:700; font-size:13.5px; text-align:right; }
+  .vtrack { position:relative; height:9px; border-radius:5px; background:var(--panel2); }
+  .vfill { position:absolute; top:0; left:0; bottom:0; border-radius:5px; }
+  .vmed { position:absolute; top:-3px; bottom:-3px; width:2px; background:var(--text); opacity:.55; }
+  .finrow { display:grid; grid-template-columns:1fr auto 66px; gap:10px; align-items:center;
+            padding:5px 0; border-bottom:1px solid var(--line); font-size:13px; }
+  .finrow .flab { color:var(--muted); }
+  .finrow .fval { font-weight:700; }
+  .finrow .fchg { font-size:12px; text-align:right; }
+  .spark { vertical-align:middle; margin-left:6px; }
+  .facwrap { display:flex; gap:18px; flex-wrap:wrap; align-items:center; }
+  .radarbox { flex:0 0 auto; }
+  .zbars { flex:1; min-width:240px; }
+  .zrow { display:grid; grid-template-columns:108px 1fr; gap:8px; align-items:center; margin:3px 0; font-size:12px; }
+  .zrow .zlab { color:var(--muted); }
+  .ztrack { position:relative; height:8px; background:var(--panel2); border-radius:4px; }
+  .zmid { position:absolute; left:50%; top:-2px; bottom:-2px; width:1px; background:var(--line); }
+  .zfill { position:absolute; top:0; bottom:0; border-radius:4px; }
+  .twocol { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:560px){ .twocol{ grid-template-columns:1fr; } .valbar{ grid-template-columns:120px 60px 1fr; } }
+  .posbox h3 { font-size:11.5px; color:var(--muted); margin:0 0 6px; text-transform:uppercase; letter-spacing:.05em; }
+  .kv { display:flex; justify-content:space-between; gap:10px; font-size:13px; padding:4px 0; border-bottom:1px solid var(--line); }
+  .kv .kvk { color:var(--muted); } .kv .kvv { font-weight:700; }
+  .grade { display:inline-block; min-width:18px; text-align:center; padding:1px 7px; border-radius:7px; font-weight:800; }
+  .myhdr { font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin:2px 0 4px; }
+  .myrow { display:grid; grid-template-columns:92px 116px 1fr; gap:10px; align-items:center; padding:3px 0; font-size:13px; }
+  .myrow .mylab { color:var(--muted); }
+  .myrow .myval { font-weight:700; font-size:12.5px; }
+  .hchip { display:inline-block; padding:2px 9px; border-radius:8px; font-weight:700; font-size:12.5px; margin-right:6px; cursor:help; }
+  .earnhdr { font-size:13px; } .earnhdr .earndays { font-weight:800; font-size:15px; }
+  .earntbl { margin-top:6px; } .earntbl th, .earntbl td { padding:3px 8px; font-size:12.5px; }
+  @media (max-width:560px){ .myrow{ grid-template-columns:80px 90px 1fr; } }
 </style>
 </head>
 <body>
@@ -115,6 +199,9 @@
     <a class="nav-link" href="etfs.html">🐳 <span class="l-en">ETF flows</span><span class="l-zh">ETF 资金流</span></a>
     <a class="nav-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国A股</span></a>
     <a class="nav-link" href="commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span></a>
+    <a class="nav-link" href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span></a>
+    <a class="nav-link" href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span></a>
+    <a class="nav-link" href="discovery.html">🏆 <span class="l-en">Alpha leaders</span><span class="l-zh">阿尔法领先股</span></a>
     <a class="nav-link" href="brief.html">📰 <span class="l-en">Brief</span><span class="l-zh">简报</span></a>
     <a class="nav-link" href="history.html">📈 <span class="l-en">History</span><span class="l-zh">历史</span></a>
   </div>
@@ -148,14 +235,23 @@
         <h1 id="r_name"></h1>
         <span id="r_state" class="state"></span>
         <span id="r_eq" class="eqbadge" style="display:none"></span>
+        <span id="r_archetype" class="arch" style="display:none"></span>
         <span style="flex:1"></span>
+        <button id="r_afbtn" class="af-toggle" type="button" aria-label="Toggle alert feed" aria-expanded="false" aria-controls="af-feed" style="display:none"></button>
         <span id="r_asof" class="muted"></span>
       </div>
       <p id="r_summary" class="muted" style="margin:2px 0 6px; font-size:13.5px"></p>
-      <div id="r_entry" class="entrybar"><span class="entrytag" id="r_tag"></span><span id="r_entrytext"></span></div>
+      <div id="r_glance" class="glance" style="display:none"></div>
+      <!-- bold VERDICT + at-a-glance SIGNAL STRIP (replace the thin entry bar) -->
+      <div id="r_verdict" class="verdict"></div>
+      <div id="r_sigstrip" class="sigstrip"></div>
+      <!-- collapsible alert feed: ladder pinned on top + technical timeline -->
+      <div id="af-feed" class="af" hidden><div id="r_affeed"></div></div>
+      <!-- bottom-confidence box (multi-TF, bottoming states only) -->
       <div id="r_bc" class="bcbox" style="display:none"></div>
       <p id="r_age" class="agewhen" style="display:none"></p>
       <p id="r_early" class="early" style="display:none"></p>
+      <p id="r_macro" class="macro-caution" style="display:none"></p>
       <ul id="r_points" class="points"></ul>
       <div id="r_cyclebox" class="cyclebox"></div>
       <p id="r_flags" class="neg" style="margin:4px 0"></p>
@@ -165,6 +261,75 @@
       <h2>🧠 <span class="l-en">AI brief — research context</span><span class="l-zh">AI 简报 — 研究背景</span></h2>
       <div id="stock-brief-body"></div>
     </div>
+
+    <!-- ===== Fundamentals suite (Phase 1: surface what we already compute) ===== -->
+    <div class="panel" id="panel_profile" style="display:none">
+      <h2>🏢 <span class="l-en">Business profile</span><span class="l-zh">公司概况</span></h2>
+      <p id="r_profile_desc" style="margin:0 0 8px"></p>
+      <div id="r_profile_chips" class="chips"></div>
+      <p id="r_profile_src" class="srcline"></p>
+    </div>
+
+    <div class="panel" id="panel_val" style="display:none">
+      <h2>💲 <span class="l-en">Valuation</span><span class="l-zh">估值</span>
+        <span class="help">?<span class="tip"><span class="l-en">Trailing multiples from the latest SEC filing divided by the current price. The bar shows how cheap or expensive the name is versus its own GICS sector (green = cheaper, marker = sector median). Forward P/E is only available for a deep set of large caps; every other name shows trailing only — we never impute a forward number.</span><span class="l-zh">历史估值倍数＝最新SEC财报÷当前股价。条形显示相对其所属行业的便宜或昂贵程度（绿色＝更便宜，标记＝行业中位）。前瞻市盈率仅对部分大盘股可得，其余仅显示历史值——我们绝不臆造前瞻数字。</span></span></span></h2>
+      <div id="r_valbars"></div>
+      <p id="r_val_fwd" style="margin-top:8px; font-size:12.5px"></p>
+    </div>
+
+    <div class="panel" id="panel_fin" style="display:none">
+      <h2>📊 <span class="l-en">Financials &amp; growth</span><span class="l-zh">财务与增长</span>
+        <span class="help">?<span class="tip"><span class="l-en">Latest fiscal year from SEC EDGAR XBRL; multi-year trends, growth (CAGR) and the Piotroski-F / Altman-Z health scores from SEC companyfacts. All lagged to the filing date. Diluted EPS is as-reported — not split-adjusted across years.</span><span class="l-zh">最新财年来自SEC EDGAR XBRL；多年趋势、增长（CAGR）与 Piotroski-F／Altman-Z 健康分数来自SEC companyfacts。均滞后至申报日。摊薄EPS为申报口径，未跨年做拆股调整。</span></span></span></h2>
+      <div id="r_multiyear" style="margin-bottom:8px"></div>
+      <div id="r_finrows"></div>
+      <details><summary><span class="l-en">more metrics &amp; financial health</span><span class="l-zh">更多指标与财务健康</span></summary>
+        <div id="r_finmore" style="margin-top:6px"></div>
+      </details>
+    </div>
+
+    <div class="panel" id="panel_earn" style="display:none">
+      <h2>📅 <span class="l-en">Earnings</span><span class="l-zh">财报</span></h2>
+      <div id="r_earn"></div>
+    </div>
+
+    <div class="panel" id="panel_fac" style="display:none">
+      <h2>🧬 <span class="l-en">Factor fingerprint</span><span class="l-zh">因子指纹</span>
+        <span class="help">?<span class="tip"><span class="l-en">Where this name sits on the canonical smart-beta factors versus the S&P 1500 cross-section (winsorized z-scores; 0 = average, +2 = top of the pack, bars right of centre = attractive). These are RELATIVE RANKS lagged to the latest filing — context, not a validated alpha and not a quality verdict.</span><span class="l-zh">该标的在标普1500横截面上各经典smart-beta因子的位置（缩尾z分数；0＝平均，+2＝领先，条形位于中线右侧＝有吸引力）。这些是滞后至最新财报的相对排名——仅供参考，并非已验证的超额收益或质量结论。</span></span></span></h2>
+      <div class="facwrap">
+        <div id="r_radar" class="radarbox"></div>
+        <div id="r_zbars" class="zbars"></div>
+      </div>
+      <p id="r_fac_score" class="muted" style="margin-top:8px; font-size:12.5px"></p>
+    </div>
+
+    <div class="panel" id="panel_alpha" style="display:none">
+      <h2>📈 <span class="l-en">Alpha vs sector &amp; index</span><span class="l-zh">相对板块与大盘的阿尔法</span>
+        <span class="help">?<span class="tip"><span class="l-en">This stock's return with its MARKET and SECTOR beta removed — sector-neutral residual momentum over a 12-1-month window (research/RESIDUAL_ALPHA_MOMENTUM.md). 'alpha z' is its rank vs the whole S&P 1500 cross-section (0 = average, +2 = top of the pack); 'sector rank' is its place among its GICS peers; 'idiosyncratic' is the annualized beta-stripped return. The entry tag flags whether a leader just spiked ('extended' = short-term reversal risk) or is on a recent dip ('pullback' = constructive). Phase-0 validated as a MODEST, regime-decayed edge — context for stock selection, not a standalone buy signal.</span><span class="l-zh">该股票剔除其市场与板块贝塔后的收益 —— 12-1 个月的板块中性残差动量。“阿尔法 z”是其在整个标普1500横截面中的排名（0＝平均，+2＝领先）；“板块排名”是其在 GICS 同业中的位次；“特异收益”为年化的剔除贝塔后收益。入场标签标记领跑股是刚急涨（“extended”＝短期反转风险）还是处于近期回调（“pullback”＝较佳入场）。第 0 阶段验证为温和、随周期衰减的优势 —— 仅为选股参考，并非独立买入信号。</span></span></span></h2>
+      <div id="r_alpha"></div>
+    </div>
+
+    <div class="panel" id="panel_gex" style="display:none">
+      <h2>🎯 <span class="l-en">Options &amp; dealer gamma (GEX)</span><span class="l-zh">期权与做市商Gamma</span></h2>
+      <div id="r_gex"></div>
+    </div>
+
+    <div class="panel" id="panel_pos" style="display:none">
+      <h2>🩳 <span class="l-en">Positioning</span><span class="l-zh">持仓与做空</span>
+        <span class="help">?<span class="tip"><span class="l-en">Short interest from FINRA (bi-monthly, ~2-week lag). Insider net buying/selling from SEC Form-4 filings. Heavy or rising short interest with insider selling is a caution; insider buying is the higher-conviction signal.</span><span class="l-zh">做空数据来自FINRA（每半月，约两周滞后）。内部人净买卖来自SEC Form-4申报。高或上升的做空＋内部人卖出为警示；内部人买入是更高确信度的信号。</span></span></span></h2>
+      <div id="r_pos" class="twocol"></div>
+    </div>
+
+    <div class="panel" id="panel_analyst" style="display:none">
+      <h2>👔 <span class="l-en">Analyst &amp; estimates</span><span class="l-zh">分析师与预期</span></h2>
+      <div id="r_analyst"></div>
+    </div>
+
+    <div class="panel" id="panel_flow" style="display:none">
+      <h2>🐳 <span class="l-en">Institutional flow — funds buying / selling this</span><span class="l-zh">机构资金流 — 哪些基金在买卖它</span>
+        <span class="help">?<span class="tip"><span class="l-en">Which curated thematic/industry funds (SPDR sector, Global X) and actively managed funds (ARK) have been accumulating or trimming this stock, with mechanical creation/redemption flow and price moves stripped out. Conviction = the percentage POINTS of the fund's weight the manager actually committed. A real add from a sector specialist is a meaningful vote of confidence; pair it with the analyst & filings panels above. From the 🐳 Real fund moves board.</span><span class="l-zh">哪些精选的主题／行业基金（SPDR 板块、Global X）与主动管理基金（ARK）一直在增持或减持该股，已剔除机械性的申购／赎回资金流与价格变动。信念 = 经理人实际投入的基金权重百分点。来自板块专业基金的真实增持是有意义的信心投票；请与上方的分析师与申报面板结合参考。数据来自 🐳 基金真实动作 看板。</span></span></span></h2>
+      <div id="r_flow"></div>
+    </div>
+
     <div class="panel">
       <h2><span class="l-en">Momentum across timeframes</span><span class="l-zh">跨周期动量</span></h2>
       <div id="r_mtf"></div>
@@ -223,8 +388,350 @@
   // pick the Chinese variant of a composed analysis string when in zh mode
   // (the per-stock JSON carries parallel *_zh fields from engine/cycles.py)
   function lz(en, zh) { return lang() === 'zh' && zh ? zh : (en || ''); }
+
+  // ===== fundamentals suite (Phase 1) — render panels baked by engine/stock_fundamentals.py =====
+  var TF = {
+    en: { building:'Building — arrives in a later phase.',
+          deeponly:'Analyst ratings & price targets aren\'t collected yet — coming in a later (tiered) phase. The figures below are from a ~110-name deep-set snapshot.',
+          earnsoon:'Next earnings date, surprise history and estimate-revision trend arrive in Phase 2 (SEC + Nasdaq, keyless).',
+          gexsoon:'Per-equity dealer gamma exposure (GEX), the gamma-flip level and IV arrive in Phase 3 — CBOE delayed quotes, per-equity coverage already confirmed.',
+          grade:'Quality', valuevs:'Valuation', shyield:'Shareholder yld', nextearn:'Next earnings',
+          verdict:'Master verdict', cheap:'cheap vs S&P', rich:'rich vs S&P', na:'n/a', soon:'Phase 2', tbd:'Phase 4',
+          archhelp:'Archetype from factor ranks', conf:'confidence',
+          fwdpe:'Forward P/E', peyf:'P/E (Yahoo)', pmargin:'Profit margin', roe:'ROE', dyield:'Dividend yld',
+          short:'Short interest', shortpct:'Short % of float', dtc:'Days to cover', sichg:'SI change (2wk)',
+          insider:'Insider net flow', buys:'buys / sells', fwdnote_lite:'Forward P/E: trailing only — no free forward estimate at S&P-1500 scale.',
+          mediansrc:'sector median', scorelab:'Factor score', compos:'composite percentile vs S&P 1500',
+          piotroski:'Piotroski F · Altman Z', ph2:'Phase 2' },
+    zh: { building:'建设中——将在后续阶段加入。',
+          deeponly:'分析师评级与目标价尚未采集——将在后续（分层）阶段加入。下方数据来自约110只标的的深度集快照。',
+          earnsoon:'下次财报日、超预期历史与预期修正趋势将在第二阶段加入（SEC＋纳斯达克，免密钥）。',
+          gexsoon:'每只股票的做市商Gamma敞口（GEX）、Gamma翻转价位与隐含波动率将在第三阶段加入——CBOE延迟报价，逐股覆盖已验证。',
+          grade:'质量', valuevs:'估值', shyield:'股东回报率', nextearn:'下次财报',
+          verdict:'综合判断', cheap:'低于标普', rich:'高于标普', na:'无', soon:'第二阶段', tbd:'第四阶段',
+          archhelp:'基于因子排名的画像', conf:'确信度',
+          fwdpe:'前瞻市盈率', peyf:'市盈率（雅虎）', pmargin:'利润率', roe:'净资产收益率', dyield:'股息率',
+          short:'做空持仓', shortpct:'做空占流通股', dtc:'回补天数', sichg:'做空变化（两周）',
+          insider:'内部人净流向', buys:'买入 / 卖出', fwdnote_lite:'前瞻市盈率：仅历史值——标普1500规模下无免费前瞻预期。',
+          mediansrc:'行业中位', scorelab:'因子评分', compos:'相对标普1500综合百分位',
+          piotroski:'Piotroski F · Altman Z', ph2:'第二阶段' } };
+  function LF(k) { return (TF[lang()] || TF.en)[k]; }
+  function el(id) { return document.getElementById(id); }
+  function show(id, on) { var e = el(id); if (e) e.style.display = on ? '' : 'none'; }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+    return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]; }); }
+  function fmtNum(n) {
+    if (n == null) return LF('na');
+    var a = Math.abs(n), s = n < 0 ? '-' : '';
+    if (a >= 1e12) return s + '$' + (a/1e12).toFixed(2) + 'T';
+    if (a >= 1e9)  return s + '$' + (a/1e9).toFixed(2) + 'B';
+    if (a >= 1e6)  return s + '$' + (a/1e6).toFixed(1) + 'M';
+    if (a >= 1e3)  return s + '$' + (a/1e3).toFixed(0) + 'K';
+    return s + '$' + a.toFixed(0);
+  }
+  function fmtX(n) { return n == null ? LF('na') : (n < 10 ? n.toFixed(1) : Math.round(n)) + '×'; }
+  function fmtPct(n, nd) { return n == null ? LF('na') : n.toFixed(nd == null ? 1 : nd) + '%'; }
+  function signPct(n) { if (n == null) return ''; var c = n > 0 ? 'pos' : n < 0 ? 'neg' : 'muted';
+    return '<span class="' + c + '">' + (n > 0 ? '+' : '') + n.toFixed(1) + '%</span>'; }
+  function gchip(k, v, dashed) { return '<span class="gchip' + (dashed ? ' dashed' : '') + '"><span class="gk">' +
+    k + '</span><span class="gv">' + v + '</span></span>'; }
+  function gradeFromScore(s) { return s == null ? null : s >= 60 ? 'A' : s >= 30 ? 'B' : s >= 0 ? 'C' : s >= -30 ? 'D' : 'F'; }
+  function gradeStyle(g) { var c = (g==='A'||g==='B') ? 'var(--up)' : (g==='D'||g==='F') ? 'var(--down)' : 'var(--muted)';
+    return 'color:' + c + ';background:color-mix(in srgb,' + c + ' 14%,transparent)'; }
+  function kvRow(k, v, warn) { return '<div class="kv"><span class="kvk">' + k + '</span><span class="kvv' +
+    (warn ? ' neg' : '') + '">' + v + '</span></div>'; }
+
+  function radarSVG(radar) {
+    var cx = 80, cy = 80, R = 56, N = 6;
+    var labs = { value:['Val','价值'], profitability:['Prof','盈利'], quality:['Qual','质量'],
+                 investment:['Inv','投资'], payout:['Pay','回报'], low_vol:['LoVol','低波'] };
+    function pt(i, r) { var a = (-90 + i*360/N) * Math.PI/180; return [cx + r*Math.cos(a), cy + r*Math.sin(a)]; }
+    function poly(r) { var p = []; for (var i=0;i<N;i++){ var xy = pt(i,r); p.push(xy[0].toFixed(1)+','+xy[1].toFixed(1)); } return p.join(' '); }
+    var g = '<svg class="radar" width="160" height="176" viewBox="0 0 160 176" aria-hidden="true">';
+    g += '<polygon points="' + poly(R) + '" fill="none" stroke="var(--line)"/>';
+    g += '<polygon points="' + poly(R*0.5) + '" fill="none" stroke="var(--line)" opacity=".55"/>';
+    var dp = [];
+    for (var i=0;i<N;i++) {
+      var sp = pt(i, R);
+      g += '<line x1="'+cx+'" y1="'+cy+'" x2="'+sp[0].toFixed(1)+'" y2="'+sp[1].toFixed(1)+'" stroke="var(--line)" opacity=".5"/>';
+      var z = (radar[i] && radar[i].z != null) ? radar[i].z : 0;
+      var v = Math.max(0, Math.min(1, (z + 3) / 6));
+      var d2 = pt(i, v*R); dp.push(d2[0].toFixed(1)+','+d2[1].toFixed(1));
+      var lp = pt(i, R + 13), lab = labs[radar[i].key] || ['',''];
+      g += '<text x="'+lp[0].toFixed(1)+'" y="'+lp[1].toFixed(1)+'" font-size="9" fill="var(--muted)" text-anchor="middle" dominant-baseline="middle">' + (lang()==='zh'?lab[1]:lab[0]) + '</text>';
+    }
+    g += '<polygon points="' + dp.join(' ') + '" fill="var(--link)" fill-opacity=".22" stroke="var(--link)" stroke-width="1.5"/>';
+    return g + '</svg>';
+  }
+  function sparkSVG(arr) {
+    if (!arr || arr.length < 2 || arr[0] == null || arr[1] == null) return '';
+    var w = 64, h = 20, pad = 3, a = arr[0], b = arr[1];
+    var lo = Math.min(a,b), hi = Math.max(a,b), rng = (hi - lo) || Math.abs(hi) || 1;
+    function y(v) { return (h - pad) - ((v - lo) / rng) * (h - 2*pad); }
+    var up = b >= a, col = up ? 'var(--up)' : 'var(--down)';
+    return '<svg class="spark" width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'" aria-hidden="true">' +
+      '<line x1="'+pad+'" y1="'+y(a).toFixed(1)+'" x2="'+(w-pad)+'" y2="'+y(b).toFixed(1)+'" stroke="'+col+'" stroke-width="1.6"/>' +
+      '<circle cx="'+(w-pad)+'" cy="'+y(b).toFixed(1)+'" r="2.2" fill="'+col+'"/></svg>';
+  }
+  function sparkN(arr, w) {
+    var pts = (arr || []).filter(function (x) { return x != null; });
+    if (pts.length < 2) return '';
+    w = w || 120; var h = 22, pad = 3, n = arr.length, step = (w - 2*pad) / (n - 1);
+    var lo = Math.min.apply(null, pts), hi = Math.max.apply(null, pts), rng = (hi - lo) || Math.abs(hi) || 1;
+    var d = '', first = true, lx = pad, ly = null;
+    for (var i = 0; i < n; i++) {
+      if (arr[i] == null) continue;
+      var x = pad + i*step, yy = (h - pad) - ((arr[i] - lo) / rng) * (h - 2*pad);
+      d += (first ? 'M' : 'L') + x.toFixed(1) + ' ' + yy.toFixed(1) + ' '; first = false; lx = x; ly = yy;
+    }
+    var up = pts[pts.length-1] >= pts[0], col = up ? 'var(--up)' : 'var(--down)';
+    return '<svg class="spark" width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'" aria-hidden="true">' +
+      '<path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="1.5"/>' +
+      (ly != null ? '<circle cx="'+lx.toFixed(1)+'" cy="'+ly.toFixed(1)+'" r="2" fill="'+col+'"/>' : '') + '</svg>';
+  }
+  function myRow(lab, series, fmtFn, cagr) {
+    var clean = (series || []).filter(function (x) { return x != null; });
+    if (!clean.length) return '';
+    var last = clean[clean.length - 1];
+    var cg = (cagr != null) ? ' <span class="' + (cagr > 0 ? 'pos' : 'neg') + '">' + (cagr > 0 ? '+' : '') + cagr + '%/yr</span>' : '';
+    return '<div class="myrow"><span class="mylab">' + lab + '</span>' + sparkN(series, 116) +
+           '<span class="myval">' + fmtFn(last) + cg + '</span></div>';
+  }
+  function valbar(lab, cell, kind) {
+    if (!cell || cell.v == null) return '';
+    var v = kind === 'x' ? fmtX(cell.v) : fmtPct(cell.v, 1);
+    var cheap = cell.cheap == null ? 50 : cell.cheap;
+    var col = 'color-mix(in srgb, var(--up) ' + cheap + '%, var(--down))';
+    var med = cell.med == null ? '—' : (kind === 'x' ? fmtX(cell.med) : fmtPct(cell.med, 1));
+    return '<div class="valbar" title="' + LF('mediansrc') + ' ' + med + '"><span class="vlab">' + lab + '</span>' +
+      '<span class="vval">' + v + '</span><span class="vtrack">' +
+      '<span class="vfill" style="width:' + cheap + '%;background:' + col + '"></span>' +
+      '<span class="vmed" style="left:50%"></span></span></div>';
+  }
+  function finrow(lab, val, fmt, chg, spark) {
+    if (val == null && !(spark && spark[0] != null)) return '';
+    var v = val == null ? LF('na') : (fmt === 'num' ? fmtNum(val) : fmtPct(val, 1));
+    var sp = spark ? sparkSVG(spark) : '';
+    var ch = (chg == null) ? '' : signPct(chg);
+    return '<div class="finrow"><span class="flab">' + lab + sp + '</span><span class="fval">' + v + '</span><span class="fchg">' + ch + '</span></div>';
+  }
+  function zbar(lab, z) {
+    var mag = Math.max(0, Math.min(50, Math.abs(z) / 3 * 50));
+    var pos = z >= 0, col = pos ? 'var(--up)' : 'var(--down)';
+    var style = (pos ? 'left:50%;' : 'right:50%;') + 'width:' + mag + '%';
+    return '<div class="zrow"><span class="zlab">' + lab + '</span><span class="ztrack"><span class="zmid"></span>' +
+      '<span class="zfill" style="' + style + ';background:' + col + '"></span></span></div>';
+  }
+  var VROWS = [
+    { k:'trailing_pe', en:'P/E (trailing)', zh:'市盈率（历史）', kind:'x' },
+    { k:'price_to_book', en:'Price / book', zh:'市净率', kind:'x' },
+    { k:'price_to_sales', en:'Price / sales', zh:'市销率', kind:'x' },
+    { k:'earnings_yield', en:'Earnings yield', zh:'盈利收益率', kind:'pct' },
+    { k:'fcf_proxy_yield', en:'FCF yield (pre-capex)', zh:'自由现金流收益率', kind:'pct' },
+    { k:'shareholder_yield', en:'Shareholder yield', zh:'股东回报率', kind:'pct' } ];
+  var FROWS = [
+    { en:'Revenue', zh:'营收', get:function(f){return f.raw && f.raw.revenue;}, fmt:'num', chg:function(f){return f.rev_growth;} },
+    { en:'Gross margin', zh:'毛利率', get:function(f){return f.gross_margin;}, fmt:'pct' },
+    { en:'Net margin', zh:'净利率', get:function(f){return f.net_margin;}, fmt:'pct' },
+    { en:'Net income', zh:'净利润', get:function(f){return f.raw && f.raw.ni;}, fmt:'num', chg:function(f){return f.ni_growth;}, spark:function(f){return f.spark && f.spark.ni;} },
+    { en:'FCF margin', zh:'自由现金流利润率', get:function(f){return f.fcf_margin;}, fmt:'pct' },
+    { en:'Return on equity', zh:'净资产收益率', get:function(f){return f.roe;}, fmt:'pct' } ];
+  var ZL = { value:['Value','价值'], profitability:['Profitability','盈利能力'], quality:['Quality','质量'],
+             investment:['Investment','投资'], payout:['Payout','股东回报'], low_vol:['Low volatility','低波动'],
+             low_beta:['Low beta','低贝塔'], accruals:['Low accruals','低应计'], short_interest:['Low short int.','低做空'] };
+
+  function hideFundamentals() {
+    ['panel_profile','panel_val','panel_fin','panel_earn','panel_fac','panel_alpha','panel_gex','panel_pos','panel_analyst']
+      .forEach(function (id) { show(id, false); });
+    show('r_archetype', false); show('r_glance', false);
+  }
+
+  function renderFundamentals(d) {
+    var prof = d.profile, val = d.valuation, fin = d.financials, fac = d.factors, pos = d.positioning, an = d.analyst;
+    var isEquity = !!(prof || val || fin || fac);
+
+    var arch = prof && prof.archetype, archEl = el('r_archetype');
+    if (arch) {
+      archEl.textContent = lz(arch.label, arch.label_zh);
+      archEl.className = 'arch a-' + arch.key;
+      archEl.title = LF('archhelp') + ' · ' + lz(arch.why, arch.why_zh) + ' (' + LF('conf') + ': ' + arch.conf_word + ')';
+      archEl.style.display = 'inline-flex';
+    } else { archEl.style.display = 'none'; }
+
+    var chips = [];
+    if (fac && fac.fundamental_score != null) {
+      var g = gradeFromScore(fac.fundamental_score);
+      chips.push(gchip(LF('grade'), '<span class="grade" style="' + gradeStyle(g) + '">' + g + '</span>'));
+    }
+    if (val && val.value_z != null)
+      chips.push(gchip(LF('valuevs'), '<span class="' + (val.value_z > 0 ? 'pos' : 'neg') + '">' +
+        (val.value_z > 0 ? LF('cheap') : LF('rich')) + '</span>'));
+    if (val && val.shareholder_yield && val.shareholder_yield.v != null)
+      chips.push(gchip(LF('shyield'), fmtPct(val.shareholder_yield.v, 2)));
+    if (isEquity) {
+      chips.push(gchip(LF('nextearn'), '<span class="muted">' + LF('soon') + '</span>', true));
+      chips.push(gchip(LF('verdict'), '<span class="muted">' + LF('tbd') + '</span>', true));
+    }
+    var glance = el('r_glance');
+    if (chips.length) { glance.innerHTML = chips.join(''); glance.style.display = 'flex'; }
+    else glance.style.display = 'none';
+
+    if (prof) {
+      el('r_profile_desc').textContent = lz(prof.description, prof.description_zh) || LF('building');
+      el('r_profile_desc').className = prof.description ? '' : 'muted';
+      var pc = [];
+      if (prof.sector) pc.push('<span class="chip">' + esc(prof.sector) + '</span>');
+      if (prof.mktcap_tier) pc.push('<span class="chip">' + lz(prof.mktcap_tier.label, prof.mktcap_tier.label_zh) +
+        (prof.mktcap_bn != null ? ' · $' + Math.round(prof.mktcap_bn) + 'B' : '') + '</span>');
+      if (prof.sic_description) pc.push('<span class="chip">' + esc(prof.sic_description) + '</span>');
+      if (prof.exchange) pc.push('<span class="chip">' + esc(prof.exchange) + '</span>');
+      el('r_profile_chips').innerHTML = pc.join('');
+      show('panel_profile', true);
+    } else show('panel_profile', false);
+
+    if (val) {
+      el('r_valbars').innerHTML = VROWS.map(function (r) { return valbar(lz(r.en, r.zh), val[r.k], r.kind); }).join('');
+      el('r_val_fwd').innerHTML = (val.forward_pe != null)
+        ? (lz('Forward P/E','前瞻市盈率') + ': <b>' + val.forward_pe.toFixed(1) + '×</b>')
+        : '<span class="muted">' + LF('fwdnote_lite') + '</span>';
+      show('panel_val', true);
+    } else show('panel_val', false);
+
+    if (fin) {
+      // multi-year trend (SEC companyfacts) — sparklines + CAGR; falls back to the
+      // single-year rows below when companyfacts hasn't been collected for this name
+      var my = fin.multiyear;
+      if (my && my.years && my.years.length >= 2) {
+        var yspan = ' <span class="muted">(FY' + my.years[0] + '–' + my.years[my.years.length-1] + ')</span>';
+        var mrows = [
+          myRow(lz('Revenue','营收'), my.revenue, fmtNum, my.rev_cagr),
+          myRow(lz('Net margin','净利率'), my.net_margin, function (x){ return x.toFixed(1)+'%'; }, null),
+          myRow(lz('Diluted EPS','摊薄EPS'), my.eps, function (x){ return '$'+x.toFixed(2); }, my.eps_cagr),
+          myRow(lz('Free cash flow','自由现金流'), my.fcf, fmtNum, null)
+        ].join('');
+        el('r_multiyear').innerHTML = '<div class="myhdr">' + lz('Multi-year trend','多年趋势') + yspan + '</div>' + mrows;
+      } else { el('r_multiyear').innerHTML = ''; }
+
+      el('r_finrows').innerHTML = FROWS.map(function (r) {
+        return finrow(lz(r.en, r.zh), r.get(fin), r.fmt, r.chg ? r.chg(fin) : null, r.spark ? r.spark(fin) : null);
+      }).join('');
+      var more = [];
+      more.push(finrow(lz('Return on assets','总资产收益率'), fin.roa, 'pct'));
+      more.push(finrow(lz('Debt / assets','负债／资产'), fin.debt_to_assets, 'pct'));
+      more.push(finrow(lz('Asset growth (YoY)','资产增长（同比）'), fin.asset_growth, 'pct'));
+      more.push(finrow(lz('Accruals (lower = better)','应计（越低越好）'), fin.accruals == null ? null : fin.accruals * 100, 'pct'));
+      // Piotroski F + Altman Z health chips (real when companyfacts present, else stub)
+      var hz = [];
+      if (my && my.piotroski) {
+        var f = my.piotroski, fcol = (f.score >= Math.ceil(f.of*0.7)) ? 'var(--up)' : (f.score <= Math.floor(f.of*0.34)) ? 'var(--down)' : 'var(--muted)';
+        hz.push('<span class="hchip" style="color:'+fcol+';background:color-mix(in srgb,'+fcol+' 14%,transparent)" title="'+lz('Piotroski F — fundamental-momentum signals passing','Piotroski F — 通过的基本面动能信号')+'">F '+f.score+'/'+f.of+'</span>');
+      }
+      if (my && my.altman) {
+        var z = my.altman, zcol = z.zone==='safe' ? 'var(--up)' : z.zone==='distress' ? 'var(--down)' : 'var(--warn)';
+        var zlab = lz({safe:'safe',grey:'grey zone',distress:'distress'}[z.zone], {safe:'安全',grey:'灰色区',distress:'困境'}[z.zone]);
+        hz.push('<span class="hchip" style="color:'+zcol+';background:color-mix(in srgb,'+zcol+' 14%,transparent)" title="Altman Z — '+zlab+'">Z '+z.z+' · '+zlab+'</span>');
+      }
+      more.push('<div class="finrow"><span class="flab">' + LF('piotroski') + '</span><span class="fval">' +
+        (hz.length ? hz.join(' ') : '<span class="muted">'+LF('ph2')+'</span>') + '</span><span class="fchg"></span></div>');
+      el('r_finmore').innerHTML = more.join('');
+      show('panel_fin', true);
+    } else show('panel_fin', false);
+
+    if (d.earnings) {
+      var ev = d.earnings, eh = '';
+      if (ev.next_date) {
+        var days = Math.ceil((new Date(ev.next_date + 'T00:00:00') - new Date()) / 86400000);
+        var when = days < 0 ? lz('reported','已公布') : days === 0 ? lz('today','今天')
+                 : (lz('in','还有') + ' ' + days + lz('d','天'));
+        var tm = ev.next_time ? ' · ' + ev.next_time : '';
+        var est = ev.eps_forecast != null ? ' · ' + lz('est EPS','预期EPS') + ' $' + ev.eps_forecast : '';
+        eh += '<div class="earnhdr"><span class="earndays">' + when + '</span> <span class="muted">' +
+              lz('next earnings','下次财报') + ' ' + ev.next_date + tm + est + '</span></div>';
+      }
+      if (ev.summary) {
+        var su = ev.summary, bc = (su.beats >= Math.ceil(su.total*0.75)) ? 'var(--up)'
+                : (su.beats <= Math.floor(su.total*0.25)) ? 'var(--down)' : 'var(--muted)';
+        var strk = su.streak >= 2 ? ' · ' + su.streak + lz('-streak','连') : '';
+        eh += '<div style="margin:6px 0"><span class="hchip" style="color:'+bc+';background:color-mix(in srgb,'+bc+' 14%,transparent)">' +
+              lz('beat','超预期') + ' ' + su.beats + '/' + su.total + strk + '</span> <span class="muted">' +
+              lz('avg surprise','平均超预期') + ' ' + (su.avg_surprise > 0 ? '+' : '') + su.avg_surprise + '%</span></div>';
+      }
+      if (ev.surprises && ev.surprises.length) {
+        var er = ev.surprises.map(function (s) {
+          var sp = s.surprise_pct;
+          return '<tr><td>' + (s.qtr || '') + '</td><td>' + (s.eps != null ? '$'+s.eps : '—') +
+                 '</td><td>' + (s.consensus != null ? '$'+s.consensus : '—') + '</td><td class="' +
+                 (sp > 0 ? 'pos' : sp < 0 ? 'neg' : '') + '">' + (sp != null ? (sp>0?'+':'')+sp+'%' : '—') + '</td></tr>';
+        }).join('');
+        eh += '<table class="earntbl"><tr><th>' + lz('quarter','季度') + '</th><th>' + lz('actual','实际') +
+              '</th><th>' + lz('est','预期') + '</th><th>' + lz('surprise','超预期') + '</th></tr>' + er + '</table>';
+      }
+      el('r_earn').innerHTML = eh || ('<div class="stub">' + LF('earnsoon') + '</div>');
+      show('panel_earn', true);
+    } else if (isEquity) {
+      el('r_earn').innerHTML = '<div class="stub">' + LF('earnsoon') + '</div>'; show('panel_earn', true);
+    } else show('panel_earn', false);
+
+    if (fac) {
+      el('r_radar').innerHTML = fac.radar_ok ? radarSVG(fac.radar) : '';
+      var zb = [];
+      Object.keys(ZL).forEach(function (k) {
+        var z = fac.legs ? fac.legs[k] : null;
+        if (z != null) zb.push(zbar(lz(ZL[k][0], ZL[k][1]), z));
+      });
+      el('r_zbars').innerHTML = zb.join('');
+      var sc = fac.fundamental_score;
+      el('r_fac_score').innerHTML = (sc == null) ? ''
+        : (LF('scorelab') + ': <b>' + (sc > 0 ? '+' : '') + sc + '</b> / ±100 — ' + LF('compos') +
+           (fac.n_universe ? ' (n=' + fac.n_universe + ')' : ''));
+      show('panel_fac', true);
+    } else show('panel_fac', false);
+
+    if (isEquity) { el('r_gex').innerHTML = '<div class="stub">' + LF('gexsoon') + '</div>'; show('panel_gex', true); }
+    else show('panel_gex', false);
+
+    if (pos && (pos.short || pos.insider)) {
+      var html = '';
+      if (pos.short) {
+        var s = pos.short;
+        html += '<div class="posbox"><h3>' + LF('short') + '</h3>' +
+          kvRow(LF('shortpct'), s.pct_float == null ? LF('na') : s.pct_float.toFixed(2) + '%', s.pct_float != null && s.pct_float >= 10) +
+          kvRow(LF('dtc'), s.days_to_cover == null ? LF('na') : s.days_to_cover.toFixed(1), s.days_to_cover != null && s.days_to_cover >= 5) +
+          kvRow(LF('sichg'), s.si_change_pct == null ? LF('na') : signPct(s.si_change_pct), false) + '</div>';
+      }
+      if (pos.insider) {
+        var ins = pos.insider, net = ins.net_usd_mn;
+        var netstr = net == null ? LF('na') : '<span class="' + (net > 0 ? 'pos' : 'neg') + '">' +
+          (net > 0 ? '+' : '-') + '$' + Math.abs(net).toFixed(1) + 'M</span>';
+        html += '<div class="posbox"><h3>' + LF('insider') + '</h3>' +
+          kvRow(LF('insider'), netstr, false) +
+          (ins.n_buys != null ? kvRow(LF('buys'), (ins.n_buys || 0) + ' / ' + (ins.n_sells || 0), false) : '') +
+          (ins.quarter ? '<p class="srcline">' + esc(ins.quarter) + '</p>' : '') + '</div>';
+      }
+      el('r_pos').innerHTML = html;
+      show('panel_pos', true);
+    } else show('panel_pos', false);
+
+    if (isEquity) {
+      var ah;
+      if (an && an.tier === 'deep') {
+        var ar = [];
+        if (an.forward_pe != null) ar.push(kvRow(LF('fwdpe'), an.forward_pe.toFixed(1) + '×', false));
+        if (an.pe_yf != null) ar.push(kvRow(LF('peyf'), an.pe_yf.toFixed(1) + '×', false));
+        if (an.profit_margin != null) ar.push(kvRow(LF('pmargin'), an.profit_margin.toFixed(1) + '%', false));
+        if (an.roe != null) ar.push(kvRow(LF('roe'), an.roe.toFixed(1) + '%', false));
+        if (an.div_yield != null) ar.push(kvRow(LF('dyield'), an.div_yield.toFixed(2) + '%', false));
+        ah = (ar.length ? '<div class="posbox">' + ar.join('') + '</div>' : '') + '<p class="srcline">' + LF('deeponly') + '</p>';
+      } else { ah = '<div class="stub">' + LF('deeponly') + '</div>'; }
+      el('r_analyst').innerHTML = ah;
+      show('panel_analyst', true);
+    } else show('panel_analyst', false);
+  }
   // internal state -> friendly "LABEL · ACTION" (mirrors engine/cycles.STATE_DISPLAY)
   var DISP = {"DECLINE": {"label": "DOWNTREND", "action": "AVOID", "dir": "down", "label_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "action_zh": "\u56de\u907f"}, "BOTTOM WATCH": {"label": "NEARING A LOW", "action": "GET READY", "dir": "down", "label_zh": "\u63a5\u8fd1\u4f4e\u70b9", "action_zh": "\u51c6\u5907"}, "TURN SIGNALED": {"label": "BOTTOMING", "action": "BUY SETUP", "dir": "up", "label_zh": "\u7b51\u5e95\u4e2d", "action_zh": "\u4e70\u5165\u9884\u5907"}, "FRESH BUY": {"label": "BUY ZONE", "action": "BUY", "dir": "up", "label_zh": "\u4e70\u5165\u533a", "action_zh": "\u4e70\u5165"}, "RALLY ON": {"label": "UPTREND", "action": "HOLD", "dir": "up", "label_zh": "\u4e0a\u6da8\u8d8b\u52bf", "action_zh": "\u6301\u6709"}, "TOP WATCH": {"label": "NEARING A HIGH", "action": "TAKE PROFITS", "dir": "up", "label_zh": "\u63a5\u8fd1\u9ad8\u70b9", "action_zh": "\u6b62\u76c8"}, "ROLLING OVER": {"label": "TOPPING", "action": "SELL SETUP", "dir": "down", "label_zh": "\u505a\u9876\u4e2d", "action_zh": "\u5356\u51fa\u9884\u5907"}, "COUNTERTREND BOUNCE": {"label": "COUNTER-TREND BOUNCE", "action": "HIGH-RISK \u00b7 NIMBLE ONLY", "dir": "caution", "label_zh": "\u9006\u52bf\u53cd\u5f39", "action_zh": "\u9ad8\u98ce\u9669 \u00b7 \u4ec5\u9650\u7075\u6d3b\u64cd\u4f5c"}};
+  // alert-feed conviction notes keyed by event type — the slimmed events embedded
+  // in each stockdata JSON omit these repeated strings; we reattach them client-side
+  var AF_META = {"ladder": {"edge": "The cycle ladder's standing read \u2014 built for position structure, not a price target.", "edge_zh": "\u5468\u671f\u9636\u68af\u7684\u5f53\u524d\u5224\u8bfb \u2014 \u7528\u4e8e\u4ed3\u4f4d\u7ed3\u6784\uff0c\u800c\u975e\u4ef7\u683c\u76ee\u6807\u3002", "forward": "Use it for sizing and the invalidation level, not for certainty.", "forward_zh": "\u7528\u4e8e\u4ed3\u4f4d\u89c4\u6a21\u4e0e\u5931\u6548\u4ef7\u4f4d\uff0c\u800c\u975e\u8ffd\u6c42\u786e\u5b9a\u6027\u3002"}, "ma_cross": {"edge": "50/200-day cross \u2014 a slow, widely-watched trend filter; it lags but rarely whipsaws.", "edge_zh": "50/200\u65e5\u5747\u7ebf\u4ea4\u53c9 \u2014 \u4e00\u4e2a\u6ede\u540e\u4f46\u5f88\u5c11\u6765\u56de\u7684\u3001\u5e7f\u53d7\u5173\u6ce8\u7684\u8d8b\u52bf\u8fc7\u6ee4\u5668\u3002", "forward": "A regime label, not an entry \u2014 most of the move precedes the cross.", "forward_zh": "\u8fd9\u662f\u8d8b\u52bf\u6807\u7b7e\u800c\u975e\u5165\u573a\u70b9 \u2014 \u5927\u90e8\u5206\u884c\u60c5\u53d1\u751f\u5728\u4ea4\u53c9\u4e4b\u524d\u3002"}, "trend_200": {"edge": "Price vs the 200-day average \u2014 the classic bull / bear dividing line.", "edge_zh": "\u4ef7\u683c\u76f8\u5bf9200\u65e5\u5747\u7ebf \u2014 \u7ecf\u5178\u7684\u591a\u7a7a\u5206\u754c\u7ebf\u3002", "forward": "A backdrop filter; pair it with a cycle low or momentum cross to act.", "forward_zh": "\u4f5c\u4e3a\u80cc\u666f\u8fc7\u6ee4\u5668\uff1b\u9700\u914d\u5408\u5468\u671f\u4f4e\u70b9\u6216\u52a8\u91cf\u4ea4\u53c9\u518d\u884c\u52a8\u3002"}, "dcl": {"edge": "Daily-cycle low \u2014 historically the highest-odds long-entry window in this framework.", "edge_zh": "\u65e5\u7ebf\u5468\u671f\u4f4e\u70b9 \u2014 \u5728\u672c\u6846\u67b6\u4e2d\u5386\u53f2\u4e0a\u505a\u591a\u80dc\u7387\u6700\u9ad8\u7684\u5165\u573a\u7a97\u53e3\u3002", "forward": "Confirm with a swing low and a reclaim of the 10-day average before sizing up.", "forward_zh": "\u52a0\u4ed3\u524d\u4ee5\u4e00\u4e2a\u6446\u52a8\u4f4e\u70b9\u5e76\u6536\u590d10\u65e5\u5747\u7ebf\u6765\u786e\u8ba4\u3002"}, "rs": {"edge": "Relative strength vs SPY \u2014 momentum persistence is one of the few robust equity factors.", "edge_zh": "\u76f8\u5bf9\u6807\u666e500\u7684\u5f3a\u5f31 \u2014 \u52a8\u91cf\u6301\u7eed\u6027\u662f\u5c11\u6570\u7a33\u5065\u7684\u80a1\u7968\u56e0\u5b50\u4e4b\u4e00\u3002", "forward": "Leadership tends to persist; breakdowns warn before price does.", "forward_zh": "\u9886\u5148\u5f80\u5f80\u5ef6\u7eed\uff1b\u8d70\u5f31\u5e38\u5148\u4e8e\u4ef7\u683c\u53d1\u51fa\u8b66\u793a\u3002"}, "macd_w": {"edge": "Weekly MACD \u2014 the slower, less-whippy momentum read.", "edge_zh": "\u5468\u7ebfMACD \u2014 \u66f4\u6162\u3001\u66f4\u5c11\u6765\u56de\u7684\u52a8\u91cf\u4fe1\u53f7\u3002", "forward": "Higher-timeframe confirmation; daily noise resolves around it.", "forward_zh": "\u66f4\u9ad8\u5468\u671f\u7684\u786e\u8ba4\uff1b\u65e5\u7ebf\u566a\u97f3\u56f4\u7ed5\u5b83\u6536\u655b\u3002"}, "macd_d": {"edge": "Daily MACD \u2014 fast and noisy; context, not a standalone trigger.", "edge_zh": "\u65e5\u7ebfMACD \u2014 \u5feb\u901f\u4e14\u5608\u6742\uff1b\u4ec5\u4f5c\u80cc\u666f\uff0c\u800c\u975e\u72ec\u7acb\u89e6\u53d1\u3002", "forward": "Frequent by design \u2014 filter with the weekly cross and trend.", "forward_zh": "\u672c\u5c31\u9891\u7e41 \u2014 \u7528\u5468\u7ebf\u4ea4\u53c9\u4e0e\u8d8b\u52bf\u52a0\u4ee5\u8fc7\u6ee4\u3002"}, "stoch": {"edge": "StochRSI turning up out of oversold \u2014 the earliest oscillator heads-up.", "edge_zh": "StochRSI\u81ea\u8d85\u5356\u533a\u4e0a\u884c \u2014 \u6700\u65e9\u7684\u632f\u8361\u6307\u6807\u9884\u8b66\u3002", "forward": "An early flag, not confirmation; it can fire repeatedly in a downtrend.", "forward_zh": "\u65e9\u671f\u4fe1\u53f7\u800c\u975e\u786e\u8ba4\uff1b\u4e0b\u8dcc\u8d8b\u52bf\u4e2d\u53ef\u80fd\u53cd\u590d\u51fa\u73b0\u3002"}, "rsi": {"edge": "RSI extreme \u2014 stretched and mean-reversion-prone; not a timing trigger alone.", "edge_zh": "RSI\u6781\u503c \u2014 \u8d85\u4e70/\u8d85\u5356\u4e14\u6613\u5747\u503c\u56de\u5f52\uff1b\u5355\u72ec\u4e0d\u6784\u6210\u62e9\u65f6\u89e6\u53d1\u3002", "forward": "Extremes can persist in strong trends \u2014 context, not a fade signal.", "forward_zh": "\u5f3a\u8d8b\u52bf\u4e2d\u6781\u503c\u53ef\u6301\u7eed \u2014 \u4ec5\u4f5c\u80cc\u666f\uff0c\u800c\u975e\u53cd\u5411\u4fe1\u53f7\u3002"}, "range_52w": {"edge": "New 52-week extreme \u2014 a momentum / trend signal the whole market watches.", "edge_zh": "\u521b52\u5468\u65b0\u9ad8/\u65b0\u4f4e \u2014 \u5168\u5e02\u573a\u5173\u6ce8\u7684\u52a8\u91cf/\u8d8b\u52bf\u4fe1\u53f7\u3002", "forward": "New highs beget highs more often than not; new lows cut both ways.", "forward_zh": "\u65b0\u9ad8\u5f80\u5f80\u5ef6\u7eed\uff1b\u65b0\u4f4e\u5219\u4e24\u9762\u7686\u6709\u53ef\u80fd\u3002"}};
   function dlabel(s) { var d = DISP[s]; if (!d) return s; return lang() === 'zh' ? (d.label_zh || d.label) : d.label; }
   function disp(s) {
     var d = DISP[s]; if (!d) return s;
@@ -256,6 +763,119 @@
            ' · MACD ' + macd + note + '</span>';
   }
 
+  // ===== verdict hero + at-a-glance signal strip + alert feed =====
+  // The action verb for the verdict (just the ACTION half of DISP, current lang).
+  function ladderAction(l) { var dd = DISP[l.state];
+    if (dd) return lang() === 'zh' ? (dd.action_zh || dd.action) : dd.action;
+    return lz(l.action, l.action_zh); }
+
+  function renderVerdict(d) {
+    var e = d.ladder.entry || {}, v = el('r_verdict');
+    v.className = 'verdict urg-' + (e.urgency || 'hold');
+    v.innerHTML = '<span class="v-act">' + esc(ladderAction(d.ladder)) + '</span>' +
+      '<span class="v-tag">' + esc(lz(e.tag, e.tag_zh)) + '</span>' +
+      '<span class="v-text">' + esc(lz(e.text, e.text_zh)) + '</span>';
+  }
+
+  function sigchip(cls, k, val, sub) {
+    return '<div class="sigchip ' + cls + '"><span class="sc-k">' + k + '</span>' +
+      '<span class="sc-v">' + val + '</span>' + (sub ? '<span class="sc-s">' + sub + '</span>' : '') + '</div>';
+  }
+  function renderSignalStrip(d) {
+    var tech = d.tech || {}, m = (d.mtf && d.mtf.D) || {}, cy = d.cycle || {}, c = [];
+    var ab = tech.above200;
+    c.push(sigchip(ab ? 'up' : 'down', lz('Trend', '趋势'), (ab ? '▲' : '▼') + ' 200d',
+      tech.pct_vs_200dma != null ? (tech.pct_vs_200dma > 0 ? '+' : '') + tech.pct_vs_200dma + '%' : ''));
+    var mp = m.macd_pos, arr = m.macd_cross_up ? ' ↑' : m.macd_cross_dn ? ' ↓' : '';
+    c.push(sigchip(mp ? 'up' : 'down', lz('Momentum', '动量'), 'MACD ' + (mp ? '＋' : '－') + arr, lz('daily', '日线')));
+    // RSI / Stoch extremes are context (caution), not a directional call — colour
+    // them amber so the meaning doesn't invert under the zh red=up swap
+    var r = tech.rsi14, rc = (r != null && (r >= 70 || r <= 30)) ? 'warn' : 'neutral';
+    c.push(sigchip(rc, 'RSI', r != null ? Math.round(r) : '—',
+      (r != null && r >= 70) ? lz('overbought', '超买') : (r != null && r <= 30) ? lz('oversold', '超卖') : lz('neutral', '中性')));
+    var sv = m.stoch, sc = (sv != null && (sv >= 80 || sv <= 20)) ? 'warn' : 'neutral';
+    c.push(sigchip(sc, 'Stoch', sv != null ? Math.round(sv) : '—', lz('StochRSI', '随机RSI')));
+    var dd = cy.dc_day, band = cy.dc_band, due = (dd != null && band && dd >= band[0]);
+    c.push(sigchip(due ? 'warn' : 'neutral', lz('Cycle', '周期'), lz('Day', '第') + ' ' + (dd != null ? dd : '—'),
+      band ? lz('of', '/') + ' ' + band[0] + '–' + band[1] : ''));
+    el('r_sigstrip').innerHTML = c.join('');
+  }
+
+  var afOpen = false;
+  try { afOpen = localStorage.getItem('afOpen') === 'true'; } catch (e) { /* private mode */ }
+  var AF_FILTERS = [['all', 'All', '全部'], ['signal', 'Signal', '信号'], ['trend', 'Trend', '趋势'],
+    ['momentum', 'Momentum', '动量'], ['strength', 'vs Market', '相对强弱'], ['cycle', 'Cycle', '周期']];
+  // chip label per filter group (the slimmed events carry only `filter`, not the label)
+  var AF_LABELMAP = {}; AF_FILTERS.forEach(function (f) { AF_LABELMAP[f[0]] = [f[1], f[2]]; });
+  function afLabel(flt) { var l = AF_LABELMAP[flt] || ['', '']; return lz(l[0], l[1]); }
+  function afFeedHTML(a) {
+    if (!a) return '';
+    var h = '';
+    if (a.pinned) { var p = a.pinned;
+      h += '<div class="af-pin dir-' + (p.dir || 'neutral') + '"><div class="af-pin-h">' +
+        '<span class="af-pin-tag">' + lz('Current signal', '当前信号') + '</span>' +
+        '<span class="af-pin-title">' + esc(lz(p.headline, p.headline_zh)) + '</span></div>' +
+        '<p class="af-pin-d">' + esc(lz(p.detail, p.detail_zh)) + '</p></div>';
+    }
+    var tl = a.timeline || [];
+    if (tl.length) {
+      h += '<div class="af-filters">' + AF_FILTERS.map(function (f) {
+        return '<button class="aff' + (f[0] === 'all' ? ' active' : '') + '" type="button" data-f="' +
+          f[0] + '">' + lz(f[1], f[2]) + '</button>'; }).join('') + '</div>';
+      tl.forEach(function (day) {
+        h += '<div class="af-day"><div class="af-date">' + esc(lz(day.daylabel, day.daylabel_zh)) + '</div>';
+        (day.events || []).forEach(function (ev) {
+          var m = AF_META[ev.type] || {};
+          h += '<details class="af-item' + (ev.pinned ? ' pinned' : '') + '" data-f="' + ev.filter + '"><summary>' +
+            '<span class="af-node dir-' + (ev.dir || 'neutral') + '"></span>' +
+            '<span class="af-chip f-' + ev.filter + '">' + esc(afLabel(ev.filter)) + '</span>' +
+            '<span class="af-head">' + esc(lz(ev.headline, ev.headline_zh)) + '</span></summary>' +
+            '<div class="af-detail">' + esc(lz(ev.detail, ev.detail_zh));
+          if (m.edge) h += '<div class="af-edge"><b>' + lz('Edge:', '优势：') + '</b> ' + esc(lz(m.edge, m.edge_zh)) + '</div>';
+          if (m.forward) h += '<div class="af-fwd">' + esc(lz(m.forward, m.forward_zh)) + '</div>';
+          h += '</div></details>';
+        });
+        h += '</div>';
+      });
+    } else {
+      h += '<div class="af-empty">' + lz('No signal changes in the recent window — quiet on every tracked signal.',
+        '近期无信号变化 — 所有跟踪信号均平静。') + '</div>';
+    }
+    return h;
+  }
+  function renderAlertFeed(d) {
+    var a = d.alerts || {}, btn = el('r_afbtn'), n = a.n_recent || 0;
+    btn.style.display = 'inline-flex';
+    btn.innerHTML = '🔔 <span>' + lz('Alerts', '警报') + '</span>' +
+      (n ? '<span class="af-badge">' + n + '</span>' : '') + ' <span class="af-caret">▾</span>';
+    el('r_affeed').innerHTML = afFeedHTML(a);
+    var feed = el('af-feed');
+    if (afOpen) { feed.removeAttribute('hidden'); btn.setAttribute('aria-expanded', 'true'); }
+    else { feed.setAttribute('hidden', ''); btn.setAttribute('aria-expanded', 'false'); }
+  }
+  // toggle (persists across re-renders) + filter chips (event-delegated)
+  (function () {
+    var btn = el('r_afbtn'), feed = el('af-feed');
+    if (btn) btn.addEventListener('click', function () {
+      afOpen = feed.hasAttribute('hidden');
+      try { localStorage.setItem('afOpen', afOpen ? 'true' : 'false'); } catch (e) { /* private mode */ }
+      if (afOpen) { feed.removeAttribute('hidden'); btn.setAttribute('aria-expanded', 'true'); }
+      else { feed.setAttribute('hidden', ''); btn.setAttribute('aria-expanded', 'false'); }
+    });
+    if (feed) feed.addEventListener('click', function (ev) {
+      var b = ev.target.closest ? ev.target.closest('.aff') : null;
+      if (!b) return;
+      feed.querySelectorAll('.aff').forEach(function (x) { x.classList.remove('active'); });
+      b.classList.add('active');
+      var f = b.dataset.f;
+      feed.querySelectorAll('.af-item').forEach(function (it) { it.hidden = !(f === 'all' || it.dataset.f === f); });
+      feed.querySelectorAll('.af-day').forEach(function (dd) {
+        var any = [].slice.call(dd.querySelectorAll('.af-item')).some(function (i) { return !i.hidden; });
+        dd.style.display = any ? '' : 'none';
+      });
+    });
+  })();
+
   function load(t) {
     var safe = t.replace('=', '_').replace('^', '_');
     if (window.loadStockBrief) window.loadStockBrief(safe);   // 🧠 AI brief (hidden if absent)
@@ -267,10 +887,68 @@
       document.getElementById('r_name').textContent = t;
       document.getElementById('r_state').textContent = L('notlib');
       document.getElementById('r_state').className = 'state';
-      document.getElementById('r_entry').style.display = 'none';
+      document.getElementById('r_verdict').innerHTML = '';
+      document.getElementById('r_sigstrip').innerHTML = '';
+      document.getElementById('r_afbtn').style.display = 'none';
+      document.getElementById('af-feed').setAttribute('hidden', '');
       document.getElementById('r_points').innerHTML = '';
       document.getElementById('r_cyclebox').innerHTML = L('notlibmsg');
+      hideFundamentals();
     });
+  }
+
+  // Institutional flow: which thematic/active funds are accumulating or trimming
+  // this name (from the 🐳 Real fund moves board). Self-contained; hidden when empty.
+  function renderFundFlow(d) {
+    var moves = (d && d.fund_flows) || [];
+    if (!moves.length) { show('panel_flow', false); return; }
+    var R = ' style="text-align:right"';
+    var th = '<tr><th>' + lz('fund', '基金') + '</th><th>' + lz('theme', '主题') +
+      '</th><th>' + lz('action', '动作') + '</th><th' + R + '>' + lz('conviction Δwt', '信念权重Δ') +
+      '</th><th' + R + '>' + lz('weight', '权重') + '</th></tr>';
+    var rows = moves.map(function (m) {
+      var acc = m.direction === 'accumulating';
+      var col = ' style="color:var(' + (acc ? '--up' : '--down') + ')"';
+      var colR = ' style="text-align:right;color:var(' + (acc ? '--up' : '--down') + ')"';
+      var dirTxt = m.is_new ? lz('★ initiated', '★ 新建仓')
+        : m.is_exit ? lz('✕ exited', '✕ 清仓')
+        : acc ? lz('▲ buying', '▲ 买入') : lz('▼ trimming', '▼ 减持');
+      var conv = (m.conviction_pp == null) ? '—'
+        : (m.conviction_pp >= 0 ? '+' : '') + Number(m.conviction_pp).toFixed(2) + 'pp';
+      var w = (m.weight_pct == null) ? '—' : Number(m.weight_pct).toFixed(2) + '%';
+      var kind = m.is_active ? lz('active manager', '主动经理') : lz('curated basket', '精选篮子');
+      var theme = (m.theme ? m.theme + ' · ' : '') + kind;
+      return '<tr><td><b>' + m.fund + '</b> <span class="muted">' + (m.fund_name || '') + '</span></td>' +
+        '<td class="muted">' + theme + '</td>' +
+        '<td' + col + '>' + dirTxt + '</td>' +
+        '<td' + colR + '><b>' + conv + '</b></td>' +
+        '<td class="muted"' + R + '>' + w + '</td></tr>';
+    }).join('');
+    el('r_flow').innerHTML = '<table>' + th + rows + '</table>';
+    show('panel_flow', true);
+  }
+
+  // Sector-neutral residual-alpha: this name's stock-specific momentum after its
+  // market + sector beta are stripped, ranked within its GICS sector.
+  var AE = { extended:['Extended — ran hot','偏热 — 短期反转'], pullback:['Pullback — constructive','回调 — 较佳入场'],
+             intact:['Intact','趋势完好'], laggard:['Laggard','落后'], neutral:['Neutral','中性'] };
+  function renderAlpha(d) {
+    var a = d.alpha;
+    if (!a || a.alpha == null) { show('panel_alpha', false); return; }
+    function sgn(v, nd, suf) { return v == null ? LF('na') : (v > 0 ? '+' : '') + Number(v).toFixed(nd) + (suf || ''); }
+    var chips = [gchip(lz('alpha z','阿尔法 z'), '<span class="' + (a.alpha >= 0 ? 'pos' : 'neg') + '">' + sgn(a.alpha, 2) + '</span>')];
+    if (a.sector_rank != null && a.sector_n != null)
+      chips.push(gchip(lz('sector rank','板块排名'), '#' + a.sector_rank + ' / ' + a.sector_n));
+    if (a.resid_ann != null)
+      chips.push(gchip(lz('idiosyncratic (ann)','特异收益（年化）'), '<span class="' + (a.resid_ann >= 0 ? 'pos' : 'neg') + '">' + sgn(a.resid_ann, 0, '%') + '</span>'));
+    if (a.rev_1m != null)
+      chips.push(gchip(lz('last month','近一月'), '<span class="' + (a.rev_1m >= 0 ? 'pos' : 'neg') + '">' + sgn(a.rev_1m, 1, '%') + '</span>'));
+    var tag = (a.entry && AE[a.entry]) ? '<span class="alpha-entry ae-' + a.entry + '">' + lz(AE[a.entry][0], AE[a.entry][1]) + '</span>' : '';
+    el('r_alpha').innerHTML = '<div class="glance">' + chips.join('') + '</div>' +
+      (tag ? '<div style="margin:8px 0 2px">' + tag + '</div>' : '') +
+      '<p class="srcline">' + lz('Stock-specific momentum after market + sector beta are removed, ranked within its sector. A modest, regime-decayed edge — context, not a standalone buy signal.',
+        '剔除市场与板块贝塔后的个股特定动量，在其板块内排名。温和且随周期衰减的优势 —— 仅供参考，而非独立买入信号。') + '</p>';
+    show('panel_alpha', true);
   }
 
   function render(d) {
@@ -282,12 +960,9 @@
     document.getElementById('r_summary').textContent = lz(d.ladder.summary_line, d.ladder.summary_line_zh);
     document.getElementById('r_asof').textContent = L('asof') + ' ' + d.asof;
 
-    var e = d.ladder.entry || {};
-    var eb = document.getElementById('r_entry');
-    eb.style.display = 'flex';
-    eb.className = 'entrybar urg-' + (e.urgency || 'hold');
-    document.getElementById('r_tag').textContent = lz(e.tag, e.tag_zh);
-    document.getElementById('r_entrytext').textContent = lz(e.text, e.text_zh);
+    renderVerdict(d);
+    renderSignalStrip(d);
+    renderAlertFeed(d);
 
     var ageEl = document.getElementById('r_age');
     if (d.ladder.age_line) {
@@ -355,6 +1030,9 @@
     var early = document.getElementById('r_early');
     if (d.ladder.early_note) { early.textContent = lz(d.ladder.early_note, d.ladder.early_note_zh); early.style.display = 'block'; }
     else { early.style.display = 'none'; }
+    var macro = document.getElementById('r_macro');
+    if (d.ladder.macro_line) { macro.textContent = '⚠ ' + lz(d.ladder.macro_line, d.ladder.macro_line_zh); macro.style.display = 'block'; }
+    else { macro.style.display = 'none'; }
 
     document.getElementById('r_flags').textContent = d.cycle.failed_cycle ? L('failed') : '';
     document.getElementById('r_why').textContent = lz(d.ladder.why, d.ladder.why_zh) + ' ' + L('next') + ' ' + lz(d.ladder.next, d.ladder.next_zh);
@@ -374,6 +1052,10 @@
       });
     }
     document.getElementById('r_cal').innerHTML = cs;
+
+    renderFundamentals(d);
+    renderFundFlow(d);
+    renderAlpha(d);
 
     document.getElementById('tvbox').innerHTML = '<div id="tvchart"></div>';
     try {
@@ -401,7 +1083,7 @@
 </script>
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
-<p class="muted" style="font-size:12px">Generated 2026-06-14 10:42 UTC · charts by TradingView ·
+<p class="muted" style="font-size:12px">Generated 2026-06-14 11:17 UTC · charts by TradingView ·
 methodology &amp; caveats: see any sector page footer.</p>
 <footer class="site-footer">
   <span class="made">Made with ❤️ in Canada</span>

@@ -277,14 +277,14 @@
       "stlfsi": -0.8681
     },
     "recession": {
-      "score": 8.767981087785952,
+      "score": 3.889932307298147,
       "label": "low",
       "components": {
-        "sahm": 20.0,
         "prob": 0.44,
         "ebp_prob": 9.30245069395062,
         "curve": 0.0,
-        "ebp_level": 16.30952380952381
+        "ebp_level": 16.30952380952381,
+        "claims": 0.0
       },
       "curve_raw": 0.39,
       "curve_tp_adjusted": 1.1919,
@@ -297,6 +297,19 @@
       "wei": 2.9,
       "wei_trend": "rising",
       "gdpnow": 3.2906
+    },
+    "labor_nowcast": {
+      "initial_claims_4wk": 219000.0,
+      "continued_claims": 1795000.0,
+      "claims_yoy_pct": -9.597523219814242,
+      "claims_z": -0.301541352126245,
+      "claims_trend": "falling",
+      "indeed_postings": 100.19,
+      "indeed_chg_3m_pct": -3.2541521823097774,
+      "indeed_trend": "falling",
+      "withheld_tax_yoy_pct": 3.3611434643846083,
+      "income_trend": "rising",
+      "read": "labor firm"
     },
     "inflation_nowcast": {
       "sticky_ann": 3.3161359677362334,
@@ -315,14 +328,17 @@
       "vix_term_state": "contango (calm)",
       "skew": 142.6,
       "skew_pctile": 0.3194444444444444,
-      "stock_bond_corr": 0.6936367796179748,
+      "stock_bond_corr": 0.6936367796179752,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.4110536838487616,
+      "roro": 0.411053683848763,
       "roro_state": "risk-on",
-      "vol_target_scalar": 0.8172282208779413
+      "vol_target_scalar": 0.8172282208779413,
+      "news_sentiment": -0.031533293426036835,
+      "news_sentiment_z": 0.1679185746442469,
+      "news_sentiment_state": "pessimistic"
     },
     "drawdown_risk": {
-      "score": 13.440746237015052,
+      "score": 15.454738181047276,
       "band": "low",
       "dd10_prob_pct": 8,
       "base_rate_pct": 8
@@ -357,7 +373,7 @@
     "confidence_gated": false,
     "dropped_fields": [],
     "evidence": [],
-    "degraded_reason": "stop_max_tokens",
+    "degraded_reason": "no_client_or_key",
     "disclaimer": "Context only \u2014 not a signal. This is a machine DIGEST of a public document, produced by an AI model after the fact. The tone / guidance / risk / reversibility readings are background context; they are NOT inputs to any score, signal or allocation unless a downstream, separately-gated step promotes a single field, and even then only as one bounded factor. \u201cunknown\u201d means the evidence was insufficient \u2014 the honest answer. Every non-unknown field is backed by a quote verified to appear verbatim in the source; unverifiable claims are dropped."
   },
   "dislocation": {
@@ -381,8 +397,8 @@
       "spy_drawdown_pct": -2.3,
       "vix": 17.7,
       "vix_term": 0.862,
-      "vix_front_future": null,
-      "vix_vs_front": null,
+      "vix_front_future": 17.97,
+      "vix_vs_front": 0.98,
       "vix_reliable": true,
       "vix_intraday_high": null,
       "vix_wick_pct": null,
@@ -721,6 +737,17 @@
     ],
     "evidence": "Risk budgeting on the trailing covariance: equal-weight vs inverse-vol vs equal-risk-contribution. Stress replay = equal-weight book of the then-available markets through named crises. A risk-budget reference, not a trade list; same timezone caveat as cross_asset."
   },
+  "macro_risk": {
+    "score": 0.098,
+    "label": "low",
+    "components": {
+      "recession": 0.039,
+      "drawdown": 0.155,
+      "nfci": 0.0,
+      "liquidity": 0.0,
+      "transition": 0.5
+    }
+  },
   "playbook": {
     "headline": "Goldilocks \u2014 growth improving while inflation cools. Posture: NEUTRAL \u2014 no edge either way; core holdings only, no new conviction bets.",
     "dial": {
@@ -925,7 +952,8 @@
           "regime": 8,
           "tape": 25,
           "technicals": 30,
-          "crowding": 0
+          "crowding": 0,
+          "macro": 0
         },
         "heat_band": "55-69",
         "heat_label": "HOT",
@@ -1018,22 +1046,23 @@
         "tech_rsi14": 38.0,
         "tech_macd_pos": false,
         "tech_off_52w_high_pct": -6.7,
-        "heat": 26,
+        "heat": 25,
         "heat_parts": {
-          "score": 26,
+          "score": 25,
           "regime": 18,
           "tape": 4,
           "technicals": 4,
-          "crowding": 0
+          "crowding": 0,
+          "macro": -1
         },
         "heat_band": "0-39",
         "heat_label": "COLD",
         "heat_note": "washed out. Historically this band mildly mean-reverts upward, but timing is unreliable \u2014 wait for the confirmation trigger.",
         "heat_note_zh": "\u5df2\u8d85\u5356\u3002\u5386\u53f2\u4e0a\u8be5\u533a\u95f4\u5b58\u5728\u6e29\u548c\u7684\u5747\u503c\u4e0a\u884c\u56de\u5f52\uff0c\u4f46\u62e9\u65f6\u4e0d\u53ef\u9760 \u2014 \u7b49\u5f85\u786e\u8ba4\u89e6\u53d1\u4fe1\u53f7\u3002",
         "heat_cal": {
-          "n": 10696,
+          "n": 10736,
           "hit_pct": 49.9,
-          "avg_excess_pct": 0.11
+          "avg_excess_pct": 0.12
         },
         "season_this": "Jun: +1.3% avg, up 75% of years (n=8)",
         "season_next": "Jul: +2.4% avg, up 75% of years (n=8)",
@@ -1129,16 +1158,17 @@
           "regime": 8,
           "tape": 10,
           "technicals": 18,
-          "crowding": 0
+          "crowding": 0,
+          "macro": 0
         },
         "heat_band": "0-39",
         "heat_label": "COLD",
         "heat_note": "washed out. Historically this band mildly mean-reverts upward, but timing is unreliable \u2014 wait for the confirmation trigger.",
         "heat_note_zh": "\u5df2\u8d85\u5356\u3002\u5386\u53f2\u4e0a\u8be5\u533a\u95f4\u5b58\u5728\u6e29\u548c\u7684\u5747\u503c\u4e0a\u884c\u56de\u5f52\uff0c\u4f46\u62e9\u65f6\u4e0d\u53ef\u9760 \u2014 \u7b49\u5f85\u786e\u8ba4\u89e6\u53d1\u4fe1\u53f7\u3002",
         "heat_cal": {
-          "n": 10696,
+          "n": 10736,
           "hit_pct": 49.9,
-          "avg_excess_pct": 0.11
+          "avg_excess_pct": 0.12
         },
         "season_this": "Jun: +0.1% avg, up 54% of years (n=28)",
         "season_next": "Jul: +0.1% avg, up 59% of years (n=27)",
@@ -1226,22 +1256,23 @@
         "tech_rsi14": 65.0,
         "tech_macd_pos": true,
         "tech_off_52w_high_pct": -4.9,
-        "heat": 53,
+        "heat": 52,
         "heat_parts": {
-          "score": 53,
+          "score": 52,
           "regime": 8,
           "tape": 15,
           "technicals": 30,
-          "crowding": 0
+          "crowding": 0,
+          "macro": -1
         },
         "heat_band": "40-54",
         "heat_label": "NEUTRAL",
         "heat_note": "mixed picture, no statistical lean either way.",
         "heat_note_zh": "\u56fe\u666f\u6df7\u6742\uff0c\u7edf\u8ba1\u4e0a\u65e0\u660e\u663e\u503e\u5411\u3002",
         "heat_cal": {
-          "n": 2253,
-          "hit_pct": 48.2,
-          "avg_excess_pct": -0.09
+          "n": 2201,
+          "hit_pct": 48.1,
+          "avg_excess_pct": -0.14
         },
         "season_this": "Jun: -0.9% avg, up 39% of years (n=28)",
         "season_next": "Jul: +1.9% avg, up 67% of years (n=27)",
@@ -1337,7 +1368,8 @@
           "regime": 8,
           "tape": 25,
           "technicals": 30,
-          "crowding": 0
+          "crowding": 0,
+          "macro": 0
         },
         "heat_band": "55-69",
         "heat_label": "HOT",
@@ -1436,16 +1468,17 @@
           "regime": 18,
           "tape": 12,
           "technicals": 25,
-          "crowding": -10
+          "crowding": -10,
+          "macro": 0
         },
         "heat_band": "40-54",
         "heat_label": "NEUTRAL",
         "heat_note": "mixed picture, no statistical lean either way.",
         "heat_note_zh": "\u56fe\u666f\u6df7\u6742\uff0c\u7edf\u8ba1\u4e0a\u65e0\u660e\u663e\u503e\u5411\u3002",
         "heat_cal": {
-          "n": 2253,
-          "hit_pct": 48.2,
-          "avg_excess_pct": -0.09
+          "n": 2201,
+          "hit_pct": 48.1,
+          "avg_excess_pct": -0.14
         },
         "season_this": "Jun: +0.8% avg, up 50% of years (n=28)",
         "season_next": "Jul: +1.6% avg, up 67% of years (n=27)",
@@ -1539,16 +1572,17 @@
           "regime": 8,
           "tape": 15,
           "technicals": 30,
-          "crowding": 0
+          "crowding": 0,
+          "macro": 0
         },
         "heat_band": "40-54",
         "heat_label": "NEUTRAL",
         "heat_note": "mixed picture, no statistical lean either way.",
         "heat_note_zh": "\u56fe\u666f\u6df7\u6742\uff0c\u7edf\u8ba1\u4e0a\u65e0\u660e\u663e\u503e\u5411\u3002",
         "heat_cal": {
-          "n": 2253,
-          "hit_pct": 48.2,
-          "avg_excess_pct": -0.09
+          "n": 2201,
+          "hit_pct": 48.1,
+          "avg_excess_pct": -0.14
         },
         "season_this": "Jun: -0.1% avg, up 43% of years (n=28)",
         "season_next": "Jul: +1.2% avg, up 63% of years (n=27)",
@@ -1644,7 +1678,8 @@
           "regime": 8,
           "tape": 25,
           "technicals": 30,
-          "crowding": 0
+          "crowding": 0,
+          "macro": 0
         },
         "heat_band": "55-69",
         "heat_label": "HOT",
@@ -1743,16 +1778,17 @@
           "regime": 8,
           "tape": 15,
           "technicals": 23,
-          "crowding": 0
+          "crowding": 0,
+          "macro": 0
         },
         "heat_band": "40-54",
         "heat_label": "NEUTRAL",
         "heat_note": "mixed picture, no statistical lean either way.",
         "heat_note_zh": "\u56fe\u666f\u6df7\u6742\uff0c\u7edf\u8ba1\u4e0a\u65e0\u660e\u663e\u503e\u5411\u3002",
         "heat_cal": {
-          "n": 2253,
-          "hit_pct": 48.2,
-          "avg_excess_pct": -0.09
+          "n": 2201,
+          "hit_pct": 48.1,
+          "avg_excess_pct": -0.14
         },
         "season_this": "Jun: -0.1% avg, up 54% of years (n=28)",
         "season_next": "Jul: +1.1% avg, up 67% of years (n=27)",
@@ -1848,16 +1884,17 @@
           "regime": 8,
           "tape": 15,
           "technicals": 30,
-          "crowding": 0
+          "crowding": 0,
+          "macro": 0
         },
         "heat_band": "40-54",
         "heat_label": "NEUTRAL",
         "heat_note": "mixed picture, no statistical lean either way.",
         "heat_note_zh": "\u56fe\u666f\u6df7\u6742\uff0c\u7edf\u8ba1\u4e0a\u65e0\u660e\u663e\u503e\u5411\u3002",
         "heat_cal": {
-          "n": 2253,
-          "hit_pct": 48.2,
-          "avg_excess_pct": -0.09
+          "n": 2201,
+          "hit_pct": 48.1,
+          "avg_excess_pct": -0.14
         },
         "season_this": "Jun: +0.7% avg, up 57% of years (n=28)",
         "season_next": "Jul: +1.1% avg, up 63% of years (n=27)",
@@ -1953,16 +1990,17 @@
           "regime": 18,
           "tape": 4,
           "technicals": 8,
-          "crowding": 0
+          "crowding": 0,
+          "macro": 0
         },
         "heat_band": "0-39",
         "heat_label": "COLD",
         "heat_note": "washed out. Historically this band mildly mean-reverts upward, but timing is unreliable \u2014 wait for the confirmation trigger.",
         "heat_note_zh": "\u5df2\u8d85\u5356\u3002\u5386\u53f2\u4e0a\u8be5\u533a\u95f4\u5b58\u5728\u6e29\u548c\u7684\u5747\u503c\u4e0a\u884c\u56de\u5f52\uff0c\u4f46\u62e9\u65f6\u4e0d\u53ef\u9760 \u2014 \u7b49\u5f85\u786e\u8ba4\u89e6\u53d1\u4fe1\u53f7\u3002",
         "heat_cal": {
-          "n": 10696,
+          "n": 10736,
           "hit_pct": 49.9,
-          "avg_excess_pct": 0.11
+          "avg_excess_pct": 0.12
         },
         "season_this": "Jun: -0.1% avg, up 54% of years (n=28)",
         "season_next": "Jul: +1.8% avg, up 70% of years (n=27)",
@@ -2037,14 +2075,14 @@
     ],
     "heat_calibration": {
       "0-39": {
-        "n": 10696,
+        "n": 10736,
         "hit_pct": 49.9,
-        "avg_excess_pct": 0.11
+        "avg_excess_pct": 0.12
       },
       "40-54": {
-        "n": 2253,
-        "hit_pct": 48.2,
-        "avg_excess_pct": -0.09
+        "n": 2201,
+        "hit_pct": 48.1,
+        "avg_excess_pct": -0.14
       }
     },
     "commodities": [
@@ -2165,15 +2203,15 @@
         "avg_worst_dd63_pct": NaN
       },
       "conditions_recession_high": {
-        "n": 72,
-        "fwd21_avg_pct": -1.43,
-        "fwd21_hit_pct": 50.0,
+        "n": 51,
+        "fwd21_avg_pct": -1.69,
+        "fwd21_hit_pct": 52.9,
         "avg_worst_dd63_pct": NaN
       },
       "conditions_recession_low": {
-        "n": 1263,
-        "fwd21_avg_pct": 1.09,
-        "fwd21_hit_pct": 68.1,
+        "n": 1371,
+        "fwd21_avg_pct": 1.0,
+        "fwd21_hit_pct": 67.0,
         "avg_worst_dd63_pct": NaN
       }
     },

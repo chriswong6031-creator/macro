@@ -51,6 +51,14 @@
   .eqbadge.eq-down { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--down);
                      border-color:color-mix(in srgb,var(--down) 40%,transparent); }
   .eqbadge.eq-flat { background:var(--panel2); color:var(--muted); }
+  .alpha-entry { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px;
+                 border-radius:9px; text-transform:capitalize; border:1px solid var(--line); white-space:nowrap; }
+  .ae-pullback { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up);
+                 border-color:color-mix(in srgb,var(--up) 40%,transparent); }
+  .ae-extended { background:color-mix(in srgb,var(--warn) 22%,transparent); color:var(--text);
+                 border-color:color-mix(in srgb,var(--warn) 55%,transparent); }
+  .ae-intact { background:color-mix(in srgb,var(--link) 14%,transparent); color:var(--link); }
+  .ae-laggard,.ae-neutral { background:var(--panel2); color:var(--muted); }
   a { text-decoration:none; }
   h1 { font-size:20px; margin:0; }
   h2 { font-size:14px; margin:0 0 10px; color:var(--muted); text-transform:uppercase;
@@ -72,8 +80,11 @@
           overflow:auto; display:none; box-shadow:var(--popover-shadow); }
   #sugg div { padding:8px 13px; cursor:pointer; display:flex; gap:10px; align-items:center; }
   #sugg div:hover, #sugg div.sel { background:var(--panel2); }
-  #sugg b { min-width:78px; }
-  #sugg small { color:var(--muted); flex:1; }
+  #sugg b { min-width:78px; flex:none; }
+  #sugg small { color:var(--muted); flex:1 1 auto; min-width:0;
+                white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #sugg div span { flex:0 1 auto; min-width:0; max-width:40%;
+                   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:right; }
   .mtf { display:flex; gap:14px; flex-wrap:wrap; font-size:12.5px; color:var(--muted);
          margin-top:8px; }
   .mtf b { color:var(--text); }
@@ -124,6 +135,11 @@
     <div class="panel">
       <h2><span class="l-en">Momentum across timeframes</span><span class="l-zh">跨周期动量</span></h2>
       <div id="r_mtf"></div>
+    </div>
+    <div class="panel" id="r_alpha_panel" style="display:none">
+      <h2><span class="l-en">Alpha vs sector</span><span class="l-zh">相对板块阿尔法</span> <span class="note" style="text-transform:none">· <span class="l-en">sector-neutral residual momentum</span><span class="l-zh">板块中性残差动量</span></span></h2>
+      <div id="r_alpha" class="mtf"></div>
+      <p class="muted" style="font-size:12px; margin-top:8px"><span class="l-en">This name's return with its MARKET and SECTOR beta removed — sector-neutral residual momentum over a 12-1-month window. <b>alpha z</b> ranks it vs the whole A-share cross-section (0 = average, +2 = top of the pack); <b>sector rank</b> is its place among its sector peers; <b>idio ann</b> is the annualized beta-stripped return. The entry tag flags a leader that just spiked (<b>extended</b> = short-term reversal risk) vs one on a recent dip (<b>pullback</b> = constructive). Phase-0 validated as a MODEST, regime-decayed edge — context for selection, not a standalone buy signal.</span><span class="l-zh">本股票剔除其市场与板块贝塔后的收益 — 12-1 个月的板块中性残差动量。<b>alpha z</b> 为相对全 A 股横截面的排名（0＝平均，+2＝最强一档）；<b>板块排名</b> 为同板块内位置；<b>年化残差</b> 为年化的剔除贝塔收益。入场标签标记刚急涨的领先股（<b>extended</b>＝短期反转风险）与近期回调者（<b>pullback</b>＝较佳入场）。第 0 阶段验证为温和、随周期衰减的优势 — 仅供选股参考，而非独立买入信号。</span></p>
     </div>
     <div class="panel">
       <h2><span class="l-en">Chart</span><span class="l-zh">图表</span></h2>
@@ -305,6 +321,25 @@
     document.getElementById('r_why').textContent = lz(d.ladder.why, d.ladder.why_zh) + ' ' + L('next') + ' ' + lz(d.ladder.next, d.ladder.next_zh);
     window.renderMTF(document.getElementById('r_mtf'), d.mtf);
 
+    // Alpha vs sector — sector-neutral residual momentum (additive; absent on ETFs/indices)
+    var ap = document.getElementById('r_alpha_panel'), a = d.alpha;
+    if (a && a.alpha != null) {
+      var AE = {pullback:['pullback','回调买点'], extended:['extended','急涨偏热'],
+                intact:['intact','趋势完好'], laggard:['laggard','落后'], neutral:['neutral','中性']};
+      var sgn = function (x, n) { return (x >= 0 ? '+' : '') + (x == null ? '—' : x.toFixed(n)); };
+      var stat = function (lab, val, cls) {
+        return '<span>' + lab + ' <b' + (cls ? ' class="' + cls + '"' : '') + '>' + val + '</b></span>'; };
+      var html =
+        stat(lz('alpha z','阿尔法 z'), sgn(a.alpha, 2), a.alpha >= 0 ? 'pos' : 'neg') +
+        stat(lz('sector rank','板块排名'), a.sector_rank + '/' + a.sector_n, '') +
+        (a.resid_ann != null ? stat(lz('idio ann','年化残差'), sgn(a.resid_ann, 0) + '%', (a.resid_ann >= 0 ? 'pos' : 'neg')) : '') +
+        (a.rev_1m != null ? stat(lz('1-mo','近一月'), sgn(a.rev_1m, 1) + '%', (a.rev_1m >= 0 ? 'pos' : 'neg')) : '');
+      if (a.entry && AE[a.entry])
+        html += '<span class="alpha-entry ae-' + a.entry + '">' + lz(AE[a.entry][0], AE[a.entry][1]) + '</span>';
+      document.getElementById('r_alpha').innerHTML = html;
+      ap.style.display = 'block';
+    } else { ap.style.display = 'none'; }
+
     var cs = '<tr><th>' + L('th_state') + '</th><th>' + L('th_n') + '</th><th>' + L('th_up') +
              '</th><th>' + L('th_avg') + '</th><th>' + L('th_dipm') + '</th><th>' + L('th_dipb') + '</th></tr>';
     if (cal) {
@@ -342,7 +377,7 @@
 </script>
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
-<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-14 10:59 UTC UTC · <span class="l-en">charts by TradingView · curated A-share universe, not exhaustive</span><span class="l-zh">图表由 TradingView 提供 · 精选 A 股范围，非全市场</span></p>
+<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-14 11:23 UTC UTC · <span class="l-en">charts by TradingView · curated A-share universe, not exhaustive</span><span class="l-zh">图表由 TradingView 提供 · 精选 A 股范围，非全市场</span></p>
 <footer class="site-footer">
   <span class="made"><span class="l-en">Made with ❤️ in Canada</span><span class="l-zh">用 ❤️ 在加拿大制作</span></span>
   <span class="dev"><span class="l-en">Developed by</span><span class="l-zh">开发者</span> Chris Wong</span>
