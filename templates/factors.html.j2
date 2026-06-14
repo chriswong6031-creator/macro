@@ -263,6 +263,14 @@
     <h2>{{ t('Factor performance — interactive', '因子表现 — 交互图') }}
       {{ help("Rebased to 0% at the start of the selected window. Four relational views: factors LONG-ONLY (carry with the market), factors vs S&P 500, the Q5−Q1 PREMIUM (market-neutral), and cap-weighted GICS SECTORS vs S&P. Click legend entries to toggle series; pick a range. Powered by TradingView Lightweight Charts.", "在所选窗口起点重设为 0%。四种关系视图：因子纯多头、因子相对标普、Q5−Q1 溢价（市场中性）、以及市值加权 GICS 行业相对标普。点击图例切换；可选区间。") }}
     </h2>
+    <div class="chartbar" style="margin-bottom:4px">
+      <span class="tabs" id="fc-universe" role="group" aria-label="Universe"></span>
+      <span class="muted" style="font-size:11.5px;flex:1;min-width:240px">{{ t(
+        'Broad = S&P 1500 (large+mid+small); Narrow = S&P 500 large-cap. This switch re-ranks only the chart, table & sector monitor below — the IC scorecard, crowding, quilt and breadth panels stay on the broad universe.',
+        '广义=标普 1500（大+中+小）；狭义=标普 500 大盘。此切换仅重排下方图表、表格与行业监测 — IC 记分卡、拥挤度、拼布与广度面板保持广义口径。') }}
+        <span id="uni-note" style="display:none;color:var(--warn)"> · {{ t('S&P 500 price history starts 2025-03 (~1y) — curves are shorter and σ/z need ~1y+, so some cells show —.', '标普 500 价格历史自 2025-03（约 1 年）— 曲线更短，σ/z 需约 1 年以上，部分单元格显示 —。') }}</span>
+      </span>
+    </div>
     <div class="chartbar"><span class="tabs" id="fc-modes" role="group"></span><span class="tabs" id="fc-ranges" role="group"></span></div>
     <div id="fchart"></div>
     <div class="legend" id="fc-legend"></div>
@@ -504,13 +512,16 @@
   {% if series and series.chart_data %}
   <script>
   const CHART_DATA = {{ series.chart_data | tojson }};
+  const CHART_DATA_NARROW = {% if series.chart_data_narrow %}{{ series.chart_data_narrow | tojson }}{% else %}null{% endif %};
   (function(){
     if(!CHART_DATA || !CHART_DATA.dates) return;
-    const D=CHART_DATA, dates=D.dates, bench=D.bench, labels=D.labels||{};
     const cssv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
     const PALETTE=['#5aa7ff','#4ade80','#facc15','#fb923c','#f472b6','#2dd4bf','#a78bfa','#fb7185','#a3e635','#38bdf8','#e879f9'];
-    const FAC=Object.keys(D.long||{}), SEC=Object.keys(D.sector||{});
-    const colorOf={}; FAC.forEach((f,i)=>colorOf[f]=PALETTE[i%PALETTE.length]); SEC.forEach((s,i)=>colorOf['sec:'+s]=PALETTE[i%PALETTE.length]);
+    let uni='broad', D=CHART_DATA, dates=D.dates, bench=D.bench, labels=D.labels||{};
+    let FAC=Object.keys(D.long||{}), SEC=Object.keys(D.sector||{}), colorOf={};
+    function recolor(){ colorOf={}; FAC.forEach((f,i)=>colorOf[f]=PALETTE[i%PALETTE.length]); SEC.forEach((s,i)=>colorOf['sec:'+s]=PALETTE[i%PALETTE.length]); }
+    recolor();
+    function setUni(u){ if(u==='narrow'&&!CHART_DATA_NARROW) return; uni=u; D=(u==='narrow')?CHART_DATA_NARROW:CHART_DATA; dates=D.dates; bench=D.bench; labels=D.labels||{}; FAC=Object.keys(D.long||{}); SEC=Object.keys(D.sector||{}); recolor(); hidden={}; var nt=document.getElementById('uni-note'); if(nt) nt.style.display=(u==='narrow')?'inline':'none'; drawChart(); renderPerfTable(); drawSector(); }
     const lastIdx=a=>{for(let i=a.length-1;i>=0;i--) if(a[i]!=null) return i; return -1;};
     function startIdxFor(col,li){ const u=col.toUpperCase(); if(u==='YTD'){const p=dates[li].slice(0,4); let i=li; while(i>0&&dates[i-1].startsWith(p))i--; return i>0?i-1:null;} const i=li-parseInt(col,10); return i>=0?i:null; }
     function winRet(lv,col){ if(!lv) return null; const li=lastIdx(lv); if(li<0) return null; const si=startIdxFor(col,li); if(si==null||lv[si]==null) return null; return lv[li]/lv[si]-1; }
@@ -578,6 +589,9 @@
       document.getElementById('sector-monitor').innerHTML=html+'</tbody>';
     }
     function bootFc(){
+      const usw=document.getElementById('fc-universe');
+      if(CHART_DATA_NARROW) tabs('fc-universe',[['broad','S&P 1500 · broad'],['narrow','S&P 500 · large cap']],'broad',setUni);
+      else if(usw) usw.style.display='none';
       tabs('fp-scope',FSCOPE,fscope,v=>{fscope=v; localStorage.setItem('fw-fp-scope',v); renderPerfTable();});
       tabs('fp-mode',FMODES,fmode,v=>{fmode=v; localStorage.setItem('fw-fp-mode',v); renderPerfTable();});
       renderPerfTable();

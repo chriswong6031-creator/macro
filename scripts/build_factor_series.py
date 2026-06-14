@@ -34,11 +34,22 @@ def main() -> int:
     if not data:
         log.warning("no price caches — skipping factor series")
         return 0
+    # NARROW (S&P 500) universe — its chart_data feeds the page's universe switch.
+    # Computed AFTER broad so a narrow failure can never blank the broad payload.
+    try:
+        narrow = compute_factor_series(universe="narrow")
+        if narrow and narrow.get("chart_data"):
+            data["chart_data_narrow"] = narrow["chart_data"]
+            data["narrow_history_start"] = narrow.get("history_start")
+            log.info("added narrow (S&P 500) chart_data (%d sectors, start %s)",
+                     len(narrow["chart_data"].get("sector", {})), narrow.get("history_start"))
+    except Exception as e:  # noqa: BLE001 — narrow is optional; broad already stands
+        log.warning("narrow universe series failed (broad unaffected): %s", e)
     fdir = config.ROOT / "site" / "factordata"
     fdir.mkdir(parents=True, exist_ok=True)
     (fdir / "factor_series.json").write_text(json.dumps(data, separators=(",", ":")))
-    log.info("wrote factor_series.json (%d factors, %d rebalances)",
-             len(data["factors"]), data["n_rebalances"])
+    log.info("wrote factor_series.json (%d factors, %d rebalances, narrow=%s)",
+             len(data["factors"]), data["n_rebalances"], "yes" if data.get("chart_data_narrow") else "no")
     return 0
 
 

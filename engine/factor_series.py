@@ -119,10 +119,11 @@ def _nav(r: pd.Series) -> list:
     return [None if pd.isna(v) else round(float(v), 5) for v in lv]
 
 
-def compute_factor_series() -> dict | None:
+def compute_factor_series(universe: str = "broad") -> dict | None:
     """Walk month-ends, build per-factor long-only + L/S daily return series, and
-    derive horizons, stats, crowding, rotation and the quilt. None if no caches."""
-    closes = _closes()
+    derive horizons, stats, crowding, rotation and the quilt. None if no caches.
+    universe='narrow' restricts to the S&P 500 large-cap cache (shorter history)."""
+    closes = _closes(universe)
     if closes is None or closes.empty:
         return None
     rets = closes.pct_change(fill_method=None)
@@ -137,7 +138,7 @@ def compute_factor_series() -> dict | None:
 
     for i, d in enumerate(me):
         try:
-            fac = compute_factors(asof=d)
+            fac = compute_factors(asof=d, universe=universe)
         except Exception as e:  # noqa: BLE001
             log.warning("compute_factors(asof=%s) failed: %s", d.date(), e)
             continue

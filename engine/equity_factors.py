@@ -74,10 +74,18 @@ def _insider_block(ns: dict) -> dict | None:
             "top_buying": rows(buying, 1), "top_selling": rows(selling, -1)}
 
 
-def _closes() -> pd.DataFrame:
-    """Combined S&P 1500 close matrix from the three breadth caches."""
+# universe → which breadth caches define the price/name set. 'broad' = the full
+# S&P 1500 (large+mid+small); 'narrow' = the S&P 500 large-cap (breadth cache only).
+# The keyword default is 'broad' so every existing caller is unchanged.
+_UNIVERSE_GROUPS = {"broad": ("breadth", "smallcap_breadth", "midcap_breadth"),
+                    "narrow": ("breadth",)}
+
+
+def _closes(universe: str = "broad") -> pd.DataFrame:
+    """Close matrix from the breadth caches. 'broad' = combined S&P 1500;
+    'narrow' = the S&P 500 large-cap cache only."""
     frames = []
-    for grp in ("breadth", "smallcap_breadth", "midcap_breadth"):
+    for grp in _UNIVERSE_GROUPS.get(universe, _UNIVERSE_GROUPS["broad"]):
         p = config.data_dir() / grp / "_closes_cache.parquet"
         if p.exists():
             frames.append(pd.read_parquet(p))
@@ -87,9 +95,9 @@ def _closes() -> pd.DataFrame:
     return out.loc[:, ~out.columns.duplicated()].sort_index()
 
 
-def _names_sectors() -> dict[str, tuple[str, str]]:
+def _names_sectors(universe: str = "broad") -> dict[str, tuple[str, str]]:
     out: dict[str, tuple[str, str]] = {}
-    for grp in ("breadth", "smallcap_breadth", "midcap_breadth"):
+    for grp in _UNIVERSE_GROUPS.get(universe, _UNIVERSE_GROUPS["broad"]):
         p = config.data_dir() / grp / "constituents.parquet"
         if p.exists():
             meta = pd.read_parquet(p)
@@ -106,7 +114,7 @@ def _winsor_z(s: pd.Series, cap: float) -> pd.Series:
     return ((s - mu) / sd).clip(-cap, cap)
 
 
-def compute_factors(asof=None) -> dict | None:
+def compute_factors(asof=None, universe: str = "broad") -> dict | None:
     """Build the factor table + leaderboards + leadership read. Returns None if
     the fundamentals cache is missing (caller logs and skips).
 
@@ -134,7 +142,7 @@ def compute_factors(asof=None) -> dict | None:
         if fund.empty:
             log.warning("equity_factors: no fundamentals knowable at %s", asof)
             return None
-    closes = _closes()
+    closes = _closes(universe)
     if closes.empty:
         log.warning("equity_factors: no close caches")
         return None
@@ -218,7 +226,7 @@ def compute_factors(asof=None) -> dict | None:
     all_factors = [c for c in fac.columns if c != "composite"]    # incl. standalone accruals / low_beta
 
     # attach descriptive cols
-    ns = _names_sectors()
+    ns = _names_sectors(universe)
     meta = pd.DataFrame(index=fac.index)
     meta["name"] = [ns.get(t, (t, "—"))[0] for t in fac.index]
     meta["sector"] = [ns.get(t, (t, "—"))[1] for t in fac.index]
@@ -264,6 +272,7 @@ def compute_factors(asof=None) -> dict | None:
 
     return {
         "as_of": str(px.index.max().date()),
+        "universe": universe,
         "fy": (int(fund["fy"].max()) if (asof is not None and "fy" in fund.columns)
                else meta_json.get("fy")),
         "n": int(fac["composite"].notna().sum()),

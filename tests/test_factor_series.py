@@ -45,9 +45,9 @@ def _mock(monkeypatch, n_tickers=120, n_days=260):
     rng = np.random.default_rng(0)
     closes = pd.DataFrame(100 * np.cumprod(1 + rng.normal(0, 0.01, (n_days, n_tickers)), axis=0),
                           index=idx, columns=tickers)
-    monkeypatch.setattr(fsx, "_closes", lambda: closes)
+    monkeypatch.setattr(fsx, "_closes", lambda *a, **k: closes)
 
-    def fake_compute(asof=None):
+    def fake_compute(asof=None, universe="broad"):
         z = rng.normal(0, 1, n_tickers)
         rows = []
         for i, t in enumerate(tickers):
@@ -84,5 +84,22 @@ def test_compute_series_smoke_and_json(monkeypatch):
 
 
 def test_degrades_without_caches(monkeypatch):
-    monkeypatch.setattr(fsx, "_closes", lambda: pd.DataFrame())
+    monkeypatch.setattr(fsx, "_closes", lambda *a, **k: pd.DataFrame())
     assert fsx.compute_factor_series() is None
+
+
+def test_universe_param_backcompat():
+    """The new universe= keyword must default to 'broad' so existing callers
+    (baskets / residual_alpha / discovery) are unchanged; 'narrow' ⊆ 'broad'."""
+    import pytest
+    from engine.equity_factors import _closes, _names_sectors
+    b = _closes()
+    if b is None or b.empty:
+        pytest.skip("no price caches in this checkout")
+    assert _closes("broad").shape == b.shape          # no-arg == broad (back-compat)
+    assert _names_sectors() == _names_sectors("broad")
+    n = _closes("narrow")
+    if not n.empty:
+        assert set(n.columns).issubset(set(b.columns))  # S&P 500 ⊆ S&P 1500
+        assert n.shape[1] <= b.shape[1]
+        assert set(_names_sectors("narrow")).issubset(set(_names_sectors("broad")))
