@@ -1,6 +1,6 @@
 {
  "DECLINE": {
-  "n": 8555,
+  "n": 8556,
   "hit_pct": 60.8,
   "avg_fwd_pct": 2.37,
   "dd_med_pct": -3.18,
@@ -8,7 +8,7 @@
   "dd_bad_pct": 16.4
  },
  "BOTTOM WATCH": {
-  "n": 10391,
+  "n": 10390,
   "hit_pct": 58.8,
   "avg_fwd_pct": 1.56,
   "dd_med_pct": -2.85,
@@ -16,7 +16,7 @@
   "dd_bad_pct": 12.6
  },
  "TURN SIGNALED": {
-  "n": 15606,
+  "n": 15607,
   "hit_pct": 57.9,
   "avg_fwd_pct": 1.27,
   "dd_med_pct": -2.8,
@@ -32,20 +32,20 @@
   "dd_bad_pct": 9.9
  },
  "RALLY ON": {
-  "n": 11764,
-  "hit_pct": 59.1,
-  "avg_fwd_pct": 1.36,
-  "dd_med_pct": -2.62,
-  "dd_p10_pct": -10.4,
+  "n": 15757,
+  "hit_pct": 59.2,
+  "avg_fwd_pct": 1.29,
+  "dd_med_pct": -2.58,
+  "dd_p10_pct": -10.37,
   "dd_bad_pct": 10.9
  },
  "TOP WATCH": {
-  "n": 8740,
-  "hit_pct": 58.0,
-  "avg_fwd_pct": 1.06,
-  "dd_med_pct": -2.52,
-  "dd_p10_pct": -9.98,
-  "dd_bad_pct": 9.9
+  "n": 4745,
+  "hit_pct": 56.8,
+  "avg_fwd_pct": 1.03,
+  "dd_med_pct": -2.55,
+  "dd_p10_pct": -9.55,
+  "dd_bad_pct": 9.1
  },
  "ROLLING OVER": {
   "n": 2910,
@@ -56,7 +56,7 @@
   "dd_bad_pct": 13.0
  },
  "COUNTERTREND BOUNCE": {
-  "n": 9362,
+  "n": 9363,
   "hit_pct": 59.6,
   "avg_fwd_pct": 1.38,
   "dd_med_pct": -2.89,
@@ -72,7 +72,7 @@
   "dd_bad_pct": 14.6
  },
  "BOTTOM WATCH no-early": {
-  "n": 10007,
+  "n": 10006,
   "hit_pct": 58.8,
   "avg_fwd_pct": 1.58,
   "dd_med_pct": -2.83,

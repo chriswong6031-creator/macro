@@ -170,10 +170,17 @@ def test_etf_active_decision_flags_accumulation() -> None:
     parent = Path(tempfile.mkdtemp())
     d = parent / "FAKE"
     d.mkdir()
-    base = pd.DataFrame({"ticker": ["AAA", "BBB", "CCC"], "name": ["A", "B", "C"],
-                         "weight_pct": [5.0, 4.0, 3.0], "shares": [100, 100, 100]})
+    # BALLAST keeps the fund's shares-outstanding ratio ~1, the way a real
+    # many-holding fund behaves; without it, AAA's +40 shares alone would inflate
+    # this 3-name fund's total SO ~13%, manufacturing a phantom -11.8% "active
+    # change" on the untouched names. With ballast the untouched names sit at ~0%,
+    # so the assertion holds under any sane threshold (origin 5% or local 15%).
+    base = pd.DataFrame({"ticker": ["BALLAST", "AAA", "BBB", "CCC"],
+                         "name": ["Ballast", "A", "B", "C"],
+                         "weight_pct": [88.0, 5.0, 4.0, 3.0],
+                         "shares": [10_000_000, 100, 100, 100]})
     t0 = base.copy(); t0["as_of"] = "2026-06-06"
-    t1 = base.copy(); t1["shares"] = [140, 100, 100]; t1["as_of"] = "2026-06-11"
+    t1 = base.copy(); t1["shares"] = [10_000_000, 140, 100, 100]; t1["as_of"] = "2026-06-11"
     t0.to_parquet(d / "2026-06-06.parquet")
     t1.to_parquet(d / "2026-06-11.parquet")
     sigs = hs.etf_signals("FAKE", base_dir=parent, is_active=True, meta={"name": "Fake"})

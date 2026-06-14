@@ -53,6 +53,10 @@ jobs:
         # calibration just leaves last week's (stale) calibration in place.
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          # catalyst_tone (engine.run) + catalyst_stock briefs (build_site) need the
+          # DeepSeek key in the weekly build too. No-op (degrades to neutral / no
+          # brief) when the secret is absent. Mirrors daily.yml.
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           set +e
           run_py() {
@@ -69,6 +73,7 @@ jobs:
           run_py "weekly collectors" scripts.collect --only cot,sentiment_naaim,sentiment_aaii,fundamentals,stock_fundamentals
           run_py "recalibrate (macro)" scripts.recalibrate
           run_py "regime engine (engine.run)" engine.run
+          run_py "factor IC scorecard (leak-free, full grid)" scripts.factor_ic_scorecard
           run_py "macro dashboard (build_site)" scripts.build_site
           run_py "daily brief" scripts.daily_brief
           run_py "calibrate china" scripts.calibrate_china
@@ -102,6 +107,9 @@ jobs:
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/ reports/ site/
+          # force-track the gitignored LLM stock briefs so pages.yml's committed-tree
+          # deploy ships them (mirrors the stock-search libraries). See daily.yml.
+          git add -f site/stockbrief 2>/dev/null || true
           if git diff --cached --quiet; then echo "no weekly changes to commit"; exit 0; fi
           git commit -m "weekly: deep-dive $(date -u +%F)"
           # best-effort push: losing a race with a concurrent push must NOT fail the

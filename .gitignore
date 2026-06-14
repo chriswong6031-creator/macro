@@ -6,6 +6,7 @@ __pycache__/
 .env
 site/_tmp/
 site/stockdata/
+site/stockbrief/
 site/chinastockdata/
 site/hkstockdata/
 data/breadth/_closes_cache.parquet
@@ -13,3 +14,16 @@ data/smallcap_breadth/_closes_cache.parquet
 data/midcap_breadth/_closes_cache.parquet
 data/china_breadth/_closes_cache.parquet
 data/hk_breadth/_closes_cache.parquet
+
+# LLM digest cache (regenerable; never commit — would ship a stale-floor digest)
+data/catalyst/digest_cache/
+data/catalyst/stockbrief_cache/
+
+# Large local-only research/build caches (regenerable; kept out of the deploy repo
+# so the daily CI `git add data/` never re-commits & grows them). Not on origin/main.
+data/breadth/_closes_deep.parquet
+data/breadth/_closes_delisted.parquet
+data/breadth/_closes_delisted_1500.parquet
+data/breadth/sp500_pit_membership.parquet
+data/china_search/closes_deep.parquet
+data/sec_insider/insider_panel.parquet

@@ -125,6 +125,11 @@ jobs:
         # public check-runs API) AND appended to the run Summary with its traceback,
         # but NEVER aborts the job — so the site still deploys (via the always()
         # artifact upload) and one broken builder can't 404 the whole dashboard.
+        env:
+          # catalyst_tone (Tier-A FOMC/dislocation digest) runs INSIDE engine.run, so it
+          # needs the DeepSeek key here too — not only on the master_brain step below.
+          # No-op (degrades to neutral) when the secret is absent.
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           set +e
           run_py() {
@@ -173,6 +178,9 @@ jobs:
         # before build_vector (which writes the hub last): writes the discovery
         # leaderboard. Self-sufficient; returns 0 on any engine error.
         run: python -m scripts.build_discovery
+      - name: GEX magnets board (build_gex_board)
+        # after build_site; live Cboe chains -> site/gex.html. Self-sufficient (returns 0 on engine error).
+        run: python -m scripts.build_gex_board
       - name: build bitcoin vector + landing hub
         # installs the landing hub at index.html (rendered from stored engine
         # state, so ordering vs build_site no longer matters — build_site writes
@@ -180,6 +188,21 @@ jobs:
         # signals); returns 0 even if the crypto engine errors, so it can never
         # break the macro site.
         run: python -m scripts.build_vector
+      - name: master brain (cross-asset LLM synthesis; default-off, resilient)
+        # Runs LAST among the builders — it reads EVERY dashboard's latest.json
+        # (macro/china/hk/commodity/forex + BTC) plus the catalyst digest. Writes
+        # data/regime/master_brief.json + site/master_brief.json (client-fetched by
+        # the dashboard's Master Brief panel). NO-OP unless BOTH config
+        # master_brain.enabled is true AND the DEEPSEEK_API_KEY secret is set.
+        # Self-sufficient; never aborts the deploy.
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          set +e
+          python -m engine.master_brain > /tmp/mb.log 2>&1; rc=$?
+          cat /tmp/mb.log
+          [ "$rc" -ne 0 ] && echo "::warning title=master_brain::rc=$rc (non-fatal)"
+          exit 0
       - name: rebuild stock-search libraries (resilient — guarantees the analyzers ship)
         # build_china/build_hk render their dashboards but SWALLOW errors (return 0),
         # so a failure there silently 404s the per-stock search. This rebuilds the
@@ -207,6 +230,11 @@ jobs:
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/ site/ reports/
+          # LLM stock briefs (site/stockbrief) are gitignored for local-dev cleanliness
+          # but must be TRACKED on main so the committed-tree deploy (pages.yml) ships
+          # them — same as the force-tracked stock-search libraries. -f overrides the
+          # ignore; || true so an empty/absent dir (feature off) never fails the commit.
+          git add -f site/stockbrief 2>/dev/null || true
           if git diff --cached --quiet; then echo "no engine output changes"; exit 0; fi
           git commit -m "engine: regime update $(date -u +%F)"
           # best-effort push (see commit-data). The deploy below uses the uploaded

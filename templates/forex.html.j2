@@ -143,7 +143,13 @@ table.tbl th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:
   <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;padding:0;border:none;margin:0 auto">
     <div class="nav-links">
       <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
-      <a class="nav-link" href="macro.html">📊 {{ t('US Macro', '美国宏观') }}</a>
+      <div class="nav-dd">
+        <a class="nav-link" href="macro.html">🇺🇸 {{ t('US Macro', '美国宏观') }} <span class="caret">▾</span></a>
+        <div class="nav-dd-menu">
+          <a href="macro.html">📊 {{ t('Macro dashboard', '宏观仪表盘') }}</a>
+          <a href="spvector.html">📈 {{ t('S&P / Macro Vector', '标普宏观向量') }}</a>
+        </div>
+      </div>
       <div class="nav-dd">
         <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }} <span class="caret">▾</span></a>
         <div class="nav-dd-menu" role="menu">
@@ -152,6 +158,7 @@ table.tbl th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:
         </div>
       </div>
       <a class="nav-link" href="etfs.html">🐳 {{ t('ETF flows', 'ETF 资金流') }}</a>
+      <a class="nav-link" href="factors.html">🧮 {{ t('Factors', '因子') }}</a>
       <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国A股') }}</a>
       <a class="nav-link" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }}</a>
       <a class="nav-link" href="commodities.html">◆ {{ t('Commodity Vector', '大宗商品向量') }}</a>

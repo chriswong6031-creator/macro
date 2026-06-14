@@ -104,6 +104,25 @@ def test_schema_and_bounds() -> None:
         assert v["alpha"] is None or -3.0 <= v["alpha"] <= 3.0
 
 
+def test_rs_pctile_bounds_and_monotone() -> None:
+    """The derived IBD-style RS column is in 1-99 and the headline rs is monotone
+    with total_mom (so it reads as a familiar momentum lens, never the alpha score)."""
+    r = _run()
+    recs = list(r["per_ticker"].values())
+    for v in recs:
+        for k in ("rs", "rs3m", "rs6m", "rs12m"):
+            assert k in v
+            if v[k] is not None:
+                assert 1 <= v[k] <= 99
+    paired = [(v["total_mom"], v["rs"]) for v in recs
+              if v.get("total_mom") is not None and v.get("rs") is not None]
+    xs = [p[0] for p in paired]
+    ys = [p[1] for p in paired]
+    # same ordering by total_mom and by rs ⇒ rs is monotone in total_mom
+    assert sorted(range(len(xs)), key=lambda i: xs[i]) == \
+           sorted(range(len(ys)), key=lambda i: ys[i])
+
+
 def test_too_few_names_returns_none() -> None:
     closes, market, tkr_sector = _synthetic()
     r = ra.compute_residual_alpha(closes[["AL", "A1"]], market,

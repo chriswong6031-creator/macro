@@ -617,8 +617,8 @@ def _season_tooltip(seas: dict | None, month: int | None):
 
     # --- two stacked 6-month tables, current month row highlighted ------------
     def _col(rng) -> str:
-        rows = ['<colgroup><col style="width:32%"><col style="width:26%">'
-                '<col style="width:23%"><col style="width:19%"></colgroup>',
+        rows = ['<colgroup><col style="width:28%"><col style="width:28%">'
+                '<col style="width:23%"><col style="width:21%"></colgroup>',
                 f'<tr><th style="text-align:left">{_b("Month", "月份")}</th>'
                 f'<th>{_b("Avg", "均值")}</th><th>{_b("Up", "收涨")}</th>'
                 f'<th>{_b("Yrs", "年数")}</th></tr>']
@@ -1159,6 +1159,26 @@ def build_insider_data(site: Path) -> dict | None:
     return sig
 
 
+def build_smartmoney_data(site: Path) -> dict | None:
+    """Compute curated super-investor 13F holdings and write
+    factordata/smartmoney.json (consumed by the per-stock "who holds this" panel +
+    a future consensus board). Additive — any failure logs and skips. CONTEXT only,
+    never wired into any score. See collectors/edgar_13f.py + engine/smart_money.py."""
+    from engine.smart_money import compute_smart_money
+    try:
+        sm = compute_smart_money()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("smart-money engine failed: %s", e)
+        return None
+    if not sm:
+        return None
+    fdir = site / "factordata"
+    fdir.mkdir(parents=True, exist_ok=True)
+    (fdir / "smartmoney.json").write_text(json.dumps(sm, separators=(",", ":"), default=str))
+    log.info("wrote smartmoney.json (%d funds, %d names)", sm.get("n_funds"), sm.get("n_names"))
+    return sm
+
+
 def build_sector_pages(env: Environment, site: Path, generated: str,
                        alpha: dict | None = None) -> dict:
     """Render sectors/<FUND>.html drill-downs; return per-fund timing summary
@@ -1381,6 +1401,48 @@ def regime_timeline(hist: pd.DataFrame) -> dict:
     }
 
 
+def build_advanced_page(env: Environment, site: Path, generated: str, latest: dict, f,
+                        confirming, contradicting):
+    """The Quant Lab — the geekier reads, kept off the main dashboard: cross-asset
+    concentration + risk budgeting + the factor IC scorecard + the raw market-
+    internals tables (dials / pair-ratios / size-style / accumulation / fund flows).
+    Computes the cross-asset & portfolio snapshots FRESH (like build_factors_page),
+    so the page is populated even if the last engine.run predates them; reads the
+    factor IC scorecard JSON if present. Returns the cross-asset snapshot for the
+    dashboard's compact card."""
+    cross_asset = portfolio = ic_scorecard = None
+    try:
+        from engine.cross_asset import snapshot as _ca
+        cross_asset = _ca()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("cross-asset snapshot failed: %s", e)
+    try:
+        from engine.portfolio import snapshot as _pf
+        portfolio = _pf()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("portfolio snapshot failed: %s", e)
+    icp = config.data_dir() / "edgar" / "ic_scorecard.json"
+    if icp.exists():
+        try:
+            ic_scorecard = json.loads(icp.read_text())
+        except Exception:  # noqa: BLE001
+            ic_scorecard = None
+    html = env.get_template("advanced.html.j2").render(
+        latest=latest, generated_utc=generated,
+        cross_asset=cross_asset, portfolio=portfolio, ic_scorecard=ic_scorecard,
+        components_confirming=confirming, components_contradicting=contradicting,
+        flip_plain=flip_plain_text(latest),
+        internals=internals_rows(latest), size_style=size_style_rows(f),
+        breadth_div=breadth_divergence(f),
+        accumulation=accumulation_rows(), holdings_changes=holdings_rows(),
+        holdings_threshold=config.load()["holdings"]["active_change_alert_pct"],
+        flows_html=flows_html_table(),
+    )
+    (site / "advanced.html").write_text(html)
+    log.info("wrote advanced.html (%.0f KB)", (site / "advanced.html").stat().st_size / 1024)
+    return cross_asset
+
+
 def main() -> int:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     site.mkdir(parents=True, exist_ok=True)
@@ -1413,6 +1475,10 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("insider data failed: %s", e)
     try:
+        build_smartmoney_data(site)               # 13F super-investor holdings (CONTEXT)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("smart-money data failed: %s", e)
+    try:
         sector_timing, notable = build_sector_pages(env, site, generated, alpha=alpha_data)
     except Exception as e:  # noqa: BLE001 — drill-downs are additive, never fatal
         log.error("sector pages failed: %s", e)
@@ -1426,9 +1492,19 @@ def main() -> int:
         factor_leadership = (_fac or {}).get("leadership")
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("factors page failed: %s", e)
+    # Quant Lab (advanced analytics): cross-asset concentration + risk budgeting +
+    # factor scorecard + the raw internals moved off the main dashboard. Returns the
+    # cross-asset snapshot for the dashboard's compact one-bet card.
+    cross_asset_snap = None
+    try:
+        cross_asset_snap = build_advanced_page(env, site, generated, latest, f,
+                                               confirming, contradicting)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("advanced page failed: %s", e)
     # copy shared static assets (theme + visual widgets) into the site
     for asset in ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
-                  "stockdata.js", "watchlist.js", "auth.js", "tablesort.js", "charts.js"):
+                  "stockdata.js", "watchlist.js", "auth.js", "tablesort.js", "charts.js",
+                  "masterbrief.js", "stockbrief.js"):
         src = config.ROOT / "templates" / asset
         if src.exists():
             (site / asset).write_text(src.read_text())
@@ -1442,9 +1518,39 @@ def main() -> int:
             top_setups = json.loads(_sp.read_text())
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("setups.json unreadable (%s)", e)
+
+    # Macro news & catalysts (LEAF, additive, never fatal). Catalysts (FOMC + jobs
+    # report) are keyless and always on; filtered headlines + the optional LLM brief
+    # only when macro_news.enabled. News NEVER feeds any score.
+    macro_catalysts, macro_news_data, macro_brief_data = [], None, None
+    macro_news_disclaimer = macro_news_disclaimer_zh = ""
+    try:
+        from engine import macro_news as _mnews
+        _mncfg = config.load().get("macro_news", {}) or {}
+        macro_catalysts = _mnews.upcoming_catalysts(
+            horizon_days=_mncfg.get("catalysts_horizon_days", 14))
+        macro_news_data = _mnews.macro_headlines()
+        macro_news_disclaimer = _mnews.DISCLAIMER_TEXT
+        macro_news_disclaimer_zh = _mnews.DISCLAIMER_TEXT_ZH
+        if macro_news_data and macro_news_data.get("headlines"):
+            _ra = (latest.get("conditions") or {}).get("risk_appetite") or {}
+            _sent = (f"{_ra.get('news_sentiment_state')} (z={_ra.get('news_sentiment_z')})"
+                     if _ra.get("news_sentiment_state") else "")
+            macro_brief_data = _mnews.macro_brief(
+                macro_news_data["headlines"],
+                regime_line=str((latest.get("regime") or {}).get("label", "")),
+                sentiment_line=_sent)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("macro news failed: %s", e)
+
     from engine.alerts import alert_views
     html = env.get_template("dashboard.html.j2").render(
         latest=latest,
+        macro_catalysts=macro_catalysts,
+        macro_news=macro_news_data,
+        macro_brief=macro_brief_data,
+        macro_news_disclaimer=macro_news_disclaimer,
+        macro_news_disclaimer_zh=macro_news_disclaimer_zh,
         alerts=alert_views(latest.get("alerts", [])),
         pb=latest.get("playbook"),
         month_name=calendar.month_name[pd.Timestamp(latest["date"]).month],
@@ -1471,6 +1577,7 @@ def main() -> int:
         factor_leadership=factor_leadership,
         nowcast_hist=nowcast_history(f),
         stance=regime_stance(latest, latest.get("playbook")),
+        cross_asset=cross_asset_snap,
     )
     # Write the macro dashboard straight to macro.html. index.html is owned
     # solely by build_vector.build_landing() (the landing hub) — keeping the raw
@@ -1540,6 +1647,22 @@ def main() -> int:
                     supabase_cfg_json=_json.dumps(sup_cfg),
                     starters_json=_json.dumps(wl.get("suggested", []))))
             log.info("wrote %s", site / "watchlist.html")
+
+        # 🧠 AI stock briefs (LLM "Option 2") — DEFAULT-OFF LEAF. Precompute a
+        # research brief for a small, bounded set (the action-board standouts +
+        # the watchlist's suggested tickers) into site/stockbrief/<TICKER>.json,
+        # cached per ticker per day. The stock page fetches it client-side; the
+        # static site cannot call the model on demand (no server-side key). Gated
+        # by catalyst_stock.enabled — a no-op (and zero cost) when off.
+        try:
+            from engine import catalyst_stock
+            if catalyst_stock.enabled():
+                brief_set = ([n["ticker"] for n in notable]
+                             + list(config.load().get("watchlist", {}).get("suggested", [])))
+                briefs = catalyst_stock.precompute_briefs(brief_set, root=config.ROOT, site=site)
+                log.info("precomputed %d AI stock brief(s)", len(briefs))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("stock brief precompute failed: %s", e)
     return 0
 
 

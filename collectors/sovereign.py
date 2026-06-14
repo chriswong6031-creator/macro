@@ -73,7 +73,11 @@ class SovereignAdapter(Adapter):
             d = df[["TIME_PERIOD", "OBS_VALUE"]].rename(columns={"TIME_PERIOD": "date", "OBS_VALUE": name})
             d["date"] = pd.to_datetime(d["date"], errors="coerce")
             d[name] = pd.to_numeric(d[name], errors="coerce")
-            out[name] = d.dropna().set_index("date")
+            d = d.dropna().set_index("date")
+            if not d.empty:                       # one dead series shouldn't sink the others
+                out[name] = d
+            else:
+                log.warning("sovereign: ECB series %s came back empty; skipping", name)
         return out
 
     def _jgb(self) -> dict[str, pd.DataFrame]:

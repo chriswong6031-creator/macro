@@ -508,6 +508,21 @@ def main() -> int:
             log.error("china stock library build failed (%s); skipping", e)
         vm["setups"] = setups
 
+        # "Mean-reversion watch" — the VALIDATED A-share signal (3mo within-sector deep
+        # dips, screened). Separate from the momentum-anchored setups; Phase 0 showed this
+        # is the real edge (reports/china-reversal-phase0.md). Honest contrarian framing.
+        try:
+            from scripts.build_china_library import compute_china_reversal
+            rev = compute_china_reversal()
+            vm["reversal"] = rev
+            if rev:
+                (site / "factordata").mkdir(parents=True, exist_ok=True)
+                (site / "factordata" / "china_reversal.json").write_text(
+                    json.dumps(rev, separators=(",", ":"), default=str))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("china reversal watch failed (%s); skipping", e)
+            vm["reversal"] = None
+
         env = Environment(loader=FileSystemLoader(
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)
         from engine import i18n
