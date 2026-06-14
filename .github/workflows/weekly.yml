@@ -53,6 +53,10 @@ jobs:
         # calibration just leaves last week's (stale) calibration in place.
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          # catalyst_tone (engine.run) + catalyst_stock briefs (build_site) need the
+          # DeepSeek key in the weekly build too. No-op (degrades to neutral / no
+          # brief) when the secret is absent. Mirrors daily.yml.
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           set +e
           run_py() {
