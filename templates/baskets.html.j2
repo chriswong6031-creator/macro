@@ -1,25 +1,5 @@
-{% macro help(en, zh='') -%}
-<span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
-{%- endmacro %}
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
-{%- endmacro %}
-{% macro spark(vals, spyvals) -%}
-{% if vals and vals|length > 1 %}
-{% set lo = [vals|min, (spyvals|min if spyvals else vals|min)]|min %}
-{% set hi = [vals|max, (spyvals|max if spyvals else vals|max)]|max %}
-{% set rng = (hi - lo) or 1 %}
-<svg viewBox="0 0 120 30" class="spark" preserveAspectRatio="none">
-  {% if spyvals and spyvals|length > 1 %}<polyline fill="none" stroke="var(--muted)" stroke-width="1" opacity="0.4" points="{% for v in spyvals %}{{ (loop.index0/(spyvals|length-1)*120)|round(1) }},{{ (28-(v-lo)/rng*26)|round(1) }} {% endfor %}"/>{% endif %}
-  <polyline fill="none" stroke="{{ 'var(--up)' if vals[-1] >= vals[0] else 'var(--down)' }}" stroke-width="1.5" points="{% for v in vals %}{{ (loop.index0/(vals|length-1)*120)|round(1) }},{{ (28-(v-lo)/rng*26)|round(1) }} {% endfor %}"/>
-</svg>
-{% endif %}
-{%- endmacro %}
-{% macro rcell(raw, rel) -%}
-<td class="r num">
-  <span class="v-raw {{ 'pos' if raw and raw > 0 else ('neg' if raw and raw < 0 else 'muted') }}" data-v="{{ raw if raw is not none else -999 }}">{{ '%+.1f'|format(raw) if raw is not none else '—' }}</span>
-  <span class="v-rel {{ 'pos' if rel and rel > 0 else ('neg' if rel and rel < 0 else 'muted') }}" data-v="{{ rel if rel is not none else -999 }}">{{ '%+.1f'|format(rel) if rel is not none else '—' }}</span>
-</td>
 {%- endmacro %}
 <!DOCTYPE html>
 <html lang="en">
@@ -32,178 +12,326 @@
 <style>
   * { box-sizing:border-box; }
   body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
-  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1320px)/2)); } }
+  @media (min-width:1100px){ body{ padding:24px max(34px,calc((100vw - 1340px)/2)); } }
   a { text-decoration:none; color:inherit; }
-  h1 { font-size:20px; margin:0; } h3 { font-size:13px; margin:0 0 6px; }
-  h2 { font-size:13px; margin:0 0 8px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
-  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:14px; }
-  .topline { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+  h1 { font-size:21px; margin:0; }
+  h2 { font-size:15px; margin:30px 0 4px; display:flex; align-items:center; gap:8px; }
+  h2 .idx { font-size:11px; color:var(--muted); border:1px solid var(--line); border-radius:6px; padding:1px 6px; font-weight:600; }
+  h3.cat { font-size:12px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin:20px 0 9px; border-bottom:1px solid var(--line); padding-bottom:5px; }
   .muted { color:var(--muted); } .sm { font-size:12px; }
-  table { border-collapse:collapse; width:100%; font-size:13px; }
-  th,td { text-align:left; padding:5px 8px; border-bottom:1px solid var(--line); }
-  th { color:var(--muted); font-weight:500; cursor:pointer; user-select:none; white-space:nowrap; }
-  th.r, td.r { text-align:right; }
   .pos { color:var(--up); } .neg { color:var(--down); }
-  .navbtn, .lang-btn, .theme-btn, .seg button { font-size:12.5px; padding:5px 11px; border-radius:8px; border:1px solid var(--line); background:var(--panel2); color:var(--text); cursor:pointer; }
-  .seg { display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
-  .seg button { border:0; border-radius:0; background:var(--panel); }
-  .seg button.on { background:var(--panel2); font-weight:600; }
-  .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:5px; }
-  .help .tip { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%); width:300px; background:var(--panel); border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text); font-weight:400; box-shadow:var(--popover-shadow); pointer-events:none; }
-  .help:hover .tip { display:block; }
-  .spark { width:120px; height:30px; display:block; }
-  .cat { font-size:10.5px; padding:1px 7px; border-radius:8px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
-  .bname { font-weight:600; cursor:pointer; } .bname:hover { color:var(--link); }
-  .miss { color:var(--warn); font-size:11px; }
-  table[data-mode="raw"] .v-rel { display:none; }
-  table[data-mode="rel"] .v-raw { display:none; }
-  #detail { display:none; }
-  .ddl { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:8px 18px; margin:6px 0 12px; }
-  .ddl b { display:block; font-size:16px; }
-  .chip { display:inline-block; font-size:11px; padding:1px 7px; margin:0 4px 4px 0; border-radius:8px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
+  .topline { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom:14px; }
+  .navbtn,.lang-btn,.theme-btn { font-size:12.5px; padding:5px 11px; border-radius:8px; border:1px solid var(--line); background:var(--panel2); color:var(--text); cursor:pointer; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:6px; margin-top:8px; }
+  .panel.pad { padding:14px; }
+  .story { font-size:14.5px; margin:8px 0 4px; line-height:1.5; }
+  .story b { font-weight:650; }
+  .tagline { color:var(--muted); font-size:12.5px; max-width:90ch; margin:4px 0 0; }
+  .sub { color:var(--muted); font-size:12.5px; margin:2px 0 8px; max-width:92ch; }
+  .chartbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin:8px 0 2px; }
+  .tabs { display:inline-flex; border:1px solid var(--line); border-radius:9px; overflow:hidden; }
+  .tabs button,.tabs .tab { border:0; background:var(--panel); color:var(--muted); font-size:12px; padding:5px 11px; cursor:pointer; border-right:1px solid var(--line); }
+  .tabs button:last-child { border-right:0; }
+  .tabs button.on { background:var(--panel2); color:var(--text); font-weight:650; }
+  .tabs .rangeN { width:74px; background:var(--panel); color:var(--text); border:0; border-left:1px solid var(--line); padding:5px 8px; font-size:12px; }
+  .ts { overflow-x:auto; }
+  table { border-collapse:collapse; width:100%; font-size:13px; }
+  th,td { padding:6px 9px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  th { color:var(--muted); font-weight:500; text-align:right; cursor:pointer; user-select:none; }
+  th:first-child,td:first-child { text-align:left; }
+  td.num,th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  th.sel { color:var(--text); }
+  .bname { font-weight:600; cursor:pointer; }
+  .bname:hover { color:var(--link); }
+  .dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:7px; vertical-align:middle; }
+  #chart { height:420px; width:100%; }
+  .legend { display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:10px; }
+  .lchip { display:inline-flex; align-items:center; gap:6px; font-size:12px; cursor:pointer; color:var(--text); }
+  .lchip.off { opacity:.34; }
+  .lchip .lv { color:var(--muted); font-variant-numeric:tabular-nums; }
+  .toolbar { display:flex; align-items:center; gap:10px; margin:10px 0 4px; }
+  .toolbar .lbl { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+  .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:13px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--c,#888); border-radius:10px; padding:12px 13px; cursor:pointer; transition:border-color .15s; }
+  .card:hover { border-color:var(--muted); }
+  .card .nm { font-weight:650; font-size:14px; }
+  .card .meta { color:var(--muted); font-size:11.5px; margin:3px 0 6px; }
+  .card .th { font-size:12px; line-height:1.45; color:var(--text); opacity:.9; margin-bottom:9px; min-height:50px; }
+  .card .perf { display:flex; align-items:center; gap:16px; }
+  .card .kpi .v { font-size:16px; font-weight:650; font-variant-numeric:tabular-nums; }
+  .card .kpi .k { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .card .spark { margin-left:auto; }
+  .detail { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:13px 15px; margin-top:12px; scroll-margin-top:14px; }
+  .detail h4 { margin:0 0 4px; font-size:15px; display:flex; align-items:center; gap:8px; }
+  .detail .th { color:var(--text); opacity:.92; font-size:12.5px; line-height:1.5; margin:0 0 9px; max-width:95ch; }
+  .kpirow { display:flex; flex-wrap:wrap; gap:18px; margin:8px 0 10px; }
+  .kpirow .k { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .kpirow .v { font-size:15px; font-weight:650; font-variant-numeric:tabular-nums; }
+  .refline { font-size:12px; color:var(--muted); margin:2px 0 9px; }
+  .why { color:var(--muted); font-size:12px; white-space:normal; max-width:46ch; }
+  details > summary { cursor:pointer; font-size:12.5px; color:var(--muted); margin:6px 0; }
+  .warn { display:inline-block; font-size:11px; padding:1px 7px; margin:2px 5px 2px 0; border-radius:7px; background:rgba(250,204,21,.12); border:1px solid rgba(250,204,21,.4); color:var(--warn); }
+  .chip { display:inline-block; font-size:11px; padding:1px 7px; margin:0 4px 4px 0; border-radius:7px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
+  .clog { margin:6px 0 0; padding-left:18px; font-size:12px; color:var(--muted); }
+  .clog li { margin:2px 0; }
+  footer { color:var(--muted); font-size:11.5px; margin-top:26px; border-top:1px solid var(--line); padding-top:12px; max-width:95ch; }
+  .pfx { color:var(--muted); }
+  .asof { font-size:12px; color:var(--muted); margin-left:auto; }
 </style>
 </head>
 <body>
-  <div class="panel">
-    <div class="topline">
+  <div class="topline">
+    <a class="navbtn" href="macro.html">{{ t('← Dashboard', '← 仪表盘') }}</a>
+    <a class="navbtn" href="factors.html">🧮 {{ t('Factor Lab', '因子实验室') }}</a>
+    <a class="navbtn" href="seasonality.html">🗓 {{ t('Seasonality', '季节性') }}</a>
+    <span style="flex:1"></span>
+    <button class="lang-btn">中文</button>
+    <button class="theme-btn">☀️ {{ t('Light', '浅色') }}</button>
+  </div>
+
+  <header>
+    <div style="display:flex;align-items:baseline;flex-wrap:wrap;gap:12px">
       <h1>🧺 {{ t('Thematic baskets', '主题篮子') }}</h1>
-      <span class="muted sm">{{ t('equal-weight theme baskets — raw and relative to the S&P 500', '等权主题篮子 — 原始及相对标普 500') }}</span>
-      <span style="flex:1"></span>
-      <a class="navbtn" href="macro.html">{{ t('← Dashboard', '← 仪表盘') }}</a>
-      <a class="navbtn" href="factors.html">🧮 {{ t('Factor Lab', '因子实验室') }}</a>
-      <a class="navbtn" href="seasonality.html">🗓 {{ t('Seasonality', '季节性') }}</a>
-      <button class="lang-btn">中文</button>
-      <button class="theme-btn">☀️ {{ t('Light', '浅色') }}</button>
+      <span class="asof"><span class="pfx">{{ t('as of', '截至') }} </span><span id="asof">—</span></span>
     </div>
-    <p class="muted sm" style="margin:10px 0 0">{{ t(
-      'Curated thematic stock baskets, EQUAL-WEIGHTED, buy-and-hold with point-in-time dated membership. ' ~ data.note ~ ' Members outside the free S&P-1500 cache are excluded (shown as n-missing). Reference-ETF correlation is a sanity check that a basket co-moved with its theme over this window, not a guarantee. Context, not a buy list.',
-      '精选主题股票篮子，等权重、买入持有，按时点日期管理成分。' ~ data.note ~ ' 不在免费标普 1500 缓存内的成分被剔除（标记为 n-missing）。参考 ETF 相关性仅为该篮子在此窗口内与主题同向的合理性检验，并非保证。仅作背景，而非买入清单。') }}</p>
-  </div>
+    <p class="story" id="story"></p>
+    <p class="tagline">{{ t(
+      'Curated thematic stock baskets — every membership decision dated and documented; equal-weighted, monthly-rebalanced, buy-and-hold between rebalances. Where a listed sector ETF approximates the theme the basket is cross-checked against it daily. A monitoring/structure frame, not a buy list.',
+      '精选主题股票篮子 — 每次成分调整均注明日期与理由；等权重、按月再平衡、调整间买入持有。若有相近行业 ETF，则按日交叉验证。仅作监测/结构参考，并非买入清单。') }}</p>
+  </header>
 
-  <div class="panel">
-    <div class="topline" style="margin-bottom:10px">
-      <h2 style="margin:0">{{ t('Performance', '表现') }}
-        {{ help('Click a column to sort; click a basket name for its members + dated changelog. Toggle RAW returns vs RELATIVE to the S&P 500. The spark is the cumulative basket return (grey = SPY) over the ~3y cache. |Sharpe/MaxDD are over one short, mostly-bull window — regime-limited, not validated edge.', '点击列排序；点击篮子名称查看成分与带日期的变更记录。可切换原始回报与相对标普 500。火花线为该篮子在约 3 年缓存内的累计回报（灰=SPY）。夏普/最大回撤仅覆盖一段偏多头的短窗口，受单一行情限制，并非已验证的超额收益。') }}
-      </h2>
-      <span style="flex:1"></span>
-      <span class="seg" id="modeseg">
-        <button data-mode="raw" class="on">{{ t('Raw', '原始') }}</button>
-        <button data-mode="rel">{{ t('vs S&P 500', '相对标普') }}</button>
-      </span>
-    </div>
-    <table id="btab" data-mode="raw">
-      <thead><tr>
-        <th data-sort="name">{{ t('Basket', '篮子') }}</th>
-        <th class="r" data-col="0">1d</th>
-        <th class="r" data-col="1">5d</th>
-        <th class="r" data-col="2">20d</th>
-        <th class="r" data-col="3">60d</th>
-        <th class="r" data-col="4">YTD</th>
-        <th class="r">{{ t('trend', '走势') }}</th>
-        <th class="r">{{ t('ETF ρ', 'ETF 相关') }}</th>
-      </tr></thead>
-      <tbody>
-      {% for b in data.baskets %}
-        <tr data-id="{{ b.id }}">
-          <td><span class="bname" data-id="{{ b.id }}">{{ t(b.name, b.name_zh) }}</span>
-            <span class="cat">{{ b.category }}</span>
-            {% if b.n_missing %}<span class="miss" title="members not in the free cache">−{{ b.n_missing }}</span>{% endif %}
-          </td>
-          {{ rcell(b.ret.raw.d1, b.ret.rel.d1) }}
-          {{ rcell(b.ret.raw.d5, b.ret.rel.d5) }}
-          {{ rcell(b.ret.raw.d20, b.ret.rel.d20) }}
-          {{ rcell(b.ret.raw.d60, b.ret.rel.d60) }}
-          {{ rcell(b.ret.raw.ytd, b.ret.rel.ytd) }}
-          <td class="r">{{ spark(b.spark, b.spy_spark) }}</td>
-          <td class="r muted sm">{{ b.etf_corr if b.etf_corr is not none else '—' }}</td>
-        </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  </div>
+  <div id="content">
+    <section id="table-section">
+      <h2><span class="idx">01</span>{{ t('Performance table', '表现一览') }}</h2>
+      <p class="sub">{{ t(
+        "All baskets, watchlist-style. Click a column to sort; toggle the value between raw return, vs S&P 500, and σ (the move z-scored vs the basket's own trailing year — computed horizons only). Click a name to jump to its members.",
+        '全部篮子，自选股式表格。点击列标题排序；可在原始回报、相对标普 500、σ（相对该篮子自身过去一年的 z 分数 — 仅限定窗）之间切换。点击名称跳转至成分。') }}</p>
+      <div class="chartbar"><span></span><span class="tabs" id="btbl-mode" role="group"></span></div>
+      <div class="panel"><div class="ts"><table id="btable"></table></div></div>
+    </section>
 
-  <div class="panel" id="detail">
-    {% for b in data.baskets %}
-    <div class="bdetail" data-id="{{ b.id }}" hidden>
-      <h3>{{ t(b.name, b.name_zh) }} <span class="cat">{{ b.category }}</span></h3>
-      <p class="muted sm" style="margin:0 0 8px">{{ b.theme }}{% if b.omitted %} · <span class="miss">{{ t('omitted (not in free cache):', '已剔除（不在免费缓存）：') }} {{ b.omitted|join(', ') }}</span>{% endif %}</p>
-      <div class="ddl">
-        <span class="muted sm">{{ t('Cumulative (3y)', '累计（3年）') }}<b class="{{ 'pos' if b.stats.cum_pct and b.stats.cum_pct>0 else 'neg' }}">{{ '%+.0f'|format(b.stats.cum_pct) }}%</b></span>
-        <span class="muted sm">{{ t('Sharpe', '夏普') }}<b>{{ b.stats.sharpe }}</b></span>
-        <span class="muted sm">{{ t('Max drawdown', '最大回撤') }}<b class="neg">{{ b.stats.maxdd_pct }}%</b></span>
-        <span class="muted sm">{{ t('Ann. vol', '年化波动') }}<b>{{ b.stats.ann_vol_pct }}%</b></span>
-        <span class="muted sm">{{ t('Members', '成分') }}<b>{{ b.n }}</b></span>
-        {% if b.etf_corr is not none %}<span class="muted sm">{{ t('ρ vs', '相关') }} {{ b.etf_proxy }}<b>{{ b.etf_corr }}</b></span>{% endif %}
+    <section id="chart-section">
+      <h2><span class="idx">02</span>{{ t('Performance', '走势对比') }}</h2>
+      <p class="sub">{{ t(
+        'Rebased to 0% at the start of the selected window. Click legend entries to toggle baskets. The full "All" range is ~3 years (our free-cache ceiling); series before a basket\'s creation date are a backtest of the membership at creation. Powered by TradingView Lightweight Charts.',
+        '在所选窗口起点重设为 0%。点击图例可切换篮子。"全部"区间约 3 年（免费缓存上限）；篮子创建日之前为按创建时成分的回测。由 TradingView Lightweight Charts 提供。') }}</p>
+      <div class="chartbar">
+        <span class="tabs" id="chart-modes" role="group"></span>
+        <span class="tabs" id="chart-ranges" role="group"></span>
       </div>
-      <div class="twocol" style="display:grid;grid-template-columns:1.4fr 1fr;gap:20px">
-        <div>
-          <h2>{{ t('Members (equal weight)', '成分（等权）') }}</h2>
-          <table><thead><tr><th>{{ t('stock','个股') }}</th><th>{{ t('sector','板块') }}</th><th class="r">{{ t('wt','权重') }}</th><th class="r">YTD</th></tr></thead><tbody>
-          {% for m in b.members %}
-            <tr><td><a href="stock.html#{{ m.ticker }}"><b>{{ m.ticker }}</b></a> <span class="muted sm">{{ m.name }}</span></td>
-              <td class="muted sm">{{ td(m.sector) }}</td><td class="r muted sm">{{ '%.1f'|format(m.weight*100) }}%</td>
-              <td class="r {{ 'pos' if m.ytd and m.ytd>0 else ('neg' if m.ytd and m.ytd<0 else 'muted') }}">{{ '%+.1f'|format(m.ytd) if m.ytd is not none else '—' }}%</td></tr>
-          {% endfor %}
-          </tbody></table>
-        </div>
-        <div>
-          <h2>{{ t('Membership changelog', '成分变更记录') }}</h2>
-          <p class="muted sm">{{ t('Seeded ' ~ b.created ~ ' (curated ' ~ b.curated ~ ', applied to full history — hindsight, not out-of-sample).', '建立于 ' ~ b.created ~ '（' ~ b.curated ~ ' 整理并应用于全历史 — 事后选取，非样本外）。') }}</p>
-          {% for c in b.changelog %}<span class="chip">{{ c.date }} · {{ '+' if c.action=='add' else '−' }}{{ c.ticker }}</span>{% endfor %}
-        </div>
-      </div>
+      <div class="panel pad"><div id="chart"></div><div class="legend" id="chart-legend"></div></div>
+    </section>
+
+    <h2 id="categories"><span class="idx">03</span>{{ t('Baskets by category', '按类别分组') }}</h2>
+    <div class="toolbar">
+      <span class="lbl">{{ t('Horizon', '时间跨度') }}</span>
+      <span class="tabs" id="hz-tabs" role="group"></span>
     </div>
-    {% endfor %}
+    <div id="cards"></div>
+    <div id="details"></div>
   </div>
 
-  <div class="panel">
-    <p class="muted" style="font-size:12px;margin:0">{{ t(
-      'Equal-weight, point-in-time dated membership, buy-and-hold between changes, over the free S&P-1500 price cache (~3y, from ' ~ data.seed_date ~ '). As of ' ~ data.as_of ~ '. Membership was curated with knowledge of the period, so the series is HINDSIGHT-curated and descriptive — not an out-of-sample backtest and not a buy list. Sharpe/MaxDD reflect one short, mostly-bull regime. See LIMITATIONS.md.',
-      '等权重、按时点日期管理成分、变更间买入持有，基于免费标普 1500 价格缓存（约 3 年，自 ' ~ data.seed_date ~ '）。截至 ' ~ data.as_of ~ '。成分在已知该期间表现的情况下整理，故为事后选取的描述性序列 — 并非样本外回测，也非买入清单。夏普/最大回撤仅反映一段偏多头的短行情。参见 LIMITATIONS.md。') }}
-      {{ t('Generated', '生成于') }} {{ built }}</p>
-  </div>
+  <footer>
+    {{ t(
+      'Read-only analytics for informational purposes only — not investment advice. Equal-weighted, point-in-time dated membership, buy-and-hold between changes, over the FREE S&P-1500 price cache (~3y). Membership was curated with knowledge of the period, so the series is HINDSIGHT-curated and descriptive — not an out-of-sample backtest and not a buy list. See LIMITATIONS.md.',
+      '仅供参考的只读分析 — 非投资建议。等权重、按时点日期管理成分、调整间买入持有，基于免费标普 1500 价格缓存（约 3 年）。成分在已知该期间表现下整理，故为事后选取的描述性序列 — 并非样本外回测，也非买入清单。参见 LIMITATIONS.md。') }}
+    {{ t('Generated', '生成于') }} <span id="gen">{{ generated_utc }}</span>.
+  </footer>
 
-  <script>
-    (function(){
-      var tab=document.getElementById('btab'), tb=tab.querySelector('tbody');
-      var modeseg=document.getElementById('modeseg'), detail=document.getElementById('detail');
-      // metric mode toggle
-      modeseg.addEventListener('click', function(e){
-        var b=e.target.closest('button[data-mode]'); if(!b) return;
-        tab.setAttribute('data-mode', b.dataset.mode);
-        modeseg.querySelectorAll('button').forEach(function(x){x.classList.toggle('on', x===b);});
-        if(sortCol!==null) applySort();
-      });
-      // sortable return columns (sorts on the VISIBLE value for the current mode)
-      var sortCol=2, sortDir=-1;   // default: 20d descending
-      function cellVal(row, col){
-        var td=row.children[col+1]; if(!td) return -1e9;
-        var span=tab.getAttribute('data-mode')==='rel'?td.querySelector('.v-rel'):td.querySelector('.v-raw');
-        var v=span?parseFloat(span.getAttribute('data-v')):NaN; return isNaN(v)?-1e9:v;
-      }
-      function applySort(){
-        var rows=Array.prototype.slice.call(tb.querySelectorAll('tr'));
-        rows.sort(function(a,b){ return (cellVal(a,sortCol)-cellVal(b,sortCol))*sortDir; });
-        rows.forEach(function(r){ tb.appendChild(r); });
-      }
-      tab.querySelectorAll('th[data-col]').forEach(function(th){
-        th.addEventListener('click', function(){
-          var c=+th.dataset.col;
-          if(c===sortCol){ sortDir=-sortDir; } else { sortCol=c; sortDir=-1; }
-          applySort();
-        });
-      });
-      applySort();
-      // basket name -> open detail
-      tb.addEventListener('click', function(e){
-        var n=e.target.closest('.bname'); if(!n) return;
-        var id=n.dataset.id;
-        detail.style.display='block';
-        detail.querySelectorAll('.bdetail').forEach(function(d){ d.hidden = (d.dataset.id!==id); });
-        detail.scrollIntoView({behavior:'smooth', block:'nearest'});
-      });
-    })();
-  </script>
-  <script src="theme.js"></script>
+<script src="lightweight-charts.js"></script>
+<script>
+const BASKETS = {{ baskets_json|safe }};
+const CHART   = {{ chart_json|safe }};
+
+const TBL_COLS = ['1d','5d','20d','60d','MTD','YTD'];
+const TBL_MODES = [['raw','Raw'],['rel','vs S&P'],['sigma','σ']];
+const RANGES = [['3M',63],['6M',126],['YTD','ytd'],['1Y',252],['All',0]];
+const HZ_TABS = ['1d','5d','20d','60d','YTD'];
+const PALETTE = ['#5aa7ff','#4ade80','#facc15','#fb923c','#f472b6','#2dd4bf','#a78bfa','#fb7185','#a3e635','#38bdf8','#e879f9','#34d399','#fbbf24','#60a5fa'];
+const colorOf = {}; (BASKETS.baskets||[]).forEach((b,i)=>colorOf[b.id]=PALETTE[i%PALETTE.length]);
+const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const BENCH_COLOR = () => cssv('--muted') || '#94a3b8';
+
+const fmtPct = x => x==null ? '—' : (x>=0?'+':'')+(x*100).toFixed(1)+'%';
+const fmtZ   = x => x==null ? '—' : (x>=0?'+':'')+x.toFixed(1)+'σ';
+const cls    = x => x==null ? 'muted' : (x>=0?'pos':'neg');
+const esc    = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const lastIdx = a => { for(let i=a.length-1;i>=0;i--) if(a[i]!=null) return i; return -1; };
+const hzLabel = c => c==='ytd'?'YTD':c;
+
+function startIdxFor(col,dates,li){
+  const u = col.toUpperCase();
+  if(u==='MTD'||u==='YTD'){ const p = dates[li].slice(0, u==='MTD'?7:4); let i=li; while(i>0 && dates[i-1].startsWith(p)) i--; return i>0?i-1:null; }
+  const i = li-parseInt(col,10); return i>=0?i:null;
+}
+function winRet(levels,col){ if(!levels) return null; const li=lastIdx(levels); if(li<0) return null;
+  const si=startIdxFor(col,CHART.dates,li); if(si==null||levels[si]==null) return null; return levels[li]/levels[si]-1; }
+function winZ(levels,col){ const n=parseInt(col,10); if(!n||!levels) return null; const li=lastIdx(levels); if(li<252+n) return null;
+  const hr=[]; for(let i=li-252;i<=li;i++) hr.push((levels[i]!=null&&levels[i-n]!=null)?levels[i]/levels[i-n]-1:null);
+  const cur=hr[hr.length-1]; const base=hr.slice(0,-1).filter(v=>v!=null); if(cur==null||base.length<200) return null;
+  const m=base.reduce((a,b)=>a+b,0)/base.length; const sd=Math.sqrt(base.reduce((a,b)=>a+(b-m)**2,0)/(base.length-1)); return sd>0?(cur-m)/sd:null; }
+const ratio = a => a.map((v,i)=>(v!=null&&CHART.bench[i]!=null)?v/CHART.bench[i]:null);
+
+function sparkSvg(values,{w=92,h=26,color=''}={}){
+  const vs=(values||[]).filter(v=>v!=null); if(vs.length<2) return '';
+  const min=Math.min(...vs),max=Math.max(...vs),span=(max-min)||1;
+  const pts=vs.map((v,i)=>[i/(vs.length-1)*w, h-3-(v-min)/span*(h-7)]);
+  const d=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  const col = color || (vs[vs.length-1]>=vs[0]?cssv('--up'):cssv('--down'));
+  const e=pts[pts.length-1];
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><path d="${d}" fill="none" stroke="${col}" stroke-width="1.4"/><circle cx="${e[0].toFixed(1)}" cy="${e[1].toFixed(1)}" r="1.6" fill="${col}"/></svg>`;
+}
+const sparkTail = (levels,n=60) => (levels||[]).filter(x=>x!=null).slice(-n);
+
+function renderTabs(el, opts, active, cb){
+  el.innerHTML = opts.map(([v,lab])=>`<button data-v="${v}" class="${v==active?'on':''}">${lab}</button>`).join('');
+  el.querySelectorAll('button').forEach(b=>b.onclick=()=>{ el.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); cb(b.dataset.v); });
+}
+
+// ---- 01 table -------------------------------------------------------------
+let btblMode = localStorage.getItem('fw-btbl-mode')||'rel';
+let btblSort = JSON.parse(localStorage.getItem('fw-btbl-sort')||'{"col":"20d","dir":-1}');
+function renderBTable(){
+  const rows = Object.entries(CHART.baskets).map(([id,lv])=>{
+    const b=(BASKETS.baskets||[]).find(x=>x.id===id); const rl=ratio(lv);
+    const src = btblMode==='raw'?lv:rl;
+    const vals={}; TBL_COLS.forEach(c=>{ vals[c]= btblMode==='sigma' ? (/^\d/.test(c)?winZ(rl,c):null) : winRet(src,c); });
+    return {id,name:b?b.name:id,color:colorOf[id]||'#888',spark:sparkTail(src),vals};
+  });
+  const sc=btblSort.col, dir=btblSort.dir;
+  rows.sort((a,b)=>{ if(sc==='name') return a.name.localeCompare(b.name)*dir;
+    const x=a.vals[sc], y=b.vals[sc]; if(x==null) return 1; if(y==null) return -1; return (x-y)*dir; });
+  const fmt = btblMode==='sigma' ? fmtZ : fmtPct;
+  const th = c => `<th class="num ${c===sc?'sel':''}" data-c="${c}">${c}${c===sc?(dir<0?' ▾':' ▴'):''}</th>`;
+  let html = `<thead><tr><th data-c="name">Basket${sc==='name'?(dir<0?' ▾':' ▴'):''}</th><th class="num">60d</th>${TBL_COLS.map(th).join('')}</tr></thead><tbody>`;
+  html += rows.map(r=>`<tr><td class="bname" data-id="${r.id}"><span class="dot" style="background:${r.color}"></span>${esc(r.name)}</td>
+    <td class="num">${sparkSvg(r.spark,{color:r.color})}</td>
+    ${TBL_COLS.map(c=>`<td class="num ${cls(r.vals[c])}">${r.vals[c]==null?'<span class="muted">—</span>':fmt(r.vals[c])}</td>`).join('')}</tr>`).join('');
+  if(btblMode==='raw'){ const bv={}; TBL_COLS.forEach(c=>bv[c]=winRet(CHART.bench,c));
+    html += `<tr><td class="bname" style="font-weight:500"><span class="dot" style="background:${BENCH_COLOR()}"></span>S&amp;P 500</td><td></td>${TBL_COLS.map(c=>`<td class="num ${cls(bv[c])}">${fmtPct(bv[c])}</td>`).join('')}</tr>`; }
+  html += '</tbody>';
+  const tbl=document.getElementById('btable'); tbl.innerHTML=html;
+  tbl.querySelectorAll('th[data-c]').forEach(h=>h.onclick=()=>{ const c=h.dataset.c;
+    if(c===btblSort.col) btblSort.dir*=-1; else btblSort={col:c,dir:c==='name'?1:-1};
+    localStorage.setItem('fw-btbl-sort',JSON.stringify(btblSort)); renderBTable(); });
+  tbl.querySelectorAll('.bname[data-id]').forEach(n=>n.onclick=()=>openBasket(n.dataset.id));
+}
+
+// ---- 02 chart -------------------------------------------------------------
+let chart=null, chartMode='rel', chartRange=252, hidden={};
+function chartSets(){
+  const sets=Object.entries(CHART.baskets).map(([id,levels])=>{ const b=(BASKETS.baskets||[]).find(x=>x.id===id);
+    return {key:id,label:b?b.name:id,color:colorOf[id]||'#888',levels}; });
+  if(chartMode==='rel') return sets.map(s=>({...s,levels:ratio(s.levels)}));
+  return [...sets,{key:'bench',label:'S&P 500',color:BENCH_COLOR(),levels:CHART.bench}];
+}
+function rangeStart(dates){ if(chartRange==='ytd'){ const y=dates[dates.length-1].slice(0,4); const i=dates.findIndex(d=>d.startsWith(y)); return i<=0?0:i-1; }
+  return chartRange?Math.max(0,dates.length-chartRange):0; }
+function chartOpts(){ return { autoSize:true,
+  layout:{ background:{type:'solid',color:'transparent'}, textColor:cssv('--muted')||'#9aa4b2', fontSize:11 },
+  grid:{ vertLines:{visible:false}, horzLines:{color:cssv('--line')||'#222'} },
+  rightPriceScale:{ borderColor:cssv('--line')||'#222' }, timeScale:{ borderColor:cssv('--line')||'#222' },
+  crosshair:{ mode:0, vertLine:{labelBackgroundColor:cssv('--panel2')||'#333'}, horzLine:{labelBackgroundColor:cssv('--panel2')||'#333'} } }; }
+function renderChart(){
+  const el=document.getElementById('chart'); if(typeof LightweightCharts==='undefined'){ el.innerHTML='<p class="muted">The charting library failed to load — the rest of the page is unaffected.</p>'; return; }
+  if(!chart){ chart=LightweightCharts.createChart(el,chartOpts()); }
+  (chart.__series||[]).forEach(s=>chart.removeSeries(s)); chart.__series=[];
+  const start=rangeStart(CHART.dates);
+  const sets=chartSets().filter(s=>!hidden[s.key]); const nVis=sets.length;
+  sets.forEach(set=>{
+    let base=null; const data=[];
+    for(let i=start;i<CHART.dates.length;i++){ const v=set.levels[i]; if(v==null) continue; if(base===null) base=v; data.push({time:CHART.dates[i], value:100*(v/base-1)}); }
+    if(data.length<2) return;
+    const s=chart.addLineSeries({ color:set.color, lineWidth:2, priceLineVisible:false, lastValueVisible:nVis<=4, title:nVis<=4?set.label:'',
+      priceFormat:{type:'custom',minMove:0.01,formatter:v=>(v>=0?'+':'')+v.toFixed(1)+'%'} });
+    s.setData(data); chart.__series.push(s);
+  });
+  chart.timeScale().fitContent(); renderChartLegend();
+}
+function renderChartLegend(){
+  const el=document.getElementById('chart-legend'); const st=rangeStart(CHART.dates);
+  el.innerHTML=chartSets().map(s=>{ const li=lastIdx(s.levels); let base=null; for(let i=st;i<=li;i++){ if(s.levels[i]!=null){ base=s.levels[i]; break; } }
+    const v=(base!=null&&s.levels[li]!=null)?100*(s.levels[li]/base-1):null;
+    return `<span class="lchip ${hidden[s.key]?'off':''}" data-k="${s.key}"><span class="dot" style="background:${s.color}"></span>${esc(s.label)} <span class="lv">${v==null?'':(v>=0?'+':'')+v.toFixed(1)+'%'}</span></span>`;
+  }).join('');
+  el.querySelectorAll('.lchip').forEach(c=>c.onclick=()=>{ hidden[c.dataset.k]=!hidden[c.dataset.k]; renderChart(); });
+}
+function initChartDefaults(){
+  const ranked=(BASKETS.baskets||[]).slice().sort((a,b)=>Math.abs((b.perf?.['20d']?.rel)||0)-Math.abs((a.perf?.['20d']?.rel)||0));
+  ranked.slice(6).forEach(b=>hidden[b.id]=true);
+}
+
+// ---- 03 cards + details ---------------------------------------------------
+let bhz = localStorage.getItem('fw-hz')||'20d';
+function kpi(k,p){ const v=p?p.rel:null; return `<div class="kpi"><div class="v ${cls(v)}">${fmtPct(v)}</div><div class="k">${k} vs S&P</div></div>`; }
+function renderCards(){
+  const el=document.getElementById('cards');
+  el.innerHTML=(BASKETS.categories||[]).map(cat=>{
+    const cards=(BASKETS.baskets||[]).filter(b=>b.category===cat)
+      .sort((a,c)=>((c.perf?.[bhz]?.rel)??-9)-((a.perf?.[bhz]?.rel)??-9))
+      .map(b=>{ const spk=sparkTail(ratio(CHART.baskets[b.id]));
+        const ref=b.reference?` · tracks ${esc(b.reference.label)} (r ${b.reference.corr.toFixed(2)})`:'';
+        return `<div class="card" style="--c:${colorOf[b.id]}" data-id="${b.id}">
+          <div class="nm"><span class="dot" style="background:${colorOf[b.id]}"></span>${esc(b.name)}</div>
+          <div class="meta">${b.n_members} members · equal-weighted · since ${esc(b.created)}${ref}</div>
+          <div class="th">${esc(b.thesis)}</div>
+          <div class="perf">${kpi(hzLabel(bhz),b.perf?.[bhz])}${kpi('YTD',b.perf?.ytd)}<span class="spark">${sparkSvg(spk,{w:96,h:30,color:colorOf[b.id]})}</span></div>
+        </div>`; }).join('');
+    return cards?`<h3 class="cat">${esc(cat)}</h3><div class="cards">${cards}</div>`:'';
+  }).join('');
+  el.querySelectorAll('.card').forEach(c=>c.onclick=()=>openBasket(c.dataset.id));
+}
+function memRows(b){ return (b.members||[]).map(m=>`<tr><td><b>${esc(m.symbol)}</b> <span class="muted sm">${esc(m.name)}</span></td>
+  <td class="why">${esc(m.rationale)}</td><td class="num muted sm">${esc(m.added)}</td>
+  <td class="num ${cls(m.ret_20d)}">${fmtPct(m.ret_20d)}</td><td class="num ${cls(m.ret_ytd)}">${fmtPct(m.ret_ytd)}</td></tr>`).join(''); }
+function detailSection(b){
+  const p=b.perf||{}; const kr=(k,h)=>`<div><div class="k">${k} vs S&P</div><div class="v ${cls(p[h]?.rel)}">${fmtPct(p[h]?.rel)}</div></div>`;
+  const ref=b.reference?`<p class="refline">Cross-checked vs <b>${esc(b.reference.label)}</b>${b.reference.name?' — '+esc(b.reference.name):''}: daily correlation <b>${b.reference.corr.toFixed(2)}</b>, market-adjusted <b>${b.reference.rel_corr.toFixed(2)}</b> over ${b.reference.n} sessions. <span class="muted">(market-adjusted strips shared market beta — basket−S&P vs ETF−S&P.)</span></p>`:'';
+  const warns=[]; if((b.missing||[]).length) warns.push(`<span class="warn">excluded (not in free cache): ${b.missing.map(esc).join(', ')}</span>`);
+  (b.partial||[]).forEach(pp=>warns.push(`<span class="warn">${esc(pp.symbol)} enters ${esc(pp.from)}</span>`));
+  const clog=(b.changelog||[]).map(c=>`<li><b>${esc(c.date)}</b> — ${esc(c.action)}: ${esc(c.note)}</li>`).join('');
+  return `<div class="detail" id="b-${b.id}"><h4><span class="dot" style="background:${colorOf[b.id]}"></span>${esc(b.name)} <span class="chip">${esc(b.category)}</span></h4>
+    <p class="th">${esc(b.thesis)}</p>
+    <div class="kpirow">${kr('20d','20d')}${kr('60d','60d')}${kr('MTD','mtd')}${kr('YTD','ytd')}${kr('Full','full')}</div>
+    ${ref}<div>${warns.join(' ')}</div>
+    <details open><summary>Members (${b.n_members}) &amp; changelog</summary>
+      <div class="ts"><table><thead><tr><th>Symbol</th><th>Rationale</th><th class="num">Added</th><th class="num">20d</th><th class="num">YTD</th></tr></thead><tbody>${memRows(b)}</tbody></table></div>
+      <ul class="clog">${clog}</ul>
+    </details></div>`;
+}
+function renderDetails(){
+  const el=document.getElementById('details');
+  el.innerHTML=(BASKETS.categories||[]).map(cat=>(BASKETS.baskets||[]).filter(b=>b.category===cat)
+    .sort((a,c)=>((c.perf?.[bhz]?.rel)??-9)-((a.perf?.[bhz]?.rel)??-9)).map(detailSection).join('')).join('');
+}
+function openBasket(id){ const d=document.getElementById('b-'+id); if(!d) return; const det=d.querySelector('details'); if(det) det.open=true; d.scrollIntoView({behavior:'smooth',block:'start'}); }
+
+function renderStory(){
+  const s=BASKETS.story; if(!s) return;
+  const dot=id=>`<span class="dot" style="background:${colorOf[id]||'#888'}"></span>`;
+  const lead=(BASKETS.baskets||[]).find(b=>b.name===s.leader), lag=(BASKETS.baskets||[]).find(b=>b.name===s.laggard);
+  document.getElementById('story').innerHTML =
+    `${lead?dot(lead.id):''}<b>${esc(s.leader)}</b> leads the themes over 20 days (<span class="${cls(s.leader_rel)}">${fmtPct(s.leader_rel)}</span> vs S&amp;P) · ${lag?dot(lag.id):''}<b>${esc(s.laggard)}</b> lags (<span class="${cls(s.laggard_rel)}">${fmtPct(s.laggard_rel)}</span>) · <b>${s.n_baskets}</b> baskets across <b>${s.n_cats}</b> categories.`;
+}
+
+function boot(){
+  document.getElementById('asof').textContent=BASKETS.as_of||'—';
+  renderStory();
+  renderTabs(document.getElementById('btbl-mode'), TBL_MODES, btblMode, v=>{ btblMode=v; localStorage.setItem('fw-btbl-mode',v); renderBTable(); });
+  renderTabs(document.getElementById('chart-modes'), [['rel','vs S&P 500'],['abs','Absolute']], chartMode, v=>{ chartMode=v; renderChart(); });
+  const rel=document.getElementById('chart-ranges');
+  rel.innerHTML=RANGES.map(([lab,v])=>`<button data-v="${v}" class="${v===chartRange?'on':''}">${lab}</button>`).join('')+`<input class="rangeN" type="number" min="5" max="600" placeholder="N days">`;
+  rel.querySelectorAll('button').forEach(b=>b.onclick=()=>{ chartRange=(b.dataset.v==='ytd')?'ytd':parseInt(b.dataset.v,10); rel.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); renderChart(); });
+  rel.querySelector('.rangeN').onchange=function(){ const n=Math.min(600,Math.max(5,parseInt(this.value,10)||252)); chartRange=n; rel.querySelectorAll('button').forEach(x=>x.classList.remove('on')); renderChart(); };
+  renderTabs(document.getElementById('hz-tabs'), HZ_TABS.map(h=>[h,hzLabel(h)]), bhz, v=>{ bhz=v; localStorage.setItem('fw-hz',v); renderCards(); renderDetails(); });
+  initChartDefaults();
+  renderBTable(); renderChart(); renderCards(); renderDetails();
+  if(location.hash.startsWith('#b-')) setTimeout(()=>openBasket(location.hash.slice(3)),200);
+  document.addEventListener('langchange',()=>{ if(chart){chart.applyOptions(chartOpts());} renderChart(); });
+  document.addEventListener('themechange',()=>{ if(chart){chart.applyOptions(chartOpts());} renderChart(); });
+}
+if(document.readyState!=='loading') boot(); else document.addEventListener('DOMContentLoaded',boot);
+</script>
+<script src="theme.js"></script>
 </body>
 </html>

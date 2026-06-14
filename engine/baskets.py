@@ -1,17 +1,23 @@
 """Thematic baskets — equal-weight, dated-membership trackers over the FREE cache.
 
-A direct replication of FactorWatch's "Baskets": curated thematic stock baskets,
-EQUAL-WEIGHTED with point-in-time dated membership (a member counts only between
-its added and removed dates), buy-and-hold between. We report each basket's return
-at 1d/5d/20d/60d/YTD horizons RAW and RELATIVE to SPY, a cumulative spark series, a
-Sharpe/MaxDD summary, an optional reference-ETF correlation cross-check, and the
-per-member weights.
+A faithful rebuild of FactorWatch's "Baskets": curated thematic stock baskets,
+EQUAL-WEIGHTED with point-in-time dated membership (a member counts only between its
+added and removed dates), buy-and-hold between, monthly-rebalanced. The engine emits
+two payloads the page renders client-side (like FactorWatch):
 
-HONEST BY CONSTRUCTION (house rule): membership.json is curated with knowledge of
-the period, so the ~3y series is hindsight-curated and descriptive — NOT an out-of-
-sample backtest, NOT a buy list. Equal-weight, one short single-regime window, free
-S&P-1500 universe only (members outside it are excluded and counted in n_missing).
-No scoring, no recommendations.
+  CHART   = { dates:[ISO], bench:[SPY level], baskets:{id:[EW level series]} }
+            full daily LEVEL matrix → the interactive lightweight-charts overlay
+            (rebased per range) + the live σ/sort table (winRet/winZ run on it).
+  BASKETS = { as_of, construction, history_note, note, categories, story,
+              baskets:[ {id,name,name_zh,category,thesis,weighting,created,n_members,
+                         members:[{symbol,name,added,removed,rationale,last,ret_20d,ret_ytd}],
+                         changelog, reference:{label,name,corr,rel_corr,n,note}, missing,
+                         partial, perf:{1d/5d/20d/60d/mtd/ytd/full:{ret,rel}} } ] }
+
+HONEST BY CONSTRUCTION (house rule): membership.json is curated with knowledge of the
+period, so the ~3y series is HINDSIGHT-curated and descriptive — not an out-of-sample
+backtest, not a buy list. Free S&P-1500 universe only (members outside it are excluded
+and surfaced as `missing`); names that begin trading mid-window are `partial`.
 """
 from __future__ import annotations
 
@@ -22,13 +28,11 @@ import numpy as np
 import pandas as pd
 
 from engine.equity_factors import _closes, _names_sectors
-from engine.validation import _maxdd, _sharpe
 from lib import config, store
 
 log = logging.getLogger(__name__)
 
-HORIZONS = {"d1": 1, "d5": 5, "d20": 20, "d60": 60}
-SPARK_POINTS = 90                      # downsample the cumulative series for the sparkline
+HORIZONS = {"1d": 1, "5d": 5, "20d": 20, "60d": 60}    # fixed-window horizons (MTD/YTD computed separately)
 
 
 def _membership() -> dict | None:
@@ -42,32 +46,84 @@ def _membership() -> dict | None:
         return None
 
 
-def _hz(r: pd.Series, h: int) -> float | None:
-    """Compounded return (%) over the last h observations of a daily-return series."""
-    r = r.dropna()
-    if len(r) <= h:
+def _ew_level(rets: pd.DataFrame, members: list, idx: pd.DatetimeIndex) -> pd.Series:
+    """Daily equal-weight LEVEL series (start 1.0 at first active day) with point-in-time
+    dated membership — a member counts only within [added, removed). NaN before inception."""
+    present = [m["ticker"] for m in members if m["ticker"] in rets.columns]
+    if len(present) < 3:
+        return pd.Series(np.nan, index=idx)
+    mask = pd.DataFrame(False, index=idx, columns=present)
+    for m in members:
+        t = m["ticker"]
+        if t not in present:
+            continue
+        a = idx >= pd.Timestamp(m["added"])
+        if m.get("removed"):
+            a = a & (idx < pd.Timestamp(m["removed"]))
+        mask[t] = a
+    ew = rets[present].where(mask).mean(axis=1)         # EW of active members each day
+    first = ew.first_valid_index()
+    if first is None:
+        return pd.Series(np.nan, index=idx)
+    lvl = pd.Series(np.nan, index=idx)
+    lvl.loc[first:] = (1.0 + ew.loc[first:].fillna(0.0)).cumprod()
+    return lvl
+
+
+def _mtd_anchor(idx: pd.DatetimeIndex) -> pd.Timestamp:
+    """Last trading day of the prior month (the close MTD bases off)."""
+    last = idx.max()
+    prior = idx[idx < pd.Timestamp(last.year, last.month, 1)]
+    return prior.max() if len(prior) else idx[0]
+
+
+def _ret(lvl: pd.Series, anchor) -> float | None:
+    s = lvl.dropna()
+    if s.empty or anchor is None:
         return None
-    return round(float(((1.0 + r).tail(h).prod() - 1.0) * 100), 2)
+    base = lvl.get(anchor)
+    if base is None or pd.isna(base):
+        # nearest valid level at/after anchor
+        seg = lvl[lvl.index >= anchor].dropna()
+        if seg.empty:
+            return None
+        base = seg.iloc[0]
+    return float(s.iloc[-1] / base - 1.0)
 
 
-def _ytd(r: pd.Series, anchor: pd.Timestamp) -> float | None:
-    seg = r[r.index >= anchor].dropna()
-    if seg.empty:
+def _perf(lvl: pd.Series, bench: pd.Series, idx: pd.DatetimeIndex,
+          ytd_anchor, mtd_anchor) -> dict:
+    """raw + (vs-SPY) relative return at every horizon, level-based (matches the client winRet)."""
+    out = {}
+    valid = lvl.dropna()
+    li = idx.get_loc(valid.index[-1]) if not valid.empty else None
+    for k, h in HORIZONS.items():
+        anc = idx[li - h] if (li is not None and li - h >= 0) else None
+        r, br = _ret(lvl, anc), _ret(bench, anc)
+        out[k] = {"ret": r, "rel": (r - br if r is not None and br is not None else None)}
+    for k, anc in (("mtd", mtd_anchor), ("ytd", ytd_anchor)):
+        r, br = _ret(lvl, anc), _ret(bench, anc)
+        out[k] = {"ret": r, "rel": (r - br if r is not None and br is not None else None)}
+    first = valid.index[0] if not valid.empty else None
+    r, br = _ret(lvl, first), _ret(bench, first)
+    out["full"] = {"ret": r, "rel": (r - br if r is not None and br is not None else None)}
+    return out
+
+
+def _proxy_returns(proxy, idx: pd.DatetimeIndex) -> pd.Series | None:
+    """Daily returns of a reference ETF, or an equal blend of several (e.g. ['XLP','XLU'])."""
+    syms = proxy if isinstance(proxy, list) else [proxy]
+    legs = []
+    for s in syms:
+        pe = store.read("yahoo", s)
+        if pe is not None and "close" in pe.columns:
+            legs.append(pe["close"].reindex(idx).ffill().pct_change())
+    if not legs:
         return None
-    return round(float(((1.0 + seg).prod() - 1.0) * 100), 2)
-
-
-def _spark(cum: pd.Series) -> list:
-    cum = cum.dropna()
-    if cum.empty:
-        return []
-    step = max(1, len(cum) // SPARK_POINTS)
-    return [round(float(v), 2) for v in cum.iloc[::step]]
+    return pd.concat(legs, axis=1).mean(axis=1)
 
 
 def compute_baskets() -> dict | None:
-    """Build the baskets payload from membership.json + the price caches + SPY.
-    Returns None (page hides) if membership or prices are missing."""
     mem = _membership()
     if not mem or not mem.get("baskets"):
         return None
@@ -79,111 +135,108 @@ def compute_baskets() -> dict | None:
     nm = _names_sectors()
 
     spy = store.read("yahoo", "SPY")
-    spy_ret = None
-    if spy is not None and "close" in spy.columns:
-        spy_close = spy["close"].reindex(idx).ffill()
-        spy_ret = spy_close.pct_change()
+    if spy is None or "close" not in spy.columns:
+        return None
+    spy_ret = spy["close"].reindex(idx).ffill().pct_change()
+    bench = pd.Series(np.nan, index=idx)
+    bf = spy_ret.first_valid_index()
+    bench.loc[bf:] = (1.0 + spy_ret.loc[bf:].fillna(0.0)).cumprod()
 
     year = idx.max().year
-    ytd_anchor = idx[idx >= pd.Timestamp(year, 1, 1)].min()
+    ytd_anchor = idx[idx < pd.Timestamp(year, 1, 1)].max() if (idx < pd.Timestamp(year, 1, 1)).any() else idx[0]
+    mtd_anchor = _mtd_anchor(idx)
+    dates = [d.strftime("%Y-%m-%d") for d in idx]
 
-    spy_hz = {k: _hz(spy_ret, h) for k, h in HORIZONS.items()} if spy_ret is not None else {}
-    spy_hz["ytd"] = _ytd(spy_ret, ytd_anchor) if spy_ret is not None else None
-
-    out_baskets = []
-    for bid, b in mem["baskets"].items():
+    chart_baskets, out_baskets = {}, []
+    bdict = mem["baskets"]
+    items = bdict.items() if isinstance(bdict, dict) else [(b["id"], b) for b in bdict]
+    for bid, b in items:
         members = b.get("members", [])
         tickers = [m["ticker"] for m in members]
         present = [t for t in tickers if t in rets.columns]
-        n_missing = len(set(tickers)) - len(set(present))
-        if len(present) < 3:                       # too thin to be a basket
+        missing = sorted(set(tickers) - set(present))
+        if len(present) < 3:
             log.warning("basket %s skipped: only %d members in cache", bid, len(present))
             continue
+        lvl = _ew_level(rets, members, idx)
+        if lvl.dropna().empty:
+            continue
+        chart_baskets[bid] = [None if pd.isna(v) else round(float(v), 5) for v in lvl]
 
-        # point-in-time equal-weight: a member counts only within [added, removed)
-        sub = rets[present]
-        mask = pd.DataFrame(False, index=idx, columns=present)
+        perf = _perf(lvl, bench, idx, ytd_anchor, mtd_anchor)
+
+        # latest active members enriched with last / ret_20d / ret_ytd + partial flag
+        last_d = idx.max()
+        active, partial = [], []
         for m in members:
             t = m["ticker"]
-            if t not in mask.columns:
+            if t not in present or (m.get("removed") and pd.Timestamp(m["removed"]) <= last_d):
                 continue
-            a = idx >= pd.Timestamp(m["added"])
-            if m.get("removed"):
-                a = a & (idx < pd.Timestamp(m["removed"]))
-            mask[t] = a
-        ew = sub.where(mask).mean(axis=1)          # EW mean of active members per day
-        ew_valid = ew.dropna()
-        if ew_valid.empty:
-            continue
+            tc = closes[t].dropna()
+            if tc.empty:
+                continue
+            first_tape = tc.index[0]
+            if first_tape > pd.Timestamp(m["added"]) + pd.Timedelta(days=7):
+                partial.append({"symbol": t, "from": first_tape.strftime("%Y-%m-%d")})
+            r20 = float(tc.iloc[-1] / tc.iloc[-21] - 1.0) if len(tc) > 21 else None
+            yseg = tc[tc.index >= ytd_anchor]
+            ry = float(tc.iloc[-1] / yseg.iloc[0] - 1.0) if len(yseg) > 1 else None
+            active.append({"symbol": t, "name": nm.get(t, (t, "—"))[0][:26],
+                           "added": m["added"], "rationale": m.get("rationale", m.get("note", "")),
+                           "last": round(float(tc.iloc[-1]), 2),
+                           "ret_20d": round(r20, 4) if r20 is not None else None,
+                           "ret_ytd": round(ry, 4) if ry is not None else None})
+        active.sort(key=lambda x: (x["ret_20d"] is None, -(x["ret_20d"] or 0)))
 
-        raw = {k: _hz(ew, h) for k, h in HORIZONS.items()}
-        raw["ytd"] = _ytd(ew, ytd_anchor)
-        rel = {k: (round(raw[k] - spy_hz.get(k), 2) if raw.get(k) is not None and spy_hz.get(k) is not None else None)
-               for k in list(HORIZONS) + ["ytd"]}
-
-        cum = (1.0 + ew.fillna(0.0)).cumprod() - 1.0
-        cum = cum[cum.index >= ew_valid.index.min()] * 100
-        spark = _spark(cum)
-        spy_spark = []
-        if spy_ret is not None:
-            spy_cum = (1.0 + spy_ret.reindex(cum.index).fillna(0.0)).cumprod() - 1.0
-            spy_spark = _spark(spy_cum * 100)
-
-        # reference-ETF correlation (only when a proxy is actually stored)
-        etf_corr = None
+        # reference-ETF cross-check: absolute + market-adjusted (beta-stripped) correlation
+        reference = None
         proxy = b.get("etf_proxy")
         if proxy:
-            pe = store.read("yahoo", proxy)
-            if pe is not None and "close" in pe.columns:
-                pr = pe["close"].reindex(idx).ffill().pct_change()
-                pair = pd.concat([ew, pr], axis=1).dropna()
+            pr = _proxy_returns(proxy, idx)
+            if pr is not None:
+                ew_ret = lvl.pct_change()
+                pair = pd.concat([ew_ret, pr, spy_ret], axis=1).dropna()
                 if len(pair) > 60:
-                    etf_corr = round(float(pair.iloc[:, 0].corr(pair.iloc[:, 1])), 2)
+                    corr = float(pair.iloc[:, 0].corr(pair.iloc[:, 1]))
+                    rc = float((pair.iloc[:, 0] - pair.iloc[:, 2]).corr(pair.iloc[:, 1] - pair.iloc[:, 2]))
+                    reference = {"label": "+".join(proxy) if isinstance(proxy, list) else proxy,
+                                 "name": b.get("etf_proxy_note", ""), "corr": round(corr, 2),
+                                 "rel_corr": round(rc, 2), "n": int(len(pair))}
 
-        # latest active members -> weights + per-name YTD
-        last = idx.max()
-        active = [t for t in present if bool(mask.loc[last, t])]
-        w = round(1.0 / len(active), 4) if active else None
-        mlist = []
-        for t in sorted(active, key=lambda x: nm.get(x, (x, ""))[0]):
-            tc = closes[t].dropna()
-            seg = tc[tc.index >= ytd_anchor]
-            ytd_r = round(float(tc.iloc[-1] / seg.iloc[0] - 1.0) * 100, 1) if len(seg) > 1 else None
-            mlist.append({"ticker": t, "name": nm.get(t, (t, "—"))[0][:24],
-                          "sector": nm.get(t, (t, "—"))[1], "weight": w, "ytd": ytd_r})
-
-        changelog = sorted(
-            [{"date": m["added"], "action": "add", "ticker": m["ticker"], "note": m.get("note", "")}
-             for m in members]
-            + [{"date": m["removed"], "action": "drop", "ticker": m["ticker"], "note": m.get("note", "")}
-               for m in members if m.get("removed")],
-            key=lambda x: x["date"])
+        changelog = b.get("changelog") or sorted(
+            [{"date": m["added"], "action": "add", "note": (m.get("ticker", "") + ": " + m.get("rationale", m.get("note", "")))}
+             for m in members], key=lambda x: x["date"])
 
         out_baskets.append({
             "id": bid, "name": b["name"], "name_zh": b.get("name_zh", b["name"]),
-            "theme": b.get("theme", ""), "category": b.get("category", "—"),
-            "n": len(active), "n_missing": n_missing, "omitted": b.get("omitted", []),
-            "etf_proxy": proxy, "etf_proxy_note": b.get("etf_proxy_note"), "etf_corr": etf_corr,
-            "created": b.get("created"), "curated": b.get("curated"),
-            "ret": {"raw": raw, "rel": rel},
-            "stats": {"sharpe": round(_sharpe(ew_valid, 252), 2),
-                      "maxdd_pct": round(_maxdd(ew_valid) * 100, 1),
-                      "ann_vol_pct": round(float(np.std(ew_valid)) * np.sqrt(252) * 100, 1),
-                      "cum_pct": round(float(cum.iloc[-1]), 1) if not cum.empty else None},
-            "spark": spark, "spy_spark": spy_spark,
-            "members": mlist, "changelog": changelog,
+            "category": b.get("category", "Other"), "thesis": b.get("thesis", ""),
+            "weighting": b.get("weighting", "equal"), "created": b.get("created"),
+            "n_members": len(active), "members": active, "changelog": changelog,
+            "reference": reference, "missing": missing, "partial": partial,
+            "perf": perf,
         })
 
     if not out_baskets:
         return None
-    # default sort: strongest 20-day relative first (the FactorWatch default read)
-    out_baskets.sort(key=lambda x: (x["ret"]["rel"].get("d20") is None,
-                                    -(x["ret"]["rel"].get("d20") or 0)))
-    cats = sorted({b["category"] for b in out_baskets})
+    out_baskets.sort(key=lambda x: (x["perf"]["20d"]["rel"] is None, -(x["perf"]["20d"]["rel"] or 0)))
+    cats = []
+    for b in out_baskets:
+        if b["category"] not in cats:
+            cats.append(b["category"])
+    lead, lag = out_baskets[0], out_baskets[-1]
+    story = {"leader": lead["name"], "leader_rel": lead["perf"]["20d"]["rel"],
+             "laggard": lag["name"], "laggard_rel": lag["perf"]["20d"]["rel"],
+             "n_baskets": len(out_baskets), "n_cats": len(cats)}
+
     return {
         "as_of": idx.max().strftime("%Y-%m-%d"),
-        "seed_date": mem.get("seed_date"), "curated": mem.get("curated"),
+        "construction": mem.get("construction",
+            "Equal-weighted, monthly-rebalanced, buy-and-hold between rebalances; dated membership changes take effect same-day."),
+        "history_note": mem.get("history_note",
+            "Series before a basket's creation date are a backtest of the membership as of creation; live tracking starts at creation."),
         "note": mem.get("note", ""),
-        "spx_note": "Relative = basket return minus SPY over the same horizon.",
-        "categories": cats, "baskets": out_baskets,
+        "categories": cats, "story": story, "baskets": out_baskets,
+        "chart": {"dates": dates,
+                  "bench": [None if pd.isna(v) else round(float(v), 5) for v in bench],
+                  "baskets": chart_baskets},
     }

@@ -43,14 +43,22 @@ def main() -> int:
     fdir.mkdir(parents=True, exist_ok=True)
     (fdir / "baskets.json").write_text(json.dumps(data, separators=(",", ":"), default=str))
 
+    # split the dense CHART (level matrix, for the interactive chart + live σ/sort table)
+    # from the BASKETS metadata (thesis/members/rationale/perf/changelog/reference).
+    chart = data.pop("chart")
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    from engine.i18n import td, tr
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
-    env.globals.update(td=td, tr=tr, zip=zip)
-    html = env.get_template("baskets.html.j2").render(data=data, built=built)
+    html = env.get_template("baskets.html.j2").render(
+        baskets_json=json.dumps(data, separators=(",", ":")),
+        chart_json=json.dumps(chart, separators=(",", ":")),
+        generated_utc=built)
     (site / "baskets.html").write_text(html)
-    log.info("wrote %s/baskets.html (%d baskets, %d KB)",
-             site, len(data["baskets"]), len(html) // 1024)
+    # ship the TradingView Lightweight Charts runtime (Apache-2.0) used by the page
+    lwc = config.ROOT / "templates" / "lightweight-charts.js"
+    if lwc.exists():
+        (site / "lightweight-charts.js").write_text(lwc.read_text())
+    log.info("wrote %s/baskets.html (%d baskets, %d categories, %d KB)",
+             site, len(data["baskets"]), len(data.get("categories", [])), len(html) // 1024)
     return 0
 
 
