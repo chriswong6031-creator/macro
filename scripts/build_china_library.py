@@ -139,6 +139,43 @@ def compute_china_alpha() -> dict | None:
     return alpha
 
 
+def compute_china_reversal() -> dict | None:
+    """The "Mean-reversion watch" — the VALIDATED A-share stock signal (3-month
+    within-sector deepest dips, screened for ST/delisting + a market-cap floor).
+    engine/china_reversal.py; reports/china-reversal-phase0.md. Best-effort: every
+    failure path degrades to None, never raises."""
+    from engine.china_reversal import reversal_watch
+    dd = config.data_dir()
+    cp = dd / "china_search" / "closes.parquet"
+    mp = dd / "china_search" / "members.parquet"
+    if not (cp.exists() and mp.exists()):
+        log.warning("china reversal: search panel missing — skipped")
+        return None
+    try:
+        closes = pd.read_parquet(cp).sort_index()
+        closes = closes.loc[:, ~closes.columns.duplicated()]
+        members = pd.read_parquet(mp)
+    except Exception as e:  # noqa: BLE001 — corrupt committed parquet must not break the build
+        log.warning("china reversal: panel unreadable (%s) — skipped", e)
+        return None
+    tkr_sector = {t: (s if s != JUNK_SECTOR else "—") for t, s in members["sector"].items()}
+    tkr_name = {t: str(n) for t, n in members["name"].items()}
+    tkr_name_zh = ({t: str(z) for t, z in members["name_zh"].items()}
+                   if "name_zh" in members.columns else {})
+    tkr_mktcap = ({t: float(v) for t, v in members["mktcap_yi"].items()}
+                  if "mktcap_yi" in members.columns else {})
+    try:
+        out = reversal_watch(closes, tkr_sector, tkr_name, tkr_name_zh=tkr_name_zh,
+                             tkr_mktcap=tkr_mktcap)
+    except Exception as e:  # noqa: BLE001 — additive leg, never fatal
+        log.warning("china reversal engine failed (%s) — skipped", e)
+        return None
+    if out:
+        log.info("china reversal watch: %d names, %d on watch (screened %s)",
+                 out.get("n"), len(out.get("watch", [])), out.get("screened"))
+    return out
+
+
 def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
     """(ticker, close, high|None, name, sector) for everything analyzable."""
     out: list[tuple] = []
