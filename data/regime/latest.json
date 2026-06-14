@@ -261,14 +261,7 @@
       "chg_20d_pct": 11.18
     }
   },
-  "alerts": [
-    {
-      "rule": "transition_state_change",
-      "severity": "warn",
-      "message": "Transition state STABLE -> WEAKENING (2 flags active)",
-      "message_zh": "\u8f6c\u6362\u72b6\u6001 STABLE -> WEAKENING\uff082 \u4e2a\u9884\u8b66\u6fc0\u6d3b\uff09"
-    }
-  ],
+  "alerts": [],
   "conditions": {
     "financial_conditions": {
       "nfci": -0.506,
@@ -322,9 +315,9 @@
       "vix_term_state": "contango (calm)",
       "skew": 142.6,
       "skew_pctile": 0.3194444444444444,
-      "stock_bond_corr": 0.6936367796179752,
+      "stock_bond_corr": 0.6936367796179748,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.4163673844839169,
+      "roro": 0.41636738448391547,
       "roro_state": "risk-on",
       "vol_target_scalar": 0.8172282208779413
     },
