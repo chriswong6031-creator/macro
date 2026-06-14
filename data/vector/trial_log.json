@@ -1,0 +1,43 @@
+{
+  "asof": "2026-06-13",
+  "n_trials_declared": 50,
+  "cost_bps_one_way": 10.0,
+  "allocation_variants_tested": [
+    "conservative",
+    "moderate",
+    "aggressive",
+    "optimal"
+  ],
+  "signal_families_screened": [
+    "bfi",
+    "coinbase_premium_ema",
+    "corr_spx",
+    "cot_z",
+    "cycle_pct",
+    "dvol",
+    "funding_z",
+    "global_m2_yoy",
+    "hash_ribbon_capit",
+    "impulse",
+    "leverage_stress",
+    "macro_score",
+    "mayer",
+    "momentum",
+    "mpi",
+    "mvrv_z",
+    "net_liq_roc",
+    "nupl",
+    "oi_price_divergence",
+    "puell",
+    "reserve_risk",
+    "risk_index",
+    "risk_oscillator",
+    "ssr_oscillator",
+    "sth_cb_ratio",
+    "structure",
+    "vdd_multiple",
+    "vrp"
+  ],
+  "n_signal_families": 28,
+  "note": "Point-in-time trial ledger (overwritten each run). n_trials_declared is an upper-bound count of independent strategy configs explored across the hunt, used to deflate the headline Sharpe. Raise it as you try more."
+}

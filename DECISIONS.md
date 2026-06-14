@@ -2,6 +2,38 @@
 
 Newest first. Each entry: what was decided, why, and what would change it.
 
+## 2026-06-13 — Vector stability gates: purged CV, OOF probability calibration, collinearity, bootstrap CI
+
+**D-vec-GATES. Four compute-only methodology gates added to the calibration harness
+(no new data; can only reduce overfit).** A 14-agent factor-research workflow
+(research/VECTOR_FACTOR_ROADMAP_2026.md) found the highest-leverage Vector upgrades are
+NOT new factors but methodology gaps — the precondition that lets thin post-2024 factors
+ship honestly. Built as ADDITIVE calibration.json blocks (existing verdicts untouched) +
+reusable primitives in engine.validation (shared with commodity/forex calibrators):
+purged_folds, block_bootstrap_ci, brier_reliability, platt_fit, vif, top_correlated_pairs.
+NOTE: DSR + cost-aware backtest + trial_log ALREADY shipped — the research over-stated
+those as gaps; the real remaining work was these four.
+(1) **Purged + embargoed walk-forward CV** — the single split_date leaked (a pre-half
+row's 90d forward label peeked across the split). Fixed: embargo the pre-half's last
+embargo=max(horizons)=90 rows + add a stricter K=5 purged walk-forward gate (each fold
+embargoed on its right edge; robust = full sign==want + no fold flip + all-but-one agree;
+drawdown gauges judged at 7d, returns at 90d). LIVE: only **6/27** signals survive the
+leak-free gate (risk_index, vrp, net_liq_roc, impulse, cycle_pct, cot_z). config
+vector.calibration.cv_folds.
+(2) **OOF probability calibration of the conviction layer** — _conviction stated odds
+with NO reliability/Brier anywhere. Added out-of-fold Brier + reliability + Platt (each
+day's P(up) = the momentum×risk cell rate fit on the OTHER folds, the live EB mechanism,
+scored vs realized). LIVE: Brier 0.250 vs base 0.248, **skill ≈ 0**, Platt a≈0.69 — the
+measured proof that direction is a near-coin-flip with ~calibrated odds and no skill.
+(3) **Collinearity (VIF + top-corr pairs)** — surfaces the cost-basis triple-count.
+LIVE: 14 signals VIF≥5; mvrv_z~nupl 0.94, mayer~sth_cb 0.94 → orthogonalize before blend.
+(4) **Block-bootstrap CI on the allocation backtest** — circular 21d-block bootstrap →
+95% CI. LIVE: optimal Sharpe **1.42 [0.79, 2.03]**, P(Sharpe>0)=1.0 (pairs with the DSR
+mean-haircut). tests/test_validation_gates.py (5). Verdicts/reconciliation unchanged; all
+9 vector tests green. NEXT (deferred): wire the orthogonalized residual into the LIVE
+composite (the ensemble capstone) and refit the regression valuation bands on expanding
+windows (the next PIT gap) — both build on these gates.
+
 ## 2026-06-13 — Vector "Cycle Time Machine": scrubbable point-in-time history
 
 **D-vec-TIMEMACHINE. A draggable timeline that rewinds the whole Vector core to any

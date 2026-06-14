@@ -12,7 +12,7 @@ House rule: a signal is trusted (labeled a *signal* in the UI) only if its forwa
 | momentum | **DIRECTIONAL (one half weak)** | 1 | 1 | 0 | 1 |
 | structure | **DIRECTIONAL (one half weak)** | 1 | 1 | 0 | 1 |
 | risk_oscillator | **CONTEXT-ONLY** | 0 | 0 | -1 | -1 |
-| bfi | **CONFIRMED** | 1 | 1 | 1 | 1 |
+| bfi | **DIRECTIONAL (one half weak)** | 1 | 0 | 1 | 1 |
 | mvrv_z | **EXTREMES — low <0: +40.5%/90d 71.9% hit (n=356) [BOTTOM]; high >3.5: +27.1%/90d 57.8% hit (n=277) [weak]** | 0 | 0 | 0 | -1 |
 | nupl | **EXTREMES — low <0: +28.0%/90d 66.5% hit (n=603) [weak]; high >.65: +25.8%/90d 58.5% hit (n=265) [weak]** | 0 | 0 | -1 | -1 |
 | mayer | **EXTREMES — low <0.8: +12.0%/90d 49.9% hit (n=625) [weak]; high >2.4: -13.9%/90d 33.9% hit (n=62) [TOP]** | 1 | 1 | 0 | -1 |
@@ -29,13 +29,13 @@ House rule: a signal is trusted (labeled a *signal* in the UI) only if its forwa
 | coinbase_premium_ema | **EXTREMES — low <-.3: +16.5%/90d 64.8% hit (n=295) [weak]; high >1.5: -5.9%/90d 35.5% hit (n=421) [TOP]** | -1 | 0 | -1 | 1 |
 | ssr_oscillator | **CONTEXT-ONLY** | 0 | 0 | 0 | 1 |
 | mpi | **INVERTED** | 1 | 0 | 1 | -1 |
-| reserve_risk | **EXTREMES — low <.0015: +18.6%/90d 68.6% hit (n=974) [weak]; high >.02: -42.5%/90d 4.2% hit (n=48) [TOP]** | 1 | 1 | -1 | -1 |
-| impulse | **CONFIRMED** | 1 | 1 | 1 | 1 |
+| reserve_risk | **EXTREMES — low <.0015: +18.6%/90d 68.6% hit (n=974) [weak]; high >.02: -42.5%/90d 4.2% hit (n=48) [TOP]** | 1 | 0 | -1 | -1 |
+| impulse | **DIRECTIONAL (one half weak)** | 1 | 0 | 1 | 1 |
 | cycle_pct | **DIRECTIONAL (one half weak)** | -1 | -1 | 0 | -1 |
-| cot_z | **EXTREMES — low <-1.5: +13.2%/90d 47.8% hit (n=224) [weak]; high >1.5: -5.8%/90d 35.3% hit (n=593) [TOP]** | -1 | 1 | -1 | -1 |
-| corr_spx | **DIRECTIONAL (one half weak)** | -1 | 1 | -1 | -1 |
+| cot_z | **EXTREMES — low <-1.5: +13.2%/90d 47.8% hit (n=224) [weak]; high >1.5: -5.8%/90d 35.3% hit (n=593) [TOP]** | -1 | 0 | -1 | -1 |
+| corr_spx | **CONFIRMED** | -1 | -1 | -1 | -1 |
 | vdd_multiple | **EXTREMES — low <.5: +8.0%/90d 43.6% hit (n=774) [weak]; high >2.9: +35.2%/90d 59.1% hit (n=154) [weak]** | 1 | 1 | 0 | -1 |
-| global_m2_yoy | **DIRECTIONAL (one half weak)** | 1 | 1 | -1 | 1 |
+| global_m2_yoy | **DIRECTIONAL (full only)** | 1 | 0 | -1 | 1 |
 
 ## Risk Index as a drawdown gauge
 
@@ -315,14 +315,92 @@ House rule: a signal is trusted (labeled a *signal* in the UI) only if its forwa
 | 8.5-11 | 1310 |     54   |      0.54 |      56.5 |       3.53 |      59.7 |      15.75 |
 | >11    |  395 |     64.6 |      4.23 |      72.2 |      17.65 |      80.8 |      57.97 |
 
-## Allocation backtest vs HODL
+## Allocation backtest vs HODL (NET of 10.0bps one-way cost)
 
-|              |   cagr |   hodl_cagr |   sharpe |   hodl_sharpe |   sortino |   hodl_sortino |   maxdd |   hodl_maxdd |   time_in_market |   final_vs_hodl |
-|:-------------|-------:|------------:|---------:|--------------:|----------:|---------------:|--------:|-------------:|-----------------:|----------------:|
-| conservative |   51.4 |          59 |     1.38 |          1.03 |      1.34 |           1.37 |   -28.8 |        -83.8 |             48.8 |            0.57 |
-| moderate     |   67.4 |          59 |     1.46 |          1.03 |      1.69 |           1.37 |   -38.6 |        -83.8 |             68.1 |            1.8  |
-| aggressive   |   64.4 |          59 |     1.3  |          1.03 |      1.55 |           1.37 |   -48   |        -83.8 |             75.2 |            1.46 |
-| optimal      |   66.1 |          59 |     1.44 |          1.03 |      1.69 |           1.37 |   -42.4 |        -83.8 |             70.2 |            1.65 |
+`cagr` is net of transaction cost (the honest headline); `cagr_gross` and `cost_drag_pp` show the cost bite, `turnover_annual` the one-way turnover/yr driving it.
+
+|              |   cagr |   cagr_gross |   cost_drag_pp |   hodl_cagr |   sharpe |   hodl_sharpe |   sortino |   hodl_sortino |   maxdd |   hodl_maxdd |   time_in_market |   turnover_annual |   final_vs_hodl |
+|:-------------|-------:|-------------:|---------------:|------------:|---------:|--------------:|----------:|---------------:|--------:|-------------:|-----------------:|------------------:|----------------:|
+| conservative |   49.5 |         51.4 |            1.9 |          59 |     1.35 |          1.03 |      1.33 |           1.37 |   -29.4 |        -83.8 |             48.8 |              12.4 |            0.49 |
+| moderate     |   65.5 |         67.4 |            1.9 |          59 |     1.44 |          1.03 |      1.67 |           1.37 |   -39   |        -83.8 |             68.1 |              11.4 |            1.58 |
+| aggressive   |   62.7 |         64.4 |            1.7 |          59 |     1.28 |          1.03 |      1.53 |           1.37 |   -48.4 |        -83.8 |             75.2 |              10.3 |            1.3  |
+| optimal      |   64.2 |         66.1 |            1.9 |          59 |     1.41 |          1.03 |      1.67 |           1.37 |   -42.8 |        -83.8 |             70.2 |              11.4 |            1.44 |
+
+**Block-bootstrap 95% CI** [optimal, 5000 resamples, 21d blocks]: Sharpe **1.42** [0.79, 2.03] · MaxDD -47.4% [-34.3, -68.5] · P(Sharpe>0) 1.0. Circular block bootstrap (21d blocks) of the NET daily strategy returns → 95% CI [2.5, 50, 97.5]. sharpe_gt0_prob = bootstrap P(Sharpe>0). Pairs with the Deflated-Sharpe haircut: DSR deflates the mean, this bounds the variance.
+
+## Purged walk-forward CV (stability gate)
+
+6/27 signals **robust** under 5 embargoed folds (90d embargo = max horizon). Purged + embargoed walk-forward CV (embargo = max forward horizon) replaces the single split_date's leaky boundary. 'robust' = full-sample sign matches `want`, no fold flips, all-but-one folds agree. Stricter than pre/post; both are reported.
+
+| Signal | full | folds | want | robust |
+|---|--:|---|--:|:-:|
+| risk_index | -1 | [-1, -1, -1, -1, 0] | -1 | ✅ |
+| momentum | +1 | [0, 1, 1, 1, -1] | +1 | · |
+| structure | +1 | [-1, 1, 1, 1, 0] | +1 | · |
+| risk_oscillator | -1 | [-1, -1, -1, -1, 1] | -1 | · |
+| bfi | +1 | [-1, 0, 0, 1, -1] | +1 | · |
+| mvrv_z | +0 | [0, 0, 0, -1, 0] | -1 | · |
+| nupl | +0 | [1, 0, 0, -1, 0] | -1 | · |
+| mayer | +1 | [0, 1, 0, 1, 0] | -1 | · |
+| puell | +1 | [0, 1, -1, 0, 0] | -1 | · |
+| sth_cb_ratio | +0 | [0, 0, 0, 0, 0] | +1 | · |
+| dvol | +0 | [0, 0, 0, -1, 1] | -1 | · |
+| vrp | -1 | [0, 0, 0, -1, 0] | -1 | ✅ |
+| leverage_stress | +0 | [0, 0, 0, 0, 1] | -1 | · |
+| funding_z | +0 | [0, 0, 0, 0, -1] | -1 | · |
+| oi_price_divergence | -1 | [0, 0, 0, 0, 0] | -1 | · |
+| net_liq_roc | +1 | [1, 1, 0, 1, 0] | +1 | ✅ |
+| macro_score | +1 | [1, 1, -1, 1, 1] | +1 | · |
+| coinbase_premium_ema | -1 | [0, 0, 0, 0, -1] | +1 | · |
+| ssr_oscillator | +0 | [0, 0, 0, 0, 0] | +1 | · |
+| mpi | +1 | [0, 0, 0, -1, -1] | -1 | · |
+| reserve_risk | +1 | [0, 0, -1, 0, 0] | -1 | · |
+| impulse | +1 | [0, 0, 1, 1, 1] | +1 | ✅ |
+| cycle_pct | -1 | [0, 0, -1, 0, -1] | -1 | ✅ |
+| cot_z | -1 | [0, 0, 0, -1, -1] | -1 | ✅ |
+| corr_spx | -1 | [0, -1, 1, -1, 1] | -1 | · |
+| vdd_multiple | +1 | [0, 1, 0, 1, -1] | -1 | · |
+| global_m2_yoy | +1 | [0, 0, 1, -1, -1] | +1 | · |
+
+## Probability calibration of the conviction layer (out-of-fold)
+
+OOF 7d direction: **Brier 0.25** vs base 0.2483 (skill -0.007); Platt a=0.694, b=0.026. Out-of-fold: each day's P(up) is the momentum×risk cell rate fit on the OTHER folds (EB-shrunk, the live mechanism), scored vs realized. brier<base_brier = skill; Platt a≈1/b≈0 = already calibrated. Direction is a near-coin-flip, so calibrated probabilities cluster near the base rate — that is the honest result.
+
+| prob bin | n | predicted | observed |
+|---|--:|--:|--:|
+| 0.5-0.6 | 3649 | 0.547 | 0.543 |
+| 0.6-0.7 | 83 | 0.606 | 0.446 |
+
+## Signal collinearity (orthogonalize before any blend)
+
+14 signals with **VIF≥5** (redundant): risk_index, momentum, bfi, mvrv_z, nupl, mayer, puell, sth_cb_ratio, ssr_oscillator, reserve_risk, cycle_pct, cot_z, corr_spx, global_m2_yoy. VIF>5 ≈ redundant (its forward info is already carried by other signals); the high-corr pairs name the cluster. This MEASURES the independent contribution the one-representative-per-axis rule asserts — orthogonalize before any blend.
+
+| a | b | \|corr\| |
+|---|---|--:|
+| mvrv_z | nupl | 0.94 |
+| mayer | sth_cb_ratio | 0.94 |
+| mvrv_z | reserve_risk | 0.92 |
+| mayer | ssr_oscillator | 0.9 |
+| sth_cb_ratio | ssr_oscillator | 0.9 |
+| nupl | reserve_risk | 0.87 |
+| momentum | sth_cb_ratio | 0.84 |
+| risk_index | momentum | 0.8 |
+| momentum | structure | 0.78 |
+| nupl | mayer | 0.77 |
+
+## Deflated Sharpe Ratio (multiple-testing haircut)
+
+**SURVIVES multiple-testing (DSR≥0.95)** — shipped variant `optimal`.
+
+- DSR — P(true Sharpe > 0) after deflation: **0.9947**
+- Observed Sharpe 1.41 ann (0.073793/day); haircut threshold SR0 0.66 ann
+- N=50 trials (upper-bound) · T=4182d · skew=0.553 · kurt=12.442 · SR-variance: max(cross-variant dispersion, null SR-sampling proxy)
+
+> DSR = P(true Sharpe>0) after deflating for n_trials independent configs, sample length, skew & kurtosis. n_trials is a manual UPPER-BOUND of the signal/threshold/window variants explored — overestimating is the conservative direction (de Prado). Bump vector.calibration.n_trials as you try more.
+
+## Trial log
+
+As-of 2026-06-13: **50** declared independent trials (upper-bound); 28 signal families screened; allocation variants: conservative, moderate, aggressive, optimal; transaction cost 10.0bps one-way.
 
 ## Whipsaw
 
@@ -332,4 +410,4 @@ House rule: a signal is trusted (labeled a *signal* in the UI) only if its forwa
 | risk_regime      |       126 |         25 |  19.8 |
 | structure_state  |       178 |         36 |  20.2 |
 | market_mode      |        86 |         14 |  16.3 |
-| alt_cycle_leader |        94 |         16 |  17   |
+| alt_cycle_leader |       102 |         21 |  20.6 |
