@@ -38,6 +38,14 @@
   .eqbadge.eq-down { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--down);
                      border-color:color-mix(in srgb,var(--down) 40%,transparent); }
   .eqbadge.eq-flat { background:var(--panel2); color:var(--muted); }
+  .alpha-entry { font-size:11px; font-weight:700; padding:2px 8px; border-radius:9px;
+                 text-transform:capitalize; border:1px solid var(--line); white-space:nowrap; }
+  .ae-pullback { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up);
+                 border-color:color-mix(in srgb,var(--up) 40%,transparent); }
+  .ae-extended { background:color-mix(in srgb,var(--warn) 22%,transparent); color:var(--text);
+                 border-color:color-mix(in srgb,var(--warn) 55%,transparent); }
+  .ae-intact { background:color-mix(in srgb,var(--link) 14%,transparent); color:var(--link); }
+  .ae-laggard,.ae-neutral { background:var(--panel); color:var(--muted); }
   /* entry call bar + urgency colors */
   .entrybar { display:flex; gap:10px; align-items:flex-start; margin:10px 0 8px;
               padding:9px 12px; border-radius:9px; background:var(--panel2);
@@ -128,11 +136,85 @@
       <h1>{{ td(s.name) }} <span class="muted">({{ s.fund }})</span></h1>
       <span class="state st-{{ s.ladder.state | replace(" ", "_") }}">{{ td(s.ladder.label) }}</span>
       {% if s.ladder.eq_badge %}<span class="eqbadge eq-{{ s.ladder.eq_dir }}">{{ t('Entry','入场') }} {{ s.ladder.eq_badge }} <span class="eqg">{{ td(s.ladder.eq_grade) }}</span></span>{{ help(s.ladder.eq_tip, s.ladder.eq_tip_zh) }}{% endif %}
+      <span style="flex:1"></span>
+      <button class="af-toggle" id="af-btn" type="button" aria-label="Toggle alert feed" aria-expanded="false" aria-controls="af-feed">🔔 <span>{{ t('Alerts','警报') }}</span>{% if alerts and alerts.n_recent %}<span class="af-badge">{{ alerts.n_recent }}</span>{% endif %} <span class="af-caret">▾</span></button>
     </div>
     {% set e = s.ladder.entry %}
-    <div class="entrybar urg-{{ e.urgency }}">
-      <span class="entrytag">{{ td(e.tag) }}</span>
-      <span>{{ t(e.text, e.text_zh) }}</span>
+    {# ---- bold VERDICT: the action verb + tag + call, read in a glance ---- #}
+    <div class="verdict urg-{{ e.urgency }}">
+      <span class="v-act">{{ td(s.ladder.action) }}</span>
+      <span class="v-tag">{{ td(e.tag) }}</span>
+      <span class="v-text">{{ t(e.text, e.text_zh) }}</span>
+    </div>
+    {# ---- at-a-glance signal-chip strip (from the same tech/mtf/cycle data) ---- #}
+    {% set tech = s.tech or {} %}{% set d = (s.mtf or {}).get('D') or {} %}
+    <div class="sigstrip">
+      {% set ab = tech.above200 %}
+      <div class="sigchip {{ 'up' if ab else 'down' }}">
+        <span class="sc-k">{{ t('Trend','趋势') }}</span>
+        <span class="sc-v">{{ '▲' if ab else '▼' }} 200d</span>
+        <span class="sc-s">{% if tech.pct_vs_200dma is not none %}{{ "%+.1f"|format(tech.pct_vs_200dma) }}%{% endif %}</span>
+      </div>
+      {% set mpos = d.macd_pos %}
+      <div class="sigchip {{ 'up' if mpos else 'down' }}">
+        <span class="sc-k">{{ t('Momentum','动量') }}</span>
+        <span class="sc-v">MACD {{ '＋' if mpos else '－' }}{% if d.macd_cross_up %} ↑{% elif d.macd_cross_dn %} ↓{% endif %}</span>
+        <span class="sc-s">{{ t('daily','日线') }}</span>
+      </div>
+      {% set r = tech.rsi14 %}
+      <div class="sigchip {{ 'warn' if (r is not none and (r>=70 or r<=30)) else 'neutral' }}">
+        <span class="sc-k">RSI</span>
+        <span class="sc-v">{{ r|round(0)|int if r is not none else '—' }}</span>
+        <span class="sc-s">{{ t('overbought','超买') if (r is not none and r>=70) else (t('oversold','超卖') if (r is not none and r<=30) else t('neutral','中性')) }}</span>
+      </div>
+      {% set sv = d.stoch %}
+      <div class="sigchip {{ 'warn' if (sv is not none and (sv>=80 or sv<=20)) else 'neutral' }}">
+        <span class="sc-k">Stoch</span>
+        <span class="sc-v">{{ sv|round(0)|int if sv is not none else '—' }}</span>
+        <span class="sc-s">{{ t('StochRSI','随机RSI') }}</span>
+      </div>
+      {% set dd = s.cycle.dc_day %}{% set band = s.cycle.dc_band %}
+      <div class="sigchip {{ 'warn' if (dd is not none and band and dd >= band[0]) else 'neutral' }}">
+        <span class="sc-k">{{ t('Cycle','周期') }}</span>
+        <span class="sc-v">{{ t('Day','第') }} {{ dd }}</span>
+        <span class="sc-s">{% if band %}{{ t('of','/') }} {{ band[0] }}–{{ band[1] }}{% endif %}</span>
+      </div>
+    </div>
+    {# ---- collapsible alert feed (ladder pinned on top + technical timeline) ---- #}
+    <div class="af" id="af-feed" hidden>
+      {% if alerts and alerts.pinned %}{% set p = alerts.pinned %}
+      <div class="af-pin dir-{{ p.dir }}">
+        <div class="af-pin-h"><span class="af-pin-tag">{{ t('Current signal','当前信号') }}</span>
+          <span class="af-pin-title">{{ t(p.headline|e, p.headline_zh|e) }}</span></div>
+        <p class="af-pin-d">{{ t(p.detail|e, p.detail_zh|e) }}</p>
+      </div>{% endif %}
+      {% if alerts and alerts.timeline %}
+      <div class="af-filters">
+        {% set flz = {'All':'全部','Signal':'信号','Trend':'趋势','Momentum':'动量','vs Market':'相对强弱','Cycle':'周期'} %}
+        {% for f,lab in [('all','All'),('signal','Signal'),('trend','Trend'),('momentum','Momentum'),('strength','vs Market'),('cycle','Cycle')] %}
+        <button class="aff {{ 'active' if f=='all' else '' }}" type="button" data-f="{{ f }}">{{ t(lab, flz[lab]) }}</button>{% endfor %}
+      </div>
+      {% for day in alerts.timeline %}
+      <div class="af-day">
+        <div class="af-date">{{ t(day.daylabel, day.daylabel_zh) }}</div>
+        {% for ev in day.events %}
+        <details class="af-item{{ ' pinned' if ev.pinned else '' }}" data-f="{{ ev.filter }}">
+          <summary>
+            <span class="af-node dir-{{ ev.dir }}"></span>
+            <span class="af-chip f-{{ ev.filter }}">{{ t(ev.label, ev.label_zh) }}</span>
+            <span class="af-head">{{ t(ev.headline|e, ev.headline_zh|e) }}</span>
+          </summary>
+          <div class="af-detail">{{ t(ev.detail|e, ev.detail_zh|e) }}
+            {% if ev.edge %}<div class="af-edge"><b>{{ t('Edge:','优势：') }}</b> {{ t(ev.edge|e, ev.edge_zh|e) }}</div>{% endif %}
+            {% if ev.forward %}<div class="af-fwd">{{ t(ev.forward|e, ev.forward_zh|e) }}</div>{% endif %}
+          </div>
+        </details>
+        {% endfor %}
+      </div>
+      {% endfor %}
+      {% else %}
+      <div class="af-empty">{{ t('No signal changes in the recent window — quiet on every tracked signal.','近期无信号变化 — 所有跟踪信号均平静。') }}</div>
+      {% endif %}
     </div>
     {% if s.ladder.age_line %}<p class="agewhen">{{ t(s.ladder.age_line, s.ladder.age_line_zh) }}</p>{% endif %}
     {% if s.ladder.early_note %}<p class="early">{{ t(s.ladder.early_note, s.ladder.early_note_zh) }}</p>{% endif %}
@@ -198,6 +280,35 @@
       {% endfor %}
     </table>
     <p class="muted" style="font-size:12px;margin-top:8px">{{ t('Window: prior snapshot → latest. “Active Δ” strips out price action; on this passive ETF it reflects index reconstitution / float-weight flow, not a manager’s discretion.', '窗口：上一快照 → 最新快照。“主动Δ”已剔除价格变动；在该被动 ETF 上反映的是指数再平衡／流通权重调整带来的资金流，而非经理人的主动决策。') }}</p>
+  </div>
+  {% endif %}
+
+  {% if s.alpha_leaders %}
+  <div class="panel" id="alpha-leaders">
+    <h2>{{ t('Alpha leaders — strongest stock-specific momentum in the sector', '阿尔法领跑 — 板块内最强个股动量') }}
+      {{ help("Each stock's return with its MARKET and SECTOR beta removed — sector-neutral residual momentum over a 12-1-month window. It ranks the names pulling ahead of their OWN sector on stock-specific strength, not just riding the sector tide. 'idio ann' is the annualized idiosyncratic (beta-stripped) return; the entry tag flags a leader that just spiked ('extended' = short-term reversal risk) vs one on a recent dip ('pullback' = constructive entry). Phase-0 validated as a MODEST, regime-decayed edge — context, not a buy list (research/RESIDUAL_ALPHA_MOMENTUM.md).", "每只股票剔除其市场与板块贝塔后的收益 —— 12-1 个月的板块中性残差动量。它排出在个股特定强度上领先于自身板块、而非仅随板块上涨的股票。“年化残差”为年化的特异（剔除贝塔）收益；入场标签标记刚急涨的领跑股（“extended”=短期反转风险）与近期回调者（“pullback”=较佳入场）。第 0 阶段验证为温和、随周期衰减的优势 —— 仅供参考，而非买入清单。") }}
+    </h2>
+    <table>
+      <tr>
+        <th class="l">{{ t('stock','个股') }}</th>
+        <th>{{ t('alpha z','阿尔法 z') }}</th>
+        <th>{{ t('sector rank','板块排名') }}</th>
+        <th>{{ t('idio ann','年化残差') }}</th>
+        <th>{{ t('1-mo','近一月') }}</th>
+        <th class="l">{{ t('entry','入场') }}</th>
+      </tr>
+      {% for a in s.alpha_leaders %}
+      <tr>
+        <td class="l"><a href="../stock.html#{{ a.ticker }}"><b>{{ a.ticker }}</b></a> <span class="muted">{{ a.name }}</span></td>
+        <td><b class="pos">{% if a.alpha is not none %}{{ "%+.2f"|format(a.alpha) }}{% else %}—{% endif %}</b></td>
+        <td class="muted">{{ a.sector_rank }}/{{ a.sector_n }}</td>
+        <td class="{{ 'pos' if (a.resid_ann or 0) >= 0 else 'neg' }}">{% if a.resid_ann is not none %}{{ "%+.0f"|format(a.resid_ann) }}%{% else %}—{% endif %}</td>
+        <td class="{{ 'pos' if (a.rev_1m or 0) >= 0 else 'neg' }}">{% if a.rev_1m is not none %}{{ "%+.1f"|format(a.rev_1m) }}%{% else %}—{% endif %}</td>
+        <td class="l">{% if a.entry %}<span class="alpha-entry ae-{{ a.entry }}">{{ a.entry }}</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    <p class="muted" style="font-size:12px;margin-top:8px">{{ t('Sector-neutral residual momentum — a modest, regime-decayed edge measured over 1962–2026 (research/RESIDUAL_ALPHA_MOMENTUM.md). Stock-selection context within the sector, not a standalone buy list.', '板块中性残差动量 —— 基于 1962–2026 测得的温和、随周期衰减的优势。用于板块内选股的参考，而非独立买入清单。') }}</p>
   </div>
   {% endif %}
 
@@ -291,6 +402,26 @@
        这正是为何每个买入状态都以确认（摆动低点、10 日均线）为前提。图表由 TradingView 提供。</span></p>
   </div>
 
+<script>
+/* alert feed: toggle open/closed + filter chips (clone of the Vector timeline JS) */
+(function(){
+  var btn=document.getElementById('af-btn'), feed=document.getElementById('af-feed');
+  if(btn&&feed){btn.addEventListener('click',function(){
+    if(feed.hasAttribute('hidden')){feed.removeAttribute('hidden');btn.setAttribute('aria-expanded','true');}
+    else{feed.setAttribute('hidden','');btn.setAttribute('aria-expanded','false');}
+  });}
+  var fil=document.querySelectorAll('.aff'), items=document.querySelectorAll('.af-item');
+  fil.forEach(function(b){b.addEventListener('click',function(){
+    fil.forEach(function(x){x.classList.remove('active')}); b.classList.add('active');
+    var f=b.dataset.f;
+    items.forEach(function(it){ it.hidden=!(f==='all'||it.dataset.f===f); });
+    document.querySelectorAll('.af-day').forEach(function(dd){
+      var any=[].slice.call(dd.querySelectorAll('.af-item')).some(function(i){return !i.hidden});
+      dd.style.display=any?'':'none';
+    });
+  });});
+})();
+</script>
 <script src="../mtf.js"></script>
 <script src="../theme.js"></script>
 <footer class="site-footer">
