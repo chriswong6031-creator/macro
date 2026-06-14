@@ -999,6 +999,36 @@ validation:
 # commodity-specific. House rule: mechanical backtestable core; the news/LLM
 # event layer is deferred (annotation-only, never a scoring input).
 # =============================================================================
+
+# =============================================================================
+# Cross-Asset Vector (engine/cross_asset_trend.py) — multi-asset TREND (time-series
+# momentum) + intermarket RATIOS + light CARRY context, over the keyless price
+# stores (NO new collectors). A LEAF: nothing in scoring imports it. TREND is the
+# canonical managed-futures factor; AQR's gross Sharpe ~1.8 is contested, so the
+# AFTER-COST/DSR/permutation-null number from scripts/cross_asset_phase0.py is the
+# published one (verdict: CONTESTED — shipped as a REGIME read, not a strategy).
+# =============================================================================
+cross_asset:
+  universe:                          # name: [store-group, store-key, price-col, class]
+    equity_us:  [yahoo, "SPY",      close, equity]
+    equity_sm:  [yahoo, "IWM",      close, equity]
+    credit_hy:  [yahoo, "HYG",      close, credit]
+    gold:       [yahoo, "GC=F",     close, commodity]
+    silver:     [yahoo, "SI=F",     close, commodity]
+    copper:     [yahoo, "HG=F",     close, commodity]
+    oil:        [yahoo, "CL=F",     close, commodity]
+    dollar:     [yahoo, "DX-Y.NYB", close, fx]
+    bond_10y:   [fred,  "DGS10",    us10y, rates]   # traded as -duration*Δyield proxy
+    crypto:     [yahoo, "BTC-USD",  close, crypto]
+  tsmom:
+    lookbacks_d: [63, 126, 252]      # 3/6/12-month TSMOM, equal-weight blend of signs
+    skip_d: 5                        # skip most-recent week (dodge 1-week reversal)
+  ratios:
+    pctile_lookback_d: 504           # ~2y window for the intermarket-ratio percentile
+  calibration:
+    start_date: "2007-01-01"         # all 10 legs live (HY-constrained); phase0 window
+    cost_bps: 8                      # one-way; net-of-cost headline (futures-proxy slippage)
+
 commodities:
   assets:                          # name: [yahoo price ticker, cot store-series, class]
     gold:   ["GC=F", cot_gold,   precious]
