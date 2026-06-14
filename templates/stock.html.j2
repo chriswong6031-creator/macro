@@ -341,6 +341,13 @@
       <div id="r_flow"></div>
     </div>
 
+    <div class="panel" id="panel_smartmoney" style="display:none">
+      <h2>🏦 {{ t('Super-investors — 13F holders', '超级投资者 — 13F 持仓') }}
+        {{ help("Which curated super-investor funds (Berkshire, Pershing Square, Scion, Baupost, Viking, Tiger Global, etc.) reported holding this stock in their latest SEC Form 13F, and whether they initiated / added / trimmed / exited vs the prior quarter. Conviction = the position's share of that fund's reported US-equity book. 13F is QUARTERLY with a ~45-day lag — long-only US equity >= $100M only (no shorts, options detail, or non-US positions); CUSIPs are name-matched to tickers so some lines are hidden. CONTEXT on who holds it, NOT a buy list or a real-time signal.",
+          "哪些精选的超级投资者基金（伯克希尔、潘兴广场、Scion、Baupost、Viking、老虎环球等）在最新的 SEC 13F 表中报告持有该股，以及相对上一季度是新建仓／加仓／减持／清仓。信念 = 该持仓在该基金所报美股组合中的占比。13F 为季度申报，约有 45 天滞后 —— 仅含美股多头持仓（≥1亿美元），不含空头、期权细节或非美持仓；CUSIP 通过名称匹配到代码，部分行可能缺失。仅作为「谁持有它」的背景，而非买入清单或实时信号。") }}</h2>
+      <div id="r_smartmoney"></div>
+    </div>
+
     <div class="panel">
       <h2>{{ t('Momentum across timeframes', '跨周期动量') }}</h2>
       <div id="r_mtf"></div>
@@ -964,6 +971,44 @@
     show('panel_alpha', true);
   }
 
+  // Super-investor 13F holders: which curated funds reported holding this name and
+  // how they moved it vs last quarter (from collectors/edgar_13f.py). CONTEXT only.
+  var SMA = { 'new':['★ initiated','★ 新建仓','up'], add:['▲ added','▲ 加仓','up'],
+              hold:['● holding','● 持有',''], trim:['▼ trimmed','▼ 减持','down'],
+              exit:['✕ exited','✕ 清仓','down'] };
+  function renderSmartMoney(d) {
+    var s = d && d.smart_money;
+    var hold = (s && s.holders) || [];
+    if (!hold.length) { show('panel_smartmoney', false); return; }
+    var R = ' style="text-align:right"';
+    var head = '<p class="srcline" style="margin:0 0 8px">' +
+      '<b>' + s.n_holders + '</b> ' + lz('super-investor fund' + (s.n_holders === 1 ? '' : 's') + ' hold this',
+        '家超级投资者基金持有') +
+      (s.n_buying ? ' · <span class="pos">' + s.n_buying + ' ' + lz('buying', '买入') + '</span>' : '') +
+      (s.n_selling ? ' · <span class="neg">' + s.n_selling + ' ' + lz('selling', '卖出') + '</span>' : '') +
+      (s.as_of ? ' · ' + lz('as of', '截至') + ' ' + s.as_of : '') + '</p>';
+    var th = '<tr><th>' + lz('fund', '基金') + '</th><th>' + lz('action', '动作') +
+      '</th><th' + R + '>' + lz('% of portfolio', '组合占比') +
+      '</th><th' + R + '>' + lz('Δ shares', '股数Δ') + '</th></tr>';
+    var rows = hold.map(function (h) {
+      var a = SMA[h.action] || [h.action, h.action, ''];
+      var col = a[2] ? ' style="color:var(--' + a[2] + ')"' : ' class="muted"';
+      var dir = lz(a[0], a[1]);
+      var pct = (h.pct_portfolio == null) ? '—' : Number(h.pct_portfolio).toFixed(1) + '%';
+      var chg = (h.shares_change_pct == null) ? (h.action === 'new' ? lz('new', '新') : '—')
+        : (h.shares_change_pct >= 0 ? '+' : '') + Number(h.shares_change_pct).toFixed(0) + '%';
+      return '<tr><td><b>' + h.fund + '</b> <span class="muted">' + (h.fund_name || '') + '</span></td>' +
+        '<td' + col + '>' + dir + '</td>' +
+        '<td' + R + '><b>' + pct + '</b></td>' +
+        '<td class="muted"' + R + '>' + chg + '</td></tr>';
+    }).join('');
+    el('r_smartmoney').innerHTML = head + '<table>' + th + rows + '</table>' +
+      '<p class="srcline">' + lz(
+        '13F-HR holdings are filed quarterly with a ~45-day lag — a stale, partial picture of long-only US equity stakes ≥ $100M, with no shorts, options detail, or non-US positions. CUSIPs are name-matched to tickers, so some lines may be missing. Context on who holds this, NOT a buy list or a real-time signal.',
+        '13F-HR 持仓为季度申报，约有 45 天滞后 —— 仅为美股多头持仓（≥1亿美元）的陈旧且不完整快照，不含空头、期权细节或非美持仓。CUSIP 通过名称匹配到代码，部分行可能缺失。仅作为「谁持有它」的背景，而非买入清单或实时信号。') + '</p>';
+    show('panel_smartmoney', true);
+  }
+
   function render(d) {
     document.getElementById('result').style.display = 'block';
     document.getElementById('r_name').textContent = d.name + ' (' + d.ticker + ')';
@@ -1069,6 +1114,7 @@
     renderFundamentals(d);
     renderFundFlow(d);
     renderAlpha(d);
+    renderSmartMoney(d);
 
     document.getElementById('tvbox').innerHTML = '<div id="tvchart"></div>';
     try {

@@ -1096,6 +1096,26 @@ def build_alpha_data(site: Path) -> dict | None:
     return alpha
 
 
+def build_smartmoney_data(site: Path) -> dict | None:
+    """Compute curated super-investor 13F holdings and write
+    factordata/smartmoney.json (consumed by the per-stock "who holds this" panel +
+    a future consensus board). Additive — any failure logs and skips. CONTEXT only,
+    never wired into any score. See collectors/edgar_13f.py + engine/smart_money.py."""
+    from engine.smart_money import compute_smart_money
+    try:
+        sm = compute_smart_money()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("smart-money engine failed: %s", e)
+        return None
+    if not sm:
+        return None
+    fdir = site / "factordata"
+    fdir.mkdir(parents=True, exist_ok=True)
+    (fdir / "smartmoney.json").write_text(json.dumps(sm, separators=(",", ":"), default=str))
+    log.info("wrote smartmoney.json (%d funds, %d names)", sm.get("n_funds"), sm.get("n_names"))
+    return sm
+
+
 def build_sector_pages(env: Environment, site: Path, generated: str,
                        alpha: dict | None = None) -> dict:
     """Render sectors/<FUND>.html drill-downs; return per-fund timing summary
@@ -1339,6 +1359,10 @@ def main() -> int:
         alpha_data = build_alpha_data(site)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("alpha data failed: %s", e)
+    try:
+        build_smartmoney_data(site)               # 13F super-investor holdings (CONTEXT)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("smart-money data failed: %s", e)
     try:
         sector_timing, notable = build_sector_pages(env, site, generated, alpha=alpha_data)
     except Exception as e:  # noqa: BLE001 — drill-downs are additive, never fatal

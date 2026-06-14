@@ -245,6 +245,15 @@ def main() -> int:
             alpha_pt = (json.loads(ap.read_text()) or {}).get("per_ticker", {})
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("alpha.json unreadable (%s)", e)
+    # curated super-investor 13F holdings per stock (written by build_site.
+    # build_smartmoney_data just before this runs). Additive — absent => no panel.
+    smart_money: dict[str, dict] = {}
+    smp = site / "factordata" / "smartmoney.json"
+    if smp.exists():
+        try:
+            smart_money = (json.loads(smp.read_text()) or {}).get("by_ticker", {})
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("smartmoney.json unreadable (%s)", e)
     index, built, failed = [], 0, 0
     for ticker, close, high, name, sector in universe():
         try:
@@ -263,6 +272,8 @@ def main() -> int:
             rec["fund_flows"] = flows[ticker]
         if alpha_pt.get(ticker):
             rec["alpha"] = alpha_pt[ticker]
+        if smart_money.get(ticker):
+            rec["smart_money"] = smart_money[ticker]
         ladder_rows.append(ticker_alerts.ladder_row(ticker, rec.get("ladder"), rec.get("asof")))
         safe = ticker.replace("=", "_").replace("^", "_")
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))

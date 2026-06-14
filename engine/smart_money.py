@@ -1,0 +1,276 @@
+"""Smart-money (13F) engine — diff curated super-investor quarters into
+new/add/trim/exit, resolve CUSIP->ticker against our universe, and emit a
+per-ticker "who holds this" context slice for the stock pages (plus a consensus
+"most-held" overlap and per-fund summaries for a future board).
+
+Reads the snapshots collectors/edgar_13f.py writes under data/smart_money/<slug>/.
+Pure where it matters: parse/resolve/diff take in-memory inputs so tests need no
+network and no parquet. CONTEXT only — never imported by any scoring path.
+"""
+from __future__ import annotations
+
+import logging
+from datetime import datetime, timezone
+
+import pandas as pd
+
+from collectors import edgar
+from lib import config
+
+log = logging.getLogger(__name__)
+
+NOTE = ("13F-HR holdings: quarterly, ~45-day lag, long-only US equity stakes "
+        ">= $100M. No shorts, options detail, or non-US positions. CUSIPs are "
+        "name-matched to tickers, so some lines are hidden. Context on who holds "
+        "a name, not a buy list or a real-time signal.")
+
+# extra tokens stripped beyond edgar._SUFFIX so class/share descriptors and
+# connective words on 13F issuer names collapse onto our universe company names.
+_EXTRA_DROP = {"CL", "SER", "SERIES", "ADR", "ADS", "SPON", "SPONSORED", "REIT",
+               "SHS", "SH", "ORD", "VTG", "VOTING", "COMMON", "CMN", "NEW",
+               "PAR", "REDH", "DEL", "MD", "RG", "REG", "OF", "AND", "THE",
+               "FOR", "TO",
+               # domicile / market tags 13F appends that our names omit
+               "SWITZ", "IRE", "IRELAND", "BERMUDA", "BMU", "CAYMAN", "NETH",
+               "LUX", "JERSEY", "UK", "USA"}
+# 13F abbreviations -> the canonical token our universe names use (canonical may
+# itself be an edgar suffix that then drops out, e.g. GRP->GROUP->dropped).
+_SYN = {"FINL": "FINANCIAL", "FIN": "FINANCIAL", "GRP": "GROUP", "HLDGS": "HOLDINGS",
+        "HLDG": "HOLDINGS", "INTL": "INTERNATIONAL", "TECH": "TECHNOLOGY",
+        "TECHS": "TECHNOLOGY", "SYS": "SYSTEMS", "MGMT": "MANAGEMENT",
+        "COS": "COMPANIES", "SVCS": "SERVICES", "SVC": "SERVICES",
+        "COMMUN": "COMMUNICATIONS", "COMM": "COMMUNICATIONS",
+        "PHARM": "PHARMACEUTICALS", "PHARMA": "PHARMACEUTICALS",
+        "PETE": "PETROLEUM", "PAC": "PACIFIC", "NATL": "NATIONAL",
+        "AMER": "AMERICAN", "INDS": "INDUSTRIES", "MTRS": "MOTORS",
+        "ELEC": "ELECTRIC", "ENRGY": "ENERGY", "RES": "RESOURCES",
+        "PPTYS": "PROPERTIES", "PWR": "POWER", "LABS": "LABORATORIES"}
+# tokens dropped after canonicalization (edgar suffixes + our extras)
+_DROP = edgar._SUFFIX | _EXTRA_DROP
+
+# share-count change beyond +/- this fraction => ADD / TRIM (else HOLD)
+_MOVE_FRAC = 0.10
+
+
+def _norm(name: str) -> str:
+    """Normalize an issuer/company name for cross-source matching: strip
+    possessive apostrophes (Moody's -> MOODYS, matching 13F's MOODYS), run the
+    shared edgar normalizer, map common 13F abbreviations to canonical tokens,
+    and drop suffix/connective words. Maximizes 13F<->universe name overlap."""
+    s = str(name or "").replace("'", "").replace("’", "")
+    base = edgar._norm_name(s)
+    toks = [_SYN.get(t, t) for t in base.split()]
+    return " ".join(t for t in toks if t and t not in _DROP)
+
+
+def name_ticker_map(membership: pd.DataFrame | None = None) -> dict[str, str]:
+    """normalized issuer name -> ticker, from the S&P 1500 membership table.
+    First active ticker wins on a normalized-name collision (e.g. GOOGL before
+    GOOG); pass `membership` to unit test without disk."""
+    if membership is None:
+        p = config.data_dir() / "universe" / "membership.parquet"
+        if not p.exists():
+            return {}
+        membership = pd.read_parquet(p)
+    out: dict[str, str] = {}
+    df = membership
+    if "active" in df.columns:
+        df = df[df["active"].astype(bool)]
+    for _, row in df.iterrows():
+        nm = _norm(row.get("name", ""))
+        if nm:
+            out.setdefault(nm, str(row["ticker"]))
+    return out
+
+
+def cusip_ticker_seed() -> dict[str, str]:
+    """Exact CUSIP -> ticker pairs harvested from the ARK holdings snapshots we
+    already store (the only repo source carrying both). Small (~60) but precise;
+    used as the high-confidence first pass before name matching."""
+    import glob
+    out: dict[str, str] = {}
+    for f in glob.glob(str(config.data_dir() / "holdings" / "*" / "*.parquet")):
+        try:
+            d = pd.read_parquet(f, columns=["cusip", "ticker"])
+        except Exception:  # noqa: BLE001 — not every snapshot carries cusip
+            continue
+        for c, t in zip(d["cusip"].astype(str), d["ticker"].astype(str)):
+            c = c.strip().upper()
+            if c and t and t.lower() != "nan":
+                out.setdefault(c, t)
+    return out
+
+
+def resolve_tickers(df: pd.DataFrame, name_map: dict[str, str],
+                    cusip_map: dict[str, str] | None = None) -> pd.DataFrame:
+    """Add a `ticker` column (or None). PURE — takes the maps as args. CUSIP 8/9-char
+    exact match first (precise), then normalized issuer-name match (broad)."""
+    cusip_map = cusip_map or {}
+    out = df.copy()
+
+    def _one(cusip: str, issuer: str) -> str | None:
+        c = str(cusip).strip().upper()
+        if c in cusip_map:
+            return cusip_map[c]
+        if len(c) >= 8 and c[:8] in {k[:8] for k in cusip_map}:  # 8-char issuer stem
+            for k, v in cusip_map.items():
+                if k[:8] == c[:8]:
+                    return v
+        return name_map.get(_norm(issuer))
+
+    out["ticker"] = [_one(c, i) for c, i in zip(out.get("cusip", ""), out.get("issuer", ""))]
+    return out
+
+
+def diff_snapshots(prev: pd.DataFrame | None, latest: pd.DataFrame,
+                   move_frac: float = _MOVE_FRAC) -> pd.DataFrame:
+    """Classify each position in `latest` (and full exits from `prev`) as
+    new/add/trim/hold/exit by share count. PURE. Snapshots use the
+    collectors/edgar_13f.py schema (cusip, shares, value_usd, sh_type, issuer …).
+    pct_portfolio = value share of the latest equity book."""
+    eq = latest[latest.get("sh_type", "SH") == "SH"].copy()
+    if eq.empty:
+        return eq.assign(action=[], pct_portfolio=[], prior_shares=[], shares_change_pct=[])
+    eq = (eq.groupby("cusip", as_index=False)
+            .agg(issuer=("issuer", "first"), shares=("shares", "sum"),
+                 value_usd=("value_usd", "sum")))
+    total = eq["value_usd"].sum() or 1.0
+    eq["pct_portfolio"] = 100.0 * eq["value_usd"] / total
+
+    prior_sh: dict[str, float] = {}
+    if prev is not None and not prev.empty:
+        pe = prev[prev.get("sh_type", "SH") == "SH"]
+        prior_sh = pe.groupby("cusip")["shares"].sum().to_dict()
+
+    actions, prior_col, chg = [], [], []
+    for c, sh in zip(eq["cusip"], eq["shares"]):
+        ps = prior_sh.get(c)
+        prior_col.append(ps)
+        if ps is None or ps == 0:
+            actions.append("new"); chg.append(None)
+        else:
+            pct = (sh - ps) / ps
+            chg.append(round(100.0 * pct, 1))
+            actions.append("add" if pct > move_frac else "trim" if pct < -move_frac else "hold")
+    eq["action"] = actions
+    eq["prior_shares"] = prior_col
+    eq["shares_change_pct"] = chg
+
+    # full exits: in prev, gone from latest
+    if prior_sh:
+        gone = set(prior_sh) - set(eq["cusip"])
+        if gone:
+            pe = prev[prev["cusip"].isin(gone) & (prev.get("sh_type", "SH") == "SH")]
+            ex = (pe.groupby("cusip", as_index=False)
+                    .agg(issuer=("issuer", "first"), shares=("shares", "sum"),
+                         value_usd=("value_usd", "sum")))
+            ex["pct_portfolio"] = 0.0
+            ex["action"] = "exit"
+            ex["prior_shares"] = ex["shares"]
+            ex["shares"] = 0.0
+            ex["shares_change_pct"] = -100.0
+            eq = pd.concat([eq, ex], ignore_index=True)
+    return eq
+
+
+# --------------------------------------------------------------------------- #
+# Orchestration (reads disk; the heavy lifting above is pure/tested).
+# --------------------------------------------------------------------------- #
+def _read_two(slug: str) -> tuple[pd.DataFrame | None, pd.DataFrame | None]:
+    d = config.data_dir() / "smart_money" / slug
+    if not d.exists():
+        return None, None
+    snaps = sorted(d.glob("*.parquet"))
+    if not snaps:
+        return None, None
+    latest = pd.read_parquet(snaps[-1])
+    prev = pd.read_parquet(snaps[-2]) if len(snaps) >= 2 else None
+    return prev, latest
+
+
+def compute_smart_money(cfg: dict | None = None) -> dict | None:
+    cfg = cfg if cfg is not None else (config.load().get("smart_money", {}) or {})
+    funds = cfg.get("funds", {}) or {}
+    if not funds:
+        return None
+    name_map = name_ticker_map()
+    cusip_map = cusip_ticker_seed()
+    top_n = int(cfg.get("panel_top_n", 12))
+
+    by_ticker: dict[str, dict] = {}
+    fund_rows: list[dict] = []
+    overlap: dict[str, dict] = {}
+    as_of_dates: list[str] = []
+
+    for slug, spec in funds.items():
+        prev, latest = _read_two(slug)
+        if latest is None or latest.empty:
+            continue
+        period_end = str(latest["period_end"].iloc[0]) if "period_end" in latest else ""
+        as_of_dates.append(period_end)
+        diff = diff_snapshots(prev, latest)
+        if diff.empty:
+            continue
+        diff = resolve_tickers(diff, name_map, cusip_map)
+        resolved = diff[diff["ticker"].notna()]
+        if not resolved.empty:
+            # collapse dual-class / multi-lot lines mapping to the same ticker
+            # (e.g. a fund holding BRK-A + BRK-B) so a fund is counted once per name:
+            # sum the weight/value, take the largest lot's action.
+            resolved = (resolved.sort_values("value_usd", ascending=False)
+                        .groupby("ticker", as_index=False)
+                        .agg(action=("action", "first"),
+                             pct_portfolio=("pct_portfolio", "sum"),
+                             value_usd=("value_usd", "sum"),
+                             shares_change_pct=("shares_change_pct", "first")))
+        fund_rows.append({
+            "slug": slug, "name": spec.get("name", slug), "period_end": period_end,
+            "n_positions": int(len(diff)), "n_resolved": int(len(resolved)),
+            "top": [{"ticker": t, "pct": round(float(p), 2)}
+                    for t, p in resolved.sort_values("pct_portfolio", ascending=False)
+                    .head(5)[["ticker", "pct_portfolio"]].itertuples(index=False)],
+        })
+        for r in resolved.itertuples(index=False):
+            t = r.ticker
+            entry = {
+                "fund": slug.upper(), "fund_name": spec.get("name", slug),
+                "action": r.action, "pct_portfolio": round(float(r.pct_portfolio), 2),
+                "value_usd": float(r.value_usd), "period_end": period_end,
+                "shares_change_pct": (None if r.shares_change_pct is None
+                                      or pd.isna(r.shares_change_pct)
+                                      else float(r.shares_change_pct)),
+            }
+            by_ticker.setdefault(t, {"holders": []})["holders"].append(entry)
+            ov = overlap.setdefault(t, {"ticker": t, "n_funds": 0, "funds": [],
+                                        "total_value": 0.0})
+            ov["n_funds"] += 1
+            ov["funds"].append(slug.upper())
+            ov["total_value"] += float(r.value_usd)
+
+    if not by_ticker:
+        return None
+
+    _BUY = {"new": 0, "add": 1, "hold": 2, "trim": 3, "exit": 4}
+    for t, rec in by_ticker.items():
+        h = rec["holders"]
+        h.sort(key=lambda e: (_BUY.get(e["action"], 9), -e["pct_portfolio"]))
+        rec["holders"] = h[:top_n]
+        rec["n_holders"] = len(h)
+        rec["n_buying"] = sum(1 for e in h if e["action"] in ("new", "add"))
+        rec["n_selling"] = sum(1 for e in h if e["action"] in ("trim", "exit"))
+        rec["as_of"] = max((e["period_end"] for e in h), default="")
+
+    most_held = sorted(overlap.values(), key=lambda r: (-r["n_funds"], -r["total_value"]))[:40]
+    for m in most_held:
+        m["total_value"] = round(m["total_value"], 0)
+
+    return {
+        "as_of": max(as_of_dates) if as_of_dates else "",
+        "built": datetime.now(timezone.utc).isoformat(),
+        "note": NOTE,
+        "n_funds": len(fund_rows),
+        "n_names": len(by_ticker),
+        "funds": sorted(fund_rows, key=lambda r: r["name"]),
+        "most_held": most_held,
+        "by_ticker": by_ticker,
+    }
