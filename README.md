@@ -106,8 +106,13 @@ Overlay** (a dollar/VIX/US-equity/copper-gold/USD-CNY/EM composite + the HKD peg
 distance 7.75↔7.85, shown as the dashboard hero), and (3) HK-internal structure
 (H-share leadership, the HS-TECH tilt, breadth). **Sectors are deep synthetic
 baskets** of curated HK large-caps (15–25y history, richer than HK's thin sector
-ETFs), RS-ranked vs `^HSI`. Includes sector drill-downs, history, a daily brief and
-a single-stock analyzer/search over the HK universe. Calibrated 2000→2026
+ETFs), RS-ranked vs `^HSI`. HK-native panels: an exposure-dial **playbook**, the
+**Southbound Connect flow** (mainland → HK), an **HKMA peg-funding** read (the
+Aggregate Balance drains when the 7.85 peg is defended — HK's real funding-tightening
+mechanism, from the keyless HKMA API), a **VHSI** fear gauge (`^HSIL`), an
+**AH-premium** computed basket (H-share vs A-share twin), a China credit/RRR backdrop,
+and a regime **time-machine** scrubber. Plus sector drill-downs, history, a daily brief
+and a single-stock analyzer/search over the HK universe. Calibrated 2000→2026
 (split-half): Goldilocks is the best quad and Stagflation the worst — both stable
 across halves — expanding dual-liquidity is a tailwind, and the global risk state
 differentiates HSI forward returns monotonically (Risk-on > Risk-off > Neutral).
@@ -115,7 +120,7 @@ Data sources: [research/HK_DATA_AUDIT.md](research/HK_DATA_AUDIT.md); honest cav
 in [LIMITATIONS.md](LIMITATIONS.md).
 
 ```bash
-.venv/bin/python -m scripts.collect --full-history --only hk_prices,hk_breadth
+.venv/bin/python -m scripts.collect --full-history --only hk_prices,hk_breadth,hkma
 .venv/bin/python -m scripts.calibrate_hk          # quad + dual-liquidity + global-risk + ladder calibration
 .venv/bin/python -m scripts.build_hk              # -> site/hk.html + sectors/ + search + history + brief
 ```

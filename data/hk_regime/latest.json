@@ -21,12 +21,12 @@
   "contradicting": [
     "growth_breadth_direction"
   ],
-  "global_score": 0.13,
+  "global_score": 0.115,
   "risk_state": "Neutral",
   "peg_state": "weak-side (outflow)",
   "peg_distance": 0.856,
   "global_snapshot": {
-    "score": 0.13,
+    "score": 0.115,
     "state": "Neutral",
     "factors": [
       {
@@ -76,6 +76,14 @@
         "sign": 1.0,
         "risk": "neutral",
         "level": 67.88
+      },
+      {
+        "key": "vhsi",
+        "label": "HK Volatility (VHSI)",
+        "z": 0.01,
+        "sign": -1,
+        "risk": "neutral",
+        "level": 21.58
       }
     ],
     "peg": {

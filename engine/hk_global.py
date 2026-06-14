@@ -35,6 +35,7 @@ log = logging.getLogger(__name__)
 FACTOR_LABELS = {
     "dxy": "US Dollar (DXY)", "vix": "Volatility (VIX)", "spy": "S&P 500",
     "copper_gold": "Copper / Gold", "usdcny": "USD / CNY", "eem": "EM equity (EEM)",
+    "vhsi": "HK Volatility (VHSI)",
 }
 
 
