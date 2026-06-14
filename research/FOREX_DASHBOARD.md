@@ -120,11 +120,16 @@ fx_rates_short,fx_rates_long,fx_reer}`, `fred.series.credit.BAMLEMCBPIOAS`, and
   shifted) + **10y rate-diff** factor wired and calibrated (value CONFIRMED for EUR/AUD,
   INVERTED for JPY; rates mostly CONTEXT — monthly-lagged data); cross-pair **carry &
   valuation table**; USD/CNH backfilled from FRED onshore (`DEXCHUS`). Value tipped
-  EUR/JPY/AUD to RELIABLE. **Deferred to Phase 3.5:** MTF confluence (the commodity
-  equity-preset needs FX validation first) and the alerts/timeline engine (FX wants
-  hourly data we don't collect); COT positioning table waits on CFTC recovery.
-- **Phase 4 — integration** — cross-page nav links + hub card across all sections;
-  optional catalyst annotation.
+  EUR/JPY/AUD to RELIABLE. COT positioning table waits on CFTC recovery.
+- **Phase 3.5 — MTF + alerts** ✅ — per-pair multi-timeframe technical confluence
+  (reuses `commodity_mtf`; FX macro-fusion zeroes out → a pure technical D/3D/W/2W/ME
+  RSI/Stoch/MACD read, framed as a tactical overlay on the equity cycle preset, NOT
+  return-validated) + a deterministic DAILY alert timeline (`engine/forex_alerts.py`):
+  shock / risk / trend / momentum / structure / COT events plus FX-specific
+  **carry-inversion**, **peg-zone approach**, and **dollar-smile regime** events. No
+  intraday machine (FX has no hourly feed here).
+- **Phase 4 — integration** ✅ — Forex nav links across the macro/vector pages + a 💱
+  home-hub card (`build_vector._forex_state`); `build_forex` wired into daily.yml.
 
 ## 7 · Honesty bar
 

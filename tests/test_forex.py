@@ -224,6 +224,44 @@ def test_calibrate_pair_signs_inverted_and_normalizes():
     assert out["weights"]["trend"] < 0, "INVERTED factor must carry a negative (sign-flipped) weight"
 
 
+def test_alerts_carry_flip_and_states():
+    """A carry differential crossing zero fires a carry_flip; a momentum state flip fires too."""
+    from engine import forex_alerts as FA
+    idx = _idx(60)
+    df = pd.DataFrame({"close": pd.Series(1.1, index=idx),
+                       "carry_diff": pd.Series([-1.0] * 30 + [1.0] * 30, index=idx),
+                       "momentum_state": ["bear"] * 30 + ["bull"] * 30}, index=idx)
+    ev = FA._pair_events("EURUSD", df, {"label": "EUR/USD", "base": "EUR", "invert": False})
+    types = [e["type"] for e in ev]
+    assert "carry_flip" in types and "momentum" in types
+    cf = next(e for e in ev if e["type"] == "carry_flip")
+    assert "positive" in cf["headline"].lower()
+
+
+def test_alerts_peg_approach_fires():
+    """The quote entering the MoF intervention watch band fires a peg_approach event."""
+    from engine import forex_alerts as FA
+    idx = _idx(40)
+    quote = pd.Series([145.0] * 20 + [155.0] * 20, index=idx)   # crosses into [150,162]
+    df = pd.DataFrame({"close": 1.0 / quote}, index=idx)         # canonical (inverted) price
+    meta = {"label": "USD/JPY", "base": "JPY", "invert": True,
+            "peg": {"kind": "intervention", "watch": [150, 162]}}
+    ev = FA._pair_events("USDJPY", df, meta)
+    assert any(e["type"] == "peg_approach" for e in ev)
+
+
+def test_mtf_runs_on_fx_close():
+    """The reused commodity/equity MTF engine produces a ladder on an FX close, no crash."""
+    from engine import commodity_mtf
+    idx = pd.date_range("2010-01-01", periods=1500, freq="B")
+    rng = np.random.default_rng(5)
+    close = np.exp(pd.Series(rng.normal(0, 0.005, len(idx)), index=idx).cumsum())
+    a = commodity_mtf.mtf_ladder(close)
+    assert isinstance(a, dict)
+    if a:
+        assert "mtf" in a and {"D", "W"} <= set(a["mtf"].keys())
+
+
 if __name__ == "__main__":
     for fn in [test_orthogonalize_strips_dollar_beta, test_carry_sign_and_vol_penalty,
                test_riskoff_factor_archetype_sign, test_factor_panel_naive_bullish_bounds,
@@ -231,6 +269,7 @@ if __name__ == "__main__":
                test_conviction_managed_forces_flat, test_em_carry_context_has_no_carry_factor,
                test_dollar_master_regime_is_valid_and_dir_matches, test_real_orientation_crosscheck,
                test_value_lag_has_no_lookahead,
+               test_alerts_carry_flip_and_states, test_alerts_peg_approach_fires, test_mtf_runs_on_fx_close,
                test_calibrate_peg_mask_excises_zones, test_calibrate_pair_signs_inverted_and_normalizes]:
         fn()
         print(f"PASS {fn.__name__}")

@@ -186,6 +186,20 @@ falls back to FRED `DEXCHUS` (onshore CNY) when the Yahoo series is < 300 rows �
 an onshore proxy / managed regime. Deferred (Phase 3.5, honestly out-of-scope): MTF
 (equity-preset fit unverified for FX) and the alerts/timeline engine (wants hourly data).
 
+**D-FX9. Phase 3.5 — MTF (reused, honestly framed) + daily-only alerts.** MTF REUSES
+`commodity_mtf.mtf_ladder`/`confluence_verdict` directly rather than forking: for FX the
+macro-fusion (`driver_score`/`ts_momentum` polarity) gracefully zeroes out (no driver_score
+column; calib keys differ), so the verdict collapses to the asset-agnostic D/3D/W/2W/ME
+RSI/Stoch/MACD technical confluence — shipped as a TACTICAL overlay with an inline note
+that it runs the equity cycle preset and isn't return-validated for FX (rather than build an
+unvalidated FX cycle preset). Alerts (`engine/forex_alerts.py`) clone only the commodity
+DAILY `_transitions` layer — NO intraday shock machine, since FX has no hourly feed here —
+and add three FX-native event types: carry-inversion (foreign−US short rate crossing zero),
+peg-zone approach (quote entering the MoF watch band), and dollar-smile regime shift (from
+the `_dollar` master frame). Alerts are display-only (a timeline), NOT a conviction input —
+adding an alert tilt would have forced a re-calibration for no measured edge. Events recompute
+idempotently to `data/forex/alerts.jsonl`.
+
 ## 2026-06-13 — Section 4 (HK) enrichment: native features ported from China/US
 
 After a verified viability research pass (4-cluster workflow + web checks), added the

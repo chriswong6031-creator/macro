@@ -194,6 +194,29 @@ def pair_vm(pair: str, df: pd.DataFrame, calib: dict, dollar_day: float) -> dict
     quote_prev = (1.0 / df["close"].iloc[-22]) if invert else df["close"].iloc[-22]
     conv = forex_conviction.conviction(pair, df, meta, calib, dollar_day=dollar_day)
     cd, cs_ = last.get("carry_diff"), last.get("carry_score")
+
+    # multi-timeframe technical confluence — reuses the commodity/equity MTF engine
+    # (cycles.analyze equity preset). For FX the macro-fusion (driver/trend lean)
+    # gracefully zeroes out (no driver_score; calib keys differ), so the verdict is a
+    # PURE technical read — presented as a tactical overlay, not a return-validated call.
+    from engine import commodity_mtf
+    mtf_a = commodity_mtf.mtf_ladder(df["close"])
+    cal_a = (calib.get("assets", {}) or {}).get(pair, {})
+    verdict = commodity_mtf.confluence_verdict(mtf_a, pair, last, cal_a)
+    _TF = (("D", "Daily", "日线"), ("3D", "3-Day", "3日"), ("W", "Weekly", "周线"),
+           ("2W", "Biweekly", "双周"), ("ME", "Monthly", "月线"))
+    mtf_rows = []
+    for key, lbl, lbl_zh in _TF:
+        s = (mtf_a.get("mtf") or {}).get(key) or {}
+        if not s:
+            continue
+        macd = ("up" if s.get("macd_cross_up") or s.get("macd_curl_up") else
+                "down" if s.get("macd_cross_dn") or s.get("macd_curl_dn") else
+                "pos" if s.get("macd_pos") else "neg")
+        mtf_rows.append({"key": key, "label": lbl, "label_zh": lbl_zh,
+                         "rsi14": _r(s.get("rsi14"), 0), "stoch": _r(s.get("stoch"), 0),
+                         "macd": macd, "trend": (verdict.get("per_tf") or {}).get(key, "flat")})
+
     vm = {
         "key": pair, "label": META[pair]["label"], "zh": META[pair]["zh"],
         "base": META[pair]["base"], "quote_ccy": META[pair]["quote"],
@@ -214,6 +237,11 @@ def pair_vm(pair: str, df: pd.DataFrame, calib: dict, dollar_day: float) -> dict
         "reer_gap": _r(100 * last.get("reer_gap"), 1) if pd.notna(last.get("reer_gap")) else None,
         "rate_diff_10y": _r(last.get("rate_diff_10y"), 2) if pd.notna(last.get("rate_diff_10y")) else None,
         "conviction": conv,
+        "mtf_rows": mtf_rows,
+        "verdict": {"headline": verdict.get("headline"), "headline_zh": verdict.get("headline_zh"),
+                    "sub": verdict.get("sub"), "sub_zh": verdict.get("sub_zh"),
+                    "grade": verdict.get("grade"), "grade_zh": verdict.get("grade_zh"),
+                    "ladder_label": verdict.get("ladder_label"), "ladder_label_zh": verdict.get("ladder_label_zh")},
         "chart": chart_pair(df, pair),
     }
     return vm
@@ -254,6 +282,27 @@ def carry_table(pairs: list[dict]) -> list[dict]:
 
 
 # --------------------------------------------------------------------------- #
+# alert timeline (mirrors build_commodities._group_timeline)
+# --------------------------------------------------------------------------- #
+TYPE_LABEL = {"residual_shock": "Shock", "risk_regime": "Risk", "trend_flip": "Trend",
+              "momentum": "Momentum", "structure": "Structure", "positioning": "COT",
+              "carry_flip": "Carry", "peg_approach": "Peg", "smile_regime": "Dollar"}
+
+
+def _group_timeline(events: list[dict]) -> list[dict]:
+    days: dict[str, list] = {}
+    for e in events:
+        ts = pd.Timestamp(e["ts"])
+        asset = e.get("asset")
+        lab = "Dollar" if asset == "dollar" else META.get(asset, {}).get("label", asset or "")
+        e = {**e, "label": TYPE_LABEL.get(e["type"], e["type"]), "asset_label": lab,
+             "daylabel": ts.strftime("%a %b %d")}
+        days.setdefault(ts.strftime("%Y-%m-%d"), []).append(e)
+    return [{"day": d, "daylabel": evs[0]["daylabel"], "events": evs}
+            for d, evs in sorted(days.items(), reverse=True)]
+
+
+# --------------------------------------------------------------------------- #
 # main
 # --------------------------------------------------------------------------- #
 def main() -> int:
@@ -282,6 +331,17 @@ def main() -> int:
     sections = group_sections(pairs)
     ctable = carry_table(pairs)
 
+    # daily alert timeline (deterministic, recomputed each build; no intraday for FX)
+    from engine import forex_alerts
+    acfg = cfg["alerts"]
+    try:
+        all_events = forex_alerts.rebuild(results)
+    except Exception as e:  # noqa: BLE001 — timeline is optional, never break the page
+        log.warning("forex alerts rebuild failed (%s)", e)
+        all_events = forex_alerts.load_events()
+    recent_events = forex_alerts.recent(all_events, acfg["timeline_days"])
+    timeline = _group_timeline(recent_events)
+
     as_of = max((results[p].index.max() for p in order), default=dol.index.max()).strftime("%b %d, %Y")
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     cal_span = f"{min(results[p].index.min() for p in order).date()}..{max(results[p].index.max() for p in order).date()}"
@@ -292,7 +352,8 @@ def main() -> int:
     env.globals.update(tr=tr, td=td)
     html = env.get_template("forex.html.j2").render(
         C=C, as_of=as_of, built=built, cal_span=cal_span,
-        dollar=dollar, pairs=pairs, sections=sections, carry_table=ctable, cot_ok=cot_ok)
+        dollar=dollar, pairs=pairs, sections=sections, carry_table=ctable, cot_ok=cot_ok,
+        timeline=timeline, timeline_days=acfg["timeline_days"], n_alerts=len(recent_events))
     site = config.ROOT / config.load()["storage"]["site_dir"]
     (site / "forex.html").write_text(html)
     log.info("wrote %s/forex.html (%d KB)", site, len(html) // 1024)

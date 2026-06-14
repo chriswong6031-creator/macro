@@ -407,9 +407,17 @@ Forex Vector` entry in DECISIONS.md.
   so the tile's history is backfilled from FRED `DEXCHUS` (onshore CNY). Onshore CNY ≠
   offshore CNH (the spread is itself a stress signal we don't yet model), and it's a
   managed regime — the tile is China-proxy risk-context only (forced FLAT).
-- **MTF confluence and the alerts/timeline engine are deferred.** The commodity MTF uses
-  an equity cycle preset that may not fit FX (range-trading), and FX alerts want intraday
-  data the site doesn't collect — both are out of the current build, not silently broken.
+- **MTF confluence is a pure technical overlay, not return-validated for FX.** It reuses
+  the commodity/equity MTF engine (`cycles.analyze(kind="equity")`, a 36–42 trading-day
+  cycle preset). For FX the macro-fusion (driver/trend lean) intentionally zeroes out, so
+  what ships is the asset-agnostic D/3D/W/2W/ME RSI/Stoch/MACD confluence read — a tactical
+  TIMING overlay. The equity cycle preset was NOT re-validated against FX cycle lengths, and
+  FX range-trades differently; treat the ladder regime as indicative, not calibrated.
+- **Alerts are daily-only.** There is no intraday FX feed in the repo, so the alert engine
+  recomputes deterministic DAILY state-change events (shock/risk/trend/momentum/structure,
+  plus FX-specific carry-inversion, peg-zone approach, dollar-smile regime) — no intraday
+  price-shock state machine like the commodity sentinel. COT-positioning events stay empty
+  until CFTC recovers. All events are context, never trade signals.
 - **Everything Yahoo is an unofficial API** (same caveat as the rest of the site).
 
 ## Infrastructure

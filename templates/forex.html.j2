@@ -111,6 +111,18 @@ html[data-theme="dark"] .fbar{background:#222732}
 .fbar .fill.pos{background:var(--green);border-radius:0 7px 7px 0}
 .fbar .fill.neg{background:var(--red);border-radius:7px 0 0 7px}
 .carry-row{display:flex;gap:18px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--grid)}
+.mtf{margin-top:12px;padding-top:12px;border-top:1px solid var(--grid)}
+.mtf-row{display:grid;grid-template-columns:1.3fr 1fr 1fr .8fr .8fr;gap:6px;font-size:12px;padding:3px 0;align-items:center;font-variant-numeric:tabular-nums}
+.mtf-head{color:var(--muted);font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:.03em}
+.mtf-grade{color:var(--blue);font-weight:700}
+.macd-up,.tr-up,.macd-pos{color:var(--green)}.macd-down,.tr-down,.macd-neg{color:var(--red)}
+.timeline{margin-top:6px}
+.tl-day{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:14px 0 4px}
+.tl-ev{display:flex;align-items:baseline;gap:10px;padding:6px 0;border-bottom:1px solid var(--grid);font-size:13px}
+.tl-type{flex:none;min-width:62px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.02em}
+.tl-asset{flex:none;min-width:66px;color:var(--muted);font-size:12px}
+.tl-head{color:var(--text)}
+.sev-high .tl-type{color:var(--red)}.sev-medium .tl-type{color:#9a6a10}.sev-info .tl-type{color:var(--muted)}
 table.tbl{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
 table.tbl th,table.tbl td{padding:7px 8px;border-bottom:1px solid var(--grid);text-align:right}
 table.tbl th:first-child,table.tbl td:first-child{text-align:left}
@@ -236,6 +248,24 @@ table.tbl th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:
       </div>
       {% if p.carry_context %}<div class="sub faint" style="margin-top:6px">{{ t('Carry is CONTEXT-only — no clean free front-end rate for this currency.', '套息仅作背景 — 该货币无可靠的免费短端利率。') }}</div>{% endif %}
 
+      {% if p.mtf_rows %}
+      <div class="mtf">
+        <div class="fgrp">{{ t('Multi-timeframe (technical)', '多周期（技术面）') }}{% if p.verdict.grade %} · <span class="mtf-grade">{{ t(p.verdict.grade, p.verdict.grade_zh) }}</span>{% endif %}</div>
+        <div class="mtf-row mtf-head"><span>{{ t('TF', '周期') }}</span><span>RSI</span><span>Stoch</span><span>MACD</span><span>{{ t('Trend', '趋势') }}</span></div>
+        {% for m in p.mtf_rows %}
+        <div class="mtf-row">
+          <span>{{ t(m.label, m.label_zh) }}</span>
+          <span>{{ m.rsi14 if m.rsi14 is not none else '—' }}</span>
+          <span>{{ m.stoch if m.stoch is not none else '—' }}</span>
+          <span class="macd-{{ m.macd }}">{{ {'up':'↑','down':'↓','pos':'+','neg':'−'}.get(m.macd,'·') }}</span>
+          <span class="tr-{{ m.trend }}">{{ {'up':'▲','down':'▼','flat':'—'}.get(m.trend,'—') }}</span>
+        </div>
+        {% endfor %}
+        {% if p.verdict.headline %}<div class="sub" style="margin-top:6px"><span class="l-en">{{ p.verdict.headline }}</span><span class="l-zh">{{ p.verdict.headline_zh }}</span></div>{% endif %}
+        <div class="sub faint" style="margin-top:4px">{{ t('Pure technical confluence (equity cycle preset) — a tactical timing overlay, not return-validated for FX.', '纯技术共振（股票周期预设）— 战术择时叠加，未在外汇上经收益验证。') }}</div>
+      </div>
+      {% endif %}
+
       <div style="margin-top:14px">{{ p.chart | safe }}</div>
     </div>
   {% endfor %}
@@ -269,6 +299,26 @@ table.tbl th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:
     </table>
     <div class="sub faint" style="margin-top:8px">{{ t('Carry % = foreign minus US short rate (annualized). Carry/vol penalizes fragile high-vol carry. REER gap = real-effective rate vs its 5y mean (+ = rich → mean-reversion headwind). Carry has fat-tailed crash risk — see the honesty note below.', '套息 % = 外币减美国短端利率（年化）。套息/波动惩罚高波动的脆弱套息。REER偏离 = 实际有效汇率相对5年均值（+ = 偏贵 → 均值回归阻力）。套息具肥尾崩盘风险 — 见下方诚信说明。') }}</div>
   </div>
+
+  <!-- ===================== ALERT TIMELINE ===================== -->
+  {% if timeline %}
+  <div class="card" style="margin-top:20px">
+    <h2>{{ t('Alert timeline', '警报时间线') }} <span class="faint">· {{ n_alerts }} {{ t('events · last', '事件 · 近') }} {{ timeline_days }}d</span></h2>
+    <div class="timeline">
+    {% for day in timeline %}
+      <div class="tl-day">{{ day.daylabel }}</div>
+      {% for e in day.events %}
+      <div class="tl-ev sev-{{ e.severity }}">
+        <span class="tl-type">{{ e.label }}</span>
+        <span class="tl-asset">{{ e.asset_label }}</span>
+        <span class="tl-head"><span class="l-en">{{ e.headline }}</span><span class="l-zh">{{ e.headline_zh }}</span></span>
+      </div>
+      {% endfor %}
+    {% endfor %}
+    </div>
+    <div class="sub faint" style="margin-top:10px">{{ t('Deterministic daily state-change events (no intraday — FX has no hourly feed here). All context, not trade signals.', '确定性的每日状态变化事件（无日内 — 此处外汇无小时级数据）。皆为背景，非交易信号。') }}</div>
+  </div>
+  {% endif %}
 
   <!-- ===================== METHODOLOGY / HONESTY ===================== -->
   <div class="card" style="margin-top:22px">
