@@ -125,9 +125,10 @@ def test_recession_score_high_when_sahm_and_inverted() -> None:
     assert snap["recession"]["label"] == "high"
 
 
-def test_claims_leg_folds_into_recession_composite() -> None:
-    # Phase-0-validated claims leg is LIVE: surging claims must raise recession_risk
-    # vs flat claims, and surface as a 'claims' component. (research/CLAIMS_RECESSION_VALIDATION.md)
+def test_claims_is_primary_labor_leg_and_replaces_sahm() -> None:
+    # Validated claims leg is LIVE and PRIMARY: surging claims raise recession_risk
+    # vs flat, surface as a 'claims' component, and REPLACE the Sahm leg (Sahm is the
+    # fallback, so it is absent from the composite while claims is present).
     n = 400
     rng = np.arange(n, dtype=float)
     flat = _frame(n=n)                                   # default ~flat claims
@@ -137,7 +138,16 @@ def test_claims_leg_folds_into_recession_composite() -> None:
     base = conditions_snapshot(flat)["recession"]
     hot = conditions_snapshot(surged)["recession"]
     assert "claims" in hot["components"]
+    assert "sahm" not in hot["components"]               # claims replaces Sahm in the score
     assert hot["score"] > base["score"]
+
+
+def test_sahm_is_fallback_when_claims_feed_absent() -> None:
+    # graceful degradation: with no claims columns, Sahm carries the labor leg
+    f = _frame().drop(columns=["initial_claims_4wk", "initial_claims"])
+    comp = conditions_snapshot(f)["recession"]["components"]
+    assert "claims" not in comp
+    assert "sahm" in comp
 
 
 def test_term_premium_adjusted_curve_flags_false_inversion() -> None:
@@ -193,11 +203,13 @@ def test_nfci_tightening_fires_on_cross() -> None:
 
 
 def test_recession_band_change_fires() -> None:
-    # ramp recession risk up so the latest day jumps a band
+    # ramp recession risk up so the latest day jumps a band — claims (now the PRIMARY
+    # labor leg) and the NY-Fed prob both spike on the final day
     f = _frame(n=300)
-    sahm = np.full(300, 0.1)
-    sahm[-1] = 0.9
-    f["sahm"] = sahm
+    ic = np.full(300, 200.0)
+    ic[-1] = 320.0                       # +60% y/y on the last day -> claims leg ~1
+    f["initial_claims_4wk"] = pd.Series(ic, index=f.index)
+    f["initial_claims"] = pd.Series(ic, index=f.index)
     rp = np.full(300, 1.0)
     rp[-1] = 80.0
     f["recession_prob"] = rp

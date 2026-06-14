@@ -762,11 +762,13 @@ engine:
       claims_yoy_warn_pct: 10.0     # 4wk-MA claims +10% y/y => "cooling" label
       indeed_chg_warn_pct: -5.0     # Indeed postings -5% over 3m => demand softening
     recession:                      # composite 0..100 recession-risk score
-      weights: {sahm: 1.0, recession_prob: 0.8, ebp_prob: 0.8, curve: 1.0, ebp_level: 0.5, claims: 0.5}
-      # claims leg — Phase-0 validated vs NBER 1967-2026 (8 recessions): +AUC at every
-      # horizon (concurrent/6m/12m), holds in BOTH split-halves, no new false alarms, and
-      # claims is a STRONGER standalone labor signal than the Sahm leg (0.62 corr, not
-      # redundant). Conservative weight 0.5; set to 0 to disable. research/CLAIMS_RECESSION_VALIDATION.md
+      weights: {sahm: 1.0, recession_prob: 0.8, ebp_prob: 0.8, curve: 1.0, ebp_level: 0.5, claims: 1.0}
+      # LABOR leg = jobless claims (PRIMARY); Sahm is the graceful FALLBACK, used only when
+      # the claims feed is unavailable. Phase-0/1.5 validated vs NBER 1967-2026 (8 recessions,
+      # + ALFRED point-in-time): claims beats Sahm standalone AND in-composite at every horizon,
+      # and REPLACE > AUGMENT > Sahm-only across revised / timing-lagged / PIT modes. So claims
+      # carries the full labor weight (1.0, = Sahm's old weight); sahm's 1.0 is now its FALLBACK
+      # weight. Set claims:0 to revert to Sahm. research/CLAIMS_RECESSION_VALIDATION.md
       claims_yoy_window_d: 252       # ~1y change of the 4wk-MA claims level
       claims_yoy_full: 0.40          # +40% y/y => full recessionary (clipped 0..1)
       sahm_full: 0.50               # Sahm >= this => recession underway (full stress)

@@ -88,3 +88,26 @@ CAVEAT: ALFRED claims vintages begin only 2009 (negligible — claims barely rev
 has no ALFRED series (it is the one leg without revision-PIT, lagged-stored in PIT mode —
 ΔAUC(claims) is robust to it since base and +claims share the same EBP leg); NBER dates are
 final (correct — PIT applies to features, not the target).
+
+## Phase-1.6 — replace vs augment (DONE → REPLACE)
+Claims and Sahm are 0.62-correlated, so the shipped AUGMENT (sahm w=1.0 + claims w=0.5)
+gives the labor dimension ~1.5× effective weight and keeps the *weaker* Sahm leg at full
+weight while claims gets only 0.5. `scripts/validate_claims_vs_sahm.py` holds the non-labor
+legs fixed and varies only the labor leg, across all three data modes. Composite AUC:
+
+| labor leg | revised 6m/12m | lagged 6m/12m | PIT 6m/12m |
+|---|---|---|---|
+| Sahm-only (pre-claims) | 0.856 / 0.770 | 0.814 / 0.732 | 0.885 / 0.826 |
+| AUGMENT sahm + claims·0.5 | 0.869 / 0.784 | 0.839 / 0.755 | 0.904 / 0.845 |
+| **REPLACE claims·1.0** | **0.891 / 0.819** | **0.871 / 0.800** | **0.928 / 0.876** |
+
+**REPLACE beats AUGMENT at every horizon in all three modes** (REPLACE−AUGMENT = +0.021/
++0.035 revised, +0.032/+0.045 lagged, +0.024/+0.031 PIT). Ranking is consistently
+REPLACE > AUGMENT > Sahm-only. Mechanism: claims is the stronger labor signal, and keeping
+both double-counts a correlated dimension while the inferior Sahm leg drags at full weight.
+
+**DECISION — REPLACE (shipped).** Claims is now the PRIMARY labor leg at weight 1.0 (= Sahm's
+old weight); **Sahm is the graceful FALLBACK**, used only when the claims feed is unavailable,
+so the composite is never left without a labor leg and claims-free frames degrade cleanly.
+Sahm's raw value still shows in the recession card for context. `weights.claims: 0` reverts
+to Sahm. Live (2026-06): claims benign → labor leg 0, recession 3.9 / low.
