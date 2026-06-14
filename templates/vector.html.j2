@@ -698,6 +698,9 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
         <div class="bar"><div class="fill" style="width:{{ leverage.stress }}%"></div></div></div>{% endif %}
       <div class="mini"><div class="lab"><span>{{ t('Aggregate open interest','总持仓量') }}</span><span><b>{{ ('$%.1fB'|format(leverage.oi_total/1e9)) if leverage.oi_total is not none else '—' }}</b>{% if leverage.oi_mcap_pctile is not none %} <span class="faint">({{ leverage.oi_mcap_pctile }}%ile vs mcap)</span>{% endif %}</span></div></div>
       <div class="mini"><div class="lab"><span>{{ t('Funding (annualized)','资金费率（年化）') }}</span><span><b>{{ ('%+0.1f%%'|format(leverage.funding_annual)) if leverage.funding_annual is not none else '—' }}</b>{% if leverage.funding_z is not none %} <span class="faint">(z {{ leverage.funding_z }})</span>{% endif %}</span></div></div>
+      {% if leverage.cme_basis is not none %}
+      {% set creg = {'contango':'var(--amber)','backwardation':'var(--r3)','flat':'var(--muted)'} %}
+      <div class="mini"><div class="lab"><span>{{ t('CME basis (regulated carry)','CME 基差（受监管套利）') }}</span><span><b>{{ '%+0.2f'|format(leverage.cme_basis) }}%</b> <span class="faint">(~{{ '%+0.0f'|format(leverage.cme_basis_ann) }}%/yr · {{ leverage.cme_basis_pctile }}%ile · <span style="color:{{ creg.get(leverage.cme_basis_regime,'var(--muted)') }}">{{ td(leverage.cme_basis_regime) }}</span>)</span></span></div></div>{% endif %}
       {% if leverage.oi_divergence is not none %}
       <div class="mini"><div class="lab"><span>{{ t('OI vs price divergence (14d)','持仓 vs 价格背离（14 天）') }}</span><span><b>{{ '%+0.1f'|format(leverage.oi_divergence) }}%</b></span></div></div>{% endif %}
       <div class="sub" style="margin-top:10px">{{ t('Rebuilt from 15-exchange BGeometrics OI + funding (what CoinGlass aggregates). Calibrated (2022→, confirmation): funding-z below −1 (crowded shorts) preceded +18%/90d at 70% hit; OI building faster than price drags forward returns.', '基于 15 家交易所 BGeometrics 持仓 + 资金费率重建（即 CoinGlass 所聚合）。已校准（2022 起，确认）：资金费率 z 低于 −1（空头拥挤）未来 90 天 +18%、胜率 70%；持仓增速快于价格则拖累未来收益。') }}</div>
@@ -705,6 +708,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
     <div class="card">
       <h3>{{ t('How to read it', '如何解读') }}</h3>
       <div class="sub">{{ t('This layer is a short-horizon RISK amplifier, not a trend signal. High leverage stress + crowded one-sided funding = fragility: a small move can cascade into liquidations. Deeply negative funding or a sharp OI flush (deleveraging) is the contrarian tell that a local bottom is near.', '该层是短期风险放大器，而非趋势信号。高杠杆压力 + 单边拥挤资金费率 = 脆弱：小幅波动可能引发连环清算。深度负资金费率或持仓骤降（去杠杆）是局部底部临近的反向信号。') }}</div>
+      <div class="sub faint" style="margin-top:6px;font-size:12px">{{ t('CME basis is the REGULATED, real-money carry (front-month future vs spot) — distinct from the offshore perp funding above. Rich contango = leverage/positioning froth; backwardation = stress. HONEST: measured ~ZERO forward-return edge for BTC (rank-IC ~0, 2021→), so it is shown as institutional POSITIONING CONTEXT, not a predictive signal.', 'CME 基差为受监管的真实资金套利（近月期货对现货）— 区别于上方离岸永续资金费率。高升水 = 杠杆/持仓过热；贴水 = 承压。诚实说明：对 BTC 前瞻收益的实测优势约为零（秩 IC ≈ 0，2021 起），故仅作机构持仓背景，而非预测信号。') }}</div>
     </div>
   </div>
 

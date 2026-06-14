@@ -2,6 +2,28 @@
 
 Newest first. Each entry: what was decided, why, and what would change it.
 
+## 2026-06-14 — Vector CME (regulated) futures basis — institutional carry CONTEXT (measured null)
+
+**D-vec-CME. Added the CME regulated futures basis as a positioning-context read — built
+exactly because the empirical test said it's NOT a predictive signal, which is the honest
+outcome.** New BTC=F Yahoo pipe (config yahoo.tickers.crypto_fut; stored as BTC_F, daily
+2017->; the collector already handles `=F` tickers as `_F`). btc_signals.cme_basis: the
+front-month future vs spot premium = the REAL-MONEY, regulated institutional carry, distinct
+from the offshore Deribit perp funding already in the model. Emits cme_basis (%), ~annualized
+(x12 front-month approx), 1y percentile, and a regime (contango froth / flat / backwardation
+stress). MEASURED FIRST: rank-IC vs forward BTC return is ~ZERO (−0.006/30d, +0.025 for the
+z-score, flat across all bands incl. the extremes, 2021->). So it is NOT calibrated / NOT a
+signal — shipped as institutional POSITIONING CONTEXT in the leverage panel with that null
+stated plainly. (The earlier 8% "basis" was a Yahoo weekly-vs-daily artifact; the daily
+series is clean, median 0.19%.) LIVE: +0.52% (~+6%/yr, 68th pctile, flat-to-mild contango).
+tests/test_vector_cme.py (2). This is the 3rd remaining Tier-2 candidate empirically tested
+this session: cross-asset beta (symmetric, weak) and CME basis (null) both shipped as
+context/not-shipped; ETF flow (real edge) was already built. The high-value factor roadmap
+is complete. NOTE: build_vector.py is under heavy concurrent-session editing — used atomic
+read-replace-write for the contended inserts. The vector.html chart bloat (flagged via
+spawn_task) appears fixed (page 1.2MB -> 495KB).
+
+
 ## 2026-06-14 — Vector scheduled-catalyst (FOMC/jobs) gate + cross-asset-beta tested & skipped
 
 **D-vec-CAT. A 'don't size into the binary' event gate; and an honest skip of a weak

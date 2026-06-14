@@ -402,6 +402,24 @@ def composite_state(out: pd.DataFrame, cfg: dict | None = None) -> pd.Series:
     return state.rename("composite_state")
 
 
+def composite_context(out: pd.DataFrame, cfg: dict | None = None) -> pd.Series:
+    """Display-only confirmer TAG shown beside the headline stance. These are the
+    CONFIRMATION-ONLY positioning factors the integration A/B (scripts/integration_lab.py,
+    reports/vector-integration-candidates.md) said to SURFACE but never wire into the
+    allocation/risk math (no pre-2021 footprint -> can't clear the both-halves bar):
+    crowded-short capitulation (funding_z, an ACCUMULATE-side corroborator) and froth
+    (crowded CME longs via cot_z, a DISTRIBUTE-side corroborator). It is a tag only —
+    it does NOT move the Risk Index, allocation, or composite_state."""
+    cfg = cfg or {}
+    idx = out.index
+    ctx = pd.Series("", index=idx)
+    fz = out.get("funding_z", pd.Series(np.nan, index=idx))
+    cz = out.get("cot_z", pd.Series(np.nan, index=idx))
+    ctx = ctx.mask(fz < cfg.get("funding_capitulation_z", -1.0), "crowded_short")
+    ctx = ctx.mask(cz > cfg.get("cot_crowded_z", 1.5), "froth")
+    return ctx.rename("composite_context")
+
+
 def btc_vs_alts(inputs: dict, cfg: dict) -> pd.Series | None:
     px = inputs["price"]["close"]
     eth = inputs.get("eth")
@@ -709,6 +727,29 @@ def stablecoin_tide(inputs: dict, cfg: dict) -> pd.DataFrame:
     return out
 
 
+def cme_basis(inputs: dict, cfg: dict) -> pd.DataFrame:
+    """CME (regulated) Bitcoin-futures BASIS = front-month future vs spot premium —
+    the REAL-MONEY, regulated institutional carry, distinct from the offshore Deribit
+    perp funding the model already has. Rich contango = leverage / positioning froth;
+    backwardation = stress / forced de-risking. Daily 2017->. MEASURED: ~zero forward-
+    RETURN edge (rank-IC ~0, flat across bands), so this ships as POSITIONING CONTEXT,
+    NOT a calibrated predictive signal — the honest read. (D-vec-CME)"""
+    fut = inputs.get("btc_future")
+    close = inputs["price"]["close"]
+    idx = close.index
+    out = pd.DataFrame(index=idx)
+    if fut is None:
+        return out
+    f = (fut[fut.columns[0]] if hasattr(fut, "columns") else fut).reindex(idx).ffill(limit=3)
+    basis = (f / close - 1.0) * 100.0
+    out["cme_basis"] = basis
+    out["cme_basis_ann"] = basis * cfg.get("ann_mult", 12)          # ~front-month -> annualized (approx)
+    out["cme_basis_pctile"] = _pctile(basis, cfg.get("pctile_lookback_d", 365)) * 100
+    out["cme_basis_regime"] = np.where(basis > cfg.get("froth_pct", 0.7), "contango",
+                              np.where(basis < cfg.get("stress_pct", -0.2), "backwardation", "flat"))
+    return out
+
+
 def global_liquidity(inputs: dict, cfg: dict) -> pd.DataFrame:
     """US + China M2 GROWTH impulse — the broad-money read our Fed-balance-sheet
     net-liquidity lacks, and adds the PBoC dimension. Combined as a weighted
@@ -876,6 +917,36 @@ def onchain_regime(inputs: dict, cfg: dict) -> pd.DataFrame:
     return out
 
 
+def etf_flow(inputs: dict, cfg: dict) -> pd.DataFrame:
+    """US spot-ETF net flows — the institutional bid Swissblock tracks in 'Risk
+    Index & ETF Net Flows' (the Glassnode-sourced bgeo series, 2024-01-> i.e. since
+    the ETFs launched). Net creations/redemptions in BTC: sustained positive =
+    accumulation (the new structural buyer), negative = distribution. ETF-era only
+    (~2.4y) -> a CONFIRMATION / context flow gauge, never a deep calibration anchor
+    (house rule). Emits the smoothed flow regime, an extremity z (vs recent norm),
+    the accumulation/distribution state, and a cumulative-holdings proxy."""
+    close = inputs["price"]["close"]
+    idx = close.index
+    out = pd.DataFrame(index=idx)
+    ef = inputs.get("etf_flow")
+    if ef is None:
+        return out
+    f = ef.reindex(idx)                                    # daily net flow, BTC (NaN pre-launch)
+    out["etf_flow_btc"] = f
+    out["etf_flow_usd_mn"] = (f * close) / 1e6            # USD millions (panel-friendly)
+    sm = f.rolling(cfg["smooth_d"], min_periods=cfg["min_periods_d"]).sum()
+    out["etf_flow_sum"] = sm                              # N-day net flow = the regime
+    w, mp = cfg["z_window_d"], cfg["z_min_periods_d"]
+    mu = sm.rolling(w, min_periods=mp).mean()
+    sd = sm.rolling(w, min_periods=mp).std()
+    out["etf_flow_z"] = ((sm - mu) / sd).clip(-3, 3)     # extremity vs recent norm
+    out["etf_flow_cum"] = f.cumsum()                     # holdings proxy (BTC) since launch
+    out["etf_flow_state"] = _hysteresis_tri(
+        out["etf_flow_z"], cfg["state_enter_z"], cfg["state_exit_z"],
+        labels=("distribution", "neutral", "accumulation"))
+    return out
+
+
 # --------------------------------------------------------------------------- #
 # macro liquidity / risk-appetite overlay (Tier-3)
 # --------------------------------------------------------------------------- #
@@ -1007,6 +1078,7 @@ def compute_all(inputs: dict | None = None) -> pd.DataFrame:
     lv = leverage(inputs, cfg["leverage"])
     ma = macro_overlay(inputs, cfg["macro"])
     oc = onchain_regime(inputs, cfg["onchain"])
+    ef = etf_flow(inputs, cfg["etf_flow"])
     im = impulse(inputs, cfg["impulse"])
     cc = cycle_clock(inputs, cfg["cycle_clock"])
     po = positioning(inputs, cfg["positioning"])
@@ -1014,16 +1086,18 @@ def compute_all(inputs: dict | None = None) -> pd.DataFrame:
     bh = behaviour(inputs, cfg["cross_asset"])
     gl = global_liquidity(inputs, cfg["global_liquidity"])
     sc = stablecoin_tide(inputs, cfg["global_liquidity"])  # crypto-native liquidity tide
+    cm = cme_basis(inputs, cfg.get("cme_basis", {}))       # regulated institutional carry (context)
     # Tier-1b: blend the confirmed valuation tails into allocation (gated by the
     # allocation backtest below).
     al = allocation(mom["momentum"], rk["risk_index"], cfg["allocation"], va)
 
     out = pd.concat([inputs["price"][["close"]], mom, rk, bf, st, gg, al,
-                     va, mn, cb, ex, op, lv, ma, oc, im, cc, po, xa, bh, gl, sc], axis=1)
+                     va, mn, cb, ex, op, lv, ma, oc, ef, im, cc, po, xa, bh, gl, sc, cm], axis=1)
     out["cycle_position"] = cycle_stage(mom["momentum"], rk["risk_index"])
     alt = btc_vs_alts(inputs, cfg["btc_vs_alts"])
     if alt is not None:
         out["alt_cycle_leader"] = alt
     out["market_mode"] = tactical(inputs, rk["risk_index"], cfg["tactical"])
     out["composite_state"] = composite_state(out, cfg["composite"])
+    out["composite_context"] = composite_context(out, cfg["composite"])
     return out

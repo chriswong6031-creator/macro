@@ -69,6 +69,35 @@ def _runs(s: pd.Series):
     return [(g.index[0], g.index[-1], g.iloc[0]) for _, g in s.groupby(grp)]
 
 
+def _plot_idx(index, daily_days: int = 400, weekly_days: int = 1825,
+              weekly_step: int = 7, monthly_step: int = 30):
+    """Resolution-adaptive index for the heavy full-history overlay charts: daily
+    for the last ~400d, ~weekly out to 5y, ~monthly before that. Older points are
+    sub-pixel at the 5Y/All zoom and the recent window stays full daily, so the
+    line is visually identical at every zoom — but ~5x fewer points get serialized
+    (plotly emits one full date-string + value array PER trace, so the full daily
+    record dominates the page weight)."""
+    if len(index) == 0:
+        return index
+    end = index.max()
+    d0 = end - pd.Timedelta(days=daily_days)
+    w0 = end - pd.Timedelta(days=weekly_days)
+    daily = index[index >= d0]
+    weekly = index[(index < d0) & (index >= w0)][::weekly_step]
+    monthly = index[index < w0][::monthly_step]
+    return monthly.union(weekly).union(daily)
+
+
+def _plot_y(s: pd.Series, n: int):
+    """Round a y-series to n places and return a plain Python list (NaN -> null).
+    plotly base64-packs numpy float64 arrays at a fixed ~10.7 chars/point whatever
+    the value; a rounded text list is smaller for these magnitudes and shrinks
+    further the fewer decimals it carries. n<=0 emits ints (e.g. whole-dollar)."""
+    if n <= 0:
+        return [None if pd.isna(v) else int(round(float(v))) for v in s]
+    return [None if pd.isna(v) else round(float(v), n) for v in s]
+
+
 # --------------------------------------------------------------------------- #
 # view-model computations
 # --------------------------------------------------------------------------- #
@@ -516,12 +545,15 @@ def chart_risk_vs_strategy(df: pd.DataFrame, eq: pd.Series, hodl: pd.Series,
                           x0=start, x1=end, y0=0, y1=1,
                           fillcolor=fc, line_width=0, layer="below")
 
-    fig.add_trace(go.Scatter(x=d.index, y=d["close"], name="BTC Price",
+    # downsample only the heavy full-history line traces; the markers, regime
+    # shapes and range-button extents below stay full-resolution and exact.
+    pidx = _plot_idx(d.index)
+    fig.add_trace(go.Scatter(x=pidx, y=_plot_y(d["close"].reindex(pidx), 0), name="BTC Price",
                              line={"color": C["priceln"], "width": 1.4}), row=1, col=1)
     # strategy equity rescaled to price axis for visual overlay
     scale = d["close"].iloc[0] / eq.iloc[0]
     sx = eq * scale
-    fig.add_trace(go.Scatter(x=eq.index, y=sx, name="Optimal strategy",
+    fig.add_trace(go.Scatter(x=pidx, y=_plot_y(sx.reindex(pidx), 0), name="Optimal strategy",
                              line={"color": C["blue"], "width": 1.8}), row=1, col=1)
 
     # --- buy/sell markers at allocation changes (▲ add when it steps up) ---
@@ -543,13 +575,13 @@ def chart_risk_vs_strategy(df: pd.DataFrame, eq: pd.Series, hodl: pd.Series,
             ), row=1, col=1)
 
     # risk index two-tone (split at threshold 25)
-    ri = d["risk_index"]
-    fig.add_trace(go.Scatter(x=ri.index, y=ri.where(ri < 25), name="Risk (low)",
+    ri = d["risk_index"].reindex(pidx)
+    fig.add_trace(go.Scatter(x=pidx, y=_plot_y(ri.where(ri < 25), 1), name="Risk (low)",
                              line={"color": C["blue"], "width": 1.5}, showlegend=False), row=2, col=1)
-    fig.add_trace(go.Scatter(x=ri.index, y=ri.where(ri >= 25), name="Risk (high)",
+    fig.add_trace(go.Scatter(x=pidx, y=_plot_y(ri.where(ri >= 25), 1), name="Risk (high)",
                              line={"color": C["red"], "width": 1.5}, showlegend=False), row=2, col=1)
     fig.add_hline(y=25, line={"color": C["faint"], "width": 1, "dash": "dot"}, row=2, col=1)
-    fig.add_trace(go.Scatter(x=d.index, y=d["alloc_optimal"], name="Allocation",
+    fig.add_trace(go.Scatter(x=pidx, y=_plot_y(d["alloc_optimal"].reindex(pidx), 2), name="Allocation",
                              line={"color": C["indigo"], "width": 1.2, "shape": "hv"},
                              fill="tozeroy", fillcolor="rgba(40,95,255,0.10)",
                              showlegend=False), row=3, col=1)
@@ -587,12 +619,12 @@ def chart_risk_vs_strategy(df: pd.DataFrame, eq: pd.Series, hodl: pd.Series,
 def chart_oscillator(s: pd.Series, close: pd.Series, name: str, days: int = 365) -> str:
     s, close = _tail(s, days), _tail(close, days)
     fig = make_subplots(specs=[[{"secondary_y": True}]])
-    fig.add_trace(go.Scatter(x=close.index, y=close, name="BTC",
+    fig.add_trace(go.Scatter(x=close.index, y=_plot_y(close, 0), name="BTC",
                              line={"color": C["priceln"], "width": 1}, opacity=0.5),
                   secondary_y=True)
-    fig.add_trace(go.Scatter(x=s.index, y=s.where(s >= 0), name=name,
+    fig.add_trace(go.Scatter(x=s.index, y=_plot_y(s.where(s >= 0), 3), name=name,
                              line={"color": C["blue"], "width": 1.6}), secondary_y=False)
-    fig.add_trace(go.Scatter(x=s.index, y=s.where(s < 0), name=name + " (neg)",
+    fig.add_trace(go.Scatter(x=s.index, y=_plot_y(s.where(s < 0), 3), name=name + " (neg)",
                              line={"color": C["red"], "width": 1.6}, showlegend=False),
                   secondary_y=False)
     for y in (0.5, -0.5):
@@ -610,7 +642,7 @@ def chart_bfi(df: pd.DataFrame, days: int = 365) -> str:
                            ("liquidity", C["amber"], "Liquidity"),
                            ("bfi", C["blue"], "BFI")]:
         if col in d:
-            fig.add_trace(go.Scatter(x=d.index, y=d[col], name=nm,
+            fig.add_trace(go.Scatter(x=d.index, y=_plot_y(d[col], 1), name=nm,
                                      line={"color": color, "width": 1.6 if col == "bfi" else 1.2}))
     fig.add_hrect(y0=40, y1=60, fillcolor=C["grid"], opacity=0.5, line_width=0)
     fig.update_yaxes(range=[0, 100])
@@ -633,14 +665,14 @@ def chart_etf_flow(df: pd.DataFrame) -> str:
         if fc:
             fig.add_shape(type="rect", xref="x", yref="y domain", x0=start, x1=end,
                           y0=0, y1=1, fillcolor=fc, line_width=0, layer="below")
-    fig.add_trace(go.Scatter(x=d.index, y=d["close"], name="BTC Price",
+    fig.add_trace(go.Scatter(x=d.index, y=_plot_y(d["close"], 0), name="BTC Price",
                              line={"color": C["priceln"], "width": 1.5}), row=1, col=1)
     flow = d["etf_flow_btc"]
     colors = np.where(flow >= 0, C["blue"], C["red"]).tolist()
-    fig.add_trace(go.Bar(x=d.index, y=flow, name="Daily net flow",
+    fig.add_trace(go.Bar(x=d.index, y=_plot_y(flow, 1), name="Daily net flow",
                          marker={"color": colors, "line": {"width": 0}},
                          showlegend=False), row=2, col=1)
-    fig.add_trace(go.Scatter(x=d.index, y=d["etf_flow_sum"], name="5-day net flow",
+    fig.add_trace(go.Scatter(x=d.index, y=_plot_y(d["etf_flow_sum"], 1), name="5-day net flow",
                              line={"color": C["indigo"], "width": 1.6}), row=2, col=1)
     fig.add_hline(y=0, line={"color": C["faint"], "width": 1}, row=2, col=1)
     fig.update_yaxes(title_text="Price $", type="log", row=1, col=1)
@@ -1133,10 +1165,10 @@ def _r(v, n=2):
 def chart_ethbtc(ratio: pd.Series, ma: pd.Series | None, cfg: dict) -> str:
     d = _tail(ratio, 365 * 5)
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=d.index, y=d.values, name="ETH/BTC",
+    fig.add_trace(go.Scatter(x=d.index, y=_plot_y(d, 4), name="ETH/BTC",
                              line={"color": C["blue"], "width": 1.6}))
     if ma is not None:
-        fig.add_trace(go.Scatter(x=d.index, y=ma.reindex(d.index).values, name="50w MA",
+        fig.add_trace(go.Scatter(x=d.index, y=_plot_y(ma.reindex(d.index), 4), name="50w MA",
                                  line={"color": C["faint"], "dash": "dot", "width": 1.2}))
     for lvl, lbl, col in ((cfg["btc_season_line"], "0.05 · deep BTC-season", C["red"]),
                           (cfg["alt_season_line"], "0.07 · alt-season", C["blue"])):
@@ -1407,6 +1439,11 @@ def main() -> int:
             "funding_z": _r(last.get("funding_z"), 1),
             "oi_divergence": _r(100 * last["oi_price_divergence"], 1) if pd.notna(last.get("oi_price_divergence")) else None,
             "stress": _r(last.get("leverage_stress"), 0),
+            # CME (regulated) basis — institutional carry context (D-vec-CME)
+            "cme_basis": _r(last.get("cme_basis"), 2),
+            "cme_basis_ann": _r(last.get("cme_basis_ann"), 0),
+            "cme_basis_pctile": _r(last.get("cme_basis_pctile"), 0),
+            "cme_basis_regime": last.get("cme_basis_regime"),
         },
         "macro": {
             "score": _r(last.get("macro_score"), 2),

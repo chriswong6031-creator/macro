@@ -143,6 +143,7 @@ yahoo:
     fx: ["EURUSD=X", "USDJPY=X", "GBPUSD=X", "AUDUSD=X", "USDCAD=X", "USDCHF=X", "USDMXN=X", "USDBRL=X", "CNH=X", "CNH=F"]   # Forex Vector spot pairs; CNH=F = offshore CNH futures (2013->, real history vs CNH=X spot's 1 row)
     rate_pricing: ["ZQ=F"]        # 30-day fed funds front contract — LOW CONFIDENCE input
     crypto: [BTC-USD, ETH-USD, SOL-USD]   # deep daily history (BTC 2014->); Coinbase = intraday-quality OHLC
+    crypto_fut: ["BTC=F"]                 # CME (regulated) Bitcoin front-month future -> institutional carry / basis (D-vec-CME; daily 2021->)
 
 treasury:
   base_url: https://api.fiscaldata.treasury.gov/services/api/fiscal_service
@@ -215,6 +216,20 @@ engine_equity_factors:
   # leadership read: which factor's top-quintile has been beating its bottom-
   # quintile over this trailing window (a coarse "what's working now" gauge).
   leadership_window_d: 63
+
+engine_residual_alpha:
+  # Sector-neutral residual-momentum leg (research/RESIDUAL_ALPHA_MOMENTUM.md).
+  # Phase 0 verdict: a modest, regime-decayed edge — a ranking/context leg, NOT a
+  # standalone strategy. Each stock's market AND sector beta are stripped (sector
+  # orthogonalized to market; causal 252d shrunk betas); the score is the cross-
+  # sectional, SECTOR-NEUTRAL z of the residual info-ratio over a 12-1-month window.
+  beta_win: 252                   # rolling beta window (d)
+  form: 252                       # formation window (d) — 12 months
+  skip: 21                        # skip the most recent month (short-term reversal)
+  shrink: 0.66                    # Vasicek-lite beta shrink toward the cross-section
+  top_n: 15                       # leaders per sector / overall
+  min_sector: 6                   # min names for a sector to get its own leader list
+  min_names: 20                   # min universe to compute at all
 
 # FINRA consolidated short interest (Phase 3 of the four-phase build-out). Free,
 # keyless FINRA Query API — bi-monthly exchange-listed short interest + days-to-
@@ -1281,6 +1296,12 @@ vector:
   catalyst:                       # scheduled-binary (FOMC/jobs) event window (D-vec-CAT)
     imminent_days: 3              # a binary within this many days = "don't size into it" gate on the Kelly read
 
+  cme_basis:                      # CME (regulated) futures carry — POSITIONING CONTEXT (D-vec-CME; measured ~0 forward edge)
+    ann_mult: 12                  # front-month basis -> ~annualized (approx; continuous future, ~1mo to expiry)
+    pctile_lookback_d: 365        # 1y percentile of the basis
+    froth_pct: 0.7                # basis above this % = rich contango (leverage froth)
+    stress_pct: -0.2              # below this = backwardation (stress / forced de-risk)
+
   btc_vs_alts:
     rs_window_d: 30               # relative-strength window across BTC/ETH/alts
     confirm_days: 3
@@ -1399,6 +1420,7 @@ vector:
     reserve_risk_top: 0.02        # reserve_risk above this = distribution (calibrated TOP)
     bfi_strong: 60                # BFI above this = fundamentals confirm risk-on
     cot_crowded_z: 1.5            # CME spec net-long z above this = crowded (contrarian top)
+    funding_capitulation_z: -1.0  # funding z below this = crowded shorts (capitulation context, display-only tag)
 
   scenarios:                      # short-term scenario probabilities (build_vector)
     prob_horizon_d: 7             # forward horizon for the conditional base rate
