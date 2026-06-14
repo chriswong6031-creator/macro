@@ -85,6 +85,18 @@
   .quilt { border-collapse:collapse; font-size:10.5px; width:100%; }
   .quilt th { color:var(--muted); font-weight:500; padding:2px 4px; white-space:nowrap; font-size:10px; }
   .quilt td { padding:3px 5px; text-align:right; border:1px solid var(--bg); white-space:nowrap; }
+  .quilt2 { border-collapse:separate; border-spacing:2px; font-size:10px; }
+  .quilt2 th { color:var(--muted); font-weight:500; padding:1px 3px; text-align:center; font-size:9.5px; }
+  .quilt2 td.qc { width:54px; height:30px; border-radius:4px; text-align:center; color:#0b1220; vertical-align:middle; }
+  .quilt2 td.qc .qf { display:block; font-weight:600; font-size:9px; line-height:1.05; }
+  .quilt2 td.qc .qv { display:block; font-size:9px; opacity:.85; font-variant-numeric:tabular-nums; }
+  .quilt2 td.qc.hl { outline:2px solid var(--text); outline-offset:-2px; }
+  .r20bars { display:grid; grid-template-columns:auto 1fr auto; gap:2px 8px; align-items:center; margin-top:4px; max-width:560px; }
+  .r20lab { font-size:11.5px; color:var(--muted); white-space:nowrap; }
+  .r20track { height:12px; border-radius:6px; background:var(--panel2); position:relative; }
+  .r20track > i { position:absolute; top:0; bottom:0; }
+  .r20track > i.mid { left:50%; width:1px; background:var(--muted); opacity:.5; }
+  .r20val { font-size:11.5px; font-variant-numeric:tabular-nums; text-align:right; }
   .flip { display:inline-block; font-size:11px; padding:1px 7px; margin:0 4px 4px 0; border-radius:8px;
           background:var(--panel2); border:1px solid var(--line); }
   .seg { display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
@@ -360,10 +372,23 @@
       {% endfor %}
     </table>
     {% if series.rotation and series.rotation.leader_label %}
-    <p class="muted sm" style="margin:10px 0 0">{{ t('20-day leader:','20日领先因子：') }}
-      <b>{{ series.rotation.leader_label }}</b> ({{ '%+.1f'|format(series.rotation.leader_ret20_pct) }}%).
-      {% if series.rotation.recent_flips %}{{ t('Recent confirmed flips (3-session persistence):','近期确认轮动（持续3个交易日）：') }}
-      {% for fl in series.rotation.recent_flips %}<span class="flip">{{ fl.date }} → {{ fl.label }}</span>{% endfor %}{% endif %}</p>
+    <div style="margin-top:10px">
+      <p class="sm" style="margin:0 0 7px">{{ t('20-day leader:','20日领先因子：') }}
+        <b>{{ series.rotation.leader_label }}</b> <span class="{{ 'pos' if series.rotation.leader_ret20_pct>=0 else 'neg' }}">({{ '%+.1f'|format(series.rotation.leader_ret20_pct) }}%)</span><span class="muted">{% if series.rotation.leader_held_days %} · {{ t('held','已领先') }} {{ series.rotation.leader_held_days }}{{ t('d','天') }}{% endif %}{% if series.rotation.previous_leader_label %} · {{ t('prev','前任') }} {{ series.rotation.previous_leader_label }}{% endif %}</span>
+        {% for j in series.rotation.quartile_jumps %} <span class="flip" style="border-color:{{ 'var(--up)' if j.dir=='up' else 'var(--down)' }};color:{{ 'var(--up)' if j.dir=='up' else 'var(--down)' }}">{{ '↑' if j.dir=='up' else '↓' }} {{ j.label }} {{ t('quartile jump','分位跃迁') }} #{{ j.from }}→#{{ j.to }}</span>{% endfor %}
+        {% if series.rotation.recent_flips %} · <span class="muted">{{ t('flips:','轮动：') }}</span> {% for fl in series.rotation.recent_flips %}<span class="flip">{{ fl.date }} → {{ fl.label }}</span>{% endfor %}{% endif %}
+      </p>
+      {% if series.rotation.r20 %}
+      {% set rmax = (series.rotation.r20 | map(attribute='ret') | map('abs') | max) or 1 %}
+      <div class="r20bars">
+        {% for b in series.rotation.r20 %}
+        <span class="r20lab">{{ series.labels.get(b.factor, b.label) }}</span>
+        <span class="r20track">{% if b.ret >= 0 %}<i style="left:50%;width:{{ (b.ret/rmax*50)|round(1) }}%;background:var(--up)"></i>{% else %}<i style="right:50%;width:{{ (-b.ret/rmax*50)|round(1) }}%;background:var(--down)"></i>{% endif %}<i class="mid"></i></span>
+        <span class="r20val {{ 'pos' if b.ret>=0 else 'neg' }}">{{ '%+.1f'|format(b.ret) }}%</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
     {% endif %}
   </div>
 
@@ -387,23 +412,29 @@
     </div>
     {% endif %}
     {% if series.quilt and series.quilt.months %}
+    {% set qpal = ['#5aa7ff','#4ade80','#facc15','#fb923c','#f472b6','#2dd4bf','#a78bfa','#fb7185','#a3e635'] %}
     <div class="panel">
-      <h2>{{ t('Monthly quilt — Q5−Q1', '月度拼布 — 多空') }}
-        {{ help("Each factor's Q5−Q1 total return by month (green positive, red negative). Reads which premium led when. ~15 months on the free cache — descriptive, not a regime-robust signal.", "各因子按月的多空总回报（绿正红负）。读出哪种溢价在何时领先。免费缓存约15个月 — 描述性，非稳健信号。") }}
+      <h2>{{ t('Quilt — Q5−Q1 monthly ranks', '拼布 — 多空月度排名') }}
+        {{ help("The periodic-table-of-returns: each column ranks the factor Q5−Q1 premiums best→worst that month (and a YTD column), cells colored by factor IDENTITY so you can trace one factor's path — hover a cell to highlight it across every column. ~13 months on the free cache; descriptive, not a regime-robust signal.", "收益周期表：每列按当月多空溢价从优到劣排名（含 YTD 列），单元格按因子着色以便追踪某一因子 — 悬停某格可高亮其在各列的位置。免费缓存约13个月；描述性，非稳健信号。") }}
       </h2>
-      <div class="scroll"><table class="quilt">
-        <tr><th style="text-align:left">{{ t('factor','因子') }}</th>{% for m in series.quilt.months %}<th>{{ m[2:] }}</th>{% endfor %}</tr>
-        {% for f in series.factors %}
-        <tr><td style="text-align:left">{{ series.labels[f] }}</td>
-          {% for m in series.quilt.months %}{% set v = series.quilt.returns[f].get(m) %}
-          <td style="{{ ('background:rgba(35,134,54,' ~ ([(v|abs)/8, 0.8]|min)|round(2) ~ ')') if v is not none and v>0 else (('background:rgba(218,54,51,' ~ ([(v|abs)/8, 0.8]|min)|round(2) ~ ')') if v is not none and v<0 else '') }}">{{ '%+.0f'|format(v) if v is not none else '' }}</td>
-          {% endfor %}
+      <div class="scroll"><table class="quilt2">
+        <tr>{% for m in series.quilt.months %}<th>{{ 'YTD' if m == 'YTD' else m[5:] }}</th>{% endfor %}</tr>
+        {% set maxrows = series.quilt.ranked.values() | map('length') | max %}
+        {% for i in range(maxrows) %}
+        <tr>
+          {% for m in series.quilt.months %}{% set col = series.quilt.ranked[m] %}{% if i < (col|length) %}{% set f = col[i] %}{% set v = series.quilt.returns[f].get(m) %}<td class="qc" data-f="{{ f }}" style="background:{{ qpal[series.factors.index(f) % (qpal|length)] }}" title="{{ series.labels[f] }} · {{ 'YTD' if m=='YTD' else m }}: {{ '%+.1f'|format(v) }}%"><span class="qf">{{ series.labels[f][:9] }}</span><span class="qv">{{ '%+.0f'|format(v) }}%</span></td>{% else %}<td></td>{% endif %}{% endfor %}
         </tr>
         {% endfor %}
       </table></div>
     </div>
     {% endif %}
   </div>
+  <script>
+    (function(){ var q=document.querySelector('.quilt2'); if(!q) return;
+      q.addEventListener('mouseover',function(e){var c=e.target.closest('.qc[data-f]'); if(!c) return; var f=c.dataset.f; q.querySelectorAll('.qc[data-f="'+f+'"]').forEach(function(x){x.classList.add('hl');});});
+      q.addEventListener('mouseout',function(){ q.querySelectorAll('.qc.hl').forEach(function(x){x.classList.remove('hl');});});
+    })();
+  </script>
   {% endif %}
 
   <!-- Composite leaders / laggards -->

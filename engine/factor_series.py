@@ -302,18 +302,64 @@ def _rotation(ls: dict, active: list) -> dict:
     flips = [{"date": d.strftime("%Y-%m-%d"), "to": f, "label": LABELS.get(f, f)}
              for d, f in confirmed[-6:]]
     last = leader_raw.iloc[-1]
+    # how many consecutive sessions the current factor has been the raw 20d leader
+    held = 0
+    for v in leader_raw.iloc[::-1]:
+        if v == last:
+            held += 1
+        else:
+            break
+    prev = next((f for _, f in reversed(confirmed) if f != last), None)
+    # quartile jumps: factors that crossed bottom-quartile <-> top-quartile over the last 20 sessions
+    jumps = []
+    if len(roll20) > 21:
+        now = roll20.iloc[-1].rank(ascending=False)               # 1 = best
+        ago = roll20.iloc[-21].rank(ascending=False)
+        n = int(now.notna().sum())
+        if n >= 4:
+            qt = max(1, round(n / 4))
+            for f in active:
+                rn, ra = now.get(f), ago.get(f)
+                if pd.isna(rn) or pd.isna(ra):
+                    continue
+                rn, ra = int(rn), int(ra)
+                if ra > n - qt and rn <= qt:
+                    jumps.append({"factor": f, "label": LABELS.get(f, f), "dir": "up", "from": ra, "to": rn})
+                elif ra <= qt and rn > n - qt:
+                    jumps.append({"factor": f, "label": LABELS.get(f, f), "dir": "down", "from": ra, "to": rn})
+    r20 = sorted(
+        [{"factor": f, "label": LABELS.get(f, f), "ret": round(float(roll20.iloc[-1][f]) * 100, 2)}
+         for f in active if pd.notna(roll20.iloc[-1].get(f))],
+        key=lambda x: -x["ret"])
     return {"leader": last, "leader_label": LABELS.get(last, last),
             "leader_ret20_pct": round(float(roll20.iloc[-1][last]) * 100, 2),
-            "recent_flips": flips}
+            "leader_held_days": int(held),
+            "previous_leader": prev, "previous_leader_label": LABELS.get(prev, prev) if prev else None,
+            "recent_flips": flips, "quartile_jumps": jumps, "r20": r20}
 
 
 def _quilt(ls: dict, active: list) -> dict:
+    """Periodic-table-of-returns quilt: per month (and a YTD column) the factors
+    ranked best->worst, colored by factor identity in the UI."""
     df = pd.DataFrame({f: ls[f] for f in active})
     monthly = (1.0 + df.fillna(0.0)).resample("ME").apply(lambda x: x.prod()) - 1.0
-    monthly = monthly.dropna(how="all").tail(15)                       # last ~15 months
-    months = [d.strftime("%Y-%m") for d in monthly.index]
+    monthly = monthly.dropna(how="all").tail(13)                       # last ~13 months
     table = {f: {d.strftime("%Y-%m"): round(float(monthly.loc[d, f]) * 100, 1)
                  for d in monthly.index if pd.notna(monthly.loc[d, f])} for f in active}
     ranked = {d.strftime("%Y-%m"): [f for f in monthly.loc[d].sort_values(ascending=False).index
                                     if pd.notna(monthly.loc[d, f])] for d in monthly.index}
-    return {"months": months, "returns": table, "ranked": ranked}
+    cols = [d.strftime("%Y-%m") for d in monthly.index]
+    # YTD column: compound the current calendar year's monthly L/S returns
+    year = monthly.index.max().year
+    ysel = monthly[monthly.index.year == year]
+    ytd = {}
+    for f in active:
+        s = ysel[f].dropna()
+        if len(s):
+            ytd[f] = round(float(((1.0 + s).prod() - 1.0) * 100), 1)
+    if ytd:
+        for f, v in ytd.items():
+            table[f]["YTD"] = v
+        ranked["YTD"] = sorted(ytd, key=lambda f: -ytd[f])
+        cols.append("YTD")
+    return {"months": cols, "returns": table, "ranked": ranked}
