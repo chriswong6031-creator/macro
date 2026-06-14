@@ -25,6 +25,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from engine.conditions import sector_macro_beta  # noqa: E402
 from engine.cycles import analyze  # noqa: E402
 from engine.playbook import SECTOR_NAMES  # noqa: E402
+from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
 
@@ -186,6 +187,14 @@ def main() -> int:
     drag = current_macro()
     log.info("net-liquidity regime for library: %s · macro-risk: %s",
              liq or "unknown", "—" if drag is None else f"{drag:.2f}")
+    # Fundamental panels (factor fingerprint, trailing valuation, financials,
+    # positioning) assembled once from already-collected data and merged per name.
+    # Best-effort: a failure here must never 404 the technical library.
+    try:
+        fpanels = fundamental_panels()
+    except Exception as e:  # noqa: BLE001
+        log.warning("fundamental panels unavailable (%s) — library ships technicals only", e)
+        fpanels = {}
     index, built, failed = [], 0, 0
     for ticker, close, high, name, sector in universe():
         try:
@@ -197,6 +206,8 @@ def main() -> int:
         if rec is None:
             failed += 1
             continue
+        if fpanels.get(ticker):
+            rec.update(fpanels[ticker])
         safe = ticker.replace("=", "_").replace("^", "_")
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
         index.append({"t": ticker, "n": name, "s": sector,
