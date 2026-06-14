@@ -329,93 +329,93 @@
       <span class="help">?<span class="tip"><span class="l-en">Each equity factor's Information Coefficient: the cross-sectional rank correlation of its score vs forward returns, per quarter, built point-in-time (EDGAR as-of fundamentals + prices truncated to the date) so no factor ever sees a not-yet-filed report. IC-IR is mean/vol (the signal-to-noise); t_HAC is a Newey-West t-stat (overlapping windows autocorrelate); q_FDR is the Benjamini-Hochberg false-discovery rate ACROSS the factor panel. Judge survivors vs ~0 — post point-in-time fix the spreads are honestly weak.</span><span class="l-zh">每个股票因子的信息系数：其分数对未来回报的横截面秩相关，按季度、以时点方式构建（EDGAR 截至日基本面 + 截断至当日的价格），因此任何因子都不会看到尚未提交的报表。IC-IR 是均值／波动（信噪比）；t_HAC 是 Newey-West t 统计量（重叠窗口存在自相关）；q_FDR 是跨因子面板的 Benjamini-Hochberg 错误发现率。以约 0 来评判幸存者 — 时点修正后价差确实偏弱。</span></span></span>
     </h2>
     
-    <p class="muted" style="margin:0 0 8px"><span class="l-en">Span</span><span class="l-zh">区间</span> 2023-06-30..2025-12-31 · 11 <span class="l-en">quarterly rebalances · forward</span><span class="l-zh">次季度再平衡 · 前瞻</span> 63d · ~537 <span class="l-en">names</span><span class="l-zh">只股票</span>.</p>
+    <p class="muted" style="margin:0 0 8px"><span class="l-en">Span</span><span class="l-zh">区间</span> 2023-06-30..2025-12-31 · 11 <span class="l-en">quarterly rebalances · forward</span><span class="l-zh">次季度再平衡 · 前瞻</span> 63d · ~886 <span class="l-en">names</span><span class="l-zh">只股票</span>.</p>
     <table>
       <tr><th class="l"><span class="l-en">factor</span><span class="l-zh">因子</span></th><th><span class="l-en">mean IC</span><span class="l-zh">平均IC</span></th><th>IC-IR</th><th>t_HAC</th><th>q_FDR</th><th><span class="l-en">hit</span><span class="l-zh">命中</span></th><th class="l"><span class="l-en">survives FDR?</span><span class="l-zh">通过FDR？</span></th></tr>
       
       <tr><td class="l">value</td>
-        <td class="pos">0.0446</td>
-        <td>0.344</td><td>1.14</td><td>0.6061</td>
+        <td class="pos">0.0307</td>
+        <td>0.307</td><td>1.034</td><td>0.5538</td>
         <td>0.636</td>
         <td class="l"><span class="muted">no</span></td>
       </tr>
       
       <tr><td class="l">profitability</td>
-        <td class="neg">-0.0442</td>
-        <td>-0.432</td><td>-1.486</td><td>0.5038</td>
+        <td class="neg">-0.0403</td>
+        <td>-0.382</td><td>-1.213</td><td>0.5538</td>
         <td>0.455</td>
         <td class="l"><span class="muted">no</span></td>
       </tr>
       
       <tr><td class="l">quality</td>
-        <td class="neg">-0.0432</td>
-        <td>-0.721</td><td>-2.905</td><td>0.0407</td>
-        <td>0.182</td>
-        <td class="l"><span class="pos">✓</span></td>
-      </tr>
-      
-      <tr><td class="l">investment</td>
-        <td class="neg">-0.006</td>
-        <td>-0.095</td><td>-0.366</td><td>0.9549</td>
-        <td>0.455</td>
+        <td class="neg">-0.0226</td>
+        <td>-0.375</td><td>-1.8</td><td>0.3949</td>
+        <td>0.364</td>
         <td class="l"><span class="muted">no</span></td>
       </tr>
       
-      <tr><td class="l">payout</td>
-        <td class="pos">0.0089</td>
-        <td>0.189</td><td>0.644</td><td>0.8508</td>
+      <tr><td class="l">investment</td>
+        <td class="neg">0.0</td>
+        <td>0.001</td><td>0.002</td><td>0.9981</td>
         <td>0.636</td>
         <td class="l"><span class="muted">no</span></td>
       </tr>
       
+      <tr><td class="l">payout</td>
+        <td class="pos">0.013</td>
+        <td>0.234</td><td>1.062</td><td>0.5538</td>
+        <td>0.545</td>
+        <td class="l"><span class="muted">no</span></td>
+      </tr>
+      
       <tr><td class="l">low_vol</td>
-        <td class="pos">0.0021</td>
-        <td>0.014</td><td>0.057</td><td>0.9549</td>
-        <td>0.444</td>
+        <td class="pos">0.0193</td>
+        <td>0.112</td><td>0.456</td><td>0.8913</td>
+        <td>0.556</td>
         <td class="l"><span class="muted">no</span></td>
       </tr>
       
       <tr><td class="l">low_beta</td>
-        <td class="neg">-0.0313</td>
-        <td>-0.142</td><td>-0.611</td><td>0.8508</td>
+        <td class="neg">-0.018</td>
+        <td>-0.079</td><td>-0.344</td><td>0.893</td>
         <td>0.455</td>
         <td class="l"><span class="muted">no</span></td>
       </tr>
       
       <tr><td class="l">short_interest</td>
-        <td class="neg">-0.0024</td>
-        <td>-0.033</td><td>-0.119</td><td>0.9549</td>
-        <td>0.273</td>
+        <td class="pos">0.0193</td>
+        <td>0.24</td><td>0.929</td><td>0.5547</td>
+        <td>0.636</td>
         <td class="l"><span class="muted">no</span></td>
       </tr>
       
       <tr><td class="l">accruals</td>
-        <td class="neg">-0.0296</td>
-        <td>-0.694</td><td>-2.456</td><td>0.077</td>
-        <td>0.182</td>
-        <td class="l"><span class="pos">✓</span></td>
+        <td class="neg">-0.0209</td>
+        <td>-0.503</td><td>-2.016</td><td>0.3949</td>
+        <td>0.364</td>
+        <td class="l"><span class="muted">no</span></td>
       </tr>
       
       <tr><td class="l">composite</td>
-        <td class="pos">0.0022</td>
-        <td>0.032</td><td>0.122</td><td>0.9549</td>
-        <td>0.545</td>
+        <td class="pos">0.015</td>
+        <td>0.254</td><td>1.032</td><td>0.5538</td>
+        <td>0.727</td>
         <td class="l"><span class="muted">no</span></td>
       </tr>
       
       <tr><td class="l">composite_orth</td>
-        <td class="neg">-0.014</td>
-        <td>-0.205</td><td>-1.091</td><td>0.6061</td>
-        <td>0.455</td>
+        <td class="pos">0.0032</td>
+        <td>0.035</td><td>0.202</td><td>0.924</td>
+        <td>0.545</td>
         <td class="l"><span class="muted">no</span></td>
       </tr>
       
     </table>
     
     <p class="muted" style="font-size:12px;margin-top:8px"><span class="l-en">Factor overlap</span><span class="l-zh">因子重叠</span>:
-      <span class="l-en">mean |corr|</span><span class="l-zh">平均|相关|</span> 0.13 <span class="l-en">raw →</span><span class="l-zh">原始 →</span>
-      0.062 <span class="l-en">orthogonalized. Most-correlated:</span><span class="l-zh">正交化后。相关性最高：</span>
-      quality↔accruals (0.73); low_vol↔low_beta (0.71)</p>
+      <span class="l-en">mean |corr|</span><span class="l-zh">平均|相关|</span> 0.126 <span class="l-en">raw →</span><span class="l-zh">原始 →</span>
+      0.054 <span class="l-en">orthogonalized. Most-correlated:</span><span class="l-zh">正交化后。相关性最高：</span>
+      quality↔accruals (0.72); low_vol↔low_beta (0.72)</p>
     
     <p class="muted" style="font-size:12px">Point-in-time (EDGAR panel + prices truncated to asof); IC = quarterly cross-sectional rank corr of factor z vs forward return; t_hac = Newey-West; q_fdr = Benjamini-Hochberg across the factor panel. Survivors judged vs ~0.</p>
     
@@ -528,19 +528,91 @@
     </h2>
     
     <table>
-      <tr><th class="l"><span class="l-en">fund</span><span class="l-zh">基金</span></th><th class="l"><span class="l-en">position</span><span class="l-zh">仓位</span></th><th><span class="l-en">active chg</span><span class="l-zh">主动变动</span></th><th><span class="l-en">window</span><span class="l-zh">窗口</span></th></tr>
+      <tr><th class="l"><span class="l-en">fund</span><span class="l-zh">基金</span></th><th class="l"><span class="l-en">stock</span><span class="l-zh">个股</span></th><th class="l"><span class="l-en">sector</span><span class="l-zh">板块</span></th><th class="r"><span class="l-en">weight</span><span class="l-zh">权重</span></th><th class="r"><span class="l-en">conviction Δwt</span><span class="l-zh">信念权重Δ</span></th><th class="l"><span class="l-en">technical</span><span class="l-zh">技术面</span></th></tr>
       
-      <tr><td class="l">ARKK</td><td class="l">BIDU</td>
-          <td class="neg">-55.8%</td>
-          <td class="muted">2026-06-11..2026-06-12</td></tr>
+      <tr><td class="l"><b>MARS</b></td>
+          <td class="l"><a href="stock.html#SPCX"><b>SPCX</b></a> <span class="muted">Space Exploration Technologies Corp</span></td>
+          <td class="l muted"><span class="l-en">Space</span><span class="l-zh">Space</span></td>
+          <td class="r muted">10.80%</td>
+          <td class="r pos"><b>+10.80pp</b></td>
+          <td class="l"><span class="muted">—</span></td></tr>
       
-      <tr><td class="l">ARKW</td><td class="l">BIDU</td>
-          <td class="neg">-48.3%</td>
-          <td class="muted">2026-06-11..2026-06-12</td></tr>
+      <tr><td class="l"><b>CLOU</b></td>
+          <td class="l"><a href="stock.html#DDOG"><b>DDOG</b></a> <span class="muted">Datadog Inc - Class A</span></td>
+          <td class="l muted"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td>
+          <td class="r muted">6.31%</td>
+          <td class="r pos"><b>+6.31pp</b></td>
+          <td class="l"><span class="muted">—</span></td></tr>
       
-      <tr><td class="l">ARKK</td><td class="l">NTLA</td>
-          <td class="neg">-11.6%</td>
-          <td class="muted">2026-06-11..2026-06-12</td></tr>
+      <tr><td class="l"><b>MEME</b></td>
+          <td class="l"><a href="stock.html#RDW"><b>RDW</b></a> <span class="muted">Redwire Corp</span></td>
+          <td class="l muted"><span class="l-en">Meme / Retail</span><span class="l-zh">Meme / Retail</span></td>
+          <td class="r muted">6.27%</td>
+          <td class="r pos"><b>+6.27pp</b></td>
+          <td class="l"><span class="muted">—</span></td></tr>
+      
+      <tr><td class="l"><b>MEME</b></td>
+          <td class="l"><a href="stock.html#VSH"><b>VSH</b></a> <span class="muted">Vishay Intertechnology Inc</span></td>
+          <td class="l muted"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td>
+          <td class="r muted">5.62%</td>
+          <td class="r pos"><b>+5.62pp</b></td>
+          <td class="l"><span class="muted">—</span></td></tr>
+      
+      <tr><td class="l"><b>MEME</b></td>
+          <td class="l"><a href="stock.html#QNT"><b>QNT</b></a> <span class="muted">Quantinuum Inc</span></td>
+          <td class="l muted"><span class="l-en">Meme / Retail</span><span class="l-zh">Meme / Retail</span></td>
+          <td class="r muted">5.18%</td>
+          <td class="r pos"><b>+5.18pp</b></td>
+          <td class="l"><span class="muted">—</span></td></tr>
+      
+      <tr><td class="l"><b>MEME</b></td>
+          <td class="l"><a href="stock.html#QBTS"><b>QBTS</b></a> <span class="muted">D-Wave Quantum Inc</span></td>
+          <td class="l muted"><span class="l-en">Meme / Retail</span><span class="l-zh">Meme / Retail</span></td>
+          <td class="r muted">5.13%</td>
+          <td class="r pos"><b>+5.13pp</b></td>
+          <td class="l"><span class="muted">—</span></td></tr>
+      
+      <tr><td class="l"><b>MEME</b></td>
+          <td class="l"><a href="stock.html#IONQ"><b>IONQ</b></a> <span class="muted">Ionq Inc</span></td>
+          <td class="l muted"><span class="l-en">Meme / Retail</span><span class="l-zh">Meme / Retail</span></td>
+          <td class="r muted">5.06%</td>
+          <td class="r pos"><b>+5.06pp</b></td>
+          <td class="l"><span class="muted">—</span></td></tr>
+      
+      <tr><td class="l"><b>BUG</b></td>
+          <td class="l"><a href="stock.html#CVLT"><b>CVLT</b></a> <span class="muted">Commvault Systems Inc</span></td>
+          <td class="l muted"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td>
+          <td class="r muted">4.59%</td>
+          <td class="r pos"><b>+4.59pp</b></td>
+          <td class="l"><span class="muted">—</span></td></tr>
+      
+      <tr><td class="l"><b>CLOU</b></td>
+          <td class="l"><a href="stock.html#NET"><b>NET</b></a> <span class="muted">Cloudflare Inc - Class A</span></td>
+          <td class="l muted"><span class="l-en">Cloud</span><span class="l-zh">Cloud</span></td>
+          <td class="r muted">4.04%</td>
+          <td class="r pos"><b>+4.04pp</b></td>
+          <td class="l"><span class="muted">—</span></td></tr>
+      
+      <tr><td class="l"><b>MEME</b></td>
+          <td class="l"><a href="stock.html#NVTS"><b>NVTS</b></a> <span class="muted">Navitas Semiconductor Corp</span></td>
+          <td class="l muted"><span class="l-en">Meme / Retail</span><span class="l-zh">Meme / Retail</span></td>
+          <td class="r muted">3.89%</td>
+          <td class="r pos"><b>+3.89pp</b></td>
+          <td class="l"><span class="muted">—</span></td></tr>
+      
+      <tr><td class="l"><b>OZEM</b></td>
+          <td class="l"><a href="stock.html#KLRA"><b>KLRA</b></a> <span class="muted">Kailera Therapeutics Inc</span></td>
+          <td class="l muted"><span class="l-en">Obesity / GLP-1</span><span class="l-zh">Obesity / GLP-1</span></td>
+          <td class="r muted">3.80%</td>
+          <td class="r pos"><b>+3.80pp</b></td>
+          <td class="l"><span class="muted">—</span></td></tr>
+      
+      <tr><td class="l"><b>MEME</b></td>
+          <td class="l"><a href="stock.html#ALAB"><b>ALAB</b></a> <span class="muted">Astera Labs Inc</span></td>
+          <td class="l muted"><span class="l-en">Meme / Retail</span><span class="l-zh">Meme / Retail</span></td>
+          <td class="r muted">3.53%</td>
+          <td class="r pos"><b>+3.53pp</b></td>
+          <td class="l"><span class="muted">—</span></td></tr>
       
     </table>
     
