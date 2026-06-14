@@ -29,10 +29,10 @@
     },
     "USDCHF": {
       "label": "USD/CHF",
-      "quote": 0.7964,
-      "chg": 1.2,
+      "quote": 0.7956,
+      "chg": 1.1,
       "action": "FLAT",
-      "score": 13.8
+      "score": 13.1
     },
     "AUDUSD": {
       "label": "AUD/USD",
@@ -43,29 +43,29 @@
     },
     "USDCAD": {
       "label": "USD/CAD",
-      "quote": 1.3989,
-      "chg": 1.7,
+      "quote": 1.3984,
+      "chg": 1.6,
       "action": "FLAT",
-      "score": 7.3
+      "score": 7.1
     },
     "USDMXN": {
       "label": "USD/MXN",
-      "quote": 17.285,
-      "chg": 0.3,
+      "quote": 17.2065,
+      "chg": -0.8,
       "action": "SHORT",
-      "score": -44.7
+      "score": -50.7
     },
     "USDBRL": {
       "label": "USD/BRL",
       "quote": 5.0628,
-      "chg": 1.2,
+      "chg": 0.0,
       "action": "FLAT",
-      "score": -3.1
+      "score": -2.3
     },
     "USDCNH": {
       "label": "USD/CNH",
-      "quote": 6.763,
-      "chg": -1.6,
+      "quote": 6.7215,
+      "chg": -2.2,
       "action": "FLAT",
       "score": 15.0
     }
