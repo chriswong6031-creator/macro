@@ -533,6 +533,81 @@ def breadth_divergence(f: pd.DataFrame) -> dict | None:
     return {"sc": sc, "lc": lc, "gap": gap, "verdict": verdict}
 
 
+# Market-breadth scorecard across the full S&P Composite 1500, by size tier.
+# The daily collector already stores advancing/declining, % above the 50- and
+# 200-day lines, and 52w new highs/lows for each universe — but the page only
+# ever charted % > 50d (large + small). This surfaces the rest as one legible
+# scorecard. NB: % > 50d also feeds the regime model's growth axis, so this is
+# the same breadth the model reads, not a new/contradicting signal.
+_BREADTH_TIERS = (
+    ("large", "breadth",          "S&P 500", ("Large cap", "大盘")),
+    ("mid",   "midcap_breadth",   "S&P 400", ("Mid cap",   "中盘")),
+    ("small", "smallcap_breadth", "S&P 600", ("Small cap", "小盘")),
+)
+
+
+def _wmean(tiers: list[dict], key: str) -> float | None:
+    """Member-count-weighted mean of a per-tier metric, skipping missing tiers."""
+    num = sum(t[key] * t["n"] for t in tiers if t[key] is not None)
+    den = sum(t["n"] for t in tiers if t[key] is not None)
+    return num / den if den else None
+
+
+def _breadth_read(pa50: float | None, net_nh: int) -> tuple:
+    """Plain-language read of composite breadth -> (label, verdict, tone)."""
+    if pa50 is not None and pa50 >= 60 and net_nh >= 0:
+        return (T("broad", "广泛"),
+                T("The advance is well-supported across the full 1,500",
+                  "上涨在整个 1500 只股票中获得良好支撑"), "pos")
+    if pa50 is not None and (pa50 <= 40 or net_nh < 0):
+        return (T("thin", "稀薄"),
+                T("Few names hold their trend — rallies here are fragile",
+                  "守住趋势的个股很少 — 此时的反弹较脆弱"), "neg")
+    return (T("mixed", "参差"),
+            T("No clear breadth edge either way",
+              "广度上没有明显的方向性优势"), "muted")
+
+
+def breadth_scorecard() -> dict | None:
+    """Latest breadth read across the S&P 1500 size tiers + a weighted composite."""
+    tiers, asof = [], None
+    for key, ns, univ, (en, zh) in _BREADTH_TIERS:
+        p = config.data_dir() / ns / "breadth.parquet"
+        if not p.exists():
+            continue
+        try:
+            row = pd.read_parquet(p).dropna(subset=["pct_above_50"]).iloc[-1]
+        except Exception:  # noqa: BLE001 — additive, never fatal
+            continue
+        adv, dec = float(row.get("adv", 0) or 0), float(row.get("dec", 0) or 0)
+        nh, nl = float(row.get("nh", 0) or 0), float(row.get("nl", 0) or 0)
+        pa200 = row.get("pct_above_200")
+        tiers.append({
+            "key": key, "label": T(en, zh), "univ": univ,
+            "n": int(row.get("n_members", 0) or 0),
+            "adv": int(adv), "dec": int(dec),
+            "adv_pct": (100 * adv / (adv + dec)) if (adv + dec) else None,
+            "pa50": float(row["pct_above_50"]),
+            "pa200": float(pa200) if pd.notna(pa200) else None,
+            "nh": int(nh), "nl": int(nl), "net_nh": int(nh - nl),
+        })
+        asof = row.name if asof is None else max(asof, row.name)
+    if not tiers:
+        return None
+    adv, dec = sum(t["adv"] for t in tiers), sum(t["dec"] for t in tiers)
+    net_nh = sum(t["net_nh"] for t in tiers)
+    pa50, pa200 = _wmean(tiers, "pa50"), _wmean(tiers, "pa200")
+    label, verdict, tone = _breadth_read(pa50, net_nh)
+    return {
+        "asof": pd.Timestamp(asof).strftime("%Y-%m-%d") if asof is not None else None,
+        "tiers": tiers,
+        "comp": {"n": sum(t["n"] for t in tiers), "adv": adv, "dec": dec,
+                 "adv_pct": (100 * adv / (adv + dec)) if (adv + dec) else None,
+                 "pa50": pa50, "pa200": pa200, "net_nh": net_nh,
+                 "label": label, "verdict": verdict, "tone": tone},
+    }
+
+
 # heat-bar fill uses theme-aware CSS variables (legible in both modes)
 HEAT_COLORS = {"70+": "var(--orange)", "55-69": "var(--up)",
                "40-54": "var(--muted)", "0-39": "var(--info)"}
@@ -1564,6 +1639,7 @@ def main() -> int:
         internals=internals_rows(latest),
         size_style=size_style_rows(f),
         breadth_div=breadth_divergence(f),
+        breadth_panel=breadth_scorecard(),
         sector_rows=sector_rows(latest.get("playbook"), sector_timing),
         generated_utc=generated,
         chart_liquidity=chart_liquidity(f),
