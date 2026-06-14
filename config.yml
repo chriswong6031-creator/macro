@@ -1086,6 +1086,29 @@ prediction_markets:
     fed_cuts:  {match: "rate cuts in", pick: max_volume,  label_en: "Fed cuts this year", label_zh: "今年降息次数"}
     recession: {match: "recession",    pick: max_volume,  label_en: "US recession",       label_zh: "美国衰退"}
 
+# =============================================================================
+# BIS global credit cycle (collectors/bis.py + engine/credit_cycle.py) — the
+# credit-to-GDP GAP (Borio-Drehmann crisis early-warning) + debt-service ratios,
+# from the BIS keyless SDMX v2 API (stats.bis.org, attribution-only licence).
+# Quarterly, slow-moving structural CONTEXT on the bonds page — never scored.
+# CG_DTYPE: A=credit/GDP ratio, B=trend, C=GAP (we take the gap).
+# =============================================================================
+bis:
+  enabled: true
+  retries: 3
+  series:                            # store_key: {flow, full SDMX key, col}
+    us_gap: {flow: WS_CREDIT_GAP, key: "Q.US.P.A.C", col: gap}
+    us_dsr: {flow: WS_DSR,        key: "Q.US.P",     col: dsr}
+    cn_gap: {flow: WS_CREDIT_GAP, key: "Q.CN.P.A.C", col: gap}
+    cn_dsr: {flow: WS_DSR,        key: "Q.CN.P",     col: dsr}
+
+credit_cycle:
+  boom_gap: 10.0                     # credit-to-GDP gap above this = boom / elevated crisis risk (BIS)
+  delever_gap: -2.0                  # below this = deleveraging
+  countries:
+    us: {gap: us_gap, dsr: us_dsr, label_en: "United States", label_zh: "美国"}
+    cn: {gap: cn_gap, dsr: cn_dsr, label_en: "China",         label_zh: "中国"}
+
 commodities:
   assets:                          # name: [yahoo price ticker, cot store-series, class]
     gold:   ["GC=F", cot_gold,   precious]
