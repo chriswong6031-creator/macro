@@ -77,6 +77,19 @@ OPTIONABLE_GEX = ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "AMD"
                   "PLTR", "COIN", "SMCI", "MRVL", "JPM", "BAC", "XOM", "WMT", "LLY"]
 
 
+def _next_opex_days() -> int:
+    """Calendar days to the next monthly OPEX (3rd Friday) — for the pin-caution flag."""
+    import datetime
+    t = datetime.date.today()
+    def tf(y, m):
+        d = datetime.date(y, m, 1)
+        return d + datetime.timedelta(days=(4 - d.weekday()) % 7) + datetime.timedelta(days=14)
+    x = tf(t.year, t.month)
+    if x < t:
+        m = t.month % 12 + 1; y = t.year + (1 if t.month == 12 else 0); x = tf(y, m)
+    return (x - t).days
+
+
 def _optionable_gex() -> dict:
     """Per-stock dealer-gamma summary for the liquid optionable subset (DISPLAY-ONLY,
     never in the score -- gated by scripts/validate_gex.py). Best-effort; failures skip.
@@ -89,12 +102,14 @@ def _optionable_gex() -> dict:
     adapter = GexAdapter(); gcfg = adapter.cfg.get("gex", {})
     ecfg = {k: gcfg[k] for k in ("contract_multiplier", "pct_move",
                                  "strike_window_pct", "max_expiry_days") if k in gcfg}
+    od = _next_opex_days()
     out: dict = {}
     for t in OPTIONABLE_GEX:
         try:
             chain, spot = adapter._chain(t)
             summ = compute_gex(chain, spot, cfg={**ecfg, "r": gcfg.get("r", 0.043), "q": 0.0})
             if summ.get("tier") not in (None, "no_options"):
+                summ["opex_days"] = od
                 out[t] = summ
         except Exception as e:  # noqa: BLE001
             log.debug("per-stock gex %s skipped: %s", t, e)
