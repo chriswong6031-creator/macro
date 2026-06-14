@@ -108,6 +108,17 @@ def _spark(cum: pd.Series) -> list:
     return [round(float(v), 2) for v in cum.iloc[::step]]
 
 
+def _nav(r: pd.Series) -> list:
+    """Daily NAV LEVEL series (1.0 at first valid, NaN before) for the interactive chart —
+    full resolution so the client can rebase per range + z-score (winRet/winZ)."""
+    first = r.first_valid_index()
+    if first is None:
+        return [None] * len(r)
+    lv = pd.Series(np.nan, index=r.index)
+    lv.loc[first:] = (1.0 + r.loc[first:].fillna(0.0)).cumprod()
+    return [None if pd.isna(v) else round(float(v), 5) for v in lv]
+
+
 def compute_factor_series() -> dict | None:
     """Walk month-ends, build per-factor long-only + L/S daily return series, and
     derive horizons, stats, crowding, rotation and the quilt. None if no caches."""
@@ -122,6 +133,7 @@ def compute_factor_series() -> dict | None:
 
     lo = {f: pd.Series(np.nan, index=idx) for f in SERIES_FACTORS}     # long-only daily ret
     ls = {f: pd.Series(np.nan, index=idx) for f in SERIES_FACTORS}     # Q5-Q1 daily ret
+    sec_ret: dict = {}                                                 # cap-weighted GICS sector daily ret
 
     for i, d in enumerate(me):
         try:
@@ -159,6 +171,17 @@ def compute_factor_series() -> dict | None:
             c1 = [c for c in q1 if c in rets.columns]
             if len(c5) >= 10 and len(c1) >= 10:
                 ls[f].loc[hold] = rets.loc[hold, c5].mean(axis=1) - rets.loc[hold, c1].mean(axis=1)
+        # cap-weighted GICS sector series — the relational sector-vs-benchmark monitor
+        if "sector" in t.columns and mc_all is not None:
+            for sec in [s for s in t["sector"].dropna().unique() if s and s != "—"]:
+                grp = t.index[t["sector"] == sec]
+                mc = mc_all.reindex(grp).dropna()
+                mc = mc[mc > 0]
+                cols = [c for c in mc.index if c in rets.columns]
+                if len(cols) >= 3:
+                    w = mc[cols] / mc[cols].sum()
+                    sec_ret.setdefault(sec, pd.Series(np.nan, index=idx))
+                    sec_ret[sec].loc[hold] = rets.loc[hold, cols].mul(w, axis=1).sum(axis=1)
 
     # SPY benchmark (cap-weighted market)
     spy = store.read("yahoo", "SPY")
@@ -227,6 +250,17 @@ def compute_factor_series() -> dict | None:
     # quilt: monthly L/S total return per factor (ranked best->worst per month elsewhere/UI)
     quilt = _quilt(ls, active)
 
+    # dense NAV matrix for the interactive lightweight-charts view (client rebases per range):
+    # long-only + Q5-Q1 spread per factor, cap-weighted GICS sectors, and the SPY benchmark.
+    chart_data = {
+        "dates": [d.strftime("%Y-%m-%d") for d in idx],
+        "bench": _nav(spy_ret) if spy_ret is not None else [None] * len(idx),
+        "long": {f: _nav(lo[f]) for f in active},
+        "spread": {f: _nav(ls[f]) for f in active},
+        "sector": {s: _nav(r) for s, r in sorted(sec_ret.items()) if r.notna().sum() > 60},
+        "labels": {f: LABELS.get(f, f) for f in active},
+    }
+
     return {
         "as_of": idx.max().strftime("%Y-%m-%d"),
         "history_start": idx.min().strftime("%Y-%m-%d"),
@@ -235,6 +269,7 @@ def compute_factor_series() -> dict | None:
         "labels": {f: LABELS.get(f, f) for f in active},
         "series": series, "horizons": horizons, "stats": stats,
         "benchmark": bench, "crowding": crowding, "rotation": rotation, "quilt": quilt,
+        "chart_data": chart_data,
         "note": ("Point-in-time month-end rebalanced; long-only = cap-weighted top quintile "
                  "(5% name cap), long/short = equal-weight Q5-Q1 (a paper premium, not shortable)."),
         "honesty": ("Free fundamentals are ANNUAL, so fundamental factor ranks refresh only ~once "

@@ -93,7 +93,22 @@
   .seg button.on { background:var(--panel2); font-weight:600; }
   .scroll { overflow-x:auto; }
   table[data-leg="lo"] .v-ls, table[data-leg="ls"] .v-lo { display:none; }
+  .chartbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin:8px 0 2px; }
+  .tabs { display:inline-flex; border:1px solid var(--line); border-radius:9px; overflow:hidden; }
+  .tabs button { border:0; background:var(--panel); color:var(--muted); font-size:12px; padding:5px 11px; cursor:pointer; border-right:1px solid var(--line); }
+  .tabs button:last-child { border-right:0; }
+  .tabs button.on { background:var(--panel2); color:var(--text); font-weight:650; }
+  .tabs .rangeN { width:72px; background:var(--panel); color:var(--text); border:0; border-left:1px solid var(--line); padding:5px 8px; font-size:12px; }
+  #fchart { height:400px; width:100%; }
+  .legend { display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:10px; }
+  .lchip { display:inline-flex; align-items:center; gap:6px; font-size:12px; cursor:pointer; }
+  .lchip.off { opacity:.34; }
+  .lchip .ldot { width:9px; height:9px; border-radius:50%; display:inline-block; }
+  .lchip .lv { color:var(--muted); font-variant-numeric:tabular-nums; }
+  #sector-monitor td.hzc { font-variant-numeric:tabular-nums; text-align:center; }
+  #sector-monitor .zc { font-size:12.5px; font-weight:600; } #sector-monitor .rr { font-size:10px; opacity:.7; display:block; }
 </style>
+<script src="lightweight-charts.js"></script>
 </head>
 <body>
 
@@ -239,6 +254,25 @@
       'Small-cap vs large-cap breadth: ' ~ ('%+.1f'|format(breadth.div_small_large)) ~ 'pp (small minus large, % above 50d). Positive = small-caps participating MORE than mega-caps — a broadening tape; negative = leadership narrowing to the top.',
       '小盘相对大盘广度：' ~ ('%+.1f'|format(breadth.div_small_large)) ~ ' 个百分点（小盘减大盘，% 高于50日线）。正值=小盘参与度高于大盘（涨势扩散）；负值=领先向头部集中。') }}</p>
     {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Interactive factor performance chart + GICS sector monitor (lightweight-charts) -->
+  {% if series and series.chart_data %}
+  <div class="panel" id="fchart-section">
+    <h2>{{ t('Factor performance — interactive', '因子表现 — 交互图') }}
+      {{ help("Rebased to 0% at the start of the selected window. Four relational views: factors LONG-ONLY (carry with the market), factors vs S&P 500, the Q5−Q1 PREMIUM (market-neutral), and cap-weighted GICS SECTORS vs S&P. Click legend entries to toggle series; pick a range. Powered by TradingView Lightweight Charts.", "在所选窗口起点重设为 0%。四种关系视图：因子纯多头、因子相对标普、Q5−Q1 溢价（市场中性）、以及市值加权 GICS 行业相对标普。点击图例切换；可选区间。") }}
+    </h2>
+    <div class="chartbar"><span class="tabs" id="fc-modes" role="group"></span><span class="tabs" id="fc-ranges" role="group"></span></div>
+    <div id="fchart"></div>
+    <div class="legend" id="fc-legend"></div>
+  </div>
+
+  <div class="panel" id="sector-section">
+    <h2>{{ t('Sector monitor — cap-weighted GICS vs S&P', '行业监测 — 市值加权 GICS 相对标普') }}
+      {{ help("Each cap-weighted GICS sector's return RELATIVE to the S&P over each horizon, colored by how unusual that move is vs the sector's own trailing-year distribution (z). Deep color + |z|≥2 = an outsized rotation. The small number is the relative return; the big number is the z.", "每个市值加权 GICS 行业相对标普的回报（各时间跨度），按该走势相对其自身过去一年分布的异常程度（z）着色。颜色越深、|z|≥2 = 异常轮动。小字为相对回报，大字为 z。") }}
+    </h2>
+    <div class="ts"><table id="sector-monitor"></table></div>
   </div>
   {% endif %}
 
@@ -459,6 +493,70 @@
       });
     })();
   </script>
+  {% if series and series.chart_data %}
+  <script>
+  const CHART_DATA = {{ series.chart_data | tojson }};
+  (function(){
+    if(!CHART_DATA || !CHART_DATA.dates) return;
+    const D=CHART_DATA, dates=D.dates, bench=D.bench, labels=D.labels||{};
+    const cssv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+    const PALETTE=['#5aa7ff','#4ade80','#facc15','#fb923c','#f472b6','#2dd4bf','#a78bfa','#fb7185','#a3e635','#38bdf8','#e879f9'];
+    const FAC=Object.keys(D.long||{}), SEC=Object.keys(D.sector||{});
+    const colorOf={}; FAC.forEach((f,i)=>colorOf[f]=PALETTE[i%PALETTE.length]); SEC.forEach((s,i)=>colorOf['sec:'+s]=PALETTE[i%PALETTE.length]);
+    const lastIdx=a=>{for(let i=a.length-1;i>=0;i--) if(a[i]!=null) return i; return -1;};
+    function startIdxFor(col,li){ const u=col.toUpperCase(); if(u==='YTD'){const p=dates[li].slice(0,4); let i=li; while(i>0&&dates[i-1].startsWith(p))i--; return i>0?i-1:null;} const i=li-parseInt(col,10); return i>=0?i:null; }
+    function winRet(lv,col){ if(!lv) return null; const li=lastIdx(lv); if(li<0) return null; const si=startIdxFor(col,li); if(si==null||lv[si]==null) return null; return lv[li]/lv[si]-1; }
+    function winZ(lv,col){ const n=parseInt(col,10); if(!n||!lv) return null; const li=lastIdx(lv); if(li<252+n) return null; const hr=[]; for(let i=li-252;i<=li;i++) hr.push((lv[i]!=null&&lv[i-n]!=null)?lv[i]/lv[i-n]-1:null); const cur=hr[hr.length-1]; const base=hr.slice(0,-1).filter(v=>v!=null); if(cur==null||base.length<200) return null; const m=base.reduce((a,b)=>a+b,0)/base.length; const sd=Math.sqrt(base.reduce((a,b)=>a+(b-m)**2,0)/(base.length-1)); return sd>0?(cur-m)/sd:null; }
+    const ratio=a=>a.map((v,i)=>(v!=null&&bench[i]!=null)?v/bench[i]:null);
+    const fmtPct=x=>x==null?'—':(x>=0?'+':'')+(x*100).toFixed(1)+'%';
+    const MODES=[['long','Long-only'],['rel','vs S&P 500'],['spread','Q5−Q1 premium'],['sector','Sectors vs S&P']];
+    const RANGES=[['3M',63],['6M',126],['YTD','ytd'],['1Y',252],['All',0]];
+    let mode='rel', range=252, chart=null, hidden={};
+    function sets(){
+      if(mode==='spread') return FAC.map(f=>({key:f,label:labels[f]||f,color:colorOf[f],levels:D.spread[f]}));
+      if(mode==='sector') return SEC.map(s=>({key:'sec:'+s,label:s,color:colorOf['sec:'+s],levels:ratio(D.sector[s])}));
+      const base=FAC.map(f=>({key:f,label:labels[f]||f,color:colorOf[f],levels:D.long[f]}));
+      if(mode==='rel') return base.map(s=>({...s,levels:ratio(s.levels)}));
+      return [...base,{key:'bench',label:'S&P 500',color:cssv('--muted')||'#94a3b8',levels:bench}];
+    }
+    function rangeStart(){ if(range==='ytd'){const y=dates[dates.length-1].slice(0,4); const i=dates.findIndex(d=>d.startsWith(y)); return i<=0?0:i-1;} return range?Math.max(0,dates.length-range):0; }
+    function copts(){ return {autoSize:true, layout:{background:{type:'solid',color:'transparent'},textColor:cssv('--muted')||'#9aa4b2',fontSize:11}, grid:{vertLines:{visible:false},horzLines:{color:cssv('--line')||'#222'}}, rightPriceScale:{borderColor:cssv('--line')||'#222'}, timeScale:{borderColor:cssv('--line')||'#222'}, crosshair:{mode:0}}; }
+    function drawChart(){
+      const el=document.getElementById('fchart'); if(typeof LightweightCharts==='undefined'){el.innerHTML='<p class="muted">The charting library failed to load — the rest of the page is unaffected.</p>';return;}
+      if(!chart) chart=LightweightCharts.createChart(el,copts());
+      (chart.__s||[]).forEach(s=>chart.removeSeries(s)); chart.__s=[];
+      const st=rangeStart(); const ss=sets().filter(s=>!hidden[s.key]); const nv=ss.length;
+      ss.forEach(set=>{ let base=null; const data=[]; for(let i=st;i<dates.length;i++){const v=set.levels[i]; if(v==null) continue; if(base===null) base=v; data.push({time:dates[i],value:100*(v/base-1)});} if(data.length<2) return;
+        const s=chart.addLineSeries({color:set.color,lineWidth:2,priceLineVisible:false,lastValueVisible:nv<=4,title:nv<=4?set.label:'',priceFormat:{type:'custom',minMove:0.01,formatter:v=>(v>=0?'+':'')+v.toFixed(1)+'%'}}); s.setData(data); chart.__s.push(s); });
+      chart.timeScale().fitContent(); drawLegend();
+    }
+    function drawLegend(){ const el=document.getElementById('fc-legend'); const st=rangeStart();
+      el.innerHTML=sets().map(s=>{const li=lastIdx(s.levels); let base=null; for(let i=st;i<=li;i++){if(s.levels[i]!=null){base=s.levels[i];break;}} const v=(base!=null&&s.levels[li]!=null)?100*(s.levels[li]/base-1):null;
+        return `<span class="lchip ${hidden[s.key]?'off':''}" data-k="${s.key}"><span class="ldot" style="background:${s.color}"></span>${s.label} <span class="lv">${v==null?'':(v>=0?'+':'')+v.toFixed(1)+'%'}</span></span>`;}).join('');
+      el.querySelectorAll('.lchip').forEach(c=>c.onclick=()=>{hidden[c.dataset.k]=!hidden[c.dataset.k]; drawChart();}); }
+    function tabs(elId,opts,active,cb){ const el=document.getElementById(elId); el.innerHTML=opts.map(([v,l])=>`<button data-v="${v}" class="${v==active?'on':''}">${l}</button>`).join(''); el.querySelectorAll('button').forEach(b=>b.onclick=()=>{el.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); cb(b.dataset.v);}); }
+    const HZ=['1d','5d','20d','60d','YTD'];
+    function zbg(z){ if(z==null) return ''; const a=Math.min(Math.abs(z)/2.5,0.85).toFixed(2); return z>=0?`background:rgba(56,139,253,${a})`:`background:rgba(248,81,73,${a})`; }
+    function drawSector(){
+      const rows=SEC.map(s=>{const rl=ratio(D.sector[s]); return {s,rel:Object.fromEntries(HZ.map(h=>[h,winRet(rl,h)])), z:Object.fromEntries(HZ.map(h=>[h,/^\d/.test(h)?winZ(rl,h):null]))};});
+      rows.sort((a,b)=>(b.rel['20d']==null?-9:b.rel['20d'])-(a.rel['20d']==null?-9:a.rel['20d']));
+      let html=`<thead><tr><th style="text-align:left">Sector (vs S&P)</th>${HZ.map(h=>`<th class="hzc">${h}</th>`).join('')}</tr></thead><tbody>`;
+      html+=rows.map(r=>`<tr><td>${r.s}</td>${HZ.map(h=>`<td class="hzc" style="${zbg(r.z[h])}"><span class="zc">${r.z[h]==null?'':(r.z[h]>=0?'+':'')+r.z[h].toFixed(1)+'σ'}</span><span class="rr ${r.rel[h]>=0?'pos':'neg'}">${fmtPct(r.rel[h])}</span></td>`).join('')}</tr>`).join('');
+      document.getElementById('sector-monitor').innerHTML=html+'</tbody>';
+    }
+    function bootFc(){
+      tabs('fc-modes',MODES,mode,v=>{mode=v; drawChart();});
+      const rel=document.getElementById('fc-ranges'); rel.innerHTML=RANGES.map(([l,v])=>`<button data-v="${v}" class="${v===range?'on':''}">${l}</button>`).join('')+`<input class="rangeN" type="number" min="5" max="600" placeholder="N">`;
+      rel.querySelectorAll('button').forEach(b=>b.onclick=()=>{range=(b.dataset.v==='ytd')?'ytd':parseInt(b.dataset.v,10); rel.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); drawChart();});
+      rel.querySelector('.rangeN').onchange=function(){range=Math.min(600,Math.max(5,parseInt(this.value,10)||252)); rel.querySelectorAll('button').forEach(x=>x.classList.remove('on')); drawChart();};
+      drawChart(); drawSector();
+      document.addEventListener('langchange',()=>{if(chart)chart.applyOptions(copts()); drawChart(); drawSector();});
+      document.addEventListener('themechange',()=>{if(chart)chart.applyOptions(copts()); drawChart();});
+    }
+    if(document.readyState!=='loading') bootFc(); else document.addEventListener('DOMContentLoaded',bootFc);
+  })();
+  </script>
+  {% endif %}
   <script src="theme.js"></script>
 </body>
 </html>
