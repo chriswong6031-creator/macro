@@ -81,6 +81,10 @@
   .bc-tf .bc-y { color:var(--up); font-weight:800; }
   .bc-tf .bc-n { color:var(--muted); opacity:.65; }
   .bc-hist { margin-top:5px; font-size:11.5px; color:var(--muted); }
+  .bc-knife { margin-top:7px; padding:6px 9px; border-radius:7px; font-size:12px;
+              line-height:1.5; background:color-mix(in srgb, var(--down) 12%, var(--panel2));
+              border-left:3px solid var(--down); color:var(--text); }
+  .bc-knife-high { background:color-mix(in srgb, var(--down) 20%, var(--panel2)); }
   a { text-decoration:none; }
   h1 { font-size:20px; margin:0; }
   h2 { font-size:14px; margin:0 0 10px; color:var(--muted); text-transform:uppercase;
@@ -1010,13 +1014,19 @@
             : 'Historically this band held the cycle low ~' + bnd.held_pct + '% of the time (21d)') + '</div>';
         }
       }
+      // Phase 2 — knife-risk caution when deeply washed out below the 200-day
+      var bcKnife = '';
+      if (d.ladder.bc_knife) {
+        bcKnife = '<div class="bc-knife bc-knife-' + d.ladder.bc_knife + '">' +
+          lz(d.ladder.bc_knife_line, d.ladder.bc_knife_line_zh) + '</div>';
+      }
       bcEl.className = 'bcbox bc-' + (d.ladder.bc_grade || 'minimal');
       bcEl.innerHTML =
         '<div class="bc-head"><span class="bc-ttl">🎯 ' + bcLbl + '</span>' +
         '<span class="bc-score ' + 'bcg-' + (d.ladder.bc_grade || 'minimal') + '">' +
         d.ladder.bc_score + '<span class="bc-max">/100</span></span>' +
         '<span class="bc-grade">' + bcg + '</span></div>' +
-        '<div class="bc-tf">' + tfHtml + '</div>' + bcHist;
+        '<div class="bc-tf">' + tfHtml + '</div>' + bcHist + bcKnife;
       bcEl.title = lz(d.ladder.bc_tip, d.ladder.bc_tip_zh);
       bcEl.style.display = 'block';
     } else { bcEl.style.display = 'none'; }
