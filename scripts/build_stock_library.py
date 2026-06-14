@@ -96,6 +96,8 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
         "tech": snapshot(c),
         "season_this": season_line(seas, month),
         "season_next": season_line(seas, month % 12 + 1),
+        "season_this_zh": season_line(seas, month, zh=True),
+        "season_next_zh": season_line(seas, month % 12 + 1, zh=True),
         **res,
     }
 
@@ -187,6 +189,16 @@ def main() -> int:
     drag = current_macro()
     log.info("net-liquidity regime for library: %s · macro-risk: %s",
              liq or "unknown", "—" if drag is None else f"{drag:.2f}")
+    # Phase-2 (research/STOCK_FUNDAMENTALS_PLAN.md): drip a capped batch of
+    # per-stock profiles (SEC identity + Wikipedia descriptions) into
+    # data/profile/ each build — resumable + capped so it never hammers SEC/
+    # Wikipedia or stalls the build, and quiet once the universe is covered.
+    try:
+        from collectors.equity_profile import fetch_profiles
+        cap = config.load().get("equity_profile", {}).get("per_build", 80)
+        fetch_profiles(max_new=cap)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("equity_profile drip skipped (%s)", e)
     # Fundamental panels (factor fingerprint, trailing valuation, financials,
     # positioning) assembled once from already-collected data and merged per name.
     # Best-effort: a failure here must never 404 the technical library.

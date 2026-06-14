@@ -162,6 +162,24 @@ def _load_insider(facts: dict) -> dict[str, dict]:
     return out
 
 
+def _load_profiles() -> dict[str, dict]:
+    """ticker -> {description, sic_description, exchange, hq} from the Phase-2
+    profile collector (collectors/equity_profile.py). Empty if not collected yet —
+    the Profile panel then shows its "building" stub."""
+    p = config.data_dir() / "profile" / "profiles.parquet"
+    if not p.exists():
+        return {}
+    try:
+        df = pd.read_parquet(p)
+    except Exception:  # noqa: BLE001
+        return {}
+    cols = [c for c in ("description", "sic_description", "exchange", "hq") if c in df.columns]
+    out: dict[str, dict] = {}
+    for t, row in df.iterrows():
+        out[str(t)] = {c: (row[c] if pd.notna(row[c]) else None) for c in cols}
+    return out
+
+
 def _load_deep() -> dict[str, dict]:
     """ticker -> {metric: value} from the ~110-name yfinance snapshot (the only
     free source of forward P/E we have). Columns are '<TICKER>__<metric>'."""
@@ -287,15 +305,20 @@ def _mktcap_tier(mcap_bn: float | None) -> dict | None:
 
 
 # ---- per-ticker block builders ---------------------------------------------
-def _profile(t, f, fac, M, arche) -> dict:
+def _profile(t, f, fac, M, arche, prof_row=None) -> dict:
     mcap_bn = _num(fac.get("mktcap_bn")) if fac else None
+    pr = prof_row or {}
     return {
         "sector": (fac.get("sector") if fac else None) or None,
         "mktcap_bn": _r(mcap_bn, 2),
         "mktcap_tier": _mktcap_tier(mcap_bn),
         "archetype": arche,
-        # Phase-2 stubs (Wikipedia description + SEC submissions identity)
-        "description": None, "sic_description": None, "exchange": None, "hq": None,
+        # identity + description from collectors/equity_profile.py (Phase 2) —
+        # None until that collector has run (the panel guards for it)
+        "description": pr.get("description"),
+        "sic_description": pr.get("sic_description"),
+        "exchange": pr.get("exchange"),
+        "hq": pr.get("hq"),
     }
 
 
@@ -433,6 +456,7 @@ def panels() -> dict[str, dict]:
     short = _load_short()
     insider = _load_insider(facts)
     deep = _load_deep()
+    profiles = _load_profiles()
 
     M = _context_frame(fund, table)
     nm_top_thr = _num(M["net_margin"].quantile(2 / 3)) if "net_margin" in M else None
@@ -444,7 +468,7 @@ def panels() -> dict[str, dict]:
         net_margin = _num(M.loc[t, "net_margin"]) if t in M.index else None
         arche = _archetype(fac, ni, net_margin, nm_top_thr)
         blocks = {
-            "profile": _profile(t, f, fac, M, arche),
+            "profile": _profile(t, f, fac, M, arche, profiles.get(str(t))),
             "valuation": _valuation(t, f, fac, M, deep.get(t)),
             "financials": _financials(t, f, deep.get(t)),
             "factors": _factors(t, fac, facts, M),
