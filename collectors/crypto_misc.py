@@ -5,12 +5,15 @@ them individually.
 """
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 
 import pandas as pd
 
 from collectors.base import Adapter
 from lib import config
+
+log = logging.getLogger(__name__)
 
 
 class FearGreedAdapter(Adapter):
@@ -88,7 +91,43 @@ class DefiLlamaAdapter(Adapter):
         df = pd.DataFrame(recs, columns=["date", "stablecoin_mcap_usd"]).set_index("date")
         if df.empty:
             raise ValueError("defillama: no parsable rows")
-        return {"stablecoins": df.sort_index()}
+        out = {"stablecoins": df.sort_index()}
+        peg = self._peg_deviation()
+        if peg is not None and not peg.empty:
+            out["stablecoin_peg"] = peg
+        return out
+
+    def _peg_deviation(self) -> pd.DataFrame | None:
+        """Daily MAX |price-1| across the ALIVE systemic majors (USDT/USDC/DAI) — the
+        peg-integrity / collateral-solvency stress the supply tide can't see. A
+        sanity window (0.2<px<1.8) excludes the permanent ~0 of dead coins (UST/BUSD)
+        that would false-trigger forever, while keeping real depegs (USDC SVB 0.88).
+        Event-driven veto, not a calibrated factor."""
+        url = self.cfg.get("peg_url")
+        if not url:
+            return None
+        try:
+            rows = self.http_get(url, retries=self.cfg["retries"], timeout=60).json()
+        except Exception as e:  # noqa: BLE001 — peg data is optional; never break the mcap fetch
+            log.warning("defillama peg prices failed: %s", e)
+            return None
+        majors = self.cfg.get("peg_majors", ["tether", "usd-coin", "dai"])
+        recs = []
+        for x in rows if isinstance(rows, list) else []:
+            ts, px = x.get("date"), (x.get("prices") or {})
+            if not ts:
+                continue
+            d = pd.to_datetime(int(ts), unit="s").normalize()
+            if d.year < 2017:                       # epoch-0 / junk timestamps
+                continue
+            devs = [abs(float(px[m]) - 1.0) for m in majors
+                    if px.get(m) is not None and 0.2 < float(px[m]) < 1.8]
+            if devs:
+                recs.append((d, round(max(devs), 6)))
+        if not recs:
+            return None
+        p = pd.DataFrame(recs, columns=["date", "peg_dev_max"]).set_index("date").sort_index()
+        return p[~p.index.duplicated(keep="last")]
 
 
 class MempoolAdapter(Adapter):

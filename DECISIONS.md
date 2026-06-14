@@ -2,6 +2,27 @@
 
 Newest first. Each entry: what was decided, why, and what would change it.
 
+## 2026-06-13 — Vector stablecoin PEG-deviation monitor (measured → ships as CONTEXT, not a veto)
+
+**D-vec-PEG. A stablecoin peg-integrity monitor — and an honest negative result that
+kept it from shipping as a risk signal.** Roadmap Tier-1: a peg-deviation "veto" (the
+missing BTC-side Gate-1). Built the data path: DefiLlamaAdapter (crypto_misc.py) now also
+fetches stablecoinprices and stores `stablecoin_peg` = daily MAX |price-1| across the
+ALIVE systemic majors (USDT/USDC/DAI; config defillama.peg_majors). DATA-QUALITY CATCH:
+dead coins (UST/BUSD) sit at ~0 forever (10000bps) and would false-trigger permanently →
+excluded by a 0.2<px<1.8 sanity window; their collapses are captured by the supply tide
+instead. btc_signals.stablecoin_tide emits peg_dev_bps + peg_state (stable<50 / watch / 
+break≥150bps) + peg_stress. Series 2020→, current 4bps (healthy); only real big-3 event
+is the USDC SVB depeg (2023-03-12, 389bps). HONEST MEASURED RESULT (event-study): a peg
+break does NOT cleanly precede BTC drawdown — the one major break (SVB) was followed by a
+BTC RALLY (+7.8%/7d, banking-crisis hedge); watch-level stress shows only a modest edge
+(−4.9% vs −3.5% fwd-7d-dd). So it is event-driven and its BTC-directional thesis is
+UNCONFIRMED → it ships as a collateral-solvency MONITOR + context flag (with that caveat
+shown), NOT a calibrated risk input or a veto on the composite. A textbook measure-before-
+blend save: a plausible risk factor that the data says is situational awareness, not alpha.
+Surfaced in the macro panel; config defillama.peg_watch_bps/peg_break_bps. What would
+change it: more big-3 break events (a second data point) could establish a real direction.
+
 ## 2026-06-13 — Vector Tier-1 factors: realized-vol cone + vol-of-vol, stablecoin liquidity tide
 
 **D-vec-RVCONE / D-vec-STBL. Two orthogonal, both-halves-clean factors from the factor

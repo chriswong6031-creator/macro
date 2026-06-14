@@ -20,6 +20,13 @@ fred:
   csv_url: https://fred.stlouisfed.org/graph/fredgraph.csv   # keyless fallback
   retries: 4
   backoff_base_s: 3
+  # ALFRED point-in-time vintages (collectors.fred.fetch_vintages). Stores the
+  # INITIAL RELEASE per period (output_type=4) into data/fred_vintage/vintages.parquet
+  # so a macro backtest can read what was knowable on a date via as_of_series(),
+  # not the latest-revised value. Additive — the live regime engine is unchanged.
+  # Needs FRED_API_KEY (fredgraph has no vintages). vintage_series defaults to the
+  # revision-prone set in collectors/fred.py:DEFAULT_VINTAGE_SERIES; override here.
+  vintage_realtime_start: "1997-01-01"   # FRED's real-time archive begins ~1997
   series:
     rates:
       DGS2: us2y
@@ -452,6 +459,10 @@ coingecko:
 
 defillama:
   stablecoins_url: https://stablecoins.llama.fi/stablecoincharts/all
+  peg_url: https://stablecoins.llama.fi/stablecoinprices   # per-coin daily peg price -> peg-deviation veto (D-vec-PEG)
+  peg_majors: [tether, usd-coin, dai]   # ALIVE systemic majors only; dead coins (UST/BUSD) sit at ~0 forever and would false-trigger — their collapses show in the supply tide instead
+  peg_watch_bps: 50              # max |price-1| across majors: >=50bps = watch (normal noise is ~4-40bps)
+  peg_break_bps: 150             # >=150bps = peg BREAK / risk veto (USDC+DAI SVB hit ~390bps; this is event-driven, not a calibrated factor)
   retries: 3
 
 mempool:

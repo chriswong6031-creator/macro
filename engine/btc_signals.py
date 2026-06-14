@@ -689,6 +689,22 @@ def stablecoin_tide(inputs: dict, cfg: dict) -> pd.DataFrame:
     out["stbl_growth_z"] = ((g - mu) / sd).clip(-4, 4)
     out["stbl_regime"] = np.where(out["stbl_growth_z"] > 0.5, "expanding",
                           np.where(out["stbl_growth_z"] < -0.5, "contracting", "neutral"))
+
+    # Stablecoin PEG-deviation VETO — collateral/solvency stress, ORTHOGONAL to the
+    # supply tide above (issuance) and to funding/OI leverage. Max |price-1| across
+    # the alive systemic majors (USDT/USDC/DAI). Event-driven (the USDC SVB break hit
+    # ~390bps; normal noise is ~5-40bps) -> a binary risk veto / Gate-1, NOT a
+    # calibrated factor. (D-vec-PEG)
+    peg = inputs.get("stablecoin_peg")
+    if peg is not None:
+        ps = (peg[peg.columns[0]] if hasattr(peg, "columns") else peg).reindex(idx).ffill()
+        bps = (ps * 1e4)
+        watch = cfg.get("peg_watch_bps", 50)
+        brk = cfg.get("peg_break_bps", 150)
+        out["peg_dev_bps"] = bps.round(0)
+        out["peg_state"] = np.where(bps >= brk, "break",
+                            np.where(bps >= watch, "watch", "stable"))
+        out["peg_stress"] = (bps >= brk).astype(float).where(bps.notna())
     return out
 
 

@@ -100,6 +100,7 @@ def load_all() -> dict[str, pd.Series | pd.DataFrame | None]:
         "etf_flow": _col("bgeo", "etf_flow_btc"),
         "btc_dominance": _col("bgeo", "btc_dominance"),
         "stablecoins": stables,
+        "stablecoin_peg": _col("defillama", "stablecoin_peg"),  # peg-deviation veto (D-vec-PEG)
         "fear_greed": _col("sentiment_crypto", "fear_greed"),
         "reserve_risk": _col("checkonchain", "reserve_risk"),  # deep cycle-bottom (2010->)
         "vdd_multiple": _col("checkonchain", "vdd_multiple"),  # spending-behaviour axis (2011->)

@@ -1235,6 +1235,9 @@ def main() -> int:
             "stbl_growth": _r(last.get("stbl_growth"), 1),
             "stbl_growth_z": _r(last.get("stbl_growth_z"), 1),
             "stbl_regime": last.get("stbl_regime"),
+            # stablecoin PEG-deviation monitor (collateral solvency; D-vec-PEG)
+            "peg_dev_bps": _r(last.get("peg_dev_bps"), 0),
+            "peg_state": last.get("peg_state"),
         },
         "onchain": {
             "premium": _r(last.get("coinbase_premium_ema"), 2),

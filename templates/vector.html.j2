@@ -703,6 +703,9 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
       {% if macro.stbl_growth_z is not none %}
       {% set sreg = {'expanding':'var(--blue)','contracting':'var(--r3)','neutral':'var(--muted)'} %}
       <div class="mini"><div class="lab"><span>{{ t('Stablecoin tide (crypto-native liquidity)','稳定币潮汐（加密原生流动性）') }}</span><span><b style="color:{{ sreg.get(macro.stbl_regime,'var(--muted)') }}">{{ td((macro.stbl_regime or '')|capitalize) }}</b> <span class="faint">(z {{ '%+0.1f'|format(macro.stbl_growth_z) }} · ${{ macro.stbl_mcap_bn }}B)</span></span></div></div>{% endif %}
+      {% if macro.peg_state %}
+      {% set pst = {'stable':['Stable','稳定','var(--blue)'],'watch':['Watch','观察','var(--amber)'],'break':['BREAK','脱锚','var(--red)']} %}
+      <div class="mini"><div class="lab"><span>{{ t('Stablecoin peg health (USDT/USDC/DAI)','稳定币锚定健康（USDT/USDC/DAI）') }}</span><span><b style="color:{{ pst.get(macro.peg_state,['','','var(--muted)'])[2] }}">{{ t(pst.get(macro.peg_state,['—'])[0], pst.get(macro.peg_state,['—','—'])[1]) }}</b> <span class="faint">({{ t('max dev','最大偏离') }} {{ macro.peg_dev_bps }}bps)</span></span></div></div>{% endif %}
       <div class="mini"><div class="lab"><span>{{ t('10y real yield','10 年期实际收益率') }}</span><span><b>{{ ('%.2f%%'|format(macro.real_yield)) if macro.real_yield is not none else '—' }}</b></span></div></div>
       <div class="mini"><div class="lab"><span>{{ t('HY credit spread (OAS)','高收益信用利差') }}</span><span><b>{{ ('%.2f%%'|format(macro.hy_oas)) if macro.hy_oas is not none else '—' }}</b></span></div></div>
       <div class="mini"><div class="lab"><span>{{ t('VIX / Dollar (DXY)','VIX / 美元指数') }}</span><span><b>{{ macro.vix if macro.vix is not none else '—' }}</b> / {{ macro.dxy if macro.dxy is not none else '—' }}</span></div></div>
@@ -714,6 +717,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
       <div class="mini"><div class="lab"><span style="color:var(--blue)">{{ t('Tailwind (score > +0.3)','顺风（评分 > +0.3）') }}</span><span><b>+48.8%</b> <span class="faint">/90d · 76% hit</span></span></div></div>
       <div class="sub" style="margin-top:10px">{{ t('It is a STRATEGIC (months-horizon) context gauge — kept separate from the tactical allocation, which it did not improve when tested as an overlay. Read it as the tide BTC swims in.', '这是战略层（数月维度）的背景指标 — 与战术仓位分开，因为作为叠加测试时并未改善回测。可将其理解为 BTC 所处的潮汐。') }}</div>
       <div class="sub faint" style="margin-top:10px;font-size:12px">{{ t('Stablecoin tide = the GROWTH of total stablecoin supply (the pace new capital mints INTO crypto) — orthogonal to the fiat net-liquidity above. DIRECTIONAL (2018→, both-halves): an expanding tide (z 1–2) preceded +23%/90d at 76% hit; a contracting tide (z < −1, where we are now) preceded only +0.8%/90d at 42% hit — a measured headwind.','稳定币潮汐 = 稳定币总供给的增速（新资本铸入加密的速度）— 与上方法币净流动性正交。方向性（2018 起，两半样本）：扩张潮汐（z 1–2）后 90 天 +23%、胜率 76%；收缩潮汐（z < −1，即当前）后 90 天仅 +0.8%、胜率 42% — 一项实测逆风。') }}</div>
+      <div class="sub faint" style="margin-top:8px;font-size:12px">{{ t('Peg health is a separate COLLATERAL-SOLVENCY monitor (max deviation across USDT/USDC/DAI). HONEST caveat: the one major break (USDC at SVB, Mar-2023, ~390bps) was followed by a BTC RALLY (banking-crisis hedge), so a peg break is situational AWARENESS — not a confirmed BTC risk-off signal. Shown as context, not a directional input.','锚定健康是另一项抵押品偿付能力监测（USDT/USDC/DAI 的最大偏离）。诚实提示：唯一一次重大脱锚（USDC 于 SVB，2023 年 3 月，约 390bps）之后 BTC 反而上涨（作为银行危机对冲），故脱锚为情境感知 — 并非已确认的 BTC 避险信号。仅作背景，不作方向输入。') }}</div>
     </div>
   </div>
 
