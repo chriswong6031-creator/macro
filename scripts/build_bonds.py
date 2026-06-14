@@ -283,8 +283,8 @@ def _vm(snap: dict, fr: pd.DataFrame, calib: dict | None = None) -> dict:
     # (a null high_edge_pp -> no claim; also avoids a None in the template arithmetic).
     calib_vm = ({} if (not comp or comp_cond.get("high_edge_pp") is None) else {
         "verdict": comp.get("verdict"),
-        "hi_dd10": _r((comp_hi.get("p_dd10") or 0) * 100, 0),
-        "base_dd10": _r((comp_cond.get("base_p_dd10") or 0) * 100, 0),
+        "hi_dd10": _r((comp_hi.get("p_dd10") or 0) * 100, 1),
+        "base_dd10": _r((comp_cond.get("base_p_dd10") or 0) * 100, 1),
         "edge_pp": comp_cond.get("high_edge_pp"),
         "ic_recession": comp.get("ic_recession"),
         "span": comp.get("span"),
