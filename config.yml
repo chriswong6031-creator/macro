@@ -48,6 +48,8 @@ fred:
       WALCL: fed_balance_sheet    # weekly (Wed), $ millions
       RRPONTSYD: on_rrp           # daily, $ billions
       M2SL: us_m2                 # US M2 broad money ($bn, monthly) — global-M2 leg
+      ECBASSETSW: ecb_assets      # ECB total assets (€ millions, weekly) — global-CB liquidity leg
+      JPNASSETS: boj_assets       # BoJ total assets (¥100M, monthly) — global-CB liquidity leg
     econ_confirm:
       PAYEMS: payrolls            # monthly, thousands
       INDPRO: industrial_prod     # monthly, index
@@ -1028,6 +1030,23 @@ cross_asset:
   calibration:
     start_date: "2007-01-01"         # all 10 legs live (HY-constrained); phase0 window
     cost_bps: 8                      # one-way; net-of-cost headline (futures-proxy slippage)
+
+# =============================================================================
+# Global central-bank LIQUIDITY (engine/global_liquidity.py) — the major-CB
+# balance-sheet tide, USD-aggregated, from keyless FRED. Distinct from the BTC
+# `global_liquidity` M2 read above (that's broad money; this is CB assets). A LEAF:
+# context macro driver, not wired into scoring. Major CBs at usable frequency =
+# Fed (weekly) + ECB (weekly) + BoJ (monthly); BoE is annual-only on FRED and a
+# clean keyless PBoC series is unavailable, so they are omitted (honest). Each raw
+# series -> local currency (unit_mult) -> USD (fx, invert for USD/XXX quotes) ->
+# summed in USD trillions; impulse = 13-week & 52-week % change.
+# =============================================================================
+cb_liquidity:
+  banks:                             # id: series, unit_mult(->local ccy), fx(yahoo, null=USD), invert
+    fed: {series: WALCL,      unit_mult: 1.0e6, fx: null,        invert: false, label_en: "Federal Reserve", label_zh: "美联储"}
+    ecb: {series: ECBASSETSW, unit_mult: 1.0e6, fx: "EURUSD=X",  invert: false, label_en: "ECB",            label_zh: "欧洲央行"}
+    boj: {series: JPNASSETS,  unit_mult: 1.0e8, fx: "USDJPY=X",  invert: true,  label_en: "Bank of Japan",  label_zh: "日本央行"}
+  impulse_windows_w: [13, 52]        # quarterly & YoY % change of the USD aggregate
 
 commodities:
   assets:                          # name: [yahoo price ticker, cot store-series, class]

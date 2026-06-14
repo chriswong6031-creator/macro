@@ -80,6 +80,34 @@
     </p>
   </div>
 
+  <!-- ===================== GLOBAL CB LIQUIDITY ===================== -->
+  {% if liquidity %}
+  {% set i13 = liquidity.impulse_pct.get('13w') %}
+  {% set icol = 'var(--up,#16a34a)' if (i13 or 0) > 0 else 'var(--down,#dc2626)' if (i13 or 0) < 0 else 'var(--muted)' %}
+  <div class="card">
+    <h2>{{ t('Global central-bank liquidity', '全球央行流动性') }}</h2>
+    <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+      <div class="ca-hero" style="font-size:22px;margin:0">${{ liquidity.total_usd_tn }}T</div>
+      <div>
+        <span class="chip" style="background:rgba(125,141,163,.16);color:{{ icol }}">{{ t(liquidity.state, {'expanding':'扩张','contracting':'收缩','flat':'持平'}.get(liquidity.state, liquidity.state)) }} · {{ t(liquidity.accel, {'accelerating':'加速','decelerating':'减速','steady':'平稳'}.get(liquidity.accel, liquidity.accel)) }}</span>
+        <div class="muted sm" style="margin-top:4px">
+          {% for w, v in liquidity.impulse_pct.items() %}{{ w }} <b style="color:{{ 'var(--up,#16a34a)' if (v or 0)>=0 else 'var(--down,#dc2626)' }}">{{ ('%+.1f%%'|format(v)) if v is not none else '—' }}</b>{% if not loop.last %} · {% endif %}{% endfor %}
+        </div>
+      </div>
+      {% if liq_spark %}<svg width="184" height="40" style="margin-left:auto"><polyline points="{{ liq_spark }}" fill="none" stroke="{{ icol }}" stroke-width="1.6"/></svg>{% endif %}
+    </div>
+    <table class="ca" style="margin-top:8px">
+      <tr><th>{{ t('central bank', '央行') }}</th><th class="r">{{ t('assets ($T)', '资产($万亿)') }}</th><th class="r">{{ t('share', '占比') }}</th><th style="width:38%"></th></tr>
+      {% for b in liquidity.banks %}
+      <tr><td><b>{{ t(b.label_en, b.label_zh) }}</b></td>
+        <td class="r">{{ b.usd_tn }}</td><td class="r muted">{{ b.share }}%</td>
+        <td><span class="sbar" style="width:100%"><i style="left:0;width:{{ b.share|round|int }}%;background:var(--muted)"></i></span></td></tr>
+      {% endfor %}
+    </table>
+    <p class="ca-note">{{ t(liquidity.note, '全球央行资产负债表流动性（美联储+欧洲央行+日本央行），以美元汇总。其变化率（脉冲）以可变滞后（数周至数月）领先风险资产；上升=流动性顺风。仅作背景，非信号：英格兰银行（FRED 仅年度）与中国央行（无无密钥序列）未纳入。') }}</p>
+  </div>
+  {% endif %}
+
   <!-- ===================== TREND BOARD ===================== -->
   <div class="card">
     <h2>{{ t('Trend board — time-series momentum by asset', '趋势看板 — 各资产时间序列动量') }}</h2>
