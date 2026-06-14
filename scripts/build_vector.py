@@ -1012,6 +1012,50 @@ def build_allocation_page(env, site: Path, sig: pd.DataFrame, cards: dict,
     log.info("wrote %s/vector_allocation.html (%d KB)", site, len(html) // 1024)
 
 
+def vector_timeline(sig: pd.DataFrame, ladder: pd.DataFrame) -> dict:
+    """Compact columnar JSON tape for the cycle time machine (vector_timemachine.js).
+    Merges the per-day CAUSAL signals (already point-in-time in signals.parquet) with
+    the backtested ladder state/regime (scripts/backtest_ladder_history.py). Starts
+    where the ladder backtest is defined (~late-2015). Every value is what the
+    dashboard would have shown that day — no look-ahead."""
+    lad = ladder.reindex(sig.index)
+    keep = lad["ladder_state"].notna()
+    df, lad = sig[keep], lad[keep]
+    # cycle_position 0..1 -> stage index 0..3 (Defensive/Fragile/Recovery/Expansion)
+    stage = (df["cycle_position"].clip(0, 0.999).fillna(0.0) * 4).astype(int)
+
+    def cat(s, default=""):
+        return [default if pd.isna(v) else str(v) for v in s]
+
+    def num(s, mul=1.0):
+        return [None if pd.isna(v) else round(float(v) * mul) for v in s]
+
+    return {
+        "dates": [d.strftime("%Y-%m-%d") for d in df.index],
+        "price": num(df["close"]),
+        "phase": cat(df["cycle_phase"], "accumulation"),
+        "stage": [None if pd.isna(v) else int(v) for v in stage],
+        "regime": cat(lad["regime"], "neutral"),
+        "ladder": cat(lad["ladder_state"], ""),
+        "mom": cat(df["momentum_state"], "neutral"),
+        "val": cat(df["valuation_state"], "fair"),
+        "extreme": cat(df["market_extreme"], "normal"),
+        "composite": cat(df["composite_state"], "NEUTRAL"),
+        "risk": num(df["risk_index"]),
+        "alloc": num(df["alloc_optimal"], 100),
+    }
+
+
+def build_timeline(site: Path, sig: pd.DataFrame) -> None:
+    """Refresh the ladder backtest cache (incremental) and write the time-machine tape."""
+    from scripts import backtest_ladder_history as blh
+    ladder = blh.update()                       # cheap after the first ~2-3min pass
+    tape = vector_timeline(sig, ladder)
+    blob = json.dumps(tape, separators=(",", ":"))
+    (site / "vector_timeline.json").write_text(blob)
+    log.info("wrote %s/vector_timeline.json (%d days, %d KB)", site, len(tape["dates"]), len(blob) // 1024)
+
+
 def main() -> int:
     # self-sufficient: recompute signals every build (daily freshness) and
     # persist them. The heavy calibration (verdicts/backtests in calibration.json)
@@ -1254,6 +1298,10 @@ def main() -> int:
         build_allocation_page(env, site, sig, cards, mtf_a, verdict)
     except Exception as e:  # noqa: BLE001 — never let the sub-page break the main build
         log.error("allocation page failed (%s)", e)
+    try:
+        build_timeline(site, sig)
+    except Exception as e:  # noqa: BLE001 — never let the time-machine tape break the build
+        log.error("timeline tape failed (%s)", e)
     build_landing(site, vm)
     return 0
 

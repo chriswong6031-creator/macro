@@ -249,6 +249,38 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 .tl-fwd{margin-top:3px;font-size:12px;color:var(--muted)}
 .tl-link{display:inline-block;margin-left:8px;font-weight:700;font-size:13px}
 .tl-item[hidden]{display:none}
+/* cycle time machine (vector_timemachine.js) */
+#vtm{padding:20px 22px}
+.vtm-wrap{position:relative;margin:2px 0}
+.vtm-canvas{display:block;width:100%;height:56px;cursor:ew-resize;border-radius:8px;touch-action:none}
+.vtm-range{-webkit-appearance:none;appearance:none;width:100%;height:16px;background:transparent;margin:2px 0 0;cursor:ew-resize}
+.vtm-range::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:var(--grid)}
+.vtm-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:16px;height:16px;margin-top:-6px;border-radius:50%;background:var(--ink);border:2px solid var(--card);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.vtm-range::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--ink);border:2px solid var(--card)}
+.vtm-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0 4px}
+.vtm-btn{font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;background:var(--bg);border:1px solid var(--grid);border-radius:8px;padding:5px 11px;color:var(--muted);transition:color .15s,border-color .15s}
+.vtm-btn:hover{color:var(--ink);border-color:var(--muted)}
+.vtm-play{display:inline-flex;align-items:center;justify-content:center;width:34px;padding:0}
+.vtm-play-ico{width:0;height:0;border-style:solid;border-width:6px 0 6px 10px;border-color:transparent transparent transparent var(--ink)}
+.vtm-play.is-playing .vtm-play-ico{width:9px;height:11px;border:none;border-left:3px solid var(--ink);border-right:3px solid var(--ink)}
+.vtm-presets{display:flex;gap:6px;flex-wrap:wrap}
+.vtm-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin:9px 2px 0}
+.vtm-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:middle}
+.vtm-readout{background:var(--bg);border:1px solid var(--grid);border-radius:12px;padding:14px 16px;margin-top:13px}
+.vtm-asof{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.vtm-date{font-size:20px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
+.vtm-tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 9px;border-radius:9px}
+.vtm-tag.is-live{color:var(--blue);background:color-mix(in srgb,var(--blue) 14%,var(--card))}
+.vtm-tag.is-hist{color:var(--muted);background:var(--grid)}
+.vtm-price{margin-left:auto;font-size:17px;font-weight:800;color:var(--ink)}
+.vtm-badges{display:flex;align-items:center;gap:9px 16px;flex-wrap:wrap;margin-top:13px;font-size:13px;color:var(--muted)}
+.vtm-badge{display:inline-block;padding:3px 11px;border-radius:10px;font-weight:700;font-size:12.5px;background:var(--grid);color:var(--ink)}
+.vtm-badges .kv b{color:var(--ink);font-weight:700}
+.vtm-gauge{margin-top:15px}
+.vtm-glabel{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:5px}
+.vtm-glabel span:last-child{font-weight:700;color:var(--ink)}
+.vtm-grail{position:relative;height:6px;border-radius:3px;background:linear-gradient(90deg,var(--blue),var(--grid) 50%,var(--r3))}
+.vtm-grail i{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;background:var(--ink);border:2px solid var(--card);transform:translate(-50%,-50%)}
 </style>
 </head>
 <body>
@@ -453,6 +485,54 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
       <div class="s"><div class="k">{{ t('Time in market', '在场时间') }}</div><div class="v">{{ cards.optimal.in_market }}%</div><div class="h">{{ cards.optimal.x_hodl }}× HODL</div></div>
     </div>
     <div class="sub" style="margin-top:10px">{{ t('Long-only, acts next-day on the signal (no look-ahead). Every variant beats HODL\'s Sharpe', '仅做多，信号次日生效（无前视）。每个变体的 Sharpe 均优于 HODL') }} ({{ cards.optimal.hodl_sharpe }}){{ t(' and cuts max drawdown.', '，且降低了最大回撤。') }}</div>
+  </div>
+
+  <!-- ===================== CYCLE TIME MACHINE ===================== -->
+  <div class="section-title">{{ t('Cycle Time Machine · scrub 10+ years of point-in-time history', '周期时光机 · 回溯十余年实时历史') }}</div>
+  <div class="card" id="vtm" data-timeline="vector_timeline.json">
+    <div class="vtm-wrap">
+      <canvas id="vtm-canvas" class="vtm-canvas"></canvas>
+      <input id="vtm-range" class="vtm-range" type="range" min="0" max="0" value="0" aria-label="Scrub BTC cycle history">
+    </div>
+    <div class="vtm-legend">
+      <span><i style="background:#3b6fe0"></i>{{ t('Accumulation','吸筹') }}</span>
+      <span><i style="background:#1f9d57"></i>{{ t('Markup','拉升') }}</span>
+      <span><i style="background:#e0a43a"></i>{{ t('Recovery','修复') }}</span>
+      <span><i style="background:#cf4f4f"></i>{{ t('Markdown','派发下行') }}</span>
+    </div>
+    <div class="vtm-controls">
+      <button class="vtm-btn vtm-play" id="vtm-play" aria-label="Play"><span class="vtm-play-ico"></span></button>
+      <span class="vtm-presets">
+        <button class="vtm-btn" data-vtm-jump="now">{{ t('Now','当前') }}</button>
+        <button class="vtm-btn" data-vtm-jump="2017-12-17">{{ t('2017 top','2017 顶') }}</button>
+        <button class="vtm-btn" data-vtm-jump="2018-12-15">{{ t('2018 bottom','2018 底') }}</button>
+        <button class="vtm-btn" data-vtm-jump="2021-04-14">{{ t('2021 top','2021 顶') }}</button>
+        <button class="vtm-btn" data-vtm-jump="2022-11-09">{{ t('FTX crash','FTX 崩盘') }}</button>
+      </span>
+    </div>
+    <div class="vtm-readout">
+      <div class="vtm-asof">
+        <span class="vtm-date" id="vtm-date">—</span>
+        <span class="vtm-tag is-live" id="vtm-tag">—</span>
+        <span class="vtm-price" id="vtm-price">—</span>
+      </div>
+      <div class="vtm-badges">
+        <span class="vtm-badge" id="vtm-phase">—</span>
+        <span class="vtm-badge" id="vtm-regime">—</span>
+        <span class="vtm-badge" id="vtm-extreme" style="display:none">—</span>
+        <span class="kv">{{ t('cycle stage','周期阶段') }} <b id="vtm-stage">—</b></span>
+        <span class="kv">{{ t('ladder','阶梯') }} <b id="vtm-ladder">—</b></span>
+        <span class="kv">{{ t('momentum','动量') }} <b id="vtm-mom">—</b></span>
+        <span class="kv">{{ t('valuation','估值') }} <b id="vtm-val">—</b></span>
+        <span class="kv">{{ t('stance','立场') }} <b id="vtm-composite">—</b></span>
+        <span class="kv">{{ t('model alloc','模型仓位') }} <b id="vtm-alloc">—</b></span>
+      </div>
+      <div class="vtm-gauge">
+        <div class="vtm-glabel"><span>{{ t('Risk Index (0–100)','风险指数（0–100）') }}</span><span id="vtm-risk-v">—</span></div>
+        <div class="vtm-grail"><i id="vtm-risk-i" style="left:50%"></i></div>
+      </div>
+    </div>
+    <div class="sub faint" style="margin-top:11px;font-size:12px">{{ t('Every value is point-in-time — no look-ahead. Drag the playhead (or press play) and the cycle phase, stage, ladder state, regime, risk index, valuation, stance and the model\'s allocation all rewind to exactly what the dashboard showed that day. The ladder & regime are backtested by replaying the cycle engine on each day\'s history.','每个数值均为实时快照 — 无前视。拖动播放头（或点击播放），周期阶段、阶梯状态、格局、风险指数、估值、立场与模型仓位都会回溯到当天看板的真实状态。阶梯与格局通过对每日历史重放周期引擎回测得到。') }}</div>
   </div>
 
   <!-- ===================== MULTI-TIMEFRAME TECHNICALS ===================== -->
@@ -787,6 +867,7 @@ window.__CHART_SWAP__ = {
 </script>
 <script src="theme.js"></script>
 <script src="chart_i18n.js"></script>
+<script src="vector_timemachine.js"></script>
 <footer class="site-footer">
   <span class="made">{{ t('Made with ❤️ in Canada', '用 ❤️ 在加拿大制作') }}</span>
   <span class="dev">{{ t('Developed by', '开发者') }} Chris Wong</span>

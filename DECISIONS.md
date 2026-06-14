@@ -2,6 +2,33 @@
 
 Newest first. Each entry: what was decided, why, and what would change it.
 
+## 2026-06-13 — Vector "Cycle Time Machine": scrubbable point-in-time history
+
+**D-vec-TIMEMACHINE. A draggable timeline that rewinds the whole Vector core to any
+past day — 13 pieces move at once.** User wanted a scrubber to see "historically what
+the stages those times are." CLONED the proven macro/HK time-machine pattern (shared
+client-side scrubber over a columnar JSON tape; no deps, canvas ribbon + range + play
++ jump presets + readout). KEY EFFICIENCY: 17 of 19 stages are ALREADY causal per-day
+in signals.parquet (price, momentum, risk_index, cycle_phase, cycle_position->stage,
+valuation, composite stance, market_extreme, alloc...). Only the cycle-LADDER state +
+regime are build-time-only (engine.cycles.analyze is latest-only), so
+scripts/backtest_ladder_history.py REPLAYS analyze() on expanding windows (point-in-
+time, NO look-ahead) and caches data/vector/ladder_history.parquet (3888 days,
+2015-10->; ~2.6min first pass, incremental after). VALIDATED the backtest nails every
+inflection: 2017/2021 tops -> TOP WATCH/bull/overvalued/DISTRIBUTE/euphoria/low-risk;
+2018/FTX bottoms -> DECLINE/bear/undervalued/ACCUMULATE/capitulation/high-risk (risk_
+index is contrarian at extremes, by design). build_vector.vector_timeline() merges
+signals + ladder cache -> site/vector_timeline.json (370KB, 3888 days); build_timeline()
+runs it + the incremental backtest each build (wrapped, can't break the build). NEW
+site/vector_timemachine.js (cloned mechanics: paint/setIndex/idxFromClientX/nearest/
+play/wire) with a Vector readout + a cycle-PHASE-coloured ribbon (accumulation/markup/
+recovery/markdown) + a robust theme/lang reactivity (custom events OR a MutationObserver
+on data-lang/data-theme). Panel in vector.html.j2 after the Risk-vs-Strategy section.
+Verified live (eval): tape loads, jumps + scrub rewind date/tag/phase/stage/regime/
+ladder/momentum/valuation/extreme/stance/alloc/risk-gauge/price coherently; EN<->中文
+(async re-render); dark repaints; 0 console errors. What would change it: adding a stage
+to the readout = add a column to vector_timeline() + a DOM id + a label map in the JS.
+
 ## 2026-06-13 — Vector cards re-framed onto forward DRAWDOWN (the confirmed quantity)
 
 **D-vec-RISK. The mid/short cards now LEAD with calibrated forward drawdown/risk;
