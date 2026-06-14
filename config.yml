@@ -327,28 +327,28 @@ holdings_signals:
   volume_surge_x: 1.5             # recent vs prior avg-volume ratio to flag a surge (📊)
 
 etf_holdings:
-  # Phase 2: broad "popular ETFs" universe. The collector writes FULL daily
-  # holdings (with Shares Held) per fund; the engine diffs consecutive snapshots
-  # with flow normalization (share-based active-decision) — no per-stock prices
-  # needed, so it scales to the whole universe. Edit the universe freely to grow
-  # toward the top ~200. Sponsor reliability (recon 2026-06-13, D71): ssga/ark/invesco
-  # /globalx VERIFIED; iShares/Schwab BLOCKED (Akamai/JS consent walls, need a headless
-  # browser); Vanguard NOT supported (no free daily feed). Invesco: idType=cusip is
-  # reliable (idType=ticker 500s for all but flagship QQQ).
+  # Phase 2: the "real fund moves" universe — SECTOR / INDUSTRY / THEMATIC funds
+  # ONLY. The collector writes FULL daily holdings (with Shares Held) per fund; the
+  # engine diffs consecutive snapshots with flow normalization (share-based
+  # active-decision) — no per-stock prices needed, so it scales.
+  # Broad market-cap trackers (SPY/QQQ/DIA/MDY/RSP) are DELIBERATELY EXCLUDED: a
+  # cap-weighted index reweighting a name is mechanical tracking, not a curation /
+  # conviction decision, so it surfaces no actionable "fund move". A curated
+  # thematic/sector basket does — that is the only kind of fund this board carries.
+  # Sponsor reliability (recon 2026-06-13, D71): ssga/ark/invesco/globalx VERIFIED;
+  # iShares/Schwab BLOCKED (Akamai/JS consent walls, need a headless browser);
+  # Vanguard NOT supported (no free daily feed).
   retries: 3
-  # Tuned for INDEX/thematic ETFs (measured 2026-06-13 on backfilled Global X data):
+  # Tuned for SECTOR/thematic ETFs (measured 2026-06-13 on backfilled Global X data):
   # these rebalance over weeks, not days, so a 5-day/15% bar (set for fast ARK funds)
   # surfaced nothing. A ~40-snapshot (≈8-week) rolling window at a 5% flow-normalized
-  # change captures the actual index-reconstitution / float-flow decisions.
+  # change captures the actual reconstitution / float-flow decisions.
   active_change_alert_pct: 5      # |flow-normalized share change| (% of position) to flag
   active_change_window_d: 40      # compare latest snapshot to ~40 snapshots back (≈8 weeks)
   min_position_pct: 0.20          # ignore tiny <0.2%-weight positions (noise)
   page_top_n: 40                  # rows on the ETFs page
   universe:
     # --- SPDR / State Street (VERIFIED: daily XLSX incl. Shares Held) ----------
-    SPY:  {sponsor: ssga, name: "SPDR S&P 500", category: "US Large Cap"}
-    DIA:  {sponsor: ssga, name: "SPDR Dow Jones Industrial", category: "US Large Cap"}
-    MDY:  {sponsor: ssga, name: "SPDR S&P MidCap 400", category: "US Mid Cap"}
     XBI:  {sponsor: ssga, name: "SPDR S&P Biotech", category: "Biotech"}
     XOP:  {sponsor: ssga, name: "SPDR S&P Oil & Gas E&P", category: "Energy"}
     XHB:  {sponsor: ssga, name: "SPDR S&P Homebuilders", category: "Homebuilders"}
@@ -358,9 +358,8 @@ etf_holdings:
     XME:  {sponsor: ssga, name: "SPDR S&P Metals & Mining", category: "Metals & Mining"}
     XSD:  {sponsor: ssga, name: "SPDR S&P Semiconductor", category: "Semiconductors"}
     XAR:  {sponsor: ssga, name: "SPDR S&P Aerospace & Defense", category: "Aerospace & Defense"}
-    # --- Invesco (VERIFIED: dng-api JSON; use cusip — idType=ticker 500s for many) -
-    QQQ:  {sponsor: invesco, name: "Invesco QQQ (Nasdaq-100)", category: "US Large Cap Growth"}   # flagship works by ticker
-    RSP:  {sponsor: invesco, cusip: "46137V357", name: "Invesco S&P 500 Equal Weight", category: "US Large Cap"}
+    # Invesco is sponsor-VERIFIED (dng-api JSON, idType=cusip), but its only seeded
+    # funds were the broad QQQ / RSP trackers — both excluded above, so none remain.
     # --- Global X (VERIFIED: dated full-holdings CSV; thematic, real equity names) -
     URA:  {sponsor: globalx, name: "Global X Uranium", category: "Uranium"}
     LIT:  {sponsor: globalx, name: "Global X Lithium & Battery Tech", category: "Lithium / Battery"}

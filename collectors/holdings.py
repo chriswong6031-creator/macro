@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import io
 import logging
+import re
 from datetime import date
 
 import pandas as pd
@@ -22,6 +23,62 @@ from collectors.base import Adapter
 from lib import config
 
 log = logging.getLogger(__name__)
+
+# --------------------------------------------------------------------------- #
+# Non-equity holding lines that must NEVER be treated as a stock position: cash,
+# FX/currency, money-market, equivalents, derivatives, receivables/payables.
+# Their "shares" are a dollar/units BALANCE that swings arbitrarily on a near-zero
+# base, so a flow-normalized share-diff explodes into absurd % (the radar's
+# "CHATS Cash&Other −15,116,065%" / "BETZ Euro −338,977%" bug). This predicate is
+# shared by the diff engine (active_changes_dir) AND the collector
+# (collectors.etf_holdings._normalize), because already-stored snapshots are
+# never re-cleaned — the diff layer can't trust the snapshot was filtered at write.
+# Real foreign-listed EQUITIES (e.g. "000720 KS", "1211 HK", "8001 JP") are kept.
+# --------------------------------------------------------------------------- #
+_CURRENCY_CODES = {
+    "USD", "USDOLLAR", "EUR", "GBP", "JPY", "CAD", "CHF", "AUD", "HKD", "CNY",
+    "CNH", "KRW", "TWD", "SGD", "INR", "BRL", "MXN", "ZAR", "SEK", "NOK", "DKK",
+    "NZD", "ILS", "PLN", "THB", "IDR", "MYR", "PHP", "TRY", "CLP", "COP", "PEN",
+}
+_NON_EQUITY_TICKERS = _CURRENCY_CODES | {
+    "", "-", "--", "—", "NAN", "NONE", "NULL", "<NA>", "N/A", "NA", "CASH",
+}
+# High-precision name patterns — kept tight to avoid flagging real issuers
+# (e.g. "FutureFuel", "Cash America" are NOT matched: we anchor on cash-sleeve /
+# currency / instrument phrasing, not bare substrings).
+_NON_EQUITY_NAME_RE = re.compile(
+    r"^\s*cash\b|cash\s*[&/+]|cash\s+and\b|cash\s+equiv|&\s*equivalent|"
+    r"money\s*market|u\.?\s*s\.?\s*dollar\b|\bcurrency\b|cash\s*&\s*other|"
+    r"\brepo\b|receivable|payable|net\s+other\s+asset|other\s+net\s+asset|"
+    r"\bfx\s+forward|forward\s+contract|\bswap\b",
+    re.IGNORECASE,
+)
+
+
+def is_non_equity_holding(ticker, name: str = "") -> bool:
+    """True if a holdings row is cash / FX / money-market / a derivative /
+    receivable — anything whose share count is a balance, not an equity position.
+    Used to weed the radar's erroneous near-zero-base blow-ups."""
+    tk = str(ticker).strip().upper()
+    if tk in _NON_EQUITY_TICKERS:
+        return True
+    head = tk.split()[0] if tk.split() else ""
+    if head in _CURRENCY_CODES:                     # e.g. "USD CASH", "EUR FWD"
+        return True
+    nm = str(name).strip()
+    return bool(nm and _NON_EQUITY_NAME_RE.search(nm))
+
+
+def _drop_non_equity(df: pd.DataFrame) -> pd.DataFrame:
+    """Filter cash/FX/derivative rows from a holdings snapshot. Resolves the name
+    column across sponsors (etf_holdings: 'name'; ARK csv: 'company')."""
+    if df is None or df.empty or "ticker" not in df.columns:
+        return df
+    ncol = next((c for c in df.columns if c.lower() in ("name", "company")), None)
+    names = df[ncol].astype(str) if ncol else pd.Series("", index=df.index)
+    keep = [not is_non_equity_holding(t, n)
+            for t, n in zip(df["ticker"].astype(str), names)]
+    return df[pd.Series(keep, index=df.index)]
 
 
 class HoldingsAdapter(Adapter):
@@ -101,7 +158,22 @@ class HoldingsAdapter(Adapter):
         return df.dropna(subset=["shares"])
 
 
-def active_changes_dir(d, window_d: int) -> pd.DataFrame | None:
+def _weight_map(df: pd.DataFrame) -> pd.Series:
+    """ticker -> weight_pct from a holdings snapshot (the weight column name varies
+    by sponsor: weight_pct / weight / weight_(%) …). Used to recover the PRIOR
+    weight of a fully-exited position, which is absent from the latest snapshot."""
+    if df is None or df.empty or "ticker" not in df.columns:
+        return pd.Series(dtype=float)
+    wcol = next((c for c in df.columns if "weight" in c.lower()), None)
+    if wcol is None:
+        return pd.Series(dtype=float)
+    w = pd.to_numeric(df[wcol].astype(str).str.replace(r"[,%$]", "", regex=True),
+                      errors="coerce")
+    return pd.Series(w.values, index=df["ticker"].astype(str)).groupby(level=0).last()
+
+
+def active_changes_dir(d, window_d: int, *, min_base_frac: float = 1e-6,
+                       include_lifecycle: bool = False) -> pd.DataFrame | None:
     """Flow-normalized share decisions from per-day snapshots in directory `d`.
 
     Isolates the manager's (or index's) actual share decisions from mechanical
@@ -109,6 +181,18 @@ def active_changes_dir(d, window_d: int) -> pd.DataFrame | None:
     where the fund SO ratio is proxied by the total share growth of positions
     common to both snapshots. Sponsor-agnostic, so any collector that writes
     snapshots with a `ticker`+`shares` schema (holdings/, etf_holdings/) reuses it.
+
+    Two data-hygiene guards make the %-change trustworthy (every consumer — the
+    radar, the dashboard panel, alerts — flows through here):
+      1. cash/FX/derivative rows are dropped (is_non_equity_holding);
+      2. a position whose expected base is a negligible fraction of the fund
+         (< min_base_frac) is dropped, so a near-zero denominator can never
+         explode the ratio (also kills placeholder contra-lines).
+
+    `include_lifecycle` adds two RADAR-only row kinds whose % change is undefined
+    (so they'd be noise in the plain alert path, which stays on continuing
+    positions): brand-NEW positions (is_new) and full EXITS (is_exit, with the
+    prior weight carried so conviction can be scored on it).
     """
     from pathlib import Path
     d = Path(d)
@@ -117,9 +201,11 @@ def active_changes_dir(d, window_d: int) -> pd.DataFrame | None:
     snaps = sorted(d.glob("*.parquet"))[-(window_d + 1):]
     if len(snaps) < 2:
         return None
-    first = pd.read_parquet(snaps[0]).set_index("ticker")["shares"]
-    last = pd.read_parquet(snaps[-1]).set_index("ticker")["shares"]
-    # collapse any duplicate tickers, drop non-numeric (cash/'-')
+    first_df = _drop_non_equity(pd.read_parquet(snaps[0]))
+    last_df = _drop_non_equity(pd.read_parquet(snaps[-1]))
+    first = first_df.set_index("ticker")["shares"]
+    last = last_df.set_index("ticker")["shares"]
+    # collapse any duplicate tickers, drop non-numeric residue
     first = pd.to_numeric(first, errors="coerce").groupby(level=0).sum()
     last = pd.to_numeric(last, errors="coerce").groupby(level=0).sum()
     common = first.index.intersection(last.index)
@@ -128,8 +214,39 @@ def active_changes_dir(d, window_d: int) -> pd.DataFrame | None:
     so_ratio = last[common].sum() / first[common].sum()
     expected = first * so_ratio
     diff = (last.reindex(expected.index) - expected).dropna()
-    pct = 100 * diff / expected.replace(0, pd.NA)
+    # align pct to diff's index — otherwise dividing by the full `expected` index
+    # re-introduces fully-exited tickers as NaN rows (handled explicitly below).
+    pct = 100 * diff / expected.reindex(diff.index).replace(0, pd.NA)
     out = pd.DataFrame({"active_share_chg": diff, "active_chg_pct": pct})
+    # denominator guard: drop positions whose expected base is a negligible
+    # share of the fund — their % is meaningless and prone to blow-ups.
+    exp_pos = expected[expected > 0]
+    if not exp_pos.empty:
+        frac = expected.reindex(out.index).fillna(0.0) / exp_pos.sum()
+        out = out[frac >= min_base_frac]
+    out["is_new"], out["is_exit"], out["prior_weight_pct"] = False, False, float("nan")
+    if include_lifecycle:
+        # Brand-NEW positions — held now, absent a window ago. A manager INITIATING
+        # a stake is the strongest "high interest" signal, but its % change is
+        # undefined (no prior base), so is_new=True and downstream ranks it on the
+        # full CURRENT weight (frac=1) instead of a meaningless ratio.
+        new_last = last.reindex(last.index.difference(first.index)).dropna()
+        new_last = new_last[new_last > 0]
+        if len(new_last):
+            out = pd.concat([out, pd.DataFrame({
+                "active_share_chg": new_last, "active_chg_pct": float("nan"),
+                "is_new": True, "is_exit": False, "prior_weight_pct": float("nan")})])
+        # Full EXITS — held a window ago, gone now (manager fully sold out): the
+        # strongest NEGATIVE signal. The position is absent from the latest snapshot
+        # so we carry its PRIOR weight for conviction scoring (= −full weight).
+        exit_first = first.reindex(first.index.difference(last.index)).dropna()
+        exit_first = exit_first[exit_first > 0]
+        if len(exit_first):
+            pw = _weight_map(first_df).reindex(exit_first.index)
+            out = pd.concat([out, pd.DataFrame({
+                "active_share_chg": -exit_first, "active_chg_pct": -100.0,
+                "is_new": False, "is_exit": True, "prior_weight_pct": pw},
+                index=exit_first.index)])
     out["window_start"], out["window_end"] = snaps[0].stem, snaps[-1].stem
     return out.sort_values("active_chg_pct")
 
