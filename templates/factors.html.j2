@@ -64,6 +64,9 @@
   .twocol { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
   @media (max-width:760px){ .twocol{ grid-template-columns:1fr; } }
   .zpos { color:var(--up); font-weight:600; } .zneg { color:var(--down); font-weight:600; }
+  .chip { display:inline-block; font-size:11px; padding:1px 7px; margin:0 4px 4px 0; border-radius:8px;
+          background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
+  sub { font-size:.72em; }
 </style>
 </head>
 <body>
@@ -102,6 +105,51 @@
       </div>
       {% endfor %}
     </div>
+  </div>
+  {% endif %}
+
+  <!-- Does the rank actually predict? — leak-free point-in-time IC scorecard -->
+  {% if ic and ic.rows %}
+  <div class="panel">
+    <h2>{{ t('Does the rank actually predict? — point-in-time IC', '排名真的能预测吗？— 时点信息系数') }}
+      {{ help("The honest test most factor dashboards never show. At each quarter-end we rebuild every factor AS IT WAS KNOWABLE THEN — no look-ahead into a not-yet-filed 10-K, no survivorship — then rank-correlate the factor score with the NEXT " ~ ic.horizon_d ~ "-day return: the Information Coefficient (IC). mean IC ≈ raw predictive edge; IC-IR (annualized) = IC ÷ its own volatility; t_HAC = Newey-West t-stat (overlapping forward windows autocorrelate the IC series); q_FDR = Benjamini-Hochberg false-discovery rate across every factor screened. Judge each number against ZERO — and against the tiny sample.",
+                "大多数因子面板从不展示的诚实检验。在每个季末，我们按当时可知的信息重建每个因子（无前视、无幸存者偏差），再将因子分数与未来 " ~ ic.horizon_d ~ " 日回报做秩相关，得到信息系数 IC。平均 IC ≈ 原始预测力；IC-IR（年化）= IC ÷ 自身波动；t_HAC = Newey-West t 值；q_FDR = 跨全部因子的多重检验错误发现率。每个数字都应与零比较，并考虑样本极小。") }}
+    </h2>
+    <p class="muted sm" style="margin:0 0 10px">
+      {% if not ic.any_survive %}<b class="zneg">{{ t('No factor clears the multiple-testing bar (BH-FDR 10%).', '没有因子通过多重检验（BH-FDR 10%）。') }}</b> {% endif %}
+      {{ t('Span ' ~ ic.span ~ ' · ' ~ ic.rebalances ~ ' quarterly rebalances · ~' ~ ic.median_universe ~ ' names. This is the permanent ceiling of FREE data: ~3 years of price history caps the sample at n≈' ~ ic.rebalances ~ ', so t-stats and FDR are low-power. Read it as honest context, not a green light — and note fundamentals refresh only ~annually, so the fundamental factors have even fewer independent draws.',
+              '区间 ' ~ ic.span ~ ' · ' ~ ic.rebalances ~ ' 次季度再平衡 · 约 ' ~ ic.median_universe ~ ' 只。这是免费数据的永久上限：约 3 年价格历史使样本仅 n≈' ~ ic.rebalances ~ '，t 统计与 FDR 检验力较低。仅作诚实背景，而非买入信号 — 且基本面约每年才更新一次，基本面因子的独立样本更少。') }}
+    </p>
+    <table>
+      <tr>
+        <th>{{ t('factor','因子') }}</th>
+        <th class="r">{{ t('mean IC','平均 IC') }}</th>
+        <th class="r">{{ t('IC-IR (ann)','IC-IR（年化）') }}</th>
+        <th class="r">t<sub>HAC</sub></th>
+        <th class="r">{{ t('hit','命中率') }}</th>
+        <th class="r">q<sub>FDR</sub></th>
+        <th class="r">n</th>
+      </tr>
+      {% for r in ic.rows %}
+      <tr>
+        <td>{{ t(r.label_en, fac.factor_labels.get(r.factor, r.label_en)) }}</td>
+        <td class="r {{ 'pos' if r.mean_ic and r.mean_ic > 0 else ('neg' if r.mean_ic and r.mean_ic < 0 else 'muted') }}">{{ '%+.4f'|format(r.mean_ic) if r.mean_ic is not none else '—' }}</td>
+        <td class="r {{ 'pos' if r.ic_ir_ann and r.ic_ir_ann > 0 else ('neg' if r.ic_ir_ann and r.ic_ir_ann < 0 else 'muted') }}">{{ '%+.2f'|format(r.ic_ir_ann) if r.ic_ir_ann is not none else '—' }}</td>
+        <td class="r muted">{{ '%+.2f'|format(r.t_hac) if r.t_hac is not none else '—' }}</td>
+        <td class="r muted">{{ '%.0f%%'|format(r.hit * 100) if r.hit is not none else '—' }}</td>
+        <td class="r muted">{{ '%.2f'|format(r.q_fdr) if r.q_fdr is not none else '—' }}</td>
+        <td class="r muted">{{ r.n }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% if ic.collinearity and ic.collinearity.top_pairs %}
+    <p class="muted sm" style="margin:10px 0 0">
+      {{ t('Crowding / overlap','拥挤／重叠') }}{{ help("Factors that move together are redundant (a 'crowded' tilt). Mean absolute pairwise factor correlation, raw vs after Löwdin de-correlation; the composite (de-correlated) row above strips this overlap. VIF > 5 would flag a factor that is a linear combination of the others.", "彼此同向移动的因子是冗余的（拥挤的押注）。下为平均 |因子相关性|（原始 vs Löwdin 去相关后）；上方“综合（去相关）”行已剔除该重叠。VIF>5 表示某因子是其它因子的线性组合。") }}:
+      {{ t('mean |corr| ' ~ ic.collinearity.mean_abs_corr_raw ~ ' raw → ' ~ ic.collinearity.mean_abs_corr_orth ~ ' de-correlated.',
+           '平均 |相关性| ' ~ ic.collinearity.mean_abs_corr_raw ~ ' 原始 → ' ~ ic.collinearity.mean_abs_corr_orth ~ ' 去相关后。') }}
+      {% for p in ic.collinearity.top_pairs %}<span class="chip">{{ p.a }} ↔ {{ p.b }} · {{ p.corr }}</span>{% endfor %}
+    </p>
+    {% endif %}
   </div>
   {% endif %}
 
