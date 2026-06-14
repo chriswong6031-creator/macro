@@ -48,10 +48,15 @@ SPDRs, however, have deep history. Therefore:
 | liquidity | `liquidity_overlay == contracting` (risk-off half only) | 0.5 |
 | transition | `transition_state` TRANSITIONING/NEW_REGIME=1, WEAKENING=0.5 | 0.25 |
 
-**Sensitivity** — a coarse 3-tier table over the 11 SPDRs
-(`engine.confluence.sector_macro_beta`), keyed by SPDR ticker AND GICS/display
-sector name: cyclical/long-duration +1.0 (XLK/XLY/XLF/XLC/XLI/XLB), rate-sensitive
-+0.5 (XLRE), neutral 0 (XLE), defensive −0.4 (XLP/XLU/XLV).
+**Sensitivity** — `engine.confluence.sector_macro_beta`, keyed by SPDR ticker AND
+GICS/display sector name. Started as a coarse 3-tier textbook prior; now **measured
++ shrunk** (`scripts/calibrate_macro_betas.py`): each SPDR's beta is tied to its
+conditional fwd-63d drawdown depth under high MRS over 1998→, standardized
+cross-sectionally and shrunk 50% toward the prior. Measured agrees with the prior
+(corr +0.58) but adds a real within-cyclical gradient — financials/comms bite
+hardest (1.0), tech least (0.39), defensives credited (XLP −0.56 … XLU −0.29).
+Per-stock inherits its sector's beta. Re-derive offline and adopt only if it still
+agrees with the prior's structure.
 
 **Integration** — two additive seams, both mirroring the existing liquidity nudge,
 both no-ops by default:
@@ -115,4 +120,6 @@ macro block) · `engine/playbook.py` (wire live drag + per-sector beta) ·
 `engine/holdings_signals.py` (Track A fix + macro threading) ·
 `scripts/build_stock_library.py` + `scripts/build_site.py` (current_macro / beta
 wiring) · `scripts/research_macro_sector.py` (B-1 gate) ·
-`tests/test_macro_overlay.py`.
+`scripts/calibrate_macro_betas.py` (measured-beta upgrade) ·
+`templates/sector.html.j2` + `templates/stock.html.j2` (macro caution line in the
+ladder cards) · `tests/test_macro_overlay.py`.

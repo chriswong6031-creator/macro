@@ -276,9 +276,12 @@ def test_snapshot_robust_to_stale_quad():
 
 
 def test_sector_macro_beta_lookup():
-    assert sector_macro_beta("XLK") == 1.0
-    assert sector_macro_beta("Technology") == 1.0          # GICS / display name
-    assert sector_macro_beta("health care") == -0.4        # case-insensitive
-    assert sector_macro_beta("Utilities") == -0.4
-    assert sector_macro_beta("SPY") == 0.0                 # unknown -> 0
+    # value-agnostic (betas are recalibrated by scripts/calibrate_macro_betas): assert
+    # the STRUCTURE — cyclical positive, defensive negative, GICS alias == its SPDR,
+    # case-insensitive, unknown -> 0.
+    assert sector_macro_beta("XLF") > 0                     # cyclical penalized
+    assert sector_macro_beta("XLP") < 0                     # defensive credited
+    assert sector_macro_beta("Technology") == sector_macro_beta("XLK")   # GICS alias
+    assert sector_macro_beta("health care") == sector_macro_beta("Health Care")  # case-insens.
+    assert sector_macro_beta("SPY") == 0.0                  # unknown -> 0
     assert sector_macro_beta(None) == 0.0

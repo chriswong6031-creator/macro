@@ -20,6 +20,9 @@
   .early { margin:6px 0; padding:8px 12px; border-radius:8px;
            background:color-mix(in srgb, var(--g-cold) 14%, var(--panel2));
            border-left:3px solid var(--g-cold); font-size:13px; }
+  .macro-caution { margin:6px 0; padding:8px 12px; border-radius:8px;
+           background:color-mix(in srgb, var(--down) 10%, var(--panel2));
+           border-left:3px solid var(--down); font-size:13px; }
   .agewhen { margin:6px 0; padding:7px 11px; border-radius:8px; background:var(--panel2);
              border-left:3px solid var(--link); font-size:13px; color:var(--text); }
   .agechip { font-size:11px; font-weight:700; padding:2px 7px; border-radius:9px;
@@ -133,6 +136,7 @@
     </div>
     {% if s.ladder.age_line %}<p class="agewhen">{{ t(s.ladder.age_line, s.ladder.age_line_zh) }}</p>{% endif %}
     {% if s.ladder.early_note %}<p class="early">{{ t(s.ladder.early_note, s.ladder.early_note_zh) }}</p>{% endif %}
+    {% if s.ladder.macro_line %}<p class="macro-caution">⚠ {{ t(s.ladder.macro_line, s.ladder.macro_line_zh) }}</p>{% endif %}
     <ul class="points">
       {% for p, pz in zip(s.ladder.points, s.ladder.points_zh) %}<li>{{ t(p, pz) }}</li>{% endfor %}
     </ul>
@@ -218,6 +222,7 @@
         {% for p, pz in zip(h.ladder.points[:3], h.ladder.points_zh[:3]) %}<li>{{ t(p, pz) }}</li>{% endfor %}
       </ul>
       {% if h.ladder.early_note %}<p class="early">{{ t(h.ladder.early_note, h.ladder.early_note_zh) }}</p>{% endif %}
+      {% if h.ladder.macro_line %}<p class="macro-caution">⚠ {{ t(h.ladder.macro_line, h.ladder.macro_line_zh) }}</p>{% endif %}
       {% if h.fundamentals and (h.fundamentals.fwd_pe or h.fundamentals.rev_growth) %}
       <p class="muted" style="font-size:12px; margin:4px 0">{% if h.fundamentals.fwd_pe %}{{ t('fwd P/E', '预期市盈率') }} <b>{{ h.fundamentals.fwd_pe | round(1) }}</b>{% endif %}{% if h.fundamentals.rev_growth %} · {{ t('rev growth', '营收增长') }} <b>{{ (h.fundamentals.rev_growth * 100) | round(1) }}%</b>{% endif %}{% if h.fundamentals.profit_margin %} · {{ t('margin', '利润率') }} <b>{{ (h.fundamentals.profit_margin * 100) | round(0) }}%</b>{% endif %} {{ help("Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.", "来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。") }}</p>
       {% endif %}
