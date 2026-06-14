@@ -6,7 +6,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<title>Bitcoin Vector — Jun 13, 2026</title>
+<title>Bitcoin Vector — Jun 14, 2026</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
@@ -71,7 +71,9 @@ html[data-theme="dark"] body{-webkit-font-smoothing:antialiased}
 .theme-switch{width:56px;height:27px;border-radius:999px;background:#eef1f6;border:1px solid var(--grid);position:relative;cursor:pointer;padding:0;flex:none}
 html[data-theme="dark"] .theme-switch{background:#222732}
 .theme-switch .ic{position:absolute;top:50%;transform:translateY(-50%);font-size:10.5px;opacity:.5;line-height:1}
-.theme-switch .ic.sun{left:8px}.theme-switch .ic.moon{right:8px}
+/* knob covers the same-side icon it duplicates, leaving the OTHER visible (sun
+   right / moon left) — else light mode shows two suns */
+.theme-switch .ic.sun{right:8px}.theme-switch .ic.moon{left:8px}
 .theme-switch .knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 5px rgba(0,0,0,.3);transform:translateX(29px);transition:transform .34s cubic-bezier(.34,1.45,.5,1),background .3s}
 .theme-switch .knob::before{content:"☀️"}
 html[data-theme="dark"] .theme-switch .knob{transform:translateX(0);background:#e8c15a}
@@ -260,7 +262,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
       <div class="hero-meta">
         <span class="down"><span class="l-en">Risk Index</span><span class="l-zh">风险指数</span> 41</span>
         · <b><span class="l-en">High Risk</span><span class="l-zh">高风险</span></b>
-        · <span class="tip" title="Momentum vote-ensemble in [-1,+1]; ±0.5 = trigger · 动量投票集成，区间 [-1,+1]；±0.5 = 触发"><span class="l-en">Momentum</span><span class="l-zh">动量</span> -0.87 (<span class="l-en">bear</span><span class="l-zh">看空</span>)</span>
+        · <span class="tip" title="Momentum vote-ensemble in [-1,+1]; ±0.5 = trigger · 动量投票集成，区间 [-1,+1]；±0.5 = 触发"><span class="l-en">Momentum</span><span class="l-zh">动量</span> -0.81 (<span class="l-en">bear</span><span class="l-zh">看空</span>)</span>
       </div>
       
       
@@ -299,7 +301,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 
       <!-- cycle slider -->
       <div class="slider">
-        <div class="track"><div class="knob" style="left:20%"></div></div>
+        <div class="track"><div class="knob" style="left:22%"></div></div>
         <div class="labels">
           
           <span class="cur"><span class="l-en">Defensive</span><span class="l-zh">防御</span></span>
@@ -318,7 +320,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
         <div class="m"><div class="k"><span class="l-en">Momentum</span><span class="l-zh">动量</span></div><div class="v"><span class="l-en">Strong</span><span class="l-zh">强</span></div></div>
         <div class="m"><div class="k"><span class="l-en">Volatility</span><span class="l-zh">波动率</span></div><div class="v"><span class="l-en">Sweet spot</span><span class="l-zh">理想区间</span></div>
           <div class="sub"><span class="l-en">Downside</span><span class="l-zh">下行</span></div></div>
-        <div class="m"><div class="k"><span class="l-en">Flow</span><span class="l-zh">资金流</span></div><div class="v"><span class="l-en">Sweet spot</span><span class="l-zh">理想区间</span></div></div>
+        <div class="m"><div class="k"><span class="l-en">Flow</span><span class="l-zh">资金流</span></div><div class="v"><span class="l-en">Low</span><span class="l-zh">低</span></div></div>
       </div>
     </div>
 
@@ -443,7 +445,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
     <div class="card">
       <h3><span class="l-en">Cycle ladder (shared with the stock analyzer)</span><span class="l-zh">周期阶梯（与个股分析器一致）</span>
         <b style="color:var(--r3)"> · <span class="l-en">BEARISH</span><span class="l-zh">BEARISH</span></b></h3>
-      <div class="mini"><div class="lab"><span><span class="l-en">Daily cycle state</span><span class="l-zh">日线周期状态</span></span><span><b><span class="l-en">COUNTER-TREND BOUNCE</span><span class="l-zh">COUNTER-TREND BOUNCE</span></b> <span class="faint">· <span class="l-en">2d ago</span><span class="l-zh">2d ago</span></span></span></div></div>
+      <div class="mini"><div class="lab"><span><span class="l-en">Daily cycle state</span><span class="l-zh">日线周期状态</span></span><span><b><span class="l-en">COUNTER-TREND BOUNCE</span><span class="l-zh">COUNTER-TREND BOUNCE</span></b> <span class="faint">· <span class="l-en">3d ago</span><span class="l-zh">3d ago</span></span></span></div></div>
       <div class="sub" style="margin-top:8px"><span class="l-en">Short-term (daily): counter-trend bounce. Bigger picture (counter-trend): bearish.</span><span class="l-zh">短期（日线）：逆势反弹。大局（逆势）：看空。</span></div>
       <div class="sub" style="margin-top:6px;color:var(--ink)"><span class="l-en">Counter-trend bounce inside a bearish bigger picture. For nimble traders only — small size, tight stop below 60850.48. If the daily low fails it cascades toward the larger cycle low; not an investment buy.</span><span class="l-zh">处于看空大局中的逆势反弹。仅限灵活交易者——小仓位、将止损紧贴 60850.48 下方。若日线低点失守，将向更大周期低点蔓延；并非投资性买入。</span></div>
       <div class="sub faint" style="margin-top:8px;font-size:12px"><span class="l-en">Same calibrated DCL/ICL cycle engine the Macro Dashboard runs on every asset (crypto preset: ~56–70d daily cycle).</span><span class="l-zh">与宏观看板对每个资产运行的、同一套已校准的 DCL/ICL 周期引擎（加密预设：约 56–70 天日线周期）。</span></div>
@@ -460,7 +462,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
         <tr style="border-top:1px solid var(--grid)">
           <td style="padding:7px 4px;font-weight:600;color:var(--ink)"><span class="l-en">Daily</span><span class="l-zh">日线</span></td>
           <td style="text-align:right;color:var(--text)">37.0</td>
-          <td style="text-align:right;color:var(--r3)">86.0</td>
+          <td style="text-align:right;color:var(--r3)">93.0</td>
           <td style="text-align:right;color:var(--blue)"><span class="l-en">Up</span><span class="l-zh">转多</span></td>
           <td style="text-align:right"><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--blue)"></i></td>
         </tr>
@@ -514,11 +516,11 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
         
         
         <b style="color:var(--muted)"> · <span class="l-en">NEUTRAL</span><span class="l-zh">中性</span></b>
-        <span class="faint" style="font-size:14px"> 0.01</span></h3>
+        <span class="faint" style="font-size:14px"> 0.03</span></h3>
       
-      <div class="mini"><div class="lab"><span><span class="l-en">Positive participation (14d)</span><span class="l-zh">正向占比（14 天）</span></span><span><b>7.0%</b></span></div>
-        <div class="bar"><div class="fill" style="width:7.0%"></div></div></div>
-      <div class="mini"><div class="lab"><span><span class="l-en">Trend efficiency (chop gate)</span><span class="l-zh">趋势效率（震荡过滤）</span></span><span><b>0.03</b> <span class="faint"><span class="l-en">(0 = chop, 1 = clean trend)</span><span class="l-zh">（0 = 震荡，1 = 单边）</span></span></span></div></div>
+      <div class="mini"><div class="lab"><span><span class="l-en">Positive participation (14d)</span><span class="l-zh">正向占比（14 天）</span></span><span><b>14.0%</b></span></div>
+        <div class="bar"><div class="fill" style="width:14.0%"></div></div></div>
+      <div class="mini"><div class="lab"><span><span class="l-en">Trend efficiency (chop gate)</span><span class="l-zh">趋势效率（震荡过滤）</span></span><span><b>0.06</b> <span class="faint"><span class="l-en">(0 = chop, 1 = clean trend)</span><span class="l-zh">（0 = 震荡，1 = 单边）</span></span></span></div></div>
       <div class="sub" style="margin-top:10px"><span class="l-en">Glassnode/Swissblock-style: the z-scored ACCELERATION of momentum (MACD-histogram), gated by trend-efficiency so chop reads ~0, fused with a funding/OI positioning shock. It catches the START of a move and exhaustion — a level says “cheap”, Impulse says “selling force is burning out now.”</span><span class="l-zh">Glassnode/Swissblock 风格：动量的标准化加速度（MACD 柱），用趋势效率过滤震荡（震荡时约为 0），并融合资金费率/持仓的持仓冲击。它捕捉走势的启动与衰竭 — 估值说“便宜”，脉冲说“抛压此刻正在衰竭”。</span></div>
     </div>
     <div class="card">
@@ -536,14 +538,14 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
       <h3><span class="l-en">Fundamental gauges</span><span class="l-zh">基本面指标</span></h3>
       
       
-      <div class="mini"><div class="lab"><span><span class="l-en">Network Growth</span><span class="l-zh">网络增长</span></span><span><b>52</b></span></div>
-        <div class="bar"><div class="fill" style="width:52%"></div></div></div>
+      <div class="mini"><div class="lab"><span><span class="l-en">Network Growth</span><span class="l-zh">网络增长</span></span><span><b>59</b></span></div>
+        <div class="bar"><div class="fill" style="width:59%"></div></div></div>
       
-      <div class="mini"><div class="lab"><span><span class="l-en">Liquidity</span><span class="l-zh">流动性</span></span><span><b>2</b></span></div>
-        <div class="bar"><div class="fill" style="width:2%"></div></div></div>
+      <div class="mini"><div class="lab"><span><span class="l-en">Liquidity</span><span class="l-zh">流动性</span></span><span><b>3</b></span></div>
+        <div class="bar"><div class="fill" style="width:3%"></div></div></div>
       
-      <div class="mini"><div class="lab"><span><span class="l-en">BFI</span><span class="l-zh">BFI</span></span><span><b>25</b></span></div>
-        <div class="bar"><div class="fill" style="width:25%"></div></div></div>
+      <div class="mini"><div class="lab"><span><span class="l-en">BFI</span><span class="l-zh">BFI</span></span><span><b>26</b></span></div>
+        <div class="bar"><div class="fill" style="width:26%"></div></div></div>
       
       <div class="sub" style="margin-top:14px"><span class="l-en">Network Growth = active-address momentum percentile. Liquidity = realized-cap + stablecoin + ETF-flow composite. BFI never turned negative through the Feb–Mar 2025 stress in Swissblock&#39;s framing — a long-term anchor.</span><span class="l-zh">网络增长 = 活跃地址动量百分位。流动性 = 已实现市值 + 稳定币 + ETF 资金流的综合。在 Swissblock 的框架下，BFI 在 2025 年 2 月至 3 月的压力期间从未转负 — 一个长期锚点。</span></div>
     </div>
@@ -582,20 +584,20 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
   <div class="grid cols-2">
     <div class="card">
       <h3><span class="l-en">Implied volatility</span><span class="l-zh">隐含波动率</span></h3>
-      <div class="mini"><div class="lab"><span><span class="l-en">DVOL (crypto VIX)</span><span class="l-zh">DVOL（加密 VIX）</span></span><span><b>40.6</b> <span class="faint">(22.0%ile)</span></span></div></div>
-      <div class="mini"><div class="lab"><span><span class="l-en">Variance risk premium (IV−RV)</span><span class="l-zh">方差风险溢价（IV−RV）</span></span><span><b>2.2</b></span></div></div>
-      <div class="mini"><div class="lab"><span><span class="l-en">ATM IV 30d / term slope</span><span class="l-zh">平值 30 天 IV / 期限斜率</span></span><span><b>38.6</b> / 1.3</span></div></div>
+      <div class="mini"><div class="lab"><span><span class="l-en">DVOL (crypto VIX)</span><span class="l-zh">DVOL（加密 VIX）</span></span><span><b>40.8</b> <span class="faint">(23.0%ile)</span></span></div></div>
+      <div class="mini"><div class="lab"><span><span class="l-en">Variance risk premium (IV−RV)</span><span class="l-zh">方差风险溢价（IV−RV）</span></span><span><b>1.6</b></span></div></div>
+      <div class="mini"><div class="lab"><span><span class="l-en">ATM IV 30d / term slope</span><span class="l-zh">平值 30 天 IV / 期限斜率</span></span><span><b>38.9</b> / 1.2</span></div></div>
       <div class="sub" style="margin-top:10px"><span class="l-en">Calibrated (2021→, confirmation-only): DVOL 70–90 is the bleed zone (−13%/90d); VRP below −5 (realized overshooting implied) marked recoveries (+17%/90d).</span><span class="l-zh">已校准（2021 起，仅作确认）：DVOL 70–90 为失血区（90 天 −13%）；VRP 低于 −5（已实现超过隐含）标记反弹（90 天 +17%）。</span></div>
     </div>
     <div class="card">
       <h3><span class="l-en">Skew &amp; positioning (snapshot)</span><span class="l-zh">偏斜与持仓（快照）</span></h3>
-      <div class="mini"><div class="lab"><span><span class="l-en">25Δ risk reversal</span><span class="l-zh">25Δ 风险逆转</span></span><span><b style="color:var(--r3)">-6.1</b> <span class="faint"><span class="l-en">(&lt;0 = downside bid)</span><span class="l-zh">（&lt;0 = 下行需求）</span></span></span></div></div>
+      <div class="mini"><div class="lab"><span><span class="l-en">25Δ risk reversal</span><span class="l-zh">25Δ 风险逆转</span></span><span><b style="color:var(--r3)">-5.9</b> <span class="faint"><span class="l-en">(&lt;0 = downside bid)</span><span class="l-zh">（&lt;0 = 下行需求）</span></span></span></div></div>
       <div class="mini"><div class="lab"><span><span class="l-en">Put/Call OI ratio</span><span class="l-zh">看跌/看涨 持仓比</span></span><span><b>0.6</b></span></div></div>
       <div class="mini"><div class="lab"><span><span class="l-en">Max pain</span><span class="l-zh">最大痛点</span></span><span><b>$74,000</b></span></div></div>
       
-      <div class="mini"><div class="lab"><span><span class="l-en">Futures basis (annualized)</span><span class="l-zh">期货基差（年化）</span></span><span><b style="color:var(--blue)">+3.3%</b> <span class="faint"><span class="l-en">(&gt;15 froth, &lt;0 stress)</span><span class="l-zh">（&gt;15 过热，&lt;0 承压）</span></span></span></div></div>
+      <div class="mini"><div class="lab"><span><span class="l-en">Futures basis (annualized)</span><span class="l-zh">期货基差（年化）</span></span><span><b style="color:var(--blue)">+3.4%</b> <span class="faint"><span class="l-en">(&gt;15 froth, &lt;0 stress)</span><span class="l-zh">（&gt;15 过热，&lt;0 承压）</span></span></span></div></div>
       
-      <div class="mini"><div class="lab"><span><span class="l-en">Skew term (7d−90d)</span><span class="l-zh">偏斜期限（7天−90天）</span></span><span><b>-0.018</b> <span class="faint"><span class="l-en">(&gt;0 = acute near-term fear)</span><span class="l-zh">（&gt;0 = 近端急性恐慌）</span></span></span></div></div>
+      <div class="mini"><div class="lab"><span><span class="l-en">Skew term (7d−90d)</span><span class="l-zh">偏斜期限（7天−90天）</span></span><span><b>-0.031</b> <span class="faint"><span class="l-en">(&gt;0 = acute near-term fear)</span><span class="l-zh">（&gt;0 = 近端急性恐慌）</span></span></span></div></div>
       <div class="sub" style="margin-top:10px"><span class="l-en">Rebuilt from the free Deribit chain (what Laevitas sells) — now incl. the futures-basis curve (leverage demand) and the skew term structure (near-term vs structural fear). The per-strike snapshot accumulates daily — context until ~6–12mo of history enables calibration.</span><span class="l-zh">基于免费的 Deribit 期权链重建（即 Laevitas 所售）— 现含期货基差曲线（杠杆需求）与偏斜期限结构（近端 vs 结构性恐慌）。逐行权价快照每日累积 — 在约 6–12 个月历史前仅作背景。</span></div>
     </div>
   </div>
@@ -609,9 +611,9 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
       <div class="mini"><div class="lab"><span><span class="l-en">Leverage stress</span><span class="l-zh">杠杆压力</span></span><span><b>18.0/100</b></span></div>
         <div class="bar"><div class="fill" style="width:18.0%"></div></div></div>
       <div class="mini"><div class="lab"><span><span class="l-en">Aggregate open interest</span><span class="l-zh">总持仓量</span></span><span><b>$26.8B</b> <span class="faint">(42.0%ile vs mcap)</span></span></div></div>
-      <div class="mini"><div class="lab"><span><span class="l-en">Funding (annualized)</span><span class="l-zh">资金费率（年化）</span></span><span><b>+0.9%</b> <span class="faint">(z -0.1)</span></span></div></div>
+      <div class="mini"><div class="lab"><span><span class="l-en">Funding (annualized)</span><span class="l-zh">资金费率（年化）</span></span><span><b>+1.0%</b> <span class="faint">(z -0.1)</span></span></div></div>
       
-      <div class="mini"><div class="lab"><span><span class="l-en">OI vs price divergence (14d)</span><span class="l-zh">持仓 vs 价格背离（14 天）</span></span><span><b>-5.1%</b></span></div></div>
+      <div class="mini"><div class="lab"><span><span class="l-en">OI vs price divergence (14d)</span><span class="l-zh">持仓 vs 价格背离（14 天）</span></span><span><b>-6.5%</b></span></div></div>
       <div class="sub" style="margin-top:10px"><span class="l-en">Rebuilt from 15-exchange BGeometrics OI + funding (what CoinGlass aggregates). Calibrated (2022→, confirmation): funding-z below −1 (crowded shorts) preceded +18%/90d at 70% hit; OI building faster than price drags forward returns.</span><span class="l-zh">基于 15 家交易所 BGeometrics 持仓 + 资金费率重建（即 CoinGlass 所聚合）。已校准（2022 起，确认）：资金费率 z 低于 −1（空头拥挤）未来 90 天 +18%、胜率 70%；持仓增速快于价格则拖累未来收益。</span></div>
     </div>
     <div class="card">
@@ -653,7 +655,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
     <div class="card">
       <h3><span class="l-en">Coinbase Premium</span><span class="l-zh">Coinbase 溢价</span>
         </h3>
-      <div class="mini"><div class="lab"><span><span class="l-en">Premium (Coinbase − Binance, 7d)</span><span class="l-zh">溢价（Coinbase − Binance，7 天）</span></span><span><b style="color:var(--r3)">-0.01%</b></span></div></div>
+      <div class="mini"><div class="lab"><span><span class="l-en">Premium (Coinbase − Binance, 7d)</span><span class="l-zh">溢价（Coinbase − Binance，7 天）</span></span><span><b style="color:var(--blue)">+0.00%</b></span></div></div>
       <div class="sub" style="margin-top:8px"><span class="l-en">US/institutional demand proxy. CONTRARIAN at the extreme: a premium above +1.5% (FOMO) preceded −5.9%/90d at 36% hit — a measured TOP signal; 0 to +1.5% is the healthy-demand zone.</span><span class="l-zh">美国/机构需求代理。极端时为反向信号：溢价高于 +1.5%（追高）后未来 90 天 −5.9%、胜率 36% — 实测的顶部信号；0 至 +1.5% 为健康需求区。</span></div>
     </div>
     <div class="card">
@@ -674,7 +676,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
       <h3><span class="l-en">Halving cycle clock</span><span class="l-zh">减半周期时钟</span>
         <b style="color:var(--r3)"> · <span class="l-en">MARKDOWN</span><span class="l-zh">下跌</span></b></h3>
       
-      <div class="mini"><div class="lab"><span><span class="l-en">Cycle progress (since halving)</span><span class="l-zh">周期进度（自减半起）</span></span><span><b>54.0%</b> <span class="faint">(784.0d)</span></span></div>
+      <div class="mini"><div class="lab"><span><span class="l-en">Cycle progress (since halving)</span><span class="l-zh">周期进度（自减半起）</span></span><span><b>54.0%</b> <span class="faint">(785.0d)</span></span></div>
         <div class="bar"><div class="fill" style="width:54.0%"></div></div></div>
       
       <div class="mini"><div class="lab"><span><span class="l-en">Spending behaviour · VDD Multiple</span><span class="l-zh">支出行为 · VDD 倍数</span></span><span><b>0.36</b> <span class="faint">(8.0%ile · <span class="l-en">&gt;2.9 distribution, &lt;0.75 dormant</span><span class="l-zh">&gt;2.9 派发，&lt;0.75 沉睡</span>)</span></span></div></div>
@@ -683,9 +685,9 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
     <div class="card">
       <h3><span class="l-en">CME positioning &amp; correlation</span><span class="l-zh">CME 持仓与相关性</span>
         <b style="color:var(--r3)"> · <span class="l-en">CROWDED LONG</span><span class="l-zh">多头拥挤</span></b></h3>
-      <div class="mini"><div class="lab"><span><span class="l-en">CME spec net (z-score)</span><span class="l-zh">CME 投机净持仓（z）</span></span><span><b style="color:var(--r3)">3.04</b> <span class="faint">(15.3% of OI)</span></span></div></div>
-      <div class="mini"><div class="lab"><span><span class="l-en">BTC↔S&amp;P 500 correlation (90d)</span><span class="l-zh">BTC↔标普 500 相关性（90 天）</span></span><span><b>0.44</b> <span class="faint"><span class="l-en">Mixed</span><span class="l-zh">Mixed</span></span></span></div></div>
-      <div class="mini"><div class="lab"><span><span class="l-en">BTC↔Gold correlation (90d)</span><span class="l-zh">BTC↔黄金 相关性（90 天）</span></span><span><b>0.19</b></span></div></div>
+      <div class="mini"><div class="lab"><span><span class="l-en">CME spec net (z-score)</span><span class="l-zh">CME 投机净持仓（z）</span></span><span><b style="color:var(--r3)">3.02</b> <span class="faint">(15.3% of OI)</span></span></div></div>
+      <div class="mini"><div class="lab"><span><span class="l-en">BTC↔S&amp;P 500 correlation (90d)</span><span class="l-zh">BTC↔标普 500 相关性（90 天）</span></span><span><b>0.43</b> <span class="faint"><span class="l-en">Mixed</span><span class="l-zh">Mixed</span></span></span></div></div>
+      <div class="mini"><div class="lab"><span><span class="l-en">BTC↔Gold correlation (90d)</span><span class="l-zh">BTC↔黄金 相关性（90 天）</span></span><span><b>0.2</b></span></div></div>
       <div class="sub" style="margin-top:8px"><span class="l-en">CME net-spec (regulated, weekly) is the only real-money positioning input — crowded long (z&gt;1.5) preceded −5.8%/90d at 35% hit (contrarian). Correlation tells what BTC trades as: coupled to equities (&gt;0.4) averaged +13%/90d vs +33% when decoupled.</span><span class="l-zh">CME 投机净持仓（受监管、周度）是唯一的真实资金持仓输入 — 多头拥挤（z&gt;1.5）后 90 天 −5.8%、胜率 35%（反向）。相关性显示 BTC 的交易属性：与股票耦合（&gt;0.4）90 天平均 +13%，脱钩时 +33%。</span></div>
     </div>
   </div>
@@ -780,7 +782,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
           <td class="a">BTC</td>
           <td class="r"><span class="chip chip-bull" style="padding:3px 10px"><span class="l-en">Bull</span><span class="l-zh">看多</span></span></td>
           <td class="r"><span class="dots">
-            <i class="on"></i><i class="on"></i><i class="on"></i>
+            <i class="on"></i><i class="on"></i><i class=""></i>
           </span></td>
         </tr>
         

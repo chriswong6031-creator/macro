@@ -21,14 +21,38 @@
   html[data-lang="zh"] body { font-family: "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",-apple-system,sans-serif; }
   a { text-decoration: none; color: var(--link); }
   h1 { font-size: 21px; margin: 0 0 2px; color: var(--text); }
-  h2 { font-size: 13px; margin: 0 0 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
-  .topbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
-  .topbar .sp { flex: 1; }
-  .navbtn { display: inline-block; padding: 5px 11px; border-radius: 9px; background: var(--panel);
-            border: 1px solid var(--line); color: var(--text); font-size: 13px; font-weight: 600; }
-  .navbtn:hover { border-color: var(--info); }
-  .lang-btn, .theme-btn { font: inherit; cursor: pointer; background: var(--panel); border: 1px solid var(--line);
-            border-radius: 9px; padding: 5px 11px; color: var(--muted); font-weight: 700; }
+  h2 { font-size: 14.5px; margin: 0 0 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+
+  /* ---- hover tooltips (the ? help icons) — hidden until hover ---------------- */
+  .help { display: inline-flex; align-items: center; justify-content: center;
+          width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--muted);
+          color: var(--muted); font-size: 10px; font-weight: 600; cursor: help;
+          position: relative; vertical-align: middle; margin-left: 5px; flex: none; }
+  .help .tip { display: none; position: absolute; bottom: 150%; left: 50%;
+               transform: translateX(-50%); width: 300px;
+               background: var(--panel); border: 1px solid var(--line);
+               padding: 10px 12px; border-radius: 9px; z-index: 60; font-size: 12px;
+               line-height: 1.5; color: var(--text); text-align: left; font-weight: 400;
+               text-transform: none; letter-spacing: normal; box-shadow: var(--popover-shadow);
+               pointer-events: none; white-space: normal; }
+  .help:hover .tip { display: block; }
+  th .help .tip, .help.below .tip { bottom: auto; top: 150%; }
+  .help.edge-right .tip { left: auto; right: 0; transform: none; }
+  .help.edge-left .tip { left: 0; right: auto; transform: none; }
+  /* structured tooltip building blocks (tables / scale bars / tinted rows) */
+  .tip p { margin: 0 0 6px; } .tip p:last-child { margin-bottom: 0; } .tip b { color: var(--text); }
+  .tip table { width: 100%; margin: 7px 0 2px; font-size: 11.5px; border-collapse: collapse; }
+  .tip th, .tip td { padding: 3px 6px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+  .tip th { color: var(--muted); font-weight: 600; }
+  .tip tr:last-child td { border-bottom: none; }
+  .tip .scale { display: flex; height: 15px; border-radius: 7px; overflow: hidden; margin: 8px 0 2px; font-size: 9.5px; font-weight: 700; }
+  .tip .scale span { flex: 1; display: flex; align-items: center; justify-content: center; color: #fff; }
+  .tip .sl { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin: 0 0 4px; }
+  .tip .lad { display: block; padding: 4px 9px; border-radius: 6px; margin: 4px 0; font-size: 11.5px;
+              background: color-mix(in srgb, var(--c, var(--muted)) 16%, var(--panel));
+              color: color-mix(in srgb, var(--c, var(--muted)) 84%, var(--text)); }
+  .tip .lad.up { --c: var(--up); } .tip .lad.down { --c: var(--down); } .tip .lad.warn { --c: var(--warn); }
+  .tip .lad.orange { --c: var(--orange); } .tip .lad.info { --c: var(--info); } .tip .lad.muted { --c: var(--muted); }
   .grid { display: grid; gap: 14px; grid-template-columns: repeat(12, 1fr); }
   .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 15px 17px; }
   .span12 { grid-column: span 12; } .span8 { grid-column: span 8; }
@@ -190,9 +214,14 @@
     <a class="nav-link" href="macro.html">📊 {{ t('US Macro', '美国宏观') }}</a>
     <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin', '比特币') }}</a>
     <a class="nav-link active" href="china.html">🇨🇳 {{ t('China A', '中国A股') }}</a>
-    <a class="nav-link" href="china_stock.html">🔎 {{ t('A-share search', '个股搜索') }}</a>
     <a class="nav-link" href="china_brief.html">📰 {{ t('Brief', '简报') }}</a>
     <a class="nav-link" href="china_history.html">📈 {{ t('History', '历史') }}</a>
+  </div>
+  <div class="nav-search" data-lib="chinastockdata/index.json" data-target="china_stock.html">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search A-shares"
+      placeholder="Search any A-share stock…" data-ph-zh="搜索任意 A 股个股…">
+    <div class="nav-sugg"></div>
   </div>
   <div class="nav-ctrls">
     <button class="theme-switch" aria-label="Toggle dark / light mode">
@@ -474,7 +503,7 @@
   {% if I.margin %}
   <div class="panel span6">
     <h2>{{ t('🔥 Margin crowd meter', '🔥 两融拥挤度') }} <span class="note" style="text-transform:none">· {{ t('融资融券 — the A-share COT', '融资融券 — A股的持仓拥挤度') }}</span>
-      {{ help("Financing balance as a % of free-float market cap — China’s self-normalizing retail-leverage gauge (the closest analog to US CFTC positioning). It peaked near 4.7% at the 2015 leverage-bubble top vs the percentile shown now. High percentile = crowded, leveraged retail; low = capitulated. The maintenance ratio is the system-wide margin-call distance; froth is margin trades as a share of turnover.", "融资余额占流通市值的比例 — 中国可自我归一化的散户杠杆指标（最接近美国 CFTC 持仓）。2015 杠杆牛顶部曾接近 4.7%。分位越高＝杠杆越拥挤；越低＝已出清。维持担保比例衡量全市场距强平的远近；换手占比为两融交易占成交额比重。") }}
+      {{ help("<b>Financing balance as a % of free-float</b> — a self-normalizing China retail-leverage gauge (closest analog to US CFTC positioning); it peaked near 4.7% at the 2015 bubble top.<div class='scale'><span style='background:var(--info)'>capitulated</span><span style='background:var(--muted)'>normal</span><span style='background:var(--warn)'>elevated</span><span style='background:var(--act)'>crowded</span></div><div class='sl'><span>0</span><span>40th</span><span>70th</span><span>100th %ile</span></div><b>Maintenance ratio</b> = system-wide distance to a margin call; <b>froth</b> = margin trades as a share of turnover.", "<b>融资余额占流通市值比</b> — 可自我归一化的散户杠杆指标（最接近美国 CFTC 持仓）；2015 杠杆牛顶部曾接近 4.7%。<div class='scale'><span style='background:var(--info)'>已出清</span><span style='background:var(--muted)'>正常</span><span style='background:var(--warn)'>偏高</span><span style='background:var(--act)'>拥挤</span></div><div class='sl'><span>0</span><span>40分位</span><span>70分位</span><span>100分位</span></div><b>维持担保比例</b>＝全市场距强平的远近；<b>换手占比</b>＝两融交易占成交额比重。") }}
     </h2>
     <div style="display:flex;align-items:baseline;gap:10px">
       <span class="bignum {{ 'neg' if I.margin.pctile>=80 else ('pos' if I.margin.pctile<=25 else '') }}">{{ I.margin.fin_pct_float }}%</span>
@@ -515,7 +544,7 @@
   {% if leaderboard %}
   <div class="panel span8">
     <h2>{{ t('🌐 Connect leaderboard — smart money', '🌐 互联互通龙虎榜 — 聪明钱') }}
-      {{ help("Where cross-border money is concentrated today. Northbound = the A-shares foreign money traded most (turnover only — daily net was discontinued Aug-2024). Southbound = the HK names mainland money net-bought (green) or net-sold (red) — a live read on mainland risk appetite and which themes it is chasing offshore.", "今日跨境资金的集中之处。北向＝外资成交额最大的 A 股（仅成交额 — 每日净额自 2024 年 8 月停止）。南向＝内地资金净买入（涨色）或净卖出（跌色）的港股 — 实时反映内地的风险偏好及其在离岸追逐的主题。") }}
+      {{ help("Where cross-border money is concentrated today:<table><tr><th>Leg</th><th>What it shows</th></tr><tr><td><b>Northbound</b><br>foreign → A</td><td>the A-shares foreign money traded most — turnover only (daily net discontinued Aug-2024)</td></tr><tr><td><b>Southbound</b><br>mainland → HK</td><td>HK names mainland money net-bought / net-sold — a live read on mainland risk appetite offshore</td></tr></table>", "今日跨境资金的集中之处：<table><tr><th>方向</th><th>含义</th></tr><tr><td><b>北向</b><br>外资 → A 股</td><td>外资成交额最大的 A 股 — 仅成交额（每日净额自 2024 年 8 月停止）</td></tr><tr><td><b>南向</b><br>内地 → 港股</td><td>内地资金净买入／净卖出的港股 — 实时反映内地离岸风险偏好</td></tr></table>") }}
     </h2>
     <div class="grid" style="gap:18px">
       <div class="span6">
@@ -552,7 +581,7 @@
   {% if I.pboc %}
   <div class="panel span4">
     <h2>{{ t('🏛️ PBoC policy — RRR', '🏛️ 央行政策 — 存准率') }}
-      {{ help("The reserve-requirement ratio (存款准备金率) is the PBoC's main liquidity lever — each CUT frees bank reserves to lend (easing, supportive for equities), each HIKE drains them. The 2-year net change shows the policy stance. Coloured by the Asia convention: easing/cut is the up-colour.", "存款准备金率是央行主要的流动性工具 — 每次下调释放银行可贷资金（宽松，利好股市），每次上调则回收。近两年累计变动显示政策立场。按亚洲习惯着色：宽松/降准为上涨色。") }}
+      {{ help("<b>RRR (存款准备金率)</b> — the PBoC main liquidity lever:<div class='lad up'><b>CUT 降准</b> — frees bank reserves to lend → easing, supportive for equities</div><div class='lad down'><b>HIKE 升准</b> — drains reserves → tightening, a headwind</div>The 2-year net change shows the policy stance (Asia-coloured: a cut is the up-colour).", "<b>存款准备金率</b> — 央行主要的流动性工具：<div class='lad up'><b>降准 CUT</b> — 释放银行可贷资金 → 宽松，利好股市</div><div class='lad down'><b>升准 HIKE</b> — 回收资金 → 收紧，构成逆风</div>近两年累计变动显示政策立场（按亚洲习惯着色：降准为上涨色）。") }}
     </h2>
     <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:4px">
       <span class="bignum">{{ I.pboc.rrr_big }}%</span>
@@ -614,7 +643,7 @@
   {% if I.flows or I.turnover %}
   <div class="panel span4">
     <h2>{{ t('🌡️ Sentiment thermometer', '🌡️ 情绪温度计') }}
-      {{ help("Fast A-share sentiment. Two-market turnover (成交额) is the headline retail-mania gauge — '万亿成交' (trillion-yuan days) signal froth, sub-0.7T apathy. AH premium >100 means mainland A-shares trade richer than their HK twins. Limit-up vs limit-down counts and the seal rate (limit-ups that stayed sealed) are the purest daily speculation read — many limit-ups but a falling seal rate flags topping froth.", "快速的 A 股情绪。两市成交额是核心的散户狂热指标 — 万亿成交预示泡沫，低于 0.7 万亿为清淡。AH 溢价 >100 表示 A 股比港股孪生股更贵。涨停／跌停家数与封板率是最纯粹的日内投机读数 — 涨停多但封板率下降预示投机见顶。") }}
+      {{ help("<b>Two-market turnover (成交额)</b> — the headline retail-mania gauge:<div class='scale'><span style='background:var(--muted)'>apathy</span><span style='background:var(--info)'>normal</span><span style='background:var(--warn)'>active</span><span style='background:var(--act)'>mania</span></div><div class='sl'><span>&lt;¥0.7T</span><span>¥1.2T</span><span>¥1.8T</span><span>&gt;¥1.8T</span></div><b>AH premium</b> &gt;100 = A-shares richer than their HK twins. <b>Seal rate</b> = limit-ups that stayed sealed; many limit-ups + a falling seal rate flags topping froth.", "<b>两市成交额</b> — 核心的散户狂热指标：<div class='scale'><span style='background:var(--muted)'>清淡</span><span style='background:var(--info)'>正常</span><span style='background:var(--warn)'>活跃</span><span style='background:var(--act)'>狂热</span></div><div class='sl'><span>&lt;0.7万亿</span><span>1.2万亿</span><span>1.8万亿</span><span>&gt;1.8万亿</span></div><b>AH 溢价</b> &gt;100＝A 股比港股孪生股更贵。<b>封板率</b>＝封住未开板的涨停比例；涨停多而封板率下降预示投机见顶。") }}
     </h2>
     {% if I.turnover %}
     {% set tb = {'apathy':['c-muted','apathy','清淡'],'normal':['c-info','normal','正常'],'active':['c-warn','active','活跃'],'mania':['c-down','mania','狂热']}[I.turnover.band] %}
@@ -714,5 +743,19 @@ window.__CHART_SWAP__ = {
 <script src="mtf.js"></script>
 <script src="timemachine.js"></script>
 <script src="tablesort.js"></script>
+<script>
+  // keep tooltips on-screen: flip below near the top of the viewport, and anchor to
+  // the nearest side when the help icon is close to the left/right edge
+  document.addEventListener('mouseover', function (e) {
+    var h = e.target.closest('.help'); if (!h) return;
+    var r = h.getBoundingClientRect();
+    h.classList.toggle('below', r.top < 340);
+    var tip = h.querySelector('.tip');
+    var half = ((tip && tip.offsetWidth) || 300) / 2 + 16;
+    h.classList.remove('edge-right', 'edge-left');
+    if (r.left + r.width / 2 + half > window.innerWidth) h.classList.add('edge-right');
+    else if (r.left + r.width / 2 - half < 0) h.classList.add('edge-left');
+  });
+</script>
 </body>
 </html>

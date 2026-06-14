@@ -518,9 +518,18 @@
   </div>
 
   
-  <div class="panel span12">
-    <h2><span class="l-en">Fired alerts (today)</span><span class="l-zh">已触发警报（今日）</span>
-      <span class="help">?<span class="tip"><span class="l-en">Alerts fire only when something <b>changes</b> — never just because a level is high:<span class="lad lad-tint" style="--c:var(--warn)"><b>Escalation</b> — a warning level steps up.</span><span class="lad lad-tint" style="--c:var(--info)"><b>Crossing</b> — a key line is crossed.</span><span class="lad lad-tint" style="--c:var(--orange)"><b>Sign flip</b> — a reading changes direction.</span>Rare by design — read every one. Click one to jump to the scorecard it came from.</span><span class="l-zh">警报只在某物<b>变化</b>时触发 — 绝不仅因水平偏高：<span class="lad lad-tint" style="--c:var(--warn)"><b>升级</b> — 预警级别上升。</span><span class="lad lad-tint" style="--c:var(--info)"><b>交叉</b> — 关键线被穿越。</span><span class="lad lad-tint" style="--c:var(--orange)"><b>符号翻转</b> — 读数改变方向。</span>刻意稀少 — 每条都读。点击可跳转到其来源计分卡。</span></span></span>
+
+  <!-- ============ MACRO NOWCAST · CONDITIONS · RISK APPETITE ============ -->
+  
+  
+  
+  
+  
+  
+  
+  <div class="panel span12" id="conditions">
+    <h2>🛰️ <span class="l-en">Macro nowcast · conditions · risk appetite</span><span class="l-zh">宏观即时预测 · 金融条件 · 风险偏好</span>
+      <span class="help">?<span class="tip"><span class="l-en">A complementary lens that runs ALONGSIDE the price-based quad and never alters it: the Fed-research feeds and option-implied risk that a markets-only model misses. Financial conditions (Chicago Fed NFCI — 105 inputs in one z-score), a 0–100 recession-risk score (Sahm rule + smoothed probability + Excess Bond Premium + a term-premium-ADJUSTED curve that strips the 2022–24 false inversion), real-time growth (Weekly Economic Index, GDPNow) and inflation (Atlanta sticky vs flexible CPI) nowcasts, and a cross-asset risk-appetite read (equity vol-risk-premium, VIX term structure, CBOE SKEW, the stock-bond correlation regime, a RORO composite). Free Fed/CBOE data — see research/QUANT_FACTOR_EXPANSION.md.</span><span class="l-zh">一个与价格象限并行、绝不改变象限的补充视角：纯市场模型遗漏的美联储研究数据与期权隐含风险。金融条件（芝加哥联储 NFCI — 105 项输入合成一个 z 分数）、0–100 衰退风险评分（Sahm 法则 + 平滑概率 + 超额债券溢价 + 期限溢价调整后的收益率曲线，剔除 2022–24 的假性倒挂）、实时增长（周度经济指数、GDPNow）与通胀（亚特兰大黏性对弹性 CPI）即时预测，以及跨资产风险偏好（股票波动率风险溢价、VIX 期限结构、CBOE SKEW、股债相关性状态、RORO 综合）。免费美联储／CBOE 数据。</span></span></span>
     </h2>
     
       <a class="alert alert-warn" href="#regime-radar">
@@ -1599,7 +1608,7 @@
       </tr>
       
       <tr>
-        <td class="l"><span class="l-en">Options hedging mood</span><span class="l-zh">期权对冲情绪</span> <span class="help">?<span class="tip"><span class="l-en"><span class="l-en">Put/call volume ratio on S&amp;P index options, computed from CBOE&#39;s chain: bearish bets ÷ bullish bets traded today. Above ~1.3 = heavy hedging; below ~0.8 = complacency. Today: 1.59 (as of 2026-06-13). A young series — labels are based on standard thresholds until enough history accrues.</span><span class="l-zh">标普指数期权的看跌/看涨成交量比，由 CBOE 期权链计算：今日看空押注 ÷ 看多押注。高于约1.3 = 大量对冲；低于约0.8 = 自满。今日：1.59（截至 2026-06-13）。这是一个较新的序列 — 在积累足够历史前，标签基于标准阈值。</span></span><span class="l-zh"><span class="l-en">Put/call volume ratio on S&amp;P index options, computed from CBOE&#39;s chain: bearish bets ÷ bullish bets traded today. Above ~1.3 = heavy hedging; below ~0.8 = complacency. Today: 1.59 (as of 2026-06-13). A young series — labels are based on standard thresholds until enough history accrues.</span><span class="l-zh">标普指数期权的看跌/看涨成交量比，由 CBOE 期权链计算：今日看空押注 ÷ 看多押注。高于约1.3 = 大量对冲；低于约0.8 = 自满。今日：1.59（截至 2026-06-13）。这是一个较新的序列 — 在积累足够历史前，标签基于标准阈值。</span></span></span></span></td>
+        <td class="l"><span class="l-en">Options hedging mood</span><span class="l-zh">期权对冲情绪</span> <span class="help">?<span class="tip"><span class="l-en"><span class="l-en">Put/call volume ratio on S&amp;P index options, computed from CBOE&#39;s chain: bearish bets ÷ bullish bets traded today. Above ~1.3 = heavy hedging; below ~0.8 = complacency. Today: 1.59 (as of 2026-06-14). A young series — labels are based on standard thresholds until enough history accrues.</span><span class="l-zh">标普指数期权的看跌/看涨成交量比，由 CBOE 期权链计算：今日看空押注 ÷ 看多押注。高于约1.3 = 大量对冲；低于约0.8 = 自满。今日：1.59（截至 2026-06-14）。这是一个较新的序列 — 在积累足够历史前，标签基于标准阈值。</span></span><span class="l-zh"><span class="l-en">Put/call volume ratio on S&amp;P index options, computed from CBOE&#39;s chain: bearish bets ÷ bullish bets traded today. Above ~1.3 = heavy hedging; below ~0.8 = complacency. Today: 1.59 (as of 2026-06-14). A young series — labels are based on standard thresholds until enough history accrues.</span><span class="l-zh">标普指数期权的看跌/看涨成交量比，由 CBOE 期权链计算：今日看空押注 ÷ 看多押注。高于约1.3 = 大量对冲；低于约0.8 = 自满。今日：1.59（截至 2026-06-14）。这是一个较新的序列 — 在积累足够历史前，标签基于标准阈值。</span></span></span></span></td>
         <td class="l">
           
             <span class="plabel plabel-hot"><span class="l-en">heavy hedging</span><span class="l-zh">大量对冲</span></span>
@@ -1611,7 +1620,7 @@
       </tr>
       
       <tr>
-        <td class="l"><span class="l-en">Market-maker effect</span><span class="l-zh">做市商效应</span> <span class="help">?<span class="tip"><span class="l-en"><span class="l-en">Estimated dealer gamma (GEX) from the S&amp;P options chain, standard assumption (dealers long calls/short puts). Positive = their hedging dampens market moves; negative = it amplifies them. Today: +23bn per 1% move (as of 2026-06-13). An estimate, not ground truth.</span><span class="l-zh">由标普期权链估算的做市商 gamma（GEX），采用标准假设（做市商持有多头看涨/空头看跌）。正值 = 其对冲抑制市场波动；负值 = 放大波动。今日：每1%波动 +23十亿 （截至 2026-06-13）。这是估算，并非真实值。</span></span><span class="l-zh"><span class="l-en">Estimated dealer gamma (GEX) from the S&amp;P options chain, standard assumption (dealers long calls/short puts). Positive = their hedging dampens market moves; negative = it amplifies them. Today: +23bn per 1% move (as of 2026-06-13). An estimate, not ground truth.</span><span class="l-zh">由标普期权链估算的做市商 gamma（GEX），采用标准假设（做市商持有多头看涨/空头看跌）。正值 = 其对冲抑制市场波动；负值 = 放大波动。今日：每1%波动 +23十亿 （截至 2026-06-13）。这是估算，并非真实值。</span></span></span></span></td>
+        <td class="l"><span class="l-en">Market-maker effect</span><span class="l-zh">做市商效应</span> <span class="help">?<span class="tip"><span class="l-en"><span class="l-en">Estimated dealer gamma (GEX) from the S&amp;P options chain, standard assumption (dealers long calls/short puts). Positive = their hedging dampens market moves; negative = it amplifies them. Today: +23bn per 1% move (as of 2026-06-14). An estimate, not ground truth.</span><span class="l-zh">由标普期权链估算的做市商 gamma（GEX），采用标准假设（做市商持有多头看涨/空头看跌）。正值 = 其对冲抑制市场波动；负值 = 放大波动。今日：每1%波动 +23十亿 （截至 2026-06-14）。这是估算，并非真实值。</span></span><span class="l-zh"><span class="l-en">Estimated dealer gamma (GEX) from the S&amp;P options chain, standard assumption (dealers long calls/short puts). Positive = their hedging dampens market moves; negative = it amplifies them. Today: +23bn per 1% move (as of 2026-06-14). An estimate, not ground truth.</span><span class="l-zh">由标普期权链估算的做市商 gamma（GEX），采用标准假设（做市商持有多头看涨/空头看跌）。正值 = 其对冲抑制市场波动；负值 = 放大波动。今日：每1%波动 +23十亿 （截至 2026-06-14）。这是估算，并非真实值。</span></span></span></span></td>
         <td class="l">
           
             <span class="plabel plabel-norm"><span class="l-en">dampening swings</span><span class="l-zh">抑制波动</span></span>
@@ -1695,7 +1704,7 @@
       <tr>
         <td class="l">bgeo</td>
         <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>17</td><td>2026-06-12</td>
+        <td>19</td><td>2026-06-13</td>
         <td class="l muted"></td>
       </tr>
       
@@ -1709,14 +1718,14 @@
       <tr>
         <td class="l">cboe_gex</td>
         <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>1</td><td>2026-06-13</td>
+        <td>1</td><td>2026-06-14</td>
         <td class="l muted"></td>
       </tr>
       
       <tr>
         <td class="l">cboe_putcall</td>
         <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>1</td><td>2026-06-13</td>
+        <td>1</td><td>2026-06-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -1751,21 +1760,21 @@
       <tr>
         <td class="l">coinbase</td>
         <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>25</td><td>2026-06-13</td>
+        <td>28</td><td>2026-06-14</td>
         <td class="l muted"></td>
       </tr>
       
       <tr>
         <td class="l">coingecko</td>
         <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>1</td><td>2026-06-13</td>
+        <td>1</td><td>2026-06-14</td>
         <td class="l muted"></td>
       </tr>
       
       <tr>
         <td class="l">coinmetrics</td>
         <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>60</td><td>2026-06-12</td>
+        <td>61</td><td>2026-06-13</td>
         <td class="l muted"></td>
       </tr>
       
@@ -1786,21 +1795,21 @@
       <tr>
         <td class="l">deribit</td>
         <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>5</td><td>2026-06-13</td>
+        <td>6</td><td>2026-06-14</td>
         <td class="l muted"></td>
       </tr>
       
       <tr>
         <td class="l">etf_holdings</td>
         <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>1</td><td>2026-06-13</td>
+        <td>1</td><td>2026-06-14</td>
         <td class="l muted"></td>
       </tr>
       
       <tr>
         <td class="l">feargreed</td>
         <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>3051</td><td>2026-06-13</td>
+        <td>3052</td><td>2026-06-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -1814,7 +1823,7 @@
       <tr>
         <td class="l">fundamentals</td>
         <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>5758</td><td>2026-06-13</td>
+        <td>5758</td><td>2026-06-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -1835,28 +1844,28 @@
       <tr>
         <td class="l">holdings</td>
         <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>1</td><td>2026-06-13</td>
+        <td>1</td><td>2026-06-14</td>
         <td class="l muted"></td>
       </tr>
       
       <tr>
         <td class="l">mempool</td>
         <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>34</td><td>2026-06-13</td>
+        <td>33</td><td>2026-06-14</td>
         <td class="l muted"></td>
       </tr>
       
       <tr>
         <td class="l">nyfed</td>
         <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>1267</td><td>2026-06-12</td>
+        <td>1265</td><td>2026-06-12</td>
         <td class="l muted"></td>
       </tr>
       
       <tr>
         <td class="l">okx</td>
         <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>214</td><td>2026-06-13</td>
+        <td>214</td><td>2026-06-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -1870,7 +1879,7 @@
       <tr>
         <td class="l">sector_holdings</td>
         <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>1</td><td>2026-06-13</td>
+        <td>1</td><td>2026-06-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -1898,7 +1907,7 @@
       <tr>
         <td class="l">stock_fundamentals</td>
         <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>1</td><td>2026-06-13</td>
+        <td>1</td><td>2026-06-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -1919,7 +1928,7 @@
       <tr>
         <td class="l">yahoo</td>
         <td class="l"><span class="pill pill-ok">ok</span></td>
-        <td>956</td><td>2026-06-13</td>
+        <td>931</td><td>2026-06-14</td>
         <td class="l muted"></td>
       </tr>
       
