@@ -439,11 +439,19 @@ def main() -> int:
     lo, hi = fr.index.min(), fr.index.max()
     span = f"{lo.date()}..{hi.date()}" if pd.notna(lo) and pd.notna(hi) else "—"
 
+    # global credit cycle (BIS credit-gap + DSR; additive leaf, None if data absent)
+    credit_cycle = None
+    try:
+        from engine import credit_cycle as _cc
+        credit_cycle = _cc.snapshot()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("credit-cycle snapshot failed: %s", e)
+
     from engine.i18n import tr, td
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     env.globals.update(tr=tr, td=td)
     html = env.get_template("bonds.html.j2").render(
-        C=C, as_of=as_of_disp, built=built, span=span, vm=vm, charts=charts,
+        C=C, as_of=as_of_disp, built=built, span=span, vm=vm, charts=charts, credit_cycle=credit_cycle,
         timeline=timeline, timeline_days=acfg["timeline_days"], n_alerts=len(recent))
     site = config.ROOT / config.load()["storage"]["site_dir"]
     (site / "bonds.html").write_text(html)
