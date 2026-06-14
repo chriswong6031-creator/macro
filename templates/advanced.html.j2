@@ -264,11 +264,14 @@
     </h2>
     {% if holdings_changes %}
     <table>
-      <tr><th class="l">{{ t('fund', '基金') }}</th><th class="l">{{ t('position', '仓位') }}</th><th>{{ t('active chg', '主动变动') }}</th><th>{{ t('window', '窗口') }}</th></tr>
+      <tr><th class="l">{{ t('fund', '基金') }}</th><th class="l">{{ t('stock', '个股') }}</th><th class="l">{{ t('sector', '板块') }}</th><th class="r">{{ t('weight', '权重') }}</th><th class="r">{{ t('conviction Δwt', '信念权重Δ') }}</th><th class="l">{{ t('technical', '技术面') }}</th></tr>
       {% for h in holdings_changes %}
-      <tr><td class="l">{{ h.fund }}</td><td class="l">{{ h.position }}</td>
-          <td class="{{ 'pos' if h.pct > 0 else 'neg' }}">{{ "%+.1f" | format(h.pct) }}%</td>
-          <td class="muted">{{ h.window }}</td></tr>
+      <tr><td class="l"><b>{{ h.fund }}</b></td>
+          <td class="l"><a href="stock.html#{{ h.ticker }}"><b>{{ h.ticker }}</b></a> <span class="muted">{{ h.name }}</span></td>
+          <td class="l muted">{{ td(h.sector) if h.sector else "—" }}</td>
+          <td class="r muted">{% if h.get('weight_pct') is not none %}{{ "%.2f" | format(h.weight_pct) }}%{% else %}—{% endif %}</td>
+          <td class="r {{ ('pos' if h.conviction_pp >= 0 else 'neg') if h.get('conviction_pp') is not none else 'muted' }}"><b>{% if h.get('conviction_pp') is not none %}{{ "%+.2f" | format(h.conviction_pp) }}pp{% else %}—{% endif %}</b></td>
+          <td class="l">{% if h.ladder %}<span class="pill st-{{ h.ladder.state | replace(' ', '_') }}">{{ td(h.ladder.label) }}</span>{% if h.confirmed %} ✅{% endif %}{% else %}<span class="muted">—</span>{% endif %}</td></tr>
       {% endfor %}
     </table>
     {% else %}<p class="muted">{{ t('No significant manager moves in the current window.', '当前窗口内无显著的经理人动作。') }}</p>{% endif %}
