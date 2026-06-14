@@ -60,7 +60,31 @@ Claims falling (−9.6% y/y) ⇒ claims leg reads **0** (benign), nudging `reces
 slightly DOWN (a labor "all-clear"). Score 7.81 / low. Correct: the leg adds signal in
 both directions and is currently saying "no recession from the labor side."
 
-## Caveat / Phase-1
-Uses stored (latest-revised) series, not ALFRED point-in-time vintages — directional
-Phase-0 (claims/curve barely revise; Sahm/NY-Fed-prob do; NBER dates are final). A PIT
-re-run via the existing vintage store is the natural Phase-1 follow-up.
+## Phase-1.5 — point-in-time robustness (DONE)
+The Phase-0 numbers used stored (latest-revised) series. Two look-ahead sources could
+in principle have manufactured the result: REVISION (latest-revised legs, esp. the
+Chauvet-Piger recession prob, "know" recessions better than their real-time prints) and
+TIMING (a value stamped on its reference month wasn't published until weeks later).
+`scripts/validate_claims_recession_pit.py` re-measures ΔAUC(claims, w=0.5) under both
+fixes. Claims barely revise (~3%, mostly 4wk-MA smoothing) and publish within days, so
+the PIT-ness is applied to the OTHER legs; claims stays stored.
+
+| mode | recessions | ΔAUC 6m | ΔAUC 12m |
+|---|---|---|---|
+| revised-full (Phase-0 baseline) | 8 | +0.013 | +0.014 |
+| **lagged-full** (stored + publication lags; timing-honest) | 8 | **+0.025** | **+0.023** |
+| **ALFRED-PIT** (sahm/prob real-time initial-release, 1997+; revision-honest) | 3 | **+0.019** | **+0.019** |
+
+**The claims leg SURVIVES point-in-time — and gets STRONGER.** Removing timing look-ahead
+roughly DOUBLES its incremental value (+0.013 → +0.025 at 6m): the other legs lose ground
+when lagged 1–2 months, while claims (weekly, ~0 lag) does not, so claims fills more of
+the gap. This is the whole thesis — claims helps *because* it is real-time — confirmed
+once the other legs no longer get an unfair as-of-reference-date advantage. It also holds
+under revision-honest ALFRED data (low power: only 3 recessions since the archive begins
+1997). The conservative w=0.5 stands (the lagged result would justify more; we don't chase
+a single-sample number).
+
+CAVEAT: ALFRED claims vintages begin only 2009 (negligible — claims barely revise); EBP
+has no ALFRED series (it is the one leg without revision-PIT, lagged-stored in PIT mode —
+ΔAUC(claims) is robust to it since base and +claims share the same EBP leg); NBER dates are
+final (correct — PIT applies to features, not the target).
