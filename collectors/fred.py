@@ -14,11 +14,33 @@ history lives in data/archive/ (see DECISIONS.md for provenance).
 from __future__ import annotations
 
 import io
+import logging
 
 import pandas as pd
 
 from collectors.base import Adapter
 from lib import config
+
+log = logging.getLogger(__name__)
+
+# Revision-prone series whose LATEST-revised value differs from what was knowable
+# in real time — economic releases (revised for months/years), model nowcasts, and
+# the weekly-revised financial-conditions indices. Market data (rates, OAS, VIX,
+# FX, dollar) is never revised, so it is deliberately excluded. SAHMREALTIME is
+# already a point-in-time construct but is cheap to archive too. Overridable via
+# config fred.vintage_series.
+DEFAULT_VINTAGE_SERIES = [
+    "PAYEMS", "INDPRO", "M2SL", "WEI", "GDPNOW",            # growth / money nowcasts
+    "RECPROUSM156N", "THREEFYTP10", "SAHMREALTIME",         # recession-risk model series
+    "STICKCPIM157SFRBATL", "CORESTICKM157SFRBATL",          # inflation nowcasts (revised)
+    "FLEXCPIM157SFRBATL", "MEDCPIM158SFRBCLE",
+    "STLFSI4",                                             # St. Louis financial-stress (revised)
+    "UMCSENT", "MICH",                                      # surveys (revised)
+    # DEFERRED — the Chicago Fed NFCI family (NFCI/ANFCI/NFCIRISK/NFCICREDIT/
+    # NFCILEVERAGE) revises its WHOLE weekly history every release, so the initial-
+    # release vintage matrix is large and the API read-times-out here. Add via
+    # config fred.vintage_series with a patient connection if you need their PIT path.
+]
 
 
 class FredAdapter(Adapter):
@@ -93,3 +115,108 @@ class FredAdapter(Adapter):
         df.columns = ["date", col]
         df[col] = pd.to_numeric(df[col], errors="coerce")
         return df.set_index("date").dropna()
+
+    # --- ALFRED point-in-time vintages ------------------------------------- #
+    # The live path above stores the LATEST-revised value per date, so a backtest
+    # that reads it sees numbers nobody had in real time (e.g. payrolls revised
+    # ~558k lower across the years after 2008; NFCI re-revised every week). ALFRED
+    # serves the vintage history. We store the INITIAL RELEASE per period
+    # (output_type=4): one row per period stamped with realtime_start = the date it
+    # was FIRST published. That is bounded (~1 row/period — the full vintage matrix
+    # is millions of rows for weekly-fully-revised series like NFCI and blows the
+    # API's 100k cap) and is the standard point-in-time convention: it strips ALL
+    # later revisions, the dominant look-ahead. as_of_series(date) then returns each
+    # period's first-published value that was knowable by `date`. ADDITIVE — a
+    # separate store the live regime engine does NOT read; it feeds point-in-time
+    # macro backtests (and a future, separately-validated switch of the regime
+    # inputs). Requires the API key (fredgraph has no vintages); skipped if absent.
+    def _vintage_series(self) -> list[str]:
+        return list(self.cfg.get("vintage_series", DEFAULT_VINTAGE_SERIES))
+
+    def _fetch_vintage_one(self, sid: str, realtime_start: str) -> pd.DataFrame:
+        r = self.http_get(
+            self.cfg["api_url"],
+            retries=self.cfg["retries"],
+            backoff_base=self.cfg["backoff_base_s"],
+            timeout=90,
+            params={"series_id": sid, "api_key": self.api_key, "file_type": "json",
+                    "output_type": 4,                      # initial release only (one row/period)
+                    "realtime_start": realtime_start, "realtime_end": "9999-12-31",
+                    "limit": 100000},
+
+        )
+        obs = r.json().get("observations", [])
+        if not obs:
+            return pd.DataFrame()
+        df = pd.DataFrame(obs)
+        df["value"] = pd.to_numeric(df["value"], errors="coerce")
+        df = df.dropna(subset=["value"]).rename(columns={"date": "period"})
+        df["series"] = sid
+        return df[["series", "period", "value", "realtime_start", "realtime_end"]]
+
+    def fetch_vintages(self) -> pd.DataFrame:
+        """Build the ALFRED vintage matrix for the revision-prone series and write
+        data/fred_vintage/vintages.parquet. Returns the combined frame (empty if no
+        API key)."""
+        if not self.api_key:
+            log.warning("FRED vintages need an API key (fredgraph has none) — skipping")
+            return pd.DataFrame()
+        rt0 = str(self.cfg.get("vintage_realtime_start", "1997-01-01"))
+        frames, errors = [], []
+        for sid in self._vintage_series():
+            try:
+                d = self._fetch_vintage_one(sid, rt0)
+                if not d.empty:
+                    frames.append(d)
+            except Exception as e:  # noqa: BLE001 — partial success allowed
+                errors.append(f"{sid}: {e}")
+        if errors:
+            log.warning("FRED vintage partial failure: %s", errors)
+        if not frames:
+            return pd.DataFrame()
+        out = pd.concat(frames, ignore_index=True)
+        for c in ("period", "realtime_start", "realtime_end"):
+            out[c] = pd.to_datetime(out[c], errors="coerce")
+        out = out.dropna(subset=["period", "realtime_start"]).reset_index(drop=True)
+        p = config.data_dir() / "fred_vintage"
+        p.mkdir(parents=True, exist_ok=True)
+        out.to_parquet(p / "vintages.parquet")
+        log.info("FRED vintages: %d rows across %d series (realtime from %s)",
+                 len(out), out["series"].nunique(), rt0)
+        return out
+
+
+# --- point-in-time readers (module-level; no adapter needed) --------------- #
+def _vintage_path():
+    return config.data_dir() / "fred_vintage" / "vintages.parquet"
+
+
+def load_vintages() -> pd.DataFrame | None:
+    p = _vintage_path()
+    return pd.read_parquet(p) if p.exists() else None
+
+
+def as_of_series(series: str, asof, vintages: pd.DataFrame | None = None) -> pd.Series:
+    """The series as it was KNOWN on `asof`: each period's first-published value
+    whose release date (realtime_start) was on or before `asof`. The store holds
+    initial releases, so this is the leak-free input a point-in-time macro backtest
+    reads at each rebalance date — never the latest-revised value the live store
+    keeps, and never a period not yet published by `asof`."""
+    v = vintages if vintages is not None else load_vintages()
+    if v is None:
+        return pd.Series(dtype=float)
+    asof = pd.Timestamp(asof)
+    sub = v[(v["series"] == series) & (v["realtime_start"] <= asof)]
+    if sub.empty:
+        return pd.Series(dtype=float)
+    return sub.set_index("period")["value"].sort_index()
+
+
+def initial_release(series: str, vintages: pd.DataFrame | None = None) -> pd.Series:
+    """First-published value per period (no date filter) — the full initial-release
+    series, useful for release-surprise / nowcast studies."""
+    v = vintages if vintages is not None else load_vintages()
+    if v is None:
+        return pd.Series(dtype=float)
+    sub = v[v["series"] == series]
+    return sub.set_index("period")["value"].sort_index() if not sub.empty else pd.Series(dtype=float)

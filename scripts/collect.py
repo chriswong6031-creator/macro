@@ -110,6 +110,25 @@ def main() -> int:
         log.info("%s -> %s (%d rows, last %s)%s", key, res.status, res.rows,
                  res.last_date, f" err={res.error}" if res.error else "")
 
+    # ALFRED point-in-time vintages — slow-moving (revisions accrue over months),
+    # so refresh weekly via an mtime gate. Additive: a separate store the live
+    # engine doesn't read (feeds point-in-time macro backtests). Runs only when
+    # FRED is in scope; failure never aborts collection.
+    if "fred" in registry:
+        try:
+            import time
+
+            from collectors.fred import FredAdapter, _vintage_path
+            vp = _vintage_path()
+            stale = not vp.exists() or (time.time() - vp.stat().st_mtime) / 86400.0 >= 7
+            if stale or args.full_history:
+                log.info("=== refreshing FRED ALFRED vintages ===")
+                FredAdapter().fetch_vintages()
+            else:
+                log.info("FRED vintages fresh — skip")
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("FRED vintages step failed: %s", e)
+
     status = store.read_status()
     status["last_run"] = datetime.now(timezone.utc).isoformat()
     # merge: a partial --only run must not wipe the health of sources it skipped
