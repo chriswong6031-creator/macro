@@ -38,7 +38,30 @@ FACTOR_LABELS = {
     "investment": "Investment", "payout": "Shareholder yield",
     "low_vol": "Low volatility", "low_beta": "Low beta (BAB)",
     "short_interest": "Low short interest", "accruals": "Low accruals",
+    "sue": "Earnings momentum (SUE)",
 }
+
+
+# SUE panel is read once per process (the backtest calls compute_factors per date).
+_SUE_PANEL_CACHE: list = []
+
+
+def _sue_signal(asof, price_date, index) -> "pd.Series | None":
+    """Point-in-time raw SUE per ticker, reindexed to the factor universe. `asof` (a
+    date) is the backtest rebalance; live mode (asof=None) uses the latest price date.
+    Returns None when the quarterly EPS panel has not been built."""
+    if not _SUE_PANEL_CACHE:
+        from engine.sue import load_panel
+        _SUE_PANEL_CACHE.append(load_panel())
+    panel = _SUE_PANEL_CACHE[0]
+    if panel is None:
+        return None
+    from engine.sue import sue_cross_section
+    when = pd.Timestamp(asof) if asof is not None else (
+        pd.Timestamp(price_date) if price_date is not None else None)
+    if when is None:
+        return None
+    return sue_cross_section(panel, when).reindex(index)
 
 
 def _short_interest() -> pd.DataFrame | None:
@@ -331,6 +354,14 @@ def compute_factors(asof=None) -> dict | None:
         si_pct = si["short_shares"].reindex(d.index) / d["shares"].where(d["shares"] > 0)
         raw["short_interest"] = -pd.concat([_winsor_z(dtc, cap), _winsor_z(si_pct, cap)],
                                            axis=1).mean(axis=1)
+    # earnings momentum: SUE (standardized unexpected earnings) from the quarterly
+    # EDGAR EPS panel. Standalone leg (not in the value/quality composite, like
+    # short_interest) — it survives the leak-free BH-FDR scorecard as the strongest
+    # positive factor (research/DATA_SIGNAL_EXPANSION_2026.md). The second-pass z below
+    # standardizes the raw d/sigma SUE cross-sectionally.
+    sue = _sue_signal(asof, closes.index[-1] if len(closes.index) else None, d.index)
+    if sue is not None and sue.notna().any():
+        raw["sue"] = sue
 
     # second-pass z (so each factor is a clean unit-variance score)
     fac = pd.DataFrame({c: _winsor_z(raw[c], cap) for c in raw.columns})

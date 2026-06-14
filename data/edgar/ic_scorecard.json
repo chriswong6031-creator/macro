@@ -14,7 +14,7 @@
       "p_hac": 0.2544,
       "hit": 0.636,
       "n": 11,
-      "q_fdr": 0.6061,
+      "q_fdr": 0.6106,
       "survives_fdr": false
     },
     "profitability": {
@@ -26,7 +26,7 @@
       "p_hac": 0.1374,
       "hit": 0.455,
       "n": 11,
-      "q_fdr": 0.5038,
+      "q_fdr": 0.4122,
       "survives_fdr": false
     },
     "quality": {
@@ -38,7 +38,7 @@
       "p_hac": 0.0037,
       "hit": 0.182,
       "n": 11,
-      "q_fdr": 0.0407,
+      "q_fdr": 0.0444,
       "survives_fdr": true
     },
     "investment": {
@@ -62,7 +62,7 @@
       "p_hac": 0.5193,
       "hit": 0.636,
       "n": 11,
-      "q_fdr": 0.8508,
+      "q_fdr": 0.9281,
       "survives_fdr": false
     },
     "low_vol": {
@@ -86,7 +86,7 @@
       "p_hac": 0.5414,
       "hit": 0.455,
       "n": 11,
-      "q_fdr": 0.8508,
+      "q_fdr": 0.9281,
       "survives_fdr": false
     },
     "short_interest": {
@@ -110,7 +110,19 @@
       "p_hac": 0.014,
       "hit": 0.182,
       "n": 11,
-      "q_fdr": 0.077,
+      "q_fdr": 0.0768,
+      "survives_fdr": true
+    },
+    "sue": {
+      "mean_ic": 0.0354,
+      "ic_vol": 0.0776,
+      "ic_ir": 0.456,
+      "ic_ir_ann": 0.911,
+      "t_hac": 2.342,
+      "p_hac": 0.0192,
+      "hit": 0.636,
+      "n": 11,
+      "q_fdr": 0.0768,
       "survives_fdr": true
     },
     "composite": {
@@ -126,31 +138,32 @@
       "survives_fdr": false
     },
     "composite_orth": {
-      "mean_ic": -0.014,
-      "ic_vol": 0.0686,
-      "ic_ir": -0.205,
-      "ic_ir_ann": -0.41,
-      "t_hac": -1.091,
-      "p_hac": 0.2755,
-      "hit": 0.455,
+      "mean_ic": -0.0015,
+      "ic_vol": 0.0711,
+      "ic_ir": -0.021,
+      "ic_ir_ann": -0.043,
+      "t_hac": -0.122,
+      "p_hac": 0.9025,
+      "hit": 0.545,
       "n": 11,
-      "q_fdr": 0.6061,
+      "q_fdr": 0.9549,
       "survives_fdr": false
     }
   },
   "collinearity": {
-    "mean_abs_corr_raw": 0.13,
-    "mean_abs_corr_orth": 0.062,
+    "mean_abs_corr_raw": 0.12,
+    "mean_abs_corr_orth": 0.059,
     "vif": {
-      "value": 1.11,
-      "profitability": 1.12,
-      "quality": 2.38,
-      "investment": 1.19,
-      "payout": 1.22,
-      "low_vol": 2.24,
-      "low_beta": 2.25,
+      "value": 1.12,
+      "profitability": 1.13,
+      "quality": 2.4,
+      "investment": 1.2,
+      "payout": 1.24,
+      "low_vol": 2.31,
+      "low_beta": 2.29,
       "short_interest": 1.11,
-      "accruals": 2.53
+      "accruals": 2.6,
+      "sue": 1.11
     },
     "top_pairs": [
       {

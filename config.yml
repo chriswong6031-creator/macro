@@ -243,6 +243,7 @@ edgar:
   # (120d ≈ past the 90d 10-K deadline; longer = safer against look-ahead).
   panel_start_fy: 2009            # XBRL financial-statement tagging was mandated ~2009
   reporting_lag_days: 120
+  quarterly_lag_days: 60          # SUE EPS panel (collectors/edgar_eps.py): period_end + this = PIT as-of (10-Q files ~40-45d after q-end; 60 = conservative)
   factors:
     winsor_z: 3.0                 # clip cross-sectional z-scores at +/- this
     low_vol_window_d: 252         # trailing window for idiosyncratic/total vol + beta

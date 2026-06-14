@@ -1159,6 +1159,11 @@ def build_factors_page(env: Environment, site: Path, generated: str) -> dict | N
             fetch_insider()                        # Phase 4: Form-4 insider buying (cached)
         except Exception as e:  # noqa: BLE001 — insider panel is optional
             log.warning("sec insider failed: %s", e)
+        try:
+            from collectors.edgar_eps import build_eps_panel
+            build_eps_panel()                      # SUE: quarterly diluted-EPS panel (weekly-cached)
+        except Exception as e:  # noqa: BLE001 — SUE factor is an optional leg
+            log.warning("edgar quarterly EPS panel failed: %s", e)
         fac = compute_factors()
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("factor engine failed: %s", e)

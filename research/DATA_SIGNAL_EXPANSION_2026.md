@@ -93,3 +93,31 @@ same contract as `bond_health.json drivers_for` and the `cross_asset.py` absorpt
 
 Contract stays strict: the LLM only narrates already-computed deterministic numbers (degrade-never-raise,
 public-data firewall, default-off). These proposals enlarge the *facts* the narrator can cite, not its authority.
+
+---
+
+## Build status (2026-06-14, branch `feat/stress-layer`)
+
+### #4 OFR FSI / systemic-stress layer — SHIPPED (display + LLM context)
+`collectors/ofr_fsi.py` (named `ofr_fsi`, decoupled from the separate OFR funding collector
+`collectors/ofr.py` on PR #31) + a `systemic_stress` block in `engine/conditions.py` + a "Systemic stress"
+card on the macro dashboard + the A2/P2 & CP-bill FRED spreads. **Phase-0 (`scripts/validate_stress_gate.py`):
+DISPLAY-ONLY** — OFR FSI is a coincident gauge; its forward-drawdown AUC collapses out-of-sample (0.79 in
+2000-2013 → 0.58 in 2013-2026) and adding it to NFCI fails the both-halves +0.02 bar. Ships as display + a
+deterministic `latest['conditions']['systemic_stress']` context vector for the LLM, **not** in the scoring path.
+
+### #5 SUE earnings-momentum factor — SHIPPED (scored factor)
+Reality check changed the plan: the on-disk EDGAR panel is **annual only** (no quarterly EPS), so a real
+SUE/PEAD signal needed a NEW quarterly-EPS pipeline. Built `collectors/edgar_eps.py` (keyless SEC XBRL
+`EarningsPerShareDiluted` quarterly frames → `data/edgar/eps_quarterly.parquet`: 65k rows, 1,317 tickers,
+2008-2026, PIT via period_end + a 60d reporting lag) + `engine/sue.py` (seasonal-random-walk
+SUE = (EPS_q − EPS_year-ago)/σ, calendar-matched, point-in-time, stale-dropped). **Phase-0
+(`scripts/validate_sue.py`): PASS** — on the leak-free quarterly IC grid SUE is the STRONGEST positive factor
+and the only positive leg that survives BH-FDR across the whole factor family (mean IC 0.033, IC-IR ann 1.07,
+t_HAC 2.81, q_FDR 0.059, quintile L/S Sharpe 1.26) — the bar the insider factor cleared and short_interest
+failed. Wired as a **standalone scored leg** (`equity_factors.compute_factors`, not in the value/quality
+composite, mirroring short_interest) → factors.html leaderboard + IC scorecard. **Caveat:** validated on the
+2023-2025 price window because the price-universe cache is shallow there — the *same* caveat the entire
+existing factor zoo carries (committed `ic_scorecard.json` spans the same 11 rebalances); the EPS history is
+deep, so a deep-history + PIT-survivorship re-validation (as the insider factor earned separately) is the
+honest follow-up. Deferred follow-ups: a per-stock SUE chip on stock.html + a `setups.py` SUE confirmer.

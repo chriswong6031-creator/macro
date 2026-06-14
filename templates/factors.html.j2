@@ -14,6 +14,7 @@
   'low_beta': ['Betting-Against-Beta (Frazzini-Pedersen): low-beta stocks have had high risk-adjusted returns because leverage-constrained investors bid up high-beta names.', 'Betting-Against-Beta：低贝塔。'],
   'accruals': ['Low accruals = earnings backed by cash flow, not estimates (Sloan). High-accrual earnings tend to reverse.', '低应计：盈利由现金流支撑。'],
   'short_interest': ['Low short interest. High days-to-cover (short interest / avg daily volume, FINRA bi-monthly) negatively predicts the cross-section (Hong-Li-Rajan-Sherman) — leaders here are the LEAST shorted; the laggards are the crowded shorts.', '低做空。高回补天数（FINRA 双月）在横截面上负向预测。'],
+  'sue': ['Earnings momentum (SUE = standardized unexpected earnings). Latest quarterly EPS vs the same quarter a year ago, standardized by its own history — the post-earnings-announcement-drift effect: beats keep drifting up. Built point-in-time from free SEC EDGAR quarterly EPS frames; in our leak-free IC scorecard it is the STRONGEST positive factor and the one that survives the FDR control (validated on the 2023-2025 price window, like the rest of the zoo).', '盈利动量（SUE = 标准化超预期盈利）。最新季度 EPS 对比去年同季、以自身历史标准化 — 盈利公布后漂移效应。基于 SEC EDGAR 季度 EPS 逐期点时构建；在防泄漏 IC 评分中为最强正向因子且通过 FDR。'],
 } %}
 <!DOCTYPE html>
 <html lang="en">
@@ -207,7 +208,7 @@
   <div class="panel">
     <h2>{{ t('Factor leaders', '各因子领先股') }}</h2>
     <div class="cardgrid">
-      {% for f in fac.factors + ['low_beta','accruals','short_interest'] %}
+      {% for f in fac.factors + ['sue','low_beta','accruals','short_interest'] %}
       {% if fac.leaders.get(f) %}
       <div class="fcard">
         <h3>{{ t(fac.factor_labels.get(f, f), fac.factor_labels.get(f, f)) }}
