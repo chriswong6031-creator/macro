@@ -42,6 +42,15 @@
   .c-up { --c: var(--up); } .c-down { --c: var(--down); } .c-warn { --c: var(--warn); }
   .c-info { --c: var(--info); } .c-muted { --c: var(--muted); }
 
+  /* global-risk-beta regime tilt (amplifiers vs cushions) */
+  .gb-tilt { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px;
+             border-radius:9px; border:1px solid var(--line); white-space:nowrap; }
+  .gb-favored { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up);
+                border-color:color-mix(in srgb,var(--up) 40%,transparent); }
+  .gb-exposed { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--down);
+                border-color:color-mix(in srgb,var(--down) 40%,transparent); }
+  .gb-lag,.gb-neutral { background:var(--panel2,var(--panel)); color:var(--muted); }
+
   /* global risk overlay (HK-specific) */
   .risk-badge { font-size: 20px; font-weight: 800; padding: 7px 16px; border-radius: 12px;
                 background: color-mix(in srgb, var(--c, var(--muted)) 20%, var(--panel));
@@ -285,6 +294,59 @@
     </div>
     {% endif %}
     <p class="note" style="margin:13px 0 0">{{ t('Hong Kong is ~2x more globally sensitive than the Mainland — this risk-on/off composite (dollar, volatility, US equity, copper/gold, USD-CNY, EM) plus the HKD peg is HK\'s primary high-frequency driver. It is a concurrent risk STATE, not a forecast.', '香港对全球因素的敏感度约为内地的2倍——此风险开关综合指标（美元、波动率、美股、铜金比、美元兑人民币、新兴市场）加上港元联系汇率，是香港最主要的高频驱动。它是同步的风险状态，而非预测。') }}</p>
+  </div>
+  {% endif %}
+
+  <!-- ===================== GLOBAL-RISK EXPOSURE (amplifiers vs cushions) ===================== -->
+  {% if betas and betas.amplifiers %}
+  {% set RS = betas.risk_state %}
+  {% set TILTS = {'favored':['favored','占优'],'exposed':['exposed','最受冲击'],'lag':['lags','滞后'],'neutral':['—','—']} %}
+  <div class="panel span12" id="global-beta">
+    <h2>{{ t('🌐 Global-risk exposure — amplifiers vs cushions', '🌐 全球风险敞口 — 放大器 vs 缓冲') }}
+      <span class="note" style="text-transform:none">· {{ t('beta to global risk (S&P 500, overnight)', '对全球风险的贝塔（标普500·隔夜）') }}</span>
+      {{ help("HK has NO idiosyncratic stock-selection edge (residual momentum is dead here — its long-short Sharpe is negative on a 40-year panel; research/CHINA_HK_STOCK_SIGNALS.md). HK's validated edge is the GLOBAL-RISK overlay above, so the honest per-name read is RISK EXPOSURE, not selection alpha: each stock's <b>beta to global risk</b> (S&P 500, lagged one day for the overnight US→HK transmission). <b>Amplifiers</b> (high beta — global cyclicals: tech, miners, CXO) move MORE with the regime; <b>cushions</b> (low beta — domestic SOE energy/staples/telecom) move less. Conditioned on the live risk state: in Risk-on amplifiers are the leveraged play and cushions lag; in Risk-off amplifiers take the bigger drawdown and cushions defend. Measured (40y, monthly): high-minus-low beta forward-21d is +0.4% in Risk-on, −0.7% in Risk-off — modest risk CONTEXT for sizing, NOT a forecast or a buy list.", "香港没有特异选股优势（残差动量在此无效——40年面板上多空夏普为负；research/CHINA_HK_STOCK_SIGNALS.md）。香港经验证的优势是上方的全球风险开关，因此诚实的个股解读是风险敞口而非选股阿尔法：每只股票对全球风险的<b>贝塔</b>（标普500，滞后一天反映隔夜美→港传导）。<b>放大器</b>（高贝塔——全球周期股：科技、矿业、CXO）随风险状态波动更大；<b>缓冲</b>（低贝塔——本地国企能源/必需消费/电信）波动更小。结合实时风险状态：风险偏好时放大器是杠杆首选、缓冲滞后；风险规避时放大器回撤更大、缓冲防守。实测（40年·月度）：高减低贝塔前瞻21日收益在风险偏好时+0.4%、风险规避时−0.7%——用于仓位管理的温和风险背景，而非预测或买入清单。") }}
+    </h2>
+    <p class="note" style="margin:0 0 12px;text-transform:none">
+      {% if RS == 'Risk-on' %}{{ t('Global risk is <b>ON</b> — amplifiers are the leveraged play; cushions lag the rally.', '全球风险<b>开启</b> — 放大器是杠杆首选；缓冲滞后于上涨。') }}
+      {% elif RS == 'Risk-off' %}{{ t('Global risk is <b>OFF</b> — amplifiers are the most exposed to the drawdown; cushions defend.', '全球风险<b>关闭</b> — 放大器回撤敞口最大；缓冲防守。') }}
+      {% else %}{{ t('Global risk is <b>neutral</b> — these are exposures, not a tilt; amplifiers will move more in EITHER direction when the regime turns.', '全球风险<b>中性</b> — 这是敞口而非倾向；当风险状态转变时，放大器在任一方向都会波动更大。') }}{% endif %}
+      {{ t('Current state:', '当前状态：') }} <b>{{ RS }}</b>.
+    </p>
+    <div class="grid" style="gap:18px">
+      <div class="span6">
+        <h3>{{ t('⚡ Amplifiers', '⚡ 放大器') }} <span class="note" style="text-transform:none">· {{ t('highest global-risk beta', '全球风险贝塔最高') }}</span></h3>
+        <table>
+          <thead><tr><th class="l">{{ t('Stock', '个股') }}</th><th>β</th><th>{{ t('%ile', '分位') }}</th><th class="l">{{ t('in this regime', '当前状态下') }}</th></tr></thead>
+          <tbody>
+          {% for r in betas.amplifiers %}
+          <tr>
+            <td class="l"><a href="hk_stock.html#{{ r.ticker }}"><b>{{ r.ticker }}</b></a> <span class="note">{{ r.name }}</span></td>
+            <td><b>{{ '%.2f'|format(r.beta) if r.beta is not none else '—' }}</b></td>
+            <td class="note">{{ r.beta_pct|int if r.beta_pct is not none else '—' }}</td>
+            <td class="l"><span class="gb-tilt gb-{{ r.tilt }}">{{ t(TILTS[r.tilt][0], TILTS[r.tilt][1]) }}</span></td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="span6">
+        <h3>{{ t('🛡 Cushions', '🛡 缓冲') }} <span class="note" style="text-transform:none">· {{ t('lowest beta · domestic-defensive', '贝塔最低·本地防御') }}</span></h3>
+        <table>
+          <thead><tr><th class="l">{{ t('Stock', '个股') }}</th><th>β</th><th>{{ t('%ile', '分位') }}</th><th class="l">{{ t('in this regime', '当前状态下') }}</th></tr></thead>
+          <tbody>
+          {% for r in betas.cushions %}
+          <tr>
+            <td class="l"><a href="hk_stock.html#{{ r.ticker }}"><b>{{ r.ticker }}</b></a> <span class="note">{{ r.name }}</span></td>
+            <td><b>{{ '%.2f'|format(r.beta) if r.beta is not none else '—' }}</b></td>
+            <td class="note">{{ r.beta_pct|int if r.beta_pct is not none else '—' }}</td>
+            <td class="l"><span class="gb-tilt gb-{{ r.tilt }}">{{ t(TILTS[r.tilt][0], TILTS[r.tilt][1]) }}</span></td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <p class="note" style="margin:8px 0 0;font-size:11px">{{ t('Beta to the S&P 500 (overnight), 252d causal & shrunk. Risk context for position sizing within the validated regime — NOT a return forecast or a buy list. Beta is a descriptive exposure, not an alpha.', '对标普500（隔夜）的贝塔，252日因果并收缩。用于在已验证的风险状态内进行仓位管理的风险背景 —— 而非收益预测或买入清单。贝塔是描述性敞口，并非阿尔法。') }}</p>
   </div>
   {% endif %}
 
