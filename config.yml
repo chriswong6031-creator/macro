@@ -958,6 +958,9 @@ catalyst_tone:
   max_doc_chars: 20000            # input doc is trimmed to the statement body + capped
   max_age_days: 120               # ignore FOMC statements older than this (stale context)
   cache_dir: data/catalyst/digest_cache   # one digest cached per meeting (never re-called)
+  event_enabled: true             # Stage 3b: on a dislocation day with no FOMC read, digest that day's news
+  event_window_days: 2            # GDELT window +/- around the dislocation day
+  event_max_records: 8            # headlines fetched for the event digest (keep small)
 
 # =============================================================================
 # Master brain — cross-asset macro SYNTHESIS (LLM Tier-B; engine/master_brain.py).

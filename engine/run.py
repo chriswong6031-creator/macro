@@ -124,6 +124,24 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("portfolio layer failed: %s", e)
         latest["portfolio"] = None
+    # Catalyst event-trigger (Stage 3b): on an ACTIVE dislocation whose FOMC digest
+    # carries no usable reversibility read, digest THAT DAY's market news for a fresh
+    # shock_reversible and re-attach the dislocation narrative. Gated + never fatal
+    # (no-ops while dislocation isn't wired into latest on this line).
+    try:
+        from engine import catalyst_tone as _ct
+        dis = latest.get("dislocation") or {}
+        ct0 = latest.get("catalyst_tone") or {}
+        if (dis.get("verdict") in ("buyable_washout", "stand_aside")
+                and ct0.get("shock_reversible") not in ("reversible", "persistent")):
+            ev = _ct.event_snapshot(asof, context=f"dislocation: {str(dis.get('headline', ''))[:120]}")
+            if ev:
+                latest["catalyst_event"] = ev
+                src = ev if ev.get("shock_reversible") in ("reversible", "persistent") else ct0
+                from engine.dislocation import _catalyst_narrative
+                latest["dislocation"]["catalyst_narrative"] = _catalyst_narrative(dis.get("verdict"), src)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("catalyst event-trigger failed: %s", e)
     try:
         latest["playbook"] = build_playbook(f, regime, yahoo_closes(), latest)
     except Exception as e:  # noqa: BLE001 — conclusions are additive, never fatal

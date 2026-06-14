@@ -7,6 +7,7 @@ degrade-never-raise) are exercised as pure functions. Run as a plain script:
 """
 from __future__ import annotations
 
+import json
 import pathlib
 import sys
 from datetime import date
@@ -237,6 +238,42 @@ def test_dislocation_narrative_none_cases():
                                   {"shock_reversible": "unknown"}) is None   # gated/unknown
     assert dz._catalyst_narrative("calm",
                                   {"shock_reversible": "reversible"}) is None  # no live dislocation
+
+
+# --------------------------------------------------------------------------- #
+# Stage 3b — dislocation-day event trigger (GDELT digest)
+# --------------------------------------------------------------------------- #
+def test_event_snapshot_disabled():
+    assert ct.event_snapshot("2026-06-14") is None              # config ships default-off
+
+
+def test_event_snapshot_no_headlines():
+    oc, of = ct._cfg, ct._fetch_event_headlines
+    ct._cfg = lambda: {"enabled": True, "event_enabled": True, "llm_min_confidence": "high"}
+    ct._fetch_event_headlines = lambda today, cfg: []
+    try:
+        assert ct.event_snapshot("2026-06-14") is None
+    finally:
+        ct._cfg, ct._fetch_event_headlines = oc, of
+
+
+def test_event_snapshot_stubbed():
+    oc, of, om = ct._cfg, ct._fetch_event_headlines, ct._call_model
+    ct._cfg = lambda: {"enabled": True, "event_enabled": True, "llm_min_confidence": "high"}
+    ct._fetch_event_headlines = lambda today, cfg: [
+        "Stocks plunge as Fed signals higher-for-longer", "Treasury yields spike on hot inflation"]
+    reply = json.dumps({"tone_score": 0.7, "risk_delta": 0.6, "shock_reversible": "persistent",
+                        "confidence": "high",
+                        "evidence": [{"field": "shock_reversible",
+                                      "quote_span": "Fed signals higher-for-longer"}]})
+    ct._call_model = lambda *a, **k: (reply, None)
+    try:
+        ev = ct.event_snapshot("2026-06-14", context="dislocation test")
+        assert ev["kind"] == "dislocation"
+        assert ev["shock_reversible"] == "persistent"   # citation verified against the headline
+        assert ev["doc_id"].startswith("event_")
+    finally:
+        ct._cfg, ct._fetch_event_headlines, ct._call_model = oc, of, om
 
 
 if __name__ == "__main__":

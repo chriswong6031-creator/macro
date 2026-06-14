@@ -450,3 +450,56 @@ def daily_snapshot(asof: date | str | None = None) -> dict | None:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("catalyst daily_snapshot failed (%s)", e)
         return None
+
+
+# --------------------------------------------------------------------------- #
+# event trigger — on a dislocation day, digest that day's market news (Stage 3b)
+# --------------------------------------------------------------------------- #
+_GDELT_URL = "https://api.gdeltproject.org/api/v2/doc/doc"
+_EVENT_QUERY = ('(stock market OR "S&P 500" OR selloff OR "Federal Reserve" OR Treasury '
+                'OR "risk-off" OR volatility OR crash OR rally)')
+
+
+def _fetch_event_headlines(today: date, cfg: dict) -> list[str]:
+    """GDELT macro/market headlines around `today` (free, keyless). [] on any error."""
+    from datetime import timedelta
+    win = int(cfg.get("event_window_days", 2))
+    start = datetime(today.year, today.month, today.day) - timedelta(days=win)
+    end = datetime(today.year, today.month, today.day, 23, 59, 59)
+    n = int(cfg.get("event_max_records", 8))
+    params = {"query": cfg.get("event_query", _EVENT_QUERY) + " sourcelang:eng",
+              "mode": "artlist", "format": "json", "maxrecords": str(n), "sort": "datedesc",
+              "startdatetime": start.strftime("%Y%m%d%H%M%S"),
+              "enddatetime": end.strftime("%Y%m%d%H%M%S")}
+    try:
+        import requests
+        r = requests.get(_GDELT_URL, params=params, timeout=30,
+                         headers={"User-Agent": "macro-dashboard/1.0 (research)"})
+        if r.status_code != 200 or "json" not in r.headers.get("Content-Type", "").lower():
+            return []
+        arts = (r.json().get("articles") or [])[:n]
+        return [a.get("title", "").strip() for a in arts if a.get("title")]
+    except Exception as e:  # noqa: BLE001 — degrade, never raise
+        log.warning("event headline fetch failed (%s)", e)
+        return []
+
+
+def event_snapshot(asof: date | str | None = None, context: str = "") -> dict | None:
+    """Digest the current dislocation day's market news into a shock_reversible read.
+    None when disabled, event-digest off, or no headlines. NEVER raises.
+    The digest text is PUBLIC headlines only (same firewall as the FOMC path)."""
+    cfg = _cfg()
+    if not cfg.get("enabled", False) or not cfg.get("event_enabled", True):
+        return None
+    try:
+        today = _as_date(asof) or date.today()
+        headlines = _fetch_event_headlines(today, cfg)
+        if not headlines:
+            return None
+        text = "Market headlines around the dislocation:\n" + "\n".join(f"- {h}" for h in headlines)
+        rec = digest_document(text, kind="dislocation", doc_id=f"event_{today.isoformat()}",
+                              context=context or "market dislocation day", asof=today)
+        return {k: rec.get(k) for k in _SNAP_KEYS} if rec else None
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("catalyst event_snapshot failed (%s)", e)
+        return None
