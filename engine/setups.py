@@ -109,24 +109,32 @@ def dedupe_dual_class(rows: list[dict]) -> list[dict]:
 
 def rank_setups(cands: list[tuple[float, dict]], *, buy_min: float = BUY_MIN,
                 lag_max: float = LAG_MAX, n_buy: int = N_BUY, n_lag: int = N_LAG,
-                as_of=None) -> dict:
-    """Split scored candidates into the constructive ``buy`` shortlist (strong
-    alpha + constructive timing) and the ``laggards`` watch (weak alpha). ``cands``
-    is a list of ``(score, row)`` from :func:`setup_score`. Rows are ranked by setup
-    score; the cross-sectional factor composite (``row['factor_z']``, attached by the
-    caller when available) breaks near-ties as a LIGHT quality leg — crowded/decayed
-    factors should not drive the order, only settle exact ties. Dual-class duplicates
-    are collapsed to the best-ranked variant."""
-    def _desc(x):                                    # buys: best setup first, factor breaks ties
-        return (-x[0], -(x[1].get("factor_z") or 0.0))
+                as_of=None, rank_by: str = "setup") -> dict:
+    """Split scored candidates into the constructive ``buy`` shortlist and the
+    ``laggards`` watch. ``cands`` is a list of ``(score, row)`` from :func:`setup_score`.
 
-    def _asc(x):                                     # laggards: worst setup first
-        return (x[0], (x[1].get("factor_z") or 0.0))
+    ``rank_by`` chooses the SORT key, per the market's validated evidence:
+      * ``"alpha"`` (US) — order by the sector-neutral residual-momentum z. The
+        cycle-timing/reversal blend was Phase-0 tested (reports/setup-score-phase0.md)
+        and does NOT improve forward-return ranking — it slightly DILUTES alpha — so
+        the board rides the only positive-IC leg and the timing is displayed *context*.
+      * ``"setup"`` (China, default) — order by the full reversal-led setup score, which
+        IS the A-share validated construction (deep-history reversal edge,
+        research/CHINA_HK_STOCK_SIGNALS.md).
 
+    The factor composite (``row['factor_z']``) breaks near-ties as a LIGHT quality leg.
+    Dual-class duplicates collapse to the best-ranked variant."""
+    def _key(x):
+        s, r = x
+        primary = (r.get("alpha") if rank_by == "alpha" else s) or 0.0
+        return primary, (r.get("factor_z") or 0.0)
+
+    ranked_desc = sorted(cands, key=_key, reverse=True)   # best (buys) first
+    ranked_asc = sorted(cands, key=_key)                  # worst (laggards) first
     buys = dedupe_dual_class(
-        [r for s, r in sorted(cands, key=_desc)
+        [r for s, r in ranked_desc
          if r.get("alpha") is not None and r["alpha"] >= buy_min])[:n_buy]
     laggards = dedupe_dual_class(
-        [r for s, r in sorted(cands, key=_asc)
+        [r for s, r in ranked_asc
          if r.get("alpha") is not None and r["alpha"] <= lag_max])[:n_lag]
     return {"as_of": as_of, "buy": buys, "laggards": laggards}
