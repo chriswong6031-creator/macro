@@ -119,6 +119,15 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("dislocation layer failed: %s", e)
         latest["dislocation"] = None
+    # Cross-asset concentration: are the six markets secretly one liquidity/risk bet?
+    # Additive leaf (engine/cross_asset.py) — reads the per-market price stores and
+    # degrades to verdict="unknown" if too few are present.
+    try:
+        from engine.cross_asset import snapshot as cross_asset_snapshot
+        latest["cross_asset"] = cross_asset_snapshot()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("cross-asset layer failed: %s", e)
+        latest["cross_asset"] = None
     try:
         latest["playbook"] = build_playbook(f, regime, yahoo_closes(), latest)
     except Exception as e:  # noqa: BLE001 — conclusions are additive, never fatal

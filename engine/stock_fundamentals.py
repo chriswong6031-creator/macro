@@ -180,121 +180,6 @@ def _load_profiles() -> dict[str, dict]:
     return out
 
 
-def _load_statements() -> dict[str, list[dict]]:
-    """ticker -> list of per-fiscal-year statement dicts (ascending) from the
-    Phase-2 companyfacts collector (collectors/edgar_facts.py). Empty until run."""
-    p = config.data_dir() / "edgar" / "statements.parquet"
-    if not p.exists():
-        return {}
-    try:
-        df = pd.read_parquet(p)
-    except Exception:  # noqa: BLE001
-        return {}
-    if df.empty or "ticker" not in df.columns:
-        return {}
-    out: dict[str, list[dict]] = {}
-    for t, sub in df.sort_values("fy").groupby("ticker"):
-        out[str(t)] = sub.to_dict("records")
-    return out
-
-
-def _piotroski(rows: list[dict]) -> dict | None:
-    """Piotroski F-score: count of 9 fundamental-momentum signals that pass
-    (latest FY vs prior). Reports score out of however many were computable —
-    sparse filers get a smaller denominator rather than a wrong absolute."""
-    if len(rows) < 2:
-        return None
-    a, b = rows[-2], rows[-1]            # prior, latest
-
-    def n(r, k):
-        return _num(r.get(k))
-
-    def ratio(r, num, den):
-        x, y = n(r, num), n(r, den)
-        return x / y if (x is not None and y not in (None, 0)) else None
-
-    score, total = 0, 0
-    tests = [
-        (ratio(b, "ni", "assets"), None, "gt0"),                       # ROA > 0
-        (n(b, "cfo"), None, "gt0"),                                    # CFO > 0
-        (ratio(b, "ni", "assets"), ratio(a, "ni", "assets"), "gt"),   # ROA rising
-        (n(b, "cfo"), n(b, "ni"), "gt"),                              # accruals: CFO > NI
-        (ratio(a, "debt_lt", "assets"), ratio(b, "debt_lt", "assets"), "gt"),  # leverage falling
-        (ratio(b, "cur_assets", "cur_liab"), ratio(a, "cur_assets", "cur_liab"), "gt"),  # current ratio rising
-        (n(a, "shares"), n(b, "shares"), "gte"),                      # no dilution
-        (ratio(b, "gross_profit", "revenue"), ratio(a, "gross_profit", "revenue"), "gt"),  # margin rising
-        (ratio(b, "revenue", "assets"), ratio(a, "revenue", "assets"), "gt"),  # asset turnover rising
-    ]
-    for x, y, op in tests:
-        if x is None or (op in ("gt", "gte") and y is None):
-            continue
-        total += 1
-        if op == "gt0":
-            score += 1 if x > 0 else 0
-        elif op == "gt":
-            score += 1 if x > y else 0
-        elif op == "gte":
-            score += 1 if x >= y * 1.01 else 0
-    if total < 5:
-        return None
-    return {"score": score, "of": total}
-
-
-def _altman(latest: dict, mktcap: float | None) -> dict | None:
-    """Altman Z-score (classic, manufacturers) — distress < 1.81, grey 1.81-2.99,
-    safe > 2.99. Uses market cap for X4; labelled approximate for non-manufacturers."""
-    a = _num(latest.get("assets"))
-    if not a or not mktcap:
-        return None
-    ca, cl = _num(latest.get("cur_assets")), _num(latest.get("cur_liab"))
-    wc = (ca - cl) if (ca is not None and cl is not None) else None
-    legs = [(1.2, wc / a if wc is not None else None),
-            (1.4, _num(latest.get("retained_earnings")) and _num(latest.get("retained_earnings")) / a),
-            (3.3, _num(latest.get("op_income")) and _num(latest.get("op_income")) / a),
-            (0.6, mktcap / _num(latest.get("liabilities")) if _num(latest.get("liabilities")) else None),
-            (1.0, _num(latest.get("revenue")) and _num(latest.get("revenue")) / a)]
-    avail = [(c, x) for c, x in legs if x is not None]
-    if len(avail) < 4:
-        return None
-    z = sum(c * x for c, x in avail)
-    zone = "safe" if z > 2.99 else "grey" if z >= 1.81 else "distress"
-    return {"z": round(z, 2), "zone": zone}
-
-
-def _cagr(series: list) -> float | None:
-    s = [x for x in series if x is not None]
-    if len(series) < 2 or series[0] is None or series[-1] is None:
-        return None
-    if series[0] <= 0 or series[-1] <= 0:
-        return None
-    return round(((series[-1] / series[0]) ** (1 / (len(series) - 1)) - 1) * 100, 1)
-
-
-def _multiyear(rows: list[dict], mktcap: float | None) -> dict | None:
-    """Multi-year trend series + CAGRs + Piotroski/Altman from the statements rows."""
-    if not rows:
-        return None
-
-    def col(k):
-        return [_num(r.get(k)) for r in rows]
-
-    rev, ni, gp = col("revenue"), col("ni"), col("gross_profit")
-    cfo, capex, eps = col("cfo"), col("capex"), col("eps_diluted")
-
-    def margin(num, den):
-        return [round(n / d * 100, 1) if (n is not None and d) else None for n, d in zip(num, den)]
-
-    fcf = [(c - x) if (c is not None and x is not None) else None for c, x in zip(cfo, capex)]
-    block = {
-        "years": [int(r["fy"]) for r in rows],
-        "revenue": rev, "net_margin": margin(ni, rev), "gross_margin": margin(gp, rev),
-        "eps": eps, "fcf": fcf, "fcf_margin": margin(fcf, rev),
-        "rev_cagr": _cagr(rev), "eps_cagr": _cagr(eps),
-        "piotroski": _piotroski(rows), "altman": _altman(rows[-1], mktcap),
-    }
-    return block
-
-
 def _load_deep() -> dict[str, dict]:
     """ticker -> {metric: value} from the ~110-name yfinance snapshot (the only
     free source of forward P/E we have). Columns are '<TICKER>__<metric>'."""
@@ -463,7 +348,7 @@ def _valuation(t, f, fac, M, deep) -> dict | None:
     }
 
 
-def _financials(t, f, deep, multiyear=None) -> dict | None:
+def _financials(t, f, deep) -> dict | None:
     rev, ni, ni_p = _num(f.get("revenue")), _num(f.get("ni")), _num(f.get("ni_prior"))
     eq, cfo, gp = _num(f.get("equity")), _num(f.get("cfo")), _num(f.get("gross_profit"))
     assets, assets_p = _num(f.get("assets")), _num(f.get("assets_prior"))
@@ -496,7 +381,7 @@ def _financials(t, f, deep, multiyear=None) -> dict | None:
         # tiny 2-point sparkline series (prior, latest) — honest until companyfacts (Phase 2)
         "spark": {"ni": [_num(ni_p), _num(ni)] if (ni_p is not None and ni is not None) else None,
                   "assets": [_num(assets_p), _num(assets)] if (assets_p is not None and assets is not None) else None},
-        "multiyear": multiyear,  # SEC companyfacts trends + Piotroski/Altman (Phase 2)
+        "multiyear": None,  # Phase 2: SEC companyfacts (rev/margins/EPS/FCF trend + Piotroski/Altman)
     }
 
 
@@ -572,7 +457,6 @@ def panels() -> dict[str, dict]:
     insider = _load_insider(facts)
     deep = _load_deep()
     profiles = _load_profiles()
-    statements = _load_statements()
 
     M = _context_frame(fund, table)
     nm_top_thr = _num(M["net_margin"].quantile(2 / 3)) if "net_margin" in M else None
@@ -583,12 +467,10 @@ def panels() -> dict[str, dict]:
         ni = _num(f.get("ni"))
         net_margin = _num(M.loc[t, "net_margin"]) if t in M.index else None
         arche = _archetype(fac, ni, net_margin, nm_top_thr)
-        mcap = _num(M.loc[t, "mktcap"]) if t in M.index else None
-        my = _multiyear(statements.get(str(t)), mcap)
         blocks = {
             "profile": _profile(t, f, fac, M, arche, profiles.get(str(t))),
             "valuation": _valuation(t, f, fac, M, deep.get(t)),
-            "financials": _financials(t, f, deep.get(t), my),
+            "financials": _financials(t, f, deep.get(t)),
             "factors": _factors(t, fac, facts, M),
             "positioning": _positioning(t, f, short, insider.get(t)),
             "analyst": _analyst(t, deep.get(t)),
