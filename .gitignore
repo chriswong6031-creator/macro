@@ -13,3 +13,6 @@ data/smallcap_breadth/_closes_cache.parquet
 data/midcap_breadth/_closes_cache.parquet
 data/china_breadth/_closes_cache.parquet
 data/hk_breadth/_closes_cache.parquet
+
+# LLM digest cache (regenerable; never commit — would ship a stale-floor digest)
+data/catalyst/digest_cache/
