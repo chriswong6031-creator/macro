@@ -282,3 +282,79 @@ def top_correlated_pairs(df, k: int = 8, thresh: float = 0.6) -> list:
              for i in range(len(cols)) for j in range(i + 1, len(cols))
              if c.iloc[i, j] >= thresh]
     return sorted(pairs, key=lambda x: -x["corr"])[:k]
+
+
+# --------------------------------------------------------------------------- #
+# Signal-quality scorecard primitives (Phase A). The Information Coefficient is
+# the institutional lingua franca for ranking signals on ONE comparable scale;
+# Newey-West makes its t-stat honest under the serial correlation that overlapping
+# forward-return windows inject; Benjamini-Hochberg deflates the panel of signals
+# you screened (the DSR deflates one strategy — FDR deflates the family). All pure
+# numpy/pandas, no scipy/sklearn.
+# --------------------------------------------------------------------------- #
+def rank_ic(signal, fwd) -> float:
+    """Cross-sectional rank IC on ONE date: Spearman correlation between a signal
+    cross-section and the forward return across the universe. Higher = the signal
+    ranks winners above losers that period. NaN if fewer than 10 joint names."""
+    j = pd.concat([pd.Series(signal).rename("s"), pd.Series(fwd).rename("f")], axis=1).dropna()
+    if len(j) < 10:
+        return float("nan")
+    return float(j["s"].rank().corr(j["f"].rank()))
+
+
+def newey_west_tstat(x, lags: int = 4) -> dict:
+    """HAC (Newey-West) t-stat for the MEAN of `x`. Overlapping forward-return
+    windows serially-correlate a signal's per-date stats, so a plain t-stat
+    overstates significance; the Bartlett-weighted long-run variance corrects it.
+    Returns mean, HAC se, t, and a two-sided p (normal approx — large-sample)."""
+    import math
+    a = np.asarray(pd.Series(x).dropna(), float)
+    n = len(a)
+    if n < 8:
+        return {"mean": None, "se": None, "t": None, "p": None, "n": n}
+    mean = float(a.mean())
+    d = a - mean
+    var = float(np.dot(d, d) / n)                       # gamma_0
+    L = min(int(lags), n - 1)
+    for j in range(1, L + 1):
+        gj = float(np.dot(d[j:], d[:-j]) / n)           # gamma_j (autocovariance)
+        var += 2.0 * (1.0 - j / (L + 1)) * gj           # Bartlett kernel weight
+    se = math.sqrt(max(var, 1e-18) / n)
+    t = mean / se if se else float("nan")
+    return {"mean": round(mean, 5), "se": round(se, 5), "t": round(t, 3),
+            "p": round(2.0 * (1.0 - _norm_cdf(abs(t))), 4), "n": n}
+
+
+def ic_summary(ics, periods_per_year: int = 4) -> dict:
+    """Summarize a time series of per-date ICs: mean IC, IC vol, IC-IR (mean/vol),
+    annualized IC-IR, a Newey-West t-stat (the IC series autocorrelates when the
+    forward window overlaps the sampling step), hit rate and n."""
+    import math
+    s = pd.Series(ics).dropna()
+    n = len(s)
+    if n < 6:
+        return {"n": n}
+    mean, sd = float(s.mean()), float(s.std(ddof=1))
+    icir = mean / sd if sd else float("nan")
+    nw = newey_west_tstat(s, lags=max(1, periods_per_year // 2))
+    return {"mean_ic": round(mean, 4), "ic_vol": round(sd, 4), "ic_ir": round(icir, 3),
+            "ic_ir_ann": round(icir * math.sqrt(periods_per_year), 3),
+            "t_hac": nw["t"], "p_hac": nw["p"], "hit": round(float((s > 0).mean()), 3), "n": n}
+
+
+def benjamini_hochberg(pvals: dict, alpha: float = 0.10) -> dict:
+    """Benjamini-Hochberg FDR across a PANEL of p-values (one per screened signal):
+    controls the expected false-discovery rate at `alpha` — the right correction
+    when you test many signals and keep the significant ones. Returns per-name
+    {p, q (BH-adjusted), reject}."""
+    items = [(k, float(v)) for k, v in pvals.items() if v is not None and np.isfinite(v)]
+    m = len(items)
+    if m == 0:
+        return {}
+    items.sort(key=lambda kv: kv[1])
+    out, qprev = {}, 1.0
+    for i in range(m - 1, -1, -1):                       # walk up, enforce monotone q
+        k, p = items[i]
+        qprev = min(qprev, p * m / (i + 1))
+        out[k] = {"p": round(p, 4), "q": round(float(qprev), 4), "reject": bool(qprev <= alpha)}
+    return out
