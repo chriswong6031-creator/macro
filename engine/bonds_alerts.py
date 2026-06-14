@@ -49,29 +49,36 @@ def _transitions(state: pd.Series):
 
 
 def _debounce(state: pd.Series, min_days: int) -> pd.Series:
-    """Collapse runs shorter than `min_days` into the preceding durable run, so a
+    """Collapse runs shorter than `min_days` BARS into the preceding durable run, so a
     threshold-oscillating signal (the curve taxonomy, a band hovering on a knot)
-    emits ONE event per genuine regime, not one per whipsaw."""
+    emits ONE event per genuine regime, not one per whipsaw.
+
+    Two correctness points: (1) duration is BAR COUNT, not calendar days — the frame
+    is business-daily, so `.days` would make the thresholds weekend-dependent. (2) the
+    CURRENT (last) run is NEVER absorbed, even if it hasn't yet lasted `min_days` —
+    otherwise a brand-new genuine flip (e.g. a fresh curve un-inversion, the headline
+    pre-recession alarm) is structurally hidden for up to `min_days` after it fires."""
     s = state.dropna()
     if len(s) < 2:
         return s
-    runs: list[list] = []   # [start_ts, end_ts, value]
-    cs = cv = None
+    runs: list[list] = []   # [start_ts, end_ts, value, n_bars]
+    cv = None
     for ts, v in s.items():
         if cv is None or v != cv:
-            runs.append([ts, ts, v])
-            cs, cv = ts, v
+            runs.append([ts, ts, v, 1])
+            cv = v
         else:
             runs[-1][1] = ts
+            runs[-1][3] += 1
     merged: list[list] = []
-    for r in runs:
-        dur = (r[1] - r[0]).days
-        if merged and dur < min_days:
-            merged[-1][1] = r[1]            # absorb the short run into the previous value
+    last = len(runs) - 1
+    for i, r in enumerate(runs):
+        if merged and r[3] < min_days and i != last:    # absorb only short INTERIOR runs
+            merged[-1][1] = r[1]
         else:
             merged.append(r)
     out = pd.Series(index=s.index, dtype=object)
-    for cs, ce, cv in merged:
+    for cs, ce, cv, _n in merged:
         out.loc[cs:ce] = cv
     return out.dropna()
 
