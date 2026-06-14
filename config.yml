@@ -133,7 +133,7 @@ yahoo:
     credit: [HYG, LQD]
     vol: ["^VIX", "^VIX9D", "^VIX3M", "^MOVE", "^VVIX"]   # ^VVIX = vol-of-vol (option-implied risk layer)
     fx_commod: ["DX-Y.NYB", "CL=F", "HG=F", "GC=F", "SI=F", "BZ=F"]
-    fx: ["EURUSD=X", "USDJPY=X", "GBPUSD=X", "AUDUSD=X", "USDCAD=X", "USDCHF=X", "USDMXN=X", "USDBRL=X", "CNH=X"]   # Forex Vector spot pairs (USDCNY=X collected under china; CNH=X = offshore yuan)
+    fx: ["EURUSD=X", "USDJPY=X", "GBPUSD=X", "AUDUSD=X", "USDCAD=X", "USDCHF=X", "USDMXN=X", "USDBRL=X", "CNH=X", "CNH=F"]   # Forex Vector spot pairs; CNH=F = offshore CNH futures (2013->, real history vs CNH=X spot's 1 row)
     rate_pricing: ["ZQ=F"]        # 30-day fed funds front contract — LOW CONFIDENCE input
     crypto: [BTC-USD, ETH-USD, SOL-USD]   # deep daily history (BTC 2014->); Coinbase = intraday-quality OHLC
 
@@ -610,40 +610,44 @@ engine:
     crowding_hard_penalty: 10
     # --- Macro-risk SENSITIVITY table (per-sector beta to a risk-OFF reading) ----
     # How much a high macro-risk score (MRS, 0..1) should HURT each sector's heat
-    # and its holdings' buy-setup conviction. Coarse 3-tier textbook prior — NOT
-    # fitted to this sample (there is no risk-off episode in the broad cross-
-    # section's 2023-> history to fit on); the SPDRs DO have deep history, so the
-    # SIGN is validated offline by scripts/research_macro_sector.py before any
-    # magnitude>0 ships. Positive = cyclical / long-duration (penalized in risk-
-    # off); negative = defensive (a small credit). Keyed by SPDR ticker AND GICS /
-    # display sector name so both the sector pages (ticker) and the stock library
-    # (sector name) resolve. See research/MACRO_RISK_INTEGRATION.md.
+    # and its holdings' buy-setup conviction. MEASURED + shrunk: each SPDR's beta is
+    # tied to its CONDITIONAL fwd-63d drawdown depth under high MRS over the deep
+    # SPDR history (1998->), standardized cross-sectionally and shrunk 50% toward a
+    # coarse 3-tier textbook prior to stay overfit-resistant. Re-derive offline with
+    # `python -m scripts.calibrate_macro_betas` (adopt only if it agrees with the
+    # prior's structure); the SIGN/tier ordering is separately gated by
+    # scripts/research_macro_sector.py. Positive = cyclical / long-duration
+    # (penalized in risk-off; financials & comms bite hardest, tech least);
+    # negative = defensive (a small credit). Keyed by SPDR ticker AND GICS / display
+    # sector name so both the sector pages (ticker) and the stock library (sector
+    # name) resolve. See research/MACRO_RISK_INTEGRATION.md.
     sector_macro_beta:
-      XLK: 1.0
-      XLY: 1.0
-      XLF: 1.0
-      XLC: 1.0
-      XLI: 1.0
-      XLB: 1.0
-      XLRE: 0.5
-      XLE: 0.0
-      XLP: -0.4
-      XLU: -0.4
-      XLV: -0.4
-      # GICS / display sector names (deep-history holdings + breadth constituents)
-      Technology: 1.0
-      Information Technology: 1.0
-      Consumer Discretionary: 1.0
+      XLF: 1.0      # Financials — deepest conditional drawdown under high MRS
+      XLC: 1.0      # Communications
+      XLY: 0.64     # Consumer Discretionary
+      XLB: 0.5      # Materials
+      XLRE: 0.5     # Real Estate (rate-sensitive; thin history -> prior)
+      XLI: 0.48     # Industrials
+      XLK: 0.39     # Technology — shallower conditional drawdown than other cyclicals
+      XLE: 0.16     # Energy — modest (oil drawdowns)
+      XLU: -0.29    # Utilities (least defensive of the three — rate-sensitive)
+      XLV: -0.46    # Health Care
+      XLP: -0.56    # Consumer Staples — most defensive
+      # GICS / display sector names (deep-history holdings + breadth constituents) —
+      # mirror their SPDR's measured value.
+      Technology: 0.39
+      Information Technology: 0.39
+      Consumer Discretionary: 0.64
       Financials: 1.0
       Communications: 1.0
       Communication Services: 1.0
-      Industrials: 1.0
-      Materials: 1.0
+      Industrials: 0.48
+      Materials: 0.5
       Real Estate: 0.5
-      Energy: 0.0
-      Consumer Staples: -0.4
-      Utilities: -0.4
-      Health Care: -0.4
+      Energy: 0.16
+      Consumer Staples: -0.56
+      Utilities: -0.29
+      Health Care: -0.46
 
   # --- Macro-risk overlay: make aggregate macro risk a DETERMINISTIC, risk-OFF-
   # only factor in sector heat + per-stock buy-setup conviction. MRS (macro-risk
@@ -1000,7 +1004,7 @@ forex:
     USDCHF: {yahoo: "USDCHF=X", fred: DEXSZUS, cot: cot_swiss,   archetype: haven-funder,     base: CHF, invert: true,  short_rate: ch_short, long_rate: ch_10y, reer: reer_ch, peg: {kind: snb}}
     USDMXN: {yahoo: "USDMXN=X", fred: DEXMXUS, cot: cot_peso,    archetype: em,               base: MXN, invert: true,  carry: context, reer: reer_mx}
     USDBRL: {yahoo: "USDBRL=X", fred: DEXBZUS, cot: cot_real,    archetype: em,               base: BRL, invert: true,  carry: context, reer: reer_br}
-    USDCNH: {yahoo: "CNH=X",    fred: DEXCHUS, cot: null,        archetype: em-managed,       base: CNH, invert: true,  carry: context, reer: reer_cn, peg: {kind: managed}, fred_fallback: true}
+    USDCNH: {yahoo: "CNH=F",    fred: DEXCHUS, cot: null,        archetype: em-managed,       base: CNH, invert: true,  carry: context, reer: reer_cn, peg: {kind: managed}, onshore: cny_onshore}
 
   drivers:                          # shared macro series: name -> [store-group, store-name]
     dxy:          [yahoo, "DX-Y.NYB"]   # US Dollar Index (1971->)
@@ -1019,6 +1023,12 @@ forex:
     oil:          [yahoo, "CL=F"]
     spy:          [yahoo, SPY]
     eem:          [hk, EEM]             # EM-equity risk proxy (already collected under hk)
+    cny_onshore:  [fred, DEXCHUS]       # onshore USD/CNY — vs offshore CNH=F = the CNH basis
+
+  cnh:                                  # offshore(CNH)-onshore(CNY) basis = China stress / capital-flow gauge
+    stress_bps: 150                     # basis above this (offshore yuan weaker) = depreciation / outflow stress
+    inflow_bps: -100                    # basis below this (offshore stronger) = inflow / risk-on
+    pctile_lookback_d: 504
 
   dollar:                           # broad-dollar master tile + orthogonalization
     legs: {broad: broad_dollar, advanced: broad_afe, emerging: broad_eme, index: dxy}
@@ -1371,6 +1381,8 @@ vector:
     forward_days: [7, 30, 90]
     whipsaw_max_days: 7
     whipsaw_target_pct: 15
+    cost_bps: 10                  # one-way transaction cost (spread+fee) per unit |Δpos|; allocation backtest CAGR/Sharpe are NET of this
+    n_trials: 50                  # honest UPPER-BOUND of independent strategy configs explored, for the Deflated Sharpe haircut — overestimate is conservative (de Prado); raise as you try more
 
   # Alerts (Phase 3). Vector severity high|medium|info. Flash-crash thresholds
   # provisional (calibrated against known episodes; see research/VECTOR_ALERTS_DESIGN.md).

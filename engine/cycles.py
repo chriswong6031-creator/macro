@@ -49,6 +49,11 @@ TROUGH_MIN_GAP = 18       # merge troughs closer than this (days)
 CYCLE_PRESETS = {
     "equity": {"dc_band": (36, 42), "dc_early": 12, "ic_band_w": (16, 26), "tf3": "3B"},
     "crypto": {"dc_band": (56, 70), "dc_early": 18, "ic_band_w": (24, 40), "tf3": "3D"},
+    # FX MEASURED (research/FOREX_DASHBOARD.md): across the G10 majors the daily
+    # cycle low recurs ~35 trading days apart (median; IQR 25-47) — close to equities
+    # but shorter and NOISIER, so a wider band; the intermediate cycle is ~34 weeks
+    # (vs ~16-26 for equities), nearly double. FX trades business days (3B, not 3D).
+    "fx": {"dc_band": (30, 44), "dc_early": 11, "ic_band_w": (26, 42), "tf3": "3B"},
 }
 
 

@@ -33,6 +33,7 @@ STATE_ZH = {
     "high_risk": "高风险", "low_risk": "低风险",
     "crowded_long": "多头拥挤", "crowded_short": "空头拥挤",
     "exogenous_bid": "外生买盘", "exogenous_pressure": "外生压力",
+    "outflow_stress": "外流压力", "inflow": "资金流入",
     "Risk-off haven bid": "避险买盘", "US growth premium": "美国增长溢价",
     "Global reflation": "全球再通胀", "US-specific stress": "美国自身风险", "Neutral": "中性",
 }
@@ -188,6 +189,29 @@ def _pair_events(pair: str, df: pd.DataFrame, meta: dict) -> list[dict]:
                            headline_zh=f"{lab} 进入干预观察区",
                            detail_zh=f"{lab} 报 {qv:,.2f}，进入约 {lo:g}–{hi:g} 的财务省干预观察带 — "
                            f"信心受限，官方行动可能逆转走势。"))
+
+    # FX-specific: CNH offshore-vs-onshore basis stress / inflow
+    if "cnh_basis_state" in df.columns:
+        for ts, frm, to in _transitions(df["cnh_basis_state"]):
+            if to == "neutral":
+                continue
+            bp = df["cnh_basis_bps"].get(ts, float("nan"))
+            if to == "outflow_stress":
+                out.append(_ev(pair, "cnh_basis", ts, "high",
+                               f"{lab}: offshore CNH stress",
+                               f"The offshore−onshore CNH basis widened to {bp:+.0f} bps — offshore yuan "
+                               f"weaker than the onshore fix, a depreciation / capital-outflow signal.",
+                               {"basis_bps": round(float(bp)) if pd.notna(bp) else None}, to,
+                               headline_zh=f"{lab}：离岸人民币承压",
+                               detail_zh=f"离岸−在岸人民币基差扩大至 {bp:+.0f} 基点 — 离岸弱于在岸中间价，贬值/资金外流信号。"))
+            else:
+                out.append(_ev(pair, "cnh_basis", ts, "info",
+                               f"{lab}: offshore CNH inflow",
+                               f"The offshore−onshore CNH basis fell to {bp:+.0f} bps — offshore yuan "
+                               f"stronger than onshore (inflow / risk-on).",
+                               {"basis_bps": round(float(bp)) if pd.notna(bp) else None}, to,
+                               headline_zh=f"{lab}：离岸人民币资金流入",
+                               detail_zh=f"离岸−在岸人民币基差降至 {bp:+.0f} 基点 — 离岸强于在岸（资金流入/偏好风险）。"))
     return out
 
 

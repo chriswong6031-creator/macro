@@ -262,6 +262,31 @@ def test_mtf_runs_on_fx_close():
         assert "mtf" in a and {"D", "W"} <= set(a["mtf"].keys())
 
 
+def test_forex_mtf_uses_measured_fx_preset():
+    """forex_mtf runs the MEASURED fx cycle preset, not the equity one."""
+    from engine import forex_mtf, cycles
+    assert "fx" in cycles.CYCLE_PRESETS
+    assert cycles.CYCLE_PRESETS["fx"]["dc_band"] != cycles.CYCLE_PRESETS["equity"]["dc_band"]
+    idx = pd.date_range("2010-01-01", periods=1600, freq="B")
+    rng = np.random.default_rng(7)
+    close = np.exp(pd.Series(rng.normal(0, 0.005, len(idx)), index=idx).cumsum())
+    a = forex_mtf.mtf_ladder(close)
+    assert isinstance(a, dict)
+    if a and a.get("cycle"):
+        assert tuple(a["cycle"]["dc_band"]) == cycles.CYCLE_PRESETS["fx"]["dc_band"]
+
+
+def test_cnh_basis_sign_and_states():
+    """Offshore weaker than onshore -> positive bps; thresholds map to stress / inflow."""
+    from engine.forex_signals import cnh_basis
+    idx = _idx(40)
+    onshore = pd.Series(7.10, index=idx)
+    cfg = {"stress_bps": 150, "inflow_bps": -100}
+    assert cnh_basis(pd.Series(7.20, index=idx), onshore, cfg)["cnh_basis_bps"].iloc[-1] > 0
+    assert cnh_basis(pd.Series(7.30, index=idx), onshore, cfg)["cnh_basis_state"].iloc[-1] == "outflow_stress"
+    assert cnh_basis(pd.Series(7.00, index=idx), onshore, cfg)["cnh_basis_state"].iloc[-1] == "inflow"
+
+
 if __name__ == "__main__":
     for fn in [test_orthogonalize_strips_dollar_beta, test_carry_sign_and_vol_penalty,
                test_riskoff_factor_archetype_sign, test_factor_panel_naive_bullish_bounds,
@@ -270,6 +295,7 @@ if __name__ == "__main__":
                test_dollar_master_regime_is_valid_and_dir_matches, test_real_orientation_crosscheck,
                test_value_lag_has_no_lookahead,
                test_alerts_carry_flip_and_states, test_alerts_peg_approach_fires, test_mtf_runs_on_fx_close,
+               test_forex_mtf_uses_measured_fx_preset, test_cnh_basis_sign_and_states,
                test_calibrate_peg_mask_excises_zones, test_calibrate_pair_signs_inverted_and_normalizes]:
         fn()
         print(f"PASS {fn.__name__}")

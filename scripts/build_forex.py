@@ -195,14 +195,14 @@ def pair_vm(pair: str, df: pd.DataFrame, calib: dict, dollar_day: float) -> dict
     conv = forex_conviction.conviction(pair, df, meta, calib, dollar_day=dollar_day)
     cd, cs_ = last.get("carry_diff"), last.get("carry_score")
 
-    # multi-timeframe technical confluence — reuses the commodity/equity MTF engine
-    # (cycles.analyze equity preset). For FX the macro-fusion (driver/trend lean)
-    # gracefully zeroes out (no driver_score; calib keys differ), so the verdict is a
-    # PURE technical read — presented as a tactical overlay, not a return-validated call.
-    from engine import commodity_mtf
-    mtf_a = commodity_mtf.mtf_ladder(df["close"])
+    # multi-timeframe technical confluence on the FX-CALIBRATED cycle preset
+    # (forex_mtf -> cycles.analyze(kind="fx"): measured ~35d daily / ~34wk intermediate
+    # cycle). The macro-fusion (driver/trend lean) gracefully zeroes out for FX, so the
+    # verdict is a PURE technical read — a tactical timing overlay.
+    from engine import forex_mtf
+    mtf_a = forex_mtf.mtf_ladder(df["close"])
     cal_a = (calib.get("assets", {}) or {}).get(pair, {})
-    verdict = commodity_mtf.confluence_verdict(mtf_a, pair, last, cal_a)
+    verdict = forex_mtf.confluence_verdict(mtf_a, pair, last, cal_a)
     _TF = (("D", "Daily", "日线"), ("3D", "3-Day", "3日"), ("W", "Weekly", "周线"),
            ("2W", "Biweekly", "双周"), ("ME", "Monthly", "月线"))
     mtf_rows = []
@@ -236,6 +236,8 @@ def pair_vm(pair: str, df: pd.DataFrame, calib: dict, dollar_day: float) -> dict
         "carry_context": meta.get("carry") == "context",
         "reer_gap": _r(100 * last.get("reer_gap"), 1) if pd.notna(last.get("reer_gap")) else None,
         "rate_diff_10y": _r(last.get("rate_diff_10y"), 2) if pd.notna(last.get("rate_diff_10y")) else None,
+        "cnh_basis": _r(last.get("cnh_basis_bps"), 0) if pd.notna(last.get("cnh_basis_bps")) else None,
+        "cnh_state": last.get("cnh_basis_state") if pd.notna(last.get("cnh_basis_state")) else None,
         "conviction": conv,
         "mtf_rows": mtf_rows,
         "verdict": {"headline": verdict.get("headline"), "headline_zh": verdict.get("headline_zh"),
@@ -286,7 +288,8 @@ def carry_table(pairs: list[dict]) -> list[dict]:
 # --------------------------------------------------------------------------- #
 TYPE_LABEL = {"residual_shock": "Shock", "risk_regime": "Risk", "trend_flip": "Trend",
               "momentum": "Momentum", "structure": "Structure", "positioning": "COT",
-              "carry_flip": "Carry", "peg_approach": "Peg", "smile_regime": "Dollar"}
+              "carry_flip": "Carry", "peg_approach": "Peg", "smile_regime": "Dollar",
+              "cnh_basis": "CNH"}
 
 
 def _group_timeline(events: list[dict]) -> list[dict]:

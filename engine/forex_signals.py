@@ -149,6 +149,24 @@ def rates_signal(long_rate: pd.Series | None, us10y: pd.Series | None,
 
 
 # --------------------------------------------------------------------------- #
+# CNH offshore-vs-onshore basis — China stress / capital-flow gauge
+# --------------------------------------------------------------------------- #
+def cnh_basis(offshore_usdcnh: pd.Series, onshore_usdcny: pd.Series, cfg: dict) -> pd.DataFrame:
+    """Offshore USD/CNH (CME futures) minus onshore USD/CNY (PBoC-managed), in bps.
+    POSITIVE = offshore yuan WEAKER than onshore = depreciation / capital-outflow stress;
+    NEGATIVE = offshore stronger = inflow / risk-on. CNH is a managed regime so this is a
+    flow/stress STATE, not a tradeable signal."""
+    idx = offshore_usdcnh.index
+    on = onshore_usdcny.reindex(idx).ffill()
+    bps = ((offshore_usdcnh - on) / on * 10000).rename("cnh_basis_bps")
+    stress, inflow = cfg.get("stress_bps", 150), cfg.get("inflow_bps", -100)
+    state = pd.Series(np.where(bps > stress, "outflow_stress",
+                      np.where(bps < inflow, "inflow", "neutral")), index=idx, name="cnh_basis_state")
+    state[bps.isna()] = np.nan
+    return pd.DataFrame({"cnh_basis_bps": bps, "cnh_basis_state": state})
+
+
+# --------------------------------------------------------------------------- #
 # residual shock: causal decoupling / intervention detector (FX-specific)
 # --------------------------------------------------------------------------- #
 def residual_shock(close: pd.Series, drivers: dict, commodity: dict | None,
@@ -300,6 +318,11 @@ def compute_asset(ai: dict, cfg: dict | None = None, R: pd.Series | None = None)
     parts = [px[["close"]], resid_close, beta, mom, st, ts, pos, rk, ca, va, ra, rs, ro]
     out = pd.concat(parts, axis=1)
     out["cycle_position"] = cs.cycle_stage(mom["momentum"], rk["risk_index"])
+    # CNH offshore-vs-onshore basis (China stress gauge) when an onshore ref is configured
+    onshore = drivers.get(meta["onshore"]) if meta.get("onshore") else None
+    if onshore is not None:
+        off = (1.0 / px["close"]) if meta.get("invert") else px["close"]   # raw offshore USD/CNH
+        out = out.join(cnh_basis(off, onshore, cfg.get("cnh", {})))
     out["pair"] = ai["pair"]
     return out
 

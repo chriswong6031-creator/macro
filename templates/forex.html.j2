@@ -79,6 +79,11 @@ html[data-theme="dark"] .pill{background:#222732}
 .flag{display:inline-block;padding:4px 10px;border-radius:8px;font-size:12px;font-weight:600;margin-top:10px}
 .flag.warn{background:rgba(245,173,66,.14);color:#9a6a10}
 .flag.info{background:rgba(40,95,255,.10);color:var(--blue)}
+.cnh-basis{margin:10px 0;padding:8px 11px;border-radius:8px;font-size:12.5px;line-height:1.5;background:#eef1f6}
+html[data-theme="dark"] .cnh-basis{background:#222732}
+.cnh-basis b{color:var(--ink)}
+.cnh-basis.s-outflow_stress{background:rgba(211,11,11,.12)}
+.cnh-basis.s-inflow{background:rgba(26,127,67,.12)}
 /* per-pair card */
 .pair-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .pair-name{font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
@@ -240,6 +245,15 @@ table.tbl th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:
       <div class="sub faint" style="margin:14px 0">{{ t('Conviction unavailable (insufficient data).', '暂无信心评分（数据不足）。') }}</div>
       {% endif %}
 
+      {% if p.cnh_basis is not none %}
+      <div class="cnh-basis s-{{ p.cnh_state or 'neutral' }}">
+        <b>{{ t('Offshore–onshore CNH basis', '离岸–在岸人民币基差') }}:</b> {{ '%+.0f'|format(p.cnh_basis) }} bps —
+        {% if p.cnh_state == 'outflow_stress' %}{{ t('offshore yuan notably weaker than the onshore fix — depreciation / capital-outflow pressure.', '离岸人民币明显弱于在岸中间价 — 贬值/资金外流压力。') }}
+        {% elif p.cnh_state == 'inflow' %}{{ t('offshore yuan stronger than onshore — inflow / risk-on.', '离岸人民币强于在岸 — 资金流入/偏好风险。') }}
+        {% else %}{{ t('broadly aligned with the onshore fix.', '与在岸中间价大体一致。') }}{% endif %}
+      </div>
+      {% endif %}
+
       <div class="carry-row">
         <div class="kpi">{{ t('Carry (rate diff)', '套息（利差）') }}<b>{% if p.carry_context %}—{% else %}{{ '%+.2f'|format(p.carry_diff) }}%{% endif %}</b></div>
         <div class="kpi">{{ t('Carry / vol', '套息/波动') }}<b>{% if p.carry_context %}—{% else %}{{ p.carry_to_vol }}{% endif %}</b></div>
@@ -262,7 +276,7 @@ table.tbl th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:
         </div>
         {% endfor %}
         {% if p.verdict.headline %}<div class="sub" style="margin-top:6px"><span class="l-en">{{ p.verdict.headline }}</span><span class="l-zh">{{ p.verdict.headline_zh }}</span></div>{% endif %}
-        <div class="sub faint" style="margin-top:4px">{{ t('Pure technical confluence (equity cycle preset) — a tactical timing overlay, not return-validated for FX.', '纯技术共振（股票周期预设）— 战术择时叠加，未在外汇上经收益验证。') }}</div>
+        <div class="sub faint" style="margin-top:4px">{{ t('Pure technical confluence on the FX-calibrated cycle preset (measured ~35d daily / ~34wk intermediate cycle) — a tactical timing overlay, not a return-validated alpha.', '纯技术共振，采用外汇校准的周期预设（实测约35天日周期 / 约34周中期周期）— 战术择时叠加，非经收益验证的超额收益。') }}</div>
       </div>
       {% endif %}
 

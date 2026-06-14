@@ -407,12 +407,19 @@ Forex Vector` entry in DECISIONS.md.
   so the tile's history is backfilled from FRED `DEXCHUS` (onshore CNY). Onshore CNY ≠
   offshore CNH (the spread is itself a stress signal we don't yet model), and it's a
   managed regime — the tile is China-proxy risk-context only (forced FLAT).
-- **MTF confluence is a pure technical overlay, not return-validated for FX.** It reuses
-  the commodity/equity MTF engine (`cycles.analyze(kind="equity")`, a 36–42 trading-day
-  cycle preset). For FX the macro-fusion (driver/trend lean) intentionally zeroes out, so
-  what ships is the asset-agnostic D/3D/W/2W/ME RSI/Stoch/MACD confluence read — a tactical
-  TIMING overlay. The equity cycle preset was NOT re-validated against FX cycle lengths, and
-  FX range-trades differently; treat the ladder regime as indicative, not calibrated.
+- **MTF confluence is a pure technical overlay, not return-validated for FX.** It runs an
+  FX-MEASURED cycle preset (`CYCLE_PRESETS["fx"]`: a ~35-trading-day daily cycle — wider/
+  noisier than equities' 36–42 — and a ~34-week intermediate cycle vs equities' 16–26;
+  measured across the G10 majors, see `research/FOREX_DASHBOARD.md`). For FX the macro-fusion
+  (driver/trend lean) intentionally zeroes out, so what ships is the asset-agnostic
+  D/3D/W/2W/ME RSI/Stoch/MACD + cycle-ladder read — a tactical TIMING overlay. The cycle
+  LENGTHS are now measured, but the ladder's forward edge was NOT return-validated for FX
+  (FX range-trades differently); treat it as indicative timing context, not alpha.
+- **CNH offshore−onshore basis uses a futures proxy.** The USD/CNH tile prices off the CME
+  offshore-CNH futures continuous (`CNH=F`, 2013→) because Yahoo's `CNH=X` spot has no
+  history; the basis is `CNH=F` minus FRED onshore `DEXCHUS`. A continuous-futures splice
+  carries roll artifacts, the onshore series lags ~1 week, and CNH is a managed regime — so
+  the basis is a STRESS/flow STATE (positive = depreciation/outflow), never a tradeable signal.
 - **Alerts are daily-only.** There is no intraday FX feed in the repo, so the alert engine
   recomputes deterministic DAILY state-change events (shock/risk/trend/momentum/structure,
   plus FX-specific carry-inversion, peg-zone approach, dollar-smile regime) — no intraday

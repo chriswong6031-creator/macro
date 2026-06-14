@@ -64,8 +64,8 @@
     },
     "USDCNH": {
       "label": "USD/CNH",
-      "quote": 6.7655,
-      "chg": -0.7,
+      "quote": 6.763,
+      "chg": -1.6,
       "action": "FLAT",
       "score": 15.0
     }

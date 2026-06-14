@@ -130,6 +130,13 @@ fx_rates_short,fx_rates_long,fx_reer}`, `fred.series.credit.BAMLEMCBPIOAS`, and
   intraday machine (FX has no hourly feed here).
 - **Phase 4 — integration** ✅ — Forex nav links across the macro/vector pages + a 💱
   home-hub card (`build_vector._forex_state`); `build_forex` wired into daily.yml.
+- **Extras** ✅ — (1) **FX-measured MTF cycle preset**: measured the cycle-low spacing
+  across the G10 majors with `cycles.find_troughs` — daily cycle ~35 trading days (IQR
+  25–47, vs equities' 36–42), intermediate ~34 weeks (vs 16–26) — and added
+  `CYCLE_PRESETS["fx"] = {dc_band:(30,44), ic_band_w:(26,42), …}`; `engine/forex_mtf.py`
+  runs it. (2) **CNH offshore−onshore basis**: USD/CNH prices off CME offshore futures
+  (`CNH=F`, 2013→) and the tile shows `CNH=F − DEXCHUS` in bps as a China stress / capital-
+  flow gauge (positive = depreciation/outflow), with stress/inflow alert events.
 
 ## 7 · Honesty bar
 

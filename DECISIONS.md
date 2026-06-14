@@ -200,6 +200,22 @@ the `_dollar` master frame). Alerts are display-only (a timeline), NOT a convict
 adding an alert tilt would have forced a re-calibration for no measured edge. Events recompute
 idempotently to `data/forex/alerts.jsonl`.
 
+**D-FX10. Extras — measured FX cycle preset + the CNH offshore-onshore basis.** (1) Rather
+than keep the MTF on the equity preset with a "not validated" caveat, I MEASURED FX cycle
+lengths: ran `cycles.find_troughs` (the same detector `analyze` uses) over the G10 majors and
+their weekly resample. Daily cycle ≈ 35 trading days (median; IQR 25-47 — close to equities'
+36-42 but shorter and noisier); intermediate ≈ 34 weeks (vs equities' 16-26, nearly double).
+Added `CYCLE_PRESETS["fx"] = {dc_band:(30,44), dc_early:11, ic_band_w:(26,42), tf3:"3B"}` and a
+tiny `engine/forex_mtf.py` (runs `cycles.analyze(kind="fx")`, reuses `_long_timeframes` +
+`confluence_verdict`). The note changes from "equity preset, unvalidated" to "FX-calibrated
+preset" — but still flags that only the cycle LENGTHS are measured, not a forward edge.
+(2) CNH offshore-onshore basis: `CNH=X` spot has no Yahoo history (1 row), but `CNH=F` (CME
+offshore-CNH futures continuous) has 3,284 rows back to 2013 — so USD/CNH now prices off
+`CNH=F` (replacing the `DEXCHUS` onshore fallback) and a new `cnh_basis` (`CNH=F − DEXCHUS`, bps;
++ = offshore yuan weaker = depreciation/outflow stress) shows on the tile with stress/inflow
+alert events. Framed as a managed-regime STATE, not a signal (futures-roll + onshore-lag caveats
+in LIMITATIONS). Measured basis range −168…+224 bps spans the real 2015/2016/2022 stress episodes.
+
 ## 2026-06-13 — Section 4 (HK) enrichment: native features ported from China/US
 
 After a verified viability research pass (4-cluster workflow + web checks), added the
