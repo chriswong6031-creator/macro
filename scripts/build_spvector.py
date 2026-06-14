@@ -83,6 +83,13 @@ def build() -> str:
     html = html.replace("__PAYLOAD__", payload)   # JSON braces collide with .format -> replace separately
     out = config.ROOT / "site" / "spvector.html"
     out.write_text(html)
+    # persist a tiny state file for the landing-hub card (build_vector._spvector_state)
+    band_key = ("Low" if cur_score < 25 else "Elevated" if cur_score < 50
+                else "High" if cur_score < 75 else "Extreme")
+    (config.data_dir() / "regime").mkdir(parents=True, exist_ok=True)
+    (config.data_dir() / "regime" / "spvector_latest.json").write_text(json.dumps(
+        {"risk_score": round(cur_score, 1), "equity_weight": int(round(cur_w)),
+         "band": f"{band_key} risk", "asof": asof}))
     return str(out)
 
 

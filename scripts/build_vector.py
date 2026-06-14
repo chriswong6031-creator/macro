@@ -414,7 +414,7 @@ def build_landing(site: Path, vm: dict) -> None:
     stored engine state, not from any HTML file build_site emits."""
     macro = _macro_state()
     hub = _hub_html(vm, macro, home_alert_feed(), _china_state(), _commodities_state(),
-                    _watchlist_state(), _etf_state(), _hk_state())
+                    _watchlist_state(), _etf_state(), _hk_state(), _spvector_state())
     (site / "index.html").write_text(hub)
     log.info("wrote landing hub -> index.html")
 
@@ -482,6 +482,21 @@ def _etf_state() -> dict:
     (signals are share-flow decisions, no single regime label to show)."""
     site = config.ROOT / config.load()["storage"]["site_dir"]
     return {"present": (site / "etfs.html").exists()}
+
+
+def _spvector_state() -> dict:
+    """S&P / Macro Vector card — gated on the page existing; shows the current macro
+    risk band + recommended equity weight from data/regime/spvector_latest.json when
+    build_spvector has run (static label otherwise)."""
+    site = config.ROOT / config.load()["storage"]["site_dir"]
+    present = (site / "spvector.html").exists()
+    try:
+        import json
+        d = json.loads((config.data_dir() / "regime" / "spvector_latest.json").read_text())
+        return {"label": d.get("band") or "Index ↔ T-bills",
+                "weight": d.get("equity_weight"), "present": present}
+    except Exception:  # noqa: BLE001
+        return {"label": "Index ↔ T-bills", "weight": None, "present": present}
 
 
 MACRO_SEV = {"act": "high", "warn": "medium", "info": "info"}
@@ -642,7 +657,8 @@ def _hub_alert_rows(alerts: list[dict]) -> str:
 
 def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = None,
               commodities: dict | None = None, watchlist: dict | None = None,
-              etf: dict | None = None, hk: dict | None = None) -> str:
+              etf: dict | None = None, hk: dict | None = None,
+              spvector: dict | None = None) -> str:
     # Bilingual via the i18n layer when present, identity fallback when absent.
     try:
         from engine.i18n import t as T, tr as TR
@@ -701,6 +717,16 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
     <p>{T('What funds are accumulating and trimming — flow-normalized share decisions across popular ETFs, tagged manager-conviction vs index-rebalance.', '基金在增持与减持什么——主流 ETF 经资金流标准化的份额决策，并标注“经理人信念”与“指数再平衡”。')}</p>
     <span class="stat">{T('Manager and index flows', '经理人与指数资金流')}</span>
     <div class="go">{T('Open ETF Flow Radar →', '打开 ETF 资金雷达 →')}</div>
+  </a>""")
+    spvector = spvector or {"present": False}
+    sp_w = spvector.get("weight")
+    spvector_card = ("" if not spvector.get("present") else f"""
+  <a class="c" href="spvector.html">
+    <div class="ico">📈</div>
+    <h2>{T('S&P / Macro Vector', '标普宏观向量')}</h2>
+    <p>{T('Stay-in / step-out allocation for the broad US index vs T-bills — a backtested drawdown & Sharpe engine.', '美国大盘指数与短债之间的进出场配置——经回测、以回撤与夏普为目标的引擎。')}</p>
+    <span class="stat">{T(spvector['label'], TR(spvector['label']))}{(' · ' + str(int(sp_w)) + '% ' + T('equity', '股票')) if sp_w is not None else ''}</span>
+    <div class="go">{T('Open S&P / Macro Vector →', '打开标普宏观向量 →')}</div>
   </a>""")
     return f"""{HUB_MARKER}
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
@@ -785,7 +811,7 @@ body{{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
     <p>{T('Regime, liquidity & sector-flow read across the global business cycle.', '纵观全球商业周期的市场状态、流动性与板块资金流向解读。')}</p>
     <span class="stat">{T(macro['label'], TR(macro['label']))}</span>
     <div class="go">{T(f"Open {macro_label} →", f"打开{TR(macro_label)} →")}</div>
-  </a>{china_card}{hk_card}
+  </a>{spvector_card}{china_card}{hk_card}
   <a class="c" href="vector.html">
     <div class="ico">₿</div>
     <h2>{T('Bitcoin Vector', '比特币向量')}</h2>
@@ -1152,6 +1178,11 @@ def main() -> int:
         build_allocation_page(env, site, sig, cards, mtf_a, verdict)
     except Exception as e:  # noqa: BLE001 — never let the sub-page break the main build
         log.error("allocation page failed (%s)", e)
+    try:  # S&P / Macro Vector page + hub-card state (independent; never break the BTC build)
+        from scripts.build_spvector import build as _build_spvector
+        _build_spvector()
+    except Exception as e:  # noqa: BLE001
+        log.error("spvector page failed (%s)", e)
     build_landing(site, vm)
     return 0
 
