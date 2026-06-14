@@ -209,11 +209,11 @@
     },
     {
       "ticker": "GC=F",
-      "rs": 5.6825075834175935,
-      "mom_20d_pct": -9.12,
-      "mom_60d_pct": -23.35,
+      "rs": 5.7145936025446575,
+      "mom_20d_pct": -8.61,
+      "mom_60d_pct": -22.91,
       "above_200d_trend": false,
-      "pctile_252d": 27.4,
+      "pctile_252d": 28.2,
       "rank": 19
     }
   ],
@@ -258,7 +258,7 @@
     },
     "copper_gold": {
       "level": 0.0015,
-      "chg_20d_pct": 11.18
+      "chg_20d_pct": 10.81
     }
   },
   "alerts": [],
@@ -317,7 +317,7 @@
       "skew_pctile": 0.3194444444444444,
       "stock_bond_corr": 0.6936367796179748,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.41636738448391547,
+      "roro": 0.4110536838487616,
       "roro_state": "risk-on",
       "vol_target_scalar": 0.8172282208779413
     },
@@ -1651,16 +1651,16 @@
       {
         "ticker": "GC=F",
         "name": "Gold",
-        "price": 4215.0,
+        "price": 4238.8,
         "above50": false,
         "above200": false,
-        "pct_vs_50dma": -8.1,
-        "pct_vs_200dma": -4.6,
-        "rsi14": 35.0,
+        "pct_vs_50dma": -7.6,
+        "pct_vs_200dma": -4.1,
+        "rsi14": 37.0,
         "macd_pos": false,
-        "off_52w_high_pct": -20.7,
+        "off_52w_high_pct": -20.3,
         "season_this": "Jun: -0.7% avg, up 42% of years (n=26)",
-        "mom_60d_pct": -13.8
+        "mom_60d_pct": -13.3
       },
       {
         "ticker": "CL=F",
@@ -1679,16 +1679,16 @@
       {
         "ticker": "HG=F",
         "name": "Copper",
-        "price": 6.43,
+        "price": 6.45,
         "above50": true,
         "above200": true,
-        "pct_vs_50dma": 4.5,
-        "pct_vs_200dma": 16.3,
-        "rsi14": 55.0,
+        "pct_vs_50dma": 4.7,
+        "pct_vs_200dma": 16.5,
+        "rsi14": 56.0,
         "macd_pos": false,
-        "off_52w_high_pct": -3.3,
+        "off_52w_high_pct": -3.1,
         "season_this": "Jun: -0.4% avg, up 58% of years (n=26)",
-        "mom_60d_pct": 15.8
+        "mom_60d_pct": 16.0
       },
       {
         "ticker": "DX-Y.NYB",
