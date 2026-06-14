@@ -1,5 +1,5 @@
 {
-  "date": "Jun 14, 2026",
+  "date": "Jun 15, 2026",
   "regime": "US growth premium",
   "favored": [
     "USD"
@@ -8,36 +8,36 @@
   "pairs": {
     "EURUSD": {
       "label": "EUR/USD",
-      "quote": 1.1573,
-      "chg": -1.2,
+      "quote": 1.1579,
+      "chg": -0.7,
       "action": "FLAT",
-      "score": 10.5
+      "score": 12.5
     },
     "GBPUSD": {
       "label": "GBP/USD",
-      "quote": 1.3408,
+      "quote": 1.341,
       "chg": 0.1,
       "action": "FLAT",
       "score": 8.9
     },
     "USDJPY": {
       "label": "USD/JPY",
-      "quote": 160.185,
+      "quote": 160.107,
       "chg": 0.8,
       "action": "SHORT",
-      "score": -34.9
+      "score": -34.8
     },
     "USDCHF": {
       "label": "USD/CHF",
-      "quote": 0.7956,
-      "chg": 1.1,
+      "quote": 0.7955,
+      "chg": 1.0,
       "action": "FLAT",
-      "score": 13.1
+      "score": 13.0
     },
     "AUDUSD": {
       "label": "AUD/USD",
-      "quote": 0.7049,
-      "chg": -1.1,
+      "quote": 0.7046,
+      "chg": -1.2,
       "action": "SHORT",
       "score": -27.5
     },
@@ -50,17 +50,17 @@
     },
     "USDMXN": {
       "label": "USD/MXN",
-      "quote": 17.208,
+      "quote": 17.196,
       "chg": -0.8,
       "action": "SHORT",
-      "score": -50.7
+      "score": -50.9
     },
     "USDBRL": {
       "label": "USD/BRL",
       "quote": 5.0628,
-      "chg": 0.0,
+      "chg": 1.1,
       "action": "FLAT",
-      "score": -2.3
+      "score": -4.5
     },
     "USDCNH": {
       "label": "USD/CNH",

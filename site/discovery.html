@@ -75,6 +75,7 @@
     <a class="nav-link" href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span></a>
     <a class="nav-link" href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span></a>
     <a class="nav-link active" href="discovery.html">🏆 <span class="l-en">Alpha leaders</span><span class="l-zh">阿尔法领先股</span></a>
+    <a class="nav-link" href="gex.html">🧲 <span class="l-en">GEX magnets</span><span class="l-zh">Gamma磁吸</span></a>
   </div>
   <div class="nav-search">
     <span class="mag">🔎</span>
@@ -107,6 +108,7 @@
 <div class="tabs">
   <button class="tabbtn on" data-tab="global"><span class="l-en">Global index</span><span class="l-zh">全球指数</span></button>
   <button class="tabbtn" data-tab="sectors"><span class="l-en">Sectors</span><span class="l-zh">板块</span></button>
+  <button class="tabbtn" data-tab="themes"><span class="l-en">Themes</span><span class="l-zh">主题</span></button>
   <button class="tabbtn" data-tab="sector"><span class="l-en">Sector index</span><span class="l-zh">板块明细</span></button>
 </div>
 
@@ -123,7 +125,9 @@
       <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">sector</span><span class="l-zh">板块</span></th>
         <th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span><span class="help">?<span class="tip"><span class="l-en">Sector-neutral residual-momentum information ratio, winsorized to a cross-sectional z-score. Higher = stronger idiosyncratic (beta/sector-stripped) momentum within its GICS sector. This is the global, cross-sector-comparable score.</span><span class="l-zh">板块中性残差动量信息比率的去极值横截面 z 分数。越高 = 在其 GICS 板块内的特质（剔除贝塔/板块）动量越强。此为可跨板块比较的全局评分。</span></span></span></th>
         <th><span class="l-en">entry</span><span class="l-zh">入场</span><span class="help">?<span class="tip"><span class="l-en">Short-term reversal overlay (NOT the score): a leader that just ran hot is extended (reversal risk); one on a recent pullback is constructive. Laggards/neutral otherwise.</span><span class="l-zh">短期反转叠加项（非评分）：刚刚过热的领先股为 extended（反转风险）；近期回调的为 constructive。</span></span></span></th>
-        <th class="r"><span class="l-en">12-1 mom</span><span class="l-zh">12-1 动量</span></th><th class="r"><span class="l-en">sector #</span><span class="l-zh">板块排名</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
+        <th class="r"><span class="l-en">12-1 mom</span><span class="l-zh">12-1 动量</span></th><th class="r"><span class="l-en">sector #</span><span class="l-zh">板块排名</span></th>
+        <th class="r"><span class="l-en">RS</span><span class="l-zh">相对强度</span><span class="help">?<span class="tip"><span class="l-en">Relative strength 1-99: cross-sectional percentile of the trailing 12-1 return (the familiar IBD-style rating). A recognizable but SHALLOWER momentum lens — subordinate context, NOT the alpha score (which also strips market AND sector beta). The 3m/6m/12m sub-percentiles show whether RS is improving or fading.</span><span class="l-zh">相对强度 1-99：12-1 趋势回报的横截面百分位（熟悉的 IBD 风格评级）。一个易懂但更浅的动量视角——从属背景，并非阿尔法评分（后者还剔除了市场与板块贝塔）。3/6/12 月分项显示 RS 在改善还是衰退。</span></span></span></th>
+        <th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
     <tr>
   <td class="rk">1</td>
   <td><a href="stock.html#SNDK"><b>SNDK</b></a> <span class="muted sm">Sandisk</span></td>
@@ -133,6 +137,7 @@
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+404%</td>
   <td class="r muted sm">#1/187</td>
+  <td class="r"><b>99</b> <span class="muted sm">99/99/99</span></td>
   <td class="r muted sm">$1980.10</td>
 </tr><tr>
   <td class="rk">2</td>
@@ -143,6 +148,7 @@
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+237%</td>
   <td class="r muted sm">#2/187</td>
+  <td class="r"><b>99</b> <span class="muted sm">98/99/99</span></td>
   <td class="r muted sm">$981.61</td>
 </tr><tr>
   <td class="rk">3</td>
@@ -153,6 +159,7 @@
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+257%</td>
   <td class="r muted sm">#3/187</td>
+  <td class="r"><b>99</b> <span class="muted sm">97/98/99</span></td>
   <td class="r muted sm">$562.93</td>
 </tr><tr>
   <td class="rk">4</td>
@@ -163,6 +170,7 @@
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+220%</td>
   <td class="r muted sm">#4/187</td>
+  <td class="r"><b>98</b> <span class="muted sm">87/97/98</span></td>
   <td class="r muted sm">$445.98</td>
 </tr><tr>
   <td class="rk">5</td>
@@ -173,6 +181,7 @@
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+194%</td>
   <td class="r muted sm">#5/187</td>
+  <td class="r"><b>98</b> <span class="muted sm">99/98/98</span></td>
   <td class="r muted sm">$124.57</td>
 </tr><tr>
   <td class="rk">6</td>
@@ -183,6 +192,7 @@
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+104%</td>
   <td class="r muted sm">#1/253</td>
+  <td class="r"><b>94</b> <span class="muted sm">81/87/94</span></td>
   <td class="r muted sm">$910.57</td>
 </tr><tr>
   <td class="rk">7</td>
@@ -193,6 +203,7 @@
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+301%</td>
   <td class="r muted sm">#6/187</td>
+  <td class="r"><b>99</b> <span class="muted sm">93/98/99</span></td>
   <td class="r muted sm">$921.56</td>
 </tr><tr>
   <td class="rk">8</td>
@@ -203,6 +214,7 @@
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+75%</td>
   <td class="r muted sm">#1/78</td>
+  <td class="r"><b>89</b> <span class="muted sm">84/92/84</span></td>
   <td class="r muted sm">$895.14</td>
 </tr><tr>
   <td class="rk">9</td>
@@ -213,6 +225,7 @@
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+39%</td>
   <td class="r muted sm">#1/196</td>
+  <td class="r"><b>74</b> <span class="muted sm">62/78/83</span></td>
   <td class="r muted sm">$240.13</td>
 </tr><tr>
   <td class="rk">10</td>
@@ -223,6 +236,7 @@
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+190%</td>
   <td class="r muted sm">#7/187</td>
+  <td class="r"><b>98</b> <span class="muted sm">96/98/98</span></td>
   <td class="r muted sm">$53.46</td>
 </tr><tr>
   <td class="rk">11</td>
@@ -233,6 +247,7 @@
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+164%</td>
   <td class="r muted sm">#2/253</td>
+  <td class="r"><b>97</b> <span class="muted sm">87/94/97</span></td>
   <td class="r muted sm">$1877.61</td>
 </tr><tr>
   <td class="rk">12</td>
@@ -243,6 +258,7 @@
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+130%</td>
   <td class="r muted sm">#1/169</td>
+  <td class="r"><b>96</b> <span class="muted sm">75/50/95</span></td>
   <td class="r muted sm">$38.48</td>
 </tr><tr>
   <td class="rk">13</td>
@@ -253,6 +269,7 @@
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+229%</td>
   <td class="r muted sm">#8/187</td>
+  <td class="r"><b>99</b> <span class="muted sm">98/98/99</span></td>
   <td class="r muted sm">$931.04</td>
 </tr><tr>
   <td class="rk">14</td>
@@ -263,6 +280,7 @@
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+91%</td>
   <td class="r muted sm">#3/253</td>
+  <td class="r"><b>93</b> <span class="muted sm">79/89/89</span></td>
   <td class="r muted sm">$707.74</td>
 </tr><tr>
   <td class="rk">15</td>
@@ -273,6 +291,7 @@
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+174%</td>
   <td class="r muted sm">#4/253</td>
+  <td class="r"><b>98</b> <span class="muted sm">96/98/98</span></td>
   <td class="r muted sm">$294.75</td>
 </tr><tr>
   <td class="rk">16</td>
@@ -283,6 +302,7 @@
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+193%</td>
   <td class="r muted sm">#2/169</td>
+  <td class="r"><b>98</b> <span class="muted sm">85/56/98</span></td>
   <td class="r muted sm">$74.52</td>
 </tr><tr>
   <td class="rk">17</td>
@@ -293,6 +313,7 @@
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+189%</td>
   <td class="r muted sm">#9/187</td>
+  <td class="r"><b>98</b> <span class="muted sm">94/97/98</span></td>
   <td class="r muted sm">$385.03</td>
 </tr><tr>
   <td class="rk">18</td>
@@ -303,6 +324,7 @@
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+107%</td>
   <td class="r muted sm">#10/187</td>
+  <td class="r"><b>95</b> <span class="muted sm">94/96/96</span></td>
   <td class="r muted sm">$567.25</td>
 </tr><tr>
   <td class="rk">19</td>
@@ -313,6 +335,7 @@
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+52%</td>
   <td class="r muted sm">#5/253</td>
+  <td class="r"><b>81</b> <span class="muted sm">68/86/86</span></td>
   <td class="r muted sm">$338.31</td>
 </tr><tr>
   <td class="rk">20</td>
@@ -323,6 +346,7 @@
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+54%</td>
   <td class="r muted sm">#1/257</td>
+  <td class="r"><b>82</b> <span class="muted sm">38/66/64</span></td>
   <td class="r muted sm">$294.91</td>
 </tr><tr>
   <td class="rk">21</td>
@@ -333,6 +357,7 @@
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+225%</td>
   <td class="r muted sm">#6/253</td>
+  <td class="r"><b>98</b> <span class="muted sm">97/99/99</span></td>
   <td class="r muted sm">$303.77</td>
 </tr><tr>
   <td class="rk">22</td>
@@ -343,6 +368,7 @@
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+76%</td>
   <td class="r muted sm">#3/169</td>
+  <td class="r"><b>89</b> <span class="muted sm">73/85/86</span></td>
   <td class="r muted sm">$16.48</td>
 </tr><tr>
   <td class="rk">23</td>
@@ -353,6 +379,7 @@
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+48%</td>
   <td class="r muted sm">#2/257</td>
+  <td class="r"><b>79</b> <span class="muted sm">76/72/84</span></td>
   <td class="r muted sm">$55.25</td>
 </tr><tr>
   <td class="rk">24</td>
@@ -363,6 +390,7 @@
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+163%</td>
   <td class="r muted sm">#11/187</td>
+  <td class="r"><b>97</b> <span class="muted sm">89/96/97</span></td>
   <td class="r muted sm">$179.20</td>
 </tr><tr>
   <td class="rk">25</td>
@@ -373,6 +401,7 @@
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+31%</td>
   <td class="r muted sm">#7/253</td>
+  <td class="r"><b>67</b> <span class="muted sm">54/69/60</span></td>
   <td class="r muted sm">$265.20</td>
 </tr><tr>
   <td class="rk">26</td>
@@ -383,6 +412,7 @@
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+87%</td>
   <td class="r muted sm">#3/257</td>
+  <td class="r"><b>92</b> <span class="muted sm">71/87/92</span></td>
   <td class="r muted sm">$31.25</td>
 </tr><tr>
   <td class="rk">27</td>
@@ -393,6 +423,7 @@
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+146%</td>
   <td class="r muted sm">#8/253</td>
+  <td class="r"><b>97</b> <span class="muted sm">70/93/95</span></td>
   <td class="r muted sm">$302.87</td>
 </tr><tr>
   <td class="rk">28</td>
@@ -403,6 +434,7 @@
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+62%</td>
   <td class="r muted sm">#1/76</td>
+  <td class="r"><b>86</b> <span class="muted sm">93/91/91</span></td>
   <td class="r muted sm">$282.76</td>
 </tr><tr>
   <td class="rk">29</td>
@@ -413,6 +445,7 @@
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+144%</td>
   <td class="r muted sm">#1/48</td>
+  <td class="r"><b>97</b> <span class="muted sm">89/94/97</span></td>
   <td class="r muted sm">$153.25</td>
 </tr><tr>
   <td class="rk">30</td>
@@ -423,6 +456,7 @@
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+109%</td>
   <td class="r muted sm">#9/253</td>
+  <td class="r"><b>95</b> <span class="muted sm">77/90/92</span></td>
   <td class="r muted sm">$362.97</td>
 </tr></table>
     </div>
@@ -431,7 +465,9 @@
       <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">sector</span><span class="l-zh">板块</span></th>
         <th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span><span class="help">?<span class="tip"><span class="l-en">Sector-neutral residual-momentum information ratio, winsorized to a cross-sectional z-score. Higher = stronger idiosyncratic (beta/sector-stripped) momentum within its GICS sector. This is the global, cross-sector-comparable score.</span><span class="l-zh">板块中性残差动量信息比率的去极值横截面 z 分数。越高 = 在其 GICS 板块内的特质（剔除贝塔/板块）动量越强。此为可跨板块比较的全局评分。</span></span></span></th>
         <th><span class="l-en">entry</span><span class="l-zh">入场</span><span class="help">?<span class="tip"><span class="l-en">Short-term reversal overlay (NOT the score): a leader that just ran hot is extended (reversal risk); one on a recent pullback is constructive. Laggards/neutral otherwise.</span><span class="l-zh">短期反转叠加项（非评分）：刚刚过热的领先股为 extended（反转风险）；近期回调的为 constructive。</span></span></span></th>
-        <th class="r"><span class="l-en">12-1 mom</span><span class="l-zh">12-1 动量</span></th><th class="r"><span class="l-en">sector #</span><span class="l-zh">板块排名</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
+        <th class="r"><span class="l-en">12-1 mom</span><span class="l-zh">12-1 动量</span></th><th class="r"><span class="l-en">sector #</span><span class="l-zh">板块排名</span></th>
+        <th class="r"><span class="l-en">RS</span><span class="l-zh">相对强度</span><span class="help">?<span class="tip"><span class="l-en">Relative strength 1-99: cross-sectional percentile of the trailing 12-1 return (the familiar IBD-style rating). A recognizable but SHALLOWER momentum lens — subordinate context, NOT the alpha score (which also strips market AND sector beta). The 3m/6m/12m sub-percentiles show whether RS is improving or fading.</span><span class="l-zh">相对强度 1-99：12-1 趋势回报的横截面百分位（熟悉的 IBD 风格评级）。一个易懂但更浅的动量视角——从属背景，并非阿尔法评分（后者还剔除了市场与板块贝塔）。3/6/12 月分项显示 RS 在改善还是衰退。</span></span></span></th>
+        <th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
     <tr>
   <td class="rk">1</td>
   <td><a href="stock.html#CSGP"><b>CSGP</b></a> <span class="muted sm">CoStar Group</span></td>
@@ -441,6 +477,7 @@
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-78%</td>
   <td class="r muted sm">#107/107</td>
+  <td class="r"><b>2</b> <span class="muted sm">4/2/2</span></td>
   <td class="r muted sm">$32.84</td>
 </tr><tr>
   <td class="rk">2</td>
@@ -451,6 +488,7 @@
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-21%</td>
   <td class="r muted sm">#187/187</td>
+  <td class="r"><b>16</b> <span class="muted sm">4/3/9</span></td>
   <td class="r muted sm">$50.42</td>
 </tr><tr>
   <td class="rk">3</td>
@@ -461,6 +499,7 @@
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-24%</td>
   <td class="r muted sm">#253/253</td>
+  <td class="r"><b>14</b> <span class="muted sm">8/7/12</span></td>
   <td class="r muted sm">$73.80</td>
 </tr><tr>
   <td class="rk">4</td>
@@ -471,6 +510,7 @@
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-40%</td>
   <td class="r muted sm">#169/169</td>
+  <td class="r"><b>9</b> <span class="muted sm">6/8/8</span></td>
   <td class="r muted sm">$88.18</td>
 </tr><tr>
   <td class="rk">5</td>
@@ -481,6 +521,7 @@
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-46%</td>
   <td class="r muted sm">#252/253</td>
+  <td class="r"><b>7</b> <span class="muted sm">6/4/7</span></td>
   <td class="r muted sm">$144.87</td>
 </tr><tr>
   <td class="rk">6</td>
@@ -491,6 +532,7 @@
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-51%</td>
   <td class="r muted sm">#196/196</td>
+  <td class="r"><b>6</b> <span class="muted sm">2/3/7</span></td>
   <td class="r muted sm">$31.25</td>
 </tr><tr>
   <td class="rk">7</td>
@@ -501,6 +543,7 @@
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-69%</td>
   <td class="r muted sm">#168/169</td>
+  <td class="r"><b>4</b> <span class="muted sm">2/2/4</span></td>
   <td class="r muted sm">$149.70</td>
 </tr><tr>
   <td class="rk">8</td>
@@ -511,6 +554,7 @@
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-56%</td>
   <td class="r muted sm">#186/187</td>
+  <td class="r"><b>5</b> <span class="muted sm">20/9/6</span></td>
   <td class="r muted sm">$334.97</td>
 </tr><tr>
   <td class="rk">9</td>
@@ -521,6 +565,7 @@
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-14%</td>
   <td class="r muted sm">#185/187</td>
+  <td class="r"><b>20</b> <span class="muted sm">3/5/9</span></td>
   <td class="r muted sm">$113.68</td>
 </tr><tr>
   <td class="rk">10</td>
@@ -531,6 +576,7 @@
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-38%</td>
   <td class="r muted sm">#251/253</td>
+  <td class="r"><b>10</b> <span class="muted sm">13/8/11</span></td>
   <td class="r muted sm">$77.77</td>
 </tr><tr>
   <td class="rk">11</td>
@@ -541,6 +587,7 @@
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-74%</td>
   <td class="r muted sm">#184/187</td>
+  <td class="r"><b>3</b> <span class="muted sm">34/4/5</span></td>
   <td class="r muted sm">$130.80</td>
 </tr><tr>
   <td class="rk">12</td>
@@ -551,6 +598,7 @@
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-99%</td>
   <td class="r muted sm">#183/187</td>
+  <td class="r"><b>2</b> <span class="muted sm">16/5/2</span></td>
   <td class="r muted sm">$55.24</td>
 </tr><tr>
   <td class="rk">13</td>
@@ -561,6 +609,7 @@
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-75%</td>
   <td class="r muted sm">#182/187</td>
+  <td class="r"><b>3</b> <span class="muted sm">21/4/5</span></td>
   <td class="r muted sm">$102.15</td>
 </tr><tr>
   <td class="rk">14</td>
@@ -571,6 +620,7 @@
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-70%</td>
   <td class="r muted sm">#167/169</td>
+  <td class="r"><b>3</b> <span class="muted sm">3/6/3</span></td>
   <td class="r muted sm">$79.57</td>
 </tr><tr>
   <td class="rk">15</td>
@@ -581,6 +631,7 @@
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-66%</td>
   <td class="r muted sm">#257/257</td>
+  <td class="r"><b>4</b> <span class="muted sm">11/10/5</span></td>
   <td class="r muted sm">$59.99</td>
 </tr><tr>
   <td class="rk">16</td>
@@ -591,6 +642,7 @@
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-2%</td>
   <td class="r muted sm">#69/69</td>
+  <td class="r"><b>30</b> <span class="muted sm">5/22/12</span></td>
   <td class="r muted sm">$20.79</td>
 </tr><tr>
   <td class="rk">17</td>
@@ -601,6 +653,7 @@
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-45%</td>
   <td class="r muted sm">#181/187</td>
+  <td class="r"><b>8</b> <span class="muted sm">28/10/6</span></td>
   <td class="r muted sm">$91.46</td>
 </tr><tr>
   <td class="rk">18</td>
@@ -611,6 +664,7 @@
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-140%</td>
   <td class="r muted sm">#195/196</td>
+  <td class="r"><b>1</b> <span class="muted sm">78/5/1</span></td>
   <td class="r muted sm">$122.63</td>
 </tr><tr>
   <td class="rk">19</td>
@@ -621,6 +675,7 @@
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-107%</td>
   <td class="r muted sm">#78/78</td>
+  <td class="r"><b>1</b> <span class="muted sm">13/7/2</span></td>
   <td class="r muted sm">$12.57</td>
 </tr><tr>
   <td class="rk">20</td>
@@ -631,6 +686,7 @@
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-55%</td>
   <td class="r muted sm">#250/253</td>
+  <td class="r"><b>5</b> <span class="muted sm">1/1/1</span></td>
   <td class="r muted sm">$4.67</td>
 </tr><tr>
   <td class="rk">21</td>
@@ -641,6 +697,7 @@
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-55%</td>
   <td class="r muted sm">#248/253</td>
+  <td class="r"><b>6</b> <span class="muted sm">27/15/9</span></td>
   <td class="r muted sm">$35.84</td>
 </tr><tr>
   <td class="rk">22</td>
@@ -651,6 +708,7 @@
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-6%</td>
   <td class="r muted sm">#249/253</td>
+  <td class="r"><b>26</b> <span class="muted sm">15/15/27</span></td>
   <td class="r muted sm">$133.97</td>
 </tr><tr>
   <td class="rk">23</td>
@@ -661,6 +719,7 @@
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-69%</td>
   <td class="r muted sm">#77/78</td>
+  <td class="r"><b>3</b> <span class="muted sm">14/9/4</span></td>
   <td class="r muted sm">$7.79</td>
 </tr><tr>
   <td class="rk">24</td>
@@ -671,6 +730,7 @@
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-11%</td>
   <td class="r muted sm">#246/253</td>
+  <td class="r"><b>22</b> <span class="muted sm">15/12/19</span></td>
   <td class="r muted sm">$110.08</td>
 </tr><tr>
   <td class="rk">25</td>
@@ -681,6 +741,7 @@
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-60%</td>
   <td class="r muted sm">#247/253</td>
+  <td class="r"><b>4</b> <span class="muted sm">12/11/6</span></td>
   <td class="r muted sm">$30.75</td>
 </tr><tr>
   <td class="rk">26</td>
@@ -691,6 +752,7 @@
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-13%</td>
   <td class="r muted sm">#256/257</td>
+  <td class="r"><b>20</b> <span class="muted sm">63/13/23</span></td>
   <td class="r muted sm">$122.79</td>
 </tr><tr>
   <td class="rk">27</td>
@@ -701,6 +763,7 @@
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-4%</td>
   <td class="r muted sm">#106/107</td>
+  <td class="r"><b>28</b> <span class="muted sm">78/30/26</span></td>
   <td class="r muted sm">$66.28</td>
 </tr><tr>
   <td class="rk">28</td>
@@ -711,6 +774,7 @@
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-16%</td>
   <td class="r muted sm">#245/253</td>
+  <td class="r"><b>19</b> <span class="muted sm">11/19/22</span></td>
   <td class="r muted sm">$59.08</td>
 </tr><tr>
   <td class="rk">29</td>
@@ -721,6 +785,7 @@
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-63%</td>
   <td class="r muted sm">#180/187</td>
+  <td class="r"><b>4</b> <span class="muted sm">16/3/4</span></td>
   <td class="r muted sm">$43.89</td>
 </tr><tr>
   <td class="rk">30</td>
@@ -731,6 +796,7 @@
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-51%</td>
   <td class="r muted sm">#178/187</td>
+  <td class="r"><b>6</b> <span class="muted sm">10/4/8</span></td>
   <td class="r muted sm">$52.17</td>
 </tr></table>
     </div>
@@ -848,6 +914,181 @@
   </div>
 </div>
 
+<!-- THEMES OVERVIEW -->
+<div id="tab-themes" data-grp="tab" style="display:none">
+  <div class="panel">
+    <h2><span class="l-en">Themes by alpha</span><span class="l-zh">按阿尔法排序的主题</span>
+      <span class="help">?<span class="tip"><span class="l-en">Curated narrow thematic baskets ranked by the MEAN sector-neutral alpha-z of their members, with the share sitting in the universe-wide top quintile. Membership is hand-curated (S&amp;P 1500-verified), overlaps GICS sectors, and is CONTEXT — not a buy list. There is no per-theme backtest: hand-picked baskets ranked on a single snapshot would be selection / multiple-testing bias, so this is a current-snapshot lens, not validated alpha.</span><span class="l-zh">人工策划的细分主题篮子，按其成分股的平均板块中性阿尔法 z 排序，并显示位于全域前五分位的占比。成分为人工策划（标普1500内核验）、跨 GICS 板块，仅作背景——非买入清单。无逐主题回测：对人工挑选篮子做单时点排名会带来选择/多重检验偏差，故此为当前快照视角，而非经验证的阿尔法。</span></span></span></h2>
+    <p class="muted sm note"><span class="l-en">Context, not a buy list. Themes are curated baskets, not backtested portfolios — they re-aggregate the existing sector-neutral alpha.</span><span class="l-zh">仅作背景，非买入清单。主题为人工策划的篮子，未作组合回测——它们仅对既有的板块中性阿尔法重新聚合。</span></p>
+    <table>
+      <tr><th>#</th><th><span class="l-en">theme</span><span class="l-zh">主题</span></th><th><span class="l-en">mean alpha</span><span class="l-zh">平均阿尔法</span></th><th class="r"><span class="l-en">in top 20%</span><span class="l-zh">位于前20%</span></th><th class="r"><span class="l-en">names</span><span class="l-zh">只</span></th></tr>
+      
+      <tr>
+        <td class="rk">1</td>
+        <td><span class="l-en">Memory, HBM &amp; Storage</span><span class="l-zh">Memory, HBM &amp; Storage</span><div class="muted sm"><a href="stock.html#SNDK">SNDK</a> · <a href="stock.html#MU">MU</a> · <a href="stock.html#WDC">WDC</a> · <a href="stock.html#STX">STX</a> · <a href="stock.html#NTAP">NTAP</a></div></td>
+        <td><div class="scorecell">
+<span class="abar"><i style="left:50%;width:33.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.00</span></div></td>
+        <td class="r muted sm">4/5 · 80%</td>
+        <td class="r muted sm">5</td>
+      </tr>
+      
+      <tr>
+        <td class="rk">2</td>
+        <td><span class="l-en">Rare Earth &amp; Critical Minerals</span><span class="l-zh">Rare Earth &amp; Critical Minerals</span><div class="muted sm"><a href="stock.html#MTRN">MTRN</a> · <a href="stock.html#KALU">KALU</a> · <a href="stock.html#CENX">CENX</a> · <a href="stock.html#ATI">ATI</a> · <a href="stock.html#AA">AA</a> · <a href="stock.html#MP">MP</a> · <a href="stock.html#CRS">CRS</a></div></td>
+        <td><div class="scorecell">
+<span class="abar"><i style="left:50%;width:24.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.46</span></div></td>
+        <td class="r muted sm">7/7 · 100%</td>
+        <td class="r muted sm">7</td>
+      </tr>
+      
+      <tr>
+        <td class="rk">3</td>
+        <td><span class="l-en">Copper, Steel &amp; Electrification</span><span class="l-zh">Copper, Steel &amp; Electrification</span><div class="muted sm"><a href="stock.html#STLD">STLD</a> · <a href="stock.html#ENS">ENS</a> · <a href="stock.html#NUE">NUE</a> · <a href="stock.html#WCC">WCC</a> · <a href="stock.html#FCX">FCX</a> · <a href="stock.html#CMC">CMC</a></div></td>
+        <td><div class="scorecell">
+<span class="abar"><i style="left:50%;width:23.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.43</span></div></td>
+        <td class="r muted sm">5/6 · 83%</td>
+        <td class="r muted sm">6</td>
+      </tr>
+      
+      <tr>
+        <td class="rk">4</td>
+        <td><span class="l-en">Data Center Power &amp; Cooling</span><span class="l-zh">Data Center Power &amp; Cooling</span><div class="muted sm"><a href="stock.html#POWL">POWL</a> · <a href="stock.html#VRT">VRT</a> · <a href="stock.html#NVT">NVT</a> · <a href="stock.html#AEIS">AEIS</a> · <a href="stock.html#NXT">NXT</a> · <a href="stock.html#ETN">ETN</a> · <a href="stock.html#HUBB">HUBB</a></div></td>
+        <td><div class="scorecell">
+<span class="abar"><i style="left:50%;width:21.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.26</span></div></td>
+        <td class="r muted sm">5/7 · 71%</td>
+        <td class="r muted sm">7</td>
+      </tr>
+      
+      <tr>
+        <td class="rk">5</td>
+        <td><span class="l-en">Semiconductor Equipment (WFE)</span><span class="l-zh">Semiconductor Equipment (WFE)</span><div class="muted sm"><a href="stock.html#AMAT">AMAT</a> · <a href="stock.html#LRCX">LRCX</a> · <a href="stock.html#MKSI">MKSI</a> · <a href="stock.html#FORM">FORM</a> · <a href="stock.html#COHU">COHU</a> · <a href="stock.html#ONTO">ONTO</a> · <a href="stock.html#ICHR">ICHR</a> <span class="muted">+3</span></div></td>
+        <td><div class="scorecell">
+<span class="abar"><i style="left:50%;width:20.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.21</span></div></td>
+        <td class="r muted sm">8/10 · 80%</td>
+        <td class="r muted sm">10</td>
+      </tr>
+      
+      <tr>
+        <td class="rk">6</td>
+        <td><span class="l-en">Space &amp; Satellites</span><span class="l-zh">Space &amp; Satellites</span><div class="muted sm"><a href="stock.html#HWM">HWM</a> · <a href="stock.html#BWXT">BWXT</a> · <a href="stock.html#IRDM">IRDM</a> · <a href="stock.html#RTX">RTX</a> · <a href="stock.html#LHX">LHX</a> · <a href="stock.html#GD">GD</a></div></td>
+        <td><div class="scorecell">
+<span class="abar"><i style="left:50%;width:11.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+0.66</span></div></td>
+        <td class="r muted sm">3/6 · 50%</td>
+        <td class="r muted sm">6</td>
+      </tr>
+      
+      <tr>
+        <td class="rk">7</td>
+        <td><span class="l-en">AI Semiconductors</span><span class="l-zh">AI Semiconductors</span><div class="muted sm"><a href="stock.html#AMD">AMD</a> · <a href="stock.html#MPWR">MPWR</a> · <a href="stock.html#NVDA">NVDA</a> · <a href="stock.html#QCOM">QCOM</a> · <a href="stock.html#AVGO">AVGO</a> · <a href="stock.html#ANET">ANET</a> · <a href="stock.html#SMCI">SMCI</a></div></td>
+        <td><div class="scorecell">
+<span class="abar"><i style="left:50%;width:6.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+0.37</span></div></td>
+        <td class="r muted sm">2/7 · 29%</td>
+        <td class="r muted sm">7</td>
+      </tr>
+      
+      <tr>
+        <td class="rk">8</td>
+        <td><span class="l-en">Solar</span><span class="l-zh">Solar</span><div class="muted sm"><a href="stock.html#SEDG">SEDG</a> · <a href="stock.html#RUN">RUN</a> · <a href="stock.html#FSLR">FSLR</a> · <a href="stock.html#ENPH">ENPH</a></div></td>
+        <td><div class="scorecell">
+<span class="abar"><i style="left:50%;width:4.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-mid">+0.25</span></div></td>
+        <td class="r muted sm">0/4 · 0%</td>
+        <td class="r muted sm">4</td>
+      </tr>
+      
+      <tr>
+        <td class="rk">9</td>
+        <td><span class="l-en">Nuclear &amp; SMR Power</span><span class="l-zh">Nuclear &amp; SMR Power</span><div class="muted sm"><a href="stock.html#ORA">ORA</a> · <a href="stock.html#GEV">GEV</a> · <a href="stock.html#BWXT">BWXT</a> · <a href="stock.html#TLN">TLN</a> · <a href="stock.html#TXNM">TXNM</a> · <a href="stock.html#CEG">CEG</a> · <a href="stock.html#NRG">NRG</a> <span class="muted">+1</span></div></td>
+        <td><div class="scorecell">
+<span class="abar"><i style="left:50%;width:2.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-mid">+0.17</span></div></td>
+        <td class="r muted sm">3/8 · 38%</td>
+        <td class="r muted sm">8</td>
+      </tr>
+      
+      <tr>
+        <td class="rk">10</td>
+        <td><span class="l-en">GLP-1 / Obesity</span><span class="l-zh">GLP-1 / Obesity</span><div class="muted sm"><a href="stock.html#LLY">LLY</a> · <a href="stock.html#AMGN">AMGN</a> · <a href="stock.html#PFE">PFE</a> · <a href="stock.html#HIMS">HIMS</a> · <a href="stock.html#ZBH">ZBH</a></div></td>
+        <td><div class="scorecell">
+<span class="abar"><i style="left:50%;width:2.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-mid">+0.17</span></div></td>
+        <td class="r muted sm">2/5 · 40%</td>
+        <td class="r muted sm">5</td>
+      </tr>
+      
+      <tr>
+        <td class="rk">11</td>
+        <td><span class="l-en">Defense &amp; Aerospace</span><span class="l-zh">Defense &amp; Aerospace</span><div class="muted sm"><a href="stock.html#HWM">HWM</a> · <a href="stock.html#CW">CW</a> · <a href="stock.html#HII">HII</a> · <a href="stock.html#KTOS">KTOS</a> · <a href="stock.html#RTX">RTX</a> · <a href="stock.html#LMT">LMT</a> · <a href="stock.html#LHX">LHX</a> <span class="muted">+7</span></div></td>
+        <td><div class="scorecell">
+<span class="abar"><i style="left:50%;width:1.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-mid">+0.06</span></div></td>
+        <td class="r muted sm">2/14 · 14%</td>
+        <td class="r muted sm">14</td>
+      </tr>
+      
+      <tr>
+        <td class="rk">12</td>
+        <td><span class="l-en">Grid &amp; Electrification</span><span class="l-zh">Grid &amp; Electrification</span><div class="muted sm"><a href="stock.html#PWR">PWR</a> · <a href="stock.html#NEE">NEE</a> · <a href="stock.html#GEV">GEV</a> · <a href="stock.html#AEP">AEP</a> · <a href="stock.html#D">D</a> · <a href="stock.html#ITRI">ITRI</a> · <a href="stock.html#XYL">XYL</a> <span class="muted">+1</span></div></td>
+        <td><div class="scorecell">
+<span class="abar"><i style="right:50%;width:0.7%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-mid">-0.04</span></div></td>
+        <td class="r muted sm">4/8 · 50%</td>
+        <td class="r muted sm">8</td>
+      </tr>
+      
+      <tr>
+        <td class="rk">13</td>
+        <td><span class="l-en">Cybersecurity</span><span class="l-zh">Cybersecurity</span><div class="muted sm"><a href="stock.html#YOU">YOU</a> · <a href="stock.html#FTNT">FTNT</a> · <a href="stock.html#CRWD">CRWD</a> · <a href="stock.html#NSSC">NSSC</a> · <a href="stock.html#PANW">PANW</a> · <a href="stock.html#QLYS">QLYS</a> · <a href="stock.html#OKTA">OKTA</a></div></td>
+        <td><div class="scorecell">
+<span class="abar"><i style="right:50%;width:0.8%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-mid">-0.05</span></div></td>
+        <td class="r muted sm">1/7 · 14%</td>
+        <td class="r muted sm">7</td>
+      </tr>
+      
+      <tr>
+        <td class="rk">14</td>
+        <td><span class="l-en">Agriculture &amp; Fertilizer</span><span class="l-zh">Agriculture &amp; Fertilizer</span><div class="muted sm"><a href="stock.html#CF">CF</a> · <a href="stock.html#DE">DE</a> · <a href="stock.html#CTVA">CTVA</a> · <a href="stock.html#AGCO">AGCO</a> · <a href="stock.html#SMG">SMG</a> · <a href="stock.html#MOS">MOS</a> · <a href="stock.html#FMC">FMC</a></div></td>
+        <td><div class="scorecell">
+<span class="abar"><i style="right:50%;width:1.0%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-mid">-0.06</span></div></td>
+        <td class="r muted sm">1/7 · 14%</td>
+        <td class="r muted sm">7</td>
+      </tr>
+      
+      <tr>
+        <td class="rk">15</td>
+        <td><span class="l-en">Diagnostics &amp; Life-Science Tools</span><span class="l-zh">Diagnostics &amp; Life-Science Tools</span><div class="muted sm"><a href="stock.html#ILMN">ILMN</a> · <a href="stock.html#VCYT">VCYT</a> · <a href="stock.html#DGX">DGX</a> · <a href="stock.html#NEO">NEO</a> · <a href="stock.html#IQV">IQV</a> · <a href="stock.html#TMO">TMO</a> · <a href="stock.html#LH">LH</a> <span class="muted">+3</span></div></td>
+        <td><div class="scorecell">
+<span class="abar"><i style="right:50%;width:6.3%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-lag">-0.38</span></div></td>
+        <td class="r muted sm">1/10 · 10%</td>
+        <td class="r muted sm">10</td>
+      </tr>
+      
+      <tr>
+        <td class="rk">16</td>
+        <td><span class="l-en">Robotics &amp; Automation</span><span class="l-zh">Robotics &amp; Automation</span><div class="muted sm"><a href="stock.html#TER">TER</a> · <a href="stock.html#ROK">ROK</a> · <a href="stock.html#CGNX">CGNX</a> · <a href="stock.html#NOVT">NOVT</a> · <a href="stock.html#ISRG">ISRG</a> · <a href="stock.html#ZBRA">ZBRA</a> · <a href="stock.html#PTC">PTC</a> <span class="muted">+1</span></div></td>
+        <td><div class="scorecell">
+<span class="abar"><i style="right:50%;width:7.5%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-lag">-0.45</span></div></td>
+        <td class="r muted sm">2/8 · 25%</td>
+        <td class="r muted sm">8</td>
+      </tr>
+      
+      <tr>
+        <td class="rk">17</td>
+        <td><span class="l-en">Fintech &amp; Payments</span><span class="l-zh">Fintech &amp; Payments</span><div class="muted sm"><a href="stock.html#RELY">RELY</a> · <a href="stock.html#XYZ">XYZ</a> · <a href="stock.html#V">V</a> · <a href="stock.html#PAYO">PAYO</a> · <a href="stock.html#GPN">GPN</a> · <a href="stock.html#COIN">COIN</a> · <a href="stock.html#HOOD">HOOD</a> <span class="muted">+4</span></div></td>
+        <td><div class="scorecell">
+<span class="abar"><i style="right:50%;width:17.8%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-lag">-1.07</span></div></td>
+        <td class="r muted sm">0/11 · 0%</td>
+        <td class="r muted sm">11</td>
+      </tr>
+      
+      <tr>
+        <td class="rk">18</td>
+        <td><span class="l-en">Medical Devices</span><span class="l-zh">Medical Devices</span><div class="muted sm"><a href="stock.html#EW">EW</a> · <a href="stock.html#TNDM">TNDM</a> · <a href="stock.html#TMDX">TMDX</a> · <a href="stock.html#DXCM">DXCM</a> · <a href="stock.html#INSP">INSP</a> · <a href="stock.html#SYK">SYK</a> · <a href="stock.html#MDT">MDT</a> <span class="muted">+3</span></div></td>
+        <td><div class="scorecell">
+<span class="abar"><i style="right:50%;width:21.8%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-lag">-1.31</span></div></td>
+        <td class="r muted sm">0/10 · 0%</td>
+        <td class="r muted sm">10</td>
+      </tr>
+      
+    </table>
+  </div>
+</div>
+
 <!-- SECTOR INDEX (drill) -->
 <div id="tab-sector" data-grp="tab" style="display:none">
   <div class="panel">
@@ -860,7 +1101,7 @@
         <div>
           <h3 class="pos"><span class="l-en">Leaders</span><span class="l-zh">领先</span> — <span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></h3>
           <table>
-            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
+            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">RS</span><span class="l-zh">相对强度</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
             <tr>
   <td class="rk">1</td>
   <td><a href="stock.html#SNDK"><b>SNDK</b></a> <span class="muted sm">Sandisk</span></td>
@@ -868,6 +1109,7 @@
 <span class="abar"><i style="left:50%;width:50.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+3.00</span></div></td>
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+404%</td>
+  <td class="r"><b>99</b></td>
   <td class="r muted sm">$1980.10</td>
 </tr><tr>
   <td class="rk">2</td>
@@ -876,6 +1118,7 @@
 <span class="abar"><i style="left:50%;width:49.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.95</span></div></td>
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+237%</td>
+  <td class="r"><b>99</b></td>
   <td class="r muted sm">$981.61</td>
 </tr><tr>
   <td class="rk">3</td>
@@ -884,6 +1127,7 @@
 <span class="abar"><i style="left:50%;width:47.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.82</span></div></td>
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+257%</td>
+  <td class="r"><b>99</b></td>
   <td class="r muted sm">$562.93</td>
 </tr><tr>
   <td class="rk">4</td>
@@ -892,6 +1136,7 @@
 <span class="abar"><i style="left:50%;width:45.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.72</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+220%</td>
+  <td class="r"><b>98</b></td>
   <td class="r muted sm">$445.98</td>
 </tr><tr>
   <td class="rk">5</td>
@@ -900,6 +1145,7 @@
 <span class="abar"><i style="left:50%;width:43.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.59</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+194%</td>
+  <td class="r"><b>98</b></td>
   <td class="r muted sm">$124.57</td>
 </tr><tr>
   <td class="rk">6</td>
@@ -908,6 +1154,7 @@
 <span class="abar"><i style="left:50%;width:42.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.54</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+301%</td>
+  <td class="r"><b>99</b></td>
   <td class="r muted sm">$921.56</td>
 </tr><tr>
   <td class="rk">7</td>
@@ -916,6 +1163,7 @@
 <span class="abar"><i style="left:50%;width:40.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.42</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+190%</td>
+  <td class="r"><b>98</b></td>
   <td class="r muted sm">$53.46</td>
 </tr><tr>
   <td class="rk">8</td>
@@ -924,6 +1172,7 @@
 <span class="abar"><i style="left:50%;width:39.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.35</span></div></td>
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+229%</td>
+  <td class="r"><b>99</b></td>
   <td class="r muted sm">$931.04</td>
 </tr><tr>
   <td class="rk">9</td>
@@ -932,6 +1181,7 @@
 <span class="abar"><i style="left:50%;width:37.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.24</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+189%</td>
+  <td class="r"><b>98</b></td>
   <td class="r muted sm">$385.03</td>
 </tr><tr>
   <td class="rk">10</td>
@@ -940,6 +1190,7 @@
 <span class="abar"><i style="left:50%;width:37.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.22</span></div></td>
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+107%</td>
+  <td class="r"><b>95</b></td>
   <td class="r muted sm">$567.25</td>
 </tr><tr>
   <td class="rk">11</td>
@@ -948,6 +1199,7 @@
 <span class="abar"><i style="left:50%;width:34.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.09</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+163%</td>
+  <td class="r"><b>97</b></td>
   <td class="r muted sm">$179.20</td>
 </tr><tr>
   <td class="rk">12</td>
@@ -956,6 +1208,7 @@
 <span class="abar"><i style="left:50%;width:33.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.03</span></div></td>
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+201%</td>
+  <td class="r"><b>98</b></td>
   <td class="r muted sm">$194.05</td>
 </tr><tr>
   <td class="rk">13</td>
@@ -964,6 +1217,7 @@
 <span class="abar"><i style="left:50%;width:33.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.00</span></div></td>
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+168%</td>
+  <td class="r"><b>98</b></td>
   <td class="r muted sm">$403.20</td>
 </tr><tr>
   <td class="rk">14</td>
@@ -972,6 +1226,7 @@
 <span class="abar"><i style="left:50%;width:32.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.97</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+225%</td>
+  <td class="r"><b>99</b></td>
   <td class="r muted sm">$70.17</td>
 </tr><tr>
   <td class="rk">15</td>
@@ -980,6 +1235,7 @@
 <span class="abar"><i style="left:50%;width:32.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.92</span></div></td>
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+141%</td>
+  <td class="r"><b>97</b></td>
   <td class="r muted sm">$366.81</td>
 </tr>
           </table>
@@ -987,7 +1243,7 @@
         <div>
           <h3 class="neg"><span class="l-en">Laggards</span><span class="l-zh">落后</span> — <span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></h3>
           <table>
-            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
+            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">RS</span><span class="l-zh">相对强度</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
             <tr>
   <td class="rk">187</td>
   <td><a href="stock.html#TRMB"><b>TRMB</b></a> <span class="muted sm">Trimble Inc.</span></td>
@@ -995,6 +1251,7 @@
 <span class="abar"><i style="right:50%;width:48.8%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-2.93</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-21%</td>
+  <td class="r"><b>16</b></td>
   <td class="r muted sm">$50.42</td>
 </tr><tr>
   <td class="rk">186</td>
@@ -1003,6 +1260,7 @@
 <span class="abar"><i style="right:50%;width:40.7%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-2.44</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-56%</td>
+  <td class="r"><b>5</b></td>
   <td class="r muted sm">$334.97</td>
 </tr><tr>
   <td class="rk">185</td>
@@ -1011,6 +1269,7 @@
 <span class="abar"><i style="right:50%;width:40.3%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-2.42</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-14%</td>
+  <td class="r"><b>20</b></td>
   <td class="r muted sm">$113.68</td>
 </tr><tr>
   <td class="rk">184</td>
@@ -1019,6 +1278,7 @@
 <span class="abar"><i style="right:50%;width:38.7%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-2.32</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-74%</td>
+  <td class="r"><b>3</b></td>
   <td class="r muted sm">$130.80</td>
 </tr><tr>
   <td class="rk">183</td>
@@ -1027,6 +1287,7 @@
 <span class="abar"><i style="right:50%;width:38.5%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-2.31</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-99%</td>
+  <td class="r"><b>2</b></td>
   <td class="r muted sm">$55.24</td>
 </tr>
           </table>
@@ -1040,7 +1301,7 @@
         <div>
           <h3 class="pos"><span class="l-en">Leaders</span><span class="l-zh">领先</span> — <span class="l-en">Industrials</span><span class="l-zh">工业</span></h3>
           <table>
-            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
+            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">RS</span><span class="l-zh">相对强度</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
             <tr>
   <td class="rk">1</td>
   <td><a href="stock.html#CAT"><b>CAT</b></a> <span class="muted sm">Caterpillar Inc.</span></td>
@@ -1048,6 +1309,7 @@
 <span class="abar"><i style="left:50%;width:43.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.58</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+104%</td>
+  <td class="r"><b>94</b></td>
   <td class="r muted sm">$910.57</td>
 </tr><tr>
   <td class="rk">2</td>
@@ -1056,6 +1318,7 @@
 <span class="abar"><i style="left:50%;width:40.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.40</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+164%</td>
+  <td class="r"><b>97</b></td>
   <td class="r muted sm">$1877.61</td>
 </tr><tr>
   <td class="rk">3</td>
@@ -1064,6 +1327,7 @@
 <span class="abar"><i style="left:50%;width:38.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.29</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+91%</td>
+  <td class="r"><b>93</b></td>
   <td class="r muted sm">$707.74</td>
 </tr><tr>
   <td class="rk">4</td>
@@ -1072,6 +1336,7 @@
 <span class="abar"><i style="left:50%;width:38.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.28</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+174%</td>
+  <td class="r"><b>98</b></td>
   <td class="r muted sm">$294.75</td>
 </tr><tr>
   <td class="rk">5</td>
@@ -1080,6 +1345,7 @@
 <span class="abar"><i style="left:50%;width:36.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.18</span></div></td>
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+52%</td>
+  <td class="r"><b>81</b></td>
   <td class="r muted sm">$338.31</td>
 </tr><tr>
   <td class="rk">6</td>
@@ -1088,6 +1354,7 @@
 <span class="abar"><i style="left:50%;width:35.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.15</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+225%</td>
+  <td class="r"><b>98</b></td>
   <td class="r muted sm">$303.77</td>
 </tr><tr>
   <td class="rk">7</td>
@@ -1096,6 +1363,7 @@
 <span class="abar"><i style="left:50%;width:34.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.05</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+31%</td>
+  <td class="r"><b>67</b></td>
   <td class="r muted sm">$265.20</td>
 </tr><tr>
   <td class="rk">8</td>
@@ -1104,6 +1372,7 @@
 <span class="abar"><i style="left:50%;width:34.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.04</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+146%</td>
+  <td class="r"><b>97</b></td>
   <td class="r muted sm">$302.87</td>
 </tr><tr>
   <td class="rk">9</td>
@@ -1112,6 +1381,7 @@
 <span class="abar"><i style="left:50%;width:33.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.03</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+109%</td>
+  <td class="r"><b>95</b></td>
   <td class="r muted sm">$362.97</td>
 </tr><tr>
   <td class="rk">10</td>
@@ -1120,6 +1390,7 @@
 <span class="abar"><i style="left:50%;width:33.7%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.02</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+83%</td>
+  <td class="r"><b>91</b></td>
   <td class="r muted sm">$659.58</td>
 </tr><tr>
   <td class="rk">11</td>
@@ -1128,6 +1399,7 @@
 <span class="abar"><i style="left:50%;width:31.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.88</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+94%</td>
+  <td class="r"><b>93</b></td>
   <td class="r muted sm">$224.26</td>
 </tr><tr>
   <td class="rk">12</td>
@@ -1136,6 +1408,7 @@
 <span class="abar"><i style="left:50%;width:30.7%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.84</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+117%</td>
+  <td class="r"><b>95</b></td>
   <td class="r muted sm">$445.72</td>
 </tr><tr>
   <td class="rk">13</td>
@@ -1144,6 +1417,7 @@
 <span class="abar"><i style="left:50%;width:28.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.73</span></div></td>
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+54%</td>
+  <td class="r"><b>83</b></td>
   <td class="r muted sm">$289.36</td>
 </tr><tr>
   <td class="rk">14</td>
@@ -1152,6 +1426,7 @@
 <span class="abar"><i style="left:50%;width:28.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.68</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+104%</td>
+  <td class="r"><b>94</b></td>
   <td class="r muted sm">$165.84</td>
 </tr><tr>
   <td class="rk">15</td>
@@ -1160,6 +1435,7 @@
 <span class="abar"><i style="left:50%;width:27.5%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.65</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+56%</td>
+  <td class="r"><b>83</b></td>
   <td class="r muted sm">$603.64</td>
 </tr>
           </table>
@@ -1167,7 +1443,7 @@
         <div>
           <h3 class="neg"><span class="l-en">Laggards</span><span class="l-zh">落后</span> — <span class="l-en">Industrials</span><span class="l-zh">工业</span></h3>
           <table>
-            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
+            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">RS</span><span class="l-zh">相对强度</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
             <tr>
   <td class="rk">253</td>
   <td><a href="stock.html#PNR"><b>PNR</b></a> <span class="muted sm">Pentair</span></td>
@@ -1175,6 +1451,7 @@
 <span class="abar"><i style="right:50%;width:43.5%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-2.61</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-24%</td>
+  <td class="r"><b>14</b></td>
   <td class="r muted sm">$73.80</td>
 </tr><tr>
   <td class="rk">252</td>
@@ -1183,6 +1460,7 @@
 <span class="abar"><i style="right:50%;width:42.5%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-2.55</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-46%</td>
+  <td class="r"><b>7</b></td>
   <td class="r muted sm">$144.87</td>
 </tr><tr>
   <td class="rk">251</td>
@@ -1191,6 +1469,7 @@
 <span class="abar"><i style="right:50%;width:40.3%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-2.42</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-38%</td>
+  <td class="r"><b>10</b></td>
   <td class="r muted sm">$77.77</td>
 </tr><tr>
   <td class="rk">250</td>
@@ -1199,6 +1478,7 @@
 <span class="abar"><i style="right:50%;width:35.7%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-2.14</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-55%</td>
+  <td class="r"><b>5</b></td>
   <td class="r muted sm">$4.67</td>
 </tr><tr>
   <td class="rk">249</td>
@@ -1207,6 +1487,7 @@
 <span class="abar"><i style="right:50%;width:35.3%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-2.12</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-6%</td>
+  <td class="r"><b>26</b></td>
   <td class="r muted sm">$133.97</td>
 </tr>
           </table>
@@ -1220,7 +1501,7 @@
         <div>
           <h3 class="pos"><span class="l-en">Leaders</span><span class="l-zh">领先</span> — <span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></h3>
           <table>
-            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
+            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">RS</span><span class="l-zh">相对强度</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
             <tr>
   <td class="rk">1</td>
   <td><a href="stock.html#CASY"><b>CASY</b></a> <span class="muted sm">Casey&#39;s</span></td>
@@ -1228,6 +1509,7 @@
 <span class="abar"><i style="left:50%;width:41.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.51</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+75%</td>
+  <td class="r"><b>89</b></td>
   <td class="r muted sm">$895.14</td>
 </tr><tr>
   <td class="rk">2</td>
@@ -1236,6 +1518,7 @@
 <span class="abar"><i style="left:50%;width:33.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.99</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+53%</td>
+  <td class="r"><b>82</b></td>
   <td class="r muted sm">$127.17</td>
 </tr><tr>
   <td class="rk">3</td>
@@ -1244,6 +1527,7 @@
 <span class="abar"><i style="left:50%;width:31.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.88</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+18%</td>
+  <td class="r"><b>53</b></td>
   <td class="r muted sm">$82.62</td>
 </tr><tr>
   <td class="rk">4</td>
@@ -1252,6 +1536,7 @@
 <span class="abar"><i style="left:50%;width:28.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.69</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+77%</td>
+  <td class="r"><b>90</b></td>
   <td class="r muted sm">$71.85</td>
 </tr><tr>
   <td class="rk">5</td>
@@ -1260,6 +1545,7 @@
 <span class="abar"><i style="left:50%;width:25.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.51</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+28%</td>
+  <td class="r"><b>65</b></td>
   <td class="r muted sm">$135.23</td>
 </tr><tr>
   <td class="rk">6</td>
@@ -1268,6 +1554,7 @@
 <span class="abar"><i style="left:50%;width:25.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.50</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+58%</td>
+  <td class="r"><b>84</b></td>
   <td class="r muted sm">$80.24</td>
 </tr><tr>
   <td class="rk">7</td>
@@ -1276,6 +1563,7 @@
 <span class="abar"><i style="left:50%;width:22.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.32</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+34%</td>
+  <td class="r"><b>70</b></td>
   <td class="r muted sm">$121.04</td>
 </tr><tr>
   <td class="rk">8</td>
@@ -1284,6 +1572,7 @@
 <span class="abar"><i style="left:50%;width:21.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.31</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+24%</td>
+  <td class="r"><b>60</b></td>
   <td class="r muted sm">$57.43</td>
 </tr><tr>
   <td class="rk">9</td>
@@ -1292,6 +1581,7 @@
 <span class="abar"><i style="left:50%;width:21.7%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.30</span></div></td>
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+47%</td>
+  <td class="r"><b>78</b></td>
   <td class="r muted sm">$182.30</td>
 </tr><tr>
   <td class="rk">10</td>
@@ -1300,6 +1590,7 @@
 <span class="abar"><i style="left:50%;width:21.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.26</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+96%</td>
+  <td class="r"><b>93</b></td>
   <td class="r muted sm">$80.90</td>
 </tr><tr>
   <td class="rk">11</td>
@@ -1308,6 +1599,7 @@
 <span class="abar"><i style="left:50%;width:20.5%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.23</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+37%</td>
+  <td class="r"><b>73</b></td>
   <td class="r muted sm">$92.83</td>
 </tr><tr>
   <td class="rk">12</td>
@@ -1316,6 +1608,7 @@
 <span class="abar"><i style="left:50%;width:18.7%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.12</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+30%</td>
+  <td class="r"><b>66</b></td>
   <td class="r muted sm">$38.88</td>
 </tr><tr>
   <td class="rk">13</td>
@@ -1324,6 +1617,7 @@
 <span class="abar"><i style="left:50%;width:18.7%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.12</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+74%</td>
+  <td class="r"><b>89</b></td>
   <td class="r muted sm">$50.39</td>
 </tr><tr>
   <td class="rk">14</td>
@@ -1332,6 +1626,7 @@
 <span class="abar"><i style="left:50%;width:17.5%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.05</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+3%</td>
+  <td class="r"><b>35</b></td>
   <td class="r muted sm">$89.45</td>
 </tr><tr>
   <td class="rk">15</td>
@@ -1340,6 +1635,7 @@
 <span class="abar"><i style="left:50%;width:17.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.03</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+64%</td>
+  <td class="r"><b>86</b></td>
   <td class="r muted sm">$56.99</td>
 </tr>
           </table>
@@ -1347,7 +1643,7 @@
         <div>
           <h3 class="neg"><span class="l-en">Laggards</span><span class="l-zh">落后</span> — <span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></h3>
           <table>
-            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
+            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">RS</span><span class="l-zh">相对强度</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
             <tr>
   <td class="rk">78</td>
   <td><a href="stock.html#SMPL"><b>SMPL</b></a> <span class="muted sm">Simply Good Foods Comp</span></td>
@@ -1355,6 +1651,7 @@
 <span class="abar"><i style="right:50%;width:36.3%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-2.18</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-107%</td>
+  <td class="r"><b>1</b></td>
   <td class="r muted sm">$12.57</td>
 </tr><tr>
   <td class="rk">77</td>
@@ -1363,6 +1660,7 @@
 <span class="abar"><i style="right:50%;width:34.8%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-2.09</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-69%</td>
+  <td class="r"><b>3</b></td>
   <td class="r muted sm">$7.79</td>
 </tr><tr>
   <td class="rk">76</td>
@@ -1371,6 +1669,7 @@
 <span class="abar"><i style="right:50%;width:33.5%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-2.01</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-165%</td>
+  <td class="r"><b>1</b></td>
   <td class="r muted sm">$8.81</td>
 </tr><tr>
   <td class="rk">75</td>
@@ -1379,6 +1678,7 @@
 <span class="abar"><i style="right:50%;width:30.3%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.82</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-124%</td>
+  <td class="r"><b>1</b></td>
   <td class="r muted sm">$10.60</td>
 </tr><tr>
   <td class="rk">74</td>
@@ -1387,6 +1687,7 @@
 <span class="abar"><i style="right:50%;width:27.2%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.63</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-47%</td>
+  <td class="r"><b>7</b></td>
   <td class="r muted sm">$22.81</td>
 </tr>
           </table>
@@ -1400,7 +1701,7 @@
         <div>
           <h3 class="pos"><span class="l-en">Leaders</span><span class="l-zh">领先</span> — <span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></h3>
           <table>
-            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
+            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">RS</span><span class="l-zh">相对强度</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
             <tr>
   <td class="rk">1</td>
   <td><a href="stock.html#ROST"><b>ROST</b></a> <span class="muted sm">Ross Stores</span></td>
@@ -1408,6 +1709,7 @@
 <span class="abar"><i style="left:50%;width:41.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.47</span></div></td>
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+39%</td>
+  <td class="r"><b>74</b></td>
   <td class="r muted sm">$240.13</td>
 </tr><tr>
   <td class="rk">2</td>
@@ -1416,6 +1718,7 @@
 <span class="abar"><i style="left:50%;width:32.7%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.96</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+66%</td>
+  <td class="r"><b>87</b></td>
   <td class="r muted sm">$85.16</td>
 </tr><tr>
   <td class="rk">3</td>
@@ -1424,6 +1727,7 @@
 <span class="abar"><i style="left:50%;width:32.7%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.96</span></div></td>
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+30%</td>
+  <td class="r"><b>66</b></td>
   <td class="r muted sm">$402.54</td>
 </tr><tr>
   <td class="rk">4</td>
@@ -1432,6 +1736,7 @@
 <span class="abar"><i style="left:50%;width:29.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.74</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+82%</td>
+  <td class="r"><b>91</b></td>
   <td class="r muted sm">$30.81</td>
 </tr><tr>
   <td class="rk">5</td>
@@ -1440,6 +1745,7 @@
 <span class="abar"><i style="left:50%;width:28.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.68</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+80%</td>
+  <td class="r"><b>90</b></td>
   <td class="r muted sm">$74.51</td>
 </tr><tr>
   <td class="rk">6</td>
@@ -1448,6 +1754,7 @@
 <span class="abar"><i style="left:50%;width:25.5%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.53</span></div></td>
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+84%</td>
+  <td class="r"><b>91</b></td>
   <td class="r muted sm">$43.89</td>
 </tr><tr>
   <td class="rk">7</td>
@@ -1456,6 +1763,7 @@
 <span class="abar"><i style="left:50%;width:24.5%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.47</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+43%</td>
+  <td class="r"><b>77</b></td>
   <td class="r muted sm">$83.90</td>
 </tr><tr>
   <td class="rk">8</td>
@@ -1464,6 +1772,7 @@
 <span class="abar"><i style="left:50%;width:24.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.46</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+51%</td>
+  <td class="r"><b>80</b></td>
   <td class="r muted sm">$82.56</td>
 </tr><tr>
   <td class="rk">9</td>
@@ -1472,6 +1781,7 @@
 <span class="abar"><i style="left:50%;width:24.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.45</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+78%</td>
+  <td class="r"><b>90</b></td>
   <td class="r muted sm">$198.49</td>
 </tr><tr>
   <td class="rk">10</td>
@@ -1480,6 +1790,7 @@
 <span class="abar"><i style="left:50%;width:23.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.39</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+45%</td>
+  <td class="r"><b>78</b></td>
   <td class="r muted sm">$145.16</td>
 </tr><tr>
   <td class="rk">11</td>
@@ -1488,6 +1799,7 @@
 <span class="abar"><i style="left:50%;width:22.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.37</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+28%</td>
+  <td class="r"><b>64</b></td>
   <td class="r muted sm">$103.04</td>
 </tr><tr>
   <td class="rk">12</td>
@@ -1496,6 +1808,7 @@
 <span class="abar"><i style="left:50%;width:21.5%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.29</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+24%</td>
+  <td class="r"><b>60</b></td>
   <td class="r muted sm">$345.95</td>
 </tr><tr>
   <td class="rk">13</td>
@@ -1504,6 +1817,7 @@
 <span class="abar"><i style="left:50%;width:21.5%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.29</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+49%</td>
+  <td class="r"><b>80</b></td>
   <td class="r muted sm">$81.50</td>
 </tr><tr>
   <td class="rk">14</td>
@@ -1512,6 +1826,7 @@
 <span class="abar"><i style="left:50%;width:21.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.28</span></div></td>
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+90%</td>
+  <td class="r"><b>92</b></td>
   <td class="r muted sm">$78.88</td>
 </tr><tr>
   <td class="rk">15</td>
@@ -1520,6 +1835,7 @@
 <span class="abar"><i style="left:50%;width:20.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.25</span></div></td>
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+70%</td>
+  <td class="r"><b>88</b></td>
   <td class="r muted sm">$70.93</td>
 </tr>
           </table>
@@ -1527,7 +1843,7 @@
         <div>
           <h3 class="neg"><span class="l-en">Laggards</span><span class="l-zh">落后</span> — <span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></h3>
           <table>
-            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
+            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">RS</span><span class="l-zh">相对强度</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
             <tr>
   <td class="rk">196</td>
   <td><a href="stock.html#TSCO"><b>TSCO</b></a> <span class="muted sm">Tractor Supply</span></td>
@@ -1535,6 +1851,7 @@
 <span class="abar"><i style="right:50%;width:42.3%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-2.54</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-51%</td>
+  <td class="r"><b>6</b></td>
   <td class="r muted sm">$31.25</td>
 </tr><tr>
   <td class="rk">195</td>
@@ -1543,6 +1860,7 @@
 <span class="abar"><i style="right:50%;width:36.3%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-2.18</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-140%</td>
+  <td class="r"><b>1</b></td>
   <td class="r muted sm">$122.63</td>
 </tr><tr>
   <td class="rk">194</td>
@@ -1551,6 +1869,7 @@
 <span class="abar"><i style="right:50%;width:33.5%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-2.01</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-52%</td>
+  <td class="r"><b>6</b></td>
   <td class="r muted sm">$195.00</td>
 </tr><tr>
   <td class="rk">193</td>
@@ -1559,6 +1878,7 @@
 <span class="abar"><i style="right:50%;width:27.0%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.62</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-16%</td>
+  <td class="r"><b>18</b></td>
   <td class="r muted sm">$150.58</td>
 </tr><tr>
   <td class="rk">192</td>
@@ -1567,6 +1887,7 @@
 <span class="abar"><i style="right:50%;width:25.5%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.53</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-17%</td>
+  <td class="r"><b>18</b></td>
   <td class="r muted sm">$328.39</td>
 </tr>
           </table>
@@ -1580,7 +1901,7 @@
         <div>
           <h3 class="pos"><span class="l-en">Leaders</span><span class="l-zh">领先</span> — <span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></h3>
           <table>
-            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
+            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">RS</span><span class="l-zh">相对强度</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
             <tr>
   <td class="rk">1</td>
   <td><a href="stock.html#INDV"><b>INDV</b></a> <span class="muted sm">Indivior</span></td>
@@ -1588,6 +1909,7 @@
 <span class="abar"><i style="left:50%;width:39.5%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.37</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+130%</td>
+  <td class="r"><b>96</b></td>
   <td class="r muted sm">$38.48</td>
 </tr><tr>
   <td class="rk">2</td>
@@ -1596,6 +1918,7 @@
 <span class="abar"><i style="left:50%;width:37.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.27</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+193%</td>
+  <td class="r"><b>98</b></td>
   <td class="r muted sm">$74.52</td>
 </tr><tr>
   <td class="rk">3</td>
@@ -1604,6 +1927,7 @@
 <span class="abar"><i style="left:50%;width:35.7%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.14</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+76%</td>
+  <td class="r"><b>89</b></td>
   <td class="r muted sm">$16.48</td>
 </tr><tr>
   <td class="rk">4</td>
@@ -1612,6 +1936,7 @@
 <span class="abar"><i style="left:50%;width:32.5%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.95</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+105%</td>
+  <td class="r"><b>94</b></td>
   <td class="r muted sm">$30.04</td>
 </tr><tr>
   <td class="rk">5</td>
@@ -1620,6 +1945,7 @@
 <span class="abar"><i style="left:50%;width:30.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.80</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+101%</td>
+  <td class="r"><b>94</b></td>
   <td class="r muted sm">$63.23</td>
 </tr><tr>
   <td class="rk">6</td>
@@ -1628,6 +1954,7 @@
 <span class="abar"><i style="left:50%;width:28.5%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.71</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+87%</td>
+  <td class="r"><b>92</b></td>
   <td class="r muted sm">$230.56</td>
 </tr><tr>
   <td class="rk">7</td>
@@ -1636,6 +1963,7 @@
 <span class="abar"><i style="left:50%;width:27.5%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.65</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+44%</td>
+  <td class="r"><b>77</b></td>
   <td class="r muted sm">$240.87</td>
 </tr><tr>
   <td class="rk">8</td>
@@ -1644,6 +1972,7 @@
 <span class="abar"><i style="left:50%;width:27.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.64</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+17%</td>
+  <td class="r"><b>51</b></td>
   <td class="r muted sm">$65.19</td>
 </tr><tr>
   <td class="rk">9</td>
@@ -1652,6 +1981,7 @@
 <span class="abar"><i style="left:50%;width:27.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.63</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+72%</td>
+  <td class="r"><b>88</b></td>
   <td class="r muted sm">$197.72</td>
 </tr><tr>
   <td class="rk">10</td>
@@ -1660,6 +1990,7 @@
 <span class="abar"><i style="left:50%;width:26.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.61</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+88%</td>
+  <td class="r"><b>92</b></td>
   <td class="r muted sm">$317.97</td>
 </tr><tr>
   <td class="rk">11</td>
@@ -1668,6 +1999,7 @@
 <span class="abar"><i style="left:50%;width:26.5%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.59</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+42%</td>
+  <td class="r"><b>76</b></td>
   <td class="r muted sm">$119.05</td>
 </tr><tr>
   <td class="rk">12</td>
@@ -1676,6 +2008,7 @@
 <span class="abar"><i style="left:50%;width:26.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.56</span></div></td>
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+80%</td>
+  <td class="r"><b>90</b></td>
   <td class="r muted sm">$255.54</td>
 </tr><tr>
   <td class="rk">13</td>
@@ -1684,6 +2017,7 @@
 <span class="abar"><i style="left:50%;width:25.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.51</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+95%</td>
+  <td class="r"><b>93</b></td>
   <td class="r muted sm">$109.78</td>
 </tr><tr>
   <td class="rk">14</td>
@@ -1692,6 +2026,7 @@
 <span class="abar"><i style="left:50%;width:24.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.45</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+88%</td>
+  <td class="r"><b>92</b></td>
   <td class="r muted sm">$49.91</td>
 </tr><tr>
   <td class="rk">15</td>
@@ -1700,6 +2035,7 @@
 <span class="abar"><i style="left:50%;width:23.5%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.41</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+124%</td>
+  <td class="r"><b>96</b></td>
   <td class="r muted sm">$23.80</td>
 </tr>
           </table>
@@ -1707,7 +2043,7 @@
         <div>
           <h3 class="neg"><span class="l-en">Laggards</span><span class="l-zh">落后</span> — <span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></h3>
           <table>
-            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
+            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">RS</span><span class="l-zh">相对强度</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
             <tr>
   <td class="rk">169</td>
   <td><a href="stock.html#ABT"><b>ABT</b></a> <span class="muted sm">Abbott Laboratories</span></td>
@@ -1715,6 +2051,7 @@
 <span class="abar"><i style="right:50%;width:43.0%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-2.58</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-40%</td>
+  <td class="r"><b>9</b></td>
   <td class="r muted sm">$88.18</td>
 </tr><tr>
   <td class="rk">168</td>
@@ -1723,6 +2060,7 @@
 <span class="abar"><i style="right:50%;width:41.8%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-2.51</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-69%</td>
+  <td class="r"><b>4</b></td>
   <td class="r muted sm">$149.70</td>
 </tr><tr>
   <td class="rk">167</td>
@@ -1731,6 +2069,7 @@
 <span class="abar"><i style="right:50%;width:37.7%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-2.26</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-70%</td>
+  <td class="r"><b>3</b></td>
   <td class="r muted sm">$79.57</td>
 </tr><tr>
   <td class="rk">166</td>
@@ -1739,6 +2078,7 @@
 <span class="abar"><i style="right:50%;width:33.8%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-2.03</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-61%</td>
+  <td class="r"><b>4</b></td>
   <td class="r muted sm">$46.91</td>
 </tr><tr>
   <td class="rk">165</td>
@@ -1747,6 +2087,7 @@
 <span class="abar"><i style="right:50%;width:33.8%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-2.03</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-37%</td>
+  <td class="r"><b>10</b></td>
   <td class="r muted sm">$159.54</td>
 </tr>
           </table>
@@ -1760,7 +2101,7 @@
         <div>
           <h3 class="pos"><span class="l-en">Leaders</span><span class="l-zh">领先</span> — <span class="l-en">Financials</span><span class="l-zh">金融</span></h3>
           <table>
-            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
+            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">RS</span><span class="l-zh">相对强度</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
             <tr>
   <td class="rk">1</td>
   <td><a href="stock.html#CBOE"><b>CBOE</b></a> <span class="muted sm">Cboe Global Markets</span></td>
@@ -1768,6 +2109,7 @@
 <span class="abar"><i style="left:50%;width:36.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.16</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+54%</td>
+  <td class="r"><b>82</b></td>
   <td class="r muted sm">$294.91</td>
 </tr><tr>
   <td class="rk">2</td>
@@ -1776,6 +2118,7 @@
 <span class="abar"><i style="left:50%;width:35.7%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.14</span></div></td>
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+48%</td>
+  <td class="r"><b>79</b></td>
   <td class="r muted sm">$55.25</td>
 </tr><tr>
   <td class="rk">3</td>
@@ -1784,6 +2127,7 @@
 <span class="abar"><i style="left:50%;width:34.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.05</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+87%</td>
+  <td class="r"><b>92</b></td>
   <td class="r muted sm">$31.25</td>
 </tr><tr>
   <td class="rk">4</td>
@@ -1792,6 +2136,7 @@
 <span class="abar"><i style="left:50%;width:29.5%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.77</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+52%</td>
+  <td class="r"><b>81</b></td>
   <td class="r muted sm">$167.63</td>
 </tr><tr>
   <td class="rk">5</td>
@@ -1800,6 +2145,7 @@
 <span class="abar"><i style="left:50%;width:29.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.75</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+93%</td>
+  <td class="r"><b>93</b></td>
   <td class="r muted sm">$78.54</td>
 </tr><tr>
   <td class="rk">6</td>
@@ -1808,6 +2154,7 @@
 <span class="abar"><i style="left:50%;width:27.7%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.66</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+62%</td>
+  <td class="r"><b>86</b></td>
   <td class="r muted sm">$48.44</td>
 </tr><tr>
   <td class="rk">7</td>
@@ -1816,6 +2163,7 @@
 <span class="abar"><i style="left:50%;width:26.5%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.59</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+55%</td>
+  <td class="r"><b>83</b></td>
   <td class="r muted sm">$100.93</td>
 </tr><tr>
   <td class="rk">8</td>
@@ -1824,6 +2172,7 @@
 <span class="abar"><i style="left:50%;width:25.5%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.53</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+58%</td>
+  <td class="r"><b>84</b></td>
   <td class="r muted sm">$224.89</td>
 </tr><tr>
   <td class="rk">9</td>
@@ -1832,6 +2181,7 @@
 <span class="abar"><i style="left:50%;width:24.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.49</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+43%</td>
+  <td class="r"><b>76</b></td>
   <td class="r muted sm">$14.63</td>
 </tr><tr>
   <td class="rk">10</td>
@@ -1840,6 +2190,7 @@
 <span class="abar"><i style="left:50%;width:24.7%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.48</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+79%</td>
+  <td class="r"><b>90</b></td>
   <td class="r muted sm">$17.97</td>
 </tr><tr>
   <td class="rk">11</td>
@@ -1848,6 +2199,7 @@
 <span class="abar"><i style="left:50%;width:24.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.46</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+36%</td>
+  <td class="r"><b>72</b></td>
   <td class="r muted sm">$8.25</td>
 </tr><tr>
   <td class="rk">12</td>
@@ -1856,6 +2208,7 @@
 <span class="abar"><i style="left:50%;width:23.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.43</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+73%</td>
+  <td class="r"><b>89</b></td>
   <td class="r muted sm">$81.34</td>
 </tr><tr>
   <td class="rk">13</td>
@@ -1864,6 +2217,7 @@
 <span class="abar"><i style="left:50%;width:23.5%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.41</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+48%</td>
+  <td class="r"><b>79</b></td>
   <td class="r muted sm">$32.13</td>
 </tr><tr>
   <td class="rk">14</td>
@@ -1872,6 +2226,7 @@
 <span class="abar"><i style="left:50%;width:22.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.32</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+34%</td>
+  <td class="r"><b>70</b></td>
   <td class="r muted sm">$38.87</td>
 </tr><tr>
   <td class="rk">15</td>
@@ -1880,6 +2235,7 @@
 <span class="abar"><i style="left:50%;width:21.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.31</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+32%</td>
+  <td class="r"><b>68</b></td>
   <td class="r muted sm">$88.95</td>
 </tr>
           </table>
@@ -1887,7 +2243,7 @@
         <div>
           <h3 class="neg"><span class="l-en">Laggards</span><span class="l-zh">落后</span> — <span class="l-en">Financials</span><span class="l-zh">金融</span></h3>
           <table>
-            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
+            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">RS</span><span class="l-zh">相对强度</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
             <tr>
   <td class="rk">257</td>
   <td><a href="stock.html#BRO"><b>BRO</b></a> <span class="muted sm">Brown &amp; Brown</span></td>
@@ -1895,6 +2251,7 @@
 <span class="abar"><i style="right:50%;width:37.5%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-2.25</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-66%</td>
+  <td class="r"><b>4</b></td>
   <td class="r muted sm">$59.99</td>
 </tr><tr>
   <td class="rk">256</td>
@@ -1903,6 +2260,7 @@
 <span class="abar"><i style="right:50%;width:34.5%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-2.07</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-13%</td>
+  <td class="r"><b>20</b></td>
   <td class="r muted sm">$122.79</td>
 </tr><tr>
   <td class="rk">255</td>
@@ -1911,6 +2269,7 @@
 <span class="abar"><i style="right:50%;width:33.7%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-2.02</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-56%</td>
+  <td class="r"><b>5</b></td>
   <td class="r muted sm">$39.20</td>
 </tr><tr>
   <td class="rk">254</td>
@@ -1919,6 +2278,7 @@
 <span class="abar"><i style="right:50%;width:31.5%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.89</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-59%</td>
+  <td class="r"><b>5</b></td>
   <td class="r muted sm">$80.10</td>
 </tr><tr>
   <td class="rk">253</td>
@@ -1927,6 +2287,7 @@
 <span class="abar"><i style="right:50%;width:31.2%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.87</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-18%</td>
+  <td class="r"><b>18</b></td>
   <td class="r muted sm">$96.24</td>
 </tr>
           </table>
@@ -1940,7 +2301,7 @@
         <div>
           <h3 class="pos"><span class="l-en">Leaders</span><span class="l-zh">领先</span> — <span class="l-en">Materials</span><span class="l-zh">原材料</span></h3>
           <table>
-            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
+            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">RS</span><span class="l-zh">相对强度</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
             <tr>
   <td class="rk">1</td>
   <td><a href="stock.html#STLD"><b>STLD</b></a> <span class="muted sm">Steel Dynamics</span></td>
@@ -1948,6 +2309,7 @@
 <span class="abar"><i style="left:50%;width:33.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.03</span></div></td>
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+62%</td>
+  <td class="r"><b>86</b></td>
   <td class="r muted sm">$282.76</td>
 </tr><tr>
   <td class="rk">2</td>
@@ -1956,6 +2318,7 @@
 <span class="abar"><i style="left:50%;width:32.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.97</span></div></td>
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+110%</td>
+  <td class="r"><b>95</b></td>
   <td class="r muted sm">$247.26</td>
 </tr><tr>
   <td class="rk">3</td>
@@ -1964,6 +2327,7 @@
 <span class="abar"><i style="left:50%;width:30.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.85</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+139%</td>
+  <td class="r"><b>97</b></td>
   <td class="r muted sm">$170.42</td>
 </tr><tr>
   <td class="rk">4</td>
@@ -1972,6 +2336,7 @@
 <span class="abar"><i style="left:50%;width:30.5%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.83</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+169%</td>
+  <td class="r"><b>98</b></td>
   <td class="r muted sm">$15.29</td>
 </tr><tr>
   <td class="rk">5</td>
@@ -1980,6 +2345,7 @@
 <span class="abar"><i style="left:50%;width:30.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.80</span></div></td>
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+72%</td>
+  <td class="r"><b>89</b></td>
   <td class="r muted sm">$266.35</td>
 </tr><tr>
   <td class="rk">6</td>
@@ -1988,6 +2354,7 @@
 <span class="abar"><i style="left:50%;width:29.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.75</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+104%</td>
+  <td class="r"><b>94</b></td>
   <td class="r muted sm">$190.63</td>
 </tr><tr>
   <td class="rk">7</td>
@@ -1996,6 +2363,7 @@
 <span class="abar"><i style="left:50%;width:28.5%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.71</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+60%</td>
+  <td class="r"><b>85</b></td>
   <td class="r muted sm">$48.26</td>
 </tr><tr>
   <td class="rk">8</td>
@@ -2004,6 +2372,7 @@
 <span class="abar"><i style="left:50%;width:26.5%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.59</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+151%</td>
+  <td class="r"><b>97</b></td>
   <td class="r muted sm">$61.19</td>
 </tr><tr>
   <td class="rk">9</td>
@@ -2012,6 +2381,7 @@
 <span class="abar"><i style="left:50%;width:21.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.28</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+103%</td>
+  <td class="r"><b>94</b></td>
   <td class="r muted sm">$68.77</td>
 </tr><tr>
   <td class="rk">10</td>
@@ -2020,6 +2390,7 @@
 <span class="abar"><i style="left:50%;width:20.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.25</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+51%</td>
+  <td class="r"><b>80</b></td>
   <td class="r muted sm">$109.48</td>
 </tr><tr>
   <td class="rk">11</td>
@@ -2028,6 +2399,7 @@
 <span class="abar"><i style="left:50%;width:19.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.19</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+75%</td>
+  <td class="r"><b>89</b></td>
   <td class="r muted sm">$43.70</td>
 </tr><tr>
   <td class="rk">12</td>
@@ -2036,6 +2408,7 @@
 <span class="abar"><i style="left:50%;width:19.7%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.18</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+150%</td>
+  <td class="r"><b>97</b></td>
   <td class="r muted sm">$57.55</td>
 </tr><tr>
   <td class="rk">13</td>
@@ -2044,6 +2417,7 @@
 <span class="abar"><i style="left:50%;width:18.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.13</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+97%</td>
+  <td class="r"><b>94</b></td>
   <td class="r muted sm">$100.23</td>
 </tr><tr>
   <td class="rk">14</td>
@@ -2052,6 +2426,7 @@
 <span class="abar"><i style="left:50%;width:18.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.13</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+41%</td>
+  <td class="r"><b>75</b></td>
   <td class="r muted sm">$33.85</td>
 </tr><tr>
   <td class="rk">15</td>
@@ -2060,6 +2435,7 @@
 <span class="abar"><i style="left:50%;width:16.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.98</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+98%</td>
+  <td class="r"><b>94</b></td>
   <td class="r muted sm">$22.00</td>
 </tr>
           </table>
@@ -2067,7 +2443,7 @@
         <div>
           <h3 class="neg"><span class="l-en">Laggards</span><span class="l-zh">落后</span> — <span class="l-en">Materials</span><span class="l-zh">原材料</span></h3>
           <table>
-            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
+            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">RS</span><span class="l-zh">相对强度</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
             <tr>
   <td class="rk">76</td>
   <td><a href="stock.html#GPK"><b>GPK</b></a> <span class="muted sm">Graphic Packaging</span></td>
@@ -2075,6 +2451,7 @@
 <span class="abar"><i style="right:50%;width:33.0%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.98</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-74%</td>
+  <td class="r"><b>3</b></td>
   <td class="r muted sm">$10.70</td>
 </tr><tr>
   <td class="rk">75</td>
@@ -2083,6 +2460,7 @@
 <span class="abar"><i style="right:50%;width:27.0%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.62</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-28%</td>
+  <td class="r"><b>13</b></td>
   <td class="r muted sm">$36.15</td>
 </tr><tr>
   <td class="rk">74</td>
@@ -2091,6 +2469,7 @@
 <span class="abar"><i style="right:50%;width:24.5%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.47</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-23%</td>
+  <td class="r"><b>15</b></td>
   <td class="r muted sm">$117.72</td>
 </tr><tr>
   <td class="rk">73</td>
@@ -2099,6 +2478,7 @@
 <span class="abar"><i style="right:50%;width:24.3%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.46</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-12%</td>
+  <td class="r"><b>21</b></td>
   <td class="r muted sm">$317.30</td>
 </tr><tr>
   <td class="rk">72</td>
@@ -2107,6 +2487,7 @@
 <span class="abar"><i style="right:50%;width:23.2%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.39</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-8%</td>
+  <td class="r"><b>25</b></td>
   <td class="r muted sm">$86.59</td>
 </tr>
           </table>
@@ -2120,7 +2501,7 @@
         <div>
           <h3 class="pos"><span class="l-en">Leaders</span><span class="l-zh">领先</span> — <span class="l-en">Communication Services</span><span class="l-zh">Communication Services</span></h3>
           <table>
-            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
+            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">RS</span><span class="l-zh">相对强度</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
             <tr>
   <td class="rk">1</td>
   <td><a href="stock.html#SPHR"><b>SPHR</b></a> <span class="muted sm">Sphere Entertainment</span></td>
@@ -2128,6 +2509,7 @@
 <span class="abar"><i style="left:50%;width:33.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.03</span></div></td>
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+144%</td>
+  <td class="r"><b>97</b></td>
   <td class="r muted sm">$153.25</td>
 </tr><tr>
   <td class="rk">2</td>
@@ -2136,6 +2518,7 @@
 <span class="abar"><i style="left:50%;width:33.7%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+2.02</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+238%</td>
+  <td class="r"><b>99</b></td>
   <td class="r muted sm">$114.08</td>
 </tr><tr>
   <td class="rk">3</td>
@@ -2144,6 +2527,7 @@
 <span class="abar"><i style="left:50%;width:32.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.93</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+98%</td>
+  <td class="r"><b>94</b></td>
   <td class="r muted sm">$359.68</td>
 </tr><tr>
   <td class="rk">4</td>
@@ -2152,6 +2536,7 @@
 <span class="abar"><i style="left:50%;width:32.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.93</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+96%</td>
+  <td class="r"><b>94</b></td>
   <td class="r muted sm">$358.16</td>
 </tr><tr>
   <td class="rk">5</td>
@@ -2160,6 +2545,7 @@
 <span class="abar"><i style="left:50%;width:28.5%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.71</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+119%</td>
+  <td class="r"><b>96</b></td>
   <td class="r muted sm">$26.98</td>
 </tr><tr>
   <td class="rk">6</td>
@@ -2168,6 +2554,7 @@
 <span class="abar"><i style="left:50%;width:23.7%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.42</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+62%</td>
+  <td class="r"><b>86</b></td>
   <td class="r muted sm">$384.68</td>
 </tr><tr>
   <td class="rk">7</td>
@@ -2176,6 +2563,7 @@
 <span class="abar"><i style="left:50%;width:16.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.98</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+107%</td>
+  <td class="r"><b>95</b></td>
   <td class="r muted sm">$8.49</td>
 </tr><tr>
   <td class="rk">8</td>
@@ -2184,6 +2572,7 @@
 <span class="abar"><i style="left:50%;width:15.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.92</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+40%</td>
+  <td class="r"><b>75</b></td>
   <td class="r muted sm">$73.38</td>
 </tr><tr>
   <td class="rk">9</td>
@@ -2192,6 +2581,7 @@
 <span class="abar"><i style="left:50%;width:14.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.86</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+68%</td>
+  <td class="r"><b>87</b></td>
   <td class="r muted sm">$47.32</td>
 </tr><tr>
   <td class="rk">10</td>
@@ -2200,6 +2590,7 @@
 <span class="abar"><i style="left:50%;width:14.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.86</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+32%</td>
+  <td class="r"><b>68</b></td>
   <td class="r muted sm">$203.27</td>
 </tr><tr>
   <td class="rk">11</td>
@@ -2208,6 +2599,7 @@
 <span class="abar"><i style="left:50%;width:13.5%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.81</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+36%</td>
+  <td class="r"><b>72</b></td>
   <td class="r muted sm">$16.46</td>
 </tr><tr>
   <td class="rk">12</td>
@@ -2216,6 +2608,7 @@
 <span class="abar"><i style="left:50%;width:13.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.78</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+18%</td>
+  <td class="r"><b>52</b></td>
   <td class="r muted sm">$48.11</td>
 </tr><tr>
   <td class="rk">13</td>
@@ -2224,6 +2617,7 @@
 <span class="abar"><i style="left:50%;width:11.7%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.70</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+29%</td>
+  <td class="r"><b>65</b></td>
   <td class="r muted sm">$65.85</td>
 </tr><tr>
   <td class="rk">14</td>
@@ -2232,6 +2626,7 @@
 <span class="abar"><i style="left:50%;width:11.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.67</span></div></td>
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+54%</td>
+  <td class="r"><b>82</b></td>
   <td class="r muted sm">$12.75</td>
 </tr><tr>
   <td class="rk">15</td>
@@ -2240,6 +2635,7 @@
 <span class="abar"><i style="left:50%;width:10.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.65</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+25%</td>
+  <td class="r"><b>61</b></td>
   <td class="r muted sm">$58.92</td>
 </tr>
           </table>
@@ -2247,7 +2643,7 @@
         <div>
           <h3 class="neg"><span class="l-en">Laggards</span><span class="l-zh">落后</span> — <span class="l-en">Communication Services</span><span class="l-zh">Communication Services</span></h3>
           <table>
-            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
+            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">RS</span><span class="l-zh">相对强度</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
             <tr>
   <td class="rk">48</td>
   <td><a href="stock.html#TTD"><b>TTD</b></a> <span class="muted sm">Trade Desk (The)</span></td>
@@ -2255,6 +2651,7 @@
 <span class="abar"><i style="right:50%;width:27.5%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.65</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-113%</td>
+  <td class="r"><b>1</b></td>
   <td class="r muted sm">$19.28</td>
 </tr><tr>
   <td class="rk">47</td>
@@ -2263,6 +2660,7 @@
 <span class="abar"><i style="right:50%;width:26.0%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.56</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-77%</td>
+  <td class="r"><b>2</b></td>
   <td class="r muted sm">$2.81</td>
 </tr><tr>
   <td class="rk">46</td>
@@ -2271,6 +2669,7 @@
 <span class="abar"><i style="right:50%;width:24.7%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.48</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-50%</td>
+  <td class="r"><b>6</b></td>
   <td class="r muted sm">$23.10</td>
 </tr><tr>
   <td class="rk">45</td>
@@ -2279,6 +2678,7 @@
 <span class="abar"><i style="right:50%;width:22.7%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.36</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-88%</td>
+  <td class="r"><b>2</b></td>
   <td class="r muted sm">$3.66</td>
 </tr><tr>
   <td class="rk">44</td>
@@ -2287,6 +2687,7 @@
 <span class="abar"><i style="right:50%;width:21.3%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.28</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r pos">+3%</td>
+  <td class="r"><b>34</b></td>
   <td class="r muted sm">$566.98</td>
 </tr>
           </table>
@@ -2300,7 +2701,7 @@
         <div>
           <h3 class="pos"><span class="l-en">Leaders</span><span class="l-zh">领先</span> — <span class="l-en">Real Estate</span><span class="l-zh">房地产</span></h3>
           <table>
-            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
+            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">RS</span><span class="l-zh">相对强度</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
             <tr>
   <td class="rk">1</td>
   <td><a href="stock.html#VTR"><b>VTR</b></a> <span class="muted sm">Ventas</span></td>
@@ -2308,6 +2709,7 @@
 <span class="abar"><i style="left:50%;width:31.5%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.89</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+37%</td>
+  <td class="r"><b>73</b></td>
   <td class="r muted sm">$84.60</td>
 </tr><tr>
   <td class="rk">2</td>
@@ -2316,6 +2718,7 @@
 <span class="abar"><i style="left:50%;width:27.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.62</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+45%</td>
+  <td class="r"><b>78</b></td>
   <td class="r muted sm">$214.23</td>
 </tr><tr>
   <td class="rk">3</td>
@@ -2324,6 +2727,7 @@
 <span class="abar"><i style="left:50%;width:26.7%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.60</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+79%</td>
+  <td class="r"><b>90</b></td>
   <td class="r muted sm">$31.34</td>
 </tr><tr>
   <td class="rk">4</td>
@@ -2332,6 +2736,7 @@
 <span class="abar"><i style="left:50%;width:23.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.43</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+46%</td>
+  <td class="r"><b>78</b></td>
   <td class="r muted sm">$36.85</td>
 </tr><tr>
   <td class="rk">5</td>
@@ -2340,6 +2745,7 @@
 <span class="abar"><i style="left:50%;width:23.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.40</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+27%</td>
+  <td class="r"><b>63</b></td>
   <td class="r muted sm">$1055.85</td>
 </tr><tr>
   <td class="rk">6</td>
@@ -2348,6 +2754,7 @@
 <span class="abar"><i style="left:50%;width:22.7%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.36</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+37%</td>
+  <td class="r"><b>73</b></td>
   <td class="r muted sm">$45.77</td>
 </tr><tr>
   <td class="rk">7</td>
@@ -2356,6 +2763,7 @@
 <span class="abar"><i style="left:50%;width:22.5%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.35</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+31%</td>
+  <td class="r"><b>67</b></td>
   <td class="r muted sm">$148.74</td>
 </tr><tr>
   <td class="rk">8</td>
@@ -2364,6 +2772,7 @@
 <span class="abar"><i style="left:50%;width:22.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.32</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+46%</td>
+  <td class="r"><b>78</b></td>
   <td class="r muted sm">$19.06</td>
 </tr><tr>
   <td class="rk">9</td>
@@ -2372,6 +2781,7 @@
 <span class="abar"><i style="left:50%;width:21.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.27</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+38%</td>
+  <td class="r"><b>74</b></td>
   <td class="r muted sm">$20.70</td>
 </tr><tr>
   <td class="rk">10</td>
@@ -2380,6 +2790,7 @@
 <span class="abar"><i style="left:50%;width:19.5%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.17</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+45%</td>
+  <td class="r"><b>77</b></td>
   <td class="r muted sm">$46.81</td>
 </tr><tr>
   <td class="rk">11</td>
@@ -2388,6 +2799,7 @@
 <span class="abar"><i style="left:50%;width:17.7%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.06</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+26%</td>
+  <td class="r"><b>62</b></td>
   <td class="r muted sm">$76.71</td>
 </tr><tr>
   <td class="rk">12</td>
@@ -2396,6 +2808,7 @@
 <span class="abar"><i style="left:50%;width:16.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.97</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+63%</td>
+  <td class="r"><b>86</b></td>
   <td class="r muted sm">$10.93</td>
 </tr><tr>
   <td class="rk">13</td>
@@ -2404,6 +2817,7 @@
 <span class="abar"><i style="left:50%;width:15.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.95</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+21%</td>
+  <td class="r"><b>56</b></td>
   <td class="r muted sm">$125.84</td>
 </tr><tr>
   <td class="rk">14</td>
@@ -2412,6 +2826,7 @@
 <span class="abar"><i style="left:50%;width:15.7%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.94</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+28%</td>
+  <td class="r"><b>64</b></td>
   <td class="r muted sm">$21.07</td>
 </tr><tr>
   <td class="rk">15</td>
@@ -2420,6 +2835,7 @@
 <span class="abar"><i style="left:50%;width:15.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.90</span></div></td>
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+40%</td>
+  <td class="r"><b>75</b></td>
   <td class="r muted sm">$24.89</td>
 </tr>
           </table>
@@ -2427,7 +2843,7 @@
         <div>
           <h3 class="neg"><span class="l-en">Laggards</span><span class="l-zh">落后</span> — <span class="l-en">Real Estate</span><span class="l-zh">房地产</span></h3>
           <table>
-            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
+            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">RS</span><span class="l-zh">相对强度</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
             <tr>
   <td class="rk">107</td>
   <td><a href="stock.html#CSGP"><b>CSGP</b></a> <span class="muted sm">CoStar Group</span></td>
@@ -2435,6 +2851,7 @@
 <span class="abar"><i style="right:50%;width:50.0%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-3.00</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-78%</td>
+  <td class="r"><b>2</b></td>
   <td class="r muted sm">$32.84</td>
 </tr><tr>
   <td class="rk">106</td>
@@ -2443,6 +2860,7 @@
 <span class="abar"><i style="right:50%;width:34.3%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-2.06</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-4%</td>
+  <td class="r"><b>28</b></td>
   <td class="r muted sm">$66.28</td>
 </tr><tr>
   <td class="rk">105</td>
@@ -2451,6 +2869,7 @@
 <span class="abar"><i style="right:50%;width:27.8%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.67</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-29%</td>
+  <td class="r"><b>13</b></td>
   <td class="r muted sm">$53.17</td>
 </tr><tr>
   <td class="rk">104</td>
@@ -2459,6 +2878,7 @@
 <span class="abar"><i style="right:50%;width:24.7%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.48</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-20%</td>
+  <td class="r"><b>17</b></td>
   <td class="r muted sm">$38.27</td>
 </tr><tr>
   <td class="rk">103</td>
@@ -2467,6 +2887,7 @@
 <span class="abar"><i style="right:50%;width:23.3%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.40</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-14%</td>
+  <td class="r"><b>19</b></td>
   <td class="r muted sm">$33.29</td>
 </tr>
           </table>
@@ -2480,7 +2901,7 @@
         <div>
           <h3 class="pos"><span class="l-en">Leaders</span><span class="l-zh">领先</span> — <span class="l-en">Energy</span><span class="l-zh">能源</span></h3>
           <table>
-            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
+            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">RS</span><span class="l-zh">相对强度</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
             <tr>
   <td class="rk">1</td>
   <td><a href="stock.html#REX"><b>REX</b></a> <span class="muted sm">REX American Resources</span></td>
@@ -2488,6 +2909,7 @@
 <span class="abar"><i style="left:50%;width:29.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.76</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+91%</td>
+  <td class="r"><b>93</b></td>
   <td class="r muted sm">$43.94</td>
 </tr><tr>
   <td class="rk">2</td>
@@ -2496,6 +2918,7 @@
 <span class="abar"><i style="left:50%;width:26.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.61</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+135%</td>
+  <td class="r"><b>96</b></td>
   <td class="r muted sm">$55.82</td>
 </tr><tr>
   <td class="rk">3</td>
@@ -2504,6 +2927,7 @@
 <span class="abar"><i style="left:50%;width:23.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.39</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+96%</td>
+  <td class="r"><b>93</b></td>
   <td class="r muted sm">$82.01</td>
 </tr><tr>
   <td class="rk">4</td>
@@ -2512,6 +2936,7 @@
 <span class="abar"><i style="left:50%;width:22.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.33</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+91%</td>
+  <td class="r"><b>93</b></td>
   <td class="r muted sm">$70.79</td>
 </tr><tr>
   <td class="rk">5</td>
@@ -2520,6 +2945,7 @@
 <span class="abar"><i style="left:50%;width:16.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.98</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+83%</td>
+  <td class="r"><b>91</b></td>
   <td class="r muted sm">$69.08</td>
 </tr><tr>
   <td class="rk">6</td>
@@ -2528,6 +2954,7 @@
 <span class="abar"><i style="left:50%;width:16.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.98</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+79%</td>
+  <td class="r"><b>90</b></td>
   <td class="r muted sm">$71.26</td>
 </tr><tr>
   <td class="rk">7</td>
@@ -2536,6 +2963,7 @@
 <span class="abar"><i style="left:50%;width:16.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.97</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+75%</td>
+  <td class="r"><b>89</b></td>
   <td class="r muted sm">$39.60</td>
 </tr><tr>
   <td class="rk">8</td>
@@ -2544,6 +2972,7 @@
 <span class="abar"><i style="left:50%;width:15.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.91</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+118%</td>
+  <td class="r"><b>95</b></td>
   <td class="r muted sm">$28.87</td>
 </tr><tr>
   <td class="rk">9</td>
@@ -2552,6 +2981,7 @@
 <span class="abar"><i style="left:50%;width:13.5%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.81</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+88%</td>
+  <td class="r"><b>92</b></td>
   <td class="r muted sm">$46.93</td>
 </tr><tr>
   <td class="rk">10</td>
@@ -2560,6 +2990,7 @@
 <span class="abar"><i style="left:50%;width:13.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.80</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+107%</td>
+  <td class="r"><b>95</b></td>
   <td class="r muted sm">$89.95</td>
 </tr><tr>
   <td class="rk">11</td>
@@ -2568,6 +2999,7 @@
 <span class="abar"><i style="left:50%;width:13.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.79</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+52%</td>
+  <td class="r"><b>81</b></td>
   <td class="r muted sm">$272.60</td>
 </tr><tr>
   <td class="rk">12</td>
@@ -2576,6 +3008,7 @@
 <span class="abar"><i style="left:50%;width:12.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.72</span></div></td>
   <td><span class="echip ent-ext"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
   <td class="r pos">+74%</td>
+  <td class="r"><b>89</b></td>
   <td class="r muted sm">$45.19</td>
 </tr><tr>
   <td class="rk">13</td>
@@ -2584,6 +3017,7 @@
 <span class="abar"><i style="left:50%;width:11.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.66</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+90%</td>
+  <td class="r"><b>92</b></td>
   <td class="r muted sm">$101.31</td>
 </tr><tr>
   <td class="rk">14</td>
@@ -2592,6 +3026,7 @@
 <span class="abar"><i style="left:50%;width:10.7%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.64</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+93%</td>
+  <td class="r"><b>93</b></td>
   <td class="r muted sm">$41.89</td>
 </tr><tr>
   <td class="rk">15</td>
@@ -2600,6 +3035,7 @@
 <span class="abar"><i style="left:50%;width:9.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.59</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+83%</td>
+  <td class="r"><b>91</b></td>
   <td class="r muted sm">$39.25</td>
 </tr>
           </table>
@@ -2607,7 +3043,7 @@
         <div>
           <h3 class="neg"><span class="l-en">Laggards</span><span class="l-zh">落后</span> — <span class="l-en">Energy</span><span class="l-zh">能源</span></h3>
           <table>
-            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
+            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">RS</span><span class="l-zh">相对强度</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
             <tr>
   <td class="rk">69</td>
   <td><a href="stock.html#NOG"><b>NOG</b></a> <span class="muted sm">Northern Oil and Gas, </span></td>
@@ -2615,6 +3051,7 @@
 <span class="abar"><i style="right:50%;width:37.2%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-2.23</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-2%</td>
+  <td class="r"><b>30</b></td>
   <td class="r muted sm">$20.79</td>
 </tr><tr>
   <td class="rk">68</td>
@@ -2623,6 +3060,7 @@
 <span class="abar"><i style="right:50%;width:21.2%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.27</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r pos">+24%</td>
+  <td class="r"><b>59</b></td>
   <td class="r muted sm">$136.65</td>
 </tr><tr>
   <td class="rk">67</td>
@@ -2631,6 +3069,7 @@
 <span class="abar"><i style="right:50%;width:18.0%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.08</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r pos">+29%</td>
+  <td class="r"><b>65</b></td>
   <td class="r muted sm">$27.62</td>
 </tr><tr>
   <td class="rk">66</td>
@@ -2639,6 +3078,7 @@
 <span class="abar"><i style="right:50%;width:17.7%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.06</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r pos">+1%</td>
+  <td class="r"><b>32</b></td>
   <td class="r muted sm">$34.83</td>
 </tr><tr>
   <td class="rk">65</td>
@@ -2647,6 +3087,7 @@
 <span class="abar"><i style="right:50%;width:17.3%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.04</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-28%</td>
+  <td class="r"><b>13</b></td>
   <td class="r muted sm">$13.52</td>
 </tr>
           </table>
@@ -2660,7 +3101,7 @@
         <div>
           <h3 class="pos"><span class="l-en">Leaders</span><span class="l-zh">领先</span> — <span class="l-en">Utilities</span><span class="l-zh">公用事业</span></h3>
           <table>
-            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
+            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">RS</span><span class="l-zh">相对强度</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
             <tr>
   <td class="rk">1</td>
   <td><a href="stock.html#NEE"><b>NEE</b></a> <span class="muted sm">NextEra Energy</span></td>
@@ -2668,6 +3109,7 @@
 <span class="abar"><i style="left:50%;width:24.7%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.48</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+37%</td>
+  <td class="r"><b>72</b></td>
   <td class="r muted sm">$85.99</td>
 </tr><tr>
   <td class="rk">2</td>
@@ -2676,6 +3118,7 @@
 <span class="abar"><i style="left:50%;width:23.7%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.42</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+64%</td>
+  <td class="r"><b>86</b></td>
   <td class="r muted sm">$138.16</td>
 </tr><tr>
   <td class="rk">3</td>
@@ -2684,6 +3127,7 @@
 <span class="abar"><i style="left:50%;width:20.7%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.24</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+37%</td>
+  <td class="r"><b>72</b></td>
   <td class="r muted sm">$111.11</td>
 </tr><tr>
   <td class="rk">4</td>
@@ -2692,6 +3136,7 @@
 <span class="abar"><i style="left:50%;width:18.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.10</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+51%</td>
+  <td class="r"><b>81</b></td>
   <td class="r muted sm">$40.43</td>
 </tr><tr>
   <td class="rk">5</td>
@@ -2700,6 +3145,7 @@
 <span class="abar"><i style="left:50%;width:16.7%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.00</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+31%</td>
+  <td class="r"><b>68</b></td>
   <td class="r muted sm">$72.95</td>
 </tr><tr>
   <td class="rk">6</td>
@@ -2708,6 +3154,7 @@
 <span class="abar"><i style="left:50%;width:14.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.86</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+28%</td>
+  <td class="r"><b>65</b></td>
   <td class="r muted sm">$129.23</td>
 </tr><tr>
   <td class="rk">7</td>
@@ -2716,6 +3163,7 @@
 <span class="abar"><i style="left:50%;width:13.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.80</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+25%</td>
+  <td class="r"><b>61</b></td>
   <td class="r muted sm">$47.21</td>
 </tr><tr>
   <td class="rk">8</td>
@@ -2724,6 +3172,7 @@
 <span class="abar"><i style="left:50%;width:13.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.79</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+28%</td>
+  <td class="r"><b>63</b></td>
   <td class="r muted sm">$142.98</td>
 </tr><tr>
   <td class="rk">9</td>
@@ -2732,6 +3181,7 @@
 <span class="abar"><i style="left:50%;width:11.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.71</span></div></td>
   <td><span class="echip ent-intact"><span class="l-en">Intact</span><span class="l-zh">完好</span></span></td>
   <td class="r pos">+15%</td>
+  <td class="r"><b>47</b></td>
   <td class="r muted sm">$103.44</td>
 </tr><tr>
   <td class="rk">10</td>
@@ -2740,6 +3190,7 @@
 <span class="abar"><i style="left:50%;width:11.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.71</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+26%</td>
+  <td class="r"><b>63</b></td>
   <td class="r muted sm">$55.09</td>
 </tr><tr>
   <td class="rk">11</td>
@@ -2748,6 +3199,7 @@
 <span class="abar"><i style="left:50%;width:11.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.71</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+31%</td>
+  <td class="r"><b>67</b></td>
   <td class="r muted sm">$71.05</td>
 </tr><tr>
   <td class="rk">12</td>
@@ -2756,6 +3208,7 @@
 <span class="abar"><i style="left:50%;width:11.7%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.70</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+30%</td>
+  <td class="r"><b>67</b></td>
   <td class="r muted sm">$73.50</td>
 </tr><tr>
   <td class="rk">13</td>
@@ -2764,6 +3217,7 @@
 <span class="abar"><i style="left:50%;width:11.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.68</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+36%</td>
+  <td class="r"><b>71</b></td>
   <td class="r muted sm">$21.11</td>
 </tr><tr>
   <td class="rk">14</td>
@@ -2772,6 +3226,7 @@
 <span class="abar"><i style="left:50%;width:11.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.68</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+38%</td>
+  <td class="r"><b>74</b></td>
   <td class="r muted sm">$37.47</td>
 </tr><tr>
   <td class="rk">15</td>
@@ -2780,6 +3235,7 @@
 <span class="abar"><i style="left:50%;width:10.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.60</span></div></td>
   <td><span class="echip ent-pull"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
   <td class="r pos">+29%</td>
+  <td class="r"><b>65</b></td>
   <td class="r muted sm">$89.01</td>
 </tr>
           </table>
@@ -2787,7 +3243,7 @@
         <div>
           <h3 class="neg"><span class="l-en">Laggards</span><span class="l-zh">落后</span> — <span class="l-en">Utilities</span><span class="l-zh">公用事业</span></h3>
           <table>
-            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
+            <tr><th>#</th><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th><th><span class="l-en">entry</span><span class="l-zh">入场</span></th><th class="r"><span class="l-en">12-1</span><span class="l-zh">12-1</span></th><th class="r"><span class="l-en">RS</span><span class="l-zh">相对强度</span></th><th class="r"><span class="l-en">price</span><span class="l-zh">价格</span></th></tr>
             <tr>
   <td class="rk">60</td>
   <td><a href="stock.html#MGEE"><b>MGEE</b></a> <span class="muted sm">MGE Energy, Inc.</span></td>
@@ -2795,6 +3251,7 @@
 <span class="abar"><i style="right:50%;width:26.7%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.60</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-14%</td>
+  <td class="r"><b>19</b></td>
   <td class="r muted sm">$77.66</td>
 </tr><tr>
   <td class="rk">59</td>
@@ -2803,6 +3260,7 @@
 <span class="abar"><i style="right:50%;width:22.0%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.32</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r pos">+3%</td>
+  <td class="r"><b>34</b></td>
   <td class="r muted sm">$79.70</td>
 </tr><tr>
   <td class="rk">58</td>
@@ -2811,6 +3269,7 @@
 <span class="abar"><i style="right:50%;width:19.0%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.14</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r pos">+10%</td>
+  <td class="r"><b>41</b></td>
   <td class="r muted sm">$148.02</td>
 </tr><tr>
   <td class="rk">57</td>
@@ -2819,6 +3278,7 @@
 <span class="abar"><i style="right:50%;width:16.0%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-lag">-0.96</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r neg">-3%</td>
+  <td class="r"><b>29</b></td>
   <td class="r muted sm">$125.47</td>
 </tr><tr>
   <td class="rk">56</td>
@@ -2827,6 +3287,7 @@
 <span class="abar"><i style="right:50%;width:14.5%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-lag">-0.87</span></div></td>
   <td><span class="echip ent-lag"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
   <td class="r pos">+7%</td>
+  <td class="r"><b>39</b></td>
   <td class="r muted sm">$35.85</td>
 </tr>
           </table>
@@ -2840,7 +3301,7 @@
 
 <div class="panel">
   <p class="muted" style="font-size:12px;margin:0"><span class="l-en">Source: engine/residual_alpha.py (sector-neutral residual momentum) over the S&amp;P 1500 price universe joined to GICS sectors. Ranks recompute daily with prices. A modest, decayed, crowded edge — research lens, not a buy list. See research/RESIDUAL_ALPHA_MOMENTUM.md and LIMITATIONS.md.</span><span class="l-zh">来源：engine/residual_alpha.py（板块中性残差动量），覆盖标普 1500 价格域并连接 GICS 板块。排名随价格每日重算。温和、已衰减、拥挤的边际信号 — 研究视角，而非买入清单。</span>
-    <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-14 20:29 UTC</p>
+    <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-14 21:52 UTC</p>
 </div>
 
 <script>
