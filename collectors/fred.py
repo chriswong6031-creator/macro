@@ -36,6 +36,10 @@ DEFAULT_VINTAGE_SERIES = [
     "FLEXCPIM157SFRBATL", "MEDCPIM158SFRBCLE",
     "STLFSI4",                                             # St. Louis financial-stress (revised)
     "UMCSENT", "MICH",                                      # surveys (revised)
+    "ICSA", "IC4WSA", "CCSA",                              # jobless claims (revised the following week)
+    # DEFERRED — the Indeed job-postings family (IHLIDXUS/IHLIDXNEWUS) re-revises its
+    # whole history on each methodology change (like NFCI below) AND is copyrighted,
+    # so it is intentionally excluded from the PIT vintage matrix.
     # DEFERRED — the Chicago Fed NFCI family (NFCI/ANFCI/NFCIRISK/NFCICREDIT/
     # NFCILEVERAGE) revises its WHOLE weekly history every release, so the initial-
     # release vintage matrix is large and the API read-times-out here. Add via

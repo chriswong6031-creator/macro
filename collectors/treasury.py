@@ -8,6 +8,11 @@
 - Net marketable issuance from DTS Table IIIA (public_debt_transactions):
   Issues minus Redemptions, Marketable only, $ millions, aggregated monthly
   by the engine.
+- Withheld income & employment taxes from DTS Table II
+  (deposits_withdrawals_operating_cash): the daily 'Taxes - Withheld
+  Individual/FICA' deposit, $ millions. A real-time wage/income FLOW that leads
+  payrolls; the engine sums it over a trailing window (never forward-fills it).
+  Self-backfills full history the first time it is collected.
 """
 from __future__ import annotations
 
@@ -49,8 +54,14 @@ class TreasuryAdapter(Adapter):
         else:
             last = store.last_date(self.group, "tga") or (date.today() - timedelta(days=30))
             start = str(last - timedelta(days=7))
+        # withheld taxes self-backfill: a new series has no stored history, so pull
+        # full history the first time we see it (independent of the shared `start`).
+        w_last = store.last_date(self.group, "withheld_taxes")
+        w_start = ("2005-01-01" if (full_history or w_last is None)
+                   else str(w_last - timedelta(days=10)))
         return {"tga": self._fetch_tga(start),
-                "net_issuance": self._fetch_issuance(start)}
+                "net_issuance": self._fetch_issuance(start),
+                "withheld_taxes": self._fetch_withheld(w_start)}
 
     def _fetch_tga(self, start: str) -> pd.DataFrame:
         rows = self._paged(
@@ -86,4 +97,25 @@ class TreasuryAdapter(Adapter):
                              values="amt", aggfunc="sum")
         out = pd.DataFrame(index=piv.index)
         out["net_issuance_mn"] = piv.get("Issues", 0) - piv.get("Redemptions", 0)
+        return out
+
+    def _fetch_withheld(self, start: str) -> pd.DataFrame:
+        catg = self.cfg.get("withheld_tax_catg", "Taxes - Withheld Individual/FICA")
+        endpoint = self.cfg.get(
+            "deposits_endpoint", "/v1/accounting/dts/deposits_withdrawals_operating_cash")
+        rows = self._paged(
+            endpoint,
+            f"record_date:gte:{start},transaction_type:eq:Deposits,transaction_catg:eq:{catg}",
+            "record_date,transaction_catg,transaction_today_amt",
+        )
+        df = pd.DataFrame(rows)
+        if df.empty:
+            raise ValueError("no withheld-tax rows")
+        df["withheld_tax_mn"] = pd.to_numeric(df["transaction_today_amt"], errors="coerce")
+        # one deposit row per day, but sum defensively in case the table ever splits
+        # the line across account types; a $0 'no deposit' day is a real datum, kept.
+        out = (df.dropna(subset=["withheld_tax_mn"])
+                 .groupby("record_date", as_index=True)["withheld_tax_mn"].sum()
+                 .to_frame())
+        out.index.name = "date"
         return out

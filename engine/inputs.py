@@ -191,6 +191,25 @@ def build_features() -> pd.DataFrame:
         f["ebp"] = np.nan
         f["ebp_recession_prob"] = np.nan
 
+    # --- high-frequency real-activity nowcast (research/REAL_ACTIVITY_NOWCAST.md) -
+    # Weekly jobless claims + Indeed postings are LEVELS (ffill across the week);
+    # the conditions layer reads their trend. Augur-style leading labor reads that
+    # front-run the monthly, revised PAYEMS.
+    put("initial_claims", series.get("initial_claims"), ffill_limit=10)
+    put("initial_claims_4wk", series.get("initial_claims_4wk"), ffill_limit=10)
+    put("continued_claims", series.get("continued_claims"), ffill_limit=12)
+    put("indeed_postings", series.get("indeed_postings"), ffill_limit=14)
+    put("indeed_new_postings", series.get("indeed_new_postings"), ffill_limit=14)
+    # Daily withheld income & employment taxes ($mn) — a FLOW, so it is NOT ffilled
+    # (carrying a deposit forward would double-count); conditions sums the raw days.
+    wt = store.read("treasury", "withheld_taxes")
+    put("withheld_taxes", wt.iloc[:, 0] if wt is not None and not wt.empty else None,
+        ffill_limit=None)
+    # SF Fed Daily News Sentiment — a quant complement to the LLM news digests.
+    ns = store.read("frbsf", "news_sentiment")
+    put("news_sentiment", ns.iloc[:, 0] if ns is not None and not ns.empty else None,
+        ffill_limit=7)
+
     # --- liquidity ($bn) — FRED merged with official NY Fed / Board sources -------
     walcl = series.get("fed_balance_sheet")
     h41 = store.read("nyfed", "h41_assets")

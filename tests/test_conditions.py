@@ -49,6 +49,13 @@ def _frame(n: int = 400, **overrides) -> pd.DataFrame:
     f["ebp_recession_prob"] = 0.08
     f["wei"] = 2.5
     f["gdpnow"] = 2.8
+    # high-frequency real-activity / labor nowcast inputs
+    f["initial_claims"] = 220 + 5 * np.sin(rng / 20)
+    f["initial_claims_4wk"] = 222 + 3 * np.sin(rng / 25)
+    f["continued_claims"] = 1800 + 20 * np.sin(rng / 30)
+    f["indeed_postings"] = 120 - rng * 0.01
+    f["indeed_new_postings"] = 118 - rng * 0.01
+    f["news_sentiment"] = 0.05 * np.sin(rng / 15)
     f["sticky_cpi"] = 0.30      # monthly %
     f["flex_cpi"] = 0.50
     f["median_cpi"] = 3.5
@@ -63,9 +70,39 @@ def _frame(n: int = 400, **overrides) -> pd.DataFrame:
 def test_snapshot_has_all_blocks() -> None:
     snap = conditions_snapshot(_frame())
     for block in ("financial_conditions", "recession", "growth_nowcast",
-                  "inflation_nowcast", "risk_appetite"):
+                  "labor_nowcast", "inflation_nowcast", "risk_appetite"):
         assert block in snap
     assert snap["financial_conditions"]["state"] in ("loose", "neutral", "tight")
+
+
+def test_labor_nowcast_block_populates() -> None:
+    snap = conditions_snapshot(_frame())
+    lab = snap["labor_nowcast"]
+    assert lab["initial_claims_4wk"] is not None
+    assert lab["continued_claims"] is not None
+    assert lab["claims_trend"] in ("rising", "falling")
+    assert lab["indeed_trend"] in ("rising", "falling")
+    assert lab["read"] in ("labor cooling", "labor firm", "labor mixed")
+    # SF Fed news sentiment surfaces in the risk-appetite read, not the roro composite
+    assert "news_sentiment" in snap["risk_appetite"]
+    assert snap["risk_appetite"]["news_sentiment_state"] in ("optimistic", "pessimistic")
+
+
+def test_labor_reads_cooling_when_claims_surge_and_demand_falls() -> None:
+    # claims +30% over the trailing year, Indeed postings sliding hard
+    n = 400
+    idx = pd.bdate_range("2023-01-02", periods=n)
+    rng = np.arange(n, dtype=float)
+    surge = np.where(rng < n - 252, 200.0, 200.0 + (rng - (n - 252)) * 0.30)
+    f = _frame(n=n)
+    f["initial_claims_4wk"] = pd.Series(surge, index=idx)
+    f["initial_claims"] = pd.Series(surge, index=idx)
+    f["indeed_postings"] = pd.Series(130 - rng * 0.15, index=idx)  # steep demand fade (>5%/3m)
+    snap = conditions_snapshot(f)
+    lab = snap["labor_nowcast"]
+    assert lab["claims_trend"] == "rising"
+    assert lab["indeed_trend"] == "falling"
+    assert lab["read"] == "labor cooling"
 
 
 def test_recession_score_low_when_calm() -> None:

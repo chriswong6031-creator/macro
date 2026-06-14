@@ -13,6 +13,11 @@ risk that the price-based quad lacks:
                             ADJUSTED curve slope (strips the 2022-24 false
                             inversion driven by a low/negative term premium).
   • Growth nowcast        — Weekly Economic Index + Atlanta Fed GDPNow.
+  • Labor / real-activity — high-frequency leading reads that front-run the
+                            monthly, revised payrolls: weekly jobless claims,
+                            Indeed job postings (demand), and daily withheld
+                            income-tax receipts (a wage/income flow). Additive
+                            display reads — NOT in the recession/drawdown SCORE.
   • Inflation nowcast     — Atlanta sticky vs flexible CPI: is the impulse
                             persistent (sticky rising) or transitory (flexible)?
   • Risk-appetite layer   — equity volatility-risk-premium (implied-realized),
@@ -117,6 +122,41 @@ def conditions_frame(f: pd.DataFrame) -> pd.DataFrame:
         out["curve_tp_adj"] = f["curve_tp_adj"]
     if "spread_2s10s" in f:
         out["curve_raw"] = f["spread_2s10s"]
+
+    # Real-activity / labor nowcast (research/REAL_ACTIVITY_NOWCAST.md) --------
+    # Leading labor + income reads that front-run the monthly, revised PAYEMS.
+    # ADDITIVE display columns — deliberately NOT folded into recession_risk /
+    # drawdown_risk (those feed the macro-risk SCORE), so scoring is unchanged
+    # until these legs are separately validated.
+    lcfg = cfg.get("labor", {})
+    claims4 = _col(f, "initial_claims_4wk")
+    if claims4 is None:
+        claims4 = _col(f, "initial_claims")
+    if claims4 is not None:
+        out["initial_claims_4wk"] = claims4
+        out["claims_yoy"] = (claims4 / claims4.shift(lcfg.get("claims_yoy_window_d", 252)) - 1.0) * 100
+        out["claims_z"] = _z(claims4, lcfg.get("claims_z_lookback_d", 756))
+    cc = _col(f, "continued_claims")
+    if cc is not None:
+        out["continued_claims"] = cc
+    indeed = _col(f, "indeed_postings")
+    if indeed is not None:
+        out["indeed_postings"] = indeed
+        out["indeed_chg"] = (indeed / indeed.shift(lcfg.get("indeed_chg_window_d", 63)) - 1.0) * 100
+    # withheld income & employment taxes: a daily FLOW — sum the ACTUAL deposit
+    # days over a trailing window, then YoY of that sum (never ffill a flow).
+    wt_raw = store.read("treasury", "withheld_taxes")
+    if wt_raw is not None and not wt_raw.empty:
+        s = wt_raw.iloc[:, 0].copy()
+        s.index = pd.to_datetime(s.index)
+        s = s.sort_index()
+        roll = s.rolling(lcfg.get("withheld_sum_window_d", 63), min_periods=40).sum()
+        wt_yoy = (roll / roll.shift(lcfg.get("withheld_yoy_window_d", 252)) - 1.0) * 100
+        out["withheld_tax_yoy"] = wt_yoy.reindex(out.index).ffill(limit=10)
+    ns = _col(f, "news_sentiment")
+    if ns is not None:
+        out["news_sentiment"] = ns
+        out["news_sentiment_z"] = _z(ns, lcfg.get("news_z_lookback_d", 252))
 
     # Equity volatility-risk-premium -----------------------------------------
     vcfg = cfg["vrp"]
@@ -280,6 +320,37 @@ def conditions_snapshot(f: pd.DataFrame) -> dict:
         "gdpnow": _last(_col(f, "gdpnow")),
     }
 
+    # real-activity / labor nowcast — leading reads that front-run monthly PAYEMS
+    lw = cfg.get("labor", {})
+    cyoy = g("claims_yoy")
+    ichg = g("indeed_chg")
+    wyoy = g("withheld_tax_yoy")
+    labor = {
+        "initial_claims_4wk": _last(_col(f, "initial_claims_4wk")),
+        "continued_claims": _last(_col(f, "continued_claims")),
+        "claims_yoy_pct": cyoy,
+        "claims_z": g("claims_z"),
+        # claims RISING => labor cooling (more separations)
+        "claims_trend": (None if cyoy is None else ("rising" if cyoy > 0 else "falling")),
+        "indeed_postings": _last(_col(f, "indeed_postings")),
+        "indeed_chg_3m_pct": ichg,
+        # postings FALLING => labor demand softening
+        "indeed_trend": (None if ichg is None else ("rising" if ichg > 0 else "falling")),
+        "withheld_tax_yoy_pct": wyoy,        # nominal, trailing ~3m of deposit days
+        "income_trend": (None if wyoy is None else ("rising" if wyoy > 0 else "falling")),
+    }
+    cooling_votes = sum(bool(v) for v in (
+        cyoy is not None and cyoy >= lw.get("claims_yoy_warn_pct", 10.0),
+        ichg is not None and ichg <= lw.get("indeed_chg_warn_pct", -5.0),
+        wyoy is not None and wyoy < 0))
+    firm_votes = sum(bool(v) for v in (
+        cyoy is not None and cyoy <= 0,
+        ichg is not None and ichg >= 0,
+        wyoy is not None and wyoy >= 2.0))
+    if any(v is not None for v in (cyoy, ichg, wyoy)):
+        labor["read"] = ("labor cooling" if cooling_votes >= 2 else
+                         ("labor firm" if firm_votes >= 2 else "labor mixed"))
+
     # inflation nowcast: persistent (sticky) vs transitory (flexible)
     sm = cfg["inflation_nowcast"]["smooth_months"]
     sticky = _col(f, "sticky_cpi")
@@ -329,6 +400,13 @@ def conditions_snapshot(f: pd.DataFrame) -> dict:
                        ("risk-on" if roro > rcfg["risk_on"] else
                         ("risk-off" if roro < rcfg["risk_off"] else "neutral"))),
         "vol_target_scalar": g("vol_target_scalar"),
+        # SF Fed Daily News Sentiment: a quant complement to the LLM digests.
+        # Surfaced as its own read — NOT folded into the roro composite above, to
+        # keep that gauge stable until this leg is separately validated.
+        "news_sentiment": g("news_sentiment"),
+        "news_sentiment_z": g("news_sentiment_z"),
+        "news_sentiment_state": (None if g("news_sentiment") is None else
+                                 ("optimistic" if (g("news_sentiment") or 0) > 0 else "pessimistic")),
     }
 
     # drawdown-risk gauge (MEASURED §6: >=80 -> P(>=10% dd/63d) ~45% vs 13% base)
@@ -379,6 +457,7 @@ def conditions_snapshot(f: pd.DataFrame) -> dict:
         "financial_conditions": fin,
         "recession": recession,
         "growth_nowcast": growth,
+        "labor_nowcast": labor,
         "inflation_nowcast": inflation,
         "risk_appetite": risk,
         "drawdown_risk": drawdown,

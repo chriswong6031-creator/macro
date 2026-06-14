@@ -51,7 +51,14 @@ fred:
     econ_confirm:
       PAYEMS: payrolls            # monthly, thousands
       INDPRO: industrial_prod     # monthly, index
-    # --- Quant-factor expansion (research/QUANT_FACTOR_EXPANSION.md) -----------
+    labor:                        # high-frequency real-activity LABOR nowcast (research/REAL_ACTIVITY_NOWCAST.md)
+      ICSA: initial_claims        # weekly initial jobless claims (SA, level) — the leading labor signal
+      IC4WSA: initial_claims_4wk  # 4-week MA (the smoothed read used for trend)
+      CCSA: continued_claims      # weekly continued claims (insured unemployment) — confirms
+      IHLIDXUS: indeed_postings   # Indeed Hiring Lab job-postings index (Feb-1-2020=100) — labor DEMAND
+      IHLIDXNEWUS: indeed_new_postings  # NEW postings only (the more-leading variant)
+      # NOTE: the Indeed series are copyrighted; FRED states pre-approval is required to
+      # USE/redistribute them. Pulled here for PRIVATE dashboard use only — do not publish.
     # All free on FRED; feed engine/conditions.py + the growth/inflation axes.
     conditions:                   # Financial-conditions indices (Chicago/StL Fed)
       NFCI: nfci                  # National Financial Conditions Index (weekly; +=tight)
@@ -164,6 +171,11 @@ treasury:
   base_url: https://api.fiscaldata.treasury.gov/services/api/fiscal_service
   tga_endpoint: /v1/accounting/dts/operating_cash_balance
   debt_txn_endpoint: /v1/accounting/dts/public_debt_transactions
+  # DTS "Deposits and Withdrawals of Operating Cash" (Table II): the daily withheld
+  # income & employment taxes deposit ($mn) = a real-time wage/income proxy that
+  # leads payrolls and is near-impossible to game. Same keyless API as the TGA.
+  deposits_endpoint: /v1/accounting/dts/deposits_withdrawals_operating_cash
+  withheld_tax_catg: "Taxes - Withheld Individual/FICA"
   page_size: 10000
   retries: 3
 
@@ -187,6 +199,14 @@ fedboard:
   # warning gauge that forecasts both activity and asset prices. Monthly CSV from
   # the Fed Board (cols: date, gz_spread, ebp, est_prob), history from 1973.
   ebp_url: https://www.federalreserve.gov/econres/notes/feds-notes/ebp_csv.csv
+  retries: 3
+
+frbsf:
+  # SF Fed Daily News Sentiment Index (Buckman-Shapiro-Sudhof-Wilson): a daily,
+  # lexical-analysis economic-sentiment gauge built from major-newspaper articles,
+  # history from 1980. Free .xlsx ('Data' sheet: date, News Sentiment). A QUANT
+  # complement to the LLM news digests; feeds engine/conditions.py risk-appetite.
+  news_sentiment_url: https://www.frbsf.org/wp-content/uploads/news_sentiment_data.xlsx
   retries: 3
 
 # =============================================================================
@@ -731,6 +751,15 @@ engine:
   conditions:
     nfci_change_window_d: 65        # ~13 weeks: NFCI tightening/loosening trend
     nfci_pctile_lookback_d: 1260    # ~5y percentile of the conditions level
+    labor:                          # high-frequency real-activity nowcast (research/REAL_ACTIVITY_NOWCAST.md)
+      claims_yoy_window_d: 252      # ~1y change of the 4wk-MA claims level (rising = labor cooling)
+      claims_z_lookback_d: 756      # ~3y rolling z of the 4wk-MA claims level
+      indeed_chg_window_d: 63       # ~3m change of the Indeed postings index (labor demand trend)
+      withheld_sum_window_d: 63     # trailing ~3m of ACTUAL deposit days (a flow — never ffilled)
+      withheld_yoy_window_d: 252    # ~1y of deposit days for the YoY of the trailing sum
+      news_z_lookback_d: 252        # ~1y rolling z of the daily news-sentiment level
+      claims_yoy_warn_pct: 10.0     # 4wk-MA claims +10% y/y => "cooling" label
+      indeed_chg_warn_pct: -5.0     # Indeed postings -5% over 3m => demand softening
     recession:                      # composite 0..100 recession-risk score
       weights: {sahm: 1.0, recession_prob: 0.8, ebp_prob: 0.8, curve: 1.0, ebp_level: 0.5}
       sahm_full: 0.50               # Sahm >= this => recession underway (full stress)

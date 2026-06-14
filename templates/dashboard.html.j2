@@ -760,6 +760,7 @@
   {% set DR = C.drawdown_risk %}
   {% set CAP = C.capitulation %}
   {% set ST = C.style_tilt %}
+  {% set LN = C.labor_nowcast %}
   {% set SC = (latest.playbook or {}).scenario %}
   {% set NH = nowcast_hist or {} %}
   <div class="panel span12" id="conditions">
@@ -857,6 +858,40 @@
           {{ help("Which side of inflation is running hotter right now. 'Transitory (flexible-led)' = the gap is driven by the FAST, noisy prices (gas/food/cars), which tend to mean-revert — so this kind of inflation usually fades on its own. 'Persistent (sticky-led)' = the SLOW prices (rent/services) are leading, which is stubborn and what forces the Fed's hand. It compares the two nowcasts above; it is a read on the MIX, not a forecast of the level.", "现在通胀的哪一侧更热。'暂时性（弹性主导）'＝差距由快速、噪声大的价格（汽油/食品/汽车）驱动，往往均值回归，所以这类通胀通常自行消退。'持续性（黏性主导）'＝缓慢价格（房租/服务）领先，顽固且最终迫使美联储行动。它比较上面两个即时预测，判读的是结构而非水平的预测。") }}</div>{% endif %}
       </div>
 
+      <!-- Labor & real-activity nowcast (leading; front-runs payrolls) -->
+      {% if LN %}
+      <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
+        <div style="font-weight:700;margin-bottom:6px">{{ t('Labor & real activity', '劳动力与实体活动') }}
+          {{ help("High-frequency, LEADING reads on the real economy that front-run the monthly (and heavily revised) jobs report. Weekly jobless claims (rising = more layoffs), Indeed job postings (labor DEMAND), and the daily withheld income & employment taxes deposited at the Treasury (a near-real-time read on total wages — very hard to game). They turn months before payrolls confirm. Free FRED / Treasury / SF Fed data — see research/REAL_ACTIVITY_NOWCAST.md.", "对实体经济的高频领先读数，抢在月度（且大幅修正）的就业报告之前。每周首次申领失业金（上升＝裁员增多）、Indeed 招聘职位（劳动力需求）、以及财政部每日预扣所得与就业税存款（对总工资的近实时读数，极难操纵）。它们比非农数据提前数月转向。免费 FRED／财政部／旧金山联储数据。") }}
+          <span class="muted" style="font-weight:400;font-size:11px">· {{ t('leads payrolls', '领先非农') }}</span></div>
+
+        {% if LN.initial_claims_4wk is not none %}
+        {% set _ccol = 'var(--down)' if LN.claims_trend=='rising' else 'var(--up)' %}
+        <div class="kv">{{ t('Initial claims (4wk avg)', '首次申领（4周均）') }}
+          <b>{{ (LN.initial_claims_4wk/1000)|round|int }}k</b>
+          {% if LN.claims_yoy_pct is not none %}<span class="sm" style="color:{{ _ccol }}">{{ '%+.0f'|format(LN.claims_yoy_pct) }}% y/y {{ '▲' if LN.claims_trend=='rising' else '▼' }}</span>{% endif %}</div>{% endif %}
+
+        {% if LN.continued_claims is not none %}<div class="kv">{{ t('Continued claims', '续领失业金') }} <b>{{ '%.2f'|format(LN.continued_claims/1000000) }}M</b></div>{% endif %}
+
+        {% if LN.indeed_postings is not none %}
+        {% set _icol = 'var(--up)' if LN.indeed_trend=='rising' else 'var(--down)' %}
+        <div class="kv">{{ t('Indeed job postings', 'Indeed 招聘职位') }}
+          <b>{{ '%.0f'|format(LN.indeed_postings) }}</b>
+          {% if LN.indeed_chg_3m_pct is not none %}<span class="sm" style="color:{{ _icol }}">{{ '%+.1f'|format(LN.indeed_chg_3m_pct) }}%/3mo {{ '▲' if LN.indeed_trend=='rising' else '▼' }}</span>{% endif %}</div>{% endif %}
+
+        {% if LN.withheld_tax_yoy_pct is not none %}
+        {% set _wcol = 'var(--up)' if LN.income_trend=='rising' else 'var(--down)' %}
+        <div class="kv">{{ t('Withheld income taxes', '预扣所得税') }}
+          {{ help("Income & employment taxes deposited daily at the Treasury straight from paychecks. The trailing-3-month total vs a year ago is a near-real-time read on total WAGE income — hard to manipulate, and it leads the payroll report.", "每日从工资中直接缴入财政部的所得与就业税。近三个月合计同比是对总工资收入的近实时读数 — 难以操纵，且领先非农报告。") }}
+          <b style="color:{{ _wcol }}">{{ '%+.1f'|format(LN.withheld_tax_yoy_pct) }}%</b> <span class="muted sm">y/y</span></div>{% endif %}
+
+        {% if LN.read %}
+        {% set _rcol = 'var(--up)' if LN.read=='labor firm' else ('var(--down)' if LN.read=='labor cooling' else 'var(--muted)') %}
+        <div class="muted sm" style="margin-top:6px;padding-top:6px;border-top:1px solid var(--line)">{{ t('Read:', '判读：') }}
+          <b style="color:{{ _rcol }}">{{ t(LN.read, {'labor firm':'劳动力稳健','labor cooling':'劳动力降温','labor mixed':'劳动力分化'}.get(LN.read, LN.read)) }}</b></div>{% endif %}
+      </div>
+      {% endif %}
+
       <!-- Risk appetite -->
       <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
         <div style="font-weight:700;margin-bottom:6px">{{ t('Risk appetite (cross-asset)', '风险偏好（跨资产）') }}</div>
@@ -871,6 +906,11 @@
         {% set sbcolor = 'var(--down)' if 'breakdown' in (RA.stock_bond_regime or '') else 'var(--muted)' %}
         <div class="kv">{{ t('Stock-bond corr', '股债相关性') }} <b style="color:{{ sbcolor }}">{{ '%+.2f'|format(RA.stock_bond_corr) }}</b> <span class="muted sm">{{ t('bonds not hedging' if 'breakdown' in (RA.stock_bond_regime or '') else ('bonds hedge' if 'diversifying' in (RA.stock_bond_regime or '') else 'mixed'), '债券未对冲' if 'breakdown' in (RA.stock_bond_regime or '') else ('债券对冲' if 'diversifying' in (RA.stock_bond_regime or '') else '混合')) }}</span></div>{% endif %}
         {% if RA.vol_target_scalar is not none %}<div class="kv">{{ t('Vol-target exposure', '波动率目标敞口') }} <b>{{ '%.2f'|format(RA.vol_target_scalar) }}×</b></div>{% endif %}
+        {% if RA.news_sentiment is not none %}
+        {% set _nscol = 'var(--up)' if RA.news_sentiment_state=='optimistic' else 'var(--down)' %}
+        <div class="kv">{{ t('News sentiment', '新闻情绪') }}
+          {{ help("The San Francisco Fed's Daily News Sentiment Index — economic tone extracted from major US newspapers (history from 1980). A continuous, reproducible read of the macro mood (positive = optimistic), and a quant complement to the AI news digests.", "旧金山联储每日新闻情绪指数 — 从美国主流报纸提取的经济基调（自 1980 年）。对宏观情绪的连续、可复现读数（正值＝乐观），是 AI 新闻摘要的量化补充。") }}
+          <b style="color:{{ _nscol }}">{{ '%+.2f'|format(RA.news_sentiment) }}</b> <span class="muted sm">{{ t(RA.news_sentiment_state, {'optimistic':'乐观','pessimistic':'悲观'}.get(RA.news_sentiment_state, RA.news_sentiment_state)) }}</span></div>{% endif %}
         {% if CAP and CAP.active %}
         {% set _firing = CAP.signals_firing or [] %}
         {% set _cot_on = (CAP.score or 0) - (_firing|length) %}
