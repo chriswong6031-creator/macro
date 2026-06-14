@@ -54,6 +54,23 @@
   .eqbadge.eq-down { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--down);
                      border-color:color-mix(in srgb,var(--down) 40%,transparent); }
   .eqbadge.eq-flat { background:var(--panel2); color:var(--muted); }
+  .bcbox { margin:9px 0 6px; padding:9px 12px; border-radius:9px; background:var(--panel2);
+           border-left:4px solid var(--muted); cursor:help; }
+  .bc-head { display:flex; align-items:baseline; gap:9px; }
+  .bc-ttl { font-size:12px; font-weight:800; letter-spacing:.03em; text-transform:uppercase;
+            color:var(--muted); }
+  .bc-score { font-size:19px; font-weight:800; line-height:1; }
+  .bc-score .bc-max { font-size:11px; font-weight:600; opacity:.55; }
+  .bc-grade { font-size:12px; font-weight:600; opacity:.8; margin-left:auto; }
+  .bcg-strong, .bcg-solid { color:var(--up); }
+  .bcg-light { color:var(--warn); } .bcg-minimal { color:var(--muted); }
+  .bcbox.bc-strong, .bcbox.bc-solid { border-left-color:var(--up);
+            background:color-mix(in srgb, var(--up) 9%, var(--panel2)); }
+  .bcbox.bc-light { border-left-color:var(--warn); }
+  .bc-tf { margin-top:5px; font-size:12.5px; color:var(--text);
+           font-variant-numeric:tabular-nums; }
+  .bc-tf .bc-y { color:var(--up); font-weight:800; }
+  .bc-tf .bc-n { color:var(--muted); opacity:.65; }
   a { text-decoration:none; }
   h1 { font-size:20px; margin:0; }
   h2 { font-size:14px; margin:0 0 10px; color:var(--muted); text-transform:uppercase;
@@ -140,6 +157,7 @@
       </div>
       <p id="r_summary" class="muted" style="margin:2px 0 6px; font-size:13.5px"></p>
       <div id="r_entry" class="entrybar"><span class="entrytag" id="r_tag"></span><span id="r_entrytext"></span></div>
+      <div id="r_bc" class="bcbox" style="display:none"></div>
       <p id="r_age" class="agewhen" style="display:none"></p>
       <p id="r_early" class="early" style="display:none"></p>
       <ul id="r_points" class="points"></ul>
@@ -285,6 +303,24 @@
       eqEl.title = lz(d.ladder.eq_tip, d.ladder.eq_tip_zh);
       eqEl.style.display = 'inline-flex';
     } else { eqEl.style.display = 'none'; }
+
+    // Bottom Confidence (multi-timeframe) — only on bottoming states
+    var bcEl = document.getElementById('r_bc');
+    if (d.ladder.bc_score != null && d.ladder.bc_line) {
+      var bcg = lang() === 'zh' ? (d.ladder.bc_grade_zh || d.ladder.bc_grade) : d.ladder.bc_grade;
+      var bcLbl = lang() === 'zh' ? '底部信心' : 'Bottom confidence';
+      var tfHtml = lz(d.ladder.bc_line, d.ladder.bc_line_zh)
+        .replace(/✓/g, '<span class="bc-y">✓</span>').replace(/✗/g, '<span class="bc-n">✗</span>');
+      bcEl.className = 'bcbox bc-' + (d.ladder.bc_grade || 'minimal');
+      bcEl.innerHTML =
+        '<div class="bc-head"><span class="bc-ttl">🎯 ' + bcLbl + '</span>' +
+        '<span class="bc-score ' + 'bcg-' + (d.ladder.bc_grade || 'minimal') + '">' +
+        d.ladder.bc_score + '<span class="bc-max">/100</span></span>' +
+        '<span class="bc-grade">' + bcg + '</span></div>' +
+        '<div class="bc-tf">' + tfHtml + '</div>';
+      bcEl.title = lz(d.ladder.bc_tip, d.ladder.bc_tip_zh);
+      bcEl.style.display = 'block';
+    } else { bcEl.style.display = 'none'; }
 
     var pts = (lang() === 'zh' && d.ladder.points_zh && d.ladder.points_zh.length)
       ? d.ladder.points_zh : (d.ladder.points || []);

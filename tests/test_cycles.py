@@ -10,9 +10,10 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine.cycles import (  # noqa: E402
-    _EQ_BEARISH, _EQ_BULLISH, _eq_grade, _eq_proximity, analyze, cycle_state,
-    early_signals, entry_quality, entry_quality_fields, find_troughs, ladder_state,
-    mtf_snapshot, signal_age, signal_age_fields, STATE_DISPLAY,
+    _EQ_BEARISH, _EQ_BULLISH, _eq_grade, _eq_proximity, analyze, bottom_confidence,
+    bottom_confidence_fields, cycle_state, early_signals, entry_quality,
+    entry_quality_fields, find_troughs, ladder_state, mtf_snapshot, signal_age,
+    signal_age_fields, STATE_DISPLAY,
 )
 
 IDX = pd.bdate_range("2020-01-01", periods=520)
@@ -190,6 +191,31 @@ def test_eq_fields_and_analyze() -> None:
     assert "eq_score" in res["ladder"] and -100 <= res["ladder"]["eq_score"] <= 100
 
 
+def test_bottom_confidence_confluence_and_gating() -> None:
+    full = {"D": {"macd_cross_up": True}, "3D": {"macd_cross_up": True},
+            "W": {"macd_cross_up": True}, "M": {"macd_cross_up": True}}
+    none = {"D": {}, "3D": {}, "W": {}, "M": {}}
+    eq = {"long": 80.0}
+    # full multi-TF confluence => no discount (bc == entry quality)
+    assert bottom_confidence(full, eq, "FRESH BUY")["score"] == 80.0
+    # zero confluence => the floor (0.55 x long)
+    assert abs(bottom_confidence(none, eq, "FRESH BUY")["score"] - 44.0) < 0.1
+    # confluence only DISCOUNTS, never inflates
+    assert bottom_confidence(none, eq, "FRESH BUY")["score"] <= eq["long"]
+    # non-bottoming states get no bottom-confidence at all
+    assert bottom_confidence(full, eq, "RALLY ON") == {}
+    assert bottom_confidence(full, eq, "TOP WATCH") == {}
+    # counter-trend bounce is capped into the high-risk band
+    assert bottom_confidence(full, {"long": 95.0}, "COUNTERTREND BOUNCE")["score"] <= 30
+    # a missing monthly bar renormalises (no silent cap, no crash)
+    bc = bottom_confidence({"D": {"macd_cross_up": True}, "3D": {}, "W": {"macd_cross_up": True}},
+                           eq, "TURN SIGNALED")
+    assert 0 < bc["score"] <= 80 and bc["monthly_avail"] is False
+    # fields render a per-timeframe line + a grade
+    f = bottom_confidence_fields(bottom_confidence(full, eq, "FRESH BUY"))
+    assert "Weekly ✓" in f["bc_line"] and f["bc_grade"] == "strong"
+
+
 if __name__ == "__main__":
     for fn in [test_trough_spacing, test_translation_right, test_translation_left,
                test_failed_cycle_flag, test_ladder_states_sane, test_decline_on_breakdown,
@@ -198,7 +224,7 @@ if __name__ == "__main__":
                test_analyze_attaches_age, test_eq_proximity_peaks_near_the_low,
                test_eq_grade_bands, test_eq_sign_anchored_to_state,
                test_eq_every_state_classified, test_eq_thin_history_bows_out,
-               test_eq_fields_and_analyze]:
+               test_eq_fields_and_analyze, test_bottom_confidence_confluence_and_gating]:
         fn()
         print(f"PASS {fn.__name__}")
     print("all cycle tests passed")

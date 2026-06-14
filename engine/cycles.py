@@ -140,6 +140,10 @@ def mtf_snapshot(close: pd.Series, kind: str = "equity") -> dict:
         "D": _tf_state(daily),
         "3D": _tf_state(daily.resample(tf3).last().dropna()) if len(daily) > 150 else {},
         "W": _tf_state(daily.resample("W-FRI").last().dropna()) if len(daily) > 300 else {},
+        # Monthly — for the multi-timeframe Bottom-Confidence confluence. Needs
+        # ~40 month-end bars for the MACD/RSI math (_tf_state bows out under 40),
+        # i.e. ~900 trading days; thin-history names simply omit it.
+        "M": _tf_state(daily.resample("ME").last().dropna()) if len(daily) > 900 else {},
     }
 
 
@@ -1312,6 +1316,84 @@ def entry_quality_fields(eq: dict, state: str | None = None) -> dict:
             "eq_pct_from_low": eq.get("pct_from_low")}
 
 
+# ------------------------------------------------- bottom confidence (multi-TF) ----
+# Surfaced 0-100 "Bottom Confidence" for the buy-side / bottoming states. It does
+# NOT replace entry_quality — it EXTENDS it. Measured (research/BOTTOM_CONFIDENCE.md,
+# 68,916 walk-forward evals over 109 deep-history names): the two axes are
+# orthogonal — entry_quality's proximity-to-the-low governs DRAWDOWN DEPTH (tail
+# halves across its range), while multi-timeframe confluence governs DURABILITY
+# (the "cycle low held" rate climbs 30%->75%). WEEKLY confirmation is the strong
+# lever (+19pp held-rate vs +4pp monthly), so it dominates the confluence weight.
+# Conservative by design: confluence only DISCOUNTS the (drawdown-calibrated) entry
+# quality when the higher timeframes haven't confirmed the turn — never inflates it.
+
+# States where "is this a durable bottom?" is the live question (the measured pop).
+_BC_STATES = {"DECLINE", "BOTTOM WATCH", "TURN SIGNALED", "FRESH BUY",
+              "COUNTERTREND BOUNCE"}
+# Confluence weights — weekly dominant per the measured held-rate lift.
+_BC_TF_WEIGHTS = {"D": 0.20, "3D": 0.20, "W": 0.45, "M": 0.15}
+_BC_TF_KEY = {"D": "daily", "3D": "three_day", "W": "weekly", "M": "monthly"}
+
+
+def _tf_turning_up(s: dict) -> bool:
+    """A timeframe is 'turning up' if its MACD just crossed up, curled up off a
+    histogram trough, is approaching an up-cross, or StochRSI popped out of
+    oversold — the bottoming-confluence primitive from research/BOTTOM_CONFIDENCE.md."""
+    if not s:
+        return False
+    return bool(s.get("macd_cross_up") or s.get("macd_curl_up")
+                or s.get("macd_approaching_up") or s.get("stoch_cross_up"))
+
+
+def bottom_confidence(mtf: dict, eq: dict, state: str | None) -> dict:
+    """0-100 confidence this is a DURABLE, low-drawdown bottom (buy-side states
+    only). = entry_quality's LONG magnitude (proximity = the drawdown-depth axis)
+    DISCOUNTED when higher timeframes haven't confirmed the turn (the durability
+    axis; weekly weighted heaviest). Returns {} for non-bottoming states."""
+    if not eq or state not in _BC_STATES:
+        return {}
+    long_eq = float(eq.get("long", 0.0)) / 100.0                 # 0..1 (depth axis)
+    tf = {_BC_TF_KEY[k]: _tf_turning_up(mtf.get(k, {})) for k in _BC_TF_WEIGHTS}
+    have_m = bool(mtf.get("M"))
+    # weighted confluence in [0,1]; if monthly is unavailable (thin history) drop
+    # its weight and renormalise so a missing bar can't silently cap the score.
+    wts = {k: w for k, w in _BC_TF_WEIGHTS.items() if k != "M" or have_m}
+    wsum = sum(wts.values()) or 1.0
+    tf_score = sum(w * float(tf[_BC_TF_KEY[k]]) for k, w in wts.items()) / wsum
+    bc = long_eq * (0.55 + 0.45 * tf_score) * 100.0
+    if state == "COUNTERTREND BOUNCE":          # high-risk bounce, never a confident bottom
+        bc = min(bc, 30.0)
+    return {"score": round(float(np.clip(bc, 0, 100)), 1),
+            "tf": tf, "tf_score": round(tf_score, 2), "monthly_avail": have_m}
+
+
+def bottom_confidence_fields(bc: dict) -> dict:
+    """Per-timeframe breakdown line + honest tooltip (EN+ZH) for the UI."""
+    if not bc:
+        return {}
+    sr = int(round(bc["score"]))
+    grade, grade_zh = _eq_grade(sr)                     # reuse strong/solid/light/minimal bands
+    tf = bc["tf"]
+    mk = lambda v: "✓" if v else "✗"
+    mmark = mk(tf["monthly"]) if bc.get("monthly_avail") else "—"
+    line = (f"Daily {mk(tf['daily'])} · 3-Day {mk(tf['three_day'])} · "
+            f"Weekly {mk(tf['weekly'])} · Monthly {mmark}")
+    line_zh = (f"日线 {mk(tf['daily'])} · 3日 {mk(tf['three_day'])} · "
+               f"周线 {mk(tf['weekly'])} · 月线 {mmark}")
+    tip = ("Confidence this is a DURABLE, low-drawdown bottom: how near price is to "
+           "the cycle low (the drawdown-depth axis) discounted when higher "
+           "timeframes haven't confirmed the turn. Measured: weekly confirmation "
+           "lifted the 'cycle-low held' rate ~19pp — a higher score held far more "
+           "often. Risk/durability, NOT a return forecast.")
+    tip_zh = ("衡量当前是否为「持久、低回撤」底部的信心：价格距周期低点的远近（回撤深度轴），"
+              "并在更高周期尚未确认转向时打折。实测：周线确认使「周期低点守住」的比例提升约 "
+              "19 个百分点——分数越高，低点守住的概率越大。这是风险/持久性，并非收益预测。")
+    return {"bc_score": sr, "bc_grade": grade, "bc_grade_zh": grade_zh,
+            "bc_line": line, "bc_line_zh": line_zh,
+            "bc_weekly": tf["weekly"], "bc_monthly": tf["monthly"],
+            "bc_tip": tip, "bc_tip_zh": tip_zh}
+
+
 def analyze(close: pd.Series, high: pd.Series | None = None,
             kind: str = "equity", liquidity: str | None = None) -> dict:
     """`liquidity` = live US net-liquidity regime ("expanding"/"contracting"/
@@ -1330,6 +1412,10 @@ def analyze(close: pd.Series, high: pd.Series | None = None,
         eq = entry_quality(close, cyc, mtf, early, regime, state=lad["state"])
         if eq:
             lad.update(entry_quality_fields(eq, state=lad["state"]))
+            bc = bottom_confidence(mtf, eq, lad["state"])
+            if bc:
+                lad.update(bottom_confidence_fields(bc))
+                lad["bottom_confidence"] = bc["score"]
     return {"cycle": cyc, "mtf": mtf, "early": early, "ladder": lad}
 
 
