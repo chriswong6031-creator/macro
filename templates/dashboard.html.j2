@@ -764,6 +764,21 @@
       </div>
       {% endif %}
 
+      {% if DL.catalyst_narrative %}
+      {% set CN = DL.catalyst_narrative %}
+      {% set cncolor = 'var(--up)' if CN.agreement=='corroborates' else '#d98a00' %}
+      <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-left:3px solid {{ cncolor }};border-radius:8px;padding:10px 14px">
+        <div style="font-weight:700;margin-bottom:4px">🧠 {{ t('Catalyst cross-check', '催化交叉验证') }}
+          {{ help("An AI read of the actual catalyst TEXT (engine/catalyst_tone.py, DeepSeek) cross-checked against the Fed-put switch: does the document read as a reversible washout or a structural break? CONTEXT ONLY — it never changes the verdict; the validated gate governs. Shown only on an active dislocation when the read is confidence-passed and quote-verified.", "对实际催化文本的 AI 解读（engine/catalyst_tone.py，DeepSeek）与美联储托底开关的交叉验证：文档解读为可逆抛售还是结构性断裂？仅供背景 —— 绝不改变判定，以经验证的一道闸为准。仅在活跃错位且解读通过置信度与引文核验时显示。") }}
+        </div>
+        <div style="margin-bottom:5px;display:flex;flex-wrap:wrap;gap:6px">
+          <span class="badge" style="font-size:11px;color:{{ cncolor }}">{% if CN.agreement=='corroborates' %}{{ t('corroborates', '印证') }}{% else %}{{ t('diverges', '背离') }}{% endif %}</span>
+          <span class="badge" style="font-size:11px">{{ t('catalyst reads', '催化解读') }}: <span class="l-en">{{ CN.shock_reversible }}</span><span class="l-zh">{{ CN.shock_reversible_zh or CN.shock_reversible }}</span></span>
+        </div>
+        <div class="muted sm"><span class="l-en">{{ CN.note }}</span><span class="l-zh">{{ CN.note_zh or CN.note }}</span></div>
+      </div>
+      {% endif %}
+
       {% if DL.gate2 and DL.gate2.state not in ('dormant', 'unknown') %}
       {% set g2 = DL.gate2 %}
       {% set g2color = 'var(--up)' if g2.state=='confirmed' else ('#d98a00' if g2.state=='awaiting_confirm' else 'var(--muted)') %}
