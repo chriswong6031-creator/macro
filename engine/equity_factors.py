@@ -106,20 +106,40 @@ def _winsor_z(s: pd.Series, cap: float) -> pd.Series:
     return ((s - mu) / sd).clip(-cap, cap)
 
 
-def compute_factors() -> dict | None:
+def compute_factors(asof=None) -> dict | None:
     """Build the factor table + leaderboards + leadership read. Returns None if
-    the fundamentals cache is missing (caller logs and skips)."""
+    the fundamentals cache is missing (caller logs and skips).
+
+    `asof` (a date) switches to POINT-IN-TIME mode: fundamentals come from the
+    leak-free panel cross-section knowable at `asof` (collectors.edgar.
+    as_of_cross_section) and prices are truncated to `asof`. This is the honest
+    input for a factor IC backtest (Phase A) — at each rebalance date it sees only
+    what had actually been filed. `asof=None` (the live dashboard path) reads the
+    latest-FY snapshot and the newest prices, exactly as before."""
     cfg = config.load()["edgar"]["factors"]
     cap = cfg["winsor_z"]
     fpath = config.data_dir() / "edgar" / "fundamentals.parquet"
-    if not fpath.exists():
-        log.warning("equity_factors: no fundamentals cache — run collectors.edgar")
-        return None
-    fund = pd.read_parquet(fpath)
+    if asof is None:
+        if not fpath.exists():
+            log.warning("equity_factors: no fundamentals cache — run collectors.edgar")
+            return None
+        fund = pd.read_parquet(fpath)
+    else:
+        from collectors.edgar import as_of_cross_section
+        try:
+            fund = as_of_cross_section(asof)
+        except Exception as e:  # noqa: BLE001 — no panel yet
+            log.warning("equity_factors: point-in-time panel unavailable (%s)", e)
+            return None
+        if fund.empty:
+            log.warning("equity_factors: no fundamentals knowable at %s", asof)
+            return None
     closes = _closes()
     if closes.empty:
         log.warning("equity_factors: no close caches")
         return None
+    if asof is not None:
+        closes = closes.loc[:pd.Timestamp(asof)]
 
     # latest price + trailing return stats, aligned to fundamentals universe
     px = closes.reindex(columns=[t for t in fund.index if t in closes.columns])
@@ -131,6 +151,8 @@ def compute_factors() -> dict | None:
     vol[rets.tail(win).count() < minp] = np.nan
     # market beta vs SPY (Betting-Against-Beta)
     spy = store.read("yahoo", "SPY")
+    if spy is not None and asof is not None:
+        spy = spy.loc[:pd.Timestamp(asof)]
     beta = pd.Series(np.nan, index=px.columns)
     if spy is not None and "close" in spy.columns:
         spy_ret = spy["close"].pct_change(fill_method=None).reindex(px.index)
@@ -242,7 +264,8 @@ def compute_factors() -> dict | None:
 
     return {
         "as_of": str(px.index.max().date()),
-        "fy": meta_json.get("fy"),
+        "fy": (int(fund["fy"].max()) if (asof is not None and "fy" in fund.columns)
+               else meta_json.get("fy")),
         "n": int(fac["composite"].notna().sum()),
         "factors": composite_legs,
         "factor_labels": {c: FACTOR_LABELS.get(c, c) for c in fac.columns if c in FACTOR_LABELS},
