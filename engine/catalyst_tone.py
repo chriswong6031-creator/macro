@@ -182,9 +182,15 @@ def _validate(parsed: dict) -> dict:
 
 
 def _norm(s: str) -> str:
-    """Whitespace-insensitive, case-insensitive normalization for substring
-    matching a quote against the source (models often reflow whitespace)."""
-    return re.sub(r"\s+", " ", s).strip().lower()
+    """Typography-agnostic normalization for matching a quote against the source:
+    lowercase, then collapse every run of non-ASCII-alphanumeric characters
+    (whitespace, punctuation, Unicode dashes/quotes/NBSP, and mojibake fragments —
+    e.g. the Fed's non-breaking hyphen U+2011 that reaches the reply as 'â€‘') to a
+    single space. The actual word/number SEQUENCE must still appear verbatim in the
+    source, so the anti-hallucination guarantee holds — only typographic noise is
+    normalized away. (Caveat: accented/non-Latin letters in a quote are also dropped;
+    fine for the English macro/FOMC docs this is used on, and it's context-only.)"""
+    return re.sub(r"[^a-z0-9]+", " ", (s or "").lower()).strip()
 
 
 def _verify_citations(rec: dict, source_text: str) -> dict:

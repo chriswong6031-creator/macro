@@ -291,6 +291,19 @@ def test_event_snapshot_stubbed():
         ct._cfg, ct._fetch_event_headlines, ct._call_model = oc, of, om
 
 
+def test_norm_matches_unicode_and_mojibake_dashes():
+    # Regression: Fed rate ranges use the non-breaking hyphen U+2011; the model's quote
+    # and/or the reply encoding can differ from the source ("3â€‑1/2" mojibake). _norm must
+    # reconcile typography so a GENUINE verbatim quote isn't wrongly dropped -> neutral.
+    src = ct._norm("maintain the target range for the federal funds rate at "
+                   "3‑1/2 to 3‑3/4 percent")
+    assert ct._norm("target range for the federal funds rate at 3-1/2 to 3-3/4 percent") in src   # ascii hyphen
+    assert ct._norm("target range for the federal funds rate at "
+                    "3â€‑1/2 to 3â€‑3/4 percent") in src             # mojibake form
+    # anti-hallucination invariant still holds: words not in the source never match
+    assert ct._norm("a fabricated structural regime break in liquidity") not in src
+
+
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     failed = 0
