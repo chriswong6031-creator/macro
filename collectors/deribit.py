@@ -142,6 +142,42 @@ def compute_basis(rows: list[dict], now: datetime) -> dict:
     return out
 
 
+def _gamma_flip(df: pd.DataFrame, S: float):
+    """Zero-gamma spot (dealer GEX sign-flip) + signed distance-to-flip. Recomputes
+    the net dealer gamma across a ±25% spot grid using the stored per-strike K/T/IV
+    (same closed form + assumed dealer sign as the GEX scalar), and finds the spot
+    where it crosses zero, nearest to current spot. ABOVE flip = net long gamma
+    (dealers dampen / pin / mean-revert); BELOW = net short (dealers amplify / trend) —
+    a binary vol-regime BOUNDARY distinct from the per-1% sensitivity scalar.
+    Snapshot-only (the chain has no free history) -> forward-accumulating context."""
+    g = df.dropna(subset=["K", "T", "iv"])
+    g = g[(g["iv"] > 0) & (g["oi"] > 0)]
+    if len(g) < 20 or not (S > 0):
+        return None, None, None
+    K = g["K"].to_numpy(float)
+    T = g["T"].to_numpy(float)
+    sig = g["iv"].to_numpy(float) / 100.0
+    oi = g["oi"].to_numpy(float)
+    sgn = np.where(g["is_call"].to_numpy(bool), 1.0, -1.0)
+    sqrtT = np.sqrt(T)
+    grid = S * np.linspace(0.75, 1.25, 101)
+    net = np.empty(len(grid))
+    for i, Sx in enumerate(grid):
+        d1 = (np.log(Sx / K) + 0.5 * sig * sig * T) / (sig * sqrtT)
+        gamma = np.exp(-0.5 * d1 * d1) / SQRT2PI / (Sx * sig * sqrtT)
+        net[i] = float(np.sum(sgn * gamma * oi * Sx * Sx * 0.01))
+    flips = []
+    for i in range(len(grid) - 1):
+        if net[i] == 0.0 or (net[i] < 0) != (net[i + 1] < 0):
+            x0, x1, y0, y1 = grid[i], grid[i + 1], net[i], net[i + 1]
+            flips.append(x0 - y0 * (x1 - x0) / (y1 - y0) if y1 != y0 else x0)
+    if not flips:
+        regime = "long" if net[len(grid) // 2] >= 0 else "short"
+        return None, None, regime
+    flip = min(flips, key=lambda f: abs(f - S))
+    return float(flip), round(100.0 * (S - flip) / S, 2), ("long" if S >= flip else "short")
+
+
 def compute_structure(rows: list[dict], now: datetime, cfg: dict) -> dict:
     """Pure function (testable): chain rows -> structure-panel dict."""
     recs = []
@@ -230,6 +266,8 @@ def compute_structure(rows: list[dict], now: datetime, cfg: dict) -> dict:
     g_usd = sign * df["gamma"].fillna(0) * df["oi"] * (S ** 2) * 0.01  # USD / 1% move
     out["gex_per_1pct_usd"] = float(g_usd.sum())
     out["gamma_concentration_usd"] = float((df["gamma"].fillna(0) * df["oi"] * (S ** 2) * 0.01).sum())
+    # dealer gamma-FLIP level (zero-gamma spot) + signed distance-to-flip (D-vec-GAMMA)
+    out["gamma_flip"], out["dist_to_flip_pct"], out["gamma_regime"] = _gamma_flip(df, S)
     return out
 
 

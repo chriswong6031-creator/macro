@@ -1210,6 +1210,10 @@ def main() -> int:
             "rv_cone_pctile": _r(last.get("rv_cone_pctile"), 0),
             "vol_of_vol": _r(last.get("vol_of_vol"), 1),
             "vov_pctile": _r(last.get("vov_pctile"), 0),
+            # dealer gamma-flip (zero-gamma spot) + distance-to-flip (D-vec-GAMMA)
+            "gamma_flip": _r(last.get("gamma_flip"), 0),
+            "dist_to_flip_pct": _r(last.get("dist_to_flip_pct"), 1),
+            "gamma_regime": last.get("gamma_regime"),
         },
         "leverage": {
             "oi_total": _r(last.get("oi_total_usd"), 0),

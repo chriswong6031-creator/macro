@@ -2,6 +2,27 @@
 
 Newest first. Each entry: what was decided, why, and what would change it.
 
+## 2026-06-13 — Vector dealer gamma-FLIP level (zero-gamma spot) + distance-to-flip
+
+**D-vec-GAMMA. The last roadmap Tier-1 factor — a dealer gamma-regime boundary, computed
+from the options chain the Vector already fetches.** collectors.deribit._gamma_flip
+recomputes net dealer gamma across a ±25% spot grid (same BS closed form + assumed dealer
+sign — long calls / short puts — as the existing gex_per_1pct_usd scalar) and finds the
+zero-gamma crossing nearest spot. Emits gamma_flip (spot), dist_to_flip_pct (signed), and
+gamma_regime: ABOVE the flip = net long gamma (dealers hedge against the move → pinning /
+mean-reversion / vol suppressed), BELOW = net short (hedge with the move → amplification /
+trend / vol expansion). A binary vol-regime BOUNDARY distinct from the per-1% sensitivity
+scalar — directly addresses the documented 'post-2021 trend votes degrade' problem by
+giving a gate. Wired through btc_signals.options() (snapshot passthrough) + surfaced in the
+options panel. LIVE: spot $64,624 sits +1.9% ABOVE the flip $63,399 → long-gamma (pinning)
+regime; a break below $63,399 would flip to amplification. SNAPSHOT-ONLY (Deribit has no
+free options history) → it forward-ACCRUES rather than being back-calibrated; framed as a
+regime read, not a forecast. tests/test_gamma_flip.py (2: flip-in-range + regime-sign +
+degenerate-None). NOTE: the daily pipeline aligns the snapshot date with the close date; a
+manual mid-day fetch can run 1 day ahead (cosmetic, self-resolves). Completes the 4 roadmap
+Tier-1 factors (RV cone, stablecoin tide, peg monitor, gamma-flip); next = the deferred
+ensemble capstones the stability gates unlock.
+
 ## 2026-06-13 — Vector stablecoin PEG-deviation monitor (measured → ships as CONTEXT, not a veto)
 
 **D-vec-PEG. A stablecoin peg-integrity monitor — and an honest negative result that

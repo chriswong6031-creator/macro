@@ -553,7 +553,8 @@ def options(inputs: dict, cfg: dict) -> pd.DataFrame:
         o.index = pd.to_datetime(o.index)
         for c in ("skew_25d", "rr_25d", "term_slope_30_90", "atm_iv_30d",
                   "put_call_oi_ratio", "max_pain", "gex_per_1pct_usd",
-                  "skew_term", "basis_front_ann", "basis_ann", "basis_slope"):
+                  "skew_term", "basis_front_ann", "basis_ann", "basis_slope",
+                  "gamma_flip", "dist_to_flip_pct", "gamma_regime"):
             if c in o.columns:
                 out[c] = o[c].reindex(idx).ffill()
     return out
