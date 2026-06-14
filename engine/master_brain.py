@@ -292,6 +292,60 @@ def render_markdown(brief: dict) -> str:
     return "\n".join(L)
 
 
+_ZH_SCALARS = ("summary", "regime_read", "rotation_check")
+_ZH_LISTS = ("conflicts", "transmission", "watch_items")
+
+
+def _translate_brief(brief: dict, cfg: dict) -> None:
+    """Attach a Chinese version (brief['zh']) via the shared DeepSeek translator
+    (engine/translate.translate_to_zh) so the dashboard's 中文 toggle shows the brief
+    in Chinese. The brief is unique daily, so it's translated fresh each run — a cheap
+    V4-Flash pass. Degrade-never-raise: on any failure brief['zh'] is omitted and the
+    panel falls back to English (per field)."""
+    if not cfg.get("translate_zh", True):
+        return
+    if brief.get("degraded_reason") and not brief.get("regime_read"):
+        return                                       # nothing usable to translate
+    try:
+        from engine import translate as _tr
+        texts: list[str] = []
+        layout: list[tuple[str, int | None]] = []
+        for k in _ZH_SCALARS:
+            v = brief.get(k)
+            if isinstance(v, str) and v.strip():
+                layout.append((k, None)); texts.append(v)
+        for k in _ZH_LISTS:
+            for i, v in enumerate(brief.get(k) or []):
+                if isinstance(v, str) and v.strip():
+                    layout.append((k, i)); texts.append(v)
+        if not texts:
+            return
+        tcfg = {                                     # force-on Flash translate (independent of profile_translation)
+            "enabled": True,
+            "base_url": cfg.get("llm_base_url", "https://api.deepseek.com/anthropic"),
+            "api_key_env": cfg.get("api_key_env", "DEEPSEEK_API_KEY"),
+            "model": cfg.get("translate_model", "deepseek-v4-flash"),
+            "max_chars": 2000, "max_tokens": 4000, "batch_size": 24,
+        }
+        zh_list = _tr.translate_to_zh(texts, tcfg)
+        if not zh_list or all(x is None for x in zh_list):
+            return
+        zh: dict = {"summary": None, "regime_read": None, "rotation_check": None,
+                    "conflicts": [None] * len(brief.get("conflicts") or []),
+                    "transmission": [None] * len(brief.get("transmission") or []),
+                    "watch_items": [None] * len(brief.get("watch_items") or [])}
+        for (k, i), t in zip(layout, zh_list):
+            if t is None:
+                continue
+            if i is None:
+                zh[k] = t
+            else:
+                zh[k][i] = t
+        brief["zh"] = zh
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("master_brief zh translation failed (%s)", e)
+
+
 def run(persist: bool = True, root: Path | None = None, force: bool = False) -> dict | None:
     """Gather state -> synthesize -> persist data/regime/master_brief.json.
     Returns the brief, or None when disabled (unless `force`, for on-demand/CLI use).
@@ -303,6 +357,7 @@ def run(persist: bool = True, root: Path | None = None, force: bool = False) -> 
         root = Path(root) if root else config.ROOT
         state = gather_state(root)
         brief = synthesize(state, cfg)
+        _translate_brief(brief, cfg)          # attach brief['zh'] for the 中文 toggle
         if persist:
             try:
                 payload = json.dumps(brief, indent=2, default=str)
