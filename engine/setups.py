@@ -30,6 +30,8 @@ only the residual's weight changes.
 """
 from __future__ import annotations
 
+import re
+
 # per-market residual-momentum weight (see module docstring)
 US_ALPHA_WEIGHT = 0.7    # alpha-led: US residual momentum is a validated context leg
 CN_ALPHA_WEIGHT = 0.35   # demoted to a quality tiebreaker: A-share momentum is killed in deep history
@@ -77,15 +79,54 @@ def setup_score(rec: dict, *, alpha_weight: float) -> tuple[float, dict] | None:
     return score, row
 
 
+_CLASS_TOK = re.compile(r"\b(?:cl|class)\s*[a-k]\b")
+
+
+def norm_company(name: str | None) -> str:
+    """Normalised company name for dual-class / multi-listing dedup: lowercased,
+    punctuation and share-class tokens ('Cl A' / 'Class C') stripped, so GOOG
+    'Alphabet Inc Cl C' and GOOGL 'Alphabet Inc Cl A' collapse to one key. Corporate
+    suffixes (Inc/Corp/…) are KEPT to avoid collapsing genuinely distinct firms."""
+    s = _CLASS_TOK.sub(" ", (name or "").lower())
+    s = re.sub(r"[^a-z0-9 ]", " ", s)
+    return re.sub(r"\s+", " ", s).strip()
+
+
+def dedupe_dual_class(rows: list[dict]) -> list[dict]:
+    """Drop dual-class / multi-listing duplicates from an already-ranked list,
+    keeping the FIRST (best-ranked) variant per normalised company name — so a board
+    doesn't spend two slots on GOOG + GOOGL. Falls back to the ticker when a name is
+    blank (never collapses two blank-named rows together)."""
+    seen, out = set(), []
+    for r in rows:
+        key = norm_company(r.get("name")) or (r.get("ticker") or id(r))
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(r)
+    return out
+
+
 def rank_setups(cands: list[tuple[float, dict]], *, buy_min: float = BUY_MIN,
                 lag_max: float = LAG_MAX, n_buy: int = N_BUY, n_lag: int = N_LAG,
                 as_of=None) -> dict:
     """Split scored candidates into the constructive ``buy`` shortlist (strong
-    alpha + constructive timing, ranked by setup desc) and the ``laggards`` watch
-    (weak alpha, ranked by setup asc). ``cands`` is a list of ``(score, row)`` as
-    returned by :func:`setup_score`."""
-    buys = [r for s, r in sorted(cands, key=lambda x: -x[0])
-            if r.get("alpha") is not None and r["alpha"] >= buy_min][:n_buy]
-    laggards = [r for s, r in sorted(cands, key=lambda x: x[0])
-                if r.get("alpha") is not None and r["alpha"] <= lag_max][:n_lag]
+    alpha + constructive timing) and the ``laggards`` watch (weak alpha). ``cands``
+    is a list of ``(score, row)`` from :func:`setup_score`. Rows are ranked by setup
+    score; the cross-sectional factor composite (``row['factor_z']``, attached by the
+    caller when available) breaks near-ties as a LIGHT quality leg — crowded/decayed
+    factors should not drive the order, only settle exact ties. Dual-class duplicates
+    are collapsed to the best-ranked variant."""
+    def _desc(x):                                    # buys: best setup first, factor breaks ties
+        return (-x[0], -(x[1].get("factor_z") or 0.0))
+
+    def _asc(x):                                     # laggards: worst setup first
+        return (x[0], (x[1].get("factor_z") or 0.0))
+
+    buys = dedupe_dual_class(
+        [r for s, r in sorted(cands, key=_desc)
+         if r.get("alpha") is not None and r["alpha"] >= buy_min])[:n_buy]
+    laggards = dedupe_dual_class(
+        [r for s, r in sorted(cands, key=_asc)
+         if r.get("alpha") is not None and r["alpha"] <= lag_max])[:n_lag]
     return {"as_of": as_of, "buy": buys, "laggards": laggards}

@@ -9,13 +9,15 @@ from pytest import approx
 from engine.setups import (
     CN_ALPHA_WEIGHT,
     US_ALPHA_WEIGHT,
+    dedupe_dual_class,
+    norm_company,
     rank_setups,
     setup_score,
     timing_tilt,
 )
 
 
-def _rec(az, *, entry=None, urgency=None, eq_dir=None, ticker="T", name="N",
+def _rec(az, *, entry=None, urgency=None, eq_dir=None, ticker="T", name=None,
          sector="Tech", sector_rank=1, sector_n=10, state="FRESH BUY",
          label="BUY ZONE"):
     """A minimal rec shaped like build_*_library passes in."""
@@ -118,6 +120,70 @@ def test_rank_setups_respects_caps():
 def test_rank_setups_as_of_passthrough():
     out = rank_setups([], as_of="2026-06-14")
     assert out == {"as_of": "2026-06-14", "buy": [], "laggards": []}
+
+
+# ---- dual-class dedup -------------------------------------------------------
+
+def test_norm_company_collapses_share_classes():
+    # GOOG / GOOGL real names collapse to one key; distinct firms stay distinct
+    assert norm_company("Alphabet Inc Cl C") == norm_company("Alphabet Inc Cl A")
+    assert norm_company("Berkshire Hathaway Cl B") == norm_company("Berkshire Hathaway Cl A")
+    assert norm_company("Ford Motor") != norm_company("General Motors")
+    assert norm_company("Fox Corp Class A") == norm_company("Fox Corp Class B")
+
+
+def test_dedupe_dual_class_keeps_first():
+    rows = [{"ticker": "GOOG", "name": "Alphabet Inc Cl C"},
+            {"ticker": "GOOGL", "name": "Alphabet Inc Cl A"},
+            {"ticker": "MSFT", "name": "Microsoft Corp"}]
+    out = dedupe_dual_class(rows)
+    assert [r["ticker"] for r in out] == ["GOOG", "MSFT"]   # GOOGL dropped, order kept
+
+
+def test_dedupe_blank_names_not_collapsed():
+    # two rows with no name must NOT be treated as the same company
+    rows = [{"ticker": "AAA", "name": None}, {"ticker": "BBB", "name": ""}]
+    assert len(dedupe_dual_class(rows)) == 2
+
+
+def test_rank_setups_collapses_dual_class_in_buys():
+    cands = [
+        setup_score(_rec(2.5, entry="pullback", urgency="now", eq_dir="up",
+                         ticker="GOOG", name="Alphabet Inc Cl C"), alpha_weight=US_ALPHA_WEIGHT),
+        setup_score(_rec(2.4, entry="pullback", urgency="now", eq_dir="up",
+                         ticker="GOOGL", name="Alphabet Inc Cl A"), alpha_weight=US_ALPHA_WEIGHT),
+        setup_score(_rec(2.0, entry="pullback", urgency="now", eq_dir="up",
+                         ticker="MSFT", name="Microsoft Corp"), alpha_weight=US_ALPHA_WEIGHT),
+    ]
+    buys = [r["ticker"] for r in rank_setups(cands)["buy"]]
+    assert buys == ["GOOG", "MSFT"]            # GOOGL (lower setup) dropped
+
+
+# ---- factor composite tiebreaker -------------------------------------------
+
+def test_rank_setups_factor_breaks_ties():
+    # two identical setups; the higher factor composite ranks first
+    a = setup_score(_rec(1.0, entry="intact", urgency="now", eq_dir="up",
+                         ticker="LOWQ", name="Low Quality Co"), alpha_weight=US_ALPHA_WEIGHT)
+    b = setup_score(_rec(1.0, entry="intact", urgency="now", eq_dir="up",
+                         ticker="HIQ", name="High Quality Co"), alpha_weight=US_ALPHA_WEIGHT)
+    assert a[0] == b[0]                          # exact setup tie
+    a[1]["factor_z"] = -1.0
+    b[1]["factor_z"] = 1.5
+    buys = [r["ticker"] for r in rank_setups([a, b])["buy"]]
+    assert buys == ["HIQ", "LOWQ"]              # factor settles the tie
+
+
+def test_rank_setups_factor_does_not_override_setup():
+    # a much stronger setup with a weak factor still outranks a weak setup
+    strong = setup_score(_rec(2.5, entry="pullback", urgency="now", eq_dir="up",
+                              ticker="STR", name="Strong Co"), alpha_weight=US_ALPHA_WEIGHT)
+    weak = setup_score(_rec(0.6, entry="intact", urgency="soon",
+                            ticker="WK", name="Weak Co"), alpha_weight=US_ALPHA_WEIGHT)
+    strong[1]["factor_z"] = -2.0
+    weak[1]["factor_z"] = 2.0
+    buys = [r["ticker"] for r in rank_setups([strong, weak])["buy"]]
+    assert buys == ["STR", "WK"]               # setup leads; factor is only a tiebreaker
 
 
 # ---- China parity lock ------------------------------------------------------

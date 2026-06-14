@@ -249,6 +249,25 @@ def main() -> int:
             alpha_asof = _aj.get("as_of")
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("alpha.json unreadable (%s)", e)
+    # confirmer legs for the Top-setups board: the factor composite (factors.json
+    # table) as a LIGHT tiebreaker + insider BUY clusters (insider_signals.json) —
+    # both written by build_site just before this runs. Additive — absent => no chip.
+    factor_z: dict[str, float] = {}
+    insider_map: dict[str, dict] = {}
+    fp = site / "factordata" / "factors.json"
+    if fp.exists():
+        try:
+            for _r in (json.loads(fp.read_text()) or {}).get("table", []):
+                if _r.get("ticker") and _r.get("composite") is not None:
+                    factor_z[_r["ticker"]] = _r["composite"]
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("factors.json unreadable (%s)", e)
+    isp = site / "factordata" / "insider_signals.json"
+    if isp.exists():
+        try:
+            insider_map = json.loads(isp.read_text()) or {}
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("insider_signals.json unreadable (%s)", e)
     index, cand, built, failed = [], [], 0, 0
     for ticker, close, high, name, sector in universe():
         try:
@@ -269,6 +288,13 @@ def main() -> int:
             rec["alpha"] = alpha_pt[ticker]
             sc = setup_score(rec, alpha_weight=US_ALPHA_WEIGHT)
             if sc:
+                row = sc[1]
+                row["factor_z"] = factor_z.get(ticker)      # tiebreaker in rank_setups + display
+                ins = insider_map.get(ticker) or {}
+                if ins.get("buyers", 0) >= 2 and (ins.get("net_mn") or 0) > 0:
+                    row["insider_buyers"] = ins.get("buyers")
+                    row["insider_bps"] = ins.get("bps")
+                    row["insider_net_mn"] = ins.get("net_mn")
                 cand.append(sc)
         ladder_rows.append(ticker_alerts.ladder_row(ticker, rec.get("ladder"), rec.get("asof")))
         safe = ticker.replace("=", "_").replace("^", "_")

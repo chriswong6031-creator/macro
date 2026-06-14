@@ -88,10 +88,32 @@ test** (`alpha_weight=0.35` reproduces the prior output exactly).
 - PIT/survivorship are handled **upstream** (the alpha engine is causal/lagged; the cycle
   engine is point-in-time). The setup score adds no look-ahead.
 
-## 7. Recommended next (not built tonight)
+## 7. Confluence confirmers (BUILT — second pass)
 
-- **Insider Form-4 net buying** (`data/sec_insider/insider.parquet`, Phase-0 validated but
-  *wired to nothing*) → a conviction chip on setups. *Verify the parquet is emitted by CI
-  and respect the PIT filing lag first* — highest-value remaining signal.
-- **Factor composite** (`factors.json`, already shipped) → a context tooltip/tiebreaker.
-- **Per-equity GEX** (tiered) → vol-regime/pin context on the highest-conviction names.
+Three confirmer/context legs layered on top of the setup score (the score itself stays a
+clean, interpretable alpha×timing — confirmers never enter it):
+
+1. **Insider Form-4 buy-cluster chip** — `engine.equity_factors.insider_signals` returns
+   per-ticker net open-market buying as **bps of market cap** (the validated `net_mcap_bps`
+   construction — Phase-0 PIT FDR survivor in the mid-cap habitat; see
+   `research/INSIDER_FACTOR.md` / [[insider-factor-phase0]]) plus the **distinct-insider
+   CLUSTER count**. `build_insider_data` writes `site/factordata/insider_signals.json`; the
+   chip (👤 N) fires when **≥2 distinct insiders net-bought** (a genuine cluster). It
+   naturally lights up on the mid-cap setups (INDV 👤6, CASY 👤2) and stays dark on the
+   megacap holdings — exactly its validated habitat. Labeled a *confirmer* (orthogonal
+   long-only conviction), **not** a standalone sizer.
+2. **Factor composite tiebreaker** — `factors.json .table[].composite` (value/quality/
+   low-vol …) attached as `factor_z` and used as a **light secondary sort key** in both
+   `action_board` and `rank_setups`: it settles near-ties, never overrides the validated
+   setup (factors are crowded / post-publication-decayed). Shown as a `factor` column on
+   the Top setups board so it's visible even when it doesn't move the order.
+3. **Dual-class dedup** — `engine.setups.dedupe_dual_class` collapses GOOG+GOOGL,
+   BRK-A/B, … to the best-ranked variant by normalised company name (share-class tokens
+   stripped, corporate suffixes kept to avoid collapsing distinct firms). Applied in
+   `action_board` and `rank_setups`; frees a board slot for a genuinely different name.
+
+## 8. Recommended next (not built)
+
+- **Per-equity GEX** (tiered) → vol-regime / pin context on the highest-conviction names.
+- **Insider SELL caution** — deliberately omitted: insider selling is far noisier than
+  buying (10b5-1 / diversification), so surfacing it would imply false precision.

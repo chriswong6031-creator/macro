@@ -829,21 +829,32 @@ def action_board(sector_timing: dict, notable: list[dict]) -> dict:
         return ss if n.get("urgency") == "exit" else -ss
 
     def _rank(n):
+        # exact setup decisiveness leads; the factor composite breaks near-ties only
+        # (a crowded/decayed leg — it should settle ties, never override the setup).
         return (order.get(n["urgency"], 9), _decis(n),
+                -(n.get("factor_z") or 0.0),
                 n.get("age_days") if n.get("age_days") is not None else 999,
                 n["days"] if n.get("days") is not None else 99)
 
+    from engine.setups import norm_company
+
     # A soft per-sector cap keeps one hot sector (e.g. all of XLK in a tech rip) from
     # crowding out the board — the best names per sector fill first, then any spare
-    # slots backfill from the overflow (already in rank order).
+    # slots backfill from the overflow (already in rank order). Dual-class listings
+    # (GOOG + GOOGL) are collapsed to the best-ranked variant.
     CAP, FLOOR, PER_SECTOR = 24, 15, 5
     strong = [n for n in notable if _conv(n) >= FLOOR]
     pool = strong if len(strong) >= 6 else notable
-    seen, by_sec, picked, overflow = set(), {}, [], []
+    seen, seen_name, by_sec, picked, overflow = set(), set(), {}, [], []
     for n in sorted(pool, key=_rank):
         if n["ticker"] in seen:
             continue
+        nm = norm_company(n.get("name"))
+        if nm and nm in seen_name:                      # dual-class / multi-listing dupe
+            continue
         seen.add(n["ticker"])
+        if nm:
+            seen_name.add(nm)
         sec = n.get("sector")
         if by_sec.get(sec, 0) < PER_SECTOR:
             by_sec[sec] = by_sec.get(sec, 0) + 1
@@ -1116,6 +1127,38 @@ def build_alpha_data(site: Path) -> dict | None:
     return alpha
 
 
+def build_insider_data(site: Path) -> dict | None:
+    """Per-ticker insider-conviction map (net Form-4 buying as bps of market cap over
+    a trailing window + distinct-insider CLUSTER count) → factordata/insider_signals.
+    json, the CONFIRMER chip on the standout / Top-setups boards. Market cap is read
+    from the prior factors.json (slow-moving — a one-build lag is immaterial). Reuses
+    the validated net_mcap_bps construction (engine.equity_factors.insider_signals).
+    Additive + graceful: returns/writes nothing if the panel or caps are missing."""
+    from engine.equity_factors import insider_signals
+    mktcap = None
+    fp = site / "factordata" / "factors.json"
+    if fp.exists():
+        try:
+            tbl = (json.loads(fp.read_text()) or {}).get("table", [])
+            mktcap = pd.Series({r["ticker"]: (r.get("mktcap_bn") or 0) * 1e9
+                                for r in tbl if r.get("ticker") and r.get("mktcap_bn")})
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("insider mktcap load failed (%s)", e)
+    try:
+        sig = insider_signals(mktcap)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("insider signals failed: %s", e)
+        return None
+    if not sig:
+        return None
+    fdir = site / "factordata"
+    fdir.mkdir(parents=True, exist_ok=True)
+    (fdir / "insider_signals.json").write_text(
+        json.dumps(sig, separators=(",", ":"), default=str))
+    log.info("wrote insider_signals.json (%d names with 6mo Form-4 activity)", len(sig))
+    return sig
+
+
 def build_sector_pages(env: Environment, site: Path, generated: str,
                        alpha: dict | None = None) -> dict:
     """Render sectors/<FUND>.html drill-downs; return per-fund timing summary
@@ -1136,6 +1179,23 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
     # cards with an alpha sector rank + reversal overlay and an alpha-aware setup
     # score (selection × timing). Absent => cards fall back to pure cycle timing.
     alpha_pt = (alpha or {}).get("per_ticker", {})
+    # confirmer legs on those same cards: a distinct-insider Form-4 BUY cluster
+    # (insider_signals.json, written by build_insider_data just above) and the
+    # cross-sectional factor composite (factors.json table) as a light tiebreaker.
+    # Both additive + graceful — absent => the card simply omits that chip.
+    insider_map: dict[str, dict] = {}
+    factor_z: dict[str, float] = {}
+    try:
+        _ip = site / "factordata" / "insider_signals.json"
+        if _ip.exists():
+            insider_map = json.loads(_ip.read_text()) or {}
+        _fp = site / "factordata" / "factors.json"
+        if _fp.exists():
+            for _r in (json.loads(_fp.read_text()) or {}).get("table", []):
+                if _r.get("ticker") and _r.get("composite") is not None:
+                    factor_z[_r["ticker"]] = _r["composite"]
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("standout confirmer maps unavailable (%s)", e)
 
     cal_path = config.data_dir() / "regime" / "ladder_calibration.json"
     calibration = _json.loads(cal_path.read_text()) if cal_path.exists() else None
@@ -1209,6 +1269,10 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
                     tilt = timing_tilt(urg, lad.get("eq_dir"), a_entry)
                     setup = round((US_ALPHA_WEIGHT * az + tilt) if az is not None
                                   else tilt, 2)
+                    # confirmers: an insider BUY cluster (>=2 distinct insiders net
+                    # buying, Form-4 6mo) + the factor composite (light tiebreaker)
+                    ins = insider_map.get(tick) or {}
+                    ins_buy = ins.get("buyers", 0) >= 2 and (ins.get("net_mn") or 0) > 0
                     notable.append({"ticker": tick, "name": str(r.get("name", "")).title(),
                                     "sector": SECTOR_NAMES.get(fund, fund),
                                     "label": lad["label"], "action": lad.get("action"),
@@ -1226,6 +1290,10 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
                                     "alpha_sector_rank": apt.get("sector_rank") if apt else None,
                                     "alpha_sector_n": apt.get("sector_n") if apt else None,
                                     "alpha_entry": a_entry,
+                                    "factor_z": factor_z.get(tick),
+                                    "insider_buyers": ins.get("buyers") if ins_buy else None,
+                                    "insider_bps": ins.get("bps") if ins_buy else None,
+                                    "insider_net_mn": ins.get("net_mn") if ins_buy else None,
                                     "signal_date": lad.get("signal_date"),
                                     "age_days": lad.get("age_days"),
                                     "spark_svg": _mini_svg(spark, color=scolor, w=240, h=42,
@@ -1340,6 +1408,10 @@ def main() -> int:
         alpha_data = build_alpha_data(site)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("alpha data failed: %s", e)
+    try:
+        build_insider_data(site)               # confirmer-chip map; read by sector pages + library
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("insider data failed: %s", e)
     try:
         sector_timing, notable = build_sector_pages(env, site, generated, alpha=alpha_data)
     except Exception as e:  # noqa: BLE001 — drill-downs are additive, never fatal
