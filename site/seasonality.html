@@ -1,0 +1,1632 @@
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><span class="l-en">Factor seasonality — Ken French monthly factors</span><span class="l-zh">因子季节性 — Ken French 月度因子</span></title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1320px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:20px; margin:0; }
+  h2 { font-size:13px; margin:0 0 4px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:14px; }
+  .topline { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+  .muted { color:var(--muted); } .sm { font-size:12px; }
+  .navbtn, .lang-btn, .theme-btn, .seg button { font-size:12.5px; padding:5px 11px; border-radius:8px; border:1px solid var(--line); background:var(--panel2); color:var(--text); cursor:pointer; }
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:5px; }
+  .help .tip { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%); width:300px; background:var(--panel); border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text); font-weight:400; box-shadow:var(--popover-shadow); pointer-events:none; }
+  .help:hover .tip { display:block; }
+  .seg { display:inline-flex; gap:0; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .seg button { border:0; border-radius:0; background:var(--panel); }
+  .seg button.on { background:var(--panel2); color:var(--text); font-weight:600; }
+  .cardgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:14px; }
+  .fcard { background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:11px 12px; }
+  .fcard h3 { font-size:13px; margin:0 0 6px; display:flex; align-items:center; gap:6px; }
+  .fcard .badge { font-size:10.5px; padding:1px 7px; border-radius:8px; background:var(--panel); border:1px solid var(--line); color:var(--muted); }
+  .ctx { font-size:10.5px; padding:1px 7px; border-radius:8px; background:transparent; border:1px dashed var(--line); color:var(--muted); }
+  .seasbars { width:100%; height:auto; display:block; }
+  .seasgrid[data-win="full"] .win-t30 { display:none; }
+  .seasgrid[data-win="t30"] .win-full { display:none; }
+  .secthead { display:flex; align-items:baseline; gap:10px; margin:4px 0 8px; }
+</style>
+</head>
+<body>
+  <div class="panel">
+    <div class="topline">
+      <h1>🗓 <span class="l-en">Factor seasonality</span><span class="l-zh">因子季节性</span></h1>
+      <span class="muted sm"><span class="l-en">which calendar months each factor STYLE has tended to pay — Ken French, 1926-07+</span><span class="l-zh">各因子风格在哪些月份历史上更易获得回报 — Ken French，1926-07 起</span></span>
+      <span style="flex:1"></span>
+      <a class="navbtn" href="macro.html"><span class="l-en">← Dashboard</span><span class="l-zh">← 仪表盘</span></a>
+      <a class="navbtn" href="factors.html">🧮 <span class="l-en">Factor Lab</span><span class="l-zh">因子实验室</span></a>
+      <button class="lang-btn">中文</button>
+      <button class="theme-btn">☀️ <span class="l-en">Light</span><span class="l-zh">浅色</span></button>
+    </div>
+    <p class="muted sm" style="margin:10px 0 0"><span class="l-en">These are Ken French TOTAL-US-MARKET academic factor portfolios (value-weighted long/short, 1926/1963+), NOT our S&amp;P-1500 winsorized z-score quintiles. A month&#39;s seasonal tendency describes the long-run CLIMATE of the style — it is not a forecast of our daily factor leadership, and it is deliberately kept out of every calibrated score.</span><span class="l-zh">这些是 Ken French 的全市场学术因子组合（市值加权多空，1926/1963 年至今），并非我们对标普 1500 的去极值 z 分数分位。某月的季节性倾向描述的是该风格的长期气候，而非对我们每日因子领先的预测，且刻意不纳入任何校准评分。</span></p>
+  </div>
+
+  <div class="panel">
+    <div class="secthead">
+      <h2 style="margin:0"><span class="l-en">Average return by calendar month</span><span class="l-zh">按日历月份的平均回报</span>
+        <span class="help">?<span class="tip"><span class="l-en">Each bar is that calendar month&#39;s average factor return across all years (green = positive, red = negative; bar height ∝ magnitude). Hover for mean, median and hit-rate (% of years that month was positive). The current month is shaded. Median + hit-rate sit alongside the mean because a single crisis month can swing a 30-year average.</span><span class="l-zh">每根柱为该月历年平均因子回报（绿=正、红=负；高度∝幅度）。悬停查看均值、中位数与命中率（该月为正的年份比例）。当前月份已高亮。中位数与命中率与均值并列，因为单个危机月可大幅扭曲 30 年均值。</span></span></span>
+      </h2>
+      <span style="flex:1"></span>
+      <span class="seg" id="winseg">
+        <button data-win="full" class="on"><span class="l-en">Full history</span><span class="l-zh">全历史</span></button>
+        <button data-win="t30"><span class="l-en">Trailing 30y</span><span class="l-zh">近 30 年</span></button>
+      </span>
+    </div>
+    <div class="cardgrid seasgrid" data-win="full" id="grid">
+      
+      <div class="fcard">
+        <h3><span class="l-en">Value (HML)</span><span class="l-zh">价值 (HML)</span>
+          <span class="badge"><span class="l-en">since</span><span class="l-zh">自</span> 1926-07</span>
+          
+        </h3>
+        <div class="win win-full">
+<svg viewBox="0 0 360 100" class="seasbars" preserveAspectRatio="xMidYMid meet">
+  <line x1="6" y1="44" x2="354" y2="44" stroke="var(--line)" stroke-width="1"/>
+  
+  
+  <rect class="mcol" data-m="1" x="6.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="13.5" y="10.0" width="14" height="34.0" rx="1.5" fill="var(--up)"><title>J · mean +1.90% · median +1.75% · up 71% of years (n=100)</title></rect>
+  
+  <text x="20.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="2" x="35.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="42.5" y="35.2" width="14" height="8.8" rx="1.5" fill="var(--up)"><title>F · mean +0.49% · median +0.26% · up 55% of years (n=100)</title></rect>
+  
+  <text x="49.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">F</text>
+  
+  
+  <rect class="mcol" data-m="3" x="64.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="71.5" y="39.7" width="14" height="4.3" rx="1.5" fill="var(--up)"><title>M · mean +0.24% · median +0.27% · up 51% of years (n=100)</title></rect>
+  
+  <text x="78.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">M</text>
+  
+  
+  <rect class="mcol" data-m="4" x="93.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="100.5" y="30.4" width="14" height="13.6" rx="1.5" fill="var(--up)"><title>A · mean +0.76% · median +0.49% · up 58% of years (n=100)</title></rect>
+  
+  <text x="107.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">A</text>
+  
+  
+  <rect class="mcol" data-m="5" x="122.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="129.5" y="44" width="14" height="2.1" rx="1.5" fill="var(--down)"><title>M · mean -0.12% · median -0.20% · up 46% of years (n=99)</title></rect>
+  
+  <text x="136.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">M</text>
+  
+  
+  <rect class="mcol" data-m="6" x="151.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="158.5" y="44" width="14" height="3.4" rx="1.5" fill="var(--down)"><title>J · mean -0.19% · median -0.03% · up 49% of years (n=99)</title></rect>
+  
+  <text x="165.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="7" x="180.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="187.5" y="25.7" width="14" height="18.3" rx="1.5" fill="var(--up)"><title>J · mean +1.02% · median +0.20% · up 55% of years (n=100)</title></rect>
+  
+  <text x="194.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="8" x="209.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="216.5" y="35.6" width="14" height="8.4" rx="1.5" fill="var(--up)"><title>A · mean +0.47% · median +0.08% · up 51% of years (n=100)</title></rect>
+  
+  <text x="223.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">A</text>
+  
+  
+  <rect class="mcol" data-m="9" x="238.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="245.5" y="44" width="14" height="1.5" rx="1.5" fill="var(--down)"><title>S · mean -0.05% · median -0.03% · up 49% of years (n=100)</title></rect>
+  
+  <text x="252.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">S</text>
+  
+  
+  <rect class="mcol" data-m="10" x="267.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="274.5" y="44" width="14" height="1.5" rx="1.5" fill="var(--down)"><title>O · mean -0.08% · median +0.01% · up 50% of years (n=100)</title></rect>
+  
+  <text x="281.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">O</text>
+  
+  
+  <rect class="mcol" data-m="11" x="296.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="303.5" y="44" width="14" height="3.0" rx="1.5" fill="var(--down)"><title>N · mean -0.17% · median -0.29% · up 44% of years (n=100)</title></rect>
+  
+  <text x="310.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">N</text>
+  
+  
+  <rect class="mcol" data-m="12" x="325.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="332.5" y="44" width="14" height="1.5" rx="1.5" fill="var(--down)"><title>D · mean -0.04% · median +0.02% · up 50% of years (n=100)</title></rect>
+  
+  <text x="339.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">D</text>
+  
+</svg></div>
+        <div class="win win-t30">
+<svg viewBox="0 0 360 100" class="seasbars" preserveAspectRatio="xMidYMid meet">
+  <line x1="6" y1="44" x2="354" y2="44" stroke="var(--line)" stroke-width="1"/>
+  
+  
+  <rect class="mcol" data-m="1" x="6.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="13.5" y="44" width="14" height="9.1" rx="1.5" fill="var(--down)"><title>J · mean -0.37% · median -0.74% · up 43% of years (n=30)</title></rect>
+  
+  <text x="20.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="2" x="35.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="42.5" y="34.7" width="14" height="9.3" rx="1.5" fill="var(--up)"><title>F · mean +0.38% · median -0.20% · up 47% of years (n=30)</title></rect>
+  
+  <text x="49.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">F</text>
+  
+  
+  <rect class="mcol" data-m="3" x="64.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="71.5" y="32.3" width="14" height="11.7" rx="1.5" fill="var(--up)"><title>M · mean +0.48% · median +0.84% · up 60% of years (n=30)</title></rect>
+  
+  <text x="78.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">M</text>
+  
+  
+  <rect class="mcol" data-m="4" x="93.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="100.5" y="29.3" width="14" height="14.7" rx="1.5" fill="var(--up)"><title>A · mean +0.60% · median +0.24% · up 53% of years (n=30)</title></rect>
+  
+  <text x="107.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">A</text>
+  
+  
+  <rect class="mcol" data-m="5" x="122.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="129.5" y="44" width="14" height="4.4" rx="1.5" fill="var(--down)"><title>M · mean -0.18% · median -0.74% · up 37% of years (n=30)</title></rect>
+  
+  <text x="136.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">M</text>
+  
+  
+  <rect class="mcol" data-m="6" x="151.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="158.5" y="44" width="14" height="34.0" rx="1.5" fill="var(--down)"><title>J · mean -1.39% · median -0.94% · up 30% of years (n=30)</title></rect>
+  
+  <text x="165.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="7" x="180.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="187.5" y="29.3" width="14" height="14.7" rx="1.5" fill="var(--up)"><title>J · mean +0.60% · median -0.13% · up 43% of years (n=30)</title></rect>
+  
+  <text x="194.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="8" x="209.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="216.5" y="41.1" width="14" height="2.9" rx="1.5" fill="var(--up)"><title>A · mean +0.12% · median -0.40% · up 47% of years (n=30)</title></rect>
+  
+  <text x="223.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">A</text>
+  
+  
+  <rect class="mcol" data-m="9" x="238.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="245.5" y="36.7" width="14" height="7.3" rx="1.5" fill="var(--up)"><title>S · mean +0.30% · median +0.04% · up 53% of years (n=30)</title></rect>
+  
+  <text x="252.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">S</text>
+  
+  
+  <rect class="mcol" data-m="10" x="267.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="274.5" y="39.4" width="14" height="4.6" rx="1.5" fill="var(--up)"><title>O · mean +0.19% · median -0.10% · up 50% of years (n=30)</title></rect>
+  
+  <text x="281.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">O</text>
+  
+  
+  <rect class="mcol" data-m="11" x="296.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="303.5" y="34.9" width="14" height="9.1" rx="1.5" fill="var(--up)"><title>N · mean +0.37% · median -0.02% · up 50% of years (n=30)</title></rect>
+  
+  <text x="310.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">N</text>
+  
+  
+  <rect class="mcol" data-m="12" x="325.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="332.5" y="23.0" width="14" height="21.0" rx="1.5" fill="var(--up)"><title>D · mean +0.86% · median +1.31% · up 67% of years (n=30)</title></rect>
+  
+  <text x="339.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">D</text>
+  
+</svg></div>
+      </div>
+      
+      <div class="fcard">
+        <h3><span class="l-en">Profitability (RMW)</span><span class="l-zh">盈利 (RMW)</span>
+          <span class="badge"><span class="l-en">since</span><span class="l-zh">自</span> 1963-07</span>
+          
+        </h3>
+        <div class="win win-full">
+<svg viewBox="0 0 360 100" class="seasbars" preserveAspectRatio="xMidYMid meet">
+  <line x1="6" y1="44" x2="354" y2="44" stroke="var(--line)" stroke-width="1"/>
+  
+  
+  <rect class="mcol" data-m="1" x="6.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="13.5" y="44" width="14" height="34.0" rx="1.5" fill="var(--down)"><title>J · mean -0.96% · median -1.08% · up 30% of years (n=63)</title></rect>
+  
+  <text x="20.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="2" x="35.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="42.5" y="42.5" width="14" height="1.5" rx="1.5" fill="var(--up)"><title>F · mean +0.03% · median +0.11% · up 52% of years (n=63)</title></rect>
+  
+  <text x="49.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">F</text>
+  
+  
+  <rect class="mcol" data-m="3" x="64.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="71.5" y="26.6" width="14" height="17.4" rx="1.5" fill="var(--up)"><title>M · mean +0.49% · median +0.39% · up 56% of years (n=63)</title></rect>
+  
+  <text x="78.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">M</text>
+  
+  
+  <rect class="mcol" data-m="4" x="93.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="100.5" y="20.3" width="14" height="23.7" rx="1.5" fill="var(--up)"><title>A · mean +0.67% · median +0.97% · up 68% of years (n=63)</title></rect>
+  
+  <text x="107.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">A</text>
+  
+  
+  <rect class="mcol" data-m="5" x="122.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="129.5" y="28.8" width="14" height="15.2" rx="1.5" fill="var(--up)"><title>M · mean +0.43% · median +0.48% · up 63% of years (n=62)</title></rect>
+  
+  <text x="136.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">M</text>
+  
+  
+  <rect class="mcol" data-m="6" x="151.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="158.5" y="32.0" width="14" height="12.0" rx="1.5" fill="var(--up)"><title>J · mean +0.34% · median +0.40% · up 61% of years (n=62)</title></rect>
+  
+  <text x="165.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="7" x="180.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="187.5" y="20.6" width="14" height="23.4" rx="1.5" fill="var(--up)"><title>J · mean +0.66% · median +0.29% · up 60% of years (n=63)</title></rect>
+  
+  <text x="194.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="8" x="209.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="216.5" y="40.1" width="14" height="3.9" rx="1.5" fill="var(--up)"><title>A · mean +0.11% · median -0.16% · up 49% of years (n=63)</title></rect>
+  
+  <text x="223.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">A</text>
+  
+  
+  <rect class="mcol" data-m="9" x="238.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="245.5" y="33.4" width="14" height="10.6" rx="1.5" fill="var(--up)"><title>S · mean +0.30% · median +0.26% · up 60% of years (n=63)</title></rect>
+  
+  <text x="252.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">S</text>
+  
+  
+  <rect class="mcol" data-m="10" x="267.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="274.5" y="28.1" width="14" height="15.9" rx="1.5" fill="var(--up)"><title>O · mean +0.45% · median +0.43% · up 59% of years (n=63)</title></rect>
+  
+  <text x="281.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">O</text>
+  
+  
+  <rect class="mcol" data-m="11" x="296.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="303.5" y="30.9" width="14" height="13.1" rx="1.5" fill="var(--up)"><title>N · mean +0.37% · median +0.21% · up 54% of years (n=63)</title></rect>
+  
+  <text x="310.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">N</text>
+  
+  
+  <rect class="mcol" data-m="12" x="325.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="332.5" y="36.2" width="14" height="7.8" rx="1.5" fill="var(--up)"><title>D · mean +0.22% · median +0.23% · up 60% of years (n=63)</title></rect>
+  
+  <text x="339.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">D</text>
+  
+</svg></div>
+        <div class="win win-t30">
+<svg viewBox="0 0 360 100" class="seasbars" preserveAspectRatio="xMidYMid meet">
+  <line x1="6" y1="44" x2="354" y2="44" stroke="var(--line)" stroke-width="1"/>
+  
+  
+  <rect class="mcol" data-m="1" x="6.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="13.5" y="44" width="14" height="20.9" rx="1.5" fill="var(--down)"><title>J · mean -0.70% · median -0.70% · up 37% of years (n=30)</title></rect>
+  
+  <text x="20.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="2" x="35.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="42.5" y="42.5" width="14" height="1.5" rx="1.5" fill="var(--up)"><title>F · mean +0.05% · median +0.24% · up 53% of years (n=30)</title></rect>
+  
+  <text x="49.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">F</text>
+  
+  
+  <rect class="mcol" data-m="3" x="64.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="71.5" y="21.0" width="14" height="23.0" rx="1.5" fill="var(--up)"><title>M · mean +0.77% · median +0.49% · up 67% of years (n=30)</title></rect>
+  
+  <text x="78.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">M</text>
+  
+  
+  <rect class="mcol" data-m="4" x="93.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="100.5" y="19.5" width="14" height="24.5" rx="1.5" fill="var(--up)"><title>A · mean +0.82% · median +1.24% · up 73% of years (n=30)</title></rect>
+  
+  <text x="107.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">A</text>
+  
+  
+  <rect class="mcol" data-m="5" x="122.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="129.5" y="36.8" width="14" height="7.2" rx="1.5" fill="var(--up)"><title>M · mean +0.24% · median +0.90% · up 60% of years (n=30)</title></rect>
+  
+  <text x="136.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">M</text>
+  
+  
+  <rect class="mcol" data-m="6" x="151.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="158.5" y="35.1" width="14" height="8.9" rx="1.5" fill="var(--up)"><title>J · mean +0.30% · median +0.53% · up 67% of years (n=30)</title></rect>
+  
+  <text x="165.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="7" x="180.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="187.5" y="10.0" width="14" height="34.0" rx="1.5" fill="var(--up)"><title>J · mean +1.14% · median +0.34% · up 70% of years (n=30)</title></rect>
+  
+  <text x="194.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="8" x="209.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="216.5" y="42.5" width="14" height="1.5" rx="1.5" fill="var(--up)"><title>A · mean +0.04% · median -0.25% · up 47% of years (n=30)</title></rect>
+  
+  <text x="223.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">A</text>
+  
+  
+  <rect class="mcol" data-m="9" x="238.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="245.5" y="35.6" width="14" height="8.4" rx="1.5" fill="var(--up)"><title>S · mean +0.28% · median +0.23% · up 53% of years (n=30)</title></rect>
+  
+  <text x="252.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">S</text>
+  
+  
+  <rect class="mcol" data-m="10" x="267.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="274.5" y="31.8" width="14" height="12.2" rx="1.5" fill="var(--up)"><title>O · mean +0.41% · median +0.59% · up 53% of years (n=30)</title></rect>
+  
+  <text x="281.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">O</text>
+  
+  
+  <rect class="mcol" data-m="11" x="296.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="303.5" y="27.9" width="14" height="16.1" rx="1.5" fill="var(--up)"><title>N · mean +0.54% · median +0.23% · up 57% of years (n=30)</title></rect>
+  
+  <text x="310.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">N</text>
+  
+  
+  <rect class="mcol" data-m="12" x="325.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="332.5" y="42.5" width="14" height="1.5" rx="1.5" fill="var(--up)"><title>D · mean +0.01% · median +0.24% · up 63% of years (n=30)</title></rect>
+  
+  <text x="339.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">D</text>
+  
+</svg></div>
+      </div>
+      
+      <div class="fcard">
+        <h3><span class="l-en">Investment (CMA)</span><span class="l-zh">投资 (CMA)</span>
+          <span class="badge"><span class="l-en">since</span><span class="l-zh">自</span> 1963-07</span>
+          
+        </h3>
+        <div class="win win-full">
+<svg viewBox="0 0 360 100" class="seasbars" preserveAspectRatio="xMidYMid meet">
+  <line x1="6" y1="44" x2="354" y2="44" stroke="var(--line)" stroke-width="1"/>
+  
+  
+  <rect class="mcol" data-m="1" x="6.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="13.5" y="12.8" width="14" height="31.2" rx="1.5" fill="var(--up)"><title>J · mean +0.55% · median +0.54% · up 56% of years (n=63)</title></rect>
+  
+  <text x="20.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="2" x="35.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="42.5" y="10.0" width="14" height="34.0" rx="1.5" fill="var(--up)"><title>F · mean +0.60% · median -0.08% · up 49% of years (n=63)</title></rect>
+  
+  <text x="49.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">F</text>
+  
+  
+  <rect class="mcol" data-m="3" x="64.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="71.5" y="15.7" width="14" height="28.3" rx="1.5" fill="var(--up)"><title>M · mean +0.50% · median +0.29% · up 56% of years (n=63)</title></rect>
+  
+  <text x="78.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">M</text>
+  
+  
+  <rect class="mcol" data-m="4" x="93.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="100.5" y="34.9" width="14" height="9.1" rx="1.5" fill="var(--up)"><title>A · mean +0.16% · median +0.24% · up 51% of years (n=63)</title></rect>
+  
+  <text x="107.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">A</text>
+  
+  
+  <rect class="mcol" data-m="5" x="122.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="129.5" y="44" width="14" height="7.9" rx="1.5" fill="var(--down)"><title>M · mean -0.14% · median -0.25% · up 47% of years (n=62)</title></rect>
+  
+  <text x="136.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">M</text>
+  
+  
+  <rect class="mcol" data-m="6" x="151.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="158.5" y="44" width="14" height="12.5" rx="1.5" fill="var(--down)"><title>J · mean -0.22% · median -0.22% · up 45% of years (n=62)</title></rect>
+  
+  <text x="165.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="7" x="180.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="187.5" y="26.4" width="14" height="17.6" rx="1.5" fill="var(--up)"><title>J · mean +0.31% · median +0.37% · up 60% of years (n=63)</title></rect>
+  
+  <text x="194.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="8" x="209.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="216.5" y="29.3" width="14" height="14.7" rx="1.5" fill="var(--up)"><title>A · mean +0.26% · median -0.14% · up 49% of years (n=63)</title></rect>
+  
+  <text x="223.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">A</text>
+  
+  
+  <rect class="mcol" data-m="9" x="238.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="245.5" y="30.4" width="14" height="13.6" rx="1.5" fill="var(--up)"><title>S · mean +0.24% · median +0.15% · up 54% of years (n=63)</title></rect>
+  
+  <text x="252.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">S</text>
+  
+  
+  <rect class="mcol" data-m="10" x="267.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="274.5" y="34.4" width="14" height="9.6" rx="1.5" fill="var(--up)"><title>O · mean +0.17% · median +0.03% · up 51% of years (n=63)</title></rect>
+  
+  <text x="281.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">O</text>
+  
+  
+  <rect class="mcol" data-m="11" x="296.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="303.5" y="32.1" width="14" height="11.9" rx="1.5" fill="var(--up)"><title>N · mean +0.21% · median +0.14% · up 54% of years (n=63)</title></rect>
+  
+  <text x="310.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">N</text>
+  
+  
+  <rect class="mcol" data-m="12" x="325.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="332.5" y="28.7" width="14" height="15.3" rx="1.5" fill="var(--up)"><title>D · mean +0.27% · median +0.20% · up 56% of years (n=63)</title></rect>
+  
+  <text x="339.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">D</text>
+  
+</svg></div>
+        <div class="win win-t30">
+<svg viewBox="0 0 360 100" class="seasbars" preserveAspectRatio="xMidYMid meet">
+  <line x1="6" y1="44" x2="354" y2="44" stroke="var(--line)" stroke-width="1"/>
+  
+  
+  <rect class="mcol" data-m="1" x="6.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="13.5" y="44" width="14" height="1.5" rx="1.5" fill="var(--down)"><title>J · mean -0.01% · median -0.48% · up 43% of years (n=30)</title></rect>
+  
+  <text x="20.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="2" x="35.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="42.5" y="19.9" width="14" height="24.1" rx="1.5" fill="var(--up)"><title>F · mean +0.51% · median -0.58% · up 40% of years (n=30)</title></rect>
+  
+  <text x="49.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">F</text>
+  
+  
+  <rect class="mcol" data-m="3" x="64.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="71.5" y="27.9" width="14" height="16.1" rx="1.5" fill="var(--up)"><title>M · mean +0.34% · median -0.03% · up 50% of years (n=30)</title></rect>
+  
+  <text x="78.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">M</text>
+  
+  
+  <rect class="mcol" data-m="4" x="93.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="100.5" y="38.8" width="14" height="5.2" rx="1.5" fill="var(--up)"><title>A · mean +0.11% · median -0.24% · up 47% of years (n=30)</title></rect>
+  
+  <text x="107.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">A</text>
+  
+  
+  <rect class="mcol" data-m="5" x="122.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="129.5" y="42.5" width="14" height="1.5" rx="1.5" fill="var(--up)"><title>M · mean +0.02% · median -0.11% · up 50% of years (n=30)</title></rect>
+  
+  <text x="136.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">M</text>
+  
+  
+  <rect class="mcol" data-m="6" x="151.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="158.5" y="44" width="14" height="31.6" rx="1.5" fill="var(--down)"><title>J · mean -0.67% · median -0.46% · up 33% of years (n=30)</title></rect>
+  
+  <text x="165.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="7" x="180.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="187.5" y="40.2" width="14" height="3.8" rx="1.5" fill="var(--up)"><title>J · mean +0.08% · median +0.34% · up 60% of years (n=30)</title></rect>
+  
+  <text x="194.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="8" x="209.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="216.5" y="36.0" width="14" height="8.0" rx="1.5" fill="var(--up)"><title>A · mean +0.17% · median -0.31% · up 43% of years (n=30)</title></rect>
+  
+  <text x="223.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">A</text>
+  
+  
+  <rect class="mcol" data-m="9" x="238.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="245.5" y="44" width="14" height="1.5" rx="1.5" fill="var(--down)"><title>S · mean -0.02% · median -0.42% · up 47% of years (n=30)</title></rect>
+  
+  <text x="252.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">S</text>
+  
+  
+  <rect class="mcol" data-m="10" x="267.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="274.5" y="30.3" width="14" height="13.7" rx="1.5" fill="var(--up)"><title>O · mean +0.29% · median +0.23% · up 60% of years (n=30)</title></rect>
+  
+  <text x="281.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">O</text>
+  
+  
+  <rect class="mcol" data-m="11" x="296.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="303.5" y="10.0" width="14" height="34.0" rx="1.5" fill="var(--up)"><title>N · mean +0.72% · median +0.10% · up 53% of years (n=30)</title></rect>
+  
+  <text x="310.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">N</text>
+  
+  
+  <rect class="mcol" data-m="12" x="325.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="332.5" y="17.1" width="14" height="26.9" rx="1.5" fill="var(--up)"><title>D · mean +0.57% · median +0.40% · up 67% of years (n=30)</title></rect>
+  
+  <text x="339.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">D</text>
+  
+</svg></div>
+      </div>
+      
+      <div class="fcard">
+        <h3><span class="l-en">Momentum (Mom)</span><span class="l-zh">动量 (Mom)</span>
+          <span class="badge"><span class="l-en">since</span><span class="l-zh">自</span> 1927-01</span>
+          <span class="ctx"><span class="l-en">reference</span><span class="l-zh">参考</span></span>
+        </h3>
+        <div class="win win-full">
+<svg viewBox="0 0 360 100" class="seasbars" preserveAspectRatio="xMidYMid meet">
+  <line x1="6" y1="44" x2="354" y2="44" stroke="var(--line)" stroke-width="1"/>
+  
+  
+  <rect class="mcol" data-m="1" x="6.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="13.5" y="44" width="14" height="23.8" rx="1.5" fill="var(--down)"><title>J · mean -1.51% · median -0.52% · up 44% of years (n=100)</title></rect>
+  
+  <text x="20.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="2" x="35.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="42.5" y="27.2" width="14" height="16.8" rx="1.5" fill="var(--up)"><title>F · mean +1.07% · median +0.69% · up 63% of years (n=100)</title></rect>
+  
+  <text x="49.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">F</text>
+  
+  
+  <rect class="mcol" data-m="3" x="64.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="71.5" y="26.8" width="14" height="17.2" rx="1.5" fill="var(--up)"><title>M · mean +1.09% · median +1.40% · up 68% of years (n=100)</title></rect>
+  
+  <text x="78.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">M</text>
+  
+  
+  <rect class="mcol" data-m="4" x="93.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="100.5" y="40.2" width="14" height="3.8" rx="1.5" fill="var(--up)"><title>A · mean +0.24% · median +0.93% · up 65% of years (n=100)</title></rect>
+  
+  <text x="107.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">A</text>
+  
+  
+  <rect class="mcol" data-m="5" x="122.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="129.5" y="33.0" width="14" height="11.0" rx="1.5" fill="var(--up)"><title>M · mean +0.70% · median +0.61% · up 64% of years (n=99)</title></rect>
+  
+  <text x="136.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">M</text>
+  
+  
+  <rect class="mcol" data-m="6" x="151.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="158.5" y="28.3" width="14" height="15.7" rx="1.5" fill="var(--up)"><title>J · mean +1.00% · median +0.89% · up 65% of years (n=99)</title></rect>
+  
+  <text x="165.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="7" x="180.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="187.5" y="44" width="14" height="1.5" rx="1.5" fill="var(--down)"><title>J · mean -0.03% · median +0.11% · up 52% of years (n=99)</title></rect>
+  
+  <text x="194.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="8" x="209.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="216.5" y="44" width="14" height="1.5" rx="1.5" fill="var(--down)"><title>A · mean -0.05% · median +0.36% · up 59% of years (n=99)</title></rect>
+  
+  <text x="223.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">A</text>
+  
+  
+  <rect class="mcol" data-m="9" x="238.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="245.5" y="27.3" width="14" height="16.7" rx="1.5" fill="var(--up)"><title>S · mean +1.06% · median +1.39% · up 70% of years (n=99)</title></rect>
+  
+  <text x="252.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">S</text>
+  
+  
+  <rect class="mcol" data-m="10" x="267.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="274.5" y="29.2" width="14" height="14.8" rx="1.5" fill="var(--up)"><title>O · mean +0.94% · median +0.92% · up 66% of years (n=99)</title></rect>
+  
+  <text x="281.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">O</text>
+  
+  
+  <rect class="mcol" data-m="11" x="296.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="303.5" y="31.4" width="14" height="12.6" rx="1.5" fill="var(--up)"><title>N · mean +0.80% · median +1.12% · up 65% of years (n=99)</title></rect>
+  
+  <text x="310.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">N</text>
+  
+  
+  <rect class="mcol" data-m="12" x="325.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="332.5" y="10.0" width="14" height="34.0" rx="1.5" fill="var(--up)"><title>D · mean +2.16% · median +1.75% · up 74% of years (n=99)</title></rect>
+  
+  <text x="339.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">D</text>
+  
+</svg></div>
+        <div class="win win-t30">
+<svg viewBox="0 0 360 100" class="seasbars" preserveAspectRatio="xMidYMid meet">
+  <line x1="6" y1="44" x2="354" y2="44" stroke="var(--line)" stroke-width="1"/>
+  
+  
+  <rect class="mcol" data-m="1" x="6.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="13.5" y="44" width="14" height="14.6" rx="1.5" fill="var(--down)"><title>J · mean -0.88% · median +1.60% · up 63% of years (n=30)</title></rect>
+  
+  <text x="20.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="2" x="35.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="42.5" y="17.5" width="14" height="26.5" rx="1.5" fill="var(--up)"><title>F · mean +1.60% · median +0.88% · up 57% of years (n=30)</title></rect>
+  
+  <text x="49.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">F</text>
+  
+  
+  <rect class="mcol" data-m="3" x="64.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="71.5" y="40.7" width="14" height="3.3" rx="1.5" fill="var(--up)"><title>M · mean +0.20% · median +1.07% · up 60% of years (n=30)</title></rect>
+  
+  <text x="78.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">M</text>
+  
+  
+  <rect class="mcol" data-m="4" x="93.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="100.5" y="44" width="14" height="31.5" rx="1.5" fill="var(--down)"><title>A · mean -1.90% · median -0.06% · up 50% of years (n=30)</title></rect>
+  
+  <text x="107.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">A</text>
+  
+  
+  <rect class="mcol" data-m="5" x="122.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="129.5" y="44" width="14" height="2.0" rx="1.5" fill="var(--down)"><title>M · mean -0.12% · median +0.73% · up 60% of years (n=30)</title></rect>
+  
+  <text x="136.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">M</text>
+  
+  
+  <rect class="mcol" data-m="6" x="151.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="158.5" y="10.0" width="14" height="34.0" rx="1.5" fill="var(--up)"><title>J · mean +2.05% · median +1.06% · up 70% of years (n=30)</title></rect>
+  
+  <text x="165.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="7" x="180.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="187.5" y="35.2" width="14" height="8.8" rx="1.5" fill="var(--up)"><title>J · mean +0.53% · median -0.06% · up 50% of years (n=30)</title></rect>
+  
+  <text x="194.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="8" x="209.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="216.5" y="34.5" width="14" height="9.5" rx="1.5" fill="var(--up)"><title>A · mean +0.57% · median +0.25% · up 57% of years (n=30)</title></rect>
+  
+  <text x="223.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">A</text>
+  
+  
+  <rect class="mcol" data-m="9" x="238.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="245.5" y="15.1" width="14" height="28.9" rx="1.5" fill="var(--up)"><title>S · mean +1.74% · median +1.38% · up 67% of years (n=30)</title></rect>
+  
+  <text x="252.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">S</text>
+  
+  
+  <rect class="mcol" data-m="10" x="267.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="274.5" y="38.5" width="14" height="5.5" rx="1.5" fill="var(--up)"><title>O · mean +0.33% · median +0.09% · up 57% of years (n=30)</title></rect>
+  
+  <text x="281.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">O</text>
+  
+  
+  <rect class="mcol" data-m="11" x="296.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="303.5" y="44" width="14" height="11.4" rx="1.5" fill="var(--down)"><title>N · mean -0.69% · median +0.39% · up 60% of years (n=30)</title></rect>
+  
+  <text x="310.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">N</text>
+  
+  
+  <rect class="mcol" data-m="12" x="325.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="332.5" y="27.2" width="14" height="16.8" rx="1.5" fill="var(--up)"><title>D · mean +1.01% · median +0.28% · up 57% of years (n=30)</title></rect>
+  
+  <text x="339.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">D</text>
+  
+</svg></div>
+      </div>
+      
+      <div class="fcard">
+        <h3><span class="l-en">Size (SMB)</span><span class="l-zh">规模 (SMB)</span>
+          <span class="badge"><span class="l-en">since</span><span class="l-zh">自</span> 1926-07</span>
+          <span class="ctx"><span class="l-en">reference</span><span class="l-zh">参考</span></span>
+        </h3>
+        <div class="win win-full">
+<svg viewBox="0 0 360 100" class="seasbars" preserveAspectRatio="xMidYMid meet">
+  <line x1="6" y1="44" x2="354" y2="44" stroke="var(--line)" stroke-width="1"/>
+  
+  
+  <rect class="mcol" data-m="1" x="6.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="13.5" y="10.0" width="14" height="34.0" rx="1.5" fill="var(--up)"><title>J · mean +1.91% · median +1.81% · up 72% of years (n=100)</title></rect>
+  
+  <text x="20.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="2" x="35.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="42.5" y="33.5" width="14" height="10.5" rx="1.5" fill="var(--up)"><title>F · mean +0.59% · median +0.39% · up 62% of years (n=100)</title></rect>
+  
+  <text x="49.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">F</text>
+  
+  
+  <rect class="mcol" data-m="3" x="64.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="71.5" y="44" width="14" height="1.5" rx="1.5" fill="var(--down)"><title>M · mean -0.03% · median +0.19% · up 54% of years (n=100)</title></rect>
+  
+  <text x="78.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">M</text>
+  
+  
+  <rect class="mcol" data-m="4" x="93.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="100.5" y="44" width="14" height="3.9" rx="1.5" fill="var(--down)"><title>A · mean -0.22% · median -0.43% · up 44% of years (n=100)</title></rect>
+  
+  <text x="107.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">A</text>
+  
+  
+  <rect class="mcol" data-m="5" x="122.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="129.5" y="37.4" width="14" height="6.6" rx="1.5" fill="var(--up)"><title>M · mean +0.37% · median -0.05% · up 49% of years (n=99)</title></rect>
+  
+  <text x="136.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">M</text>
+  
+  
+  <rect class="mcol" data-m="6" x="151.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="158.5" y="41.9" width="14" height="2.1" rx="1.5" fill="var(--up)"><title>J · mean +0.12% · median -0.19% · up 48% of years (n=99)</title></rect>
+  
+  <text x="165.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="7" x="180.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="187.5" y="44" width="14" height="6.4" rx="1.5" fill="var(--down)"><title>J · mean -0.36% · median -0.43% · up 43% of years (n=100)</title></rect>
+  
+  <text x="194.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="8" x="209.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="216.5" y="44" width="14" height="1.6" rx="1.5" fill="var(--down)"><title>A · mean -0.09% · median -0.07% · up 49% of years (n=100)</title></rect>
+  
+  <text x="223.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">A</text>
+  
+  
+  <rect class="mcol" data-m="9" x="238.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="245.5" y="39.5" width="14" height="4.5" rx="1.5" fill="var(--up)"><title>S · mean +0.25% · median +0.08% · up 53% of years (n=100)</title></rect>
+  
+  <text x="252.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">S</text>
+  
+  
+  <rect class="mcol" data-m="10" x="267.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="274.5" y="44" width="14" height="14.8" rx="1.5" fill="var(--down)"><title>O · mean -0.83% · median -0.53% · up 40% of years (n=100)</title></rect>
+  
+  <text x="281.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">O</text>
+  
+  
+  <rect class="mcol" data-m="11" x="296.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="303.5" y="39.0" width="14" height="5.0" rx="1.5" fill="var(--up)"><title>N · mean +0.28% · median -0.16% · up 48% of years (n=100)</title></rect>
+  
+  <text x="310.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">N</text>
+  
+  
+  <rect class="mcol" data-m="12" x="325.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="332.5" y="42.5" width="14" height="1.5" rx="1.5" fill="var(--up)"><title>D · mean +0.01% · median -0.06% · up 46% of years (n=100)</title></rect>
+  
+  <text x="339.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">D</text>
+  
+</svg></div>
+        <div class="win win-t30">
+<svg viewBox="0 0 360 100" class="seasbars" preserveAspectRatio="xMidYMid meet">
+  <line x1="6" y1="44" x2="354" y2="44" stroke="var(--line)" stroke-width="1"/>
+  
+  
+  <rect class="mcol" data-m="1" x="6.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="13.5" y="35.7" width="14" height="8.3" rx="1.5" fill="var(--up)"><title>J · mean +0.38% · median +0.19% · up 57% of years (n=30)</title></rect>
+  
+  <text x="20.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="2" x="35.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="42.5" y="35.7" width="14" height="8.3" rx="1.5" fill="var(--up)"><title>F · mean +0.38% · median +0.14% · up 53% of years (n=30)</title></rect>
+  
+  <text x="49.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">F</text>
+  
+  
+  <rect class="mcol" data-m="3" x="64.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="71.5" y="44" width="14" height="17.0" rx="1.5" fill="var(--down)"><title>M · mean -0.78% · median -0.01% · up 50% of years (n=30)</title></rect>
+  
+  <text x="78.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">M</text>
+  
+  
+  <rect class="mcol" data-m="4" x="93.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="100.5" y="44" width="14" height="13.9" rx="1.5" fill="var(--down)"><title>A · mean -0.64% · median -0.95% · up 40% of years (n=30)</title></rect>
+  
+  <text x="107.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">A</text>
+  
+  
+  <rect class="mcol" data-m="5" x="122.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="129.5" y="35.9" width="14" height="8.1" rx="1.5" fill="var(--up)"><title>M · mean +0.37% · median +0.15% · up 57% of years (n=30)</title></rect>
+  
+  <text x="136.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">M</text>
+  
+  
+  <rect class="mcol" data-m="6" x="151.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="158.5" y="10.0" width="14" height="34.0" rx="1.5" fill="var(--up)"><title>J · mean +1.56% · median +1.40% · up 80% of years (n=30)</title></rect>
+  
+  <text x="165.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="7" x="180.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="187.5" y="44" width="14" height="19.8" rx="1.5" fill="var(--down)"><title>J · mean -0.91% · median -2.09% · up 40% of years (n=30)</title></rect>
+  
+  <text x="194.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="8" x="209.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="216.5" y="44" width="14" height="2.2" rx="1.5" fill="var(--down)"><title>A · mean -0.10% · median -0.15% · up 47% of years (n=30)</title></rect>
+  
+  <text x="223.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">A</text>
+  
+  
+  <rect class="mcol" data-m="9" x="238.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="245.5" y="44" width="14" height="2.4" rx="1.5" fill="var(--down)"><title>S · mean -0.11% · median -0.37% · up 43% of years (n=30)</title></rect>
+  
+  <text x="252.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">S</text>
+  
+  
+  <rect class="mcol" data-m="10" x="267.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="274.5" y="44" width="14" height="20.7" rx="1.5" fill="var(--down)"><title>O · mean -0.95% · median -1.20% · up 37% of years (n=30)</title></rect>
+  
+  <text x="281.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">O</text>
+  
+  
+  <rect class="mcol" data-m="11" x="296.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="303.5" y="32.7" width="14" height="11.3" rx="1.5" fill="var(--up)"><title>N · mean +0.52% · median +0.57% · up 53% of years (n=30)</title></rect>
+  
+  <text x="310.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">N</text>
+  
+  
+  <rect class="mcol" data-m="12" x="325.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="332.5" y="28.7" width="14" height="15.3" rx="1.5" fill="var(--up)"><title>D · mean +0.70% · median -0.04% · up 47% of years (n=30)</title></rect>
+  
+  <text x="339.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">D</text>
+  
+</svg></div>
+      </div>
+      
+      <div class="fcard">
+        <h3><span class="l-en">Market (Mkt-RF)</span><span class="l-zh">市场 (Mkt-RF)</span>
+          <span class="badge"><span class="l-en">since</span><span class="l-zh">自</span> 1926-07</span>
+          <span class="ctx"><span class="l-en">reference</span><span class="l-zh">参考</span></span>
+        </h3>
+        <div class="win win-full">
+<svg viewBox="0 0 360 100" class="seasbars" preserveAspectRatio="xMidYMid meet">
+  <line x1="6" y1="44" x2="354" y2="44" stroke="var(--line)" stroke-width="1"/>
+  
+  
+  <rect class="mcol" data-m="1" x="6.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="13.5" y="17.3" width="14" height="26.7" rx="1.5" fill="var(--up)"><title>J · mean +1.21% · median +1.25% · up 62% of years (n=100)</title></rect>
+  
+  <text x="20.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="2" x="35.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="42.5" y="37.4" width="14" height="6.6" rx="1.5" fill="var(--up)"><title>F · mean +0.30% · median +0.69% · up 55% of years (n=100)</title></rect>
+  
+  <text x="49.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">F</text>
+  
+  
+  <rect class="mcol" data-m="3" x="64.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="71.5" y="36.1" width="14" height="7.9" rx="1.5" fill="var(--up)"><title>M · mean +0.36% · median +1.02% · up 63% of years (n=100)</title></rect>
+  
+  <text x="78.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">M</text>
+  
+  
+  <rect class="mcol" data-m="4" x="93.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="100.5" y="19.1" width="14" height="24.9" rx="1.5" fill="var(--up)"><title>A · mean +1.13% · median +0.71% · up 62% of years (n=100)</title></rect>
+  
+  <text x="107.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">A</text>
+  
+  
+  <rect class="mcol" data-m="5" x="122.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="129.5" y="36.7" width="14" height="7.3" rx="1.5" fill="var(--up)"><title>M · mean +0.33% · median +1.29% · up 63% of years (n=99)</title></rect>
+  
+  <text x="136.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">M</text>
+  
+  
+  <rect class="mcol" data-m="6" x="151.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="158.5" y="28.3" width="14" height="15.7" rx="1.5" fill="var(--up)"><title>J · mean +0.71% · median +0.58% · up 56% of years (n=99)</title></rect>
+  
+  <text x="165.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="7" x="180.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="187.5" y="12.4" width="14" height="31.6" rx="1.5" fill="var(--up)"><title>J · mean +1.43% · median +1.50% · up 60% of years (n=100)</title></rect>
+  
+  <text x="194.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="8" x="209.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="216.5" y="24.6" width="14" height="19.4" rx="1.5" fill="var(--up)"><title>A · mean +0.88% · median +1.33% · up 62% of years (n=100)</title></rect>
+  
+  <text x="223.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">A</text>
+  
+  
+  <rect class="mcol" data-m="9" x="238.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="245.5" y="44" width="14" height="23.2" rx="1.5" fill="var(--down)"><title>S · mean -1.05% · median -0.26% · up 48% of years (n=100)</title></rect>
+  
+  <text x="252.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">S</text>
+  
+  
+  <rect class="mcol" data-m="10" x="267.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="274.5" y="40.5" width="14" height="3.5" rx="1.5" fill="var(--up)"><title>O · mean +0.16% · median +0.73% · up 55% of years (n=100)</title></rect>
+  
+  <text x="281.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">O</text>
+  
+  
+  <rect class="mcol" data-m="11" x="296.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="303.5" y="10.0" width="14" height="34.0" rx="1.5" fill="var(--up)"><title>N · mean +1.54% · median +2.24% · up 68% of years (n=100)</title></rect>
+  
+  <text x="310.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">N</text>
+  
+  
+  <rect class="mcol" data-m="12" x="325.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="332.5" y="15.3" width="14" height="28.7" rx="1.5" fill="var(--up)"><title>D · mean +1.30% · median +1.48% · up 76% of years (n=100)</title></rect>
+  
+  <text x="339.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">D</text>
+  
+</svg></div>
+        <div class="win win-t30">
+<svg viewBox="0 0 360 100" class="seasbars" preserveAspectRatio="xMidYMid meet">
+  <line x1="6" y1="44" x2="354" y2="44" stroke="var(--line)" stroke-width="1"/>
+  
+  
+  <rect class="mcol" data-m="1" x="6.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="13.5" y="39.5" width="14" height="4.5" rx="1.5" fill="var(--up)"><title>J · mean +0.34% · median +0.88% · up 57% of years (n=30)</title></rect>
+  
+  <text x="20.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="2" x="35.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="42.5" y="44" width="14" height="1.6" rx="1.5" fill="var(--down)"><title>F · mean -0.12% · median -0.18% · up 47% of years (n=30)</title></rect>
+  
+  <text x="49.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">F</text>
+  
+  
+  <rect class="mcol" data-m="3" x="64.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="71.5" y="35.6" width="14" height="8.4" rx="1.5" fill="var(--up)"><title>M · mean +0.64% · median +1.10% · up 67% of years (n=30)</title></rect>
+  
+  <text x="78.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">M</text>
+  
+  
+  <rect class="mcol" data-m="4" x="93.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="100.5" y="20.0" width="14" height="24.0" rx="1.5" fill="var(--up)"><title>A · mean +1.82% · median +1.00% · up 70% of years (n=30)</title></rect>
+  
+  <text x="107.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">A</text>
+  
+  
+  <rect class="mcol" data-m="5" x="122.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="129.5" y="34.4" width="14" height="9.6" rx="1.5" fill="var(--up)"><title>M · mean +0.73% · median +1.27% · up 67% of years (n=30)</title></rect>
+  
+  <text x="136.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">M</text>
+  
+  
+  <rect class="mcol" data-m="6" x="151.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="158.5" y="37.1" width="14" height="6.9" rx="1.5" fill="var(--up)"><title>J · mean +0.52% · median +0.69% · up 60% of years (n=30)</title></rect>
+  
+  <text x="165.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="7" x="180.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="187.5" y="30.3" width="14" height="13.7" rx="1.5" fill="var(--up)"><title>J · mean +1.04% · median +1.29% · up 60% of years (n=30)</title></rect>
+  
+  <text x="194.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">J</text>
+  
+  
+  <rect class="mcol" data-m="8" x="209.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="216.5" y="44" width="14" height="5.1" rx="1.5" fill="var(--down)"><title>A · mean -0.39% · median +0.49% · up 60% of years (n=30)</title></rect>
+  
+  <text x="223.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">A</text>
+  
+  
+  <rect class="mcol" data-m="9" x="238.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="245.5" y="44" width="14" height="9.0" rx="1.5" fill="var(--down)"><title>S · mean -0.68% · median +0.38% · up 57% of years (n=30)</title></rect>
+  
+  <text x="252.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">S</text>
+  
+  
+  <rect class="mcol" data-m="10" x="267.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="274.5" y="25.9" width="14" height="18.1" rx="1.5" fill="var(--up)"><title>O · mean +1.37% · median +2.01% · up 63% of years (n=30)</title></rect>
+  
+  <text x="281.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">O</text>
+  
+  
+  <rect class="mcol" data-m="11" x="296.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="303.5" y="10.0" width="14" height="34.0" rx="1.5" fill="var(--up)"><title>N · mean +2.58% · median +3.12% · up 80% of years (n=30)</title></rect>
+  
+  <text x="310.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">N</text>
+  
+  
+  <rect class="mcol" data-m="12" x="325.0" y="2" width="29.0" height="96" fill="var(--text)" opacity="0"></rect>
+  
+  
+  
+  
+  <rect x="332.5" y="30.6" width="14" height="13.4" rx="1.5" fill="var(--up)"><title>D · mean +1.02% · median +1.25% · up 67% of years (n=30)</title></rect>
+  
+  <text x="339.5" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">D</text>
+  
+</svg></div>
+      </div>
+      
+    </div>
+  </div>
+
+  <div class="panel">
+    <p class="muted" style="font-size:12px;margin:0"><span class="l-en">Source: Ken French Data Library (Dartmouth), monthly factor returns, as of 2026-04. Factors mapping to one of our live legs (Value→HML, Profitability→RMW, Investment→CMA) are shown first; Momentum, Size and Market are reference styles we do not rank cross-sectionally. Seasonality is descriptive context only and is deliberately kept out of every calibrated score — see LIMITATIONS.md.</span><span class="l-zh">来源：Ken French Data Library (Dartmouth), monthly factor returns，截至 2026-04。映射到我们在用因子的（价值→HML、盈利→RMW、投资→CMA）排在前面；动量、规模与市场为我们未做横截面排名的参考风格。季节性仅为描述性背景，刻意不纳入任何校准评分 — 参见 LIMITATIONS.md。</span>
+      <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-14 10:36 UTC</p>
+  </div>
+
+  <script>
+    (function(){
+      var seg=document.getElementById('winseg'), grid=document.getElementById('grid');
+      if(seg&&grid) seg.addEventListener('click', function(e){
+        var b=e.target.closest('button[data-win]'); if(!b) return;
+        grid.setAttribute('data-win', b.dataset.win);
+        seg.querySelectorAll('button').forEach(function(x){x.classList.toggle('on', x===b);});
+      });
+      var cm=new Date().getMonth()+1;
+      document.querySelectorAll('.mcol[data-m="'+cm+'"]').forEach(function(e){e.setAttribute('opacity','0.09');});
+    })();
+  </script>
+  <script src="theme.js"></script>
+</body>
+</html>
