@@ -269,6 +269,30 @@ def test_etf_signals_conviction_ranks_weight_over_pct() -> None:
     assert acc[0]["ticker"] == "BIG"                                     # ranked first
 
 
+def test_etf_signals_flags_new_position() -> None:
+    import tempfile
+    parent = Path(tempfile.mkdtemp())
+    d = parent / "FAKE3"
+    d.mkdir()
+    # NEW initiated this window (absent before): undefined % but a real 1.2%-weight
+    # stake => flagged is_new, conviction = full weight, ranked highly.
+    cols0 = {"name": ["Ballast", "Held"], "weight_pct": [60.0, 4.0]}
+    t0 = pd.DataFrame({"ticker": ["BALLAST", "HELD"], "shares": [1_000_000, 5000], **cols0})
+    cols1 = {"name": ["Ballast", "Held", "Initiated Co"], "weight_pct": [60.0, 4.0, 1.2]}
+    t1 = pd.DataFrame({"ticker": ["BALLAST", "HELD", "NEWPOS"],
+                       "shares": [1_000_000, 5000, 8000], **cols1})
+    t0.to_parquet(d / "2026-06-06.parquet")
+    t1.to_parquet(d / "2026-06-11.parquet")
+    sigs = hs.etf_signals("FAKE3", base_dir=parent, is_active=False,
+                          meta={"name": "Fake", "category": "Test"})
+    by = {s["ticker"]: s for s in sigs}
+    assert "NEWPOS" in by
+    n = by["NEWPOS"]
+    assert n["is_new"] is True and n["direction"] == "accumulating"
+    assert n["active_chg_pct"] is None            # % undefined for a new position
+    assert n["conviction_pp"] == 1.2              # full current weight committed
+
+
 if __name__ == "__main__":
     for fn in [test_decompose_price_only_zero_residual,
                test_decompose_accumulation_positive_residual,
@@ -283,7 +307,8 @@ if __name__ == "__main__":
                test_volume_surge_detects_and_degrades,
                test_is_non_equity_holding,
                test_active_changes_dir_weeds_cash_and_tiny_base,
-               test_etf_signals_conviction_ranks_weight_over_pct]:
+               test_etf_signals_conviction_ranks_weight_over_pct,
+               test_etf_signals_flags_new_position]:
         fn()
         print(f"PASS {fn.__name__}")
     print("all holdings-signal tests passed")

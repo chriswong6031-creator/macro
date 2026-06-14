@@ -202,6 +202,18 @@ def active_changes_dir(d, window_d: int, *, min_base_frac: float = 1e-6) -> pd.D
     if not exp_pos.empty:
         frac = expected.reindex(out.index).fillna(0.0) / exp_pos.sum()
         out = out[frac >= min_base_frac]
+    out["is_new"] = False
+    # Brand-NEW positions — held now, absent a window ago. A manager INITIATING a
+    # stake is the strongest "high interest" signal, but its % change is undefined
+    # (no prior base), so we surface it with is_new=True and let downstream rank it
+    # on the full CURRENT weight (frac=1) instead of a meaningless ratio.
+    new_tk = last.index.difference(first.index)
+    new_last = last.reindex(new_tk).dropna()
+    new_last = new_last[new_last > 0]
+    if len(new_last):
+        out = pd.concat([out, pd.DataFrame({
+            "active_share_chg": new_last, "active_chg_pct": float("nan"),
+            "is_new": True})])
     out["window_start"], out["window_end"] = snaps[0].stem, snaps[-1].stem
     return out.sort_values("active_chg_pct")
 

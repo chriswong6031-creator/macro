@@ -59,8 +59,8 @@
         <td class="l"><a href="stock.html#{{ r.ticker }}"><b>{{ r.ticker }}</b></a> <span class="muted">{{ r.name }}</span></td>
         <td class="l muted">{{ td(r.sector) if r.sector else "—" }}</td>
         <td class="r muted">{% if r.weight_pct is not none %}{{ "%.2f" | format(r.weight_pct) }}%{% else %}—{% endif %}</td>
-        <td class="r {{ 'pos' if r.conviction_pp >= 0 else 'neg' }}"><b>{{ "%+.2f" | format(r.conviction_pp) }}pp</b></td>
-        <td class="r muted">{% if r.active_chg_pct is not none %}{{ "%+.0f" | format(r.active_chg_pct) }}%{% else %}—{% endif %}</td>
+        <td class="r {{ 'pos' if r.conviction_pp >= 0 else 'neg' }}"><b>{{ "%+.2f" | format(r.conviction_pp) }}pp</b>{% if r.is_new %} <span class="tag tag-active" title="brand-new position — the fund just initiated a stake">{{ t('NEW', '新建') }}</span>{% endif %}</td>
+        <td class="r muted">{% if r.is_new %}{{ t('initiated', '新建仓') }}{% elif r.active_chg_pct is not none %}{{ "%+.0f" | format(r.active_chg_pct) }}%{% else %}—{% endif %}</td>
         <td class="l">{% if r.is_active %}<span class="tag tag-active">{{ t('manager conviction', '经理人信念') }}</span>{% else %}<span class="tag tag-passive">{{ t('curated basket', '精选篮子') }}</span>{% endif %}</td>
         <td class="l">{% if r.ladder %}<span class="state st-{{ r.ladder.state | replace(' ', '_') }}">{{ td(r.ladder.label) }}</span>{% if r.confirmed %} ✅{% endif %}{% else %}<span class="muted">—</span>{% endif %}{% if r.vol and r.vol.surging %} <span title="volume {{ r.vol.ratio }}× recent avg">📊</span>{% endif %}</td>
         <td class="l muted">{{ r.window }}</td>

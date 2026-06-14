@@ -971,7 +971,7 @@ def _fund_flows_by_ticker(rows: list[dict]) -> dict[str, list[dict]]:
             "theme": r.get("category", ""), "is_active": r.get("is_active", False),
             "direction": r["direction"], "conviction_pp": r.get("conviction_pp"),
             "weight_pct": r.get("weight_pct"), "active_chg_pct": r.get("active_chg_pct"),
-            "window": r.get("window", ""),
+            "is_new": r.get("is_new", False), "window": r.get("window", ""),
         })
     for tk in by:
         by[tk].sort(key=lambda m: -abs(m.get("conviction_pp") or 0))

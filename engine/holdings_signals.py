@@ -363,8 +363,11 @@ def etf_signals(etf: str, *, base_dir=None, is_active: bool = False,
 
     out = []
     for tk, row in ch.iterrows():
+        is_new = bool(row.get("is_new", False))
         pct = row["active_chg_pct"]
-        if pd.isna(pct) or abs(pct) < thresh:
+        # Existing positions must clear the share-% threshold; a brand-new position
+        # has no % (undefined base) but is the strongest signal — let it through.
+        if not is_new and (pd.isna(pct) or abs(pct) < thresh):
             continue
         w = wmap.get(tk)
         # Conviction needs a real weight: a tiny position doubling (0.1%->0.2%) is
@@ -373,15 +376,19 @@ def etf_signals(etf: str, *, base_dir=None, is_active: bool = False,
         if w is None or pd.isna(w) or abs(float(w)) < min_w:
             continue
         w = float(w)
-        # active share of the CURRENT position (bounded), then expressed as pp of
-        # fund weight: frac = (pct/100)/(1+pct/100); conviction_pp = w * frac.
-        denom = 1.0 + pct / 100.0
-        frac = -1.0 if abs(denom) < 1e-9 else (pct / 100.0) / denom
-        conviction_pp = round(w * frac, 4)
+        if is_new:
+            # initiating a stake = full current weight committed (frac = 1).
+            conviction_pp, direction = round(w, 4), "accumulating"
+        else:
+            # active share of the CURRENT position (bounded), then expressed as pp
+            # of fund weight: frac = (pct/100)/(1+pct/100); conviction_pp = w*frac.
+            denom = 1.0 + pct / 100.0
+            frac = -1.0 if abs(denom) < 1e-9 else (pct / 100.0) / denom
+            conviction_pp = round(w * frac, 4)
+            direction = "accumulating" if pct > 0 else "trimming"
         if abs(conviction_pp) < min_conv:
             continue
         ladder = _ladder_for(str(tk), min_hist, liquidity=liq, macro_drag=drag)
-        direction = "accumulating" if pct > 0 else "trimming"
         confirmed = bool(direction == "accumulating" and ladder
                          and (ladder["state"] in BULLISH_STATES
                               or ladder["urgency"] in ("now", "imminent", "soon")))
@@ -391,8 +398,8 @@ def etf_signals(etf: str, *, base_dir=None, is_active: bool = False,
             "ticker": str(tk), "name": str(nmap.get(tk, "")).title(),
             "sector": _sector_for(str(tk), theme),
             "weight_pct": w,
-            "active_chg_pct": float(pct),
-            "conviction_pp": conviction_pp,
+            "active_chg_pct": (None if is_new else float(pct)),
+            "conviction_pp": conviction_pp, "is_new": is_new,
             "active_share_chg": float(row["active_share_chg"]),
             "window": f"{row['window_start']}..{row['window_end']}",
             "direction": direction, "ladder": ladder, "confirmed": confirmed,
