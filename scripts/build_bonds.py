@@ -67,6 +67,22 @@ TAX_COLOR = {"bull_steepener": C["green"], "bull_flattener": C["teal"],
 LEG_LABEL = {"recession": ("Recession", "衰退"), "drawdown": ("Drawdown", "回撤"),
              "credit": ("Credit", "信用"), "rates_vol": ("Rates vol", "利率波动"),
              "plumbing": ("Plumbing", "资金管道")}
+# calibration (scripts/calibrate_bonds) → display
+VERDICT_GLYPH = {"CONFIRMED": ("✓", "measured", "已校准"), "DIRECTIONAL": ("~", "directional", "有方向性"),
+                 "CONTEXT": ("·", "context", "仅背景"), "INVERTED": ("⇄", "inverted", "反向"),
+                 "UNMEASURED": ("", "", "")}
+LEG_CALIB_KEY = {"recession": "recession_risk", "drawdown": "drawdown_risk",
+                 "credit": "credit", "rates_vol": "rates_vol", "plumbing": "plumbing"}
+
+
+def _load_calibration() -> dict:
+    """The measured calibration (scripts/calibrate_bonds → data/bonds/calibration.json).
+    Empty dict if never run — the dashboard then shows the prior framing."""
+    p = config.data_dir() / "bonds" / "calibration.json"
+    try:
+        return json.loads(p.read_text())
+    except Exception:  # noqa: BLE001
+        return {}
 
 
 # --------------------------------------------------------------------------- #
@@ -237,7 +253,21 @@ def chart_corr(fr: pd.DataFrame, years=12) -> str:
 # --------------------------------------------------------------------------- #
 # view-model (display-ready, from the snapshot)
 # --------------------------------------------------------------------------- #
-def _vm(snap: dict, fr: pd.DataFrame) -> dict:
+def _vm(snap: dict, fr: pd.DataFrame, calib: dict | None = None) -> dict:
+    calib = calib or {}
+    csig = calib.get("signals", {})
+    comp = csig.get("composite", {})
+    comp_cond = comp.get("conditional", {}) or {}
+    comp_hi = (comp_cond.get("terciles", {}) or {}).get("high", {}) or {}
+    calib_vm = ({} if not comp else {
+        "verdict": comp.get("verdict"),
+        "hi_dd10": _r((comp_hi.get("p_dd10") or 0) * 100, 0),
+        "base_dd10": _r((comp_cond.get("base_p_dd10") or 0) * 100, 0),
+        "edge_pp": comp_cond.get("high_edge_pp"),
+        "ic_recession": comp.get("ic_recession"),
+        "span": comp.get("span"),
+        "vs_best": (calib.get("composite_vs_best_leg") or {}).get("verdict"),
+    })
     p = snap["pillars"]
     c, cr, ri, st, xa = p["curve"], p["credit"], p["real_inflation"], p["stress"], p["cross_asset"]
     phase = snap.get("cycle_phase")
@@ -262,8 +292,12 @@ def _vm(snap: dict, fr: pd.DataFrame) -> dict:
             "verdict_en": snap.get("verdict_en"), "verdict_zh": snap.get("verdict_zh"),
             "recession_risk": _r(snap.get("recession_risk"), 0),
             "drawdown_risk": _r(snap.get("drawdown_risk"), 0),
+            "calib": calib_vm,
             "stress_legs": [{"en": LEG_LABEL.get(k, (k, k))[0], "zh": LEG_LABEL.get(k, (k, k))[1],
-                             "val": _r(v, 0)} for k, v in (snap.get("stress_legs") or {}).items()],
+                             "val": _r(v, 0),
+                             "vg": VERDICT_GLYPH.get(csig.get(LEG_CALIB_KEY.get(k, ""), {}).get("verdict", ""),
+                                                     ("", "", ""))}
+                            for k, v in (snap.get("stress_legs") or {}).items()],
         },
         "curve": {
             "spread_10y3m": _r(c.get("spread_10y3m")), "spread_2s10s": _r(c.get("spread_2s10s")),
@@ -343,7 +377,8 @@ def main() -> int:
         log.error("bonds engine failed (%s); skipping bonds page", e)
         return 0
 
-    vm = _vm(snap, fr)
+    calib = _load_calibration()
+    vm = _vm(snap, fr, calib)
     charts = {
         "health": chart_health(fr), "curve_now": chart_curve_now(f), "spreads": chart_spreads(fr),
         "credit": chart_credit(fr), "real": chart_real(fr), "move": chart_move(fr), "corr": chart_corr(fr),

@@ -105,6 +105,7 @@ fred:
       BAMLH0A3HYC: ccc_oas        # CCC & lower OAS — the distress tail (ICE BofA; ~3y rolling, cache forever)
       IORB: iorb                  # interest on reserve balances — the SOFR-IORB plumbing anchor
       SOFR99: sofr_99             # 99th-pctile SOFR — a repo-stress spike gauge
+      USRECD: us_recession        # NBER recession indicator (daily) — calibration target ONLY (not in live frame)
     # --- Forex Vector (research/FOREX_DASHBOARD.md) — all keyless via FRED ---------
     fx_rates:                     # daily FX reference rates (H.10) — cross-check + deep history
       DEXUSEU: fx_eur_usd         # USD per EUR  (EUR base, NOT inverted)
@@ -1598,6 +1599,8 @@ bonds:
     weights: {recession: 1.0, drawdown: 1.0, credit: 0.8, rates_vol: 0.6, plumbing: 0.4}
     healthy_score: 67            # >= => "healthy"
     stressed_score: 40           # <  => "stressed" (between => "mixed")
+  calibration:
+    split_date: "2013-01-01"      # split-half boundary for the discriminative drawdown IC
   alerts:
     timeline_days: 120             # durable (debounced) state-changes are sparse; show ~4mo
 

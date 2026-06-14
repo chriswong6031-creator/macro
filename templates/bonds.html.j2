@@ -90,6 +90,11 @@ html[data-theme="dark"] .pill{background:#222732}
 html[data-theme="dark"] .leg .lbar{background:#222732}
 .leg .lfill{position:absolute;left:0;top:0;bottom:0;border-radius:5px}
 .leg .lval{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+.lvg{margin-left:5px;font-weight:800;font-size:11px;cursor:help}
+.vg-measured{color:var(--green)}.vg-directional{color:var(--amber)}.vg-context{color:var(--faint)}.vg-inverted{color:var(--indigo)}
+.measured-edge{margin-top:12px;padding:10px 13px;border-radius:10px;background:rgba(26,127,67,.08);font-size:13px;line-height:1.5;color:var(--text)}
+.measured-edge b{color:var(--green)}
+html[data-theme="dark"] .measured-edge{background:rgba(26,127,67,.12)}
 /* cross-asset drivers */
 .drv{display:grid;grid-template-columns:120px 1fr;gap:10px 16px;align-items:start;padding:12px 0;border-bottom:1px solid var(--grid)}
 .drv:last-child{border-bottom:none}
@@ -164,14 +169,20 @@ html[data-theme="dark"] .leg .lbar{background:#222732}
         {% for leg in vm.health.stress_legs %}
         <div class="leg"><span class="lname">{{ t(leg.en, leg.zh) }}</span>
           <span class="lbar"><span class="lfill" style="width:{{ leg.val }}%;background:{{ C.green if leg.val < 50 else C.amber if leg.val < 75 else C.red }}"></span></span>
-          <span class="lval">{{ leg.val }}</span></div>
+          <span class="lval">{{ leg.val }}{% if leg.vg[0] %}<span class="lvg vg-{{ leg.vg[1] }}" title="forward-drawdown calibration: {{ leg.vg[1] }}">{{ leg.vg[0] }}</span>{% endif %}</span></div>
         {% endfor %}
+        {% if vm.health.calib %}
+        <div class="measured-edge">📊 {{ t('Measured', '已校准') }}: {{ t('when this composite is in its top stress tercile, a ≥10% S&P drawdown followed within 63 days', '当该综合指标处于压力最高的三分位时，标普在63天内出现≥10%回撤的概率为') }}
+          <b>{{ vm.health.calib.hi_dd10 }}%</b> {{ t('of the time vs a', '，而基准为') }} <b>{{ vm.health.calib.base_dd10 }}%</b> {{ t('base', '') }}
+          (<b>{% if vm.health.calib.edge_pp >= 0 %}+{% endif %}{{ vm.health.calib.edge_pp }}pp</b>){{ t('. Recession-IC', '。衰退IC') }} {{ vm.health.calib.ic_recession }}.
+          <span class="faint">{{ t('Legs: ✓ confirmed · ~ directional · · context (glyph by each bar). Honest caveat: the blend ≈ the drawdown-risk leg alone — it is an explainable synthesis, not a better single predictor.', '分项：✓ 已确认 · ~ 有方向 · · 仅背景（见各条形旁字形）。诚实提示：综合 ≈ 单独的回撤风险分项 — 它是可解释的综合，而非更优的单一预测。') }}</span></div>
+        {% endif %}
       </div>{% endif %}
     </div>
     <div class="card">
       <h2>{{ t('Bond health — history', '债券健康度 · 历史') }}</h2>
       {{ charts.health | safe }}
-      <div class="sub faint" style="margin-top:6px">{{ t('A transparent composite of the measured recession & drawdown-risk gauges plus the credit, rates-vol and funding-stress reads. Higher = healthier. Calibration pending (a documented prior, not tuned to a backtest).', '由已测得的衰退与回撤风险，加上信用、利率波动与资金压力读数构成的透明综合指标。越高越健康。校准待定（为有据先验，未对回测调参）。') }}</div>
+      <div class="sub faint" style="margin-top:6px">{{ t('A transparent composite of the recession & drawdown-risk gauges plus the credit, rates-vol and funding-stress reads. Higher = healthier. Split-half CONFIRMED against forward S&P drawdowns (the measured edge is shown left); the weighting is a documented prior, conservatively kept.', '由衰退与回撤风险，加上信用、利率波动与资金压力读数构成的透明综合指标。越高越健康。已对未来标普回撤进行前后半段校准并确认（左侧显示实测优势）；权重为有据先验，保守保留。') }}</div>
     </div>
   </div>
 
@@ -314,9 +325,9 @@ html[data-theme="dark"] .leg .lbar{background:#222732}
     <h2>{{ t('How to read this · and what it is not', '如何解读 · 以及它不是什么') }}</h2>
     <div class="note">
       <p>{{ t('This board reads the bond market HEALTH-FIRST: what the Treasury curve, corporate credit, real yields, rates volatility and funding plumbing say about economic health, regime and cycle position — not a "trade the bond" vector. The health score is a transparent composite of the already-MEASURED recession-risk and drawdown-risk gauges (engine.conditions) plus the credit, rates-vol and funding stress reads.', '本面板以“健康”为先解读债券市场：美国国债曲线、公司信用、实际利率、利率波动与资金管道对经济健康、周期状态与所处阶段的判读——而非“交易债券”的向量。健康度评分是已测得的衰退风险与回撤风险（engine.conditions），加上信用、利率波动与资金压力读数的透明综合。') }}</p>
-      <p><b>{{ t('Honesty bar.', '诚信底线。') }}</b> {{ t('Thresholds (curve, OAS distress, MOVE bands) are documented practitioner levels, NOT tuned to a backtest. The composite health-score weighting is a stated PRIOR pending split-half calibration against forward recession dating + equity drawdowns (scripts/calibrate_bonds.py). The recession-risk and drawdown-risk gauges underneath ARE measured. All alerts are CONTEXT.', '阈值（曲线、OAS困境、MOVE分带）为有据的从业者水平，未对回测调参。综合健康度的权重为明示先验，待用前后半段对“未来衰退定盘+股票回撤”进行校准（scripts/calibrate_bonds.py）。其下的衰退风险与回撤风险确为已测得。所有警报皆为背景。') }}</p>
+      <p><b>{{ t('Honesty bar.', '诚信底线。') }}</b> {{ t('Thresholds (curve, OAS distress, MOVE bands) are documented practitioner levels, NOT tuned to a backtest. scripts/calibrate_bonds.py MEASURES each leg vs strictly-forward S&P drawdowns + NBER recession, split-half: recession-risk, drawdown-risk and rates-vol are CONFIRMED, credit is DIRECTIONAL (strong pre-2013, faded through QE), funding-plumbing is CONTEXT (it rarely fires, so it rarely discriminates). The composite is CONFIRMED — but, honestly, it does NOT beat the drawdown-risk leg alone, so treat it as an explainable synthesis, not a better single predictor. The health-score weighting is kept as a conservative prior (measured-informed weights are reported in reports/bonds-calibration.md, adopted only if they hold on a refresh). All alerts are CONTEXT.', '阈值（曲线、OAS困境、MOVE分带）为有据的从业者水平，未对回测调参。scripts/calibrate_bonds.py 对每个分项相对严格向前的标普回撤与NBER衰退做前后半段测量：衰退风险、回撤风险与利率波动为已确认，信用为有方向（2013年前强、QE期间减弱），资金管道为仅背景（极少触发，故极少有区分力）。综合指标已确认 — 但诚实地说，它并不优于单独的回撤风险分项，故应视为可解释的综合，而非更优的单一预测。健康度权重保守地保留为先验（实测建议权重见 reports/bonds-calibration.md，仅在刷新后仍成立时采用）。所有警报皆为背景。') }}</p>
       <p><b>{{ t('Data.', '数据。') }}</b> {{ t('Free / keyless: FRED (full Treasury curve, real yields, breakevens, ACM/Kim-Wright term premium, ICE BofA OAS, Moody\'s Baa/Aaa back to 1986, SOFR/IORB plumbing, Excess Bond Premium), Yahoo (MOVE, bond ETFs).', '免费/无密钥：FRED（完整国债曲线、实际利率、盈亏平衡通胀、ACM/Kim-Wright期限溢价、ICE美银OAS、追溯至1986年的穆迪Baa/Aaa、SOFR/准备金利率管道、超额债券溢价）、Yahoo（MOVE、债券ETF）。') }}</p>
-      <p class="meta-foot">{{ t('Coming next: split-half calibration of the health composite, daily foreign sovereign spreads (BTP-Bund, JGB) for the global-risk leg.', '后续：健康度综合的前后半段校准、用于全球风险分项的每日外国主权利差（意德利差、日本国债）。') }}</p>
+      <p class="meta-foot">{{ t('Coming next: daily foreign sovereign spreads (BTP-Bund, JGB) for the global-risk leg; adopting the measured leg weights once they hold across refreshes.', '后续：用于全球风险分项的每日外国主权利差（意德利差、日本国债）；待实测分项权重多次刷新后仍成立时予以采用。') }}</p>
       <p class="meta-foot">{{ t('History', '历史') }} {{ span }} · {{ t('built', '构建于') }} {{ built }}</p>
     </div>
   </div>
