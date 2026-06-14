@@ -209,6 +209,138 @@ def test_volume_surge_detects_and_degrades() -> None:
         store.read = orig
 
 
+# --- data hygiene: non-equity predicate + denominator guard ---------------------
+
+def test_is_non_equity_holding() -> None:
+    from collectors.holdings import is_non_equity_holding
+    # cash / FX / equivalents / blank => non-equity
+    assert is_non_equity_holding("USD", "CASH & EQUIVALENTS")
+    assert is_non_equity_holding("EUR", "EURO")
+    assert is_non_equity_holding("-", "")
+    assert is_non_equity_holding("XYZ", "Cash&Other")
+    assert is_non_equity_holding("", "")
+    # real equities (incl. foreign-listed) => kept
+    assert not is_non_equity_holding("NVDA", "NVIDIA CORP")
+    assert not is_non_equity_holding("000720 KS", "HYUNDAI ENGINEERING & CONST")
+    assert not is_non_equity_holding("FF", "FutureFuel Corp")   # 'future' substring not flagged
+
+
+def test_active_changes_dir_weeds_cash_and_tiny_base() -> None:
+    import tempfile
+    from collectors.holdings import active_changes_dir
+    d = Path(tempfile.mkdtemp()) / "FUND"
+    d.mkdir()
+    # BALLAST keeps the SO ratio ~1 so AAPL's real add stands out; USD is a cash
+    # line (dropped by predicate); ZZZZ is a tiny placeholder contra-line whose
+    # near-zero base would otherwise explode the %.
+    cols = {"name": ["Ballast", "Apple", "Cash & Equivalents", "Contra"]}
+    t0 = pd.DataFrame({"ticker": ["BALLAST", "AAPL", "USD", "ZZZZ"],
+                       "shares": [10_000_000, 10_000, 5, 1], **cols})
+    t1 = pd.DataFrame({"ticker": ["BALLAST", "AAPL", "USD", "ZZZZ"],
+                       "shares": [10_000_000, 15_000, 9_999_999, 80], **cols})
+    t0.to_parquet(d / "2026-06-06.parquet")
+    t1.to_parquet(d / "2026-06-11.parquet")
+    out = active_changes_dir(d, 5)
+    assert out is not None
+    assert "USD" not in out.index            # cash line dropped by the predicate
+    assert "ZZZZ" not in out.index           # tiny base dropped by min_base_frac
+    assert "AAPL" in out.index               # real accumulation survives
+    assert 40 < out.loc["AAPL", "active_chg_pct"] < 60   # ~+49%, NOT an explosion
+    assert out["active_chg_pct"].abs().max() < 1000       # nothing blows up
+
+
+def test_etf_signals_conviction_ranks_weight_over_pct() -> None:
+    import tempfile
+    parent = Path(tempfile.mkdtemp())
+    d = parent / "FAKE2"
+    d.mkdir()
+    # BIG: 5%-weight name, manager adds ~20%; TINY: 0.2%-weight name that DOUBLES.
+    # TINY's share % is far bigger, but conviction (pp of fund weight committed)
+    # must rank BIG first — the user's "0.1%->0.2% double isn't significant".
+    base_cols = {"name": ["Ballast", "Big Co", "Tiny Co"]}
+    t0 = pd.DataFrame({"ticker": ["BALLAST", "BIG", "TINY"],
+                       "weight_pct": [50.0, 5.0, 0.20],
+                       "shares": [1_000_000, 1000, 100], **base_cols})
+    t1 = pd.DataFrame({"ticker": ["BALLAST", "BIG", "TINY"],
+                       "weight_pct": [50.0, 5.0, 0.20],
+                       "shares": [1_000_000, 1200, 200], **base_cols})
+    t0.to_parquet(d / "2026-06-06.parquet")
+    t1.to_parquet(d / "2026-06-11.parquet")
+    sigs = hs.etf_signals("FAKE2", base_dir=parent, is_active=True,
+                          meta={"name": "Fake", "category": "Test"})
+    by = {s["ticker"]: s for s in sigs}
+    assert "BIG" in by and "TINY" in by
+    assert by["TINY"]["active_chg_pct"] > by["BIG"]["active_chg_pct"]   # raw % bigger for TINY
+    assert by["BIG"]["conviction_pp"] > by["TINY"]["conviction_pp"]      # but conviction bigger for BIG
+    acc = hs.split_by_conviction(sigs)["accumulation"]
+    assert acc[0]["ticker"] == "BIG"                                     # ranked first
+
+
+def test_etf_signals_flags_new_position() -> None:
+    import tempfile
+    parent = Path(tempfile.mkdtemp())
+    d = parent / "FAKE3"
+    d.mkdir()
+    # NEW initiated this window (absent before): undefined % but a real 1.2%-weight
+    # stake => flagged is_new, conviction = full weight, ranked highly.
+    cols0 = {"name": ["Ballast", "Held"], "weight_pct": [60.0, 4.0]}
+    t0 = pd.DataFrame({"ticker": ["BALLAST", "HELD"], "shares": [1_000_000, 5000], **cols0})
+    cols1 = {"name": ["Ballast", "Held", "Initiated Co"], "weight_pct": [60.0, 4.0, 1.2]}
+    t1 = pd.DataFrame({"ticker": ["BALLAST", "HELD", "NEWPOS"],
+                       "shares": [1_000_000, 5000, 8000], **cols1})
+    t0.to_parquet(d / "2026-06-06.parquet")
+    t1.to_parquet(d / "2026-06-11.parquet")
+    sigs = hs.etf_signals("FAKE3", base_dir=parent, is_active=False,
+                          meta={"name": "Fake", "category": "Test"})
+    by = {s["ticker"]: s for s in sigs}
+    assert "NEWPOS" in by
+    n = by["NEWPOS"]
+    assert n["is_new"] is True and n["direction"] == "accumulating"
+    assert n["active_chg_pct"] is None            # % undefined for a new position
+    assert n["conviction_pp"] == 1.2              # full current weight committed
+
+
+def test_etf_signals_flags_full_exit() -> None:
+    import tempfile
+    parent = Path(tempfile.mkdtemp())
+    d = parent / "FAKE4"
+    d.mkdir()
+    # GONE held a window ago (3% weight), fully sold by now => strongest negative
+    # signal: is_exit, conviction = -prior weight, name recovered from the prior snap.
+    t0 = pd.DataFrame({"ticker": ["BALLAST", "GONE"], "name": ["Ballast", "Gone Co"],
+                       "weight_pct": [60.0, 3.0], "shares": [1_000_000, 5000]})
+    t1 = pd.DataFrame({"ticker": ["BALLAST"], "name": ["Ballast"],
+                       "weight_pct": [60.0], "shares": [1_000_000]})
+    t0.to_parquet(d / "2026-06-06.parquet")
+    t1.to_parquet(d / "2026-06-11.parquet")
+    sigs = hs.etf_signals("FAKE4", base_dir=parent, is_active=False,
+                          meta={"name": "Fake", "category": "Test"})
+    by = {s["ticker"]: s for s in sigs}
+    assert "GONE" in by
+    g = by["GONE"]
+    assert g["is_exit"] is True and g["direction"] == "trimming"
+    assert g["conviction_pp"] == -3.0            # full prior weight sold out
+    assert g["weight_pct"] == 3.0 and g["name"] == "Gone Co"   # prior-snap name
+    assert hs.split_by_conviction(sigs)["trims"][0]["ticker"] == "GONE"
+
+
+def test_active_changes_dir_no_lifecycle_rows_by_default() -> None:
+    # the alert path uses the default (no lifecycle rows) so its semantics are
+    # unchanged — only the radar opts into new/exit via include_lifecycle=True.
+    import tempfile
+    from collectors.holdings import active_changes_dir
+    d = Path(tempfile.mkdtemp()) / "FUND"
+    d.mkdir()
+    pd.DataFrame({"ticker": ["A", "GONE"], "name": ["A", "G"],
+                  "shares": [1000, 500]}).to_parquet(d / "2026-06-06.parquet")
+    pd.DataFrame({"ticker": ["A", "NEWP"], "name": ["A", "N"],
+                  "shares": [1000, 500]}).to_parquet(d / "2026-06-11.parquet")
+    base = active_changes_dir(d, 5)
+    assert "GONE" not in base.index and "NEWP" not in base.index   # no lifecycle
+    life = active_changes_dir(d, 5, include_lifecycle=True)
+    assert "NEWP" in life.index and "GONE" in life.index
+
+
 if __name__ == "__main__":
     for fn in [test_decompose_price_only_zero_residual,
                test_decompose_accumulation_positive_residual,
@@ -220,7 +352,13 @@ if __name__ == "__main__":
                test_alert_silent_below_threshold,
                test_etf_normalize_drops_cash_and_parses,
                test_etf_active_decision_flags_accumulation,
-               test_volume_surge_detects_and_degrades]:
+               test_volume_surge_detects_and_degrades,
+               test_is_non_equity_holding,
+               test_active_changes_dir_weeds_cash_and_tiny_base,
+               test_etf_signals_conviction_ranks_weight_over_pct,
+               test_etf_signals_flags_new_position,
+               test_etf_signals_flags_full_exit,
+               test_active_changes_dir_no_lifecycle_rows_by_default]:
         fn()
         print(f"PASS {fn.__name__}")
     print("all holdings-signal tests passed")

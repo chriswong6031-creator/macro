@@ -827,17 +827,22 @@ BUY_ZONE_STATES = ("FRESH BUY", "TURN SIGNALED")
 
 
 def build_etf_page(env: Environment, site: Path, generated: str) -> None:
-    """Render etfs.html — the broad-universe ETF flow radar (share-based
-    flow-normalized active decisions). See engine/holdings_signals.top_etf_accumulation."""
-    from engine.holdings_signals import top_etf_accumulation
+    """Render etfs.html — the "real fund moves" board: conviction-ranked,
+    accumulation-first holding decisions across the curated thematic/active ETF
+    universe, with a smaller de-emphasized trims list. See engine/holdings_signals."""
+    from engine.holdings_signals import all_etf_signals, split_by_conviction
     try:
-        rows = top_etf_accumulation()
+        rows = all_etf_signals()
     except Exception as e:  # noqa: BLE001
         log.error("etf signals failed: %s", e)
         rows = []
-    html = env.get_template("etfs.html.j2").render(etf_rows=rows, generated_utc=generated)
+    split = split_by_conviction(rows)
+    html = env.get_template("etfs.html.j2").render(
+        accumulation=split["accumulation"], trims=split["trims"],
+        generated_utc=generated)
     (site / "etfs.html").write_text(html)
-    log.info("wrote etfs.html (%d signal rows)", len(rows))
+    log.info("wrote etfs.html (%d accumulation, %d trims)",
+             len(split["accumulation"]), len(split["trims"]))
 
 
 def build_factors_page(env: Environment, site: Path, generated: str) -> dict | None:

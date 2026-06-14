@@ -151,15 +151,42 @@ def weight_decomposition(fund: str, lookback_days: int | None = None) -> pd.Data
     return dec
 
 
-def _ladder_for(ticker: str, min_hist: int) -> dict | None:
+def _live_macro_context() -> tuple[str | None, float | None]:
+    """(net-liquidity regime, macro-risk drag) from regime/latest.json; (None,None)
+    if unavailable. Lets the accumulation/ETF overlays pass the SAME macro context
+    into analyze() that the sector cards use, so the overlay ladder can no longer
+    disagree with the card for the same stock."""
+    import json
+    p = config.data_dir() / "regime" / "latest.json"
+    if not p.exists():
+        return None, None
+    try:
+        j = json.loads(p.read_text())
+    except Exception:  # noqa: BLE001
+        return None, None
+    liq = j.get("liquidity_overlay")
+    liq = liq if liq in ("expanding", "contracting", "neutral") else None
+    drag = (j.get("macro_risk") or {}).get("score")
+    return liq, (float(drag) if isinstance(drag, (int, float)) else None)
+
+
+def _ladder_for(ticker: str, min_hist: int, *, liquidity: str | None = None,
+                macro_drag: float | None = None, macro_beta: float = 0.0) -> dict | None:
     """The stock's calibrated cycle/ladder state — the 'is a buy signal forming?'
-    confirmation layer. Reuses engine.cycles.analyze; None if too little history."""
+    confirmation layer. Reuses engine.cycles.analyze; None if too little history.
+
+    Threads the live macro context (net-liquidity regime, macro-risk drag × this
+    name's sector beta) so this overlay ladder matches the sector-card ladder for
+    the same stock; defaults keep it a no-op. Crypto tickers (-USD) get the crypto
+    cycle preset, mirroring build_stock_library."""
     px = store.read("stocks", str(ticker).replace(".", "-"))
     if px is None or "close" not in px or len(px) < min_hist:
         return None
     try:
         from engine.cycles import analyze
-        lad = analyze(px["close"], px.get("high")).get("ladder")
+        kind = "crypto" if str(ticker).endswith("-USD") else "equity"
+        lad = analyze(px["close"], px.get("high"), kind=kind, liquidity=liquidity,
+                      macro_drag=macro_drag, macro_beta=macro_beta).get("ladder")
     except Exception as e:  # noqa: BLE001 — confirmation is additive, never fatal
         log.debug("cycle read failed for %s: %s", ticker, e)
         return None
@@ -190,21 +217,34 @@ def volume_surge(ticker: str, recent: int = 5, base: int = 20) -> dict | None:
     return {"ratio": round(ratio, 2), "surging": ratio >= x}
 
 
-def accumulation_signals(fund: str) -> list[dict]:
+def accumulation_signals(fund: str, *, liquidity: str | None = None,
+                         macro_drag: float | None = None,
+                         macro_beta: float | None = None) -> list[dict]:
     """Holdings whose residual weight change clears the config threshold, each
     enriched with the stock's cycle state. `confirmed` = accumulating AND the
-    stock is technically basing/turning up (the strongest combination)."""
+    stock is technically basing/turning up (the strongest combination).
+
+    `liquidity`/`macro_drag`/`macro_beta` are threaded into each holding's ladder
+    so the overlay matches the sector card. macro_beta defaults to the FUND's
+    sector sensitivity (all holdings sit in that sector)."""
     cfg = _cfg()
     pp = cfg.get("active_change_pp", 0.15)
     pct = cfg.get("active_change_pct", 8)
     min_hist = cfg.get("min_price_history", 60)
+    if macro_beta is None:
+        try:
+            from engine.conditions import sector_macro_beta
+            macro_beta = sector_macro_beta(fund)
+        except Exception:  # noqa: BLE001 — macro overlay is additive; absent on some builds
+            macro_beta = 0.0
     dec = weight_decomposition(fund)
     if dec is None:
         return []
     flagged = dec[(dec["active_change"].abs() >= pp) | (dec["active_pct"].abs() >= pct)]
     out = []
     for tk, row in flagged.iterrows():
-        ladder = _ladder_for(str(tk), min_hist)
+        ladder = _ladder_for(str(tk), min_hist, liquidity=liquidity,
+                             macro_drag=macro_drag, macro_beta=macro_beta)
         direction = "accumulating" if row["active_change"] > 0 else "distributing"
         confirmed = bool(
             direction == "accumulating" and ladder
@@ -227,13 +267,53 @@ def accumulation_signals(fund: str) -> list[dict]:
 def all_accumulation_signals() -> list[dict]:
     """Flattened, magnitude-sorted accumulation signals across every sector SPDR."""
     funds = config.load()["sponsors"]["sector_funds"]
+    liq, drag = _live_macro_context()
     out: list[dict] = []
     for fund in funds:
         try:
-            out.extend(accumulation_signals(fund))
+            out.extend(accumulation_signals(fund, liquidity=liq, macro_drag=drag))
         except Exception as e:  # noqa: BLE001 — one fund must not kill the rest
             log.error("accumulation_signals %s failed: %s", fund, e)
     return sorted(out, key=lambda r: -abs(r["active_change"]))
+
+
+# --------------------------------------------------------------------------- #
+# Sector lookup — the GICS sector each stock belongs to, so the radar can show it
+# and the per-stock page can answer "which sector fund is buying me". Reuses the
+# breadth/midcap/smallcap constituents tables (symbol -> name, sector) that the
+# stock library already builds; cached once per process.
+# --------------------------------------------------------------------------- #
+_SECTOR_MAP: dict[str, str] | None = None
+
+
+def _sector_map() -> dict[str, str]:
+    global _SECTOR_MAP
+    if _SECTOR_MAP is not None:
+        return _SECTOR_MAP
+    m: dict[str, str] = {}
+    for grp in ("breadth", "smallcap_breadth", "midcap_breadth"):
+        p = config.data_dir() / grp / "constituents.parquet"
+        if not p.exists():
+            continue
+        try:
+            df = pd.read_parquet(p)
+        except Exception as e:  # noqa: BLE001 — a corrupt cache must not break the radar
+            log.warning("sector map %s unreadable: %s", grp, e)
+            continue
+        if "sector" not in df.columns:
+            continue
+        for sym, sec in df["sector"].items():
+            key = str(sym).replace(".", "-").upper()
+            if key not in m and isinstance(sec, str) and sec:
+                m[key] = sec
+    _SECTOR_MAP = m
+    return m
+
+
+def _sector_for(ticker: str, fallback: str = "") -> str:
+    """GICS sector for a US-listed ticker, else the fund's theme as a fallback
+    (foreign holdings have no GICS row)."""
+    return _sector_map().get(str(ticker).replace(".", "-").upper(), fallback)
 
 
 # --------------------------------------------------------------------------- #
@@ -256,12 +336,18 @@ def etf_signals(etf: str, *, base_dir=None, is_active: bool = False,
     cfg = config.load()["etf_holdings"]
     thresh = cfg.get("active_change_alert_pct", 15)
     min_w = cfg.get("min_position_pct", 0.20)
+    min_conv = cfg.get("min_conviction_pp", 0.05)
+    min_base_frac = cfg.get("min_base_frac", 1e-6)
     window = cfg.get("active_change_window_d", 5)
     min_hist = config.load()["holdings_signals"].get("min_price_history", 60)
     meta = meta or {}
+    # match the sector cards' macro context; per-holding sector beta is unknown for
+    # the mixed ETF universe, so only the liquidity/drag context is threaded here.
+    liq, drag = _live_macro_context()
 
     base = Path(base_dir or config.data_dir() / "etf_holdings") / etf
-    ch = active_changes_dir(base, window)
+    ch = active_changes_dir(base, window, min_base_frac=min_base_frac,
+                            include_lifecycle=True)
     if ch is None or ch.empty:
         return []
     snaps = sorted(base.glob("*.parquet"))
@@ -277,26 +363,55 @@ def etf_signals(etf: str, *, base_dir=None, is_active: bool = False,
     else:
         wmap = pd.Series(dtype=float)
     nmap = latest.groupby("ticker")[ncol].last() if ncol else pd.Series(dtype=str)
+    # fully-exited positions are absent from `latest`, so resolve their name from the
+    # window-start snapshot active_changes_dir compared against.
+    prior = pd.read_parquet(snaps[-(window + 1)] if len(snaps) > window else snaps[0])
+    pncol = next((c for c in prior.columns if c.lower() in ("name", "company")), None)
+    pnmap = prior.groupby("ticker")[pncol].last() if pncol else pd.Series(dtype=str)
+    theme = meta.get("category", "")
 
     out = []
     for tk, row in ch.iterrows():
+        is_new = bool(row.get("is_new", False))
+        is_exit = bool(row.get("is_exit", False))
         pct = row["active_chg_pct"]
-        if pd.isna(pct) or abs(pct) < thresh:
+        # Existing positions must clear the share-% threshold; brand-new positions
+        # and full exits have no meaningful % but are the strongest signals — pass.
+        if not is_new and not is_exit and (pd.isna(pct) or abs(pct) < thresh):
             continue
-        w = wmap.get(tk)
-        if w is not None and pd.notna(w) and abs(float(w)) < min_w:
+        # Conviction needs a real weight (pp of fund committed) — a tiny position
+        # doubling (0.1%->0.2%) is a big % but trivial conviction. For exits the
+        # position is gone from `latest`, so use its carried PRIOR weight.
+        w = row.get("prior_weight_pct") if is_exit else wmap.get(tk)
+        if w is None or pd.isna(w) or abs(float(w)) < min_w:
             continue
-        ladder = _ladder_for(str(tk), min_hist)
-        direction = "accumulating" if pct > 0 else "trimming"
+        w = float(w)
+        if is_new:
+            conviction_pp, direction = round(w, 4), "accumulating"   # full weight in
+        elif is_exit:
+            conviction_pp, direction = round(-w, 4), "trimming"       # full weight out
+        else:
+            # active share of the CURRENT position (bounded), then expressed as pp
+            # of fund weight: frac = (pct/100)/(1+pct/100); conviction_pp = w*frac.
+            denom = 1.0 + pct / 100.0
+            frac = -1.0 if abs(denom) < 1e-9 else (pct / 100.0) / denom
+            conviction_pp = round(w * frac, 4)
+            direction = "accumulating" if pct > 0 else "trimming"
+        if abs(conviction_pp) < min_conv:
+            continue
+        ladder = _ladder_for(str(tk), min_hist, liquidity=liq, macro_drag=drag)
         confirmed = bool(direction == "accumulating" and ladder
                          and (ladder["state"] in BULLISH_STATES
                               or ladder["urgency"] in ("now", "imminent", "soon")))
+        name = nmap.get(tk) or pnmap.get(tk, "") if is_exit else nmap.get(tk, "")
         out.append({
             "etf": etf, "etf_name": meta.get("name", etf),
-            "category": meta.get("category", ""), "is_active": is_active,
-            "ticker": str(tk), "name": str(nmap.get(tk, "")).title(),
-            "weight_pct": float(w) if w is not None and pd.notna(w) else None,
-            "active_chg_pct": float(pct),
+            "category": theme, "is_active": is_active,
+            "ticker": str(tk), "name": str(name or "").title(),
+            "sector": _sector_for(str(tk), theme),
+            "weight_pct": w,
+            "active_chg_pct": (None if is_new else float(pct)),
+            "conviction_pp": conviction_pp, "is_new": is_new, "is_exit": is_exit,
             "active_share_chg": float(row["active_share_chg"]),
             "window": f"{row['window_start']}..{row['window_end']}",
             "direction": direction, "ladder": ladder, "confirmed": confirmed,
@@ -305,12 +420,11 @@ def etf_signals(etf: str, *, base_dir=None, is_active: bool = False,
     return out
 
 
-def top_etf_accumulation(n: int | None = None) -> list[dict]:
-    """Biggest flow-normalized share decisions across the whole ETF universe —
-    the passive index/sector funds (data/etf_holdings) plus the active ARK
-    watchlist (data/holdings) — flattened and magnitude-sorted for the page."""
+def all_etf_signals() -> list[dict]:
+    """Every flagged, conviction-scored holding decision across the curated
+    thematic/active ETF universe (data/etf_holdings) plus the active watchlist
+    (data/holdings, e.g. ARK). Unsorted; callers split into accumulation / trims."""
     cfg = config.load()
-    n = n or cfg["etf_holdings"].get("page_top_n", 40)
     out: list[dict] = []
     for etf, spec in cfg["etf_holdings"].get("universe", {}).items():
         try:
@@ -321,7 +435,28 @@ def top_etf_accumulation(n: int | None = None) -> list[dict]:
     for etf in cfg["holdings"].get("watchlist", {}):
         try:
             out.extend(etf_signals(etf, base_dir=holdings_dir, is_active=True,
-                                   meta={"name": etf, "category": "Active / Thematic"}))
+                                   meta={"name": etf, "category": "Active / Innovation"}))
         except Exception as e:  # noqa: BLE001
             log.error("etf_signals %s (watchlist) failed: %s", etf, e)
-    return sorted(out, key=lambda r: -abs(r["active_chg_pct"]))[:n]
+    return out
+
+
+def split_by_conviction(rows: list[dict], n: int | None = None,
+                        trims_n: int | None = None) -> dict[str, list[dict]]:
+    """Split signal rows into a positive-first accumulation list (the actionable
+    side the user cares about) and a smaller, de-emphasized trims list, each
+    ranked by conviction (pp of fund weight committed), NOT raw share %."""
+    cfg = config.load()["etf_holdings"]
+    n = n or cfg.get("page_top_n", 40)
+    trims_n = trims_n if trims_n is not None else cfg.get("trims_top_n", 12)
+    acc = sorted((r for r in rows if (r.get("conviction_pp") or 0) > 0),
+                 key=lambda r: -r["conviction_pp"])[:n]
+    trims = sorted((r for r in rows if (r.get("conviction_pp") or 0) < 0),
+                   key=lambda r: r["conviction_pp"])[:trims_n]
+    return {"accumulation": acc, "trims": trims}
+
+
+def top_etf_accumulation(n: int | None = None, trims_n: int | None = None) -> dict[str, list[dict]]:
+    """Conviction-ranked fund decisions for the radar page: {accumulation, trims}.
+    Accumulation (positive conviction) is the headline; trims are secondary."""
+    return split_by_conviction(all_etf_signals(), n=n, trims_n=trims_n)
