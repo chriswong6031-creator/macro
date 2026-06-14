@@ -6,6 +6,7 @@ __pycache__/
 .env
 site/_tmp/
 site/stockdata/
+site/stockbrief/
 site/chinastockdata/
 site/hkstockdata/
 data/breadth/_closes_cache.parquet
@@ -16,3 +17,4 @@ data/hk_breadth/_closes_cache.parquet
 
 # LLM digest cache (regenerable; never commit — would ship a stale-floor digest)
 data/catalyst/digest_cache/
+data/catalyst/stockbrief_cache/

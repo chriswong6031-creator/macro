@@ -981,6 +981,34 @@ master_brain:
   # rotation_thesis: "<override the built-in liquidity-rotation hypothesis here>"
 
 # =============================================================================
+# Catalyst stock — single-stock research BRIEF (LLM "Option 2"; engine/catalyst_stock.py).
+# LEAF · DEFAULT-OFF · RESEARCH/CONTEXT-ONLY. The per-stock analogue of master_brain:
+# assembles ONE ticker's PUBLIC context (cycle/ladder signal + technical state +
+# cross-sectional factor z-scores + SEC-EDGAR fundamentals), adds an OPTIONAL
+# DeepSeek V4 Flash news digest (reuses catalyst_tone wholesale; gated by
+# catalyst_tone.enabled), then a DeepSeek V4 Pro reasoning pass ->
+# {summary, drivers[], risks[], catalysts[], confidence}. NEVER feeds a score/signal/
+# size; NO holdings/positions/watchlist are ever read or sent. The static site can't
+# call the model on demand (no server-side key), so the pipeline PRECOMPUTES briefs
+# for the watchlist's suggested tickers + the action-board standouts into
+# site/stockbrief/<TICKER>.json (cached per ticker per day, ~$0.04 each). On-demand
+# any-ticker needs a serverless proxy (Supabase Edge Function) — documented follow-up.
+# Run on-demand: `python -m engine.catalyst_stock AAPL --force`.
+# =============================================================================
+catalyst_stock:
+  enabled: false                  # MASTER SWITCH — nothing calls the model unless true
+  api_key_env: DEEPSEEK_API_KEY   # credential read from env / .env (gitignored)
+  llm_base_url: https://api.deepseek.com/anthropic   # DeepSeek Anthropic-compat endpoint
+  llm_model: deepseek-v4-pro      # reasoning tier for the brief ($0.435/$0.87 per 1M tok)
+  llm_min_confidence: medium      # (news leg uses catalyst_tone's own floor)
+  max_tokens: 2000                # OUTPUT cap — the brief is a small JSON record
+  news_enabled: true              # OPTIONAL Flash news digest (also needs catalyst_tone.enabled)
+  news_window_days: 5             # GDELT lookback window for company headlines
+  news_max_records: 8             # headlines fetched per ticker (keep small)
+  precompute_max: 30              # hard cap on tickers briefed per build (cost guard)
+  brief_cache_dir: data/catalyst/stockbrief_cache   # one brief cached per ticker per day
+
+# =============================================================================
 # Forex Vector — currency signal board (research/FOREX_DASHBOARD.md).
 # A structural CLONE of the commodities section: same conviction()/factor_panel
 # engine, same -100..+100 scale + STRONG/weak bands, same split-half calibration.

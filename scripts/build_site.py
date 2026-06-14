@@ -1089,7 +1089,7 @@ def main() -> int:
     # copy shared static assets (theme + visual widgets) into the site
     for asset in ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
                   "stockdata.js", "watchlist.js", "auth.js", "tablesort.js", "charts.js",
-                  "masterbrief.js"):
+                  "masterbrief.js", "stockbrief.js"):
         src = config.ROOT / "templates" / asset
         if src.exists():
             (site / asset).write_text(src.read_text())
@@ -1179,6 +1179,22 @@ def main() -> int:
                     supabase_cfg_json=_json.dumps(sup_cfg),
                     starters_json=_json.dumps(wl.get("suggested", []))))
             log.info("wrote %s", site / "watchlist.html")
+
+        # 🧠 AI stock briefs (LLM "Option 2") — DEFAULT-OFF LEAF. Precompute a
+        # research brief for a small, bounded set (the action-board standouts +
+        # the watchlist's suggested tickers) into site/stockbrief/<TICKER>.json,
+        # cached per ticker per day. The stock page fetches it client-side; the
+        # static site cannot call the model on demand (no server-side key). Gated
+        # by catalyst_stock.enabled — a no-op (and zero cost) when off.
+        try:
+            from engine import catalyst_stock
+            if catalyst_stock.enabled():
+                brief_set = ([n["ticker"] for n in notable]
+                             + list(config.load().get("watchlist", {}).get("suggested", [])))
+                briefs = catalyst_stock.precompute_briefs(brief_set, root=config.ROOT, site=site)
+                log.info("precomputed %d AI stock brief(s)", len(briefs))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("stock brief precompute failed: %s", e)
     return 0
 
 
