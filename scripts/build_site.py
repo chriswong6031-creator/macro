@@ -821,16 +821,21 @@ def action_board(sector_timing: dict, notable: list[dict]) -> dict:
         return abs(n.get("eq_score") or 0)
 
     def _decis(n):
-        # decisiveness in the tier's DIRECTION: buys want the highest setup first,
-        # exits want the most-negative (strongest sell) first.
-        ss = n.get("setup_score")
-        if ss is None:                                  # defensive — always set now
-            ss = (n.get("eq_score") or 0) / 100.0
-        return ss if n.get("urgency") == "exit" else -ss
+        # The urgency TIER is the cycle-timing read (risk placement). WITHIN a tier we
+        # order buys by the validated selection leg — sector-neutral momentum α — not
+        # the blended setup score: Phase-0 (reports/setup-score-phase0.md) showed the
+        # timing blend does NOT improve forward-return ranking (it dilutes α). Sells
+        # keep the cycle sell-conviction (α is not a sell signal). asc sort throughout.
+        if n.get("urgency") == "exit":
+            return n.get("eq_score") or 0               # most-negative (strongest sell) first
+        az = n.get("alpha_z")
+        if az is not None:
+            return -az                                  # highest α (strongest leader) first
+        return -(n.get("eq_score") or 0)                # no α: fall back to cycle conviction
 
     def _rank(n):
-        # exact setup decisiveness leads; the factor composite breaks near-ties only
-        # (a crowded/decayed leg — it should settle ties, never override the setup).
+        # α (selection) leads within the cycle tier; the factor composite breaks
+        # near-ties only (a crowded/decayed leg — settle ties, never drive the order).
         return (order.get(n["urgency"], 9), _decis(n),
                 -(n.get("factor_z") or 0.0),
                 n.get("age_days") if n.get("age_days") is not None else 999,

@@ -320,7 +320,11 @@ def main() -> int:
     # build_library runs at the END of build_site). Buys = strong-alpha leaders on a
     # constructive entry; laggards = weak alpha. Mirrors build_china_library.
     if cand:
-        setups = rank_setups(cand, as_of=alpha_asof)
+        # rank by the validated alpha leg, NOT the blended setup score: Phase-0
+        # (reports/setup-score-phase0.md) found the cycle-timing/reversal blend does
+        # not improve forward-return ranking on the US panel — it dilutes alpha — so
+        # the board rides the positive-IC leg and shows the timing as entry context.
+        setups = rank_setups(cand, as_of=alpha_asof, rank_by="alpha")
         (site / "factordata").mkdir(parents=True, exist_ok=True)
         (site / "factordata" / "setups.json").write_text(
             json.dumps(setups, separators=(",", ":"), default=str))

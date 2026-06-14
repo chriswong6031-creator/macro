@@ -60,8 +60,9 @@ setup = alpha_weight · alpha_z                      # selection (sector-neutral
       + ENTRY[alpha_entry]                          # reversal overlay    (pullback +0.7, extended −0.7)
 ```
 
-- **Top setups (buy):** `alpha_z ≥ 0.5` leaders, ranked by `setup` desc, top 12.
-- **Laggards:** `alpha_z ≤ −0.3`, ranked by `setup` asc, top 6.
+- **Top setups (buy):** `alpha_z ≥ 0.5` leaders, **ranked by `alpha` desc** (see §9 — the
+  setup-blend ranking was tested and reverted), top 12.
+- **Laggards:** `alpha_z ≤ −0.3`, ranked by `alpha` asc, top 6.
 
 Shared, parameterized implementation: `engine/setups.py` (`setup_score`, `timing_tilt`,
 `rank_setups`). China's old inline `_setup_score` is refactored onto it with a **parity
@@ -112,7 +113,39 @@ clean, interpretable alpha×timing — confirmers never enter it):
    stripped, corporate suffixes kept to avoid collapsing distinct firms). Applied in
    `action_board` and `rank_setups`; frees a board slot for a genuinely different name.
 
-## 8. Recommended next (not built)
+## 9. Phase-0 validation → the ranking was REVERTED to α (honest negative result)
+
+`scripts/setup_score_phase0.py` → `reports/setup-score-phase0.md`. Point-in-time on the
+**survivorship-clean deep S&P-500 panel** (PIT membership + folded-in delisted names),
+production residual-alpha windows (252/252/21, shrink 0.66), **141 monthly rebalances
+2014–2026, ~448 names/date**, cycle leg computed causally (`analyze(close[:d])`, cached).
+Four signals, rank-IC + quintile L/S + DSR, at 21d & 63d:
+
+| signal | 21d mean IC | 63d mean IC |
+|---|--:|--:|
+| **alpha** (baseline) | **+0.0101** | **+0.0231** |
+| alpha + reversal overlay | +0.0093 | +0.0227 |
+| timing only (no α) | −0.0046 | −0.0058 |
+| setup (shipped blend) | −0.0013 | +0.0107 |
+
+**Verdict: NEUTRAL / cosmetic.** The cycle-timing/reversal blend does **not** improve
+forward-return ranking — it **dilutes** α (halves the IC at 63d, erases it at 21d), and
+timing-only IC is negative (the cycle leg is **risk placement, not return prediction** —
+exactly what its own calibration says). So:
+
+- **The board now ranks by `alpha`** (`rank_setups(rank_by="alpha")`; macro cards order
+  within their cycle tier by `alpha_z`). The cycle/pullback timing and the `setup` column
+  are kept as **displayed risk-placement context** (when to enter), not ranking drivers.
+- **UI copy softened** to "grouped by cycle entry, ranked by sector-neutral momentum (α)"
+  / "α leaders at a constructive entry", with the validation finding stated in the help.
+- **China is unchanged** — `rank_by="setup"` (default) preserves its *separately validated*
+  reversal-led construction (A-shares mean-revert; [[china-hk-stock-signals]]).
+
+No edge is claimed that the evidence doesn't support. The board's value is the (validated,
+context-leg) α selection + the (calibrated) cycle risk placement — surfaced together,
+honestly labelled.
+
+## 10. Recommended next (not built)
 
 - **Per-equity GEX** (tiered) → vol-regime / pin context on the highest-conviction names.
 - **Insider SELL caution** — deliberately omitted: insider selling is far noisier than
