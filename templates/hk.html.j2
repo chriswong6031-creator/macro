@@ -111,7 +111,7 @@
   .prob .bar i { display: block; height: 100%; border-radius: 7px; }
   .prob .pc { flex: 0 0 38px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
   .pdial { display: flex; gap: 4px; margin: 6px 0 12px; }
-  .pdial span { flex: 1; text-align: center; font-size: 11.5px; font-weight: 700; padding: 7px 4px; border-radius: 8px;
+  .pdial > span { flex: 1; text-align: center; font-size: 11.5px; font-weight: 700; padding: 7px 4px; border-radius: 8px;
                 background: var(--panel2); color: var(--muted); border: 1px solid var(--line); }
   .pdial .on-def { background: color-mix(in srgb, var(--down) 80%, var(--panel)); color: #fff; border-color: transparent; }
   .pdial .on-car { background: color-mix(in srgb, var(--warn) 75%, var(--panel)); color: #1a1a1a; border-color: transparent; }
@@ -181,7 +181,13 @@
 <nav class="site-nav">
   <div class="nav-links">
     <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
-    <a class="nav-link" href="macro.html">📊 {{ t('US Macro', '美国宏观') }}</a>
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 {{ t('US Macro', '美国宏观') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu">
+        <a href="macro.html">📊 {{ t('Macro dashboard', '宏观仪表盘') }}</a>
+        <a href="spvector.html">📈 {{ t('S&P / Macro Vector', '标普宏观向量') }}</a>
+      </div>
+    </div>
     <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }}</a>
     <a class="nav-link" href="etfs.html">🐳 {{ t('ETF flows', 'ETF 资金流') }}</a>
     <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国A股') }}</a>
