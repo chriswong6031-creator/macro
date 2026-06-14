@@ -1084,6 +1084,20 @@ def build_factors_page(env: Environment, site: Path, generated: str) -> dict | N
             fetch_insider()                        # Phase 4: Form-4 insider buying (cached)
         except Exception as e:  # noqa: BLE001 — insider panel is optional
             log.warning("sec insider failed: %s", e)
+        try:
+            # Regenerate the PIT per-transaction panel concat (insider_panel.parquet,
+            # gitignored) from the COMMITTED per-quarter cache so the size-normalised
+            # leaderboard / per-stock chip get the trailing-window + distinct-insider
+            # CLUSTER construction (research/INSIDER_FACTOR.md). Guarded to the existing
+            # cache: never triggers a cold 2006→ full fetch in CI — only a regen plus a
+            # probe for any newly-published quarter. Falls back to the quarterly
+            # aggregate (size-normalised too) if the panel is unavailable.
+            pdir = config.data_dir() / "sec_insider" / "panel"
+            if pdir.exists() and any(pdir.glob("*.parquet")):
+                from collectors.sec_insider import backfill_panel
+                backfill_panel()
+        except Exception as e:  # noqa: BLE001 — panel is optional; leaderboard degrades gracefully
+            log.warning("sec insider panel refresh failed: %s", e)
         fac = compute_factors()
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("factor engine failed: %s", e)

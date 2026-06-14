@@ -131,24 +131,91 @@ def _load_short() -> pd.DataFrame | None:
     return df if not df.empty else None
 
 
-def _load_insider(facts: dict) -> dict[str, dict]:
-    """ticker -> {net_usd_mn, n_buys, n_sells, quarter}. Prefer the full Form-4
-    parquet; fall back to the page-level top-buyers/sellers in factors.json."""
+def _mcap_map(facts: dict) -> dict[str, float]:
+    """ticker -> market cap (USD) from the factor table's mktcap_bn, for sizing the
+    insider net flow as a % of cap."""
+    out: dict[str, float] = {}
+    for t, r in (facts.get("table") or {}).items():
+        b = _num(r.get("mktcap_bn"))
+        if b and b > 0:
+            out[t] = b * 1e9
+    return out
+
+
+def _insider_from_panel(mcap: dict[str, float], months: int, path=None) -> dict[str, dict]:
+    """Per-ticker insider net flow over a trailing window of Form-4 FILINGS, with the
+    DISTINCT-insider cluster count and net buying as a % of market cap — the validated
+    construction (research/INSIDER_FACTOR.md). Empty if the PIT panel isn't present."""
+    import os
+    p = path or config.data_dir() / "sec_insider" / "insider_panel.parquet"
+    if not os.path.exists(p):
+        return {}
+    try:
+        df = pd.read_parquet(p, columns=["ticker", "filing_date", "code", "usd", "rptownercik"])
+    except Exception as e:  # noqa: BLE001
+        log.debug("stock_fundamentals: insider panel unreadable (%s)", e)
+        return {}
+    if df.empty:
+        return {}
+    win = df[df["filing_date"] > df["filing_date"].max() - pd.DateOffset(months=months)]
+    if win.empty:
+        return {}
+    buys, sells = win[win["code"] == "P"], win[win["code"] == "S"]
+    buy_usd, sell_usd = buys.groupby("ticker")["usd"].sum(), sells.groupby("ticker")["usd"].sum()
+    buyers = buys.groupby("ticker")["rptownercik"].nunique()
+    sellers = sells.groupby("ticker")["rptownercik"].nunique()
+    label = f"{months}mo to {df['filing_date'].max():%Y-%m}"
     out: dict[str, dict] = {}
-    p = config.data_dir() / "sec_insider" / "insider.parquet"
-    if p.exists():
-        try:
-            df = pd.read_parquet(p)
-            q = str(df["quarter"].iloc[0]) if "quarter" in df.columns and len(df) else None
-            for t, r in df.iterrows():
-                nu = _num(r.get("net_usd"))
-                if nu is None:
-                    continue
-                out[str(t)] = {"net_usd_mn": round(nu / 1e6, 2),
-                               "n_buys": int(r.get("n_buys", 0) or 0),
-                               "n_sells": int(r.get("n_sells", 0) or 0), "quarter": q}
-        except Exception as e:  # noqa: BLE001
-            log.debug("stock_fundamentals: insider parquet unreadable (%s)", e)
+    for t in set(buy_usd.index) | set(sell_usd.index):
+        net = float(buy_usd.get(t, 0.0)) - float(sell_usd.get(t, 0.0))
+        rec = {"net_usd_mn": round(net / 1e6, 2), "cluster": True,
+               "n_buyers": int(buyers.get(t, 0)), "n_sellers": int(sellers.get(t, 0)),
+               "quarter": label}
+        mc = mcap.get(str(t))
+        if mc:
+            rec["net_mcap_bps"] = round(net / mc * 1e4, 1)
+        out[str(t)] = rec
+    return out
+
+
+def _insider_from_aggregate(mcap: dict[str, float], path=None) -> dict[str, dict]:
+    """Single-quarter aggregate fallback (no panel): net flow + buy/sell TRANSACTION
+    counts, size-normalised by market cap when available."""
+    import os
+    p = path or config.data_dir() / "sec_insider" / "insider.parquet"
+    if not os.path.exists(p):
+        return {}
+    try:
+        df = pd.read_parquet(p)
+    except Exception as e:  # noqa: BLE001
+        log.debug("stock_fundamentals: insider parquet unreadable (%s)", e)
+        return {}
+    if df.empty or "net_usd" not in df.columns:
+        return {}
+    q = str(df["quarter"].iloc[0]) if "quarter" in df.columns and len(df) else None
+    out: dict[str, dict] = {}
+    for t, r in df.iterrows():
+        nu = _num(r.get("net_usd"))
+        if nu is None:
+            continue
+        rec = {"net_usd_mn": round(nu / 1e6, 2), "cluster": False,
+               "n_buys": int(r.get("n_buys", 0) or 0),
+               "n_sells": int(r.get("n_sells", 0) or 0), "quarter": q}
+        mc = mcap.get(str(t))
+        if mc:
+            rec["net_mcap_bps"] = round(nu / mc * 1e4, 1)
+        out[str(t)] = rec
+    return out
+
+
+def _load_insider(facts: dict) -> dict[str, dict]:
+    """ticker -> insider net-flow chip. Prefers the PIT panel (trailing window,
+    distinct-insider CLUSTERS, net buying as % of market cap); falls back to the
+    single-quarter aggregate (size-normalised when caps are available), then to the
+    page-level top-buyers/sellers in factors.json."""
+    mcap = _mcap_map(facts)
+    months = int(config.load()["sec_insider"].get("panel_window_months", 6))
+    out = _insider_from_panel(mcap, months) or _insider_from_aggregate(mcap)
     if out:
         return out
     ins = facts.get("insider") or {}
@@ -157,8 +224,12 @@ def _load_insider(facts: dict) -> dict[str, dict]:
         for r in ins.get(side, []) or []:
             t = r.get("ticker")
             if t:
-                out[t] = {"net_usd_mn": _num(r.get("net_usd_mn")),
-                          "n_buys": r.get("buys"), "n_sells": r.get("sells"), "quarter": q}
+                rec = {"net_usd_mn": _num(r.get("net_usd_mn")),
+                       "n_buys": r.get("buys"), "n_sells": r.get("sells"), "quarter": q,
+                       "cluster": bool(ins.get("cluster"))}
+                if r.get("net_mcap_bps") is not None:
+                    rec["net_mcap_bps"] = r.get("net_mcap_bps")
+                out[t] = rec
     return out
 
 

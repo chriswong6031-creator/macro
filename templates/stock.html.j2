@@ -292,8 +292,8 @@
 
     <div class="panel" id="panel_pos" style="display:none">
       <h2>🩳 {{ t('Positioning', '持仓与做空') }}
-        {{ help('Short interest from FINRA (bi-monthly, ~2-week lag). Insider net buying/selling from SEC Form-4 filings. Heavy or rising short interest with insider selling is a caution; insider buying is the higher-conviction signal.',
-          '做空数据来自FINRA（每半月，约两周滞后）。内部人净买卖来自SEC Form-4申报。高或上升的做空＋内部人卖出为警示；内部人买入是更高确信度的信号。') }}</h2>
+        {{ help('Short interest from FINRA (bi-monthly, ~2-week lag). Insider net open-market buying/selling from SEC Form-4 filings, shown as a % of market cap (size-normalised so small/mid-cap conviction is not drowned by megacap dollars) with the count of distinct insiders — a cluster of independent buyers is the higher-conviction signal. Heavy or rising short interest with insider selling is a caution.',
+          '做空数据来自FINRA（每半月，约两周滞后）。内部人净公开市场买卖来自SEC Form-4申报，按占市值%显示（经规模标准化，避免小/中盘信念被大盘美元金额淹没），并附不同内部人人数——多名独立买家形成的集群信号确信度更高。高或上升的做空＋内部人卖出为警示。') }}</h2>
       <div id="r_pos" class="twocol"></div>
     </div>
 
@@ -379,7 +379,7 @@
           archhelp:'Archetype from factor ranks', conf:'confidence',
           fwdpe:'Forward P/E', peyf:'P/E (Yahoo)', pmargin:'Profit margin', roe:'ROE', dyield:'Dividend yld',
           short:'Short interest', shortpct:'Short % of float', dtc:'Days to cover', sichg:'SI change (2wk)',
-          insider:'Insider net flow', buys:'buys / sells', fwdnote_lite:'Forward P/E: trailing only — no free forward estimate at S&P-1500 scale.',
+          insider:'Insider net flow', insiderpct:'Net buying (% cap)', buyers:'distinct insiders (B/S)', buys:'buys / sells', fwdnote_lite:'Forward P/E: trailing only — no free forward estimate at S&P-1500 scale.',
           mediansrc:'sector median', scorelab:'Factor score', compos:'composite percentile vs S&P 1500',
           piotroski:'Piotroski F · Altman Z', ph2:'Phase 2' },
     zh: { building:'建设中——将在后续阶段加入。',
@@ -391,7 +391,7 @@
           archhelp:'基于因子排名的画像', conf:'确信度',
           fwdpe:'前瞻市盈率', peyf:'市盈率（雅虎）', pmargin:'利润率', roe:'净资产收益率', dyield:'股息率',
           short:'做空持仓', shortpct:'做空占流通股', dtc:'回补天数', sichg:'做空变化（两周）',
-          insider:'内部人净流向', buys:'买入 / 卖出', fwdnote_lite:'前瞻市盈率：仅历史值——标普1500规模下无免费前瞻预期。',
+          insider:'内部人净流向', insiderpct:'净买入（占市值%）', buyers:'不同内部人（买/卖）', buys:'买入 / 卖出', fwdnote_lite:'前瞻市盈率：仅历史值——标普1500规模下无免费前瞻预期。',
           mediansrc:'行业中位', scorelab:'因子评分', compos:'相对标普1500综合百分位',
           piotroski:'Piotroski F · Altman Z', ph2:'第二阶段' } };
   function LF(k) { return (TF[lang()] || TF.en)[k]; }
@@ -679,12 +679,24 @@
           kvRow(LF('sichg'), s.si_change_pct == null ? LF('na') : signPct(s.si_change_pct), false) + '</div>';
       }
       if (pos.insider) {
-        var ins = pos.insider, net = ins.net_usd_mn;
+        var ins = pos.insider, net = ins.net_usd_mn, irows = '';
+        // headline: net buying as a % of market cap (size-normalised, the validated read)
+        if (ins.net_mcap_bps != null) {
+          var pct = ins.net_mcap_bps / 100, tiny = Math.abs(pct) < 0.005;
+          var pctStr = tiny ? '≈0%' : (pct > 0 ? '+' : '') + pct.toFixed(2) + '%';
+          var pctCls = tiny ? 'muted' : (pct > 0 ? 'pos' : 'neg');
+          irows += kvRow(LF('insiderpct'), '<span class="' + pctCls + '">' + pctStr + '</span>', false);
+        }
         var netstr = net == null ? LF('na') : '<span class="' + (net > 0 ? 'pos' : 'neg') + '">' +
           (net > 0 ? '+' : '-') + '$' + Math.abs(net).toFixed(1) + 'M</span>';
-        html += '<div class="posbox"><h3>' + LF('insider') + '</h3>' +
-          kvRow(LF('insider'), netstr, false) +
-          (ins.n_buys != null ? kvRow(LF('buys'), (ins.n_buys || 0) + ' / ' + (ins.n_sells || 0), false) : '') +
+        irows += kvRow(LF('insider'), netstr, false);
+        // distinct-insider clusters (panel) or buy/sell filing counts (aggregate)
+        if (ins.cluster && ins.n_buyers != null) {
+          irows += kvRow(LF('buyers'), (ins.n_buyers || 0) + ' / ' + (ins.n_sellers || 0), false);
+        } else if (ins.n_buys != null) {
+          irows += kvRow(LF('buys'), (ins.n_buys || 0) + ' / ' + (ins.n_sells || 0), false);
+        }
+        html += '<div class="posbox"><h3>' + LF('insider') + '</h3>' + irows +
           (ins.quarter ? '<p class="srcline">' + esc(ins.quarter) + '</p>' : '') + '</div>';
       }
       el('r_pos').innerHTML = html;

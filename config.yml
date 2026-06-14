@@ -297,6 +297,7 @@ sec_insider:
   min_trade_usd: 10000          # ignore de-minimis transactions
   panel_top_n: 20               # rows on the insider buying/selling leaderboards
   panel_start: 2006q1           # Phase-0 PIT panel backfill start (earliest structured form345 set)
+  panel_window_months: 6        # trailing window for the size-normalised leaderboard (validated construction)
 
 # =============================================================================
 # EIA petroleum supply (Phase 2 of the four-phase build-out). The single biggest
