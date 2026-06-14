@@ -996,7 +996,7 @@ master_brain:
 # Run on-demand: `python -m engine.catalyst_stock AAPL --force`.
 # =============================================================================
 catalyst_stock:
-  enabled: false                  # MASTER SWITCH — nothing calls the model unless true
+  enabled: true                   # MASTER SWITCH — nothing calls the model unless true
   api_key_env: DEEPSEEK_API_KEY   # credential read from env / .env (gitignored)
   llm_base_url: https://api.deepseek.com/anthropic   # DeepSeek Anthropic-compat endpoint
   llm_model: deepseek-v4-pro      # reasoning tier for the brief ($0.435/$0.87 per 1M tok)
