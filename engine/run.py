@@ -127,6 +127,16 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("conditions layer failed: %s", e)
         latest["conditions"] = None
+    # Business-cycle model: Conference-Board-style Leading / Coincident / Lagging tiers
+    # kept SEPARATE so the lead-lag SEQUENCE is legible (where conditions.recession_risk
+    # blends them). Reads the FRED/price store directly; additive, never fatal.
+    # See engine/business_cycle.py + reports/business-cycle-validation.md.
+    try:
+        from engine.business_cycle import business_cycle_snapshot
+        latest["business_cycle"] = business_cycle_snapshot()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("business-cycle layer failed: %s", e)
+        latest["business_cycle"] = None
     # Catalyst tone (LLM Tier-A): a DIGEST of the most recent public catalyst (FOMC
     # statement) as honest CONTEXT only. Default-off LEAF (engine/catalyst_tone.py);
     # None when disabled or nothing recent. NEVER enters the deterministic scoring path.
