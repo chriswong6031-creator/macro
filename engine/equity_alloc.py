@@ -198,6 +198,115 @@ def after_tax(close: pd.Series, alloc: pd.Series, cash_yield: pd.Series,
 
 
 # --------------------------------------------------------------------------- #
+# PHASE 1 — pre-registered de-risk score + graded glide path
+# --------------------------------------------------------------------------- #
+# A small set of economically-motivated, mostly-orthogonal legs (NOT an optimized
+# zoo), folded into a 0-100 risk score by a renormalized weighted mean (a missing
+# leg drops out of both numerator and denominator). Every leg is already computed
+# and (where measured) validated in the repo on the house rule (forward DRAWDOWN):
+#   drawdown_risk  — macro-stress gauge, P(>=10% dd/63d) monotone 8->38% (conditions.py)
+#   recession_risk — Sahm+recession-prob+EBP+term-premium-adjusted curve (conditions.py)
+#   nfci           — tight AND tightening (level>0 & 13w change>0) percentile
+#   hy_widening    — HY-OAS 63d rate-of-change percentile (credit stress, the RoC not level)
+#   liquidity      — net-liquidity CONTRACTING (regime_history; the one trend-orthogonal gate)
+# Pre-registered weights below; do NOT tune them per-result (DSR honesty).
+RISK_WEIGHTS = {"drawdown": 1.0, "recession": 1.0, "nfci": 0.5,
+                "hy_widening": 0.5, "liquidity": 0.5}
+# Per-leg PUBLICATION-DELAY lag (trading days). FRED stamps series at their REFERENCE
+# date but releases them later, so a same-day read is look-ahead. Adversarial audit
+# (spvector-phase1-verify) measured the true delays: monthly recession legs (Sahm/
+# recession-prob/EBP) ~22-30d, weekly NFCI ~5d, daily HY-OAS ~2-3d; net-liquidity is
+# already 3-bd-lagged in regime.py. These per-leg lags make the score PIT-honest by
+# construction (the real fix is ALFRED vintages, Phase 3); cost ~0.06 Sharpe, gate
+# still passes. drawdown_risk is a mixed gauge (slow EBP/recession + fast NFCI/HY) so
+# it gets a moderate 10d, not the full monthly delay.
+LEG_LAGS = {"drawdown": 10, "recession": 22, "nfci": 5, "hy_widening": 3, "liquidity": 0}
+
+
+def risk_score(f=None, regime=None, cf=None, weights: dict | None = None,
+               leg_lags: dict | None = None, lag_d: int = 0) -> pd.Series:
+    """0-100 macro de-risk score (higher = more risk-off). Renormalized weighted
+    mean of the pre-registered legs over whatever is available each day. Causal in
+    computation; PIT-honest in timing via PER-LEG publication lags (LEG_LAGS) —
+    each leg is shifted by its real release delay so the score never reads a macro
+    print before it was published (the adversarial audit found the old uniform 5d
+    under-lagged the monthly recession legs). `lag_d` adds an OPTIONAL uniform extra
+    buffer on top (default 0) — used by the calibrator's lag-sensitivity sweep. The
+    real fix is ALFRED point-in-time vintages (Phase 3 data step)."""
+    from engine.conditions import conditions_frame
+    from engine.indicators import pct_rank_window
+    if f is None:
+        from engine.inputs import build_features
+        f = build_features()
+    if cf is None:
+        cf = conditions_frame(f)
+    if regime is None:
+        regime = store.read("regime", "regime_history")
+    w = weights or RISK_WEIGHTS
+    idx = cf.index
+    legs: dict[str, tuple[pd.Series, float]] = {}
+    if "drawdown_risk" in cf:
+        legs["drawdown"] = ((cf["drawdown_risk"] / 100.0).clip(0, 1), w["drawdown"])
+    if "recession_risk" in cf:
+        legs["recession"] = ((cf["recession_risk"] / 100.0).clip(0, 1), w["recession"])
+    if {"nfci", "nfci_pctile", "nfci_chg"} <= set(cf.columns):
+        tight = (cf["nfci"] > 0) & (cf["nfci_chg"] > 0)
+        legs["nfci"] = (cf["nfci_pctile"].where(tight, 0.0).clip(0, 1), w["nfci"])
+    if "hy_oas" in f.columns and f["hy_oas"].notna().any():
+        widen = pct_rank_window(f["hy_oas"].diff(63), 252 * 5).reindex(idx)
+        legs["hy_widening"] = (widen.clip(0, 1), w["hy_widening"])
+    if regime is not None and "liquidity" in regime.columns:
+        liq = regime["liquidity"].reindex(idx, method="ffill")
+        legs["liquidity"] = ((liq == "contracting").astype(float), w["liquidity"])
+    if not legs:
+        return pd.Series(index=idx, dtype=float)
+    ll = leg_lags or LEG_LAGS
+    legs = {n: (s.shift(int(ll.get(n, 0))), wt) for n, (s, wt) in legs.items()}
+    num = sum(s.fillna(0) * wt for s, wt in legs.values())
+    den = sum(s.notna().astype(float) * wt for s, wt in legs.values())
+    score = (100.0 * num / den.replace(0, np.nan)).clip(0, 100)
+    return score.shift(lag_d) if lag_d else score
+
+
+def glide_path(score: pd.Series, confirm_days: int = 5,
+               bands: tuple = (25, 50, 75),
+               weights: tuple = (1.0, 0.66, 0.33, 0.0)) -> pd.Series:
+    """Map the 0-100 risk score to a GRADED equity weight via risk bands, with a
+    confirm-days debounce (a new band must hold `confirm_days` consecutive days
+    before it takes effect) to cut the whipsaw that sinks naive switches. band 0
+    (lowest risk) -> weights[0] (fully long); higher band -> lower weight."""
+    b = np.digitize(score.fillna(0.0).to_numpy(), bands)   # 0..len(bands)
+    out = np.empty(len(b), dtype=int)
+    cur = cand = int(b[0]) if len(b) else 0
+    run = 0
+    for i in range(len(b)):
+        if b[i] == cand:
+            run += 1
+        else:
+            cand, run = int(b[i]), 1
+        if run >= confirm_days:
+            cur = cand
+        out[i] = cur
+    wv = np.asarray(weights, float)
+    return pd.Series(wv[out], index=score.index)
+
+
+def voltarget_overlay(alloc: pd.Series, f=None, cf=None) -> pd.Series:
+    """Optional Sharpe lever: scale the equity weight DOWN when realized vol is
+    high (Moreira-Muir vol-managed sizing), capped at 1 for a long/flat book."""
+    from engine.conditions import conditions_frame
+    if cf is None:
+        if f is None:
+            from engine.inputs import build_features
+            f = build_features()
+        cf = conditions_frame(f)
+    if "vol_target_scalar" not in cf:
+        return alloc
+    scal = cf["vol_target_scalar"].reindex(alloc.index).ffill().clip(0, 1).fillna(1.0)
+    return (alloc * scal).clip(0, 1)
+
+
+# --------------------------------------------------------------------------- #
 # honest-N: count INDEPENDENT bear episodes (the true sample size for a switch)
 # --------------------------------------------------------------------------- #
 def bear_episodes(close: pd.Series, thresh: float = 0.20) -> list[dict]:
