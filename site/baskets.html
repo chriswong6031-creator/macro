@@ -1,0 +1,1540 @@
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><span class="l-en">Thematic baskets — performance vs S&amp;P 500</span><span class="l-zh">主题篮子 — 相对标普 500 表现</span></title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1320px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:20px; margin:0; } h3 { font-size:13px; margin:0 0 6px; }
+  h2 { font-size:13px; margin:0 0 8px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:14px; }
+  .topline { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+  .muted { color:var(--muted); } .sm { font-size:12px; }
+  table { border-collapse:collapse; width:100%; font-size:13px; }
+  th,td { text-align:left; padding:5px 8px; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:500; cursor:pointer; user-select:none; white-space:nowrap; }
+  th.r, td.r { text-align:right; }
+  .pos { color:var(--up); } .neg { color:var(--down); }
+  .navbtn, .lang-btn, .theme-btn, .seg button { font-size:12.5px; padding:5px 11px; border-radius:8px; border:1px solid var(--line); background:var(--panel2); color:var(--text); cursor:pointer; }
+  .seg { display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .seg button { border:0; border-radius:0; background:var(--panel); }
+  .seg button.on { background:var(--panel2); font-weight:600; }
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:5px; }
+  .help .tip { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%); width:300px; background:var(--panel); border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text); font-weight:400; box-shadow:var(--popover-shadow); pointer-events:none; }
+  .help:hover .tip { display:block; }
+  .spark { width:120px; height:30px; display:block; }
+  .cat { font-size:10.5px; padding:1px 7px; border-radius:8px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
+  .bname { font-weight:600; cursor:pointer; } .bname:hover { color:var(--link); }
+  .miss { color:var(--warn); font-size:11px; }
+  table[data-mode="raw"] .v-rel { display:none; }
+  table[data-mode="rel"] .v-raw { display:none; }
+  #detail { display:none; }
+  .ddl { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:8px 18px; margin:6px 0 12px; }
+  .ddl b { display:block; font-size:16px; }
+  .chip { display:inline-block; font-size:11px; padding:1px 7px; margin:0 4px 4px 0; border-radius:8px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
+</style>
+</head>
+<body>
+  <div class="panel">
+    <div class="topline">
+      <h1>🧺 <span class="l-en">Thematic baskets</span><span class="l-zh">主题篮子</span></h1>
+      <span class="muted sm"><span class="l-en">equal-weight theme baskets — raw and relative to the S&amp;P 500</span><span class="l-zh">等权主题篮子 — 原始及相对标普 500</span></span>
+      <span style="flex:1"></span>
+      <a class="navbtn" href="macro.html"><span class="l-en">← Dashboard</span><span class="l-zh">← 仪表盘</span></a>
+      <a class="navbtn" href="factors.html">🧮 <span class="l-en">Factor Lab</span><span class="l-zh">因子实验室</span></a>
+      <a class="navbtn" href="seasonality.html">🗓 <span class="l-en">Seasonality</span><span class="l-zh">季节性</span></a>
+      <button class="lang-btn">中文</button>
+      <button class="theme-btn">☀️ <span class="l-en">Light</span><span class="l-zh">浅色</span></button>
+    </div>
+    <p class="muted sm" style="margin:10px 0 0"><span class="l-en">Curated thematic stock baskets, EQUAL-WEIGHTED, buy-and-hold with point-in-time dated membership. Equal-weight thematic baskets over the FREE S&amp;P-1500 price cache. Membership is explicit, dated and auditable. Curated 2026-06 with knowledge of the period, so the full ~3y series is HINDSIGHT-curated and descriptive — not an out-of-sample backtest. Members outside the free S&amp;P-1500 cache are excluded (shown as n-missing). Reference-ETF correlation is a sanity check that a basket co-moved with its theme over this window, not a guarantee. Context, not a buy list.</span><span class="l-zh">精选主题股票篮子，等权重、买入持有，按时点日期管理成分。Equal-weight thematic baskets over the FREE S&amp;P-1500 price cache. Membership is explicit, dated and auditable. Curated 2026-06 with knowledge of the period, so the full ~3y series is HINDSIGHT-curated and descriptive — not an out-of-sample backtest. 不在免费标普 1500 缓存内的成分被剔除（标记为 n-missing）。参考 ETF 相关性仅为该篮子在此窗口内与主题同向的合理性检验，并非保证。仅作背景，而非买入清单。</span></p>
+  </div>
+
+  <div class="panel">
+    <div class="topline" style="margin-bottom:10px">
+      <h2 style="margin:0"><span class="l-en">Performance</span><span class="l-zh">表现</span>
+        <span class="help">?<span class="tip"><span class="l-en">Click a column to sort; click a basket name for its members + dated changelog. Toggle RAW returns vs RELATIVE to the S&amp;P 500. The spark is the cumulative basket return (grey = SPY) over the ~3y cache. |Sharpe/MaxDD are over one short, mostly-bull window — regime-limited, not validated edge.</span><span class="l-zh">点击列排序；点击篮子名称查看成分与带日期的变更记录。可切换原始回报与相对标普 500。火花线为该篮子在约 3 年缓存内的累计回报（灰=SPY）。夏普/最大回撤仅覆盖一段偏多头的短窗口，受单一行情限制，并非已验证的超额收益。</span></span></span>
+      </h2>
+      <span style="flex:1"></span>
+      <span class="seg" id="modeseg">
+        <button data-mode="raw" class="on"><span class="l-en">Raw</span><span class="l-zh">原始</span></button>
+        <button data-mode="rel"><span class="l-en">vs S&amp;P 500</span><span class="l-zh">相对标普</span></button>
+      </span>
+    </div>
+    <table id="btab" data-mode="raw">
+      <thead><tr>
+        <th data-sort="name"><span class="l-en">Basket</span><span class="l-zh">篮子</span></th>
+        <th class="r" data-col="0">1d</th>
+        <th class="r" data-col="1">5d</th>
+        <th class="r" data-col="2">20d</th>
+        <th class="r" data-col="3">60d</th>
+        <th class="r" data-col="4">YTD</th>
+        <th class="r"><span class="l-en">trend</span><span class="l-zh">走势</span></th>
+        <th class="r"><span class="l-en">ETF ρ</span><span class="l-zh">ETF 相关</span></th>
+      </tr></thead>
+      <tbody>
+      
+        <tr data-id="travel">
+          <td><span class="bname" data-id="travel"><span class="l-en">Travel &amp; Experiences</span><span class="l-zh">旅行与体验</span></span>
+            <span class="cat">Consumer</span>
+            
+          </td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="1.78">+1.8</span>
+  <span class="v-rel pos" data-v="1.24">+1.2</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="3.36">+3.4</span>
+  <span class="v-rel pos" data-v="2.79">+2.8</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="13.07">+13.1</span>
+  <span class="v-rel pos" data-v="13.93">+13.9</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="12.48">+12.5</span>
+  <span class="v-rel pos" data-v="0.03">+0.0</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="4.19">+4.2</span>
+  <span class="v-rel neg" data-v="-4.88">-4.9</span>
+</td>
+          <td class="r">
+
+
+
+<svg viewBox="0 0 120 30" class="spark" preserveAspectRatio="none">
+  <polyline fill="none" stroke="var(--muted)" stroke-width="1" opacity="0.4" points="0.0,26.7 1.2,26.4 2.5,25.9 3.8,25.4 5.0,25.3 6.2,25.1 7.5,24.4 8.8,24.2 10.0,24.8 11.2,24.9 12.5,24.6 13.8,24.8 15.0,25.8 16.2,25.5 17.5,25.8 18.8,26.2 20.0,25.0 21.2,24.2 22.5,24.1 23.8,23.3 25.0,22.9 26.2,22.9 27.5,22.4 28.8,21.9 30.0,21.6 31.3,21.2 32.5,20.9 33.8,20.3 35.0,20.4 36.2,20.9 37.5,21.2 38.8,20.5 40.0,19.9 41.2,20.0 42.5,19.5 43.8,18.9 45.0,18.5 46.2,17.7 47.5,18.9 48.8,20.3 50.0,18.0 51.2,18.1 52.5,18.3 53.8,17.4 55.0,17.5 56.2,16.8 57.5,16.8 58.8,16.2 60.0,16.3 61.2,15.5 62.5,15.2 63.8,15.8 65.0,15.8 66.2,15.7 67.5,15.2 68.8,15.2 70.0,15.7 71.2,17.1 72.5,17.7 73.8,18.0 75.0,18.4 76.2,19.6 77.5,17.3 78.8,16.1 80.0,15.9 81.2,15.5 82.5,15.6 83.8,14.3 85.0,13.9 86.2,13.4 87.5,13.7 88.8,12.9 90.0,12.7 91.2,12.5 92.5,11.6 93.8,11.3 95.0,11.6 96.2,11.1 97.5,10.9 98.8,11.1 100.0,10.7 101.2,10.5 102.5,10.5 103.8,10.4 105.0,10.0 106.2,9.7 107.5,9.9 108.8,10.3 110.0,10.5 111.2,11.6 112.5,11.8 113.8,11.6 115.0,8.7 116.2,8.6 117.5,7.0 118.8,6.8 120.0,6.2 "/>
+  <polyline fill="none" stroke="var(--up)" stroke-width="1.5" points="0.0,27.2 1.2,26.8 2.5,26.1 3.8,24.0 5.0,23.5 6.2,21.8 7.5,21.7 8.8,21.7 10.0,22.6 11.2,23.5 12.5,23.7 13.8,24.2 15.0,25.8 16.2,26.3 17.5,27.7 18.8,28.0 20.0,26.3 21.2,24.6 22.5,23.8 23.8,21.3 25.0,21.1 26.2,21.4 27.5,21.7 28.8,21.1 30.0,21.3 31.3,20.4 32.5,20.1 33.8,19.6 35.0,19.9 36.2,21.0 37.5,20.0 38.8,20.6 40.0,20.6 41.2,21.4 42.5,19.9 43.8,19.8 45.0,19.7 46.2,18.2 47.5,20.5 48.8,24.0 50.0,21.6 51.2,21.0 52.5,20.9 53.8,18.6 55.0,17.9 56.2,15.3 57.5,14.7 58.8,11.7 60.0,11.6 61.2,10.2 62.5,9.6 63.8,10.8 65.0,11.6 66.2,11.0 67.5,9.7 68.8,10.8 70.0,11.0 71.2,14.2 72.5,16.4 73.8,16.9 75.0,17.8 76.2,19.5 77.5,16.2 78.8,13.2 80.0,13.8 81.2,12.4 82.5,13.9 83.8,10.4 85.0,7.8 86.2,8.3 87.5,9.8 88.8,8.2 90.0,6.1 91.2,7.1 92.5,7.2 93.8,8.8 95.0,9.6 96.2,8.3 97.5,10.7 98.8,8.9 100.0,7.6 101.2,7.1 102.5,2.9 103.8,3.5 105.0,3.9 106.2,5.2 107.5,2.0 108.8,4.0 110.0,5.3 111.2,8.3 112.5,6.3 113.8,7.4 115.0,2.5 116.2,6.4 117.5,6.8 118.8,6.3 120.0,3.7 "/>
+</svg>
+</td>
+          <td class="r muted sm">—</td>
+        </tr>
+      
+        <tr data-id="regional_banks">
+          <td><span class="bname" data-id="regional_banks"><span class="l-en">Regional Banks</span><span class="l-zh">区域银行</span></span>
+            <span class="cat">Financials</span>
+            
+          </td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="1.87">+1.9</span>
+  <span class="v-rel pos" data-v="1.33">+1.3</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="4.87">+4.9</span>
+  <span class="v-rel pos" data-v="4.3">+4.3</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="11.34">+11.3</span>
+  <span class="v-rel pos" data-v="12.2">+12.2</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="19.18">+19.2</span>
+  <span class="v-rel pos" data-v="6.73">+6.7</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="11.99">+12.0</span>
+  <span class="v-rel pos" data-v="2.92">+2.9</span>
+</td>
+          <td class="r">
+
+
+
+<svg viewBox="0 0 120 30" class="spark" preserveAspectRatio="none">
+  <polyline fill="none" stroke="var(--muted)" stroke-width="1" opacity="0.4" points="0.0,27.5 1.2,27.3 2.5,26.9 3.8,26.5 5.0,26.5 6.2,26.3 7.5,25.8 8.8,25.6 10.0,26.1 11.2,26.2 12.5,25.9 13.8,26.1 15.0,26.8 16.2,26.6 17.5,26.8 18.8,27.2 20.0,26.2 21.2,25.6 22.5,25.5 23.8,24.9 25.0,24.6 26.2,24.6 27.5,24.2 28.8,23.8 30.0,23.6 31.3,23.3 32.5,23.1 33.8,22.6 35.0,22.7 36.2,23.0 37.5,23.3 38.8,22.8 40.0,22.2 41.2,22.4 42.5,21.9 43.8,21.5 45.0,21.2 46.2,20.6 47.5,21.5 48.8,22.6 50.0,20.8 51.2,20.9 52.5,21.1 53.8,20.3 55.0,20.4 56.2,19.9 57.5,19.9 58.8,19.4 60.0,19.5 61.2,18.9 62.5,18.7 63.8,19.1 65.0,19.1 66.2,19.0 67.5,18.7 68.8,18.7 70.0,19.0 71.2,20.1 72.5,20.6 73.8,20.8 75.0,21.1 76.2,22.0 77.5,20.3 78.8,19.4 80.0,19.2 81.2,18.9 82.5,18.9 83.8,18.0 85.0,17.6 86.2,17.2 87.5,17.5 88.8,16.8 90.0,16.7 91.2,16.5 92.5,15.8 93.8,15.6 95.0,15.9 96.2,15.5 97.5,15.3 98.8,15.5 100.0,15.1 101.2,15.0 102.5,15.0 103.8,14.9 105.0,14.6 106.2,14.3 107.5,14.6 108.8,14.8 110.0,15.0 111.2,15.8 112.5,16.0 113.8,15.9 115.0,13.6 116.2,13.5 117.5,12.3 118.8,12.2 120.0,11.7 "/>
+  <polyline fill="none" stroke="var(--up)" stroke-width="1.5" points="0.0,28.0 1.2,26.6 2.5,26.0 3.8,26.3 5.0,26.6 6.2,25.9 7.5,23.5 8.8,23.5 10.0,23.8 11.2,25.7 12.5,25.0 13.8,25.2 15.0,26.5 16.2,26.6 17.5,26.6 18.8,27.5 20.0,26.4 21.2,25.0 22.5,23.5 23.8,20.7 25.0,20.7 26.2,20.8 27.5,21.0 28.8,21.5 30.0,21.7 31.3,21.4 32.5,20.0 33.8,19.9 35.0,19.6 36.2,20.7 37.5,19.5 38.8,19.1 40.0,18.7 41.2,20.4 42.5,20.9 43.8,20.4 45.0,19.6 46.2,17.0 47.5,15.5 48.8,18.4 50.0,16.5 51.2,15.3 52.5,16.6 53.8,15.5 55.0,16.2 56.2,14.0 57.5,14.4 58.8,10.6 60.0,10.9 61.2,10.0 62.5,11.7 63.8,13.7 65.0,13.2 66.2,12.1 67.5,11.7 68.8,12.3 70.0,13.6 71.2,15.3 72.5,16.1 73.8,16.2 75.0,18.0 76.2,18.7 77.5,16.6 78.8,14.7 80.0,15.4 81.2,14.7 82.5,15.2 83.8,12.2 85.0,11.4 86.2,11.5 87.5,12.6 88.8,11.9 90.0,9.6 91.2,9.9 92.5,9.3 93.8,10.4 95.0,12.3 96.2,12.1 97.5,12.4 98.8,11.6 100.0,10.6 101.2,8.8 102.5,7.0 103.8,7.1 105.0,6.7 106.2,5.6 107.5,2.0 108.8,4.2 110.0,6.6 111.2,10.1 112.5,8.6 113.8,7.2 115.0,5.2 116.2,5.6 117.5,6.8 118.8,6.4 120.0,6.6 "/>
+</svg>
+</td>
+          <td class="r muted sm">—</td>
+        </tr>
+      
+        <tr data-id="retail">
+          <td><span class="bname" data-id="retail"><span class="l-en">Retail</span><span class="l-zh">零售</span></span>
+            <span class="cat">Consumer</span>
+            
+          </td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="0.56">+0.6</span>
+  <span class="v-rel pos" data-v="0.02">+0.0</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="5.82">+5.8</span>
+  <span class="v-rel pos" data-v="5.25">+5.2</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="10.2">+10.2</span>
+  <span class="v-rel pos" data-v="11.06">+11.1</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="6.9">+6.9</span>
+  <span class="v-rel neg" data-v="-5.55">-5.5</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="9.91">+9.9</span>
+  <span class="v-rel pos" data-v="0.84">+0.8</span>
+</td>
+          <td class="r">
+
+
+
+<svg viewBox="0 0 120 30" class="spark" preserveAspectRatio="none">
+  <polyline fill="none" stroke="var(--muted)" stroke-width="1" opacity="0.4" points="0.0,25.2 1.2,24.8 2.5,24.3 3.8,23.7 5.0,23.7 6.2,23.4 7.5,22.6 8.8,22.4 10.0,23.1 11.2,23.2 12.5,22.8 13.8,23.1 15.0,24.2 16.2,23.8 17.5,24.2 18.8,24.7 20.0,23.3 21.2,22.4 22.5,22.3 23.8,21.3 25.0,20.9 26.2,20.9 27.5,20.4 28.8,19.8 30.0,19.5 31.3,19.0 32.5,18.7 33.8,18.0 35.0,18.1 36.2,18.6 37.5,19.0 38.8,18.3 40.0,17.5 41.2,17.6 42.5,17.0 43.8,16.4 45.0,15.9 46.2,15.1 47.5,16.4 48.8,18.0 50.0,15.4 51.2,15.5 52.5,15.7 53.8,14.7 55.0,14.8 56.2,14.0 57.5,14.1 58.8,13.3 60.0,13.5 61.2,12.6 62.5,12.2 63.8,12.9 65.0,12.9 66.2,12.7 67.5,12.3 68.8,12.2 70.0,12.8 71.2,14.3 72.5,15.1 73.8,15.3 75.0,15.8 76.2,17.1 77.5,14.6 78.8,13.3 80.0,13.0 81.2,12.5 82.5,12.6 83.8,11.2 85.0,10.8 86.2,10.1 87.5,10.6 88.8,9.6 90.0,9.3 91.2,9.1 92.5,8.1 93.8,7.8 95.0,8.2 96.2,7.6 97.5,7.4 98.8,7.6 100.0,7.1 101.2,6.9 102.5,6.9 103.8,6.7 105.0,6.3 106.2,5.9 107.5,6.3 108.8,6.7 110.0,6.9 111.2,8.1 112.5,8.3 113.8,8.2 115.0,4.9 116.2,4.8 117.5,3.0 118.8,2.7 120.0,2.0 "/>
+  <polyline fill="none" stroke="var(--up)" stroke-width="1.5" points="0.0,25.5 1.2,25.7 2.5,26.6 3.8,26.0 5.0,25.2 6.2,25.3 7.5,24.6 8.8,24.4 10.0,24.8 11.2,25.1 12.5,25.9 13.8,26.4 15.0,27.8 16.2,28.0 17.5,27.5 18.8,27.6 20.0,27.2 21.2,26.1 22.5,25.2 23.8,24.2 25.0,23.4 26.2,23.4 27.5,23.7 28.8,22.8 30.0,22.7 31.3,21.3 32.5,20.8 33.8,20.7 35.0,21.0 36.2,22.1 37.5,22.6 38.8,22.6 40.0,21.8 41.2,22.6 42.5,21.6 43.8,21.0 45.0,21.9 46.2,20.5 47.5,21.3 48.8,22.7 50.0,20.9 51.2,21.1 52.5,21.8 53.8,20.8 55.0,21.2 56.2,20.8 57.5,21.5 58.8,22.1 60.0,21.2 61.2,20.3 62.5,20.2 63.8,21.3 65.0,21.0 66.2,21.4 67.5,20.2 68.8,20.3 70.0,21.1 71.2,22.0 72.5,23.9 73.8,23.1 75.0,22.9 76.2,22.1 77.5,21.4 78.8,21.0 80.0,20.6 81.2,19.9 82.5,21.2 83.8,19.8 85.0,19.8 86.2,19.8 87.5,19.2 88.8,18.3 90.0,18.2 91.2,18.5 92.5,19.0 93.8,19.3 95.0,19.4 96.2,18.2 97.5,18.7 98.8,18.8 100.0,17.5 101.2,16.8 102.5,16.2 103.8,16.2 105.0,13.8 106.2,14.9 107.5,13.2 108.8,13.1 110.0,13.5 111.2,15.2 112.5,15.7 113.8,15.5 115.0,14.0 116.2,15.8 117.5,17.1 118.8,16.3 120.0,15.4 "/>
+</svg>
+</td>
+          <td class="r muted sm">0.59</td>
+        </tr>
+      
+        <tr data-id="managed_care">
+          <td><span class="bname" data-id="managed_care"><span class="l-en">Managed Care &amp; Insurers</span><span class="l-zh">管理式医疗与保险</span></span>
+            <span class="cat">Health</span>
+            
+          </td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="2.02">+2.0</span>
+  <span class="v-rel pos" data-v="1.48">+1.5</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="3.44">+3.4</span>
+  <span class="v-rel pos" data-v="2.87">+2.9</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="8.24">+8.2</span>
+  <span class="v-rel pos" data-v="9.1">+9.1</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="52.84">+52.8</span>
+  <span class="v-rel pos" data-v="40.39">+40.4</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="30.92">+30.9</span>
+  <span class="v-rel pos" data-v="21.85">+21.9</span>
+</td>
+          <td class="r">
+
+
+
+<svg viewBox="0 0 120 30" class="spark" preserveAspectRatio="none">
+  <polyline fill="none" stroke="var(--muted)" stroke-width="1" opacity="0.4" points="0.0,20.2 1.2,19.9 2.5,19.4 3.8,19.0 5.0,18.9 6.2,18.8 7.5,18.2 8.8,17.9 10.0,18.5 11.2,18.6 12.5,18.3 13.8,18.5 15.0,19.4 16.2,19.1 17.5,19.3 18.8,19.8 20.0,18.6 21.2,17.9 22.5,17.9 23.8,17.1 25.0,16.8 26.2,16.8 27.5,16.4 28.8,15.9 30.0,15.7 31.3,15.3 32.5,15.0 33.8,14.5 35.0,14.6 36.2,15.0 37.5,15.3 38.8,14.7 40.0,14.1 41.2,14.2 42.5,13.8 43.8,13.2 45.0,12.9 46.2,12.2 47.5,13.2 48.8,14.5 50.0,12.5 51.2,12.6 52.5,12.8 53.8,11.9 55.0,12.0 56.2,11.4 57.5,11.4 58.8,10.8 60.0,11.0 61.2,10.3 62.5,10.0 63.8,10.6 65.0,10.5 66.2,10.4 67.5,10.0 68.8,10.0 70.0,10.4 71.2,11.7 72.5,12.2 73.8,12.4 75.0,12.8 76.2,13.9 77.5,11.9 78.8,10.8 80.0,10.6 81.2,10.2 82.5,10.3 83.8,9.2 85.0,8.9 86.2,8.4 87.5,8.7 88.8,7.9 90.0,7.8 91.2,7.6 92.5,6.8 93.8,6.6 95.0,6.8 96.2,6.4 97.5,6.2 98.8,6.4 100.0,6.0 101.2,5.8 102.5,5.8 103.8,5.7 105.0,5.3 106.2,5.1 107.5,5.3 108.8,5.6 110.0,5.9 111.2,6.8 112.5,7.0 113.8,6.8 115.0,4.2 116.2,4.2 117.5,2.8 118.8,2.6 120.0,2.0 "/>
+  <polyline fill="none" stroke="var(--down)" stroke-width="1.5" points="0.0,20.3 1.2,20.7 2.5,20.4 3.8,21.4 5.0,20.9 6.2,21.0 7.5,19.8 8.8,20.0 10.0,19.7 11.2,20.2 12.5,20.6 13.8,20.0 15.0,19.5 16.2,19.1 17.5,18.4 18.8,18.8 20.0,18.7 21.2,18.2 22.5,18.6 23.8,18.7 25.0,18.7 26.2,18.0 27.5,18.9 28.8,18.9 30.0,18.2 31.3,18.1 32.5,18.7 33.8,18.1 35.0,19.4 36.2,19.7 37.5,18.9 38.8,19.2 40.0,18.4 41.2,19.8 42.5,19.5 43.8,19.6 45.0,19.8 46.2,18.5 47.5,18.0 48.8,18.6 50.0,17.8 51.2,17.4 52.5,18.0 53.8,18.3 55.0,19.7 56.2,20.0 57.5,20.8 58.8,20.3 60.0,21.2 61.2,20.5 62.5,21.8 63.8,22.3 65.0,22.0 66.2,21.8 67.5,20.9 68.8,22.2 70.0,22.4 71.2,21.4 72.5,20.9 73.8,20.8 75.0,19.8 76.2,21.4 77.5,21.7 78.8,23.4 80.0,23.5 81.2,23.5 82.5,23.4 83.8,22.6 85.0,26.1 86.2,27.7 87.5,28.0 88.8,26.5 90.0,26.2 91.2,25.7 92.5,26.1 93.8,25.4 95.0,24.8 96.2,25.2 97.5,26.0 98.8,26.5 100.0,25.8 101.2,26.0 102.5,25.5 103.8,24.8 105.0,24.3 106.2,26.0 107.5,26.8 108.8,26.1 110.0,26.8 111.2,27.5 112.5,27.7 113.8,26.7 115.0,26.1 116.2,23.1 117.5,22.7 118.8,22.4 120.0,22.1 "/>
+</svg>
+</td>
+          <td class="r muted sm">0.49</td>
+        </tr>
+      
+        <tr data-id="housing">
+          <td><span class="bname" data-id="housing"><span class="l-en">Housing Chain</span><span class="l-zh">住房产业链</span></span>
+            <span class="cat">Consumer</span>
+            
+          </td>
+          <td class="r num">
+  <span class="v-raw neg" data-v="-0.81">-0.8</span>
+  <span class="v-rel neg" data-v="-1.35">-1.4</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="4.39">+4.4</span>
+  <span class="v-rel pos" data-v="3.82">+3.8</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="6.94">+6.9</span>
+  <span class="v-rel pos" data-v="7.8">+7.8</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="2.65">+2.6</span>
+  <span class="v-rel neg" data-v="-9.8">-9.8</span>
+</td>
+          <td class="r num">
+  <span class="v-raw neg" data-v="-3.29">-3.3</span>
+  <span class="v-rel neg" data-v="-12.36">-12.4</span>
+</td>
+          <td class="r">
+
+
+
+<svg viewBox="0 0 120 30" class="spark" preserveAspectRatio="none">
+  <polyline fill="none" stroke="var(--muted)" stroke-width="1" opacity="0.4" points="0.0,27.1 1.2,26.7 2.5,26.1 3.8,25.5 5.0,25.4 6.2,25.2 7.5,24.4 8.8,24.1 10.0,24.8 11.2,25.0 12.5,24.6 13.8,24.9 15.0,26.0 16.2,25.6 17.5,26.0 18.8,26.6 20.0,25.0 21.2,24.1 22.5,24.0 23.8,23.0 25.0,22.4 26.2,22.5 27.5,21.9 28.8,21.2 30.0,20.9 31.3,20.4 32.5,20.0 33.8,19.3 35.0,19.4 36.2,20.0 37.5,20.4 38.8,19.6 40.0,18.8 41.2,18.9 42.5,18.3 43.8,17.6 45.0,17.1 46.2,16.2 47.5,17.6 48.8,19.3 50.0,16.5 51.2,16.6 52.5,16.9 53.8,15.7 55.0,15.8 56.2,15.0 57.5,15.1 58.8,14.2 60.0,14.4 61.2,13.4 62.5,13.1 63.8,13.8 65.0,13.8 66.2,13.6 67.5,13.1 68.8,13.1 70.0,13.7 71.2,15.4 72.5,16.2 73.8,16.4 75.0,16.9 76.2,18.4 77.5,15.7 78.8,14.2 80.0,14.0 81.2,13.4 82.5,13.5 83.8,12.0 85.0,11.5 86.2,10.8 87.5,11.3 88.8,10.2 90.0,10.0 91.2,9.7 92.5,8.6 93.8,8.3 95.0,8.7 96.2,8.1 97.5,7.8 98.8,8.1 100.0,7.5 101.2,7.3 102.5,7.3 103.8,7.1 105.0,6.6 106.2,6.3 107.5,6.6 108.8,7.0 110.0,7.3 111.2,8.6 112.5,8.9 113.8,8.7 115.0,5.1 116.2,5.0 117.5,3.1 118.8,2.8 120.0,2.0 "/>
+  <polyline fill="none" stroke="var(--up)" stroke-width="1.5" points="0.0,27.3 1.2,27.5 2.5,27.0 3.8,26.1 5.0,24.2 6.2,24.4 7.5,23.6 8.8,22.4 10.0,23.2 11.2,24.0 12.5,24.2 13.8,25.1 15.0,26.2 16.2,26.5 17.5,28.0 18.8,27.7 20.0,25.0 21.2,23.4 22.5,22.2 23.8,18.4 25.0,18.3 26.2,18.1 27.5,18.8 28.8,17.6 30.0,17.0 31.3,15.9 32.5,14.6 33.8,13.8 35.0,14.5 36.2,16.0 37.5,16.9 38.8,15.8 40.0,16.3 41.2,18.5 42.5,18.4 43.8,17.9 45.0,19.7 46.2,14.1 47.5,12.8 48.8,15.0 50.0,12.7 51.2,11.5 52.5,11.4 53.8,8.5 55.0,8.3 56.2,7.6 57.5,10.4 58.8,11.2 60.0,11.3 61.2,9.4 62.5,12.0 63.8,15.9 65.0,16.4 66.2,13.9 67.5,13.4 68.8,15.8 70.0,18.2 71.2,17.1 72.5,19.2 73.8,19.5 75.0,20.4 76.2,20.7 77.5,19.8 78.8,19.6 80.0,20.1 81.2,20.2 82.5,21.6 83.8,18.0 85.0,18.2 86.2,17.4 87.5,15.9 88.8,13.8 90.0,13.2 91.2,12.3 92.5,14.1 93.8,14.5 95.0,17.1 96.2,16.0 97.5,17.8 98.8,18.7 100.0,16.6 101.2,18.4 102.5,18.7 103.8,18.7 105.0,14.8 106.2,16.4 107.5,14.3 108.8,14.6 110.0,17.1 111.2,20.7 112.5,21.0 113.8,22.2 115.0,18.9 116.2,20.5 117.5,21.9 118.8,22.1 120.0,22.1 "/>
+</svg>
+</td>
+          <td class="r muted sm">—</td>
+        </tr>
+      
+        <tr data-id="ai_infra">
+          <td><span class="bname" data-id="ai_infra"><span class="l-en">AI Infrastructure</span><span class="l-zh">AI 基础设施</span></span>
+            <span class="cat">AI &amp; Tech</span>
+            
+          </td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="0.57">+0.6</span>
+  <span class="v-rel pos" data-v="0.03">+0.0</span>
+</td>
+          <td class="r num">
+  <span class="v-raw neg" data-v="-0.8">-0.8</span>
+  <span class="v-rel neg" data-v="-1.37">-1.4</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="2.73">+2.7</span>
+  <span class="v-rel pos" data-v="3.59">+3.6</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="53.84">+53.8</span>
+  <span class="v-rel pos" data-v="41.39">+41.4</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="86.77">+86.8</span>
+  <span class="v-rel pos" data-v="77.7">+77.7</span>
+</td>
+          <td class="r">
+
+
+
+<svg viewBox="0 0 120 30" class="spark" preserveAspectRatio="none">
+  <polyline fill="none" stroke="var(--muted)" stroke-width="1" opacity="0.4" points="0.0,28.0 1.2,28.0 2.5,27.9 3.8,27.9 5.0,27.9 6.2,27.8 7.5,27.8 8.8,27.7 10.0,27.8 11.2,27.8 12.5,27.8 13.8,27.8 15.0,27.9 16.2,27.9 17.5,27.9 18.8,28.0 20.0,27.8 21.2,27.7 22.5,27.7 23.8,27.6 25.0,27.6 26.2,27.6 27.5,27.5 28.8,27.5 30.0,27.5 31.3,27.4 32.5,27.4 33.8,27.3 35.0,27.3 36.2,27.4 37.5,27.4 38.8,27.3 40.0,27.3 41.2,27.3 42.5,27.2 43.8,27.2 45.0,27.1 46.2,27.0 47.5,27.2 48.8,27.3 50.0,27.1 51.2,27.1 52.5,27.1 53.8,27.0 55.0,27.0 56.2,26.9 57.5,27.0 58.8,26.9 60.0,26.9 61.2,26.8 62.5,26.8 63.8,26.8 65.0,26.8 66.2,26.8 67.5,26.8 68.8,26.8 70.0,26.8 71.2,27.0 72.5,27.0 73.8,27.1 75.0,27.1 76.2,27.2 77.5,27.0 78.8,26.9 80.0,26.9 81.2,26.8 82.5,26.8 83.8,26.7 85.0,26.6 86.2,26.6 87.5,26.6 88.8,26.5 90.0,26.5 91.2,26.5 92.5,26.4 93.8,26.4 95.0,26.4 96.2,26.3 97.5,26.3 98.8,26.3 100.0,26.3 101.2,26.3 102.5,26.3 103.8,26.3 105.0,26.2 106.2,26.2 107.5,26.2 108.8,26.3 110.0,26.3 111.2,26.4 112.5,26.4 113.8,26.4 115.0,26.1 116.2,26.1 117.5,25.9 118.8,25.9 120.0,25.8 "/>
+  <polyline fill="none" stroke="var(--up)" stroke-width="1.5" points="0.0,28.0 1.2,27.8 2.5,27.4 3.8,27.2 5.0,27.3 6.2,27.2 7.5,27.1 8.8,26.9 10.0,27.1 11.2,26.9 12.5,26.7 13.8,26.8 15.0,26.9 16.2,26.7 17.5,26.9 18.8,26.9 20.0,26.5 21.2,26.4 22.5,26.5 23.8,26.2 25.0,26.0 26.2,25.9 27.5,25.3 28.8,24.9 30.0,24.6 31.3,24.3 32.5,23.7 33.8,23.9 35.0,23.5 36.2,23.8 37.5,24.1 38.8,23.6 40.0,23.1 41.2,22.8 42.5,23.2 43.8,22.6 45.0,22.6 46.2,22.6 47.5,23.6 48.8,24.6 50.0,23.3 51.2,23.8 52.5,23.8 53.8,23.3 55.0,23.1 56.2,22.8 57.5,22.7 58.8,22.9 60.0,23.3 61.2,22.9 62.5,22.6 63.8,22.5 65.0,22.0 66.2,22.3 67.5,22.8 68.8,22.3 70.0,22.7 71.2,23.7 72.5,23.5 73.8,24.0 75.0,24.1 76.2,24.6 77.5,23.4 78.8,22.3 80.0,22.3 81.2,22.1 82.5,21.8 83.8,21.3 85.0,20.9 86.2,20.5 87.5,20.1 88.8,19.9 90.0,20.2 91.2,19.8 92.5,18.9 93.8,18.0 95.0,17.0 96.2,16.9 97.5,16.4 98.8,17.2 100.0,17.5 101.2,16.9 102.5,17.5 103.8,16.7 105.0,17.1 106.2,16.0 107.5,16.0 108.8,15.4 110.0,15.6 111.2,14.9 112.5,14.3 113.8,14.4 115.0,11.3 116.2,10.7 117.5,7.0 118.8,7.3 120.0,2.0 "/>
+</svg>
+</td>
+          <td class="r muted sm">0.9</td>
+        </tr>
+      
+        <tr data-id="defense">
+          <td><span class="bname" data-id="defense"><span class="l-en">Defense &amp; Aerospace</span><span class="l-zh">国防与航空航天</span></span>
+            <span class="cat">Industrials</span>
+            
+          </td>
+          <td class="r num">
+  <span class="v-raw neg" data-v="-0.67">-0.7</span>
+  <span class="v-rel neg" data-v="-1.21">-1.2</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="1.0">+1.0</span>
+  <span class="v-rel pos" data-v="0.43">+0.4</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="1.86">+1.9</span>
+  <span class="v-rel pos" data-v="2.72">+2.7</span>
+</td>
+          <td class="r num">
+  <span class="v-raw neg" data-v="-8.61">-8.6</span>
+  <span class="v-rel neg" data-v="-21.06">-21.1</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="2.55">+2.5</span>
+  <span class="v-rel neg" data-v="-6.52">-6.5</span>
+</td>
+          <td class="r">
+
+
+
+<svg viewBox="0 0 120 30" class="spark" preserveAspectRatio="none">
+  <polyline fill="none" stroke="var(--muted)" stroke-width="1" opacity="0.4" points="0.0,27.3 1.2,27.0 2.5,26.5 3.8,26.1 5.0,26.1 6.2,25.9 7.5,25.3 8.8,25.1 10.0,25.6 11.2,25.8 12.5,25.5 13.8,25.7 15.0,26.5 16.2,26.2 17.5,26.5 18.8,26.9 20.0,25.8 21.2,25.1 22.5,25.0 23.8,24.3 25.0,24.0 26.2,24.0 27.5,23.6 28.8,23.2 30.0,23.0 31.3,22.6 32.5,22.3 33.8,21.8 35.0,21.9 36.2,22.3 37.5,22.6 38.8,22.0 40.0,21.4 41.2,21.6 42.5,21.1 43.8,20.6 45.0,20.3 46.2,19.6 47.5,20.6 48.8,21.8 50.0,19.9 51.2,19.9 52.5,20.1 53.8,19.3 55.0,19.4 56.2,18.8 57.5,18.9 58.8,18.3 60.0,18.4 61.2,17.7 62.5,17.5 63.8,18.0 65.0,18.0 66.2,17.9 67.5,17.5 68.8,17.5 70.0,17.9 71.2,19.1 72.5,19.6 73.8,19.8 75.0,20.2 76.2,21.2 77.5,19.3 78.8,18.3 80.0,18.1 81.2,17.7 82.5,17.8 83.8,16.7 85.0,16.4 86.2,15.9 87.5,16.2 88.8,15.5 90.0,15.3 91.2,15.1 92.5,14.4 93.8,14.2 95.0,14.4 96.2,14.0 97.5,13.8 98.8,14.0 100.0,13.6 101.2,13.5 102.5,13.5 103.8,13.4 105.0,13.0 106.2,12.8 107.5,13.0 108.8,13.3 110.0,13.5 111.2,14.4 112.5,14.6 113.8,14.4 115.0,11.9 116.2,11.9 117.5,10.5 118.8,10.4 120.0,9.8 "/>
+  <polyline fill="none" stroke="var(--up)" stroke-width="1.5" points="0.0,27.6 1.2,27.4 2.5,27.4 3.8,27.1 5.0,26.8 6.2,26.5 7.5,26.5 8.8,26.6 10.0,26.5 11.2,26.8 12.5,26.9 13.8,27.5 15.0,28.0 16.2,27.2 17.5,27.3 18.8,27.2 20.0,26.2 21.2,25.5 22.5,25.1 23.8,24.5 25.0,24.1 26.2,24.5 27.5,24.4 28.8,24.0 30.0,23.6 31.3,23.2 32.5,22.7 33.8,22.5 35.0,22.5 36.2,22.9 37.5,22.8 38.8,21.8 40.0,21.7 41.2,22.2 42.5,21.7 43.8,21.9 45.0,22.1 46.2,21.3 47.5,20.6 48.8,20.6 50.0,19.2 51.2,18.8 52.5,19.5 53.8,18.5 55.0,18.3 56.2,17.9 57.5,18.1 58.8,18.3 60.0,18.6 61.2,17.9 62.5,18.6 63.8,18.9 65.0,19.8 66.2,18.2 67.5,17.9 68.8,18.4 70.0,19.7 71.2,18.8 72.5,17.9 73.8,17.8 75.0,17.9 76.2,18.3 77.5,15.7 78.8,15.4 80.0,14.1 81.2,13.3 82.5,13.5 83.8,12.5 85.0,11.3 86.2,11.0 87.5,10.4 88.8,11.1 90.0,10.3 91.2,10.9 92.5,10.2 93.8,9.2 95.0,9.5 96.2,8.7 97.5,9.1 98.8,10.2 100.0,10.7 101.2,10.7 102.5,9.2 103.8,7.9 105.0,4.1 106.2,3.6 107.5,5.5 108.8,3.7 110.0,2.0 111.2,4.5 112.5,5.9 113.8,6.5 115.0,5.9 116.2,8.9 117.5,8.6 118.8,9.1 120.0,9.2 "/>
+</svg>
+</td>
+          <td class="r muted sm">—</td>
+        </tr>
+      
+        <tr data-id="reshoring">
+          <td><span class="bname" data-id="reshoring"><span class="l-en">Reshoring &amp; Industrial Capex</span><span class="l-zh">回流与工业资本开支</span></span>
+            <span class="cat">Industrials</span>
+            
+          </td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="0.9">+0.9</span>
+  <span class="v-rel pos" data-v="0.36">+0.4</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="1.07">+1.1</span>
+  <span class="v-rel pos" data-v="0.5">+0.5</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="1.19">+1.2</span>
+  <span class="v-rel pos" data-v="2.05">+2.0</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="17.47">+17.5</span>
+  <span class="v-rel pos" data-v="5.02">+5.0</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="29.06">+29.1</span>
+  <span class="v-rel pos" data-v="19.99">+20.0</span>
+</td>
+          <td class="r">
+
+
+
+<svg viewBox="0 0 120 30" class="spark" preserveAspectRatio="none">
+  <polyline fill="none" stroke="var(--muted)" stroke-width="1" opacity="0.4" points="0.0,27.8 1.2,27.5 2.5,27.2 3.8,26.8 5.0,26.8 6.2,26.7 7.5,26.2 8.8,26.1 10.0,26.5 11.2,26.6 12.5,26.3 13.8,26.5 15.0,27.1 16.2,26.9 17.5,27.1 18.8,27.4 20.0,26.6 21.2,26.0 22.5,26.0 23.8,25.4 25.0,25.2 26.2,25.2 27.5,24.8 28.8,24.5 30.0,24.3 31.3,24.0 32.5,23.8 33.8,23.4 35.0,23.5 36.2,23.8 37.5,24.0 38.8,23.6 40.0,23.1 41.2,23.2 42.5,22.8 43.8,22.4 45.0,22.2 46.2,21.7 47.5,22.4 48.8,23.4 50.0,21.9 51.2,21.9 52.5,22.1 53.8,21.4 55.0,21.5 56.2,21.0 57.5,21.0 58.8,20.6 60.0,20.7 61.2,20.1 62.5,20.0 63.8,20.4 65.0,20.3 66.2,20.3 67.5,20.0 68.8,20.0 70.0,20.3 71.2,21.2 72.5,21.7 73.8,21.8 75.0,22.1 76.2,22.9 77.5,21.4 78.8,20.6 80.0,20.4 81.2,20.1 82.5,20.2 83.8,19.3 85.0,19.1 86.2,18.7 87.5,18.9 88.8,18.3 90.0,18.2 91.2,18.1 92.5,17.5 93.8,17.3 95.0,17.5 96.2,17.2 97.5,17.0 98.8,17.2 100.0,16.9 101.2,16.7 102.5,16.8 103.8,16.7 105.0,16.4 106.2,16.2 107.5,16.4 108.8,16.6 110.0,16.8 111.2,17.5 112.5,17.6 113.8,17.5 115.0,15.5 116.2,15.5 117.5,14.4 118.8,14.2 120.0,13.8 "/>
+  <polyline fill="none" stroke="var(--up)" stroke-width="1.5" points="0.0,28.0 1.2,27.8 2.5,27.3 3.8,26.3 5.0,25.8 6.2,25.4 7.5,24.8 8.8,24.6 10.0,24.6 11.2,25.0 12.5,24.5 13.8,25.1 15.0,25.5 16.2,25.6 17.5,26.3 18.8,26.7 20.0,25.8 21.2,25.3 22.5,25.2 23.8,23.5 25.0,23.1 26.2,23.6 27.5,23.3 28.8,22.5 30.0,21.9 31.3,21.3 32.5,20.7 33.8,20.1 35.0,19.9 36.2,20.2 37.5,20.5 38.8,20.4 40.0,20.3 41.2,20.9 42.5,21.2 43.8,21.1 45.0,21.3 46.2,19.5 47.5,19.9 48.8,22.0 50.0,20.4 51.2,20.1 52.5,20.6 53.8,18.8 55.0,18.5 56.2,17.9 57.5,18.0 58.8,16.0 60.0,16.4 61.2,15.1 62.5,16.0 63.8,17.5 65.0,17.9 66.2,16.6 67.5,16.7 68.8,17.0 70.0,18.6 71.2,19.2 72.5,19.3 73.8,19.7 75.0,20.1 76.2,20.7 77.5,18.3 78.8,16.2 80.0,16.0 81.2,15.5 82.5,15.5 83.8,14.0 85.0,13.2 86.2,11.7 87.5,12.6 88.8,12.8 90.0,12.0 91.2,12.7 92.5,11.9 93.8,11.6 95.0,12.1 96.2,11.4 97.5,11.3 98.8,11.4 100.0,10.9 101.2,10.7 102.5,11.1 103.8,10.6 105.0,8.8 106.2,8.1 107.5,5.7 108.8,4.9 110.0,6.0 111.2,8.2 112.5,7.6 113.8,7.6 115.0,4.9 116.2,4.8 117.5,2.6 118.8,4.4 120.0,2.0 "/>
+</svg>
+</td>
+          <td class="r muted sm">0.92</td>
+        </tr>
+      
+        <tr data-id="defensives">
+          <td><span class="bname" data-id="defensives"><span class="l-en">Defensives</span><span class="l-zh">防御板块</span></span>
+            <span class="cat">Consumer</span>
+            
+          </td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="0.58">+0.6</span>
+  <span class="v-rel pos" data-v="0.04">+0.0</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="2.41">+2.4</span>
+  <span class="v-rel pos" data-v="1.84">+1.8</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="1.18">+1.2</span>
+  <span class="v-rel pos" data-v="2.04">+2.0</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="2.39">+2.4</span>
+  <span class="v-rel neg" data-v="-10.06">-10.1</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="8.06">+8.1</span>
+  <span class="v-rel neg" data-v="-1.01">-1.0</span>
+</td>
+          <td class="r">
+
+
+
+<svg viewBox="0 0 120 30" class="spark" preserveAspectRatio="none">
+  <polyline fill="none" stroke="var(--muted)" stroke-width="1" opacity="0.4" points="0.0,25.3 1.2,24.9 2.5,24.3 3.8,23.7 5.0,23.7 6.2,23.5 7.5,22.7 8.8,22.4 10.0,23.1 11.2,23.3 12.5,22.9 13.8,23.1 15.0,24.2 16.2,23.8 17.5,24.2 18.8,24.7 20.0,23.3 21.2,22.4 22.5,22.3 23.8,21.4 25.0,20.9 26.2,20.9 27.5,20.4 28.8,19.8 30.0,19.5 31.3,19.0 32.5,18.7 33.8,18.0 35.0,18.1 36.2,18.7 37.5,19.0 38.8,18.3 40.0,17.5 41.2,17.7 42.5,17.1 43.8,16.4 45.0,16.0 46.2,15.1 47.5,16.4 48.8,18.0 50.0,15.4 51.2,15.5 52.5,15.8 53.8,14.7 55.0,14.8 56.2,14.0 57.5,14.1 58.8,13.3 60.0,13.5 61.2,12.6 62.5,12.3 63.8,12.9 65.0,12.9 66.2,12.8 67.5,12.3 68.8,12.3 70.0,12.8 71.2,14.4 72.5,15.1 73.8,15.4 75.0,15.8 76.2,17.2 77.5,14.6 78.8,13.3 80.0,13.1 81.2,12.6 82.5,12.7 83.8,11.2 85.0,10.8 86.2,10.2 87.5,10.6 88.8,9.6 90.0,9.4 91.2,9.1 92.5,8.1 93.8,7.8 95.0,8.2 96.2,7.6 97.5,7.4 98.8,7.6 100.0,7.1 101.2,6.9 102.5,6.9 103.8,6.8 105.0,6.3 106.2,6.0 107.5,6.3 108.8,6.7 110.0,6.9 111.2,8.1 112.5,8.3 113.8,8.2 115.0,4.9 116.2,4.8 117.5,3.0 118.8,2.7 120.0,2.0 "/>
+  <polyline fill="none" stroke="var(--up)" stroke-width="1.5" points="0.0,25.4 1.2,26.1 2.5,26.3 3.8,26.2 5.0,26.0 6.2,26.5 7.5,25.7 8.8,25.8 10.0,25.8 11.2,26.6 12.5,26.9 13.8,26.6 15.0,27.3 16.2,28.0 17.5,27.7 18.8,27.4 20.0,27.0 21.2,26.8 22.5,26.7 23.8,26.6 25.0,26.2 26.2,25.9 27.5,25.6 28.8,25.2 30.0,25.7 31.3,24.9 32.5,24.9 33.8,24.5 35.0,24.6 36.2,25.3 37.5,24.1 38.8,24.0 40.0,23.2 41.2,24.2 42.5,23.6 43.8,23.3 45.0,23.7 46.2,23.3 47.5,22.7 48.8,22.5 50.0,21.8 51.2,21.2 52.5,20.7 53.8,20.7 55.0,21.3 56.2,20.8 57.5,21.8 58.8,22.6 60.0,22.6 61.2,21.5 62.5,22.2 63.8,22.9 65.0,23.6 66.2,23.4 67.5,22.4 68.8,22.0 70.0,21.3 71.2,20.9 72.5,22.1 73.8,21.8 75.0,22.2 76.2,21.3 77.5,22.0 78.8,22.9 80.0,21.7 81.2,22.0 82.5,22.7 83.8,21.9 85.0,22.5 86.2,22.0 87.5,22.6 88.8,22.0 90.0,22.3 91.2,21.9 92.5,22.3 93.8,22.4 95.0,22.6 96.2,22.1 97.5,23.4 98.8,22.9 100.0,22.3 101.2,23.1 102.5,22.8 103.8,23.2 105.0,21.9 106.2,21.5 107.5,19.3 108.8,19.6 110.0,19.5 111.2,20.9 112.5,21.6 113.8,21.7 115.0,21.3 116.2,21.3 117.5,21.5 118.8,21.1 120.0,22.3 "/>
+</svg>
+</td>
+          <td class="r muted sm">0.94</td>
+        </tr>
+      
+        <tr data-id="energy_complex">
+          <td><span class="bname" data-id="energy_complex"><span class="l-en">US Energy Complex</span><span class="l-zh">美国能源综合</span></span>
+            <span class="cat">Energy</span>
+            
+          </td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="1.0">+1.0</span>
+  <span class="v-rel pos" data-v="0.46">+0.5</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="0.08">+0.1</span>
+  <span class="v-rel neg" data-v="-0.49">-0.5</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="0.51">+0.5</span>
+  <span class="v-rel pos" data-v="1.37">+1.4</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="2.91">+2.9</span>
+  <span class="v-rel neg" data-v="-9.54">-9.5</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="37.03">+37.0</span>
+  <span class="v-rel pos" data-v="27.96">+28.0</span>
+</td>
+          <td class="r">
+
+
+
+<svg viewBox="0 0 120 30" class="spark" preserveAspectRatio="none">
+  <polyline fill="none" stroke="var(--muted)" stroke-width="1" opacity="0.4" points="0.0,27.6 1.2,27.2 2.5,26.6 3.8,25.9 5.0,25.9 6.2,25.7 7.5,24.8 8.8,24.5 10.0,25.2 11.2,25.4 12.5,25.0 13.8,25.3 15.0,26.5 16.2,26.1 17.5,26.5 18.8,27.0 20.0,25.5 21.2,24.5 22.5,24.4 23.8,23.4 25.0,22.8 26.2,22.8 27.5,22.3 28.8,21.6 30.0,21.3 31.3,20.7 32.5,20.4 33.8,19.7 35.0,19.8 36.2,20.3 37.5,20.7 38.8,19.9 40.0,19.1 41.2,19.3 42.5,18.6 43.8,17.9 45.0,17.4 46.2,16.4 47.5,17.9 48.8,19.7 50.0,16.8 51.2,16.9 52.5,17.2 53.8,16.0 55.0,16.1 56.2,15.3 57.5,15.3 58.8,14.5 60.0,14.7 61.2,13.7 62.5,13.3 63.8,14.1 65.0,14.0 66.2,13.9 67.5,13.3 68.8,13.3 70.0,13.9 71.2,15.6 72.5,16.4 73.8,16.7 75.0,17.2 76.2,18.7 77.5,15.9 78.8,14.4 80.0,14.2 81.2,13.6 82.5,13.7 83.8,12.2 85.0,11.7 86.2,11.0 87.5,11.4 88.8,10.3 90.0,10.1 91.2,9.9 92.5,8.8 93.8,8.4 95.0,8.8 96.2,8.2 97.5,7.9 98.8,8.2 100.0,7.6 101.2,7.4 102.5,7.4 103.8,7.2 105.0,6.7 106.2,6.4 107.5,6.7 108.8,7.1 110.0,7.4 111.2,8.7 112.5,9.0 113.8,8.8 115.0,5.2 116.2,5.1 117.5,3.1 118.8,2.8 120.0,2.0 "/>
+  <polyline fill="none" stroke="var(--up)" stroke-width="1.5" points="0.0,28.0 1.2,27.8 2.5,27.6 3.8,27.5 5.0,27.5 6.2,26.5 7.5,25.2 8.8,23.9 10.0,22.6 11.2,23.7 12.5,22.6 13.8,21.9 15.0,21.9 16.2,23.2 17.5,22.1 18.8,24.0 20.0,24.5 21.2,23.9 22.5,24.1 23.8,23.7 25.0,23.5 26.2,24.3 27.5,24.5 28.8,23.3 30.0,23.5 31.3,22.6 32.5,21.6 33.8,19.4 35.0,17.7 36.2,18.1 37.5,18.4 38.8,19.8 40.0,19.7 41.2,20.9 42.5,20.7 43.8,20.8 45.0,19.9 46.2,20.0 47.5,19.6 48.8,21.4 50.0,20.0 51.2,20.2 52.5,22.9 53.8,21.0 55.0,19.4 56.2,20.5 57.5,20.8 58.8,19.5 60.0,18.5 61.2,18.7 62.5,20.4 63.8,22.8 65.0,21.5 66.2,18.8 67.5,20.2 68.8,19.8 70.0,19.7 71.2,21.8 72.5,19.9 73.8,19.4 75.0,23.5 76.2,23.8 77.5,23.0 78.8,21.1 80.0,22.1 81.2,21.8 82.5,19.9 83.8,20.4 85.0,19.2 86.2,19.8 87.5,20.4 88.8,20.5 90.0,18.6 91.2,18.9 92.5,18.6 93.8,17.8 95.0,19.4 96.2,18.5 97.5,19.4 98.8,17.4 100.0,18.6 101.2,17.7 102.5,19.4 103.8,17.9 105.0,15.4 106.2,14.7 107.5,11.7 108.8,10.0 110.0,8.3 111.2,6.9 112.5,4.2 113.8,4.1 115.0,8.5 116.2,4.8 117.5,5.9 118.8,4.3 120.0,4.1 "/>
+</svg>
+</td>
+          <td class="r muted sm">0.98</td>
+        </tr>
+      
+        <tr data-id="payments_fintech">
+          <td><span class="bname" data-id="payments_fintech"><span class="l-en">Payments &amp; Fintech</span><span class="l-zh">支付与金融科技</span></span>
+            <span class="cat">Financials</span>
+            
+          </td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="1.7">+1.7</span>
+  <span class="v-rel pos" data-v="1.16">+1.2</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="1.25">+1.2</span>
+  <span class="v-rel pos" data-v="0.68">+0.7</span>
+</td>
+          <td class="r num">
+  <span class="v-raw neg" data-v="-0.53">-0.5</span>
+  <span class="v-rel pos" data-v="0.33">+0.3</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="0.87">+0.9</span>
+  <span class="v-rel neg" data-v="-11.58">-11.6</span>
+</td>
+          <td class="r num">
+  <span class="v-raw neg" data-v="-18.0">-18.0</span>
+  <span class="v-rel neg" data-v="-27.07">-27.1</span>
+</td>
+          <td class="r">
+
+
+
+<svg viewBox="0 0 120 30" class="spark" preserveAspectRatio="none">
+  <polyline fill="none" stroke="var(--muted)" stroke-width="1" opacity="0.4" points="0.0,27.3 1.2,26.9 2.5,26.3 3.8,25.7 5.0,25.6 6.2,25.4 7.5,24.5 8.8,24.2 10.0,25.0 11.2,25.2 12.5,24.7 13.8,25.0 15.0,26.2 16.2,25.8 17.5,26.2 18.8,26.8 20.0,25.2 21.2,24.2 22.5,24.1 23.8,23.1 25.0,22.6 26.2,22.6 27.5,22.0 28.8,21.4 30.0,21.1 31.3,20.5 32.5,20.2 33.8,19.5 35.0,19.6 36.2,20.1 37.5,20.5 38.8,19.7 40.0,18.9 41.2,19.1 42.5,18.4 43.8,17.7 45.0,17.2 46.2,16.3 47.5,17.7 48.8,19.5 50.0,16.6 51.2,16.7 52.5,17.0 53.8,15.8 55.0,15.9 56.2,15.1 57.5,15.2 58.8,14.3 60.0,14.5 61.2,13.5 62.5,13.2 63.8,13.9 65.0,13.9 66.2,13.7 67.5,13.2 68.8,13.2 70.0,13.8 71.2,15.5 72.5,16.3 73.8,16.5 75.0,17.0 76.2,18.5 77.5,15.8 78.8,14.3 80.0,14.1 81.2,13.5 82.5,13.6 83.8,12.1 85.0,11.6 86.2,10.9 87.5,11.3 88.8,10.2 90.0,10.0 91.2,9.8 92.5,8.7 93.8,8.4 95.0,8.7 96.2,8.1 97.5,7.9 98.8,8.1 100.0,7.6 101.2,7.3 102.5,7.4 103.8,7.2 105.0,6.7 106.2,6.3 107.5,6.6 108.8,7.1 110.0,7.4 111.2,8.7 112.5,8.9 113.8,8.7 115.0,5.1 116.2,5.0 117.5,3.1 118.8,2.8 120.0,2.0 "/>
+  <polyline fill="none" stroke="var(--up)" stroke-width="1.5" points="0.0,28.0 1.2,26.8 2.5,26.1 3.8,25.9 5.0,26.3 6.2,24.8 7.5,23.7 8.8,23.4 10.0,24.6 11.2,25.4 12.5,25.0 13.8,24.7 15.0,26.8 16.2,27.1 17.5,27.5 18.8,28.0 20.0,26.6 21.2,25.7 22.5,24.0 23.8,22.2 25.0,21.5 26.2,21.4 27.5,21.1 28.8,19.8 30.0,19.7 31.3,18.9 32.5,18.8 33.8,17.4 35.0,17.9 36.2,18.7 37.5,17.4 38.8,18.3 40.0,18.0 41.2,19.5 42.5,18.5 43.8,19.2 45.0,19.0 46.2,17.4 47.5,18.2 48.8,19.3 50.0,16.6 51.2,15.4 52.5,16.2 53.8,14.1 55.0,15.2 56.2,13.3 57.5,13.1 58.8,9.2 60.0,9.3 61.2,8.1 62.5,8.0 63.8,9.3 65.0,9.2 66.2,8.4 67.5,6.6 68.8,9.0 70.0,10.3 71.2,12.8 72.5,13.6 73.8,13.4 75.0,14.5 76.2,15.7 77.5,12.7 78.8,10.3 80.0,11.1 81.2,10.1 82.5,11.5 83.8,8.3 85.0,8.6 86.2,8.2 87.5,10.5 88.8,9.1 90.0,8.0 91.2,8.5 92.5,8.3 93.8,9.5 95.0,9.7 96.2,8.1 97.5,9.4 98.8,10.6 100.0,9.8 101.2,9.3 102.5,7.5 103.8,8.1 105.0,9.7 106.2,11.8 107.5,13.3 108.8,14.2 110.0,14.6 111.2,16.7 112.5,16.3 113.8,17.0 115.0,13.2 116.2,14.1 117.5,16.2 118.8,15.6 120.0,17.6 "/>
+</svg>
+</td>
+          <td class="r muted sm">—</td>
+        </tr>
+      
+        <tr data-id="ai_software">
+          <td><span class="bname" data-id="ai_software"><span class="l-en">AI Software &amp; Platforms</span><span class="l-zh">AI 软件与平台</span></span>
+            <span class="cat">AI &amp; Tech</span>
+            
+          </td>
+          <td class="r num">
+  <span class="v-raw neg" data-v="-1.31">-1.3</span>
+  <span class="v-rel neg" data-v="-1.85">-1.9</span>
+</td>
+          <td class="r num">
+  <span class="v-raw neg" data-v="-8.12">-8.1</span>
+  <span class="v-rel neg" data-v="-8.69">-8.7</span>
+</td>
+          <td class="r num">
+  <span class="v-raw neg" data-v="-2.12">-2.1</span>
+  <span class="v-rel neg" data-v="-1.26">-1.3</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="4.36">+4.4</span>
+  <span class="v-rel neg" data-v="-8.09">-8.1</span>
+</td>
+          <td class="r num">
+  <span class="v-raw neg" data-v="-12.23">-12.2</span>
+  <span class="v-rel neg" data-v="-21.3">-21.3</span>
+</td>
+          <td class="r">
+
+
+
+<svg viewBox="0 0 120 30" class="spark" preserveAspectRatio="none">
+  <polyline fill="none" stroke="var(--muted)" stroke-width="1" opacity="0.4" points="0.0,28.0 1.2,27.8 2.5,27.5 3.8,27.2 5.0,27.1 6.2,27.0 7.5,26.6 8.8,26.4 10.0,26.8 11.2,26.9 12.5,26.7 13.8,26.8 15.0,27.4 16.2,27.2 17.5,27.4 18.8,27.7 20.0,26.9 21.2,26.4 22.5,26.4 23.8,25.9 25.0,25.6 26.2,25.6 27.5,25.3 28.8,25.0 30.0,24.8 31.3,24.5 32.5,24.4 33.8,24.0 35.0,24.1 36.2,24.3 37.5,24.5 38.8,24.1 40.0,23.7 41.2,23.8 42.5,23.5 43.8,23.1 45.0,22.9 46.2,22.4 47.5,23.1 48.8,24.0 50.0,22.6 51.2,22.6 52.5,22.8 53.8,22.2 55.0,22.2 56.2,21.8 57.5,21.8 58.8,21.4 60.0,21.5 61.2,21.0 62.5,20.8 63.8,21.2 65.0,21.2 66.2,21.1 67.5,20.8 68.8,20.8 70.0,21.1 71.2,22.0 72.5,22.4 73.8,22.5 75.0,22.8 76.2,23.5 77.5,22.1 78.8,21.4 80.0,21.3 81.2,21.0 82.5,21.0 83.8,20.3 85.0,20.0 86.2,19.7 87.5,19.9 88.8,19.3 90.0,19.2 91.2,19.1 92.5,18.5 93.8,18.4 95.0,18.6 96.2,18.3 97.5,18.1 98.8,18.3 100.0,18.0 101.2,17.9 102.5,17.9 103.8,17.8 105.0,17.5 106.2,17.3 107.5,17.5 108.8,17.7 110.0,17.9 111.2,18.5 112.5,18.7 113.8,18.6 115.0,16.7 116.2,16.7 117.5,15.7 118.8,15.6 120.0,15.2 "/>
+  <polyline fill="none" stroke="var(--up)" stroke-width="1.5" points="0.0,27.7 1.2,26.4 2.5,25.2 3.8,24.5 5.0,24.8 6.2,24.4 7.5,23.6 8.8,22.7 10.0,24.5 11.2,24.1 12.5,23.5 13.8,23.9 15.0,24.9 16.2,23.8 17.5,23.9 18.8,24.7 20.0,22.3 21.2,21.5 22.5,21.6 23.8,21.5 25.0,21.1 26.2,21.1 27.5,20.1 28.8,19.1 30.0,18.0 31.3,18.5 32.5,18.4 33.8,17.9 35.0,18.3 36.2,18.3 37.5,19.0 38.8,18.4 40.0,18.5 41.2,18.7 42.5,18.9 43.8,17.5 45.0,16.2 46.2,16.3 47.5,17.1 48.8,18.4 50.0,16.1 51.2,16.5 52.5,16.0 53.8,14.7 55.0,14.6 56.2,13.7 57.5,13.6 58.8,12.0 60.0,11.6 61.2,10.1 62.5,7.9 63.8,9.3 65.0,9.7 66.2,10.4 67.5,9.0 68.8,7.7 70.0,10.4 71.2,12.3 72.5,13.6 73.8,14.2 75.0,14.0 76.2,15.8 77.5,11.1 78.8,9.1 80.0,9.2 81.2,8.2 82.5,7.5 83.8,6.8 85.0,6.3 86.2,5.1 87.5,5.4 88.8,5.4 90.0,5.9 91.2,4.5 92.5,2.0 93.8,3.0 95.0,2.4 96.2,2.2 97.5,3.2 98.8,3.8 100.0,5.0 101.2,3.1 102.5,4.2 103.8,5.5 105.0,6.6 106.2,6.7 107.5,11.6 108.8,11.3 110.0,10.8 111.2,10.8 112.5,12.1 113.8,12.3 115.0,10.0 116.2,10.5 117.5,8.2 118.8,7.6 120.0,4.9 "/>
+</svg>
+</td>
+          <td class="r muted sm">0.77</td>
+        </tr>
+      
+        <tr data-id="power_grid">
+          <td><span class="bname" data-id="power_grid"><span class="l-en">Power &amp; Grid Buildout</span><span class="l-zh">电力与电网</span></span>
+            <span class="cat">Industrials</span>
+            
+          </td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="1.8">+1.8</span>
+  <span class="v-rel pos" data-v="1.26">+1.3</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="0.01">+0.0</span>
+  <span class="v-rel neg" data-v="-0.56">-0.6</span>
+</td>
+          <td class="r num">
+  <span class="v-raw neg" data-v="-5.56">-5.6</span>
+  <span class="v-rel neg" data-v="-4.7">-4.7</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="0.5">+0.5</span>
+  <span class="v-rel neg" data-v="-11.95">-11.9</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="17.81">+17.8</span>
+  <span class="v-rel pos" data-v="8.74">+8.7</span>
+</td>
+          <td class="r">
+
+
+
+<svg viewBox="0 0 120 30" class="spark" preserveAspectRatio="none">
+  <polyline fill="none" stroke="var(--muted)" stroke-width="1" opacity="0.4" points="0.0,28.0 1.2,27.9 2.5,27.7 3.8,27.6 5.0,27.6 6.2,27.5 7.5,27.3 8.8,27.2 10.0,27.4 11.2,27.4 12.5,27.3 13.8,27.4 15.0,27.7 16.2,27.6 17.5,27.7 18.8,27.8 20.0,27.4 21.2,27.2 22.5,27.2 23.8,26.9 25.0,26.8 26.2,26.8 27.5,26.6 28.8,26.4 30.0,26.4 31.3,26.2 32.5,26.1 33.8,25.9 35.0,26.0 36.2,26.1 37.5,26.2 38.8,26.0 40.0,25.8 41.2,25.8 42.5,25.6 43.8,25.5 45.0,25.3 46.2,25.1 47.5,25.5 48.8,25.9 50.0,25.2 51.2,25.2 52.5,25.3 53.8,25.0 55.0,25.0 56.2,24.8 57.5,24.8 58.8,24.6 60.0,24.6 61.2,24.4 62.5,24.3 63.8,24.5 65.0,24.5 66.2,24.4 67.5,24.3 68.8,24.3 70.0,24.4 71.2,24.9 72.5,25.1 73.8,25.2 75.0,25.3 76.2,25.7 77.5,24.9 78.8,24.6 80.0,24.5 81.2,24.3 82.5,24.4 83.8,24.0 85.0,23.8 86.2,23.7 87.5,23.8 88.8,23.5 90.0,23.4 91.2,23.4 92.5,23.1 93.8,23.0 95.0,23.1 96.2,22.9 97.5,22.9 98.8,22.9 100.0,22.8 101.2,22.7 102.5,22.7 103.8,22.7 105.0,22.5 106.2,22.5 107.5,22.5 108.8,22.7 110.0,22.7 111.2,23.1 112.5,23.1 113.8,23.1 115.0,22.1 116.2,22.1 117.5,21.6 118.8,21.5 120.0,21.3 "/>
+  <polyline fill="none" stroke="var(--up)" stroke-width="1.5" points="0.0,28.0 1.2,27.9 2.5,27.7 3.8,27.3 5.0,27.1 6.2,27.0 7.5,26.7 8.8,26.7 10.0,26.4 11.2,26.4 12.5,26.2 13.8,26.1 15.0,26.5 16.2,26.8 17.5,26.8 18.8,26.6 20.0,26.1 21.2,25.7 22.5,25.6 23.8,25.2 25.0,25.0 26.2,25.1 27.5,25.2 28.8,24.5 30.0,24.5 31.3,23.7 32.5,23.0 33.8,22.3 35.0,21.8 36.2,21.6 37.5,21.4 38.8,20.2 40.0,19.6 41.2,19.1 42.5,19.8 43.8,19.9 45.0,20.1 46.2,20.0 47.5,20.9 48.8,21.1 50.0,19.9 51.2,19.6 52.5,19.5 53.8,17.1 55.0,16.4 56.2,16.3 57.5,16.1 58.8,15.9 60.0,15.3 61.2,14.2 62.5,15.2 63.8,15.8 65.0,14.6 66.2,13.9 67.5,14.6 68.8,14.7 70.0,16.6 71.2,18.2 72.5,17.3 73.8,17.9 75.0,17.7 76.2,17.9 77.5,15.3 78.8,13.1 80.0,12.6 81.2,12.2 82.5,12.3 83.8,11.6 85.0,11.1 86.2,10.2 87.5,9.4 88.8,10.2 90.0,10.4 91.2,10.8 92.5,9.4 93.8,8.5 95.0,7.2 96.2,7.8 97.5,8.1 98.8,8.5 100.0,8.0 101.2,8.5 102.5,9.0 103.8,8.0 105.0,8.7 106.2,8.1 107.5,7.4 108.8,4.6 110.0,4.6 111.2,5.1 112.5,4.7 113.8,5.0 115.0,3.0 116.2,3.2 117.5,2.0 118.8,3.1 120.0,3.3 "/>
+</svg>
+</td>
+          <td class="r muted sm">—</td>
+        </tr>
+      
+        <tr data-id="mag7">
+          <td><span class="bname" data-id="mag7"><span class="l-en">Magnificent Seven</span><span class="l-zh">七巨头</span></span>
+            <span class="cat">AI &amp; Tech</span>
+            
+          </td>
+          <td class="r num">
+  <span class="v-raw neg" data-v="-0.06">-0.1</span>
+  <span class="v-rel neg" data-v="-0.6">-0.6</span>
+</td>
+          <td class="r num">
+  <span class="v-raw neg" data-v="-2.46">-2.5</span>
+  <span class="v-rel neg" data-v="-3.03">-3.0</span>
+</td>
+          <td class="r num">
+  <span class="v-raw neg" data-v="-7.92">-7.9</span>
+  <span class="v-rel neg" data-v="-7.06">-7.1</span>
+</td>
+          <td class="r num">
+  <span class="v-raw pos" data-v="8.67">+8.7</span>
+  <span class="v-rel neg" data-v="-3.78">-3.8</span>
+</td>
+          <td class="r num">
+  <span class="v-raw neg" data-v="-0.16">-0.2</span>
+  <span class="v-rel neg" data-v="-9.23">-9.2</span>
+</td>
+          <td class="r">
+
+
+
+<svg viewBox="0 0 120 30" class="spark" preserveAspectRatio="none">
+  <polyline fill="none" stroke="var(--muted)" stroke-width="1" opacity="0.4" points="0.0,28.0 1.2,27.8 2.5,27.5 3.8,27.3 5.0,27.2 6.2,27.1 7.5,26.7 8.8,26.6 10.0,26.9 11.2,27.0 12.5,26.8 13.8,27.0 15.0,27.5 16.2,27.3 17.5,27.5 18.8,27.7 20.0,27.1 21.2,26.6 22.5,26.6 23.8,26.1 25.0,25.9 26.2,25.9 27.5,25.6 28.8,25.3 30.0,25.2 31.3,24.9 32.5,24.8 33.8,24.5 35.0,24.5 36.2,24.8 37.5,24.9 38.8,24.6 40.0,24.2 41.2,24.3 42.5,24.0 43.8,23.7 45.0,23.5 46.2,23.0 47.5,23.7 48.8,24.5 50.0,23.2 51.2,23.2 52.5,23.4 53.8,22.8 55.0,22.9 56.2,22.5 57.5,22.5 58.8,22.2 60.0,22.3 61.2,21.8 62.5,21.6 63.8,22.0 65.0,22.0 66.2,21.9 67.5,21.7 68.8,21.7 70.0,21.9 71.2,22.7 72.5,23.0 73.8,23.2 75.0,23.4 76.2,24.1 77.5,22.8 78.8,22.2 80.0,22.0 81.2,21.8 82.5,21.8 83.8,21.1 85.0,20.9 86.2,20.6 87.5,20.8 88.8,20.3 90.0,20.2 91.2,20.1 92.5,19.6 93.8,19.5 95.0,19.7 96.2,19.4 97.5,19.3 98.8,19.4 100.0,19.1 101.2,19.0 102.5,19.0 103.8,19.0 105.0,18.7 106.2,18.6 107.5,18.7 108.8,18.9 110.0,19.0 111.2,19.6 112.5,19.7 113.8,19.7 115.0,18.0 116.2,18.0 117.5,17.1 118.8,17.0 120.0,16.6 "/>
+  <polyline fill="none" stroke="var(--up)" stroke-width="1.5" points="0.0,27.9 1.2,27.0 2.5,25.7 3.8,25.1 5.0,25.1 6.2,24.9 7.5,24.4 8.8,24.0 10.0,24.9 11.2,24.6 12.5,24.0 13.8,24.2 15.0,25.1 16.2,24.2 17.5,24.9 18.8,25.4 20.0,23.9 21.2,23.3 22.5,23.6 23.8,23.1 25.0,22.7 26.2,22.6 27.5,22.2 28.8,21.4 30.0,21.1 31.3,20.8 32.5,20.9 33.8,20.2 35.0,20.5 36.2,20.1 37.5,20.9 38.8,19.6 40.0,19.4 41.2,18.7 42.5,18.2 43.8,17.4 45.0,15.7 46.2,15.7 47.5,17.7 48.8,19.2 50.0,16.7 51.2,17.5 52.5,17.2 53.8,16.0 55.0,16.1 56.2,15.9 57.5,14.9 58.8,14.1 60.0,13.8 61.2,13.4 62.5,10.7 63.8,10.9 65.0,10.7 66.2,11.3 67.5,11.1 68.8,11.9 70.0,12.6 71.2,14.9 72.5,16.4 73.8,16.1 75.0,15.9 76.2,18.1 77.5,15.0 78.8,12.5 80.0,12.5 81.2,12.4 82.5,12.0 83.8,11.4 85.0,10.5 86.2,9.9 87.5,9.7 88.8,8.1 90.0,8.1 91.2,7.5 92.5,5.6 93.8,5.5 95.0,6.0 96.2,5.4 97.5,4.5 98.8,5.6 100.0,4.9 101.2,4.3 102.5,4.3 103.8,4.7 105.0,4.9 106.2,4.0 107.5,5.8 108.8,6.6 110.0,6.7 111.2,7.4 112.5,8.0 113.8,8.4 115.0,3.8 116.2,3.7 117.5,2.1 118.8,2.0 120.0,2.4 "/>
+</svg>
+</td>
+          <td class="r muted sm">0.93</td>
+        </tr>
+      
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel" id="detail">
+    
+    <div class="bdetail" data-id="travel" hidden>
+      <h3><span class="l-en">Travel &amp; Experiences</span><span class="l-zh">旅行与体验</span> <span class="cat">Consumer</span></h3>
+      <p class="muted sm" style="margin:0 0 8px">Airlines, cruises, lodging, gaming</p>
+      <div class="ddl">
+        <span class="muted sm"><span class="l-en">Cumulative (3y)</span><span class="l-zh">累计（3年）</span><b class="pos">+110%</b></span>
+        <span class="muted sm"><span class="l-en">Sharpe</span><span class="l-zh">夏普</span><b>1.0</b></span>
+        <span class="muted sm"><span class="l-en">Max drawdown</span><span class="l-zh">最大回撤</span><b class="neg">-32.4%</b></span>
+        <span class="muted sm"><span class="l-en">Ann. vol</span><span class="l-zh">年化波动</span><b>28.2%</b></span>
+        <span class="muted sm"><span class="l-en">Members</span><span class="l-zh">成分</span><b>13</b></span>
+        
+      </div>
+      <div class="twocol" style="display:grid;grid-template-columns:1.4fr 1fr;gap:20px">
+        <div>
+          <h2><span class="l-en">Members (equal weight)</span><span class="l-zh">成分（等权）</span></h2>
+          <table><thead><tr><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">sector</span><span class="l-zh">板块</span></th><th class="r"><span class="l-en">wt</span><span class="l-zh">权重</span></th><th class="r">YTD</th></tr></thead><tbody>
+          
+            <tr><td><a href="stock.html#ABNB"><b>ABNB</b></a> <span class="muted sm">Airbnb</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r muted sm">7.7%</td>
+              <td class="r neg">-0.5%</td></tr>
+          
+            <tr><td><a href="stock.html#BKNG"><b>BKNG</b></a> <span class="muted sm">Booking Holdings</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r muted sm">7.7%</td>
+              <td class="r neg">-22.2%</td></tr>
+          
+            <tr><td><a href="stock.html#CCL"><b>CCL</b></a> <span class="muted sm">Carnival Corporation</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r muted sm">7.7%</td>
+              <td class="r neg">-4.6%</td></tr>
+          
+            <tr><td><a href="stock.html#DAL"><b>DAL</b></a> <span class="muted sm">Delta Air Lines</span></td>
+              <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r muted sm">7.7%</td>
+              <td class="r pos">+20.9%</td></tr>
+          
+            <tr><td><a href="stock.html#EXPE"><b>EXPE</b></a> <span class="muted sm">Expedia Group</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r muted sm">7.7%</td>
+              <td class="r neg">-20.2%</td></tr>
+          
+            <tr><td><a href="stock.html#HLT"><b>HLT</b></a> <span class="muted sm">Hilton Worldwide</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r muted sm">7.7%</td>
+              <td class="r pos">+18.2%</td></tr>
+          
+            <tr><td><a href="stock.html#LVS"><b>LVS</b></a> <span class="muted sm">Las Vegas Sands</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r muted sm">7.7%</td>
+              <td class="r neg">-21.4%</td></tr>
+          
+            <tr><td><a href="stock.html#MGM"><b>MGM</b></a> <span class="muted sm">MGM Resorts</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r muted sm">7.7%</td>
+              <td class="r pos">+34.2%</td></tr>
+          
+            <tr><td><a href="stock.html#MAR"><b>MAR</b></a> <span class="muted sm">Marriott International</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r muted sm">7.7%</td>
+              <td class="r pos">+28.9%</td></tr>
+          
+            <tr><td><a href="stock.html#NCLH"><b>NCLH</b></a> <span class="muted sm">Norwegian Cruise Line Ho</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r muted sm">7.7%</td>
+              <td class="r neg">-14.7%</td></tr>
+          
+            <tr><td><a href="stock.html#RCL"><b>RCL</b></a> <span class="muted sm">Royal Caribbean Group</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r muted sm">7.7%</td>
+              <td class="r pos">+5.0%</td></tr>
+          
+            <tr><td><a href="stock.html#LUV"><b>LUV</b></a> <span class="muted sm">Southwest Airlines</span></td>
+              <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r muted sm">7.7%</td>
+              <td class="r pos">+11.1%</td></tr>
+          
+            <tr><td><a href="stock.html#UAL"><b>UAL</b></a> <span class="muted sm">United Airlines Holdings</span></td>
+              <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r muted sm">7.7%</td>
+              <td class="r pos">+2.2%</td></tr>
+          
+          </tbody></table>
+        </div>
+        <div>
+          <h2><span class="l-en">Membership changelog</span><span class="l-zh">成分变更记录</span></h2>
+          <p class="muted sm"><span class="l-en">Seeded 2023-05-09 (curated 2026-06-14, applied to full history — hindsight, not out-of-sample).</span><span class="l-zh">建立于 2023-05-09（2026-06-14 整理并应用于全历史 — 事后选取，非样本外）。</span></p>
+          <span class="chip">2023-05-09 · +BKNG</span><span class="chip">2023-05-09 · +MAR</span><span class="chip">2023-05-09 · +HLT</span><span class="chip">2023-05-09 · +RCL</span><span class="chip">2023-05-09 · +CCL</span><span class="chip">2023-05-09 · +NCLH</span><span class="chip">2023-05-09 · +DAL</span><span class="chip">2023-05-09 · +UAL</span><span class="chip">2023-05-09 · +LUV</span><span class="chip">2023-05-09 · +ABNB</span><span class="chip">2023-05-09 · +EXPE</span><span class="chip">2023-05-09 · +LVS</span><span class="chip">2023-05-09 · +MGM</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bdetail" data-id="regional_banks" hidden>
+      <h3><span class="l-en">Regional Banks</span><span class="l-zh">区域银行</span> <span class="cat">Financials</span></h3>
+      <p class="muted sm" style="margin:0 0 8px">Mid/large regional lenders · <span class="miss"><span class="l-en">omitted (not in free cache):</span><span class="l-zh">已剔除（不在免费缓存）：</span> ZION, CMA (not in free cache)</span></p>
+      <div class="ddl">
+        <span class="muted sm"><span class="l-en">Cumulative (3y)</span><span class="l-zh">累计（3年）</span><b class="pos">+140%</b></span>
+        <span class="muted sm"><span class="l-en">Sharpe</span><span class="l-zh">夏普</span><b>1.16</b></span>
+        <span class="muted sm"><span class="l-en">Max drawdown</span><span class="l-zh">最大回撤</span><b class="neg">-29.6%</b></span>
+        <span class="muted sm"><span class="l-en">Ann. vol</span><span class="l-zh">年化波动</span><b>27.9%</b></span>
+        <span class="muted sm"><span class="l-en">Members</span><span class="l-zh">成分</span><b>8</b></span>
+        
+      </div>
+      <div class="twocol" style="display:grid;grid-template-columns:1.4fr 1fr;gap:20px">
+        <div>
+          <h2><span class="l-en">Members (equal weight)</span><span class="l-zh">成分（等权）</span></h2>
+          <table><thead><tr><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">sector</span><span class="l-zh">板块</span></th><th class="r"><span class="l-en">wt</span><span class="l-zh">权重</span></th><th class="r">YTD</th></tr></thead><tbody>
+          
+            <tr><td><a href="stock.html#CFG"><b>CFG</b></a> <span class="muted sm">Citizens Financial Group</span></td>
+              <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r muted sm">12.5%</td>
+              <td class="r pos">+15.5%</td></tr>
+          
+            <tr><td><a href="stock.html#FITB"><b>FITB</b></a> <span class="muted sm">Fifth Third Bancorp</span></td>
+              <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r muted sm">12.5%</td>
+              <td class="r pos">+15.8%</td></tr>
+          
+            <tr><td><a href="stock.html#HBAN"><b>HBAN</b></a> <span class="muted sm">Huntington Bancshares</span></td>
+              <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r muted sm">12.5%</td>
+              <td class="r pos">+1.2%</td></tr>
+          
+            <tr><td><a href="stock.html#KEY"><b>KEY</b></a> <span class="muted sm">KeyCorp</span></td>
+              <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r muted sm">12.5%</td>
+              <td class="r pos">+10.4%</td></tr>
+          
+            <tr><td><a href="stock.html#MTB"><b>MTB</b></a> <span class="muted sm">M&amp;T Bank</span></td>
+              <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r muted sm">12.5%</td>
+              <td class="r pos">+15.2%</td></tr>
+          
+            <tr><td><a href="stock.html#RF"><b>RF</b></a> <span class="muted sm">Regions Financial Corpor</span></td>
+              <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r muted sm">12.5%</td>
+              <td class="r pos">+8.3%</td></tr>
+          
+            <tr><td><a href="stock.html#TFC"><b>TFC</b></a> <span class="muted sm">Truist Financial</span></td>
+              <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r muted sm">12.5%</td>
+              <td class="r pos">+6.0%</td></tr>
+          
+            <tr><td><a href="stock.html#USB"><b>USB</b></a> <span class="muted sm">U.S. Bancorp</span></td>
+              <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r muted sm">12.5%</td>
+              <td class="r pos">+10.4%</td></tr>
+          
+          </tbody></table>
+        </div>
+        <div>
+          <h2><span class="l-en">Membership changelog</span><span class="l-zh">成分变更记录</span></h2>
+          <p class="muted sm"><span class="l-en">Seeded 2023-05-09 (curated 2026-06-14, applied to full history — hindsight, not out-of-sample).</span><span class="l-zh">建立于 2023-05-09（2026-06-14 整理并应用于全历史 — 事后选取，非样本外）。</span></p>
+          <span class="chip">2023-05-09 · +RF</span><span class="chip">2023-05-09 · +KEY</span><span class="chip">2023-05-09 · +CFG</span><span class="chip">2023-05-09 · +HBAN</span><span class="chip">2023-05-09 · +FITB</span><span class="chip">2023-05-09 · +MTB</span><span class="chip">2023-05-09 · +TFC</span><span class="chip">2023-05-09 · +USB</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bdetail" data-id="retail" hidden>
+      <h3><span class="l-en">Retail</span><span class="l-zh">零售</span> <span class="cat">Consumer</span></h3>
+      <p class="muted sm" style="margin:0 0 8px">Big-box, off-price &amp; discount retail</p>
+      <div class="ddl">
+        <span class="muted sm"><span class="l-en">Cumulative (3y)</span><span class="l-zh">累计（3年）</span><b class="pos">+46%</b></span>
+        <span class="muted sm"><span class="l-en">Sharpe</span><span class="l-zh">夏普</span><b>0.8</b></span>
+        <span class="muted sm"><span class="l-en">Max drawdown</span><span class="l-zh">最大回撤</span><b class="neg">-15.5%</b></span>
+        <span class="muted sm"><span class="l-en">Ann. vol</span><span class="l-zh">年化波动</span><b>17.4%</b></span>
+        <span class="muted sm"><span class="l-en">Members</span><span class="l-zh">成分</span><b>10</b></span>
+        <span class="muted sm"><span class="l-en">ρ vs</span><span class="l-zh">相关</span> XLY<b>0.59</b></span>
+      </div>
+      <div class="twocol" style="display:grid;grid-template-columns:1.4fr 1fr;gap:20px">
+        <div>
+          <h2><span class="l-en">Members (equal weight)</span><span class="l-zh">成分（等权）</span></h2>
+          <table><thead><tr><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">sector</span><span class="l-zh">板块</span></th><th class="r"><span class="l-en">wt</span><span class="l-zh">权重</span></th><th class="r">YTD</th></tr></thead><tbody>
+          
+            <tr><td><a href="stock.html#BBY"><b>BBY</b></a> <span class="muted sm">Best Buy</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r muted sm">10.0%</td>
+              <td class="r pos">+15.2%</td></tr>
+          
+            <tr><td><a href="stock.html#COST"><b>COST</b></a> <span class="muted sm">Costco</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></td><td class="r muted sm">10.0%</td>
+              <td class="r pos">+15.3%</td></tr>
+          
+            <tr><td><a href="stock.html#DG"><b>DG</b></a> <span class="muted sm">Dollar General</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></td><td class="r muted sm">10.0%</td>
+              <td class="r neg">-15.3%</td></tr>
+          
+            <tr><td><a href="stock.html#DLTR"><b>DLTR</b></a> <span class="muted sm">Dollar Tree</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></td><td class="r muted sm">10.0%</td>
+              <td class="r neg">-10.7%</td></tr>
+          
+            <tr><td><a href="stock.html#HD"><b>HD</b></a> <span class="muted sm">Home Depot (The)</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r muted sm">10.0%</td>
+              <td class="r neg">-3.7%</td></tr>
+          
+            <tr><td><a href="stock.html#LOW"><b>LOW</b></a> <span class="muted sm">Lowe&#39;s</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r muted sm">10.0%</td>
+              <td class="r neg">-9.7%</td></tr>
+          
+            <tr><td><a href="stock.html#ROST"><b>ROST</b></a> <span class="muted sm">Ross Stores</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r muted sm">10.0%</td>
+              <td class="r pos">+31.9%</td></tr>
+          
+            <tr><td><a href="stock.html#TJX"><b>TJX</b></a> <span class="muted sm">TJX Companies</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r muted sm">10.0%</td>
+              <td class="r pos">+9.8%</td></tr>
+          
+            <tr><td><a href="stock.html#TGT"><b>TGT</b></a> <span class="muted sm">Target Corporation</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></td><td class="r muted sm">10.0%</td>
+              <td class="r pos">+37.2%</td></tr>
+          
+            <tr><td><a href="stock.html#WMT"><b>WMT</b></a> <span class="muted sm">Walmart</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></td><td class="r muted sm">10.0%</td>
+              <td class="r pos">+7.8%</td></tr>
+          
+          </tbody></table>
+        </div>
+        <div>
+          <h2><span class="l-en">Membership changelog</span><span class="l-zh">成分变更记录</span></h2>
+          <p class="muted sm"><span class="l-en">Seeded 2023-05-09 (curated 2026-06-14, applied to full history — hindsight, not out-of-sample).</span><span class="l-zh">建立于 2023-05-09（2026-06-14 整理并应用于全历史 — 事后选取，非样本外）。</span></p>
+          <span class="chip">2023-05-09 · +WMT</span><span class="chip">2023-05-09 · +COST</span><span class="chip">2023-05-09 · +TGT</span><span class="chip">2023-05-09 · +HD</span><span class="chip">2023-05-09 · +LOW</span><span class="chip">2023-05-09 · +TJX</span><span class="chip">2023-05-09 · +ROST</span><span class="chip">2023-05-09 · +DG</span><span class="chip">2023-05-09 · +DLTR</span><span class="chip">2023-05-09 · +BBY</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bdetail" data-id="managed_care" hidden>
+      <h3><span class="l-en">Managed Care &amp; Insurers</span><span class="l-zh">管理式医疗与保险</span> <span class="cat">Health</span></h3>
+      <p class="muted sm" style="margin:0 0 8px">Health insurers / MCOs</p>
+      <div class="ddl">
+        <span class="muted sm"><span class="l-en">Cumulative (3y)</span><span class="l-zh">累计（3年）</span><b class="neg">-1%</b></span>
+        <span class="muted sm"><span class="l-en">Sharpe</span><span class="l-zh">夏普</span><b>0.14</b></span>
+        <span class="muted sm"><span class="l-en">Max drawdown</span><span class="l-zh">最大回撤</span><b class="neg">-48.2%</b></span>
+        <span class="muted sm"><span class="l-en">Ann. vol</span><span class="l-zh">年化波动</span><b>28.2%</b></span>
+        <span class="muted sm"><span class="l-en">Members</span><span class="l-zh">成分</span><b>6</b></span>
+        <span class="muted sm"><span class="l-en">ρ vs</span><span class="l-zh">相关</span> XLV<b>0.49</b></span>
+      </div>
+      <div class="twocol" style="display:grid;grid-template-columns:1.4fr 1fr;gap:20px">
+        <div>
+          <h2><span class="l-en">Members (equal weight)</span><span class="l-zh">成分（等权）</span></h2>
+          <table><thead><tr><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">sector</span><span class="l-zh">板块</span></th><th class="r"><span class="l-en">wt</span><span class="l-zh">权重</span></th><th class="r">YTD</th></tr></thead><tbody>
+          
+            <tr><td><a href="stock.html#CNC"><b>CNC</b></a> <span class="muted sm">Centene Corporation</span></td>
+              <td class="muted sm"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td><td class="r muted sm">16.7%</td>
+              <td class="r pos">+56.0%</td></tr>
+          
+            <tr><td><a href="stock.html#CI"><b>CI</b></a> <span class="muted sm">Cigna</span></td>
+              <td class="muted sm"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td><td class="r muted sm">16.7%</td>
+              <td class="r pos">+8.0%</td></tr>
+          
+            <tr><td><a href="stock.html#ELV"><b>ELV</b></a> <span class="muted sm">Elevance Health</span></td>
+              <td class="muted sm"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td><td class="r muted sm">16.7%</td>
+              <td class="r pos">+15.2%</td></tr>
+          
+            <tr><td><a href="stock.html#HUM"><b>HUM</b></a> <span class="muted sm">Humana</span></td>
+              <td class="muted sm"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td><td class="r muted sm">16.7%</td>
+              <td class="r pos">+44.1%</td></tr>
+          
+            <tr><td><a href="stock.html#MOH"><b>MOH</b></a> <span class="muted sm">Molina Healthcare</span></td>
+              <td class="muted sm"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td><td class="r muted sm">16.7%</td>
+              <td class="r pos">+12.2%</td></tr>
+          
+            <tr><td><a href="stock.html#UNH"><b>UNH</b></a> <span class="muted sm">UnitedHealth Group</span></td>
+              <td class="muted sm"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td><td class="r muted sm">16.7%</td>
+              <td class="r pos">+22.4%</td></tr>
+          
+          </tbody></table>
+        </div>
+        <div>
+          <h2><span class="l-en">Membership changelog</span><span class="l-zh">成分变更记录</span></h2>
+          <p class="muted sm"><span class="l-en">Seeded 2023-05-09 (curated 2026-06-14, applied to full history — hindsight, not out-of-sample).</span><span class="l-zh">建立于 2023-05-09（2026-06-14 整理并应用于全历史 — 事后选取，非样本外）。</span></p>
+          <span class="chip">2023-05-09 · +UNH</span><span class="chip">2023-05-09 · +ELV</span><span class="chip">2023-05-09 · +CI</span><span class="chip">2023-05-09 · +HUM</span><span class="chip">2023-05-09 · +CNC</span><span class="chip">2023-05-09 · +MOH</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bdetail" data-id="housing" hidden>
+      <h3><span class="l-en">Housing Chain</span><span class="l-zh">住房产业链</span> <span class="cat">Consumer</span></h3>
+      <p class="muted sm" style="margin:0 0 8px">Builders &amp; building products · <span class="miss"><span class="l-en">omitted (not in free cache):</span><span class="l-zh">已剔除（不在免费缓存）：</span> WHR (not in free cache)</span></p>
+      <div class="ddl">
+        <span class="muted sm"><span class="l-en">Cumulative (3y)</span><span class="l-zh">累计（3年）</span><b class="pos">+25%</b></span>
+        <span class="muted sm"><span class="l-en">Sharpe</span><span class="l-zh">夏普</span><b>0.41</b></span>
+        <span class="muted sm"><span class="l-en">Max drawdown</span><span class="l-zh">最大回撤</span><b class="neg">-34.5%</b></span>
+        <span class="muted sm"><span class="l-en">Ann. vol</span><span class="l-zh">年化波动</span><b>25.8%</b></span>
+        <span class="muted sm"><span class="l-en">Members</span><span class="l-zh">成分</span><b>9</b></span>
+        
+      </div>
+      <div class="twocol" style="display:grid;grid-template-columns:1.4fr 1fr;gap:20px">
+        <div>
+          <h2><span class="l-en">Members (equal weight)</span><span class="l-zh">成分（等权）</span></h2>
+          <table><thead><tr><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">sector</span><span class="l-zh">板块</span></th><th class="r"><span class="l-en">wt</span><span class="l-zh">权重</span></th><th class="r">YTD</th></tr></thead><tbody>
+          
+            <tr><td><a href="stock.html#BLDR"><b>BLDR</b></a> <span class="muted sm">Builders FirstSource</span></td>
+              <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r muted sm">11.1%</td>
+              <td class="r neg">-25.7%</td></tr>
+          
+            <tr><td><a href="stock.html#DHI"><b>DHI</b></a> <span class="muted sm">D. R. Horton</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r muted sm">11.1%</td>
+              <td class="r pos">+6.4%</td></tr>
+          
+            <tr><td><a href="stock.html#HD"><b>HD</b></a> <span class="muted sm">Home Depot (The)</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r muted sm">11.1%</td>
+              <td class="r neg">-3.7%</td></tr>
+          
+            <tr><td><a href="stock.html#LEN"><b>LEN</b></a> <span class="muted sm">Lennar</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r muted sm">11.1%</td>
+              <td class="r neg">-12.5%</td></tr>
+          
+            <tr><td><a href="stock.html#LOW"><b>LOW</b></a> <span class="muted sm">Lowe&#39;s</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r muted sm">11.1%</td>
+              <td class="r neg">-9.7%</td></tr>
+          
+            <tr><td><a href="stock.html#MAS"><b>MAS</b></a> <span class="muted sm">Masco</span></td>
+              <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r muted sm">11.1%</td>
+              <td class="r pos">+15.9%</td></tr>
+          
+            <tr><td><a href="stock.html#NVR"><b>NVR</b></a> <span class="muted sm">NVR, Inc.</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r muted sm">11.1%</td>
+              <td class="r neg">-12.4%</td></tr>
+          
+            <tr><td><a href="stock.html#PHM"><b>PHM</b></a> <span class="muted sm">PulteGroup</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r muted sm">11.1%</td>
+              <td class="r pos">+3.7%</td></tr>
+          
+            <tr><td><a href="stock.html#SHW"><b>SHW</b></a> <span class="muted sm">Sherwin-Williams</span></td>
+              <td class="muted sm"><span class="l-en">Materials</span><span class="l-zh">原材料</span></td><td class="r muted sm">11.1%</td>
+              <td class="r neg">-2.7%</td></tr>
+          
+          </tbody></table>
+        </div>
+        <div>
+          <h2><span class="l-en">Membership changelog</span><span class="l-zh">成分变更记录</span></h2>
+          <p class="muted sm"><span class="l-en">Seeded 2023-05-09 (curated 2026-06-14, applied to full history — hindsight, not out-of-sample).</span><span class="l-zh">建立于 2023-05-09（2026-06-14 整理并应用于全历史 — 事后选取，非样本外）。</span></p>
+          <span class="chip">2023-05-09 · +DHI</span><span class="chip">2023-05-09 · +LEN</span><span class="chip">2023-05-09 · +PHM</span><span class="chip">2023-05-09 · +NVR</span><span class="chip">2023-05-09 · +BLDR</span><span class="chip">2023-05-09 · +MAS</span><span class="chip">2023-05-09 · +SHW</span><span class="chip">2023-05-09 · +HD</span><span class="chip">2023-05-09 · +LOW</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bdetail" data-id="ai_infra" hidden>
+      <h3><span class="l-en">AI Infrastructure</span><span class="l-zh">AI 基础设施</span> <span class="cat">AI &amp; Tech</span></h3>
+      <p class="muted sm" style="margin:0 0 8px">Compute, networking &amp; power for AI buildout · <span class="miss"><span class="l-en">omitted (not in free cache):</span><span class="l-zh">已剔除（不在免费缓存）：</span> MRVL (not in free cache)</span></p>
+      <div class="ddl">
+        <span class="muted sm"><span class="l-en">Cumulative (3y)</span><span class="l-zh">累计（3年）</span><b class="pos">+913%</b></span>
+        <span class="muted sm"><span class="l-en">Sharpe</span><span class="l-zh">夏普</span><b>1.97</b></span>
+        <span class="muted sm"><span class="l-en">Max drawdown</span><span class="l-zh">最大回撤</span><b class="neg">-38.8%</b></span>
+        <span class="muted sm"><span class="l-en">Ann. vol</span><span class="l-zh">年化波动</span><b>42.8%</b></span>
+        <span class="muted sm"><span class="l-en">Members</span><span class="l-zh">成分</span><b>9</b></span>
+        <span class="muted sm"><span class="l-en">ρ vs</span><span class="l-zh">相关</span> SMH<b>0.9</b></span>
+      </div>
+      <div class="twocol" style="display:grid;grid-template-columns:1.4fr 1fr;gap:20px">
+        <div>
+          <h2><span class="l-en">Members (equal weight)</span><span class="l-zh">成分（等权）</span></h2>
+          <table><thead><tr><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">sector</span><span class="l-zh">板块</span></th><th class="r"><span class="l-en">wt</span><span class="l-zh">权重</span></th><th class="r">YTD</th></tr></thead><tbody>
+          
+            <tr><td><a href="stock.html#AMD"><b>AMD</b></a> <span class="muted sm">Advanced Micro Devices</span></td>
+              <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r muted sm">11.1%</td>
+              <td class="r pos">+128.9%</td></tr>
+          
+            <tr><td><a href="stock.html#ANET"><b>ANET</b></a> <span class="muted sm">Arista Networks</span></td>
+              <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r muted sm">11.1%</td>
+              <td class="r pos">+22.2%</td></tr>
+          
+            <tr><td><a href="stock.html#AVGO"><b>AVGO</b></a> <span class="muted sm">Broadcom</span></td>
+              <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r muted sm">11.1%</td>
+              <td class="r pos">+10.1%</td></tr>
+          
+            <tr><td><a href="stock.html#CIEN"><b>CIEN</b></a> <span class="muted sm">Ciena</span></td>
+              <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r muted sm">11.1%</td>
+              <td class="r pos">+81.2%</td></tr>
+          
+            <tr><td><a href="stock.html#DELL"><b>DELL</b></a> <span class="muted sm">Dell Technologies</span></td>
+              <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r muted sm">11.1%</td>
+              <td class="r pos">+211.8%</td></tr>
+          
+            <tr><td><a href="stock.html#MU"><b>MU</b></a> <span class="muted sm">Micron Technology</span></td>
+              <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r muted sm">11.1%</td>
+              <td class="r pos">+211.3%</td></tr>
+          
+            <tr><td><a href="stock.html#NVDA"><b>NVDA</b></a> <span class="muted sm">Nvidia</span></td>
+              <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r muted sm">11.1%</td>
+              <td class="r pos">+8.8%</td></tr>
+          
+            <tr><td><a href="stock.html#SMCI"><b>SMCI</b></a> <span class="muted sm">Supermicro</span></td>
+              <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r muted sm">11.1%</td>
+              <td class="r neg">-1.6%</td></tr>
+          
+            <tr><td><a href="stock.html#VRT"><b>VRT</b></a> <span class="muted sm">Vertiv</span></td>
+              <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r muted sm">11.1%</td>
+              <td class="r pos">+72.5%</td></tr>
+          
+          </tbody></table>
+        </div>
+        <div>
+          <h2><span class="l-en">Membership changelog</span><span class="l-zh">成分变更记录</span></h2>
+          <p class="muted sm"><span class="l-en">Seeded 2023-05-09 (curated 2026-06-14, applied to full history — hindsight, not out-of-sample).</span><span class="l-zh">建立于 2023-05-09（2026-06-14 整理并应用于全历史 — 事后选取，非样本外）。</span></p>
+          <span class="chip">2023-05-09 · +NVDA</span><span class="chip">2023-05-09 · +AVGO</span><span class="chip">2023-05-09 · +AMD</span><span class="chip">2023-05-09 · +MU</span><span class="chip">2023-05-09 · +ANET</span><span class="chip">2023-05-09 · +VRT</span><span class="chip">2023-05-09 · +DELL</span><span class="chip">2023-05-09 · +SMCI</span><span class="chip">2023-05-09 · +CIEN</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bdetail" data-id="defense" hidden>
+      <h3><span class="l-en">Defense &amp; Aerospace</span><span class="l-zh">国防与航空航天</span> <span class="cat">Industrials</span></h3>
+      <p class="muted sm" style="margin:0 0 8px">Primes &amp; defense-tech</p>
+      <div class="ddl">
+        <span class="muted sm"><span class="l-en">Cumulative (3y)</span><span class="l-zh">累计（3年）</span><b class="pos">+100%</b></span>
+        <span class="muted sm"><span class="l-en">Sharpe</span><span class="l-zh">夏普</span><b>1.36</b></span>
+        <span class="muted sm"><span class="l-en">Max drawdown</span><span class="l-zh">最大回撤</span><b class="neg">-17.8%</b></span>
+        <span class="muted sm"><span class="l-en">Ann. vol</span><span class="l-zh">年化波动</span><b>17.8%</b></span>
+        <span class="muted sm"><span class="l-en">Members</span><span class="l-zh">成分</span><b>10</b></span>
+        
+      </div>
+      <div class="twocol" style="display:grid;grid-template-columns:1.4fr 1fr;gap:20px">
+        <div>
+          <h2><span class="l-en">Members (equal weight)</span><span class="l-zh">成分（等权）</span></h2>
+          <table><thead><tr><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">sector</span><span class="l-zh">板块</span></th><th class="r"><span class="l-en">wt</span><span class="l-zh">权重</span></th><th class="r">YTD</th></tr></thead><tbody>
+          
+            <tr><td><a href="stock.html#AXON"><b>AXON</b></a> <span class="muted sm">Axon Enterprise</span></td>
+              <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r muted sm">10.0%</td>
+              <td class="r neg">-21.6%</td></tr>
+          
+            <tr><td><a href="stock.html#BA"><b>BA</b></a> <span class="muted sm">Boeing</span></td>
+              <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r muted sm">10.0%</td>
+              <td class="r neg">-3.8%</td></tr>
+          
+            <tr><td><a href="stock.html#GD"><b>GD</b></a> <span class="muted sm">General Dynamics</span></td>
+              <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r muted sm">10.0%</td>
+              <td class="r pos">+5.8%</td></tr>
+          
+            <tr><td><a href="stock.html#HWM"><b>HWM</b></a> <span class="muted sm">Howmet Aerospace</span></td>
+              <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r muted sm">10.0%</td>
+              <td class="r pos">+25.1%</td></tr>
+          
+            <tr><td><a href="stock.html#HII"><b>HII</b></a> <span class="muted sm">Huntington Ingalls Indus</span></td>
+              <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r muted sm">10.0%</td>
+              <td class="r neg">-14.3%</td></tr>
+          
+            <tr><td><a href="stock.html#LHX"><b>LHX</b></a> <span class="muted sm">L3Harris</span></td>
+              <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r muted sm">10.0%</td>
+              <td class="r pos">+1.9%</td></tr>
+          
+            <tr><td><a href="stock.html#LMT"><b>LMT</b></a> <span class="muted sm">Lockheed Martin</span></td>
+              <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r muted sm">10.0%</td>
+              <td class="r pos">+10.0%</td></tr>
+          
+            <tr><td><a href="stock.html#NOC"><b>NOC</b></a> <span class="muted sm">Northrop Grumman</span></td>
+              <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r muted sm">10.0%</td>
+              <td class="r neg">-5.3%</td></tr>
+          
+            <tr><td><a href="stock.html#RTX"><b>RTX</b></a> <span class="muted sm">RTX Corporation</span></td>
+              <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r muted sm">10.0%</td>
+              <td class="r neg">-1.3%</td></tr>
+          
+            <tr><td><a href="stock.html#TDG"><b>TDG</b></a> <span class="muted sm">TransDigm Group</span></td>
+              <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r muted sm">10.0%</td>
+              <td class="r neg">-7.5%</td></tr>
+          
+          </tbody></table>
+        </div>
+        <div>
+          <h2><span class="l-en">Membership changelog</span><span class="l-zh">成分变更记录</span></h2>
+          <p class="muted sm"><span class="l-en">Seeded 2023-05-09 (curated 2026-06-14, applied to full history — hindsight, not out-of-sample).</span><span class="l-zh">建立于 2023-05-09（2026-06-14 整理并应用于全历史 — 事后选取，非样本外）。</span></p>
+          <span class="chip">2023-05-09 · +LMT</span><span class="chip">2023-05-09 · +RTX</span><span class="chip">2023-05-09 · +NOC</span><span class="chip">2023-05-09 · +GD</span><span class="chip">2023-05-09 · +LHX</span><span class="chip">2023-05-09 · +HII</span><span class="chip">2023-05-09 · +BA</span><span class="chip">2023-05-09 · +TDG</span><span class="chip">2023-05-09 · +AXON</span><span class="chip">2023-05-09 · +HWM</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bdetail" data-id="reshoring" hidden>
+      <h3><span class="l-en">Reshoring &amp; Industrial Capex</span><span class="l-zh">回流与工业资本开支</span> <span class="cat">Industrials</span></h3>
+      <p class="muted sm" style="margin:0 0 8px">Onshoring &amp; capex beneficiaries · <span class="miss"><span class="l-en">omitted (not in free cache):</span><span class="l-zh">已剔除（不在免费缓存）：</span> GGG (not in free cache)</span></p>
+      <div class="ddl">
+        <span class="muted sm"><span class="l-en">Cumulative (3y)</span><span class="l-zh">累计（3年）</span><b class="pos">+166%</b></span>
+        <span class="muted sm"><span class="l-en">Sharpe</span><span class="l-zh">夏普</span><b>1.5</b></span>
+        <span class="muted sm"><span class="l-en">Max drawdown</span><span class="l-zh">最大回撤</span><b class="neg">-26.0%</b></span>
+        <span class="muted sm"><span class="l-en">Ann. vol</span><span class="l-zh">年化波动</span><b>23.0%</b></span>
+        <span class="muted sm"><span class="l-en">Members</span><span class="l-zh">成分</span><b>9</b></span>
+        <span class="muted sm"><span class="l-en">ρ vs</span><span class="l-zh">相关</span> XLI<b>0.92</b></span>
+      </div>
+      <div class="twocol" style="display:grid;grid-template-columns:1.4fr 1fr;gap:20px">
+        <div>
+          <h2><span class="l-en">Members (equal weight)</span><span class="l-zh">成分（等权）</span></h2>
+          <table><thead><tr><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">sector</span><span class="l-zh">板块</span></th><th class="r"><span class="l-en">wt</span><span class="l-zh">权重</span></th><th class="r">YTD</th></tr></thead><tbody>
+          
+            <tr><td><a href="stock.html#CAT"><b>CAT</b></a> <span class="muted sm">Caterpillar Inc.</span></td>
+              <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r muted sm">11.1%</td>
+              <td class="r pos">+52.8%</td></tr>
+          
+            <tr><td><a href="stock.html#DE"><b>DE</b></a> <span class="muted sm">Deere &amp; Company</span></td>
+              <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r muted sm">11.1%</td>
+              <td class="r pos">+24.1%</td></tr>
+          
+            <tr><td><a href="stock.html#ETN"><b>ETN</b></a> <span class="muted sm">Eaton Corporation</span></td>
+              <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r muted sm">11.1%</td>
+              <td class="r pos">+20.3%</td></tr>
+          
+            <tr><td><a href="stock.html#EMR"><b>EMR</b></a> <span class="muted sm">Emerson Electric</span></td>
+              <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r muted sm">11.1%</td>
+              <td class="r pos">+6.2%</td></tr>
+          
+            <tr><td><a href="stock.html#FAST"><b>FAST</b></a> <span class="muted sm">Fastenal</span></td>
+              <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r muted sm">11.1%</td>
+              <td class="r pos">+16.4%</td></tr>
+          
+            <tr><td><a href="stock.html#PH"><b>PH</b></a> <span class="muted sm">Parker Hannifin</span></td>
+              <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r muted sm">11.1%</td>
+              <td class="r pos">+1.5%</td></tr>
+          
+            <tr><td><a href="stock.html#PWR"><b>PWR</b></a> <span class="muted sm">Quanta Services</span></td>
+              <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r muted sm">11.1%</td>
+              <td class="r pos">+61.0%</td></tr>
+          
+            <tr><td><a href="stock.html#ROK"><b>ROK</b></a> <span class="muted sm">Rockwell Automation</span></td>
+              <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r muted sm">11.1%</td>
+              <td class="r pos">+16.0%</td></tr>
+          
+            <tr><td><a href="stock.html#URI"><b>URI</b></a> <span class="muted sm">United Rentals</span></td>
+              <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r muted sm">11.1%</td>
+              <td class="r pos">+27.7%</td></tr>
+          
+          </tbody></table>
+        </div>
+        <div>
+          <h2><span class="l-en">Membership changelog</span><span class="l-zh">成分变更记录</span></h2>
+          <p class="muted sm"><span class="l-en">Seeded 2023-05-09 (curated 2026-06-14, applied to full history — hindsight, not out-of-sample).</span><span class="l-zh">建立于 2023-05-09（2026-06-14 整理并应用于全历史 — 事后选取，非样本外）。</span></p>
+          <span class="chip">2023-05-09 · +ETN</span><span class="chip">2023-05-09 · +PH</span><span class="chip">2023-05-09 · +EMR</span><span class="chip">2023-05-09 · +ROK</span><span class="chip">2023-05-09 · +CAT</span><span class="chip">2023-05-09 · +DE</span><span class="chip">2023-05-09 · +URI</span><span class="chip">2023-05-09 · +PWR</span><span class="chip">2023-05-09 · +FAST</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bdetail" data-id="defensives" hidden>
+      <h3><span class="l-en">Defensives</span><span class="l-zh">防御板块</span> <span class="cat">Consumer</span></h3>
+      <p class="muted sm" style="margin:0 0 8px">Staples &amp; defensive cash-flows</p>
+      <div class="ddl">
+        <span class="muted sm"><span class="l-en">Cumulative (3y)</span><span class="l-zh">累计（3年）</span><b class="pos">+18%</b></span>
+        <span class="muted sm"><span class="l-en">Sharpe</span><span class="l-zh">夏普</span><b>0.48</b></span>
+        <span class="muted sm"><span class="l-en">Max drawdown</span><span class="l-zh">最大回撤</span><b class="neg">-11.8%</b></span>
+        <span class="muted sm"><span class="l-en">Ann. vol</span><span class="l-zh">年化波动</span><b>12.9%</b></span>
+        <span class="muted sm"><span class="l-en">Members</span><span class="l-zh">成分</span><b>10</b></span>
+        <span class="muted sm"><span class="l-en">ρ vs</span><span class="l-zh">相关</span> XLP<b>0.94</b></span>
+      </div>
+      <div class="twocol" style="display:grid;grid-template-columns:1.4fr 1fr;gap:20px">
+        <div>
+          <h2><span class="l-en">Members (equal weight)</span><span class="l-zh">成分（等权）</span></h2>
+          <table><thead><tr><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">sector</span><span class="l-zh">板块</span></th><th class="r"><span class="l-en">wt</span><span class="l-zh">权重</span></th><th class="r">YTD</th></tr></thead><tbody>
+          
+            <tr><td><a href="stock.html#KO"><b>KO</b></a> <span class="muted sm">Coca-Cola Company (The)</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></td><td class="r muted sm">10.0%</td>
+              <td class="r pos">+20.4%</td></tr>
+          
+            <tr><td><a href="stock.html#CL"><b>CL</b></a> <span class="muted sm">Colgate-Palmolive</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></td><td class="r muted sm">10.0%</td>
+              <td class="r pos">+16.6%</td></tr>
+          
+            <tr><td><a href="stock.html#COST"><b>COST</b></a> <span class="muted sm">Costco</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></td><td class="r muted sm">10.0%</td>
+              <td class="r pos">+15.3%</td></tr>
+          
+            <tr><td><a href="stock.html#GIS"><b>GIS</b></a> <span class="muted sm">General Mills</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></td><td class="r muted sm">10.0%</td>
+              <td class="r neg">-22.2%</td></tr>
+          
+            <tr><td><a href="stock.html#JNJ"><b>JNJ</b></a> <span class="muted sm">Johnson &amp; Johnson</span></td>
+              <td class="muted sm"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td><td class="r muted sm">10.0%</td>
+              <td class="r pos">+17.5%</td></tr>
+          
+            <tr><td><a href="stock.html#KMB"><b>KMB</b></a> <span class="muted sm">Kimberly-Clark</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></td><td class="r muted sm">10.0%</td>
+              <td class="r pos">+3.5%</td></tr>
+          
+            <tr><td><a href="stock.html#MDLZ"><b>MDLZ</b></a> <span class="muted sm">Mondelez International</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></td><td class="r muted sm">10.0%</td>
+              <td class="r pos">+18.4%</td></tr>
+          
+            <tr><td><a href="stock.html#PEP"><b>PEP</b></a> <span class="muted sm">PepsiCo</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></td><td class="r muted sm">10.0%</td>
+              <td class="r pos">+3.4%</td></tr>
+          
+            <tr><td><a href="stock.html#PG"><b>PG</b></a> <span class="muted sm">Procter &amp; Gamble</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></td><td class="r muted sm">10.0%</td>
+              <td class="r pos">+7.1%</td></tr>
+          
+            <tr><td><a href="stock.html#WMT"><b>WMT</b></a> <span class="muted sm">Walmart</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></td><td class="r muted sm">10.0%</td>
+              <td class="r pos">+7.8%</td></tr>
+          
+          </tbody></table>
+        </div>
+        <div>
+          <h2><span class="l-en">Membership changelog</span><span class="l-zh">成分变更记录</span></h2>
+          <p class="muted sm"><span class="l-en">Seeded 2023-05-09 (curated 2026-06-14, applied to full history — hindsight, not out-of-sample).</span><span class="l-zh">建立于 2023-05-09（2026-06-14 整理并应用于全历史 — 事后选取，非样本外）。</span></p>
+          <span class="chip">2023-05-09 · +PG</span><span class="chip">2023-05-09 · +KO</span><span class="chip">2023-05-09 · +PEP</span><span class="chip">2023-05-09 · +JNJ</span><span class="chip">2023-05-09 · +WMT</span><span class="chip">2023-05-09 · +COST</span><span class="chip">2023-05-09 · +CL</span><span class="chip">2023-05-09 · +MDLZ</span><span class="chip">2023-05-09 · +KMB</span><span class="chip">2023-05-09 · +GIS</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bdetail" data-id="energy_complex" hidden>
+      <h3><span class="l-en">US Energy Complex</span><span class="l-zh">美国能源综合</span> <span class="cat">Energy</span></h3>
+      <p class="muted sm" style="margin:0 0 8px">Integrateds, E&amp;P, services, midstream</p>
+      <div class="ddl">
+        <span class="muted sm"><span class="l-en">Cumulative (3y)</span><span class="l-zh">累计（3年）</span><b class="pos">+80%</b></span>
+        <span class="muted sm"><span class="l-en">Sharpe</span><span class="l-zh">夏普</span><b>0.99</b></span>
+        <span class="muted sm"><span class="l-en">Max drawdown</span><span class="l-zh">最大回撤</span><b class="neg">-23.3%</b></span>
+        <span class="muted sm"><span class="l-en">Ann. vol</span><span class="l-zh">年化波动</span><b>21.7%</b></span>
+        <span class="muted sm"><span class="l-en">Members</span><span class="l-zh">成分</span><b>11</b></span>
+        <span class="muted sm"><span class="l-en">ρ vs</span><span class="l-zh">相关</span> XLE<b>0.98</b></span>
+      </div>
+      <div class="twocol" style="display:grid;grid-template-columns:1.4fr 1fr;gap:20px">
+        <div>
+          <h2><span class="l-en">Members (equal weight)</span><span class="l-zh">成分（等权）</span></h2>
+          <table><thead><tr><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">sector</span><span class="l-zh">板块</span></th><th class="r"><span class="l-en">wt</span><span class="l-zh">权重</span></th><th class="r">YTD</th></tr></thead><tbody>
+          
+            <tr><td><a href="stock.html#CVX"><b>CVX</b></a> <span class="muted sm">Chevron Corporation</span></td>
+              <td class="muted sm"><span class="l-en">Energy</span><span class="l-zh">能源</span></td><td class="r muted sm">9.1%</td>
+              <td class="r pos">+22.4%</td></tr>
+          
+            <tr><td><a href="stock.html#COP"><b>COP</b></a> <span class="muted sm">ConocoPhillips</span></td>
+              <td class="muted sm"><span class="l-en">Energy</span><span class="l-zh">能源</span></td><td class="r muted sm">9.1%</td>
+              <td class="r pos">+22.8%</td></tr>
+          
+            <tr><td><a href="stock.html#EOG"><b>EOG</b></a> <span class="muted sm">EOG Resources</span></td>
+              <td class="muted sm"><span class="l-en">Energy</span><span class="l-zh">能源</span></td><td class="r muted sm">9.1%</td>
+              <td class="r pos">+29.6%</td></tr>
+          
+            <tr><td><a href="stock.html#XOM"><b>XOM</b></a> <span class="muted sm">ExxonMobil</span></td>
+              <td class="muted sm"><span class="l-en">Energy</span><span class="l-zh">能源</span></td><td class="r muted sm">9.1%</td>
+              <td class="r pos">+21.5%</td></tr>
+          
+            <tr><td><a href="stock.html#KMI"><b>KMI</b></a> <span class="muted sm">Kinder Morgan</span></td>
+              <td class="muted sm"><span class="l-en">Energy</span><span class="l-zh">能源</span></td><td class="r muted sm">9.1%</td>
+              <td class="r pos">+17.5%</td></tr>
+          
+            <tr><td><a href="stock.html#MPC"><b>MPC</b></a> <span class="muted sm">Marathon Petroleum</span></td>
+              <td class="muted sm"><span class="l-en">Energy</span><span class="l-zh">能源</span></td><td class="r muted sm">9.1%</td>
+              <td class="r pos">+61.0%</td></tr>
+          
+            <tr><td><a href="stock.html#OXY"><b>OXY</b></a> <span class="muted sm">Occidental Petroleum</span></td>
+              <td class="muted sm"><span class="l-en">Energy</span><span class="l-zh">能源</span></td><td class="r muted sm">9.1%</td>
+              <td class="r pos">+34.7%</td></tr>
+          
+            <tr><td><a href="stock.html#PSX"><b>PSX</b></a> <span class="muted sm">Phillips 66</span></td>
+              <td class="muted sm"><span class="l-en">Energy</span><span class="l-zh">能源</span></td><td class="r muted sm">9.1%</td>
+              <td class="r pos">+39.6%</td></tr>
+          
+            <tr><td><a href="stock.html#SLB"><b>SLB</b></a> <span class="muted sm">Schlumberger</span></td>
+              <td class="muted sm"><span class="l-en">Energy</span><span class="l-zh">能源</span></td><td class="r muted sm">9.1%</td>
+              <td class="r pos">+41.3%</td></tr>
+          
+            <tr><td><a href="stock.html#VLO"><b>VLO</b></a> <span class="muted sm">Valero Energy</span></td>
+              <td class="muted sm"><span class="l-en">Energy</span><span class="l-zh">能源</span></td><td class="r muted sm">9.1%</td>
+              <td class="r pos">+58.2%</td></tr>
+          
+            <tr><td><a href="stock.html#WMB"><b>WMB</b></a> <span class="muted sm">Williams Companies</span></td>
+              <td class="muted sm"><span class="l-en">Energy</span><span class="l-zh">能源</span></td><td class="r muted sm">9.1%</td>
+              <td class="r pos">+20.2%</td></tr>
+          
+          </tbody></table>
+        </div>
+        <div>
+          <h2><span class="l-en">Membership changelog</span><span class="l-zh">成分变更记录</span></h2>
+          <p class="muted sm"><span class="l-en">Seeded 2023-05-09 (curated 2026-06-14, applied to full history — hindsight, not out-of-sample).</span><span class="l-zh">建立于 2023-05-09（2026-06-14 整理并应用于全历史 — 事后选取，非样本外）。</span></p>
+          <span class="chip">2023-05-09 · +XOM</span><span class="chip">2023-05-09 · +CVX</span><span class="chip">2023-05-09 · +COP</span><span class="chip">2023-05-09 · +EOG</span><span class="chip">2023-05-09 · +SLB</span><span class="chip">2023-05-09 · +MPC</span><span class="chip">2023-05-09 · +PSX</span><span class="chip">2023-05-09 · +VLO</span><span class="chip">2023-05-09 · +OXY</span><span class="chip">2023-05-09 · +WMB</span><span class="chip">2023-05-09 · +KMI</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bdetail" data-id="payments_fintech" hidden>
+      <h3><span class="l-en">Payments &amp; Fintech</span><span class="l-zh">支付与金融科技</span> <span class="cat">Financials</span></h3>
+      <p class="muted sm" style="margin:0 0 8px">Networks &amp; payment processors · <span class="miss"><span class="l-en">omitted (not in free cache):</span><span class="l-zh">已剔除（不在免费缓存）：</span> FI Fiserv (not in free cache)</span></p>
+      <div class="ddl">
+        <span class="muted sm"><span class="l-en">Cumulative (3y)</span><span class="l-zh">累计（3年）</span><b class="pos">+39%</b></span>
+        <span class="muted sm"><span class="l-en">Sharpe</span><span class="l-zh">夏普</span><b>0.6</b></span>
+        <span class="muted sm"><span class="l-en">Max drawdown</span><span class="l-zh">最大回撤</span><b class="neg">-24.6%</b></span>
+        <span class="muted sm"><span class="l-en">Ann. vol</span><span class="l-zh">年化波动</span><b>21.8%</b></span>
+        <span class="muted sm"><span class="l-en">Members</span><span class="l-zh">成分</span><b>8</b></span>
+        
+      </div>
+      <div class="twocol" style="display:grid;grid-template-columns:1.4fr 1fr;gap:20px">
+        <div>
+          <h2><span class="l-en">Members (equal weight)</span><span class="l-zh">成分（等权）</span></h2>
+          <table><thead><tr><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">sector</span><span class="l-zh">板块</span></th><th class="r"><span class="l-en">wt</span><span class="l-zh">权重</span></th><th class="r">YTD</th></tr></thead><tbody>
+          
+            <tr><td><a href="stock.html#AXP"><b>AXP</b></a> <span class="muted sm">American Express</span></td>
+              <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r muted sm">12.5%</td>
+              <td class="r neg">-12.4%</td></tr>
+          
+            <tr><td><a href="stock.html#COF"><b>COF</b></a> <span class="muted sm">Capital One</span></td>
+              <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r muted sm">12.5%</td>
+              <td class="r neg">-24.9%</td></tr>
+          
+            <tr><td><a href="stock.html#FIS"><b>FIS</b></a> <span class="muted sm">Fidelity National Inform</span></td>
+              <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r muted sm">12.5%</td>
+              <td class="r neg">-39.1%</td></tr>
+          
+            <tr><td><a href="stock.html#GPN"><b>GPN</b></a> <span class="muted sm">Global Payments</span></td>
+              <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r muted sm">12.5%</td>
+              <td class="r neg">-9.7%</td></tr>
+          
+            <tr><td><a href="stock.html#MA"><b>MA</b></a> <span class="muted sm">Mastercard</span></td>
+              <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r muted sm">12.5%</td>
+              <td class="r neg">-12.7%</td></tr>
+          
+            <tr><td><a href="stock.html#PYPL"><b>PYPL</b></a> <span class="muted sm">PayPal</span></td>
+              <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r muted sm">12.5%</td>
+              <td class="r neg">-28.1%</td></tr>
+          
+            <tr><td><a href="stock.html#SYF"><b>SYF</b></a> <span class="muted sm">Synchrony Financial</span></td>
+              <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r muted sm">12.5%</td>
+              <td class="r neg">-12.6%</td></tr>
+          
+            <tr><td><a href="stock.html#V"><b>V</b></a> <span class="muted sm">Visa Inc.</span></td>
+              <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r muted sm">12.5%</td>
+              <td class="r neg">-6.6%</td></tr>
+          
+          </tbody></table>
+        </div>
+        <div>
+          <h2><span class="l-en">Membership changelog</span><span class="l-zh">成分变更记录</span></h2>
+          <p class="muted sm"><span class="l-en">Seeded 2023-05-09 (curated 2026-06-14, applied to full history — hindsight, not out-of-sample).</span><span class="l-zh">建立于 2023-05-09（2026-06-14 整理并应用于全历史 — 事后选取，非样本外）。</span></p>
+          <span class="chip">2023-05-09 · +V</span><span class="chip">2023-05-09 · +MA</span><span class="chip">2023-05-09 · +PYPL</span><span class="chip">2023-05-09 · +FIS</span><span class="chip">2023-05-09 · +GPN</span><span class="chip">2023-05-09 · +AXP</span><span class="chip">2023-05-09 · +COF</span><span class="chip">2023-05-09 · +SYF</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bdetail" data-id="ai_software" hidden>
+      <h3><span class="l-en">AI Software &amp; Platforms</span><span class="l-zh">AI 软件与平台</span> <span class="cat">AI &amp; Tech</span></h3>
+      <p class="muted sm" style="margin:0 0 8px">Apps &amp; platforms monetizing AI · <span class="miss"><span class="l-en">omitted (not in free cache):</span><span class="l-zh">已剔除（不在免费缓存）：</span> SNOW (not in free cache)</span></p>
+      <div class="ddl">
+        <span class="muted sm"><span class="l-en">Cumulative (3y)</span><span class="l-zh">累计（3年）</span><b class="pos">+133%</b></span>
+        <span class="muted sm"><span class="l-en">Sharpe</span><span class="l-zh">夏普</span><b>1.15</b></span>
+        <span class="muted sm"><span class="l-en">Max drawdown</span><span class="l-zh">最大回撤</span><b class="neg">-30.9%</b></span>
+        <span class="muted sm"><span class="l-en">Ann. vol</span><span class="l-zh">年化波动</span><b>27.1%</b></span>
+        <span class="muted sm"><span class="l-en">Members</span><span class="l-zh">成分</span><b>9</b></span>
+        <span class="muted sm"><span class="l-en">ρ vs</span><span class="l-zh">相关</span> XLK<b>0.77</b></span>
+      </div>
+      <div class="twocol" style="display:grid;grid-template-columns:1.4fr 1fr;gap:20px">
+        <div>
+          <h2><span class="l-en">Members (equal weight)</span><span class="l-zh">成分（等权）</span></h2>
+          <table><thead><tr><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">sector</span><span class="l-zh">板块</span></th><th class="r"><span class="l-en">wt</span><span class="l-zh">权重</span></th><th class="r">YTD</th></tr></thead><tbody>
+          
+            <tr><td><a href="stock.html#ADBE"><b>ADBE</b></a> <span class="muted sm">Adobe Inc.</span></td>
+              <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r muted sm">11.1%</td>
+              <td class="r neg">-38.8%</td></tr>
+          
+            <tr><td><a href="stock.html#GOOGL"><b>GOOGL</b></a> <span class="muted sm">Alphabet Inc. (Class A)</span></td>
+              <td class="muted sm"><span class="l-en">Communication Services</span><span class="l-zh">Communication Services</span></td><td class="r muted sm">11.1%</td>
+              <td class="r pos">+14.3%</td></tr>
+          
+            <tr><td><a href="stock.html#DDOG"><b>DDOG</b></a> <span class="muted sm">Datadog</span></td>
+              <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r muted sm">11.1%</td>
+              <td class="r pos">+71.9%</td></tr>
+          
+            <tr><td><a href="stock.html#META"><b>META</b></a> <span class="muted sm">Meta Platforms</span></td>
+              <td class="muted sm"><span class="l-en">Communication Services</span><span class="l-zh">Communication Services</span></td><td class="r muted sm">11.1%</td>
+              <td class="r neg">-12.8%</td></tr>
+          
+            <tr><td><a href="stock.html#MSFT"><b>MSFT</b></a> <span class="muted sm">Microsoft</span></td>
+              <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r muted sm">11.1%</td>
+              <td class="r neg">-17.0%</td></tr>
+          
+            <tr><td><a href="stock.html#ORCL"><b>ORCL</b></a> <span class="muted sm">Oracle Corporation</span></td>
+              <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r muted sm">11.1%</td>
+              <td class="r neg">-5.3%</td></tr>
+          
+            <tr><td><a href="stock.html#PLTR"><b>PLTR</b></a> <span class="muted sm">Palantir Technologies</span></td>
+              <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r muted sm">11.1%</td>
+              <td class="r neg">-23.8%</td></tr>
+          
+            <tr><td><a href="stock.html#CRM"><b>CRM</b></a> <span class="muted sm">Salesforce</span></td>
+              <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r muted sm">11.1%</td>
+              <td class="r neg">-34.3%</td></tr>
+          
+            <tr><td><a href="stock.html#NOW"><b>NOW</b></a> <span class="muted sm">ServiceNow</span></td>
+              <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r muted sm">11.1%</td>
+              <td class="r neg">-30.7%</td></tr>
+          
+          </tbody></table>
+        </div>
+        <div>
+          <h2><span class="l-en">Membership changelog</span><span class="l-zh">成分变更记录</span></h2>
+          <p class="muted sm"><span class="l-en">Seeded 2023-05-09 (curated 2026-06-14, applied to full history — hindsight, not out-of-sample).</span><span class="l-zh">建立于 2023-05-09（2026-06-14 整理并应用于全历史 — 事后选取，非样本外）。</span></p>
+          <span class="chip">2023-05-09 · +MSFT</span><span class="chip">2023-05-09 · +GOOGL</span><span class="chip">2023-05-09 · +META</span><span class="chip">2023-05-09 · +PLTR</span><span class="chip">2023-05-09 · +NOW</span><span class="chip">2023-05-09 · +CRM</span><span class="chip">2023-05-09 · +ORCL</span><span class="chip">2023-05-09 · +ADBE</span><span class="chip">2023-05-09 · +DDOG</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bdetail" data-id="power_grid" hidden>
+      <h3><span class="l-en">Power &amp; Grid Buildout</span><span class="l-zh">电力与电网</span> <span class="cat">Industrials</span></h3>
+      <p class="muted sm" style="margin:0 0 8px">Generation, grid &amp; electrification</p>
+      <div class="ddl">
+        <span class="muted sm"><span class="l-en">Cumulative (3y)</span><span class="l-zh">累计（3年）</span><b class="pos">+322%</b></span>
+        <span class="muted sm"><span class="l-en">Sharpe</span><span class="l-zh">夏普</span><b>1.8</b></span>
+        <span class="muted sm"><span class="l-en">Max drawdown</span><span class="l-zh">最大回撤</span><b class="neg">-30.6%</b></span>
+        <span class="muted sm"><span class="l-en">Ann. vol</span><span class="l-zh">年化波动</span><b>28.2%</b></span>
+        <span class="muted sm"><span class="l-en">Members</span><span class="l-zh">成分</span><b>10</b></span>
+        
+      </div>
+      <div class="twocol" style="display:grid;grid-template-columns:1.4fr 1fr;gap:20px">
+        <div>
+          <h2><span class="l-en">Members (equal weight)</span><span class="l-zh">成分（等权）</span></h2>
+          <table><thead><tr><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">sector</span><span class="l-zh">板块</span></th><th class="r"><span class="l-en">wt</span><span class="l-zh">权重</span></th><th class="r">YTD</th></tr></thead><tbody>
+          
+            <tr><td><a href="stock.html#CEG"><b>CEG</b></a> <span class="muted sm">Constellation Energy</span></td>
+              <td class="muted sm"><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></td><td class="r muted sm">10.0%</td>
+              <td class="r neg">-30.5%</td></tr>
+          
+            <tr><td><a href="stock.html#D"><b>D</b></a> <span class="muted sm">Dominion Energy</span></td>
+              <td class="muted sm"><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></td><td class="r muted sm">10.0%</td>
+              <td class="r pos">+17.0%</td></tr>
+          
+            <tr><td><a href="stock.html#ETN"><b>ETN</b></a> <span class="muted sm">Eaton Corporation</span></td>
+              <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r muted sm">10.0%</td>
+              <td class="r pos">+20.3%</td></tr>
+          
+            <tr><td><a href="stock.html#GEV"><b>GEV</b></a> <span class="muted sm">GE Vernova</span></td>
+              <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r muted sm">10.0%</td>
+              <td class="r pos">+38.6%</td></tr>
+          
+            <tr><td><a href="stock.html#NRG"><b>NRG</b></a> <span class="muted sm">NRG Energy</span></td>
+              <td class="muted sm"><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></td><td class="r muted sm">10.0%</td>
+              <td class="r neg">-24.0%</td></tr>
+          
+            <tr><td><a href="stock.html#NEE"><b>NEE</b></a> <span class="muted sm">NextEra Energy</span></td>
+              <td class="muted sm"><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></td><td class="r muted sm">10.0%</td>
+              <td class="r pos">+7.8%</td></tr>
+          
+            <tr><td><a href="stock.html#PCG"><b>PCG</b></a> <span class="muted sm">PG&amp;E Corporation</span></td>
+              <td class="muted sm"><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></td><td class="r muted sm">10.0%</td>
+              <td class="r pos">+4.5%</td></tr>
+          
+            <tr><td><a href="stock.html#PWR"><b>PWR</b></a> <span class="muted sm">Quanta Services</span></td>
+              <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r muted sm">10.0%</td>
+              <td class="r pos">+61.0%</td></tr>
+          
+            <tr><td><a href="stock.html#VRT"><b>VRT</b></a> <span class="muted sm">Vertiv</span></td>
+              <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r muted sm">10.0%</td>
+              <td class="r pos">+72.5%</td></tr>
+          
+            <tr><td><a href="stock.html#VST"><b>VST</b></a> <span class="muted sm">Vistra Corp.</span></td>
+              <td class="muted sm"><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></td><td class="r muted sm">10.0%</td>
+              <td class="r neg">-10.3%</td></tr>
+          
+          </tbody></table>
+        </div>
+        <div>
+          <h2><span class="l-en">Membership changelog</span><span class="l-zh">成分变更记录</span></h2>
+          <p class="muted sm"><span class="l-en">Seeded 2023-05-09 (curated 2026-06-14, applied to full history — hindsight, not out-of-sample).</span><span class="l-zh">建立于 2023-05-09（2026-06-14 整理并应用于全历史 — 事后选取，非样本外）。</span></p>
+          <span class="chip">2023-05-09 · +GEV</span><span class="chip">2023-05-09 · +ETN</span><span class="chip">2023-05-09 · +VRT</span><span class="chip">2023-05-09 · +PWR</span><span class="chip">2023-05-09 · +NEE</span><span class="chip">2023-05-09 · +CEG</span><span class="chip">2023-05-09 · +VST</span><span class="chip">2023-05-09 · +NRG</span><span class="chip">2023-05-09 · +PCG</span><span class="chip">2023-05-09 · +D</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bdetail" data-id="mag7" hidden>
+      <h3><span class="l-en">Magnificent Seven</span><span class="l-zh">七巨头</span> <span class="cat">AI &amp; Tech</span></h3>
+      <p class="muted sm" style="margin:0 0 8px">Mega-cap tech &amp; AI leaders</p>
+      <div class="ddl">
+        <span class="muted sm"><span class="l-en">Cumulative (3y)</span><span class="l-zh">累计（3年）</span><b class="pos">+188%</b></span>
+        <span class="muted sm"><span class="l-en">Sharpe</span><span class="l-zh">夏普</span><b>1.46</b></span>
+        <span class="muted sm"><span class="l-en">Max drawdown</span><span class="l-zh">最大回撤</span><b class="neg">-29.0%</b></span>
+        <span class="muted sm"><span class="l-en">Ann. vol</span><span class="l-zh">年化波动</span><b>25.7%</b></span>
+        <span class="muted sm"><span class="l-en">Members</span><span class="l-zh">成分</span><b>7</b></span>
+        <span class="muted sm"><span class="l-en">ρ vs</span><span class="l-zh">相关</span> QQQ<b>0.93</b></span>
+      </div>
+      <div class="twocol" style="display:grid;grid-template-columns:1.4fr 1fr;gap:20px">
+        <div>
+          <h2><span class="l-en">Members (equal weight)</span><span class="l-zh">成分（等权）</span></h2>
+          <table><thead><tr><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">sector</span><span class="l-zh">板块</span></th><th class="r"><span class="l-en">wt</span><span class="l-zh">权重</span></th><th class="r">YTD</th></tr></thead><tbody>
+          
+            <tr><td><a href="stock.html#GOOGL"><b>GOOGL</b></a> <span class="muted sm">Alphabet Inc. (Class A)</span></td>
+              <td class="muted sm"><span class="l-en">Communication Services</span><span class="l-zh">Communication Services</span></td><td class="r muted sm">14.3%</td>
+              <td class="r pos">+14.3%</td></tr>
+          
+            <tr><td><a href="stock.html#AMZN"><b>AMZN</b></a> <span class="muted sm">Amazon</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r muted sm">14.3%</td>
+              <td class="r pos">+5.3%</td></tr>
+          
+            <tr><td><a href="stock.html#AAPL"><b>AAPL</b></a> <span class="muted sm">Apple Inc.</span></td>
+              <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r muted sm">14.3%</td>
+              <td class="r pos">+7.6%</td></tr>
+          
+            <tr><td><a href="stock.html#META"><b>META</b></a> <span class="muted sm">Meta Platforms</span></td>
+              <td class="muted sm"><span class="l-en">Communication Services</span><span class="l-zh">Communication Services</span></td><td class="r muted sm">14.3%</td>
+              <td class="r neg">-12.8%</td></tr>
+          
+            <tr><td><a href="stock.html#MSFT"><b>MSFT</b></a> <span class="muted sm">Microsoft</span></td>
+              <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r muted sm">14.3%</td>
+              <td class="r neg">-17.0%</td></tr>
+          
+            <tr><td><a href="stock.html#NVDA"><b>NVDA</b></a> <span class="muted sm">Nvidia</span></td>
+              <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r muted sm">14.3%</td>
+              <td class="r pos">+8.8%</td></tr>
+          
+            <tr><td><a href="stock.html#TSLA"><b>TSLA</b></a> <span class="muted sm">Tesla, Inc.</span></td>
+              <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r muted sm">14.3%</td>
+              <td class="r neg">-7.2%</td></tr>
+          
+          </tbody></table>
+        </div>
+        <div>
+          <h2><span class="l-en">Membership changelog</span><span class="l-zh">成分变更记录</span></h2>
+          <p class="muted sm"><span class="l-en">Seeded 2023-05-09 (curated 2026-06-14, applied to full history — hindsight, not out-of-sample).</span><span class="l-zh">建立于 2023-05-09（2026-06-14 整理并应用于全历史 — 事后选取，非样本外）。</span></p>
+          <span class="chip">2023-05-09 · +AAPL</span><span class="chip">2023-05-09 · +MSFT</span><span class="chip">2023-05-09 · +NVDA</span><span class="chip">2023-05-09 · +AMZN</span><span class="chip">2023-05-09 · +GOOGL</span><span class="chip">2023-05-09 · +META</span><span class="chip">2023-05-09 · +TSLA</span>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+
+  <div class="panel">
+    <p class="muted" style="font-size:12px;margin:0"><span class="l-en">Equal-weight, point-in-time dated membership, buy-and-hold between changes, over the free S&amp;P-1500 price cache (~3y, from 2023-05-09). As of 2026-06-12. Membership was curated with knowledge of the period, so the series is HINDSIGHT-curated and descriptive — not an out-of-sample backtest and not a buy list. Sharpe/MaxDD reflect one short, mostly-bull regime. See LIMITATIONS.md.</span><span class="l-zh">等权重、按时点日期管理成分、变更间买入持有，基于免费标普 1500 价格缓存（约 3 年，自 2023-05-09）。截至 2026-06-12。成分在已知该期间表现的情况下整理，故为事后选取的描述性序列 — 并非样本外回测，也非买入清单。夏普/最大回撤仅反映一段偏多头的短行情。参见 LIMITATIONS.md。</span>
+      <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-14 10:46 UTC</p>
+  </div>
+
+  <script>
+    (function(){
+      var tab=document.getElementById('btab'), tb=tab.querySelector('tbody');
+      var modeseg=document.getElementById('modeseg'), detail=document.getElementById('detail');
+      // metric mode toggle
+      modeseg.addEventListener('click', function(e){
+        var b=e.target.closest('button[data-mode]'); if(!b) return;
+        tab.setAttribute('data-mode', b.dataset.mode);
+        modeseg.querySelectorAll('button').forEach(function(x){x.classList.toggle('on', x===b);});
+        if(sortCol!==null) applySort();
+      });
+      // sortable return columns (sorts on the VISIBLE value for the current mode)
+      var sortCol=2, sortDir=-1;   // default: 20d descending
+      function cellVal(row, col){
+        var td=row.children[col+1]; if(!td) return -1e9;
+        var span=tab.getAttribute('data-mode')==='rel'?td.querySelector('.v-rel'):td.querySelector('.v-raw');
+        var v=span?parseFloat(span.getAttribute('data-v')):NaN; return isNaN(v)?-1e9:v;
+      }
+      function applySort(){
+        var rows=Array.prototype.slice.call(tb.querySelectorAll('tr'));
+        rows.sort(function(a,b){ return (cellVal(a,sortCol)-cellVal(b,sortCol))*sortDir; });
+        rows.forEach(function(r){ tb.appendChild(r); });
+      }
+      tab.querySelectorAll('th[data-col]').forEach(function(th){
+        th.addEventListener('click', function(){
+          var c=+th.dataset.col;
+          if(c===sortCol){ sortDir=-sortDir; } else { sortCol=c; sortDir=-1; }
+          applySort();
+        });
+      });
+      applySort();
+      // basket name -> open detail
+      tb.addEventListener('click', function(e){
+        var n=e.target.closest('.bname'); if(!n) return;
+        var id=n.dataset.id;
+        detail.style.display='block';
+        detail.querySelectorAll('.bdetail').forEach(function(d){ d.hidden = (d.dataset.id!==id); });
+        detail.scrollIntoView({behavior:'smooth', block:'nearest'});
+      });
+    })();
+  </script>
+  <script src="theme.js"></script>
+</body>
+</html>

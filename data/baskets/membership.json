@@ -1,0 +1,976 @@
+{
+  "version": "2026-06-14",
+  "note": "Equal-weight thematic baskets over the FREE S&P-1500 price cache. Membership is explicit, dated and auditable. Curated 2026-06 with knowledge of the period, so the full ~3y series is HINDSIGHT-curated and descriptive — not an out-of-sample backtest.",
+  "seed_date": "2023-05-09",
+  "curated": "2026-06-14",
+  "baskets": {
+    "mag7": {
+      "name": "Magnificent Seven",
+      "name_zh": "七巨头",
+      "theme": "Mega-cap tech & AI leaders",
+      "category": "AI & Tech",
+      "etf_proxy": "QQQ",
+      "etf_proxy_note": "loose — Mag7 ≈ 40% of QQQ",
+      "created": "2023-05-09",
+      "curated": "2026-06-14",
+      "omitted": [],
+      "members": [
+        {
+          "ticker": "AAPL",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "MSFT",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "NVDA",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "AMZN",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "GOOGL",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "META",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "TSLA",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        }
+      ]
+    },
+    "ai_infra": {
+      "name": "AI Infrastructure",
+      "name_zh": "AI 基础设施",
+      "theme": "Compute, networking & power for AI buildout",
+      "category": "AI & Tech",
+      "etf_proxy": "SMH",
+      "etf_proxy_note": "semis proxy",
+      "created": "2023-05-09",
+      "curated": "2026-06-14",
+      "omitted": [
+        "MRVL (not in free cache)"
+      ],
+      "members": [
+        {
+          "ticker": "NVDA",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "AVGO",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "AMD",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "MU",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "ANET",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "VRT",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "DELL",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "SMCI",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "CIEN",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        }
+      ]
+    },
+    "ai_software": {
+      "name": "AI Software & Platforms",
+      "name_zh": "AI 软件与平台",
+      "theme": "Apps & platforms monetizing AI",
+      "category": "AI & Tech",
+      "etf_proxy": "XLK",
+      "etf_proxy_note": "loose — broad tech",
+      "created": "2023-05-09",
+      "curated": "2026-06-14",
+      "omitted": [
+        "SNOW (not in free cache)"
+      ],
+      "members": [
+        {
+          "ticker": "MSFT",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "GOOGL",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "META",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "PLTR",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "NOW",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "CRM",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "ORCL",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "ADBE",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "DDOG",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        }
+      ]
+    },
+    "defense": {
+      "name": "Defense & Aerospace",
+      "name_zh": "国防与航空航天",
+      "theme": "Primes & defense-tech",
+      "category": "Industrials",
+      "etf_proxy": null,
+      "etf_proxy_note": null,
+      "created": "2023-05-09",
+      "curated": "2026-06-14",
+      "omitted": [],
+      "members": [
+        {
+          "ticker": "LMT",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "RTX",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "NOC",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "GD",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "LHX",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "HII",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "BA",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "TDG",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "AXON",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "HWM",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        }
+      ]
+    },
+    "power_grid": {
+      "name": "Power & Grid Buildout",
+      "name_zh": "电力与电网",
+      "theme": "Generation, grid & electrification",
+      "category": "Industrials",
+      "etf_proxy": null,
+      "etf_proxy_note": null,
+      "created": "2023-05-09",
+      "curated": "2026-06-14",
+      "omitted": [],
+      "members": [
+        {
+          "ticker": "GEV",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "ETN",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "VRT",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "PWR",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "NEE",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "CEG",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "VST",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "NRG",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "PCG",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "D",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        }
+      ]
+    },
+    "reshoring": {
+      "name": "Reshoring & Industrial Capex",
+      "name_zh": "回流与工业资本开支",
+      "theme": "Onshoring & capex beneficiaries",
+      "category": "Industrials",
+      "etf_proxy": "XLI",
+      "etf_proxy_note": "industrials proxy",
+      "created": "2023-05-09",
+      "curated": "2026-06-14",
+      "omitted": [
+        "GGG (not in free cache)"
+      ],
+      "members": [
+        {
+          "ticker": "ETN",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "PH",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "EMR",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "ROK",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "CAT",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "DE",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "URI",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "PWR",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "FAST",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        }
+      ]
+    },
+    "regional_banks": {
+      "name": "Regional Banks",
+      "name_zh": "区域银行",
+      "theme": "Mid/large regional lenders",
+      "category": "Financials",
+      "etf_proxy": null,
+      "etf_proxy_note": null,
+      "created": "2023-05-09",
+      "curated": "2026-06-14",
+      "omitted": [
+        "ZION, CMA (not in free cache)"
+      ],
+      "members": [
+        {
+          "ticker": "RF",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "KEY",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "CFG",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "HBAN",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "FITB",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "MTB",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "TFC",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "USB",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        }
+      ]
+    },
+    "managed_care": {
+      "name": "Managed Care & Insurers",
+      "name_zh": "管理式医疗与保险",
+      "theme": "Health insurers / MCOs",
+      "category": "Health",
+      "etf_proxy": "XLV",
+      "etf_proxy_note": "loose — broad health",
+      "created": "2023-05-09",
+      "curated": "2026-06-14",
+      "omitted": [],
+      "members": [
+        {
+          "ticker": "UNH",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "ELV",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "CI",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "HUM",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "CNC",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "MOH",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        }
+      ]
+    },
+    "housing": {
+      "name": "Housing Chain",
+      "name_zh": "住房产业链",
+      "theme": "Builders & building products",
+      "category": "Consumer",
+      "etf_proxy": null,
+      "etf_proxy_note": null,
+      "created": "2023-05-09",
+      "curated": "2026-06-14",
+      "omitted": [
+        "WHR (not in free cache)"
+      ],
+      "members": [
+        {
+          "ticker": "DHI",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "LEN",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "PHM",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "NVR",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "BLDR",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "MAS",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "SHW",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "HD",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "LOW",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        }
+      ]
+    },
+    "payments_fintech": {
+      "name": "Payments & Fintech",
+      "name_zh": "支付与金融科技",
+      "theme": "Networks & payment processors",
+      "category": "Financials",
+      "etf_proxy": null,
+      "etf_proxy_note": null,
+      "created": "2023-05-09",
+      "curated": "2026-06-14",
+      "omitted": [
+        "FI Fiserv (not in free cache)"
+      ],
+      "members": [
+        {
+          "ticker": "V",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "MA",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "PYPL",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "FIS",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "GPN",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "AXP",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "COF",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "SYF",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        }
+      ]
+    },
+    "energy_complex": {
+      "name": "US Energy Complex",
+      "name_zh": "美国能源综合",
+      "theme": "Integrateds, E&P, services, midstream",
+      "category": "Energy",
+      "etf_proxy": "XLE",
+      "etf_proxy_note": "energy proxy",
+      "created": "2023-05-09",
+      "curated": "2026-06-14",
+      "omitted": [],
+      "members": [
+        {
+          "ticker": "XOM",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "CVX",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "COP",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "EOG",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "SLB",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "MPC",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "PSX",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "VLO",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "OXY",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "WMB",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "KMI",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        }
+      ]
+    },
+    "defensives": {
+      "name": "Defensives",
+      "name_zh": "防御板块",
+      "theme": "Staples & defensive cash-flows",
+      "category": "Consumer",
+      "etf_proxy": "XLP",
+      "etf_proxy_note": "staples proxy",
+      "created": "2023-05-09",
+      "curated": "2026-06-14",
+      "omitted": [],
+      "members": [
+        {
+          "ticker": "PG",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "KO",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "PEP",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "JNJ",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "WMT",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "COST",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "CL",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "MDLZ",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "KMB",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "GIS",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        }
+      ]
+    },
+    "travel": {
+      "name": "Travel & Experiences",
+      "name_zh": "旅行与体验",
+      "theme": "Airlines, cruises, lodging, gaming",
+      "category": "Consumer",
+      "etf_proxy": null,
+      "etf_proxy_note": null,
+      "created": "2023-05-09",
+      "curated": "2026-06-14",
+      "omitted": [],
+      "members": [
+        {
+          "ticker": "BKNG",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "MAR",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "HLT",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "RCL",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "CCL",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "NCLH",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "DAL",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "UAL",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "LUV",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "ABNB",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "EXPE",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "LVS",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "MGM",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        }
+      ]
+    },
+    "retail": {
+      "name": "Retail",
+      "name_zh": "零售",
+      "theme": "Big-box, off-price & discount retail",
+      "category": "Consumer",
+      "etf_proxy": "XLY",
+      "etf_proxy_note": "loose — broad cons. disc.",
+      "created": "2023-05-09",
+      "curated": "2026-06-14",
+      "omitted": [],
+      "members": [
+        {
+          "ticker": "WMT",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "COST",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "TGT",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "HD",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "LOW",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "TJX",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "ROST",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "DG",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "DLTR",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        },
+        {
+          "ticker": "BBY",
+          "added": "2023-05-09",
+          "removed": null,
+          "note": "seed"
+        }
+      ]
+    }
+  }
+}

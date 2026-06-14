@@ -1,0 +1,209 @@
+{% macro help(en, zh='') -%}
+<span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
+{%- endmacro %}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{% macro spark(vals, spyvals) -%}
+{% if vals and vals|length > 1 %}
+{% set lo = [vals|min, (spyvals|min if spyvals else vals|min)]|min %}
+{% set hi = [vals|max, (spyvals|max if spyvals else vals|max)]|max %}
+{% set rng = (hi - lo) or 1 %}
+<svg viewBox="0 0 120 30" class="spark" preserveAspectRatio="none">
+  {% if spyvals and spyvals|length > 1 %}<polyline fill="none" stroke="var(--muted)" stroke-width="1" opacity="0.4" points="{% for v in spyvals %}{{ (loop.index0/(spyvals|length-1)*120)|round(1) }},{{ (28-(v-lo)/rng*26)|round(1) }} {% endfor %}"/>{% endif %}
+  <polyline fill="none" stroke="{{ 'var(--up)' if vals[-1] >= vals[0] else 'var(--down)' }}" stroke-width="1.5" points="{% for v in vals %}{{ (loop.index0/(vals|length-1)*120)|round(1) }},{{ (28-(v-lo)/rng*26)|round(1) }} {% endfor %}"/>
+</svg>
+{% endif %}
+{%- endmacro %}
+{% macro rcell(raw, rel) -%}
+<td class="r num">
+  <span class="v-raw {{ 'pos' if raw and raw > 0 else ('neg' if raw and raw < 0 else 'muted') }}" data-v="{{ raw if raw is not none else -999 }}">{{ '%+.1f'|format(raw) if raw is not none else '—' }}</span>
+  <span class="v-rel {{ 'pos' if rel and rel > 0 else ('neg' if rel and rel < 0 else 'muted') }}" data-v="{{ rel if rel is not none else -999 }}">{{ '%+.1f'|format(rel) if rel is not none else '—' }}</span>
+</td>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ t('Thematic baskets — performance vs S&P 500', '主题篮子 — 相对标普 500 表现') }}</title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1320px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:20px; margin:0; } h3 { font-size:13px; margin:0 0 6px; }
+  h2 { font-size:13px; margin:0 0 8px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:14px; }
+  .topline { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+  .muted { color:var(--muted); } .sm { font-size:12px; }
+  table { border-collapse:collapse; width:100%; font-size:13px; }
+  th,td { text-align:left; padding:5px 8px; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:500; cursor:pointer; user-select:none; white-space:nowrap; }
+  th.r, td.r { text-align:right; }
+  .pos { color:var(--up); } .neg { color:var(--down); }
+  .navbtn, .lang-btn, .theme-btn, .seg button { font-size:12.5px; padding:5px 11px; border-radius:8px; border:1px solid var(--line); background:var(--panel2); color:var(--text); cursor:pointer; }
+  .seg { display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .seg button { border:0; border-radius:0; background:var(--panel); }
+  .seg button.on { background:var(--panel2); font-weight:600; }
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:5px; }
+  .help .tip { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%); width:300px; background:var(--panel); border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text); font-weight:400; box-shadow:var(--popover-shadow); pointer-events:none; }
+  .help:hover .tip { display:block; }
+  .spark { width:120px; height:30px; display:block; }
+  .cat { font-size:10.5px; padding:1px 7px; border-radius:8px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
+  .bname { font-weight:600; cursor:pointer; } .bname:hover { color:var(--link); }
+  .miss { color:var(--warn); font-size:11px; }
+  table[data-mode="raw"] .v-rel { display:none; }
+  table[data-mode="rel"] .v-raw { display:none; }
+  #detail { display:none; }
+  .ddl { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:8px 18px; margin:6px 0 12px; }
+  .ddl b { display:block; font-size:16px; }
+  .chip { display:inline-block; font-size:11px; padding:1px 7px; margin:0 4px 4px 0; border-radius:8px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
+</style>
+</head>
+<body>
+  <div class="panel">
+    <div class="topline">
+      <h1>🧺 {{ t('Thematic baskets', '主题篮子') }}</h1>
+      <span class="muted sm">{{ t('equal-weight theme baskets — raw and relative to the S&P 500', '等权主题篮子 — 原始及相对标普 500') }}</span>
+      <span style="flex:1"></span>
+      <a class="navbtn" href="macro.html">{{ t('← Dashboard', '← 仪表盘') }}</a>
+      <a class="navbtn" href="factors.html">🧮 {{ t('Factor Lab', '因子实验室') }}</a>
+      <a class="navbtn" href="seasonality.html">🗓 {{ t('Seasonality', '季节性') }}</a>
+      <button class="lang-btn">中文</button>
+      <button class="theme-btn">☀️ {{ t('Light', '浅色') }}</button>
+    </div>
+    <p class="muted sm" style="margin:10px 0 0">{{ t(
+      'Curated thematic stock baskets, EQUAL-WEIGHTED, buy-and-hold with point-in-time dated membership. ' ~ data.note ~ ' Members outside the free S&P-1500 cache are excluded (shown as n-missing). Reference-ETF correlation is a sanity check that a basket co-moved with its theme over this window, not a guarantee. Context, not a buy list.',
+      '精选主题股票篮子，等权重、买入持有，按时点日期管理成分。' ~ data.note ~ ' 不在免费标普 1500 缓存内的成分被剔除（标记为 n-missing）。参考 ETF 相关性仅为该篮子在此窗口内与主题同向的合理性检验，并非保证。仅作背景，而非买入清单。') }}</p>
+  </div>
+
+  <div class="panel">
+    <div class="topline" style="margin-bottom:10px">
+      <h2 style="margin:0">{{ t('Performance', '表现') }}
+        {{ help('Click a column to sort; click a basket name for its members + dated changelog. Toggle RAW returns vs RELATIVE to the S&P 500. The spark is the cumulative basket return (grey = SPY) over the ~3y cache. |Sharpe/MaxDD are over one short, mostly-bull window — regime-limited, not validated edge.', '点击列排序；点击篮子名称查看成分与带日期的变更记录。可切换原始回报与相对标普 500。火花线为该篮子在约 3 年缓存内的累计回报（灰=SPY）。夏普/最大回撤仅覆盖一段偏多头的短窗口，受单一行情限制，并非已验证的超额收益。') }}
+      </h2>
+      <span style="flex:1"></span>
+      <span class="seg" id="modeseg">
+        <button data-mode="raw" class="on">{{ t('Raw', '原始') }}</button>
+        <button data-mode="rel">{{ t('vs S&P 500', '相对标普') }}</button>
+      </span>
+    </div>
+    <table id="btab" data-mode="raw">
+      <thead><tr>
+        <th data-sort="name">{{ t('Basket', '篮子') }}</th>
+        <th class="r" data-col="0">1d</th>
+        <th class="r" data-col="1">5d</th>
+        <th class="r" data-col="2">20d</th>
+        <th class="r" data-col="3">60d</th>
+        <th class="r" data-col="4">YTD</th>
+        <th class="r">{{ t('trend', '走势') }}</th>
+        <th class="r">{{ t('ETF ρ', 'ETF 相关') }}</th>
+      </tr></thead>
+      <tbody>
+      {% for b in data.baskets %}
+        <tr data-id="{{ b.id }}">
+          <td><span class="bname" data-id="{{ b.id }}">{{ t(b.name, b.name_zh) }}</span>
+            <span class="cat">{{ b.category }}</span>
+            {% if b.n_missing %}<span class="miss" title="members not in the free cache">−{{ b.n_missing }}</span>{% endif %}
+          </td>
+          {{ rcell(b.ret.raw.d1, b.ret.rel.d1) }}
+          {{ rcell(b.ret.raw.d5, b.ret.rel.d5) }}
+          {{ rcell(b.ret.raw.d20, b.ret.rel.d20) }}
+          {{ rcell(b.ret.raw.d60, b.ret.rel.d60) }}
+          {{ rcell(b.ret.raw.ytd, b.ret.rel.ytd) }}
+          <td class="r">{{ spark(b.spark, b.spy_spark) }}</td>
+          <td class="r muted sm">{{ b.etf_corr if b.etf_corr is not none else '—' }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel" id="detail">
+    {% for b in data.baskets %}
+    <div class="bdetail" data-id="{{ b.id }}" hidden>
+      <h3>{{ t(b.name, b.name_zh) }} <span class="cat">{{ b.category }}</span></h3>
+      <p class="muted sm" style="margin:0 0 8px">{{ b.theme }}{% if b.omitted %} · <span class="miss">{{ t('omitted (not in free cache):', '已剔除（不在免费缓存）：') }} {{ b.omitted|join(', ') }}</span>{% endif %}</p>
+      <div class="ddl">
+        <span class="muted sm">{{ t('Cumulative (3y)', '累计（3年）') }}<b class="{{ 'pos' if b.stats.cum_pct and b.stats.cum_pct>0 else 'neg' }}">{{ '%+.0f'|format(b.stats.cum_pct) }}%</b></span>
+        <span class="muted sm">{{ t('Sharpe', '夏普') }}<b>{{ b.stats.sharpe }}</b></span>
+        <span class="muted sm">{{ t('Max drawdown', '最大回撤') }}<b class="neg">{{ b.stats.maxdd_pct }}%</b></span>
+        <span class="muted sm">{{ t('Ann. vol', '年化波动') }}<b>{{ b.stats.ann_vol_pct }}%</b></span>
+        <span class="muted sm">{{ t('Members', '成分') }}<b>{{ b.n }}</b></span>
+        {% if b.etf_corr is not none %}<span class="muted sm">{{ t('ρ vs', '相关') }} {{ b.etf_proxy }}<b>{{ b.etf_corr }}</b></span>{% endif %}
+      </div>
+      <div class="twocol" style="display:grid;grid-template-columns:1.4fr 1fr;gap:20px">
+        <div>
+          <h2>{{ t('Members (equal weight)', '成分（等权）') }}</h2>
+          <table><thead><tr><th>{{ t('stock','个股') }}</th><th>{{ t('sector','板块') }}</th><th class="r">{{ t('wt','权重') }}</th><th class="r">YTD</th></tr></thead><tbody>
+          {% for m in b.members %}
+            <tr><td><a href="stock.html#{{ m.ticker }}"><b>{{ m.ticker }}</b></a> <span class="muted sm">{{ m.name }}</span></td>
+              <td class="muted sm">{{ td(m.sector) }}</td><td class="r muted sm">{{ '%.1f'|format(m.weight*100) }}%</td>
+              <td class="r {{ 'pos' if m.ytd and m.ytd>0 else ('neg' if m.ytd and m.ytd<0 else 'muted') }}">{{ '%+.1f'|format(m.ytd) if m.ytd is not none else '—' }}%</td></tr>
+          {% endfor %}
+          </tbody></table>
+        </div>
+        <div>
+          <h2>{{ t('Membership changelog', '成分变更记录') }}</h2>
+          <p class="muted sm">{{ t('Seeded ' ~ b.created ~ ' (curated ' ~ b.curated ~ ', applied to full history — hindsight, not out-of-sample).', '建立于 ' ~ b.created ~ '（' ~ b.curated ~ ' 整理并应用于全历史 — 事后选取，非样本外）。') }}</p>
+          {% for c in b.changelog %}<span class="chip">{{ c.date }} · {{ '+' if c.action=='add' else '−' }}{{ c.ticker }}</span>{% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="panel">
+    <p class="muted" style="font-size:12px;margin:0">{{ t(
+      'Equal-weight, point-in-time dated membership, buy-and-hold between changes, over the free S&P-1500 price cache (~3y, from ' ~ data.seed_date ~ '). As of ' ~ data.as_of ~ '. Membership was curated with knowledge of the period, so the series is HINDSIGHT-curated and descriptive — not an out-of-sample backtest and not a buy list. Sharpe/MaxDD reflect one short, mostly-bull regime. See LIMITATIONS.md.',
+      '等权重、按时点日期管理成分、变更间买入持有，基于免费标普 1500 价格缓存（约 3 年，自 ' ~ data.seed_date ~ '）。截至 ' ~ data.as_of ~ '。成分在已知该期间表现的情况下整理，故为事后选取的描述性序列 — 并非样本外回测，也非买入清单。夏普/最大回撤仅反映一段偏多头的短行情。参见 LIMITATIONS.md。') }}
+      {{ t('Generated', '生成于') }} {{ built }}</p>
+  </div>
+
+  <script>
+    (function(){
+      var tab=document.getElementById('btab'), tb=tab.querySelector('tbody');
+      var modeseg=document.getElementById('modeseg'), detail=document.getElementById('detail');
+      // metric mode toggle
+      modeseg.addEventListener('click', function(e){
+        var b=e.target.closest('button[data-mode]'); if(!b) return;
+        tab.setAttribute('data-mode', b.dataset.mode);
+        modeseg.querySelectorAll('button').forEach(function(x){x.classList.toggle('on', x===b);});
+        if(sortCol!==null) applySort();
+      });
+      // sortable return columns (sorts on the VISIBLE value for the current mode)
+      var sortCol=2, sortDir=-1;   // default: 20d descending
+      function cellVal(row, col){
+        var td=row.children[col+1]; if(!td) return -1e9;
+        var span=tab.getAttribute('data-mode')==='rel'?td.querySelector('.v-rel'):td.querySelector('.v-raw');
+        var v=span?parseFloat(span.getAttribute('data-v')):NaN; return isNaN(v)?-1e9:v;
+      }
+      function applySort(){
+        var rows=Array.prototype.slice.call(tb.querySelectorAll('tr'));
+        rows.sort(function(a,b){ return (cellVal(a,sortCol)-cellVal(b,sortCol))*sortDir; });
+        rows.forEach(function(r){ tb.appendChild(r); });
+      }
+      tab.querySelectorAll('th[data-col]').forEach(function(th){
+        th.addEventListener('click', function(){
+          var c=+th.dataset.col;
+          if(c===sortCol){ sortDir=-sortDir; } else { sortCol=c; sortDir=-1; }
+          applySort();
+        });
+      });
+      applySort();
+      // basket name -> open detail
+      tb.addEventListener('click', function(e){
+        var n=e.target.closest('.bname'); if(!n) return;
+        var id=n.dataset.id;
+        detail.style.display='block';
+        detail.querySelectorAll('.bdetail').forEach(function(d){ d.hidden = (d.dataset.id!==id); });
+        detail.scrollIntoView({behavior:'smooth', block:'nearest'});
+      });
+    })();
+  </script>
+  <script src="theme.js"></script>
+</body>
+</html>
