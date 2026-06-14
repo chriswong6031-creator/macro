@@ -212,11 +212,16 @@ def test_alerts_debounce_and_idempotent():
     ev1 = BA.compute_all_events(fr)
     ev2 = BA.compute_all_events(fr)
     assert {e["id"] for e in ev1} == {e["id"] for e in ev2}      # idempotent
-    # a short (<5d) whipsaw run in the HY band must NOT spawn its own event
+    # a short (<5 bar) whipsaw run in the HY band must NOT spawn its own event
     raw = pd.Series(["tight"] * 100 + ["normal"] * 2 + ["tight"] * 100,
                     index=_idx(202))
     deb = BA._debounce(raw, 5)
-    assert (deb == "tight").all(), "a 2-day blip should be absorbed"
+    assert (deb == "tight").all(), "a 2-bar interior blip should be absorbed"
+    # ...but the CURRENT (last) run is NEVER absorbed, even if short — a fresh genuine
+    # flip (e.g. a curve un-inversion) must surface immediately, not be hidden for min_days.
+    raw2 = pd.Series(["bear_flattener"] * 100 + ["bull_steepener"] * 2, index=_idx(102))
+    deb2 = BA._debounce(raw2, 21)
+    assert deb2.iloc[-1] == "bull_steepener", "the latest genuine transition must be preserved"
 
 
 def test_real_data_smoke():

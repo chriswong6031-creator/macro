@@ -1,6 +1,6 @@
 {
   "as_of": "2026-06-12",
-  "health_score": 87,
+  "health_score": 86,
   "health_label": "healthy",
   "cycle_phase": "late",
   "recession_risk": 8.767981087785952,
@@ -72,8 +72,8 @@
     "plumbing": 7.105427357601002e-14
   },
   "alarms": [],
-  "verdict_en": "Bond health healthy (87/100), late-cycle. Curve positively sloped. Credit tight. Rates-vol calm.",
-  "verdict_zh": "债券健康度健康（87/100），周期晚段。曲线正向倾斜。信用偏紧。利率波动平静。",
+  "verdict_en": "Bond health healthy (86/100), late-cycle. Curve positively sloped. Credit tight. Rates-vol calm.",
+  "verdict_zh": "债券健康度健康（86/100），周期晚段。曲线正向倾斜。信用偏紧。利率波动平静。",
   "drivers_for": {
     "forex": {
       "note_en": "Rate differentials drive FX — the US 2y policy-path and the real-10y are the carry and value anchors; a US-favorable widening vs foreign rates is a USD tailwind.",

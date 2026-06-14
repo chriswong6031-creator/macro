@@ -11,38 +11,38 @@
       "desc": "Recession-risk composite (0-100)",
       "span": "1971-01-04..2026-03-17",
       "n": 14402,
-      "ic_dd_full": 0.164,
-      "ic_dd_pre": 0.205,
-      "ic_dd_post": 0.007,
-      "ic_recession": 0.445,
-      "verdict": "CONFIRMED",
+      "ic_dd_full": 0.17,
+      "ic_dd_pre": 0.208,
+      "ic_dd_post": 0.013,
+      "ic_recession": 0.434,
+      "verdict": "DIRECTIONAL",
       "conditional": {
         "terciles": {
           "low": {
             "n": 4801,
-            "p_dd10": 0.053,
+            "p_dd10": 0.051,
             "mean_dd_depth_pct": 3.7,
-            "p_recession": 0.089
+            "p_recession": 0.094
           },
           "mid": {
             "n": 4800,
-            "p_dd10": 0.109,
-            "mean_dd_depth_pct": 4.2,
-            "p_recession": 0.138
+            "p_dd10": 0.112,
+            "mean_dd_depth_pct": 4.3,
+            "p_recession": 0.147
           },
           "high": {
             "n": 4801,
-            "p_dd10": 0.207,
+            "p_dd10": 0.205,
             "mean_dd_depth_pct": 6.2,
-            "p_recession": 0.48
+            "p_recession": 0.467
           }
         },
         "base_p_dd10": 0.123,
-        "high_edge_pp": 8.4,
+        "high_edge_pp": 8.2,
         "high_p_dd10_ci": [
-          0.142,
-          0.205,
-          0.283
+          0.141,
+          0.204,
+          0.282
         ]
       }
     },
@@ -50,38 +50,38 @@
       "desc": "Drawdown-risk gauge (0-100, already MEASURED)",
       "span": "1973-03-05..2026-03-17",
       "n": 13837,
-      "ic_dd_full": 0.248,
-      "ic_dd_pre": 0.287,
-      "ic_dd_post": 0.117,
-      "ic_recession": 0.564,
+      "ic_dd_full": 0.25,
+      "ic_dd_pre": 0.288,
+      "ic_dd_post": 0.123,
+      "ic_recession": 0.554,
       "verdict": "CONFIRMED",
       "conditional": {
         "terciles": {
           "low": {
             "n": 4613,
-            "p_dd10": 0.033,
+            "p_dd10": 0.034,
             "mean_dd_depth_pct": 3.4,
-            "p_recession": 0.018
+            "p_recession": 0.028
           },
           "mid": {
             "n": 4612,
-            "p_dd10": 0.099,
+            "p_dd10": 0.095,
             "mean_dd_depth_pct": 4.1,
-            "p_recession": 0.144
+            "p_recession": 0.14
           },
           "high": {
             "n": 4612,
-            "p_dd10": 0.248,
+            "p_dd10": 0.251,
             "mean_dd_depth_pct": 6.8,
-            "p_recession": 0.558
+            "p_recession": 0.552
           }
         },
         "base_p_dd10": 0.127,
-        "high_edge_pp": 12.1,
+        "high_edge_pp": 12.4,
         "high_p_dd10_ci": [
-          0.177,
-          0.247,
-          0.322
+          0.179,
+          0.25,
+          0.325
         ]
       }
     },
@@ -90,7 +90,7 @@
       "span": "1996-12-31..2026-03-17",
       "n": 7621,
       "ic_dd_full": 0.174,
-      "ic_dd_pre": 0.285,
+      "ic_dd_pre": 0.287,
       "ic_dd_post": -0.089,
       "ic_recession": 0.284,
       "verdict": "DIRECTIONAL",
@@ -129,7 +129,7 @@
       "span": "2002-11-12..2026-03-17",
       "n": 6091,
       "ic_dd_full": 0.168,
-      "ic_dd_pre": 0.251,
+      "ic_dd_pre": 0.244,
       "ic_dd_post": 0.083,
       "ic_recession": 0.183,
       "verdict": "CONFIRMED",
@@ -206,38 +206,38 @@
       "desc": "Bond-stress composite = 100 - health score (the headline)",
       "span": "1971-01-04..2026-03-17",
       "n": 14402,
-      "ic_dd_full": 0.235,
-      "ic_dd_pre": 0.284,
-      "ic_dd_post": 0.046,
-      "ic_recession": 0.539,
+      "ic_dd_full": 0.244,
+      "ic_dd_pre": 0.287,
+      "ic_dd_post": 0.086,
+      "ic_recession": 0.544,
       "verdict": "CONFIRMED",
       "conditional": {
         "terciles": {
           "low": {
             "n": 4801,
-            "p_dd10": 0.033,
-            "mean_dd_depth_pct": 3.4,
-            "p_recession": 0.058
+            "p_dd10": 0.027,
+            "mean_dd_depth_pct": 3.3,
+            "p_recession": 0.061
           },
           "mid": {
             "n": 4800,
             "p_dd10": 0.104,
-            "mean_dd_depth_pct": 4.1,
-            "p_recession": 0.089
+            "mean_dd_depth_pct": 4.0,
+            "p_recession": 0.088
           },
           "high": {
             "n": 4801,
-            "p_dd10": 0.231,
-            "mean_dd_depth_pct": 6.6,
-            "p_recession": 0.557
+            "p_dd10": 0.237,
+            "mean_dd_depth_pct": 6.7,
+            "p_recession": 0.555
           }
         },
         "base_p_dd10": 0.123,
-        "high_edge_pp": 10.8,
+        "high_edge_pp": 11.4,
         "high_p_dd10_ci": [
-          0.168,
-          0.23,
-          0.305
+          0.174,
+          0.238,
+          0.307
         ]
       }
     }
@@ -248,7 +248,7 @@
       "span": "1971-01-04..2026-03-17",
       "n": 14402,
       "ic_dd_full": 0.054,
-      "ic_dd_pre": 0.089,
+      "ic_dd_pre": 0.09,
       "ic_dd_post": -0.017,
       "ic_recession": 0.363,
       "verdict": "DIRECTIONAL",
@@ -287,7 +287,7 @@
       "span": "1976-06-01..2026-03-17",
       "n": 12991,
       "ic_dd_full": -0.018,
-      "ic_dd_pre": 0.07,
+      "ic_dd_pre": 0.073,
       "ic_dd_post": -0.199,
       "ic_recession": 0.24,
       "verdict": "CONTEXT",
@@ -326,7 +326,7 @@
       "span": "1996-12-31..2026-03-17",
       "n": 7621,
       "ic_dd_full": 0.174,
-      "ic_dd_pre": 0.285,
+      "ic_dd_pre": 0.288,
       "ic_dd_post": -0.089,
       "ic_recession": 0.284,
       "verdict": "DIRECTIONAL",
@@ -362,11 +362,11 @@
     }
   },
   "weights_measured": {
-    "recession": 0.323,
-    "drawdown": 0.323,
-    "credit": 0.129,
-    "rates_vol": 0.194,
-    "plumbing": 0.032
+    "recession": 0.192,
+    "drawdown": 0.385,
+    "credit": 0.154,
+    "rates_vol": 0.231,
+    "plumbing": 0.038
   },
   "weights_prior": {
     "recession": 1.0,
@@ -376,11 +376,11 @@
     "plumbing": 0.4
   },
   "composite_vs_best_leg": {
-    "composite_ic": 0.235,
+    "composite_ic": 0.244,
     "best_leg": "drawdown",
-    "best_leg_ic": 0.248,
-    "delta": -0.013,
-    "verdict": "best single leg (drawdown) BEATS the composite"
+    "best_leg_ic": 0.25,
+    "delta": -0.006,
+    "verdict": "composite ~= best leg (blend adds little)"
   },
   "probit_reliability": {
     "brier": 0.1651,
