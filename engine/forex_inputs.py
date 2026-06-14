@@ -34,10 +34,15 @@ def _col(group: str, name: str, col: str | None = None) -> pd.Series | None:
     return s[~s.index.duplicated(keep="last")].sort_index().dropna()
 
 
-def _short_rate_sid_map(cfg_fred: dict | None = None) -> dict[str, str]:
-    """col-name -> FRED series_id for fx_rates_short (asset.short_rate names the col)."""
+def _col_sid(group: str, cfg_fred: dict | None = None) -> dict[str, str]:
+    """col-name -> FRED series_id for a fred.series group (assets name the col)."""
     cfg_fred = cfg_fred or config.load()["fred"]["series"]
-    return {colname: sid for sid, colname in cfg_fred.get("fx_rates_short", {}).items()}
+    return {colname: sid for sid, colname in cfg_fred.get(group, {}).items()}
+
+
+def _sid_maps() -> dict[str, dict[str, str]]:
+    fred = config.load()["fred"]["series"]
+    return {grp: _col_sid(grp, fred) for grp in ("fx_rates_short", "fx_rates_long", "fx_reer")}
 
 
 def load_drivers(cfg: dict | None = None) -> dict[str, pd.Series]:
@@ -54,9 +59,16 @@ def load_price(meta: dict) -> pd.DataFrame:
     """Canonical BASE-vs-USD daily price. Yahoo stores close (+vol); synthesize
     OHLC from close so the ported price-structure functions work unchanged. When
     meta['invert'] (symbol quotes USD as base, USD/xxx), take 1/close so a RISING
-    series always = the base currency strengthening vs the dollar (LONG-base up)."""
+    series always = the base currency strengthening vs the dollar (LONG-base up).
+
+    fred_fallback: when the Yahoo series has < 300 rows (e.g. USD/CNH has only a
+    current print), fall back to the FRED reference rate (meta['fred']) for history."""
     ticker = meta["yahoo"]
     df = store.read("yahoo", ticker)
+    if (df is None or len(df) < 300) and meta.get("fred_fallback") and meta.get("fred"):
+        fr = store.read("fred", meta["fred"])
+        if fr is not None and not fr.empty:
+            df = fr.iloc[:, [0]].rename(columns={fr.columns[0]: "close"})
     if df is None or df.empty:
         raise RuntimeError(f"no price stored for {ticker}")
     px = df.rename(columns=str.lower).copy()
@@ -83,31 +95,35 @@ def load_cot_positioning(cot_name: str | None) -> pd.Series | None:
     return s[~s.index.duplicated(keep="last")].sort_index().dropna().rename("net_spec_pct_oi")
 
 
-def load_short_rate(meta: dict, sid_map: dict[str, str]) -> pd.Series | None:
-    """Foreign short/policy rate (%) for the carry differential vs US (DFF).
-    Step-function rates -> ffill is economically correct (handled downstream)."""
-    if meta.get("carry") == "context" or "short_rate" not in meta:
+def load_rate(meta: dict, meta_key: str, group: str, sid_maps: dict) -> pd.Series | None:
+    """Foreign rate / REER series named by a column in meta -> its FRED parquet.
+    Short/policy rates are step functions (ffill correct); REER/10y are monthly +
+    lagged (the signal engine shifts them by the configured pub_lag before use)."""
+    col = meta.get(meta_key)
+    if not col:
         return None
-    col = meta["short_rate"]
-    sid = sid_map.get(col)
+    sid = sid_maps.get(group, {}).get(col)
     if not sid:
-        log.warning("forex_inputs: no FRED series for short_rate col %s", col)
+        log.warning("forex_inputs: no FRED series for %s col %s", meta_key, col)
         return None
     return _col("fred", sid, col)
 
 
 def load_asset(pair: str, drivers: dict | None = None, cfg: dict | None = None,
-               sid_map: dict[str, str] | None = None) -> dict:
+               sid_maps: dict | None = None) -> dict:
     cfg = cfg or config.load()["forex"]
     meta = cfg["assets"][pair]
-    sid_map = sid_map if sid_map is not None else _short_rate_sid_map()
+    sid_maps = sid_maps if sid_maps is not None else _sid_maps()
+    short = None if meta.get("carry") == "context" else load_rate(meta, "short_rate", "fx_rates_short", sid_maps)
     ai = {
         "pair": pair,
         "meta": meta,
         "archetype": meta.get("archetype", "major"),
         "base": meta.get("base", pair),
         "price": load_price(meta),
-        "short_rate": load_short_rate(meta, sid_map),
+        "short_rate": short,
+        "long_rate": load_rate(meta, "long_rate", "fx_rates_long", sid_maps),
+        "reer": load_rate(meta, "reer", "fx_reer", sid_maps),
         "cot_net_pct_oi": load_cot_positioning(meta.get("cot")),
         "drivers": drivers if drivers is not None else load_drivers(cfg),
     }
@@ -128,12 +144,12 @@ def load_all(cfg: dict | None = None, active_only: bool = True) -> dict[str, dic
     """Load pairs (active board by default), sharing one driver load."""
     cfg = cfg or config.load()["forex"]
     drivers = load_drivers(cfg)
-    sid_map = _short_rate_sid_map()
+    sid_maps = _sid_maps()
     pairs = cfg["active"] if active_only else list(cfg["assets"].keys())
     out: dict[str, dict] = {}
     for p in pairs:
         try:
-            out[p] = load_asset(p, drivers, cfg, sid_map)
+            out[p] = load_asset(p, drivers, cfg, sid_maps)
         except Exception as e:  # noqa: BLE001 — one bad pair must not kill the board
             log.warning("forex_inputs: skipping %s (%s)", p, e)
     return out

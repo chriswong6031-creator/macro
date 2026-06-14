@@ -921,23 +921,26 @@ commodity_news:
 # CONTEXT, not alpha — see LIMITATIONS.md.
 # =============================================================================
 forex:
-  active: [EURUSD, USDJPY, AUDUSD]   # Phase-1 board; others collected + ready for later phases
+  active: [EURUSD, GBPUSD, USDJPY, USDCHF, AUDUSD, USDCAD, USDMXN, USDBRL, USDCNH]  # full board (Phase 3)
 
   # pair -> orientation + data wiring.
-  #   base    = the non-USD currency we score (LONG-base = long it vs USD)
-  #   invert  = yahoo symbol quotes USD as BASE (USD/xxx); take 1/price for base-vs-USD
+  #   base       = the non-USD currency we score (LONG-base = long it vs USD)
+  #   invert     = yahoo symbol quotes USD as BASE (USD/xxx); take 1/price for base-vs-USD
   #   short_rate = fx_rates_short column for the carry differential (US leg = fed_funds/DFF)
+  #   long_rate  = fx_rates_long column (foreign 10y) for the rate-differential factor vs US10y
+  #   reer       = fx_reer column (BIS real effective rate) for the value factor
   #   carry: context = no carry weight (no clean free front-end rate) — EM tiles
+  #   fred_fallback (price) is used when the Yahoo series has too little history (USD/CNH)
   assets:
-    EURUSD: {yahoo: "EURUSD=X", fred: DEXUSEU, cot: cot_euro_fx, archetype: major,           base: EUR, invert: false, short_rate: ez_short, reer: reer_ez}
-    USDJPY: {yahoo: "USDJPY=X", fred: DEXJPUS, cot: cot_yen,     archetype: haven-funder,     base: JPY, invert: true,  short_rate: jp_short, reer: reer_jp, peg: {kind: intervention, watch: [150, 162]}}
-    AUDUSD: {yahoo: "AUDUSD=X", fred: DEXUSAL, cot: cot_aussie,  archetype: commodity-dollar, base: AUD, invert: false, short_rate: au_short, reer: reer_au, commodity: ["HG=F", "GC=F"]}
-    GBPUSD: {yahoo: "GBPUSD=X", fred: DEXUSUK, cot: cot_pound,   archetype: major,            base: GBP, invert: false, short_rate: gb_short, reer: reer_gb}
-    USDCAD: {yahoo: "USDCAD=X", fred: DEXCAUS, cot: cot_cad,     archetype: commodity-dollar, base: CAD, invert: true,  short_rate: ca_short, reer: reer_ca, commodity: ["CL=F"]}
-    USDCHF: {yahoo: "USDCHF=X", fred: DEXSZUS, cot: cot_swiss,   archetype: haven-funder,     base: CHF, invert: true,  short_rate: ch_short, reer: reer_ch, peg: {kind: snb}}
+    EURUSD: {yahoo: "EURUSD=X", fred: DEXUSEU, cot: cot_euro_fx, archetype: major,           base: EUR, invert: false, short_rate: ez_short, long_rate: ez_10y, reer: reer_ez}
+    USDJPY: {yahoo: "USDJPY=X", fred: DEXJPUS, cot: cot_yen,     archetype: haven-funder,     base: JPY, invert: true,  short_rate: jp_short, long_rate: jp_10y, reer: reer_jp, peg: {kind: intervention, watch: [150, 162]}}
+    AUDUSD: {yahoo: "AUDUSD=X", fred: DEXUSAL, cot: cot_aussie,  archetype: commodity-dollar, base: AUD, invert: false, short_rate: au_short, long_rate: au_10y, reer: reer_au, commodity: ["HG=F", "GC=F"]}
+    GBPUSD: {yahoo: "GBPUSD=X", fred: DEXUSUK, cot: cot_pound,   archetype: major,            base: GBP, invert: false, short_rate: gb_short, long_rate: gb_10y, reer: reer_gb}
+    USDCAD: {yahoo: "USDCAD=X", fred: DEXCAUS, cot: cot_cad,     archetype: commodity-dollar, base: CAD, invert: true,  short_rate: ca_short, long_rate: ca_10y, reer: reer_ca, commodity: ["CL=F"]}
+    USDCHF: {yahoo: "USDCHF=X", fred: DEXSZUS, cot: cot_swiss,   archetype: haven-funder,     base: CHF, invert: true,  short_rate: ch_short, long_rate: ch_10y, reer: reer_ch, peg: {kind: snb}}
     USDMXN: {yahoo: "USDMXN=X", fred: DEXMXUS, cot: cot_peso,    archetype: em,               base: MXN, invert: true,  carry: context, reer: reer_mx}
     USDBRL: {yahoo: "USDBRL=X", fred: DEXBZUS, cot: cot_real,    archetype: em,               base: BRL, invert: true,  carry: context, reer: reer_br}
-    USDCNH: {yahoo: "CNH=X",    fred: DEXCHUS, cot: null,        archetype: em-managed,       base: CNH, invert: true,  carry: context, reer: reer_cn, peg: {kind: managed}}
+    USDCNH: {yahoo: "CNH=X",    fred: DEXCHUS, cot: null,        archetype: em-managed,       base: CNH, invert: true,  carry: context, reer: reer_cn, peg: {kind: managed}, fred_fallback: true}
 
   drivers:                          # shared macro series: name -> [store-group, store-name]
     dxy:          [yahoo, "DX-Y.NYB"]   # US Dollar Index (1971->)
@@ -1028,10 +1031,15 @@ forex:
     bands: {strong: 60, weak: 20}   # |score| -> STRONG / weak / FLAT
     hysteresis_confirm_days: 5
 
-  value:                            # REER mean-reversion (Phase 3; collected now)
-    pctile_lookback_d: 1260
-    high_pctile: 0.80
-    low_pctile: 0.20
+  value:                            # REER mean-reversion (slow valuation anchor)
+    gap_window_d: 1260              # ~5y rolling mean of log-REER (the long-run "fair" level)
+    z_lookback_d: 1260
+    pub_lag_d: 45                   # BIS REER is monthly + ~6wk lag -> shift before use (no look-ahead)
+
+  rates:                            # 10y yield-differential momentum (relative monetary policy)
+    diff_window_d: 63               # change in (foreign 10y - US 10y) over this window
+    z_lookback_d: 252
+    pub_lag_d: 45                   # foreign 10y (OECD monthly) is lagged -> shift before use
 
   calibration:
     start_date: "2004-01-01"        # Yahoo FX-major history is deep; EM shorter

@@ -264,5 +264,11 @@ LEX: dict[str, str] = {
     "Trend & Structure": "趋势与结构",
     "Carry & Rates": "套息与利率",
     "Risk & Positioning": "风险与持仓",
+    "Value": "估值",
     "Shocks": "冲击",
+    # Forex Vector — archetype board sections
+    "Majors": "主要货币",
+    "Commodity dollars": "商品货币",
+    "Haven-funders": "避险/融资货币",
+    "Emerging markets": "新兴市场",
 }

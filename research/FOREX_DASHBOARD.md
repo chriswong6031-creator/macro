@@ -47,8 +47,8 @@ Each pair's price-layer factors are computed on the **dollar-orthogonalized resi
 | Risk index | per-pair realized-vol/drawdown saturating 0–100 | Yahoo spot | 1 |
 | Residual shock | causal expanding-fit decoupling (intervention/geopolitics) | derived | 1 |
 | Positioning | CFTC COT net-spec %OI percentile (contrarian) | CFTC COT | 1* |
-| Value (REER) | −z of BIS REER gap vs long-run mean | FRED `RB*BIS` | 3 |
-| Real-rate diff | Δ(2y/front-end differential − breakeven differential) | FRED | 3 |
+| Value (REER) | −z of BIS REER gap vs 5y mean (pub-lag shifted, no look-ahead) | FRED `RB*BIS` | 3 ✅ |
+| Rate diff (10y) | z of Δ(foreign 10y − US 10y) — relative monetary policy | FRED `IRLTLT01*`/`DGS10` | 3 ✅ |
 
 \* COT depends on CFTC uptime (503 at first build → drops gracefully until collected).
 
@@ -115,8 +115,14 @@ fx_rates_short,fx_rates_long,fx_reer}`, `fred.series.credit.BAMLEMCBPIOAS`, and
   IC, which overfits) + per-factor verdict glyphs on the page. `score_reliable` needs ≥2
   robust factors; report in `reports/forex-calibration.md`. Findings: USD/JPY trend
   CONFIRMED, GBP riskoff CONFIRMED, carry INVERTED (forward-premium puzzle). See D-FX7.
-- **Phase 3 — full board + depth** — GBP/CAD/CHF + EM tiles; REER value + real-rate
-  factors; MTF confluence; alerts/timeline; carry + positioning tables.
+- **Phase 3 — full board + depth** ✅ (partial) — all 9 pairs live, archetype-grouped
+  (Majors / Commodity-dollars / Haven-funders / EM); REER **value** factor (pub-lag
+  shifted) + **10y rate-diff** factor wired and calibrated (value CONFIRMED for EUR/AUD,
+  INVERTED for JPY; rates mostly CONTEXT — monthly-lagged data); cross-pair **carry &
+  valuation table**; USD/CNH backfilled from FRED onshore (`DEXCHUS`). Value tipped
+  EUR/JPY/AUD to RELIABLE. **Deferred to Phase 3.5:** MTF confluence (the commodity
+  equity-preset needs FX validation first) and the alerts/timeline engine (FX wants
+  hourly data we don't collect); COT positioning table waits on CFTC recovery.
 - **Phase 4 — integration** — cross-page nav links + hub card across all sections;
   optional catalyst annotation.
 

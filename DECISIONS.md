@@ -111,6 +111,21 @@ forward-premium puzzle). The score is scale-invariant (100·Σwf/Σ|w|) so only 
 weights matter. Caveat that remains: a Gaussian split-half can't price the carry crash
 tail (LIMITATIONS.md) — verdicts are honest over-this-sample, not regime-proof.
 
+**D-FX8. Phase 3 — full 9-pair board + value/rates factors.** All pairs go live,
+archetype-grouped (Majors / Commodity-dollars / Haven-funders / EM) in an auto-fill grid,
+plus a cross-pair carry & valuation table. Two new factors: (a) **value** = −z of the BIS
+REER gap vs its 5y mean (overvalued → mean-reversion headwind); (b) **rates** = z of the
+Δ(foreign 10y − US 10y) — relative monetary policy, the honest "rate differential" the
+review demanded (NOT a fake free 2y). Both are monthly/lagged, so a `_lag_to_daily` helper
+shifts each by its publication lag BEFORE ffill — the daily factor never sees a print
+before release (test `test_value_lag_has_no_lookahead`). Calibration: value CONFIRMED for
+EUR/AUD (REER reverts), INVERTED for JPY (the yen kept cheapening), rates mostly CONTEXT
+(weak IC on coarse data) — and value tipped EUR/JPY/AUD over the ≥2-robust bar, so the
+active majors now read RELIABLE. **USD/CNH** has no usable Yahoo history, so `load_price`
+falls back to FRED `DEXCHUS` (onshore CNY) when the Yahoo series is < 300 rows — flagged as
+an onshore proxy / managed regime. Deferred (Phase 3.5, honestly out-of-scope): MTF
+(equity-preset fit unverified for FX) and the alerts/timeline engine (wants hourly data).
+
 ## 2026-06-13 — Section 4 (HK) enrichment: native features ported from China/US
 
 After a verified viability research pass (4-cluster workflow + web checks), added the

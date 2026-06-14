@@ -211,10 +211,46 @@ def pair_vm(pair: str, df: pd.DataFrame, calib: dict, dollar_day: float) -> dict
         "carry_diff": _r(cd, 2), "carry_score": _r(cs_, 2),
         "carry_to_vol": _r(last.get("carry_to_vol"), 2),
         "carry_context": meta.get("carry") == "context",
+        "reer_gap": _r(100 * last.get("reer_gap"), 1) if pd.notna(last.get("reer_gap")) else None,
+        "rate_diff_10y": _r(last.get("rate_diff_10y"), 2) if pd.notna(last.get("rate_diff_10y")) else None,
         "conviction": conv,
         "chart": chart_pair(df, pair),
     }
     return vm
+
+
+# archetype -> board section (label en/zh, order)
+SECTIONS = [
+    ("major", "Majors", "主要货币"),
+    ("commodity-dollar", "Commodity dollars", "商品货币"),
+    ("haven-funder", "Haven-funders", "避险/融资货币"),
+    ("em", "Emerging markets", "新兴市场"),
+]
+
+
+def group_sections(pairs: list[dict]) -> list[dict]:
+    by_arch: dict[str, list] = {}
+    for vm in pairs:
+        a = config.load()["forex"]["assets"][vm["key"]].get("archetype", "major")
+        by_arch.setdefault("em" if a.startswith("em") else a, []).append(vm)
+    out = []
+    for arch, label, zh in SECTIONS:
+        members = by_arch.get(arch, [])
+        if members:
+            out.append({"label": label, "zh": zh, "pairs": members})
+    return out
+
+
+def carry_table(pairs: list[dict]) -> list[dict]:
+    rows = []
+    for vm in pairs:
+        rows.append({"label": vm["label"], "base": vm["base"],
+                     "carry": None if vm["carry_context"] else vm["carry_diff"],
+                     "ctv": None if vm["carry_context"] else vm["carry_to_vol"],
+                     "beta": vm["dollar_beta"], "reer_gap": vm["reer_gap"],
+                     "rate10": vm["rate_diff_10y"]})
+    rows.sort(key=lambda r: (r["carry"] is None, -(r["carry"] or -99)))   # high carry first
+    return rows
 
 
 # --------------------------------------------------------------------------- #
@@ -241,8 +277,10 @@ def main() -> int:
     dollar_day = float(dol.iloc[-1].get("dollar_day_z") or 0.0)
     calib = forex_conviction.load_calibration()
 
-    order = [p for p in cfg["active"] if p in results]
+    order = [p for p in cfg["active"] if p in results and len(results[p]) >= 300]
     pairs = [pair_vm(p, results[p], calib, dollar_day) for p in order]
+    sections = group_sections(pairs)
+    ctable = carry_table(pairs)
 
     as_of = max((results[p].index.max() for p in order), default=dol.index.max()).strftime("%b %d, %Y")
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -254,7 +292,7 @@ def main() -> int:
     env.globals.update(tr=tr, td=td)
     html = env.get_template("forex.html.j2").render(
         C=C, as_of=as_of, built=built, cal_span=cal_span,
-        dollar=dollar, pairs=pairs, cot_ok=cot_ok)
+        dollar=dollar, pairs=pairs, sections=sections, carry_table=ctable, cot_ok=cot_ok)
     site = config.ROOT / config.load()["storage"]["site_dir"]
     (site / "forex.html").write_text(html)
     log.info("wrote %s/forex.html (%d KB)", site, len(html) // 1024)

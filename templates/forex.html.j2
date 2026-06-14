@@ -61,6 +61,8 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 .grid{display:grid;gap:18px}
 .cols-2{grid-template-columns:1.05fr .95fr}.cols-3{grid-template-columns:repeat(3,1fr)}
 @media(max-width:900px){.cols-2,.cols-3{grid-template-columns:1fr}}
+.sec-head{font-size:12px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.05em;margin:24px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--grid)}
+.board-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(328px,1fr));gap:18px}
 .card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:22px}
 .card h2{margin:0 0 4px;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 .brand{font-weight:800;font-size:21px;color:var(--ink);letter-spacing:-.02em;margin:6px 0 2px}
@@ -184,8 +186,10 @@ table.tbl th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:
 
   <!-- ===================== PER-PAIR SIGNAL BOARD ===================== -->
   <h2 style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:24px 0 10px">{{ t('Currency board · idiosyncratic (ex-dollar) signals', '货币面板 · 特异（剥离美元）信号') }}</h2>
-  <div class="grid cols-3">
-  {% for p in pairs %}{% set c = p.conviction %}
+  {% for sec in sections %}
+  <div class="sec-head">{{ t(sec.label, sec.zh) }} <span class="faint">· {{ sec.pairs|length }}</span></div>
+  <div class="board-grid">
+  {% for p in sec.pairs %}{% set c = p.conviction %}
     <div class="card">
       <div class="pair-head">
         <div>
@@ -235,6 +239,35 @@ table.tbl th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:
       <div style="margin-top:14px">{{ p.chart | safe }}</div>
     </div>
   {% endfor %}
+  </div>
+  {% endfor %}
+
+  <!-- ===================== CARRY & VALUATION TABLE ===================== -->
+  <div class="card" style="margin-top:20px">
+    <h2>{{ t('Carry &amp; valuation — cross-pair', '套息与估值 · 跨货币对') }}</h2>
+    <table class="tbl">
+      <thead><tr>
+        <th>{{ t('Pair', '货币对') }}</th>
+        <th>{{ t('Carry %', '套息 %') }}</th>
+        <th>{{ t('Carry/vol', '套息/波动') }}</th>
+        <th>{{ t('10y diff', '10年利差') }}</th>
+        <th>{{ t('REER gap %', 'REER偏离 %') }}</th>
+        <th>{{ t('$ beta', '美元贝塔') }}</th>
+      </tr></thead>
+      <tbody>
+      {% for r in carry_table %}
+        <tr>
+          <td>{{ r.label }}</td>
+          <td>{% if r.carry is none %}<span class="faint">—</span>{% else %}{{ '%+.2f'|format(r.carry) }}{% endif %}</td>
+          <td>{% if r.ctv is none %}<span class="faint">—</span>{% else %}{{ '%+.2f'|format(r.ctv) }}{% endif %}</td>
+          <td>{% if r.rate10 is none %}<span class="faint">—</span>{% else %}{{ '%+.2f'|format(r.rate10) }}{% endif %}</td>
+          <td>{% if r.reer_gap is none %}<span class="faint">—</span>{% else %}{{ '%+.1f'|format(r.reer_gap) }}{% endif %}</td>
+          <td>{{ r.beta }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <div class="sub faint" style="margin-top:8px">{{ t('Carry % = foreign minus US short rate (annualized). Carry/vol penalizes fragile high-vol carry. REER gap = real-effective rate vs its 5y mean (+ = rich → mean-reversion headwind). Carry has fat-tailed crash risk — see the honesty note below.', '套息 % = 外币减美国短端利率（年化）。套息/波动惩罚高波动的脆弱套息。REER偏离 = 实际有效汇率相对5年均值（+ = 偏贵 → 均值回归阻力）。套息具肥尾崩盘风险 — 见下方诚信说明。') }}</div>
   </div>
 
   <!-- ===================== METHODOLOGY / HONESTY ===================== -->

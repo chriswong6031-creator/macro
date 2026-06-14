@@ -76,13 +76,25 @@ def test_factor_panel_naive_bullish_bounds():
     sig = pd.DataFrame({
         "close": 1.0, "ts_momentum": np.linspace(-2, 2, 60), "structure": np.linspace(2, -2, 60),
         "risk_index": np.linspace(0, 100, 60), "carry_score": np.linspace(-2, 2, 60),
+        "rates_score": np.linspace(-2, 2, 60), "value_score": np.linspace(2, -2, 60),
         "riskoff": np.linspace(-2, 2, 60), "pos_pctile": np.linspace(0, 100, 60),
         "shock_z": np.linspace(-4, 4, 60),
     }, index=idx)
     f = FC.factor_panel("EURUSD", sig, {"base": "EUR"})
     assert (f.abs() <= 1.0 + 1e-9).all().all(), "every factor must be naive-bullish in [-1,1]"
+    assert {"value", "rates"} <= set(f.columns), "value & rates factors must be in the panel"
     # contrarian positioning: crowded long (high pctile) -> bearish
     assert f["positioning"].iloc[-1] < 0 < f["positioning"].iloc[0]
+
+
+def test_value_lag_has_no_lookahead():
+    """A monthly REER value is only visible AFTER its publication lag (no look-ahead)."""
+    from engine.forex_signals import _lag_to_daily
+    idx = pd.date_range("2020-01-01", periods=400, freq="D")
+    reer = pd.Series([100.0, 110.0], index=pd.to_datetime(["2020-06-30", "2020-07-31"]))
+    out = _lag_to_daily(reer, idx, 45)
+    assert out.loc["2020-08-15"] == 100.0, "the July print (released ~Sep) must not leak into August"
+    assert out.loc["2020-09-20"] == 110.0, "after the lag, the July print is visible"
 
 
 def _sig(close_last, n=700, **cols):
@@ -96,10 +108,10 @@ def _sig(close_last, n=700, **cols):
 def test_conviction_bounds_action_and_framing():
     sig = _sig(1.1, ts_momentum=0.4, structure=0.3, risk_index=20.0,
                carry_score=0.5, riskoff=0.3, shock_z=0.5, pos_pctile=40.0)
-    c = FC.conviction("EURUSD", sig, CFG["assets"]["EURUSD"])
+    c = FC.conviction("EURUSD", sig, CFG["assets"]["EURUSD"], calib={})   # un-calibrated path
     assert -100 <= c["score"] <= 100
     assert c["action"] in ("STRONG LONG", "LONG", "FLAT", "SHORT", "STRONG SHORT")
-    assert c["framing"] and c["reliable"] is False       # Phase 1: un-calibrated, dampened
+    assert c["framing"] and c["reliable"] is False       # empty calib -> dampened, prior weights
     assert 0.0 <= c["confidence"] <= 1.0
 
 
@@ -218,6 +230,7 @@ if __name__ == "__main__":
                test_conviction_bounds_action_and_framing, test_conviction_peg_intervention_caps,
                test_conviction_managed_forces_flat, test_em_carry_context_has_no_carry_factor,
                test_dollar_master_regime_is_valid_and_dir_matches, test_real_orientation_crosscheck,
+               test_value_lag_has_no_lookahead,
                test_calibrate_peg_mask_excises_zones, test_calibrate_pair_signs_inverted_and_normalizes]:
         fn()
         print(f"PASS {fn.__name__}")

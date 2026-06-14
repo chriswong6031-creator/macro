@@ -13,15 +13,17 @@
       "span": "2004-01-01..2026-06-12",
       "rows": 5823,
       "weights": {
-        "trend": -0.3761,
-        "structure": 0.0427,
-        "carry": -0.1709,
-        "riskoff": 0.1538,
-        "positioning": 0.1709,
-        "risk": 0.0513,
-        "shock": 0.0342
+        "trend": -0.3064,
+        "structure": 0.034,
+        "carry": -0.1277,
+        "rates": 0.0468,
+        "value": 0.1362,
+        "riskoff": 0.1277,
+        "positioning": 0.1532,
+        "risk": 0.0383,
+        "shock": 0.0298
       },
-      "score_reliable": false,
+      "score_reliable": true,
       "signals": {
         "trend": {
           "verdict": "INVERTED",
@@ -40,6 +42,18 @@
           "ic_full": -0.121,
           "ic_pre": -0.217,
           "ic_post": 0.01
+        },
+        "rates": {
+          "verdict": "CONTEXT",
+          "ic_full": 0.035,
+          "ic_pre": 0.066,
+          "ic_post": -0.007
+        },
+        "value": {
+          "verdict": "CONFIRMED",
+          "ic_full": 0.099,
+          "ic_pre": 0.141,
+          "ic_post": 0.055
         },
         "riskoff": {
           "verdict": "DIRECTIONAL",
@@ -71,15 +85,17 @@
       "span": "2004-01-01..2026-06-13",
       "rows": 5824,
       "weights": {
-        "trend": 0.3761,
-        "structure": 0.0427,
-        "carry": 0.0855,
-        "riskoff": 0.1538,
-        "positioning": 0.1709,
-        "risk": -0.1026,
-        "shock": 0.0684
+        "trend": 0.3051,
+        "structure": 0.0339,
+        "carry": 0.0636,
+        "rates": 0.0466,
+        "value": -0.1356,
+        "riskoff": 0.1271,
+        "positioning": 0.1525,
+        "risk": -0.0763,
+        "shock": 0.0593
       },
-      "score_reliable": false,
+      "score_reliable": true,
       "signals": {
         "trend": {
           "verdict": "CONFIRMED",
@@ -98,6 +114,18 @@
           "ic_full": -0.017,
           "ic_pre": -0.104,
           "ic_post": 0.035
+        },
+        "rates": {
+          "verdict": "CONTEXT",
+          "ic_full": -0.024,
+          "ic_pre": -0.032,
+          "ic_post": -0.014
+        },
+        "value": {
+          "verdict": "INVERTED",
+          "ic_full": -0.166,
+          "ic_pre": -0.125,
+          "ic_post": -0.189
         },
         "riskoff": {
           "verdict": "DIRECTIONAL",
@@ -129,15 +157,17 @@
       "span": "2006-05-16..2026-06-13",
       "rows": 5223,
       "weights": {
-        "trend": 0.1325,
-        "structure": 0.0602,
-        "carry": 0.1205,
-        "riskoff": 0.1084,
-        "positioning": 0.241,
-        "risk": -0.2892,
-        "shock": 0.0482
+        "trend": 0.1011,
+        "structure": 0.0449,
+        "carry": 0.0843,
+        "rates": 0.0618,
+        "value": 0.1798,
+        "riskoff": 0.0843,
+        "positioning": 0.2022,
+        "risk": -0.2022,
+        "shock": 0.0393
       },
-      "score_reliable": false,
+      "score_reliable": true,
       "signals": {
         "trend": {
           "verdict": "CONTEXT",
@@ -156,6 +186,18 @@
           "ic_full": 0.004,
           "ic_pre": -0.249,
           "ic_post": 0.021
+        },
+        "rates": {
+          "verdict": "CONTEXT",
+          "ic_full": 0.04,
+          "ic_pre": 0.069,
+          "ic_post": 0.03
+        },
+        "value": {
+          "verdict": "CONFIRMED",
+          "ic_full": 0.1,
+          "ic_pre": 0.06,
+          "ic_post": 0.167
         },
         "riskoff": {
           "verdict": "CONTEXT",
@@ -187,13 +229,15 @@
       "span": "2004-01-01..2026-06-12",
       "rows": 5835,
       "weights": {
-        "trend": -0.2543,
-        "structure": 0.0289,
-        "carry": -0.2312,
-        "riskoff": 0.2081,
-        "positioning": 0.1156,
-        "risk": -0.1387,
-        "shock": 0.0231
+        "trend": -0.2353,
+        "structure": 0.0261,
+        "carry": -0.1961,
+        "rates": 0.0359,
+        "value": 0.0523,
+        "riskoff": 0.1961,
+        "positioning": 0.1176,
+        "risk": -0.1176,
+        "shock": 0.0229
       },
       "score_reliable": true,
       "signals": {
@@ -214,6 +258,18 @@
           "ic_full": -0.161,
           "ic_pre": -0.307,
           "ic_post": -0.109
+        },
+        "rates": {
+          "verdict": "CONTEXT",
+          "ic_full": 0.002,
+          "ic_pre": -0.028,
+          "ic_post": 0.034
+        },
+        "value": {
+          "verdict": "DIRECTIONAL",
+          "ic_full": 0.044,
+          "ic_pre": -0.063,
+          "ic_post": 0.142
         },
         "riskoff": {
           "verdict": "CONFIRMED",
@@ -245,13 +301,15 @@
       "span": "2004-01-01..2026-06-13",
       "rows": 5839,
       "weights": {
-        "trend": 0.0846,
-        "structure": -0.0769,
-        "carry": -0.3077,
-        "riskoff": 0.0692,
-        "positioning": 0.1538,
-        "risk": -0.1846,
-        "shock": -0.1231
+        "trend": 0.0763,
+        "structure": -0.0678,
+        "carry": -0.2542,
+        "rates": 0.0466,
+        "value": 0.0678,
+        "riskoff": 0.0636,
+        "positioning": 0.1525,
+        "risk": -0.1525,
+        "shock": -0.1186
       },
       "score_reliable": true,
       "signals": {
@@ -272,6 +330,18 @@
           "ic_full": -0.203,
           "ic_pre": -0.345,
           "ic_post": -0.148
+        },
+        "rates": {
+          "verdict": "CONTEXT",
+          "ic_full": -0.01,
+          "ic_pre": -0.015,
+          "ic_post": -0.001
+        },
+        "value": {
+          "verdict": "DIRECTIONAL",
+          "ic_full": 0.045,
+          "ic_pre": 0.065,
+          "ic_post": 0.06
         },
         "riskoff": {
           "verdict": "CONTEXT",
@@ -303,13 +373,15 @@
       "span": "2004-01-01..2026-06-13",
       "rows": 5837,
       "weights": {
-        "trend": -0.2543,
-        "structure": -0.1156,
-        "carry": -0.2312,
-        "riskoff": 0.052,
-        "positioning": 0.1156,
-        "risk": -0.1387,
-        "shock": -0.0925
+        "trend": -0.233,
+        "structure": -0.1036,
+        "carry": -0.1942,
+        "rates": 0.0712,
+        "value": 0.0259,
+        "riskoff": 0.0485,
+        "positioning": 0.1165,
+        "risk": -0.1165,
+        "shock": -0.0906
       },
       "score_reliable": true,
       "signals": {
@@ -330,6 +402,18 @@
           "ic_full": -0.073,
           "ic_pre": -0.045,
           "ic_post": -0.15
+        },
+        "rates": {
+          "verdict": "DIRECTIONAL",
+          "ic_full": 0.059,
+          "ic_pre": 0.087,
+          "ic_post": 0.033
+        },
+        "value": {
+          "verdict": "CONTEXT",
+          "ic_full": -0.035,
+          "ic_pre": 0.001,
+          "ic_post": -0.091
         },
         "riskoff": {
           "verdict": "CONTEXT",
@@ -361,12 +445,14 @@
       "span": "2004-01-01..2026-06-13",
       "rows": 5845,
       "weights": {
-        "trend": -0.3308,
-        "structure": -0.1504,
-        "riskoff": 0.0677,
-        "positioning": 0.1504,
-        "risk": -0.1805,
-        "shock": -0.1203
+        "trend": -0.2581,
+        "structure": -0.1147,
+        "rates": 0.1577,
+        "value": 0.0573,
+        "riskoff": 0.0538,
+        "positioning": 0.129,
+        "risk": -0.129,
+        "shock": -0.1004
       },
       "score_reliable": true,
       "signals": {
@@ -381,6 +467,18 @@
           "ic_full": -0.096,
           "ic_pre": -0.146,
           "ic_post": -0.062
+        },
+        "rates": {
+          "verdict": "UNMEASURED",
+          "ic_full": null,
+          "ic_pre": null,
+          "ic_post": null
+        },
+        "value": {
+          "verdict": "DIRECTIONAL",
+          "ic_full": 0.079,
+          "ic_pre": 0.328,
+          "ic_post": -0.059
         },
         "riskoff": {
           "verdict": "CONTEXT",
@@ -412,12 +510,14 @@
       "span": "2004-01-01..2026-06-13",
       "rows": 5406,
       "weights": {
-        "trend": 0.2619,
-        "structure": 0.0595,
-        "riskoff": 0.1071,
-        "positioning": 0.2381,
-        "risk": -0.2857,
-        "shock": 0.0476
+        "trend": 0.1818,
+        "structure": 0.0404,
+        "rates": 0.2222,
+        "value": 0.0808,
+        "riskoff": 0.0758,
+        "positioning": 0.1818,
+        "risk": -0.1818,
+        "shock": 0.0354
       },
       "score_reliable": false,
       "signals": {
@@ -432,6 +532,18 @@
           "ic_full": 0.028,
           "ic_pre": 0.032,
           "ic_post": 0.018
+        },
+        "rates": {
+          "verdict": "UNMEASURED",
+          "ic_full": null,
+          "ic_pre": null,
+          "ic_post": null
+        },
+        "value": {
+          "verdict": "DIRECTIONAL",
+          "ic_full": 0.045,
+          "ic_pre": 0.039,
+          "ic_post": 0.069
         },
         "riskoff": {
           "verdict": "CONTEXT",
@@ -456,6 +568,71 @@
           "ic_full": -0.002,
           "ic_pre": -0.007,
           "ic_post": 0.001
+        }
+      }
+    },
+    "USDCNH": {
+      "span": "2004-01-02..2026-06-05",
+      "rows": 5623,
+      "weights": {
+        "trend": 0.2118,
+        "structure": 0.0941,
+        "rates": 0.1294,
+        "value": 0.0941,
+        "riskoff": 0.1765,
+        "positioning": 0.1059,
+        "risk": 0.1059,
+        "shock": 0.0824
+      },
+      "score_reliable": false,
+      "signals": {
+        "trend": {
+          "verdict": "UNMEASURED",
+          "ic_full": null,
+          "ic_pre": null,
+          "ic_post": null
+        },
+        "structure": {
+          "verdict": "UNMEASURED",
+          "ic_full": null,
+          "ic_pre": null,
+          "ic_post": null
+        },
+        "rates": {
+          "verdict": "UNMEASURED",
+          "ic_full": null,
+          "ic_pre": null,
+          "ic_post": null
+        },
+        "value": {
+          "verdict": "UNMEASURED",
+          "ic_full": null,
+          "ic_pre": null,
+          "ic_post": null
+        },
+        "riskoff": {
+          "verdict": "UNMEASURED",
+          "ic_full": null,
+          "ic_pre": null,
+          "ic_post": null
+        },
+        "positioning": {
+          "verdict": "UNMEASURED",
+          "ic_full": null,
+          "ic_pre": null,
+          "ic_post": null
+        },
+        "risk": {
+          "verdict": "UNMEASURED",
+          "ic_full": null,
+          "ic_pre": null,
+          "ic_post": null
+        },
+        "shock": {
+          "verdict": "UNMEASURED",
+          "ic_full": null,
+          "ic_pre": null,
+          "ic_post": null
         }
       }
     }

@@ -395,9 +395,21 @@ Forex Vector` entry in DECISIONS.md.
   dollar-orthogonalized residual (rolling causal beta vs `DTWEXBGS`); the residual is a
   derived index, not a tradeable instrument. `CNH=X` has no usable Yahoo history (one
   current print) — its tile is China-proxy context only until backfilled from FRED.
-- **REER value & real-rate factors are Phase 3.** They are collected (BIS `RB*BIS`,
-  foreign CPI/10y) but NOT yet wired; REER is monthly and lagged and must never be
-  forward-filled into the daily factor (look-ahead).
+- **REER value & 10y-rate-diff factors are slow and lagged.** Both are now wired but
+  fed from monthly, lagged data: REER (BIS, ~6wk lag) and foreign 10y (OECD monthly,
+  2–5mo lag). The engine shifts each by a publication lag (`_lag_to_daily`) before use,
+  so the daily factor never sees a value before it was released — but the signals are
+  inherently slow/coarse. The 10y rate-diff factor lands mostly CONTEXT in calibration
+  (weak IC) and carries little weight; value is CONFIRMED for some pairs and INVERTED
+  for JPY (the yen kept cheapening without mean-reverting). EM pairs have no foreign 10y,
+  so they get no rate-diff factor.
+- **USD/CNH uses an onshore proxy for history.** Yahoo `CNH=X` has only a current print,
+  so the tile's history is backfilled from FRED `DEXCHUS` (onshore CNY). Onshore CNY ≠
+  offshore CNH (the spread is itself a stress signal we don't yet model), and it's a
+  managed regime — the tile is China-proxy risk-context only (forced FLAT).
+- **MTF confluence and the alerts/timeline engine are deferred.** The commodity MTF uses
+  an equity cycle preset that may not fit FX (range-trading), and FX alerts want intraday
+  data the site doesn't collect — both are out of the current build, not silently broken.
 - **Everything Yahoo is an unofficial API** (same caveat as the rest of the site).
 
 ## Infrastructure

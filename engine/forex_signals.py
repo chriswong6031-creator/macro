@@ -109,6 +109,45 @@ def carry_signal(fr: pd.Series | None, us: pd.Series | None,
     return out
 
 
+def _lag_to_daily(s: pd.Series, idx: pd.Index, pub_lag_d: int) -> pd.Series:
+    """Shift a monthly/lagged series forward by its publication lag, then hold the last
+    KNOWN value across the daily index (no look-ahead — the value only appears once it
+    was actually released)."""
+    r = s.copy()
+    r.index = pd.to_datetime(r.index) + pd.Timedelta(days=pub_lag_d)
+    return r.reindex(r.index.union(idx)).sort_index().ffill().reindex(idx)
+
+
+# --------------------------------------------------------------------------- #
+# value: REER mean-reversion (slow valuation anchor)
+# --------------------------------------------------------------------------- #
+def value_signal(reer: pd.Series | None, cfg: dict, idx: pd.Index) -> pd.DataFrame:
+    if reer is None:
+        return pd.DataFrame(index=idx)
+    r = _lag_to_daily(reer, idx, cfg.get("pub_lag_d", 45))
+    logr = np.log(r.replace(0, np.nan))
+    win = cfg["gap_window_d"]
+    mean = logr.rolling(win, min_periods=max(120, win // 4)).mean()
+    gap = (logr - mean).rename("reer_gap")                # + = REER rich vs its long-run mean
+    score = (-_zclip(gap, cfg["z_lookback_d"])).clip(-1, 1)   # overvalued -> bearish (mean-revert)
+    return pd.DataFrame({"reer_gap": gap, "value_score": score})
+
+
+# --------------------------------------------------------------------------- #
+# rates: 10y yield-differential momentum (relative monetary policy)
+# --------------------------------------------------------------------------- #
+def rates_signal(long_rate: pd.Series | None, us10y: pd.Series | None,
+                 cfg: dict, idx: pd.Index) -> pd.DataFrame:
+    if long_rate is None or us10y is None:
+        return pd.DataFrame(index=idx)
+    f = _lag_to_daily(long_rate, idx, cfg.get("pub_lag_d", 45))
+    u = us10y.reindex(idx).ffill()
+    diff = (f - u).rename("rate_diff_10y")                # foreign 10y - US 10y
+    mom = diff.diff(cfg["diff_window_d"])
+    score = _zclip(mom, cfg["z_lookback_d"]).clip(-1, 1)  # rising diff -> base attracts flows (bullish)
+    return pd.DataFrame({"rate_diff_10y": diff, "rates_score": score})
+
+
 # --------------------------------------------------------------------------- #
 # residual shock: causal decoupling / intervention detector (FX-specific)
 # --------------------------------------------------------------------------- #
@@ -253,10 +292,12 @@ def compute_asset(ai: dict, cfg: dict | None = None, R: pd.Series | None = None)
     rk = cs.risk(px, mom["momentum"], pos_pctile, cfg["risk"])   # risk on the ACTUAL price
     ca = (carry_signal(ai.get("short_rate"), drivers.get("us_short"), px["close"], cfg["carry"])
           if meta.get("carry") != "context" else pd.DataFrame(index=px.index))
+    va = value_signal(ai.get("reer"), cfg["value"], px.index)
+    ra = rates_signal(ai.get("long_rate"), drivers.get("us10y"), cfg["rates"], px.index)
     rs = residual_shock(px["close"], drivers, ai.get("commodity"), cfg["residual"])
     ro = riskoff_factor(R, meta, px.index)
 
-    parts = [px[["close"]], resid_close, beta, mom, st, ts, pos, rk, ca, rs, ro]
+    parts = [px[["close"]], resid_close, beta, mom, st, ts, pos, rk, ca, va, ra, rs, ro]
     out = pd.concat(parts, axis=1)
     out["cycle_position"] = cs.cycle_stage(mom["momentum"], rk["risk_index"])
     out["pair"] = ai["pair"]

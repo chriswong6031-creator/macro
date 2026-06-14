@@ -38,6 +38,8 @@ FX_FACTOR_LABELS = {
     "trend": ("Trend (idiosyncratic)", "趋势（特异）"),
     "structure": ("Price structure", "价格结构"),
     "carry": ("Carry (rate diff)", "套息（利差）"),
+    "rates": ("Rate diff (10y)", "利差（10年）"),
+    "value": ("Value (REER)", "估值（REER）"),
     "riskoff": ("Risk appetite", "风险偏好"),
     "positioning": ("Positioning (COT)", "持仓（COT）"),
     "risk": ("Risk index", "风险指数"),
@@ -45,16 +47,17 @@ FX_FACTOR_LABELS = {
 }
 FX_FACTOR_GROUP = {
     "trend": "Trend & Structure", "structure": "Trend & Structure",
-    "carry": "Carry & Rates",
+    "carry": "Carry & Rates", "rates": "Carry & Rates",
+    "value": "Value",
     "riskoff": "Risk & Positioning", "positioning": "Risk & Positioning",
     "risk": "Risk & Positioning",
     "shock": "Shocks",
 }
-# Phase-1 prior (un-calibrated). trend = workhorse + carry-crash filter; carry high
-# but vol-penalized + crash-gated; riskoff is the regime conditioner; havens get the
-# right sign via the per-pair beta folded into the riskoff factor itself.
-FX_PRIOR = {"trend": 0.22, "structure": 0.10, "carry": 0.20, "riskoff": 0.18,
-            "positioning": 0.10, "risk": 0.12, "shock": 0.08}
+# Documented prior (the calibration anchors to these magnitudes — DECISIONS D-FX7).
+# trend = workhorse + carry-crash filter; carry vol-penalized + crash-gated; rates =
+# relative monetary policy; value = slow REER anchor; riskoff = the regime conditioner.
+FX_PRIOR = {"trend": 0.18, "structure": 0.08, "carry": 0.15, "rates": 0.11, "value": 0.08,
+            "riskoff": 0.15, "positioning": 0.09, "risk": 0.09, "shock": 0.07}
 
 # action label -> FX LONG/SHORT/FLAT (base currency), css reused from the commodity theme
 _FX_ACTION = {
@@ -100,6 +103,10 @@ def factor_panel(pair: str, sig: pd.DataFrame, meta: dict) -> pd.DataFrame:
         f["risk"] = ((50.0 - sig["risk_index"]) / 50.0).clip(-1, 1)
     if "carry_score" in sig and meta.get("carry") != "context":
         f["carry"] = sig["carry_score"].clip(-1, 1)
+    if "rates_score" in sig:
+        f["rates"] = sig["rates_score"].clip(-1, 1)
+    if "value_score" in sig:
+        f["value"] = sig["value_score"].clip(-1, 1)
     if "riskoff" in sig:
         f["riskoff"] = sig["riskoff"].clip(-1, 1)
     if "pos_pctile" in sig:                 # crowded long = contrarian bearish
