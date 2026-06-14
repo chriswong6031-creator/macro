@@ -533,6 +533,93 @@
   {% endif %}
 
   <!-- ============ MACRO NOWCAST · CONDITIONS · RISK APPETITE ============ -->
+  {% if latest.dislocation %}
+  {% set DL = latest.dislocation %}
+  {% set DI = DL.inputs %}
+  {% set vcolor = 'var(--up)' if DL.verdict=='buyable_washout' else ('var(--down)' if DL.verdict=='stand_aside' else 'var(--muted)') %}
+  <div class="panel span12" id="dislocation">
+    <h2>🚦 {{ t('Dislocation Gate-1 · buyable washout vs falling knife', '错位一道闸 · 可买入错杀 对 接飞刀') }}
+      {{ help("A risk FILTER that sits in FRONT of the capitulation gauge: when a stress dislocation hits (VIX panic, a >10% drawdown, a variance-premium extreme or VIX backwardation), it asks ONE question — is the Fed put present? PUT-ABSENT = a recession is underway (real-time Sahm >= 0.50) OR inflation locks the Fed (sustained 10y breakeven >= 2.5%). The whole edge is in REFUSING the falling knife (2000/2008/2022), not in catching the bounce — measured on SPY 1997-2026, see research/DISLOCATION_VALIDATION.md.", "位于恐慌触底指标之前的风险过滤器：当压力错位出现（VIX 恐慌、>10% 回撤、方差溢价极端或 VIX 倒挂）时，它只问一个问题 — 美联储托底是否在位？托底缺失＝衰退进行中（实时 Sahm ≥ 0.50）或通胀锁住美联储（持续十年期盈亏平衡 ≥ 2.5%）。全部优势在于拒绝接飞刀（2000／2008／2022），而非抄到反弹 — 基于标普 1997-2026 实测。") }}
+    </h2>
+    <p class="muted sm" style="margin:-4px 0 10px">{{ t('A risk filter, not a buy signal. The edge is in refusing the knife, not catching the bounce — judged on drawdown, not return.', '这是风险过滤器而非买入信号。优势在于拒绝接飞刀，而非抄到反弹 — 以回撤而非回报衡量。') }}</p>
+    <div class="grid">
+
+      <!-- verdict hero -->
+      <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-left:3px solid {{ vcolor }};border-radius:8px;padding:12px 14px">
+        <div style="font-size:20px;font-weight:700;color:{{ vcolor }}">
+          {% if DL.verdict=='buyable_washout' %}{{ t('Buyable washout', '可买入的错杀') }}
+          {% elif DL.verdict=='stand_aside' %}{{ t('Stand aside — falling knife', '观望 — 接飞刀风险') }}
+          {% else %}{{ t('No acute dislocation', '无急性错位') }}{% endif %}
+        </div>
+        <div class="muted sm" style="margin-top:6px">
+          {% if DL.verdict=='buyable_washout' %}{{ t('A stress dislocation with the Fed put intact (no recession, inflation not blocking easing). Historically these mean-revert with shallower median drawdown — confirm into stabilization, do not anticipate.', '压力错位且美联储托底在位（无衰退、通胀不阻碍宽松）。历史上此类回归均值且中位回撤更浅 — 在企稳中确认，勿提前抢跑。') }}
+          {% elif DL.verdict=='stand_aside' %}{{ t('A stress dislocation with the Fed put ABSENT. This is the 2000/2008/2022 regime where the same capitulation signals kept falling.', '压力错位且美联储托底缺失。这是 2000／2008／2022 情形，同样的恐慌信号仍持续下跌。') }}
+          {% else %}{{ t('Markets are not in a stress washout — the filter is dormant and lights up only on a real dislocation.', '市场未处于压力抛售 — 过滤器休眠，仅在真正错位时点亮。') }}{% endif %}
+        </div>
+      </div>
+
+      <!-- Fed-put master switch -->
+      <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
+        {% set pcolor = 'var(--up)' if DL.fed_put else 'var(--down)' %}
+        <div style="font-weight:700;margin-bottom:6px">{{ t('Fed-put master switch', '美联储托底主开关') }}
+          {{ help("The one out-of-sample-stable discriminator (holds in BOTH 1997-2011 and 2012-2025). PUT-ABSENT = recession underway (Sahm >= 0.50) OR inflation locks the Fed (sustained 10y breakeven >= 2.5%). Primary trend is shown as context but adds little on top of the switch.", "唯一在样本外稳定的判别器（1997-2011 与 2012-2025 两半区均成立）。托底缺失＝衰退进行中（Sahm ≥ 0.50）或通胀锁住美联储（持续十年期盈亏平衡 ≥ 2.5%）。主趋势作为背景显示，但在开关之上增益有限。") }}
+        </div>
+        <div style="font-size:18px;font-weight:700;color:{{ pcolor }}">
+          {% if DL.fed_put %}{{ t('Put present', '托底在位') }}{% else %}{{ t('Put ABSENT', '托底缺失') }}{% endif %}</div>
+        <div class="muted sm" style="margin-top:5px">Sahm <b>{{ '%.2f'|format(DI.sahm) if DI.sahm is not none else '—' }}</b>
+          · {{ t('10y breakeven', '十年盈亏平衡') }} <b>{{ '%.2f'|format(DI.breakeven_10y_1m) if DI.breakeven_10y_1m is not none else '—' }}%</b>
+          · {{ t('trend', '趋势') }} <b>{{ t('up', '上行') if DI.primary_trend=='up' else t('down', '下行') }}</b></div>
+        {% if not DL.fed_put %}
+        <div class="sm" style="margin-top:5px;color:var(--down)">
+          {% if DI.sahm is not none and DI.sahm >= 0.5 %}⚑ {{ t('recession underway (Sahm)', '衰退进行中（Sahm）') }}{% endif %}
+          {% if DI.breakeven_10y_1m is not none and DI.breakeven_10y_1m >= 2.5 %}{% if DI.sahm is not none and DI.sahm >= 0.5 %} · {% endif %}⚑ {{ t('inflation locks the Fed', '通胀锁住美联储') }}{% endif %}
+        </div>
+        {% endif %}
+      </div>
+
+      {% if DL.dislocation_active %}
+      <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 14px">
+        <div style="font-weight:700;margin-bottom:4px">{{ t('Stress triggers firing', '触发的压力信号') }}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          {% if DI.vix is not none and DI.vix > 30 %}<span class="badge" style="font-size:11px">{{ t('VIX panic', 'VIX 恐慌') }} {{ DI.vix }}</span>{% endif %}
+          {% if DI.spy_drawdown_pct is not none and DI.spy_drawdown_pct <= -10 %}<span class="badge" style="font-size:11px">{{ t('drawdown', '回撤') }} {{ DI.spy_drawdown_pct }}%</span>{% endif %}
+          {% if DI.vrp_pctile is not none and DI.vrp_pctile > 0.9 %}<span class="badge" style="font-size:11px">{{ t('VRP extreme', 'VRP 极端') }}</span>{% endif %}
+          {% if DI.vix_term is not none and DI.vix_term >= 1 %}<span class="badge" style="font-size:11px">{{ t('VIX backwardation', 'VIX 倒挂') }} {{ '%.2f'|format(DI.vix_term) }}</span>{% endif %}
+          {% if DI.capitulation_active %}<span class="badge" style="font-size:11px;color:var(--up)">{{ t('capitulation', '恐慌触底') }} {{ DI.capitulation_signals|length }}{% if DI.capitulation_strong %} ⚑{% endif %}</span>{% endif %}
+        </div>
+        {% if DL.capitulation_caveat %}
+        <div class="sm" style="margin-top:7px;color:var(--down)">⚠ {{ t('The capitulation gauge is firing, but the Fed put is absent — its measured bounce does NOT apply here (the falling-knife regime).', '恐慌触底指标在触发，但美联储托底缺失 — 其实测反弹在此不适用（接飞刀情形）。') }}</div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {% if DL.gate2 and DL.gate2.state not in ('dormant', 'unknown') %}
+      {% set g2 = DL.gate2 %}
+      {% set g2color = 'var(--up)' if g2.state=='confirmed' else ('#d98a00' if g2.state=='awaiting_confirm' else 'var(--muted)') %}
+      <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-left:3px solid {{ g2color }};border-radius:8px;padding:10px 14px">
+        <div style="font-weight:700;margin-bottom:4px">{{ t('Gate-2 entry timer', '二道闸 · 入场时机') }}
+          {{ help("The entry TIMER — it arms ONLY once Gate-1 says buyable, and it is a coincident CONFIRM, never anticipation: it waits for the VIX term structure to un-invert (backwardation back to contango), which historically lags the VIX peak by ~13 sessions. MEASURED on matched buyable washouts (2006+): waiting for the un-inversion lifted hit-rate 61->67%, median 3-month return +2.2->+4.6% and shallowed median drawdown -4.5->-2.9% — but the 1-in-10 tail was marginally worse. A confirm, not a bottom-caller.", "入场时机器 — 仅在一道闸判定可买入后才启动，且是同步确认而非提前预判：它等待 VIX 期限结构回正（由倒挂转为正向），历史上滞后 VIX 峰值约 13 个交易日。基于匹配的可买入错杀样本（2006+）实测：等待回正将胜率由 61% 提升至 67%，三月中位回报 +2.2% 升至 +4.6%，中位回撤由 −4.5% 收窄至 −2.9% — 但 1/10 尾部略差。这是确认，而非抄底。") }}
+        </div>
+        <b style="color:{{ g2color }}">
+          {% if g2.state=='confirmed' %}{{ t('Re-entry confirmed', '入场已确认') }}
+          {% elif g2.state=='awaiting_confirm' %}{{ t('Awaiting confirm', '等待确认') }}
+          {% else %}{{ t('No timer signal', '无时机信号') }}{% endif %}</b>
+        <span class="muted sm"> —
+          {% if g2.state=='confirmed' %}{{ t('term structure un-inverted', '期限结构已回正') }}{% if g2.hook_days_ago is not none %} ({{ g2.hook_days_ago }} {{ t('sessions ago', '个交易日前') }}){% endif %}{{ t('; the mean-reversion confirm — wait for it, do not anticipate.', '；均值回归确认 — 等待它，勿提前抢跑。') }}
+          {% elif g2.state=='awaiting_confirm' %}{{ t('term structure still backwardated; wait for the un-inversion (historically ~13 sessions after the VIX peak), do not anticipate.', '期限结构仍倒挂；等待回正（历史上约在 VIX 峰值后 13 个交易日），勿提前抢跑。') }}
+          {% else %}{{ t('no backwardation to un-invert — the term-structure timer does not apply; rely on Gate-1.', '无倒挂可回正 — 期限结构时机器不适用；以一道闸为准。') }}{% endif %}</span>
+      </div>
+      {% endif %}
+
+      <!-- measured record (honest) -->
+      <div class="span12 muted sm" style="border-top:1px solid var(--line);padding-top:8px;margin-top:2px">
+        <b>{{ t('Measured (SPY 1997-2026):', '实测（标普 1997-2026）：') }}</b> {{ t('put-present washouts had ~4pp shallower median 3-month drawdown than put-absent (95% CI [+0.3, +6.3]) — the one effect whose CI excludes zero. The larger hit-rate and 1-year-tail gaps point the same way, but their CIs span zero at ~10 effective crises, so they are carried by sign-consistency (leave-one-year-out 26/28, both split-halves), not significance. A drawdown filter, never alpha.', '托底在位的错杀其中位三月回撤比托底缺失浅约 4 个百分点（95% 置信区间 [+0.3, +6.3]）— 唯一置信区间不含零的效应。更大的胜率与一年尾部差异方向一致，但在约 10 个有效危机样本下置信区间跨零，故由符号一致性支撑（留一年法 26/28、两个样本半区），而非统计显著性。这是回撤过滤器，绝非超额收益。') }}
+      </div>
+
+    </div>
+  </div>
+  {% endif %}
+
   {% if latest.conditions %}
   {% set C = latest.conditions %}
   {% set FC = C.financial_conditions %}
