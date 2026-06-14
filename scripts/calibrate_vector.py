@@ -34,6 +34,16 @@ warnings.filterwarnings("ignore")
 
 from engine import btc_signals  # noqa: E402
 from lib import config, store  # noqa: E402
+# DSR + cost engine now live in engine.validation (shared with the commodity /
+# forex calibrators). Re-exported here so existing importers (and tests) that
+# referenced them on scripts.calibrate_vector keep working.
+from engine.validation import (  # noqa: E402,F401
+    EULER_GAMMA, _norm_cdf, _norm_ppf, _ret_moments, backtest_core, deflated_sharpe,
+)
+from engine.validation import (  # noqa: E402 — stability gates (D-vec-GATES)
+    block_bootstrap_ci, brier_reliability, dsr_verdict, platt_fit, purged_folds,
+    top_correlated_pairs, vif,
+)
 
 TRADING_YEAR = 365  # BTC trades every day
 
@@ -142,15 +152,25 @@ def rank_trend(table: pd.DataFrame, col: str, n_floor: int = 150) -> int:
 
 
 # --------------------------------------------------------------------------- #
-# allocation backtest
+# allocation backtest (DSR + cost engine factored into engine.validation; the
+# multiple-testing haircut math and the turnover-cost core are shared with the
+# commodity / forex calibrators — see engine/validation.py).
 # --------------------------------------------------------------------------- #
-def backtest(close: pd.Series, alloc: pd.Series) -> dict:
-    ret = close.pct_change().fillna(0)
-    pos = alloc.shift(1).reindex(ret.index).ffill().fillna(0)  # act next day
-    strat = pos * ret
+def backtest(close: pd.Series, alloc: pd.Series, cost_bps: float = 0.0) -> dict:
+    """Allocation backtest vs buy-and-hold. `cost_bps` is the ONE-WAY transaction
+    cost (spread + fee) in basis points, charged on each unit of position turnover
+    |Δpos| — so a full 0→1→0 round trip pays 2×cost_bps. The headline cagr/sharpe/
+    maxdd are NET of cost (the honest figure); `*_gross` and `cost_drag_pp` expose
+    how much cost ate, and `turnover_annual` is the one-way turnover/yr driving it.
+    Default 0.0 keeps legacy callers gross-of-cost; calibrate_vector.main() passes
+    the configured crypto cost so the published headline is net."""
+    bt = backtest_core(close, alloc, cost_bps=cost_bps)
+    ret, gross, strat, turnover, years = (
+        bt["ret"], bt["gross"], bt["net"], bt["turnover"], bt["years"])
     eq = (1 + strat).cumprod()
+    eq_gross = (1 + gross).cumprod()
     hodl = (1 + ret).cumprod()
-    years = (close.index[-1] - close.index[0]).days / 365.25
+    pos = bt["pos"]
 
     def cagr(e):
         return (e.iloc[-1]) ** (1 / years) - 1 if years > 0 and e.iloc[-1] > 0 else np.nan
@@ -166,15 +186,28 @@ def backtest(close: pd.Series, alloc: pd.Series) -> dict:
     def maxdd(e):
         return float((e / e.cummax() - 1).min())
 
+    cagr_net, cagr_gross = cagr(eq), cagr(eq_gross)
+    mom = _ret_moments(strat)  # net per-period moments for the Deflated Sharpe
     return {
-        "cagr": round(100 * cagr(eq), 1), "hodl_cagr": round(100 * cagr(hodl), 1),
+        "cagr": round(100 * cagr_net, 1), "hodl_cagr": round(100 * cagr(hodl), 1),
+        "cagr_gross": round(100 * cagr_gross, 1) if pd.notna(cagr_gross) else np.nan,
+        "cost_drag_pp": (round(100 * (cagr_gross - cagr_net), 1)
+                         if pd.notna(cagr_net) and pd.notna(cagr_gross) else np.nan),
         "sharpe": round(sharpe(strat), 2), "hodl_sharpe": round(sharpe(ret), 2),
+        "sharpe_gross": round(sharpe(gross), 2),
         "sortino": round(sortino(strat), 2), "hodl_sortino": round(sortino(ret), 2),
         "maxdd": round(100 * maxdd(eq), 1), "hodl_maxdd": round(100 * maxdd(hodl), 1),
         "time_in_market": round(100 * (pos > 0).mean(), 1),
+        "turnover_annual": round(float(turnover.sum() / years), 1) if years > 0 else np.nan,
+        "cost_bps": cost_bps,
         "total_return": round(100 * (eq.iloc[-1] - 1), 0),
         "hodl_total_return": round(100 * (hodl.iloc[-1] - 1), 0),
         "final_vs_hodl": round(eq.iloc[-1] / hodl.iloc[-1], 2),
+        # per-period (daily) stats the Deflated Sharpe Ratio consumes:
+        "sharpe_daily": round(mom[0], 6) if mom else None,
+        "skew": round(mom[1], 4) if mom else None,
+        "kurt": round(mom[2], 4) if mom else None,
+        "n_obs": mom[3] if mom else None,
     }
 
 
@@ -189,6 +222,68 @@ def whipsaw(state: pd.Series, max_days: int) -> dict:
 
 
 # --------------------------------------------------------------------------- #
+# STABILITY GATES (D-vec-GATES) — purged walk-forward CV robustness, out-of-fold
+# probability calibration of the conditional direction model, signal collinearity,
+# and a block-bootstrap CI on the allocation backtest. All ADDITIVE report blocks.
+# --------------------------------------------------------------------------- #
+def cv_fold_signs(signal: pd.Series, fdf: pd.DataFrame, bands, labels, h: int,
+                  col_prefix: str, folds: dict, builder, n_floor: int = 80) -> list:
+    """Per-fold rank-trend sign under purged walk-forward CV (folds already embargoed
+    by `embargo` rows, so no forward label leaks across a fold edge). 0 = fold too thin."""
+    signs = []
+    for idx in folds.values():
+        if len(idx) < max(n_floor * 2, 200):
+            signs.append(0)
+            continue
+        t = builder(signal.loc[idx], fdf.loc[idx], bands, labels, [h])
+        signs.append(rank_trend(t, f"{col_prefix}_{h}d", n_floor=n_floor))
+    return signs
+
+
+def fold_robust(full_sign: int, fold_signs: list, want: int) -> bool:
+    """Purged-CV robustness: the full-sample sign matches `want`, NO fold with
+    adequate data flips to the opposite sign, and all-but-one of the non-empty folds
+    agree. Stricter than the single pre/post split it complements."""
+    nz = [s for s in fold_signs if s != 0]
+    if not nz:
+        return False
+    flip = sum(1 for s in nz if s == -want)
+    agree = sum(1 for s in nz if s == want)
+    return full_sign == want and flip == 0 and agree >= max(1, len(nz) - 1)
+
+
+def oof_cell_probs(df: pd.DataFrame, folds: dict, h: int, alpha: int = 10, min_n: int = 20):
+    """OUT-OF-FOLD calibration data for the conditional direction model: for each
+    test fold, predict P(up over h) from the momentum_state×risk_regime cell rate fit
+    on the OTHER folds (empirical-Bayes shrunk to the marginal, exactly the live
+    _cond_up_prob mechanism), then pool (p, y). This is the missing LEVEL check on the
+    headline conviction probability — no look-ahead because the cell rate is OOF."""
+    close = df["close"]
+    y = (close.shift(-h) > close).astype(float)
+    mom, risk = df.get("momentum_state"), df.get("risk_regime")
+    if mom is None or risk is None:
+        return None
+    P, Y = [], []
+    for test in folds.values():
+        train = df.index.difference(test)
+        sub = pd.DataFrame({"y": y, "m": mom, "r": risk}).loc[train].dropna()
+        if len(sub) < 200:
+            continue
+        marg = sub["y"].mean()
+        cell = {}
+        for (m_, r_), g in sub.groupby(["m", "r"]):
+            n = len(g)
+            cell[(m_, r_)] = (g["y"].sum() + alpha * marg) / (n + alpha) if n >= min_n else marg
+        for d in test:
+            yd, md, rd = y.get(d), mom.get(d), risk.get(d)
+            if pd.isna(yd) or pd.isna(md) or pd.isna(rd):
+                continue
+            P.append(cell.get((md, rd), marg))
+            Y.append(float(yd))
+    return (np.array(P), np.array(Y)) if len(P) >= 50 else None
+
+
+# --------------------------------------------------------------------------- #
 # main
 # --------------------------------------------------------------------------- #
 def main() -> int:
@@ -200,11 +295,20 @@ def main() -> int:
     fwd = forward_returns(close, horizons)
     fdd = forward_drawdown(close, horizons)
 
+    # EMBARGO FIX (D-vec-GATES): the pre-half's last `embargo` rows have forward
+    # labels (up to max horizon) that peek across split_date into the post half —
+    # the leak a bare split has. Drop them so the two halves are clean.
+    embargo = int(max(horizons))
+    _pre = df.index[df.index < cfg["split_date"]]
     halves = {
         "full": df.index,
-        "pre": df.index[df.index < cfg["split_date"]],
+        "pre": _pre[:-embargo] if len(_pre) > embargo else _pre,
         "post": df.index[df.index >= cfg["split_date"]],
     }
+    # Purged + embargoed walk-forward folds — the stricter robustness gate that
+    # complements the single split (K contiguous folds, each embargoed on its right edge).
+    k_folds = int(cfg.get("cv_folds", 5))
+    folds = purged_folds(df.index, k_folds, embargo)
 
     SIGNALS = {
         "risk_index": {
@@ -366,19 +470,140 @@ def main() -> int:
         entry["monotone"] = {"full": m_full, "pre": m_pre, "post": m_post, "want": want}
         report["signals"][sig] = entry
 
+    # One-way transaction cost (spread+fee) and the honest trial count for the
+    # Deflated Sharpe live in config with code defaults (the dislocation/leaf
+    # precedent — ships without a config.yml edit). 10 bps ≈ a realistic BTC-spot
+    # round-trip leg; n_trials is a manual UPPER-BOUND of configs explored.
+    cost_bps = float(cfg.get("cost_bps", 10.0))
+    n_trials = int(cfg.get("n_trials", 50))
+
     for variant in config.load()["vector"]["allocation"]["variants"]:
         col = f"alloc_{variant}"
         if col in df.columns:
-            report["allocation"][variant] = backtest(close, df[col])
+            report["allocation"][variant] = backtest(close, df[col], cost_bps=cost_bps)
+
+    # ---- multiple-testing haircut (Deflated Sharpe on the SHIPPED variant) ---- #
+    # The published Sharpe is the MAX over the variants/thresholds we tried, so it
+    # is upward-biased; the DSR deflates it for n_trials, sample length, skew and
+    # fat tails. We estimate the cross-trial SR variance from the variants actually
+    # backtested (falls back to the SR-estimator proxy if only one exists).
+    va = report["allocation"]
+    if va:
+        sel = ("optimal" if "optimal" in va else
+               max(va, key=lambda k: va[k]["cagr"] if pd.notna(va[k]["cagr"]) else -1e9))
+        daily_srs = [v["sharpe_daily"] for v in va.values() if v.get("sharpe_daily") is not None]
+        sr_var = float(np.var(daily_srs, ddof=1)) if len(daily_srs) >= 2 else None
+        m = va[sel]
+        dsr = deflated_sharpe(m.get("sharpe_daily"), m.get("skew"), m.get("kurt"),
+                              m.get("n_obs"), n_trials, sr_variance=sr_var,
+                              trading_year=TRADING_YEAR)
+        if dsr is not None:
+            dsr["selected_variant"] = sel
+            dsr["sr_variance_source"] = ("max(cross-variant dispersion, null SR-sampling proxy)"
+                                         if sr_var else "null SR-sampling proxy")
+            dsr["verdict"] = ("SURVIVES multiple-testing (DSR≥0.95)" if dsr["dsr"] >= 0.95
+                              else "MARGINAL (0.90≤DSR<0.95)" if dsr["dsr"] >= 0.90
+                              else "FAILS multiple-testing haircut (DSR<0.90)")
+            dsr["note"] = ("DSR = P(true Sharpe>0) after deflating for n_trials independent "
+                           "configs, sample length, skew & kurtosis. n_trials is a manual "
+                           "UPPER-BOUND of the signal/threshold/window variants explored — "
+                           "overestimating is the conservative direction (de Prado). Bump "
+                           "vector.calibration.n_trials as you try more.")
+        report["multiple_testing"] = dsr or {"dsr": None, "verdict": "insufficient data"}
+        report["trial_log"] = {
+            "asof": str(df.index.max().date()),
+            "n_trials_declared": n_trials,
+            "cost_bps_one_way": cost_bps,
+            "allocation_variants_tested": list(va),
+            "signal_families_screened": sorted(report["signals"]),
+            "n_signal_families": len(report["signals"]),
+            "note": ("Point-in-time trial ledger (overwritten each run). n_trials_declared is "
+                     "an upper-bound count of independent strategy configs explored across the "
+                     "hunt, used to deflate the headline Sharpe. Raise it as you try more."),
+        }
 
     for sig in ("momentum_state", "risk_regime", "structure_state", "market_mode", "alt_cycle_leader"):
         if sig in df.columns:
             report["whipsaw"][sig] = whipsaw(df[sig], cfg["whipsaw_max_days"])
 
+    # ===================== STABILITY GATES (D-vec-GATES) ===================== #
+    # (1) Purged walk-forward CV robustness — a stricter, leak-free complement to
+    #     the single split: each return-signal's band→forward sign must hold across
+    #     the embargoed folds with no flip. Drawdown-judged signals use want=-1.
+    cv = {"k_folds": len(folds), "embargo_days": embargo,
+          "fold_spans": [f"{idx.min().date()}..{idx.max().date()}" for idx in folds.values() if len(idx)],
+          "signals": {}}
+    h_last = horizons[-1]
+    for sig, spec in SIGNALS.items():
+        if sig not in df.columns or isinstance(spec["bands"][0], (list, tuple)) or len(spec["labels"]) < 3:
+            continue
+        drawdown_judged = sig in ("risk_index", "risk_oscillator")
+        builder = drawdown_table if drawdown_judged else band_table
+        fdf = fdd if drawdown_judged else fwd
+        prefix = "avgDD" if drawdown_judged else "mean"
+        # judge each signal at ITS calibrated horizon: drawdown gauges at the short
+        # horizon (the contrarian flip weakens the relation by 90d), returns at long.
+        h_cv = horizons[0] if drawdown_judged else h_last
+        signs = cv_fold_signs(df[sig], fdf, spec["bands"], spec["labels"], h_cv, prefix, folds, builder)
+        full_t = builder(df[sig], fdf, spec["bands"], spec["labels"], [h_cv])
+        full_sign = rank_trend(full_t, f"{prefix}_{h_cv}d", n_floor=150)
+        cv["signals"][sig] = {"full": full_sign, "folds": signs,
+                              "robust": fold_robust(full_sign, signs, spec["want"]), "want": spec["want"]}
+    cv["n_robust"] = sum(1 for v in cv["signals"].values() if v["robust"])
+    cv["note"] = ("Purged + embargoed walk-forward CV (embargo = max forward horizon) replaces the "
+                  "single split_date's leaky boundary. 'robust' = full-sample sign matches `want`, no "
+                  "fold flips, all-but-one folds agree. Stricter than pre/post; both are reported.")
+    report["cross_validation"] = cv
+
+    # (2) Out-of-fold PROBABILITY CALIBRATION of the conditional direction model —
+    #     does the headline conviction probability match realized frequency?
+    oof = oof_cell_probs(df, folds, horizons[0])
+    if oof is not None:
+        P, Y = oof
+        pc = brier_reliability(P, Y) or {}
+        pc["platt"] = platt_fit(P, Y) or {}
+        pc["horizon"] = horizons[0]
+        pc["note"] = ("Out-of-fold: each day's P(up) is the momentum×risk cell rate fit on the OTHER "
+                      "folds (EB-shrunk, the live mechanism), scored vs realized. brier<base_brier = "
+                      "skill; Platt a≈1/b≈0 = already calibrated. Direction is a near-coin-flip, so "
+                      "calibrated probabilities cluster near the base rate — that is the honest result.")
+        report["probability_calibration"] = pc
+
+    # (3) COLLINEARITY — VIF + the high-|corr| clusters, to surface the cost-basis
+    #     triple-counting a heuristic composite_state can't see.
+    coll_cols = [s for s in SIGNALS if s in df.columns
+                 and not isinstance(SIGNALS[s]["bands"][0], (list, tuple))]
+    cdf = df[coll_cols].apply(pd.to_numeric, errors="coerce")
+    vifs = vif(cdf)
+    if vifs:
+        report["collinearity"] = {
+            "vif": dict(sorted(vifs.items(), key=lambda kv: -kv[1])),
+            "redundant": [k for k, v in vifs.items() if v >= 5],
+            "top_pairs": top_correlated_pairs(cdf, k=10, thresh=0.6),
+            "note": ("VIF>5 ≈ redundant (its forward info is already carried by other signals); the "
+                     "high-corr pairs name the cluster. This MEASURES the independent contribution "
+                     "the one-representative-per-axis rule asserts — orthogonalize before any blend."),
+        }
+
+    # (4) Block-bootstrap CI on the shipped allocation variant — the point-estimate
+    #     Sharpe/MaxDD now ship with a 95% interval (+ DSR already haircuts the mean).
+    sel_variant = (report.get("multiple_testing") or {}).get("selected_variant") or "optimal"
+    acol = f"alloc_{sel_variant}"
+    if acol in df.columns:
+        net = backtest_core(close, df[acol], cost_bps=cfg.get("cost_bps", 0))["net"]
+        boot = block_bootstrap_ci(net, block=21, B=5000, ann=TRADING_YEAR)
+        if boot:
+            boot["variant"] = sel_variant
+            boot["note"] = ("Circular block bootstrap (21d blocks) of the NET daily strategy returns → "
+                            "95% CI [2.5, 50, 97.5]. sharpe_gt0_prob = bootstrap P(Sharpe>0). Pairs with "
+                            "the Deflated-Sharpe haircut: DSR deflates the mean, this bounds the variance.")
+            report["allocation_bootstrap"] = boot
+
     # ---- persist ----------------------------------------------------------- #
     outdir = config.data_dir() / "vector"
     outdir.mkdir(parents=True, exist_ok=True)
     (outdir / "calibration.json").write_text(json.dumps(report, indent=2, default=str))
+    (outdir / "trial_log.json").write_text(json.dumps(report.get("trial_log", {}), indent=2, default=str))
     df.to_parquet(outdir / "signals.parquet")
     _write_markdown(report)
     print(_summary(report))
@@ -405,15 +630,45 @@ def _summary(report: dict) -> str:
         for r in rd["full"]:
             cols = "  ".join(f"{k}={r[k]}" for k in r if k not in ("band",))
             L.append(f"     {r['band']:10s} {cols}")
-    L.append("\nALLOCATION BACKTEST vs HODL:")
+    _cb = next(iter(report["allocation"].values()), {}).get("cost_bps", 0)
+    L.append(f"\nALLOCATION BACKTEST vs HODL (NET of {_cb}bps one-way cost):")
     for v, m in report["allocation"].items():
-        L.append(f"  {v:13s} CAGR {m['cagr']:>6}% (HODL {m['hodl_cagr']}%)  "
+        L.append(f"  {v:13s} CAGR {m['cagr']:>6}% net (gross {m.get('cagr_gross')}%, "
+                 f"drag {m.get('cost_drag_pp')}pp; HODL {m['hodl_cagr']}%)  "
                  f"Sharpe {m['sharpe']} (HODL {m['hodl_sharpe']})  "
                  f"MaxDD {m['maxdd']}% (HODL {m['hodl_maxdd']}%)  "
-                 f"inMkt {m['time_in_market']}%  xHODL {m['final_vs_hodl']}")
+                 f"inMkt {m['time_in_market']}%  turn {m.get('turnover_annual')}x/yr  "
+                 f"xHODL {m['final_vs_hodl']}")
+    mt = report.get("multiple_testing")
+    if mt and mt.get("dsr") is not None:
+        L.append(f"\nDEFLATED SHARPE [{mt['selected_variant']}]: DSR={mt['dsr']}  "
+                 f"(SR {mt['sr_annual']} ann vs haircut SR0 {mt['sr0_annual']} ann; "
+                 f"N={mt['n_trials']} trials, T={mt['T']}d, skew={mt['skew']}, kurt={mt['kurt']})")
+        L.append(f"  => {mt['verdict']}")
     L.append("\nWHIPSAW (state flips < max_days):")
     for s, w in report["whipsaw"].items():
         L.append(f"  {s:18s} {w['changes']:4d} changes, {w['pct']}% whipsaw")
+    cv = report.get("cross_validation")
+    if cv:
+        robust = [s for s, v in cv["signals"].items() if v["robust"]]
+        L.append(f"\nPURGED WALK-FORWARD CV ({cv['k_folds']} folds, {cv['embargo_days']}d embargo): "
+                 f"{cv['n_robust']}/{len(cv['signals'])} signals robust (leak-free, no fold flip)")
+        L.append(f"  robust: {', '.join(robust) if robust else '(none — single signals are weak at the fold level on ~3 cycles)'}")
+    pc = report.get("probability_calibration")
+    if pc:
+        L.append(f"\nPROBABILITY CALIBRATION (OOF, {pc['horizon']}d direction): Brier {pc['brier']} vs "
+                 f"base {pc['base_brier']} (skill {pc['skill_score']}); Platt a={pc['platt'].get('a')} "
+                 f"b={pc['platt'].get('b')} — near-coin-flip, odds ~calibrated, ~0 skill (honest).")
+    co = report.get("collinearity")
+    if co and co.get("top_pairs"):
+        tp = co["top_pairs"][0]
+        L.append(f"\nCOLLINEARITY: {len(co['redundant'])} signals VIF≥5 (redundant); "
+                 f"worst pair {tp['a']}~{tp['b']} r={tp['corr']} — the cost-basis cluster is triple-counted.")
+    ab = report.get("allocation_bootstrap")
+    if ab:
+        L.append(f"\nBOOTSTRAP CI [{ab['variant']}]: Sharpe {ab['sharpe_ci'][1]} "
+                 f"95%CI[{ab['sharpe_ci'][0]}, {ab['sharpe_ci'][2]}]  MaxDD {ab['maxdd_ci_pct'][1]}% "
+                 f"[{ab['maxdd_ci_pct'][2]}, {ab['maxdd_ci_pct'][0]}]  P(Sharpe>0)={ab['sharpe_gt0_prob']}")
     return "\n".join(L)
 
 
@@ -448,11 +703,71 @@ def _write_markdown(report: dict) -> None:
         lines.append(f"\n### {sig} — forward returns by band (full sample)\n")
         t = pd.DataFrame(e["full"])
         lines.append(t.to_markdown(index=False))
-    lines.append("\n## Allocation backtest vs HODL\n")
-    cols = ["cagr", "hodl_cagr", "sharpe", "hodl_sharpe", "sortino", "hodl_sortino",
-            "maxdd", "hodl_maxdd", "time_in_market", "final_vs_hodl"]
-    at = pd.DataFrame(report["allocation"]).T[cols]
+    _cb = next(iter(report["allocation"].values()), {}).get("cost_bps", 0)
+    lines.append(f"\n## Allocation backtest vs HODL (NET of {_cb}bps one-way cost)\n")
+    lines.append(f"`cagr` is net of transaction cost (the honest headline); `cagr_gross` "
+                 f"and `cost_drag_pp` show the cost bite, `turnover_annual` the one-way "
+                 f"turnover/yr driving it.\n")
+    cols = ["cagr", "cagr_gross", "cost_drag_pp", "hodl_cagr", "sharpe", "hodl_sharpe",
+            "sortino", "hodl_sortino", "maxdd", "hodl_maxdd", "time_in_market",
+            "turnover_annual", "final_vs_hodl"]
+    at = pd.DataFrame(report["allocation"]).T
+    at = at[[c for c in cols if c in at.columns]]
     lines.append(at.to_markdown())
+    ab = report.get("allocation_bootstrap")
+    if ab:
+        lines.append(f"\n**Block-bootstrap 95% CI** [{ab['variant']}, {ab['B']} resamples, "
+                     f"{ab['block']}d blocks]: Sharpe **{ab['sharpe_ci'][1]}** "
+                     f"[{ab['sharpe_ci'][0]}, {ab['sharpe_ci'][2]}] · MaxDD {ab['maxdd_ci_pct'][1]}% "
+                     f"[{ab['maxdd_ci_pct'][2]}, {ab['maxdd_ci_pct'][0]}] · P(Sharpe>0) {ab['sharpe_gt0_prob']}. "
+                     f"{ab['note']}")
+    cv = report.get("cross_validation")
+    if cv:
+        lines.append("\n## Purged walk-forward CV (stability gate)\n")
+        lines.append(f"{cv['n_robust']}/{len(cv['signals'])} signals **robust** under "
+                     f"{cv['k_folds']} embargoed folds ({cv['embargo_days']}d embargo = max horizon). "
+                     f"{cv['note']}\n")
+        lines.append("| Signal | full | folds | want | robust |")
+        lines.append("|---|--:|---|--:|:-:|")
+        for s, v in cv["signals"].items():
+            lines.append(f"| {s} | {v['full']:+d} | {v['folds']} | {v['want']:+d} | "
+                         f"{'✅' if v['robust'] else '·'} |")
+    pc = report.get("probability_calibration")
+    if pc:
+        lines.append("\n## Probability calibration of the conviction layer (out-of-fold)\n")
+        lines.append(f"OOF {pc['horizon']}d direction: **Brier {pc['brier']}** vs base "
+                     f"{pc['base_brier']} (skill {pc['skill_score']}); Platt a={pc['platt'].get('a')}, "
+                     f"b={pc['platt'].get('b')}. {pc['note']}\n")
+        lines.append("| prob bin | n | predicted | observed |")
+        lines.append("|---|--:|--:|--:|")
+        for r in pc.get("reliability", []):
+            lines.append(f"| {r['bin']} | {r['n']} | {r['pred']} | {r['obs']} |")
+    co = report.get("collinearity")
+    if co:
+        lines.append("\n## Signal collinearity (orthogonalize before any blend)\n")
+        lines.append(f"{len(co['redundant'])} signals with **VIF≥5** (redundant): "
+                     f"{', '.join(co['redundant'])}. {co['note']}\n")
+        lines.append("| a | b | \\|corr\\| |")
+        lines.append("|---|---|--:|")
+        for p in co.get("top_pairs", []):
+            lines.append(f"| {p['a']} | {p['b']} | {p['corr']} |")
+    mt = report.get("multiple_testing")
+    if mt and mt.get("dsr") is not None:
+        lines.append("\n## Deflated Sharpe Ratio (multiple-testing haircut)\n")
+        lines.append(f"**{mt['verdict']}** — shipped variant `{mt['selected_variant']}`.\n")
+        lines.append(f"- DSR — P(true Sharpe > 0) after deflation: **{mt['dsr']}**")
+        lines.append(f"- Observed Sharpe {mt['sr_annual']} ann ({mt['sr_daily']}/day); "
+                     f"haircut threshold SR0 {mt['sr0_annual']} ann")
+        lines.append(f"- N={mt['n_trials']} trials (upper-bound) · T={mt['T']}d · "
+                     f"skew={mt['skew']} · kurt={mt['kurt']} · SR-variance: {mt['sr_variance_source']}")
+        lines.append(f"\n> {mt['note']}")
+    tl = report.get("trial_log")
+    if tl:
+        lines.append("\n## Trial log\n")
+        lines.append(f"As-of {tl['asof']}: **{tl['n_trials_declared']}** declared independent "
+                     f"trials (upper-bound); {tl['n_signal_families']} signal families screened; "
+                     f"allocation variants: {', '.join(tl['allocation_variants_tested'])}; "
+                     f"transaction cost {tl['cost_bps_one_way']}bps one-way.")
     lines.append("\n## Whipsaw\n")
     wt = pd.DataFrame(report["whipsaw"]).T
     lines.append(wt.to_markdown())

@@ -38,6 +38,10 @@ warnings.filterwarnings("ignore")
 
 from lib import config  # noqa: E402
 from engine import forex_inputs, forex_signals, forex_conviction  # noqa: E402
+from engine.validation import (  # noqa: E402
+    backtest_core, deflated_sharpe, dsr_verdict, ret_moments)
+
+TRADING_YEAR = 252  # FX spot trades ~252 days/yr
 
 # FX factor ICs are tiny and forward returns overlap (autocorrelated), so |IC| below
 # ~0.04 is noise. We DON'T replace the prior with raw IC weights (that overfits short FX
@@ -82,6 +86,75 @@ def _ic(factor: pd.Series, fwd: pd.DataFrame, idx: pd.Index, horizons: list[int]
             if pd.notna(c):
                 ics.append(c)
     return float(np.mean(ics)) if ics else np.nan
+
+
+def conviction_series(panel: pd.DataFrame, weights: dict) -> pd.Series | None:
+    """Daily conviction in [-1, 1] = Σ w·factor / Σ|w| over the factors PRESENT that
+    day — the same scale-invariant blend forex_conviction.conviction ships (its
+    score/100), reconstructed historically from the just-calibrated signed weights.
+    Returns None if no weighted factor is available."""
+    cols = [f for f in weights if f in panel.columns and weights[f] != 0]
+    if not cols:
+        return None
+    w = pd.Series({f: float(weights[f]) for f in cols})
+    P = panel[cols]
+    num = (P.fillna(0.0) * w).sum(axis=1)
+    den = (P.notna() * w.abs()).sum(axis=1)             # available weight mass per day
+    return (num / den.replace(0.0, np.nan)).clip(-1, 1).fillna(0.0)
+
+
+def backtest_conviction(close: pd.Series, conviction: pd.Series, cost_bps: float = 0.0) -> dict:
+    """Long/short allocation driven by the calibrated CONVICTION score (sized in
+    [-1,1], acting next bar) vs a passive long-the-base benchmark, NET of a one-way
+    `cost_bps` on |Δpos|. This is an IN-SAMPLE read (weights are fit on the full
+    history), which is exactly why the Deflated Sharpe haircut is applied on top.
+    Returns {} if the strategy never takes a position (e.g. a managed peg)."""
+    if conviction is None or float(conviction.abs().sum()) == 0.0:
+        return {}
+    bt = backtest_core(close, conviction, cost_bps=cost_bps)
+    ret, gross, strat, turnover, years, pos = (
+        bt["ret"], bt["gross"], bt["net"], bt["turnover"], bt["years"], bt["pos"])
+    eq = (1 + strat).cumprod()
+    eq_gross = (1 + gross).cumprod()
+    hold = (1 + ret).cumprod()
+
+    def cagr(e):
+        return (e.iloc[-1]) ** (1 / years) - 1 if years > 0 and e.iloc[-1] > 0 else np.nan
+
+    def sharpe(r):
+        sd = r.std()
+        return (r.mean() / sd * np.sqrt(TRADING_YEAR)) if sd else np.nan
+
+    def sortino(r):
+        dn = r[r < 0].std()
+        return (r.mean() / dn * np.sqrt(TRADING_YEAR)) if dn else np.nan
+
+    def maxdd(e):
+        return float((e / e.cummax() - 1).min())
+
+    cagr_net, cagr_gross = cagr(eq), cagr(eq_gross)
+    mom = ret_moments(strat)  # net per-period moments for the Deflated Sharpe
+    return {
+        "cagr": round(100 * cagr_net, 1), "hold_cagr": round(100 * cagr(hold), 1),
+        "cagr_gross": round(100 * cagr_gross, 1) if pd.notna(cagr_gross) else np.nan,
+        "cost_drag_pp": (round(100 * (cagr_gross - cagr_net), 1)
+                         if pd.notna(cagr_net) and pd.notna(cagr_gross) else np.nan),
+        "sharpe": round(sharpe(strat), 2), "hold_sharpe": round(sharpe(ret), 2),
+        "sharpe_gross": round(sharpe(gross), 2),
+        "sortino": round(sortino(strat), 2), "hold_sortino": round(sortino(ret), 2),
+        "maxdd": round(100 * maxdd(eq), 1), "hold_maxdd": round(100 * maxdd(hold), 1),
+        "time_in_market": round(100 * (pos.abs() > 1e-9).mean(), 1),
+        "avg_exposure": round(100 * pos.abs().mean(), 1),
+        "net_long_pct": round(100 * (pos > 1e-9).mean(), 1),
+        "turnover_annual": round(float(turnover.sum() / years), 1) if years > 0 else np.nan,
+        "cost_bps": cost_bps,
+        "final_vs_hold": round(eq.iloc[-1] / hold.iloc[-1], 2) if hold.iloc[-1] else np.nan,
+        # per-period (daily) stats the Deflated Sharpe Ratio consumes:
+        "sharpe_daily": round(mom[0], 6) if mom else None,
+        "skew": round(mom[1], 4) if mom else None,
+        "kurt": round(mom[2], 4) if mom else None,
+        "n_obs": mom[3] if mom else None,
+    }
 
 
 def calibrate_pair(pair: str, sig: pd.DataFrame, meta: dict, cal: dict) -> dict:
@@ -131,8 +204,20 @@ def calibrate_pair(pair: str, sig: pd.DataFrame, meta: dict, cal: dict) -> dict:
     mass = sum(abs(w) for w in raw_w.values()) or 1.0
     weights = {f: round(w / mass, 4) for f, w in raw_w.items()}    # normalize to sum|w|=1 (cosmetic)
     reliable = n_robust >= 2                                        # >=2 factors held sign in BOTH halves
+
+    # Honest-validation overlay: does a conviction-weighted long/short of THIS pair
+    # actually pay once you net out the spread? Reconstruct the conviction series from
+    # the just-fit weights, flatten through peg/intervention windows (no edge there),
+    # and backtest NET of the configured G10 cost. The DSR haircut is applied across
+    # pairs in main() (the cross-pair Sharpe dispersion is the trial set).
+    cost_bps = float(cal.get("cost_bps", 2.0))
+    conv = conviction_series(panel, weights)
+    if conv is not None:
+        conv = conv.where(peg_mask(close, meta), 0.0)
+    allocation = backtest_conviction(close, conv, cost_bps=cost_bps)
     return {"span": f"{df.index.min().date()}..{df.index.max().date()}", "rows": len(df),
-            "weights": weights, "score_reliable": bool(reliable), "signals": signals}
+            "weights": weights, "score_reliable": bool(reliable), "signals": signals,
+            "allocation": allocation}
 
 
 def main() -> int:
@@ -143,8 +228,13 @@ def main() -> int:
         print("no forex inputs; nothing to calibrate")
         return 0
     results = forex_signals.compute_all(inputs, cfg)
+    # One-way spread cost (tight G10) + the honest trial count for the Deflated
+    # Sharpe live in config with code defaults (ship without a config.yml edit).
+    cost_bps = float(cal.get("cost_bps", 2.0))
+    n_trials = int(cal.get("n_trials", 60))
 
     report = {"meta": {"split": cal["split_date"], "horizons": cal["forward_days"],
+                       "cost_bps_one_way": cost_bps, "n_trials": n_trials,
                        "note": "IC = Spearman rank corr of naive-bullish factor vs forward base-vs-USD return; peg windows excised."},
               "assets": {}}
     for pair, ai in inputs.items():
@@ -153,9 +243,46 @@ def main() -> int:
             continue
         report["assets"][pair] = calibrate_pair(pair, sig, ai["meta"], cal)
 
+    # ---- multiple-testing haircut: Deflated Sharpe on each pair's conviction L/S --
+    # Weights are fit per pair on the full sample and we screened n_trials factor×pair
+    # configs, so each per-pair Sharpe is upward-biased. Deflate using the cross-pair
+    # daily-Sharpe dispersion as the trial set (floored at the null proxy in-helper).
+    daily_srs = [a["allocation"]["sharpe_daily"] for a in report["assets"].values()
+                 if a.get("allocation", {}).get("sharpe_daily") is not None]
+    sr_var = float(np.var(daily_srs, ddof=1)) if len(daily_srs) >= 2 else None
+    for a in report["assets"].values():
+        m = a.get("allocation") or {}
+        dsr = deflated_sharpe(m.get("sharpe_daily"), m.get("skew"), m.get("kurt"),
+                              m.get("n_obs"), n_trials, sr_variance=sr_var,
+                              trading_year=TRADING_YEAR)
+        if dsr is not None:
+            dsr["sr_variance_source"] = ("max(cross-pair Sharpe dispersion, null SR-sampling proxy)"
+                                         if sr_var else "null SR-sampling proxy")
+            dsr["verdict"] = dsr_verdict(dsr["dsr"])
+            dsr["note"] = ("DSR = P(true Sharpe>0) for the conviction long/short after deflating "
+                           "for n_trials factor×pair configs screened, sample length, skew & "
+                           "kurtosis. Weights are in-sample, so this haircut is the honest "
+                           "counterweight — a low DSR means the edge is likely selection bias.")
+            a["multiple_testing"] = dsr
+
+    fams = sorted({f for a in report["assets"].values() for f in a.get("signals", {})})
+    asof = max((results[p].index.max() for p in report["assets"]), default=None)
+    report["trial_log"] = {
+        "asof": str(asof.date()) if asof is not None else None,
+        "n_trials_declared": n_trials,
+        "cost_bps_one_way": cost_bps,
+        "pairs_tested": list(report["assets"]),
+        "factor_families_screened": fams,
+        "n_factor_families": len(fams),
+        "note": ("Upper-bound count of factor×pair configs screened across the hunt, used to "
+                 "deflate each pair's conviction Sharpe. Raise forex.calibration.n_trials as you "
+                 "screen more factors/pairs."),
+    }
+
     outdir = config.data_dir() / "forex"
     outdir.mkdir(parents=True, exist_ok=True)
     (outdir / "conviction_calibration.json").write_text(json.dumps(report, indent=2, default=str))
+    (outdir / "trial_log.json").write_text(json.dumps(report["trial_log"], indent=2, default=str))
     _write_markdown(report)
     print(_summary(report))
     return 0
@@ -172,6 +299,16 @@ def _summary(report: dict) -> str:
             icf = "  n/a" if s["ic_full"] is None else f"{s['ic_full']:+.3f}"
             L.append(f"    {f:12s} {s['verdict']:12s} IC full/pre/post = "
                      f"{icf}/{s['ic_pre']}/{s['ic_post']}   {wt}")
+        al = a.get("allocation") or {}
+        if al:
+            L.append(f"    conviction L/S (NET {al['cost_bps']}bps): CAGR {al['cagr']}% net "
+                     f"(gross {al.get('cagr_gross')}%; hold {al['hold_cagr']}%)  "
+                     f"Sharpe {al['sharpe']} (hold {al['hold_sharpe']})  MaxDD {al['maxdd']}%  "
+                     f"turn {al.get('turnover_annual')}x/yr")
+        mt = a.get("multiple_testing")
+        if mt and mt.get("dsr") is not None:
+            L.append(f"    Deflated Sharpe: DSR={mt['dsr']} (SR {mt['sr_annual']} ann vs SR0 "
+                     f"{mt['sr0_annual']} ann; N={mt['n_trials']}, T={mt['T']}d) => {mt['verdict']}")
     return "\n".join(L)
 
 
@@ -196,6 +333,26 @@ def _write_markdown(report: dict) -> None:
             icf = "n/a" if s["ic_full"] is None else f"{s['ic_full']:+.3f}"
             lines.append(f"| {f} | **{s['verdict']}** | {icf} | {s['ic_pre']} "
                          f"| {s['ic_post']} | {('%+.3f' % w) if w is not None else '0'} |")
+        al = a.get("allocation") or {}
+        if al:
+            lines.append(f"\n**Conviction long/short backtest (NET of {al['cost_bps']}bps one-way "
+                         f"cost)** — IN-SAMPLE (weights fit on full history): CAGR **{al['cagr']}%** net "
+                         f"(gross {al.get('cagr_gross')}%, drag {al.get('cost_drag_pp')}pp; passive-long "
+                         f"hold {al['hold_cagr']}%), Sharpe {al['sharpe']} (hold {al['hold_sharpe']}), "
+                         f"MaxDD {al['maxdd']}%, turnover {al.get('turnover_annual')}x/yr, avg exposure "
+                         f"{al.get('avg_exposure')}%.")
+        mt = a.get("multiple_testing")
+        if mt and mt.get("dsr") is not None:
+            lines.append(f"\n**Deflated Sharpe (multiple-testing haircut)**: **{mt['verdict']}**. "
+                         f"DSR (P true Sharpe>0) = **{mt['dsr']}**; observed SR {mt['sr_annual']} ann "
+                         f"vs haircut SR0 {mt['sr0_annual']} ann (N={mt['n_trials']} factor×pair trials, "
+                         f"T={mt['T']}d, skew={mt['skew']}, kurt={mt['kurt']}).")
+    tl = report.get("trial_log")
+    if tl:
+        lines.append("\n## Trial log\n")
+        lines.append(f"As-of {tl['asof']}: **{tl['n_trials_declared']}** declared factor×pair trials "
+                     f"(upper-bound); {tl['n_factor_families']} factor families screened across "
+                     f"{len(tl['pairs_tested'])} pairs; spread cost {tl['cost_bps_one_way']}bps one-way.")
     Path(config.load()["storage"]["reports_dir"], "forex-calibration.md").write_text("\n".join(lines))
 
 

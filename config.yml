@@ -187,6 +187,13 @@ edgar:
   retries: 3
   latest_fy: 2025                  # most recent COMPLETE fiscal year on EDGAR; auto-walks-back if sparse
   min_filers_ok: 800              # a frame with fewer than this is treated as not-yet-available
+  # Point-in-time panel (collectors.edgar.fetch_panel): one cross-section per FY
+  # back to panel_start_fy, each stamped asof_date = period_end + reporting_lag_days
+  # so a factor backtest never peeks at a not-yet-filed 10-K. Frames carry the
+  # period end but NOT the SEC filed timestamp, so the lag is a CONSERVATIVE proxy
+  # (120d ≈ past the 90d 10-K deadline; longer = safer against look-ahead).
+  panel_start_fy: 2009            # XBRL financial-statement tagging was mandated ~2009
+  reporting_lag_days: 120
   factors:
     winsor_z: 3.0                 # clip cross-sectional z-scores at +/- this
     low_vol_window_d: 252         # trailing window for idiosyncratic/total vol + beta
@@ -881,6 +888,8 @@ commodities:
     forward_days: [21, 63, 126]
     whipsaw_max_days: 10
     whipsaw_target_pct: 15
+    cost_bps: 8                    # one-way transaction cost (spread+roll slippage) per unit |Δpos|; liquid commodity futures/ETF proxy — wider than FX spot, tighter than BTC. Allocation CAGR/Sharpe are NET of this
+    n_trials: 40                  # honest UPPER-BOUND of independent strategy configs explored per asset, for the Deflated Sharpe haircut — overestimate is conservative (de Prado); raise as you try more
 
   # --- Phase 5: alerts (daily state-change events) + intraday shock sentinel ---
   alerts:
@@ -1060,6 +1069,8 @@ forex:
     exclude_peg_windows: true       # excise managed/intervention/SNB eras from weight calibration
     whipsaw_max_days: 10
     whipsaw_target_pct: 15
+    cost_bps: 2                     # one-way transaction cost (spread) per unit |Δpos|; tight G10 spot majors (EM wider, but modeled conservatively at the same leg). Conviction-allocation Sharpe is NET of this
+    n_trials: 60                    # honest UPPER-BOUND of factor×pair configs screened, for the Deflated Sharpe haircut — overestimate is conservative (de Prado); raise as you try more
 
   alerts:
     timeline_days: 60
@@ -1323,6 +1334,9 @@ vector:
     forward_days: [7, 30, 90]
     whipsaw_max_days: 7
     whipsaw_target_pct: 15
+    cost_bps: 10                  # one-way transaction cost (spread+fee) per unit |Δpos|; allocation backtest CAGR/Sharpe are NET of this
+    n_trials: 50                  # honest UPPER-BOUND of independent strategy configs explored, for the Deflated Sharpe haircut — overestimate is conservative (de Prado); raise as you try more
+    cv_folds: 5                   # purged + embargoed walk-forward folds (embargo = max forward horizon) — the leak-free robustness gate complementing split_date (D-vec-GATES)
 
   # Alerts (Phase 3). Vector severity high|medium|info. Flash-crash thresholds
   # provisional (calibrated against known episodes; see research/VECTOR_ALERTS_DESIGN.md).
