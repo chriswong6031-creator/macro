@@ -1,0 +1,230 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{% macro help(en, zh='') -%}
+<span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
+{%- endmacro %}
+{% macro abar(a) -%}
+{% set w = ((a if a else 0) / 3.0 * 50) %}
+<span class="abar">{% if (a or 0) >= 0 %}<i style="left:50%;width:{{ [w,50]|min|round(1) }}%;background:var(--up)"></i>{% else %}<i style="right:50%;width:{{ [-w,50]|min|round(1) }}%;background:var(--down)"></i>{% endif %}<i class="mid"></i></span>
+{%- endmacro %}
+{% macro echip(tag) -%}
+{% set m = entry_meta.get(tag) %}{% if m %}<span class="echip {{ m[2] }}">{{ t(m[0], m[1]) }}</span>{% endif %}
+{%- endmacro %}
+{% macro mom(v) -%}
+<td class="r {{ 'pos' if (v or 0) >= 0 else 'neg' }}">{{ ('%+.0f%%'|format(v)) if v is not none else '—' }}</td>
+{%- endmacro %}
+{% macro grow(r, i) -%}
+<tr>
+  <td class="rk">{{ i }}</td>
+  <td><a href="stock.html#{{ r.ticker }}"><b>{{ r.ticker }}</b></a> <span class="muted sm">{{ r.name[:20] }}</span></td>
+  <td class="muted sm">{{ td(r.sector) }}</td>
+  <td><div class="scorecell">{{ abar(r.alpha) }}<span class="znum band-{{ r.band }}">{{ '%+.2f'|format(r.alpha) }}</span></div></td>
+  <td>{{ echip(r.entry) }}</td>
+  {{ mom(r.total_mom) }}
+  <td class="r muted sm">{{ ('#%d/%d'|format(r.sector_rank, r.sector_n)) if r.sector_rank else '—' }}</td>
+  <td class="r muted sm">{{ ('$%.2f'|format(r.price)) if r.price is not none else '—' }}</td>
+</tr>
+{%- endmacro %}
+{% macro srow(r) -%}
+<tr>
+  <td class="rk">{{ r.sector_rank }}</td>
+  <td><a href="stock.html#{{ r.ticker }}"><b>{{ r.ticker }}</b></a> <span class="muted sm">{{ r.name[:22] }}</span></td>
+  <td><div class="scorecell">{{ abar(r.alpha) }}<span class="znum band-{{ r.band }}">{{ '%+.2f'|format(r.alpha) }}</span></div></td>
+  <td>{{ echip(r.entry) }}</td>
+  {{ mom(r.total_mom) }}
+  <td class="r muted sm">{{ ('$%.2f'|format(r.price)) if r.price is not none else '—' }}</td>
+</tr>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ t('Alpha leaders — sector-neutral residual momentum', '阿尔法领先股 — 板块中性残差动量') }}</title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1320px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:20px; margin:0; }
+  h2 { font-size:14px; margin:0 0 10px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+  h3 { font-size:13px; margin:0 0 6px; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:14px; }
+  .topline { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+  .muted { color:var(--muted); } .sm { font-size:12px; }
+  table { border-collapse:collapse; width:100%; font-size:13px; }
+  th,td { text-align:left; padding:4px 7px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  th { color:var(--muted); font-weight:500; } td.r, th.r { text-align:right; }
+  .pos { color:var(--up); } .neg { color:var(--down); }
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:5px; }
+  .help .tip { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%); width:300px; background:var(--panel); border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text); font-weight:400; box-shadow:var(--popover-shadow); pointer-events:none; }
+  .help:hover .tip { display:block; }
+  .tabs { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 14px; }
+  .tabbtn { padding:7px 14px; font:inherit; font-size:13px; border:1px solid var(--line); background:var(--panel); color:var(--muted); border-radius:8px; cursor:pointer; }
+  .tabbtn.on { background:var(--panel2); color:var(--text); border-color:var(--muted); }
+  .seg { display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; margin-bottom:10px; }
+  .segbtn { padding:5px 16px; font:inherit; font-size:12px; background:var(--panel); color:var(--muted); border:none; cursor:pointer; }
+  .segbtn.on { background:var(--panel2); color:var(--text); }
+  .rk { color:var(--muted); font-size:12px; width:30px; }
+  .scorecell { display:flex; align-items:center; gap:8px; min-width:150px; }
+  .abar { position:relative; flex:1; height:12px; border-radius:6px; background:var(--panel2); overflow:hidden; min-width:74px; }
+  .abar > i { position:absolute; top:0; bottom:0; } .abar > i.mid { left:50%; width:1px; background:var(--muted); opacity:.5; }
+  .znum { font-variant-numeric:tabular-nums; width:42px; text-align:right; }
+  .band-strong .znum, .band-leader .znum { color:var(--up); font-weight:600; }
+  .band-lag .znum, .band-deeplag .znum { color:var(--down); font-weight:600; }
+  .echip { font-size:10.5px; padding:1px 7px; border-radius:7px; border:1px solid var(--line); white-space:nowrap; }
+  .ent-pull { color:var(--up); border-color:var(--up); } .ent-ext { color:var(--down); border-color:var(--down); }
+  .ent-intact, .ent-lag, .ent-neutral { color:var(--muted); }
+  .secsel { font:inherit; font-size:13px; padding:6px 10px; border:1px solid var(--line); border-radius:8px; background:var(--panel); color:var(--text); margin-bottom:12px; }
+  .note { margin:8px 0 0; line-height:1.5; }
+  .twocol { display:grid; grid-template-columns:1fr 1fr; gap:18px; } @media (max-width:760px){ .twocol{ grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
+    <a class="nav-link" href="macro.html">📊 {{ t('US Macro', '美国宏观') }}</a>
+    <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }}</a>
+    <a class="nav-link" href="etfs.html">🐳 {{ t('ETF flows', 'ETF 资金流') }}</a>
+    <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国A股') }}</a>
+    <a class="nav-link" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }}</a>
+    <a class="nav-link" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }}</a>
+    <a class="nav-link" href="forex.html">💱 {{ t('Forex', '外汇') }}</a>
+    <a class="nav-link active" href="discovery.html">🏆 {{ t('Alpha leaders', '阿尔法领先股') }}</a>
+  </div>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+<div class="panel">
+  <div class="topline">
+    <h1>🏆 {{ t('Alpha leaders', '阿尔法领先股') }}</h1>
+    <span class="muted sm">{{ t('sector-neutral residual momentum across the S&P 1500 · winners within their sector', '板普 1500 的板块中性残差动量 · 各板块内的领先股') }}</span>
+  </div>
+  <p class="muted sm note">{{ t(
+    "The durable form of the operator's idea: strip each stock's market AND sector beta, then rank the residual ('alpha') information ratio WITHIN its GICS sector over a 12-1-month window. The entry tag flags a leader that ran hot (extended → reversal risk) vs one on a recent pullback (constructive). Validated on a deep 1962-2026 panel (research/RESIDUAL_ALPHA_MOMENTUM.md): residual is the modern-durable variant of momentum, but it's a modest, decayed, crowded edge — a research lens and context, NOT a buy list. Short-term reversal is an entry overlay, not the score; 'acceleration' was tested and dropped (anti-predictive).",
+    "操作者想法的持久形式：剔除每只股票的市场与板块贝塔，再在其 GICS 板块内按 12-1 个月窗口对残差（“阿尔法”）信息比率排名。入场标签标示领先股是否过热（extended → 反转风险）或处于近期回调（constructive）。已在 1962-2026 深度样本验证（research/RESIDUAL_ALPHA_MOMENTUM.md）：残差是动量的现代持久变体，但属温和、已衰减、拥挤的边际信号——仅作研究视角与背景，并非买入清单。短期反转为入场叠加项而非评分；“加速度”经测试已剔除（反向预测）。") }}</p>
+  <p class="muted sm" style="margin:6px 0 0">{{ t('As of', '截至') }} {{ as_of }} · {{ n }} {{ t('names', '只') }} ·
+    {{ t('betas', '贝塔') }} {{ windows.beta_win }}d · {{ t('formation', '形成窗口') }} {{ windows.form }}-{{ windows.skip }}d</p>
+</div>
+
+<div class="tabs">
+  <button class="tabbtn on" data-tab="global">{{ t('Global index', '全球指数') }}</button>
+  <button class="tabbtn" data-tab="sectors">{{ t('Sectors', '板块') }}</button>
+  <button class="tabbtn" data-tab="sector">{{ t('Sector index', '板块明细') }}</button>
+</div>
+
+<!-- GLOBAL INDEX -->
+<div id="tab-global" data-grp="tab">
+  <div class="panel">
+    <div class="seg">
+      <button class="segbtn on" id="seg-strong">{{ t('Strongest', '最强') }}</button>
+      <button class="segbtn" id="seg-weak">{{ t('Weakest', '最弱') }}</button>
+    </div>
+    {% set thead %}
+      <tr><th>#</th><th>{{ t('stock', '个股') }}</th><th>{{ t('sector', '板块') }}</th>
+        <th>{{ t('alpha z', '阿尔法 z') }}{{ help('Sector-neutral residual-momentum information ratio, winsorized to a cross-sectional z-score. Higher = stronger idiosyncratic (beta/sector-stripped) momentum within its GICS sector. This is the global, cross-sector-comparable score.', '板块中性残差动量信息比率的去极值横截面 z 分数。越高 = 在其 GICS 板块内的特质（剔除贝塔/板块）动量越强。此为可跨板块比较的全局评分。') }}</th>
+        <th>{{ t('entry', '入场') }}{{ help('Short-term reversal overlay (NOT the score): a leader that just ran hot is extended (reversal risk); one on a recent pullback is constructive. Laggards/neutral otherwise.', '短期反转叠加项（非评分）：刚刚过热的领先股为 extended（反转风险）；近期回调的为 constructive。') }}</th>
+        <th class="r">{{ t('12-1 mom', '12-1 动量') }}</th><th class="r">{{ t('sector #', '板块排名') }}</th><th class="r">{{ t('price', '价格') }}</th></tr>
+    {% endset %}
+    <div id="g-strong" data-grp="glist">
+      <table>{{ thead }}{% for r in strongest %}{{ grow(r, loop.index) }}{% endfor %}</table>
+    </div>
+    <div id="g-weak" data-grp="glist" style="display:none">
+      <table>{{ thead }}{% for r in weakest %}{{ grow(r, loop.index) }}{% endfor %}</table>
+    </div>
+  </div>
+</div>
+
+<!-- SECTORS OVERVIEW -->
+<div id="tab-sectors" data-grp="tab" style="display:none">
+  <div class="panel">
+    <h2>{{ t('Sectors by alpha', '按阿尔法排序的板块') }}
+      {{ help('GICS sectors ranked by the mean sector-neutral alpha of their names, with the share of each sector sitting in the universe-wide top quintile. Because the score is sector-neutral, this measures how broadly a sector is leading, not the sector ETF return.', '按其成分股的平均板块中性阿尔法对 GICS 板块排序，并显示各板块处于全域顶部五分位的占比。由于评分为板块中性，这衡量的是板块领先的广度，而非板块 ETF 回报。') }}</h2>
+    <table>
+      <tr><th>#</th><th>{{ t('sector', '板块') }}</th><th>{{ t('mean alpha', '平均阿尔法') }}</th><th class="r">{{ t('in top 20%', '位于前20%') }}</th><th class="r">{{ t('names', '只') }}</th></tr>
+      {% for s in sectors %}
+      <tr>
+        <td class="rk">{{ loop.index }}</td>
+        <td>{{ td(s.sector) }}</td>
+        <td><div class="scorecell">{{ abar(s.mean) }}<span class="znum band-{{ 'strong' if s.mean>=0.3 else 'lag' if s.mean<-0.3 else 'mid' }}">{{ '%+.2f'|format(s.mean) }}</span></div></td>
+        <td class="r muted sm">{{ s.intop }}/{{ s.n }} · {{ s.pct }}%</td>
+        <td class="r muted sm">{{ s.n }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+
+<!-- SECTOR INDEX (drill) -->
+<div id="tab-sector" data-grp="tab" style="display:none">
+  <div class="panel">
+    <select id="secsel" class="secsel">
+      {% for sec in sector_order %}<option value="{{ loop.index0 }}">{{ sec }} ({{ by_sector[sec].n }})</option>{% endfor %}
+    </select>
+    {% for sec in sector_order %}
+    <div id="sec-{{ loop.index0 }}" data-grp="seclist"{% if not loop.first %} style="display:none"{% endif %}>
+      <div class="twocol">
+        <div>
+          <h3 class="pos">{{ t('Leaders', '领先') }} — {{ td(sec) }}</h3>
+          <table>
+            <tr><th>#</th><th>{{ t('stock', '个股') }}</th><th>{{ t('alpha z', '阿尔法 z') }}</th><th>{{ t('entry', '入场') }}</th><th class="r">{{ t('12-1', '12-1') }}</th><th class="r">{{ t('price', '价格') }}</th></tr>
+            {% for r in by_sector[sec].leaders %}{{ srow(r) }}{% endfor %}
+          </table>
+        </div>
+        <div>
+          <h3 class="neg">{{ t('Laggards', '落后') }} — {{ td(sec) }}</h3>
+          <table>
+            <tr><th>#</th><th>{{ t('stock', '个股') }}</th><th>{{ t('alpha z', '阿尔法 z') }}</th><th>{{ t('entry', '入场') }}</th><th class="r">{{ t('12-1', '12-1') }}</th><th class="r">{{ t('price', '价格') }}</th></tr>
+            {% for r in by_sector[sec].laggards %}{{ srow(r) }}{% endfor %}
+          </table>
+        </div>
+      </div>
+      <p class="muted sm note">{{ t('Dual score: alpha z is the GLOBAL sector-neutral rank (comparable across sectors); the # is the IN-SECTOR rank. A name can lead its sector yet sit mid globally, or rank elite globally from a hot sector.', '双重评分：alpha z 是全局板块中性排名（可跨板块比较）；# 为板块内排名。某只股票可能领先其板块却在全局居中，或因身处强势板块而全局领先。') }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="panel">
+  <p class="muted" style="font-size:12px;margin:0">{{ t(
+    'Source: engine/residual_alpha.py (sector-neutral residual momentum) over the S&P 1500 price universe joined to GICS sectors. Ranks recompute daily with prices. A modest, decayed, crowded edge — research lens, not a buy list. See research/RESIDUAL_ALPHA_MOMENTUM.md and LIMITATIONS.md.',
+    '来源：engine/residual_alpha.py（板块中性残差动量），覆盖标普 1500 价格域并连接 GICS 板块。排名随价格每日重算。温和、已衰减、拥挤的边际信号 — 研究视角，而非买入清单。') }}
+    {{ t('Generated', '生成于') }} {{ built }}</p>
+</div>
+
+<script>
+(function(){
+ function show(id, grp){ document.querySelectorAll('[data-grp="'+grp+'"]').forEach(function(el){ el.style.display='none'; }); var el=document.getElementById(id); if(el) el.style.display=''; }
+ document.querySelectorAll('.tabbtn').forEach(function(b){ b.addEventListener('click', function(){
+   document.querySelectorAll('.tabbtn').forEach(function(x){ x.classList.remove('on'); }); this.classList.add('on');
+   show('tab-'+this.dataset.tab, 'tab'); }); });
+ var su=document.getElementById('seg-strong'), sw=document.getElementById('seg-weak');
+ if(su&&sw){ su.addEventListener('click', function(){ su.classList.add('on'); sw.classList.remove('on'); show('g-strong','glist'); });
+             sw.addEventListener('click', function(){ sw.classList.add('on'); su.classList.remove('on'); show('g-weak','glist'); }); }
+ var sel=document.getElementById('secsel');
+ if(sel) sel.addEventListener('change', function(){ show('sec-'+this.value, 'seclist'); });
+})();
+</script>
+<script src="theme.js"></script>
+</body>
+</html>

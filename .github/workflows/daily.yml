@@ -162,6 +162,11 @@ jobs:
         # writes forex.html + forex/latest.json so the hub picks up the Forex card.
         # Self-sufficient; returns 0 on any engine error.
         run: python -m scripts.build_forex
+      - name: discovery leaderboard (build_discovery)
+        # after build_site (reads site/factordata/alpha.json) and build_forex,
+        # before build_vector (which writes the hub last): writes the discovery
+        # leaderboard. Self-sufficient; returns 0 on any engine error.
+        run: python -m scripts.build_discovery
       - name: build bitcoin vector + landing hub
         # installs the landing hub at index.html (rendered from stored engine
         # state, so ordering vs build_site no longer matters — build_site writes
