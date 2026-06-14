@@ -11,12 +11,12 @@ Verdicts: **CONFIRMED** = stress→worse outcome, positive sign in full + both h
 
 | Signal | Verdict | IC dd (full/pre/post) | IC recession | hi-tercile P(dd10) vs base | span | n |
 |---|---|---|--:|---|---|--:|
-| recession_risk (Recession-risk composite (0-100)) | **CONFIRMED** | 0.17/0.208/0.013 | 0.434 | 0.205 vs 0.123 (+8.2pp) | 1971-01-04..2026-03-17 | 14402 |
-| drawdown_risk (Drawdown-risk gauge (0-100, already MEASURED)) | **CONFIRMED** | 0.25/0.288/0.123 | 0.554 | 0.251 vs 0.127 (+12.4pp) | 1973-03-05..2026-03-17 | 13837 |
+| recession (Recession-risk composite (0-100)) | **CONFIRMED** | 0.164/0.205/0.007 | 0.445 | 0.207 vs 0.123 (+8.4pp) | 1971-01-04..2026-03-17 | 14402 |
+| drawdown (Drawdown-risk gauge (0-100, already MEASURED)) | **CONFIRMED** | 0.248/0.287/0.117 | 0.564 | 0.248 vs 0.127 (+12.1pp) | 1973-03-05..2026-03-17 | 13837 |
 | credit (HY-OAS credit stress (0-100)) | **DIRECTIONAL** | 0.174/0.285/-0.089 | 0.284 | 0.289 vs 0.158 (+13.1pp) | 1996-12-31..2026-03-17 | 7621 |
 | rates_vol (MOVE rates-vol stress (0-100)) | **CONFIRMED** | 0.168/0.251/0.083 | 0.183 | 0.205 vs 0.133 (+7.2pp) | 2002-11-12..2026-03-17 | 6091 |
 | plumbing (SOFR-IORB funding stress (0-100)) | **CONTEXT** | -0.01/nan/-0.01 | None | 0.151 vs 0.147 (+0.4pp) | 2021-07-29..2026-03-17 | 1209 |
-| composite (Bond-stress composite = 100 - health score (the headline)) | **CONFIRMED** | 0.237/0.285/0.055 | 0.529 | 0.23 vs 0.123 (+10.7pp) | 1971-01-04..2026-03-17 | 14402 |
+| composite (Bond-stress composite = 100 - health score (the headline)) | **CONFIRMED** | 0.235/0.284/0.046 | 0.539 | 0.231 vs 0.123 (+10.8pp) | 1971-01-04..2026-03-17 | 14402 |
 
 ## Diagnostic curve signals
 
@@ -28,7 +28,7 @@ Verdicts: **CONFIRMED** = stress→worse outcome, positive sign in full + both h
 
 ## Does the blend beat the best single leg?
 
-Composite IC **0.237** vs best leg `drawdown_risk` **0.25** (Δ -0.013). **best single leg (drawdown_risk) BEATS the composite.**
+Composite IC **0.235** vs best leg `drawdown` **0.248** (Δ -0.013). **best single leg (drawdown) BEATS the composite.**
 
 ## NY-Fed recession-probit reliability
 
@@ -48,8 +48,8 @@ Keep the prior magnitude, scale by the verdict (CONFIRMED 1.0 · DIRECTIONAL 0.5
 
 | leg | prior | measured |
 |---|--:|--:|
-| recession_risk | 1.0 | 0.323 |
-| drawdown_risk | 1.0 | 0.323 |
+| recession | 1.0 | 0.323 |
+| drawdown | 1.0 | 0.323 |
 | credit | 0.8 | 0.129 |
 | rates_vol | 0.6 | 0.194 |
 | plumbing | 0.4 | 0.032 |

@@ -3121,6 +3121,171 @@
         "want": -1
       }
     },
+    "etf_flow_z": {
+      "full": [
+        {
+          "band": "<-.75",
+          "n": 207,
+          "hit_7d": 45.6,
+          "mean_7d": -0.57,
+          "hit_30d": 39.7,
+          "mean_30d": -2.89,
+          "hit_90d": 42.0,
+          "mean_90d": 0.91
+        },
+        {
+          "band": "-.75--.25",
+          "n": 140,
+          "hit_7d": 49.6,
+          "mean_7d": -0.16,
+          "hit_30d": 53.0,
+          "mean_30d": 0.2,
+          "hit_90d": 43.4,
+          "mean_90d": 0.64
+        },
+        {
+          "band": "-.25-.25",
+          "n": 153,
+          "hit_7d": 48.4,
+          "mean_7d": 0.23,
+          "hit_30d": 56.9,
+          "mean_30d": 2.29,
+          "hit_90d": 47.4,
+          "mean_90d": 4.34
+        },
+        {
+          "band": ".25-.75",
+          "n": 100,
+          "hit_7d": 62.0,
+          "mean_7d": 1.54,
+          "hit_30d": 63.0,
+          "mean_30d": 4.99,
+          "hit_90d": 65.5,
+          "mean_90d": 12.16
+        },
+        {
+          "band": ">.75",
+          "n": 157,
+          "hit_7d": 57.3,
+          "mean_7d": 1.13,
+          "hit_30d": 57.3,
+          "mean_30d": 4.02,
+          "hit_90d": 63.5,
+          "mean_90d": 7.84
+        }
+      ],
+      "pre": [
+        {
+          "band": "<-.75",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": "-.75--.25",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": "-.25-.25",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": ".25-.75",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        },
+        {
+          "band": ">.75",
+          "n": 0,
+          "hit_7d": NaN,
+          "mean_7d": NaN,
+          "hit_30d": NaN,
+          "mean_30d": NaN,
+          "hit_90d": NaN,
+          "mean_90d": NaN
+        }
+      ],
+      "post": [
+        {
+          "band": "<-.75",
+          "n": 207,
+          "hit_7d": 45.6,
+          "mean_7d": -0.57,
+          "hit_30d": 39.7,
+          "mean_30d": -2.89,
+          "hit_90d": 42.0,
+          "mean_90d": 0.91
+        },
+        {
+          "band": "-.75--.25",
+          "n": 140,
+          "hit_7d": 49.6,
+          "mean_7d": -0.16,
+          "hit_30d": 53.0,
+          "mean_30d": 0.2,
+          "hit_90d": 43.4,
+          "mean_90d": 0.64
+        },
+        {
+          "band": "-.25-.25",
+          "n": 153,
+          "hit_7d": 48.4,
+          "mean_7d": 0.23,
+          "hit_30d": 56.9,
+          "mean_30d": 2.29,
+          "hit_90d": 47.4,
+          "mean_90d": 4.34
+        },
+        {
+          "band": ".25-.75",
+          "n": 100,
+          "hit_7d": 62.0,
+          "mean_7d": 1.54,
+          "hit_30d": 63.0,
+          "mean_30d": 4.99,
+          "hit_90d": 65.5,
+          "mean_90d": 12.16
+        },
+        {
+          "band": ">.75",
+          "n": 157,
+          "hit_7d": 57.3,
+          "mean_7d": 1.13,
+          "hit_30d": 57.3,
+          "mean_30d": 4.02,
+          "hit_90d": 63.5,
+          "mean_90d": 7.84
+        }
+      ],
+      "verdict": "DIRECTIONAL (one half weak)",
+      "monotone": {
+        "full": 1,
+        "pre": 0,
+        "post": 1,
+        "want": 1
+      }
+    },
     "reserve_risk": {
       "full": [
         {
@@ -4976,6 +5141,7 @@
       "cot_z",
       "cycle_pct",
       "dvol",
+      "etf_flow_z",
       "funding_z",
       "global_m2_yoy",
       "hash_ribbon_capit",
@@ -5002,7 +5168,7 @@
       "vov_pctile",
       "vrp"
     ],
-    "n_signal_families": 31,
+    "n_signal_families": 32,
     "note": "Point-in-time trial ledger (overwritten each run). n_trials_declared is an upper-bound count of independent strategy configs explored across the hunt, used to deflate the headline Sharpe. Raise it as you try more."
   },
   "cross_validation": {
@@ -5256,6 +5422,18 @@
         "robust": false,
         "want": -1
       },
+      "etf_flow_z": {
+        "full": 1,
+        "folds": [
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "robust": true,
+        "want": 1
+      },
       "reserve_risk": {
         "full": 1,
         "folds": [
@@ -5377,7 +5555,7 @@
         "want": 1
       }
     },
-    "n_robust": 6,
+    "n_robust": 7,
     "note": "Purged + embargoed walk-forward CV (embargo = max forward horizon) replaces the single split_date's leaky boundary. 'robust' = full-sample sign matches `want`, no fold flips, all-but-one folds agree. Stricter than pre/post; both are reported."
   },
   "probability_calibration": {
@@ -5410,36 +5588,37 @@
   },
   "collinearity": {
     "vif": {
-      "mvrv_z": 92.42,
-      "mayer": 69.41,
-      "nupl": 67.36,
-      "sth_cb_ratio": 66.42,
-      "ssr_oscillator": 55.17,
-      "reserve_risk": 53.84,
-      "rv_cone_pctile": 19.27,
-      "cycle_pct": 16.38,
-      "global_m2_yoy": 15.66,
-      "risk_index": 13.41,
-      "momentum": 10.42,
-      "dvol": 10.22,
-      "vrp": 9.57,
-      "puell": 9.38,
-      "cot_z": 8.42,
-      "stbl_growth_z": 8.18,
-      "bfi": 7.9,
-      "corr_spx": 7.66,
-      "structure": 5.05,
-      "vdd_multiple": 4.82,
-      "net_liq_roc": 4.27,
-      "macro_score": 3.83,
-      "risk_oscillator": 3.37,
-      "coinbase_premium_ema": 2.51,
-      "mpi": 2.48,
-      "leverage_stress": 2.45,
-      "impulse": 2.28,
-      "funding_z": 2.1,
-      "vov_pctile": 1.67,
-      "oi_price_divergence": 1.45
+      "mvrv_z": 154.24,
+      "mayer": 76.17,
+      "sth_cb_ratio": 73.45,
+      "nupl": 65.14,
+      "reserve_risk": 58.06,
+      "ssr_oscillator": 49.06,
+      "rv_cone_pctile": 20.48,
+      "global_m2_yoy": 17.8,
+      "risk_index": 14.39,
+      "dvol": 13.21,
+      "momentum": 11.64,
+      "cycle_pct": 11.4,
+      "puell": 10.59,
+      "bfi": 9.94,
+      "vrp": 9.94,
+      "cot_z": 7.69,
+      "stbl_growth_z": 7.41,
+      "corr_spx": 5.87,
+      "vdd_multiple": 5.51,
+      "structure": 5.34,
+      "net_liq_roc": 4.26,
+      "risk_oscillator": 3.74,
+      "macro_score": 3.25,
+      "coinbase_premium_ema": 2.81,
+      "impulse": 2.81,
+      "mpi": 2.75,
+      "leverage_stress": 2.63,
+      "etf_flow_z": 2.37,
+      "vov_pctile": 2.35,
+      "funding_z": 2.3,
+      "oi_price_divergence": 1.57
     },
     "redundant": [
       "risk_index",
@@ -5458,6 +5637,7 @@
       "cycle_pct",
       "cot_z",
       "corr_spx",
+      "vdd_multiple",
       "global_m2_yoy",
       "rv_cone_pctile",
       "stbl_growth_z"
@@ -5466,7 +5646,7 @@
       {
         "a": "mvrv_z",
         "b": "nupl",
-        "corr": 0.94
+        "corr": 0.96
       },
       {
         "a": "mayer",
@@ -5474,44 +5654,44 @@
         "corr": 0.94
       },
       {
-        "a": "mvrv_z",
-        "b": "reserve_risk",
-        "corr": 0.92
-      },
-      {
         "a": "mayer",
         "b": "ssr_oscillator",
-        "corr": 0.9
-      },
-      {
-        "a": "sth_cb_ratio",
-        "b": "ssr_oscillator",
-        "corr": 0.9
+        "corr": 0.93
       },
       {
         "a": "nupl",
         "b": "reserve_risk",
+        "corr": 0.91
+      },
+      {
+        "a": "sth_cb_ratio",
+        "b": "ssr_oscillator",
+        "corr": 0.91
+      },
+      {
+        "a": "mvrv_z",
+        "b": "reserve_risk",
+        "corr": 0.9
+      },
+      {
+        "a": "mvrv_z",
+        "b": "mayer",
         "corr": 0.87
+      },
+      {
+        "a": "mvrv_z",
+        "b": "sth_cb_ratio",
+        "corr": 0.87
+      },
+      {
+        "a": "mvrv_z",
+        "b": "ssr_oscillator",
+        "corr": 0.86
       },
       {
         "a": "momentum",
         "b": "sth_cb_ratio",
-        "corr": 0.84
-      },
-      {
-        "a": "risk_index",
-        "b": "momentum",
-        "corr": 0.8
-      },
-      {
-        "a": "ssr_oscillator",
-        "b": "stbl_growth_z",
-        "corr": 0.8
-      },
-      {
-        "a": "momentum",
-        "b": "structure",
-        "corr": 0.78
+        "corr": 0.83
       }
     ],
     "note": "VIF>5 \u2248 redundant (its forward info is already carried by other signals); the high-corr pairs name the cluster. This MEASURES the independent contribution the one-representative-per-axis rule asserts \u2014 orthogonalize before any blend."

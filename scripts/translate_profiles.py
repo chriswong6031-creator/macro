@@ -98,9 +98,13 @@ def main() -> int:
                 ok += 1
         log.info("translated %d/%d (the rest stay English, retried next run)", ok, len(todo))
 
-    # rebuild the cache frame from whatever we now hold (prune tickers no longer in profiles)
+    # rebuild the cache frame from whatever we now hold. Keep a translation ONLY
+    # when its en_hash still matches the CURRENT English — otherwise a blurb that
+    # changed (e.g. a corrected profile) but failed to re-translate would leak its
+    # stale 中文, since the analyzer joins description_zh by ticker, not by hash.
     rows = [{"ticker": t, "en_hash": v["en_hash"], "description_zh": v["description_zh"]}
-            for t, v in cache.items() if t in current_hashes and v.get("description_zh")]
+            for t, v in cache.items()
+            if current_hashes.get(t) == v.get("en_hash") and v.get("description_zh")]
     if rows:
         out = pd.DataFrame(rows).set_index("ticker")
         cache_path.parent.mkdir(parents=True, exist_ok=True)

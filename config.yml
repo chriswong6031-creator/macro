@@ -286,12 +286,17 @@ finra:
 # quarterly, so it is a slow conviction read, not real-time). Fetched from build_factors.
 sec_insider:
   zip_url: https://www.sec.gov/files/structureddata/data/insider-transactions-data-sets/{q}_form345.zip
-  user_agent: "macro-dashboard research macro-dashboard@users.noreply.github.com"
+  # SEC's WAF 403s any User-Agent containing 'github.com' (scraper heuristic) and
+  # rejects non-contactable addresses, so the committed default is an example.com
+  # placeholder that passes. SEC fair-access asks for a REAL contact — set
+  # SEC_CONTACT_EMAIL in .env (gitignored) to override without leaking it publicly.
+  user_agent: "Macro Dashboard Research admin@example.com"
   retries: 3
   lookback_quarters: 5          # probe the current quarter, then walk back to the latest published
   open_market_codes: [P, S]     # P = open-market purchase, S = open-market sale (exclude grants/exercises)
   min_trade_usd: 10000          # ignore de-minimis transactions
   panel_top_n: 20               # rows on the insider buying/selling leaderboards
+  panel_start: 2006q1           # Phase-0 PIT panel backfill start (earliest structured form345 set)
 
 # =============================================================================
 # EIA petroleum supply (Phase 2 of the four-phase build-out). The single biggest

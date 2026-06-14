@@ -64,57 +64,95 @@ class PutCallAdapter(Adapter):
         return {"putcall": snap.dropna(axis=1, how="all")}
 
 
+# underlyings scored daily for the GEX/magnets layer (engine/gex_engine.py). Indices
+# + a small set of the most-liquid optionable single-names (dealer-sign is least
+# unreliable where the chain is deep). Overridable via config cboe.gex.symbols.
+DEFAULT_GEX_SYMBOLS = ["_SPX", "SPY", "QQQ", "IWM",
+                       "NVDA", "AAPL", "TSLA", "AMD", "META", "MSFT"]
+GEX_Q = {"_SPX": 0.013, "SPY": 0.013, "QQQ": 0.006, "IWM": 0.013}  # div yields; names -> 0
+
+
 class GexAdapter(Adapter):
+    """Dealer-gamma summaries for SPX + liquid underlyings. Persists a 1-row/day
+    summary per symbol (regime/flip/magnets/IV30 history -> feeds the board's regime
+    panel, the per-stock context overlay, and the realized-vol validation). The rich
+    per-strike chain is NOT stored (the runner is a date-indexed time series); the
+    board/stock builds re-fetch the live chain for the strike-ladder detail. The
+    legacy `gex` (SPX) frame is preserved byte-for-byte for build_site + the
+    gex_flip_cross alert. A VOL-REGIME + LEVELS MAP, not alpha (see LIMITATIONS.md)."""
+
     name = "cboe_gex"
     group = "cboe"
 
     def __init__(self) -> None:
         self.cfg = config.load()["cboe"]
 
-    def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
-        r = self.http_get(self.cfg["chain_url"], retries=self.cfg["retries"], timeout=120)
-        j = r.json()
-        data = j["data"]
+    def _chain(self, symbol: str) -> tuple[pd.DataFrame, float]:
+        """Fetch + parse one underlying's delayed chain -> per-strike DataFrame
+        [K, T, iv(decimal), oi, gamma, is_call, expiry] + spot."""
+        url = self.cfg["chain_url"].replace("_SPX", symbol)
+        r = self.http_get(url, retries=self.cfg["retries"], timeout=120)
+        data = r.json()["data"]
         spot = float(data.get("close") or data.get("current_price"))
-        options = pd.DataFrame(data["options"])
-        gcfg = self.cfg["gex"]
+        o = pd.DataFrame(data["options"])
+        m = o["option"].str.extract(r"^[A-Z]+W?(?P<exp>\d{6})(?P<cp>[CP])(?P<strike>\d{8})$")
+        o["is_call"] = m["cp"] == "C"
+        o["K"] = pd.to_numeric(m["strike"], errors="coerce") / 1000.0
+        exp = pd.to_datetime(m["exp"], format="%y%m%d", errors="coerce")
+        o["expiry"] = exp
+        o["T"] = (exp - pd.Timestamp(date.today())).dt.days / 365.0
+        o["iv"] = pd.to_numeric(o.get("iv"), errors="coerce")
+        o["oi"] = pd.to_numeric(o.get("open_interest"), errors="coerce")
+        o["gamma"] = pd.to_numeric(o.get("gamma"), errors="coerce")
+        return o.dropna(subset=["K", "T", "is_call", "oi"]), spot
 
-        # symbol like 'SPX260620C06000000' -> expiry, type, strike
-        sym = options["option"].str.extract(
-            r"^[A-Z]+W?(?P<exp>\d{6})(?P<cp>[CP])(?P<strike>\d{8})$")
-        options["cp"] = sym["cp"]
-        options["strike"] = pd.to_numeric(sym["strike"]) / 1000
-        options["expiry"] = pd.to_datetime(sym["exp"], format="%y%m%d", errors="coerce")
-        options["gamma"] = pd.to_numeric(options["gamma"], errors="coerce")
-        options["open_interest"] = pd.to_numeric(options["open_interest"], errors="coerce")
-        options = options.dropna(subset=["gamma", "open_interest", "strike", "expiry", "cp"])
-
+    def _legacy_spx(self, o: pd.DataFrame, spot: float, gcfg: dict) -> pd.DataFrame:
+        """Original SPX frame (net_gex_bn, flip_strike, spot, spot_vs_flip_pct) —
+        UNCHANGED math, so build_site + gex_flip_cross are unaffected."""
+        c = o.dropna(subset=["gamma"]).copy()
         horizon = pd.Timestamp(date.today()) + pd.Timedelta(days=gcfg["max_expiry_days"])
         win = gcfg["strike_window_pct"]
-        options = options[(options["expiry"] <= horizon)
-                          & (options["strike"].between(spot * (1 - win), spot * (1 + win)))]
-
+        c = c[(c["expiry"] <= horizon) & c["K"].between(spot * (1 - win), spot * (1 + win))]
         mult = gcfg["contract_multiplier"] * spot ** 2 * gcfg["pct_move"]
-        sign = np.where(options["cp"] == "C", 1.0, -1.0)
-        options["gex"] = sign * options["gamma"] * options["open_interest"] * mult
-
-        by_strike = options.groupby("strike")["gex"].sum().sort_index()
-        net_gex_bn = by_strike.sum() / 1e9
+        sign = np.where(c["is_call"], 1.0, -1.0)
+        c = c.assign(gex=sign * c["gamma"] * c["oi"] * mult)
+        by_strike = c.groupby("K")["gex"].sum().sort_index()
         cum = by_strike.cumsum()
-        # flip = zero-crossing of the cumulative profile nearest to spot,
-        # considered only within +/-15% of spot — deep-OTM sign flickers in the
-        # sparse tails are artifacts, not a gamma flip
         flip = np.nan
         crossings = cum[np.sign(cum).diff().abs() > 0]
         near = crossings[np.abs(crossings.index / spot - 1) <= 0.15]
         if not near.empty:
             flip = float(near.index[np.argmin(np.abs(near.index - spot))])
-        spot_vs_flip = (spot / flip - 1) * 100 if not np.isnan(flip) else np.nan
+        svf = (spot / flip - 1) * 100 if not np.isnan(flip) else np.nan
+        return pd.DataFrame({"net_gex_bn": [by_strike.sum() / 1e9], "flip_strike": [flip],
+                             "spot": [spot], "spot_vs_flip_pct": [svf]},
+                            index=[pd.Timestamp(date.today())])
 
-        snap = pd.DataFrame({
-            "net_gex_bn": [net_gex_bn],
-            "flip_strike": [flip],
-            "spot": [spot],
-            "spot_vs_flip_pct": [spot_vs_flip],
-        }, index=[pd.Timestamp(date.today())])
-        return {"gex": snap}
+    @staticmethod
+    def _row(summ: dict) -> pd.DataFrame:
+        """1-row/day summary frame (the per-strike detail is re-fetched at build)."""
+        keep = ("spot", "net_gex_bn", "net_vex", "net_cex", "gamma_flip",
+                "dist_to_flip_pct", "gamma_regime", "magnet_up", "magnet_down",
+                "charm_anchor", "charm_net_sign", "iv30", "put_call_oi_ratio",
+                "max_pain", "n_strikes", "tier")
+        return pd.DataFrame({k: [summ.get(k)] for k in keep},
+                            index=[pd.Timestamp(date.today())])
+
+    def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
+        from engine.gex_engine import compute_gex     # lazy — keep the collector light
+        gcfg = self.cfg["gex"]
+        symbols = gcfg.get("symbols", DEFAULT_GEX_SYMBOLS)
+        ecfg = {k: gcfg[k] for k in ("contract_multiplier", "pct_move",
+                                     "strike_window_pct", "max_expiry_days") if k in gcfg}
+        out: dict[str, pd.DataFrame] = {}
+        for sym in symbols:
+            try:
+                chain, spot = self._chain(sym)
+                summ = compute_gex(chain, spot, cfg={**ecfg, "r": gcfg.get("r", 0.043),
+                                                     "q": GEX_Q.get(sym, 0.0)})
+                out[f"gex_{sym.lstrip('_')}"] = self._row(summ)
+                if sym == "_SPX":
+                    out["gex"] = self._legacy_spx(chain, spot, gcfg)
+            except Exception as e:  # noqa: BLE001 — partial coverage still useful
+                log.warning("gex: %s failed: %s", sym, e)
+        return out

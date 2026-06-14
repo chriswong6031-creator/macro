@@ -15,6 +15,7 @@
     "cot_z",
     "cycle_pct",
     "dvol",
+    "etf_flow_z",
     "funding_z",
     "global_m2_yoy",
     "hash_ribbon_capit",
@@ -32,12 +33,15 @@
     "reserve_risk",
     "risk_index",
     "risk_oscillator",
+    "rv_cone_pctile",
     "ssr_oscillator",
+    "stbl_growth_z",
     "sth_cb_ratio",
     "structure",
     "vdd_multiple",
+    "vov_pctile",
     "vrp"
   ],
-  "n_signal_families": 28,
+  "n_signal_families": 32,
   "note": "Point-in-time trial ledger (overwritten each run). n_trials_declared is an upper-bound count of independent strategy configs explored across the hunt, used to deflate the headline Sharpe. Raise it as you try more."
 }

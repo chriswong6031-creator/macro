@@ -84,8 +84,11 @@
           overflow:auto; display:none; box-shadow:var(--popover-shadow); }
   #sugg div { padding:8px 13px; cursor:pointer; display:flex; gap:10px; align-items:center; }
   #sugg div:hover, #sugg div.sel { background:var(--panel2); }
-  #sugg b { min-width:78px; }
-  #sugg small { color:var(--muted); flex:1; }
+  #sugg b { min-width:78px; flex:none; }
+  #sugg small { color:var(--muted); flex:1 1 auto; min-width:0;
+                white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #sugg div span { flex:0 1 auto; min-width:0; max-width:40%;
+                   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:right; }
   .mtf { display:flex; gap:14px; flex-wrap:wrap; font-size:12.5px; color:var(--muted);
          margin-top:8px; }
   .mtf b { color:var(--text); }

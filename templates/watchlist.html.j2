@@ -39,8 +39,11 @@
           overflow:auto; display:none; box-shadow:var(--popover-shadow); }
   #wl_sugg div { padding:8px 13px; cursor:pointer; display:flex; gap:10px; align-items:center; }
   #wl_sugg div:hover, #wl_sugg div.sel { background:var(--panel2); }
-  #wl_sugg b { min-width:58px; } #wl_sugg small { color:var(--muted); flex:1; }
-  .wl-sst { font-size:11px; white-space:nowrap; }
+  #wl_sugg b { min-width:58px; flex:none; }
+  #wl_sugg small { color:var(--muted); flex:1 1 auto; min-width:0;
+                   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .wl-sst { font-size:11px; white-space:nowrap; flex:0 1 auto; min-width:0; max-width:42%;
+            overflow:hidden; text-overflow:ellipsis; text-align:right; }
   /* ---- sync / account bar ---- */
   .wl-syncbar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
   .wl-pill { font-size:11.5px; font-weight:700; padding:3px 9px; border-radius:8px;
