@@ -84,6 +84,20 @@ fred:
     inflation_extra:              # 5y inflation leg (second-tenor real-yield anchor)
       T5YIE: breakeven_5y
       DFII5: us5y_real
+    # --- Bonds & bond-health dashboard (research/BOND_HEALTH_DASHBOARD.md) --------
+    # All free/daily on FRED. The fuller curve feeds the near-term-forward recession
+    # read; Moody's DBAA/DAAA give DEEP-history credit (the ICE BofA BAML* series are
+    # truncated to a ~3y rolling window on FRED since Apr 2026); IORB/SOFR99 are the
+    # funding-plumbing early-warning legs.
+    bonds_extra:
+      DGS1: us1y                  # 1y CMT — interpolation node for the near-term forward spread
+      DGS3: us3y                  # curve fill (butterfly / chart)
+      DGS7: us7y
+      DBAA: baa_corp              # Moody's Baa corporate yield (daily, 1986->) — deep-history credit
+      DAAA: aaa_corp              # Moody's Aaa corporate yield (daily) — Baa-Aaa = the deep credit gauge
+      BAMLH0A3HYC: ccc_oas        # CCC & lower OAS — the distress tail (ICE BofA; ~3y rolling, cache forever)
+      IORB: iorb                  # interest on reserve balances — the SOFR-IORB plumbing anchor
+      SOFR99: sofr_99             # 99th-pctile SOFR — a repo-stress spike gauge
     # --- Forex Vector (research/FOREX_DASHBOARD.md) — all keyless via FRED ---------
     fx_rates:                     # daily FX reference rates (H.10) — cross-check + deep history
       DEXUSEU: fx_eur_usd         # USD per EUR  (EUR base, NOT inverted)
@@ -138,6 +152,7 @@ yahoo:
     style: [IWF, IWD]             # Russell 1000 Growth / Value — style-rotation read (growth vs value leadership)
     factors: [MTUM, QUAL, USMV, SPHB, SPLV]
     credit: [HYG, LQD]
+    bond_etfs: [TLT, IEF, TIP, EMB]   # Bonds dashboard price/flow proxies: long UST, 7-10y UST, TIPS, EM USD sov
     vol: ["^VIX", "^VIX9D", "^VIX3M", "^MOVE", "^VVIX"]   # ^VVIX = vol-of-vol (option-implied risk layer)
     fx_commod: ["DX-Y.NYB", "CL=F", "HG=F", "GC=F", "SI=F", "BZ=F"]
     fx: ["EURUSD=X", "USDJPY=X", "GBPUSD=X", "AUDUSD=X", "USDCAD=X", "USDCHF=X", "USDMXN=X", "USDBRL=X", "CNH=X", "CNH=F"]   # Forex Vector spot pairs; CNH=F = offshore CNH futures (2013->, real history vs CNH=X spot's 1 row)
@@ -1505,6 +1520,57 @@ vector:
       impulse_window_h: 48          # EMA-of-returns horizon for the Impulse sign
     risk_extreme_days: 14           # risk_index >= threshold this many days -> capitulation watch
     risk_extreme_level: 50
+
+# =============================================================================
+# Bonds & bond-health dashboard (research/BOND_HEALTH_DASHBOARD.md)
+# A health-first read of the bond market: what the curve, credit, real rates,
+# rates-vol and funding plumbing say about economic health, regime and cycle.
+# Reuses the shared macro feature frame (engine.inputs.build_features) + the
+# already-validated conditions layer (recession_risk, drawdown_risk,
+# stock_bond_corr). Thresholds are documented practitioner levels, NOT tuned to a
+# backtest; the composite health score is a TRANSPARENT prior pending calibration
+# (scripts/calibrate_bonds.py, Phase 4).
+# =============================================================================
+bonds:
+  curve:
+    nyfed_a: -0.5333              # NY Fed recession probit intercept (Estrella-Mishkin)
+    nyfed_b: -0.6629             # ...slope on the 10y-3m spread (pp); P=Phi(a+b*spread)
+    move_window_d: 21            # ~1mo window for the curve-move (bull/bear x steep/flat) taxonomy
+    uninvert_lookback_d: 252     # was the curve inverted in the last ~1y, now positive? (un-inversion alarm)
+    ntfs_tenors: [0.25, 0.5, 1, 2, 3, 5, 7, 10, 30]   # interpolation nodes (years) for the near-term forward
+  credit:
+    # HY OAS distress bands (%, 100bp = 1.0): the canary. <3 tight, 3-5 normal,
+    # 5-8 elevated, >8 distress (>10 crisis — hit in 2000/2008/2020).
+    hy_tight: 3.0
+    hy_elevated: 5.0
+    hy_distress: 8.0
+    hy_crisis: 10.0
+    widening_window_d: 20        # OAS change window for the credit-direction read
+    pctile_lookback_d: 1260      # ~5y percentile context for OAS / baa-aaa
+  rates_vol:
+    # MOVE bands (the "VIX of bonds"). Post-2022 MOVE runs structurally higher.
+    move_calm: 80
+    move_elevated: 120
+    move_crisis: 150
+    z_window_d: 252
+  plumbing:
+    sofr_iorb_stress_bp: 5       # SOFR-IORB drifting > this (bp) above => reserve scarcity
+    repo_spike_bp: 20            # SOFR99-SOFR > this (bp) => repo-stress spike
+  cycle:                         # curve x credit four-box clock (mirrors engine.cycle thresholds)
+    curve_level: 0.0             # 10y-3m below this => outright inverted
+    flat_level: 1.0              # 10y-3m below this (~historical median) => flat/late-leaning
+    oas_lookback_d: 504          # 2y window for the HY OAS percentile
+    oas_low_third: 0.33
+    oas_high_third: 0.67
+  health:                        # composite 0..100 (higher = healthier). TRANSPARENT prior.
+    # Built from the already-MEASURED recession_risk + drawdown_risk gauges plus
+    # the credit / rates-vol stress reads. Each leg contributes a 0..100 STRESS
+    # value; health = 100 - weighted-mean(stress legs over available).
+    weights: {recession: 1.0, drawdown: 1.0, credit: 0.8, rates_vol: 0.6, plumbing: 0.4}
+    healthy_score: 67            # >= => "healthy"
+    stressed_score: 40           # <  => "stressed" (between => "mixed")
+  alerts:
+    timeline_days: 120             # durable (debounced) state-changes are sparse; show ~4mo
 
 # Home landing hub — combined alert feed from both dashboards
 home:

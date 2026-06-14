@@ -280,4 +280,16 @@ LEX: dict[str, str] = {
     "US-specific stress": "美国自身风险",
     "risk-on": "偏好风险",
     "risk-off": "避险",
+    # Bonds & bond-health dashboard (research/BOND_HEALTH_DASHBOARD.md)
+    "Bonds": "债券",
+    "Bonds & Bond Health": "债券与债券健康",
+    "Bond Health": "债券健康",
+    "healthy": "健康",
+    "mixed": "中性",
+    "stressed": "承压",
+    "recession": "衰退",
+    "Recession": "衰退",
+    "Drawdown": "回撤",
+    "Rates vol": "利率波动",
+    "Plumbing": "资金管道",
 }

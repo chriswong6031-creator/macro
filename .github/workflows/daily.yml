@@ -162,6 +162,12 @@ jobs:
         # writes forex.html + forex/latest.json so the hub picks up the Forex card.
         # Self-sufficient; returns 0 on any engine error.
         run: python -m scripts.build_forex
+      - name: build bonds & bond-health dashboard
+        # after build_site/build_forex, before build_vector (which writes the hub
+        # last): writes bonds.html + bonds/latest.json (hub card) + bonds/
+        # bond_health.json (the cross-asset AI signal vector). Reuses the macro
+        # feature frame + conditions layer; returns 0 on any engine error.
+        run: python -m scripts.build_bonds
       - name: discovery leaderboard (build_discovery)
         # after build_site (reads site/factordata/alpha.json) and build_forex,
         # before build_vector (which writes the hub last): writes the discovery

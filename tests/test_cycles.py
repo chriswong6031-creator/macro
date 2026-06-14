@@ -10,9 +10,10 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine.cycles import (  # noqa: E402
-    _EQ_BEARISH, _EQ_BULLISH, _eq_grade, _eq_proximity, analyze, cycle_state,
-    early_signals, entry_quality, entry_quality_fields, entry_timing, find_troughs,
-    ladder_state, mtf_snapshot, signal_age, signal_age_fields, STATE_DISPLAY,
+    _EQ_BEARISH, _EQ_BULLISH, _eq_freshness, _eq_grade, _eq_proximity, analyze,
+    cycle_state, early_signals, entry_quality, entry_quality_fields, entry_timing,
+    find_troughs, ladder_state, mtf_snapshot, signal_age, signal_age_fields,
+    STATE_DISPLAY,
 )
 
 IDX = pd.bdate_range("2020-01-01", periods=520)
@@ -269,6 +270,24 @@ def test_turn_signaled_text_not_self_contradictory_above_ma() -> None:
     assert "closes back above" in below["text"]
 
 
+def test_eq_freshness_decays_for_a_late_cross() -> None:
+    """Fix C: a fresh up-cross near the low keeps full freshness, but the SAME
+    fresh cross once price is already extended above the low is a chase and must
+    be discounted — it used to score identically and wash out the proximity
+    penalty (the SNDK +48% case). Staleness still stacks on top; the short side
+    mirrors; default pct keeps the old near-pivot behaviour (back-compat)."""
+    d_up = {"macd_pos": True}
+    near = _eq_freshness(d_up, 0, False, True, pct=0.01)
+    far = _eq_freshness(d_up, 0, False, True, pct=0.30)
+    assert near == 1.0, near
+    assert far <= 0.45 and near > far, (near, far)
+    assert _eq_freshness(d_up, 0, False, True) == 1.0          # default pct → unchanged
+    assert _eq_freshness(d_up, 40, False, True, pct=0.01) < near  # staleness still bites
+    d_dn = {"macd_pos": False}
+    assert _eq_freshness(d_dn, 0, False, False, pct=-0.01) > \
+        _eq_freshness(d_dn, 0, False, False, pct=-0.30)
+
+
 if __name__ == "__main__":
     for fn in [test_trough_spacing, test_translation_right, test_translation_left,
                test_failed_cycle_flag, test_ladder_states_sane, test_decline_on_breakdown,
@@ -282,7 +301,8 @@ if __name__ == "__main__":
                test_extension_gate_fires_on_higher_tf_only,
                test_extension_gate_also_catches_fresh_buy,
                test_extension_gate_spares_a_clean_buy,
-               test_turn_signaled_text_not_self_contradictory_above_ma]:
+               test_turn_signaled_text_not_self_contradictory_above_ma,
+               test_eq_freshness_decays_for_a_late_cross]:
         fn()
         print(f"PASS {fn.__name__}")
     print("all cycle tests passed")

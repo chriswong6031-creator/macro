@@ -1277,17 +1277,28 @@ def _eq_proximity(pct: float, up: bool) -> float:
     return _eq_ramp(p, 0.06, 0.18, 0.85, 0.2)        # decays as it runs away
 
 
-def _eq_freshness(d: dict, cross_age: int | None, early_match: bool, up: bool) -> float:
+def _eq_freshness(d: dict, cross_age: int | None, early_match: bool, up: bool,
+                  pct: float = 0.0) -> float:
     """Flat for ~2 weeks after the cross, decays once stale (>~3-4 wks were the
-    worst band), with anticipation credit before the cross."""
+    worst band), with anticipation credit before the cross. A *late* cross — one
+    that only prints once price is already extended past the pivot — is a chase,
+    not an early turn, so the post-cross credit is scaled by distance from the
+    pivot (`pct`, signed like proximity): full near the low, decaying to 0.4 once
+    extended. Measured (research/ENTRY_QUALITY.md): among fresh up-crosses the
+    forward 63d drawdown worsens −6.8%→−10.9% as distance grows, so freshness
+    must not exempt the chaser — without this a fresh-but-extended cross scored
+    full freshness and washed out the proximity penalty (the SNDK +48% case)."""
     crossed = d.get("macd_pos") if up else (not d.get("macd_pos"))
     if crossed:
         a = cross_age if cross_age is not None else 4
         if a <= 12:
-            return 1.0
-        if a <= 30:
-            return 1.0 - 0.65 * (a - 12) / 18
-        return 0.35
+            base = 1.0
+        elif a <= 30:
+            base = 1.0 - 0.65 * (a - 12) / 18
+        else:
+            base = 0.35
+        p = pct if up else -pct       # distance ABOVE the low (mirror: below the high)
+        return base * _eq_ramp(p, 0.03, 0.18, 1.0, 0.4)
     appr = d.get("macd_approaching_up") if up else d.get("macd_approaching_dn")
     curl = d.get("macd_curl_up") if up else d.get("macd_curl_dn")
     btc = d.get("macd_bars_to_cross")
@@ -1339,7 +1350,7 @@ def entry_quality(close: pd.Series, cyc: dict, mtf: dict, early: dict,
 
     # LONG (buy-setup) ----------------------------------------------------------
     up_raw = (EQ_W_PROX * _eq_proximity(pct_low, True)
-              + EQ_W_FRESH * _eq_freshness(d, up_age, early.get("dir") == "up", True)
+              + EQ_W_FRESH * _eq_freshness(d, up_age, early.get("dir") == "up", True, pct_low)
               + EQ_W_MOM * _eq_momentum(d, True))
     up_hold = np.clip(0.5 * float(bool(cyc.get("swing_low") or cyc.get("cand_swing")))
                       + 0.3 * float(bool(cyc.get("above_ma10")))
@@ -1353,7 +1364,7 @@ def entry_quality(close: pd.Series, cyc: dict, mtf: dict, early: dict,
 
     # SHORT (sell/exit-setup) ---------------------------------------------------
     dn_raw = (EQ_W_PROX * _eq_proximity(pct_hi, False)
-              + EQ_W_FRESH * _eq_freshness(d, dn_age, early.get("dir") == "down", False)
+              + EQ_W_FRESH * _eq_freshness(d, dn_age, early.get("dir") == "down", False, pct_hi)
               + EQ_W_MOM * _eq_momentum(d, False))
     dn_hold = np.clip(0.5 * float(not cyc.get("above_ma10"))
                       + 0.3 * float(not cyc.get("ma10_rising"))

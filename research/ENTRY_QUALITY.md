@@ -48,7 +48,10 @@ contradict the displayed call. Magnitude =
 - **proximity** — hump peaking 0–3% above the pivot (mirror: below the high for
   shorts), decaying outward, discounted once the pivot breaks;
 - **freshness** — flat for ~12 days after the cross, decaying to 0.35 by ~30d,
-  with anticipation credit before the cross;
+  with anticipation credit before the cross; **scaled by distance from the pivot**
+  (full near the low → 0.4 floor once extended) so a *late* cross — one that only
+  prints after a vertical run — isn't credited as an early turn (2026-06-14
+  refinement below);
 - **hold** — swing-low / above-10dMA / 10dMA-rising = evidence the low is holding
   (knife-catch filter), as a 0.55–1.0 multiplier;
 - **gate** — bull 1.0 / neutral 0.8 / counter-trend 0.45; failed-cycle ×0.3.
@@ -56,6 +59,35 @@ contradict the displayed call. Magnitude =
 Calibration of the engine score (drawdown by buy-setup band) is written to
 `data/regime/entry_quality_calibration.json`. **UI: concise badge + one-line
 honest tooltip** (no full table on the page, per product decision).
+
+### Refinement — late-cross decay on freshness (2026-06-14)
+
+The original freshness term gave a just-crossed MACD **full credit regardless of
+how far price had already run**, so a fresh-but-extended cross (the SNDK +48%
+case) scored full freshness and partly cancelled the proximity penalty — eq could
+read "solid buy" on a chase. Fix: the post-cross credit is now multiplied by a
+distance factor — 1.0 at ≤3% above the low, ramping to a **0.4 floor by +18%**
+(mirror below the high for shorts).
+
+Justified by the cache — among **fresh** up-crosses (cross ≤12d) the forward 63d
+drawdown worsens monotonically with distance above the low: **−6.8%** (0–3%) →
+−7.1% (3–6%) → −7.8% (6–12%) → −9.2% (12–25%) → **−10.9%** (chasing >25%). `ret`
+*rises* over those same bins, but eq scores risk, not return, so the drawdown is
+what it must track.
+
+Effect on the engine score (54k-sample re-walk, `calibrate_eq`) — the drawdown
+gradient steepens and `strong` becomes a purer near-the-low cohort:
+
+| buy band (eq) | OLD avg \|MAE63\| | NEW avg \|MAE63\| | n (old → new) |
+|---|---|---|---|
+| light  [15–34] | −7.88% | −7.95% | 12455 → 14049 |
+| solid  [35–59] | −7.82% | −7.64% | 13683 → 13408 |
+| strong [60–100]| −7.13% | −6.99% | 10344 →  8978 |
+
+light→solid goes from flat (0.06pp) to a real 0.31pp step; light→strong spread
+0.75pp → 0.96pp; extended names demote out of `strong`. Pairs with the ladder's
+overbought **extension gate** (`fix(ladder): extension gate`), which routes the
+most overbought fresh-crosses out of the buy states entirely before eq sees them.
 
 What would change it: a different universe/period (small-caps, mean-reverting
 assets, or a bear-dominated sample) could shift the trend-vs-mean-reversion

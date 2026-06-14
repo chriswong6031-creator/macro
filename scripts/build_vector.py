@@ -709,7 +709,7 @@ def build_landing(site: Path, vm: dict) -> None:
     stored engine state, not from any HTML file build_site emits."""
     macro = _macro_state()
     hub = _hub_html(vm, macro, home_alert_feed(), _china_state(), _commodities_state(),
-                    _watchlist_state(), _etf_state(), _hk_state(), _forex_state())
+                    _watchlist_state(), _etf_state(), _hk_state(), _forex_state(), _bonds_state())
     (site / "index.html").write_text(hub)
     log.info("wrote landing hub -> index.html")
 
@@ -778,6 +778,21 @@ def _forex_state() -> dict:
     except Exception:
         return {"label": "—", "date": "", "favored": [], "risk": "",
                 "present": (site / "forex.html").exists()}
+
+
+def _bonds_state() -> dict:
+    """Bonds & bond-health read for the hub card (written by build_bonds, which runs
+    before build_vector). `present` gates the card so the hub still works if the
+    bonds page wasn't built this run."""
+    site = config.ROOT / config.load()["storage"]["site_dir"]
+    try:
+        d = json.loads((config.data_dir() / "bonds" / "latest.json").read_text())
+        return {"score": d.get("health_score"), "label": d.get("health_label", "—"),
+                "phase": d.get("cycle_phase", ""), "date": d.get("date", ""),
+                "present": (site / "bonds.html").exists()}
+    except Exception:
+        return {"label": "—", "phase": "", "date": "", "score": None,
+                "present": (site / "bonds.html").exists()}
 
 
 def _watchlist_state() -> dict:
@@ -953,7 +968,7 @@ def _hub_alert_rows(alerts: list[dict]) -> str:
 def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = None,
               commodities: dict | None = None, watchlist: dict | None = None,
               etf: dict | None = None, hk: dict | None = None,
-              forex: dict | None = None) -> str:
+              forex: dict | None = None, bonds: dict | None = None) -> str:
     # Bilingual via the i18n layer when present, identity fallback when absent.
     try:
         from engine.i18n import t as T, tr as TR
@@ -1004,6 +1019,19 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
     <p>{T('Dollar-first currency board — the dollar-smile regime plus risk-context signals on 9 pairs, each scored on its dollar-orthogonalized residual.', '以美元为先的货币面板——美元微笑格局，以及9个货币对在剥离美元后的风险背景信号。')}</p>
     <span class="stat">{T(forex['label'], TR(forex['label']))}{(' · ' + T(fx_risk, TR(fx_risk))) if fx_risk else ''}</span>
     <div class="go">{T('Open Forex Vector →', '打开外汇向量 →')}</div>
+  </a>""")
+    bonds = bonds or {"present": False}
+    b_score = bonds.get("score")
+    b_phase = bonds.get("phase") or ""
+    b_stat = ((f"{T('Health', '健康度')} {b_score}/100" if b_score is not None else T(bonds.get("label", "—"), TR(bonds.get("label", "—"))))
+              + ((" · " + T(b_phase, TR(b_phase))) if b_phase else ""))
+    bonds_card = ("" if not bonds.get("present") else f"""
+  <a class="c" href="bonds.html">
+    <div class="ico">\U0001F3DB️</div>
+    <h2>{T('Bonds & Bond Health', '债券与债券健康')}</h2>
+    <p>{T('What the curve, credit, real rates, rates-vol & funding plumbing say about economic health, regime & the cycle.', '收益率曲线、信用利差、实际利率、利率波动与资金管道对经济健康、周期状态与所处阶段的判读。')}</p>
+    <span class="stat">{b_stat}</span>
+    <div class="go">{T('Open Bonds →', '打开债券 →')}</div>
   </a>""")
     watchlist = watchlist or {"present": False}
     watchlist_card = ("" if not watchlist.get("present") else f"""
@@ -1114,7 +1142,7 @@ body{{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
     <span class="stat {risk_cls}">{T('Risk', '风险')} {T(vm['risk_word'], TR(vm['risk_word']))} · {vm['risk_index']}</span>
     <span class="stat">{T('Momentum', '动量')} {vm['momentum']}</span>
     <div class="go">{T('Open Bitcoin Vector →', '打开比特币向量 →')}</div>
-  </a>{commodities_card}{forex_card}{etf_card}{watchlist_card}
+  </a>{commodities_card}{forex_card}{bonds_card}{etf_card}{watchlist_card}
 </div>
 <div class="feed">
   <div class="feed-h"><h3>{T('Latest Alerts', '最新警报')}</h3>

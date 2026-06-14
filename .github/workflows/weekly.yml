@@ -78,6 +78,7 @@ jobs:
           run_py "calibrate commodities" scripts.calibrate_commodities
           run_py "research commodity conviction" scripts.research_commodity_conviction
           run_py "build commodities" scripts.build_commodities
+          run_py "build bonds" scripts.build_bonds
           run_py "calibrate vector" scripts.calibrate_vector
           run_py "build vector + landing hub" scripts.build_vector
           exit 0
