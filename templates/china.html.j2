@@ -4,6 +4,9 @@
 {% macro help(en, zh='') -%}
 <span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
 {%- endmacro %}
+{% macro nm(name) -%}
+{% set p = (name or '').split(' / ') %}<span class="l-en">{{ p[0] }}</span><span class="l-zh">{{ p[1] if p|length > 1 else p[0] }}</span>
+{%- endmacro %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -509,9 +512,51 @@
     {% endif %}
   </div>
 
+  {% set SECZH = {'Technology':'科技','Industrials':'工业','Basic Materials':'原材料','Financial Services':'金融','Consumer Cyclical':'可选消费','Healthcare':'医疗保健','Utilities':'公用事业','Consumer Defensive':'必需消费','Energy':'能源','Communication Services':'通信服务','Real Estate':'房地产'} %}
+
+  <!-- ===================== TOP SETUPS (selection × timing) ===================== -->
+  {% if setups and setups.buy %}
+  <div class="panel span12" id="top-setups">
+    <h2>{{ t('⚡ Top setups — strong alpha meeting a constructive entry', '⚡ 顶级配置 — 强阿尔法叠加较佳入场') }}
+      <span class="note" style="text-transform:none">· {{ t('selection × timing', '选股 × 择时') }}</span>
+      {{ help("The actionable shortlist: names that rank high on <b>sector-neutral residual alpha</b> (the validated selection signal — strongest stock-specific momentum within their sector) AND sit at a <b>constructive point in their price cycle</b> (a fresh/near entry, or a pullback rather than an extended spike). <b>setup</b> = alpha z re-ranked by cycle timing (alpha dominates; timing is a tilt). This RE-RANKS the alpha leaders by WHEN — it is not a new statistical edge. A modest, regime-decayed signal: a research shortlist to size and confirm, NOT a buy list (research/CHINA_HK_STOCK_SIGNALS.md).", "可操作的精选名单：在<b>板块中性残差阿尔法</b>（已验证的选股信号 —— 板块内最强个股动量）上排名靠前，且当前处于<b>价格周期的较佳位置</b>（临近入场，或回调而非急涨过热）的股票。<b>setup</b>＝以周期择时对 alpha z 重新排序（alpha 主导，择时为微调）。这是按“何时”对阿尔法领先股重新排序，并非新的统计优势。温和、随周期衰减的信号：用于研究的精选名单（需自行定仓与确认），而非买入清单。") }}
+    </h2>
+    <table class="sortable">
+      <thead><tr>
+        <th class="l">{{ t('Stock', '个股') }}</th>
+        <th class="l">{{ t('Sector', '板块') }}</th>
+        <th>{{ t('alpha z', '阿尔法 z') }}</th>
+        <th>{{ t('sector rank', '板块排名') }}</th>
+        <th class="l">{{ t('cycle state', '周期状态') }}</th>
+        <th class="l">{{ t('entry', '入场') }}</th>
+        <th>{{ t('setup', '配置分') }}</th>
+      </tr></thead>
+      <tbody>
+      {% for r in setups.buy %}
+      <tr>
+        <td class="l"><a href="china_stock.html#{{ r.ticker }}"><b>{{ r.ticker }}</b></a> <span class="note">{{ nm(r.name) }}</span></td>
+        <td class="l note">{{ t(r.sector, SECZH.get(r.sector, r.sector)) }}</td>
+        <td><b class="{{ 'pos' if (r.alpha or 0)>=0 else 'neg' }}">{{ '%+.2f'|format(r.alpha) if r.alpha is not none else '—' }}</b></td>
+        <td class="note">{{ r.sector_rank }}/{{ r.sector_n }}</td>
+        <td class="l"><span class="lad {{ 'up' if r.dir=='up' else ('down' if r.dir=='down' else 'flat') }}">{{ td(r.label or r.state) }}</span></td>
+        <td class="l">{% if r.alpha_entry %}<span class="alpha-entry ae-{{ r.alpha_entry }}">{{ r.alpha_entry }}</span>{% endif %}</td>
+        <td><b>{{ '%+.2f'|format(r.setup) if r.setup is not none else '—' }}</b></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% if setups.laggards %}
+    <p class="note" style="margin:11px 0 5px;text-transform:none">{{ t('Weakest relative momentum (laggards) — distribution risk:', '相对动量最弱（落后股）— 派发风险：') }}</p>
+    <p style="margin:0;line-height:2">
+      {% for r in setups.laggards %}<a href="china_stock.html#{{ r.ticker }}" style="margin-right:14px;white-space:nowrap"><b>{{ r.ticker }}</b> <span class="note">{{ nm(r.name) }}</span> <span class="neg">{{ '%+.2f'|format(r.alpha) }}</span></a>{% endfor %}
+    </p>
+    {% endif %}
+    <p class="note" style="margin:8px 0 0;font-size:11px">{{ t('Selection (residual alpha) × timing (price cycle). A modest, regime-decayed signal — a shortlist to size and confirm, not a buy list. Cycle state is a drawdown/structure tool, not a timing oracle.', '选股（残差阿尔法）× 择时（价格周期）。温和、随周期衰减的信号 —— 用于精选与确认的名单，而非买入清单。周期状态是回撤/结构工具，而非择时神谕。') }}</p>
+  </div>
+  {% endif %}
+
   <!-- ===================== ALPHA LEADERS (sector-neutral residual momentum) ===================== -->
   {% if alpha and alpha.top %}
-  {% set SECZH = {'Technology':'科技','Industrials':'工业','Basic Materials':'原材料','Financial Services':'金融','Consumer Cyclical':'可选消费','Healthcare':'医疗保健','Utilities':'公用事业','Consumer Defensive':'必需消费','Energy':'能源','Communication Services':'通信服务','Real Estate':'房地产'} %}
   <div class="panel span12" id="alpha-leaders">
     <h2>{{ t('🎯 Alpha leaders — strongest stock-specific momentum', '🎯 阿尔法领先股 — 最强个股特异动量') }}
       <span class="note" style="text-transform:none">· {{ t('sector-neutral residual · vs CSI 300', '板块中性残差 · 相对沪深300') }}{% if alpha.n %} · {{ alpha.n }} {{ t('names', '只') }}{% endif %}</span>
@@ -530,7 +575,7 @@
       <tbody>
       {% for a in alpha.top[:16] %}
       <tr>
-        <td class="l"><a href="china_stock.html#{{ a.ticker }}"><b>{{ a.ticker }}</b></a> <span class="note">{{ a.name }}</span></td>
+        <td class="l"><a href="china_stock.html#{{ a.ticker }}"><b>{{ a.ticker }}</b></a> <span class="note">{{ nm(a.name) }}</span></td>
         <td class="l note">{{ t(a.sector, SECZH.get(a.sector, a.sector)) }}</td>
         <td><b class="{{ 'pos' if (a.alpha or 0)>=0 else 'neg' }}">{{ '%+.2f'|format(a.alpha) if a.alpha is not none else '—' }}</b></td>
         <td class="note">{{ a.sector_rank }}/{{ a.sector_n }}</td>
