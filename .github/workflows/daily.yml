@@ -181,6 +181,12 @@ jobs:
       - name: GEX magnets board (build_gex_board)
         # after build_site; live Cboe chains -> site/gex.html. Self-sufficient (returns 0 on engine error).
         run: python -m scripts.build_gex_board
+      - name: cross-asset vector (build_crossasset)
+        # after the commodity/forex/bonds pages, before build_vector (hub last):
+        # TSMOM trend + intermarket ratios + correlation regime over keyless
+        # price stores -> site/crossasset.html + data/crossasset/latest.json.
+        # Self-sufficient; returns 0 on any engine error.
+        run: python -m scripts.build_crossasset
       - name: build bitcoin vector + landing hub
         # installs the landing hub at index.html (rendered from stored engine
         # state, so ordering vs build_site no longer matters — build_site writes

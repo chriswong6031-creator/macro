@@ -1,0 +1,174 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ t('Cross-Asset Vector — trend · ratios · correlation regime', '跨资产向量 — 趋势 · 比价 · 相关性体制') }}</title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  .ca-wrap{max-width:1180px;margin:0 auto;padding:0 4px}
+  .ca-hero{font-size:26px;font-weight:800;margin:2px 0 4px}
+  .ca-sub{color:var(--muted);font-size:13px;margin:0 0 6px}
+  .ca-note{color:var(--muted);font-size:12px;line-height:1.5;border-top:1px solid var(--line);margin-top:10px;padding-top:8px}
+  .ca-verdict{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:6px;background:var(--amber-bg,rgba(217,160,60,.16));color:var(--amber,#c98a2e)}
+  table.ca{border-collapse:collapse;width:100%;font-size:13px}
+  table.ca th,table.ca td{text-align:left;padding:5px 9px;border-bottom:1px solid var(--line);vertical-align:middle}
+  table.ca th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em;font-weight:700}
+  table.ca td.r,table.ca th.r{text-align:right;font-variant-numeric:tabular-nums}
+  .trend-up{color:var(--up,#16a34a);font-weight:700}.trend-down{color:var(--down,#dc2626);font-weight:700}.trend-mixed{color:var(--muted)}
+  .sbar{display:inline-block;width:64px;height:7px;border-radius:4px;background:var(--line);position:relative;vertical-align:middle;margin-right:6px}
+  .sbar i{position:absolute;top:0;height:7px;border-radius:4px}
+  .chip{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;padding:1px 6px;border-radius:5px;background:var(--line);color:var(--muted)}
+  .st-elevated{background:rgba(220,38,38,.16);color:#dc2626}.st-depressed{background:rgba(22,163,74,.16);color:#16a34a}
+  .cmat td,.cmat th{padding:3px 7px;font-size:12px;text-align:center;border:1px solid var(--line)}
+  .pos{color:var(--up,#16a34a)}.neg{color:var(--down,#dc2626)}.muted{color:var(--muted)}.sm{font-size:12px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:820px){.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;padding:0;border:none;margin:0 auto">
+    <div class="nav-links">
+      <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
+      <div class="nav-dd">
+        <a class="nav-link" href="macro.html">🇺🇸 {{ t('US Macro', '美国宏观') }} <span class="caret">▾</span></a>
+        <div class="nav-dd-menu">
+          <a href="macro.html">📊 {{ t('Macro dashboard', '宏观仪表盘') }}</a>
+          <a href="spvector.html">📈 {{ t('S&P / Macro Vector', '标普宏观向量') }}</a>
+        </div>
+      </div>
+      <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }}</a>
+      <a class="nav-link" href="etfs.html">🐳 {{ t('ETF flows', 'ETF 资金流') }}</a>
+      <a class="nav-link" href="factors.html">🧮 {{ t('Factors', '因子') }}</a>
+      <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国A股') }}</a>
+      <a class="nav-link" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }}</a>
+      <a class="nav-link" href="commodities.html">◆ {{ t('Commodity Vector', '大宗商品向量') }}</a>
+      <a class="nav-link" href="forex.html">💱 {{ t('Forex Vector', '外汇向量') }}</a>
+      <a class="nav-link" href="bonds.html">🏛️ {{ t('Bonds', '债券') }}</a>
+      <a class="nav-link active" href="crossasset.html">🧭 {{ t('Cross-Asset', '跨资产') }}</a>
+    </div>
+    <div class="nav-ctrls">
+      <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap ca-wrap">
+
+  <!-- ===================== REGIME HERO ===================== -->
+  {% set bcol = 'var(--up,#16a34a)' if (breadth or 0) >= 0.34 else 'var(--down,#dc2626)' if (breadth or 0) <= -0.34 else 'var(--muted)' %}
+  <div class="card">
+    <div class="ca-sub">🧭 {{ t('Cross-Asset Vector', '跨资产向量') }} · {{ t('as of', '截至') }} {{ as_of }}</div>
+    <div class="ca-hero" style="color:{{ bcol }}">{{ td(regime) }}</div>
+    <div class="ca-sub">{{ t('Trend breadth', '趋势广度') }}
+      <b style="color:{{ bcol }}">{{ '%+.2f'|format(breadth) }}</b>
+      <span class="muted">({{ trend.n_up }} {{ t('up', '上行') }} / {{ trend.n_down }} {{ t('down', '下行') }} {{ t('of', '/共') }} {{ trend.n }})</span>
+    </div>
+    <p class="ca-note">
+      <span class="ca-verdict">{{ t('contested', '存疑') }}</span>
+      {{ t('Cross-asset TREND = time-series momentum (sign of the trailing 3/6/12-month return). The timing carries REAL skill — it beats a permutation null (p≈0.01) — but after an 8bps cost it only matches an equal-weight buy&hold and does NOT clear the Deflated-Sharpe multiple-testing bar (DSR≈0.80). So it is shown here as a REGIME / CONTEXT read of what is trending across asset classes — NOT a strategy or a buy list. AQR’s widely-quoted gross ~1.8 Sharpe is contested and gross-of-cost; our honest after-cost number is in scripts/cross_asset_phase0.py → reports/cross-asset-phase0.md.',
+         '跨资产趋势 = 时间序列动量（过去 3/6/12 个月收益的符号）。其择时确有真实技能——能击败置换检验零假设（p≈0.01）——但在扣除 8bps 成本后仅与等权买入持有持平，且无法通过 Deflated-Sharpe 的多重检验门槛（DSR≈0.80）。因此这里仅作为「各资产类别在趋势什么」的体制/背景判读——并非策略或买入清单。AQR 常被引用的约 1.8 夏普为毛收益且存在争议；我们扣费后的诚实数值见 scripts/cross_asset_phase0.py → reports/cross-asset-phase0.md。') }}
+    </p>
+  </div>
+
+  <!-- ===================== TREND BOARD ===================== -->
+  <div class="card">
+    <h2>{{ t('Trend board — time-series momentum by asset', '趋势看板 — 各资产时间序列动量') }}</h2>
+    <table class="ca">
+      <tr><th>{{ t('asset', '资产') }}</th><th>{{ t('class', '类别') }}</th><th>{{ t('trend', '趋势') }}</th>
+        <th>{{ t('strength', '强度') }}</th><th class="r">{{ t('3m', '3月') }}</th><th class="r">{{ t('6m', '6月') }}</th><th class="r">{{ t('12m', '12月') }}</th></tr>
+      {% for r in trend.rows %}
+      {% set tc = 'trend-up' if r.trend=='up' else 'trend-down' if r.trend=='down' else 'trend-mixed' %}
+      {% set sc = 'var(--up,#16a34a)' if r.score>0 else 'var(--down,#dc2626)' if r.score<0 else 'var(--muted)' %}
+      <tr>
+        <td><b>{{ t(r.name_en, r.name_zh) }}</b></td>
+        <td class="muted sm">{{ t(r.class_en, r.class_zh) }}</td>
+        <td class="{{ tc }}">{{ '▲' if r.trend=='up' else '▼' if r.trend=='down' else '◦' }} {{ t(r.trend, {'up':'上行','down':'下行','mixed':'分化'}.get(r.trend, r.trend)) }}</td>
+        <td><span class="sbar"><i style="{{ 'left:50%' if r.score>=0 else 'right:50%' }};width:{{ (r.score|abs*50)|round(0)|int }}%;background:{{ sc }}"></i></span><span class="muted sm">{{ '%+.2f'|format(r.score) }}</span></td>
+        {% for rv in [r.ret_3m, r.ret_6m, r.ret_12m] %}
+        <td class="r {{ 'pos' if (rv or 0)>=0 else 'neg' }}">{{ ('%+.0f%%'|format(rv)) if rv is not none else '—' }}</td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </table>
+    <p class="ca-note">{{ t('Trend = average sign of the trailing 3/6/12-month return (most-recent week skipped). ▲ up = the trend is positive across most horizons. Returns are price-only; the bond leg is a duration-return proxy (−7·Δyield) and the dollar leg trends the DXY level. Context, not a buy list.',
+       '趋势 = 过去 3/6/12 个月收益符号的平均（跳过最近一周）。▲上行表示多数周期趋势为正。收益仅为价格收益；债券为久期收益代理（−7·Δ收益率），美元为 DXY 水平趋势。仅作背景，非买入清单。') }}</p>
+  </div>
+
+  <div class="grid2">
+    <!-- ===================== INTERMARKET RATIOS ===================== -->
+    <div class="card">
+      <h2>{{ t('Intermarket ratios', '跨市场比价') }}</h2>
+      <table class="ca">
+        <tr><th>{{ t('ratio', '比价') }}</th><th class="r">{{ t('value', '数值') }}</th><th class="r">{{ t('%ile (2y)', '分位(2年)') }}</th><th class="r">{{ t('3m', '3月') }}</th></tr>
+        {% for r in ratios %}
+        <tr title="{{ r.note }}">
+          <td><b>{{ t(r.label_en, r.label_zh) }}</b>
+            {% if r.state != 'mid' %}<span class="chip st-{{ r.state }}">{{ t(r.state, {'elevated':'偏高','depressed':'偏低'}.get(r.state, r.state)) }}</span>{% endif %}
+            <div class="muted sm">{{ r.note }}</div></td>
+          <td class="r">{{ r.value }}</td>
+          <td class="r muted">{{ (r.pctile|round|int) if r.pctile is not none else '—' }}</td>
+          <td class="r {{ 'pos' if (r.chg_3m or 0)>=0 else 'neg' }}">{{ ('%+.0f%%'|format(r.chg_3m)) if r.chg_3m is not none else '—' }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+
+    <!-- ===================== CARRY CONTEXT ===================== -->
+    <div class="card">
+      <h2>{{ t('Carry — current state', '套息 — 当前状态') }}</h2>
+      <table class="ca">
+        <tr><th>{{ t('source', '来源') }}</th><th class="r">{{ t('carry', '套息') }}</th><th>{{ t('state', '状态') }}</th></tr>
+        {% for r in carry.rows %}
+        <tr><td>{{ t(r.label_en, r.label_zh) }}</td>
+          <td class="r {{ 'pos' if r.value>=0 else 'neg' }}">{{ r.value }}{{ r.unit }}</td>
+          <td class="muted sm">{{ r.state }}</td></tr>
+        {% endfor %}
+      </table>
+      <p class="ca-note">{{ t(carry.note, '仅为当前状态的套息背景。利率期限利差历史悠久；商品展期收益由近月合约重建、历史不足两年，故未作因子回测。仅作背景。') }}</p>
+    </div>
+  </div>
+
+  <!-- ===================== CORRELATION REGIME ===================== -->
+  {% if correlation and correlation.verdict and correlation.verdict != 'unknown' %}
+  {% set vc = {'concentrated':'var(--down,#dc2626)','converging':'var(--amber,#c98a2e)','diversified':'var(--up,#16a34a)'} %}
+  <div class="card">
+    <h2>{{ t('Correlation regime — are the markets one bet?', '相关性体制 — 各市场是否同一笔交易') }}</h2>
+    <div class="ca-hero" style="font-size:18px;color:{{ vc.get(correlation.verdict,'var(--muted)') }}">{{ t(correlation.verdict, {'concentrated':'高度集中','converging':'趋于收敛','diversified':'分散'}.get(correlation.verdict, correlation.verdict)) }}</div>
+    <div class="ca-sub">{{ t('Absorption ratio', '吸收比率') }} <b>{{ correlation.absorption_ratio }}</b>
+      <span class="muted">({{ t('PC1 variance share; floor', 'PC1 方差占比；下限') }} {{ correlation.absorption_floor }})</span>
+      {% if correlation.dominant_cluster %} · {{ t('dominant cluster', '主导集群') }}: <b>{{ correlation.dominant_cluster|join(', ') }}</b>{% endif %}
+    </div>
+    {% if correlation.corr_matrix %}
+    <div style="overflow-x:auto;margin-top:8px">
+      <table class="cmat"><tr><th></th>{% for a in correlation.markets %}<th>{{ a }}</th>{% endfor %}</tr>
+        {% for a in correlation.markets %}<tr><th>{{ a }}</th>
+          {% for b in correlation.markets %}{% set v = correlation.corr_matrix[a][b] %}
+          <td style="background:rgba({{ '220,38,38' if v>0 else '22,163,74' }},{{ (v|abs*0.5)|round(2) }})">{{ '%.2f'|format(v) }}</td>{% endfor %}
+        </tr>{% endfor %}
+      </table>
+    </div>
+    {% endif %}
+    <p class="ca-note">{{ t(correlation.headline, '') }}</p>
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <p class="muted sm" style="margin:0">{{ t(note, '') }} {{ t('Generated', '生成于') }} {{ built }}.
+      {{ t('Source: engine/cross_asset_trend.py + the cross-asset correlation leaf, over keyless price stores. Validation: scripts/cross_asset_phase0.py.',
+         '来源：engine/cross_asset_trend.py 及跨资产相关性叶子模块，覆盖无密钥价格库。验证：scripts/cross_asset_phase0.py。') }}</p>
+  </div>
+
+</div>
+<script src="theme.js"></script>
+</body>
+</html>

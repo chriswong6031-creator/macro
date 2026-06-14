@@ -85,6 +85,8 @@ jobs:
           run_py "build commodities" scripts.build_commodities
           run_py "calibrate bonds" scripts.calibrate_bonds
           run_py "build bonds" scripts.build_bonds
+          run_py "cross-asset TSMOM phase0 (honesty gate -> reports/cross-asset-phase0.md)" scripts.cross_asset_phase0
+          run_py "build cross-asset" scripts.build_crossasset
           run_py "calibrate vector" scripts.calibrate_vector
           run_py "build vector + landing hub" scripts.build_vector
           exit 0
