@@ -333,6 +333,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
       {% set cs_zh = {'ACCUMULATE':'累积','RISK-ON':'风险偏好','DISTRIBUTE':'派发','RISK-OFF':'风险规避','NEUTRAL':'中性'} %}
       <div class="hero-meta" style="margin-top:6px;font-size:17px">
         <b style="color:{{ cs_color.get(composite_state,'var(--muted)') }}">{{ t('Stance', '立场') }}: {{ t(composite_state, cs_zh.get(composite_state, composite_state)) }}</b>
+        {% if composite_context == 'crowded_short' %}<span class="tip" title="Funding z below -1 = crowded shorts. A capitulation CONTEXT confirmer — surfaced but deliberately NOT wired into the allocation (no pre-2021 history to validate it). 资金费率 z 低于 -1 = 空头拥挤；投降式背景确认，仅展示不参与仓位。" style="font-size:12.5px;font-weight:600;color:var(--blue);border:1px solid var(--blue);border-radius:999px;padding:1px 9px;margin-left:8px">⚠ {{ t('Crowded shorts · capitulation context', '空头拥挤 · 投降式背景') }}</span>{% elif composite_context == 'froth' %}<span class="tip" title="CME spec net-long z above 1.5 = crowded longs = froth. A distribution CONTEXT confirmer (display-only). CME 投机净多 z 高于 1.5 = 多头拥挤 = 过热；派发背景确认，仅展示。" style="font-size:12.5px;font-weight:600;color:var(--r3);border:1px solid var(--r3);border-radius:999px;padding:1px 9px;margin-left:8px">🔥 {{ t('Froth · crowded longs', '过热 · 多头拥挤') }}</span>{% endif %}
         <span class="faint" style="font-size:13px"> · {{ t('valuation + extremes resolve the risk U-shape into a direction', '估值 + 极值将风险 U 形解析为方向') }}</span>
       </div>
 

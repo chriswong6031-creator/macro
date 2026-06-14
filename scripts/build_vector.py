@@ -58,6 +58,55 @@ def _tail(obj, days: int):
     return obj.loc[obj.index >= cutoff]
 
 
+def _runs(s: pd.Series):
+    """Contiguous constant-value runs -> [(start, end, value), ...] so a price
+    panel can be shaded by a regime/state series (allocation level, ETF-flow
+    accumulation/distribution state, risk regime, …)."""
+    s = s.dropna()
+    if s.empty:
+        return []
+    grp = (s != s.shift()).cumsum()
+    return [(g.index[0], g.index[-1], g.iloc[0]) for _, g in s.groupby(grp)]
+
+
+def _plot_idx(index, daily_days: int = 400, weekly_days: int = 1825,
+              weekly_step: int = 7, monthly_step: int = 30):
+    """Resolution-adaptive index for the heavy full-history overlay charts: daily
+    for the last ~400d, ~weekly out to 5y, ~monthly before that. Older points are
+    sub-pixel at the 5Y/All zoom and the recent window stays full daily, so the
+    line is visually identical at every zoom — but ~5x fewer points get serialized
+    (plotly emits one full date-string + value array PER trace, so the full daily
+    record dominates the page weight)."""
+    if len(index) == 0:
+        return index
+    end = index.max()
+    d0 = end - pd.Timedelta(days=daily_days)
+    w0 = end - pd.Timedelta(days=weekly_days)
+    daily = index[index >= d0]
+    weekly = index[(index < d0) & (index >= w0)][::weekly_step]
+    monthly = index[index < w0][::monthly_step]
+    return monthly.union(weekly).union(daily)
+
+
+def _plot_y(s: pd.Series, n: int):
+    """Round a y-series to n places and return a plain Python list (NaN -> null).
+    plotly base64-packs numpy float64 arrays at a fixed ~10.7 chars/point whatever
+    the value; a rounded text list is smaller for these magnitudes and shrinks
+    further the fewer decimals it carries. n<=0 emits ints (e.g. whole-dollar)."""
+    if n <= 0:
+        return [None if pd.isna(v) else int(round(float(v))) for v in s]
+    return [None if pd.isna(v) else round(float(v), n) for v in s]
+
+
+def _dx(index):
+    """Date-only x strings ('2015-08-17') for a daily DatetimeIndex. Plotly's
+    default datetime serialization emits the full '...T00:00:00.000' per point
+    PER trace; for daily data the time part is dead weight, so date strings ~halve
+    every x array while still rendering on a normal plotly date axis (sparse
+    Timestamp shapes/markers serialize as ISO and land on the same date scale)."""
+    return [t.strftime("%Y-%m-%d") for t in index]
+
+
 # --------------------------------------------------------------------------- #
 # view-model computations
 # --------------------------------------------------------------------------- #
@@ -336,32 +385,100 @@ def _series(group: str, name: str) -> pd.Series | None:
 # charts
 # --------------------------------------------------------------------------- #
 def chart_risk_vs_strategy(df: pd.DataFrame, eq: pd.Series, hodl: pd.Series,
-                           days: int = 730) -> str:
-    d = _tail(df, days)
+                           days: int | None = None) -> str:
+    """Full-history (2015->) BTC price + backtested strategy, with the price panel
+    SHADED by the model's allocation (green = fully in / amber = half / clear =
+    out) and buy/sell markers at every allocation change — so you can read, at a
+    glance, when risk drove the model fully in or fully out. Log price axis;
+    1Y/2Y/5Y/All buttons rescale both axes. `days=None` = the whole record."""
+    d = df if days is None else _tail(df, days)
     eq, hodl = eq.reindex(d.index), hodl.reindex(d.index)
     fig = make_subplots(rows=3, cols=1, shared_xaxes=True, row_heights=[0.5, 0.28, 0.22],
                         vertical_spacing=0.04)
-    fig.add_trace(go.Scatter(x=d.index, y=d["close"], name="BTC Price",
+
+    # --- allocation regime shading behind the price (the headline upgrade) ---
+    # Explicit shapes on row-1's axes (xref="x", yref="y domain" spans the full
+    # panel height on the log axis). add_vrect(row=,col=) defers and drops here.
+    shade = {1.0: "rgba(34,170,94,0.13)", 0.5: "rgba(245,173,66,0.15)"}  # 0.0 = clear
+    for start, end, lvl in _runs(d["alloc_optimal"]):
+        fc = shade.get(round(lvl, 1))
+        if fc:
+            fig.add_shape(type="rect", xref="x", yref="y domain",
+                          x0=start, x1=end, y0=0, y1=1,
+                          fillcolor=fc, line_width=0, layer="below")
+
+    # downsample only the heavy full-history line traces; the markers, regime
+    # shapes and range-button extents below stay full-resolution and exact.
+    pidx = _plot_idx(d.index)
+    pxs = _dx(pidx)
+    fig.add_trace(go.Scatter(x=pxs, y=_plot_y(d["close"].reindex(pidx), 0), name="BTC Price",
                              line={"color": C["priceln"], "width": 1.4}), row=1, col=1)
     # strategy equity rescaled to price axis for visual overlay
     scale = d["close"].iloc[0] / eq.iloc[0]
-    fig.add_trace(go.Scatter(x=eq.index, y=eq * scale, name="Optimal strategy",
+    sx = eq * scale
+    fig.add_trace(go.Scatter(x=pxs, y=_plot_y(sx.reindex(pidx), 0), name="Optimal strategy",
                              line={"color": C["blue"], "width": 1.8}), row=1, col=1)
+
+    # --- buy/sell markers at allocation changes (▲ add when it steps up) ---
+    chg = d["alloc_optimal"].diff()
+    for mask, sym, col, nm, off in [
+        (chg > 0, "triangle-up", "#1FA971", "Buy / add", 0.90),
+        (chg < 0, "triangle-down", C["red"], "Sell / trim", 1.10),
+    ]:
+        idx = d.index[mask.fillna(False).to_numpy()]
+        if len(idx):
+            to = d["alloc_optimal"].reindex(idx)
+            fr = to - chg.reindex(idx)
+            txt = [f"{a:.0%} → {b:.0%}" for a, b in zip(fr, to)]
+            fig.add_trace(go.Scatter(
+                x=idx, y=d["close"].reindex(idx) * off, mode="markers", name=nm,
+                marker={"symbol": sym, "color": col, "size": 8,
+                        "line": {"width": 0.5, "color": "#fff"}},
+                text=txt, hovertemplate="%{x|%b %d %Y} · " + nm + " %{text}<extra></extra>",
+            ), row=1, col=1)
+
     # risk index two-tone (split at threshold 25)
-    ri = d["risk_index"]
-    fig.add_trace(go.Scatter(x=ri.index, y=ri.where(ri < 25), name="Risk (low)",
+    ri = d["risk_index"].reindex(pidx)
+    fig.add_trace(go.Scatter(x=pxs, y=_plot_y(ri.where(ri < 25), 1), name="Risk (low)",
                              line={"color": C["blue"], "width": 1.5}, showlegend=False), row=2, col=1)
-    fig.add_trace(go.Scatter(x=ri.index, y=ri.where(ri >= 25), name="Risk (high)",
+    fig.add_trace(go.Scatter(x=pxs, y=_plot_y(ri.where(ri >= 25), 1), name="Risk (high)",
                              line={"color": C["red"], "width": 1.5}, showlegend=False), row=2, col=1)
     fig.add_hline(y=25, line={"color": C["faint"], "width": 1, "dash": "dot"}, row=2, col=1)
-    fig.add_trace(go.Scatter(x=d.index, y=d["alloc_optimal"], name="Allocation",
+    fig.add_trace(go.Scatter(x=pxs, y=_plot_y(d["alloc_optimal"].reindex(pidx), 2), name="Allocation",
                              line={"color": C["indigo"], "width": 1.2, "shape": "hv"},
                              fill="tozeroy", fillcolor="rgba(40,95,255,0.10)",
                              showlegend=False), row=3, col=1)
-    fig.update_yaxes(title_text="Price $", row=1, col=1)
+
+    # --- range buttons: precompute x+y so the LOG price axis rescales on zoom ---
+    now = d.index.max()
+    btns = []
+    for label, dd in [("1Y", 365), ("2Y", 730), ("5Y", 1825), ("All", None)]:
+        x0 = d.index.min() if dd is None else max(d.index.min(), now - pd.Timedelta(days=dd))
+        w = (d.index >= x0)
+        lo = float(min(d["close"][w].min(), sx[w].min()))
+        hi = float(max(d["close"][w].max(), sx[w].max()))
+        xr = [x0.strftime("%Y-%m-%d"), now.strftime("%Y-%m-%d")]
+        yr = [float(np.log10(lo * 0.88)), float(np.log10(hi * 1.14))]
+        btns.append({"label": label, "method": "relayout",
+                     "args": [{"xaxis.range": xr, "xaxis2.range": xr,
+                               "xaxis3.range": xr, "yaxis.range": yr}]})
+        if label == "1Y":            # open on the 1Y view; wider frames via the buttons
+            default_xr, default_yr = xr, yr
+
+    fig.update_yaxes(title_text="Price $", type="log", range=default_yr, row=1, col=1)
+    fig.update_xaxes(range=default_xr)
     fig.update_yaxes(title_text="Risk", range=[0, 100], row=2, col=1)
     fig.update_yaxes(title_text="Alloc", range=[-0.05, 1.05], row=3, col=1)
-    fig.update_layout(**{**PLOT, "height": 460})
+    fig.update_layout(
+        **{**PLOT, "height": 480, "margin": {"l": 48, "r": 52, "t": 44, "b": 28}},
+        updatemenus=[{
+            "type": "buttons", "direction": "right", "showactive": True, "active": 0,
+            "x": 1, "xanchor": "right", "y": 1.02, "yanchor": "bottom",
+            "bgcolor": "rgba(255,255,255,0.7)", "bordercolor": C["grid"],
+            "borderwidth": 1, "font": {"size": 10, "color": C["text"]},
+            "pad": {"t": 2, "b": 2, "l": 4, "r": 4}, "buttons": btns,
+        }],
+    )
     return _html(fig)
 
 
@@ -396,6 +513,37 @@ def chart_bfi(df: pd.DataFrame, days: int = 365) -> str:
     fig.add_hrect(y0=40, y1=60, fillcolor=C["grid"], opacity=0.5, line_width=0)
     fig.update_yaxes(range=[0, 100])
     fig.update_layout(**{**PLOT, "height": 240})
+    return _html(fig)
+
+
+def chart_etf_flow(df: pd.DataFrame) -> str:
+    """Swissblock's 'Risk Index & ETF Net Flows' (#9): BTC price shaded by the
+    spot-ETF accumulation (blue) / distribution (red) regime, with daily net-flow
+    bars + the 5-day net flow below. ETF era only (2024->)."""
+    d = df[df["etf_flow_btc"].notna()]
+    if d.empty:
+        return ""
+    fig = make_subplots(rows=2, cols=1, shared_xaxes=True, row_heights=[0.56, 0.44],
+                        vertical_spacing=0.05)
+    shade = {"accumulation": "rgba(40,95,255,0.11)", "distribution": "rgba(211,11,11,0.10)"}
+    for start, end, st in _runs(d["etf_flow_state"]):
+        fc = shade.get(st)
+        if fc:
+            fig.add_shape(type="rect", xref="x", yref="y domain", x0=start, x1=end,
+                          y0=0, y1=1, fillcolor=fc, line_width=0, layer="below")
+    fig.add_trace(go.Scatter(x=_dx(d.index), y=_plot_y(d["close"], 0), name="BTC Price",
+                             line={"color": C["priceln"], "width": 1.5}), row=1, col=1)
+    flow = d["etf_flow_btc"]
+    colors = np.where(flow >= 0, C["blue"], C["red"]).tolist()
+    fig.add_trace(go.Bar(x=_dx(d.index), y=_plot_y(flow, 1), name="Daily net flow",
+                         marker={"color": colors, "line": {"width": 0}},
+                         showlegend=False), row=2, col=1)
+    fig.add_trace(go.Scatter(x=_dx(d.index), y=_plot_y(d["etf_flow_sum"], 1), name="5-day net flow",
+                             line={"color": C["indigo"], "width": 1.6}), row=2, col=1)
+    fig.add_hline(y=0, line={"color": C["faint"], "width": 1}, row=2, col=1)
+    fig.update_yaxes(title_text="Price $", type="log", row=1, col=1)
+    fig.update_yaxes(title_text="Net flow (BTC)", row=2, col=1)
+    fig.update_layout(**{**PLOT, "height": 340, "barmode": "relative"})
     return _html(fig)
 
 
@@ -963,6 +1111,10 @@ def main() -> int:
     all_events = btc_alerts.rebuild(sig)
     timeline = _group_timeline(btc_alerts.recent(all_events, acfg["timeline_days"]))
     last = sig.iloc[-1]
+    # ETF flows lag the price tape by a few days -> read the last row that HAS them
+    _efl = sig[sig["etf_flow_sum"].notna()] if "etf_flow_sum" in sig.columns else sig.iloc[0:0]
+    etf_last = _efl.iloc[-1] if len(_efl) else last
+    etf_asof = _efl.index[-1].strftime("%b %-d") if len(_efl) else None
     px = _series("coinbase", "btc_daily")
     close = sig["close"]
     chg24 = round(100 * (close.iloc[-1] / close.iloc[-2] - 1), 2)
@@ -1043,6 +1195,7 @@ def main() -> int:
         "alloc_sizing": sizing,
         # ---- accuracy-upgrade layers (Tier 1/1b/2) ----
         "composite_state": last.get("composite_state", "NEUTRAL"),
+        "composite_context": last.get("composite_context", ""),
         "verdict": verdict,
         "mtf_rows": mtf_rows,
         "ladder": {
@@ -1113,6 +1266,20 @@ def main() -> int:
             "ssr_osc": _r(last.get("ssr_oscillator"), 2),
             "mpi": _r(last.get("mpi"), 2),
         },
+        "etf": {
+            "state": etf_last.get("etf_flow_state"),
+            "flow_z": _r(etf_last.get("etf_flow_z"), 2),
+            "asof": etf_asof,
+            "flow_5d_str": (f"{int(etf_last['etf_flow_sum']):+,} BTC"
+                            if pd.notna(etf_last.get("etf_flow_sum")) else "—"),
+            "daily_str": (f"${int(etf_last['etf_flow_usd_mn']):+,}M"
+                          if pd.notna(etf_last.get("etf_flow_usd_mn")) else "—"),
+            "cum_btc_str": (f"{int(etf_last['etf_flow_cum']):,} BTC"
+                            if pd.notna(etf_last.get("etf_flow_cum")) else "—"),
+            "cum_usd_bn": (_r(etf_last["etf_flow_cum"] * etf_last["close"] / 1e9, 1)
+                           if pd.notna(etf_last.get("etf_flow_cum")) else None),
+            "present": bool(len(_efl)),
+        },
         "impulse": {
             "value": _r(last.get("impulse"), 2),
             "state": last.get("impulse_state"),
@@ -1155,6 +1322,7 @@ def main() -> int:
             "momentum": chart_oscillator(sig["momentum"], close, "Momentum"),
             "structure": chart_oscillator(sig["structure"], close, "Structure Shift"),
             "bfi": chart_bfi(sig),
+            "etf_flow": chart_etf_flow(sig) if "etf_flow_btc" in sig.columns else "",
         },
     }
 
