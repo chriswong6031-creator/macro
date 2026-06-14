@@ -125,6 +125,11 @@ jobs:
         # public check-runs API) AND appended to the run Summary with its traceback,
         # but NEVER aborts the job — so the site still deploys (via the always()
         # artifact upload) and one broken builder can't 404 the whole dashboard.
+        env:
+          # catalyst_tone (Tier-A FOMC/dislocation digest) runs INSIDE engine.run, so it
+          # needs the DeepSeek key here too — not only on the master_brain step below.
+          # No-op (degrades to neutral) when the secret is absent.
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           set +e
           run_py() {
@@ -164,6 +169,21 @@ jobs:
         # signals); returns 0 even if the crypto engine errors, so it can never
         # break the macro site.
         run: python -m scripts.build_vector
+      - name: master brain (cross-asset LLM synthesis; default-off, resilient)
+        # Runs LAST among the builders — it reads EVERY dashboard's latest.json
+        # (macro/china/hk/commodity/forex + BTC) plus the catalyst digest. Writes
+        # data/regime/master_brief.json + site/master_brief.json (client-fetched by
+        # the dashboard's Master Brief panel). NO-OP unless BOTH config
+        # master_brain.enabled is true AND the DEEPSEEK_API_KEY secret is set.
+        # Self-sufficient; never aborts the deploy.
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          set +e
+          python -m engine.master_brain > /tmp/mb.log 2>&1; rc=$?
+          cat /tmp/mb.log
+          [ "$rc" -ne 0 ] && echo "::warning title=master_brain::rc=$rc (non-fatal)"
+          exit 0
       - name: rebuild stock-search libraries (resilient — guarantees the analyzers ship)
         # build_china/build_hk render their dashboards but SWALLOW errors (return 0),
         # so a failure there silently 404s the per-stock search. This rebuilds the

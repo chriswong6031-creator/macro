@@ -98,6 +98,61 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("conditions layer failed: %s", e)
         latest["conditions"] = None
+    # Catalyst tone (LLM Tier-A): a DIGEST of the most recent public catalyst (FOMC
+    # statement) as honest CONTEXT only. Default-off LEAF (engine/catalyst_tone.py);
+    # None when disabled or nothing recent. NEVER enters the deterministic scoring path.
+    try:
+        from engine.catalyst_tone import daily_snapshot as catalyst_snapshot
+        latest["catalyst_tone"] = catalyst_snapshot(asof)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("catalyst tone layer failed: %s", e)
+        latest["catalyst_tone"] = None
+    # Dislocation Gate-1: the Fed-put master switch that CONDITIONS the capitulation
+    # gauge (buyable washout vs falling-knife). Additive risk filter; reads the
+    # catalyst shock-reversibility leg when present (computed above). See
+    # engine/dislocation.py + research/DISLOCATION_VALIDATION.md.
+    try:
+        from engine.dislocation import snapshot as dislocation_snapshot
+        latest["dislocation"] = dislocation_snapshot(
+            f, latest.get("conditions"), latest.get("catalyst_tone"))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("dislocation layer failed: %s", e)
+        latest["dislocation"] = None
+    # Cross-asset concentration: are the six markets secretly one liquidity/risk bet?
+    # Additive leaf (engine/cross_asset.py) — reads the per-market price stores and
+    # degrades to verdict="unknown" if too few are present.
+    try:
+        from engine.cross_asset import snapshot as cross_asset_snapshot
+        latest["cross_asset"] = cross_asset_snapshot()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("cross-asset layer failed: %s", e)
+        latest["cross_asset"] = None
+    # Cross-asset risk budgeting (ERC/inverse-vol) + crisis stress-replay — the
+    # additive "size as uncorrelated bets / cap risk" view (engine/portfolio.py).
+    try:
+        from engine.portfolio import snapshot as portfolio_snapshot
+        latest["portfolio"] = portfolio_snapshot()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("portfolio layer failed: %s", e)
+        latest["portfolio"] = None
+    # Catalyst event-trigger (Stage 3b): on an ACTIVE dislocation whose FOMC digest
+    # carries no usable reversibility read, digest THAT DAY's market news for a fresh
+    # shock_reversible and re-attach the dislocation narrative. Gated + never fatal
+    # (no-ops while dislocation isn't wired into latest on this line).
+    try:
+        from engine import catalyst_tone as _ct
+        dis = latest.get("dislocation") or {}
+        ct0 = latest.get("catalyst_tone") or {}
+        if (dis.get("verdict") in ("buyable_washout", "stand_aside")
+                and ct0.get("shock_reversible") not in ("reversible", "persistent")):
+            ev = _ct.event_snapshot(asof, context=f"dislocation: {str(dis.get('headline', ''))[:120]}")
+            if ev:
+                latest["catalyst_event"] = ev
+                src = ev if ev.get("shock_reversible") in ("reversible", "persistent") else ct0
+                from engine.dislocation import _catalyst_narrative
+                latest["dislocation"]["catalyst_narrative"] = _catalyst_narrative(dis.get("verdict"), src)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("catalyst event-trigger failed: %s", e)
     try:
         latest["playbook"] = build_playbook(f, regime, yahoo_closes(), latest)
     except Exception as e:  # noqa: BLE001 — conclusions are additive, never fatal

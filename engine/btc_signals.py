@@ -335,8 +335,84 @@ def cycle_stage(mom: pd.Series, risk_idx: pd.Series) -> pd.Series:
     return pos.clip(0, 1).rename("cycle_position")
 
 
+# --------------------------------------------------------------------------- #
+# Point-4: size by CONVICTION, cap RISK. Conviction used to be a UI label only —
+# a thin TOSS-UP and a strong EDGE both sized the grid to 1.0. These two helpers
+# turn it into actual SIZE (a continuous multiplier on the grid) and add an
+# ENFORCED drawdown brake (today MaxDD is only a MEASURED backtest stat). Both
+# modulate magnitude only; the (momentum, risk) grid still owns DIRECTION.
+# --------------------------------------------------------------------------- #
+def conviction_multiplier(score, cfg: dict):
+    """Continuous position-size multiplier in [floor, 1] from a directional-confidence
+    score in [0,1] (0.5 = a 50/50 coin-flip). The score's distance ABOVE the coin-flip
+    is the same honest ladder the dashboard's conviction layer shows — TOSS-UP (no
+    edge) / LEAN / EDGE — and the multiplier ramps the grid size `conviction_floor`->1
+    linearly across it: an EDGE setup sizes the full grid, a TOSS-UP only the floor.
+    Monotone non-decreasing in the score (so EDGE ≥ LEAN ≥ TOSS-UP). Accepts a scalar,
+    ndarray or pandas Series and returns the same kind."""
+    floor = float(cfg.get("conviction_floor", 0.5))
+    toss = float(cfg.get("conviction_toss", 0.05))
+    edge = float(cfg.get("conviction_edge", 0.30))
+    lean = np.clip(np.asarray(score, dtype=float) - 0.5, 0.0, None)   # bullish edge above coin-flip
+    ramp = np.clip((lean - toss) / max(edge - toss, 1e-9), 0.0, 1.0)  # 0 at TOSS-UP .. 1 at EDGE
+    mult = np.clip(floor + (1.0 - floor) * ramp, floor, 1.0)
+    if isinstance(score, pd.Series):
+        return pd.Series(mult, index=score.index, name="conviction_mult")
+    return mult if mult.ndim else float(mult)
+
+
+def conviction_tier(score, cfg: dict) -> str:
+    """TOSS-UP / LEAN / EDGE label for a scalar directional-confidence score — the
+    ladder that backs conviction_multiplier(), kept beside it so size and label can
+    never drift apart (the bug this fix closes)."""
+    toss = float(cfg.get("conviction_toss", 0.05))
+    edge = float(cfg.get("conviction_edge", 0.30))
+    lean = max(float(score) - 0.5, 0.0)
+    return "TOSS-UP" if lean <= toss else ("LEAN" if lean <= edge else "EDGE")
+
+
+def drawdown_brake(alloc: pd.Series, ret: pd.Series, cfg: dict) -> pd.Series:
+    """ENFORCED max-drawdown cap: tighten exposure as the strategy's OWN equity falls
+    further below its high-water mark — a live position cap, not just a backtest stat.
+    Path-dependent (the cap feeds back into the equity it is measured on), so it is
+    simulated day-by-day. No look-ahead: the cap that scales tomorrow's position uses
+    only the drawdown realized THROUGH today, and equity is advanced with yesterday's
+    position (the same shift(1) timing as the backtest engine). The cap is
+    `clip(1 - decay * max(0, drawdown - threshold), floor, 1)`, so it is 1.0 until the
+    strategy is `dd_threshold` underwater, then tightens linearly to `dd_floor`."""
+    thr = float(cfg.get("dd_threshold", 0.25))
+    decay = float(cfg.get("dd_decay", 1.0))
+    floor = float(cfg.get("dd_floor", 0.40))
+    a = alloc.to_numpy(dtype=float)
+    r = ret.reindex(alloc.index).to_numpy(dtype=float)
+    out = a.copy()
+    equity, peak, prev_pos = 1.0, 1.0, 0.0
+    for i in range(len(a)):
+        ri = r[i] if np.isfinite(r[i]) else 0.0
+        equity *= 1.0 + prev_pos * ri              # realize today on yesterday's position
+        if equity > peak:
+            peak = equity
+        dd = equity / peak - 1.0                    # <= 0, known only at end of day i
+        cap = min(1.0, max(floor, 1.0 - decay * max(0.0, (-dd) - thr)))
+        if np.isnan(a[i]):
+            out[i], prev_pos = a[i], 0.0
+        else:
+            out[i] = a[i] * cap
+            prev_pos = out[i]
+    return pd.Series(out, index=alloc.index)
+
+
 def allocation(mom: pd.Series, risk_idx: pd.Series, cfg: dict,
-               val: pd.DataFrame | None = None) -> pd.DataFrame:
+               val: pd.DataFrame | None = None,
+               close: pd.Series | None = None) -> pd.DataFrame:
+    """Strategy grids on (momentum, risk) -> {0, 0.5, 1.0}, then Point-4 sizing:
+    a CONTINUOUS conviction multiplier scales the grid (EDGE sizes larger than a LEAN
+    than a TOSS-UP — size BY conviction, not just label it) and, when `close` is given,
+    an ENFORCED drawdown brake caps exposure as the strategy goes underwater (cap risk).
+    Both are config-gated (vector.allocation.*) and modulate SIZE only — the grid still
+    owns direction, and the whipsaw guard runs on the DISCRETE grid before scaling.
+    Backward-compatible: omit `close` and leave the new keys unset for the legacy
+    stepped grid."""
     out = pd.DataFrame(index=mom.index)
     deep_value = overvalued = None
     if val is not None and cfg.get("use_valuation_overlay"):
@@ -353,6 +429,13 @@ def allocation(mom: pd.Series, risk_idx: pd.Series, cfg: dict,
             # risk already de-risk first) but a safety guard if they ever lag it.
             ov = ov | (val["reserve_risk"].reindex(mom.index) > cfg["overvalued_rr"])
         deep_value, overvalued = dv.fillna(False), ov.fillna(False)
+    conv_on = cfg.get("conviction_sizing", True)
+    brake_on = cfg.get("drawdown_brake", True) and close is not None
+    # directional-confidence proxy (the dashboard's regime-cell p_bull isn't a
+    # historical series, so reuse cycle_position — momentum carries direction, risk
+    # drags it); fill the warm-up gap with a coin-flip (sizes the floor, never NaN).
+    score = cycle_stage(mom, risk_idx).fillna(0.5) if conv_on else None
+    ret = close.pct_change() if brake_on else None
     for name, v in cfg["variants"].items():
         full = (mom > v["mom_full"]) & (risk_idx < v["risk_full"])
         half = (mom > v["mom_half"]) & (risk_idx < v["risk_half"])
@@ -360,7 +443,12 @@ def allocation(mom: pd.Series, risk_idx: pd.Series, cfg: dict,
         if deep_value is not None:
             raw = raw.mask(deep_value, raw.clip(lower=0.5))   # accumulate the bottom
             raw = raw.mask(overvalued, raw.clip(upper=0.5))   # trim the cycle top
-        out[f"alloc_{name}"] = _confirm(raw, cfg["confirm_days"])
+        raw = _confirm(raw, cfg["confirm_days"])              # whipsaw guard on the DISCRETE grid
+        if conv_on:
+            raw = raw * conviction_multiplier(score, cfg)     # size by conviction (magnitude only)
+        if brake_on:
+            raw = drawdown_brake(raw, ret, cfg)               # cap risk while underwater
+        out[f"alloc_{name}"] = raw.clip(0.0, 1.0)
     return out
 
 
@@ -958,8 +1046,9 @@ def compute_all(inputs: dict | None = None) -> pd.DataFrame:
     bh = behaviour(inputs, cfg["cross_asset"])
     gl = global_liquidity(inputs, cfg["global_liquidity"])
     # Tier-1b: blend the confirmed valuation tails into allocation (gated by the
-    # allocation backtest below).
-    al = allocation(mom["momentum"], rk["risk_index"], cfg["allocation"], va)
+    # allocation backtest below). `close` enables the ENFORCED drawdown brake live.
+    al = allocation(mom["momentum"], rk["risk_index"], cfg["allocation"], va,
+                    close=inputs["price"]["close"])
 
     out = pd.concat([inputs["price"][["close"]], mom, rk, bf, st, gg, al,
                      va, mn, cb, ex, op, lv, ma, oc, im, cc, po, xa, bh, gl], axis=1)

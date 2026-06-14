@@ -36,6 +36,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 warnings.filterwarnings("ignore")
 
 from engine import commodity_signals  # noqa: E402
+from engine.validation import (  # noqa: E402
+    backtest_core, deflated_sharpe, dsr_verdict, ret_moments)
 from lib import config  # noqa: E402
 
 TRADING_YEAR = 252  # commodities trade ~252 days/yr
@@ -114,13 +116,19 @@ def _extremes_verdict(table: pd.DataFrame, base: float, mcol: str, hcol: str,
     return "EXTREMES — " + ("; ".join(parts) if parts else "tails too thin")
 
 
-def backtest(close: pd.Series, alloc: pd.Series) -> dict:
-    ret = close.pct_change().fillna(0)
-    pos = alloc.shift(1).reindex(ret.index).ffill().fillna(0)
-    strat = pos * ret
+def backtest(close: pd.Series, alloc: pd.Series, cost_bps: float = 0.0) -> dict:
+    """Allocation vs buy-and-hold. `cost_bps` is the ONE-WAY transaction cost
+    (spread + roll slippage) in basis points, charged on each unit of position
+    turnover |Δpos| — a 0→1→0 round trip pays 2×cost_bps. Headline cagr/sharpe/maxdd
+    are NET of cost (the honest figure); `*_gross` + `cost_drag_pp` show the bite and
+    `turnover_annual` the one-way turnover/yr. Keeps the `hold_*` key naming the
+    commodities dashboard (build_commodities.py) reads. Default 0.0 = legacy gross."""
+    bt = backtest_core(close, alloc, cost_bps=cost_bps)
+    ret, gross, strat, turnover, years, pos = (
+        bt["ret"], bt["gross"], bt["net"], bt["turnover"], bt["years"], bt["pos"])
     eq = (1 + strat).cumprod()
+    eq_gross = (1 + gross).cumprod()
     hold = (1 + ret).cumprod()
-    years = (close.index[-1] - close.index[0]).days / 365.25
 
     def cagr(e):
         return (e.iloc[-1]) ** (1 / years) - 1 if years > 0 and e.iloc[-1] > 0 else np.nan
@@ -136,13 +144,26 @@ def backtest(close: pd.Series, alloc: pd.Series) -> dict:
     def maxdd(e):
         return float((e / e.cummax() - 1).min())
 
+    cagr_net, cagr_gross = cagr(eq), cagr(eq_gross)
+    mom = ret_moments(strat)  # net per-period moments for the Deflated Sharpe
     return {
-        "cagr": round(100 * cagr(eq), 1), "hold_cagr": round(100 * cagr(hold), 1),
+        "cagr": round(100 * cagr_net, 1), "hold_cagr": round(100 * cagr(hold), 1),
+        "cagr_gross": round(100 * cagr_gross, 1) if pd.notna(cagr_gross) else np.nan,
+        "cost_drag_pp": (round(100 * (cagr_gross - cagr_net), 1)
+                         if pd.notna(cagr_net) and pd.notna(cagr_gross) else np.nan),
         "sharpe": round(sharpe(strat), 2), "hold_sharpe": round(sharpe(ret), 2),
+        "sharpe_gross": round(sharpe(gross), 2),
         "sortino": round(sortino(strat), 2), "hold_sortino": round(sortino(ret), 2),
         "maxdd": round(100 * maxdd(eq), 1), "hold_maxdd": round(100 * maxdd(hold), 1),
         "time_in_market": round(100 * (pos > 0).mean(), 1),
+        "turnover_annual": round(float(turnover.sum() / years), 1) if years > 0 else np.nan,
+        "cost_bps": cost_bps,
         "final_vs_hold": round(eq.iloc[-1] / hold.iloc[-1], 2) if hold.iloc[-1] else np.nan,
+        # per-period (daily) stats the Deflated Sharpe Ratio consumes:
+        "sharpe_daily": round(mom[0], 6) if mom else None,
+        "skew": round(mom[1], 4) if mom else None,
+        "kurt": round(mom[2], 4) if mom else None,
+        "n_obs": mom[3] if mom else None,
     }
 
 
@@ -188,7 +209,8 @@ RISK_BANDS = ([-0.1, 25, 50, 75, 100], ["0-25", "25-50", "50-75", "75-100"])
 
 
 def build_asset(asset: str, df: pd.DataFrame, complex_regime: pd.Series,
-                cal: dict, alloc_variants: dict) -> dict:
+                cal: dict, alloc_variants: dict,
+                cost_bps: float = 0.0, n_trials: int = 1) -> dict:
     horizons = cal["forward_days"]
     df = df.loc[cal["start_date"]:].copy()
     close = df["close"]
@@ -244,11 +266,37 @@ def build_asset(asset: str, df: pd.DataFrame, complex_regime: pd.Series,
         ddt["rank_trend"] = {**rt, "want": -1, "horizon": horizons[0]}
         out["risk_drawdown"] = ddt
 
-    # allocation backtest vs buy-and-hold
+    # allocation backtest vs buy-and-hold (NET of the configured one-way cost)
     for variant in alloc_variants:
         col = f"alloc_{variant}"
         if col in df.columns:
-            out["allocation"][variant] = backtest(close, df[col])
+            out["allocation"][variant] = backtest(close, df[col], cost_bps=cost_bps)
+
+    # ---- multiple-testing haircut: Deflated Sharpe on the SHIPPED variant ----- #
+    # The published Sharpe is the MAX over the allocation variants we tried, so it
+    # is upward-biased; the DSR deflates it for n_trials independent configs, sample
+    # length, skew and fat tails. Cross-trial SR variance comes from the variants
+    # actually backtested (floored at the null SR-sampling proxy inside the helper).
+    va = out["allocation"]
+    if va:
+        sel = ("optimal" if "optimal" in va else
+               max(va, key=lambda k: va[k]["cagr"] if pd.notna(va[k]["cagr"]) else -1e9))
+        daily_srs = [v["sharpe_daily"] for v in va.values() if v.get("sharpe_daily") is not None]
+        sr_var = float(np.var(daily_srs, ddof=1)) if len(daily_srs) >= 2 else None
+        m = va[sel]
+        dsr = deflated_sharpe(m.get("sharpe_daily"), m.get("skew"), m.get("kurt"),
+                              m.get("n_obs"), n_trials, sr_variance=sr_var,
+                              trading_year=TRADING_YEAR)
+        if dsr is not None:
+            dsr["selected_variant"] = sel
+            dsr["sr_variance_source"] = ("max(cross-variant dispersion, null SR-sampling proxy)"
+                                         if sr_var else "null SR-sampling proxy")
+            dsr["verdict"] = dsr_verdict(dsr["dsr"])
+            dsr["note"] = ("DSR = P(true Sharpe>0) after deflating for n_trials independent "
+                           "configs, sample length, skew & kurtosis. n_trials is a manual "
+                           "UPPER-BOUND of the signal/threshold/window variants explored per "
+                           "asset — overestimating is the conservative direction (de Prado).")
+        out["multiple_testing"] = dsr or {"dsr": None, "verdict": "insufficient data"}
 
     for sig in ("momentum_state", "ts_trend", "structure_state", "risk_regime",
                 "driver_state", "shock_state", "pos_state", "gsr_state", "market_mode"):
@@ -266,19 +314,47 @@ def build_asset(asset: str, df: pd.DataFrame, complex_regime: pd.Series,
 def main() -> int:
     cal = config.load()["commodities"]["calibration"]
     alloc_variants = config.load()["commodities"]["allocation"]["variants"]
+    # One-way transaction cost (spread+roll slippage) and the honest trial count
+    # for the Deflated Sharpe live in config with code defaults (ships without a
+    # config.yml edit). 8 bps ≈ a liquid commodity futures/ETF leg — wider than FX
+    # spot, tighter than BTC; n_trials is a manual UPPER-BOUND of configs explored.
+    cost_bps = float(cal.get("cost_bps", 8.0))
+    n_trials = int(cal.get("n_trials", 40))
     res = commodity_signals.compute_all()
     complex_regime = res["_complex"]["complex_regime"]
 
-    report = {"meta": {"split": cal["split_date"], "horizons": cal["forward_days"]},
+    report = {"meta": {"split": cal["split_date"], "horizons": cal["forward_days"],
+                       "cost_bps_one_way": cost_bps, "n_trials": n_trials},
               "assets": {}}
     outdir = config.data_dir() / "commodity"
     outdir.mkdir(parents=True, exist_ok=True)
-    for asset in [a for a in res if a != "_complex"]:
+    assets = [a for a in res if a != "_complex"]
+    for asset in assets:
         report["assets"][asset] = build_asset(asset, res[asset], complex_regime,
-                                               cal, alloc_variants)
+                                               cal, alloc_variants,
+                                               cost_bps=cost_bps, n_trials=n_trials)
         res[asset].to_parquet(outdir / f"signals_{asset}.parquet")
     res["_complex"].to_parquet(outdir / "signals_complex.parquet")
+
+    # point-in-time trial ledger (overwritten each run) — the multiple-testing
+    # bookkeeping the Deflated Sharpe deflates against.
+    fams = sorted({s for a in report["assets"].values() for s in a.get("signals", {})})
+    asof = max((res[a].index.max() for a in assets), default=None)
+    report["trial_log"] = {
+        "asof": str(asof.date()) if asof is not None else None,
+        "n_trials_declared": n_trials,
+        "cost_bps_one_way": cost_bps,
+        "assets_tested": assets,
+        "allocation_variants_tested": list(alloc_variants),
+        "signal_families_screened": fams,
+        "n_signal_families": len(fams),
+        "note": ("Upper-bound count of independent strategy configs explored per asset, used "
+                 "to deflate each asset's headline Sharpe. Raise commodities.calibration.n_trials "
+                 "as you try more variants/thresholds/windows."),
+    }
+
     (outdir / "calibration.json").write_text(json.dumps(report, indent=2, default=str))
+    (outdir / "trial_log.json").write_text(json.dumps(report["trial_log"], indent=2, default=str))
     _write_markdown(report)
     print(_summary(report))
     return 0
@@ -295,11 +371,19 @@ def _summary(report: dict) -> str:
         if a["risk_drawdown"]:
             rd = a["risk_drawdown"]
             L.append(f"    risk_index     {rd['verdict']} (drawdown rank_trend={rd['rank_trend']})")
-        L.append("  allocation vs buy&hold:")
+        _cb = next(iter(a["allocation"].values()), {}).get("cost_bps", 0)
+        L.append(f"  allocation vs buy&hold (NET of {_cb}bps one-way cost):")
         for v, m in a["allocation"].items():
-            L.append(f"    {v:13s} CAGR {m['cagr']:>6}% (hold {m['hold_cagr']}%)  "
+            L.append(f"    {v:13s} CAGR {m['cagr']:>6}% net (gross {m.get('cagr_gross')}%, "
+                     f"drag {m.get('cost_drag_pp')}pp; hold {m['hold_cagr']}%)  "
                      f"Sharpe {m['sharpe']} (hold {m['hold_sharpe']})  "
-                     f"MaxDD {m['maxdd']}% (hold {m['hold_maxdd']}%)  inMkt {m['time_in_market']}%")
+                     f"MaxDD {m['maxdd']}% (hold {m['hold_maxdd']}%)  inMkt {m['time_in_market']}%  "
+                     f"turn {m.get('turnover_annual')}x/yr")
+        mt = a.get("multiple_testing")
+        if mt and mt.get("dsr") is not None:
+            L.append(f"    Deflated Sharpe [{mt['selected_variant']}]: DSR={mt['dsr']}  "
+                     f"(SR {mt['sr_annual']} ann vs haircut SR0 {mt['sr0_annual']} ann; "
+                     f"N={mt['n_trials']}, T={mt['T']}d) => {mt['verdict']}")
     return "\n".join(L)
 
 
@@ -330,8 +414,31 @@ def _write_markdown(report: dict) -> None:
             lines.append(pd.DataFrame(e["full"]).to_markdown(index=False))
         lines.append(f"\n### {asset} · forward returns by complex regime\n")
         lines.append(pd.DataFrame(a["by_regime"]).to_markdown(index=False))
-        lines.append("\n### allocation vs buy-and-hold\n")
-        lines.append(pd.DataFrame(a["allocation"]).T.to_markdown())
+        _cb = next(iter(a["allocation"].values()), {}).get("cost_bps", 0)
+        lines.append(f"\n### allocation vs buy-and-hold (NET of {_cb}bps one-way cost)\n")
+        lines.append("`cagr` is net of transaction cost (the honest headline); `cagr_gross` "
+                     "and `cost_drag_pp` show the cost bite, `turnover_annual` the one-way "
+                     "turnover/yr driving it.\n")
+        cols = ["cagr", "cagr_gross", "cost_drag_pp", "hold_cagr", "sharpe", "hold_sharpe",
+                "sortino", "hold_sortino", "maxdd", "hold_maxdd", "time_in_market",
+                "turnover_annual", "final_vs_hold"]
+        at = pd.DataFrame(a["allocation"]).T
+        lines.append(at[[c for c in cols if c in at.columns]].to_markdown())
+        mt = a.get("multiple_testing")
+        if mt and mt.get("dsr") is not None:
+            lines.append(f"\n**Deflated Sharpe (multiple-testing haircut)** — shipped variant "
+                         f"`{mt['selected_variant']}`: **{mt['verdict']}**. "
+                         f"DSR (P true Sharpe>0) = **{mt['dsr']}**; observed SR {mt['sr_annual']} ann "
+                         f"vs haircut SR0 {mt['sr0_annual']} ann (N={mt['n_trials']} trials, "
+                         f"T={mt['T']}d, skew={mt['skew']}, kurt={mt['kurt']}).")
+    tl = report.get("trial_log")
+    if tl:
+        lines.append("\n## Trial log\n")
+        lines.append(f"As-of {tl['asof']}: **{tl['n_trials_declared']}** declared independent trials "
+                     f"per asset (upper-bound); {tl['n_signal_families']} signal families screened "
+                     f"across {len(tl['assets_tested'])} assets; allocation variants: "
+                     f"{', '.join(tl['allocation_variants_tested'])}; transaction cost "
+                     f"{tl['cost_bps_one_way']}bps one-way.")
     Path(config.load()["storage"]["reports_dir"], "commodity-calibration.md").write_text(
         "\n".join(lines))
 

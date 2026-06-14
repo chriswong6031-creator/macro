@@ -82,6 +82,14 @@
   th,td { text-align:left; padding:4px 8px; border-bottom:1px solid var(--line); }
   th { color:var(--muted); font-weight:500; }
   #result { display:none; }
+  #stock-brief { border-left:3px solid var(--link); }
+  #stock-brief h2 { color:var(--link); }
+  #stock-brief .sb-sum { font-size:14.5px; font-weight:600; margin:0 0 10px; }
+  #stock-brief .sb-sec { margin:10px 0; }
+  #stock-brief .sb-h { font-weight:600; color:var(--link); margin:0 0 4px; }
+  #stock-brief .sb-list { margin:4px 0 0 18px; padding:0; }
+  #stock-brief .sb-list li { margin:3px 0; }
+  #stock-brief .sb-foot { margin-top:12px; color:var(--muted); font-size:12px; }
 </style>
 </head>
 <body>
@@ -139,6 +147,10 @@
       <p id="r_flags" class="neg" style="margin:4px 0"></p>
       <details><summary>{{ t('full reasoning', '完整推理') }}</summary><p class="muted" id="r_why" style="margin:6px 0"></p></details>
     </div>
+    <div class="panel" id="stock-brief" style="display:none">
+      <h2>🧠 {{ t('AI brief — research context', 'AI 简报 — 研究背景') }}</h2>
+      <div id="stock-brief-body"></div>
+    </div>
     <div class="panel">
       <h2>{{ t('Momentum across timeframes', '跨周期动量') }}</h2>
       <div id="r_mtf"></div>
@@ -170,6 +182,7 @@
   </div>
 
 <script src="https://s3.tradingview.com/tv.js"></script>
+<script src="stockbrief.js"></script>
 <script>
 (function () {
   var cal = null;  // calibration table data (the nav search bar drives navigation now)
@@ -226,6 +239,7 @@
 
   function load(t) {
     var safe = t.replace('=', '_').replace('^', '_');
+    if (window.loadStockBrief) window.loadStockBrief(safe);   // 🧠 AI brief (hidden if absent)
     fetch('stockdata/' + safe + '.json').then(function (r) {
       if (!r.ok) throw new Error('not in library');
       return r.json();

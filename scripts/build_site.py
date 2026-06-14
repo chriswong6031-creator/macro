@@ -847,10 +847,10 @@ def build_factors_page(env: Environment, site: Path, generated: str) -> dict | N
     See research/QUANT_FACTOR_EXPANSION.md."""
     if not config.load().get("edgar", {}).get("enabled"):
         return None
-    from collectors.edgar import fetch_fundamentals
+    from collectors.edgar import fetch_panel
     from engine.equity_factors import compute_factors
     try:
-        fetch_fundamentals()                       # weekly-cached; no-op if fresh
+        fetch_panel()                              # point-in-time panel (weekly-cached); also writes the back-compat latest-FY fundamentals.parquet slice
         try:
             from collectors.finra import fetch_short_interest
             fetch_short_interest()                 # Phase 3: bi-monthly short interest (cached)
@@ -999,6 +999,48 @@ def regime_timeline(hist: pd.DataFrame) -> dict:
     }
 
 
+def build_advanced_page(env: Environment, site: Path, generated: str, latest: dict, f,
+                        confirming, contradicting):
+    """The Quant Lab — the geekier reads, kept off the main dashboard: cross-asset
+    concentration + risk budgeting + the factor IC scorecard + the raw market-
+    internals tables (dials / pair-ratios / size-style / accumulation / fund flows).
+    Computes the cross-asset & portfolio snapshots FRESH (like build_factors_page),
+    so the page is populated even if the last engine.run predates them; reads the
+    factor IC scorecard JSON if present. Returns the cross-asset snapshot for the
+    dashboard's compact card."""
+    cross_asset = portfolio = ic_scorecard = None
+    try:
+        from engine.cross_asset import snapshot as _ca
+        cross_asset = _ca()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("cross-asset snapshot failed: %s", e)
+    try:
+        from engine.portfolio import snapshot as _pf
+        portfolio = _pf()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("portfolio snapshot failed: %s", e)
+    icp = config.data_dir() / "edgar" / "ic_scorecard.json"
+    if icp.exists():
+        try:
+            ic_scorecard = json.loads(icp.read_text())
+        except Exception:  # noqa: BLE001
+            ic_scorecard = None
+    html = env.get_template("advanced.html.j2").render(
+        latest=latest, generated_utc=generated,
+        cross_asset=cross_asset, portfolio=portfolio, ic_scorecard=ic_scorecard,
+        components_confirming=confirming, components_contradicting=contradicting,
+        flip_plain=flip_plain_text(latest),
+        internals=internals_rows(latest), size_style=size_style_rows(f),
+        breadth_div=breadth_divergence(f),
+        accumulation=accumulation_rows(), holdings_changes=holdings_rows(),
+        holdings_threshold=config.load()["holdings"]["active_change_alert_pct"],
+        flows_html=flows_html_table(),
+    )
+    (site / "advanced.html").write_text(html)
+    log.info("wrote advanced.html (%.0f KB)", (site / "advanced.html").stat().st_size / 1024)
+    return cross_asset
+
+
 def main() -> int:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     site.mkdir(parents=True, exist_ok=True)
@@ -1035,9 +1077,19 @@ def main() -> int:
         factor_leadership = (_fac or {}).get("leadership")
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("factors page failed: %s", e)
+    # Quant Lab (advanced analytics): cross-asset concentration + risk budgeting +
+    # factor scorecard + the raw internals moved off the main dashboard. Returns the
+    # cross-asset snapshot for the dashboard's compact one-bet card.
+    cross_asset_snap = None
+    try:
+        cross_asset_snap = build_advanced_page(env, site, generated, latest, f,
+                                               confirming, contradicting)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("advanced page failed: %s", e)
     # copy shared static assets (theme + visual widgets) into the site
     for asset in ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
-                  "stockdata.js", "watchlist.js", "auth.js", "tablesort.js", "charts.js"):
+                  "stockdata.js", "watchlist.js", "auth.js", "tablesort.js", "charts.js",
+                  "masterbrief.js", "stockbrief.js"):
         src = config.ROOT / "templates" / asset
         if src.exists():
             (site / asset).write_text(src.read_text())
@@ -1067,6 +1119,7 @@ def main() -> int:
         flows_html=flows_html_table(),
         health=health_rows(),
         factor_leadership=factor_leadership,
+        cross_asset=cross_asset_snap,
     )
     # Write the macro dashboard straight to macro.html. index.html is owned
     # solely by build_vector.build_landing() (the landing hub) — keeping the raw
@@ -1125,6 +1178,22 @@ def main() -> int:
                     supabase_cfg_json=_json.dumps(sup_cfg),
                     starters_json=_json.dumps(wl.get("suggested", []))))
             log.info("wrote %s", site / "watchlist.html")
+
+        # 🧠 AI stock briefs (LLM "Option 2") — DEFAULT-OFF LEAF. Precompute a
+        # research brief for a small, bounded set (the action-board standouts +
+        # the watchlist's suggested tickers) into site/stockbrief/<TICKER>.json,
+        # cached per ticker per day. The stock page fetches it client-side; the
+        # static site cannot call the model on demand (no server-side key). Gated
+        # by catalyst_stock.enabled — a no-op (and zero cost) when off.
+        try:
+            from engine import catalyst_stock
+            if catalyst_stock.enabled():
+                brief_set = ([n["ticker"] for n in notable]
+                             + list(config.load().get("watchlist", {}).get("suggested", [])))
+                briefs = catalyst_stock.precompute_briefs(brief_set, root=config.ROOT, site=site)
+                log.info("precomputed %d AI stock brief(s)", len(briefs))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("stock brief precompute failed: %s", e)
     return 0
 
 

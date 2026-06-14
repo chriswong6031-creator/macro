@@ -754,6 +754,32 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
     </div>
   </div>
 
+  <!-- ===================== BTC SPOT-ETF NET FLOWS ===================== -->
+  {% if etf.present %}
+  <div class="section-title">{{ t('Spot-ETF Net Flows · the institutional bid (since 2024)', '现货 ETF 净流入 · 机构买盘（2024 起）') }}</div>
+  <div class="card">
+    <h3>{{ t('Risk Index & ETF Net Flows', '风险指数与 ETF 净流入') }}
+      {% set _st = etf.state %}
+      <b style="color:{{ 'var(--blue)' if _st=='accumulation' else ('var(--r3)' if _st=='distribution' else 'var(--muted)') }}"> · {{ (t('ACCUMULATION','吸筹') if _st=='accumulation' else (t('DISTRIBUTION','派发') if _st=='distribution' else t('NEUTRAL','中性'))) }}</b>
+      {% if etf.asof %}<span class="faint" style="font-size:12px;font-weight:400"> · {{ t('as of','截至') }} {{ etf.asof }}</span>{% endif %}
+    </h3>
+    {{ charts.etf_flow|safe }}
+    <div class="sub" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;font-size:12px">
+      <span style="opacity:.8">{{ t('Price shaded by flow regime:', '价格按资金流状态着色：') }}</span>
+      <span><span style="display:inline-block;width:12px;height:11px;border-radius:2px;background:rgba(40,95,255,0.45);vertical-align:-1px;margin-right:5px"></span>{{ t('Accumulation (net inflows)', '吸筹（净流入）') }}</span>
+      <span><span style="display:inline-block;width:12px;height:11px;border-radius:2px;background:rgba(211,11,11,0.4);vertical-align:-1px;margin-right:5px"></span>{{ t('Distribution (net outflows)', '派发（净流出）') }}</span>
+      <span style="color:var(--blue)">▮ {{ t('inflow day','流入日') }}</span>
+      <span style="color:var(--r3)">▮ {{ t('outflow day','流出日') }}</span>
+    </div>
+    <div class="score" style="margin-top:12px">
+      <div class="s"><div class="k">{{ t('5-day net flow','5 日净流入') }}</div><div class="v" style="font-size:18px">{{ etf.flow_5d_str }}</div><div class="h">z {{ '%+0.2f'|format(etf.flow_z) if etf.flow_z is not none else '—' }}</div></div>
+      <div class="s"><div class="k">{{ t('Latest day','最新一日') }}</div><div class="v" style="font-size:18px">{{ etf.daily_str }}</div><div class="h">{{ t('net flow','净流入') }}</div></div>
+      <div class="s"><div class="k">{{ t('Net since launch','上线以来净流入') }}</div><div class="v" style="font-size:18px">${{ etf.cum_usd_bn }}B</div><div class="h">{{ etf.cum_btc_str }}</div></div>
+    </div>
+    <div class="sub" style="margin-top:10px">{{ t('Measured (2024→, ETF era only — so CONFIRMATION-grade, not a both-halves anchor): strong net inflows (flow z 0.25–0.75) preceded +5.0%/30d and +12.2%/90d at 65% hit, while strong outflows (z below −0.75) preceded −2.9%/30d. The relationship is intuitive and DIRECTIONAL, but only ~2.4 years exist, so it confirms the risk read rather than leading it. Glassnode-sourced via BGeometrics, free.', '实测（2024 起，仅 ETF 时代 — 故为确认级，而非双半段锚点）：强净流入（资金流 z 0.25–0.75）后 30 天 +5.0%、90 天 +12.2%、胜率 65%；强净流出（z 低于 −0.75）后 30 天 −2.9%。关系直观且具方向性，但仅约 2.4 年样本，故用于确认风险判断而非领先。数据经 BGeometrics 源自 Glassnode，免费。') }}</div>
+  </div>
+  {% endif %}
+
   <!-- ===================== CYCLE / POSITIONING / CORRELATION ===================== -->
   <div class="section-title">{{ t('Cycle Clock · Positioning · Cross-Asset Correlation', '周期时钟 · 持仓 · 跨资产相关性') }}</div>
   <div class="grid cols-2">
@@ -907,6 +933,7 @@ window.__CHART_SWAP__ = {
   colors: {},
   labels: {"BTC Price":"BTC 价格","Optimal strategy":"最优策略","Allocation":"仓位",
            "Buy / add":"买入 / 加仓","Sell / trim":"卖出 / 减仓",
+           "5-day net flow":"5 日净流入","Net flow (BTC)":"净流入（BTC）",
            "Network Growth":"网络增长","Liquidity":"流动性","Momentum":"动量",
            "Structure Shift":"结构转变","Price $":"价格 $","Risk":"风险","Alloc":"仓位"}
 };
