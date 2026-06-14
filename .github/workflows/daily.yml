@@ -139,6 +139,9 @@ jobs:
             fi
           }
           run_py "regime engine (engine.run)" engine.run
+          # leak-free point-in-time IC scorecard -> data/edgar/ic_scorecard.json, read by
+          # build_site's factors page. ~4s, only moves quarterly; additive (never blocks build_site).
+          python -m scripts.factor_ic_scorecard --quick || echo "ic scorecard skipped (additive)"
           run_py "macro dashboard (build_site)" scripts.build_site
           run_py "daily brief (daily_brief)" scripts.daily_brief
           exit 0
@@ -173,6 +176,17 @@ jobs:
         # before build_vector (which writes the hub last): writes the discovery
         # leaderboard. Self-sufficient; returns 0 on any engine error.
         run: python -m scripts.build_discovery
+      - name: factor seasonality (build_seasonality)
+        # after build_site, before build_vector: reads data/french/factors.parquet
+        # (Ken French monthly factors, collected in the collect job) and writes
+        # seasonality.html + factordata/factor_seasonality.json. Standalone; returns 0
+        # on any error (can't break the macro/vector site).
+        run: python -m scripts.build_seasonality
+      - name: thematic baskets (build_baskets)
+        # after build_site, before build_vector: reads data/baskets/membership.json +
+        # the price caches + SPY and writes baskets.html + basketdata/baskets.json.
+        # Standalone; returns 0 on any error.
+        run: python -m scripts.build_baskets
       - name: build bitcoin vector + landing hub
         # installs the landing hub at index.html (rendered from stored engine
         # state, so ordering vs build_site no longer matters — build_site writes
