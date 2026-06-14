@@ -77,9 +77,23 @@ def test_vif_and_pairs_catch_collinearity():
     assert any({"a", "b"} == {pr["a"], pr["b"]} for pr in pairs)
 
 
+def test_resid_z_removes_correlation_causally():
+    rng = np.random.default_rng(5)
+    idx = pd.date_range("2015-01-01", periods=1500, freq="D")
+    b = pd.Series(rng.normal(size=1500), index=idx)
+    z = 0.8 * b + 0.6 * pd.Series(rng.normal(size=1500), index=idx)   # z carries a b-component
+    r = V.resid_z(z, [b], win=252, min_p=252)
+    warm = slice(400, None)                                            # after betas are estimable
+    assert abs(z[warm].corr(b[warm])) > 0.6                           # z was correlated with b
+    assert abs(r[warm].corr(b[warm])) < 0.2                           # residual de-correlated
+    # causal: residual at t uses only prior-window betas -> no look-ahead (raw until estimable)
+    assert r.iloc[:252].equals(z.iloc[:252]) or r.iloc[:10].equals(z.iloc[:10])
+
+
 if __name__ == "__main__":
     for fn in [test_purged_folds_embargo, test_block_bootstrap_ci, test_brier_and_platt_calibrated,
-               test_brier_detects_miscalibration, test_vif_and_pairs_catch_collinearity]:
+               test_brier_detects_miscalibration, test_vif_and_pairs_catch_collinearity,
+               test_resid_z_removes_correlation_causally]:
         fn()
         print(f"  ok  {fn.__name__}")
     print("all validation-gate tests passed")

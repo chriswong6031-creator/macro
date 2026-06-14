@@ -284,6 +284,100 @@ def oof_cell_probs(df: pd.DataFrame, folds: dict, h: int, alpha: int = 10, min_n
 
 
 # --------------------------------------------------------------------------- #
+# ENSEMBLE CAPSTONE promotion gate (D-vec-ENSEMBLE) — does a fixed-form,
+# orthogonalized, gate-passed ensemble BEAT the heuristic composite_state + the
+# best single signal, out-of-sample, in BOTH halves? Each axis is oriented by its
+# CALIBRATED expected-return band-map (so U-shaped extremes are oriented correctly,
+# which a linear z×want cannot), de-correlated in a fixed order, equal-weight
+# combined. Honest if-it-fails: ship the simpler winner, never overfit.
+# --------------------------------------------------------------------------- #
+_ENS_ORDER = ["risk_index", "net_liq_roc", "vrp", "cot_z", "mvrv_z", "momentum"]
+_HEUR_EXPOSURE = {"RISK-OFF": 0.0, "DISTRIBUTE": 0.25, "NEUTRAL": 0.5,
+                  "RISK-ON": 0.75, "ACCUMULATE": 1.0}
+
+
+def _zc(s: pd.Series, n: int = 365) -> pd.Series:
+    m = s.rolling(n, min_periods=max(60, n // 4))
+    return (s - m.mean()) / m.std().replace(0, np.nan)
+
+
+def _expret_signal(signal: pd.Series, fwd: pd.DataFrame, bands, labels, h: int):
+    """Orient a (U-shaped) signal by its CALIBRATED expected fwd-h return: map each
+    value to its band's mean_h. The non-linear orientation a linear z×want can't do."""
+    if isinstance(bands[0], (list, tuple)):
+        return None
+    t = band_table(signal, fwd, bands, labels, [h])
+    m = {r["band"]: r.get(f"mean_{h}d") for _, r in t.iterrows()}
+    cats = pd.cut(signal, bins=bands, labels=labels, include_lowest=True)
+    return cats.astype(object).map(m).astype(float)
+
+
+def ensemble_promotion(df, fwd, halves, folds, SIGNALS, cost_bps, n_trials):
+    """Build the orthogonalized equal-weight ensemble + baselines; decide promotion."""
+    from engine.validation import resid_z, block_bootstrap_ci
+    ecfg = config.load()["vector"].get("ensemble", {})
+    bw, bmin = ecfg.get("beta_window_d", 252), ecfg.get("beta_min_train_d", 252)
+    zw = ecfg.get("z_window_d", 365)
+    close = df["close"]
+    h = 90 if 90 in fwd.columns else int(fwd.columns[-1])
+    res, basis = {}, []
+    for sig in _ENS_ORDER:
+        if sig not in df.columns or sig not in SIGNALS:
+            continue
+        er = _expret_signal(df[sig], fwd, SIGNALS[sig]["bands"], SIGNALS[sig]["labels"], h)
+        if er is None:
+            continue
+        z = _zc(er, zw)
+        r = resid_z(z, basis, bw, bmin) if basis else z.copy()
+        r = _zc(r, zw)
+        res[sig] = r
+        basis.append(r)
+    if len(res) < 3:
+        return None
+    R = pd.DataFrame(res)
+    ens = R.mean(axis=1, skipna=True)                       # equal-weight (the robust default)
+    ics = {s: round(float(R[s].rank().corr(fwd[h].rank())), 3) for s in res}
+    best = max(ics, key=lambda s: abs(ics[s]))
+    exp = {
+        "ensemble_eqw": ((_zc(ens) + 1.5) / 3.0).clip(0, 1),
+        "best_single": ((_zc(R[best]) + 1.5) / 3.0).clip(0, 1),
+        "heuristic": df["composite_state"].map(_HEUR_EXPOSURE),
+    }
+
+    def sharpe(net):
+        r = net.dropna()
+        sd = r.std()
+        return float(r.mean() / sd * np.sqrt(TRADING_YEAR)) if sd else float("nan")
+
+    def ns(e, idx):
+        return round(sharpe(backtest_core(close.loc[idx], e.reindex(idx), cost_bps)["net"]), 2)
+
+    table = {name: {half: ns(e, idx) for half, idx in halves.items()} for name, e in exp.items()}
+    ens_ic = round(float(ens.rank().corr(fwd[h].rank())), 3)
+    legs = [hf for hf in halves if hf != "full"]
+    beats = lambda a, b: all(table[a][hf] > table[b][hf] for hf in legs)
+    boot = block_bootstrap_ci(backtest_core(close, exp["ensemble_eqw"], cost_bps)["net"],
+                              block=21, B=5000, ann=TRADING_YEAR)
+    if beats("ensemble_eqw", "best_single") and beats("ensemble_eqw", "heuristic"):
+        verdict = "PROMOTE — orthogonalized ensemble beats best-single AND heuristic in both halves"
+    elif beats("ensemble_eqw", "heuristic"):
+        verdict = "KEEP-EQUAL-WEIGHT — beats the heuristic but not the best single signal; ship the simpler read"
+    elif all(table["heuristic"][hf] >= table["ensemble_eqw"][hf] for hf in legs):
+        verdict = "KEEP-HEURISTIC — the hand-tuned composite_state is NOT beaten by the fixed-form ensemble"
+    else:
+        verdict = "KEEP-HEURISTIC+DIAGNOSTIC — no clean sweep; ensemble is context-only"
+    return {"axes": list(res), "best_single": best, "ensemble_ic": ens_ic, "axis_ic": ics,
+            "net_sharpe": table, "ensemble_sharpe_ci": boot.get("sharpe_ci") if boot else None,
+            "horizon": h, "verdict": verdict,
+            "note": ("Each axis oriented by its calibrated expected-fwd-return band-map (handles the "
+                     "U-shape a linear z can't), de-correlated in a fixed order, equal-weight combined. "
+                     "Promotion needs the ensemble to beat BOTH the best single signal AND the heuristic "
+                     "composite_state on net Sharpe in BOTH halves. Honest non-promotion = keep the simpler "
+                     "winner (the forecast-combination literature: equal-weight/best-single are brutal "
+                     "baselines on ~3 cycles).")}
+
+
+# --------------------------------------------------------------------------- #
 # main
 # --------------------------------------------------------------------------- #
 def main() -> int:
@@ -609,6 +703,14 @@ def main() -> int:
                             "the Deflated-Sharpe haircut: DSR deflates the mean, this bounds the variance.")
             report["allocation_bootstrap"] = boot
 
+    # ENSEMBLE CAPSTONE promotion gate (D-vec-ENSEMBLE) — measure-before-blend
+    try:
+        ens = ensemble_promotion(df, fwd, halves, folds, SIGNALS, cost_bps, n_trials)
+        if ens:
+            report["ensemble_promotion"] = ens
+    except Exception as e:  # noqa: BLE001 — never let the gate break the calibration
+        report["ensemble_promotion"] = {"verdict": f"error: {e}"}
+
     # ---- persist ----------------------------------------------------------- #
     outdir = config.data_dir() / "vector"
     outdir.mkdir(parents=True, exist_ok=True)
@@ -679,6 +781,13 @@ def _summary(report: dict) -> str:
         L.append(f"\nBOOTSTRAP CI [{ab['variant']}]: Sharpe {ab['sharpe_ci'][1]} "
                  f"95%CI[{ab['sharpe_ci'][0]}, {ab['sharpe_ci'][2]}]  MaxDD {ab['maxdd_ci_pct'][1]}% "
                  f"[{ab['maxdd_ci_pct'][2]}, {ab['maxdd_ci_pct'][0]}]  P(Sharpe>0)={ab['sharpe_gt0_prob']}")
+    ep = report.get("ensemble_promotion")
+    if ep and ep.get("net_sharpe"):
+        L.append(f"\nENSEMBLE CAPSTONE ({ep['horizon']}d): {ep['verdict']}")
+        for name, t in ep["net_sharpe"].items():
+            legs = " ".join(f"{hf} {t.get(hf)}" for hf in ("pre", "post"))
+            L.append(f"  net Sharpe [{name:13s}] full {t.get('full')}  ({legs})")
+        L.append(f"  ensemble OOF-IC {ep['ensemble_ic']} · best-single axis = {ep['best_single']}")
     return "\n".join(L)
 
 
@@ -778,6 +887,20 @@ def _write_markdown(report: dict) -> None:
                      f"trials (upper-bound); {tl['n_signal_families']} signal families screened; "
                      f"allocation variants: {', '.join(tl['allocation_variants_tested'])}; "
                      f"transaction cost {tl['cost_bps_one_way']}bps one-way.")
+    ep = report.get("ensemble_promotion")
+    if ep and ep.get("net_sharpe"):
+        lines.append("\n## Ensemble capstone — does combining beat the heuristic?\n")
+        lines.append(f"**{ep['verdict']}**\n")
+        lines.append(ep["note"] + "\n")
+        ns = ep["net_sharpe"]
+        lines.append("| read | net Sharpe full | pre-2021 | post-2021 |")
+        lines.append("|---|--:|--:|--:|")
+        for name in ("ensemble_eqw", "best_single", "heuristic"):
+            t = ns.get(name, {})
+            lines.append(f"| {name} | {t.get('full')} | {t.get('pre')} | {t.get('post')} |")
+        lines.append(f"\nEnsemble OOF rank-IC vs {ep['horizon']}d return: **{ep['ensemble_ic']}** "
+                     f"(best single axis = `{ep['best_single']}`). Per-axis IC: "
+                     f"{', '.join(f'{k} {v}' for k, v in ep['axis_ic'].items())}.")
     lines.append("\n## Whipsaw\n")
     wt = pd.DataFrame(report["whipsaw"]).T
     lines.append(wt.to_markdown())

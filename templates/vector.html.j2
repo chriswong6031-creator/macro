@@ -473,6 +473,14 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
   <div class="card">
     <h3>{{ t('BTC price, Risk Index & allocation', 'BTC 价格、风险指数与仓位') }}</h3>
     {{ charts.risk_strategy|safe }}
+    <div class="sub" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;font-size:12px">
+      <span style="opacity:.8">{{ t('Price shaded by allocation:', '价格按仓位着色：') }}</span>
+      <span><span style="display:inline-block;width:12px;height:11px;border-radius:2px;background:rgba(34,170,94,0.45);vertical-align:-1px;margin-right:5px"></span>{{ t('Fully in (100%)', '满仓（100%）') }}</span>
+      <span><span style="display:inline-block;width:12px;height:11px;border-radius:2px;background:rgba(245,173,66,0.55);vertical-align:-1px;margin-right:5px"></span>{{ t('Half (50%)', '半仓（50%）') }}</span>
+      <span><span style="display:inline-block;width:12px;height:11px;border-radius:2px;border:1px solid var(--grid);vertical-align:-1px;margin-right:5px"></span>{{ t('Out (0%)', '空仓（0%）') }}</span>
+      <span style="color:#1FA971;font-weight:600">▲ {{ t('buy / add', '买入 / 加仓') }}</span>
+      <span style="color:#D30B0B;font-weight:600">▼ {{ t('sell / trim', '卖出 / 减仓') }}</span>
+    </div>
     <div class="variant-tabs" style="margin-top:14px">
       {% set variant_zh = {'conservative':'保守','moderate':'稳健','aggressive':'进取','optimal':'最优'} %}
       {% for v in ['conservative','moderate','aggressive','optimal'] %}
@@ -848,6 +856,24 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
     <div class="sub" style="margin-top:12px">{{ t('House rule: a signal is labelled trustworthy only if its forward record holds in both halves of history. The Risk Index is judged on forward', '内部准则：只有当一个信号的前瞻记录在历史的前后两半段都成立时，才会被标记为可信。风险指数以前瞻') }} <b>{{ t('drawdown', '回撤') }}</b> {{ t('(not return) — at long horizons extreme risk marks capitulation, so it is contrarian there by design. Momentum on free data', '（而非收益）来评判 — 在长周期下，极端风险标志着投降式抛售，因此其在该处的设计本就是逆向的。在免费数据上，动量') }} <b>{{ t('leads', '领先') }}</b> {{ t('Swissblock\'s by ~2 weeks and matches their published', 'Swissblock 约 2 周，并在 65–69% 的交易日与其公布的') }} <em>{{ t('risk regime', '风险周期') }}</em> {{ t('65–69% of days; their proprietary momentum uses entity-adjusted flows we can\'t replicate for free.', '相符；他们的专有动量使用了我们无法免费复现的实体调整资金流。') }}</div>
   </div>
 
+  {% set ep = calib.ensemble_promotion %}
+  {% if ep and ep.net_sharpe %}
+  <div class="card" style="margin-top:18px">
+    <h3>{{ t('Ensemble capstone · does combining beat the hand-tuned stance?', '集成总验 · 组合能否击败手调立场？') }}</h3>
+    <div class="sub">{{ t('We tested a principled, fixed-form ensemble (the gate-passed signals collapsed to 6 orthogonal axes, each oriented by its CALIBRATED expected-return map, de-correlated, equal-weight combined) against the hand-tuned Stance and the single best signal — net of cost, in both halves. The honest result:', '我们用一个有原则的固定形式集成（将通过校准的信号收敛为 6 个正交轴，各按其已校准的预期收益映射定向、去相关、等权组合）对比手调“立场”与单一最佳信号 — 扣除成本、在前后两半段中检验。诚实结论：') }}</div>
+    <div class="sub" style="margin-top:8px;font-weight:700;color:var(--ink)">{{ td(ep.verdict) }}</div>
+    <table class="catbl" style="margin-top:10px">
+      <tr><td class="a">{{ t('Read','读数') }}</td><td>{{ t('Net Sharpe (full)','净夏普（全样本）') }}</td><td>{{ t('pre-2021','2021 前') }}</td><td>{{ t('post-2021','2021 后') }}</td></tr>
+      {% set names = {'heuristic':['Hand-tuned Stance (shipped)','手调立场（已采用）'],'ensemble_eqw':['Orthogonalized ensemble','正交集成'],'best_single':['Best single signal','单一最佳信号']} %}
+      {% for key in ['heuristic','ensemble_eqw','best_single'] %}{% set row = ep.net_sharpe[key] %}
+      <tr><td class="a">{{ t(names[key][0], names[key][1]) }}{% if key=='best_single' %} <span class="faint">({{ ep.best_single }})</span>{% endif %}</td>
+        <td><b>{{ row.full }}</b></td><td>{{ row.pre }}</td><td>{{ row.post }}</td></tr>
+      {% endfor %}
+    </table>
+    <div class="sub faint" style="margin-top:10px;font-size:12px">{{ t('The ensemble (rank-IC', '该集成（秩 IC') }} {{ ep.ensemble_ic }}{{ t(' vs 90-day return) clearly beats the best single signal — de-redundancy + orthogonalization earn their keep — but does NOT beat the hand-tuned Stance in either half, so the Stance is KEPT and is now validated rather than just hand-set. We do not ship a worse model to look sophisticated (forecast-combination on ~3 cycles: equal-weight and best-single are brutal baselines). The ensemble research lives in the calibration report.', ' 对比 90 天收益）明显优于单一最佳信号 — 去冗余与正交化确有其值 — 但在任一半段均未击败手调“立场”，故保留“立场”，且其现已被验证而非仅靠手调。我们不会为了显得高级而采用更差的模型（约 3 个周期上的预测组合：等权与单一最佳是极难超越的基准）。集成研究详见校准报告。') }}</div>
+  </div>
+  {% endif %}
+
   <div class="foot">
     Bitcoin Vector · {{ t('built', '生成于') }} {{ built }} · {{ t('data as of', '数据截至') }} {{ as_of }}.
     {{ t('Independent reverse-engineering of Glassnode/Swissblock\'s Bitcoin Vector on free public data', '基于免费公开数据对 Glassnode/Swissblock 的 Bitcoin Vector 进行的独立逆向工程') }}
@@ -876,6 +902,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 window.__CHART_SWAP__ = {
   colors: {},
   labels: {"BTC Price":"BTC 价格","Optimal strategy":"最优策略","Allocation":"仓位",
+           "Buy / add":"买入 / 加仓","Sell / trim":"卖出 / 减仓",
            "Network Growth":"网络增长","Liquidity":"流动性","Momentum":"动量",
            "Structure Shift":"结构转变","Price $":"价格 $","Risk":"风险","Alloc":"仓位"}
 };

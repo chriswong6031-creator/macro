@@ -436,6 +436,20 @@ OOF 7d direction: **Brier 0.25** vs base 0.2483 (skill -0.007); Platt a=0.694, b
 
 As-of 2026-06-13: **50** declared independent trials (upper-bound); 31 signal families screened; allocation variants: conservative, moderate, aggressive, optimal; transaction cost 10.0bps one-way.
 
+## Ensemble capstone — does combining beat the heuristic?
+
+**KEEP-HEURISTIC — the hand-tuned composite_state is NOT beaten by the fixed-form ensemble**
+
+Each axis oriented by its calibrated expected-fwd-return band-map (handles the U-shape a linear z can't), de-correlated in a fixed order, equal-weight combined. Promotion needs the ensemble to beat BOTH the best single signal AND the heuristic composite_state on net Sharpe in BOTH halves. Honest non-promotion = keep the simpler winner (the forecast-combination literature: equal-weight/best-single are brutal baselines on ~3 cycles).
+
+| read | net Sharpe full | pre-2021 | post-2021 |
+|---|--:|--:|--:|
+| ensemble_eqw | 1.01 | 1.24 | 0.31 |
+| best_single | 0.47 | 0.37 | 0.24 |
+| heuristic | 1.19 | 1.48 | 0.65 |
+
+Ensemble OOF rank-IC vs 90d return: **0.22** (best single axis = `mvrv_z`). Per-axis IC: risk_index 0.008, net_liq_roc 0.185, vrp 0.171, cot_z 0.084, mvrv_z 0.188, momentum 0.124.
+
 ## Whipsaw
 
 |                  |   changes |   whipsaws |   pct |

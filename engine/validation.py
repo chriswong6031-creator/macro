@@ -33,7 +33,8 @@ EULER_GAMMA = 0.5772156649015329
 # --------------------------------------------------------------------------- #
 # allocation backtest core (turnover-scaled transaction cost)
 # --------------------------------------------------------------------------- #
-def backtest_core(close: pd.Series, alloc: pd.Series, cost_bps: float = 0.0) -> dict:
+def backtest_core(close: pd.Series, alloc: pd.Series, cost_bps: float = 0.0,
+                  cash_yield: pd.Series | None = None) -> dict:
     """Next-bar allocation engine with a one-way transaction cost.
 
     `cost_bps` is the ONE-WAY cost (spread + fee/slippage) in basis points,
@@ -42,12 +43,28 @@ def backtest_core(close: pd.Series, alloc: pd.Series, cost_bps: float = 0.0) -> 
     `gross` exposes the costless path, `turnover` drives the drag. Works for
     long/flat (alloc ∈ [0,1]) and long/short (alloc ∈ [-1,1]) the same way.
     cost_bps default 0.0 keeps legacy callers gross-of-cost.
+
+    `cash_yield` (annualized %, e.g. 3.63 = 3.63%/yr) credits the FLAT sleeve:
+    the (1-pos) capital not in the asset earns the prevailing short rate. REQUIRED
+    for an equity-vs-treasuries strategy — the de-risked sleeve sits in T-bills,
+    not under the mattress, so without it CAGR is understated by the carry on
+    ~25-50% of capital and the comparison vs an all-equity buy&hold is unfair.
+    Interest accrues on CALENDAR days between bars (a Fri→Mon bar earns 3 days),
+    matching the close-to-close return that also spans the weekend; a >100%
+    position pays no phantom rebate (clip lower=0). Default None keeps the
+    BTC/commodity/forex callers (where flat = uninvested cash) byte-identical.
     """
     ret = close.pct_change().fillna(0)
     pos = alloc.shift(1).reindex(ret.index).ffill().fillna(0)   # act next bar
     turnover = pos.diff().abs().fillna(0.0)                      # |Δpos|, day-1 ramp from 0
     cost = (cost_bps / 1e4) * turnover
-    gross = pos * ret
+    if cash_yield is not None:
+        days = pd.Series(ret.index, index=ret.index).diff().dt.days.fillna(0).clip(lower=0)
+        rf = (cash_yield.reindex(ret.index).ffill().fillna(0.0) / 100.0) * (days / 365.0)
+        cash_leg = (1.0 - pos).clip(lower=0) * rf               # bill carry on the flat sleeve
+    else:
+        cash_leg = 0.0
+    gross = pos * ret + cash_leg
     net = gross - cost
     hold = ret
     years = (close.index[-1] - close.index[0]).days / 365.25
@@ -358,3 +375,21 @@ def benjamini_hochberg(pvals: dict, alpha: float = 0.10) -> dict:
         qprev = min(qprev, p * m / (i + 1))
         out[k] = {"p": round(p, 4), "q": round(float(qprev), 4), "reject": bool(qprev <= alpha)}
     return out
+
+
+def resid_z(z: pd.Series, basis: list, win: int, min_p: int) -> pd.Series:
+    """Sequential CAUSAL residual of a standardized signal `z` on each series in
+    `basis` (already-orthogonalized earlier axes). Peels one basis at a time using a
+    rolling-beta regression evaluated with PRIOR-window betas (shift(1), no
+    look-ahead); the residual stays raw until a beta is estimable. This is the
+    z-series analogue of forex_signals.orthogonalize (which returns a price index —
+    wrong shape here). Fixed-form: the only parameter is the rolling window, declared
+    in config, not tuned. (Vector D-vec-ENSEMBLE.)"""
+    e = z.copy()
+    for b in basis:
+        b = b.reindex(e.index)
+        cov = e.rolling(win, min_periods=min_p).cov(b)
+        var = b.rolling(win, min_periods=min_p).var()
+        beta = (cov / var.replace(0, np.nan)).shift(1)            # causal
+        e = (e - beta * b).where(beta.notna(), e)                 # raw until estimable
+    return e

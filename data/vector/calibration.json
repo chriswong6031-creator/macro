@@ -5533,5 +5533,50 @@
     "n": 4182,
     "variant": "optimal",
     "note": "Circular block bootstrap (21d blocks) of the NET daily strategy returns \u2192 95% CI [2.5, 50, 97.5]. sharpe_gt0_prob = bootstrap P(Sharpe>0). Pairs with the Deflated-Sharpe haircut: DSR deflates the mean, this bounds the variance."
+  },
+  "ensemble_promotion": {
+    "axes": [
+      "risk_index",
+      "net_liq_roc",
+      "vrp",
+      "cot_z",
+      "mvrv_z",
+      "momentum"
+    ],
+    "best_single": "mvrv_z",
+    "ensemble_ic": 0.22,
+    "axis_ic": {
+      "risk_index": 0.008,
+      "net_liq_roc": 0.185,
+      "vrp": 0.171,
+      "cot_z": 0.084,
+      "mvrv_z": 0.188,
+      "momentum": 0.124
+    },
+    "net_sharpe": {
+      "ensemble_eqw": {
+        "full": 1.01,
+        "pre": 1.24,
+        "post": 0.31
+      },
+      "best_single": {
+        "full": 0.47,
+        "pre": 0.37,
+        "post": 0.24
+      },
+      "heuristic": {
+        "full": 1.19,
+        "pre": 1.48,
+        "post": 0.65
+      }
+    },
+    "ensemble_sharpe_ci": [
+      0.36,
+      1.02,
+      1.67
+    ],
+    "horizon": 90,
+    "verdict": "KEEP-HEURISTIC \u2014 the hand-tuned composite_state is NOT beaten by the fixed-form ensemble",
+    "note": "Each axis oriented by its calibrated expected-fwd-return band-map (handles the U-shape a linear z can't), de-correlated in a fixed order, equal-weight combined. Promotion needs the ensemble to beat BOTH the best single signal AND the heuristic composite_state on net Sharpe in BOTH halves. Honest non-promotion = keep the simpler winner (the forecast-combination literature: equal-weight/best-single are brutal baselines on ~3 cycles)."
   }
 }

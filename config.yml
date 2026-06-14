@@ -1265,14 +1265,13 @@ vector:
     overvalued_rr: 0.02         # Reserve Risk above this = distribution CAP (calibrated TOP)
 
   ensemble:                       # fixed-form orthogonalized gate-passed ensemble (D-vec-ENSEMBLE)
-    z_window_d: 365               # rolling z-score window for the signed-z axes + the score
+    z_window_d: 365               # rolling z-score window for the band-map-oriented axes + the score
     beta_window_d: 252            # rolling-beta window for the causal orthogonalization (copied from forex; NOT tuned)
     beta_min_train_d: 252         # min bars before a residual beta is estimable (raw z until then)
-    confirm_days: 7               # whipsaw confirmation on the 5-state stance (matches calibration.whipsaw_max_days)
-    # ensemble_weights left UNSET => equal-weight over orthogonalized axes (the robust 1/N default).
-    # The calibration promotion-gate measures whether OOF-IC reliability-tilting beats this OOS;
-    # only on a clean sweep (beat equal-weight + best-single + heuristic, both halves + folds) does
-    # the UI point the headline at the ensemble (report.ensemble_promotion.verdict).
+    # The calibration promotion-gate (ensemble_promotion) tests whether this ensemble beats the
+    # best single signal AND the hand-tuned composite_state on net Sharpe in BOTH halves. Current
+    # verdict KEEP-HEURISTIC -> composite_state stays the headline; the ensemble is a transparency
+    # card only. It is promoted to the live headline only if a future calibration sweeps all baselines.
 
   btc_vs_alts:
     rs_window_d: 30               # relative-strength window across BTC/ETH/alts

@@ -2,6 +2,33 @@
 
 Newest first. Each entry: what was decided, why, and what would change it.
 
+## 2026-06-13 — Vector ensemble capstone: tested a principled ensemble, KEPT the heuristic (validated)
+
+**D-vec-ENSEMBLE. The deferred capstone — a fixed-form, orthogonalized, gate-passed
+ensemble to replace the hand-tuned composite_state — was BUILT, MEASURED, and honestly
+NOT promoted: the heuristic beats it in both halves, so the heuristic is kept and now
+*validated* rather than just hand-set.** Design from a 12-agent workflow (robustness lens
+won; adversarial overfit-skeptic panel). Six one-per-orthogonal-axis signals (risk_index,
+net_liq_roc, vrp, cot_z, mvrv_z, momentum — the collinear valuation cluster collapsed to
+mvrv_z ONLY, by admission not averaging), de-correlated in a fixed robustness order via a
+NEW causal-residual primitive `engine.validation.resid_z` (z-series analogue of forex
+orthogonalize, which returns a price index — wrong shape). KEY FINDING (the discipline
+working): a naive linear `z×want` ensemble had rank-IC −0.01 and was INVERTED at extremes
+(ACCUMULATE at the 2021 top), because 4 of 6 axes are U-SHAPED — a linear blend can't
+orient them. Fixed by orienting each axis by its CALIBRATED expected-return band-map →
+ensemble OOF rank-IC jumped to **+0.22**. The promotion gate (`ensemble_promotion` in
+calibrate_vector) then compared net-cost Sharpe in both halves: orthogonalized ensemble
+**1.01** (pre 1.24 / post 0.31) BEATS the best single signal (mvrv_z) 0.47 — de-redundancy
++ orthogonalization earn their keep — but the hand-tuned Stance **1.19** (pre 1.48 / post
+0.65) beats the ensemble in BOTH halves → verdict **KEEP-HEURISTIC**. We do NOT ship a
+worse model to look sophisticated (the forecast-combination literature: equal-weight /
+best-single are brutal baselines on ~3 cycles). composite_state stays the headline,
+untouched (time-machine/alerts read it). Surfaced as an honest transparency card on the
+page + the calibration report. tests/test_validation_gates.py +resid_z. What would change
+it: a future regime where the ensemble sweeps both halves + best-single + heuristic would
+flip the verdict to PROMOTE (the gate re-decides every calibration). This is the capstone:
+the ensemble machinery exists and is measured; promotion is data-driven, not assumed.
+
 ## 2026-06-13 — Vector dealer gamma-FLIP level (zero-gamma spot) + distance-to-flip
 
 **D-vec-GAMMA. The last roadmap Tier-1 factor — a dealer gamma-regime boundary, computed
