@@ -162,6 +162,22 @@ jobs:
         # last): writes commodities.html + commodity/latest.json so the hub picks up
         # the Commodity card. Self-sufficient; returns 0 on any engine error.
         run: python -m scripts.build_commodities
+      - name: build forex vector dashboard
+        # after build_commodities, before build_vector (which writes the hub last):
+        # writes forex.html + forex/latest.json so the hub picks up the Forex card.
+        # Self-sufficient; returns 0 on any engine error.
+        run: python -m scripts.build_forex
+      - name: build bonds & bond-health dashboard
+        # after build_site/build_forex, before build_vector (which writes the hub
+        # last): writes bonds.html + bonds/latest.json (hub card) + bonds/
+        # bond_health.json (the cross-asset AI signal vector). Reuses the macro
+        # feature frame + conditions layer; returns 0 on any engine error.
+        run: python -m scripts.build_bonds
+      - name: discovery leaderboard (build_discovery)
+        # after build_site (reads site/factordata/alpha.json) and build_forex,
+        # before build_vector (which writes the hub last): writes the discovery
+        # leaderboard. Self-sufficient; returns 0 on any engine error.
+        run: python -m scripts.build_discovery
       - name: build bitcoin vector + landing hub
         # installs the landing hub at index.html (rendered from stored engine
         # state, so ordering vs build_site no longer matters — build_site writes

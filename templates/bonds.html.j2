@@ -1,0 +1,368 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{% macro kpi(label, zh, val, unit='', sub='') -%}
+<div class="kpi">{{ t(label, zh) }}<b>{% if val is none %}<span class="faint">—</span>{% else %}{{ val }}{{ unit }}{% endif %}</b>{% if sub %}<span class="ksub">{{ sub }}</span>{% endif %}</div>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>Bonds & Bond Health — {{ as_of }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+<style>
+:root{
+  --blue:{{C.blue}}; --indigo:{{C.indigo}}; --ink:{{C.ink}}; --text:{{C.text}}; --muted:{{C.muted}};
+  --faint:{{C.faint}}; --red:{{C.red}}; --amber:{{C.amber}}; --green:{{C.green}}; --teal:{{C.teal}};
+  --grid:{{C.grid}}; --card:{{C.card}}; --bg:{{C.bg}};
+}
+*{box-sizing:border-box}
+html:not([data-lang="zh"]) .l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:var(--blue);text-decoration:none}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 0 14px;border-bottom:1px solid var(--grid);margin-bottom:24px;position:sticky;top:0;background:var(--bg);z-index:20}
+.nav-links{display:flex;align-items:center;gap:2px;flex-wrap:wrap}
+a.nav-link{padding:7px 11px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;white-space:nowrap;transition:color .18s,background .18s}
+a.nav-link:hover,a.nav-link.active{color:var(--ink);background:#eef1f6}
+html[data-theme="dark"] a.nav-link:hover,html[data-theme="dark"] a.nav-link.active{background:#222732}
+.nav-dd{position:relative;display:inline-flex}
+.nav-dd>a.nav-link .caret{display:inline-block;margin-left:3px;font-size:9px;opacity:.6;transition:transform .2s}
+.nav-dd:hover>a.nav-link .caret{transform:rotate(180deg)}
+.nav-dd::after{content:"";position:absolute;left:0;right:0;top:100%;height:9px}
+.nav-dd-menu{position:absolute;top:calc(100% + 7px);left:0;min-width:218px;background:var(--card);border:1px solid var(--grid);border-radius:13px;box-shadow:0 12px 34px rgba(16,24,40,.14);padding:6px;opacity:0;visibility:hidden;transform:translateY(-6px);transition:opacity .18s,transform .18s,visibility .18s;z-index:70}
+.nav-dd:hover>.nav-dd-menu,.nav-dd:focus-within>.nav-dd-menu{opacity:1;visibility:visible;transform:translateY(0)}
+.nav-dd-menu a{display:block;padding:9px 12px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--text);white-space:nowrap}
+.nav-dd-menu a:hover{background:#eef1f6;color:var(--ink)}
+.nav-ctrls{display:flex;align-items:center;gap:10px;flex:none}
+.lang-toggle{display:inline-flex;position:relative;background:#eef1f6;border:1px solid var(--grid);border-radius:999px;padding:3px;cursor:pointer;flex:none}
+.lang-toggle .pill{position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);border-radius:999px;background:var(--blue);transition:transform .34s cubic-bezier(.34,1.4,.5,1)}
+html[data-lang="zh"] .lang-toggle .pill{transform:translateX(100%)}
+.lang-toggle .opt{position:relative;z-index:1;min-width:28px;text-align:center;padding:3px 9px;font-size:11.5px;font-weight:600;color:var(--muted);transition:color .25s;user-select:none}
+html:not([data-lang="zh"]) .lang-toggle .en-opt{color:#fff}
+html[data-lang="zh"] .lang-toggle .zh-opt{color:#fff}
+html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280}
+.theme-switch{width:56px;height:27px;border-radius:999px;background:#eef1f6;border:1px solid var(--grid);position:relative;cursor:pointer;padding:0;flex:none}
+html[data-theme="dark"] .theme-switch{background:#222732}
+.theme-switch .ic{position:absolute;top:50%;transform:translateY(-50%);font-size:10.5px;opacity:.5;line-height:1}
+.theme-switch .ic.sun{left:8px}.theme-switch .ic.moon{right:8px}
+.theme-switch .knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 5px rgba(0,0,0,.3);transform:translateX(29px);transition:transform .34s cubic-bezier(.34,1.45,.5,1),background .3s}
+.theme-switch .knob::before{content:"☀️"}
+html[data-theme="dark"] .theme-switch .knob{transform:translateX(0);background:#e8c15a}
+html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
+.grid{display:grid;gap:18px}
+.cols-2{grid-template-columns:1.05fr .95fr}.cols-3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:900px){.cols-2,.cols-3{grid-template-columns:1fr}}
+.sec-head{font-size:12px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.05em;margin:26px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--grid)}
+.card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:22px}
+.card h2{margin:0 0 4px;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.brand{font-weight:800;font-size:21px;color:var(--ink);letter-spacing:-.02em;margin:6px 0 2px}
+.brand .gn{color:var(--blue)}
+.lead{color:var(--muted);font-size:14px;margin:0 0 20px}
+.hero-state{font-size:40px;font-weight:800;letter-spacing:-.02em;margin:6px 0 4px;line-height:1}
+.hero-state small{font-size:18px;color:var(--muted);font-weight:700}
+.hero-meta{font-size:14px;color:var(--text);margin-bottom:8px}.hero-meta b{color:var(--ink)}
+.verdict-lead{font-size:15px;color:var(--text);line-height:1.5;margin:8px 0 0}
+.sub{font-size:13px;color:var(--muted)}.faint{color:var(--faint)}
+.pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;background:#eef1f6;color:var(--ink);margin:2px 4px 2px 0}
+html[data-theme="dark"] .pill{background:#222732}
+.kpis{display:flex;gap:18px 22px;flex-wrap:wrap;margin-top:14px}
+.kpi{font-size:12.5px;color:var(--muted)}.kpi b{display:block;font-size:19px;color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+.kpi .ksub{font-size:11px;color:var(--faint)}
+.band-chip{display:inline-block;padding:4px 13px;border-radius:999px;font-size:13px;font-weight:700;color:#fff;letter-spacing:.01em}
+.flag{display:inline-block;padding:5px 11px;border-radius:8px;font-size:12.5px;font-weight:600;margin-top:12px;line-height:1.4}
+.flag.warn{background:rgba(245,173,66,.16);color:#9a6a10}
+.flag.alarm{background:rgba(211,11,11,.13);color:var(--red)}
+.flag.info{background:rgba(40,95,255,.10);color:var(--blue)}
+.flag.ok{background:rgba(26,127,67,.12);color:var(--green)}
+.tax-note{font-size:13px;color:var(--muted);margin:8px 0 0;line-height:1.5}
+/* stress-leg mini bars */
+.legs{margin-top:14px;display:flex;flex-direction:column;gap:7px}
+.leg{display:grid;grid-template-columns:118px 1fr 34px;align-items:center;gap:10px;font-size:12px}
+.leg .lname{color:var(--text)}
+.leg .lbar{position:relative;height:8px;background:#eef1f6;border-radius:5px;overflow:hidden}
+html[data-theme="dark"] .leg .lbar{background:#222732}
+.leg .lfill{position:absolute;left:0;top:0;bottom:0;border-radius:5px}
+.leg .lval{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+.lvg{margin-left:5px;font-weight:800;font-size:11px;cursor:help}
+.vg-measured{color:var(--green)}.vg-directional{color:var(--amber)}.vg-context{color:var(--faint)}.vg-inverted{color:var(--indigo)}
+.measured-edge{margin-top:12px;padding:10px 13px;border-radius:10px;background:rgba(26,127,67,.08);font-size:13px;line-height:1.5;color:var(--text)}
+.measured-edge b{color:var(--green)}
+html[data-theme="dark"] .measured-edge{background:rgba(26,127,67,.12)}
+/* cross-asset drivers */
+.drv{display:grid;grid-template-columns:120px 1fr;gap:10px 16px;align-items:start;padding:12px 0;border-bottom:1px solid var(--grid)}
+.drv:last-child{border-bottom:none}
+.drv .dasset{font-weight:700;color:var(--ink);font-size:14px}
+.drv .dnote{font-size:13px;color:var(--muted);line-height:1.5}
+.drv .dnote b{color:var(--text)}
+/* timeline */
+.timeline{margin-top:6px}
+.tl-day{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:14px 0 4px}
+.tl-ev{display:flex;align-items:baseline;gap:10px;padding:7px 0;border-bottom:1px solid var(--grid);font-size:13px}
+.tl-type{flex:none;min-width:78px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.02em}
+.tl-head{color:var(--text)}
+.sev-high .tl-type{color:var(--red)}.sev-medium .tl-type{color:#9a6a10}.sev-info .tl-type{color:var(--muted)}
+.note{font-size:13px;color:var(--muted);line-height:1.6}.note b{color:var(--ink)}
+.site-footer{max-width:1180px;margin:30px auto 0;padding:18px 20px;border-top:1px solid var(--grid);display:flex;justify-content:space-between;color:var(--muted);font-size:12.5px}
+.meta-foot{font-size:12px;color:var(--faint);margin-top:8px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;padding:0;border:none;margin:0 auto">
+    <div class="nav-links">
+      <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
+      <a class="nav-link" href="macro.html">📊 {{ t('US Macro', '美国宏观') }}</a>
+      <div class="nav-dd">
+        <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }} <span class="caret">▾</span></a>
+        <div class="nav-dd-menu" role="menu">
+          <a href="vector.html">{{ t('Overview', '总览') }}</a>
+          <a href="vector_allocation.html">◎ {{ t('Allocation strategy', '仓位策略') }}</a>
+        </div>
+      </div>
+      <a class="nav-link" href="etfs.html">🐳 {{ t('ETF flows', 'ETF 资金流') }}</a>
+      <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国A股') }}</a>
+      <a class="nav-link" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }}</a>
+      <a class="nav-link" href="commodities.html">◆ {{ t('Commodities', '大宗商品') }}</a>
+      <a class="nav-link" href="forex.html">💱 {{ t('Forex', '外汇') }}</a>
+      <a class="nav-link active" href="bonds.html">🏛️ {{ t('Bonds', '债券') }}</a>
+    </div>
+    <div class="nav-ctrls">
+      <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="brand">🏛️ Bonds <span class="gn">&amp; Bond Health</span></div>
+  <p class="lead">{{ t('What the bond market says about economic health, regime and the cycle. A health-first read across the curve, credit, real rates, rates-vol and funding plumbing — the same machinery that feeds the cross-asset synthesis. Context, not trade calls.', '债券市场对经济健康、周期状态与所处阶段的判读。以“健康”为先，纵览收益率曲线、信用利差、实际利率、利率波动与资金管道——并为跨资产综合分析供数。仅作背景，非交易建议。') }}
+  <span class="faint">· {{ t('As of', '截至') }} {{ as_of }}</span></p>
+
+  <!-- ===================== HEALTH HERO ===================== -->
+  <div class="grid cols-2" style="margin-bottom:18px">
+    <div class="card">
+      <h2>{{ t('Bond health score', '债券健康度') }}</h2>
+      <div class="hero-state" style="color:{{ vm.health.color }}">{{ vm.health.score if vm.health.score is not none else '—' }}<small>/100 · {{ t(vm.health.label, vm.health.label_zh) }}</small></div>
+      <div class="hero-meta">
+        {{ t('Cycle', '周期') }} <b style="color:{{ vm.health.phase_color }}">{{ t(vm.health.phase_en, vm.health.phase_zh) }}</b>
+        <span class="faint">·</span> {{ t('recession risk', '衰退风险') }} <b>{{ vm.health.recession_risk if vm.health.recession_risk is not none else '—' }}</b>/100
+        <span class="faint">·</span> {{ t('drawdown risk', '回撤风险') }} <b>{{ vm.health.drawdown_risk if vm.health.drawdown_risk is not none else '—' }}</b>/100
+      </div>
+      <p class="verdict-lead"><span class="l-en">{{ vm.health.verdict_en }}</span><span class="l-zh">{{ vm.health.verdict_zh }}</span></p>
+      {% if vm.alarms %}{% for a in vm.alarms %}
+      <div class="flag {{ 'alarm' if a.severity=='high' else 'warn' }}">⚑ <span class="l-en">{{ a.en }}</span><span class="l-zh">{{ a.zh }}</span></div>
+      {% endfor %}{% else %}<div class="flag ok">✓ {{ t('No active bond-stress alarms.', '无活跃的债市压力警报。') }}</div>{% endif %}
+      {% if vm.health.stress_legs %}
+      <div class="legs">
+        <div class="sub" style="margin-bottom:2px">{{ t('Stress contributions (0 = calm, 100 = max)', '压力来源（0=平静，100=最大）') }}</div>
+        {% for leg in vm.health.stress_legs %}
+        <div class="leg"><span class="lname">{{ t(leg.en, leg.zh) }}</span>
+          <span class="lbar"><span class="lfill" style="width:{{ leg.val }}%;background:{{ C.green if leg.val < 50 else C.amber if leg.val < 75 else C.red }}"></span></span>
+          <span class="lval">{{ leg.val }}{% if leg.vg[0] %}<span class="lvg vg-{{ leg.vg[1] }}" title="forward-drawdown calibration: {{ leg.vg[1] }}">{{ leg.vg[0] }}</span>{% endif %}</span></div>
+        {% endfor %}
+        {% if vm.health.calib %}
+        <div class="measured-edge">📊 {{ t('Measured', '已校准') }}: {{ t('when this composite is in its top stress tercile, a ≥10% S&P drawdown followed within 63 days', '当该综合指标处于压力最高的三分位时，标普在63天内出现≥10%回撤的概率为') }}
+          <b>{{ vm.health.calib.hi_dd10 }}%</b> {{ t('of the time vs a', '，而基准为') }} <b>{{ vm.health.calib.base_dd10 }}%</b> {{ t('base', '') }}
+          (<b>{% if vm.health.calib.edge_pp >= 0 %}+{% endif %}{{ vm.health.calib.edge_pp }}pp</b>){{ t('. Recession-IC', '。衰退IC') }} {{ vm.health.calib.ic_recession }}.
+          <span class="faint">{{ t('Legs: ✓ confirmed · ~ directional · · context (glyph by each bar). Honest caveat: the blend ≈ the drawdown-risk leg alone — it is an explainable synthesis, not a better single predictor.', '分项：✓ 已确认 · ~ 有方向 · · 仅背景（见各条形旁字形）。诚实提示：综合 ≈ 单独的回撤风险分项 — 它是可解释的综合，而非更优的单一预测。') }}</span></div>
+        {% endif %}
+      </div>{% endif %}
+    </div>
+    <div class="card">
+      <h2>{{ t('Bond health — history', '债券健康度 · 历史') }}</h2>
+      {{ charts.health | safe }}
+      <div class="sub faint" style="margin-top:6px">{{ t('A transparent composite of the recession & drawdown-risk gauges plus the credit, rates-vol and funding-stress reads. Higher = healthier. Split-half CONFIRMED against forward S&P drawdowns (the measured edge is shown left); the weighting is a documented prior, conservatively kept.', '由衰退与回撤风险，加上信用、利率波动与资金压力读数构成的透明综合指标。越高越健康。已对未来标普回撤进行前后半段校准并确认（左侧显示实测优势）；权重为有据先验，保守保留。') }}</div>
+    </div>
+  </div>
+
+  <!-- ===================== CURVE & GROWTH ===================== -->
+  <div class="sec-head">{{ t('① Curve & growth — the recession read', '① 收益率曲线与增长 · 衰退判读') }}</div>
+  <div class="card">
+    <div class="kpis">
+      {{ kpi('10y−3m (NY Fed)', '10年−3月（纽约联储）', vm.curve.spread_10y3m, 'pp') }}
+      {{ kpi('Near-term fwd spread', '近端远期利差', vm.curve.ntfs, 'pp') }}
+      {{ kpi('2s10s', '2年/10年', vm.curve.spread_2s10s, 'pp') }}
+      {{ kpi('TP-adjusted slope', '期限溢价调整斜率', vm.curve.curve_tp_adj, 'pp') }}
+      {{ kpi('NY Fed recession prob', '纽约联储衰退概率', vm.curve.nyfed_prob, '%') }}
+    </div>
+    <div style="margin-top:14px">
+      <span class="band-chip" style="background:{{ vm.curve.tax_color }}"><span class="l-en">{{ vm.curve.tax_en }}</span><span class="l-zh">{{ vm.curve.tax_zh }}</span></span>
+      <span class="tax-note"><span class="l-en">{{ vm.curve.tax_note_en }}</span><span class="l-zh">{{ vm.curve.tax_note_zh }}</span></span>
+    </div>
+    {% if vm.curve.bull_steepener_uninversion %}
+    <div class="flag alarm">⚑ {{ t('Bull-steepening un-inversion — the curve dis-inverted while short rates fall. Historically the ~66-day pre-recession configuration.', '牛市陡峭式解除倒挂 — 曲线在短端利率下行时解除倒挂。历史上为衰退前约66天的形态。') }}</div>
+    {% elif vm.curve.uninversion %}
+    <div class="flag warn">⚑ {{ t('Curve un-inverted after a prior inversion — the dis-inversion, not the inversion, tends to lead recession.', '曲线在此前倒挂后解除 — 引领衰退的往往是解除倒挂而非倒挂本身。') }}</div>
+    {% elif vm.curve.tp_adj_inverted %}
+    <div class="flag warn">⚑ {{ t('Term-premium-adjusted curve is inverted (a "real" inversion, not a low-term-premium artifact).', '期限溢价调整后的曲线倒挂（“真实”倒挂，非低期限溢价造成的假象）。') }}</div>
+    {% endif %}
+    <div class="grid cols-2" style="margin-top:16px">
+      <div><div class="sub" style="margin-bottom:4px">{{ t('Treasury curve — now vs 3mo / 1y ago', '国债曲线 · 当前 vs 3月前/1年前') }}</div>{{ charts.curve_now | safe }}</div>
+      <div><div class="sub" style="margin-bottom:4px">{{ t('Recession spreads & TP-adjusted slope', '衰退利差与期限溢价调整斜率') }}</div>{{ charts.spreads | safe }}</div>
+    </div>
+    <div class="sub faint" style="margin-top:8px">{{ t('The 3m10y spread drives the NY Fed probit. The near-term forward spread (the implied 3m rate ~18 months out minus today\'s) statistically beats 2s10s as a recession signal — it inverts when the market prices Fed cuts. The TP-adjusted slope strips the low-term-premium distortion that inverted the curve in 2022–24 without a recession.', '3月/10年利差驱动纽约联储概率模型。近端远期利差（约18个月后的隐含3月利率减去当前）作为衰退信号在统计上优于2年/10年——当市场为美联储降息定价时即倒挂。期限溢价调整斜率剔除了2022–24年在无衰退情况下导致曲线倒挂的低期限溢价扭曲。') }}</div>
+  </div>
+
+  <!-- ===================== CREDIT + REAL/INFLATION ===================== -->
+  <div class="sec-head">{{ t('② Credit & ③ Real rates — risk appetite & the discount rate', '② 信用 与 ③ 实际利率 · 风险偏好与贴现率') }}</div>
+  <div class="grid cols-2">
+    <div class="card">
+      <h2>{{ t('Credit — the "smart money" canary', '信用 · “聪明钱”预警') }}</h2>
+      <div style="margin:6px 0 4px"><span class="band-chip" style="background:{{ vm.credit.band_color }}">{{ t(vm.credit.band_en, vm.credit.band_zh) }}</span>
+        {% if vm.credit.direction %}<span class="pill"><span class="l-en">{{ vm.credit.direction }}</span><span class="l-zh">{{ vm.credit.direction_zh }}</span></span>{% endif %}</div>
+      <div class="kpis">
+        {{ kpi('HY OAS', '高收益OAS', vm.credit.hy_oas, '%') }}
+        {{ kpi('IG OAS', '投资级OAS', vm.credit.ig_oas, '%') }}
+        {{ kpi('HY / IG ratio', '高收益/投资级', vm.credit.hy_ig_ratio, '×') }}
+        {{ kpi('Baa−Aaa', 'Baa−Aaa', vm.credit.baa_aaa, '%') }}
+        {{ kpi('Excess bond premium', '超额债券溢价', vm.credit.ebp, '%') }}
+        {{ kpi('HY %ile (2y)', '高收益百分位(2年)', vm.credit.pctile, '%') }}
+      </div>
+      <div style="margin-top:14px">{{ charts.credit | safe }}</div>
+      <div class="sub faint" style="margin-top:6px">{{ t('HY OAS distress bands: ~500bp = half-distress, ~800bp+ = distress (>1000bp in the 2000/2008/2020 bears). The Excess Bond Premium is the part of spreads NOT explained by default risk — the cleanest "smart-money" recession signal. Credit leads equity drawdowns.', '高收益OAS困境分带：约500基点=半困境，约800基点以上=困境（2000/2008/2020熊市>1000基点）。超额债券溢价是利差中无法用违约风险解释的部分——最干净的“聪明钱”衰退信号。信用领先股票回撤。') }}</div>
+    </div>
+    <div class="card">
+      <h2>{{ t('Real rates & inflation — the discount rate', '实际利率与通胀 · 贴现率') }}</h2>
+      <div class="kpis" style="margin-top:2px">
+        {{ kpi('10y real (TIPS)', '10年实际利率', vm.real.real_10y, '%') }}
+        {{ kpi('5y real', '5年实际利率', vm.real.real_5y, '%') }}
+        {{ kpi('10y breakeven', '10年盈亏平衡通胀', vm.real.breakeven_10y, '%') }}
+        {{ kpi('5y5y fwd breakeven', '5年5年远期通胀', vm.real.breakeven_5y5y, '%') }}
+        {{ kpi('Term premium', '期限溢价', vm.real.term_premium, '%') }}
+      </div>
+      {% if vm.real.tp_positive %}<div class="flag info">ℹ {{ t('Term premium repriced positive (the 2023–25 shift) — more of any long-yield move is now supply / fiscal / risk, a bear-steepening force.', '期限溢价重新定价转正（2023–25年的转变）——长端收益率变动中更多源于供给/财政/风险，构成熊市陡峭力量。') }}</div>{% endif %}
+      <div style="margin-top:14px">{{ charts.real | safe }}</div>
+      <div class="sub faint" style="margin-top:6px">{{ t('The real 10y is the discount rate for ALL risk assets and gold\'s opportunity cost; the 5y5y forward breakeven is the Fed\'s preferred inflation anchor. These feed the commodity & bitcoin reads downstream.', '10年实际利率是所有风险资产的贴现率，也是黄金的机会成本；5年5年远期盈亏平衡通胀是美联储青睐的通胀锚。它们向下游为大宗商品与比特币判读供数。') }}</div>
+    </div>
+  </div>
+
+  <!-- ===================== STRESS + CROSS-ASSET ===================== -->
+  <div class="sec-head">{{ t('④ Stress & plumbing · ⑤ the stock-bond hedge', '④ 压力与资金管道 · ⑤ 股债对冲') }}</div>
+  <div class="grid cols-2">
+    <div class="card">
+      <h2>{{ t('Rates volatility & funding plumbing', '利率波动与资金管道') }}</h2>
+      <div style="margin:6px 0 4px"><span class="band-chip" style="background:{{ vm.stress.color }}">MOVE {{ vm.stress.move }} · {{ t(vm.stress.band_en, vm.stress.band_zh) }}</span></div>
+      <div class="kpis">
+        {{ kpi('MOVE %ile (1y)', 'MOVE百分位(1年)', vm.stress.pctile, '%') }}
+        {{ kpi('SOFR − IORB', 'SOFR − 准备金利率', vm.stress.sofr_iorb_bp, 'bp') }}
+        {{ kpi('Repo spike (SOFR99)', '回购跳升(SOFR99)', vm.stress.repo_spike_bp, 'bp') }}
+      </div>
+      {% if vm.stress.move_leads_vix %}<div class="flag warn">⚑ {{ t('Rates vol (MOVE) leading equity vol (VIX) — stress often transmits this way.', '利率波动（MOVE）领先股票波动（VIX）——压力常以此路径传导。') }}</div>{% endif %}
+      {% if vm.stress.repo_stress %}<div class="flag alarm">⚑ {{ t('Repo-stress spike — funding plumbing under strain.', '回购市场承压——资金管道紧张。') }}</div>
+      {% elif vm.stress.reserve_scarcity %}<div class="flag warn">⚑ {{ t('SOFR drifting above IORB — creeping reserve scarcity.', 'SOFR持续高于准备金利率——准备金趋于稀缺。') }}</div>{% endif %}
+      <div style="margin-top:14px">{{ charts.move | safe }}</div>
+      <div class="sub faint" style="margin-top:6px">{{ t('MOVE is the "VIX of bonds" — the systemic rates-stress thermometer. SOFR−IORB and the SOFR 99th-percentile spike are the funding-plumbing early-warning (the 2025 repo stress lives here).', 'MOVE是“债券的VIX”——系统性利率压力的温度计。SOFR−准备金利率与SOFR第99百分位跳升是资金管道的预警（2025年回购压力即体现于此）。') }}</div>
+    </div>
+    <div class="card">
+      <h2>{{ t('Stock-bond correlation — is the hedge working?', '股债相关性 · 对冲是否有效？') }}</h2>
+      <div style="margin:6px 0 4px"><span class="band-chip" style="background:{{ vm.cross.color }}">{{ t(vm.cross.regime_en, vm.cross.regime_zh) }}</span></div>
+      <div class="kpis">
+        {{ kpi('63d stock-bond corr', '63日股债相关性', vm.cross.corr) }}
+      </div>
+      <div style="margin-top:14px">{{ charts.corr | safe }}</div>
+      <div class="sub faint" style="margin-top:6px">{{ t('The correlation flipped POSITIVE in 2022 (driven by inflation volatility, per AQR) — bonds stopped hedging equities and 60/40 broke. A negative reading means bonds diversify again; positive means they don\'t. This is the single most important "what do bonds mean for my portfolio" read.', '相关性在2022年转正（据AQR，由通胀波动驱动）——债券不再对冲股票，60/40失效。读数为负意味债券重新分散风险；为正则相反。这是“债券对我的组合意味着什么”最重要的单一判读。') }}</div>
+    </div>
+  </div>
+
+  <!-- ===================== SOVEREIGN / GLOBAL ===================== -->
+  <div class="sec-head">{{ t('⑥ Sovereign & global rates', '⑥ 主权与全球利率') }}</div>
+  <div class="card">
+    <h2>{{ t('Euro-area fragmentation & the JGB curve', '欧元区分化与日债曲线') }}</h2>
+    <div style="margin:6px 0 4px">
+      <span class="band-chip" style="background:{{ vm.sovereign.frag_color }}">{{ t('Euro fragmentation', '欧元分化') }} · {{ t(vm.sovereign.frag_en, vm.sovereign.frag_zh) }}</span>
+      {% if vm.sovereign.frag_direction %}<span class="pill"><span class="l-en">{{ vm.sovereign.frag_direction }}</span><span class="l-zh">{{ vm.sovereign.frag_direction_zh }}</span></span>{% endif %}
+      {% if vm.sovereign.jgb_2s10s is not none %}<span class="band-chip" style="background:{{ vm.sovereign.jgb_color }};margin-left:6px">JGB 2s10s · {{ t(vm.sovereign.jgb_en, vm.sovereign.jgb_zh) }}</span>{% endif %}
+    </div>
+    <div class="kpis">
+      {{ kpi('Euro frag (all−AAA 10y)', '欧元分化（全体−AAA 10年）', vm.sovereign.euro_frag, 'pp') }}
+      {{ kpi('Bund 10y (euro core)', '德债10年（欧元核心）', vm.sovereign.bund_10y, '%') }}
+      {{ kpi('JGB 2s10s', '日债 2年/10年', vm.sovereign.jgb_2s10s, 'pp') }}
+    </div>
+    <div style="margin-top:14px">{{ charts.sovereign | safe }}</div>
+    <div class="sub faint" style="margin-top:6px">{{ t('Euro-area fragmentation = the ECB all-government minus AAA-rated 10y yield — a free, official, daily BTP-Bund-style proxy for periphery-vs-core stress (AAA ≈ the German Bund). JGB 2s10s tracks Japan\'s post-YCC normalization; a steep long end can repatriate Japanese capital and lift global duration supply.', '欧元区分化 = 欧洲央行全体政府债减AAA级的10年收益率——免费、官方、每日，类似意德利差的“外围对核心”压力代理（AAA≈德国国债）。日债2年/10年跟踪日本YCC退出后的正常化；长端陡峭可能促使日本资本回流并推高全球久期供给。') }}</div>
+  </div>
+
+  <!-- ===================== CROSS-ASSET DRIVERS (AI hand-off) ===================== -->
+  <div class="sec-head">{{ t('Cross-asset hand-off — what bonds imply for the other boards', '跨资产传导 · 债券对其他面板的含义') }}</div>
+  <div class="card">
+    <div class="drv">
+      <div class="dasset">💱 {{ t('Forex', '外汇') }}</div>
+      <div class="dnote">{{ t('Rate differentials drive FX — the US 2y policy-path and the real-10y are the carry and value anchors; a US-favorable widening vs foreign rates is a USD tailwind.', '利率差驱动外汇——美国2年期政策路径与10年期实际利率是套息与估值之锚；相对外国利率向有利于美国的方向走阔，是美元的顺风。') }}
+        <b>{{ t('real 10y', '10年实际利率') }} {{ vm.real.real_10y }}% · {{ t('term premium', '期限溢价') }} {{ vm.real.term_premium }}%</b></div>
+    </div>
+    <div class="drv">
+      <div class="dasset">◆ {{ t('Commodities', '大宗商品') }}</div>
+      <div class="dnote">{{ t('Real-10y is gold\'s discount rate (inverse); breakevens track oil/energy; the curve slope proxies the growth impulse for copper/oil.', '10年实际利率是黄金的贴现率（反向）；盈亏平衡通胀跟踪油价/能源；曲线斜率代表铜/油的增长动能。') }}
+        <b>{{ t('real 10y', '10年实际利率') }} {{ vm.real.real_10y }}% · {{ t('10y breakeven', '10年盈亏平衡通胀') }} {{ vm.real.breakeven_10y }}%</b></div>
+    </div>
+    <div class="drv">
+      <div class="dasset">₿ {{ t('Bitcoin', '比特币') }}</div>
+      <div class="dnote">{{ t('BTC is a long-duration, real-rate-sensitive liquidity asset — falling real-10y + easing plumbing is a tailwind; widening credit / rising MOVE is a risk-off gate.', '比特币是长久期、对实际利率敏感的流动性资产——实际利率下行+资金管道宽松是顺风；信用走阔/MOVE上行则是避险闸门。') }}
+        <b>{{ t('risk-off gate', '避险闸门') }}: {{ t('ON', '开启') if vm.drivers.bitcoin and vm.drivers.bitcoin.risk_off_gate else t('off', '关闭') }}</b></div>
+    </div>
+    <div class="drv">
+      <div class="dasset">📈 {{ t('Equities', '股票') }}</div>
+      <div class="dnote">{{ t('The discount-rate channel (real-10y, term premium) compresses long-duration multiples; credit (HY OAS) is the canary that leads equity drawdowns; the SPEED of yield moves (MOVE) matters more than the level.', '贴现率通道（10年实际利率、期限溢价）压缩长久期估值；信用（高收益OAS）是领先股票回撤的预警；收益率变动的“速度”（MOVE）比水平更重要。') }}
+        <b>{{ t('HY OAS', '高收益OAS') }} {{ vm.credit.hy_oas }}% · {{ t('stock-bond corr', '股债相关性') }} {{ vm.cross.corr }}</b></div>
+    </div>
+    <div class="sub faint" style="margin-top:10px">{{ t('This is the bond layer\'s contribution to the holistic cross-asset synthesis — exported as data/bonds/bond_health.json for the AI reasoning engine alongside the equity, macro, BTC, forex and commodity states.', '这是债券层对跨资产综合分析的贡献——以 data/bonds/bond_health.json 导出，连同股票、宏观、比特币、外汇与大宗商品状态一起供AI推理引擎使用。') }}</div>
+  </div>
+
+  <!-- ===================== ALERT TIMELINE ===================== -->
+  {% if timeline %}
+  <div class="card" style="margin-top:20px">
+    <h2>{{ t('Bond state-change timeline', '债券状态变化时间线') }} <span class="faint">· {{ n_alerts }} {{ t('events · last', '事件 · 近') }} {{ timeline_days }}d</span></h2>
+    <div class="timeline">
+    {% for day in timeline %}
+      <div class="tl-day"><span class="l-en">{{ day.daylabel }}</span><span class="l-zh">{{ day.daylabel_zh }}</span></div>
+      {% for e in day.events %}
+      <div class="tl-ev sev-{{ e.severity }}">
+        <span class="tl-type"><span class="l-en">{{ e.label }}</span><span class="l-zh">{{ e.label_zh }}</span></span>
+        <span class="tl-head"><span class="l-en">{{ e.headline }}</span><span class="l-zh">{{ e.headline_zh }}</span></span>
+      </div>
+      {% endfor %}
+    {% endfor %}
+    </div>
+    <div class="sub faint" style="margin-top:10px">{{ t('Deterministic, debounced daily state-changes (durable regime shifts only, not whipsaw). All context, not trade signals.', '确定性、经去抖的每日状态变化（仅持久的状态切换，非来回震荡）。皆为背景，非交易信号。') }}</div>
+  </div>
+  {% endif %}
+
+  <!-- ===================== METHODOLOGY / HONESTY ===================== -->
+  <div class="card" style="margin-top:22px">
+    <h2>{{ t('How to read this · and what it is not', '如何解读 · 以及它不是什么') }}</h2>
+    <div class="note">
+      <p>{{ t('This board reads the bond market HEALTH-FIRST: what the Treasury curve, corporate credit, real yields, rates volatility and funding plumbing say about economic health, regime and cycle position — not a "trade the bond" vector. The health score is a transparent composite of the already-MEASURED recession-risk and drawdown-risk gauges (engine.conditions) plus the credit, rates-vol and funding stress reads.', '本面板以“健康”为先解读债券市场：美国国债曲线、公司信用、实际利率、利率波动与资金管道对经济健康、周期状态与所处阶段的判读——而非“交易债券”的向量。健康度评分是已测得的衰退风险与回撤风险（engine.conditions），加上信用、利率波动与资金压力读数的透明综合。') }}</p>
+      <p><b>{{ t('Honesty bar.', '诚信底线。') }}</b> {{ t('Thresholds (curve, OAS distress, MOVE bands) are documented practitioner levels, NOT tuned to a backtest. scripts/calibrate_bonds.py MEASURES each leg vs strictly-forward S&P drawdowns + NBER recession, split-half: recession-risk, drawdown-risk and rates-vol are CONFIRMED, credit is DIRECTIONAL (strong pre-2013, faded through QE), funding-plumbing is CONTEXT (it rarely fires, so it rarely discriminates). The composite is CONFIRMED — but, honestly, it does NOT beat the drawdown-risk leg alone, so treat it as an explainable synthesis, not a better single predictor. The health-score weighting is kept as a conservative prior (measured-informed weights are reported in reports/bonds-calibration.md, adopted only if they hold on a refresh). All alerts are CONTEXT.', '阈值（曲线、OAS困境、MOVE分带）为有据的从业者水平，未对回测调参。scripts/calibrate_bonds.py 对每个分项相对严格向前的标普回撤与NBER衰退做前后半段测量：衰退风险、回撤风险与利率波动为已确认，信用为有方向（2013年前强、QE期间减弱），资金管道为仅背景（极少触发，故极少有区分力）。综合指标已确认 — 但诚实地说，它并不优于单独的回撤风险分项，故应视为可解释的综合，而非更优的单一预测。健康度权重保守地保留为先验（实测建议权重见 reports/bonds-calibration.md，仅在刷新后仍成立时采用）。所有警报皆为背景。') }}</p>
+      <p><b>{{ t('Data.', '数据。') }}</b> {{ t('Free / keyless: FRED (full Treasury curve, real yields, breakevens, ACM/Kim-Wright term premium, ICE BofA OAS, Moody\'s Baa/Aaa back to 1986, SOFR/IORB plumbing, Excess Bond Premium), Yahoo (MOVE, bond ETFs), ECB Data Portal (euro-area AAA/all-government curve), Japan MoF (JGB, 1974→).', '免费/无密钥：FRED（完整国债曲线、实际利率、盈亏平衡通胀、ACM/Kim-Wright期限溢价、ICE美银OAS、追溯至1986年的穆迪Baa/Aaa、SOFR/准备金利率管道、超额债券溢价）、Yahoo（MOVE、债券ETF）、欧洲央行数据门户（欧元区AAA/全体政府债曲线）、日本财务省（日债，1974年起）。') }}</p>
+      <p class="meta-foot">{{ t('Leg weights are now the MEASURED (calibration-derived) weights, refreshed each weekly calibration. Further work: per-country BTP-Bund vs the euro-area aggregate proxy, EM sovereign (EMBI), and a richer cross-country curve-divergence read.', '分项权重现采用已校准（由校准得出）的权重，每周校准刷新。后续：相对欧元区总量代理的逐国意德利差、新兴市场主权（EMBI），以及更丰富的跨国曲线背离判读。') }}</p>
+      <p class="meta-foot">{{ t('History', '历史') }} {{ span }} · {{ t('built', '构建于') }} {{ built }}</p>
+    </div>
+  </div>
+</div>
+
+<script>
+window.__CHART_SWAP__ = { colors:{}, labels:{
+  "Bond health":"债券健康度","Today":"当前","~3mo ago":"约3月前","~1y ago":"约1年前",
+  "10y−3m (NY Fed)":"10年−3月（纽约联储）","2s10s":"2年/10年","TP-adjusted 2s10s":"期限溢价调整",
+  "HY OAS":"高收益OAS","IG OAS":"投资级OAS","10y real (TIPS)":"10年实际利率","10y breakeven":"10年盈亏平衡通胀",
+  "term premium":"期限溢价","MOVE":"MOVE","63d stock-bond corr":"63日股债相关性"} };
+</script>
+<script src="theme.js"></script>
+<script src="chart_i18n.js"></script>
+<footer class="site-footer">
+  <span>{{ t('Made with ❤️ in Canada', '用 ❤️ 在加拿大制作') }} · {{ t('Developed by', '开发者') }} Chris Wong</span>
+  <span class="faint">{{ t('Bond-market context, not investment advice.', '债市背景，非投资建议。') }}</span>
+</footer>
+</body>
+</html>

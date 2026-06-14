@@ -1,0 +1,100 @@
+{
+  "as_of": "2026-06-12",
+  "health_score": 87,
+  "health_label": "healthy",
+  "cycle_phase": "late",
+  "recession_risk": 8.767981087785952,
+  "drawdown_risk": 13.440746237015052,
+  "pillars": {
+    "curve": {
+      "spread_10y3m": 0.7,
+      "spread_2s10s": 0.39,
+      "curve_tp_adjusted": 1.1919,
+      "ntfs": 0.6699999999999973,
+      "ny_fed_recession_prob": 0.15930217825744686,
+      "inverted": false,
+      "tp_adj_inverted": false,
+      "move_taxonomy": "bull_flattener",
+      "move_taxonomy_en": "Bull flattener",
+      "move_taxonomy_zh": "牛市平坦",
+      "move_taxonomy_note_en": "long rates falling faster than short — growth/inflation fears pulling the long end",
+      "move_taxonomy_note_zh": "长端利率下行快于短端 — 增长/通胀担忧压低长端",
+      "uninversion_alarm": false,
+      "bull_steepener_uninversion": false
+    },
+    "credit": {
+      "hy_oas": 2.78,
+      "ig_oas": 0.75,
+      "hy_ig_ratio": 3.7066666666666666,
+      "baa_aaa": 0.4900000000000002,
+      "ebp": -0.3914736491748761,
+      "hy_pctile": 0.2152777777777778,
+      "distress_band": "tight",
+      "direction": "tightening"
+    },
+    "real_inflation": {
+      "real_10y": 2.16,
+      "real_5y": 1.78,
+      "breakeven_10y": 2.31,
+      "breakeven_5y5y": 2.23,
+      "term_premium": 0.8019,
+      "tp_repriced_positive": true
+    },
+    "stress": {
+      "move": 69.36000061035156,
+      "move_band": "calm",
+      "move_pctile": 0.30158730158730157,
+      "move_leads_vix": false,
+      "sofr_iorb_bp": -4.999999999999982,
+      "repo_spike_bp": 10.000000000000009,
+      "reserve_scarcity": false,
+      "repo_stress": false
+    },
+    "cross_asset": {
+      "stock_bond_corr": 0.6936367796179752,
+      "regime": "breakdown",
+      "hedge_working": false
+    },
+    "sovereign": {
+      "euro_frag": 0.3870528138,
+      "bund_10y": 3.0798140633,
+      "frag_state": "calm",
+      "frag_direction": "widening",
+      "jgb_2s10s": 1.264,
+      "jgb_state": "steep"
+    }
+  },
+  "stress_legs": {
+    "recession": 8.767981087785952,
+    "drawdown": 13.440746237015052,
+    "credit": 15.599999999999996,
+    "rates_vol": 19.360000610351562,
+    "plumbing": 7.105427357601002e-14
+  },
+  "alarms": [],
+  "verdict_en": "Bond health healthy (87/100), late-cycle. Curve positively sloped. Credit tight. Rates-vol calm.",
+  "verdict_zh": "债券健康度健康（87/100），周期晚段。曲线正向倾斜。信用偏紧。利率波动平静。",
+  "drivers_for": {
+    "forex": {
+      "note_en": "Rate differentials drive FX — the US 2y policy-path and the real-10y are the carry and value anchors; a US-favorable widening vs foreign rates is a USD tailwind.",
+      "real_10y": 2.16,
+      "term_premium": 0.8019
+    },
+    "commodities": {
+      "note_en": "Real-10y is gold's discount rate (inverse); breakevens track oil/energy; curve slope proxies the growth impulse for copper/oil.",
+      "real_10y": 2.16,
+      "breakeven_10y": 2.31
+    },
+    "bitcoin": {
+      "note_en": "BTC is a long-duration, real-rate-sensitive liquidity asset — falling real-10y + easing plumbing is a tailwind; widening credit / rising MOVE is a risk-off gate.",
+      "real_10y": 2.16,
+      "risk_off_gate": false
+    },
+    "equities": {
+      "note_en": "Discount-rate channel (real-10y, term premium) compresses long-duration multiples; credit (HY OAS) is the canary that leads equity drawdowns; the SPEED of yield moves (MOVE) matters more than the level.",
+      "hy_oas": 2.78,
+      "credit_canary": false,
+      "stock_bond_corr": 0.6936367796179752
+    }
+  }
+}

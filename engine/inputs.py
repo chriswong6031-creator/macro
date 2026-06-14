@@ -165,8 +165,11 @@ def build_features() -> pd.DataFrame:
     # Household sentiment / inflation expectations (monthly).
     put("umich_sentiment", series.get("umich_sentiment"), ffill_limit=45)
     put("umich_infl_exp", series.get("umich_infl_exp"), ffill_limit=45)
-    # Fuller curve + 5y inflation leg.
-    for col in ["us3m", "us6m", "us5y", "us30y", "spread_10y3m", "breakeven_5y", "us5y_real"]:
+    # Fuller curve + 5y inflation leg. (us1y/us3y/us7y added for the Bonds
+    # dashboard's near-term-forward spread + curve interpolation; additive — the
+    # macro engine does not read them.)
+    for col in ["us3m", "us6m", "us1y", "us3y", "us5y", "us7y", "us30y",
+                "spread_10y3m", "breakeven_5y", "us5y_real"]:
         put(col, series.get(col))
     f["spread_10y3m"] = f["spread_10y3m"].combine_first(f["us10y"] - f["us3m"])
     # term-premium-adjusted curve slope: strips the term-premium distortion that

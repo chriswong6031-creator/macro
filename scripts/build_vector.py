@@ -414,7 +414,7 @@ def build_landing(site: Path, vm: dict) -> None:
     stored engine state, not from any HTML file build_site emits."""
     macro = _macro_state()
     hub = _hub_html(vm, macro, home_alert_feed(), _china_state(), _commodities_state(),
-                    _watchlist_state(), _etf_state(), _hk_state(), _spvector_state())
+                    _watchlist_state(), _etf_state(), _hk_state(), _spvector_state(), _bonds_state())
     (site / "index.html").write_text(hub)
     log.info("wrote landing hub -> index.html")
 
@@ -497,6 +497,20 @@ def _spvector_state() -> dict:
                 "weight": d.get("equity_weight"), "present": present}
     except Exception:  # noqa: BLE001
         return {"label": "Index ↔ T-bills", "weight": None, "present": present}
+
+
+def _bonds_state() -> dict:
+    """Bonds & bond-health card — gated on the page existing; shows the health score
+    + cycle phase from data/bonds/latest.json when build_bonds has run."""
+    site = config.ROOT / config.load()["storage"]["site_dir"]
+    present = (site / "bonds.html").exists()
+    try:
+        import json
+        d = json.loads((config.data_dir() / "bonds" / "latest.json").read_text())
+        return {"score": d.get("health_score"), "label": d.get("health_label", "—"),
+                "phase": d.get("cycle_phase", ""), "present": present}
+    except Exception:  # noqa: BLE001
+        return {"score": None, "label": "—", "phase": "", "present": present}
 
 
 MACRO_SEV = {"act": "high", "warn": "medium", "info": "info"}
@@ -658,7 +672,7 @@ def _hub_alert_rows(alerts: list[dict]) -> str:
 def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = None,
               commodities: dict | None = None, watchlist: dict | None = None,
               etf: dict | None = None, hk: dict | None = None,
-              spvector: dict | None = None) -> str:
+              spvector: dict | None = None, bonds: dict | None = None) -> str:
     # Bilingual via the i18n layer when present, identity fallback when absent.
     try:
         from engine.i18n import t as T, tr as TR
@@ -727,6 +741,20 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
     <p>{T('Stay-in / step-out allocation for the broad US index vs T-bills — a backtested drawdown & Sharpe engine.', '美国大盘指数与短债之间的进出场配置——经回测、以回撤与夏普为目标的引擎。')}</p>
     <span class="stat">{T(spvector['label'], TR(spvector['label']))}{(' · ' + str(int(sp_w)) + '% ' + T('equity', '股票')) if sp_w is not None else ''}</span>
     <div class="go">{T('Open S&P / Macro Vector →', '打开标普宏观向量 →')}</div>
+  </a>""")
+    bonds = bonds or {"present": False}
+    b_score = bonds.get("score")
+    b_phase = bonds.get("phase") or ""
+    b_stat = ((f"{T('Health', '健康度')} {b_score}/100" if b_score is not None
+               else T(bonds.get("label", "—"), TR(bonds.get("label", "—"))))
+              + ((" · " + T(b_phase, TR(b_phase))) if b_phase else ""))
+    bonds_card = ("" if not bonds.get("present") else f"""
+  <a class="c" href="bonds.html">
+    <div class="ico">\U0001F3DB\uFE0F</div>
+    <h2>{T('Bonds & Bond Health', '债券与债券健康')}</h2>
+    <p>{T('What the curve, credit, real rates, rates-vol & funding plumbing say about economic health, regime & the cycle.', '收益率曲线、信用利差、实际利率、利率波动与资金管道对经济健康、周期状态与所处阶段的判读。')}</p>
+    <span class="stat">{b_stat}</span>
+    <div class="go">{T('Open Bonds →', '打开债券 →')}</div>
   </a>""")
     return f"""{HUB_MARKER}
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
@@ -819,7 +847,7 @@ body{{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
     <span class="stat {risk_cls}">{T('Risk', '风险')} {T(vm['risk_word'], TR(vm['risk_word']))} · {vm['risk_index']}</span>
     <span class="stat">{T('Momentum', '动量')} {vm['momentum']}</span>
     <div class="go">{T('Open Bitcoin Vector →', '打开比特币向量 →')}</div>
-  </a>{commodities_card}{etf_card}{watchlist_card}
+  </a>{commodities_card}{bonds_card}{etf_card}{watchlist_card}
 </div>
 <div class="feed">
   <div class="feed-h"><h3>{T('Latest Alerts', '最新警报')}</h3>
