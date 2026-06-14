@@ -271,4 +271,11 @@ LEX: dict[str, str] = {
     "Commodity dollars": "商品货币",
     "Haven-funders": "避险/融资货币",
     "Emerging markets": "新兴市场",
+    # Forex Vector — dollar-smile regimes + risk state (hub card)
+    "Risk-off haven bid": "避险买盘",
+    "US growth premium": "美国增长溢价",
+    "Global reflation": "全球再通胀",
+    "US-specific stress": "美国自身风险",
+    "risk-on": "偏好风险",
+    "risk-off": "避险",
 }

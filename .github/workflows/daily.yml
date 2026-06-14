@@ -157,6 +157,11 @@ jobs:
         # last): writes commodities.html + commodity/latest.json so the hub picks up
         # the Commodity card. Self-sufficient; returns 0 on any engine error.
         run: python -m scripts.build_commodities
+      - name: build forex vector dashboard
+        # after build_commodities, before build_vector (which writes the hub last):
+        # writes forex.html + forex/latest.json so the hub picks up the Forex card.
+        # Self-sufficient; returns 0 on any engine error.
+        run: python -m scripts.build_forex
       - name: build bitcoin vector + landing hub
         # installs the landing hub at index.html (rendered from stored engine
         # state, so ordering vs build_site no longer matters — build_site writes

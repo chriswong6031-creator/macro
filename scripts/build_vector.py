@@ -393,7 +393,7 @@ def build_landing(site: Path, vm: dict) -> None:
     stored engine state, not from any HTML file build_site emits."""
     macro = _macro_state()
     hub = _hub_html(vm, macro, home_alert_feed(), _china_state(), _commodities_state(),
-                    _watchlist_state(), _etf_state(), _hk_state())
+                    _watchlist_state(), _etf_state(), _hk_state(), _forex_state())
     (site / "index.html").write_text(hub)
     log.info("wrote landing hub -> index.html")
 
@@ -447,6 +447,21 @@ def _commodities_state() -> dict:
     except Exception:
         return {"label": "—", "date": "", "favored": [],
                 "present": (site / "commodities.html").exists()}
+
+
+def _forex_state() -> dict:
+    """Forex Vector dollar-smile regime for the hub card (written by build_forex,
+    which runs before build_vector). `present` gates the card so the hub still works
+    if the forex page wasn't built this run."""
+    site = config.ROOT / config.load()["storage"]["site_dir"]
+    try:
+        d = json.loads((config.data_dir() / "forex" / "latest.json").read_text())
+        return {"label": d.get("regime", "—"), "date": d.get("date", ""),
+                "favored": d.get("favored", []), "risk": d.get("risk", ""),
+                "present": (site / "forex.html").exists()}
+    except Exception:
+        return {"label": "—", "date": "", "favored": [], "risk": "",
+                "present": (site / "forex.html").exists()}
 
 
 def _watchlist_state() -> dict:
@@ -621,7 +636,8 @@ def _hub_alert_rows(alerts: list[dict]) -> str:
 
 def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = None,
               commodities: dict | None = None, watchlist: dict | None = None,
-              etf: dict | None = None, hk: dict | None = None) -> str:
+              etf: dict | None = None, hk: dict | None = None,
+              forex: dict | None = None) -> str:
     # Bilingual via the i18n layer when present, identity fallback when absent.
     try:
         from engine.i18n import t as T, tr as TR
@@ -662,6 +678,16 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
     <p>{T('Regime, allocation & shock-detection for gold, silver, oil & copper.', '黄金、白银、原油与铜的周期、配置与冲击检测。')}</p>
     <span class="stat">{T(commodities['label'], TR(commodities['label']))}{(' · ' + fav) if fav else ''}</span>
     <div class="go">{T('Open Commodity Vector →', '打开大宗商品向量 →')}</div>
+  </a>""")
+    forex = forex or {"present": False}
+    fx_risk = forex.get("risk", "")
+    forex_card = ("" if not forex.get("present") else f"""
+  <a class="c" href="forex.html">
+    <div class="ico">💱</div>
+    <h2>{T('Forex Vector', '外汇向量')}</h2>
+    <p>{T('Dollar-first currency board — the dollar-smile regime plus risk-context signals on 9 pairs, each scored on its dollar-orthogonalized residual.', '以美元为先的货币面板——美元微笑格局，以及9个货币对在剥离美元后的风险背景信号。')}</p>
+    <span class="stat">{T(forex['label'], TR(forex['label']))}{(' · ' + T(fx_risk, TR(fx_risk))) if fx_risk else ''}</span>
+    <div class="go">{T('Open Forex Vector →', '打开外汇向量 →')}</div>
   </a>""")
     watchlist = watchlist or {"present": False}
     watchlist_card = ("" if not watchlist.get("present") else f"""
@@ -772,7 +798,7 @@ body{{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
     <span class="stat {risk_cls}">{T('Risk', '风险')} {T(vm['risk_word'], TR(vm['risk_word']))} · {vm['risk_index']}</span>
     <span class="stat">{T('Momentum', '动量')} {vm['momentum']}</span>
     <div class="go">{T('Open Bitcoin Vector →', '打开比特币向量 →')}</div>
-  </a>{commodities_card}{etf_card}{watchlist_card}
+  </a>{commodities_card}{forex_card}{etf_card}{watchlist_card}
 </div>
 <div class="feed">
   <div class="feed-h"><h3>{T('Latest Alerts', '最新警报')}</h3>
