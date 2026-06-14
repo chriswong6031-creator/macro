@@ -94,18 +94,31 @@ count and kill survivorship — the path to a stronger-than-"context" claim.
   603156 (alpha +1.92 but FRESH BUY + pullback) ranks #1 at setup +3.42, above the raw #1 alpha
   leader 603268 (+2.56 but COUNTERTREND BOUNCE → +2.86). Honest label throughout: selection ×
   timing, a shortlist to size/confirm, NOT a buy list. 348 tests green.
-- **Phase 3 (Hong Kong) — Phase-0 INCONCLUSIVE on current data; do NOT ship yet.** Ran the
-  same harness on the HK cache (73 names, 12 sectors of 4–9, 3y → only ~10/22 rebalances). Result:
-  momentum IC ≈ 0 / slightly negative at 21d (all variants, |t|<0.5); at 63d plain momentum is
-  *negative* (−0.045) while residual flips faintly positive (ir_res +0.007, LS Sharpe +0.48) —
-  the "residual is durable" pattern but statistically insignificant. **Coherent finding:** HK is
-  ~2× global-beta (`china-global-factors`); the index is dominated by mega-caps + global
-  risk-on/off, so within-universe stock-specific momentum has little to pick up — *and* 73
-  names / 3y has no power to detect it anyway. Matches the HK model's own disclaimer ("no stable
-  single-sector outperformance"). **Two paths:** (a) widen the universe (clone
-  `china_universe.py` → fetch ~150–300 HK names + deeper history) and re-validate; (b) accept HK
-  as a macro/global-risk product and add a global-risk-beta per-stock context read instead of
-  residual alpha. Do NOT fake a selection signal on the thin cache.
+- **Phase 3 (Hong Kong) — deep-history validated → KILL the residual-alpha leg; do NOT ship.**
+  First read on the 3y cache (73 names, ~23 rebalances) was inconclusive, so the binding
+  constraint (history length) was removed: `scripts/hk_residual_alpha_phase0.py --fetch` pulls
+  full yfinance history for the 73 constituents + ^HSI → a **~40-year, 447-rebalance** deep panel
+  (`data/hk_search/closes_deep.parquet`, 1986→2026), then re-runs the identical harness.
+  `reports/hk-residual-alpha-phase0.md`. **Definitive result — the residual INVERTS vs US/China:**
+
+  | signal | DEEP full (447 reb) | DEEP modern 2010+ (171 reb) |
+  |---|--:|--:|
+  | `mom_tot` (plain/beta) | IC +0.032, t **2.0**, LS Sharpe 0.23 | IC +0.030, LS 0.08 |
+  | `mom_res` (residual) | IC +0.004, **LS Sharpe −0.22** | IC +0.007, **LS −0.35** |
+  | `ir_res` | IC +0.010, LS 0.02 | IC +0.010, LS 0.18 |
+  | `acc_res\|SN` | IC −0.034, t −3.6 ✓FDR (KILLED) | −0.029, t −2.8 ✓FDR |
+
+  HK's ONLY positive cross-sectional signal is plain TOTAL-return momentum — but it's weak (fails
+  DSR) and it is **beta, not alpha**. The **residual (beta-stripped) construction — the durable
+  winner-picker for US + China A-shares — has a NEGATIVE long-short Sharpe in HK.** Stripping
+  market+sector beta REMOVES HK's signal: the cross-section is beta-dominated, the hard-data
+  confirmation that **HK is a macro/global-risk product, not a stock-selection one** (~2×
+  global-beta, `china-global-factors`; matches the HK model's own "no stable single-sector
+  outperformance" disclaimer). Shipping the China leg here would deploy a negative-Sharpe signal.
+  **Recommended HK path instead:** a per-stock **global-risk-beta** context read (which names are
+  most levered to the validated risk-on/off overlay), NOT residual momentum. Name-count expansion
+  won't change this — the residual is dead even with 447 rebalances; HK lacks idiosyncratic
+  stock momentum, full stop.
 - **Phase 4 (optional).** China fundamentals via Tushare/akshare (value/quality leg);
   per-stock northbound Stock-Connect holdings (a China-specific "smart money" signal with no
   US analog, free from Eastmoney — note `_leaderboard()` in build_china.py already hits the
