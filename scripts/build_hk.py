@@ -30,7 +30,22 @@ from lib import config, store  # noqa: E402
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_hk")
 
-ASSETS = ("theme.css", "theme.js", "mtf.js", "chart_i18n.js")
+ASSETS = ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
+          "charts.js", "tablesort.js")
+
+
+def _range_selector() -> dict:
+    """1M…All range-selector buttons (theme-neutral; charts.js rescales y on zoom)."""
+    return dict(
+        buttons=[dict(count=3, label="3M", step="month", stepmode="backward"),
+                 dict(count=6, label="6M", step="month", stepmode="backward"),
+                 dict(count=1, label="YTD", step="year", stepmode="todate"),
+                 dict(count=1, label="1Y", step="year", stepmode="backward"),
+                 dict(count=3, label="3Y", step="year", stepmode="backward"),
+                 dict(step="all", label="All")],
+        bgcolor="rgba(128,138,160,0.14)", activecolor="rgba(120,167,224,0.55)",
+        bordercolor="rgba(128,138,160,0.30)", borderwidth=1,
+        font={"size": 10, "color": "#8b93a1"}, x=0, xanchor="left", y=1.0, yanchor="bottom")
 
 QUAD_COLORS = {"Q1": "#2e9e4f", "Q2": "#d4a017", "Q3": "#d04545", "Q4": "#3f78d8"}
 PLOT_LAYOUT = dict(
@@ -59,7 +74,7 @@ def _chart_html(fig: go.Figure) -> str:
     return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
 
 
-def _chart_regime(px: pd.Series, hist: pd.DataFrame, days: int = 1095) -> str:
+def _chart_regime(px: pd.Series, hist: pd.DataFrame, days: int = 3650) -> str:
     cut = px.index.max() - pd.Timedelta(days=days)
     s = px.loc[cut:].dropna()
     sub = hist.loc[cut:]
@@ -72,10 +87,12 @@ def _chart_regime(px: pd.Series, hist: pd.DataFrame, days: int = 1095) -> str:
             fig.add_vrect(x0=seg.index.min(), x1=seg.index.max(),
                           fillcolor=QUAD_COLORS.get(seg.iloc[0], "#888"), opacity=0.16, line_width=0)
     fig.update_layout(**PLOT_LAYOUT, showlegend=False)
+    fig.update_xaxes(rangeselector=_range_selector())
+    fig.update_layout(margin={"l": 45, "r": 15, "t": 40, "b": 30})
     return _chart_html(fig)
 
 
-def _chart_axes(hist: pd.DataFrame, days: int = 1095) -> str:
+def _chart_axes(hist: pd.DataFrame, days: int = 3650) -> str:
     cut = hist.index.max() - pd.Timedelta(days=days)
     sub = hist.loc[cut:]
     fig = go.Figure()
@@ -88,7 +105,9 @@ def _chart_axes(hist: pd.DataFrame, days: int = 1095) -> str:
                                  line={"color": "#d4a017", "width": 1.0, "dash": "dot"}))
     fig.add_hline(y=0, line={"color": "#666", "width": 0.6})
     fig.update_layout(**PLOT_LAYOUT)
-    fig.update_yaxes(range=[-1.05, 1.05])
+    fig.update_yaxes(range=[-1.05, 1.05], autorange=False)   # fixed ±1 band — charts.js leaves it alone
+    fig.update_xaxes(rangeselector=_range_selector())
+    fig.update_layout(margin={"l": 45, "r": 15, "t": 54, "b": 30}, legend={"orientation": "h", "y": 1.18})
     return _chart_html(fig)
 
 
@@ -234,6 +253,134 @@ def _build_history(env, latest: dict, generated: str) -> None:
     log.info("wrote hk_history.html (%d regime periods)", trans.get("n_segments", 0))
 
 
+def _panel_line(series: dict, color: str, height: int = 190, zero: bool = False,
+                fill: bool = False, hline: float | None = None, hline_text: str = "") -> str:
+    """Single-line panel chart from an internals {dates, vals} dict."""
+    if not series or not series.get("dates"):
+        return ""
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=pd.to_datetime(series["dates"]), y=series["vals"], mode="lines",
+        line={"color": color, "width": 1.5}, fill="tozeroy" if fill else None,
+        fillcolor=("rgba(63,120,216,0.10)" if fill else None)))
+    if zero:
+        fig.add_hline(y=0, line={"color": "rgba(128,138,160,0.5)", "width": 0.8})
+    if hline is not None:
+        fig.add_hline(y=hline, line={"color": "#d04545", "width": 0.8, "dash": "dot"},
+                      annotation_text=hline_text, annotation_position="top left",
+                      annotation_font={"size": 10, "color": "#d04545"})
+    fig.update_layout(**{**PLOT_LAYOUT, "height": height}, showlegend=False)
+    return _chart_html(fig)
+
+
+def hk_regime_timeline(hist: pd.DataFrame) -> dict:
+    """Compact columnar JSON for the client-side Time Machine (timemachine.js),
+    mirroring build_site.regime_timeline() over the HK regime history. HK doesn't
+    track transition_state / recession / shock / warning flags, so those carry safe
+    defaults — timemachine.js degrades to 'no warnings'."""
+    h = hist[hist["quad"].notna()].copy()
+    n = len(h)
+
+    def r3(col: str) -> list:
+        return [None if pd.isna(v) else round(float(v), 3) for v in h[col]]
+
+    return {
+        "dates": [d.strftime("%Y-%m-%d") for d in h.index],
+        "quad":  h["quad"].fillna("").tolist(),
+        "g":     r3("growth_score"),
+        "i":     r3("inflation_score"),
+        "conf":  r3("regime_confidence"),
+        "liq":   h["liquidity"].fillna("unknown").tolist() if "liquidity" in h else ["unknown"] * n,
+        "cyc":   h["cycle"].fillna("unknown").tolist() if "cycle" in h else ["unknown"] * n,
+        "trans": ["STABLE"] * n, "rec": [0] * n, "shock": [0] * n, "flags": [0] * n,
+        "flag_order": [],
+    }
+
+
+def _internals_vm(latest: dict) -> dict:
+    """HK market-internals panels: Southbound Connect flow (the #1 HK flow) +
+    a slim China credit/policy backdrop (HSI is China-earnings-driven). Reuses the
+    china_internals view-models verbatim — these stores are shared, read HK-side.
+    Each piece is None-safe so a missing source just drops its panel."""
+    from engine import china_internals as ci
+    vm: dict = {}
+    sb = ci.southbound_flow()
+    if sb:
+        sb["chart_html"] = _panel_line(sb.get("chart_cum"), "#3f78d8", height=190, zero=True, fill=True)
+        if sb.get("hold_chart"):
+            sb["hold_html"] = _panel_line(sb["hold_chart"], "#5fbf7f", height=150)
+        vm["southbound"] = sb
+    credit = ci.credit_tape()
+    if credit:
+        if credit.get("impulse_chart"):
+            credit["impulse_html"] = _panel_line(credit["impulse_chart"], "#3f9fd8", height=170, zero=True)
+        vm["credit"] = credit
+    pboc = ci.pboc_policy()
+    if pboc:
+        vm["pboc"] = pboc
+    return vm
+
+
+def _funding_vm(latest: dict) -> dict | None:
+    """HKMA peg-funding panel — the Aggregate Balance drains when HKMA defends the
+    7.85 weak-side peg (the real HK funding-tightening mechanism), + HIBOR + TWI."""
+    h = store.read("hkma", "interbank_liquidity")
+    if h is None or h.empty or "agg_balance" not in h.columns:
+        return None
+    ab = h["agg_balance"].dropna()
+    if ab.empty:
+        return None
+    latest_ab = float(ab.iloc[-1])
+    yr_ago = float(ab.iloc[-252]) if len(ab) > 252 else None
+    out = {
+        "agg_balance": round(latest_ab),
+        "agg_chg_1y_pct": round(100 * (latest_ab / yr_ago - 1), 1) if yr_ago else None,
+        "agg_pctile": int(round((ab <= latest_ab).mean() * 100)),
+        "agg_max": round(float(ab.max())),
+        "chart_html": _panel_line({"dates": [d.strftime("%Y-%m-%d") for d in ab.index],
+                                    "vals": [round(float(v)) for v in ab]}, "#d4a017", height=200, fill=True),
+    }
+    for col, key in (("hibor_on", "hibor_on"), ("hibor_1m", "hibor_1m"),
+                     ("twi", "twi"), ("base_rate", "base_rate")):
+        s = h[col].dropna() if col in h.columns else pd.Series(dtype=float)
+        if not s.empty:
+            out[key] = round(float(s.iloc[-1]), 2)
+            if col == "hibor_on":
+                out["hibor_on_chg20"] = round(float(s.iloc[-1] - s.iloc[-21]), 2) if len(s) > 21 else None
+    # peg state from the global snapshot
+    gv = latest.get("global_snapshot") or {}
+    out["peg"] = gv.get("peg")
+    return out
+
+
+def _lifespan_rows(quad: pd.Series) -> list[dict]:
+    """Per-quad base rates (count, median length, two most-common next quads)."""
+    from engine.playbook import QUAD_SHORT, transition_stats
+    trans = transition_stats(quad)
+    rows = []
+    for q in ("Q1", "Q2", "Q3", "Q4"):
+        nxt = trans["matrix"].get(q, {})
+        nxt_str = ", ".join(f"{QUAD_SHORT.get(k, k)} {v:.0%}" for k, v in
+                            sorted(nxt.items(), key=lambda kv: -kv[1])[:2]) or "—"
+        rows.append({"name": QUAD_SHORT[q], "n": trans["n_by_quad"].get(q, "—"),
+                     "median": trans["median_days"].get(q, "—"), "next": nxt_str})
+    return rows
+
+
+def _vhsi_vm() -> dict | None:
+    """VHSI — HK's own fear gauge (HSI 30-day implied vol). level + percentile + 20d chg."""
+    v = store.read("hk", "^HSIL")
+    if v is None or "close" not in v.columns:
+        return None
+    s = v["close"].dropna()
+    if s.empty:
+        return None
+    latest = float(s.iloc[-1])
+    return {"level": round(latest, 2),
+            "pctile": int(round((s <= latest).mean() * 100)),
+            "chg20": round(latest - float(s.iloc[-21]), 2) if len(s) > 21 else None}
+
+
 def main() -> int:
     try:
         from engine.hk_run import run
@@ -243,23 +390,69 @@ def main() -> int:
         return 0
 
     try:
+        sectors = _sector_cards(latest)
         vm = {
             "latest": latest,
             "built": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
-            "sectors": _sector_cards(latest),
+            "sectors": sectors,
             "breadth": _breadth(),
             "benchmark": _benchmark_card(),
             "pair": latest.get("pair_ratios", {}),
             "pref": latest.get("preference_check", {}),
             "gv": latest.get("global_snapshot", {}),
+            "vhsi": _vhsi_vm(),
         }
+        site = Path(config.load()["storage"]["site_dir"])
+        site.mkdir(parents=True, exist_ok=True)
+
+        # market-internals (southbound flow + China credit/policy backdrop) — None-safe
+        try:
+            vm["internals"] = _internals_vm(latest)
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("hk internals build failed (%s); skipping", e)
+            vm["internals"] = {}
+
+        # HKMA peg-funding panel (Aggregate Balance + HIBOR + TWI)
+        try:
+            vm["funding"] = _funding_vm(latest)
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("hk funding panel failed (%s); skipping", e)
+            vm["funding"] = None
+
+        # AH-premium computed basket (H-share vs A-share twin, FX-adjusted)
+        try:
+            from engine.hk_ah import ah_basket
+            ah = ah_basket()
+            if ah and ah.get("chart"):
+                ah["chart_html"] = _panel_line(ah["chart"], "#c08bd8", height=190, zero=True)
+            vm["ah"] = ah
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("hk AH premium failed (%s); skipping", e)
+            vm["ah"] = None
+
+        # regime history -> Time Machine JSON + lifespan base rates
+        hist = store.read("hk_regime", "regime_history")
+        if hist is not None and "quad" in hist.columns:
+            (site / "hk_regime_timeline.json").write_text(
+                json.dumps(hk_regime_timeline(hist), separators=(",", ":")))
+            vm["lifespan_rows"] = _lifespan_rows(hist["quad"])
+
+        # playbook — quad meaning, lifespan progress, next-quad odds, exposure dial
+        try:
+            from engine import hk_playbook
+            vm["pb"] = hk_playbook.build(latest, hist, sectors, vm.get("internals") or {})
+            if vm["pb"] and vm["pb"].get("preferred"):   # sector NAME -> drill-down slug
+                for x in vm["pb"]["preferred"]:
+                    x["slug"] = sector_slug(x.get("ticker", ""))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("hk playbook build failed (%s); skipping", e)
+            vm["pb"] = None
+
         env = Environment(loader=FileSystemLoader(
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)
         from engine import i18n
         env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
         html = env.get_template("hk.html.j2").render(**vm)
-        site = Path(config.load()["storage"]["site_dir"])
-        site.mkdir(parents=True, exist_ok=True)
         (site / "hk.html").write_text(html)
         for a in ASSETS:
             src = Path(config.ROOT) / "templates" / a

@@ -12,6 +12,7 @@
 <title>{{ t('Hong Kong Regime', '香港周期') }} — {{ latest.date }}</title>
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 <style>
   * { box-sizing: border-box; }
   body { background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system,
@@ -75,8 +76,84 @@
   .lad.up { --c: var(--up); } .lad.down { --c: var(--down); } .lad.flat { --c: var(--muted); }
   .agechip { font-size: 10.5px; font-weight: 700; color: var(--muted); white-space: nowrap; margin-left: 5px; }
   .note { font-size: 12.5px; color: var(--muted); line-height: 1.6; }
+  .sub { font-size: 11.5px; color: var(--muted); }
   .mtf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
   .mtf-card .mtf-name { font-weight: 700; font-size: 13.5px; margin-bottom: 6px; color: var(--text); }
+  h3 { font-size: 12.5px; margin: 12px 0 6px; color: var(--text); }
+
+  /* ---- playbook: lifespan bar + next-quad odds + exposure dial -------------- */
+  .lifebar { position: relative; height: 16px; border-radius: 8px; overflow: hidden; margin: 12px 0 3px; background: var(--panel2); }
+  .lifebar .zone { position: absolute; top: 0; height: 100%; }
+  .lifebar .marker { position: absolute; top: -2px; height: calc(100% + 4px); width: 3px; background: var(--text); border-radius: 2px; box-shadow: 0 0 0 1px var(--panel); }
+  .lifelabels { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--muted); }
+  .prob { display: flex; align-items: center; gap: 9px; margin: 7px 0; }
+  .prob .nm { flex: 0 0 96px; font-size: 12.5px; font-weight: 600; }
+  .prob .bar { flex: 1; height: 14px; background: var(--panel2); border-radius: 7px; overflow: hidden; }
+  .prob .bar i { display: block; height: 100%; border-radius: 7px; }
+  .prob .pc { flex: 0 0 38px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .pdial { display: flex; gap: 4px; margin: 6px 0 12px; }
+  .pdial span { flex: 1; text-align: center; font-size: 11.5px; font-weight: 700; padding: 7px 4px; border-radius: 8px;
+                background: var(--panel2); color: var(--muted); border: 1px solid var(--line); }
+  .pdial .on-def { background: color-mix(in srgb, var(--down) 80%, var(--panel)); color: #fff; border-color: transparent; }
+  .pdial .on-car { background: color-mix(in srgb, var(--warn) 75%, var(--panel)); color: #1a1a1a; border-color: transparent; }
+  .pdial .on-neu { background: color-mix(in srgb, var(--muted) 55%, var(--panel)); color: var(--text); border-color: transparent; }
+  .pdial .on-con { background: color-mix(in srgb, var(--up) 62%, var(--panel)); color: #fff; border-color: transparent; }
+  .pdial .on-agg { background: color-mix(in srgb, var(--up) 88%, var(--panel)); color: #fff; border-color: transparent; }
+  .reason { display: flex; align-items: flex-start; gap: 8px; font-size: 12.5px; margin: 5px 0; line-height: 1.45; }
+  .sig { flex: none; width: 17px; height: 17px; border-radius: 50%; font-size: 11px; font-weight: 800; line-height: 17px; text-align: center; }
+  .sig-p { background: color-mix(in srgb, var(--up) 22%, var(--panel)); color: var(--up); }
+  .sig-m { background: color-mix(in srgb, var(--down) 22%, var(--panel)); color: var(--down); }
+  .sig-i { background: color-mix(in srgb, var(--muted) 22%, var(--panel)); color: var(--muted); }
+  .pcard { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 7px 10px; margin: 6px 0; font-size: 12.5px; }
+  .calltag { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 8px; margin-right: 6px; text-transform: uppercase; letter-spacing: .03em; }
+  .tag-pref { background: color-mix(in srgb, var(--info) 18%, var(--panel)); color: color-mix(in srgb, var(--info) 85%, var(--text)); }
+  .tag-lead { background: color-mix(in srgb, var(--up) 18%, var(--panel)); color: color-mix(in srgb, var(--up) 85%, var(--text)); }
+  .tag-avoid { background: color-mix(in srgb, var(--down) 18%, var(--panel)); color: color-mix(in srgb, var(--down) 85%, var(--text)); }
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%;
+          border:1px solid var(--muted); color:var(--muted); font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:4px; }
+  .help .tip { display:none; position:absolute; bottom:140%; left:50%; transform:translateX(-50%); width:280px; background:var(--panel);
+               border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text);
+               font-weight:400; text-transform:none; letter-spacing:normal; box-shadow:var(--popover-shadow); }
+  .help:hover .tip { display:block; }
+  .stat-row { display:flex; flex-wrap:wrap; gap:18px; align-items:baseline; margin:2px 0 10px; }
+  .stat-row .v { font-size:22px; font-weight:800; color:var(--text); }
+  table.sortable th.th-sort { cursor: pointer; user-select: none; }
+  table.sortable th.sorted { color: var(--text); }
+  table.sortable th .sarrow { font-size: 9px; opacity: .32; margin-left: 3px; font-weight: 700; }
+  table.sortable th.sorted .sarrow { opacity: .9; color: var(--link); }
+
+  /* ---- regime time machine (timemachine.js) -------------------------------- */
+  #time-machine .tm-wrap { position: relative; margin: 4px 0 2px; }
+  .tm-canvas { display: block; width: 100%; height: 56px; cursor: ew-resize; border-radius: 8px; touch-action: none; }
+  .tm-range { -webkit-appearance: none; appearance: none; width: 100%; height: 16px; background: transparent; margin: 2px 0 0; cursor: ew-resize; }
+  .tm-range::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: var(--line); }
+  .tm-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; margin-top: -6px; border-radius: 50%; background: var(--text); border: 2px solid var(--panel); box-shadow: 0 1px 4px rgba(0,0,0,.35); }
+  .tm-range::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--text); border: 2px solid var(--panel); }
+  .tm-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin: 8px 0 12px; }
+  .tm-presets { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+  .tm-btn { font: inherit; font-size: 12px; font-weight: 600; color: var(--text); background: var(--panel2); border: 1px solid var(--line); border-radius: 7px; padding: 5px 11px; cursor: pointer; }
+  .tm-btn:hover { border-color: var(--link); }
+  .tm-play { display: inline-flex; align-items: center; gap: 7px; }
+  .tm-play-ico { width: 0; height: 0; border-style: solid; border-width: 6px 0 6px 10px; border-color: transparent transparent transparent var(--text); }
+  .tm-play.is-playing .tm-play-ico { width: 9px; height: 11px; border: none; border-left: 3px solid var(--text); border-right: 3px solid var(--text); }
+  .tm-readout { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+  .tm-asof { display: flex; align-items: baseline; gap: 10px; margin-bottom: 9px; }
+  .tm-date { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .tm-state-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 2px 8px; border-radius: 10px; }
+  .tm-state-tag.is-live { color: color-mix(in srgb, var(--up) 85%, var(--text)); background: color-mix(in srgb, var(--up) 16%, var(--panel)); }
+  .tm-state-tag.is-hist { color: var(--muted); background: color-mix(in srgb, var(--muted) 16%, var(--panel)); }
+  .tm-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .tm-gauges { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 22px; margin: 12px 0 4px; }
+  @media (max-width: 640px) { .tm-gauges { grid-template-columns: 1fr; } }
+  .tm-glabel { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 600; margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+  .tm-flags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .badge { display: inline-block; padding: 3px 11px; border-radius: 11px; font-weight: 700; font-size: 12.5px; }
+  .badge.quad-Q1 { background: var(--q1); color: #fff; } .badge.quad-Q2 { background: var(--q2); color: #1a1a1a; }
+  .badge.quad-Q3 { background: var(--q3); color: #fff; } .badge.quad-Q4 { background: var(--q4); color: #fff; }
+  .badge.state-STABLE { background: color-mix(in srgb, var(--muted) 16%, var(--panel)); color: color-mix(in srgb, var(--muted) 82%, var(--text)); }
+  .kv { font-size: 12.5px; color: var(--muted); } .kv b { color: var(--text); font-variant-numeric: tabular-nums; }
+  .gauge { position: relative; height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--down), var(--line) 50%, var(--up)); }
+  .gauge i { position: absolute; top: 50%; width: 12px; height: 12px; border-radius: 50%; background: var(--text); border: 2px solid var(--panel); transform: translate(-50%,-50%); }
   .foot { margin-top: 26px; color: var(--muted); font-size: 12px; text-align: center; line-height: 1.7; }
 </style>
 </head>
@@ -108,6 +185,7 @@
       <div class="metric"><span class="v">{{ (latest.confidence*100)|round|int }}%</span><span class="k">{{ t('Confidence', '置信度') }}</span></div>
       <div class="metric"><span class="chip c-info">{{ t('Dual liquidity', '双重流动性') }} {{ td(latest.liquidity_overlay) }}</span><span class="k">{{ t('Liquidity', '流动性') }}</span></div>
       <div class="metric"><span class="chip c-muted">{{ td(latest.cycle_tag) }}</span><span class="k">{{ t('Cycle', '周期阶段') }}</span></div>
+      {% if vhsi %}<div class="metric"><span class="chip {{ 'c-warn' if vhsi.level>=23 else 'c-muted' }}">{{ vhsi.level }}</span><span class="k">{{ t('VHSI fear', '恒指波幅') }} · {{ vhsi.pctile }}%ile</span></div>{% endif %}
     </div>
     {% if latest.confirming %}<p class="note" style="margin:12px 0 0">{{ t('Confirming', '确认') }}: {{ latest.confirming|join(', ') }}{% if latest.contradicting %} · {{ t('Contradicting', '矛盾') }}: {{ latest.contradicting|join(', ') }}{% endif %}</p>{% endif %}
   </div>
@@ -158,6 +236,124 @@
   </div>
   {% endif %}
 
+  {% if pb %}
+  <!-- ===================== WHERE WE ARE + WHAT'S NEXT ===================== -->
+  {% if pb.progress %}
+  <div class="panel span6">
+    <h2>{{ t('Where we are in this regime', '我们身处此周期何处') }}
+      {{ help("This regime's age vs every same-quad period since ~2006 in this classifier. HK regimes are globally sensitive and short — context, not a forecast.", "当前周期的年龄对比本分类器自约 2006 年以来的每段同象限周期。香港周期对全球敏感且较短 — 仅作背景，而非预测。") }}</h2>
+    <div class="lifebar">
+      <div class="zone" style="left:0;width:{{ pb.progress.zone_early_pct }}%;background:color-mix(in srgb,var(--up) 32%,var(--panel))"></div>
+      <div class="zone" style="left:{{ pb.progress.zone_early_pct }}%;width:{{ pb.progress.zone_mid_pct - pb.progress.zone_early_pct }}%;background:color-mix(in srgb,var(--warn) 32%,var(--panel))"></div>
+      <div class="zone" style="left:{{ pb.progress.zone_mid_pct }}%;width:{{ 100 - pb.progress.zone_mid_pct }}%;background:color-mix(in srgb,var(--down) 32%,var(--panel))"></div>
+      <div class="marker" style="left:{{ pb.progress.bar_pct }}%"></div>
+    </div>
+    <div class="lifelabels"><span>{{ t('young', '年轻') }}</span><span>{{ t('mid-life', '中年') }}</span><span>{{ t('old', '年老') }}</span></div>
+    <p class="note" style="margin:10px 0 0">{{ t(
+      pb.progress.age_days|string + ' trading days in, vs a median of ' + pb.progress.median_days|string + ' across ' + pb.progress.n_history|string + ' past ' + latest.quad_name + ' periods.',
+      '已运行 ' + pb.progress.age_days|string + ' 个交易日，对比 ' + pb.progress.n_history|string + ' 段过往同象限周期的中位数 ' + pb.progress.median_days|string + ' 个交易日。') }}</p>
+  </div>
+  {% endif %}
+  {% if pb.next_list %}
+  <div class="panel span6">
+    <h2>{{ t("What's likely next", '接下来可能发生什么') }}
+      {{ help("Across every same-quad period in this classifier, which regime came next. Base rates from a short, globally-sensitive history — not forecasts.", "本分类器中每段同象限周期之后接下来出现的周期。来自一段短而对全球敏感历史的基础概率 — 而非预测。") }}</h2>
+    {% for n in pb.next_list %}
+    <div class="prob">
+      <span class="nm">{{ t(n.name, n.name_zh) }}</span>
+      <span class="bar"><i style="width:{{ n.prob_pct }}%;background:var(--q{{ n.code[1] }})"></i></span>
+      <span class="pc">{{ n.prob_pct }}%</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ===================== HOW TO TRADE NOW (exposure dial) ===================== -->
+  <div class="panel span12">
+    <h2>{{ t('How to trade the current regime', '如何交易当前周期') }}
+      {{ help("The dial is the headline: how much risk current conditions support, built from the quad's calibrated edge plus HK's live drivers (the global risk-on/off state, dual liquidity, the HKD peg, southbound flow). Sector names are risk filters — no stable monthly single-sector outperformance signal exists.", "刻度盘是核心：当前条件支持多大风险，由象限的校准优势加香港实时驱动（全球风险开关、双重流动性、港元联汇、南向资金）构建。板块名称是风险过滤器 — 不存在稳定的月度单一板块跑赢信号。") }}</h2>
+    {% if pb.quad_meaning %}<p class="note" style="margin:0 0 10px">{{ t(pb.quad_meaning.en, pb.quad_meaning.zh) }}</p>{% endif %}
+    <div class="pdial">
+      {% set pmap = {'DEFENSIVE':'on-def','CAREFUL':'on-car','NEUTRAL':'on-neu','CONSTRUCTIVE':'on-con','AGGRESSIVE':'on-agg'} %}
+      {% set pzh = {'DEFENSIVE':'防御','CAREFUL':'谨慎','NEUTRAL':'中性','CONSTRUCTIVE':'积极','AGGRESSIVE':'进取'} %}
+      {% for p in ['DEFENSIVE','CAREFUL','NEUTRAL','CONSTRUCTIVE','AGGRESSIVE'] %}
+        <span class="{{ pmap[p] if pb.dial.posture==p }}">{{ t(p, pzh[p]) }}</span>
+      {% endfor %}
+    </div>
+    {% for sign, r_en, r_zh in pb.dial.reasons %}
+      <div class="reason"><span class="sig sig-{{ {'+':'p','-':'m','i':'i'}[sign] }}">{{ {'+':'+','-':'−','i':'i'}[sign] }}</span> <span>{{ t(r_en, r_zh) }}</span></div>
+    {% endfor %}
+    <div class="grid" style="margin-top:14px">
+      <div class="span4">
+        <h3>🎯 {{ t('Framework-preferred sectors', '框架偏好板块') }}{% if pb.pref_agreement is not none %} <span class="note" style="text-transform:none">· {{ t('tape agrees', '盘面一致') }} {{ (pb.pref_agreement*100)|round|int }}%</span>{% endif %}</h3>
+        {% for x in pb.preferred %}
+          <div class="pcard"><span class="calltag tag-pref">{{ t('PREFERRED', '偏好') }}</span><a href="sectors/{{ x.slug }}.html"><b>{{ td(x.name) }}</b></a>{% if x.rank %} <span class="note">{{ t('RS', '相对') }} #{{ x.rank }}/12</span>{% endif %}</div>
+        {% else %}<p class="note">—</p>{% endfor %}
+      </div>
+      <div class="span4">
+        <h3>✅ {{ t('Confirmed leaders', '已确认领先') }} <span class="note" style="text-transform:none">· {{ t('uptrend + momentum', '上涨趋势 + 动量') }}</span></h3>
+        {% for x in pb.leaders %}
+          <div class="pcard"><span class="calltag tag-lead">{{ t('LEADER', '领先') }}</span><a href="sectors/{{ x.ticker }}.html"><b>{{ td(x.name) }}</b></a>{% if x.mom20 is not none %} <span class="pos">{{ '%+.1f'|format(x.mom20) }}</span>{% endif %}</div>
+        {% else %}<p class="note">{{ t('None confirmed — stay close to the index.', '无确认领先 — 紧贴指数。') }}</p>{% endfor %}
+      </div>
+      <div class="span4">
+        <h3>🚫 {{ t('Avoid right now', '现在回避') }} <span class="note" style="text-transform:none">· {{ t('downtrend / topping', '下跌 / 见顶') }}</span></h3>
+        {% for x in pb.avoid %}
+          <div class="pcard"><span class="calltag tag-avoid">{{ t('AVOID', '回避') }}</span><a href="sectors/{{ x.ticker }}.html"><b>{{ td(x.name) }}</b></a> <span class="note">{{ td(x.state) }}</span></div>
+        {% else %}<p class="note">{{ t('Nothing triggers the avoid rules.', '当前无标的触发回避规则。') }}</p>{% endfor %}
+      </div>
+    </div>
+    {% if pb.honesty %}<p class="note" style="margin-top:10px">⚖️ {{ t(pb.honesty.en, pb.honesty.zh) }}</p>{% endif %}
+  </div>
+  {% endif %}
+
+  <!-- ===================== REGIME TIME MACHINE ===================== -->
+  {% if lifespan_rows %}
+  <div class="panel span12" id="time-machine" data-timeline="hk_regime_timeline.json">
+    <h2>{{ t('⏳ Regime time machine', '⏳ 周期时光机') }}
+      {{ help("Drag the playhead across ~20 years of Hang Seng history and the readout rewinds the regime core to that day — quadrant, growth/inflation scores, agreement, dual liquidity and the cycle. Hit ▶ to watch the quad ribbon flip at every major turn — 2008 GFC, the 2015 rally, 2018, 2020 COVID, the 2021 HS-TECH peak.", "拖动播放头横扫约 20 年恒生历史，下方读数会把周期核心回退到那一天 — 象限、增长／通胀分数、一致度、双重流动性与周期。点击 ▶ 观看周期色带在每个重大转折处翻转 — 2008 金融危机、2015 行情、2018、2020 疫情、2021 恒生科技见顶。") }}
+    </h2>
+    <div class="tm-wrap">
+      <canvas id="tm-canvas" class="tm-canvas"></canvas>
+      <input id="tm-range" class="tm-range" type="range" min="0" max="0" value="0" aria-label="Scrub regime history">
+    </div>
+    <div class="tm-controls">
+      <button class="tm-btn tm-play" id="tm-play" aria-label="play/pause" title="Play / pause"><span class="tm-play-ico"></span></button>
+      <span class="tm-presets">
+        <button class="tm-btn" data-tm-jump="now">{{ t('Now', '现在') }}</button>
+        <button class="tm-btn" data-tm-jump="2015-04-27">{{ t('2015 rally', '2015 行情') }}</button>
+        <button class="tm-btn" data-tm-jump="2018-01-26">{{ t('2018 peak', '2018 高点') }}</button>
+        <button class="tm-btn" data-tm-jump="2020-03-23">{{ t('2020 COVID', '2020 疫情') }}</button>
+        <button class="tm-btn" data-tm-jump="2021-02-17">{{ t('2021 HS-TECH top', '2021 恒科见顶') }}</button>
+      </span>
+    </div>
+    <div class="tm-readout">
+      <div class="tm-asof">
+        <span class="tm-date" id="tm-date">—</span>
+        <span class="tm-state-tag is-live" id="tm-tag">—</span>
+      </div>
+      <div class="tm-badges">
+        <span class="badge" id="tm-quad">—</span>
+        <span class="badge" id="tm-trans">—</span>
+        <span class="kv">{{ t('agreement', '一致度') }} <b id="tm-conf">—</b></span>
+        <span class="kv">{{ t('cycle', '周期') }} <b id="tm-cyc">—</b></span>
+        <span class="kv">{{ t('liquidity', '流动性') }} <b id="tm-liq">—</b></span>
+      </div>
+      <div class="tm-gauges">
+        <div class="tm-gauge">
+          <div class="tm-glabel"><span>{{ t('Growth', '增长') }}</span><span class="sub" id="tm-g-v">—</span></div>
+          <div class="gauge"><i id="tm-g-i" style="left:50%"></i></div>
+        </div>
+        <div class="tm-gauge">
+          <div class="tm-glabel"><span>{{ t('Inflation', '通胀') }}</span><span class="sub" id="tm-i-v">—</span></div>
+          <div class="gauge"><i id="tm-i-i" style="left:50%"></i></div>
+        </div>
+      </div>
+      <div class="tm-flags" id="tm-flags"></div>
+    </div>
+  </div>
+  {% endif %}
+
   <!-- honest calibration framing -->
   <div class="panel span12">
     <h2>{{ t('How to read this', '如何解读') }}</h2>
@@ -165,14 +361,14 @@
       'The Hong Kong regime stands on <b>three legs</b>: (1) China-driven fundamentals (PMI, CPI, PPI, M2 — the Mainland sets HK\'s earnings cycle), (2) a <b>primary global risk overlay</b> (the dollar/VIX/US-equity/copper-gold/USD-CNY/EM composite plus the HKD peg shown above — HK is ~2x more globally sensitive than the Mainland), and (3) HK-internal structure (H-share leadership, the HS-TECH tilt, and breadth). Read it as a <b>risk-context map</b>, not an allocation rule — the cycle ladder below is a drawdown/structure tool, never a standalone buy trigger. HS-TECH is proxied by an ETF (2020→).',
       '香港周期建立在<b>三条腿</b>之上：(1) 由中国驱动的基本面（PMI、CPI、PPI、M2——内地决定香港的盈利周期），(2) <b>主导性的全球风险开关</b>（上方所示的美元/波动率/美股/铜金比/美元兑人民币/新兴市场综合指标加港元联系汇率——香港对全球因素的敏感度约为内地的2倍），以及 (3) 香港内部结构（国企股领导力、恒生科技倾斜与市场宽度）。请将其视作<b>风险背景图</b>，而非配置规则——下方的周期阶梯是回撤/结构工具，绝非独立买入信号。恒生科技以ETF代理（2020年起）。') }}</p>
     <p class="note" style="margin-top:8px">{{ t(
-      'Measured 2000→2026, split-half: all three legs carry a real, stable signal on HSI forward returns — <b>Goldilocks</b> is the best quad (+1.3%/21d, 64% hit, positive in both halves) and <b>Stagflation</b> the worst (−0.9%/21d, negative in both); <b>expanding</b> dual-liquidity (PBoC + peg + southbound) beats contracting (+0.5% vs −0.4%/21d); and the global overlay differentiates monotonically — <b>Risk-on +0.9%/21d (57% hit) &gt; Risk-off &gt; Neutral</b>. These are base rates, not predictions.',
-      '校准区间 2000→2026（折半验证）：三条腿对恒指前瞻收益均有真实且稳定的信号——<b>理想增长</b>是最佳象限（21日 +1.3%、命中率64%，两段均为正），<b>滞胀</b>最差（21日 −0.9%，两段均为负）；<b>扩张</b>的双重流动性（央行＋联汇＋南向）优于收缩（21日 +0.5% vs −0.4%）；全球风险开关呈单调区分——<b>风险偏好 21日 +0.9%（命中率57%）&gt; 风险规避 &gt; 中性</b>。以上为历史基准，而非预测。') }}</p>
+      'Measured 2000→2026, split-half: all three legs carry a real, stable signal on HSI forward returns — <b>Goldilocks</b> is the best quad (+1.3%/21d, 64% hit, positive in both halves) and <b>Stagflation</b> the worst (−0.9%/21d, negative in both); <b>expanding</b> dual-liquidity (PBoC + peg + southbound) beats contracting (+0.5% vs −0.4%/21d); and the global overlay differentiates monotonically — <b>Risk-on +0.8%/21d (57% hit) &gt; Risk-off &gt; Neutral</b>. These are base rates, not predictions.',
+      '校准区间 2000→2026（折半验证）：三条腿对恒指前瞻收益均有真实且稳定的信号——<b>理想增长</b>是最佳象限（21日 +1.3%、命中率64%，两段均为正），<b>滞胀</b>最差（21日 −0.9%，两段均为负）；<b>扩张</b>的双重流动性（央行＋联汇＋南向）优于收缩（21日 +0.5% vs −0.4%）；全球风险开关呈单调区分——<b>风险偏好 21日 +0.8%（命中率57%）&gt; 风险规避 &gt; 中性</b>。以上为历史基准，而非预测。') }}</p>
   </div>
 
   <!-- sector rotation board -->
   <div class="panel span8">
     <h2>{{ t('Sector Rotation', '板块轮动') }} <span class="note" style="text-transform:none">· {{ t('RS vs HSI', '相对恒生指数') }}</span></h2>
-    <table>
+    <table class="sortable">
       <thead><tr>
         <th class="l">{{ t('Sector', '板块') }}</th>
         <th>{{ t('Rank', '排名') }}</th>
@@ -221,6 +417,66 @@
     {% endif %}
   </div>
 
+  <!-- ===================== SOUTHBOUND FLOW (南向资金) ===================== -->
+  {% if internals and internals.southbound %}{% set sb = internals.southbound %}
+  <div class="panel span6">
+    <h2>{{ t('🇭🇰 Southbound flow', '🇭🇰 南向资金') }} <span class="note" style="text-transform:none">· {{ t('mainland → Hong Kong', '内地 → 香港') }}</span>
+      {{ help("Net daily Stock-Connect southbound flow — mainland money buying HK-listed shares, the single most-watched HK liquidity tell (HK has no central retail-margin disclosure). z-score vs the trailing year; 20-day cumulative net; mainland holdings of HK stock.", "每日南向净流入 — 内地资金买入港股，香港最受关注的流动性指标（香港无集中的散户两融披露）。相对过去一年的 z 分数；20 日累计净额；内地持有港股市值。") }}</h2>
+    <div class="stat-row">
+      <div><span class="v {{ 'pos' if sb.cum_20d>=0 else 'neg' }}">{{ '%+.0f'|format(sb.cum_20d) }}</span><div class="note">{{ t('20d net (¥100M)', '20日净额(亿元)') }}</div></div>
+      <div><span class="v {{ 'pos' if sb.net_z>=0 else 'neg' }}">{{ '%+.1f'|format(sb.net_z) }}σ</span><div class="note">{{ t('today vs 1y', '今日 vs 一年') }}</div></div>
+      {% if sb.hold_mktcap %}<div><span class="v">{{ '{:,}'.format(sb.hold_mktcap) }}</span><div class="note">{{ t('mainland holdings (¥100M)', '内地持仓(亿元)') }}</div></div>{% endif %}
+      <div><span class="v">{{ sb.pos_days_20 }}/20</span><div class="note">{{ t('net-buy days', '净买入天数') }}</div></div>
+    </div>
+    {{ sb.chart_html | safe }}
+  </div>
+  {% endif %}
+
+  <!-- ===================== HKMA PEG FUNDING ===================== -->
+  {% if funding %}
+  <div class="panel span6">
+    <h2>{{ t('HKMA peg funding', '金管局联汇流动性') }} <span class="note" style="text-transform:none">· {{ t('Aggregate Balance + HIBOR', '总结余 + HIBOR') }}</span>
+      {{ help("The Aggregate Balance is HK banks' settlement liquidity; it mechanically SHRINKS when the HKMA sells USD to defend the 7.85 weak-side peg — the real driver of HIBOR spikes and HSI funding headwinds. Falling balance + rising HIBOR = tightening.", "总结余是香港银行体系的结算流动性；当金管局卖出美元捍卫 7.85 弱方兑换保证时会机械性收缩 — 这是 HIBOR 抽升与港股资金面逆风的真正成因。总结余下降＋HIBOR 上行＝收紧。") }}</h2>
+    <div class="stat-row">
+      <div><span class="v">{{ '{:,}'.format(funding.agg_balance) }}</span><div class="note">{{ t('Aggregate Balance (HK$M)', '总结余(百万港元)') }}{% if funding.agg_chg_1y_pct is not none %} · <span class="{{ 'neg' if funding.agg_chg_1y_pct<0 else 'pos' }}">{{ '%+.0f'|format(funding.agg_chg_1y_pct) }}% {{ t('1y', '年') }}</span>{% endif %}</div></div>
+      {% if funding.hibor_on is not none %}<div><span class="v">{{ funding.hibor_on }}%</span><div class="note">{{ t('HIBOR overnight', '隔夜 HIBOR') }}</div></div>{% endif %}
+      {% if funding.hibor_1m is not none %}<div><span class="v">{{ funding.hibor_1m }}%</span><div class="note">{{ t('HIBOR 1-month', '1 个月 HIBOR') }}</div></div>{% endif %}
+      {% if funding.twi is not none %}<div><span class="v">{{ funding.twi }}</span><div class="note">{{ t('HKD TWI', '港汇指数') }}</div></div>{% endif %}
+    </div>
+    {{ funding.chart_html | safe }}
+  </div>
+  {% endif %}
+
+  <!-- ===================== AH PREMIUM (computed basket) ===================== -->
+  {% if ah %}
+  <div class="panel span6">
+    <h2>{{ t('AH premium', 'AH 溢价') }} <span class="note" style="text-transform:none">· {{ t('A-share vs HK-listed H twin', 'A股 对 H股') }}</span>
+      {{ help("For dual-listed companies, how much DEARER the Shanghai/Shenzhen A-share trades vs its Hong-Kong-listed H-share twin (FX-adjusted, equal-weight basket). A high premium = the H/HK line is the cheaper way to own the same company; a low/compressing premium = that value gap has closed. Lean on the trend + percentile, not the absolute level (computed basket, not the official index).", "对于两地上市公司，沪深 A 股相对其香港上市 H 股的溢价（经汇率调整、等权篮子）。溢价高＝以 H/港股持有同一公司更便宜；溢价低/收窄＝价值差已收敛。请关注趋势与分位，而非绝对水平（自算篮子，非官方指数）。") }}</h2>
+    <div class="stat-row">
+      <div><span class="v">{{ '%+.1f'|format(ah.premium_pct) }}%</span><div class="note">{{ t('basket A-over-H', '篮子 A 高于 H') }} ({{ ah.n_pairs }} {{ t('pairs', '对') }})</div></div>
+      {% if ah.pctile is not none %}<div><span class="v">{{ ah.pctile }}%ile</span><div class="note">{{ t('vs 3y range', '对比3年区间') }}</div></div>{% endif %}
+      {% if ah.chg_1y is not none %}<div><span class="v {{ 'neg' if ah.chg_1y<0 else 'pos' }}">{{ '%+.1f'|format(ah.chg_1y) }}pp</span><div class="note">{{ t('1y change', '一年变化') }}</div></div>{% endif %}
+    </div>
+    {{ ah.chart_html | safe }}
+    <table style="margin-top:8px"><thead><tr><th class="l">{{ t('Pair', '配对') }}</th><th>{{ t('A-over-H %', 'A 高于 H %') }}</th></tr></thead><tbody>
+    {% for p in ah.pairs[:6] %}<tr><td class="l">{{ p.name }} <span class="note">{{ p.h }}</span></td><td>{{ '%+.1f'|format(p.premium_pct) }}%</td></tr>{% endfor %}
+    </tbody></table>
+  </div>
+  {% endif %}
+
+  <!-- ===================== CHINA EARNINGS BACKDROP ===================== -->
+  {% if internals and (internals.credit or internals.pboc) %}
+  <div class="panel span6">
+    <h2>{{ t('China earnings backdrop', '中国盈利背景') }} <span class="note" style="text-transform:none">· {{ t('drives HSI fundamentals', '驱动恒指基本面') }}</span>
+      {{ help("HSI is ~75% China earnings, so the Mainland credit + policy cycle is the fundamental driver. The credit impulse (社融脉冲) historically leads risk assets ~2 quarters; PBoC RRR cuts free bank liquidity.", "恒指约 75% 为中国盈利，故内地信贷与政策周期是基本面驱动。社融脉冲历史上领先风险资产约两个季度；央行降准释放银行体系流动性。") }}</h2>
+    <div class="stat-row">
+      {% if internals.credit and internals.credit.credit_impulse is not none %}<div><span class="v {{ 'pos' if internals.credit.credit_impulse>=0 else 'neg' }}">{{ '%+.1f'|format(internals.credit.credit_impulse) }}</span><div class="note">{{ t('credit impulse (社融)', '社融脉冲') }}{% if internals.credit.credit_impulse_6mo is not none %} · {{ t('6mo ago', '半年前') }} {{ '%+.1f'|format(internals.credit.credit_impulse_6mo) }}{% endif %}</div></div>{% endif %}
+      {% if internals.pboc %}<div><span class="v">{{ internals.pboc.rrr_big }}%</span><div class="note">{{ t('RRR (big banks)', '大行存准率') }} · <span class="{{ 'pos' if internals.pboc.bias=='easing' else ('neg' if internals.pboc.bias=='tightening' else '') }}">{{ td(internals.pboc.bias) }}</span></div></div>{% endif %}
+    </div>
+    {% if internals.credit and internals.credit.impulse_html %}{{ internals.credit.impulse_html | safe }}{% endif %}
+  </div>
+  {% endif %}
+
   <!-- MTF cards for the leaders -->
   <div class="panel span12">
     <h2>{{ t('Cycle Detail — Sector Leaders', '周期详情 — 领先板块') }}</h2>
@@ -246,5 +502,8 @@
 
 <script src="theme.js"></script>
 <script src="mtf.js"></script>
+<script src="charts.js"></script>
+<script src="tablesort.js"></script>
+<script src="timemachine.js"></script>
 </body>
 </html>

@@ -58,24 +58,24 @@ differentiate HSI forward returns?_
 
 | risk_state   |    n |   f21_mean% |   f21_hit% |   f63_mean% |   f63_hit% |
 |:-------------|-----:|------------:|-----------:|------------:|-----------:|
-| Neutral      | 2165 |       -0.23 |       49.5 |        0.21 |       50.3 |
-| Risk-off     | 1734 |        0.27 |       53.3 |        0.94 |       53.8 |
-| Risk-on      | 2793 |        0.89 |       57.5 |        1.83 |       57.4 |
+| Neutral      | 2464 |       -0.14 |       49.7 |        0.36 |       50.2 |
+| Risk-off     | 1609 |        0.37 |       54.6 |        0.84 |       53.8 |
+| Risk-on      | 2619 |        0.84 |       57.3 |        1.9  |       58.1 |
 
 ## 4. Cycle ladder (deep HK panel) — endpoint return + forward drawdown
 
 |                          |    n |   hit_pct |   avg_fwd_pct |   dd_med_pct |   dd_p10_pct |   dd_bad_pct |
 |:-------------------------|-----:|----------:|--------------:|-------------:|-------------:|-------------:|
-| DECLINE                  | 5098 |      55.1 |          1.4  |        -4.27 |       -16.56 |         23.6 |
-| BOTTOM WATCH             | 5775 |      51.7 |          1.07 |        -4.03 |       -14.21 |         19.6 |
+| DECLINE                  | 5100 |      55.1 |          1.4  |        -4.27 |       -16.56 |         23.6 |
+| BOTTOM WATCH             | 5775 |      51.8 |          1.08 |        -4.03 |       -14.21 |         19.6 |
 | TURN SIGNALED            | 7357 |      51.2 |          1.17 |        -3.96 |       -13.57 |         18.1 |
-| FRESH BUY                | 2251 |      50.7 |          1.35 |        -4.13 |       -13.33 |         18.1 |
-| RALLY ON                 | 5595 |      53.5 |          1.64 |        -3.5  |       -13.56 |         17.8 |
-| TOP WATCH                | 3764 |      54.5 |          1.65 |        -3.7  |       -13.18 |         17   |
-| ROLLING OVER             | 1437 |      51.3 |          1.13 |        -3.95 |       -14.54 |         19.3 |
-| COUNTERTREND BOUNCE      | 4889 |      53.1 |          1.08 |        -3.94 |       -14.46 |         20.7 |
+| FRESH BUY                | 2249 |      50.7 |          1.34 |        -4.13 |       -13.33 |         18.1 |
+| RALLY ON                 | 5596 |      53.5 |          1.64 |        -3.5  |       -13.56 |         17.8 |
+| TOP WATCH                | 3767 |      54.4 |          1.63 |        -3.7  |       -13.17 |         17   |
+| ROLLING OVER             | 1436 |      51.3 |          1.13 |        -3.96 |       -14.55 |         19.4 |
+| COUNTERTREND BOUNCE      | 4886 |      53.1 |          1.08 |        -3.94 |       -14.46 |         20.7 |
 | BOTTOM WATCH +early-bull |  264 |      50.4 |          0.69 |        -4.89 |       -13.91 |         22.3 |
-| BOTTOM WATCH no-early    | 5511 |      51.8 |          1.09 |        -4    |       -14.21 |         19.5 |
+| BOTTOM WATCH no-early    | 5511 |      51.8 |          1.1  |        -4    |       -14.21 |         19.5 |
 
 ## Reading this
 - Quad rows whose sign/ranking flips between the two halves are **regime-unstable** ->

@@ -61,9 +61,10 @@ def all_adapters() -> dict:
         ("china_flows", "collectors.china_flows", "ChinaFlowsAdapter"),        # AH premium / limit-up / ETF shares
         ("china_credit", "collectors.china_credit", "ChinaCreditAdapter"),     # 社融 TSF (mofcom, legacy-SSL)
         # Hong Kong / Hang Seng dashboard — see research/HK_DATA_AUDIT.md
-        # (macro is reused from china_macro; HK only adds prices + breadth)
+        # (macro reused from china_macro; flows reused from china_connect/china_flows)
         ("hk_prices", "collectors.hk_prices", "HkPriceAdapter"),
         ("hk_breadth", "collectors.hk_breadth", "HkBreadthAdapter"),
+        ("hkma", "collectors.hkma", "HkmaAdapter"),                            # peg-funding: Aggregate Balance + HIBOR + TWI
         # crypto (Bitcoin Vector) — see research/VECTOR_DATA_AUDIT.md
         ("coinmetrics", "collectors.coinmetrics", "CoinMetricsAdapter"),
         ("bgeo", "collectors.bgeo", "BgeoAdapter"),

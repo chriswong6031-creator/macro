@@ -125,6 +125,20 @@ def build_features() -> pd.DataFrame:
     else:
         f["copper_gold"] = np.nan
 
+    # VHSI — HK's own fear gauge (for the hero + a global-overlay factor)
+    vh = store.read("hk", "^HSIL")
+    put("vhsi", vh["close"] if (vh is not None and "close" in vh.columns) else None)
+
+    # HKMA peg-funding mechanics — Aggregate Balance shrinks when HKMA defends the
+    # 7.85 weak-side peg (the real funding-tightening driver) + overnight HIBOR
+    hkma = store.read("hkma", "interbank_liquidity")
+    if hkma is not None:
+        put("agg_balance", hkma["agg_balance"] if "agg_balance" in hkma.columns else None)
+        put("hibor_on", hkma["hibor_on"] if "hibor_on" in hkma.columns else None)
+    else:
+        f["agg_balance"] = np.nan
+        f["hibor_on"] = np.nan
+
     # --- China macro (monthly; step-fill across the month) ---------------------
     m = _macro_frame()
     for col in ["pmi_mfg", "pmi_nonmfg", "cpi_yoy", "ppi_yoy", "m2_yoy", "m1_yoy"]:

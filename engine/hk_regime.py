@@ -47,6 +47,10 @@ def liquidity_overlay(f: pd.DataFrame) -> pd.Series:
         ps[peg.isna()] = np.nan
         parts.append((ps, w["peg_pressure"]["weight"]))
 
+    # NOTE: an HKMA Aggregate-Balance leg was tested here and REMOVED — it inverted
+    # the overlay's measured edge (see config hk.engine.liquidity). The Aggregate
+    # Balance ships as a descriptive panel only, not a scored liquidity leg.
+
     if "southbound_cum" in f and not f["southbound_cum"].isna().all():
         sb = f["southbound_cum"].diff(lcfg["roc_window_d"])
         sbs = pd.Series(np.sign(sb), index=f.index)
