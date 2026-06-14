@@ -95,6 +95,38 @@ favourable-window artifact. Remaining unbought data: point-in-time CSI membershi
 which would only *weaken* momentum further, since survivorship biases it up). The honest A-share edge is
 **mean-reversion**, so the next real build is a reversal/pullback-led signal, not a momentum one.
 
+## Reversal-native signal — Phase 0 (validated; REFUTES the intuitive "confirmed pullback" design)
+
+`scripts/china_reversal_phase0.py` → `reports/china-reversal-phase0.md`. Long-only top-quintile of
+within-sector reversal fuel, forward 21d, EXCESS over the EW-universe (cross-sectional skill net of
+the A-share drift), on the deep panel (~790 names, 388 monthly rebalances, 1990→2026).
+
+| construction | excess /mo | Sharpe | maxDD | hit |
+|---|--:|--:|--:|--:|
+| **rev 3mo · deepest quintile (NO gate)** | **+0.56%** | **0.58** | −37.6% | 56% |
+| rev 1mo · deepest quintile | +0.37% | 0.38 | −49.3% | 54% |
+| rev 1mo · moderate band (avoid worst) | +0.10% | 0.16 | −31.7% | 53% |
+| rev + turn-confirmation (ret_5d>0) | **−0.29%** | −0.29 | −78.9% | 48% |
+| rev + turn + quality floor | −0.21% | −0.19 | −78.0% | 48% |
+| rev 3mo + market-healthy gate | +0.36% | 0.34 | −39.5% | 54% |
+| mom 12-1 (killed momentum, ref) | +0.03% | 0.03 | −57.3% | 47% |
+
+**Verdict: the validated A-share signal is 3-month within-sector reversal, deepest quintile, NO gates**
+(Sharpe 0.58, +0.56%/mo, 56% hit). It beats 1-month reversal, the killed momentum, and — decisively —
+**every refinement the intuition suggested:**
+- **Turn-confirmation HURTS** (excess flips negative): waiting for the bounce = buying AFTER the
+  mean-reversion. The edge is in the UNCONFIRMED dip.
+- **Quality floors HURT**: the deepest decliners carry the most reversal fuel.
+- **Moderate-band / market-regime timing** don't improve risk-adjusted return.
+
+So the operator's proposed construction — *cycle-confirmed pullbacks of quality names* — is **refuted**;
+confirmation and quality both forfeit the edge. **Caveats:** excess is cross-sectional skill, NOT
+net-of-cost (reversal is high-turnover); −37.6% drawdown is deep (contrarian, bleeds in sustained
+declines); quality-filtering hurts, so the raw signal surfaces the deepest decliners *including
+potentially-broken names* → a responsible product needs a light liquidity / non-ST(delisting-risk)
+screen and honest "high-variance contrarian, size small" framing, **not** a confident buy list. **Build
+is a product decision (the signal inverts the request + carries real risk) — flagged for the operator.**
+
 ## Build plan & status
 
 - **Phase 1 (China alpha leg) — SHIPPED + verified.** `compute_china_alpha()` in

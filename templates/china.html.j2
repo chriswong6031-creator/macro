@@ -524,44 +524,69 @@
 
   {% set SECZH = {'Technology':'科技','Industrials':'工业','Basic Materials':'原材料','Financial Services':'金融','Consumer Cyclical':'可选消费','Healthcare':'医疗保健','Utilities':'公用事业','Consumer Defensive':'必需消费','Energy':'能源','Communication Services':'通信服务','Real Estate':'房地产'} %}
 
-  <!-- ===================== TOP SETUPS (selection × timing) ===================== -->
-  {% if setups and setups.buy %}
-  <div class="panel span12" id="top-setups">
-    <h2>{{ t('⚡ Top setups — mean-reversion entries on decent names', '⚡ 顶级配置 — 优质个股的均值回归入场') }}
-      <span class="note" style="text-transform:none">· {{ t('cycle + mean-reversion entry', '周期 + 均值回归入场') }}</span>
-      {{ help("The actionable shortlist — REVERSAL-led after the deep-history correction. On ~35 years of A-share data, cross-sectional MOMENTUM is NOT a validated edge; short-term <b>reversal</b> is (research/CHINA_HK_STOCK_SIGNALS.md, reports/china-residual-alpha-deep.md). So this surfaces decent-quality names (some residual relative strength) sitting at a <b>cycle-confirmed mean-reversion entry</b> — a recent <b>pullback</b>, not an extended spike. <b>setup</b> LEADS with the validated effects (the calibrated cycle entry + the pullback/reversal overlay); the residual is only a light quality tiebreaker (0.35×), NOT the ranking driver. An <b>extended</b> name is reversal RISK, not a buy. Mean-reversion context to size and confirm — not a buy list.", "可操作的精选名单 —— 经深度历史校正后改为均值回归主导。在约35年的A股数据上，横截面动量并非有效优势；短期<b>反转</b>才是（research/CHINA_HK_STOCK_SIGNALS.md、reports/china-residual-alpha-deep.md）。因此这里筛选出具备一定残差相对强度、且处于<b>周期确认的均值回归入场点</b>（近期<b>回调</b>而非急涨过热）的优质个股。<b>setup</b> 以已验证的效应为主（校准的周期入场＋回调/反转叠加）；残差仅作轻量质量加权（0.35×），并非排序主导。<b>extended</b>（急涨）个股是反转风险而非买入。用于定仓与确认的均值回归背景 —— 而非买入清单。") }}
+  <!-- ===================== MEAN-REVERSION WATCH (the validated A-share signal) ===================== -->
+  {% if reversal and reversal.watch %}
+  <div class="panel span12" id="mean-reversion">
+    <h2>{{ t('🔄 Mean-reversion watch — deepest 3-month dips within sector', '🔄 均值回归观察 — 板块内近3月跌幅最深') }}
+      <span class="note" style="text-transform:none">· {{ t('the validated A-share signal', 'A股唯一已验证信号') }}{% if reversal.n %} · {{ reversal.n }} {{ t('names', '只') }}{% endif %}</span>
+      {{ help("The VALIDATED A-share stock signal (reports/china-reversal-phase0.md). Over ~35 years, A-share cross-sectional MOMENTUM is dead; the robust, FDR-surviving edge is short-term REVERSAL — the names most beaten-down vs their SECTOR over 3 months tend to mean-revert (cross-sectional Sharpe 0.58 across 388 rebalances). Counterintuitively, waiting for the bounce to “confirm” OR filtering for “quality” both DESTROY the edge (you buy after the move; the deepest decliners carry the most fuel) — so this surfaces the UNCONFIRMED deepest dips, screened ONLY for ST/delisting risk and a market-cap floor (tradability), never on momentum/quality. <b>rev-z</b> = within-sector reversal strength (deeper relative dip = higher). HIGH-VARIANCE CONTRARIAN — research candidates to size small, NOT a buy list: the measured edge is cross-sectional SKILL (not a net-of-cost return — reversal is high-turnover) and it buys into weakness (deep −37.6% historical drawdown; the deepest dips can keep falling).", "A股唯一已验证的个股信号（reports/china-reversal-phase0.md）。约35年里，A股横截面动量无效；稳健且通过FDR的优势是短期反转 —— 近3个月相对其<b>板块</b>跌幅最深的个股倾向于均值回归（388次再平衡，横截面夏普0.58）。反直觉的是：等待反弹“确认”或筛选“优质”都会摧毁该优势（你会在反弹后买入；跌幅最深者反转动力最强）—— 故此处展示<b>未确认</b>的最深跌幅个股，仅按 ST/退市风险与市值下限（可交易性）筛选，绝不按动量/质量筛选。<b>rev-z</b>＝板块内反转强度（相对跌幅越深越高）。高波动逆向 —— 用于研究、宜小仓位，并非买入清单：实测优势为横截面选股技巧（非扣费后收益，反转换手高），且是买入弱势（历史回撤深达 −37.6%；最深跌幅者可能继续下跌）。") }}
     </h2>
+    <p class="note" style="margin:0 0 12px;text-transform:none">{{ t('The most beaten-down names vs their sector over 3 months — statistically the strongest mean-reversion candidates. A high-variance contrarian signal that buys into weakness; size small, not a buy list.', '近3个月相对其板块跌幅最深的个股 —— 统计上反转动力最强的候选。高波动逆向信号，买入弱势；宜小仓位，而非买入清单。') }}{% if reversal.screened %} <span class="muted">({{ t('screened out', '已筛除') }} {{ reversal.screened.st }} ST/{{ t('delisting', '退市') }} + {{ reversal.screened.illiquid }} {{ t('illiquid', '低流动') }})</span>{% endif %}</p>
     <table class="sortable">
       <thead><tr>
         <th class="l">{{ t('Stock', '个股') }}</th>
         <th class="l">{{ t('Sector', '板块') }}</th>
-        <th>{{ t('alpha z', '阿尔法 z') }}</th>
+        <th>{{ t('3-mo', '近3月') }}</th>
         <th>{{ t('sector rank', '板块排名') }}</th>
-        <th class="l">{{ t('cycle state', '周期状态') }}</th>
-        <th class="l">{{ t('entry', '入场') }}</th>
-        <th>{{ t('setup', '配置分') }}</th>
+        <th>{{ t('rev-z', '反转强度') }}</th>
+        <th>{{ t('mkt cap', '市值') }}</th>
       </tr></thead>
       <tbody>
-      {% for r in setups.buy %}
+      {% for r in reversal.watch %}
       <tr>
         <td class="l"><a href="china_stock.html#{{ r.ticker }}"><b>{{ r.ticker }}</b></a> <span class="note">{{ nm(r.name) }}</span></td>
         <td class="l note">{{ t(r.sector, SECZH.get(r.sector, r.sector)) }}</td>
-        <td><b class="{{ 'pos' if (r.alpha or 0)>=0 else 'neg' }}">{{ '%+.2f'|format(r.alpha) if r.alpha is not none else '—' }}</b></td>
+        <td class="neg">{{ '%+.1f'|format(r.ret_3m) }}%</td>
         <td class="note">{{ r.sector_rank }}/{{ r.sector_n }}</td>
-        <td class="l"><span class="lad {{ 'up' if r.dir=='up' else ('down' if r.dir=='down' else 'flat') }}">{{ td(r.label or r.state) }}</span></td>
-        <td class="l">{% if r.alpha_entry %}<span class="alpha-entry ae-{{ r.alpha_entry }}">{{ r.alpha_entry }}</span>{% endif %}</td>
-        <td><b>{{ '%+.2f'|format(r.setup) if r.setup is not none else '—' }}</b></td>
+        <td><b>{{ '%.2f'|format(r.rev_z) if r.rev_z is not none else '—' }}</b></td>
+        <td class="note">{% if r.mktcap_yi %}{{ r.mktcap_yi|int }}亿{% else %}—{% endif %}</td>
       </tr>
       {% endfor %}
       </tbody>
     </table>
-    {% if setups.laggards %}
-    <p class="note" style="margin:11px 0 5px;text-transform:none">{{ t('Weakest relative momentum (laggards) — distribution risk:', '相对动量最弱（落后股）— 派发风险：') }}</p>
-    <p style="margin:0;line-height:2">
-      {% for r in setups.laggards %}<a href="china_stock.html#{{ r.ticker }}" style="margin-right:14px;white-space:nowrap"><b>{{ r.ticker }}</b> <span class="note">{{ nm(r.name) }}</span> <span class="neg">{{ '%+.2f'|format(r.alpha) }}</span></a>{% endfor %}
-    </p>
-    {% endif %}
-    <p class="note" style="margin:8px 0 0;font-size:11px">{{ t('Cycle entry + mean-reversion (the validated A-share effects), with residual relative strength as a light quality tiebreaker. Deep-history corrected: A-shares mean-revert — momentum is not an edge. A shortlist to size and confirm, not a buy list; cycle state is a drawdown/structure tool, not a timing oracle.', '周期入场 + 均值回归（A股已验证的效应），残差相对强度仅作轻量质量加权。经深度历史校正：A股均值回归 —— 动量并非优势。用于定仓与确认的名单，而非买入清单；周期状态是回撤/结构工具，而非择时神谕。') }}</p>
+    <p class="note" style="margin:8px 0 0;font-size:11px">{{ t('Validated cross-sectional edge (3-month within-sector reversal, Sharpe 0.58, 1990→2026) — but the deepest dips can keep falling. A watch list of mean-reversion CANDIDATES to research and size small, NOT a confident buy list. Confirmation and quality filters were tested and HURT the edge; excess is selection skill, not a net-of-cost return.', '已验证的横截面优势（板块内3个月反转，夏普0.58，1990→2026）—— 但最深跌幅者可能继续下跌。这是用于研究、宜小仓位的均值回归候选观察名单，而非买入清单。已测试“确认”与“质量”筛选，二者均削弱该优势；超额为选股技巧，而非扣费后收益。') }}</p>
+  </div>
+  {% endif %}
+
+  <!-- ===================== DEFENSIVE LOW-VOL (validated defensive tilt) ===================== -->
+  {% if lowvol and lowvol.sleeve %}
+  <div class="panel span12" id="defensive-lowvol">
+    <h2>{{ t('🛡 Defensive low-vol — lowest-volatility names', '🛡 防御低波 — 波动率最低个股') }}
+      <span class="note" style="text-transform:none">· {{ t('validated defensive tilt', '已验证的防御倾向') }}{% if lowvol.n %} · {{ lowvol.n }} {{ t('names', '只') }}{% endif %}</span>
+      {{ help("The validated A-share DEFENSIVE tilt — the low-volatility anomaly (reports/china-lowvol-phase0.md). Over ~35 years, the lowest-volatility quintile earned market-like returns (~27% vs ~28%) with a materially SHALLOWER drawdown (−57% vs −66% market, −71% high-vol) → a higher Sharpe (0.98 vs 0.88 market vs 0.76 high-vol), monotone across vol AND beta. It is NOT a long-short alpha (the Q1−Q5 spread is ~0) — it is risk-adjusted DEFENSIVE exposure: same return, LESS RISK, low turnover. These are the lowest trailing-volatility names (annualized σ), screened for ST/delisting, a market-cap floor, and a vol floor (which drops halted/flat-priced artifacts). The conservative complement to the aggressive Mean-reversion watch above — for risk-aware exposure, NOT return maximization.", "已验证的 A 股防御倾向 —— 低波动率异象（reports/china-lowvol-phase0.md）。约35年里，波动率最低的五分位组合获得与市场相近的收益（约27% 对 约28%），但回撤明显更浅（−57% 对 市场−66%、高波−71%）→ 更高的夏普（0.98 对 市场0.88 对 高波0.76），在波动率与贝塔上均单调。它并非多空阿尔法（Q1−Q5 价差约为0）—— 而是风险调整后的防御敞口：收益相近、风险更低、换手低。此处为滚动年化波动率最低的个股，已按 ST/退市、市值下限与波动率下限（剔除停牌/价格停滞的伪低波）筛选。它是上方激进的均值回归观察的稳健补充 —— 用于风险可控的敞口，而非收益最大化。") }}
+    </h2>
+    <p class="note" style="margin:0 0 12px;text-transform:none">{{ t('The lowest-volatility A-share names — historically market-like returns with shallower drawdowns (a defensive tilt). For risk-aware exposure, not return maximization.', '波动率最低的 A 股个股 —— 历史上收益与市场相近但回撤更浅（防御倾向）。用于风险可控的敞口，而非收益最大化。') }}{% if lowvol.screened %} <span class="muted">({{ t('screened out', '已筛除') }} {{ lowvol.screened.st }} ST/{{ t('delisting', '退市') }} + {{ lowvol.screened.flat }} {{ t('flat/halted', '停滞/停牌') }} + {{ lowvol.screened.illiquid }} {{ t('illiquid', '低流动') }})</span>{% endif %}</p>
+    <table class="sortable">
+      <thead><tr>
+        <th class="l">{{ t('Stock', '个股') }}</th>
+        <th class="l">{{ t('Sector', '板块') }}</th>
+        <th>{{ t('σ (ann)', '年化波动') }}</th>
+        <th>{{ t('beta', '贝塔') }}</th>
+        <th>{{ t('mkt cap', '市值') }}</th>
+      </tr></thead>
+      <tbody>
+      {% for r in lowvol.sleeve %}
+      <tr>
+        <td class="l"><a href="china_stock.html#{{ r.ticker }}"><b>{{ r.ticker }}</b></a> <span class="note">{{ nm(r.name) }}</span></td>
+        <td class="l note">{{ t(r.sector, SECZH.get(r.sector, r.sector)) }}</td>
+        <td><b>{{ '%.1f'|format(r.vol_pct_ann) }}%</b></td>
+        <td class="note">{{ '%.2f'|format(r.beta) if r.beta is not none else '—' }}</td>
+        <td class="note">{% if r.mktcap_yi %}{{ r.mktcap_yi|int }}亿{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <p class="note" style="margin:8px 0 0;font-size:11px">{{ t('Validated defensive tilt (low-vol anomaly: lowest-vol quintile Sharpe 0.98 vs 0.88 market, drawdown −57% vs −66%, 1990→2026). A risk-REDUCING sleeve, not a return-maximizer; low turnover. σ = trailing annualized volatility; beta to the equal-weight market.', '已验证的防御倾向（低波异象：最低波动五分位夏普0.98 对 市场0.88，回撤 −57% 对 −66%，1990→2026）。用于降低风险的持仓，而非收益最大化；换手低。σ＝滚动年化波动率；贝塔为相对等权市场。') }}</p>
   </div>
   {% endif %}
 
