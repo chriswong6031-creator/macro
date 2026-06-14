@@ -164,6 +164,53 @@ def _tail_years(df: pd.DataFrame, years: float) -> pd.DataFrame:
     return df.loc[df.index >= cutoff]
 
 
+# --- plotly weight helpers (mirror scripts/build_vector.py) ---------------- #
+def _plot_idx(index, daily_days: int = 400, weekly_days: int = 1825,
+              weekly_step: int = 7, monthly_step: int = 30):
+    """Resolution-adaptive index for the heavy full-history overlay charts: daily
+    for the last ~400d, ~weekly out to 5y, ~monthly before that. Older points are
+    sub-pixel at 5Y/All zoom and the recent window stays full daily, so the line
+    is visually identical at every zoom — but ~5x fewer points get serialized
+    (plotly emits one full date-string + value array PER trace)."""
+    if len(index) == 0:
+        return index
+    end = index.max()
+    d0 = end - pd.Timedelta(days=daily_days)
+    w0 = end - pd.Timedelta(days=weekly_days)
+    daily = index[index >= d0]
+    weekly = index[(index < d0) & (index >= w0)][::weekly_step]
+    monthly = index[index < w0][::monthly_step]
+    return monthly.union(weekly).union(daily)
+
+
+def _plot_y(s: pd.Series, n: int):
+    """Round a y-series to n places and return a plain Python list (NaN -> null).
+    plotly base64-packs numpy float64 arrays at a fixed ~10.7 chars/point whatever
+    the value; a rounded text list is smaller and shrinks with fewer decimals.
+    n<=0 emits ints."""
+    if n <= 0:
+        return [None if pd.isna(v) else int(round(float(v))) for v in s]
+    return [None if pd.isna(v) else round(float(v), n) for v in s]
+
+
+def _dx(index):
+    """Date-only x strings ('2015-08-17') for a daily DatetimeIndex — plotly's
+    default datetime serialization emits the full '...T00:00:00.000' per point PER
+    trace, so date strings ~halve every x array while still rendering on a normal
+    plotly date axis."""
+    return [t.strftime("%Y-%m-%d") for t in index]
+
+
+def _pdec(s) -> int:
+    """Decimals giving a price series ~5 significant figures regardless of
+    magnitude (copper ~4.5 -> 4dp, gold ~2000 -> 1dp)."""
+    a = np.abs(pd.Series(s).to_numpy(dtype="float64"))
+    a = a[np.isfinite(a) & (a > 0)]
+    if a.size == 0:
+        return 2
+    return max(0, 4 - int(np.floor(np.log10(float(np.median(a))))))
+
+
 # --------------------------------------------------------------------------- #
 # charts
 # --------------------------------------------------------------------------- #
@@ -172,11 +219,16 @@ def chart_price(df: pd.DataFrame, asset: str, years: float = 6) -> str:
     risk gauge and the residual-shock episodes against price."""
     d = _tail_years(df, years)
     meta = META[asset]
+    # downsample only the heavy full-history line traces; the sparse shock markers
+    # below stay full-resolution and exact.
+    pidx = _plot_idx(d.index)
+    px = _dx(pidx)
+    pdec = _pdec(d["close"])
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=d.index, y=d["close"], name=meta["label"],
+    fig.add_trace(go.Scatter(x=px, y=_plot_y(d["close"].reindex(pidx), pdec), name=meta["label"],
                              line={"color": meta["color"], "width": 1.8}, yaxis="y"))
     if "risk_index" in d:
-        fig.add_trace(go.Scatter(x=d.index, y=d["risk_index"], name="Risk Index",
+        fig.add_trace(go.Scatter(x=px, y=_plot_y(d["risk_index"].reindex(pidx), 1), name="Risk Index",
                                  line={"color": C["red"], "width": 0}, fill="tozeroy",
                                  fillcolor="rgba(211,11,11,0.07)", yaxis="y2",
                                  hovertemplate="Risk %{y:.0f}<extra></extra>"))
@@ -184,10 +236,10 @@ def chart_price(df: pd.DataFrame, asset: str, years: float = 6) -> str:
         bid = d[d["shock_state"] == "exogenous_bid"]
         prs = d[d["shock_state"] == "exogenous_pressure"]
         if len(bid):
-            fig.add_trace(go.Scatter(x=bid.index, y=bid["close"], mode="markers", name="Exogenous bid",
+            fig.add_trace(go.Scatter(x=_dx(bid.index), y=_plot_y(bid["close"], pdec), mode="markers", name="Exogenous bid",
                                      marker={"color": C["blue"], "size": 5, "symbol": "triangle-up"}, yaxis="y"))
         if len(prs):
-            fig.add_trace(go.Scatter(x=prs.index, y=prs["close"], mode="markers", name="Exogenous pressure",
+            fig.add_trace(go.Scatter(x=_dx(prs.index), y=_plot_y(prs["close"], pdec), mode="markers", name="Exogenous pressure",
                                      marker={"color": C["red"], "size": 5, "symbol": "triangle-down"}, yaxis="y"))
     fig.update_layout(**{**PLOT, "height": 300,
                          "yaxis": {"type": "log", "gridcolor": C["grid"], "title": meta["unit"]},
@@ -204,7 +256,9 @@ def chart_complex(results: dict) -> str:
         s = _tail_years(results[a][["close"]], 2)["close"]
         if s.empty:
             continue
-        fig.add_trace(go.Scatter(x=s.index, y=100 * s / s.iloc[0], name=META[a]["label"],
+        rb = 100 * s / s.iloc[0]
+        pidx = _plot_idx(s.index)
+        fig.add_trace(go.Scatter(x=_dx(pidx), y=_plot_y(rb.reindex(pidx), 2), name=META[a]["label"],
                                  line={"color": META[a]["color"], "width": 1.8}))
     fig.add_hline(y=100, line={"color": C["faint"], "width": 1, "dash": "dot"})
     fig.update_layout(**{**PLOT, "height": 300,
