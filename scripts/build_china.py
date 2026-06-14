@@ -487,6 +487,29 @@ def main() -> int:
             log.error("china leaderboard failed (%s); skipping", e)
             vm["leaderboard"] = None
 
+        # sector-neutral residual-alpha leg (per-stock signal score + "Alpha leaders"
+        # panel). Computed once here, rendered on china.html, and passed into the stock
+        # library so each chinastockdata record carries its alpha. Phase 0 = GO context leg.
+        alpha = None
+        try:
+            from scripts.build_china_library import compute_china_alpha
+            alpha = compute_china_alpha()
+            vm["alpha"] = alpha
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("china alpha build failed (%s); skipping", e)
+            vm["alpha"] = None
+
+        # build the per-ticker stock library NOW (records carry ladder + alpha) and
+        # capture the cross-sectional "Top setups" ranking (selection × timing) for
+        # china.html. Built here so the setups board renders server-side below.
+        setups = None
+        try:
+            from scripts import build_china_library
+            setups = build_china_library.main(alpha=alpha)
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("china stock library build failed (%s); skipping", e)
+        vm["setups"] = setups
+
         env = Environment(loader=FileSystemLoader(
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)
         from engine import i18n
@@ -499,18 +522,17 @@ def main() -> int:
                 (site / a).write_text(src.read_text())
         log.info("wrote %s/china.html (%d KB, %d sectors)", site, len(html) // 1024, len(vm["sectors"]))
 
-        # A-share stock search: build the per-ticker JSON library + render the search page
+        # A-share stock search shell (the per-ticker library was built above, before
+        # the china.html render, so its "Top setups" ranking could feed the page)
         try:
             from engine.cycles import STATE_DISPLAY
-            from scripts import build_china_library
-            build_china_library.main()
             stock_html = env.get_template("china_stock.html.j2").render(
                 state_display_json=json.dumps(STATE_DISPLAY, default=str),
                 generated_utc=vm["built"])
             (site / "china_stock.html").write_text(stock_html)
             log.info("wrote %s/china_stock.html + chinastockdata/", site)
         except Exception as e:  # noqa: BLE001 — search is additive, never fatal
-            log.error("china stock search build failed (%s); skipping", e)
+            log.error("china stock search render failed (%s); skipping", e)
 
         # history page (regime-over-index + the two dials + lifespan base rates)
         try:
