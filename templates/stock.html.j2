@@ -81,6 +81,10 @@
   .bc-tf .bc-y { color:var(--up); font-weight:800; }
   .bc-tf .bc-n { color:var(--muted); opacity:.65; }
   .bc-hist { margin-top:5px; font-size:11.5px; color:var(--muted); }
+  .bc-knife { margin-top:7px; padding:6px 9px; border-radius:7px; font-size:12px;
+              line-height:1.5; background:color-mix(in srgb, var(--down) 12%, var(--panel2));
+              border-left:3px solid var(--down); color:var(--text); }
+  .bc-knife-high { background:color-mix(in srgb, var(--down) 20%, var(--panel2)); }
   a { text-decoration:none; }
   h1 { font-size:20px; margin:0; }
   h2 { font-size:14px; margin:0 0 10px; color:var(--muted); text-transform:uppercase;
@@ -198,7 +202,16 @@
 <nav class="site-nav">
   <div class="nav-links">
     <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
-    <a class="nav-link" href="macro.html">📊 {{ t('Macro', '宏观') }}</a>
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 {{ t('US Macro', '美国宏观') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">{{ t('Regime dashboard', '宏观周期') }}<span class="d">{{ t('Growth · inflation · MRS · nowcast', '增长 · 通胀 · MRS · 即时预测') }}</span></a>
+        <a href="factors.html">🧮 {{ t('Factor Lab', '因子实验室') }}<span class="d">{{ t('Value · quality · low-vol + point-in-time IC', '价值 · 质量 · 低波动 + 时点 IC') }}</span></a>
+        <a href="baskets.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P', '等权主题篮子 vs 标普') }}</span></a>
+        <a href="seasonality.html">🗓 {{ t('Factor Seasonality', '因子季节性') }}<span class="d">{{ t('Ken French monthly, 1926+', 'Ken French 月度，1926+') }}</span></a>
+        <a href="spvector.html">📈 {{ t('S&P / Macro Vector', '标普宏观向量') }}<span class="d">{{ t('Tactical equity↔cash allocation', '战术股票↔现金配置') }}</span></a>
+      </div>
+    </div>
     <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }}</a>
     <a class="nav-link" href="etfs.html">🐳 {{ t('ETF flows', 'ETF 资金流') }}</a>
     <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国A股') }}</a>
@@ -1079,13 +1092,19 @@
             : 'Historically this band held the cycle low ~' + bnd.held_pct + '% of the time (21d)') + '</div>';
         }
       }
+      // Phase 2 — knife-risk caution when deeply washed out below the 200-day
+      var bcKnife = '';
+      if (d.ladder.bc_knife) {
+        bcKnife = '<div class="bc-knife bc-knife-' + d.ladder.bc_knife + '">' +
+          lz(d.ladder.bc_knife_line, d.ladder.bc_knife_line_zh) + '</div>';
+      }
       bcEl.className = 'bcbox bc-' + (d.ladder.bc_grade || 'minimal');
       bcEl.innerHTML =
         '<div class="bc-head"><span class="bc-ttl">🎯 ' + bcLbl + '</span>' +
         '<span class="bc-score ' + 'bcg-' + (d.ladder.bc_grade || 'minimal') + '">' +
         d.ladder.bc_score + '<span class="bc-max">/100</span></span>' +
         '<span class="bc-grade">' + bcg + '</span></div>' +
-        '<div class="bc-tf">' + tfHtml + '</div>' + bcHist;
+        '<div class="bc-tf">' + tfHtml + '</div>' + bcHist + bcKnife;
       bcEl.title = lz(d.ladder.bc_tip, d.ladder.bc_tip_zh);
       bcEl.style.display = 'block';
     } else { bcEl.style.display = 'none'; }

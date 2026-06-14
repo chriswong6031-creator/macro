@@ -11,9 +11,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine.cycles import (  # noqa: E402
     _EQ_BEARISH, _EQ_BULLISH, _eq_freshness, _eq_grade, _eq_proximity, analyze,
-    bottom_confidence, bottom_confidence_fields, cycle_state, early_signals,
-    entry_quality, entry_quality_fields, entry_timing, find_troughs, ladder_state,
-    mtf_snapshot, signal_age, signal_age_fields, STATE_DISPLAY,
+    bottom_confidence, bottom_confidence_fields, market_vix_context, washout,
+    cycle_state, early_signals, entry_quality, entry_quality_fields, entry_timing,
+    find_troughs, ladder_state, mtf_snapshot, signal_age, signal_age_fields,
+    STATE_DISPLAY,
 )
 
 IDX = pd.bdate_range("2020-01-01", periods=520)
@@ -311,6 +312,35 @@ def test_bottom_confidence_confluence_and_gating() -> None:
     assert "Weekly ✓" in f["bc_line"] and f["bc_grade"] == "strong"
 
 
+def test_washout_knife_tempers_bottom_confidence() -> None:
+    full = {"D": {"macd_cross_up": True}, "3D": {"macd_cross_up": True},
+            "W": {"macd_cross_up": True}, "M": {"macd_cross_up": True}}
+    eq = {"long": 80.0}
+    # a deeply-stretched-below-200dma, still-falling series => high knife
+    n = 260
+    falling = pd.Series([100 * (1 - 0.0016 * i) for i in range(n)],
+                        index=pd.bdate_range("2021-01-01", periods=n))
+    wo_fall = washout(falling, {"above_ma10": False})
+    assert wo_fall["knife"] >= 0.6 and wo_fall["pct_below_200d"] < -8 and wo_fall["level"] in ("elevated", "high")
+    # the knife TEMPERS (discounts) bottom_confidence vs the same setup with no washout
+    bc_clean = bottom_confidence(full, eq, "FRESH BUY")["score"]
+    bc_knife = bottom_confidence(full, eq, "FRESH BUY", wo=wo_fall)["score"]
+    assert bc_knife < bc_clean                       # washout only discounts, never boosts
+    # reclaiming (above the 10-day) is a much milder knife than still-falling
+    wo_reclaim = washout(falling, {"above_ma10": True})
+    assert wo_reclaim["knife"] < wo_fall["knife"]
+    # fields surface a knife-risk caution at elevated/high severity
+    flds = bottom_confidence_fields(bottom_confidence(full, eq, "FRESH BUY", wo=wo_fall))
+    assert flds.get("bc_knife") in ("elevated", "high") and "washout" in flds["bc_knife_line"].lower()
+    # an above-trend series => no knife, no temper
+    up = pd.Series([100 * (1 + 0.001 * i) for i in range(n)],
+                   index=pd.bdate_range("2021-01-01", periods=n))
+    assert washout(up, {"above_ma10": True}).get("knife", 0) == 0
+    # market VIX context: a calm-then-spike series flags panic
+    vix = pd.Series([15] * 300 + [45] * 5, index=pd.bdate_range("2020-01-01", periods=305))
+    assert market_vix_context(vix)["panic"] is True
+
+
 if __name__ == "__main__":
     for fn in [test_trough_spacing, test_translation_right, test_translation_left,
                test_failed_cycle_flag, test_ladder_states_sane, test_decline_on_breakdown,
@@ -326,7 +356,8 @@ if __name__ == "__main__":
                test_extension_gate_spares_a_clean_buy,
                test_turn_signaled_text_not_self_contradictory_above_ma,
                test_eq_freshness_decays_for_a_late_cross,
-               test_bottom_confidence_confluence_and_gating]:
+               test_bottom_confidence_confluence_and_gating,
+               test_washout_knife_tempers_bottom_confidence]:
         fn()
         print(f"PASS {fn.__name__}")
     print("all cycle tests passed")

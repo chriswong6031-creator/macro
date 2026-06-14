@@ -4,6 +4,15 @@
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
+{% macro spark1(vals) -%}
+{% if vals and vals|length > 1 %}
+{% set lo = vals|min %}{% set hi = vals|max %}{% set rng = (hi - lo) or 1 %}
+<svg viewBox="0 0 96 26" class="spk" preserveAspectRatio="none"><polyline fill="none" stroke="{{ 'var(--up)' if vals[-1] >= 0 else 'var(--down)' }}" stroke-width="1.4" points="{% for v in vals %}{{ (loop.index0/(vals|length-1)*96)|round(1) }},{{ (24-(v-lo)/rng*22)|round(1) }} {% endfor %}"/></svg>
+{% endif %}
+{%- endmacro %}
+{% macro hcell(c) -%}
+<td class="hmc" style="background:{{ ('rgba(56,139,253,' ~ (c*0.85)|round(2) ~ ')') if c >= 0 else ('rgba(248,81,73,' ~ (-c*0.85)|round(2) ~ ')') }}">{{ '%.2f'|format(c) }}</td>
+{%- endmacro %}
 {% set FHELP = {
   'value': ['Cheap on fundamentals — a blend of earnings yield, book/price, sales/price and cash-flow yield (the cross-section Fama-French/Dimensional trade). Volatile and regime-dependent; book/price is weak for intangible-heavy firms.', '基本面便宜 — 盈利收益率、市净率倒数、市销率倒数与现金流收益率的综合。'],
   'profitability': ['Gross profitability = gross profit / total assets (Novy-Marx). About as powerful as book/price historically, and it tilts the OPPOSITE way (toward growthier, higher-quality names).', '毛利润率 = 毛利润／总资产（Novy-Marx）。'],
@@ -62,6 +71,28 @@
   .twocol { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
   @media (max-width:760px){ .twocol{ grid-template-columns:1fr; } }
   .zpos { color:var(--up); font-weight:600; } .zneg { color:var(--down); font-weight:600; }
+  .chip { display:inline-block; font-size:11px; padding:1px 7px; margin:0 4px 4px 0; border-radius:8px;
+          background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
+  sub { font-size:.72em; }
+  .bbar { display:inline-block; width:150px; max-width:42vw; height:11px; border-radius:6px;
+          background:var(--panel2); position:relative; overflow:hidden; vertical-align:middle; }
+  .bbar > i { position:absolute; left:0; top:0; bottom:0; border-radius:6px; }
+  .spk { width:96px; height:26px; display:block; }
+  .hm { border-collapse:collapse; font-size:11px; }
+  .hm td, .hm th { border:1px solid var(--bg); padding:0; text-align:center; }
+  .hm th { color:var(--muted); font-weight:500; padding:2px 4px; white-space:nowrap; }
+  .hmc { width:30px; height:26px; text-align:center; color:var(--text); font-size:10px; }
+  .quilt { border-collapse:collapse; font-size:10.5px; width:100%; }
+  .quilt th { color:var(--muted); font-weight:500; padding:2px 4px; white-space:nowrap; font-size:10px; }
+  .quilt td { padding:3px 5px; text-align:right; border:1px solid var(--bg); white-space:nowrap; }
+  .flip { display:inline-block; font-size:11px; padding:1px 7px; margin:0 4px 4px 0; border-radius:8px;
+          background:var(--panel2); border:1px solid var(--line); }
+  .seg { display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .seg button { border:0; border-radius:0; background:var(--panel); color:var(--text); cursor:pointer;
+                font-size:12px; padding:4px 10px; }
+  .seg button.on { background:var(--panel2); font-weight:600; }
+  .scroll { overflow-x:auto; }
+  table[data-leg="lo"] .v-ls, table[data-leg="ls"] .v-lo { display:none; }
 </style>
 </head>
 <body>
@@ -71,9 +102,12 @@
     <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
     <div class="nav-dd">
       <a class="nav-link" href="macro.html">🇺🇸 {{ t('US Macro', '美国宏观') }} <span class="caret">▾</span></a>
-      <div class="nav-dd-menu">
-        <a href="macro.html">📊 {{ t('Macro dashboard', '宏观仪表盘') }}</a>
-        <a href="spvector.html">📈 {{ t('S&P / Macro Vector', '标普宏观向量') }}</a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">{{ t('Regime dashboard', '宏观周期') }}<span class="d">{{ t('Growth · inflation · MRS · nowcast', '增长 · 通胀 · MRS · 即时预测') }}</span></a>
+        <a href="factors.html">🧮 {{ t('Factor Lab', '因子实验室') }}<span class="d">{{ t('Value · quality · low-vol + point-in-time IC', '价值 · 质量 · 低波动 + 时点 IC') }}</span></a>
+        <a href="baskets.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P', '等权主题篮子 vs 标普') }}</span></a>
+        <a href="seasonality.html">🗓 {{ t('Factor Seasonality', '因子季节性') }}<span class="d">{{ t('Ken French monthly, 1926+', 'Ken French 月度，1926+') }}</span></a>
+        <a href="spvector.html">📈 {{ t('S&P / Macro Vector', '标普宏观向量') }}<span class="d">{{ t('Tactical equity↔cash allocation', '战术股票↔现金配置') }}</span></a>
       </div>
     </div>
     <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }}</a>
@@ -135,6 +169,190 @@
       </div>
       {% endfor %}
     </div>
+  </div>
+  {% endif %}
+
+  <!-- Does the rank actually predict? — leak-free point-in-time IC scorecard -->
+  {% if ic and ic.rows %}
+  <div class="panel">
+    <h2>{{ t('Does the rank actually predict? — point-in-time IC', '排名真的能预测吗？— 时点信息系数') }}
+      {{ help("The honest test most factor dashboards never show. At each quarter-end we rebuild every factor AS IT WAS KNOWABLE THEN — no look-ahead into a not-yet-filed 10-K, no survivorship — then rank-correlate the factor score with the NEXT " ~ ic.horizon_d ~ "-day return: the Information Coefficient (IC). mean IC ≈ raw predictive edge; IC-IR (annualized) = IC ÷ its own volatility; t_HAC = Newey-West t-stat (overlapping forward windows autocorrelate the IC series); q_FDR = Benjamini-Hochberg false-discovery rate across every factor screened. Judge each number against ZERO — and against the tiny sample.",
+                "大多数因子面板从不展示的诚实检验。在每个季末，我们按当时可知的信息重建每个因子（无前视、无幸存者偏差），再将因子分数与未来 " ~ ic.horizon_d ~ " 日回报做秩相关，得到信息系数 IC。平均 IC ≈ 原始预测力；IC-IR（年化）= IC ÷ 自身波动；t_HAC = Newey-West t 值；q_FDR = 跨全部因子的多重检验错误发现率。每个数字都应与零比较，并考虑样本极小。") }}
+    </h2>
+    <p class="muted sm" style="margin:0 0 10px">
+      {% if not ic.any_survive %}<b class="zneg">{{ t('No factor clears the multiple-testing bar (BH-FDR 10%).', '没有因子通过多重检验（BH-FDR 10%）。') }}</b> {% endif %}
+      {{ t('Span ' ~ ic.span ~ ' · ' ~ ic.rebalances ~ ' quarterly rebalances · ~' ~ ic.median_universe ~ ' names. This is the permanent ceiling of FREE data: ~3 years of price history caps the sample at n≈' ~ ic.rebalances ~ ', so t-stats and FDR are low-power. Read it as honest context, not a green light — and note fundamentals refresh only ~annually, so the fundamental factors have even fewer independent draws.',
+              '区间 ' ~ ic.span ~ ' · ' ~ ic.rebalances ~ ' 次季度再平衡 · 约 ' ~ ic.median_universe ~ ' 只。这是免费数据的永久上限：约 3 年价格历史使样本仅 n≈' ~ ic.rebalances ~ '，t 统计与 FDR 检验力较低。仅作诚实背景，而非买入信号 — 且基本面约每年才更新一次，基本面因子的独立样本更少。') }}
+    </p>
+    <table>
+      <tr>
+        <th>{{ t('factor','因子') }}</th>
+        <th class="r">{{ t('mean IC','平均 IC') }}</th>
+        <th class="r">{{ t('IC-IR (ann)','IC-IR（年化）') }}</th>
+        <th class="r">t<sub>HAC</sub></th>
+        <th class="r">{{ t('hit','命中率') }}</th>
+        <th class="r">q<sub>FDR</sub></th>
+        <th class="r">n</th>
+      </tr>
+      {% for r in ic.rows %}
+      <tr>
+        <td>{{ t(r.label_en, fac.factor_labels.get(r.factor, r.label_en)) }}</td>
+        <td class="r {{ 'pos' if r.mean_ic and r.mean_ic > 0 else ('neg' if r.mean_ic and r.mean_ic < 0 else 'muted') }}">{{ '%+.4f'|format(r.mean_ic) if r.mean_ic is not none else '—' }}</td>
+        <td class="r {{ 'pos' if r.ic_ir_ann and r.ic_ir_ann > 0 else ('neg' if r.ic_ir_ann and r.ic_ir_ann < 0 else 'muted') }}">{{ '%+.2f'|format(r.ic_ir_ann) if r.ic_ir_ann is not none else '—' }}</td>
+        <td class="r muted">{{ '%+.2f'|format(r.t_hac) if r.t_hac is not none else '—' }}</td>
+        <td class="r muted">{{ '%.0f%%'|format(r.hit * 100) if r.hit is not none else '—' }}</td>
+        <td class="r muted">{{ '%.2f'|format(r.q_fdr) if r.q_fdr is not none else '—' }}</td>
+        <td class="r muted">{{ r.n }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% if ic.collinearity and ic.collinearity.top_pairs %}
+    <p class="muted sm" style="margin:10px 0 0">
+      {{ t('Crowding / overlap','拥挤／重叠') }}{{ help("Factors that move together are redundant (a 'crowded' tilt). Mean absolute pairwise factor correlation, raw vs after Löwdin de-correlation; the composite (de-correlated) row above strips this overlap. VIF > 5 would flag a factor that is a linear combination of the others.", "彼此同向移动的因子是冗余的（拥挤的押注）。下为平均 |因子相关性|（原始 vs Löwdin 去相关后）；上方“综合（去相关）”行已剔除该重叠。VIF>5 表示某因子是其它因子的线性组合。") }}:
+      {{ t('mean |corr| ' ~ ic.collinearity.mean_abs_corr_raw ~ ' raw → ' ~ ic.collinearity.mean_abs_corr_orth ~ ' de-correlated.',
+           '平均 |相关性| ' ~ ic.collinearity.mean_abs_corr_raw ~ ' 原始 → ' ~ ic.collinearity.mean_abs_corr_orth ~ ' 去相关后。') }}
+      {% for p in ic.collinearity.top_pairs %}<span class="chip">{{ p.a }} ↔ {{ p.b }} · {{ p.corr }}</span>{% endfor %}
+    </p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Market breadth (index-member participation, not factor breadth) -->
+  {% if breadth and breadth.groups %}
+  <div class="panel">
+    <h2>{{ t('Market breadth', '市场广度') }}
+      {{ help("Share of index members trading above their own 50-day AND 200-day moving averages, across the S&P 500 / 400 / 600 caps. This is MARKET-MEMBER participation (is the rally broad or narrow?), NOT factor-portfolio breadth. Above ~60% = broad; a small/large divergence flags where participation is rotating. Small & mid breadth history starts 2023-07 (the divergence is on that common window).", "指数成分中股价同时高于自身 50 日与 200 日均线的比例，覆盖标普 500／400／600。这是市场成分的参与度（涨势是广泛还是狭窄），并非因子组合广度。约 60% 以上=广泛；大小盘背离提示参与度在轮动。中小盘广度数据自 2023-07 起。") }}
+    </h2>
+    <table>
+      <tr><th>{{ t('index', '指数') }}</th><th class="r">{{ t('% > 50d MA', '% 高于50日线') }}</th><th class="r">{{ t('% > 200d MA', '% 高于200日线') }}</th><th class="r">{{ t('members', '成分数') }}</th></tr>
+      {% for g in breadth.groups %}
+      <tr>
+        <td>{{ t(g.label_en, g.label_zh) }}</td>
+        <td class="r"><span class="bbar"><i style="width:{{ g.p50 }}%;background:{{ 'var(--up)' if g.p50>=50 else 'var(--down)' }}"></i></span> <b class="{{ 'pos' if g.p50>=50 else 'neg' }}">{{ g.p50 }}%</b></td>
+        <td class="r"><span class="bbar"><i style="width:{{ g.p200 }}%;background:{{ 'var(--up)' if g.p200>=50 else 'var(--down)' }}"></i></span> <b class="{{ 'pos' if g.p200>=50 else 'neg' }}">{{ g.p200 }}%</b></td>
+        <td class="r muted sm">{{ g.n }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% if breadth.div_small_large is not none %}
+    <p class="muted sm" style="margin:8px 0 0">{{ t(
+      'Small-cap vs large-cap breadth: ' ~ ('%+.1f'|format(breadth.div_small_large)) ~ 'pp (small minus large, % above 50d). Positive = small-caps participating MORE than mega-caps — a broadening tape; negative = leadership narrowing to the top.',
+      '小盘相对大盘广度：' ~ ('%+.1f'|format(breadth.div_small_large)) ~ ' 个百分点（小盘减大盘，% 高于50日线）。正值=小盘参与度高于大盘（涨势扩散）；负值=领先向头部集中。') }}</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Factor performance — point-in-time portfolios (P3 return-series) -->
+  {% if series and series.factors %}
+  <div class="panel">
+    <h2>{{ t('Factor performance — point-in-time portfolios', '因子表现 — 时点组合') }}
+      {{ help("Each factor built into a daily PORTFOLIO at every month-end, as it was knowable then (no look-ahead): long-only = cap-weighted top quintile with a 5% single-name cap; long/short = equal-weight top-minus-bottom quintile (a paper factor premium, NOT a shortable book). Long-only carries with the market (compare SPY); the long/short isolates the premium. " ~ series.honesty, "在每个月末，将每个因子构建为日度组合（无前视）：纯多头=市值加权顶部五分位（单股5%上限）；多空=等权顶部减底部五分位（纸面因子溢价，非可做空组合）。" ~ series.honesty) }}
+    </h2>
+    <p class="muted sm" style="margin:0 0 10px">{{ t(
+      'Rebased over ' ~ series.history_start ~ '→' ~ series.as_of ~ ' (' ~ series.n_rebalances ~ ' month-ends). Free fundamentals are ANNUAL, so fundamental ranks refresh only ~yearly — most turnover is the price legs (low-vol/low-beta). Every Sharpe ships with a block-bootstrap 95% CI that mostly straddles zero, and NO factor clears FDR (see the IC panel above). Descriptive, not tradeable.',
+      '区间 ' ~ series.history_start ~ '→' ~ series.as_of ~ '（' ~ series.n_rebalances ~ ' 个月末）。免费基本面为年度数据，故基本面排名约每年才刷新一次 — 多数换手来自价格类因子（低波动/低贝塔）。每个夏普均附 block-bootstrap 95% 置信区间（多数跨越零），且无因子通过 FDR（见上方 IC 面板）。仅作描述，不可交易。') }}</p>
+    <div class="scroll"><table>
+      <tr>
+        <th>{{ t('factor','因子') }}</th>
+        <th class="r">{{ t('long-only trend','纯多头走势') }}</th>
+        <th class="r">{{ t('LO cum','纯多头累计') }}</th>
+        <th class="r">{{ t('LO Sharpe','纯多头夏普') }}</th>
+        <th class="r">{{ t('Q5−Q1 cum','多空累计') }}</th>
+        <th class="r">{{ t('Q5−Q1 Sharpe (95% CI)','多空夏普（CI）') }}</th>
+        <th class="r">{{ t('P(Sharpe>0)','P(夏普>0)') }}</th>
+      </tr>
+      {% for f in series.factors %}
+      {% set s = series.series[f] %}{% set st = series.stats[f] %}
+      <tr>
+        <td>{{ t(series.labels[f], series.labels[f]) }}</td>
+        <td class="r">{{ spark1(s.long_only.spark) }}</td>
+        <td class="r {{ 'pos' if s.long_only.cum_pct and s.long_only.cum_pct>0 else 'neg' }}">{{ '%+.0f'|format(s.long_only.cum_pct) if s.long_only.cum_pct is not none else '—' }}%</td>
+        <td class="r muted">{{ '%.2f'|format(st.sharpe_lo) if st.sharpe_lo is not none else '—' }}</td>
+        <td class="r {{ 'pos' if s.long_short.cum_pct and s.long_short.cum_pct>0 else 'neg' }}">{{ '%+.0f'|format(s.long_short.cum_pct) if s.long_short.cum_pct is not none else '—' }}%</td>
+        <td class="r muted">{{ '%.2f'|format(st.sharpe_ls) if st.sharpe_ls is not none else '—' }}{% if st.sharpe_ls_ci %} <span class="sm">[{{ st.sharpe_ls_ci[0] }}, {{ st.sharpe_ls_ci[2] }}]</span>{% endif %}</td>
+        <td class="r muted">{{ st.sharpe_gt0_prob if st.sharpe_gt0_prob is not none else '—' }}</td>
+      </tr>
+      {% endfor %}
+      {% if series.benchmark %}
+      <tr><td class="muted">{{ t('SPY (cap-wtd market)','SPY（市值加权市场）') }}</td><td class="r">{{ spark1(series.benchmark.spark) }}</td>
+        <td class="r {{ 'pos' if series.benchmark.cum_pct>0 else 'neg' }}">{{ '%+.0f'|format(series.benchmark.cum_pct) }}%</td>
+        <td class="r muted">—</td><td class="r muted">—</td><td class="r muted">—</td><td class="r muted">—</td></tr>
+      {% endif %}
+    </table></div>
+  </div>
+
+  <!-- Recent factor moves (horizon z) + rotation -->
+  <div class="panel">
+    <div class="topline" style="margin-bottom:8px">
+      <h2 style="margin:0">{{ t('Recent moves — z vs trailing year', '近期变动 — 相对过去一年的 z') }}
+        {{ help("Each horizon's compounded return z-scored against that series' own trailing-252 distribution of overlapping returns (|z|≥2 = a notable move, marked ●). Green/red follows the sign of the move. Toggle the long-only portfolio vs the Q5−Q1 premium.", "各时间跨度的复利回报，相对该序列自身过去 252 日重叠回报分布做 z 标准化（|z|≥2 为显著，标 ●）。绿/红表示方向。可切换纯多头与多空溢价。") }}
+      </h2>
+      <span style="flex:1"></span>
+      <span class="seg" id="legseg">
+        <button data-leg="ls" class="on">Q5−Q1</button>
+        <button data-leg="lo">{{ t('Long-only','纯多头') }}</button>
+      </span>
+    </div>
+    <table id="hztab" data-leg="ls">
+      <tr><th>{{ t('factor','因子') }}</th><th class="r">1d</th><th class="r">5d</th><th class="r">20d</th>
+        <th>{{ t('20d leader','20日领先') }}</th></tr>
+      {% for f in series.factors %}
+      {% set hz = series.horizons[f] %}
+      <tr>
+        <td>{{ t(series.labels[f], series.labels[f]) }}</td>
+        {% for k in ['d1','d5','d20'] %}
+        <td class="r">
+          {% for leg in ['lo','ls'] %}{% set c = hz[('long_only' if leg=='lo' else 'long_short')][k] %}<span class="v-{{ leg }} {{ 'zpos' if c.z and c.z>0 else ('zneg' if c.z and c.z<0 else 'muted') }}" title="z {{ c.z }} · pct {{ c.pct }}">{{ ('%+.1f'|format(c.ret_pct)) if c.ret_pct is not none else '—' }}{% if c.flag %} ●{% endif %}</span>{% endfor %}
+        </td>
+        {% endfor %}
+        <td class="muted sm">{% if series.rotation.leader == f %}★ {{ t('current','当前') }}{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% if series.rotation and series.rotation.leader_label %}
+    <p class="muted sm" style="margin:10px 0 0">{{ t('20-day leader:','20日领先因子：') }}
+      <b>{{ series.rotation.leader_label }}</b> ({{ '%+.1f'|format(series.rotation.leader_ret20_pct) }}%).
+      {% if series.rotation.recent_flips %}{{ t('Recent confirmed flips (3-session persistence):','近期确认轮动（持续3个交易日）：') }}
+      {% for fl in series.rotation.recent_flips %}<span class="flip">{{ fl.date }} → {{ fl.label }}</span>{% endfor %}{% endif %}</p>
+    {% endif %}
+  </div>
+
+  <!-- Crowding + quilt -->
+  <div class="twocol">
+    {% if series.crowding %}
+    <div class="panel">
+      <h2>{{ t('Factor crowding', '因子拥挤度') }}
+        {{ help("Correlation of the factor LONG/SHORT daily return series. Deep blue = the two premiums move TOGETHER (a crowded, redundant pair); red = they hedge each other. This is return co-movement (distinct from the static z-exposure overlap in the IC panel). With annual fundamentals the price legs (low-vol/low-beta) co-move most.", "因子多空日度回报序列的相关性。深蓝=两种溢价同向（拥挤、冗余）；红=互相对冲。这是回报的同向性（区别于 IC 面板中的静态暴露重叠）。") }}
+      </h2>
+      <div class="scroll"><table class="hm">
+        <tr><th></th>{% for f in series.crowding.factors %}<th>{{ series.labels[f][:4] }}</th>{% endfor %}</tr>
+        {% for a in series.crowding.factors %}
+        <tr><th style="text-align:right">{{ series.labels[a] }}</th>
+          {% set row = series.crowding.matrix[loop.index0] %}
+          {% for c in row %}{{ hcell(c) }}{% endfor %}
+        </tr>
+        {% endfor %}
+      </table></div>
+      {% if series.crowding.pairs %}<p class="muted sm" style="margin:8px 0 0">{{ t('Most crowded:','最拥挤：') }} {% for p in series.crowding.pairs %}<span class="chip">{{ series.labels.get(p.a, p.a) }} ↔ {{ series.labels.get(p.b, p.b) }} · {{ p.corr }}</span>{% endfor %}</p>{% endif %}
+    </div>
+    {% endif %}
+    {% if series.quilt and series.quilt.months %}
+    <div class="panel">
+      <h2>{{ t('Monthly quilt — Q5−Q1', '月度拼布 — 多空') }}
+        {{ help("Each factor's Q5−Q1 total return by month (green positive, red negative). Reads which premium led when. ~15 months on the free cache — descriptive, not a regime-robust signal.", "各因子按月的多空总回报（绿正红负）。读出哪种溢价在何时领先。免费缓存约15个月 — 描述性，非稳健信号。") }}
+      </h2>
+      <div class="scroll"><table class="quilt">
+        <tr><th style="text-align:left">{{ t('factor','因子') }}</th>{% for m in series.quilt.months %}<th>{{ m[2:] }}</th>{% endfor %}</tr>
+        {% for f in series.factors %}
+        <tr><td style="text-align:left">{{ series.labels[f] }}</td>
+          {% for m in series.quilt.months %}{% set v = series.quilt.returns[f].get(m) %}
+          <td style="{{ ('background:rgba(35,134,54,' ~ ([(v|abs)/8, 0.8]|min)|round(2) ~ ')') if v is not none and v>0 else (('background:rgba(218,54,51,' ~ ([(v|abs)/8, 0.8]|min)|round(2) ~ ')') if v is not none and v<0 else '') }}">{{ '%+.0f'|format(v) if v is not none else '' }}</td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </table></div>
+    </div>
+    {% endif %}
   </div>
   {% endif %}
 
@@ -231,6 +449,16 @@
       "来源：SEC EDGAR XBRL ‘frames’ API（免费、无需密钥）的 FY" ~ (fac.fy or '') ~ " 基本面，与标普 1500 价格域连接；截至 " ~ fac.as_of ~ " 有 " ~ fac.n ~ " 只具备完整综合分。基本面每周刷新，排名随价格每日重算。因子已衰减／拥挤且免费基本面并不完美 — 视作研究视角，而非买入清单。") }}
       {{ t('Generated', '生成于') }} {{ generated_utc }} UTC</p>
   </div>
+  <script>
+    (function(){
+      var seg=document.getElementById('legseg'), tab=document.getElementById('hztab');
+      if(seg&&tab) seg.addEventListener('click', function(e){
+        var b=e.target.closest('button[data-leg]'); if(!b) return;
+        tab.setAttribute('data-leg', b.dataset.leg);
+        seg.querySelectorAll('button').forEach(function(x){x.classList.toggle('on', x===b);});
+      });
+    })();
+  </script>
   <script src="theme.js"></script>
 </body>
 </html>

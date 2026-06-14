@@ -302,7 +302,7 @@
       "initial_claims_4wk": 219000.0,
       "continued_claims": 1795000.0,
       "claims_yoy_pct": -9.597523219814242,
-      "claims_z": -0.301541352126245,
+      "claims_z": -0.3015413521264515,
       "claims_trend": "falling",
       "indeed_postings": 100.19,
       "indeed_chg_3m_pct": -3.2541521823097774,
@@ -328,13 +328,13 @@
       "vix_term_state": "contango (calm)",
       "skew": 142.6,
       "skew_pctile": 0.3194444444444444,
-      "stock_bond_corr": 0.6936367796179752,
+      "stock_bond_corr": 0.6936367796179748,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.411053683848763,
+      "roro": 0.4110536838487616,
       "roro_state": "risk-on",
       "vol_target_scalar": 0.8172282208779413,
       "news_sentiment": -0.031533293426036835,
-      "news_sentiment_z": 0.1679185746442469,
+      "news_sentiment_z": 0.16791857464424684,
       "news_sentiment_state": "pessimistic"
     },
     "drawdown_risk": {
@@ -366,14 +366,27 @@
     "doc_id": "fomc_2026-04-29",
     "asof": "2026-04-29",
     "tone_score": 0.0,
-    "guidance_direction": "unknown",
+    "guidance_direction": "on_hold",
     "risk_delta": 0.0,
     "shock_reversible": "unknown",
-    "confidence": "low",
+    "confidence": "medium",
     "confidence_gated": false,
     "dropped_fields": [],
-    "evidence": [],
-    "degraded_reason": "no_client_or_key",
+    "evidence": [
+      {
+        "field": "tone_score",
+        "quote_span": "The Committee decided to maintain the target range for the federal funds rate"
+      },
+      {
+        "field": "guidance_direction",
+        "quote_span": "maintain the target range"
+      },
+      {
+        "field": "risk_delta",
+        "quote_span": "The Committee is attentive to the risks to both sides of its dual mandate"
+      }
+    ],
+    "degraded_reason": null,
     "disclaimer": "Context only \u2014 not a signal. This is a machine DIGEST of a public document, produced by an AI model after the fact. The tone / guidance / risk / reversibility readings are background context; they are NOT inputs to any score, signal or allocation unless a downstream, separately-gated step promotes a single field, and even then only as one bounded factor. \u201cunknown\u201d means the evidence was insufficient \u2014 the honest answer. Every non-unknown field is backed by a quote verified to appear verbatim in the source; unverifiable claims are dropped."
   },
   "dislocation": {
@@ -400,8 +413,8 @@
       "vix_front_future": 17.97,
       "vix_vs_front": 0.98,
       "vix_reliable": true,
-      "vix_intraday_high": null,
-      "vix_wick_pct": null,
+      "vix_intraday_high": 19.9,
+      "vix_wick_pct": 12.3,
       "vrp_pctile": 0.3,
       "capitulation_active": true,
       "capitulation_strong": false,

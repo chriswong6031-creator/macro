@@ -15,7 +15,7 @@
   },
   "XLC": {
    "stage": "lagging",
-   "heat": 26,
+   "heat": 25,
    "progress": 10.0
   },
   "XLE": {
@@ -25,7 +25,7 @@
   },
   "XLF": {
    "stage": "improving",
-   "heat": 53,
+   "heat": 52,
    "progress": 49.0
   },
   "XLI": {

@@ -2,31 +2,31 @@
  "fwd": 21,
  "bands": {
   "0-20": {
-   "n": 30742,
-   "held_pct": 36.7,
-   "dd_p10_pct": -13.32,
-   "dd_med_pct": -3.44,
-   "ret_med_pct": 1.62
+   "n": 31284,
+   "held_pct": 36.8,
+   "dd_p10_pct": -13.45,
+   "dd_med_pct": -3.47,
+   "ret_med_pct": 1.63
   },
   "20-40": {
-   "n": 25120,
-   "held_pct": 65.4,
-   "dd_p10_pct": -11.24,
-   "dd_med_pct": -3.19,
-   "ret_med_pct": 1.18
+   "n": 24799,
+   "held_pct": 65.8,
+   "dd_p10_pct": -11.04,
+   "dd_med_pct": -3.15,
+   "ret_med_pct": 1.19
   },
   "40-60": {
-   "n": 9976,
-   "held_pct": 74.6,
-   "dd_p10_pct": -10.23,
-   "dd_med_pct": -2.81,
-   "ret_med_pct": 1.26
+   "n": 9830,
+   "held_pct": 74.8,
+   "dd_p10_pct": -10.18,
+   "dd_med_pct": -2.8,
+   "ret_med_pct": 1.22
   },
   "60+": {
-   "n": 3377,
-   "held_pct": 73.1,
-   "dd_p10_pct": -9.21,
-   "dd_med_pct": -2.38,
+   "n": 3302,
+   "held_pct": 73.5,
+   "dd_p10_pct": -9.0,
+   "dd_med_pct": -2.35,
    "ret_med_pct": 1.5
   }
  }
