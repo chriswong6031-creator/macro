@@ -84,6 +84,10 @@ def build_features() -> pd.DataFrame:
     put("gold", closes.get("GC=F"))
     put("dxy", closes.get("DX-Y.NYB"))
     put("vix", closes.get("^VIX"))
+    # intraday VIX high (daily wick = high vs close — a washout / thin-quote tell);
+    # yahoo_closes() carries only close, so read the high column directly
+    _vixs = store.read("yahoo", "_VIX")
+    put("vix_high", _vixs["high"] if _vixs is not None and "high" in _vixs.columns else None)
     put("vix3m", closes.get("^VIX3M"))
     put("vix9d", closes.get("^VIX9D"))
     put("move", closes.get("^MOVE"))

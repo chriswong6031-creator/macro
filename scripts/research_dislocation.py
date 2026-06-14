@@ -343,6 +343,35 @@ def main() -> None:
     emit(fmt("immediate entry", idx_stats(imm_th)))
     emit(fmt("wait for thrust", idx_stats(th_e)))
 
+    # --- VIX intraday wick: does a round-tripped spike mark washout lows? ----
+    emit("\n" + "=" * 100)
+    emit(f"VIX INTRADAY WICK — round-tripped spike (intraday high >> close) as a washout tell")
+    emit("  wick% = (VIX_high - VIX_close)/VIX_close — a same-day fear spike that REVERSED.")
+    emit("=" * 100)
+    vh = f["vix_high"] if "vix_high" in f else None
+    if vh is None or vh.dropna().empty:
+        emit("  (no vix_high in the frame — run the yahoo OHLC backfill first)")
+    else:
+        vc = f["vix"]
+        wick = (vh - vc) / vc * 100
+        emit(f"  wick% over VIX history: median {wick.median():.1f}, p90 {wick.quantile(0.90):.1f}, "
+             f"p98 {wick.quantile(0.98):.1f}, max {wick.max():.1f}")
+        elevated = vc >= 25                          # wicks only carry info in a stressed tape
+        for thr in (10, 20):
+            big = (wick > thr) & elevated
+            small = (wick <= thr) & elevated
+            emit(f"\n  [wick>{thr}% vs no-wick, both VIX>=25]")
+            for h in (21, 63):
+                emit(f"    -- {h}d --")
+                emit(fmt("wick day", stats(episodes(big), fwd_ret, maxdd, h), 18))
+                emit(fmt("no-wick (elevated)", stats(episodes(small), fwd_ret, maxdd, h), 18))
+        emit("\n  [within BUYABLE washouts — does a wick improve the entry?]")
+        buy = sc & M["put_present"]
+        for h in (21, 63):
+            emit(f"    -- {h}d --")
+            emit(fmt("buyable + wick>15%", stats(episodes(buy & (wick > 15)), fwd_ret, maxdd, h), 20))
+            emit(fmt("buyable, no wick", stats(episodes(buy & (wick <= 15)), fwd_ret, maxdd, h), 20))
+
     # --- named-episode ledger ----------------------------------------------
     emit("\n" + "=" * 100)
     emit("NAMED-EPISODE LEDGER — entry = max-VIX day in window; put-state tag + outcome")

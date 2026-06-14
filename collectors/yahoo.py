@@ -38,6 +38,11 @@ class YahooAdapter(Adapter):
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
         tickers = self.all_tickers()
         period = "max" if full_history else "1mo"
+        # Keep intraday High/Low for the volatility group (^VIX etc.) — the daily
+        # VIX wick (intraday high vs close) is a washout / thin-quote tell that
+        # engine/dislocation.py reads. Everything else stays close+volume to avoid
+        # churning ~1500 parquets.
+        ohlc = set(self.cfg["tickers"].get("vol", []))
         frames: dict[str, pd.DataFrame] = {}
         bs = self.cfg["batch_size"]
         for i in range(0, len(tickers), bs):
@@ -46,8 +51,10 @@ class YahooAdapter(Adapter):
             for t in batch:
                 try:
                     sub = df[t] if isinstance(df.columns, pd.MultiIndex) else df
-                    sub = sub[["Close", "Volume"]].rename(
-                        columns={"Close": "close", "Volume": "volume"}).dropna(subset=["close"])
+                    want = ["High", "Low", "Close", "Volume"] if t in ohlc else ["Close", "Volume"]
+                    sub = sub[[c for c in want if c in sub.columns]].rename(
+                        columns={"Close": "close", "Volume": "volume",
+                                 "High": "high", "Low": "low"}).dropna(subset=["close"])
                     if not sub.empty:
                         frames[t] = sub
                 except KeyError:

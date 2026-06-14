@@ -115,6 +115,36 @@ GATE-2 ENTRY TIMER — within BUYABLE-WASHOUT episodes, immediate vs wait-for-co
   wait for thrust        n= 12  hit= 66.7%  medRet=  +6.1%  medDD=  -1.7%  p10DD=  -11.0%
 
 ====================================================================================================
+VIX INTRADAY WICK — round-tripped spike (intraday high >> close) as a washout tell
+  wick% = (VIX_high - VIX_close)/VIX_close — a same-day fear spike that REVERSED.
+====================================================================================================
+  wick% over VIX history: median 4.0, p90 10.2, p98 17.1, max 72.4
+
+  [wick>10% vs no-wick, both VIX>=25]
+    -- 21d --
+  wick day           n= 31  hit= 61.3%  medRet=  +2.6%  medDD=  -2.4%  p10DD=   -9.4%
+  no-wick (elevated) n= 27  hit= 63.0%  medRet=  +1.3%  medDD=  -2.4%  p10DD=  -10.0%
+    -- 63d --
+  wick day           n= 31  hit= 67.7%  medRet=  +4.7%  medDD=  -3.8%  p10DD=  -20.9%
+  no-wick (elevated) n= 27  hit= 66.7%  medRet=  +5.3%  medDD=  -5.3%  p10DD=  -15.6%
+
+  [wick>20% vs no-wick, both VIX>=25]
+    -- 21d --
+  wick day           n= 17  hit= 58.8%  medRet=  +2.0%  medDD=  -2.3%  p10DD=  -13.7%
+  no-wick (elevated) n= 29  hit= 65.5%  medRet=  +1.7%  medDD=  -1.9%  p10DD=   -9.6%
+    -- 63d --
+  wick day           n= 17  hit= 76.5%  medRet=  +6.5%  medDD=  -4.3%  p10DD=  -15.2%
+  no-wick (elevated) n= 29  hit= 69.0%  medRet=  +5.4%  medDD=  -4.7%  p10DD=  -15.1%
+
+  [within BUYABLE washouts — does a wick improve the entry?]
+    -- 21d --
+  buyable + wick>15%   n= 21  hit= 61.9%  medRet=  +2.6%  medDD=  -2.4%  p10DD=   -6.5%
+  buyable, no wick     n= 37  hit= 70.3%  medRet=  +1.2%  medDD=  -1.5%  p10DD=   -5.4%
+    -- 63d --
+  buyable + wick>15%   n= 21  hit= 81.0%  medRet=  +3.8%  medDD=  -3.7%  p10DD=   -9.3%
+  buyable, no wick     n= 37  hit= 70.3%  medRet=  +3.8%  medDD=  -2.9%  p10DD=   -8.8%
+
+====================================================================================================
 NAMED-EPISODE LEDGER — entry = max-VIX day in window; put-state tag + outcome
 ====================================================================================================
   episode         entry        VIX  Sahm   be  200d    put-state   fwd63  fwd252   dd63  dd252

@@ -162,15 +162,25 @@ def _gate2(f: pd.DataFrame, verdict: str, vix_term: float | None, c: dict) -> di
             "recent_thrust": recent_thrust, "measured": measured}
 
 
-def _vix_sanitizer(vix: float | None, asof, c: dict) -> dict:
-    """Cross-check spot VIX against the front VIX future (cboe/vix_futures). On
-    5-Aug-2024 spot VIX printed ~65 intraday on thin SPX quotes while the front
-    future stayed <35. A spot/front ratio far beyond plausible backwardation =>
-    a likely fictitious print. Daily CLOSE VIX rarely triggers this (the artifact
-    is intraday), so the threshold is set high and real panics (COVID ~1.5x) pass."""
-    out = {"reliable": True, "front_future": None, "spot_vs_front": None, "note": None}
+def _vix_sanitizer(vix: float | None, vix_high: float | None, asof, c: dict) -> dict:
+    """Cross-check VIX against the front VIX future (cboe/vix_futures). Two checks:
+
+    1. CLOSE vs front future -> `reliable` (drives the verdict): a close/front ratio
+       far beyond plausible backwardation = a likely fictitious print; suppress the
+       vix_panic trigger. The threshold is high (real COVID-style closes ~1.5x pass).
+    2. Intraday HIGH vs front future -> `intraday_note` (CONTEXT only): on 5-Aug-2024
+       VIX wicked to ~65 intraday (close 38.6) while the front future stayed ~32. The
+       artifact lives in the HIGH, not the close, so this is the check that actually
+       catches it. The daily VIX WICK was tested as a washout entry signal and showed
+       NO robust edge (research/DISLOCATION_VALIDATION.md), so it is surfaced as a
+       data-quality / whipsaw note, never as a score."""
+    out = {"reliable": True, "front_future": None, "spot_vs_front": None, "note": None,
+           "intraday_high": None, "wick_pct": None, "intraday_note": None}
     if vix is None:
         return out
+    if vix_high is not None and vix > 0:
+        out["intraday_high"] = round(vix_high, 1)
+        out["wick_pct"] = round((vix_high - vix) / vix * 100, 1)
     vf = store.read("cboe", "vix_futures")
     if vf is None or "front_settle" not in vf.columns:
         return out
@@ -185,13 +195,19 @@ def _vix_sanitizer(vix: float | None, asof, c: dict) -> dict:
         return out                                   # stale futures print -> no cross-check
     if front <= 0:
         return out
+    thr = c["vix_spot_future_max_ratio"]
     ratio = vix / front
     out["spot_vs_front"] = round(ratio, 2)
-    if ratio > c["vix_spot_future_max_ratio"]:
+    if ratio > thr:
         out["reliable"] = False
         out["note"] = (f"spot VIX {vix:.1f} is {(ratio - 1) * 100:.0f}% above the front VIX future "
                        f"({front:.1f}) — beyond plausible backwardation; likely a thin-quote print, "
                        "not corroborated by futures. VIX-panic trigger suppressed.")
+    if vix_high is not None and vix_high / front > thr:
+        out["intraday_note"] = (f"VIX wicked to {vix_high:.0f} intraday ({out['wick_pct']:.0f}% above the "
+                                f"{vix:.0f} close) — {(vix_high / front - 1) * 100:.0f}% above the front "
+                                f"future ({front:.1f}); a thin-quote / whipsaw spike, not corroborated by "
+                                "futures (context only — the wick carries no measured entry edge).")
     return out
 
 
@@ -231,8 +247,9 @@ def snapshot(f: pd.DataFrame, conditions: dict | None = None) -> dict:
     roll_max = spy.rolling(c["dd_lookback_d"], min_periods=120).max()
     dd = _last(spy / roll_max - 1.0)
     vix = _last(_col(f, "vix"))
+    vix_high = _last(_col(f, "vix_high"))
     vix_term = _last(_col(f, "vix_ratio"))
-    san = _vix_sanitizer(vix, asof, c)               # thin-quote cross-check vs the front VX future
+    san = _vix_sanitizer(vix, vix_high, asof, c)     # thin-quote cross-check vs the front VX future
     vrp_pctile = ((conditions or {}).get("risk_appetite") or {}).get("vrp_pctile")
     cap = (conditions or {}).get("capitulation") or {}
     cap_active = bool(cap.get("active"))
@@ -293,6 +310,8 @@ def snapshot(f: pd.DataFrame, conditions: dict | None = None) -> dict:
             "vix_front_future": san["front_future"],
             "vix_vs_front": san["spot_vs_front"],
             "vix_reliable": san["reliable"],
+            "vix_intraday_high": san["intraday_high"],
+            "vix_wick_pct": san["wick_pct"],
             "vrp_pctile": None if vrp_pctile is None else round(vrp_pctile, 2),
             "capitulation_active": cap_active,
             "capitulation_strong": cap_strong,
@@ -301,5 +320,6 @@ def snapshot(f: pd.DataFrame, conditions: dict | None = None) -> dict:
         },
         "capitulation_caveat": cap_caveat,
         "vix_caveat": san["note"],
+        "vix_wick_note": san["intraday_note"],
         "evidence": EVIDENCE,
     }
