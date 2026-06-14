@@ -214,6 +214,7 @@
     <a class="nav-link" href="macro.html">📊 {{ t('US Macro', '美国宏观') }}</a>
     <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin', '比特币') }}</a>
     <a class="nav-link active" href="china.html">🇨🇳 {{ t('China A', '中国A股') }}</a>
+    <a class="nav-link" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }}</a>
     <a class="nav-link" href="china_brief.html">📰 {{ t('Brief', '简报') }}</a>
     <a class="nav-link" href="china_history.html">📈 {{ t('History', '历史') }}</a>
   </div>
@@ -699,7 +700,7 @@
       <thead><tr><th class="l">{{ t('regime', '周期') }}</th><th>{{ t('periods', '次数') }}</th><th>{{ t('median days', '中位天数') }}</th><th class="l">{{ t('most common next', '最常见下一周期') }}</th></tr></thead>
       <tbody>
       {% for row in lifespan_rows %}
-        <tr><td class="l">{{ td(row.name) }}</td><td>{{ row.n }}</td><td>{{ row.median }}</td><td class="l">{{ row.next }}</td></tr>
+        <tr><td class="l">{{ td(row.name) }}</td><td>{{ row.n }}</td><td>{{ row.median }}</td><td class="l">{{ t(row.next, row.next_zh) }}</td></tr>
       {% endfor %}
       </tbody>
     </table>
