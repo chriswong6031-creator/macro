@@ -74,6 +74,25 @@ def _closes_deep() -> pd.DataFrame:
     return pd.read_parquet(p).sort_index() if p.exists() else pd.DataFrame()
 
 
+def _load_membership() -> pd.DataFrame | None:
+    """Point-in-time S&P 500 membership intervals (scripts/residual_alpha_pit.py)."""
+    p = config.data_dir() / "breadth" / "sp500_pit_membership.parquet"
+    if not p.exists():
+        return None
+    m = pd.read_parquet(p)
+    m["start_date"] = pd.to_datetime(m["start_date"])
+    m["end_date"] = pd.to_datetime(m["end_date"])
+    return m
+
+
+def _eligible(membership: pd.DataFrame, d) -> set:
+    """Tickers that were actual index members on date d (any interval covers d)."""
+    d = pd.Timestamp(d)
+    mask = (membership["start_date"] <= d) & (
+        membership["end_date"].isna() | (membership["end_date"] >= d))
+    return set(membership.loc[mask, "ticker"])
+
+
 def _shrink(beta: pd.DataFrame, w: float) -> pd.DataFrame:
     """Vasicek-lite: w*raw + (1-w)*cross-sectional-mean-that-day. w>=1 → no-op.
     Pulls noisy per-stock betas toward the prior so the residual isn't poisoned by
@@ -143,7 +162,7 @@ def month_grid(index, warmup, horizon):
 
 
 def score_panel(closes, market, tkr_sector, sector_ret, *, label, win, minp,
-                form, skip, horizon, shrink=1.0):
+                form, skip, horizon, shrink=1.0, membership=None):
     R, eps = build_residuals(closes, market, tkr_sector, sector_ret, win, minp, shrink)
     sigs = signal_matrices(R, eps, form, skip)
     fwd = closes.pct_change(horizon, fill_method=None).shift(-horizon)
@@ -160,11 +179,17 @@ def score_panel(closes, market, tkr_sector, sector_ret, *, label, win, minp,
         if d not in fwd.index:
             continue
         fr = fwd.loc[d].dropna()
+        if membership is not None:                      # PIT: only names in the index then
+            fr = fr[fr.index.isin(_eligible(membership, d))]
+        if len(fr) < 10:
+            continue
         nseries.append(int(len(fr)))
         for c in cand:
-            s = sigs[c].loc[d] if d in sigs[c].index else None
-            if s is None:
+            if d not in sigs[c].index:
                 continue
+            s = sigs[c].loc[d]
+            if membership is not None:
+                s = s[s.index.isin(fr.index)]
             ic[c].append(rank_ic(s, fr))
             sn = s - s.groupby(sec).transform("mean")  # within-sector demeaned
             ic[f"{c}|SN"].append(rank_ic(sn, fr))
@@ -181,7 +206,7 @@ def score_panel(closes, market, tkr_sector, sector_ret, *, label, win, minp,
         rows[c]["survives_fdr"] = q["reject"]
 
     # dollar-neutral top-vs-bottom-quintile backtest for the momentum signals
-    ls = {c: quintile_ls(R, sigs[c], grid, horizon, n_trials=len(rows))
+    ls = {c: quintile_ls(R, sigs[c], grid, horizon, n_trials=len(rows), membership=membership)
           for c in ("mom_tot", "mom_res", "ir_res")}
 
     return {"label": label, "span": f"{grid[0].date()}..{grid[-1].date()}",
@@ -190,11 +215,13 @@ def score_panel(closes, market, tkr_sector, sector_ret, *, label, win, minp,
             "ic": rows, "ls": ls}
 
 
-def quintile_ls(R, sig, grid, horizon, n_trials):
+def quintile_ls(R, sig, grid, horizon, n_trials, membership=None):
     """Long top-quintile / short bottom-quintile, EW, monthly rebalance, net of cost."""
     w = pd.DataFrame(0.0, index=R.index, columns=R.columns)
     for d in grid:
         s = sig.loc[d].dropna() if d in sig.index else pd.Series(dtype=float)
+        if membership is not None:                       # PIT: only members on date d
+            s = s[s.index.isin(_eligible(membership, d))]
         if len(s) < 25:
             continue
         hi, lo = s.quantile(0.8), s.quantile(0.2)
@@ -204,7 +231,9 @@ def quintile_ls(R, sig, grid, horizon, n_trials):
             w.loc[d, bot] = -1.0 / len(bot)
     w = w.replace(0.0, np.nan).ffill().fillna(0.0)
     pos = w.shift(1)
-    gross = (pos * R).sum(axis=1)
+    # clip daily returns at ±50% — kills garbage ticks in thin/delisted yahoo
+    # history that otherwise blow the compounded LS to ±inf (rank-IC is immune).
+    gross = (pos * R.clip(-0.5, 0.5)).sum(axis=1)
     turn = w.diff().abs().sum(axis=1)
     net = (gross - (COST_BPS / 1e4) * turn).loc[grid[0]:]
     net = net[net.index <= grid[-1]]
@@ -244,6 +273,8 @@ def main() -> int:
                     help="also run the 110-name deep-history SPDR-sector cross-check")
     ap.add_argument("--start", type=int, default=0,
                     help="drop closes before this year (apples-to-apples era comparison)")
+    ap.add_argument("--pit", action="store_true",
+                    help="point-in-time S&P 500 membership de-bias (run scripts.residual_alpha_pit first)")
     args = ap.parse_args()
     minp = max(args.beta_win // 2, 40)
 
@@ -252,20 +283,34 @@ def main() -> int:
         print(f"no {args.closes} close matrix — run "
               f"{'scripts.residual_alpha_fetch' if args.closes == 'deep' else 'breadth collectors'}")
         return 1
+    membership = None
+    if args.pit:
+        membership = _load_membership()
+        if membership is None:
+            print("no PIT membership — run scripts.residual_alpha_pit first")
+            return 1
+        delp = config.data_dir() / "breadth" / "_closes_delisted.parquet"
+        if delp.exists():                              # fold in the resolvable delisted names
+            closes = pd.concat([closes, pd.read_parquet(delp)], axis=1)
+            closes = closes.loc[:, ~closes.columns.duplicated()].sort_index()
     if args.start:
         closes = closes.loc[closes.index >= f"{args.start}-01-01"]
     ns = _names_sectors()
     tkr_sector = {t: ns.get(t, (t, "—"))[1] for t in closes.columns}
+    if args.pit:                                       # delisted names lack GICS -> 'Other' bucket
+        tkr_sector = {t: (s if s != "—" else "Other") for t, s in tkr_sector.items()}
     spy = _yahoo_ret("SPY", closes.index)
 
     panels = []
     tag = "DEEP-broad" if args.closes == "deep" else "BROAD live"
-    print(f"[panel] {tag} universe (EW-peer sector, shrink {args.shrink}) …")
+    pit_lbl = " · PIT membership (survivorship-reduced)" if args.pit else (
+        " (survivorship-biased)" if args.closes == "deep" else "")
+    print(f"[panel] {tag} universe (EW-peer sector, shrink {args.shrink}"
+          f"{', PIT' if args.pit else ''}) …")
     panels.append(score_panel(closes, spy, tkr_sector, ew_peer,
-                              label=f"{tag} universe · EW-peer sector"
-                                    + (" (survivorship-biased)" if args.closes == "deep" else ""),
-                              win=args.beta_win, minp=minp, form=args.form,
-                              skip=args.skip, horizon=args.horizon, shrink=args.shrink))
+                              label=f"{tag} universe · EW-peer sector" + pit_lbl,
+                              win=args.beta_win, minp=minp, form=args.form, skip=args.skip,
+                              horizon=args.horizon, shrink=args.shrink, membership=membership))
 
     if args.spdr:
         print("[panel] deep-history (data/stocks, SPDR sector) …")

@@ -8,7 +8,7 @@
 2. **The short timeframes are *reversal*, not a picker** — 1-month sector-neutral reversal is the single most significant effect (IC −0.046, t −9.5 full-history). The 2024–26 "continuation" was a regime exception, not the rule.
 3. **"Velocity of change" / acceleration is anti-predictive — KILLED** — significant *negative* IC in every deep panel (t −2.7 full-history).
 
-**Honest ceiling:** on the modern era *nothing* clears the strict BH-FDR/DSR bar — these are real-but-modest, crowded, post-publication edges (and the FDR-surviving full-history numbers carry survivorship + pre-2000 tailwinds). Ship as a ranking / context / tilt leg, **not** a standalone market-neutral alpha engine. Measured numbers in §4a.
+**Honest ceiling:** on the modern era *nothing* clears the strict BH-FDR/DSR bar — these are real-but-modest, crowded, post-publication edges (and the FDR-surviving full-history numbers carry survivorship + pre-2000 tailwinds). Ship as a ranking / context / tilt leg, **not** a standalone market-neutral alpha engine. Measured numbers in §4a. **Phase 2 (point-in-time de-biasing, §4b) settled the path-to-GO: NO-GO standalone** — survivorship had inflated *plain* momentum (its IC collapses to ~0 de-biased) while the residual stays the robust leader (0.012 vs 0.001) but isn't tradeable net (long-short Sharpe ≤ 0; nothing clears BH-FDR). It stays the context leg; a standalone would need paid PIT data (CRSP).
 
 ---
 
@@ -97,6 +97,24 @@ Forward 21d. Three reads, betas 252d shrunk (0.66), formation 12−1 (252/21):
 **The honest ceiling.** On the *modern* era nothing clears BH-FDR(10%) or DSR ≥ 0.90 (best: residual LS DSR 0.75, P(SR>0) 0.96; `rev_st|SN` IC q 0.17). These are real-but-modest, crowded edges. The FDR/DSR-surviving full-history `mom_tot` numbers are inflated by (a) the pre-2000 golden age and (b) **survivorship** (current members back to inception biases momentum *up*).
 
 **Determination: GO as a ranking/context leg, not a standalone strategy.** The operator's thesis is confirmed — relative momentum picks winners, the beta-stripped sector-neutral residual is the durable construction, short frames are reversal-timing, acceleration is dead. But the magnitude is modest in the current regime, so it belongs as a **factor leg / sector tilt / per-stock context read**, framed honestly, alongside the existing factors — not a high-conviction market-neutral book.
+
+---
+
+## 4b. Phase 2 — point-in-time de-biasing (2026-06-14 · the "path to GO" test)
+
+Does the edge survive removing survivorship? Added PIT S&P 500 membership ([fja05680/sp500](https://github.com/fja05680/sp500), 1996→, 1202 historical members; `scripts/residual_alpha_pit.py` → `data/breadth/sp500_pit_membership.parquet`) + a best-effort delisted-price fetch — **199 of 567 missing names recovered → 69% price coverage**. The 31% gap is the *catastrophic losers* Yahoo no longer serves (LEHMQ, ENRNQ, WAMUQ, BSC), so the test still **under-weights the worst** — i.e. these numbers are, if anything, optimistic. `--pit` restricts each rebalance to actual members then. Modern era (2002–26, 291 rebalances, ~369 names/date):
+
+| signal | IC (PIT) | vs survivorship-biased | de-contaminated L/S Sharpe |
+|---|--:|---|--:|
+| `mom_tot` | **0.0008** | collapsed from 0.0036 | −0.05 |
+| `mom_res` | **0.0124** | held (0.007→0.012) | −0.29 |
+| `ir_res` / `mom_res\|SN` | ~0.012 | held | −0.40 / — |
+
+**Two clean findings:**
+1. **Plain momentum's edge was largely survivorship** — its IC collapses to ~0 (t 0.08) once delisted losers are in the pool. **The beta-stripped residual is the survivorship-robust form** — it still leads the cross-section (0.012 ≫ 0.0008), exactly the BHM thesis.
+2. **But it is not a standalone tradeable edge.** Nothing survives BH-FDR (best q ≈ 0.40); the de-contaminated long-short is negative for every variant. *(Before clipping, the L/S printed Sharpe +2.5 / DSR 1.0 — a pure artifact of garbage ticks in thin delisted Yahoo history; rank-IC is immune to magnitude, the L/S is not, so daily returns are clipped at ±50%.)*
+
+**Determination: NO-GO for standalone graduation — KEEP it as the shipped context leg.** PIT de-biasing empirically vindicates the Phase-1 framing ("a modest, regime-decayed edge — context, not a buy list") *and* confirms the residual / sector-neutral construction is the right one (it dominates plain momentum precisely when survivorship is removed). A genuine standalone signal would need paid point-in-time data (CRSP) to even price the catastrophic-loser tail — but the direction on free data is unambiguous.
 
 ---
 
