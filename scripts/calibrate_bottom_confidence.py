@@ -20,7 +20,7 @@ warnings.filterwarnings("ignore")
 import numpy as np, pandas as pd
 from engine.cycles import (cycle_state, mtf_snapshot, early_signals, ladder_state,
                            regime_state, entry_quality, bottom_confidence,
-                           macd_parts, stoch_rsi)
+                           washout, macd_parts, stoch_rsi)
 from lib import config
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -55,6 +55,11 @@ def main() -> int:
     data = config.data_dir() / "stocks"
     buckets = {b[0]: [] for b in BANDS}
     n_inst = 0
+    # VIX for the Phase-2 washout knife-risk temper (aligned per name, as-of each eval)
+    try:
+        vix_s = pd.read_parquet(config.data_dir() / "yahoo" / "_VIX.parquet")["close"].dropna()
+    except Exception:
+        vix_s = None
     files = sorted(data.glob("*.parquet"))
     for fi, f in enumerate(files):
         if (fi + 1) % 20 == 0:
@@ -68,6 +73,7 @@ def main() -> int:
             continue
         n_inst += 1; cv = close.to_numpy()
         mflags = _monthly_turnup(close)          # precomputed once per name
+        vx = (vix_s.reindex(close.index).ffill().to_numpy() if vix_s is not None else None)
         for i in range(WIN, len(close) - FWD - 1, STEP):
             sub = close.iloc[i - WIN:i + 1]
             hsub = high.reindex(sub.index) if high is not None else None
@@ -87,7 +93,14 @@ def main() -> int:
                     continue
                 reg = regime_state(cyc, mtf)
                 eq = entry_quality(sub, cyc, mtf, early, reg, state=lad["state"])
-                bc = bottom_confidence(mtf, eq, lad["state"])
+                # market VIX context as-of bar i (same fields as market_vix_context)
+                vctx = None
+                if vx is not None and i >= 252 and not np.isnan(vx[i]):
+                    pct = float((vx[i - 252:i + 1] <= vx[i]).mean())
+                    vctx = {"pct": pct, "panic": pct >= 0.85,
+                            "fading": i >= 6 and not np.isnan(vx[i - 6]) and vx[i] < vx[i - 6]}
+                wo = washout(sub, cyc, vctx)
+                bc = bottom_confidence(mtf, eq, lad["state"], wo=wo)
             except Exception:
                 continue
             if not bc:

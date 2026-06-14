@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine import ticker_alerts  # noqa: E402
 from engine.conditions import sector_macro_beta  # noqa: E402
-from engine.cycles import analyze  # noqa: E402
+from engine.cycles import analyze, market_vix_context  # noqa: E402
 from engine.playbook import SECTOR_NAMES  # noqa: E402
 from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
@@ -72,11 +72,25 @@ def current_macro() -> float | None:
     return float(v) if isinstance(v, (int, float)) else None
 
 
+def current_vix_context() -> dict | None:
+    """Live market panic/washout context from VIX (percentile, panic, fading),
+    computed once and threaded into analyze() for the Phase-2 washout knife-risk
+    temper on Bottom Confidence. None when VIX is unavailable."""
+    p = config.data_dir() / "yahoo" / "_VIX.parquet"
+    if not p.exists():
+        return None
+    try:
+        vctx = market_vix_context(pd.read_parquet(p)["close"])
+    except Exception:  # noqa: BLE001
+        return None
+    return vctx or None
+
+
 def _one(ticker: str, close: pd.Series, high: pd.Series | None,
          name: str, sector: str, liquidity: str | None = None,
          macro_drag: float | None = None, macro_beta: float = 0.0,
          bench: pd.Series | None = None, alert_days: int = 120,
-         alert_max: int = 50) -> dict | None:
+         alert_max: int = 50, vix_ctx: dict | None = None) -> dict | None:
     c = close.dropna()
     if len(c) < 300:
         return None
@@ -87,7 +101,7 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
     # US net-liquidity is a single macro regime that applies to every US-listed
     # name — and to crypto (BTC tracks it) — so the same live label conditions all.
     res = analyze(c, high, kind=kind, liquidity=liquidity,
-                  macro_drag=macro_drag, macro_beta=macro_beta)
+                  macro_drag=macro_drag, macro_beta=macro_beta, vix_ctx=vix_ctx)
     if not res.get("ladder"):
         return None
     month = int(c.index.max().month)
@@ -199,8 +213,9 @@ def main() -> int:
 
     liq = current_liquidity()
     drag = current_macro()
-    log.info("net-liquidity regime for library: %s · macro-risk: %s",
-             liq or "unknown", "—" if drag is None else f"{drag:.2f}")
+    vctx = current_vix_context()
+    log.info("net-liquidity regime for library: %s · macro-risk: %s · VIX: %s",
+             liq or "unknown", "—" if drag is None else f"{drag:.2f}", vctx or "n/a")
     # benchmark for per-ticker relative-strength alerts + the feed window/caps
     spy = store.read("yahoo", "SPY")
     bench = spy["close"] if spy is not None else None
@@ -250,7 +265,7 @@ def main() -> int:
         try:
             rec = _one(ticker, close, high, name, sector, liquidity=liq,
                        macro_drag=drag, macro_beta=sector_macro_beta(sector),
-                       bench=bench, alert_days=a_days, alert_max=a_max)
+                       bench=bench, alert_days=a_days, alert_max=a_max, vix_ctx=vctx)
         except Exception as e:  # noqa: BLE001 — one bad ticker must not kill the library
             log.debug("library %s failed: %s", ticker, e)
             rec = None

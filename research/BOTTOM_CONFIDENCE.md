@@ -16,7 +16,32 @@
 > A high reading held the cycle low ~74% vs ~37% (2×) with a monotonically shallower
 > drawdown tail. Conservative formula: `entry_quality_long × (0.55 + 0.45·confluence)` —
 > confluence DISCOUNTS an unconfirmed turn, never inflates; counter-trend bounces capped ≤30.
-> Phase 2 (capitulation/washout factors) remains future work.
+>
+> **STATUS: Phase 2 BUILT + validated (2026-06-14) — capitulation as a knife-risk TEMPER,
+> not a boost.** Measuring the user's proposed capitulation factors (`scripts/_p2_measure.py`,
+> 68,916 bottoming evals) REJECTED the naive "washout boosts confidence" hypothesis — they
+> are *falling-knife* tells, not durable-bottom tells:
+>
+> | factor | hold-rate (21d) | drawdown tail p10 |
+> |---|---:|---:|
+> | above 200-day | **61.8%** | −10.5% |
+> | 8–18% below | 39.4% | −14.6% |
+> | >18% below (deep) | **36.9%** | **−22.5%** |
+> | VIX panic (>85th pct) | 44.6% | −15.5% |
+> | deep + still-falling | **29.6%** | −19.9% |
+> | deep + reversing | 55.7% | −19.3% |
+>
+> Deep washouts bounce violently (highest forward *return*) but rarely hold and draw down
+> brutally. So washout TEMPERS (never boosts) Bottom Confidence: `bottom_confidence ×=
+> (1 − 0.45·knife)`, where `knife` = depth below the 200-day × (1.0 still-falling / 0.35
+> reclaiming), amplified by a market VIX panic. `engine.cycles.washout` + `market_vix_context`
+> (threaded like `liquidity` via `build_stock_library.current_vix_context`); `stock.html` shows
+> a red knife-risk caution with the measured stats. This fixes a real blind spot — a good cycle
+> low inside a *broken primary trend* no longer reads as a high-confidence bottom.
+> Re-calibration with the temper PRESERVES the monotone separation (held 36.8%→65.8%→74.8%→73.5%,
+> drawdown tail −13.4%→−9.0%) and slightly cleans the top band (−9.21%→−9.0% as knives drop out) —
+> a targeted fix, not a broad shift (deep washouts are a rare minority of bottoming setups).
+> 19/19 cycle tests; browser-verified (ABT 22% below 200-day → 14.4→9.0 + red caution).
 
 **Question (user).** Backtests showed the `DECLINE` state has the *highest* forward
 return **and** the *deepest* drawdown. How do we reconcile that, and what factors
