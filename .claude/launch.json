@@ -6,6 +6,24 @@
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "8847", "--directory", "site"],
       "port": 8847
+    },
+    {
+      "name": "hk-verify",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8851", "--directory", "/Users/chriswong/Documents/Cluade/Macro Dashboard/site"],
+      "port": 8851
+    },
+    {
+      "name": "feed-verify",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8862", "--directory", "/tmp/preview_site"],
+      "port": 8862
+    },
+    {
+      "name": "dash-lab",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8872", "--directory", "/tmp/dash-wt/site"],
+      "port": 8872
     }
   ]
 }

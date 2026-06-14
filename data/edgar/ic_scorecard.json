@@ -1,0 +1,169 @@
+{
+  "horizon_d": 63,
+  "rebalances": 11,
+  "span": "2023-06-30..2025-12-31",
+  "median_universe": 1323,
+  "leak_free": true,
+  "factors": {
+    "value": {
+      "mean_ic": 0.0285,
+      "ic_vol": 0.0895,
+      "ic_ir": 0.319,
+      "ic_ir_ann": 0.638,
+      "t_hac": 1.162,
+      "p_hac": 0.2452,
+      "hit": 0.727,
+      "n": 11,
+      "q_fdr": 0.5394,
+      "survives_fdr": false
+    },
+    "profitability": {
+      "mean_ic": -0.0339,
+      "ic_vol": 0.1061,
+      "ic_ir": -0.319,
+      "ic_ir_ann": -0.639,
+      "t_hac": -1.014,
+      "p_hac": 0.3105,
+      "hit": 0.364,
+      "n": 11,
+      "q_fdr": 0.5692,
+      "survives_fdr": false
+    },
+    "quality": {
+      "mean_ic": -0.0213,
+      "ic_vol": 0.067,
+      "ic_ir": -0.318,
+      "ic_ir_ann": -0.635,
+      "t_hac": -1.566,
+      "p_hac": 0.1174,
+      "hit": 0.455,
+      "n": 11,
+      "q_fdr": 0.3229,
+      "survives_fdr": false
+    },
+    "investment": {
+      "mean_ic": -0.0051,
+      "ic_vol": 0.0468,
+      "ic_ir": -0.11,
+      "ic_ir_ann": -0.219,
+      "t_hac": -0.304,
+      "p_hac": 0.7609,
+      "hit": 0.455,
+      "n": 11,
+      "q_fdr": 0.9286,
+      "survives_fdr": false
+    },
+    "payout": {
+      "mean_ic": 0.0232,
+      "ic_vol": 0.0567,
+      "ic_ir": 0.409,
+      "ic_ir_ann": 0.817,
+      "t_hac": 1.604,
+      "p_hac": 0.1087,
+      "hit": 0.636,
+      "n": 11,
+      "q_fdr": 0.3229,
+      "survives_fdr": false
+    },
+    "low_vol": {
+      "mean_ic": 0.0079,
+      "ic_vol": 0.2137,
+      "ic_ir": 0.037,
+      "ic_ir_ann": 0.074,
+      "t_hac": 0.151,
+      "p_hac": 0.88,
+      "hit": 0.556,
+      "n": 9,
+      "q_fdr": 0.9286,
+      "survives_fdr": false
+    },
+    "low_beta": {
+      "mean_ic": -0.0358,
+      "ic_vol": 0.256,
+      "ic_ir": -0.14,
+      "ic_ir_ann": -0.28,
+      "t_hac": -0.646,
+      "p_hac": 0.5182,
+      "hit": 0.455,
+      "n": 11,
+      "q_fdr": 0.8143,
+      "survives_fdr": false
+    },
+    "short_interest": {
+      "mean_ic": 0.0326,
+      "ic_vol": 0.0811,
+      "ic_ir": 0.402,
+      "ic_ir_ann": 0.805,
+      "t_hac": 1.731,
+      "p_hac": 0.0834,
+      "hit": 0.636,
+      "n": 11,
+      "q_fdr": 0.3229,
+      "survives_fdr": false
+    },
+    "accruals": {
+      "mean_ic": -0.0171,
+      "ic_vol": 0.0459,
+      "ic_ir": -0.371,
+      "ic_ir_ann": -0.743,
+      "t_hac": -1.681,
+      "p_hac": 0.0928,
+      "hit": 0.455,
+      "n": 11,
+      "q_fdr": 0.3229,
+      "survives_fdr": false
+    },
+    "composite": {
+      "mean_ic": 0.0126,
+      "ic_vol": 0.0937,
+      "ic_ir": 0.134,
+      "ic_ir_ann": 0.268,
+      "t_hac": 0.501,
+      "p_hac": 0.6166,
+      "hit": 0.545,
+      "n": 11,
+      "q_fdr": 0.8478,
+      "survives_fdr": false
+    },
+    "composite_orth": {
+      "mean_ic": -0.0021,
+      "ic_vol": 0.1226,
+      "ic_ir": -0.017,
+      "ic_ir_ann": -0.035,
+      "t_hac": -0.09,
+      "p_hac": 0.9286,
+      "hit": 0.545,
+      "n": 11,
+      "q_fdr": 0.9286,
+      "survives_fdr": false
+    }
+  },
+  "collinearity": {
+    "mean_abs_corr_raw": 0.126,
+    "mean_abs_corr_orth": 0.054,
+    "vif": {
+      "value": 1.06,
+      "profitability": 1.11,
+      "quality": 2.21,
+      "investment": 1.22,
+      "payout": 1.18,
+      "low_vol": 2.35,
+      "low_beta": 2.34,
+      "short_interest": 1.1,
+      "accruals": 2.4
+    },
+    "top_pairs": [
+      {
+        "a": "low_vol",
+        "b": "low_beta",
+        "corr": 0.73
+      },
+      {
+        "a": "quality",
+        "b": "accruals",
+        "corr": 0.72
+      }
+    ]
+  },
+  "note": "Point-in-time (EDGAR panel + prices truncated to asof); IC = quarterly cross-sectional rank corr of factor z vs forward return; t_hac = Newey-West; q_fdr = Benjamini-Hochberg across the factor panel. Survivors judged vs ~0."
+}

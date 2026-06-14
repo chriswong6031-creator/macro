@@ -6,6 +6,8 @@
       63,
       126
     ],
+    "cost_bps_one_way": 2.0,
+    "n_trials": 60,
     "note": "IC = Spearman rank corr of naive-bullish factor vs forward base-vs-USD return; peg windows excised."
   },
   "assets": {
@@ -79,6 +81,43 @@
           "ic_pre": -0.031,
           "ic_post": 0.016
         }
+      },
+      "allocation": {
+        "cagr": 0.4,
+        "hold_cagr": -0.4,
+        "cagr_gross": 0.5,
+        "cost_drag_pp": 0.1,
+        "sharpe": 0.15,
+        "hold_sharpe": 0.02,
+        "sharpe_gross": 0.18,
+        "sortino": 0.19,
+        "hold_sortino": 0.03,
+        "maxdd": -9.7,
+        "hold_maxdd": -40.0,
+        "time_in_market": 100.0,
+        "avg_exposure": 17.6,
+        "net_long_pct": 52.6,
+        "turnover_annual": 4.3,
+        "cost_bps": 2.0,
+        "final_vs_hold": 1.18,
+        "sharpe_daily": 0.00933,
+        "skew": 3.0771,
+        "kurt": 142.5239,
+        "n_obs": 5823
+      },
+      "multiple_testing": {
+        "dsr": 0.0005,
+        "sr_daily": 0.00933,
+        "sr_annual": 0.15,
+        "sr0_daily": 0.0519,
+        "sr0_annual": 0.82,
+        "n_trials": 60,
+        "T": 5823,
+        "skew": 3.077,
+        "kurt": 142.524,
+        "sr_variance_source": "max(cross-pair Sharpe dispersion, null SR-sampling proxy)",
+        "verdict": "FAILS multiple-testing haircut (DSR<0.90)",
+        "note": "DSR = P(true Sharpe>0) for the conviction long/short after deflating for n_trials factor\u00d7pair configs screened, sample length, skew & kurtosis. Weights are in-sample, so this haircut is the honest counterweight \u2014 a low DSR means the edge is likely selection bias."
       }
     },
     "USDJPY": {
@@ -151,6 +190,43 @@
           "ic_pre": 0.095,
           "ic_post": 0.0
         }
+      },
+      "allocation": {
+        "cagr": 0.9,
+        "hold_cagr": -1.8,
+        "cagr_gross": 1.0,
+        "cost_drag_pp": 0.1,
+        "sharpe": 0.21,
+        "hold_sharpe": -0.09,
+        "sharpe_gross": 0.23,
+        "sortino": 0.22,
+        "hold_sortino": -0.13,
+        "maxdd": -13.7,
+        "hold_maxdd": -53.1,
+        "time_in_market": 93.3,
+        "avg_exposure": 25.1,
+        "net_long_pct": 39.9,
+        "turnover_annual": 5.6,
+        "cost_bps": 2.0,
+        "final_vs_hold": 1.83,
+        "sharpe_daily": 0.01315,
+        "skew": -0.952,
+        "kurt": 505.4537,
+        "n_obs": 5824
+      },
+      "multiple_testing": {
+        "dsr": 0.0018,
+        "sr_daily": 0.01315,
+        "sr_annual": 0.21,
+        "sr0_daily": 0.0519,
+        "sr0_annual": 0.82,
+        "n_trials": 60,
+        "T": 5824,
+        "skew": -0.952,
+        "kurt": 505.454,
+        "sr_variance_source": "max(cross-pair Sharpe dispersion, null SR-sampling proxy)",
+        "verdict": "FAILS multiple-testing haircut (DSR<0.90)",
+        "note": "DSR = P(true Sharpe>0) for the conviction long/short after deflating for n_trials factor\u00d7pair configs screened, sample length, skew & kurtosis. Weights are in-sample, so this haircut is the honest counterweight \u2014 a low DSR means the edge is likely selection bias."
       }
     },
     "AUDUSD": {
@@ -223,6 +299,43 @@
           "ic_pre": 0.1,
           "ic_post": -0.069
         }
+      },
+      "allocation": {
+        "cagr": -0.2,
+        "hold_cagr": -0.4,
+        "cagr_gross": -0.1,
+        "cost_drag_pp": 0.1,
+        "sharpe": -0.08,
+        "hold_sharpe": 0.03,
+        "sharpe_gross": -0.02,
+        "sortino": -0.1,
+        "hold_sortino": 0.04,
+        "maxdd": -10.0,
+        "hold_maxdd": -48.0,
+        "time_in_market": 100.0,
+        "avg_exposure": 15.6,
+        "net_long_pct": 26.2,
+        "turnover_annual": 5.7,
+        "cost_bps": 2.0,
+        "final_vs_hold": 1.05,
+        "sharpe_daily": -0.00495,
+        "skew": -0.4024,
+        "kurt": 15.4306,
+        "n_obs": 5223
+      },
+      "multiple_testing": {
+        "dsr": 0.0,
+        "sr_daily": -0.00495,
+        "sr_annual": -0.08,
+        "sr0_daily": 0.0519,
+        "sr0_annual": 0.82,
+        "n_trials": 60,
+        "T": 5223,
+        "skew": -0.402,
+        "kurt": 15.431,
+        "sr_variance_source": "max(cross-pair Sharpe dispersion, null SR-sampling proxy)",
+        "verdict": "FAILS multiple-testing haircut (DSR<0.90)",
+        "note": "DSR = P(true Sharpe>0) for the conviction long/short after deflating for n_trials factor\u00d7pair configs screened, sample length, skew & kurtosis. Weights are in-sample, so this haircut is the honest counterweight \u2014 a low DSR means the edge is likely selection bias."
       }
     },
     "GBPUSD": {
@@ -295,6 +408,43 @@
           "ic_pre": -0.015,
           "ic_post": -0.048
         }
+      },
+      "allocation": {
+        "cagr": 0.5,
+        "hold_cagr": -1.3,
+        "cagr_gross": 0.6,
+        "cost_drag_pp": 0.1,
+        "sharpe": 0.31,
+        "hold_sharpe": -0.09,
+        "sharpe_gross": 0.36,
+        "sortino": 0.39,
+        "hold_sortino": -0.12,
+        "maxdd": -6.7,
+        "hold_maxdd": -49.1,
+        "time_in_market": 100.0,
+        "avg_exposure": 15.6,
+        "net_long_pct": 35.0,
+        "turnover_annual": 4.5,
+        "cost_bps": 2.0,
+        "final_vs_hold": 1.49,
+        "sharpe_daily": 0.019236,
+        "skew": -0.0964,
+        "kurt": 12.9198,
+        "n_obs": 5835
+      },
+      "multiple_testing": {
+        "dsr": 0.0064,
+        "sr_daily": 0.019236,
+        "sr_annual": 0.31,
+        "sr0_daily": 0.0519,
+        "sr0_annual": 0.82,
+        "n_trials": 60,
+        "T": 5835,
+        "skew": -0.096,
+        "kurt": 12.92,
+        "sr_variance_source": "max(cross-pair Sharpe dispersion, null SR-sampling proxy)",
+        "verdict": "FAILS multiple-testing haircut (DSR<0.90)",
+        "note": "DSR = P(true Sharpe>0) for the conviction long/short after deflating for n_trials factor\u00d7pair configs screened, sample length, skew & kurtosis. Weights are in-sample, so this haircut is the honest counterweight \u2014 a low DSR means the edge is likely selection bias."
       }
     },
     "USDCAD": {
@@ -367,6 +517,43 @@
           "ic_pre": -0.122,
           "ic_post": -0.118
         }
+      },
+      "allocation": {
+        "cagr": 1.5,
+        "hold_cagr": -0.3,
+        "cagr_gross": 1.7,
+        "cost_drag_pp": 0.2,
+        "sharpe": 1.02,
+        "hold_sharpe": 0.0,
+        "sharpe_gross": 1.14,
+        "sortino": 1.41,
+        "hold_sortino": 0.01,
+        "maxdd": -6.3,
+        "hold_maxdd": -37.6,
+        "time_in_market": 100.0,
+        "avg_exposure": 13.8,
+        "net_long_pct": 31.0,
+        "turnover_annual": 9.0,
+        "cost_bps": 2.0,
+        "final_vs_hold": 1.5,
+        "sharpe_daily": 0.064172,
+        "skew": 0.9748,
+        "kurt": 20.757,
+        "n_obs": 5839
+      },
+      "multiple_testing": {
+        "dsr": 0.831,
+        "sr_daily": 0.064172,
+        "sr_annual": 1.02,
+        "sr0_daily": 0.0519,
+        "sr0_annual": 0.82,
+        "n_trials": 60,
+        "T": 5839,
+        "skew": 0.975,
+        "kurt": 20.757,
+        "sr_variance_source": "max(cross-pair Sharpe dispersion, null SR-sampling proxy)",
+        "verdict": "FAILS multiple-testing haircut (DSR<0.90)",
+        "note": "DSR = P(true Sharpe>0) for the conviction long/short after deflating for n_trials factor\u00d7pair configs screened, sample length, skew & kurtosis. Weights are in-sample, so this haircut is the honest counterweight \u2014 a low DSR means the edge is likely selection bias."
       }
     },
     "USDCHF": {
@@ -439,6 +626,43 @@
           "ic_pre": -0.057,
           "ic_post": -0.204
         }
+      },
+      "allocation": {
+        "cagr": 1.9,
+        "hold_cagr": 2.0,
+        "cagr_gross": 2.1,
+        "cost_drag_pp": 0.2,
+        "sharpe": 0.58,
+        "hold_sharpe": 0.23,
+        "sharpe_gross": 0.64,
+        "sortino": 0.93,
+        "hold_sortino": 0.36,
+        "maxdd": -15.0,
+        "hold_maxdd": -29.8,
+        "time_in_market": 100.0,
+        "avg_exposure": 19.1,
+        "net_long_pct": 44.1,
+        "turnover_annual": 9.5,
+        "cost_bps": 2.0,
+        "final_vs_hold": 0.98,
+        "sharpe_daily": 0.036522,
+        "skew": 15.5533,
+        "kurt": 674.8392,
+        "n_obs": 5837
+      },
+      "multiple_testing": {
+        "dsr": 0.0736,
+        "sr_daily": 0.036522,
+        "sr_annual": 0.58,
+        "sr0_daily": 0.0519,
+        "sr0_annual": 0.82,
+        "n_trials": 60,
+        "T": 5837,
+        "skew": 15.553,
+        "kurt": 674.839,
+        "sr_variance_source": "max(cross-pair Sharpe dispersion, null SR-sampling proxy)",
+        "verdict": "FAILS multiple-testing haircut (DSR<0.90)",
+        "note": "DSR = P(true Sharpe>0) for the conviction long/short after deflating for n_trials factor\u00d7pair configs screened, sample length, skew & kurtosis. Weights are in-sample, so this haircut is the honest counterweight \u2014 a low DSR means the edge is likely selection bias."
       }
     },
     "USDMXN": {
@@ -504,6 +728,43 @@
           "ic_pre": -0.104,
           "ic_post": -0.079
         }
+      },
+      "allocation": {
+        "cagr": 2.0,
+        "hold_cagr": -1.9,
+        "cagr_gross": 2.2,
+        "cost_drag_pp": 0.3,
+        "sharpe": 0.41,
+        "hold_sharpe": -0.09,
+        "sharpe_gross": 0.46,
+        "sortino": 0.52,
+        "hold_sortino": -0.12,
+        "maxdd": -14.1,
+        "hold_maxdd": -61.1,
+        "time_in_market": 100.0,
+        "avg_exposure": 31.0,
+        "net_long_pct": 41.4,
+        "turnover_annual": 13.3,
+        "cost_bps": 2.0,
+        "final_vs_hold": 2.39,
+        "sharpe_daily": 0.025834,
+        "skew": 0.1459,
+        "kurt": 28.2836,
+        "n_obs": 5845
+      },
+      "multiple_testing": {
+        "dsr": 0.0232,
+        "sr_daily": 0.025834,
+        "sr_annual": 0.41,
+        "sr0_daily": 0.0519,
+        "sr0_annual": 0.82,
+        "n_trials": 60,
+        "T": 5845,
+        "skew": 0.146,
+        "kurt": 28.284,
+        "sr_variance_source": "max(cross-pair Sharpe dispersion, null SR-sampling proxy)",
+        "verdict": "FAILS multiple-testing haircut (DSR<0.90)",
+        "note": "DSR = P(true Sharpe>0) for the conviction long/short after deflating for n_trials factor\u00d7pair configs screened, sample length, skew & kurtosis. Weights are in-sample, so this haircut is the honest counterweight \u2014 a low DSR means the edge is likely selection bias."
       }
     },
     "USDBRL": {
@@ -569,11 +830,48 @@
           "ic_pre": -0.007,
           "ic_post": 0.001
         }
+      },
+      "allocation": {
+        "cagr": -0.1,
+        "hold_cagr": -2.5,
+        "cagr_gross": -0.0,
+        "cost_drag_pp": 0.1,
+        "sharpe": 0.01,
+        "hold_sharpe": -0.04,
+        "sharpe_gross": 0.03,
+        "sortino": 0.0,
+        "hold_sortino": -0.06,
+        "maxdd": -28.5,
+        "hold_maxdd": -75.7,
+        "time_in_market": 100.0,
+        "avg_exposure": 19.9,
+        "net_long_pct": 24.3,
+        "turnover_annual": 7.1,
+        "cost_bps": 2.0,
+        "final_vs_hold": 1.69,
+        "sharpe_daily": 0.000315,
+        "skew": -22.8179,
+        "kurt": 1134.7202,
+        "n_obs": 5406
+      },
+      "multiple_testing": {
+        "dsr": 0.0001,
+        "sr_daily": 0.000315,
+        "sr_annual": 0.01,
+        "sr0_daily": 0.0519,
+        "sr0_annual": 0.82,
+        "n_trials": 60,
+        "T": 5406,
+        "skew": -22.818,
+        "kurt": 1134.72,
+        "sr_variance_source": "max(cross-pair Sharpe dispersion, null SR-sampling proxy)",
+        "verdict": "FAILS multiple-testing haircut (DSR<0.90)",
+        "note": "DSR = P(true Sharpe>0) for the conviction long/short after deflating for n_trials factor\u00d7pair configs screened, sample length, skew & kurtosis. Weights are in-sample, so this haircut is the honest counterweight \u2014 a low DSR means the edge is likely selection bias."
       }
     },
     "USDCNH": {
-      "span": "2004-01-02..2026-06-05",
-      "rows": 5623,
+      "span": "2013-02-11..2026-06-12",
+      "rows": 3284,
       "weights": {
         "trend": 0.2118,
         "structure": 0.0941,
@@ -634,7 +932,37 @@
           "ic_pre": null,
           "ic_post": null
         }
-      }
+      },
+      "allocation": {}
     }
+  },
+  "trial_log": {
+    "asof": "2026-06-13",
+    "n_trials_declared": 60,
+    "cost_bps_one_way": 2.0,
+    "pairs_tested": [
+      "EURUSD",
+      "USDJPY",
+      "AUDUSD",
+      "GBPUSD",
+      "USDCAD",
+      "USDCHF",
+      "USDMXN",
+      "USDBRL",
+      "USDCNH"
+    ],
+    "factor_families_screened": [
+      "carry",
+      "positioning",
+      "rates",
+      "risk",
+      "riskoff",
+      "shock",
+      "structure",
+      "trend",
+      "value"
+    ],
+    "n_factor_families": 9,
+    "note": "Upper-bound count of factor\u00d7pair configs screened across the hunt, used to deflate each pair's conviction Sharpe. Raise forex.calibration.n_trials as you screen more factors/pairs."
   }
 }

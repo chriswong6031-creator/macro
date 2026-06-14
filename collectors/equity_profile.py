@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import time
 from datetime import datetime, timezone
 from urllib.parse import quote
@@ -42,9 +43,189 @@ log = logging.getLogger(__name__)
 WIKI_UA = "macro-dashboard research (chriswong6031-creator) macro-dashboard@users.noreply.github.com"
 SUBMISSIONS = "https://data.sec.gov/submissions/CIK{:010d}.json"
 WIKI_SUMMARY = "https://en.wikipedia.org/api/rest_v1/page/summary/{}"
+# limit=5 (not 1): opensearch's top hit is often a namesake (a lawsuit, a town,
+# a chemical) rather than the company, so we pull a handful and validate.
 WIKI_OPENSEARCH = ("https://en.wikipedia.org/w/api.php?action=opensearch"
-                   "&search={}&limit=1&namespace=0&format=json")
+                   "&search={}&limit=5&namespace=0&format=json")
 REFRESH_DAYS = 120
+
+# Trailing corporate-form words stripped to build a bare "core" search/match term
+# ("Microsoft Corp" -> "Microsoft", "CVR Energy, Inc." -> "CVR Energy").
+_CORE_SUFFIX = {"corp", "corporation", "inc", "incorporated", "co", "cos",
+                "company", "companies", "ltd", "limited", "plc", "llc", "lp",
+                "lllp", "sa", "nv", "ag", "se", "holdings", "holding"}
+# Generic words ignored when checking a Wikipedia title actually names the company.
+_NAME_STOP = _CORE_SUFFIX | {"the", "of", "and", "for", "group", "trust",
+                             "international", "american", "global", "new",
+                             "class", "cl"}
+# Industry/descriptor words too generic to anchor a name match on their own — else
+# "CVR Energy" matches "Cove Energy plc" on the shared "energy". A distinctive
+# token (a brand) still anchors; an exact name still matches via core-substring.
+_GENERIC_TOK = {
+    "energy", "power", "electric", "electrical", "gas", "petroleum", "oil",
+    "technologies", "technology", "systems", "system", "financial", "finance",
+    "solutions", "services", "service", "industries", "industrial", "resources",
+    "resource", "partners", "properties", "property", "realty", "brands",
+    "networks", "communications", "pharmaceuticals", "pharmaceutical",
+    "biosciences", "therapeutics", "motors", "materials", "products", "media",
+    "entertainment", "foods", "retail", "stores", "bancshares", "bancorp",
+    "insurance", "health", "healthcare", "digital", "national", "general",
+    "united", "standard", "enterprises", "ventures", "laboratories", "pharma",
+    "data", "first", "mortgage", "capital", "bank", "holdings",
+}
+# An organization-type keyword in a page's short description (or extract lead)
+# is what separates the company from a same-named court case / place / chemical.
+_ORG_KW = (
+    "compan", "corporat", "incorporat", "holding", "conglomerate", "multinational",
+    "manufactur", "retail", "bank", "insur", "brokerage", "broker", "reit",
+    "real estate investment trust", "enterprise", "firm", "business", "airline",
+    "utilit", "producer", "provider", "operator", "developer", "supplier", "maker",
+    "distributor", "distribution", "fintech", "pharmaceutic", "biotechnolog",
+    "biopharma", "technolog", "financ", "asset manage", "investment", "automaker",
+    "automotive", "energy", "oil and gas", "mining", "semiconductor", "software",
+    "restaurant", "hotel", "casino", "media", "telecommunication", "aerospace",
+    "defense", "defence", "industrial", "chemical", "consumer", "service",
+    "platform", " brand", "homebuilder", "winery", "brewer", "agricultur",
+    "logistics", "transport", "railroad", "railway", "shipping", "apparel",
+    "footwear", "cosmetic", "beverage", "bottler", "supermarket", "grocer",
+    "commerce", "payment", "credit", "mortgage", "lender", "exchange",
+    "marketplace", "networking", "bancorp", "bancshares", "realty", "properties",
+    "reinsur", "staffing", "equipment", "products", "solutions", "stores",
+    "health", "biolog", "medical", "devices", "fortune 500", "chain",
+    "publicly traded", "publicly owned", "electronics", "refiner", "midstream",
+    "educational", "institute", "carrier", "fund manage", "steakhouse",
+)  # NB: bare "designer"/"producer" omitted — they also describe people
+   # (a jewellery designer, a film producer); the company words above suffice.
+# Wikidata short-description fragments that VETO a page outright: a place, a work,
+# a person, a court case — never a company, even if an org word slips in (e.g.
+# "unincorporated community" contains "incorporat"). Checked before _ORG_KW.
+_NOT_COMPANY = (
+    "unincorporated", "community in", "town in", "city in", "village in",
+    "census-designated", "county", "river", "lake", "mountain", "island",
+    "neighborhood", "borough", "hamlet", "municipality", "geological",
+    "historic", "amino acid", "chemical compound", "chemical element",
+    "documentary", "film", "novel", "book by", "album", "song", "single by",
+    "band", "musician", "actor", "actress", "politician", "footballer",
+    "writer", "poet", "given name", "surname", "species", "genus",
+    # person professions — opensearch fuzz lands on a same-named individual
+    # ("Jean Michel Schlumberger ... jewellery designer" for SLB)
+    "designer", "architect", "painter", "novelist", "screenwriter",
+    "composer", "journalist", "businessman", "businesswoman", "entrepreneur",
+    "philanthropist", "economist", "physician", "aristocrat", "nobleman",
+    "filmmaker", "rapper", "singer", "director (", "cricketer",
+    "court case", "legal case", "legal issue", "supreme court", "law case",
+    "convention center", "country club", "concert hall", "university",
+    "incident", "crisis", "battle", "treaty", "disease", "vaccine", "pandemic",
+)
+
+
+def _titlecase(s: str) -> str:
+    """SEC entity names arrive ALL-CAPS ("MICROSOFT CORP"); lower the shouting so
+    Wikipedia's (case-sensitive) opensearch ranking doesn't favour a lawsuit."""
+    def fix(w: str) -> str:
+        return w if (not w or "&" in w or "/" in w) else w[0].upper() + w[1:].lower()
+    return " ".join(fix(w) for w in s.split())
+
+
+def _clean_name(name: str) -> str:
+    """A sane Wikipedia search string from a raw breadth/SEC name: fold "X (The)"
+    to "The X", drop SEC registration tags (/DE/, /NEW/, trailing slash) and
+    de-shout ALL-CAPS names."""
+    n = " ".join(str(name or "").split())
+    if not n:
+        return ""
+    m = re.match(r"^(.*?)[,\s]*\(the\)\s*$", n, re.I)
+    if m:
+        n = "The " + m.group(1).strip()
+    n = re.sub(r"\s*/[A-Za-z .&]{1,8}/?\s*$", "", n).strip()  # " /DE/", " /NEW/"
+    n = n.rstrip("/ ").strip()                                # "AMETEK INC/"
+    letters = re.sub(r"[^A-Za-z]", "", n)
+    if len(n) > 4 and letters and letters.isupper():
+        n = _titlecase(n)
+    return n
+
+
+def _core_name(name: str) -> str:
+    """`_clean_name` with trailing corporate-form words removed."""
+    n = _clean_name(name)
+    toks = re.sub(r"[.,]", " ", n).split()
+    while toks and toks[-1].lower().strip(".,&") in _CORE_SUFFIX:
+        toks.pop()
+    return " ".join(toks).strip(" ,&")
+
+
+def _search_terms(*names: str) -> list[str]:
+    """Ordered, de-duplicated search candidates: the cleaned name then its bare
+    core, for each supplied name (clean display name first, SEC name as backup).
+    Kept deliberately tight — a bare brand token ("EPAM") tends to surface a
+    same-named different entity, and every extra term is another way to go wrong."""
+    out: list[str] = []
+    for nm in names:
+        for cand in (_clean_name(nm), _core_name(nm)):
+            cand = cand.strip()
+            if cand and cand not in out:
+                out.append(cand)
+    return out
+
+
+def _norm(s: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", str(s).lower())
+
+
+def _lawsuit_title(title: str) -> bool:
+    """"Microsoft Corp. v European Commission", "Altria Group v. Good" — a court
+    case, not the company. Cheap pre-filter so we don't even fetch its summary."""
+    return bool(re.search(r"\sv\.?\s", f" {title} "))
+
+
+def _name_relevant(title: str, *names: str) -> bool:
+    """Does this Wikipedia title actually name the company? Guards against
+    opensearch fuzz ("Arginine" for Argan, "Sugar Land" for CVR Energy)."""
+    t = _norm(title)
+    if not t:
+        return False
+    ttoks = set(re.sub(r"[^a-z0-9]", " ", title.lower()).split())
+    for nm in names:
+        core = _norm(_core_name(nm))
+        if core and (core in t or t in core):
+            return True
+        ntoks = {w for w in re.sub(r"[^a-z0-9]", " ", str(nm).lower()).split()
+                 if len(w) >= 4 and w not in _NAME_STOP and w not in _GENERIC_TOK}
+        if ntoks & ttoks:
+            return True
+        # a distinctive token fused into the title ("Eagle" Bancorp -> "EagleBank")
+        if any(w in t for w in ntoks):
+            return True
+    return False
+
+
+def _looks_company_guard(desc: str) -> bool:
+    """False when the short description names a place/work/person/case."""
+    d = (desc or "").lower()
+    return not any(v in d for v in _NOT_COMPANY)
+
+
+def _looks_company(desc: str, extract: str) -> bool:
+    """An organization-type keyword in the Wikidata short description (preferred,
+    it's terse and clean) — or, when there is none, in the extract's lead. A
+    place/work/person/case short description vetoes regardless."""
+    d = (desc or "").lower()
+    if not _looks_company_guard(d):
+        return False
+    if d:
+        return any(k in d for k in _ORG_KW)
+    return any(k in (extract or "").lower()[:200] for k in _ORG_KW)
+
+
+def _is_company_page(s: dict, *names: str) -> bool:
+    """Accept a resolved Wikipedia page only if it both names the company and
+    reads like an organization — fail-safe: an uncertain page yields no blurb
+    (an empty chip) rather than a confidently-wrong one (a lawsuit, a town)."""
+    if not isinstance(s, dict) or s.get("type") == "disambiguation":
+        return False
+    if not _name_relevant(s.get("title") or "", *names):
+        return False
+    return _looks_company(s.get("description") or "", s.get("extract") or "")
 
 
 def _cache_path():
@@ -133,48 +314,69 @@ def _sec_submission(cik: int) -> dict:
 
 
 def _trim(extract: str, max_sentences: int = 2, max_chars: int = 320) -> str:
-    """First couple of sentences of a Wikipedia extract, length-capped."""
+    """First couple of sentences of a Wikipedia extract, length-capped. A single
+    capital initial ("W. W. Grainger", "W. P. Carey") is NOT a sentence break —
+    without this the extract collapses to a useless stub ("W. W.")."""
     extract = " ".join((extract or "").split())
     if not extract:
         return ""
-    parts, out = extract.split(". "), ""
+    # shield "X. " initials from the naive ". " split, restore after
+    SEP = "\x00"
+    guarded = re.sub(r"\b([A-Z])\.\s", lambda m: m.group(1) + "." + SEP, extract)
+    parts, out = guarded.split(". "), ""
     for i, s in enumerate(parts):
         nxt = out + s + (". " if i < len(parts) - 1 else "")
-        if i >= max_sentences or len(nxt) > max_chars:
+        if i >= max_sentences or len(nxt.replace(SEP, " ")) > max_chars:
             break
         out = nxt
-    out = out.strip()
-    return out if out else extract[:max_chars]
+    out = out.replace(SEP, " ").strip()
+    return out if out else extract.replace(SEP, " ")[:max_chars]
 
 
-def _wiki_description(name: str) -> str | None:
-    """One-paragraph business description via Wikipedia REST, resolving the page
-    title through opensearch first (company names rarely match a title exactly)."""
-    headers = {"User-Agent": WIKI_UA, "Accept": "application/json"}
-    title = None
-    r = _get(WIKI_OPENSEARCH.format(quote(name)), headers)
-    time.sleep(0.05)
-    if r is not None:
-        try:
-            os_res = r.json()
-            if isinstance(os_res, list) and len(os_res) >= 2 and os_res[1]:
-                title = os_res[1][0]
-        except Exception:  # noqa: BLE001
-            title = None
-    if not title:
-        title = name
+def _wiki_summary(title: str, headers: dict) -> dict | None:
     r = _get(WIKI_SUMMARY.format(quote(title.replace(" ", "_"))) + "?redirect=true", headers)
     time.sleep(0.05)
     if r is None:
         return None
     try:
-        s = r.json()
+        return r.json()
     except Exception:  # noqa: BLE001
         return None
-    if s.get("type") == "disambiguation":
-        return None
-    desc = _trim(s.get("extract") or "")
-    return desc or None
+
+
+def _wiki_description(*names: str, max_check: int = 6) -> str | None:
+    """One-paragraph business description via Wikipedia REST. opensearch ranks a
+    namesake court case / town / chemical above the company for many tickers
+    (especially ALL-CAPS SEC names), so we walk the top candidates of each search
+    term and return the first that actually validates as the company's page."""
+    headers = {"User-Agent": WIKI_UA, "Accept": "application/json"}
+    seen: set[str] = set()
+    checked = 0
+    for term in _search_terms(*names):
+        r = _get(WIKI_OPENSEARCH.format(quote(term)), headers)
+        time.sleep(0.05)
+        cands: list[str] = []
+        if r is not None:
+            try:
+                os_res = r.json()
+                if isinstance(os_res, list) and len(os_res) >= 2:
+                    cands = [c for c in os_res[1] if c]
+            except Exception:  # noqa: BLE001
+                cands = []
+        for title in (cands or [term]):
+            key = title.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            if _lawsuit_title(title):           # cheap reject, skip the fetch
+                continue
+            if checked >= max_check:
+                return None
+            checked += 1
+            s = _wiki_summary(title, headers)
+            if s and _is_company_page(s, *names):
+                return _trim(s.get("extract") or "") or None
+    return None
 
 
 def fetch_profiles(force: bool = False, max_new: int = 250,
@@ -205,11 +407,13 @@ def fetch_profiles(force: bool = False, max_new: int = 250,
     rows = []
     now = datetime.now(timezone.utc).isoformat()
     for t in todo:
-        rec: dict = {"ticker": t, "name": names.get(t, t), "as_of": now}
+        display = names.get(t, t)                  # clean breadth name (mixed-case)
+        rec: dict = {"ticker": t, "name": display, "as_of": now}
         if t in cik:
-            rec.update(_sec_submission(cik[t]))
-        wiki_name = rec.get("name") or names.get(t, t)
-        rec["description"] = _wiki_description(wiki_name)
+            rec.update(_sec_submission(cik[t]))    # may overwrite name with the SEC entity
+        # Search the clean display name FIRST, the (ALL-CAPS) SEC name as backup:
+        # "MICROSOFT CORP" ranks the EU antitrust case ahead of the company.
+        rec["description"] = _wiki_description(display, rec.get("name"))
         rec["source"] = "wikipedia+sec"
         rows.append(rec)
 

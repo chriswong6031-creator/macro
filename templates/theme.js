@@ -79,10 +79,14 @@
     setPh();
     document.addEventListener('langchange', setPh);
     var pfx = location.pathname.indexOf('/sectors/') > -1 ? '../' : '';
+    // a page can scope the search to its own library + analyzer via data attributes
+    // (default = the global nightly library + stock.html, so macro is unchanged)
+    var libUrl = box.getAttribute('data-lib') || 'stockdata/index.json';
+    var target = box.getAttribute('data-target') || 'stock.html';
     var lib = [], rows = [], sel = -1;
-    fetch(pfx + 'stockdata/index.json').then(function (r) { return r.json(); })
+    fetch(pfx + libUrl).then(function (r) { return r.json(); })
       .then(function (d) { lib = d || []; }).catch(function () {});
-    function go(t) { location.href = pfx + 'stock.html#' + encodeURIComponent(t); }
+    function go(t) { location.href = pfx + target + '#' + encodeURIComponent(t); }
     function close() { sugg.classList.remove('show'); sugg.innerHTML = ''; rows = []; sel = -1; }
     function paint() {
       [].forEach.call(sugg.querySelectorAll('.row'), function (r, i) { r.classList.toggle('sel', i === sel); });

@@ -57,6 +57,12 @@
   .eqbadge.eq-down { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--down);
                      border-color:color-mix(in srgb,var(--down) 40%,transparent); }
   .eqbadge.eq-flat { background:var(--panel2); color:var(--muted); }
+  .alpha-entry { display:inline-block; font-size:11.5px; font-weight:700; padding:2px 9px;
+                 border-radius:9px; border:1px solid var(--line); }
+  .ae-pullback { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
+  .ae-extended { background:color-mix(in srgb,var(--warn) 22%,transparent); color:var(--text); border-color:color-mix(in srgb,var(--warn) 55%,transparent); }
+  .ae-intact { background:color-mix(in srgb,var(--link) 14%,transparent); color:var(--link); }
+  .ae-laggard,.ae-neutral { background:var(--panel2); color:var(--muted); }
   a { text-decoration:none; }
   h1 { font-size:20px; margin:0; }
   h2 { font-size:14px; margin:0 0 10px; color:var(--muted); text-transform:uppercase;
@@ -268,6 +274,13 @@
         <div id="r_zbars" class="zbars"></div>
       </div>
       <p id="r_fac_score" class="muted" style="margin-top:8px; font-size:12.5px"></p>
+    </div>
+
+    <div class="panel" id="panel_alpha" style="display:none">
+      <h2>📈 {{ t('Alpha vs sector &amp; index', '相对板块与大盘的阿尔法') }}
+        {{ help("This stock's return with its MARKET and SECTOR beta removed — sector-neutral residual momentum over a 12-1-month window (research/RESIDUAL_ALPHA_MOMENTUM.md). 'alpha z' is its rank vs the whole S&P 1500 cross-section (0 = average, +2 = top of the pack); 'sector rank' is its place among its GICS peers; 'idiosyncratic' is the annualized beta-stripped return. The entry tag flags whether a leader just spiked ('extended' = short-term reversal risk) or is on a recent dip ('pullback' = constructive). Phase-0 validated as a MODEST, regime-decayed edge — context for stock selection, not a standalone buy signal.",
+          "该股票剔除其市场与板块贝塔后的收益 —— 12-1 个月的板块中性残差动量。“阿尔法 z”是其在整个标普1500横截面中的排名（0＝平均，+2＝领先）；“板块排名”是其在 GICS 同业中的位次；“特异收益”为年化的剔除贝塔后收益。入场标签标记领跑股是刚急涨（“extended”＝短期反转风险）还是处于近期回调（“pullback”＝较佳入场）。第 0 阶段验证为温和、随周期衰减的优势 —— 仅为选股参考，并非独立买入信号。") }}</h2>
+      <div id="r_alpha"></div>
     </div>
 
     <div class="panel" id="panel_gex" style="display:none">
@@ -505,7 +518,7 @@
              low_beta:['Low beta','低贝塔'], accruals:['Low accruals','低应计'], short_interest:['Low short int.','低做空'] };
 
   function hideFundamentals() {
-    ['panel_profile','panel_val','panel_fin','panel_earn','panel_fac','panel_gex','panel_pos','panel_analyst']
+    ['panel_profile','panel_val','panel_fin','panel_earn','panel_fac','panel_alpha','panel_gex','panel_pos','panel_analyst']
       .forEach(function (id) { show(id, false); });
     show('r_archetype', false); show('r_glance', false);
   }
@@ -883,6 +896,29 @@
     }).join('');
     el('r_flow').innerHTML = '<table>' + th + rows + '</table>';
     show('panel_flow', true);
+  }
+
+  // Sector-neutral residual-alpha: this name's stock-specific momentum after its
+  // market + sector beta are stripped, ranked within its GICS sector.
+  var AE = { extended:['Extended — ran hot','偏热 — 短期反转'], pullback:['Pullback — constructive','回调 — 较佳入场'],
+             intact:['Intact','趋势完好'], laggard:['Laggard','落后'], neutral:['Neutral','中性'] };
+  function renderAlpha(d) {
+    var a = d.alpha;
+    if (!a || a.alpha == null) { show('panel_alpha', false); return; }
+    function sgn(v, nd, suf) { return v == null ? LF('na') : (v > 0 ? '+' : '') + Number(v).toFixed(nd) + (suf || ''); }
+    var chips = [gchip(lz('alpha z','阿尔法 z'), '<span class="' + (a.alpha >= 0 ? 'pos' : 'neg') + '">' + sgn(a.alpha, 2) + '</span>')];
+    if (a.sector_rank != null && a.sector_n != null)
+      chips.push(gchip(lz('sector rank','板块排名'), '#' + a.sector_rank + ' / ' + a.sector_n));
+    if (a.resid_ann != null)
+      chips.push(gchip(lz('idiosyncratic (ann)','特异收益（年化）'), '<span class="' + (a.resid_ann >= 0 ? 'pos' : 'neg') + '">' + sgn(a.resid_ann, 0, '%') + '</span>'));
+    if (a.rev_1m != null)
+      chips.push(gchip(lz('last month','近一月'), '<span class="' + (a.rev_1m >= 0 ? 'pos' : 'neg') + '">' + sgn(a.rev_1m, 1, '%') + '</span>'));
+    var tag = (a.entry && AE[a.entry]) ? '<span class="alpha-entry ae-' + a.entry + '">' + lz(AE[a.entry][0], AE[a.entry][1]) + '</span>' : '';
+    el('r_alpha').innerHTML = '<div class="glance">' + chips.join('') + '</div>' +
+      (tag ? '<div style="margin:8px 0 2px">' + tag + '</div>' : '') +
+      '<p class="srcline">' + lz('Stock-specific momentum after market + sector beta are removed, ranked within its sector. A modest, regime-decayed edge — context, not a standalone buy signal.',
+        '剔除市场与板块贝塔后的个股特定动量，在其板块内排名。温和且随周期衰减的优势 —— 仅供参考，而非独立买入信号。') + '</p>';
+    show('panel_alpha', true);
   }
 
   function render(d) {

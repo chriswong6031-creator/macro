@@ -48,7 +48,7 @@ House rule: a relationship is trusted (labeled a *signal* in the UI) only if its
 
 | band   |    n |   hit_21d |   mean_21d |   hit_63d |   mean_63d |   hit_126d |   mean_126d |
 |:-------|-----:|----------:|-----------:|----------:|-----------:|-----------:|------------:|
-| 0-20   | 1229 |      55   |       0.88 |      57.8 |       2.47 |       72.7 |        5.39 |
+| 0-20   | 1229 |      55   |       0.88 |      57.8 |       2.46 |       72.7 |        5.38 |
 | 20-40  |  850 |      51.8 |       0.41 |      55.6 |       2.08 |       61.8 |        5.67 |
 | 40-60  |  807 |      59.1 |       1.33 |      65.7 |       3.58 |       65.1 |        4.86 |
 | 60-80  |  997 |      55.1 |       0.77 |      67.9 |       3.54 |       79.8 |        8.9  |
@@ -63,12 +63,12 @@ House rule: a relationship is trusted (labeled a *signal* in the UI) only if its
 | tailwind | 2042 |      56.5 |       1.06 |      59.6 |       3.03 |       69.8 |        6.12 |
 
 ### gold · shock_z — forward returns by band (full)  
-_EXTREMES — low <-1.5: +3.4% 67.9%hit (n=333) [flat]; high >1.5: +8.0% 72.3%hit (n=581) [flat]_
+_EXTREMES — low <-1.5: +3.4% 67.9%hit (n=334) [flat]; high >1.5: +8.0% 72.3%hit (n=581) [flat]_
 
 | band      |    n |   hit_21d |   mean_21d |   hit_63d |   mean_63d |   hit_126d |   mean_126d |
 |:----------|-----:|----------:|-----------:|----------:|-----------:|-----------:|------------:|
-| <-1.5     |  333 |      65.9 |       1.9  |      52.2 |       1.09 |       67.9 |        3.36 |
-| -1.5..-.5 | 1267 |      58.3 |       1.04 |      66.9 |       3.58 |       69.5 |        6.5  |
+| <-1.5     |  334 |      65.9 |       1.9  |      52.2 |       1.09 |       67.9 |        3.36 |
+| -1.5..-.5 | 1266 |      58.3 |       1.04 |      66.9 |       3.58 |       69.5 |        6.5  |
 | -.5..5    | 2041 |      57.7 |       1.28 |      65.7 |       3.72 |       71   |        6.99 |
 | .5..1.5   | 1083 |      54   |       0.83 |      59.9 |       2.93 |       66.3 |        6.45 |
 | >1.5      |  581 |      52.8 |       0.32 |      62.8 |       2.53 |       72.3 |        7.98 |
@@ -92,14 +92,18 @@ _EXTREMES — low <-1.5: +3.4% 67.9%hit (n=333) [flat]; high >1.5: +8.0% 72.3%hi
 | Deflation-scare | 1712 |      56.8 |       0.85 |      66.6 |       3.56 |       73.3 |        6.42 |
 | Neutral         |    0 |     nan   |     nan    |     nan   |     nan    |      nan   |      nan    |
 
-### allocation vs buy-and-hold
+### allocation vs buy-and-hold (NET of 8.0bps one-way cost)
 
-|              |   cagr |   hold_cagr |   sharpe |   hold_sharpe |   sortino |   hold_sortino |   maxdd |   hold_maxdd |   time_in_market |   final_vs_hold |
-|:-------------|-------:|------------:|---------:|--------------:|----------:|---------------:|--------:|-------------:|-----------------:|----------------:|
-| conservative |    6   |        11.5 |     0.69 |           0.7 |      0.53 |           0.93 |   -12.6 |        -44.4 |             35.1 |            0.28 |
-| moderate     |    5.8 |        11.5 |     0.56 |           0.7 |      0.55 |           0.93 |   -29.3 |        -44.4 |             58.7 |            0.27 |
-| aggressive   |    6.7 |        11.5 |     0.56 |           0.7 |      0.59 |           0.93 |   -28.4 |        -44.4 |             68.6 |            0.33 |
-| optimal      |    5.8 |        11.5 |     0.55 |           0.7 |      0.55 |           0.93 |   -29.8 |        -44.4 |             61.3 |            0.26 |
+`cagr` is net of transaction cost (the honest headline); `cagr_gross` and `cost_drag_pp` show the cost bite, `turnover_annual` the one-way turnover/yr driving it.
+
+|              |   cagr |   cagr_gross |   cost_drag_pp |   hold_cagr |   sharpe |   hold_sharpe |   sortino |   hold_sortino |   maxdd |   hold_maxdd |   time_in_market |   turnover_annual |   final_vs_hold |
+|:-------------|-------:|-------------:|---------------:|------------:|---------:|--------------:|----------:|---------------:|--------:|-------------:|-----------------:|------------------:|----------------:|
+| conservative |    5.2 |          6   |            0.8 |        11.4 |     0.61 |           0.7 |      0.48 |           0.92 |   -14.8 |        -44.4 |             35.1 |               8.9 |            0.23 |
+| moderate     |    5   |          5.8 |            0.9 |        11.4 |     0.49 |           0.7 |      0.48 |           0.92 |   -33.2 |        -44.4 |             58.7 |              10.1 |            0.22 |
+| aggressive   |    5.8 |          6.7 |            0.8 |        11.4 |     0.49 |           0.7 |      0.53 |           0.92 |   -32.2 |        -44.4 |             68.6 |               9.9 |            0.27 |
+| optimal      |    4.9 |          5.8 |            0.8 |        11.4 |     0.48 |           0.7 |      0.49 |           0.92 |   -33.6 |        -44.4 |             61.3 |               9.8 |            0.22 |
+
+**Deflated Sharpe (multiple-testing haircut)** — shipped variant `optimal`: **FAILS multiple-testing haircut (DSR<0.90)**. DSR (P true Sharpe>0) = **0.5771**; observed SR 0.48 ann vs haircut SR0 0.44 ann (N=40 trials, T=6386d, skew=-0.895, kurt=20.643).
 
 ## SILVER — 2001-01-02..2026-06-12 (6388 days)
 
@@ -188,14 +192,18 @@ _EXTREMES — low <-1.5: +13.9% 65.4%hit (n=361) [STRONG]; high >1.5: +8.7% 56.8
 | Deflation-scare | 1712 |      53.3 |       1.1  |      58.2 |       5.83 |       62.9 |        9.72 |
 | Neutral         |    0 |     nan   |     nan    |     nan   |     nan    |      nan   |      nan    |
 
-### allocation vs buy-and-hold
+### allocation vs buy-and-hold (NET of 8.0bps one-way cost)
 
-|              |   cagr |   hold_cagr |   sharpe |   hold_sharpe |   sortino |   hold_sortino |   maxdd |   hold_maxdd |   time_in_market |   final_vs_hold |
-|:-------------|-------:|------------:|---------:|--------------:|----------:|---------------:|--------:|-------------:|-----------------:|----------------:|
-| conservative |    1.5 |        11.2 |     0.17 |          0.49 |      0.11 |           0.61 |   -46.5 |        -75.8 |             28.1 |            0.1  |
-| moderate     |    2.2 |        11.2 |     0.21 |          0.49 |      0.17 |           0.61 |   -57.7 |        -75.8 |             47.8 |            0.12 |
-| aggressive   |    3.6 |        11.2 |     0.27 |          0.49 |      0.25 |           0.61 |   -68.5 |        -75.8 |             59.3 |            0.16 |
-| optimal      |    1.5 |        11.2 |     0.18 |          0.49 |      0.14 |           0.61 |   -62.3 |        -75.8 |             51.3 |            0.1  |
+`cagr` is net of transaction cost (the honest headline); `cagr_gross` and `cost_drag_pp` show the cost bite, `turnover_annual` the one-way turnover/yr driving it.
+
+|              |   cagr |   cagr_gross |   cost_drag_pp |   hold_cagr |   sharpe |   hold_sharpe |   sortino |   hold_sortino |   maxdd |   hold_maxdd |   time_in_market |   turnover_annual |   final_vs_hold |
+|:-------------|-------:|-------------:|---------------:|------------:|---------:|--------------:|----------:|---------------:|--------:|-------------:|-----------------:|------------------:|----------------:|
+| conservative |    0.8 |          1.5 |            0.7 |        11.2 |     0.13 |          0.49 |      0.08 |            0.6 |   -49.4 |        -75.8 |             28.1 |               8.5 |            0.08 |
+| moderate     |    1.4 |          2.2 |            0.8 |        11.2 |     0.17 |          0.49 |      0.14 |            0.6 |   -62   |        -75.8 |             47.8 |              10   |            0.1  |
+| aggressive   |    2.8 |          3.6 |            0.8 |        11.2 |     0.24 |          0.49 |      0.22 |            0.6 |   -71.9 |        -75.8 |             59.3 |              10.1 |            0.13 |
+| optimal      |    0.6 |          1.5 |            0.8 |        11.2 |     0.14 |          0.49 |      0.11 |            0.6 |   -66.2 |        -75.8 |             51.3 |              10.1 |            0.08 |
+
+**Deflated Sharpe (multiple-testing haircut)** — shipped variant `optimal`: **FAILS multiple-testing haircut (DSR<0.90)**. DSR (P true Sharpe>0) = **0.0651**; observed SR 0.14 ann vs haircut SR0 0.44 ann (N=40 trials, T=6388d, skew=-2.778, kurt=75.231).
 
 ## COPPER — 2001-01-02..2026-06-12 (6391 days)
 
@@ -214,7 +222,7 @@ _EXTREMES — low <-1.5: +13.9% 65.4%hit (n=361) [STRONG]; high >1.5: +8.7% 56.8
 | band    |    n |   hit_21d |   mean_21d |   hit_63d |   mean_63d |   hit_126d |   mean_126d |
 |:--------|-----:|----------:|-----------:|----------:|-----------:|-----------:|------------:|
 | <-0.5   | 1707 |      54.1 |      -0.17 |      56   |       1.08 |       58.7 |        4.45 |
-| -0.5..0 | 1073 |      55.6 |       1.41 |      61.1 |       3.4  |       57.8 |        5.08 |
+| -0.5..0 | 1073 |      55.6 |       1.41 |      61.1 |       3.39 |       57.8 |        5.08 |
 | 0..0.5  | 1178 |      57.6 |       1.68 |      56.8 |       3.94 |       55.3 |        6.06 |
 | >0.5    | 2433 |      54.3 |       1.22 |      58   |       3.86 |       59.6 |        8.57 |
 
@@ -269,18 +277,22 @@ _EXTREMES — low <-1.5: +4.8% 56.9%hit (n=364) [flat]; high >1.5: +6.2% 51.4%hi
 |:----------------|-----:|----------:|-----------:|----------:|-----------:|-----------:|------------:|
 | Reflation       | 1561 |      61.5 |       1.97 |      63.2 |       5.36 |       59.7 |        6.65 |
 | Stagflation     | 1608 |      50.6 |       0.77 |      55.4 |       3.98 |       61.8 |        6.71 |
-| Goldilocks      | 1509 |      50.7 |       0.08 |      49.4 |      -0.29 |       47.2 |        4.41 |
+| Goldilocks      | 1509 |      50.7 |       0.07 |      49.4 |      -0.29 |       47.2 |        4.41 |
 | Deflation-scare | 1713 |      57.2 |       1    |      62.3 |       2.94 |       63.3 |        7.63 |
 | Neutral         |    0 |     nan   |     nan    |     nan   |     nan    |      nan   |      nan    |
 
-### allocation vs buy-and-hold
+### allocation vs buy-and-hold (NET of 8.0bps one-way cost)
 
-|              |   cagr |   hold_cagr |   sharpe |   hold_sharpe |   sortino |   hold_sortino |   maxdd |   hold_maxdd |   time_in_market |   final_vs_hold |
-|:-------------|-------:|------------:|---------:|--------------:|----------:|---------------:|--------:|-------------:|-----------------:|----------------:|
-| conservative |    5   |         8.5 |     0.46 |          0.44 |      0.35 |            0.6 |   -37.7 |        -69.4 |             30.9 |            0.44 |
-| moderate     |    4.7 |         8.5 |     0.37 |          0.44 |      0.35 |            0.6 |   -55.2 |        -69.4 |             52.5 |            0.41 |
-| aggressive   |    5   |         8.5 |     0.36 |          0.44 |      0.38 |            0.6 |   -57.7 |        -69.4 |             63.7 |            0.44 |
-| optimal      |    5.3 |         8.5 |     0.4  |          0.44 |      0.39 |            0.6 |   -52.5 |        -69.4 |             55.5 |            0.47 |
+`cagr` is net of transaction cost (the honest headline); `cagr_gross` and `cost_drag_pp` show the cost bite, `turnover_annual` the one-way turnover/yr driving it.
+
+|              |   cagr |   cagr_gross |   cost_drag_pp |   hold_cagr |   sharpe |   hold_sharpe |   sortino |   hold_sortino |   maxdd |   hold_maxdd |   time_in_market |   turnover_annual |   final_vs_hold |
+|:-------------|-------:|-------------:|---------------:|------------:|---------:|--------------:|----------:|---------------:|--------:|-------------:|-----------------:|------------------:|----------------:|
+| conservative |    4.3 |          5   |            0.7 |         8.4 |     0.41 |          0.43 |      0.32 |            0.6 |   -39.8 |        -69.4 |             30.9 |               8.1 |            0.37 |
+| moderate     |    3.9 |          4.7 |            0.8 |         8.4 |     0.32 |          0.43 |      0.31 |            0.6 |   -60.2 |        -69.4 |             52.5 |              10.1 |            0.34 |
+| aggressive   |    4.2 |          5   |            0.9 |         8.4 |     0.31 |          0.43 |      0.34 |            0.6 |   -61.7 |        -69.4 |             63.7 |              10.4 |            0.36 |
+| optimal      |    4.5 |          5.3 |            0.8 |         8.4 |     0.35 |          0.43 |      0.35 |            0.6 |   -56.6 |        -69.4 |             55.5 |               9.7 |            0.39 |
+
+**Deflated Sharpe (multiple-testing haircut)** — shipped variant `optimal`: **FAILS multiple-testing haircut (DSR<0.90)**. DSR (P true Sharpe>0) = **0.323**; observed SR 0.35 ann vs haircut SR0 0.44 ann (N=40 trials, T=6391d, skew=-1.272, kurt=47.995).
 
 ## OIL — 2001-01-02..2026-06-12 (6390 days)
 
@@ -369,11 +381,19 @@ _EXTREMES — low <-1.5: +12.7% 61.5%hit (n=371) [STRONG]; high >1.5: -4.4% 34.3
 | Deflation-scare | 1713 |      51.5 |       0.3  |      55.6 |       3.85 |       49.8 |        3.94 |
 | Neutral         |    0 |     nan   |     nan    |     nan   |     nan    |      nan   |      nan    |
 
-### allocation vs buy-and-hold
+### allocation vs buy-and-hold (NET of 8.0bps one-way cost)
 
-|              |   cagr |   hold_cagr |   sharpe |   hold_sharpe |   sortino |   hold_sortino |   maxdd |   hold_maxdd |   time_in_market |   final_vs_hold |
-|:-------------|-------:|------------:|---------:|--------------:|----------:|---------------:|--------:|-------------:|-----------------:|----------------:|
-| conservative |    1.3 |         4.5 |     0.16 |         -0.02 |      0.13 |          -0.02 |   -64.5 |       -125.9 |             33.9 |            0.45 |
-| moderate     |    1.9 |         4.5 |     0.2  |         -0.02 |      0.19 |          -0.02 |   -59.6 |       -125.9 |             52.7 |            0.53 |
-| aggressive   |    4   |         4.5 |     0.28 |         -0.02 |      0.3  |          -0.02 |   -50.8 |       -125.9 |             62.2 |            0.87 |
-| optimal      |    2.9 |         4.5 |     0.25 |         -0.02 |      0.24 |          -0.02 |   -59.8 |       -125.9 |             54.6 |            0.67 |
+`cagr` is net of transaction cost (the honest headline); `cagr_gross` and `cost_drag_pp` show the cost bite, `turnover_annual` the one-way turnover/yr driving it.
+
+|              |   cagr |   cagr_gross |   cost_drag_pp |   hold_cagr |   sharpe |   hold_sharpe |   sortino |   hold_sortino |   maxdd |   hold_maxdd |   time_in_market |   turnover_annual |   final_vs_hold |
+|:-------------|-------:|-------------:|---------------:|------------:|---------:|--------------:|----------:|---------------:|--------:|-------------:|-----------------:|------------------:|----------------:|
+| conservative |    0.5 |          1.3 |            0.8 |         4.6 |     0.11 |         -0.02 |      0.09 |          -0.02 |   -67.8 |       -125.9 |             33.9 |               9.7 |            0.36 |
+| moderate     |    1.1 |          1.9 |            0.8 |         4.6 |     0.16 |         -0.02 |      0.15 |          -0.02 |   -63.3 |       -125.9 |             52.7 |              10.3 |            0.42 |
+| aggressive   |    3.2 |          4   |            0.8 |         4.6 |     0.25 |         -0.02 |      0.27 |          -0.02 |   -52.1 |       -125.9 |             62.2 |               9.6 |            0.71 |
+| optimal      |    2.1 |          2.9 |            0.8 |         4.6 |     0.2  |         -0.02 |      0.21 |          -0.02 |   -63.6 |       -125.9 |             54.6 |              10.2 |            0.54 |
+
+**Deflated Sharpe (multiple-testing haircut)** — shipped variant `optimal`: **FAILS multiple-testing haircut (DSR<0.90)**. DSR (P true Sharpe>0) = **0.1225**; observed SR 0.2 ann vs haircut SR0 0.44 ann (N=40 trials, T=6390d, skew=-0.516, kurt=17.23).
+
+## Trial log
+
+As-of 2026-06-12: **40** declared independent trials per asset (upper-bound); 8 signal families screened across 4 assets; allocation variants: conservative, moderate, aggressive, optimal; transaction cost 8.0bps one-way.

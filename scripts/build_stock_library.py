@@ -236,6 +236,15 @@ def main() -> int:
             flows = json.loads(ff.read_text())
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("fund_flows.json unreadable (%s)", e)
+    # sector-neutral residual-alpha per-ticker scores (written by build_site.
+    # build_alpha_data just before this runs). Additive — absent => no panel.
+    alpha_pt: dict[str, dict] = {}
+    ap = site / "factordata" / "alpha.json"
+    if ap.exists():
+        try:
+            alpha_pt = (json.loads(ap.read_text()) or {}).get("per_ticker", {})
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("alpha.json unreadable (%s)", e)
     index, built, failed = [], 0, 0
     for ticker, close, high, name, sector in universe():
         try:
@@ -252,6 +261,8 @@ def main() -> int:
             rec.update(fpanels[ticker])
         if flows.get(ticker):
             rec["fund_flows"] = flows[ticker]
+        if alpha_pt.get(ticker):
+            rec["alpha"] = alpha_pt[ticker]
         ladder_rows.append(ticker_alerts.ladder_row(ticker, rec.get("ladder"), rec.get("asof")))
         safe = ticker.replace("=", "_").replace("^", "_")
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))

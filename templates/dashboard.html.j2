@@ -407,10 +407,9 @@
 <nav class="site-nav">
   <div class="nav-links">
     <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
-    <a class="nav-link active" href="macro.html">📊 {{ t('Macro', '宏观') }}</a>
+    <a class="nav-link active" href="macro.html">📊 {{ t('US Macro', '美国宏观') }}</a>
     <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }}</a>
     <a class="nav-link" href="etfs.html">🐳 {{ t('ETF flows', 'ETF 资金流') }}</a>
-    <a class="nav-link" href="factors.html">🧮 {{ t('Factors', '因子') }}</a>
     <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国A股') }}</a>
     <a class="nav-link" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }}</a>
     <a class="nav-link" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }}</a>
@@ -978,7 +977,7 @@
       <div class="actcol act-soon">
         <div class="acth">🔵 {{ t('SETTING UP — buy soon', '构筑中 — 即将买入') }}</div>
         {% for x in action_board.buy_soon %}
-          <a class="actitem" href="sectors/{{ x.ticker }}.html"><b>{{ td(x.name) }}</b> <span class="muted">{{ x.ticker }}</span>{% if x.days is not none %}<span class="acteta">~{{ x.days }}d</span>{% endif %}</a>
+          <a class="actitem" href="sectors/{{ x.ticker }}.html"><b>{{ td(x.name) }}</b> <span class="muted">{{ x.ticker }}</span>{% if x.get('days') is not none %}<span class="acteta">~{{ x.days }}d</span>{% endif %}</a>
         {% else %}<p class="muted sm">{{ t('No imminent setups.', '暂无临近的构筑。') }}</p>{% endfor %}
       </div>
       <div class="actcol act-trim">
@@ -1011,9 +1010,9 @@
           <div class="nb-top">
             <span class="nb-tk">{{ n.ticker }}</span>
             <span class="nb-nm">{{ n.name }}</span>
-            {% if n.price is not none %}<span class="nb-px">${{ '%.2f'|format(n.price) }}</span>{% endif %}
+            {% if n.get('price') is not none %}<span class="nb-px">${{ '%.2f'|format(n.price) }}</span>{% endif %}
           </div>
-          <div class="nb-sub"><span>{{ td(n.sector) }}</span>{% if n.off_high is not none %}<span>{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}</div>
+          <div class="nb-sub"><span>{{ td(n.sector) }}</span>{% if n.get('off_high') is not none %}<span>{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}</div>
           {{ n.spark_svg }}
           <div class="nb-bot">
             <span class="nb-state">{{ td(n.label) }}</span>
@@ -1489,8 +1488,8 @@
         <tr><td class="l"><b>{{ h.fund }}</b></td>
             <td class="l"><a href="stock.html#{{ h.ticker }}"><b>{{ h.ticker }}</b></a> <span class="muted">{{ h.name }}</span></td>
             <td class="l muted">{{ td(h.sector) if h.sector else "—" }}</td>
-            <td class="r muted">{% if h.weight_pct is not none %}{{ "%.2f" | format(h.weight_pct) }}%{% else %}—{% endif %}</td>
-            <td class="r {{ 'pos' if h.conviction_pp >= 0 else 'neg' }}"><b>{{ "%+.2f" | format(h.conviction_pp) }}pp</b></td>
+            <td class="r muted">{% if h.get('weight_pct') is not none %}{{ "%.2f" | format(h.weight_pct) }}%{% else %}—{% endif %}</td>
+            <td class="r {{ ('pos' if h.conviction_pp >= 0 else 'neg') if h.get('conviction_pp') is not none else 'muted' }}"><b>{% if h.get('conviction_pp') is not none %}{{ "%+.2f" | format(h.conviction_pp) }}pp{% else %}—{% endif %}</b></td>
             <td class="l">{% if h.ladder %}<span class="pill st-{{ h.ladder.state | replace(' ', '_') }}">{{ td(h.ladder.label) }}</span>{% if h.confirmed %} ✅{% endif %}{% else %}<span class="muted">—</span>{% endif %}</td></tr>
         {% endfor %}
       </table>

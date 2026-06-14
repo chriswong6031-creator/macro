@@ -252,7 +252,7 @@
     var eb = document.getElementById('r_entry');
     eb.style.display = 'flex';
     eb.className = 'entrybar urg-' + (e.urgency || 'hold');
-    document.getElementById('r_tag').textContent = e.tag || '';
+    document.getElementById('r_tag').textContent = lz(e.tag, e.tag_zh);
     document.getElementById('r_entrytext').textContent = lz(e.text, e.text_zh);
 
     var ageEl = document.getElementById('r_age');
@@ -276,8 +276,8 @@
     cyc += '<div><b>📅 ' + lz(cp.daily_line, cp.daily_line_zh) + '</b> — ' + lz(cp.daily_phase, cp.daily_phase_zh) + '</div>';
     if (cp.weekly_line) cyc += '<div><b>🗓 ' + lz(cp.weekly_line, cp.weekly_line_zh) + '</b> — ' + lz(cp.weekly_phase, cp.weekly_phase_zh) + '</div>';
     if (cp.translation) cyc += '<div class="muted">' + lz(cp.translation, cp.translation_zh) + '</div>';
-    if (d.season_this) cyc += '<div class="muted">' + L('season') + ' — ' + d.season_this +
-      (d.season_next ? '; ' + d.season_next : '') + '.</div>';
+    if (d.season_this) cyc += '<div class="muted">' + L('season') + ' — ' + lz(d.season_this, d.season_this_zh) +
+      (d.season_next ? '; ' + lz(d.season_next, d.season_next_zh) : '') + '.</div>';
     document.getElementById('r_cyclebox').innerHTML = cyc;
 
     var early = document.getElementById('r_early');
@@ -367,7 +367,7 @@
 </script>
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
-<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-14 00:26 UTC UTC · <span class="l-en">charts drawn from our own stored EOD prices with TradingView Lightweight Charts · curated HK universe, not exhaustive</span><span class="l-zh">图表由我方存储的日线数据经 TradingView Lightweight Charts 绘制 · 精选港股范围，非全市场</span></p>
+<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-14 04:18 UTC UTC · <span class="l-en">charts drawn from our own stored EOD prices with TradingView Lightweight Charts · curated HK universe, not exhaustive</span><span class="l-zh">图表由我方存储的日线数据经 TradingView Lightweight Charts 绘制 · 精选港股范围，非全市场</span></p>
 <footer class="site-footer">
   <span class="made"><span class="l-en">Made with ❤️ in Canada</span><span class="l-zh">用 ❤️ 在加拿大制作</span></span>
   <span class="dev"><span class="l-en">Developed by</span><span class="l-zh">开发者</span> Chris Wong</span>

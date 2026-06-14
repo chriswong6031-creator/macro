@@ -474,6 +474,11 @@ def main() -> int:
                            "labels": ["<-1", "-1-.3", "-.3-.5", ".5-1.5", ">1.5"], "want": 1},
         "mpi": {"bands": [0, 0.7, 1, 1.5, 2.5, 10],
                 "labels": ["<0.7", "0.7-1", "1-1.5", "1.5-2.5", ">2.5"], "want": -1},
+        # US spot-ETF net flows (bgeo/Glassnode 2024-> => ETF-era only, CONFIRMATION-
+        # grade: too short for both-halves robustness). z of the 5d net flow vs 90d norm;
+        # hypothesis is momentum-like (strong inflow -> higher forward return, want +1).
+        "etf_flow_z": {"bands": [-3.01, -0.75, -0.25, 0.25, 0.75, 3.01],
+                       "labels": ["<-.75", "-.75--.25", "-.25-.25", ".25-.75", ">.75"], "want": 1},
         # Reserve Risk (checkonchain 2010-> => deep). Low = accumulation, high = top.
         "reserve_risk": {"bands": [0, 0.0015, 0.0025, 0.005, 0.02, 1], "shape": "extremes",
                          "labels": ["<.0015", ".0015-.0025", ".0025-.005", ".005-.02", ">.02"],
@@ -718,6 +723,13 @@ def main() -> int:
     (outdir / "trial_log.json").write_text(json.dumps(report.get("trial_log", {}), indent=2, default=str))
     df.to_parquet(outdir / "signals.parquet")
     _write_markdown(report)
+    # Standing integration-candidates A/B (does any factor earn a place in the
+    # risk/allocation MATH yet?) — re-checked each calibration as history deepens.
+    try:
+        from scripts.integration_lab import write_report as _intg_report
+        _intg_report(config.load()["storage"]["reports_dir"])
+    except Exception as e:  # noqa: BLE001 — never let the candidate report break calibration
+        print(f"integration-candidates report skipped ({e})")
     print(_summary(report))
     return 0
 

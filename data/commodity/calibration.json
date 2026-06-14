@@ -5,7 +5,9 @@
       21,
       63,
       126
-    ]
+    ],
+    "cost_bps_one_way": 8.0,
+    "n_trials": 40
   },
   "assets": {
     "gold": {
@@ -398,9 +400,9 @@
               "hit_21d": 55.0,
               "mean_21d": 0.88,
               "hit_63d": 57.8,
-              "mean_63d": 2.47,
+              "mean_63d": 2.46,
               "hit_126d": 72.7,
-              "mean_126d": 5.39
+              "mean_126d": 5.38
             },
             {
               "band": "20-40",
@@ -500,7 +502,7 @@
               "band": "0-20",
               "n": 400,
               "hit_21d": 45.1,
-              "mean_21d": -0.1,
+              "mean_21d": -0.11,
               "hit_63d": 36.5,
               "mean_63d": -0.38,
               "hit_126d": 46.4,
@@ -666,7 +668,7 @@
           "full": [
             {
               "band": "<-1.5",
-              "n": 333,
+              "n": 334,
               "hit_21d": 65.9,
               "mean_21d": 1.9,
               "hit_63d": 52.2,
@@ -676,7 +678,7 @@
             },
             {
               "band": "-1.5..-.5",
-              "n": 1267,
+              "n": 1266,
               "hit_21d": 58.3,
               "mean_21d": 1.04,
               "hit_63d": 66.9,
@@ -770,7 +772,7 @@
           "post": [
             {
               "band": "<-1.5",
-              "n": 216,
+              "n": 217,
               "hit_21d": 64.5,
               "mean_21d": 1.24,
               "hit_63d": 46.3,
@@ -780,7 +782,7 @@
             },
             {
               "band": "-1.5..-.5",
-              "n": 869,
+              "n": 868,
               "hit_21d": 56.4,
               "mean_21d": 0.62,
               "hit_63d": 66.7,
@@ -820,7 +822,7 @@
             }
           ],
           "verdict_horizon": 126,
-          "extremes": "EXTREMES \u2014 low <-1.5: +3.4% 67.9%hit (n=333) [flat]; high >1.5: +8.0% 72.3%hit (n=581) [flat]",
+          "extremes": "EXTREMES \u2014 low <-1.5: +3.4% 67.9%hit (n=334) [flat]; high >1.5: +8.0% 72.3%hit (n=581) [flat]",
           "sample_mean": 6.58,
           "verdict": "DIRECTIONAL (one half weak)",
           "monotone": {
@@ -1047,7 +1049,7 @@
             "band": "50-75",
             "n": 153,
             "avgDD_21d": -2.58,
-            "avgDD_63d": -5.2,
+            "avgDD_63d": -5.21,
             "avgDD_126d": -6.12
           },
           {
@@ -1069,52 +1071,88 @@
       },
       "allocation": {
         "conservative": {
-          "cagr": 6.0,
-          "hold_cagr": 11.5,
-          "sharpe": 0.69,
+          "cagr": 5.2,
+          "hold_cagr": 11.4,
+          "cagr_gross": 6.0,
+          "cost_drag_pp": 0.8,
+          "sharpe": 0.61,
           "hold_sharpe": 0.7,
-          "sortino": 0.53,
-          "hold_sortino": 0.93,
-          "maxdd": -12.6,
+          "sharpe_gross": 0.69,
+          "sortino": 0.48,
+          "hold_sortino": 0.92,
+          "maxdd": -14.8,
           "hold_maxdd": -44.4,
           "time_in_market": 35.1,
-          "final_vs_hold": 0.28
+          "turnover_annual": 8.9,
+          "cost_bps": 8.0,
+          "final_vs_hold": 0.23,
+          "sharpe_daily": 0.038735,
+          "skew": -0.706,
+          "kurt": 21.238,
+          "n_obs": 6386
         },
         "moderate": {
-          "cagr": 5.8,
-          "hold_cagr": 11.5,
-          "sharpe": 0.56,
+          "cagr": 5.0,
+          "hold_cagr": 11.4,
+          "cagr_gross": 5.8,
+          "cost_drag_pp": 0.9,
+          "sharpe": 0.49,
           "hold_sharpe": 0.7,
-          "sortino": 0.55,
-          "hold_sortino": 0.93,
-          "maxdd": -29.3,
+          "sharpe_gross": 0.56,
+          "sortino": 0.48,
+          "hold_sortino": 0.92,
+          "maxdd": -33.2,
           "hold_maxdd": -44.4,
           "time_in_market": 58.7,
-          "final_vs_hold": 0.27
+          "turnover_annual": 10.1,
+          "cost_bps": 8.0,
+          "final_vs_hold": 0.22,
+          "sharpe_daily": 0.031,
+          "skew": -0.9641,
+          "kurt": 21.7642,
+          "n_obs": 6386
         },
         "aggressive": {
-          "cagr": 6.7,
-          "hold_cagr": 11.5,
-          "sharpe": 0.56,
+          "cagr": 5.8,
+          "hold_cagr": 11.4,
+          "cagr_gross": 6.7,
+          "cost_drag_pp": 0.8,
+          "sharpe": 0.49,
           "hold_sharpe": 0.7,
-          "sortino": 0.59,
-          "hold_sortino": 0.93,
-          "maxdd": -28.4,
+          "sharpe_gross": 0.56,
+          "sortino": 0.53,
+          "hold_sortino": 0.92,
+          "maxdd": -32.2,
           "hold_maxdd": -44.4,
           "time_in_market": 68.6,
-          "final_vs_hold": 0.33
+          "turnover_annual": 9.9,
+          "cost_bps": 8.0,
+          "final_vs_hold": 0.27,
+          "sharpe_daily": 0.031169,
+          "skew": -0.6975,
+          "kurt": 15.1763,
+          "n_obs": 6386
         },
         "optimal": {
-          "cagr": 5.8,
-          "hold_cagr": 11.5,
-          "sharpe": 0.55,
+          "cagr": 4.9,
+          "hold_cagr": 11.4,
+          "cagr_gross": 5.8,
+          "cost_drag_pp": 0.8,
+          "sharpe": 0.48,
           "hold_sharpe": 0.7,
-          "sortino": 0.55,
-          "hold_sortino": 0.93,
-          "maxdd": -29.8,
+          "sharpe_gross": 0.55,
+          "sortino": 0.49,
+          "hold_sortino": 0.92,
+          "maxdd": -33.6,
           "hold_maxdd": -44.4,
           "time_in_market": 61.3,
-          "final_vs_hold": 0.26
+          "turnover_annual": 9.8,
+          "cost_bps": 8.0,
+          "final_vs_hold": 0.22,
+          "sharpe_daily": 0.030302,
+          "skew": -0.8953,
+          "kurt": 20.6428,
+          "n_obs": 6386
         }
       },
       "whipsaw": {
@@ -1144,9 +1182,9 @@
           "pct": 49.7
         },
         "shock_state": {
-          "changes": 360,
-          "whipsaws": 240,
-          "pct": 66.7
+          "changes": 359,
+          "whipsaws": 239,
+          "pct": 66.6
         },
         "pos_state": {
           "changes": 196,
@@ -1215,7 +1253,22 @@
           "hit_126d": NaN,
           "mean_126d": NaN
         }
-      ]
+      ],
+      "multiple_testing": {
+        "dsr": 0.5771,
+        "sr_daily": 0.030302,
+        "sr_annual": 0.48,
+        "sr0_daily": 0.027831,
+        "sr0_annual": 0.44,
+        "n_trials": 40,
+        "T": 6386,
+        "skew": -0.895,
+        "kurt": 20.643,
+        "selected_variant": "optimal",
+        "sr_variance_source": "max(cross-variant dispersion, null SR-sampling proxy)",
+        "verdict": "FAILS multiple-testing haircut (DSR<0.90)",
+        "note": "DSR = P(true Sharpe>0) after deflating for n_trials independent configs, sample length, skew & kurtosis. n_trials is a manual UPPER-BOUND of the signal/threshold/window variants explored per asset \u2014 overestimating is the conservative direction (de Prado)."
+      }
     },
     "silver": {
       "span": "2001-01-02..2026-06-12",
@@ -1341,7 +1394,7 @@
               "band": ">0.5",
               "n": 1066,
               "hit_21d": 45.5,
-              "mean_21d": 0.97,
+              "mean_21d": 0.96,
               "hit_63d": 42.9,
               "mean_63d": 3.29,
               "hit_126d": 52.9,
@@ -1713,7 +1766,7 @@
               "hit_63d": 44.8,
               "mean_63d": -0.24,
               "hit_126d": 32.5,
-              "mean_126d": -1.33
+              "mean_126d": -1.34
             },
             {
               "band": "20-40",
@@ -2202,8 +2255,8 @@
           {
             "band": "75-100",
             "n": 63,
-            "avgDD_21d": -4.02,
-            "avgDD_63d": -7.25,
+            "avgDD_21d": -4.03,
+            "avgDD_63d": -7.26,
             "avgDD_126d": -9.08
           }
         ],
@@ -2262,9 +2315,9 @@
           {
             "band": "75-100",
             "n": 30,
-            "avgDD_21d": -4.25,
-            "avgDD_63d": -7.89,
-            "avgDD_126d": -8.71
+            "avgDD_21d": -4.27,
+            "avgDD_63d": -7.9,
+            "avgDD_126d": -8.72
           }
         ],
         "verdict": "CONFIRMED near-term risk gauge",
@@ -2278,52 +2331,88 @@
       },
       "allocation": {
         "conservative": {
-          "cagr": 1.5,
+          "cagr": 0.8,
           "hold_cagr": 11.2,
-          "sharpe": 0.17,
+          "cagr_gross": 1.5,
+          "cost_drag_pp": 0.7,
+          "sharpe": 0.13,
           "hold_sharpe": 0.49,
-          "sortino": 0.11,
-          "hold_sortino": 0.61,
-          "maxdd": -46.5,
+          "sharpe_gross": 0.17,
+          "sortino": 0.08,
+          "hold_sortino": 0.6,
+          "maxdd": -49.4,
           "hold_maxdd": -75.8,
           "time_in_market": 28.1,
-          "final_vs_hold": 0.1
+          "turnover_annual": 8.5,
+          "cost_bps": 8.0,
+          "final_vs_hold": 0.08,
+          "sharpe_daily": 0.008061,
+          "skew": -1.4603,
+          "kurt": 42.0965,
+          "n_obs": 6388
         },
         "moderate": {
-          "cagr": 2.2,
+          "cagr": 1.4,
           "hold_cagr": 11.2,
-          "sharpe": 0.21,
+          "cagr_gross": 2.2,
+          "cost_drag_pp": 0.8,
+          "sharpe": 0.17,
           "hold_sharpe": 0.49,
-          "sortino": 0.17,
-          "hold_sortino": 0.61,
-          "maxdd": -57.7,
+          "sharpe_gross": 0.21,
+          "sortino": 0.14,
+          "hold_sortino": 0.6,
+          "maxdd": -62.0,
           "hold_maxdd": -75.8,
           "time_in_market": 47.8,
-          "final_vs_hold": 0.12
+          "turnover_annual": 10.0,
+          "cost_bps": 8.0,
+          "final_vs_hold": 0.1,
+          "sharpe_daily": 0.010931,
+          "skew": -2.8702,
+          "kurt": 79.7472,
+          "n_obs": 6388
         },
         "aggressive": {
-          "cagr": 3.6,
+          "cagr": 2.8,
           "hold_cagr": 11.2,
-          "sharpe": 0.27,
+          "cagr_gross": 3.6,
+          "cost_drag_pp": 0.8,
+          "sharpe": 0.24,
           "hold_sharpe": 0.49,
-          "sortino": 0.25,
-          "hold_sortino": 0.61,
-          "maxdd": -68.5,
+          "sharpe_gross": 0.27,
+          "sortino": 0.22,
+          "hold_sortino": 0.6,
+          "maxdd": -71.9,
           "hold_maxdd": -75.8,
           "time_in_market": 59.3,
-          "final_vs_hold": 0.16
+          "turnover_annual": 10.1,
+          "cost_bps": 8.0,
+          "final_vs_hold": 0.13,
+          "sharpe_daily": 0.014905,
+          "skew": -1.9348,
+          "kurt": 45.3339,
+          "n_obs": 6388
         },
         "optimal": {
-          "cagr": 1.5,
+          "cagr": 0.6,
           "hold_cagr": 11.2,
-          "sharpe": 0.18,
+          "cagr_gross": 1.5,
+          "cost_drag_pp": 0.8,
+          "sharpe": 0.14,
           "hold_sharpe": 0.49,
-          "sortino": 0.14,
-          "hold_sortino": 0.61,
-          "maxdd": -62.3,
+          "sharpe_gross": 0.18,
+          "sortino": 0.11,
+          "hold_sortino": 0.6,
+          "maxdd": -66.2,
           "hold_maxdd": -75.8,
           "time_in_market": 51.3,
-          "final_vs_hold": 0.1
+          "turnover_annual": 10.1,
+          "cost_bps": 8.0,
+          "final_vs_hold": 0.08,
+          "sharpe_daily": 0.008564,
+          "skew": -2.778,
+          "kurt": 75.2312,
+          "n_obs": 6388
         }
       },
       "whipsaw": {
@@ -2424,7 +2513,22 @@
           "hit_126d": NaN,
           "mean_126d": NaN
         }
-      ]
+      ],
+      "multiple_testing": {
+        "dsr": 0.0651,
+        "sr_daily": 0.008564,
+        "sr_annual": 0.14,
+        "sr0_daily": 0.027739,
+        "sr0_annual": 0.44,
+        "n_trials": 40,
+        "T": 6388,
+        "skew": -2.778,
+        "kurt": 75.231,
+        "selected_variant": "optimal",
+        "sr_variance_source": "max(cross-variant dispersion, null SR-sampling proxy)",
+        "verdict": "FAILS multiple-testing haircut (DSR<0.90)",
+        "note": "DSR = P(true Sharpe>0) after deflating for n_trials independent configs, sample length, skew & kurtosis. n_trials is a manual UPPER-BOUND of the signal/threshold/window variants explored per asset \u2014 overestimating is the conservative direction (de Prado)."
+      }
     },
     "copper": {
       "span": "2001-01-02..2026-06-12",
@@ -2448,7 +2552,7 @@
               "hit_21d": 55.6,
               "mean_21d": 1.41,
               "hit_63d": 61.1,
-              "mean_63d": 3.4,
+              "mean_63d": 3.39,
               "hit_126d": 57.8,
               "mean_126d": 5.08
             },
@@ -3240,7 +3344,7 @@
             "n": 556,
             "avgDD_21d": -5.25,
             "avgDD_63d": -8.3,
-            "avgDD_126d": -9.45
+            "avgDD_126d": -9.46
           },
           {
             "band": "75-100",
@@ -3299,7 +3403,7 @@
             "band": "50-75",
             "n": 237,
             "avgDD_21d": -3.18,
-            "avgDD_63d": -5.89,
+            "avgDD_63d": -5.9,
             "avgDD_126d": -6.56
           },
           {
@@ -3321,52 +3425,88 @@
       },
       "allocation": {
         "conservative": {
-          "cagr": 5.0,
-          "hold_cagr": 8.5,
-          "sharpe": 0.46,
-          "hold_sharpe": 0.44,
-          "sortino": 0.35,
+          "cagr": 4.3,
+          "hold_cagr": 8.4,
+          "cagr_gross": 5.0,
+          "cost_drag_pp": 0.7,
+          "sharpe": 0.41,
+          "hold_sharpe": 0.43,
+          "sharpe_gross": 0.46,
+          "sortino": 0.32,
           "hold_sortino": 0.6,
-          "maxdd": -37.7,
+          "maxdd": -39.8,
           "hold_maxdd": -69.4,
           "time_in_market": 30.9,
-          "final_vs_hold": 0.44
+          "turnover_annual": 8.1,
+          "cost_bps": 8.0,
+          "final_vs_hold": 0.37,
+          "sharpe_daily": 0.025597,
+          "skew": 0.1021,
+          "kurt": 43.0542,
+          "n_obs": 6391
         },
         "moderate": {
-          "cagr": 4.7,
-          "hold_cagr": 8.5,
-          "sharpe": 0.37,
-          "hold_sharpe": 0.44,
-          "sortino": 0.35,
+          "cagr": 3.9,
+          "hold_cagr": 8.4,
+          "cagr_gross": 4.7,
+          "cost_drag_pp": 0.8,
+          "sharpe": 0.32,
+          "hold_sharpe": 0.43,
+          "sharpe_gross": 0.37,
+          "sortino": 0.31,
           "hold_sortino": 0.6,
-          "maxdd": -55.2,
+          "maxdd": -60.2,
           "hold_maxdd": -69.4,
           "time_in_market": 52.5,
-          "final_vs_hold": 0.41
+          "turnover_annual": 10.1,
+          "cost_bps": 8.0,
+          "final_vs_hold": 0.34,
+          "sharpe_daily": 0.019947,
+          "skew": -1.3037,
+          "kurt": 49.9719,
+          "n_obs": 6391
         },
         "aggressive": {
-          "cagr": 5.0,
-          "hold_cagr": 8.5,
-          "sharpe": 0.36,
-          "hold_sharpe": 0.44,
-          "sortino": 0.38,
+          "cagr": 4.2,
+          "hold_cagr": 8.4,
+          "cagr_gross": 5.0,
+          "cost_drag_pp": 0.9,
+          "sharpe": 0.31,
+          "hold_sharpe": 0.43,
+          "sharpe_gross": 0.36,
+          "sortino": 0.34,
           "hold_sortino": 0.6,
-          "maxdd": -57.7,
+          "maxdd": -61.7,
           "hold_maxdd": -69.4,
           "time_in_market": 63.7,
-          "final_vs_hold": 0.44
+          "turnover_annual": 10.4,
+          "cost_bps": 8.0,
+          "final_vs_hold": 0.36,
+          "sharpe_daily": 0.019749,
+          "skew": -0.8477,
+          "kurt": 33.1919,
+          "n_obs": 6391
         },
         "optimal": {
-          "cagr": 5.3,
-          "hold_cagr": 8.5,
-          "sharpe": 0.4,
-          "hold_sharpe": 0.44,
-          "sortino": 0.39,
+          "cagr": 4.5,
+          "hold_cagr": 8.4,
+          "cagr_gross": 5.3,
+          "cost_drag_pp": 0.8,
+          "sharpe": 0.35,
+          "hold_sharpe": 0.43,
+          "sharpe_gross": 0.4,
+          "sortino": 0.35,
           "hold_sortino": 0.6,
-          "maxdd": -52.5,
+          "maxdd": -56.6,
           "hold_maxdd": -69.4,
           "time_in_market": 55.5,
-          "final_vs_hold": 0.47
+          "turnover_annual": 9.7,
+          "cost_bps": 8.0,
+          "final_vs_hold": 0.39,
+          "sharpe_daily": 0.022006,
+          "skew": -1.272,
+          "kurt": 47.9946,
+          "n_obs": 6391
         }
       },
       "whipsaw": {
@@ -3436,7 +3576,7 @@
           "band": "Goldilocks",
           "n": 1509,
           "hit_21d": 50.7,
-          "mean_21d": 0.08,
+          "mean_21d": 0.07,
           "hit_63d": 49.4,
           "mean_63d": -0.29,
           "hit_126d": 47.2,
@@ -3462,7 +3602,22 @@
           "hit_126d": NaN,
           "mean_126d": NaN
         }
-      ]
+      ],
+      "multiple_testing": {
+        "dsr": 0.323,
+        "sr_daily": 0.022006,
+        "sr_annual": 0.35,
+        "sr0_daily": 0.027847,
+        "sr0_annual": 0.44,
+        "n_trials": 40,
+        "T": 6391,
+        "skew": -1.272,
+        "kurt": 47.995,
+        "selected_variant": "optimal",
+        "sr_variance_source": "max(cross-variant dispersion, null SR-sampling proxy)",
+        "verdict": "FAILS multiple-testing haircut (DSR<0.90)",
+        "note": "DSR = P(true Sharpe>0) after deflating for n_trials independent configs, sample length, skew & kurtosis. n_trials is a manual UPPER-BOUND of the signal/threshold/window variants explored per asset \u2014 overestimating is the conservative direction (de Prado)."
+      }
     },
     "oil": {
       "span": "2001-01-02..2026-06-12",
@@ -4270,7 +4425,7 @@
               "hit_21d": 49.4,
               "mean_21d": 1.19,
               "hit_63d": 47.8,
-              "mean_63d": 1.36,
+              "mean_63d": 1.37,
               "hit_126d": 31.1,
               "mean_126d": -4.56
             }
@@ -4436,15 +4591,15 @@
             "band": "25-50",
             "n": 2177,
             "avgDD_21d": -6.12,
-            "avgDD_63d": -12.08,
-            "avgDD_126d": -16.16
+            "avgDD_63d": -12.07,
+            "avgDD_126d": -16.15
           },
           {
             "band": "50-75",
             "n": 874,
-            "avgDD_21d": -14.8,
-            "avgDD_63d": -22.39,
-            "avgDD_126d": -26.2
+            "avgDD_21d": -14.79,
+            "avgDD_63d": -22.38,
+            "avgDD_126d": -26.19
           },
           {
             "band": "75-100",
@@ -4495,16 +4650,16 @@
           {
             "band": "25-50",
             "n": 1197,
-            "avgDD_21d": -6.7,
-            "avgDD_63d": -14.89,
-            "avgDD_126d": -20.48
+            "avgDD_21d": -6.69,
+            "avgDD_63d": -14.88,
+            "avgDD_126d": -20.46
           },
           {
             "band": "50-75",
             "n": 536,
-            "avgDD_21d": -17.52,
-            "avgDD_63d": -24.6,
-            "avgDD_126d": -29.51
+            "avgDD_21d": -17.5,
+            "avgDD_63d": -24.58,
+            "avgDD_126d": -29.49
           },
           {
             "band": "75-100",
@@ -4525,52 +4680,88 @@
       },
       "allocation": {
         "conservative": {
-          "cagr": 1.3,
-          "hold_cagr": 4.5,
-          "sharpe": 0.16,
+          "cagr": 0.5,
+          "hold_cagr": 4.6,
+          "cagr_gross": 1.3,
+          "cost_drag_pp": 0.8,
+          "sharpe": 0.11,
           "hold_sharpe": -0.02,
-          "sortino": 0.13,
+          "sharpe_gross": 0.16,
+          "sortino": 0.09,
           "hold_sortino": -0.02,
-          "maxdd": -64.5,
+          "maxdd": -67.8,
           "hold_maxdd": -125.9,
           "time_in_market": 33.9,
-          "final_vs_hold": 0.45
+          "turnover_annual": 9.7,
+          "cost_bps": 8.0,
+          "final_vs_hold": 0.36,
+          "sharpe_daily": 0.007079,
+          "skew": -0.3479,
+          "kurt": 23.5675,
+          "n_obs": 6390
         },
         "moderate": {
-          "cagr": 1.9,
-          "hold_cagr": 4.5,
-          "sharpe": 0.2,
+          "cagr": 1.1,
+          "hold_cagr": 4.6,
+          "cagr_gross": 1.9,
+          "cost_drag_pp": 0.8,
+          "sharpe": 0.16,
           "hold_sharpe": -0.02,
-          "sortino": 0.19,
+          "sharpe_gross": 0.2,
+          "sortino": 0.15,
           "hold_sortino": -0.02,
-          "maxdd": -59.6,
+          "maxdd": -63.3,
           "hold_maxdd": -125.9,
           "time_in_market": 52.7,
-          "final_vs_hold": 0.53
+          "turnover_annual": 10.3,
+          "cost_bps": 8.0,
+          "final_vs_hold": 0.42,
+          "sharpe_daily": 0.009801,
+          "skew": -0.526,
+          "kurt": 17.9199,
+          "n_obs": 6390
         },
         "aggressive": {
-          "cagr": 4.0,
-          "hold_cagr": 4.5,
-          "sharpe": 0.28,
-          "hold_sharpe": -0.02,
-          "sortino": 0.3,
-          "hold_sortino": -0.02,
-          "maxdd": -50.8,
-          "hold_maxdd": -125.9,
-          "time_in_market": 62.2,
-          "final_vs_hold": 0.87
-        },
-        "optimal": {
-          "cagr": 2.9,
-          "hold_cagr": 4.5,
+          "cagr": 3.2,
+          "hold_cagr": 4.6,
+          "cagr_gross": 4.0,
+          "cost_drag_pp": 0.8,
           "sharpe": 0.25,
           "hold_sharpe": -0.02,
-          "sortino": 0.24,
+          "sharpe_gross": 0.28,
+          "sortino": 0.27,
           "hold_sortino": -0.02,
-          "maxdd": -59.8,
+          "maxdd": -52.1,
+          "hold_maxdd": -125.9,
+          "time_in_market": 62.2,
+          "turnover_annual": 9.6,
+          "cost_bps": 8.0,
+          "final_vs_hold": 0.71,
+          "sharpe_daily": 0.015818,
+          "skew": -0.44,
+          "kurt": 13.1362,
+          "n_obs": 6390
+        },
+        "optimal": {
+          "cagr": 2.1,
+          "hold_cagr": 4.6,
+          "cagr_gross": 2.9,
+          "cost_drag_pp": 0.8,
+          "sharpe": 0.2,
+          "hold_sharpe": -0.02,
+          "sharpe_gross": 0.25,
+          "sortino": 0.21,
+          "hold_sortino": -0.02,
+          "maxdd": -63.6,
           "hold_maxdd": -125.9,
           "time_in_market": 54.6,
-          "final_vs_hold": 0.67
+          "turnover_annual": 10.2,
+          "cost_bps": 8.0,
+          "final_vs_hold": 0.54,
+          "sharpe_daily": 0.012897,
+          "skew": -0.5162,
+          "kurt": 17.2301,
+          "n_obs": 6390
         }
       },
       "whipsaw": {
@@ -4666,7 +4857,51 @@
           "hit_126d": NaN,
           "mean_126d": NaN
         }
-      ]
+      ],
+      "multiple_testing": {
+        "dsr": 0.1225,
+        "sr_daily": 0.012897,
+        "sr_annual": 0.2,
+        "sr0_daily": 0.027492,
+        "sr0_annual": 0.44,
+        "n_trials": 40,
+        "T": 6390,
+        "skew": -0.516,
+        "kurt": 17.23,
+        "selected_variant": "optimal",
+        "sr_variance_source": "max(cross-variant dispersion, null SR-sampling proxy)",
+        "verdict": "FAILS multiple-testing haircut (DSR<0.90)",
+        "note": "DSR = P(true Sharpe>0) after deflating for n_trials independent configs, sample length, skew & kurtosis. n_trials is a manual UPPER-BOUND of the signal/threshold/window variants explored per asset \u2014 overestimating is the conservative direction (de Prado)."
+      }
     }
+  },
+  "trial_log": {
+    "asof": "2026-06-12",
+    "n_trials_declared": 40,
+    "cost_bps_one_way": 8.0,
+    "assets_tested": [
+      "gold",
+      "silver",
+      "copper",
+      "oil"
+    ],
+    "allocation_variants_tested": [
+      "conservative",
+      "moderate",
+      "aggressive",
+      "optimal"
+    ],
+    "signal_families_screened": [
+      "bw_change",
+      "driver_score",
+      "gsr_pctile",
+      "momentum",
+      "pos_pctile",
+      "shock_z",
+      "structure",
+      "ts_momentum"
+    ],
+    "n_signal_families": 8,
+    "note": "Upper-bound count of independent strategy configs explored per asset, used to deflate each asset's headline Sharpe. Raise commodities.calibration.n_trials as you try more variants/thresholds/windows."
   }
 }

@@ -29,6 +29,7 @@ House rule: a signal is trusted (labeled a *signal* in the UI) only if its forwa
 | coinbase_premium_ema | **EXTREMES — low <-.3: +16.5%/90d 64.8% hit (n=295) [weak]; high >1.5: -5.9%/90d 35.5% hit (n=421) [TOP]** | -1 | 0 | -1 | 1 |
 | ssr_oscillator | **CONTEXT-ONLY** | 0 | 0 | 0 | 1 |
 | mpi | **INVERTED** | 1 | 0 | 1 | -1 |
+| etf_flow_z | **DIRECTIONAL (one half weak)** | 1 | 0 | 1 | 1 |
 | reserve_risk | **EXTREMES — low <.0015: +18.6%/90d 68.6% hit (n=974) [weak]; high >.02: -42.5%/90d 4.2% hit (n=48) [TOP]** | 1 | 0 | -1 | -1 |
 | impulse | **DIRECTIONAL (one half weak)** | 1 | 0 | 1 | 1 |
 | cycle_pct | **DIRECTIONAL (one half weak)** | -1 | -1 | 0 | -1 |
@@ -249,6 +250,16 @@ House rule: a signal is trusted (labeled a *signal* in the UI) only if its forwa
 | 1.5-2.5 | 255 |     58.8 |      1.95 |      64.3 |       8.59 |      69.4 |      19.37 |
 | >2.5    | 140 |     52.9 |      1.35 |      46.4 |       2.13 |      60   |      11    |
 
+### etf_flow_z — forward returns by band (full sample)
+
+| band      |   n |   hit_7d |   mean_7d |   hit_30d |   mean_30d |   hit_90d |   mean_90d |
+|:----------|----:|---------:|----------:|----------:|-----------:|----------:|-----------:|
+| <-.75     | 207 |     45.6 |     -0.57 |      39.7 |      -2.89 |      42   |       0.91 |
+| -.75--.25 | 140 |     49.6 |     -0.16 |      53   |       0.2  |      43.4 |       0.64 |
+| -.25-.25  | 153 |     48.4 |      0.23 |      56.9 |       2.29 |      47.4 |       4.34 |
+| .25-.75   | 100 |     62   |      1.54 |      63   |       4.99 |      65.5 |      12.16 |
+| >.75      | 157 |     57.3 |      1.13 |      57.3 |       4.02 |      63.5 |       7.84 |
+
 ### reserve_risk — forward returns by band (full sample)
 
 | band        |    n |   hit_7d |   mean_7d |   hit_30d |   mean_30d |   hit_90d |   mean_90d |
@@ -361,7 +372,7 @@ House rule: a signal is trusted (labeled a *signal* in the UI) only if its forwa
 
 ## Purged walk-forward CV (stability gate)
 
-6/30 signals **robust** under 5 embargoed folds (90d embargo = max horizon). Purged + embargoed walk-forward CV (embargo = max forward horizon) replaces the single split_date's leaky boundary. 'robust' = full-sample sign matches `want`, no fold flips, all-but-one folds agree. Stricter than pre/post; both are reported.
+7/31 signals **robust** under 5 embargoed folds (90d embargo = max horizon). Purged + embargoed walk-forward CV (embargo = max forward horizon) replaces the single split_date's leaky boundary. 'robust' = full-sample sign matches `want`, no fold flips, all-but-one folds agree. Stricter than pre/post; both are reported.
 
 | Signal | full | folds | want | robust |
 |---|--:|---|--:|:-:|
@@ -385,6 +396,7 @@ House rule: a signal is trusted (labeled a *signal* in the UI) only if its forwa
 | coinbase_premium_ema | -1 | [0, 0, 0, 0, -1] | +1 | · |
 | ssr_oscillator | +0 | [0, 0, 0, 0, 0] | +1 | · |
 | mpi | +1 | [0, 0, 0, -1, -1] | -1 | · |
+| etf_flow_z | +1 | [0, 0, 0, 0, 1] | +1 | ✅ |
 | reserve_risk | +1 | [0, 0, -1, 0, 0] | -1 | · |
 | impulse | +1 | [0, 0, 1, 1, 1] | +1 | ✅ |
 | cycle_pct | -1 | [0, 0, -1, 0, -1] | -1 | ✅ |
@@ -407,20 +419,20 @@ OOF 7d direction: **Brier 0.25** vs base 0.2483 (skill -0.007); Platt a=0.694, b
 
 ## Signal collinearity (orthogonalize before any blend)
 
-19 signals with **VIF≥5** (redundant): risk_index, momentum, structure, bfi, mvrv_z, nupl, mayer, puell, sth_cb_ratio, dvol, vrp, ssr_oscillator, reserve_risk, cycle_pct, cot_z, corr_spx, global_m2_yoy, rv_cone_pctile, stbl_growth_z. VIF>5 ≈ redundant (its forward info is already carried by other signals); the high-corr pairs name the cluster. This MEASURES the independent contribution the one-representative-per-axis rule asserts — orthogonalize before any blend.
+20 signals with **VIF≥5** (redundant): risk_index, momentum, structure, bfi, mvrv_z, nupl, mayer, puell, sth_cb_ratio, dvol, vrp, ssr_oscillator, reserve_risk, cycle_pct, cot_z, corr_spx, vdd_multiple, global_m2_yoy, rv_cone_pctile, stbl_growth_z. VIF>5 ≈ redundant (its forward info is already carried by other signals); the high-corr pairs name the cluster. This MEASURES the independent contribution the one-representative-per-axis rule asserts — orthogonalize before any blend.
 
 | a | b | \|corr\| |
 |---|---|--:|
-| mvrv_z | nupl | 0.94 |
+| mvrv_z | nupl | 0.96 |
 | mayer | sth_cb_ratio | 0.94 |
-| mvrv_z | reserve_risk | 0.92 |
-| mayer | ssr_oscillator | 0.9 |
-| sth_cb_ratio | ssr_oscillator | 0.9 |
-| nupl | reserve_risk | 0.87 |
-| momentum | sth_cb_ratio | 0.84 |
-| risk_index | momentum | 0.8 |
-| ssr_oscillator | stbl_growth_z | 0.8 |
-| momentum | structure | 0.78 |
+| mayer | ssr_oscillator | 0.93 |
+| nupl | reserve_risk | 0.91 |
+| sth_cb_ratio | ssr_oscillator | 0.91 |
+| mvrv_z | reserve_risk | 0.9 |
+| mvrv_z | mayer | 0.87 |
+| mvrv_z | sth_cb_ratio | 0.87 |
+| mvrv_z | ssr_oscillator | 0.86 |
+| momentum | sth_cb_ratio | 0.83 |
 
 ## Deflated Sharpe Ratio (multiple-testing haircut)
 
@@ -434,7 +446,7 @@ OOF 7d direction: **Brier 0.25** vs base 0.2483 (skill -0.007); Platt a=0.694, b
 
 ## Trial log
 
-As-of 2026-06-13: **50** declared independent trials (upper-bound); 31 signal families screened; allocation variants: conservative, moderate, aggressive, optimal; transaction cost 10.0bps one-way.
+As-of 2026-06-13: **50** declared independent trials (upper-bound); 32 signal families screened; allocation variants: conservative, moderate, aggressive, optimal; transaction cost 10.0bps one-way.
 
 ## Ensemble capstone — does combining beat the heuristic?
 

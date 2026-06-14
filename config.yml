@@ -216,6 +216,20 @@ engine_equity_factors:
   # quintile over this trailing window (a coarse "what's working now" gauge).
   leadership_window_d: 63
 
+engine_residual_alpha:
+  # Sector-neutral residual-momentum leg (research/RESIDUAL_ALPHA_MOMENTUM.md).
+  # Phase 0 verdict: a modest, regime-decayed edge — a ranking/context leg, NOT a
+  # standalone strategy. Each stock's market AND sector beta are stripped (sector
+  # orthogonalized to market; causal 252d shrunk betas); the score is the cross-
+  # sectional, SECTOR-NEUTRAL z of the residual info-ratio over a 12-1-month window.
+  beta_win: 252                   # rolling beta window (d)
+  form: 252                       # formation window (d) — 12 months
+  skip: 21                        # skip the most recent month (short-term reversal)
+  shrink: 0.66                    # Vasicek-lite beta shrink toward the cross-section
+  top_n: 15                       # leaders per sector / overall
+  min_sector: 6                   # min names for a sector to get its own leader list
+  min_names: 20                   # min universe to compute at all
+
 # FINRA consolidated short interest (Phase 3 of the four-phase build-out). Free,
 # keyless FINRA Query API — bi-monthly exchange-listed short interest + days-to-
 # cover. Feeds a short_interest factor (high days-to-cover negatively predicts

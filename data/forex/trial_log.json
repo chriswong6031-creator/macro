@@ -1,0 +1,29 @@
+{
+  "asof": "2026-06-13",
+  "n_trials_declared": 60,
+  "cost_bps_one_way": 2.0,
+  "pairs_tested": [
+    "EURUSD",
+    "USDJPY",
+    "AUDUSD",
+    "GBPUSD",
+    "USDCAD",
+    "USDCHF",
+    "USDMXN",
+    "USDBRL",
+    "USDCNH"
+  ],
+  "factor_families_screened": [
+    "carry",
+    "positioning",
+    "rates",
+    "risk",
+    "riskoff",
+    "shock",
+    "structure",
+    "trend",
+    "value"
+  ],
+  "n_factor_families": 9,
+  "note": "Upper-bound count of factor\u00d7pair configs screened across the hunt, used to deflate each pair's conviction Sharpe. Raise forex.calibration.n_trials as you screen more factors/pairs."
+}

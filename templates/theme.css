@@ -254,6 +254,114 @@ html[data-lang="zh"] .lang-toggle .pill { transform: translateX(100%); }
 html:not([data-lang="zh"]) .lang-toggle .en-opt { color: #fff; }
 html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
 
+/* ===================== readability restructure components =====================
+   Shared by the stock analyzer and the sector-ETF pages: a bold VERDICT hero and
+   an at-a-glance SIGNAL-CHIP strip so the call + the technical picture read in a
+   few seconds. Colours resolve from the theme vars at paint time, so light/dark
+   and the zh red/green swap both apply automatically. */
+.verdict { display: flex; align-items: center; gap: 14px 16px; flex-wrap: wrap;
+  padding: 14px 18px; border-radius: 14px; background: var(--panel2);
+  border: 1px solid var(--line); border-left: 6px solid var(--c, var(--muted));
+  margin: 12px 0 14px; }
+.verdict .v-act { font-size: 23px; font-weight: 800; line-height: 1.05;
+  letter-spacing: .005em; color: var(--c, var(--text)); white-space: nowrap; }
+.verdict .v-tag { font-size: 12px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .05em; padding: 4px 11px; border-radius: 8px; white-space: nowrap;
+  background: color-mix(in srgb, var(--c, var(--muted)) 18%, var(--panel));
+  color: color-mix(in srgb, var(--c, var(--muted)) 85%, var(--text));
+  border: 1px solid color-mix(in srgb, var(--c, var(--muted)) 35%, transparent); }
+.verdict .v-text { flex: 1; min-width: 220px; font-size: 14.5px; line-height: 1.45;
+  color: var(--text); }
+.verdict .v-text b { color: var(--c, var(--text)); }
+/* urgency → accent colour (mirrors the entrybar mapping, one source here) */
+.verdict.urg-now    { --c: var(--up); }
+.verdict.urg-imminent, .verdict.urg-soon { --c: var(--g-cold); }
+.verdict.urg-caution { --c: var(--warn); }
+.verdict.urg-exit, .verdict.urg-avoid { --c: var(--down); }
+.verdict.urg-hold, .verdict.urg-later { --c: var(--muted); }
+
+.sigstrip { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 6px; }
+.sigchip { display: flex; flex-direction: column; gap: 1px; padding: 8px 13px;
+  border-radius: 11px; background: var(--panel2); border: 1px solid var(--line);
+  min-width: 104px; }
+.sigchip .sc-k { font-size: 10px; text-transform: uppercase; letter-spacing: .05em;
+  color: var(--muted); font-weight: 700; }
+.sigchip .sc-v { font-size: 15px; font-weight: 800; line-height: 1.15; color: var(--text); }
+.sigchip .sc-s { font-size: 10.5px; font-weight: 500; color: var(--muted); }
+.sigchip.up   { border-color: color-mix(in srgb, var(--up) 42%, transparent);
+  background: color-mix(in srgb, var(--up) 9%, var(--panel)); }
+.sigchip.up   .sc-v { color: var(--up); }
+.sigchip.down { border-color: color-mix(in srgb, var(--down) 42%, transparent);
+  background: color-mix(in srgb, var(--down) 9%, var(--panel)); }
+.sigchip.down .sc-v { color: var(--down); }
+.sigchip.warn { border-color: color-mix(in srgb, var(--warn) 42%, transparent);
+  background: color-mix(in srgb, var(--warn) 10%, var(--panel)); }
+.sigchip.warn .sc-v { color: var(--warn); }
+
+/* ===================== alert feed (.af-*) =====================
+   Cloned from the Bitcoin Vector alert timeline (.tl-*), re-themed to the shared
+   vars and shared by the stock + sector pages. The node colour encodes DIRECTION
+   (var(--up)/--down, so it swaps in zh mode); severity only drives sort order. */
+.af-toggle { display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+  background: var(--panel2); border: 1px solid var(--line); color: var(--text);
+  padding: 6px 13px; border-radius: 10px; font-size: 13px; font-weight: 700; line-height: 1; }
+.af-toggle:hover { border-color: var(--link); }
+.af-toggle[aria-expanded="true"] { border-color: var(--link); color: var(--link);
+  background: color-mix(in srgb, var(--link) 10%, var(--panel2)); }
+.af-toggle .af-badge { background: var(--act); color: #fff; font-size: 11px; font-weight: 800;
+  min-width: 18px; text-align: center; padding: 1px 6px; border-radius: 9px; }
+.af-toggle .af-caret { font-size: 10px; opacity: .6; transition: transform .2s; }
+.af-toggle[aria-expanded="true"] .af-caret { transform: rotate(180deg); }
+
+.af { margin: 2px 0 14px; }
+.af[hidden] { display: none; }
+/* pinned standing read — the ladder's current call, top of the feed */
+.af-pin { border: 1px solid color-mix(in srgb, var(--c, var(--info)) 32%, var(--line));
+  background: color-mix(in srgb, var(--c, var(--info)) 8%, var(--panel));
+  border-left: 4px solid var(--c, var(--info)); border-radius: 12px;
+  padding: 11px 14px; margin-bottom: 14px; }
+.af-pin.dir-up { --c: var(--up); } .af-pin.dir-down { --c: var(--down); }
+.af-pin.dir-neutral { --c: var(--muted); }
+.af-pin .af-pin-h { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.af-pin .af-pin-tag { font-size: 10px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--c, var(--info)); }
+.af-pin .af-pin-title { font-size: 15.5px; font-weight: 800; color: var(--text); }
+.af-pin .af-pin-d { margin: 5px 0 0; font-size: 13px; color: var(--muted); line-height: 1.55; }
+
+.af-filters { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 14px; }
+.aff { padding: 5px 13px; border-radius: 9px; background: var(--panel2); color: var(--muted);
+  font-weight: 700; font-size: 12.5px; cursor: pointer; border: 1px solid var(--line); }
+.aff:hover { color: var(--text); }
+.aff.active { background: var(--link); color: #fff; border-color: var(--link); }
+
+.af-day { margin-bottom: 16px; }
+.af-date { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase;
+  letter-spacing: .05em; margin: 0 0 8px; }
+.af-item { border-left: 2px solid var(--line); padding: 0 0 0 18px; margin-left: 6px;
+  position: relative; }
+.af-item > summary { display: flex; align-items: center; gap: 10px; padding: 8px 0;
+  cursor: pointer; list-style: none; flex-wrap: wrap; }
+.af-item > summary::-webkit-details-marker { display: none; }
+.af-item[hidden] { display: none; }
+.af-node { position: absolute; left: -7px; top: 14px; width: 12px; height: 12px;
+  border-radius: 50%; background: var(--muted); border: 2px solid var(--panel); }
+.af-node.dir-up { background: var(--up); } .af-node.dir-down { background: var(--down); }
+.af-node.dir-neutral { background: var(--muted); }
+.af-item.pinned > summary .af-node { box-shadow: 0 0 0 3px color-mix(in srgb, var(--info) 30%, transparent); }
+.af-chip { font-size: 10.5px; font-weight: 700; padding: 2px 9px; border-radius: 7px;
+  background: color-mix(in srgb, var(--c, var(--muted)) 16%, var(--panel));
+  color: color-mix(in srgb, var(--c, var(--muted)) 82%, var(--text));
+  border: 1px solid color-mix(in srgb, var(--c, var(--muted)) 28%, transparent); white-space: nowrap; }
+.af-chip.f-signal   { --c: var(--info); } .af-chip.f-trend  { --c: var(--link); }
+.af-chip.f-momentum { --c: var(--g-cold); } .af-chip.f-strength { --c: var(--warn); }
+.af-chip.f-cycle    { --c: var(--orange); }
+.af-head { font-weight: 600; color: var(--text); font-size: 13.5px; flex: 1; min-width: 180px; }
+.af-time { font-size: 11.5px; color: var(--muted); font-weight: 600; }
+.af-detail { padding: 2px 0 12px; font-size: 12.5px; color: var(--muted); line-height: 1.6; }
+.af-edge { margin-top: 6px; font-size: 12px; color: var(--text); }
+.af-fwd { margin-top: 3px; font-size: 12px; color: var(--muted); }
+.af-empty { padding: 10px 2px; color: var(--muted); font-size: 13px; }
+
 /* mobile: full-width search, and tighter links so the wrapped menu stays compact
    (controls stay pinned in their own grid column regardless) */
 @media (max-width: 760px) { .nav-search { max-width: none; } }

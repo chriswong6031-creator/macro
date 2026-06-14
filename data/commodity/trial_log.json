@@ -1,0 +1,29 @@
+{
+  "asof": "2026-06-12",
+  "n_trials_declared": 40,
+  "cost_bps_one_way": 8.0,
+  "assets_tested": [
+    "gold",
+    "silver",
+    "copper",
+    "oil"
+  ],
+  "allocation_variants_tested": [
+    "conservative",
+    "moderate",
+    "aggressive",
+    "optimal"
+  ],
+  "signal_families_screened": [
+    "bw_change",
+    "driver_score",
+    "gsr_pctile",
+    "momentum",
+    "pos_pctile",
+    "shock_z",
+    "structure",
+    "ts_momentum"
+  ],
+  "n_signal_families": 8,
+  "note": "Upper-bound count of independent strategy configs explored per asset, used to deflate each asset's headline Sharpe. Raise commodities.calibration.n_trials as you try more variants/thresholds/windows."
+}

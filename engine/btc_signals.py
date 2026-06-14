@@ -876,6 +876,36 @@ def onchain_regime(inputs: dict, cfg: dict) -> pd.DataFrame:
     return out
 
 
+def etf_flow(inputs: dict, cfg: dict) -> pd.DataFrame:
+    """US spot-ETF net flows — the institutional bid Swissblock tracks in 'Risk
+    Index & ETF Net Flows' (the Glassnode-sourced bgeo series, 2024-01-> i.e. since
+    the ETFs launched). Net creations/redemptions in BTC: sustained positive =
+    accumulation (the new structural buyer), negative = distribution. ETF-era only
+    (~2.4y) -> a CONFIRMATION / context flow gauge, never a deep calibration anchor
+    (house rule). Emits the smoothed flow regime, an extremity z (vs recent norm),
+    the accumulation/distribution state, and a cumulative-holdings proxy."""
+    close = inputs["price"]["close"]
+    idx = close.index
+    out = pd.DataFrame(index=idx)
+    ef = inputs.get("etf_flow")
+    if ef is None:
+        return out
+    f = ef.reindex(idx)                                    # daily net flow, BTC (NaN pre-launch)
+    out["etf_flow_btc"] = f
+    out["etf_flow_usd_mn"] = (f * close) / 1e6            # USD millions (panel-friendly)
+    sm = f.rolling(cfg["smooth_d"], min_periods=cfg["min_periods_d"]).sum()
+    out["etf_flow_sum"] = sm                              # N-day net flow = the regime
+    w, mp = cfg["z_window_d"], cfg["z_min_periods_d"]
+    mu = sm.rolling(w, min_periods=mp).mean()
+    sd = sm.rolling(w, min_periods=mp).std()
+    out["etf_flow_z"] = ((sm - mu) / sd).clip(-3, 3)     # extremity vs recent norm
+    out["etf_flow_cum"] = f.cumsum()                     # holdings proxy (BTC) since launch
+    out["etf_flow_state"] = _hysteresis_tri(
+        out["etf_flow_z"], cfg["state_enter_z"], cfg["state_exit_z"],
+        labels=("distribution", "neutral", "accumulation"))
+    return out
+
+
 # --------------------------------------------------------------------------- #
 # macro liquidity / risk-appetite overlay (Tier-3)
 # --------------------------------------------------------------------------- #
@@ -1007,6 +1037,7 @@ def compute_all(inputs: dict | None = None) -> pd.DataFrame:
     lv = leverage(inputs, cfg["leverage"])
     ma = macro_overlay(inputs, cfg["macro"])
     oc = onchain_regime(inputs, cfg["onchain"])
+    ef = etf_flow(inputs, cfg["etf_flow"])
     im = impulse(inputs, cfg["impulse"])
     cc = cycle_clock(inputs, cfg["cycle_clock"])
     po = positioning(inputs, cfg["positioning"])
@@ -1019,7 +1050,7 @@ def compute_all(inputs: dict | None = None) -> pd.DataFrame:
     al = allocation(mom["momentum"], rk["risk_index"], cfg["allocation"], va)
 
     out = pd.concat([inputs["price"][["close"]], mom, rk, bf, st, gg, al,
-                     va, mn, cb, ex, op, lv, ma, oc, im, cc, po, xa, bh, gl, sc], axis=1)
+                     va, mn, cb, ex, op, lv, ma, oc, ef, im, cc, po, xa, bh, gl, sc], axis=1)
     out["cycle_position"] = cycle_stage(mom["momentum"], rk["risk_index"])
     alt = btc_vs_alts(inputs, cfg["btc_vs_alts"])
     if alt is not None:
