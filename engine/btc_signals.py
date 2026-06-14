@@ -380,9 +380,9 @@ def drawdown_brake(alloc: pd.Series, ret: pd.Series, cfg: dict) -> pd.Series:
     position (the same shift(1) timing as the backtest engine). The cap is
     `clip(1 - decay * max(0, drawdown - threshold), floor, 1)`, so it is 1.0 until the
     strategy is `dd_threshold` underwater, then tightens linearly to `dd_floor`."""
-    thr = float(cfg.get("dd_threshold", 0.20))
-    decay = float(cfg.get("dd_decay", 1.5))
-    floor = float(cfg.get("dd_floor", 0.30))
+    thr = float(cfg.get("dd_threshold", 0.25))
+    decay = float(cfg.get("dd_decay", 1.0))
+    floor = float(cfg.get("dd_floor", 0.40))
     a = alloc.to_numpy(dtype=float)
     r = ret.reindex(alloc.index).to_numpy(dtype=float)
     out = a.copy()

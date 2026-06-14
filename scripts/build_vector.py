@@ -96,6 +96,27 @@ def scorecard(close: pd.Series, alloc: pd.Series) -> dict:
     }
 
 
+def alloc_sizing(last: pd.Series, eq: pd.Series, acfg: dict) -> dict:
+    """Decompose the live optimal allocation into the Point-4 factors that now SIZE it,
+    so the % on the page is explained, not a bare number: the conviction multiplier
+    (from the directional-confidence cycle position, tiered TOSS-UP/LEAN/EDGE) and the
+    ENFORCED drawdown brake (its current cap + how far the strategy is underwater).
+    This is what closes the old 'conviction is just a label' gap on the dashboard."""
+    from engine import btc_signals
+    cp = float(last["cycle_position"]) if pd.notna(last.get("cycle_position")) else 0.5
+    dd = float(eq.iloc[-1] / eq.cummax().iloc[-1] - 1.0)
+    thr, decay = float(acfg.get("dd_threshold", 0.25)), float(acfg.get("dd_decay", 1.0))
+    floor = float(acfg.get("dd_floor", 0.40))
+    cap = min(1.0, max(floor, 1.0 - decay * max(0.0, (-dd) - thr)))
+    return {
+        "tier": btc_signals.conviction_tier(cp, acfg),
+        "mult": round(float(btc_signals.conviction_multiplier(cp, acfg)), 2),
+        "brake_active": bool(cap < 0.999),
+        "brake_cap": round(100 * cap),
+        "dd": round(100 * dd),
+    }
+
+
 def _cond_up_prob(df: pd.DataFrame, cfg: dict, horizon: int):
     """P(up over `horizon`d) conditioned on momentum_state x risk_regime, shrunk
     toward the momentum marginal (empirical Bayes), nudged by the CONFIRMED macro
@@ -922,6 +943,7 @@ def main() -> int:
 
     eq = alloc_equity(close, sig["alloc_optimal"])
     hodl = (1 + close.pct_change().fillna(0)).cumprod()
+    sizing = alloc_sizing(last, eq, config.load()["vector"]["allocation"])
     cards = {v: scorecard(close, sig[f"alloc_{v}"])
              for v in ("conservative", "moderate", "aggressive", "optimal")}
 
@@ -992,6 +1014,7 @@ def main() -> int:
         "alt_leader": last.get("alt_cycle_leader", "BTC"),
         "market_mode": last["market_mode"],
         "alloc_pct": round(100 * last["alloc_optimal"]),
+        "alloc_sizing": sizing,
         # ---- accuracy-upgrade layers (Tier 1/1b/2) ----
         "composite_state": last.get("composite_state", "NEUTRAL"),
         "verdict": verdict,

@@ -382,6 +382,14 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
         {% if alloc_pct > 0 %}<div class="btc" style="width:{{ alloc_pct }}%">{{ alloc_pct }}% BTC</div>{% endif %}
         {% if alloc_pct < 100 %}<div class="cash" style="width:{{ 100-alloc_pct }}%">{{ 100-alloc_pct }}% {{ t('Cash', '现金') }}</div>{% endif %}
       </div>
+      {# Point-4: the % above is SIZED by conviction (no longer a 0/50/100 step) and capped by the drawdown brake #}
+      {% set _szt = {'EDGE': t('EDGE','高信念'), 'LEAN': t('LEAN','中等'), 'TOSS-UP': t('TOSS-UP','低信念')} %}
+      <div class="sub" style="margin-top:9px;font-size:12.5px">{{ t('Sized by conviction', '按信念定仓') }}:
+        <b>{{ _szt.get(alloc_sizing.tier, alloc_sizing.tier) }}</b>
+        <span class="faint">(×{{ '%.2f'|format(alloc_sizing.mult) }} {{ t('of grid', '网格') }})</span>
+        · {{ t('Drawdown brake', '回撤刹车') }}:
+        {% if alloc_sizing.brake_active %}<b style="color:var(--amber)">{{ t('active', '已触发') }}</b> <span class="faint">— {{ alloc_sizing.brake_cap }}% {{ t('cap', '上限') }} ({{ t('strategy', '策略') }} {{ alloc_sizing.dd }}% {{ t('underwater', '回撤中') }})</span>{% else %}<b>{{ t('inactive', '未触发') }}</b>{% endif %}
+      </div>
       <div class="sub" style="margin-top:10px">{{ t('Market mode:', '市场模式：') }}
         <span class="chip {{ 'chip-strategic' if market_mode=='Strategic' else 'chip-tactical' }}">{{ td(market_mode) }}</span>
         · {{ t('BTC vs Alts leader:', 'BTC vs 山寨币 领先：') }} <b>{{ td(alt_leader) }}</b></div>

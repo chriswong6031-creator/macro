@@ -1174,9 +1174,13 @@ vector:
     conviction_toss: 0.05        # directional-confidence edge (cycle_position-0.5) <= this = TOSS-UP -> floor
     conviction_edge: 0.30        # ...>= this = EDGE -> full grid size; linear LEAN ramp between
     drawdown_brake: true         # ENFORCE a position cap that tightens as strategy equity goes underwater
-    dd_threshold: 0.20           # no brake until the strategy is >20% below its equity high-water mark
-    dd_decay: 1.5                # cut the cap by this per unit of drawdown beyond the threshold
-    dd_floor: 0.30               # never cap exposure below this fraction (keep a core position)
+    dd_threshold: 0.25           # no brake until the strategy is >25% below its equity high-water mark
+    dd_decay: 1.0                # cut the cap by this per unit of drawdown beyond the threshold
+    dd_floor: 0.40               # never cap exposure below this fraction (keep a core position)
+    # ^ tuned (sweep, reports/vector-calibration.md): conviction sizing is the value
+    #   driver (lifts Sharpe/Sortino/DSR AND MaxDD); the brake is the costly safety
+    #   leg, so it is GENTLE — keeps ~all of the conviction risk-adjusted gain while
+    #   still cutting MaxDD ~5pp. Dial it harder (0.20/1.5/0.30) for more DD armor.
 
   btc_vs_alts:
     rs_window_d: 30               # relative-strength window across BTC/ETH/alts
@@ -1346,7 +1350,7 @@ vector:
     whipsaw_max_days: 7
     whipsaw_target_pct: 15
     cost_bps: 10                  # one-way transaction cost (spread+fee) per unit |Δpos|; allocation backtest CAGR/Sharpe are NET of this
-    n_trials: 50                  # honest UPPER-BOUND of independent strategy configs explored, for the Deflated Sharpe haircut — overestimate is conservative (de Prado); raise as you try more
+    n_trials: 65                  # honest UPPER-BOUND of independent strategy configs explored, for the Deflated Sharpe haircut — overestimate is conservative (de Prado); raise as you try more. +15 for the Point-4 conviction/brake sweep.
     cv_folds: 5                   # purged + embargoed walk-forward folds (embargo = max forward horizon) — the leak-free robustness gate complementing split_date (D-vec-GATES)
 
   # Alerts (Phase 3). Vector severity high|medium|info. Flash-crash thresholds
