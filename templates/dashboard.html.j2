@@ -732,6 +732,17 @@
   </div>
   {% endif %}
 
+  <!-- ======================= CROSS-ASSET (compact) ======================= -->
+  {% if cross_asset and cross_asset.verdict and cross_asset.verdict != 'unknown' %}
+  <div class="panel span12" id="cross-asset">
+    <h2>🌐 {{ t('Cross-asset concentration', '跨资产集中度') }}
+      {{ help("How much the six markets (US, crypto, China, HK, commodities, the dollar) are really moving as ONE risk/liquidity bet vs independent bets. Concentrated = stacking these views doubles one exposure rather than diversifying. Full matrix + risk budgeting in the Quant Lab.", "六大市场（美股、加密、中国、香港、大宗、美元）在多大程度上其实是同一笔风险／流动性押注，而非独立押注。集中 = 叠加这些观点是在加倍同一笔敞口，而非分散。完整矩阵与风险预算见量化实验室。") }}
+    </h2>
+    <p style="margin:6px 0 0"><b class="{{ 'neg' if cross_asset.verdict=='concentrated' else 'pos' if cross_asset.verdict=='diversified' else '' }}">{{ cross_asset.verdict | upper }}</b> — {{ cross_asset.headline.split(' — ', 1)[-1] }}</p>
+    <p class="muted" style="font-size:13px;margin:6px 0 0">{{ t('Full correlation matrix, risk budgeting & crisis stress-replay in the', '完整相关性矩阵、风险预算与危机压力回放见') }} <a href="advanced.html#cross-asset">{{ t('Quant Lab', '量化实验室') }}</a> →</p>
+  </div>
+  {% endif %}
+
   <!-- ======================= ACTION BOARD ======================= -->
   {% if action_board %}
   <div class="panel span12">
@@ -890,91 +901,6 @@
     <p class="muted" style="font-size:12px; margin-top:8px">⚖️ {{ t(pb.honesty, pb.honesty_zh) }}</p>
   </div>
   {% endif %}
-
-  <!-- ======================= SIGNALS ======================= -->
-  <div class="panel span6" id="dials">
-    <h2>{{ t('The two dials behind the regime', '周期背后的两个刻度盘') }}
-      {{ help("The regime label comes from two scores between -1 and +1, built from market prices (which lead) plus a small weight on economic data (which confirms). Growth above zero + inflation below zero = Goldilocks, and so on. The white marker is today.", "周期标签来自两个介于 -1 与 +1 之间的分数，由市场价格（领先）加上经济数据（确认）的小幅权重构建。增长高于零 + 通胀低于零 = 理想增长，以此类推。白色标记代表今日。") }}
-    </h2>
-    <p style="margin:8px 0 0"><b>{{ t('Growth:', '增长：') }} {{ t("RISING", '上行') if latest.growth_score >= 0 else t("FALLING", '下行') }}</b>
-      <span class="muted">({{ "%+.2f" | format(latest.growth_score) }} {{ t('of ±1 · agreement', '／±1 · 一致度') }} {{ (latest.growth_confidence * 100) | round | int }}%)</span>
-      {{ help("Is the economy's growth impulse improving or deteriorating, as priced by markets: copper vs gold, consumer discretionary vs staples, small vs large caps, cyclical vs defensive sectors, the 2-year yield, breadth — confirmed slowly by payrolls and industrial production.", "经济的增长动能正在改善还是恶化，以市场定价衡量：铜对黄金、可选消费对必需消费、小盘对大盘、周期板块对防御板块、2 年期收益率、市场广度 — 由非农就业与工业产出缓慢确认。") }}
-    </p>
-    <div class="gauge"><i style="left: {{ ((latest.growth_score + 1) / 2 * 100) | round(1) }}%"></i></div>
-    <p style="margin:10px 0 0"><b>{{ t('Inflation pressure:', '通胀压力：') }} {{ t("RISING", '上行') if latest.inflation_score >= 0 else t("FALLING", '下行') }}</b>
-      <span class="muted">({{ "%+.2f" | format(latest.inflation_score) }} {{ t('of ±1 · agreement', '／±1 · 一致度') }} {{ (latest.inflation_confidence * 100) | round | int }}%)</span>
-      {{ help("Is inflation pressure building or cooling, as priced by markets: bond-market inflation expectations, oil, energy-sector strength, and inflation-winner vs inflation-loser sector baskets.", "通胀压力正在累积还是降温，以市场定价衡量：债市通胀预期、原油、能源板块强度，以及通胀受益板块对通胀受损板块的组合。") }}
-    </p>
-    <div class="gauge"><i style="left: {{ ((latest.inflation_score + 1) / 2 * 100) | round(1) }}%"></i></div>
-
-    <h3>{{ t("What's voting for this regime", '哪些指标在为此周期投票') }}
-      {{ help("Each chip is one indicator inside the two dials. Green chips point WITH the regime call; red chips point AGAINST it. Lots of red = shaky ground (and lower 'signal agreement').", "每个标签代表两个刻度盘中的一个指标。绿色标签与周期判断同向；红色标签与之反向。红色越多 = 根基越不稳（且'信号一致度'越低）。") }}
-    </h3>
-    <div>
-      {% for c in components_confirming %}<span class="chip chip-pos">{{ c }}</span>{% endfor %}
-      {% for c in components_contradicting %}<span class="chip chip-neg">{{ c }}</span>{% endfor %}
-      {% if not components_confirming and not components_contradicting %}<span class="muted">{{ t('all quiet', '一切平静') }}</span>{% endif %}
-    </div>
-
-    <h3>{{ t('Weakest link', '最薄弱环节') }}
-      {{ help("Of everything currently supporting the regime call, this indicator is closest to flipping sides — the single thing most likely to change the picture.", "在当前支撑周期判断的所有指标中，这一个最接近倒戈 — 是最有可能改变全局的单一因素。") }}
-    </h3>
-    <p class="muted">{{ flip_plain }}</p>
-
-    {% if latest.preference_check %}
-    <h3>{{ t('Does the market agree with the regime?', '市场是否认同此周期？') }}
-      {{ help("The regime implies certain sectors should lead. This checks whether they actually ARE. Agreement strengthens the call; disagreement is an early warning — when the tape stops cooperating with the story, the story is often about to change.", "此周期暗示某些板块应当领先。这里检验它们是否真的在领先。一致会强化判断；分歧则是早期预警 — 当盘面不再配合剧情时，剧情往往即将改变。") }}
-    </h3>
-    <p class="muted">{{ latest.preference_check.note }}
-      {% if latest.preference_check.actual_ranks %}
-        <span class="l-en">({% for t, r in latest.preference_check.actual_ranks.items() %}{{ t }} is #{{ r }}{{ ", " if not loop.last }}{% endfor %} of {{ latest.sector_rs | length }})</span><span class="l-zh">（{% for t, r in latest.preference_check.actual_ranks.items() %}{{ t }} 排名第 {{ r }}{{ "，" if not loop.last }}{% endfor %}，共 {{ latest.sector_rs | length }} 个）</span>
-      {% endif %}
-    </p>
-    {% endif %}
-  </div>
-
-  <!-- ======================= INTERNALS ======================= -->
-  <div class="panel span6">
-    <h2>{{ t('Market internals — risk appetite gauges', '市场内部结构 — 风险偏好计') }}
-      {{ help("Simple ratios between two assets; each answers a question about investor mood. Direction over the last 20 days matters more than the level. Green = moved in the risk-friendly direction.", "两类资产之间的简单比率；每一个都回答一个关于投资者情绪的问题。过去 20 天的方向比绝对水平更重要。绿色 = 朝风险友好的方向移动。") }}
-    </h2>
-    <table>
-      <tr><th class="l">{{ t('gauge', '指标') }}</th><th>{{ t('past month', '过去一月') }}</th><th class="l">{{ t("what it's saying", '它在说什么') }}</th></tr>
-      {% for r in internals %}
-      <tr>
-        <td class="l">{{ r.label }} {{ help(r.tip) }}</td>
-        <td class="{{ 'pos' if r.good else 'neg' }}">{{ "%+.2f" | format(r.chg) }}%</td>
-        <td class="l muted">{{ r.verdict }}</td>
-      </tr>
-      {% endfor %}
-    </table>
-  </div>
-
-  <!-- ===================== US EQUITY SIZE & STYLE ===================== -->
-  <div class="panel span6" id="size-style">
-    <h2>{{ t('US equity — size &amp; style', '美股 — 规模与风格') }}
-      {{ help("Is the advance broad or narrow? Small caps (Russell 2000) and mid caps measured against the large-cap S&P 500: rising = participation broadening (risk-on); falling = a narrow, mega-cap-led tape. Growth vs value is the style rotation — growth tends to lead in disinflation and slowdowns, value in reflation. Direction over the last 20 trading days; size ratios are coloured by risk-on direction, growth/value is left neutral (no inherently good side).", "上涨是广泛还是狭窄？小盘（罗素2000）与中盘对大盘标普500衡量：上行 = 参与度扩散（风险偏好）；下行 = 狭窄、由超大盘主导的盘面。成长对价值是风格轮动 — 成长在去通胀与放缓中领先，价值在再通胀中领先。看过去20个交易日的方向；规模比率按风险偏好方向着色，成长／价值保持中性（无天然的好坏方向）。") }}
-    </h2>
-    <table>
-      <tr><th class="l">{{ t('lens', '维度') }}</th><th>{{ t('past month', '过去一月') }}</th><th class="l">{{ t("what it's saying", '它在说什么') }}</th></tr>
-      {% for r in size_style %}
-      <tr>
-        <td class="l">{{ r.label }} {{ help(r.tip) }}</td>
-        <td class="{{ r.tone }}">{{ "%+.2f" | format(r.chg) }}%</td>
-        <td class="l muted">{{ r.verdict }}</td>
-      </tr>
-      {% endfor %}
-    </table>
-    {% if breadth_div %}
-    <p class="muted" style="margin:10px 2px 0; font-size:13px; line-height:1.45">
-      {{ t('Small-cap participation', '小盘参与度') }}:
-      <b>{{ "%.0f" | format(breadth_div.sc) }}%</b>
-      {{ t('of S&P 600 small caps are above their 50-day line, vs', '的标普600小盘股高于其50日均线，对比') }}
-      <b>{{ "%.0f" | format(breadth_div.lc) }}%</b>
-      {{ t('for the S&P 500', '的标普500') }} — {{ breadth_div.verdict }}.
-    </p>
-    {% endif %}
-  </div>
 
   <!-- ======================= SECTOR HEAT BOARD ======================= -->
   <div class="panel span12" id="sectors">
@@ -1164,66 +1090,10 @@
     </table>
   </div>
 
-  <!-- ======================= ACCUMULATION WATCH ======================= -->
-  <div class="panel span12" id="accumulation">
-    <h2>{{ t('🐳 Accumulation watch — sector ETFs', '🐳 增持监测 — 板块 ETF') }}
-      {{ help("Each sector SPDR's top-10 weights, with each holding's weight change split into the part explained by the stock's own price move and a residual ('active' = weight that grew MORE than price alone). A large positive residual = real buying flowed into the name beyond market drift. HONEST CAVEAT: these SPDRs are PASSIVE index funds, so the residual is index reconstitution / float-weight flow (forced index-fund buying), NOT a discretionary manager's conviction — that reading comes with the active funds in the planned top-200 page. The technical column shows the stock's own cycle state; ✅ marks accumulation that also has a forming buy setup. Thresholds are uncalibrated until more snapshot history accumulates.", "每只板块 SPDR 的前十大权重；每只持仓的权重变动被拆分为“由个股自身价格变动解释的部分”与“残差”（“主动”=权重增长超过价格涨幅的部分）。较大的正残差=除市场漂移外确有真实买盘流入该股。诚实提示：这些 SPDR 是被动指数基金，故残差代表指数再平衡／流通权重调整带来的资金流（被动强制买入），并非主动经理的信念——后者要等到计划中的前 200 ETF 页面里的主动基金。技术面列显示个股自身的周期状态；✅ 表示增持同时出现了正在形成的买入形态。在积累更多快照历史前，阈值尚未校准。") }}
-    </h2>
-    {% if accumulation %}
-      <table>
-        <tr>
-          <th class="l">{{ t('sector', '板块') }}</th>
-          <th class="l">{{ t('stock', '个股') }}</th>
-          <th>{{ t('raw Δwt', '原始权重Δ') }}</th>
-          <th>{{ t('active Δwt', '主动权重Δ') }}</th>
-          <th>{{ t('est. flow', '估算资金流') }}</th>
-          <th class="l">{{ t('technical', '技术面') }}</th>
-        </tr>
-        {% for a in accumulation %}
-        <tr>
-          <td class="l muted">{{ a.fund }} · {{ td(a.sector) }}</td>
-          <td class="l"><a href="stock.html#{{ a.ticker }}"><b>{{ a.ticker }}</b></a> <span class="muted">{{ a.name }}</span></td>
-          <td class="{{ 'pos' if a.raw_change >= 0 else 'neg' }}">{{ "%+.2f" | format(a.raw_change) }}pp</td>
-          <td class="{{ 'pos' if a.active_change >= 0 else 'neg' }}"><b>{{ "%+.2f" | format(a.active_change) }}pp</b></td>
-          <td class="muted">{{ a.flow_str }}</td>
-          <td class="l">
-            {% if a.ladder %}<span class="pill st-{{ a.ladder.state | replace(' ', '_') }}">{{ td(a.ladder.label) }}</span>{% if a.confirmed %} ✅{% endif %}{% else %}<span class="muted">—</span>{% endif %}{% if a.vol and a.vol.surging %} <span title="volume {{ a.vol.ratio }}× its recent average">📊</span>{% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </table>
-      <p class="muted" style="font-size:12px;margin-top:8px">{{ t('“Active Δwt” strips out price: it is the percentage points of weight a name gained beyond what its own price move explains. On passive index ETFs this captures index reconstitution / float-weight flow, not a manager’s discretion. The estimated $ flow applies the active Δwt to the fund’s AUM and is approximate.', '“主动权重Δ”已剔除价格因素：它是个股权重增长中超出其自身价格涨幅所能解释的百分点。在被动指数 ETF 上，这反映的是指数再平衡／流通权重调整带来的资金流，而非经理人的主动决策。估算的美元资金流是将“主动权重Δ”乘以基金 AUM 得出的近似值。') }}</p>
-    {% else %}
-      <p class="muted">{{ t('Building — needs at least two daily holdings snapshots per fund (collection began 2026-06-11). Decomposed accumulation signals appear once a second snapshot lands.', '构建中 — 每只基金至少需要两个每日持仓快照（采集自 2026-06-11 开始）。第二个快照落地后将显示拆解后的增持信号。') }}</p>
-    {% endif %}
-  </div>
-
-  <!-- ======================= HOLDINGS / FLOWS ======================= -->
-  <div class="panel span12" id="holdings">
-    <h2>{{ t("Star fund managers' real moves", '明星基金经理的真实动作') }}
-      {{ help("Daily holdings of the watchlist funds (ARK etc.) with mechanical flow effects stripped out — what's left is genuine manager conviction, visible the day after they trade.", "观察名单基金（ARK 等）的每日持仓，已剔除机械性的资金流影响 — 剩下的是真正的经理人信念，在他们交易后的次日可见。") }}
-    </h2>
-    {% if holdings_changes %}
-      <table>
-        <tr><th class="l">{{ t('fund', '基金') }}</th><th class="l">{{ t('position', '仓位') }}</th><th>{{ t('active chg', '主动变动') }}</th><th>{{ t('window', '窗口') }}</th></tr>
-        {% for h in holdings_changes %}
-        <tr><td class="l">{{ h.fund }}</td><td class="l">{{ h.position }}</td>
-            <td class="{{ 'pos' if h.pct > 0 else 'neg' }}">{{ "%+.1f" | format(h.pct) }}%</td>
-            <td class="muted">{{ h.window }}</td></tr>
-        {% endfor %}
-      </table>
-    {% else %}
-      <p class="muted">{{ t('No significant manager moves in the current window (needs a few trading days of snapshots).', '当前窗口内无显著的经理人动作（需要数个交易日的快照）。') }}</p>
-    {% endif %}
-
-    <h2 style="margin-top:16px">{{ t('Where ETF money is flowing', 'ETF 资金流向何处') }}
-      {{ help("Daily money in/out of each sector's main ETF, from share creations/redemptions (ΔShares × price). Positive = money entering. History builds from June 2026.", "每个板块主力 ETF 的每日资金进出，来自份额的申购／赎回（份额变动 × 价格）。正值 = 资金进入。历史自 2026 年 6 月起累积。") }}
-    </h2>
-    {% if flows_html %}
-      {{ flows_html | safe }}
-    {% else %}
-      <p class="muted">{{ t('Collecting — needs at least two daily snapshots per fund.', '采集中 — 每只基金至少需要两个每日快照。') }}</p>
-    {% endif %}
+  <!-- ======================= QUANT LAB BUTTON ======================= -->
+  <div class="panel span12" style="text-align:center;background:var(--panel2);padding:12px">
+    <a class="navbtn" href="advanced.html" style="display:inline-block;padding:10px 22px;font-size:14px">🔬 {{ t('Open the Quant Lab — advanced analytics', '打开量化实验室 — 进阶分析') }}</a>
+    <div class="muted" style="font-size:12px;margin-top:6px">{{ t('cross-asset concentration · risk budgeting · factor scorecard · raw market internals', '跨资产集中度 · 风险预算 · 因子记分卡 · 原始市场内部结构') }}</div>
   </div>
 
   <!-- ======================= HEALTH ======================= -->

@@ -999,6 +999,48 @@ def regime_timeline(hist: pd.DataFrame) -> dict:
     }
 
 
+def build_advanced_page(env: Environment, site: Path, generated: str, latest: dict, f,
+                        confirming, contradicting):
+    """The Quant Lab — the geekier reads, kept off the main dashboard: cross-asset
+    concentration + risk budgeting + the factor IC scorecard + the raw market-
+    internals tables (dials / pair-ratios / size-style / accumulation / fund flows).
+    Computes the cross-asset & portfolio snapshots FRESH (like build_factors_page),
+    so the page is populated even if the last engine.run predates them; reads the
+    factor IC scorecard JSON if present. Returns the cross-asset snapshot for the
+    dashboard's compact card."""
+    cross_asset = portfolio = ic_scorecard = None
+    try:
+        from engine.cross_asset import snapshot as _ca
+        cross_asset = _ca()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("cross-asset snapshot failed: %s", e)
+    try:
+        from engine.portfolio import snapshot as _pf
+        portfolio = _pf()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("portfolio snapshot failed: %s", e)
+    icp = config.data_dir() / "edgar" / "ic_scorecard.json"
+    if icp.exists():
+        try:
+            ic_scorecard = json.loads(icp.read_text())
+        except Exception:  # noqa: BLE001
+            ic_scorecard = None
+    html = env.get_template("advanced.html.j2").render(
+        latest=latest, generated_utc=generated,
+        cross_asset=cross_asset, portfolio=portfolio, ic_scorecard=ic_scorecard,
+        components_confirming=confirming, components_contradicting=contradicting,
+        flip_plain=flip_plain_text(latest),
+        internals=internals_rows(latest), size_style=size_style_rows(f),
+        breadth_div=breadth_divergence(f),
+        accumulation=accumulation_rows(), holdings_changes=holdings_rows(),
+        holdings_threshold=config.load()["holdings"]["active_change_alert_pct"],
+        flows_html=flows_html_table(),
+    )
+    (site / "advanced.html").write_text(html)
+    log.info("wrote advanced.html (%.0f KB)", (site / "advanced.html").stat().st_size / 1024)
+    return cross_asset
+
+
 def main() -> int:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     site.mkdir(parents=True, exist_ok=True)
@@ -1035,6 +1077,15 @@ def main() -> int:
         factor_leadership = (_fac or {}).get("leadership")
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("factors page failed: %s", e)
+    # Quant Lab (advanced analytics): cross-asset concentration + risk budgeting +
+    # factor scorecard + the raw internals moved off the main dashboard. Returns the
+    # cross-asset snapshot for the dashboard's compact one-bet card.
+    cross_asset_snap = None
+    try:
+        cross_asset_snap = build_advanced_page(env, site, generated, latest, f,
+                                               confirming, contradicting)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("advanced page failed: %s", e)
     # copy shared static assets (theme + visual widgets) into the site
     for asset in ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
                   "stockdata.js", "watchlist.js", "auth.js", "tablesort.js", "charts.js"):
@@ -1067,6 +1118,7 @@ def main() -> int:
         flows_html=flows_html_table(),
         health=health_rows(),
         factor_leadership=factor_leadership,
+        cross_asset=cross_asset_snap,
     )
     # Write the macro dashboard straight to macro.html. index.html is owned
     # solely by build_vector.build_landing() (the landing hub) — keeping the raw
