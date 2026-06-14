@@ -939,6 +939,24 @@ commodity_news:
   catalysts_horizon_days: 14      # upcoming OPEC/FOMC/EIA watch window (keyless, always on)
 
 # =============================================================================
+# Catalyst tone — market/regime narrative DIGEST (LLM Tier A; engine/catalyst_tone.py).
+# LEAF · DEFAULT-OFF · CONTEXT-ONLY. Digests ONE public document (FOMC text, a
+# regulatory release, dislocation-day catalyst text) into a typed tone/guidance/
+# risk/shock-reversibility record. Runs on DeepSeek V4 Flash via its
+# Anthropic-compatible endpoint (the same `anthropic` SDK, base_url + key swapped).
+# Safety is in CODE: JSON-parse -> schema-validate -> verbatim-citation-verify ->
+# confidence-floor -> degrade-never-raise. PUBLIC source documents only.
+# Promotion of a field to a deterministic feature happens downstream, separately gated.
+# =============================================================================
+catalyst_tone:
+  enabled: false                  # MASTER SWITCH — nothing calls the model unless true
+  api_key_env: DEEPSEEK_API_KEY   # credential read from env / .env (gitignored)
+  llm_base_url: https://api.deepseek.com/anthropic   # DeepSeek Anthropic-compat endpoint
+  llm_model: deepseek-v4-flash    # cheap digest model ($0.14/$0.28 per 1M tok)
+  llm_min_confidence: high        # code-side floor: below this every field -> "unknown"
+  max_tokens: 700                 # OUTPUT cap (the JSON record is tiny); input can be a full doc
+
+# =============================================================================
 # Forex Vector — currency signal board (research/FOREX_DASHBOARD.md).
 # A structural CLONE of the commodities section: same conviction()/factor_panel
 # engine, same -100..+100 scale + STRONG/weak bands, same split-half calibration.
