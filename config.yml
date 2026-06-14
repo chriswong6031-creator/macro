@@ -1048,6 +1048,28 @@ cb_liquidity:
     boj: {series: JPNASSETS,  unit_mult: 1.0e8, fx: "USDJPY=X",  invert: true,  label_en: "Bank of Japan",  label_zh: "日本央行"}
   impulse_windows_w: [13, 52]        # quarterly & YoY % change of the USD aggregate
 
+# =============================================================================
+# OFR Short-Term Funding Monitor (collectors/ofr.py) — repo/SOFR/money-market
+# plumbing from the US Office of Financial Research's KEYLESS public JSON API
+# (data.financialresearch.gov, "no tokens or registration"). FRBNY reference rates:
+# SOFR + its 1/99 percentile distribution, EFFR, OBFR, and GC repo rates. Feeds the
+# funding-stress leaf (engine/funding_stress.py) — CONTEXT, never scored.
+# =============================================================================
+ofr:
+  enabled: true
+  retries: 3
+  series:                            # OFR mnemonic -> stored column name
+    FNYR-SOFR-A: sofr
+    FNYR-SOFR_99Pctl-A: sofr_p99
+    FNYR-SOFR_1Pctl-A: sofr_p1
+    FNYR-EFFR-A: effr
+    FNYR-OBFR-A: obfr
+    FNYR-BGCR-A: bgcr
+    FNYR-TGCR-A: tgcr
+
+funding_stress:
+  pctile_lookback_d: 504             # ~2y trailing window for the spread/dispersion percentile
+
 commodities:
   assets:                          # name: [yahoo price ticker, cot store-series, class]
     gold:   ["GC=F", cot_gold,   precious]

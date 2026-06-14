@@ -59,6 +59,14 @@ def main() -> int:
         log.warning("global liquidity snapshot failed: %s", e)
         liquidity = None
 
+    # funding/repo plumbing stress (additive leaf; None if OFR data absent)
+    try:
+        from engine import funding_stress
+        funding = funding_stress.snapshot()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("funding-stress snapshot failed: %s", e)
+        funding = None
+
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     from engine.i18n import td, tr
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
@@ -67,7 +75,8 @@ def main() -> int:
         as_of=snap.get("asof"), built=built, regime=snap.get("regime"),
         breadth=snap.get("breadth"), trend=snap.get("trend"), ratios=snap.get("ratios"),
         carry=snap.get("carry"), correlation=snap.get("correlation"), note=snap.get("note"),
-        liquidity=liquidity, liq_spark=(_sparkline(liquidity["spark"]) if liquidity else ""))
+        liquidity=liquidity, liq_spark=(_sparkline(liquidity["spark"]) if liquidity else ""),
+        funding=funding, fund_spark=(_sparkline(funding["spark"]) if funding else ""))
     site = config.ROOT / config.load()["storage"]["site_dir"]
     (site / "crossasset.html").write_text(html)
     log.info("wrote %s/crossasset.html (%d KB)", site, len(html) // 1024)

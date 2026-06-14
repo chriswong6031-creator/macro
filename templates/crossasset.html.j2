@@ -108,6 +108,29 @@
   </div>
   {% endif %}
 
+  <!-- ===================== FUNDING / REPO STRESS ===================== -->
+  {% if funding %}
+  {% set fcol = 'var(--down,#dc2626)' if funding.state == 'stressed' else 'var(--amber,#c98a2e)' if funding.state == 'watch' else 'var(--up,#16a34a)' %}
+  <div class="card">
+    <h2>{{ t('Funding &amp; repo plumbing', '资金与回购管道') }}</h2>
+    <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+      <div class="ca-hero" style="font-size:20px;margin:0;color:{{ fcol }}">{{ t(funding.state, {'calm':'平静','watch':'关注','stressed':'紧张'}.get(funding.state, funding.state)) }}</div>
+      <div class="muted sm">{{ t('stress score', '压力分') }} <b style="color:{{ fcol }}">{{ funding.score }}</b>/100 · {{ t('SOFR−EFFR', 'SOFR−联邦基金') }} <b>{{ '%+.0f'|format(funding.spread_bp) }}bp</b>{% if funding.dispersion_bp is not none %} · {{ t('dispersion', '离散度') }} <b>{{ funding.dispersion_bp }}bp</b>{% endif %}</div>
+      {% if fund_spark %}<svg width="184" height="40" style="margin-left:auto"><polyline points="{{ fund_spark }}" fill="none" stroke="{{ fcol }}" stroke-width="1.6"/></svg>{% endif %}
+    </div>
+    <table class="ca" style="margin-top:8px">
+      <tr><th>{{ t('gauge', '指标') }}</th><th class="r">{{ t('value', '数值') }}</th><th class="r">{{ t('%ile (2y)', '分位(2年)') }}</th><th style="width:34%"></th></tr>
+      {% for r in funding.rows %}
+      <tr title="{{ r.note }}"><td><b>{{ t(r.label_en, r.label_zh) }}</b><div class="muted sm">{{ r.note }}</div></td>
+        <td class="r">{{ r.value }}{{ r.unit }}</td><td class="r muted">{{ (r.pctile|round|int) if r.pctile is not none else '—' }}</td>
+        <td><span class="sbar" style="width:100%"><i style="left:0;width:{{ (r.pctile|round|int) if r.pctile is not none else 0 }}%;background:{{ fcol }}"></i></span></td></tr>
+      {% endfor %}
+    </table>
+    {% if funding.levels %}<div class="muted sm" style="margin-top:6px">{% for l in funding.levels %}{{ l.label }} <b>{{ l.value }}%</b>{% if not loop.last %} · {% endif %}{% endfor %}</div>{% endif %}
+    <p class="ca-note">{{ t(funding.note, '来自 OFR 纽约联储参考利率（无密钥）的资金/回购管道。SOFR 高于 EFFR 且 SOFR 分布走阔预示准备金稀缺/回购紧张（2019年9月的信号）。各项按其约2年区间打分。仅作背景，非信号——从不进入任何评分。') }}</p>
+  </div>
+  {% endif %}
+
   <!-- ===================== TREND BOARD ===================== -->
   <div class="card">
     <h2>{{ t('Trend board — time-series momentum by asset', '趋势看板 — 各资产时间序列动量') }}</h2>
