@@ -636,6 +636,24 @@
     </details>
   </div>
 
+  <!-- ===================== MARKET SNAPSHOT TILES ===================== -->
+  {% if market_tiles %}
+  <div class="panel span12" id="market-tiles">
+    <h2>{{ t('Market snapshot', '市场快照') }}
+      {{ help("The headline cross-asset levels in one glance — equities, volatility, the Treasury curve, the dollar and oil — each with its 1-day move. A quick orientation; the read and the why live in the panels below.", "一眼看尽跨资产的关键水平 — 股票、波动率、国债收益率曲线、美元与原油 — 各附其单日变动。用于快速定位；解读与原因见下方面板。") }}
+    </h2>
+    <div class="mtiles">
+      {% for tl in market_tiles %}
+      <div class="mtile">
+        <div class="mtile-top"><span class="mtile-lbl">{{ tl.label }}</span><span class="mtile-tag">{{ tl.tag }}</span></div>
+        <div class="mtile-val">{{ tl.level }}</div>
+        <div class="mtile-chg {{ tl.tone }}">{{ tl.chg }} <span class="muted">({{ tl.pct }})</span></div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
   <!-- ===================== REGIME TIME MACHINE ===================== -->
   <div class="panel span12" id="time-machine">
     <h2>{{ t('⏳ Regime time machine', '⏳ 周期时光机') }}
@@ -1689,6 +1707,30 @@
     </h2>
     <div class="chart">{{ chart_credit_breadth | safe }}</div>
   </div>
+
+  <!-- ======================= VIX MONITOR ======================= -->
+  {% if vix %}
+  <div class="panel span6" id="vix-monitor">
+    <h2>{{ t('VIX monitor', 'VIX 监测') }}
+      {{ help("The 30-day VIX path with the conventional regime bands (below 15 = calm/complacent, 20-25 = elevated, above 30 = high fear). The sharper read shown beside is OURS: the VIX term structure (spot vs 3-month — backwardation = near-term stress) and where today sits in VIX's own history.", "30 日 VIX 走势，叠加常规区间（低于 15 = 平静／自满，20–25 = 偏高，高于 30 = 高度恐慌）。旁边给出的是我们更锐利的解读：VIX 期限结构（现货对 3 个月 — 倒挂＝近期压力）以及今日在 VIX 自身历史中的位置。") }}
+    </h2>
+    <div class="vixhead">
+      <span class="vixnum">{{ '%.2f' | format(vix.last) }}</span>
+      <span class="{{ 'pos' if vix.chg > 0 else 'neg' if vix.chg < 0 else 'muted' }}">{{ '%+.2f' | format(vix.chg) }} ({{ '%+.1f' | format(vix.pct) }}%)</span>
+      <span class="badge vix-{{ vix.tone }}">{{ vix.regime }}</span>
+    </div>
+    <p class="muted" style="font-size:13px; margin:8px 2px 4px; line-height:1.5">
+      {% if vix.ratio is not none %}{{ t('Term structure', '期限结构') }} <b>{{ '%.2f' | format(vix.ratio) }}</b> {{ vix.rword }} · {% endif %}
+      <span class="l-en">today sits at the <b>{{ '%.0f' | format(vix.pctile) }}th</b> percentile of VIX history</span><span class="l-zh">今日处于 VIX 历史 <b>{{ '%.0f' | format(vix.pctile) }}</b> 百分位</span>
+    </p>
+    <div class="chart">{{ chart_vix | safe }}</div>
+    <div class="vixstats">
+      <span class="kv">{{ vix.days }}{{ t('d high', '日高') }} <b>{{ '%.2f' | format(vix.hi) }}</b></span>
+      <span class="kv">{{ vix.days }}{{ t('d low', '日低') }} <b>{{ '%.2f' | format(vix.lo) }}</b></span>
+      <span class="kv">{{ t('prev close', '前收') }} <b>{{ '%.2f' | format(vix.prev) }}</b></span>
+    </div>
+  </div>
+  {% endif %}
 
   <!-- ======================= POSITIONING ======================= -->
   <div class="panel span6" id="positioning">

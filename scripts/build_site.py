@@ -152,6 +152,96 @@ def chart_liquidity(f: pd.DataFrame) -> str:
     return _html(fig)
 
 
+# ----- market snapshot tiles + VIX monitor (display surfacing; reuse the frame) -----
+# The 8 headline instruments are already in the feature frame; this surfaces them as
+# at-a-glance tiles, and gives VIX a proper monitor (30-day path + OUR term-structure
+# / percentile read — richer than the conventional 15/20/30 bands, which we keep only
+# as a familiar label). No new data collection.
+_TILE_SPEC = (
+    ("SPY",   ("S&P 500 · SPY",    "标普500 · SPY"),  ("Indices", "指数"),     2),
+    ("QQQ",   ("Nasdaq 100 · QQQ", "纳指100 · QQQ"),   ("Indices", "指数"),     2),
+    ("vix",   ("VIX",              "VIX"),             ("Volatility", "波动率"), 2),
+    ("us10y", ("10Y yield",        "10年期收益率"),     ("Rates", "利率"),       2),
+    ("us30y", ("30Y yield",        "30年期收益率"),     ("Rates", "利率"),       2),
+    ("us5y",  ("5Y yield",         "5年期收益率"),      ("Rates", "利率"),       2),
+    ("dxy",   ("US dollar · DXY",  "美元 · DXY"),       ("FX", "外汇"),          2),
+    ("oil",   ("Crude oil · WTI",  "原油 · WTI"),       ("Commodities", "商品"), 2),
+)
+
+
+def market_tiles(f: pd.DataFrame) -> list[dict]:
+    """Level + 1-day change for the 8 headline instruments already in the frame.
+    Coloured by raw sign (the price move); semantic context lives in the panels."""
+    rows = []
+    for col, (en, zh), (ten, tzh), dec in _TILE_SPEC:
+        if col not in f.columns:
+            continue
+        s = f[col].dropna()
+        if len(s) < 2:
+            continue
+        last, prev = float(s.iloc[-1]), float(s.iloc[-2])
+        chg = last - prev
+        pct = (last / prev - 1) * 100 if prev else 0.0
+        is_rate = col.startswith("us")
+        rows.append({
+            "label": T(en, zh), "tag": T(ten, tzh),
+            "level": (f"{last:.{dec}f}%" if is_rate else f"{last:,.{dec}f}"),
+            "chg": f"{chg:+.{dec}f}", "pct": f"{pct:+.1f}%",
+            "tone": "pos" if chg > 0 else "neg" if chg < 0 else "muted",
+        })
+    return rows
+
+
+def vix_monitor(f: pd.DataFrame, days: int = 30) -> dict | None:
+    """Current VIX + N-day range + our term-structure / percentile read. The level
+    bands (low/normal/elevated/high) are the familiar framing; the term structure
+    (vix/vix3m) and history percentile are the sharper read shown beside them."""
+    if "vix" not in f.columns:
+        return None
+    v = f["vix"].dropna()
+    if len(v) < 2:
+        return None
+    last, prev = float(v.iloc[-1]), float(v.iloc[-2])
+    win = v.tail(days)
+    if last < 15:
+        regime, tone = T("low", "偏低"), "muted"
+    elif last < 20:
+        regime, tone = T("normal", "正常"), "muted"
+    elif last < 30:
+        regime, tone = T("elevated", "偏高"), "warn"
+    else:
+        regime, tone = T("high fear", "高度恐慌"), "neg"
+    ratio, rword = None, None
+    vr = f["vix_ratio"].dropna() if "vix_ratio" in f.columns else pd.Series(dtype=float)
+    if len(vr):
+        ratio = float(vr.iloc[-1])
+        rword = T("backwardation", "倒挂") if ratio >= 1 else T("contango", "正向")
+    return {"last": last, "chg": last - prev,
+            "pct": (last / prev - 1) * 100 if prev else 0.0,
+            "hi": float(win.max()), "lo": float(win.min()), "prev": prev, "days": days,
+            "regime": regime, "tone": tone, "ratio": ratio, "rword": rword,
+            "pctile": float((v <= last).mean() * 100)}
+
+
+def chart_vix(f: pd.DataFrame, days: int = 90) -> str:
+    """A focused VIX path with the conventional regime bands shaded behind it."""
+    if "vix" not in f.columns:
+        return ""
+    v = f["vix"].dropna()
+    if v.empty:
+        return ""
+    v = v.loc[v.index.max() - pd.Timedelta(days=days):]
+    fig = go.Figure()
+    for y0, y1, c in ((0, 15, "#4fb39a"), (15, 20, "#7aa7e0"),
+                      (20, 30, "#e0a030"), (30, 90, "#e06464")):
+        fig.add_hrect(y0=y0, y1=y1, fillcolor=c, opacity=0.07, line_width=0)
+    fig.add_trace(go.Scatter(x=v.index, y=v, name="VIX",
+                             line={"color": "#e07a9a", "width": 1.6}))
+    fig.update_layout(**{**PLOT_LAYOUT, "height": 240}, showlegend=False)
+    fig.update_yaxes(range=[max(0.0, float(v.min()) - 2), float(v.max()) + 3])
+    return _html(fig)
+
+
 def chart_credit_breadth(f: pd.DataFrame) -> str:
     two_y = f.index.max() - pd.Timedelta(days=730)
     oas = f.loc[two_y:, "hy_oas"].dropna()
@@ -1653,6 +1743,9 @@ def main() -> int:
         generated_utc=generated,
         chart_liquidity=chart_liquidity(f),
         chart_credit_breadth=chart_credit_breadth(f),
+        market_tiles=market_tiles(f),
+        vix=vix_monitor(f),
+        chart_vix=chart_vix(f),
         positioning=positioning_rows(f),
         holdings_changes=holdings_rows(),
         holdings_threshold=config.load()["holdings"]["active_change_alert_pct"],
