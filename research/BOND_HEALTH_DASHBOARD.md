@@ -1,6 +1,8 @@
 # Bonds & Bond Health — Research + Build Plan
 
-**Status:** ✅ BUILT (Phases 0–3) + verified. Date: 2026-06-14. Health-first framing (per user). Calibration (Phase 4) + daily sovereign spreads (Phase 5) are documented fast-follows.
+**Status:** ✅ BUILT + CALIBRATED (Phases 0–4) + verified + COMMITTED (face1f3 + c3c92fc, bonds-only). Date: 2026-06-14. Health-first framing (per user). Daily sovereign spreads (Phase 5) is the remaining fast-follow.
+
+**Phase 4 (calibration) — DONE.** `scripts/calibrate_bonds.py` discriminatively validates each leg + the composite (as STRESS) vs strictly-forward S&P 63-day drawdown + NBER 252-day recession, split-half (2013). **drawdown_risk / recession_risk / rates_vol CONFIRMED; credit DIRECTIONAL (strong pre-2013, faded in QE); plumbing CONTEXT.** Composite CONFIRMED (high-stress tercile → 23% forward-drawdown rate vs 12% base, +10.7pp; recession-IC 0.53) **but does NOT beat the drawdown-risk leg alone** — kept as an explainable synthesis, surfaced honestly in the UI (measured-edge box + ✓/~/· leg glyphs). NY-Fed probit Brier 0.165 vs 0.181 (skill +0.086). Weights kept as a conservative prior (measured weights in `reports/bonds-calibration.md`). `data/bonds/calibration.json`; weekly.yml calibrates before build.
 **Goal:** A "Bonds & bond health" section on the front page that reads economic health, market health, regime, and cycle position *from the bond market* — and exports a structured **bond-health signal vector** for the cross-asset AI synthesis brain (alongside equities / macro / BTC / forex / commodities).
 
 ## BUILD STATUS (what shipped, uncommitted)
