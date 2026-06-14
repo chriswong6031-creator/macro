@@ -1317,9 +1317,38 @@ def main() -> int:
         src = config.ROOT / "templates" / asset
         if src.exists():
             (site / asset).write_text(src.read_text())
+    # Macro news & catalysts (LEAF, additive, never fatal). Catalysts (FOMC + jobs
+    # report) are keyless and always on; filtered headlines + the optional LLM brief
+    # only when macro_news.enabled. News NEVER feeds any score.
+    macro_catalysts, macro_news_data, macro_brief_data = [], None, None
+    macro_news_disclaimer = macro_news_disclaimer_zh = ""
+    try:
+        from engine import macro_news as _mnews
+        _mncfg = config.load().get("macro_news", {}) or {}
+        macro_catalysts = _mnews.upcoming_catalysts(
+            horizon_days=_mncfg.get("catalysts_horizon_days", 14))
+        macro_news_data = _mnews.macro_headlines()
+        macro_news_disclaimer = _mnews.DISCLAIMER_TEXT
+        macro_news_disclaimer_zh = _mnews.DISCLAIMER_TEXT_ZH
+        if macro_news_data and macro_news_data.get("headlines"):
+            _ra = (latest.get("conditions") or {}).get("risk_appetite") or {}
+            _sent = (f"{_ra.get('news_sentiment_state')} (z={_ra.get('news_sentiment_z')})"
+                     if _ra.get("news_sentiment_state") else "")
+            macro_brief_data = _mnews.macro_brief(
+                macro_news_data["headlines"],
+                regime_line=str((latest.get("regime") or {}).get("label", "")),
+                sentiment_line=_sent)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("macro news failed: %s", e)
+
     from engine.alerts import alert_views
     html = env.get_template("dashboard.html.j2").render(
         latest=latest,
+        macro_catalysts=macro_catalysts,
+        macro_news=macro_news_data,
+        macro_brief=macro_brief_data,
+        macro_news_disclaimer=macro_news_disclaimer,
+        macro_news_disclaimer_zh=macro_news_disclaimer_zh,
         alerts=alert_views(latest.get("alerts", [])),
         pb=latest.get("playbook"),
         month_name=calendar.month_name[pd.Timestamp(latest["date"]).month],
