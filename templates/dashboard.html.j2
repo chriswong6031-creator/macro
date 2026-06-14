@@ -934,7 +934,7 @@
         {% set sbcolor = 'var(--down)' if 'breakdown' in (RA.stock_bond_regime or '') else 'var(--muted)' %}
         <div class="kv">{{ t('Stock-bond corr', '股债相关性') }} <b style="color:{{ sbcolor }}">{{ '%+.2f'|format(RA.stock_bond_corr) }}</b> <span class="muted sm">{{ t('bonds not hedging' if 'breakdown' in (RA.stock_bond_regime or '') else ('bonds hedge' if 'diversifying' in (RA.stock_bond_regime or '') else 'mixed'), '债券未对冲' if 'breakdown' in (RA.stock_bond_regime or '') else ('债券对冲' if 'diversifying' in (RA.stock_bond_regime or '') else '混合')) }}</span></div>{% endif %}
         {% if RA.vol_target_scalar is not none %}<div class="kv">{{ t('Vol-target exposure', '波动率目标敞口') }} <b>{{ '%.2f'|format(RA.vol_target_scalar) }}×</b></div>{% endif %}
-        {% if RA.news_sentiment is not none %}
+        {% if RA.get('news_sentiment') is not none %}
         {% set _nscol = 'var(--up)' if RA.news_sentiment_state=='optimistic' else 'var(--down)' %}
         <div class="kv">{{ t('News sentiment', '新闻情绪') }}
           {{ help("The San Francisco Fed's Daily News Sentiment Index — economic tone extracted from major US newspapers (history from 1980). A continuous, reproducible read of the macro mood (positive = optimistic), and a quant complement to the AI news digests.", "旧金山联储每日新闻情绪指数 — 从美国主流报纸提取的经济基调（自 1980 年）。对宏观情绪的连续、可复现读数（正值＝乐观），是 AI 新闻摘要的量化补充。") }}
@@ -1029,6 +1029,66 @@
     </div>
   </div>
   {% endif %}
+
+  <!-- ======================= MACRO NEWS, SENTIMENT & CATALYSTS ======================= -->
+  <style>
+  #macro-news .mn-cols{display:grid;grid-template-columns:1.7fr 1fr;gap:20px;margin-top:10px}
+  #macro-news .section-title{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 8px;font-weight:700}
+  #macro-news .mn-sent{display:flex;gap:8px;align-items:baseline;font-size:14px;margin:2px 0 4px}
+  #macro-news .mn-brief{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.5;margin:8px 0 4px}
+  #macro-news .mn-item{display:block;padding:6px 0;border-bottom:1px solid var(--panel2);color:var(--text);text-decoration:none;font-size:13px;line-height:1.4}
+  #macro-news .mn-item:hover{color:var(--up)}
+  #macro-news .mn-theme,#macro-news .cat-type{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;padding:1px 6px;border-radius:5px;background:var(--line);color:var(--muted)}
+  #macro-news .mn-theme{margin-right:7px;vertical-align:1px}
+  #macro-news .mn-t-monetary{background:#22324f;color:#9cc4ff}#macro-news .mn-t-inflation{background:#4f2c22;color:#ffb499}
+  #macro-news .mn-t-labor{background:#1f4733;color:#a0ffc4}#macro-news .mn-t-growth{background:#2c3f1f;color:#cfe89a}
+  #macro-news .mn-t-credit{background:#3a2f5f;color:#c4b0ff}#macro-news .mn-t-fiscal{background:#4f3a1f;color:#ffd79a}
+  #macro-news .cat-row{display:flex;gap:9px;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--panel2);font-size:13px}
+  #macro-news .cat-date{color:var(--muted);font-variant-numeric:tabular-nums;min-width:118px}
+  #macro-news .ct-FOMC{background:#3a2f5f;color:#c4b0ff}#macro-news .ct-NFP{background:#1f4733;color:#a0ffc4}
+  #macro-news .mn-disc{color:var(--muted);font-size:11px;margin-top:12px;border-top:1px solid var(--line);padding-top:8px;line-height:1.5}
+  @media(max-width:760px){ #macro-news .mn-cols{grid-template-columns:1fr} }
+  </style>
+  <div class="panel span12" id="macro-news">
+    <h2>📰 {{ t('Macro news, sentiment &amp; catalysts', '宏观新闻、情绪与日程') }}
+      {{ help("Filtered macro news (reputable sources, macro themes only — each headline tagged by theme), the SF-Fed Daily News Sentiment Index (a quantitative series, NOT per-headline AI), and the upcoming scheduled catalysts (FOMC, jobs report). All CONTEXT — none of it feeds any score, signal or allocation, and the mechanical model never sees it.", "已筛选的宏观新闻（仅可靠来源、仅宏观主题，每条按主题标注）、旧金山联储每日新闻情绪指数（量化序列，而非逐条新闻 AI），以及即将到来的排定催化（FOMC、就业报告）。全部为背景 —— 不进入任何评分、信号或配置，机械模型也从不读取。") }}
+    </h2>
+    {% set RA = (latest.conditions or {}).get('risk_appetite') or {} %}
+    {% if RA.get('news_sentiment_state') %}
+    {% set nz = RA.get('news_sentiment_z') %}
+    <div class="mn-sent">
+      <span class="muted">{{ t('News sentiment (SF-Fed index):', '新闻情绪（旧金山联储指数）：') }}</span>
+      <span class="{{ 'pos' if RA.get('news_sentiment_state') == 'optimistic' else 'neg' }}"><b>{{ t('optimistic', '乐观') if RA.get('news_sentiment_state') == 'optimistic' else t('pessimistic', '悲观') }}</b>{% if nz is not none %} · z {{ '%+.1f'|format(nz) }}{% endif %}</span>
+    </div>
+    {% endif %}
+    {% if macro_brief and macro_brief.text %}
+    <div class="mn-brief">🤖 <b>{{ t('AI brief (context)', 'AI 摘要（背景）') }}:</b> {{ macro_brief.text }}</div>
+    {% endif %}
+    {% set TL = {'monetary':['Fed','美联储'],'inflation':['Inflation','通胀'],'labor':['Labor','就业'],'growth':['Growth','增长'],'credit':['Rates','利率'],'fiscal':['Fiscal','财政']} %}
+    <div class="mn-cols">
+      <div class="mn-news">
+        <div class="section-title">{{ t('Filtered macro headlines', '已筛选的宏观头条') }}{% if macro_news and macro_news.n_raw %} <span class="muted">({{ macro_news.n_kept }}/{{ macro_news.n_raw }})</span>{% endif %}</div>
+        {% if macro_news and macro_news.headlines %}
+          {% for h in macro_news.headlines %}
+          <a class="mn-item" href="{{ h.url }}" target="_blank" rel="noopener"><span class="mn-theme mn-t-{{ h.theme }}">{{ t(TL.get(h.theme, [h.theme,h.theme])[0], TL.get(h.theme, [h.theme,h.theme])[1]) }}</span>{{ h.title }} <span class="muted">— {{ h.domain }}</span></a>
+          {% endfor %}
+        {% else %}
+          <p class="muted sm">{{ t('No macro headlines right now — the news fetch is off (default) or the tape is quiet.', '暂无宏观头条 —— 新闻抓取已关闭（默认）或行情平静。') }}</p>
+        {% endif %}
+      </div>
+      <div class="mn-cats">
+        <div class="section-title">{{ t('Upcoming catalysts', '即将到来的催化') }}</div>
+        {% if macro_catalysts %}
+          {% for c in macro_catalysts %}
+          <div class="cat-row"><span class="cat-date">{{ c.date }}{% if c.time_et %} · {{ c.time_et }} ET{% endif %}</span><span class="cat-type ct-{{ c.type }}">{{ c.type }}</span><span class="cat-label">{{ c.label }}</span></div>
+          {% endfor %}
+        {% else %}
+          <p class="muted sm">{{ t('No scheduled catalysts in the window.', '窗口内无排定催化。') }}</p>
+        {% endif %}
+      </div>
+    </div>
+    <p class="mn-disc">{{ t(macro_news_disclaimer, macro_news_disclaimer_zh) }}</p>
+  </div>
 
   <!-- ======================= ACTION BOARD ======================= -->
   {% if action_board %}

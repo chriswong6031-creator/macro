@@ -1131,6 +1131,41 @@ commodity_news:
   catalysts_horizon_days: 14      # upcoming OPEC/FOMC/EIA watch window (keyless, always on)
 
 # =============================================================================
+# Macro news & catalysts (engine/macro_news.py) — ANNOTATION layer for macro.html.
+# A LEAF: imports nothing from the scoring core; nothing in scoring imports it.
+# "Useful vs useless" news is decided WITHOUT AI: (1) GDELT is queried with a macro
+# OR-clause + sourcecountry:US; (2) a reputable-source allowlist + (3) a title-level
+# macro-theme gate keep only clearly-macro headlines from quality outlets and TAG
+# each by theme; (4) dedup + recency. The "sentiment" shown is the quantitative
+# SF-Fed Daily News Sentiment Index (already computed in conditions), NOT per-headline
+# AI. The OPTIONAL llm_brief is the only AI — a gated, default-off narrator that
+# writes one context paragraph and feeds NO score. Catalysts (FOMC + jobs report)
+# are keyless and always on.
+# =============================================================================
+macro_news:
+  enabled: false                  # MASTER SWITCH for the GDELT fetch + LLM brief
+  lang: eng
+  window_days: 2                  # fetch the last N days of macro news
+  max_records: 200                # candidates pulled from GDELT before filtering
+  max_show: 10                    # headlines shown after filtering
+  min_request_interval_s: 6       # GDELT pacing
+  cache_dir: data/macro/news_cache
+  cache_ttl_hours: 12
+  catalysts_horizon_days: 14
+  # reputable macro/financial source allowlist (substring match on article domain).
+  # Omit to use the built-in default list in engine/macro_news.py.
+  sources: []
+  # official release dates the calendar can't compute (CPI/GDP/Jackson Hole/etc.) —
+  # add {type, date: 'YYYY-MM-DD', label, time_et} rows as the BLS/BEA schedule firms up.
+  extra_catalysts: []
+  # OPTIONAL AI brief — the only AI; off even if a key is present. Provider-agnostic
+  # (DeepSeek/Anthropic wire), degrade-to-keyless, never scored.
+  llm_brief: false
+  llm_model: deepseek-chat
+  base_url: https://api.deepseek.com/anthropic   # omit / null for native Anthropic
+  api_key_env: DEEPSEEK_API_KEY
+
+# =============================================================================
 # Company-profile translation (engine/translate.py + scripts/translate_profiles.py).
 # The single-stock analyzer's "Business profile" blurb is sourced English free text
 # (Wikipedia/SEC) — not a UI string, so it can't be dual-emitted like the rest of the
