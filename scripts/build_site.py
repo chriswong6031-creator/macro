@@ -876,7 +876,36 @@ def build_factors_page(env: Environment, site: Path, generated: str) -> dict | N
     return fac
 
 
-def build_sector_pages(env: Environment, site: Path, generated: str) -> dict:
+ETF_GICS = {                       # SPDR sector fund -> GICS sector (residual-alpha leaders)
+    "XLK": "Information Technology", "XLF": "Financials", "XLV": "Health Care",
+    "XLY": "Consumer Discretionary", "XLP": "Consumer Staples", "XLE": "Energy",
+    "XLI": "Industrials", "XLB": "Materials", "XLU": "Utilities",
+    "XLRE": "Real Estate", "XLC": "Communication Services",
+}
+
+
+def build_alpha_data(site: Path) -> dict | None:
+    """Compute the sector-neutral residual-momentum cross-section and write
+    factordata/alpha.json (consumed by the sector-page Alpha-leaders panel).
+    Additive — any failure logs and skips. See research/RESIDUAL_ALPHA_MOMENTUM.md."""
+    from engine.residual_alpha import compute_residual_alpha
+    try:
+        alpha = compute_residual_alpha()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("residual-alpha engine failed: %s", e)
+        return None
+    if not alpha:
+        return None
+    fdir = site / "factordata"
+    fdir.mkdir(parents=True, exist_ok=True)
+    (fdir / "alpha.json").write_text(json.dumps(alpha, separators=(",", ":"), default=str))
+    log.info("wrote alpha.json (%d names, %d sectors)", alpha.get("n"),
+             len(alpha.get("by_sector", {})))
+    return alpha
+
+
+def build_sector_pages(env: Environment, site: Path, generated: str,
+                       alpha: dict | None = None) -> dict:
     """Render sectors/<FUND>.html drill-downs; return per-fund timing summary
     for the heat board."""
     import json as _json
@@ -939,6 +968,10 @@ def build_sector_pages(env: Environment, site: Path, generated: str) -> dict:
         s = {"fund": fund, "name": SECTOR_NAMES.get(fund, fund),
              "mtf_json": _json2.dumps(res.get("mtf", {})), **res,
              "holdings": holdings, "accumulation": accumulation_signals(fund)}
+        if alpha and fund in ETF_GICS:                 # within-sector residual-alpha leaders
+            _sa = (alpha.get("by_sector") or {}).get(ETF_GICS[fund])
+            if _sa:
+                s["alpha_leaders"] = _sa.get("leaders")
         html = tpl.render(s=s, state_styles=STATE_STYLES, calibration=calibration,
                           ladder_order=LADDER, state_display=STATE_DISPLAY,
                           generated_utc=generated)
@@ -1063,8 +1096,13 @@ def main() -> int:
 
     import calendar
     sector_timing, notable = {}, []
+    alpha_data = None
     try:
-        sector_timing, notable = build_sector_pages(env, site, generated)
+        alpha_data = build_alpha_data(site)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("alpha data failed: %s", e)
+    try:
+        sector_timing, notable = build_sector_pages(env, site, generated, alpha=alpha_data)
     except Exception as e:  # noqa: BLE001 — drill-downs are additive, never fatal
         log.error("sector pages failed: %s", e)
     try:
