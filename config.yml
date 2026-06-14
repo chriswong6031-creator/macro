@@ -1070,6 +1070,22 @@ ofr:
 funding_stress:
   pctile_lookback_d: 504             # ~2y trailing window for the spread/dispersion percentile
 
+# =============================================================================
+# Prediction markets (collectors/prediction_markets.py + engine) — market-implied
+# odds for macro events from the keyless Polymarket Gamma API. Pairs with the
+# FOMC/jobs catalyst calendar on macro.html. Event titles rotate, so each is matched
+# by a title substring and the nearest-expiry/max-volume event is picked dynamically;
+# each run APPENDS a dated snapshot (history accrues → backtestable later). Private-use
+# dashboard. CONTEXT (crowd expectation), never wired into any score.
+# =============================================================================
+prediction_markets:
+  enabled: true
+  retries: 3
+  events:                            # key: {match(title substr), pick, labels}
+    fed_next:  {match: "Fed Decision", pick: nearest_end, label_en: "Next Fed decision", label_zh: "下次美联储决议"}
+    fed_cuts:  {match: "rate cuts in", pick: max_volume,  label_en: "Fed cuts this year", label_zh: "今年降息次数"}
+    recession: {match: "recession",    pick: max_volume,  label_en: "US recession",       label_zh: "美国衰退"}
+
 commodities:
   assets:                          # name: [yahoo price ticker, cot store-series, class]
     gold:   ["GC=F", cot_gold,   precious]

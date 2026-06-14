@@ -1618,10 +1618,19 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("macro news failed: %s", e)
 
+    # prediction-markets odds (additive leaf; None if no snapshot yet)
+    prediction_markets = None
+    try:
+        from engine import prediction_markets as _pm
+        prediction_markets = _pm.snapshot()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("prediction markets failed: %s", e)
+
     from engine.alerts import alert_views
     html = env.get_template("dashboard.html.j2").render(
         latest=latest,
         macro_catalysts=macro_catalysts,
+        prediction_markets=prediction_markets,
         macro_news=macro_news_data,
         macro_brief=macro_brief_data,
         macro_news_disclaimer=macro_news_disclaimer,
