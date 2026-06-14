@@ -1616,6 +1616,29 @@ def build_advanced_page(env: Environment, site: Path, generated: str, latest: di
     (site / "advanced.html").write_text(html)
     log.info("wrote advanced.html (%.0f KB)", (site / "advanced.html").stat().st_size / 1024)
     return cross_asset
+def market_gamma_view(gex) -> dict | None:
+    """Market-wide dealer-gamma vol regime from the VALIDATED index dealer-gamma read
+    (SPX, data/cboe/gex via engine.gex_engine — the same that drives the dealer-gamma
+    board). ABOVE the gamma-flip strike dealers are net long gamma and hedge AGAINST
+    moves (pinning / vol suppressed); BELOW it they're short gamma and hedge WITH moves
+    (amplifying). A whole-market vol CONTEXT for the per-stock setups — not a per-stock
+    signal. Graceful: None if the store is missing/empty (the note simply won't render).
+    Uses the flip side (spot vs flip), the engine's authoritative regime, NOT the coarse
+    net-$ sign the ETF-flows board flags — they answer different questions."""
+    if gex is None or not len(gex):
+        return None
+    g = gex.iloc[-1]
+    svf = g.get("spot_vs_flip_pct")
+    if svf is None or pd.isna(svf):
+        return None
+    return {
+        "regime": "short" if float(svf) < 0 else "long",
+        "spot_vs_flip_pct": round(float(svf), 1),
+        "net_gex_bn": round(float(g.get("net_gex_bn") or 0), 0),
+        "flip": int(round(float(g.get("flip_strike") or 0))),
+        "spot": int(round(float(g.get("spot") or 0))),
+        "asof": str(gex.index.max().date()),
+    }
 
 
 def main() -> int:
@@ -1726,6 +1749,13 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("prediction markets failed: %s", e)
 
+    # whole-market dealer-gamma vol regime (validated index GEX) — context for the
+    # standout setups below. Additive + graceful: None if the cboe gex store is absent.
+    market_gamma = None
+    try:
+        market_gamma = market_gamma_view(store.read("cboe", "gex"))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("market gamma view failed (%s)", e)
     from engine.alerts import alert_views
     html = env.get_template("dashboard.html.j2").render(
         latest=latest,
@@ -1742,6 +1772,7 @@ def main() -> int:
         sector_timing=sector_timing,
         action_board=action_board(sector_timing, notable),
         top_setups=top_setups,
+        market_gamma=market_gamma,
         components_confirming=confirming,
         components_contradicting=contradicting,
         flip_plain=flip_plain_text(latest),
