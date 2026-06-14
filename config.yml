@@ -634,6 +634,66 @@ engine:
     crowding_soft_penalty: 5
     crowding_hard_pctile: 92
     crowding_hard_penalty: 10
+    # --- Macro-risk SENSITIVITY table (per-sector beta to a risk-OFF reading) ----
+    # How much a high macro-risk score (MRS, 0..1) should HURT each sector's heat
+    # and its holdings' buy-setup conviction. Coarse 3-tier textbook prior — NOT
+    # fitted to this sample (there is no risk-off episode in the broad cross-
+    # section's 2023-> history to fit on); the SPDRs DO have deep history, so the
+    # SIGN is validated offline by scripts/research_macro_sector.py before any
+    # magnitude>0 ships. Positive = cyclical / long-duration (penalized in risk-
+    # off); negative = defensive (a small credit). Keyed by SPDR ticker AND GICS /
+    # display sector name so both the sector pages (ticker) and the stock library
+    # (sector name) resolve. See research/MACRO_RISK_INTEGRATION.md.
+    sector_macro_beta:
+      XLK: 1.0
+      XLY: 1.0
+      XLF: 1.0
+      XLC: 1.0
+      XLI: 1.0
+      XLB: 1.0
+      XLRE: 0.5
+      XLE: 0.0
+      XLP: -0.4
+      XLU: -0.4
+      XLV: -0.4
+      # GICS / display sector names (deep-history holdings + breadth constituents)
+      Technology: 1.0
+      Information Technology: 1.0
+      Consumer Discretionary: 1.0
+      Financials: 1.0
+      Communications: 1.0
+      Communication Services: 1.0
+      Industrials: 1.0
+      Materials: 1.0
+      Real Estate: 0.5
+      Energy: 0.0
+      Consumer Staples: -0.4
+      Utilities: -0.4
+      Health Care: -0.4
+
+  # --- Macro-risk overlay: make aggregate macro risk a DETERMINISTIC, risk-OFF-
+  # only factor in sector heat + per-stock buy-setup conviction. MRS (macro-risk
+  # score, 0..1) is a pure function of the already-persisted conditions/regime legs
+  # (engine.conditions.macro_risk_*); the penalty per instrument scales by the
+  # sector_macro_beta table above. Framed as drawdown/sizing caution, NEVER alpha:
+  # the cross-sectional edge is unproven (research/DISLOCATION_VALIDATION.md shows
+  # one robust drawdown-median cell; returns/tail/hit all span 0). Magnitudes are
+  # conservative and FIXED (not tuned to a backtest). enabled:false => exact pre-
+  # overlay behavior. See research/MACRO_RISK_INTEGRATION.md.
+  macro_overlay:
+    enabled: true            # global kill-switch (false => overlay is a no-op)
+    macro_max: 7             # max sector-heat swing (conservative; <= the +7 regime swing)
+    macro_headwind: 7        # max per-stock buy-setup penalty (conservative; <= LIQ_HEADWIND=12)
+    mrs_weights:             # weight each MRS leg toward the measured-edge legs
+      recession: 1.0
+      drawdown: 1.0
+      nfci: 0.5
+      liquidity: 0.5         # contracting-liquidity is the main cyclical/defensive
+                             # differentiator — the B-1 sign-check only passes WITH
+                             # it. It also has a uniform ladder nudge (LIQ_HEADWIND);
+                             # the MRS leg adds sector differentiation on top — a
+                             # small, intentional overlap, not double-counting noise.
+      transition: 0.25
 
   # --- Quant-factor expansion: complementary nowcast / conditions / risk layer.
   # ADDITIVE — engine/conditions.py runs alongside the validated quad, never

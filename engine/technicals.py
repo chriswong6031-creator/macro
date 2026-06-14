@@ -99,9 +99,29 @@ def season_line(seas: dict, month: int) -> str | None:
 
 # ---------------------------------------------------------------- scoring ----
 
+def _macro_pts(macro_drag: float | None, macro_beta: float) -> int:
+    """Sector-heat macro-risk term: a risk-OFF, ASYMMETRIC adjustment scaled by
+    the sector's sensitivity. penalty (cyclical · high MRS) is capped at the full
+    macro_max; the defensive credit (beta<0) at half that — penalties bite harder
+    than the small defensive favouring. 0 when disabled / no drag / beta 0."""
+    if macro_drag is None:
+        return 0
+    mo = config.load()["engine"].get("macro_overlay") or {}
+    if not mo.get("enabled", True):
+        return 0
+    mmax = float(mo.get("macro_max", 7))
+    raw = -mmax * float(macro_drag) * float(macro_beta)
+    return int(round(max(-mmax, min(mmax / 2.0, raw))))
+
+
 def _score_components(aligned: bool, dial_score: int, stage: str, extended: bool,
-                      tech: dict, rs_pctile: float) -> dict:
-    """Transparent checklist. Returns each sub-score so the UI can show its work."""
+                      tech: dict, rs_pctile: float,
+                      macro_drag: float | None = None, macro_beta: float = 0.0) -> dict:
+    """Transparent checklist. Returns each sub-score so the UI can show its work.
+
+    `macro_drag` (MRS, 0..1) × `macro_beta` (sector sensitivity) adds a risk-OFF
+    penalty for macro-sensitive sectors / a small credit for defensives. Defaults
+    keep the score byte-identical to the pre-overlay behavior."""
     w = config.load()["engine"]["confluence"]
 
     regime = w["regime_aligned"] if aligned else w["regime_neutral"]
@@ -135,18 +155,32 @@ def _score_components(aligned: bool, dial_score: int, stage: str, extended: bool
     elif rs_pctile >= w["crowding_soft_pctile"]:
         crowding = -w["crowding_soft_penalty"]
 
-    total = max(0, min(100, regime + tape + tech_pts + crowding))
+    macro = _macro_pts(macro_drag, macro_beta)
+
+    total = max(0, min(100, regime + tape + tech_pts + crowding + macro))
     return {"score": total, "regime": regime, "tape": tape,
-            "technicals": tech_pts, "crowding": crowding}
+            "technicals": tech_pts, "crowding": crowding, "macro": macro}
 
 
 # ------------------------------------------------------------- calibration ----
 
-def calibrate(closes: pd.DataFrame, regime: pd.DataFrame) -> dict:
+def calibrate(closes: pd.DataFrame, regime: pd.DataFrame,
+              macro_series: pd.Series | None = None) -> dict:
     """Compute the (seasonality-free) score across history, weekly-sampled,
     and measure forward 63d excess vs SPY per score band. THE honesty layer:
-    whatever these numbers say is what the UI shows."""
+    whatever these numbers say is what the UI shows.
+
+    `macro_series` is the historical MRS (engine.conditions.macro_risk_series).
+    When supplied, the IDENTICAL macro term added to the live _score_components is
+    folded into the historical score here — otherwise the displayed band hit-rates
+    would silently diverge from the live score. None => pre-overlay behavior."""
     w = config.load()["engine"]["confluence"]
+    mo = config.load()["engine"].get("macro_overlay") or {}
+    macro_on = bool(macro_series is not None and mo.get("enabled", True))
+    mmax = float(mo.get("macro_max", 7))
+    mrs = macro_series.reindex(closes.index) if macro_on else None
+    if macro_on:
+        from engine.conditions import sector_macro_beta
     bench = config.load()["engine"]["rs_ranking"]["benchmark"]
     prefs = config.load()["engine"]["sector_preferences"]
     sectors = [t for t in config.load()["yahoo"]["tickers"]["sectors"]
@@ -193,7 +227,12 @@ def calibrate(closes: pd.DataFrame, regime: pd.DataFrame) -> dict:
                          np.where(pct >= w["crowding_soft_pctile"],
                                   -w["crowding_soft_penalty"], 0))
         score = pd.Series(regime_pts + tape_pts + tech_pts + crowd,
-                          index=closes.index).clip(0, 100)
+                          index=closes.index)
+        if macro_on:
+            beta = sector_macro_beta(t)
+            macro_pts = (-mmax * mrs * beta).clip(-mmax, mmax / 2.0).round()
+            score = score + macro_pts.fillna(0.0)
+        score = score.clip(0, 100)
         fwd_ex = close.pct_change(63).shift(-63) - spy_fwd
         ok = weekly & fwd_ex.notna() & score.notna() & quad.notna()
         scores_all.append(score[ok])

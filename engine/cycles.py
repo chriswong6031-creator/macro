@@ -30,6 +30,7 @@ import numpy as np
 import pandas as pd
 
 from engine.technicals import macd_hist, rsi
+from lib import config
 
 log = logging.getLogger(__name__)
 
@@ -612,7 +613,8 @@ def regime_state(cyc: dict, mtf: dict) -> dict:
 
 
 def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
-                 liquidity: str | None = None) -> dict:
+                 liquidity: str | None = None,
+                 macro_drag: float | None = None, macro_beta: float = 0.0) -> dict:
     """Combine cycle position + multi-timeframe indicators into one state,
     with a plain next-step line. The higher-timeframe regime (weekly + 3-day +
     investor cycle) gates and can RE-LABEL the daily signal: a daily buy setup
@@ -856,6 +858,36 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
             liq_line = "US net liquidity is neutral right now — no macro tilt either way on the odds."
             liq_line_zh = "美国净流动性目前中性——对概率没有方向性影响。"
 
+    # ── Macro-risk regime (risk-OFF conviction modifier) ─────────────────────
+    # Aggregate macro risk (engine.conditions MRS, 0..1) scaled by this name's
+    # SECTOR sensitivity (macro_beta). SUBTRACT-ONLY and buy-setup-only — it
+    # mirrors the liquidity-nudge envelope: a high macro-risk reading shaves
+    # conviction on FRESH BUY / TURN SIGNALED for macro-sensitive (cyclical) names;
+    # defensives (beta<=0) are untouched. Net liquidity is also one of MRS's legs,
+    # so on a contracting day a cyclical here sees the uniform LIQ_HEADWIND above
+    # PLUS a small (~1pt) sector-scaled macro share — that overlap is intentional
+    # (it adds sector differentiation to the liquidity signal), bounded, and the
+    # validated cyclical/defensive split depends on it. Drawdown/sizing caution, not
+    # alpha. See research/MACRO_RISK_INTEGRATION.md.
+    macro_effect = None
+    macro_pen = 0
+    macro_line = macro_line_zh = ""
+    _mo = config.load()["engine"].get("macro_overlay") or {}
+    macro_on = bool(macro_drag is not None and _mo.get("enabled", True))
+    if macro_on and state in LIQ_NUDGE_STATES and macro_beta > 0:
+        _mhead = float(_mo.get("macro_headwind", 7))
+        macro_pen = int(round(_mhead * float(macro_drag) * float(macro_beta)))
+        if macro_pen > 0:
+            score -= macro_pen
+            macro_effect = "headwind"
+            macro_line = ("Macro-risk headwind: aggregate macro risk is elevated and this is "
+                          "a macro-sensitive (cyclical) name — buy setups here have "
+                          "historically taken deeper drawdowns, so demand extra confirmation "
+                          "and smaller size. A risk/sizing caution, not a forecast.")
+            macro_line_zh = ("宏观风险逆风：总体宏观风险偏高，且该标的对宏观较敏感（周期性）——"
+                             "在此环境下买入形态历史上回撤更深，因此应要求更多确认并降低仓位。"
+                             "这是风险/仓位提示，并非预测。")
+
     disp = STATE_DISPLAY[state]
     plain = cycle_plain(cyc)
     entry = entry_timing(state, cyc, mtf)
@@ -912,6 +944,10 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
                    "cautionary": "需谨慎", "neutral": "无方向性影响"}[liq_effect]
         points.append(f"Macro: US net liquidity {_liq_word} — {_eff} on the odds")
         points_zh.append(f"宏观：美国净流动性{_liq_word_zh}——对概率属{_eff_zh}")
+    if macro_effect == "headwind":
+        points.append("Macro-risk: aggregate macro risk elevated for a macro-sensitive name "
+                      "— caution on the odds")
+        points_zh.append("宏观风险：总体宏观风险偏高且标的对宏观敏感——对概率需谨慎")
     if cyc.get("failed_cycle"):
         age = f" ({cyc['failed_age']}d ago)" if cyc.get("failed_age") else ""
         age_zh = f"（{cyc['failed_age']} 天前）" if cyc.get("failed_age") else ""
@@ -954,7 +990,11 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
             "regime_line_zh": regime_line_zh, "summary_line_zh": summary_line_zh,
             "points_zh": points_zh, "early_note_zh": early_note_zh,
             "liq_regime": liq_regime, "liq_effect": liq_effect,
-            "liq_line": liq_line, "liq_line_zh": liq_line_zh}
+            "liq_line": liq_line, "liq_line_zh": liq_line_zh,
+            "macro_effect": macro_effect, "macro_pen": macro_pen,
+            "macro_drag": (round(float(macro_drag), 3) if macro_on else None),
+            "macro_beta": (float(macro_beta) if macro_on else 0.0),
+            "macro_line": macro_line, "macro_line_zh": macro_line_zh}
 
 
 # ----------------------------------------------------- signal age / strength ----
@@ -1293,15 +1333,22 @@ def entry_quality_fields(eq: dict, state: str | None = None) -> dict:
 
 
 def analyze(close: pd.Series, high: pd.Series | None = None,
-            kind: str = "equity", liquidity: str | None = None) -> dict:
+            kind: str = "equity", liquidity: str | None = None,
+            macro_drag: float | None = None, macro_beta: float = 0.0) -> dict:
     """`liquidity` = live US net-liquidity regime ("expanding"/"contracting"/
     "neutral", from engine.regime.liquidity_overlay), threaded into the ladder as
     an orthogonal macro conviction modifier. None => no liquidity context (keeps
-    every existing caller working unchanged)."""
+    every existing caller working unchanged).
+
+    `macro_drag` (MRS, 0..1; engine.conditions.macro_risk_score) × `macro_beta`
+    (this name's sector sensitivity, engine.conditions.sector_macro_beta) add a
+    risk-OFF, subtract-only, buy-setup-only conviction penalty for macro-sensitive
+    names. Defaults (None / 0.0) keep every existing caller unchanged."""
     cyc = cycle_state(close, high, kind)
     mtf = mtf_snapshot(close, kind)
     early = early_signals(close, cyc, mtf)
-    lad = ladder_state(cyc, mtf, early, liquidity=liquidity)
+    lad = ladder_state(cyc, mtf, early, liquidity=liquidity,
+                       macro_drag=macro_drag, macro_beta=macro_beta)
     if lad:
         age = signal_age(close, lad["state"], high, kind)
         if age:
