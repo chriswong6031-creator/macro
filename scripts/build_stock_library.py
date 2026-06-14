@@ -187,6 +187,11 @@ def main() -> int:
     cal = config.data_dir() / "regime" / "ladder_calibration.json"
     if cal.exists():
         (outdir / "calibration.json").write_text(cal.read_text())
+    # multi-timeframe Bottom-Confidence per-band held-rate (stock.html shows the
+    # measured "this band held the low ~N%" line; see research/BOTTOM_CONFIDENCE.md)
+    bccal = config.data_dir() / "regime" / "bottom_confidence_calibration.json"
+    if bccal.exists():
+        (outdir / "bc_calibration.json").write_text(bccal.read_text())
     log.info("stock library: %d analyzed, %d skipped (thin history)", built, failed)
     return 0
 
