@@ -98,6 +98,15 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("conditions layer failed: %s", e)
         latest["conditions"] = None
+    # Catalyst tone (LLM Tier-A): a DIGEST of the most recent public catalyst (FOMC
+    # statement) as honest CONTEXT only. Default-off LEAF (engine/catalyst_tone.py);
+    # None when disabled or nothing recent. NEVER enters the deterministic scoring path.
+    try:
+        from engine.catalyst_tone import daily_snapshot as catalyst_snapshot
+        latest["catalyst_tone"] = catalyst_snapshot(asof)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("catalyst tone layer failed: %s", e)
+        latest["catalyst_tone"] = None
     # Cross-asset concentration: are the six markets secretly one liquidity/risk bet?
     # Additive leaf (engine/cross_asset.py) — reads the per-market price stores and
     # degrades to verdict="unknown" if too few are present.

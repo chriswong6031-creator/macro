@@ -955,6 +955,9 @@ catalyst_tone:
   llm_model: deepseek-v4-flash    # cheap digest model ($0.14/$0.28 per 1M tok)
   llm_min_confidence: high        # code-side floor: below this every field -> "unknown"
   max_tokens: 700                 # OUTPUT cap (the JSON record is tiny); input can be a full doc
+  max_doc_chars: 20000            # input doc is trimmed to the statement body + capped
+  max_age_days: 120               # ignore FOMC statements older than this (stale context)
+  cache_dir: data/catalyst/digest_cache   # one digest cached per meeting (never re-called)
 
 # =============================================================================
 # Forex Vector — currency signal board (research/FOREX_DASHBOARD.md).

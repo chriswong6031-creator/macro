@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import pathlib
 import sys
+from datetime import date
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
@@ -148,6 +149,61 @@ def test_never_raises_on_garbage_reply():
         assert rec["degraded_reason"] == "unparseable_reply"
     finally:
         ct._cfg, ct._call_model = orig_cfg, orig_call
+
+
+# --------------------------------------------------------------------------- #
+# Stage 3 — source fetch + daily snapshot
+# --------------------------------------------------------------------------- #
+def test_recent_fomc():
+    assert ct._recent_fomc(date(2026, 6, 18), 120) == date(2026, 6, 17)  # last meeting
+    assert ct._recent_fomc(date(2026, 6, 18), 0) is None                 # 1 day old > 0
+    assert ct._recent_fomc(date(2020, 1, 1), 120) is None                # before all
+
+
+def test_html_to_statement_trims_body():
+    html = ("<html><head><style>x{}</style></head><body><nav>menu junk</nav>"
+            "<div>Recent indicators suggest economic activity expanded. "
+            "The Committee decided to maintain the target range. "
+            "Voting for the monetary policy action were all members.</div></body></html>")
+    out = ct._html_to_statement(html, 20000)
+    assert out.startswith("Recent indicators")
+    assert "maintain the target range" in out
+    assert "menu junk" not in out          # trimmed before the body
+    assert "Voting for the monetary policy action" not in out  # trimmed after the body
+
+
+def test_daily_snapshot_disabled():
+    assert ct.daily_snapshot("2026-06-18") is None   # config ships default-off
+
+
+def test_daily_snapshot_nothing_recent():
+    orig_cfg, orig_recent = ct._cfg, ct._recent_fomc
+    ct._cfg = lambda: {"enabled": True}
+    ct._recent_fomc = lambda today, age: None
+    try:
+        assert ct.daily_snapshot("2026-06-18") is None
+    finally:
+        ct._cfg, ct._recent_fomc = orig_cfg, orig_recent
+
+
+def test_daily_snapshot_stubbed_compacts():
+    orig_cfg, orig_recent, orig_dig = ct._cfg, ct._recent_fomc, ct._cached_or_digest_fomc
+    ct._cfg = lambda: {"enabled": True, "max_age_days": 120}
+    ct._recent_fomc = lambda today, age: date(2026, 6, 17)
+    ct._cached_or_digest_fomc = lambda meeting, cfg: {
+        "schema": "catalyst_tone.v1", "is_context_only": True, "kind": "fomc_statement",
+        "doc_id": "fomc_2026-06-17", "asof": "2026-06-17", "tone_score": 0.3,
+        "guidance_direction": "on_hold", "risk_delta": 0.0, "shock_reversible": "unknown",
+        "confidence": "high", "confidence_gated": False, "dropped_fields": [],
+        "evidence": [], "degraded_reason": None, "disclaimer": "x", "extra": "stripped"}
+    try:
+        snap = ct.daily_snapshot("2026-06-18")
+        assert snap["kind"] == "fomc_statement"
+        assert snap["tone_score"] == 0.3 and snap["guidance_direction"] == "on_hold"
+        assert "disclaimer" in snap
+        assert "extra" not in snap          # compacted to the snapshot key set
+    finally:
+        ct._cfg, ct._recent_fomc, ct._cached_or_digest_fomc = orig_cfg, orig_recent, orig_dig
 
 
 if __name__ == "__main__":

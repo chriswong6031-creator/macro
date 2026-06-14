@@ -317,3 +317,136 @@ def digest_document(source_text: str, kind: str = "macro", doc_id: str | None = 
     _verify_citations(rec, source_text)                       # drops unverifiable fields
     _apply_confidence_floor(rec, cfg.get("llm_min_confidence", "high"))
     return rec
+
+
+# --------------------------------------------------------------------------- #
+# source fetch + daily snapshot — the most recent FOMC statement, digested once
+# per meeting (cached) and surfaced as honest CONTEXT in latest.json.
+# --------------------------------------------------------------------------- #
+# FOMC decision dates (the statement is released that afternoon). Refresh yearly.
+_FOMC_MEETINGS = [
+    "2025-09-17", "2025-10-29", "2025-12-10",
+    "2026-01-28", "2026-03-18", "2026-04-29", "2026-06-17",
+    "2026-07-29", "2026-09-16", "2026-10-28", "2026-12-09",
+]
+_FOMC_URL = "https://www.federalreserve.gov/newsevents/pressreleases/monetary{ymd}a.htm"
+
+
+def _as_date(x: date | str | None) -> date | None:
+    if x is None or isinstance(x, date):
+        return x
+    try:
+        return date.fromisoformat(str(x)[:10])
+    except ValueError:
+        return None
+
+
+def _recent_fomc(today: date, max_age_days: int) -> date | None:
+    """Most recent FOMC decision on/before `today`, if within max_age_days."""
+    past = [date.fromisoformat(d) for d in _FOMC_MEETINGS
+            if date.fromisoformat(d) <= today]
+    if not past:
+        return None
+    meeting = max(past)
+    return meeting if (today - meeting).days <= max_age_days else None
+
+
+def _html_to_statement(html: str, cap: int) -> str:
+    """Crude tag-strip + best-effort trim to the FOMC statement body."""
+    t = re.sub(r"<(script|style)\b.*?</\1>", " ", html, flags=re.DOTALL | re.I)
+    t = re.sub(r"<[^>]+>", " ", t)
+    t = re.sub(r"\s+", " ", t).strip()
+    starts = ("Recent indicators", "Information received", "The Committee")
+    ends = ("Voting for the monetary policy action", "Implementation Note",
+            "Last Update", "Board of Governors")
+    lo = min((i for i in (t.find(s) for s in starts) if i != -1), default=-1)
+    if lo > 0:
+        t = t[lo:]
+    hi = min((i for i in (t.find(e) for e in ends) if i != -1), default=-1)
+    if hi > 0:
+        t = t[:hi]
+    return t[:cap].strip()
+
+
+def fetch_fomc_statement(meeting_date: date,
+                         cfg: dict | None = None) -> tuple[str | None, str | None]:
+    """Fetch + plain-text the FOMC statement for a decision date (public, keyless).
+    Returns (text, degraded_reason); never raises."""
+    cfg = cfg or _cfg()
+    url = _FOMC_URL.format(ymd=meeting_date.strftime("%Y%m%d"))
+    try:
+        import requests
+        r = requests.get(url, timeout=30,
+                         headers={"User-Agent": "macro-dashboard/1.0 (research)"})
+        if r.status_code != 200 or "html" not in r.headers.get("Content-Type", "").lower():
+            return None, f"fetch_status_{getattr(r, 'status_code', '?')}"
+        text = _html_to_statement(r.text, int(cfg.get("max_doc_chars", 20000)))
+        return (text, None) if text else (None, "empty_after_strip")
+    except Exception as e:  # noqa: BLE001 — degrade, never raise
+        log.warning("fomc fetch failed (%s)", e)
+        return None, "fetch_error"
+
+
+def _cache_path(doc_id: str, cfg: dict):
+    from pathlib import Path
+    cdir = config.ROOT / cfg.get("cache_dir", "data/catalyst/digest_cache")
+    Path(cdir).mkdir(parents=True, exist_ok=True)
+    return Path(cdir) / f"{doc_id}.json"
+
+
+def _cached_or_digest_fomc(meeting: date, cfg: dict) -> dict | None:
+    """Return the digest for one FOMC meeting, from cache if present (the
+    statement never changes) else fetch+digest. Only a SUCCESSFUL digest is
+    cached, so a transient failure retries next run."""
+    doc_id = f"fomc_{meeting.isoformat()}"
+    cache = _cache_path(doc_id, cfg)
+    if cache.exists():
+        try:
+            return json.loads(cache.read_text())
+        except Exception:  # noqa: BLE001
+            pass
+    text, reason = fetch_fomc_statement(meeting, cfg)
+    if not text:
+        return {"schema": "catalyst_tone.v1", "is_context_only": True,
+                "kind": "fomc_statement", "doc_id": doc_id, "asof": meeting.isoformat(),
+                **_NEUTRAL, "confidence": "low", "confidence_gated": False,
+                "evidence": [], "dropped_fields": [], "degraded_reason": reason,
+                "disclaimer": DISCLAIMER_TEXT}
+    rec = digest_document(text, kind="fomc_statement", doc_id=doc_id,
+                          context=f"FOMC monetary-policy statement, {meeting.isoformat()}",
+                          asof=meeting)
+    if rec is None:                       # disabled mid-call; don't cache
+        return None
+    if rec.get("degraded_reason") is None:
+        try:
+            cache.write_text(json.dumps(rec))
+        except Exception:  # noqa: BLE001
+            pass
+    return rec
+
+
+_SNAP_KEYS = ("schema", "is_context_only", "kind", "doc_id", "asof",
+              "tone_score", "guidance_direction", "risk_delta", "shock_reversible",
+              "confidence", "confidence_gated", "dropped_fields", "evidence",
+              "degraded_reason", "disclaimer")
+
+
+def daily_snapshot(asof: date | str | None = None) -> dict | None:
+    """Daily Action-step entry: digest the most recent FOMC statement (cached per
+    meeting) as honest CONTEXT for latest.json. Returns None when disabled or
+    when nothing is recent enough. NEVER raises into the pipeline."""
+    cfg = _cfg()
+    if not cfg.get("enabled", False):
+        return None
+    try:
+        today = _as_date(asof) or date.today()
+        meeting = _recent_fomc(today, int(cfg.get("max_age_days", 120)))
+        if meeting is None:
+            return None
+        rec = _cached_or_digest_fomc(meeting, cfg)
+        if rec is None:
+            return None
+        return {k: rec.get(k) for k in _SNAP_KEYS}
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("catalyst daily_snapshot failed (%s)", e)
+        return None
