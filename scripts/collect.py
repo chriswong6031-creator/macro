@@ -168,6 +168,17 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("basket extras step failed: %s", e)
 
+    # Polygon options-OI accrual: snapshot the GEX universe's chains and store the RAW
+    # per-strike open interest the Cboe path throws away (the one thing that can't be
+    # backfilled — OI is point-in-time only). Foundation for the validate-gated GEX
+    # drawdown leg. No-op without POLYGON_API_KEY. Additive, never fatal.
+    try:
+        from scripts.build_polygon_gex import accrue as accrue_polygon_gex
+        log.info("=== accruing Polygon options OI (GEX foundation) ===")
+        accrue_polygon_gex(datetime.now(timezone.utc))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("Polygon GEX accrual step failed: %s", e)
+
     status = store.read_status()
     status["last_run"] = datetime.now(timezone.utc).isoformat()
     # merge: a partial --only run must not wipe the health of sources it skipped
