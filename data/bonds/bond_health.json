@@ -51,7 +51,7 @@
       "repo_stress": false
     },
     "cross_asset": {
-      "stock_bond_corr": 0.668185982994312,
+      "stock_bond_corr": 0.6707038009372001,
       "regime": "breakdown",
       "hedge_working": false
     },
@@ -94,12 +94,12 @@
       "note_en": "Discount-rate channel (real-10y, term premium) compresses long-duration multiples; credit (HY OAS) is the canary that leads equity drawdowns; the SPEED of yield moves (MOVE) matters more than the level.",
       "hy_oas": 2.71,
       "credit_canary": false,
-      "stock_bond_corr": 0.668185982994312
+      "stock_bond_corr": 0.6707038009372001
     }
   },
   "fed_path": {
     "asof": "2026-06-15",
-    "built": "2026-06-15T18:02:25.523523+00:00",
+    "built": "2026-06-15T18:45:46.666233+00:00",
     "policy_rate": 3.62,
     "target_low": 3.5,
     "target_high": 3.75,

@@ -23,7 +23,7 @@
   "global_score": 0.423,
   "risk_state": "Risk-on",
   "peg_state": "weak-side (outflow)",
-  "peg_distance": 0.843,
+  "peg_distance": 0.844,
   "global_snapshot": {
     "score": 0.423,
     "state": "Risk-on",
@@ -34,28 +34,28 @@
         "z": 0.45,
         "sign": -1,
         "risk": "off",
-        "level": 99.585
+        "level": 99.58
       },
       {
         "key": "vix",
         "label": "Volatility (VIX)",
-        "z": -0.3,
+        "z": -0.27,
         "sign": -1,
         "risk": "neutral",
-        "level": 16.06
+        "level": 16.23
       },
       {
         "key": "spy",
         "label": "S&P 500",
-        "z": 0.52,
+        "z": 0.49,
         "sign": 1.0,
         "risk": "on",
-        "level": 756.19
+        "level": 755.19
       },
       {
         "key": "copper_gold",
         "label": "Copper / Gold",
-        "z": 1.14,
+        "z": 1.17,
         "sign": 1.0,
         "risk": "on",
         "level": 0.0015
@@ -74,7 +74,7 @@
         "z": 0.74,
         "sign": 1.0,
         "risk": "on",
-        "level": 69.725
+        "level": 69.695
       },
       {
         "key": "vhsi",
@@ -86,7 +86,7 @@
       }
     ],
     "peg": {
-      "level": 7.8343,
+      "level": 7.8344,
       "distance": 0.84,
       "state": "weak-side (outflow)"
     },
@@ -262,7 +262,7 @@
       "chg_20d_pct": 4.54
     },
     "usdhkd": {
-      "level": 7.8343,
+      "level": 7.8344,
       "chg_20d_pct": 0.05
     }
   }
