@@ -139,7 +139,49 @@
       <span class="state st-{{ s.ladder.state | replace(" ", "_") }}">{{ td(s.ladder.label) }}</span>
       {% if s.ladder.eq_badge %}<span class="eqbadge eq-{{ s.ladder.eq_dir }}">{{ t('Entry','入场') }} {{ s.ladder.eq_badge }} <span class="eqg">{{ td(s.ladder.eq_grade) }}</span></span>{{ help(s.ladder.eq_tip, s.ladder.eq_tip_zh) }}{% endif %}
       <span style="flex:1"></span>
-      <button class="af-toggle" id="af-btn" type="button" aria-label="Toggle alert feed" aria-expanded="false" aria-controls="af-feed">🔔 <span>{{ t('Alerts','警报') }}</span>{% if alerts and alerts.n_recent %}<span class="af-badge">{{ alerts.n_recent }}</span>{% endif %} <span class="af-caret">▾</span></button>
+      <span class="af-wrap">
+        <button class="af-toggle" id="af-btn" type="button" aria-label="Toggle alert feed" aria-expanded="false" aria-controls="af-feed">🔔 <span>{{ t('Alerts','警报') }}</span>{% if alerts and alerts.n_recent %}<span class="af-badge">{{ alerts.n_recent }}</span>{% endif %} <span class="af-caret">▾</span></button>
+        <div class="af-scrim" id="af-scrim"></div>
+        <div class="af" id="af-feed" role="dialog" aria-label="Alerts" aria-hidden="true">
+          <div class="af-bar"><span class="af-bar-t">🔔 {{ t('Alerts','警报') }}</span>
+            <button class="af-x" id="af-close" type="button" aria-label="Close">✕</button></div>
+          <div class="af-body">
+            {% if alerts and alerts.pinned %}{% set p = alerts.pinned %}
+            <div class="af-pin dir-{{ p.dir }}">
+              <div class="af-pin-h"><span class="af-pin-tag">{{ t('Current signal','当前信号') }}</span>
+                <span class="af-pin-title">{{ t(p.headline|e, p.headline_zh|e) }}</span></div>
+              <p class="af-pin-d">{{ t(p.detail|e, p.detail_zh|e) }}</p>
+            </div>{% endif %}
+            {% if alerts and alerts.timeline %}
+            <div class="af-filters">
+              {% set flz = {'All':'全部','Signal':'信号','Trend':'趋势','Momentum':'动量','vs Market':'相对强弱','Cycle':'周期'} %}
+              {% for f,lab in [('all','All'),('signal','Signal'),('trend','Trend'),('momentum','Momentum'),('strength','vs Market'),('cycle','Cycle')] %}
+              <button class="aff {{ 'active' if f=='all' else '' }}" type="button" data-f="{{ f }}">{{ t(lab, flz[lab]) }}</button>{% endfor %}
+            </div>
+            {% for day in alerts.timeline %}
+            <div class="af-day">
+              <div class="af-date">{{ t(day.daylabel, day.daylabel_zh) }}</div>
+              {% for ev in day.events %}
+              <details class="af-item{{ ' pinned' if ev.pinned else '' }}" data-f="{{ ev.filter }}">
+                <summary>
+                  <span class="af-node dir-{{ ev.dir }}"></span>
+                  <span class="af-chip f-{{ ev.filter }}">{{ t(ev.label, ev.label_zh) }}</span>
+                  <span class="af-head">{{ t(ev.headline|e, ev.headline_zh|e) }}</span>
+                </summary>
+                <div class="af-detail">{{ t(ev.detail|e, ev.detail_zh|e) }}
+                  {% if ev.edge %}<div class="af-edge"><b>{{ t('Edge:','优势：') }}</b> {{ t(ev.edge|e, ev.edge_zh|e) }}</div>{% endif %}
+                  {% if ev.forward %}<div class="af-fwd">{{ t(ev.forward|e, ev.forward_zh|e) }}</div>{% endif %}
+                </div>
+              </details>
+              {% endfor %}
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="af-empty">{{ t('No signal changes in the recent window — quiet on every tracked signal.','近期无信号变化 — 所有跟踪信号均平静。') }}</div>
+            {% endif %}
+          </div>
+        </div>
+      </span>
     </div>
     {% set e = s.ladder.entry %}
     {# ---- bold VERDICT: the action verb + tag + call, read in a glance ---- #}
@@ -181,42 +223,6 @@
         <span class="sc-v">{{ t('Day','第') }} {{ dd }}</span>
         <span class="sc-s">{% if band %}{{ t('of','/') }} {{ band[0] }}–{{ band[1] }}{% endif %}</span>
       </div>
-    </div>
-    {# ---- collapsible alert feed (ladder pinned on top + technical timeline) ---- #}
-    <div class="af" id="af-feed" hidden>
-      {% if alerts and alerts.pinned %}{% set p = alerts.pinned %}
-      <div class="af-pin dir-{{ p.dir }}">
-        <div class="af-pin-h"><span class="af-pin-tag">{{ t('Current signal','当前信号') }}</span>
-          <span class="af-pin-title">{{ t(p.headline|e, p.headline_zh|e) }}</span></div>
-        <p class="af-pin-d">{{ t(p.detail|e, p.detail_zh|e) }}</p>
-      </div>{% endif %}
-      {% if alerts and alerts.timeline %}
-      <div class="af-filters">
-        {% set flz = {'All':'全部','Signal':'信号','Trend':'趋势','Momentum':'动量','vs Market':'相对强弱','Cycle':'周期'} %}
-        {% for f,lab in [('all','All'),('signal','Signal'),('trend','Trend'),('momentum','Momentum'),('strength','vs Market'),('cycle','Cycle')] %}
-        <button class="aff {{ 'active' if f=='all' else '' }}" type="button" data-f="{{ f }}">{{ t(lab, flz[lab]) }}</button>{% endfor %}
-      </div>
-      {% for day in alerts.timeline %}
-      <div class="af-day">
-        <div class="af-date">{{ t(day.daylabel, day.daylabel_zh) }}</div>
-        {% for ev in day.events %}
-        <details class="af-item{{ ' pinned' if ev.pinned else '' }}" data-f="{{ ev.filter }}">
-          <summary>
-            <span class="af-node dir-{{ ev.dir }}"></span>
-            <span class="af-chip f-{{ ev.filter }}">{{ t(ev.label, ev.label_zh) }}</span>
-            <span class="af-head">{{ t(ev.headline|e, ev.headline_zh|e) }}</span>
-          </summary>
-          <div class="af-detail">{{ t(ev.detail|e, ev.detail_zh|e) }}
-            {% if ev.edge %}<div class="af-edge"><b>{{ t('Edge:','优势：') }}</b> {{ t(ev.edge|e, ev.edge_zh|e) }}</div>{% endif %}
-            {% if ev.forward %}<div class="af-fwd">{{ t(ev.forward|e, ev.forward_zh|e) }}</div>{% endif %}
-          </div>
-        </details>
-        {% endfor %}
-      </div>
-      {% endfor %}
-      {% else %}
-      <div class="af-empty">{{ t('No signal changes in the recent window — quiet on every tracked signal.','近期无信号变化 — 所有跟踪信号均平静。') }}</div>
-      {% endif %}
     </div>
     {% if s.ladder.age_line %}<p class="agewhen">{{ t(s.ladder.age_line, s.ladder.age_line_zh) }}</p>{% endif %}
     {% if s.ladder.early_note %}<p class="early">{{ t(s.ladder.early_note, s.ladder.early_note_zh) }}</p>{% endif %}
@@ -405,13 +411,39 @@
   </div>
 
 <script>
-/* alert feed: toggle open/closed + filter chips (clone of the Vector timeline JS) */
+/* alert feed: floating popover (grows out of the 🔔 button, overlays the page)
+   + filter chips */
 (function(){
-  var btn=document.getElementById('af-btn'), feed=document.getElementById('af-feed');
-  if(btn&&feed){btn.addEventListener('click',function(){
-    if(feed.hasAttribute('hidden')){feed.removeAttribute('hidden');btn.setAttribute('aria-expanded','true');}
-    else{feed.setAttribute('hidden','');btn.setAttribute('aria-expanded','false');}
-  });}
+  var btn=document.getElementById('af-btn'), feed=document.getElementById('af-feed'),
+      scrim=document.getElementById('af-scrim'), x=document.getElementById('af-close');
+  function place(){
+    // phone (≤560) is a CSS bottom-sheet — clear any desktop inline pinning
+    if(window.matchMedia('(max-width: 560px)').matches){
+      feed.style.left=feed.style.top=feed.style.right=feed.style.transformOrigin=''; return;
+    }
+    var b=btn.getBoundingClientRect(), pw=feed.offsetWidth||470, m=10;
+    var left=Math.min(b.right-pw, window.innerWidth-m-pw);
+    if(left<m) left=m;
+    feed.style.left=left+'px'; feed.style.right='auto';
+    feed.style.top=(b.bottom+9)+'px';
+    feed.style.transformOrigin=Math.max(14,Math.min(pw-14,(b.left+b.right)/2-left))+'px top';
+  }
+  function set(open){
+    feed.classList.toggle('af-open',open);
+    if(scrim) scrim.classList.toggle('af-open',open);
+    btn.setAttribute('aria-expanded',open?'true':'false');
+    feed.setAttribute('aria-hidden',open?'false':'true');
+  }
+  function open(){ place(); set(true); document.addEventListener('keydown',onKey);
+    window.addEventListener('scroll',close); window.addEventListener('resize',close); }
+  function close(){ set(false); document.removeEventListener('keydown',onKey);
+    window.removeEventListener('scroll',close); window.removeEventListener('resize',close); }
+  function onKey(e){ if(e.key==='Escape'||e.key==='Esc') close(); }
+  if(btn&&feed){
+    btn.addEventListener('click',function(){ feed.classList.contains('af-open')?close():open(); });
+    if(x) x.addEventListener('click',close);
+    if(scrim) scrim.addEventListener('click',close);
+  }
   var fil=document.querySelectorAll('.aff'), items=document.querySelectorAll('.af-item');
   fil.forEach(function(b){b.addEventListener('click',function(){
     fil.forEach(function(x){x.classList.remove('active')}); b.classList.add('active');
