@@ -28,7 +28,7 @@ import logging
 import numpy as np
 import pandas as pd
 
-from engine.validation import top_correlated_pairs
+from engine.validation import benjamini_hochberg, newey_west_tstat, top_correlated_pairs
 from lib import config, store
 
 log = logging.getLogger(__name__)
@@ -47,7 +47,10 @@ DEFAULT_MARKETS = {
 
 def _cfg() -> dict:
     base = {"window_d": 63, "ar_lookback_d": 252 * 5, "concentrated_pctile": 0.80,
-            "diversified_pctile": 0.40, "loading_thresh": 0.40}
+            "diversified_pctile": 0.40, "loading_thresh": 0.40,
+            # --- lead/lag transmission gauge ---
+            "ll_window_d": 252, "ll_lags": [1, 2, 3, 5, 10], "ll_hac_lags": 10,
+            "ll_alpha": 0.10, "ll_min_abs_r": 0.06, "ll_top": 8}
     return {**base, **(config.load().get("engine", {}).get("cross_asset", {}) or {})}
 
 
@@ -166,3 +169,135 @@ def snapshot() -> dict:
                      "drawdowns. Daily closes across US/Asia/24-7 crypto carry a timezone "
                      "lead/lag — a coarse regime gauge, not a hedge ratio."),
     }
+
+
+def leadlag_pairs(rets: pd.DataFrame, lags, window: int, hac_lags: int = 10,
+                  alpha: float = 0.10) -> list[dict]:
+    """HAC-gated lead/lag cross-correlations for every ORDERED market pair.
+
+    For leader L and follower F at lag k>=1, the daily series
+
+        prod_t = z_F(t) * z_L(t-k)
+
+    has mean ~= corr(F_t, L_{t-k}): does the leader's PAST move predict the
+    follower's present? Its Newey-West (HAC) t-stat tests mean != 0 while
+    correcting for the volatility-clustering autocorrelation that would otherwise
+    overstate significance, and a Benjamini-Hochberg pass across the whole
+    (pair x lag) panel controls the false-discovery rate from screening many
+    pairs. z-scores are taken over the window so each mean is a standardized,
+    correlation-like quantity comparable across pairs.
+    """
+    r = rets.dropna()
+    lags = [int(k) for k in lags if int(k) >= 1]
+    if r.shape[1] < 3 or not lags:
+        return []
+    if len(r) > window:
+        r = r.tail(window)
+    if len(r) < max(60, max(lags) + 40):
+        return []
+    Z = {}
+    for c in r.columns:
+        sd = float(r[c].std())
+        if sd and np.isfinite(sd) and sd > 0:
+            Z[c] = (r[c] - r[c].mean()) / sd
+    cols = list(Z.keys())
+    recs, pvals = [], {}
+    for L in cols:
+        for F in cols:
+            if L == F:
+                continue
+            for k in lags:
+                prod = (Z[F] * Z[L].shift(k)).dropna()       # z_F(t) * z_L(t-k)
+                if len(prod) < 30:
+                    continue
+                nw = newey_west_tstat(prod, lags=hac_lags)
+                if nw["t"] is None:
+                    continue
+                key = f"{L}>{F}@{k}"
+                pvals[key] = nw["p"]
+                recs.append({"leader": L, "follower": F, "lag": k,
+                             "r": round(float(prod.mean()), 3), "t": nw["t"],
+                             "p": nw["p"], "n": nw["n"], "_key": key})
+    bh = benjamini_hochberg(pvals, alpha=alpha)
+    for rec in recs:
+        q = bh.get(rec.pop("_key"), {})
+        rec["q"] = q.get("q")
+        rec["sig"] = bool(q.get("reject"))
+    return recs
+
+
+def leadlag_snapshot() -> dict:
+    """Which asset is leading the others right now, by how many days, with what
+    confidence — a DESCRIPTIVE transmission/regime gauge, never a hedge ratio.
+
+    Daily lead/lag is unstable and inflates t-stats on overlapping windows, so
+    every link is HAC-corrected and FDR-gated, a stability check re-tests the
+    prior window, and the honest default verdict is "contemporaneous" (no pair
+    survives). The one structural link we expect is the timezone one: the US
+    close leads the next Asia session by a day.
+    """
+    c = _cfg()
+    rets = returns_frame()
+    window, lags = int(c["ll_window_d"]), c["ll_lags"]
+    min_r, hac, alpha = float(c["ll_min_abs_r"]), int(c["ll_hac_lags"]), float(c["ll_alpha"])
+
+    if rets.empty:
+        return {"verdict": "unknown", "headline": "fewer than 3 markets have data"}
+    aligned = rets.dropna()
+    if len(aligned) < window + max(int(k) for k in lags) + 5:
+        return {"verdict": "unknown", "headline": "insufficient overlapping history",
+                "markets": list(rets.columns)}
+
+    recs = leadlag_pairs(rets, lags, window, hac_lags=hac, alpha=alpha)
+    sig = sorted([x for x in recs if x["sig"] and abs(x["r"]) >= min_r],
+                 key=lambda x: -abs(x["t"]))
+
+    base = {"asof": str(aligned.index[-1].date()), "window_d": window, "lags": lags,
+            "markets": list(aligned.columns), "n_tested": len(recs), "n_significant": len(sig),
+            "evidence": ("Lead/lag = mean of z_follower(t)·z_leader(t−k), Newey-West (HAC) "
+                         "t-stat, Benjamini-Hochberg FDR across all ordered pairs×lags. Daily "
+                         "lead/lag is noisy and partly timezone-driven (the US closes before "
+                         "Asia opens) — a transmission/regime gauge, NOT a tradeable hedge ratio.")}
+
+    if not sig:
+        return {**base, "verdict": "contemporaneous", "links": [], "lead_asset": None,
+                "headline": (f"No stable cross-asset lead over the last {window}d — moves are "
+                             "broadly contemporaneous at daily frequency (no pair survives "
+                             "HAC + FDR).")}
+
+    score: dict[str, list[str]] = {}
+    for x in sig:
+        score.setdefault(x["leader"], []).append(x["follower"])
+    lead = max(score.items(), key=lambda kv: len(kv[1]))
+    lead_asset = {"name": lead[0], "n_followers": len(set(lead[1])),
+                  "followers": sorted(set(lead[1]))}
+
+    # stability: re-test the PRIOR window — does the top link keep its sign and
+    # clear conventional significance (|HAC t|>=2)? (A softer, fairer bar than the
+    # full-panel FDR, which over-penalises a single-lag re-test.)
+    top = sig[0]
+    held, prior_t = None, None
+    if len(aligned) >= 2 * window:
+        prior = aligned.iloc[-(2 * window):-window]
+        pr = leadlag_pairs(prior, [top["lag"]], len(prior), hac_lags=hac, alpha=alpha)
+        m = next((x for x in pr if x["leader"] == top["leader"]
+                  and x["follower"] == top["follower"]), None)
+        if m and m["t"] is not None:
+            prior_t = m["t"]
+            held = bool(np.sign(m["r"]) == np.sign(top["r"]) and abs(m["t"]) >= 2.0)
+    stable = held is True
+
+    lag_word = "1 day" if top["lag"] == 1 else f"{top['lag']} days"
+    head = (f"{top['leader']} is leading {top['follower']} by ~{lag_word} "
+            f"(r={top['r']:+.2f}, HAC t={top['t']:+.1f}, FDR q={top['q']}). ")
+    if lead_asset["n_followers"] >= 2:
+        head += f"{lead_asset['name']} leads {lead_asset['n_followers']} markets. "
+    head += ("Held sign+significance in the prior window."
+             if stable else "Unstable across the prior window — treat as tentative.")
+
+    return {**base, "verdict": "lead" if stable else "weak_lead", "headline": head,
+            "links": [{k: x[k] for k in ("leader", "follower", "lag", "r", "t", "q")}
+                      for x in sig[: int(c["ll_top"])]],
+            "lead_asset": lead_asset,
+            "stability": {"top_link": f"{top['leader']}→{top['follower']}@{top['lag']}d",
+                          "held_prior_window": held, "prior_t": prior_t}}

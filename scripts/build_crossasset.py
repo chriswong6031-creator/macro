@@ -67,6 +67,16 @@ def main() -> int:
         log.warning("funding-stress snapshot failed: %s", e)
         funding = None
 
+    # cross-asset lead/lag transmission read (additive leaf; HAC + FDR gated,
+    # validated DISPLAY-only by scripts/cross_asset_leadlag_phase0.py — a regime
+    # gauge, not a hedge ratio). None if <3 markets / too little overlap.
+    try:
+        from engine import cross_asset
+        leadlag = cross_asset.leadlag_snapshot()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("lead/lag snapshot failed: %s", e)
+        leadlag = None
+
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     from engine.i18n import td, tr
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
@@ -75,6 +85,7 @@ def main() -> int:
         as_of=snap.get("asof"), built=built, regime=snap.get("regime"),
         breadth=snap.get("breadth"), trend=snap.get("trend"), ratios=snap.get("ratios"),
         carry=snap.get("carry"), correlation=snap.get("correlation"), note=snap.get("note"),
+        leadlag=leadlag,
         liquidity=liquidity, liq_spark=(_sparkline(liquidity["spark"]) if liquidity else ""),
         funding=funding, fund_spark=(_sparkline(funding["spark"]) if funding else ""))
     site = config.ROOT / config.load()["storage"]["site_dir"]
