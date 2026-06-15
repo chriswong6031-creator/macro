@@ -1444,6 +1444,7 @@
     {% set FE = fear_euphoria %}
     {% set DL = latest.dislocation %}
     {% set FCAP = (latest.conditions or {}).capitulation %}
+    {% set FCOMP = (latest.conditions or {}).complacency %}
     {% set _bandzh = {'Panic':'恐慌','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Euphoria':'欣喜'} %}
     <div class="grid">
 
@@ -1507,6 +1508,33 @@
           <b style="float:right">{{ FCAP.score }}/3 {{ t('signals', '信号') }}</b></div>
         {% if FCAP.signals_firing %}<div class="muted sm">{{ FCAP.signals_firing | join(' · ') }}</div>{% endif %}
         {% if FCAP.measured_bounce_pct is not none %}<div class="muted sm">{{ t('measured bounce', '实测反弹') }} {{ '%+.1f'|format(FCAP.measured_bounce_pct) }}% ({{ FCAP.measured_hit_pct }}% {{ t('hit', '命中') }})</div>{% endif %}
+        {% endif %}
+
+        {# Complacency / hidden-fragility — the euphoria-side MIRROR of the
+           capitulation block above. Display-only conjunction (calm AND weak),
+           neutral styling, never scored. #}
+        {% if FCOMP and FCOMP.state %}
+        {% set _cl = [] %}
+        {% if FCOMP.vix_low %}{% set _ = _cl.append(t('VIX low', 'VIX 偏低')) %}{% endif %}
+        {% if FCOMP.contango %}{% set _ = _cl.append(t('steep contango', '陡峭正向')) %}{% endif %}
+        {% set _fl = [] %}
+        {% if FCOMP.breadth_div %}{% set _ = _fl.append(t('breadth not confirming', '广度未确认')) %}{% endif %}
+        {% if FCOMP.credit_widen %}{% set _ = _fl.append(t('HY credit widening', '高收益走阔')) %}{% endif %}
+        <div class="kv" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line)">{{ t('Complacency', '自满') }}
+          {{ help("The euphoria-side MIRROR of the capitulation gauge. Capitulation marks extreme fear (a measured bounce); this marks the opposite tail — a CALM surface (VIX in the bottom quartile of its 2-year range, a steep-contango term structure) sitting over WEAKENING internals (the index near its 1-year high while fewer stocks hold their 200-day average, and high-yield credit quietly widening). 'Hidden fragility' fires ONLY on the conjunction — calm AND weak together. It is NOT a timing signal and is never scored: a low VIX is persistent and roughly neutral for forward returns, and the fragility only bites when a catalyst arrives. Context for position-sizing humility, not a sell.", "投降指标的欣喜一侧镜像。投降标记极端恐惧（实测反弹）；本指标标记相反一端 — 平静的表象（VIX 处于两年区间最低四分位、陡峭的正向期限结构）叠加走弱的内部结构（指数接近一年高点，但守住 200 日均线的个股越来越少，且高收益信用悄然走阔）。'隐性脆弱'仅在两者同时出现时触发 — 又平静又虚弱。它不是择时信号，也从不参与评分：低 VIX 具有持续性、对未来收益大致中性，脆弱只有催化剂到来时才发作。它用于仓位上的谦逊，而非卖出建议。") }}
+          <b style="float:right">{% if FCOMP.state=='hidden_fragility' %}⚠ {{ t('hidden fragility', '隐性脆弱') }}{% elif FCOMP.state=='watch' %}{{ t('watch', '留意') }}{% elif FCOMP.state=='calm' %}{{ t('calm', '平静') }}{% else %}{{ t('neutral', '中性') }}{% endif %}</b></div>
+        {% if FCOMP.warning %}
+        <div class="muted sm">{{ _cl|join(' · ') }} <span style="opacity:.55">{{ t('over', '叠加') }}</span> {{ _fl|join(' · ') }}</div>
+        {% elif FCOMP.state=='calm' %}
+        <div class="muted sm">{{ _cl|join(' · ') if _cl else t('calm surface', '表象平静') }} · {{ t('internals confirming', '内部确认') }}</div>
+        {% endif %}
+        <div class="muted sm" style="margin-top:1px">
+          {%- if FCOMP.vix_pctile is not none %}VIX {{ (FCOMP.vix_pctile*100)|round|int }}%ile{% endif %}
+          {%- if FCOMP.vix_term is not none %} · vix/3m {{ '%.2f'|format(FCOMP.vix_term) }}{% endif %}
+          {%- if FCOMP.breadth_above200_pctile is not none %} · %&gt;200dma {{ (FCOMP.breadth_above200_pctile*100)|round|int }}%ile{% endif %}
+          {%- if FCOMP.hy_oas_chg_21d_bp is not none %} · HY {{ '%+.0f'|format(FCOMP.hy_oas_chg_21d_bp) }}bp/mo{% endif %}
+        </div>
+        <div class="muted sm" style="margin-top:2px">{{ t('Display-only mirror of capitulation — never scored.', '投降指标的纯展示镜像 — 从不评分。') }}</div>
         {% endif %}
 
         {% if latest.cross_asset and latest.cross_asset.get('absorption_ratio') is not none %}
