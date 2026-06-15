@@ -25,12 +25,13 @@
   --green:{{C.green}}; --grid:{{C.grid}}; --card:{{C.card}}; --bg:{{C.bg}};
 }
 *{box-sizing:border-box}
+html{overflow-x:hidden}
 html:not([data-lang="zh"]) .l-zh{display:none}
 html[data-lang="zh"] .l-en{display:none}
 html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB",
   "Microsoft YaHei","Noto Sans CJK SC","Microsoft JhengHei","Heiti SC",Inter,sans-serif}
 body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;
-  font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 a{color:var(--blue);text-decoration:none}
 .wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
 .topbar{display:flex;align-items:center;justify-content:space-between;
@@ -78,10 +79,11 @@ html[data-theme="dark"] .theme-switch{background:#222732}
 html[data-theme="dark"] .theme-switch .knob{transform:translateX(0);background:#e8c15a}
 html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 .grid{display:grid;gap:18px}
+.grid>*{min-width:0}
 .cols-2{grid-template-columns:1.1fr .9fr} .cols-3{grid-template-columns:repeat(3,1fr)}
 .cols-4{grid-template-columns:repeat(4,1fr)}
 @media(max-width:900px){.cols-2,.cols-3,.cols-4{grid-template-columns:1fr}}
-.card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:22px}
+.card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:22px;min-width:0}
 .card h2{margin:0 0 4px;font-size:13px;font-weight:700;color:var(--muted);
   text-transform:uppercase;letter-spacing:.04em}
 .card h3{margin:0 0 12px;font-size:18px;font-weight:700;color:var(--ink)}
@@ -184,6 +186,10 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 .fbar .ff.pos{background:var(--green)} .fbar .ff.neg{background:var(--red)}
 .frow .fw{font-size:11px;color:var(--faint);text-align:right;font-weight:600}
 @media(max-width:600px){.frow{grid-template-columns:120px 1fr 60px}}
+@media(max-width:600px){
+  .js-plotly-plot,.plot-container,.svg-container{max-width:100%!important;overflow:hidden!important}
+  .main-svg{max-width:100%!important}
+}
 /* alert timeline */
 .tl-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
 .tlf{padding:6px 14px;border-radius:9px;background:var(--grid);color:var(--muted);font-weight:700;font-size:13px;cursor:pointer;border:none}
