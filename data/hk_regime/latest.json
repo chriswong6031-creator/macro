@@ -20,42 +20,42 @@
   "contradicting": [
     "growth_breadth_direction"
   ],
-  "global_score": 0.115,
-  "risk_state": "Neutral",
+  "global_score": 0.423,
+  "risk_state": "Risk-on",
   "peg_state": "weak-side (outflow)",
   "peg_distance": 0.843,
   "global_snapshot": {
-    "score": 0.115,
-    "state": "Neutral",
+    "score": 0.423,
+    "state": "Risk-on",
     "factors": [
       {
         "key": "dxy",
         "label": "US Dollar (DXY)",
-        "z": 0.41,
+        "z": 0.45,
         "sign": -1,
         "risk": "off",
-        "level": 99.532
+        "level": 99.585
       },
       {
         "key": "vix",
         "label": "Volatility (VIX)",
-        "z": -0.17,
+        "z": -0.3,
         "sign": -1,
         "risk": "neutral",
-        "level": 16.84
+        "level": 16.06
       },
       {
         "key": "spy",
         "label": "S&P 500",
-        "z": -0.2,
+        "z": 0.52,
         "sign": 1.0,
-        "risk": "neutral",
-        "level": 741.75
+        "risk": "on",
+        "level": 756.19
       },
       {
         "key": "copper_gold",
         "label": "Copper / Gold",
-        "z": 1.12,
+        "z": 1.14,
         "sign": 1.0,
         "risk": "on",
         "level": 0.0015
@@ -63,18 +63,18 @@
       {
         "key": "usdcny",
         "label": "USD / CNY",
-        "z": -0.97,
+        "z": -0.98,
         "sign": -1,
         "risk": "on",
-        "level": 6.7572
+        "level": 6.7565
       },
       {
         "key": "eem",
         "label": "EM equity (EEM)",
-        "z": 0.08,
+        "z": 0.74,
         "sign": 1.0,
-        "risk": "neutral",
-        "level": 67.88
+        "risk": "on",
+        "level": 69.725
       },
       {
         "key": "vhsi",
