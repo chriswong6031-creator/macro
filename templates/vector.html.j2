@@ -787,6 +787,39 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
     </div>
   </div>
 
+  <!-- ===================== CRYPTO BREADTH ===================== -->
+  {% if breadth and breadth.bucket and breadth.bucket != '—' %}
+  <div class="section-title">{{ t('Crypto Breadth · risk appetite across the curve', '加密广度 · 风险曲线上的偏好') }}</div>
+  <div class="grid cols-2">
+    <div class="card">
+      {% set bkt = breadth.bucket %}
+      {% set bk_color = {'Alt season':'var(--blue)','BTC season':'var(--amber)','Mixed':'var(--muted)'} %}
+      {% set bk_zh = {'Alt season':'山寨季','BTC season':'BTC 季','Mixed':'混合'} %}
+      <h3>{{ t('Breadth regime', '广度状态') }}
+        <b style="color:{{ bk_color.get(bkt,'var(--muted)') }}"> · {{ t(bkt, bk_zh.get(bkt, bkt)) }}</b>
+        {% if breadth.score is not none %}<span class="faint" style="font-size:13px"> ({{ breadth.score|int }}/100)</span>{% endif %}</h3>
+      {% if breadth.score is not none %}
+      <div class="mini"><div class="lab"><span>{{ t('Alt-season score (ETH/BTC + dominance)','山寨季评分（ETH/BTC + 占比）') }}</span><span><b>{{ breadth.score|int }}/100</b> <span class="faint">{{ t('0 = BTC-only · 100 = broad','0 = 仅 BTC · 100 = 广泛') }}</span></span></div>
+        <div class="bar"><div class="fill" style="width:{{ breadth.score|int }}%"></div></div></div>{% endif %}
+      {% if breadth.ethbtc is not none %}
+      {% set es_color = {'alt':'var(--blue)','btc':'var(--amber)','mixed':'var(--muted)'} %}
+      <div class="mini"><div class="lab"><span>{{ t('ETH/BTC (alt-cycle core)','ETH/BTC（山寨周期核心）') }}</span><span><b style="color:{{ es_color.get(breadth.ethbtc_season,'var(--ink)') }}">{{ '%.4f'|format(breadth.ethbtc) }}</b>{% if breadth.ethbtc_slope is not none %} <span class="faint" style="color:{{ 'var(--blue)' if breadth.ethbtc_slope>=0 else 'var(--r3)' }}">({{ '%+0.1f'|format(breadth.ethbtc_slope) }}% 8w)</span>{% endif %}{% if breadth.ethbtc_pctile is not none %} <span class="faint">· {{ breadth.ethbtc_pctile|int }}%ile</span>{% endif %}</span></div></div>{% endif %}
+      {% if breadth.soleth is not none %}
+      {% set st_color = {'rising':'var(--blue)','falling':'var(--r3)','flat':'var(--muted)'} %}
+      {% set st_lab = {'rising':['rising — high-beta bid','上升 — 高贝塔买盘'],'falling':['falling — risk-off','下降 — 避险'],'flat':['flat','走平']} %}
+      <div class="mini"><div class="lab"><span>{{ t('SOL/ETH (high-beta appetite)','SOL/ETH（高贝塔偏好）') }} <span class="faint">{{ t('NEW','新增') }}</span></span><span><b>{{ '%.4f'|format(breadth.soleth) }}</b>{% if breadth.soleth_trend %} <span class="faint" style="color:{{ st_color.get(breadth.soleth_trend,'var(--muted)') }}">· {{ t(st_lab.get(breadth.soleth_trend,['—'])[0], st_lab.get(breadth.soleth_trend,['—','—'])[1]) }}</span>{% endif %}{% if breadth.soleth_pctile is not none %} <span class="faint">· {{ breadth.soleth_pctile|int }}%ile</span>{% endif %}</span></div></div>{% endif %}
+      {% if breadth.dom is not none %}
+      <div class="mini"><div class="lab"><span>{{ t('BTC dominance','BTC 占比') }}</span><span><b>{{ '%.1f%%'|format(breadth.dom) }}</b>{% if breadth.ethdom is not none %} <span class="faint">· ETH {{ '%.1f%%'|format(breadth.ethdom) }}</span>{% endif %}</span></div></div>{% endif %}
+    </div>
+    <div class="card">
+      <h3>{{ t('What breadth tells you', '广度说明什么') }}</h3>
+      <div class="sub">{{ t('Breadth = how far OUT THE RISK CURVE capital is willing to go. BTC-only leadership (high dominance, falling ETH/BTC & SOL/ETH) = risk NARROWING — the late/defensive crypto tape. Alts and high-beta (SOL/ETH) participating = risk BROADENING — the speculative, risk-on tape.', '广度 = 资金愿意在风险曲线上走多远。仅 BTC 领先（占比高、ETH/BTC 与 SOL/ETH 下行）= 风险收窄 — 防御性的后期行情。山寨与高贝塔（SOL/ETH）参与 = 风险扩张 — 投机性的风险偏好行情。') }}</div>
+      <div class="sub faint" style="margin-top:10px;font-size:12px">{{ t('DISPLAY-ONLY context, not a timing signal. The ETH/BTC alt-cycle has only ~1.5–2 clean cycles of history (low calibration confidence) and breadth is largely COINCIDENT with the tape — it confirms the regime you are in, it does not lead it. The alt-season score is a labelled judgment blend, not an optimized factor.', '仅作背景展示，并非择时信号。ETH/BTC 山寨周期仅有约 1.5–2 个完整周期（校准置信度低），且广度与行情基本同步 — 它确认你所处的状态，而非领先它。山寨季评分为带标注的判断式混合，并非优化因子。') }}</div>
+      <div class="sub faint" style="margin-top:8px;font-size:12px">{{ t('SOL/ETH is the high-beta-appetite proxy: SOL leads ETH up in risk-on rotations and bleeds first when speculation fades. Read it alongside ETH/BTC, not alone.', 'SOL/ETH 为高贝塔偏好代理：风险偏好轮动时 SOL 领先 ETH 上涨，投机退潮时最先回落。应与 ETH/BTC 结合解读，而非单独使用。') }}</div>
+    </div>
+  </div>
+  {% endif %}
+
   <!-- ===================== ON-CHAIN DEMAND ===================== -->
   <div class="section-title">{{ t('On-Chain Demand · CryptoQuant-style (free reproduction)', '链上需求 · CryptoQuant 风格（免费复刻）') }}</div>
   <div class="grid cols-2">

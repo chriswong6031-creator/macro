@@ -74,3 +74,53 @@ def alloc_grid(regime: str | None, season_bucket: str | None) -> dict:
     btc, eth, alts, cash = ALLOC_GRID[reg][sk]
     return {"btc": btc, "eth": eth, "alts": alts, "cash": cash,
             "regime_key": reg, "season_key": sk}
+
+
+def beta_ratio(numer: pd.Series | None, denom: pd.Series | None, cfg: dict) -> dict:
+    """Generic high-beta crypto ratio (e.g. SOL/ETH) — a breadth / risk-appetite
+    read of where capital sits ON THE RISK CURVE. A RISING ratio = rotation OUT to
+    higher-beta alts (risk-on, broad breadth); FALLING = retreat toward the majors
+    (risk narrowing). DISPLAY-ONLY context with the same honest framing as the
+    ETH/BTC cycle — a coincident regime tell, not a calibrated timing signal."""
+    if numer is None or denom is None:
+        return {}
+    ratio = (numer.reindex(denom.index).ffill() / denom).dropna()
+    if len(ratio) < 120:
+        return {}
+    ma_d = cfg.get("soleth_ma_d", 100)
+    slope_d = cfg.get("soleth_slope_d", cfg["slope_window_d"])
+    pctile_d = cfg.get("soleth_pctile_d", 730)
+    level = float(ratio.iloc[-1])
+    ma = ratio.rolling(ma_d, min_periods=min(ma_d, 60)).mean()
+    above_ma = bool(level > ma.iloc[-1]) if pd.notna(ma.iloc[-1]) else None
+    slope = float(ratio.iloc[-1] / ratio.iloc[-slope_d] - 1) if len(ratio) > slope_d else None
+    pct = ratio.rolling(pctile_d, min_periods=120).rank(pct=True).iloc[-1]
+    trend = ("rising" if (slope is not None and slope > 0.02 and above_ma) else
+             ("falling" if (slope is not None and slope < -0.02 and above_ma is False) else "flat"))
+    return {"ratio": ratio, "ma": ma, "level": level, "above_ma": above_ma,
+            "slope": slope, "pctile": round(100 * float(pct), 0) if pd.notna(pct) else None,
+            "trend": trend}
+
+
+def breadth_view(eb: dict, se: dict, dom: float | None, ethdom: float | None,
+                 score, bucket) -> dict:
+    """Consolidate the scattered crypto-breadth reads into ONE display dict for the
+    Vector overview: the alt-season regime (ETH/BTC + dominance, the existing 0-100
+    judgment score) as the headline, plus the ETH/BTC cycle level and the NEW
+    SOL/ETH high-beta-appetite line. All DISPLAY-ONLY — breadth tells you whether
+    risk is broadening (alts participating) or narrowing (BTC-only), not when to act."""
+    eb, se = eb or {}, se or {}
+    return {
+        "score": score, "bucket": bucket,
+        "ethbtc": round(eb["level"], 4) if eb.get("level") is not None else None,
+        "ethbtc_pctile": eb.get("pctile"),
+        "ethbtc_slope": round(100 * eb["slope"], 1) if eb.get("slope") is not None else None,
+        "ethbtc_above_ma": eb.get("above_ma"),
+        "ethbtc_season": eb.get("season"),
+        "soleth": round(se["level"], 4) if se.get("level") is not None else None,
+        "soleth_pctile": se.get("pctile"),
+        "soleth_slope": round(100 * se["slope"], 1) if se.get("slope") is not None else None,
+        "soleth_trend": se.get("trend"),
+        "dom": round(dom, 1) if dom is not None else None,
+        "ethdom": round(ethdom, 1) if ethdom is not None else None,
+    }

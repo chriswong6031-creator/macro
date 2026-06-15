@@ -1993,6 +1993,9 @@ vector:
     pctile_lookback_d: 1095       # 3y ETH/BTC percentile
     btc_season_max: 25            # alt-season score <25 = BTC season
     alt_season_min: 75            # >75 = alt season
+    soleth_ma_d: 100              # ~14-week SOL/ETH moving average (high-beta rotation)
+    soleth_slope_d: 56            # 8-week SOL/ETH slope
+    soleth_pctile_d: 730          # 2y SOL/ETH percentile (SOL-USD ~2020->)
 
   calibration:
     start_date: "2015-01-01"      # price-signal backtests (Yahoo BTC 2014-09->)

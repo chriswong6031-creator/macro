@@ -1601,6 +1601,24 @@ def main() -> int:
         log.warning("catalyst window failed (%s)", e)
         catalyst = None
 
+    # Crypto breadth / risk-appetite — consolidate the scattered ETH/BTC + dominance
+    # reads (previously only on the allocation deep-dive) onto the overview, plus the
+    # NEW SOL/ETH high-beta-appetite line. DISPLAY-ONLY; must never break the build.
+    try:
+        from engine import alt_cycle
+        _acfg = config.load()["vector"]["alt_cycle"]
+        _eth = _series("yahoo", "ETH-USD")
+        _eb = alt_cycle.ethbtc_signal(_eth, close, _acfg)
+        _se = alt_cycle.beta_ratio(_series("yahoo", "SOL-USD"), _eth, _acfg)
+        _cg = store.read("coingecko", "global_market")
+        _dom = float(_cg["btc_dominance_pct"].iloc[-1]) if _cg is not None and not _cg.empty else None
+        _ethdom = float(_cg["eth_dominance_pct"].iloc[-1]) if _cg is not None and not _cg.empty else None
+        _bscore, _bbucket = alt_cycle.alt_season_score(_eb, _dom, _acfg)
+        breadth = alt_cycle.breadth_view(_eb, _se, _dom, _ethdom, _bscore, _bbucket)
+    except Exception as e:  # noqa: BLE001 — breadth card is optional context
+        log.warning("crypto breadth view failed (%s)", e)
+        breadth = {}
+
     vm = {
         "as_of": sig.index.max().strftime("%b %d, %Y"),
         "built": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
@@ -1774,6 +1792,7 @@ def main() -> int:
             "vol": round(100 * last["vol_pctile"]) if pd.notna(last["vol_pctile"]) else 50,
             "flow": round(100 * last["flow_pctile"]) if pd.notna(last["flow_pctile"]) else 50,
         },
+        "breadth": breadth,
         "env": envd,
         "scn": scnd,
         "sizing": sizing,
