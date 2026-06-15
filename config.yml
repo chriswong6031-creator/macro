@@ -2210,6 +2210,7 @@ china:
       "588000.SS": STAR 50
     fx:
       "CNY=X": USDCNY
+      "CNH=F": USDCNH               # offshore CNH futures (2013->) — capital-flow / fear leg (onshore CNY=X is pinned)
     sector_etfs:                    # ticker: [plain name, representative-constituent TradingView symbol]
       "512800.SS": [Banks, "SSE:601398"]
       "512880.SS": [Securities & Brokers, "SSE:600030"]
@@ -2237,7 +2238,13 @@ china:
     referer: https://data.eastmoney.com/
     retries: 3
     page_size: 600                  # monthly series ~ <300 rows of history
-    enabled: [pmi, cpi, ppi, money_supply, lpr, indpro, rmb_loan, fai, retail, customs, rrr]  # social_financing now via china_credit (mofcom legacy-SSL); bond_yield deferred (chinabond)
+    enabled: [pmi, cpi, ppi, money_supply, lpr, indpro, rmb_loan, fai, retail, customs, rrr, gdp, lpr_rate]  # social_financing now via china_credit (mofcom legacy-SSL); bond_yield deferred (chinabond). gdp + real lpr_rate added for the conditions overhaul
+
+  # -- Plane A sentiment: A-share option-implied vol "the China VIX" -----------
+  # 300ETF + 50ETF 30d implied vol via optbbs QVIX (keyless, 2015->). Single
+  # third-party host -> graceful-missing; engine never depends on it.
+  qvix:
+    series: ["qvix300", "qvix50"]
   # Stock Connect (沪深港通) flows: see collectors/china_connect.py (group `china_connect`,
   # RPT_MUTUAL_DEAL_HISTORY 006=southbound / 005=northbound). No tunables here — host +
   # leg codes live in that module. Replaced the old hsgt/push2his kamt.kline path.

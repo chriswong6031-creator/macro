@@ -74,6 +74,33 @@ def run() -> dict:
         latest["property"] = china_property.regime_context()
     except Exception as e:  # noqa: BLE001 — additive context, never break the engine
         log.warning("china property context failed: %s", e)
+    # "What's driving the tape" — deterministic cross-asset attribution (display-only,
+    # never gates the quad). Mirrors engine/run.py's market_drivers wiring.
+    try:
+        from engine.china_market_drivers import append_log, snapshot
+        latest["market_drivers"] = snapshot()
+        append_log(latest["market_drivers"])
+    except Exception as e:  # noqa: BLE001 — additive display leaf, never fatal
+        log.warning("china market-drivers layer failed: %s", e)
+        latest["market_drivers"] = None
+    # RORO composite + Fear↔Euphoria + uncalibrated recession/drawdown gauges
+    # (display-only context — never scored into china_axes/regime/playbook).
+    try:
+        from engine import china_conditions
+        latest["conditions"] = china_conditions.snapshot(f)
+        latest["fear_euphoria"] = china_conditions.fear_euphoria(f)
+    except Exception as e:  # noqa: BLE001 — additive display leaf, never fatal
+        log.warning("china conditions layer failed: %s", e)
+        latest["conditions"] = None
+        latest["fear_euphoria"] = None
+    # Fired alerts — display-only change detectors over today's engine output
+    # (mirrors engine/run.py's alerts wiring). Surfaced notifications, never scored.
+    try:
+        from engine.china_alerts import evaluate, log_and_dedup
+        latest["alerts"] = log_and_dedup(evaluate(f=f, regime=regime, latest=latest), asof)
+    except Exception as e:  # noqa: BLE001 — additive display leaf, never fatal
+        log.warning("china alerts layer failed: %s", e)
+        latest["alerts"] = []
     with open(p / "latest.json", "w") as fh:
         json.dump(latest, fh, indent=2, default=str)
     log.info("china regime %s (%s) conf=%.2f liq=%s cycle=%s",

@@ -266,6 +266,25 @@
   table.sortable th.sorted { color: var(--text); }
   table.sortable th.sorted .sarrow { opacity: .9; color: var(--link); }
   .foot { margin-top: 26px; color: var(--muted); font-size: 12px; text-align: center; line-height: 1.7; }
+  /* ---- fired alerts (ported from the US dashboard) -------------------------- */
+  .alert { display: block; padding: 10px 13px; border-radius: 8px; margin: 8px 0;
+           background: var(--panel2); border-left: 3px solid var(--muted);
+           color: var(--text); transition: transform .12s, box-shadow .12s; }
+  a.alert:hover { transform: translateX(2px); box-shadow: 0 3px 14px rgba(0,0,0,.22); }
+  .alert-high { border-left-color: var(--down); }
+  .alert-warn { border-left-color: var(--warn); }
+  .alert-info { border-left-color: var(--info); }
+  .alert-head { display: flex; align-items: baseline; gap: 8px; }
+  .alert-ico { font-size: 15px; flex: none; line-height: 1; }
+  .alert-head b { font-size: 13.5px; color: var(--text); }
+  .alert-jump { margin-left: auto; font-size: 11px; font-weight: 700;
+                color: var(--link); flex: none; white-space: nowrap; }
+  .alert-detail { margin: 6px 0 0; font-size: 12.5px; color: var(--text);
+                  font-variant-numeric: tabular-nums; }
+  .alert-what { margin: 6px 0 0; padding-top: 6px; border-top: 1px solid var(--line);
+                font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .alert-edge { margin: 5px 0 0; font-size: 12px; color: var(--text); line-height: 1.45; }
+  .alert-edge b { color: var(--muted); font-weight: 600; }
   /* major-index health strip (macro page) */
   .idx-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
   @media (max-width: 760px) { .idx-grid { grid-template-columns: 1fr; } }
@@ -355,7 +374,7 @@
 
   {% if mode != 'stocks' %}
   <!-- regime hero -->
-  <div class="panel span8">
+  <div class="panel span8" id="regime-hero">
     <h1>{{ t('China A-Share Regime', '中国A股周期') }}</h1>
     <h2 style="margin-top:1px">{{ t('Market Regime', '市场周期') }} · {{ latest.date }}</h2>
     <div class="hero">
@@ -390,6 +409,28 @@
     {% if latest.confirming %}<p class="note" style="margin:10px 0 0">{{ t('Confirming', '确认') }}: {{ latest.confirming|join(', ') }}{% if latest.contradicting %} · {{ t('Contradicting', '矛盾') }}: {{ latest.contradicting|join(', ') }}{% endif %}</p>{% endif %}
   </div>
 
+  <!-- ===================== FIRED ALERTS (today) ===================== -->
+  {% set ALERTS = latest.alerts %}
+  {% if ALERTS %}
+  <div class="panel span12" id="china-fired-alerts">
+    <h2>🚨 {{ t('Fired alerts (today)', '已触发警报（今日）') }}
+      {{ help("Alerts fire only when something CHANGES — a confidence drop, a crossing, a sign flip, a fresh policy event — never just because a level is high. They're rare by design; read every one. Click any alert to jump to the panel it came from. All display-only — alerts are surfaced notifications, never scored into the regime.", "警报只在某物发生变化时触发 — 置信度下降、出现交叉、符号翻转、新的政策事件 — 绝不仅因某个水平偏高而触发。它们刻意设计得稀少；每一条都要读。点击任意警报可跳转到其来源面板。全部仅展示 —— 警报是提示，从不计入区制评分。") }}
+    </h2>
+    {% for a in ALERTS %}
+      <a class="alert alert-{{ a.severity }}" {% if a.anchor %}href="#{{ a.anchor }}"{% endif %}>
+        <div class="alert-head">
+          <span class="alert-ico">{{ a.icon }}</span>
+          <b><span class="l-en">{{ a.plain_en }}</span><span class="l-zh">{{ a.plain_zh }}</span></b>
+          {% if a.anchor %}<span class="alert-jump">{{ t('View panel ↓', '查看面板 ↓') }}</span>{% endif %}
+        </div>
+        <div class="alert-detail"><span class="l-en">{{ a.message }}</span><span class="l-zh">{{ a.message_zh or a.message }}</span></div>
+        {% if a.what_en %}<div class="alert-what"><span class="l-en">{{ a.what_en }}</span><span class="l-zh">{{ a.what_zh or a.what_en }}</span></div>{% endif %}
+        {% if a.edge_en %}<div class="alert-edge"><b>{{ t('Conviction:', '可信度：') }}</b> <span class="l-en">{{ a.edge_en }}</span><span class="l-zh">{{ a.edge_zh or a.edge_en }}</span></div>{% endif %}
+      </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
   <!-- benchmark cycle card -->
   {% if benchmark %}
   <div class="panel span4">
@@ -423,6 +464,146 @@
     </div>
     <p class="note" style="margin:10px 0 0;text-transform:none">{{ t('Looking for individual A-shares?', '想找个股？') }}
       <a href="china_stocks.html" style="color:var(--link);font-weight:600">→ {{ t('A-share stock dashboard', 'A股个股看板') }}</a></p>
+  </div>
+  {% endif %}
+
+  <!-- ===================== DRAWDOWN & SLOWDOWN RISK (uncalibrated, display-only) ===================== -->
+  {% if latest.conditions and latest.conditions.recession and latest.conditions.recession.score is not none %}
+  {% set CO = latest.conditions %}
+  <div class="panel span12" id="china-risk">
+    <h2>{{ t('China drawdown & slowdown risk', '中国回撤与放缓风险') }}
+      <span class="note" style="text-transform:none">· {{ t('uncalibrated — display only', '未校准 — 仅展示') }}</span>
+      {{ help("Two China-native risk gauges, both 0–100 and UNCALIBRATED (no forward-return claim — A-shares mean-revert and China cycle history is short, so these are descriptive context, never scored into the regime). <b>Slowdown</b> blends the credit impulse (社融), PPI deflation, manufacturing PMI, the M1−M2 scissors, property breadth and GDP. <b>Drawdown risk</b> is the rank-percentile of stacked stress legs (slowdown, margin froth, a flat CGB curve at low weight since the PBoC pins the front end, the QVIX level and turnover mania).", "两个中国本土风险仪表，均为 0–100 且<b>未校准</b>（不含前瞻收益主张 —— A股均值回归且中国周期历史较短，故为描述性背景，从不计入区制评分）。<b>放缓</b>融合社融信用脉冲、PPI 通缩、制造业 PMI、M1−M2 剪刀差、房价宽度与 GDP。<b>回撤风险</b>是各压力腿（放缓、两融拥挤、低权重的 CGB 平坦曲线[央行锚定短端]、QVIX 水平与成交亢奋）的排名分位。") }}
+    </h2>
+    <div class="grid" style="gap:18px">
+      <div class="span6">
+        <div style="display:flex;align-items:baseline;gap:10px">
+          <span class="bignum {{ 'neg' if CO.recession.score>=60 else ('warn' if CO.recession.score>=40 else 'pos') }}">{{ CO.recession.score|round|int }}</span>
+          <span class="sub">{{ t('Slowdown score', '放缓评分') }} · {{ t(CO.recession.label, {'low':'低','elevated':'偏高','high':'高'}.get(CO.recession.label, CO.recession.label)) }}</span>
+        </div>
+        <div class="dial"><i style="left:{{ CO.recession.score }}%"></i></div>
+        <div class="dial-ends"><span>{{ t('expansion', '扩张') }}</span><span>{{ t('contraction', '收缩') }}</span></div>
+        <table style="margin-top:8px">
+          <tbody>
+          {% for lg in CO.recession.legs if lg.active %}
+          <tr><td class="l">{{ t(lg.label, lg.label_zh) }}</td>
+            <td>{{ '%.0f'|format(lg.points) if lg.points is not none else '—' }}</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        {% if CO.recession_html %}<div class="chart">{{ CO.recession_html | safe }}</div>{% endif %}
+      </div>
+      <div class="span6">
+        {% if CO.drawdown_risk and CO.drawdown_risk.score is not none %}
+        <div style="display:flex;align-items:baseline;gap:10px">
+          <span class="bignum {{ 'neg' if CO.drawdown_risk.score>=60 else ('warn' if CO.drawdown_risk.score>=40 else 'pos') }}">{{ CO.drawdown_risk.score|round|int }}</span>
+          <span class="sub">{{ t('Drawdown-risk percentile', '回撤风险分位') }} · {{ t(CO.drawdown_risk.band, {'calm':'平静','low':'低','elevated':'偏高','high':'高','fragile':'脆弱'}.get(CO.drawdown_risk.band, CO.drawdown_risk.band)) }}</span>
+        </div>
+        <div class="dial"><i style="left:{{ CO.drawdown_risk.score }}%"></i></div>
+        <div class="dial-ends"><span>{{ t('calm', '平静') }}</span><span>{{ t('fragile', '脆弱') }}</span></div>
+        {% if CO.drawdown_html %}<div class="chart">{{ CO.drawdown_html | safe }}</div>{% endif %}
+        {% endif %}
+      </div>
+    </div>
+    <p class="note" style="margin:8px 0 0;font-size:11px;text-transform:none">{{ t('Uncalibrated narrative gauges — China cycle history is short and regime-unstable, so these are descriptive context, never scored into the quad / axes / playbook.', '未校准的叙事仪表 —— 中国周期历史短且区制不稳，故为描述性背景，从不计入象限／轴／策略评分。') }}</p>
+  </div>
+  {% endif %}
+
+  <!-- ===================== WHAT'S DRIVING THE TAPE (market drivers, display-only) ===================== -->
+  {% if latest.market_drivers and latest.market_drivers.verdict not in [none, 'unknown'] %}
+  {% set MD = latest.market_drivers %}
+  <div class="panel span12" id="market-drivers">
+    <h2>{{ t("What's driving the A-share tape", 'A股市场驱动因素') }}
+      <span class="note" style="text-transform:none">· {{ t('past week', '过去一周') }}{% if MD.window_d %} · {{ MD.window_d }}d z{% endif %}</span>
+      {{ help("Deterministic cross-asset attribution — which macro <b>fingerprint</b> best explains the last week's moves. NO news feed: it z-scores China cross-asset legs (PBoC rates & SHIBOR, on/offshore yuan, M1/M2 & margin liquidity, the stimulus tape of CSI300/brokers/property/copper-rebar, PPI & commodities, AI-semis relative strength, southbound flow & A/H, and a QVIX/breadth risk-off washout) and attributes the day to the driver whose legs line up best. A regime READ, never a signal — it never gates the quad or any score.", "确定性的跨资产归因 —— 哪个宏观<b>指纹</b>最能解释过去一周的走势。无新闻源：它对中国跨资产分腿（央行利率与 SHIBOR、在/离岸人民币、M1/M2 与两融流动性、沪深300/券商/地产/铜螺纹的刺激行情、PPI 与商品、AI-半导体相对强度、南向资金与 A/H、以及 QVIX/宽度的风险厌恶出清）进行 z 标准化，并把当下归因于分腿最吻合的驱动。这是区制解读，而非信号 —— 从不决定象限或任何评分。") }}
+    </h2>
+    <div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:10px">
+      <span class="chip c-{{ 'info' if MD.verdict=='clear' else ('warn' if MD.verdict=='mixed' else 'muted') }}"><span class="l-en">{{ MD.verdict }}</span><span class="l-zh">{{ MD.verdict_zh }}</span></span>
+      <span style="font-size:18px;font-weight:800">{{ t(MD.primary_label, MD.primary_label_zh) }}</span>
+      <span class="sub">{{ t('confidence', '置信度') }} <span class="l-en">{{ MD.confidence }}</span><span class="l-zh">{{ MD.confidence_zh }}</span> · {{ t('agreement', '一致度') }} {{ (MD.agreement*100)|round|int }}%</span>
+    </div>
+    <p class="note" style="margin:8px 0 8px;text-transform:none"><span class="l-en">{{ MD.direction }}</span><span class="l-zh">{{ MD.direction_zh }}</span></p>
+    {% if MD.evidence_legs %}
+    <div style="display:flex;flex-direction:column;gap:5px;max-width:560px">
+      {% for lg in MD.evidence_legs %}
+      {% set w = (([lg.z|abs, 3]|min)/3*50)|round(1) %}
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="flex:0 0 160px;font-size:12.5px">{{ t(lg.en, lg.zh) }}</span>
+        <div style="flex:1;height:9px;border-radius:5px;background:var(--panel2);position:relative">
+          <i style="position:absolute;top:0;height:100%;border-radius:5px;{{ 'right:50%;background:var(--down)' if lg.z<0 else 'left:50%;background:var(--up)' }};width:{{ w }}%"></i>
+          <span style="position:absolute;left:50%;top:-2px;height:13px;width:1px;background:var(--muted)"></span>
+        </div>
+        <span class="sub" style="flex:0 0 48px;text-align:right">{{ '%+.1f'|format(lg.z) }}σ</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if MD.runner_up_label %}<p class="sub" style="margin:8px 0 0">{{ t('Runner-up', '次因') }}: {{ t(MD.runner_up_label, MD.runner_up_label_zh) }}</p>{% endif %}
+    <p class="note" style="margin:6px 0 0;font-size:11px;text-transform:none"><span class="l-en">{{ MD.note }}{% if MD.invalidation %} · {{ MD.invalidation }}{% endif %}</span><span class="l-zh">确定性的中国跨资产归因 —— 区制解读，而非信号；从不决定评分或象限。{% if MD.invalidation_zh %} · {{ MD.invalidation_zh }}{% endif %}</span></p>
+  </div>
+  {% endif %}
+
+  <!-- ===================== FEAR ↔ EUPHORIA + RORO (display-only) ===================== -->
+  {% if latest.fear_euphoria %}
+  {% set FE = latest.fear_euphoria %}
+  <div class="panel span12" id="fear-euphoria">
+    <h2>{{ t('🌡️ Fear ↔ Euphoria — A-share regime synthesis', '🌡️ 恐惧 ↔ 欣喜 — A股情绪综合') }}
+      <span class="note" style="text-transform:none">· RORO {{ '%+.2f'|format(FE.roro) }} ({{ td(FE.roro_state) }}){% if FE.warming_up %} · {{ t('history warming up', '历史预热中') }}{% endif %}</span>
+      {{ help("A 0–100 sentiment synthesis: the rolling-5y percentile of a China risk-on/risk-off (RORO) composite. The RORO is the equal-weight mean of causal-z legs — copper/gold, breadth, southbound smart-money, M1−M2 scissors and turnover (risk-ON), against QVIX, a weaker offshore yuan, margin froth and the A/H premium (risk-OFF). The cross-asset confirmation tally shows whether the legs agree or the tape is internally divergent. Display-only — never scored.", "0–100 的情绪综合：中国风险偏好（RORO）综合指标的滚动 5 年分位。RORO 是因果 z 分腿的等权平均 —— 铜/金、宽度、南向聪明钱、M1−M2 剪刀差与成交（偏多），对 QVIX、离岸人民币走弱、两融拥挤与 A/H 溢价（偏空）。跨资产确认计数显示各腿是否一致、或市场内部背离。仅展示 —— 从不评分。") }}
+    </h2>
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+      <span class="bignum">{{ FE.fe_score }}</span>
+      <span class="chip c-{{ 'down' if FE.fe_score>=75 else ('up' if FE.fe_score<=25 else 'muted') }}" style="font-size:15px">{{ t(FE.band, FE.band_zh) }}</span>
+      <span class="sub">{{ t('0 = Panic · 100 = Euphoria', '0＝恐慌 · 100＝欣喜') }}</span>
+    </div>
+    <div class="dial"><i style="left:{{ FE.fe_score }}%"></i></div>
+    <div class="dial-ends"><span>{{ t('Panic', '恐慌') }}</span><span>{{ t('Neutral', '中性') }}</span><span>{{ t('Euphoria', '欣喜') }}</span></div>
+    {% if FE.chart_html %}<div class="chart">{{ FE.chart_html | safe }}</div>{% endif %}
+    <h3>{{ t('Risk-on / risk-off legs (percentile)', '风险偏好分腿（分位）') }}</h3>
+    <div style="display:flex;flex-direction:column;gap:5px;max-width:600px">
+      {% for lg in FE.legs %}
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="flex:0 0 180px;font-size:12.5px">{{ t(lg.name_en, lg.name_zh) }}</span>
+        <div style="flex:1;height:9px;border-radius:5px;background:var(--panel2);position:relative">
+          <i style="position:absolute;top:0;left:0;height:100%;border-radius:5px;background:{{ 'var(--up)' if lg.lean=='risk-on' else ('var(--down)' if lg.lean=='risk-off' else 'var(--muted)') }};width:{{ lg.pct }}%"></i>
+        </div>
+        <span class="sub" style="flex:0 0 34px;text-align:right">{{ lg.pct }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% if FE.confirmation %}
+    <p class="note" style="margin:9px 0 0;text-transform:none">{{ t('Cross-asset confirmation', '跨资产确认') }}:
+      <b><span class="l-en">{{ FE.confirmation.verdict_en }}</span><span class="l-zh">{{ FE.confirmation.verdict_zh }}</span></b>
+      — {{ FE.confirmation.n_on }} {{ t('risk-on', '偏多') }} / {{ FE.confirmation.n_off }} {{ t('risk-off', '偏空') }}.</p>
+    {% endif %}
+    <p class="note" style="margin:6px 0 0;font-size:11px;text-transform:none">{{ t('Display-only sentiment synthesis — never scored into the China regime.', '仅展示的情绪综合 —— 从不计入中国区制评分。') }}</p>
+  </div>
+  {% endif %}
+
+  <!-- ===================== CHINA MACRO CALENDAR (display-only, no news API) ===================== -->
+  {% if event_strip or calendar %}
+  <div class="panel span12" id="china-calendar">
+    <h2>📅 {{ t('China macro calendar — releases & catalysts', '中国宏观日历 — 数据与催化') }}
+      <span class="note" style="text-transform:none">· {{ t('next 14 days', '未来14天') }}</span>
+      {{ help("Scheduled China macro/policy releases (NBS PMI, CPI/PPI, M1/M2 + RMB loans + TSF, customs trade, IP/FAI/retail, GDP, the LPR fix on the 20th, MLF, SAFE FX reserves). All CONTEXT — none of it feeds any score, signal or regime, and there is no event-risk dampener. Dates come from the known monthly cadence (pure date arithmetic), not forecasts, and NO news feed is used.", "排定的中国宏观/政策数据（统计局 PMI、CPI/PPI、M1/M2＋人民币贷款＋社融、海关进出口、工业/固投/社零、GDP、每月 20 日的 LPR 报价、MLF、外汇局外储）。全部为背景 —— 不进入任何评分、信号或区制，亦无事件风险衰减。日期来自已知月度节律（纯日期推算），而非预测，且不使用任何新闻源。") }}
+    </h2>
+    {% if imminent %}<p class="note" style="margin:0 0 8px;text-transform:none"><b>{{ t('Imminent', '临近') }}:</b> <span class="l-en">{{ imminent.en }}</span><span class="l-zh">{{ imminent.zh }}</span></p>{% endif %}
+    {% if calendar %}
+    <table>
+      <thead><tr><th class="l">{{ t('Date', '日期') }}</th><th class="l">{{ t('In', '距今') }}</th><th class="l">{{ t('Release', '数据') }}</th><th class="l">{{ t('Type', '类别') }}</th></tr></thead>
+      <tbody>
+      {% for c in calendar %}
+      <tr>
+        <td class="l">{{ c.date }}</td>
+        <td class="l note">+{{ c.days_until }}{{ t('d', '天') }}</td>
+        <td class="l">{% if c.importance=='high' %}<b>{{ t(c.name_en, c.name_zh) }}</b>{% else %}{{ t(c.name_en, c.name_zh) }}{% endif %}</td>
+        <td class="l"><span class="chip c-{{ 'info' if c.importance=='high' else 'muted' }}" style="font-size:10.5px">{{ c.type }}</span></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+    <p class="note" style="margin:8px 0 0;font-size:11px;text-transform:none">{{ t('Scheduling context only — never scored, no event-risk dampener, no news API.', '仅日程背景 —— 从不评分、无事件风险衰减、无新闻接口。') }}</p>
   </div>
   {% endif %}
 
@@ -881,7 +1062,7 @@
   {% if mode != 'stocks' %}
   <!-- ===================== CROWD METER (margin / 融资融券) ===================== -->
   {% if I.margin %}
-  <div class="panel span6">
+  <div class="panel span6" id="internals">
     <h2>{{ t('🔥 Margin crowd meter', '🔥 两融拥挤度') }} <span class="note" style="text-transform:none">· {{ t('融资融券 — the A-share COT', '融资融券 — A股的持仓拥挤度') }}</span>
       {{ help("<b>Financing balance as a % of free-float</b> — a self-normalizing China retail-leverage gauge (closest analog to US CFTC positioning); it peaked near 4.7% at the 2015 bubble top.<div class='scale'><span style='background:var(--info)'>capitulated</span><span style='background:var(--muted)'>normal</span><span style='background:var(--warn)'>elevated</span><span style='background:var(--act)'>crowded</span></div><div class='sl'><span>0</span><span>40th</span><span>70th</span><span>100th %ile</span></div><b>Maintenance ratio</b> = system-wide distance to a margin call; <b>froth</b> = margin trades as a share of turnover.", "<b>融资余额占流通市值比</b> — 可自我归一化的散户杠杆指标（最接近美国 CFTC 持仓）；2015 杠杆牛顶部曾接近 4.7%。<div class='scale'><span style='background:var(--info)'>已出清</span><span style='background:var(--muted)'>正常</span><span style='background:var(--warn)'>偏高</span><span style='background:var(--act)'>拥挤</span></div><div class='sl'><span>0</span><span>40分位</span><span>70分位</span><span>100分位</span></div><b>维持担保比例</b>＝全市场距强平的远近；<b>换手占比</b>＝两融交易占成交额比重。") }}
     </h2>
@@ -1168,7 +1349,7 @@
   {% endif %}
 
   {% if health %}
-  <div class="panel span6">
+  <div class="panel span6" id="data-health">
     <h2>{{ t('Data health', '数据健康度') }}
       {{ help("Freshness of the China data feeds powering this page. ‘ok’ = updated within its expected cadence; rows = total stored history.", "驱动本页的中国数据源的新鲜度。‘ok’＝在预期更新周期内已更新；rows＝累计存储行数。") }}
     </h2>

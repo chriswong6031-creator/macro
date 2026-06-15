@@ -18,7 +18,7 @@ from lib import config, store
 
 log = logging.getLogger(__name__)
 
-MACRO_SERIES = ["pmi", "cpi", "ppi", "money_supply", "indpro", "rates"]
+MACRO_SERIES = ["pmi", "cpi", "ppi", "money_supply", "indpro", "rates", "gdp", "lpr_rate"]
 
 
 def china_closes() -> pd.DataFrame:
@@ -41,7 +41,7 @@ def _macro_frame() -> pd.DataFrame:
             parts.append(df)
     if not parts:
         return pd.DataFrame()
-    out = pd.concat(parts, axis=1)
+    out = pd.concat(parts, axis=1, sort=False)
     return out[~out.index.duplicated(keep="last")].sort_index()
 
 
@@ -71,6 +71,7 @@ def build_features() -> pd.DataFrame:
     for t in list(ycfg["indices"]) + list(ycfg["sector_etfs"]):
         put(t, closes.get(t))
     put("usdcny", closes.get("CNY=X"))
+    put("usdcnh", closes.get("CNH=F"))      # offshore yuan (onshore CNY=X is PBoC-pinned)
     put("market_index", closes.get(ycfg["market_index"]))
 
     ecfg = cfg["engine"]
@@ -93,6 +94,10 @@ def build_features() -> pd.DataFrame:
         put(col, m[col] if (not m.empty and col in m.columns) else None, ffill_limit=40)
     for col in ["rate_3m", "rate_1y"]:
         put(col, m[col] if (not m.empty and col in m.columns) else None, ffill_limit=10)
+    # quarterly GDP + event-dated LPR step-fill across their long cadence
+    put("gdp_yoy", m["gdp_yoy"] if (not m.empty and "gdp_yoy" in m.columns) else None, ffill_limit=130)
+    for col in ["lpr_1y", "lpr_5y"]:
+        put(col, m[col] if (not m.empty and col in m.columns) else None, ffill_limit=260)
 
     # --- breadth ---------------------------------------------------------------
     br = store.read("china_breadth", "breadth")
