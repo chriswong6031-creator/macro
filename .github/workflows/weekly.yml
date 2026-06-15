@@ -69,7 +69,8 @@ jobs:
           run_py "weekly collectors" scripts.collect --only cot,sentiment_naaim,sentiment_aaii,fundamentals,stock_fundamentals
           run_py "recalibrate (macro)" scripts.recalibrate
           run_py "regime engine (engine.run)" engine.run
-          run_py "macro dashboard (build_site)" scripts.build_site
+          run_py "S&P allocation vector (build_spvector)" scripts.build_spvector
+          run_py "macro dashboard + US stocks (build_site)" scripts.build_site
           run_py "daily brief" scripts.daily_brief
           run_py "calibrate china" scripts.calibrate_china
           run_py "build china" scripts.build_china
