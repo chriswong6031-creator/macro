@@ -38,7 +38,30 @@ FACTOR_LABELS = {
     "investment": "Investment", "payout": "Shareholder yield",
     "low_vol": "Low volatility", "low_beta": "Low beta (BAB)",
     "short_interest": "Low short interest", "accruals": "Low accruals",
+    "sue": "Earnings momentum (SUE)",
 }
+
+
+# SUE panel is read once per process (the backtest calls compute_factors per date).
+_SUE_PANEL_CACHE: list = []
+
+
+def _sue_signal(asof, price_date, index) -> "pd.Series | None":
+    """Point-in-time raw SUE per ticker, reindexed to the factor universe. `asof` (a
+    date) is the backtest rebalance; live mode (asof=None) uses the latest price date.
+    Returns None when the quarterly EPS panel has not been built."""
+    if not _SUE_PANEL_CACHE:
+        from engine.sue import load_panel
+        _SUE_PANEL_CACHE.append(load_panel())
+    panel = _SUE_PANEL_CACHE[0]
+    if panel is None:
+        return None
+    from engine.sue import sue_cross_section
+    when = pd.Timestamp(asof) if asof is not None else (
+        pd.Timestamp(price_date) if price_date is not None else None)
+    if when is None:
+        return None
+    return sue_cross_section(panel, when).reindex(index)
 
 
 def _short_interest() -> pd.DataFrame | None:
@@ -49,29 +72,154 @@ def _short_interest() -> pd.DataFrame | None:
     return df if not df.empty else None
 
 
-def _insider_block(ns: dict) -> dict | None:
-    """Top net insider buying / selling from the SEC Form-4 quarterly dataset."""
-    p = config.data_dir() / "sec_insider" / "insider.parquet"
-    if not p.exists():
-        return None
-    df = pd.read_parquet(p)
-    if df.empty or "net_usd" not in df.columns:
-        return None
+def _insider_block(ns: dict, mktcap: pd.Series | None = None) -> dict | None:
+    """Insider-conviction leaderboard from SEC Form-4. Prefers the point-in-time
+    per-transaction PANEL ranked by net buying as a FRACTION OF MARKET CAP — the
+    construction validated in research/INSIDER_FACTOR.md (Phase-0 PIT FDR survivor;
+    orthogonal to momentum/size). That removes the large-cap dollar bias of a raw
+    net-$ sum, so a high-conviction small/mid-cap buy isn't drowned by megacap noise,
+    and adds the distinct-insider CLUSTER count. Falls back to the single-quarter
+    net-$ aggregate when the panel or market caps aren't available."""
+    panel_p = config.data_dir() / "sec_insider" / "insider_panel.parquet"
+    if mktcap is not None and panel_p.exists():
+        blk = _insider_block_panel(ns, mktcap, panel_p)
+        if blk:
+            return blk
+    # No panel: still size-normalise the single-quarter aggregate when we have caps
+    # (the core "% of cap" upgrade, live in CI without the heavy panel) — only the
+    # 6-month window and true distinct-buyer clusters need the panel.
+    return _insider_block_aggregate(ns, mktcap)
 
-    def rows(sub: pd.DataFrame, sign: int) -> list[dict]:
+
+def _insider_block_panel(ns: dict, mktcap: pd.Series, panel_p) -> dict | None:
+    cfg = config.load()["sec_insider"]
+    months = int(cfg.get("panel_window_months", 6))
+    n = int(cfg["panel_top_n"])
+    df = pd.read_parquet(panel_p, columns=["ticker", "filing_date", "code", "usd", "rptownercik"])
+    if df.empty:
+        return None
+    win = df[df["filing_date"] > df["filing_date"].max() - pd.DateOffset(months=months)]
+    win = win[win["ticker"].isin(ns)]
+    if win.empty:
+        return None
+    buys, sells = win[win["code"] == "P"], win[win["code"] == "S"]
+    agg = pd.DataFrame({
+        "buy_usd": buys.groupby("ticker")["usd"].sum(),
+        "sell_usd": sells.groupby("ticker")["usd"].sum(),
+        "n_buyers": buys.groupby("ticker")["rptownercik"].nunique(),
+        "n_sellers": sells.groupby("ticker")["rptownercik"].nunique(),
+    }).reindex(sorted(set(win["ticker"]))).fillna(0.0)
+    agg["net_usd"] = agg["buy_usd"] - agg["sell_usd"]
+    mc = mktcap.reindex(agg.index)
+    agg["net_mcap_bps"] = (agg["net_usd"] / mc.where(mc > 0)) * 1e4   # net buying, bps of mcap
+    agg = agg[agg["net_mcap_bps"].notna()]
+
+    def rows(sub: pd.DataFrame) -> list[dict]:
         out = []
         for t, r in sub.iterrows():
             out.append({"ticker": t, "name": ns.get(t, (t, "—"))[0],
                         "sector": ns.get(t, (t, "—"))[1],
                         "net_usd_mn": round(float(r["net_usd"]) / 1e6, 2),
-                        "buys": int(r.get("n_buys", 0)), "sells": int(r.get("n_sells", 0))})
+                        "net_mcap_bps": round(float(r["net_mcap_bps"]), 1),
+                        "n_buyers": int(r["n_buyers"]), "n_sellers": int(r["n_sellers"]),
+                        "buys": int(r["n_buyers"]), "sells": int(r["n_sellers"])})
+        return out
+    buying = agg[agg["net_usd"] > 0].nlargest(n, "net_mcap_bps")
+    selling = agg[agg["net_usd"] < 0].nsmallest(n, "net_mcap_bps")
+    label = f"{months}mo to {df['filing_date'].max():%Y-%m}"
+    return {"quarter": label, "n_issuers": int(len(agg)), "basis": "net_mcap_bps",
+            "cluster": True,   # n_buyers = distinct insiders
+            "top_buying": rows(buying), "top_selling": rows(selling)}
+
+
+def _insider_block_aggregate(ns: dict, mktcap: pd.Series | None = None,
+                             path=None) -> dict | None:
+    """Single-quarter aggregate leaderboard. When market caps are available, ranks by
+    net buying as a FRACTION OF MARKET CAP (the size-normalised upgrade — works in CI
+    from the quarterly insider.parquet alone, no panel needed); otherwise the legacy
+    raw net-$ ranking. Counts here are buy/sell TRANSACTIONS (n_buys/n_sells), not
+    distinct insiders — true clusters need the panel, so `cluster` is False."""
+    import os
+    p = path or config.data_dir() / "sec_insider" / "insider.parquet"
+    if not os.path.exists(p):
+        return None
+    df = pd.read_parquet(p)
+    if df.empty or "net_usd" not in df.columns:
+        return None
+    norm = mktcap is not None
+    if norm:
+        mc = mktcap.reindex(df.index)
+        df = df.copy()
+        df["net_mcap_bps"] = (df["net_usd"] / mc.where(mc > 0)) * 1e4
+        ranked = df[df["net_mcap_bps"].notna()]
+    else:
+        ranked = df
+
+    def rows(sub: pd.DataFrame) -> list[dict]:
+        out = []
+        for t, r in sub.iterrows():
+            row = {"ticker": t, "name": ns.get(t, (t, "—"))[0],
+                   "sector": ns.get(t, (t, "—"))[1],
+                   "net_usd_mn": round(float(r["net_usd"]) / 1e6, 2),
+                   "buys": int(r.get("n_buys", 0)), "sells": int(r.get("n_sells", 0))}
+            if norm:
+                row["net_mcap_bps"] = round(float(r["net_mcap_bps"]), 1)
+            out.append(row)
         return out
     n = config.load()["sec_insider"]["panel_top_n"]
-    buying = df[df["net_usd"] > 0].nlargest(n, "net_usd")
-    selling = df[df["net_usd"] < 0].nsmallest(n, "net_usd")
+    key = "net_mcap_bps" if norm else "net_usd"
+    buying = ranked[ranked["net_usd"] > 0].nlargest(n, key)
+    selling = ranked[ranked["net_usd"] < 0].nsmallest(n, key)
     return {"quarter": str(df["quarter"].iloc[0]) if "quarter" in df else None,
-            "n_issuers": int(len(df)),
-            "top_buying": rows(buying, 1), "top_selling": rows(selling, -1)}
+            "n_issuers": int(len(df)), "basis": ("net_mcap_bps" if norm else None),
+            "cluster": False,
+            "top_buying": rows(buying), "top_selling": rows(selling)}
+
+
+def insider_signals(mktcap: pd.Series | None, *, months: int | None = None) -> dict[str, dict]:
+    """Per-ticker insider-conviction read for the standout/setup CONFIRMER chip.
+
+    Net open-market Form-4 buying over a trailing window as basis points of market
+    cap (the validated ``net_mcap_bps`` construction — research/INSIDER_FACTOR.md, a
+    Phase-0 PIT FDR survivor, orthogonal to momentum/size) plus the distinct-insider
+    CLUSTER count. Returns ``{ticker: {bps, buyers, sellers, net_mn}}`` for every name
+    with activity in the window (``bps`` is ``None`` when no market cap is available,
+    so a cluster still surfaces); empty dict if the panel is missing. Reuses the same
+    panel→aggregate logic as :func:`_insider_block_panel`. A confirmer leg only —
+    orthogonal long-only conviction, NOT a standalone sizer."""
+    panel_p = config.data_dir() / "sec_insider" / "insider_panel.parquet"
+    if not panel_p.exists():
+        return {}
+    cfg = config.load().get("sec_insider", {})
+    months = int(cfg.get("panel_window_months", 6)) if months is None else months
+    df = pd.read_parquet(panel_p, columns=["ticker", "filing_date", "code", "usd", "rptownercik"])
+    if df.empty:
+        return {}
+    win = df[df["filing_date"] > df["filing_date"].max() - pd.DateOffset(months=months)]
+    if win.empty:
+        return {}
+    buys, sells = win[win["code"] == "P"], win[win["code"] == "S"]
+    agg = pd.DataFrame({
+        "buy_usd": buys.groupby("ticker")["usd"].sum(),
+        "sell_usd": sells.groupby("ticker")["usd"].sum(),
+        "n_buyers": buys.groupby("ticker")["rptownercik"].nunique(),
+        "n_sellers": sells.groupby("ticker")["rptownercik"].nunique(),
+    }).fillna(0.0)
+    agg["net_usd"] = agg["buy_usd"] - agg["sell_usd"]
+    if mktcap is not None:
+        mc = mktcap.reindex(agg.index)
+        bps = (agg["net_usd"] / mc.where(mc > 0)) * 1e4
+    else:
+        bps = pd.Series(np.nan, index=agg.index)
+    out: dict[str, dict] = {}
+    for t in agg.index:
+        b = bps.get(t)
+        out[str(t)] = {
+            "bps": (round(float(b), 1) if b is not None and np.isfinite(b) else None),
+            "buyers": int(agg.at[t, "n_buyers"]), "sellers": int(agg.at[t, "n_sellers"]),
+            "net_mn": round(float(agg.at[t, "net_usd"]) / 1e6, 2),
+        }
+    return out
 
 
 # universe → which breadth caches define the price/name set. 'broad' = the full
@@ -214,6 +362,14 @@ def compute_factors(asof=None, universe: str = "broad") -> dict | None:
         si_pct = si["short_shares"].reindex(d.index) / d["shares"].where(d["shares"] > 0)
         raw["short_interest"] = -pd.concat([_winsor_z(dtc, cap), _winsor_z(si_pct, cap)],
                                            axis=1).mean(axis=1)
+    # earnings momentum: SUE (standardized unexpected earnings) from the quarterly
+    # EDGAR EPS panel. Standalone leg (not in the value/quality composite, like
+    # short_interest) — it survives the leak-free BH-FDR scorecard as the strongest
+    # positive factor (research/DATA_SIGNAL_EXPANSION_2026.md). The second-pass z below
+    # standardizes the raw d/sigma SUE cross-sectionally.
+    sue = _sue_signal(asof, closes.index[-1] if len(closes.index) else None, d.index)
+    if sue is not None and sue.notna().any():
+        raw["sue"] = sue
 
     # second-pass z (so each factor is a clean unit-variance score)
     fac = pd.DataFrame({c: _winsor_z(raw[c], cap) for c in raw.columns})
@@ -283,6 +439,6 @@ def compute_factors(asof=None, universe: str = "broad") -> dict | None:
         "laggards": laggards,
         "composite_top": top("composite", n),
         "composite_bottom": top("composite", n, asc=True),
-        "insider": _insider_block(ns),
+        "insider": _insider_block(ns, d["mktcap"] if "mktcap" in d.columns else None),
         "table": table.reset_index().rename(columns={"index": "ticker"}).to_dict("records"),
     }

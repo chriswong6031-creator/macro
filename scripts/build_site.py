@@ -152,6 +152,96 @@ def chart_liquidity(f: pd.DataFrame) -> str:
     return _html(fig)
 
 
+# ----- market snapshot tiles + VIX monitor (display surfacing; reuse the frame) -----
+# The 8 headline instruments are already in the feature frame; this surfaces them as
+# at-a-glance tiles, and gives VIX a proper monitor (30-day path + OUR term-structure
+# / percentile read — richer than the conventional 15/20/30 bands, which we keep only
+# as a familiar label). No new data collection.
+_TILE_SPEC = (
+    ("SPY",   ("S&P 500 · SPY",    "标普500 · SPY"),  ("Indices", "指数"),     2),
+    ("QQQ",   ("Nasdaq 100 · QQQ", "纳指100 · QQQ"),   ("Indices", "指数"),     2),
+    ("vix",   ("VIX",              "VIX"),             ("Volatility", "波动率"), 2),
+    ("us10y", ("10Y yield",        "10年期收益率"),     ("Rates", "利率"),       2),
+    ("us30y", ("30Y yield",        "30年期收益率"),     ("Rates", "利率"),       2),
+    ("us5y",  ("5Y yield",         "5年期收益率"),      ("Rates", "利率"),       2),
+    ("dxy",   ("US dollar · DXY",  "美元 · DXY"),       ("FX", "外汇"),          2),
+    ("oil",   ("Crude oil · WTI",  "原油 · WTI"),       ("Commodities", "商品"), 2),
+)
+
+
+def market_tiles(f: pd.DataFrame) -> list[dict]:
+    """Level + 1-day change for the 8 headline instruments already in the frame.
+    Coloured by raw sign (the price move); semantic context lives in the panels."""
+    rows = []
+    for col, (en, zh), (ten, tzh), dec in _TILE_SPEC:
+        if col not in f.columns:
+            continue
+        s = f[col].dropna()
+        if len(s) < 2:
+            continue
+        last, prev = float(s.iloc[-1]), float(s.iloc[-2])
+        chg = last - prev
+        pct = (last / prev - 1) * 100 if prev else 0.0
+        is_rate = col.startswith("us")
+        rows.append({
+            "label": T(en, zh), "tag": T(ten, tzh),
+            "level": (f"{last:.{dec}f}%" if is_rate else f"{last:,.{dec}f}"),
+            "chg": f"{chg:+.{dec}f}", "pct": f"{pct:+.1f}%",
+            "tone": "pos" if chg > 0 else "neg" if chg < 0 else "muted",
+        })
+    return rows
+
+
+def vix_monitor(f: pd.DataFrame, days: int = 30) -> dict | None:
+    """Current VIX + N-day range + our term-structure / percentile read. The level
+    bands (low/normal/elevated/high) are the familiar framing; the term structure
+    (vix/vix3m) and history percentile are the sharper read shown beside them."""
+    if "vix" not in f.columns:
+        return None
+    v = f["vix"].dropna()
+    if len(v) < 2:
+        return None
+    last, prev = float(v.iloc[-1]), float(v.iloc[-2])
+    win = v.tail(days)
+    if last < 15:
+        regime, tone = T("low", "偏低"), "muted"
+    elif last < 20:
+        regime, tone = T("normal", "正常"), "muted"
+    elif last < 30:
+        regime, tone = T("elevated", "偏高"), "warn"
+    else:
+        regime, tone = T("high fear", "高度恐慌"), "neg"
+    ratio, rword = None, None
+    vr = f["vix_ratio"].dropna() if "vix_ratio" in f.columns else pd.Series(dtype=float)
+    if len(vr):
+        ratio = float(vr.iloc[-1])
+        rword = T("backwardation", "倒挂") if ratio >= 1 else T("contango", "正向")
+    return {"last": last, "chg": last - prev,
+            "pct": (last / prev - 1) * 100 if prev else 0.0,
+            "hi": float(win.max()), "lo": float(win.min()), "prev": prev, "days": days,
+            "regime": regime, "tone": tone, "ratio": ratio, "rword": rword,
+            "pctile": float((v <= last).mean() * 100)}
+
+
+def chart_vix(f: pd.DataFrame, days: int = 90) -> str:
+    """A focused VIX path with the conventional regime bands shaded behind it."""
+    if "vix" not in f.columns:
+        return ""
+    v = f["vix"].dropna()
+    if v.empty:
+        return ""
+    v = v.loc[v.index.max() - pd.Timedelta(days=days):]
+    fig = go.Figure()
+    for y0, y1, c in ((0, 15, "#4fb39a"), (15, 20, "#7aa7e0"),
+                      (20, 30, "#e0a030"), (30, 90, "#e06464")):
+        fig.add_hrect(y0=y0, y1=y1, fillcolor=c, opacity=0.07, line_width=0)
+    fig.add_trace(go.Scatter(x=v.index, y=v, name="VIX",
+                             line={"color": "#e07a9a", "width": 1.6}))
+    fig.update_layout(**{**PLOT_LAYOUT, "height": 240}, showlegend=False)
+    fig.update_yaxes(range=[max(0.0, float(v.min()) - 2), float(v.max()) + 3])
+    return _html(fig)
+
+
 def chart_credit_breadth(f: pd.DataFrame) -> str:
     two_y = f.index.max() - pd.Timedelta(days=730)
     oas = f.loc[two_y:, "hy_oas"].dropna()
@@ -533,6 +623,81 @@ def breadth_divergence(f: pd.DataFrame) -> dict | None:
     return {"sc": sc, "lc": lc, "gap": gap, "verdict": verdict}
 
 
+# Market-breadth scorecard across the full S&P Composite 1500, by size tier.
+# The daily collector already stores advancing/declining, % above the 50- and
+# 200-day lines, and 52w new highs/lows for each universe — but the page only
+# ever charted % > 50d (large + small). This surfaces the rest as one legible
+# scorecard. NB: % > 50d also feeds the regime model's growth axis, so this is
+# the same breadth the model reads, not a new/contradicting signal.
+_BREADTH_TIERS = (
+    ("large", "breadth",          "S&P 500", ("Large cap", "大盘")),
+    ("mid",   "midcap_breadth",   "S&P 400", ("Mid cap",   "中盘")),
+    ("small", "smallcap_breadth", "S&P 600", ("Small cap", "小盘")),
+)
+
+
+def _wmean(tiers: list[dict], key: str) -> float | None:
+    """Member-count-weighted mean of a per-tier metric, skipping missing tiers."""
+    num = sum(t[key] * t["n"] for t in tiers if t[key] is not None)
+    den = sum(t["n"] for t in tiers if t[key] is not None)
+    return num / den if den else None
+
+
+def _breadth_read(pa50: float | None, net_nh: int) -> tuple:
+    """Plain-language read of composite breadth -> (label, verdict, tone)."""
+    if pa50 is not None and pa50 >= 60 and net_nh >= 0:
+        return (T("broad", "广泛"),
+                T("The advance is well-supported across the full 1,500",
+                  "上涨在整个 1500 只股票中获得良好支撑"), "pos")
+    if pa50 is not None and (pa50 <= 40 or net_nh < 0):
+        return (T("thin", "稀薄"),
+                T("Few names hold their trend — rallies here are fragile",
+                  "守住趋势的个股很少 — 此时的反弹较脆弱"), "neg")
+    return (T("mixed", "参差"),
+            T("No clear breadth edge either way",
+              "广度上没有明显的方向性优势"), "muted")
+
+
+def breadth_scorecard() -> dict | None:
+    """Latest breadth read across the S&P 1500 size tiers + a weighted composite."""
+    tiers, asof = [], None
+    for key, ns, univ, (en, zh) in _BREADTH_TIERS:
+        p = config.data_dir() / ns / "breadth.parquet"
+        if not p.exists():
+            continue
+        try:
+            row = pd.read_parquet(p).dropna(subset=["pct_above_50"]).iloc[-1]
+        except Exception:  # noqa: BLE001 — additive, never fatal
+            continue
+        adv, dec = float(row.get("adv", 0) or 0), float(row.get("dec", 0) or 0)
+        nh, nl = float(row.get("nh", 0) or 0), float(row.get("nl", 0) or 0)
+        pa200 = row.get("pct_above_200")
+        tiers.append({
+            "key": key, "label": T(en, zh), "univ": univ,
+            "n": int(row.get("n_members", 0) or 0),
+            "adv": int(adv), "dec": int(dec),
+            "adv_pct": (100 * adv / (adv + dec)) if (adv + dec) else None,
+            "pa50": float(row["pct_above_50"]),
+            "pa200": float(pa200) if pd.notna(pa200) else None,
+            "nh": int(nh), "nl": int(nl), "net_nh": int(nh - nl),
+        })
+        asof = row.name if asof is None else max(asof, row.name)
+    if not tiers:
+        return None
+    adv, dec = sum(t["adv"] for t in tiers), sum(t["dec"] for t in tiers)
+    net_nh = sum(t["net_nh"] for t in tiers)
+    pa50, pa200 = _wmean(tiers, "pa50"), _wmean(tiers, "pa200")
+    label, verdict, tone = _breadth_read(pa50, net_nh)
+    return {
+        "asof": pd.Timestamp(asof).strftime("%Y-%m-%d") if asof is not None else None,
+        "tiers": tiers,
+        "comp": {"n": sum(t["n"] for t in tiers), "adv": adv, "dec": dec,
+                 "adv_pct": (100 * adv / (adv + dec)) if (adv + dec) else None,
+                 "pa50": pa50, "pa200": pa200, "net_nh": net_nh,
+                 "label": label, "verdict": verdict, "tone": tone},
+    }
+
+
 # heat-bar fill uses theme-aware CSS variables (legible in both modes)
 HEAT_COLORS = {"70+": "var(--orange)", "55-69": "var(--up)",
                "40-54": "var(--muted)", "0-39": "var(--info)"}
@@ -807,30 +972,66 @@ def action_board(sector_timing: dict, notable: list[dict]) -> dict:
             avoid.append(item)
     buy_soon.sort(key=lambda x: (x["days"] if x["days"] is not None else 99))
     # ----- standout-stock ranking ------------------------------------------------
-    # Rank by the engine's OWN calibrated entry-quality (|eq_score|), not just the
-    # urgency bucket — a 'strong' fresh buy should outrank a 'minimal' one (the old
-    # code sorted on bucket+ETA only and never used the conviction it computed).
-    # Then prefer fresher signals. A soft conviction floor drops 'minimal' (<15)
+    # Within each urgency tier, rank by the alpha-aware SETUP score (selection =
+    # sector-neutral residual momentum × timing = the calibrated cycle entry +
+    # reversal overlay; see engine/setups.py). This upgrades the old |eq_score|-only
+    # order so a sector-neutral LEADER on a fresh, constructive entry outranks an
+    # equally-timed laggard. setup_score is always set (timing-only fallback when a
+    # name has no residual), so every card ranks on the same scale. Then prefer
+    # fresher signals. A soft conviction floor still drops 'minimal' (|eq|<15) timing
     # setups, but only while enough genuine ones remain so the strip never starves.
     order = {"now": 0, "imminent": 1, "exit": 2}
 
     def _conv(n):
         return abs(n.get("eq_score") or 0)
 
+    def _decis(n):
+        # The urgency TIER is the cycle-timing read (risk placement). WITHIN a tier we
+        # order buys by the validated selection leg — sector-neutral momentum α — not
+        # the blended setup score: Phase-0 (reports/setup-score-phase0.md) showed the
+        # timing blend does NOT improve forward-return ranking (it dilutes α). Sells
+        # keep the cycle sell-conviction (α is not a sell signal). asc sort throughout.
+        if n.get("urgency") == "exit":
+            return n.get("eq_score") or 0               # most-negative (strongest sell) first
+        az = n.get("alpha_z")
+        if az is not None:
+            return -az                                  # highest α (strongest leader) first
+        return -(n.get("eq_score") or 0)                # no α: fall back to cycle conviction
+
     def _rank(n):
-        return (order.get(n["urgency"], 9), -_conv(n),
+        # α (selection) leads within the cycle tier; the factor composite breaks
+        # near-ties only (a crowded/decayed leg — settle ties, never drive the order).
+        return (order.get(n["urgency"], 9), _decis(n),
+                -(n.get("factor_z") or 0.0),
                 n.get("age_days") if n.get("age_days") is not None else 999,
                 n["days"] if n.get("days") is not None else 99)
 
-    CAP, FLOOR = 24, 15
+    from engine.setups import norm_company
+
+    # A soft per-sector cap keeps one hot sector (e.g. all of XLK in a tech rip) from
+    # crowding out the board — the best names per sector fill first, then any spare
+    # slots backfill from the overflow (already in rank order). Dual-class listings
+    # (GOOG + GOOGL) are collapsed to the best-ranked variant.
+    CAP, FLOOR, PER_SECTOR = 24, 15, 5
     strong = [n for n in notable if _conv(n) >= FLOOR]
     pool = strong if len(strong) >= 6 else notable
-    seen, notable_clean = set(), []
+    seen, seen_name, by_sec, picked, overflow = set(), set(), {}, [], []
     for n in sorted(pool, key=_rank):
         if n["ticker"] in seen:
             continue
+        nm = norm_company(n.get("name"))
+        if nm and nm in seen_name:                      # dual-class / multi-listing dupe
+            continue
         seen.add(n["ticker"])
-        notable_clean.append(n)
+        if nm:
+            seen_name.add(nm)
+        sec = n.get("sector")
+        if by_sec.get(sec, 0) < PER_SECTOR:
+            by_sec[sec] = by_sec.get(sec, 0) + 1
+            picked.append(n)
+        else:
+            overflow.append(n)
+    notable_clean = (picked + overflow)[:CAP]
     return {"buy_now": buy_now, "buy_soon": buy_soon, "take_profits": take_profits,
             "hold": hold, "avoid": avoid, "notable": notable_clean[:CAP]}
 
@@ -1135,6 +1336,11 @@ def build_factors_page(env: Environment, site: Path, generated: str) -> dict | N
             fetch_insider()                        # Phase 4: Form-4 insider buying (cached)
         except Exception as e:  # noqa: BLE001 — insider panel is optional
             log.warning("sec insider failed: %s", e)
+        try:
+            from collectors.edgar_eps import build_eps_panel
+            build_eps_panel()                      # SUE: quarterly diluted-EPS panel (weekly-cached)
+        except Exception as e:  # noqa: BLE001 — SUE factor is an optional leg
+            log.warning("edgar quarterly EPS panel failed: %s", e)
         fac = compute_factors()
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("factor engine failed: %s", e)
@@ -1183,6 +1389,38 @@ def build_alpha_data(site: Path) -> dict | None:
     return alpha
 
 
+def build_insider_data(site: Path) -> dict | None:
+    """Per-ticker insider-conviction map (net Form-4 buying as bps of market cap over
+    a trailing window + distinct-insider CLUSTER count) → factordata/insider_signals.
+    json, the CONFIRMER chip on the standout / Top-setups boards. Market cap is read
+    from the prior factors.json (slow-moving — a one-build lag is immaterial). Reuses
+    the validated net_mcap_bps construction (engine.equity_factors.insider_signals).
+    Additive + graceful: returns/writes nothing if the panel or caps are missing."""
+    from engine.equity_factors import insider_signals
+    mktcap = None
+    fp = site / "factordata" / "factors.json"
+    if fp.exists():
+        try:
+            tbl = (json.loads(fp.read_text()) or {}).get("table", [])
+            mktcap = pd.Series({r["ticker"]: (r.get("mktcap_bn") or 0) * 1e9
+                                for r in tbl if r.get("ticker") and r.get("mktcap_bn")})
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("insider mktcap load failed (%s)", e)
+    try:
+        sig = insider_signals(mktcap)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("insider signals failed: %s", e)
+        return None
+    if not sig:
+        return None
+    fdir = site / "factordata"
+    fdir.mkdir(parents=True, exist_ok=True)
+    (fdir / "insider_signals.json").write_text(
+        json.dumps(sig, separators=(",", ":"), default=str))
+    log.info("wrote insider_signals.json (%d names with 6mo Form-4 activity)", len(sig))
+    return sig
+
+
 def build_smartmoney_data(site: Path) -> dict | None:
     """Compute curated super-investor 13F holdings and write
     factordata/smartmoney.json (consumed by the per-stock "who holds this" panel +
@@ -1215,7 +1453,38 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
     from engine.cycles import LADDER, STATE_DISPLAY, analyze
     from engine.holdings_signals import accumulation_signals
     from engine.playbook import SECTOR_NAMES
+    from engine.setups import US_ALPHA_WEIGHT, sue_confirmer, timing_tilt
     from scripts.build_stock_library import current_liquidity, current_macro
+
+    # per-ticker sector-neutral residual alpha (already computed by build_alpha_data
+    # and passed in) — used to enrich the front-page "Standout individual stocks"
+    # cards with an alpha sector rank + reversal overlay and an alpha-aware setup
+    # score (selection × timing). Absent => cards fall back to pure cycle timing.
+    alpha_pt = (alpha or {}).get("per_ticker", {})
+    # confirmer legs on those same cards: a distinct-insider Form-4 BUY cluster
+    # (insider_signals.json, written by build_insider_data just above), the cross-
+    # sectional factor composite (factors.json table) as a light tiebreaker, and the
+    # validated SUE earnings-momentum z (factors.json table 'sue') as an earnings-
+    # drift confirmer. All additive + graceful — absent => the card omits that chip.
+    # None of these enter the setup score; they are displayed risk/conviction context.
+    insider_map: dict[str, dict] = {}
+    factor_z: dict[str, float] = {}
+    sue_z: dict[str, float] = {}
+    try:
+        _ip = site / "factordata" / "insider_signals.json"
+        if _ip.exists():
+            insider_map = json.loads(_ip.read_text()) or {}
+        _fp = site / "factordata" / "factors.json"
+        if _fp.exists():
+            for _r in (json.loads(_fp.read_text()) or {}).get("table", []):
+                if not _r.get("ticker"):
+                    continue
+                if _r.get("composite") is not None:
+                    factor_z[_r["ticker"]] = _r["composite"]
+                if _r.get("sue") is not None:
+                    sue_z[_r["ticker"]] = _r["sue"]
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("standout confirmer maps unavailable (%s)", e)
 
     cal_path = config.data_dir() / "regime" / "ladder_calibration.json"
     calibration = _json.loads(cal_path.read_text()) if cal_path.exists() else None
@@ -1278,6 +1547,23 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
                     sdir = lad.get("dir")
                     scolor = ("var(--up)" if sdir == "up"
                               else "var(--down)" if sdir == "down" else "var(--warn)")
+                    # alpha-aware setup score: selection (sector-neutral residual
+                    # momentum) × timing (cycle entry + reversal overlay). Falls back
+                    # to timing-only when the name has no residual, so EVERY card has
+                    # a setup_score on the same scale for ranking. NOT a new edge —
+                    # see engine/setups.py + research/US_STANDOUT_SETUP_SCORE.md.
+                    apt = alpha_pt.get(tick)
+                    az = apt.get("alpha") if apt else None
+                    a_entry = apt.get("entry") if apt else None
+                    tilt = timing_tilt(urg, lad.get("eq_dir"), a_entry)
+                    setup = round((US_ALPHA_WEIGHT * az + tilt) if az is not None
+                                  else tilt, 2)
+                    # confirmers: an insider BUY cluster (>=2 distinct insiders net
+                    # buying, Form-4 6mo) + the factor composite (light tiebreaker) +
+                    # the SUE earnings-momentum z (gated to a real positive tailwind).
+                    # All DISPLAY context — none touch the setup score above.
+                    ins = insider_map.get(tick) or {}
+                    ins_buy = ins.get("buyers", 0) >= 2 and (ins.get("net_mn") or 0) > 0
                     notable.append({"ticker": tick, "name": str(r.get("name", "")).title(),
                                     "sector": SECTOR_NAMES.get(fund, fund),
                                     "label": lad["label"], "action": lad.get("action"),
@@ -1290,6 +1576,16 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
                                     "eq_grade": lad.get("eq_grade"),
                                     "eq_grade_zh": lad.get("eq_grade_zh"),
                                     "score": lad.get("score"),
+                                    "setup_score": setup,
+                                    "alpha_z": az,
+                                    "alpha_sector_rank": apt.get("sector_rank") if apt else None,
+                                    "alpha_sector_n": apt.get("sector_n") if apt else None,
+                                    "alpha_entry": a_entry,
+                                    "factor_z": factor_z.get(tick),
+                                    "insider_buyers": ins.get("buyers") if ins_buy else None,
+                                    "insider_bps": ins.get("bps") if ins_buy else None,
+                                    "insider_net_mn": ins.get("net_mn") if ins_buy else None,
+                                    "sue_z": sue_confirmer(sue_z.get(tick)),
                                     "signal_date": lad.get("signal_date"),
                                     "age_days": lad.get("age_days"),
                                     "spark_svg": _mini_svg(spark, color=scolor, w=240, h=42,
@@ -1417,6 +1713,29 @@ def build_advanced_page(env: Environment, site: Path, generated: str, latest: di
     (site / "advanced.html").write_text(html)
     log.info("wrote advanced.html (%.0f KB)", (site / "advanced.html").stat().st_size / 1024)
     return cross_asset
+def market_gamma_view(gex) -> dict | None:
+    """Market-wide dealer-gamma vol regime from the VALIDATED index dealer-gamma read
+    (SPX, data/cboe/gex via engine.gex_engine — the same that drives the dealer-gamma
+    board). ABOVE the gamma-flip strike dealers are net long gamma and hedge AGAINST
+    moves (pinning / vol suppressed); BELOW it they're short gamma and hedge WITH moves
+    (amplifying). A whole-market vol CONTEXT for the per-stock setups — not a per-stock
+    signal. Graceful: None if the store is missing/empty (the note simply won't render).
+    Uses the flip side (spot vs flip), the engine's authoritative regime, NOT the coarse
+    net-$ sign the ETF-flows board flags — they answer different questions."""
+    if gex is None or not len(gex):
+        return None
+    g = gex.iloc[-1]
+    svf = g.get("spot_vs_flip_pct")
+    if svf is None or pd.isna(svf):
+        return None
+    return {
+        "regime": "short" if float(svf) < 0 else "long",
+        "spot_vs_flip_pct": round(float(svf), 1),
+        "net_gex_bn": round(float(g.get("net_gex_bn") or 0), 0),
+        "flip": int(round(float(g.get("flip_strike") or 0))),
+        "spot": int(round(float(g.get("spot") or 0))),
+        "asof": str(gex.index.max().date()),
+    }
 
 
 def main() -> int:
@@ -1446,6 +1765,10 @@ def main() -> int:
         alpha_data = build_alpha_data(site)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("alpha data failed: %s", e)
+    try:
+        build_insider_data(site)               # confirmer-chip map; read by sector pages + library
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("insider data failed: %s", e)
     try:
         build_smartmoney_data(site)               # 13F super-investor holdings (CONTEXT)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
@@ -1480,16 +1803,33 @@ def main() -> int:
         src = config.ROOT / "templates" / asset
         if src.exists():
             (site / asset).write_text(src.read_text())
+    # broad "Top setups" board (selection × timing across the full S&P 1500),
+    # written by build_stock_library at the END of the prior build_site run —
+    # additive + graceful: absent (first run) => the board simply doesn't render.
+    top_setups = None
+    _sp = site / "factordata" / "setups.json"
+    if _sp.exists():
+        try:
+            top_setups = json.loads(_sp.read_text())
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("setups.json unreadable (%s)", e)
+
     # Macro news & catalysts (LEAF, additive, never fatal). Catalysts (FOMC + jobs
     # report) are keyless and always on; filtered headlines + the optional LLM brief
     # only when macro_news.enabled. News NEVER feeds any score.
     macro_catalysts, macro_news_data, macro_brief_data = [], None, None
+    event_strip, catalyst_line = [], ""
     macro_news_disclaimer = macro_news_disclaimer_zh = ""
     try:
+        from engine import event_calendar as _ec
         from engine import macro_news as _mnews
         _mncfg = config.load().get("macro_news", {}) or {}
-        macro_catalysts = _mnews.upcoming_catalysts(
-            horizon_days=_mncfg.get("catalysts_horizon_days", 14))
+        _horizon = _mncfg.get("catalysts_horizon_days", 14)
+        macro_catalysts = _mnews.upcoming_catalysts(horizon_days=_horizon)
+        # compact "US high-impact next 14 days" glance strip + the imminent-catalyst
+        # text line fed to the LLM brief below (context only; never a scored input)
+        event_strip = _ec.high_impact_strip(horizon_days=_horizon)
+        catalyst_line = _ec.imminent_line(horizon_days=_horizon)
         macro_news_data = _mnews.macro_headlines()
         macro_news_disclaimer = _mnews.DISCLAIMER_TEXT
         macro_news_disclaimer_zh = _mnews.DISCLAIMER_TEXT_ZH
@@ -1500,14 +1840,31 @@ def main() -> int:
             macro_brief_data = _mnews.macro_brief(
                 macro_news_data["headlines"],
                 regime_line=str((latest.get("regime") or {}).get("label", "")),
-                sentiment_line=_sent)
+                sentiment_line=_sent, catalyst_line=catalyst_line)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("macro news failed: %s", e)
 
+    # prediction-markets odds (additive leaf; None if no snapshot yet)
+    prediction_markets = None
+    try:
+        from engine import prediction_markets as _pm
+        prediction_markets = _pm.snapshot()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("prediction markets failed: %s", e)
+
+    # whole-market dealer-gamma vol regime (validated index GEX) — context for the
+    # standout setups below. Additive + graceful: None if the cboe gex store is absent.
+    market_gamma = None
+    try:
+        market_gamma = market_gamma_view(store.read("cboe", "gex"))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("market gamma view failed (%s)", e)
     from engine.alerts import alert_views
     html = env.get_template("dashboard.html.j2").render(
         latest=latest,
         macro_catalysts=macro_catalysts,
+        event_strip=event_strip,
+        prediction_markets=prediction_markets,
         macro_news=macro_news_data,
         macro_brief=macro_brief_data,
         macro_news_disclaimer=macro_news_disclaimer,
@@ -1518,16 +1875,22 @@ def main() -> int:
         commodities=(latest.get("playbook") or {}).get("commodities", []),
         sector_timing=sector_timing,
         action_board=action_board(sector_timing, notable),
+        top_setups=top_setups,
+        market_gamma=market_gamma,
         components_confirming=confirming,
         components_contradicting=contradicting,
         flip_plain=flip_plain_text(latest),
         internals=internals_rows(latest),
         size_style=size_style_rows(f),
         breadth_div=breadth_divergence(f),
+        breadth_panel=breadth_scorecard(),
         sector_rows=sector_rows(latest.get("playbook"), sector_timing),
         generated_utc=generated,
         chart_liquidity=chart_liquidity(f),
         chart_credit_breadth=chart_credit_breadth(f),
+        market_tiles=market_tiles(f),
+        vix=vix_monitor(f),
+        chart_vix=chart_vix(f),
         positioning=positioning_rows(f),
         holdings_changes=holdings_rows(),
         holdings_threshold=config.load()["holdings"]["active_change_alert_pct"],

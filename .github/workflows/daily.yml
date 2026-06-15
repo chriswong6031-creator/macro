@@ -202,6 +202,12 @@ jobs:
         # after build_site/build_factor_series/build_baskets: documents the construction +
         # injects a few live stats from the JSONs. Standalone; returns 0 on any error.
         run: python -m scripts.build_methodology || echo "methodology skipped (additive)"
+      - name: cross-asset vector (build_crossasset)
+        # after the commodity/forex/bonds pages, before build_vector (hub last):
+        # TSMOM trend + intermarket ratios + correlation regime over keyless
+        # price stores -> site/crossasset.html + data/crossasset/latest.json.
+        # Self-sufficient; returns 0 on any engine error.
+        run: python -m scripts.build_crossasset
       - name: build bitcoin vector + landing hub
         # installs the landing hub at index.html (rendered from stored engine
         # state, so ordering vs build_site no longer matters — build_site writes

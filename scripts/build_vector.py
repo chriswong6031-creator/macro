@@ -731,7 +731,7 @@ def build_landing(site: Path, vm: dict) -> None:
     macro = _macro_state()
     hub = _hub_html(vm, macro, home_alert_feed(), _china_state(), _commodities_state(),
                     _watchlist_state(), _etf_state(), _hk_state(), _forex_state(),
-                    _bonds_state(), _spvector_state())
+                    _bonds_state(), _spvector_state(), _crossasset_state())
     (site / "index.html").write_text(hub)
     log.info("wrote landing hub -> index.html")
 
@@ -815,6 +815,19 @@ def _bonds_state() -> dict:
     except Exception:
         return {"label": "—", "phase": "", "date": "", "score": None,
                 "present": (site / "bonds.html").exists()}
+
+
+def _crossasset_state() -> dict:
+    """Cross-asset trend/correlation read for the hub card (written by
+    build_crossasset, which runs before build_vector)."""
+    site = config.ROOT / config.load()["storage"]["site_dir"]
+    try:
+        d = json.loads((config.data_dir() / "crossasset" / "latest.json").read_text())
+        return {"regime": d.get("regime", "—"), "correlation": d.get("correlation", ""),
+                "date": d.get("date", ""), "present": (site / "crossasset.html").exists()}
+    except Exception:
+        return {"regime": "—", "correlation": "", "date": "",
+                "present": (site / "crossasset.html").exists()}
 
 
 def _watchlist_state() -> dict:
@@ -1006,7 +1019,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
               commodities: dict | None = None, watchlist: dict | None = None,
               etf: dict | None = None, hk: dict | None = None,
               forex: dict | None = None, bonds: dict | None = None,
-              spvector: dict | None = None) -> str:
+              spvector: dict | None = None, crossasset: dict | None = None) -> str:
     # Bilingual via the i18n layer when present, identity fallback when absent.
     try:
         from engine.i18n import t as T, tr as TR
@@ -1070,6 +1083,18 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
     <p>{T('What the curve, credit, real rates, rates-vol & funding plumbing say about economic health, regime & the cycle.', '收益率曲线、信用利差、实际利率、利率波动与资金管道对经济健康、周期状态与所处阶段的判读。')}</p>
     <span class="stat">{b_stat}</span>
     <div class="go">{T('Open Bonds →', '打开债券 →')}</div>
+  </a>""")
+    crossasset = crossasset or {"present": False}
+    ca_stat = (T(crossasset.get("regime", "—"), TR(crossasset.get("regime", "—")))
+               + ((" · " + T(crossasset.get("correlation"), TR(crossasset.get("correlation"))))
+                  if crossasset.get("correlation") else ""))
+    crossasset_card = ("" if not crossasset.get("present") else f"""
+  <a class="c" href="crossasset.html">
+    <div class="ico">🧭</div>
+    <h2>{T('Cross-Asset Vector', '跨资产向量')}</h2>
+    <p>{T('What is trending across equities, bonds, commodities, the dollar & crypto — time-series momentum, intermarket ratios & the correlation regime. A regime read, not a strategy.', '股票、债券、商品、美元与加密货币之间在趋势什么——时间序列动量、跨市场比价与相关性体制。体制判读，而非策略。')}</p>
+    <span class="stat">{ca_stat}</span>
+    <div class="go">{T('Open Cross-Asset →', '打开跨资产 →')}</div>
   </a>""")
     watchlist = watchlist or {"present": False}
     watchlist_card = ("" if not watchlist.get("present") else f"""
@@ -1190,7 +1215,7 @@ body{{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
     <span class="stat {risk_cls}">{T('Risk', '风险')} {T(vm['risk_word'], TR(vm['risk_word']))} · {vm['risk_index']}</span>
     <span class="stat">{T('Momentum', '动量')} {vm['momentum']}</span>
     <div class="go">{T('Open Bitcoin Vector →', '打开比特币向量 →')}</div>
-  </a>{commodities_card}{forex_card}{bonds_card}{etf_card}{watchlist_card}
+  </a>{commodities_card}{forex_card}{bonds_card}{crossasset_card}{etf_card}{watchlist_card}
 </div>
 <div class="feed">
   <div class="feed-h"><h3>{T('Latest Alerts', '最新警报')}</h3>

@@ -181,6 +181,49 @@ def chart_curve_now(f: pd.DataFrame) -> str:
     return _html(fig)
 
 
+def chart_policy_path(fp: dict, horizons=(1, 3, 6, 12)) -> str:
+    """Market-implied policy path (ZQ/SR3 futures) vs the FOMC dot-plot, on a shared
+    months-ahead axis. Display-only — the implied line is a price, the dots a forecast."""
+    if not fp:
+        return ""
+    asof = pd.Timestamp(fp.get("asof"))
+    fig = go.Figure()
+    pol = fp.get("policy_rate") if fp.get("policy_rate") is not None else fp.get("target_mid")
+    # market-implied path: now (0m) + each available horizon
+    imp = fp.get("implied") or {}
+    xs, ys = [], []
+    if pol is not None:
+        xs.append(0); ys.append(round(float(pol), 3))
+    for h in horizons:
+        v = imp.get(f"m{h}")
+        if v is not None:
+            xs.append(h); ys.append(round(float(v), 3))
+    if len(xs) >= 2:
+        fig.add_trace(go.Scatter(x=xs, y=ys, name="Market-implied (ZQ/SR3)", mode="lines+markers",
+                                 line={"color": C["blue"], "width": 2.2}, marker={"size": 6}))
+    # SOFR cross-check path (faint)
+    sp = fp.get("sofr_path") or {}
+    sx = [h for h in horizons if sp.get(f"m{h}") is not None]
+    if len(sx) >= 2:
+        fig.add_trace(go.Scatter(x=sx, y=[round(float(sp[f"m{h}"]), 3) for h in sx],
+                                 name="SOFR-implied (SR3)", mode="lines",
+                                 line={"color": C["faint"], "width": 1.3, "dash": "dot"}))
+    # FOMC dot-plot medians placed at their year-end horizon
+    dx, dy, dtxt = [], [], []
+    for d in (fp.get("dots") or []):
+        months = (int(d["year"]) - asof.year) * 12 + (12 - asof.month)
+        if months >= 1:
+            dx.append(months); dy.append(round(float(d["median"]), 3)); dtxt.append(str(d["year"]))
+    if dx:
+        fig.add_trace(go.Scatter(x=dx, y=dy, name="FOMC median dot", mode="markers+text",
+                                 text=dtxt, textposition="top center",
+                                 marker={"size": 11, "symbol": "diamond", "color": C["amber"]}))
+    fig.update_layout(**{**PLOT, "height": 280,
+                         "xaxis": {"title": "months ahead", "gridcolor": C["grid"], "zeroline": False},
+                         "yaxis": {"title": "policy rate %", "gridcolor": C["grid"]}})
+    return _html(fig)
+
+
 def chart_spreads(fr: pd.DataFrame, years=12) -> str:
     d = _tail_years(fr, years)
     fig = go.Figure()
@@ -411,12 +454,25 @@ def main() -> int:
 
     calib = _load_calibration()
     vm = _vm(snap, fr, calib)
-    _CHART_KEYS = ("health", "curve_now", "spreads", "credit", "real", "move", "corr", "sovereign")
+
+    # Fed policy path (display-only, research/DATA_SIGNAL_EXPANSION_2026.md #2): the
+    # market-implied path (ZQ/SR3 futures) vs the FOMC dot-plot. Additive leaf —
+    # never scored, never an MRS leg. None when the feeds are absent.
+    fed_path = None
+    try:
+        from engine import fed_path as _fp
+        fed_path = _fp.snapshot(f)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("fed-path snapshot failed: %s", e)
+
+    _CHART_KEYS = ("health", "curve_now", "spreads", "credit", "real", "move", "corr",
+                   "sovereign", "policy_path")
     try:
         charts = {
             "health": chart_health(fr), "curve_now": chart_curve_now(f), "spreads": chart_spreads(fr),
             "credit": chart_credit(fr), "real": chart_real(fr), "move": chart_move(fr), "corr": chart_corr(fr),
             "sovereign": chart_sovereign(fr),
+            "policy_path": chart_policy_path(fed_path) if fed_path else "",
         }
     except Exception as e:  # noqa: BLE001 — a single chart must never break the page
         log.warning("bonds chart build failed (%s); rendering without charts", e)
@@ -439,11 +495,20 @@ def main() -> int:
     lo, hi = fr.index.min(), fr.index.max()
     span = f"{lo.date()}..{hi.date()}" if pd.notna(lo) and pd.notna(hi) else "—"
 
+    # global credit cycle (BIS credit-gap + DSR; additive leaf, None if data absent)
+    credit_cycle = None
+    try:
+        from engine import credit_cycle as _cc
+        credit_cycle = _cc.snapshot()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("credit-cycle snapshot failed: %s", e)
+
     from engine.i18n import tr, td
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     env.globals.update(tr=tr, td=td)
     html = env.get_template("bonds.html.j2").render(
-        C=C, as_of=as_of_disp, built=built, span=span, vm=vm, charts=charts,
+        C=C, as_of=as_of_disp, built=built, span=span, vm=vm, charts=charts, credit_cycle=credit_cycle,
+        fed_path=fed_path,
         timeline=timeline, timeline_days=acfg["timeline_days"], n_alerts=len(recent))
     site = config.ROOT / config.load()["storage"]["site_dir"]
     (site / "bonds.html").write_text(html)
@@ -456,6 +521,8 @@ def main() -> int:
               "health_label": snap.get("health_label"), "cycle_phase": snap.get("cycle_phase"),
               "verdict_en": snap.get("verdict_en"), "verdict_zh": snap.get("verdict_zh")}
     (outdir / "latest.json").write_text(json.dumps(latest, indent=2, default=str, ensure_ascii=False))
+    if fed_path is not None:
+        snap["fed_path"] = fed_path  # deterministic LLM context on the bonds AI contract
     (outdir / "bond_health.json").write_text(json.dumps(snap, indent=2, default=str, ensure_ascii=False))
     log.info("wrote data/bonds/{latest,bond_health}.json — health=%s phase=%s",
              snap.get("health_score"), snap.get("cycle_phase"))

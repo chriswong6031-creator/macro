@@ -19,6 +19,12 @@ data/hk_breadth/_closes_cache.parquet
 data/catalyst/digest_cache/
 data/catalyst/stockbrief_cache/
 
+# Event-calendar fetch caches (regenerable; keyless TreasuryDirect + keyed FRED
+# release/dates). Date-stamped & ephemeral — never commit.
+data/macro/news_cache/
+data/macro/auction_cache/
+data/macro/release_cache/
+
 # Large local-only research/build caches (regenerable; kept out of the deploy repo
 # so the daily CI `git add data/` never re-commits & grows them). Not on origin/main.
 data/breadth/_closes_deep.parquet

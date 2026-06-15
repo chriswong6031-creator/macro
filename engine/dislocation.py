@@ -226,22 +226,35 @@ def _catalyst_narrative(verdict: str, catalyst: dict | None) -> dict | None:
         return None                                  # only meaningful when a dislocation is live
     gate_says = "reversible" if verdict == "buyable_washout" else "persistent"
     agree = sr == gate_says
+    # deterministic 中文 (this is fixed-variant composed prose — no LLM needed; the
+    # dashboard dual-emits note/note_zh so it follows the EN/中文 toggle)
+    _sr_zh = {"reversible": "可逆", "persistent": "结构性"}
+    _vd_zh = {"buyable_washout": "可买入错杀", "stand_aside": "观望（接飞刀）"}
     if agree:
         note = (f"Catalyst text corroborates the gate — reads as {sr.upper()}, matching the "
                 f"Fed-put switch ({verdict.replace('_', ' ')}).")
+        note_zh = (f"催化文本印证一道闸 —— 解读为「{_sr_zh[sr]}」，与美联储托底开关一致"
+                   f"（{_vd_zh[verdict]}）。")
     elif verdict == "buyable_washout":               # gate constructive, narrative cautious
         note = ("Divergence — the Fed-put switch reads BUYABLE WASHOUT, but the catalyst text "
                 "reads PERSISTENT (structural). The validated gate governs; treat the narrative "
                 "as a caution flag worth a look.")
+        note_zh = ("背离 —— 美联储托底开关判定为「可买入错杀」，但催化文本解读为「结构性（持续）」。"
+                   "以经验证的一道闸为准；将该叙述视为值得留意的警示信号。")
     else:                                            # stand_aside, narrative constructive
         note = ("Divergence — the Fed-put switch reads STAND ASIDE (knife), but the catalyst text "
                 "reads REVERSIBLE. The validated gate governs; the narrative is a watch-for-"
                 "stabilization hint, not a green light.")
+        note_zh = ("背离 —— 美联储托底开关判定为「观望（接飞刀）」，但催化文本解读为「可逆」。"
+                   "以经验证的一道闸为准；该叙述仅为等待企稳的提示，并非买入许可。")
     return {
         "shock_reversible": sr,
+        "shock_reversible_zh": _sr_zh.get(sr),
         "confidence": catalyst.get("confidence"),
         "agreement": "corroborates" if agree else "diverges",
+        "agreement_zh": "印证" if agree else "背离",
         "note": note,
+        "note_zh": note_zh,
         "source_doc": catalyst.get("doc_id"),
         "evidence": catalyst.get("evidence") or [],
         "is_context_only": True,

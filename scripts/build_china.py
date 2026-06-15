@@ -239,6 +239,29 @@ def _internals_vm() -> dict:
     return vm
 
 
+def _property_vm() -> dict | None:
+    """China Property & Fiscal panel (70-city price breadth, NBS climate composite,
+    rebar/iron-ore construction demand, CGB curve, property-ETF drawdown) + charts.
+    DISPLAY/regime context only — never a scored A-share signal."""
+    from engine import china_property as cp
+    v = cp.property_view()
+    if not v:
+        return None
+    if v.get("breadth") and v["breadth"].get("chart"):
+        v["breadth"]["chart_html"] = _panel_line(v["breadth"]["chart"], "#c97f9a", height=170, zero=True)
+    if v.get("climate") and v["climate"].get("chart"):
+        v["climate"]["chart_html"] = _panel_line(v["climate"]["chart"], "#5fbf7f", height=170,
+                                                 hline=100, hline_text="neutral 100")
+    if v.get("construction") and v["construction"].get("chart"):
+        v["construction"]["chart_html"] = _panel_line(v["construction"]["chart"], "#e0a030", height=170)
+    if v.get("cgb") and v["cgb"].get("chart"):
+        v["cgb"]["chart_html"] = _panel_line(v["cgb"]["chart"], "#3f9fd8", height=170)
+    if v.get("prop_etf") and v["prop_etf"].get("chart"):
+        v["prop_etf"]["chart_html"] = _panel_line(v["prop_etf"]["chart"], "#d04545", height=170,
+                                                 zero=True, fill=True)
+    return v
+
+
 def _leaderboard() -> dict | None:
     """Stock-Connect 'smart money' leaderboard — today's most-active A-shares by foreign
     (northbound) turnover + the HK names mainland (southbound) money net-bought/sold.
@@ -463,6 +486,14 @@ def main() -> int:
             log.error("china internals build failed (%s); skipping", e)
             vm["internals"] = {}
 
+        # property & fiscal panel (70-city price breadth / climate / construction
+        # demand / CGB curve / property-ETF drawdown) — display/regime context, None-safe
+        try:
+            vm["property"] = _property_vm()
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("china property build failed (%s); skipping", e)
+            vm["property"] = None
+
         # regime history -> Time Machine JSON + lifespan base rates on the main page
         hist = store.read("china_regime", "regime_history")
         if hist is not None and "quad" in hist.columns:
@@ -537,6 +568,30 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("china lowvol sleeve failed (%s); skipping", e)
             vm["lowvol"] = None
+
+        # "Standout individual stocks" — the US notable-cards feature, ported. Enrich the
+        # reversal-led setups shortlist with price + off-52w-high + sparkline + a China
+        # confluence flag (reversal ∩ low-vol). Runs after reversal+lowvol so confluence
+        # can be computed. Updates vm["setups"] in place (falls back to raw setups).
+        try:
+            from scripts.build_china_library import compute_china_standouts
+            vm["setups"] = compute_china_standouts(setups, vm.get("reversal"), vm.get("lowvol"))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("china standouts enrich failed (%s); using raw setups", e)
+
+        # consolidated SCOREBOARD — merge the 4 single-signal screener JSONs (reversal,
+        # low-vol, alpha, setups, + confluence) into one toggle-ready board. Runs last,
+        # after all screener JSONs + the stock library are written.
+        try:
+            from scripts.build_china_library import compute_china_scoreboard
+            sb = compute_china_scoreboard()
+            vm["scoreboard"] = sb
+            if sb:
+                (site / "factordata" / "china_scoreboard.json").write_text(
+                    json.dumps(sb, separators=(",", ":"), default=str))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("china scoreboard build failed (%s); skipping", e)
+            vm["scoreboard"] = None
 
         env = Environment(loader=FileSystemLoader(
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)

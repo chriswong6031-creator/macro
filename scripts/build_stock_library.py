@@ -26,6 +26,7 @@ from engine import ticker_alerts  # noqa: E402
 from engine.conditions import sector_macro_beta  # noqa: E402
 from engine.cycles import analyze, market_vix_context  # noqa: E402
 from engine.playbook import SECTOR_NAMES  # noqa: E402
+from engine.setups import US_ALPHA_WEIGHT, rank_setups, setup_score, sue_confirmer  # noqa: E402
 from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
@@ -284,12 +285,41 @@ def main() -> int:
     # sector-neutral residual-alpha per-ticker scores (written by build_site.
     # build_alpha_data just before this runs). Additive — absent => no panel.
     alpha_pt: dict[str, dict] = {}
+    alpha_asof = None
     ap = site / "factordata" / "alpha.json"
     if ap.exists():
         try:
-            alpha_pt = (json.loads(ap.read_text()) or {}).get("per_ticker", {})
+            _aj = json.loads(ap.read_text()) or {}
+            alpha_pt = _aj.get("per_ticker", {})
+            alpha_asof = _aj.get("as_of")
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("alpha.json unreadable (%s)", e)
+    # confirmer legs for the Top-setups board: the factor composite (factors.json
+    # table) as a LIGHT tiebreaker + insider BUY clusters (insider_signals.json) + the
+    # validated SUE earnings-momentum z (factors.json table 'sue') — all written by
+    # build_site just before this runs. Additive — absent => no chip. DISPLAY context
+    # only; the factor breaks ties in rank_setups, insider/SUE never touch the order.
+    factor_z: dict[str, float] = {}
+    sue_z: dict[str, float] = {}
+    insider_map: dict[str, dict] = {}
+    fp = site / "factordata" / "factors.json"
+    if fp.exists():
+        try:
+            for _r in (json.loads(fp.read_text()) or {}).get("table", []):
+                if not _r.get("ticker"):
+                    continue
+                if _r.get("composite") is not None:
+                    factor_z[_r["ticker"]] = _r["composite"]
+                if _r.get("sue") is not None:
+                    sue_z[_r["ticker"]] = _r["sue"]
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("factors.json unreadable (%s)", e)
+    isp = site / "factordata" / "insider_signals.json"
+    if isp.exists():
+        try:
+            insider_map = json.loads(isp.read_text()) or {}
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("insider_signals.json unreadable (%s)", e)
     # curated super-investor 13F holdings per stock (written by build_site.
     # build_smartmoney_data just before this runs). Additive — absent => no panel.
     smart_money: dict[str, dict] = {}
@@ -301,7 +331,12 @@ def main() -> int:
             log.warning("smartmoney.json unreadable (%s)", e)
     # per-stock dealer-gamma (DISPLAY-ONLY, gated from the score by validate_gex)
     gex_by_ticker = _optionable_gex()
-    index, built, failed = [], 0, 0
+    # contrarian crowding/fragility flags (DISPLAY-ONLY, gated OUT of the score by
+    # scripts/fund_crowding_phase0.py — short interest has no PIT history to validate).
+    # Computed once over the whole panel; graceful (absent feed => {} => no chip).
+    from engine.crowding import compute_fragility
+    fragility_map = compute_fragility()
+    index, cand, built, failed = [], [], 0, 0
     for ticker, close, high, name, sector in universe():
         try:
             rec = _one(ticker, close, high, name, sector, liquidity=liq,
@@ -317,17 +352,34 @@ def main() -> int:
             rec.update(fpanels[ticker])
         if flows.get(ticker):
             rec["fund_flows"] = flows[ticker]
-        if alpha_pt.get(ticker):
+        if alpha_pt.get(ticker):            # additive: absent => no alpha/setup for this name
             rec["alpha"] = alpha_pt[ticker]
+            sc = setup_score(rec, alpha_weight=US_ALPHA_WEIGHT)
+            if sc:
+                row = sc[1]
+                row["factor_z"] = factor_z.get(ticker)      # tiebreaker in rank_setups + display
+                ins = insider_map.get(ticker) or {}
+                if ins.get("buyers", 0) >= 2 and (ins.get("net_mn") or 0) > 0:
+                    row["insider_buyers"] = ins.get("buyers")
+                    row["insider_bps"] = ins.get("bps")
+                    row["insider_net_mn"] = ins.get("net_mn")
+                sconf = sue_confirmer(sue_z.get(ticker))    # earnings-momentum confirmer (display only)
+                if sconf is not None:
+                    row["sue_z"] = sconf
+                cand.append(sc)
         if smart_money.get(ticker):
             rec["smart_money"] = smart_money[ticker]
         if gex_by_ticker.get(ticker):
             rec["gex"] = gex_by_ticker[ticker]
+        if fragility_map.get(ticker):
+            rec["fragility"] = fragility_map[ticker]
         ladder_rows.append(ticker_alerts.ladder_row(ticker, rec.get("ladder"), rec.get("asof")))
         safe = ticker.replace("=", "_").replace("^", "_")
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
-        index.append({"t": ticker, "n": name, "s": sector,
-                      "st": rec["ladder"]["state"]})
+        idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
+        if rec.get("alpha", {}).get("alpha") is not None:
+            idx["a"] = rec["alpha"]["alpha"]          # alpha-z in the index for client ranking
+        index.append(idx)
         built += 1
     # flush the accruing ladder-transition log in one idempotent, atomic write
     try:
@@ -339,6 +391,22 @@ def main() -> int:
     cal = config.data_dir() / "regime" / "ladder_calibration.json"
     if cal.exists():
         (outdir / "calibration.json").write_text(cal.read_text())
+    # cross-sectional "Top setups" — selection (sector-neutral residual alpha) ×
+    # timing (cycle entry + reversal overlay), surfaced on the macro dashboard's
+    # "Standout individual stocks" board (read by build_site one build later, since
+    # build_library runs at the END of build_site). Buys = strong-alpha leaders on a
+    # constructive entry; laggards = weak alpha. Mirrors build_china_library.
+    if cand:
+        # rank by the validated alpha leg, NOT the blended setup score: Phase-0
+        # (reports/setup-score-phase0.md) found the cycle-timing/reversal blend does
+        # not improve forward-return ranking on the US panel — it dilutes alpha — so
+        # the board rides the positive-IC leg and shows the timing as entry context.
+        setups = rank_setups(cand, as_of=alpha_asof, rank_by="alpha")
+        (site / "factordata").mkdir(parents=True, exist_ok=True)
+        (site / "factordata" / "setups.json").write_text(
+            json.dumps(setups, separators=(",", ":"), default=str))
+        log.info("wrote setups.json (%d buy, %d laggards, %d candidates)",
+                 len(setups["buy"]), len(setups["laggards"]), len(cand))
     # multi-timeframe Bottom-Confidence per-band held-rate (stock.html shows the
     # measured "this band held the low ~N%" line; see research/BOTTOM_CONFIDENCE.md)
     bccal = config.data_dir() / "regime" / "bottom_confidence_calibration.json"

@@ -53,10 +53,6 @@ jobs:
         # calibration just leaves last week's (stale) calibration in place.
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
-          # catalyst_tone (engine.run) + catalyst_stock briefs (build_site) need the
-          # DeepSeek key in the weekly build too. No-op (degrades to neutral / no
-          # brief) when the secret is absent. Mirrors daily.yml.
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           set +e
           run_py() {
@@ -73,11 +69,15 @@ jobs:
           run_py "weekly collectors" scripts.collect --only cot,sentiment_naaim,sentiment_aaii,fundamentals,stock_fundamentals
           run_py "recalibrate (macro)" scripts.recalibrate
           run_py "regime engine (engine.run)" engine.run
-          run_py "factor IC scorecard (leak-free, full grid)" scripts.factor_ic_scorecard
           run_py "macro dashboard (build_site)" scripts.build_site
           run_py "daily brief" scripts.daily_brief
+          # descriptive A-share fundamentals (akshare, keyless) — refresh high-value
+          # names + widen the universe ~150/run; the China build reads the cache.
+          run_py "china fundamentals (subset)" collectors.china_fundamentals
+          run_py "china fundamentals (widen)" collectors.china_fundamentals --all --limit 150
           run_py "calibrate china" scripts.calibrate_china
           run_py "build china" scripts.build_china
+          run_py "hk fundamentals" collectors.hk_fundamentals
           run_py "calibrate hk" scripts.calibrate_hk
           run_py "build hk" scripts.build_hk
           run_py "calibrate commodities" scripts.calibrate_commodities
@@ -107,9 +107,6 @@ jobs:
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/ reports/ site/
-          # force-track the gitignored LLM stock briefs so pages.yml's committed-tree
-          # deploy ships them (mirrors the stock-search libraries). See daily.yml.
-          git add -f site/stockbrief 2>/dev/null || true
           if git diff --cached --quiet; then echo "no weekly changes to commit"; exit 0; fi
           git commit -m "weekly: deep-dive $(date -u +%F)"
           # best-effort push: losing a race with a concurrent push must NOT fail the

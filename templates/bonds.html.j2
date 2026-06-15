@@ -223,6 +223,33 @@ html[data-theme="dark"] .measured-edge{background:rgba(26,127,67,.12)}
     <div class="sub faint" style="margin-top:8px">{{ t('The 3m10y spread drives the NY Fed probit. The near-term forward spread (the implied 3m rate ~18 months out minus today\'s) statistically beats 2s10s as a recession signal — it inverts when the market prices Fed cuts. The TP-adjusted slope strips the low-term-premium distortion that inverted the curve in 2022–24 without a recession.', '3月/10年利差驱动纽约联储概率模型。近端远期利差（约18个月后的隐含3月利率减去当前）作为衰退信号在统计上优于2年/10年——当市场为美联储降息定价时即倒挂。期限溢价调整斜率剔除了2022–24年在无衰退情况下导致曲线倒挂的低期限溢价扭曲。') }}</div>
   </div>
 
+  <!-- ===================== FED POLICY PATH ===================== -->
+  {% if fed_path %}
+  <div class="sec-head">{{ t('Market-implied policy path — the Fed vs the market', '市场隐含政策路径 · 美联储 vs 市场') }}</div>
+  <div class="card">
+    <h2>{{ t('Where the market prices the funds rate — and where the Fed projects it', '市场为基金利率定价之处 · 以及美联储的预测') }}</h2>
+    {% if fed_path.headline_en %}<div class="sub" style="margin:2px 0 8px"><b><span class="l-en">{{ fed_path.headline_en }}</span><span class="l-zh">{{ fed_path.headline_zh }}</span></b></div>{% endif %}
+    {% if fed_path.gap %}
+    <div style="margin:6px 0 10px">
+      <span class="band-chip" style="background:var(--muted)">{{ fed_path.gap.horizon_label }} · {{ t('market', '市场') }} {{ '%.2f'|format(fed_path.gap.market) }}% · {{ t('Fed dot', '美联储点阵') }} {{ '%.2f'|format(fed_path.gap.fed_dot) }}%</span>
+      <span class="pill"><span class="l-en">{{ '%+d'|format(fed_path.gap.gap_bp) }}bp · {{ fed_path.gap.lean_en }}</span><span class="l-zh">{{ '%+d'|format(fed_path.gap.gap_bp) }}基点 · {{ fed_path.gap.lean_zh }}</span></span>
+    </div>
+    {% endif %}
+    <div class="kpis">
+      {{ kpi('Target range', '目标区间', (('%.2f'|format(fed_path.target_low)) ~ '–' ~ ('%.2f'|format(fed_path.target_high))) if fed_path.target_low is not none else none, '%') }}
+      {{ kpi('EFFR (policy now)', '有效联邦基金利率', fed_path.policy_rate, '%') }}
+      {{ kpi('Implied 12m', '隐含12个月', fed_path.implied.get('m12'), '%') }}
+      {{ kpi('Implied 25bp moves (12m)', '隐含25基点变动(12月)', fed_path.implied_cuts_12m, '', t('+ = cuts', '正=降息')) }}
+      {{ kpi('Near-term fwd spread', '近端远期利差', fed_path.ntfs, 'pp') }}
+      {{ kpi('us2y − funds', 'us2y − 基金利率', fed_path.rate_exp_proxy, 'pp') }}
+    </div>
+    {% if fed_path.implied_source_en %}<div class="sub faint" style="margin-top:6px">{{ t('Implied path source', '隐含路径来源') }}: <span class="l-en">{{ fed_path.implied_source_en }}</span><span class="l-zh">{{ fed_path.implied_source_zh }}</span></div>{% endif %}
+    {% if charts.policy_path %}<div style="margin-top:14px">{{ charts.policy_path | safe }}</div>{% endif %}
+    {% if fed_path.read_en %}<div class="sub" style="margin-top:8px"><span class="l-en">{{ fed_path.read_en }}</span><span class="l-zh">{{ fed_path.read_zh }}</span></div>{% endif %}
+    <div class="sub faint" style="margin-top:8px">{{ t(fed_path.note_en, fed_path.note_zh) }}</div>
+  </div>
+  {% endif %}
+
   <!-- ===================== CREDIT + REAL/INFLATION ===================== -->
   <div class="sec-head">{{ t('② Credit & ③ Real rates — risk appetite & the discount rate', '② 信用 与 ③ 实际利率 · 风险偏好与贴现率') }}</div>
   <div class="grid cols-2">
@@ -301,6 +328,31 @@ html[data-theme="dark"] .measured-edge{background:rgba(26,127,67,.12)}
     <div style="margin-top:14px">{{ charts.sovereign | safe }}</div>
     <div class="sub faint" style="margin-top:6px">{{ t('Euro-area fragmentation = the ECB all-government minus AAA-rated 10y yield — a free, official, daily BTP-Bund-style proxy for periphery-vs-core stress (AAA ≈ the German Bund). JGB 2s10s tracks Japan\'s post-YCC normalization; a steep long end can repatriate Japanese capital and lift global duration supply.', '欧元区分化 = 欧洲央行全体政府债减AAA级的10年收益率——免费、官方、每日，类似意德利差的“外围对核心”压力代理（AAA≈德国国债）。日债2年/10年跟踪日本YCC退出后的正常化；长端陡峭可能促使日本资本回流并推高全球久期供给。') }}</div>
   </div>
+
+  {% if credit_cycle %}
+  <div class="card">
+    <h2>{{ t('Global credit cycle — the crisis early-warning (BIS)', '全球信用周期 · 危机预警 (BIS)') }}</h2>
+    <div class="sub faint" style="margin:4px 0 8px">{{ t('Private-sector leverage vs trend.', '私人部门杠杆相对趋势。') }} <b>{{ t(credit_cycle.headline, '') }}</b> · {{ t('as of', '截至') }} {{ credit_cycle.asof }}</div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <tr style="color:var(--muted);font-size:11px;text-transform:uppercase">
+        <th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--line)">{{ t('economy', '经济体') }}</th>
+        <th style="text-align:right;padding:4px 8px;border-bottom:1px solid var(--line)">{{ t('credit-to-GDP gap', '信贷/GDP 缺口') }}</th>
+        <th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--line)">{{ t('state', '状态') }}</th>
+        <th style="text-align:right;padding:4px 8px;border-bottom:1px solid var(--line)">{{ t('debt-service ratio', '偿债比率') }}</th>
+      </tr>
+      {% for r in credit_cycle.rows %}
+      {% set gc = 'var(--down)' if (r.gap or 0) >= 10 else '#d9a03c' if (r.gap or 0) >= 2 else 'var(--up)' if (r.gap or 0) <= -2 else 'var(--muted)' %}
+      <tr>
+        <td style="padding:5px 8px;border-bottom:1px solid var(--line)"><b>{{ t(r.label_en, r.label_zh) }}</b></td>
+        <td style="text-align:right;padding:5px 8px;border-bottom:1px solid var(--line);color:{{ gc }};font-weight:700">{{ '%+.1f'|format(r.gap) }}pp{% if r.gap_chg_1y is not none %} <span class="sub faint" style="font-weight:400">{{ '%+.1f'|format(r.gap_chg_1y) }}/yr</span>{% endif %}</td>
+        <td style="padding:5px 8px;border-bottom:1px solid var(--line);color:{{ gc }}">{{ t(r.gap_state, {'elevated risk':'风险偏高','building':'累积中','deleveraging':'去杠杆','neutral':'中性'}.get(r.gap_state, r.gap_state)) }}</td>
+        <td style="text-align:right;padding:5px 8px;border-bottom:1px solid var(--line)">{{ r.dsr }}%{% if r.dsr_chg_1y is not none %} <span class="sub faint">{{ '%+.1f'|format(r.dsr_chg_1y) }}/yr</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    <div class="sub faint" style="margin-top:8px">{{ t(credit_cycle.note, '信贷/GDP 缺口（BIS，Borio-Drehmann）= 私人非金融部门信贷/GDP 减去其长期趋势；大幅正缺口（>10个百分点）在历史上领先银行业危机1-3年，负缺口标志去杠杆完成。DSR=偿债负担。季度、缓变的结构性背景——非信号，从不评分。来源：BIS 统计（无需密钥），请注明 BIS。') }}</div>
+  </div>
+  {% endif %}
 
   <!-- ===================== CROSS-ASSET DRIVERS (AI hand-off) ===================== -->
   <div class="sec-head">{{ t('Cross-asset hand-off — what bonds imply for the other boards', '跨资产传导 · 债券对其他面板的含义') }}</div>

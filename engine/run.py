@@ -153,6 +153,16 @@ def run() -> dict:
                 latest["dislocation"]["catalyst_narrative"] = _catalyst_narrative(dis.get("verdict"), src)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("catalyst event-trigger failed: %s", e)
+    # Fed policy path (research/DATA_SIGNAL_EXPANSION_2026.md #2): the market-implied
+    # rate path (ZQ/SR3 futures) vs the FOMC dot-plot + a Fed-vs-market gap read.
+    # Additive DISPLAY/LLM-context leaf (engine/fed_path.py) — the path level is a
+    # PRICE and repricing is reactive, so it is NEVER scored and NEVER an MRS leg.
+    try:
+        from engine.fed_path import snapshot as fed_path_snapshot
+        latest["fed_path"] = fed_path_snapshot(f)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("fed-path layer failed: %s", e)
+        latest["fed_path"] = None
     # Macro-risk score (MRS, 0..1): one deterministic risk-OFF gauge folded from
     # the conditions/regime legs above. Derived from macro_risk_series (one coherent
     # as-of date) — NOT from the latest dict, whose legs can straddle two release

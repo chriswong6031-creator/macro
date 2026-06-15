@@ -145,11 +145,34 @@ def build_features() -> pd.DataFrame:
     # values = market prices cuts over the next ~2y; ZQ front adds a 30d view
     f["rate_expectations_proxy"] = f["us2y"] - f["fed_funds"]
     f["zq_implied_rate"] = 100 - f["zq_front"]
+    # Fed policy path (DISPLAY-ONLY, research/DATA_SIGNAL_EXPANSION_2026.md #2): the
+    # live target range (daily) + the FOMC dot-plot median. The range gives the policy
+    # midpoint; the dot is future-dated (each SEP overwrites the series) so ffill only
+    # carries the latest projection forward — engine/fed_path.py reads the RAW store
+    # series for the full forward dot path. Never scored, never an MRS leg.
+    put("fed_target_upper", series.get("fed_target_upper"))
+    put("fed_target_lower", series.get("fed_target_lower"))
+    put("fed_dot_median", series.get("fed_dot_median"), ffill_limit=400)
 
     # --- Quant-factor expansion: Fed-research feeds (research/QUANT_FACTOR_EXPANSION.md)
     # Financial-conditions indices (weekly) — a ready broad risk gauge.
     for col in ["nfci", "anfci", "nfci_risk", "nfci_credit", "nfci_leverage", "stlfsi"]:
         put(col, series.get(col), ffill_limit=7)
+    # OFR Financial Stress Index (daily, ~2-bday lag) — level + 5 functional + 3
+    # regional legs (data/ofr/). The functional decomposition lets the read name the
+    # stress CHANNEL; the Funding leg embeds a free x-ccy-basis proxy, the EM leg is
+    # additive vs the US-centric NFCI. See research/DATA_SIGNAL_EXPANSION_2026.md.
+    for col, sid in [("ofr_fsi", "fsi"), ("ofr_fsi_credit", "fsi_credit"),
+                     ("ofr_fsi_equity", "fsi_equity"), ("ofr_fsi_safe", "fsi_safe_assets"),
+                     ("ofr_fsi_funding", "fsi_funding"), ("ofr_fsi_vol", "fsi_volatility"),
+                     ("ofr_fsi_us", "fsi_us"), ("ofr_fsi_oae", "fsi_oae"),
+                     ("ofr_fsi_em", "fsi_em")]:
+        o = store.read("ofr_fsi", sid)
+        put(col, o.iloc[:, 0] if o is not None and not o.empty else None, ffill_limit=7)
+    # Commercial-paper spreads (daily): A2/P2 = credit-quality stress, CP-bill = funding
+    # stress. The bill leg (us3m) is loaded with the fuller curve below.
+    put("aa_cp_90d", series.get("aa_cp_90d"), ffill_limit=7)
+    put("a2p2_cp_90d", series.get("a2p2_cp_90d"), ffill_limit=7)
     # Recession reads: Sahm + smoothed prob (monthly, ~6wk publication lag), ACM
     # term premium (daily). 70 bdays carries a monthly print until its successor.
     put("sahm", series.get("sahm"), ffill_limit=70)

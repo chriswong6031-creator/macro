@@ -243,38 +243,23 @@ def macro_headlines(today: date | None = None) -> dict | None:
 # --------------------------------------------------------------------------- #
 # public: upcoming macro catalysts (keyless, always available)
 # --------------------------------------------------------------------------- #
-# Fed-published 2026 FOMC schedule. * (SEP) = meeting with projections/dot-plot.
-_FOMC = [("2026-01-28", " (SEP)"), ("2026-03-18", ""), ("2026-04-29", " (SEP)"),
-         ("2026-06-17", ""), ("2026-07-29", " (SEP)"), ("2026-09-16", ""),
-         ("2026-10-28", " (SEP)"), ("2026-12-09", "")]
+# The catalyst schedule now lives in the shared, unified engine.event_calendar
+# (FOMC + CPI/PPI/jobs/GDP/PCE + jobless claims + ISM + opex + Treasury auctions).
+# This wrapper delegates to it and tacks on any user-supplied `extra_catalysts`
+# from config, preserving the existing context-only contract.
+from engine import event_calendar as _ec
 
-
-def _first_friday(y: int, m: int) -> date:
-    d = date(y, m, 1)
-    return d + timedelta(days=(4 - d.weekday()) % 7)   # weekday 4 == Friday
+_first_friday = _ec.first_friday   # re-export (computed-jobs helper; kept for tests)
 
 
 def upcoming_catalysts(today: date | None = None, horizon_days: int = 14) -> list[dict]:
-    """Forward macro-event watch list (FOMC + monthly jobs report, computed
-    reliably) plus any config `extra_catalysts` (official CPI/GDP dates the user
-    supplies). Scheduling info, context-only."""
+    """Forward macro-event watch list from the unified event calendar plus any config
+    `extra_catalysts` (e.g. Jackson Hole) the user supplies. Scheduling info,
+    context-only — NEVER a scored event-risk dampener (see engine.event_calendar)."""
     today = today or date.today()
     end = today + timedelta(days=horizon_days)
-    out: list[dict] = []
-
-    for d, tag in _FOMC:
-        dd = date.fromisoformat(d)
-        if today <= dd <= end:
-            out.append({"type": "FOMC", "date": d, "time_et": "14:00",
-                        "label": f"FOMC rate decision{tag}", "is_context_only": True})
-    # Nonfarm payrolls — first Friday of each month, 08:30 ET (computed)
-    for mo in (today.month, today.month % 12 + 1):
-        yr = today.year + (1 if mo == 1 and today.month == 12 else 0)
-        ff = _first_friday(yr, mo)
-        if today <= ff <= end:
-            out.append({"type": "NFP", "date": ff.isoformat(), "time_et": "08:30",
-                        "label": "Jobs report (nonfarm payrolls)", "is_context_only": True})
-    # user-supplied official dates (CPI/GDP/Jackson Hole/etc.) — {type,date,label,time_et?}
+    out: list[dict] = _ec.us_macro_events(today, horizon_days)
+    # user-supplied official dates (Jackson Hole/etc.) — {type,date,label,time_et?}
     for c in (_cfg().get("extra_catalysts") or []):
         try:
             dd = date.fromisoformat(c["date"])
@@ -283,7 +268,7 @@ def upcoming_catalysts(today: date | None = None, horizon_days: int = 14) -> lis
         if today <= dd <= end:
             out.append({"type": c.get("type", "EVENT"), "date": c["date"],
                         "time_et": c.get("time_et", ""), "label": c.get("label", ""),
-                        "is_context_only": True})
+                        "impact": "med", "source": "config", "is_context_only": True})
     out.sort(key=lambda c: c["date"])
     return out
 
@@ -307,10 +292,12 @@ def _llm_ready(cfg: dict) -> bool:
 
 
 def macro_brief(headlines: list[dict] | None, regime_line: str = "",
-                sentiment_line: str = "") -> dict | None:
-    """OPTIONAL one-paragraph narration of the filtered headlines + regime/sentiment.
-    Default-off, gated on key, provider-agnostic (DeepSeek/Anthropic), degrade to
-    None. Labeled context; never scored."""
+                sentiment_line: str = "", catalyst_line: str = "") -> dict | None:
+    """OPTIONAL one-paragraph narration of the filtered headlines + regime/sentiment
+    + the imminent-catalyst schedule (from engine.event_calendar). Default-off, gated
+    on key, provider-agnostic (DeepSeek/Anthropic), degrade to None. Labeled context;
+    never scored. The catalyst line is scheduling background the narrator may mention
+    ("CPI prints Thursday"), NOT a directive to de-risk."""
     cfg = _cfg()
     if not _llm_ready(cfg) or not headlines:
         return None
@@ -326,7 +313,8 @@ def macro_brief(headlines: list[dict] | None, regime_line: str = "",
         lines = "\n".join(f"- [{h.get('theme','')}] {h['title']} ({h['domain']})"
                           for h in headlines[:12])
         user = (f"Regime: {regime_line or 'n/a'}\nNews sentiment: {sentiment_line or 'n/a'}\n"
-                f"Filtered macro headlines:\n{lines}")
+                + (f"{catalyst_line}\n" if catalyst_line else "")
+                + f"Filtered macro headlines:\n{lines}")
         resp = client.messages.create(
             model=cfg.get("llm_model", "deepseek-chat"), max_tokens=220,
             system=BRIEF_SYSTEM, messages=[{"role": "user", "content": user}])
