@@ -1506,7 +1506,7 @@
       </span>
       {% if ndi and ndi.ndi is not none %}<span><b>{{ t('NDI', '叙事主导') }} {{ ndi.ndi }}/100</b> <span class="muted">· {{ t(ndi.band, {'calm':'平静','elevated':'偏高','high':'高'}.get(ndi.band, ndi.band)) }} · {{ t('gate off (display-only)', '闸门关闭（仅显示）') }}</span></span>{% endif %}
       {% if L.epu and L.epu.pct is not none %}<span class="muted">EPU {{ L.epu.pct }}{{ t('th pct', '百分位') }}</span>{% endif %}
-      {% if L.gpr_threat and L.gpr_threat.pct is not none %}<span class="muted">GPR-{{ t('threat', '威胁') }} {{ L.gpr_threat.pct }}{{ t('th pct', '百分位') }}{% if L.gpr_threat.lean and L.gpr_threat.lean != 'balanced' %} <span title="{{ t('threat-led tends to revert (~3mo); act-led tends to persist', '以威胁为主往往回落（约3个月）；以行动为主则更持久') }}">({{ t('led by', '主导') }} {{ t('threats', '威胁') if L.gpr_threat.lean == 'threat' else t('acts', '行动') }})</span>{% endif %}</span>{% endif %}
+      {% if L.gpr_threat and L.gpr_threat.pct is not none %}<span class="muted">GPR-{{ t('threat', '威胁') }} {{ L.gpr_threat.pct }}{{ t('th pct', '百分位') }}{% if L.gpr_threat.lean and L.gpr_threat.lean != 'balanced' %} <span title="{{ 'threat-led tends to revert (~3mo); act-led tends to persist · 以威胁为主往往回落（约3个月）；以行动为主则更持久' }}">({{ t('led by', '主导') }} {{ t('threats', '威胁') if L.gpr_threat.lean == 'threat' else t('acts', '行动') }})</span>{% endif %}</span>{% endif %}
       {% if L.vix and L.vix.pct is not none %}<span class="muted">VIX {{ L.vix.pct }}{{ t('th pct', '百分位') }}</span>{% endif %}
       {% if narrative_regime and narrative_regime.events and narrative_regime.events.n_recent %}<span class="muted">· {{ t('news-bus', '新闻总线') }}: {{ narrative_regime.events.n_recent }} {{ t('events', '事件') }}/{{ narrative_regime.window_days }}d{% if narrative_regime.events.unscheduled_share is not none %} · {{ (narrative_regime.events.unscheduled_share * 100) | round | int }}% {{ t('unscheduled', '非排程') }}{% endif %}</span>{% endif %}
     </div>
@@ -1538,7 +1538,7 @@
         <div class="section-title">{{ t('Upcoming catalysts', '即将到来的催化') }}</div>
         {% if macro_catalysts %}
           {% for c in macro_catalysts %}
-          <div class="cat-row"><span class="cat-imp imp-{{ c.get('impact','med') }}" title="{{ t('high impact','高影响') if c.get('impact')=='high' else t('scheduled','日程') }}"></span><span class="cat-date">{{ c.date }}{% if c.time_et %} · {{ c.time_et }} ET{% endif %}</span><span class="cat-type ct-{{ c.type }}">{{ c.type }}</span><span class="cat-label">{{ c.label }}</span></div>
+          <div class="cat-row"><span class="cat-imp imp-{{ c.get('impact','med') }}" title="{{ 'high impact · 高影响' if c.get('impact')=='high' else 'scheduled · 日程' }}"></span><span class="cat-date">{{ c.date }}{% if c.time_et %} · {{ c.time_et }} ET{% endif %}</span><span class="cat-type ct-{{ c.type }}">{{ c.type }}</span><span class="cat-label">{{ c.label }}</span></div>
           {% endfor %}
         {% else %}
           <p class="muted sm">{{ t('No scheduled catalysts in the window.', '窗口内无排定催化。') }}</p>
