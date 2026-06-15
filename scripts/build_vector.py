@@ -1193,7 +1193,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
     </div>
   </div>"""
     _cn_href = ("china_stocks.html" if (_site / "china_stocks.html").exists()
-                else ("china_stock.html" if (_site / "china_stock.html").exists() else "china.html"))
+                else ("china_lookup.html" if (_site / "china_lookup.html").exists() else "china.html"))
     _cn_n = (china_stocks or {}).get("n_setups") or 0
     cn_stat = (T(f"{_cn_n} setups · screener", f"{_cn_n} 形态 · 筛选") if _cn_n
                else T('Setups · screener · lookup', '形态 · 筛选 · 查询'))
@@ -1214,7 +1214,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
     </div>
   </div>""")
     _hk_href = ("hk_stocks.html" if (_site / "hk_stocks.html").exists()
-                else ("hk_stock.html" if (_site / "hk_stock.html").exists() else "hk.html"))
+                else ("hk_lookup.html" if (_site / "hk_lookup.html").exists() else "hk.html"))
     _hk_n = (hk_stocks or {}).get("n_setups") or 0
     hk_stat = (T(f"{_hk_n} beta exposures", f"{_hk_n} 个 beta 敞口") if _hk_n
                else T('Beta exposure · sectors · lookup', 'Beta敞口 · 板块 · 查询'))

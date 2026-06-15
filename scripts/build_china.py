@@ -666,11 +666,11 @@ def main() -> int:
         # the china.html render, so its "Top setups" ranking could feed the page)
         try:
             from engine.cycles import STATE_DISPLAY
-            stock_html = env.get_template("china_stock.html.j2").render(
+            stock_html = env.get_template("china_lookup.html.j2").render(
                 state_display_json=json.dumps(STATE_DISPLAY, default=str),
                 generated_utc=vm["built"])
-            (site / "china_stock.html").write_text(stock_html)
-            log.info("wrote %s/china_stock.html + chinastockdata/", site)
+            (site / "china_lookup.html").write_text(stock_html)
+            log.info("wrote %s/china_lookup.html + chinastockdata/", site)
         except Exception as e:  # noqa: BLE001 — search is additive, never fatal
             log.error("china stock search render failed (%s); skipping", e)
 

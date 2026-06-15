@@ -3,7 +3,7 @@
 China parallel of scripts/build_stock_library.py. Runs the SAME cycle/ladder
 engine over the China universe (curated constituents from the breadth close
 cache + sector ETFs + indices in store group 'china') and writes one small JSON
-per instrument that china_stock.html fetches client-side. Instant search, no
+per instrument that china_lookup.html fetches client-side. Instant search, no
 keys, no rate limits. site/chinastockdata/ is gitignored — regenerated nightly.
 
 Each record carries a `tv` field = the TradingView SSE:/SZSE: symbol so the
