@@ -175,6 +175,22 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("fed-path layer failed: %s", e)
         latest["fed_path"] = None
+    # Turning-point fragility meta-layer (engine/turning_point.py): reads ACROSS the
+    # leaves above (cross_asset / market_drivers / conditions / dislocation / fed_path)
+    # and raises a DISPLAY-ONLY caution when the tape is a one-factor macro-shock
+    # extreme with pinned positioning — the configuration that whipsaws. NEVER scored
+    # (the layer cannot tell "forced & reversible" from "early & real"). A one-day
+    # cooldown (last_active/append_log) keeps the caution from flickering.
+    try:
+        from engine.turning_point import (snapshot as turning_point_snapshot,
+                                           append_log as turning_point_log,
+                                           last_active as turning_point_prev)
+        latest["turning_point"] = turning_point_snapshot(
+            latest, latest.get("transition_state"), turning_point_prev(asof))
+        turning_point_log(latest["turning_point"])
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("turning-point layer failed: %s", e)
+        latest["turning_point"] = None
     # Macro-risk score (MRS, 0..1): one deterministic risk-OFF gauge folded from
     # the conditions/regime legs above. Derived from macro_risk_series (one coherent
     # as-of date) — NOT from the latest dict, whose legs can straddle two release
