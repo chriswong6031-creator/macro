@@ -1,0 +1,360 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><span class="l-en">TSX analyzer</span><span class="l-zh">TSX 个股分析</span> — cycle &amp; momentum</title>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,
+         "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1100px)/2)); } }
+  html[data-lang="zh"] body { font-family: "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",-apple-system,sans-serif; }
+  .points { margin:6px 0; padding-left:18px; } .points li { margin:2px 0; }
+  .cyclebox { margin:8px 0; padding:9px 12px; border-radius:9px; background:var(--panel2);
+              font-size:13px; line-height:1.6; }
+  .regline { margin:-2px -4px 6px; padding:6px 9px; border-radius:7px; border-left:3px solid var(--muted); }
+  .regline.rl-bear { border-left-color:var(--down); background:color-mix(in srgb, var(--down) 12%, var(--panel2)); }
+  .regline.rl-bull { border-left-color:var(--up); background:color-mix(in srgb, var(--up) 12%, var(--panel2)); }
+  .regline.rl-neutral { border-left-color:var(--muted); background:color-mix(in srgb, var(--muted) 10%, var(--panel2)); }
+  .entrybar { display:flex; gap:10px; align-items:flex-start; margin:10px 0 8px;
+              padding:9px 12px; border-radius:9px; background:var(--panel2);
+              border-left:4px solid var(--muted); font-size:14px; }
+  .entrytag { font-weight:800; font-size:12px; letter-spacing:.04em; white-space:nowrap;
+              padding:3px 9px; border-radius:7px; background:var(--panel); color:var(--text); border:1px solid var(--line); }
+  .urg-now .entrytag { background:var(--up); color:#fff; } .urg-now { border-left-color:var(--up); }
+  .urg-imminent .entrytag { background:var(--g-cold); color:#fff; } .urg-imminent { border-left-color:var(--g-cold); }
+  .urg-soon { border-left-color:var(--g-cold); } .urg-later { border-left-color:var(--muted); }
+  .urg-hold { border-left-color:var(--muted); }
+  .urg-caution .entrytag { background:var(--warn); color:#1a1a1a; } .urg-caution { border-left-color:var(--warn); }
+  .urg-exit .entrytag { background:var(--down); color:#fff; } .urg-exit { border-left-color:var(--down); }
+  .urg-avoid { border-left-color:var(--down); }
+  .agewhen { margin:6px 0; padding:7px 11px; border-radius:8px; background:var(--panel2);
+             border-left:3px solid var(--link); font-size:13px; color:var(--text); }
+  .eqbadge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px;
+             border-radius:11px; font-size:12.5px; font-weight:700; cursor:help;
+             border:1px solid var(--line); white-space:nowrap; }
+  .eqbadge .eqg { font-weight:500; opacity:.8; }
+  .eqbadge.eq-up { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
+  .eqbadge.eq-down { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
+  .eqbadge.eq-flat { background:var(--panel2); color:var(--muted); }
+  .alpha-entry { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px;
+                 border-radius:9px; text-transform:capitalize; border:1px solid var(--line); white-space:nowrap; }
+  .ae-pullback { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
+  .ae-extended { background:color-mix(in srgb,var(--warn) 22%,transparent); color:var(--text); border-color:color-mix(in srgb,var(--warn) 55%,transparent); }
+  .ae-intact { background:color-mix(in srgb,var(--link) 14%,transparent); color:var(--link); }
+  .ae-laggard,.ae-neutral { background:var(--panel2); color:var(--muted); }
+  .fnd-arch { display:inline-block; font-size:11.5px; font-weight:700; padding:2px 9px;
+              border-radius:8px; background:color-mix(in srgb,var(--link) 14%,var(--panel2));
+              color:var(--link); border:1px solid color-mix(in srgb,var(--link) 30%,var(--line)); }
+  .fnd-desc { font-size:13px; color:var(--text); margin:9px 0 4px; line-height:1.55; }
+  .fnd-grid { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 4px; }
+  .fnd-chip { background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:5px 10px; font-size:12px; min-width:78px; }
+  .fnd-chip .k { color:var(--muted); font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; }
+  .fnd-chip .v { font-weight:800; font-size:15px; font-variant-numeric:tabular-nums; }
+  .fnd-chip .vs { font-size:10px; color:var(--muted); margin-left:4px; }
+  a { text-decoration:none; }
+  h1 { font-size:20px; margin:0; }
+  h2 { font-size:14px; margin:0 0 10px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:14px; }
+  .topline { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+  .navbtn { display:inline-block; padding:5px 11px; border-radius:9px; background:var(--panel2); border:1px solid var(--line); color:var(--text); font-size:13px; font-weight:600; }
+  .muted { color:var(--muted); }
+  .state { display:inline-block; padding:2px 11px; border-radius:12px; font-weight:700; font-size:12.5px; }
+  .searchwrap { position:relative; flex:1; min-width:260px; max-width:460px; }
+  .searchwrap::before { content:''; position:absolute; left:15px; top:50%; width:16px; height:16px;
+       transform:translateY(-50%); pointer-events:none; background-color:var(--muted);
+       -webkit-mask:var(--mag-svg) center/contain no-repeat; mask:var(--mag-svg) center/contain no-repeat;
+       transition:background-color .2s ease; z-index:1; }
+  .searchwrap:focus-within::before { background-color:var(--link); }
+  #q { width:100%; box-sizing:border-box; padding:11px 16px 11px 44px; border-radius:12px;
+       border:1px solid var(--line); background:var(--panel2); color:var(--text);
+       font:inherit; font-size:15px; outline:none; box-shadow:inset 0 1px 2px rgba(0,0,0,.05);
+       transition:border-color .2s ease, background .2s ease, box-shadow .25s ease; }
+  #q::placeholder { color:var(--muted); }
+  .searchwrap:hover #q { border-color:color-mix(in srgb,var(--link) 38%,var(--line)); }
+  #q:focus { border-color:color-mix(in srgb,var(--link) 75%,var(--line)); background:var(--panel);
+       box-shadow:0 0 0 3px color-mix(in srgb,var(--link) 20%,transparent), 0 8px 22px color-mix(in srgb,var(--link) 14%,transparent); }
+  #sugg { position:absolute; top:calc(100% + 8px); left:0; right:0; background:var(--panel);
+          border:1px solid var(--line); border-radius:13px; z-index:50; max-height:330px;
+          overflow:auto; display:none; box-shadow:var(--popover-shadow); padding:5px; }
+  #sugg div { padding:8px 11px; cursor:pointer; display:flex; gap:10px; align-items:center; border-radius:9px; }
+  #sugg div:hover, #sugg div.sel { background:color-mix(in srgb,var(--link) 13%,var(--panel2)); padding-left:14px; }
+  #sugg b { min-width:78px; flex:none; }
+  #sugg small { color:var(--muted); flex:1 1 auto; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #sugg div span { flex:0 1 auto; min-width:0; max-width:40%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:right; }
+  .mtf { display:flex; gap:14px; flex-wrap:wrap; font-size:12.5px; color:var(--muted); margin-top:8px; }
+  .mtf b { color:var(--text); }
+  #result { display:none; }
+</style>
+</head>
+<body>
+  <div class="panel">
+    <div class="topline">
+      <h1>🔎 <span class="l-en">TSX analyzer</span><span class="l-zh">TSX 个股分析</span></h1>
+      <div class="searchwrap">
+        <input id="q" placeholder="Search any TSX stock / sector ETF / index… (e.g. RY, Shopify, Energy)" autocomplete="off">
+        <div id="sugg"></div>
+      </div>
+      <a class="navbtn" href="canada.html"><span class="l-en">← Canada</span><span class="l-zh">← 加拿大</span></a>
+      <a class="navbtn" href="index.html"><span class="l-en">🏠 Home</span><span class="l-zh">🏠 首页</span></a>
+      <button class="lang-btn">中文</button>
+      <button class="theme-btn">☀️ <span class="l-en">Light</span><span class="l-zh">浅色</span></button>
+    </div>
+    <p class="muted" style="margin:8px 0 0"><span class="l-en">Every name gets the same treatment as the sector board:
+      cycle position (daily + weekly), three-timeframe momentum, a clear entry/exit call, sector-neutral
+      relative strength, and descriptive fundamentals. Library refreshes nightly; covers the curated TSX
+      large-caps, the sector ETFs and the broad indices.</span><span class="l-zh">每个标的都享有与板块面板相同的分析：周期位置（日线＋周线）、三周期动量、明确的进出场判断、
+      板块中性相对强度，以及描述性基本面。标的库每晚刷新，覆盖精选的 TSX 大盘股、板块 ETF 与宽基指数。</span></p>
+  </div>
+
+  <div id="result">
+    <div class="panel">
+      <div class="topline">
+        <h1 id="r_name"></h1>
+        <span id="r_state" class="state"></span>
+        <span id="r_eq" class="eqbadge" style="display:none"></span>
+        <span style="flex:1"></span>
+        <span id="r_asof" class="muted"></span>
+      </div>
+      <p id="r_summary" class="muted" style="margin:2px 0 6px; font-size:13.5px"></p>
+      <div id="r_entry" class="entrybar"><span class="entrytag" id="r_tag"></span><span id="r_entrytext"></span></div>
+      <p id="r_age" class="agewhen" style="display:none"></p>
+      <ul id="r_points" class="points"></ul>
+      <div id="r_cyclebox" class="cyclebox"></div>
+      <p id="r_flags" class="neg" style="margin:4px 0"></p>
+      <details><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary><p class="muted" id="r_why" style="margin:6px 0"></p></details>
+    </div>
+    <div class="panel">
+      <h2><span class="l-en">Momentum across timeframes</span><span class="l-zh">跨周期动量</span></h2>
+      <div id="r_mtf"></div>
+    </div>
+    <div class="panel" id="r_alpha_panel" style="display:none">
+      <h2><span class="l-en">Relative strength</span><span class="l-zh">相对强度</span> <span class="note" style="text-transform:none">· <span class="l-en">sector-neutral residual</span><span class="l-zh">板块中性残差</span></span></h2>
+      <div id="r_alpha" class="mtf"></div>
+      <p class="muted" style="font-size:12px; margin-top:8px"><span class="l-en">This name's return with its MARKET and SECTOR beta removed — sector-neutral residual relative strength (12-1 month); <b>alpha z</b> ranks it vs the whole TSX large-cap cross-section. This is the positive-IC SELECTION leg (Canada is momentum-persistent like the US). The entry tag is the timing context: <b>pullback</b> = a leader on a recent dip (the constructive entry); <b>extended</b> = just spiked (chase risk). Context, not a personalized buy signal.</span><span class="l-zh">本股票剔除其市场与板块贝塔后的收益 — 板块中性残差相对强度（12-1 个月）；<b>alpha z</b> 为相对全 TSX 大盘横截面的排名。这是正 IC 的<b>选股腿</b>（加拿大与美国一样动量具持续性）。入场标记为时机背景：<b>pullback</b>＝近期回调的领先股（建设性入场）；<b>extended</b>＝刚急涨（追高风险）。仅作背景，非个性化买入信号。</span></p>
+    </div>
+    <div class="panel" id="r_fund_panel" style="display:none">
+      <h2><span class="l-en">Fundamentals</span><span class="l-zh">基本面</span> <span class="note" style="text-transform:none">· <span class="l-en">context, not a signal</span><span class="l-zh">背景，而非信号</span></span></h2>
+      <div id="r_fund"></div>
+      <p class="muted" style="font-size:12px; margin-top:10px"><span class="l-en">Descriptive valuation, profitability and dividends (from yfinance) — a backdrop to read ALONGSIDE the cycle / relative-strength signals, NOT a buy ranking. "Cheap vs sector" is not validated as a cross-sectional edge here. Fundamentals refresh on a slower cadence than price.</span><span class="l-zh">描述性的估值、盈利与分红（来自 yfinance）—— 作为与周期／相对强度信号并读的背景，而非买入排序。"相对板块便宜"在此并未被验证为有效的横截面优势。基本面的更新频率慢于价格。</span></p>
+    </div>
+    <div class="panel">
+      <h2><span class="l-en">Chart</span><span class="l-zh">图表</span></h2>
+      <div id="tvbox"></div>
+    </div>
+  </div>
+
+<script src="https://s3.tradingview.com/tv.js"></script>
+<script>
+(function () {
+  var idx = [], sel = -1, items = [];
+  var q = document.getElementById('q'), sugg = document.getElementById('sugg');
+  function lang() { return document.documentElement.getAttribute('data-lang') || 'en'; }
+  var T = {
+    en: { asof: 'data through', notlib: 'NOT IN LIBRARY',
+          notlibmsg: 'Not in the nightly library (curated TSX large-caps + sector ETFs + indices). Add it in config.yml → canada.constituents.',
+          season: 'Seasonality', failed: '⚠ Failed cycle — price is below the low that started this cycle; the larger trend is usually rolling over.',
+          next: 'Next:', ph: 'Search any TSX stock / sector ETF / index… (e.g. RY, Shopify, Energy)' },
+    zh: { asof: '数据截至', notlib: '不在库中',
+          notlibmsg: '不在每晚更新的标的库中（精选 TSX 大盘股 ＋ 板块 ETF ＋ 指数）。可在 config.yml → canada.constituents 添加。',
+          season: '季节性', failed: '⚠ 失败周期 — 价格已跌破启动本周期的低点；此时更大的趋势通常正在转向下行。',
+          next: '下一步：', ph: '搜索任意 TSX 个股 / 板块ETF / 指数…（例如 RY、Shopify、Energy）' } };
+  function L(k) { return (T[lang()] || T.en)[k]; }
+  function lz(en, zh) { return lang() === 'zh' && zh ? zh : (en || ''); }
+  var DISP = {"DECLINE": {"label": "DOWNTREND", "action": "AVOID", "dir": "down", "label_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "action_zh": "\u56de\u907f"}, "BOTTOM WATCH": {"label": "NEARING A LOW", "action": "GET READY", "dir": "down", "label_zh": "\u63a5\u8fd1\u4f4e\u70b9", "action_zh": "\u51c6\u5907"}, "TURN SIGNALED": {"label": "BOTTOMING", "action": "BUY SETUP", "dir": "up", "label_zh": "\u7b51\u5e95\u4e2d", "action_zh": "\u4e70\u5165\u9884\u5907"}, "FRESH BUY": {"label": "BUY ZONE", "action": "BUY", "dir": "up", "label_zh": "\u4e70\u5165\u533a", "action_zh": "\u4e70\u5165"}, "RALLY ON": {"label": "UPTREND", "action": "HOLD", "dir": "up", "label_zh": "\u4e0a\u6da8\u8d8b\u52bf", "action_zh": "\u6301\u6709"}, "TOP WATCH": {"label": "NEARING A HIGH", "action": "TAKE PROFITS", "dir": "up", "label_zh": "\u63a5\u8fd1\u9ad8\u70b9", "action_zh": "\u6b62\u76c8"}, "ROLLING OVER": {"label": "TOPPING", "action": "SELL SETUP", "dir": "down", "label_zh": "\u505a\u9876\u4e2d", "action_zh": "\u5356\u51fa\u9884\u5907"}, "COUNTERTREND BOUNCE": {"label": "COUNTER-TREND BOUNCE", "action": "HIGH-RISK \u00b7 NIMBLE ONLY", "dir": "caution", "label_zh": "\u9006\u52bf\u53cd\u5f39", "action_zh": "\u9ad8\u98ce\u9669 \u00b7 \u4ec5\u9650\u7075\u6d3b\u64cd\u4f5c"}};
+  function dlabel(s) { var d = DISP[s]; if (!d) return s; return lang() === 'zh' ? (d.label_zh || d.label) : d.label; }
+  function disp(s) {
+    var d = DISP[s]; if (!d) return s;
+    return lang() === 'zh' ? (d.label_zh || d.label) + ' · ' + (d.action_zh || d.action)
+                           : d.label + ' · ' + d.action;
+  }
+  q.placeholder = L('ph');
+
+  fetch('canadastockdata/index.json').then(r => r.json()).then(d => { idx = d; fromHash(); });
+
+  function fromHash() {
+    var t = decodeURIComponent((location.hash || '').slice(1));
+    if (t) load(t);
+  }
+  window.addEventListener('hashchange', fromHash);
+
+  q.addEventListener('input', function () {
+    var v = q.value.trim().toLowerCase();
+    sel = -1;
+    if (!v) { sugg.style.display = 'none'; return; }
+    items = idx.filter(function (x) {
+      return x.t.toLowerCase().indexOf(v) === 0 ||
+             x.n.toLowerCase().indexOf(v) >= 0 || x.s.toLowerCase().indexOf(v) >= 0;
+    }).sort(function (a, b) {
+      var ae = a.t.toLowerCase() === v ? -1 : 0, be = b.t.toLowerCase() === v ? -1 : 0;
+      if (ae !== be) return ae - be;
+      var ap = a.t.toLowerCase().indexOf(v) === 0 ? 0 : 1,
+          bp = b.t.toLowerCase().indexOf(v) === 0 ? 0 : 1;
+      return ap - bp || a.t.localeCompare(b.t);
+    }).slice(0, 12);
+    sugg.innerHTML = items.map(function (x, i) {
+      return '<div data-i="' + i + '"><b>' + x.t + '</b><small>' + x.n +
+             (x.s ? ' · ' + x.s : '') + '</small><span class="muted" style="font-size:11px">' +
+             disp(x.st) + '</span></div>';
+    }).join('');
+    sugg.style.display = items.length ? 'block' : 'none';
+  });
+  q.addEventListener('keydown', function (e) {
+    if (sugg.style.display === 'none') return;
+    var divs = sugg.querySelectorAll('div');
+    if (e.key === 'ArrowDown') { sel = Math.min(sel + 1, divs.length - 1); e.preventDefault(); }
+    else if (e.key === 'ArrowUp') { sel = Math.max(sel - 1, 0); e.preventDefault(); }
+    else if (e.key === 'Enter') { pick(sel >= 0 ? sel : 0); e.preventDefault(); return; }
+    else if (e.key === 'Escape') { sugg.style.display = 'none'; return; }
+    divs.forEach(function (d, i) { d.classList.toggle('sel', i === sel); });
+  });
+  sugg.addEventListener('mousedown', function (e) {
+    var d = e.target.closest('div[data-i]');
+    if (d) pick(+d.dataset.i);
+  });
+  function pick(i) {
+    if (!items[i]) return;
+    sugg.style.display = 'none';
+    q.value = items[i].t;
+    location.hash = encodeURIComponent(items[i].t);
+  }
+
+  function load(t) {
+    var safe = t.replace('=', '_').replace('^', '_');
+    fetch('canadastockdata/' + safe + '.json').then(function (r) {
+      if (!r.ok) throw new Error('not in library');
+      return r.json();
+    }).then(render).catch(function () {
+      document.getElementById('result').style.display = 'block';
+      document.getElementById('r_name').textContent = t;
+      document.getElementById('r_state').textContent = L('notlib');
+      document.getElementById('r_state').className = 'state';
+      document.getElementById('r_entry').style.display = 'none';
+      document.getElementById('r_points').innerHTML = '';
+      document.getElementById('r_cyclebox').innerHTML = L('notlibmsg');
+    });
+  }
+
+  function render(d) {
+    document.getElementById('result').style.display = 'block';
+    document.getElementById('r_name').textContent = d.name + ' (' + d.ticker + ')';
+    var st = document.getElementById('r_state');
+    st.textContent = dlabel(d.ladder.state) || d.ladder.label;
+    st.className = 'state st-' + d.ladder.state.replace(/ /g, '_');
+    document.getElementById('r_summary').textContent = lz(d.ladder.summary_line, d.ladder.summary_line_zh);
+    document.getElementById('r_asof').textContent = L('asof') + ' ' + d.asof;
+
+    var e = d.ladder.entry || {};
+    var eb = document.getElementById('r_entry');
+    eb.style.display = 'flex';
+    eb.className = 'entrybar urg-' + (e.urgency || 'hold');
+    document.getElementById('r_tag').textContent = lz(e.tag, e.tag_zh);
+    document.getElementById('r_entrytext').textContent = lz(e.text, e.text_zh);
+
+    var ageEl = document.getElementById('r_age');
+    if (d.ladder.age_line) { ageEl.textContent = lz(d.ladder.age_line, d.ladder.age_line_zh); ageEl.style.display = 'block'; }
+    else { ageEl.style.display = 'none'; }
+
+    var eqEl = document.getElementById('r_eq');
+    if (d.ladder.eq_badge) {
+      var grade = lang() === 'zh' ? (d.ladder.eq_grade_zh || d.ladder.eq_grade) : d.ladder.eq_grade;
+      eqEl.innerHTML = (lang() === 'zh' ? '入场 ' : 'Entry ') + d.ladder.eq_badge + ' <span class="eqg">' + grade + '</span>';
+      eqEl.className = 'eqbadge eq-' + (d.ladder.eq_dir || 'flat');
+      eqEl.title = lz(d.ladder.eq_tip, d.ladder.eq_tip_zh);
+      eqEl.style.display = 'inline-flex';
+    } else { eqEl.style.display = 'none'; }
+
+    var pts = (lang() === 'zh' && d.ladder.points_zh && d.ladder.points_zh.length)
+      ? d.ladder.points_zh : (d.ladder.points || []);
+    document.getElementById('r_points').innerHTML = pts.map(function (p) { return '<li>' + p + '</li>'; }).join('');
+
+    var cp = d.ladder.cycle_plain || {};
+    var reg = d.ladder.regime || 'neutral';
+    var regEmoji = reg === 'bear' ? '🔻' : reg === 'bull' ? '🟢' : '⚪';
+    var cyc = '';
+    if (d.ladder.regime_line)
+      cyc += '<div class="regline rl-' + reg + '"><b>' + regEmoji + ' ' + lz(d.ladder.regime_line, d.ladder.regime_line_zh) + '</b></div>';
+    cyc += '<div><b>📅 ' + lz(cp.daily_line, cp.daily_line_zh) + '</b> — ' + lz(cp.daily_phase, cp.daily_phase_zh) + '</div>';
+    if (cp.weekly_line) cyc += '<div><b>🗓 ' + lz(cp.weekly_line, cp.weekly_line_zh) + '</b> — ' + lz(cp.weekly_phase, cp.weekly_phase_zh) + '</div>';
+    if (cp.translation) cyc += '<div class="muted">' + lz(cp.translation, cp.translation_zh) + '</div>';
+    if (d.season_this) cyc += '<div class="muted">' + L('season') + ' — ' + lz(d.season_this, d.season_this_zh) +
+      (d.season_next ? '; ' + lz(d.season_next, d.season_next_zh) : '') + '.</div>';
+    document.getElementById('r_cyclebox').innerHTML = cyc;
+
+    document.getElementById('r_flags').textContent = d.cycle.failed_cycle ? L('failed') : '';
+    document.getElementById('r_why').textContent = lz(d.ladder.why, d.ladder.why_zh) + ' ' + L('next') + ' ' + lz(d.ladder.next, d.ladder.next_zh);
+    window.renderMTF(document.getElementById('r_mtf'), d.mtf);
+
+    // Alpha vs sector — sector-neutral residual momentum (additive; absent on ETFs/indices)
+    var ap = document.getElementById('r_alpha_panel'), a = d.alpha;
+    if (a && a.alpha != null) {
+      var AE = {pullback:['pullback','回调买点'], extended:['extended','急涨偏热'],
+                intact:['intact','趋势完好'], laggard:['laggard','落后'], neutral:['neutral','中性']};
+      var sgn = function (x, n) { return (x >= 0 ? '+' : '') + (x == null ? '—' : x.toFixed(n)); };
+      var stat = function (lab, val, cls) { return '<span>' + lab + ' <b' + (cls ? ' class="' + cls + '"' : '') + '>' + val + '</b></span>'; };
+      var html =
+        stat(lz('alpha z','阿尔法 z'), sgn(a.alpha, 2), a.alpha >= 0 ? 'pos' : 'neg') +
+        stat(lz('sector rank','板块排名'), a.sector_rank + '/' + a.sector_n, '') +
+        (a.resid_ann != null ? stat(lz('idio ann','年化残差'), sgn(a.resid_ann, 0) + '%', (a.resid_ann >= 0 ? 'pos' : 'neg')) : '') +
+        (a.rev_1m != null ? stat(lz('1-mo','近一月'), sgn(a.rev_1m, 1) + '%', (a.rev_1m >= 0 ? 'pos' : 'neg')) : '');
+      if (a.entry && AE[a.entry])
+        html += '<span class="alpha-entry ae-' + a.entry + '">' + lz(AE[a.entry][0], AE[a.entry][1]) + '</span>';
+      document.getElementById('r_alpha').innerHTML = html;
+      ap.style.display = 'block';
+    } else { ap.style.display = 'none'; }
+
+    // Fundamentals — descriptive context (yfinance). Additive; absent on ETFs/indices/uncovered.
+    var fpEl = document.getElementById('r_fund_panel'), f = d.fundamentals;
+    if (f && f.valuation) {
+      var v = f.valuation;
+      var fnum = function (x, n) { return x == null ? '—' : (+x).toFixed(n == null ? 1 : n); };
+      function chip(lab, val, med, suffix) {
+        if (val == null) return '';
+        var vs = med != null ? '<span class="vs">' + lz('sector','板块') + ' ' + fnum(med, 1) + (suffix || '') + '</span>' : '';
+        return '<div class="fnd-chip"><div class="k">' + lab + '</div><div class="v">' + fnum(val, 1) + (suffix || '') + '</div>' + vs + '</div>';
+      }
+      var fhtml = '<div><span class="fnd-arch">' + lz(f.archetype_label, f.archetype_label_zh) + '</span></div>';
+      var desc = f.description && f.description.summary;
+      if (desc) fhtml += '<p class="fnd-desc">' + desc.slice(0, 320) + (desc.length > 320 ? '…' : '') + '</p>';
+      fhtml += '<div class="fnd-grid">'
+        + chip('PE', v.pe, v.pe_sector_med) + chip('PB', v.pb, v.pb_sector_med)
+        + chip('PS', v.ps, null) + chip('ROE', v.roe, v.roe_sector_med, '%')
+        + chip(lz('Net margin','净利率'), v.net_margin, null, '%')
+        + chip(lz('Div yield','股息率'), v.div_yield, v.div_yield_sector_med, '%')
+        + chip(lz('Rev growth','营收增长'), v.rev_growth, null, '%') + '</div>';
+      document.getElementById('r_fund').innerHTML = fhtml;
+      fpEl.style.display = 'block';
+    } else { fpEl.style.display = 'none'; }
+
+    // TradingView embed (works for TSX; the chart is garnish — the analysis above stands alone).
+    document.getElementById('tvbox').innerHTML = '<div id="tvchart"></div>';
+    try {
+      new TradingView.widget({container_id: 'tvchart', symbol: d.tv || d.ticker,
+        interval: 'D', theme: (localStorage.getItem('theme') === 'light' ? 'light' : 'dark'),
+        style: '1', height: 430, width: '100%',
+        hide_side_toolbar: true, allow_symbol_change: true,
+        studies: ['RSI@tv-basicstudies', 'MACD@tv-basicstudies']});
+    } catch (e) { /* chart is garnish */ }
+  }
+  document.addEventListener('themechange', function () {
+    var h = (location.hash || '').slice(1); if (h) load(decodeURIComponent(h));
+  });
+  document.addEventListener('langchange', function () {
+    q.placeholder = L('ph'); var h = (location.hash || '').slice(1); if (h) load(decodeURIComponent(h));
+  });
+})();
+</script>
+<script src="mtf.js"></script>
+<script src="theme.js"></script>
+<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-15 10:54 UTC UTC · <span class="l-en">charts by TradingView · curated TSX universe, not exhaustive</span><span class="l-zh">图表由 TradingView 提供 · 精选 TSX 范围，非全市场</span></p>
+<footer class="site-footer">
+  <span class="made"><span class="l-en">Made with ❤️ in Canada</span><span class="l-zh">用 ❤️ 在加拿大制作</span></span>
+  <span class="dev"><span class="l-en">Developed by</span><span class="l-zh">开发者</span> Chris Wong</span>
+</footer>
+</body>
+</html>

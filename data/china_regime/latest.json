@@ -212,8 +212,8 @@
       "chg_20d_pct": -2.36
     },
     "usdcny": {
-      "level": 6.7567,
-      "chg_20d_pct": -0.77
+      "level": 6.7572,
+      "chg_20d_pct": -0.76
     }
   },
   "property": {
@@ -224,9 +224,9 @@
     "climate_index": 91.45,
     "climate_trend": "falling",
     "construction_demand_z": -0.14,
-    "cgb_10y": 1.743,
-    "cgb_10y2y_slope": 0.449,
-    "cgb_10y_chg_6m": -0.107,
+    "cgb_10y": 1.745,
+    "cgb_10y2y_slope": 0.443,
+    "cgb_10y_chg_6m": -0.098,
     "property_etf_drawdown": -29.8,
     "note": "display/context only \u2014 A-shares mean-revert, not a scored signal"
   }

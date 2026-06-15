@@ -261,20 +261,7 @@
       "chg_20d_pct": 11.18
     }
   },
-  "alerts": [
-    {
-      "rule": "holdings_active_change",
-      "severity": "info",
-      "message": "ARKK: manager cut NTLA by -42% of position (2026-06-11..2026-06-15, flow-normalized)",
-      "message_zh": "ARKK\uff1a\u7ecf\u7406 cut NTLA \u4ed3\u4f4d -42%\uff082026-06-11..2026-06-15\uff0c\u5df2\u6309\u8d44\u91d1\u6d41\u6807\u51c6\u5316\uff09"
-    },
-    {
-      "rule": "holdings_active_change",
-      "severity": "info",
-      "message": "ARKW: manager cut BIDU by -97% of position (2026-06-11..2026-06-15, flow-normalized)",
-      "message_zh": "ARKW\uff1a\u7ecf\u7406 cut BIDU \u4ed3\u4f4d -97%\uff082026-06-11..2026-06-15\uff0c\u5df2\u6309\u8d44\u91d1\u6d41\u6807\u51c6\u5316\uff09"
-    }
-  ],
+  "alerts": [],
   "conditions": {
     "financial_conditions": {
       "nfci": -0.506,
@@ -422,14 +409,19 @@
     "doc_id": "fomc_2026-04-29",
     "asof": "2026-04-29",
     "tone_score": 0.0,
-    "guidance_direction": "unknown",
+    "guidance_direction": "on_hold",
     "risk_delta": 0.0,
     "shock_reversible": "unknown",
-    "confidence": "low",
+    "confidence": "medium",
     "confidence_gated": false,
     "dropped_fields": [],
-    "evidence": [],
-    "degraded_reason": "stop_max_tokens",
+    "evidence": [
+      {
+        "field": "guidance_direction",
+        "quote_span": "maintain the target range for the federal funds rate"
+      }
+    ],
+    "degraded_reason": null,
     "disclaimer": "Context only \u2014 not a signal. This is a machine DIGEST of a public document, produced by an AI model after the fact. The tone / guidance / risk / reversibility readings are background context; they are NOT inputs to any score, signal or allocation unless a downstream, separately-gated step promotes a single field, and even then only as one bounded factor. \u201cunknown\u201d means the evidence was insufficient \u2014 the honest answer. Every non-unknown field is backed by a quote verified to appear verbatim in the source; unverifiable claims are dropped."
   },
   "dislocation": {
@@ -926,7 +918,7 @@
   },
   "fed_path": {
     "asof": "2026-06-12",
-    "built": "2026-06-15T09:13:53.264117+00:00",
+    "built": "2026-06-15T10:22:30.599058+00:00",
     "policy_rate": 3.62,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -936,17 +928,17 @@
       "m1": 3.62,
       "m3": 3.65,
       "m6": 3.75,
-      "m12": 3.9
+      "m12": 3.91
     },
     "implied_source_en": "ZQ fed-funds futures",
     "implied_source_zh": "ZQ \u8054\u90a6\u57fa\u91d1\u671f\u8d27",
-    "implied_bp_12m": 28,
+    "implied_bp_12m": 29,
     "implied_cuts_12m": -1,
     "implied_cuts_6m": -1,
     "sofr_path": {
       "m1": null,
-      "m3": 3.7,
-      "m6": 3.8,
+      "m3": 3.71,
+      "m6": 3.81,
       "m12": 3.94
     },
     "dots": [
@@ -975,8 +967,8 @@
     "ntfs": 0.67,
     "curve_tp_adj": 1.19,
     "rate_exp_proxy": 0.43,
-    "headline_en": "Market prices ~1 hike over the next 12m (funds 3.62% \u2192 3.90%)",
-    "headline_zh": "\u5e02\u573a\u4e3a\u672a\u676512\u4e2a\u6708\u5b9a\u4ef7\u7ea6\u52a0\u606f1\u6b21\uff08\u57fa\u91d1\u5229\u7387 3.62% \u2192 3.90%\uff09",
+    "headline_en": "Market prices ~1 hike over the next 12m (funds 3.62% \u2192 3.91%)",
+    "headline_zh": "\u5e02\u573a\u4e3a\u672a\u676512\u4e2a\u6708\u5b9a\u4ef7\u7ea6\u52a0\u606f1\u6b21\uff08\u57fa\u91d1\u5229\u7387 3.62% \u2192 3.91%\uff09",
     "read_en": "At end-2026 the market implies 3.75% vs the Fed's 3.40% median dot (+35bp \u2014 market more hawkish than the Fed). The near-term forward spread is positive \u2014 no cuts priced near-term (+0.67pp).",
     "read_zh": "\u5728end-2026\uff0c\u5e02\u573a\u9690\u542b 3.75% \u5bf9\u6bd4\u7f8e\u8054\u50a8 3.40% \u7684\u4e2d\u4f4d\u70b9\uff08+35\u57fa\u70b9 \u2014 \u5e02\u573a\u6bd4\u7f8e\u8054\u50a8\u66f4\u9e70\u6d3e\uff09\u3002\u8fd1\u7aef\u8fdc\u671f\u5229\u5dee\u4e3a\u6b63\u2014\u2014\u8fd1\u7aef\u672a\u4e3a\u964d\u606f\u5b9a\u4ef7\uff08+0.67\u4e2a\u767e\u5206\u70b9\uff09\u3002",
     "note_en": "Display / LLM-context only. The implied path is a market PRICE (the futures-implied funds rate), not a forecast edge, and repricing is REACTIVE \u2014 it moves after data and the Fed, it does not lead. Never scored, never an MRS leg. ZQ/SR3 = keyless CME futures; dots = FRED FEDTARMD (FOMC SEP median). Cite the CME/FRED.",
@@ -2334,7 +2326,7 @@
       {
         "ticker": "GC=F",
         "name": "Gold",
-        "price": 4359.3,
+        "price": 4359.8,
         "above50": false,
         "above200": false,
         "pct_vs_50dma": -4.7,
@@ -2349,44 +2341,44 @@
       {
         "ticker": "CL=F",
         "name": "Crude Oil",
-        "price": 80.43,
+        "price": 80.18,
         "above50": false,
         "above200": true,
-        "pct_vs_50dma": -15.8,
-        "pct_vs_200dma": 9.3,
+        "pct_vs_50dma": -16.0,
+        "pct_vs_200dma": 9.0,
         "rsi14": 34.0,
         "macd_pos": false,
-        "off_52w_high_pct": -28.8,
+        "off_52w_high_pct": -29.0,
         "season_this": "Jun: +2.6% avg, up 65% of years (n=26)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 +2.6%\uff0c65% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": -18.2
+        "mom_60d_pct": -18.4
       },
       {
         "ticker": "HG=F",
         "name": "Copper",
-        "price": 6.51,
+        "price": 6.49,
         "above50": true,
         "above200": true,
-        "pct_vs_50dma": 5.2,
-        "pct_vs_200dma": 17.3,
-        "rsi14": 58.0,
+        "pct_vs_50dma": 4.9,
+        "pct_vs_200dma": 16.9,
+        "rsi14": 57.0,
         "macd_pos": false,
-        "off_52w_high_pct": -2.1,
+        "off_52w_high_pct": -2.4,
         "season_this": "Jun: -0.4% avg, up 58% of years (n=26)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.4%\uff0c58% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": 21.9
+        "mom_60d_pct": 21.5
       },
       {
         "ticker": "DX-Y.NYB",
         "name": "US Dollar",
-        "price": 99.58,
+        "price": 99.53,
         "above50": true,
         "above200": true,
         "pct_vs_50dma": 0.7,
         "pct_vs_200dma": 0.9,
-        "rsi14": 55.0,
+        "rsi14": 54.0,
         "macd_pos": false,
-        "off_52w_high_pct": -0.9,
+        "off_52w_high_pct": -1.0,
         "season_this": "Jun: -0.2% avg, up 45% of years (n=56)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.2%\uff0c45% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=56\uff09",
         "mom_60d_pct": -0.1
