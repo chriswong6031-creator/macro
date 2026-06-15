@@ -1198,18 +1198,22 @@
       <span class="ev-strip-none">{{ t('Clear — no top-tier US prints in the window.', '空窗 —— 窗口内无一线美国数据。') }}</span>
       {% endfor %}
     </div>
-    {# Narrative regime — policy/geopolitical uncertainty percentile + the news-vector
-       PIT bus texture. DISPLAY/CONTEXT ONLY: text-uncertainty reads forward VOLATILITY,
-       not direction (and VIX beats EPU at vol) — never a score. Neutral, no red/green. #}
-    {% if narrative_regime and (narrative_regime.uncertainty or narrative_regime.events) %}
-    {% set U = narrative_regime.uncertainty or {} %}
+    {# Narrative-regime banner — the Narrative-Dominance Index (NDI): a 0-100 blend of
+       policy uncertainty (EPU), geopolitical-threat risk (GPR-threat) and the vol
+       regime (VIX), + the news-vector PIT bus texture. DISPLAY/CONTEXT ONLY: Gate A
+       (reports/narrative-regime-phase0.md) showed text-uncertainty is redundant with
+       VIX for forward vol, so the gate is pinned OFF — never a score. Neutral colors. #}
+    {% if ndi or (narrative_regime and narrative_regime.events) %}
+    {% set L = (ndi.legs if ndi else {}) or {} %}
     <div class="mn-sent" style="flex-wrap:wrap;gap:6px 16px">
       <span class="muted">{{ t('Narrative regime (context):', '叙事环境（背景）：') }}
-        {{ help("How policy/geopolitical-narrative-driven the tape is right now. EPU = US daily news-based Economic Policy Uncertainty (Baker-Bloom-Davis); GPR = daily Geopolitical Risk (Caldara-Iacoviello), split into THREAT vs ACT — threat-led spikes tend to revert (~3 months) while realized acts persist. Shown as percentile of full history. CONTEXT ONLY: these read forward VOLATILITY / risk, not market direction, and are never an input to any score, signal or allocation.", "当前行情受政策／地缘叙事驱动的程度。EPU＝美国每日新闻型经济政策不确定性（Baker-Bloom-Davis）；GPR＝每日地缘政治风险（Caldara-Iacoviello），分为“威胁”与“行动”——以威胁为主的飙升往往在约3个月内回落，而已发生的行动更持久。以历史百分位显示。仅供背景：它们反映的是前瞻波动率／风险，而非市场方向，且绝不进入任何评分、信号或配置。") }}
+        {{ help("How policy/geopolitical-narrative-driven the tape is right now. The Narrative-Dominance Index (NDI) is a 0-100 blend of three percentiles: EPU = US daily news-based Economic Policy Uncertainty (Baker-Bloom-Davis); GPR-threat = the THREAT component of daily Geopolitical Risk (Caldara-Iacoviello) — threat-led spikes tend to revert (~3 months) while realized acts persist; and VIX. CONTEXT ONLY: a Phase-0 test on 36 years showed text-uncertainty adds NO forward-volatility content beyond VIX (if anything it is mildly contrarian once VIX is controlled), so the NDI is shown as a regime read and the gate that would let it down-weight momentum conviction is pinned OFF. It is never an input to any score, signal or allocation, and it reads forward VOLATILITY / risk, not market direction.", "当前行情受政策／地缘叙事驱动的程度。叙事主导指数（NDI）是三个百分位的 0-100 合成：EPU＝美国每日新闻型经济政策不确定性（Baker-Bloom-Davis）；GPR-威胁＝每日地缘政治风险（Caldara-Iacoviello）的“威胁”分量——以威胁为主的飙升往往在约3个月内回落，而已发生的行动更持久；以及 VIX。仅供背景：对36年的 Phase-0 检验显示，在控制 VIX 后文本不确定性对前瞻波动率没有任何增量信息（若有则略偏反向），因此 NDI 仅作环境读数显示，允许其下调动量信心的闸门保持关闭。它绝不进入任何评分、信号或配置，且度量的是前瞻波动率／风险，而非市场方向。") }}
       </span>
-      {% if U.epu %}<span><b>{{ t('Policy uncertainty', '政策不确定性') }}</b> · EPU {{ U.epu.value }}{% if U.epu.pct is not none %} <span class="muted">{{ U.epu.pct }}{{ t('th pct', '百分位') }}</span>{% endif %}</span>{% endif %}
-      {% if U.gpr %}<span><b>{{ t('Geopolitical risk', '地缘风险') }}</b> · GPR {{ U.gpr.value }}{% if U.gpr.pct is not none %} <span class="muted">{{ U.gpr.pct }}{{ t('th pct', '百分位') }}</span>{% endif %}{% if U.gpr.lean and U.gpr.lean != 'balanced' %} · <span class="muted" title="{{ t('threat-led tends to revert (~3mo); act-led tends to persist', '以威胁为主往往回落（约3个月）；以行动为主则更持久') }}">{{ t('led by', '主导') }} {{ t('threats', '威胁') if U.gpr.lean == 'threat' else t('acts', '行动') }}</span>{% endif %}</span>{% endif %}
-      {% if narrative_regime.events and narrative_regime.events.n_recent %}<span class="muted">· {{ t('news-bus', '新闻总线') }}: {{ narrative_regime.events.n_recent }} {{ t('events', '事件') }}/{{ narrative_regime.window_days }}d{% if narrative_regime.events.unscheduled_share is not none %} · {{ (narrative_regime.events.unscheduled_share * 100) | round | int }}% {{ t('unscheduled', '非排程') }}{% endif %}</span>{% endif %}
+      {% if ndi and ndi.ndi is not none %}<span><b>{{ t('NDI', '叙事主导') }} {{ ndi.ndi }}/100</b> <span class="muted">· {{ t(ndi.band, {'calm':'平静','elevated':'偏高','high':'高'}.get(ndi.band, ndi.band)) }} · {{ t('gate off (display-only)', '闸门关闭（仅显示）') }}</span></span>{% endif %}
+      {% if L.epu and L.epu.pct is not none %}<span class="muted">EPU {{ L.epu.pct }}{{ t('th pct', '百分位') }}</span>{% endif %}
+      {% if L.gpr_threat and L.gpr_threat.pct is not none %}<span class="muted">GPR-{{ t('threat', '威胁') }} {{ L.gpr_threat.pct }}{{ t('th pct', '百分位') }}{% if L.gpr_threat.lean and L.gpr_threat.lean != 'balanced' %} <span title="{{ t('threat-led tends to revert (~3mo); act-led tends to persist', '以威胁为主往往回落（约3个月）；以行动为主则更持久') }}">({{ t('led by', '主导') }} {{ t('threats', '威胁') if L.gpr_threat.lean == 'threat' else t('acts', '行动') }})</span>{% endif %}</span>{% endif %}
+      {% if L.vix and L.vix.pct is not none %}<span class="muted">VIX {{ L.vix.pct }}{{ t('th pct', '百分位') }}</span>{% endif %}
+      {% if narrative_regime and narrative_regime.events and narrative_regime.events.n_recent %}<span class="muted">· {{ t('news-bus', '新闻总线') }}: {{ narrative_regime.events.n_recent }} {{ t('events', '事件') }}/{{ narrative_regime.window_days }}d{% if narrative_regime.events.unscheduled_share is not none %} · {{ (narrative_regime.events.unscheduled_share * 100) | round | int }}% {{ t('unscheduled', '非排程') }}{% endif %}</span>{% endif %}
     </div>
     {% endif %}
     {% set RA = (latest.conditions or {}).get('risk_appetite') or {} %}
