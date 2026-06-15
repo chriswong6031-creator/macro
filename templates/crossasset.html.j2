@@ -150,7 +150,7 @@
   {% if funding %}
   {% set fcol = 'var(--down,#dc2626)' if funding.state == 'stressed' else 'var(--amber,#c98a2e)' if funding.state == 'watch' else 'var(--up,#16a34a)' %}
   <div class="card">
-    <h2>{{ t('Funding &amp; repo plumbing', '资金与回购管道') }}</h2>
+    <h2>{{ t('Funding & repo plumbing', '资金与回购管道') }}</h2>
     <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
       <div class="ca-hero" style="font-size:20px;margin:0;color:{{ fcol }}">{{ t(funding.state, {'calm':'平静','watch':'关注','stressed':'紧张'}.get(funding.state, funding.state)) }}</div>
       <div class="muted sm">{{ t('stress score', '压力分') }} <b style="color:{{ fcol }}">{{ funding.score }}</b>/100 · {{ t('SOFR−EFFR', 'SOFR−联邦基金') }} <b>{{ '%+.0f'|format(funding.spread_bp) }}bp</b>{% if funding.dispersion_bp is not none %} · {{ t('dispersion', '离散度') }} <b>{{ funding.dispersion_bp }}bp</b>{% endif %}</div>
