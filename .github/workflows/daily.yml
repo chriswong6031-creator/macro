@@ -187,6 +187,12 @@ jobs:
         # price stores -> site/crossasset.html + data/crossasset/latest.json.
         # Self-sufficient; returns 0 on any engine error.
         run: python -m scripts.build_crossasset
+      - name: factor exposure radar (build_exposure)
+        # per-ticker causal multi-factor betas over the library universe ->
+        # site/exposure.html + data/exposure/latest.json. Validated as an EXPOSURE
+        # read (reports/factor-exposure-sanity.md), not a forecast.
+        # Self-sufficient; returns 0 on any engine error.
+        run: python -m scripts.build_exposure
       - name: build bitcoin vector + landing hub
         # installs the landing hub at index.html (rendered from stored engine
         # state, so ordering vs build_site no longer matters — build_site writes

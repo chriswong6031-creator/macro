@@ -1,0 +1,159 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ t('Factor Exposure Radar — what bets are you really making?', '因子暴露雷达 — 你真正在押什么注？') }}</title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  .ca-wrap{max-width:1180px;margin:0 auto;padding:0 4px}
+  .ca-hero{font-size:26px;font-weight:800;margin:2px 0 4px}
+  .ca-sub{color:var(--muted);font-size:13px;margin:0 0 6px}
+  .ca-note{color:var(--muted);font-size:12px;line-height:1.5;border-top:1px solid var(--line);margin-top:10px;padding-top:8px}
+  table.ca{border-collapse:collapse;width:100%;font-size:12.5px}
+  table.ca th,table.ca td{text-align:left;padding:4px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+  table.ca th{color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;font-weight:700}
+  table.ca td.r,table.ca th.r{text-align:right;font-variant-numeric:tabular-nums}
+  .pos{color:var(--up,#16a34a)}.neg{color:var(--down,#dc2626)}.muted{color:var(--muted)}.sm{font-size:12px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:820px){.grid2{grid-template-columns:1fr}}
+  .fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+  .fcard h3{font-size:13.5px;margin:0 0 2px;display:flex;align-items:center;gap:8px}
+  .chip{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;padding:1px 7px;border-radius:6px;background:var(--line);color:var(--muted)}
+  .bbar{display:inline-block;height:8px;border-radius:4px;vertical-align:middle}
+  .verdict{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:6px}
+  .v-conc{background:rgba(220,38,38,.16);color:#dc2626}.v-div{background:rgba(22,163,74,.16);color:#16a34a}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;padding:0;border:none;margin:0 auto">
+    <div class="nav-links">
+      <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
+      <div class="nav-dd">
+        <a class="nav-link" href="macro.html">🇺🇸 {{ t('US Macro', '美国宏观') }} <span class="caret">▾</span></a>
+        <div class="nav-dd-menu">
+          <a href="macro.html">📊 {{ t('Macro dashboard', '宏观仪表盘') }}</a>
+          <a href="spvector.html">📈 {{ t('S&P / Macro Vector', '标普宏观向量') }}</a>
+          <a href="signal_lab.html">🔬 {{ t('Signal Lab', '信号实验室') }}</a>
+          <a href="exposure.html">🧬 {{ t('Exposure radar', '暴露雷达') }}</a>
+          <a href="validation_timeline.html">🧪 {{ t('Validation timeline', '验证时间线') }}</a>
+        </div>
+      </div>
+      <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }}</a>
+      <a class="nav-link" href="etfs.html">🐳 {{ t('ETF flows', 'ETF 资金流') }}</a>
+      <a class="nav-link" href="factors.html">🧮 {{ t('Factors', '因子') }}</a>
+      <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国A股') }}</a>
+      <a class="nav-link" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }}</a>
+      <a class="nav-link" href="commodities.html">◆ {{ t('Commodity Vector', '大宗商品向量') }}</a>
+      <a class="nav-link" href="forex.html">💱 {{ t('Forex Vector', '外汇向量') }}</a>
+      <a class="nav-link" href="bonds.html">🏛️ {{ t('Bonds', '债券') }}</a>
+      <a class="nav-link" href="crossasset.html">🧭 {{ t('Cross-Asset', '跨资产') }}</a>
+    </div>
+    <div class="nav-ctrls">
+      <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap ca-wrap">
+
+  <div class="card">
+    <div class="ca-sub">🧬 {{ t('Factor Exposure Radar', '因子暴露雷达') }} · {{ t('as of', '截至') }} {{ as_of }} · {{ n_modelled }} {{ t('names', '只') }}</div>
+    <div class="ca-hero">{{ t('What bets are you really making?', '你真正在押什么注？') }}</div>
+    <p class="ca-note" style="border-top:none;margin-top:2px;padding-top:0">{{ t(
+      'Per-name daily returns are regressed on ' ~ n_factors ~ ' observable, tradeable factor proxies '
+      '(market, size, momentum, the dollar, semis/AI, crypto, oil, 10y rates). Every non-market factor is '
+      'orthogonalised to the market, so a beta reads as exposure BEYOND broad direction. Below: for each '
+      'factor, the names most loaded on it — and a few baskets decomposed to expose the hidden one-way bet. '
+      'This is a RISK decomposition (what you are exposed to), NOT a return forecast: betas describe risk, '
+      'they do not predict alpha.',
+      '将每只标的的日收益对 ' ~ n_factors ~ ' 个可观测、可交易的因子代理（大盘、小盘、动量、美元、半导体/AI、加密、原油、10年利率）回归。'
+      '每个非大盘因子都对大盘正交化，因此贝塔表示「超出大盘方向」的暴露。下方：每个因子上暴露最大的标的，以及几个组合的拆解以揭示隐藏的单边押注。'
+      '这是风险拆解（你暴露于什么），并非收益预测：贝塔描述风险，不预测 alpha。') }}</p>
+  </div>
+
+  <!-- ===================== HIDDEN ONE-WAY BET ===================== -->
+  {% if books %}
+  <div class="card">
+    <h2>{{ t('Hidden one-way bet — book decomposition', '隐藏的单边押注 — 组合拆解') }}</h2>
+    <div class="grid2">
+      {% for bk in books %}
+      <div class="fcard" style="background:var(--panel2,rgba(127,127,127,.05));border:1px solid var(--line);border-radius:9px;padding:11px 12px">
+        <h3>{{ t(bk.meta.name, bk.meta.name_zh) }}
+          {% if bk.agg.concentrated %}<span class="verdict v-conc">{{ t('concentrated', '高度集中') }}</span>
+          {% else %}<span class="verdict v-div">{{ t('diversified', '较分散') }}</span>{% endif %}</h3>
+        <div class="ca-sub" style="margin:2px 0 6px">{{ bk.held|join(', ') }}</div>
+        {% if bk.agg.dominant %}
+        <p class="sm" style="margin:0 0 6px">{{ t(
+          'Net dominant exposure: ', '净主导暴露：') }}<b>{{ t(bk.agg.label, bk.agg.label_zh) }}</b>
+          ({{ '%+.2f'|format(bk.agg.net[bk.agg.dominant]) }}) ·
+          {{ bk.agg.n_aligned }}/{{ bk.agg.n_total }} {{ t('names load the same way', '只标的同向暴露') }}</p>
+        {% endif %}
+        <table class="ca">
+          <tr><th>{{ t('factor', '因子') }}</th><th class="r">{{ t('net β', '净 β') }}</th></tr>
+          {% for k, v in bk.agg.net.items() if k != 'market' %}
+          <tr><td>{{ t(factor_labels[k][0], factor_labels[k][1]) }}</td>
+              <td class="r {{ 'pos' if v >= 0 else 'neg' }}">{{ '%+.2f'|format(v) }}</td></tr>
+          {% endfor %}
+        </table>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="ca-note">{{ t(
+      'Equal-weight illustrative baskets. "Concentrated" = one factor dominates the net exposure and a '
+      'majority of the names load on it the same way — i.e. it looks diversified but is really one bet.',
+      '等权示例组合。「高度集中」= 单一因子主导净暴露，且多数标的同向暴露——看似分散，实为一笔押注。') }}</p>
+  </div>
+  {% endif %}
+
+  <!-- ===================== PER-FACTOR LEADERBOARDS ===================== -->
+  <div class="card">
+    <h2>{{ t('Most-exposed names, by factor', '各因子暴露最大的标的') }}</h2>
+    <div class="fgrid">
+      {% for k in factor_keys %}
+      {% if radar[k] %}
+      <div class="fcard" style="background:var(--panel2,rgba(127,127,127,.05));border:1px solid var(--line);border-radius:9px;padding:11px 12px">
+        <h3>{{ t(factor_labels[k][0], factor_labels[k][1]) }}
+          <span class="chip">{{ radar[k]|length }}</span></h3>
+        <table class="ca">
+          <tr><th>{{ t('name', '标的') }}</th><th class="r">β</th><th class="r">t</th><th class="r">R²</th></tr>
+          {% for r in radar[k][:10] %}
+          <tr>
+            <td><a href="stock.html#{{ r.ticker }}" style="color:var(--link)"><b>{{ r.ticker }}</b></a>
+                <span class="muted sm">{{ r.name[:16] }}</span></td>
+            <td class="r {{ 'pos' if r.beta >= 0 else 'neg' }}">{{ '%+.2f'|format(r.beta) }}</td>
+            <td class="r muted">{{ '%+.0f'|format(r.t) }}</td>
+            <td class="r muted">{{ '%.2f'|format(r.r2) }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="ca-note" style="border-top:none;margin:0;padding-top:0">{{ t(
+      'Source: engine/factor_exposure.py — causal rolling OLS over keyless price/FRED stores, '
+      'market-orthogonalised, VIF-pruned. Validation: scripts/factor_exposure_sanity.py → '
+      'reports/factor-exposure-sanity.md (7/7 known names land on the right factor; betas stable). '
+      'EXPOSURE, not a forecast — never a buy list. Generated ',
+      '来源：engine/factor_exposure.py — 对无密钥价格/FRED 库的因果滚动 OLS，大盘正交化、VIF 剪枝。'
+      '验证：scripts/factor_exposure_sanity.py → reports/factor-exposure-sanity.md（7/7 已知标的落在正确因子；贝塔稳定）。'
+      '这是暴露而非预测——绝非买入清单。生成于 ') }}{{ built }}.</p>
+  </div>
+
+</div>
+<script src="theme.js"></script>
+</body>
+</html>
