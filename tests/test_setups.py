@@ -186,6 +186,22 @@ def test_rank_setups_factor_does_not_override_setup():
     assert buys == ["STR", "WK"]               # setup leads; factor is only a tiebreaker
 
 
+# ---- rank_by: US ranks by alpha, China by setup -----------------------------
+
+def test_rank_by_alpha_vs_setup_diverge():
+    # HIA = high alpha but a weak (extended, no-cycle) setup; LOA = lower alpha but a
+    # strong (fresh pullback) setup. The two sort keys disagree on the order.
+    hia = setup_score(_rec(2.0, entry="extended", urgency=None, eq_dir=None,
+                           ticker="HIA", name="High Alpha Co"), alpha_weight=US_ALPHA_WEIGHT)
+    loa = setup_score(_rec(1.0, entry="pullback", urgency="now", eq_dir="up",
+                           ticker="LOA", name="Low Alpha Co"), alpha_weight=US_ALPHA_WEIGHT)
+    assert hia[0] < loa[0]                      # setup score ranks LOA above HIA
+    # US (validated leg): order by alpha -> HIA first
+    assert [r["ticker"] for r in rank_setups([hia, loa], rank_by="alpha")["buy"]] == ["HIA", "LOA"]
+    # China default (reversal-led setup): order by setup -> LOA first
+    assert [r["ticker"] for r in rank_setups([hia, loa])["buy"]] == ["LOA", "HIA"]
+
+
 # ---- China parity lock ------------------------------------------------------
 
 def _china_old_setup_score(rec):

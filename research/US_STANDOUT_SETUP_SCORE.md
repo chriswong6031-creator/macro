@@ -60,8 +60,9 @@ setup = alpha_weight · alpha_z                      # selection (sector-neutral
       + ENTRY[alpha_entry]                          # reversal overlay    (pullback +0.7, extended −0.7)
 ```
 
-- **Top setups (buy):** `alpha_z ≥ 0.5` leaders, ranked by `setup` desc, top 12.
-- **Laggards:** `alpha_z ≤ −0.3`, ranked by `setup` asc, top 6.
+- **Top setups (buy):** `alpha_z ≥ 0.5` leaders, **ranked by `alpha` desc** (see §9 — the
+  setup-blend ranking was tested and reverted), top 12.
+- **Laggards:** `alpha_z ≤ −0.3`, ranked by `alpha` asc, top 6.
 
 Shared, parameterized implementation: `engine/setups.py` (`setup_score`, `timing_tilt`,
 `rank_setups`). China's old inline `_setup_score` is refactored onto it with a **parity
@@ -112,8 +113,58 @@ clean, interpretable alpha×timing — confirmers never enter it):
    stripped, corporate suffixes kept to avoid collapsing distinct firms). Applied in
    `action_board` and `rank_setups`; frees a board slot for a genuinely different name.
 
-## 8. Recommended next (not built)
+## 9. Phase-0 validation → the ranking was REVERTED to α (honest negative result)
 
-- **Per-equity GEX** (tiered) → vol-regime / pin context on the highest-conviction names.
+`scripts/setup_score_phase0.py` → `reports/setup-score-phase0.md`. Point-in-time on the
+**survivorship-clean deep S&P-500 panel** (PIT membership + folded-in delisted names),
+production residual-alpha windows (252/252/21, shrink 0.66), **141 monthly rebalances
+2014–2026, ~448 names/date**, cycle leg computed causally (`analyze(close[:d])`, cached).
+Four signals, rank-IC + quintile L/S + DSR, at 21d & 63d:
+
+| signal | 21d mean IC | 63d mean IC |
+|---|--:|--:|
+| **alpha** (baseline) | **+0.0101** | **+0.0231** |
+| alpha + reversal overlay | +0.0093 | +0.0227 |
+| timing only (no α) | −0.0046 | −0.0058 |
+| setup (shipped blend) | −0.0013 | +0.0107 |
+
+**Verdict: NEUTRAL / cosmetic.** The cycle-timing/reversal blend does **not** improve
+forward-return ranking — it **dilutes** α (halves the IC at 63d, erases it at 21d), and
+timing-only IC is negative (the cycle leg is **risk placement, not return prediction** —
+exactly what its own calibration says). So:
+
+- **The board now ranks by `alpha`** (`rank_setups(rank_by="alpha")`; macro cards order
+  within their cycle tier by `alpha_z`). The cycle/pullback timing and the `setup` column
+  are kept as **displayed risk-placement context** (when to enter), not ranking drivers.
+- **UI copy softened** to "grouped by cycle entry, ranked by sector-neutral momentum (α)"
+  / "α leaders at a constructive entry", with the validation finding stated in the help.
+- **China is unchanged** — `rank_by="setup"` (default) preserves its *separately validated*
+  reversal-led construction (A-shares mean-revert; [[china-hk-stock-signals]]).
+
+No edge is claimed that the evidence doesn't support. The board's value is the (validated,
+context-leg) α selection + the (calibrated) cycle risk placement — surfaced together,
+honestly labelled.
+
+## 10. Market dealer-gamma vol-regime note (BUILT)
+
+A whole-market vol-regime banner atop the standout section, from the **validated index
+dealer-gamma** (SPX, `data/cboe/gex` via `engine.gex_engine` — the read that drives the
+dealer-gamma board). `scripts/build_site.market_gamma_view` derives the regime from the
+flip side (`spot >= flip` → long/pinning, else short/amplifying — the engine's
+authoritative `_gamma_flip` regime, NOT the coarser net-$ sign the ETF board flags).
+Short-gamma → "hedging AMPLIFIES moves, wider stops, don't chase"; long-gamma → "hedging
+DAMPENS moves, fade extremes". Market-wide CONTEXT for the setups, not a per-stock signal;
+graceful if the store is absent. `tests/test_market_gamma.py` (6).
+
+**Per-equity GEX was evaluated and DECLINED** (CBOE per-equity *is* reachable + the infra
+exists — 6 megacaps already fetched): single-name dealer-gamma *sign* is noisy (retail
+call-buying breaks the dealer assumption; weak vs the index read), so shipping a per-stock
+gamma-regime chip right after Phase-0-removing an overclaim would be inconsistent. The
+robust index regime is surfaced instead.
+
+## 11. Recommended next (not built)
+
 - **Insider SELL caution** — deliberately omitted: insider selling is far noisier than
   buying (10b5-1 / diversification), so surfacing it would imply false precision.
+- **Earnings-proximity risk chip** — DATA-BLOCKED: the `earnings` field is empty in the
+  stock library store for the board names (like the RVOL volume block).
