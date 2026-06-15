@@ -15,6 +15,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from jinja2 import Environment, FileSystemLoader
@@ -1145,6 +1146,157 @@ def accumulation_rows() -> list[dict]:
     return rows
 
 
+# --- Fear <-> Euphoria regime synthesis (DISPLAY-ONLY) -----------------------
+# Maps the already-computed RORO risk-on/off composite (engine.conditions) to a
+# rolling-5y 0-100 Fear<->Euphoria percentile, decomposes its 7 signed legs, and
+# annotates whether positioning (COT spec + insider Form-4 breadth) confirms or
+# diverges from price. This is a CONDITIONING LENS, NEVER a scored leg: it is
+# read only as a render kwarg on the macro dashboard, and nothing in
+# axes/regime/macro_risk reads any of it. See research/FEAR_EUPHORIA_PANEL_SPEC.md.
+_FE_LEG_META = [
+    ("vix", "VIX", "波动率 VIX"),
+    ("hy_oas", "HY credit spread", "高收益信用利差"),
+    ("skew", "SKEW (tail pricing)", "SKEW 尾部定价"),
+    ("vix_term", "VIX term structure", "VIX 期限结构"),
+    ("nfci", "Financial conditions (NFCI)", "金融条件 NFCI"),
+    ("copper_gold", "Copper/Gold", "铜／金 比"),
+    ("dxy", "Dollar (20d %Δ)", "美元（20日 %变动）"),
+]
+
+
+def _last_finite(s: pd.Series) -> float | None:
+    """Latest finite value of a series (drops trailing NaN), else None."""
+    s = s.dropna()
+    return float(s.iloc[-1]) if len(s) else None
+
+
+def _fe_map(pct: float) -> int:
+    """Map a [0,1] percentile to a clamped 0-100 integer Fear<->Euphoria score."""
+    return int(max(0, min(100, round(100 * float(pct)))))
+
+
+def _fe_band(fe: int) -> str:
+    """Half-open band for a 0-100 score: panic<10 / fear<35 / neutral<65 /
+    greed<90 / euphoria>=90. Returns the canonical English key."""
+    if fe < 10:
+        return "Panic"
+    if fe < 35:
+        return "Fear"
+    if fe < 65:
+        return "Neutral"
+    if fe < 90:
+        return "Greed"
+    return "Euphoria"
+
+
+def _fe_insider_breadth(sig: dict) -> float:
+    """Net Form-4 buy breadth across the insider-signals map: (#net-buyers -
+    #net-sellers) / #valid using the per-ticker `bps` field (% of mktcap). None /
+    non-finite bps are ignored; an empty / all-None map returns 0.0 (no crash)."""
+    vals = [v["bps"] for v in sig.values()
+            if v.get("bps") is not None and np.isfinite(v["bps"])]
+    if not vals:
+        return 0.0
+    return (sum(b > 0 for b in vals) - sum(b < 0 for b in vals)) / len(vals)
+
+
+def _fe_chip(cot_washed_out: bool, cot_crowded_long: bool,
+             insider_buying: bool, insider_selling: bool,
+             price_up: bool) -> tuple[str, str]:
+    """Deterministic positioning-vs-price read (no scorer). Returns
+    (chip, smart_money_lean). Descriptive only — never a buy/sell call."""
+    bullish = cot_washed_out or insider_buying
+    bearish = cot_crowded_long or insider_selling
+    lean = ("bullish" if (bullish and not bearish)
+            else "bearish" if (bearish and not bullish) else "mixed")
+    chip = ("mixed" if lean == "mixed"
+            else "confirms" if (lean == "bullish") == price_up else "diverges")
+    return chip, lean
+
+
+def _fe_legs(cf: pd.DataFrame) -> list[dict]:
+    """Per-leg decomposition of the RORO composite from the signed roro_<key>
+    columns: latest signed contribution, its rolling-5y percentile, and a
+    risk-on/risk-off lean (hyphenated to match the i18n LEX so td() resolves it)."""
+    from engine.indicators import pct_rank_window
+    legs = []
+    for key, en, zh in _FE_LEG_META:
+        col = f"roro_{key}"
+        if col not in cf.columns:
+            continue
+        sig = cf[col]
+        val = _last_finite(sig)
+        if val is None:
+            continue
+        p = _last_finite(pct_rank_window(sig, 252 * 5))
+        if p is None:                                  # warm-up shortfall fallback
+            p = _last_finite(sig.expanding(min_periods=20).rank(pct=True))
+        legs.append({
+            "key": key, "name_en": en, "name_zh": zh,
+            "value": round(val, 3),
+            "pct": _fe_map(p) if p is not None else 50,
+            "lean": "risk-on" if val > 0 else "risk-off"})
+    return legs
+
+
+def _fe_positioning(latest: dict, f: pd.DataFrame) -> dict:
+    """Positioning confirms/diverges read from US-macro inputs ONLY (no China/HK
+    southbound): COT spec washout/crowding (recomputed — the boolean is not
+    persisted, mirrors conditions.py) + insider Form-4 breadth, vs price trend."""
+    from engine.indicators import pct_rank_window
+    ccfg = config.load()["engine"]["conditions"]["capitulation"]
+    cot_washed_out = cot_crowded_long = False
+    cot = store.read("cot", "cot_es_spx")
+    if cot is not None and "net_spec_pct_oi" in cot.columns:
+        ns = cot["net_spec_pct_oi"].reindex(f.index).ffill(limit=10)
+        p = _last_finite(pct_rank_window(ns, ccfg["cot_pctile_lookback_d"]))
+        if p is not None:
+            cot_washed_out = p < ccfg["cot_washout_pctile"]
+            cot_crowded_long = p > 1 - ccfg["cot_washout_pctile"]
+    sig = {}
+    ip = (config.ROOT / config.load()["storage"]["site_dir"]
+          / "factordata" / "insider_signals.json")
+    if ip.exists():
+        try:
+            sig = json.loads(ip.read_text()) or {}
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("insider signals unreadable for fear/euphoria (%s)", e)
+    breadth = _fe_insider_breadth(sig)
+    insider_buying, insider_selling = breadth > 0.05, breadth < -0.05
+    price_up = (((latest.get("dislocation") or {}).get("inputs") or {})
+                .get("primary_trend") == "up")
+    chip, lean = _fe_chip(cot_washed_out, cot_crowded_long,
+                          insider_buying, insider_selling, price_up)
+    return {"chip": chip, "smart_money_lean": lean,
+            "cot_washed_out": cot_washed_out, "cot_crowded_long": cot_crowded_long,
+            "insider_breadth": round(breadth, 3), "price_up": price_up}
+
+
+def fear_euphoria_synthesis(latest: dict, f: pd.DataFrame) -> dict | None:
+    """DISPLAY-ONLY Fear<->Euphoria regime synthesis. Zero new data: maps the
+    existing RORO composite to a rolling-5y 0-100 percentile, decomposes its 7
+    legs, annotates positioning confirms/diverges. NEVER scores; NEVER touches
+    axes / regime / macro_risk. Returns None gracefully on any shortfall (the
+    2023+ price cache can hold fewer obs than the rolling window's min_periods)."""
+    from engine.conditions import conditions_frame
+    from engine.indicators import pct_rank_window
+    try:
+        cf = conditions_frame(f)
+        if "roro" not in cf or cf["roro"].dropna().empty:
+            return None
+        pct = _last_finite(pct_rank_window(cf["roro"], 252 * 5))
+        if pct is None or not np.isfinite(pct):            # shallow-cache guard
+            return None
+        fe = _fe_map(pct)
+        RA = (latest.get("conditions") or {}).get("risk_appetite") or {}
+        return {"fe_score": fe, "band": _fe_band(fe),
+                "roro": RA.get("roro"), "roro_state": RA.get("roro_state"),
+                "legs": _fe_legs(cf), "positioning": _fe_positioning(latest, f)}
+    except Exception as e:  # noqa: BLE001 — additive panel, never fatal
+        log.warning("fear/euphoria synthesis failed: %s", e)
+        return None
+
+
 def _fmt_money_mn(v: float) -> str:
     """$ millions -> human string: 1234 -> +$1.2B, -87 -> -$87M."""
     if pd.isna(v):
@@ -1847,6 +1999,7 @@ def main() -> int:
         nowcast_hist=nowcast_history(f),
         stance=regime_stance(latest, latest.get("playbook")),
         cross_asset=cross_asset_snap,
+        fear_euphoria=fear_euphoria_synthesis(latest, f),
     )
     # Write the macro dashboard straight to macro.html. index.html is owned
     # solely by build_vector.build_landing() (the landing hub) — keeping the raw

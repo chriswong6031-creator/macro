@@ -327,4 +327,14 @@ LEX: dict[str, str] = {
     "Drawdown": "回撤",
     "Rates vol": "利率波动",
     "Plumbing": "资金管道",
+    # Fear <-> Euphoria synthesis panel (DISPLAY-ONLY, research/FEAR_EUPHORIA_PANEL_SPEC.md)
+    # NB: unknown / risk-on / risk-off / mixed are already mapped above.
+    "stand_aside": "观望",
+    "buyable_washout": "可买入的错杀",
+    "put-present": "托底在位",
+    "put-absent": "托底缺失",
+    "calm": "平静",
+    "diversified": "分散",
+    "converging": "趋同",
+    "concentrated": "集中",
 }

@@ -1283,6 +1283,94 @@
     <p class="mn-disc">{{ t(macro_news_disclaimer, macro_news_disclaimer_zh) }}</p>
   </div>
 
+  <!-- ===== FEAR <-> EUPHORIA SYNTHESIS (display-only conditioning lens) ===== -->
+  <div class="panel span12" id="fear-euphoria">
+    <h2>🌡️ {{ t('Fear ↔ Euphoria: regime synthesis', '恐惧 ↔ 欣喜：周期综合') }}
+      {{ help("A conditioning lens, NOT a signal. It synthesises components this dashboard already computes — the cross-asset RORO risk-appetite composite, the dislocation verdict and the capitulation gauge — into one Fear↔Euphoria regime read. It does NOT score direction or size positions, and never feeds the quad, the macro-risk score or any axis. 'Contrarian at extremes' is regime-dependent: fear is buyable only when the Fed put is present; in put-absent regimes extreme fear can be a falling knife.", "这是环境视角，不是信号。它综合本仪表盘已计算的成分 — 跨资产 RORO 风险偏好综合、错位读数与投降指标 — 形成单一的恐惧↔欣喜周期读数。它不评分方向、不决定仓位，也绝不进入象限、宏观风险评分或任何轴。'极端时反向操作'取决于周期：只有在美联储托底在位时，恐惧才可买入；托底缺失时，极端恐惧可能是下跌中的刀子。") }}
+      <a href="gex.html" class="muted" style="font-size:12px;font-weight:400;float:right">{{ t('dealer gamma →','交易商 gamma →') }}</a>
+    </h2>
+    <p class="muted sm" style="margin:-4px 0 10px">{{ t('A regime read, not a signal — it synthesises existing components and never scores direction or sizes positions.', '这是周期读数而非信号 — 仅综合已有成分，绝不评分方向或决定仓位。') }}</p>
+    {% if fear_euphoria %}
+    {% set FE = fear_euphoria %}
+    {% set DL = latest.dislocation %}
+    {% set FCAP = (latest.conditions or {}).capitulation %}
+    {% set _bandzh = {'Panic':'恐慌','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Euphoria':'欣喜'} %}
+    <div class="grid">
+
+      <!-- 0-100 Fear<->Euphoria gauge -->
+      <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
+        <div style="font-weight:700">{{ t('Fear ↔ Euphoria', '恐惧 ↔ 欣喜') }}
+          <span style="font-size:22px">{{ FE.fe_score }}</span><span class="muted" style="font-size:13px">/100</span>
+          <span class="badge" style="font-size:11px;vertical-align:middle;background:var(--panel)">{{ t(FE.band, _bandzh.get(FE.band, FE.band)) }}</span>
+          {% if FE.roro is not none %}<span class="muted sm" style="float:right">RORO {{ '%+.2f'|format(FE.roro) }}{% if FE.roro_state %} <span class="pill" style="background:var(--panel)">{{ td(FE.roro_state) }}</span>{% endif %}</span>{% endif %}
+        </div>
+        <div class="pgauge" style="width:100%"><i style="left: {{ FE.fe_score }}%"></i></div>
+        <div class="pends"><span>← {{ t('Fear', '恐惧') }}</span><span>{{ t('Euphoria', '欣喜') }} →</span></div>
+        <div class="pends" style="margin-top:3px">
+          <span{% if FE.band=='Panic' %} style="color:var(--text);font-weight:700"{% endif %}>{{ t('Panic', '恐慌') }}</span>
+          <span{% if FE.band=='Fear' %} style="color:var(--text);font-weight:700"{% endif %}>{{ t('Fear', '恐惧') }}</span>
+          <span{% if FE.band=='Neutral' %} style="color:var(--text);font-weight:700"{% endif %}>{{ t('Neutral', '中性') }}</span>
+          <span{% if FE.band=='Greed' %} style="color:var(--text);font-weight:700"{% endif %}>{{ t('Greed', '贪婪') }}</span>
+          <span{% if FE.band=='Euphoria' %} style="color:var(--text);font-weight:700"{% endif %}>{{ t('Euphoria', '欣喜') }}</span>
+        </div>
+        <div class="muted sm" style="margin-top:8px">{{ t("Today's score is the rolling-5-year percentile of the RORO composite (valid after ~2.5y). 'Contrarian at extremes' is regime-dependent — see the dislocation read below.", '今日评分为 RORO 综合的滚动五年百分位（约 2.5 年后有效）。"极端时反向操作"取决于周期 — 见下方错位读数。') }}</div>
+      </div>
+
+      <!-- 7-leg decomposition (neutral fill, no green/red) -->
+      <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
+        <div style="font-weight:700;margin-bottom:6px">{{ t('What is driving it', '驱动因素') }} <span class="muted sm">{{ t('7 RORO legs', '7 项 RORO 分量') }}</span>
+          {{ help("The seven cross-asset legs of the RORO composite, each shown as its signed contribution (risk-on positive) and its own rolling-5-year percentile. Six fear legs are negated so that, like the headline, higher = more risk-on; copper/gold enters positive. Bars are deliberately neutral-coloured — this is a regime decomposition, not a buy/sell on any leg.", "RORO 综合的七项跨资产分量，各自显示其带符号贡献（偏好风险为正）及其滚动五年百分位。六项恐惧分量取负，使其与总览一致：越高越偏好风险；铜／金以正向计入。柱状刻意采用中性色 — 这是周期拆解，而非对任一分量的买卖。") }}</div>
+        {% for leg in FE.legs %}
+        <div style="display:flex;align-items:center;gap:8px;margin:5px 0">
+          <span style="flex:0 0 132px;font-size:12px">{{ t(leg.name_en, leg.name_zh) }}</span>
+          <div style="flex:1;height:7px;border-radius:4px;background:var(--line);overflow:hidden"><div style="height:100%;width:{{ leg.pct }}%;background:var(--muted)"></div></div>
+          <span class="muted sm" style="flex:0 0 96px;text-align:right">{{ '%+.2f'|format(leg.value) }} · {{ td(leg.lean) }}</span>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- positioning + dislocation + capitulation -->
+      <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
+        {% if FE.positioning %}
+        {% set P = FE.positioning %}
+        <div style="font-weight:700;margin-bottom:4px">{{ t('Positioning vs price', '持仓与价格') }}
+          <span class="badge" style="font-size:11px;background:var(--panel);float:right">
+            {% if P.chip=='confirms' %}{{ t('positioning confirms', '持仓与价格一致') }}
+            {% elif P.chip=='diverges' %}{{ t('positioning diverges', '持仓与价格背离') }}
+            {% else %}{{ t('positioning mixed', '持仓信号混杂') }}{% endif %}</span>
+          {{ help("A DESCRIPTIVE read of whether smart-money positioning agrees with the price trend — never a buy/sell. Bullish if COT speculators are washed out OR insider Form-4 breadth is net-buying; bearish if COT is crowded long OR insiders are net-selling. 'Confirms' = positioning leans the same way price is trending; 'diverges' = the opposite; 'mixed' when the two positioning sources disagree.", "对聪明钱持仓是否与价格趋势一致的描述性读数 — 绝非买卖建议。当 COT 投机者被清洗 或 内部人 Form-4 净买入时偏多；当 COT 拥挤做多 或 内部人净卖出时偏空。'一致'＝持仓方向与价格趋势相同；'背离'＝相反；当两个持仓来源不一致时为'混杂'。") }}</div>
+        <div class="muted sm">{{ t('COT spec', 'COT 投机') }}: {% if P.cot_washed_out %}{{ t('washed out', '已清洗') }}{% elif P.cot_crowded_long %}{{ t('crowded long', '拥挤做多') }}{% else %}{{ t('neutral', '中性') }}{% endif %}
+          · {{ t('insider breadth', '内部人广度') }} {{ '%+.0f'|format(P.insider_breadth * 100) }}%
+          · {{ t('price', '价格') }} {{ t('up', '上行') if P.price_up else t('down', '下行') }}</div>
+        {% endif %}
+
+        {% if DL %}
+        <div class="kv" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line)">{{ t('Dislocation read', '错位读数') }}
+          <b style="float:right">{{ td(DL.verdict) }}</b></div>
+        <div class="muted sm">{{ t('Fed put', '美联储托底') }}: <b>{{ td(DL.put_state) if DL.put_state else (t('Put present','托底在位') if DL.fed_put else t('Put ABSENT','托底缺失')) }}</b>
+          {% if DL.inputs and DL.inputs.spy_drawdown_pct is not none %} · {{ t('S&P drawdown', '标普回撤') }} {{ DL.inputs.spy_drawdown_pct }}%{% endif %}</div>
+        {% if DL.capitulation_caveat %}<div class="sm" style="margin-top:4px;color:var(--muted)">⚠ {{ DL.capitulation_caveat }}</div>{% endif %}
+        {% endif %}
+
+        {% if FCAP and FCAP.score is not none %}
+        <div class="kv" style="margin-top:8px">{{ t('Capitulation', '投降') }}
+          <b style="float:right">{{ FCAP.score }}/3 {{ t('signals', '信号') }}</b></div>
+        {% if FCAP.signals_firing %}<div class="muted sm">{{ FCAP.signals_firing | join(' · ') }}</div>{% endif %}
+        {% if FCAP.measured_bounce_pct is not none %}<div class="muted sm">{{ t('measured bounce', '实测反弹') }} {{ '%+.1f'|format(FCAP.measured_bounce_pct) }}% ({{ FCAP.measured_hit_pct }}% {{ t('hit', '命中') }})</div>{% endif %}
+        {% endif %}
+
+        {% if latest.cross_asset and latest.cross_asset.get('absorption_ratio') is not none %}
+        <div class="kv" style="margin-top:8px">{{ t('Cross-asset absorption', '跨资产吸收') }}
+          <b style="float:right">{{ '%.2f'|format(latest.cross_asset.absorption_ratio) }}{% if latest.cross_asset.get('verdict') %} · {{ td(latest.cross_asset.verdict) }}{% endif %}</b></div>
+        {% endif %}
+      </div>
+
+    </div>
+    {% else %}
+    <p class="muted">{{ t('Building…', '构建中…') }}</p>
+    {% endif %}
+  </div>
+
   <!-- ======================= ACTION BOARD ======================= -->
   {% if action_board %}
   <div class="panel span12">
