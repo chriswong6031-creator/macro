@@ -377,6 +377,267 @@ def _multiyear(rows: list[dict], mktcap: float | None) -> dict | None:
     return block
 
 
+# ---- accounting-quality read (DISPLAY-ONLY; never scored) -------------------
+# Composes the cross-sectional accruals / profitability / investment / payout
+# factor z-scores (all oriented HIGH = good in engine/equity_factors.py) with the
+# single-period ratios and — where the companyfacts collector has run — multi-year
+# trends, into one plain-language "is the accounting deteriorating?" verdict.
+# CONTEXT ONLY: baked for the reader and deliberately NOT consumed by any scored
+# output (eq_score / MRS / the factor ranks). It surfaces a fundamental read for a
+# human to weigh; it never dampens a price/technical signal (that cross-modal
+# interaction would need its own Phase-0 before it could touch scoring).
+AQ_READS = {
+    "earnings_quality":   ("Earnings quality",   "盈利质量"),
+    "working_capital":    ("Working capital",    "营运资本"),
+    "pricing_power":      ("Pricing power",      "定价能力"),
+    "capital_discipline": ("Capital discipline", "资本纪律"),
+    "balance_sheet":      ("Balance sheet",      "资产负债表"),
+}
+AQ_DEFAULTS = {
+    "z_good": 0.5, "z_caution": -0.6,
+    "asset_growth_aggressive_pct": 40.0,
+    "margin_drop_pts": 3.0, "margin_rise_pts": 2.0,
+    "accruals_trend_min": 0.03, "dilution_pct": 5.0,
+    "wc_gap_pts": 25.0,
+    "debt_to_assets_high_pct": 60.0,
+    "piotroski_weak": 3, "min_reads": 2, "watch_cautions": 2, "warn_cautions": 3,
+}
+AQ_HEADLINE = {"clean": ("Clean", "稳健"), "watch": ("Watch", "关注"), "warn": ("Warning", "警示")}
+
+
+def _aq_accruals_series(rows) -> list[float]:
+    """(ni - cfo) / assets per fiscal year (ascending), unavailable years dropped."""
+    out = []
+    for r in rows or []:
+        ni, cfo, a = _num(r.get("ni")), _num(r.get("cfo")), _num(r.get("assets"))
+        if ni is not None and cfo is not None and a:
+            out.append((ni - cfo) / a)
+    return out
+
+
+def _aq_wc_pair(rows, metric: str):
+    """(metric_growth_pct, sales_growth_pct) over the fiscal years where BOTH the
+    balance-sheet metric (inventory / receivables) and revenue are present and
+    positive (>=3 points), else (None, None). Lets the chip flag inventory or
+    receivables OUTGROWING sales — the Sloan working-capital accrual made concrete
+    (ChatGPT's demand-slowdown / revenue-quality warnings). Needs the v2 companyfacts
+    line items in statements.parquet; absent for banks and pre-seed names."""
+    pts = []
+    for r in rows or []:
+        m, rev = _num(r.get(metric)), _num(r.get("revenue"))
+        if m and m > 0 and rev and rev > 0:
+            pts.append((int(r["fy"]), m, rev))
+    if len(pts) < 3:
+        return None, None
+    pts.sort()
+    return (pts[-1][1] / pts[0][1] - 1) * 100, (pts[-1][2] / pts[0][2] - 1) * 100
+
+
+def _accounting_quality(fac: dict | None, fin: dict | None,
+                        my: dict | None, rows: list | None, cfg: dict | None = None) -> dict | None:
+    """Plain-language accounting-quality read for the single-stock page. Returns
+    {verdict, reads[], ...} or None when fewer than ``min_reads`` sub-reads are
+    computable (the panel then hides). Display-only — see the section header;
+    nothing here feeds a scored output."""
+    if fin is None and not fac:
+        return None
+    c = {**AQ_DEFAULTS, **(cfg or {})}
+    fac, fin, my = fac or {}, fin or {}, my or {}
+    raw = fin.get("raw") or {}
+    reads: list[dict] = []
+
+    def add(key, state, en, zh):
+        en_lab, zh_lab = AQ_READS[key]
+        reads.append({"key": key, "label": en_lab, "label_zh": zh_lab,
+                      "state": state, "detail": en, "detail_zh": zh})
+
+    # trend inputs computed once up front so they are always defined (None-safe)
+    accs = _aq_accruals_series(rows)
+    rising = len(accs) >= 3 and (accs[-1] - accs[0]) >= c["accruals_trend_min"] and accs[-1] > accs[0]
+    falling = len(accs) >= 3 and (accs[0] - accs[-1]) >= c["accruals_trend_min"]
+    alt = my.get("altman") or {}
+
+    # 1) earnings quality — are earnings backed by cash? (accruals; Sloan)
+    az = _num(fac.get("accruals"))                 # factor z: HIGH = low accruals = good
+    cfo, ni = _num(raw.get("cfo")), _num(raw.get("ni"))
+    if az is not None or _num(fin.get("accruals")) is not None or len(accs) >= 3:
+        if rising or _le(az, c["z_caution"]):
+            state = "caution"
+        elif falling or (_ge(az, c["z_good"]) and (cfo is None or ni is None or cfo >= ni)):
+            state = "good"
+        else:
+            state = "neutral"
+        if rising:
+            # window framing on purpose — `rising` is net-higher across the span, not
+            # strictly monotonic, so we say "trending up over N years" not "rising N years"
+            en = f"accruals trending up over {len(accs)} fiscal years — earnings increasingly not cash-backed"
+            zh = f"应计利润在 {len(accs)} 个财年间走高——盈利的现金支撑减弱"
+        elif state == "caution":
+            en, zh = "accruals elevated vs peers (earnings lean on non-cash items)", "应计利润高于同业（盈利依赖非现金项目）"
+        elif state == "good":
+            en, zh = "earnings cash-backed", "盈利有现金支撑"
+        else:
+            en, zh = "accruals near the peer median", "应计利润接近同业中位"
+        add("earnings_quality", state, en, zh)
+
+    # 1b) working capital — inventory / receivables OUTGROWING sales (the Sloan
+    # accrual decomposed into ChatGPT's demand-slowdown / revenue-quality warnings).
+    # Only present once the v2 companyfacts line items are in statements.parquet.
+    inv_g, inv_sales = _aq_wc_pair(rows, "inventory")
+    recv_g, recv_sales = _aq_wc_pair(rows, "receivables")
+    if inv_g is not None or recv_g is not None:
+        gap = c["wc_gap_pts"]
+        inv_build = inv_g is not None and (inv_g - inv_sales) >= gap
+        recv_stretch = recv_g is not None and (recv_g - recv_sales) >= gap
+        inv_ok = inv_g is None or (inv_g - inv_sales) <= -gap
+        recv_ok = recv_g is None or (recv_g - recv_sales) <= -gap
+        if inv_build or recv_stretch:
+            state = "caution"
+        elif inv_ok and recv_ok:
+            state = "good"
+        else:
+            state = "neutral"
+        en_parts, zh_parts = [], []
+        if inv_build:
+            en_parts.append(f"inventory +{round(inv_g)}% vs sales +{round(inv_sales)}%")
+            zh_parts.append(f"存货 +{round(inv_g)}% 对销售 +{round(inv_sales)}%")
+        if recv_stretch:
+            en_parts.append(f"receivables +{round(recv_g)}% vs sales +{round(recv_sales)}%")
+            zh_parts.append(f"应收 +{round(recv_g)}% 对销售 +{round(recv_sales)}%")
+        if state == "caution":
+            tag_en = (" — demand & revenue-quality risk" if (inv_build and recv_stretch)
+                      else " — inventory building, demand risk" if inv_build
+                      else " — receivables outpacing sales, revenue-quality risk")
+            tag_zh = ("——需求与营收质量风险" if (inv_build and recv_stretch)
+                      else "——存货积压，需求风险" if inv_build
+                      else "——应收快于销售，营收质量风险")
+            en, zh = "; ".join(en_parts) + tag_en, "；".join(zh_parts) + tag_zh
+        elif state == "good":
+            en, zh = "inventory & receivables lean vs sales", "存货与应收相对销售保持精简"
+        else:
+            en, zh = "working capital roughly in line with sales", "营运资本与销售大致同步"
+        add("working_capital", state, en, zh)
+
+    # 2) pricing power — gross profitability (Novy-Marx) + gross-margin trend
+    pz = _num(fac.get("profitability"))            # HIGH = good
+    gm = [x for x in (my.get("gross_margin") or []) if x is not None]
+    gm_delta = (gm[-1] - gm[0]) if len(gm) >= 3 else None
+    if pz is not None or gm_delta is not None:
+        if (gm_delta is not None and gm_delta <= -c["margin_drop_pts"]) or _le(pz, c["z_caution"]):
+            state = "caution"
+        elif (gm_delta is not None and gm_delta >= c["margin_rise_pts"]) or _ge(pz, c["z_good"]):
+            state = "good"
+        else:
+            state = "neutral"
+        # keep the detail CONSISTENT with the dot: only show the margin trend when it
+        # is what drove the state (compression for caution, expansion for good); a
+        # caution from the cross-sectional profitability-z explains itself instead.
+        compress = gm_delta is not None and gm_delta <= -c["margin_drop_pts"]
+        expand = gm_delta is not None and gm_delta >= c["margin_rise_pts"]
+        if state == "caution" and compress:
+            en = f"gross margin −{abs(round(gm_delta, 1))}pts over {len(gm)} years"
+            zh = f"毛利率 {len(gm)} 年下降 {abs(round(gm_delta, 1))} 个百分点"
+        elif state == "caution":
+            en, zh = "soft gross profitability vs peers", "毛利能力弱于同业"
+        elif state == "good" and expand:
+            en = f"gross margin +{round(gm_delta, 1)}pts over {len(gm)} years"
+            zh = f"毛利率 {len(gm)} 年上升 {round(gm_delta, 1)} 个百分点"
+        elif state == "good":
+            en, zh = "strong gross profitability vs peers", "毛利能力强于同业"
+        elif gm_delta is not None and abs(gm_delta) >= 0.1:
+            en = f"gross margin {'+' if gm_delta >= 0 else '−'}{abs(round(gm_delta, 1))}pts over {len(gm)} years"
+            zh = f"毛利率 {len(gm)} 年{'上升' if gm_delta >= 0 else '下降'} {abs(round(gm_delta, 1))} 个百分点"
+        else:
+            en, zh = "profitability near the peer median", "盈利能力接近同业中位"
+        add("pricing_power", state, en, zh)
+
+    # 3) capital discipline — asset growth, dilution, cash return
+    iz = _num(fac.get("investment"))               # HIGH = low asset growth = good
+    payz = _num(fac.get("payout"))                 # HIGH = returning cash = good
+    ag = _num(fin.get("asset_growth"))             # %
+    sh = [x for x in (_num(r.get("shares")) for r in (rows or [])) if x]
+    dil = ((sh[-1] / sh[0] - 1.0) * 100) if len(sh) >= 3 and sh[0] else None
+    if iz is not None or ag is not None or dil is not None:
+        aggressive = (ag is not None and ag >= c["asset_growth_aggressive_pct"]) or _le(iz, c["z_caution"])
+        diluting = dil is not None and dil >= c["dilution_pct"]
+        if aggressive or diluting:
+            state = "caution"
+        elif _ge(iz, c["z_good"]) and (payz is None or payz >= 0):
+            state = "good"
+        else:
+            state = "neutral"
+        if diluting:
+            en, zh = f"share count +{round(dil, 1)}% over {len(sh)} years (dilution)", f"股本 {len(sh)} 年增加 {round(dil, 1)}%（稀释）"
+        elif aggressive and ag is not None:
+            en, zh = f"assets +{round(ag, 1)}% (aggressive expansion)", f"资产 +{round(ag, 1)}%（扩张激进）"
+        elif aggressive:
+            en, zh = "aggressive asset growth vs peers", "资产增长快于同业"
+        elif state == "good":
+            en, zh = "disciplined growth, returning cash", "增长克制、回报股东"
+        else:
+            en, zh = "investment near the peer median", "投资力度接近同业中位"
+        add("capital_discipline", state, en, zh)
+
+    # 4) balance sheet — Altman zone (companyfacts) else a coarse leverage flag.
+    # No Altman ⇒ we only ever flag caution (absolute leverage is sector-relative,
+    # so we will not assert "safe" without the Altman corroboration).
+    d2a = _num(fin.get("debt_to_assets"))
+    if alt.get("zone") or d2a is not None:
+        zone, zval = alt.get("zone"), alt.get("z")
+        if zone == "distress":
+            state, en, zh = "caution", f"Altman Z {zval} — distress zone", f"Altman Z {zval}——困境区"
+        elif zone == "grey":
+            # grey (1.81-2.99) is INDETERMINATE, not a red flag — neutral, not caution
+            state, en, zh = "neutral", f"Altman Z {zval} — grey zone", f"Altman Z {zval}——灰色区"
+        elif zone == "safe":
+            state, en, zh = "good", f"Altman Z {zval} — safe zone", f"Altman Z {zval}——安全区"
+        elif d2a is not None and d2a >= c["debt_to_assets_high_pct"]:
+            state, en, zh = "caution", f"high leverage (LT debt {round(d2a)}% of assets)", f"杠杆偏高（长期债务占资产 {round(d2a)}%）"
+        else:
+            state, en, zh = "neutral", "leverage unremarkable", "杠杆水平一般"
+        add("balance_sheet", state, en, zh)
+
+    if len(reads) < c["min_reads"]:
+        return None
+
+    state_by = {r["key"]: r["state"] for r in reads}
+    n_caution = sum(1 for r in reads if r["state"] == "caution")
+    # earnings_quality (aggregate accruals) and working_capital (the inventory /
+    # receivables that DRIVE those accruals) are the same phenomenon — when both fire,
+    # the working-capital read is the EXPLANATION, not a second independent strike, so
+    # collapse the pair to one caution. Without this, quality names with fast-growing
+    # receivables (e.g. AAPL) would over-warn off what is really one accrual signal.
+    if state_by.get("earnings_quality") == "caution" and state_by.get("working_capital") == "caution":
+        n_caution -= 1
+    severe = rising and alt.get("zone") == "distress"
+    # With up to 5 RELATIVE reads, one isolated caution is the normal/modal state — so
+    # clean absorbs <= 1 (the breakdown still shows the flag); watch = a couple of
+    # concerns (>= watch_cautions); warn = multi-front (>= warn_cautions, accrual cluster
+    # de-duped above) or `severe` = accruals deteriorating into the Altman distress zone.
+    verdict = ("warn" if (n_caution >= c["warn_cautions"] or severe)
+               else "watch" if n_caution >= c["watch_cautions"] else "clean")
+
+    piotroski = my.get("piotroski")
+    if verdict == "clean" and piotroski and piotroski.get("of") and piotroski["score"] <= c["piotroski_weak"]:
+        verdict = "watch"   # the F-score corroborator can only DOWNGRADE a clean read
+
+    has_trend = len(accs) >= 3 or gm_delta is not None or inv_g is not None or recv_g is not None
+    en_head, zh_head = AQ_HEADLINE[verdict]
+    return {
+        "verdict": verdict,
+        "headline": en_head, "headline_zh": zh_head,
+        "n_caution": n_caution,
+        "reads": reads,
+        "piotroski": piotroski,
+        "basis": "multi-year trend + peer ranks" if has_trend else "latest filing + peer ranks",
+        "basis_zh": "多年趋势 + 同业排名" if has_trend else "最新财报 + 同业排名",
+        "caveat": "Annual filings, lagged to the report date; free XBRL is sparse for some "
+                  "filers. Context, not a signal — it does not change the technical call.",
+        "caveat_zh": "年度财报，滞后于披露日；免费 XBRL 数据对部分公司不全。仅供参考，"
+                     "并非交易信号，不改变技术面判断。",
+    }
+
+
 def _load_earnings() -> dict[str, dict]:
     """ticker -> earnings row (next date + surprise history) from the Phase-2
     earnings collector (collectors/equity_earnings.py). Empty until run."""
@@ -721,6 +982,7 @@ def panels() -> dict[str, dict]:
     profiles = _load_profiles()
     statements = _load_statements()
     earnings = _load_earnings()
+    aq_cfg = config.load().get("accounting_quality") or {}
 
     M = _context_frame(fund, table)
     nm_top_thr = _num(M["net_margin"].quantile(2 / 3)) if "net_margin" in M else None
@@ -732,11 +994,13 @@ def panels() -> dict[str, dict]:
         net_margin = _num(M.loc[t, "net_margin"]) if t in M.index else None
         arche = _archetype(fac, ni, net_margin, nm_top_thr)
         mcap = _num(M.loc[t, "mktcap"]) if t in M.index else None
-        my = _multiyear(statements.get(str(t)), mcap)
+        rows = statements.get(str(t))
+        my = _multiyear(rows, mcap)
+        fin = _financials(t, f, deep.get(t), my)
         blocks = {
             "profile": _profile(t, f, fac, M, arche, profiles.get(str(t))),
             "valuation": _valuation(t, f, fac, M, deep.get(t)),
-            "financials": _financials(t, f, deep.get(t), my),
+            "financials": fin,
             "factors": _factors(t, fac, facts, M),
             "positioning": _positioning(t, f, short, insider.get(t)),
             "analyst": _analyst(t, deep.get(t)),
@@ -744,6 +1008,10 @@ def panels() -> dict[str, dict]:
             # of every factor leg, written by equity_factors just before this runs);
             # surface it on the Earnings panel since it IS an earnings read.
             "earnings": _earnings(earnings.get(str(t)), (fac or {}).get("sue")),
+            # accounting-quality read — composes the accruals / profitability /
+            # investment factor z's + single-period ratios + (where companyfacts has
+            # run) the multi-year trend. DISPLAY-ONLY: baked for the reader, never scored.
+            "accounting_quality": _accounting_quality(fac, fin, my, rows, aq_cfg),
         }
         out[str(t)] = _clean({k: v for k, v in blocks.items() if v})
     log.info("stock_fundamentals: %d names with panels (factors %d, deep %d, short %s)",

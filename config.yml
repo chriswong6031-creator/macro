@@ -427,6 +427,30 @@ sec_insider:
   panel_window_months: 6        # trailing window for the size-normalised leaderboard (validated construction)
 
 # =============================================================================
+# Accounting-quality read (engine/stock_fundamentals.py :: _accounting_quality).
+# DISPLAY-ONLY context chip on the single-stock page — composes the cross-sectional
+# accruals / profitability / investment / payout factor z's (all oriented HIGH=good)
+# with single-period ratios and, where the companyfacts collector has run, multi-year
+# trends, into a clean / watch / warning verdict. It NEVER feeds a scored output;
+# these thresholds only tune what gets surfaced to the reader. All optional — the code
+# carries the same defaults (AQ_DEFAULTS), so the chip works with this block absent.
+# =============================================================================
+accounting_quality:
+  z_good: 0.5                     # factor z at/above which a leg reads "good"
+  z_caution: -0.6                 # factor z at/below which a leg reads "caution"
+  asset_growth_aggressive_pct: 40 # YoY asset growth flagged as aggressive expansion
+  margin_drop_pts: 3.0            # multi-year gross-margin compression (pts) → caution
+  margin_rise_pts: 2.0            # multi-year gross-margin expansion (pts) → good
+  accruals_trend_min: 0.03        # min rise in (ni-cfo)/assets over the window to call accruals "rising" (≈3pts of assets — above noise)
+  dilution_pct: 5.0               # share-count growth over the window flagged as dilution
+  wc_gap_pts: 25.0                # cumulative inventory/receivables growth must exceed sales growth by this (pts) over the window to flag
+  debt_to_assets_high_pct: 60     # coarse leverage caution used only when Altman is unavailable
+  piotroski_weak: 3               # F-score <= this downgrades an otherwise-clean read to watch
+  min_reads: 2                    # need >= this many computable sub-reads or the panel hides
+  watch_cautions: 2               # >= this many caution reads → "watch" (one isolated flag among the 5 relative reads stays "clean")
+  warn_cautions: 3                # >= this many caution reads (accrual cluster de-duped) → "warning"
+
+# =============================================================================
 # EIA petroleum supply (Phase 2 of the four-phase build-out). The single biggest
 # missing oil supply-shock driver per COMMODITY_DATA_AUDIT. EIA's keyless dnav
 # "Download Series History" .xls endpoints (hist_xls/{ID}w.xls) — no API key —

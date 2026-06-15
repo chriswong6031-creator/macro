@@ -47,6 +47,8 @@ BALANCE = {
     "assets": ["Assets"],
     "cur_assets": ["AssetsCurrent"],
     "cur_liab": ["LiabilitiesCurrent"],
+    "inventory": ["InventoryNet"],
+    "receivables": ["AccountsReceivableNetCurrent", "ReceivablesNetCurrent"],
     "liabilities": ["Liabilities"],
     "equity": ["StockholdersEquity",
                "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest"],
