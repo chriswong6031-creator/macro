@@ -18,3 +18,7 @@ data/hk_breadth/_closes_cache.parquet
 data/sec_insider/insider_panel.parquet
 # Phase-0 validation caches (local build artifacts, rebuilt by the harness on demand).
 data/regime/*phase0*cache.parquet
+# Bulk GEX EOD option archives (~840MB of .7z / partial downloads) — local-only raw
+# inputs, must never enter git history. Keep them on disk, out of the repo.
+data/gex_backfill/
+*.crdownload
