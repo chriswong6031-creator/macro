@@ -25,12 +25,15 @@
   .cmat td,.cmat th{padding:3px 7px;font-size:12px;text-align:center;border:1px solid var(--line)}
   .pos{color:var(--up,#16a34a)}.neg{color:var(--down,#dc2626)}.muted{color:var(--muted)}.sm{font-size:12px}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:820px){.grid2{grid-template-columns:1fr}}
+  body{margin:0;background:var(--bg);color:var(--text);}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:14px}
+  .card h2{margin:0 0 8px;font-size:15px;font-weight:700}
 </style>
 </head>
 <body>
-<div class="topbar">
-  <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;padding:0;border:none;margin:0 auto">
-    <div class="nav-links">
+<div class="ca-wrap">
+<nav class="site-nav">
+  <div class="nav-links">
       <a class="nav-link" href="index.html">🏠 <span class="l-en">Home</span><span class="l-zh">首页</span></a>
       <div class="nav-dd">
         <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">US Macro</span><span class="l-zh">美国宏观</span> <span class="caret">▾</span></a>
@@ -61,10 +64,7 @@
         <span class="opt zh-opt" data-l="zh">中文</span>
       </div>
     </div>
-  </div>
-</div>
-
-<div class="wrap ca-wrap">
+</nav>
 
   <!-- ===================== REGIME HERO ===================== -->
   
