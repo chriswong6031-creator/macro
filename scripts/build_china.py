@@ -437,6 +437,42 @@ def _breadth() -> dict | None:
     }
 
 
+def _china_index_health() -> list[dict]:
+    """Health snapshot for the major China indexes — the 'how is the market
+    itself doing' read that leads the macro page. Price, % off the 52-week high
+    (drawdown), 50/200d trend, RSI(14). Pure price math off the stored daily
+    closes; reuses engine.technicals.rsi. SHCOMP (000001.SS, deep history) +
+    CSI 300 ETF (510300.SS, the benchmark) + Shenzhen Component (399001.SZ)."""
+    from engine.technicals import rsi
+    out = []
+    for tkr, label, zh in [("000001.SS", "Shanghai Composite", "上证综指"),
+                           ("510300.SS", "CSI 300", "沪深300"),
+                           ("399001.SZ", "Shenzhen Component", "深证成指")]:
+        df = store.read("china", tkr)
+        if df is None or df.empty or "close" not in df.columns:
+            continue
+        c = df["close"].astype(float).dropna()
+        if len(c) < 60:
+            continue
+        px = float(c.iloc[-1])
+        hi52 = float(c.tail(252).max())
+        ma50 = float(c.tail(50).mean())
+        ma200 = float(c.tail(200).mean()) if len(c) >= 200 else float("nan")
+        try:
+            r = float(rsi(c).iloc[-1])
+        except Exception:  # noqa: BLE001 — never let one index break the panel
+            r = float("nan")
+        out.append({
+            "ticker": tkr, "label": label, "label_zh": zh, "price": round(px, 2),
+            "chg": round(100 * (px / float(c.iloc[-2]) - 1), 2) if len(c) >= 2 else 0.0,
+            "dd": round(100 * (px / hi52 - 1), 1),
+            "above50": bool(px >= ma50),
+            "above200": (bool(px >= ma200) if ma200 == ma200 else None),
+            "rsi": round(r) if r == r else None,
+        })
+    return out
+
+
 def _benchmark_card() -> dict | None:
     """Headline cycle card for the Shanghai Composite (deep history)."""
     from engine.cycles import analyze
@@ -475,6 +511,7 @@ def main() -> int:
             "pref": latest.get("preference_check", {}),
             "actions": _china_action_board(sectors),
             "health": _health_rows(),
+            "index_health": _china_index_health(),  # macro-page index-health strip
         }
         site = Path(config.load()["storage"]["site_dir"])
         site.mkdir(parents=True, exist_ok=True)
@@ -597,13 +634,31 @@ def main() -> int:
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)
         from engine import i18n
         env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
-        html = env.get_template("china.html.j2").render(**vm)
+        # One shared view-model feeds BOTH the China macro-regime page and the
+        # A-share Stock Dashboard — the same china.html.j2 is rendered twice with
+        # a `mode` flag (macro / stocks) that selects which sections show. No data
+        # is recomputed and the heavy page CSS lives in exactly one template.
+        tmpl = env.get_template("china.html.j2")
+        html = tmpl.render(**vm, mode="macro")
         (site / "china.html").write_text(html)
         for a in ASSETS:
             src = Path(config.ROOT) / "templates" / a
             if src.exists():
                 (site / a).write_text(src.read_text())
         log.info("wrote %s/china.html (%d KB, %d sectors)", site, len(html) // 1024, len(vm["sectors"]))
+
+        # A-share Stock Dashboard — same VM, the "looking for stocks" half.
+        html_st = tmpl.render(**vm, mode="stocks")
+        (site / "china_stocks.html").write_text(html_st)
+        log.info("wrote %s/china_stocks.html (%d KB)", site, len(html_st) // 1024)
+        # landing-hub card stat (presence-gated by the .html existing)
+        _su = vm.get("setups") or {}
+        _n = len(_su.get("buy") or [])
+        _label = (f"{_n} mean-reversion setups" if _n else "Setups · reversal · screener")
+        cndir = config.data_dir() / "china_stocks"
+        cndir.mkdir(parents=True, exist_ok=True)
+        (cndir / "latest.json").write_text(json.dumps(
+            {"date": latest.get("date", ""), "label": _label, "n_setups": _n}, indent=2))
 
         # A-share stock search shell (the per-ticker library was built above, before
         # the china.html render, so its "Top setups" ranking could feed the page)

@@ -49,22 +49,12 @@ def _norm(sym) -> str:
     return str(sym).replace(".", "-").strip()
 
 
-def reconstruct(label: str, url: str) -> pd.DataFrame:
-    """Walk the Wikipedia changes log backward from today's constituents into
-    membership intervals. Guarantees the reconstructed open intervals reconcile
-    exactly to the current constituent list."""
-    html = urllib.request.urlopen(urllib.request.Request(url, headers=HDR), timeout=60).read().decode()
-    tabs = pd.read_html(io.StringIO(html))
-    current = {_norm(s) for s in tabs[0]["Symbol"]}
-    ch = tabs[1].copy()
-    ch.columns = ["_".join(c).strip() if isinstance(c, tuple) else str(c) for c in ch.columns]
-    ch["date"] = pd.to_datetime(ch[[c for c in ch.columns if "Date" in c][0]], errors="coerce")
-    addc = [c for c in ch.columns if c.startswith("Added") and "Ticker" in c][0]
-    remc = [c for c in ch.columns if c.startswith("Removed") and "Ticker" in c][0]
-    ch["add"] = ch[addc].map(_norm).replace("nan", "")
-    ch["rem"] = ch[remc].map(_norm).replace("nan", "")
-    ch = ch.dropna(subset=["date"]).sort_values("date", ascending=False)
-
+def reconstruct_intervals(current: set, changes: pd.DataFrame) -> tuple[pd.DataFrame, int]:
+    """Pure walk-backward reconstruction (no I/O — unit-testable). `changes` has
+    columns date/add/rem (normalised tickers, '' if none). Returns (intervals df with
+    a sentinel-NaT floor for pre-log starts, orphan-add count). GUARANTEE: the open
+    (end=NaT) intervals reconcile exactly to `current`."""
+    ch = changes.dropna(subset=["date"]).sort_values("date", ascending=False)
     cset = set(current)
     intervals: dict[str, list] = defaultdict(list)
     for t in current:
@@ -83,14 +73,32 @@ def reconstruct(label: str, url: str) -> pd.DataFrame:
             intervals[r["rem"]].append([None, D])
             cset.add(r["rem"])
     floor = ch["date"].min()
-
     rows = [(t, s if s is not None else floor, e) for t, ivs in intervals.items() for s, e in ivs]
     m = pd.DataFrame(rows, columns=["ticker", "start_date", "end_date"])
+    assert set(m.loc[m["end_date"].isna(), "ticker"]) == current, \
+        "open intervals do not reconcile to current constituents"
+    return m, orphan
+
+
+def reconstruct(label: str, url: str) -> pd.DataFrame:
+    """Scrape a Wikipedia index page (current constituents + changes log) and
+    reconstruct point-in-time membership intervals."""
+    html = urllib.request.urlopen(urllib.request.Request(url, headers=HDR), timeout=60).read().decode()
+    tabs = pd.read_html(io.StringIO(html))
+    current = {_norm(s) for s in tabs[0]["Symbol"]}
+    ch = tabs[1].copy()
+    ch.columns = ["_".join(c).strip() if isinstance(c, tuple) else str(c) for c in ch.columns]
+    ch["date"] = pd.to_datetime(ch[[c for c in ch.columns if "Date" in c][0]], errors="coerce")
+    addc = [c for c in ch.columns if c.startswith("Added") and "Ticker" in c][0]
+    remc = [c for c in ch.columns if c.startswith("Removed") and "Ticker" in c][0]
+    ch["add"] = ch[addc].map(_norm).replace("nan", "")
+    ch["rem"] = ch[remc].map(_norm).replace("nan", "")
+
+    m, orphan = reconstruct_intervals(current, ch[["date", "add", "rem"]])
     m["src"] = label
-    opens = set(m.loc[m["end_date"].isna(), "ticker"])
-    assert opens == current, f"{label}: open intervals do not reconcile to current constituents"
     print(f"[{label}] {len(m)} intervals · {m['ticker'].nunique()} tickers · "
-          f"changes {floor.date()}→{ch['date'].max().date()} · {orphan} orphan adds skipped", flush=True)
+          f"changes {ch['date'].min().date()}→{ch['date'].max().date()} · "
+          f"{orphan} orphan adds skipped", flush=True)
     return m
 
 

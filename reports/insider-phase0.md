@@ -6,96 +6,96 @@ Suffixes: `|SN` sector-neutral (within-GICS) · `|act` IC among only the names w
 
 ## deep 1962→ (current members) · full universe (survivorship-biased)
 
-Span 2006-01-31..2026-02-27 · 242 monthly rebalances · ~1374 priced names · trailing 6-month filing window · forward 63d.
+Span 2012-01-31..2026-02-27 · 170 monthly rebalances · ~1601 priced names · trailing 6-month filing window · forward 63d.
 
 | signal | mean IC | IC-IR | t_HAC | p | q_FDR | hit | IC h1→h2 | med_act | n |
 |---|--:|--:|--:|--:|--:|--:|--:|--:|--:|
-| opp_buy_usd_mcap|act | 0.0376 | 0.397 | 3.675 | 0.0002 | 0.0027 | 0.651 | 0.0593→0.0159 | 227 | 192 |
-| role_buy_usd_mcap|act | 0.0349 | 0.374 | 3.523 | 0.0004 | 0.0027 | 0.615 | 0.0573→0.0126 | 230 | 192 |
-| opp_buy_usd_mcap | 0.0163 | 0.402 | 3.685 | 0.0002 | 0.0027 | 0.644 | 0.0204→0.0122 | 227 | 194 |
-| role_buy_usd_mcap | 0.0162 | 0.397 | 3.613 | 0.0003 | 0.0027 | 0.629 | 0.0206→0.0119 | 230 | 194 |
-| opp_buyers | 0.0146 | 0.291 | 3.101 | 0.0019 | 0.0064 | 0.62 | 0.0188→0.0103 | 304 | 242 |
-| n_buyers | 0.0145 | 0.287 | 3.062 | 0.0022 | 0.0066 | 0.632 | 0.0188→0.0101 | 307 | 242 |
-| role_buy_usd | 0.0145 | 0.302 | 3.221 | 0.0013 | 0.005 | 0.649 | 0.0197→0.0094 | 307 | 242 |
-| buy_usd | 0.0144 | 0.301 | 3.216 | 0.0013 | 0.005 | 0.636 | 0.0194→0.0094 | 307 | 242 |
-| opp_buy_usd | 0.0143 | 0.301 | 3.224 | 0.0013 | 0.005 | 0.636 | 0.0191→0.0095 | 304 | 242 |
-| net_usd_mcap|SN | 0.0142 | 0.17 | 1.554 | 0.1203 | 0.2499 | 0.576 | 0.0257→0.0028 | 820 | 198 |
-| n_buyers|SN | 0.0082 | 0.15 | 1.442 | 0.1493 | 0.2879 | 0.574 | 0.0057→0.0107 | 307 | 242 |
-| opp_buyers|SN | 0.0068 | 0.124 | 1.194 | 0.2324 | 0.4084 | 0.574 | 0.0035→0.0101 | 304 | 242 |
-| opp_buyers|act | 0.0042 | 0.055 | 0.606 | 0.5442 | 0.7093 | 0.508 | 0.0084→0.0001 | 304 | 242 |
-| role_buy_usd|act | 0.0041 | 0.051 | 0.532 | 0.595 | 0.7302 | 0.475 | 0.0187→-0.0105 | 307 | 242 |
-| buy_usd|act | 0.0031 | 0.039 | 0.424 | 0.6716 | 0.7773 | 0.479 | 0.0162→-0.01 | 307 | 242 |
-| n_buyers|act | 0.0028 | 0.036 | 0.398 | 0.6909 | 0.7773 | 0.508 | 0.0064→-0.0009 | 307 | 242 |
-| net_usd|act | 0.0026 | 0.023 | 0.21 | 0.834 | 0.8661 | 0.483 | 0.004→0.0013 | 1011 | 242 |
-| opp_buy_usd|act | 0.0019 | 0.024 | 0.261 | 0.7944 | 0.858 | 0.475 | 0.0141→-0.0102 | 304 | 242 |
-| role_buy_usd|SN | 0.0002 | 0.003 | 0.031 | 0.9753 | 0.9753 | 0.504 | -0.0082→0.0086 | 307 | 242 |
-| opp_buy_usd|SN | -0.0049 | -0.059 | -0.666 | 0.5056 | 0.7093 | 0.471 | -0.0158→0.006 | 304 | 242 |
-| buy_usd|SN | -0.0058 | -0.071 | -0.81 | 0.4182 | 0.6273 | 0.471 | -0.016→0.0043 | 307 | 242 |
-| net_usd | -0.0063 | -0.066 | -0.595 | 0.5517 | 0.7093 | 0.434 | -0.0074→-0.0053 | 1011 | 242 |
-| net_usd|SN | -0.0096 | -0.116 | -1.17 | 0.242 | 0.4084 | 0.463 | -0.0033→-0.0159 | 1011 | 242 |
-| net_usd_mcap|act | -0.0123 | -0.127 | -1.079 | 0.2806 | 0.4457 | 0.392 | -0.0196→-0.0051 | 820 | 194 |
-| role_buy_usd_mcap|SN | -0.0131 | -0.167 | -1.596 | 0.1105 | 0.2486 | 0.438 | -0.0116→-0.0147 | 230 | 194 |
-| net_usd_mcap | -0.0139 | -0.215 | -1.857 | 0.0632 | 0.1551 | 0.389 | -0.0168→-0.011 | 820 | 198 |
-| opp_buy_usd_mcap|SN | -0.0162 | -0.2 | -1.922 | 0.0546 | 0.1474 | 0.443 | -0.0153→-0.017 | 227 | 194 |
+| opp_buy_usd_mcap|act | 0.0307 | 0.323 | 2.856 | 0.0043 | 0.0125 | 0.624 | 0.0467→0.0147 | 247 | 170 |
+| role_buy_usd_mcap|act | 0.0292 | 0.309 | 2.77 | 0.0056 | 0.0125 | 0.594 | 0.0476→0.0107 | 250 | 170 |
+| net_usd_mcap|SN | 0.0263 | 0.362 | 3.152 | 0.0016 | 0.0062 | 0.682 | 0.0251→0.0275 | 908 | 170 |
+| n_buyers|SN | 0.0245 | 0.474 | 3.875 | 0.0001 | 0.0005 | 0.712 | 0.0299→0.0191 | 358 | 170 |
+| opp_buyers|SN | 0.023 | 0.441 | 3.644 | 0.0003 | 0.0013 | 0.706 | 0.0275→0.0186 | 354 | 170 |
+| role_buy_usd_mcap | 0.0224 | 0.624 | 5.402 | 0.0 | 0.0 | 0.718 | 0.0254→0.0194 | 250 | 170 |
+| opp_buy_usd_mcap | 0.0223 | 0.627 | 5.432 | 0.0 | 0.0 | 0.724 | 0.025→0.0196 | 247 | 170 |
+| role_buy_usd | 0.014 | 0.308 | 2.748 | 0.006 | 0.0125 | 0.659 | 0.0241→0.0039 | 358 | 170 |
+| buy_usd | 0.0139 | 0.307 | 2.75 | 0.006 | 0.0125 | 0.659 | 0.0238→0.0039 | 358 | 170 |
+| n_buyers | 0.0139 | 0.294 | 2.613 | 0.009 | 0.0162 | 0.641 | 0.024→0.0037 | 358 | 170 |
+| opp_buyers | 0.0139 | 0.296 | 2.64 | 0.0083 | 0.016 | 0.653 | 0.024→0.0038 | 354 | 170 |
+| opp_buy_usd | 0.0138 | 0.306 | 2.75 | 0.006 | 0.0125 | 0.659 | 0.0235→0.004 | 354 | 170 |
+| net_usd|SN | 0.005 | 0.078 | 0.69 | 0.4904 | 0.6305 | 0.494 | 0.0004→0.0096 | 1211 | 170 |
+| role_buy_usd|SN | 0.0006 | 0.008 | 0.071 | 0.9434 | 0.9434 | 0.512 | -0.0003→0.0015 | 358 | 170 |
+| opp_buy_usd|SN | -0.002 | -0.026 | -0.226 | 0.8209 | 0.8533 | 0.494 | -0.0038→-0.0002 | 354 | 170 |
+| buy_usd|SN | -0.0034 | -0.044 | -0.385 | 0.7004 | 0.788 | 0.488 | -0.0052→-0.0015 | 358 | 170 |
+| net_usd|act | -0.0035 | -0.03 | -0.225 | 0.8217 | 0.8533 | 0.465 | 0.0028→-0.0098 | 1211 | 170 |
+| role_buy_usd|act | -0.0042 | -0.056 | -0.509 | 0.611 | 0.7173 | 0.471 | 0.015→-0.0233 | 358 | 170 |
+| buy_usd|act | -0.0054 | -0.074 | -0.701 | 0.4832 | 0.6305 | 0.459 | 0.0116→-0.0225 | 358 | 170 |
+| opp_buy_usd|act | -0.0063 | -0.085 | -0.8 | 0.4238 | 0.6022 | 0.459 | 0.0098→-0.0224 | 354 | 170 |
+| opp_buyers|act | -0.007 | -0.103 | -0.888 | 0.3744 | 0.5616 | 0.482 | 0.0138→-0.0279 | 354 | 170 |
+| net_usd_mcap|act | -0.0074 | -0.08 | -0.601 | 0.5482 | 0.6728 | 0.412 | -0.0088→-0.006 | 908 | 170 |
+| n_buyers|act | -0.0089 | -0.132 | -1.141 | 0.254 | 0.4286 | 0.471 | 0.0101→-0.0279 | 358 | 170 |
+| net_usd | -0.0119 | -0.124 | -0.927 | 0.3541 | 0.5616 | 0.412 | -0.0102→-0.0137 | 1211 | 170 |
+| net_usd_mcap | -0.0232 | -0.355 | -2.748 | 0.006 | 0.0125 | 0.341 | -0.019→-0.0275 | 908 | 170 |
+| role_buy_usd_mcap|SN | -0.0324 | -0.479 | -4.032 | 0.0001 | 0.0005 | 0.312 | -0.0266→-0.0382 | 250 | 170 |
+| opp_buy_usd_mcap|SN | -0.0339 | -0.485 | -4.024 | 0.0001 | 0.0005 | 0.312 | -0.0264→-0.0415 | 247 | 170 |
 
-**Survive BH-FDR(10%):** buy_usd, n_buyers, opp_buy_usd, opp_buyers, role_buy_usd, opp_buy_usd_mcap, role_buy_usd_mcap, opp_buy_usd_mcap|act, role_buy_usd_mcap|act
+**Survive BH-FDR(10%):** buy_usd, n_buyers, opp_buy_usd, opp_buyers, role_buy_usd, net_usd_mcap, opp_buy_usd_mcap, role_buy_usd_mcap, n_buyers|SN, opp_buyers|SN, net_usd_mcap|SN, opp_buy_usd_mcap|SN, role_buy_usd_mcap|SN, opp_buy_usd_mcap|act, role_buy_usd_mcap|act
 
 Dollar-neutral top-vs-bottom-quintile backtest (net of 5bps one-way; only names with a signal; bottom = net sellers):
 
 | signal | net Sharpe | cum % | DSR | verdict | bootstrap Sharpe CI | P(SR>0) |
 |---|--:|--:|--:|---|---|--:|
-| net_usd | -0.57 | -72.5 | 0.0 | FAILS multiple-testing haircut (DSR<0.90) | [-0.97, -0.57, -0.2] | 0.003 |
-| net_usd_mcap | 0.48 | 452.0 | 0.5525 | FAILS multiple-testing haircut (DSR<0.90) | [0.03, 0.49, 0.92] | 0.981 |
-| opp_buy_usd_mcap | 0.81 | 8369.3 | 0.951 | SURVIVES multiple-testing (DSR≥0.95) | [0.37, 0.82, 1.27] | 1.0 |
-| role_buy_usd_mcap | 0.81 | 8132.8 | 0.9496 | MARGINAL (0.90≤DSR<0.95) | [0.38, 0.82, 1.27] | 1.0 |
+| net_usd | -0.63 | -61.2 | 0.0 | FAILS multiple-testing haircut (DSR<0.90) | [-1.11, -0.63, -0.18] | 0.003 |
+| net_usd_mcap | 0.53 | 348.2 | 0.4864 | FAILS multiple-testing haircut (DSR<0.90) | [0.02, 0.55, 1.06] | 0.981 |
+| opp_buy_usd_mcap | 0.78 | 2319.1 | 0.8173 | FAILS multiple-testing haircut (DSR<0.90) | [0.28, 0.78, 1.29] | 0.999 |
+| role_buy_usd_mcap | 0.86 | 3783.0 | 0.891 | FAILS multiple-testing haircut (DSR<0.90) | [0.35, 0.86, 1.39] | 0.999 |
 
-## deep 1962→ (current members) · PIT S&P 500 membership (survivorship-debiased, large-cap)
+## deep 1962→ (current members) · PIT S&P 1500 membership (large+mid+small; coverage ramps ~500→920→1500 as the 400/600 logs begin 2012/2020), survivorship-debiased
 
-Span 2006-01-31..2026-02-27 · 242 monthly rebalances · ~395 priced names · trailing 6-month filing window · forward 63d.
+Span 2012-01-31..2026-02-27 · 170 monthly rebalances · ~749 priced names · trailing 6-month filing window · forward 63d.
 
 | signal | mean IC | IC-IR | t_HAC | p | q_FDR | hit | IC h1→h2 | med_act | n |
 |---|--:|--:|--:|--:|--:|--:|--:|--:|--:|
-| net_usd_mcap|SN | 0.0174 | 0.165 | 1.619 | 0.1055 | 0.734 | 0.535 | 0.0108→0.0239 | 278 | 198 |
-| opp_buyers|act | 0.0104 | 0.092 | 1.228 | 0.2196 | 0.734 | 0.566 | -0.0028→0.0236 | 97 | 242 |
-| opp_buy_usd_mcap|act | 0.0096 | 0.079 | 0.73 | 0.4653 | 0.734 | 0.55 | 0.0287→-0.0092 | 74 | 191 |
-| opp_buyers | 0.0082 | 0.109 | 1.252 | 0.2104 | 0.734 | 0.537 | 0.0119→0.0045 | 97 | 242 |
-| role_buy_usd_mcap|act | 0.0081 | 0.068 | 0.672 | 0.5014 | 0.734 | 0.524 | 0.0293→-0.0129 | 75 | 191 |
-| n_buyers|act | 0.0078 | 0.07 | 0.918 | 0.3588 | 0.734 | 0.545 | -0.0057→0.0212 | 98 | 242 |
-| n_buyers | 0.0076 | 0.1 | 1.138 | 0.2553 | 0.734 | 0.537 | 0.0114→0.0039 | 98 | 242 |
-| opp_buy_usd | 0.007 | 0.094 | 1.064 | 0.2871 | 0.734 | 0.537 | 0.0119→0.002 | 97 | 242 |
-| opp_buy_usd_mcap | 0.007 | 0.119 | 1.106 | 0.2689 | 0.734 | 0.521 | 0.0025→0.0115 | 74 | 192 |
-| n_buyers|SN | 0.007 | 0.09 | 0.903 | 0.3667 | 0.734 | 0.57 | 0.0119→0.002 | 98 | 242 |
-| buy_usd | 0.0066 | 0.088 | 0.994 | 0.3202 | 0.734 | 0.529 | 0.0115→0.0017 | 98 | 242 |
-| role_buy_usd | 0.0065 | 0.086 | 0.975 | 0.3296 | 0.734 | 0.525 | 0.0112→0.0017 | 98 | 242 |
-| opp_buyers|SN | 0.0063 | 0.082 | 0.836 | 0.403 | 0.734 | 0.554 | 0.0106→0.002 | 97 | 242 |
-| role_buy_usd_mcap | 0.0062 | 0.103 | 0.959 | 0.3378 | 0.734 | 0.521 | 0.0022→0.0103 | 75 | 192 |
-| opp_buy_usd_mcap|SN | 0.0037 | 0.036 | 0.402 | 0.6879 | 0.7429 | 0.51 | -0.0143→0.0217 | 74 | 192 |
-| role_buy_usd_mcap|SN | 0.0021 | 0.021 | 0.239 | 0.8108 | 0.8108 | 0.464 | -0.0177→0.0219 | 75 | 192 |
-| role_buy_usd|SN | -0.0033 | -0.032 | -0.364 | 0.7159 | 0.7434 | 0.488 | -0.0008→-0.0058 | 98 | 242 |
-| buy_usd|act | -0.0037 | -0.036 | -0.431 | 0.6667 | 0.7429 | 0.446 | 0.0019→-0.0093 | 98 | 242 |
-| opp_buy_usd|act | -0.0049 | -0.047 | -0.567 | 0.5709 | 0.734 | 0.434 | 0.0014→-0.0112 | 97 | 242 |
-| role_buy_usd|act | -0.0056 | -0.053 | -0.636 | 0.525 | 0.734 | 0.442 | -0.0023→-0.0088 | 98 | 242 |
-| opp_buy_usd|SN | -0.0057 | -0.054 | -0.602 | 0.5469 | 0.734 | 0.504 | -0.0053→-0.0062 | 97 | 242 |
-| net_usd | -0.006 | -0.046 | -0.419 | 0.6755 | 0.7429 | 0.446 | 0.0012→-0.0132 | 349 | 242 |
-| buy_usd|SN | -0.0074 | -0.07 | -0.78 | 0.4353 | 0.734 | 0.504 | -0.0066→-0.0081 | 98 | 242 |
-| net_usd|act | -0.0078 | -0.056 | -0.524 | 0.6005 | 0.737 | 0.442 | 0.0004→-0.0159 | 349 | 242 |
-| net_usd_mcap | -0.0095 | -0.091 | -0.783 | 0.4334 | 0.734 | 0.409 | -0.0138→-0.0052 | 278 | 198 |
-| net_usd|SN | -0.0147 | -0.143 | -1.314 | 0.1888 | 0.734 | 0.446 | -0.0022→-0.0271 | 349 | 242 |
-| net_usd_mcap|act | -0.0185 | -0.148 | -1.239 | 0.2153 | 0.734 | 0.391 | -0.032→-0.005 | 278 | 192 |
+| net_usd_mcap|SN | 0.0289 | 0.334 | 2.903 | 0.0037 | 0.0999 | 0.629 | 0.031→0.0268 | 520 | 170 |
+| n_buyers|SN | 0.0163 | 0.258 | 2.151 | 0.0315 | 0.2126 | 0.618 | 0.0152→0.0174 | 199 | 170 |
+| opp_buyers|SN | 0.0144 | 0.226 | 1.897 | 0.0578 | 0.3121 | 0.618 | 0.0115→0.0172 | 199 | 170 |
+| opp_buy_usd_mcap | 0.0112 | 0.263 | 2.281 | 0.0225 | 0.2126 | 0.588 | 0.0107→0.0116 | 154 | 170 |
+| role_buy_usd_mcap | 0.0112 | 0.258 | 2.244 | 0.0248 | 0.2126 | 0.612 | 0.0108→0.0116 | 155 | 170 |
+| net_usd|SN | 0.0058 | 0.068 | 0.589 | 0.5558 | 0.7898 | 0.512 | 0.0025→0.009 | 638 | 170 |
+| role_buy_usd_mcap|act | 0.0035 | 0.03 | 0.247 | 0.8045 | 0.9996 | 0.506 | 0.0224→-0.0154 | 155 | 170 |
+| opp_buy_usd_mcap|act | 0.0029 | 0.025 | 0.203 | 0.8393 | 0.9996 | 0.506 | 0.0168→-0.011 | 154 | 170 |
+| buy_usd | 0.0003 | 0.006 | 0.054 | 0.9567 | 0.9996 | 0.488 | 0.0035→-0.0028 | 199 | 170 |
+| role_buy_usd | 0.0003 | 0.005 | 0.05 | 0.96 | 0.9996 | 0.482 | 0.0036→-0.003 | 199 | 170 |
+| opp_buy_usd | 0.0002 | 0.004 | 0.04 | 0.9678 | 0.9996 | 0.5 | 0.0033→-0.0028 | 199 | 170 |
+| opp_buyers | 0.0002 | 0.003 | 0.03 | 0.9763 | 0.9996 | 0.518 | 0.0029→-0.0026 | 199 | 170 |
+| buy_usd|act | -0.0055 | -0.064 | -0.662 | 0.508 | 0.762 | 0.435 | 0.0077→-0.0186 | 199 | 170 |
+| role_buy_usd|act | -0.0062 | -0.071 | -0.715 | 0.4746 | 0.762 | 0.465 | 0.0092→-0.0217 | 199 | 170 |
+| net_usd_mcap|act | -0.0065 | -0.067 | -0.506 | 0.6128 | 0.8273 | 0.406 | -0.0101→-0.0029 | 520 | 170 |
+| opp_buy_usd|act | -0.0068 | -0.079 | -0.821 | 0.4114 | 0.762 | 0.435 | 0.0056→-0.0192 | 199 | 170 |
+| role_buy_usd|SN | -0.0075 | -0.081 | -0.722 | 0.4706 | 0.762 | 0.488 | -0.0134→-0.0015 | 199 | 170 |
+| opp_buyers|act | -0.0112 | -0.124 | -1.233 | 0.2177 | 0.5878 | 0.429 | -0.0038→-0.0185 | 199 | 170 |
+| opp_buy_usd|SN | -0.0113 | -0.121 | -1.075 | 0.2825 | 0.6356 | 0.459 | -0.0123→-0.0102 | 199 | 170 |
+| net_usd | -0.0114 | -0.095 | -0.715 | 0.4747 | 0.762 | 0.424 | -0.009→-0.0139 | 638 | 170 |
+| net_usd|act | -0.0114 | -0.088 | -0.675 | 0.4997 | 0.762 | 0.429 | -0.0087→-0.0142 | 638 | 170 |
+| opp_buy_usd_mcap|SN | -0.0116 | -0.135 | -1.243 | 0.2139 | 0.5878 | 0.441 | -0.0038→-0.0194 | 154 | 170 |
+| role_buy_usd_mcap|SN | -0.0118 | -0.136 | -1.265 | 0.2059 | 0.5878 | 0.453 | -0.0059→-0.0177 | 155 | 170 |
+| buy_usd|SN | -0.012 | -0.13 | -1.165 | 0.2439 | 0.5987 | 0.453 | -0.0133→-0.0108 | 199 | 170 |
+| n_buyers|act | -0.0142 | -0.16 | -1.595 | 0.1106 | 0.4266 | 0.412 | -0.0089→-0.0194 | 199 | 170 |
+| net_usd_mcap | -0.0188 | -0.224 | -1.72 | 0.0855 | 0.3847 | 0.394 | -0.0112→-0.0263 | 520 | 170 |
+| n_buyers | -0.0 | -0.0 | -0.001 | 0.9996 | 0.9996 | 0.524 | 0.0027→-0.0027 | 199 | 170 |
 
-**Survive BH-FDR(10%):** NONE
+**Survive BH-FDR(10%):** net_usd_mcap|SN
 
 Dollar-neutral top-vs-bottom-quintile backtest (net of 5bps one-way; only names with a signal; bottom = net sellers):
 
 | signal | net Sharpe | cum % | DSR | verdict | bootstrap Sharpe CI | P(SR>0) |
 |---|--:|--:|--:|---|---|--:|
-| net_usd | 0.52 | 952.9 | 0.6146 | FAILS multiple-testing haircut (DSR<0.90) | [0.07, 0.52, 0.95] | 0.987 |
-| net_usd_mcap | 0.46 | 504.9 | 0.5153 | FAILS multiple-testing haircut (DSR<0.90) | [0.0, 0.47, 0.91] | 0.976 |
-| opp_buy_usd_mcap | 0.03 | -66.7 | 0.0291 | FAILS multiple-testing haircut (DSR<0.90) | [-0.4, 0.03, 0.45] | 0.556 |
-| role_buy_usd_mcap | 0.01 | -75.5 | 0.0233 | FAILS multiple-testing haircut (DSR<0.90) | [-0.42, 0.01, 0.44] | 0.518 |
+| net_usd | 0.45 | 271.4 | 0.3616 | FAILS multiple-testing haircut (DSR<0.90) | [-0.08, 0.45, 0.97] | 0.955 |
+| net_usd_mcap | 0.55 | 343.6 | 0.5253 | FAILS multiple-testing haircut (DSR<0.90) | [0.04, 0.56, 1.05] | 0.984 |
+| opp_buy_usd_mcap | 0.2 | 4.1 | 0.102 | FAILS multiple-testing haircut (DSR<0.90) | [-0.3, 0.19, 0.7] | 0.773 |
+| role_buy_usd_mcap | 0.16 | -22.1 | 0.0746 | FAILS multiple-testing haircut (DSR<0.90) | [-0.34, 0.15, 0.67] | 0.718 |
 
 ---
 
 **How to read.** `opp_buyers`/`n_buyers` (distinct-insider CLUSTERS) and the `*_mcap` size-normalised dollars are the constructions the literature backs; `buy_usd` raw is the size-confounded baseline they must beat. A positive `|act` IC says *more* buying beats *less* among buyers (the conditional edge); a positive bare IC says buyers beat the field. `opp_*` (opportunistic) should beat the all-trades version if the Cohen–Malloy–Pomorski split is doing work. Insider buying is a LONG signal: the L/S short leg is the least-buying / net-selling names, so read the long tilt as the primary effect and the short as a weak hedge.
 
-**Survivorship vs PIT.** The biased panel scores current index members on the full ~1500-name universe (incl. mid/small); the PIT panel restricts to actual S&P 500 members on each date (+ recovered delistings). Note the PIT panel is therefore ALSO a LARGE-CAP restriction — and insider buying's edge is academically concentrated in small/mid-caps — so a PIT FDR-miss here conflates survivorship with the loss of the signal's natural habitat. A clean standalone verdict needs point-in-time S&P 400/600 membership, not just S&P 500.
+**Survivorship vs PIT.** The biased panel scores current index members on the full ~1500-name universe (incl. mid/small); the PIT panel restricts to the actual S&P 1500 members on each date (+ recovered delistings). Membership coverage RAMPS — S&P 500 back to 1996, S&P 400 from ~2012, S&P 600 from ~2020 (the free Wikipedia changes logs go no further) — so the eligible universe grows ~500 (pre-2012, large only) → ~920 (2012–19, +mid) → ~1500 (2020+, full). Read the PIT panel with `--start 2012` (mid-cap era) and note the 2020+ sub-window is where small-caps — insider buying's natural habitat — finally enter the de-biased test.

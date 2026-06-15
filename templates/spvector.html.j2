@@ -1,0 +1,251 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>S&amp;P Vector — Allocation Strategy</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+<style>
+:root{
+  --blue:{{C.blue}}; --indigo:{{C.indigo}}; --r2:{{C.r2}}; --r3:{{C.r3}}; --ink:{{C.ink}};
+  --text:{{C.text}}; --muted:{{C.muted}}; --faint:{{C.faint}}; --red:{{C.red}}; --amber:{{C.amber}};
+  --grid:{{C.grid}}; --card:{{C.card}}; --bg:{{C.bg}}; --green:#1FA971;
+}
+*{box-sizing:border-box}
+html:not([data-lang="zh"]) .l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 0 14px;border-bottom:1px solid var(--grid);margin-bottom:24px;position:sticky;top:0;background:var(--bg);z-index:20}
+.brand{font-weight:800;font-size:20px;color:var(--ink);letter-spacing:-.02em}
+.brand .gn{color:var(--blue)}
+.nav{display:flex;align-items:center;gap:2px;flex-wrap:wrap}
+.nav a{padding:7px 11px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none}
+.nav a:hover,.nav a.active{color:var(--ink);background:#eef1f6}
+.nav-dd{position:relative;display:inline-flex}
+.nav-dd>a .caret{display:inline-block;margin-left:3px;font-size:9px;opacity:.6;transition:transform .2s}
+.nav-dd:hover>a .caret,.nav-dd:focus-within>a .caret{transform:rotate(180deg)}
+.nav-dd::after{content:"";position:absolute;left:0;right:0;top:100%;height:9px}
+.nav-dd-menu{position:absolute;top:calc(100% + 7px);left:0;min-width:230px;background:var(--card);border:1px solid var(--grid);border-radius:13px;box-shadow:0 12px 34px rgba(16,24,40,.14);padding:6px;opacity:0;visibility:hidden;transform:translateY(-6px);transition:opacity .18s ease,transform .18s ease,visibility .18s;z-index:70}
+.nav-dd:hover>.nav-dd-menu,.nav-dd:focus-within>.nav-dd-menu{opacity:1;visibility:visible;transform:translateY(0)}
+.nav-dd-menu a{display:block;padding:9px 12px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--text);text-decoration:none;white-space:nowrap}
+.nav-dd-menu a .d{display:block;font-size:11.5px;font-weight:400;color:var(--muted);margin-top:2px}
+.nav-dd-menu a:hover,.nav-dd-menu a.active{background:#eef1f6;color:var(--ink)}
+.lang-btn{font:inherit;cursor:pointer;background:none;border:1px solid var(--grid);border-radius:8px;padding:4px 11px;color:var(--muted)}
+.grid{display:grid;gap:18px}
+.cols-2{grid-template-columns:1.05fr .95fr}
+.cols-3{grid-template-columns:repeat(3,1fr)}
+.cols-4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:900px){.cols-2,.cols-3,.cols-4{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:22px}
+.card h3{margin:0 0 14px;font-size:18px;font-weight:700;color:var(--ink)}
+.sub{color:var(--muted);font-size:13px} .faint{color:var(--faint)}
+.section-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:30px 4px 12px}
+.h1{font-size:30px;font-weight:800;color:var(--ink);letter-spacing:-.02em;margin:6px 0 2px}
+.tag{display:inline-block;background:#FFF4E0;color:#8a5a00;border-radius:8px;padding:3px 10px;font-size:12.5px;font-weight:700}
+.allocbar{height:54px;border-radius:12px;overflow:hidden;display:flex;font-weight:700;color:#fff;margin:12px 0 4px}
+.allocbar div{display:flex;align-items:center;justify-content:center;font-size:13.5px;min-width:0}
+.seg-spy{background:linear-gradient(90deg,#4a86ff,var(--blue))}
+.seg-cash{background:linear-gradient(90deg,#cfd4dc,#9aa4b2)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:middle}
+.dialwrap{display:flex;align-items:center;gap:18px;margin-top:2px}
+.dialnum{font-size:54px;font-weight:800;line-height:1;letter-spacing:-.02em}
+.pill{display:inline-block;padding:5px 12px;border-radius:9px;font-weight:700;font-size:13px;color:#fff}
+.mini{margin-top:8px}
+.mini .lab{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);padding:6px 0;border-top:1px solid var(--grid)}
+.mini .lab b{color:var(--ink)}
+.riskbar{height:26px;border-radius:8px;overflow:hidden;display:flex;background:repeating-linear-gradient(90deg,#f0f2f6,#f0f2f6 24px,#e9ecf1 24px,#e9ecf1 25px);border:1px solid var(--grid);margin:8px 0}
+.riskbar div{height:100%}
+.legtbl{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
+.legtbl td,.legtbl th{padding:7px 8px;border-bottom:1px solid var(--grid);text-align:right}
+.legtbl td.l,.legtbl th.l{text-align:left}
+.legtbl .dot{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:7px;vertical-align:middle}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.chip{display:inline-block;padding:5px 11px;border-radius:9px;font-weight:700;font-size:12.5px;border:1px solid var(--grid)}
+.gtable{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+.gtable td,.gtable th{padding:9px 8px;border:1px solid var(--grid);text-align:center}
+.gtable th{background:var(--bg);color:var(--muted);font-weight:600;font-size:12px}
+.gtable td.rh{text-align:left;font-weight:700;color:var(--ink);background:var(--bg)}
+.gtable td.cur{background:#E8EEFF;font-weight:700;color:var(--ink);outline:2px solid var(--blue)}
+.score .s{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:4px}
+.score .s>div{background:var(--bg);border-radius:10px;padding:12px;text-align:center}
+.score .k{font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600}
+.score .v{font-size:21px;font-weight:800;color:var(--ink)}
+.score .v small{font-size:12px;font-weight:600;color:var(--muted)}
+.win{color:var(--green)} .lose{color:var(--red)}
+.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
+.tbl td,.tbl th{padding:7px 10px;border-bottom:1px solid var(--grid);text-align:left}
+.tbl td.n{text-align:right;font-variant-numeric:tabular-nums}
+.note{border-left:3px solid var(--amber);padding:6px 0 6px 14px;margin:8px 0;color:var(--text);font-size:13.5px}
+.note.r{border-color:var(--red)} .note.b{border-color:var(--blue)}
+.foot{margin-top:34px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">📈 S&amp;P <span class="gn">Vector</span></div>
+    <div class="nav">
+      <a href="index.html">{{ t('Home','首页') }}</a>
+      <div class="nav-dd">
+        <a class="active" href="spvector.html">🇺🇸 {{ t('US Macro','美国宏观') }} <span class="caret">▾</span></a>
+        <div class="nav-dd-menu" role="menu">
+          <a href="macro.html">{{ t('Macro dashboard','宏观看板') }}<span class="d">{{ t('Regime · indexes · risk','格局 · 指数 · 风险') }}</span></a>
+          <a href="us_stocks.html">{{ t('US Stocks','美国个股') }}<span class="d">{{ t('Standouts · sectors · flows','精选 · 板块 · 资金') }}</span></a>
+          <a class="active" href="spvector.html">◎ {{ t('Allocation strategy','仓位策略') }}<span class="d">{{ t('S&P 500 · T-bills','标普500 · 短债') }}</span></a>
+        </div>
+      </div>
+      <a href="vector.html">₿ {{ t('Bitcoin Vector','比特币向量') }}</a>
+      <a href="china.html">🇨🇳 {{ t('China','中国') }}</a>
+      <a href="hk.html">🇭🇰 {{ t('Hong Kong','香港') }}</a>
+      <button class="lang-btn">中文</button>
+    </div>
+  </div>
+
+  <div class="section-title">{{ t('Allocation Strategy · in depth','仓位策略 · 深度') }}</div>
+  <div class="h1">{{ t('How much S&P 500 — vs T-bills — to hold right now','当前应持有多少标普500 — 相对短期国债') }}</div>
+  <div class="sub" style="margin-bottom:6px">{{ t('As of','截至') }} {{ as_of }} · SPY {{ '$%s'|format('{:,.2f}'.format(price)) }}</div>
+  <div class="tag">{{ t('A drawdown / Sharpe engine — not a CAGR-beater','回撤 / 夏普引擎 — 并非跑赢年化收益的工具') }}</div>
+
+  <!-- ===== recommended split + posture ===== -->
+  <div class="grid cols-2" style="margin-top:14px">
+    <div class="card">
+      <h3>{{ t('Recommended allocation right now','当前建议仓位') }}</h3>
+      <div class="allocbar">
+        {% if equity_w %}<div class="seg-spy" style="flex:{{ equity_w }}">{{ t('S&P 500','标普500') }} {{ equity_w }}%</div>{% endif %}
+        {% if cash_w %}<div class="seg-cash" style="flex:{{ cash_w }}">{{ t('T-bills','短债') }} {{ cash_w }}%</div>{% endif %}
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--blue)"></i>{{ t('S&P 500 (SPY)','标普500 (SPY)') }}</span>
+        <span><i style="background:#9aa4b2"></i>{{ t('3-mo T-bills (cash carry)','3个月国债（现金套息）') }}</span>
+      </div>
+      {% if last_switch %}<div class="sub" style="margin-top:12px">{{ t('Last change','上次调整') }}: <b style="color:var(--ink)">{{ last_switch.date }}</b> — {{ last_switch.frm }}% → {{ last_switch.to }}%</div>{% endif %}
+      <div class="sub faint" style="margin-top:8px;font-size:12px">{{ t(next_note, next_note_zh) }}</div>
+    </div>
+    <div class="card">
+      <h3>{{ t('Macro de-risk score','宏观降险评分') }} <span class="faint" style="font-weight:500">(0–100)</span></h3>
+      <div class="dialwrap">
+        <div class="dialnum" style="color:{{ band_color }}">{{ score }}</div>
+        <div>
+          <span class="pill" style="background:{{ band_color }}">{{ t(band_label, band_label_zh) }}</span>
+          <div class="sub" style="margin-top:8px">{{ t('Higher = more risk-off. The score sets the equity weight via graded bands (below); a Fed-put-gated re-deploy buys validated washouts.','分数越高越偏避险。该分数通过分级区间（见下）设定股票权重；并由美联储看跌期权门控的再部署逻辑买入经验证的恐慌底。') }}</div>
+        </div>
+      </div>
+      <div class="chips">
+        <span class="chip" style="border-color:{{ '#cfa' if not disloc.put_absent else '#f6b' }}">{{ t('Fed-put','美联储看跌') }}: <b>{{ t('present','在场') if not disloc.put_absent else t('absent (knife)','缺席（落刀）') }}</b></span>
+        <span class="chip">{{ t('Dislocation','错位') }}: <b>{{ t(disloc.verdict, disloc.verdict_zh) }}</b></span>
+        <span class="chip">{{ t('Capitulation','投降') }}: <b>{{ disloc.capitulation }}/3</b></span>
+      </div>
+    </div>
+  </div>
+
+  {% if overlay %}
+  <!-- ===== LLM context / knife-veto overlay (advisory, never in the backtest) ===== -->
+  <div class="card" style="margin-top:14px;{% if overlay.veto %}border-color:var(--red){% endif %}">
+    <h3 style="margin-bottom:6px">{% if overlay.veto %}<span style="color:var(--red)">⚠ {{ t('LLM knife-veto active','LLM 接刀否决生效') }}</span>{% else %}{{ t('LLM context / veto overlay','LLM 背景 / 否决叠加') }}{% if not overlay.enabled %} <span class="faint" style="font-weight:500">· {{ t('off','关闭') }}</span>{% endif %}{% endif %}</h3>
+    {% if not overlay.enabled %}
+    <div class="sub">{{ t('No DeepSeek key configured — the mechanical recommendation stands. When enabled, this firewalled layer digests the FOMC tone (and, on a stress day, the shock-reversibility read) and can veto a buyable-washout redeploy if it judges the shock a regime break. It is logged forward and NEVER enters the backtest or the score.','未配置 DeepSeek 密钥 —— 以机械建议为准。启用后，该防火墙层会消化 FOMC 基调（压力日则读取冲击可逆性），并在判断冲击为周期破裂时否决可买入恐慌底的再部署。它仅向前记录，绝不进入回测或评分。') }}</div>
+    {% elif overlay.veto %}
+    <div class="sub" style="margin-bottom:6px">{{ overlay.veto_reason }}</div>
+    <div class="sub faint">{{ t('Live recommendation','实时建议') }} <b style="color:var(--ink)">{{ (overlay.overlay_weight*100)|round|int }}% {{ t('equity','股票') }}</b> ({{ t('mechanical would redeploy to','机械逻辑将再部署至') }} {{ (overlay.mechanical_weight*100)|round|int }}%). {{ overlay.disclaimer }}</div>
+    {% else %}
+    <div class="sub" style="margin-bottom:6px">{{ overlay.note }}</div>
+    <div class="sub faint">{{ t('No veto — the mechanical recommendation stands.','无否决 —— 以机械建议为准。') }} {{ overlay.disclaimer }}</div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- ===== risk-score leg breakdown ===== -->
+  <div class="section-title">{{ t('What is driving the score','分数由什么驱动') }}</div>
+  <div class="card">
+    <div class="sub" style="margin-bottom:4px">{{ t('Each leg adds points to the 0–100 score (renormalised weighted mean). The bar below is the current score, split by contribution — so you can see exactly what is risk-on or risk-off today.','各分项为 0–100 分数贡献分值（归一化加权平均）。下方进度条为当前分数，按贡献拆分 — 让你一眼看清今天是什么在加风险或降风险。') }}</div>
+    <div class="riskbar">
+      {% for lg in legs %}{% if lg.active and lg.points %}<div style="width:{{ lg.points }}%;background:{{ lg.color }}" title="{{ lg.label }}: {{ lg.points }} pts"></div>{% endif %}{% endfor %}
+    </div>
+    <div class="sub faint" style="font-size:12px">{{ t('Filled width = the score out of 100. Empty = headroom (calm).','填充宽度 = 满分100中的得分。空白 = 余量（平静）。') }}</div>
+    <table class="legtbl">
+      <tr><th class="l">{{ t('Risk leg','风险分项') }}</th><th>{{ t('Intensity','强度') }}</th><th>{{ t('Weight','权重') }}</th><th>{{ t('Pub lag','发布滞后') }}</th><th>{{ t('Points','贡献分') }}</th></tr>
+      {% for lg in legs %}
+      <tr>
+        <td class="l"><span class="dot" style="background:{{ lg.color }}"></span>{{ t(lg.label, lg.label_zh) }}</td>
+        <td>{{ (lg.value|round|int ~ '/100') if lg.value is not none else '—' }}</td>
+        <td>{{ '%.1f'|format(lg.weight) }}</td>
+        <td>{{ lg.lag }}d</td>
+        <td><b>{{ ('%.1f'|format(lg.points)) if lg.points is not none else '—' }}</b></td>
+      </tr>
+      {% endfor %}
+      <tr><td class="l"><b>{{ t('Composite score','综合分数') }}</b></td><td></td><td></td><td></td><td><b>{{ score }}</b></td></tr>
+    </table>
+  </div>
+
+  <!-- ===== strategy chart ===== -->
+  <div class="section-title">{{ t('The strategy in action · S&P 500 with the model on top','策略实战 · 标普500 叠加模型') }}</div>
+  <div class="card">{{ charts.strategy|safe }}
+    <div class="sub" style="margin-top:8px">{{ t('Green = fully invested, amber = trimmed, clear = defensive. ▲/▼ mark every allocation change. The strategy equity (blue) is rescaled onto the price axis so you can read protection vs participation directly. Use the range buttons to zoom.','绿色 = 满仓，琥珀 = 减仓，空白 = 防守。▲/▼ 标注每次仓位变动。策略净值（蓝）已缩放至价格轴，可直接对比保护与参与度。用范围按钮缩放。') }}</div>
+  </div>
+
+  <!-- ===== growth + drawdown ===== -->
+  <div class="grid cols-2">
+    <div class="card"><h3>{{ t('Growth of $1 (log) — vs buy & hold','1美元增长（对数）— 对比买入持有') }}</h3>{{ charts.growth|safe }}</div>
+    <div class="card"><h3>{{ t('Underwater (drawdown) — vs buy & hold','水下回撤 — 对比买入持有') }}</h3>{{ charts.dd|safe }}</div>
+  </div>
+  <div class="note b" style="margin-top:14px">{{ t('Honest framing: the headline CAGR includes the T-bill carry earned on the de-risked sleeve; net of carry it roughly matches buy & hold. The robust, verified edge is the higher Sharpe and the ~40% shallower max drawdown. It stays mostly invested and WILL lag the index in prolonged bulls — that give-up is the premium paid for crash protection, banked when the cycle breaks.','诚实说明：标题年化收益包含降险部分赚取的国债套息；扣除套息后大致与买入持有持平。稳健、已验证的优势是更高的夏普比率与约浅 40% 的最大回撤。它大部分时间在场，在长牛市中必然跑输指数 — 这一让步是为崩盘保护支付的保费，在周期破裂时兑现。') }}</div>
+
+  <!-- ===== scorecard tiles ===== -->
+  <div class="section-title">{{ t('Backtest scorecard · {y} years vs buy & hold'|replace('{y}', sc.years|string), '回测记分卡 · {y} 年对比买入持有'|replace('{y}', sc.years|string)) }}</div>
+  <div class="grid cols-4">
+    <div class="card score"><div class="k">CAGR</div><div class="v {{ 'win' if sc.cagr >= sc.hodl_cagr else 'lose' }}">{{ sc.cagr }}%</div><div class="sub">{{ t('buy & hold','买入持有') }} {{ sc.hodl_cagr }}% · {{ t('ex-carry','扣息') }} {{ sc.cagr_nocarry }}%</div></div>
+    <div class="card score"><div class="k">Sharpe</div><div class="v {{ 'win' if sc.sharpe >= sc.hodl_sharpe else 'lose' }}">{{ sc.sharpe }}</div><div class="sub">{{ t('buy & hold','买入持有') }} {{ sc.hodl_sharpe }}{% if sc.bootstrap %} · CI {{ sc.boot_sharpe_lo }}–{{ sc.boot_sharpe_hi }}{% endif %}</div></div>
+    <div class="card score"><div class="k">{{ t('Max drawdown','最大回撤') }}</div><div class="v {{ 'win' if sc.maxdd >= sc.hodl_maxdd else 'lose' }}">{{ sc.maxdd }}%</div><div class="sub">{{ t('buy & hold','买入持有') }} {{ sc.hodl_maxdd }}%</div></div>
+    <div class="card score"><div class="k">{{ t('Time invested','在场时间') }}</div><div class="v">{{ sc.time_in_market }}%</div><div class="sub">{{ sc.turnover_annual }}x {{ t('turnover/yr','换手/年') }}</div></div>
+  </div>
+  <div class="grid cols-3" style="margin-top:18px">
+    <div class="card score"><div class="k">Sortino</div><div class="v {{ 'win' if sc.sortino >= sc.hodl_sortino else 'lose' }}">{{ sc.sortino }}</div><div class="sub">{{ t('buy & hold','买入持有') }} {{ sc.hodl_sortino }}</div></div>
+    <div class="card score"><div class="k">{{ t('After-tax CAGR (taxable, 35%)','税后年化（应税，35%）') }}</div><div class="v">{{ at.after_tax_cagr }}%</div><div class="sub">{{ t('buy & hold','买入持有') }} {{ at.hodl_cagr }}% · {{ t('cum. tax','累计税') }} {{ at.cumulative_tax_paid_x }}×</div></div>
+    <div class="card score"><div class="k">{{ t('Carry contribution','套息贡献') }}</div><div class="v">+{{ sc.carry_pp }}pp</div><div class="sub">{{ t('rate-regime dependent (~0 in ZIRP)','取决于利率环境（零利率时≈0）') }}</div></div>
+  </div>
+
+  <!-- ===== allocation rule-book ===== -->
+  <div class="section-title">{{ t('The rule-book · risk band → equity weight','规则手册 · 风险区间 → 股票权重') }}</div>
+  <div class="card">
+    <table class="gtable">
+      <tr><th>{{ t('Risk band','风险区间') }}</th><th>{{ t('Score','分数') }}</th><th>{{ t('S&P 500 weight','标普500权重') }}</th><th>{{ t('T-bills','短债') }}</th></tr>
+      {% for b in bands %}
+      <tr><td class="rh {{ 'cur' if b.cur }}">{{ t(b.label, b.label_zh) }}{% if b.cur %} ◀{% endif %}</td>
+        <td class="{{ 'cur' if b.cur }}">{{ b.rng }}</td>
+        <td class="{{ 'cur' if b.cur }}"><b>{{ b.weight }}%</b></td>
+        <td class="{{ 'cur' if b.cur }}">{{ 100 - b.weight }}%</td></tr>
+      {% endfor %}
+    </table>
+    <div class="sub faint" style="margin-top:8px;font-size:12px">{{ t('A new band must hold 5 trading days before it takes effect (hysteresis kills whipsaw). On a buyable washout (capitulation with the Fed-put present) the model over-rides back to fully invested and holds ~42 days to ride the recovery. Bands are pre-registered, not tuned per result.','新区间须连续保持 5 个交易日才生效（滞后机制抑制频繁换仓）。在可买入的恐慌底（投降且美联储看跌在场）时，模型会强制回到满仓并持有约 42 天以参与反弹。区间为预先登记，非按结果调参。') }}</div>
+  </div>
+
+  <!-- ===== bear ledger ===== -->
+  <div class="section-title">{{ t('Independent bear episodes · the true sample size','独立熊市事件 · 真实样本量') }}</div>
+  <div class="card">
+    <table class="tbl">
+      <tr><th>{{ t('Peak','峰值') }}</th><th>{{ t('Trough','谷底') }}</th><th class="n">{{ t('S&P drawdown','标普回撤') }}</th></tr>
+      {% for e in episodes %}<tr><td>{{ e.peak }}</td><td>{{ e.trough }}</td><td class="n lose">{{ e.drawdown_pct }}%{% if e.ongoing %} ({{ t('ongoing','进行中') }}){% endif %}</td></tr>{% endfor %}
+    </table>
+    <div class="sub faint" style="margin-top:8px;font-size:12px">{{ t('Only ~4 independent ≥20% bears govern a get-out / get-back-in switch — effective-N, not the day count, bounds confidence. The edge is validated by leave-one-crisis-out + an AQR-style permutation null (real Sharpe & drawdown beat every random-timing shuffle, p=0.0), and holds under point-in-time (ALFRED) macro vintages.','只有约 4 次独立的 ≥20% 熊市决定一次离场/再入场切换 — 决定置信度的是有效样本量，而非天数。该优势通过留一危机检验 + AQR 式置换零假设验证（真实夏普与回撤击败每一次随机择时洗牌，p=0.0），并在时点（ALFRED）宏观数据下依然成立。') }}</div>
+  </div>
+
+  <div class="note r">{{ t('Taxable-account warning: switching realises short-term capital gains that buy & hold defers — best run in a tax-advantaged account. The low ~1.5×/yr turnover keeps this manageable.','应税账户提示：切换会实现买入持有可递延的短期资本利得 — 最好在税收优惠账户中运行。约 1.5×/年 的低换手使其可控。') }}</div>
+
+  <div class="foot">
+    {{ t('Mechanical, backtested on free public data (SPY 1993→, DTB3 cash leg). Not investment advice. The strategy is a drawdown / risk-adjusted-return engine; it does not promise to beat the index CAGR. Macro legs are revised FRED series, PIT-lagged per-leg by publication delay. Reports: spvector-baseline / phase1 / phase2 / phase3-audit / pit. Research: research/SP_VECTOR_VIABILITY.md. Built','机械化 · 基于免费公开数据回测（SPY 1993 起，DTB3 现金腿）。非投资建议。该策略为回撤 / 风险调整收益引擎，不承诺跑赢指数年化。宏观分项为修订后的 FRED 序列，按发布滞后逐项时点对齐。报告：spvector-baseline / phase1 / phase2 / phase3-audit / pit。研究：research/SP_VECTOR_VIABILITY.md。生成于') }} {{ built }}.
+  </div>
+</div>
+<script>
+document.querySelector('.lang-btn')?.addEventListener('click',function(){
+  var h=document.documentElement, z=h.getAttribute('data-lang')==='zh';
+  h.setAttribute('data-lang', z?'en':'zh'); try{localStorage.setItem('lang', z?'en':'zh');}catch(e){}
+});
+</script>
+</body></html>

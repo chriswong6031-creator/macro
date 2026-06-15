@@ -21,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from collectors.sec_insider import _parse_panel, _quarters_from  # noqa: E402
 from engine.insider_factor import (build_signals, classify_routine,  # noqa: E402
                                    market_cap, role_weights)
+from scripts.midsmall_pit import reconstruct_intervals  # noqa: E402
 
 
 def _synthetic_zip() -> zipfile.ZipFile:
@@ -160,6 +161,125 @@ def test_build_signals_no_lookahead_and_aggregation() -> None:
 
     # size-normalised = net buy $ ÷ market cap
     assert np.isclose(sigs["net_usd_mcap"].loc[grid[1], "FOO"], 250_000 / 1e9)
+
+
+def test_pit_membership_reconstruction() -> None:
+    """Walk-backward reconstruction of index membership from a changes log: closed
+    spell for a name that left, floor-start for pre-log members, orphan adds skipped,
+    and open intervals reconcile exactly to the current constituents."""
+    current = {"AAA", "BBB", "CCC"}
+    changes = pd.DataFrame({
+        "date": pd.to_datetime(["2023-01-01", "2021-01-01", "2020-01-01"]),
+        "add": ["CCC", "YYY", "XXX"],   # YYY = orphan (never current, no later removal)
+        "rem": ["XXX", "", ""],
+    })
+    m, orphan = reconstruct_intervals(current, changes)
+    m = m.set_index("ticker")
+    assert orphan == 1 and "YYY" not in m.index
+    # XXX entered 2020, left 2023 → closed spell
+    xxx = m.loc["XXX"]
+    assert xxx["start_date"] == pd.Timestamp("2020-01-01")
+    assert xxx["end_date"] == pd.Timestamp("2023-01-01")
+    # CCC entered 2023 and is still a member
+    assert m.loc["CCC", "start_date"] == pd.Timestamp("2023-01-01")
+    assert pd.isna(m.loc["CCC", "end_date"])
+    # AAA/BBB never appear as "added" → pre-log members, floored to the log start
+    assert m.loc["AAA", "start_date"] == pd.Timestamp("2020-01-01")
+    assert pd.isna(m.loc["AAA", "end_date"])
+    # reconciliation: open spells == current constituents
+    assert set(m.index[m["end_date"].isna()]) == current
+
+
+def test_insider_leaderboard_size_normalised() -> None:
+    """The upgraded leaderboard ranks by net buying as a fraction of market cap, so a
+    high-conviction small/mid-cap buy outranks a bigger raw-dollar megacap buy."""
+    import tempfile
+
+    from engine.equity_factors import _insider_block_panel
+    fd = pd.Timestamp("2026-03-15")
+    rows = [
+        # ticker, code, usd, owner  (all within the trailing window)
+        ("BIG", "P", 10_000_000, "1"),   # megacap: big $, tiny % of cap
+        ("SML", "P", 5_000_000, "2"),    # small cap: smaller $, large % of cap
+        ("SML", "P", 1_000_000, "3"),    # second distinct buyer at SML (cluster)
+        ("SEL", "S", 4_000_000, "4"),    # net seller
+    ]
+    panel = pd.DataFrame({
+        "ticker": [r[0] for r in rows], "code": [r[1] for r in rows],
+        "usd": [r[2] for r in rows], "rptownercik": [r[3] for r in rows],
+        "filing_date": [fd] * len(rows),
+    })
+    ns = {"BIG": ("Big Co", "Tech"), "SML": ("Small Co", "Industrials"), "SEL": ("Sell Co", "Energy")}
+    mktcap = pd.Series({"BIG": 1e12, "SML": 1e9, "SEL": 2e9})
+    with tempfile.NamedTemporaryFile(suffix=".parquet") as f:
+        panel.to_parquet(f.name)
+        blk = _insider_block_panel(ns, mktcap, f.name)
+    assert blk["basis"] == "net_mcap_bps"
+    buying = blk["top_buying"]
+    # SML (50 bps of cap) must rank above BIG (0.1 bps of cap) despite half the dollars
+    assert buying[0]["ticker"] == "SML" and buying[1]["ticker"] == "BIG"
+    assert buying[0]["n_buyers"] == 2                       # distinct-insider cluster
+    assert blk["top_selling"][0]["ticker"] == "SEL"
+
+
+def test_insider_aggregate_size_normalised_and_legacy() -> None:
+    """The single-quarter aggregate path (live in CI, no panel): size-normalises when
+    caps are given (basis flag set, cluster False), and falls back to raw net-$ ranking
+    without caps."""
+    import tempfile
+
+    from engine.equity_factors import _insider_block_aggregate
+    agg = pd.DataFrame({
+        "buy_usd": [10_000_000.0, 5_000_000.0, 0.0],
+        "sell_usd": [0.0, 0.0, 4_000_000.0],
+        "n_buys": [1, 2, 0], "n_sells": [0, 0, 3],
+        "net_usd": [10_000_000.0, 5_000_000.0, -4_000_000.0],
+        "quarter": ["2026q1"] * 3,
+    }, index=pd.Index(["BIG", "SML", "SEL"], name="ticker"))
+    ns = {"BIG": ("Big Co", "Tech"), "SML": ("Small Co", "Industrials"), "SEL": ("Sell Co", "Energy")}
+    mktcap = pd.Series({"BIG": 1e12, "SML": 1e9, "SEL": 2e9})
+    with tempfile.NamedTemporaryFile(suffix=".parquet") as f:
+        agg.to_parquet(f.name)
+        norm = _insider_block_aggregate(ns, mktcap, path=f.name)
+        legacy = _insider_block_aggregate(ns, None, path=f.name)
+    # size-normalised: SML (50 bps) outranks BIG (0.1 bps); flagged, not a cluster
+    assert norm["basis"] == "net_mcap_bps" and norm["cluster"] is False
+    assert norm["top_buying"][0]["ticker"] == "SML"
+    # legacy: raw dollars rank BIG first, no basis flag
+    assert legacy["basis"] is None
+    assert legacy["top_buying"][0]["ticker"] == "BIG"
+
+
+def test_per_stock_chip_panel_and_aggregate() -> None:
+    """Per-stock insider chip: panel path gives distinct-insider clusters + net buying
+    as % of cap; aggregate fallback size-normalises the single-quarter net-$ too."""
+    import tempfile
+
+    from engine.stock_fundamentals import _insider_from_aggregate, _insider_from_panel
+    mcap = {"SML": 1e9}   # $1bn cap
+    fd = pd.Timestamp("2026-03-15")
+    panel = pd.DataFrame({
+        "ticker": ["SML", "SML", "SML"],
+        "code": ["P", "P", "S"],
+        "usd": [3_000_000.0, 2_000_000.0, 1_000_000.0],   # net +$4m = 40 bps of $1bn
+        "rptownercik": ["1", "2", "3"],                    # 2 distinct buyers, 1 seller
+        "filing_date": [fd, fd, fd],
+    })
+    with tempfile.NamedTemporaryFile(suffix=".parquet") as f:
+        panel.to_parquet(f.name)
+        rec = _insider_from_panel(mcap, 6, path=f.name)["SML"]
+    assert rec["cluster"] is True
+    assert rec["n_buyers"] == 2 and rec["n_sellers"] == 1
+    assert rec["net_usd_mn"] == 4.0
+    assert rec["net_mcap_bps"] == 40.0           # +$4m / $1bn = 40 bps
+
+    agg = pd.DataFrame({"net_usd": [4_000_000.0], "n_buys": [2], "n_sells": [1],
+                        "quarter": ["2026q1"]}, index=pd.Index(["SML"], name="ticker"))
+    with tempfile.NamedTemporaryFile(suffix=".parquet") as f:
+        agg.to_parquet(f.name)
+        arec = _insider_from_aggregate(mcap, path=f.name)["SML"]
+    assert arec["cluster"] is False and arec["net_mcap_bps"] == 40.0
+    assert arec["n_buys"] == 2 and arec["n_sells"] == 1
 
 
 def test_market_cap_is_causal() -> None:

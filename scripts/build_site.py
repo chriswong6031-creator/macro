@@ -1337,6 +1337,20 @@ def build_factors_page(env: Environment, site: Path, generated: str) -> dict | N
         except Exception as e:  # noqa: BLE001 — insider panel is optional
             log.warning("sec insider failed: %s", e)
         try:
+            # Regenerate the PIT per-transaction panel concat (insider_panel.parquet,
+            # gitignored) from the COMMITTED per-quarter cache so the size-normalised
+            # leaderboard / per-stock chip get the trailing-window + distinct-insider
+            # CLUSTER construction (research/INSIDER_FACTOR.md). Guarded to the existing
+            # cache: never triggers a cold 2006→ full fetch in CI — only a regen plus a
+            # probe for any newly-published quarter. Falls back to the quarterly
+            # aggregate (size-normalised too) if the panel is unavailable.
+            pdir = config.data_dir() / "sec_insider" / "panel"
+            if pdir.exists() and any(pdir.glob("*.parquet")):
+                from collectors.sec_insider import backfill_panel
+                backfill_panel()
+        except Exception as e:  # noqa: BLE001 — panel is optional; leaderboard degrades gracefully
+            log.warning("sec insider panel refresh failed: %s", e)
+        try:
             from collectors.edgar_eps import build_eps_panel
             build_eps_panel()                      # SUE: quarterly diluted-EPS panel (weekly-cached)
         except Exception as e:  # noqa: BLE001 — SUE factor is an optional leg
@@ -1713,6 +1727,8 @@ def build_advanced_page(env: Environment, site: Path, generated: str, latest: di
     (site / "advanced.html").write_text(html)
     log.info("wrote advanced.html (%.0f KB)", (site / "advanced.html").stat().st_size / 1024)
     return cross_asset
+
+
 def market_gamma_view(gex) -> dict | None:
     """Market-wide dealer-gamma vol regime from the VALIDATED index dealer-gamma read
     (SPX, data/cboe/gex via engine.gex_engine — the same that drives the dealer-gamma
@@ -1738,6 +1754,176 @@ def market_gamma_view(gex) -> dict | None:
     }
 
 
+def index_health_rows() -> list[dict]:
+    """Health snapshot for the four major US indexes — the 'how is the market
+    itself doing' read that leads the macro page (people open it for the index
+    first, the economy second). Price, % off the 52-week high (drawdown), 50/200d
+    trend, RSI(14). Pure price math off the stored daily closes; reuses
+    engine.technicals.rsi."""
+    from engine.technicals import rsi
+    out = []
+    for tkr, label, zh in [("SPY", "S&P 500", "标普500"), ("QQQ", "Nasdaq 100", "纳指100"),
+                           ("_DJI", "Dow Jones", "道指"), ("_RUT", "Russell 2000", "罗素2000")]:
+        df = store.read("yahoo", tkr)
+        if df is None or df.empty or "close" not in df.columns:
+            continue
+        c = df["close"].astype(float).dropna()
+        if len(c) < 60:
+            continue
+        px = float(c.iloc[-1])
+        hi52 = float(c.tail(252).max())
+        ma50 = float(c.tail(50).mean())
+        ma200 = float(c.tail(200).mean()) if len(c) >= 200 else float("nan")
+        try:
+            r = float(rsi(c).iloc[-1])
+        except Exception:  # noqa: BLE001 — never let one index break the panel
+            r = float("nan")
+        out.append({
+            "ticker": tkr, "label": label, "label_zh": zh, "price": round(px, 2),
+            "chg": round(100 * (px / float(c.iloc[-2]) - 1), 2) if len(c) >= 2 else 0.0,
+            "dd": round(100 * (px / hi52 - 1), 1),
+            "above50": bool(px >= ma50),
+            "above200": (bool(px >= ma200) if ma200 == ma200 else None),
+            "rsi": round(r) if r == r else None,
+        })
+    return out
+
+
+def alloc_card_state() -> dict:
+    """The S&P Vector allocation snapshot for the macro page's allocation CTA card.
+    Best-effort: degrades to a present=False stub (CTA only, no live numbers) when
+    build_spvector hasn't run yet — so build order never breaks the macro page."""
+    try:
+        d = json.loads((config.data_dir() / "regime" / "spvector_latest.json").read_text())
+        d["present"] = True
+        return d
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        return {"present": False}
+
+
+# Index drawdown/risk MODEL integrated onto the macro page (the predictive layer
+# from the S&P Vector engine — the allocation STRATEGY itself lives on spvector.html).
+_RISK_LEG_COLORS = {"drawdown": "#e07070", "recession": "#e0a030", "nfci": "#9b8de0",
+                    "hy_widening": "#d98c00", "liquidity": "#7aa7e0"}
+_RISK_LEG_ZH = {"drawdown": "宏观压力回撤计", "recession": "衰退风险",
+                "nfci": "金融条件（紧且收紧）", "hy_widening": "信用压力（高收益利差走阔）",
+                "liquidity": "净流动性收缩"}
+_RISK_LEG_ORDER = ["drawdown", "recession", "hy_widening", "nfci", "liquidity"]
+
+
+def risk_model_view(f: pd.DataFrame, regime, cf: pd.DataFrame) -> dict:
+    """The S&P Vector de-risk SCORE + its per-leg breakdown, for the macro page's
+    integrated 'index risk model' read. Reuses engine.equity_alloc.risk_legs (each
+    leg's 0-100 intensity, weight, publication lag, and points-contribution that
+    sum to the composite). Degrades to {} if the engine can't compute."""
+    try:
+        from engine import equity_alloc as ea
+        rl = ea.risk_legs(f, regime, cf)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("risk_model_view failed (%s)", e)
+        return {}
+    sc = rl["score"].dropna()
+    if sc.empty:
+        return {}
+    score = round(float(sc.iloc[-1]))
+    legs = []
+    order = _RISK_LEG_ORDER + [n for n in rl["legs"] if n not in _RISK_LEG_ORDER]
+    for n in order:
+        lg = rl["legs"].get(n)
+        if not lg:
+            continue
+        legs.append({"key": n, "label": lg["label"], "label_zh": _RISK_LEG_ZH.get(n, lg["label"]),
+                     "value": lg["value"], "points": lg["points"], "weight": lg["weight"],
+                     "lag": lg["lag"], "active": lg["active"],
+                     "color": _RISK_LEG_COLORS.get(n, "#888")})
+    band = ("low" if score < 25 else "elevated" if score < 50 else "high" if score < 75 else "extreme")
+    return {"score": score, "legs": legs, "band": band}
+
+
+def chart_risk_model(cf: pd.DataFrame) -> str:
+    """The index drawdown-risk + recession-risk MODELS over ~25y, with NBER
+    recessions shaded — the 'predict index drawdown / recession risk through a model'
+    chart, integrated onto the macro page. Both are 0-100 composite gauges from
+    engine.conditions; band lines mark the elevated/high thresholds."""
+    start = cf.index.max() - pd.Timedelta(days=365 * 25)
+    dr = cf.loc[start:, "drawdown_risk"].dropna()
+    rr = cf.loc[start:, "recession_risk"].dropna()
+    fig = go.Figure()
+    rec = store.read("fred", "USRECD")
+    if rec is not None and not rec.empty:
+        on = (rec[rec.columns[0]] > 0.5)
+        on = on[on.index >= start]
+        if on.any():
+            seg = (on != on.shift()).cumsum()
+            for _, g in on[on].groupby(seg[on]):
+                fig.add_vrect(x0=g.index.min(), x1=g.index.max(),
+                              fillcolor="#8b93a1", opacity=0.16, line_width=0)
+    # NB: use reds/ambers OUTSIDE the chart_i18n.js swap map ({#e07070,#d04545}↔green)
+    # so a RISK gauge stays red in zh mode (risk ≠ price direction — must not flip green).
+    fig.add_trace(go.Scatter(x=dr.index, y=dr, name="Index drawdown-risk model",
+                             line={"color": "#de5d5d", "width": 1.4}))
+    fig.add_trace(go.Scatter(x=rr.index, y=rr, name="Recession-risk model",
+                             line={"color": "#e0a030", "width": 1.2}))
+    fig.add_hline(y=80, line={"color": "#de5d5d", "width": 0.5, "dash": "dot"})
+    fig.add_hline(y=60, line={"color": "#e0a030", "width": 0.5, "dash": "dot"})
+    fig.update_layout(**PLOT_LAYOUT)
+    fig.update_yaxes(range=[0, 100], autorange=False)
+    _apply_range(fig, has_legend=True, height=320)
+    return _html(fig)
+
+
+def chart_curve(cf: pd.DataFrame) -> str:
+    """Yield curve: the 2s10s slope RAW vs TERM-PREMIUM-ADJUSTED, ~25y, NBER-shaded.
+    Inversion (below 0) is the classic recession lead; the TP-adjusted line strips
+    the term premium so a low-TP flattening isn't misread as a recession signal
+    (it's why 2022-24's raw inversion didn't fire the composite). Colours sit
+    outside the zh swap map (a curve isn't a price-direction read)."""
+    start = cf.index.max() - pd.Timedelta(days=365 * 25)
+    raw = cf.loc[start:, "curve_raw"].dropna()
+    adj = cf.loc[start:, "curve_tp_adj"].dropna()
+    fig = go.Figure()
+    rec = store.read("fred", "USRECD")
+    if rec is not None and not rec.empty:
+        on = (rec[rec.columns[0]] > 0.5)
+        on = on[on.index >= start]
+        if on.any():
+            seg = (on != on.shift()).cumsum()
+            for _, g in on[on].groupby(seg[on]):
+                fig.add_vrect(x0=g.index.min(), x1=g.index.max(),
+                              fillcolor="#8b93a1", opacity=0.16, line_width=0)
+    fig.add_trace(go.Scatter(x=raw.index, y=raw, name="2s10s (raw)",
+                             line={"color": "#7aa7e0", "width": 1.3}))
+    fig.add_trace(go.Scatter(x=adj.index, y=adj, name="2s10s (term-premium adj.)",
+                             line={"color": "#c08af0", "width": 1.3}))
+    fig.add_hline(y=0, line={"color": "#9aa4b2", "width": 0.8, "dash": "dot"})
+    fig.update_layout(**PLOT_LAYOUT)
+    _apply_range(fig, has_legend=True, height=300)
+    return _html(fig)
+
+
+def chart_vix_term(f: pd.DataFrame, cf: pd.DataFrame) -> str:
+    """Volatility regime: VIX level (top) + the VIX term-structure ratio VIX/VIX3M
+    (bottom), ~10y. Ratio above 1.0 = BACKWARDATION (front-month fear > 3-month) —
+    a stress / washout marker; the curve re-normalising back below 1.0 is the
+    historically constructive 'all-clear'. Colours outside the zh swap map."""
+    start = cf.index.max() - pd.Timedelta(days=365 * 10)
+    vix = f.loc[start:, "vix"].dropna() if "vix" in f.columns else pd.Series(dtype=float)
+    term = cf.loc[start:, "vix_term"].dropna()
+    fig = make_subplots(rows=2, cols=1, shared_xaxes=True, row_heights=[0.55, 0.45],
+                        vertical_spacing=0.07)
+    if not vix.empty:
+        fig.add_trace(go.Scatter(x=vix.index, y=vix, name="VIX",
+                                 line={"color": "#7aa7e0", "width": 1.2}), row=1, col=1)
+        fig.add_hline(y=30, line={"color": "#e0a030", "width": 0.5, "dash": "dot"}, row=1, col=1)
+    fig.add_trace(go.Scatter(x=term.index, y=term, name="VIX / VIX3M (term structure)",
+                             line={"color": "#c08af0", "width": 1.2}), row=2, col=1)
+    fig.add_hline(y=1.0, line={"color": "#de5d5d", "width": 0.6, "dash": "dot"}, row=2, col=1)
+    layout = {**PLOT_LAYOUT, "height": 320}
+    fig.update_layout(**layout)
+    _apply_range(fig, subplot=True, has_legend=True, height=320)
+    return _html(fig)
+
+
 def main() -> int:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     site.mkdir(parents=True, exist_ok=True)
@@ -1750,6 +1936,8 @@ def main() -> int:
     (site / "regime_timeline.json").write_text(
         json.dumps(regime_timeline(hist), separators=(",", ":")))
     f = build_features()
+    from engine.conditions import conditions_frame
+    _cf = conditions_frame(f)  # shared by the integrated index risk-model panel
 
     env = Environment(loader=FileSystemLoader(config.ROOT / "templates"))
     env.filters["min"] = lambda seq: min(seq)
@@ -1882,7 +2070,11 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("market gamma view failed (%s)", e)
     from engine.alerts import alert_views
-    html = env.get_template("dashboard.html.j2").render(
+    # One shared view-model feeds BOTH the macro-regime page and the US Stock
+    # Dashboard — the same dashboard.html.j2 is rendered twice with a `mode` flag
+    # (macro / stocks) that selects which sections show. No data is recomputed and
+    # the heavy page CSS lives in exactly one template.
+    vm = dict(
         latest=latest,
         macro_catalysts=macro_catalysts,
         event_strip=event_strip,
@@ -1924,6 +2116,12 @@ def main() -> int:
         factor_leadership=factor_leadership,
         nowcast_hist=nowcast_history(f),
         stance=regime_stance(latest, latest.get("playbook")),
+        index_health=index_health_rows(),       # macro-page index-health section
+        alloc_card=alloc_card_state(),           # macro-page allocation CTA card
+        risk_model=risk_model_view(f, hist, _cf),  # de-risk score + leg breakdown
+        chart_risk_model=chart_risk_model(_cf),    # drawdown/recession risk-model chart
+        chart_curve=chart_curve(_cf),              # 2s10s raw vs term-premium-adjusted
+        chart_vix_term=chart_vix_term(f, _cf),     # VIX level + term-structure ratio
         cross_asset=cross_asset_snap,
     )
     # Write the macro dashboard straight to macro.html. index.html is owned
@@ -1931,8 +2129,22 @@ def main() -> int:
     # dashboard out of index.html is what stops Home (-> index.html) from
     # regressing to the dashboard when build_vector doesn't run after this.
     out = site / "macro.html"
-    out.write_text(html)
+    out.write_text(env.get_template("dashboard.html.j2").render(**vm, mode="macro"))
     log.info("wrote %s (%.0f KB)", out, out.stat().st_size / 1024)
+
+    # US Stock Dashboard — same VM, the "looking for stocks" half of the split.
+    out_st = site / "us_stocks.html"
+    out_st.write_text(env.get_template("dashboard.html.j2").render(**vm, mode="stocks"))
+    log.info("wrote %s (%.0f KB)", out_st, out_st.stat().st_size / 1024)
+    # landing-hub card stat (presence-gated by the .html existing)
+    _ab = vm["action_board"] or {}
+    _ts = top_setups or {}
+    _n = len(_ts.get("buy") or []) or len(_ab.get("notable") or [])
+    _us_label = (f"{_n} standout setups" if _n else "Stock signals & flows")
+    usdir = config.data_dir() / "us_stocks"
+    usdir.mkdir(parents=True, exist_ok=True)
+    (usdir / "latest.json").write_text(json.dumps(
+        {"date": latest.get("date", ""), "label": _us_label, "n_setups": _n}, indent=2))
 
     # --- history page: the longer-window charts + lifespan base rates ----------
     from engine.playbook import QUAD_SHORT, next_quads_line, transition_stats

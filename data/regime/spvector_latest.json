@@ -1,1 +1,15 @@
-{"risk_score": 8.6, "equity_weight": 100, "band": "Low risk", "asof": "2026-06-12"}
+{
+  "date": "2026-06-12",
+  "score": 9,
+  "band": "low",
+  "band_label": "LOW \u2014 fully invested",
+  "equity_w": 100,
+  "cash_w": 0,
+  "stance": "100% equity",
+  "cagr": 12.56,
+  "sharpe": 0.88,
+  "maxdd": -36.5,
+  "equity_weight": 100,
+  "risk_score": 9,
+  "asof": "2026-06-12"
+}
