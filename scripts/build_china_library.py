@@ -384,6 +384,23 @@ def main(alpha: dict | None = None) -> dict | None:
     outdir = site / "chinastockdata"
     outdir.mkdir(parents=True, exist_ok=True)
 
+    # Refresh the additive A-share CONTEXT caches that power the US-parity per-stock panels
+    # (analyst consensus / earnings-disclosure calendar / own-history valuation percentile /
+    # per-name margin financing). Keyless akshare/Eastmoney drips — best-effort, idempotent
+    # within a day, capped where per-name. GFW-reachable from CI only; a blocked source just
+    # leaves its cache (stale or absent) and the page hides that panel. Mirrors the US
+    # build_stock_library equity_profile drip — keeps the fetch out of the workflow YAML.
+    import importlib
+    _val_cap = int((config.load().get("china") or {}).get("valuation_per_build", 60))
+    for _mod, _kw in (("collectors.china_analyst", {}),
+                      ("collectors.china_earnings", {}),
+                      ("collectors.china_margin_detail", {}),
+                      ("collectors.china_valuation", {"max_new": _val_cap})):
+        try:
+            importlib.import_module(_mod).refresh(**_kw)
+        except Exception as e:  # noqa: BLE001 — additive context, never fatal
+            log.warning("china context drip %s skipped (%s)", _mod, e)
+
     # sector-neutral residual-alpha leg — computed here if not passed in by build_china
     if alpha is None:
         alpha = compute_china_alpha()
@@ -436,29 +453,56 @@ def main(alpha: dict | None = None) -> dict | None:
         sector_by[ticker] = sector
         built += 1
 
-    # descriptive FUNDAMENTALS (akshare cache) — context, not a signal. Computed for
-    # the cohort at once (needs sector medians), then patched onto the per-stock JSONs.
+    # descriptive FUNDAMENTALS + additive CONTEXT panels (analyst consensus / earnings
+    # calendar / own-history valuation percentile / margin-financing positioning) — all
+    # keyless akshare context, NOT signals. Each is computed for the cohort, then patched
+    # onto the per-stock JSONs in ONE re-read pass. Every block degrades independently: a
+    # missing cache just yields {} and the page hides that panel.
+    fmap: dict[str, dict] = {}
     try:
         from engine import china_fundamentals
         fmap = china_fundamentals.build_all(price_by, sector_by, mktcap_by)
-        for ticker, fund in fmap.items():
-            safe = ticker.replace("=", "_").replace("^", "_")
-            fp = outdir / f"{safe}.json"
-            if not fp.exists():
-                continue
-            try:
-                rec = json.loads(fp.read_text())
-                rec["fundamentals"] = fund
-                fp.write_text(json.dumps(rec, default=str))
-            except Exception:  # noqa: BLE001
-                continue
-        if fmap:
-            for idx in index:
-                if idx["t"] in fmap:
-                    idx["f"] = 1
-            log.info("china fundamentals: attached to %d names", len(fmap))
     except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.error("china fundamentals attach failed (%s); skipping", e)
+        log.error("china fundamentals build failed (%s)", e)
+    cons = earn = vpct = marg = {}
+    try:
+        from engine import china_extras
+        cons = china_extras.analyst_consensus(price_by)
+        earn = china_extras.earnings_calendar()
+        vpct = china_extras.valuation_percentile()
+        marg = china_extras.margin_positioning(mktcap_by)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("china extras unavailable (%s)", e)
+    for ticker in price_by:                       # every analyzed name has a JSON on disk
+        patch: dict = {}
+        if fmap.get(ticker):
+            patch["fundamentals"] = fmap[ticker]
+        if cons.get(ticker):
+            patch["consensus"] = cons[ticker]
+        if earn.get(ticker):
+            patch["earnings"] = earn[ticker]
+        if vpct.get(ticker):
+            patch["val_pctile"] = vpct[ticker]
+        if marg.get(ticker):
+            patch["positioning"] = marg[ticker]
+        if not patch:
+            continue
+        safe = ticker.replace("=", "_").replace("^", "_")
+        fp = outdir / f"{safe}.json"
+        if not fp.exists():
+            continue
+        try:
+            rec = json.loads(fp.read_text())
+            rec.update(patch)
+            fp.write_text(json.dumps(rec, default=str))
+        except Exception:  # noqa: BLE001
+            continue
+    fset = set(fmap)
+    for idx in index:                             # keep the existing fundamentals index flag
+        if idx["t"] in fset:
+            idx["f"] = 1
+    log.info("china context attached: fund %d · consensus %d · earnings %d · val_pct %d · margin %d",
+             len(fmap), len(cons), len(earn), len(vpct), len(marg))
     (outdir / "index.json").write_text(json.dumps(index))
     cal = config.data_dir() / "china_regime" / "ladder_calibration.json"
     if cal.exists():

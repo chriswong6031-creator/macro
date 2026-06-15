@@ -87,6 +87,26 @@
   .fnd-score.warn { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 38%,var(--line)); }
   .fnd-score.bad { color:var(--down); border-color:color-mix(in srgb,var(--down) 38%,var(--line)); }
   .cagr-up { color:var(--up); } .cagr-dn { color:var(--down); }
+  /* ---- valuation band / analyst / earnings / positioning context ---------- */
+  /* neutral track — A-share valuation cheapness is NOT a validated buy, so no green/red */
+  .vbar { position:relative; height:8px; border-radius:5px; margin:7px 0 2px;
+          background:var(--panel2); border:1px solid var(--line); }
+  .vbar .mark { position:absolute; top:-3px; width:3px; height:14px; border-radius:2px;
+                background:var(--text); transform:translateX(-1.5px); }
+  .vrange { display:flex; justify-content:space-between; font-size:10.5px; color:var(--muted);
+            font-variant-numeric:tabular-nums; }
+  .rchip { display:inline-block; font-weight:800; padding:2px 10px; border-radius:8px; font-size:12.5px; }
+  .rchip.buy { background:color-mix(in srgb,var(--up) 18%,transparent); color:var(--up);
+               border:1px solid color-mix(in srgb,var(--up) 40%,transparent); }
+  .rchip.hold { background:var(--panel2); color:var(--muted); border:1px solid var(--line); }
+  .rchip.sell { background:color-mix(in srgb,var(--down) 18%,transparent); color:var(--down);
+                border:1px solid color-mix(in srgb,var(--down) 40%,transparent); }
+  .bhs { display:flex; height:9px; border-radius:5px; overflow:hidden; margin:8px 0 4px;
+         border:1px solid var(--line); }
+  .bhs i { display:block; } .bhs .b { background:var(--up); }
+  .bhs .h { background:var(--muted); } .bhs .s { background:var(--down); }
+  .bhs-lab { display:flex; gap:12px; font-size:11px; color:var(--muted); }
+  .bhs-lab b { color:var(--text); }
   a { text-decoration:none; }
   h1 { font-size:20px; margin:0; }
   h2 { font-size:14px; margin:0 0 10px; color:var(--muted); text-transform:uppercase;
@@ -179,6 +199,31 @@
         'Descriptive financial health, valuation, and dividends — a backdrop to read ALONGSIDE the validated reversal / low-vol signals, NOT a buy ranking. On ~35 years of A-share data, value and quality are NOT validated cross-sectional edges (cheap names are often value traps; junk has beaten quality), so do not read "cheap vs sector" or "high Piotroski" as a signal. Piotroski / Altman are standard health scores shown for context; Altman is approximate on A-share accounting. Fundamentals refresh on a slower cadence than price.',
         '描述性的财务健康、估值与分红 —— 作为与已验证的反转／低波信号并读的背景，而非买入排序。在约35年的A股数据上，价值与质量并非有效的横截面优势（便宜的个股常是价值陷阱；劣质股曾跑赢优质股），因此切勿把“相对板块便宜”或“高 Piotroski”当作信号。Piotroski／Altman 为标准健康评分，仅作背景；Altman 在 A 股会计下为近似值。基本面的更新频率慢于价格。') }}</p>
     </div>
+    <div class="panel" id="r_vband_panel" style="display:none">
+      <h2>{{ t('Valuation band', '估值分位') }} <span class="note" style="text-transform:none">· {{ t('own 5-year range', '自身5年区间') }}</span></h2>
+      <div id="r_vband" class="fnd-grid"></div>
+      <p class="muted" style="font-size:12px; margin-top:8px">{{ t(
+        'Where today\'s multiple sits inside the stock\'s OWN trailing-5-year range (市盈率/市净率分位) — how A-share desks read valuation. Lower percentile = cheaper than its own norm. Context only: on ~35y of A-share data cheapness is NOT a validated edge (cheap is often a value trap), so a low percentile is not a buy.',
+        '当前估值倍数处于该股<b>自身</b>近5年区间中的位置（市盈率／市净率分位）—— A股机构惯用的估值读法。分位越低＝相对自身越便宜。仅作背景：在约35年A股数据上，便宜并非有效优势（常是价值陷阱），低分位不等于买入。') }}</p>
+    </div>
+    <div class="panel" id="r_analyst_panel" style="display:none">
+      <h2>👔 {{ t('Analyst &amp; estimates', '分析师与预期') }} <span class="note" style="text-transform:none">· {{ t('sell-side consensus', '卖方一致预期') }}</span></h2>
+      <div id="r_analyst"></div>
+      <p class="muted" style="font-size:12px; margin-top:10px">{{ t(
+        'Eastmoney sell-side aggregate: 6-month institutional rating mix (买入/增持/中性/减持/卖出), coverage breadth, and forward EPS forecasts; forward P/E uses the live price. Sell-side opinion shown as coverage context, NOT an endorsement — high coverage and a bullish skew are not a validated edge.',
+        '东方财富卖方汇总：近6个月机构评级分布（买入／增持／中性／减持／卖出）、覆盖广度，以及预测每股收益；前瞻市盈率用实时价格计算。卖方观点仅作覆盖背景，并非推荐——高覆盖与看多倾向并非有效优势。') }}</p>
+    </div>
+    <div class="panel" id="r_earn_panel" style="display:none">
+      <h2>📅 {{ t('Earnings &amp; disclosure', '财报披露') }}</h2>
+      <div id="r_earn"></div>
+    </div>
+    <div class="panel" id="r_pos_panel" style="display:none">
+      <h2>{{ t('Margin positioning', '融资融券仓位') }} <span class="note" style="text-transform:none">· {{ t('leveraged financing', '杠杆资金') }}</span></h2>
+      <div id="r_pos"></div>
+      <p class="muted" style="font-size:12px; margin-top:10px">{{ t(
+        'Per-name margin financing balance (融资余额) and its ~20-trading-day change — the A-share leverage/crowding plane (the per-stock cut of the market-wide margin meter). A-share leverage is retail-driven, so a fast build-up is a froth/crowding tell and an unwind is de-risking. Context only — leverage is not a validated timing signal, and margin-eligibility is not universal.',
+        '个股融资余额及其约20个交易日的变化 —— A股杠杆／拥挤度平面（全市场两融表的个股切片）。A股杠杆由散户驱动，快速攀升是过热／拥挤信号，回落则是去杠杆。仅作背景 —— 杠杆并非有效择时信号，且并非所有个股都可两融。') }}</p>
+    </div>
     <div class="panel">
       <h2>{{ t('Chart', '图表') }}</h2>
       <div id="tvbox"></div>
@@ -220,7 +265,14 @@
           f_revcagr: 'Rev CAGR', f_epscagr: 'EPS CAGR', f_5y: '(5y)',
           f_pio: 'Piotroski F', f_alt: 'Altman Z', f_approx: 'approx', f_year: 'FY',
           f_hold: 'Holders', f_holdchg: 'holders Δ', f_conc: 'fewer holders = rising concentration',
-          f_safe: 'safe', f_grey: 'grey', f_distress: 'distress' },
+          f_safe: 'safe', f_grey: 'grey', f_distress: 'distress',
+          vb_pctile: 'pctile', vb_cheap: 'cheap end', vb_rich: 'dear end',
+          an_rating: 'Consensus', an_cov: 'reports', an_buy: 'Buy', an_hold: 'Hold', an_sell: 'Sell',
+          an_fwdpe: 'Fwd P/E', an_fwdeps: 'Fwd EPS', an_fy: 'FY',
+          e_next: 'Next report', e_last: 'Last reported', e_in: 'in', e_dd: 'd', e_ago: 'ago',
+          e_today: 'today', e_soon: '⚠ Reports soon — results risk near-term',
+          p_fin: 'Financing balance', p_chg: '20-day change', p_pct: '% of market cap',
+          p_build: 'leverage building', p_unwind: 'de-leveraging' },
     zh: { asof: '数据截至', notlib: '不在库中',
           notlibmsg: '不在每晚更新的标的库中（精选 A 股大盘股 ＋ 板块 ETF ＋ 指数）。一行即可添加：config.yml → china.constituents。',
           season: '季节性', failed: '⚠ 失败周期 — 价格已跌破启动本周期的低点；此时更大的趋势通常正在转向下行。',
@@ -233,7 +285,14 @@
           f_revcagr: '营收年化', f_epscagr: '每股收益年化', f_5y: '（5年）',
           f_pio: 'Piotroski F', f_alt: 'Altman Z', f_approx: '近似', f_year: '财年',
           f_hold: '股东户数', f_holdchg: '户数变化', f_conc: '户数减少＝集中度上升',
-          f_safe: '安全', f_grey: '灰色', f_distress: '困境' } };
+          f_safe: '安全', f_grey: '灰色', f_distress: '困境',
+          vb_pctile: '分位', vb_cheap: '便宜端', vb_rich: '昂贵端',
+          an_rating: '一致评级', an_cov: '研报', an_buy: '买入', an_hold: '中性', an_sell: '卖出',
+          an_fwdpe: '前瞻PE', an_fwdeps: '预测EPS', an_fy: '财年',
+          e_next: '下次披露', e_last: '上次披露', e_in: '还有', e_dd: '天', e_ago: '天前',
+          e_today: '今天', e_soon: '⚠ 临近披露 —— 短期业绩风险',
+          p_fin: '融资余额', p_chg: '20日变化', p_pct: '占市值',
+          p_build: '杠杆上升', p_unwind: '去杠杆' } };
   function L(k) { return (T[lang()] || T.en)[k]; }
   function lz(en, zh) { return lang() === 'zh' && zh ? zh : (en || ''); }
   var DISP = {{ state_display_json | safe }};
@@ -449,6 +508,96 @@
       document.getElementById('r_fund').innerHTML = fhtml;
       fpEl.style.display = 'block';
     } else { fpEl.style.display = 'none'; }
+
+    // Valuation band — current multiple's percentile within the stock's own 5y range (additive)
+    var vbEl = document.getElementById('r_vband_panel'), vp = d.val_pctile;
+    if (vp && (vp.pe || vp.pb || vp.ps)) {
+      function ordSuf(n) {
+        if (lang() === 'zh') return '';
+        var s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+        return s[(v - 20) % 10] || s[v] || s[0];
+      }
+      function vband(b, lab) {
+        if (!b || b.pctile == null) return '';
+        var pos = Math.max(0, Math.min(100, b.pctile)), pr = Math.round(pos);
+        return '<div class="fnd-chip" style="min-width:158px">'
+          + '<div class="k">' + lab + '</div>'
+          + '<div class="v">' + (+b.v).toFixed(2)
+          + ' <span class="vs">' + pr + '<span style="font-size:9px">' + ordSuf(pr) + '</span> ' + L('vb_pctile') + '</span></div>'
+          + '<div class="vbar"><span class="mark" style="left:' + pos + '%"></span></div>'
+          + '<div class="vrange"><span>' + (+b.lo).toFixed(1) + ' · ' + L('vb_cheap') + '</span>'
+          + '<span>' + L('vb_rich') + ' · ' + (+b.hi).toFixed(1) + '</span></div></div>';
+      }
+      var vbHtml = vband(vp.pe, 'PE-TTM') + vband(vp.pb, 'PB') + vband(vp.ps, 'PS');
+      document.getElementById('r_vband').innerHTML = vbHtml;
+      vbEl.style.display = vbHtml ? 'block' : 'none';
+    } else { vbEl.style.display = 'none'; }
+
+    // Analyst & estimates — Eastmoney sell-side consensus (additive)
+    var anEl = document.getElementById('r_analyst_panel'), an = d.consensus;
+    if (an && (an.reports || an.eps_fy1 != null)) {
+      var total = (an.buy || 0) + (an.hold || 0) + (an.sell || 0);
+      var rcls = an.net >= 0.15 ? 'buy' : an.net <= -0.15 ? 'sell' : 'hold';
+      var ah = '';
+      if (an.rating) ah += '<span class="rchip ' + rcls + '">' + lz(an.rating, an.rating_zh) + '</span>';
+      if (an.reports) ah += ' <span class="muted" style="font-size:12px">' + an.reports + ' ' + L('an_cov') + '</span>';
+      if (total > 0) {
+        var pc = function (x) { return (x / total * 100).toFixed(1); };
+        ah += '<div class="bhs">'
+          + (an.buy ? '<i class="b" style="width:' + pc(an.buy) + '%"></i>' : '')
+          + (an.hold ? '<i class="h" style="width:' + pc(an.hold) + '%"></i>' : '')
+          + (an.sell ? '<i class="s" style="width:' + pc(an.sell) + '%"></i>' : '') + '</div>'
+          + '<div class="bhs-lab"><span>' + L('an_buy') + ' <b>' + an.buy + '</b></span>'
+          + '<span>' + L('an_hold') + ' <b>' + an.hold + '</b></span>'
+          + '<span>' + L('an_sell') + ' <b>' + an.sell + '</b></span></div>';
+      }
+      function fchip(lab, val) { return val == null ? '' : '<div class="fnd-chip"><div class="k">' + lab + '</div><div class="v">' + val + '</div></div>'; }
+      var fc = '<div class="fnd-grid" style="margin-top:10px">'
+        + fchip(L('an_fwdpe') + (an.fy1 ? ' ' + an.fy1 : ''), an.fwd_pe_fy1 != null ? an.fwd_pe_fy1 + '×' : null)
+        + fchip(L('an_fwdpe') + (an.fy2 ? ' ' + an.fy2 : ''), an.fwd_pe_fy2 != null ? an.fwd_pe_fy2 + '×' : null)
+        + fchip(L('an_fwdeps') + (an.fy1 ? ' ' + an.fy1 : ''), an.eps_fy1 != null ? an.eps_fy1 : null)
+        + fchip(L('an_fwdeps') + (an.fy2 ? ' ' + an.fy2 : ''), an.eps_fy2 != null ? an.eps_fy2 : null) + '</div>';
+      document.getElementById('r_analyst').innerHTML = ah + fc;
+      anEl.style.display = 'block';
+    } else { anEl.style.display = 'none'; }
+
+    // Earnings & disclosure — next/last report; countdown computed client-side (never baked) (additive)
+    var enEl = document.getElementById('r_earn_panel'), ev = d.earnings;
+    if (ev && (ev.next_date || ev.last_date)) {
+      function daysFrom(ds) {
+        var p = ds.split('-'); var dt = new Date(+p[0], +p[1] - 1, +p[2]);
+        var now = new Date(); now.setHours(0, 0, 0, 0);
+        return Math.round((dt - now) / 86400000);
+      }
+      var eh = '';
+      if (ev.next_date) {
+        var dd = daysFrom(ev.next_date);
+        var when = dd <= 0 ? L('e_today') : L('e_in') + ' ' + dd + ' ' + L('e_dd');
+        eh += '<div style="font-size:15px"><b>' + L('e_next') + ':</b> ' + ev.next_date + ' <span class="muted">(' + when + ')</span></div>';
+        if (dd >= 0 && dd <= 7) eh += '<div class="early" style="margin-top:8px">' + L('e_soon') + '</div>';
+      } else if (ev.last_date) {
+        var da = -daysFrom(ev.last_date);
+        eh += '<div style="font-size:15px"><b>' + L('e_last') + ':</b> ' + ev.last_date + ' <span class="muted">(' + da + ' ' + L('e_dd') + ' ' + L('e_ago') + ')</span></div>';
+      }
+      document.getElementById('r_earn').innerHTML = eh;
+      enEl.style.display = 'block';
+    } else { enEl.style.display = 'none'; }
+
+    // Margin positioning — per-name financing balance + 20d trend (additive; neutral colouring)
+    var posEl = document.getElementById('r_pos_panel'), pos = d.positioning;
+    if (pos && pos.fin_balance_yi != null) {
+      var ph = '<div class="fnd-grid">'
+        + '<div class="fnd-chip"><div class="k">' + L('p_fin') + '</div><div class="v">' + pos.fin_balance_yi + ' <span class="vs">亿</span></div></div>';
+      if (pos.chg_pct != null) {
+        var up = pos.chg_pct >= 0;
+        ph += '<div class="fnd-chip"><div class="k">' + L('p_chg') + '</div><div class="v">'
+          + (up ? '+' : '') + pos.chg_pct + '%</div><div class="vs">' + (up ? L('p_build') : L('p_unwind')) + '</div></div>';
+      }
+      if (pos.pct_mcap != null) ph += '<div class="fnd-chip"><div class="k">' + L('p_pct') + '</div><div class="v">' + pos.pct_mcap + '%</div></div>';
+      ph += '</div>';
+      document.getElementById('r_pos').innerHTML = ph;
+      posEl.style.display = 'block';
+    } else { posEl.style.display = 'none'; }
 
     var cs = '<tr><th>' + L('th_state') + '</th><th>' + L('th_n') + '</th><th>' + L('th_up') +
              '</th><th>' + L('th_avg') + '</th><th>' + L('th_dipm') + '</th><th>' + L('th_dipb') + '</th></tr>';
