@@ -71,7 +71,6 @@ jobs:
           run_py "regime engine (engine.run)" engine.run
           run_py "S&P allocation vector (build_spvector)" scripts.build_spvector
           run_py "macro dashboard + US stocks (build_site)" scripts.build_site
-          run_py "daily brief" scripts.daily_brief
           # descriptive A-share fundamentals (akshare, keyless) — refresh high-value
           # names + widen the universe ~150/run; the China build reads the cache.
           run_py "china fundamentals (subset)" collectors.china_fundamentals
@@ -88,6 +87,7 @@ jobs:
           run_py "build bonds" scripts.build_bonds
           run_py "calibrate vector" scripts.calibrate_vector
           run_py "build vector + landing hub" scripts.build_vector
+          run_py "AI brief page (build_aibrief)" scripts.build_aibrief
           exit 0
       - name: rebuild stock-search libraries (resilient — guarantees the analyzers ship)
         # build_china/build_hk swallow errors; rebuild the per-stock search JSON

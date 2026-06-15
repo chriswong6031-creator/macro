@@ -507,7 +507,6 @@
       <a class="nav-link" href="crossasset.html">🧭 {{ t('Cross-Asset', '跨资产') }}</a>
     <a class="nav-link" href="discovery.html">🏆 {{ t('Alpha leaders', '阿尔法领先股') }}</a>
     <a class="nav-link" href="gex.html">🧲 {{ t('GEX magnets', 'Gamma磁吸') }}</a>
-    <a class="nav-link" href="brief.html">📰 {{ t('Brief', '简报') }}</a>
     <a class="nav-link" href="history.html">📈 {{ t('History', '历史') }}</a>
   </div>
   <div class="nav-search">
@@ -517,6 +516,7 @@
     <div class="nav-sugg"></div>
   </div>
   <div class="nav-ctrls">
+    <a class="ai-brief-link" href="aibrief.html">🧠 {{ t('AI Daily Brief', 'AI每日简报') }}</a>
     <button class="theme-switch" aria-label="Toggle dark / light mode">
       <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
     </button>
@@ -2215,9 +2215,9 @@
       {% endfor %}
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated {{ generated_utc }} UTC · <a href="brief.html">daily brief</a> ·
+       Generated {{ generated_utc }} UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a> · <a href="validation_timeline.html">full 2007→ backtest</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 {{ generated_utc }} UTC · <a href="brief.html">每日简报</a> ·
+       生成于 {{ generated_utc }} UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a> · <a href="validation_timeline.html">完整 2007→ 回测</a></span></p>
   </div>
   {% endif %}{# /mode != stocks — data health #}
