@@ -111,6 +111,16 @@ fred:
       IORB: iorb                  # interest on reserve balances — the SOFR-IORB plumbing anchor
       SOFR99: sofr_99             # 99th-pctile SOFR — a repo-stress spike gauge
       USRECD: us_recession        # NBER recession indicator (daily) — calibration target ONLY (not in live frame)
+    # --- Fed policy path (research/DATA_SIGNAL_EXPANSION_2026.md #2) — DISPLAY-ONLY -
+    # The FOMC dot-plot median + the live target range. DISPLAY / LLM-context only —
+    # the path LEVEL is a price and repricing is reactive, so there is NO scored leg
+    # and NO MRS entry. Pairs with the keyless ZQ/SR3 futures implied path
+    # (collectors/rate_futures.py) on bonds.html. FRED is unreachable from the build
+    # sandbox (live CI fetches fine) → engine/fed_path.py degrades gracefully.
+    fed_path:
+      FEDTARMD: fed_dot_median    # FOMC SEP median projection of the fed funds rate (year-end, % annual; quarterly)
+      DFEDTARU: fed_target_upper  # fed funds target range — UPPER limit (daily, 2008-12->)
+      DFEDTARL: fed_target_lower  # fed funds target range — LOWER limit (daily)
     # --- Forex Vector (research/FOREX_DASHBOARD.md) — all keyless via FRED ---------
     fx_rates:                     # daily FX reference rates (H.10) — cross-check + deep history
       DEXUSEU: fx_eur_usd         # USD per EUR  (EUR base, NOT inverted)
@@ -433,6 +443,21 @@ eia:
 ofr_fsi:                           # distinct from the OFR funding-rates collector (collectors/ofr.py, group "ofr")
   fsi_url: https://www.financialresearch.gov/financial-stress-index/data/fsi.csv
   retries: 4
+
+rate_futures:                      # Fed policy path — keyless ZQ/SR3 implied curve (research/DATA_SIGNAL_EXPANSION_2026.md #2)
+  # Multi-contract futures from Yahoo → a daily implied-policy-path snapshot at fixed
+  # horizons (1/3/6/12m). DISPLAY-ONLY: the implied rate IS a market price, not a
+  # forecast edge — never scored, never an MRS leg. Yahoo throttles the build sandbox
+  # (429) so this is verified by synthetic scaffold; live CI fetches the real curve.
+  horizons_m: [1, 3, 6, 12]        # months-ahead the path is interpolated to
+  max_months: 18                   # ignore contracts further out than this (illiquid tail)
+  roots:
+    # ZQ = 30-Day Fed Funds (CBOT), MONTHLY contracts. 100-price = the avg EFFR the
+    # market prices for that delivery month.
+    zq:   {symbol_root: ZQ,  exchanges: [CBT, NYB], cadence: monthly,  label: "Fed Funds (ZQ)",   months: 14}
+    # SR3 = 3-Month SOFR (CME), QUARTERLY IMM contracts (Mar/Jun/Sep/Dec). 100-price =
+    # the compounded avg SOFR over the reference quarter. SOFR ≈ EFFR-few-bp.
+    sofr: {symbol_root: SR3, exchanges: [CME],      cadence: quarterly, label: "SOFR 3M (SR3)",    months: 18}
 
 cot:
   socrata_url: https://publicreporting.cftc.gov/resource/6dca-aqww.json   # legacy futures-only

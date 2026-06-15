@@ -45,6 +45,7 @@ def all_adapters() -> dict:
         ("frbsf_sentiment", "collectors.frbsf", "NewsSentimentAdapter"),  # SF Fed Daily News Sentiment (real-activity nowcast)
         ("eia", "collectors.eia", "EiaAdapter"),                       # petroleum supply (Weekly Petroleum Status)
         ("ofr_fsi", "collectors.ofr_fsi", "OfrFsiAdapter"),            # OFR Financial Stress Index (functional + regional decomposition)
+        ("rate_futures", "collectors.rate_futures", "RateFuturesAdapter"),  # ZQ/SR3 implied Fed-policy path (display-only, research/DATA_SIGNAL_EXPANSION_2026.md #2)
         # FINRA short interest (Phase 3) is ticker-indexed, fetched from build_factors (like EDGAR), not here.
         ("sentiment_naaim", "collectors.sentiment", "NaaimAdapter"),
         ("sentiment_aaii", "collectors.sentiment", "AaiiAdapter"),
