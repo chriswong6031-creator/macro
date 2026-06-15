@@ -1164,14 +1164,40 @@
   #macro-news .mn-t-credit{background:#3a2f5f;color:#c4b0ff}#macro-news .mn-t-fiscal{background:#4f3a1f;color:#ffd79a}
   #macro-news .cat-row{display:flex;gap:9px;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--panel2);font-size:13px}
   #macro-news .cat-date{color:var(--muted);font-variant-numeric:tabular-nums;min-width:118px}
-  #macro-news .ct-FOMC{background:#3a2f5f;color:#c4b0ff}#macro-news .ct-NFP{background:#1f4733;color:#a0ffc4}
+  #macro-news .cat-imp{width:7px;height:7px;border-radius:50%;flex:0 0 auto;align-self:center;background:var(--muted)}
+  #macro-news .imp-high{background:var(--warn)} #macro-news .imp-med{background:var(--muted)}
+  #macro-news .ct-FOMC{background:#3a2f5f;color:#c4b0ff}#macro-news .ct-NFP,#macro-news .ct-CLAIMS{background:#1f4733;color:#a0ffc4}
+  #macro-news .ct-CPI,#macro-news .ct-PPI{background:#4f2c22;color:#ffb499}#macro-news .ct-PCE{background:#4f3a1f;color:#ffd79a}
+  #macro-news .ct-GDP,#macro-news .ct-ISM_MFG,#macro-news .ct-ISM_SVC{background:#2c3f1f;color:#cfe89a}
+  #macro-news .ct-OPEX{background:#22324f;color:#9cc4ff}#macro-news .ct-AUCTION{background:#33305a;color:#b9b0ff}
+  /* compact "US high-impact next 14 days" glance strip (display/context only) */
+  #macro-news .ev-strip{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:8px 0 4px;padding:9px 11px;background:var(--panel2);border:1px solid var(--line);border-radius:8px}
+  #macro-news .ev-strip-h{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-right:2px}
+  #macro-news .ev-chip{display:inline-flex;align-items:baseline;gap:5px;font-size:12px;padding:3px 9px;border-radius:6px;background:var(--panel);border:1px solid var(--line);white-space:nowrap}
+  #macro-news .ev-chip b{font-size:11px;letter-spacing:.02em}
+  #macro-news .ev-chip .ev-when{color:var(--muted);font-variant-numeric:tabular-nums}
+  #macro-news .ev-chip.ec-FOMC{border-color:#5a4a8f}#macro-news .ev-chip.ec-FOMC b{color:#c4b0ff}
+  #macro-news .ev-chip.ec-CPI b,#macro-news .ev-chip.ec-PPI b{color:#ffb499}
+  #macro-news .ev-chip.ec-NFP b,#macro-news .ev-chip.ec-CLAIMS b{color:#a0ffc4}
+  #macro-news .ev-chip.ec-GDP b{color:#cfe89a}#macro-news .ev-chip.ec-PCE b{color:#ffd79a}
+  #macro-news .ev-strip-none{font-size:12px;color:var(--muted)}
   #macro-news .mn-disc{color:var(--muted);font-size:11px;margin-top:12px;border-top:1px solid var(--line);padding-top:8px;line-height:1.5}
   @media(max-width:760px){ #macro-news .mn-cols{grid-template-columns:1fr} }
   </style>
   <div class="panel span12" id="macro-news">
     <h2>📰 {{ t('Macro news, sentiment &amp; catalysts', '宏观新闻、情绪与日程') }}
-      {{ help("Filtered macro news (reputable sources, macro themes only — each headline tagged by theme), the SF-Fed Daily News Sentiment Index (a quantitative series, NOT per-headline AI), and the upcoming scheduled catalysts (FOMC, jobs report). All CONTEXT — none of it feeds any score, signal or allocation, and the mechanical model never sees it.", "已筛选的宏观新闻（仅可靠来源、仅宏观主题，每条按主题标注）、旧金山联储每日新闻情绪指数（量化序列，而非逐条新闻 AI），以及即将到来的排定催化（FOMC、就业报告）。全部为背景 —— 不进入任何评分、信号或配置，机械模型也从不读取。") }}
+      {{ help("Filtered macro news (reputable sources, macro themes only — each headline tagged by theme), the SF-Fed Daily News Sentiment Index (a quantitative series, NOT per-headline AI), and a unified US event calendar (FOMC, CPI/PPI, jobs report, GDP, PCE, jobless claims, ISM, options-expiry and Treasury auctions). All CONTEXT — none of it feeds any score, signal or allocation, and the mechanical model never sees it. There is deliberately NO event-risk dampener: pre-FOMC drift died after 2016 and the announcement premium is positive, so cutting exposure into prints would be wrong-signed. Dates are scheduling info, not forecasts.", "已筛选的宏观新闻（仅可靠来源、仅宏观主题，每条按主题标注）、旧金山联储每日新闻情绪指数（量化序列，而非逐条新闻 AI），以及统一的美国事件日历（FOMC、CPI/PPI、就业报告、GDP、PCE、初请失业金、ISM、期权到期与国债拍卖）。全部为背景 —— 不进入任何评分、信号或配置，机械模型也从不读取。我们刻意不做事件风险衰减：2016 年后 FOMC 前漂移已消失、公告溢价为正，因此在数据公布前削减仓位方向是错的。日期为日程信息，而非预测。") }}
     </h2>
+    {# compact US high-impact catalyst strip (next 14 days) — glanceable scheduling
+       context. DISPLAY ONLY: it never feeds a score, signal or allocation. #}
+    <div class="ev-strip">
+      <span class="ev-strip-h">{{ t('US high-impact · next 14 days', '美国高影响 · 未来14天') }}</span>
+      {% for s in event_strip %}
+      <span class="ev-chip ec-{{ s.type }}" title="{{ s.label }}{% if s.time_et %} · {{ s.time_et }} ET{% endif %}"><b>{{ s.type }}</b> <span class="ev-when">{{ s.dow }} {{ s.md }}</span></span>
+      {% else %}
+      <span class="ev-strip-none">{{ t('Clear — no top-tier US prints in the window.', '空窗 —— 窗口内无一线美国数据。') }}</span>
+      {% endfor %}
+    </div>
     {% set RA = (latest.conditions or {}).get('risk_appetite') or {} %}
     {% if RA.get('news_sentiment_state') %}
     {% set nz = RA.get('news_sentiment_z') %}
@@ -1199,7 +1225,7 @@
         <div class="section-title">{{ t('Upcoming catalysts', '即将到来的催化') }}</div>
         {% if macro_catalysts %}
           {% for c in macro_catalysts %}
-          <div class="cat-row"><span class="cat-date">{{ c.date }}{% if c.time_et %} · {{ c.time_et }} ET{% endif %}</span><span class="cat-type ct-{{ c.type }}">{{ c.type }}</span><span class="cat-label">{{ c.label }}</span></div>
+          <div class="cat-row"><span class="cat-imp imp-{{ c.get('impact','med') }}" title="{{ t('high impact','高影响') if c.get('impact')=='high' else t('scheduled','日程') }}"></span><span class="cat-date">{{ c.date }}{% if c.time_et %} · {{ c.time_et }} ET{% endif %}</span><span class="cat-type ct-{{ c.type }}">{{ c.type }}</span><span class="cat-label">{{ c.label }}</span></div>
           {% endfor %}
         {% else %}
           <p class="muted sm">{{ t('No scheduled catalysts in the window.', '窗口内无排定催化。') }}</p>

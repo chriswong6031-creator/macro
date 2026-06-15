@@ -225,44 +225,11 @@ def annotate_event(asset: str, event_date: date, move_desc: str = "") -> dict | 
 
 
 # --------------------------------------------------------------------------- #
-# public: upcoming catalysts (static skeleton; keyless; always available)
+# public: upcoming catalysts (delegates to the shared engine.event_calendar)
 # --------------------------------------------------------------------------- #
-# 2026 schedule (refresh quarterly). * = FOMC meeting with SEP/dot-plot (higher vol).
-_FOMC_2026 = [("2026-01-28", ""), ("2026-03-18", " (SEP)"), ("2026-04-29", ""),
-              ("2026-06-17", " (SEP)"), ("2026-07-29", ""), ("2026-09-16", " (SEP)"),
-              ("2026-10-28", ""), ("2026-12-09", " (SEP)")]
-_OPEC_2026 = ["2026-06-07"]  # full ministerial; OPEC+ group meets ~monthly otherwise
-_EIA_SLIP_WEEKS = {"2026-01-16", "2026-02-13", "2026-05-22", "2026-09-04",
-                   "2026-10-09", "2026-11-06"}  # holiday weeks -> Thu instead of Wed
-
-
 def upcoming_catalysts(today: date | None = None, horizon_days: int = 14) -> list[dict]:
-    today = today or date.today()
-    end = today + timedelta(days=horizon_days)
-    out: list[dict] = []
-
-    for d, tag in _FOMC_2026:
-        dd = date.fromisoformat(d)
-        if today <= dd <= end:
-            out.append({"type": "FOMC", "date": d, "time_et": "14:00",
-                        "label": f"FOMC decision{tag}", "assets": ["gold", "silver", "oil", "copper"],
-                        "source": "static", "is_context_only": True})
-    for d in _OPEC_2026:
-        dd = date.fromisoformat(d)
-        if today <= dd <= end:
-            out.append({"type": "OPEC", "date": d, "time_et": "",
-                        "label": "OPEC ministerial meeting", "assets": ["oil"],
-                        "source": "static", "is_context_only": True})
-    # EIA WPSR — every Wednesday 10:30 ET (Thu on holiday-slip weeks)
-    d = today
-    while d <= end:
-        if d.weekday() == 2:  # Wednesday
-            slip = d.isoformat() in _EIA_SLIP_WEEKS
-            day = d + timedelta(days=1) if slip else d
-            out.append({"type": "EIA_WPSR", "date": day.isoformat(),
-                        "time_et": "12:00" if slip else "10:30",
-                        "label": "EIA crude/petroleum inventories", "assets": ["oil"],
-                        "source": "static", "is_context_only": True})
-        d += timedelta(days=1)
-    out.sort(key=lambda c: c["date"])
-    return out
+    """Forward OPEC / FOMC / EIA-WPSR watch list (oil-centric), context-only. The
+    schedule now lives in the unified engine.event_calendar (single source of truth
+    shared with macro.html); this thin wrapper keeps the commodities-page contract."""
+    from engine import event_calendar as _ec
+    return _ec.commodity_events(today, horizon_days)
