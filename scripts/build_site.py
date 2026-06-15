@@ -1787,6 +1787,15 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("narrative_regime failed: %s", e)
 
+    # Forward PIT state accrual (engine/dislocation.append_state_log): record today's
+    # dislocation + narrative state so the mechanical-reversion fade edge becomes
+    # validatable on FORWARD data later. Append-only; research-only, never scored.
+    try:
+        from engine import dislocation as _dz
+        _dz.append_state_log(latest.get("dislocation"), ndi, narrative_regime)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("dislocation state-log accrual failed: %s", e)
+
     # whole-market dealer-gamma vol regime (validated index GEX) — context for the
     # standout setups below. Additive + graceful: None if the cboe gex store is absent.
     market_gamma = None

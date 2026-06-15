@@ -138,8 +138,11 @@ def test_reads_never_raise():
 # --------------------------------------------------------------------------- #
 # LLM extraction is OFF in P0
 # --------------------------------------------------------------------------- #
-def test_llm_extract_off_by_default():
-    assert nv.enabled() is False, "master switch defaults off"
+def test_llm_extract_stays_off_even_when_bus_enabled():
+    # The event bus may be ENABLED (it accrues the forward PIT event store), but the
+    # LLM structured-extraction STAGE is a separate switch (llm_extract) that stays
+    # off — extract_structured must remain a no-op with neutral placeholders.
+    assert nv._cfg().get("llm_extract", False) is False, "LLM extraction stage must stay off"
     rec = {"event_id": "x", "title": "t", "theme": "trade"}
     out = nv.extract_structured(rec)
     assert out["llm_extracted"] is False
