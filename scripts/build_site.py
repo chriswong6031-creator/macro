@@ -1425,6 +1425,53 @@ def market_gamma_view(gex) -> dict | None:
     }
 
 
+def index_health_rows() -> list[dict]:
+    """Health snapshot for the four major US indexes — the 'how is the market
+    itself doing' read that leads the macro page (people open it for the index
+    first, the economy second). Price, % off the 52-week high (drawdown), 50/200d
+    trend, RSI(14). Pure price math off the stored daily closes; reuses
+    engine.technicals.rsi."""
+    from engine.technicals import rsi
+    out = []
+    for tkr, label, zh in [("SPY", "S&P 500", "标普500"), ("QQQ", "Nasdaq 100", "纳指100"),
+                           ("_DJI", "Dow Jones", "道指"), ("_RUT", "Russell 2000", "罗素2000")]:
+        df = store.read("yahoo", tkr)
+        if df is None or df.empty or "close" not in df.columns:
+            continue
+        c = df["close"].astype(float).dropna()
+        if len(c) < 60:
+            continue
+        px = float(c.iloc[-1])
+        hi52 = float(c.tail(252).max())
+        ma50 = float(c.tail(50).mean())
+        ma200 = float(c.tail(200).mean()) if len(c) >= 200 else float("nan")
+        try:
+            r = float(rsi(c).iloc[-1])
+        except Exception:  # noqa: BLE001 — never let one index break the panel
+            r = float("nan")
+        out.append({
+            "ticker": tkr, "label": label, "label_zh": zh, "price": round(px, 2),
+            "chg": round(100 * (px / float(c.iloc[-2]) - 1), 2) if len(c) >= 2 else 0.0,
+            "dd": round(100 * (px / hi52 - 1), 1),
+            "above50": bool(px >= ma50),
+            "above200": (bool(px >= ma200) if ma200 == ma200 else None),
+            "rsi": round(r) if r == r else None,
+        })
+    return out
+
+
+def alloc_card_state() -> dict:
+    """The S&P Vector allocation snapshot for the macro page's allocation CTA card.
+    Best-effort: degrades to a present=False stub (CTA only, no live numbers) when
+    build_spvector hasn't run yet — so build order never breaks the macro page."""
+    try:
+        d = json.loads((config.data_dir() / "regime" / "spvector_latest.json").read_text())
+        d["present"] = True
+        return d
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        return {"present": False}
+
+
 def main() -> int:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     site.mkdir(parents=True, exist_ok=True)
@@ -1494,7 +1541,11 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("market gamma view failed (%s)", e)
     from engine.alerts import alert_views
-    html = env.get_template("dashboard.html.j2").render(
+    # One shared view-model feeds BOTH the macro-regime page and the US Stock
+    # Dashboard — the same dashboard.html.j2 is rendered twice with a `mode` flag
+    # (macro / stocks) that selects which sections show. No data is recomputed and
+    # the heavy page CSS lives in exactly one template.
+    vm = dict(
         latest=latest,
         alerts=alert_views(latest.get("alerts", [])),
         pb=latest.get("playbook"),
@@ -1523,14 +1574,30 @@ def main() -> int:
         factor_leadership=factor_leadership,
         nowcast_hist=nowcast_history(f),
         stance=regime_stance(latest, latest.get("playbook")),
+        index_health=index_health_rows(),       # macro-page index-health section
+        alloc_card=alloc_card_state(),           # macro-page allocation CTA card
     )
     # Write the macro dashboard straight to macro.html. index.html is owned
     # solely by build_vector.build_landing() (the landing hub) — keeping the raw
     # dashboard out of index.html is what stops Home (-> index.html) from
     # regressing to the dashboard when build_vector doesn't run after this.
     out = site / "macro.html"
-    out.write_text(html)
+    out.write_text(env.get_template("dashboard.html.j2").render(**vm, mode="macro"))
     log.info("wrote %s (%.0f KB)", out, out.stat().st_size / 1024)
+
+    # US Stock Dashboard — same VM, the "looking for stocks" half of the split.
+    out_st = site / "us_stocks.html"
+    out_st.write_text(env.get_template("dashboard.html.j2").render(**vm, mode="stocks"))
+    log.info("wrote %s (%.0f KB)", out_st, out_st.stat().st_size / 1024)
+    # landing-hub card stat (presence-gated by the .html existing)
+    _ab = vm["action_board"] or {}
+    _ts = top_setups or {}
+    _n = len(_ts.get("buy") or []) or len(_ab.get("notable") or [])
+    _us_label = (f"{_n} standout setups" if _n else "Stock signals & flows")
+    usdir = config.data_dir() / "us_stocks"
+    usdir.mkdir(parents=True, exist_ok=True)
+    (usdir / "latest.json").write_text(json.dumps(
+        {"date": latest.get("date", ""), "label": _us_label, "n_setups": _n}, indent=2))
 
     # --- history page: the longer-window charts + lifespan base rates ----------
     from engine.playbook import QUAD_SHORT, next_quads_line, transition_stats

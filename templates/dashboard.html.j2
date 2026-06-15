@@ -19,7 +19,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Macro Regime Dashboard — {{ latest.date }}</title>
+<title>{% if mode == 'stocks' %}US Stock Dashboard{% else %}Macro Regime Dashboard{% endif %} — {{ latest.date }}</title>
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
@@ -446,6 +446,22 @@
   .ts-nm { font-size: 10px; color: var(--muted); }
   .ts-tbl td.az-up { color: var(--up); font-weight: 700; }
   .ts-tbl td.az-dn { color: var(--down); font-weight: 700; }
+  /* major-index health (macro page hero) */
+  .idx-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
+  @media (max-width: 900px) { .idx-grid { grid-template-columns: repeat(2, 1fr); } }
+  .idx-tile { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; }
+  .idx-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .idx-px { font-variant-numeric: tabular-nums; color: var(--muted); }
+  .idx-row, .idx-trend { display: flex; justify-content: space-between; font-size: 12px; gap: 8px; }
+  .idx-trend { margin-top: 3px; color: var(--muted); }
+  .idx-grid .pos { color: var(--up); } .idx-grid .neg { color: var(--down); } .idx-grid .warn { color: var(--warn); }
+  .idx-risk { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  @media (max-width: 900px) { .idx-risk { grid-template-columns: 1fr; } }
+  .idx-gauge, .idx-alloc { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; }
+  .idx-alloc { display: block; text-decoration: none; color: inherit; border-color: var(--link); }
+  .idx-alloc:hover { background: var(--panel); }
+  .idx-gk { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .idx-gv { font-size: 24px; font-weight: 800; color: var(--text); } .idx-gv small { font-size: 12px; font-weight: 600; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -455,8 +471,9 @@
     <div class="nav-dd">
       <a class="nav-link active" href="macro.html">🇺🇸 {{ t('US Macro', '美国宏观') }} <span class="caret">▾</span></a>
       <div class="nav-dd-menu">
-        <a href="macro.html">📊 {{ t('Macro dashboard', '宏观仪表盘') }}</a>
-        <a href="spvector.html">📈 {{ t('S&P / Macro Vector', '标普宏观向量') }}</a>
+        <a class="{{ 'active' if mode != 'stocks' }}" href="macro.html">📊 {{ t('Macro dashboard', '宏观仪表盘') }}</a>
+        <a class="{{ 'active' if mode == 'stocks' }}" href="us_stocks.html">📈 {{ t('US Stocks', '美国个股') }}</a>
+        <a href="spvector.html">◎ {{ t('Allocation strategy', '仓位策略') }}</a>
       </div>
     </div>
     <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }}</a>
@@ -489,6 +506,20 @@
 </nav>
 <div class="grid">
 
+  {% if mode == 'stocks' %}
+  <!-- ===================== US STOCK DASHBOARD HEADER ===================== -->
+  <div class="panel span12" id="stocks-header">
+    <div class="topline">
+      <h1>🇺🇸 {{ t('US Stock Dashboard', '美国个股看板') }}</h1>
+      <span class="badge quad-{{ latest.quad }}">{{ td(latest.quad_name) }}</span>
+      {% if pb and pb.dial %}<span class="badge" style="background:var(--panel2);color:var(--text)">{{ td(pb.dial.posture) }}</span>{% endif %}
+    </div>
+    <p class="muted" style="margin:6px 0 0">{{ t('Where to look for stocks — standouts, sector rotation, factor tilts and real fund flows, filtered by the current macro regime.', '在哪里找股票 — 精选个股、板块轮动、因子倾斜与基金真实资金流，按当前宏观周期过滤。') }}
+      <a href="macro.html" style="color:var(--link);font-weight:600">← {{ t('Macro regime dashboard', '宏观周期看板') }}</a></p>
+  </div>
+  {% endif %}
+
+  {% if mode != 'stocks' %}
   <!-- ======================= HEADER ======================= -->
   <div class="panel span12" id="regime-radar">
     <div class="topline">
@@ -644,6 +675,54 @@
         </span>
       </div>
     </details>
+  </div>
+
+  <!-- ===================== MAJOR US INDEXES — HEALTH & RISK ===================== -->
+  <div class="panel span12" id="index-health">
+    <h2>{{ t('Major US indexes — health & drawdown risk', '美国主要指数 — 健康度与回撤风险') }}
+      {{ help("How the market itself is doing, before the economy. Price, % below the 52-week high (drawdown), trend vs the 50/200-day averages, and RSI(14) for the four major US indexes — alongside the validated macro de-risk read that drives the allocation strategy.", "在看经济之前，先看市场本身。四大美国指数的价格、距52周高点的回撤、相对50/200日均线的趋势、RSI(14) — 以及驱动仓位策略的经验证宏观降险读数。") }}
+    </h2>
+    <div class="idx-grid">
+      {% for ix in index_health %}
+      <div class="idx-tile">
+        <div class="idx-top"><b>{{ t(ix.label, ix.label_zh) }}</b> <span class="idx-px">{{ '%.2f'|format(ix.price) }}</span></div>
+        <div class="idx-row">
+          <span class="{{ 'pos' if ix.dd >= -1 else ('warn' if ix.dd >= -10 else 'neg') }}">{{ '%+.1f'|format(ix.dd) }}% {{ t('off high', '距高点') }}</span>
+          <span>RSI {{ ix.rsi if ix.rsi is not none else '—' }}</span>
+        </div>
+        <div class="idx-trend">
+          <span class="{{ 'pos' if ix.above200 else 'neg' }}">{{ '✓' if ix.above200 else '✕' }} 200d</span>
+          <span class="{{ 'pos' if ix.above50 else 'neg' }}">{{ '✓' if ix.above50 else '✕' }} 50d</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="idx-risk">
+      {% set dr = latest.conditions.drawdown_risk %}
+      {% set rc = latest.conditions.recession %}
+      <div class="idx-gauge">
+        <div class="idx-gk">{{ t('Drawdown risk', '回撤风险') }}</div>
+        <div class="idx-gv">{{ dr.score|round|int if dr and dr.score is not none else '—' }}<small>/100</small></div>
+        <div class="muted" style="font-size:11px">{% if dr and dr.dd10_prob_pct is not none %}{{ t('P(≥10% / 63d)', '概率(≥10%/63日)') }} {{ dr.dd10_prob_pct }}%{% endif %}</div>
+      </div>
+      <div class="idx-gauge">
+        <div class="idx-gk">{{ t('Recession risk', '衰退风险') }}</div>
+        <div class="idx-gv">{{ rc.score|round|int if rc and rc.score is not none else '—' }}<small>/100</small></div>
+        <div class="muted" style="font-size:11px">{% if rc and rc.label %}{{ td(rc.label) }}{% endif %}</div>
+      </div>
+      {% if alloc_card and alloc_card.present %}
+      <a class="idx-alloc" href="spvector.html">
+        <div class="idx-gk">{{ t('S&P Vector allocation', '标普向量仓位') }} →</div>
+        <div class="idx-gv" style="color:{{ '#1FA971' if alloc_card.band == 'low' else ('var(--warn)' if alloc_card.band in ['elevated','high'] else 'var(--down)') }}">{{ alloc_card.equity_w }}%<small> {{ t('equity', '股票') }}</small></div>
+        <div class="muted" style="font-size:11px">{{ t('de-risk score', '降险分') }} {{ alloc_card.score }} · Sharpe {{ alloc_card.sharpe }} · MaxDD {{ alloc_card.maxdd }}%</div>
+      </a>
+      {% else %}
+      <a class="idx-alloc" href="spvector.html">
+        <div class="idx-gk">◎ {{ t('Allocation strategy', '仓位策略') }} →</div>
+        <div class="muted" style="font-size:12px;margin-top:4px">{{ t('S&P 500 ↔ T-bills — a validated drawdown / Sharpe engine.', '标普500 ↔ 短债 — 经验证的回撤 / 夏普引擎。') }}</div>
+      </a>
+      {% endif %}
+    </div>
   </div>
 
   <!-- ===================== REGIME TIME MACHINE ===================== -->
@@ -1055,6 +1134,9 @@
   </div>
   {% endif %}
 
+  {% endif %}{# /mode != stocks — macro group 1 (regime, index health, nowcast) #}
+
+  {% if mode != 'macro' %}
   <!-- ======================= ACTION BOARD ======================= -->
   {% if action_board %}
   <div class="panel span12">
@@ -1178,9 +1260,11 @@
     <p class="muted" style="font-size:11.5px; margin-top:8px">⚠ {{ t("Cycle-timing signals are about <i>where in the price cycle</i> a sector is — most useful combined with the regime read above. Our calibration shows these states don't beat buy-and-hold on average return; their value is structure and risk placement (entry + a defined exit), not certainty.", "周期择时信号关乎一个板块<i>处于价格周期的哪个位置</i> — 与上方的周期判读结合使用最有价值。我们的校准显示这些状态在平均回报上并不能跑赢买入持有；它们的价值在于结构与风险摆位（入场 + 明确的出场），而非确定性。") }}</p>
   </div>
   {% endif %}
+  {% endif %}{# /mode != macro — action board #}
 
   <!-- ======================= NOW ======================= -->
   {% if pb %}
+  {% if mode != 'stocks' %}
   <div class="panel span6">
     <h2>{{ t('Where we are in this regime', '我们身处此周期何处') }}
       {{ help("Compares this regime's age against every " + latest.quad_name + " period since 2007 in this exact classifier. Regimes don't die of old age — but the older one gets relative to history, the more weight every warning flag deserves.", "将此周期的年龄与自 2007 年以来本分类器中每一段 " + latest.quad_name + " 周期对比。周期不会因年老而自然消亡 — 但相对历史越老，每一面预警旗都越值得加重看待。") }}
@@ -1265,8 +1349,10 @@
       {% for trg_en, trg_zh in pb.triggers %}<li>{{ t(trg_en, trg_zh) }}</li>{% endfor %}
     </ul>
   </div>
+  {% endif %}{# /mode != stocks — where we are + what's next #}
 
-  <!-- ======================= TRADE IT ======================= -->
+  {% if mode != 'stocks' %}
+  <!-- ============== TRADE IT — regime posture dial (macro) ============== -->
   <div class="panel span12">
     <h2>{{ t('How to trade the current regime', '如何交易当前周期') }}
       {{ help("Built from conditions that held up in both halves of a 2007-2026 backtest. The dial is the headline: how much risk current conditions support. Sector calls below it are risk filters and confirmation tools — our research found no stable 'this sector will outperform' signal at monthly horizons, so anyone selling you that is curve-fitting.", "基于在 2007–2026 回测前后两半都站得住脚的条件构建。刻度盘是核心：当前条件支持多大的风险。其下的板块判断是风险过滤器与确认工具 — 我们的研究在月度时间尺度上未发现稳定的'某板块将跑赢'信号，所以任何向你兜售此类信号的人都是在过拟合。") }}
@@ -1279,7 +1365,16 @@
     {% for sign, r_en, r_zh in pb.dial.reasons %}
       <div class="reason"><b class="sig sig-{{ {'+':'p','-':'m','i':'i'}[sign] }}">{{ {'+':'+','-':'−','i':'i'}[sign] }}</b> {{ t(r_en, r_zh) }}</div>
     {% endfor %}
+    <a href="us_stocks.html" style="display:inline-block;margin-top:12px;font-weight:600;color:var(--link)">{{ t('→ Regime-approved sectors & stocks (US Stock Dashboard)', '→ 周期认可的板块与个股（美国个股看板）') }}</a>
+  </div>
+  {% endif %}{# /mode != stocks — regime posture dial #}
 
+  {% if mode != 'macro' %}
+  <!-- ============== Regime-approved sectors (stock side) ============== -->
+  <div class="panel span12">
+    <h2>{{ t('Regime-approved sectors — leaders & avoids', '周期认可的板块 — 领先与回避') }}
+      {{ help("Sector calls derived from the current regime. Confirmed leadership = an established uptrend with positive, not-yet-stretched momentum. Avoids = the evidence-backed don'ts (chasing stretched leaders and buying below-trend bounces both lost in our 2007-2026 backtest).", "源自当前周期的板块判断。已确认领先＝既定上涨趋势、动量为正且尚未过热。回避＝有证据支撑的禁忌（追逐过热领先股与买入趋势下方反弹在 2007–2026 回测中都亏钱）。") }}
+    </h2>
     <div class="grid" style="margin-top:12px">
       <div class="span6">
         <h3>✅ {{ t('Confirmed leadership — where participation is real', '已确认的领先 — 参与度真实之处') }}
@@ -1313,8 +1408,10 @@
     </div>
     <p class="muted" style="font-size:12px; margin-top:8px">⚖️ {{ t(pb.honesty, pb.honesty_zh) }}</p>
   </div>
-  {% endif %}
+  {% endif %}{# /mode != macro — regime-approved sectors #}
+  {% endif %}{# /if pb #}
 
+  {% if mode != 'stocks' %}
   <!-- ======================= SIGNALS ======================= -->
   <div class="panel span6" id="dials">
     <h2>{{ t('The two dials behind the regime', '周期背后的两个刻度盘') }}
@@ -1374,6 +1471,9 @@
     </table>
   </div>
 
+  {% endif %}{# /mode != stocks — two dials + internals #}
+
+  {% if mode != 'macro' %}
   <!-- ===================== US EQUITY SIZE & STYLE ===================== -->
   <div class="panel span6" id="size-style">
     <h2>{{ t('US equity — size &amp; style', '美股 — 规模与风格') }}
@@ -1522,7 +1622,9 @@
     </table>
     <p class="muted" style="font-size:12px">{{ t('Click any sector for its full drill-down: cycle position, multi-timeframe momentum, and each top-10 holding analyzed individually.', '点击任意板块查看完整下钻：周期位置、多时间尺度动量，以及逐一分析的每个前十大持仓。') }}</p>
   </div>
+  {% endif %}{# /mode != macro — size/style + sector heat #}
 
+  {% if mode != 'stocks' %}
   <div class="panel span6">
     <h2>{{ t('Commodities & macro tape', '大宗商品与宏观盘面') }}
       {{ help("The non-equity instruments the regime engine watches, with their technicals and seasonal tendency. No heat score here — regime alignment and rotation stages are equity-sector concepts.", "周期引擎所关注的非股票类标的，及其技术面与季节性倾向。这里没有热度分数 — 周期契合度与轮动阶段是股票板块的概念。") }}
@@ -1588,6 +1690,9 @@
     </table>
   </div>
 
+  {% endif %}{# /mode != stocks — commodities, liquidity, credit, positioning #}
+
+  {% if mode != 'macro' %}
   <!-- ======================= ACCUMULATION WATCH ======================= -->
   <div class="panel span12" id="accumulation">
     <h2>{{ t('🐳 Accumulation watch — sector ETFs', '🐳 增持监测 — 板块 ETF') }}
@@ -1654,6 +1759,9 @@
     {% endif %}
   </div>
 
+  {% endif %}{# /mode != macro — accumulation + holdings/flows #}
+
+  {% if mode != 'stocks' %}
   <!-- ======================= HEALTH ======================= -->
   <div class="panel span12" id="health">
     <h2>{{ t('Data health', '数据健康度') }}
@@ -1676,6 +1784,7 @@
        生成于 {{ generated_utc }} UTC · <a href="brief.html">每日简报</a> ·
        <a href="history.html">历史与图表</a> · <a href="validation_timeline.html">完整 2007→ 回测</a></span></p>
   </div>
+  {% endif %}{# /mode != stocks — data health #}
 
 </div>
 <script>
