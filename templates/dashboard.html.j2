@@ -1243,6 +1243,49 @@
         {% endif %}
       </div>
 
+      <!-- What's driving markets — daily cross-asset driver attribution (DISPLAY-ONLY) -->
+      {% if latest.market_drivers and latest.market_drivers.verdict not in [none, 'unknown'] %}
+      {% set MD = latest.market_drivers %}
+      <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
+        <div style="font-weight:700;margin-bottom:6px">{{ t("What's driving markets", '市场驱动因素') }}
+          <span class="muted sm">{{ t('past week', '过去一周') }}</span>
+          {{ help("Which single cross-asset FORCE has moved the tape over the last week — Fed repricing, real-rate shock, USD, credit stress, a liquidity impulse, China, oil, AI/semis or crypto. Each driver is a fingerprint of cross-asset legs; this names the strongest by scoring how coherently each fingerprint is lit — every leg's 5-day move z-scored against its own year of history, so a 2σ move in real yields is comparable to a 2σ move in HY spreads. 'Mixed' = no single driver clearly leads the runner-up; 'quiet' = nothing is moving beyond its normal weekly range. DISPLAY-ONLY: a regime read, it never scores or sizes anything.", "过去一周哪一种跨资产力量在主导行情 — 美联储重定价、实际利率冲击、美元、信用压力、流动性脉冲、中国、油价、AI/半导体或加密。每个驱动是一组跨资产腿的指纹；此处通过衡量每个指纹被点亮的一致程度来指出最强者 — 每条腿的 5 日变动相对其自身一年历史做 z 标准化，使实际利率的 2σ 变动与高收益利差的 2σ 变动可比。'混合'＝没有单一驱动明显领先次强者；'平静'＝波动未超出正常周度区间。仅供显示：这是周期读数，绝不评分或决定仓位。") }}
+          {% set _vcol = 'var(--text)' if MD.verdict=='clear' else 'var(--muted)' %}
+          <span class="badge" style="float:right;font-size:11px;color:{{ _vcol }}">{{ t(MD.verdict, MD.verdict_zh) }}{% if MD.confidence %} · {{ t('confidence', '置信度') }} {{ t(MD.confidence, MD.confidence_zh) }}{% endif %}</span>
+        </div>
+        {% if MD.verdict == 'quiet' %}
+        <div class="muted">{{ t('No dominant driver — cross-asset moves are within their normal weekly range.', '无主导驱动 — 跨资产波动处于正常的周度区间内。') }}</div>
+        {% else %}
+        <div style="font-size:15px;font-weight:600;margin-bottom:2px">{{ t(MD.primary_label, MD.primary_label_zh) }}
+          <span class="muted" style="font-weight:400">— {{ t(MD.direction, MD.direction_zh) }}</span></div>
+        {% if MD.verdict == 'mixed' and MD.runner_up_label %}
+        <div class="muted sm" style="margin-bottom:4px">{{ t('jointly with', '与之并列') }} {{ t(MD.runner_up_label, MD.runner_up_label_zh) }} {{ t('— no single dominant driver', '— 无单一主导驱动') }}</div>
+        {% endif %}
+        {% if MD.evidence_legs %}
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin:6px 0">
+          {% for e in MD.evidence_legs %}
+          <span class="badge" style="font-size:11px;border:1px solid var(--line);background:var(--panel)">{{ t(e.en, e.zh) }} {{ '%+.1f'|format(e.z) }}σ</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <div class="muted sm">{{ t('Invalidation', '失效条件') }}: {{ t(MD.invalidation, MD.invalidation_zh) }}</div>
+        {% endif %}
+        <!-- all-driver strength bars (neutral on purpose — a decomposition, not a buy/sell on any leg) -->
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line)">
+          {% for s in MD.scores %}
+          {% set _isp = (s.driver == MD.primary and MD.verdict != 'quiet') %}
+          <div style="display:flex;align-items:center;gap:8px;margin:2px 0;{% if _isp %}font-weight:700{% endif %}">
+            <div style="flex:0 0 150px;font-size:12px">{{ t(s.label, s.label_zh) }}</div>
+            <div style="flex:1;background:var(--panel);border-radius:3px;height:8px;overflow:hidden">
+              <div style="width:{{ (([s.strength, 3]|min)/3*100)|round|int }}%;height:8px;background:var(--{{ 'text' if _isp else 'muted' }});opacity:{{ 0.65 if _isp else 0.4 }}"></div>
+            </div>
+            <div class="muted sm" style="flex:0 0 44px;text-align:right">{{ '%+.2f'|format(s.projection) }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
       <!-- factor leadership (cross-sectional equity factors) -->
       {% if factor_leadership %}
       <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 14px">

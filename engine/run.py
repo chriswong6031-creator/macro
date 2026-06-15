@@ -127,6 +127,18 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("cross-asset layer failed: %s", e)
         latest["cross_asset"] = None
+    # Market-driver attribution: WHICH cross-asset force is moving the tape this
+    # week (Fed repricing / real-rate / USD / credit / liquidity / China / oil /
+    # AI-semis / crypto) + evidence + invalidation. Deterministic fingerprints over
+    # signals already computed here — a regime READ, DISPLAY-ONLY, never scored (an
+    # LLM brief only narrates it). Append-only log grades the calls later.
+    try:
+        from engine.market_drivers import snapshot as market_drivers_snapshot, append_log
+        latest["market_drivers"] = market_drivers_snapshot()
+        append_log(latest["market_drivers"])
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("market-drivers layer failed: %s", e)
+        latest["market_drivers"] = None
     # Cross-asset risk budgeting (ERC/inverse-vol) + crisis stress-replay — the
     # additive "size as uncorrelated bets / cap risk" view (engine/portfolio.py).
     try:

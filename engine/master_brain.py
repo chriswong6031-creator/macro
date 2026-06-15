@@ -94,6 +94,10 @@ MASTER_SYSTEM_TMPL = (
     "- Your value is the CROSS-ASSET view: the unified regime read, where signals "
     "CONFLICT (e.g. risk-on FX vs a cautious macro-risk gauge) and what that implies, "
     "and second-order transmission chains worth watching.\n"
+    "- OPEN with the dominant driver in `macro.market_drivers` when one is present — "
+    "name it, the evidence, and what would invalidate it. It is a DETERMINISTIC "
+    "cross-asset attribution: narrate it, do not recompute it. If it reads 'mixed' or "
+    "'quiet', say so plainly rather than inventing a driver.\n"
     "- Evaluate the trader's working rotation thesis against the actual state; say "
     "explicitly where reality tracks it and where it diverges.\n"
     "- Do NOT give position sizes or fire trades — the deterministic system does "
@@ -194,6 +198,12 @@ def _macro_summary(m: dict) -> dict:
     mr = m.get("macro_risk") or {}
     pb = m.get("playbook") or {}
     dial = pb.get("dial")
+    mdr = m.get("market_drivers") or {}
+    drivers = None
+    if mdr.get("verdict") not in (None, "unknown"):
+        drivers = {"primary": mdr.get("primary_label"), "direction": mdr.get("direction"),
+                   "verdict": mdr.get("verdict"), "confidence": mdr.get("confidence"),
+                   "evidence": mdr.get("evidence"), "invalidation": mdr.get("invalidation")}
     return {
         "date": m.get("date"), "quad": m.get("quad"), "quad_name": m.get("quad_name"),
         "label": m.get("label"),
@@ -208,6 +218,7 @@ def _macro_summary(m: dict) -> dict:
                         "catalyst_narrative": dis.get("catalyst_narrative")},
         "playbook": {"posture": pb.get("posture"),
                      "dial_score": dial.get("score") if isinstance(dial, dict) else dial},
+        "market_drivers": drivers,
     }
 
 
