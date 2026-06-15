@@ -20,6 +20,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from engine import i18n  # noqa: E402
 from engine.cycles import analyze  # noqa: E402
 from engine.residual_alpha import compute_residual_alpha  # noqa: E402
 from engine.setups import CN_ALPHA_WEIGHT, rank_setups, setup_score  # noqa: E402
@@ -212,6 +213,55 @@ def compute_china_lowvol() -> dict | None:
         log.info("china lowvol: %d names, %d in sleeve (screened %s)",
                  out.get("n"), len(out.get("sleeve", [])), out.get("screened"))
     return out
+
+
+def compute_china_scoreboard() -> dict | None:
+    """Merge the per-stock screener JSONs (reversal / low-vol / alpha / setups, already
+    written to site/factordata/) into ONE toggle-ready scoreboard — the consolidation of
+    the scattered single-signal boards into a single switchable table. Each row is
+    enriched with the per-stock price + cycle state (read only for the ~union of listed
+    names, not all 800). Adds a CONFLUENCE mode = names appearing in BOTH the reversal and
+    low-vol screens (beaten-down AND defensive — 'safer rebound'; legs validated, the
+    intersection itself is honest context, not a backtested composite). Best-effort."""
+    site = config.ROOT / config.load()["storage"]["site_dir"]
+    fdir, cd = site / "factordata", site / "chinastockdata"
+
+    def load(f):
+        p = fdir / f
+        try:
+            return json.loads(p.read_text()) if p.exists() else {}
+        except Exception:  # noqa: BLE001
+            return {}
+    rev, lv = load("china_reversal.json"), load("china_lowvol.json")
+    al = load("china_alpha.json")
+    # the three screener boards the page currently shows, consolidated into one toggle
+    # (the momentum-reweight 'setups' feeds the separate Standout card strip, not here)
+    raw = {"reversal": rev.get("watch", []), "lowvol": lv.get("sleeve", []),
+           "alpha": (al.get("top", []) or [])[:16]}
+    if not any(raw.values()):
+        return None
+
+    # per-stock price + cycle, only for the names actually listed (small read, not 800)
+    look: dict[str, dict] = {}
+    for t in {r["ticker"] for rows in raw.values() for r in rows}:
+        p = cd / f"{t.replace('=', '_').replace('^', '_')}.json"
+        if not p.exists():
+            continue
+        try:
+            r = json.loads(p.read_text())
+        except Exception:  # noqa: BLE001
+            continue
+        lad = r.get("ladder", {})
+        cyc = lad.get("label") or lad.get("state")
+        look[t] = {"price": r.get("tech", {}).get("price"),
+                   "cycle": cyc,
+                   "cycle_zh": lad.get("label_zh") or (i18n.tr(cyc) if cyc else None),
+                   "cycle_dir": lad.get("dir")}
+
+    def enrich(rows):
+        return [{**rec, **look.get(rec["ticker"], {})} for rec in rows]
+    modes = {k: enrich(v) for k, v in raw.items()}
+    return {"as_of": rev.get("as_of") or lv.get("as_of") or al.get("as_of"), "modes": modes}
 
 
 def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:

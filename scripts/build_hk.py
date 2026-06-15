@@ -459,6 +459,19 @@ def main() -> int:
             log.error("hk global-beta / stock library build failed (%s); skipping", e)
             vm["betas"] = None
 
+        # consolidated SCOREBOARD — the HK parallel of the China screener: ONE toggle
+        # (Amplifiers / Cushions / All) over the validated global-risk-beta read, each
+        # row enriched with price + cycle. Built after the library so hkstockdata/ exists.
+        try:
+            sb = build_hk_library.compute_hk_scoreboard(betas)
+            vm["hk_scoreboard"] = sb
+            if sb:
+                (site / "factordata" / "hk_scoreboard.json").write_text(
+                    json.dumps(sb, separators=(",", ":"), default=str))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("hk scoreboard build failed (%s); skipping", e)
+            vm["hk_scoreboard"] = None
+
         env = Environment(loader=FileSystemLoader(
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)
         from engine import i18n

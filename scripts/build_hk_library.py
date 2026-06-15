@@ -20,6 +20,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from engine import i18n  # noqa: E402
 from engine.cycles import analyze  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
@@ -141,6 +142,66 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
         out.append((t, df["close"], None, nm, sec))
         seen.add(t)
     return out
+
+
+def compute_hk_scoreboard(betas: dict | None = None) -> dict | None:
+    """Consolidate the HK per-name read into ONE toggle-ready scoreboard — the HK
+    parallel of compute_china_scoreboard(). HK has no idiosyncratic stock-selection
+    edge (residual momentum is dead on a 40y panel); the validated read is the
+    GLOBAL-RISK beta overlay. So the three lenses are the same risk dimension sliced
+    by exposure — Amplifiers (highest beta), Cushions (lowest beta), and the full
+    sortable list (All) — every row enriched with the per-stock price + cycle state
+    read back from hkstockdata/. Best-effort; never fatal."""
+    site = config.ROOT / config.load()["storage"]["site_dir"]
+    fdir, hd = site / "factordata", site / "hkstockdata"
+    if betas is None:
+        p = fdir / "hk_global_beta.json"
+        try:
+            betas = json.loads(p.read_text()) if p.exists() else None
+        except Exception:  # noqa: BLE001
+            betas = None
+    pt = (betas or {}).get("per_ticker") or {}
+    if not pt:
+        return None
+
+    rows = []
+    for ticker, gb in pt.items():
+        safe = ticker.replace("=", "_").replace("^", "_")
+        f = hd / f"{safe}.json"
+        rec = {}
+        if f.exists():
+            try:
+                rec = json.loads(f.read_text())
+            except Exception:  # noqa: BLE001
+                rec = {}
+        lad = rec.get("ladder", {})
+        cyc = lad.get("label") or lad.get("state")
+        sec = rec.get("sector")
+        rows.append({
+            "ticker": ticker,
+            "name": rec.get("name"),
+            "sector": sec,
+            "sector_zh": i18n.tr(sec) if sec else None,
+            "price": rec.get("tech", {}).get("price"),
+            "beta": gb.get("beta"),
+            "beta_pct": gb.get("beta_pct"),
+            "role": gb.get("role"),
+            "tilt": gb.get("tilt"),
+            "cycle": cyc,
+            "cycle_zh": lad.get("label_zh") or (i18n.tr(cyc) if cyc else None),
+            "cycle_dir": lad.get("dir"),
+        })
+    if not rows:
+        return None
+
+    def b(r):  # sort key, missing beta to the bottom either way
+        return r["beta"] if r["beta"] is not None else -1
+    amp = sorted([r for r in rows if r["role"] == "amplifier"], key=b, reverse=True)
+    cush = sorted([r for r in rows if r["role"] == "cushion"], key=b)
+    allr = sorted(rows, key=b, reverse=True)
+    return {"as_of": (betas or {}).get("as_of"),
+            "risk_state": (betas or {}).get("risk_state"),
+            "modes": {"amplifiers": amp, "cushions": cush, "all": allr}}
 
 
 def main(betas: dict | None = None) -> dict | None:
