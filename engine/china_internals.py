@@ -103,6 +103,56 @@ def southbound_flow() -> dict | None:
     return out
 
 
+def southbound_price_divergence(window: int = 63) -> dict | None:
+    """DISPLAY-ONLY context chip: is the southbound-net FLOW trend pulling the same
+    way as the HSI PRICE trend over a ~quarter window?  Descriptive, not a signal —
+    NOT wired into hk_axes / hk_regime / MRS.  z-trend of window-cumulative southbound
+    net vs window HSI return.  Returns None if either series is missing/too short."""
+    sb = store.read("china_connect", "southbound")
+    if sb is None or sb.empty or "net" not in sb.columns:
+        return None
+    net = sb["net"].dropna()
+    px = store.read("hk", "^HSI")          # store sanitizes "^HSI" -> data/hk/_HSI.parquet
+    if px is None or "close" not in px.columns:
+        return None
+    close = px["close"].dropna()
+    # need a full window plus a baseline for the z, on BOTH series
+    if len(net) < window + 20 or len(close) < window + 5:
+        return {"state": "insufficient", "n_flow": int(len(net)), "n_px": int(len(close))}
+
+    # FLOW trend: window-cumulative southbound net, z-scored vs its own 1y history
+    cum = net.rolling(window).sum()
+    base = cum.dropna().tail(252)
+    if len(base) < 30:
+        return {"state": "insufficient", "n_flow": int(len(net)), "n_px": int(len(close))}
+    mu, sd = float(base.mean()), float(base.std() or 1.0)   # `or 1.0` zero-sigma guard, per southbound_flow()
+    flow_z = (float(cum.iloc[-1]) - mu) / sd                # >0 = flows accelerating IN
+
+    # PRICE trend: window return of HSI
+    px_ret = float(close.iloc[-1] / close.iloc[-window] - 1.0)   # >0 = price up
+
+    # deterministic neutral bands (z and pct both with a dead-zone to avoid flicker)
+    Z_HI, RET_HI = 0.5, 0.02
+    flow_up = flow_z >= Z_HI
+    flow_dn = flow_z <= -Z_HI
+    px_up = px_ret >= RET_HI
+    px_dn = px_ret <= -RET_HI
+
+    if (flow_up and px_up) or (flow_dn and px_dn):
+        state = "confirms"          # flow and price agree (both up or both down)
+    elif (flow_up and px_dn) or (flow_dn and px_up):
+        state = "diverges"          # flow and price disagree
+    else:
+        state = "mixed"             # one or both in the dead-zone
+
+    return {
+        "state": state,             # confirms | diverges | mixed | insufficient
+        "flow_z": round(flow_z, 2),
+        "px_ret_pct": round(px_ret * 100, 1),
+        "window_d": window,
+    }
+
+
 def _macro(name: str, col: str) -> pd.Series:
     df = store.read("china_macro", name)
     if df is None or df.empty or col not in df.columns:

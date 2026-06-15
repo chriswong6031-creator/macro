@@ -714,6 +714,23 @@
   </div>
   {% endif %}
 
+  <!-- ===== SOUTHBOUND vs PRICE DIVERGENCE (display-only context) ===== -->
+  {% if internals and internals.sb_divergence %}{% set d = internals.sb_divergence %}
+  <div class="panel span6">
+    <h2>{{ t('🔀 Southbound vs price', '🔀 南向 vs 价格') }} <span class="note" style="text-transform:none">· {{ t('flow trend vs HSI trend', '资金趋势 vs 恒指趋势') }}</span>
+      {{ help("Context only, not a buy/sell call: does the ~quarter southbound-net FLOW trend pull the same way as the Hang Seng PRICE trend? 'Confirms' = both up or both down; 'Diverges' = flow and price disagree (read the two numbers for which way). Descriptive conditioning, NOT scored into the regime.", "仅供参考，非买卖信号：约一个季度的南向净流入趋势是否与恒生指数价格趋势方向一致？「同向」＝同涨同跌；「背离」＝资金与价格方向相反（看两个数字判断方向）。描述性背景，不计入周期评分。") }}</h2>
+    {% if d.state == 'insufficient' %}
+    <div class="note">{{ t('Not enough history to compare.', '历史数据不足，暂无法比较。') }}</div>
+    {% else %}
+    <div class="stat-row">
+      <div><span class="v">{{ t('Confirms','同向') if d.state=='confirms' else (t('Diverges','背离') if d.state=='diverges' else t('Mixed','中性')) }}</span><div class="note">{{ t('flow vs price', '资金 vs 价格') }} · {{ d.window_d }}{{ t('d', '日') }}</div></div>
+      <div><span class="v {{ 'pos' if d.flow_z>=0 else 'neg' }}">{{ '%+.1f'|format(d.flow_z) }}σ</span><div class="note">{{ t('southbound flow trend', '南向资金趋势') }}</div></div>
+      <div><span class="v {{ 'pos' if d.px_ret_pct>=0 else 'neg' }}">{{ '%+.1f'|format(d.px_ret_pct) }}%</span><div class="note">{{ t('HSI', '恒指') }} {{ d.window_d }}{{ t('d', '日') }}</div></div>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
   {% endif %}{# /mode != macro — southbound flow #}
 
   {% if mode != 'stocks' %}

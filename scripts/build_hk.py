@@ -346,6 +346,9 @@ def _internals_vm(latest: dict) -> dict:
         if sb.get("hold_chart"):
             sb["hold_html"] = _panel_line(sb["hold_chart"], "#5fbf7f", height=150)
         vm["southbound"] = sb
+    div = ci.southbound_price_divergence()   # DISPLAY-ONLY context chip (not scored)
+    if div:
+        vm["sb_divergence"] = div
     credit = ci.credit_tape()
     if credit:
         if credit.get("impulse_chart"):
