@@ -295,6 +295,7 @@
     <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin', '比特币') }}</a>
     <a class="nav-link active" href="china.html">🇨🇳 {{ t('China A', '中国A股') }}</a>
     <a class="nav-link" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }}</a>
+    <a class="nav-link" href="canada.html">🇨🇦 {{ t('Canada', '加拿大') }}</a>
     <a class="nav-link" href="gex.html">🧲 {{ t('GEX magnets', 'Gamma磁吸') }}</a>
     <a class="nav-link" href="china_brief.html">📰 {{ t('Brief', '简报') }}</a>
     <a class="nav-link" href="china_history.html">📈 {{ t('History', '历史') }}</a>
@@ -628,18 +629,17 @@
   <!-- ===================== STOCK SCREENER (consolidated · toggle) ===================== -->
   {% if scoreboard and scoreboard.modes %}
   <div class="panel span12" id="stock-screener">
-    <h2>{{ t('🎯 Stock screener — one board, three validated lenses', '🎯 选股面板 — 一板三镜') }}
+    <h2>{{ t('🎯 Stock screener — two validated lenses', '🎯 选股面板 — 一板双镜') }}
       <span class="note" style="text-transform:none">· {{ t('switch the lens; the table re-sorts', '切换视角；表格随之重排') }}{% if scoreboard.as_of %} · {{ scoreboard.as_of }}{% endif %}</span>
-      {{ help("The scattered single-signal screens, consolidated into ONE switchable board. Three lenses, each its own validated (or honestly-flagged) read on ~35 years of A-share data — flip between them with the toggle: <b>Mean-reversion</b> = the deepest 3-month within-sector dips (the one robust, FDR-surviving A-share edge: cross-sectional Sharpe 0.58; a high-variance contrarian signal that buys into weakness). <b>Low-vol defensive</b> = the lowest-volatility names (market-like returns, shallower drawdowns → higher Sharpe; a risk-REDUCING tilt, not a return-maximizer). <b>Sector strength</b> = sector-neutral residual relative strength — but A-share momentum is NOT a validated edge, so read the <b>entry</b> flag (pullback = mean-reversion buy; extended = fade risk), not the alpha ranking. Click any column to sort. Context to size and confirm — NOT a buy list.", "把分散的单一信号筛选合并为一块可切换的面板。三种视角，各自基于约35年A股数据的已验证（或如实标注）解读 —— 用开关切换：<b>均值回归</b>＝板块内近3月跌幅最深者（A股唯一稳健、通过FDR的优势：横截面夏普0.58；高波动逆向信号，买入弱势）。<b>防御低波</b>＝波动率最低的个股（收益与市场相近、回撤更浅→更高夏普；降低风险的倾向，而非收益最大化）。<b>板块强度</b>＝板块中性残差相对强度 —— 但A股动量并非有效优势，故请看<b>入场</b>标记（pullback＝均值回归买入；extended＝做空风险），而非alpha排序。点击任意列排序。用于定仓与确认的背景 —— 而非买入清单。") }}
+      {{ help("Two validated A-share lenses on ~35 years of data — flip between them with the toggle: <b>Mean-reversion</b> = the deepest 3-month within-sector dips (the one robust, FDR-surviving A-share edge: cross-sectional Sharpe 0.58; a high-variance contrarian signal that buys into weakness). <b>Low-vol defensive</b> = the lowest-volatility names (market-like returns, shallower drawdowns → higher Sharpe; a risk-REDUCING tilt, not a return-maximizer). Click any column to sort. Context to size and confirm — NOT a buy list.", "两个A股已验证视角，基于约35年数据 —— 用开关切换：<b>均值回归</b>＝板块内近3月跌幅最深者（A股唯一稳健、通过FDR的优势：横截面夏普0.58；高波动逆向信号，买入弱势）。<b>防御低波</b>＝波动率最低的个股（收益与市场相近、回撤更浅→更高夏普；降低风险的倾向，而非收益最大化）。点击任意列排序。用于定仓与确认的背景 —— 而非买入清单。") }}
     </h2>
     <div class="sb-seg" role="tablist" aria-label="screener mode">
       <button role="tab" data-mode="reversal" aria-selected="true">{{ t('🔄 Mean-reversion', '🔄 均值回归') }}</button>
       <button role="tab" data-mode="lowvol" aria-selected="false">{{ t('🛡 Low-vol defensive', '🛡 防御低波') }}</button>
-      <button role="tab" data-mode="alpha" aria-selected="false">{{ t('📊 Sector strength', '📊 板块强度') }}</button>
     </div>
     <p class="note sb-cap" id="sb-cap"><!-- per-mode caption injected by JS --></p>
     <table class="sb-table"><thead id="sb-head"></thead><tbody id="sb-body"></tbody></table>
-    <p class="note" style="margin:8px 0 0;font-size:11px">{{ t('Validated A-share effects only: short-term within-sector REVERSAL (Sharpe 0.58) and the LOW-VOL defensive tilt (Sharpe 0.98 vs 0.88 market). Classic momentum / value / quality were tested over ~35 years and do NOT clear FDR on A-shares, so the sector-strength lens is relative-strength CONTEXT (read the entry flag), not a buy ranking. A research surface to size and confirm — not a confident buy list; cycle state is a drawdown/structure tool, not a timing oracle.', '仅采用已验证的A股效应：短期板块内反转（夏普0.58）与低波防御倾向（夏普0.98 对 市场0.88）。经典动量／价值／质量在约35年里测试均未通过FDR，故板块强度视角是相对强度背景（请看入场标记），而非买入排序。用于定仓与确认的研究面板 —— 而非买入清单；周期状态是回撤/结构工具，而非择时神谕。') }}</p>
+    <p class="note" style="margin:8px 0 0;font-size:11px">{{ t('Validated A-share effects only: short-term within-sector REVERSAL (Sharpe 0.58) and the LOW-VOL defensive tilt (Sharpe 0.98 vs 0.88 market). Classic momentum / value / quality were tested over ~35 years and do NOT clear FDR on A-shares. A research surface to size and confirm — not a confident buy list; cycle state is a drawdown/structure tool, not a timing oracle.', '仅采用已验证的A股效应：短期板块内反转（夏普0.58）与低波防御倾向（夏普0.98 对 市场0.88）。经典动量／价值／质量在约35年里测试均未通过FDR。用于定仓与确认的研究面板 —— 而非买入清单；周期状态是回撤/结构工具，而非择时神谕。') }}</p>
     <script type="application/json" id="sb-data">{{ scoreboard.modes | tojson }}</script>
     <script type="application/json" id="sb-seczh">{{ SECZH | tojson }}</script>
     <script>
@@ -676,21 +676,13 @@
         vol: { en: 'σ (ann)', zh: '年化波动', key: function (r) { return r.vol_pct_ann; }, def: 'asc',
           cell: function (r) { return r.vol_pct_ann != null ? '<b>' + r.vol_pct_ann.toFixed(1) + '%</b>' : '—'; } },
         beta: { en: 'beta', zh: '贝塔', key: function (r) { return r.beta; },
-          cell: function (r) { return r.beta != null ? '<span class="note">' + r.beta.toFixed(2) + '</span>' : '—'; } },
-        alpha: { en: 'alpha z', zh: '阿尔法 z', key: function (r) { return r.alpha; }, def: 'desc',
-          cell: function (r) { return r.alpha != null ? '<b class="' + cls(r.alpha) + '">' + sgn(r.alpha, 2) + '</b>' : '—'; } },
-        rev1m: { en: '1-mo', zh: '近一月', key: function (r) { return r.rev_1m; },
-          cell: function (r) { return r.rev_1m != null ? '<span class="' + cls(r.rev_1m) + '">' + sgn(r.rev_1m, 1) + '%</span>' : '—'; } },
-        entry: { en: 'entry', zh: '入场', l: true, key: null,
-          cell: function (r) { return r.entry ? '<span class="alpha-entry ae-' + r.entry + '">' + r.entry + '</span>' : ''; } }
+          cell: function (r) { return r.beta != null ? '<span class="note">' + r.beta.toFixed(2) + '</span>' : '—'; } }
       };
       var MODES = {
         reversal: { cols: ['stock', 'sector', 'price', 'ret3m', 'revz', 'srank', 'mcap', 'cycle'],
           cap: bl('The most beaten-down names vs their sector over 3 months — the validated A-share edge (within-sector reversal, Sharpe 0.58). A high-variance contrarian signal that buys into weakness; size small, not a buy list.', '近3个月相对其板块跌幅最深的个股 —— 已验证的A股优势（板块内反转，夏普0.58）。高波动逆向信号，买入弱势；宜小仓位，而非买入清单。') },
         lowvol: { cols: ['stock', 'sector', 'price', 'vol', 'beta', 'mcap', 'cycle'],
-          cap: bl('The lowest-volatility names — historically market-like returns with shallower drawdowns (the validated defensive tilt, Sharpe 0.98 vs 0.88 market). For risk-aware exposure, not return maximization.', '波动率最低的个股 —— 历史上收益与市场相近但回撤更浅（已验证的防御倾向，夏普0.98 对 市场0.88）。用于风险可控的敞口，而非收益最大化。') },
-        alpha: { cols: ['stock', 'sector', 'price', 'alpha', 'srank', 'rev1m', 'entry', 'cycle'],
-          cap: bl('Sector-neutral residual relative strength. A-share momentum is NOT a validated edge — read the entry flag (pullback = mean-reversion buy; extended = fade risk), not the alpha ranking. Relative-strength context, not a buy list.', '板块中性残差相对强度。A股动量并非有效优势 —— 请看入场标记（pullback＝均值回归买入；extended＝做空风险），而非alpha排序。相对强度背景，而非买入清单。') }
+          cap: bl('The lowest-volatility names — historically market-like returns with shallower drawdowns (the validated defensive tilt, Sharpe 0.98 vs 0.88 market). For risk-aware exposure, not return maximization.', '波动率最低的个股 —— 历史上收益与市场相近但回撤更浅（已验证的防御倾向，夏普0.98 对 市场0.88）。用于风险可控的敞口，而非收益最大化。') }
       };
       var cur = 'reversal', sortCol = null, sortDir = 'desc';
       function render() {
