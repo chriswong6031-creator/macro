@@ -152,6 +152,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 /* scorecard */
 .score{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
 .score .s{background:var(--bg);border-radius:10px;padding:12px;text-align:center}
+html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black in dark → lift tiles to the card-elevation grey so they read on the card */
 .score .s .k{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase}
 .score .s .v{font-size:20px;font-weight:800;color:var(--ink)}
 .score .s .h{font-size:11px;color:var(--faint);margin-top:2px}

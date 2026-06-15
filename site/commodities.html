@@ -96,7 +96,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 .atab.active{border-color:var(--blue);box-shadow:0 2px 10px rgba(40,95,255,.12)}
 .atab .an{font-weight:800;color:var(--ink);font-size:16px}
 .atab .ap{font-weight:700;color:var(--ink);font-size:15px;margin-top:3px}
-.atab .am{font-size:12px;font-weight:700;margin-top:4px}
+.atab .am{font-size:12px;font-weight:700;margin-top:4px;color:var(--muted)}
 .atab .tag{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:6px;
   background:var(--grid);color:var(--muted);margin-top:6px}
 .atab .tag.calm{background:#E3F5E9;color:var(--green)} .atab .tag.elev{background:#FDEBEB;color:var(--red)}
@@ -132,6 +132,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 .sigline:last-child{border:none} .sigline .l{font-weight:600;color:var(--ink)} .sigline .r{text-align:right}
 .score{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
 .score .s{background:var(--bg);border-radius:10px;padding:12px;text-align:center}
+html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black in dark → lift tiles to the card-elevation grey so they read on the card */
 .score .s .k{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase}
 .score .s .v{font-size:20px;font-weight:800;color:var(--ink)}
 .score .s .h{font-size:11px;color:var(--faint);margin-top:2px}
@@ -175,6 +176,8 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 .fbar .fmid{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--grid)}
 .fbar .ff{position:absolute;top:0;bottom:0;border-radius:3px}
 .fbar .ff.pos{background:var(--green)} .fbar .ff.neg{background:var(--red)}
+html[data-theme="dark"] .fbar{background:var(--grid)} /* --bg near-black in dark → lift the rail to card-elevation grey */
+html[data-theme="dark"] .fbar .fmid{background:var(--card)} /* keep the centre tick visible against the lifted grey rail */
 .frow .fw{font-size:11px;color:var(--faint);text-align:right;font-weight:600}
 @media(max-width:600px){.frow{grid-template-columns:120px 1fr 60px}}
 /* alert timeline */
@@ -192,6 +195,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 .tl-chip.f-shock{background:#FDEBEB;color:var(--red)} .tl-chip.f-risk{background:#FFF2D9;color:#9a6a00}
 .tl-chip.f-driver{background:#E8EEFF;color:var(--blue)} .tl-chip.f-alloc{background:#ECE9FB;color:var(--indigo)}
 .tl-asset{font-size:11px;font-weight:700;padding:2px 8px;border-radius:7px;background:var(--bg);color:var(--ink)}
+html[data-theme="dark"] .tl-asset{background:var(--grid)} /* --bg is near-black in dark → use the lighter grid grey so the pill reads on the card */
 .tl-head{font-weight:600;color:var(--ink);font-size:14px;flex:1;min-width:200px}
 .tl-time{font-size:12px;color:var(--faint);font-weight:600}
 .tl-detail{padding:2px 0 12px;font-size:13px;color:var(--muted);line-height:1.6}
