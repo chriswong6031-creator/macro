@@ -467,3 +467,79 @@ def snapshot(f: pd.DataFrame, conditions: dict | None = None,
         "vix_wick_note": san["intraday_note"],
         "evidence": EVIDENCE,
     }
+
+
+# --------------------------------------------------------------------------- #
+# Forward PIT state accrual — the validation clock for the mechanical-reversion
+# fade edge (memory narrative-quant-framework P3+). Each build appends today's
+# dislocation + narrative state; FORWARD returns are joined to these as-of states
+# at validation time. This preserves the PIT narrative context (GPR threat/act,
+# NDI, news-bus unscheduled-share) that revises or only exists going forward and so
+# cannot be reconstructed later. Append-only, keep-LAST per date (the state for a
+# date is deterministic from as-of data, so re-runs are idempotent). RESEARCH/
+# accrual only — never read by any scoring path.
+# --------------------------------------------------------------------------- #
+_STATE_LOG_COLS = ("date", "verdict", "put_state", "dislocation_active",
+                   "cap_active", "cap_strong", "vix", "spy_dd_pct", "vrp_pctile",
+                   "gate2_state", "gpr_pct", "gpr_lean", "geo_agreement",
+                   "ndi", "ndi_band", "unscheduled_share")
+
+
+def state_row(snap: dict | None, ndi: dict | None = None,
+              news: dict | None = None, gpr: dict | None = None) -> dict | None:
+    """One PIT state-log row from a dislocation snapshot + the NDI banner + the
+    news-vector panel + the GPR reading. PURE (gpr injected). None if no date."""
+    if not snap or not snap.get("asof"):
+        return None
+    inp = snap.get("inputs") or {}
+    gpr = gpr or {}
+    ge = snap.get("geo_reversibility") or {}
+    ev = ((news or {}).get("events")) or {}
+    return {
+        "date": snap["asof"],
+        "verdict": snap.get("verdict"),
+        "put_state": snap.get("put_state"),
+        "dislocation_active": bool(snap.get("dislocation_active")),
+        "cap_active": bool(inp.get("capitulation_active")),
+        "cap_strong": bool(inp.get("capitulation_strong")),
+        "vix": inp.get("vix"),
+        "spy_dd_pct": inp.get("spy_drawdown_pct"),
+        "vrp_pctile": inp.get("vrp_pctile"),
+        "gate2_state": (snap.get("gate2") or {}).get("state"),
+        "gpr_pct": gpr.get("pct"),
+        "gpr_lean": gpr.get("lean"),
+        "geo_agreement": ge.get("agreement"),
+        "ndi": (ndi or {}).get("ndi"),
+        "ndi_band": (ndi or {}).get("band"),
+        "unscheduled_share": ev.get("unscheduled_share"),
+    }
+
+
+def merge_state_log(existing, rows: list[dict]):
+    """Append rows, keep-LAST per date (re-runs overwrite a date identically; forward
+    dates accrue), sorted. PURE."""
+    import pandas as pd
+    new = pd.DataFrame(rows, columns=list(_STATE_LOG_COLS))
+    if existing is not None and len(existing):
+        new = pd.concat([existing.reindex(columns=_STATE_LOG_COLS), new], ignore_index=True)
+    return (new.drop_duplicates(subset=["date"], keep="last")
+            .sort_values("date").reset_index(drop=True))
+
+
+def append_state_log(snap: dict | None, ndi: dict | None = None,
+                     news: dict | None = None) -> dict | None:
+    """IO wrapper: append today's state row to data/dislocation/state_log.parquet
+    (append-only, keep-last per date). Returns the row written or None. Never raises."""
+    try:
+        row = state_row(snap, ndi, news, gpr=_gpr_reading())
+        if row is None:
+            return None
+        import pandas as pd
+        p = config.data_dir() / "dislocation" / "state_log.parquet"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        existing = pd.read_parquet(p) if p.exists() else None
+        merge_state_log(existing, [row]).to_parquet(p, index=False)
+        return row
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("dislocation state-log accrual failed (%s)", e)
+        return None
