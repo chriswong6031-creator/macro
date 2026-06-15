@@ -1681,6 +1681,11 @@ def main() -> int:
     site = Path(config.load()["storage"]["site_dir"])
     (site / "vector.html").write_text(html)
     log.info("wrote %s/vector.html (%d KB)", site, len(html) // 1024)
+    # the AI brief panel fetches aibrief.js at runtime — ship it alongside the page
+    # (build_site copies it too; done here so a standalone vector rebuild is complete).
+    _ab = config.ROOT / "templates" / "aibrief.js"
+    if _ab.exists():
+        (site / "aibrief.js").write_text(_ab.read_text())
     try:
         build_allocation_page(env, site, sig, cards, mtf_a, verdict)
     except Exception as e:  # noqa: BLE001 — never let the sub-page break the main build
