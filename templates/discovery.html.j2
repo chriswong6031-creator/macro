@@ -4,38 +4,62 @@
 {% macro help(en, zh='') -%}
 <span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
 {%- endmacro %}
-{% macro abar(a) -%}
+{% macro sbar(a) -%}
 {% set w = ((a if a else 0) / 3.0 * 50) %}
 <span class="abar">{% if (a or 0) >= 0 %}<i style="left:50%;width:{{ [w,50]|min|round(1) }}%;background:var(--up)"></i>{% else %}<i style="right:50%;width:{{ [-w,50]|min|round(1) }}%;background:var(--down)"></i>{% endif %}<i class="mid"></i></span>
 {%- endmacro %}
-{% macro echip(tag) -%}
-{% set m = entry_meta.get(tag) %}{% if m %}<span class="echip {{ m[2] }}">{{ t(m[0], m[1]) }}</span>{% endif %}
+{% macro entry(r) -%}
+<span class="echip {{ r.entry_css }}">{{ t(r.entry_en, r.entry_zh) }}</span>
+{%- endmacro %}
+{# extension / exhaustion grade (own-history) — risk placement, never in the score.
+   Null-safe: a row with no extension data renders a neutral dash. #}
+{% macro stretch(r) -%}
+{%- set g = r.grade if (r.grade is defined and r.grade) else 'na' -%}
+{%- set ez = r.ext_z if (r.ext_z is defined and r.ext_z is not none) else none -%}
+{%- set near = r.near_52wh if (r.near_52wh is defined and r.near_52wh is not none) else none -%}
+{%- if g == 'parabolic' -%}
+<span class="gchip ex-parabolic" title="Parabolic{% if ez is not none %}: {{ '%+.1f'|format(ez) }}σ above{% else %}: far above{% endif %} this name's OWN normal distance from its 200-day average — the validated blow-off tail. In the point-in-time test that cohort ran ~9% return on ~50% vol with a −94% max drawdown and badly negative skew (vs the full leader cohort's 19% / 25% / −49%). A size-down / pullback-risk caution, NOT a short. · 抛物：远高于该股相对其200日均线的自身常态 — 经验证的冲顶尾部，回撤风险极高；减仓提示，而非做空。">⚠ {{ t(r.grade_en, r.grade_zh) }}{% if ez is not none %} <span class="xs">{{ '%+.1f'|format(ez) }}σ</span>{% endif %}</span>
+{%- elif g == 'na' -%}
+<span class="gchip ex-na">—</span>
+{%- else -%}
+<span class="gchip {{ r.grade_css }}" title="Extension vs the name's OWN history{% if ez is not none %}: ext_z {{ '%+.1f'|format(ez) }}σ (distance above its 200-day average, z-scored over a year){% endif %}{% if near is not none %}, {{ (near*100)|round }}% of its 52-week high{% endif %}. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input. · 相对自身历史的拉伸程度，仅作风险定位，不计入排名。">{{ t(r.grade_en, r.grade_zh) }}{% if ez is not none %} <span class="xs">{{ '%+.1f'|format(ez) }}σ</span>{% endif %}</span>
+{%- endif -%}
 {%- endmacro %}
 {% macro mom(v) -%}
 <td class="r {{ 'pos' if (v or 0) >= 0 else 'neg' }}">{{ ('%+.0f%%'|format(v)) if v is not none else '—' }}</td>
 {%- endmacro %}
-{% macro grow(r, i) -%}
-<tr>
+{# conviction drivers: chips for the confirming legs that actually move the score, plus an insider-cluster chip #}
+{% set LEG_LBL = {'value':['Value','价值'],'quality':['Quality','质量'],'profitability':['Profit','盈利'],'low_vol':['LowVol','低波'],'insider':['Insider','内部']} %}
+{% macro conv(r) -%}
+<span class="cchips">
+{%- for leg in tilt_legs if r.legs[leg] is not none and (r.legs[leg] >= 0.6 or r.legs[leg] <= -0.6) -%}
+<span class="cchip {{ 'up' if r.legs[leg] >= 0 else 'down' }}" title="{{ leg }} z {{ '%+.1f'|format(r.legs[leg]) }}">{{ t(LEG_LBL[leg][0], LEG_LBL[leg][1]) }} {{ '%+.1f'|format(r.legs[leg]) }}</span>
+{%- endfor -%}
+{%- if r.ins_buyers and r.ins_buyers >= 2 and (r.ins_bps or 0) > 0 -%}<span class="cchip ins">👤{{ r.ins_buyers }}</span>{%- endif -%}
+{%- if r.val_label -%}<span class="vchip {{ r.val_css }}" title="Earnings yield at the {{ r.ey_pctile }}th percentile of this name's OWN ~3-year history — {{ 'cheaper than its own norm (re-rating headroom)' if r.val_label=='cheap' else 'near the richest multiple it has carried in 3 years (stretched-valuation caution — the kind price extension alone can miss)' }}. Coarse (annual earnings), display-only, never scored. · 市盈收益率处于该股近3年自身历史的第 {{ r.ey_pctile }} 百分位；仅作展示，不计入评分。">{{ t(r.val_en, r.val_zh) }}</span>{%- endif -%}
+{%- if r.attn_z is not none and r.attn_z >= (attn_threshold|default(2.0)) -%}<span class="cchip attn" title="Abnormal en.wikipedia attention (offshore), z {{ '%+.1f'|format(r.attn_z) }} — Da-Engelberg-Gao: attention precedes short-horizon reversal; over-extension / fade caution, not a buy. · 维基百科异常关注度（境外），z {{ '%+.1f'|format(r.attn_z) }} — 关注度领先短期反转；过度/回吐风险提示，非买入信号。">👁 {{ t('Attn','关注') }} {{ '%+.1f'|format(r.attn_z) }}σ{%- if r.ticker.endswith('.SS') or r.ticker.endswith('.SZ') or r.ticker.endswith('.HK') %} {{ t('· intl only','· 仅境外') }}{%- endif -%}</span>{%- endif -%}
+</span>
+{%- endmacro %}
+{% macro trow(r, i) -%}
+<tr data-grade="{{ r.grade }}">
   <td class="rk">{{ i }}</td>
-  <td><a href="stock.html#{{ r.ticker }}"><b>{{ r.ticker }}</b></a> <span class="muted sm">{{ r.name[:20] }}</span></td>
-  <td class="muted sm">{{ td(r.sector) }}</td>
-  <td><div class="scorecell">{{ abar(r.alpha) }}<span class="znum band-{{ r.band }}">{{ '%+.2f'|format(r.alpha) }}</span></div></td>
-  <td>{{ echip(r.entry) }}</td>
-  {{ mom(r.total_mom) }}
-  <td class="r muted sm">{{ ('#%d/%d'|format(r.sector_rank, r.sector_n)) if r.sector_rank else '—' }}</td>
-  <td class="r">{% if r.rs is not none %}<b>{{ r.rs|round|int }}</b>{% if r.rs3m is not none %} <span class="muted sm">{{ r.rs3m|round|int }}/{{ r.rs6m|round|int }}/{{ r.rs12m|round|int }}</span>{% endif %}{% else %}—{% endif %}</td>
+  <td><a href="stock.html#{{ r.ticker }}"><b>{{ r.ticker }}</b></a> <span class="muted sm">{{ r.name[:18] }}</span><br><span class="muted xs">{{ td(r.sector) }}</span></td>
+  <td><div class="scorecell">{{ sbar(r.top_score) }}<span class="znum band-{{ r.band }}">{{ '%+.2f'|format(r.top_score) }}</span></div></td>
+  <td>{{ stretch(r) }}</td>
+  <td>{{ entry(r) }}</td>
+  <td class="convcell">{{ conv(r) }}</td>
+  <td class="r muted sm" title="sector-neutral residual-momentum z (selection leg)">{{ '%+.2f'|format(r.alpha) }}{% if r.sector_rank %} <span class="xs">#{{ r.sector_rank }}/{{ r.sector_n }}</span>{% endif %}</td>
   <td class="r muted sm">{{ ('$%.2f'|format(r.price)) if r.price is not none else '—' }}</td>
 </tr>
 {%- endmacro %}
 {% macro srow(r) -%}
-<tr>
-  <td class="rk">{{ r.sector_rank }}</td>
-  <td><a href="stock.html#{{ r.ticker }}"><b>{{ r.ticker }}</b></a> <span class="muted sm">{{ r.name[:22] }}</span></td>
-  <td><div class="scorecell">{{ abar(r.alpha) }}<span class="znum band-{{ r.band }}">{{ '%+.2f'|format(r.alpha) }}</span></div></td>
-  <td>{{ echip(r.entry) }}</td>
-  {{ mom(r.total_mom) }}
-  <td class="r">{% if r.rs is not none %}<b>{{ r.rs|round|int }}</b>{% else %}—{% endif %}</td>
-  <td class="r muted sm">{{ ('$%.2f'|format(r.price)) if r.price is not none else '—' }}</td>
+<tr data-grade="{{ r.grade }}">
+  <td><a href="stock.html#{{ r.ticker }}"><b>{{ r.ticker }}</b></a> <span class="muted sm">{{ r.name[:18] }}</span></td>
+  <td><div class="scorecell">{{ sbar(r.top_score) }}<span class="znum band-{{ r.band }}">{{ '%+.2f'|format(r.top_score) }}</span></div></td>
+  <td>{{ stretch(r) }}</td>
+  <td>{{ entry(r) }}</td>
+  <td class="convcell">{{ conv(r) }}</td>
+  <td class="r muted sm">{{ '%+.2f'|format(r.alpha) }}</td>
 </tr>
 {%- endmacro %}
 <!DOCTYPE html>
@@ -43,7 +67,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ t('Alpha leaders — sector-neutral residual momentum', '阿尔法领先股 — 板块中性残差动量') }}</title>
+<title>{{ t('Top Picks — holistic conviction + entry timing', '精选股 — 综合信念 + 入场时机') }}</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
@@ -56,9 +80,9 @@
   h3 { font-size:13px; margin:0 0 6px; }
   .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:14px; }
   .topline { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
-  .muted { color:var(--muted); } .sm { font-size:12px; }
+  .muted { color:var(--muted); } .sm { font-size:12px; } .xs { font-size:10.5px; color:var(--muted); }
   table { border-collapse:collapse; width:100%; font-size:13px; }
-  th,td { text-align:left; padding:4px 7px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  th,td { text-align:left; padding:5px 7px; border-bottom:1px solid var(--line); vertical-align:middle; }
   th { color:var(--muted); font-weight:500; } td.r, th.r { text-align:right; }
   .pos { color:var(--up); } .neg { color:var(--down); }
   .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:5px; }
@@ -70,19 +94,65 @@
   .seg { display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; margin-bottom:10px; }
   .segbtn { padding:5px 16px; font:inherit; font-size:12px; background:var(--panel); color:var(--muted); border:none; cursor:pointer; }
   .segbtn.on { background:var(--panel2); color:var(--text); }
-  .rk { color:var(--muted); font-size:12px; width:30px; }
+  .rk { color:var(--muted); font-size:12px; width:26px; }
   .scorecell { display:flex; align-items:center; gap:8px; min-width:150px; }
   .abar { position:relative; flex:1; height:12px; border-radius:6px; background:var(--panel2); overflow:hidden; min-width:74px; }
   .abar > i { position:absolute; top:0; bottom:0; } .abar > i.mid { left:50%; width:1px; background:var(--muted); opacity:.5; }
   .znum { font-variant-numeric:tabular-nums; width:42px; text-align:right; }
   .band-strong .znum, .band-leader .znum { color:var(--up); font-weight:600; }
   .band-lag .znum, .band-deeplag .znum { color:var(--down); font-weight:600; }
-  .echip { font-size:10.5px; padding:1px 7px; border-radius:7px; border:1px solid var(--line); white-space:nowrap; }
-  .ent-pull { color:var(--up); border-color:var(--up); } .ent-ext { color:var(--down); border-color:var(--down); }
-  .ent-intact, .ent-lag, .ent-neutral { color:var(--muted); }
-  .secsel { font:inherit; font-size:13px; padding:6px 10px; border:1px solid var(--line); border-radius:8px; background:var(--panel); color:var(--text); margin-bottom:12px; }
+  /* entry badges (axis 2) */
+  .echip { font-size:10.5px; padding:1px 8px; border-radius:7px; border:1px solid var(--line); white-space:nowrap; font-weight:600; }
+  .tp-buyzone { color:var(--up); border-color:var(--up); background:color-mix(in srgb, var(--up) 12%, transparent); }
+  .tp-extended { color:var(--down); border-color:var(--down); }
+  .tp-steady, .tp-laggard, .tp-neutral { color:var(--muted); font-weight:400; }
+  /* conviction driver chips */
+  .convcell { max-width:260px; }
+  .cchips { display:flex; flex-wrap:wrap; gap:4px; }
+  .cchip { font-size:10px; padding:1px 6px; border-radius:6px; border:1px solid var(--line); white-space:nowrap; color:var(--muted); }
+  .cchip.up { color:var(--up); border-color:color-mix(in srgb, var(--up) 45%, var(--line)); }
+  .cchip.down { color:var(--down); border-color:color-mix(in srgb, var(--down) 45%, var(--line)); }
+  .cchip.ins { color:var(--text); border-color:var(--muted); }
+  .cchip.attn { color:var(--muted); border-style:dashed; border-color:var(--muted); }  /* display-only caution */
+  /* buy-zone sweet-spot strip */
+  .bz-strip { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:10px; }
+  .bz-card { border:1px solid var(--up); border-radius:9px; padding:9px 11px; background:color-mix(in srgb, var(--up) 7%, var(--panel)); }
+  .bz-card .tk { font-weight:700; font-size:14px; } .bz-card .tk a:hover { text-decoration:underline; }
+  .bz-head { display:flex; justify-content:space-between; align-items:baseline; gap:6px; }
+  .bz-score { font-variant-numeric:tabular-nums; font-weight:600; color:var(--up); }
+  .secsel { font:inherit; font-size:13px; -webkit-appearance:none; appearance:none;
+            padding:7px 30px 7px 11px; border:1px solid var(--line); border-radius:10px;
+            background-color:var(--panel); background-image:var(--caret-svg); background-repeat:no-repeat;
+            background-position:right 10px center; background-size:11px; color:var(--text);
+            margin-bottom:12px; cursor:pointer; outline:none;
+            transition:border-color .2s ease, box-shadow .2s ease; }
+  .secsel:hover { border-color:color-mix(in srgb,var(--link) 32%,var(--line)); }
+  .secsel:focus { border-color:color-mix(in srgb,var(--link) 70%,var(--line));
+            box-shadow:0 0 0 3px color-mix(in srgb,var(--link) 18%,transparent); }
   .note { margin:8px 0 0; line-height:1.5; }
   .twocol { display:grid; grid-template-columns:1fr 1fr; gap:18px; } @media (max-width:760px){ .twocol{ grid-template-columns:1fr; } }
+  /* extension / exhaustion grade chips (axis: own-history extension — NEVER in the score) */
+  .gchip { font-size:10.5px; padding:1px 7px; border-radius:7px; border:1px solid var(--line); white-space:nowrap; font-weight:600; }
+  .gchip .xs { font-weight:400; opacity:.8; }
+  .ex-intrend { color:var(--up); border-color:color-mix(in srgb, var(--up) 45%, var(--line)); }
+  .ex-steady { color:var(--muted); font-weight:400; }
+  .ex-stretched { color:var(--warn-fg); border-color:color-mix(in srgb, var(--warn-fg) 50%, var(--line)); background:color-mix(in srgb, var(--warn-fg) 8%, transparent); }
+  .ex-parabolic { color:var(--down); border-color:var(--down); background:color-mix(in srgb, var(--down) 13%, transparent); }
+  .ex-na { color:var(--muted); opacity:.45; font-weight:400; }
+  /* valuation-vs-own-history chip (display-only tail flag) */
+  .vchip { font-size:10px; padding:1px 6px; border-radius:6px; border:1px solid var(--line); white-space:nowrap; }
+  .val-cheap { color:var(--up); border-color:color-mix(in srgb, var(--up) 45%, var(--line)); }
+  .val-rich, .val-richest { color:var(--down); border-color:color-mix(in srgb, var(--down) 45%, var(--line)); }
+  .val-richest { background:color-mix(in srgb, var(--down) 10%, transparent); font-weight:600; }
+  /* cohort-stretch fragility banner (board-level, display-only sizing context) */
+  .cohort { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:10px 14px; border-radius:10px; margin-bottom:14px; border:1px solid var(--line); font-size:13px; }
+  .cohort .dot { width:10px; height:10px; border-radius:50%; flex:none; }
+  .cohort.normal { background:color-mix(in srgb, var(--up) 6%, var(--panel)); border-color:color-mix(in srgb, var(--up) 30%, var(--line)); } .cohort.normal .dot { background:var(--up); }
+  .cohort.elevated { background:color-mix(in srgb, var(--warn-fg) 9%, var(--panel)); border-color:color-mix(in srgb, var(--warn-fg) 35%, var(--line)); } .cohort.elevated .dot { background:var(--warn-fg); }
+  .cohort.stretched { background:color-mix(in srgb, var(--down) 9%, var(--panel)); border-color:color-mix(in srgb, var(--down) 38%, var(--line)); } .cohort.stretched .dot { background:var(--down); }
+  .filt { display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--muted); cursor:pointer; margin-left:12px; }
+  .filt input { accent-color:var(--link); cursor:pointer; }
+  :root { --warn-fg:#b8770a; } :root[data-theme="dark"] { --warn-fg:#e0a93a; }
 </style>
 </head>
 <body>
@@ -95,6 +165,7 @@
       <div class="nav-dd-menu" role="menu">
         <a href="macro.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('Regime · growth · inflation · nowcast', '周期 · 增长 · 通胀 · 即时预测') }}</span></a>
         <a href="us_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Standouts · sectors · flows', '精选 · 板块 · 资金') }}</span></a>
+        <a class="active" href="discovery.html">🏆 {{ t('Top Picks', '精选股') }}<span class="d">{{ t('Conviction + extension / exhaustion lens', '信念 + 拉伸/过热透视') }}</span></a>
         <a href="spvector.html">📐 {{ t('Allocation Strategy', '配置策略') }}<span class="d">{{ t('Tactical equity↔cash', '战术股票↔现金') }}</span></a>
         <a href="baskets.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P', '等权主题篮子 vs 标普') }}</span></a>
         <a href="alerts.html">🚨 {{ t('Alert Center', '警报中心') }}<span class="d">{{ t('Ranked & triaged alerts', '分级分诊的警报') }}</span></a>
@@ -165,43 +236,76 @@
 
 <div class="panel">
   <div class="topline">
-    <h1>🏆 {{ t('Alpha leaders', '阿尔法领先股') }}</h1>
-    <span class="muted sm">{{ t('sector-neutral residual momentum across the S&P 1500 · winners within their sector', '板普 1500 的板块中性残差动量 · 各板块内的领先股') }}</span>
+    <h1>🏆 {{ t('Top Picks', '精选股') }}</h1>
+    <span class="muted sm">{{ t('holistic conviction across the S&P 1500 — ranked by what to own, flagged for when to buy', '覆盖标普 1500 的综合信念 — 按“持有什么”排名，并标注“何时买入”') }}</span>
   </div>
   <p class="muted sm note">{{ t(
-    "The durable form of the operator's idea: strip each stock's market AND sector beta, then rank the residual ('alpha') information ratio WITHIN its GICS sector over a 12-1-month window. The entry tag flags a leader that ran hot (extended → reversal risk) vs one on a recent pullback (constructive). Validated on a deep 1962-2026 panel (research/RESIDUAL_ALPHA_MOMENTUM.md): residual is the modern-durable variant of momentum, but it's a modest, decayed, crowded edge — a research lens and context, NOT a buy list. Short-term reversal is an entry overlay, not the score; 'acceleration' was tested and dropped (anti-predictive).",
-    "操作者想法的持久形式：剔除每只股票的市场与板块贝塔，再在其 GICS 板块内按 12-1 个月窗口对残差（“阿尔法”）信息比率排名。入场标签标示领先股是否过热（extended → 反转风险）或处于近期回调（constructive）。已在 1962-2026 深度样本验证（research/RESIDUAL_ALPHA_MOMENTUM.md）：残差是动量的现代持久变体，但属温和、已衰减、拥挤的边际信号——仅作研究视角与背景，并非买入清单。短期反转为入场叠加项而非评分；“加速度”经测试已剔除（反向预测）。") }}</p>
+    "Two axes, kept honest and separate. CONVICTION (the rank) = a validated alpha-led blend: sector-neutral residual momentum (the only individually positive-IC leg) plus a light multi-factor confirmation — value, quality, profitability, low-vol and insider buying. ENTRY (a separate column) = a leader on a recent pullback is a constructive 'buy zone'; one that just spiked is 'extended' (wait). We DON'T fold entry into the rank: unlike China's A-shares (which mean-revert), US leaders keep running, so a reversal tilt in the rank measurably hurts (reports/top-picks-phase0.md). The blend beat residual-momentum alone on point-in-time IC at every horizon, but it's a modest, decayed, crowded edge — a research lens with an entry read, not a guaranteed buy list.",
+    "两个维度，保持诚实且分离。信念（排名）= 经验证的以阿尔法为主的混合：板块中性残差动量（唯一单独正 IC 的因子）加上轻度多因子确认——价值、质量、盈利、低波动与内部人买入。入场（单独一列）= 处于近期回调的领先股为建设性“可建仓”；刚刚飙升的为“过热”（等待）。我们不把入场折入排名：与会均值回归的中国 A 股不同，美股领先股会延续，因此在排名中加入反转倾斜会明显损害收益（reports/top-picks-phase0.md）。该混合在每个时间跨度的点对点 IC 上都优于单独的残差动量，但属温和、已衰减、拥挤的边际信号——是带入场读数的研究视角，而非保证买入清单。") }}</p>
   <p class="muted sm" style="margin:6px 0 0">{{ t('As of', '截至') }} {{ as_of }} · {{ n }} {{ t('names', '只') }} ·
+    {{ t('score', '评分') }} {{ alpha_w }}·α + {{ tilt_w }}·{{ t('conviction', '信念') }} ·
     {{ t('betas', '贝塔') }} {{ windows.beta_win }}d · {{ t('formation', '形成窗口') }} {{ windows.form }}-{{ windows.skip }}d</p>
 </div>
 
+{% if banner and banner.state and banner.state != 'na' %}
+<div class="cohort {{ banner.state }}">
+  <span class="dot"></span>
+  <span><b>{{ t('Leadership cohort', '领先股群体') }}:</b>
+    {% if banner.state == 'stretched' %}{{ t('stretched', '过度拉伸') }}{% elif banner.state == 'elevated' %}{{ t('elevated', '偏高') }}{% else %}{{ t('normal', '正常') }}{% endif %}</span>
+  <span class="muted sm">{{ banner.pct_stretched }}% {{ t('stretched / parabolic', '拉伸/抛物') }} ·
+    {{ t('median extension', '中位拉伸') }} {{ '%+.1f'|format(banner.median_ext_z) }}σ ·
+    {{ banner.pct_at_highs }}% {{ t('pressing highs', '逼近新高') }}</span>
+  {{ help('How stretched the top-conviction leaders are versus their OWN history. A fragility / size-DOWN gauge for the whole book — crowding and stretch raise crash *probability*, they do NOT time the market (we tested: no extension screen reduces drawdown, and narrow markets can grind higher for a long time). Never a fade, never changes the rank. When stretched, prefer smaller size and in-trend names over parabolic ones.', '顶端高信念领先股相对其自身历史的拉伸程度。面向整体仓位的脆弱性/减仓提示——拥挤与拉伸提高崩跌“概率”，但并不择时（我们验证过：任何拉伸筛选都不会降低回撤）。绝非反向做空，也不改变排名。拉伸时宜减小仓位、偏好趋势内而非抛物个股。') }}
+</div>
+{% endif %}
+
+{% if buyzone %}
+<div class="panel">
+  <h2>{{ t('⭐ Buy-zone picks', '⭐ 可建仓精选') }}
+    {{ help('The sweet spot: high-conviction Top Picks that are ALSO a sector leader on a recent pullback (not extended) — a constructive entry into a high-quality leader rather than chasing one that just ran. Entry is a risk-placement read, not a return prediction.', '最佳交集：既是高信念精选、又是处于近期回调（而非过热）的板块领先股——以建设性方式进入优质领先股，而不是追高。入场为风险定位读数，而非收益预测。') }}</h2>
+  <div class="bz-strip">
+    {% for r in buyzone %}
+    <div class="bz-card">
+      <div class="bz-head">
+        <span class="tk"><a href="stock.html#{{ r.ticker }}">{{ r.ticker }}</a></span>
+        <span class="bz-score">{{ '%+.2f'|format(r.top_score) }}</span>
+      </div>
+      <div class="muted xs" style="margin:1px 0 6px">{{ r.name[:24] }} · {{ td(r.sector) }} · α {{ '%+.2f'|format(r.alpha) }}{% if r.sector_rank %} #{{ r.sector_rank }}/{{ r.sector_n }}{% endif %}</div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">{{ stretch(r) }}{{ entry(r) }}{{ conv(r) }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
 <div class="tabs">
-  <button class="tabbtn on" data-tab="global">{{ t('Global index', '全球指数') }}</button>
+  <button class="tabbtn on" data-tab="global">{{ t('Top Picks', '精选') }}</button>
   <button class="tabbtn" data-tab="sectors">{{ t('Sectors', '板块') }}</button>
-  <button class="tabbtn" data-tab="themes">{{ t('Themes', '主题') }}</button>
   <button class="tabbtn" data-tab="sector">{{ t('Sector index', '板块明细') }}</button>
 </div>
 
-<!-- GLOBAL INDEX -->
+<!-- TOP PICKS (global, ranked by conviction) -->
 <div id="tab-global" data-grp="tab">
   <div class="panel">
     <div class="seg">
-      <button class="segbtn on" id="seg-strong">{{ t('Strongest', '最强') }}</button>
-      <button class="segbtn" id="seg-weak">{{ t('Weakest', '最弱') }}</button>
+      <button class="segbtn on" id="seg-strong">{{ t('Top conviction', '高信念') }}</button>
+      <button class="segbtn" id="seg-weak">{{ t('Avoid', '回避') }}</button>
     </div>
+    <label class="filt"><input type="checkbox" id="hideStretch">{{ t('Hide stretched / parabolic', '隐藏拉伸/抛物') }}
+      {{ help('Hides leaders that are ≥1σ extended vs their own history (stretched or parabolic) — leaving the high-conviction names that are still in-trend or steady. A risk-placement filter for finding leaders earlier in their move; NOT a higher-return or lower-drawdown claim (we tested — see reports/top-picks-freshness-phase0.md).', '隐藏相对自身历史拉伸 ≥1σ 的领先股（拉伸或抛物），仅保留仍处趋势内/平稳的高信念个股。这是风险定位筛选，并非更高收益或更低回撤的承诺。') }}</label>
     {% set thead %}
-      <tr><th>#</th><th>{{ t('stock', '个股') }}</th><th>{{ t('sector', '板块') }}</th>
-        <th>{{ t('alpha z', '阿尔法 z') }}{{ help('Sector-neutral residual-momentum information ratio, winsorized to a cross-sectional z-score. Higher = stronger idiosyncratic (beta/sector-stripped) momentum within its GICS sector. This is the global, cross-sector-comparable score.', '板块中性残差动量信息比率的去极值横截面 z 分数。越高 = 在其 GICS 板块内的特质（剔除贝塔/板块）动量越强。此为可跨板块比较的全局评分。') }}</th>
-        <th>{{ t('entry', '入场') }}{{ help('Short-term reversal overlay (NOT the score): a leader that just ran hot is extended (reversal risk); one on a recent pullback is constructive. Laggards/neutral otherwise.', '短期反转叠加项（非评分）：刚刚过热的领先股为 extended（反转风险）；近期回调的为 constructive。') }}</th>
-        <th class="r">{{ t('12-1 mom', '12-1 动量') }}</th><th class="r">{{ t('sector #', '板块排名') }}</th>
-        <th class="r">{{ t('RS', '相对强度') }}{{ help('Relative strength 1-99: cross-sectional percentile of the trailing 12-1 return (the familiar IBD-style rating). A recognizable but SHALLOWER momentum lens — subordinate context, NOT the alpha score (which also strips market AND sector beta). The 3m/6m/12m sub-percentiles show whether RS is improving or fading.', '相对强度 1-99：12-1 趋势回报的横截面百分位（熟悉的 IBD 风格评级）。一个易懂但更浅的动量视角——从属背景，并非阿尔法评分（后者还剔除了市场与板块贝塔）。3/6/12 月分项显示 RS 在改善还是衰退。') }}</th>
-        <th class="r">{{ t('price', '价格') }}</th></tr>
+      <tr><th>#</th><th>{{ t('stock', '个股') }}</th>
+        <th>{{ t('Top-Pick score', '精选评分') }}{{ help('The conviction rank = 0.6·alpha + 0.4·confirmation. alpha is the sector-neutral residual-momentum z; confirmation is the sector-neutral z-mean of value / quality / profitability / low-vol / insider. Validated point-in-time to beat alpha alone on IC at every horizon (reports/top-picks-phase0.md). A modest, decayed edge — context, not a guaranteed buy.', '信念排名 = 0.6·阿尔法 + 0.4·确认。阿尔法为板块中性残差动量 z；确认为价值/质量/盈利/低波/内部人的板块中性 z 均值。经点对点验证在每个跨度上优于单独阿尔法（reports/top-picks-phase0.md）。温和、已衰减的边际信号——背景而非保证买入。') }}</th>
+        <th>{{ t('stretch', '拉伸') }}{{ help('Extension vs the name\'s OWN history (ext_z = distance above its 200-day average, z-scored over a year): In-trend → Steady → Stretched → ⚠Parabolic. The PARABOLIC tail (>2σ) is the validated bubble-pullback flag — that cohort showed a −94% drawdown / negative skew point-in-time (reports/top-picks-freshness-phase0.md). DISPLAY-ONLY risk placement — never in the rank, never a short. We tested folding it into the score / a freshness rotation: it does NOT reduce drawdown, so it stays a per-name caution.', '相对自身历史的拉伸（ext_z = 高于其200日均线的距离，按年标准化）：趋势内→平稳→拉伸→⚠抛物。抛物尾部（>2σ）为经验证的泡沫回撤标记（该群体点对点显示 −94% 回撤）。仅作每股风险定位——不计入排名，不做空。') }}</th>
+        <th>{{ t('entry', '入场') }}{{ help('Separate timing axis (NOT in the rank): a leader on a recent 1-month pullback is a constructive buy zone; one that just spiked is extended (wait). Complements stretch — a name can be a 1m buy-zone yet still stretched vs its own year.', '独立的择时维度（不在排名内）：近一个月回调的领先股为可建仓；刚飙升的为过热（等待）。与“拉伸”互补。') }}</th>
+        <th>{{ t('conviction drivers', '信念驱动') }}{{ help('Which confirming legs move the score (sector-neutral z ≥ 0.6 or ≤ -0.6): Profit = gross profitability (the strongest confirmer), plus value / quality / low-vol. 👤N = N insiders bought. "Rich/Cheap vs own" = current earnings yield vs the name\'s own ~3y history (display-only).', '推动评分的确认因子（板块中性 z ≥ 0.6 或 ≤ -0.6）：Profit = 毛利率（最强确认），以及价值/质量/低波。👤N = N 名内部人买入。“相对自身偏高/偏低” = 当前市盈收益率相对该股近3年历史（仅展示）。') }}</th>
+        <th class="r">{{ t('α', '阿尔法') }}</th><th class="r">{{ t('price', '价格') }}</th></tr>
     {% endset %}
     <div id="g-strong" data-grp="glist">
-      <table>{{ thead }}{% for r in strongest %}{{ grow(r, loop.index) }}{% endfor %}</table>
+      <table>{{ thead }}{% for r in strongest %}{{ trow(r, loop.index) }}{% endfor %}</table>
     </div>
     <div id="g-weak" data-grp="glist" style="display:none">
-      <table>{{ thead }}{% for r in weakest %}{{ grow(r, loop.index) }}{% endfor %}</table>
+      <table>{{ thead }}{% for r in weakest %}{{ trow(r, loop.index) }}{% endfor %}</table>
     </div>
   </div>
 </div>
@@ -209,38 +313,17 @@
 <!-- SECTORS OVERVIEW -->
 <div id="tab-sectors" data-grp="tab" style="display:none">
   <div class="panel">
-    <h2>{{ t('Sectors by alpha', '按阿尔法排序的板块') }}
-      {{ help('GICS sectors ranked by the mean sector-neutral alpha of their names, with the share of each sector sitting in the universe-wide top quintile. Because the score is sector-neutral, this measures how broadly a sector is leading, not the sector ETF return.', '按其成分股的平均板块中性阿尔法对 GICS 板块排序，并显示各板块处于全域顶部五分位的占比。由于评分为板块中性，这衡量的是板块领先的广度，而非板块 ETF 回报。') }}</h2>
+    <h2>{{ t('Sectors by conviction', '按信念排序的板块') }}
+      {{ help('GICS sectors ranked by the mean Top-Pick score of their names, with the share of each sector sitting in the universe-wide top quintile. Because the score is sector-neutral, this measures how broadly a sector is leading, not the sector ETF return.', '按其成分股的平均精选评分对 GICS 板块排序，并显示各板块处于全域顶部五分位的占比。由于评分为板块中性，这衡量的是板块领先的广度，而非板块 ETF 回报。') }}</h2>
     <table>
-      <tr><th>#</th><th>{{ t('sector', '板块') }}</th><th>{{ t('mean alpha', '平均阿尔法') }}</th><th class="r">{{ t('in top 20%', '位于前20%') }}</th><th class="r">{{ t('names', '只') }}</th></tr>
+      <tr><th>#</th><th>{{ t('sector', '板块') }}</th><th>{{ t('mean score', '平均评分') }}</th><th class="r">{{ t('in top 20%', '位于前20%') }}</th><th class="r">{{ t('names', '只') }}</th></tr>
       {% for s in sectors %}
       <tr>
         <td class="rk">{{ loop.index }}</td>
         <td>{{ td(s.sector) }}</td>
-        <td><div class="scorecell">{{ abar(s.mean) }}<span class="znum band-{{ 'strong' if s.mean>=0.3 else 'lag' if s.mean<-0.3 else 'mid' }}">{{ '%+.2f'|format(s.mean) }}</span></div></td>
+        <td><div class="scorecell">{{ sbar(s.mean) }}<span class="znum band-{{ 'strong' if s.mean>=0.3 else 'lag' if s.mean<-0.3 else 'mid' }}">{{ '%+.2f'|format(s.mean) }}</span></div></td>
         <td class="r muted sm">{{ s.intop }}/{{ s.n }} · {{ s.pct }}%</td>
         <td class="r muted sm">{{ s.n }}</td>
-      </tr>
-      {% endfor %}
-    </table>
-  </div>
-</div>
-
-<!-- THEMES OVERVIEW -->
-<div id="tab-themes" data-grp="tab" style="display:none">
-  <div class="panel">
-    <h2>{{ t('Themes by alpha', '按阿尔法排序的主题') }}
-      {{ help('Curated narrow thematic baskets ranked by the MEAN sector-neutral alpha-z of their members, with the share sitting in the universe-wide top quintile. Membership is hand-curated (S&P 1500-verified), overlaps GICS sectors, and is CONTEXT — not a buy list. There is no per-theme backtest: hand-picked baskets ranked on a single snapshot would be selection / multiple-testing bias, so this is a current-snapshot lens, not validated alpha.', '人工策划的细分主题篮子，按其成分股的平均板块中性阿尔法 z 排序，并显示位于全域前五分位的占比。成分为人工策划（标普1500内核验）、跨 GICS 板块，仅作背景——非买入清单。无逐主题回测：对人工挑选篮子做单时点排名会带来选择/多重检验偏差，故此为当前快照视角，而非经验证的阿尔法。') }}</h2>
-    <p class="muted sm note">{{ t('Context, not a buy list. Themes are curated baskets, not backtested portfolios — they re-aggregate the existing sector-neutral alpha.', '仅作背景，非买入清单。主题为人工策划的篮子，未作组合回测——它们仅对既有的板块中性阿尔法重新聚合。') }}</p>
-    <table>
-      <tr><th>#</th><th>{{ t('theme', '主题') }}</th><th>{{ t('mean alpha', '平均阿尔法') }}</th><th class="r">{{ t('in top 20%', '位于前20%') }}</th><th class="r">{{ t('names', '只') }}</th></tr>
-      {% for h in themes %}
-      <tr>
-        <td class="rk">{{ loop.index }}</td>
-        <td>{{ td(h.theme) }}<div class="muted sm">{% for r in h.names[:7] %}<a href="stock.html#{{ r.ticker }}">{{ r.ticker }}</a>{% if not loop.last %} · {% endif %}{% endfor %}{% if h.names|length > 7 %} <span class="muted">+{{ h.names|length - 7 }}</span>{% endif %}</div></td>
-        <td><div class="scorecell">{{ abar(h.mean) }}<span class="znum band-{{ 'strong' if h.mean>=0.3 else 'lag' if h.mean<-0.3 else 'mid' }}">{{ '%+.2f'|format(h.mean) }}</span></div></td>
-        <td class="r muted sm">{{ h.intop }}/{{ h.n }} · {{ h.pct }}%</td>
-        <td class="r muted sm">{{ h.n }}</td>
       </tr>
       {% endfor %}
     </table>
@@ -257,21 +340,21 @@
     <div id="sec-{{ loop.index0 }}" data-grp="seclist"{% if not loop.first %} style="display:none"{% endif %}>
       <div class="twocol">
         <div>
-          <h3 class="pos">{{ t('Leaders', '领先') }} — {{ td(sec) }}</h3>
+          <h3 class="pos">{{ t('Top picks', '精选') }} — {{ td(sec) }}</h3>
           <table>
-            <tr><th>#</th><th>{{ t('stock', '个股') }}</th><th>{{ t('alpha z', '阿尔法 z') }}</th><th>{{ t('entry', '入场') }}</th><th class="r">{{ t('12-1', '12-1') }}</th><th class="r">{{ t('RS', '相对强度') }}</th><th class="r">{{ t('price', '价格') }}</th></tr>
+            <tr><th>{{ t('stock', '个股') }}</th><th>{{ t('score', '评分') }}</th><th>{{ t('stretch', '拉伸') }}</th><th>{{ t('entry', '入场') }}</th><th>{{ t('drivers', '驱动') }}</th><th class="r">{{ t('α', '阿尔法') }}</th></tr>
             {% for r in by_sector[sec].leaders %}{{ srow(r) }}{% endfor %}
           </table>
         </div>
         <div>
-          <h3 class="neg">{{ t('Laggards', '落后') }} — {{ td(sec) }}</h3>
+          <h3 class="neg">{{ t('Avoid', '回避') }} — {{ td(sec) }}</h3>
           <table>
-            <tr><th>#</th><th>{{ t('stock', '个股') }}</th><th>{{ t('alpha z', '阿尔法 z') }}</th><th>{{ t('entry', '入场') }}</th><th class="r">{{ t('12-1', '12-1') }}</th><th class="r">{{ t('RS', '相对强度') }}</th><th class="r">{{ t('price', '价格') }}</th></tr>
+            <tr><th>{{ t('stock', '个股') }}</th><th>{{ t('score', '评分') }}</th><th>{{ t('stretch', '拉伸') }}</th><th>{{ t('entry', '入场') }}</th><th>{{ t('drivers', '驱动') }}</th><th class="r">{{ t('α', '阿尔法') }}</th></tr>
             {% for r in by_sector[sec].laggards %}{{ srow(r) }}{% endfor %}
           </table>
         </div>
       </div>
-      <p class="muted sm note">{{ t('Dual score: alpha z is the GLOBAL sector-neutral rank (comparable across sectors); the # is the IN-SECTOR rank. A name can lead its sector yet sit mid globally, or rank elite globally from a hot sector.', '双重评分：alpha z 是全局板块中性排名（可跨板块比较）；# 为板块内排名。某只股票可能领先其板块却在全局居中，或因身处强势板块而全局领先。') }}</p>
+      <p class="muted sm note">{{ t('Re-ranked WITHIN sector by the Top-Pick score. α is the sector-neutral residual-momentum component; the score adds the multi-factor confirmation. Entry flags the constructive (pullback) vs extended names — a separate axis.', '按精选评分在板块内重新排序。α 为板块中性残差动量成分；评分加入多因子确认。入场标注建设性（回调）与过热个股——独立维度。') }}</p>
     </div>
     {% endfor %}
   </div>
@@ -279,8 +362,8 @@
 
 <div class="panel">
   <p class="muted" style="font-size:12px;margin:0">{{ t(
-    'Source: engine/residual_alpha.py (sector-neutral residual momentum) over the S&P 1500 price universe joined to GICS sectors. Ranks recompute daily with prices. A modest, decayed, crowded edge — research lens, not a buy list. See research/RESIDUAL_ALPHA_MOMENTUM.md and LIMITATIONS.md.',
-    '来源：engine/residual_alpha.py（板块中性残差动量），覆盖标普 1500 价格域并连接 GICS 板块。排名随价格每日重算。温和、已衰减、拥挤的边际信号 — 研究视角，而非买入清单。') }}
+    'Source: engine/top_picks.py — an alpha-led conviction blend (engine/residual_alpha.py + engine/equity_factors.py + Form-4 insider) over the S&P 1500, validated point-in-time in reports/top-picks-phase0.md. The stretch / exhaustion axis, valuation-vs-own-history chip and cohort banner (engine/extension.py) are DISPLAY-ONLY risk reads — never in the rank: a point-in-time downside test (reports/top-picks-freshness-phase0.md) found no extension screen reduces drawdown, but the parabolic (>2σ own-history) tail is a genuine bubble-pullback hazard, so it is flagged per-name. Ranks recompute daily with prices/filings. A modest, decayed, crowded edge — a research lens with risk context, not a buy list. See LIMITATIONS.md.',
+    '来源：engine/top_picks.py — 覆盖标普 1500 的以阿尔法为主的信念混合（engine/residual_alpha.py + engine/equity_factors.py + Form-4 内部人），已在 reports/top-picks-phase0.md 做点对点验证。拉伸/过热维度、相对自身估值标签与群体横幅（engine/extension.py）均为仅展示的风险读数，不计入排名：点对点下行测试（reports/top-picks-freshness-phase0.md）发现任何拉伸筛选都无法降低回撤，但抛物（相对自身历史>2σ）尾部确为真实的泡沫回撤风险，故逐股标注。排名随价格/申报每日重算。温和、已衰减、拥挤的边际信号 — 带风险背景的研究视角，而非买入清单。') }}
     {{ t('Generated', '生成于') }} {{ built }}</p>
 </div>
 
@@ -295,6 +378,13 @@
              sw.addEventListener('click', function(){ sw.classList.add('on'); su.classList.remove('on'); show('g-weak','glist'); }); }
  var sel=document.getElementById('secsel');
  if(sel) sel.addEventListener('change', function(){ show('sec-'+this.value, 'seclist'); });
+ var hs=document.getElementById('hideStretch');
+ if(hs) hs.addEventListener('change', function(){
+   var hide=this.checked;
+   document.querySelectorAll('tr[data-grade]').forEach(function(tr){
+     var g=tr.getAttribute('data-grade');
+     if(g==='stretched'||g==='parabolic') tr.style.display = hide ? 'none' : '';
+   }); });
 })();
 </script>
 <script src="theme.js"></script>
