@@ -67,6 +67,13 @@ def run() -> dict:
         "preference_check": preference_check(row["quad_name"], table),
         "pair_ratios": pair_ratios_snapshot(f),
     }
+    # property & fiscal context (display/regime only — NOT a scored axis; A-shares
+    # mean-revert). Attached so the daily brief / LLM narrator can cite the cycle.
+    try:
+        from engine import china_property
+        latest["property"] = china_property.regime_context()
+    except Exception as e:  # noqa: BLE001 — additive context, never break the engine
+        log.warning("china property context failed: %s", e)
     with open(p / "latest.json", "w") as fh:
         json.dump(latest, fh, indent=2, default=str)
     log.info("china regime %s (%s) conf=%.2f liq=%s cycle=%s",

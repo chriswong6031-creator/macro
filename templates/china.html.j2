@@ -805,6 +805,87 @@
   </div>
   {% endif %}
 
+  <!-- ===================== PROPERTY & FISCAL ===================== -->
+  {% if property %}{% set P = property %}{% set R = P.regime %}
+  <div class="panel span12">
+    <h2>{{ t('🏗️ Property & Fiscal', '🏗️ 房地产与财政') }}
+      {% set rc = {'neg':'c-down','warn':'c-warn','pos':'c-up','neutral':'c-muted'}[R.tone] %}
+      <span class="chip {{ rc }}" style="margin-left:6px">{{ t(R.label_en, R.label_zh) }}</span>
+      {{ help("China's property cycle — a third of GDP and the heart of household wealth. The headline is the <b>70-city price diffusion</b> (cities with month-on-month price rises minus those falling); below zero = more cities falling than rising. The <b>NBS climate index</b> (100 = neutral) bundles the investment/sales/land cycle. <b>Rebar &amp; iron-ore</b> futures are the high-frequency construction-demand pulse. The <b>10-year CGB yield</b> is the fiscal/duration read (falling = the bond market pricing disinflation + easing), and the <b>512200 property-ETF drawdown</b> stands in for developer stress (a free, market-priced proxy for the LGFV spreads that are paid + policy-administered). <b>Context only — A-shares mean-revert, so this is a regime read, not a trade signal.</b>", "中国房地产周期 — 约占 GDP 三分之一，也是居民财富的核心。核心指标是<b>70 城价格宽度</b>（环比上涨城市数减去下跌城市数）；低于零＝下跌城市多于上涨。<b>国房景气指数</b>（100＝中性）综合了投资／销售／土地周期。<b>螺纹钢与铁矿石</b>期货是高频的建材需求脉搏。<b>10 年期国债收益率</b>是财政／久期视角（下行＝债市定价通缩+宽松），<b>512200 地产 ETF 回撤</b>替代开发商压力（对 LGFV 利差这一付费且受政策管制指标的免费市场化替代）。<b>仅作背景 — A 股均值回归，这是周期判读而非交易信号。</b>") }}
+    </h2>
+    <p class="note" style="margin:-2px 0 10px">{% for d in R.drivers %}{% if not loop.first %} · {% endif %}<span class="{{ 'pos' if d.sign>0 else 'neg' if d.sign<0 else '' }}">{{ t(d.en, d.zh) }}</span>{% endfor %}</p>
+    <div style="display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start">
+
+      {% if P.breadth %}
+      <div style="flex:1 1 300px;min-width:280px">
+        <div style="display:flex;align-items:baseline;gap:10px">
+          <span class="bignum {{ 'pos' if P.breadth.new>0 else 'neg' if P.breadth.new<0 else '' }}">{{ '%+d'|format(P.breadth.new) }}</span>
+          <span class="sub">{{ t('70-city price breadth', '70城价格宽度') }} · {{ P.breadth.rising }}↑ {{ P.breadth.falling }}↓ {{ P.breadth.flat }}→ · {{ P.breadth.date }}</span>
+        </div>
+        <p class="note" style="margin:3px 0 0">
+          {% if P.breadth.trend_6m is not none %}{{ t('6-mo trend', '近6月趋势') }} <b class="{{ 'pos' if P.breadth.trend_6m>0 else 'neg' if P.breadth.trend_6m<0 else '' }}">{{ '%+d'|format(P.breadth.trend_6m) }}</b>{% endif %}
+          {% if P.breadth.tier1_mom is not none %} · {{ t('tier-1 MoM', '一线环比') }} <b class="{{ 'pos' if P.breadth.tier1_mom>=0 else 'neg' }}">{{ '%+.1f'|format(P.breadth.tier1_mom) }}%</b>{% endif %}
+          {% if P.breadth.second is not none %} · {{ t('2nd-hand', '二手') }} <b class="{{ 'pos' if P.breadth.second>0 else 'neg' }}">{{ '%+d'|format(P.breadth.second) }}</b>{% endif %}
+        </p>
+        {% if P.breadth.chart_html %}<div class="chart">{{ P.breadth.chart_html | safe }}</div>{% endif %}
+      </div>
+      {% endif %}
+
+      {% if P.climate %}
+      <div style="flex:1 1 300px;min-width:280px">
+        <div style="display:flex;align-items:baseline;gap:10px">
+          <span class="bignum {{ 'neg' if P.climate.level<100 else 'pos' }}">{{ P.climate.level }}</span>
+          <span class="sub">{{ t('NBS climate index (国房景气)', '国房景气指数') }} · {{ P.climate.date }}</span>
+        </div>
+        <p class="note" style="margin:3px 0 0">{{ t('MoM', '环比') }} <b class="{{ 'pos' if P.climate.chg>=0 else 'neg' }}">{{ '%+.2f'|format(P.climate.chg) }}%</b>{% if P.climate.chg_12m is not none %} · {{ t('12-mo', '近12月') }} <b class="{{ 'pos' if P.climate.chg_12m>=0 else 'neg' }}">{{ '%+.2f'|format(P.climate.chg_12m) }}</b>{% endif %} · {{ t('100 = neutral', '100＝中性') }}</p>
+        {% if P.climate.chart_html %}<div class="chart">{{ P.climate.chart_html | safe }}</div>{% endif %}
+      </div>
+      {% endif %}
+
+      {% if P.construction %}{% set K = P.construction %}
+      <div style="flex:1 1 300px;min-width:280px">
+        <div style="display:flex;align-items:baseline;gap:10px">
+          {% if K.demand_z is not none %}<span class="bignum {{ 'pos' if K.demand_z>0 else 'neg' if K.demand_z<0 else '' }}">{{ '%+.2f'|format(K.demand_z) }}</span>{% endif %}
+          <span class="sub">{{ t('construction-demand z', '建材需求 z') }} · {{ t('rebar + iron-ore', '螺纹+铁矿') }}</span>
+        </div>
+        <div class="tiles" style="margin-top:5px">
+          {% if K.rebar is defined %}<div class="tile"><div class="tv">{{ K.rebar }}{% if K.rebar_mom is not none %} <span class="sub {{ 'pos' if K.rebar_mom>=0 else 'neg' }}">{{ '%+.1f'|format(K.rebar_mom) }}%</span>{% endif %}</div><div class="tk">{{ t('rebar 螺纹', '螺纹钢') }}</div></div>{% endif %}
+          {% if K.iron_ore is defined %}<div class="tile"><div class="tv">{{ K.iron_ore }}{% if K.iron_ore_mom is not none %} <span class="sub {{ 'pos' if K.iron_ore_mom>=0 else 'neg' }}">{{ '%+.1f'|format(K.iron_ore_mom) }}%</span>{% endif %}</div><div class="tk">{{ t('iron-ore 铁矿', '铁矿石') }}</div></div>{% endif %}
+        </div>
+        {% if K.chart_html %}<div class="chart">{{ K.chart_html | safe }}</div>{% endif %}
+      </div>
+      {% endif %}
+
+      {% if P.cgb %}
+      <div style="flex:1 1 300px;min-width:280px">
+        <div style="display:flex;align-items:baseline;gap:10px">
+          <span class="bignum">{{ P.cgb.y10 }}%</span>
+          <span class="sub">{{ t('10-year CGB yield', '10年期国债收益率') }} · {{ t('fiscal / duration', '财政/久期') }}</span>
+        </div>
+        <p class="note" style="margin:3px 0 0">
+          {% if P.cgb.slope is not none %}{{ t('10y−2y slope', '10年−2年期限利差') }} <b>{{ '%+.2f'|format(P.cgb.slope) }}</b>{% endif %}
+          {% if P.cgb.chg_6m is not none %} · {{ t('6-mo Δ', '近6月') }} <b class="{{ 'neg' if P.cgb.chg_6m<0 else 'pos' }}">{{ '%+.2f'|format(P.cgb.chg_6m) }}pp</b>{% endif %}
+          {% if P.cgb.pctile is not none %} · {{ t('pctile', '分位') }} {{ P.cgb.pctile }}{% endif %}
+        </p>
+        {% if P.cgb.chart_html %}<div class="chart">{{ P.cgb.chart_html | safe }}</div>{% endif %}
+      </div>
+      {% endif %}
+
+      {% if P.prop_etf %}
+      <div style="flex:1 1 300px;min-width:280px">
+        <div style="display:flex;align-items:baseline;gap:10px">
+          <span class="bignum neg">{{ P.prop_etf.drawdown }}%</span>
+          <span class="sub">{{ t('property-ETF drawdown (512200)', '地产 ETF 回撤 (512200)') }}</span>
+        </div>
+        <p class="note" style="margin:3px 0 0">{{ t('from ATH', '距历史高点') }} {{ P.prop_etf.ath_date }} · {{ t('developer-stress proxy', '开发商压力替代') }}</p>
+        {% if P.prop_etf.chart_html %}<div class="chart">{{ P.prop_etf.chart_html | safe }}</div>{% endif %}
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+  {% endif %}
+
   <!-- ===================== SENTIMENT THERMOMETER ===================== -->
   {% if I.flows or I.turnover %}
   <div class="panel span4">
