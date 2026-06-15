@@ -1276,6 +1276,15 @@ def _r(v, n=2):
     return round(float(v), n) if v is not None and pd.notna(v) else None
 
 
+def _okx_ls_lean(z) -> str:
+    """Contrarian crowding label for the OKX retail long/short z (DISPLAY-ONLY,
+    never a directional trigger): crowded_long above +1.5, crowded_short below
+    -1.5, else balanced. None/NaN -> balanced."""
+    if z is None or pd.isna(z):
+        return "balanced"
+    return "crowded_long" if z > 1.5 else "crowded_short" if z < -1.5 else "balanced"
+
+
 def chart_ethbtc(ratio: pd.Series, ma: pd.Series | None, cfg: dict) -> str:
     d = _tail(ratio, 365 * 5)
     fig = go.Figure()
@@ -1568,6 +1577,14 @@ def main() -> int:
             "oi_mcap_pctile": _r(last.get("oi_mcap_pctile"), 0),
             "funding_annual": _r(last.get("funding_annual_pct"), 1),
             "funding_z": _r(last.get("funding_z"), 1),
+            # OKX retail positioning — DISPLAY-ONLY crowding context (rubik free data, shallow
+            # history); lean is contrarian framing, never a directional trigger.
+            "okx_ls_ratio": _r(last.get("okx_ls_ratio"), 2),
+            "okx_ls_pctile": _r(last.get("okx_ls_ratio_pctile"), 0),
+            "okx_ls_z": _r(last.get("okx_ls_ratio_z"), 1),
+            "okx_taker_buy": _r(last.get("okx_taker_buy"), 3),
+            "okx_taker_pctile": _r(last.get("okx_taker_buy_pctile"), 0),
+            "okx_ls_lean": _okx_ls_lean(last.get("okx_ls_ratio_z")),
             "oi_divergence": _r(100 * last["oi_price_divergence"], 1) if pd.notna(last.get("oi_price_divergence")) else None,
             "stress": _r(last.get("leverage_stress"), 0),
             # CME (regulated) basis — institutional carry context (D-vec-CME)

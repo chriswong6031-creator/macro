@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import time
 
+import numpy as np
 import pandas as pd
 
 from collectors.base import Adapter
@@ -36,6 +37,12 @@ class OkxAdapter(Adapter):
         oi = self._open_interest()
         if oi is not None:
             out["open_interest"] = oi
+        lsr = self._ls_account_ratio()
+        if lsr is not None:
+            out["ls_account_ratio"] = lsr
+        tk = self._taker_volume()
+        if tk is not None:
+            out["taker_volume"] = tk
         if not out:
             raise ValueError("okx returned nothing")
         return out
@@ -80,3 +87,35 @@ class OkxAdapter(Adapter):
         df["date"] = pd.to_datetime(pd.to_numeric(df["ts"]), unit="ms").dt.normalize()
         df["oi_usd"] = pd.to_numeric(df["oi_usd"], errors="coerce")
         return df.set_index("date")[["oi_usd"]].dropna().sort_index()
+
+    def _ls_account_ratio(self) -> pd.DataFrame | None:
+        """rubik retail long/short ACCOUNT ratio (#accounts net-long / #net-short)
+        for BTC — a breadth-of-positioning read distinct from funding (price of
+        leverage) and OI (notional). Keyless; recent ~180d window only."""
+        r = self.http_get(self.cfg["ls_ratio_url"], retries=self.cfg["retries"],
+                          params={"ccy": "BTC", "period": "1D"}, timeout=30)
+        data = r.json().get("data", [])
+        if not data:
+            return None
+        # rows: [ts_ms, ratio]   ratio = #accounts long / #accounts short
+        df = pd.DataFrame(data, columns=["ts", "ls_ratio"])
+        df["date"] = pd.to_datetime(pd.to_numeric(df["ts"]), unit="ms").dt.normalize()
+        df["ls_ratio"] = pd.to_numeric(df["ls_ratio"], errors="coerce")
+        return df.set_index("date")[["ls_ratio"]].dropna().sort_index()
+
+    def _taker_volume(self) -> pd.DataFrame | None:
+        """rubik aggressive taker buy/sell volume for BTC SPOT -> buy share =
+        buy/(buy+sell), a short-horizon order-flow imbalance gauge. Keyless;
+        recent window only. (SWAP instType returns nothing for BTC here.)"""
+        r = self.http_get(self.cfg["taker_url"], retries=self.cfg["retries"],
+                          params={"ccy": "BTC", "instType": "SPOT", "period": "1D"}, timeout=30)
+        data = r.json().get("data", [])
+        if not data:
+            return None
+        # rows: [ts_ms, sellVol, buyVol] (sell-then-buy — confirmed live 2026-06-14)
+        df = pd.DataFrame(data, columns=["ts", "sell_vol", "buy_vol"])
+        df["date"] = pd.to_datetime(pd.to_numeric(df["ts"]), unit="ms").dt.normalize()
+        buy = pd.to_numeric(df["buy_vol"], errors="coerce")
+        sell = pd.to_numeric(df["sell_vol"], errors="coerce")
+        df["taker_buy_ratio"] = buy / (buy + sell).replace(0, np.nan)
+        return df.set_index("date")[["taker_buy_ratio"]].dropna().sort_index()

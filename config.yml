@@ -672,6 +672,8 @@ coinbase:
 okx:
   funding_url: https://www.okx.com/api/v5/public/funding-rate-history
   oi_url: https://www.okx.com/api/v5/rubik/stat/contracts/open-interest-volume
+  ls_ratio_url: https://www.okx.com/api/v5/rubik/stat/contracts/long-short-account-ratio
+  taker_url: https://www.okx.com/api/v5/rubik/stat/taker-volume
   inst_id: BTC-USDT-SWAP
   retries: 3
 
@@ -1863,6 +1865,8 @@ vector:
     pctile_lookback_d: 730
     change_window_d: 14           # OI / price change horizon for the divergence
     funding_z_window_d: 180       # funding extremity window
+    okx_pctile_lookback_d: 180    # OKX rubik retail history is shallow -> short window
+    okx_z_window_d: 90            # z-window for the OKX retail long/short chip (display-only)
     stress_oi_pctile_w: 1.0       # leverage_stress = weighted mean of scaled parts
     stress_funding_w: 1.0
     stress_oi_rise_w: 0.5

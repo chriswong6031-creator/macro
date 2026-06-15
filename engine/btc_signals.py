@@ -723,6 +723,23 @@ def leverage(inputs: dict, cfg: dict) -> pd.DataFrame:
         wsum = stacked.notna().mul(weights, axis=1).sum(axis=1)
         out["leverage_stress"] = (stacked.mul(weights, axis=1).sum(axis=1, min_count=1)
                                   / wsum.replace(0, np.nan) * 100).clip(0, 100)
+
+    # OKX retail positioning — DISPLAY-ONLY crowding context (research/OKX_RETAIL_CHIPS_SPEC.md).
+    # Deliberately computed AFTER leverage_stress and NOT appended to parts/weights: these
+    # never enter the scored stress gauge, allocation, axes or regime. rubik history is
+    # shallow -> short rolling windows (okx_* cfg keys, .get() with defaults so a missing
+    # key can't break the build).
+    lsr = inputs.get("okx_ls_ratio")
+    if lsr is not None:
+        s = lsr.reindex(idx).ffill(limit=3)
+        out["okx_ls_ratio"] = s
+        out["okx_ls_ratio_pctile"] = _pctile(s, cfg.get("okx_pctile_lookback_d", 180)) * 100
+        out["okx_ls_ratio_z"] = _zscore(s, cfg.get("okx_z_window_d", 90))
+    tk = inputs.get("okx_taker_buy")
+    if tk is not None:
+        s = tk.reindex(idx).ffill(limit=3)
+        out["okx_taker_buy"] = s
+        out["okx_taker_buy_pctile"] = _pctile(s, cfg.get("okx_pctile_lookback_d", 180)) * 100
     return out
 
 
