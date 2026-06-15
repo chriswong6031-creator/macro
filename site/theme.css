@@ -126,6 +126,25 @@ html body .prob .pc { font-size: 18px; font-weight: 700; }
 
 .pos { color: var(--up); } .neg { color: var(--down); }
 
+/* advancing/declining mini-bar (market-breadth scorecard) */
+.bbar { display:inline-flex; width:90px; height:7px; margin-left:8px; vertical-align:middle;
+  border:1px solid var(--line); border-radius:4px; overflow:hidden; background:var(--panel2); }
+.bbar i { display:block; height:100%; }
+
+/* market snapshot tiles + VIX monitor (macro at-a-glance surfacing) */
+.mtiles { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+@media (max-width:760px){ .mtiles { grid-template-columns:repeat(2,1fr); } }
+.mtile { background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:10px 12px; }
+.mtile-top { display:flex; justify-content:space-between; align-items:baseline; gap:6px; }
+.mtile-lbl { font-size:12px; color:var(--muted); }
+.mtile-tag { font-size:9px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); opacity:.65; white-space:nowrap; }
+.mtile-val { font-size:20px; font-weight:700; margin:3px 0 1px; }
+.mtile-chg { font-size:12px; }
+.vixhead { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
+.vixnum { font-size:30px; font-weight:700; line-height:1; }
+.vixstats { display:flex; gap:16px; flex-wrap:wrap; margin-top:8px; }
+.badge.vix-muted { --c: var(--muted); } .badge.vix-warn { --c: var(--warn); } .badge.vix-neg { --c: var(--down); }
+
 /* rotation-stage pills (heat board) — tinted like the badges */
 .stg-improving, .stg-leading, .stg-weakening, .stg-lagging {
   background: color-mix(in srgb, var(--c) 15%, var(--panel));

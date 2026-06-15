@@ -1,5 +1,5 @@
 {
- "date": "2026-06-12",
+ "date": "2026-06-15",
  "quad": "Q3",
  "quad_name": "Stagflation",
  "growth_score": 0.25,
@@ -10,16 +10,16 @@
  "peg_state": "weak-side (outflow)",
  "ranks": {
   "Financials & Banks": 1,
-  "Internet & Tech": 2,
-  "Exchange & Diversified": 3,
-  "Property": 4,
-  "Insurance": 5,
+  "Exchange & Diversified": 2,
+  "Internet & Tech": 3,
+  "Insurance": 4,
+  "Property": 5,
   "Telecom & Utilities": 6,
   "Consumer": 7,
   "Energy": 8,
   "Healthcare & Pharma": 9,
   "Gaming & Leisure": 10,
-  "Auto & EV": 11,
-  "Materials": 12
+  "Materials": 11,
+  "Auto & EV": 12
  }
 }
