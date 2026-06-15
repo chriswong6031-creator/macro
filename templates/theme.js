@@ -161,11 +161,13 @@
       ".has-nav-toggle .nav-links{display:none;position:absolute;top:100%;left:8px;right:8px;z-index:1000;box-sizing:border-box;flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:1px;margin-top:8px;padding:8px;border-radius:14px;background:var(--panel,var(--card));border:1px solid var(--line,var(--grid));box-shadow:0 18px 44px rgba(16,24,40,.30);max-height:78vh;overflow-y:auto;overflow-x:hidden}",
       ".has-nav-toggle.nav-open .nav-links{display:flex}",
       ".has-nav-toggle .nav-links a.nav-link{display:block;width:100%;padding:11px 12px;font-size:15px;border-radius:9px;white-space:normal}",
-      /* nested fly-outs can't hover/tap-open inside a tap menu → flatten inline */
+      /* nested fly-outs: accordion on mobile (tap parent → toggle open class) */
       ".has-nav-toggle .nav-links .nav-dd{display:block;width:100%}",
-      ".has-nav-toggle .nav-links .nav-dd>a.nav-link .caret{display:none}",
+      ".has-nav-toggle .nav-links .nav-dd>a.nav-link .caret{display:inline-block;transition:transform .2s}",
+      ".has-nav-toggle .nav-links .nav-dd.open>a.nav-link .caret{transform:rotate(180deg)}",
       ".has-nav-toggle .nav-links .nav-dd::after{display:none}",
-      ".has-nav-toggle .nav-links .nav-dd-menu{position:static;opacity:1;visibility:visible;transform:none;min-width:0;margin:0;padding:0 0 4px 12px;border:none;box-shadow:none;background:transparent}",
+      ".has-nav-toggle .nav-links .nav-dd-menu{position:static;transform:none;min-width:0;margin:0;padding:0;border:none;box-shadow:none;background:transparent;max-height:0;overflow:hidden;opacity:0;visibility:visible;transition:max-height .28s ease,opacity .18s ease}",
+      ".has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu{max-height:600px;opacity:1;padding:0 0 6px 12px}",
       ".has-nav-toggle .nav-links .nav-dd-menu a{display:block;padding:9px 12px;font-size:14px;font-weight:500;white-space:normal}",
       ".has-nav-toggle .nav-links .nav-dd-menu a .d{display:block;font-size:11px;opacity:.65;font-weight:400}",
     "}"
@@ -199,14 +201,30 @@
     function closeNav() {
       nav.classList.remove('nav-open');
       btn.setAttribute('aria-expanded', 'false');
+      links.querySelectorAll('.nav-dd.open').forEach(function(d) { d.classList.remove('open'); });
     }
     btn.addEventListener('click', function (e) {
       e.preventDefault(); e.stopPropagation();
       var open = nav.classList.toggle('nav-open');
       btn.setAttribute('aria-expanded', open ? 'true' : 'false');
     });
-    // close after a destination is picked, on Escape, on outside tap, on widen
-    links.addEventListener('click', function (e) { if (e.target.closest('a')) closeNav(); });
+    // accordion: tap dropdown parent to toggle submenu (mobile only)
+    links.querySelectorAll('.nav-dd').forEach(function(dd) {
+      var trigger = dd.querySelector(':scope > a.nav-link');
+      if (!trigger) return;
+      trigger.addEventListener('click', function(e) {
+        if (window.innerWidth > 700) return;
+        e.preventDefault(); e.stopPropagation();
+        var wasOpen = dd.classList.contains('open');
+        links.querySelectorAll('.nav-dd.open').forEach(function(d) { d.classList.remove('open'); });
+        if (!wasOpen) dd.classList.add('open');
+      });
+    });
+    // close after a destination link is picked, on Escape, on outside tap, on widen
+    links.addEventListener('click', function (e) {
+      var a = e.target.closest('a');
+      if (a && !a.closest('.nav-dd') || (a && a.closest('.nav-dd-menu'))) closeNav();
+    });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeNav(); });
     document.addEventListener('click', function (e) { if (!nav.contains(e.target)) closeNav(); });
     window.addEventListener('resize', function () { if (window.innerWidth > 700) closeNav(); });

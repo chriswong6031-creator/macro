@@ -550,11 +550,11 @@ def main() -> int:
         # hk.html render, so its global-beta board could feed the page)
         try:
             from engine.cycles import STATE_DISPLAY
-            stock_html = env.get_template("hk_stock.html.j2").render(
+            stock_html = env.get_template("hk_lookup.html.j2").render(
                 state_display_json=json.dumps(STATE_DISPLAY, default=str),
                 generated_utc=vm["built"])
-            (site / "hk_stock.html").write_text(stock_html)
-            log.info("wrote %s/hk_stock.html + hkstockdata/", site)
+            (site / "hk_lookup.html").write_text(stock_html)
+            log.info("wrote %s/hk_lookup.html + hkstockdata/", site)
         except Exception as e:  # noqa: BLE001 — search is additive, never fatal
             log.error("hk stock search render failed (%s); skipping", e)
 

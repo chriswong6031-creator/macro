@@ -3,7 +3,7 @@
 HK parallel of scripts/build_china_library.py. Runs the SAME cycle/ladder engine
 over the HK universe (curated constituents from the breadth close cache + HK
 indices + ETF proxies in store group 'hk') and writes one small JSON per
-instrument that hk_stock.html fetches client-side. Instant search, no keys, no
+instrument that hk_lookup.html fetches client-side. Instant search, no keys, no
 rate limits. site/hkstockdata/ is gitignored — regenerated nightly.
 
 Each record carries a `tv` field = the TradingView HKEX: symbol so the search
