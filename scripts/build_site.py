@@ -1366,7 +1366,7 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
     from engine.cycles import LADDER, STATE_DISPLAY, analyze
     from engine.holdings_signals import accumulation_signals
     from engine.playbook import SECTOR_NAMES
-    from engine.setups import US_ALPHA_WEIGHT, timing_tilt
+    from engine.setups import US_ALPHA_WEIGHT, sue_confirmer, timing_tilt
     from scripts.build_stock_library import current_liquidity, current_macro
 
     # per-ticker sector-neutral residual alpha (already computed by build_alpha_data
@@ -1375,11 +1375,14 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
     # score (selection × timing). Absent => cards fall back to pure cycle timing.
     alpha_pt = (alpha or {}).get("per_ticker", {})
     # confirmer legs on those same cards: a distinct-insider Form-4 BUY cluster
-    # (insider_signals.json, written by build_insider_data just above) and the
-    # cross-sectional factor composite (factors.json table) as a light tiebreaker.
-    # Both additive + graceful — absent => the card simply omits that chip.
+    # (insider_signals.json, written by build_insider_data just above), the cross-
+    # sectional factor composite (factors.json table) as a light tiebreaker, and the
+    # validated SUE earnings-momentum z (factors.json table 'sue') as an earnings-
+    # drift confirmer. All additive + graceful — absent => the card omits that chip.
+    # None of these enter the setup score; they are displayed risk/conviction context.
     insider_map: dict[str, dict] = {}
     factor_z: dict[str, float] = {}
+    sue_z: dict[str, float] = {}
     try:
         _ip = site / "factordata" / "insider_signals.json"
         if _ip.exists():
@@ -1387,8 +1390,12 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
         _fp = site / "factordata" / "factors.json"
         if _fp.exists():
             for _r in (json.loads(_fp.read_text()) or {}).get("table", []):
-                if _r.get("ticker") and _r.get("composite") is not None:
+                if not _r.get("ticker"):
+                    continue
+                if _r.get("composite") is not None:
                     factor_z[_r["ticker"]] = _r["composite"]
+                if _r.get("sue") is not None:
+                    sue_z[_r["ticker"]] = _r["sue"]
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("standout confirmer maps unavailable (%s)", e)
 
@@ -1465,7 +1472,9 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
                     setup = round((US_ALPHA_WEIGHT * az + tilt) if az is not None
                                   else tilt, 2)
                     # confirmers: an insider BUY cluster (>=2 distinct insiders net
-                    # buying, Form-4 6mo) + the factor composite (light tiebreaker)
+                    # buying, Form-4 6mo) + the factor composite (light tiebreaker) +
+                    # the SUE earnings-momentum z (gated to a real positive tailwind).
+                    # All DISPLAY context — none touch the setup score above.
                     ins = insider_map.get(tick) or {}
                     ins_buy = ins.get("buyers", 0) >= 2 and (ins.get("net_mn") or 0) > 0
                     notable.append({"ticker": tick, "name": str(r.get("name", "")).title(),
@@ -1489,6 +1498,7 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
                                     "insider_buyers": ins.get("buyers") if ins_buy else None,
                                     "insider_bps": ins.get("bps") if ins_buy else None,
                                     "insider_net_mn": ins.get("net_mn") if ins_buy else None,
+                                    "sue_z": sue_confirmer(sue_z.get(tick)),
                                     "signal_date": lad.get("signal_date"),
                                     "age_days": lad.get("age_days"),
                                     "spark_svg": _mini_svg(spark, color=scolor, w=240, h=42,

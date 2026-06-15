@@ -26,7 +26,7 @@ from engine import ticker_alerts  # noqa: E402
 from engine.conditions import sector_macro_beta  # noqa: E402
 from engine.cycles import analyze  # noqa: E402
 from engine.playbook import SECTOR_NAMES  # noqa: E402
-from engine.setups import US_ALPHA_WEIGHT, rank_setups, setup_score  # noqa: E402
+from engine.setups import US_ALPHA_WEIGHT, rank_setups, setup_score, sue_confirmer  # noqa: E402
 from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
@@ -280,16 +280,23 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("alpha.json unreadable (%s)", e)
     # confirmer legs for the Top-setups board: the factor composite (factors.json
-    # table) as a LIGHT tiebreaker + insider BUY clusters (insider_signals.json) —
-    # both written by build_site just before this runs. Additive — absent => no chip.
+    # table) as a LIGHT tiebreaker + insider BUY clusters (insider_signals.json) + the
+    # validated SUE earnings-momentum z (factors.json table 'sue') — all written by
+    # build_site just before this runs. Additive — absent => no chip. DISPLAY context
+    # only; the factor breaks ties in rank_setups, insider/SUE never touch the order.
     factor_z: dict[str, float] = {}
+    sue_z: dict[str, float] = {}
     insider_map: dict[str, dict] = {}
     fp = site / "factordata" / "factors.json"
     if fp.exists():
         try:
             for _r in (json.loads(fp.read_text()) or {}).get("table", []):
-                if _r.get("ticker") and _r.get("composite") is not None:
+                if not _r.get("ticker"):
+                    continue
+                if _r.get("composite") is not None:
                     factor_z[_r["ticker"]] = _r["composite"]
+                if _r.get("sue") is not None:
+                    sue_z[_r["ticker"]] = _r["sue"]
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("factors.json unreadable (%s)", e)
     isp = site / "factordata" / "insider_signals.json"
@@ -341,6 +348,9 @@ def main() -> int:
                     row["insider_buyers"] = ins.get("buyers")
                     row["insider_bps"] = ins.get("bps")
                     row["insider_net_mn"] = ins.get("net_mn")
+                sconf = sue_confirmer(sue_z.get(ticker))    # earnings-momentum confirmer (display only)
+                if sconf is not None:
+                    row["sue_z"] = sconf
                 cand.append(sc)
         if smart_money.get(ticker):
             rec["smart_money"] = smart_money[ticker]

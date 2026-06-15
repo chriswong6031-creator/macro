@@ -44,6 +44,31 @@ _ENTRY_TILT = {"pullback": 0.7, "extended": -0.7}
 # default cross-sectional gates for the "Top setups" / "Laggards" boards
 BUY_MIN, LAG_MAX, N_BUY, N_LAG = 0.5, -0.3, 12, 6
 
+# SUE earnings-momentum confirmer (DISPLAY CONTEXT ONLY) — a setup card / Top-setups
+# row may carry a SUE (standardized unexpected earnings) chip the SAME way it carries
+# the insider buy-cluster chip: a CONFIRMER shown beside the card, NEVER folded into
+# setup_score. The setup ranking is validated as rank-by-alpha — timing and confirmers
+# are displayed risk context, not scored (research/US_STANDOUT_SETUP_SCORE.md). SUE is
+# the post-earnings-announcement-drift leg and the only positive factor to survive the
+# leak-free FDR scorecard (engine/sue.py); a positive z means the latest quarter beat
+# its seasonal expectation and tends to keep drifting — earnings momentum AGREES with
+# the setup. Gated to a real positive tailwind so it stays a confirmer, not noise.
+SUE_CONFIRM = 1.0
+
+
+def sue_confirmer(sue_z) -> float | None:
+    """The SUE z to DISPLAY as an earnings-momentum confirmer chip on a setup card,
+    or None when it is missing/NaN or below the positive-tailwind gate. Mirrors the
+    insider buy-cluster chip: a confirmer leg only — the caller attaches the returned
+    value to the card row, and it NEVER enters :func:`setup_score`."""
+    try:
+        z = float(sue_z)
+    except (TypeError, ValueError):
+        return None
+    if z != z or z < SUE_CONFIRM:        # NaN, or below the tailwind gate
+        return None
+    return round(z, 2)
+
 
 def timing_tilt(urgency: str | None, eq_dir: str | None,
                 alpha_entry: str | None) -> float:
