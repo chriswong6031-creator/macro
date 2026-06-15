@@ -166,6 +166,57 @@
       '精选主题股票篮子 — 每次成分调整均注明日期与理由；等权重、按月再平衡、调整间买入持有。若有相近行业 ETF，则按日交叉验证。仅作监测/结构参考，并非买入清单。') }}</p>
   </header>
 
+  {% if flow %}
+  {% set SZH = {'Information Technology':'信息技术','Health Care':'医疗保健','Financials':'金融','Consumer Discretionary':'非必需消费','Communication Services':'通信服务','Industrials':'工业','Consumer Staples':'必需消费','Energy':'能源','Utilities':'公用事业','Real Estate':'房地产','Materials':'原材料'} %}
+  <div class="panel pad" id="flow-lens" style="margin-top:10px;border-left:3px solid var(--muted)">
+    <h2 style="margin:0 0 4px"><span class="idx">00</span>🌐 {{ t('Flow lens — where rotation is concentrating', '资金流透视 — 轮动集中在哪里') }}
+      <span class="chip" style="vertical-align:middle">{{ t('display-only', '仅展示') }}</span></h2>
+    <p class="tagline" style="margin-top:0">{{ t(
+      'A detection + description layer, NOT a forecast. It ranks where cross-sectional flow is concentrating across the unbiased point-in-time GICS sectors and the thematic baskets — rigorously validated to have NO forward edge (rank-IC ~0 on clean sectors; the basket "edge" was survivorship). Use it to focus attention; never to infer returns.',
+      '这是探测+描述层，并非预测。它在无偏的时点 GICS 行业与主题篮子中，排出资金横截面集中之处 — 经严格验证无前瞻优势（干净行业上 rank-IC≈0；篮子的"优势"实为幸存者偏差）。用于聚焦关注，绝不用于推断收益。') }}</p>
+
+    {% if flow.cluster %}{% set CL = flow.cluster %}
+    <div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 12px;margin:6px 0;font-size:13px">
+      <b>{{ t('Cross-group structure', '跨组结构') }}</b> <span class="muted">{{ t('supply-chain / theme-spread read', '供应链／主题扩散读数') }}</span><br>
+      {{ t('co-movement', '共动度') }} <b>{{ (CL.absorption*100)|round|int }}%</b> ({{ t(CL.regime, {'concentrated':'高度集中','broad':'分散','mixed':'中等'}.get(CL.regime, CL.regime)) }})
+      · {{ t('dominant cluster', '主导集群') }}: {% for s in CL.dominant_cluster %}<span class="chip">{{ t(s, SZH.get(s, s)) }}</span>{% endfor %}
+      {% if CL.top_pair %}· {{ t('tightest pair', '最紧耦合') }} {{ t(CL.top_pair[0], SZH.get(CL.top_pair[0], CL.top_pair[0])) }} ↔ {{ t(CL.top_pair[1], SZH.get(CL.top_pair[1], CL.top_pair[1])) }} ({{ '%.2f'|format(CL.top_pair_corr) }}){% endif %}
+    </div>
+    {% endif %}
+
+    <div class="story" style="margin:8px 0 2px">{{ t('Concentrating now', '当前集中') }}
+      <span class="muted" style="font-size:12px">— {{ t('descriptive flow + read-quality bar; sectors are unbiased, baskets are hindsight-curated (confidence-capped). Do not rank one type against the other.', '描述性资金流 + 读数质量条；行业无偏，篮子为事后筛选（置信度封顶）。勿跨类型排名。') }}</span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      {% for col, label, lzh in [(flow.sectors, 'GICS sectors (unbiased)', 'GICS 行业（无偏）'), (flow.baskets, 'Thematic baskets (capped)', '主题篮子（封顶）')] %}
+      <div>
+        <div style="font-weight:650;font-size:12px;margin-bottom:3px">{{ t(label, lzh) }}</div>
+        {% for g in col[:5] %}
+        <div style="display:flex;align-items:center;gap:7px;margin:3px 0">
+          <span style="flex:0 0 12px;font-size:11px" title="{{ g.stage }}">{{ {'emerging':'▲','confirmed':'●','cooling':'▽','quiet':'·'}.get(g.stage,'·') }}</span>
+          <span style="flex:1;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ t(g.name, g.name_zh) }}{% if g.leadership.breadth=='narrow' %} <span class="chip" style="font-size:10px" title="one name dominates the move">⚠{{ t('narrow','集中') }}</span>{% endif %}</span>
+          <div style="flex:0 0 56px;height:6px;background:var(--line);border-radius:4px;overflow:hidden"><div style="height:100%;width:{{ (g.read_quality*100)|round|int }}%;background:var(--muted)"></div></div>
+          <span class="muted" style="flex:0 0 30px;text-align:right;font-size:10.5px">{{ '%.2f'|format(g.read_quality) }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+
+    {% set RG = flow.regime %}
+    {% set cohering = [] %}{% for g in (flow.sectors + flow.baskets) %}{% if g.cohesion_gate.stress_conditional %}{% set _ = cohering.append(g) %}{% endif %}{% endfor %}
+    <div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 12px;margin:10px 0 4px;font-size:12.5px">
+      <b>{{ t('Cohesion gate', '共动门') }}</b> <span class="muted">({{ t('context only · the one measured-but-modest edge, stress-conditional, 20d', '仅上下文 · 唯一实测但有限的边际信号，压力条件下，20日') }})</span><br>
+      {% if RG.elevated and cohering %}⚠ {{ t('Stress regime AND groups cohering', '压力状态 且 多组共动') }}: {% for g in cohering %}<span class="chip">{{ t(g.name, g.name_zh) }}</span>{% endfor %} — {{ t('rotation may be forming (low confidence; a stress dispersion-recovery proxy, not inflows)', '轮动或在形成（低置信度；压力离散修复代理，并非资金流入）') }}
+      {% else %}{{ t('inactive', '未激活') }} — {{ t('VIX', 'VIX') }} {% if RG.pctile is not none %}{{ (RG.pctile*100)|round|int }}%ile{% else %}—{% endif %} ({{ t('not a stress regime; cohesion only carries signal under stress', '非压力状态；共动仅在压力下才有意义') }}){% endif %}
+    </div>
+
+    <div class="muted" style="font-size:11.5px;margin-top:6px">{{ t('Verdict', '结论') }}: <b>{{ flow.verdict }}</b> · {{ t(
+      'never scored, never an axis. The read-quality bar measures data/coherence, NOT directional confidence (there is none). Built on a ~3y cache; reconfirm as data accrues. This is the wide detector that focuses a separate inference layer — it does not draw conclusions itself.',
+      '从不评分、绝不入轴。读数质量条衡量数据/一致性，而非方向置信度（不存在）。基于约3年缓存；随数据积累需复核。这是用于聚焦独立推断层的"宽探测器"，本身不下结论。') }}
+      <a href="#" onclick="return false" class="muted" style="text-decoration:underline" title="See data/group_flow/validation_meta.json">{{ t('how this was validated', '验证方法') }}</a></div>
+  </div>
+  {% endif %}
+
   <div id="content">
     <section id="table-section">
       <h2><span class="idx">01</span>{{ t('Performance table', '表现一览') }}</h2>

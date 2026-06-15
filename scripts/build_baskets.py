@@ -43,6 +43,19 @@ def main() -> int:
     fdir.mkdir(parents=True, exist_ok=True)
     (fdir / "baskets.json").write_text(json.dumps(data, separators=(",", ":"), default=str))
 
+    # Engine-1 FLOW LENS (display-only characterization + the AI-handoff payload). It
+    # ranks where cross-sectional flow is CONCENTRATING (PIT sectors + baskets), maps the
+    # cross-group cluster, and carries the validated-honest verdict/caveats. flow.json is
+    # the contract a downstream AI judge reads. Additive — never breaks the page.
+    flow = None
+    try:
+        from engine.group_flow import compute_group_flows
+        flow = compute_group_flows()
+        if flow:
+            (fdir / "flow.json").write_text(json.dumps(flow, separators=(",", ":"), default=str))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("group_flow lens failed: %s", e)
+
     # split the dense CHART (level matrix, for the interactive chart + live σ/sort table)
     # from the BASKETS metadata (thesis/members/rationale/perf/changelog/reference).
     chart = data.pop("chart")
@@ -51,6 +64,7 @@ def main() -> int:
     html = env.get_template("baskets.html.j2").render(
         baskets_json=json.dumps(data, separators=(",", ":")),
         chart_json=json.dumps(chart, separators=(",", ":")),
+        flow=flow,
         generated_utc=built)
     (site / "baskets.html").write_text(html)
     # ship the TradingView Lightweight Charts runtime (Apache-2.0) used by the page
