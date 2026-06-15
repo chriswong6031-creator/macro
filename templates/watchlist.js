@@ -235,6 +235,74 @@
       '" aria-label="' + esc(L('removeA')) + '">✕</button>';
   }
 
+  // ---- book-level factor exposure: the watchlist's hidden one-way bet -------
+  // Equal-weight average of each holding's per-stock exposure betas (added to the
+  // library JSON in the analyzer). Mirrors engine.factor_exposure.book_exposure.
+  function aggExposure(jsons) {
+    var net = {}, labels = {}, holders = [], k;
+    jsons.forEach(function (j) {
+      var e = j && j.exposure;
+      if (!e || !e.betas) return;
+      holders.push(e);
+      for (k in e.betas) {
+        net[k] = (net[k] || 0) + e.betas[k].beta;
+        labels[k] = [e.betas[k].label, e.betas[k].label_zh];
+      }
+    });
+    var n = holders.length;
+    if (n < 2) return null;
+    for (k in net) net[k] /= n;
+    var dom = null, best = 0;
+    for (k in net) { if (k !== 'market' && Math.abs(net[k]) > best) { best = Math.abs(net[k]); dom = k; } }
+    var aligned = 0;
+    if (dom) {
+      var s = net[dom] >= 0 ? 1 : -1;
+      holders.forEach(function (e) { if (e.betas[dom] && (e.betas[dom].beta >= 0 ? 1 : -1) === s) aligned++; });
+    }
+    return { net: net, labels: labels, dominant: dom, n_aligned: aligned, n_total: n,
+             concentrated: !!(dom && aligned >= 0.7 * n && Math.abs(net[dom]) >= 0.25) };
+  }
+  function renderBookExposure() {
+    var box = document.getElementById('wl_book'), body = document.getElementById('wl_book_body');
+    if (!box || !body) return;
+    var ts = blob.items.map(function (it) { return it.t; });
+    if (ts.length < 2) { box.style.display = 'none'; return; }
+    Promise.all(ts.map(function (t) { return window.SD.loadTicker(t).catch(function () { return null; }); }))
+      .then(function (jsons) {
+        var a = aggExposure(jsons.filter(Boolean));
+        if (!a || !a.dominant) { box.style.display = 'none'; return; }
+        var lz = window.SD.lz, zh = lang() === 'zh';
+        var lab = function (k) { return zh && a.labels[k] && a.labels[k][1] ? a.labels[k][1] : (a.labels[k] ? a.labels[k][0] : k); };
+        var rows = Object.keys(a.net).filter(function (k) { return k !== 'market'; })
+          .sort(function (x, y) { return Math.abs(a.net[y]) - Math.abs(a.net[x]); });
+        var maxb = 1;
+        rows.forEach(function (k) { maxb = Math.max(maxb, Math.abs(a.net[k])); });
+        var bars = rows.map(function (k) {
+          var b = a.net[k], col = b >= 0 ? 'var(--up,#16a34a)' : 'var(--down,#dc2626)';
+          var w = Math.round(78 * Math.abs(b) / maxb);
+          return '<div style="display:flex;align-items:center;gap:8px;margin:3px 0">' +
+            '<span style="width:104px;font-size:12px">' + esc(lab(k)) + '</span>' +
+            '<span style="flex:1"><span style="display:inline-block;height:8px;border-radius:4px;background:' + col +
+              ';width:' + w + 'px;vertical-align:middle"></span></span>' +
+            '<span class="' + (b >= 0 ? 'pos' : 'neg') + '" style="width:54px;text-align:right;font-variant-numeric:tabular-nums">' +
+              (b >= 0 ? '+' : '') + b.toFixed(2) + '</span></div>';
+        }).join('');
+        var dl = lab(a.dominant), nb = a.net[a.dominant], nbs = (nb >= 0 ? '+' : '') + nb.toFixed(2);
+        var head = a.concentrated
+          ? '<b class="neg">' + esc(lz('Really one ' + dl + ' bet', '其实是一笔' + dl + '押注')) + '</b> — ' +
+            esc(lz(a.n_aligned + ' of your ' + a.n_total + ' names load the same way. Looks diversified, but it is concentrated.',
+                   '你 ' + a.n_total + ' 只中有 ' + a.n_aligned + ' 只同向暴露。看似分散，实则集中。'))
+          : '<b class="pos">' + esc(lz('Genuinely diversified', '确实分散')) + '</b> — ' +
+            esc(lz('mild ' + dl + ' tilt (' + nbs + '), no single dominant factor.',
+                   '轻微' + dl + '倾斜（' + nbs + '），无单一主导因子。'));
+        body.innerHTML = '<p style="margin:0 0 8px">' + head + '</p><div style="margin:6px 0 2px">' + bars + '</div>' +
+          '<p class="muted" style="font-size:11.5px;margin:8px 0 0">' + esc(lz(
+            'Equal-weight average of each holding’s factor-exposure betas (per 1-SD move), market-orthogonalised. EXPOSURE, not a forecast — a read on your book’s hidden one-way bet, never a buy/sell signal.',
+            '各持仓因子暴露贝塔（按 1 个标准差变动）的等权平均，已对大盘正交化。这是暴露而非预测 — 揭示你组合隐藏的单边押注，绝非买卖信号。')) + '</p>';
+        box.style.display = '';
+      });
+  }
+
   function render() {
     if (!listEl) return;
     var rows = viewItems();
@@ -246,6 +314,7 @@
     if (!blob.items.length) {
       listEl.innerHTML = ''; empty.style.display = 'block'; renderStarters();
       document.getElementById('wl_controls').style.display = 'none';
+      var bx = document.getElementById('wl_book'); if (bx) bx.style.display = 'none';
       return;
     }
     empty.style.display = 'none';
@@ -253,6 +322,7 @@
     listEl.innerHTML = rows.map(cardHTML).join('');
     // (re)observe enrich hosts for lazy detail loading
     wireEnrich();
+    renderBookExposure();   // book-level factor exposure (your hidden one-way bet)
   }
 
   // ---- lazy Tier-2 enrichment (entry cue + momentum strip) ----------------
