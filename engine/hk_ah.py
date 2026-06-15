@@ -123,6 +123,55 @@ def ah_basket() -> dict | None:
     }
 
 
+def ah_by_ticker() -> dict[str, dict]:
+    """Per dual-listed H-share: its A/H premium TODAY, the percentile within that pair's
+    OWN history, the 1-year change, and the A twin — for the per-stock A/H panel on the
+    HK analyzer. Keyed by H-share ticker (e.g. ``0939.HK``). Empty dict if the inputs are
+    missing, so the caller silently hides the panel. Same computed-premium method as
+    ``ah_basket`` (1:1 share-equivalence; lean on the trend/percentile, not the level)."""
+    cfg = config.load().get("hk", {})
+    pairs = cfg.get("ah_pairs") or {}
+    names = cfg.get("names") or {}
+    if not pairs:
+        return {}
+    try:
+        h_closes = pd.read_parquet(config.data_dir() / "hk_breadth" / "_closes_cache.parquet")
+    except (FileNotFoundError, OSError):
+        return {}
+    a_closes = store.read("china_search", "closes")
+    cny = store.read("china", "CNY=X")
+    hkd = store.read("hk", "HKD=X")
+    if h_closes is None or h_closes.empty or a_closes is None or a_closes.empty:
+        return {}
+    if cny is None or hkd is None or "close" not in cny.columns or "close" not in hkd.columns:
+        return {}
+    cny_per_hkd = (cny["close"].dropna() / hkd["close"].dropna()).dropna()
+    if cny_per_hkd.empty:
+        return {}
+    out: dict[str, dict] = {}
+    for h, a in pairs.items():
+        if h not in h_closes.columns or a not in a_closes.columns:
+            continue
+        df = pd.concat({"h": h_closes[h].dropna(), "a": a_closes[a].dropna(),
+                        "fx": cny_per_hkd}, axis=1, join="inner").dropna()
+        if df.empty:
+            continue
+        prem = ((df["a"] / (df["h"] * df["fx"]) - 1.0) * 100.0).dropna()
+        prem = prem[prem.index.notna()]
+        if prem.empty:
+            continue
+        latest = float(prem.iloc[-1])
+        chg_1y = round(latest - float(prem.iloc[-253]), 1) if len(prem) > 252 else None
+        out[h] = {
+            "premium_pct": round(latest, 1),
+            "pctile": _pctile(prem, latest),
+            "chg_1y": chg_1y,
+            "a": a, "name": names.get(h, h),
+            "span": f"{prem.index.min():%Y-%m} -> {prem.index.max():%Y-%m}",
+        }
+    return out
+
+
 if __name__ == "__main__":
     res = ah_basket()
     if res is None:

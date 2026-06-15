@@ -264,6 +264,30 @@ def main(betas: dict | None = None) -> dict | None:
             log.info("hk fundamentals: attached to %d names", len(fmap))
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("hk fundamentals attach failed (%s); skipping", e)
+
+    # A/H premium per dual-listed name — the signature HK cross-market arb context
+    # (how much DEARER the mainland A-share trades vs its HK-listed H twin; a high
+    # premium means the H/HK line is the cheaper way to own the same company). Pure
+    # function of already-stored A + H closes (engine/hk_ah.py); attached to the ~12
+    # dual-listed H tickers, absent => no panel.
+    try:
+        from engine import hk_ah
+        ah = hk_ah.ah_by_ticker()
+        for ticker, blk in ah.items():
+            safe = ticker.replace("=", "_").replace("^", "_")
+            fp = outdir / f"{safe}.json"
+            if not fp.exists():
+                continue
+            try:
+                rec = json.loads(fp.read_text())
+                rec["ah_premium"] = blk
+                fp.write_text(json.dumps(rec, default=str))
+            except Exception:  # noqa: BLE001
+                continue
+        if ah:
+            log.info("hk A/H premium: attached to %d dual-listed names", len(ah))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("hk A/H premium attach failed (%s); skipping", e)
     (outdir / "index.json").write_text(json.dumps(index))
     cal = config.data_dir() / "hk_regime" / "ladder_calibration.json"
     if cal.exists():
