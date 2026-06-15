@@ -204,6 +204,22 @@ def test_snapshot_structure_and_contract():
     assert snap["verdict_zh"] and snap["verdict_zh"] != snap["verdict_en"]
 
 
+def test_china_hk_snapshot_contract_real_data():
+    fr = B.china_hk_bond_frame()
+    if fr.empty:
+        print("SKIP no China/HK bond proxy data")
+        return
+    snap = B.china_hk_bond_snapshot(fr)
+    assert snap["market"] == "china_hk"
+    assert snap["health_label"] in {"healthy", "mixed", "stressed", None}
+    if snap["health_score"] is not None:
+        assert 0 <= snap["health_score"] <= 100
+    for p in ["rates", "credit_liquidity", "market_health", "fx_funding"]:
+        assert p in snap["pillars"], p
+    assert set(snap["stress_legs"]).intersection({"curve", "credit_impulse", "breadth", "fx", "hk_funding", "hk_vol"})
+    assert snap["verdict_en"] and snap["verdict_zh"]
+
+
 # --- alerts ------------------------------------------------------------------
 def test_alerts_debounce_and_idempotent():
     """Debounce kills the daily whipsaw; rebuilding is idempotent (same ids)."""
@@ -248,7 +264,8 @@ if __name__ == "__main__":
                test_uninversion_flag, test_hy_band_thresholds, test_move_band_thresholds,
                test_stress_maps_monotone, test_cycle_phase_mapping,
                test_health_score_bounds_and_orientation, test_bonds_frame_no_lookahead,
-               test_snapshot_structure_and_contract, test_alerts_debounce_and_idempotent,
+               test_snapshot_structure_and_contract, test_china_hk_snapshot_contract_real_data,
+               test_alerts_debounce_and_idempotent,
                test_real_data_smoke]:
         fn()
         print(f"PASS {fn.__name__}")
