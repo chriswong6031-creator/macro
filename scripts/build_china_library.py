@@ -264,6 +264,79 @@ def compute_china_scoreboard() -> dict | None:
     return {"as_of": rev.get("as_of") or lv.get("as_of") or al.get("as_of"), "modes": modes}
 
 
+def _spark_svg(vals: list[float], color: str = "var(--link)",
+               w: int = 240, h: int = 42) -> str:
+    """Tiny theme-aware inline sparkline (area + line + last-point dot) — the same
+    shape build_site._mini_svg draws for the US standout cards, replicated here to
+    avoid importing the heavy build_site module. `vals` = a clean recent close list."""
+    vals = [float(v) for v in vals if v is not None and v == v]
+    if len(vals) < 2:
+        return ""
+    lo, hi = min(vals), max(vals)
+    rng = (hi - lo) or 1.0
+    n, pad = len(vals), h * 0.12
+
+    def xy(i, v):
+        return (i / (n - 1) * w, (h - pad) - ((v - lo) / rng) * (h - 2 * pad) + pad)
+
+    pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in (xy(i, v) for i, v in enumerate(vals)))
+    lx, ly = xy(n - 1, vals[-1])
+    return (f'<svg class="nch" viewBox="0 0 {w} {h}" preserveAspectRatio="none" '
+            f'width="100%" height="{h}">'
+            f'<polyline points="0,{h} {pts} {w},{h}" fill="{color}" opacity="0.12" stroke="none"/>'
+            f'<polyline points="{pts}" fill="none" stroke="{color}" stroke-width="1.7" '
+            f'stroke-linejoin="round" stroke-linecap="round"/>'
+            f'<circle cx="{lx:.1f}" cy="{ly:.1f}" r="2.6" fill="{color}"/></svg>')
+
+
+def compute_china_standouts(setups: dict | None, reversal: dict | None,
+                            lowvol: dict | None) -> dict | None:
+    """Enrich the reversal-led `setups.buy` shortlist into US-parity 'Standout
+    individual stocks' CARDS — adds per-stock price + off-52w-high + a compact
+    price sparkline, plus a CHINA-UNIQUE 'confluence' flag = a name that sits in
+    BOTH the validated screens (a deep-dip reversal candidate that is ALSO a low-vol
+    defensive name → a structurally 'safer rebound'; both legs are validated, the
+    intersection is honest context, not a backtested composite). Best-effort: returns
+    the setups dict with each buy row enriched; missing fields just don't render."""
+    if not setups or not setups.get("buy"):
+        return setups
+    site = config.ROOT / config.load()["storage"]["site_dir"]
+    cd = site / "chinastockdata"
+    rev_tk = {r["ticker"] for r in (reversal or {}).get("watch", [])}
+    lv_tk = {r["ticker"] for r in (lowvol or {}).get("sleeve", [])}
+
+    # recent closes for the sparklines — one small read for the ~12 listed names
+    closes = None
+    try:
+        p = config.data_dir() / "china_search" / "closes.parquet"
+        if p.exists():
+            closes = pd.read_parquet(p)
+    except Exception:  # noqa: BLE001
+        closes = None
+
+    for r in setups["buy"]:
+        t = r["ticker"]
+        # price + off-52w-high from the per-stock library record
+        f = cd / f"{t.replace('=', '_').replace('^', '_')}.json"
+        if f.exists():
+            try:
+                rec = json.loads(f.read_text())
+                tech = rec.get("tech", {})
+                r["price"] = tech.get("price")
+                r["off_high"] = tech.get("off_52w_high_pct")
+            except Exception:  # noqa: BLE001
+                pass
+        # confluence: in the reversal watch AND the low-vol sleeve (validated both)
+        r["confluence"] = (t in rev_tk) and (t in lv_tk)
+        # compact sparkline coloured by cycle direction
+        if closes is not None and t in closes.columns:
+            s = closes[t].dropna().tail(64).tolist()
+            col = ("var(--up)" if r.get("dir") == "up"
+                   else "var(--down)" if r.get("dir") == "down" else "var(--muted)")
+            r["spark_svg"] = _spark_svg(s, color=col)
+    return setups
+
+
 def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
     """(ticker, close, high|None, name, sector) for everything analyzable."""
     out: list[tuple] = []
