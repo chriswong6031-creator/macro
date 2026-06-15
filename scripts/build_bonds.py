@@ -88,6 +88,11 @@ VERDICT_GLYPH = {"CONFIRMED": ("✓", "measured", "已校准"), "DIRECTIONAL": (
                  "UNMEASURED": ("", "", "")}
 LEG_CALIB_KEY = {"recession": "recession", "drawdown": "drawdown",
                  "credit": "credit", "rates_vol": "rates_vol", "plumbing": "plumbing"}
+# Treasury auction absorption regime -> (en, zh, color). DISPLAY-ONLY (engine.auction_stress).
+AUCTION_REGIME = {"firm": ("Firm demand", "需求强劲", C["green"]),
+                  "smooth": ("Smooth absorption", "吸收顺畅", C["green"]),
+                  "watch": ("Demand softening", "需求转弱", C["amber"]),
+                  "stressed": ("Weak absorption", "吸收承压", C["red"])}
 
 
 def _load_calibration() -> dict:
@@ -281,6 +286,29 @@ def chart_sovereign(fr: pd.DataFrame, years=14) -> str:
     return _html(fig)
 
 
+def chart_auction(fr: pd.DataFrame, years=8) -> str:
+    """Composite auction-absorption stress over time (12-auction rolling mean of the
+    -bid-to-cover/-indirect/+dealer z). Higher = weaker coupon demand. DISPLAY-ONLY."""
+    if fr is None or fr.empty or "stress_roll" not in fr:
+        return ""
+    cfg = config.load()["auction_stress"]
+    d = fr.dropna(subset=["auction_date"]).copy()
+    d = d[d["auction_date"] >= d["auction_date"].max() - pd.Timedelta(days=int(365 * years))]
+    if d.empty:
+        return ""
+    fig = go.Figure()
+    fig.add_hrect(y0=cfg["stressed_z"], y1=4, fillcolor="rgba(211,11,11,0.06)", line_width=0)
+    fig.add_hrect(y0=-4, y1=cfg["firm_z"], fillcolor="rgba(26,127,67,0.06)", line_width=0)
+    fig.add_hline(y=0, line={"color": C["faint"], "width": 1, "dash": "dot"})
+    x = [t.strftime("%Y-%m-%d") for t in d["auction_date"]]
+    y = [None if pd.isna(v) else round(float(v), 2) for v in d["stress_roll"]]
+    fig.add_trace(go.Scatter(x=x, y=y, name="Auction absorption stress",
+                             line={"color": C["ink"], "width": 2}))
+    fig.update_layout(**{**PLOT, "height": 250,
+                         "yaxis": {"title": "absorption stress (z)", "gridcolor": C["grid"]}})
+    return _html(fig)
+
+
 def chart_regional_health(fr: pd.DataFrame, years=6) -> str:
     d = _tail_years(fr, years)
     bcfg = config.load()["bonds"]["health"]
@@ -449,6 +477,21 @@ def _vm(snap: dict, fr: pd.DataFrame, calib: dict | None = None) -> dict:
     }
 
 
+def _auction_vm(snap: dict | None) -> dict | None:
+    """DISPLAY-ONLY auction-absorption view-model (engine.auction_stress). None -> the
+    template skips the panel. Never feeds a score or the cross-asset hand-off."""
+    if not snap:
+        return None
+    rg = AUCTION_REGIME.get(snap.get("regime"), (snap.get("regime") or "—", snap.get("regime") or "—", C["muted"]))
+    return {
+        "as_of": snap.get("as_of"), "regime_en": rg[0], "regime_zh": rg[1], "color": rg[2],
+        "composite_z": snap.get("composite_z"),
+        "verdict_en": snap.get("verdict_en"), "verdict_zh": snap.get("verdict_zh"),
+        "tenors": snap.get("tenors") or [], "supply": snap.get("supply") or {},
+        "recent": snap.get("recent") or [], "span": snap.get("span"),
+    }
+
+
 def _regional_vm(snap: dict) -> dict:
     p = snap["pillars"]
     rates, liq, mh, fx = p["rates"], p["credit_liquidity"], p["market_health"], p["fx_funding"]
@@ -523,7 +566,7 @@ def _group_timeline(events: list[dict]) -> list[dict]:
 # main
 # --------------------------------------------------------------------------- #
 def main() -> int:
-    from engine import inputs, bonds, bonds_alerts
+    from engine import inputs, bonds, bonds_alerts, auction_stress
     try:
         f = inputs.build_features()
         fr = bonds.bonds_frame(f)
@@ -537,13 +580,24 @@ def main() -> int:
         log.error("bonds engine failed (%s); skipping bonds page", e)
         return 0
 
+    # Treasury auction absorption (DISPLAY-ONLY context; own try so it can never skip
+    # the page). engine/auction_stress.py — coincident only, never scored/propagated.
+    try:
+        auction_fr = auction_stress.auction_frame()
+        auction_snap = auction_stress.auction_snapshot(auction_fr)
+    except Exception as e:  # noqa: BLE001
+        log.warning("auction-absorption panel failed (%s); omitting", e)
+        auction_fr, auction_snap = None, None
+
     calib = _load_calibration()
     vm = _vm(snap, fr, calib)
     regional_vm = _regional_vm(regional_snap)
+    auction_vm = _auction_vm(auction_snap)
     charts = {
         "health": chart_health(fr), "curve_now": chart_curve_now(f), "spreads": chart_spreads(fr),
         "credit": chart_credit(fr), "real": chart_real(fr), "move": chart_move(fr), "corr": chart_corr(fr),
         "sovereign": chart_sovereign(fr),
+        "auction": chart_auction(auction_fr) if auction_vm else "",
     }
     regional_charts = {
         "health": chart_regional_health(regional_fr),
@@ -577,7 +631,7 @@ def main() -> int:
     html = env.get_template("bonds.html.j2").render(
         C=C, as_of=as_of_disp, regional_as_of=regional_as_of_disp, built=built,
         span=span, regional_span=regional_span, vm=vm, regional_vm=regional_vm, charts=charts,
-        regional_charts=regional_charts,
+        regional_charts=regional_charts, auction=auction_vm,
         timeline=timeline, timeline_days=acfg["timeline_days"], n_alerts=len(recent))
     site = config.ROOT / config.load()["storage"]["site_dir"]
     (site / "bonds.html").write_text(html)

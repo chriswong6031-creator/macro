@@ -1688,6 +1688,27 @@ bonds:
     timeline_days: 120             # durable (debounced) state-changes are sparse; show ~4mo
 
 # =============================================================================
+# Treasury auction absorption — DISPLAY-ONLY coincident context on the bonds page
+# (engine.auction_stress + collectors.treasury_auctions). Phase-0 verdict in
+# scripts/auction_stress_phase0.py: the demand signal is REAL but priced within the
+# session (same-day IC +0.28) with NO forward edge (forward IC ~-0.07, the WRONG sign
+# vs "weak auction => higher yields" — a mean-reversion snapback; long end shows
+# nothing). So it is NEVER scored and NEVER propagated into asset views.
+# =============================================================================
+auction_stress:
+  base_url: https://www.treasurydirect.gov/TA_WS/securities
+  start_year: 2008               # full-history backfill floor
+  types: [Note, Bond]            # nominal coupons only (bills = money-market; TIPS/FRN excluded)
+  tenors: [2, 3, 5, 7, 10, 20, 30]
+  z_minobs: 8                    # min prior auctions of a tenor before its causal z is defined
+  recent_window_d: 70            # "recent" coupon auctions for the composite regime (~10 weeks)
+  supply_window_d: 90            # trailing window for gross coupon issuance ($) context
+  # composite absorption-stress (mean of -z bid-to-cover, -z indirect, +z dealer) bands:
+  firm_z: -0.5                   # <= => "firm" (strong demand)
+  watch_z: 0.5                   # >= => "watch" (demand softening)
+  stressed_z: 1.0                # >= => "stressed" (weak absorption)
+
+# =============================================================================
 # Foreign sovereign yields (Bonds dashboard Phase 5) — ECB euro-area curve +
 # Japan MoF JGB. The euro ALL-minus-AAA 10y spread is a free daily BTP-Bund-
 # style fragmentation proxy; JGB 2s10s tracks post-YCC normalization.

@@ -142,6 +142,17 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("universe membership step failed: %s", e)
 
+    # Treasury auction RESULTS for the DISPLAY-ONLY absorption panel (bonds page).
+    # CUSIP-keyed event data, so it manages its own append-only parquet outside the
+    # date-indexed store. Additive, never fatal. See engine/auction_stress.py.
+    if not args.only or "treasury_auctions" in {s.strip() for s in args.only.split(",")}:
+        try:
+            from collectors import treasury_auctions
+            n = treasury_auctions.refresh(full_history=args.full_history)
+            log.info("treasury auctions: %d coupon auctions cached", n)
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("treasury auctions refresh failed: %s", e)
+
     status = store.read_status()
     status["last_run"] = datetime.now(timezone.utc).isoformat()
     # merge: a partial --only run must not wipe the health of sources it skipped
