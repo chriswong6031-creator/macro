@@ -1529,15 +1529,69 @@ def chart_risk_model(cf: pd.DataFrame) -> str:
             for _, g in on[on].groupby(seg[on]):
                 fig.add_vrect(x0=g.index.min(), x1=g.index.max(),
                               fillcolor="#8b93a1", opacity=0.16, line_width=0)
+    # NB: use reds/ambers OUTSIDE the chart_i18n.js swap map ({#e07070,#d04545}↔green)
+    # so a RISK gauge stays red in zh mode (risk ≠ price direction — must not flip green).
     fig.add_trace(go.Scatter(x=dr.index, y=dr, name="Index drawdown-risk model",
-                             line={"color": "#e07070", "width": 1.4}))
+                             line={"color": "#de5d5d", "width": 1.4}))
     fig.add_trace(go.Scatter(x=rr.index, y=rr, name="Recession-risk model",
                              line={"color": "#e0a030", "width": 1.2}))
-    fig.add_hline(y=80, line={"color": "#e07070", "width": 0.5, "dash": "dot"})
+    fig.add_hline(y=80, line={"color": "#de5d5d", "width": 0.5, "dash": "dot"})
     fig.add_hline(y=60, line={"color": "#e0a030", "width": 0.5, "dash": "dot"})
     fig.update_layout(**PLOT_LAYOUT)
     fig.update_yaxes(range=[0, 100], autorange=False)
     _apply_range(fig, has_legend=True, height=320)
+    return _html(fig)
+
+
+def chart_curve(cf: pd.DataFrame) -> str:
+    """Yield curve: the 2s10s slope RAW vs TERM-PREMIUM-ADJUSTED, ~25y, NBER-shaded.
+    Inversion (below 0) is the classic recession lead; the TP-adjusted line strips
+    the term premium so a low-TP flattening isn't misread as a recession signal
+    (it's why 2022-24's raw inversion didn't fire the composite). Colours sit
+    outside the zh swap map (a curve isn't a price-direction read)."""
+    start = cf.index.max() - pd.Timedelta(days=365 * 25)
+    raw = cf.loc[start:, "curve_raw"].dropna()
+    adj = cf.loc[start:, "curve_tp_adj"].dropna()
+    fig = go.Figure()
+    rec = store.read("fred", "USRECD")
+    if rec is not None and not rec.empty:
+        on = (rec[rec.columns[0]] > 0.5)
+        on = on[on.index >= start]
+        if on.any():
+            seg = (on != on.shift()).cumsum()
+            for _, g in on[on].groupby(seg[on]):
+                fig.add_vrect(x0=g.index.min(), x1=g.index.max(),
+                              fillcolor="#8b93a1", opacity=0.16, line_width=0)
+    fig.add_trace(go.Scatter(x=raw.index, y=raw, name="2s10s (raw)",
+                             line={"color": "#7aa7e0", "width": 1.3}))
+    fig.add_trace(go.Scatter(x=adj.index, y=adj, name="2s10s (term-premium adj.)",
+                             line={"color": "#c08af0", "width": 1.3}))
+    fig.add_hline(y=0, line={"color": "#9aa4b2", "width": 0.8, "dash": "dot"})
+    fig.update_layout(**PLOT_LAYOUT)
+    _apply_range(fig, has_legend=True, height=300)
+    return _html(fig)
+
+
+def chart_vix_term(f: pd.DataFrame, cf: pd.DataFrame) -> str:
+    """Volatility regime: VIX level (top) + the VIX term-structure ratio VIX/VIX3M
+    (bottom), ~10y. Ratio above 1.0 = BACKWARDATION (front-month fear > 3-month) —
+    a stress / washout marker; the curve re-normalising back below 1.0 is the
+    historically constructive 'all-clear'. Colours outside the zh swap map."""
+    start = cf.index.max() - pd.Timedelta(days=365 * 10)
+    vix = f.loc[start:, "vix"].dropna() if "vix" in f.columns else pd.Series(dtype=float)
+    term = cf.loc[start:, "vix_term"].dropna()
+    fig = make_subplots(rows=2, cols=1, shared_xaxes=True, row_heights=[0.55, 0.45],
+                        vertical_spacing=0.07)
+    if not vix.empty:
+        fig.add_trace(go.Scatter(x=vix.index, y=vix, name="VIX",
+                                 line={"color": "#7aa7e0", "width": 1.2}), row=1, col=1)
+        fig.add_hline(y=30, line={"color": "#e0a030", "width": 0.5, "dash": "dot"}, row=1, col=1)
+    fig.add_trace(go.Scatter(x=term.index, y=term, name="VIX / VIX3M (term structure)",
+                             line={"color": "#c08af0", "width": 1.2}), row=2, col=1)
+    fig.add_hline(y=1.0, line={"color": "#de5d5d", "width": 0.6, "dash": "dot"}, row=2, col=1)
+    layout = {**PLOT_LAYOUT, "height": 320}
+    fig.update_layout(**layout)
+    _apply_range(fig, subplot=True, has_legend=True, height=320)
     return _html(fig)
 
 
@@ -1649,6 +1703,8 @@ def main() -> int:
         alloc_card=alloc_card_state(),           # macro-page allocation CTA card
         risk_model=risk_model_view(f, hist, _cf),  # de-risk score + leg breakdown
         chart_risk_model=chart_risk_model(_cf),    # drawdown/recession risk-model chart
+        chart_curve=chart_curve(_cf),              # 2s10s raw vs term-premium-adjusted
+        chart_vix_term=chart_vix_term(f, _cf),     # VIX level + term-structure ratio
     )
     # Write the macro dashboard straight to macro.html. index.html is owned
     # solely by build_vector.build_landing() (the landing hub) — keeping the raw

@@ -752,6 +752,26 @@
     <h3 style="margin-top:16px">{{ t('Drawdown & recession risk — modeled (NBER recessions shaded)', '回撤与衰退风险 — 模型（阴影为NBER衰退期）') }}</h3>
     <div>{{ chart_risk_model | safe }}</div>
     {% endif %}
+    {% if chart_curve or chart_vix_term %}
+    <div class="grid" style="margin-top:14px">
+      {% if chart_curve %}
+      <div class="span6">
+        <h3>{{ t('Yield curve — recession lead', '收益率曲线 — 衰退先行指标') }}
+          {{ help("The 2-year/10-year slope, raw vs term-premium-adjusted. Below zero (inversion) is the classic recession lead. The TP-adjusted line strips the term premium so a low-term-premium flattening (e.g. 2022-24) isn't misread as a recession signal. NBER recessions shaded.", "2年／10年期利差，原始值对比剥离期限溢价后。低于零（倒挂）是经典的衰退先行信号。剥离期限溢价的线条避免把低期限溢价导致的平坦化（如 2022–24）误读为衰退信号。阴影为 NBER 衰退期。") }}
+        </h3>
+        <div>{{ chart_curve | safe }}</div>
+      </div>
+      {% endif %}
+      {% if chart_vix_term %}
+      <div class="span6">
+        <h3>{{ t('Volatility regime — VIX term structure', '波动率状态 — VIX 期限结构') }}
+          {{ help("VIX level (top) and the VIX/VIX3M term-structure ratio (bottom). Ratio above 1.0 = backwardation (front-month fear exceeds 3-month) — a stress / washout marker; the curve re-normalising back below 1.0 has historically been the constructive all-clear.", "VIX 水平（上）与 VIX/VIX3M 期限结构比率（下）。比率高于 1.0＝backwardation（近月恐慌高于三个月）— 是压力／恐慌底标记；曲线回落至 1.0 以下在历史上是具建设性的“警报解除”。") }}
+        </h3>
+        <div>{{ chart_vix_term | safe }}</div>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
   </div>
 
   <!-- ===================== REGIME TIME MACHINE ===================== -->
