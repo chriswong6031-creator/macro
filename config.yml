@@ -176,6 +176,7 @@ yahoo:
     factors: [MTUM, QUAL, USMV, SPHB, SPLV]
     credit: [HYG, LQD]
     bond_etfs: [TLT, IEF, TIP, EMB]   # Bonds dashboard price/flow proxies: long UST, 7-10y UST, TIPS, EM USD sov
+    intl_etfs: [FXI]                  # China large-cap (US-hours) — factor-exposure China proxy + holding
     vol: ["^VIX", "^VIX9D", "^VIX3M", "^MOVE", "^VVIX"]   # ^VVIX = vol-of-vol (option-implied risk layer)
     fx_commod: ["DX-Y.NYB", "CL=F", "HG=F", "GC=F", "SI=F", "BZ=F"]
     fx: ["EURUSD=X", "USDJPY=X", "GBPUSD=X", "AUDUSD=X", "USDCAD=X", "USDCHF=X", "USDMXN=X", "USDBRL=X", "CNH=X", "CNH=F"]   # Forex Vector spot pairs; CNH=F = offshore CNH futures (2013->, real history vs CNH=X spot's 1 row)

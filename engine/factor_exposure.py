@@ -83,6 +83,8 @@ FACTORS: list[Factor] = [
            "US Dollar", "Dollar index (DXY) — + beta = benefits from a stronger dollar (rare for equities)."),
     Factor("oil", "commodity", "signals_oil", "close", 1,
            "Oil / energy", "WTI crude (26y daily) — + beta = energy / inflation-shock exposure."),
+    Factor("china", "yahoo", "FXI", "close", 1,
+           "China", "FXI (China large-cap, US-hours) beyond global beta — China/HK growth exposure."),
     Factor("btc", "yahoo", "BTC-USD", "close", 1,
            "Bitcoin / crypto", "BTC-USD — + beta = crypto / high-risk-appetite exposure."),
 ]
@@ -102,6 +104,7 @@ FACTOR_CONFIDENCE = {
     "growth": {"tier": "high",   "scope": "single", "persist": 0.50},
     "rates":  {"tier": "medium", "scope": "single", "persist": 0.36},
     "oil":    {"tier": "medium", "scope": "book",   "persist": 0.22},   # 0.22→0.49 with book size
+    "china":  {"tier": "low",    "scope": "low",    "persist": 0.19},   # flat ~0.17 even aggregated
     "usd":    {"tier": "low",    "scope": "low",    "persist": 0.11},
     "btc":    {"tier": "low",    "scope": "low",    "persist": 0.02},
 }
@@ -127,6 +130,7 @@ ETF_NAMES = {
     "XLRE": "Real Estate", "XLU": "Utilities", "XLV": "Health Care", "XLY": "Consumer Disc",
     "TLT": "20y+ Treasuries", "IEF": "7-10y Treasuries", "TIP": "TIPS",
     "HYG": "High-yield credit", "LQD": "IG credit", "EMB": "EM bonds",
+    "FXI": "China large-cap",
 }
 ETF_UNIVERSE = list(ETF_NAMES)
 

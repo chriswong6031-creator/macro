@@ -67,9 +67,7 @@ def test_univariate_raw_betas_double_count_vs_orthogonal():
 
 def test_portfolio_exposure_aggregates_and_flags_concentration():
     keys = fe.FACTOR_ORDER
-    vols = {"mkt": 0.12, "growth": 0.06, "size": 0.10, "rates": 0.09,
-            "usd": 0.05, "oil": 0.34, "btc": 0.34}
-    fcov = pd.DataFrame(np.diag([vols[k] ** 2 for k in keys]), index=keys, columns=keys)
+    fcov = pd.DataFrame(np.diag([0.15 ** 2] * len(keys)), index=keys, columns=keys)
     betas = {"A": {k: 0.0 for k in keys}, "B": {k: 0.0 for k in keys}}
     betas["A"]["mkt"] = betas["B"]["mkt"] = 1.0         # two names, both pure market = ONE bet
     out = fe.portfolio_exposure({"A": 0.5, "B": 0.5}, betas, fcov)
@@ -82,8 +80,7 @@ def test_portfolio_exposure_aggregates_and_flags_concentration():
 
 def test_portfolio_exposure_balanced_book():
     keys = fe.FACTOR_ORDER
-    fcov = pd.DataFrame(np.diag([0.12, 0.12, 0.12, 0.12, 0.12, 0.12, 0.12]),
-                        index=keys, columns=keys) ** 2
+    fcov = pd.DataFrame(np.diag([0.12 ** 2] * len(keys)), index=keys, columns=keys)
     # one name loads market, the other loads oil — genuinely two different bets
     betas = {"A": {k: 0.0 for k in keys}, "B": {k: 0.0 for k in keys}}
     betas["A"]["mkt"] = 1.0
@@ -118,6 +115,8 @@ def test_compute_exposure_covers_etfs_self_consistently():
         assert abs(b["TLT"]["rates"] - 1.0) < 0.15      # TLT IS the rates factor
     if "XLE" in b:
         assert b["XLE"]["oil"] > 0                       # energy ETF loads positively on oil
+    if "FXI" in b and b["FXI"].get("china") is not None:
+        assert b["FXI"]["china"] > 0.6                   # FXI IS the china factor proxy
     # every record carries the client-required fields
     rec = next(iter(b.values()))
     assert {"name", "sector", "is_etf", "raw", "r2", "idio_vol"} <= set(rec)
