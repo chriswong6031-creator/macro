@@ -1550,6 +1550,30 @@ def build_signal_lab_page(env: Environment, site: Path, generated: str) -> None:
              payload["summary"]["factor_total"])
 
 
+def build_alerts_page(env: Environment, site: Path, generated: str) -> None:
+    """🚨 Alert Command Center — the honest triage board over every alert engine.
+
+    Pure assembler over engine.alert_triage: pulls the recent macro / cross-asset
+    feeds into one ranked board with a transparent priority, a TRUE cross-asset
+    conviction tier, the regime/event backdrop, and a measured-edge column that
+    shows a hit-rate / Deflated-Sharpe ONLY where Signal Lab validated the family.
+    Additive + graceful: never fatal to the build.
+    """
+    from engine import alert_triage
+    payload = alert_triage.build_triage()
+    payload["generated_utc"] = generated     # align with the rest of the site
+    html = env.get_template("alerts.html.j2").render(**payload)
+    (site / "alerts.html").write_text(html)
+    fdir = site / "factordata"
+    fdir.mkdir(parents=True, exist_ok=True)
+    (fdir / "alerts_triage.json").write_text(
+        json.dumps(payload, separators=(",", ":"), default=str))
+    s = payload["summary"]
+    log.info("wrote alerts.html (%d alerts: %d critical / %d major / %d actionable, "
+             "%d validated)", s["total"], s["critical"], s["major"],
+             s["actionable"], s["backtested"])
+
+
 ETF_GICS = {                       # SPDR sector fund -> GICS sector (residual-alpha leaders)
     "XLK": "Information Technology", "XLF": "Financials", "XLV": "Health Care",
     "XLY": "Consumer Discretionary", "XLP": "Consumer Staples", "XLE": "Energy",
@@ -2157,6 +2181,10 @@ def main() -> int:
         build_signal_lab_page(env, site, generated)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("signal lab page failed: %s", e)
+    try:
+        build_alerts_page(env, site, generated)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("alerts page failed: %s", e)
     # Quant Lab (advanced analytics): cross-asset concentration + risk budgeting +
     # factor scorecard + the raw internals moved off the main dashboard. Returns the
     # cross-asset snapshot for the dashboard's compact one-bet card.
