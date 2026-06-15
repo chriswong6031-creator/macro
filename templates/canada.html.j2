@@ -1,0 +1,320 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{% macro help(en, zh='') -%}
+<span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
+{%- endmacro %}
+{% set Q = latest.quad %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ t('Canada — S&P/TSX Regime', '加拿大 — 标普/TSX 周期') }} — {{ latest.date }}</title>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system,
+         "Segoe UI", Roboto, Helvetica, sans-serif; margin: 0; padding: 18px; }
+  @media (min-width: 1100px) { body { padding: 24px max(36px, calc((100vw - 1500px) / 2)); } }
+  html[data-lang="zh"] body { font-family: "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",-apple-system,sans-serif; }
+  a { text-decoration: none; color: var(--link); }
+  h1 { font-size: 21px; margin: 0 0 2px; }
+  h2 { font-size: 14px; margin: 0 0 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 11px; padding: 15px 17px; margin-bottom: 14px; }
+  .muted { color: var(--muted); } .small { font-size: 12px; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .grid { display: grid; gap: 12px; }
+  .navbtn { display:inline-block; padding:5px 11px; border-radius:9px; background:var(--panel2); border:1px solid var(--line); color:var(--text); font-size:13px; font-weight:600; }
+  /* hero quad badge */
+  .quad { display:inline-flex; align-items:center; gap:9px; padding:7px 15px; border-radius:12px; font-weight:800; font-size:18px; color:#fff; }
+  .q-Q1 { background:var(--q1,#2e9e4f); } .q-Q2 { background:var(--q2,#d4a017); }
+  .q-Q3 { background:var(--q3,#d04545); } .q-Q4 { background:var(--q4,#3f78d8); }
+  .dial { display:inline-flex; flex-direction:column; gap:2px; min-width:120px; }
+  .dial b { font-size:19px; } .dial .lbl { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+  .pos { color:var(--up); } .neg { color:var(--down); }
+  .chip { display:inline-block; padding:3px 9px; border-radius:9px; font-size:12px; font-weight:600;
+          background:var(--panel2); border:1px solid var(--line); }
+  .chip.on { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up); border-color:color-mix(in srgb,var(--up) 38%,transparent); }
+  .chip.off { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 38%,transparent); }
+  .chip.neutral { color:var(--muted); }
+  /* overlay hero */
+  .riskbig { font-size:26px; font-weight:800; }
+  .risk-on { color:var(--up); } .risk-off { color:var(--down); } .risk-neutral, .risk-unknown { color:var(--muted); }
+  .factors { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .fct { display:flex; flex-direction:column; gap:1px; padding:6px 10px; border-radius:9px; background:var(--panel2); border:1px solid var(--line); min-width:96px; }
+  .fct .fl { font-size:11px; color:var(--muted); } .fct .fv { font-size:13px; font-weight:700; }
+  .fct.on { border-left:3px solid var(--up); } .fct.off { border-left:3px solid var(--down); } .fct.neutral { border-left:3px solid var(--muted); }
+  /* sector + standout cards */
+  .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:11px; }
+  .card { background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:11px 13px; }
+  .lad { display:inline-block; padding:2px 9px; border-radius:10px; font-weight:700; font-size:11.5px;
+         background:color-mix(in srgb, var(--c, var(--muted)) 16%, var(--panel)); color:color-mix(in srgb, var(--c, var(--muted)) 82%, var(--text)); }
+  .lad.up { --c:var(--up); } .lad.down { --c:var(--down); } .lad.flat { --c:var(--muted); }
+  .rk { font-size:12px; font-weight:800; color:var(--muted); }
+  .ab { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
+  .abcol h3 { font-size:12px; margin:0 0 6px; text-transform:uppercase; letter-spacing:.04em; }
+  .abcol .it { font-size:12.5px; padding:3px 0; border-bottom:1px solid var(--line); }
+  table { border-collapse:collapse; width:100%; font-size:13px; }
+  th,td { text-align:right; padding:4px 8px; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:500; } th:first-child,td:first-child { text-align:left; }
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:5px; }
+  .help .tip { display:none; position:absolute; bottom:150%; left:50%; transform:translateX(-50%); width:300px; background:var(--panel); border:1px solid var(--line); padding:10px 12px; border-radius:9px; z-index:60; font-size:12px; line-height:1.5; color:var(--text); text-align:left; font-weight:400; text-transform:none; letter-spacing:normal; box-shadow:var(--popover-shadow); pointer-events:none; }
+  .help:hover .tip { display:block; }
+  .caveat { font-size:11.5px; color:var(--muted); font-style:italic; }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 {{ t('US Macro', '美国宏观') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu">
+        <a href="macro.html">📊 {{ t('Macro dashboard', '宏观仪表盘') }}</a>
+        <a href="discovery.html">🏆 {{ t('Top Picks', '精选股') }}</a>
+        <a href="spvector.html">📈 {{ t('S&P / Macro Vector', '标普宏观向量') }}</a>
+      </div>
+    </div>
+    <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin', '比特币') }}</a>
+    <a class="nav-link" href="china.html">🇨🇳 {{ t('China A', '中国A股') }}</a>
+    <a class="nav-link" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }}</a>
+    <a class="nav-link active" href="canada.html">🇨🇦 {{ t('Canada', '加拿大') }}</a>
+    <a class="nav-link" href="canada_history.html">📈 {{ t('History', '历史') }}</a>
+  </div>
+  <div class="nav-search" data-lib="canadastockdata/index.json" data-target="canada_stock.html">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search TSX stocks"
+      placeholder="Search any TSX stock…" data-ph-zh="搜索任意 TSX 个股…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <button data-lang="en">EN</button><button data-lang="zh">中文</button>
+    </div>
+  </div>
+</nav>
+
+<div class="panel">
+  <div class="row">
+    <h1>🇨🇦 {{ t('Canada — S&P/TSX Regime', '加拿大 — 标普/TSX 周期') }}</h1>
+    <span style="flex:1"></span>
+    <span class="muted small">{{ t('data through', '数据截至') }} {{ latest.date }} · {{ t('built', '生成') }} {{ built }}</span>
+  </div>
+  <p class="muted small" style="margin:6px 0 0">{{ t('Commodity-and-bank-cycle market — the TSX is ~70% Financials, Energy & Materials. The growth/inflation quad sets the slow backdrop; the commodity / CAD / BoC-vs-Fed overlay below is the high-frequency driver.', '大宗商品与银行周期市场 — TSX 约 70% 为金融、能源与材料。增长／通胀象限给出慢速背景；下方的大宗商品／加元／央行-美联储叠加为高频驱动。') }}</p>
+</div>
+
+<!-- ===== Regime hero ===== -->
+<div class="panel">
+  <div class="row" style="gap:18px">
+    <span class="quad q-{{ Q }}">{{ td(latest.quad_name) }}</span>
+    {% if quad_meaning %}<span class="muted small">{{ t(quad_meaning[0], quad_meaning[1]) }}</span>{% endif %}
+    <span style="flex:1"></span>
+    <div class="dial"><span class="lbl">{{ t('Growth', '增长') }}</span><b class="{{ 'pos' if latest.growth_score>=0 else 'neg' }}">{{ '%+.2f'|format(latest.growth_score) }}</b></div>
+    <div class="dial"><span class="lbl">{{ t('Inflation', '通胀') }}</span><b class="{{ 'pos' if latest.inflation_score>=0 else 'neg' }}">{{ '%+.2f'|format(latest.inflation_score) }}</b></div>
+    <div class="dial"><span class="lbl">{{ t('Confidence', '置信度') }}</span><b>{{ '%.0f'|format(latest.confidence*100) }}%</b></div>
+  </div>
+  <div class="row" style="margin-top:11px">
+    <span class="chip">{{ t('BoC stance', '央行立场') }}: <b>{{ td(latest.liquidity_overlay) }}</b>{{ help('Bank of Canada policy-rate direction over ~3 months (cuts = expanding, hikes = contracting), with a GoC-curve steepening tilt.', '加拿大央行政策利率约三个月方向（降息＝扩张，加息＝收缩），并叠加加债收益率曲线变陡的倾向。') }}</span>
+    <span class="chip">{{ t('Cycle', '周期阶段') }}: <b>{{ td(latest.cycle_tag) }}</b></span>
+    {% if latest.confirming %}<span class="chip on">✓ {{ latest.confirming|length }} {{ t('confirming', '确认') }}</span>{% endif %}
+    {% if latest.contradicting %}<span class="chip off">✗ {{ latest.contradicting|length }} {{ t('contradicting', '矛盾') }}</span>{% endif %}
+    <span style="flex:1"></span>
+    <a class="navbtn" href="canada_history.html">{{ t('Regime history →', '周期历史 →') }}</a>
+  </div>
+</div>
+
+<!-- ===== Commodity / CAD / BoC overlay hero (the primary driver) ===== -->
+{% set ov = overlay or {} %}
+<div class="panel">
+  <h2>{{ t('Commodity / CAD / BoC-vs-Fed overlay', '大宗商品／加元／央行-美联储 叠加') }}
+    {{ help('The single most important high-frequency read for the TSX: a concurrent commodity-and-currency risk gauge (WTI oil, gold, copper/gold, USD/CAD, S&P 500, VIX, DXY). Risk-on = commodities firm + CAD strong + US equity up. A CONCURRENT state, not a forecast; not yet calibrated to TSX forward returns — read as context.', 'TSX 最重要的高频读数：同期的大宗商品与货币风险计（WTI 原油、黄金、铜金比、美元兑加元、标普500、VIX、美元指数）。风险偏好＝大宗坚挺＋加元走强＋美股上行。这是同期状态而非预测；尚未对 TSX 前瞻收益做校准 — 作为背景阅读。') }}
+  </h2>
+  <div class="row" style="gap:18px">
+    <span class="riskbig risk-{{ (ov.state or 'unknown')|lower|replace('-','') }}">{{ td(ov.state or 'unknown') }}</span>
+    {% if ov.score is not none %}<span class="muted">{{ t('composite', '综合') }} {{ '%+.2f'|format(ov.score) }}</span>{% endif %}
+    {% if ov.terms_of_trade %}<span class="chip {{ 'on' if ov.terms_of_trade=='improving' else ('off' if ov.terms_of_trade=='deteriorating' else 'neutral') }}">{{ t('Terms of trade', '贸易条件') }}: <b>{{ td(ov.terms_of_trade) }}</b></span>{% endif %}
+  </div>
+  <div class="factors">
+    {% for f in ov.factors or [] %}
+    <div class="fct {{ f.risk }}">
+      <span class="fl">{{ td(f.label) }}</span>
+      <span class="fv">{{ '%+.2f'|format(f.z) }}σ <span class="muted small">{{ f.risk }}</span></span>
+    </div>
+    {% endfor %}
+  </div>
+  {% set cp = coupling or {} %}
+  {% if cp.boc_rate is not none %}
+  <p class="small" style="margin:11px 0 0">{{ t('BoC vs Fed', '央行 vs 美联储') }}:
+    {{ t('policy rate', '政策利率') }} <b>{{ '%.2f'|format(cp.boc_rate) }}%</b> ·
+    {{ t('GoC 2s10s', '加债 2s10s') }} <b>{{ '%+.2f'|format(cp.goc_curve_2s10s) if cp.goc_curve_2s10s is not none else '—' }}</b>
+    {% if cp.goc_minus_ust_10y is not none %} · {{ t('GoC−UST 10y', '加债−美债 10y') }} <b>{{ '%+.2f'|format(cp.goc_minus_ust_10y) }}</b>{% else %}<span class="muted"> · {{ t('US-coupling spreads pending FRED', '美债利差待 FRED') }}</span>{% endif %}
+  </p>
+  {% endif %}
+</div>
+
+<!-- ===== Rate path / GoC curve ===== -->
+{% if curve_chart %}
+<div class="panel">
+  <h2>{{ t('Bank of Canada rate path & GoC curve', '央行利率路径与加债收益率曲线') }}
+    {{ help('BoC policy (overnight) rate and the 2y / 10y Government of Canada benchmark yields. The 2s10s slope and the gap to the policy rate frame how restrictive policy is and whether the curve is steepening (often an easing tell).', '央行政策（隔夜）利率与 2 年／10 年加拿大政府基准债收益率。2s10s 斜率及其与政策利率的差距，反映政策的紧缩程度与曲线是否变陡（常为宽松信号）。') }}
+  </h2>
+  {{ curve_chart | safe }}
+</div>
+{% endif %}
+
+<!-- ===== The two dials over time ===== -->
+{% if axes_chart %}
+<div class="panel">
+  <h2>{{ t('Growth & inflation over time', '增长与通胀随时间变化') }}</h2>
+  {{ axes_chart | safe }}
+</div>
+{% endif %}
+
+<!-- ===== Sector rotation ===== -->
+<div class="panel">
+  <h2>{{ t('Sector rotation — TSX sector ETFs', '板块轮动 — TSX 板块 ETF') }}
+    {{ help('Each Canadian sector ETF ranked by relative strength vs the S&P/TSX Composite, with its own cycle/ladder state and multi-timeframe momentum. Energy, Financials, Materials & Gold dominate the index.', '每个加拿大板块 ETF 按相对标普/TSX 综合指数的相对强度排名，并附自身的周期／阶梯状态与多周期动量。能源、金融、材料与黄金主导该指数。') }}
+  </h2>
+  <div class="cards">
+    {% for c in sectors %}
+    <div class="card">
+      <div class="row" style="gap:8px">
+        <span class="rk">#{{ c.rank if c.rank else '—' }}</span>
+        <a href="sectors/{{ c.ticker }}.html"><b>{{ td(c.name) }}</b></a>
+        <span class="muted small">{{ c.ticker }}</span>
+        <span style="flex:1"></span>
+        <span class="lad {{ 'up' if c.dir=='up' else ('down' if c.dir=='down' else 'flat') }}">{{ td(c.label) if c.label else td(c.state) }}</span>
+      </div>
+      <div class="row small muted" style="gap:10px; margin:6px 0">
+        <span>{{ t('1m RS', '1月相对') }} {{ '%+.1f'|format(c.mom20) if c.mom20 is not none else '—' }}</span>
+        <span>{{ t('3m RS', '3月相对') }} {{ '%+.1f'|format(c.mom60) if c.mom60 is not none else '—' }}</span>
+        {% if c.pctile is not none %}<span>{{ t('pctile', '分位') }} {{ '%.0f'|format(c.pctile) }}</span>{% endif %}
+        {% if c.above200 %}<span class="pos">↑200d</span>{% else %}<span class="neg">↓200d</span>{% endif %}
+      </div>
+      <div data-mtf='{{ c.mtf_json }}'></div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ===== Action board ===== -->
+<div class="panel">
+  <h2>{{ t('What to act on — sector entry timing', '可执行 — 板块入场时机') }}</h2>
+  <div class="ab">
+    {% set abmap = [('buy_now','✅ '+('立即买入' if False else 'Buy now'),'立即买入'), ('buy_soon','⏳ Buy soon','即将买入'), ('take_profits','💰 Take profits','止盈'), ('hold','✋ Hold','持有'), ('avoid','🚫 Avoid','回避')] %}
+    {% for key, en, zh in abmap %}
+    {% set items = actions[key] %}
+    <div class="abcol">
+      <h3>{{ t(en, zh) }} <span class="muted">({{ items|length }})</span></h3>
+      {% for it in items %}<div class="it">{{ td(it.name) }} <span class="muted small">{{ it.ticker }}</span></div>{% endfor %}
+      {% if not items %}<div class="it muted">—</div>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ===== Standout stocks (alpha-led) ===== -->
+{% if setups and setups.buy %}
+<div class="panel">
+  <h2>{{ t('Standout TSX stocks — alpha leaders', '标普/TSX 个股精选 — α 领先') }}
+    {{ help('Large-cap TSX names ranked by sector-neutral residual momentum (the positive-IC selection leg), with the cycle entry shown as timing context. Alpha-led like the US (Canada is momentum-persistent). Context, not personalized advice.', '按板块中性残差动量（正 IC 选股腿）排名的大盘 TSX 个股，并以周期入场作为时机背景。与美国一样采用 α 主导（加拿大动量具持续性）。仅作背景，非个性化建议。') }}
+  </h2>
+  <div class="cards">
+    {% for s in setups.buy %}
+    <div class="card">
+      <div class="row" style="gap:8px">
+        <a href="canada_stock.html#{{ s.ticker }}"><b>{{ s.name or s.ticker }}</b></a>
+        <span class="muted small">{{ s.ticker }}</span>
+        <span style="flex:1"></span>
+        {% if s.label %}<span class="lad {{ 'up' if s.dir=='up' else ('down' if s.dir=='down' else 'flat') }}">{{ td(s.label) }}</span>{% endif %}
+      </div>
+      <div class="row small muted" style="gap:10px; margin:5px 0">
+        {% if s.alpha is not none %}<span>α-z <b class="{{ 'pos' if s.alpha>=0 else 'neg' }}">{{ '%+.2f'|format(s.alpha) }}</b></span>{% endif %}
+        {% if s.sector_rank %}<span>#{{ s.sector_rank }}/{{ s.sector_n }} {{ td(s.sector) }}</span>{% endif %}
+        {% if s.off_high is not none %}<span>{{ '%.0f'|format(s.off_high) }}% {{ t('off high', '距高点') }}</span>{% endif %}
+      </div>
+      {% if s.spark_svg %}{{ s.spark_svg | safe }}{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  <p class="caveat" style="margin-top:8px">{{ t('Residual-momentum construction is shared with the validated US/China engines; the Canada-specific weights are HK-mirrored priors pending Phase-0 validation.', '残差动量构造与经验证的美国／中国引擎共用；加拿大专属权重为对标香港的先验，待 Phase-0 验证。') }}</p>
+</div>
+{% endif %}
+
+<!-- ===== Breadth + benchmark ===== -->
+<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr))">
+  {% if breadth %}
+  <div class="panel">
+    <h2>{{ t('Large-cap breadth', '大盘宽度') }}
+      {{ help('Computed from the curated TSX large-cap constituents (not the full Composite). % above the 50/200-day average, new highs vs lows, and the advance/decline trend.', '基于精选的 TSX 大盘成分股计算（非完整综合指数）。50／200 日均线上方占比、新高对新低，以及涨跌线趋势。') }}
+    </h2>
+    <div class="row" style="gap:18px">
+      <div class="dial"><span class="lbl">{{ t('above 50d', '50日上方') }}</span><b>{{ breadth.pct_above_50 }}%</b></div>
+      <div class="dial"><span class="lbl">{{ t('above 200d', '200日上方') }}</span><b>{{ breadth.pct_above_200 }}%</b></div>
+      <div class="dial"><span class="lbl">{{ t('NH / NL', '新高/新低') }}</span><b>{{ breadth.nh }} / {{ breadth.nl }}</b></div>
+      <div class="dial"><span class="lbl">{{ t('A/D trend', '涨跌趋势') }}</span><b class="{{ 'pos' if breadth.ad_trend=='up' else 'neg' }}">{{ td(breadth.ad_trend) }}</b></div>
+    </div>
+    <p class="muted small" style="margin:8px 0 0">{{ t('20d change in % above 50d:', '50日上方占比 20日变化：') }} {{ '%+.1f'|format(breadth.pct50_chg20) }} · {{ breadth.n_members }} {{ t('names', '只成分') }}</p>
+  </div>
+  {% endif %}
+  {% if benchmark %}
+  <div class="panel">
+    <h2>{{ t('S&P/TSX Composite', '标普/TSX 综合指数') }}</h2>
+    <div class="row" style="gap:12px">
+      <b style="font-size:18px">{{ '{:,.0f}'.format(benchmark.price) }}</b>
+      <span class="{{ 'pos' if benchmark.chg>=0 else 'neg' }}">{{ '%+.2f'|format(benchmark.chg) }}%</span>
+      <span class="lad {{ 'up' if benchmark.dc_day else 'flat' }}">{{ td(benchmark.label) if benchmark.label else td(benchmark.state) }}</span>
+    </div>
+    <div data-mtf='{{ benchmark.mtf_json }}' style="margin-top:8px"></div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ===== Housing / household-debt context ===== -->
+{% if housing %}
+<div class="panel">
+  <h2>{{ t('Housing & household-debt context', '房地产与家庭债务背景') }}
+    {{ help('Real residential property prices (BIS via FRED). Canada carries among the highest household debt in the G7 and short mortgage-renewal cycles, so housing is a structural fragility the US engine does not weight as heavily. Display-only context.', '实际住宅地产价格（经 FRED 的 BIS 数据）。加拿大的家庭债务在 G7 中名列前茅、按揭续期周期短，因此房地产是结构性脆弱点，美国引擎对此权重远低。仅作背景展示。') }}
+  </h2>
+  <div class="row" style="gap:18px">
+    <div class="dial"><span class="lbl">{{ t('real house price idx', '实际房价指数') }}</span><b>{{ housing.level }}</b></div>
+    {% if housing.yoy is not none %}<div class="dial"><span class="lbl">{{ t('~1y change', '约1年变化') }}</span><b class="{{ 'pos' if housing.yoy>=0 else 'neg' }}">{{ '%+.1f'|format(housing.yoy) }}%</b></div>{% endif %}
+    <div class="dial"><span class="lbl">{{ t('off peak', '距峰值') }}</span><b class="{{ 'neg' if housing.off_peak<0 else 'pos' }}">{{ '%.1f'|format(housing.off_peak) }}%</b></div>
+    <span class="muted small">{{ t('as of', '截至') }} {{ housing.asof }}</span>
+  </div>
+</div>
+{% endif %}
+
+<!-- ===== Data health ===== -->
+{% if health %}
+<div class="panel">
+  <h2>{{ t('Data health', '数据健康') }}</h2>
+  <table>
+    <tr><th>{{ t('source', '来源') }}</th><th>{{ t('status', '状态') }}</th><th>{{ t('rows', '行数') }}</th><th>{{ t('last', '最新') }}</th></tr>
+    {% for h in health %}
+    <tr><td>{{ t(h.en, h.zh) }}</td><td>{{ h.status }}</td><td>{{ h.rows }}</td><td>{{ h.last }}</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
+<p class="muted small">{{ t('Generated', '生成于') }} {{ built }} · {{ t('Keyless data: yfinance · Bank of Canada VALET · StatsCan WDS · FRED. Educational context, not investment advice.', '无密钥数据：yfinance · 加拿大央行 VALET · 统计局 WDS · FRED。教育性背景，非投资建议。') }}</p>
+
+<script src="mtf.js"></script>
+<script src="theme.js"></script>
+<script src="chart_i18n.js"></script>
+<script src="charts.js"></script>
+<script src="tablesort.js"></script>
+<footer class="site-footer">
+  <span class="made">{{ t('Made with ❤️ in Canada', '用 ❤️ 在加拿大制作') }}</span>
+  <span class="dev">{{ t('Developed by', '开发者') }} Chris Wong</span>
+</footer>
+</body>
+</html>

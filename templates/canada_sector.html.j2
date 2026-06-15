@@ -1,0 +1,120 @@
+{% macro help(en, zh='') -%}
+<span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
+{%- endmacro %}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ td(s.name) }} ({{ s.fund }}) — {{ t('cycle & constituents', '周期与成分股') }}</title>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="../theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1200px)/2)); } }
+  html[data-lang="zh"] body { font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",-apple-system,sans-serif; }
+  a { text-decoration:none; color:var(--link); }
+  h1 { font-size:20px; margin:0; } h2 { font-size:14px; margin:0 0 10px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:14px; }
+  .topline { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+  .navbtn { display:inline-block; padding:5px 11px; border-radius:9px; background:var(--panel2); border:1px solid var(--line); color:var(--text); font-size:13px; font-weight:600; }
+  .muted { color:var(--muted); }
+  .lad { display:inline-block; padding:2px 10px; border-radius:11px; font-weight:700; font-size:12px;
+         background:color-mix(in srgb, var(--c, var(--muted)) 16%, var(--panel)); color:color-mix(in srgb, var(--c, var(--muted)) 82%, var(--text)); }
+  .lad.up { --c:var(--up); } .lad.down { --c:var(--down); } .lad.flat { --c:var(--muted); }
+  .entrybar { display:flex; gap:10px; align-items:flex-start; margin:10px 0 4px; padding:9px 12px; border-radius:9px; background:var(--panel2); border-left:4px solid var(--muted); font-size:14px; }
+  .entrytag { font-weight:800; font-size:12px; padding:3px 9px; border-radius:7px; background:var(--panel); border:1px solid var(--line); white-space:nowrap; }
+  .urg-now .entrytag{background:var(--up);color:#fff;} .urg-now{border-left-color:var(--up);}
+  .urg-imminent .entrytag{background:var(--g-cold);color:#fff;} .urg-imminent{border-left-color:var(--g-cold);}
+  .urg-caution .entrytag{background:var(--warn);color:#1a1a1a;} .urg-caution{border-left-color:var(--warn);}
+  .urg-exit .entrytag{background:var(--down);color:#fff;} .urg-exit{border-left-color:var(--down);}
+  .agewhen { margin:6px 0; padding:7px 11px; border-radius:8px; background:var(--panel2); border-left:3px solid var(--link); font-size:13px; color:var(--text); }
+  .agechip { font-size:11px; font-weight:700; padding:2px 7px; border-radius:9px; background:var(--panel); color:var(--muted); border:1px solid var(--line); white-space:nowrap; }
+  .eqbadge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:11px; font-size:12.5px; font-weight:700; white-space:nowrap; border:1px solid var(--line); }
+  .eqbadge.sm { font-size:11px; padding:2px 7px; border-radius:9px; }
+  .eqbadge .eqg { font-weight:500; opacity:.8; }
+  .eqbadge.eq-up { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
+  .eqbadge.eq-down { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
+  .eqbadge.eq-flat { background:var(--panel2); color:var(--muted); }
+  .cyclebox { margin:8px 0; padding:9px 12px; border-radius:9px; background:var(--panel2); font-size:13px; line-height:1.6; }
+  .card { background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:11px 13px; margin:9px 0; }
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:4px; }
+  .help .tip { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%); width:280px; background:var(--panel); border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text); font-weight:400; text-transform:none; letter-spacing:normal; box-shadow:var(--popover-shadow); }
+  .help:hover .tip { display:block; }
+  .tv { margin-top:8px; }
+</style>
+</head>
+<body>
+  <div class="panel">
+    <div class="topline">
+      <h1>{{ td(s.name) }} <span class="muted">({{ s.fund }})</span></h1>
+      <span class="lad {{ 'up' if s.ladder.dir=='up' else ('down' if s.ladder.dir=='down' else 'flat') }}">{{ td(s.ladder.label) }}</span>
+      {% if s.ladder.eq_badge %}<span class="eqbadge eq-{{ s.ladder.eq_dir }}">{{ t('Entry','入场') }} {{ s.ladder.eq_badge }} <span class="eqg">{{ td(s.ladder.eq_grade) }}</span></span>{{ help(s.ladder.eq_tip, s.ladder.eq_tip_zh) }}{% endif %}
+      <span style="flex:1"></span>
+      <a class="navbtn" href="../canada.html">{{ t('← Canada', '← 加拿大') }}</a>
+      <a class="navbtn" href="../canada_stock.html">{{ t('🔎 Search', '🔎 搜索') }}</a>
+      <button class="lang-btn">中文</button>
+      <button class="theme-btn">☀️ {{ t('Light', '浅色') }}</button>
+    </div>
+    {% set e = s.ladder.entry %}
+    <div class="entrybar urg-{{ e.urgency }}">
+      <span class="entrytag">{{ td(e.tag) }}</span>
+      <span>{{ t(e.text, e.text_zh) }}</span>
+    </div>
+    {% if s.ladder.age_line %}<p class="agewhen">{{ t(s.ladder.age_line, s.ladder.age_line_zh) }}</p>{% endif %}
+    {% set cp = s.ladder.cycle_plain %}
+    <div class="cyclebox">
+      <div><b>📅 {{ t(cp.daily_line, cp.daily_line_zh) }}</b> — {{ t(cp.daily_phase, cp.daily_phase_zh) }}</div>
+      {% if cp.weekly_line %}<div><b>🗓 {{ t(cp.weekly_line, cp.weekly_line_zh) }}</b> — {{ t(cp.weekly_phase, cp.weekly_phase_zh) }}</div>{% endif %}
+      {% if cp.translation %}<div class="muted">{{ t(cp.translation, cp.translation_zh) }}</div>{% endif %}
+    </div>
+    <details style="margin-top:6px"><summary class="muted">{{ t('full reasoning', '完整推理') }}</summary>
+      <p class="muted" style="margin:6px 0">{{ t(s.ladder.why, s.ladder.why_zh) }} {{ t('Next:', '下一步：') }} {{ t(s.ladder.next, s.ladder.next_zh) }}</p></details>
+  </div>
+
+  <div class="panel">
+    <h2>{{ t('Momentum across timeframes', '跨周期动量') }}</h2>
+    <div data-mtf='{{ s.mtf_json }}'></div>
+  </div>
+
+  <div class="panel">
+    <h2>{{ t('Chart', '图表') }}</h2>
+    <div class="tv"><div id="tv_main"></div></div>
+    <script src="https://s3.tradingview.com/tv.js"></script>
+    <script>new TradingView.widget({"container_id":"tv_main","symbol":"{{ s.tv }}","interval":"D","theme":(localStorage.getItem('theme')==='light'?'light':'dark'),"style":"1","height":420,"width":"100%","hide_side_toolbar":true,"allow_symbol_change":true,"studies":["RSI@tv-basicstudies","MACD@tv-basicstudies"]});</script>
+  </div>
+
+  {% if s.holdings %}
+  <div class="panel">
+    <h2>{{ t('Key constituents — each on its own cycle', '主要成分股 — 各自的周期') }}
+      {{ help("Representative large-caps in this sector (curated; not the ETF's full holdings). Each gets the same cycle/ladder treatment. Click a name for the full single-stock analysis.", "本板块中具代表性的大盘股（精选，并非该 ETF 的完整持仓）。每只都享有相同的周期／阶梯分析。点击名称查看完整个股分析。") }}
+    </h2>
+    {% for h in s.holdings %}
+    <div class="card">
+      <div class="topline">
+        <a href="../canada_stock.html#{{ h.ticker }}"><b style="font-size:15px">{{ h.ticker }}</b></a>
+        <span class="lad {{ 'up' if h.ladder.dir=='up' else ('down' if h.ladder.dir=='down' else 'flat') }}">{{ td(h.ladder.label) }}</span>
+        <span class="muted" style="font-size:12px">{{ td(h.ladder.entry.tag) }}</span>
+        {% if h.ladder.age_short %}<span class="agechip" title="when this signal last crossed">⏱ {{ t(h.ladder.age_short, h.ladder.age_short_zh) }}</span>{% endif %}
+        {% if h.ladder.eq_badge %}<span class="eqbadge sm eq-{{ h.ladder.eq_dir }}" title="{{ h.ladder.eq_tip }}">{{ h.ladder.eq_badge }}</span>{% endif %}
+        <span style="flex:1"></span>
+        <span class="muted" style="font-size:12px">{{ t('daily cycle day', '日线周期第') }} {{ h.cycle.dc_day }}/~{{ h.cycle.dc_band[1] }}{{ t('', ' 天') }}</span>
+      </div>
+      <div data-mtf='{{ h.mtf_json }}'></div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+<script src="../mtf.js"></script>
+<script src="../theme.js"></script>
+<footer class="site-footer">
+  <span class="made">{{ t('Made with ❤️ in Canada', '用 ❤️ 在加拿大制作') }}</span>
+  <span class="dev">{{ t('Developed by', '开发者') }} Chris Wong</span>
+</footer>
+</body>
+</html>
