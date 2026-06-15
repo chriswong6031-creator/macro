@@ -107,6 +107,40 @@ _VALIDATION_MAP = {
     ("commodity", "risk_extreme"): "Commodity risk index (gold/silver/copper/oil)",
 }
 
+# (source, alert type/rule) → key in data/alerts/rule_scorecard.json — the DIRECT
+# event-study backtest of the alert rule itself (scripts/alert_rules_phase0.py).
+# net_liquidity_roc_flip resolves to expand/contract by parsing the detail line.
+_RULE_MAP = {
+    ("macro", "ebp_widening"): "ebp_widening",
+    ("macro", "drawdown_risk_high"): "drawdown_risk_high",
+    ("macro", "capitulation_signal"): "capitulation_signal",
+    ("macro", "hy_oas_widening"): "hy_oas_widening",
+    ("macro", "nfci_tightening"): "nfci_tightening",
+    ("macro", "sahm_trigger"): "sahm_trigger",
+    ("macro", "conditions_recession_state_change"): "recession_high",
+}
+
+
+def _rule_scorecard() -> dict:
+    """Live read of the alert-rule event-study scorecard (committed artifact)."""
+    try:
+        p = config.data_dir() / "alerts" / "rule_scorecard.json"
+        return (json.loads(p.read_text()).get("rules") or {}) if p.exists() else {}
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        return {}
+
+
+def _rule_key(source: str, type_: str, detail: str) -> str | None:
+    if source == "macro" and type_ == "net_liquidity_roc_flip":
+        d = (detail or "").lower()
+        if "expand" in d or "positive" in d:
+            return "net_liq_expand"
+        if "contract" in d or "negative" in d:
+            return "net_liq_contract"
+        return None
+    return _RULE_MAP.get((source, type_))
+
+
 # Priority weights (max 40+30+20+10 = 100).  Surfaced to the page so the score is
 # auditable, never a black box.
 W_TIER = {"act": 40, "watch": 22, "context": 8}
@@ -180,17 +214,50 @@ def priority(tier: str, band: str, age_days: float, ca_tag: str) -> tuple[int, d
 
 
 def _validation(source: str, type_: str, engine_edge: str, engine_edge_zh: str,
-                reg: dict) -> dict:
-    """Honest edge block. Surfaces the engine's calibrated edge note, and — ONLY
-    when a Signal-Lab row backs this family — the real hit/DSR/verdict + link.
+                reg: dict, rule_sc: dict | None = None, detail: str = "") -> dict:
+    """Honest edge block. Precedence: (1) the rule's OWN event-study backtest
+    (rule_scorecard.json) — most direct; (2) a Signal-Lab row backing the family;
+    (3) the engine's calibrated edge note; (4) documented-only.
 
-    Always returns the SAME key set (None / [] where absent) so the template can
-    read v.hit / v.dsr / v.scorecard_name without tripping Jinja's missing-key
+    Always returns the SAME key set (None / [] / {} where absent) so the template
+    can read v.hit / v.dsr / v.horizons without tripping Jinja's missing-key
     Undefined (which is-not-none → True → format crash)."""
     base = {"backtested": False, "verdict": "documented", "scorecard_name": None,
             "hit": None, "dsr": None, "ic": None, "n": None, "horizon": None,
             "extra": [], "report": None, "link": "signal_lab.html",
-            "note": "", "note_zh": ""}
+            "horizons": {}, "note": "", "note_zh": ""}
+
+    # (1) the alert rule's own forward-SPY event study (scripts/alert_rules_phase0)
+    rk = _rule_key(source, type_, detail)
+    rule = (rule_sc or {}).get(rk) if rk else None
+    if rule:
+        v = rule.get("verdict")
+        if v == "earned":
+            hh = rule["headline_horizon"]
+            hd = rule["horizons"][hh]
+            hits = {h: rule["horizons"][h]["hit"] for h in rule.get("earned_horizons", [])}
+            return {**base, "backtested": True, "verdict": "backtested",
+                    "scorecard_name": rule["label"], "hit": hd["hit"],
+                    "horizon": f"{hh}d", "n": rule["n_events"], "horizons": hits,
+                    "report": "alert-rules-phase0",
+                    "note": f"Event study on 33y SPY: {hh}d hit {hd['hit']:.0%} vs "
+                            f"{hd['base_hit']:.0%} base — survives FDR.",
+                    "note_zh": f"33 年标普事件研究：{hh} 日命中 {hd['hit']:.0%}"
+                               f"（基准 {hd['base_hit']:.0%}）— 通过 FDR。"}
+        if v == "no_edge":
+            return {**base, "verdict": "no_edge", "scorecard_name": rule["label"],
+                    "report": "alert-rules-phase0",
+                    "note": "Event-tested on 33y SPY — NO forward edge (FDR q>0.10). "
+                            "Shown as risk context, not a timing signal.",
+                    "note_zh": "33 年标普事件检验 — 无前瞻边际（FDR q>0.10）。"
+                               "作为风险背景，而非择时信号。"}
+        if v == "underpowered":
+            return {**base, "verdict": "underpowered", "scorecard_name": rule["label"],
+                    "report": "alert-rules-phase0",
+                    "note": f"Too few historical firings ({rule['n_events']}) to "
+                            "backtest — documented conviction only.",
+                    "note_zh": f"历史触发次数过少（{rule['n_events']}），无法回测 — 仅有据可查。"}
+
     name = _VALIDATION_MAP.get((source, type_))
     row = reg.get(name) if name else None
     if row:
@@ -345,6 +412,7 @@ def build_triage(days: int = 30, today: date | None = None,
     today_ts = pd.Timestamp(today)
     cutoff = today_ts - pd.Timedelta(days=days)
     reg = _registry_index()
+    rule_sc = _rule_scorecard()
     ctx = _load_context()
     ca_verdict = (ctx.get("cross_asset") or {}).get("verdict")
 
@@ -375,7 +443,8 @@ def build_triage(days: int = 30, today: date | None = None,
             "source_icon": smeta.get("icon", "•"),
             "link": smeta.get("page", "macro.html") + (a.get("anchor") or ""),
             "validation": _validation(a["source"], a["type"], a.get("edge", ""),
-                                      a.get("edge_zh", ""), reg),
+                                      a.get("edge_zh", ""), reg, rule_sc,
+                                      a.get("detail", "")),
         })
 
     # collapse re-fires of the same (source,type,asset) within the window: keep the

@@ -82,6 +82,38 @@ def test_validation_always_has_a_consistent_key_set():
         assert expect <= set(v)
 
 
+def test_rule_scorecard_wiring_three_honest_outcomes():
+    # synthetic rule scorecard standing in for data/alerts/rule_scorecard.json
+    rsc = {
+        "ebp_widening": {"label": "EBP spike", "verdict": "earned",
+                         "headline_horizon": "60", "earned_horizons": ["20", "60"],
+                         "n_events": 12,
+                         "horizons": {"20": {"hit": 0.67, "base_hit": 0.35},
+                                      "60": {"hit": 0.50, "base_hit": 0.28}}},
+        "hy_oas_widening": {"label": "HY OAS spike", "verdict": "no_edge",
+                            "n_events": 168, "horizons": {}},
+        "sahm_trigger": {"label": "Sahm", "verdict": "underpowered",
+                         "n_events": 4, "horizons": {}},
+    }
+    reg = at._registry_index()
+    earned = at._validation("macro", "ebp_widening", "", "", reg, rsc, "spike")
+    assert earned["backtested"] is True and earned["verdict"] == "backtested"
+    assert earned["hit"] == 0.50 and earned["horizon"] == "60d"   # headline horizon
+    no_edge = at._validation("macro", "hy_oas_widening", "", "", reg, rsc, "widening")
+    assert no_edge["verdict"] == "no_edge" and no_edge["hit"] is None
+    under = at._validation("macro", "sahm_trigger", "", "", reg, rsc, "")
+    assert under["verdict"] == "underpowered" and under["backtested"] is False
+    # the rule's own backtest takes precedence over the signal_lab map / engine edge
+    assert earned["report"] == "alert-rules-phase0"
+
+
+def test_net_liquidity_rule_key_is_direction_aware():
+    assert at._rule_key("macro", "net_liquidity_roc_flip", "flipped positive (expanding)") == "net_liq_expand"
+    assert at._rule_key("macro", "net_liquidity_roc_flip", "negative (contracting)") == "net_liq_contract"
+    assert at._rule_key("macro", "hy_oas_widening", "") == "hy_oas_widening"
+    assert at._rule_key("forex", "carry_flip", "") is None
+
+
 def test_only_validated_families_are_backtested_true():
     reg = at._registry_index()
     # a Signal-Lab-mapped family is backtested True with a registry verdict
