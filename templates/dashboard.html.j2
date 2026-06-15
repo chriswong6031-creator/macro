@@ -819,6 +819,21 @@
       </div>
       {% endif %}
 
+      {% if DL.geo_reversibility %}
+      {% set GR = DL.geo_reversibility %}
+      {% set grcolor = 'var(--up)' if GR.agreement=='corroborates' else '#d98a00' %}
+      <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-left:3px solid {{ grcolor }};border-radius:8px;padding:10px 14px">
+        <div style="font-weight:700;margin-bottom:4px">🌍 {{ t('Geopolitical reversibility', '地缘可逆性') }}
+          {{ help("A DETERMINISTIC reversibility cross-check from the GPR threat/act split (Caldara-Iacoviello, AER 2022): the THREAT component of geopolitical risk historically reverts (~3 months) while realized ACTS persist. The free, always-available complement to the AI catalyst cross-check above — shown only on an active dislocation when geopolitical risk is elevated (≥80th pct) and the threat/act mix has a clear lean. CONTEXT ONLY — it never changes the verdict; the validated Fed-put gate governs.", "基于 GPR 威胁／行动分量的确定性可逆性交叉验证（Caldara-Iacoviello，AER 2022）：地缘风险的「威胁」分量历史上往往回落（约3个月），而已发生的「行动」更持久。这是上方 AI 催化交叉验证的免费、始终可用的补充 —— 仅在活跃错位、地缘风险偏高（≥80百分位）且威胁／行动结构有明确倾向时显示。仅供背景 —— 绝不改变判定，以经验证的美联储托底闸为准。") }}
+        </div>
+        <div style="margin-bottom:5px;display:flex;flex-wrap:wrap;gap:6px">
+          <span class="badge" style="font-size:11px;color:{{ grcolor }}">{% if GR.agreement=='corroborates' %}{{ t('corroborates', '印证') }}{% else %}{{ t('diverges', '背离') }}{% endif %}</span>
+          <span class="badge" style="font-size:11px">{{ t('GPR reads', '地缘解读') }}: <span class="l-en">{{ GR.reversibility }}</span><span class="l-zh">{{ GR.reversibility_zh or GR.reversibility }}</span> ({{ t('led by', '主导') }} {{ t('threats', '威胁') if GR.lean=='threat' else t('acts', '行动') }}{% if GR.gpr_pct is not none %}, {{ GR.gpr_pct }}{{ t('th pct', '百分位') }}{% endif %})</span>
+        </div>
+        <div class="muted sm"><span class="l-en">{{ GR.note }}</span><span class="l-zh">{{ GR.note_zh or GR.note }}</span></div>
+      </div>
+      {% endif %}
+
       {% if DL.gate2 and DL.gate2.state not in ('dormant', 'unknown') %}
       {% set g2 = DL.gate2 %}
       {% set g2color = 'var(--up)' if g2.state=='confirmed' else ('#d98a00' if g2.state=='awaiting_confirm' else 'var(--muted)') %}
