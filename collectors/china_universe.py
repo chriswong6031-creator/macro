@@ -53,6 +53,23 @@ def _to_ticker(sina_symbol: str) -> str | None:
     return None  # Beijing (bj) etc. — yfinance has no clean feed
 
 
+def _code_to_ticker(code: str) -> str | None:
+    """Convert a bare 6-digit A-share code to a Yahoo Finance ticker.
+
+    Shanghai (6xxxxx, 9xxxxx, 688xxx STAR) → .SS
+    Shenzhen (0xxxxx, 3xxxxx ChiNext)       → .SZ
+    Beijing / other                          → None (no yfinance feed)
+    """
+    code = str(code).strip().zfill(6)
+    if not code.isdigit() or len(code) != 6:
+        return None
+    if code[0] in ("6", "9") or code.startswith("688"):
+        return f"{code}.SS"
+    if code[0] in ("0", "3"):
+        return f"{code}.SZ"
+    return None  # 8xxxxx / 4xxxxx = Beijing Stock Exchange — skip
+
+
 class ChinaUniverseAdapter(Adapter):
     name = "china_universe"
     group = "china_search"
@@ -177,6 +194,42 @@ class ChinaUniverseAdapter(Adapter):
         members["sector"] = members["sector"].replace("", "A-share")
         return members
 
+    # -- CSI index constituents (akshare) -------------------------------------
+    def _index_constituents(self, symbols: list[str]) -> list[dict]:
+        """Fetch constituent lists for named CSI indices (e.g. '000300', '000852')
+        via akshare. Returns a list of {ticker, name_zh} dicts. Best-effort: one
+        failed index is logged and skipped, never fatal."""
+        try:
+            import akshare as ak  # noqa: PLC0415 — optional dep
+        except ImportError:
+            log.warning("china_universe: akshare not installed — CSI index fetch skipped")
+            return []
+        rows: list[dict] = []
+        for sym in symbols:
+            try:
+                df = ak.index_stock_cons(symbol=sym)
+                # akshare column names vary by version — try common patterns
+                code_col = next(
+                    (c for c in df.columns if "代码" in c or c.lower() in ("code", "symbol")),
+                    df.columns[0] if len(df.columns) else None,
+                )
+                name_col = next(
+                    (c for c in df.columns if "名称" in c or c.lower() == "name"),
+                    None,
+                )
+                if code_col is None:
+                    log.warning("china_universe: index %s — no code column found (%s)", sym, list(df.columns))
+                    continue
+                for _, row in df.iterrows():
+                    t = _code_to_ticker(str(row[code_col]))
+                    if t:
+                        zh = str(row[name_col]).strip() if name_col else ""
+                        rows.append({"ticker": t, "name_zh": zh})
+                log.info("china_universe: CSI index %s → %d constituents", sym, len(df))
+            except Exception as e:  # noqa: BLE001 — one bad index must not kill the run
+                log.warning("china_universe: akshare index %s failed (%s) — skipped", sym, e)
+        return rows
+
     # -- main ------------------------------------------------------------------
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
         if not self.cfg.get("enabled", True):
@@ -184,6 +237,24 @@ class ChinaUniverseAdapter(Adapter):
         self.dir.mkdir(parents=True, exist_ok=True)
 
         uni = self._sina_universe()
+
+        # Union with CSI index constituents (CSI 300 + CSI 1000 by default).
+        # Stocks already ranked by Sina are kept with their real mktcap; extras
+        # get a conservative 30亿 placeholder (all CSI index members exceed the floor).
+        idx_symbols = self.cfg.get("index_constituents", [])
+        if idx_symbols:
+            idx_rows = self._index_constituents(idx_symbols)
+            extra = [r for r in idx_rows if r["ticker"] not in uni.index]
+            if extra:
+                extra_df = pd.DataFrame(
+                    [{"ticker": r["ticker"], "name_zh": r["name_zh"], "mktcap_yi": 30.0}
+                     for r in extra]
+                ).set_index("ticker")
+                # deduplicate within the extras list (same ticker from multiple indices)
+                extra_df = extra_df[~extra_df.index.duplicated(keep="first")]
+                uni = pd.concat([uni, extra_df])
+                log.info("china_universe: +%d CSI index extras (total %d)", len(extra_df), len(uni))
+
         tickers = uni.index.tolist()
 
         prev_closes = pd.read_parquet(self.closes_path) if self.closes_path.exists() else None
