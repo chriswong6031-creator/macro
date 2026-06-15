@@ -1423,7 +1423,7 @@ macro_news:
 # structured-extraction stage is STUBBED OFF (enabled + llm_extract both false).
 # =============================================================================
 news_vector:
-  enabled: false                  # MASTER SWITCH for the GDELT fetch + accrual
+  enabled: true                   # MASTER SWITCH for the GDELT fetch + accrual (ON: accrues the forward PIT event store)
   llm_extract: false              # Stage-C structured extraction — OFF in P0 (no model call)
   lang: eng
   window_days: 2                  # fetch the last N days of narrative news
