@@ -15,7 +15,9 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import sys
+import time
 from pathlib import Path
 
 import pandas as pd
@@ -237,6 +239,49 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
     return out
 
 
+# ---- parallel per-ticker analysis (the build's single heaviest stretch) ------
+# _one() is dominated by engine.cycles.analyze and is GIL-bound, but every ticker
+# is independent (its JSON is written serially in main()), so the universe is
+# fanned across processes. These helpers are module-level so spawned workers can
+# import them; the shared read-only context is installed once per worker via the
+# pool initializer.
+_SHARED: dict = {}
+
+
+def _library_workers() -> int:
+    """Process-pool size for the per-ticker fan-out. Precedence: STOCK_LIB_WORKERS
+    env var (ops knob; set 1 to force the serial path) > config stock_search.workers
+    > the runner's CPU count. Capped at 8 so we don't oversubscribe pandas' BLAS
+    threads."""
+    n = os.environ.get("STOCK_LIB_WORKERS") or None
+    if n is None:
+        n = config.load().get("stock_search", {}).get("workers")
+    if n is None:
+        n = os.cpu_count() or 1
+    return max(1, min(int(n), 8))
+
+
+def _winit(liq, drag, bench, a_days, a_max, vctx) -> None:
+    _SHARED.update(liquidity=liq, macro_drag=drag, bench=bench,
+                   alert_days=a_days, alert_max=a_max, vix_ctx=vctx)
+
+
+def _one_task(item):
+    """Worker: one ticker's library record (or None). Reads the shared context
+    installed by _winit; mirrors the original inline call and its
+    one-bad-ticker-can't-kill-the-library guard."""
+    ticker, close, high, name, sector = item
+    try:
+        return _one(ticker, close, high, name, sector,
+                    liquidity=_SHARED.get("liquidity"), macro_drag=_SHARED.get("macro_drag"),
+                    macro_beta=sector_macro_beta(sector), bench=_SHARED.get("bench"),
+                    alert_days=_SHARED.get("alert_days", 120),
+                    alert_max=_SHARED.get("alert_max", 50), vix_ctx=_SHARED.get("vix_ctx"))
+    except Exception as e:  # noqa: BLE001 — one bad ticker must not kill the library
+        log.debug("library %s failed: %s", ticker, e)
+        return None
+
+
 def main() -> int:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     outdir = site / "stockdata"
@@ -337,14 +382,33 @@ def main() -> int:
     from engine.crowding import compute_fragility
     fragility_map = compute_fragility()
     index, cand, built, failed = [], [], 0, 0
-    for ticker, close, high, name, sector in universe():
+    uni = universe()
+    # Heaviest stretch of the whole site build: ~1500 independent _one() calls.
+    # Fan them across processes (CI runner = 4 vCPU); the cheap post-processing
+    # below (shared-map merges, setup scoring, JSON writes) stays serial and in
+    # universe() order, so the output is byte-identical to the serial build.
+    # Graceful: any pool error — or workers<=1 — drops back to the serial path.
+    _winit(liq, drag, bench, a_days, a_max, vctx)   # also primes the serial path
+    workers = _library_workers()
+    recs: list[dict | None] | None = None
+    if workers > 1 and len(uni) > 50:
         try:
-            rec = _one(ticker, close, high, name, sector, liquidity=liq,
-                       macro_drag=drag, macro_beta=sector_macro_beta(sector),
-                       bench=bench, alert_days=a_days, alert_max=a_max, vix_ctx=vctx)
-        except Exception as e:  # noqa: BLE001 — one bad ticker must not kill the library
-            log.debug("library %s failed: %s", ticker, e)
-            rec = None
+            from concurrent.futures import ProcessPoolExecutor
+            t0 = time.time()
+            with ProcessPoolExecutor(max_workers=workers, initializer=_winit,
+                                     initargs=(liq, drag, bench, a_days, a_max, vctx)) as ex:
+                recs = list(ex.map(_one_task, uni, chunksize=8))
+            log.info("stock library: analysed %d names in %.0fs (%d processes)",
+                     len(uni), time.time() - t0, workers)
+        except Exception as e:  # noqa: BLE001 — parallelism must never break the build
+            log.warning("parallel library build failed (%s) — serial fallback", e)
+            recs = None
+    if recs is None:
+        t0 = time.time()
+        recs = [_one_task(item) for item in uni]
+        log.info("stock library: analysed %d names in %.0fs (serial)", len(uni), time.time() - t0)
+
+    for (ticker, close, high, name, sector), rec in zip(uni, recs):
         if rec is None:
             failed += 1
             continue
