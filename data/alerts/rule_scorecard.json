@@ -1,0 +1,580 @@
+{
+  "generated_utc": "2026-06-15 05:53",
+  "target": "SPY",
+  "horizons_d": [
+    1,
+    5,
+    20,
+    60
+  ],
+  "span": "1993-01-29..2026-06-12",
+  "method": "event study; forward SPY return; Newey-West HAC (lags=h); BH-FDR across rule\u00d7horizon; earned = FDR-survive AND >= 8 independent clusters.",
+  "fdr_alpha": 0.1,
+  "min_clusters": 8,
+  "n_earned": 4,
+  "rules": {
+    "hy_oas_widening": {
+      "label": "HY OAS 1-day widening spike",
+      "thesis": "down",
+      "n_events": 168,
+      "span": "1998-03-31..2026-03-27",
+      "horizons": {
+        "1": {
+          "n": 168,
+          "n_clusters": 146,
+          "hit": 0.411,
+          "base_hit": 0.436,
+          "hit_uplift": -0.025,
+          "mean": 0.0027,
+          "base_mean": 0.0005,
+          "mean_uplift": 0.0023,
+          "t_hac": 1.187,
+          "p_one": 0.8824,
+          "q_fdr": 0.9263,
+          "survives": false
+        },
+        "5": {
+          "n": 168,
+          "n_clusters": 108,
+          "hit": 0.333,
+          "base_hit": 0.411,
+          "hit_uplift": -0.077,
+          "mean": 0.0063,
+          "base_mean": 0.0022,
+          "mean_uplift": 0.0041,
+          "t_hac": 0.883,
+          "p_one": 0.8114,
+          "q_fdr": 0.9263,
+          "survives": false
+        },
+        "20": {
+          "n": 168,
+          "n_clusters": 77,
+          "hit": 0.393,
+          "base_hit": 0.348,
+          "hit_uplift": 0.045,
+          "mean": 0.0139,
+          "base_mean": 0.0089,
+          "mean_uplift": 0.0051,
+          "t_hac": 0.583,
+          "p_one": 0.7202,
+          "q_fdr": 0.9097,
+          "survives": false
+        },
+        "60": {
+          "n": 167,
+          "n_clusters": 50,
+          "hit": 0.251,
+          "base_hit": 0.278,
+          "hit_uplift": -0.027,
+          "mean": 0.0421,
+          "base_mean": 0.0262,
+          "mean_uplift": 0.0159,
+          "t_hac": 1.214,
+          "p_one": 0.8877,
+          "q_fdr": 0.9263,
+          "survives": false
+        }
+      },
+      "earned_horizons": [],
+      "verdict": "no_edge",
+      "headline_horizon": null
+    },
+    "nfci_tightening": {
+      "label": "NFCI tightens above threshold",
+      "thesis": "down",
+      "n_events": 2,
+      "span": "2008-02-22..2008-06-20",
+      "horizons": {
+        "1": {
+          "n": 2,
+          "insufficient": true
+        },
+        "5": {
+          "n": 2,
+          "insufficient": true
+        },
+        "20": {
+          "n": 2,
+          "insufficient": true
+        },
+        "60": {
+          "n": 2,
+          "insufficient": true
+        }
+      },
+      "earned_horizons": [],
+      "verdict": "underpowered",
+      "headline_horizon": null
+    },
+    "sahm_trigger": {
+      "label": "Sahm rule triggers (0.50)",
+      "thesis": "down",
+      "n_events": 4,
+      "span": "2001-06-01..2024-07-01",
+      "horizons": {
+        "1": {
+          "n": 4,
+          "n_clusters": 4,
+          "hit": 0.0,
+          "base_hit": 0.436,
+          "hit_uplift": -0.436,
+          "mean": 0.0088,
+          "base_mean": 0.0005,
+          "mean_uplift": 0.0084,
+          "t_hac": null,
+          "p_one": null
+        },
+        "5": {
+          "n": 4,
+          "n_clusters": 4,
+          "hit": 0.0,
+          "base_hit": 0.411,
+          "hit_uplift": -0.411,
+          "mean": 0.0338,
+          "base_mean": 0.0022,
+          "mean_uplift": 0.0316,
+          "t_hac": null,
+          "p_one": null
+        },
+        "20": {
+          "n": 4,
+          "n_clusters": 4,
+          "hit": 0.5,
+          "base_hit": 0.348,
+          "hit_uplift": 0.152,
+          "mean": 0.0446,
+          "base_mean": 0.0089,
+          "mean_uplift": 0.0357,
+          "t_hac": null,
+          "p_one": null
+        },
+        "60": {
+          "n": 4,
+          "n_clusters": 4,
+          "hit": 0.5,
+          "base_hit": 0.278,
+          "hit_uplift": 0.222,
+          "mean": 0.0489,
+          "base_mean": 0.0262,
+          "mean_uplift": 0.0227,
+          "t_hac": null,
+          "p_one": null
+        }
+      },
+      "earned_horizons": [],
+      "verdict": "underpowered",
+      "headline_horizon": null
+    },
+    "ebp_widening": {
+      "label": "Excess Bond Premium spike",
+      "thesis": "down",
+      "n_events": 12,
+      "span": "1995-06-01..2020-03-02",
+      "horizons": {
+        "1": {
+          "n": 12,
+          "n_clusters": 12,
+          "hit": 0.5,
+          "base_hit": 0.436,
+          "hit_uplift": 0.064,
+          "mean": -0.0099,
+          "base_mean": 0.0005,
+          "mean_uplift": -0.0104,
+          "t_hac": -2.908,
+          "p_one": 0.0018,
+          "q_fdr": 0.0054,
+          "survives": true
+        },
+        "5": {
+          "n": 12,
+          "n_clusters": 12,
+          "hit": 0.833,
+          "base_hit": 0.411,
+          "hit_uplift": 0.423,
+          "mean": -0.0318,
+          "base_mean": 0.0022,
+          "mean_uplift": -0.0341,
+          "t_hac": -2.864,
+          "p_one": 0.0021,
+          "q_fdr": 0.0056,
+          "survives": true
+        },
+        "20": {
+          "n": 12,
+          "n_clusters": 12,
+          "hit": 0.667,
+          "base_hit": 0.348,
+          "hit_uplift": 0.319,
+          "mean": -0.0499,
+          "base_mean": 0.0089,
+          "mean_uplift": -0.0588,
+          "t_hac": -3.415,
+          "p_one": 0.0003,
+          "q_fdr": 0.0014,
+          "survives": true
+        },
+        "60": {
+          "n": 12,
+          "n_clusters": 11,
+          "hit": 0.5,
+          "base_hit": 0.278,
+          "hit_uplift": 0.222,
+          "mean": -0.0508,
+          "base_mean": 0.0262,
+          "mean_uplift": -0.077,
+          "t_hac": -3.103,
+          "p_one": 0.0009,
+          "q_fdr": 0.0036,
+          "survives": true
+        }
+      },
+      "earned_horizons": [
+        "1",
+        "5",
+        "20",
+        "60"
+      ],
+      "verdict": "earned",
+      "headline_horizon": "60"
+    },
+    "drawdown_risk_high": {
+      "label": "Macro-stress gauge \u2192 HIGH band",
+      "thesis": "down",
+      "n_events": 13,
+      "span": "1998-07-01..2020-03-02",
+      "horizons": {
+        "1": {
+          "n": 13,
+          "n_clusters": 13,
+          "hit": 0.385,
+          "base_hit": 0.436,
+          "hit_uplift": -0.051,
+          "mean": -0.0033,
+          "base_mean": 0.0005,
+          "mean_uplift": -0.0037,
+          "t_hac": -0.873,
+          "p_one": 0.1913,
+          "q_fdr": 0.3029,
+          "survives": false
+        },
+        "5": {
+          "n": 13,
+          "n_clusters": 11,
+          "hit": 0.462,
+          "base_hit": 0.411,
+          "hit_uplift": 0.051,
+          "mean": -0.0155,
+          "base_mean": 0.0022,
+          "mean_uplift": -0.0177,
+          "t_hac": -2.215,
+          "p_one": 0.0134,
+          "q_fdr": 0.0322,
+          "survives": true
+        },
+        "20": {
+          "n": 13,
+          "n_clusters": 10,
+          "hit": 0.846,
+          "base_hit": 0.348,
+          "hit_uplift": 0.498,
+          "mean": -0.0245,
+          "base_mean": 0.0089,
+          "mean_uplift": -0.0334,
+          "t_hac": -4.1,
+          "p_one": 0.0,
+          "q_fdr": 0.0,
+          "survives": true
+        },
+        "60": {
+          "n": 13,
+          "n_clusters": 10,
+          "hit": 0.615,
+          "base_hit": 0.278,
+          "hit_uplift": 0.337,
+          "mean": -0.024,
+          "base_mean": 0.0262,
+          "mean_uplift": -0.0502,
+          "t_hac": -8.729,
+          "p_one": 0.0,
+          "q_fdr": 0.0,
+          "survives": true
+        }
+      },
+      "earned_horizons": [
+        "5",
+        "20",
+        "60"
+      ],
+      "verdict": "earned",
+      "headline_horizon": "60"
+    },
+    "recession_high": {
+      "label": "Recession-risk band \u2192 HIGH",
+      "thesis": "down",
+      "n_events": 4,
+      "span": "2008-07-01..2020-03-23",
+      "horizons": {
+        "1": {
+          "n": 4,
+          "n_clusters": 4,
+          "hit": 0.25,
+          "base_hit": 0.436,
+          "hit_uplift": -0.186,
+          "mean": 0.0323,
+          "base_mean": 0.0005,
+          "mean_uplift": 0.0319,
+          "t_hac": null,
+          "p_one": null
+        },
+        "5": {
+          "n": 4,
+          "n_clusters": 4,
+          "hit": 0.75,
+          "base_hit": 0.411,
+          "hit_uplift": 0.339,
+          "mean": 0.0082,
+          "base_mean": 0.0022,
+          "mean_uplift": 0.0059,
+          "t_hac": null,
+          "p_one": null
+        },
+        "20": {
+          "n": 4,
+          "n_clusters": 2,
+          "hit": 0.5,
+          "base_hit": 0.348,
+          "hit_uplift": 0.152,
+          "mean": 0.0628,
+          "base_mean": 0.0089,
+          "mean_uplift": 0.054,
+          "t_hac": null,
+          "p_one": null
+        },
+        "60": {
+          "n": 4,
+          "n_clusters": 2,
+          "hit": 0.5,
+          "base_hit": 0.278,
+          "hit_uplift": 0.222,
+          "mean": 0.0905,
+          "base_mean": 0.0262,
+          "mean_uplift": 0.0643,
+          "t_hac": null,
+          "p_one": null
+        }
+      },
+      "earned_horizons": [],
+      "verdict": "underpowered",
+      "headline_horizon": null
+    },
+    "capitulation_signal": {
+      "label": "Capitulation gauge fires (contrarian)",
+      "thesis": "up",
+      "n_events": 91,
+      "span": "1997-12-24..2026-03-27",
+      "horizons": {
+        "1": {
+          "n": 91,
+          "n_clusters": 91,
+          "hit": 0.527,
+          "base_hit": 0.522,
+          "hit_uplift": 0.005,
+          "mean": 0.003,
+          "base_mean": 0.0005,
+          "mean_uplift": 0.0025,
+          "t_hac": 1.178,
+          "p_one": 0.1193,
+          "q_fdr": 0.2069,
+          "survives": false
+        },
+        "5": {
+          "n": 91,
+          "n_clusters": 78,
+          "hit": 0.736,
+          "base_hit": 0.587,
+          "hit_uplift": 0.149,
+          "mean": 0.014,
+          "base_mean": 0.0022,
+          "mean_uplift": 0.0117,
+          "t_hac": 3.577,
+          "p_one": 0.0001,
+          "q_fdr": 0.0006,
+          "survives": true
+        },
+        "20": {
+          "n": 91,
+          "n_clusters": 54,
+          "hit": 0.637,
+          "base_hit": 0.65,
+          "hit_uplift": -0.013,
+          "mean": 0.0266,
+          "base_mean": 0.0089,
+          "mean_uplift": 0.0177,
+          "t_hac": 3.047,
+          "p_one": 0.0011,
+          "q_fdr": 0.0038,
+          "survives": true
+        },
+        "60": {
+          "n": 90,
+          "n_clusters": 36,
+          "hit": 0.844,
+          "base_hit": 0.722,
+          "hit_uplift": 0.123,
+          "mean": 0.0656,
+          "base_mean": 0.0262,
+          "mean_uplift": 0.0394,
+          "t_hac": 8.925,
+          "p_one": 0.0,
+          "q_fdr": 0.0,
+          "survives": true
+        }
+      },
+      "earned_horizons": [
+        "5",
+        "20",
+        "60"
+      ],
+      "verdict": "earned",
+      "headline_horizon": "60"
+    },
+    "net_liq_expand": {
+      "label": "Net-liquidity RoC flips POSITIVE (expanding)",
+      "thesis": "up",
+      "n_events": 137,
+      "span": "2008-01-03..2026-05-14",
+      "horizons": {
+        "1": {
+          "n": 137,
+          "n_clusters": 137,
+          "hit": 0.526,
+          "base_hit": 0.522,
+          "hit_uplift": 0.003,
+          "mean": -0.0005,
+          "base_mean": 0.0005,
+          "mean_uplift": -0.001,
+          "t_hac": -1.053,
+          "p_one": 0.8538,
+          "q_fdr": 0.9263,
+          "survives": false
+        },
+        "5": {
+          "n": 137,
+          "n_clusters": 130,
+          "hit": 0.606,
+          "base_hit": 0.587,
+          "hit_uplift": 0.019,
+          "mean": 0.0043,
+          "base_mean": 0.0022,
+          "mean_uplift": 0.0021,
+          "t_hac": 0.835,
+          "p_one": 0.2019,
+          "q_fdr": 0.3029,
+          "survives": false
+        },
+        "20": {
+          "n": 137,
+          "n_clusters": 89,
+          "hit": 0.657,
+          "base_hit": 0.65,
+          "hit_uplift": 0.007,
+          "mean": 0.0147,
+          "base_mean": 0.0089,
+          "mean_uplift": 0.0058,
+          "t_hac": 2.127,
+          "p_one": 0.0167,
+          "q_fdr": 0.0364,
+          "survives": true
+        },
+        "60": {
+          "n": 135,
+          "n_clusters": 54,
+          "hit": 0.77,
+          "base_hit": 0.722,
+          "hit_uplift": 0.049,
+          "mean": 0.0341,
+          "base_mean": 0.0262,
+          "mean_uplift": 0.0079,
+          "t_hac": 1.88,
+          "p_one": 0.0301,
+          "q_fdr": 0.0602,
+          "survives": true
+        }
+      },
+      "earned_horizons": [
+        "20",
+        "60"
+      ],
+      "verdict": "earned",
+      "headline_horizon": "60"
+    },
+    "net_liq_contract": {
+      "label": "Net-liquidity RoC flips NEGATIVE (contracting)",
+      "thesis": "down",
+      "n_events": 103,
+      "span": "2009-01-08..2026-04-17",
+      "horizons": {
+        "1": {
+          "n": 103,
+          "n_clusters": 103,
+          "hit": 0.456,
+          "base_hit": 0.436,
+          "hit_uplift": 0.021,
+          "mean": -0.0006,
+          "base_mean": 0.0005,
+          "mean_uplift": -0.001,
+          "t_hac": -1.171,
+          "p_one": 0.1207,
+          "q_fdr": 0.2069,
+          "survives": false
+        },
+        "5": {
+          "n": 103,
+          "n_clusters": 96,
+          "hit": 0.379,
+          "base_hit": 0.411,
+          "hit_uplift": -0.032,
+          "mean": 0.0027,
+          "base_mean": 0.0022,
+          "mean_uplift": 0.0005,
+          "t_hac": 0.212,
+          "p_one": 0.5838,
+          "q_fdr": 0.7784,
+          "survives": false
+        },
+        "20": {
+          "n": 103,
+          "n_clusters": 69,
+          "hit": 0.379,
+          "base_hit": 0.348,
+          "hit_uplift": 0.03,
+          "mean": 0.0065,
+          "base_mean": 0.0089,
+          "mean_uplift": -0.0024,
+          "t_hac": -0.562,
+          "p_one": 0.2869,
+          "q_fdr": 0.405,
+          "survives": false
+        },
+        "60": {
+          "n": 102,
+          "n_clusters": 44,
+          "hit": 0.225,
+          "base_hit": 0.278,
+          "hit_uplift": -0.053,
+          "mean": 0.0359,
+          "base_mean": 0.0262,
+          "mean_uplift": 0.0096,
+          "t_hac": 2.651,
+          "p_one": 0.996,
+          "q_fdr": 0.996,
+          "survives": false
+        }
+      },
+      "earned_horizons": [],
+      "verdict": "no_edge",
+      "headline_horizon": null
+    }
+  }
+}

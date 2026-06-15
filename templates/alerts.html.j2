@@ -90,9 +90,12 @@
   .val { font-size:11px; color:var(--muted); margin-top:7px; display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
   .vpill { font-size:10px; font-weight:700; padding:1px 7px; border-radius:7px; border:1px solid var(--line); }
   .vp-scored{ color:var(--up); border-color:color-mix(in srgb,var(--up) 50%,var(--line)); }
+  .vp-backtested{ color:var(--up); border-color:color-mix(in srgb,var(--up) 55%,var(--line)); font-weight:800; }
   .vp-confirmer{ color:var(--link); border-color:color-mix(in srgb,var(--link) 50%,var(--line)); }
   .vp-calibrated{ color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,var(--line)); }
   .vp-documented{ color:var(--muted); }
+  .vp-no_edge{ color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,var(--line)); }
+  .vp-underpowered{ color:var(--muted); border-style:dashed; }
   .vp-display{ color:var(--muted); } .vp-killed{ color:var(--down); }
   .mono { font-variant-numeric:tabular-nums; }
   .lnk { color:var(--link); }
@@ -255,12 +258,22 @@
       </div>
       <!-- validation: measured edge ONLY where it exists, else honest 'documented' -->
       <div class="val">
-        {% set vc = 'vp-' ~ (v.verdict if v.verdict in ['scored','confirmer','calibrated','documented','display','killed'] else 'documented') %}
-        <span class="vpill {{ vc }}">{{ t(v.verdict|upper, v.verdict|upper) }}</span>
-        {% if v.hit is not none %}<span class="mono">{{ t('hit','命中') }} {{ pct(v.hit) }}</span>{% endif %}
+        {% set vmap = {
+          'backtested': ('vp-backtested','BACKTESTED ✓','已回测 ✓'),
+          'scored': ('vp-scored','SCORED','已计分'),
+          'confirmer': ('vp-confirmer','CONFIRMER','确认项'),
+          'calibrated': ('vp-calibrated','CALIBRATED','已校准'),
+          'no_edge': ('vp-no_edge','TESTED · NO EDGE','已检验·无边际'),
+          'underpowered': ('vp-underpowered','UNTESTABLE','样本不足'),
+          'documented': ('vp-documented','DOCUMENTED','有据可查'),
+          'display': ('vp-documented','DISPLAY','仅展示'),
+          'killed': ('vp-killed','NO-GO','否决') } %}
+        {% set vv = vmap.get(v.verdict, vmap['documented']) %}
+        <span class="vpill {{ vv[0] }}">{{ t(vv[1], vv[2]) }}</span>
+        {% if v.hit is not none %}<span class="mono">{{ t('hit','命中') }} {{ pct(v.hit) }}{% if v.horizon %} @{{ v.horizon }}{% endif %}</span>{% endif %}
         {% if v.ic is not none %}<span class="mono">IC {{ '%+.3f'|format(v.ic) }}</span>{% endif %}
         {% if v.dsr is not none %}<span class="mono">DSR {{ '%.2f'|format(v.dsr) }}</span>{% endif %}
-        {% if v.horizon %}<span class="muted">· {{ v.horizon }}</span>{% endif %}
+        {% if v.horizon and v.hit is none %}<span class="muted">· {{ v.horizon }}</span>{% endif %}
         {% if v.note %}<span class="muted">— {{ t(v.note[:130], (v.note_zh or v.note)[:130]) }}</span>{% endif %}
         {{ help(
            (v.note or 'No standalone backtest for this alert family.') ~ (('  Validated as: ' ~ v.scorecard_name ~ '.') if v.scorecard_name else '') ~ (('  [' ~ v.report ~ ']') if v.report else '') ~ '  See Signal Lab for the full battery.',
