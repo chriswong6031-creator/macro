@@ -214,6 +214,33 @@ html[data-theme="dark"] .measured-edge{background:rgba(26,127,67,.12)}
     <div class="sub faint" style="margin-top:8px">{{ t('The 3m10y spread drives the NY Fed probit. The near-term forward spread (the implied 3m rate ~18 months out minus today\'s) statistically beats 2s10s as a recession signal — it inverts when the market prices Fed cuts. The TP-adjusted slope strips the low-term-premium distortion that inverted the curve in 2022–24 without a recession.', '3月/10年利差驱动纽约联储概率模型。近端远期利差（约18个月后的隐含3月利率减去当前）作为衰退信号在统计上优于2年/10年——当市场为美联储降息定价时即倒挂。期限溢价调整斜率剔除了2022–24年在无衰退情况下导致曲线倒挂的低期限溢价扭曲。') }}</div>
   </div>
 
+  <!-- ===================== FED POLICY PATH ===================== -->
+  {% if fed_path %}
+  <div class="sec-head">{{ t('Market-implied policy path — the Fed vs the market', '市场隐含政策路径 · 美联储 vs 市场') }}</div>
+  <div class="card">
+    <h2>{{ t('Where the market prices the funds rate — and where the Fed projects it', '市场为基金利率定价之处 · 以及美联储的预测') }}</h2>
+    {% if fed_path.headline_en %}<div class="sub" style="margin:2px 0 8px"><b><span class="l-en">{{ fed_path.headline_en }}</span><span class="l-zh">{{ fed_path.headline_zh }}</span></b></div>{% endif %}
+    {% if fed_path.gap %}
+    <div style="margin:6px 0 10px">
+      <span class="band-chip" style="background:var(--muted)">{{ fed_path.gap.horizon_label }} · {{ t('market', '市场') }} {{ '%.2f'|format(fed_path.gap.market) }}% · {{ t('Fed dot', '美联储点阵') }} {{ '%.2f'|format(fed_path.gap.fed_dot) }}%</span>
+      <span class="pill"><span class="l-en">{{ '%+d'|format(fed_path.gap.gap_bp) }}bp · {{ fed_path.gap.lean_en }}</span><span class="l-zh">{{ '%+d'|format(fed_path.gap.gap_bp) }}基点 · {{ fed_path.gap.lean_zh }}</span></span>
+    </div>
+    {% endif %}
+    <div class="kpis">
+      {{ kpi('Target range', '目标区间', (('%.2f'|format(fed_path.target_low)) ~ '–' ~ ('%.2f'|format(fed_path.target_high))) if fed_path.target_low is not none else none, '%') }}
+      {{ kpi('EFFR (policy now)', '有效联邦基金利率', fed_path.policy_rate, '%') }}
+      {{ kpi('Implied 12m', '隐含12个月', fed_path.implied.get('m12'), '%') }}
+      {{ kpi('Implied 25bp moves (12m)', '隐含25基点变动(12月)', fed_path.implied_cuts_12m, '', t('+ = cuts', '正=降息')) }}
+      {{ kpi('Near-term fwd spread', '近端远期利差', fed_path.ntfs, 'pp') }}
+      {{ kpi('us2y − funds', 'us2y − 基金利率', fed_path.rate_exp_proxy, 'pp') }}
+    </div>
+    {% if fed_path.implied_source_en %}<div class="sub faint" style="margin-top:6px">{{ t('Implied path source', '隐含路径来源') }}: <span class="l-en">{{ fed_path.implied_source_en }}</span><span class="l-zh">{{ fed_path.implied_source_zh }}</span></div>{% endif %}
+    {% if charts.policy_path %}<div style="margin-top:14px">{{ charts.policy_path | safe }}</div>{% endif %}
+    {% if fed_path.read_en %}<div class="sub" style="margin-top:8px"><span class="l-en">{{ fed_path.read_en }}</span><span class="l-zh">{{ fed_path.read_zh }}</span></div>{% endif %}
+    <div class="sub faint" style="margin-top:8px">{{ t(fed_path.note_en, fed_path.note_zh) }}</div>
+  </div>
+  {% endif %}
+
   <!-- ===================== CREDIT + REAL/INFLATION ===================== -->
   <div class="sec-head">{{ t('② Credit & ③ Real rates — risk appetite & the discount rate', '② 信用 与 ③ 实际利率 · 风险偏好与贴现率') }}</div>
   <div class="grid cols-2">

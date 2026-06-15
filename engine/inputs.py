@@ -145,6 +145,14 @@ def build_features() -> pd.DataFrame:
     # values = market prices cuts over the next ~2y; ZQ front adds a 30d view
     f["rate_expectations_proxy"] = f["us2y"] - f["fed_funds"]
     f["zq_implied_rate"] = 100 - f["zq_front"]
+    # Fed policy path (DISPLAY-ONLY, research/DATA_SIGNAL_EXPANSION_2026.md #2): the
+    # live target range (daily) + the FOMC dot-plot median. The range gives the policy
+    # midpoint; the dot is future-dated (each SEP overwrites the series) so ffill only
+    # carries the latest projection forward — engine/fed_path.py reads the RAW store
+    # series for the full forward dot path. Never scored, never an MRS leg.
+    put("fed_target_upper", series.get("fed_target_upper"))
+    put("fed_target_lower", series.get("fed_target_lower"))
+    put("fed_dot_median", series.get("fed_dot_median"), ffill_limit=400)
 
     # --- Quant-factor expansion: Fed-research feeds (research/QUANT_FACTOR_EXPANSION.md)
     # Financial-conditions indices (weekly) — a ready broad risk gauge.
