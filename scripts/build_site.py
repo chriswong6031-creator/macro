@@ -1472,6 +1472,75 @@ def alloc_card_state() -> dict:
         return {"present": False}
 
 
+# Index drawdown/risk MODEL integrated onto the macro page (the predictive layer
+# from the S&P Vector engine — the allocation STRATEGY itself lives on spvector.html).
+_RISK_LEG_COLORS = {"drawdown": "#e07070", "recession": "#e0a030", "nfci": "#9b8de0",
+                    "hy_widening": "#d98c00", "liquidity": "#7aa7e0"}
+_RISK_LEG_ZH = {"drawdown": "宏观压力回撤计", "recession": "衰退风险",
+                "nfci": "金融条件（紧且收紧）", "hy_widening": "信用压力（高收益利差走阔）",
+                "liquidity": "净流动性收缩"}
+_RISK_LEG_ORDER = ["drawdown", "recession", "hy_widening", "nfci", "liquidity"]
+
+
+def risk_model_view(f: pd.DataFrame, regime, cf: pd.DataFrame) -> dict:
+    """The S&P Vector de-risk SCORE + its per-leg breakdown, for the macro page's
+    integrated 'index risk model' read. Reuses engine.equity_alloc.risk_legs (each
+    leg's 0-100 intensity, weight, publication lag, and points-contribution that
+    sum to the composite). Degrades to {} if the engine can't compute."""
+    try:
+        from engine import equity_alloc as ea
+        rl = ea.risk_legs(f, regime, cf)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("risk_model_view failed (%s)", e)
+        return {}
+    sc = rl["score"].dropna()
+    if sc.empty:
+        return {}
+    score = round(float(sc.iloc[-1]))
+    legs = []
+    order = _RISK_LEG_ORDER + [n for n in rl["legs"] if n not in _RISK_LEG_ORDER]
+    for n in order:
+        lg = rl["legs"].get(n)
+        if not lg:
+            continue
+        legs.append({"key": n, "label": lg["label"], "label_zh": _RISK_LEG_ZH.get(n, lg["label"]),
+                     "value": lg["value"], "points": lg["points"], "weight": lg["weight"],
+                     "lag": lg["lag"], "active": lg["active"],
+                     "color": _RISK_LEG_COLORS.get(n, "#888")})
+    band = ("low" if score < 25 else "elevated" if score < 50 else "high" if score < 75 else "extreme")
+    return {"score": score, "legs": legs, "band": band}
+
+
+def chart_risk_model(cf: pd.DataFrame) -> str:
+    """The index drawdown-risk + recession-risk MODELS over ~25y, with NBER
+    recessions shaded — the 'predict index drawdown / recession risk through a model'
+    chart, integrated onto the macro page. Both are 0-100 composite gauges from
+    engine.conditions; band lines mark the elevated/high thresholds."""
+    start = cf.index.max() - pd.Timedelta(days=365 * 25)
+    dr = cf.loc[start:, "drawdown_risk"].dropna()
+    rr = cf.loc[start:, "recession_risk"].dropna()
+    fig = go.Figure()
+    rec = store.read("fred", "USRECD")
+    if rec is not None and not rec.empty:
+        on = (rec[rec.columns[0]] > 0.5)
+        on = on[on.index >= start]
+        if on.any():
+            seg = (on != on.shift()).cumsum()
+            for _, g in on[on].groupby(seg[on]):
+                fig.add_vrect(x0=g.index.min(), x1=g.index.max(),
+                              fillcolor="#8b93a1", opacity=0.16, line_width=0)
+    fig.add_trace(go.Scatter(x=dr.index, y=dr, name="Index drawdown-risk model",
+                             line={"color": "#e07070", "width": 1.4}))
+    fig.add_trace(go.Scatter(x=rr.index, y=rr, name="Recession-risk model",
+                             line={"color": "#e0a030", "width": 1.2}))
+    fig.add_hline(y=80, line={"color": "#e07070", "width": 0.5, "dash": "dot"})
+    fig.add_hline(y=60, line={"color": "#e0a030", "width": 0.5, "dash": "dot"})
+    fig.update_layout(**PLOT_LAYOUT)
+    fig.update_yaxes(range=[0, 100], autorange=False)
+    _apply_range(fig, has_legend=True, height=320)
+    return _html(fig)
+
+
 def main() -> int:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     site.mkdir(parents=True, exist_ok=True)
@@ -1484,6 +1553,8 @@ def main() -> int:
     (site / "regime_timeline.json").write_text(
         json.dumps(regime_timeline(hist), separators=(",", ":")))
     f = build_features()
+    from engine.conditions import conditions_frame
+    _cf = conditions_frame(f)  # shared by the integrated index risk-model panel
 
     env = Environment(loader=FileSystemLoader(config.ROOT / "templates"))
     env.filters["min"] = lambda seq: min(seq)
@@ -1576,6 +1647,8 @@ def main() -> int:
         stance=regime_stance(latest, latest.get("playbook")),
         index_health=index_health_rows(),       # macro-page index-health section
         alloc_card=alloc_card_state(),           # macro-page allocation CTA card
+        risk_model=risk_model_view(f, hist, _cf),  # de-risk score + leg breakdown
+        chart_risk_model=chart_risk_model(_cf),    # drawdown/recession risk-model chart
     )
     # Write the macro dashboard straight to macro.html. index.html is owned
     # solely by build_vector.build_landing() (the landing hub) — keeping the raw

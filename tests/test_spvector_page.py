@@ -91,7 +91,8 @@ def test_dashboard_compiles_and_splits():
             check(f"{tpl} compiles", False, str(e))
     src = (ROOT / "templates" / "dashboard.html.j2").read_text()
     for m in ("mode == 'stocks'", "mode != 'stocks'", "mode != 'macro'",
-              'id="index-health"', 'id="stocks-header"', "Regime-approved sectors"):
+              'id="index-health"', 'id="stocks-header"', "Regime-approved sectors",
+              "Index risk model", "rm-bar", "chart_risk_model"):  # integrated risk model
         check(f"dashboard has split marker: {m}", m in src, "missing")
     # China + HK mirror the same macro/stocks mode split (rendered twice by their
     # builders -> <market>.html + <market>_stocks.html).

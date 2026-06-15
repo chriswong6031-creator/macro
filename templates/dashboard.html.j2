@@ -462,6 +462,13 @@
   .idx-alloc:hover { background: var(--panel); }
   .idx-gk { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
   .idx-gv { font-size: 24px; font-weight: 800; color: var(--text); } .idx-gv small { font-size: 12px; font-weight: 600; color: var(--muted); }
+  /* integrated de-risk score model (leg breakdown) */
+  .rm-bar { height: 22px; border-radius: 7px; overflow: hidden; display: flex; background: var(--panel2); border: 1px solid var(--line); margin: 6px 0; }
+  .rm-bar div { height: 100%; }
+  .rm-tbl { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 8px; }
+  .rm-tbl td, .rm-tbl th { padding: 5px 8px; border-bottom: 1px solid var(--line); text-align: right; }
+  .rm-tbl td.l, .rm-tbl th.l { text-align: left; }
+  .rm-dot { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 6px; vertical-align: middle; }
 </style>
 </head>
 <body>
@@ -723,6 +730,28 @@
       </a>
       {% endif %}
     </div>
+    {% if risk_model and risk_model.legs %}
+    <h3 style="margin-top:16px">{{ t('Index risk model — what is driving de-risk', '指数风险模型 — 降险信号由什么驱动') }}
+      {{ help("The S&P Vector de-risk score (0-100) and the legs that build it: macro-stress drawdown gauge, recession risk, financial conditions, credit-spread widening, and net-liquidity. Each leg's points sum to the score, so the bar shows exactly what is risk-on or risk-off now. The full allocation strategy + backtest lives on the S&P Vector page.", "标普向量降险评分（0-100）及其构成分项：宏观压力回撤计、衰退风险、金融条件、信用利差走阔、净流动性。各分项贡献分相加即为总分，进度条直观显示当前什么在加／降风险。完整仓位策略与回测见标普向量页。") }}
+    </h3>
+    <div class="rm-bar">{% for lg in risk_model.legs %}{% if lg.active and lg.points %}<div style="width:{{ lg.points }}%;background:{{ lg.color }}" title="{{ lg.label }}: {{ lg.points }}"></div>{% endif %}{% endfor %}</div>
+    <div class="muted" style="font-size:11px">{{ t('Filled = de-risk score out of 100.', '填充 = 满分100的降险评分。') }} <a href="spvector.html" style="font-weight:600">{{ t('Full allocation strategy →', '完整仓位策略 →') }}</a></div>
+    <table class="rm-tbl">
+      <tr><th class="l">{{ t('Risk leg', '风险分项') }}</th><th>{{ t('Intensity', '强度') }}</th><th>{{ t('Weight', '权重') }}</th><th>{{ t('Pub lag', '发布滞后') }}</th><th>{{ t('Points', '贡献') }}</th></tr>
+      {% for lg in risk_model.legs %}
+      <tr><td class="l"><span class="rm-dot" style="background:{{ lg.color }}"></span>{{ t(lg.label, lg.label_zh) }}</td>
+        <td>{{ (lg.value|round|int ~ '/100') if lg.value is not none else '—' }}</td>
+        <td>{{ '%.1f'|format(lg.weight) }}</td>
+        <td>{{ lg.lag }}d</td>
+        <td><b>{{ ('%.1f'|format(lg.points)) if lg.points is not none else '—' }}</b></td></tr>
+      {% endfor %}
+      <tr><td class="l"><b>{{ t('De-risk score', '降险评分') }}</b></td><td></td><td></td><td></td><td><b>{{ risk_model.score }}</b></td></tr>
+    </table>
+    {% endif %}
+    {% if chart_risk_model %}
+    <h3 style="margin-top:16px">{{ t('Drawdown & recession risk — modeled (NBER recessions shaded)', '回撤与衰退风险 — 模型（阴影为NBER衰退期）') }}</h3>
+    <div>{{ chart_risk_model | safe }}</div>
+    {% endif %}
   </div>
 
   <!-- ===================== REGIME TIME MACHINE ===================== -->
