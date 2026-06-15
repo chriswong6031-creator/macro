@@ -1,16 +1,20 @@
 """Master brain — cross-asset macro SYNTHESIS (LLM Tier-B).
 
 LEAF · GATED · DEFAULT-OFF · RESEARCH/CONTEXT-ONLY. Reads the DETERMINISTIC
-outputs of every dashboard (macro / China / HK / commodity / forex / BTC-vector)
-plus the catalyst_tone digest, and asks a reasoning LLM to synthesize the
-cross-asset picture a single dashboard can't: the unified regime read, where the
-signals CONFLICT and why, whether reality is tracking the liquidity-rotation
-thesis, and the transmission chains to watch.
+outputs of the dashboards and asks a reasoning LLM to synthesize the picture a
+single panel can't. Three LENSES share one engine:
+  • macro — the cross-asset read across every dashboard (macro/China/HK/commodity/
+    forex/BTC) + the catalyst digest  → data/regime/master_brief.json
+  • china — a China & Hong-Kong focused read (US macro / dollar / global liquidity /
+    commodities as backdrop)          → data/regime/china_brief.json
+  • btc   — a Bitcoin focused read (cycle / valuation / leverage / on-chain / ETF
+    flows / macro-liquidity backdrop)  → data/regime/btc_brief.json
+Each writes a SEPARATE artifact and a site/ copy the dashboard panel fetches.
 
 This is the analyst's morning note. It NEVER feeds a score, signal, or allocation;
 nothing in the scoring path imports it. It READS the engine's outputs and writes a
-SEPARATE artifact (data/regime/master_brief.json). Every public function returns
-plain data or None and never raises into the pipeline.
+SEPARATE artifact. Every public function returns plain data or None and never
+raises into the pipeline.
 
 Runs on DeepSeek V4 Pro via its Anthropic-compatible endpoint by default — one
 config line (`llm_model` / `llm_base_url` / `api_key_env`) swaps it to Claude Opus.
@@ -38,6 +42,24 @@ DEFAULT_THESIS = (
     "to test against the data, not a fact."
 )
 
+CHINA_THESIS = (
+    "China equity risk appetite is driven mainly by DOMESTIC policy & liquidity "
+    "(PBoC stance, credit impulse, fiscal) rather than earnings, and A-shares "
+    "MEAN-REVERT over short horizons — short-term reversal is the robust effect "
+    "while momentum is unreliable, so treat 'relative-strength leaders' as EXTENDED "
+    "rather than as continuation. Hong Kong additionally rides global risk appetite "
+    "and the US dollar far more than mainland A-shares. Treat this as a HYPOTHESIS "
+    "to test against the data, not a fact."
+)
+
+BTC_THESIS = (
+    "Bitcoin is the long-duration, high-beta tail of the GLOBAL LIQUIDITY cycle — "
+    "it leads risk assets higher when net liquidity / global M2 expand and unwinds "
+    "hardest when they contract; within that, leverage & funding extremes and "
+    "valuation / cycle position (MVRV, halving clock) gate the risk-reward. Treat "
+    "this as a HYPOTHESIS to test against the data, not a fact."
+)
+
 DISCLAIMER_TEXT = (
     "Context only — not a signal. This is an AI-generated SYNTHESIS of the "
     "dashboards' own deterministic outputs. It does not feed any score, signal or "
@@ -45,6 +67,19 @@ DISCLAIMER_TEXT = (
     "verify every claim against the underlying dashboard it cites. Effective sample "
     "sizes on macro regimes are small — treat cross-asset 'reads' as odds, not "
     "forecasts."
+)
+
+# Shared output contract + tail every lens reuses, so the three system prompts and
+# the client renderer stay identical bar the domain framing.
+_SCHEMA_TAIL = (
+    "Return ONLY a JSON object (no markdown fences) with keys:\n"
+    "  summary: string — one-line TL;DR of the read.\n"
+    "  regime_read: string — 1-2 short paragraphs: where we are.\n"
+    "  conflicts: array of strings — each a specific signal conflict + what it implies.\n"
+    "  rotation_check: string — is reality tracking the working thesis? where it diverges.\n"
+    "  transmission: array of strings — key second-order chains to watch.\n"
+    "  watch_items: array of strings — what would change this read / what to watch next.\n"
+    "  confidence: one of \"low\",\"medium\",\"high\"."
 )
 
 MASTER_SYSTEM_TMPL = (
@@ -66,17 +101,61 @@ MASTER_SYSTEM_TMPL = (
     "- Be honest about uncertainty and small samples. Flag conflicts rather than "
     "papering over them. Cite which dashboard supports each claim.\n\n"
     "Working rotation thesis to test:\n{thesis}\n\n"
-    "Return ONLY a JSON object (no markdown fences) with keys:\n"
-    "  summary: string — one-line TL;DR of the cross-asset read.\n"
-    "  regime_read: string — 1-2 short paragraphs: where we are across assets.\n"
-    "  conflicts: array of strings — each a specific cross-asset signal conflict + "
-    "what it implies.\n"
-    "  rotation_check: string — is reality tracking the rotation thesis? where it "
-    "diverges.\n"
-    "  transmission: array of strings — key second-order chains to watch (e.g. "
-    "'oil up -> inflation print -> Fed path -> crypto liquidity').\n"
-    "  watch_items: array of strings — what would change this read / what to watch next.\n"
-    "  confidence: one of \"low\",\"medium\",\"high\"."
+    + _SCHEMA_TAIL
+)
+
+CHINA_SYSTEM_TMPL = (
+    "You are a senior China & Hong-Kong equity strategist writing a SHORT brief for a "
+    "solo top-down trader. You are given the trader's OWN deterministic dashboard "
+    "outputs: the China A-share regime (growth/inflation quadrant, PBoC liquidity "
+    "overlay, business-cycle tag, sector relative strength, key ratios incl. "
+    "USD/CNY), the Hong-Kong regime (its global-risk score, the HKD peg state, sector "
+    "RS), and a compact US-macro / commodity / FX BACKDROP. Your job is SYNTHESIS — "
+    "not to recompute or invent numbers.\n\n"
+    "Rules:\n"
+    "- Use ONLY the provided state. Never fabricate a level, score, or signal. If "
+    "something isn't in the state, say it's not available.\n"
+    "- Centre the read on CHINA and HONG KONG; use the US-macro / dollar / global-"
+    "liquidity / commodity backdrop only to explain what is pushing on them.\n"
+    "- China A-shares MEAN-REVERT over short horizons — frame relative-strength "
+    "leaders as potentially EXTENDED, not as guaranteed continuation, and call out "
+    "deep-pullback names as the higher-odds setups. Note where Hong Kong is diverging "
+    "from the mainland because of global risk or the dollar.\n"
+    "- Surface where signals CONFLICT (e.g. easing PBoC liquidity vs a weak growth "
+    "score, or strong sector RS vs a late-cycle tag) and what that implies.\n"
+    "- Do NOT give position sizes or fire trades — the deterministic system does "
+    "that. Give the read and what to watch.\n"
+    "- Be honest about uncertainty and small samples. Cite which panel supports each "
+    "claim.\n\n"
+    "Working thesis to test:\n{thesis}\n\n"
+    + _SCHEMA_TAIL
+)
+
+BTC_SYSTEM_TMPL = (
+    "You are a senior crypto & macro strategist writing a SHORT brief on BITCOIN for "
+    "a solo trader. You are given the trader's OWN deterministic Bitcoin-Vector "
+    "outputs: the composite risk regime & optimal allocation, momentum/structure, "
+    "the halving-cycle position, valuation (MVRV-Z, NUPL, Mayer, reserve risk), "
+    "leverage & positioning (open interest, funding, basis, CME CoT), options "
+    "structure (DVOL, skew, put/call, gamma), on-chain demand (Coinbase premium, "
+    "SSR, miners), spot-ETF flows, and the macro-liquidity backdrop (net liquidity, "
+    "global M2, real yields, DXY, VIX, cross-asset correlations). Your job is "
+    "SYNTHESIS across these layers — not to recompute or invent numbers.\n\n"
+    "Rules:\n"
+    "- Use ONLY the provided state. Never fabricate a level, score, or signal. If "
+    "something isn't in the state, say it's not available.\n"
+    "- Centre the read on BITCOIN: tie the cycle/valuation position to the liquidity "
+    "backdrop and to positioning/leverage. Flag when valuation, leverage and flows "
+    "DISAGREE (e.g. cheap MVRV but crowded funding, or strong ETF flows into a "
+    "late-cycle valuation).\n"
+    "- Evaluate the working liquidity thesis against the actual state; say where "
+    "reality tracks it and where it diverges.\n"
+    "- Do NOT give position sizes or fire trades — the deterministic system already "
+    "sets the allocation. Give the read and what to watch.\n"
+    "- Be honest about uncertainty and small samples (few crypto cycles). Cite which "
+    "layer supports each claim.\n\n"
+    "Working liquidity thesis to test:\n{thesis}\n\n"
+    + _SCHEMA_TAIL
 )
 
 _BRIEF_FIELDS = ("summary", "regime_read", "conflicts", "rotation_check",
@@ -132,7 +211,50 @@ def _macro_summary(m: dict) -> dict:
     }
 
 
-def _btc_summary(root: Path) -> dict | None:
+def _macro_backdrop(m: dict | None) -> dict | None:
+    """A SLIM macro summary for the focused (china/btc) lenses — regime + risk +
+    posture only, no full conditions block (that's noise for a non-US read)."""
+    if not m:
+        return None
+    mr = m.get("macro_risk") or {}
+    pb = m.get("playbook") or {}
+    return {
+        "date": m.get("date"), "quad": m.get("quad"), "quad_name": m.get("quad_name"),
+        "growth_score": m.get("growth_score"), "inflation_score": m.get("inflation_score"),
+        "liquidity_overlay": m.get("liquidity_overlay"),
+        "macro_risk": {"score": mr.get("score"), "label": mr.get("label")},
+        "playbook_posture": pb.get("posture"),
+    }
+
+
+_BTC_SMALL_COLS = ("composite_state", "risk_regime", "momentum", "mvrv_z",
+                   "funding_z", "net_liquidity_bn", "macro_regime")
+
+# Richer set for the BTC-focused lens — every layer of the vector, all scalar.
+_BTC_RICH_COLS = (
+    "composite_state", "composite_context", "market_mode", "alloc_optimal",
+    "risk_index", "risk_regime", "momentum", "momentum_state", "structure_state",
+    "impulse_state", "efficiency_ratio",
+    "cycle_phase", "cycle_pct", "days_since_halving", "vdd_multiple", "cycle_position",
+    "mvrv_z", "mvrv_z_pctile", "valuation_state", "nupl", "mayer", "reserve_risk_pctile",
+    "market_extreme", "extreme_score",
+    "vol_state", "dvol", "dvol_pctile", "rv_cone_pctile", "vrp", "rr_25d", "skew_term",
+    "put_call_oi_ratio", "term_slope_30_90",
+    "oi_mcap_pctile", "oi_price_divergence", "funding_annual_pct", "funding_z",
+    "leverage_stress", "basis_ann", "cme_basis_regime",
+    "flow_state", "etf_flow_state", "etf_flow_z",
+    "coinbase_premium", "ssr_oscillator", "mpi",
+    "net_liquidity_bn", "net_liq_roc", "global_m2_yoy", "global_liq_regime",
+    "real_yield", "hy_oas", "vix", "dxy", "macro_score", "macro_regime",
+    "stbl_regime", "stbl_growth_z", "peg_state",
+    "cot_z", "corr_spx", "corr_gold", "corr_dxy", "risk_asset_regime",
+    "hash_ribbon", "puell",
+)
+
+
+def _btc_signals_row(root: Path, cols) -> dict | None:
+    """Pull the last row of the vector signals parquet (+ flash state) down to the
+    requested columns. Floats rounded; non-numeric strings kept; NaN -> None."""
     out: dict = {}
     fs = _read_json(root / "data/vector/flash_state.json")
     if fs:
@@ -145,13 +267,16 @@ def _btc_summary(root: Path) -> dict | None:
         df = pd.read_parquet(root / "data/vector/signals.parquet")
         if len(df):
             last = df.iloc[-1]
-            for c in ("composite_state", "risk_regime", "momentum", "mvrv_z",
-                      "funding_z", "net_liquidity_bn", "macro_regime"):
+            try:
+                out["date"] = str(getattr(last, "name", ""))[:10] or None
+            except Exception:  # noqa: BLE001
+                pass
+            for c in cols:
                 if c in df.columns:
                     v = last[c]
                     try:
                         fv = float(v)
-                        out[c] = None if math.isnan(fv) else round(fv, 3)
+                        out[c] = None if math.isnan(fv) else round(fv, 4)
                     except (TypeError, ValueError):
                         out[c] = v if isinstance(v, str) else None
     except Exception:  # noqa: BLE001
@@ -159,9 +284,13 @@ def _btc_summary(root: Path) -> dict | None:
     return out or None
 
 
+def _btc_summary(root: Path) -> dict | None:
+    return _btc_signals_row(root, _BTC_SMALL_COLS)
+
+
 def gather_state(root: Path | None = None) -> dict:
     """Compact cross-asset state assembled from each dashboard's latest.json.
-    Excludes holdings / watchlist composition by design."""
+    Excludes holdings / watchlist composition by design. (macro lens)"""
     root = Path(root) if root else config.ROOT
     macro = _read_json(root / "data/regime/latest.json") or {}
     state: dict = {"macro": _macro_summary(macro)}
@@ -187,6 +316,80 @@ def gather_state(root: Path | None = None) -> dict:
     if macro.get("catalyst_tone"):
         state["catalyst_tone"] = macro.get("catalyst_tone")
     return state
+
+
+def gather_china_state(root: Path | None = None) -> dict:
+    """China & Hong-Kong focused state: the full China/HK regime detail, with a slim
+    US-macro / commodity / FX backdrop. (china lens)"""
+    root = Path(root) if root else config.ROOT
+    state: dict = {}
+    ch = _read_json(root / "data/china_regime/latest.json")
+    if ch:
+        state["china"] = {k: ch.get(k) for k in (
+            "date", "quad", "quad_name", "growth_score", "inflation_score",
+            "growth_confidence", "inflation_confidence", "confidence",
+            "liquidity_overlay", "cycle_tag", "pending_quad", "pending_days",
+            "confirming", "contradicting", "sector_rs", "pair_ratios") if k in ch}
+    hk = _read_json(root / "data/hk_regime/latest.json")
+    if hk:
+        state["hk"] = {k: hk.get(k) for k in (
+            "date", "quad", "quad_name", "growth_score", "inflation_score", "confidence",
+            "liquidity_overlay", "cycle_tag", "global_score", "risk_state",
+            "peg_state", "peg_distance", "confirming", "contradicting",
+            "sector_rs", "pair_ratios") if k in hk}
+    backdrop = _macro_backdrop(_read_json(root / "data/regime/latest.json"))
+    if backdrop:
+        state["us_macro_backdrop"] = backdrop
+    co = _read_json(root / "data/commodity/latest.json")
+    if co:
+        state["commodity"] = {k: co.get(k) for k in ("date", "regime", "favored")}
+    fx = _read_json(root / "data/forex/latest.json")
+    if fx:
+        state["forex"] = {k: fx.get(k) for k in ("date", "regime", "favored", "risk")}
+    return state
+
+
+def gather_btc_state(root: Path | None = None) -> dict:
+    """Bitcoin focused state: the rich vector signal row + a slim US-macro backdrop.
+    (btc lens)"""
+    root = Path(root) if root else config.ROOT
+    state: dict = {}
+    btc = _btc_signals_row(root, _BTC_RICH_COLS)
+    if btc:
+        state["btc"] = btc
+    backdrop = _macro_backdrop(_read_json(root / "data/regime/latest.json"))
+    if backdrop:
+        state["us_macro_backdrop"] = backdrop
+    return state
+
+
+# --------------------------------------------------------------------------- #
+# lens registry — domain framing + state builder + output file, one engine each
+# --------------------------------------------------------------------------- #
+LENSES: dict[str, dict] = {
+    "macro": {"out": "master_brief.json", "state_fn": gather_state,
+              "system": MASTER_SYSTEM_TMPL, "thesis": DEFAULT_THESIS},
+    "china": {"out": "china_brief.json", "state_fn": gather_china_state,
+              "system": CHINA_SYSTEM_TMPL, "thesis": CHINA_THESIS},
+    "btc":   {"out": "btc_brief.json", "state_fn": gather_btc_state,
+              "system": BTC_SYSTEM_TMPL, "thesis": BTC_THESIS},
+}
+
+
+def _state_asof(state: dict) -> str | None:
+    for k in ("macro", "china", "btc", "hk"):
+        d = state.get(k)
+        if isinstance(d, dict) and d.get("date"):
+            return d.get("date")
+    return None
+
+
+def _thesis_for(lens: str, cfg: dict) -> str:
+    spec = LENSES.get(lens, LENSES["macro"])
+    # per-lens override (<lens>_thesis), then legacy rotation_thesis (macro only), then default
+    return (cfg.get(f"{lens}_thesis")
+            or (cfg.get("rotation_thesis") if lens == "macro" else None)
+            or spec["thesis"])
 
 
 # --------------------------------------------------------------------------- #
@@ -234,22 +437,22 @@ def _call_model(system: str, user: str, cfg: dict) -> tuple[str | None, str | No
 # --------------------------------------------------------------------------- #
 # public: synthesize one brief
 # --------------------------------------------------------------------------- #
-def synthesize(state: dict, cfg: dict | None = None) -> dict:
-    """Run the LLM synthesis over a gathered state. Always returns a brief record
-    (degraded fields flagged); never raises."""
+def synthesize(state: dict, cfg: dict | None = None, lens: str = "macro") -> dict:
+    """Run the LLM synthesis over a gathered state for one LENS. Always returns a
+    brief record (degraded fields flagged); never raises."""
     cfg = cfg or _cfg()
-    macro = state.get("macro") or {}
+    spec = LENSES.get(lens, LENSES["macro"])
     brief = {
-        "schema": "master_brief.v1", "is_context_only": True,
+        "schema": "master_brief.v1", "lens": lens, "is_context_only": True,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "model": cfg.get("llm_model", "deepseek-v4-pro"),
-        "state_asof": macro.get("date"),
+        "state_asof": _state_asof(state),
         "summary": None, "regime_read": None, "conflicts": [], "rotation_check": None,
         "transmission": [], "watch_items": [], "confidence": "low",
         "raw_text": None, "degraded_reason": None, "disclaimer": DISCLAIMER_TEXT,
     }
-    system = MASTER_SYSTEM_TMPL.format(thesis=cfg.get("rotation_thesis", DEFAULT_THESIS))
-    user = ("Today's deterministic cross-asset state (JSON). Synthesize per your "
+    system = spec["system"].format(thesis=_thesis_for(lens, cfg))
+    user = ("Today's deterministic state (JSON). Synthesize per your "
             "instructions.\n<state>\n"
             + json.dumps(state, indent=2, default=str) + "\n</state>")
     reply, reason = _call_model(system, user, cfg)
@@ -283,7 +486,7 @@ def render_markdown(brief: dict) -> str:
     if brief.get("conflicts"):
         L += ["## Conflicts", *[f"- {c}" for c in brief["conflicts"]], ""]
     if brief.get("rotation_check"):
-        L += ["## Rotation thesis", brief["rotation_check"], ""]
+        L += ["## Thesis check", brief["rotation_check"], ""]
     if brief.get("transmission"):
         L += ["## Transmission chains to watch", *[f"- {c}" for c in brief["transmission"]], ""]
     if brief.get("watch_items"):
@@ -325,7 +528,10 @@ def _translate_brief(brief: dict, cfg: dict) -> None:
             "base_url": cfg.get("llm_base_url", "https://api.deepseek.com/anthropic"),
             "api_key_env": cfg.get("api_key_env", "DEEPSEEK_API_KEY"),
             "model": cfg.get("translate_model", "deepseek-v4-flash"),
-            "max_chars": 2000, "max_tokens": 4000, "batch_size": 24,
+            # small batches + generous cap: a Flash batch that hits max_tokens fails the
+            # WHOLE batch closed (translate._translate_one_batch), and a long brief in one
+            # 24-item batch blows the cap -> zero zh. Split it so any truncation is local.
+            "max_chars": 2000, "max_tokens": 8000, "batch_size": 6,
         }
         zh_list = _tr.translate_to_zh(texts, tcfg)
         if not zh_list or all(x is None for x in zh_list):
@@ -346,44 +552,70 @@ def _translate_brief(brief: dict, cfg: dict) -> None:
         log.warning("master_brief zh translation failed (%s)", e)
 
 
-def run(persist: bool = True, root: Path | None = None, force: bool = False) -> dict | None:
-    """Gather state -> synthesize -> persist data/regime/master_brief.json.
-    Returns the brief, or None when disabled (unless `force`, for on-demand/CLI use).
-    NEVER raises into the pipeline."""
+def run(persist: bool = True, root: Path | None = None, force: bool = False,
+        lens: str = "macro") -> dict | None:
+    """Gather state -> synthesize -> persist data/regime/<out> + site/<out> for one
+    LENS. Returns the brief, or None when disabled (unless `force`, for on-demand/CLI
+    use) or the lens is unknown. NEVER raises into the pipeline."""
     cfg = _cfg()
     if not force and not cfg.get("enabled", False):
         return None
+    spec = LENSES.get(lens)
+    if spec is None:
+        log.warning("master_brain: unknown lens %r", lens)
+        return None
     try:
         root = Path(root) if root else config.ROOT
-        state = gather_state(root)
-        brief = synthesize(state, cfg)
+        state = spec["state_fn"](root)
+        brief = synthesize(state, cfg, lens=lens)
         _translate_brief(brief, cfg)          # attach brief['zh'] for the 中文 toggle
         if persist:
             try:
                 payload = json.dumps(brief, indent=2, default=str)
-                out = root / "data" / "regime" / "master_brief.json"
+                out = root / "data" / "regime" / spec["out"]
                 out.parent.mkdir(parents=True, exist_ok=True)
                 out.write_text(payload)
                 site = root / "site"          # client-fetched by the dashboard panel
                 if site.is_dir():
-                    (site / "master_brief.json").write_text(payload)
+                    (site / spec["out"]).write_text(payload)
             except Exception as e:  # noqa: BLE001
-                log.warning("master_brief persist failed (%s)", e)
+                log.warning("master_brief persist failed (lens=%s: %s)", lens, e)
         return brief
     except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.error("master_brain run failed (%s)", e)
+        log.error("master_brain run failed (lens=%s: %s)", lens, e)
         return None
+
+
+def run_all(persist: bool = True, root: Path | None = None,
+            force: bool = False) -> dict[str, dict | None]:
+    """Run every configured lens (master_brain.lenses, default macro+china+btc).
+    Returns {lens: brief}. Disabled (and not forced) -> {} . NEVER raises."""
+    cfg = _cfg()
+    if not force and not cfg.get("enabled", False):
+        return {}
+    lenses = cfg.get("lenses") or list(LENSES.keys())
+    out: dict[str, dict | None] = {}
+    for lens in lenses:
+        if lens in LENSES:
+            out[lens] = run(persist=persist, root=root, force=force, lens=lens)
+        else:
+            log.warning("master_brain: skipping unknown lens %r in config", lens)
+    return out
 
 
 if __name__ == "__main__":
     import sys
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     logging.basicConfig(level=logging.INFO)
-    force = "--force" in sys.argv            # ad-hoc run even when master_brain.enabled is false
-    b = run(persist=True, force=force)
-    if b is None:
+    argv = sys.argv[1:]
+    force = "--force" in argv                 # ad-hoc run even when enabled is false
+    want = [a for a in argv if a in LENSES]   # optional explicit lens(es): macro/china/btc
+    results = ({ln: run(persist=True, force=force, lens=ln) for ln in want}
+               if want else run_all(persist=True, force=force))
+    if not results:
         print("master_brain disabled — set master_brain.enabled: true, or pass --force")
-    else:
-        print(render_markdown(b))
-        if b.get("degraded_reason"):
-            print(f"\n[degraded: {b['degraded_reason']}]")
+    for ln, b in results.items():
+        print(f"\n===== lens: {ln} =====")
+        print(render_markdown(b) if b else "(none)")
+        if b and b.get("degraded_reason"):
+            print(f"[degraded: {b['degraded_reason']}]")

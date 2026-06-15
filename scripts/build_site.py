@@ -1799,7 +1799,7 @@ def main() -> int:
     # copy shared static assets (theme + visual widgets) into the site
     for asset in ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
                   "stockdata.js", "watchlist.js", "auth.js", "tablesort.js", "charts.js",
-                  "masterbrief.js", "stockbrief.js", "lightweight-charts.js"):
+                  "masterbrief.js", "aibrief.js", "stockbrief.js", "lightweight-charts.js"):
         src = config.ROOT / "templates" / asset
         if src.exists():
             (site / asset).write_text(src.read_text())
@@ -1852,6 +1852,28 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("prediction markets failed: %s", e)
 
+    # narrative-regime context (news_vector PIT bus + EPU/GPR uncertainty regime).
+    # DISPLAY-ONLY leaf — measures the policy/geo narrative backdrop; never scored.
+    # If news_vector.enabled the daily ingest accrues first-print events here too.
+    narrative_regime = None
+    try:
+        from engine import news_vector as _nv
+        if _nv.enabled():
+            _nv.ingest()
+        narrative_regime = _nv.recent_panel()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("news_vector failed: %s", e)
+
+    # Narrative-Dominance Index banner (engine/narrative_regime.py). DISPLAY-ONLY:
+    # Gate A (reports/narrative-regime-phase0.md) showed it is redundant with VIX for
+    # forward vol, so gate_multiplier is pinned 1.0 — it never feeds a score.
+    ndi = None
+    try:
+        from engine import narrative_regime as _nr
+        ndi = _nr.compute()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("narrative_regime failed: %s", e)
+
     # whole-market dealer-gamma vol regime (validated index GEX) — context for the
     # standout setups below. Additive + graceful: None if the cboe gex store is absent.
     market_gamma = None
@@ -1865,6 +1887,8 @@ def main() -> int:
         macro_catalysts=macro_catalysts,
         event_strip=event_strip,
         prediction_markets=prediction_markets,
+        narrative_regime=narrative_regime,
+        ndi=ndi,
         macro_news=macro_news_data,
         macro_brief=macro_brief_data,
         macro_news_disclaimer=macro_news_disclaimer,
