@@ -1580,6 +1580,28 @@ master_brain:
   # btc_thesis:   "<override the btc lens's working liquidity thesis>"
 
 # =============================================================================
+# AI Desk — the accountable analyst LAYER (LLM Tier-C; engine/ai_desk.py).
+# LEAF · CONTEXT-ONLY · NEVER-SCORED. The inference layer ON TOP of the TRUST-GRADED
+# detectors: reads Engine-1 flow (site/basketdata/flow.json) + Engine-2 regime-snap
+# (data/regime/regime_snap.json) and emits FALSIFIABLE conditional leans — each with a
+# check-by date + an ENGINE-derived machine-checkable predicate — appended to
+# data/ai_desk/theses.jsonl so the Phase-C scorer can grade them and feed the hit-rate
+# back into conviction. Output is a DIRECTION, never a size or a trade; nothing in
+# axes/regime/conditions imports it. Invoked from scripts/build_aibrief.py each build
+# (after build_baskets writes flow.json). On-demand: `python -m engine.ai_desk --force`.
+# =============================================================================
+ai_desk:
+  enabled: true                   # MASTER SWITCH — pipeline runs it only when true
+  api_key_env: DEEPSEEK_API_KEY
+  llm_base_url: https://api.deepseek.com/anthropic
+  llm_model: deepseek-v4-pro      # reasoning tier; swap to claude-opus-4-8 later
+  max_tokens: 8000                # reasoning model — thinking tokens count vs cap
+  max_theses: 3                   # cap leans per note (honesty over content)
+  default_horizon_d: 20           # trading-day horizon when the model omits one
+  falsifier_defaults:
+    rel_return: 0.05              # ±5% sector-vs-SPY move = the wrong-way threshold
+
+# =============================================================================
 # Catalyst stock — single-stock research BRIEF (LLM "Option 2"; engine/catalyst_stock.py).
 # LEAF · DEFAULT-OFF · RESEARCH/CONTEXT-ONLY. The per-stock analogue of master_brain:
 # assembles ONE ticker's PUBLIC context (cycle/ladder signal + technical state +
