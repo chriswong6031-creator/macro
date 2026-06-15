@@ -539,14 +539,18 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
         <div class="sub" style="margin-top:8px">{{ t('CONFIRMED for oil: a WIDENING Brent−WTI spread preceded WTI +8.2%/126d vs −1.8% when narrowing — a free supply/logistics tell.', '原油确认：布伦特−WTI 价差走阔后 WTI 未来126天 +8.2%，收窄时为 −1.8% — 免费的供给/物流信号。') }}</div>
       </div>
       {% if a.supply %}
+      {% set sp = a.supply %}
+      {% set bw = {'tight':t('tight','偏紧'),'ample':t('ample','偏松'),'balanced':t('balanced','均衡'),'n/a':'—'} %}
       <div class="card">
-        {% set sc = {'tightening':'var(--green)','loosening':'var(--red)','neutral':'var(--muted)'} %}
-        <h3>{{ t('EIA supply', 'EIA 供给') }}</h3>
-        <div class="sigline"><span class="l">{{ t('Crude stocks (5y %ile)','原油库存（5年百分位）') }}</span><span class="r"><b>{{ a.supply.stocks_pctile }}</b> <span class="faint">{{ a.supply.crude_stocks_mb }}M bbl</span></span></div>
-        <div class="sigline"><span class="l">{{ t('4-week change','4周变化') }}</span><span class="r"><b style="color:{{ 'var(--green)' if a.supply.draw else 'var(--red)' }}">{{ '%+.1f'|format(a.supply.stocks_chg_4w_mb) }}M</b> ({{ t('draw','去库') if a.supply.draw else t('build','累库') }})</span></div>
-        {% if a.supply.production_mbd is defined %}<div class="sigline"><span class="l">{{ t('Production / refinery','产量／炼厂') }}</span><span class="r"><b>{{ a.supply.production_mbd }}</b> Mb/d · {{ a.supply.refinery_util }}%</span></div>{% endif %}
-        <div class="sigline" style="border:none"><span class="l">{{ t('Supply state','供给状态') }}</span><span class="r"><b style="color:{{ sc.get(a.supply.state,'var(--muted)') }}">{{ t(a.supply.state, {'tightening':'收紧','loosening':'宽松','neutral':'中性'}.get(a.supply.state, a.supply.state)) }}</b></span></div>
-        <div class="sub" style="margin-top:8px">{{ t('Weekly Petroleum Status Report (EIA, free). Low stock percentile + a draw = tight supply (bullish oil); high + build = loose.', '每周石油状况报告（EIA，免费）。低库存百分位＋去库=供给收紧（利多油价）；高＋累库=宽松。') }}</div>
+        <h3>{{ t('Physical balance (EIA)', '实物供需（EIA）') }}</h3>
+        <div class="sigline"><span class="l">{{ t('Balance vs 5y season','相对5年季节') }}</span><span class="r"><b>{{ bw.get(sp.balance_word,'—') }}</b>{% if sp.balance_z is not none %} <span class="faint">{{ '%+.1f'|format(sp.balance_z) }}σ</span>{% endif %}</span></div>
+        <div class="sigline"><span class="l">{{ t('Crude stocks','原油库存') }}</span><span class="r">{% if sp.crude_z is not none %}<b>{{ '%+.1f'|format(sp.crude_z) }}σ</b> {% endif %}<span class="faint">{{ sp.crude_stocks_mb }}M{% if sp.crude_chg_4w_mb is defined %} · {{ '%+.1f'|format(sp.crude_chg_4w_mb) }}M/4w{% endif %}</span></span></div>
+        {% if sp.cushing_z is defined %}<div class="sigline"><span class="l">{{ t('Cushing (WTI delivery)','库欣（WTI交割）') }}</span><span class="r"><b>{{ '%+.1f'|format(sp.cushing_z) }}σ</b> <span class="faint">{{ sp.cushing_mb }}M</span></span></div>{% endif %}
+        {% if sp.gasoline_z is defined or sp.distillate_z is defined %}<div class="sigline"><span class="l">{{ t('Gasoline / distillate','汽油／馏分油') }}</span><span class="r"><b>{% if sp.gasoline_z is defined %}{{ '%+.1f'|format(sp.gasoline_z) }}σ{% else %}—{% endif %} / {% if sp.distillate_z is defined %}{{ '%+.1f'|format(sp.distillate_z) }}σ{% else %}—{% endif %}</b></span></div>{% endif %}
+        {% if sp.days_supply is defined %}<div class="sigline"><span class="l">{{ t('Crude days of supply','原油可供天数') }}</span><span class="r"><b>{{ sp.days_supply }}</b> {{ t('days','天') }}</span></div>{% endif %}
+        {% if sp.production_mbd is defined %}<div class="sigline"><span class="l">{{ t('Production / refinery','产量／炼厂') }}</span><span class="r"><b>{{ sp.production_mbd }}</b> Mb/d{% if sp.refinery_util is defined %} · {{ sp.refinery_util }}%{% endif %}</span></div>{% endif %}
+        {% if sp.spr_chg_4w_mb is defined %}<div class="sigline" style="border:none"><span class="l">{{ t('SPR 4-week change','战略储备4周变化') }}</span><span class="r"><b>{{ '%+.1f'|format(sp.spr_chg_4w_mb) }}M</b></span></div>{% endif %}
+        <div class="sub" style="margin-top:8px">{{ t(sp.caveat_en, sp.caveat_zh) }} {{ t('− = below 5y season (tight); + = above (ample).','− = 低于5年季节（偏紧）；+ = 高于（偏松）。') }}</div>
       </div>
       {% endif %}
       {% endif %}
