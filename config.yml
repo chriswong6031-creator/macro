@@ -2285,6 +2285,11 @@ china:
     min_mktcap_yi: 30               # liquidity floor (亿 RMB total market cap)
     history_period: "5y"            # yfinance close history per name (engine needs >=300 rows)
     enrich_per_run: 120             # max NEW yfinance get_info name/sector lookups per nightly run
+    # CSI index constituent lists unioned into the search universe (via akshare).
+    # Stocks already in the Sina top-800 are deduplicated; extras get mktcap_yi=30 placeholder.
+    index_constituents:
+      - "000300"                    # CSI 300 (沪深300) — 300 large-caps
+      - "000852"                    # CSI 1000 (中证1000) — 1000 mid-caps
     sina:
       url: https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeData
       node: hs_a                    # Hu-Shen A-share board (Shanghai + Shenzhen; excludes Beijing)
