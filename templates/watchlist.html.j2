@@ -134,6 +134,12 @@
        保存在本浏览器中；登录后可跨设备同步。用上方搜索添加股票、ETF、大宗商品或加密货币。') }}</p>
   </div>
 
+  <!-- book-level factor exposure: the watchlist's hidden one-way bet (display-only) -->
+  <div class="panel" id="wl_book" style="display:none">
+    <h2 style="margin:0 0 6px">🧬 {{ t("Your book's factor exposure", '你的组合因子暴露') }}</h2>
+    <div id="wl_book_body"></div>
+  </div>
+
   <!-- sync / account bar (hidden entirely when Supabase isn't configured) -->
   <div class="panel" id="wl_auth" style="display:none">
     <div class="wl-syncbar">
