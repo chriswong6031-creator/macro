@@ -1426,6 +1426,29 @@ def build_factors_page(env: Environment, site: Path, generated: str) -> dict | N
     return fac
 
 
+def build_signal_lab_page(env: Environment, site: Path, generated: str) -> None:
+    """🔬 Signal Lab — the consolidated, honest validation scorecard.
+
+    Pure assembler over engine.signal_lab (curated report verdicts + the live
+    leak-free factor cross-section in data/edgar/ic_scorecard.json). Surfaces
+    the IC / HAC-t / FDR-q / Deflated-Sharpe that already exist but are buried
+    in reports/ — including the signals we measured and refused to ship.
+    Additive + graceful: never fatal to the build.
+    """
+    from engine import signal_lab
+    payload = signal_lab.build_scorecard()
+    payload["generated_utc"] = generated     # align with the rest of the site
+    html = env.get_template("signal_lab.html.j2").render(**payload)
+    (site / "signal_lab.html").write_text(html)
+    fdir = site / "factordata"
+    fdir.mkdir(parents=True, exist_ok=True)
+    (fdir / "signal_lab.json").write_text(
+        json.dumps(payload, separators=(",", ":"), default=str))
+    log.info("wrote signal_lab.html (%d signals, %d/%d factors survive FDR)",
+             payload["summary"]["total"], payload["summary"]["factor_survivors"],
+             payload["summary"]["factor_total"])
+
+
 ETF_GICS = {                       # SPDR sector fund -> GICS sector (residual-alpha leaders)
     "XLK": "Information Technology", "XLF": "Financials", "XLV": "Health Care",
     "XLY": "Consumer Discretionary", "XLP": "Consumer Staples", "XLE": "Energy",
@@ -1852,6 +1875,10 @@ def main() -> int:
         factor_leadership = (_fac or {}).get("leadership")
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("factors page failed: %s", e)
+    try:
+        build_signal_lab_page(env, site, generated)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("signal lab page failed: %s", e)
     # Quant Lab (advanced analytics): cross-asset concentration + risk budgeting +
     # factor scorecard + the raw internals moved off the main dashboard. Returns the
     # cross-asset snapshot for the dashboard's compact one-bet card.
