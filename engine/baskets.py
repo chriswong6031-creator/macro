@@ -33,6 +33,7 @@ from lib import config, store
 log = logging.getLogger(__name__)
 
 HORIZONS = {"1d": 1, "5d": 5, "20d": 20, "60d": 60}    # fixed-window horizons (MTD/YTD computed separately)
+PARTIAL_GAP_DAYS = 180   # a member whose history starts > ~6 months after the series start is flagged short-history
 
 
 def _membership() -> dict | None:
@@ -43,6 +44,23 @@ def _membership() -> dict | None:
         return json.loads(p.read_text())
     except Exception as e:  # noqa: BLE001
         log.warning("baskets membership unreadable: %s", e)
+        return None
+
+
+def _basket_extras() -> pd.DataFrame | None:
+    """Off-index member closes (data/baskets/extras.parquet, from fetch_basket_extras) —
+    recent IPOs and crypto/nuclear names outside the free S&P-1500 cache. Kept separate so
+    the breadth/factor universe stays pure; unioned into the close matrix below. Index is
+    cast to match the breadth cache unit so the join aligns exactly."""
+    p = config.data_dir() / "baskets" / "extras.parquet"
+    if not p.exists():
+        return None
+    try:
+        df = pd.read_parquet(p)
+        df.index = pd.DatetimeIndex(df.index).as_unit("ms")
+        return df.sort_index()
+    except Exception as e:  # noqa: BLE001
+        log.warning("basket extras unreadable: %s", e)
         return None
 
 
@@ -130,6 +148,11 @@ def compute_baskets() -> dict | None:
     closes = _closes()
     if closes is None or closes.empty:
         return None
+    extras = _basket_extras()                              # off-index members, aligned to the cache calendar
+    if extras is not None and not extras.empty:
+        add = [c for c in extras.columns if c not in closes.columns]
+        if add:
+            closes = closes.join(extras[add], how="left")
     rets = closes.pct_change(fill_method=None)
     idx = rets.index
     nm = _names_sectors()
@@ -176,8 +199,13 @@ def compute_baskets() -> dict | None:
             if tc.empty:
                 continue
             first_tape = tc.index[0]
-            if first_tape > pd.Timestamp(m["added"]) + pd.Timedelta(days=7):
-                partial.append({"symbol": t, "from": first_tape.strftime("%Y-%m-%d")})
+            # effective in-basket history start: never before `added`, so a de-SPAC shell's
+            # pre-listing tape (e.g. OKLO before 2024-05) doesn't masquerade as full history.
+            eff_start = max(first_tape, pd.Timestamp(m["added"]))
+            gap = first_tape > pd.Timestamp(m["added"]) + pd.Timedelta(days=7)   # data lags the claimed add
+            short = eff_start > idx[0] + pd.Timedelta(days=PARTIAL_GAP_DAYS)      # mid-window entrant / recent IPO
+            if gap or short:
+                partial.append({"symbol": t, "from": eff_start.strftime("%Y-%m-%d")})
             r20 = float(tc.iloc[-1] / tc.iloc[-21] - 1.0) if len(tc) > 21 else None
             yseg = tc[tc.index >= ytd_anchor]
             ry = float(tc.iloc[-1] / yseg.iloc[0] - 1.0) if len(yseg) > 1 else None
