@@ -352,6 +352,13 @@
       <div id="r_fragility"></div>
     </div>
 
+    <div class="panel" id="panel_exposure" style="display:none">
+      <h2>🧬 {{ t('Factor exposure — what bets is this really?', '因子暴露 — 这到底在押什么？') }}
+        {{ help("The macro/style bets this name actually carries: its betas to 8 observable, tradeable factors (market, size, momentum, the dollar, semis/AI, crypto, oil, 10-year rates), each non-market factor orthogonalised to the market so a beta reads as exposure BEYOND broad direction. A RISK decomposition — what you are exposed to — NOT a return forecast, and NEVER in the conviction score. Validated for correctness/stability (7/7 known names land on the right factor) in reports/factor-exposure-sanity.md.",
+          "该股实际承担的宏观/风格押注：相对 8 个可观测、可交易因子（大盘、小盘、动量、美元、半导体/AI、加密、原油、10年利率）的贝塔，每个非大盘因子对大盘正交化，因此贝塔表示超出大盘方向的暴露。这是风险拆解 —— 你暴露于什么 —— 并非收益预测，且绝不计入信念评分。已就正确性/稳定性验证（7/7 已知标的落在正确因子）。") }}</h2>
+      <div id="r_exposure"></div>
+    </div>
+
     <div class="panel" id="panel_smartmoney" style="display:none">
       <h2>🏦 {{ t('Super-investors — 13F holders', '超级投资者 — 13F 持仓') }}
         {{ help("Which curated super-investor funds (Berkshire, Pershing Square, Scion, Baupost, Viking, Tiger Global, etc.) reported holding this stock in their latest SEC Form 13F, and whether they initiated / added / trimmed / exited vs the prior quarter. Conviction = the position's share of that fund's reported US-equity book. 13F is QUARTERLY with a ~45-day lag — long-only US equity >= $100M only (no shorts, options detail, or non-US positions); CUSIPs are name-matched to tickers so some lines are hidden. CONTEXT on who holds it, NOT a buy list or a real-time signal.",
@@ -1059,6 +1066,42 @@
     show('panel_fragility', true);
   }
 
+  // Per-ticker factor EXPOSURE betas (display-only risk decomposition; never scored).
+  function renderExposure(d) {
+    var e = d && d.exposure;
+    if (!e || !e.betas) { show('panel_exposure', false); return; }
+    var rows = [];
+    for (var k in e.betas) { if (k !== 'market') rows.push(e.betas[k]); }
+    rows.sort(function (a, b) { return Math.abs(b.beta) - Math.abs(a.beta); });
+    var maxb = 1;
+    rows.forEach(function (b) { maxb = Math.max(maxb, Math.abs(b.beta)); });
+    var lab = function (b) { return lang() === 'zh' && b.label_zh ? b.label_zh : b.label; };
+    var bars = rows.map(function (b) {
+      var sig = Math.abs(b.t) >= 2;
+      var cls = b.beta >= 0 ? 'pos' : 'neg';
+      var col = b.beta >= 0 ? 'var(--up,#16a34a)' : 'var(--down,#dc2626)';
+      var w = Math.round(78 * Math.abs(b.beta) / maxb);
+      return '<div style="display:flex;align-items:center;gap:8px;margin:3px 0;' + (sig ? '' : 'opacity:.45') + '">' +
+        '<span style="width:104px;font-size:12px">' + lab(b) + '</span>' +
+        '<span style="flex:1"><span style="display:inline-block;height:8px;border-radius:4px;background:' + col + ';width:' + w + 'px;vertical-align:middle"></span></span>' +
+        '<span class="' + cls + '" style="width:62px;text-align:right;font-variant-numeric:tabular-nums">' +
+          (b.beta >= 0 ? '+' : '') + b.beta.toFixed(2) + (sig ? '' : ' <span class="muted" style="font-size:10px">ns</span>') + '</span>' +
+        '</div>';
+    }).join('');
+    var dom = e.dominant ? (lang() === 'zh' ? (e.dominant_label_zh || e.dominant_label) : e.dominant_label) : null;
+    var chips = [
+      gchip(lz('market β', '大盘β'), (e.market_beta >= 0 ? '+' : '') + Number(e.market_beta).toFixed(2)),
+      gchip('R²', Number(e.r2).toFixed(2)),
+      dom ? gchip(lz('dominant bet', '主导押注'), '<b>' + dom + '</b>') : ''
+    ].join('');
+    el('r_exposure').innerHTML = '<div class="glance">' + chips + '</div>' +
+      '<div style="margin:8px 0 2px">' + bars + '</div>' +
+      '<p class="srcline">' + lz(
+        'Standardised betas (per 1-SD factor move) over a trailing window, market-orthogonalised and VIF-gated. EXPOSURE = what risks you hold, NOT a return forecast — and NOT in this stock’s score. “ns” = not statistically significant (|t|<2); a low R² means the name is idiosyncratic.',
+        '滚动窗口的标准化贝塔（按 1 个标准差因子变动），已对大盘正交化并经 VIF 筛选。暴露 = 你承担什么风险，并非收益预测，且不计入本股评分。“ns”=不显著（|t|<2）；R² 低表示该股偏特异。') + '</p>';
+    show('panel_exposure', true);
+  }
+
   function renderSmartMoney(d) {
     var s = d && d.smart_money;
     var hold = (s && s.holders) || [];
@@ -1209,6 +1252,7 @@
     renderFundFlow(d);
     renderAlpha(d);
     renderFragility(d);
+    renderExposure(d);
     renderSmartMoney(d);
 
     document.getElementById('tvbox').innerHTML = '<div id="tvchart"></div>';
