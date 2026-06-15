@@ -12,7 +12,6 @@
   body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
   a { color:var(--link); text-decoration:none; }
   .topline { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom:14px; }
-  .navbtn,.lang-btn,.theme-btn { font-size:12.5px; padding:5px 11px; border-radius:8px; border:1px solid var(--line); background:var(--panel2); color:var(--text); cursor:pointer; }
   .layout { display:grid; grid-template-columns:220px minmax(0,820px); gap:34px; align-items:start; }
   @media (max-width:900px){ .layout{ grid-template-columns:1fr; } .toc{ position:static !important; } }
   .toc { position:sticky; top:18px; font-size:13px; border-left:1px solid var(--line); padding-left:14px; }
@@ -37,15 +36,47 @@
 </style>
 </head>
 <body>
-  <div class="topline">
-    <a class="navbtn" href="macro.html"><span class="l-en">← Dashboard</span><span class="l-zh">← 仪表盘</span></a>
-    <a class="navbtn" href="factors.html">🧮 <span class="l-en">Factor Lab</span><span class="l-zh">因子实验室</span></a>
-    <a class="navbtn" href="baskets.html">🧺 <span class="l-en">Baskets</span><span class="l-zh">主题篮子</span></a>
-    <a class="navbtn" href="seasonality.html">🗓 <span class="l-en">Seasonality</span><span class="l-zh">季节性</span></a>
-    <span style="flex:1"></span>
-    <button class="lang-btn">中文</button>
-    <button class="theme-btn">☀️ <span class="l-en">Light</span><span class="l-zh">浅色</span></button>
+<nav class="site-nav">
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 <span class="l-en">Home</span><span class="l-zh">首页</span></a>
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">US Macro</span><span class="l-zh">美国宏观</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html"><span class="l-en">Regime dashboard</span><span class="l-zh">宏观周期</span><span class="d"><span class="l-en">Growth · inflation · MRS · nowcast</span><span class="l-zh">增长 · 通胀 · MRS · 即时预测</span></span></a>
+        <a href="factors.html">🧮 <span class="l-en">Factor Lab</span><span class="l-zh">因子实验室</span><span class="d"><span class="l-en">Value · quality · low-vol + point-in-time IC</span><span class="l-zh">价值 · 质量 · 低波动 + 时点 IC</span></span></a>
+        <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&amp;P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
+        <a href="seasonality.html">🗓 <span class="l-en">Factor Seasonality</span><span class="l-zh">因子季节性</span><span class="d"><span class="l-en">Ken French monthly, 1926+</span><span class="l-zh">Ken French 月度，1926+</span></span></a>
+        <a href="spvector.html">📈 <span class="l-en">S&amp;P / Macro Vector</span><span class="l-zh">标普宏观向量</span><span class="d"><span class="l-en">Tactical equity↔cash allocation</span><span class="l-zh">战术股票↔现金配置</span></span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span></a>
+    <a class="nav-link" href="etfs.html">🐳 <span class="l-en">ETF flows</span><span class="l-zh">ETF 资金流</span></a>
+    <a class="nav-link active" href="factors.html">🧮 <span class="l-en">Factors</span><span class="l-zh">因子</span></a>
+    <a class="nav-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国A股</span></a>
+    <a class="nav-link" href="hk.html">🇭🇰 <span class="l-en">Hong Kong</span><span class="l-zh">香港</span></a>
+    <a class="nav-link" href="commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span></a>
+    <a class="nav-link" href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span></a>
+    <a class="nav-link" href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span></a>
+    <a class="nav-link" href="discovery.html">🏆 <span class="l-en">Alpha leaders</span><span class="l-zh">阿尔法领先股</span></a>
+    <a class="nav-link" href="gex.html">🧲 <span class="l-en">GEX magnets</span><span class="l-zh">Gamma磁吸</span></a>
   </div>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
 
   <div class="layout">
     <nav class="toc" id="toc">
@@ -152,7 +183,7 @@
         <li>σ uses overlapping windows (autocorrelated); the IC sample is small (n≈11); baskets are hindsight-curated.</li>
         <li>Everything here is <b>read-only analytics for informational purposes only — not investment advice</b>, provided as-is with no guarantee of accuracy, timeliness or completeness.</li>
       </ul>
-      <footer><span class="l-en">Free public data only; no paid feeds. Generated</span><span class="l-zh">仅使用免费公开数据。生成于</span> 2026-06-14 23:21 UTC.</footer>
+      <footer><span class="l-en">Free public data only; no paid feeds. Generated</span><span class="l-zh">仅使用免费公开数据。生成于</span> 2026-06-15 00:19 UTC.</footer>
     </main>
   </div>
 

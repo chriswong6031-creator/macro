@@ -21,7 +21,7 @@
   .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:14px; }
   .topline { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
   .muted { color:var(--muted); } .sm { font-size:12px; }
-  .navbtn, .lang-btn, .theme-btn, .seg button { font-size:12.5px; padding:5px 11px; border-radius:8px; border:1px solid var(--line); background:var(--panel2); color:var(--text); cursor:pointer; }
+  .seg button { font-size:12.5px; padding:5px 11px; border-radius:8px; border:1px solid var(--line); background:var(--panel2); color:var(--text); cursor:pointer; }
   .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:5px; }
   .help .tip { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%); width:300px; background:var(--panel); border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text); font-weight:400; box-shadow:var(--popover-shadow); pointer-events:none; }
   .help:hover .tip { display:block; }
@@ -49,17 +49,52 @@
 </style>
 </head>
 <body>
+<nav class="site-nav">
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 <span class="l-en">Home</span><span class="l-zh">首页</span></a>
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">US Macro</span><span class="l-zh">美国宏观</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html"><span class="l-en">Regime dashboard</span><span class="l-zh">宏观周期</span><span class="d"><span class="l-en">Growth · inflation · MRS · nowcast</span><span class="l-zh">增长 · 通胀 · MRS · 即时预测</span></span></a>
+        <a href="factors.html">🧮 <span class="l-en">Factor Lab</span><span class="l-zh">因子实验室</span><span class="d"><span class="l-en">Value · quality · low-vol + point-in-time IC</span><span class="l-zh">价值 · 质量 · 低波动 + 时点 IC</span></span></a>
+        <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&amp;P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
+        <a href="seasonality.html">🗓 <span class="l-en">Factor Seasonality</span><span class="l-zh">因子季节性</span><span class="d"><span class="l-en">Ken French monthly, 1926+</span><span class="l-zh">Ken French 月度，1926+</span></span></a>
+        <a href="spvector.html">📈 <span class="l-en">S&amp;P / Macro Vector</span><span class="l-zh">标普宏观向量</span><span class="d"><span class="l-en">Tactical equity↔cash allocation</span><span class="l-zh">战术股票↔现金配置</span></span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span></a>
+    <a class="nav-link" href="etfs.html">🐳 <span class="l-en">ETF flows</span><span class="l-zh">ETF 资金流</span></a>
+    <a class="nav-link active" href="factors.html">🧮 <span class="l-en">Factors</span><span class="l-zh">因子</span></a>
+    <a class="nav-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国A股</span></a>
+    <a class="nav-link" href="hk.html">🇭🇰 <span class="l-en">Hong Kong</span><span class="l-zh">香港</span></a>
+    <a class="nav-link" href="commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span></a>
+    <a class="nav-link" href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span></a>
+    <a class="nav-link" href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span></a>
+    <a class="nav-link" href="discovery.html">🏆 <span class="l-en">Alpha leaders</span><span class="l-zh">阿尔法领先股</span></a>
+    <a class="nav-link" href="gex.html">🧲 <span class="l-en">GEX magnets</span><span class="l-zh">Gamma磁吸</span></a>
+  </div>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
   <div class="panel">
     <div class="topline">
       <h1>🗓 <span class="l-en">Factor seasonality</span><span class="l-zh">因子季节性</span></h1>
       <span class="muted sm"><span class="l-en">which calendar months each factor STYLE has tended to pay — Ken French, 1926-07+</span><span class="l-zh">各因子风格在哪些月份历史上更易获得回报 — Ken French，1926-07 起</span></span>
-      <span style="flex:1"></span>
-      <a class="navbtn" href="macro.html"><span class="l-en">← Dashboard</span><span class="l-zh">← 仪表盘</span></a>
-      <a class="navbtn" href="factors.html">🧮 <span class="l-en">Factor Lab</span><span class="l-zh">因子实验室</span></a>
-      <a class="navbtn" href="baskets.html">🧺 <span class="l-en">Baskets</span><span class="l-zh">主题篮子</span></a>
-      <a class="navbtn" href="methodology.html">📖 <span class="l-en">Methodology</span><span class="l-zh">方法论</span></a>
-      <button class="lang-btn">中文</button>
-      <button class="theme-btn">☀️ <span class="l-en">Light</span><span class="l-zh">浅色</span></button>
     </div>
     <p class="muted sm" style="margin:10px 0 0"><span class="l-en">These are Ken French TOTAL-US-MARKET academic factor portfolios (value-weighted long/short, 1926/1963+), NOT our S&amp;P-1500 winsorized z-score quintiles. A month&#39;s seasonal tendency describes the long-run CLIMATE of the style — it is not a forecast of our daily factor leadership, and it is deliberately kept out of every calibrated score.</span><span class="l-zh">这些是 Ken French 的全市场学术因子组合（市值加权多空，1926/1963 年至今），并非我们对标普 1500 的去极值 z 分数分位。某月的季节性倾向描述的是该风格的长期气候，而非对我们每日因子领先的预测，且刻意不纳入任何校准评分。</span></p>
   </div>
@@ -99,7 +134,7 @@
 
   <div class="panel">
     <p class="muted" style="font-size:12px;margin:0"><span class="l-en">Source: Ken French Data Library (Dartmouth), monthly factor returns, as of 2026-04. Factors mapping to one of our live legs (Value→HML, Profitability→RMW, Investment→CMA) are shown first; Momentum, Size and Market are reference styles we do not rank cross-sectionally. Seasonality is descriptive context only and is deliberately kept out of every calibrated score — see LIMITATIONS.md.</span><span class="l-zh">来源：Ken French Data Library (Dartmouth), monthly factor returns，截至 2026-04。映射到我们在用因子的（价值→HML、盈利→RMW、投资→CMA）排在前面；动量、规模与市场为我们未做横截面排名的参考风格。季节性仅为描述性背景，刻意不纳入任何校准评分 — 参见 LIMITATIONS.md。</span>
-      <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-14 23:21 UTC</p>
+      <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-15 00:19 UTC</p>
   </div>
 
   <script>
