@@ -239,6 +239,12 @@ def main(alpha: dict | None = None) -> dict | None:
         canada_fundamentals.fetch_info([t for t, *_ in uni], max_new=40)
     except Exception as e:  # noqa: BLE001
         log.warning("canada fundamentals fetch failed (%s)", e)
+    # earnings drip (get_earnings_dates for .TO names) — capped + freshness-cached, the
+    # same up-front best-effort pattern; the per-stock 📅 panel reads what's been collected.
+    try:
+        canada_fundamentals.fetch_earnings([t for t, *_ in uni], max_new=40)
+    except Exception as e:  # noqa: BLE001
+        log.warning("canada earnings fetch failed (%s)", e)
     names_map = canada_fundamentals.display_names()
 
     for ticker, close, high, name, sector in uni:
@@ -265,28 +271,43 @@ def main(alpha: dict | None = None) -> dict | None:
         sector_by[ticker] = sector
         built += 1
 
-    # descriptive FUNDAMENTALS (yfinance get_info cache, fetched up front) — context,
-    # not a signal. Computed for the cohort at once, then patched onto the per-stock JSONs.
+    # descriptive FUNDAMENTALS (yfinance get_info: valuation + forward-val + sell-side
+    # consensus + positioning) and EARNINGS (get_earnings_dates: next date + surprise
+    # history) — context, not signals. Attached in ONE pass; each block degrades
+    # independently (a missing field just hides its chip/panel).
+    fmap: dict[str, dict] = {}
+    earn: dict[str, dict] = {}
     try:
         fmap = canada_fundamentals.build_all(sector_by)
-        for ticker, fund in fmap.items():
-            safe = ticker.replace("=", "_").replace("^", "_")
-            fp = outdir / f"{safe}.json"
-            if not fp.exists():
-                continue
-            try:
-                rec = json.loads(fp.read_text())
-                rec["fundamentals"] = fund
-                fp.write_text(json.dumps(rec, default=str))
-            except Exception:  # noqa: BLE001
-                continue
-        if fmap:
-            for idx in index:
-                if idx["t"] in fmap:
-                    idx["f"] = 1
-            log.info("canada fundamentals: attached to %d names", len(fmap))
     except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.error("canada fundamentals attach failed (%s); skipping", e)
+        log.error("canada fundamentals build failed (%s)", e)
+    try:
+        earn = canada_fundamentals.earnings_map()
+    except Exception as e:  # noqa: BLE001
+        log.warning("canada earnings unavailable (%s)", e)
+    for ticker in set(fmap) | set(earn):
+        patch: dict = {}
+        if fmap.get(ticker):
+            patch["fundamentals"] = fmap[ticker]
+        if earn.get(ticker):
+            patch["earnings"] = earn[ticker]
+        if not patch:
+            continue
+        safe = ticker.replace("=", "_").replace("^", "_")
+        fp = outdir / f"{safe}.json"
+        if not fp.exists():
+            continue
+        try:
+            rec = json.loads(fp.read_text())
+            rec.update(patch)
+            fp.write_text(json.dumps(rec, default=str))
+        except Exception:  # noqa: BLE001
+            continue
+    fset = set(fmap)
+    for idx in index:
+        if idx["t"] in fset:
+            idx["f"] = 1
+    log.info("canada context attached: fund %d · earnings %d", len(fmap), len(earn))
     (outdir / "index.json").write_text(json.dumps(index))
 
     cal = config.data_dir() / "canada_regime" / "ladder_calibration.json"

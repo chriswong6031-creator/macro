@@ -52,3 +52,33 @@ def test_build_all_and_names_empty_when_no_cache(tmp_path, monkeypatch):
     monkeypatch.setattr(cf, "CACHE", tmp_path / "missing.parquet")
     assert cf.build_all({}) == {}
     assert cf.display_names() == {}
+
+
+def test_valuation_forward_fields():
+    info = {"forwardPE": 15.8, "trailingPegRatio": 2.56, "payoutRatio": 0.41,
+            "fiveYearAvgDividendYield": 3.51}
+    v = cf._valuation(info)
+    assert v["forward_pe"] == 15.8 and v["peg"] == 2.56
+    assert v["payout"] == 41.0                 # fraction -> %
+    assert v["five_yr_yield"] == 3.51          # already a percent (do NOT rescale)
+
+
+def test_consensus_upside_and_rating():
+    info = {"numberOfAnalystOpinions": 14, "targetMeanPrice": 269.25,
+            "targetHighPrice": 298.0, "targetLowPrice": 235.0,
+            "recommendationKey": "buy", "recommendationMean": 2.0, "currentPrice": 278.46}
+    c = cf._consensus(info)
+    assert c["n_analysts"] == 14 and c["rating"] == "Buy"
+    assert c["target_mean"] == 269.25 and c["target_high"] == 298.0
+    assert c["upside_pct"] == -3.3             # (269.25/278.46 - 1)*100
+    assert cf._consensus({}) is None           # no coverage / no target -> hidden
+
+
+def test_positioning_scales_ownership():
+    info = {"sharesShort": 8694860, "shortRatio": 2.15, "shortPercentOfFloat": 0.0119,
+            "heldPercentInsiders": 0.0003, "heldPercentInstitutions": 0.4934}
+    p = cf._positioning(info)
+    assert p["days_to_cover"] == 2.15 and p["shares_short"] == 8694860
+    assert p["short_pct_float"] == 1.19        # fraction -> %
+    assert p["held_institutions"] == 49.3
+    assert cf._positioning({}) is None

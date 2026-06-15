@@ -93,6 +93,19 @@
   #sugg div span { flex:0 1 auto; min-width:0; max-width:40%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:right; }
   .mtf { display:flex; gap:14px; flex-wrap:wrap; font-size:12.5px; color:var(--muted); margin-top:8px; }
   .mtf b { color:var(--text); }
+  .fnd-chip .vs { font-size:10px; color:var(--muted); margin-left:4px; }
+  .rchip { display:inline-block; font-weight:800; padding:2px 10px; border-radius:8px; font-size:12.5px; }
+  .rchip.buy { background:color-mix(in srgb,var(--up) 18%,transparent); color:var(--up); border:1px solid color-mix(in srgb,var(--up) 40%,transparent); }
+  .rchip.hold { background:var(--panel2); color:var(--muted); border:1px solid var(--line); }
+  .rchip.sell { background:color-mix(in srgb,var(--down) 18%,transparent); color:var(--down); border:1px solid color-mix(in srgb,var(--down) 40%,transparent); }
+  .fnd-tbl { width:100%; border-collapse:collapse; margin:8px 0 2px; font-size:12px; font-variant-numeric:tabular-nums; }
+  .fnd-tbl th, .fnd-tbl td { padding:4px 7px; border-bottom:1px solid var(--line); text-align:right; }
+  .fnd-tbl th:first-child, .fnd-tbl td:first-child { text-align:left; color:var(--muted); }
+  .fnd-tbl thead th { color:var(--muted); font-weight:700; font-size:11px; }
+  .pos { color:var(--up); } .neg { color:var(--down); }
+  .early { margin:6px 0; padding:8px 12px; border-radius:8px;
+           background:color-mix(in srgb, var(--g-cold) 14%, var(--panel2));
+           border-left:3px solid var(--g-cold); font-size:13px; color:var(--text); }
   #result { display:none; }
 </style>
 </head>
@@ -152,27 +165,70 @@
         'Descriptive valuation, profitability and dividends (from yfinance) — a backdrop to read ALONGSIDE the cycle / relative-strength signals, NOT a buy ranking. "Cheap vs sector" is not validated as a cross-sectional edge here. Fundamentals refresh on a slower cadence than price.',
         '描述性的估值、盈利与分红（来自 yfinance）—— 作为与周期／相对强度信号并读的背景，而非买入排序。"相对板块便宜"在此并未被验证为有效的横截面优势。基本面的更新频率慢于价格。') }}</p>
     </div>
+    <div class="panel" id="r_analyst_panel" style="display:none">
+      <h2>👔 {{ t('Analyst &amp; estimates', '分析师与预期') }} <span class="note" style="text-transform:none">· {{ t('sell-side consensus', '卖方一致预期') }}</span></h2>
+      <div id="r_analyst"></div>
+      <p class="muted" style="font-size:12px; margin-top:10px">{{ t(
+        'yfinance sell-side aggregate: the consensus rating, mean price target with its high/low range, the implied upside vs the current price, and coverage breadth. Sell-side opinion shown as coverage context, NOT an endorsement — a target is a forecast, not a validated edge.',
+        'yfinance 卖方汇总：一致评级、目标价中位及其高/低区间、相对现价的隐含上行空间，以及覆盖广度。卖方观点仅作覆盖背景，并非推荐——目标价是预测，并非有效优势。') }}</p>
+    </div>
+    <div class="panel" id="r_earn_panel" style="display:none">
+      <h2>📅 {{ t('Earnings', '财报') }}</h2>
+      <div id="r_earn"></div>
+    </div>
+    <div class="panel" id="r_pos_panel" style="display:none">
+      <h2>{{ t('Positioning', '持仓与做空') }} <span class="note" style="text-transform:none">· {{ t('short interest &amp; ownership', '空头与持股结构') }}</span></h2>
+      <div id="r_pos"></div>
+      <p class="muted" style="font-size:12px; margin-top:10px">{{ t(
+        'Short interest (shares short + days-to-cover) and insider / institutional ownership, from yfinance. The keyless free read — SEDI Form-4-style insider transactions and IIROC short-interest detail are not machine-readable. Heavy or rising short interest is a caution; high institutional ownership is crowding context. Descriptive, not a signal.',
+        '空头（做空股数＋回补天数）与内部人／机构持股，来自 yfinance。免密钥的免费读法——SEDI 式内部人交易与 IIROC 空头明细不可机读。高或上升的空头是警示；高机构持股是拥挤背景。描述性，非信号。') }}</p>
+    </div>
     <div class="panel">
       <h2>{{ t('Chart', '图表') }}</h2>
       <div id="tvbox"></div>
+    </div>
+    <div class="panel" id="r_cal_panel" style="display:none">
+      <h2>{{ t('How much to trust the state — measured on TSX history', '这个状态有多可信 — 基于TSX历史实测') }}</h2>
+      <table id="r_cal"></table>
+      <p class="muted" style="font-size:12px; margin-top:8px">{{ t(
+        'TSX names drift up over a month from every state; the spread between states is small. Use the state for <b>structure</b> (cycle position, confirmation checklist, invalidation level) and size positions instead of seeking certainty. <b>Typical dip</b> = median worst drop over the next month; <b>bad-case dip</b> = the worst 1-in-10 month (10th percentile).',
+        '从任何状态出发，TSX 个股在一个月内都倾向于上涨；各状态之间的差距很小。请把状态用于<b>结构判断</b>（周期位置、确认清单、失效价位）并据此控制仓位，而非追求确定性。<b>典型回撤</b> = 未来一个月最大跌幅中位数；<b>最坏回撤</b> = 十分之一的最差月份（第10百分位）。') }}</p>
     </div>
   </div>
 
 <script src="https://s3.tradingview.com/tv.js"></script>
 <script>
 (function () {
-  var idx = [], sel = -1, items = [];
+  var idx = [], cal = null, sel = -1, items = [];
   var q = document.getElementById('q'), sugg = document.getElementById('sugg');
   function lang() { return document.documentElement.getAttribute('data-lang') || 'en'; }
   var T = {
     en: { asof: 'data through', notlib: 'NOT IN LIBRARY',
           notlibmsg: 'Not in the nightly library (curated TSX large-caps + sector ETFs + indices). Add it in config.yml → canada.constituents.',
           season: 'Seasonality', failed: '⚠ Failed cycle — price is below the low that started this cycle; the larger trend is usually rolling over.',
-          next: 'Next:', ph: 'Search any TSX stock / sector ETF / index… (e.g. RY, Shopify, Energy)' },
+          next: 'Next:', ph: 'Search any TSX stock / sector ETF / index… (e.g. RY, Shopify, Energy)',
+          th_state: 'state', th_n: 'samples', th_up: 'up next month', th_avg: 'avg next month',
+          th_dipm: 'typical dip', th_dipb: 'bad-case dip',
+          f_fwdpe: 'Fwd P/E', f_peg: 'PEG', f_payout: 'Payout', f_5yy: '5y avg yield',
+          an_cov: 'analysts', an_target: 'mean target', an_upside: 'upside', an_range: 'target range',
+          pos_short: 'Short interest', pos_dtc: 'days to cover', pos_float: '% of float',
+          pos_ins: 'insiders', pos_inst: 'institutions', pos_sh: 'shares short',
+          e_next: 'Next report', e_in: 'in', e_dd: 'd', e_today: 'today',
+          e_soon: '⚠ Reports soon — results risk near-term', e_beats: 'beats', e_of: 'of',
+          e_qtr: 'date', e_eps: 'EPS', e_est: 'est', e_surp: 'surprise' },
     zh: { asof: '数据截至', notlib: '不在库中',
           notlibmsg: '不在每晚更新的标的库中（精选 TSX 大盘股 ＋ 板块 ETF ＋ 指数）。可在 config.yml → canada.constituents 添加。',
           season: '季节性', failed: '⚠ 失败周期 — 价格已跌破启动本周期的低点；此时更大的趋势通常正在转向下行。',
-          next: '下一步：', ph: '搜索任意 TSX 个股 / 板块ETF / 指数…（例如 RY、Shopify、Energy）' } };
+          next: '下一步：', ph: '搜索任意 TSX 个股 / 板块ETF / 指数…（例如 RY、Shopify、Energy）',
+          th_state: '状态', th_n: '样本数', th_up: '下月上涨', th_avg: '下月均值',
+          th_dipm: '典型回撤', th_dipb: '最坏回撤',
+          f_fwdpe: '前瞻PE', f_peg: 'PEG', f_payout: '派息率', f_5yy: '5年均股息率',
+          an_cov: '分析师', an_target: '目标价中位', an_upside: '上行空间', an_range: '目标区间',
+          pos_short: '空头', pos_dtc: '回补天数', pos_float: '占流通',
+          pos_ins: '内部持股', pos_inst: '机构持股', pos_sh: '做空股数',
+          e_next: '下次财报', e_in: '还有', e_dd: '天', e_today: '今天',
+          e_soon: '⚠ 临近财报 —— 短期业绩风险', e_beats: '超预期', e_of: '共',
+          e_qtr: '日期', e_eps: '每股收益', e_est: '预期', e_surp: '超预期幅度' } };
   function L(k) { return (T[lang()] || T.en)[k]; }
   function lz(en, zh) { return lang() === 'zh' && zh ? zh : (en || ''); }
   var DISP = {{ state_display_json | safe }};
@@ -185,6 +241,8 @@
   q.placeholder = L('ph');
 
   fetch('canadastockdata/index.json').then(r => r.json()).then(d => { idx = d; fromHash(); });
+  fetch('canadastockdata/calibration.json').then(r => r.ok ? r.json() : null)
+    .then(d => { cal = d; }).catch(() => {});
 
   function fromHash() {
     var t = decodeURIComponent((location.hash || '').slice(1));
@@ -336,9 +394,87 @@
         + chip(lz('Net margin','净利率'), v.net_margin, null, '%')
         + chip(lz('Div yield','股息率'), v.div_yield, v.div_yield_sector_med, '%')
         + chip(lz('Rev growth','营收增长'), v.rev_growth, null, '%') + '</div>';
+      // forward valuation (income lens for dividend-heavy TSX) — second chip row
+      var fwd = chip(L('f_fwdpe'), v.forward_pe, null) + chip(L('f_peg'), v.peg, null)
+        + chip(L('f_payout'), v.payout, null, '%') + chip(L('f_5yy'), v.five_yr_yield, null, '%');
+      if (fwd) fhtml += '<div class="fnd-grid">' + fwd + '</div>';
       document.getElementById('r_fund').innerHTML = fhtml;
       fpEl.style.display = 'block';
     } else { fpEl.style.display = 'none'; }
+
+    var fnum2 = function (x, n) { return x == null ? '—' : (+x).toFixed(n == null ? 1 : n); };
+
+    // Analyst & estimates — yfinance sell-side consensus (additive)
+    var anEl = document.getElementById('r_analyst_panel'), an = (d.fundamentals || {}).consensus;
+    if (an && (an.n_analysts || an.target_mean != null)) {
+      var rk = (an.rating || '').toLowerCase();
+      var rcls = rk.indexOf('buy') >= 0 ? 'buy' : (rk.indexOf('sell') >= 0 || rk.indexOf('underperform') >= 0) ? 'sell' : 'hold';
+      var ah = '';
+      if (an.rating) ah += '<span class="rchip ' + rcls + '">' + lz(an.rating, an.rating_zh) + '</span>';
+      if (an.n_analysts) ah += ' <span class="muted" style="font-size:12px">' + an.n_analysts + ' ' + L('an_cov') + '</span>';
+      ah += '<div class="fnd-grid" style="margin-top:10px">';
+      if (an.target_mean != null) ah += '<div class="fnd-chip"><div class="k">' + L('an_target') + '</div><div class="v">' + fnum2(an.target_mean, 2) + '</div></div>';
+      if (an.upside_pct != null) ah += '<div class="fnd-chip"><div class="k">' + L('an_upside') + '</div><div class="v ' + (an.upside_pct >= 0 ? 'pos' : 'neg') + '">' + (an.upside_pct >= 0 ? '+' : '') + an.upside_pct + '%</div></div>';
+      if (an.target_low != null && an.target_high != null) ah += '<div class="fnd-chip"><div class="k">' + L('an_range') + '</div><div class="v" style="font-size:12.5px">' + fnum2(an.target_low, 0) + '–' + fnum2(an.target_high, 0) + '</div></div>';
+      ah += '</div>';
+      document.getElementById('r_analyst').innerHTML = ah;
+      anEl.style.display = 'block';
+    } else { anEl.style.display = 'none'; }
+
+    // Earnings — next date (client-side countdown) + last-4 surprise history (additive)
+    var enEl = document.getElementById('r_earn_panel'), ev = d.earnings;
+    if (ev && (ev.next_date || (ev.surprises && ev.surprises.length))) {
+      var eh = '';
+      if (ev.next_date) {
+        var pp = ev.next_date.split('-'), edt = new Date(+pp[0], +pp[1] - 1, +pp[2]);
+        var enow = new Date(); enow.setHours(0, 0, 0, 0);
+        var edd = Math.round((edt - enow) / 86400000);
+        var when = edd <= 0 ? L('e_today') : L('e_in') + ' ' + edd + ' ' + L('e_dd');
+        eh += '<div style="font-size:15px"><b>' + L('e_next') + ':</b> ' + ev.next_date + ' <span class="muted">(' + when + ')</span></div>';
+        if (edd >= 0 && edd <= 7) eh += '<div class="early" style="margin-top:8px">' + L('e_soon') + '</div>';
+      }
+      var sur = ev.surprises || [];
+      if (sur.length) {
+        var beats = sur.filter(function (s) { return s.surprise_pct != null && s.surprise_pct > 0; }).length;
+        eh += '<div class="muted" style="margin-top:10px; font-size:12px">' + L('e_beats') + ' ' + beats + ' ' + L('e_of') + ' ' + sur.length + '</div>';
+        var ehead = '<tr><th>' + L('e_qtr') + '</th><th>' + L('e_eps') + '</th><th>' + L('e_est') + '</th><th>' + L('e_surp') + '</th></tr>';
+        var ebody = sur.map(function (s) {
+          var sc = s.surprise_pct == null ? '' : (s.surprise_pct >= 0 ? 'pos' : 'neg');
+          return '<tr><td>' + s.date + '</td><td>' + fnum2(s.eps, 2) + '</td><td>' + (s.est == null ? '—' : fnum2(s.est, 2)) + '</td><td class="' + sc + '">' + (s.surprise_pct == null ? '—' : (s.surprise_pct >= 0 ? '+' : '') + s.surprise_pct + '%') + '</td></tr>';
+        }).join('');
+        eh += '<table class="fnd-tbl"><thead>' + ehead + '</thead><tbody>' + ebody + '</tbody></table>';
+      }
+      document.getElementById('r_earn').innerHTML = eh;
+      enEl.style.display = 'block';
+    } else { enEl.style.display = 'none'; }
+
+    // Positioning — short interest + ownership (additive)
+    var posEl = document.getElementById('r_pos_panel'), pos = (d.fundamentals || {}).positioning;
+    if (pos && (pos.days_to_cover != null || pos.held_institutions != null || pos.shares_short != null)) {
+      var ph = '<div class="fnd-grid">';
+      if (pos.short_pct_float != null) ph += '<div class="fnd-chip"><div class="k">' + L('pos_short') + '</div><div class="v">' + pos.short_pct_float + '%<span class="vs">' + L('pos_float') + '</span></div></div>';
+      else if (pos.shares_short != null) ph += '<div class="fnd-chip"><div class="k">' + L('pos_sh') + '</div><div class="v" style="font-size:13px">' + (pos.shares_short / 1e6).toFixed(1) + 'M</div></div>';
+      if (pos.days_to_cover != null) ph += '<div class="fnd-chip"><div class="k">' + L('pos_dtc') + '</div><div class="v">' + fnum2(pos.days_to_cover, 1) + '</div></div>';
+      if (pos.held_insiders != null) ph += '<div class="fnd-chip"><div class="k">' + L('pos_ins') + '</div><div class="v">' + pos.held_insiders + '%</div></div>';
+      if (pos.held_institutions != null) ph += '<div class="fnd-chip"><div class="k">' + L('pos_inst') + '</div><div class="v">' + pos.held_institutions + '%</div></div>';
+      ph += '</div>';
+      document.getElementById('r_pos').innerHTML = ph;
+      posEl.style.display = 'block';
+    } else { posEl.style.display = 'none'; }
+
+    // Calibration "trust the state" (additive; needs calibration.json)
+    var calEl = document.getElementById('r_cal_panel');
+    if (cal) {
+      var cs = '<tr><th>' + L('th_state') + '</th><th>' + L('th_n') + '</th><th>' + L('th_up') + '</th><th>' + L('th_avg') + '</th><th>' + L('th_dipm') + '</th><th>' + L('th_dipb') + '</th></tr>';
+      Object.keys(cal).forEach(function (s) {
+        var cv = cal[s];
+        var dipMed = cv.dd_med_pct != null ? cv.dd_med_pct + '%' : '—';
+        var dipBad = cv.dd_p10_pct != null ? cv.dd_p10_pct + '%' : '—';
+        cs += '<tr><td><span class="state st-' + s.replace(/ /g, '_') + '">' + disp(s) + '</span></td><td>' + cv.n + '</td><td>' + cv.hit_pct + '%</td><td class="' + (cv.avg_fwd_pct > 0 ? 'pos' : 'neg') + '">' + cv.avg_fwd_pct + '%</td><td class="neg">' + dipMed + '</td><td class="neg">' + dipBad + '</td></tr>';
+      });
+      document.getElementById('r_cal').innerHTML = cs;
+      calEl.style.display = 'block';
+    } else { calEl.style.display = 'none'; }
 
     // TradingView embed (works for TSX; the chart is garnish — the analysis above stands alone).
     document.getElementById('tvbox').innerHTML = '<div id="tvchart"></div>';
