@@ -343,6 +343,13 @@
       <div id="r_flow"></div>
     </div>
 
+    <div class="panel" id="panel_fragility" style="display:none">
+      <h2>⚠️ {{ t('Crowded &amp; fragile', '拥挤且脆弱') }}
+        {{ help("A contrarian RISK flag: this name is at once a crowded leader (high relative-strength percentile), a crowded short (high days-to-cover in the latest FINRA snapshot), AND stretched well above its 50-day average. That conjunction is a fragile set-up — prone to a sharp unwind or short squeeze either way. DISPLAY-ONLY context, never in the conviction score: our Phase-0 found crowding carries NO forward-return edge (only a marginal, statistically-weak worse drawdown), and short interest has no point-in-time history to validate. Context on fragility, NOT a sell.",
+          "一个逆向风险标记：该股同时是拥挤的领涨股（相对强弱百分位高）、拥挤的空头（最新 FINRA 快照中回补天数高），且远高于其 50 日均线。这种组合是一种脆弱形态 —— 易于双向剧烈回吐或逼空。仅作背景展示，绝不计入信念评分：我们的 Phase-0 发现拥挤本身没有前瞻收益优势（仅有边际且统计上微弱的更深回撤），且空头数据没有可供验证的时点历史。仅作脆弱性背景，而非卖出信号。") }}</h2>
+      <div id="r_fragility"></div>
+    </div>
+
     <div class="panel" id="panel_smartmoney" style="display:none">
       <h2>🏦 {{ t('Super-investors — 13F holders', '超级投资者 — 13F 持仓') }}
         {{ help("Which curated super-investor funds (Berkshire, Pershing Square, Scion, Baupost, Viking, Tiger Global, etc.) reported holding this stock in their latest SEC Form 13F, and whether they initiated / added / trimmed / exited vs the prior quarter. Conviction = the position's share of that fund's reported US-equity book. 13F is QUARTERLY with a ~45-day lag — long-only US equity >= $100M only (no shorts, options detail, or non-US positions); CUSIPs are name-matched to tickers so some lines are hidden. CONTEXT on who holds it, NOT a buy list or a real-time signal.",
@@ -1001,6 +1008,33 @@
     show('panel_gex', true);
   }
 
+  // Contrarian fragility flag: crowded long + crowded short + extended. DISPLAY-ONLY,
+  // never in the score (Phase-0: no forward-return edge; SI has no PIT history).
+  function renderFragility(d) {
+    var f = d && d.fragility;
+    if (!f) { show('panel_fragility', false); return; }
+    var top = function (p) { return lz('top ', '前 ') + Math.max(1, 100 - p) + '%'; };
+    var legs = [
+      '📈 ' + lz('Relative strength', '相对强弱') + ': <b>' + top(f.rs_pctile) + '</b> ' +
+        lz('(a crowded leader)', '（拥挤的领涨股）'),
+      '🩳 ' + lz('Short interest', '空头持仓') + ': <b>' +
+        (f.days_to_cover != null ? f.days_to_cover + ' ' + lz('days to cover', '天回补') : top(f.si_pctile)) +
+        '</b> ' + lz('(' + top(f.si_pctile) + ', a crowded short)', '（' + top(f.si_pctile) + '，拥挤的空头）'),
+      '📏 ' + lz('Extended', '超买拉伸') + ': <b>+' + f.pct_vs_50dma + '%</b> ' +
+        lz('above its 50-day average', '高于其 50 日均线')
+    ];
+    el('r_fragility').innerHTML =
+      '<p style="margin:0 0 8px">' + lz(
+        'A crowded leader that is also heavily shorted and stretched above trend — a fragile set-up prone to a sharp unwind or short squeeze.',
+        '一只既被广泛持有、又被大量做空、且远高于趋势的领涨股 —— 一种易于剧烈回吐或逼空的脆弱形态。') + '</p>' +
+      '<ul style="margin:0 0 8px;padding-left:18px;line-height:1.7">' +
+        legs.map(function (l) { return '<li>' + l + '</li>'; }).join('') + '</ul>' +
+      '<p class="srcline">' + lz(
+        'Context on fragility, NOT a sell. This flag is NOT in the conviction score — Phase-0 found crowding carries no forward-return edge (only a marginal, weak worse-drawdown tendency), and short interest has no point-in-time history to validate.',
+        '仅作脆弱性背景，而非卖出信号。该标记不计入信念评分 —— Phase-0 发现拥挤本身没有前瞻收益优势（仅有边际且微弱的更深回撤倾向），且空头数据没有可供验证的时点历史。') + '</p>';
+    show('panel_fragility', true);
+  }
+
   function renderSmartMoney(d) {
     var s = d && d.smart_money;
     var hold = (s && s.holders) || [];
@@ -1012,6 +1046,17 @@
       (s.n_buying ? ' · <span class="pos">' + s.n_buying + ' ' + lz('buying', '买入') + '</span>' : '') +
       (s.n_selling ? ' · <span class="neg">' + s.n_selling + ' ' + lz('selling', '卖出') + '</span>' : '') +
       (s.as_of ? ' · ' + lz('as of', '截至') + ' ' + s.as_of : '') + '</p>';
+    // Cross-fund VIP / overlap: how many tracked funds currently hold it, the
+    // top holder's conviction, and how concentrated that ownership is (HHI).
+    var hhi = s.ownership_hhi, conc = '';
+    if (hhi != null) conc = (hhi >= 0.5) ? lz('top-heavy (one fund dominates)', '高度集中（单一基金主导）')
+      : (hhi <= 0.3) ? lz('broadly held', '广泛持有') : lz('moderately concentrated', '中度集中');
+    var vipline = '';
+    if (s.vip) vipline = '<p class="srcline" style="margin:-4px 0 10px">' +
+      (s.is_vip ? '<span class="chip" style="--c:var(--ok)">★ ' + lz('VIP consensus', 'VIP 共识') + '</span> ' : '') +
+      lz('held by ', '由 ') + '<b>' + s.vip + '</b> ' + lz('tracked fund' + (s.vip === 1 ? '' : 's'), '家跟踪基金') +
+      (s.max_book_pct != null ? ' · ' + lz('top conviction ', '最高信念 ') + '<b>' + s.max_book_pct + '%</b> ' + lz('of a book', '的组合占比') : '') +
+      (conc ? ' · ' + conc : '') + '</p>';
     var th = '<tr><th>' + lz('fund', '基金') + '</th><th>' + lz('action', '动作') +
       '</th><th' + R + '>' + lz('% of portfolio', '组合占比') +
       '</th><th' + R + '>' + lz('Δ shares', '股数Δ') + '</th></tr>';
@@ -1027,7 +1072,7 @@
         '<td' + R + '><b>' + pct + '</b></td>' +
         '<td class="muted"' + R + '>' + chg + '</td></tr>';
     }).join('');
-    el('r_smartmoney').innerHTML = head + '<table>' + th + rows + '</table>' +
+    el('r_smartmoney').innerHTML = head + vipline + '<table>' + th + rows + '</table>' +
       '<p class="srcline">' + lz(
         '13F-HR holdings are filed quarterly with a ~45-day lag — a stale, partial picture of long-only US equity stakes ≥ $100M, with no shorts, options detail, or non-US positions. CUSIPs are name-matched to tickers, so some lines may be missing. Context on who holds this, NOT a buy list or a real-time signal.',
         '13F-HR 持仓为季度申报，约有 45 天滞后 —— 仅为美股多头持仓（≥1亿美元）的陈旧且不完整快照，不含空头、期权细节或非美持仓。CUSIP 通过名称匹配到代码，部分行可能缺失。仅作为「谁持有它」的背景，而非买入清单或实时信号。') + '</p>';
@@ -1139,6 +1184,7 @@
     renderFundamentals(d);
     renderFundFlow(d);
     renderAlpha(d);
+    renderFragility(d);
     renderSmartMoney(d);
 
     document.getElementById('tvbox').innerHTML = '<div id="tvchart"></div>';

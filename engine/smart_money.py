@@ -51,6 +51,39 @@ _DROP = edgar._SUFFIX | _EXTRA_DROP
 # share-count change beyond +/- this fraction => ADD / TRIM (else HOLD)
 _MOVE_FRAC = 0.10
 
+# >= this many tracked funds currently holding a name flags it a cross-fund "VIP"
+# (broad super-investor consensus). Display context — never a scoring leg.
+_VIP_MIN = 5
+
+
+def overlap_stats(holders: list[dict]) -> dict:
+    """Cross-fund VIP / ownership-concentration read for one name from its tracked
+    holders (the by_ticker entries). PURE. CONTEXT only.
+
+    * ``vip`` — number of tracked funds CURRENTLY holding it (exits excluded); a
+      higher count = broader super-investor consensus.
+    * ``ownership_hhi`` — Herfindahl of the holders' dollar values (Σ wᵢ², wᵢ =
+      fundᵢ's share of the tracked dollars in this name). ~1/vip = evenly held;
+      near 1 = one whale dominates (a "consensus" of one, not a crowd).
+    * ``max_book_pct`` / ``avg_book_pct`` — the highest- and average-conviction
+      holder's weight (the stock's % of that fund's reported book).
+    """
+    cur = [e for e in holders if e.get("action") != "exit"]
+    vip = len(cur)
+    if not vip:
+        return {"vip": 0}
+    vals = [float(e.get("value_usd") or 0.0) for e in cur]
+    tot = sum(vals)
+    hhi = round(sum((v / tot) ** 2 for v in vals), 3) if tot > 0 else None
+    books = [float(e["pct_portfolio"]) for e in cur if e.get("pct_portfolio") is not None]
+    return {
+        "vip": vip,
+        "is_vip": vip >= _VIP_MIN,
+        "ownership_hhi": hhi,
+        "max_book_pct": round(max(books), 2) if books else None,
+        "avg_book_pct": round(sum(books) / len(books), 2) if books else None,
+    }
+
 
 def _norm(name: str) -> str:
     """Normalize an issuer/company name for cross-source matching: strip
@@ -254,6 +287,7 @@ def compute_smart_money(cfg: dict | None = None) -> dict | None:
     for t, rec in by_ticker.items():
         h = rec["holders"]
         h.sort(key=lambda e: (_BUY.get(e["action"], 9), -e["pct_portfolio"]))
+        rec.update(overlap_stats(h))            # vip / hhi / book conviction (full list)
         rec["holders"] = h[:top_n]
         rec["n_holders"] = len(h)
         rec["n_buying"] = sum(1 for e in h if e["action"] in ("new", "add"))

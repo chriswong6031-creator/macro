@@ -126,3 +126,32 @@ def test_diff_drops_non_equity_prn():
     latest = _snap([("A", "Alpha Co", 100, 100)], sh_type="PRN")  # a bond line
     out = sm.diff_snapshots(None, latest)
     assert out.empty
+
+
+# ---- cross-fund VIP / overlap (display-only context) ------------------------
+
+def _holder(fund, action, pct, value):
+    return {"fund": fund, "action": action, "pct_portfolio": pct, "value_usd": value}
+
+
+def test_overlap_stats_vip_and_concentration():
+    # 3 funds currently hold (one exited -> excluded from the VIP count).
+    holders = [
+        _holder("A", "hold", 10.0, 600.0),
+        _holder("B", "add", 4.0, 300.0),
+        _holder("C", "new", 2.0, 100.0),
+        _holder("D", "exit", 0.0, 999.0),     # exited -> not a current holder
+    ]
+    o = sm.overlap_stats(holders)
+    assert o["vip"] == 3                        # exits excluded
+    assert o["max_book_pct"] == 10.0           # top-conviction holder's weight
+    assert o["avg_book_pct"] == round((10 + 4 + 2) / 3, 2)   # rounded to 2dp
+    # HHI of value shares 0.6/0.3/0.1 = .36+.09+.01 = .46
+    assert abs(o["ownership_hhi"] - 0.46) < 1e-3
+
+
+def test_overlap_stats_vip_threshold_and_empty():
+    many = [_holder(f"F{i}", "hold", 1.0, 100.0) for i in range(5)]
+    assert sm.overlap_stats(many)["is_vip"] is True          # >= _VIP_MIN
+    assert sm.overlap_stats(many[:2])["is_vip"] is False
+    assert sm.overlap_stats([_holder("X", "exit", 0.0, 1.0)]) == {"vip": 0}

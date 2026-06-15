@@ -309,6 +309,11 @@ def main() -> int:
             log.warning("smartmoney.json unreadable (%s)", e)
     # per-stock dealer-gamma (DISPLAY-ONLY, gated from the score by validate_gex)
     gex_by_ticker = _optionable_gex()
+    # contrarian crowding/fragility flags (DISPLAY-ONLY, gated OUT of the score by
+    # scripts/fund_crowding_phase0.py — short interest has no PIT history to validate).
+    # Computed once over the whole panel; graceful (absent feed => {} => no chip).
+    from engine.crowding import compute_fragility
+    fragility_map = compute_fragility()
     index, cand, built, failed = [], [], 0, 0
     for ticker, close, high, name, sector in universe():
         try:
@@ -341,6 +346,8 @@ def main() -> int:
             rec["smart_money"] = smart_money[ticker]
         if gex_by_ticker.get(ticker):
             rec["gex"] = gex_by_ticker[ticker]
+        if fragility_map.get(ticker):
+            rec["fragility"] = fragility_map[ticker]
         ladder_rows.append(ticker_alerts.ladder_row(ticker, rec.get("ladder"), rec.get("asof")))
         safe = ticker.replace("=", "_").replace("^", "_")
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
