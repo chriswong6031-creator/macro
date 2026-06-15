@@ -1463,7 +1463,7 @@ commodity_news:
 # are keyless and always on.
 # =============================================================================
 macro_news:
-  enabled: false                  # MASTER SWITCH for the GDELT fetch + LLM brief
+  enabled: true                   # MASTER SWITCH for the GDELT fetch + LLM brief
   lang: eng
   window_days: 2                  # fetch the last N days of macro news
   max_records: 200                # candidates pulled from GDELT before filtering

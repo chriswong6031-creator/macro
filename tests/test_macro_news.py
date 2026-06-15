@@ -20,21 +20,27 @@ def test_classify_theme_buckets():
 
 
 def test_filter_headlines_pipeline():
+    # Two-tier contract: a tier-1 NEWS outlet is kept on source alone (the GDELT
+    # query already matched macro terms in the body) and tagged 'macro' when the
+    # title carries no keyword; a finance AGGREGATOR must clear the title theme
+    # gate; an off-allowlist junk source is always dropped; dupes collapse.
     arts = [
         {"title": "Fed holds rates as inflation cools", "domain": "reuters.com",
-         "seendate": "2026-06-14T10:00:00+00:00"},
+         "seendate": "2026-06-14T10:00:00+00:00"},                       # theme + tier-1
         {"title": "Local village fair returns this weekend", "domain": "burytimes.co.uk",
-         "seendate": "2026-06-14T09:00:00+00:00"},                       # junk source
-        {"title": "Apple unveils a new iPhone", "domain": "cnbc.com",
-         "seendate": "2026-06-14T08:00:00+00:00"},                       # reputable but non-macro
+         "seendate": "2026-06-14T09:30:00+00:00"},                       # junk source -> dropped
+        {"title": "Trump weighs new China strategy", "domain": "cnbc.com",
+         "seendate": "2026-06-14T09:00:00+00:00"},                       # tier-1, no title kw -> kept as 'macro'
+        {"title": "3 reasons to sell this stock", "domain": "yahoo.com",
+         "seendate": "2026-06-14T08:30:00+00:00"},                       # aggregator, non-macro -> dropped
         {"title": "Jobs report shows payrolls surged", "domain": "bloomberg.com",
-         "seendate": "2026-06-13T08:00:00+00:00"},
+         "seendate": "2026-06-13T08:00:00+00:00"},                       # theme + tier-1
         {"title": "Fed holds rates as inflation cools", "domain": "wsj.com",
-         "seendate": "2026-06-12T08:00:00+00:00"},                       # duplicate title
+         "seendate": "2026-06-12T08:00:00+00:00"},                       # duplicate title -> dropped
     ]
     kept = mn.filter_headlines(arts, {"max_show": 10})
-    assert len(kept) == 2                                                # junk + non-macro + dup removed
-    assert {h["theme"] for h in kept} == {"inflation", "labor"}
+    assert len(kept) == 3                                                # junk + aggregator-noise + dup removed
+    assert {h["theme"] for h in kept} == {"inflation", "labor", "macro"}
     assert kept[0]["domain"] == "reuters.com"                            # newest first
     assert all("theme" in h and h["url"] is not None for h in kept)
 
@@ -70,10 +76,10 @@ def test_query_well_formed():
     assert "federal reserve" in q.lower() and q.startswith("(")
 
 
-def test_disabled_and_llm_off_by_default():
-    # config ships macro_news.enabled: false -> no fetch
-    assert mn.enabled() is False
-    assert mn.macro_headlines() is None
+def test_llm_brief_off_by_default():
+    # The keyless GDELT headline fetch ships ON (macro_news.enabled: true), but the
+    # OPTIONAL LLM brief stays OFF unless llm_brief is set AND a key is present.
+    assert mn.enabled() is True
     # brief never runs without headlines, and is gated off by default anyway
     assert mn.macro_brief([], "Goldilocks", "optimistic") is None
     assert mn.macro_brief([{"title": "x", "domain": "reuters.com", "theme": "monetary"}],
