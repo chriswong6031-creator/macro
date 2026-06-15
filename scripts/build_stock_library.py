@@ -314,6 +314,15 @@ def main() -> int:
             smart_money = (json.loads(smp.read_text()) or {}).get("by_ticker", {})
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("smartmoney.json unreadable (%s)", e)
+    # offshore-attention z per stock (DISPLAY-ONLY over-extension caution; written by
+    # build_site.build_attention_data). Additive — absent => no chip. NEVER scored.
+    attn_map: dict[str, dict] = {}
+    atp = site / "factordata" / "attention.json"
+    if atp.exists():
+        try:
+            attn_map = json.loads(atp.read_text()) or {}
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("attention.json unreadable (%s)", e)
     # per-stock dealer-gamma (DISPLAY-ONLY, gated from the score by validate_gex)
     gex_by_ticker = _optionable_gex()
     # contrarian crowding/fragility flags (DISPLAY-ONLY, gated OUT of the score by
@@ -337,6 +346,8 @@ def main() -> int:
             rec.update(fpanels[ticker])
         if flows.get(ticker):
             rec["fund_flows"] = flows[ticker]
+        if attn_map.get(ticker):            # offshore-attention caution (display-only); never scored
+            rec["attention"] = attn_map[ticker]
         if alpha_pt.get(ticker):            # additive: absent => no alpha/setup for this name
             rec["alpha"] = alpha_pt[ticker]
             sc = setup_score(rec, alpha_weight=US_ALPHA_WEIGHT)

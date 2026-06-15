@@ -355,17 +355,21 @@ def _wiki_summary(title: str, headers: dict) -> dict | None:
         return None
 
 
-def _wiki_description(*names: str, max_check: int = 6) -> str | None:
-    """One-paragraph business description via Wikipedia REST. opensearch ranks a
-    namesake court case / town / chemical above the company for many tickers
-    (especially ALL-CAPS SEC names), so we walk the top candidates of each search
-    term, validate each as a company page, and keep the BEST name match — a full
-    match short-circuits; a mere partial ("Antero Resources" for "Antero
-    Midstream") is rejected so a wrong sibling never wins by ranking first."""
+def _wiki_description(*names: str, max_check: int = 6) -> tuple[str | None, str | None]:
+    """One-paragraph business description AND the validated article title via
+    Wikipedia REST. opensearch ranks a namesake court case / town / chemical above
+    the company for many tickers (especially ALL-CAPS SEC names), so we walk the top
+    candidates of each search term, validate each as a company page, and keep the
+    BEST name match — a full match short-circuits; a mere partial ("Antero
+    Resources" for "Antero Midstream") is rejected so a wrong sibling never wins by
+    ranking first. Returns (extract, title); title is reused by the offshore-
+    attention collector (collectors/wiki_pageviews.py) so it never re-resolves the
+    page (and re-incurs the wrong-namesake risk)."""
     headers = {"User-Agent": WIKI_UA, "Accept": "application/json"}
     seen: set[str] = set()
     checked = 0
     best_extract: str | None = None
+    best_title: str | None = None
     best_score = 0
     for term in _search_terms(*names):
         r = _get(WIKI_OPENSEARCH.format(quote(term)), headers)
@@ -391,16 +395,19 @@ def _wiki_description(*names: str, max_check: int = 6) -> str | None:
             s = _wiki_summary(title, headers)
             if not s or not _is_company_page(s, *names):
                 continue
-            score = _match_score(s.get("title") or title, *names)
+            matched = s.get("title") or title
+            score = _match_score(matched, *names)
             if score >= 3:                      # an unambiguous full-name match
-                return _trim(s.get("extract") or "") or None
+                return _trim(s.get("extract") or "") or None, matched
             if score > best_score:              # keep the strongest partial seen
-                best_score, best_extract = score, s.get("extract") or ""
+                best_score, best_extract, best_title = score, s.get("extract") or "", matched
         if checked >= max_check:
             break
     # accept a held candidate only if it matched the WHOLE distinctive name (>=2);
     # a score-1 partial is the wrong-sibling smell → leave it blank.
-    return (_trim(best_extract or "") or None) if best_score >= 2 else None
+    if best_score >= 2:
+        return (_trim(best_extract or "") or None), best_title
+    return None, None
 
 
 def fetch_profiles(force: bool = False, max_new: int = 250,
@@ -416,6 +423,11 @@ def fetch_profiles(force: bool = False, max_new: int = 250,
 
     def stale(t: str) -> bool:
         if force or existing.empty or t not in existing.index:
+            return True
+        # backfill the wiki_title column (added for the offshore-attention chip)
+        # into already-cached rows incrementally — a row missing it is "stale" so
+        # the normal max_new-capped pass repopulates it over a few runs.
+        if "wiki_title" not in existing.columns or pd.isna(existing.loc[t].get("wiki_title")):
             return True
         ts = existing.loc[t].get("as_of")
         try:
@@ -437,7 +449,7 @@ def fetch_profiles(force: bool = False, max_new: int = 250,
             rec.update(_sec_submission(cik[t]))    # may overwrite name with the SEC entity
         # Search the clean display name FIRST, the (ALL-CAPS) SEC name as backup:
         # "MICROSOFT CORP" ranks the EU antitrust case ahead of the company.
-        rec["description"] = _wiki_description(display, rec.get("name"))
+        rec["description"], rec["wiki_title"] = _wiki_description(display, rec.get("name"))
         rec["source"] = "wikipedia+sec"
         rows.append(rec)
 

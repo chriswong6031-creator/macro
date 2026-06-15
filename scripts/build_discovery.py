@@ -86,7 +86,7 @@ def _price(px, tk: str):
     return round(float(v), 2) if pd.notna(v) else None
 
 
-def _row(tk: str, rec: dict, ns: dict, px) -> dict:
+def _row(tk: str, rec: dict, ns: dict, px, attn: dict | None = None) -> dict:
     name, sector = ns.get(tk, (tk, "—"))
     a = rec.get("alpha")
     return {"ticker": tk, "name": name, "sector": sector, "alpha": a, "band": _band(a),
@@ -94,6 +94,7 @@ def _row(tk: str, rec: dict, ns: dict, px) -> dict:
             "rev_1m": rec.get("rev_1m"), "rev_pctile": rec.get("rev_pctile"),
             "sector_rank": rec.get("sector_rank"), "sector_n": rec.get("sector_n"),
             "entry": rec.get("entry"), "price": _price(px, tk),
+            "attn_z": ((attn or {}).get(tk) or {}).get("z"),   # offshore-attention caution (display-only)
             "rs": rec.get("rs"), "rs3m": rec.get("rs3m"),
             "rs6m": rec.get("rs6m"), "rs12m": rec.get("rs12m")}
 
@@ -112,8 +113,16 @@ def main() -> int:
 
     ns = _names_sectors()
     px = _last_prices()
+    # offshore-attention z map (display-only over-extension caution); graceful if absent
+    attn = {}
+    atp = site / "factordata" / "attention.json"
+    if atp.exists():
+        try:
+            attn = json.loads(atp.read_text()) or {}
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("attention.json unreadable (%s)", e)
 
-    rows = [_row(tk, rec, ns, px) for tk, rec in pt.items() if rec.get("alpha") is not None]
+    rows = [_row(tk, rec, ns, px, attn) for tk, rec in pt.items() if rec.get("alpha") is not None]
     rows.sort(key=lambda r: r["alpha"], reverse=True)
     strongest = rows[:TOP_N]
     weakest = rows[-TOP_N:][::-1]            # weakest first

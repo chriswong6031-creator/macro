@@ -11,6 +11,14 @@
 {% macro echip(tag) -%}
 {% set m = entry_meta.get(tag) %}{% if m %}<span class="echip {{ m[2] }}">{{ t(m[0], m[1]) }}</span>{% endif %}
 {%- endmacro %}
+{% macro achip(r) -%}
+{%- if r.attn_z is not none and r.attn_z >= 2.0 -%}
+{%- set intl = r.ticker.endswith('.SS') or r.ticker.endswith('.SZ') or r.ticker.endswith('.HK') -%}
+<span class="echip attn">👁 {{ '%+.1f'|format(r.attn_z) }}σ {{ help(
+  'Abnormal offshore (en.wikipedia.org) attention. Da–Engelberg–Gao: retail attention precedes short-horizon REVERSAL, strongest in small/illiquid names and decayed post-GME — an over-extension / fade caution, not a buy.' ~ (' Measures international attention only; mainland traffic is not counted.' if intl else ''),
+  '境外（en.wikipedia.org）异常关注度。Da–Engelberg–Gao：散户关注度领先短期反转，在中小盘/低流动性个股最强，且自 GME 后衰减——属过度/回吐风险提示，非买入信号。' ~ ('（仅衡量境外关注度，不含大陆访问。）' if intl else '')) }}</span>
+{%- endif -%}
+{%- endmacro %}
 {% macro mom(v) -%}
 <td class="r {{ 'pos' if (v or 0) >= 0 else 'neg' }}">{{ ('%+.0f%%'|format(v)) if v is not none else '—' }}</td>
 {%- endmacro %}
@@ -20,7 +28,7 @@
   <td><a href="stock.html#{{ r.ticker }}"><b>{{ r.ticker }}</b></a> <span class="muted sm">{{ r.name[:20] }}</span></td>
   <td class="muted sm">{{ td(r.sector) }}</td>
   <td><div class="scorecell">{{ abar(r.alpha) }}<span class="znum band-{{ r.band }}">{{ '%+.2f'|format(r.alpha) }}</span></div></td>
-  <td>{{ echip(r.entry) }}</td>
+  <td>{{ echip(r.entry) }}{{ achip(r) }}</td>
   {{ mom(r.total_mom) }}
   <td class="r muted sm">{{ ('#%d/%d'|format(r.sector_rank, r.sector_n)) if r.sector_rank else '—' }}</td>
   <td class="r">{% if r.rs is not none %}<b>{{ r.rs|round|int }}</b>{% if r.rs3m is not none %} <span class="muted sm">{{ r.rs3m|round|int }}/{{ r.rs6m|round|int }}/{{ r.rs12m|round|int }}</span>{% endif %}{% else %}—{% endif %}</td>
@@ -32,7 +40,7 @@
   <td class="rk">{{ r.sector_rank }}</td>
   <td><a href="stock.html#{{ r.ticker }}"><b>{{ r.ticker }}</b></a> <span class="muted sm">{{ r.name[:22] }}</span></td>
   <td><div class="scorecell">{{ abar(r.alpha) }}<span class="znum band-{{ r.band }}">{{ '%+.2f'|format(r.alpha) }}</span></div></td>
-  <td>{{ echip(r.entry) }}</td>
+  <td>{{ echip(r.entry) }}{{ achip(r) }}</td>
   {{ mom(r.total_mom) }}
   <td class="r">{% if r.rs is not none %}<b>{{ r.rs|round|int }}</b>{% else %}—{% endif %}</td>
   <td class="r muted sm">{{ ('$%.2f'|format(r.price)) if r.price is not none else '—' }}</td>
@@ -80,6 +88,7 @@
   .echip { font-size:10.5px; padding:1px 7px; border-radius:7px; border:1px solid var(--line); white-space:nowrap; }
   .ent-pull { color:var(--up); border-color:var(--up); } .ent-ext { color:var(--down); border-color:var(--down); }
   .ent-intact, .ent-lag, .ent-neutral { color:var(--muted); }
+  .echip.attn { color:var(--muted); border-style:dashed; border-color:var(--muted); }  /* display-only caution idiom */
   .secsel { font:inherit; font-size:13px; padding:6px 10px; border:1px solid var(--line); border-radius:8px; background:var(--panel); color:var(--text); margin-bottom:12px; }
   .note { margin:8px 0 0; line-height:1.5; }
   .twocol { display:grid; grid-template-columns:1fr 1fr; gap:18px; } @media (max-width:760px){ .twocol{ grid-template-columns:1fr; } }

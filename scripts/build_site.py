@@ -1509,6 +1509,61 @@ def build_insider_data(site: Path) -> dict | None:
     return sig
 
 
+def _attention_z(views: pd.Series, z_window: int = 90, recent_d: int = 5) -> float | None:
+    """Causal robust abnormal-attention z: trailing-5d log-views mean vs a
+    median/MAD baseline over the STRICTLY-PRIOR z_window (so a single anomalous day
+    can't dominate, and there is no look-ahead). Pageview counts are heavily
+    right-skewed -> log1p + median/MAD. Clipped to [-3, +6] for display."""
+    s = np.log1p(views.dropna().astype(float))
+    if len(s) < z_window // 2 + recent_d:
+        return None
+    recent = float(s.iloc[-recent_d:].mean())
+    base = s.iloc[-(z_window + recent_d):-recent_d].dropna()   # strictly prior -> causal
+    if len(base) < 20:
+        return None
+    med = float(base.median())
+    mad = float((base - med).abs().median())
+    scale = 1.4826 * mad if mad > 0 else float(base.std() or 0.0)
+    if not scale:
+        return None
+    return float(np.clip((recent - med) / scale, -3.0, 6.0))
+
+
+def build_attention_data(site: Path) -> dict | None:
+    """Per-ticker abnormal-attention z from offshore (en.wikipedia.org) pageviews ->
+    factordata/attention.json: a DISPLAY-ONLY over-extension / fade-risk caution chip
+    (Da-Engelberg-Gao: attention -> short-horizon reversal). Mirrors
+    build_insider_data: additive + graceful, returns/writes nothing if the attention
+    store is absent. NEVER a scored leg — not wired into axes / top_picks / setups."""
+    adir = config.data_dir() / "attention"
+    if not adir.exists():
+        return None
+    cfg = config.load().get("wiki_pageviews", {})
+    zw = cfg.get("z_window", 90)
+    out: dict = {}
+    try:
+        for p in sorted(adir.glob("*.parquet")):
+            df = pd.read_parquet(p)
+            if "views" not in df.columns or df.empty:
+                continue
+            v = df["views"].dropna()
+            z = _attention_z(v, zw)
+            if z is None:
+                continue
+            out[p.stem] = {"z": round(z, 2), "views": int(v.iloc[-1]),
+                           "asof": str(pd.Timestamp(v.index.max()).date())}
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("attention data failed: %s", e)
+        return None
+    if not out:
+        return None
+    fdir = site / "factordata"
+    fdir.mkdir(parents=True, exist_ok=True)
+    (fdir / "attention.json").write_text(json.dumps(out, separators=(",", ":"), default=str))
+    log.info("wrote attention.json (%d names with offshore-attention z)", len(out))
+    return out
+
+
 def build_smartmoney_data(site: Path) -> dict | None:
     """Compute curated super-investor 13F holdings and write
     factordata/smartmoney.json (consumed by the per-stock "who holds this" panel +
@@ -1857,6 +1912,10 @@ def main() -> int:
         build_insider_data(site)               # confirmer-chip map; read by sector pages + library
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("insider data failed: %s", e)
+    try:
+        build_attention_data(site)             # offshore-attention chip map (display-only); read by library + discovery
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("attention data failed: %s", e)
     try:
         build_smartmoney_data(site)               # 13F super-investor holdings (CONTEXT)
     except Exception as e:  # noqa: BLE001 — additive, never fatal

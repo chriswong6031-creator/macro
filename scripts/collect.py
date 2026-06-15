@@ -50,6 +50,7 @@ def all_adapters() -> dict:
         # FINRA short interest (Phase 3) is ticker-indexed, fetched from build_factors (like EDGAR), not here.
         ("sentiment_naaim", "collectors.sentiment", "NaaimAdapter"),
         ("sentiment_aaii", "collectors.sentiment", "AaiiAdapter"),
+        ("wiki_pageviews", "collectors.wiki_pageviews", "WikiPageviewsAdapter"),  # offshore attention (display-only; Phase-0 scripts/wiki_attention_phase0.py)
         ("sector_flows", "collectors.sponsors", "SectorFlowAdapter"),
         ("holdings", "collectors.holdings", "HoldingsAdapter"),
         ("etf_holdings", "collectors.etf_holdings", "EtfHoldingsAdapter"),

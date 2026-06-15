@@ -988,6 +988,13 @@
       chips.push(gchip(lz('idiosyncratic (ann)','特异收益（年化）'), '<span class="' + (a.resid_ann >= 0 ? 'pos' : 'neg') + '">' + sgn(a.resid_ann, 0, '%') + '</span>'));
     if (a.rev_1m != null)
       chips.push(gchip(lz('last month','近一月'), '<span class="' + (a.rev_1m >= 0 ? 'pos' : 'neg') + '">' + sgn(a.rev_1m, 1, '%') + '</span>'));
+    // offshore-attention caution (display-only, dashed): Da-Engelberg-Gao attention ->
+    // short-horizon reversal; never a buy. CN/HK suffix => international-attention-only caveat.
+    if (d.attention && d.attention.z != null && d.attention.z >= 2.0) {
+      var intl = /\.(SS|SZ|HK)$/.test(d.ticker || '');
+      chips.push(gchip(lz('Wiki attention','维基关注度') + (intl ? lz(' — intl only','（仅境外）') : ''),
+                       '👁 ' + sgn(d.attention.z, 1) + 'σ', true));
+    }
     var tag = (a.entry && AE[a.entry]) ? '<span class="alpha-entry ae-' + a.entry + '">' + lz(AE[a.entry][0], AE[a.entry][1]) + '</span>' : '';
     el('r_alpha').innerHTML = '<div class="glance">' + chips.join('') + '</div>' +
       (tag ? '<div style="margin:8px 0 2px">' + tag + '</div>' : '') +
