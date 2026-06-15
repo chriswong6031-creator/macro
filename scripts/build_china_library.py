@@ -394,7 +394,24 @@ def main(alpha: dict | None = None) -> dict | None:
         (fdir / "china_alpha.json").write_text(
             json.dumps(alpha, separators=(",", ":"), default=str))
 
+    # market caps (亿) for the fundamentals valuation pass — best-effort
+    mktcap_by: dict[str, float] = {}
+    try:
+        mp = config.data_dir() / "china_search" / "members.parquet"
+        if mp.exists():
+            mdf = pd.read_parquet(mp)
+            if mdf.index.name == "ticker" and "ticker" not in mdf.columns:
+                mdf = mdf.reset_index()
+            tcol = "ticker" if "ticker" in mdf.columns else mdf.columns[0]
+            if "mktcap_yi" in mdf.columns:
+                mktcap_by = {str(r[tcol]): float(r["mktcap_yi"])
+                             for _, r in mdf.iterrows() if pd.notna(r.get("mktcap_yi"))}
+    except Exception as e:  # noqa: BLE001
+        log.debug("china mktcap load failed: %s", e)
+
     index, cand, built, failed = [], [], 0, 0
+    price_by: dict[str, float] = {}
+    sector_by: dict[str, str] = {}
     for ticker, close, high, name, sector in universe():
         try:
             rec = _one(ticker, close, high, name, sector)
@@ -415,7 +432,33 @@ def main(alpha: dict | None = None) -> dict | None:
         if rec.get("alpha", {}).get("alpha") is not None:
             idx["a"] = rec["alpha"]["alpha"]          # alpha-z in the index for client ranking
         index.append(idx)
+        price_by[ticker] = rec.get("tech", {}).get("price")
+        sector_by[ticker] = sector
         built += 1
+
+    # descriptive FUNDAMENTALS (akshare cache) — context, not a signal. Computed for
+    # the cohort at once (needs sector medians), then patched onto the per-stock JSONs.
+    try:
+        from engine import china_fundamentals
+        fmap = china_fundamentals.build_all(price_by, sector_by, mktcap_by)
+        for ticker, fund in fmap.items():
+            safe = ticker.replace("=", "_").replace("^", "_")
+            fp = outdir / f"{safe}.json"
+            if not fp.exists():
+                continue
+            try:
+                rec = json.loads(fp.read_text())
+                rec["fundamentals"] = fund
+                fp.write_text(json.dumps(rec, default=str))
+            except Exception:  # noqa: BLE001
+                continue
+        if fmap:
+            for idx in index:
+                if idx["t"] in fmap:
+                    idx["f"] = 1
+            log.info("china fundamentals: attached to %d names", len(fmap))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("china fundamentals attach failed (%s); skipping", e)
     (outdir / "index.json").write_text(json.dumps(index))
     cal = config.data_dir() / "china_regime" / "ladder_calibration.json"
     if cal.exists():

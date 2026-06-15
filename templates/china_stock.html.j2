@@ -63,6 +63,30 @@
                  border-color:color-mix(in srgb,var(--warn) 55%,transparent); }
   .ae-intact { background:color-mix(in srgb,var(--link) 14%,transparent); color:var(--link); }
   .ae-laggard,.ae-neutral { background:var(--panel2); color:var(--muted); }
+  /* ---- fundamentals panel (descriptive context) --------------------------- */
+  .fnd-arch { display:inline-block; font-size:11.5px; font-weight:700; padding:2px 9px;
+              border-radius:8px; background:color-mix(in srgb,var(--link) 14%,var(--panel2));
+              color:var(--link); border:1px solid color-mix(in srgb,var(--link) 30%,var(--line)); }
+  .fnd-desc { font-size:13px; color:var(--text); margin:9px 0 4px; line-height:1.55; }
+  .fnd-grid { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 4px; }
+  .fnd-chip { background:var(--panel2); border:1px solid var(--line); border-radius:9px;
+              padding:5px 10px; font-size:12px; min-width:78px; }
+  .fnd-chip .k { color:var(--muted); font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; }
+  .fnd-chip .v { font-weight:800; font-size:15px; font-variant-numeric:tabular-nums; }
+  .fnd-chip .vs { font-size:10px; color:var(--muted); margin-left:4px; }
+  .fnd-chip .v.pos { color:var(--up); } .fnd-chip .v.neg { color:var(--down); }
+  .fnd-tbl { width:100%; border-collapse:collapse; margin:8px 0 2px; font-size:12px;
+             font-variant-numeric:tabular-nums; }
+  .fnd-tbl th, .fnd-tbl td { padding:4px 7px; border-bottom:1px solid var(--line); text-align:right; }
+  .fnd-tbl th:first-child, .fnd-tbl td:first-child { text-align:left; color:var(--muted); }
+  .fnd-tbl thead th { color:var(--muted); font-weight:700; font-size:11px; }
+  .fnd-score { display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:700;
+               padding:3px 9px; border-radius:8px; background:var(--panel2); border:1px solid var(--line); margin-right:8px; }
+  .fnd-score b { font-size:14px; }
+  .fnd-score.good { color:var(--up); border-color:color-mix(in srgb,var(--up) 34%,var(--line)); }
+  .fnd-score.warn { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 38%,var(--line)); }
+  .fnd-score.bad { color:var(--down); border-color:color-mix(in srgb,var(--down) 38%,var(--line)); }
+  .cagr-up { color:var(--up); } .cagr-dn { color:var(--down); }
   a { text-decoration:none; }
   h1 { font-size:20px; margin:0; }
   h2 { font-size:14px; margin:0 0 10px; color:var(--muted); text-transform:uppercase;
@@ -148,6 +172,13 @@
         'This name\'s return with its MARKET and SECTOR beta removed — sector-neutral residual relative strength (12-1 month); <b>alpha z</b> ranks it vs the whole A-share cross-section. <b>Deep-history corrected:</b> A-share momentum is NOT a validated edge (35y test) — A-shares MEAN-REVERT, so do not read high alpha as a buy. The actionable read is the entry tag: <b>extended</b> (just spiked) = reversal RISK / fade; <b>pullback</b> (recent dip) = the constructive MEAN-REVERSION entry — the validated effect. The alpha is relative-strength context, not a buy signal.',
         '本股票剔除其市场与板块贝塔后的收益 — 板块中性残差相对强度（12-1 个月）；<b>alpha z</b> 为相对全 A 股横截面的排名。<b>经深度历史校正：</b>A股动量并非有效优势（35年检验）—— A股<b>均值回归</b>，因此切勿把高 alpha 当作买入。可操作的解读是入场标记：<b>extended</b>（刚急涨）＝反转风险/做空；<b>pullback</b>（近期回调）＝有效的<b>均值回归</b>入场。alpha 为相对强度背景，而非买入信号。') }}</p>
     </div>
+    <div class="panel" id="r_fund_panel" style="display:none">
+      <h2>{{ t('Fundamentals', '基本面') }} <span class="note" style="text-transform:none">· {{ t('context, not a signal', '背景，而非信号') }}</span></h2>
+      <div id="r_fund"></div>
+      <p class="muted" style="font-size:12px; margin-top:10px">{{ t(
+        'Descriptive financial health, valuation, and dividends — a backdrop to read ALONGSIDE the validated reversal / low-vol signals, NOT a buy ranking. On ~35 years of A-share data, value and quality are NOT validated cross-sectional edges (cheap names are often value traps; junk has beaten quality), so do not read "cheap vs sector" or "high Piotroski" as a signal. Piotroski / Altman are standard health scores shown for context; Altman is approximate on A-share accounting. Fundamentals refresh on a slower cadence than price.',
+        '描述性的财务健康、估值与分红 —— 作为与已验证的反转／低波信号并读的背景，而非买入排序。在约35年的A股数据上，价值与质量并非有效的横截面优势（便宜的个股常是价值陷阱；劣质股曾跑赢优质股），因此切勿把“相对板块便宜”或“高 Piotroski”当作信号。Piotroski／Altman 为标准健康评分，仅作背景；Altman 在 A 股会计下为近似值。基本面的更新频率慢于价格。') }}</p>
+    </div>
     <div class="panel">
       <h2>{{ t('Chart', '图表') }}</h2>
       <div id="tvbox"></div>
@@ -184,7 +215,12 @@
           bullx: ' bars to bull cross', bearx: ' bars to bear cross',
           ph: 'Search any A-share / sector ETF / index… (e.g. 600519, Banks)',
           th_state: 'state', th_n: 'samples', th_up: 'up next month', th_avg: 'avg next month',
-          th_dipm: 'typical dip', th_dipb: 'bad-case dip' },
+          th_dipm: 'typical dip', th_dipb: 'bad-case dip',
+          f_yield: 'Div yield', f_vs: 'sector', f_rev: 'Revenue', f_nm: 'Net margin', f_eps: 'EPS',
+          f_revcagr: 'Rev CAGR', f_epscagr: 'EPS CAGR', f_5y: '(5y)',
+          f_pio: 'Piotroski F', f_alt: 'Altman Z', f_approx: 'approx', f_year: 'FY',
+          f_hold: 'Holders', f_holdchg: 'holders Δ', f_conc: 'fewer holders = rising concentration',
+          f_safe: 'safe', f_grey: 'grey', f_distress: 'distress' },
     zh: { asof: '数据截至', notlib: '不在库中',
           notlibmsg: '不在每晚更新的标的库中（精选 A 股大盘股 ＋ 板块 ETF ＋ 指数）。一行即可添加：config.yml → china.constituents。',
           season: '季节性', failed: '⚠ 失败周期 — 价格已跌破启动本周期的低点；此时更大的趋势通常正在转向下行。',
@@ -192,7 +228,12 @@
           bullx: ' 根K线后金叉', bearx: ' 根K线后死叉',
           ph: '搜索任意 A 股 / 板块ETF / 指数…（例如 600519、Banks）',
           th_state: '状态', th_n: '样本数', th_up: '下月上涨', th_avg: '下月均值',
-          th_dipm: '典型回撤', th_dipb: '最坏回撤' } };
+          th_dipm: '典型回撤', th_dipb: '最坏回撤',
+          f_yield: '股息率', f_vs: '板块', f_rev: '营业收入', f_nm: '净利率', f_eps: '每股收益',
+          f_revcagr: '营收年化', f_epscagr: '每股收益年化', f_5y: '（5年）',
+          f_pio: 'Piotroski F', f_alt: 'Altman Z', f_approx: '近似', f_year: '财年',
+          f_hold: '股东户数', f_holdchg: '户数变化', f_conc: '户数减少＝集中度上升',
+          f_safe: '安全', f_grey: '灰色', f_distress: '困境' } };
   function L(k) { return (T[lang()] || T.en)[k]; }
   function lz(en, zh) { return lang() === 'zh' && zh ? zh : (en || ''); }
   var DISP = {{ state_display_json | safe }};
@@ -348,6 +389,66 @@
       document.getElementById('r_alpha').innerHTML = html;
       ap.style.display = 'block';
     } else { ap.style.display = 'none'; }
+
+    // Fundamentals — descriptive context (akshare). Additive; absent on ETFs/indices/uncovered names.
+    var fpEl = document.getElementById('r_fund_panel'), f = d.fundamentals;
+    if (f && f.valuation) {
+      var v = f.valuation, fin = f.financials || {}, sh = f.shareholders || {};
+      var fnum = function (x, n) { return x == null ? '—' : (+x).toFixed(n == null ? 1 : n); };
+      var yi = function (x) { return x == null ? '—' : (x / 1e8).toFixed(0); };  // yuan -> 亿
+      // valuation chips (neutral colouring — cheap is NOT a buy signal on A-shares)
+      function chip(lab, val, med, suffix) {
+        if (val == null) return '';
+        var vs = med != null ? '<span class="vs">' + L('f_vs') + ' ' + fnum(med, suffix === '%' ? 1 : (suffix ? 1 : 1)) + (suffix || '') + '</span>' : '';
+        return '<div class="fnd-chip"><div class="k">' + lab + '</div><div class="v">' + fnum(val, suffix === '%' ? 1 : 1) + (suffix || '') + '</div>' + vs + '</div>';
+      }
+      var fhtml = '<div><span class="fnd-arch">' + lz(f.archetype_label, f.archetype_label_zh) + '</span>'
+        + (f.fy ? ' <span class="muted" style="font-size:11px">' + L('f_year') + ' ' + f.fy + '</span>' : '') + '</div>';
+      var desc = f.description && f.description.main_business;
+      if (desc) fhtml += '<p class="fnd-desc">' + desc + '</p>';
+      fhtml += '<div class="fnd-grid">'
+        + chip('PE', v.pe, v.pe_sector_med) + chip('PB', v.pb, v.pb_sector_med)
+        + chip('PS', v.ps, null) + chip('ROE', v.roe, v.roe_sector_med, '%')
+        + chip(L('f_yield'), v.div_yield, v.div_yield_sector_med, '%') + '</div>';
+      // multi-year trend table (last 5 FYs) + CAGRs
+      if (fin.years && fin.years.length) {
+        var yrs = fin.years.slice(-5), n0 = fin.years.length - yrs.length;
+        var head = '<tr><th>' + L('f_year') + '</th>';
+        yrs.forEach(function (y) { head += '<th>' + y + '</th>'; });
+        head += '</tr>';
+        function row(lab, arr, fmt) {
+          var r = '<tr><td>' + lab + '</td>';
+          arr.slice(n0).forEach(function (x) { r += '<td>' + fmt(x) + '</td>'; });
+          return r + '</tr>';
+        }
+        var body = row(L('f_rev') + ' (亿)', fin.revenue, function (x) { return yi(x); })
+          + row(L('f_nm'), fin.net_margin, function (x) { return x == null ? '—' : fnum(x, 1) + '%'; })
+          + row(L('f_eps'), fin.eps, function (x) { return x == null ? '—' : fnum(x, 2); });
+        fhtml += '<table class="fnd-tbl"><thead>' + head + '</thead><tbody>' + body + '</tbody></table>';
+        var cg = function (lab, x) {
+          return x == null ? '' : '<span class="fnd-score"><span class="muted">' + lab + ' ' + L('f_5y') + '</span> <b class="' + (x >= 0 ? 'cagr-up' : 'cagr-dn') + '">' + (x >= 0 ? '+' : '') + fnum(x, 1) + '%</b></span>';
+        };
+        fhtml += '<div style="margin:8px 0 2px">' + cg(L('f_revcagr'), fin.rev_cagr) + cg(L('f_epscagr'), fin.eps_cagr) + '</div>';
+      }
+      // health scores + retail concentration
+      var scores = '';
+      if (f.piotroski) {
+        var ps2 = f.piotroski, cls = ps2.score >= 7 ? 'good' : ps2.score <= 3 ? 'bad' : 'warn';
+        scores += '<span class="fnd-score ' + cls + '">' + L('f_pio') + ' <b>' + ps2.score + '/' + ps2.of + '</b></span>';
+      }
+      if (f.altman) {
+        var z = f.altman, zc = z.zone === 'safe' ? 'good' : z.zone === 'distress' ? 'bad' : 'warn';
+        scores += '<span class="fnd-score ' + zc + '">' + L('f_alt') + ' <b>' + z.z + '</b> ' + L('f_' + z.zone) + (z.approx ? ' <span class="muted" style="font-weight:400">(' + L('f_approx') + ')</span>' : '') + '</span>';
+      }
+      if (sh.holders != null) {
+        var hc = sh.holders_chg_pct, hcls = (hc != null && hc < 0) ? 'good' : '';
+        scores += '<span class="fnd-score ' + hcls + '" title="' + L('f_conc') + '">' + L('f_hold') + ' <b>' + (sh.holders / 1e4).toFixed(1) + '万</b>'
+          + (hc != null ? ' <span class="' + (hc < 0 ? 'cagr-up' : 'cagr-dn') + '">' + (hc >= 0 ? '+' : '') + fnum(hc, 1) + '%</span>' : '') + '</span>';
+      }
+      if (scores) fhtml += '<div style="margin-top:6px">' + scores + '</div>';
+      document.getElementById('r_fund').innerHTML = fhtml;
+      fpEl.style.display = 'block';
+    } else { fpEl.style.display = 'none'; }
 
     var cs = '<tr><th>' + L('th_state') + '</th><th>' + L('th_n') + '</th><th>' + L('th_up') +
              '</th><th>' + L('th_avg') + '</th><th>' + L('th_dipm') + '</th><th>' + L('th_dipb') + '</th></tr>';

@@ -220,6 +220,7 @@ def main(betas: dict | None = None) -> dict | None:
             json.dumps(betas, separators=(",", ":"), default=str))
 
     index, built, failed = [], 0, 0
+    price_by: dict[str, float] = {}
     for ticker, close, high, name, sector in universe():
         try:
             rec = _one(ticker, close, high, name, sector)
@@ -237,7 +238,32 @@ def main(betas: dict | None = None) -> dict | None:
         if rec.get("global_beta", {}).get("beta") is not None:
             idx["gb"] = rec["global_beta"]["beta"]
         index.append(idx)
+        price_by[ticker] = rec.get("tech", {}).get("price")
         built += 1
+
+    # descriptive FUNDAMENTALS (akshare) — context, not a signal; HK adds the
+    # analyst-consensus read A-shares lack. Patched onto the per-stock JSONs.
+    try:
+        from engine import hk_fundamentals
+        fmap = hk_fundamentals.build_all(price_by)
+        for ticker, fund in fmap.items():
+            safe = ticker.replace("=", "_").replace("^", "_")
+            fp = outdir / f"{safe}.json"
+            if not fp.exists():
+                continue
+            try:
+                rec = json.loads(fp.read_text())
+                rec["fundamentals"] = fund
+                fp.write_text(json.dumps(rec, default=str))
+            except Exception:  # noqa: BLE001
+                continue
+        if fmap:
+            for idx in index:
+                if idx["t"] in fmap:
+                    idx["f"] = 1
+            log.info("hk fundamentals: attached to %d names", len(fmap))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("hk fundamentals attach failed (%s); skipping", e)
     (outdir / "index.json").write_text(json.dumps(index))
     cal = config.data_dir() / "hk_regime" / "ladder_calibration.json"
     if cal.exists():
