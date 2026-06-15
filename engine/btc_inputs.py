@@ -97,6 +97,8 @@ def load_all() -> dict[str, pd.Series | pd.DataFrame | None]:
         "funding": _col("bgeo", "funding_rate"),
         "open_interest": _col("bgeo", "open_interest_futures"),
         "open_interest_df": store.read("bgeo", "open_interest_futures"),  # all 15 venue cols
+        "okx_ls_ratio": _col("okx", "ls_account_ratio"),     # OKX retail account long/short breadth (DISPLAY)
+        "okx_taker_buy": _col("okx", "taker_volume"),        # taker buy / (buy+sell) flow ratio (DISPLAY)
         "etf_flow": _col("bgeo", "etf_flow_btc"),
         "btc_dominance": _col("bgeo", "btc_dominance"),
         "stablecoins": stables,
