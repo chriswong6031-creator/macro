@@ -570,8 +570,8 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
       {% for c in catalysts %}
       <div class="cat-row">
         <span class="cat-date">{{ c.date }}{% if c.time_et %} · {{ c.time_et }} ET{% endif %}</span>
-        <span class="cat-type ct-{{ c.type }}">{{ c.type.replace('_',' ') }}</span>
-        <span class="cat-label">{{ c.label }}</span>
+        <span class="cat-type ct-{{ c.type }}">{{ td(c.type.replace('_',' ')) }}</span>
+        <span class="cat-label">{{ td(c.label) }}</span>
         <span class="faint" style="font-size:12px">{% for a in c.assets %}{{ td(a|capitalize) }}{% if not loop.last %}, {% endif %}{% endfor %}</span>
       </div>
       {% endfor %}

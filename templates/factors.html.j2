@@ -127,7 +127,7 @@
       {% set maxsp = (fac.leadership | map(attribute='spread_pct') | map('abs') | max) or 1 %}
       {% for L in fac.leadership %}
       <div class="leadrow">
-        <span>{{ t(L.label, fac.factor_labels.get(L.factor, L.label)) }}</span>
+        <span>{{ td(L.label) }}</span>
         <span class="leadbar">
           {% if L.spread_pct >= 0 %}<i style="left:50%;width:{{ (L.spread_pct/maxsp*50)|round(1) }}%;background:var(--up)"></i>
           {% else %}<i style="right:50%;width:{{ (-L.spread_pct/maxsp*50)|round(1) }}%;background:var(--down)"></i>{% endif %}
@@ -211,9 +211,9 @@
       {% for f in fac.factors + ['sue','low_beta','accruals','short_interest'] %}
       {% if fac.leaders.get(f) %}
       <div class="fcard">
-        <h3>{{ t(fac.factor_labels.get(f, f), fac.factor_labels.get(f, f)) }}
+        <h3>{{ td(fac.factor_labels.get(f, f)) }}
           {% set h = FHELP.get(f) %}{% if h %}{{ help(h[0], h[1]) }}{% endif %}
-          <span class="badge">top {{ fac.leaders[f]|length }}</span></h3>
+          <span class="badge">{{ t('top', '前') }} {{ fac.leaders[f]|length }}</span></h3>
         <table>
           {% for x in fac.leaders[f][:10] %}
           <tr><td><a href="stock.html#{{ x.ticker }}"><b>{{ x.ticker }}</b></a></td>

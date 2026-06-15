@@ -152,6 +152,22 @@ LEX: dict[str, str] = {
     "Agriculture & Fertilizer": "农业与化肥",
     "Space & Satellites": "航天与卫星",
     "Grid & Electrification": "电网与电气化",
+    # equity factor labels (engine/equity_factors.FACTOR_LABELS — factors page + macro badges)
+    "Profitability": "盈利能力",
+    "Quality": "质量",
+    "Investment": "投资",
+    "Shareholder yield": "股东收益率",
+    "Low volatility": "低波动",
+    "Low beta (BAB)": "低贝塔 (BAB)",
+    "Low short interest": "低做空兴趣",
+    "Low accruals": "低应计",
+    "Earnings momentum (SUE)": "盈利动量 (SUE)",
+    # commodity-page upcoming-catalyst labels + type chips (engine/event_calendar)
+    "FOMC decision": "美联储决议",
+    "OPEC ministerial meeting": "OPEC 部长级会议",
+    "EIA crude/petroleum inventories": "EIA 原油／石油库存",
+    "FOMC": "美联储",
+    "EIA WPSR": "EIA 周报",
     # product / page names
     "Macro Vector": "宏观向量",
     "Bitcoin Vector": "比特币向量",
