@@ -437,6 +437,193 @@ def _reading(key: str, val: float) -> tuple[str, str]:
 
 
 # ---------------------------------------------------------------------------- #
+# verdict-hardening helpers (the 2026-06 upgrade): de-compressed thresholds, an
+# inflection-aware cycle leg, an un-starved trend floor, a DISPLAY-ONLY macro pulse
+# (fast vs slow), a turning-point banner, and a data-freshness stamp. All are either
+# bug-fixes to the existing description or display-only context — none introduces a
+# new SCORED predictive leg (house rule: new prediction must pass Phase-0 first).
+# ---------------------------------------------------------------------------- #
+# A STRONG verdict must mean a genuinely large score, not merely the 15th percentile
+# of a compressed distribution. The calibrated quantile thresholds (e.g. gold
+# strong_sell = -13.6) made a mild tilt shout STRONG; floor the magnitudes while still
+# honouring an even-more-extreme calibrated threshold when one exists.
+STRONG_FLOOR = 35.0
+WEAK_FLOOR = 10.0
+# the 12-month trend is the one factor with measured content that survives detrending;
+# the noise-grade single-asset calibration can starve it (gold = 0.078). Floor |w_trend|
+# (sign preserved — oil/natgas trend stays inverted) so it is not drowned by a dozen
+# individually-insignificant macro legs.
+TREND_FLOOR = 0.13
+
+
+def _decompress_thresholds(th: dict | None) -> dict:
+    """Floor the action-band magnitudes so STRONG requires |score|>=STRONG_FLOOR and
+    BUY/SELL require |score|>=WEAK_FLOOR, keeping any calibrated band that is already
+    more extreme."""
+    base = th or {}
+    return {
+        "strong_sell": min(float(base.get("strong_sell", -STRONG_FLOOR)), -STRONG_FLOOR),
+        "sell": min(float(base.get("sell", -WEAK_FLOOR)), -WEAK_FLOOR),
+        "buy": max(float(base.get("buy", WEAK_FLOOR)), WEAK_FLOOR),
+        "strong_buy": max(float(base.get("strong_buy", STRONG_FLOOR)), STRONG_FLOOR),
+    }
+
+
+def _trend_floored(weights: dict, asset: str) -> dict:
+    """Return a copy of weights with |trend| floored to TREND_FLOOR, sign preserved
+    (falls back to the per-asset prior sign if calibration zeroed it out)."""
+    w = dict(weights)
+    wt = float(w.get("trend", 0.0) or 0.0)
+    if abs(wt) >= TREND_FLOOR:
+        return w
+    prior = float(default_weights(asset).get("trend", 0.14))
+    sign = np.sign(wt) if wt != 0 else (np.sign(prior) or 1.0)
+    w["trend"] = float(sign * TREND_FLOOR)
+    return w
+
+
+def _cycle_inflection(close: pd.Series, regime: str, win: int = 20, short: int = 5,
+                      scale: float = 0.06, max_damp: float = 0.8) -> tuple[float, float]:
+    """When price stages a counter-trend move against a stale cycle leg — a rally off the
+    recent low inside a BEAR leg, or a drop off the recent high inside a BULL leg — the leg
+    has lost conviction, so shrink the cycle factor toward NEUTRAL (never flip it). Measured
+    as the move off the `win`-day extreme, GATED on a same-signed short-term (`short`-day)
+    move so a stale price merely sitting above an old low does not trigger it. Returns
+    (damp_multiplier, gated_counter_move_return)."""
+    if close is None or regime not in ("bull", "bear"):
+        return 1.0, 0.0
+    c = close.dropna()
+    if len(c) <= win:
+        return 1.0, 0.0
+    window = c.iloc[-win:]
+    short_ret = float(c.iloc[-1] / c.iloc[-1 - short] - 1.0)
+    if regime == "bear":
+        r = float(c.iloc[-1] / window.min() - 1.0)        # bounce off the recent low (>=0)
+        opposes = r > 0 and short_ret > 0
+    else:
+        r = float(c.iloc[-1] / window.max() - 1.0)        # drop off the recent high (<=0)
+        opposes = r < 0 and short_ret < 0
+    if not opposes:
+        return 1.0, 0.0
+    return 1.0 - max_damp * min(abs(r) / scale, 1.0), r
+
+
+# orientation of each macro driver for the (metals-lens) pulse: sign of a SUPPORTIVE
+# move. Falling real yields / dollar / vol and rising breakevens / dovish rate-path are
+# supportive. Display-only — these are economic priors, never fed into the score.
+_PULSE = {
+    "real_rates": ("Real rates", "实际利率"),
+    "dollar": ("US dollar", "美元"),
+    "riskoff": ("Risk vol", "风险波动"),
+    "carry": ("Rate path", "利率路径"),
+    "inflation": ("Inflation exp.", "通胀预期"),
+}
+
+
+def _latest(s: pd.Series | None) -> float:
+    if s is None:
+        return float("nan")
+    s = s.dropna()
+    return float(s.iloc[-1]) if len(s) else float("nan")
+
+
+def macro_pulse(asset: str, sig: pd.DataFrame, drivers: dict, extras: dict,
+                fast: int = 14, slow: int = 63) -> dict:
+    """DISPLAY-ONLY 'what changed this week': each macro driver read over a fast (~2wk)
+    and the engine's slow (63d) window, signed so positive = supportive for metals. Shows
+    whether the drivers are INFLECTING even when the slow conviction score has not moved.
+    NOT scored — the fast read is noisy and unvalidated (Phase-0 gates scoring)."""
+    idx = sig.index
+    dxy = _align(drivers.get("dxy"), idx)
+    ry = _align(drivers.get("real_yield"), idx)
+    be = _align(drivers.get("breakeven10"), idx)
+    zq = _align(extras.get("fed_funds_fut"), idx)
+    curve = _align(extras.get("curve_2s10s"), idx)
+    vix = _align(extras.get("vix"), idx)
+
+    def supp(name: str, w: int) -> float:
+        if name == "real_rates" and ry is not None:
+            return -_latest(_zclip(_chg(ry, w)))
+        if name == "dollar" and dxy is not None:
+            return -_latest(_zclip(_ret(dxy, w)))
+        if name == "inflation" and be is not None:
+            return _latest(_zclip(_chg(be, w)))
+        if name == "riskoff" and vix is not None:
+            return -_latest(_zclip(_chg(vix, w)))
+        if name == "carry":
+            parts = [_latest(_zclip(_ret(zq, w))) for s, _ in [(zq, 0)] if zq is not None]
+            if curve is not None:
+                parts.append(_latest(_zclip(_chg(curve, w))))
+            parts = [p for p in parts if np.isfinite(p)]
+            return float(np.mean(parts)) if parts else float("nan")
+        return float("nan")
+
+    rows, n_turning, n_fading = [], 0, 0
+    for k, (lab, lab_zh) in _PULSE.items():
+        sl, fa = supp(k, slow), supp(k, fast)
+        if not (np.isfinite(sl) and np.isfinite(fa)):
+            continue
+        turning = sl < -0.10 and fa > 0.10     # slow headwind, fast turning supportive
+        fading = sl > 0.10 and fa < -0.10       # slow supportive, fast rolling over
+        n_turning += turning
+        n_fading += fading
+        rows.append({"key": k, "label": lab, "label_zh": lab_zh,
+                     "slow": round(sl, 2), "fast": round(fa, 2), "delta": round(fa - sl, 2),
+                     "turning": bool(turning), "fading": bool(fading)})
+    return {"rows": rows, "n_turning": int(n_turning), "n_fading": int(n_fading),
+            "fast_d": fast, "slow_d": slow}
+
+
+def regime_inflection(regime: str | None, counter_ret: float, pulse: dict) -> dict:
+    """Turning-point banner. Combines a price counter-move (vs a stale cycle leg) with the
+    macro pulse: is price turning, and are the drivers confirming? Reuses the shipped
+    turning-point-fragility pattern — 'coincident, size smaller', NEVER a fade or an auto-
+    flip of the verdict. Returns a banner + a confidence multiplier (<=1)."""
+    price_inflecting = abs(counter_ret) >= 0.03 and regime in ("bull", "bear") and (
+        (regime == "bear" and counter_ret > 0) or (regime == "bull" and counter_ret < 0))
+    if not price_inflecting:
+        return {"state": "none", "confidence_mult": 1.0}
+    up = counter_ret > 0
+    turning = (pulse or {}).get("n_turning", 0)
+    confirming = turning >= 2
+    pct = round(100 * counter_ret, 1)
+    if confirming:
+        head = (f"Inflection — price {'bouncing' if up else 'pulling back'} {abs(pct):.0f}% AND "
+                f"{turning} macro drivers turning; a possible new leg, but still early — "
+                f"signals are coincident, confirm before sizing up.")
+        head_zh = (f"拐点——价格{'反弹' if up else '回落'} {abs(pct):.0f}%，且 {turning} 项宏观驱动同向转向；"
+                   f"可能是新一段行情，但仍属早期——信号同步，确认后再加仓。")
+        return {"state": "confirming", "headline": head, "headline_zh": head_zh,
+                "confidence_mult": 0.85, "counter_move_pct": pct, "drivers_turning": True}
+    head = (f"Inflection — price {'bouncing' if up else 'pulling back'} {abs(pct):.0f}% but the macro "
+            f"drivers are NOT yet confirming; treat this as a counter-trend move inside the prevailing "
+            f"leg until the drivers turn — coincident signal, size smaller.")
+    head_zh = (f"拐点——价格{'反弹' if up else '回落'} {abs(pct):.0f}%，但宏观驱动尚未确认；"
+               f"在驱动转向前视为既有趋势内的反向波动——同步信号，减小仓位。")
+    return {"state": "price_only", "headline": head, "headline_zh": head_zh,
+            "confidence_mult": 0.70, "counter_move_pct": pct, "drivers_turning": False}
+
+
+def data_freshness(asof: pd.Timestamp, drivers: dict, extras: dict) -> dict:
+    """How stale is each key macro series the verdict reads? Surfaces the latency that
+    means the dashboard can lag a fast regime move by a few days."""
+    spec = [(drivers, "real_yield", "Real yield"), (drivers, "dxy", "Dollar"),
+            (drivers, "breakeven10", "Breakevens"), (extras, "vix", "VIX"),
+            (extras, "curve_2s10s", "2s10s"), (extras, "fed_funds_fut", "Fed-funds fut")]
+    items, max_stale = [], 0
+    for src, key, lab in spec:
+        s = (src or {}).get(key)
+        if s is None or not len(s.dropna()):
+            continue
+        last = pd.to_datetime(s.dropna().index[-1])
+        stale = int((pd.to_datetime(asof) - last).days)
+        items.append({"key": key, "label": lab, "last": str(last.date()), "stale_days": stale})
+        max_stale = max(max_stale, stale)
+    items.sort(key=lambda x: -x["stale_days"])
+    return {"items": items, "max_stale_days": max_stale, "stale": max_stale >= 3}
+
+
+# ---------------------------------------------------------------------------- #
 # the verdict
 # ---------------------------------------------------------------------------- #
 def conviction(asset: str, sig: pd.DataFrame, drivers: dict, extras: dict,
@@ -448,8 +635,8 @@ def conviction(asset: str, sig: pd.DataFrame, drivers: dict, extras: dict,
             return {}
         calib = calib if calib is not None else load_calibration()
         acal = calib.get("assets", {}).get(asset, {}) or {}
-        weights = asset_weights(asset, calib)
-        thresholds = acal.get("thresholds")
+        weights = _trend_floored(asset_weights(asset, calib), asset)
+        thresholds = _decompress_thresholds(acal.get("thresholds"))
         reliable = acal.get("score_reliable", True)
 
         panel = factor_panel(asset, sig, drivers, extras)
@@ -461,8 +648,11 @@ def conviction(asset: str, sig: pd.DataFrame, drivers: dict, extras: dict,
         mtf_a = mtf_a or {}
         ladder = (mtf_a.get("ladder") or {})
         reg = ladder.get("regime")
+        counter_ret = 0.0
         if reg in ("bull", "bear", "neutral"):
-            factors["cycle"] = {"bull": 1.0, "neutral": 0.0, "bear": -1.0}[reg]
+            base_cycle = {"bull": 1.0, "neutral": 0.0, "bear": -1.0}[reg]
+            damp, counter_ret = _cycle_inflection(sig["close"], reg)
+            factors["cycle"] = base_cycle * damp
         verdict_mtf = commodity_mtf.confluence_verdict(mtf_a, asset, sig.iloc[-1],
                                                        (calib.get("_signal_calib") or {}))
         if verdict_mtf:
@@ -495,7 +685,8 @@ def conviction(asset: str, sig: pd.DataFrame, drivers: dict, extras: dict,
         rows.sort(key=lambda r: -abs(r["contribution"]))
 
         action, action_zh, css = _action(score, thresholds)
-        stance = "bullish" if score >= 20 else ("bearish" if score <= -20 else "neutral")
+        stance = ("bullish" if score >= thresholds["buy"]
+                  else "bearish" if score <= thresholds["sell"] else "neutral")
 
         # confidence = factor agreement x data completeness
         agree = abs(num) / sum(abs(r["contribution"]) for r in rows) if rows else 0.0
@@ -520,6 +711,15 @@ def conviction(asset: str, sig: pd.DataFrame, drivers: dict, extras: dict,
         if not reliable:                       # honest: weak calibration -> dampen
             confidence = round(confidence * 0.6, 2)
 
+        # DISPLAY-ONLY context: macro pulse (fast vs slow), turning-point banner, and
+        # data freshness. The banner only MODULATES confidence and is shown to the user;
+        # it NEVER flips the verdict's direction (per the turning-point house rule).
+        pulse = macro_pulse(asset, sig, drivers, extras)
+        infl = regime_inflection((cyc or {}).get("regime"), counter_ret, pulse)
+        fresh = data_freshness(sig.index[-1], drivers, extras)
+        cmult = infl.get("confidence_mult", 1.0) * (0.9 if fresh.get("stale") else 1.0)
+        confidence = round(float(np.clip(confidence * cmult, 0.15, 1.0)), 2)
+
         head, head_zh, sub, sub_zh = _narrate(asset, action, score, cyc, rows, stance)
 
         return {
@@ -527,6 +727,7 @@ def conviction(asset: str, sig: pd.DataFrame, drivers: dict, extras: dict,
             "action_css": css, "stance": stance, "confidence": confidence,
             "reliable": bool(reliable),
             "factors": rows, "groups": group_list, "cycle": cyc,
+            "macro_pulse": pulse, "inflection": infl, "freshness": fresh,
             "headline": head, "headline_zh": head_zh, "sub": sub, "sub_zh": sub_zh,
             "n_factors": len(rows),
         }

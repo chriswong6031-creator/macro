@@ -166,6 +166,21 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
 .conv-meter .mk{position:absolute;top:-3px;width:4px;height:18px;border-radius:3px;background:var(--ink);transform:translateX(-50%)}
 .conv-meter .zero{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--faint);opacity:.5}
 .conv-scale{display:flex;justify-content:space-between;font-size:10.5px;color:var(--faint);font-weight:600}
+/* inflection banner + macro pulse + freshness stamp (2026-06 upgrade) */
+.conv-infl{margin:14px 0 2px;padding:11px 14px;border-radius:11px;border:1px solid;font-size:13px;line-height:1.5;font-weight:600}
+.conv-infl.price_only{background:#FFF6E6;border-color:#F2C97D;color:#8a5a00}
+.conv-infl.confirming{background:#EAF5EE;border-color:#9ED0B2;color:#196b3e}
+.conv-fresh{display:inline-block;font-size:11px;font-weight:700;padding:1px 8px;border-radius:6px;background:#FDECEC;color:#a23;margin-left:6px}
+.mpulse{margin-top:14px;padding:13px 15px;border:1px solid var(--grid);border-radius:12px;background:var(--bg)}
+.mpulse-h{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:9px;gap:10px;flex-wrap:wrap}
+.mp-row{display:grid;grid-template-columns:92px 1fr 62px;gap:10px;align-items:center;font-size:12.5px;padding:3px 0}
+.mp-lab{color:var(--text);font-weight:600}
+.mp-bar{position:relative;height:8px;border-radius:5px;background:var(--grid);overflow:hidden}
+.mp-bar .slow{position:absolute;top:-2px;height:12px;width:2px;background:var(--faint);transform:translateX(-50%)}
+.mp-bar .fast{position:absolute;top:0;bottom:0}
+.mp-bar .fast.sup{background:var(--green)} .mp-bar .fast.hw{background:var(--red)}
+.mp-tag{font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px;white-space:nowrap;text-align:center}
+.mp-tag.turning{background:#EAF5EE;color:#196b3e} .mp-tag.fading{background:#FDECEC;color:#a23} .mp-tag.flat{background:var(--grid);color:var(--muted)}
 /* cycle position */
 .conv-cycle{margin-top:16px;padding:13px 15px;border:1px solid var(--grid);border-radius:12px;background:var(--bg)}
 .cyc-row{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;gap:10px;flex-wrap:wrap}
@@ -398,10 +413,13 @@ html[data-theme="dark"] .tl-asset{background:var(--grid)} /* --bg is near-black 
         <div class="conv-badge conv-{{ cv.action_css }}">{{ t(cv.action, cv.action_zh) }}</div>
         <div class="conv-meta">
           <div class="conv-score">{{ '%+d'|format(cv.score|round|int) }}<small> / 100</small></div>
-          <div class="conv-cmeta">{{ t('conviction · confidence','信心 · 置信度') }} {{ (cv.confidence*100)|round|int }}%{% if not cv.reliable %}<span class="conv-ctx">{{ t('CONTEXT — weak calibration','参考 — 校准较弱') }}</span>{% endif %}</div>
+          <div class="conv-cmeta">{{ t('conviction · confidence','信心 · 置信度') }} {{ (cv.confidence*100)|round|int }}%{% if not cv.reliable %}<span class="conv-ctx">{{ t('CONTEXT — weak calibration','参考 — 校准较弱') }}</span>{% endif %}{% if cv.freshness and cv.freshness.stale %}<span class="conv-fresh" title="{{ t('Key macro series (real yields, VIX from FRED) update with a 1–4 day lag, so a very recent regime move may not yet be reflected.','关键宏观序列（实际利率、VIX 来自 FRED）有1–4天延迟，最新的体制变化可能尚未反映。') }}">{{ t('macro data','宏观数据') }} {{ cv.freshness.max_stale_days }}{{ t('d stale','天延迟') }}</span>{% endif %}</div>
         </div>
       </div>
       <div class="conv-narr">{{ t(cv.sub, cv.sub_zh) }}</div>
+      {% if cv.inflection and cv.inflection.state != 'none' %}
+      <div class="conv-infl {{ cv.inflection.state }}">⚠ {{ t(cv.inflection.headline, cv.inflection.headline_zh) }}</div>
+      {% endif %}
       <div class="conv-meter"><div class="zero"></div><div class="mk" style="left:{{ ((cv.score+100)/2)|round(1) }}%"></div></div>
       <div class="conv-scale"><span>{{ t('Strong Sell','强烈卖出') }}</span><span>{{ t('Hold','持有') }}</span><span>{{ t('Strong Buy','强烈买入') }}</span></div>
 
@@ -419,6 +437,28 @@ html[data-theme="dark"] .tl-asset{background:var(--grid)} /* --bg is near-black 
           <span style="font-weight:700;color:var(--ink)">{% if cy.eta_days>0 %}~{{ cy.eta_days }}{{ t('d to a typical','天后达典型') }} {{ t(cy.next_event, cy.next_event_zh) }} <span class="faint" style="font-weight:500">({{ cy.eta_lo }}–{{ cy.eta_hi }}{{ t('d','天') }})</span>{% else %}{{ t('past the typical','已过典型') }} {{ t(cy.next_event, cy.next_event_zh) }} {{ t('window','窗口') }}{% endif %}</span>
         </div>
         {% if not cv.reliable %}<div class="sub faint" style="margin-top:8px;font-size:11.5px">{{ t('Timing is lower-confidence for this commodity (its conviction score is weakly calibrated) — treat the cycle window as rough context, not a precise forecast.', '该商品的时机置信度较低（其裁决分数校准较弱）——周期窗口仅作粗略参考，并非精确预测。') }}</div>{% endif %}
+      </div>
+      {% endif %}
+
+      <!-- macro pulse: fast vs slow driver reads (DISPLAY-ONLY — not scored) -->
+      {% if cv.macro_pulse and cv.macro_pulse.rows %}
+      {% set mp = cv.macro_pulse %}
+      <div class="mpulse">
+        <div class="mpulse-h">
+          <span>{{ t('Macro pulse — what changed','宏观脉搏 — 近期变化') }} <span class="faint" style="font-weight:500">({{ mp.fast_d }}{{ t('d vs','天 vs') }} {{ mp.slow_d }}{{ t('d','天') }})</span></span>
+          <span class="faint" style="font-weight:600">{% if mp.n_turning %}{{ mp.n_turning }} {{ t('turning supportive','转为支撑') }}{% elif mp.n_fading %}{{ mp.n_fading }} {{ t('fading','转弱') }}{% else %}{{ t('drivers steady','驱动平稳') }}{% endif %}</span>
+        </div>
+        {% for r in mp.rows %}
+        <div class="mp-row">
+          <span class="mp-lab">{{ t(r.label, r.label_zh) }}</span>
+          <div class="mp-bar"><div class="slow" style="left:{{ ((r.slow+1)/2*100)|round(1) }}%"></div>
+            {% if r.fast >= 0 %}<div class="fast sup" style="left:50%;width:{{ (r.fast*50)|round(1) }}%"></div>
+            {% else %}<div class="fast hw" style="right:50%;width:{{ ((0-r.fast)*50)|round(1) }}%"></div>{% endif %}
+          </div>
+          <span class="mp-tag {{ 'turning' if r.turning else ('fading' if r.fading else 'flat') }}">{{ t('turning','转向') if r.turning else (t('fading','转弱') if r.fading else t('steady','平稳')) }}</span>
+        </div>
+        {% endfor %}
+        <div class="sub faint" style="margin-top:9px;font-size:11.5px">{{ t('Each macro driver over a fast (~2-week) vs the engine\'s slow (3-month) window, signed so green = supportive for this metal, the grey tick = the slow read. DISPLAY-ONLY context — the fast read is noisy and is NOT fed into the score; it shows whether the drivers are starting to confirm a price move.','每个宏观驱动的快（约2周）与引擎的慢（3个月）窗口对比，绿色=对该金属为支撑，灰色刻度=慢窗读数。仅作展示背景 — 快窗读数噪声较大，不计入裁决分数；用于显示驱动是否开始确认价格走势。') }}</div>
       </div>
       {% endif %}
 

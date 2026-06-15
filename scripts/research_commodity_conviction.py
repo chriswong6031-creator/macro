@@ -134,6 +134,10 @@ def calibrate_thresholds(score: pd.Series, close: pd.Series) -> tuple[dict, list
     qs = df["s"].quantile([0.15, 0.40, 0.60, 0.85])
     th = {"strong_sell": round(float(qs[0.15]), 1), "sell": round(float(qs[0.40]), 1),
           "buy": round(float(qs[0.60]), 1), "strong_buy": round(float(qs[0.85]), 1)}
+    # floor the band magnitudes so STRONG means a genuinely large score, not merely the
+    # 15th percentile of a compressed distribution (see commodity_conviction). The live
+    # engine floors these at read-time too, so the monotonicity bins below match live.
+    th = {k: round(v, 1) for k, v in CC._decompress_thresholds(th).items()}
     edges = [(-1e9, th["strong_sell"], "STRONG SELL"), (th["strong_sell"], th["sell"], "SELL"),
              (th["sell"], th["buy"], "HOLD"), (th["buy"], th["strong_buy"], "BUY"),
              (th["strong_buy"], 1e9, "STRONG BUY")]

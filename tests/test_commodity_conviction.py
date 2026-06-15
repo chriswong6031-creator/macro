@@ -142,12 +142,111 @@ def test_verdict_polarity_helper_unused_but_score_normalized() -> None:
     assert -100 <= v["score"] <= 100
 
 
+# ----- 2026-06 verdict-hardening upgrade ----------------------------------- #
+def _bounce_close(n=300) -> pd.Series:
+    """A bear downtrend that bounces sharply off a 20-day low in the last 5 bars."""
+    idx = pd.date_range("2024-01-01", periods=n, freq="B")
+    base = np.linspace(120.0, 100.5, n)
+    base[-6:] = [100.0, 101.2, 102.4, 103.6, 104.8, 106.0]   # +6% off the low
+    return pd.Series(base, index=idx)
+
+
+def test_decompress_thresholds_floors_compression() -> None:
+    th = CC._decompress_thresholds({"strong_sell": -13.6, "sell": -1.9,
+                                    "buy": 6.2, "strong_buy": 24.8})
+    assert th == {"strong_sell": -CC.STRONG_FLOOR, "sell": -CC.WEAK_FLOOR,
+                  "buy": CC.WEAK_FLOOR, "strong_buy": CC.STRONG_FLOOR}
+    # a mild -14 is no longer STRONG SELL once the bands are floored
+    assert CC._action(-14, th)[0] == "SELL"
+    assert CC._action(-40, th)[0] == "STRONG SELL"
+    assert CC._action(-5, th)[0] == "HOLD"
+    # an already-more-extreme calibrated band is honoured, not widened back
+    th2 = CC._decompress_thresholds({"strong_sell": -55, "sell": -18,
+                                     "buy": 18, "strong_buy": 55})
+    assert th2["strong_sell"] == -55 and th2["sell"] == -18 and th2["strong_buy"] == 55
+
+
+def test_trend_floor_preserves_sign() -> None:
+    g = CC._trend_floored({"trend": 0.078, "dollar": 0.1}, "gold")
+    assert g["trend"] >= CC.TREND_FLOOR                       # un-starved, stays positive
+    o = CC._trend_floored({"trend": -0.05}, "oil")
+    assert o["trend"] <= -CC.TREND_FLOOR                      # oil trend stays inverted
+    z = CC._trend_floored({"trend": 0.0}, "oil")              # zeroed -> prior (oil -) sign
+    assert z["trend"] < 0
+    keep = CC._trend_floored({"trend": 0.5}, "gold")          # already above floor
+    assert keep["trend"] == 0.5
+
+
+def test_cycle_inflection_damps_without_flipping() -> None:
+    damp, cr = CC._cycle_inflection(_bounce_close(), "bear")
+    assert 1.0 - 0.8 - 1e-9 <= damp < 1.0 and cr > 0.03       # shrunk toward neutral
+    assert (-1.0) * damp <= 0.0                               # bear cycle factor never flips +
+    # a bull leg making new highs has no opposing move -> untouched
+    up = pd.Series(np.linspace(100, 160, 300),
+                   index=pd.date_range("2024-01-01", periods=300, freq="B"))
+    d2, cr2 = CC._cycle_inflection(up, "bull")
+    assert d2 == 1.0 and cr2 == 0.0
+    # a stale price drifting (not rising short-term) does not trigger the damp
+    flat = pd.Series(np.linspace(120, 100, 300),
+                     index=pd.date_range("2024-01-01", periods=300, freq="B"))
+    d3, cr3 = CC._cycle_inflection(flat, "bear")
+    assert d3 == 1.0 and cr3 == 0.0
+
+
+def test_macro_pulse_is_bounded_and_display_only() -> None:
+    sig = _sig()
+    mp = CC.macro_pulse("gold", sig, _drivers(sig.index), _extras(sig.index))
+    assert mp["rows"] and {"real_rates", "dollar"} <= {r["key"] for r in mp["rows"]}
+    for r in mp["rows"]:
+        assert abs(r["slow"]) <= 1 + 1e-9 and abs(r["fast"]) <= 1 + 1e-9
+    # the pulse is NOT a scored factor in the panel
+    assert "macro_pulse" not in CC.factor_panel("gold", sig, _drivers(sig.index),
+                                                _extras(sig.index)).columns
+
+
+def test_regime_inflection_banner_states() -> None:
+    no_turn, turning = {"n_turning": 0}, {"n_turning": 3}
+    b = CC.regime_inflection("bear", 0.06, no_turn)
+    assert b["state"] == "price_only" and b["confidence_mult"] < 1.0 and not b["drivers_turning"]
+    c = CC.regime_inflection("bear", 0.06, turning)
+    assert c["state"] == "confirming" and c["drivers_turning"]
+    assert CC.regime_inflection("bear", 0.01, no_turn)["state"] == "none"   # move too small
+    assert CC.regime_inflection(None, 0.06, no_turn)["state"] == "none"     # no leg
+    # a pullback in a BULL leg (negative counter move) also flags
+    assert CC.regime_inflection("bull", -0.06, no_turn)["state"] == "price_only"
+
+
+def test_data_freshness_flags_stale() -> None:
+    idx = pd.date_range("2024-01-01", periods=80, freq="B")
+    asof = idx[-1] + pd.Timedelta(days=5)
+    fr = CC.data_freshness(asof, {"real_yield": pd.Series(2.0, index=idx)},
+                           {"vix": pd.Series(18.0, index=idx)})
+    assert fr["stale"] and fr["max_stale_days"] >= 5 and len(fr["items"]) == 2
+    fresh = CC.data_freshness(idx[-1], {"real_yield": pd.Series(2.0, index=idx)}, {})
+    assert not fresh["stale"]
+
+
+def test_conviction_exposes_upgrade_fields_without_flipping() -> None:
+    sig = _sig()
+    v = CC.conviction("gold", sig, _drivers(sig.index), _extras(sig.index), {}, None, {})
+    assert {"macro_pulse", "inflection", "freshness"} <= set(v)
+    # the action must still be a pure function of (score, floored thresholds) — the banner
+    # only modulates confidence, it never changes direction.
+    th = CC._decompress_thresholds(None)
+    assert v["action"] == CC._action(v["score"], th)[0]
+
+
 if __name__ == "__main__":
     for fn in [test_factor_panel_bounds, test_action_mapping, test_conviction_shape,
                test_conviction_empty_on_empty, test_inverted_weight_flips_contribution,
                test_cycle_segments_handle_negative_prices, test_cycle_position_fields,
                test_weight_loading_fallback_and_override,
-               test_verdict_polarity_helper_unused_but_score_normalized]:
+               test_verdict_polarity_helper_unused_but_score_normalized,
+               test_decompress_thresholds_floors_compression, test_trend_floor_preserves_sign,
+               test_cycle_inflection_damps_without_flipping,
+               test_macro_pulse_is_bounded_and_display_only,
+               test_regime_inflection_banner_states, test_data_freshness_flags_stale,
+               test_conviction_exposes_upgrade_fields_without_flipping]:
         fn()
         print(f"PASS {fn.__name__}")
     print("all commodity conviction tests passed")
