@@ -391,7 +391,10 @@ def commodity_events(today: date | None = None, horizon_days: int = 14) -> list[
     """Forward OPEC / FOMC / EIA-WPSR watch list (oil-centric), context-only."""
     today = today or date.today()
     end = today + timedelta(days=horizon_days)
-    metals_energy = ["gold", "silver", "oil", "copper"]
+    # the full commodity-complex tracked by the Commodity Vector page; FOMC moves
+    # the whole macro-driven set (context-only tags shown under each catalyst row)
+    complex_assets = ["gold", "silver", "platinum", "oil", "brent", "natgas",
+                      "copper", "corn", "wheat", "soybeans"]
     out: list[dict] = []
 
     for ds, is_sep in _FOMC:
@@ -399,11 +402,11 @@ def commodity_events(today: date | None = None, horizon_days: int = 14) -> list[
         if today <= d <= end:
             out.append(_event("FOMC", d, label="FOMC decision",
                               tag=" (SEP)" if is_sep else "",
-                              assets=metals_energy, source="static"))
+                              assets=complex_assets, source="static"))
     for ds in _OPEC_2026:
         d = date.fromisoformat(ds)
         if today <= d <= end:
-            out.append(_event("OPEC", d, assets=["oil"], source="static"))
+            out.append(_event("OPEC", d, assets=["oil", "brent"], source="static"))
     # EIA WPSR — every Wednesday 10:30 ET (Thu 12:00 on holiday-slip weeks)
     d = today
     while d <= end:
@@ -411,7 +414,7 @@ def commodity_events(today: date | None = None, horizon_days: int = 14) -> list[
             slip = d.isoformat() in _EIA_SLIP_WEEKS
             day = d + timedelta(days=1) if slip else d
             out.append(_event("EIA_WPSR", day, time_et="12:00" if slip else "10:30",
-                              assets=["oil"], source="static"))
+                              assets=["oil", "brent"], source="static"))
         d += timedelta(days=1)
     out.sort(key=lambda c: c["date"])
     return out

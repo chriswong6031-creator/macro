@@ -1,6 +1,6 @@
 """Commodity Vector input layer.
 
-Loads, for each of the core four (gold/silver/oil/copper), the price series and
+Loads, for each configured commodity, the price series and
 COT spec positioning, plus the SHARED macro driver series (real yields, dollar,
 breakevens, growth) once. Everything returns daily naive-UTC indexed frames.
 Mirrors engine/btc_inputs.py. See research/COMMODITY_DATA_AUDIT.md.
@@ -87,14 +87,27 @@ def load_asset(asset: str, drivers: dict | None = None, cfg: dict | None = None)
 
 
 def load_all(cfg: dict | None = None) -> dict[str, dict]:
-    """Load all four assets, sharing one driver load."""
+    """Load all configured assets, sharing one driver load.
+
+    New commodities can be added before their collectors have backfilled. Skip
+    missing price series so one absent contract does not break the whole page.
+    """
     cfg = cfg or config.load()["commodities"]
     drivers = load_drivers(cfg)
-    out = {a: load_asset(a, drivers, cfg) for a in cfg["assets"]}
-    # oil only: Brent front future for the Brent-WTI microstructure signal
+    out: dict[str, dict] = {}
+    for a in cfg["assets"]:
+        try:
+            out[a] = load_asset(a, drivers, cfg)
+        except Exception as e:  # noqa: BLE001
+            log.warning("commodity_inputs: skipping %s (%s)", a, e)
+    # WTI only: Brent front future for the Brent-WTI microstructure signal. If
+    # Brent is itself a configured asset, reuse its close instead of reloading.
     if "oil" in out:
         try:
-            out["oil"]["brent"] = load_price("BZ=F")["close"].rename("brent")
-        except Exception as e:  # noqa: BLE001 — optional enrichment, degrade gracefully
+            if "brent" in out:
+                out["oil"]["brent"] = out["brent"]["price"]["close"].rename("brent")
+            else:
+                out["oil"]["brent"] = load_price("BZ=F")["close"].rename("brent")
+        except Exception as e:  # noqa: BLE001 - optional enrichment, degrade gracefully
             log.warning("commodity_inputs: brent unavailable (%s)", e)
     return out

@@ -89,11 +89,21 @@ def _tf_sign(tf: dict | None) -> int:
 # recalibration that flips a verdict updates the fusion automatically — no hardcoded
 # drift. These module tables are only the FALLBACK when calibration is unavailable
 # (first run / unit tests). They mirror the current data/commodity/calibration.json:
-#   driver_score : oil CONFIRMED (+), copper DIRECTIONAL (+), gold INVERTED (-),
-#                  silver CONTEXT-ONLY (0).
-#   12-mo trend  : gold/silver DIRECTIONAL (+), oil INVERTED (-), copper CONTEXT (0).
-_DRIVER_POLARITY = {"gold": -1, "silver": 0, "copper": +1, "oil": +1}
-_TREND_POLARITY = {"gold": +1, "silver": +1, "copper": 0, "oil": -1}
+#   driver_score : energy/copper DIRECTIONAL (+), gold INVERTED (-),
+#                  silver CONTEXT-ONLY (0). Added assets use conservative priors
+#                  until their own calibration is written.
+#   12-mo trend  : precious metals DIRECTIONAL (+), energy INVERTED (-),
+#                  copper/grains CONTEXT (0).
+_DRIVER_POLARITY = {
+    "gold": -1, "silver": 0, "platinum": +1, "copper": +1,
+    "oil": +1, "brent": +1, "natgas": 0,
+    "corn": 0, "wheat": 0, "soybeans": 0,
+}
+_TREND_POLARITY = {
+    "gold": +1, "silver": +1, "platinum": +1, "copper": 0,
+    "oil": -1, "brent": -1, "natgas": -1,
+    "corn": 0, "wheat": 0, "soybeans": 0,
+}
 
 
 def _verdict_polarity(verdict: str | None, fallback: int) -> int:
@@ -119,6 +129,12 @@ _CONTRARIAN_NOTE = {
             "up-trend leans bearish for forward returns and a washout leans bullish.",
             "原油的12个月趋势作逆向解读 — 原油均值回归，因此持续上涨趋势对未来收益偏空，"
             "而超卖洗盘偏多。"),
+    "brent": ("Brent's 12-month trend is read CONTRARIAN by default — crude oil momentum "
+              "often mean-reverts after supply-premium runs.",
+              "布伦特的12个月趋势默认作逆向解读 — 原油供应溢价上涨后常均值回归。"),
+    "natgas": ("Natural gas trend is read CONTRARIAN by default — weather/storage spikes "
+               "are prone to sharp mean reversion.",
+               "天然气趋势默认作逆向解读 — 天气/库存冲击后常急剧均值回归。"),
     "gold": ("Gold's macro driver is read CONTRARIAN — a supportive rates/dollar backdrop "
              "usually means gold has already run, while a headwind backdrop has tended to precede gains.",
              "黄金的宏观驱动作逆向解读 — 有利的利率/美元背景往往意味着黄金已经上涨，"

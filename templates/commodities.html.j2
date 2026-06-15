@@ -25,12 +25,13 @@
   --green:{{C.green}}; --grid:{{C.grid}}; --card:{{C.card}}; --bg:{{C.bg}};
 }
 *{box-sizing:border-box}
+html{overflow-x:hidden}
 html:not([data-lang="zh"]) .l-zh{display:none}
 html[data-lang="zh"] .l-en{display:none}
 html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB",
   "Microsoft YaHei","Noto Sans CJK SC","Microsoft JhengHei","Heiti SC",Inter,sans-serif}
 body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;
-  font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 a{color:var(--blue);text-decoration:none}
 .wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
 .topbar{display:flex;align-items:center;justify-content:space-between;
@@ -78,10 +79,11 @@ html[data-theme="dark"] .theme-switch{background:#222732}
 html[data-theme="dark"] .theme-switch .knob{transform:translateX(0);background:#e8c15a}
 html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 .grid{display:grid;gap:18px}
+.grid>*{min-width:0}
 .cols-2{grid-template-columns:1.1fr .9fr} .cols-3{grid-template-columns:repeat(3,1fr)}
 .cols-4{grid-template-columns:repeat(4,1fr)}
 @media(max-width:900px){.cols-2,.cols-3,.cols-4{grid-template-columns:1fr}}
-.card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:22px}
+.card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:22px;min-width:0}
 .card h2{margin:0 0 4px;font-size:13px;font-weight:700;color:var(--muted);
   text-transform:uppercase;letter-spacing:.04em}
 .card h3{margin:0 0 12px;font-size:18px;font-weight:700;color:var(--ink)}
@@ -184,6 +186,10 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 .fbar .ff.pos{background:var(--green)} .fbar .ff.neg{background:var(--red)}
 .frow .fw{font-size:11px;color:var(--faint);text-align:right;font-weight:600}
 @media(max-width:600px){.frow{grid-template-columns:120px 1fr 60px}}
+@media(max-width:600px){
+  .js-plotly-plot,.plot-container,.svg-container{max-width:100%!important;overflow:hidden!important}
+  .main-svg{max-width:100%!important}
+}
 /* alert timeline */
 .tl-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
 .tlf{padding:6px 14px;border-radius:9px;background:var(--grid);color:var(--muted);font-weight:700;font-size:13px;cursor:pointer;border:none}
@@ -517,7 +523,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
         <div class="sigline" style="border:none"><span class="l">{{ t('State','状态') }}</span><span class="r"><b>{{ td(a.pos_state) }}</b></span></div>
         <div class="sub">{{ t('Context only at these horizons — crowding has tended to persist, not revert. A washout (crowded short) is the cleaner tell.', '在这些周期上仅作背景 — 拥挤往往延续而非反转。超卖（拥挤空头）是更干净的信号。') }}</div>
       </div>
-      <!-- asset-specific: GSR (metals) or Brent-WTI (oil) -->
+      <!-- asset-specific: GSR (metals), Brent-WTI (oil), or generic relative value -->
       {% if a.key in ['gold','silver'] %}
       <div class="card">
         <h3>{{ t('Gold/Silver ratio', '金银比') }} {{ vbadge(a.verdicts.get('gsr_pctile','')) }}</h3>
@@ -544,6 +550,16 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
         <div class="sub" style="margin-top:8px">{{ t('Weekly Petroleum Status Report (EIA, free). Low stock percentile + a draw = tight supply (bullish oil); high + build = loose.', '每周石油状况报告（EIA，免费）。低库存百分位＋去库=供给收紧（利多油价）；高＋累库=宽松。') }}</div>
       </div>
       {% endif %}
+      {% endif %}
+      {% if a.value_pctile is defined %}
+      <div class="card">
+        <h3>{{ t('Relative value', '相对价值') }}</h3>
+        <div class="mini"><div class="lab"><span>{{ t('Relative ratio (3y %ile)','相对比价（3年百分位）') }}</span><span><b>{{ a.value_pctile if a.value_pctile is not none else '—' }}</b></span></div>
+          <div class="bar"><div class="fill" style="width:{{ a.value_pctile or 0 }}%"></div></div></div>
+        <div class="sigline"><span class="l">{{ t('Ratio','比价') }}</span><span class="r"><b>{{ a.value_ratio if a.value_ratio is not none else '—' }}</b></span></div>
+        <div class="sigline" style="border:none"><span class="l">{{ t('State','状态') }}</span><span class="r"><b>{{ td(a.value_state) }}</b></span></div>
+        <div class="sub" style="margin-top:8px">{{ t('A cross-commodity value anchor: platinum vs gold, natural gas vs oil, and grains vs their normalized basket. Low percentile = cheap / contrarian bullish; high percentile = rich / fade risk.', '跨商品价值锚：铂金对黄金、天然气对原油、谷物对标准化谷物篮子。低百分位 = 便宜/逆向利多；高百分位 = 偏贵/回落风险。') }}</div>
+      </div>
       {% endif %}
     </div>
 
@@ -629,9 +645,11 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
   <div class="card">
     <table class="catbl">
       <tr><th>{{ t('Shock','冲击') }}</th><th>{{ t('Quant footprint (no news needed)','量化足迹（无需新闻）') }}</th></tr>
-      <tr><td class="a">{{ t('Gold/silver — central-bank &amp; Tether buying','金银 — 央行与 Tether 购买') }}</td><td>{{ t('Residual bid vs the real-yield + dollar model; correlation to real yields breaking down.','相对实际收益率+美元模型的残差买盘；与实际收益率相关性瓦解。') }}</td></tr>
+      <tr><td class="a">{{ t('Gold/silver/platinum — CB, real-rates &amp; industrial demand','金银铂 — 央行、实际利率与工业需求') }}</td><td>{{ t('Residual bid vs the real-yield + dollar model; platinum also needs industrial-demand confirmation.','相对实际收益率+美元模型的残差买盘；铂金还需要工业需求确认。') }}</td></tr>
       <tr><td class="a">{{ t('Oil — war / Strait of Hormuz','原油 — 战争/霍尔木兹海峡') }}</td><td>{{ t('Risk-Index vol spike + residual shock + a collapsing Brent−WTI spread. Premia FADE.','风险指数波动飙升 + 残差冲击 + 布伦特−WTI 价差收窄。溢价消退。') }}</td></tr>
+      <tr><td class="a">{{ t('Natural gas — weather / storage','天然气 — 天气/库存') }}</td><td>{{ t('Large residual shocks plus term-structure and gas/oil value. Trend and shocks are read contrarian by default.','大残差冲击 + 期限结构 + 气/油比价。趋势和冲击默认逆向解读。') }}</td></tr>
       <tr><td class="a">{{ t('Copper — data-center build-out','铜 — 数据中心建设') }}</td><td>{{ t('Residual strength vs the growth + dollar model; COT spec build (now 97th %ile).','相对增长+美元模型的残差强势；COT 投机持仓累积（现处97百分位）。') }}</td></tr>
+      <tr><td class="a">{{ t('Grains — weather / geopolitics / exports','谷物 — 天气/地缘/出口') }}</td><td>{{ t('Residual shock vs dollar + inflation model, COT crowding, and relative value against the grain basket.','相对美元+通胀模型的残差冲击、COT拥挤度，以及相对谷物篮子的价值。') }}</td></tr>
       <tr><td class="a">{{ t('OPEC / US supply','OPEC / 美国供给') }}</td><td>{{ t('Oil residual + COT positioning + the Brent−WTI spread.','原油残差 + COT 持仓 + 布伦特−WTI 价差。') }}</td></tr>
     </table>
     <div class="sub" style="margin-top:10px">{{ t('Rather than scrape headlines, the engine detects the FOOTPRINT a shock leaves — a commodity moving in a way its macro drivers can\'t explain. A planned news-annotation layer (labelling a detected residual\'s likely cause) is deferred; it will be context, never a scoring input.','引擎不抓取新闻标题，而是检测冲击留下的足迹 — 商品以其宏观驱动无法解释的方式运动。计划中的新闻标注层（标注已检测残差的可能成因）暂缓；它将仅作背景，绝不作为评分输入。') }}</div>
@@ -669,7 +687,8 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 </script>
 <script>
 window.__CHART_SWAP__ = { colors:{}, labels:{
-  "Gold":"黄金","Silver":"白银","Copper":"铜","Oil · WTI":"原油","Risk Index":"风险指数",
+  "Gold":"黄金","Silver":"白银","Platinum":"铂金","Copper":"铜","Oil · WTI":"WTI原油",
+  "Oil · Brent":"布伦特原油","Natural Gas":"天然气","Corn":"玉米","Wheat":"小麦","Soybeans":"大豆","Risk Index":"风险指数",
   "Exogenous bid":"外生买盘","Exogenous pressure":"外生压力","Rebased = 100":"再基准化 = 100"} };
 </script>
 <script src="theme.js"></script>
