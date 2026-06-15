@@ -78,6 +78,31 @@
   .gb-exposed { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--down);
                 border-color:color-mix(in srgb,var(--down) 40%,transparent); }
   .gb-lag,.gb-neutral { background:var(--panel2,var(--panel)); color:var(--muted); }
+  /* ---- fundamentals panel (descriptive context) --------------------------- */
+  .fnd-arch { display:inline-block; font-size:11.5px; font-weight:700; padding:2px 9px;
+              border-radius:8px; background:color-mix(in srgb,var(--link) 14%,var(--panel2));
+              color:var(--link); border:1px solid color-mix(in srgb,var(--link) 30%,var(--line)); }
+  .fnd-desc { font-size:13px; color:var(--text); margin:9px 0 4px; line-height:1.55; }
+  .fnd-grid { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 4px; }
+  .fnd-chip { background:var(--panel2); border:1px solid var(--line); border-radius:9px;
+              padding:5px 10px; font-size:12px; min-width:74px; }
+  .fnd-chip .k { color:var(--muted); font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; }
+  .fnd-chip .v { font-weight:800; font-size:15px; font-variant-numeric:tabular-nums; }
+  .fnd-tbl { width:100%; border-collapse:collapse; margin:8px 0 2px; font-size:12px;
+             font-variant-numeric:tabular-nums; }
+  .fnd-tbl th, .fnd-tbl td { padding:4px 7px; border-bottom:1px solid var(--line); text-align:right; }
+  .fnd-tbl th:first-child, .fnd-tbl td:first-child { text-align:left; color:var(--muted); }
+  .fnd-tbl thead th { color:var(--muted); font-weight:700; font-size:11px; }
+  .fnd-score { display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:700;
+               padding:3px 9px; border-radius:8px; background:var(--panel2); border:1px solid var(--line); margin-right:8px; }
+  .fnd-score b { font-size:14px; }
+  .fnd-score.good { color:var(--up); border-color:color-mix(in srgb,var(--up) 34%,var(--line)); }
+  .fnd-score.warn { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 38%,var(--line)); }
+  .fnd-score.bad { color:var(--down); border-color:color-mix(in srgb,var(--down) 38%,var(--line)); }
+  .cagr-up { color:var(--up); } .cagr-dn { color:var(--down); }
+  /* analyst-consensus bar (HK-unique) */
+  .cons-bar { display:flex; height:8px; border-radius:5px; overflow:hidden; margin:6px 0 4px; background:var(--panel2); }
+  .cons-bar i { display:block; } .cons-buy { background:var(--up); } .cons-hold { background:var(--muted); } .cons-sell { background:var(--down); }
   table { border-collapse:collapse; width:100%; font-size:13px; }
   th,td { text-align:left; padding:4px 8px; border-bottom:1px solid var(--line); }
   th { color:var(--muted); font-weight:500; }
@@ -130,6 +155,11 @@
       <div id="r_gbeta" class="mtf"></div>
       <p class="muted" style="font-size:12px; margin-top:8px"><span class="l-en">This name's beta to global risk (S&P 500, lagged one day for the overnight US→HK transmission). HK has no idiosyncratic stock-selection edge, so the honest per-name read is RISK EXPOSURE: a high beta (<b>amplifier</b> — global cyclical) moves more with the risk-on/off regime; a low beta (<b>cushion</b> — domestic-defensive) moves less. The tag conditions on the live global risk state (favored / exposed / lags). Measured edge is modest — risk context for sizing within the validated regime, NOT a forecast or a buy signal. Beta is a descriptive exposure, not an alpha.</span><span class="l-zh">本股票对全球风险的贝塔（标普500，滞后一天以反映隔夜美→港传导）。香港没有特异选股优势，因此诚实的个股解读是风险敞口：高贝塔（<b>放大器</b>——全球周期股）随风险开关波动更大；低贝塔（<b>缓冲</b>——本地防御）波动更小。标签结合实时全球风险状态（占优／受冲击／滞后）。实测优势温和——用于在已验证状态内进行仓位管理的风险背景，而非预测或买入信号。贝塔是描述性敞口，并非阿尔法。</span></p>
     </div>
+    <div class="panel" id="r_fund_panel" style="display:none">
+      <h2><span class="l-en">Fundamentals</span><span class="l-zh">基本面</span> <span class="note" style="text-transform:none">· <span class="l-en">context, not a signal</span><span class="l-zh">背景，而非信号</span></span></h2>
+      <div id="r_fund"></div>
+      <p class="muted" style="font-size:12px; margin-top:10px"><span class="l-en">Descriptive financial health, quality, and the analyst-consensus read — a backdrop to read ALONGSIDE the validated global-risk-beta exposure, NOT a buy ranking. HK has no idiosyncratic stock-selection edge, so these are health/coverage context. Analyst targets are sell-side opinion (median across brokers), shown for coverage context, not an endorsement. PE / PB are shown only when the statements are HKD-reported (omitted when a name reports in CNY, to avoid a cross-currency ratio). Fundamentals refresh on a slower cadence than price.</span><span class="l-zh">描述性的财务健康、质量与分析师一致预期 —— 作为与已验证的全球风险贝塔敞口并读的背景，而非买入排序。香港没有特异选股优势，故此为健康／覆盖背景。分析师目标价为卖方观点（各券商中位数），仅作覆盖背景，并非背书。PE／PB 仅在财报以港元列报时显示（以人民币列报时省略，以避免跨币种比率）。基本面的更新频率慢于价格。</span></p>
+    </div>
     <div class="panel">
       <h2><span class="l-en">Chart</span><span class="l-zh">图表</span></h2>
       <div id="tvbox"></div>
@@ -166,6 +196,10 @@
           ph: 'Search any HK stock / sector / index… (e.g. 0700, Tencent, Banks)',
           th_state: 'state', th_n: 'samples', th_up: 'up next month', th_avg: 'avg next month',
           th_dipm: 'typical dip', th_dipb: 'bad-case dip',
+          f_rev: 'Revenue', f_nm: 'Net margin', f_eps: 'EPS', f_revcagr: 'Rev CAGR', f_epscagr: 'EPS CAGR',
+          f_5y: '(5y)', f_pio: 'Piotroski F', f_year: 'FY', f_roe: 'ROE', f_roa: 'ROA', f_debt: 'Debt/assets',
+          f_emp: 'employees', f_cons: 'Analyst consensus', f_target: 'median target', f_upside: 'upside',
+          f_cover: 'analysts', f_buy: 'buy', f_hold: 'hold', f_sell: 'sell', f_range: 'range',
           chartcap: 'Adjusted close · 50/200-day moving averages · last ~2y of our stored EOD data', nochart: 'No price history for this symbol.' },
     zh: { asof: '数据截至', notlib: '不在库中',
           notlibmsg: '不在每晚更新的标的库中（精选港股大盘股 ＋ 指数 ＋ ETF 代理）。一行即可添加：config.yml → hk.sectors。',
@@ -175,6 +209,10 @@
           ph: '搜索任意港股 / 板块 / 指数…（例如 0700、Tencent、Banks）',
           th_state: '状态', th_n: '样本数', th_up: '下月上涨', th_avg: '下月均值',
           th_dipm: '典型回撤', th_dipb: '最坏回撤',
+          f_rev: '营业收入', f_nm: '净利率', f_eps: '每股收益', f_revcagr: '营收年化', f_epscagr: '每股收益年化',
+          f_5y: '（5年）', f_pio: 'Piotroski F', f_year: '财年', f_roe: 'ROE', f_roa: 'ROA', f_debt: '资产负债率',
+          f_emp: '员工', f_cons: '分析师一致预期', f_target: '目标价中位', f_upside: '上行空间',
+          f_cover: '分析师', f_buy: '买入', f_hold: '持有', f_sell: '卖出', f_range: '区间',
           chartcap: '复权收盘价 · 50/200 日均线 · 我方存储的近约2年日线数据', nochart: '该标的暂无价格历史。' } };
   function L(k) { return (T[lang()] || T.en)[k]; }
   function lz(en, zh) { return lang() === 'zh' && zh ? zh : (en || ''); }
@@ -321,6 +359,72 @@
       gp.style.display = 'block';
     } else { gp.style.display = 'none'; }
 
+    // Fundamentals — descriptive context (akshare) + HK-unique analyst consensus.
+    var fpEl = document.getElementById('r_fund_panel'), f = d.fundamentals;
+    if (f && (f.financials || f.consensus)) {
+      var q = f.quality || {}, fin = f.financials || {}, val = f.valuation || {}, cons = f.consensus;
+      var prof = f.profile || {};
+      var fnum = function (x, n) { return x == null ? '—' : (+x).toFixed(n == null ? 1 : n); };
+      var yi = function (x) { return x == null ? '—' : (x / 1e8).toFixed(0); };
+      function chip(lab, val2, suf) {
+        if (val2 == null) return '';
+        return '<div class="fnd-chip"><div class="k">' + lab + '</div><div class="v">' + fnum(val2, 1) + (suf || '') + '</div></div>';
+      }
+      var fhtml = '<div><span class="fnd-arch">' + lz(f.archetype_label, f.archetype_label_zh) + '</span>'
+        + (f.fy ? ' <span class="muted" style="font-size:11px">' + L('f_year') + ' ' + f.fy + (f.currency ? ' · ' + f.currency : '') + '</span>' : '') + '</div>';
+      var pbits = [];
+      if (prof.industry) pbits.push(prof.industry);
+      if (prof.employees) pbits.push(prof.employees.toLocaleString() + ' ' + L('f_emp'));
+      if (prof.founded) pbits.push(prof.founded.slice(0, 4));
+      if (pbits.length) fhtml += '<p class="fnd-desc">' + pbits.join(' · ') + '</p>';
+      fhtml += '<div class="fnd-grid">'
+        + chip('PE', val.pe) + chip('PB', val.pb)
+        + chip(L('f_roe'), q.roe, '%') + chip(L('f_roa'), q.roa, '%')
+        + chip(L('f_nm'), q.net_margin, '%') + chip(L('f_debt'), q.debt_ratio, '%') + '</div>';
+      if (fin.years && fin.years.length) {
+        var yrs = fin.years.slice(-5), n0 = fin.years.length - yrs.length;
+        var head = '<tr><th>' + L('f_year') + '</th>';
+        yrs.forEach(function (y) { head += '<th>' + y + '</th>'; });
+        head += '</tr>';
+        function frow(lab, arr, fmt) {
+          var r = '<tr><td>' + lab + '</td>';
+          arr.slice(n0).forEach(function (x) { r += '<td>' + fmt(x) + '</td>'; });
+          return r + '</tr>';
+        }
+        var body = frow(L('f_rev') + ' (亿)', fin.revenue, function (x) { return yi(x); })
+          + frow(L('f_nm'), fin.net_margin, function (x) { return x == null ? '—' : fnum(x, 1) + '%'; })
+          + frow(L('f_eps'), fin.eps, function (x) { return x == null ? '—' : fnum(x, 2); });
+        fhtml += '<table class="fnd-tbl"><thead>' + head + '</thead><tbody>' + body + '</tbody></table>';
+        var cg = function (lab, x) {
+          return x == null ? '' : '<span class="fnd-score"><span class="muted">' + lab + ' ' + L('f_5y') + '</span> <b class="' + (x >= 0 ? 'cagr-up' : 'cagr-dn') + '">' + (x >= 0 ? '+' : '') + fnum(x, 1) + '%</b></span>';
+        };
+        var pscore = '';
+        if (f.piotroski) {
+          var pcl = f.piotroski.score >= 6 ? 'good' : f.piotroski.score <= 2 ? 'bad' : 'warn';
+          pscore = '<span class="fnd-score ' + pcl + '">' + L('f_pio') + ' <b>' + f.piotroski.score + '/' + f.piotroski.of + '</b></span>';
+        }
+        fhtml += '<div style="margin:8px 0 2px">' + cg(L('f_revcagr'), fin.rev_cagr) + cg(L('f_epscagr'), fin.eps_cagr) + pscore + '</div>';
+      }
+      if (cons && cons.n_analysts) {
+        var tot = (cons.buy || 0) + (cons.hold || 0) + (cons.sell || 0) || 1;
+        var bar = '<div class="cons-bar">'
+          + '<i class="cons-buy" style="width:' + (100 * (cons.buy || 0) / tot) + '%"></i>'
+          + '<i class="cons-hold" style="width:' + (100 * (cons.hold || 0) / tot) + '%"></i>'
+          + '<i class="cons-sell" style="width:' + (100 * (cons.sell || 0) / tot) + '%"></i></div>';
+        var ch = '<div style="margin-top:11px"><b style="font-size:12.5px">' + L('f_cons') + '</b> '
+          + '<span class="muted" style="font-size:11px">· ' + cons.n_analysts + ' ' + L('f_cover') + '</span></div>';
+        ch += '<div class="fnd-grid" style="margin-top:7px">';
+        if (cons.target_med != null) ch += '<div class="fnd-chip"><div class="k">' + L('f_target') + '</div><div class="v">' + fnum(cons.target_med, 1) + '</div></div>';
+        if (cons.upside_pct != null) ch += '<div class="fnd-chip"><div class="k">' + L('f_upside') + '</div><div class="v" style="color:' + (cons.upside_pct >= 0 ? 'var(--up)' : 'var(--down)') + '">' + (cons.upside_pct >= 0 ? '+' : '') + fnum(cons.upside_pct, 1) + '%</div></div>';
+        if (cons.target_low != null && cons.target_high != null) ch += '<div class="fnd-chip"><div class="k">' + L('f_range') + '</div><div class="v" style="font-size:12px">' + fnum(cons.target_low, 1) + '–' + fnum(cons.target_high, 1) + '</div></div>';
+        ch += '</div>' + bar
+          + '<div class="muted" style="font-size:10.5px">' + L('f_buy') + ' ' + (cons.buy || 0) + ' · ' + L('f_hold') + ' ' + (cons.hold || 0) + ' · ' + L('f_sell') + ' ' + (cons.sell || 0) + '</div>';
+        fhtml += ch;
+      }
+      document.getElementById('r_fund').innerHTML = fhtml;
+      fpEl.style.display = 'block';
+    } else { fpEl.style.display = 'none'; }
+
     var cs = '<tr><th>' + L('th_state') + '</th><th>' + L('th_n') + '</th><th>' + L('th_up') +
              '</th><th>' + L('th_avg') + '</th><th>' + L('th_dipm') + '</th><th>' + L('th_dipb') + '</th></tr>';
     if (cal) {
@@ -400,7 +504,7 @@
 </script>
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
-<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-14 23:20 UTC UTC · <span class="l-en">charts drawn from our own stored EOD prices with TradingView Lightweight Charts · curated HK universe, not exhaustive</span><span class="l-zh">图表由我方存储的日线数据经 TradingView Lightweight Charts 绘制 · 精选港股范围，非全市场</span></p>
+<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-15 03:20 UTC UTC · <span class="l-en">charts drawn from our own stored EOD prices with TradingView Lightweight Charts · curated HK universe, not exhaustive</span><span class="l-zh">图表由我方存储的日线数据经 TradingView Lightweight Charts 绘制 · 精选港股范围，非全市场</span></p>
 <footer class="site-footer">
   <span class="made"><span class="l-en">Made with ❤️ in Canada</span><span class="l-zh">用 ❤️ 在加拿大制作</span></span>
   <span class="dev"><span class="l-en">Developed by</span><span class="l-zh">开发者</span> Chris Wong</span>

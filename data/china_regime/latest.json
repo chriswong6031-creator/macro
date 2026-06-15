@@ -1,5 +1,5 @@
 {
-  "date": "2026-06-12",
+  "date": "2026-06-15",
   "quad": "Q3",
   "quad_name": "Stagflation",
   "growth_score": -0.385,
@@ -22,149 +22,149 @@
     {
       "ticker": "515000.SS",
       "name": "Technology",
-      "rs": 0.27957659768659743,
-      "mom_20d_pct": 6.88,
-      "mom_60d_pct": 28.53,
+      "rs": 0.28182560994116634,
+      "mom_20d_pct": 6.17,
+      "mom_60d_pct": 31.59,
       "above_200d_trend": true,
-      "pctile_252d": 68.3,
+      "pctile_252d": 69.4,
       "rank": 1
     },
     {
-      "ticker": "515220.SS",
-      "name": "Coal",
-      "rs": 0.27355749332101353,
-      "mom_20d_pct": 8.4,
-      "mom_60d_pct": -0.6,
-      "above_200d_trend": true,
-      "pctile_252d": 91.3,
+      "ticker": "515030.SS",
+      "name": "New-Energy Vehicle",
+      "rs": 0.3874334723864352,
+      "mom_20d_pct": -7.53,
+      "mom_60d_pct": -3.9,
+      "above_200d_trend": false,
+      "pctile_252d": 40.9,
       "rank": 2
     },
     {
       "ticker": "512800.SS",
       "name": "Banks",
-      "rs": 0.16894977948507522,
-      "mom_20d_pct": 5.79,
-      "mom_60d_pct": -0.79,
+      "rs": 0.1659844378938164,
+      "mom_20d_pct": 4.46,
+      "mom_60d_pct": -4.08,
       "above_200d_trend": false,
-      "pctile_252d": 29.4,
+      "pctile_252d": 17.9,
       "rank": 3
     },
     {
-      "ticker": "515030.SS",
-      "name": "New-Energy Vehicle",
-      "rs": 0.38771276310416447,
-      "mom_20d_pct": -7.02,
-      "mom_60d_pct": -5.15,
-      "above_200d_trend": false,
-      "pctile_252d": 41.7,
+      "ticker": "515220.SS",
+      "name": "Coal",
+      "rs": 0.2576749700024935,
+      "mom_20d_pct": -0.14,
+      "mom_60d_pct": -4.99,
+      "above_200d_trend": true,
+      "pctile_252d": 76.6,
       "rank": 4
     },
     {
       "ticker": "512880.SS",
       "name": "Securities & Brokers",
-      "rs": 0.216894975474259,
-      "mom_20d_pct": 0.96,
-      "mom_60d_pct": -8.22,
+      "rs": 0.22410969986878684,
+      "mom_20d_pct": 3.86,
+      "mom_60d_pct": -6.87,
       "above_200d_trend": false,
-      "pctile_252d": 8.3,
+      "pctile_252d": 14.3,
       "rank": 5
     },
     {
       "ticker": "512400.SS",
       "name": "Nonferrous Metals",
-      "rs": 0.41012868764473115,
-      "mom_20d_pct": -1.88,
-      "mom_60d_pct": -9.72,
+      "rs": 0.41690541867930947,
+      "mom_20d_pct": 0.69,
+      "mom_60d_pct": -7.37,
       "above_200d_trend": true,
-      "pctile_252d": 63.5,
+      "pctile_252d": 66.3,
       "rank": 6
-    },
-    {
-      "ticker": "159992.SZ",
-      "name": "Innovative Drugs",
-      "rs": 0.15276048690439642,
-      "mom_20d_pct": -6.62,
-      "mom_60d_pct": -10.97,
-      "above_200d_trend": false,
-      "pctile_252d": 4.0,
-      "rank": 7
     },
     {
       "ticker": "515250.SS",
       "name": "Automobiles",
-      "rs": 0.20797011365114165,
-      "mom_20d_pct": -9.82,
-      "mom_60d_pct": -13.79,
+      "rs": 0.21019236953219506,
+      "mom_20d_pct": -9.91,
+      "mom_60d_pct": -12.73,
       "above_200d_trend": false,
-      "pctile_252d": 0.4,
-      "rank": 8
+      "pctile_252d": 0.8,
+      "rank": 7
     },
     {
       "ticker": "512660.SS",
       "name": "Defense & Military",
-      "rs": 0.2586135518747975,
-      "mom_20d_pct": -8.92,
-      "mom_60d_pct": -14.47,
+      "rs": 0.2576749700024935,
+      "mom_20d_pct": -9.07,
+      "mom_60d_pct": -13.0,
       "above_200d_trend": false,
-      "pctile_252d": 9.5,
-      "rank": 9
+      "pctile_252d": 8.3,
+      "rank": 8
     },
     {
-      "ticker": "512170.SS",
-      "name": "Healthcare",
-      "rs": 0.06185139430831789,
-      "mom_20d_pct": -7.73,
-      "mom_60d_pct": -14.61,
+      "ticker": "159992.SZ",
+      "name": "Innovative Drugs",
+      "rs": 0.1500204578358757,
+      "mom_20d_pct": -7.16,
+      "mom_60d_pct": -13.74,
       "above_200d_trend": false,
-      "pctile_252d": 2.8,
-      "rank": 10
+      "pctile_252d": 2.4,
+      "rank": 9
     },
     {
       "ticker": "515790.SS",
       "name": "Solar & Photovoltaic",
-      "rs": 0.20672478725916407,
-      "mom_20d_pct": -8.99,
-      "mom_60d_pct": -14.76,
+      "rs": 0.2056897181869063,
+      "mom_20d_pct": -9.35,
+      "mom_60d_pct": -14.29,
       "above_200d_trend": false,
-      "pctile_252d": 42.1,
+      "pctile_252d": 39.7,
+      "rank": 10
+    },
+    {
+      "ticker": "512170.SS",
+      "name": "Healthcare",
+      "rs": 0.060785915152071136,
+      "mom_20d_pct": -8.41,
+      "mom_60d_pct": -16.69,
+      "above_200d_trend": false,
+      "pctile_252d": 0.8,
       "rank": 11
     },
     {
       "ticker": "512200.SS",
       "name": "Real Estate",
-      "rs": 0.26504773617147454,
-      "mom_20d_pct": -9.78,
-      "mom_60d_pct": -16.02,
+      "rs": 0.26320097670612497,
+      "mom_20d_pct": -9.75,
+      "mom_60d_pct": -17.49,
       "above_200d_trend": false,
-      "pctile_252d": 1.2,
+      "pctile_252d": 0.8,
       "rank": 12
     },
     {
       "ticker": "159928.SZ",
       "name": "Consumer Staples",
-      "rs": 0.13636364198692844,
-      "mom_20d_pct": -6.05,
-      "mom_60d_pct": -19.22,
+      "rs": 0.13446581748145864,
+      "mom_20d_pct": -6.8,
+      "mom_60d_pct": -20.72,
       "above_200d_trend": false,
-      "pctile_252d": 3.2,
+      "pctile_252d": 1.2,
       "rank": 13
     },
     {
       "ticker": "512690.SS",
       "name": "Baijiu & Liquor",
-      "rs": 0.08883354448570172,
-      "mom_20d_pct": -4.76,
-      "mom_60d_pct": -19.9,
+      "rs": 0.08759721436737833,
+      "mom_20d_pct": -5.76,
+      "mom_60d_pct": -21.43,
       "above_200d_trend": false,
-      "pctile_252d": 1.2,
+      "pctile_252d": 0.8,
       "rank": 14
     },
     {
       "ticker": "512980.SS",
       "name": "Media",
-      "rs": 0.17227065398742963,
-      "mom_20d_pct": -14.43,
-      "mom_60d_pct": -23.36,
+      "rs": 0.17191975990283687,
+      "mom_20d_pct": -14.53,
+      "mom_60d_pct": -23.2,
       "above_200d_trend": false,
       "pctile_252d": 0.4,
       "rank": 15
@@ -172,11 +172,11 @@
     {
       "ticker": "512760.SS",
       "name": "Semiconductors",
-      "rs": 0.23121627228135017,
-      "mom_20d_pct": 3.29,
-      "mom_60d_pct": -37.27,
+      "rs": 0.2343430094708679,
+      "mom_20d_pct": 2.71,
+      "mom_60d_pct": -35.15,
       "above_200d_trend": false,
-      "pctile_252d": 14.7,
+      "pctile_252d": 16.7,
       "rank": 16
     }
   ],
@@ -190,7 +190,7 @@
     ],
     "actual_ranks": {
       "512400.SS": 6,
-      "515220.SS": 2,
+      "515220.SS": 4,
       "512800.SS": 3,
       "159928.SZ": 13
     },
@@ -201,19 +201,33 @@
   "pair_ratios": {
     "cyc_def": {
       "level": 1.3481,
-      "chg_20d_pct": -2.71
+      "chg_20d_pct": -3.48
     },
     "infl_basket": {
       "level": 2.2519,
-      "chg_20d_pct": -1.54
+      "chg_20d_pct": -0.51
     },
     "smallcap_largecap": {
-      "level": 1.7107,
-      "chg_20d_pct": -3.1
+      "level": 1.729,
+      "chg_20d_pct": -2.8
     },
     "usdcny": {
-      "level": 6.7755,
-      "chg_20d_pct": -0.14
+      "level": 6.7575,
+      "chg_20d_pct": -0.76
     }
+  },
+  "property": {
+    "regime": "Contraction (easing)",
+    "pulse": -2,
+    "home_price_breadth": -35,
+    "home_price_breadth_6m_trend": 23,
+    "climate_index": 91.45,
+    "climate_trend": "falling",
+    "construction_demand_z": -0.15,
+    "cgb_10y": 1.743,
+    "cgb_10y2y_slope": 0.449,
+    "cgb_10y_chg_6m": -0.107,
+    "property_etf_drawdown": -29.8,
+    "note": "display/context only \u2014 A-shares mean-revert, not a scored signal"
   }
 }

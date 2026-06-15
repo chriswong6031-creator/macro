@@ -1,5 +1,5 @@
 {
-  "date": "2026-06-12",
+  "date": "2026-06-15",
   "quad": "Q3",
   "quad_name": "Stagflation",
   "growth_score": 0.25,
@@ -10,7 +10,7 @@
   "liquidity_overlay": "neutral",
   "cycle_tag": "mid",
   "pending_quad": "Q2",
-  "pending_days": 3,
+  "pending_days": 4,
   "confirming": [
     "growth_hshare_hsi",
     "growth_global_growth",
@@ -21,21 +21,21 @@
   "contradicting": [
     "growth_breadth_direction"
   ],
-  "global_score": 0.0,
+  "global_score": 0.269,
   "risk_state": "Neutral",
   "peg_state": "weak-side (outflow)",
-  "peg_distance": 0.856,
+  "peg_distance": 0.845,
   "global_snapshot": {
-    "score": 0.0,
+    "score": 0.269,
     "state": "Neutral",
     "factors": [
       {
         "key": "dxy",
         "label": "US Dollar (DXY)",
-        "z": 0.6,
+        "z": 0.21,
         "sign": -1,
-        "risk": "off",
-        "level": 99.75
+        "risk": "neutral",
+        "level": 99.557
       },
       {
         "key": "vix",
@@ -56,7 +56,7 @@
       {
         "key": "copper_gold",
         "label": "Copper / Gold",
-        "z": 1.16,
+        "z": 1.33,
         "sign": 1.0,
         "risk": "on",
         "level": 0.0015
@@ -64,10 +64,10 @@
       {
         "key": "usdcny",
         "label": "USD / CNY",
-        "z": -0.22,
+        "z": -0.96,
         "sign": -1,
-        "risk": "neutral",
-        "level": 6.7755
+        "risk": "on",
+        "level": 6.7575
       },
       {
         "key": "eem",
@@ -80,150 +80,150 @@
       {
         "key": "vhsi",
         "label": "HK Volatility (VHSI)",
-        "z": 0.01,
+        "z": -0.04,
         "sign": -1,
         "risk": "neutral",
-        "level": 21.58
+        "level": 20.83
       }
     ],
     "peg": {
-      "level": 7.8356,
-      "distance": 0.86,
+      "level": 7.8345,
+      "distance": 0.84,
       "state": "weak-side (outflow)"
     },
-    "asof": "2026-06-12"
+    "asof": "2026-06-15"
   },
   "sector_rs": [
     {
       "ticker": "Financials & Banks",
       "name": "Financials & Banks",
       "tv": "HKEX:1398",
-      "rs": 9.279070335554171e-05,
-      "mom_20d_pct": 9.72,
-      "mom_60d_pct": 21.44,
+      "rs": 9.649283999578469e-05,
+      "mom_20d_pct": 8.94,
+      "mom_60d_pct": 21.45,
       "above_200d_trend": true,
       "pctile_252d": 100.0,
       "rank": 1
     },
     {
-      "ticker": "Internet & Tech",
-      "name": "Internet & Tech",
-      "tv": "HKEX:700",
-      "rs": 6.707355498448324e-05,
-      "mom_20d_pct": 3.2,
-      "mom_60d_pct": 7.19,
-      "above_200d_trend": false,
-      "pctile_252d": 42.5,
-      "rank": 2
-    },
-    {
       "ticker": "Exchange & Diversified",
       "name": "Exchange & Diversified",
       "tv": "HKEX:388",
-      "rs": 5.8047867645121706e-05,
-      "mom_20d_pct": -0.4,
-      "mom_60d_pct": 6.37,
+      "rs": 5.9475118742575176e-05,
+      "mom_20d_pct": -1.28,
+      "mom_60d_pct": 7.3,
       "above_200d_trend": true,
-      "pctile_252d": 93.7,
-      "rank": 3
+      "pctile_252d": 94.0,
+      "rank": 2
     },
     {
-      "ticker": "Property",
-      "name": "Property",
-      "tv": "HKEX:16",
-      "rs": 3.838200881860321e-05,
-      "mom_20d_pct": -5.73,
-      "mom_60d_pct": 2.45,
+      "ticker": "Internet & Tech",
+      "name": "Internet & Tech",
+      "tv": "HKEX:700",
+      "rs": 6.619296839387376e-05,
+      "mom_20d_pct": 4.92,
+      "mom_60d_pct": 7.23,
       "above_200d_trend": true,
-      "pctile_252d": 86.5,
-      "rank": 4
+      "pctile_252d": 46.0,
+      "rank": 3
     },
     {
       "ticker": "Insurance",
       "name": "Insurance",
       "tv": "HKEX:2318",
-      "rs": 6.69571627449055e-05,
-      "mom_20d_pct": 0.86,
-      "mom_60d_pct": 1.66,
+      "rs": 7.182375916890715e-05,
+      "mom_20d_pct": 2.17,
+      "mom_60d_pct": 3.86,
       "above_200d_trend": true,
-      "pctile_252d": 80.2,
+      "pctile_252d": 86.1,
+      "rank": 4
+    },
+    {
+      "ticker": "Property",
+      "name": "Property",
+      "tv": "HKEX:16",
+      "rs": 3.987211732786706e-05,
+      "mom_20d_pct": -7.02,
+      "mom_60d_pct": 3.12,
+      "above_200d_trend": true,
+      "pctile_252d": 86.9,
       "rank": 5
     },
     {
       "ticker": "Telecom & Utilities",
       "name": "Telecom & Utilities",
       "tv": "HKEX:941",
-      "rs": 5.795207484294386e-05,
-      "mom_20d_pct": -0.71,
-      "mom_60d_pct": 0.04,
+      "rs": 5.863233297562559e-05,
+      "mom_20d_pct": -1.7,
+      "mom_60d_pct": 1.43,
       "above_200d_trend": true,
-      "pctile_252d": 87.7,
+      "pctile_252d": 81.3,
       "rank": 6
     },
     {
       "ticker": "Consumer",
       "name": "Consumer",
       "tv": "HKEX:2020",
-      "rs": 3.651781637242095e-05,
-      "mom_20d_pct": 2.74,
-      "mom_60d_pct": 0.0,
+      "rs": 3.686727333986916e-05,
+      "mom_20d_pct": 1.34,
+      "mom_60d_pct": -0.5,
       "above_200d_trend": true,
-      "pctile_252d": 82.5,
+      "pctile_252d": 74.6,
       "rank": 7
     },
     {
       "ticker": "Energy",
       "name": "Energy",
       "tv": "HKEX:883",
-      "rs": 7.71242671269579e-05,
-      "mom_20d_pct": 3.35,
-      "mom_60d_pct": -5.65,
+      "rs": 7.771873471560468e-05,
+      "mom_20d_pct": 0.42,
+      "mom_60d_pct": -4.9,
       "above_200d_trend": true,
-      "pctile_252d": 81.7,
+      "pctile_252d": 77.4,
       "rank": 8
     },
     {
       "ticker": "Healthcare & Pharma",
       "name": "Healthcare & Pharma",
       "tv": "HKEX:1093",
-      "rs": 4.9869244258722094e-05,
-      "mom_20d_pct": -2.43,
-      "mom_60d_pct": -5.95,
+      "rs": 5.042988765313437e-05,
+      "mom_20d_pct": -2.81,
+      "mom_60d_pct": -6.91,
       "above_200d_trend": false,
-      "pctile_252d": 15.5,
+      "pctile_252d": 14.7,
       "rank": 9
     },
     {
       "ticker": "Gaming & Leisure",
       "name": "Gaming & Leisure",
       "tv": "HKEX:27",
-      "rs": 3.0395888388360847e-05,
-      "mom_20d_pct": 1.28,
-      "mom_60d_pct": -10.28,
+      "rs": 3.028482618965694e-05,
+      "mom_20d_pct": -0.17,
+      "mom_60d_pct": -9.35,
       "above_200d_trend": false,
-      "pctile_252d": 4.8,
+      "pctile_252d": 3.2,
       "rank": 10
-    },
-    {
-      "ticker": "Auto & EV",
-      "name": "Auto & EV",
-      "tv": "HKEX:1211",
-      "rs": 4.882592964198209e-05,
-      "mom_20d_pct": -6.34,
-      "mom_60d_pct": -11.44,
-      "above_200d_trend": false,
-      "pctile_252d": 1.6,
-      "rank": 11
     },
     {
       "ticker": "Materials",
       "name": "Materials",
       "tv": "HKEX:2600",
-      "rs": 0.00012430759119534869,
-      "mom_20d_pct": -3.24,
-      "mom_60d_pct": -16.89,
+      "rs": 0.00014039138694997496,
+      "mom_20d_pct": 2.39,
+      "mom_60d_pct": -11.26,
       "above_200d_trend": true,
-      "pctile_252d": 54.8,
+      "pctile_252d": 61.5,
+      "rank": 11
+    },
+    {
+      "ticker": "Auto & EV",
+      "name": "Auto & EV",
+      "tv": "HKEX:1211",
+      "rs": 4.6798572131227236e-05,
+      "mom_20d_pct": -6.98,
+      "mom_60d_pct": -12.61,
+      "above_200d_trend": false,
+      "pctile_252d": 2.0,
       "rank": 12
     }
   ],
@@ -237,9 +237,9 @@
     ],
     "actual_ranks": {
       "Energy": 8,
-      "Materials": 12,
+      "Materials": 11,
       "Telecom & Utilities": 6,
-      "Insurance": 5
+      "Insurance": 4
     },
     "agreement": 0.5,
     "disagreement_flag": false,
@@ -247,24 +247,24 @@
   },
   "pair_ratios": {
     "hshare_hsi": {
-      "level": 0.3388,
-      "chg_20d_pct": 1.21
+      "level": 0.338,
+      "chg_20d_pct": 0.94
     },
     "tech_hsi": {
       "level": 0.0002,
-      "chg_20d_pct": 0.25
+      "chg_20d_pct": 1.55
     },
     "cyc_def": {
-      "level": 1.6704,
-      "chg_20d_pct": -1.64
+      "level": 1.7145,
+      "chg_20d_pct": 1.29
     },
     "infl_basket": {
-      "level": 1.8821,
-      "chg_20d_pct": 7.38
+      "level": 2.0108,
+      "chg_20d_pct": 5.68
     },
     "usdhkd": {
-      "level": 7.8356,
-      "chg_20d_pct": 0.04
+      "level": 7.8345,
+      "chg_20d_pct": 0.06
     }
   }
 }

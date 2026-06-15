@@ -586,6 +586,25 @@
       '校准区间 2008→2026（折半验证）。两个信号在两个子区间均成立：<b>增长恐慌</b>象限是最佳的逆向抄底区（前瞻收益最高，命中率约70%），而<b>扩张</b>的央行立场（M2加速）是可衡量的顺风。其余象限前瞻收益平淡或为负、且部分周期不稳定——请将市场周期视作风险背景图，而非配置规则。下方的周期阶梯是回撤/结构工具，绝非独立买入信号。') }}</p>
   </div>
 
+  {# AI Master Brief — China/HK-focused LLM synthesis (engine/master_brain.py, china
+     lens). Client-fetched from china_brief.json so it never depends on build order;
+     hidden until a usable brief loads. Research context only — never a signal. #}
+  <div class="panel span12 ai-brief" id="china-brief" data-brief-src="china_brief.json" style="display:none">
+    <style>
+      #china-brief .mb-sum{font-size:15px;font-weight:600;margin:0 0 10px}
+      #china-brief .mb-sec{margin:10px 0}
+      #china-brief .mb-h{font-weight:600;color:var(--link);margin:0 0 4px}
+      #china-brief .mb-list{margin:4px 0 0 18px;padding:0}
+      #china-brief .mb-list li{margin:3px 0}
+      #china-brief .mb-foot{margin-top:12px;color:var(--muted);font-size:12px}
+    </style>
+    <h2>🧠 {{ t('AI Master Brief · China & HK synthesis', 'AI 主脑简报 · 中港综合') }}
+      {{ help('An AI-generated synthesis of the China & Hong-Kong dashboards, with US macro, the dollar, global liquidity and commodities as backdrop. RESEARCH CONTEXT only — it narrates the regime, flags where signals conflict and tests the policy/liquidity thesis (A-shares mean-revert, so leaders read as extended); it never feeds a score, signal or allocation. Can be wrong or overconfident — verify against the underlying panels.', 'AI 对中港看板的综合分析，以美国宏观、美元、全球流动性与商品为背景。仅供研究参考——它解读周期、标注信号冲突并检验政策／流动性假设（A股均值回归，故强势股视为已拉伸），绝不参与任何评分、信号或仓位。可能出错或过度自信，请对照各底层面板核实。') }}
+    </h2>
+    <div data-brief-body class="muted sm"></div>
+  </div>
+  <script src="aibrief.js"></script>
+
   <!-- sector rotation board -->
   <div class="panel span8">
     <h2>{{ t('Sector Rotation', '板块轮动') }} <span class="note" style="text-transform:none">· {{ t('RS vs CSI 300', '相对沪深300') }} · {{ t('click a header to sort', '点击表头排序') }}</span></h2>
