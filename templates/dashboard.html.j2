@@ -1457,6 +1457,7 @@
   #macro-news .mn-t-monetary{background:#22324f;color:#9cc4ff}#macro-news .mn-t-inflation{background:#4f2c22;color:#ffb499}
   #macro-news .mn-t-labor{background:#1f4733;color:#a0ffc4}#macro-news .mn-t-growth{background:#2c3f1f;color:#cfe89a}
   #macro-news .mn-t-credit{background:#3a2f5f;color:#c4b0ff}#macro-news .mn-t-fiscal{background:#4f3a1f;color:#ffd79a}
+  #macro-news .mn-t-macro{background:#2a3340;color:#a9c0d6}
   #macro-news .cat-row{display:flex;gap:9px;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--panel2);font-size:13px}
   #macro-news .cat-date{color:var(--muted);font-variant-numeric:tabular-nums;min-width:118px}
   #macro-news .cat-imp{width:7px;height:7px;border-radius:50%;flex:0 0 auto;align-self:center;background:var(--muted)}
@@ -1522,7 +1523,7 @@
     {% if macro_brief and macro_brief.text %}
     <div class="mn-brief">🤖 <b>{{ t('AI brief (context)', 'AI 摘要（背景）') }}:</b> {{ macro_brief.text }}</div>
     {% endif %}
-    {% set TL = {'monetary':['Fed','美联储'],'inflation':['Inflation','通胀'],'labor':['Labor','就业'],'growth':['Growth','增长'],'credit':['Rates','利率'],'fiscal':['Fiscal','财政']} %}
+    {% set TL = {'monetary':['Fed','美联储'],'inflation':['Inflation','通胀'],'labor':['Labor','就业'],'growth':['Growth','增长'],'credit':['Rates','利率'],'fiscal':['Fiscal','财政'],'macro':['Macro','宏观']} %}
     <div class="mn-cols">
       <div class="mn-news">
         <div class="section-title">{{ t('Filtered macro headlines', '已筛选的宏观头条') }}{% if macro_news and macro_news.n_raw %} <span class="muted">({{ macro_news.n_kept }}/{{ macro_news.n_raw }})</span>{% endif %}</div>

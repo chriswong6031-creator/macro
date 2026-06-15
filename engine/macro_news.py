@@ -63,12 +63,26 @@ THEME_LABEL = {
 
 # reputable macro/financial outlets — the source allowlist (substring match on the
 # article domain, so finance.yahoo.com matches yahoo.com). Tune in config.
-_DEFAULT_SOURCES = [
-    "reuters.com", "bloomberg.com", "wsj.com", "ft.com", "apnews.com", "cnbc.com",
-    "marketwatch.com", "economist.com", "barrons.com", "nytimes.com",
-    "washingtonpost.com", "forbes.com", "businessinsider.com", "yahoo.com",
-    "investing.com", "axios.com", "thehill.com", "politico.com", "fortune.com",
-    "morningstar.com", "seekingalpha.com", "kitco.com", "spglobal.com",
+# Tier-1 reputable NEWS wires/outlets. A GDELT hit here is kept on the SOURCE
+# alone (no title keyword needed) — the query already matched the macro terms in
+# the article BODY, and these outlets don't churn out stock-pick noise the way the
+# finance aggregators do. Without this, the title-only theme gate drops most real
+# macro stories (reputable headlines rarely put "CPI"/"Fed" in the title).
+_NEWS_SOURCES = [
+    "reuters.com", "apnews.com", "bloomberg.com", "wsj.com", "ft.com",
+    "nytimes.com", "washingtonpost.com", "cnbc.com", "cnn.com", "nbcnews.com",
+    "abcnews.go.com", "cbsnews.com", "npr.org", "pbs.org", "axios.com",
+    "thehill.com", "politico.com", "economist.com", "bbc.com", "bbc.co.uk",
+    "semafor.com", "usatoday.com", "marketwatch.com", "barrons.com",
+    "foxbusiness.com", "rttnews.com", "spglobal.com",
+]
+
+# Full quality allowlist (tier-1 + finance aggregators). Articles from the
+# aggregator-only sources must additionally clear the title macro-theme gate, so
+# their stock-pick/retirement noise is filtered out.
+_DEFAULT_SOURCES = _NEWS_SOURCES + [
+    "yahoo.com", "investing.com", "forbes.com", "businessinsider.com",
+    "fortune.com", "morningstar.com", "seekingalpha.com", "kitco.com",
 ]
 
 DISCLAIMER_TEXT = (
@@ -118,20 +132,25 @@ def filter_headlines(articles: list[dict], cfg: dict | None = None) -> list[dict
     a list of {title,url,domain,seendate,...} dicts). This is the 'useful vs
     useless' filter; no AI involved."""
     cfg = cfg or {}
-    allow = [s.lower() for s in (cfg.get("sources") or _DEFAULT_SOURCES)]
+    quality = [s.lower() for s in (cfg.get("sources") or _DEFAULT_SOURCES)]
+    news = [s.lower() for s in _NEWS_SOURCES]
     top_n = int(cfg.get("max_show", 10))
     kept: list[dict] = []
     seen: set[str] = set()
     for a in articles:
         dom = (a.get("domain") or "").lower()
-        if allow and not any(s in dom for s in allow):
-            continue                                   # (1) source allowlist
+        news_ok = any(s in dom for s in news)
+        qual_ok = (not quality) or any(s in dom for s in quality)
         theme = classify_theme(a.get("title", ""))
+        # Keep if it's a tier-1 news outlet (body already matched the macro query),
+        # OR it clears the title macro-theme gate AND is from a quality source.
+        if not (news_ok or (theme is not None and qual_ok)):
+            continue
         if theme is None:
-            continue                                   # (2) macro relevance gate
+            theme = "macro"          # reputable macro story w/o a keyword in title
         key = _norm_title(a.get("title", ""))[:60]
         if not key or key in seen:
-            continue                                   # (3) dedup
+            continue                                   # dedup
         seen.add(key)
         kept.append({"title": a.get("title", ""), "url": a.get("url", ""),
                      "domain": dom, "seendate": a.get("seendate", ""), "theme": theme})
