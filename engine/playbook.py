@@ -77,6 +77,8 @@ def next_quads_line(nxt: dict, zh: bool = False, top: int = 2) -> str:
     sep = "、" if zh else ", "
     pairs = sorted(nxt.items(), key=lambda kv: -kv[1])[:top]
     return sep.join(f"{names.get(k, k)} {v:.0%}" for k, v in pairs) or "—"
+
+
 STATE_ZH = {"STABLE": "稳定", "WEAKENING": "走弱",
             "TRANSITIONING": "转换中", "NEW_REGIME": "新周期", "NEW REGIME": "新周期"}
 # rotation-stage words (matches glossary: leading/weakening/improving/lagging)

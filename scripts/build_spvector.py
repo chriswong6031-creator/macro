@@ -247,6 +247,19 @@ def build() -> str:
 
     episodes = ea.bear_episodes(spy, 0.20)
 
+    # LLM context / knife-veto overlay — firewalled, LIVE-ONLY (never in the backtest):
+    # if the engine is taking a buyable-washout redeploy but the LLM reads the shock as a
+    # regime break, defer the buy. Off (no DeepSeek key) -> mechanical recommendation stands.
+    # Logged forward for future validation. (engine.spvector_overlay; preserved across the merge.)
+    overlay = {"enabled": False}
+    try:
+        from engine import spvector_overlay as sov
+        glide_w = float(ea.glide_path(rs).reindex(spy.index, method="ffill").fillna(1.0).iloc[-1])
+        overlay = sov.live_overlay(glide_w, float(alloc.iloc[-1]), snapshot=sov.context_snapshot())
+        sov.log_overlay(overlay, asof=spy.index[-1].strftime("%Y-%m-%d"))
+    except Exception:  # noqa: BLE001 — advisory overlay must never break the page
+        overlay = {"enabled": False}
+
     charts = {"strategy": _chart_strategy(spy, alloc, rs_on_spy, eq),
               "growth": _chart_growth(eq, hodl), "dd": _chart_dd(dd_s, dd_h)}
 
@@ -261,6 +274,7 @@ def build() -> str:
         "disloc": {"verdict": disloc_verdict, "verdict_zh": disloc_verdict_zh,
                    "put_absent": put_absent, "capitulation": cap_now},
         "sc": sc, "at": at, "bands": bands, "episodes": episodes, "charts": charts,
+        "overlay": overlay,
     }
 
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
@@ -277,7 +291,9 @@ def build() -> str:
     snap = {"date": spy.index[-1].strftime("%Y-%m-%d"), "score": score,
             "band": band_key, "band_label": band_label, "equity_w": equity_w,
             "cash_w": cash_w, "stance": f"{equity_w}% equity",
-            "cagr": sc["cagr"], "sharpe": sc["sharpe"], "maxdd": sc["maxdd"]}
+            "cagr": sc["cagr"], "sharpe": sc["sharpe"], "maxdd": sc["maxdd"],
+            # alias keys read by build_vector._spvector_state (hub S&P Vector card)
+            "equity_weight": equity_w, "risk_score": score, "asof": spy.index[-1].strftime("%Y-%m-%d")}
     snap_dir = config.data_dir() / "regime"
     snap_dir.mkdir(parents=True, exist_ok=True)
     (snap_dir / "spvector_latest.json").write_text(json.dumps(snap, indent=2))

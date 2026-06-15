@@ -1,0 +1,1137 @@
+{
+  "version": "2026-06-14",
+  "note": "Equal-weight thematic baskets over the FREE S&P-1500 price cache. Membership is explicit, dated and auditable. Curated 2026-06 with knowledge of the period, so the full ~3y series is HINDSIGHT-curated and descriptive — not an out-of-sample backtest.",
+  "seed_date": "2023-05-09",
+  "curated": "2026-06-14",
+  "baskets": {
+    "mag7": {
+      "name": "Magnificent Seven",
+      "name_zh": "七巨头",
+      "theme": "Mega-cap tech & AI leaders",
+      "category": "AI & Technology",
+      "etf_proxy": "QQQ",
+      "created": "2023-05-09",
+      "curated": "2026-06-14",
+      "omitted": [],
+      "members": [
+        {
+          "ticker": "AAPL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Hardware + services annuity; the AI catch-up question"
+        },
+        {
+          "ticker": "MSFT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Azure + Copilot — the enterprise AI distribution layer"
+        },
+        {
+          "ticker": "NVDA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Accelerator monopoly economics; the CUDA moat"
+        },
+        {
+          "ticker": "AMZN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "AWS re-acceleration + retail margin story"
+        },
+        {
+          "ticker": "GOOGL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Search cash engine funding Gemini; antitrust overhang"
+        },
+        {
+          "ticker": "META",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Ad-funded compute build-out; efficiency era"
+        },
+        {
+          "ticker": "TSLA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Auto-demand cyclicality vs robotaxi/optionality"
+        }
+      ],
+      "etf_proxy_note": "loose — Mag7 ≈ 40% of QQQ",
+      "thesis": "The mega-cap complex that drives index returns and breadth: Apple, Microsoft, Nvidia, Amazon, Alphabet, Meta and Tesla. When the Seven lead, the tape is narrow; when they lag, leadership is broadening. A concentration gauge, not a buy list.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2023-05-09",
+          "action": "create",
+          "note": "Seeded Magnificent Seven — 7 equal-weight members from the S&P 1500 cache."
+        }
+      ]
+    },
+    "ai_infra": {
+      "name": "AI Infrastructure",
+      "name_zh": "AI 基础设施",
+      "theme": "Compute, networking & power for AI buildout",
+      "category": "AI & Technology",
+      "etf_proxy": "SMH",
+      "created": "2023-05-09",
+      "curated": "2026-06-14",
+      "omitted": [
+        "MRVL (not in free cache)"
+      ],
+      "members": [
+        {
+          "ticker": "NVDA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "The accelerator the build-out is denominated in"
+        },
+        {
+          "ticker": "AVGO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Custom AI silicon + networking ASICs"
+        },
+        {
+          "ticker": "AMD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "The credible #2 accelerator + server CPU share"
+        },
+        {
+          "ticker": "MU",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "HBM supply oligopoly — memory is the bottleneck"
+        },
+        {
+          "ticker": "ANET",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "400/800G switching for AI back-end fabrics"
+        },
+        {
+          "ticker": "VRT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Data-center power & liquid-cooling thermal"
+        },
+        {
+          "ticker": "DELL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "AI server integration + storage"
+        },
+        {
+          "ticker": "SMCI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "AI server assembly; high beta to order flow"
+        },
+        {
+          "ticker": "CIEN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Coherent optical for AI data-center interconnect"
+        }
+      ],
+      "etf_proxy_note": "semis proxy",
+      "thesis": "The picks-and-shovels of the AI build-out: compute, memory, networking, power and thermal. Levered to data-center capex rather than model monetization — the first to inflect up on an order cycle and the first to roll over when capex digestion arrives.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2023-05-09",
+          "action": "create",
+          "note": "Seeded AI Infrastructure — 9 equal-weight members from the S&P 1500 cache."
+        },
+        {
+          "date": "2026-06-14",
+          "action": "note",
+          "note": "Theme names outside the free S&P-1500 cache, excluded: MRVL (not in free cache)."
+        }
+      ]
+    },
+    "ai_software": {
+      "name": "AI Software & Platforms",
+      "name_zh": "AI 软件与平台",
+      "theme": "Apps & platforms monetizing AI",
+      "category": "AI & Technology",
+      "etf_proxy": "XLK",
+      "created": "2023-05-09",
+      "curated": "2026-06-14",
+      "omitted": [
+        "SNOW (not in free cache)"
+      ],
+      "members": [
+        {
+          "ticker": "MSFT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Copilot seat monetization at scale"
+        },
+        {
+          "ticker": "GOOGL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Gemini + Workspace AI distribution"
+        },
+        {
+          "ticker": "META",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Generative ad tooling + recommendation lift"
+        },
+        {
+          "ticker": "PLTR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "AIP — the AI-deployment narrative leader"
+        },
+        {
+          "ticker": "NOW",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Agentic workflows on the enterprise system-of-record"
+        },
+        {
+          "ticker": "CRM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Agentforce vs seat-deflation fear — contested"
+        },
+        {
+          "ticker": "ORCL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "OCI capacity for AI training revenue"
+        },
+        {
+          "ticker": "ADBE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Creative AI both moat and threat"
+        },
+        {
+          "ticker": "DDOG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Observability volume scales with AI workloads"
+        }
+      ],
+      "etf_proxy_note": "loose — broad tech",
+      "thesis": "Apps and platforms trying to MONETIZE AI rather than supply it — the contested leg. Re-rates on seat expansion and inference demand, de-rates when AI is feared to deflate seat-based software. The wide spread inside this basket is the whole point.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2023-05-09",
+          "action": "create",
+          "note": "Seeded AI Software & Platforms — 9 equal-weight members from the S&P 1500 cache."
+        },
+        {
+          "date": "2026-06-14",
+          "action": "note",
+          "note": "Theme names outside the free S&P-1500 cache, excluded: SNOW (not in free cache)."
+        }
+      ]
+    },
+    "defense": {
+      "name": "Defense & Aerospace",
+      "name_zh": "国防与航空航天",
+      "theme": "Primes & defense-tech",
+      "category": "Industrials & Defense",
+      "etf_proxy": "ITA",
+      "created": "2023-05-09",
+      "curated": "2026-06-14",
+      "omitted": [],
+      "members": [
+        {
+          "ticker": "LMT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "F-35 + missiles; backlog visibility"
+        },
+        {
+          "ticker": "RTX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Missiles + engines; GTF overhang fading"
+        },
+        {
+          "ticker": "NOC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "B-21 + space; nuclear-modernization leverage"
+        },
+        {
+          "ticker": "GD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Combat systems + Gulfstream cyclicality"
+        },
+        {
+          "ticker": "LHX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Mission systems; the merchant-supplier roll-up"
+        },
+        {
+          "ticker": "HII",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Naval monopsony; shipbuilding labor risk"
+        },
+        {
+          "ticker": "BA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Defense ballast under commercial-aero recovery"
+        },
+        {
+          "ticker": "TDG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Aftermarket pricing-power compounder"
+        },
+        {
+          "ticker": "AXON",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Less-lethal + cloud — the defense-tech re-rate"
+        },
+        {
+          "ticker": "HWM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Aero-engine structures; aftermarket mix"
+        }
+      ],
+      "etf_proxy_note": "",
+      "thesis": "Primes and defense-tech levered to a rising global budget cycle: missiles, aircraft, space and the new autonomy entrants. Long-cycle backlog visibility; the cross-current is procurement reform and budget-ceiling risk.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2023-05-09",
+          "action": "create",
+          "note": "Seeded Defense & Aerospace — 10 equal-weight members from the S&P 1500 cache."
+        }
+      ]
+    },
+    "power_grid": {
+      "name": "Power & Grid Buildout",
+      "name_zh": "电力与电网",
+      "theme": "Generation, grid & electrification",
+      "category": "Energy & Power",
+      "etf_proxy": "XLU",
+      "created": "2023-05-09",
+      "curated": "2026-06-14",
+      "omitted": [],
+      "members": [
+        {
+          "ticker": "GEV",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Grid equipment + gas turbines — the pure play"
+        },
+        {
+          "ticker": "ETN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Electrical components into data-center power"
+        },
+        {
+          "ticker": "VRT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Data-center power & cooling backbone"
+        },
+        {
+          "ticker": "PWR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Grid construction labor — the build-out contractor"
+        },
+        {
+          "ticker": "NEE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Renewables + regulated utility scale"
+        },
+        {
+          "ticker": "CEG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Nuclear fleet selling 24/7 power to data centers"
+        },
+        {
+          "ticker": "VST",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Merchant power leveraged to power prices"
+        },
+        {
+          "ticker": "NRG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Retail power + generation; capital return"
+        },
+        {
+          "ticker": "PCG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "California grid hardening turnaround"
+        },
+        {
+          "ticker": "D",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Regulated utility; data-center load in its footprint"
+        }
+      ],
+      "etf_proxy_note": "",
+      "thesis": "The electricity supply chain for AI + electrification: generation, grid equipment and the IPPs selling power to data centers. A multi-year demand-growth story after two decades of flat US load; rate-case and rate-of-return regulation is the governor.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2023-05-09",
+          "action": "create",
+          "note": "Seeded Power & Grid Buildout — 10 equal-weight members from the S&P 1500 cache."
+        }
+      ]
+    },
+    "reshoring": {
+      "name": "Reshoring & Industrial Capex",
+      "name_zh": "回流与工业资本开支",
+      "theme": "Onshoring & capex beneficiaries",
+      "category": "Industrials & Defense",
+      "etf_proxy": "XLI",
+      "created": "2023-05-09",
+      "curated": "2026-06-14",
+      "omitted": [
+        "GGG (not in free cache)"
+      ],
+      "members": [
+        {
+          "ticker": "ETN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Electrical infrastructure for new plants"
+        },
+        {
+          "ticker": "PH",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Motion & control — factory automation"
+        },
+        {
+          "ticker": "EMR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Process automation for reshored capacity"
+        },
+        {
+          "ticker": "ROK",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Pure-play factory automation"
+        },
+        {
+          "ticker": "CAT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Construction + the machinery cycle bellwether"
+        },
+        {
+          "ticker": "DE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Ag + construction equipment cycle"
+        },
+        {
+          "ticker": "URI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Equipment rental — the capex-cycle read-through"
+        },
+        {
+          "ticker": "PWR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Electrical + infrastructure construction"
+        },
+        {
+          "ticker": "FAST",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Industrial distribution; reshoring volume tell"
+        }
+      ],
+      "etf_proxy_note": "industrials proxy",
+      "thesis": "Beneficiaries of onshoring and the US industrial-capex super-cycle: automation, power distribution, machinery and the equipment-rental layer. Levered to factory construction and IRA/CHIPS spending; sensitive to rates and the capex cycle turning.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2023-05-09",
+          "action": "create",
+          "note": "Seeded Reshoring & Industrial Capex — 9 equal-weight members from the S&P 1500 cache."
+        },
+        {
+          "date": "2026-06-14",
+          "action": "note",
+          "note": "Theme names outside the free S&P-1500 cache, excluded: GGG (not in free cache)."
+        }
+      ]
+    },
+    "regional_banks": {
+      "name": "Regional Banks",
+      "name_zh": "区域银行",
+      "theme": "Mid/large regional lenders",
+      "category": "Financials",
+      "etf_proxy": "KRE",
+      "created": "2023-05-09",
+      "curated": "2026-06-14",
+      "omitted": [
+        "ZION, CMA (not in free cache)"
+      ],
+      "members": [
+        {
+          "ticker": "RF",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Southeast deposit franchise"
+        },
+        {
+          "ticker": "KEY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Capital-markets-tilted regional"
+        },
+        {
+          "ticker": "CFG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Northeast commercial lender"
+        },
+        {
+          "ticker": "HBAN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Midwest franchise; credit discipline"
+        },
+        {
+          "ticker": "FITB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Diversified Midwest regional"
+        },
+        {
+          "ticker": "MTB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Conservative underwriter; CRE exposure watched"
+        },
+        {
+          "ticker": "TFC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Super-regional scale post-merger"
+        },
+        {
+          "ticker": "USB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Largest regional; fee-income diversification"
+        }
+      ],
+      "etf_proxy_note": "",
+      "thesis": "Mid- and large-regional lenders — the cleanest expression of the yield curve, CRE credit and deposit competition. Re-rate on steepening and rate cuts; the tail risk is CRE losses and a deposit-flight repeat.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2023-05-09",
+          "action": "create",
+          "note": "Seeded Regional Banks — 8 equal-weight members from the S&P 1500 cache."
+        },
+        {
+          "date": "2026-06-14",
+          "action": "note",
+          "note": "Theme names outside the free S&P-1500 cache, excluded: ZION, CMA (not in free cache)."
+        }
+      ]
+    },
+    "managed_care": {
+      "name": "Managed Care & Insurers",
+      "name_zh": "管理式医疗与保险",
+      "theme": "Health insurers / MCOs",
+      "category": "Healthcare",
+      "etf_proxy": "XLV",
+      "created": "2023-05-09",
+      "curated": "2026-06-14",
+      "omitted": [],
+      "members": [
+        {
+          "ticker": "UNH",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Scale + Optum; the MLR-cycle bellwether"
+        },
+        {
+          "ticker": "ELV",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Blues franchise; Medicaid redetermination"
+        },
+        {
+          "ticker": "CI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Evernorth PBM cash engine"
+        },
+        {
+          "ticker": "HUM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Medicare-Advantage pure play — rate-notice levered"
+        },
+        {
+          "ticker": "CNC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Medicaid/exchange exposure"
+        },
+        {
+          "ticker": "MOH",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Lean Medicaid managed-care operator"
+        }
+      ],
+      "etf_proxy_note": "loose — broad health",
+      "thesis": "Health insurers and managed-care orgs — defensive cash flows whipsawed by the medical-loss-ratio cycle and Medicare Advantage rate notices. A policy-and-utilization trade more than a growth one.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2023-05-09",
+          "action": "create",
+          "note": "Seeded Managed Care & Insurers — 6 equal-weight members from the S&P 1500 cache."
+        }
+      ]
+    },
+    "housing": {
+      "name": "Housing Chain",
+      "name_zh": "住房产业链",
+      "theme": "Builders & building products",
+      "category": "Consumer Cyclical",
+      "etf_proxy": "XHB",
+      "created": "2023-05-09",
+      "curated": "2026-06-14",
+      "omitted": [
+        "WHR (not in free cache)"
+      ],
+      "members": [
+        {
+          "ticker": "DHI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Largest builder; entry-level volume"
+        },
+        {
+          "ticker": "LEN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Land-light builder; margin focus"
+        },
+        {
+          "ticker": "PHM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Move-up + active-adult mix"
+        },
+        {
+          "ticker": "NVR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Land-option model; capital efficiency"
+        },
+        {
+          "ticker": "BLDR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Building products distribution scale"
+        },
+        {
+          "ticker": "MAS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Repair-remodel branded products"
+        },
+        {
+          "ticker": "SHW",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Coatings pricing power across the cycle"
+        },
+        {
+          "ticker": "HD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Pro + DIY repair-remodel bellwether"
+        },
+        {
+          "ticker": "LOW",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "DIY-tilted home-improvement #2"
+        }
+      ],
+      "etf_proxy_note": "",
+      "thesis": "The housing chain — builders and building-products — geared to mortgage rates and the structural under-supply of US homes. Rate-cut beneficiaries with order-cancellation risk if rates stay high.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2023-05-09",
+          "action": "create",
+          "note": "Seeded Housing Chain — 9 equal-weight members from the S&P 1500 cache."
+        },
+        {
+          "date": "2026-06-14",
+          "action": "note",
+          "note": "Theme names outside the free S&P-1500 cache, excluded: WHR (not in free cache)."
+        }
+      ]
+    },
+    "payments_fintech": {
+      "name": "Payments & Fintech",
+      "name_zh": "支付与金融科技",
+      "theme": "Networks & payment processors",
+      "category": "Financials",
+      "etf_proxy": "XLF",
+      "created": "2023-05-09",
+      "curated": "2026-06-14",
+      "omitted": [
+        "FI Fiserv (not in free cache)"
+      ],
+      "members": [
+        {
+          "ticker": "V",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Toll-road network economics"
+        },
+        {
+          "ticker": "MA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Network duopoly; cross-border recovery"
+        },
+        {
+          "ticker": "PYPL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Branded checkout turnaround"
+        },
+        {
+          "ticker": "FIS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Merchant + banking processing"
+        },
+        {
+          "ticker": "GPN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Integrated payments; valuation reset"
+        },
+        {
+          "ticker": "AXP",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Closed-loop network + premium spend"
+        },
+        {
+          "ticker": "COF",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Card lender; credit-normalization watch"
+        },
+        {
+          "ticker": "SYF",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Private-label card; consumer-credit beta"
+        }
+      ],
+      "etf_proxy_note": "",
+      "thesis": "Card networks and payment processors — secular cash-to-card plus consumer-spend cyclicality, now with the AI/stablecoin disruption overhang on the processors.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2023-05-09",
+          "action": "create",
+          "note": "Seeded Payments & Fintech — 8 equal-weight members from the S&P 1500 cache."
+        },
+        {
+          "date": "2026-06-14",
+          "action": "note",
+          "note": "Theme names outside the free S&P-1500 cache, excluded: FI Fiserv (not in free cache)."
+        }
+      ]
+    },
+    "energy_complex": {
+      "name": "US Energy Complex",
+      "name_zh": "美国能源综合",
+      "theme": "Integrateds, E&P, services, midstream",
+      "category": "Energy & Power",
+      "etf_proxy": "XLE",
+      "created": "2023-05-09",
+      "curated": "2026-06-14",
+      "omitted": [],
+      "members": [
+        {
+          "ticker": "XOM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Integrated scale + Permian/Guyana growth"
+        },
+        {
+          "ticker": "CVX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Integrated; capital-return discipline"
+        },
+        {
+          "ticker": "COP",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Low-cost E&P; shareholder returns"
+        },
+        {
+          "ticker": "EOG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Premium shale inventory"
+        },
+        {
+          "ticker": "SLB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "International + offshore services lever"
+        },
+        {
+          "ticker": "MPC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Refining + Marathon retail"
+        },
+        {
+          "ticker": "PSX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Refining + midstream + chemicals"
+        },
+        {
+          "ticker": "VLO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Pure refining crack-spread beta"
+        },
+        {
+          "ticker": "OXY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Permian + carbon-capture optionality"
+        },
+        {
+          "ticker": "WMB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Natgas midstream; data-center demand"
+        },
+        {
+          "ticker": "KMI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Natgas pipelines; LNG/power feedgas"
+        }
+      ],
+      "etf_proxy_note": "energy proxy",
+      "thesis": "The US energy complex end-to-end: integrateds, E&P, oilfield services, refiners and midstream. A crude-price + capital-discipline trade; midstream adds a data-center-power/natgas demand kicker.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2023-05-09",
+          "action": "create",
+          "note": "Seeded US Energy Complex — 11 equal-weight members from the S&P 1500 cache."
+        }
+      ]
+    },
+    "defensives": {
+      "name": "Defensives",
+      "name_zh": "防御板块",
+      "theme": "Staples & defensive cash-flows",
+      "category": "Consumer Defensive",
+      "etf_proxy": [
+        "XLP",
+        "XLU"
+      ],
+      "created": "2023-05-09",
+      "curated": "2026-06-14",
+      "omitted": [],
+      "members": [
+        {
+          "ticker": "PG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Premium staples pricing power"
+        },
+        {
+          "ticker": "KO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Global beverage distribution moat"
+        },
+        {
+          "ticker": "PEP",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Snacks + beverages; GLP-1 volume debate"
+        },
+        {
+          "ticker": "JNJ",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Pharma + medtech defensive compounder"
+        },
+        {
+          "ticker": "WMT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Defensive retail + advertising optionality"
+        },
+        {
+          "ticker": "COST",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Membership model; traffic resilience"
+        },
+        {
+          "ticker": "CL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Oral care + pet; EM exposure"
+        },
+        {
+          "ticker": "MDLZ",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Global snacking pricing power"
+        },
+        {
+          "ticker": "KMB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Tissue/personal-care; input-cost lever"
+        },
+        {
+          "ticker": "GIS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Packaged food; private-label pressure"
+        }
+      ],
+      "etf_proxy_note": "staples proxy",
+      "thesis": "Staples and defensive cash-flows — the low-beta ballast that leads in risk-off and lags in risk-on. A relative-performance regime tell more than an absolute-return engine; GLP-1 and private-label are the structural cross-currents.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2023-05-09",
+          "action": "create",
+          "note": "Seeded Defensives — 10 equal-weight members from the S&P 1500 cache."
+        }
+      ]
+    },
+    "travel": {
+      "name": "Travel & Experiences",
+      "name_zh": "旅行与体验",
+      "theme": "Airlines, cruises, lodging, gaming",
+      "category": "Consumer Cyclical",
+      "etf_proxy": "JETS",
+      "created": "2023-05-09",
+      "curated": "2026-06-14",
+      "omitted": [],
+      "members": [
+        {
+          "ticker": "BKNG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Online-travel agency network + margins"
+        },
+        {
+          "ticker": "MAR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Asset-light lodging franchise fees"
+        },
+        {
+          "ticker": "HLT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Asset-light lodging; loyalty engine"
+        },
+        {
+          "ticker": "RCL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Cruise demand + pricing recovery"
+        },
+        {
+          "ticker": "CCL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Cruise deleveraging turnaround"
+        },
+        {
+          "ticker": "NCLH",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Premium cruise; balance-sheet beta"
+        },
+        {
+          "ticker": "DAL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Premium-cabin + loyalty airline"
+        },
+        {
+          "ticker": "UAL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "International recovery airline"
+        },
+        {
+          "ticker": "LUV",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Domestic low-cost; margin reset"
+        },
+        {
+          "ticker": "ABNB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Alternative-accommodation platform"
+        },
+        {
+          "ticker": "EXPE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "OTA turnaround + B2B"
+        },
+        {
+          "ticker": "LVS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Macau/Singapore gaming recovery"
+        },
+        {
+          "ticker": "MGM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Vegas + digital-gaming optionality"
+        }
+      ],
+      "etf_proxy_note": "",
+      "thesis": "Travel and experiences — airlines, cruises, lodging and gaming. The 'experiences over goods' consumer trade; high operating leverage cuts both ways and it's first to roll over on a consumer slowdown.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2023-05-09",
+          "action": "create",
+          "note": "Seeded Travel & Experiences — 13 equal-weight members from the S&P 1500 cache."
+        }
+      ]
+    },
+    "retail": {
+      "name": "Retail",
+      "name_zh": "零售",
+      "theme": "Big-box, off-price & discount retail",
+      "category": "Consumer Cyclical",
+      "etf_proxy": "XLY",
+      "created": "2023-05-09",
+      "curated": "2026-06-14",
+      "omitted": [],
+      "members": [
+        {
+          "ticker": "WMT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Trade-down winner + retail-media margin"
+        },
+        {
+          "ticker": "COST",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Membership traffic; value perception"
+        },
+        {
+          "ticker": "TGT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Discretionary-mix discount big-box"
+        },
+        {
+          "ticker": "HD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Pro/DIY repair-remodel bellwether"
+        },
+        {
+          "ticker": "LOW",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "DIY home-improvement #2"
+        },
+        {
+          "ticker": "TJX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Off-price share-gainer"
+        },
+        {
+          "ticker": "ROST",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Off-price value; treasure-hunt model"
+        },
+        {
+          "ticker": "DG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Rural discount; low-end consumer stress tell"
+        },
+        {
+          "ticker": "DLTR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Discount; Family Dollar overhang"
+        },
+        {
+          "ticker": "BBY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Consumer-electronics replacement cycle"
+        }
+      ],
+      "etf_proxy_note": "loose — broad cons. disc.",
+      "thesis": "Big-box, off-price and discount retail — a consumer-health and trade-down gauge. Off-price and discounters win in a stretched consumer; discretionary big-box is the spend-confidence tell.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2023-05-09",
+          "action": "create",
+          "note": "Seeded Retail — 10 equal-weight members from the S&P 1500 cache."
+        }
+      ]
+    }
+  },
+  "construction": "Equal-weighted, monthly-rebalanced, buy-and-hold between rebalances; dated membership changes take effect same-day.",
+  "history_note": "Curated 2026-06 with knowledge of the period — the full ~3y series is a HINDSIGHT backtest of the as-of-creation membership, not an out-of-sample track. A monitoring/structure frame, not a buy list."
+}

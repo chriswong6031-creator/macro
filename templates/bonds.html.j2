@@ -51,7 +51,7 @@ html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4
 .theme-switch{width:56px;height:27px;border-radius:999px;background:#eef1f6;border:1px solid var(--grid);position:relative;cursor:pointer;padding:0;flex:none}
 html[data-theme="dark"] .theme-switch{background:#222732}
 .theme-switch .ic{position:absolute;top:50%;transform:translateY(-50%);font-size:10.5px;opacity:.5;line-height:1}
-.theme-switch .ic.sun{left:8px}.theme-switch .ic.moon{right:8px}
+.theme-switch .ic.sun{right:8px}.theme-switch .ic.moon{left:8px} /* opposite the knob's rest side, else two suns / two moons show */
 .theme-switch .knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 5px rgba(0,0,0,.3);transform:translateX(29px);transition:transform .34s cubic-bezier(.34,1.45,.5,1),background .3s}
 .theme-switch .knob::before{content:"☀️"}
 html[data-theme="dark"] .theme-switch .knob{transform:translateX(0);background:#e8c15a}
@@ -118,7 +118,16 @@ html[data-theme="dark"] .measured-edge{background:rgba(26,127,67,.12)}
   <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;padding:0;border:none;margin:0 auto">
     <div class="nav-links">
       <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
-      <a class="nav-link" href="macro.html">📊 {{ t('US Macro', '美国宏观') }}</a>
+      <div class="nav-dd">
+        <a class="nav-link" href="macro.html">🇺🇸 {{ t('US Macro', '美国宏观') }} <span class="caret">▾</span></a>
+        <div class="nav-dd-menu" role="menu">
+          <a href="macro.html">{{ t('Regime dashboard', '宏观周期') }}<span class="d">{{ t('Growth · inflation · MRS · nowcast', '增长 · 通胀 · MRS · 即时预测') }}</span></a>
+          <a href="factors.html">🧮 {{ t('Factor Lab', '因子实验室') }}<span class="d">{{ t('Value · quality · low-vol + point-in-time IC', '价值 · 质量 · 低波动 + 时点 IC') }}</span></a>
+          <a href="baskets.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P', '等权主题篮子 vs 标普') }}</span></a>
+          <a href="seasonality.html">🗓 {{ t('Factor Seasonality', '因子季节性') }}<span class="d">{{ t('Ken French monthly, 1926+', 'Ken French 月度，1926+') }}</span></a>
+          <a href="spvector.html">📈 {{ t('S&P / Macro Vector', '标普宏观向量') }}<span class="d">{{ t('Tactical equity↔cash allocation', '战术股票↔现金配置') }}</span></a>
+        </div>
+      </div>
       <div class="nav-dd">
         <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }} <span class="caret">▾</span></a>
         <div class="nav-dd-menu" role="menu">
@@ -174,7 +183,7 @@ html[data-theme="dark"] .measured-edge{background:rgba(26,127,67,.12)}
         {% if vm.health.calib %}
         <div class="measured-edge">📊 {{ t('Measured', '已校准') }}: {{ t('when this composite is in its top stress tercile, a ≥10% S&P drawdown followed within 63 days', '当该综合指标处于压力最高的三分位时，标普在63天内出现≥10%回撤的概率为') }}
           <b>{{ vm.health.calib.hi_dd10 }}%</b> {{ t('of the time vs a', '，而基准为') }} <b>{{ vm.health.calib.base_dd10 }}%</b> {{ t('base', '') }}
-          (<b>{% if vm.health.calib.edge_pp >= 0 %}+{% endif %}{{ vm.health.calib.edge_pp }}pp</b>){{ t('. Recession-IC', '。衰退IC') }} {{ vm.health.calib.ic_recession }}.
+          (<b>{% if (vm.health.calib.edge_pp or 0) >= 0 %}+{% endif %}{{ vm.health.calib.edge_pp }}pp</b>){{ t('. Recession-IC', '。衰退IC') }} {{ vm.health.calib.ic_recession }}.
           <span class="faint">{{ t('Legs: ✓ confirmed · ~ directional · · context (glyph by each bar). Honest caveat: the blend ≈ the drawdown-risk leg alone — it is an explainable synthesis, not a better single predictor.', '分项：✓ 已确认 · ~ 有方向 · · 仅背景（见各条形旁字形）。诚实提示：综合 ≈ 单独的回撤风险分项 — 它是可解释的综合，而非更优的单一预测。') }}</span></div>
         {% endif %}
       </div>{% endif %}
@@ -213,6 +222,33 @@ html[data-theme="dark"] .measured-edge{background:rgba(26,127,67,.12)}
     </div>
     <div class="sub faint" style="margin-top:8px">{{ t('The 3m10y spread drives the NY Fed probit. The near-term forward spread (the implied 3m rate ~18 months out minus today\'s) statistically beats 2s10s as a recession signal — it inverts when the market prices Fed cuts. The TP-adjusted slope strips the low-term-premium distortion that inverted the curve in 2022–24 without a recession.', '3月/10年利差驱动纽约联储概率模型。近端远期利差（约18个月后的隐含3月利率减去当前）作为衰退信号在统计上优于2年/10年——当市场为美联储降息定价时即倒挂。期限溢价调整斜率剔除了2022–24年在无衰退情况下导致曲线倒挂的低期限溢价扭曲。') }}</div>
   </div>
+
+  <!-- ===================== FED POLICY PATH ===================== -->
+  {% if fed_path %}
+  <div class="sec-head">{{ t('Market-implied policy path — the Fed vs the market', '市场隐含政策路径 · 美联储 vs 市场') }}</div>
+  <div class="card">
+    <h2>{{ t('Where the market prices the funds rate — and where the Fed projects it', '市场为基金利率定价之处 · 以及美联储的预测') }}</h2>
+    {% if fed_path.headline_en %}<div class="sub" style="margin:2px 0 8px"><b><span class="l-en">{{ fed_path.headline_en }}</span><span class="l-zh">{{ fed_path.headline_zh }}</span></b></div>{% endif %}
+    {% if fed_path.gap %}
+    <div style="margin:6px 0 10px">
+      <span class="band-chip" style="background:var(--muted)">{{ fed_path.gap.horizon_label }} · {{ t('market', '市场') }} {{ '%.2f'|format(fed_path.gap.market) }}% · {{ t('Fed dot', '美联储点阵') }} {{ '%.2f'|format(fed_path.gap.fed_dot) }}%</span>
+      <span class="pill"><span class="l-en">{{ '%+d'|format(fed_path.gap.gap_bp) }}bp · {{ fed_path.gap.lean_en }}</span><span class="l-zh">{{ '%+d'|format(fed_path.gap.gap_bp) }}基点 · {{ fed_path.gap.lean_zh }}</span></span>
+    </div>
+    {% endif %}
+    <div class="kpis">
+      {{ kpi('Target range', '目标区间', (('%.2f'|format(fed_path.target_low)) ~ '–' ~ ('%.2f'|format(fed_path.target_high))) if fed_path.target_low is not none else none, '%') }}
+      {{ kpi('EFFR (policy now)', '有效联邦基金利率', fed_path.policy_rate, '%') }}
+      {{ kpi('Implied 12m', '隐含12个月', fed_path.implied.get('m12'), '%') }}
+      {{ kpi('Implied 25bp moves (12m)', '隐含25基点变动(12月)', fed_path.implied_cuts_12m, '', t('+ = cuts', '正=降息')) }}
+      {{ kpi('Near-term fwd spread', '近端远期利差', fed_path.ntfs, 'pp') }}
+      {{ kpi('us2y − funds', 'us2y − 基金利率', fed_path.rate_exp_proxy, 'pp') }}
+    </div>
+    {% if fed_path.implied_source_en %}<div class="sub faint" style="margin-top:6px">{{ t('Implied path source', '隐含路径来源') }}: <span class="l-en">{{ fed_path.implied_source_en }}</span><span class="l-zh">{{ fed_path.implied_source_zh }}</span></div>{% endif %}
+    {% if charts.policy_path %}<div style="margin-top:14px">{{ charts.policy_path | safe }}</div>{% endif %}
+    {% if fed_path.read_en %}<div class="sub" style="margin-top:8px"><span class="l-en">{{ fed_path.read_en }}</span><span class="l-zh">{{ fed_path.read_zh }}</span></div>{% endif %}
+    <div class="sub faint" style="margin-top:8px">{{ t(fed_path.note_en, fed_path.note_zh) }}</div>
+  </div>
+  {% endif %}
 
   <!-- ===================== CREDIT + REAL/INFLATION ===================== -->
   <div class="sec-head">{{ t('② Credit & ③ Real rates — risk appetite & the discount rate', '② 信用 与 ③ 实际利率 · 风险偏好与贴现率') }}</div>
@@ -293,6 +329,31 @@ html[data-theme="dark"] .measured-edge{background:rgba(26,127,67,.12)}
     <div class="sub faint" style="margin-top:6px">{{ t('Euro-area fragmentation = the ECB all-government minus AAA-rated 10y yield — a free, official, daily BTP-Bund-style proxy for periphery-vs-core stress (AAA ≈ the German Bund). JGB 2s10s tracks Japan\'s post-YCC normalization; a steep long end can repatriate Japanese capital and lift global duration supply.', '欧元区分化 = 欧洲央行全体政府债减AAA级的10年收益率——免费、官方、每日，类似意德利差的“外围对核心”压力代理（AAA≈德国国债）。日债2年/10年跟踪日本YCC退出后的正常化；长端陡峭可能促使日本资本回流并推高全球久期供给。') }}</div>
   </div>
 
+  {% if credit_cycle %}
+  <div class="card">
+    <h2>{{ t('Global credit cycle — the crisis early-warning (BIS)', '全球信用周期 · 危机预警 (BIS)') }}</h2>
+    <div class="sub faint" style="margin:4px 0 8px">{{ t('Private-sector leverage vs trend.', '私人部门杠杆相对趋势。') }} <b>{{ t(credit_cycle.headline, '') }}</b> · {{ t('as of', '截至') }} {{ credit_cycle.asof }}</div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <tr style="color:var(--muted);font-size:11px;text-transform:uppercase">
+        <th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--line)">{{ t('economy', '经济体') }}</th>
+        <th style="text-align:right;padding:4px 8px;border-bottom:1px solid var(--line)">{{ t('credit-to-GDP gap', '信贷/GDP 缺口') }}</th>
+        <th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--line)">{{ t('state', '状态') }}</th>
+        <th style="text-align:right;padding:4px 8px;border-bottom:1px solid var(--line)">{{ t('debt-service ratio', '偿债比率') }}</th>
+      </tr>
+      {% for r in credit_cycle.rows %}
+      {% set gc = 'var(--down)' if (r.gap or 0) >= 10 else '#d9a03c' if (r.gap or 0) >= 2 else 'var(--up)' if (r.gap or 0) <= -2 else 'var(--muted)' %}
+      <tr>
+        <td style="padding:5px 8px;border-bottom:1px solid var(--line)"><b>{{ t(r.label_en, r.label_zh) }}</b></td>
+        <td style="text-align:right;padding:5px 8px;border-bottom:1px solid var(--line);color:{{ gc }};font-weight:700">{{ '%+.1f'|format(r.gap) }}pp{% if r.gap_chg_1y is not none %} <span class="sub faint" style="font-weight:400">{{ '%+.1f'|format(r.gap_chg_1y) }}/yr</span>{% endif %}</td>
+        <td style="padding:5px 8px;border-bottom:1px solid var(--line);color:{{ gc }}">{{ t(r.gap_state, {'elevated risk':'风险偏高','building':'累积中','deleveraging':'去杠杆','neutral':'中性'}.get(r.gap_state, r.gap_state)) }}</td>
+        <td style="text-align:right;padding:5px 8px;border-bottom:1px solid var(--line)">{{ r.dsr }}%{% if r.dsr_chg_1y is not none %} <span class="sub faint">{{ '%+.1f'|format(r.dsr_chg_1y) }}/yr</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    <div class="sub faint" style="margin-top:8px">{{ t(credit_cycle.note, '信贷/GDP 缺口（BIS，Borio-Drehmann）= 私人非金融部门信贷/GDP 减去其长期趋势；大幅正缺口（>10个百分点）在历史上领先银行业危机1-3年，负缺口标志去杠杆完成。DSR=偿债负担。季度、缓变的结构性背景——非信号，从不评分。来源：BIS 统计（无需密钥），请注明 BIS。') }}</div>
+  </div>
+  {% endif %}
+
   <!-- ===================== CROSS-ASSET DRIVERS (AI hand-off) ===================== -->
   <div class="sec-head">{{ t('Cross-asset hand-off — what bonds imply for the other boards', '跨资产传导 · 债券对其他面板的含义') }}</div>
   <div class="card">
@@ -343,7 +404,7 @@ html[data-theme="dark"] .measured-edge{background:rgba(26,127,67,.12)}
     <h2>{{ t('How to read this · and what it is not', '如何解读 · 以及它不是什么') }}</h2>
     <div class="note">
       <p>{{ t('This board reads the bond market HEALTH-FIRST: what the Treasury curve, corporate credit, real yields, rates volatility and funding plumbing say about economic health, regime and cycle position — not a "trade the bond" vector. The health score is a transparent composite of the already-MEASURED recession-risk and drawdown-risk gauges (engine.conditions) plus the credit, rates-vol and funding stress reads.', '本面板以“健康”为先解读债券市场：美国国债曲线、公司信用、实际利率、利率波动与资金管道对经济健康、周期状态与所处阶段的判读——而非“交易债券”的向量。健康度评分是已测得的衰退风险与回撤风险（engine.conditions），加上信用、利率波动与资金压力读数的透明综合。') }}</p>
-      <p><b>{{ t('Honesty bar.', '诚信底线。') }}</b> {{ t('Thresholds (curve, OAS distress, MOVE bands) are documented practitioner levels, NOT tuned to a backtest. scripts/calibrate_bonds.py MEASURES each leg vs strictly-forward S&P drawdowns + NBER recession, split-half: recession-risk, drawdown-risk and rates-vol are CONFIRMED, credit is DIRECTIONAL (strong pre-2013, faded through QE), funding-plumbing is CONTEXT (it rarely fires, so it rarely discriminates). The composite is CONFIRMED — but, honestly, it does NOT beat the drawdown-risk leg alone, so treat it as an explainable synthesis, not a better single predictor. The health-score weighting is kept as a conservative prior (measured-informed weights are reported in reports/bonds-calibration.md, adopted only if they hold on a refresh). All alerts are CONTEXT.', '阈值（曲线、OAS困境、MOVE分带）为有据的从业者水平，未对回测调参。scripts/calibrate_bonds.py 对每个分项相对严格向前的标普回撤与NBER衰退做前后半段测量：衰退风险、回撤风险与利率波动为已确认，信用为有方向（2013年前强、QE期间减弱），资金管道为仅背景（极少触发，故极少有区分力）。综合指标已确认 — 但诚实地说，它并不优于单独的回撤风险分项，故应视为可解释的综合，而非更优的单一预测。健康度权重保守地保留为先验（实测建议权重见 reports/bonds-calibration.md，仅在刷新后仍成立时采用）。所有警报皆为背景。') }}</p>
+      <p><b>{{ t('Honesty bar.', '诚信底线。') }}</b> {{ t('Thresholds (curve, OAS distress, MOVE bands) are documented practitioner levels, NOT tuned to a backtest. scripts/calibrate_bonds.py MEASURES each leg vs strictly-forward S&P drawdowns + NBER recession, split-half (with a forward-window embargo around the split, and CONFIRMED requiring BOTH halves to be meaningful, not just sign-stable): drawdown-risk and rates-vol are CONFIRMED, recession-risk and credit are DIRECTIONAL (strong pre-2013/2008, faded through QE), funding-plumbing is CONTEXT (it rarely fires, so it rarely discriminates). The composite is CONFIRMED — but, honestly, it does NOT beat the drawdown-risk leg alone (≈ it), so treat it as an explainable synthesis, not a better single predictor. The health-score weighting now USES these measured (verdict-scaled) weights, auto-refreshed each weekly calibration (config prior as fallback). All alerts are CONTEXT.', '阈值（曲线、OAS困境、MOVE分带）为有据的从业者水平，未对回测调参。scripts/calibrate_bonds.py 对每个分项相对严格向前的标普回撤与NBER衰退做前后半段测量（在分割点周围设前向窗口隔离带，且“已确认”要求两半段均有意义、而非仅同号）：回撤风险与利率波动为已确认，衰退风险与信用为有方向（2013年前/2008强、QE期间减弱），资金管道为仅背景（极少触发，故极少有区分力）。综合指标已确认 — 但诚实地说，它并不优于单独的回撤风险分项（≈相当），故应视为可解释的综合，而非更优的单一预测。健康度权重现采用这些已测得（按判定缩放）的权重，每周校准自动刷新（以配置先验为后备）。所有警报皆为背景。') }}</p>
       <p><b>{{ t('Data.', '数据。') }}</b> {{ t('Free / keyless: FRED (full Treasury curve, real yields, breakevens, ACM/Kim-Wright term premium, ICE BofA OAS, Moody\'s Baa/Aaa back to 1986, SOFR/IORB plumbing, Excess Bond Premium), Yahoo (MOVE, bond ETFs), ECB Data Portal (euro-area AAA/all-government curve), Japan MoF (JGB, 1974→).', '免费/无密钥：FRED（完整国债曲线、实际利率、盈亏平衡通胀、ACM/Kim-Wright期限溢价、ICE美银OAS、追溯至1986年的穆迪Baa/Aaa、SOFR/准备金利率管道、超额债券溢价）、Yahoo（MOVE、债券ETF）、欧洲央行数据门户（欧元区AAA/全体政府债曲线）、日本财务省（日债，1974年起）。') }}</p>
       <p class="meta-foot">{{ t('Leg weights are now the MEASURED (calibration-derived) weights, refreshed each weekly calibration. Further work: per-country BTP-Bund vs the euro-area aggregate proxy, EM sovereign (EMBI), and a richer cross-country curve-divergence read.', '分项权重现采用已校准（由校准得出）的权重，每周校准刷新。后续：相对欧元区总量代理的逐国意德利差、新兴市场主权（EMBI），以及更丰富的跨国曲线背离判读。') }}</p>
       <p class="meta-foot">{{ t('History', '历史') }} {{ span }} · {{ t('built', '构建于') }} {{ built }}</p>

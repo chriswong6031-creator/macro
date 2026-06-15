@@ -1,0 +1,200 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ t('Methodology — factor lab, baskets & seasonality', '方法论 — 因子实验室、篮子与季节性') }}</title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  a { color:var(--link); text-decoration:none; }
+  .topline { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom:14px; }
+  .layout { display:grid; grid-template-columns:220px minmax(0,820px); gap:34px; align-items:start; }
+  @media (max-width:900px){ .layout{ grid-template-columns:1fr; } .toc{ position:static !important; } }
+  .toc { position:sticky; top:18px; font-size:13px; border-left:1px solid var(--line); padding-left:14px; }
+  .toc a { display:block; color:var(--muted); padding:3px 0; }
+  .toc a:hover, .toc a.active { color:var(--text); }
+  h1 { font-size:22px; margin:0 0 4px; }
+  h2 { font-size:17px; margin:30px 0 8px; padding-top:6px; scroll-margin-top:14px; }
+  h3 { font-size:14px; margin:16px 0 4px; }
+  p, li { color:var(--text); opacity:.92; }
+  .muted { color:var(--muted); opacity:1; }
+  .lead { font-size:14.5px; }
+  code, .f { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px; background:var(--panel2); border:1px solid var(--line); border-radius:5px; padding:1px 6px; }
+  .f { display:block; padding:8px 12px; margin:6px 0; white-space:pre-wrap; line-height:1.5; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:13px 16px; margin:10px 0; }
+  .note { border-left:3px solid var(--warn); }
+  table { border-collapse:collapse; width:100%; font-size:13px; margin:8px 0; }
+  th,td { text-align:left; padding:6px 9px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--muted); font-weight:500; }
+  .kpis { display:flex; flex-wrap:wrap; gap:20px; margin:8px 0 4px; }
+  .kpis .v { font-size:18px; font-weight:650; } .kpis .k { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  footer { color:var(--muted); font-size:11.5px; margin-top:30px; border-top:1px solid var(--line); padding-top:12px; }
+</style>
+</head>
+<body>
+<nav class="site-nav">
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 {{ t('US Macro', '美国宏观') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">{{ t('Regime dashboard', '宏观周期') }}<span class="d">{{ t('Growth · inflation · MRS · nowcast', '增长 · 通胀 · MRS · 即时预测') }}</span></a>
+        <a href="factors.html">🧮 {{ t('Factor Lab', '因子实验室') }}<span class="d">{{ t('Value · quality · low-vol + point-in-time IC', '价值 · 质量 · 低波动 + 时点 IC') }}</span></a>
+        <a href="baskets.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P', '等权主题篮子 vs 标普') }}</span></a>
+        <a href="seasonality.html">🗓 {{ t('Factor Seasonality', '因子季节性') }}<span class="d">{{ t('Ken French monthly, 1926+', 'Ken French 月度，1926+') }}</span></a>
+        <a href="spvector.html">📈 {{ t('S&P / Macro Vector', '标普宏观向量') }}<span class="d">{{ t('Tactical equity↔cash allocation', '战术股票↔现金配置') }}</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }}</a>
+    <a class="nav-link" href="etfs.html">🐳 {{ t('ETF flows', 'ETF 资金流') }}</a>
+    <a class="nav-link active" href="factors.html">🧮 {{ t('Factors', '因子') }}</a>
+    <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国A股') }}</a>
+    <a class="nav-link" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }}</a>
+    <a class="nav-link" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }}</a>
+    <a class="nav-link" href="forex.html">💱 {{ t('Forex', '外汇') }}</a>
+    <a class="nav-link" href="bonds.html">🏛️ {{ t('Bonds', '债券') }}</a>
+    <a class="nav-link" href="discovery.html">🏆 {{ t('Alpha leaders', '阿尔法领先股') }}</a>
+    <a class="nav-link" href="gex.html">🧲 {{ t('GEX magnets', 'Gamma磁吸') }}</a>
+  </div>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+  <div class="layout">
+    <nav class="toc" id="toc">
+      <a href="#overview">Overview & honesty</a>
+      <a href="#data">Data sources</a>
+      <a href="#universe">Universe & point-in-time</a>
+      <a href="#factors">Factor definitions</a>
+      <a href="#zscore">Cross-sectional z-scores</a>
+      <a href="#portfolios">Portfolio construction</a>
+      <a href="#horizons">Returns, horizons & σ</a>
+      <a href="#ic">The IC scorecard</a>
+      <a href="#sectors">Sector monitor</a>
+      <a href="#baskets">Thematic baskets</a>
+      <a href="#seasonality">Seasonality (Ken French)</a>
+      <a href="#validation">Validation</a>
+      <a href="#limits">Limitations & disclaimer</a>
+    </nav>
+
+    <main>
+      <h1>{{ t('Methodology', '方法论') }}</h1>
+      <p class="lead muted">{{ t('How the Factor Lab, Thematic Baskets and Seasonality pages are built — every formula, lookback and honest limit, on FREE public data (SEC EDGAR + a ~3-year S&P-1500 price cache + the Ken French library). Read this first; it is what makes the numbers interpretable rather than impressive.',
+        '因子实验室、主题篮子与季节性页面的构建方式 — 每个公式、回看窗口与诚实的局限，全部基于免费公开数据（SEC EDGAR + 约 3 年标普 1500 价格缓存 + Ken French 库）。先读这里。') }}</p>
+      <div class="kpis">
+        <div><div class="v">{{ meth.n_factors }}</div><div class="k">factors</div></div>
+        <div><div class="v">{{ meth.n_baskets }}</div><div class="k">baskets · {{ meth.n_categories }} cats</div></div>
+        <div><div class="v">{{ meth.n_sectors }}</div><div class="k">GICS sectors</div></div>
+        <div><div class="v">~3y</div><div class="k">price history</div></div>
+        <div><div class="v muted">{{ meth.as_of }}</div><div class="k">as of</div></div>
+      </div>
+
+      <h2 id="overview">{{ t('Overview & honesty', '概述与诚实声明') }}</h2>
+      <p>This suite computes the cross-sectional equity factors quant desks actually trade, builds them into point-in-time portfolios, and stress-tests whether the ranks predict forward returns. It runs entirely on free data, which sets a hard ceiling we state everywhere rather than paper over:</p>
+      <ul>
+        <li><b>Fundamentals are ANNUAL.</b> SEC EDGAR's free XBRL "frames" give one clean cross-section per fiscal year, so fundamental factor ranks (value, quality, etc.) refresh roughly <b>once a year per name</b>. Most month-to-month portfolio turnover comes from the price-derived legs (low-volatility, low-beta).</li>
+        <li><b>History is ~3 years.</b> The daily price cache spans roughly the last three years, so every Sharpe ships with a block-bootstrap confidence interval (which mostly straddles zero) and long-run behaviour is deferred to the Ken French seasonality page.</li>
+        <li><b>Descriptive, not alpha.</b> On a leak-free point-in-time test, {{ 'no factor clears the multiple-testing bar' if not meth.ic_any_survive else 'few factors clear the multiple-testing bar' }} (see the <a href="#ic">IC scorecard</a>). These are ranks and context, not a backtested trading system.</li>
+      </ul>
+
+      <h2 id="data">{{ t('Data sources', '数据来源') }}</h2>
+      <table>
+        <tr><th>Dataset</th><th>Source (free)</th><th>Use</th></tr>
+        <tr><td>Fundamentals</td><td>SEC EDGAR XBRL <code>frames</code> API (keyless)</td><td>value / quality / profitability / investment / payout legs, FY2009→latest, stamped point-in-time</td></tr>
+        <tr><td>Prices</td><td>Stored S&P-1500 daily close caches (large + mid + small)</td><td>returns, volatility, beta, the full daily portfolio/basket series</td></tr>
+        <tr><td>Benchmark</td><td>SPY daily close</td><td>the cap-weighted market line in every chart + the "vs S&P" relative</td></tr>
+        <tr><td>Seasonality</td><td>Ken French Data Library (Dartmouth), monthly factor returns</td><td>deep-history (1926/1963+) seasonal climate per style</td></tr>
+        <tr><td>Reference ETFs</td><td>Stored ETF daily closes (sector SPDRs, SMH, factor ETFs…)</td><td>basket theme cross-check + (planned) factor-vs-ETF validation</td></tr>
+        <tr><td>Short interest / insiders</td><td>FINRA bi-monthly / SEC Form-4 (optional)</td><td>a standalone short-interest leg + an insider-conviction panel</td></tr>
+      </table>
+
+      <h2 id="universe">{{ t('Universe & point-in-time', '股票域与时点') }}</h2>
+      <p>The universe is the <b>S&P 1500</b> (large + mid + small cap) — the broadest set with free, reliable fundamentals. At a rebalance date <i>t</i>, a fiscal-year report is visible only if its filing became public on or before <i>t</i> (we apply a conservative reporting lag), so no factor ever sees a not-yet-filed statement. Prices are likewise truncated to <i>t</i>. The honest limit: the cache carries today's constituents, so the series is mildly <b>survivorship-biased</b> upward — stated, not hidden.</p>
+
+      <h2 id="factors">{{ t('Factor definitions', '因子定义') }}</h2>
+      <p>Each factor is a winsorized cross-sectional z-score (higher = more attractive). Composites are the equal-weight mean of available legs.</p>
+      <h3>Value</h3><p>Mean z of four yields: earnings/price (TTM net income ÷ market cap), book/price (common equity ÷ market cap), sales/price (revenue ÷ market cap), and cash-flow yield (operating cash flow ÷ market cap).</p>
+      <h3>Profitability</h3><p>Gross profitability (Novy-Marx): <code>gross profit ÷ total assets</code>.</p>
+      <h3>Quality</h3><p>Mean z of high ROE (net income ÷ equity), low accruals (cash-backed earnings: −(net income − operating cash flow) ÷ assets), and low leverage (−long-term debt ÷ assets) — an AQR Quality-minus-Junk reading.</p>
+      <h3>Investment</h3><p>Conservative investment (Fama-French CMA): <code>−asset growth</code> (firms that grow the balance sheet aggressively tend to underperform).</p>
+      <h3>Payout</h3><p>Net shareholder yield: <code>(dividends + buybacks) ÷ market cap</code>.</p>
+      <h3>Low volatility</h3><p><code>−trailing 252-day idiosyncratic volatility</code> (the low-vol anomaly).</p>
+      <h3>Low beta</h3><p>Betting-Against-Beta (Frazzini-Pedersen): <code>−rolling 252-day market beta vs SPY</code>.</p>
+      <p class="muted">Standalone legs also computed but kept out of the composite: accruals (a quality sub-leg) and short interest (a current FINRA snapshot, so excluded from any historical series to avoid leakage).</p>
+
+      <h2 id="zscore">{{ t('Cross-sectional z-scores', '横截面 z 分数') }}</h2>
+      <p>At each rebalance, raw factor metrics are winsorized (clipped at ±3σ to tame outliers and infinities), then z-scored across the point-in-time universe. The <b>composite</b> is the equal-weight mean of the legs a name has (minimum three). A <b>Löwdin-decorrelated composite</b> is also computed so crowding/overlap can be measured (see the IC scorecard's collinearity read).</p>
+
+      <h2 id="portfolios">{{ t('Portfolio construction', '组合构建') }}</h2>
+      <p>From the ranks, two series per factor are built and held buy-and-hold between month-end rebalances:</p>
+      <ul>
+        <li><b>Long-only</b> — the top quintile, <b>cap-weighted with a 5% single-name cap</b> (excess redistributed pro-rata, so it can't degenerate into a few mega-caps). This carries with the market; compare it to the SPY line.</li>
+        <li><b>Q5−Q1 spread</b> — top quintile minus bottom quintile, <b>equal-weighted</b> — the academic factor-premium diagnostic. It is a paper long/short (not a shortable book) and isolates the premium.</li>
+      </ul>
+      <p>Stats per series: annualized Sharpe with a <b>block-bootstrap 95% CI</b>, max drawdown, and (across the screened factors) a deflated-Sharpe haircut. A green Sharpe whose CI straddles zero is shown as exactly that.</p>
+
+      <h2 id="horizons">{{ t('Returns, horizons & σ', '回报、跨度与 σ') }}</h2>
+      <p>Returns are total returns (split- and dividend-adjusted prices). Horizons: 1d / 5d / 20d / 60d / MTD / YTD, each rebased to the start of the window. The <b>σ ("sigma")</b> mode z-scores the current h-day move against the prior 252 <i>overlapping</i> h-day moves of that same series — "is this move unusual for THIS series?", with <code>|z| ≥ 2</code> the headline flag. σ is only defined for the fixed-window horizons (1d/5d/20d/60d), not MTD/YTD. Because the windows overlap, σ answers "unusual?", not "statistically significant?".</p>
+
+      <h2 id="ic">{{ t('The IC scorecard — our rigor edge', 'IC 记分卡 — 我们的严谨之处') }}</h2>
+      <p>This is the honest test most factor dashboards (FactorWatch included) don't show. At each quarter-end we rebuild every factor <b>as it was knowable then</b> (no look-ahead, no survivorship-recovery) and rank-correlate the factor score with the <b>next 63-day return</b> — the Information Coefficient. We report:</p>
+      <ul>
+        <li><b>mean IC</b> and <b>IC-IR</b> (IC ÷ its volatility, annualized) — the predictive edge and its consistency;</li>
+        <li><b>t<sub>HAC</sub></b> — a Newey-West t-stat (overlapping forward windows autocorrelate the IC series, so the naive t-stat overstates significance);</li>
+        <li><b>q<sub>FDR</sub></b> — a Benjamini-Hochberg false-discovery-rate control across the whole factor panel (screening many factors inflates false positives);</li>
+        <li><b>collinearity</b> — pairwise factor correlation + VIF, with the Löwdin-decorrelated composite to show how much overlap is real.</li>
+      </ul>
+      <p class="panel note">Current read over <b>{{ meth.ic_span }}</b> ({{ meth.ic_rebalances }} quarterly rebalances, ~{{ meth.ic_universe }} names): <b>{{ 'no factor clears BH-FDR(10%)' if not meth.ic_any_survive else 'few factors clear BH-FDR(10%)' }}</b>, and the point-in-time fix made the spreads honestly weaker than a naive latest-data backtest — that gap <i>is</i> the look-ahead/survivorship bias being removed. Judge every number against zero, and against n≈{{ meth.ic_rebalances }}.</p>
+
+      <h2 id="sectors">{{ t('Sector monitor', '行业监测') }}</h2>
+      <p>Each of the {{ meth.n_sectors }} GICS sectors is built into a cap-weighted daily series, expressed <b>relative to the S&P</b> at each horizon, and colored by how unusual that relative move is vs the sector's own trailing-year distribution (the same σ z-score). <code>|z| ≥ 2</code> flags an outsized rotation. It is a relational view — sector vs market, normalized by the sector's own history — not an absolute-return ranking.</p>
+
+      <h2 id="baskets">{{ t('Thematic baskets', '主题篮子') }}</h2>
+      <p>Curated thematic stock baskets, <b>equal-weighted</b>, with point-in-time <b>dated membership</b> (a member counts only within [added, removed)), rebalanced at month-ends and on any dated change. Each basket carries a written <b>thesis</b> and each member a one-line <b>rationale</b>; the dated changelog is part of the product. Performance is shown raw, relative to the S&P, and in σ; where a listed ETF approximates the theme the basket is cross-checked against it both <b>absolute</b> and <b>market-adjusted</b> (basket−S&P vs ETF−S&P, which strips shared market beta).</p>
+      <p class="panel note"><b>Hindsight caveat:</b> membership was curated knowing the period, so the full ~3y series is a backtest of the as-of-creation membership — descriptive structure, <b>not</b> an out-of-sample track and not a buy list (the displacement-style baskets in particular are monitoring lists / hedge candidates).</p>
+
+      <h2 id="seasonality">{{ t('Seasonality (Ken French)', '季节性 (Ken French)') }}</h2>
+      <p>Deep-history seasonality uses the Ken French Data Library's monthly factor returns (Momentum 1927+, Value/Size/Profitability/Investment 1963+) — academic total-US-market long/short portfolios, decades longer than our price cache. Per calendar month we report mean, median and hit-rate (% of months positive), over both full history and a trailing-30-year window.</p>
+      <p class="panel note">These are a <b>definition mismatch</b> vs our S&P-1500 z-score quintiles — treat them as the long-run <b>climate of a style</b>, not a forecast of our daily factor leadership. Seasonality is deliberately kept out of every calibrated score.</p>
+
+      <h2 id="validation">{{ t('Validation', '验证') }}</h2>
+      <p>The primary validation is the leak-free IC scorecard above (forward-IC, Newey-West, FDR, bootstrap CIs) — a stricter bar than correlation-to-an-index. A complementary leg cross-checks each factor's long-only series against its corresponding factor ETF (daily correlation, absolute and relative-to-SPY); with no published-index license we validate against free ETFs rather than vendor indices. We do <b>not</b> claim parity with paid multi-decade factor indices.</p>
+
+      <h2 id="limits">{{ t('Limitations & disclaimer', '局限与免责声明') }}</h2>
+      <ul>
+        <li>Annual (not quarterly) fundamentals; ~3 years (not multi-decade) of prices; mild survivorship bias; ETF-only validation.</li>
+        <li>σ uses overlapping windows (autocorrelated); the IC sample is small (n≈{{ meth.ic_rebalances }}); baskets are hindsight-curated.</li>
+        <li>Everything here is <b>read-only analytics for informational purposes only — not investment advice</b>, provided as-is with no guarantee of accuracy, timeliness or completeness.</li>
+      </ul>
+      <footer>{{ t('Free public data only; no paid feeds. Generated', '仅使用免费公开数据。生成于') }} {{ generated_utc }}.</footer>
+    </main>
+  </div>
+
+  <script>
+    (function(){ var ls=[...document.querySelectorAll('.toc a')], hs=ls.map(a=>document.querySelector(a.getAttribute('href')));
+      function spy(){ var y=window.scrollY+90, act=0; hs.forEach((h,i)=>{ if(h&&h.offsetTop<=y) act=i; }); ls.forEach((a,i)=>a.classList.toggle('active',i===act)); }
+      window.addEventListener('scroll',spy,{passive:true}); spy(); })();
+  </script>
+  <script src="theme.js"></script>
+</body>
+</html>

@@ -402,14 +402,19 @@ def _load_earnings() -> dict[str, dict]:
     return out
 
 
-def _earnings(row: dict | None) -> dict | None:
-    """Next-date + beat/miss summary for the Earnings panel. Days-to-earnings is
-    NOT baked (it would go stale in the static JSON) — the page computes the
-    countdown client-side from next_date."""
-    if not row:
-        return None
+def _earnings(row: dict | None, sue_z=None) -> dict | None:
+    """Next-date + beat/miss summary for the Earnings panel, plus the validated
+    SUE earnings-momentum z. SUE (standardized unexpected earnings — the post-
+    earnings-announcement-drift effect) is the only positive factor leg to survive
+    the leak-free BH-FDR scorecard (engine/sue.py, surfaced on factors.html; see
+    research/DATA_SIGNAL_EXPANSION_2026.md) — a cross-sectional winsorized z vs the
+    S&P 1500, so it belongs beside the surprise history as the earnings-quality read.
+    Days-to-earnings is NOT baked (it would go stale in the static JSON) — the page
+    computes the countdown client-side from next_date."""
+    row = row or {}
+    sz = _r(sue_z, 2)
     surp = [s for s in (row.get("surprises") or []) if _num(s.get("surprise_pct")) is not None]
-    if not row.get("next_date") and not surp:
+    if not row.get("next_date") and not surp and sz is None:
         return None
     summary = None
     if surp:                                 # Nasdaq returns most-recent first
@@ -432,6 +437,7 @@ def _earnings(row: dict | None) -> dict | None:
                        "consensus": _r(s.get("consensus"), 2),
                        "surprise_pct": _r(s.get("surprise_pct"), 1)} for s in surp][:4],
         "summary": summary,
+        "sue_z": sz,
     }
 
 
@@ -734,7 +740,10 @@ def panels() -> dict[str, dict]:
             "factors": _factors(t, fac, facts, M),
             "positioning": _positioning(t, f, short, insider.get(t)),
             "analyst": _analyst(t, deep.get(t)),
-            "earnings": _earnings(earnings.get(str(t))),
+            # SUE earnings-momentum z lives in the factors table (the canonical home
+            # of every factor leg, written by equity_factors just before this runs);
+            # surface it on the Earnings panel since it IS an earnings read.
+            "earnings": _earnings(earnings.get(str(t)), (fac or {}).get("sue")),
         }
         out[str(t)] = _clean({k: v for k, v in blocks.items() if v})
     log.info("stock_fundamentals: %d names with panels (factors %d, deep %d, short %s)",

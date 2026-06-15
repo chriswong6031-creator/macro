@@ -67,6 +67,40 @@ def test_archetype_shape():
     assert a["conf_word"] in ("high", "moderate", "low")
 
 
+def test_earnings_includes_sue_z():
+    # a full earnings row + the validated SUE z surfaces both, next to each other
+    row = {"next_date": "2026-07-30", "next_time": "time-pre-market", "eps_forecast": 1.86,
+           "surprises": [{"qtr": "Mar 2026", "eps": 2.01, "consensus": 1.92, "surprise_pct": 4.7}]}
+    e = SF._earnings(row, 1.466)
+    assert e["sue_z"] == 1.47                       # rounded to 2dp
+    assert e["next_date"] == "2026-07-30"
+    assert e["next_time"] == "pre-market"
+    assert e["summary"]["beats"] == 1
+
+
+def test_earnings_sue_only_block():
+    # SUE is itself an earnings read: a name with NO Nasdaq next-date/surprises but a
+    # SUE z still returns an earnings block (the chip surfaces alone).
+    e = SF._earnings(None, 1.0)
+    assert e is not None and e["sue_z"] == 1.0
+    assert e["next_date"] is None and e["surprises"] == [] and e["summary"] is None
+    assert SF._earnings({}, 2.4)["sue_z"] == 2.4
+
+
+def test_earnings_none_when_nothing_to_show():
+    assert SF._earnings(None, None) is None
+    assert SF._earnings({}, None) is None
+    # a NaN SUE with no other earnings data is nothing to show
+    assert SF._earnings(None, float("nan")) is None
+
+
+def test_earnings_sue_nan_coerced_json_safe():
+    # a NaN SUE alongside a real next-date keeps the block but nulls the z (JSON-safe)
+    e = SF._earnings({"next_date": "2026-07-30"}, float("nan"))
+    assert e is not None and e["sue_z"] is None
+    assert "NaN" not in json.dumps(SF._clean(e))
+
+
 def test_mktcap_tier():
     assert SF._mktcap_tier(None) is None
     assert SF._mktcap_tier(500)["key"] == "mega"
@@ -89,7 +123,7 @@ def test_panels_smoke():
     sample = next(iter(p.values()))
     # blocks present are from the known set; archetype key is valid when present
     assert set(sample).issubset({"profile", "valuation", "financials",
-                                 "factors", "positioning", "analyst"})
+                                 "factors", "positioning", "analyst", "earnings"})
     for rec in list(p.values())[:200]:
         arch = (rec.get("profile") or {}).get("archetype")
         if arch:

@@ -152,6 +152,9 @@ def compute_residual_alpha(closes: pd.DataFrame | None = None,
     resid_ir = e_mean / e_std.replace(0, np.nan)
     total_mom = R.shift(skip).rolling(form, min_periods=mp).sum().iloc[-1] * 100.0
     rev_1m = R.rolling(skip, min_periods=max(skip // 2, 3)).sum().iloc[-1] * 100.0
+    # DERIVED IBD-style RS context (subordinate to alpha; never feeds the z headline)
+    _ret = lambda n: R.rolling(n, min_periods=max(n // 2, 10)).sum().iloc[-1] * 100.0
+    rs_raw = pd.DataFrame({"rs3m": _ret(63), "rs6m": _ret(126), "rs12m": _ret(252)})
 
     d = pd.DataFrame({"resid_ir": resid_ir, "resid_ann": e_mean * 252 * 100.0,
                       "total_mom": total_mom, "rev_1m": rev_1m})
@@ -166,6 +169,14 @@ def compute_residual_alpha(closes: pd.DataFrame | None = None,
     d["alpha"] = _winsor_z(sn, cap)
     d = d[d["alpha"].notna()]
     d["rev_pctile"] = d["rev_1m"].rank(pct=True) * 100.0
+    # RS = cross-sectional percentile (1-99). Headline RS ranks total_mom (12-1
+    # trailing return, the IBD lens) so it is monotone with it; sub-horizons rank
+    # fresh 3/6/12m returns. Derived context — alpha-z stays the headline.
+    _p1_99 = lambda s: s.reindex(d.index).rank(pct=True) * 98.0 + 1.0
+    d["rs"] = d["total_mom"].rank(pct=True) * 98.0 + 1.0
+    d["rs3m"] = _p1_99(rs_raw["rs3m"])
+    d["rs6m"] = _p1_99(rs_raw["rs6m"])
+    d["rs12m"] = _p1_99(rs_raw["rs12m"])
     d["sector_n"] = d.groupby("sector")["alpha"].transform("count").astype(int)
     d["sector_rank"] = d.groupby("sector")["alpha"].rank(ascending=False).astype(int)
 
@@ -176,7 +187,9 @@ def compute_residual_alpha(closes: pd.DataFrame | None = None,
                 "total_mom": _f(r["total_mom"], 1), "rev_1m": _f(r["rev_1m"], 1),
                 "rev_pctile": _f(r["rev_pctile"], 0),
                 "sector_rank": int(r["sector_rank"]), "sector_n": int(r["sector_n"]),
-                "entry": _entry(_f(r["alpha"]), _f(r["rev_pctile"], 0))}
+                "entry": _entry(_f(r["alpha"]), _f(r["rev_pctile"], 0)),
+                "rs": _f(r["rs"], 0), "rs3m": _f(r["rs3m"], 0),
+                "rs6m": _f(r["rs6m"], 0), "rs12m": _f(r["rs12m"], 0)}
 
     by_sector: dict[str, dict] = {}
     for sec, sub in d.groupby("sector"):
@@ -193,7 +206,9 @@ def compute_residual_alpha(closes: pd.DataFrame | None = None,
                       "rev_pctile": _f(d.at[t, "rev_pctile"], 0),
                       "sector_rank": int(d.at[t, "sector_rank"]),
                       "sector_n": int(d.at[t, "sector_n"]),
-                      "entry": _entry(_f(d.at[t, "alpha"]), _f(d.at[t, "rev_pctile"], 0))}
+                      "entry": _entry(_f(d.at[t, "alpha"]), _f(d.at[t, "rev_pctile"], 0)),
+                      "rs": _f(d.at[t, "rs"], 0), "rs3m": _f(d.at[t, "rs3m"], 0),
+                      "rs6m": _f(d.at[t, "rs6m"], 0), "rs12m": _f(d.at[t, "rs12m"], 0)}
                   for t in d.index}
 
     return {"as_of": str(R.index.max().date()), "n": int(len(d)), "note": NOTE,

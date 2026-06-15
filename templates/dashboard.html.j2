@@ -431,6 +431,15 @@
              background: color-mix(in srgb, var(--link) 8%, var(--panel2)); }
   .gn-long b { color: var(--link); }
   .gn-cav { color: var(--muted); font-size: 10px; }
+  /* SUE earnings-momentum confirmer chip (display context, never scored). Blue
+     (--info) so it reads distinct from the green insider cluster + the green/red
+     alpha, and is immune to the Asia red/green up/down swap. */
+  .nb-sue { font-weight: 800; padding: 0 5px; border-radius: 7px; color: var(--info);
+            white-space: nowrap; font-variant-numeric: tabular-nums;
+            background: color-mix(in srgb, var(--info) 13%, var(--panel)); }
+  .ts-sue { font-weight: 800; font-size: 10px; color: var(--info); white-space: nowrap;
+            padding: 0 4px; border-radius: 6px; font-variant-numeric: tabular-nums;
+            background: color-mix(in srgb, var(--info) 13%, var(--panel)); }
   /* broad "Top setups" board (selection × timing across the S&P 1500) */
   .topsetups { margin-top: 14px; }
   .ts-more { margin-left: auto; font-size: 11px; font-weight: 700; white-space: nowrap; }
@@ -477,10 +486,13 @@
     <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
     <div class="nav-dd">
       <a class="nav-link active" href="macro.html">🇺🇸 {{ t('US Macro', '美国宏观') }} <span class="caret">▾</span></a>
-      <div class="nav-dd-menu">
-        <a class="{{ 'active' if mode != 'stocks' }}" href="macro.html">📊 {{ t('Macro dashboard', '宏观仪表盘') }}</a>
-        <a class="{{ 'active' if mode == 'stocks' }}" href="us_stocks.html">📈 {{ t('US Stocks', '美国个股') }}</a>
-        <a href="spvector.html">◎ {{ t('Allocation strategy', '仓位策略') }}</a>
+      <div class="nav-dd-menu" role="menu">
+        <a class="{{ 'active' if mode != 'stocks' }}" href="macro.html">{{ t('Regime dashboard', '宏观周期') }}<span class="d">{{ t('Growth · inflation · MRS · nowcast', '增长 · 通胀 · MRS · 即时预测') }}</span></a>
+        <a class="{{ 'active' if mode == 'stocks' }}" href="us_stocks.html">📈 {{ t('US Stocks', '美国个股') }}<span class="d">{{ t('Standouts · sectors · flows', '精选 · 板块 · 资金') }}</span></a>
+        <a href="spvector.html">📈 {{ t('S&P / Macro Vector', '标普宏观向量') }}<span class="d">{{ t('Tactical equity↔cash allocation', '战术股票↔现金配置') }}</span></a>
+        <a href="factors.html">🧮 {{ t('Factor Lab', '因子实验室') }}<span class="d">{{ t('Value · quality · low-vol + point-in-time IC', '价值 · 质量 · 低波动 + 时点 IC') }}</span></a>
+        <a href="baskets.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P', '等权主题篮子 vs 标普') }}</span></a>
+        <a href="seasonality.html">🗓 {{ t('Factor Seasonality', '因子季节性') }}<span class="d">{{ t('Ken French monthly, 1926+', 'Ken French 月度，1926+') }}</span></a>
       </div>
     </div>
     <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }}</a>
@@ -490,7 +502,9 @@
     <a class="nav-link" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }}</a>
     <a class="nav-link" href="forex.html">💱 {{ t('Forex', '外汇') }}</a>
     <a class="nav-link" href="bonds.html">🏛️ {{ t('Bonds', '债券') }}</a>
+      <a class="nav-link" href="crossasset.html">🧭 {{ t('Cross-Asset', '跨资产') }}</a>
     <a class="nav-link" href="discovery.html">🏆 {{ t('Alpha leaders', '阿尔法领先股') }}</a>
+    <a class="nav-link" href="gex.html">🧲 {{ t('GEX magnets', 'Gamma磁吸') }}</a>
     <a class="nav-link" href="brief.html">📰 {{ t('Brief', '简报') }}</a>
     <a class="nav-link" href="history.html">📈 {{ t('History', '历史') }}</a>
   </div>
@@ -774,6 +788,24 @@
     {% endif %}
   </div>
 
+  <!-- ===================== MARKET SNAPSHOT TILES ===================== -->
+  {% if market_tiles %}
+  <div class="panel span12" id="market-tiles">
+    <h2>{{ t('Market snapshot', '市场快照') }}
+      {{ help("The headline cross-asset levels in one glance — equities, volatility, the Treasury curve, the dollar and oil — each with its 1-day move. A quick orientation; the read and the why live in the panels below.", "一眼看尽跨资产的关键水平 — 股票、波动率、国债收益率曲线、美元与原油 — 各附其单日变动。用于快速定位；解读与原因见下方面板。") }}
+    </h2>
+    <div class="mtiles">
+      {% for tl in market_tiles %}
+      <div class="mtile">
+        <div class="mtile-top"><span class="mtile-lbl">{{ tl.label }}</span><span class="mtile-tag">{{ tl.tag }}</span></div>
+        <div class="mtile-val">{{ tl.level }}</div>
+        <div class="mtile-chg {{ tl.tone }}">{{ tl.chg }} <span class="muted">({{ tl.pct }})</span></div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
   <!-- ===================== REGIME TIME MACHINE ===================== -->
   <div class="panel span12" id="time-machine">
     <h2>{{ t('⏳ Regime time machine', '⏳ 周期时光机') }}
@@ -903,6 +935,21 @@
       </div>
       {% endif %}
 
+      {% if DL.catalyst_narrative %}
+      {% set CN = DL.catalyst_narrative %}
+      {% set cncolor = 'var(--up)' if CN.agreement=='corroborates' else '#d98a00' %}
+      <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-left:3px solid {{ cncolor }};border-radius:8px;padding:10px 14px">
+        <div style="font-weight:700;margin-bottom:4px">🧠 {{ t('Catalyst cross-check', '催化交叉验证') }}
+          {{ help("An AI read of the actual catalyst TEXT (engine/catalyst_tone.py, DeepSeek) cross-checked against the Fed-put switch: does the document read as a reversible washout or a structural break? CONTEXT ONLY — it never changes the verdict; the validated gate governs. Shown only on an active dislocation when the read is confidence-passed and quote-verified.", "对实际催化文本的 AI 解读（engine/catalyst_tone.py，DeepSeek）与美联储托底开关的交叉验证：文档解读为可逆抛售还是结构性断裂？仅供背景 —— 绝不改变判定，以经验证的一道闸为准。仅在活跃错位且解读通过置信度与引文核验时显示。") }}
+        </div>
+        <div style="margin-bottom:5px;display:flex;flex-wrap:wrap;gap:6px">
+          <span class="badge" style="font-size:11px;color:{{ cncolor }}">{% if CN.agreement=='corroborates' %}{{ t('corroborates', '印证') }}{% else %}{{ t('diverges', '背离') }}{% endif %}</span>
+          <span class="badge" style="font-size:11px">{{ t('catalyst reads', '催化解读') }}: <span class="l-en">{{ CN.shock_reversible }}</span><span class="l-zh">{{ CN.shock_reversible_zh or CN.shock_reversible }}</span></span>
+        </div>
+        <div class="muted sm"><span class="l-en">{{ CN.note }}</span><span class="l-zh">{{ CN.note_zh or CN.note }}</span></div>
+      </div>
+      {% endif %}
+
       {% if DL.gate2 and DL.gate2.state not in ('dormant', 'unknown') %}
       {% set g2 = DL.gate2 %}
       {% set g2color = 'var(--up)' if g2.state=='confirmed' else ('#d98a00' if g2.state=='awaiting_confirm' else 'var(--muted)') %}
@@ -930,6 +977,25 @@
   </div>
   {% endif %}
 
+  {# AI Master Brief — cross-asset LLM synthesis (engine/master_brain.py). Client-
+     fetched from master_brief.json so it never depends on build order; hidden until
+     a usable brief loads. Research context only — never a signal. #}
+  <div class="panel span12" id="master-brief" style="display:none">
+    <style>
+      #master-brief .mb-sum{font-size:15px;font-weight:600;margin:0 0 10px}
+      #master-brief .mb-sec{margin:10px 0}
+      #master-brief .mb-h{font-weight:600;color:var(--link);margin:0 0 4px}
+      #master-brief .mb-list{margin:4px 0 0 18px;padding:0}
+      #master-brief .mb-list li{margin:3px 0}
+      #master-brief .mb-foot{margin-top:12px;color:var(--muted);font-size:12px}
+    </style>
+    <h2>🧠 {{ t('AI Master Brief · cross-asset synthesis', 'AI 主脑简报 · 跨资产综合') }}
+      {{ help('An AI-generated synthesis across all six dashboards (macro, China, HK, commodities, FX, Bitcoin). RESEARCH CONTEXT only — it reads the deterministic signals and narrates the cross-asset picture, flags where they conflict, and tests the liquidity-rotation thesis; it never feeds a score, signal or allocation. Can be wrong or overconfident — verify against the underlying dashboards.', 'AI 跨六大看板（宏观、中国、香港、商品、外汇、比特币）的综合分析。仅供研究参考——它解读确定性信号、叙述跨资产全局、标注信号冲突并检验流动性轮动假设，绝不参与任何评分、信号或仓位。可能出错或过度自信，请对照各看板核实。') }}
+    </h2>
+    <div id="master-brief-body" class="muted sm"></div>
+  </div>
+  <script src="masterbrief.js"></script>
+
   {% if latest.conditions %}
   {% set C = latest.conditions %}
   {% set FC = C.financial_conditions %}
@@ -948,6 +1014,7 @@
       {{ help("A complementary lens that runs ALONGSIDE the price-based quad and never alters it: the Fed-research feeds and option-implied risk that a markets-only model misses. Financial conditions (Chicago Fed NFCI — 105 inputs in one z-score), a 0–100 recession-risk score (Sahm rule + smoothed probability + Excess Bond Premium + a term-premium-ADJUSTED curve that strips the 2022–24 false inversion), real-time growth (Weekly Economic Index, GDPNow) and inflation (Atlanta sticky vs flexible CPI) nowcasts, and a cross-asset risk-appetite read (equity vol-risk-premium, VIX term structure, CBOE SKEW, the stock-bond correlation regime, a RORO composite). Free Fed/CBOE data — see research/QUANT_FACTOR_EXPANSION.md.", "一个与价格象限并行、绝不改变象限的补充视角：纯市场模型遗漏的美联储研究数据与期权隐含风险。金融条件（芝加哥联储 NFCI — 105 项输入合成一个 z 分数）、0–100 衰退风险评分（Sahm 法则 + 平滑概率 + 超额债券溢价 + 期限溢价调整后的收益率曲线，剔除 2022–24 的假性倒挂）、实时增长（周度经济指数、GDPNow）与通胀（亚特兰大黏性对弹性 CPI）即时预测，以及跨资产风险偏好（股票波动率风险溢价、VIX 期限结构、CBOE SKEW、股债相关性状态、RORO 综合）。免费美联储／CBOE 数据。") }}
     </h2>
     <p class="muted sm" style="margin:-4px 0 10px">{{ t('Complementary to the quad above — it does not change the regime label; agreement strengthens conviction, divergence is a heads-up.', '与上方象限互补 — 不改变周期标签；一致则增强信心，背离则为提醒。') }}</p>
+    <p class="sm" style="margin:-4px 0 12px">📈 {{ t('These macro-risk signals drive the', '这些宏观风险信号驱动') }} <a href="spvector.html" style="font-weight:700">{{ t('S&P / Macro Vector allocation', '标普／宏观向量配置') }} →</a> {{ t('— when to hold the broad US index vs T-bills.', '——何时持有美国大盘指数、何时转入短债。') }}</p>
     <div class="grid">
 
       <!-- Financial conditions -->
@@ -973,6 +1040,36 @@
         </details>{% endif %}
         {% else %}<div class="muted">—</div>{% endif %}
       </div>
+
+      <!-- Systemic stress (OFR FSI decomposition) -->
+      {% set SS = C.systemic_stress %}
+      {% if SS and SS.ofr_fsi is not none %}
+      <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
+        <div style="font-weight:700;margin-bottom:6px">{{ t('Systemic stress', '系统性压力') }} <span class="muted sm">OFR FSI</span>
+          {{ help("The OFR Financial Stress Index — a daily gauge built from 33 global market variables. 0 = average stress since 2000; NEGATIVE = calmer than normal, POSITIVE = stressed. Unlike NFCI it splits the reading into five CHANNELS (credit, equity valuation, safe assets, funding, volatility) and three regions (US, other-advanced, EM), so you can see WHERE stress is coming from — the funding leg captures offshore-dollar / cross-currency-basis strain. It is a COINCIDENT gauge: it confirms and explains stress, it does not forecast it. Free OFR data — see research/DATA_SIGNAL_EXPANSION_2026.md.", "OFR 金融压力指数 — 由 33 个全球市场变量构成的每日指标。0＝2000 年以来的平均压力；负＝比平常更平静，正＝有压力。与 NFCI 不同，它把读数拆为五个渠道（信用、股票估值、避险资产、融资、波动）与三个地区（美国、其他发达、新兴市场），可看出压力来自何处 — 融资项捕捉离岸美元/交叉货币基差紧张。这是同步指标：确认并解释压力，而非预测。免费 OFR 数据。") }}</div>
+        {% set scolor = 'var(--down)' if SS.state in ('elevated','acute') else ('var(--up)' if SS.state=='calm' else 'var(--muted)') %}
+        <div style="font-size:22px;font-weight:700;color:{{ scolor }}">{{ '%+.2f'|format(SS.ofr_fsi) }}
+          <span class="badge" style="font-size:11px;vertical-align:middle">{{ t(SS.state, {'calm':'平静','normal':'一般','elevated':'偏高','acute':'急性'}.get(SS.state, SS.state)) }}{% if SS.trend %} · {{ t(SS.trend, {'rising':'上升中','easing':'缓和中'}.get(SS.trend, SS.trend)) }}{% endif %}</span></div>
+        <div class="muted sm" style="margin-top:4px">{{ t('More stressed than', '压力高于') }} {{ (SS.ofr_fsi_pctile*100)|round|int if SS.ofr_fsi_pctile is not none else '—' }}% {{ t('of the past 5 years', '的近五年') }}{% if SS.leading_driver %} · {{ t('led by', '主导渠道') }} {{ SS.leading_driver }}{% endif %}</div>
+        {% if SS.functional %}
+        <details class="jarg"><summary>{{ t('stress by channel', '分渠道压力') }}</summary>
+          <div class="jbody">
+            {% set _fl = {'credit': ('Credit', '信用', 'Corporate / credit-market stress.', '企业／信用市场压力。'),
+                          'equity_valuation': ('Equity valuation', '股票估值', 'Equity drawdown & valuation stress.', '股票回撤与估值压力。'),
+                          'safe_assets': ('Safe assets', '避险资产', 'Flight-to-safety demand for Treasuries.', '对国债的避险需求。'),
+                          'funding': ('Funding', '融资', 'Money-market & offshore-dollar (x-ccy basis) funding stress.', '货币市场与离岸美元（交叉货币基差）融资压力。'),
+                          'volatility': ('Volatility', '波动', 'Cross-asset implied / realized volatility.', '跨资产隐含／已实现波动。')} %}
+            {% for k,v in SS.functional.items() %}{% set m = _fl.get(k) %}{% if m %}
+            <div class="jrow"><span class="jk">{{ t(m[0], m[1]) }}</span><span class="jv">{{ t(m[2], m[3]) }}</span><span class="jn" style="color:{{ 'var(--down)' if v>0.05 else ('var(--up)' if v<-0.05 else 'var(--muted)') }}">{{ '%+.2f'|format(v) }}</span></div>
+            {% endif %}{% endfor %}
+            {% if SS.regional %}<div class="muted" style="font-size:10px;margin-top:5px">{{ t('By region', '分地区') }}: {% for k,v in SS.regional.items() %}{{ {'united_states':'US','other_advanced':t('Adv','发达'),'emerging_markets':'EM'}.get(k,k) }} {{ '%+.2f'|format(v) }}{% if not loop.last %} · {% endif %}{% endfor %}</div>{% endif %}
+            {% if SS.a2p2_spread_bps is not none or SS.cp_bill_spread_bps is not none %}
+            <div class="jrow" style="margin-top:5px"><span class="jk">{{ t('CP spreads', '商票利差') }}</span><span class="jv">{{ t('Commercial-paper credit-quality (A2/P2−AA) & funding (CP−bill) stress.', '商业票据信用质量（A2/P2−AA）与融资（票据−国库券）压力。') }}</span><span class="jn">{% if SS.a2p2_spread_bps is not none %}A2/P2 {{ SS.a2p2_spread_bps|round|int }}bp{% endif %}{% if SS.cp_bill_spread_bps is not none %} · {{ t('CP-bill', '票据') }} {{ SS.cp_bill_spread_bps|round|int }}bp{% endif %}</span></div>{% endif %}
+            <div class="muted" style="font-size:10px;margin-top:5px">{{ t('+ = stress contribution · − = calm. A coincident gauge that names the channel — not a timing trigger.', '正＝压力贡献 · 负＝平静。同步指标，用于指明渠道 — 非择时触发器。') }}</div>
+          </div>
+        </details>{% endif %}
+      </div>
+      {% endif %}
 
       <!-- Recession risk -->
       <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
@@ -1087,7 +1184,7 @@
         {% set sbcolor = 'var(--down)' if 'breakdown' in (RA.stock_bond_regime or '') else 'var(--muted)' %}
         <div class="kv">{{ t('Stock-bond corr', '股债相关性') }} <b style="color:{{ sbcolor }}">{{ '%+.2f'|format(RA.stock_bond_corr) }}</b> <span class="muted sm">{{ t('bonds not hedging' if 'breakdown' in (RA.stock_bond_regime or '') else ('bonds hedge' if 'diversifying' in (RA.stock_bond_regime or '') else 'mixed'), '债券未对冲' if 'breakdown' in (RA.stock_bond_regime or '') else ('债券对冲' if 'diversifying' in (RA.stock_bond_regime or '') else '混合')) }}</span></div>{% endif %}
         {% if RA.vol_target_scalar is not none %}<div class="kv">{{ t('Vol-target exposure', '波动率目标敞口') }} <b>{{ '%.2f'|format(RA.vol_target_scalar) }}×</b></div>{% endif %}
-        {% if RA.news_sentiment is not none %}
+        {% if RA.get('news_sentiment') is not none %}
         {% set _nscol = 'var(--up)' if RA.news_sentiment_state=='optimistic' else 'var(--down)' %}
         <div class="kv">{{ t('News sentiment', '新闻情绪') }}
           {{ help("The San Francisco Fed's Daily News Sentiment Index — economic tone extracted from major US newspapers (history from 1980). A continuous, reproducible read of the macro mood (positive = optimistic), and a quant complement to the AI news digests.", "旧金山联储每日新闻情绪指数 — 从美国主流报纸提取的经济基调（自 1980 年）。对宏观情绪的连续、可复现读数（正值＝乐观），是 AI 新闻摘要的量化补充。") }}
@@ -1183,7 +1280,107 @@
   </div>
   {% endif %}
 
-  {% endif %}{# /mode != stocks — macro group 1 (regime, index health, nowcast) #}
+  <!-- ======================= MACRO NEWS, SENTIMENT & CATALYSTS ======================= -->
+  <style>
+  #macro-news .mn-cols{display:grid;grid-template-columns:1.7fr 1fr;gap:20px;margin-top:10px}
+  #macro-news .section-title{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 8px;font-weight:700}
+  #macro-news .mn-sent{display:flex;gap:8px;align-items:baseline;font-size:14px;margin:2px 0 4px}
+  #macro-news .mn-brief{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.5;margin:8px 0 4px}
+  #macro-news .mn-item{display:block;padding:6px 0;border-bottom:1px solid var(--panel2);color:var(--text);text-decoration:none;font-size:13px;line-height:1.4}
+  #macro-news .mn-item:hover{color:var(--up)}
+  #macro-news .mn-theme,#macro-news .cat-type{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;padding:1px 6px;border-radius:5px;background:var(--line);color:var(--muted)}
+  #macro-news .mn-theme{margin-right:7px;vertical-align:1px}
+  #macro-news .mn-t-monetary{background:#22324f;color:#9cc4ff}#macro-news .mn-t-inflation{background:#4f2c22;color:#ffb499}
+  #macro-news .mn-t-labor{background:#1f4733;color:#a0ffc4}#macro-news .mn-t-growth{background:#2c3f1f;color:#cfe89a}
+  #macro-news .mn-t-credit{background:#3a2f5f;color:#c4b0ff}#macro-news .mn-t-fiscal{background:#4f3a1f;color:#ffd79a}
+  #macro-news .cat-row{display:flex;gap:9px;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--panel2);font-size:13px}
+  #macro-news .cat-date{color:var(--muted);font-variant-numeric:tabular-nums;min-width:118px}
+  #macro-news .cat-imp{width:7px;height:7px;border-radius:50%;flex:0 0 auto;align-self:center;background:var(--muted)}
+  #macro-news .imp-high{background:var(--warn)} #macro-news .imp-med{background:var(--muted)}
+  #macro-news .ct-FOMC{background:#3a2f5f;color:#c4b0ff}#macro-news .ct-NFP,#macro-news .ct-CLAIMS{background:#1f4733;color:#a0ffc4}
+  #macro-news .ct-CPI,#macro-news .ct-PPI{background:#4f2c22;color:#ffb499}#macro-news .ct-PCE{background:#4f3a1f;color:#ffd79a}
+  #macro-news .ct-GDP,#macro-news .ct-ISM_MFG,#macro-news .ct-ISM_SVC{background:#2c3f1f;color:#cfe89a}
+  #macro-news .ct-OPEX{background:#22324f;color:#9cc4ff}#macro-news .ct-AUCTION{background:#33305a;color:#b9b0ff}
+  /* compact "US high-impact next 14 days" glance strip (display/context only) */
+  #macro-news .ev-strip{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:8px 0 4px;padding:9px 11px;background:var(--panel2);border:1px solid var(--line);border-radius:8px}
+  #macro-news .ev-strip-h{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-right:2px}
+  #macro-news .ev-chip{display:inline-flex;align-items:baseline;gap:5px;font-size:12px;padding:3px 9px;border-radius:6px;background:var(--panel);border:1px solid var(--line);white-space:nowrap}
+  #macro-news .ev-chip b{font-size:11px;letter-spacing:.02em}
+  #macro-news .ev-chip .ev-when{color:var(--muted);font-variant-numeric:tabular-nums}
+  #macro-news .ev-chip.ec-FOMC{border-color:#5a4a8f}#macro-news .ev-chip.ec-FOMC b{color:#c4b0ff}
+  #macro-news .ev-chip.ec-CPI b,#macro-news .ev-chip.ec-PPI b{color:#ffb499}
+  #macro-news .ev-chip.ec-NFP b,#macro-news .ev-chip.ec-CLAIMS b{color:#a0ffc4}
+  #macro-news .ev-chip.ec-GDP b{color:#cfe89a}#macro-news .ev-chip.ec-PCE b{color:#ffd79a}
+  #macro-news .ev-strip-none{font-size:12px;color:var(--muted)}
+  #macro-news .mn-disc{color:var(--muted);font-size:11px;margin-top:12px;border-top:1px solid var(--line);padding-top:8px;line-height:1.5}
+  @media(max-width:760px){ #macro-news .mn-cols{grid-template-columns:1fr} }
+  </style>
+  <div class="panel span12" id="macro-news">
+    <h2>📰 {{ t('Macro news, sentiment &amp; catalysts', '宏观新闻、情绪与日程') }}
+      {{ help("Filtered macro news (reputable sources, macro themes only — each headline tagged by theme), the SF-Fed Daily News Sentiment Index (a quantitative series, NOT per-headline AI), and a unified US event calendar (FOMC, CPI/PPI, jobs report, GDP, PCE, jobless claims, ISM, options-expiry and Treasury auctions). All CONTEXT — none of it feeds any score, signal or allocation, and the mechanical model never sees it. There is deliberately NO event-risk dampener: pre-FOMC drift died after 2016 and the announcement premium is positive, so cutting exposure into prints would be wrong-signed. Dates are scheduling info, not forecasts.", "已筛选的宏观新闻（仅可靠来源、仅宏观主题，每条按主题标注）、旧金山联储每日新闻情绪指数（量化序列，而非逐条新闻 AI），以及统一的美国事件日历（FOMC、CPI/PPI、就业报告、GDP、PCE、初请失业金、ISM、期权到期与国债拍卖）。全部为背景 —— 不进入任何评分、信号或配置，机械模型也从不读取。我们刻意不做事件风险衰减：2016 年后 FOMC 前漂移已消失、公告溢价为正，因此在数据公布前削减仓位方向是错的。日期为日程信息，而非预测。") }}
+    </h2>
+    {# compact US high-impact catalyst strip (next 14 days) — glanceable scheduling
+       context. DISPLAY ONLY: it never feeds a score, signal or allocation. #}
+    <div class="ev-strip">
+      <span class="ev-strip-h">{{ t('US high-impact · next 14 days', '美国高影响 · 未来14天') }}</span>
+      {% for s in event_strip %}
+      <span class="ev-chip ec-{{ s.type }}" title="{{ s.label }}{% if s.time_et %} · {{ s.time_et }} ET{% endif %}"><b>{{ s.type }}</b> <span class="ev-when">{{ s.dow }} {{ s.md }}</span></span>
+      {% else %}
+      <span class="ev-strip-none">{{ t('Clear — no top-tier US prints in the window.', '空窗 —— 窗口内无一线美国数据。') }}</span>
+      {% endfor %}
+    </div>
+    {% set RA = (latest.conditions or {}).get('risk_appetite') or {} %}
+    {% if RA.get('news_sentiment_state') %}
+    {% set nz = RA.get('news_sentiment_z') %}
+    <div class="mn-sent">
+      <span class="muted">{{ t('News sentiment (SF-Fed index):', '新闻情绪（旧金山联储指数）：') }}</span>
+      <span class="{{ 'pos' if RA.get('news_sentiment_state') == 'optimistic' else 'neg' }}"><b>{{ t('optimistic', '乐观') if RA.get('news_sentiment_state') == 'optimistic' else t('pessimistic', '悲观') }}</b>{% if nz is not none %} · z {{ '%+.1f'|format(nz) }}{% endif %}</span>
+    </div>
+    {% endif %}
+    {% if macro_brief and macro_brief.text %}
+    <div class="mn-brief">🤖 <b>{{ t('AI brief (context)', 'AI 摘要（背景）') }}:</b> {{ macro_brief.text }}</div>
+    {% endif %}
+    {% set TL = {'monetary':['Fed','美联储'],'inflation':['Inflation','通胀'],'labor':['Labor','就业'],'growth':['Growth','增长'],'credit':['Rates','利率'],'fiscal':['Fiscal','财政']} %}
+    <div class="mn-cols">
+      <div class="mn-news">
+        <div class="section-title">{{ t('Filtered macro headlines', '已筛选的宏观头条') }}{% if macro_news and macro_news.n_raw %} <span class="muted">({{ macro_news.n_kept }}/{{ macro_news.n_raw }})</span>{% endif %}</div>
+        {% if macro_news and macro_news.headlines %}
+          {% for h in macro_news.headlines %}
+          <a class="mn-item" href="{{ h.url }}" target="_blank" rel="noopener"><span class="mn-theme mn-t-{{ h.theme }}">{{ t(TL.get(h.theme, [h.theme,h.theme])[0], TL.get(h.theme, [h.theme,h.theme])[1]) }}</span>{{ h.title }} <span class="muted">— {{ h.domain }}</span></a>
+          {% endfor %}
+        {% else %}
+          <p class="muted sm">{{ t('No macro headlines right now — the news fetch is off (default) or the tape is quiet.', '暂无宏观头条 —— 新闻抓取已关闭（默认）或行情平静。') }}</p>
+        {% endif %}
+      </div>
+      <div class="mn-cats">
+        <div class="section-title">{{ t('Upcoming catalysts', '即将到来的催化') }}</div>
+        {% if macro_catalysts %}
+          {% for c in macro_catalysts %}
+          <div class="cat-row"><span class="cat-imp imp-{{ c.get('impact','med') }}" title="{{ t('high impact','高影响') if c.get('impact')=='high' else t('scheduled','日程') }}"></span><span class="cat-date">{{ c.date }}{% if c.time_et %} · {{ c.time_et }} ET{% endif %}</span><span class="cat-type ct-{{ c.type }}">{{ c.type }}</span><span class="cat-label">{{ c.label }}</span></div>
+          {% endfor %}
+        {% else %}
+          <p class="muted sm">{{ t('No scheduled catalysts in the window.', '窗口内无排定催化。') }}</p>
+        {% endif %}
+        {% if prediction_markets and prediction_markets.events %}
+        <div class="section-title" style="margin-top:16px">{{ t('Market-implied odds', '市场隐含概率') }} <span class="muted" style="font-weight:400;text-transform:none">· {{ prediction_markets.source }}</span></div>
+        {% for e in prediction_markets.events %}
+        <div style="margin-bottom:9px">
+          <div class="sm" style="margin-bottom:2px"><b>{{ t(e.label_en, e.label_zh) }}</b>{% if e.end_date %} <span class="muted">{{ e.end_date }}</span>{% endif %}</div>
+          {% for o in e.outcomes[:3] %}
+          <div style="display:flex;align-items:baseline;gap:6px;font-size:12px;padding:1px 0">
+            <span style="flex:1;color:var(--muted)">{{ o.outcome }}</span>
+            <b>{{ o.prob }}%</b>{% if o.chg_pp is not none and o.chg_pp != 0 %}<span class="{{ 'pos' if o.chg_pp > 0 else 'neg' }}" style="font-size:11px">{{ '%+.1f'|format(o.chg_pp) }}</span>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+        <p class="muted" style="font-size:10px;margin:2px 0 0">{{ t('Crowd expectation, not a forecast.', '群体预期，非预测。') }}</p>
+        {% endif %}
+      </div>
+    </div>
+    <p class="mn-disc">{{ t(macro_news_disclaimer, macro_news_disclaimer_zh) }}</p>
+  </div>
+  {% endif %}{# /mode != stocks — macro group 1 (regime, index health, nowcast, news) #}
 
   {% if mode != 'macro' %}
   <!-- ======================= ACTION BOARD ======================= -->
@@ -1259,13 +1456,14 @@
             {% if n.eq_grade %}<span class="nb-grade" style="color:{{ 'var(--up)' if n.eq_dir=='up' else ('var(--down)' if n.eq_dir=='down' else 'var(--muted)') }}">{{ t(n.eq_grade, n.eq_grade_zh) if n.eq_grade_zh else n.eq_grade }}</span> ·{% endif %}
             <span title="signal triggered {{ n.signal_date }} · 信号触发 {{ n.signal_date }}">⏱ {{ t(n.age_short, n.age_short_zh) if n.age_short else (n.signal_date or '') }}</span>
           </div>
-          {% if n.alpha_z is not none or n.insider_buyers %}
+          {% if n.alpha_z is not none or n.insider_buyers or n.sue_z %}
           <div class="nb-alpha">
             {% if n.alpha_z is not none %}<span class="nb-az {{ 'az-up' if n.alpha_z > 0 else ('az-dn' if n.alpha_z < 0 else '') }}" title="Sector-neutral residual momentum (z) — stock-specific strength with market + sector beta stripped. A ranking/context leg, not a standalone signal. · 行业中性残差动量（z）— 剥离大盘与行业 beta 后的个股特定强度。属排序/情境维度，并非独立信号。">α {{ '%+.2f'|format(n.alpha_z) }}</span>{% endif %}
             {% if n.alpha_sector_rank %}<span class="nb-rk" title="Rank within its GICS sector by sector-neutral momentum · 按行业中性动量在其 GICS 行业内的排名">#{{ n.alpha_sector_rank }}/{{ n.alpha_sector_n }}</span>{% endif %}
             {% if n.alpha_entry == 'pullback' %}<span class="nb-ent ent-good" title="A leader on a recent pullback — a more constructive entry · 强势股近期回调 — 更具建设性的入场点">{{ t('pullback', '回调') }}</span>
             {% elif n.alpha_entry == 'extended' %}<span class="nb-ent ent-warn" title="A leader that just spiked — short-term reversal risk · 强势股刚刚拉升 — 短线反转风险">{{ t('extended', '过热') }}</span>{% endif %}
             {% if n.insider_buyers %}<span class="nb-ins" title="{{ n.insider_buyers }} distinct insiders net-bought{% if n.insider_net_mn %} ${{ '%.1f'|format(n.insider_net_mn) }}M{% endif %}{% if n.insider_bps %} (+{{ n.insider_bps }} bps of cap){% endif %} in the last 6 months — a Form-4 CLUSTER confirmer (orthogonal long-only conviction, not a standalone signal) · {{ n.insider_buyers }} 名内部人近 6 个月净买入 — Form-4 集群确认指标">👤 {{ n.insider_buyers }}</span>{% endif %}
+            {% if n.sue_z %}<span class="nb-sue" title="Earnings momentum: SUE z {{ '%+.1f'|format(n.sue_z) }} vs the S&P 1500 — the latest quarter beat its year-ago seasonal expectation and tends to keep drifting (post-earnings-announcement drift). The only positive factor leg to survive the leak-free FDR scorecard; a DISPLAY confirmer, never part of the setup score · 盈利动量：SUE z {{ '%+.1f'|format(n.sue_z) }}（相对标普1500）— 最新季度超出去年同期季节性预期并倾向延续漂移（盈利后漂移）。唯一通过无泄漏FDR检验的正向因子；仅为展示确认项，不计入布局分">📈 SUE {{ '%+.1f'|format(n.sue_z) }}</span>{% endif %}
           </div>
           {% endif %}
         </a>
@@ -1290,7 +1488,7 @@
           <tbody>
           {% for r in top_setups.buy[:10] %}
             <tr class="ts-row" onclick="location.href='stock.html#{{ r.ticker }}'">
-              <td><span class="ts-tk">{{ r.ticker }}</span> <span class="ts-nm">{{ r.name }}</span>{% if r.insider_buyers %} <span class="ts-ins" title="{{ r.insider_buyers }} distinct insiders net-bought{% if r.insider_net_mn %} ${{ '%.1f'|format(r.insider_net_mn) }}M{% endif %}{% if r.insider_bps %} (+{{ r.insider_bps }} bps of cap){% endif %} in the last 6 months — a Form-4 CLUSTER confirmer · {{ r.insider_buyers }} 名内部人近 6 个月净买入 — Form-4 集群确认">👤 {{ r.insider_buyers }}</span>{% endif %}</td>
+              <td><span class="ts-tk">{{ r.ticker }}</span> <span class="ts-nm">{{ r.name }}</span>{% if r.insider_buyers %} <span class="ts-ins" title="{{ r.insider_buyers }} distinct insiders net-bought{% if r.insider_net_mn %} ${{ '%.1f'|format(r.insider_net_mn) }}M{% endif %}{% if r.insider_bps %} (+{{ r.insider_bps }} bps of cap){% endif %} in the last 6 months — a Form-4 CLUSTER confirmer · {{ r.insider_buyers }} 名内部人近 6 个月净买入 — Form-4 集群确认">👤 {{ r.insider_buyers }}</span>{% endif %}{% if r.sue_z %} <span class="ts-sue" title="Earnings momentum: SUE z {{ '%+.1f'|format(r.sue_z) }} vs the S&P 1500 — the latest quarter beat its year-ago seasonal expectation and tends to keep drifting (post-earnings-announcement drift). The only positive factor leg to survive the leak-free FDR scorecard; a DISPLAY confirmer, never part of the setup score · 盈利动量：SUE z {{ '%+.1f'|format(r.sue_z) }}（相对标普1500）— 唯一通过无泄漏FDR检验的正向因子；仅为展示确认项，不计入布局分">📈 SUE {{ '%+.1f'|format(r.sue_z) }}</span>{% endif %}</td>
               <td class="muted">{{ td(r.sector) }}</td>
               <td class="r {{ 'az-up' if r.alpha and r.alpha > 0 else 'az-dn' }}">{{ '%+.2f'|format(r.alpha) }}</td>
               <td class="r muted">{% if r.sector_rank %}#{{ r.sector_rank }}/{{ r.sector_n }}{% endif %}</td>
@@ -1549,6 +1747,46 @@
     {% endif %}
   </div>
 
+  <!-- ===================== MARKET BREADTH ===================== -->
+  {% if breadth_panel %}
+  <div class="panel span12" id="breadth">
+    <h2>{{ t('Market breadth — how many stocks are actually participating', '市场广度 — 究竟有多少股票在参与') }}
+      {{ help("Breadth across the full S&P Composite 1500 (large = S&P 500, mid = S&P 400, small = S&P 600): how many stocks are advancing, how many hold above their 50- and 200-day lines, and net new 52-week highs. A strong index riding on a shrinking number of stocks is fragile — broad participation confirms a move, thinning breadth is an early warning. The % above the 50-day line also feeds the regime model's growth axis, so this is the same breadth the model reads, just made legible.", "覆盖整个标普综合 1500（大盘 = 标普500、中盘 = 标普400、小盘 = 标普600）的广度：多少股票上涨、多少守在其 50 日与 200 日均线之上，以及净创 52 周新高。指数走强却只靠越来越少的股票支撑则脆弱 — 广泛参与确认走势，广度变薄是早期预警。高于 50 日线的占比也进入周期模型的增长轴，因此这与模型读取的是同一广度，只是更直观。") }}
+    </h2>
+    <p class="{{ breadth_panel.comp.tone }}" style="margin:0 2px 12px; font-size:14px; line-height:1.5">
+      {{ t('Participation looks', '参与度看起来') }} <b>{{ breadth_panel.comp.label }}</b> —
+      <b>{{ "%.0f" | format(breadth_panel.comp.pa50) }}%</b> {{ t('of the 1,500 are above their 50-day line', '的 1500 只股票高于其 50 日均线') }},
+      <b>{{ "%.0f" | format(breadth_panel.comp.pa200) }}%</b> {{ t('above their 200-day', '高于其 200 日均线') }};
+      {{ t('net new 52-week highs', '净创 52 周新高') }} <b>{{ "%+d" | format(breadth_panel.comp.net_nh) }}</b>.
+      <span class="muted">{{ breadth_panel.comp.verdict }}.</span>
+    </p>
+    <table>
+      <tr>
+        <th class="l">{{ t('size tier', '规模层级') }}</th>
+        <th class="l" style="min-width:170px">{{ t('advancing vs declining', '上涨对下跌') }}</th>
+        <th>{{ t('&gt; 50-day', '&gt; 50 日') }}</th>
+        <th>{{ t('&gt; 200-day', '&gt; 200 日') }}</th>
+        <th>{{ t('net new highs', '净新高') }}
+          {{ help("52-week highs minus 52-week lows today. Positive = expansion (healthy); negative = more stocks making new lows than highs (deteriorating).", "今日创 52 周新高减去创 52 周新低的数量。正 = 扩张（健康）；负 = 创新低的股票多于创新高（恶化）。") }}
+        </th>
+      </tr>
+      {% for tier in breadth_panel.tiers %}
+      <tr>
+        <td class="l"><b>{{ tier.label }}</b> <span class="muted">{{ tier.univ }}</span></td>
+        <td class="l">
+          <span class="pos">{{ tier.adv }}</span> <span class="muted">/</span> <span class="neg">{{ tier.dec }}</span>
+          {% if tier.adv_pct is not none %}<span class="bbar" title="{{ '%.0f' | format(tier.adv_pct) }}% advancing"><i style="width:{{ tier.adv_pct | round(0) }}%; background:var(--up)"></i><i style="width:{{ (100 - tier.adv_pct) | round(0) }}%; background:var(--down)"></i></span>{% endif %}
+        </td>
+        <td class="{{ 'pos' if tier.pa50 >= 50 else 'neg' }}">{{ "%.0f" | format(tier.pa50) }}%</td>
+        <td class="{{ 'pos' if (tier.pa200 or 0) >= 50 else 'neg' }}">{% if tier.pa200 is not none %}{{ "%.0f" | format(tier.pa200) }}%{% else %}—{% endif %}</td>
+        <td class="{{ 'pos' if tier.net_nh >= 0 else 'neg' }}">{{ "%+d" | format(tier.net_nh) }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    <p class="muted" style="margin:8px 2px 0; font-size:11px">{{ t('As of', '截至') }} {{ breadth_panel.asof }} · {{ t('daily breadth across S&P 1500 constituents', '覆盖标普 1500 成分股的每日广度') }}</p>
+  </div>
+  {% endif %}
+
   <!-- ======================= SECTOR HEAT BOARD ======================= -->
   <div class="panel span12" id="sectors">
     <h2>{{ t('Sector heat board — regime × tape × technicals × seasonality', '板块热度榜 — 周期 × 盘面 × 技术 × 季节性') }}
@@ -1711,6 +1949,30 @@
     </h2>
     <div class="chart">{{ chart_credit_breadth | safe }}</div>
   </div>
+
+  <!-- ======================= VIX MONITOR ======================= -->
+  {% if vix %}
+  <div class="panel span6" id="vix-monitor">
+    <h2>{{ t('VIX monitor', 'VIX 监测') }}
+      {{ help("The 30-day VIX path with the conventional regime bands (below 15 = calm/complacent, 20-25 = elevated, above 30 = high fear). The sharper read shown beside is OURS: the VIX term structure (spot vs 3-month — backwardation = near-term stress) and where today sits in VIX's own history.", "30 日 VIX 走势，叠加常规区间（低于 15 = 平静／自满，20–25 = 偏高，高于 30 = 高度恐慌）。旁边给出的是我们更锐利的解读：VIX 期限结构（现货对 3 个月 — 倒挂＝近期压力）以及今日在 VIX 自身历史中的位置。") }}
+    </h2>
+    <div class="vixhead">
+      <span class="vixnum">{{ '%.2f' | format(vix.last) }}</span>
+      <span class="{{ 'pos' if vix.chg > 0 else 'neg' if vix.chg < 0 else 'muted' }}">{{ '%+.2f' | format(vix.chg) }} ({{ '%+.1f' | format(vix.pct) }}%)</span>
+      <span class="badge vix-{{ vix.tone }}">{{ vix.regime }}</span>
+    </div>
+    <p class="muted" style="font-size:13px; margin:8px 2px 4px; line-height:1.5">
+      {% if vix.ratio is not none %}{{ t('Term structure', '期限结构') }} <b>{{ '%.2f' | format(vix.ratio) }}</b> {{ vix.rword }} · {% endif %}
+      <span class="l-en">today sits at the <b>{{ '%.0f' | format(vix.pctile) }}th</b> percentile of VIX history</span><span class="l-zh">今日处于 VIX 历史 <b>{{ '%.0f' | format(vix.pctile) }}</b> 百分位</span>
+    </p>
+    <div class="chart">{{ chart_vix | safe }}</div>
+    <div class="vixstats">
+      <span class="kv">{{ vix.days }}{{ t('d high', '日高') }} <b>{{ '%.2f' | format(vix.hi) }}</b></span>
+      <span class="kv">{{ vix.days }}{{ t('d low', '日低') }} <b>{{ '%.2f' | format(vix.lo) }}</b></span>
+      <span class="kv">{{ t('prev close', '前收') }} <b>{{ '%.2f' | format(vix.prev) }}</b></span>
+    </div>
+  </div>
+  {% endif %}
 
   <!-- ======================= POSITIONING ======================= -->
   <div class="panel span6" id="positioning">

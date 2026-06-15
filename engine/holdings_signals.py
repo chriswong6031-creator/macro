@@ -232,8 +232,11 @@ def accumulation_signals(fund: str, *, liquidity: str | None = None,
     pct = cfg.get("active_change_pct", 8)
     min_hist = cfg.get("min_price_history", 60)
     if macro_beta is None:
-        from engine.conditions import sector_macro_beta
-        macro_beta = sector_macro_beta(fund)
+        try:
+            from engine.conditions import sector_macro_beta
+            macro_beta = sector_macro_beta(fund)
+        except Exception:  # noqa: BLE001 — macro overlay is additive; absent on some builds
+            macro_beta = 0.0
     dec = weight_decomposition(fund)
     if dec is None:
         return []

@@ -98,24 +98,23 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("conditions layer failed: %s", e)
         latest["conditions"] = None
-    # Macro-risk score (MRS, 0..1): one deterministic risk-OFF gauge folded from
-    # the conditions/regime legs above. Derived from macro_risk_series (one coherent
-    # as-of date) — NOT from the latest dict, whose legs can straddle two release
-    # dates on a cadence-lag day — so the live score matches the calibrate() bands
-    # by construction. Computed BEFORE the playbook so the sector heat + per-stock
-    # ladder overlays can read it. Additive, never fatal. See MACRO_RISK_INTEGRATION.
+    # Catalyst tone (LLM Tier-A): a DIGEST of the most recent public catalyst (FOMC
+    # statement) as honest CONTEXT only. Default-off LEAF (engine/catalyst_tone.py);
+    # None when disabled or nothing recent. NEVER enters the deterministic scoring path.
     try:
-        from engine.conditions import macro_risk_snapshot
-        latest["macro_risk"] = macro_risk_snapshot(f, regime)
+        from engine.catalyst_tone import daily_snapshot as catalyst_snapshot
+        latest["catalyst_tone"] = catalyst_snapshot(asof)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.error("macro-risk score failed: %s", e)
-        latest["macro_risk"] = None
+        log.error("catalyst tone layer failed: %s", e)
+        latest["catalyst_tone"] = None
     # Dislocation Gate-1: the Fed-put master switch that CONDITIONS the capitulation
-    # gauge (buyable washout vs falling-knife). Additive risk filter, reuses the
-    # conditions snapshot. See engine/dislocation.py + research/DISLOCATION_VALIDATION.md.
+    # gauge (buyable washout vs falling-knife). Additive risk filter; reads the
+    # catalyst shock-reversibility leg when present (computed above). See
+    # engine/dislocation.py + research/DISLOCATION_VALIDATION.md.
     try:
         from engine.dislocation import snapshot as dislocation_snapshot
-        latest["dislocation"] = dislocation_snapshot(f, latest.get("conditions"))
+        latest["dislocation"] = dislocation_snapshot(
+            f, latest.get("conditions"), latest.get("catalyst_tone"))
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("dislocation layer failed: %s", e)
         latest["dislocation"] = None
@@ -136,6 +135,46 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("portfolio layer failed: %s", e)
         latest["portfolio"] = None
+    # Catalyst event-trigger (Stage 3b): on an ACTIVE dislocation whose FOMC digest
+    # carries no usable reversibility read, digest THAT DAY's market news for a fresh
+    # shock_reversible and re-attach the dislocation narrative. Gated + never fatal
+    # (no-ops while dislocation isn't wired into latest on this line).
+    try:
+        from engine import catalyst_tone as _ct
+        dis = latest.get("dislocation") or {}
+        ct0 = latest.get("catalyst_tone") or {}
+        if (dis.get("verdict") in ("buyable_washout", "stand_aside")
+                and ct0.get("shock_reversible") not in ("reversible", "persistent")):
+            ev = _ct.event_snapshot(asof, context=f"dislocation: {str(dis.get('headline', ''))[:120]}")
+            if ev:
+                latest["catalyst_event"] = ev
+                src = ev if ev.get("shock_reversible") in ("reversible", "persistent") else ct0
+                from engine.dislocation import _catalyst_narrative
+                latest["dislocation"]["catalyst_narrative"] = _catalyst_narrative(dis.get("verdict"), src)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("catalyst event-trigger failed: %s", e)
+    # Fed policy path (research/DATA_SIGNAL_EXPANSION_2026.md #2): the market-implied
+    # rate path (ZQ/SR3 futures) vs the FOMC dot-plot + a Fed-vs-market gap read.
+    # Additive DISPLAY/LLM-context leaf (engine/fed_path.py) — the path level is a
+    # PRICE and repricing is reactive, so it is NEVER scored and NEVER an MRS leg.
+    try:
+        from engine.fed_path import snapshot as fed_path_snapshot
+        latest["fed_path"] = fed_path_snapshot(f)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("fed-path layer failed: %s", e)
+        latest["fed_path"] = None
+    # Macro-risk score (MRS, 0..1): one deterministic risk-OFF gauge folded from
+    # the conditions/regime legs above. Derived from macro_risk_series (one coherent
+    # as-of date) — NOT from the latest dict, whose legs can straddle two release
+    # dates on a cadence-lag day — so the live score matches the calibrate() bands
+    # by construction. Computed BEFORE the playbook so the sector heat + per-stock
+    # ladder overlays can read it. Additive, never fatal. See MACRO_RISK_INTEGRATION.
+    try:
+        from engine.conditions import macro_risk_snapshot
+        latest["macro_risk"] = macro_risk_snapshot(f, regime)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("macro-risk score failed: %s", e)
+        latest["macro_risk"] = None
     try:
         latest["playbook"] = build_playbook(f, regime, yahoo_closes(), latest)
     except Exception as e:  # noqa: BLE001 — conclusions are additive, never fatal

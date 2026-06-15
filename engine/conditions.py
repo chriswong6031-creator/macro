@@ -89,6 +89,33 @@ def conditions_frame(f: pd.DataFrame) -> pd.DataFrame:
         if s is not None:
             out[sub] = s
 
+    # Systemic stress — OFR FSI (level + functional + regional) + CP spreads ---
+    # OFR FSI is a daily 33-variable global stress gauge with a built-in functional
+    # decomposition NFCI lacks; the Funding leg embeds a free x-ccy-basis proxy and
+    # the EM leg is additive. Coincident gauge -> DISPLAY + an optional, separately-
+    # validated risk-OFF gate; never cross-sectional alpha. (research/DATA_SIGNAL_EXPANSION_2026.md)
+    scfg = cfg.get("systemic_stress", {})
+    fsi = _col(f, "ofr_fsi")
+    if fsi is not None:
+        out["ofr_fsi"] = fsi
+        out["ofr_fsi_pctile"] = pct_rank_window(fsi, scfg.get("fsi_pctile_lookback_d", 1260))
+        out["ofr_fsi_chg"] = fsi - fsi.shift(scfg.get("fsi_change_window_d", 65))
+    for sub in ("ofr_fsi_credit", "ofr_fsi_equity", "ofr_fsi_safe", "ofr_fsi_funding",
+                "ofr_fsi_vol", "ofr_fsi_us", "ofr_fsi_oae", "ofr_fsi_em"):
+        s = _col(f, sub)
+        if s is not None:
+            out[sub] = s
+    # Commercial-paper spreads (bps): A2/P2 = lower-tier minus top-tier CP (credit
+    # quality); CP-bill = top-tier CP minus the 3m bill (funding / liquidity).
+    cp_look = scfg.get("cp_pctile_lookback_d", 1260)
+    aa_cp, a2p2, bill = _col(f, "aa_cp_90d"), _col(f, "a2p2_cp_90d"), _col(f, "us3m")
+    if aa_cp is not None and a2p2 is not None:
+        out["a2p2_spread"] = (a2p2 - aa_cp) * 100.0
+        out["a2p2_spread_pctile"] = pct_rank_window(out["a2p2_spread"], cp_look)
+    if aa_cp is not None and bill is not None:
+        out["cp_bill_spread"] = (aa_cp - bill) * 100.0
+        out["cp_bill_spread_pctile"] = pct_rank_window(out["cp_bill_spread"], cp_look)
+
     # Recession risk composite (0..100) --------------------------------------
     rc = cfg["recession"]
     w = rc["weights"]
@@ -300,6 +327,58 @@ def conditions_snapshot(f: pd.DataFrame) -> dict:
         "stlfsi": g("stlfsi"),
     }
 
+    # systemic stress — OFR FSI decomposition + commercial-paper spreads.
+    # The functional/regional split lets a stress read NAME the channel; the LLM
+    # cross-asset narrator ingests this to explain why six markets move as one.
+    scfg = cfg.get("systemic_stress", {})
+    elevated_p, acute_p = scfg.get("elevated_pctile", 0.80), scfg.get("acute_pctile", 0.95)
+    fsi, fsi_p, fsi_chg = g("ofr_fsi"), g("ofr_fsi_pctile"), g("ofr_fsi_chg")
+
+    def _r(name):
+        v = g(name)
+        return None if v is None else round(v, 3)
+    functional = {k: _r(c) for k, c in
+                  (("credit", "ofr_fsi_credit"), ("equity_valuation", "ofr_fsi_equity"),
+                   ("safe_assets", "ofr_fsi_safe"), ("funding", "ofr_fsi_funding"),
+                   ("volatility", "ofr_fsi_vol")) if _r(c) is not None}
+    regional = {k: _r(c) for k, c in
+                (("united_states", "ofr_fsi_us"), ("other_advanced", "ofr_fsi_oae"),
+                 ("emerging_markets", "ofr_fsi_em")) if _r(c) is not None}
+    _driver_label = {"credit": "Credit", "equity_valuation": "Equity valuation",
+                     "safe_assets": "Safe assets", "funding": "Funding (offshore-$ / x-ccy)",
+                     "volatility": "Volatility"}
+    # name a leading channel only when stress is above its long-run average (fsi>0)
+    leading = (max(functional, key=functional.get)
+               if functional and fsi is not None and fsi > 0 else None)
+    a2p2, a2p2_p = g("a2p2_spread"), g("a2p2_spread_pctile")
+    cpbill, cpbill_p = g("cp_bill_spread"), g("cp_bill_spread_pctile")
+    cp_p = max([p for p in (a2p2_p, cpbill_p) if p is not None], default=None)
+    systemic_stress = {
+        "ofr_fsi": None if fsi is None else round(fsi, 3),
+        "ofr_fsi_pctile": fsi_p,
+        "ofr_fsi_change_13w": None if fsi_chg is None else round(fsi_chg, 3),
+        "state": (None if fsi_p is None else
+                  ("acute" if fsi_p >= acute_p else
+                   ("elevated" if fsi_p >= elevated_p else
+                    ("normal" if (fsi or 0) >= 0 else "calm")))),
+        "trend": (None if fsi_chg is None else ("rising" if fsi_chg > 0 else "easing")),
+        "functional": functional,
+        "regional": regional,
+        "leading_driver": None if leading is None else _driver_label.get(leading, leading),
+        "leading_driver_key": leading,
+        "a2p2_spread_bps": None if a2p2 is None else round(a2p2, 1),
+        "a2p2_spread_pctile": a2p2_p,
+        "cp_bill_spread_bps": None if cpbill is None else round(cpbill, 1),
+        "cp_bill_spread_pctile": cpbill_p,
+        "cp_stress": (None if cp_p is None else
+                      ("acute" if cp_p >= acute_p else ("elevated" if cp_p >= elevated_p else "normal"))),
+        "evidence": ("OFR Financial Stress Index: a daily 33-variable global stress gauge with "
+                     "functional (credit / equity valuation / safe assets / funding / volatility) "
+                     "and regional (US / other-advanced / EM) decomposition. A coincident gauge — "
+                     "it names the stress CHANNEL when markets move as one; display + an optional "
+                     "risk-OFF gate, never cross-sectional alpha."),
+    }
+
     # recession risk
     rc = cfg["recession"]
     rr = g("recession_risk")
@@ -470,6 +549,7 @@ def conditions_snapshot(f: pd.DataFrame) -> dict:
 
     return {
         "financial_conditions": fin,
+        "systemic_stress": systemic_stress,
         "recession": recession,
         "growth_nowcast": growth,
         "labor_nowcast": labor,

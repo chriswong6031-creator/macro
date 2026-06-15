@@ -145,6 +145,22 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-seri
     </div>
   </div>
 
+  {% if overlay %}
+  <!-- ===== LLM context / knife-veto overlay (advisory, never in the backtest) ===== -->
+  <div class="card" style="margin-top:14px;{% if overlay.veto %}border-color:var(--red){% endif %}">
+    <h3 style="margin-bottom:6px">{% if overlay.veto %}<span style="color:var(--red)">⚠ {{ t('LLM knife-veto active','LLM 接刀否决生效') }}</span>{% else %}{{ t('LLM context / veto overlay','LLM 背景 / 否决叠加') }}{% if not overlay.enabled %} <span class="faint" style="font-weight:500">· {{ t('off','关闭') }}</span>{% endif %}{% endif %}</h3>
+    {% if not overlay.enabled %}
+    <div class="sub">{{ t('No DeepSeek key configured — the mechanical recommendation stands. When enabled, this firewalled layer digests the FOMC tone (and, on a stress day, the shock-reversibility read) and can veto a buyable-washout redeploy if it judges the shock a regime break. It is logged forward and NEVER enters the backtest or the score.','未配置 DeepSeek 密钥 —— 以机械建议为准。启用后，该防火墙层会消化 FOMC 基调（压力日则读取冲击可逆性），并在判断冲击为周期破裂时否决可买入恐慌底的再部署。它仅向前记录，绝不进入回测或评分。') }}</div>
+    {% elif overlay.veto %}
+    <div class="sub" style="margin-bottom:6px">{{ overlay.veto_reason }}</div>
+    <div class="sub faint">{{ t('Live recommendation','实时建议') }} <b style="color:var(--ink)">{{ (overlay.overlay_weight*100)|round|int }}% {{ t('equity','股票') }}</b> ({{ t('mechanical would redeploy to','机械逻辑将再部署至') }} {{ (overlay.mechanical_weight*100)|round|int }}%). {{ overlay.disclaimer }}</div>
+    {% else %}
+    <div class="sub" style="margin-bottom:6px">{{ overlay.note }}</div>
+    <div class="sub faint">{{ t('No veto — the mechanical recommendation stands.','无否决 —— 以机械建议为准。') }} {{ overlay.disclaimer }}</div>
+    {% endif %}
+  </div>
+  {% endif %}
+
   <!-- ===== risk-score leg breakdown ===== -->
   <div class="section-title">{{ t('What is driving the score','分数由什么驱动') }}</div>
   <div class="card">

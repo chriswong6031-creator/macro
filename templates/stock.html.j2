@@ -63,6 +63,28 @@
   .ae-extended { background:color-mix(in srgb,var(--warn) 22%,transparent); color:var(--text); border-color:color-mix(in srgb,var(--warn) 55%,transparent); }
   .ae-intact { background:color-mix(in srgb,var(--link) 14%,transparent); color:var(--link); }
   .ae-laggard,.ae-neutral { background:var(--panel2); color:var(--muted); }
+  .bcbox { margin:9px 0 6px; padding:9px 12px; border-radius:9px; background:var(--panel2);
+           border-left:4px solid var(--muted); cursor:help; }
+  .bc-head { display:flex; align-items:baseline; gap:9px; }
+  .bc-ttl { font-size:12px; font-weight:800; letter-spacing:.03em; text-transform:uppercase;
+            color:var(--muted); }
+  .bc-score { font-size:19px; font-weight:800; line-height:1; }
+  .bc-score .bc-max { font-size:11px; font-weight:600; opacity:.55; }
+  .bc-grade { font-size:12px; font-weight:600; opacity:.8; margin-left:auto; }
+  .bcg-strong, .bcg-solid { color:var(--up); }
+  .bcg-light { color:var(--warn); } .bcg-minimal { color:var(--muted); }
+  .bcbox.bc-strong, .bcbox.bc-solid { border-left-color:var(--up);
+            background:color-mix(in srgb, var(--up) 9%, var(--panel2)); }
+  .bcbox.bc-light { border-left-color:var(--warn); }
+  .bc-tf { margin-top:5px; font-size:12.5px; color:var(--text);
+           font-variant-numeric:tabular-nums; }
+  .bc-tf .bc-y { color:var(--up); font-weight:800; }
+  .bc-tf .bc-n { color:var(--muted); opacity:.65; }
+  .bc-hist { margin-top:5px; font-size:11.5px; color:var(--muted); }
+  .bc-knife { margin-top:7px; padding:6px 9px; border-radius:7px; font-size:12px;
+              line-height:1.5; background:color-mix(in srgb, var(--down) 12%, var(--panel2));
+              border-left:3px solid var(--down); color:var(--text); }
+  .bc-knife-high { background:color-mix(in srgb, var(--down) 20%, var(--panel2)); }
   a { text-decoration:none; }
   h1 { font-size:20px; margin:0; }
   h2 { font-size:14px; margin:0 0 10px; color:var(--muted); text-transform:uppercase;
@@ -91,6 +113,14 @@
   th,td { text-align:left; padding:4px 8px; border-bottom:1px solid var(--line); }
   th { color:var(--muted); font-weight:500; }
   #result { display:none; }
+  #stock-brief { border-left:3px solid var(--link); }
+  #stock-brief h2 { color:var(--link); }
+  #stock-brief .sb-sum { font-size:14.5px; font-weight:600; margin:0 0 10px; }
+  #stock-brief .sb-sec { margin:10px 0; }
+  #stock-brief .sb-h { font-weight:600; color:var(--link); margin:0 0 4px; }
+  #stock-brief .sb-list { margin:4px 0 0 18px; padding:0; }
+  #stock-brief .sb-list li { margin:3px 0; }
+  #stock-brief .sb-foot { margin-top:12px; color:var(--muted); font-size:12px; }
   /* tooltip (the help() macro) — mirrors the dashboard's inline rules; stock.html
      never used help() before, so these were missing and the tip leaked as text */
   .help { display: inline-flex; align-items: center; justify-content: center;
@@ -172,14 +202,25 @@
 <nav class="site-nav">
   <div class="nav-links">
     <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
-    <a class="nav-link" href="macro.html">📊 {{ t('Macro', '宏观') }}</a>
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 {{ t('US Macro', '美国宏观') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">{{ t('Regime dashboard', '宏观周期') }}<span class="d">{{ t('Growth · inflation · MRS · nowcast', '增长 · 通胀 · MRS · 即时预测') }}</span></a>
+        <a href="factors.html">🧮 {{ t('Factor Lab', '因子实验室') }}<span class="d">{{ t('Value · quality · low-vol + point-in-time IC', '价值 · 质量 · 低波动 + 时点 IC') }}</span></a>
+        <a href="baskets.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P', '等权主题篮子 vs 标普') }}</span></a>
+        <a href="seasonality.html">🗓 {{ t('Factor Seasonality', '因子季节性') }}<span class="d">{{ t('Ken French monthly, 1926+', 'Ken French 月度，1926+') }}</span></a>
+        <a href="spvector.html">📈 {{ t('S&P / Macro Vector', '标普宏观向量') }}<span class="d">{{ t('Tactical equity↔cash allocation', '战术股票↔现金配置') }}</span></a>
+      </div>
+    </div>
     <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }}</a>
     <a class="nav-link" href="etfs.html">🐳 {{ t('ETF flows', 'ETF 资金流') }}</a>
     <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国A股') }}</a>
     <a class="nav-link" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }}</a>
     <a class="nav-link" href="forex.html">💱 {{ t('Forex', '外汇') }}</a>
     <a class="nav-link" href="bonds.html">🏛️ {{ t('Bonds', '债券') }}</a>
+      <a class="nav-link" href="crossasset.html">🧭 {{ t('Cross-Asset', '跨资产') }}</a>
     <a class="nav-link" href="discovery.html">🏆 {{ t('Alpha leaders', '阿尔法领先股') }}</a>
+    <a class="nav-link" href="gex.html">🧲 {{ t('GEX magnets', 'Gamma磁吸') }}</a>
     <a class="nav-link" href="brief.html">📰 {{ t('Brief', '简报') }}</a>
     <a class="nav-link" href="history.html">📈 {{ t('History', '历史') }}</a>
   </div>
@@ -226,6 +267,8 @@
       <div id="r_sigstrip" class="sigstrip"></div>
       <!-- collapsible alert feed: ladder pinned on top + technical timeline -->
       <div id="af-feed" class="af" hidden><div id="r_affeed"></div></div>
+      <!-- bottom-confidence box (multi-TF, bottoming states only) -->
+      <div id="r_bc" class="bcbox" style="display:none"></div>
       <p id="r_age" class="agewhen" style="display:none"></p>
       <p id="r_early" class="early" style="display:none"></p>
       <p id="r_macro" class="macro-caution" style="display:none"></p>
@@ -233,6 +276,10 @@
       <div id="r_cyclebox" class="cyclebox"></div>
       <p id="r_flags" class="neg" style="margin:4px 0"></p>
       <details><summary>{{ t('full reasoning', '完整推理') }}</summary><p class="muted" id="r_why" style="margin:6px 0"></p></details>
+    </div>
+    <div class="panel" id="stock-brief" style="display:none">
+      <h2>🧠 {{ t('AI brief — research context', 'AI 简报 — 研究背景') }}</h2>
+      <div id="stock-brief-body"></div>
     </div>
 
     <!-- ===== Fundamentals suite (Phase 1: surface what we already compute) ===== -->
@@ -263,7 +310,9 @@
     </div>
 
     <div class="panel" id="panel_earn" style="display:none">
-      <h2>📅 {{ t('Earnings', '财报') }}</h2>
+      <h2>📅 {{ t('Earnings', '财报') }}
+        {{ help('Next reported earnings date and the recent beat/miss history (SEC + Nasdaq, keyless), plus the SUE earnings-momentum z. SUE (standardized unexpected earnings) measures how far the latest quarter beat its year-ago seasonal expectation, standardized by the company\'s own history — the post-earnings-announcement-drift (PEAD) effect. It is the ONLY positive factor leg to survive the dashboard\'s leak-free false-discovery-rate test (see the Factor fingerprint panel / factors page); the z is RELATIVE to the S&P 1500 (0 = average, +2 = top of the pack). Context, not a standalone buy signal.',
+          '下次财报日与近期超预期/不及预期历史（SEC＋纳斯达克，免密钥），以及SUE盈利动量z值。SUE（标准化超预期盈利）衡量最新季度相对去年同期季节性预期超出多少，并以公司自身历史标准化——即盈利公布后漂移（PEAD）效应。它是唯一通过本看板无泄漏错误发现率检验的正向因子（见“因子指纹”面板／因子页）；该z为相对标普1500的排名（0＝平均，+2＝领先）。仅供参考，并非独立买入信号。') }}</h2>
       <div id="r_earn"></div>
     </div>
 
@@ -309,6 +358,20 @@
       <div id="r_flow"></div>
     </div>
 
+    <div class="panel" id="panel_fragility" style="display:none">
+      <h2>⚠️ {{ t('Crowded &amp; fragile', '拥挤且脆弱') }}
+        {{ help("A contrarian RISK flag: this name is at once a crowded leader (high relative-strength percentile), a crowded short (high days-to-cover in the latest FINRA snapshot), AND stretched well above its 50-day average. That conjunction is a fragile set-up — prone to a sharp unwind or short squeeze either way. DISPLAY-ONLY context, never in the conviction score: our Phase-0 found crowding carries NO forward-return edge (only a marginal, statistically-weak worse drawdown), and short interest has no point-in-time history to validate. Context on fragility, NOT a sell.",
+          "一个逆向风险标记：该股同时是拥挤的领涨股（相对强弱百分位高）、拥挤的空头（最新 FINRA 快照中回补天数高），且远高于其 50 日均线。这种组合是一种脆弱形态 —— 易于双向剧烈回吐或逼空。仅作背景展示，绝不计入信念评分：我们的 Phase-0 发现拥挤本身没有前瞻收益优势（仅有边际且统计上微弱的更深回撤），且空头数据没有可供验证的时点历史。仅作脆弱性背景，而非卖出信号。") }}</h2>
+      <div id="r_fragility"></div>
+    </div>
+
+    <div class="panel" id="panel_smartmoney" style="display:none">
+      <h2>🏦 {{ t('Super-investors — 13F holders', '超级投资者 — 13F 持仓') }}
+        {{ help("Which curated super-investor funds (Berkshire, Pershing Square, Scion, Baupost, Viking, Tiger Global, etc.) reported holding this stock in their latest SEC Form 13F, and whether they initiated / added / trimmed / exited vs the prior quarter. Conviction = the position's share of that fund's reported US-equity book. 13F is QUARTERLY with a ~45-day lag — long-only US equity >= $100M only (no shorts, options detail, or non-US positions); CUSIPs are name-matched to tickers so some lines are hidden. CONTEXT on who holds it, NOT a buy list or a real-time signal.",
+          "哪些精选的超级投资者基金（伯克希尔、潘兴广场、Scion、Baupost、Viking、老虎环球等）在最新的 SEC 13F 表中报告持有该股，以及相对上一季度是新建仓／加仓／减持／清仓。信念 = 该持仓在该基金所报美股组合中的占比。13F 为季度申报，约有 45 天滞后 —— 仅含美股多头持仓（≥1亿美元），不含空头、期权细节或非美持仓；CUSIP 通过名称匹配到代码，部分行可能缺失。仅作为「谁持有它」的背景，而非买入清单或实时信号。") }}</h2>
+      <div id="r_smartmoney"></div>
+    </div>
+
     <div class="panel">
       <h2>{{ t('Momentum across timeframes', '跨周期动量') }}</h2>
       <div id="r_mtf"></div>
@@ -340,9 +403,11 @@
   </div>
 
 <script src="https://s3.tradingview.com/tv.js"></script>
+<script src="stockbrief.js"></script>
 <script>
 (function () {
   var cal = null;  // calibration table data (the nav search bar drives navigation now)
+  var bcCal = null;  // bottom-confidence per-band held-rate calibration
   // language-aware micro-strings for the JS-rendered scaffolding (the deep
   // per-stock analysis prose comes from the nightly JSON and stays English)
   function lang() { return document.documentElement.getAttribute('data-lang') || 'en'; }
@@ -381,6 +446,8 @@
           short:'Short interest', shortpct:'Short % of float', dtc:'Days to cover', sichg:'SI change (2wk)',
           insider:'Insider net flow', insiderpct:'Net buying (% cap)', buyers:'distinct insiders (B/S)', buys:'buys / sells', fwdnote_lite:'Forward P/E: trailing only — no free forward estimate at S&P-1500 scale.',
           mediansrc:'sector median', scorelab:'Factor score', compos:'composite percentile vs S&P 1500',
+          suehelp:'Standardized unexpected earnings — how far the latest quarter beat its year-ago seasonal expectation, standardized by the company’s own history (post-earnings-announcement drift). Cross-sectional winsorized z vs the S&P 1500; the only positive factor leg to survive the leak-free FDR scorecard. Context, not a standalone signal.',
+          suevs:'z vs S&P 1500',
           piotroski:'Piotroski F · Altman Z', ph2:'Phase 2' },
     zh: { building:'建设中——将在后续阶段加入。',
           deeponly:'分析师评级与目标价尚未采集——将在后续（分层）阶段加入。下方数据来自约110只标的的深度集快照。',
@@ -393,6 +460,8 @@
           short:'做空持仓', shortpct:'做空占流通股', dtc:'回补天数', sichg:'做空变化（两周）',
           insider:'内部人净流向', insiderpct:'净买入（占市值%）', buyers:'不同内部人（买/卖）', buys:'买入 / 卖出', fwdnote_lite:'前瞻市盈率：仅历史值——标普1500规模下无免费前瞻预期。',
           mediansrc:'行业中位', scorelab:'因子评分', compos:'相对标普1500综合百分位',
+          suehelp:'标准化超预期盈利（SUE）——最新季度相对去年同期季节性预期超出多少，并以公司自身历史标准化（盈利公布后漂移效应）。相对标普1500的横截面缩尾z值；是唯一通过无泄漏FDR评分卡的正向因子。仅供参考，并非独立信号。',
+          suevs:'相对标普1500的z',
           piotroski:'Piotroski F · Altman Z', ph2:'第二阶段' } };
   function LF(k) { return (TF[lang()] || TF.en)[k]; }
   function el(id) { return document.getElementById(id); }
@@ -635,6 +704,17 @@
               lz('beat','超预期') + ' ' + su.beats + '/' + su.total + strk + '</span> <span class="muted">' +
               lz('avg surprise','平均超预期') + ' ' + (su.avg_surprise > 0 ? '+' : '') + su.avg_surprise + '%</span></div>';
       }
+      if (ev.sue_z != null) {
+        // SUE earnings-momentum z — the validated post-earnings-drift leg (factors.json
+        // table 'sue'; survives the leak-free FDR scorecard). title via LF() not the t()
+        // macro — a span pair would break the attribute.
+        var sz = ev.sue_z;
+        var sc = sz >= 0.5 ? 'var(--up)' : sz <= -0.5 ? 'var(--down)' : 'var(--muted)';
+        eh += '<div style="margin:6px 0"><span class="hchip" title="' + esc(LF('suehelp')) +
+              '" style="color:'+sc+';background:color-mix(in srgb,'+sc+' 14%,transparent)">' +
+              lz('earnings momentum (SUE)','盈利动量 (SUE)') + ' ' + (sz > 0 ? '+' : '') + sz.toFixed(2) +
+              '</span> <span class="muted">' + LF('suevs') + '</span></div>';
+      }
       if (ev.surprises && ev.surprises.length) {
         var er = ev.surprises.map(function (s) {
           var sp = s.surprise_pct;
@@ -666,8 +746,7 @@
       show('panel_fac', true);
     } else show('panel_fac', false);
 
-    if (isEquity) { el('r_gex').innerHTML = '<div class="stub">' + LF('gexsoon') + '</div>'; show('panel_gex', true); }
-    else show('panel_gex', false);
+    renderGex(d);
 
     if (pos && (pos.short || pos.insider)) {
       var html = '';
@@ -731,6 +810,12 @@
   }
   fetch('stockdata/calibration.json').then(r => r.ok ? r.json() : null)
     .then(d => { cal = d; }).catch(() => {});
+  fetch('stockdata/bc_calibration.json').then(r => r.ok ? r.json() : null)
+    .then(d => { bcCal = d; }).catch(() => {});
+  // historical "cycle-low held" rate for a bottom-confidence score's band
+  function bcBand(s) {
+    return s < 20 ? '0-20' : s < 40 ? '20-40' : s < 60 ? '40-60' : '60+';
+  }
 
   function fromHash() {
     var t = decodeURIComponent((location.hash || '').slice(1));
@@ -863,6 +948,7 @@
 
   function load(t) {
     var safe = t.replace('=', '_').replace('^', '_');
+    if (window.loadStockBrief) window.loadStockBrief(safe);   // 🧠 AI brief (hidden if absent)
     fetch('stockdata/' + safe + '.json').then(function (r) {
       if (!r.ok) throw new Error('not in library');
       return r.json();
@@ -935,6 +1021,106 @@
     show('panel_alpha', true);
   }
 
+  // Super-investor 13F holders: which curated funds reported holding this name and
+  // how they moved it vs last quarter (from collectors/edgar_13f.py). CONTEXT only.
+  var SMA = { 'new':['★ initiated','★ 新建仓','up'], add:['▲ added','▲ 加仓','up'],
+              hold:['● holding','● 持有',''], trim:['▼ trimmed','▼ 减持','down'],
+              exit:['✕ exited','✕ 清仓','down'] };
+  function renderGex(d) {
+    var g = d.gex;
+    if (!g || g.net_gex_bn == null) { show('panel_gex', false); return; }
+    function gx(v, nd, suf) { return v == null ? LF('na') : Number(v).toFixed(nd) + (suf || ''); }
+    var reg = g.gamma_regime === 'long' ? lz('Long gamma · pins / mean-revert', '多头Gamma · 磁吸/均值回归')
+            : g.gamma_regime === 'short' ? lz('Short gamma · trends / amplifies', '空头Gamma · 趋势/放大')
+            : lz('Neutral', '中性');
+    var rc = g.gamma_regime === 'long' ? 'pos' : g.gamma_regime === 'short' ? 'neg' : 'muted';
+    var chips = [
+      gchip(lz('regime', '体制'), '<span class="' + rc + '">' + reg + '</span>'),
+      gchip(lz('net GEX', '净GEX'), '<span class="' + ((g.net_gex_bn || 0) >= 0 ? 'pos' : 'neg') + '">' + (g.net_gex_bn >= 0 ? '+' : '') + gx(g.net_gex_bn, 2) + ' $bn</span>'),
+      gchip(lz('gamma flip', 'Gamma翻转'), gx(g.gamma_flip, 2) + (g.dist_to_flip_pct != null ? ' <span class="muted">(' + (g.dist_to_flip_pct >= 0 ? '+' : '') + gx(g.dist_to_flip_pct, 1) + '%)</span>' : '')),
+      gchip(lz('magnets', '磁吸'), '↑ ' + gx(g.magnet_up, 2) + ' · ↓ ' + gx(g.magnet_down, 2)),
+      gchip('IV30', g.iv30 != null ? gx(g.iv30 * 100, 1) + '%' : LF('na')),
+      gchip(lz('put/call OI', '认沽/认购OI'), gx(g.put_call_oi_ratio, 2))
+    ];
+    var conf = (g.tier === 'thin_chain' || (g.top_oi_share != null && g.top_oi_share > 0.35))
+      ? '<div style="margin:6px 0 2px"><span class="alpha-entry ae-laggard">' + lz('sign-assumption: low confidence', '符号假设：低置信') + '</span></div>' : '';
+    el('r_gex').innerHTML = '<div class="glance">' + chips.join('') + '</div>' + conf +
+      '<p class="srcline">' + lz('Dealer-gamma LEVELS from Cboe delayed chains — daily, not live flow. A vol-regime + levels map (long-gamma → pins/mean-reverts; short-gamma → trends/amplifies), NOT directional and NOT in this stock’s score. The dealer long-call/short-put sign is an assumption — fragile for single names.',
+        '来自 Cboe 延迟期权链的做市商Gamma价位 — 每日、非实时流动。波动率体制+价位地图，无方向性且不计入本股评分。做市商符号为假设，对个股脆弱。') + '</p>';
+    show('panel_gex', true);
+  }
+
+  // Contrarian fragility flag: crowded long + crowded short + extended. DISPLAY-ONLY,
+  // never in the score (Phase-0: no forward-return edge; SI has no PIT history).
+  function renderFragility(d) {
+    var f = d && d.fragility;
+    if (!f) { show('panel_fragility', false); return; }
+    var top = function (p) { return lz('top ', '前 ') + Math.max(1, 100 - p) + '%'; };
+    var legs = [
+      '📈 ' + lz('Relative strength', '相对强弱') + ': <b>' + top(f.rs_pctile) + '</b> ' +
+        lz('(a crowded leader)', '（拥挤的领涨股）'),
+      '🩳 ' + lz('Short interest', '空头持仓') + ': <b>' +
+        (f.days_to_cover != null ? f.days_to_cover + ' ' + lz('days to cover', '天回补') : top(f.si_pctile)) +
+        '</b> ' + lz('(' + top(f.si_pctile) + ', a crowded short)', '（' + top(f.si_pctile) + '，拥挤的空头）'),
+      '📏 ' + lz('Extended', '超买拉伸') + ': <b>+' + f.pct_vs_50dma + '%</b> ' +
+        lz('above its 50-day average', '高于其 50 日均线')
+    ];
+    el('r_fragility').innerHTML =
+      '<p style="margin:0 0 8px">' + lz(
+        'A crowded leader that is also heavily shorted and stretched above trend — a fragile set-up prone to a sharp unwind or short squeeze.',
+        '一只既被广泛持有、又被大量做空、且远高于趋势的领涨股 —— 一种易于剧烈回吐或逼空的脆弱形态。') + '</p>' +
+      '<ul style="margin:0 0 8px;padding-left:18px;line-height:1.7">' +
+        legs.map(function (l) { return '<li>' + l + '</li>'; }).join('') + '</ul>' +
+      '<p class="srcline">' + lz(
+        'Context on fragility, NOT a sell. This flag is NOT in the conviction score — Phase-0 found crowding carries no forward-return edge (only a marginal, weak worse-drawdown tendency), and short interest has no point-in-time history to validate.',
+        '仅作脆弱性背景，而非卖出信号。该标记不计入信念评分 —— Phase-0 发现拥挤本身没有前瞻收益优势（仅有边际且微弱的更深回撤倾向），且空头数据没有可供验证的时点历史。') + '</p>';
+    show('panel_fragility', true);
+  }
+
+  function renderSmartMoney(d) {
+    var s = d && d.smart_money;
+    var hold = (s && s.holders) || [];
+    if (!hold.length) { show('panel_smartmoney', false); return; }
+    var R = ' style="text-align:right"';
+    var head = '<p class="srcline" style="margin:0 0 8px">' +
+      '<b>' + s.n_holders + '</b> ' + lz('super-investor fund' + (s.n_holders === 1 ? '' : 's') + ' hold this',
+        '家超级投资者基金持有') +
+      (s.n_buying ? ' · <span class="pos">' + s.n_buying + ' ' + lz('buying', '买入') + '</span>' : '') +
+      (s.n_selling ? ' · <span class="neg">' + s.n_selling + ' ' + lz('selling', '卖出') + '</span>' : '') +
+      (s.as_of ? ' · ' + lz('as of', '截至') + ' ' + s.as_of : '') + '</p>';
+    // Cross-fund VIP / overlap: how many tracked funds currently hold it, the
+    // top holder's conviction, and how concentrated that ownership is (HHI).
+    var hhi = s.ownership_hhi, conc = '';
+    if (hhi != null) conc = (hhi >= 0.5) ? lz('top-heavy (one fund dominates)', '高度集中（单一基金主导）')
+      : (hhi <= 0.3) ? lz('broadly held', '广泛持有') : lz('moderately concentrated', '中度集中');
+    var vipline = '';
+    if (s.vip) vipline = '<p class="srcline" style="margin:-4px 0 10px">' +
+      (s.is_vip ? '<span class="chip" style="--c:var(--ok)">★ ' + lz('VIP consensus', 'VIP 共识') + '</span> ' : '') +
+      lz('held by ', '由 ') + '<b>' + s.vip + '</b> ' + lz('tracked fund' + (s.vip === 1 ? '' : 's'), '家跟踪基金') +
+      (s.max_book_pct != null ? ' · ' + lz('top conviction ', '最高信念 ') + '<b>' + s.max_book_pct + '%</b> ' + lz('of a book', '的组合占比') : '') +
+      (conc ? ' · ' + conc : '') + '</p>';
+    var th = '<tr><th>' + lz('fund', '基金') + '</th><th>' + lz('action', '动作') +
+      '</th><th' + R + '>' + lz('% of portfolio', '组合占比') +
+      '</th><th' + R + '>' + lz('Δ shares', '股数Δ') + '</th></tr>';
+    var rows = hold.map(function (h) {
+      var a = SMA[h.action] || [h.action, h.action, ''];
+      var col = a[2] ? ' style="color:var(--' + a[2] + ')"' : ' class="muted"';
+      var dir = lz(a[0], a[1]);
+      var pct = (h.pct_portfolio == null) ? '—' : Number(h.pct_portfolio).toFixed(1) + '%';
+      var chg = (h.shares_change_pct == null) ? (h.action === 'new' ? lz('new', '新') : '—')
+        : (h.shares_change_pct >= 0 ? '+' : '') + Number(h.shares_change_pct).toFixed(0) + '%';
+      return '<tr><td><b>' + h.fund + '</b> <span class="muted">' + (h.fund_name || '') + '</span></td>' +
+        '<td' + col + '>' + dir + '</td>' +
+        '<td' + R + '><b>' + pct + '</b></td>' +
+        '<td class="muted"' + R + '>' + chg + '</td></tr>';
+    }).join('');
+    el('r_smartmoney').innerHTML = head + vipline + '<table>' + th + rows + '</table>' +
+      '<p class="srcline">' + lz(
+        '13F-HR holdings are filed quarterly with a ~45-day lag — a stale, partial picture of long-only US equity stakes ≥ $100M, with no shorts, options detail, or non-US positions. CUSIPs are name-matched to tickers, so some lines may be missing. Context on who holds this, NOT a buy list or a real-time signal.',
+        '13F-HR 持仓为季度申报，约有 45 天滞后 —— 仅为美股多头持仓（≥1亿美元）的陈旧且不完整快照，不含空头、期权细节或非美持仓。CUSIP 通过名称匹配到代码，部分行可能缺失。仅作为「谁持有它」的背景，而非买入清单或实时信号。') + '</p>';
+    show('panel_smartmoney', true);
+  }
+
   function render(d) {
     document.getElementById('result').style.display = 'block';
     document.getElementById('r_name').textContent = d.name + ' (' + d.ticker + ')';
@@ -963,6 +1149,40 @@
       eqEl.title = lz(d.ladder.eq_tip, d.ladder.eq_tip_zh);
       eqEl.style.display = 'inline-flex';
     } else { eqEl.style.display = 'none'; }
+
+    // Bottom Confidence (multi-timeframe) — only on bottoming states
+    var bcEl = document.getElementById('r_bc');
+    if (d.ladder.bc_score != null && d.ladder.bc_line) {
+      var bcg = lang() === 'zh' ? (d.ladder.bc_grade_zh || d.ladder.bc_grade) : d.ladder.bc_grade;
+      var bcLbl = lang() === 'zh' ? '底部信心' : 'Bottom confidence';
+      var tfHtml = lz(d.ladder.bc_line, d.ladder.bc_line_zh)
+        .replace(/✓/g, '<span class="bc-y">✓</span>').replace(/✗/g, '<span class="bc-n">✗</span>');
+      // measured historical "cycle-low held" rate for this score's band
+      var bcHist = '';
+      if (bcCal && bcCal.bands) {
+        var bnd = bcCal.bands[bcBand(d.ladder.bc_score)];
+        if (bnd && bnd.held_pct != null) {
+          bcHist = '<div class="bc-hist">📊 ' + (lang() === 'zh'
+            ? '历史上该档位守住周期低点约 ' + bnd.held_pct + '%（21日）'
+            : 'Historically this band held the cycle low ~' + bnd.held_pct + '% of the time (21d)') + '</div>';
+        }
+      }
+      // Phase 2 — knife-risk caution when deeply washed out below the 200-day
+      var bcKnife = '';
+      if (d.ladder.bc_knife) {
+        bcKnife = '<div class="bc-knife bc-knife-' + d.ladder.bc_knife + '">' +
+          lz(d.ladder.bc_knife_line, d.ladder.bc_knife_line_zh) + '</div>';
+      }
+      bcEl.className = 'bcbox bc-' + (d.ladder.bc_grade || 'minimal');
+      bcEl.innerHTML =
+        '<div class="bc-head"><span class="bc-ttl">🎯 ' + bcLbl + '</span>' +
+        '<span class="bc-score ' + 'bcg-' + (d.ladder.bc_grade || 'minimal') + '">' +
+        d.ladder.bc_score + '<span class="bc-max">/100</span></span>' +
+        '<span class="bc-grade">' + bcg + '</span></div>' +
+        '<div class="bc-tf">' + tfHtml + '</div>' + bcHist + bcKnife;
+      bcEl.title = lz(d.ladder.bc_tip, d.ladder.bc_tip_zh);
+      bcEl.style.display = 'block';
+    } else { bcEl.style.display = 'none'; }
 
     var pts = (lang() === 'zh' && d.ladder.points_zh && d.ladder.points_zh.length)
       ? d.ladder.points_zh : (d.ladder.points || []);
@@ -1012,6 +1232,8 @@
     renderFundamentals(d);
     renderFundFlow(d);
     renderAlpha(d);
+    renderFragility(d);
+    renderSmartMoney(d);
 
     document.getElementById('tvbox').innerHTML = '<div id="tvchart"></div>';
     try {

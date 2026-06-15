@@ -335,11 +335,19 @@ def _carry_read(asset: str) -> dict | None:
     ry = df["roll_yield_ann"]
     last = float(ry.iloc[-1])
     pct = float(ry.tail(ccfg["pctile_lookback_d"]).rank(pct=True).iloc[-1])
-    return {"roll_ann": round(last * 100, 1),
-            "state": "backwardation" if last > ccfg["backwardation_ann"] else "contango",
-            "pctile": int(round(pct * 100)),
-            "front": round(float(df["front"].iloc[-1]), 2),
-            "second": round(float(df["second"].iloc[-1]), 2)}
+    out = {"roll_ann": round(last * 100, 1),
+           "state": "backwardation" if last > ccfg["backwardation_ann"] else "contango",
+           "pctile": int(round(pct * 100)),
+           "front": round(float(df["front"].iloc[-1]), 2),
+           "second": round(float(df["second"].iloc[-1]), 2)}
+    # validated honesty layer (scripts/commodity_carry_phase0.py): carry ≠ direction.
+    from engine import commodity_carry_context as _cc
+    out["caveat_en"], out["caveat_zh"] = _cc.CARRY_CAVEAT["en"], _cc.CARRY_CAVEAT["zh"]
+    if asset == "oil":   # deep 38y EIA percentile context (panel otherwise ranks ~18mo)
+        deep = _cc.deep_oil_context(out["roll_ann"])
+        if deep:
+            out["deep"] = deep
+    return out
 
 
 def asset_vm(asset: str, df: pd.DataFrame, calib: dict, drivers: dict | None = None,

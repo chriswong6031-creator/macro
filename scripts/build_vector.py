@@ -145,6 +145,27 @@ def scorecard(close: pd.Series, alloc: pd.Series) -> dict:
     }
 
 
+def alloc_sizing(last: pd.Series, eq: pd.Series, acfg: dict) -> dict:
+    """Decompose the live optimal allocation into the Point-4 factors that now SIZE it,
+    so the % on the page is explained, not a bare number: the conviction multiplier
+    (from the directional-confidence cycle position, tiered TOSS-UP/LEAN/EDGE) and the
+    ENFORCED drawdown brake (its current cap + how far the strategy is underwater).
+    This is what closes the old 'conviction is just a label' gap on the dashboard."""
+    from engine import btc_signals
+    cp = float(last["cycle_position"]) if pd.notna(last.get("cycle_position")) else 0.5
+    dd = float(eq.iloc[-1] / eq.cummax().iloc[-1] - 1.0)
+    thr, decay = float(acfg.get("dd_threshold", 0.25)), float(acfg.get("dd_decay", 1.0))
+    floor = float(acfg.get("dd_floor", 0.40))
+    cap = min(1.0, max(floor, 1.0 - decay * max(0.0, (-dd) - thr)))
+    return {
+        "tier": btc_signals.conviction_tier(cp, acfg),
+        "mult": round(float(btc_signals.conviction_multiplier(cp, acfg)), 2),
+        "brake_active": bool(cap < 0.999),
+        "brake_cap": round(100 * cap),
+        "dd": round(100 * dd),
+    }
+
+
 def _cond_up_prob(df: pd.DataFrame, cfg: dict, horizon: int):
     """P(up over `horizon`d) conditioned on momentum_state x risk_regime, shrunk
     toward the momentum marginal (empirical Bayes), nudged by the CONFIRMED macro
@@ -709,8 +730,8 @@ def build_landing(site: Path, vm: dict) -> None:
     stored engine state, not from any HTML file build_site emits."""
     macro = _macro_state()
     hub = _hub_html(vm, macro, home_alert_feed(), _china_state(), _commodities_state(),
-                    _watchlist_state(), _etf_state(), _hk_state(), _forex_state(), _bonds_state(),
-                    _us_stocks_state())
+                    _watchlist_state(), _etf_state(), _hk_state(), _forex_state(),
+                    _bonds_state(), _us_stocks_state(), _spvector_state(), _crossasset_state())
     (site / "index.html").write_text(hub)
     log.info("wrote landing hub -> index.html")
 
@@ -796,6 +817,19 @@ def _bonds_state() -> dict:
                 "present": (site / "bonds.html").exists()}
 
 
+def _crossasset_state() -> dict:
+    """Cross-asset trend/correlation read for the hub card (written by
+    build_crossasset, which runs before build_vector)."""
+    site = config.ROOT / config.load()["storage"]["site_dir"]
+    try:
+        d = json.loads((config.data_dir() / "crossasset" / "latest.json").read_text())
+        return {"regime": d.get("regime", "—"), "correlation": d.get("correlation", ""),
+                "date": d.get("date", ""), "present": (site / "crossasset.html").exists()}
+    except Exception:
+        return {"regime": "—", "correlation": "", "date": "",
+                "present": (site / "crossasset.html").exists()}
+
+
 def _watchlist_state() -> dict:
     """The holdings watchlist is pure client state — no server-side signal — so
     the card is gated purely on the page having been built this run."""
@@ -820,6 +854,21 @@ def _us_stocks_state() -> dict:
                 "date": d.get("date", ""), "present": (site / "us_stocks.html").exists()}
     except Exception:
         return {"label": "—", "n_setups": 0, "date": "", "present": (site / "us_stocks.html").exists()}
+
+
+def _spvector_state() -> dict:
+    """S&P / Macro Vector card — gated on the page existing; shows the current macro
+    risk band + recommended equity weight from data/regime/spvector_latest.json when
+    build_spvector has run (static label otherwise)."""
+    site = config.ROOT / config.load()["storage"]["site_dir"]
+    present = (site / "spvector.html").exists()
+    try:
+        import json
+        d = json.loads((config.data_dir() / "regime" / "spvector_latest.json").read_text())
+        return {"label": d.get("band") or "Index ↔ T-bills",
+                "weight": d.get("equity_weight"), "present": present}
+    except Exception:  # noqa: BLE001
+        return {"label": "Index ↔ T-bills", "weight": None, "present": present}
 
 
 MACRO_SEV = {"act": "high", "warn": "medium", "info": "info"}
@@ -982,7 +1031,8 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
               commodities: dict | None = None, watchlist: dict | None = None,
               etf: dict | None = None, hk: dict | None = None,
               forex: dict | None = None, bonds: dict | None = None,
-              us_stocks: dict | None = None) -> str:
+              us_stocks: dict | None = None,
+              spvector: dict | None = None, crossasset: dict | None = None) -> str:
     # Bilingual via the i18n layer when present, identity fallback when absent.
     try:
         from engine.i18n import t as T, tr as TR
@@ -1049,6 +1099,18 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
     <p>{T('What the curve, credit, real rates, rates-vol & funding plumbing say about economic health, regime & the cycle.', '收益率曲线、信用利差、实际利率、利率波动与资金管道对经济健康、周期状态与所处阶段的判读。')}</p>
     <span class="stat">{b_stat}</span>
     <div class="go">{T('Open Bonds →', '打开债券 →')}</div>
+  </a>""")
+    crossasset = crossasset or {"present": False}
+    ca_stat = (T(crossasset.get("regime", "—"), TR(crossasset.get("regime", "—")))
+               + ((" · " + T(crossasset.get("correlation"), TR(crossasset.get("correlation"))))
+                  if crossasset.get("correlation") else ""))
+    crossasset_card = ("" if not crossasset.get("present") else f"""
+  <a class="c" href="crossasset.html">
+    <div class="ico">🧭</div>
+    <h2>{T('Cross-Asset Vector', '跨资产向量')}</h2>
+    <p>{T('What is trending across equities, bonds, commodities, the dollar & crypto — time-series momentum, intermarket ratios & the correlation regime. A regime read, not a strategy.', '股票、债券、商品、美元与加密货币之间在趋势什么——时间序列动量、跨市场比价与相关性体制。体制判读，而非策略。')}</p>
+    <span class="stat">{ca_stat}</span>
+    <div class="go">{T('Open Cross-Asset →', '打开跨资产 →')}</div>
   </a>""")
     watchlist = watchlist or {"present": False}
     watchlist_card = ("" if not watchlist.get("present") else f"""
@@ -1135,6 +1197,16 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
     <span class="stat">{T('Momentum', '动量')} {vm['momentum']}</span>
     <div class="go">{T('Open Bitcoin Vector →', '打开比特币向量 →')}</div>
   </a>"""
+    spvector = spvector or {"present": False}
+    sp_w = spvector.get("weight")
+    spvector_card = ("" if not spvector.get("present") else f"""
+  <a class="c" href="spvector.html">
+    <div class="ico">📈</div>
+    <h2>{T('S&P / Macro Vector', '标普宏观向量')}</h2>
+    <p>{T('Stay-in / step-out allocation for the broad US index vs T-bills — a backtested drawdown & Sharpe engine.', '美国大盘指数与短债之间的进出场配置——经回测、以回撤与夏普为目标的引擎。')}</p>
+    <span class="stat">{T(spvector['label'], TR(spvector['label']))}{(' · ' + str(int(sp_w)) + '% ' + T('equity', '股票')) if sp_w is not None else ''}</span>
+    <div class="go">{T('Open S&P / Macro Vector →', '打开标普宏观向量 →')}</div>
+  </a>""")
     return f"""{HUB_MARKER}
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -1233,7 +1305,7 @@ body{{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
 <div class="h"><h1>{T('Market Intelligence', '市场情报')}</h1>
 <p>{T('Market regime dashboards, one zero-cost data engine.', '市场周期仪表盘，一套零成本数据引擎。')}</p></div>
 <div class="cards-hero">{us_hero}{china_hero}{hk_hero}</div>
-<div class="cards-sub">{bitcoin_card}{commodities_card}{forex_card}{bonds_card}{etf_card}{watchlist_card}</div>
+<div class="cards-sub">{bitcoin_card}{spvector_card}{commodities_card}{forex_card}{bonds_card}{crossasset_card}{etf_card}{watchlist_card}</div>
 <div class="feed">
   <div class="feed-h"><h3>{T('Latest Alerts', '最新警报')}</h3>
     <span class="n">{n_major} {T('major · from both feeds ·', '条重要 · 来自两个数据源 ·')} <a href="vector.html#timeline">{T('full Vector timeline →', '完整向量时间线 →')}</a></span></div>
@@ -1326,13 +1398,27 @@ def build_allocation_page(env, site: Path, sig: pd.DataFrame, cards: dict,
     lad = mtf_a.get("ladder") or {}
     regime = lad.get("regime")
     grid = alt_cycle.alloc_grid(regime, bucket)
+    # Reconcile with vector.html's headline OPTIMAL STRATEGY: TOTAL crypto exposure =
+    # alloc_pct (the tactical risk gate, alloc_optimal); the alt-cycle grid only SPLITS
+    # that budget across BTC/ETH/alts. So when the gate is shut (alloc_pct=0) this page
+    # is 100% cash too — no more "100% cash here / 25% BTC there" incongruence.
+    alloc_pct = round(100 * last["alloc_optimal"]) if pd.notna(last.get("alloc_optimal")) else 0
+    _rs = grid["btc"] + grid["eth"] + grid["alts"]
+    if _rs > 0 and alloc_pct > 0:
+        _b = round(alloc_pct * grid["btc"] / _rs)
+        _e = round(alloc_pct * grid["eth"] / _rs)
+        _a = alloc_pct - _b - _e          # absorb rounding so crypto sums to alloc_pct
+    else:
+        _b = _e = _a = 0
+    rec = {"btc": _b, "eth": _e, "alts": _a, "cash": 100 - alloc_pct,
+           "regime_key": grid["regime_key"], "season_key": grid["season_key"]}
     pvm = {
         "as_of": sig.index.max().strftime("%b %d, %Y"),
         "built": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         "price": close.iloc[-1],
-        "grid": grid, "regime": regime, "regime_label": lad.get("regime_label"),
+        "grid": rec, "grid_full": grid, "regime": regime, "regime_label": lad.get("regime_label"),
         "regime_label_zh": lad.get("regime_label_zh"), "verdict": verdict,
-        "alloc_pct": round(100 * last["alloc_optimal"]),
+        "alloc_pct": alloc_pct,
         "cards": cards,
         "alt": {
             "ethbtc": _r(eb.get("level"), 4) if eb else None,
@@ -1430,6 +1516,7 @@ def main() -> int:
 
     eq = alloc_equity(close, sig["alloc_optimal"])
     hodl = (1 + close.pct_change().fillna(0)).cumprod()
+    sizing = alloc_sizing(last, eq, config.load()["vector"]["allocation"])
     cards = {v: scorecard(close, sig[f"alloc_{v}"])
              for v in ("conservative", "moderate", "aggressive", "optimal")}
 
@@ -1509,6 +1596,7 @@ def main() -> int:
         "alt_leader": last.get("alt_cycle_leader", "BTC"),
         "market_mode": last["market_mode"],
         "alloc_pct": round(100 * last["alloc_optimal"]),
+        "alloc_sizing": sizing,
         # ---- accuracy-upgrade layers (Tier 1/1b/2) ----
         "composite_state": last.get("composite_state", "NEUTRAL"),
         "composite_context": last.get("composite_context", ""),
@@ -1690,6 +1778,11 @@ def main() -> int:
         build_timeline(site, sig)
     except Exception as e:  # noqa: BLE001 — never let the time-machine tape break the build
         log.error("timeline tape failed (%s)", e)
+    try:  # S&P / Macro Vector page + hub-card state (independent; never break the BTC build)
+        from scripts.build_spvector import build as _build_spvector
+        _build_spvector()
+    except Exception as e:  # noqa: BLE001
+        log.error("spvector page failed (%s)", e)
     build_landing(site, vm)
     return 0
 

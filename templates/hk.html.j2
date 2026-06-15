@@ -50,6 +50,23 @@
   .gb-exposed { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--down);
                 border-color:color-mix(in srgb,var(--down) 40%,transparent); }
   .gb-lag,.gb-neutral { background:var(--panel2,var(--panel)); color:var(--muted); }
+  /* consolidated stock-screener: segmented mode toggle (parallels china.html) */
+  .sb-seg { display:inline-flex; flex-wrap:wrap; gap:4px; padding:4px; border-radius:11px;
+            background:var(--panel2,color-mix(in srgb,var(--muted) 10%,var(--panel)));
+            border:1px solid var(--line); margin:2px 0 14px; }
+  .sb-seg button { font:inherit; font-size:12.5px; font-weight:600; cursor:pointer;
+            border:1px solid transparent; background:transparent; color:var(--muted);
+            padding:6px 13px; border-radius:8px; line-height:1.2; transition:all .14s ease;
+            white-space:nowrap; }
+  .sb-seg button:hover { color:var(--text); }
+  .sb-seg button[aria-selected="true"] { background:var(--panel); color:var(--text);
+            border-color:var(--line); box-shadow:var(--popover-shadow,0 1px 3px rgba(0,0,0,.12)); }
+  .sb-cap { margin:0 0 12px; text-transform:none; line-height:1.55; }
+  .sb-table th.th-sort { cursor:pointer; user-select:none; }
+  .sb-table th.th-sort:hover { color:var(--text); }
+  .sb-table th.sorted { color:var(--text); }
+  .sb-table .sarrow { font-size:9px; opacity:.32; margin-left:3px; font-weight:700; }
+  .sb-table th.sorted .sarrow { opacity:.9; color:var(--link); }
 
   /* global risk overlay (HK-specific) */
   .risk-badge { font-size: 20px; font-weight: 800; padding: 7px 16px; border-radius: 12px;
@@ -201,10 +218,13 @@
     <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
     <div class="nav-dd">
       <a class="nav-link" href="macro.html">🇺🇸 {{ t('US Macro', '美国宏观') }} <span class="caret">▾</span></a>
-      <div class="nav-dd-menu">
-        <a href="macro.html">📊 {{ t('Macro dashboard', '宏观仪表盘') }}</a>
-        <a href="us_stocks.html">📈 {{ t('US Stocks', '美国个股') }}</a>
-        <a href="spvector.html">◎ {{ t('Allocation strategy', '仓位策略') }}</a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">{{ t('Regime dashboard', '宏观周期') }}<span class="d">{{ t('Growth · inflation · MRS · nowcast', '增长 · 通胀 · MRS · 即时预测') }}</span></a>
+        <a href="us_stocks.html">📈 {{ t('US Stocks', '美国个股') }}<span class="d">{{ t('Standouts · sectors · flows', '精选 · 板块 · 资金') }}</span></a>
+        <a href="spvector.html">📈 {{ t('S&P / Macro Vector', '标普宏观向量') }}<span class="d">{{ t('Tactical equity↔cash allocation', '战术股票↔现金配置') }}</span></a>
+        <a href="factors.html">🧮 {{ t('Factor Lab', '因子实验室') }}<span class="d">{{ t('Value · quality · low-vol + point-in-time IC', '价值 · 质量 · 低波动 + 时点 IC') }}</span></a>
+        <a href="baskets.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P', '等权主题篮子 vs 标普') }}</span></a>
+        <a href="seasonality.html">🗓 {{ t('Factor Seasonality', '因子季节性') }}<span class="d">{{ t('Ken French monthly, 1926+', 'Ken French 月度，1926+') }}</span></a>
       </div>
     </div>
     <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }}</a>
@@ -373,14 +393,13 @@
   {% endif %}{# /mode != stocks — macro group 1 (hero, index health, global risk overlay) #}
 
   {% if mode != 'macro' %}
-  <!-- ===================== GLOBAL-RISK EXPOSURE (amplifiers vs cushions) ===================== -->
-  {% if betas and betas.amplifiers %}
-  {% set RS = betas.risk_state %}
-  {% set TILTS = {'favored':['favored','占优'],'exposed':['exposed','最受冲击'],'lag':['lags','滞后'],'neutral':['—','—']} %}
-  <div class="panel span12" id="global-beta">
-    <h2>{{ t('🌐 Global-risk exposure — amplifiers vs cushions', '🌐 全球风险敞口 — 放大器 vs 缓冲') }}
-      <span class="note" style="text-transform:none">· {{ t('beta to global risk (S&P 500, overnight)', '对全球风险的贝塔（标普500·隔夜）') }}</span>
-      {{ help("HK has NO idiosyncratic stock-selection edge (residual momentum is dead here — its long-short Sharpe is negative on a 40-year panel; research/CHINA_HK_STOCK_SIGNALS.md). HK's validated edge is the GLOBAL-RISK overlay above, so the honest per-name read is RISK EXPOSURE, not selection alpha: each stock's <b>beta to global risk</b> (S&P 500, lagged one day for the overnight US→HK transmission). <b>Amplifiers</b> (high beta — global cyclicals: tech, miners, CXO) move MORE with the regime; <b>cushions</b> (low beta — domestic SOE energy/staples/telecom) move less. Conditioned on the live risk state: in Risk-on amplifiers are the leveraged play and cushions lag; in Risk-off amplifiers take the bigger drawdown and cushions defend. Measured (40y, monthly): high-minus-low beta forward-21d is +0.4% in Risk-on, −0.7% in Risk-off — modest risk CONTEXT for sizing, NOT a forecast or a buy list.", "香港没有特异选股优势（残差动量在此无效——40年面板上多空夏普为负；research/CHINA_HK_STOCK_SIGNALS.md）。香港经验证的优势是上方的全球风险开关，因此诚实的个股解读是风险敞口而非选股阿尔法：每只股票对全球风险的<b>贝塔</b>（标普500，滞后一天反映隔夜美→港传导）。<b>放大器</b>（高贝塔——全球周期股：科技、矿业、CXO）随风险状态波动更大；<b>缓冲</b>（低贝塔——本地国企能源/必需消费/电信）波动更小。结合实时风险状态：风险偏好时放大器是杠杆首选、缓冲滞后；风险规避时放大器回撤更大、缓冲防守。实测（40年·月度）：高减低贝塔前瞻21日收益在风险偏好时+0.4%、风险规避时−0.7%——用于仓位管理的温和风险背景，而非预测或买入清单。") }}
+  <!-- ===================== GLOBAL-RISK SCREENER (consolidated · toggle) ===================== -->
+  {% if hk_scoreboard and hk_scoreboard.modes and hk_scoreboard.modes.all %}
+  {% set RS = hk_scoreboard.risk_state %}
+  <div class="panel span12" id="hk-screener">
+    <h2>{{ t('🌐 Global-risk screener — amplifiers, cushions, the full list', '🌐 全球风险筛选 — 放大器、缓冲、全名单') }}
+      <span class="note" style="text-transform:none">· {{ t('beta to global risk (S&P 500, overnight)', '对全球风险的贝塔（标普500·隔夜）') }}{% if hk_scoreboard.as_of %} · {{ hk_scoreboard.as_of }}{% endif %}</span>
+      {{ help("HK has NO idiosyncratic stock-selection edge (residual momentum is dead here — its long-short Sharpe is negative on a 40-year panel; research/CHINA_HK_STOCK_SIGNALS.md). HK's validated edge is the GLOBAL-RISK overlay, so the honest per-name read is RISK EXPOSURE, not selection alpha: each stock's <b>beta to global risk</b> (S&P 500, lagged one day for the overnight US→HK transmission). One switchable board, three slices of that same exposure: <b>Amplifiers</b> (high beta — global cyclicals: tech, miners, CXO) move MORE with the regime; <b>Cushions</b> (low beta — domestic SOE energy/staples/telecom) move less; <b>All</b> is the full sortable list. Conditioned on the live risk state: in Risk-on amplifiers are the leveraged play and cushions lag; in Risk-off amplifiers take the bigger drawdown and cushions defend. Measured (40y, monthly): high-minus-low beta forward-21d is +0.4% in Risk-on, −0.7% in Risk-off — modest risk CONTEXT for sizing, NOT a forecast or a buy list. Click any column to sort.", "香港没有特异选股优势（残差动量在此无效——40年面板上多空夏普为负；research/CHINA_HK_STOCK_SIGNALS.md）。香港经验证的优势是全球风险开关，因此诚实的个股解读是风险敞口而非选股阿尔法：每只股票对全球风险的<b>贝塔</b>（标普500，滞后一天反映隔夜美→港传导）。一块可切换面板，同一敞口的三种切片：<b>放大器</b>（高贝塔——全球周期股：科技、矿业、CXO）随风险状态波动更大；<b>缓冲</b>（低贝塔——本地国企能源/必需消费/电信）波动更小；<b>全部</b>为可排序的完整名单。结合实时风险状态：风险偏好时放大器是杠杆首选、缓冲滞后；风险规避时放大器回撤更大、缓冲防守。实测（40年·月度）：高减低贝塔前瞻21日收益在风险偏好时+0.4%、风险规避时−0.7%——用于仓位管理的温和风险背景，而非预测或买入清单。点击任意列排序。") }}
     </h2>
     <p class="note" style="margin:0 0 12px;text-transform:none">
       {% if RS == 'Risk-on' %}{{ t('Global risk is <b>ON</b> — amplifiers are the leveraged play; cushions lag the rally.', '全球风险<b>开启</b> — 放大器是杠杆首选；缓冲滞后于上涨。') }}
@@ -388,45 +407,105 @@
       {% else %}{{ t('Global risk is <b>neutral</b> — these are exposures, not a tilt; amplifiers will move more in EITHER direction when the regime turns.', '全球风险<b>中性</b> — 这是敞口而非倾向；当风险状态转变时，放大器在任一方向都会波动更大。') }}{% endif %}
       {{ t('Current state:', '当前状态：') }} <b>{{ RS }}</b>.
     </p>
-    <div class="grid" style="gap:18px">
-      <div class="span6">
-        <h3>{{ t('⚡ Amplifiers', '⚡ 放大器') }} <span class="note" style="text-transform:none">· {{ t('highest global-risk beta', '全球风险贝塔最高') }}</span></h3>
-        <table>
-          <thead><tr><th class="l">{{ t('Stock', '个股') }}</th><th>β</th><th>{{ t('%ile', '分位') }}</th><th class="l">{{ t('in this regime', '当前状态下') }}</th></tr></thead>
-          <tbody>
-          {% for r in betas.amplifiers %}
-          <tr>
-            <td class="l"><a href="hk_stock.html#{{ r.ticker }}"><b>{{ r.ticker }}</b></a> <span class="note">{{ r.name }}</span></td>
-            <td><b>{{ '%.2f'|format(r.beta) if r.beta is not none else '—' }}</b></td>
-            <td class="note">{{ r.beta_pct|int if r.beta_pct is not none else '—' }}</td>
-            <td class="l"><span class="gb-tilt gb-{{ r.tilt }}">{{ t(TILTS[r.tilt][0], TILTS[r.tilt][1]) }}</span></td>
-          </tr>
-          {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      <div class="span6">
-        <h3>{{ t('🛡 Cushions', '🛡 缓冲') }} <span class="note" style="text-transform:none">· {{ t('lowest beta · domestic-defensive', '贝塔最低·本地防御') }}</span></h3>
-        <table>
-          <thead><tr><th class="l">{{ t('Stock', '个股') }}</th><th>β</th><th>{{ t('%ile', '分位') }}</th><th class="l">{{ t('in this regime', '当前状态下') }}</th></tr></thead>
-          <tbody>
-          {% for r in betas.cushions %}
-          <tr>
-            <td class="l"><a href="hk_stock.html#{{ r.ticker }}"><b>{{ r.ticker }}</b></a> <span class="note">{{ r.name }}</span></td>
-            <td><b>{{ '%.2f'|format(r.beta) if r.beta is not none else '—' }}</b></td>
-            <td class="note">{{ r.beta_pct|int if r.beta_pct is not none else '—' }}</td>
-            <td class="l"><span class="gb-tilt gb-{{ r.tilt }}">{{ t(TILTS[r.tilt][0], TILTS[r.tilt][1]) }}</span></td>
-          </tr>
-          {% endfor %}
-          </tbody>
-        </table>
-      </div>
+    <div class="sb-seg" role="tablist" aria-label="screener mode">
+      <button role="tab" data-mode="amplifiers" aria-selected="true">{{ t('⚡ Amplifiers', '⚡ 放大器') }}</button>
+      <button role="tab" data-mode="cushions" aria-selected="false">{{ t('🛡 Cushions', '🛡 缓冲') }}</button>
+      <button role="tab" data-mode="all" aria-selected="false">{{ t('🌐 All names', '🌐 全部') }}</button>
     </div>
-    <p class="note" style="margin:8px 0 0;font-size:11px">{{ t('Beta to the S&P 500 (overnight), 252d causal & shrunk. Risk context for position sizing within the validated regime — NOT a return forecast or a buy list. Beta is a descriptive exposure, not an alpha.', '对标普500（隔夜）的贝塔，252日因果并收缩。用于在已验证的风险状态内进行仓位管理的风险背景 —— 而非收益预测或买入清单。贝塔是描述性敞口，并非阿尔法。') }}</p>
+    <p class="note sb-cap" id="sb-cap"><!-- per-mode caption injected by JS --></p>
+    <table class="sb-table"><thead id="sb-head"></thead><tbody id="sb-body"></tbody></table>
+    <p class="note" style="margin:8px 0 0;font-size:11px">{{ t('Beta to the S&P 500 (overnight), 252d causal & shrunk. Risk context for position sizing within the validated regime — NOT a return forecast or a buy list. Beta is a descriptive exposure, not an alpha; the “in regime” tag is the directional read of that exposure given the live risk state.', '对标普500（隔夜）的贝塔，252日因果并收缩。用于在已验证的风险状态内进行仓位管理的风险背景 —— 而非收益预测或买入清单。贝塔是描述性敞口，并非阿尔法；“当前状态下”标记是在实时风险状态下对该敞口的方向解读。') }}</p>
+    <script type="application/json" id="sb-data">{{ hk_scoreboard.modes | tojson }}</script>
+    <script>
+    (function () {
+      var DATA;
+      try { DATA = JSON.parse(document.getElementById('sb-data').textContent); } catch (e) { return; }
+      var head = document.getElementById('sb-head'), body = document.getElementById('sb-body'),
+          cap = document.getElementById('sb-cap'),
+          seg = document.querySelector('#hk-screener .sb-seg');
+      function bl(en, zh) { return '<span class="l-en">' + en + '</span><span class="l-zh">' + (zh || en) + '</span>'; }
+      function ladDir(d) { return d === 'up' ? 'up' : (d === 'down' ? 'down' : 'flat'); }
+      var TILT = { favored: ['favored', '占优'], exposed: ['exposed', '最受冲击'], lag: ['lags', '滞后'], neutral: ['—', '—'] };
+      var COL = {
+        stock: { en: 'Stock', zh: '个股', l: true, key: function (r) { return r.ticker; },
+          cell: function (r) { return '<a href="hk_stock.html#' + r.ticker + '"><b>' + r.ticker + '</b></a>' + (r.name ? ' <span class="note">' + r.name + '</span>' : ''); } },
+        sector: { en: 'Sector', zh: '板块', l: true, key: function (r) { return r.sector || ''; },
+          cell: function (r) { return '<span class="note">' + bl(r.sector || '—', r.sector_zh || r.sector || '—') + '</span>'; } },
+        price: { en: 'Price', zh: '价格', key: function (r) { return r.price; },
+          cell: function (r) { return r.price != null ? r.price.toFixed(2) : '—'; } },
+        beta: { en: 'β', zh: 'β', key: function (r) { return r.beta; }, def: 'desc',
+          cell: function (r) { return r.beta != null ? '<b>' + r.beta.toFixed(2) + '</b>' : '—'; } },
+        pct: { en: '%ile', zh: '分位', key: function (r) { return r.beta_pct; },
+          cell: function (r) { return r.beta_pct != null ? '<span class="note">' + Math.round(r.beta_pct) + '</span>' : '—'; } },
+        tilt: { en: 'in this regime', zh: '当前状态下', l: true, key: null,
+          cell: function (r) { var tk = TILT[r.tilt] || TILT.neutral; return '<span class="gb-tilt gb-' + (r.tilt || 'neutral') + '">' + bl(tk[0], tk[1]) + '</span>'; } },
+        cycle: { en: 'Cycle', zh: '周期', l: true, key: null,
+          cell: function (r) { return r.cycle ? '<span class="lad ' + ladDir(r.cycle_dir) + '">' + bl(r.cycle, r.cycle_zh || r.cycle) + '</span>' : '—'; } }
+      };
+      var ORDER = ['stock', 'sector', 'price', 'beta', 'pct', 'tilt', 'cycle'];
+      var MODES = {
+        amplifiers: { def: 'desc',
+          cap: bl('Highest global-risk beta — global cyclicals (tech, miners, CXO) that move MORE with the regime. The leveraged play in Risk-on; the most exposed in Risk-off. Exposure context, not a buy list.', '全球风险贝塔最高 —— 随风险状态波动更大的全球周期股（科技、矿业、CXO）。风险偏好时为杠杆首选；风险规避时敞口最大。敞口背景，而非买入清单。') },
+        cushions: { def: 'asc',
+          cap: bl('Lowest global-risk beta — domestic-defensive names (SOE energy, staples, telecom) that move LESS with the regime. They lag a rally but defend in a drawdown. For risk-aware exposure, not return maximization.', '全球风险贝塔最低 —— 随风险状态波动更小的本地防御股（国企能源、必需消费、电信）。上涨时滞后，回撤时防守。用于风险可控的敞口，而非收益最大化。') },
+        all: { def: 'desc',
+          cap: bl('The full HK universe ranked by global-risk beta — sort any column to screen. High beta = global cyclical (amplifier); low beta = domestic-defensive (cushion). Descriptive exposure, not a buy list.', '按全球风险贝塔排序的完整港股范围 —— 点击任意列筛选。高贝塔＝全球周期（放大器）；低贝塔＝本地防御（缓冲）。描述性敞口，而非买入清单。') }
+      };
+      var cur = 'amplifiers', sortCol = null, sortDir = 'desc';
+      function render() {
+        var cols = ORDER.map(function (c) { return COL[c]; });
+        cap.innerHTML = MODES[cur].cap;
+        var hh = '<tr>';
+        cols.forEach(function (c, i) {
+          var sortable = c.key !== null;
+          var arrow = sortable ? '<span class="sarrow">' + (sortCol === i ? (sortDir === 'desc' ? '↓' : '↑') : '↕') + '</span>' : '';
+          hh += '<th class="' + (c.l ? 'l ' : '') + (sortable ? 'th-sort ' : '') + (sortCol === i ? 'sorted' : '') + '"'
+              + (sortable ? ' data-i="' + i + '"' : '') + '>' + bl(c.en, c.zh) + arrow + '</th>';
+        });
+        head.innerHTML = hh + '</tr>';
+        var rows = DATA[cur] ? DATA[cur].slice() : [];
+        if (sortCol !== null && cols[sortCol] && cols[sortCol].key) {
+          var kf = cols[sortCol].key, sg = sortDir === 'desc' ? -1 : 1;
+          rows.sort(function (a, b) {
+            var va = kf(a), vb = kf(b);
+            if (va == null) va = -Infinity; if (vb == null) vb = -Infinity;
+            if (typeof va === 'string' || typeof vb === 'string')
+              return sg * String(va).localeCompare(String(vb), undefined, { numeric: true });
+            return sg * (va - vb);
+          });
+        }
+        body.innerHTML = rows.map(function (r) {
+          return '<tr>' + cols.map(function (c) { return '<td class="' + (c.l ? 'l' : '') + '">' + c.cell(r) + '</td>'; }).join('') + '</tr>';
+        }).join('') || '<tr><td>—</td></tr>';
+      }
+      function setMode(m) {
+        cur = m;
+        var d = MODES[cur].def;
+        // default sort = the beta column (index 3), direction per mode
+        sortCol = ORDER.indexOf('beta'); sortDir = d;
+        Array.prototype.forEach.call(seg.querySelectorAll('button'), function (b) {
+          b.setAttribute('aria-selected', b.getAttribute('data-mode') === m ? 'true' : 'false');
+        });
+        render();
+      }
+      seg.addEventListener('click', function (e) {
+        var b = e.target.closest('button[data-mode]'); if (!b) return;
+        setMode(b.getAttribute('data-mode'));
+      });
+      head.addEventListener('click', function (e) {
+        var th = e.target.closest('th.th-sort'); if (!th) return;
+        var i = parseInt(th.getAttribute('data-i'), 10);
+        if (sortCol === i) sortDir = sortDir === 'desc' ? 'asc' : 'desc';
+        else { sortCol = i; sortDir = 'desc'; }
+        render();
+      });
+      setMode('amplifiers');
+    })();
+    </script>
   </div>
   {% endif %}
 
-  {% endif %}{# /mode != macro — global-risk exposure (amplifiers vs cushions) #}
+  {% endif %}{# /mode != macro — global-risk screener (exposure) #}
 
   {% if mode != 'stocks' %}
   {% if pb %}

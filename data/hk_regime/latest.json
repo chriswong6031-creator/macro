@@ -21,12 +21,12 @@
   "contradicting": [
     "growth_breadth_direction"
   ],
-  "global_score": 0.115,
+  "global_score": 0.0,
   "risk_state": "Neutral",
   "peg_state": "weak-side (outflow)",
   "peg_distance": 0.856,
   "global_snapshot": {
-    "score": 0.115,
+    "score": 0.0,
     "state": "Neutral",
     "factors": [
       {
@@ -64,10 +64,10 @@
       {
         "key": "usdcny",
         "label": "USD / CNY",
-        "z": -0.52,
+        "z": -0.22,
         "sign": -1,
-        "risk": "on",
-        "level": 6.7621
+        "risk": "neutral",
+        "level": 6.7755
       },
       {
         "key": "eem",
@@ -131,11 +131,11 @@
       "ticker": "Property",
       "name": "Property",
       "tv": "HKEX:16",
-      "rs": 3.854665021781277e-05,
+      "rs": 3.838200881860321e-05,
       "mom_20d_pct": -5.73,
-      "mom_60d_pct": 2.89,
+      "mom_60d_pct": 2.45,
       "above_200d_trend": true,
-      "pctile_252d": 86.9,
+      "pctile_252d": 86.5,
       "rank": 4
     },
     {
@@ -150,17 +150,6 @@
       "rank": 5
     },
     {
-      "ticker": "Consumer",
-      "name": "Consumer",
-      "tv": "HKEX:2020",
-      "rs": 3.658645680586211e-05,
-      "mom_20d_pct": 2.74,
-      "mom_60d_pct": 0.19,
-      "above_200d_trend": true,
-      "pctile_252d": 83.3,
-      "rank": 6
-    },
-    {
       "ticker": "Telecom & Utilities",
       "name": "Telecom & Utilities",
       "tv": "HKEX:941",
@@ -169,6 +158,17 @@
       "mom_60d_pct": 0.04,
       "above_200d_trend": true,
       "pctile_252d": 87.7,
+      "rank": 6
+    },
+    {
+      "ticker": "Consumer",
+      "name": "Consumer",
+      "tv": "HKEX:2020",
+      "rs": 3.651781637242095e-05,
+      "mom_20d_pct": 2.74,
+      "mom_60d_pct": 0.0,
+      "above_200d_trend": true,
+      "pctile_252d": 82.5,
       "rank": 7
     },
     {
@@ -238,12 +238,12 @@
     "actual_ranks": {
       "Energy": 8,
       "Materials": 12,
-      "Telecom & Utilities": 7,
+      "Telecom & Utilities": 6,
       "Insurance": 5
     },
-    "agreement": 0.25,
-    "disagreement_flag": true,
-    "note": "tape disagrees with framework-preferred sectors \u2014 treat as a transition signal"
+    "agreement": 0.5,
+    "disagreement_flag": false,
+    "note": "framework and tape agree"
   },
   "pair_ratios": {
     "hshare_hsi": {

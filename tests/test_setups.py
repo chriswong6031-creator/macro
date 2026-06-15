@@ -8,11 +8,13 @@ from pytest import approx
 
 from engine.setups import (
     CN_ALPHA_WEIGHT,
+    SUE_CONFIRM,
     US_ALPHA_WEIGHT,
     dedupe_dual_class,
     norm_company,
     rank_setups,
     setup_score,
+    sue_confirmer,
     timing_tilt,
 )
 
@@ -200,6 +202,50 @@ def test_rank_by_alpha_vs_setup_diverge():
     assert [r["ticker"] for r in rank_setups([hia, loa], rank_by="alpha")["buy"]] == ["HIA", "LOA"]
     # China default (reversal-led setup): order by setup -> LOA first
     assert [r["ticker"] for r in rank_setups([hia, loa])["buy"]] == ["LOA", "HIA"]
+
+
+# ---- SUE earnings-momentum confirmer (DISPLAY context only) -----------------
+
+def test_sue_confirmer_gate():
+    assert SUE_CONFIRM == 1.0
+    # clears the positive-tailwind gate -> rounded z
+    assert sue_confirmer(1.466) == 1.47
+    assert sue_confirmer(3.0) == 3.0
+    assert sue_confirmer(1.0) == 1.0            # boundary inclusive
+    # below the gate / negative / missing / NaN / junk -> no chip
+    assert sue_confirmer(0.99) is None
+    assert sue_confirmer(-2.0) is None
+    assert sue_confirmer(None) is None
+    assert sue_confirmer(float("nan")) is None
+    assert sue_confirmer("x") is None
+
+
+def test_sue_never_enters_setup_score():
+    # SUE is a DISPLAY confirmer: setup_score must be byte-identical whether or not the
+    # rec carries SUE info, and the scored row must never gain a sue/sue_z key. This is
+    # the rank-by-alpha discipline lock (research/US_STANDOUT_SETUP_SCORE.md).
+    rec = _rec(1.5, entry="pullback", urgency="now", eq_dir="up")
+    base = setup_score(rec, alpha_weight=US_ALPHA_WEIGHT)
+    rec2 = dict(rec, sue=3.0, sue_z=3.0)          # unrelated keys the scorer must ignore
+    got = setup_score(rec2, alpha_weight=US_ALPHA_WEIGHT)
+    assert got[0] == base[0]                       # score unchanged
+    assert got[1] == base[1]                       # row unchanged
+    assert "sue_z" not in got[1] and "sue" not in got[1]
+
+
+def test_sue_chip_does_not_affect_rank_but_is_carried_through():
+    # the caller attaches sue_z to the row AFTER scoring (build_stock_library). rank_setups
+    # must (a) NOT let it reorder anything — the factor composite still settles the tie —
+    # and (b) carry the chip through to the buy list for display.
+    a = setup_score(_rec(1.0, entry="intact", urgency="now", eq_dir="up", ticker="A", name="A Co"), alpha_weight=US_ALPHA_WEIGHT)
+    b = setup_score(_rec(1.0, entry="intact", urgency="now", eq_dir="up", ticker="B", name="B Co"), alpha_weight=US_ALPHA_WEIGHT)
+    a[1]["factor_z"] = -1.0
+    a[1]["sue_z"] = 3.0                            # strong SUE on the weaker-factor name
+    b[1]["factor_z"] = 1.0                         # stronger factor, no SUE
+    buys = rank_setups([a, b])["buy"]
+    assert [r["ticker"] for r in buys] == ["B", "A"]   # factor tiebreak wins; SUE ignored in order
+    a_row = next(r for r in buys if r["ticker"] == "A")
+    assert a_row["sue_z"] == 3.0                       # still displayed on the card
 
 
 # ---- China parity lock ------------------------------------------------------

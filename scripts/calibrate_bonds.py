@@ -46,7 +46,7 @@ warnings.filterwarnings("ignore")
 
 from lib import config, store  # noqa: E402
 from engine import inputs, bonds  # noqa: E402
-from engine.validation import brier_reliability, block_bootstrap_ci  # noqa: E402
+from engine.validation import brier_reliability  # noqa: E402
 
 DD_WINDOW = 63        # forward equity window (~1 quarter)
 DD_THRESH = -0.10     # "drawdown" = forward worst return <= this
@@ -92,7 +92,6 @@ def build_targets(idx: pd.DatetimeIndex) -> pd.DataFrame:
     out = pd.DataFrame(index=idx)
     out["dd_depth"] = (-fwd_worst).clip(lower=0)                    # positive depth
     out["dd10"] = (fwd_worst <= DD_THRESH).astype(float).where(fwd_worst.notna())
-    out["fwd_ret"] = spx.shift(-DD_WINDOW) / spx - 1.0
     rec = store.read("fred", "USRECD")
     if rec is not None:
         r = rec.iloc[:, 0].reindex(idx.union(rec.index)).ffill().reindex(idx)
@@ -107,11 +106,14 @@ def _verdict(ic_full, ic_pre, ic_post, hi_edge) -> str:
         return "UNMEASURED"
     d = np.sign(ic_full)
     both = (np.sign(ic_pre) == d) and (np.sign(ic_post) == d) and d != 0
+    # CONFIRMED needs both halves MEANINGFUL, not merely sign-stable — a near-zero
+    # post-half IC (e.g. a leg that worked only pre-2013/2008) is not confirmation.
+    half_ok = abs(ic_pre) >= IC_WEAK and abs(ic_post) >= IC_WEAK
     if ic_full <= -IC_WEAK and both:
         return "INVERTED"          # stress predicts the WRONG way (red flag)
     if abs(ic_full) < IC_WEAK:
         return "CONTEXT"
-    if both and ic_full >= IC_STRONG and (hi_edge is None or hi_edge > 0):
+    if both and half_ok and ic_full >= IC_STRONG and (hi_edge is None or hi_edge > 0):
         return "CONFIRMED"
     if ic_full >= IC_WEAK:
         return "DIRECTIONAL"
@@ -144,8 +146,8 @@ def _conditional(sig: pd.Series, tgt: pd.DataFrame) -> dict:
     # bootstrap CI on the high-tercile dd10 rate (block = the forward window)
     hi_mask = band == "high"
     if hi_mask.sum() >= 90:
-        ci = block_bootstrap_ci(j.loc[hi_mask, "dd10"], block=DD_WINDOW, B=2000, ann=1)
-        # reuse the sharpe_ci slot as a generic [p2.5,p50,p97.5] mean via a tiny wrap
+        # circular block bootstrap of the high-tercile dd10 RATE (block = the forward
+        # window, so overlapping-window autocorrelation is preserved in each resample).
         boot = j.loc[hi_mask, "dd10"].to_numpy(float)
         rng = np.random.default_rng(7)
         nb = int(np.ceil(len(boot) / DD_WINDOW))
@@ -165,7 +167,12 @@ def calibrate_signal(name: str, sig: pd.Series, tgt: pd.DataFrame, split: pd.Tim
     if len(joint) < MIN_OBS:
         return {"verdict": "UNMEASURED", "n": len(joint)}
     span = joint.index
-    pre, post = span[span < split], span[span >= split]
+    # purge a forward-window embargo so the pre-half's forward labels don't straddle
+    # into the post-half (otherwise the two halves aren't independent — the point of
+    # split-half). Drop the last DD_WINDOW bars before the split from the pre-half.
+    pre_full = span[span < split]
+    pre = pre_full[:-DD_WINDOW] if len(pre_full) > DD_WINDOW else pre_full
+    post = span[span >= split]
     ic_full = _spear(s.reindex(span), tgt["dd_depth"].reindex(span))
     ic_pre = _spear(s.reindex(pre), tgt["dd_depth"].reindex(pre))
     ic_post = _spear(s.reindex(post), tgt["dd_depth"].reindex(post))

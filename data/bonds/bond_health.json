@@ -1,10 +1,10 @@
 {
   "as_of": "2026-06-12",
-  "health_score": 87,
+  "health_score": 86,
   "health_label": "healthy",
   "cycle_phase": "late",
-  "recession_risk": 7.814939665200522,
-  "drawdown_risk": 13.108614232209737,
+  "recession_risk": 3.889932307298147,
+  "drawdown_risk": 15.454738181047276,
   "pillars": {
     "curve": {
       "spread_10y3m": 0.7,
@@ -51,7 +51,7 @@
       "repo_stress": false
     },
     "cross_asset": {
-      "stock_bond_corr": 0.6936367796179752,
+      "stock_bond_corr": 0.6936367796179748,
       "regime": "breakdown",
       "hedge_working": false
     },
@@ -65,15 +65,15 @@
     }
   },
   "stress_legs": {
-    "recession": 7.814939665200522,
-    "drawdown": 13.108614232209737,
+    "recession": 3.889932307298147,
+    "drawdown": 15.454738181047276,
     "credit": 15.599999999999996,
     "rates_vol": 19.360000610351562,
     "plumbing": 7.105427357601002e-14
   },
   "alarms": [],
-  "verdict_en": "Bond health healthy (87/100), late-cycle. Curve positively sloped. Credit tight. Rates-vol calm.",
-  "verdict_zh": "债券健康度健康（87/100），周期晚段。曲线正向倾斜。信用偏紧。利率波动平静。",
+  "verdict_en": "Bond health healthy (86/100), late-cycle. Curve positively sloped. Credit tight. Rates-vol calm.",
+  "verdict_zh": "债券健康度健康（86/100），周期晚段。曲线正向倾斜。信用偏紧。利率波动平静。",
   "drivers_for": {
     "forex": {
       "note_en": "Rate differentials drive FX — the US 2y policy-path and the real-10y are the carry and value anchors; a US-favorable widening vs foreign rates is a USD tailwind.",
@@ -94,7 +94,7 @@
       "note_en": "Discount-rate channel (real-10y, term premium) compresses long-duration multiples; credit (HY OAS) is the canary that leads equity drawdowns; the SPEED of yield moves (MOVE) matters more than the level.",
       "hy_oas": 2.78,
       "credit_canary": false,
-      "stock_bond_corr": 0.6936367796179752
+      "stock_bond_corr": 0.6936367796179748
     }
   }
 }

@@ -1,5 +1,48 @@
 # Bottom-Confidence score (multi-timeframe) — measured record + build plan
 
+> **STATUS: Phase 1 BUILT + validated (2026-06-14).** `engine.cycles.bottom_confidence`
+> + a Monthly timeframe in `mtf_snapshot`, surfaced as "🎯 Bottom Confidence 0-100" with a
+> per-timeframe breakdown on `stock.html`. Walk-forward calibration
+> (`scripts/calibrate_bottom_confidence.py` → `data/regime/bottom_confidence_calibration.json`,
+> 69,215 evals) CONFIRMS monotone separation — the score's own validation:
+>
+> | band | n | "low held" 21d | drawdown tail p10 |
+> |---|---:|---:|---:|
+> | 0–20 | 30,742 | **36.7%** | −13.3% |
+> | 20–40 | 25,120 | 65.4% | −11.2% |
+> | 40–60 | 9,976 | **74.6%** | −10.2% |
+> | 60+ | 3,377 | 73.1% | **−9.2%** |
+>
+> A high reading held the cycle low ~74% vs ~37% (2×) with a monotonically shallower
+> drawdown tail. Conservative formula: `entry_quality_long × (0.55 + 0.45·confluence)` —
+> confluence DISCOUNTS an unconfirmed turn, never inflates; counter-trend bounces capped ≤30.
+>
+> **STATUS: Phase 2 BUILT + validated (2026-06-14) — capitulation as a knife-risk TEMPER,
+> not a boost.** Measuring the user's proposed capitulation factors (`scripts/_p2_measure.py`,
+> 68,916 bottoming evals) REJECTED the naive "washout boosts confidence" hypothesis — they
+> are *falling-knife* tells, not durable-bottom tells:
+>
+> | factor | hold-rate (21d) | drawdown tail p10 |
+> |---|---:|---:|
+> | above 200-day | **61.8%** | −10.5% |
+> | 8–18% below | 39.4% | −14.6% |
+> | >18% below (deep) | **36.9%** | **−22.5%** |
+> | VIX panic (>85th pct) | 44.6% | −15.5% |
+> | deep + still-falling | **29.6%** | −19.9% |
+> | deep + reversing | 55.7% | −19.3% |
+>
+> Deep washouts bounce violently (highest forward *return*) but rarely hold and draw down
+> brutally. So washout TEMPERS (never boosts) Bottom Confidence: `bottom_confidence ×=
+> (1 − 0.45·knife)`, where `knife` = depth below the 200-day × (1.0 still-falling / 0.35
+> reclaiming), amplified by a market VIX panic. `engine.cycles.washout` + `market_vix_context`
+> (threaded like `liquidity` via `build_stock_library.current_vix_context`); `stock.html` shows
+> a red knife-risk caution with the measured stats. This fixes a real blind spot — a good cycle
+> low inside a *broken primary trend* no longer reads as a high-confidence bottom.
+> Re-calibration with the temper PRESERVES the monotone separation (held 36.8%→65.8%→74.8%→73.5%,
+> drawdown tail −13.4%→−9.0%) and slightly cleans the top band (−9.21%→−9.0% as knives drop out) —
+> a targeted fix, not a broad shift (deep washouts are a rare minority of bottoming setups).
+> 19/19 cycle tests; browser-verified (ABT 22% below 200-day → 14.4→9.0 + red caution).
+
 **Question (user).** Backtests showed the `DECLINE` state has the *highest* forward
 return **and** the *deepest* drawdown. How do we reconcile that, and what factors
 let us **accurately time near bottoms** — ideally an explicit **confidence of an

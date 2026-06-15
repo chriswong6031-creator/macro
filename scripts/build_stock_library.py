@@ -24,9 +24,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine import ticker_alerts  # noqa: E402
 from engine.conditions import sector_macro_beta  # noqa: E402
-from engine.cycles import analyze  # noqa: E402
+from engine.cycles import analyze, market_vix_context  # noqa: E402
 from engine.playbook import SECTOR_NAMES  # noqa: E402
-from engine.setups import US_ALPHA_WEIGHT, rank_setups, setup_score  # noqa: E402
+from engine.setups import US_ALPHA_WEIGHT, rank_setups, setup_score, sue_confirmer  # noqa: E402
 from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
@@ -73,11 +73,55 @@ def current_macro() -> float | None:
     return float(v) if isinstance(v, (int, float)) else None
 
 
+OPTIONABLE_GEX = ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "AMD",
+                  "NFLX", "AVGO", "CRM", "ORCL", "ADBE", "QCOM", "MU", "INTC",
+                  "PLTR", "COIN", "SMCI", "MRVL", "JPM", "BAC", "XOM", "WMT", "LLY"]
+
+
+def _optionable_gex() -> dict:
+    """Per-stock dealer-gamma summary for the liquid optionable subset (DISPLAY-ONLY,
+    never in the score -- gated by scripts/validate_gex.py). Best-effort; failures skip.
+    A vol-regime + levels map, not directional (see LIMITATIONS.md)."""
+    try:
+        from collectors.cboe import GexAdapter
+        from engine.gex_engine import compute_gex
+    except Exception:  # noqa: BLE001
+        return {}
+    adapter = GexAdapter(); gcfg = adapter.cfg.get("gex", {})
+    ecfg = {k: gcfg[k] for k in ("contract_multiplier", "pct_move",
+                                 "strike_window_pct", "max_expiry_days") if k in gcfg}
+    out: dict = {}
+    for t in OPTIONABLE_GEX:
+        try:
+            chain, spot = adapter._chain(t)
+            summ = compute_gex(chain, spot, cfg={**ecfg, "r": gcfg.get("r", 0.043), "q": 0.0})
+            if summ.get("tier") not in (None, "no_options"):
+                out[t] = summ
+        except Exception as e:  # noqa: BLE001
+            log.debug("per-stock gex %s skipped: %s", t, e)
+    log.info("per-stock GEX: %d/%d optionable names", len(out), len(OPTIONABLE_GEX))
+    return out
+
+
+def current_vix_context() -> dict | None:
+    """Live market panic/washout context from VIX (percentile, panic, fading),
+    computed once and threaded into analyze() for the Phase-2 washout knife-risk
+    temper on Bottom Confidence. None when VIX is unavailable."""
+    p = config.data_dir() / "yahoo" / "_VIX.parquet"
+    if not p.exists():
+        return None
+    try:
+        vctx = market_vix_context(pd.read_parquet(p)["close"])
+    except Exception:  # noqa: BLE001
+        return None
+    return vctx or None
+
+
 def _one(ticker: str, close: pd.Series, high: pd.Series | None,
          name: str, sector: str, liquidity: str | None = None,
          macro_drag: float | None = None, macro_beta: float = 0.0,
          bench: pd.Series | None = None, alert_days: int = 120,
-         alert_max: int = 50) -> dict | None:
+         alert_max: int = 50, vix_ctx: dict | None = None) -> dict | None:
     c = close.dropna()
     if len(c) < 300:
         return None
@@ -88,7 +132,7 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
     # US net-liquidity is a single macro regime that applies to every US-listed
     # name — and to crypto (BTC tracks it) — so the same live label conditions all.
     res = analyze(c, high, kind=kind, liquidity=liquidity,
-                  macro_drag=macro_drag, macro_beta=macro_beta)
+                  macro_drag=macro_drag, macro_beta=macro_beta, vix_ctx=vix_ctx)
     if not res.get("ladder"):
         return None
     month = int(c.index.max().month)
@@ -200,8 +244,9 @@ def main() -> int:
 
     liq = current_liquidity()
     drag = current_macro()
-    log.info("net-liquidity regime for library: %s · macro-risk: %s",
-             liq or "unknown", "—" if drag is None else f"{drag:.2f}")
+    vctx = current_vix_context()
+    log.info("net-liquidity regime for library: %s · macro-risk: %s · VIX: %s",
+             liq or "unknown", "—" if drag is None else f"{drag:.2f}", vctx or "n/a")
     # benchmark for per-ticker relative-strength alerts + the feed window/caps
     spy = store.read("yahoo", "SPY")
     bench = spy["close"] if spy is not None else None
@@ -250,16 +295,23 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("alpha.json unreadable (%s)", e)
     # confirmer legs for the Top-setups board: the factor composite (factors.json
-    # table) as a LIGHT tiebreaker + insider BUY clusters (insider_signals.json) —
-    # both written by build_site just before this runs. Additive — absent => no chip.
+    # table) as a LIGHT tiebreaker + insider BUY clusters (insider_signals.json) + the
+    # validated SUE earnings-momentum z (factors.json table 'sue') — all written by
+    # build_site just before this runs. Additive — absent => no chip. DISPLAY context
+    # only; the factor breaks ties in rank_setups, insider/SUE never touch the order.
     factor_z: dict[str, float] = {}
+    sue_z: dict[str, float] = {}
     insider_map: dict[str, dict] = {}
     fp = site / "factordata" / "factors.json"
     if fp.exists():
         try:
             for _r in (json.loads(fp.read_text()) or {}).get("table", []):
-                if _r.get("ticker") and _r.get("composite") is not None:
+                if not _r.get("ticker"):
+                    continue
+                if _r.get("composite") is not None:
                     factor_z[_r["ticker"]] = _r["composite"]
+                if _r.get("sue") is not None:
+                    sue_z[_r["ticker"]] = _r["sue"]
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("factors.json unreadable (%s)", e)
     isp = site / "factordata" / "insider_signals.json"
@@ -268,12 +320,28 @@ def main() -> int:
             insider_map = json.loads(isp.read_text()) or {}
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("insider_signals.json unreadable (%s)", e)
+    # curated super-investor 13F holdings per stock (written by build_site.
+    # build_smartmoney_data just before this runs). Additive — absent => no panel.
+    smart_money: dict[str, dict] = {}
+    smp = site / "factordata" / "smartmoney.json"
+    if smp.exists():
+        try:
+            smart_money = (json.loads(smp.read_text()) or {}).get("by_ticker", {})
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("smartmoney.json unreadable (%s)", e)
+    # per-stock dealer-gamma (DISPLAY-ONLY, gated from the score by validate_gex)
+    gex_by_ticker = _optionable_gex()
+    # contrarian crowding/fragility flags (DISPLAY-ONLY, gated OUT of the score by
+    # scripts/fund_crowding_phase0.py — short interest has no PIT history to validate).
+    # Computed once over the whole panel; graceful (absent feed => {} => no chip).
+    from engine.crowding import compute_fragility
+    fragility_map = compute_fragility()
     index, cand, built, failed = [], [], 0, 0
     for ticker, close, high, name, sector in universe():
         try:
             rec = _one(ticker, close, high, name, sector, liquidity=liq,
                        macro_drag=drag, macro_beta=sector_macro_beta(sector),
-                       bench=bench, alert_days=a_days, alert_max=a_max)
+                       bench=bench, alert_days=a_days, alert_max=a_max, vix_ctx=vctx)
         except Exception as e:  # noqa: BLE001 — one bad ticker must not kill the library
             log.debug("library %s failed: %s", ticker, e)
             rec = None
@@ -295,7 +363,16 @@ def main() -> int:
                     row["insider_buyers"] = ins.get("buyers")
                     row["insider_bps"] = ins.get("bps")
                     row["insider_net_mn"] = ins.get("net_mn")
+                sconf = sue_confirmer(sue_z.get(ticker))    # earnings-momentum confirmer (display only)
+                if sconf is not None:
+                    row["sue_z"] = sconf
                 cand.append(sc)
+        if smart_money.get(ticker):
+            rec["smart_money"] = smart_money[ticker]
+        if gex_by_ticker.get(ticker):
+            rec["gex"] = gex_by_ticker[ticker]
+        if fragility_map.get(ticker):
+            rec["fragility"] = fragility_map[ticker]
         ladder_rows.append(ticker_alerts.ladder_row(ticker, rec.get("ladder"), rec.get("asof")))
         safe = ticker.replace("=", "_").replace("^", "_")
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
@@ -330,6 +407,11 @@ def main() -> int:
             json.dumps(setups, separators=(",", ":"), default=str))
         log.info("wrote setups.json (%d buy, %d laggards, %d candidates)",
                  len(setups["buy"]), len(setups["laggards"]), len(cand))
+    # multi-timeframe Bottom-Confidence per-band held-rate (stock.html shows the
+    # measured "this band held the low ~N%" line; see research/BOTTOM_CONFIDENCE.md)
+    bccal = config.data_dir() / "regime" / "bottom_confidence_calibration.json"
+    if bccal.exists():
+        (outdir / "bc_calibration.json").write_text(bccal.read_text())
     log.info("stock library: %d analyzed, %d skipped (thin history)", built, failed)
     return 0
 

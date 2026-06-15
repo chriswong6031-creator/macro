@@ -8,5 +8,8 @@
   "stance": "100% equity",
   "cagr": 12.56,
   "sharpe": 0.88,
-  "maxdd": -36.5
+  "maxdd": -36.5,
+  "equity_weight": 100,
+  "risk_score": 9,
+  "asof": "2026-06-12"
 }

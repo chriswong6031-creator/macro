@@ -114,8 +114,10 @@ def _confirmed(raw: pd.Series, acfg: dict) -> pd.Series:
 
 
 def base_alloc() -> pd.Series:
-    cfg = config.load()["vector"]
-    return _confirmed(_base_raw_valued(_frame(), cfg["allocation"]), cfg["allocation"])
+    # The shipped optimal allocation is the ground truth (the engine's allocation()
+    # has evolved — drawdown brake etc.); use it directly rather than replicate, so
+    # overlay candidates test "what if we ADD this to the CURRENT allocation".
+    return _frame()["alloc_optimal"]
 
 
 def candidate_alloc(spec: dict) -> pd.Series:
@@ -124,7 +126,7 @@ def candidate_alloc(spec: dict) -> pd.Series:
     acfg = cfg["allocation"]
     t = spec["type"]
     if t in ("alloc_floor", "alloc_cap", "alloc_full"):
-        raw = _base_raw_valued(sig, acfg).copy()
+        raw = sig["alloc_optimal"].copy()
         mask = _cond(sig, spec["cond"])
         to = spec.get("to", 1.0 if t == "alloc_full" else 0.5)
         if t == "alloc_cap":
@@ -139,7 +141,7 @@ def candidate_alloc(spec: dict) -> pd.Series:
         mom = sig["momentum"]
         rk = risk(_inputs(), mom, rcfg)["risk_index"].reindex(sig.index)
         valcols = [c for c in ("mvrv_z", "nupl", "mayer", "reserve_risk") if c in sig]
-        al = allocation(mom, rk, acfg, sig[valcols])
+        al = allocation(mom, rk, acfg, sig[valcols], close=sig["close"])
         return al["alloc_optimal"]
     raise ValueError(f"unknown candidate type: {t}")
 

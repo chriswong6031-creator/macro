@@ -152,6 +152,96 @@ def chart_liquidity(f: pd.DataFrame) -> str:
     return _html(fig)
 
 
+# ----- market snapshot tiles + VIX monitor (display surfacing; reuse the frame) -----
+# The 8 headline instruments are already in the feature frame; this surfaces them as
+# at-a-glance tiles, and gives VIX a proper monitor (30-day path + OUR term-structure
+# / percentile read — richer than the conventional 15/20/30 bands, which we keep only
+# as a familiar label). No new data collection.
+_TILE_SPEC = (
+    ("SPY",   ("S&P 500 · SPY",    "标普500 · SPY"),  ("Indices", "指数"),     2),
+    ("QQQ",   ("Nasdaq 100 · QQQ", "纳指100 · QQQ"),   ("Indices", "指数"),     2),
+    ("vix",   ("VIX",              "VIX"),             ("Volatility", "波动率"), 2),
+    ("us10y", ("10Y yield",        "10年期收益率"),     ("Rates", "利率"),       2),
+    ("us30y", ("30Y yield",        "30年期收益率"),     ("Rates", "利率"),       2),
+    ("us5y",  ("5Y yield",         "5年期收益率"),      ("Rates", "利率"),       2),
+    ("dxy",   ("US dollar · DXY",  "美元 · DXY"),       ("FX", "外汇"),          2),
+    ("oil",   ("Crude oil · WTI",  "原油 · WTI"),       ("Commodities", "商品"), 2),
+)
+
+
+def market_tiles(f: pd.DataFrame) -> list[dict]:
+    """Level + 1-day change for the 8 headline instruments already in the frame.
+    Coloured by raw sign (the price move); semantic context lives in the panels."""
+    rows = []
+    for col, (en, zh), (ten, tzh), dec in _TILE_SPEC:
+        if col not in f.columns:
+            continue
+        s = f[col].dropna()
+        if len(s) < 2:
+            continue
+        last, prev = float(s.iloc[-1]), float(s.iloc[-2])
+        chg = last - prev
+        pct = (last / prev - 1) * 100 if prev else 0.0
+        is_rate = col.startswith("us")
+        rows.append({
+            "label": T(en, zh), "tag": T(ten, tzh),
+            "level": (f"{last:.{dec}f}%" if is_rate else f"{last:,.{dec}f}"),
+            "chg": f"{chg:+.{dec}f}", "pct": f"{pct:+.1f}%",
+            "tone": "pos" if chg > 0 else "neg" if chg < 0 else "muted",
+        })
+    return rows
+
+
+def vix_monitor(f: pd.DataFrame, days: int = 30) -> dict | None:
+    """Current VIX + N-day range + our term-structure / percentile read. The level
+    bands (low/normal/elevated/high) are the familiar framing; the term structure
+    (vix/vix3m) and history percentile are the sharper read shown beside them."""
+    if "vix" not in f.columns:
+        return None
+    v = f["vix"].dropna()
+    if len(v) < 2:
+        return None
+    last, prev = float(v.iloc[-1]), float(v.iloc[-2])
+    win = v.tail(days)
+    if last < 15:
+        regime, tone = T("low", "偏低"), "muted"
+    elif last < 20:
+        regime, tone = T("normal", "正常"), "muted"
+    elif last < 30:
+        regime, tone = T("elevated", "偏高"), "warn"
+    else:
+        regime, tone = T("high fear", "高度恐慌"), "neg"
+    ratio, rword = None, None
+    vr = f["vix_ratio"].dropna() if "vix_ratio" in f.columns else pd.Series(dtype=float)
+    if len(vr):
+        ratio = float(vr.iloc[-1])
+        rword = T("backwardation", "倒挂") if ratio >= 1 else T("contango", "正向")
+    return {"last": last, "chg": last - prev,
+            "pct": (last / prev - 1) * 100 if prev else 0.0,
+            "hi": float(win.max()), "lo": float(win.min()), "prev": prev, "days": days,
+            "regime": regime, "tone": tone, "ratio": ratio, "rword": rword,
+            "pctile": float((v <= last).mean() * 100)}
+
+
+def chart_vix(f: pd.DataFrame, days: int = 90) -> str:
+    """A focused VIX path with the conventional regime bands shaded behind it."""
+    if "vix" not in f.columns:
+        return ""
+    v = f["vix"].dropna()
+    if v.empty:
+        return ""
+    v = v.loc[v.index.max() - pd.Timedelta(days=days):]
+    fig = go.Figure()
+    for y0, y1, c in ((0, 15, "#4fb39a"), (15, 20, "#7aa7e0"),
+                      (20, 30, "#e0a030"), (30, 90, "#e06464")):
+        fig.add_hrect(y0=y0, y1=y1, fillcolor=c, opacity=0.07, line_width=0)
+    fig.add_trace(go.Scatter(x=v.index, y=v, name="VIX",
+                             line={"color": "#e07a9a", "width": 1.6}))
+    fig.update_layout(**{**PLOT_LAYOUT, "height": 240}, showlegend=False)
+    fig.update_yaxes(range=[max(0.0, float(v.min()) - 2), float(v.max()) + 3])
+    return _html(fig)
+
+
 def chart_credit_breadth(f: pd.DataFrame) -> str:
     two_y = f.index.max() - pd.Timedelta(days=730)
     oas = f.loc[two_y:, "hy_oas"].dropna()
@@ -533,6 +623,81 @@ def breadth_divergence(f: pd.DataFrame) -> dict | None:
     return {"sc": sc, "lc": lc, "gap": gap, "verdict": verdict}
 
 
+# Market-breadth scorecard across the full S&P Composite 1500, by size tier.
+# The daily collector already stores advancing/declining, % above the 50- and
+# 200-day lines, and 52w new highs/lows for each universe — but the page only
+# ever charted % > 50d (large + small). This surfaces the rest as one legible
+# scorecard. NB: % > 50d also feeds the regime model's growth axis, so this is
+# the same breadth the model reads, not a new/contradicting signal.
+_BREADTH_TIERS = (
+    ("large", "breadth",          "S&P 500", ("Large cap", "大盘")),
+    ("mid",   "midcap_breadth",   "S&P 400", ("Mid cap",   "中盘")),
+    ("small", "smallcap_breadth", "S&P 600", ("Small cap", "小盘")),
+)
+
+
+def _wmean(tiers: list[dict], key: str) -> float | None:
+    """Member-count-weighted mean of a per-tier metric, skipping missing tiers."""
+    num = sum(t[key] * t["n"] for t in tiers if t[key] is not None)
+    den = sum(t["n"] for t in tiers if t[key] is not None)
+    return num / den if den else None
+
+
+def _breadth_read(pa50: float | None, net_nh: int) -> tuple:
+    """Plain-language read of composite breadth -> (label, verdict, tone)."""
+    if pa50 is not None and pa50 >= 60 and net_nh >= 0:
+        return (T("broad", "广泛"),
+                T("The advance is well-supported across the full 1,500",
+                  "上涨在整个 1500 只股票中获得良好支撑"), "pos")
+    if pa50 is not None and (pa50 <= 40 or net_nh < 0):
+        return (T("thin", "稀薄"),
+                T("Few names hold their trend — rallies here are fragile",
+                  "守住趋势的个股很少 — 此时的反弹较脆弱"), "neg")
+    return (T("mixed", "参差"),
+            T("No clear breadth edge either way",
+              "广度上没有明显的方向性优势"), "muted")
+
+
+def breadth_scorecard() -> dict | None:
+    """Latest breadth read across the S&P 1500 size tiers + a weighted composite."""
+    tiers, asof = [], None
+    for key, ns, univ, (en, zh) in _BREADTH_TIERS:
+        p = config.data_dir() / ns / "breadth.parquet"
+        if not p.exists():
+            continue
+        try:
+            row = pd.read_parquet(p).dropna(subset=["pct_above_50"]).iloc[-1]
+        except Exception:  # noqa: BLE001 — additive, never fatal
+            continue
+        adv, dec = float(row.get("adv", 0) or 0), float(row.get("dec", 0) or 0)
+        nh, nl = float(row.get("nh", 0) or 0), float(row.get("nl", 0) or 0)
+        pa200 = row.get("pct_above_200")
+        tiers.append({
+            "key": key, "label": T(en, zh), "univ": univ,
+            "n": int(row.get("n_members", 0) or 0),
+            "adv": int(adv), "dec": int(dec),
+            "adv_pct": (100 * adv / (adv + dec)) if (adv + dec) else None,
+            "pa50": float(row["pct_above_50"]),
+            "pa200": float(pa200) if pd.notna(pa200) else None,
+            "nh": int(nh), "nl": int(nl), "net_nh": int(nh - nl),
+        })
+        asof = row.name if asof is None else max(asof, row.name)
+    if not tiers:
+        return None
+    adv, dec = sum(t["adv"] for t in tiers), sum(t["dec"] for t in tiers)
+    net_nh = sum(t["net_nh"] for t in tiers)
+    pa50, pa200 = _wmean(tiers, "pa50"), _wmean(tiers, "pa200")
+    label, verdict, tone = _breadth_read(pa50, net_nh)
+    return {
+        "asof": pd.Timestamp(asof).strftime("%Y-%m-%d") if asof is not None else None,
+        "tiers": tiers,
+        "comp": {"n": sum(t["n"] for t in tiers), "adv": adv, "dec": dec,
+                 "adv_pct": (100 * adv / (adv + dec)) if (adv + dec) else None,
+                 "pa50": pa50, "pa200": pa200, "net_nh": net_nh,
+                 "label": label, "verdict": verdict, "tone": tone},
+    }
+
+
 # heat-bar fill uses theme-aware CSS variables (legible in both modes)
 HEAT_COLORS = {"70+": "var(--orange)", "55-69": "var(--up)",
                "40-54": "var(--muted)", "0-39": "var(--info)"}
@@ -617,8 +782,8 @@ def _season_tooltip(seas: dict | None, month: int | None):
 
     # --- two stacked 6-month tables, current month row highlighted ------------
     def _col(rng) -> str:
-        rows = ['<colgroup><col style="width:32%"><col style="width:26%">'
-                '<col style="width:23%"><col style="width:19%"></colgroup>',
+        rows = ['<colgroup><col style="width:28%"><col style="width:28%">'
+                '<col style="width:23%"><col style="width:21%"></colgroup>',
                 f'<tr><th style="text-align:left">{_b("Month", "月份")}</th>'
                 f'<th>{_b("Avg", "均值")}</th><th>{_b("Up", "收涨")}</th>'
                 f'<th>{_b("Yrs", "年数")}</th></tr>']
@@ -1068,6 +1233,88 @@ def build_etf_page(env: Environment, site: Path, generated: str,
              len({r["ticker"] for r in rows}))
 
 
+_IC_LABELS = {
+    "value": "Value", "profitability": "Profitability", "quality": "Quality",
+    "investment": "Investment", "payout": "Payout", "low_vol": "Low volatility",
+    "low_beta": "Low beta", "accruals": "Accruals", "short_interest": "Low short interest",
+    "composite": "Composite", "composite_orth": "Composite (de-correlated)",
+}
+
+
+def _load_ic_scorecard() -> dict | None:
+    """Load the leak-free point-in-time IC scorecard (scripts.factor_ic_scorecard
+    writes data/edgar/ic_scorecard.json) for the factors page. This is the rigor
+    FactorWatch and most factor dashboards never show — IC + Newey-West t + BH-FDR.
+    Degrade-never-raise: missing/unreadable/stale → return None and the panel hides.
+    Read straight from the JSON; do NOT fork a slice into factors.json."""
+    p = config.data_dir() / "edgar" / "ic_scorecard.json"
+    if not p.exists():
+        return None
+    try:
+        ic = json.loads(p.read_text())
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("ic scorecard unreadable: %s", e)
+        return None
+    facs = ic.get("factors") or {}
+    if not facs:
+        return None
+    rows = [{"factor": k, "label_en": _IC_LABELS.get(k, k), **v} for k, v in facs.items()]
+    # mirror the report's order: best forward-IC information ratio first
+    rows.sort(key=lambda r: -(r["ic_ir_ann"] if r.get("ic_ir_ann") is not None else -9))
+    ic["rows"] = rows
+    ic["any_survive"] = any(r.get("survives_fdr") for r in rows)
+    return ic
+
+
+def _load_breadth() -> dict | None:
+    """MARKET breadth context for the factors page — % of members above their 50d and
+    200d MAs across the S&P 500 / 400 / 600 caps (data/<grp>/breadth.parquet). This is
+    INDEX-member breadth, not factor-portfolio breadth. Degrade-never-raise."""
+    import pandas as _pd
+    groups = [("Large cap (S&P 500)", "大盘 (标普500)", "breadth"),
+              ("Mid cap (S&P 400)", "中盘 (标普400)", "midcap_breadth"),
+              ("Small cap (S&P 600)", "小盘 (标普600)", "smallcap_breadth")]
+    rows, by, as_of = [], {}, None
+    for label_en, label_zh, g in groups:
+        p = config.data_dir() / g / "breadth.parquet"
+        if not p.exists():
+            continue
+        try:
+            df = _pd.read_parquet(p)
+        except Exception:  # noqa: BLE001
+            continue
+        if df.empty or "pct_above_50" not in df.columns:
+            continue
+        last = df.iloc[-1]
+        r = {"label_en": label_en, "label_zh": label_zh, "group": g,
+             "p50": round(float(last["pct_above_50"]), 1),
+             "p200": round(float(last["pct_above_200"]), 1),
+             "n": int(last.get("n_members", 0) or 0)}
+        rows.append(r)
+        by[g] = r
+        as_of = df.index.max().strftime("%Y-%m-%d")
+    if not rows:
+        return None
+    # small-vs-large divergence on the COMMON window (small/mid only start 2023-07)
+    div = (round(by["smallcap_breadth"]["p50"] - by["breadth"]["p50"], 1)
+           if "smallcap_breadth" in by and "breadth" in by else None)
+    return {"groups": rows, "div_small_large": div, "as_of": as_of}
+
+
+def _load_factor_series() -> dict | None:
+    """Load factor portfolio return series (scripts.build_factor_series writes
+    site/factordata/factor_series.json — the heavier month-end walk). Degrade-never-raise."""
+    p = config.ROOT / "site" / "factordata" / "factor_series.json"
+    if not p.exists():
+        return None
+    try:
+        d = json.loads(p.read_text())
+        return d if d.get("factors") else None
+    except Exception as e:  # noqa: BLE001
+        log.warning("factor series unreadable: %s", e)
+        return None
+
+
 def build_factors_page(env: Environment, site: Path, generated: str) -> dict | None:
     """Render factors.html — the cross-sectional equity factor rankings (SEC
     EDGAR fundamentals x prices). Fundamentals fetch is cached weekly; ranks
@@ -1103,6 +1350,11 @@ def build_factors_page(env: Environment, site: Path, generated: str) -> dict | N
                 backfill_panel()
         except Exception as e:  # noqa: BLE001 — panel is optional; leaderboard degrades gracefully
             log.warning("sec insider panel refresh failed: %s", e)
+        try:
+            from collectors.edgar_eps import build_eps_panel
+            build_eps_panel()                      # SUE: quarterly diluted-EPS panel (weekly-cached)
+        except Exception as e:  # noqa: BLE001 — SUE factor is an optional leg
+            log.warning("edgar quarterly EPS panel failed: %s", e)
         fac = compute_factors()
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("factor engine failed: %s", e)
@@ -1112,9 +1364,14 @@ def build_factors_page(env: Environment, site: Path, generated: str) -> dict | N
     fdir = site / "factordata"
     fdir.mkdir(parents=True, exist_ok=True)
     (fdir / "factors.json").write_text(json.dumps(fac, separators=(",", ":"), default=str))
-    html = env.get_template("factors.html.j2").render(fac=fac, generated_utc=generated)
+    ic = _load_ic_scorecard()                  # leak-free point-in-time IC (degrade-never-raise)
+    breadth = _load_breadth()                  # market-member breadth context (degrade-never-raise)
+    series = _load_factor_series()             # factor portfolio return series (degrade-never-raise)
+    html = env.get_template("factors.html.j2").render(
+        fac=fac, ic=ic, breadth=breadth, series=series, generated_utc=generated)
     (site / "factors.html").write_text(html)
-    log.info("wrote factors.html (%d names, FY%s)", fac.get("n"), fac.get("fy"))
+    log.info("wrote factors.html (%d names, FY%s, ic=%s)", fac.get("n"), fac.get("fy"),
+             "yes" if ic else "no")
     return fac
 
 
@@ -1178,6 +1435,26 @@ def build_insider_data(site: Path) -> dict | None:
     return sig
 
 
+def build_smartmoney_data(site: Path) -> dict | None:
+    """Compute curated super-investor 13F holdings and write
+    factordata/smartmoney.json (consumed by the per-stock "who holds this" panel +
+    a future consensus board). Additive — any failure logs and skips. CONTEXT only,
+    never wired into any score. See collectors/edgar_13f.py + engine/smart_money.py."""
+    from engine.smart_money import compute_smart_money
+    try:
+        sm = compute_smart_money()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("smart-money engine failed: %s", e)
+        return None
+    if not sm:
+        return None
+    fdir = site / "factordata"
+    fdir.mkdir(parents=True, exist_ok=True)
+    (fdir / "smartmoney.json").write_text(json.dumps(sm, separators=(",", ":"), default=str))
+    log.info("wrote smartmoney.json (%d funds, %d names)", sm.get("n_funds"), sm.get("n_names"))
+    return sm
+
+
 def build_sector_pages(env: Environment, site: Path, generated: str,
                        alpha: dict | None = None) -> dict:
     """Render sectors/<FUND>.html drill-downs; return per-fund timing summary
@@ -1190,7 +1467,7 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
     from engine.cycles import LADDER, STATE_DISPLAY, analyze
     from engine.holdings_signals import accumulation_signals
     from engine.playbook import SECTOR_NAMES
-    from engine.setups import US_ALPHA_WEIGHT, timing_tilt
+    from engine.setups import US_ALPHA_WEIGHT, sue_confirmer, timing_tilt
     from scripts.build_stock_library import current_liquidity, current_macro
 
     # per-ticker sector-neutral residual alpha (already computed by build_alpha_data
@@ -1199,11 +1476,14 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
     # score (selection × timing). Absent => cards fall back to pure cycle timing.
     alpha_pt = (alpha or {}).get("per_ticker", {})
     # confirmer legs on those same cards: a distinct-insider Form-4 BUY cluster
-    # (insider_signals.json, written by build_insider_data just above) and the
-    # cross-sectional factor composite (factors.json table) as a light tiebreaker.
-    # Both additive + graceful — absent => the card simply omits that chip.
+    # (insider_signals.json, written by build_insider_data just above), the cross-
+    # sectional factor composite (factors.json table) as a light tiebreaker, and the
+    # validated SUE earnings-momentum z (factors.json table 'sue') as an earnings-
+    # drift confirmer. All additive + graceful — absent => the card omits that chip.
+    # None of these enter the setup score; they are displayed risk/conviction context.
     insider_map: dict[str, dict] = {}
     factor_z: dict[str, float] = {}
+    sue_z: dict[str, float] = {}
     try:
         _ip = site / "factordata" / "insider_signals.json"
         if _ip.exists():
@@ -1211,8 +1491,12 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
         _fp = site / "factordata" / "factors.json"
         if _fp.exists():
             for _r in (json.loads(_fp.read_text()) or {}).get("table", []):
-                if _r.get("ticker") and _r.get("composite") is not None:
+                if not _r.get("ticker"):
+                    continue
+                if _r.get("composite") is not None:
                     factor_z[_r["ticker"]] = _r["composite"]
+                if _r.get("sue") is not None:
+                    sue_z[_r["ticker"]] = _r["sue"]
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("standout confirmer maps unavailable (%s)", e)
 
@@ -1289,7 +1573,9 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
                     setup = round((US_ALPHA_WEIGHT * az + tilt) if az is not None
                                   else tilt, 2)
                     # confirmers: an insider BUY cluster (>=2 distinct insiders net
-                    # buying, Form-4 6mo) + the factor composite (light tiebreaker)
+                    # buying, Form-4 6mo) + the factor composite (light tiebreaker) +
+                    # the SUE earnings-momentum z (gated to a real positive tailwind).
+                    # All DISPLAY context — none touch the setup score above.
                     ins = insider_map.get(tick) or {}
                     ins_buy = ins.get("buyers", 0) >= 2 and (ins.get("net_mn") or 0) > 0
                     notable.append({"ticker": tick, "name": str(r.get("name", "")).title(),
@@ -1313,6 +1599,7 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
                                     "insider_buyers": ins.get("buyers") if ins_buy else None,
                                     "insider_bps": ins.get("bps") if ins_buy else None,
                                     "insider_net_mn": ins.get("net_mn") if ins_buy else None,
+                                    "sue_z": sue_confirmer(sue_z.get(tick)),
                                     "signal_date": lad.get("signal_date"),
                                     "age_days": lad.get("age_days"),
                                     "spark_svg": _mini_svg(spark, color=scolor, w=240, h=42,
@@ -1398,6 +1685,48 @@ def regime_timeline(hist: pd.DataFrame) -> dict:
         "flag_order": ["breadth_price", "credit_equity", "ratio_inflection",
                        "inflation_basket", "confidence_decay", "gex"],
     }
+
+
+def build_advanced_page(env: Environment, site: Path, generated: str, latest: dict, f,
+                        confirming, contradicting):
+    """The Quant Lab — the geekier reads, kept off the main dashboard: cross-asset
+    concentration + risk budgeting + the factor IC scorecard + the raw market-
+    internals tables (dials / pair-ratios / size-style / accumulation / fund flows).
+    Computes the cross-asset & portfolio snapshots FRESH (like build_factors_page),
+    so the page is populated even if the last engine.run predates them; reads the
+    factor IC scorecard JSON if present. Returns the cross-asset snapshot for the
+    dashboard's compact card."""
+    cross_asset = portfolio = ic_scorecard = None
+    try:
+        from engine.cross_asset import snapshot as _ca
+        cross_asset = _ca()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("cross-asset snapshot failed: %s", e)
+    try:
+        from engine.portfolio import snapshot as _pf
+        portfolio = _pf()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("portfolio snapshot failed: %s", e)
+    icp = config.data_dir() / "edgar" / "ic_scorecard.json"
+    if icp.exists():
+        try:
+            ic_scorecard = json.loads(icp.read_text())
+        except Exception:  # noqa: BLE001
+            ic_scorecard = None
+    html = env.get_template("advanced.html.j2").render(
+        latest=latest, generated_utc=generated,
+        cross_asset=cross_asset, portfolio=portfolio, ic_scorecard=ic_scorecard,
+        components_confirming=confirming, components_contradicting=contradicting,
+        flip_plain=flip_plain_text(latest),
+        internals=internals_rows(latest), size_style=size_style_rows(f),
+        breadth_div=breadth_divergence(f),
+        accumulation=accumulation_rows(), holdings_changes=holdings_rows(),
+        holdings_threshold=config.load()["holdings"]["active_change_alert_pct"],
+        flows_html=flows_html_table(),
+    )
+    (site / "advanced.html").write_text(html)
+    log.info("wrote advanced.html (%.0f KB)", (site / "advanced.html").stat().st_size / 1024)
+    return cross_asset
 
 
 def market_gamma_view(gex) -> dict | None:
@@ -1629,6 +1958,10 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("insider data failed: %s", e)
     try:
+        build_smartmoney_data(site)               # 13F super-investor holdings (CONTEXT)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("smart-money data failed: %s", e)
+    try:
         sector_timing, notable = build_sector_pages(env, site, generated, alpha=alpha_data)
     except Exception as e:  # noqa: BLE001 — drill-downs are additive, never fatal
         log.error("sector pages failed: %s", e)
@@ -1642,9 +1975,19 @@ def main() -> int:
         factor_leadership = (_fac or {}).get("leadership")
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("factors page failed: %s", e)
+    # Quant Lab (advanced analytics): cross-asset concentration + risk budgeting +
+    # factor scorecard + the raw internals moved off the main dashboard. Returns the
+    # cross-asset snapshot for the dashboard's compact one-bet card.
+    cross_asset_snap = None
+    try:
+        cross_asset_snap = build_advanced_page(env, site, generated, latest, f,
+                                               confirming, contradicting)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("advanced page failed: %s", e)
     # copy shared static assets (theme + visual widgets) into the site
     for asset in ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
-                  "stockdata.js", "watchlist.js", "auth.js", "tablesort.js", "charts.js"):
+                  "stockdata.js", "watchlist.js", "auth.js", "tablesort.js", "charts.js",
+                  "masterbrief.js", "stockbrief.js", "lightweight-charts.js"):
         src = config.ROOT / "templates" / asset
         if src.exists():
             (site / asset).write_text(src.read_text())
@@ -1658,6 +2001,45 @@ def main() -> int:
             top_setups = json.loads(_sp.read_text())
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("setups.json unreadable (%s)", e)
+
+    # Macro news & catalysts (LEAF, additive, never fatal). Catalysts (FOMC + jobs
+    # report) are keyless and always on; filtered headlines + the optional LLM brief
+    # only when macro_news.enabled. News NEVER feeds any score.
+    macro_catalysts, macro_news_data, macro_brief_data = [], None, None
+    event_strip, catalyst_line = [], ""
+    macro_news_disclaimer = macro_news_disclaimer_zh = ""
+    try:
+        from engine import event_calendar as _ec
+        from engine import macro_news as _mnews
+        _mncfg = config.load().get("macro_news", {}) or {}
+        _horizon = _mncfg.get("catalysts_horizon_days", 14)
+        macro_catalysts = _mnews.upcoming_catalysts(horizon_days=_horizon)
+        # compact "US high-impact next 14 days" glance strip + the imminent-catalyst
+        # text line fed to the LLM brief below (context only; never a scored input)
+        event_strip = _ec.high_impact_strip(horizon_days=_horizon)
+        catalyst_line = _ec.imminent_line(horizon_days=_horizon)
+        macro_news_data = _mnews.macro_headlines()
+        macro_news_disclaimer = _mnews.DISCLAIMER_TEXT
+        macro_news_disclaimer_zh = _mnews.DISCLAIMER_TEXT_ZH
+        if macro_news_data and macro_news_data.get("headlines"):
+            _ra = (latest.get("conditions") or {}).get("risk_appetite") or {}
+            _sent = (f"{_ra.get('news_sentiment_state')} (z={_ra.get('news_sentiment_z')})"
+                     if _ra.get("news_sentiment_state") else "")
+            macro_brief_data = _mnews.macro_brief(
+                macro_news_data["headlines"],
+                regime_line=str((latest.get("regime") or {}).get("label", "")),
+                sentiment_line=_sent, catalyst_line=catalyst_line)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("macro news failed: %s", e)
+
+    # prediction-markets odds (additive leaf; None if no snapshot yet)
+    prediction_markets = None
+    try:
+        from engine import prediction_markets as _pm
+        prediction_markets = _pm.snapshot()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("prediction markets failed: %s", e)
+
     # whole-market dealer-gamma vol regime (validated index GEX) — context for the
     # standout setups below. Additive + graceful: None if the cboe gex store is absent.
     market_gamma = None
@@ -1672,6 +2054,13 @@ def main() -> int:
     # the heavy page CSS lives in exactly one template.
     vm = dict(
         latest=latest,
+        macro_catalysts=macro_catalysts,
+        event_strip=event_strip,
+        prediction_markets=prediction_markets,
+        macro_news=macro_news_data,
+        macro_brief=macro_brief_data,
+        macro_news_disclaimer=macro_news_disclaimer,
+        macro_news_disclaimer_zh=macro_news_disclaimer_zh,
         alerts=alert_views(latest.get("alerts", [])),
         pb=latest.get("playbook"),
         month_name=calendar.month_name[pd.Timestamp(latest["date"]).month],
@@ -1686,10 +2075,14 @@ def main() -> int:
         internals=internals_rows(latest),
         size_style=size_style_rows(f),
         breadth_div=breadth_divergence(f),
+        breadth_panel=breadth_scorecard(),
         sector_rows=sector_rows(latest.get("playbook"), sector_timing),
         generated_utc=generated,
         chart_liquidity=chart_liquidity(f),
         chart_credit_breadth=chart_credit_breadth(f),
+        market_tiles=market_tiles(f),
+        vix=vix_monitor(f),
+        chart_vix=chart_vix(f),
         positioning=positioning_rows(f),
         holdings_changes=holdings_rows(),
         holdings_threshold=config.load()["holdings"]["active_change_alert_pct"],
@@ -1705,6 +2098,7 @@ def main() -> int:
         chart_risk_model=chart_risk_model(_cf),    # drawdown/recession risk-model chart
         chart_curve=chart_curve(_cf),              # 2s10s raw vs term-premium-adjusted
         chart_vix_term=chart_vix_term(f, _cf),     # VIX level + term-structure ratio
+        cross_asset=cross_asset_snap,
     )
     # Write the macro dashboard straight to macro.html. index.html is owned
     # solely by build_vector.build_landing() (the landing hub) — keeping the raw
@@ -1788,6 +2182,22 @@ def main() -> int:
                     supabase_cfg_json=_json.dumps(sup_cfg),
                     starters_json=_json.dumps(wl.get("suggested", []))))
             log.info("wrote %s", site / "watchlist.html")
+
+        # 🧠 AI stock briefs (LLM "Option 2") — DEFAULT-OFF LEAF. Precompute a
+        # research brief for a small, bounded set (the action-board standouts +
+        # the watchlist's suggested tickers) into site/stockbrief/<TICKER>.json,
+        # cached per ticker per day. The stock page fetches it client-side; the
+        # static site cannot call the model on demand (no server-side key). Gated
+        # by catalyst_stock.enabled — a no-op (and zero cost) when off.
+        try:
+            from engine import catalyst_stock
+            if catalyst_stock.enabled():
+                brief_set = ([n["ticker"] for n in notable]
+                             + list(config.load().get("watchlist", {}).get("suggested", [])))
+                briefs = catalyst_stock.precompute_briefs(brief_set, root=config.ROOT, site=site)
+                log.info("precomputed %d AI stock brief(s)", len(briefs))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("stock brief precompute failed: %s", e)
     return 0
 
 

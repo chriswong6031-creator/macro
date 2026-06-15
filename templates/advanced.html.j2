@@ -1,0 +1,292 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{% macro help(en, zh='') -%}
+<span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quant Lab — {{ latest.date }}</title>
+  <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    body{background:var(--bg);color:var(--text);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;margin:0;padding:18px;}
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px;max-width:1280px;margin:0 auto;}
+    .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;}
+    .span12{grid-column:span 12;} .span6{grid-column:span 6;}
+    @media(max-width:820px){.span6{grid-column:span 12;}}
+    h1{font-size:22px;margin:0 0 4px;} h2{font-size:16px;margin:0 0 10px;} h3{font-size:13px;margin:14px 0 6px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;}
+    table{width:100%;border-collapse:collapse;font-size:13px;} th,td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:right;} th.l,td.l{text-align:left;}
+    .muted{color:var(--muted);} .pos{color:var(--up);} .neg{color:var(--down);}
+    .verdict{font-size:15px;font-weight:700;padding:3px 10px;border-radius:8px;display:inline-block;}
+    .v-bad{background:rgba(224,100,100,.16);color:var(--down);} .v-warn{background:rgba(224,160,48,.16);color:var(--warn);} .v-ok{background:rgba(69,184,115,.16);color:var(--up);}
+    .bar{height:10px;border-radius:5px;background:var(--panel2);position:relative;overflow:hidden;margin:4px 0;}
+    .bar i{position:absolute;top:0;bottom:0;left:0;border-radius:5px;background:var(--link);}
+    .heat{display:inline-block;min-width:42px;text-align:center;border-radius:4px;padding:2px 4px;}
+    .lab-intro{background:var(--panel2);}
+    .help{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;border:1px solid var(--muted);color:var(--muted);font-size:10px;font-weight:600;cursor:help;position:relative;vertical-align:middle;margin-left:5px;flex:none;}
+    .help .tip{display:none;position:absolute;bottom:140%;left:50%;transform:translateX(-50%);width:290px;background:var(--panel);border:1px solid var(--line);padding:9px 11px;border-radius:8px;z-index:60;font-size:12px;line-height:1.45;color:var(--text);text-align:left;font-weight:400;text-transform:none;letter-spacing:normal;box-shadow:0 8px 28px rgba(0,0,0,.45);pointer-events:none;white-space:normal;}
+    .help:hover .tip{display:block;}
+    .help.below .tip{bottom:auto;top:140%;}
+  </style>
+</head>
+<body>
+<nav class="site-nav">
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
+    <a class="nav-link" href="macro.html">📊 {{ t('Macro', '宏观') }}</a>
+    <a class="nav-link" href="factors.html">🧮 {{ t('Factors', '因子') }}</a>
+    <a class="nav-link active" href="advanced.html">🔬 {{ t('Quant Lab', '量化实验室') }}</a>
+  </div>
+</nav>
+
+<div class="grid">
+  <div class="panel span12 lab-intro">
+    <h1>🔬 {{ t('Quant Lab — advanced analytics', '量化实验室 — 进阶分析') }}</h1>
+    <p class="muted" style="margin:2px 0 0">{{ t(
+      'The deeper, geekier reads behind the main dashboard — cross-asset concentration, risk budgeting, the factor scorecard, and the raw market-internals tables. Useful for sanity-checking the headline calls; not needed for day-to-day decisions.',
+      '主仪表盘背后更深、更技术的解读 — 跨资产集中度、风险预算、因子记分卡，以及原始的市场内部结构表。用于校验头条判断；日常决策并不需要。') }}
+      {{ t('As of', '截至') }} {{ latest.date }}.</p>
+  </div>
+
+  {# ===================== CROSS-ASSET CONCENTRATION ===================== #}
+  {% if cross_asset and cross_asset.verdict and cross_asset.verdict != 'unknown' %}
+  {% set ca = cross_asset %}
+  <div class="panel span12" id="cross-asset">
+    <h2>🌐 {{ t('Cross-asset concentration — are the six markets one bet?', '跨资产集中度 — 六大市场是否同一笔押注？') }}
+      {{ help("How much the six markets (US equity, crypto, China, HK, commodities, the dollar) are really moving as ONE risk/liquidity bet vs independent bets. The absorption ratio is the share of total variance explained by the single dominant factor: 1/6≈0.17 means independent, →1 means everything moves together (a fragile, crowded regime that has historically preceded drawdowns). Stacking correlated views feels like diversification but doubles one exposure.", "六大市场（美股、加密货币、中国、香港、大宗商品、美元）在多大程度上其实是同一笔风险／流动性押注，而非独立押注。吸收比率是单一主导因子所解释的总方差占比：1/6≈0.17 表示独立，→1 表示一切同向（脆弱、拥挤的状态，历史上常先于回撤出现）。叠加相关的观点感觉像分散，实则在加倍同一笔敞口。") }}
+    </h2>
+    <p><span class="verdict {{ 'v-bad' if ca.verdict=='concentrated' else 'v-ok' if ca.verdict=='diversified' else 'v-warn' }}">{{ ca.verdict | upper }}</span></p>
+    <p style="margin:8px 0">{{ ca.headline.split(' — ', 1)[-1] }}</p>
+    <div style="max-width:520px">
+      <div class="muted" style="font-size:12px">{{ t('absorption ratio (PC1 variance share)', '吸收比率（PC1 方差占比）') }} —
+        <b style="color:var(--text)">{{ ca.absorption_ratio }}</b>
+        {% if ca.absorption_pctile_5y is not none %}· {{ (ca.absorption_pctile_5y*100)|round|int }}{{ t('th pctile of 5y', ' 百分位（5年）') }}{% endif %}
+        · {{ t('independent floor', '独立基准') }} {{ ca.absorption_floor }}</div>
+      <div class="bar"><i style="width: {{ (ca.absorption_ratio*100)|round(1) }}%"></i></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:12px">
+      <div>
+        <h3>{{ t('Dominant cluster (PC1 loadings)', '主导聚类（PC1 载荷）') }}</h3>
+        <p>{{ t('These markets are the one bet:', '这些市场属于同一押注：') }} <b>{{ ca.dominant_cluster | join(', ') if ca.dominant_cluster else '—' }}</b></p>
+        <table>
+          {% for m, l in ca.pc1_loadings.items() %}<tr><td class="l">{{ m }}</td><td>{{ l }}</td></tr>{% endfor %}
+        </table>
+      </div>
+      <div>
+        <h3>{{ t('Most-correlated pairs', '相关性最高的配对') }}</h3>
+        <table>
+          {% for p in ca.top_pairs %}<tr><td class="l">{{ p.a }} ↔ {{ p.b }}</td><td>{{ p.corr }}</td></tr>{% endfor %}
+          {% if not ca.top_pairs %}<tr><td class="l muted">{{ t('no pair above 0.5', '无配对超过 0.5') }}</td><td></td></tr>{% endif %}
+        </table>
+      </div>
+    </div>
+    {% if ca.corr_matrix %}
+    <h3>{{ t('Correlation matrix (63-day, risk-on-oriented)', '相关性矩阵（63日，按风险偏好定向）') }}</h3>
+    <table>
+      <tr><th class="l"></th>{% for m in ca.markets %}<th>{{ m }}</th>{% endfor %}</tr>
+      {% for a in ca.markets %}
+      <tr><td class="l">{{ a }}</td>
+        {% for b in ca.markets %}
+        {% set v = ca.corr_matrix[a][b] %}
+        <td><span class="heat" style="background: rgba({{ 224 if v<0 else 69 }},{{ 100 if v<0 else 184 }},{{ 100 if v<0 else 115 }},{{ (v|abs*0.5)|round(2) }})">{{ "%.2f"|format(v) }}</span></td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </table>
+    {% endif %}
+    <p class="muted" style="font-size:12px;margin-top:10px">{{ ca.evidence }}</p>
+  </div>
+  {% endif %}
+
+  {# ===================== RISK BUDGETING + STRESS REPLAY ===================== #}
+  {% if portfolio and portfolio.risk_budget %}
+  {% set rb = portfolio.risk_budget %}
+  <div class="panel span6" id="risk-budget">
+    <h2>⚖️ {{ t('Risk budgeting across the six markets', '六大市场的风险预算') }}
+      {{ help("If you expressed all six market views as one book, how should they be weighted? Equal-weight (1/6 each), inverse-vol (more in the calm markets), and equal-risk-contribution (ERC — each market contributes the SAME share of portfolio risk). The 'risk' column is each market's share of total portfolio variance: equal-weight quietly concentrates risk in the most volatile market; ERC equalizes it. This is the honest 'size as uncorrelated bets' weighting — a reference, not a trade list.", "若把全部六个市场观点合成一个组合，该如何配权？等权（各 1/6）、逆波动率（在平静市场配得更多），以及等风险贡献（ERC — 每个市场对组合风险贡献相同份额）。'风险'列是各市场对组合总方差的占比：等权会悄悄把风险集中在波动最大的市场；ERC 将其均衡。这是诚实的'按不相关押注定量'配权 — 仅作参考，非交易清单。") }}
+    </h2>
+    <p style="margin:0 0 8px">{{ portfolio.headline }}</p>
+    <table>
+      <tr><th class="l">{{ t('market', '市场') }}</th>
+        <th>EW {{ t('wt', '权重') }}</th><th>{{ t('IV', '逆波') }}</th><th>ERC</th><th>{{ t('EW risk', 'EW风险') }}</th></tr>
+      {% for m in rb.markets %}
+      <tr><td class="l">{{ m }}</td>
+        <td class="muted">{{ "%.0f"|format(rb.equal_weight.weights[m]*100) }}%</td>
+        <td class="muted">{{ "%.0f"|format(rb.inverse_vol.weights[m]*100) }}%</td>
+        <td><b>{{ "%.0f"|format(rb.erc.weights[m]*100) }}%</b></td>
+        <td class="{{ 'neg' if rb.equal_weight.risk_contrib[m] > (1.5/(rb.markets|length)) else 'muted' }}">{{ "%.0f"|format(rb.equal_weight.risk_contrib[m]*100) }}%</td>
+      </tr>
+      {% endfor %}
+    </table>
+    <p class="muted" style="font-size:12px;margin-top:8px">{{ t('Diversification ratio', '分散化比率') }}:
+      EW <b>{{ rb.equal_weight.diversification_ratio }}</b> · ERC <b>{{ rb.erc.diversification_ratio }}</b>
+      ({{ t('higher = more genuine diversification', '越高 = 越真实的分散化') }}).
+      {{ t('Equal-weight puts', '等权将') }} <b>{{ (rb.equal_weight.max_risk_contrib*100)|round|int }}%</b> {{ t('of risk in one market; ERC caps each at', '的风险放在一个市场；ERC 将每个限制在') }} ~{{ (100/(rb.markets|length))|round|int }}%.</p>
+  </div>
+
+  <div class="panel span6" id="stress-replay">
+    <h2>🌊 {{ t('Crisis stress replay', '危机压力回放') }}
+      {{ help("What an equal-weight book of the then-available markets would have done through past crises. The point: in a stress everything correlates toward 1, so the 'diversified' six-view book still craters — the tail cost of the concentration the absorption ratio flags in calm times.", "等权持有当时可用市场的组合在过去危机中的表现。要点：在压力中一切相关性趋于 1，因此'分散'的六观点组合依然崩塌 — 这正是吸收比率在平静期所警示的集中度的尾部代价。") }}
+    </h2>
+    <table>
+      <tr><th class="l">{{ t('crisis', '危机') }}</th><th>{{ t('book', '组合') }}</th><th>{{ t('max DD', '最大回撤') }}</th><th class="l">{{ t('worst', '最差') }}</th></tr>
+      {% for s in portfolio.stress_replay %}
+      <tr><td class="l">{{ s.crisis }}</td>
+        <td class="{{ 'neg' if s.book_return_pct < 0 else 'pos' }}">{{ s.book_return_pct }}%</td>
+        <td class="neg">{{ s.book_maxdd_pct }}%</td>
+        <td class="l muted">{% for k,v in s.worst_market.items() %}{{ k }} {{ v }}%{% endfor %}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% endif %}
+
+  {# ===================== FACTOR IC SCORECARD ===================== #}
+  <div class="panel span12" id="factor-scorecard">
+    <h2>🧮 {{ t('Factor IC scorecard — leak-free (point-in-time)', '因子 IC 记分卡 — 无前视（时点）') }}
+      {{ help("Each equity factor's Information Coefficient: the cross-sectional rank correlation of its score vs forward returns, per quarter, built point-in-time (EDGAR as-of fundamentals + prices truncated to the date) so no factor ever sees a not-yet-filed report. IC-IR is mean/vol (the signal-to-noise); t_HAC is a Newey-West t-stat (overlapping windows autocorrelate); q_FDR is the Benjamini-Hochberg false-discovery rate ACROSS the factor panel. Judge survivors vs ~0 — post point-in-time fix the spreads are honestly weak.", "每个股票因子的信息系数：其分数对未来回报的横截面秩相关，按季度、以时点方式构建（EDGAR 截至日基本面 + 截断至当日的价格），因此任何因子都不会看到尚未提交的报表。IC-IR 是均值／波动（信噪比）；t_HAC 是 Newey-West t 统计量（重叠窗口存在自相关）；q_FDR 是跨因子面板的 Benjamini-Hochberg 错误发现率。以约 0 来评判幸存者 — 时点修正后价差确实偏弱。") }}
+    </h2>
+    {% if ic_scorecard and ic_scorecard.factors %}
+    <p class="muted" style="margin:0 0 8px">{{ t('Span', '区间') }} {{ ic_scorecard.span }} · {{ ic_scorecard.rebalances }} {{ t('quarterly rebalances · forward', '次季度再平衡 · 前瞻') }} {{ ic_scorecard.horizon_d }}d · ~{{ ic_scorecard.median_universe }} {{ t('names', '只股票') }}.</p>
+    <table>
+      <tr><th class="l">{{ t('factor', '因子') }}</th><th>{{ t('mean IC', '平均IC') }}</th><th>IC-IR</th><th>t_HAC</th><th>q_FDR</th><th>{{ t('hit', '命中') }}</th><th class="l">{{ t('survives FDR?', '通过FDR？') }}</th></tr>
+      {% for name, r in ic_scorecard.factors.items() %}
+      <tr><td class="l">{{ name }}</td>
+        <td class="{{ 'pos' if r.mean_ic > 0 else 'neg' }}">{{ r.mean_ic }}</td>
+        <td>{{ r.ic_ir }}</td><td>{{ r.t_hac }}</td><td>{{ r.q_fdr if r.q_fdr is defined else '—' }}</td>
+        <td>{{ r.hit }}</td>
+        <td class="l">{% if r.survives_fdr %}<span class="pos">✓</span>{% else %}<span class="muted">no</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% if ic_scorecard.collinearity and ic_scorecard.collinearity.top_pairs %}
+    <p class="muted" style="font-size:12px;margin-top:8px">{{ t('Factor overlap', '因子重叠') }}:
+      {{ t('mean |corr|', '平均|相关|') }} {{ ic_scorecard.collinearity.mean_abs_corr_raw }} {{ t('raw →', '原始 →') }}
+      {{ ic_scorecard.collinearity.mean_abs_corr_orth }} {{ t('orthogonalized. Most-correlated:', '正交化后。相关性最高：') }}
+      {% for p in ic_scorecard.collinearity.top_pairs %}{{ p.a }}↔{{ p.b }} ({{ p.corr }}){{ "; " if not loop.last }}{% endfor %}</p>
+    {% endif %}
+    <p class="muted" style="font-size:12px">{{ ic_scorecard.note }}</p>
+    {% else %}
+    <p class="muted">{{ t('Not yet computed in this build — generated by `python -m scripts.factor_ic_scorecard` (full ~55-quarter grid runs offline/weekly; needs the full price-close cache).', '本次构建尚未计算 — 由 `python -m scripts.factor_ic_scorecard` 生成（完整约55季网格离线／每周运行；需要完整的收盘价缓存）。') }}</p>
+    {% endif %}
+  </div>
+
+  {# ===================== MOVED FROM MAIN DASHBOARD (geek detail) ===================== #}
+  <div class="panel span12 lab-intro" style="padding:10px 16px"><b>{{ t('Market internals & raw detail', '市场内部结构与原始细节') }}</b>
+    <span class="muted">— {{ t('moved off the main dashboard to keep it focused', '已从主仪表盘移出以保持其聚焦') }}</span></div>
+
+  {# --- dials --- #}
+  <div class="panel span6" id="dials">
+    <h2>{{ t('The two dials behind the regime', '周期背后的两个刻度盘') }}
+      {{ help("The regime label comes from two scores between -1 and +1, built from market prices (which lead) plus a small weight on economic data (which confirms).", "周期标签来自两个介于 -1 与 +1 之间的分数，由市场价格（领先）加上经济数据（确认）的小幅权重构建。") }}
+    </h2>
+    <p style="margin:8px 0 0"><b>{{ t('Growth:', '增长：') }} {{ t("RISING", '上行') if latest.growth_score >= 0 else t("FALLING", '下行') }}</b>
+      <span class="muted">({{ "%+.2f" | format(latest.growth_score) }} {{ t('of ±1 · agreement', '／±1 · 一致度') }} {{ (latest.growth_confidence * 100) | round | int }}%)</span></p>
+    <div class="bar"><i style="width: {{ ((latest.growth_score + 1) / 2 * 100) | round(1) }}%"></i></div>
+    <p style="margin:10px 0 0"><b>{{ t('Inflation pressure:', '通胀压力：') }} {{ t("RISING", '上行') if latest.inflation_score >= 0 else t("FALLING", '下行') }}</b>
+      <span class="muted">({{ "%+.2f" | format(latest.inflation_score) }} {{ t('of ±1 · agreement', '／±1 · 一致度') }} {{ (latest.inflation_confidence * 100) | round | int }}%)</span></p>
+    <div class="bar"><i style="width: {{ ((latest.inflation_score + 1) / 2 * 100) | round(1) }}%"></i></div>
+    <h3>{{ t("What's voting for this regime", '哪些指标在为此周期投票') }}</h3>
+    <div>
+      {% for c in components_confirming %}<span class="chip chip-pos">{{ c }}</span>{% endfor %}
+      {% for c in components_contradicting %}<span class="chip chip-neg">{{ c }}</span>{% endfor %}
+      {% if not components_confirming and not components_contradicting %}<span class="muted">{{ t('all quiet', '一切平静') }}</span>{% endif %}
+    </div>
+    <h3>{{ t('Weakest link', '最薄弱环节') }}</h3>
+    <p class="muted">{{ flip_plain }}</p>
+    {% if latest.preference_check %}
+    <h3>{{ t('Does the market agree with the regime?', '市场是否认同此周期？') }}</h3>
+    <p class="muted">{{ latest.preference_check.note }}</p>
+    {% endif %}
+  </div>
+
+  {# --- internals --- #}
+  <div class="panel span6" id="internals">
+    <h2>{{ t('Market internals — risk appetite gauges', '市场内部结构 — 风险偏好计') }}
+      {{ help("Simple ratios between two assets; each answers a question about investor mood. Direction over the last 20 days matters more than the level.", "两类资产之间的简单比率；每一个都回答一个关于投资者情绪的问题。过去 20 天的方向比绝对水平更重要。") }}
+    </h2>
+    <table>
+      <tr><th class="l">{{ t('gauge', '指标') }}</th><th>{{ t('past month', '过去一月') }}</th><th class="l">{{ t("what it's saying", '它在说什么') }}</th></tr>
+      {% for r in internals %}
+      <tr><td class="l">{{ r.label }} {{ help(r.tip) }}</td>
+        <td class="{{ 'pos' if r.good else 'neg' }}">{{ "%+.2f" | format(r.chg) }}%</td>
+        <td class="l muted">{{ r.verdict }}</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  {# --- size & style --- #}
+  <div class="panel span6" id="size-style">
+    <h2>{{ t('US equity — size &amp; style', '美股 — 规模与风格') }}
+      {{ help("Is the advance broad or narrow? Small/mid caps vs the S&P 500; growth vs value style rotation. Direction over the last 20 trading days.", "上涨是广泛还是狭窄？小／中盘对标普500；成长对价值的风格轮动。看过去20个交易日的方向。") }}
+    </h2>
+    <table>
+      <tr><th class="l">{{ t('lens', '维度') }}</th><th>{{ t('past month', '过去一月') }}</th><th class="l">{{ t("what it's saying", '它在说什么') }}</th></tr>
+      {% for r in size_style %}
+      <tr><td class="l">{{ r.label }} {{ help(r.tip) }}</td>
+        <td class="{{ r.tone }}">{{ "%+.2f" | format(r.chg) }}%</td>
+        <td class="l muted">{{ r.verdict }}</td></tr>
+      {% endfor %}
+    </table>
+    {% if breadth_div %}
+    <p class="muted" style="margin:10px 2px 0;font-size:13px">{{ t('Small-cap participation', '小盘参与度') }}:
+      <b>{{ "%.0f" | format(breadth_div.sc) }}%</b> {{ t('of S&P 600 vs', '的标普600 对') }}
+      <b>{{ "%.0f" | format(breadth_div.lc) }}%</b> {{ t('for the S&P 500', '的标普500') }} — {{ breadth_div.verdict }}.</p>
+    {% endif %}
+  </div>
+
+  {# --- accumulation --- #}
+  <div class="panel span6" id="accumulation">
+    <h2>🐳 {{ t('Accumulation watch — sector ETFs', '增持监测 — 板块 ETF') }}
+      {{ help("Each sector SPDR's top weights, with the part of the weight change beyond what price alone explains ('active'). On passive ETFs this is index reconstitution / float-weight flow, not manager conviction. Uncalibrated until more snapshots accrue.", "每只板块 SPDR 的主要权重，以及权重变动中超出价格本身所能解释的部分（'主动'）。在被动 ETF 上这是指数再平衡／流通权重资金流，而非经理人信念。在积累更多快照前未经校准。") }}
+    </h2>
+    {% if accumulation %}
+    <table>
+      <tr><th class="l">{{ t('stock', '个股') }}</th><th>{{ t('active Δwt', '主动权重Δ') }}</th><th>{{ t('est. flow', '估算资金流') }}</th><th class="l">{{ t('technical', '技术面') }}</th></tr>
+      {% for a in accumulation %}
+      <tr><td class="l"><a href="stock.html#{{ a.ticker }}"><b>{{ a.ticker }}</b></a> <span class="muted">{{ a.fund }}</span></td>
+        <td class="{{ 'pos' if a.active_change >= 0 else 'neg' }}"><b>{{ "%+.2f" | format(a.active_change) }}pp</b></td>
+        <td class="muted">{{ a.flow_str }}</td>
+        <td class="l">{% if a.ladder %}<span class="pill st-{{ a.ladder.state | replace(' ', '_') }}">{{ td(a.ladder.label) }}</span>{% if a.confirmed %} ✅{% endif %}{% else %}<span class="muted">—</span>{% endif %}</td></tr>
+      {% endfor %}
+    </table>
+    {% else %}<p class="muted">{{ t('Building — needs at least two daily holdings snapshots per fund.', '构建中 — 每只基金至少需要两个每日持仓快照。') }}</p>{% endif %}
+  </div>
+
+  {# --- holdings / flows --- #}
+  <div class="panel span12" id="holdings">
+    <h2>{{ t("Star fund managers' real moves & ETF money flows", '明星基金经理的真实动作与 ETF 资金流') }}
+      {{ help("Daily holdings of watchlist funds (ARK etc.) with mechanical flow stripped out, plus daily money in/out of each sector ETF. History builds from June 2026.", "观察名单基金（ARK 等）的每日持仓（已剔除机械性资金流），以及每个板块 ETF 的每日资金进出。历史自 2026 年 6 月起累积。") }}
+    </h2>
+    {% if holdings_changes %}
+    <table>
+      <tr><th class="l">{{ t('fund', '基金') }}</th><th class="l">{{ t('stock', '个股') }}</th><th class="l">{{ t('sector', '板块') }}</th><th class="r">{{ t('weight', '权重') }}</th><th class="r">{{ t('conviction Δwt', '信念权重Δ') }}</th><th class="l">{{ t('technical', '技术面') }}</th></tr>
+      {% for h in holdings_changes %}
+      <tr><td class="l"><b>{{ h.fund }}</b></td>
+          <td class="l"><a href="stock.html#{{ h.ticker }}"><b>{{ h.ticker }}</b></a> <span class="muted">{{ h.name }}</span></td>
+          <td class="l muted">{{ td(h.sector) if h.sector else "—" }}</td>
+          <td class="r muted">{% if h.get('weight_pct') is not none %}{{ "%.2f" | format(h.weight_pct) }}%{% else %}—{% endif %}</td>
+          <td class="r {{ ('pos' if h.conviction_pp >= 0 else 'neg') if h.get('conviction_pp') is not none else 'muted' }}"><b>{% if h.get('conviction_pp') is not none %}{{ "%+.2f" | format(h.conviction_pp) }}pp{% else %}—{% endif %}</b></td>
+          <td class="l">{% if h.ladder %}<span class="pill st-{{ h.ladder.state | replace(' ', '_') }}">{{ td(h.ladder.label) }}</span>{% if h.confirmed %} ✅{% endif %}{% else %}<span class="muted">—</span>{% endif %}</td></tr>
+      {% endfor %}
+    </table>
+    {% else %}<p class="muted">{{ t('No significant manager moves in the current window.', '当前窗口内无显著的经理人动作。') }}</p>{% endif %}
+    {% if flows_html %}<div style="margin-top:12px">{{ flows_html | safe }}</div>{% endif %}
+  </div>
+
+  <div class="panel span12" style="text-align:center;background:var(--panel2)">
+    <a class="navbtn" href="macro.html" style="display:inline-block;padding:9px 18px">← {{ t('Back to the dashboard', '返回仪表盘') }}</a>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <span class="made"><span class="l-en">Made with ❤️ in Canada</span><span class="l-zh">用 ❤️ 在加拿大制作</span></span>
+  <span class="dev"><span class="l-en">Developed by Chris Wong</span><span class="l-zh">开发者 Chris Wong</span></span>
+</footer>
+<script src="theme.js"></script>
+</body>
+</html>

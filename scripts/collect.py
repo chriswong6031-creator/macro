@@ -43,7 +43,10 @@ def all_adapters() -> dict:
         ("fedboard_ebp", "collectors.fedboard", "EbpAdapter"),         # Excess Bond Premium (credit risk-appetite)
         ("sovereign", "collectors.sovereign", "SovereignAdapter"),     # ECB euro-area + JGB sovereign yields (Bonds Phase 5)
         ("frbsf_sentiment", "collectors.frbsf", "NewsSentimentAdapter"),  # SF Fed Daily News Sentiment (real-activity nowcast)
+        ("french", "collectors.french", "FrenchAdapter"),             # Ken French monthly factors -> deep-history factor seasonality
         ("eia", "collectors.eia", "EiaAdapter"),                       # petroleum supply (Weekly Petroleum Status)
+        ("ofr_fsi", "collectors.ofr_fsi", "OfrFsiAdapter"),            # OFR Financial Stress Index (functional + regional decomposition)
+        ("rate_futures", "collectors.rate_futures", "RateFuturesAdapter"),  # ZQ/SR3 implied Fed-policy path (display-only, research/DATA_SIGNAL_EXPANSION_2026.md #2)
         # FINRA short interest (Phase 3) is ticker-indexed, fetched from build_factors (like EDGAR), not here.
         ("sentiment_naaim", "collectors.sentiment", "NaaimAdapter"),
         ("sentiment_aaii", "collectors.sentiment", "AaiiAdapter"),
@@ -54,6 +57,10 @@ def all_adapters() -> dict:
         ("stock_prices", "collectors.sector_holdings", "StockPriceAdapter"),
         ("fundamentals", "collectors.fundamentals", "FundamentalsAdapter"),
         ("stock_fundamentals", "collectors.sector_holdings", "StockFundamentalsAdapter"),
+        ("edgar_13f", "collectors.edgar_13f", "Edgar13FAdapter"),  # curated super-investor 13F holdings (smart money)
+        ("ofr", "collectors.ofr", "OfrAdapter"),                   # OFR short-term funding monitor (repo/SOFR plumbing)
+        ("prediction_markets", "collectors.prediction_markets", "PredictionMarketsAdapter"),  # Polymarket macro-event odds
+        ("bis", "collectors.bis", "BisAdapter"),                   # BIS global credit-cycle (credit-gap + DSR)
         # China A-share dashboard — see research/CHINA_DATA_AUDIT.md
         ("china_prices", "collectors.china_prices", "ChinaPriceAdapter"),
         ("china_macro", "collectors.china_macro", "ChinaMacroAdapter"),
@@ -63,6 +70,7 @@ def all_adapters() -> dict:
         ("china_connect", "collectors.china_connect", "ChinaConnectAdapter"),  # 沪深港通 flows (repairs connect_flow)
         ("china_flows", "collectors.china_flows", "ChinaFlowsAdapter"),        # AH premium / limit-up / ETF shares
         ("china_credit", "collectors.china_credit", "ChinaCreditAdapter"),     # 社融 TSF (mofcom, legacy-SSL)
+        ("china_property", "collectors.china_property", "ChinaPropertyAdapter"),  # 70-city price breadth + climate + CGB + rebar/iron-ore
         # Hong Kong / Hang Seng dashboard — see research/HK_DATA_AUDIT.md
         # (macro reused from china_macro; flows reused from china_connect/china_flows)
         ("hk_prices", "collectors.hk_prices", "HkPriceAdapter"),

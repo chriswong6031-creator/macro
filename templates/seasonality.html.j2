@@ -1,0 +1,166 @@
+{% macro help(en, zh='') -%}
+<span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
+{%- endmacro %}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{% set ML = ['J','F','M','A','M','J','J','A','S','O','N','D'] %}
+{% macro mosaic(win) -%}
+<table class="mosaic"><thead><tr><th class="mosf">{{ t('Factor','因子') }}</th>{% for m in range(1,13) %}<th class="mosh" data-m="{{ m }}">{{ ML[m-1] }}</th>{% endfor %}</tr></thead><tbody>
+{% for f in seas.factors %}<tr><td class="mosf">{{ t(f.label_en, f.label_zh) }}{% if f.context_only %} <span class="ctx">{{ t('ref','参考') }}</span>{% endif %}</td>
+{% for m in range(1,13) %}{% set s=(f[win] or {}).get(m) %}{% if s %}{% set a=[(s.mean|abs)/3.0,0.82]|min %}<td class="mos" data-m="{{ m }}" style="background:{{ ('rgba(35,134,54,' ~ a|round(2) ~ ')') if s.mean>0 else ('rgba(218,54,51,' ~ a|round(2) ~ ')') }}" title="{{ ML[m-1] }} · mean {{ '%+.2f'|format(s.mean) }}% · median {{ '%+.2f'|format(s.median) }}% · up {{ s.hit|int }}% (n={{ s.n }})"><span class="mm">{{ '%+.1f'|format(s.mean) }}</span><span class="mh">{{ s.hit|int }}%</span></td>{% else %}<td class="mos muted" data-m="{{ m }}">·</td>{% endif %}{% endfor %}</tr>{% endfor %}
+</tbody></table>
+{%- endmacro %}
+{% macro monthbars(stats) -%}
+{% set vmax = (stats.values()|map(attribute='mean')|map('abs')|max) or 1 %}
+<svg viewBox="0 0 360 100" class="seasbars" preserveAspectRatio="xMidYMid meet">
+  <line x1="6" y1="44" x2="354" y2="44" stroke="var(--line)" stroke-width="1"/>
+  {% for m in range(1,13) %}
+  {% set cx = 6 + (348/12)*(m-0.5) %}
+  <rect class="mcol" data-m="{{ m }}" x="{{ (cx-348/24)|round(1) }}" y="2" width="{{ (348/12)|round(1) }}" height="96" fill="var(--text)" opacity="0"></rect>
+  {% set s = stats.get(m) %}
+  {% if s %}
+  {% set h = [(s.mean|abs)/vmax*34, 1.5]|max %}
+  {% set up = s.mean >= 0 %}
+  <rect x="{{ (cx-7)|round(1) }}" y="{{ (44-h)|round(1) if up else 44 }}" width="14" height="{{ h|round(1) }}" rx="1.5" fill="{{ 'var(--up)' if up else 'var(--down)' }}"><title>{{ ML[m-1] }} · mean {{ '%+.2f'|format(s.mean) }}% · median {{ '%+.2f'|format(s.median) }}% · up {{ s.hit }}% of years (n={{ s.n }})</title></rect>
+  {% endif %}
+  <text x="{{ cx|round(1) }}" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">{{ ML[m-1] }}</text>
+  {% endfor %}
+</svg>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ t('Factor seasonality — Ken French monthly factors', '因子季节性 — Ken French 月度因子') }}</title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1320px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:20px; margin:0; }
+  h2 { font-size:13px; margin:0 0 4px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:14px; }
+  .topline { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+  .muted { color:var(--muted); } .sm { font-size:12px; }
+  .seg button { font-size:12.5px; padding:5px 11px; border-radius:8px; border:1px solid var(--line); background:var(--panel2); color:var(--text); cursor:pointer; }
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:5px; }
+  .help .tip { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%); width:300px; background:var(--panel); border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text); font-weight:400; box-shadow:var(--popover-shadow); pointer-events:none; }
+  .help:hover .tip { display:block; }
+  .seg { display:inline-flex; gap:0; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .seg button { border:0; border-radius:0; background:var(--panel); }
+  .seg button.on { background:var(--panel2); color:var(--text); font-weight:600; }
+  .cardgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:14px; }
+  .fcard { background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:11px 12px; }
+  .fcard h3 { font-size:13px; margin:0 0 6px; display:flex; align-items:center; gap:6px; }
+  .fcard .badge { font-size:10.5px; padding:1px 7px; border-radius:8px; background:var(--panel); border:1px solid var(--line); color:var(--muted); }
+  .ctx { font-size:10.5px; padding:1px 7px; border-radius:8px; background:transparent; border:1px dashed var(--line); color:var(--muted); }
+  .seasbars { width:100%; height:auto; display:block; }
+  .seasgrid[data-win="full"] .win-t30 { display:none; }
+  .seasgrid[data-win="t30"] .win-full { display:none; }
+  .mosaic { border-collapse:separate; border-spacing:2px; font-size:11px; }
+  .mosaic th { color:var(--muted); font-weight:500; padding:2px 6px; text-align:center; }
+  .mosaic th.mosf, .mosaic td.mosf { text-align:left; white-space:nowrap; padding-right:12px; font-size:12.5px; }
+  .mosaic td.mos { width:46px; height:38px; text-align:center; border-radius:5px; color:var(--text); cursor:default; }
+  .mosaic td.mos .mm { display:block; font-size:12px; font-weight:600; font-variant-numeric:tabular-nums; }
+  .mosaic td.mos .mh { display:block; font-size:9px; opacity:.75; }
+  .mosaic td.mos.muted { background:var(--panel2); }
+  .mosaic .curm { outline:2px solid var(--text); outline-offset:-2px; }
+  .mosaic th.curm { outline:0; color:var(--text); font-weight:700; }
+  .secthead { display:flex; align-items:baseline; gap:10px; margin:4px 0 8px; }
+</style>
+</head>
+<body>
+<nav class="site-nav">
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 {{ t('US Macro', '美国宏观') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">{{ t('Regime dashboard', '宏观周期') }}<span class="d">{{ t('Growth · inflation · MRS · nowcast', '增长 · 通胀 · MRS · 即时预测') }}</span></a>
+        <a href="factors.html">🧮 {{ t('Factor Lab', '因子实验室') }}<span class="d">{{ t('Value · quality · low-vol + point-in-time IC', '价值 · 质量 · 低波动 + 时点 IC') }}</span></a>
+        <a href="baskets.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P', '等权主题篮子 vs 标普') }}</span></a>
+        <a href="seasonality.html">🗓 {{ t('Factor Seasonality', '因子季节性') }}<span class="d">{{ t('Ken French monthly, 1926+', 'Ken French 月度，1926+') }}</span></a>
+        <a href="spvector.html">📈 {{ t('S&P / Macro Vector', '标普宏观向量') }}<span class="d">{{ t('Tactical equity↔cash allocation', '战术股票↔现金配置') }}</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }}</a>
+    <a class="nav-link" href="etfs.html">🐳 {{ t('ETF flows', 'ETF 资金流') }}</a>
+    <a class="nav-link active" href="factors.html">🧮 {{ t('Factors', '因子') }}</a>
+    <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国A股') }}</a>
+    <a class="nav-link" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }}</a>
+    <a class="nav-link" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }}</a>
+    <a class="nav-link" href="forex.html">💱 {{ t('Forex', '外汇') }}</a>
+    <a class="nav-link" href="bonds.html">🏛️ {{ t('Bonds', '债券') }}</a>
+    <a class="nav-link" href="discovery.html">🏆 {{ t('Alpha leaders', '阿尔法领先股') }}</a>
+    <a class="nav-link" href="gex.html">🧲 {{ t('GEX magnets', 'Gamma磁吸') }}</a>
+  </div>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+  <div class="panel">
+    <div class="topline">
+      <h1>🗓 {{ t('Factor seasonality', '因子季节性') }}</h1>
+      <span class="muted sm">{{ t('which calendar months each factor STYLE has tended to pay — Ken French, ' ~ seas.factors[0].start ~ '+', '各因子风格在哪些月份历史上更易获得回报 — Ken French，' ~ seas.factors[0].start ~ ' 起') }}</span>
+    </div>
+    <p class="muted sm" style="margin:10px 0 0">{{ t(seas.disclosure_en, seas.disclosure_zh) }}</p>
+  </div>
+
+  <div class="panel">
+    <div class="secthead">
+      <h2 style="margin:0">{{ t('Seasonality mosaic — mean return × hit-rate by month', '季节性矩阵 — 各月平均回报 × 命中率') }}
+        {{ help("A factor × calendar-month grid. The big number is that month's average factor return across all years (green = positive, red = negative; deeper = larger); the small number is the hit-rate (% of years that month was positive). Hover any cell for mean, median, hit-rate and sample size. The current month column is outlined. Median + hit-rate matter because a single crisis month can swing a 30-year average.", '因子 × 日历月份网格。大数为该月历年平均因子回报（绿=正、红=负；越深越大）；小数为命中率（该月为正的年份比例）。悬停查看均值、中位数、命中率与样本量。当前月份列已描边。中位数与命中率很重要，因为单个危机月可大幅扭曲 30 年均值。') }}
+      </h2>
+      <span style="flex:1"></span>
+      <span class="seg" id="winseg">
+        <button data-win="full" class="on">{{ t('Full history', '全历史') }}</button>
+        <button data-win="t30">{{ t('Trailing 30y', '近 30 年') }}</button>
+      </span>
+    </div>
+    <div class="seasgrid" data-win="full" id="grid" style="overflow-x:auto">
+      <div class="win win-full">{{ mosaic('full') }}</div>
+      <div class="win win-t30">{{ mosaic('trailing_30y') }}</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <p class="muted" style="font-size:12px;margin:0">{{ t(
+      'Source: ' ~ seas.source ~ ', as of ' ~ seas.as_of ~ '. Factors mapping to one of our live legs (Value→HML, Profitability→RMW, Investment→CMA) are shown first; Momentum, Size and Market are reference styles we do not rank cross-sectionally. Seasonality is descriptive context only and is deliberately kept out of every calibrated score — see LIMITATIONS.md.',
+      '来源：' ~ seas.source ~ '，截至 ' ~ seas.as_of ~ '。映射到我们在用因子的（价值→HML、盈利→RMW、投资→CMA）排在前面；动量、规模与市场为我们未做横截面排名的参考风格。季节性仅为描述性背景，刻意不纳入任何校准评分 — 参见 LIMITATIONS.md。') }}
+      {{ t('Generated', '生成于') }} {{ built }}</p>
+  </div>
+
+  <script>
+    (function(){
+      var seg=document.getElementById('winseg'), grid=document.getElementById('grid');
+      if(seg&&grid) seg.addEventListener('click', function(e){
+        var b=e.target.closest('button[data-win]'); if(!b) return;
+        grid.setAttribute('data-win', b.dataset.win);
+        seg.querySelectorAll('button').forEach(function(x){x.classList.toggle('on', x===b);});
+      });
+      var cm=new Date().getMonth()+1;
+      document.querySelectorAll('.mcol[data-m="'+cm+'"]').forEach(function(e){e.setAttribute('opacity','0.09');});
+      document.querySelectorAll('.mos[data-m="'+cm+'"], .mosh[data-m="'+cm+'"]').forEach(function(e){e.classList.add('curm');});
+    })();
+  </script>
+  <script src="theme.js"></script>
+</body>
+</html>

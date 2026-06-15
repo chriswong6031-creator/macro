@@ -146,6 +146,10 @@ def mtf_snapshot(close: pd.Series, kind: str = "equity") -> dict:
         "D": _tf_state(daily),
         "3D": _tf_state(daily.resample(tf3).last().dropna()) if len(daily) > 150 else {},
         "W": _tf_state(daily.resample("W-FRI").last().dropna()) if len(daily) > 300 else {},
+        # Monthly — for the multi-timeframe Bottom-Confidence confluence. Needs
+        # ~40 month-end bars for the MACD/RSI math (_tf_state bows out under 40),
+        # i.e. ~900 trading days; thin-history names simply omit it.
+        "M": _tf_state(daily.resample("ME").last().dropna()) if len(daily) > 900 else {},
     }
 
 
@@ -1442,9 +1446,166 @@ def entry_quality_fields(eq: dict, state: str | None = None) -> dict:
             "eq_pct_from_low": eq.get("pct_from_low")}
 
 
+# ------------------------------------------------- bottom confidence (multi-TF) ----
+# Surfaced 0-100 "Bottom Confidence" for the buy-side / bottoming states. It does
+# NOT replace entry_quality — it EXTENDS it. Measured (research/BOTTOM_CONFIDENCE.md,
+# 68,916 walk-forward evals over 109 deep-history names): the two axes are
+# orthogonal — entry_quality's proximity-to-the-low governs DRAWDOWN DEPTH (tail
+# halves across its range), while multi-timeframe confluence governs DURABILITY
+# (the "cycle low held" rate climbs 30%->75%). WEEKLY confirmation is the strong
+# lever (+19pp held-rate vs +4pp monthly), so it dominates the confluence weight.
+# Conservative by design: confluence only DISCOUNTS the (drawdown-calibrated) entry
+# quality when the higher timeframes haven't confirmed the turn — never inflates it.
+
+# States where "is this a durable bottom?" is the live question (the measured pop).
+_BC_STATES = {"DECLINE", "BOTTOM WATCH", "TURN SIGNALED", "FRESH BUY",
+              "COUNTERTREND BOUNCE"}
+# Confluence weights — weekly dominant per the measured held-rate lift.
+_BC_TF_WEIGHTS = {"D": 0.20, "3D": 0.20, "W": 0.45, "M": 0.15}
+_BC_TF_KEY = {"D": "daily", "3D": "three_day", "W": "weekly", "M": "monthly"}
+
+
+def _tf_turning_up(s: dict) -> bool:
+    """A timeframe is 'turning up' if its MACD just crossed up, curled up off a
+    histogram trough, is approaching an up-cross, or StochRSI popped out of
+    oversold — the bottoming-confluence primitive from research/BOTTOM_CONFIDENCE.md."""
+    if not s:
+        return False
+    return bool(s.get("macd_cross_up") or s.get("macd_curl_up")
+                or s.get("macd_approaching_up") or s.get("stoch_cross_up"))
+
+
+# ----- washout / knife-risk (Phase 2) -----
+# MEASURED, counter-intuitively (research/BOTTOM_CONFIDENCE.md, 68,916 evals): a
+# deep stretch BELOW the 200-day + a VIX panic is NOT a higher-confidence bottom —
+# it's a falling KNIFE. Forward hold-rate FALLS (62%>>37% the deeper below the
+# 200-day) and the drawdown tail BLOWS OUT (−10.5%→−22.5%); the big forward
+# *return* is just the violent bounce, not durability. So washout TEMPERS (never
+# boosts) bottom_confidence — a good-looking cycle low inside a broken primary
+# trend that's still falling is knife-risk. The discount eases once price reclaims.
+WASHOUT_MAX_PENALTY = 0.45        # max fraction shaved off bc at full knife severity
+_WO_DEPTH_LO, _WO_DEPTH_HI = 0.08, 0.25   # % below 200dma: 0 knife at 8%, full at 25%
+
+
+def market_vix_context(vix: "pd.Series | None") -> dict:
+    """Market panic/washout context from VIX, computed ONCE (build-time) and
+    threaded to every name like the liquidity regime. {pct: 1y percentile,
+    panic: pct>=0.85, fading: rolling off a spike}. {} when VIX unavailable."""
+    if vix is None:
+        return {}
+    v = vix.dropna()
+    if len(v) < 60:
+        return {}
+    now = float(v.iloc[-1])
+    pct = float((v.iloc[-252:] <= now).mean())
+    fading = len(v) >= 6 and now < float(v.iloc[-6])
+    return {"pct": round(pct, 2), "panic": bool(pct >= 0.85), "fading": bool(fading)}
+
+
+def washout(close: pd.Series, cyc: dict, vix_ctx: dict | None = None) -> dict:
+    """Per-stock knife-risk read: how stretched price is BELOW its 200-day (broken
+    primary trend), gated by whether it's still falling vs reclaiming, amplified by
+    a market VIX panic. 0..1 `knife` severity (orthogonal to cycle position)."""
+    c = close.dropna()
+    if len(c) < 200 or not cyc:
+        return {}
+    price = float(c.iloc[-1])
+    sma200 = float(c.iloc[-200:].mean())
+    d200 = price / sma200 - 1.0 if sma200 else 0.0          # negative = below
+    depth = _eq_ramp(-d200, _WO_DEPTH_LO, _WO_DEPTH_HI)     # 0..1 how far below
+    reclaim = bool(cyc.get("above_ma10"))                  # the reversal that matters
+    # deep + still falling = acute knife; deep + reclaiming = much milder (measured:
+    # deep&falling held 29.6% vs deep&reversing 55.7%)
+    knife = depth * (0.35 if reclaim else 1.0)
+    vp = vix_ctx or {}
+    if vp.get("panic"):
+        knife = min(1.0, knife * 1.25)                     # market panic worsens it
+    knife = float(np.clip(knife, 0.0, 1.0))
+    level = ("high" if knife >= 0.7 else "elevated" if knife >= 0.4
+             else "watch" if knife >= 0.12 else "none")
+    return {"knife": round(knife, 2), "pct_below_200d": round(100 * d200, 1),
+            "depth": round(depth, 2), "reclaim": reclaim,
+            "vix_panic": bool(vp.get("panic", False)), "level": level}
+
+
+def bottom_confidence(mtf: dict, eq: dict, state: str | None,
+                      wo: dict | None = None) -> dict:
+    """0-100 confidence this is a DURABLE, low-drawdown bottom (buy-side states
+    only). = entry_quality's LONG magnitude (proximity = the drawdown-depth axis)
+    DISCOUNTED when (a) higher timeframes haven't confirmed the turn (durability
+    axis; weekly heaviest) and (b) price is deeply washed out below its 200-day
+    (knife risk; Phase 2). Both are discounts — confluence/washout never inflate.
+    Returns {} for non-bottoming states."""
+    if not eq or state not in _BC_STATES:
+        return {}
+    long_eq = float(eq.get("long", 0.0)) / 100.0                 # 0..1 (depth axis)
+    tf = {_BC_TF_KEY[k]: _tf_turning_up(mtf.get(k, {})) for k in _BC_TF_WEIGHTS}
+    have_m = bool(mtf.get("M"))
+    # weighted confluence in [0,1]; if monthly is unavailable (thin history) drop
+    # its weight and renormalise so a missing bar can't silently cap the score.
+    wts = {k: w for k, w in _BC_TF_WEIGHTS.items() if k != "M" or have_m}
+    wsum = sum(wts.values()) or 1.0
+    tf_score = sum(w * float(tf[_BC_TF_KEY[k]]) for k, w in wts.items()) / wsum
+    knife = float((wo or {}).get("knife", 0.0))
+    washout_factor = 1.0 - WASHOUT_MAX_PENALTY * knife           # <=1, knife-risk temper
+    bc = long_eq * (0.55 + 0.45 * tf_score) * washout_factor * 100.0
+    if state == "COUNTERTREND BOUNCE":          # high-risk bounce, never a confident bottom
+        bc = min(bc, 30.0)
+    return {"score": round(float(np.clip(bc, 0, 100)), 1),
+            "tf": tf, "tf_score": round(tf_score, 2), "monthly_avail": have_m,
+            "knife": round(knife, 2), "wo_level": (wo or {}).get("level", "none"),
+            "pct_below_200d": (wo or {}).get("pct_below_200d")}
+
+
+def bottom_confidence_fields(bc: dict) -> dict:
+    """Per-timeframe breakdown line + honest tooltip (EN+ZH) for the UI."""
+    if not bc:
+        return {}
+    sr = int(round(bc["score"]))
+    grade, grade_zh = _eq_grade(sr)                     # reuse strong/solid/light/minimal bands
+    tf = bc["tf"]
+    mk = lambda v: "✓" if v else "✗"
+    mmark = mk(tf["monthly"]) if bc.get("monthly_avail") else "—"
+    line = (f"Daily {mk(tf['daily'])} · 3-Day {mk(tf['three_day'])} · "
+            f"Weekly {mk(tf['weekly'])} · Monthly {mmark}")
+    line_zh = (f"日线 {mk(tf['daily'])} · 3日 {mk(tf['three_day'])} · "
+               f"周线 {mk(tf['weekly'])} · 月线 {mmark}")
+    tip = ("Confidence this is a DURABLE, low-drawdown bottom: how near price is to "
+           "the cycle low (the drawdown-depth axis) discounted when higher "
+           "timeframes haven't confirmed the turn. Measured: weekly confirmation "
+           "lifted the 'cycle-low held' rate ~19pp — a higher score held far more "
+           "often. Risk/durability, NOT a return forecast.")
+    tip_zh = ("衡量当前是否为「持久、低回撤」底部的信心：价格距周期低点的远近（回撤深度轴），"
+              "并在更高周期尚未确认转向时打折。实测：周线确认使「周期低点守住」的比例提升约 "
+              "19 个百分点——分数越高，低点守住的概率越大。这是风险/持久性，并非收益预测。")
+    out = {"bc_score": sr, "bc_grade": grade, "bc_grade_zh": grade_zh,
+           "bc_line": line, "bc_line_zh": line_zh,
+           "bc_weekly": tf["weekly"], "bc_monthly": tf["monthly"],
+           "bc_tip": tip, "bc_tip_zh": tip_zh}
+    # Phase 2 — knife-risk caution when price is deeply washed out below its 200-day
+    lvl = bc.get("wo_level", "none")
+    if lvl in ("elevated", "high"):
+        below = bc.get("pct_below_200d")
+        belowtxt = f"{abs(below):.0f}% below its 200-day" if below is not None else "far below its 200-day"
+        out["bc_knife"] = lvl
+        out["bc_knife_line"] = (
+            f"⚠ Deep washout — price is {belowtxt}, a broken primary trend. "
+            "Measured: setups this stretched below the 200-day held the cycle low "
+            "only ~37% of the time and drew a ~−22% tail (violent bounces, rarely "
+            "the durable low). Treat as knife-risk — wait for it to reclaim the "
+            "10-day average and size small. The score above is already tempered for this.")
+        out["bc_knife_line_zh"] = (
+            f"⚠ 深度超卖——价格较 200 日均线低约 {abs(below):.0f}%（主趋势已破）。"
+            "实测：如此远低于 200 日线的形态，仅约 37% 守住周期低点，且回撤尾部约 −22%"
+            "（反弹猛烈，但很少是持久低点）。视为「接飞刀」风险——等其收复 10 日均线后再小仓参与。"
+            "上方分数已据此打折。")
+    return out
+
+
 def analyze(close: pd.Series, high: pd.Series | None = None,
             kind: str = "equity", liquidity: str | None = None,
-            macro_drag: float | None = None, macro_beta: float = 0.0) -> dict:
+            macro_drag: float | None = None, macro_beta: float = 0.0,
+            vix_ctx: dict | None = None) -> dict:
     """`liquidity` = live US net-liquidity regime ("expanding"/"contracting"/
     "neutral", from engine.regime.liquidity_overlay), threaded into the ladder as
     an orthogonal macro conviction modifier. None => no liquidity context (keeps
@@ -1453,7 +1614,9 @@ def analyze(close: pd.Series, high: pd.Series | None = None,
     `macro_drag` (MRS, 0..1; engine.conditions.macro_risk_score) × `macro_beta`
     (this name's sector sensitivity, engine.conditions.sector_macro_beta) add a
     risk-OFF, subtract-only, buy-setup-only conviction penalty for macro-sensitive
-    names. Defaults (None / 0.0) keep every existing caller unchanged."""
+    names. `vix_ctx` = market panic context (engine.cycles.market_vix_context) used
+    by the Phase-2 washout knife-risk temper on Bottom Confidence. Defaults keep
+    every existing caller unchanged."""
     cyc = cycle_state(close, high, kind)
     mtf = mtf_snapshot(close, kind)
     early = early_signals(close, cyc, mtf)
@@ -1467,6 +1630,11 @@ def analyze(close: pd.Series, high: pd.Series | None = None,
         eq = entry_quality(close, cyc, mtf, early, regime, state=lad["state"])
         if eq:
             lad.update(entry_quality_fields(eq, state=lad["state"]))
+            wo = washout(close, cyc, vix_ctx)
+            bc = bottom_confidence(mtf, eq, lad["state"], wo=wo)
+            if bc:
+                lad.update(bottom_confidence_fields(bc))
+                lad["bottom_confidence"] = bc["score"]
     return {"cycle": cyc, "mtf": mtf, "early": early, "ladder": lad}
 
 
