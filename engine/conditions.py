@@ -235,27 +235,36 @@ def conditions_frame(f: pd.DataFrame) -> pd.DataFrame:
         out["yield_chg_1m"] = us10y.diff(21)          # ~1-month 10y change (pp)
 
     # RORO cross-asset composite (risk-on positive) ---------------------------
+    # Each leg is the SIGNED contribution exactly as it enters the equal-weight
+    # mean (six risk/fear legs negated, copper/gold positive). The legs are also
+    # stored as out["roro_<key>"] columns so a DISPLAY-ONLY decomposition can read
+    # the per-leg contributions straight back (mean(roro_*) == roro) without
+    # recomputing them — consumed by the display-only Fear/Euphoria decomposition
+    # in scripts/build_site.py. Additive columns only; never scored — nothing in
+    # axes / regime / macro_risk reads them.
     zw = cfg["roro"]["z_window_d"]
-    roro_parts = []
+    roro_legs: dict[str, pd.Series] = {}
     if vix is not None:
-        roro_parts.append(-_z(vix, zw))
+        roro_legs["vix"] = -_z(vix, zw)
     hy = _col(f, "hy_oas")
     if hy is not None:
-        roro_parts.append(-_z(hy, zw))
+        roro_legs["hy_oas"] = -_z(hy, zw)
     if skew is not None:
-        roro_parts.append(-_z(skew, zw))
+        roro_legs["skew"] = -_z(skew, zw)
     if "vix_term" in out:
-        roro_parts.append(-_z(out["vix_term"], zw))
+        roro_legs["vix_term"] = -_z(out["vix_term"], zw)
     if nfci is not None:
-        roro_parts.append(-_z(nfci, zw))
+        roro_legs["nfci"] = -_z(nfci, zw)
     cg = _col(f, "copper_gold")
     if cg is not None:
-        roro_parts.append(_z(cg, zw))
+        roro_legs["copper_gold"] = _z(cg, zw)
     dxy = _col(f, "dxy")
     if dxy is not None:
-        roro_parts.append(-_z(dxy.pct_change(20, fill_method=None), zw))
-    if roro_parts:
-        out["roro"] = pd.concat(roro_parts, axis=1).mean(axis=1)
+        roro_legs["dxy"] = -_z(dxy.pct_change(20, fill_method=None), zw)
+    if roro_legs:
+        for _k, _s in roro_legs.items():
+            out[f"roro_{_k}"] = _s
+        out["roro"] = pd.concat(list(roro_legs.values()), axis=1).mean(axis=1)
 
     # Volatility-target exposure scalar ---------------------------------------
     tcfg = cfg["vol_target"]

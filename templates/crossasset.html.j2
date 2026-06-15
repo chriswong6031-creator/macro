@@ -39,6 +39,8 @@
         <div class="nav-dd-menu">
           <a href="macro.html">📊 {{ t('Macro dashboard', '宏观仪表盘') }}</a>
           <a href="spvector.html">📈 {{ t('S&P / Macro Vector', '标普宏观向量') }}</a>
+          <a href="signal_lab.html">🔬 {{ t('Signal Lab', '信号实验室') }}</a>
+          <a href="validation_timeline.html">🧪 {{ t('Validation timeline', '验证时间线') }}</a>
         </div>
       </div>
       <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }}</a>
@@ -210,6 +212,39 @@
     </div>
     {% endif %}
     <p class="ca-note">{{ t(correlation.headline, '') }}</p>
+  </div>
+  {% endif %}
+
+  <!-- ===================== LEAD / LAG TRANSMISSION ===================== -->
+  {% if leadlag and leadlag.verdict and leadlag.verdict != 'unknown' %}
+  {% set lv = {'lead':'var(--up,#16a34a)','weak_lead':'var(--amber,#c98a2e)','contemporaneous':'var(--muted)'} %}
+  <div class="card">
+    <h2>{{ t('Lead / lag transmission — what moves first?', '领先/滞后传导 — 谁先动？') }}</h2>
+    <div class="ca-hero" style="font-size:18px;color:{{ lv.get(leadlag.verdict,'var(--muted)') }}">{{ t(
+      {'lead':'Lead detected','weak_lead':'Tentative lead','contemporaneous':'No stable lead'}.get(leadlag.verdict, leadlag.verdict),
+      {'lead':'检测到领先','weak_lead':'暂定领先','contemporaneous':'无稳定领先'}.get(leadlag.verdict, leadlag.verdict)) }}</div>
+    <div class="ca-sub">{{ t('Window', '窗口') }} {{ leadlag.window_d }}d ·
+      {{ leadlag.n_significant }}/{{ leadlag.n_tested }} {{ t('pairs survive HAC + FDR', '对通过 HAC + FDR') }}
+      {% if leadlag.lead_asset and leadlag.lead_asset.n_followers >= 2 %} · {{ t('lead asset', '领先资产') }}: <b>{{ leadlag.lead_asset.name }}</b>{% endif %}</div>
+    <p class="ca-note" style="border-top:none;margin:2px 0 0;padding-top:0">{{ t(leadlag.headline, '') }}</p>
+    {% if leadlag.links %}
+    <div style="overflow-x:auto;margin-top:8px">
+      <table class="ca">
+        <tr><th>{{ t('leader → follower', '领先 → 滞后') }}</th><th class="r">{{ t('lag', '滞后') }}</th>
+            <th class="r">r</th><th class="r">{{ t('HAC t', 'HAC t') }}</th><th class="r">{{ t('FDR q', 'FDR q') }}</th></tr>
+        {% for l in leadlag.links %}
+        <tr><td><b>{{ l.leader }}</b> → {{ l.follower }}</td>
+            <td class="r">{{ l.lag }}d</td>
+            <td class="r {{ 'pos' if l.r >= 0 else 'neg' }}">{{ '%+.2f'|format(l.r) }}</td>
+            <td class="r">{{ '%+.1f'|format(l.t) }}</td>
+            <td class="r">{{ l.q }}</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+    {% endif %}
+    <p class="ca-note">{{ t(leadlag.evidence, '') }}
+      {{ t('Validation: scripts/cross_asset_leadlag_phase0.py — only timezone lag-1 links are split-half stable.',
+           '验证：scripts/cross_asset_leadlag_phase0.py — 仅时区滞后1日链路两半稳定。') }}</p>
   </div>
   {% endif %}
 
