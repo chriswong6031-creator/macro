@@ -40,179 +40,179 @@
   "flip_condition": {
     "axis": "growth",
     "component": "breadth_direction",
-    "z": 0.72,
+    "z": 0.65,
     "threshold": 0.45,
-    "margin": 0.27,
-    "note": "growth axis flips risk: breadth_direction slope z=0.72 is the closest supporter to its +/-0.45 cutoff"
+    "margin": 0.2,
+    "note": "growth axis flips risk: breadth_direction slope z=0.65 is the closest supporter to its +/-0.45 cutoff"
   },
   "sector_rs": [
     {
       "ticker": "SMH",
-      "rs": 0.8588650151835946,
-      "mom_20d_pct": 14.11,
-      "mom_60d_pct": 43.1,
+      "rs": 0.857279070698266,
+      "mom_20d_pct": 13.9,
+      "mom_60d_pct": 42.84,
       "above_200d_trend": true,
       "pctile_252d": 100.0,
       "rank": 1
     },
     {
       "ticker": "XLK",
-      "rs": 0.2541066210304469,
-      "mom_20d_pct": 6.56,
-      "mom_60d_pct": 20.94,
+      "rs": 0.25408368631861783,
+      "mom_20d_pct": 6.55,
+      "mom_60d_pct": 20.92,
       "above_200d_trend": true,
       "pctile_252d": 98.4,
       "rank": 2
     },
     {
       "ticker": "MTUM",
-      "rs": 0.44269286577230155,
-      "mom_20d_pct": 9.71,
-      "mom_60d_pct": 18.0,
+      "rs": 0.44199355792590606,
+      "mom_20d_pct": 9.53,
+      "mom_60d_pct": 17.81,
       "above_200d_trend": true,
       "pctile_252d": 100.0,
       "rank": 3
     },
     {
       "ticker": "IWM",
-      "rs": 0.39068486994696133,
-      "mom_20d_pct": 4.03,
-      "mom_60d_pct": 3.81,
+      "rs": 0.39033955722162006,
+      "mom_20d_pct": 3.94,
+      "mom_60d_pct": 3.72,
       "above_200d_trend": true,
-      "pctile_252d": 97.6,
+      "pctile_252d": 97.2,
       "rank": 4
     },
     {
       "ticker": "QUAL",
-      "rs": 0.29043027246058645,
-      "mom_20d_pct": 2.01,
-      "mom_60d_pct": -1.6,
+      "rs": 0.29039650250442,
+      "mom_20d_pct": 2.0,
+      "mom_60d_pct": -1.61,
       "above_200d_trend": false,
       "pctile_252d": 21.4,
       "rank": 5
     },
     {
-      "ticker": "XLB",
-      "rs": 0.06972631144164992,
-      "mom_20d_pct": 2.46,
-      "mom_60d_pct": -3.47,
-      "above_200d_trend": true,
-      "pctile_252d": 47.2,
+      "ticker": "RSP",
+      "rs": 0.28202376702445636,
+      "mom_20d_pct": 3.43,
+      "mom_60d_pct": -3.6,
+      "above_200d_trend": false,
+      "pctile_252d": 29.0,
       "rank": 6
     },
     {
-      "ticker": "RSP",
-      "rs": 0.28238261963134725,
-      "mom_20d_pct": 3.56,
-      "mom_60d_pct": -3.47,
+      "ticker": "XLB",
+      "rs": 0.0695520830006303,
+      "mom_20d_pct": 2.21,
+      "mom_60d_pct": -3.71,
       "above_200d_trend": false,
-      "pctile_252d": 31.3,
-      "rank": 6
+      "pctile_252d": 46.4,
+      "rank": 7
     },
     {
       "ticker": "XLF",
-      "rs": 0.07107076380620432,
-      "mom_20d_pct": 2.81,
-      "mom_60d_pct": -4.05,
+      "rs": 0.07095637449579066,
+      "mom_20d_pct": 2.64,
+      "mom_60d_pct": -4.21,
       "above_200d_trend": false,
       "pctile_252d": 9.5,
       "rank": 8
     },
     {
       "ticker": "XLI",
-      "rs": 0.23744171833109987,
-      "mom_20d_pct": 2.4,
-      "mom_60d_pct": -4.5,
-      "above_200d_trend": true,
-      "pctile_252d": 54.8,
+      "rs": 0.23671553678358004,
+      "mom_20d_pct": 2.08,
+      "mom_60d_pct": -4.79,
+      "above_200d_trend": false,
+      "pctile_252d": 52.0,
       "rank": 9
     },
     {
       "ticker": "XLY",
-      "rs": 0.15699184157703044,
-      "mom_20d_pct": -0.42,
-      "mom_60d_pct": -5.64,
+      "rs": 0.15708172305064996,
+      "mom_20d_pct": -0.36,
+      "mom_60d_pct": -5.59,
       "above_200d_trend": false,
       "pctile_252d": 3.6,
       "rank": 10
     },
     {
       "ticker": "XLRE",
-      "rs": 0.059499523930958996,
-      "mom_20d_pct": 1.74,
-      "mom_60d_pct": -5.98,
+      "rs": 0.05960282535122322,
+      "mom_20d_pct": 1.91,
+      "mom_60d_pct": -5.81,
       "above_200d_trend": false,
-      "pctile_252d": 19.8,
+      "pctile_252d": 21.0,
       "rank": 11
     },
     {
       "ticker": "XLP",
-      "rs": 0.11325641452094663,
-      "mom_20d_pct": -1.09,
-      "mom_60d_pct": -8.57,
+      "rs": 0.1132440435881067,
+      "mom_20d_pct": -1.1,
+      "mom_60d_pct": -8.58,
       "above_200d_trend": false,
-      "pctile_252d": 12.3,
+      "pctile_252d": 11.9,
       "rank": 12
     },
     {
       "ticker": "XLV",
-      "rs": 0.20256200014974182,
-      "mom_20d_pct": 3.19,
-      "mom_60d_pct": -8.71,
+      "rs": 0.20254891290505037,
+      "mom_20d_pct": 3.18,
+      "mom_60d_pct": -8.72,
       "above_200d_trend": false,
       "pctile_252d": 11.5,
       "rank": 13
     },
     {
       "ticker": "USMV",
-      "rs": 0.1275566981410183,
-      "mom_20d_pct": -0.44,
-      "mom_60d_pct": -10.02,
+      "rs": 0.12763137945854072,
+      "mom_20d_pct": -0.38,
+      "mom_60d_pct": -9.97,
       "above_200d_trend": false,
-      "pctile_252d": 2.0,
+      "pctile_252d": 2.8,
       "rank": 14
     },
     {
       "ticker": "LQD",
-      "rs": 0.14438056003442445,
-      "mom_20d_pct": -0.68,
-      "mom_60d_pct": -11.96,
+      "rs": 0.144390121479227,
+      "mom_20d_pct": -0.67,
+      "mom_60d_pct": -11.95,
       "above_200d_trend": false,
       "pctile_252d": 3.2,
       "rank": 15
     },
     {
       "ticker": "XLC",
-      "rs": 0.14855341069347444,
-      "mom_20d_pct": -5.4,
-      "mom_60d_pct": -13.33,
+      "rs": 0.1486294926027734,
+      "mom_20d_pct": -5.36,
+      "mom_60d_pct": -13.28,
       "above_200d_trend": false,
-      "pctile_252d": 0.4,
+      "pctile_252d": 0.8,
       "rank": 16
     },
     {
       "ticker": "XLU",
-      "rs": 0.05935380459856174,
-      "mom_20d_pct": 0.01,
-      "mom_60d_pct": -15.5,
+      "rs": 0.05927162495598212,
+      "mom_20d_pct": -0.13,
+      "mom_60d_pct": -15.61,
       "above_200d_trend": false,
-      "pctile_252d": 3.6,
+      "pctile_252d": 3.2,
       "rank": 17
     },
     {
       "ticker": "XLE",
-      "rs": 0.07381305751945715,
-      "mom_20d_pct": -8.21,
-      "mom_60d_pct": -17.64,
+      "rs": 0.07359272681182828,
+      "mom_20d_pct": -8.48,
+      "mom_60d_pct": -17.89,
       "above_200d_trend": true,
       "pctile_252d": 63.9,
       "rank": 18
     },
     {
       "ticker": "GC=F",
-      "rs": 5.753232264609005,
-      "mom_20d_pct": -6.65,
-      "mom_60d_pct": -17.72,
+      "rs": 5.740365250318687,
+      "mom_20d_pct": -6.86,
+      "mom_60d_pct": -17.9,
       "above_200d_trend": false,
       "pctile_252d": 30.2,
       "rank": 19
@@ -238,31 +238,44 @@
   },
   "pair_ratios": {
     "xly_xlp": {
-      "level": 1.3862,
-      "chg_20d_pct": 2.37
+      "level": 1.3871,
+      "chg_20d_pct": 2.44
     },
     "xlk_xlu": {
-      "level": 4.2812,
-      "chg_20d_pct": 7.89
+      "level": 4.2868,
+      "chg_20d_pct": 8.03
     },
     "hyg_lqd": {
-      "level": 0.7347,
-      "chg_20d_pct": -0.43
+      "level": 0.7344,
+      "chg_20d_pct": -0.47
     },
     "sphb_splv": {
-      "level": 2.0796,
-      "chg_20d_pct": 12.42
+      "level": 2.0787,
+      "chg_20d_pct": 12.37
     },
     "vix_ratio": {
-      "level": 0.8295,
-      "chg_20d_pct": -2.62
+      "level": 0.8368,
+      "chg_20d_pct": -1.77
     },
     "copper_gold": {
       "level": 0.0015,
-      "chg_20d_pct": 8.65
+      "chg_20d_pct": 8.74
     }
   },
-  "alerts": [],
+  "alerts": [
+    {
+      "rule": "net_liquidity_roc_flip",
+      "severity": "warn",
+      "message": "Net liquidity 4-week RoC flipped negative (contracting) and held 2d: +1bn -> -27bn",
+      "message_zh": "\u51c0\u6d41\u52a8\u6027 4 \u5468 RoC \u8f6c\u4e3anegative (contracting)\u5e76\u6301\u7eed 2 \u5929\uff1a+1bn -> -27bn"
+    },
+    {
+      "rule": "sector_rs_cross_low",
+      "severity": "info",
+      "message": "XLU RS vs SPY crossed below 10th pctile of 90d (now 9)",
+      "message_zh": "XLU RS \u76f8\u5bf9 SPY \u4e0b\u7a7f 90 \u5929\u7b2c 10 \u767e\u5206\u4f4d\uff08\u73b0\u4e3a 9\uff09"
+    }
+  ],
   "conditions": {
     "financial_conditions": {
       "nfci": -0.506,
@@ -335,9 +348,9 @@
       "indeed_postings": 100.19,
       "indeed_chg_3m_pct": -3.076327754667707,
       "indeed_trend": "falling",
-      "withheld_tax_yoy_pct": 3.3611434643846083,
-      "income_trend": "rising",
-      "read": "labor firm"
+      "withheld_tax_yoy_pct": -2.4590406954335453,
+      "income_trend": "falling",
+      "read": "labor mixed"
     },
     "inflation_nowcast": {
       "sticky_ann": 3.3161359677362334,
@@ -348,19 +361,19 @@
       "read": "transitory (flexible-led)"
     },
     "risk_appetite": {
-      "vrp": 0.7923362840587842,
+      "vrp": 0.9015603437511537,
       "vrp_pctile": 0.13690476190476192,
       "vrp_state": "normal",
-      "realized_vol": 15.307664097410942,
-      "vix_term": 0.8294693718720613,
+      "realized_vol": 15.2984404191883,
+      "vix_term": 0.8367768725315796,
       "vix_term_state": "contango (calm)",
       "skew": 142.6,
       "skew_pctile": 0.32043650793650796,
-      "stock_bond_corr": 0.6714468999719923,
+      "stock_bond_corr": 0.6663714594817538,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.5748099787565272,
+      "roro": 0.5497819487151783,
       "roro_state": "risk-on",
-      "vol_target_scalar": 0.7839210426644793,
+      "vol_target_scalar": 0.7843936813944001,
       "news_sentiment": -0.05408370867371559,
       "news_sentiment_z": -0.1451914327269076,
       "news_sentiment_state": "pessimistic"
@@ -387,17 +400,17 @@
       "strong": false,
       "state": "calm",
       "vix_low": false,
-      "vix_pctile": 0.28273809523809523,
+      "vix_pctile": 0.30158730158730157,
       "contango": true,
-      "vix_term": 0.8294693718720613,
+      "vix_term": 0.8367768725315796,
       "breadth_div": false,
-      "spy_high_prox": 0.9938254507205623,
-      "breadth_above200_pctile": 0.48214285714285715,
+      "spy_high_prox": 0.9937596400744247,
+      "breadth_above200_pctile": 0.45337301587301587,
       "credit_widen": false,
       "hy_oas_chg_21d_bp": -9.0
     },
     "style_tilt": {
-      "yield_chg_1m_bp": -14.0,
+      "yield_chg_1m_bp": -11.0,
       "tilt": "growth",
       "driver": "10y yield direction",
       "measured": "rising 10y -> value (+0.84%/63d, t=+3.0, all 4 sub-periods); Q1->value, Q4->growth"
@@ -409,28 +422,15 @@
     "kind": "fomc_statement",
     "doc_id": "fomc_2026-04-29",
     "asof": "2026-04-29",
-    "tone_score": 0.2,
-    "guidance_direction": "on_hold",
+    "tone_score": 0.0,
+    "guidance_direction": "unknown",
     "risk_delta": 0.0,
     "shock_reversible": "unknown",
-    "confidence": "medium",
+    "confidence": "low",
     "confidence_gated": false,
     "dropped_fields": [],
-    "evidence": [
-      {
-        "field": "tone_score",
-        "quote_span": "Inflation is elevated, in part reflecting the recent increase in global energy prices."
-      },
-      {
-        "field": "guidance_direction",
-        "quote_span": "the Committee decided to maintain the target range for the federal funds rate at 3\u202f1/2 to 3\u202f3/4 percent."
-      },
-      {
-        "field": "risk_delta",
-        "quote_span": "the Committee decided to maintain the target range for the federal funds rate at 3\u202f1/2 to 3\u202f3/4 percent."
-      }
-    ],
-    "degraded_reason": null,
+    "evidence": [],
+    "degraded_reason": "stop_max_tokens",
     "disclaimer": "Context only \u2014 not a signal. This is a machine DIGEST of a public document, produced by an AI model after the fact. The tone / guidance / risk / reversibility readings are background context; they are NOT inputs to any score, signal or allocation unless a downstream, separately-gated step promotes a single field, and even then only as one bounded factor. \u201cunknown\u201d means the evidence was insufficient \u2014 the honest answer. Every non-unknown field is backed by a quote verified to appear verbatim in the source; unverifiable claims are dropped."
   },
   "dislocation": {
@@ -453,13 +453,13 @@
       "breakeven_10y_1m": 2.38,
       "primary_trend": "up",
       "spy_drawdown_pct": -0.6,
-      "vix": 16.1,
-      "vix_term": 0.829,
-      "vix_front_future": 17.97,
-      "vix_vs_front": 0.9,
+      "vix": 16.2,
+      "vix_term": 0.837,
+      "vix_front_future": 16.11,
+      "vix_vs_front": 1.01,
       "vix_reliable": true,
       "vix_intraday_high": 16.9,
-      "vix_wick_pct": 4.7,
+      "vix_wick_pct": 4.0,
       "vrp_pctile": 0.14,
       "capitulation_active": true,
       "capitulation_strong": false,
@@ -489,17 +489,17 @@
       "Commodities",
       "Dollar"
     ],
-    "absorption_ratio": 0.447,
+    "absorption_ratio": 0.446,
     "absorption_pctile_5y": 0.98,
     "absorption_floor": 0.167,
-    "mean_abs_corr": 0.341,
+    "mean_abs_corr": 0.34,
     "pc1_loadings": {
       "US": 0.53,
       "Crypto": 0.3,
       "China": 0.32,
       "HK": 0.29,
       "Commodities": 0.52,
-      "Dollar": 0.42
+      "Dollar": 0.41
     },
     "dominant_cluster": [
       "US",
@@ -546,7 +546,7 @@
         "China": 1.0,
         "HK": 0.72,
         "Commodities": 0.4,
-        "Dollar": 0.04
+        "Dollar": 0.03
       },
       "HK": {
         "US": 0.22,
@@ -567,7 +567,7 @@
       "Dollar": {
         "US": 0.63,
         "Crypto": 0.35,
-        "China": 0.04,
+        "China": 0.03,
         "HK": -0.02,
         "Commodities": 0.49,
         "Dollar": 1.0
@@ -588,16 +588,16 @@
     "dir_sign": -1,
     "confidence": "medium",
     "confidence_zh": "\u4e2d",
-    "strength": 1.42,
-    "dominance_ratio": 1.39,
+    "strength": 1.43,
+    "dominance_ratio": 1.44,
     "agreement": 0.88,
     "runner_up": "crypto_liquidity",
     "runner_up_label": "Crypto liquidity",
     "runner_up_label_zh": "\u52a0\u5bc6\u6d41\u52a8\u6027",
-    "headline": "Oil shock \u2014 oil collapsing \u2014 energy lags, breakevens down. oil (WTI) -1.7\u03c3, energy sector RS -1.9\u03c3, 10y breakeven -1.1\u03c3.",
+    "headline": "Oil shock \u2014 oil collapsing \u2014 energy lags, breakevens down. oil (WTI) -1.7\u03c3, energy sector RS -2.0\u03c3, 10y breakeven -1.1\u03c3.",
     "evidence": [
       "oil (WTI) -1.7\u03c3",
-      "energy sector RS -1.9\u03c3",
+      "energy sector RS -2.0\u03c3",
       "10y breakeven -1.1\u03c3"
     ],
     "evidence_legs": [
@@ -609,7 +609,7 @@
       {
         "en": "energy sector RS",
         "zh": "\u80fd\u6e90\u677f\u5757\u76f8\u5bf9\u5f3a\u5ea6",
-        "z": -1.9
+        "z": -2.0
       },
       {
         "en": "10y breakeven",
@@ -619,15 +619,15 @@
     ],
     "invalidation": "Fades if oil (WTI) reverses and the rest of the inflation fingerprint stops confirming.",
     "invalidation_zh": "\u82e5\u539f\u6cb9(WTI)\u53cd\u8f6c\u3001\u4e14\u901a\u80c0\u6307\u7eb9\u5176\u4f59\u817f\u505c\u6b62\u786e\u8ba4\uff0c\u6b64\u5224\u8bfb\u5c06\u6d88\u9000\u3002",
-    "absorption_pctile": 0.97,
+    "absorption_pctile": 0.96,
     "scores": [
       {
         "driver": "oil_shock",
         "label": "Oil shock",
         "label_zh": "\u6cb9\u4ef7\u51b2\u51fb",
         "family": "inflation",
-        "projection": -1.42,
-        "strength": 1.42,
+        "projection": -1.43,
+        "strength": 1.43,
         "direction": "oil collapsing \u2014 energy lags, breakevens down"
       },
       {
@@ -635,8 +635,8 @@
         "label": "Crypto liquidity",
         "label_zh": "\u52a0\u5bc6\u6d41\u52a8\u6027",
         "family": "crypto",
-        "projection": 1.02,
-        "strength": 1.02,
+        "projection": 1.0,
+        "strength": 1.0,
         "direction": "crypto liquidity surging \u2014 BTC/ETH lead up"
       },
       {
@@ -649,15 +649,6 @@
         "direction": "China risk-on \u2014 A-shares/HK & copper lead up"
       },
       {
-        "driver": "fed_repricing",
-        "label": "Fed repricing",
-        "label_zh": "\u7f8e\u8054\u50a8\u91cd\u5b9a\u4ef7",
-        "family": "rates",
-        "projection": -0.61,
-        "strength": 0.61,
-        "direction": "dovish repricing \u2014 cuts priced in, front-end down"
-      },
-      {
         "driver": "ai_semis",
         "label": "AI / semis",
         "label_zh": "AI/\u534a\u5bfc\u4f53",
@@ -667,30 +658,39 @@
         "direction": "AI/semis leadership \u2014 narrow tech-led tape"
       },
       {
-        "driver": "liquidity_impulse",
-        "label": "Liquidity impulse",
-        "label_zh": "\u6d41\u52a8\u6027\u8109\u51b2",
-        "family": "liquidity",
-        "projection": 0.38,
-        "strength": 0.38,
-        "direction": "net liquidity expanding \u2014 broad risk-on tailwind"
+        "driver": "fed_repricing",
+        "label": "Fed repricing",
+        "label_zh": "\u7f8e\u8054\u50a8\u91cd\u5b9a\u4ef7",
+        "family": "rates",
+        "projection": -0.34,
+        "strength": 0.34,
+        "direction": "dovish repricing \u2014 cuts priced in, front-end down"
       },
       {
         "driver": "usd_shock",
         "label": "USD shock",
         "label_zh": "\u7f8e\u5143\u51b2\u51fb",
         "family": "fx",
-        "projection": -0.38,
-        "strength": 0.38,
+        "projection": -0.34,
+        "strength": 0.34,
         "direction": "dollar falling \u2014 risk tailwind, commodities & EM bid"
+      },
+      {
+        "driver": "liquidity_impulse",
+        "label": "Liquidity impulse",
+        "label_zh": "\u6d41\u52a8\u6027\u8109\u51b2",
+        "family": "liquidity",
+        "projection": 0.3,
+        "strength": 0.3,
+        "direction": "net liquidity expanding \u2014 broad risk-on tailwind"
       },
       {
         "driver": "real_rate_shock",
         "label": "Real-rate shock",
         "label_zh": "\u5b9e\u9645\u5229\u7387\u51b2\u51fb",
         "family": "rates",
-        "projection": -0.25,
-        "strength": 0.25,
+        "projection": -0.19,
+        "strength": 0.19,
         "direction": "real yields falling \u2014 easing, gold & duration bid"
       },
       {
@@ -698,8 +698,8 @@
         "label": "Credit stress",
         "label_zh": "\u4fe1\u7528\u538b\u529b",
         "family": "credit",
-        "projection": -0.11,
-        "strength": 0.11,
+        "projection": -0.09,
+        "strength": 0.09,
         "direction": "credit spreads compressing \u2014 risk-on"
       }
     ],
@@ -707,7 +707,7 @@
   },
   "portfolio": {
     "asof": "2026-06-15",
-    "headline": "Equal-weighting all 6 market views puts 38% of portfolio RISK in one market (vs 17% if truly balanced); ERC rebalances to ~equal risk (heaviest weight: Dollar 0.432). Diversification ratio 1.69.",
+    "headline": "Equal-weighting all 6 market views puts 38% of portfolio RISK in one market (vs 17% if truly balanced); ERC rebalances to ~equal risk (heaviest weight: Dollar 0.432). Diversification ratio 1.7.",
     "risk_budget": {
       "window_d": 126,
       "markets": [
@@ -756,7 +756,7 @@
           "China": 0.162,
           "HK": 0.153,
           "Commodities": 0.206,
-          "Dollar": 0.166
+          "Dollar": 0.165
         },
         "port_vol_ann": 0.086,
         "diversification_ratio": 1.65,
@@ -781,7 +781,7 @@
           "Dollar": 0.167
         },
         "port_vol_ann": 0.086,
-        "diversification_ratio": 1.69,
+        "diversification_ratio": 1.7,
         "max_risk_contrib": 0.167
       }
     },
@@ -927,7 +927,7 @@
   },
   "fed_path": {
     "asof": "2026-06-15",
-    "built": "2026-06-15T20:10:56.030816+00:00",
+    "built": "2026-06-15T21:05:05.823882+00:00",
     "policy_rate": 3.62,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -936,19 +936,19 @@
       "now": 3.62,
       "m1": 3.63,
       "m3": 3.66,
-      "m6": 3.76,
-      "m12": 3.92
+      "m6": 3.77,
+      "m12": 3.93
     },
     "implied_source_en": "ZQ fed-funds futures",
     "implied_source_zh": "ZQ \u8054\u90a6\u57fa\u91d1\u671f\u8d27",
-    "implied_bp_12m": 30,
+    "implied_bp_12m": 31,
     "implied_cuts_12m": -1,
     "implied_cuts_6m": -1,
     "sofr_path": {
       "m1": null,
-      "m3": 3.71,
-      "m6": 3.82,
-      "m12": 3.96
+      "m3": 3.72,
+      "m6": 3.83,
+      "m12": 3.97
     },
     "dots": [
       {
@@ -968,18 +968,18 @@
       "horizon_label": "end-2026",
       "horizon_months": 6,
       "fed_dot": 3.4,
-      "market": 3.76,
-      "gap_bp": 36,
+      "market": 3.77,
+      "gap_bp": 37,
       "lean_en": "market more hawkish than the Fed",
       "lean_zh": "\u5e02\u573a\u6bd4\u7f8e\u8054\u50a8\u66f4\u9e70\u6d3e"
     },
-    "ntfs": 0.67,
+    "ntfs": 0.75,
     "curve_tp_adj": 0.39,
-    "rate_exp_proxy": 0.43,
-    "headline_en": "Market prices ~1 hike over the next 12m (funds 3.62% \u2192 3.92%)",
-    "headline_zh": "\u5e02\u573a\u4e3a\u672a\u676512\u4e2a\u6708\u5b9a\u4ef7\u7ea6\u52a0\u606f1\u6b21\uff08\u57fa\u91d1\u5229\u7387 3.62% \u2192 3.92%\uff09",
-    "read_en": "At end-2026 the market implies 3.76% vs the Fed's 3.40% median dot (+36bp \u2014 market more hawkish than the Fed). The near-term forward spread is positive \u2014 no cuts priced near-term (+0.67pp).",
-    "read_zh": "\u5728end-2026\uff0c\u5e02\u573a\u9690\u542b 3.76% \u5bf9\u6bd4\u7f8e\u8054\u50a8 3.40% \u7684\u4e2d\u4f4d\u70b9\uff08+36\u57fa\u70b9 \u2014 \u5e02\u573a\u6bd4\u7f8e\u8054\u50a8\u66f4\u9e70\u6d3e\uff09\u3002\u8fd1\u7aef\u8fdc\u671f\u5229\u5dee\u4e3a\u6b63\u2014\u2014\u8fd1\u7aef\u672a\u4e3a\u964d\u606f\u5b9a\u4ef7\uff08+0.67\u4e2a\u767e\u5206\u70b9\uff09\u3002",
+    "rate_exp_proxy": 0.47,
+    "headline_en": "Market prices ~1 hike over the next 12m (funds 3.62% \u2192 3.93%)",
+    "headline_zh": "\u5e02\u573a\u4e3a\u672a\u676512\u4e2a\u6708\u5b9a\u4ef7\u7ea6\u52a0\u606f1\u6b21\uff08\u57fa\u91d1\u5229\u7387 3.62% \u2192 3.93%\uff09",
+    "read_en": "At end-2026 the market implies 3.77% vs the Fed's 3.40% median dot (+37bp \u2014 market more hawkish than the Fed). The near-term forward spread is positive \u2014 no cuts priced near-term (+0.75pp).",
+    "read_zh": "\u5728end-2026\uff0c\u5e02\u573a\u9690\u542b 3.77% \u5bf9\u6bd4\u7f8e\u8054\u50a8 3.40% \u7684\u4e2d\u4f4d\u70b9\uff08+37\u57fa\u70b9 \u2014 \u5e02\u573a\u6bd4\u7f8e\u8054\u50a8\u66f4\u9e70\u6d3e\uff09\u3002\u8fd1\u7aef\u8fdc\u671f\u5229\u5dee\u4e3a\u6b63\u2014\u2014\u8fd1\u7aef\u672a\u4e3a\u964d\u606f\u5b9a\u4ef7\uff08+0.75\u4e2a\u767e\u5206\u70b9\uff09\u3002",
     "note_en": "Display / LLM-context only. The implied path is a market PRICE (the futures-implied funds rate), not a forecast edge, and repricing is REACTIVE \u2014 it moves after data and the Fed, it does not lead. Never scored, never an MRS leg. ZQ/SR3 = keyless CME futures; dots = FRED FEDTARMD (FOMC SEP median). Cite the CME/FRED.",
     "note_zh": "\u4ec5\u4f9b\u5c55\u793a / LLM \u4e0a\u4e0b\u6587\u3002\u9690\u542b\u8def\u5f84\u662f\u5e02\u573a\u4ef7\u683c\uff08\u671f\u8d27\u9690\u542b\u7684\u57fa\u91d1\u5229\u7387\uff09\uff0c\u5e76\u975e\u9884\u6d4b\u4f18\u52bf\uff0c\u4e14\u91cd\u65b0\u5b9a\u4ef7\u662f\u88ab\u52a8\u7684\u2014\u2014\u5b83\u5728\u6570\u636e\u548c\u7f8e\u8054\u50a8\u4e4b\u540e\u53d8\u52a8\uff0c\u5e76\u4e0d\u9886\u5148\u3002\u4ece\u4e0d\u8bc4\u5206\uff0c\u4ece\u4e0d\u4f5c\u4e3a MRS \u9879\u3002ZQ/SR3=\u65e0\u9700\u5bc6\u94a5\u7684 CME \u671f\u8d27\uff1b\u70b9\u9635\u56fe=FRED FEDTARMD\uff08FOMC SEP \u4e2d\u4f4d\u6570\uff09\u3002\u8bf7\u6ce8\u660e CME/FRED\u3002"
   },
@@ -1052,25 +1052,15 @@
       },
       "contrast_direction": "tightening"
     },
-    "leaders": [
+    "leaders": [],
+    "avoid": [
       {
         "ticker": "XLB",
         "name": "Materials",
-        "aligned": false,
-        "mom_60d_pct": -3.47,
-        "why": "Established uptrend vs the market, short-term momentum positive (+2.5% vs the market this month; rebuilding after a soft 3 months (-3.5%)). Tech: RSI 60, above both moving averages. Jun: -0.5% avg, up 46% of years (n=28).",
-        "why_zh": "\u76f8\u5bf9\u5e02\u573a\u5df2\u786e\u7acb\u4e0a\u6da8\u8d8b\u52bf\uff0c\u77ed\u671f\u52a8\u91cf\u4e3a\u6b63 \uff08\u672c\u6708\u76f8\u5bf9\u5e02\u573a +2.5%\uff1b\u5728\u75b2\u8f6f\u7684 3 \u4e2a\u6708\u540e\u91cd\u5efa\u4e2d\uff08-3.5%\uff09\uff09\u3002 \u6280\u672f\u9762\uff1aRSI 60\u3001\u4f4d\u4e8e\u4e24\u6761\u5747\u7ebf\u4e4b\u4e0a\u3002 6\u6708\uff1a\u5e73\u5747 -0.5%\uff0c46% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=28\uff09\u3002"
+        "call": "TOO EARLY",
+        "why": "Momentum just turned up (+2.2% this month) but it's still below its long-term trend vs the market. Tempting \u2014 and historically a losing entry (-0.73%/3m avg). Wait for the trend line to actually break.",
+        "why_zh": "\u52a8\u91cf\u521a\u8f6c\u4e3a\u5411\u4e0a\uff08\u672c\u6708 +2.2%\uff09\uff0c\u4f46 \u76f8\u5bf9\u5e02\u573a\u4ecd\u4f4e\u4e8e\u5176\u957f\u671f\u8d8b\u52bf\u3002\u9887\u5177\u8bf1\u60d1 \u2014 \u4f46\u5386\u53f2\u4e0a\u662f\u4e8f\u635f\u7684\u5165\u573a\u70b9 \uff083 \u4e2a\u6708\u5e73\u5747 -0.73%\uff09\u3002\u7b49\u5f85\u8d8b\u52bf\u7ebf\u771f\u6b63\u7a81\u7834\u3002"
       },
-      {
-        "ticker": "XLI",
-        "name": "Industrials",
-        "aligned": false,
-        "mom_60d_pct": -4.5,
-        "why": "Established uptrend vs the market, short-term momentum positive (+2.4% vs the market this month; rebuilding after a soft 3 months (-4.5%)). Tech: RSI 61, above both moving averages. Jun: -0.3% avg, up 46% of years (n=28).",
-        "why_zh": "\u76f8\u5bf9\u5e02\u573a\u5df2\u786e\u7acb\u4e0a\u6da8\u8d8b\u52bf\uff0c\u77ed\u671f\u52a8\u91cf\u4e3a\u6b63 \uff08\u672c\u6708\u76f8\u5bf9\u5e02\u573a +2.4%\uff1b\u5728\u75b2\u8f6f\u7684 3 \u4e2a\u6708\u540e\u91cd\u5efa\u4e2d\uff08-4.5%\uff09\uff09\u3002 \u6280\u672f\u9762\uff1aRSI 61\u3001\u4f4d\u4e8e\u4e24\u6761\u5747\u7ebf\u4e4b\u4e0a\u3002 6\u6708\uff1a\u5e73\u5747 -0.3%\uff0c46% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=28\uff09\u3002"
-      }
-    ],
-    "avoid": [
       {
         "ticker": "XLC",
         "name": "Communications",
@@ -1082,22 +1072,15 @@
         "ticker": "XLF",
         "name": "Financials",
         "call": "TOO EARLY",
-        "why": "Momentum just turned up (+2.8% this month) but it's still below its long-term trend vs the market. Tempting \u2014 and historically a losing entry (-0.73%/3m avg). Wait for the trend line to actually break.",
-        "why_zh": "\u52a8\u91cf\u521a\u8f6c\u4e3a\u5411\u4e0a\uff08\u672c\u6708 +2.8%\uff09\uff0c\u4f46 \u76f8\u5bf9\u5e02\u573a\u4ecd\u4f4e\u4e8e\u5176\u957f\u671f\u8d8b\u52bf\u3002\u9887\u5177\u8bf1\u60d1 \u2014 \u4f46\u5386\u53f2\u4e0a\u662f\u4e8f\u635f\u7684\u5165\u573a\u70b9 \uff083 \u4e2a\u6708\u5e73\u5747 -0.73%\uff09\u3002\u7b49\u5f85\u8d8b\u52bf\u7ebf\u771f\u6b63\u7a81\u7834\u3002"
+        "why": "Momentum just turned up (+2.6% this month) but it's still below its long-term trend vs the market. Tempting \u2014 and historically a losing entry (-0.73%/3m avg). Wait for the trend line to actually break.",
+        "why_zh": "\u52a8\u91cf\u521a\u8f6c\u4e3a\u5411\u4e0a\uff08\u672c\u6708 +2.6%\uff09\uff0c\u4f46 \u76f8\u5bf9\u5e02\u573a\u4ecd\u4f4e\u4e8e\u5176\u957f\u671f\u8d8b\u52bf\u3002\u9887\u5177\u8bf1\u60d1 \u2014 \u4f46\u5386\u53f2\u4e0a\u662f\u4e8f\u635f\u7684\u5165\u573a\u70b9 \uff083 \u4e2a\u6708\u5e73\u5747 -0.73%\uff09\u3002\u7b49\u5f85\u8d8b\u52bf\u7ebf\u771f\u6b63\u7a81\u7834\u3002"
       },
       {
-        "ticker": "XLK",
-        "name": "Technology",
-        "call": "DON'T CHASE",
-        "why": "Leadership is real but stretched (RS at the 98th pctile of its year). Historically, buying here won only 44.7% of the time over 3 months. Wait for a pullback that holds the trend.",
-        "why_zh": "\u9886\u6da8\u771f\u5b9e\u4f46\u5df2\u8d85\u4e70\uff08RS \u5904\u4e8e\u5176\u5e74\u5ea6\u7684 \u7b2c 98 \u767e\u5206\u4f4d\uff09\u3002\u5386\u53f2\u4e0a\uff0c\u5728\u6b64\u5904\u4e70\u5165 3 \u4e2a\u6708\u5185\u4ec5\u6709 44.7% \u7684\u80dc\u7387\u3002\u7b49\u5f85\u5b88\u4f4f\u8d8b\u52bf\u7684\u56de\u8c03\u3002"
-      },
-      {
-        "ticker": "XLRE",
-        "name": "Real Estate",
+        "ticker": "XLI",
+        "name": "Industrials",
         "call": "TOO EARLY",
-        "why": "Momentum just turned up (+1.7% this month) but it's still below its long-term trend vs the market. Tempting \u2014 and historically a losing entry (-0.73%/3m avg). Wait for the trend line to actually break.",
-        "why_zh": "\u52a8\u91cf\u521a\u8f6c\u4e3a\u5411\u4e0a\uff08\u672c\u6708 +1.7%\uff09\uff0c\u4f46 \u76f8\u5bf9\u5e02\u573a\u4ecd\u4f4e\u4e8e\u5176\u957f\u671f\u8d8b\u52bf\u3002\u9887\u5177\u8bf1\u60d1 \u2014 \u4f46\u5386\u53f2\u4e0a\u662f\u4e8f\u635f\u7684\u5165\u573a\u70b9 \uff083 \u4e2a\u6708\u5e73\u5747 -0.73%\uff09\u3002\u7b49\u5f85\u8d8b\u52bf\u7ebf\u771f\u6b63\u7a81\u7834\u3002"
+        "why": "Momentum just turned up (+2.1% this month) but it's still below its long-term trend vs the market. Tempting \u2014 and historically a losing entry (-0.73%/3m avg). Wait for the trend line to actually break.",
+        "why_zh": "\u52a8\u91cf\u521a\u8f6c\u4e3a\u5411\u4e0a\uff08\u672c\u6708 +2.1%\uff09\uff0c\u4f46 \u76f8\u5bf9\u5e02\u573a\u4ecd\u4f4e\u4e8e\u5176\u957f\u671f\u8d8b\u52bf\u3002\u9887\u5177\u8bf1\u60d1 \u2014 \u4f46\u5386\u53f2\u4e0a\u662f\u4e8f\u635f\u7684\u5165\u573a\u70b9 \uff083 \u4e2a\u6708\u5e73\u5747 -0.73%\uff09\u3002\u7b49\u5f85\u8d8b\u52bf\u7ebf\u771f\u6b63\u7a81\u7834\u3002"
       }
     ],
     "momentum_tilt": {
@@ -1105,17 +1088,17 @@
         {
           "ticker": "XLK",
           "name": "Technology",
-          "mom_252d_pct": 25.77
+          "mom_252d_pct": 25.76
         },
         {
           "ticker": "XLE",
           "name": "Energy",
-          "mom_252d_pct": 5.03
+          "mom_252d_pct": 4.72
         },
         {
           "ticker": "XLI",
           "name": "Industrials",
-          "mom_252d_pct": -0.15
+          "mom_252d_pct": -0.46
         }
       ],
       "note": "Top-3 by 12-month relative momentum \u2014 the only sector tilt with a persistent (if mild) historical edge: +0.27% avg vs SPY over ~6 months, 51.0% hit rate. A tilt, not a trade.",
@@ -1171,8 +1154,20 @@
       {
         "ticker": "XLF",
         "name": "Financials",
-        "why": "Historically favored if the regime shifts to Reflation. Currently improving (+2.8% vs the market this month). Don't buy in anticipation \u2014 wait for the trend cross. Trigger distance: needs +7.6% more outperformance vs the market to confirm \u2014 already 40% of the way there from its recent low. Seasonality: Jul: +1.9% avg, up 67% of years (n=27).",
-        "why_zh": "\u82e5\u5468\u671f\u8f6c\u5411 \u518d\u901a\u80c0\uff0c\u5386\u53f2\u4e0a\u53d7\u9752\u7750\u3002\u5f53\u524d\u4e3a\u6539\u5584 \uff08\u672c\u6708\u76f8\u5bf9\u5e02\u573a +2.8%\uff09\u3002\u4e0d\u8981\u63d0\u524d\u4e70\u5165 \u2014 \u7b49\u5f85\u8d8b\u52bf\u4ea4\u53c9\u3002 \u89e6\u53d1\u8ddd\u79bb\uff1a\u8fd8\u9700\u76f8\u5bf9\u5e02\u573a\u518d\u591a +7.6% \u7684\u8d85\u989d\u8868\u73b0\u65b9\u53ef\u786e\u8ba4 \u2014 \u81ea\u8fd1\u671f\u4f4e\u70b9\u5df2\u5b8c\u6210 40% \u7684\u8def\u7a0b\u3002 \u5b63\u8282\u6027\uff1a7\u6708\uff1a\u5e73\u5747 +1.9%\uff0c67% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=27\uff09\u3002"
+        "why": "Historically favored if the regime shifts to Reflation. Currently improving (+2.6% vs the market this month). Don't buy in anticipation \u2014 wait for the trend cross. Trigger distance: needs +7.8% more outperformance vs the market to confirm \u2014 already 39% of the way there from its recent low. Seasonality: Jul: +1.9% avg, up 67% of years (n=27).",
+        "why_zh": "\u82e5\u5468\u671f\u8f6c\u5411 \u518d\u901a\u80c0\uff0c\u5386\u53f2\u4e0a\u53d7\u9752\u7750\u3002\u5f53\u524d\u4e3a\u6539\u5584 \uff08\u672c\u6708\u76f8\u5bf9\u5e02\u573a +2.6%\uff09\u3002\u4e0d\u8981\u63d0\u524d\u4e70\u5165 \u2014 \u7b49\u5f85\u8d8b\u52bf\u4ea4\u53c9\u3002 \u89e6\u53d1\u8ddd\u79bb\uff1a\u8fd8\u9700\u76f8\u5bf9\u5e02\u573a\u518d\u591a +7.8% \u7684\u8d85\u989d\u8868\u73b0\u65b9\u53ef\u786e\u8ba4 \u2014 \u81ea\u8fd1\u671f\u4f4e\u70b9\u5df2\u5b8c\u6210 39% \u7684\u8def\u7a0b\u3002 \u5b63\u8282\u6027\uff1a7\u6708\uff1a\u5e73\u5747 +1.9%\uff0c67% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=27\uff09\u3002"
+      },
+      {
+        "ticker": "XLI",
+        "name": "Industrials",
+        "why": "Historically favored if the regime shifts to Reflation. Currently improving (+2.1% vs the market this month). Don't buy in anticipation \u2014 wait for the trend cross. Trigger distance: needs +0.0% more outperformance vs the market to confirm \u2014 already 99% of the way there from its recent low. Seasonality: Jul: +1.7% avg, up 74% of years (n=27).",
+        "why_zh": "\u82e5\u5468\u671f\u8f6c\u5411 \u518d\u901a\u80c0\uff0c\u5386\u53f2\u4e0a\u53d7\u9752\u7750\u3002\u5f53\u524d\u4e3a\u6539\u5584 \uff08\u672c\u6708\u76f8\u5bf9\u5e02\u573a +2.1%\uff09\u3002\u4e0d\u8981\u63d0\u524d\u4e70\u5165 \u2014 \u7b49\u5f85\u8d8b\u52bf\u4ea4\u53c9\u3002 \u89e6\u53d1\u8ddd\u79bb\uff1a\u8fd8\u9700\u76f8\u5bf9\u5e02\u573a\u518d\u591a +0.0% \u7684\u8d85\u989d\u8868\u73b0\u65b9\u53ef\u786e\u8ba4 \u2014 \u81ea\u8fd1\u671f\u4f4e\u70b9\u5df2\u5b8c\u6210 99% \u7684\u8def\u7a0b\u3002 \u5b63\u8282\u6027\uff1a7\u6708\uff1a\u5e73\u5747 +1.7%\uff0c74% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=27\uff09\u3002"
+      },
+      {
+        "ticker": "XLB",
+        "name": "Materials",
+        "why": "Historically favored if the regime shifts to Reflation. Currently improving (+2.2% vs the market this month). Don't buy in anticipation \u2014 wait for the trend cross. Trigger distance: needs +0.2% more outperformance vs the market to confirm \u2014 already 94% of the way there from its recent low. Seasonality: Jul: +1.5% avg, up 52% of years (n=27).",
+        "why_zh": "\u82e5\u5468\u671f\u8f6c\u5411 \u518d\u901a\u80c0\uff0c\u5386\u53f2\u4e0a\u53d7\u9752\u7750\u3002\u5f53\u524d\u4e3a\u6539\u5584 \uff08\u672c\u6708\u76f8\u5bf9\u5e02\u573a +2.2%\uff09\u3002\u4e0d\u8981\u63d0\u524d\u4e70\u5165 \u2014 \u7b49\u5f85\u8d8b\u52bf\u4ea4\u53c9\u3002 \u89e6\u53d1\u8ddd\u79bb\uff1a\u8fd8\u9700\u76f8\u5bf9\u5e02\u573a\u518d\u591a +0.2% \u7684\u8d85\u989d\u8868\u73b0\u65b9\u53ef\u786e\u8ba4 \u2014 \u81ea\u8fd1\u671f\u4f4e\u70b9\u5df2\u5b8c\u6210 94% \u7684\u8def\u7a0b\u3002 \u5b63\u8282\u6027\uff1a7\u6708\uff1a\u5e73\u5747 +1.5%\uff0c52% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=27\uff09\u3002"
       }
     ],
     "triggers": [
@@ -1196,36 +1191,40 @@
     "stages": [
       {
         "name": "Materials",
-        "stage": "leading",
-        "mom_20d_pct": 2.46,
-        "mom_60d_pct": -3.47,
-        "mom_252d_pct": -4.0,
-        "above_trend": true,
-        "pctile_252d": 47.2,
+        "stage": "improving",
+        "mom_20d_pct": 2.21,
+        "mom_60d_pct": -3.71,
+        "mom_252d_pct": -4.24,
+        "above_trend": false,
+        "pctile_252d": 46.4,
         "extended": false,
         "ticker": "XLB",
-        "tech_price": 52.63,
+        "tech_price": 52.5,
         "tech_above50": true,
         "tech_above200": true,
-        "tech_pct_vs_50dma": 2.6,
-        "tech_pct_vs_200dma": 10.3,
-        "tech_rsi14": 60.0,
+        "tech_pct_vs_50dma": 2.4,
+        "tech_pct_vs_200dma": 10.0,
+        "tech_rsi14": 59.0,
         "tech_macd_pos": true,
-        "tech_off_52w_high_pct": -1.4,
-        "heat": 63,
+        "tech_off_52w_high_pct": -1.7,
+        "heat": 53,
         "heat_parts": {
-          "score": 63,
+          "score": 53,
           "regime": 8,
-          "tape": 25,
+          "tape": 15,
           "technicals": 30,
           "crowding": 0,
           "macro": 0
         },
-        "heat_band": "55-69",
-        "heat_label": "HOT",
-        "heat_note": "confirmed strength. Fine to hold; fresh entries showed no historical edge \u2014 prefer pullbacks that hold the trend.",
-        "heat_note_zh": "\u5f3a\u52bf\u5df2\u786e\u8ba4\u3002\u53ef\u4ee5\u6301\u6709\uff1b\u65b0\u5efa\u4ed3\u4f4d\u65e0\u5386\u53f2\u4f18\u52bf \u2014 \u4f18\u5148\u9009\u62e9\u5b88\u4f4f\u8d8b\u52bf\u7684\u56de\u8c03\u3002",
-        "heat_cal": null,
+        "heat_band": "40-54",
+        "heat_label": "NEUTRAL",
+        "heat_note": "mixed picture, no statistical lean either way.",
+        "heat_note_zh": "\u56fe\u666f\u6df7\u6742\uff0c\u7edf\u8ba1\u4e0a\u65e0\u660e\u663e\u503e\u5411\u3002",
+        "heat_cal": {
+          "n": 2201,
+          "hit_pct": 48.1,
+          "avg_excess_pct": -0.14
+        },
         "season_this": "Jun: -0.5% avg, up 46% of years (n=28)",
         "season_next": "Jul: +1.5% avg, up 52% of years (n=27)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.5%\uff0c46% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=28\uff09",
@@ -1257,7 +1256,7 @@
             "n": 28
           },
           "6": {
-            "avg_pct": -0.52,
+            "avg_pct": -0.53,
             "hit_pct": 46.0,
             "n": 28
           },
@@ -1292,19 +1291,21 @@
             "n": 27
           }
         },
-        "season_month": 6
+        "season_month": 6,
+        "trigger_gap_pct": 0.2,
+        "trigger_progress_pct": 94.0
       },
       {
         "name": "Communications",
         "stage": "lagging",
-        "mom_20d_pct": -5.4,
-        "mom_60d_pct": -13.33,
-        "mom_252d_pct": -13.37,
+        "mom_20d_pct": -5.36,
+        "mom_60d_pct": -13.28,
+        "mom_252d_pct": -13.33,
         "above_trend": false,
-        "pctile_252d": 0.4,
+        "pctile_252d": 0.8,
         "extended": false,
         "ticker": "XLC",
-        "tech_price": 112.14,
+        "tech_price": 112.19,
         "tech_above50": false,
         "tech_above200": false,
         "tech_pct_vs_50dma": -2.7,
@@ -1397,27 +1398,27 @@
           }
         },
         "season_month": 6,
-        "trigger_gap_pct": 13.3,
+        "trigger_gap_pct": 13.2,
         "trigger_progress_pct": 0.0
       },
       {
         "name": "Energy",
         "stage": "weakening",
-        "mom_20d_pct": -8.21,
-        "mom_60d_pct": -17.64,
-        "mom_252d_pct": 5.03,
+        "mom_20d_pct": -8.48,
+        "mom_60d_pct": -17.89,
+        "mom_252d_pct": 4.72,
         "above_trend": true,
         "pctile_252d": 63.9,
         "extended": false,
         "ticker": "XLE",
-        "tech_price": 55.72,
+        "tech_price": 55.55,
         "tech_above50": false,
         "tech_above200": true,
-        "tech_pct_vs_50dma": -3.5,
-        "tech_pct_vs_200dma": 10.6,
-        "tech_rsi14": 41.0,
+        "tech_pct_vs_50dma": -3.8,
+        "tech_pct_vs_200dma": 10.3,
+        "tech_rsi14": 40.0,
         "tech_macd_pos": false,
-        "tech_off_52w_high_pct": -10.9,
+        "tech_off_52w_high_pct": -11.2,
         "heat": 32,
         "heat_parts": {
           "score": 32,
@@ -1467,7 +1468,7 @@
             "n": 28
           },
           "6": {
-            "avg_pct": 0.03,
+            "avg_pct": 0.02,
             "hit_pct": 50.0,
             "n": 28
           },
@@ -1507,21 +1508,21 @@
       {
         "name": "Financials",
         "stage": "improving",
-        "mom_20d_pct": 2.81,
-        "mom_60d_pct": -4.05,
-        "mom_252d_pct": -15.53,
+        "mom_20d_pct": 2.64,
+        "mom_60d_pct": -4.21,
+        "mom_252d_pct": -15.67,
         "above_trend": false,
         "pctile_252d": 9.5,
         "extended": false,
         "ticker": "XLF",
-        "tech_price": 53.65,
+        "tech_price": 53.56,
         "tech_above50": true,
         "tech_above200": true,
-        "tech_pct_vs_50dma": 3.7,
-        "tech_pct_vs_200dma": 2.6,
-        "tech_rsi14": 67.0,
+        "tech_pct_vs_50dma": 3.6,
+        "tech_pct_vs_200dma": 2.5,
+        "tech_rsi14": 66.0,
         "tech_macd_pos": true,
-        "tech_off_52w_high_pct": -4.4,
+        "tech_off_52w_high_pct": -4.5,
         "heat": 52,
         "heat_parts": {
           "score": 52,
@@ -1571,7 +1572,7 @@
             "n": 28
           },
           "6": {
-            "avg_pct": -0.84,
+            "avg_pct": -0.85,
             "hit_pct": 39.0,
             "n": 28
           },
@@ -1607,44 +1608,48 @@
           }
         },
         "season_month": 6,
-        "trigger_gap_pct": 7.6,
-        "trigger_progress_pct": 40.0
+        "trigger_gap_pct": 7.8,
+        "trigger_progress_pct": 39.0
       },
       {
         "name": "Industrials",
-        "stage": "leading",
-        "mom_20d_pct": 2.4,
-        "mom_60d_pct": -4.5,
-        "mom_252d_pct": -0.15,
-        "above_trend": true,
-        "pctile_252d": 54.8,
+        "stage": "improving",
+        "mom_20d_pct": 2.08,
+        "mom_60d_pct": -4.79,
+        "mom_252d_pct": -0.46,
+        "above_trend": false,
+        "pctile_252d": 52.0,
         "extended": false,
         "ticker": "XLI",
-        "tech_price": 179.24,
+        "tech_price": 178.68,
         "tech_above50": true,
         "tech_above200": true,
-        "tech_pct_vs_50dma": 3.8,
-        "tech_pct_vs_200dma": 10.5,
-        "tech_rsi14": 61.0,
+        "tech_pct_vs_50dma": 3.5,
+        "tech_pct_vs_200dma": 10.2,
+        "tech_rsi14": 60.0,
         "tech_macd_pos": true,
         "tech_off_52w_high_pct": 0.0,
-        "heat": 63,
+        "heat": 53,
         "heat_parts": {
-          "score": 63,
+          "score": 53,
           "regime": 8,
-          "tape": 25,
+          "tape": 15,
           "technicals": 30,
           "crowding": 0,
           "macro": 0
         },
-        "heat_band": "55-69",
-        "heat_label": "HOT",
-        "heat_note": "confirmed strength. Fine to hold; fresh entries showed no historical edge \u2014 prefer pullbacks that hold the trend.",
-        "heat_note_zh": "\u5f3a\u52bf\u5df2\u786e\u8ba4\u3002\u53ef\u4ee5\u6301\u6709\uff1b\u65b0\u5efa\u4ed3\u4f4d\u65e0\u5386\u53f2\u4f18\u52bf \u2014 \u4f18\u5148\u9009\u62e9\u5b88\u4f4f\u8d8b\u52bf\u7684\u56de\u8c03\u3002",
-        "heat_cal": null,
-        "season_this": "Jun: -0.3% avg, up 46% of years (n=28)",
+        "heat_band": "40-54",
+        "heat_label": "NEUTRAL",
+        "heat_note": "mixed picture, no statistical lean either way.",
+        "heat_note_zh": "\u56fe\u666f\u6df7\u6742\uff0c\u7edf\u8ba1\u4e0a\u65e0\u660e\u663e\u503e\u5411\u3002",
+        "heat_cal": {
+          "n": 2201,
+          "hit_pct": 48.1,
+          "avg_excess_pct": -0.14
+        },
+        "season_this": "Jun: -0.4% avg, up 46% of years (n=28)",
         "season_next": "Jul: +1.7% avg, up 74% of years (n=27)",
-        "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.3%\uff0c46% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=28\uff09",
+        "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.4%\uff0c46% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=28\uff09",
         "season_next_zh": "7\u6708\uff1a\u5e73\u5747 +1.7%\uff0c74% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=27\uff09",
         "season_all": {
           "1": {
@@ -1673,7 +1678,7 @@
             "n": 28
           },
           "6": {
-            "avg_pct": -0.35,
+            "avg_pct": -0.36,
             "hit_pct": 46.0,
             "n": 28
           },
@@ -1708,19 +1713,21 @@
             "n": 27
           }
         },
-        "season_month": 6
+        "season_month": 6,
+        "trigger_gap_pct": 0.0,
+        "trigger_progress_pct": 99.0
       },
       {
         "name": "Technology",
         "stage": "leading",
-        "mom_20d_pct": 6.56,
-        "mom_60d_pct": 20.94,
-        "mom_252d_pct": 25.77,
+        "mom_20d_pct": 6.55,
+        "mom_60d_pct": 20.92,
+        "mom_252d_pct": 25.76,
         "above_trend": true,
         "pctile_252d": 98.4,
         "extended": true,
         "ticker": "XLK",
-        "tech_price": 191.82,
+        "tech_price": 191.79,
         "tech_above50": true,
         "tech_above200": true,
         "tech_pct_vs_50dma": 13.4,
@@ -1817,14 +1824,14 @@
       {
         "name": "Consumer Staples",
         "stage": "lagging",
-        "mom_20d_pct": -1.09,
-        "mom_60d_pct": -8.57,
+        "mom_20d_pct": -1.1,
+        "mom_60d_pct": -8.58,
         "mom_252d_pct": -15.24,
         "above_trend": false,
-        "pctile_252d": 12.3,
+        "pctile_252d": 11.9,
         "extended": false,
         "ticker": "XLP",
-        "tech_price": 85.5,
+        "tech_price": 85.48,
         "tech_above50": true,
         "tech_above200": true,
         "tech_pct_vs_50dma": 2.4,
@@ -1923,21 +1930,21 @@
       {
         "name": "Real Estate",
         "stage": "improving",
-        "mom_20d_pct": 1.74,
-        "mom_60d_pct": -5.98,
-        "mom_252d_pct": -12.98,
+        "mom_20d_pct": 1.91,
+        "mom_60d_pct": -5.81,
+        "mom_252d_pct": -12.82,
         "above_trend": false,
-        "pctile_252d": 19.8,
+        "pctile_252d": 21.0,
         "extended": false,
         "ticker": "XLRE",
-        "tech_price": 44.92,
+        "tech_price": 44.99,
         "tech_above50": true,
         "tech_above200": true,
-        "tech_pct_vs_50dma": 2.1,
-        "tech_pct_vs_200dma": 7.5,
-        "tech_rsi14": 56.0,
+        "tech_pct_vs_50dma": 2.3,
+        "tech_pct_vs_200dma": 7.7,
+        "tech_rsi14": 57.0,
         "tech_macd_pos": true,
-        "tech_off_52w_high_pct": -1.0,
+        "tech_off_52w_high_pct": -0.8,
         "heat": 53,
         "heat_parts": {
           "score": 53,
@@ -1956,9 +1963,9 @@
           "hit_pct": 48.1,
           "avg_excess_pct": -0.14
         },
-        "season_this": "Jun: +1.9% avg, up 91% of years (n=11)",
+        "season_this": "Jun: +2.0% avg, up 91% of years (n=11)",
         "season_next": "Jul: +3.3% avg, up 90% of years (n=10)",
-        "season_this_zh": "6\u6708\uff1a\u5e73\u5747 +1.9%\uff0c91% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=11\uff09",
+        "season_this_zh": "6\u6708\uff1a\u5e73\u5747 +2.0%\uff0c91% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=11\uff09",
         "season_next_zh": "7\u6708\uff1a\u5e73\u5747 +3.3%\uff0c90% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=10\uff09",
         "season_all": {
           "1": {
@@ -1987,7 +1994,7 @@
             "n": 11
           },
           "6": {
-            "avg_pct": 1.95,
+            "avg_pct": 1.96,
             "hit_pct": 91.0,
             "n": 11
           },
@@ -2023,44 +2030,44 @@
           }
         },
         "season_month": 6,
-        "trigger_gap_pct": 2.6,
-        "trigger_progress_pct": 61.0
+        "trigger_gap_pct": 2.5,
+        "trigger_progress_pct": 64.0
       },
       {
         "name": "Utilities",
-        "stage": "improving",
-        "mom_20d_pct": 0.01,
-        "mom_60d_pct": -15.5,
-        "mom_252d_pct": -11.01,
+        "stage": "lagging",
+        "mom_20d_pct": -0.13,
+        "mom_60d_pct": -15.61,
+        "mom_252d_pct": -11.13,
         "above_trend": false,
-        "pctile_252d": 3.6,
+        "pctile_252d": 3.2,
         "extended": false,
         "ticker": "XLU",
-        "tech_price": 44.81,
+        "tech_price": 44.74,
         "tech_above50": false,
         "tech_above200": true,
-        "tech_pct_vs_50dma": -1.0,
-        "tech_pct_vs_200dma": 1.5,
+        "tech_pct_vs_50dma": -1.1,
+        "tech_pct_vs_200dma": 1.4,
         "tech_rsi14": 52.0,
         "tech_macd_pos": true,
-        "tech_off_52w_high_pct": -5.5,
-        "heat": 46,
+        "tech_off_52w_high_pct": -5.6,
+        "heat": 35,
         "heat_parts": {
-          "score": 46,
+          "score": 35,
           "regime": 8,
-          "tape": 15,
+          "tape": 4,
           "technicals": 23,
           "crowding": 0,
           "macro": 0
         },
-        "heat_band": "40-54",
-        "heat_label": "NEUTRAL",
-        "heat_note": "mixed picture, no statistical lean either way.",
-        "heat_note_zh": "\u56fe\u666f\u6df7\u6742\uff0c\u7edf\u8ba1\u4e0a\u65e0\u660e\u663e\u503e\u5411\u3002",
+        "heat_band": "0-39",
+        "heat_label": "COLD",
+        "heat_note": "washed out. Historically this band mildly mean-reverts upward, but timing is unreliable \u2014 wait for the confirmation trigger.",
+        "heat_note_zh": "\u5df2\u8d85\u5356\u3002\u5386\u53f2\u4e0a\u8be5\u533a\u95f4\u5b58\u5728\u6e29\u548c\u7684\u5747\u503c\u4e0a\u884c\u56de\u5f52\uff0c\u4f46\u62e9\u65f6\u4e0d\u53ef\u9760 \u2014 \u7b49\u5f85\u786e\u8ba4\u89e6\u53d1\u4fe1\u53f7\u3002",
         "heat_cal": {
-          "n": 2201,
-          "hit_pct": 48.1,
-          "avg_excess_pct": -0.14
+          "n": 10736,
+          "hit_pct": 49.9,
+          "avg_excess_pct": 0.12
         },
         "season_this": "Jun: -0.0% avg, up 54% of years (n=28)",
         "season_next": "Jul: +1.1% avg, up 67% of years (n=27)",
@@ -2129,20 +2136,20 @@
           }
         },
         "season_month": 6,
-        "trigger_gap_pct": 8.8,
-        "trigger_progress_pct": 33.0
+        "trigger_gap_pct": 8.9,
+        "trigger_progress_pct": 32.0
       },
       {
         "name": "Health Care",
         "stage": "improving",
-        "mom_20d_pct": 3.19,
-        "mom_60d_pct": -8.71,
+        "mom_20d_pct": 3.18,
+        "mom_60d_pct": -8.72,
         "mom_252d_pct": -10.05,
         "above_trend": false,
         "pctile_252d": 11.5,
         "extended": false,
         "ticker": "XLV",
-        "tech_price": 152.91,
+        "tech_price": 152.89,
         "tech_above50": true,
         "tech_above200": true,
         "tech_pct_vs_50dma": 3.5,
@@ -2199,7 +2206,7 @@
             "n": 28
           },
           "6": {
-            "avg_pct": 0.72,
+            "avg_pct": 0.71,
             "hit_pct": 57.0,
             "n": 28
           },
@@ -2235,20 +2242,20 @@
           }
         },
         "season_month": 6,
-        "trigger_gap_pct": 7.1,
+        "trigger_gap_pct": 7.2,
         "trigger_progress_pct": 40.0
       },
       {
         "name": "Consumer Discretionary",
         "stage": "lagging",
-        "mom_20d_pct": -0.42,
-        "mom_60d_pct": -5.64,
-        "mom_252d_pct": -11.61,
+        "mom_20d_pct": -0.36,
+        "mom_60d_pct": -5.59,
+        "mom_252d_pct": -11.56,
         "above_trend": false,
         "pctile_252d": 3.6,
         "extended": false,
         "ticker": "XLY",
-        "tech_price": 118.51,
+        "tech_price": 118.57,
         "tech_above50": true,
         "tech_above200": true,
         "tech_pct_vs_50dma": 1.1,
@@ -2342,7 +2349,7 @@
         },
         "season_month": 6,
         "trigger_gap_pct": 9.3,
-        "trigger_progress_pct": 13.0
+        "trigger_progress_pct": 14.0
       }
     ],
     "heat_calibration": {
@@ -2361,26 +2368,26 @@
       {
         "ticker": "GC=F",
         "name": "Gold",
-        "price": 4343.0,
+        "price": 4333.0,
         "above50": false,
         "above200": false,
-        "pct_vs_50dma": -5.1,
-        "pct_vs_200dma": -1.9,
-        "rsi14": 45.0,
+        "pct_vs_50dma": -5.3,
+        "pct_vs_200dma": -2.2,
+        "rsi14": 44.0,
         "macd_pos": false,
-        "off_52w_high_pct": -18.3,
+        "off_52w_high_pct": -18.5,
         "season_this": "Jun: -0.6% avg, up 42% of years (n=26)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.6%\uff0c42% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": -5.0
+        "mom_60d_pct": -5.2
       },
       {
         "ticker": "CL=F",
         "name": "Crude Oil",
-        "price": 81.3,
+        "price": 81.35,
         "above50": false,
         "above200": true,
-        "pct_vs_50dma": -14.9,
-        "pct_vs_200dma": 10.5,
+        "pct_vs_50dma": -14.8,
+        "pct_vs_200dma": 10.6,
         "rsi14": 36.0,
         "macd_pos": false,
         "off_52w_high_pct": -28.0,
@@ -2391,32 +2398,32 @@
       {
         "ticker": "HG=F",
         "name": "Copper",
-        "price": 6.5,
+        "price": 6.49,
         "above50": true,
         "above200": true,
-        "pct_vs_50dma": 5.0,
-        "pct_vs_200dma": 17.1,
+        "pct_vs_50dma": 4.9,
+        "pct_vs_200dma": 16.9,
         "rsi14": 57.0,
         "macd_pos": false,
-        "off_52w_high_pct": -2.2,
+        "off_52w_high_pct": -2.4,
         "season_this": "Jun: -0.4% avg, up 58% of years (n=26)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.4%\uff0c58% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": 21.7
+        "mom_60d_pct": 21.5
       },
       {
         "ticker": "DX-Y.NYB",
         "name": "US Dollar",
-        "price": 99.64,
+        "price": 99.68,
         "above50": true,
         "above200": true,
         "pct_vs_50dma": 0.8,
         "pct_vs_200dma": 1.0,
-        "rsi14": 56.0,
+        "rsi14": 57.0,
         "macd_pos": false,
-        "off_52w_high_pct": -0.9,
+        "off_52w_high_pct": -0.8,
         "season_this": "Jun: -0.2% avg, up 45% of years (n=56)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.2%\uff0c45% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=56\uff09",
-        "mom_60d_pct": -0.0
+        "mom_60d_pct": 0.0
       }
     ],
     "evidence": {
