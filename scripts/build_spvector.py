@@ -1,158 +1,287 @@
-"""S&P / Macro Vector — dashboard page builder (Phase 3 surface).
+"""S&P / Macro Vector — US allocation deep-dive page builder.
 
-Self-contained: renders site/spvector.html from engine.equity_alloc.vector_alloc
-(the validated de-risk + Fed-put-gated re-deploy strategy). Deliberately NOT a clone
-of the 70KB build_vector.py — a lean standalone page (Plotly via CDN, dark theme,
-no theme.css coupling) so it can't break the macro/BTC builds. Honest by design: the
-hero says "drawdown/Sharpe engine, not a CAGR-beater" and the page surfaces the
-bull-market lag, the carry-vs-alpha split, the bear-episode ledger, and the tax note.
+Renders site/spvector.html (the US equivalent of the Bitcoin vector_allocation
+page) from engine.equity_alloc.vector_alloc — the validated de-risk + Fed-put-gated
+re-deploy strategy (Phases 0-3, PIT-confirmed). Reached from a card on macro.html,
+exactly like the BTC "Allocation strategy" card. House Jinja style; reuses the
+build_vector Plotly size-helpers + light palette so it stays light on weight and
+consistent with the Bitcoin allocation page.
 
-Run: python -m scripts.build_spvector
+Honest by design: the strategy is a DRAWDOWN / SHARPE engine, not a CAGR-beater.
+The page surfaces the per-leg risk breakdown, the bull-market lag, the carry-vs-
+alpha split, the after-tax drag, the bear-episode ledger, and the rule-book.
+
+Also writes data/regime/spvector_latest.json for the landing-hub US "stock/vector"
+card. Run: python -m scripts.build_spvector
 """
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 
-import numpy as np
 import pandas as pd
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 from engine import equity_alloc as ea
 from engine.validation import backtest_core
 from lib import config
+# Reuse the size-disciplined Plotly helpers + light palette (no edits to build_vector).
+from scripts.build_vector import _html, _plot_y, _dx, _plot_idx, _runs, PLOT, C
 
 COST_BPS = 3.0
-TY = ea.TRADING_YEAR
+
+LEG_COLORS = {"drawdown": C["red"], "recession": C["amber"], "nfci": C["indigo"],
+              "hy_widening": "#D98C00", "liquidity": C["r3"]}
+LEG_ZH = {"drawdown": "宏观压力回撤计", "recession": "衰退风险",
+          "nfci": "金融条件（紧且收紧）", "hy_widening": "信用压力（高收益利差走阔）",
+          "liquidity": "净流动性收缩"}
+LEG_ORDER = ["drawdown", "recession", "hy_widening", "nfci", "liquidity"]
 
 
-def _series_json(s: pd.Series) -> dict:
-    s = s.dropna()
-    return {"x": [d.strftime("%Y-%m-%d") for d in s.index], "y": [round(float(v), 4) for v in s.values]}
+# --------------------------------------------------------------------------- #
+# charts
+# --------------------------------------------------------------------------- #
+def _chart_strategy(spy: pd.Series, alloc: pd.Series, rs_on_spy: pd.Series,
+                    eq: pd.Series) -> str:
+    """SPY price + strategy equity overlay, price panel shaded by allocation
+    (green=fully in / amber=trimmed / clear=defensive) with buy/sell markers at
+    every allocation change; risk row two-toned at the de-risk midpoint; allocation
+    step row. Linear price axis; 1Y/5Y/10Y/All buttons rescale on zoom."""
+    d = pd.DataFrame({"close": spy,
+                      "alloc": alloc.reindex(spy.index).ffill().fillna(1.0),
+                      "risk": rs_on_spy.reindex(spy.index).ffill()}).dropna(subset=["close"])
+    eqr = eq.reindex(d.index)
+    fig = make_subplots(rows=3, cols=1, shared_xaxes=True, row_heights=[0.5, 0.28, 0.22],
+                        vertical_spacing=0.04)
+    shade = {1.0: "rgba(34,170,94,0.13)", 0.66: "rgba(245,173,66,0.10)",
+             0.33: "rgba(245,173,66,0.20)"}  # 0.0 = clear
+    for start, end, lvl in _runs(d["alloc"].round(2)):
+        fc = shade.get(round(lvl, 2))
+        if fc:
+            fig.add_shape(type="rect", xref="x", yref="y domain", x0=start, x1=end,
+                          y0=0, y1=1, fillcolor=fc, line_width=0, layer="below")
+    pidx = _plot_idx(d.index)
+    pxs = _dx(pidx)
+    fig.add_trace(go.Scatter(x=pxs, y=_plot_y(d["close"].reindex(pidx), 0), name="S&P 500",
+                             line={"color": C["priceln"], "width": 1.4}), row=1, col=1)
+    scale = d["close"].iloc[0] / eqr.iloc[0]
+    sx = eqr * scale
+    fig.add_trace(go.Scatter(x=pxs, y=_plot_y(sx.reindex(pidx), 0), name="Vector strategy",
+                             line={"color": C["blue"], "width": 1.8}), row=1, col=1)
+    chg = d["alloc"].diff()
+    for mask, sym, col, nm, off in [
+        (chg > 0, "triangle-up", "#1FA971", "Buy / add", 0.965),
+        (chg < 0, "triangle-down", C["red"], "Sell / trim", 1.035),
+    ]:
+        idx = d.index[mask.fillna(False).to_numpy()]
+        if len(idx):
+            to = d["alloc"].reindex(idx)
+            fr = to - chg.reindex(idx)
+            txt = [f"{a:.0%} → {b:.0%}" for a, b in zip(fr, to)]
+            fig.add_trace(go.Scatter(
+                x=idx, y=d["close"].reindex(idx) * off, mode="markers", name=nm,
+                marker={"symbol": sym, "color": col, "size": 7,
+                        "line": {"width": 0.5, "color": "#fff"}},
+                text=txt, hovertemplate="%{x|%b %d %Y} · " + nm + " %{text}<extra></extra>",
+            ), row=1, col=1)
+    ri = d["risk"].reindex(pidx)
+    fig.add_trace(go.Scatter(x=pxs, y=_plot_y(ri.where(ri < 50), 0), name="Risk (calm)",
+                             line={"color": C["blue"], "width": 1.4}, showlegend=False), row=2, col=1)
+    fig.add_trace(go.Scatter(x=pxs, y=_plot_y(ri.where(ri >= 50), 0), name="Risk (stress)",
+                             line={"color": C["red"], "width": 1.4}, showlegend=False), row=2, col=1)
+    for thr in (25, 50, 75):
+        fig.add_hline(y=thr, line={"color": C["faint"], "width": 1, "dash": "dot"}, row=2, col=1)
+    fig.add_trace(go.Scatter(x=pxs, y=_plot_y(d["alloc"].reindex(pidx), 2), name="Equity weight",
+                             line={"color": C["indigo"], "width": 1.2, "shape": "hv"},
+                             fill="tozeroy", fillcolor="rgba(40,95,255,0.10)",
+                             showlegend=False), row=3, col=1)
+    now = d.index.max()
+    btns, default_xr, default_yr = [], None, None
+    for label, dd in [("1Y", 365), ("5Y", 1825), ("10Y", 3650), ("All", None)]:
+        x0 = d.index.min() if dd is None else max(d.index.min(), now - pd.Timedelta(days=dd))
+        w = (d.index >= x0)
+        lo = float(min(d["close"][w].min(), sx[w].min()))
+        hi = float(max(d["close"][w].max(), sx[w].max()))
+        xr = [x0.strftime("%Y-%m-%d"), now.strftime("%Y-%m-%d")]
+        yr = [lo * 0.92, hi * 1.08]
+        btns.append({"label": label, "method": "relayout",
+                     "args": [{"xaxis.range": xr, "xaxis2.range": xr,
+                               "xaxis3.range": xr, "yaxis.range": yr}]})
+        if label == "5Y":
+            default_xr, default_yr = xr, yr
+    fig.update_yaxes(title_text="S&P 500", range=default_yr, row=1, col=1)
+    fig.update_xaxes(range=default_xr)
+    fig.update_yaxes(title_text="Risk", range=[0, 100], row=2, col=1)
+    fig.update_yaxes(title_text="Equity", range=[-0.05, 1.05], row=3, col=1)
+    fig.update_layout(
+        **{**PLOT, "height": 480, "margin": {"l": 48, "r": 52, "t": 44, "b": 28}},
+        updatemenus=[{
+            "type": "buttons", "direction": "right", "showactive": True, "active": 1,
+            "x": 1, "xanchor": "right", "y": 1.02, "yanchor": "bottom",
+            "bgcolor": "rgba(255,255,255,0.7)", "bordercolor": C["grid"],
+            "borderwidth": 1, "font": {"size": 10, "color": C["text"]},
+            "pad": {"t": 2, "b": 2, "l": 4, "r": 4}, "buttons": btns,
+        }],
+    )
+    return _html(fig)
 
 
+def _chart_growth(eq: pd.Series, hodl: pd.Series) -> str:
+    e, h = eq.iloc[::5], hodl.iloc[::5]
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=_dx(e.index), y=_plot_y(e, 2), name="Vector",
+                             line={"color": C["blue"], "width": 2}))
+    fig.add_trace(go.Scatter(x=_dx(h.index), y=_plot_y(h, 2), name="Buy & hold",
+                             line={"color": C["priceln"], "width": 1.5}))
+    fig.update_yaxes(type="log")
+    fig.update_layout(**{**PLOT, "height": 300})
+    return _html(fig)
+
+
+def _chart_dd(dd_s: pd.Series, dd_h: pd.Series) -> str:
+    s, h = dd_s.iloc[::5], dd_h.iloc[::5]
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=_dx(h.index), y=_plot_y(h, 1), name="Buy & hold", fill="tozeroy",
+                             line={"color": C["priceln"], "width": 1}, fillcolor="rgba(154,164,178,0.25)"))
+    fig.add_trace(go.Scatter(x=_dx(s.index), y=_plot_y(s, 1), name="Vector", fill="tozeroy",
+                             line={"color": C["blue"], "width": 1.5}, fillcolor="rgba(40,95,255,0.12)"))
+    fig.update_layout(**{**PLOT, "height": 300})
+    return _html(fig)
+
+
+# --------------------------------------------------------------------------- #
+# builder
+# --------------------------------------------------------------------------- #
 def build() -> str:
     from engine.inputs import build_features
     from engine.conditions import conditions_frame
+    from engine.dislocation import master_switch_frame
     from lib import store
+    from jinja2 import Environment, FileSystemLoader
+
     f = build_features(); cf = conditions_frame(f); reg = store.read("regime", "regime_history")
     spy = ea.index_close("SPY"); bills = ea.bill_yield()
     rs = ea.risk_score(f, reg, cf)
+    rl = ea.risk_legs(f, reg, cf)
     alloc = ea.vector_alloc(spy, f=f, regime=reg, cf=cf)
-    sc = ea.summarize(spy, alloc, "Vector", cash_yield=bills, cost_bps=COST_BPS)
+    sc = ea.summarize(spy, alloc, "Vector", cash_yield=bills, cost_bps=COST_BPS, bootstrap=True)
+    if sc.get("bootstrap"):
+        ci = sc["bootstrap"]["sharpe_ci"]
+        sc["boot_sharpe_lo"], sc["boot_sharpe_hi"] = ci[0], ci[2]
+    at = ea.after_tax(spy, alloc, bills, st_rate=0.35, cost_bps=COST_BPS)
 
     bt = backtest_core(spy, alloc, cost_bps=COST_BPS, cash_yield=bills)
     eq = (1 + bt["net"]).cumprod(); hodl = (1 + bt["hold"]).cumprod()
     dd_s = (eq / eq.cummax() - 1) * 100
     dd_h = (hodl / hodl.cummax() - 1) * 100
     rs_on_spy = rs.reindex(spy.index, method="ffill")
-    pos = bt["pos"]
 
     # current reading
-    cur_score = float(rs_on_spy.dropna().iloc[-1])
-    cur_w = float(pos.dropna().iloc[-1]) * 100
-    band = ("LOW — fully invested" if cur_score < 25 else "ELEVATED — trim" if cur_score < 50
-            else "HIGH — de-risk" if cur_score < 75 else "EXTREME — defensive")
-    asof = spy.index[-1].strftime("%Y-%m-%d")
+    score = round(float(rs_on_spy.dropna().iloc[-1]))
+    a = alloc.dropna()
+    equity_w = round(float(a.iloc[-1]) * 100)
+    cash_w = 100 - equity_w
+    asof = spy.index[-1].strftime("%b %d, %Y")
 
-    # weekly-ish downsample for chart payloads (every 5 trading days, aligned)
-    st = 5
-    eq_j = _series_json(eq.iloc[::st]); ho_j = _series_json(hodl.iloc[::st])
-    al_j = _series_json(pos.iloc[::st]); sc_j = _series_json(rs_on_spy.iloc[::st])
-    dds_j = _series_json(dd_s.iloc[::st]); ddh_j = _series_json(dd_h.iloc[::st])
+    if score < 25:
+        band_key, band_label, band_label_zh, band_color = "low", "LOW — fully invested", "低 — 满仓", "#1FA971"
+    elif score < 50:
+        band_key, band_label, band_label_zh, band_color = "elevated", "ELEVATED — trim", "偏高 — 减仓", C["amber"]
+    elif score < 75:
+        band_key, band_label, band_label_zh, band_color = "high", "HIGH — de-risk", "高 — 降险", "#D98C00"
+    else:
+        band_key, band_label, band_label_zh, band_color = "extreme", "EXTREME — defensive", "极端 — 防守", C["red"]
+
+    # last allocation change
+    chg = a.diff()
+    sw = chg[chg != 0].dropna()
+    last_switch = None
+    if len(sw):
+        d0 = sw.index[-1]
+        last_switch = {"date": d0.strftime("%Y-%m-%d"),
+                       "frm": round(float(a.shift(1).loc[d0]) * 100),
+                       "to": round(float(a.loc[d0]) * 100)}
+
+    bands = [
+        {"label": "Low", "label_zh": "低", "rng": "< 25", "weight": 100, "cur": score < 25},
+        {"label": "Elevated", "label_zh": "偏高", "rng": "25–50", "weight": 66, "cur": 25 <= score < 50},
+        {"label": "High", "label_zh": "高", "rng": "50–75", "weight": 33, "cur": 50 <= score < 75},
+        {"label": "Extreme", "label_zh": "极端", "rng": "≥ 75", "weight": 0, "cur": score >= 75},
+    ]
+    bi = next(i for i, b in enumerate(bands) if b["cur"])
+    if bi < 3:
+        nxt = bands[bi + 1]
+        next_note = f"Next de-risk: a sustained score above {(25, 50, 75)[bi]} trims equity to {nxt['weight']}%."
+        next_note_zh = f"下一步降险：分数持续高于 {(25, 50, 75)[bi]} 时，股票权重降至 {nxt['weight']}%。"
+    else:
+        next_note = "Fully defensive; a validated capitulation washout (Fed-put present) can re-deploy to fully invested."
+        next_note_zh = "完全防守；经验证的投降式恐慌底（美联储看跌在场）可再部署至满仓。"
+
+    # dislocation / capitulation chips
+    cap_now = int(cf["capitulation_score"].dropna().iloc[-1]) if "capitulation_score" in cf and cf["capitulation_score"].notna().any() else 0
+    put_absent = False
+    try:
+        pa = master_switch_frame(f)["put_absent"].dropna()
+        put_absent = bool(pa.iloc[-1]) if len(pa) else False
+    except Exception:  # noqa: BLE001 — never let the chip break the build
+        put_absent = False
+    if put_absent:
+        disloc_verdict, disloc_verdict_zh = "stand aside", "观望"
+    elif cap_now >= 2:
+        disloc_verdict, disloc_verdict_zh = "buyable washout", "可买入恐慌底"
+    else:
+        disloc_verdict, disloc_verdict_zh = "calm", "平静"
+
+    # leg breakdown view-model (canonical order, then any extras)
+    legs = []
+    order = LEG_ORDER + [n for n in rl["legs"] if n not in LEG_ORDER]
+    for n in order:
+        lg = rl["legs"].get(n)
+        if not lg:
+            continue
+        legs.append({"key": n, "label": lg["label"], "label_zh": LEG_ZH.get(n, lg["label"]),
+                     "value": lg["value"], "points": lg["points"], "weight": lg["weight"],
+                     "lag": lg["lag"], "active": lg["active"],
+                     "color": LEG_COLORS.get(n, C["muted"])})
 
     episodes = ea.bear_episodes(spy, 0.20)
-    ep_rows = "".join(
-        f"<tr><td>{e['peak']}</td><td>{e['trough']}</td><td class='neg'>{e['drawdown_pct']}%</td></tr>"
-        for e in episodes)
 
-    def card(label, v, bh, fmt="{:.2f}", good_high=True):
-        better = (v > bh) if good_high else (v < bh)
-        return (f"<div class='card'><div class='lbl'>{label}</div>"
-                f"<div class='big {'win' if better else 'mut'}'>{fmt.format(v)}</div>"
-                f"<div class='sub'>buy &amp; hold {fmt.format(bh)}</div></div>")
+    charts = {"strategy": _chart_strategy(spy, alloc, rs_on_spy, eq),
+              "growth": _chart_growth(eq, hodl), "dd": _chart_dd(dd_s, dd_h)}
 
-    cards = (card("CAGR", sc["cagr"], sc["hodl_cagr"], "{:.1f}%") +
-             card("Sharpe", sc["sharpe"], sc["hodl_sharpe"], "{:.2f}") +
-             card("Max drawdown", sc["maxdd"], sc["hodl_maxdd"], "{:.0f}%", good_high=True) +
-             card("Turnover/yr", sc["turnover_annual"], 0.03, "{:.1f}x", good_high=False))
+    vm = {
+        "as_of": asof, "built": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+        "price": float(spy.iloc[-1]),
+        "score": score, "band_label": band_label, "band_label_zh": band_label_zh,
+        "band_key": band_key, "band_color": band_color,
+        "equity_w": equity_w, "cash_w": cash_w,
+        "last_switch": last_switch, "next_note": next_note, "next_note_zh": next_note_zh,
+        "legs": legs,
+        "disloc": {"verdict": disloc_verdict, "verdict_zh": disloc_verdict_zh,
+                   "put_absent": put_absent, "capitulation": cap_now},
+        "sc": sc, "at": at, "bands": bands, "episodes": episodes, "charts": charts,
+    }
 
-    payload = json.dumps({"eq": eq_j, "ho": ho_j, "al": al_j, "rs": sc_j, "dds": dds_j, "ddh": ddh_j})
-    html = _TMPL.format(asof=asof, cur_score=f"{cur_score:.0f}", cur_w=f"{cur_w:.0f}", band=band,
-                        cards=cards, ep_rows=ep_rows,
-                        nocarry=f"{sc['cagr_nocarry']:.1f}", years=f"{sc['years']:.0f}",
-                        inmkt=f"{sc['time_in_market']:.0f}")
-    html = html.replace("__PAYLOAD__", payload)   # JSON braces collide with .format -> replace separately
+    env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
+    try:
+        from engine import i18n
+        env.globals.update(td=i18n.td, tr=i18n.tr)
+    except Exception:  # noqa: BLE001 — i18n absent -> English-only, still builds
+        env.globals.update(td=lambda en: en, tr=lambda en: en)
+    html = env.get_template("spvector.html.j2").render(**vm, C=C)
     out = config.ROOT / "site" / "spvector.html"
     out.write_text(html)
+
+    # snapshot for the landing-hub US allocation/vector card
+    snap = {"date": spy.index[-1].strftime("%Y-%m-%d"), "score": score,
+            "band": band_key, "band_label": band_label, "equity_w": equity_w,
+            "cash_w": cash_w, "stance": f"{equity_w}% equity",
+            "cagr": sc["cagr"], "sharpe": sc["sharpe"], "maxdd": sc["maxdd"]}
+    snap_dir = config.data_dir() / "regime"
+    snap_dir.mkdir(parents=True, exist_ok=True)
+    (snap_dir / "spvector_latest.json").write_text(json.dumps(snap, indent=2))
     return str(out)
-
-
-_TMPL = """<!doctype html><html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>S&amp;P / Macro Vector — index allocation</title>
-<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.27.0/plotly.min.js"></script>
-<style>
-:root{{--bg:#0e1117;--panel:#161b22;--line:#262d38;--tx:#e6edf3;--mut:#8b949e;--blue:#388bfd;--grn:#3fb950;--red:#f85149;--amb:#d29922}}
-*{{box-sizing:border-box}}body{{margin:0;background:var(--bg);color:var(--tx);font:15px/1.6 -apple-system,Segoe UI,Inter,sans-serif}}
-.wrap{{max-width:1080px;margin:0 auto;padding:28px 20px 60px}}
-h1{{font-size:26px;margin:0 0 4px}}.tag{{color:var(--amb);font-weight:600}}.mutline{{color:var(--mut);margin:0 0 22px}}
-.hero{{display:flex;flex-wrap:wrap;gap:16px;align-items:stretch;margin-bottom:22px}}
-.dial{{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 22px;min-width:230px;flex:1}}
-.dial .s{{font-size:44px;font-weight:700}}.dial .w{{font-size:15px;color:var(--mut)}}
-.cards{{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;flex:2;min-width:300px}}
-.card{{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}}
-.card .lbl{{color:var(--mut);font-size:12px}}.card .big{{font-size:24px;font-weight:700}}.card .sub{{color:var(--mut);font-size:12px}}
-.win{{color:var(--grn)}}.mut{{color:var(--tx)}}.neg{{color:var(--red)}}
-.panel{{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 22px;margin:16px 0}}
-.panel h2{{font-size:17px;margin:0 0 10px}}.chart{{height:340px}}
-table{{width:100%;border-collapse:collapse;font-size:14px}}td,th{{text-align:left;padding:6px 10px;border-bottom:1px solid var(--line)}}
-.note{{border-left:3px solid var(--amb);padding:4px 0 4px 14px;margin:10px 0;color:#d7dce2}}
-.note.r{{border-color:var(--red)}}.note.b{{border-color:var(--blue)}}
-a{{color:var(--blue)}}
-</style></head><body><div class="wrap">
-<h1>S&amp;P / Macro Vector</h1>
-<p class="mutline">Tactical allocation: a broad US index &harr; T-bills. <span class="tag">A drawdown / Sharpe engine — not a CAGR-beater.</span> &nbsp;as of {asof}</p>
-
-<div class="hero">
-  <div class="dial">
-    <div class="lbl" style="color:var(--mut);font-size:12px">MACRO RISK SCORE (0-100)</div>
-    <div class="s">{cur_score}</div>
-    <div class="w">{band}</div>
-    <div class="w" style="margin-top:8px">recommended equity weight: <b style="color:var(--tx)">{cur_w}%</b> &nbsp;/&nbsp; rest in T-bills</div>
-  </div>
-  <div class="cards">{cards}</div>
-</div>
-
-<div class="note b">Honest framing: the CAGR above includes the T-bill carry earned on the de-risked sleeve; net of carry (~{nocarry}% no-carry CAGR) it roughly matches buy &amp; hold. The robust, verified edge is the higher Sharpe and the ~40% shallower max drawdown. Stays ~{inmkt}% invested; it WILL lag the index in prolonged bulls — that give-up is the premium paid for crash protection, banked when the cycle breaks.</div>
-
-<div class="panel"><h2>Growth of $1 — Vector vs buy &amp; hold (log scale)</h2><div id="eqc" class="chart"></div></div>
-<div class="panel"><h2>Allocation &amp; macro risk score over time</h2><div id="alc" class="chart"></div></div>
-<div class="panel"><h2>Underwater (drawdown) — Vector vs buy &amp; hold</h2><div id="ddc" class="chart"></div></div>
-
-<div class="panel"><h2>Independent bear episodes ({years}yr) — the true sample size</h2>
-<table><tr><th>peak</th><th>trough</th><th>S&amp;P drawdown</th></tr>{ep_rows}</table>
-<p class="w" style="color:var(--mut);font-size:13px;margin-top:8px">Only ~4 independent &ge;20% bears govern a get-out/get-back-in switch — effective-N, not the day count, bounds confidence. Validated via leave-one-crisis-out + an AQR-style permutation null (real Sharpe &amp; drawdown beat every random-timing shuffle, p=0.0). See reports/spvector-phase3-audit.md.</p></div>
-
-<div class="note r">Taxable-account warning: switching realizes short-term capital gains that buy &amp; hold defers — best run in a tax-advantaged account. The low ~1.5x/yr turnover keeps this manageable.</div>
-<p class="w" style="color:var(--mut);font-size:13px">Macro legs (NFCI / recession-prob / Sahm / EBP) are revised FRED series, PIT-lagged per-leg by publication delay; ALFRED point-in-time vintages are the last honesty upgrade. Reports: spvector-baseline / phase1 / phase2 / phase3-audit. Research: research/SP_VECTOR_VIABILITY.md.</p>
-
-<script>
-var D=__PAYLOAD__;
-var L={{paper_bgcolor:'#161b22',plot_bgcolor:'#161b22',font:{{color:'#8b949e',size:11}},margin:{{l:48,r:16,t:8,b:30}},
-        legend:{{orientation:'h',y:1.12,x:0}},xaxis:{{gridcolor:'#262d38'}},yaxis:{{gridcolor:'#262d38'}}}};
-function cp(o){{return JSON.parse(JSON.stringify(o));}}
-var l1=cp(L);l1.yaxis.type='log';
-Plotly.newPlot('eqc',[
- {{x:D.eq.x,y:D.eq.y,name:'Vector',line:{{color:'#3fb950',width:2}}}},
- {{x:D.ho.x,y:D.ho.y,name:'Buy & hold',line:{{color:'#8b949e',width:1.5}}}}],l1,{{displayModeBar:false,responsive:true}});
-var l2=cp(L);l2.yaxis={{gridcolor:'#262d38',title:'equity weight',range:[0,1.05]}};l2.yaxis2={{overlaying:'y',side:'right',title:'risk score',range:[0,100],showgrid:false}};
-Plotly.newPlot('alc',[
- {{x:D.al.x,y:D.al.y,name:'equity weight',fill:'tozeroy',line:{{color:'#388bfd',width:1}}}},
- {{x:D.rs.x,y:D.rs.y,name:'risk score',yaxis:'y2',line:{{color:'#d29922',width:1.5}}}}],l2,{{displayModeBar:false,responsive:true}});
-Plotly.newPlot('ddc',[
- {{x:D.ddh.x,y:D.ddh.y,name:'Buy & hold',fill:'tozeroy',line:{{color:'#8b949e',width:1}}}},
- {{x:D.dds.x,y:D.dds.y,name:'Vector',fill:'tozeroy',line:{{color:'#3fb950',width:1.5}}}}],cp(L),{{displayModeBar:false,responsive:true}});
-</script>
-</div></body></html>"""
 
 
 def main() -> int:

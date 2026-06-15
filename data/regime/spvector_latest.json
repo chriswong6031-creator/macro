@@ -1,0 +1,12 @@
+{
+  "date": "2026-06-12",
+  "score": 9,
+  "band": "low",
+  "band_label": "LOW \u2014 fully invested",
+  "equity_w": 100,
+  "cash_w": 0,
+  "stance": "100% equity",
+  "cagr": 12.56,
+  "sharpe": 0.88,
+  "maxdd": -36.5
+}
