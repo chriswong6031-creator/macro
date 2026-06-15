@@ -431,6 +431,15 @@
              background: color-mix(in srgb, var(--link) 8%, var(--panel2)); }
   .gn-long b { color: var(--link); }
   .gn-cav { color: var(--muted); font-size: 10px; }
+  /* SUE earnings-momentum confirmer chip (display context, never scored). Blue
+     (--info) so it reads distinct from the green insider cluster + the green/red
+     alpha, and is immune to the Asia red/green up/down swap. */
+  .nb-sue { font-weight: 800; padding: 0 5px; border-radius: 7px; color: var(--info);
+            white-space: nowrap; font-variant-numeric: tabular-nums;
+            background: color-mix(in srgb, var(--info) 13%, var(--panel)); }
+  .ts-sue { font-weight: 800; font-size: 10px; color: var(--info); white-space: nowrap;
+            padding: 0 4px; border-radius: 6px; font-variant-numeric: tabular-nums;
+            background: color-mix(in srgb, var(--info) 13%, var(--panel)); }
   /* broad "Top setups" board (selection × timing across the S&P 1500) */
   .topsetups { margin-top: 14px; }
   .ts-more { margin-left: auto; font-size: 11px; font-weight: 700; white-space: nowrap; }
@@ -1288,13 +1297,14 @@
             {% if n.eq_grade %}<span class="nb-grade" style="color:{{ 'var(--up)' if n.eq_dir=='up' else ('var(--down)' if n.eq_dir=='down' else 'var(--muted)') }}">{{ t(n.eq_grade, n.eq_grade_zh) if n.eq_grade_zh else n.eq_grade }}</span> ·{% endif %}
             <span title="signal triggered {{ n.signal_date }} · 信号触发 {{ n.signal_date }}">⏱ {{ t(n.age_short, n.age_short_zh) if n.age_short else (n.signal_date or '') }}</span>
           </div>
-          {% if n.alpha_z is not none or n.insider_buyers %}
+          {% if n.alpha_z is not none or n.insider_buyers or n.sue_z %}
           <div class="nb-alpha">
             {% if n.alpha_z is not none %}<span class="nb-az {{ 'az-up' if n.alpha_z > 0 else ('az-dn' if n.alpha_z < 0 else '') }}" title="Sector-neutral residual momentum (z) — stock-specific strength with market + sector beta stripped. A ranking/context leg, not a standalone signal. · 行业中性残差动量（z）— 剥离大盘与行业 beta 后的个股特定强度。属排序/情境维度，并非独立信号。">α {{ '%+.2f'|format(n.alpha_z) }}</span>{% endif %}
             {% if n.alpha_sector_rank %}<span class="nb-rk" title="Rank within its GICS sector by sector-neutral momentum · 按行业中性动量在其 GICS 行业内的排名">#{{ n.alpha_sector_rank }}/{{ n.alpha_sector_n }}</span>{% endif %}
             {% if n.alpha_entry == 'pullback' %}<span class="nb-ent ent-good" title="A leader on a recent pullback — a more constructive entry · 强势股近期回调 — 更具建设性的入场点">{{ t('pullback', '回调') }}</span>
             {% elif n.alpha_entry == 'extended' %}<span class="nb-ent ent-warn" title="A leader that just spiked — short-term reversal risk · 强势股刚刚拉升 — 短线反转风险">{{ t('extended', '过热') }}</span>{% endif %}
             {% if n.insider_buyers %}<span class="nb-ins" title="{{ n.insider_buyers }} distinct insiders net-bought{% if n.insider_net_mn %} ${{ '%.1f'|format(n.insider_net_mn) }}M{% endif %}{% if n.insider_bps %} (+{{ n.insider_bps }} bps of cap){% endif %} in the last 6 months — a Form-4 CLUSTER confirmer (orthogonal long-only conviction, not a standalone signal) · {{ n.insider_buyers }} 名内部人近 6 个月净买入 — Form-4 集群确认指标">👤 {{ n.insider_buyers }}</span>{% endif %}
+            {% if n.sue_z %}<span class="nb-sue" title="Earnings momentum: SUE z {{ '%+.1f'|format(n.sue_z) }} vs the S&P 1500 — the latest quarter beat its year-ago seasonal expectation and tends to keep drifting (post-earnings-announcement drift). The only positive factor leg to survive the leak-free FDR scorecard; a DISPLAY confirmer, never part of the setup score · 盈利动量：SUE z {{ '%+.1f'|format(n.sue_z) }}（相对标普1500）— 最新季度超出去年同期季节性预期并倾向延续漂移（盈利后漂移）。唯一通过无泄漏FDR检验的正向因子；仅为展示确认项，不计入布局分">📈 SUE {{ '%+.1f'|format(n.sue_z) }}</span>{% endif %}
           </div>
           {% endif %}
         </a>
@@ -1319,7 +1329,7 @@
           <tbody>
           {% for r in top_setups.buy[:10] %}
             <tr class="ts-row" onclick="location.href='stock.html#{{ r.ticker }}'">
-              <td><span class="ts-tk">{{ r.ticker }}</span> <span class="ts-nm">{{ r.name }}</span>{% if r.insider_buyers %} <span class="ts-ins" title="{{ r.insider_buyers }} distinct insiders net-bought{% if r.insider_net_mn %} ${{ '%.1f'|format(r.insider_net_mn) }}M{% endif %}{% if r.insider_bps %} (+{{ r.insider_bps }} bps of cap){% endif %} in the last 6 months — a Form-4 CLUSTER confirmer · {{ r.insider_buyers }} 名内部人近 6 个月净买入 — Form-4 集群确认">👤 {{ r.insider_buyers }}</span>{% endif %}</td>
+              <td><span class="ts-tk">{{ r.ticker }}</span> <span class="ts-nm">{{ r.name }}</span>{% if r.insider_buyers %} <span class="ts-ins" title="{{ r.insider_buyers }} distinct insiders net-bought{% if r.insider_net_mn %} ${{ '%.1f'|format(r.insider_net_mn) }}M{% endif %}{% if r.insider_bps %} (+{{ r.insider_bps }} bps of cap){% endif %} in the last 6 months — a Form-4 CLUSTER confirmer · {{ r.insider_buyers }} 名内部人近 6 个月净买入 — Form-4 集群确认">👤 {{ r.insider_buyers }}</span>{% endif %}{% if r.sue_z %} <span class="ts-sue" title="Earnings momentum: SUE z {{ '%+.1f'|format(r.sue_z) }} vs the S&P 1500 — the latest quarter beat its year-ago seasonal expectation and tends to keep drifting (post-earnings-announcement drift). The only positive factor leg to survive the leak-free FDR scorecard; a DISPLAY confirmer, never part of the setup score · 盈利动量：SUE z {{ '%+.1f'|format(r.sue_z) }}（相对标普1500）— 唯一通过无泄漏FDR检验的正向因子；仅为展示确认项，不计入布局分">📈 SUE {{ '%+.1f'|format(r.sue_z) }}</span>{% endif %}</td>
               <td class="muted">{{ td(r.sector) }}</td>
               <td class="r {{ 'az-up' if r.alpha and r.alpha > 0 else 'az-dn' }}">{{ '%+.2f'|format(r.alpha) }}</td>
               <td class="r muted">{% if r.sector_rank %}#{{ r.sector_rank }}/{{ r.sector_n }}{% endif %}</td>
