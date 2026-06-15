@@ -69,6 +69,7 @@ def all_adapters() -> dict:
         ("china_connect", "collectors.china_connect", "ChinaConnectAdapter"),  # 沪深港通 flows (repairs connect_flow)
         ("china_flows", "collectors.china_flows", "ChinaFlowsAdapter"),        # AH premium / limit-up / ETF shares
         ("china_credit", "collectors.china_credit", "ChinaCreditAdapter"),     # 社融 TSF (mofcom, legacy-SSL)
+        ("china_property", "collectors.china_property", "ChinaPropertyAdapter"),  # 70-city price breadth + climate + CGB + rebar/iron-ore
         # Hong Kong / Hang Seng dashboard — see research/HK_DATA_AUDIT.md
         # (macro reused from china_macro; flows reused from china_connect/china_flows)
         ("hk_prices", "collectors.hk_prices", "HkPriceAdapter"),
