@@ -60,6 +60,16 @@
   }
   window.toggleLang = function () { setLang(curLang() === 'zh' ? 'en' : 'zh'); };
   window.setLang = setLang;
+  // swap title attributes for elements that carry data-title-zh
+  function swapTitles(lg) {
+    document.querySelectorAll('[data-title-zh]').forEach(function (el) {
+      var en = el.getAttribute('data-title-en') || el.getAttribute('title');
+      if (!el.getAttribute('data-title-en')) el.setAttribute('data-title-en', en || '');
+      el.setAttribute('title', lg === 'zh' ? el.getAttribute('data-title-zh') : el.getAttribute('data-title-en'));
+    });
+  }
+  document.addEventListener('langchange', function (e) { swapTitles(e.detail); });
+  document.addEventListener('DOMContentLoaded', function () { swapTitles(curLang()); });
   window.setTheme = setTheme;
 
   /* ---- global stock search (unified macro nav) ----------------------------

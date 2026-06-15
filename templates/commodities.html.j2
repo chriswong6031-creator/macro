@@ -413,7 +413,7 @@ html[data-theme="dark"] .tl-asset{background:var(--grid)} /* --bg is near-black 
         <div class="conv-badge conv-{{ cv.action_css }}">{{ t(cv.action, cv.action_zh) }}</div>
         <div class="conv-meta">
           <div class="conv-score">{{ '%+d'|format(cv.score|round|int) }}<small> / 100</small></div>
-          <div class="conv-cmeta">{{ t('conviction · confidence','信心 · 置信度') }} {{ (cv.confidence*100)|round|int }}%{% if not cv.reliable %}<span class="conv-ctx">{{ t('CONTEXT — weak calibration','参考 — 校准较弱') }}</span>{% endif %}{% if cv.freshness and cv.freshness.stale %}<span class="conv-fresh" title="{{ t('Key macro series (real yields, VIX from FRED) update with a 1–4 day lag, so a very recent regime move may not yet be reflected.','关键宏观序列（实际利率、VIX 来自 FRED）有1–4天延迟，最新的体制变化可能尚未反映。') }}">{{ t('macro data','宏观数据') }} {{ cv.freshness.max_stale_days }}{{ t('d stale','天延迟') }}</span>{% endif %}</div>
+          <div class="conv-cmeta">{{ t('conviction · confidence','信心 · 置信度') }} {{ (cv.confidence*100)|round|int }}%{% if not cv.reliable %}<span class="conv-ctx">{{ t('CONTEXT — weak calibration','参考 — 校准较弱') }}</span>{% endif %}{% if cv.freshness and cv.freshness.stale %}<span class="conv-fresh" title="Key macro series (real yields, VIX from FRED) update with a 1–4 day lag, so a very recent regime move may not yet be reflected." data-title-zh="关键宏观序列（实际利率、VIX 来自 FRED）有1–4天延迟，最新的体制变化可能尚未反映。">{{ t('macro data','宏观数据') }} {{ cv.freshness.max_stale_days }}{{ t('d stale','天延迟') }}</span>{% endif %}</div>
         </div>
       </div>
       <div class="conv-narr">{{ t(cv.sub, cv.sub_zh) }}</div>
