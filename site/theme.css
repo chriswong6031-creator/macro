@@ -386,8 +386,62 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
 .af-toggle .af-caret { font-size: 10px; opacity: .6; transition: transform .2s; }
 .af-toggle[aria-expanded="true"] .af-caret { transform: rotate(180deg); }
 
-.af { margin: 2px 0 14px; }
-.af[hidden] { display: none; }
+/* --- floating alert popover -------------------------------------------------
+   The feed no longer expands in place (which shoved the page down and read as
+   "the content vanished"). It now floats out of the 🔔 toggle as an anchored
+   popover that OVERLAYS the page — the underlying content never moves, so the
+   user keeps their place. A soft scrim dims (not hides) the page behind it and
+   gives a click-away target. Shared by the stock + sector pages. */
+.af-wrap { position: relative; display: inline-flex; }
+.af-scrim { position: fixed; inset: 0; z-index: 90; background: transparent;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity .22s ease, visibility 0s linear .22s; }
+.af-scrim.af-open { opacity: 1; visibility: visible; pointer-events: auto;
+  background: color-mix(in srgb, var(--bg) 30%, transparent);
+  -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+  transition: opacity .22s ease; }
+
+/* JS pins top/left/transform-origin on open so the panel grows straight out of
+   the bell and is always clamped on-screen (the toggle can wrap anywhere in the
+   header); top/right here are just the no-JS fallback. */
+.af { position: fixed; top: 64px; right: 14px; z-index: 100;
+  width: min(470px, calc(100vw - 24px));
+  background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+  box-shadow: var(--popover-shadow);
+  transform-origin: top right; transform: translateY(-7px) scale(.95); opacity: 0;
+  visibility: hidden; pointer-events: none;
+  transition: opacity .19s ease, transform .24s cubic-bezier(.18,.9,.32,1.12),
+              visibility 0s linear .24s; }
+.af.af-open { opacity: 1; transform: translateY(0) scale(1);
+  visibility: visible; pointer-events: auto;
+  transition: opacity .19s ease, transform .24s cubic-bezier(.18,.9,.32,1.12); }
+.af-bar { display: flex; align-items: center; gap: 9px; padding: 12px 15px 11px;
+  border-bottom: 1px solid var(--line); }
+.af-bar-t { font-size: 13.5px; font-weight: 800; color: var(--text);
+  flex: 1; min-width: 0; }
+.af-x { display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--panel2); color: var(--muted); font-size: 13px; cursor: pointer;
+  line-height: 1; transition: color .15s, border-color .15s, background .15s; }
+.af-x:hover { color: var(--text); border-color: var(--link); }
+.af-body { padding: 13px 15px 15px; max-height: min(62vh, 540px); overflow-y: auto;
+  overscroll-behavior: contain; border-radius: 0 0 14px 14px; }
+.af-body > :last-child { margin-bottom: 0; }
+
+@media (max-width: 560px) {
+  /* phone: rise from the bottom as a sheet instead of a corner dropdown */
+  .af { position: fixed; left: 50%; right: auto; top: auto; bottom: 0;
+    width: 100%; max-width: 540px; border-radius: 16px 16px 0 0;
+    transform-origin: bottom center; transform: translate(-50%, 16px) scale(1); }
+  .af.af-open { transform: translate(-50%, 0) scale(1); }
+  .af-body { max-height: 68vh; border-radius: 0; }
+  .af-scrim.af-open { background: color-mix(in srgb, var(--bg) 52%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .af { transition: opacity .15s ease, visibility 0s linear .15s; transform: none; }
+  .af.af-open { transform: none; transition: opacity .15s ease; }
+}
+
 /* pinned standing read — the ladder's current call, top of the feed */
 .af-pin { border: 1px solid color-mix(in srgb, var(--c, var(--info)) 32%, var(--line));
   background: color-mix(in srgb, var(--c, var(--info)) 8%, var(--panel));
