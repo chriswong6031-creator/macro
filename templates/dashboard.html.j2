@@ -1198,6 +1198,20 @@
       <span class="ev-strip-none">{{ t('Clear — no top-tier US prints in the window.', '空窗 —— 窗口内无一线美国数据。') }}</span>
       {% endfor %}
     </div>
+    {# Narrative regime — policy/geopolitical uncertainty percentile + the news-vector
+       PIT bus texture. DISPLAY/CONTEXT ONLY: text-uncertainty reads forward VOLATILITY,
+       not direction (and VIX beats EPU at vol) — never a score. Neutral, no red/green. #}
+    {% if narrative_regime and (narrative_regime.uncertainty or narrative_regime.events) %}
+    {% set U = narrative_regime.uncertainty or {} %}
+    <div class="mn-sent" style="flex-wrap:wrap;gap:6px 16px">
+      <span class="muted">{{ t('Narrative regime (context):', '叙事环境（背景）：') }}
+        {{ help("How policy/geopolitical-narrative-driven the tape is right now. EPU = US daily news-based Economic Policy Uncertainty (Baker-Bloom-Davis); GPR = daily Geopolitical Risk (Caldara-Iacoviello), split into THREAT vs ACT — threat-led spikes tend to revert (~3 months) while realized acts persist. Shown as percentile of full history. CONTEXT ONLY: these read forward VOLATILITY / risk, not market direction, and are never an input to any score, signal or allocation.", "当前行情受政策／地缘叙事驱动的程度。EPU＝美国每日新闻型经济政策不确定性（Baker-Bloom-Davis）；GPR＝每日地缘政治风险（Caldara-Iacoviello），分为“威胁”与“行动”——以威胁为主的飙升往往在约3个月内回落，而已发生的行动更持久。以历史百分位显示。仅供背景：它们反映的是前瞻波动率／风险，而非市场方向，且绝不进入任何评分、信号或配置。") }}
+      </span>
+      {% if U.epu %}<span><b>{{ t('Policy uncertainty', '政策不确定性') }}</b> · EPU {{ U.epu.value }}{% if U.epu.pct is not none %} <span class="muted">{{ U.epu.pct }}{{ t('th pct', '百分位') }}</span>{% endif %}</span>{% endif %}
+      {% if U.gpr %}<span><b>{{ t('Geopolitical risk', '地缘风险') }}</b> · GPR {{ U.gpr.value }}{% if U.gpr.pct is not none %} <span class="muted">{{ U.gpr.pct }}{{ t('th pct', '百分位') }}</span>{% endif %}{% if U.gpr.lean and U.gpr.lean != 'balanced' %} · <span class="muted" title="{{ t('threat-led tends to revert (~3mo); act-led tends to persist', '以威胁为主往往回落（约3个月）；以行动为主则更持久') }}">{{ t('led by', '主导') }} {{ t('threats', '威胁') if U.gpr.lean == 'threat' else t('acts', '行动') }}</span>{% endif %}</span>{% endif %}
+      {% if narrative_regime.events and narrative_regime.events.n_recent %}<span class="muted">· {{ t('news-bus', '新闻总线') }}: {{ narrative_regime.events.n_recent }} {{ t('events', '事件') }}/{{ narrative_regime.window_days }}d{% if narrative_regime.events.unscheduled_share is not none %} · {{ (narrative_regime.events.unscheduled_share * 100) | round | int }}% {{ t('unscheduled', '非排程') }}{% endif %}</span>{% endif %}
+    </div>
+    {% endif %}
     {% set RA = (latest.conditions or {}).get('risk_appetite') or {} %}
     {% if RA.get('news_sentiment_state') %}
     {% set nz = RA.get('news_sentiment_z') %}

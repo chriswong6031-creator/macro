@@ -1765,6 +1765,18 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("prediction markets failed: %s", e)
 
+    # narrative-regime context (news_vector PIT bus + EPU/GPR uncertainty regime).
+    # DISPLAY-ONLY leaf — measures the policy/geo narrative backdrop; never scored.
+    # If news_vector.enabled the daily ingest accrues first-print events here too.
+    narrative_regime = None
+    try:
+        from engine import news_vector as _nv
+        if _nv.enabled():
+            _nv.ingest()
+        narrative_regime = _nv.recent_panel()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("news_vector failed: %s", e)
+
     # whole-market dealer-gamma vol regime (validated index GEX) — context for the
     # standout setups below. Additive + graceful: None if the cboe gex store is absent.
     market_gamma = None
@@ -1778,6 +1790,7 @@ def main() -> int:
         macro_catalysts=macro_catalysts,
         event_strip=event_strip,
         prediction_markets=prediction_markets,
+        narrative_regime=narrative_regime,
         macro_news=macro_news_data,
         macro_brief=macro_brief_data,
         macro_news_disclaimer=macro_news_disclaimer,

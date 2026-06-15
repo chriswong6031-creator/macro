@@ -459,6 +459,19 @@ rate_futures:                      # Fed policy path — keyless ZQ/SR3 implied 
     # the compounded avg SOFR over the reference quarter. SOFR ≈ EFFR-few-bp.
     sofr: {symbol_root: SR3, exchanges: [CME],      cadence: quarterly, label: "SOFR 3M (SR3)",    months: 18}
 
+uncertainty_indices:                 # EPU + GPR daily text-uncertainty (narrative-quant-framework P0)
+  # Two peer-reviewed, free, KEYLESS daily indices that quantify the NARRATIVE REGIME
+  # (the manufactured-volatility backdrop). DISPLAY-ONLY context: text-uncertainty has
+  # robust content for realized VOL / tail / risk-premia but WEAK content for return
+  # DIRECTION, and VIX beats EPU at vol-forecasting — so nothing here is scored. Both
+  # endpoints are reachable from the sandbox (unlike FRED).
+  retries: 3
+  # US daily news-based Economic Policy Uncertainty (Baker-Bloom-Davis), CSV from 1985.
+  epu_daily_url: https://www.policyuncertainty.com/media/All_Daily_Policy_Data.csv
+  # Daily Geopolitical Risk index (Caldara-Iacoviello, AER 2022) — legacy .xls with the
+  # index + THREAT/ACT split (threat reverts ~3mo; acts persist → the reversibility tag).
+  gpr_daily_url: https://www.matteoiacoviello.com/gpr_files/data_gpr_daily_recent.xls
+
 cot:
   socrata_url: https://publicreporting.cftc.gov/resource/6dca-aqww.json   # legacy futures-only
   zip_url_template: https://www.cftc.gov/files/dea/history/deacot{year}.zip
@@ -1382,6 +1395,28 @@ macro_news:
   llm_model: deepseek-chat
   base_url: https://api.deepseek.com/anthropic   # omit / null for native Anthropic
   api_key_env: DEEPSEEK_API_KEY
+
+# =============================================================================
+# News-vector PIT event bus (engine/news_vector.py) — Stage 1 of the narrative-
+# quantification framework (memory narrative-quant-framework). A first-print,
+# append-only, keep-FIRST event store over a NARRATIVE-scope GDELT slice
+# (trade/geopolitics/industrial-policy + macro). DISPLAY-ONLY / CONTEXT-ONLY: its
+# value is measurement integrity, not alpha — nothing here is ever scored. The LLM
+# structured-extraction stage is STUBBED OFF (enabled + llm_extract both false).
+# =============================================================================
+news_vector:
+  enabled: false                  # MASTER SWITCH for the GDELT fetch + accrual
+  llm_extract: false              # Stage-C structured extraction — OFF in P0 (no model call)
+  lang: eng
+  window_days: 2                  # fetch the last N days of narrative news
+  max_records: 120                # candidates pulled from GDELT before the gate
+  min_request_interval_s: 6       # GDELT pacing (>=6s)
+  cache_dir: data/news_vector/fetch_cache
+  cache_ttl_hours: 12
+  use_fred: true                  # scheduled_ref via FRED release dates; degrades to static CY2026
+  # Omit `sources`/`query_terms` to use the built-in defaults in engine/news_vector.py.
+  sources: []                     # reputable-source allowlist override (default = macro_news list)
+  query_terms: []                 # GDELT OR-clause override (default = narrative core)
 
 # =============================================================================
 # Company-profile translation (engine/translate.py + scripts/translate_profiles.py).

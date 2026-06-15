@@ -25,6 +25,11 @@ data/macro/news_cache/
 data/macro/auction_cache/
 data/macro/release_cache/
 
+# News-vector GDELT fetch cache (regenerable, date-stamped). The append-only PIT
+# event store data/news_vector/events.parquet is NOT ignored — it must persist &
+# accrue forward vintages (like data/prediction_markets/snapshots.parquet).
+data/news_vector/fetch_cache/
+
 # Large local-only research/build caches (regenerable; kept out of the deploy repo
 # so the daily CI `git add data/` never re-commits & grows them). Not on origin/main.
 data/breadth/_closes_deep.parquet
