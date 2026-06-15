@@ -671,8 +671,20 @@ def _mrs_label(score: float | None) -> str | None:
             else "moderate" if score >= 0.25 else "low")
 
 
+def _mrs_transition_high() -> float:
+    """MRS weight-value the 'transition' leg contributes when the regime is actively
+    TRANSITIONING / NEW_REGIME. Config-driven for a calibration A/B: the default 1.0
+    is the pre-existing behaviour — the leg pushes MRS risk-OFF hardest exactly as a
+    regime is in flux, which is pro-cyclical INTO a turn (it leaned risk-off harder
+    right before the snap-back). Clamping to 0.5 REMOVES that amplification (sign-
+    preserving, subtract-only). NOT flipped live: default 1.0 => byte-identical.
+    See reports/mrs-transition-clamp-spec.md for the A/B + validation plan."""
+    return float((config.load().get("engine", {}).get("macro_overlay") or {})
+                 .get("transition_high", 1.0))
+
+
 def _mrs_transition_val(state) -> float:
-    return (1.0 if state in ("TRANSITIONING", "NEW_REGIME")
+    return (_mrs_transition_high() if state in ("TRANSITIONING", "NEW_REGIME")
             else 0.5 if state == "WEAKENING" else 0.0)
 
 
@@ -760,7 +772,7 @@ def _macro_risk_legs(f: pd.DataFrame, regime: pd.DataFrame):
         tr = regime["transition_state"].reindex(idx)
         val = pd.Series(0.0, index=idx)
         val = val.mask(tr == "WEAKENING", 0.5)
-        val = val.mask(tr.isin(("TRANSITIONING", "NEW_REGIME")), 1.0)
+        val = val.mask(tr.isin(("TRANSITIONING", "NEW_REGIME")), _mrs_transition_high())
         legs["transition"] = (val, tr.notna())
     return legs, idx
 

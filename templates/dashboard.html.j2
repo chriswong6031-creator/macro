@@ -702,6 +702,34 @@
     </details>
   </div>
 
+  <!-- ===================== TURNING-POINT FRAGILITY — conviction guardrail (display-only) ===================== -->
+  {% if latest.turning_point and latest.turning_point.present %}
+  {% set TP = latest.turning_point %}
+  {% set tpc = 'var(--down)' if TP.state=='fragile-structural' else ('var(--muted)' if TP.state=='cooling' else 'var(--orange)') %}
+  {% set _stx = {'RORO extreme':'RORO 极值','capitulation':'恐慌投降','regime transitioning':'周期转换中','rate path priced':'利率路径已定价'} %}
+  <div class="panel span12" id="turning-point" style="border-left:3px solid {{ tpc }}">
+    <h2>⚠️ {{ t(TP.headline_en, TP.headline_zh) }}
+      {{ help("A conviction guardrail, NOT a signal. It fires only when the tape is one-factor (six markets on one macro bet), a macro-shock driver dominates, and positioning is stretched — the configuration that whipsaws on a fast catalyst. It lowers stated conviction; it never tells you to fade. It is read across existing leaves and is never scored, because it cannot distinguish a forced, reversible move from an early, real regime change.", "这是确信度护栏，并非信号。仅当行情呈单因子（六个市场押注同一宏观主题）、某一宏观冲击驱动占主导、且仓位被拉伸时才触发——这正是快速催化剂下容易剧烈反复的格局。它只降低确信度，绝不提示做空。它跨既有读数综合得出，从不计入评分，因为它无法区分被迫的可逆移动与早期的真实周期变化。") }}
+    </h2>
+    <div class="grid">
+      <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-left:3px solid {{ tpc }};border-radius:8px;padding:12px 14px">
+        <div class="muted sm" style="margin-bottom:6px">{{ t('Display-only — these reads are coincident, not predictive. The dashboard is NOT telling you a direction here.', '仅供显示 — 此处读数为巧合同步，并非预测。仪表盘在此并不告诉你方向。') }}</div>
+        <div>{{ t(TP.message_en, TP.message_zh) }}</div>
+        <div style="margin-top:8px;font-weight:700;color:{{ tpc }}">→ {{ t(TP.size_note_en, TP.size_note_zh) }}</div>
+        {% if TP.defer_to == 'dislocation' %}
+        <div class="sm" style="margin-top:7px;color:var(--down)">↘ {{ t('See the', '参见') }} <a href="#dislocation" style="color:var(--down);text-decoration:underline">{{ t('Dislocation gate', '错位一道闸') }}</a> {{ t('— this is its falling-knife regime, not a fade.', '— 此为接飞刀情形，而非做空机会。') }}</div>
+        {% endif %}
+        <div class="sm muted" style="margin-top:9px;border-top:1px solid var(--line);padding-top:7px">
+          <b>{{ t('Why it fired', '触发原因') }}:</b>
+          {% if TP.drivers.one_factor %}{{ t('one-factor tape', '单因子行情') }}{% if TP.drivers.absorption_pctile is not none %} ({{ t('absorption', '吸收率') }} {{ (TP.drivers.absorption_pctile*100)|round|int }}{{ t('th pct', ' 百分位') }}){% endif %} · {% endif %}
+          {% if TP.drivers.primary_label %}{{ t('driver', '驱动') }}: {{ t(TP.drivers.primary_label, TP.drivers.primary_label_zh or TP.drivers.primary_label) }} · {% endif %}
+          {% if TP.drivers.stretched %}{{ t('stretched', '拉伸') }}: {% for s in TP.drivers.stretched %}{{ t(s, _stx.get(s, s)) }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
   <!-- ===================== SIGNAL STACK — consolidated cross-subsystem read ===================== -->
   {% if signal_stack %}
   <div class="panel span12" id="signal-stack">
