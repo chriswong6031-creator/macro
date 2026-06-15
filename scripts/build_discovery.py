@@ -34,6 +34,8 @@ from jinja2 import Environment, FileSystemLoader
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from engine.extension import (GRADES, VAL_LABELS, cohort_stretch,  # noqa: E402
+                              extension_signals, valuation_vs_history)
 from engine.top_picks import (ALPHA_W, ENTRY_LABELS, TILT_LEGS, TILT_W,  # noqa: E402
                               band, compute_scores, entry_meta)
 from lib import config  # noqa: E402
@@ -59,13 +61,23 @@ def _names_sectors() -> dict:
         return {}
 
 
-def _last_prices():
+def _closes_full():
+    """Full daily close matrix (shallow ~3y cache) — feeds the extension + valuation reads.
+    Never fatal: returns None and the chips degrade off."""
     try:
         from engine.equity_factors import _closes
         c = _closes()
-        return c.iloc[-1] if c is not None and not c.empty else None
-    except Exception as e:  # noqa: BLE001 — price is a nicety, never fatal
-        log.warning("price load failed (%s); omitting price column", e)
+        return c if c is not None and not c.empty else None
+    except Exception as e:  # noqa: BLE001
+        log.warning("closes load failed (%s); omitting extension/valuation chips", e)
+        return None
+
+
+def _fund_panel():
+    try:
+        return pd.read_parquet(config.data_dir() / "edgar" / "fundamentals_panel.parquet")
+    except Exception as e:  # noqa: BLE001 — valuation chip is a nicety
+        log.warning("fundamentals panel load failed (%s); omitting valuation chip", e)
         return None
 
 
@@ -105,7 +117,15 @@ def main() -> int:
     insider = _load_json(site, "insider_signals.json")
     attn = _load_json(site, "attention.json")   # offshore-attention z (display-only caution chip)
     ns = _names_sectors()
-    px = _last_prices()
+
+    # extension / exhaustion + valuation-vs-own-history (display-only; validated downside read
+    # in reports/top-picks-freshness-phase0.md — NEVER folded into the rank).
+    closes = _closes_full()
+    px = closes.iloc[-1] if closes is not None else None
+    ext = extension_signals(closes) if closes is not None else {}
+    val = valuation_vs_history(closes, _fund_panel()) if closes is not None else {}
+    log.info("extension read on %d names (%d parabolic), valuation on %d",
+             len(ext), sum(1 for v in ext.values() if v.get("parabolic")), len(val))
 
     # ---- score the whole universe with the validated Top-Pick composite ---------
     inp = []
@@ -129,7 +149,13 @@ def main() -> int:
         name, sector = ns.get(tk, (tk, "—"))
         ins = insider.get(tk, {})
         at = attn.get(tk, {})
+        ex = ext.get(tk, {})
+        vl = val.get(tk, {})
         en, zh, css, buyzone = entry_meta(a.get("entry"))
+        g = ex.get("grade", "na")
+        g_en, g_zh, g_css, g_caution = GRADES.get(g, GRADES["na"])
+        vlab = vl.get("val_label")
+        v_en, v_zh, v_css = VAL_LABELS.get(vlab, (None, None, None))
         return {
             "ticker": tk, "name": name, "sector": sector, "price": _price(px, tk),
             "top_score": s["top_score"], "band": band(s["top_score"]),
@@ -142,6 +168,14 @@ def main() -> int:
             "sector_n": a.get("sector_n"),
             "ins_buyers": ins.get("buyers") or 0, "ins_bps": _clean(ins.get("bps")),
             "attn_z": _clean(at.get("z")),   # offshore-attention z (display-only caution)
+            # extension / exhaustion axis (display-only; never in the score)
+            "grade": g, "grade_en": g_en, "grade_zh": g_zh, "grade_css": g_css,
+            "grade_caution": g_caution, "ext_z": ex.get("ext_z"), "ext": ex.get("ext"),
+            "near_52wh": ex.get("near_52wh"), "id_score": ex.get("id_score"),
+            "parabolic": ex.get("parabolic", False),
+            # valuation vs own ~3y history (display-only tail flag)
+            "ey_pctile": vl.get("ey_pctile"), "val_label": vlab,
+            "val_en": v_en, "val_zh": v_zh, "val_css": v_css,
         }
 
     rows = [r for r in (_row(tk, a) for tk, a in pt.items()) if r is not None]
@@ -152,6 +186,12 @@ def main() -> int:
     rows = dedupe_dual_class(rows)
     strongest = rows[:TOP_N]
     weakest = rows[-TOP_N:][::-1]
+
+    # cohort-stretch banner: how stretched is the LEADERSHIP cohort vs its own norms?
+    # Display-only fragility/size-down context (crowding raises crash *probability*, it
+    # does not time) — computed off the top-conviction quintile by Top-Pick score.
+    cohort_n = max(8, len(rows) // 5)
+    banner = cohort_stretch(rows[:cohort_n])
 
     # the "buy-zone" sweet spot: genuine top picks (high conviction) that are ALSO a
     # leader on a pullback — the user's "good entry into a high-alpha name".
@@ -192,7 +232,7 @@ def main() -> int:
     html = env.get_template("discovery.html.j2").render(
         strongest=strongest, weakest=weakest, buyzone=buyzone, sectors=sectors,
         by_sector=by_sector, sector_order=sector_order, entry_meta=ENTRY_META,
-        tilt_legs=list(TILT_LEGS), alpha_w=ALPHA_W, tilt_w=TILT_W,
+        tilt_legs=list(TILT_LEGS), alpha_w=ALPHA_W, tilt_w=TILT_W, banner=banner,
         attn_threshold=float((config.load().get("wiki_pageviews") or {}).get("chip_threshold", 2.0)),
         as_of=alpha.get("as_of"), windows=alpha.get("windows") or {},
         n=len(rows), built=built)
