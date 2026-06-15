@@ -533,6 +533,33 @@ def main() -> int:
             log.error("china property build failed (%s); skipping", e)
             vm["property"] = None
 
+        # conditions (RORO + uncalibrated recession/drawdown gauges) + Fear↔Euphoria
+        # charts — None-safe. The dicts already ride in vm via "latest"; here we just
+        # render their plotly lines (display-only, never scored).
+        try:
+            cond = latest.get("conditions")
+            if cond and cond.get("charts"):
+                ch = cond["charts"]
+                cond["roro_html"] = _panel_line(ch.get("roro"), "#3f9fd8", height=170, zero=True)
+                cond["recession_html"] = _panel_line(ch.get("recession"), "#d4a017", height=150)
+                cond["drawdown_html"] = _panel_line(ch.get("drawdown"), "#d04545", height=150)
+                fe = latest.get("fear_euphoria")
+                if fe is not None and ch.get("fear_euphoria"):
+                    fe["chart_html"] = _panel_line(ch["fear_euphoria"], "#c08bd8", height=160)
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("china conditions charts failed (%s); skipping", e)
+
+        # China macro/policy release calendar — display-only scheduling context (no
+        # news API; pure date arithmetic over series already collected). None-safe.
+        try:
+            from engine import china_event_calendar as cec
+            vm["calendar"] = cec.china_macro_events(horizon_days=14)
+            vm["event_strip"] = cec.high_impact_strip(horizon_days=14)
+            vm["imminent"] = cec.imminent_line(horizon_days=14)
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("china calendar build failed (%s); skipping", e)
+            vm["calendar"], vm["event_strip"], vm["imminent"] = [], [], None
+
         # regime history -> Time Machine JSON + lifespan base rates on the main page
         hist = store.read("china_regime", "regime_history")
         if hist is not None and "quad" in hist.columns:

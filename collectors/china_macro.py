@@ -38,6 +38,9 @@ DATACENTER = {
     "money_supply": ("RPT_ECONOMY_CURRENCY_SUPPLY", {"m2_yoy": "BASIC_CURRENCY_SAME",
                                                      "m1_yoy": "CURRENCY_SAME", "m0_yoy": "FREE_CASH_SAME"}),
     "indpro":       ("RPT_ECONOMY_INDUS_GROW",     {"indpro_yoy": "BASE_SAME"}),
+    # GDP (quarterly): SUM_SAME = headline YoY % — the growth-context leg in
+    # china_conditions. (The level field is cumulative-YTD, not a clean denominator, so omitted.)
+    "gdp":          ("RPT_ECONOMY_GDP",            {"gdp_yoy": "SUM_SAME"}),
     # -- credit + macro-tape monthlies (verified 2026-06-13, same datacenter host) --
     # new bank credit: the credit-cycle proxy (TSF/社融 itself is mofcom-only/legacy-SSL,
     # so we lead the credit read with new RMB loans + the M1-M2 scissors derived downstream)
@@ -115,6 +118,28 @@ class ChinaMacroAdapter(Adapter):
             raise ValueError("rates: no SHIBOR tenors parsed")
         return wide
 
+    def _report(self, report: str, fields: dict[str, str], date_col: str,
+                page_size: int) -> pd.DataFrame:
+        """Datacenter report whose date column is NOT REPORT_DATE (LPR uses
+        TRADE_DATE, investor-accounts uses STATISTICS_DATE). Same parse as
+        _datacenter otherwise — value-assign to dodge index-alignment-to-NaN."""
+        params = {"reportName": report, "columns": "ALL", "pageSize": page_size,
+                  "sortColumns": date_col, "sortTypes": -1, "pageNumber": 1}
+        r = self.http_get(self.cfg["base_url"], params=params, retries=self.cfg["retries"],
+                          headers=self._headers(), timeout=30)
+        data = (r.json().get("result") or {}).get("data") or []
+        if not data:
+            raise ValueError(f"{report}: empty result")
+        raw = pd.DataFrame(data)
+        out = pd.DataFrame(index=pd.to_datetime(raw[date_col]))
+        for stored, src in fields.items():
+            if src in raw.columns:
+                out[stored] = pd.to_numeric(raw[src], errors="coerce").to_numpy()
+        out = out.dropna(how="all").sort_index()
+        if out.empty:
+            raise ValueError(f"{report}: no usable columns {list(fields.values())}")
+        return out
+
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
         page = self.cfg["page_size"] if not full_history else max(self.cfg["page_size"], 2000)
         frames: dict[str, pd.DataFrame] = {}
@@ -124,6 +149,12 @@ class ChinaMacroAdapter(Adapter):
             try:
                 if key == "rates":
                     frames["rates"] = self._rates()
+                elif key == "lpr_rate":
+                    # the REAL Loan Prime Rate (RPTA_WEB_RATE, TRADE_DATE index) — the
+                    # repo's legacy `lpr` alias actually stores SHIBOR under `rates`.
+                    frames["lpr_rate"] = self._report(
+                        "RPTA_WEB_RATE", {"lpr_1y": "LPR1Y", "lpr_5y": "LPR5Y"},
+                        "TRADE_DATE", max(page, 2000))
                 elif key in DATACENTER:
                     report, fields = DATACENTER[key]
                     frames[key] = self._datacenter(report, fields, page)
