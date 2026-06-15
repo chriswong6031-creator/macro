@@ -569,6 +569,30 @@ def main() -> int:
             log.error("china lowvol sleeve failed (%s); skipping", e)
             vm["lowvol"] = None
 
+        # "Standout individual stocks" — the US notable-cards feature, ported. Enrich the
+        # reversal-led setups shortlist with price + off-52w-high + sparkline + a China
+        # confluence flag (reversal ∩ low-vol). Runs after reversal+lowvol so confluence
+        # can be computed. Updates vm["setups"] in place (falls back to raw setups).
+        try:
+            from scripts.build_china_library import compute_china_standouts
+            vm["setups"] = compute_china_standouts(setups, vm.get("reversal"), vm.get("lowvol"))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("china standouts enrich failed (%s); using raw setups", e)
+
+        # consolidated SCOREBOARD — merge the 4 single-signal screener JSONs (reversal,
+        # low-vol, alpha, setups, + confluence) into one toggle-ready board. Runs last,
+        # after all screener JSONs + the stock library are written.
+        try:
+            from scripts.build_china_library import compute_china_scoreboard
+            sb = compute_china_scoreboard()
+            vm["scoreboard"] = sb
+            if sb:
+                (site / "factordata" / "china_scoreboard.json").write_text(
+                    json.dumps(sb, separators=(",", ":"), default=str))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("china scoreboard build failed (%s); skipping", e)
+            vm["scoreboard"] = None
+
         env = Environment(loader=FileSystemLoader(
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)
         from engine import i18n
