@@ -1,0 +1,380 @@
+{
+  "schema": "group_flow_validation.v2",
+  "generated_at": "2026-06-15T20:51:59.145275+00:00",
+  "as_of": "2026-06-15",
+  "history_start": "2023-05-12",
+  "n_names": 1118,
+  "step_d": 21,
+  "horizons": [
+    20,
+    60
+  ],
+  "verdict": "display_only",
+  "validated_forecast_legs": [],
+  "forecast_weights": {
+    "accel_z": 0.0,
+    "broadening_z": 0.0,
+    "cohesion_chg": 0.0,
+    "persistence": 0.0
+  },
+  "cohesion_gate": {
+    "use": "context_gate",
+    "regime": "stress_conditional",
+    "horizon_d": 20,
+    "tier": "low",
+    "raw_ic_20d": 0.1643,
+    "deconf_ic_20d": 0.0818,
+    "deconf_t_20d": 1.863,
+    "deconf_p_20d": 0.0624,
+    "deconf_ic_60d": 0.0198,
+    "deconf_p_60d": 0.5263
+  },
+  "panel_sector": {
+    "accel_z": {
+      "20": {
+        "mean_ic": 0.0292,
+        "ic_vol": 0.3696,
+        "ic_ir": 0.079,
+        "ic_ir_ann": 0.274,
+        "t_hac": 0.46,
+        "p_hac": 0.6454,
+        "hit": 0.522,
+        "n": 23
+      },
+      "60": {
+        "mean_ic": -0.0652,
+        "ic_vol": 0.3529,
+        "ic_ir": -0.185,
+        "ic_ir_ann": -0.64,
+        "t_hac": -1.606,
+        "p_hac": 0.1083,
+        "hit": 0.435,
+        "n": 23
+      }
+    },
+    "broadening_z": {
+      "20": {
+        "mean_ic": -0.0336,
+        "ic_vol": 0.3547,
+        "ic_ir": -0.095,
+        "ic_ir_ann": -0.328,
+        "t_hac": -0.526,
+        "p_hac": 0.5988,
+        "hit": 0.435,
+        "n": 23
+      },
+      "60": {
+        "mean_ic": -0.0642,
+        "ic_vol": 0.2939,
+        "ic_ir": -0.219,
+        "ic_ir_ann": -0.757,
+        "t_hac": -1.604,
+        "p_hac": 0.1087,
+        "hit": 0.261,
+        "n": 23
+      }
+    },
+    "cohesion_chg": {
+      "20": {
+        "mean_ic": 0.1643,
+        "ic_vol": 0.3895,
+        "ic_ir": 0.422,
+        "ic_ir_ann": 1.461,
+        "t_hac": 2.857,
+        "p_hac": 0.0043,
+        "hit": 0.565,
+        "n": 23
+      },
+      "60": {
+        "mean_ic": 0.115,
+        "ic_vol": 0.3678,
+        "ic_ir": 0.313,
+        "ic_ir_ann": 1.083,
+        "t_hac": 3.381,
+        "p_hac": 0.0007,
+        "hit": 0.565,
+        "n": 23
+      }
+    },
+    "persistence": {
+      "20": {
+        "mean_ic": -0.0447,
+        "ic_vol": 0.3529,
+        "ic_ir": -0.127,
+        "ic_ir_ann": -0.439,
+        "t_hac": -0.888,
+        "p_hac": 0.3743,
+        "hit": 0.565,
+        "n": 23
+      },
+      "60": {
+        "mean_ic": -0.069,
+        "ic_vol": 0.3699,
+        "ic_ir": -0.187,
+        "ic_ir_ann": -0.647,
+        "t_hac": -1.95,
+        "p_hac": 0.0512,
+        "hit": 0.304,
+        "n": 23
+      }
+    },
+    "flow_score": {
+      "20": {
+        "mean_ic": -0.0101,
+        "ic_vol": 0.3787,
+        "ic_ir": -0.027,
+        "ic_ir_ann": -0.092,
+        "t_hac": -0.169,
+        "p_hac": 0.8655,
+        "hit": 0.522,
+        "n": 23
+      },
+      "60": {
+        "mean_ic": -0.0656,
+        "ic_vol": 0.364,
+        "ic_ir": -0.18,
+        "ic_ir_ann": -0.625,
+        "t_hac": -1.446,
+        "p_hac": 0.1482,
+        "hit": 0.348,
+        "n": 23
+      }
+    }
+  },
+  "panel_name": {
+    "accel_z": {
+      "20": {
+        "mean_ic": -0.0036,
+        "ic_vol": 0.1122,
+        "ic_ir": -0.032,
+        "ic_ir_ann": -0.11,
+        "t_hac": -0.202,
+        "p_hac": 0.8402,
+        "hit": 0.522,
+        "n": 23
+      },
+      "60": {
+        "mean_ic": -0.0119,
+        "ic_vol": 0.1048,
+        "ic_ir": -0.113,
+        "ic_ir_ann": -0.392,
+        "t_hac": -1.006,
+        "p_hac": 0.3142,
+        "hit": 0.435,
+        "n": 23
+      }
+    },
+    "flow_score": {
+      "20": {
+        "mean_ic": -0.0212,
+        "ic_vol": 0.1266,
+        "ic_ir": -0.168,
+        "ic_ir_ann": -0.581,
+        "t_hac": -1.019,
+        "p_hac": 0.3083,
+        "hit": 0.478,
+        "n": 23
+      },
+      "60": {
+        "mean_ic": -0.0248,
+        "ic_vol": 0.1176,
+        "ic_ir": -0.211,
+        "ic_ir_ann": -0.732,
+        "t_hac": -2.132,
+        "p_hac": 0.033,
+        "hit": 0.435,
+        "n": 23
+      }
+    }
+  },
+  "panel_basket": {
+    "accel_z": {
+      "20": {
+        "mean_ic": -0.0158,
+        "ic_vol": 0.2251,
+        "ic_ir": -0.07,
+        "ic_ir_ann": -0.243,
+        "t_hac": null,
+        "p_hac": null,
+        "hit": 0.571,
+        "n": 7
+      },
+      "60": {
+        "mean_ic": -0.0582,
+        "ic_vol": 0.2394,
+        "ic_ir": -0.243,
+        "ic_ir_ann": -0.842,
+        "t_hac": null,
+        "p_hac": null,
+        "hit": 0.571,
+        "n": 7
+      }
+    },
+    "broadening_z": {
+      "20": {
+        "mean_ic": -0.0101,
+        "ic_vol": 0.4541,
+        "ic_ir": -0.022,
+        "ic_ir_ann": -0.077,
+        "t_hac": null,
+        "p_hac": null,
+        "hit": 0.667,
+        "n": 6
+      },
+      "60": {
+        "mean_ic": -0.0399,
+        "ic_vol": 0.3629,
+        "ic_ir": -0.11,
+        "ic_ir_ann": -0.381,
+        "t_hac": null,
+        "p_hac": null,
+        "hit": 0.333,
+        "n": 6
+      }
+    },
+    "cohesion_chg": {
+      "20": {
+        "mean_ic": -0.0008,
+        "ic_vol": 0.3205,
+        "ic_ir": -0.003,
+        "ic_ir_ann": -0.009,
+        "t_hac": -0.008,
+        "p_hac": 0.9935,
+        "hit": 0.4,
+        "n": 10
+      },
+      "60": {
+        "mean_ic": -0.0583,
+        "ic_vol": 0.2121,
+        "ic_ir": -0.275,
+        "ic_ir_ann": -0.952,
+        "t_hac": -2.237,
+        "p_hac": 0.0253,
+        "hit": 0.4,
+        "n": 10
+      }
+    },
+    "persistence": {
+      "20": {
+        "mean_ic": 0.0341,
+        "ic_vol": 0.3984,
+        "ic_ir": 0.086,
+        "ic_ir_ann": 0.297,
+        "t_hac": 0.641,
+        "p_hac": 0.5212,
+        "hit": 0.5,
+        "n": 12
+      },
+      "60": {
+        "mean_ic": 0.0632,
+        "ic_vol": 0.292,
+        "ic_ir": 0.216,
+        "ic_ir_ann": 0.75,
+        "t_hac": 0.925,
+        "p_hac": 0.3551,
+        "hit": 0.583,
+        "n": 12
+      }
+    },
+    "flow_score": {
+      "20": {
+        "mean_ic": 0.0804,
+        "ic_vol": 0.4019,
+        "ic_ir": 0.2,
+        "ic_ir_ann": 0.693,
+        "t_hac": 1.057,
+        "p_hac": 0.2903,
+        "hit": 0.667,
+        "n": 12
+      },
+      "60": {
+        "mean_ic": 0.054,
+        "ic_vol": 0.3426,
+        "ic_ir": 0.158,
+        "ic_ir_ann": 0.546,
+        "t_hac": 0.654,
+        "p_hac": 0.5134,
+        "hit": 0.5,
+        "n": 12
+      }
+    }
+  },
+  "bh_family": {
+    "flow_score@20": {
+      "p": 0.8655,
+      "q": 0.8655,
+      "reject": false
+    },
+    "accel_z@20": {
+      "p": 0.6454,
+      "q": 0.7171,
+      "reject": false
+    },
+    "broadening_z@20": {
+      "p": 0.5988,
+      "q": 0.7171,
+      "reject": false
+    },
+    "persistence@20": {
+      "p": 0.3743,
+      "q": 0.5347,
+      "reject": false
+    },
+    "flow_score@60": {
+      "p": 0.1482,
+      "q": 0.247,
+      "reject": false
+    },
+    "broadening_z@60": {
+      "p": 0.1087,
+      "q": 0.2174,
+      "reject": false
+    },
+    "accel_z@60": {
+      "p": 0.1083,
+      "q": 0.2174,
+      "reject": false
+    },
+    "persistence@60": {
+      "p": 0.0512,
+      "q": 0.1707,
+      "reject": false
+    },
+    "cohesion_chg@20": {
+      "p": 0.0043,
+      "q": 0.0215,
+      "reject": true
+    },
+    "cohesion_chg@60": {
+      "p": 0.0007,
+      "q": 0.007,
+      "reject": true
+    }
+  },
+  "survivorship_gap_20d": {
+    "accel_z": -0.045,
+    "broadening_z": 0.0235,
+    "cohesion_chg": -0.1651,
+    "persistence": 0.0788,
+    "flow_score": 0.0905
+  },
+  "basket_confidence_cap": 0.55,
+  "calibrated": false,
+  "panel_name_caveat": "panel_name uses current GICS labels + cache-presence (not PIT-restricted) \u2014 a descriptive power illustration only; does not affect the display_only verdict.",
+  "cohesion_caveats": [
+    "Horizon: only the ~20d read carries de-confounded signal; the 60d claim is a sector reversal/stress proxy (collapses to ~+0.03, p~0.56 once orthogonalized on trailing return). Never use the 60d number.",
+    "Magnitude: the honest de-confounded IC is ~+0.10 (p~0.04, marginal), NOT the raw +0.164 \u2014 the raw figure is ~2.4x inflated by a handful of stress dates (median per-date IC only +0.068).",
+    "Fragility: significance hinges on a few stress cross-sections; dropping the single best date takes p from 0.004 to 0.071, and the hit rate is a coin-flip 56.5%. Right rarely but hugely, not a per-month edge.",
+    "Regime: the edge is stress-conditional (high-VIX IC +0.236 vs calm +0.099 insignificant). It reads as stress-driven dispersion/rotation-recovery, NOT 'coordinated inflows forming'. Condition any read on the VIX/stress regime.",
+    "Sample: ~1.8y effective window, n=23 overlapping monthly cross-sections of 11 sectors, edge concentrated in calendar 2025. Durability out-of-one-year is UNPROVEN \u2014 reconfirm as 2026+ accrues.",
+    "Multiple testing: clears BH-FDR only under a narrow 10-member family; at an honest ~90-trial count the adjusted p climbs to 0.5-1.0. Do not infer reliability from the headline t-stat.",
+    "Scope: GICS-sector-specific. It dies off the sector axis (size buckets null-to-wrong-signed) and is ~0 on the hindsight baskets (survivorship_gap -0.165). NOT a transferable 'members move together' law for arbitrary themes."
+  ],
+  "residual_risks": [
+    "The clean 20d residual edge could itself be a longer-window (120d+) reversal/momentum-crash component the 20d/60d controls did not remove.",
+    "Single 2023-2026 macro regime \u2014 the whole effect may be a property of this regime; untestable on a 3y close-only cache.",
+    "Close-only (no volume): a true coordinated-inflow mechanism cannot be confirmed; cohesion may be capturing factor-beta compression in stress, not flow.",
+    "Largely a stress proxy \u2014 if combined later with the dashboard's existing VIX/stress signals it may be redundant (double-count risk)."
+  ],
+  "note": "Unbiased-universe (PIT GICS sector) verdict, adversarially reviewed (ruling: PARTIAL). No leg earns a forecast weight: momentum legs are noise/anti-predictive; cohesion_chg is a real-but-modest, stress-conditional, sector-only SHORT-horizon residual effect -> a CONTEXT GATE, never a scored leg. flow_score = descriptive concentration map only. Detection, not prediction."
+}
