@@ -1,0 +1,321 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{% macro help(en, zh='') -%}
+<span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
+{%- endmacro %}
+{% macro pct(v) -%}
+{%- if v is none -%}—{%- else -%}{{ '%.0f%%'|format(v*100) }}{%- endif -%}
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ t('Alert Command Center — every alert, ranked & triaged', '警报指挥中心 — 全部警报，分级与分诊') }}</title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,
+         "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1340px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:21px; margin:0; }
+  h2 { font-size:13px; margin:0 0 4px; color:var(--muted); text-transform:uppercase;
+       letter-spacing:.06em; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+           padding:14px 16px; margin-bottom:14px; }
+  .topline { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+  .muted { color:var(--muted); } .sm { font-size:12px; }
+  .lead { font-size:14.5px; max-width:74ch; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+  .chip { font-size:12px; padding:4px 10px; border-radius:18px; border:1px solid var(--line);
+          background:var(--panel2); display:inline-flex; align-items:center; gap:6px; }
+  .chip b { font-size:14px; }
+  .dot { width:9px; height:9px; border-radius:50%; display:inline-block; }
+  .d-crit{background:var(--down);} .d-major{background:#c8922b;} .d-minor{background:var(--muted);}
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px;
+          height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted);
+          font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:4px; }
+  .help .tip { display:none; position:absolute; top:140%; left:0; width:320px;
+               background:var(--panel); border:1px solid var(--line); padding:9px 11px;
+               border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text);
+               font-weight:400; box-shadow:var(--popover-shadow); pointer-events:none; }
+  .help:hover .tip { display:block; }
+
+  /* context strip */
+  .ctx { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:10px; }
+  .ctx .cell { border:1px solid var(--line); border-radius:8px; padding:9px 11px; background:var(--panel2); }
+  .ctx .cell .k { font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+  .ctx .cell .vv { font-size:14px; font-weight:600; margin-top:2px; }
+  .ctx .cell .vsub { font-size:11.5px; color:var(--muted); margin-top:1px; }
+
+  /* filters */
+  .filters { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .fbtn { font-size:12px; padding:4px 11px; border-radius:16px; border:1px solid var(--line);
+          background:var(--panel2); color:var(--muted); cursor:pointer; user-select:none; }
+  .fbtn.on { color:var(--text); border-color:var(--text); font-weight:600; }
+
+  /* alert cards */
+  .feed { display:flex; flex-direction:column; gap:10px; }
+  .ac { display:grid; grid-template-columns:74px 1fr; gap:0; border:1px solid var(--line);
+        border-radius:10px; overflow:hidden; background:var(--panel); }
+  .ac .rail { display:flex; flex-direction:column; align-items:center; justify-content:center;
+              gap:3px; padding:10px 6px; border-right:1px solid var(--line); background:var(--panel2); }
+  .ac .pr { font-size:22px; font-weight:700; line-height:1; font-variant-numeric:tabular-nums; }
+  .ac .prl { font-size:9px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
+  .ac.crit  { border-left:4px solid var(--down); }
+  .ac.major { border-left:4px solid #c8922b; }
+  .ac.minor { border-left:4px solid var(--muted); }
+  .ac .body { padding:10px 13px; min-width:0; }
+  .ac .meta { display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:11.5px; color:var(--muted); }
+  .ac .hl { font-size:14.5px; font-weight:600; margin:4px 0 2px; }
+  .ac .dt { font-size:12.5px; color:var(--muted); }
+  .ac .row2 { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-top:8px; }
+  .pill { font-size:10.5px; font-weight:700; padding:2px 9px; border-radius:8px; white-space:nowrap;
+          border:1px solid var(--line); display:inline-flex; align-items:center; gap:4px; }
+  .sev-crit  { color:var(--down);  border-color:color-mix(in srgb,var(--down) 50%,var(--line)); }
+  .sev-major { color:#c8922b;      border-color:#c8922b66; }
+  .sev-minor { color:var(--muted); }
+  /* action pills */
+  .a-high     { color:var(--down);  border-color:color-mix(in srgb,var(--down) 55%,var(--line)); }
+  .a-reduce   { color:#c8922b;      border-color:#c8922b77; }
+  .a-confirm  { color:var(--link);  border-color:color-mix(in srgb,var(--link) 50%,var(--line)); }
+  .a-watch    { color:var(--text); }
+  .a-context  { color:var(--muted); }
+  .tier { font-size:10.5px; color:var(--muted); border:1px solid var(--line); border-radius:8px; padding:2px 8px; }
+  .ca-confirm { color:var(--up); }
+  .ca-diverge { color:var(--down); }
+  .val { font-size:11px; color:var(--muted); margin-top:7px; display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+  .vpill { font-size:10px; font-weight:700; padding:1px 7px; border-radius:7px; border:1px solid var(--line); }
+  .vp-scored{ color:var(--up); border-color:color-mix(in srgb,var(--up) 50%,var(--line)); }
+  .vp-confirmer{ color:var(--link); border-color:color-mix(in srgb,var(--link) 50%,var(--line)); }
+  .vp-calibrated{ color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,var(--line)); }
+  .vp-documented{ color:var(--muted); }
+  .vp-display{ color:var(--muted); } .vp-killed{ color:var(--down); }
+  .mono { font-variant-numeric:tabular-nums; }
+  .lnk { color:var(--link); }
+  .empty { color:var(--muted); padding:18px; text-align:center; }
+  details.method summary { cursor:pointer; font-weight:600; }
+  details.method dl { margin:8px 0 0; } details.method dt { font-weight:600; margin-top:7px; }
+  details.method dd { margin:1px 0 0; color:var(--muted); font-size:12.5px; }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 {{ t('US Macro', '美国宏观') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu">
+        <a href="macro.html">📊 {{ t('Macro dashboard', '宏观仪表盘') }}</a>
+        <a href="alerts.html">🚨 {{ t('Alert Center', '警报中心') }}</a>
+        <a href="discovery.html">🏆 {{ t('Top Picks', '精选股') }}</a>
+        <a href="spvector.html">📈 {{ t('S&P / Macro Vector', '标普宏观向量') }}</a>
+        <a href="gex.html">🧲 {{ t('GEX magnets', 'Gamma磁吸') }}</a>
+        <a href="signal_lab.html">🔬 {{ t('Signal Lab', '信号实验室') }}</a>
+        <a href="validation_timeline.html">🧪 {{ t('Validation timeline', '验证时间线') }}</a>
+        <a href="history.html">📈 {{ t('History', '历史') }}</a>
+      </div>
+    </div>
+    <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }}</a>
+    <a class="nav-link" href="etfs.html">🐳 {{ t('ETF flows', 'ETF 资金流') }}</a>
+    <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国A股') }}</a>
+    <a class="nav-link" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }}</a>
+    <a class="nav-link" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }}</a>
+    <a class="nav-link" href="forex.html">💱 {{ t('Forex', '外汇') }}</a>
+    <a class="nav-link" href="bonds.html">🏛️ {{ t('Bonds', '债券') }}</a>
+  </div>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+<div class="panel">
+  <div class="topline">
+    <h1>🚨 {{ t('Alert Command Center', '警报指挥中心') }}</h1>
+    <span class="muted sm">{{ t('Every cross-asset alert from the last ' ~ window_days ~ ' days, ranked so the dashboard speaks like a PM — not all at one volume',
+                                '过去 ' ~ window_days ~ ' 天的全部跨资产警报，经过排序 — 让仪表盘像基金经理一样说话，而非一律高声') }}</span>
+  </div>
+  <p class="lead" style="margin:10px 0 0">{{ t(
+     "Six engines emit alerts on their own pages with their own severity scales. This board pulls the "
+     "recent macro / cross-asset feeds into one place and answers the only questions that matter: how "
+     "loud is it really (a TRUE cross-asset conviction, not each engine's local 'high'), how much should "
+     "it grab attention now (a transparent priority score — its parts are shown), and what is the measured "
+     "edge. On that last point we are strict: a hit-rate or Deflated-Sharpe appears ONLY where the "
+     "validation layer actually measured this signal family; everywhere else we say 'documented, not "
+     "backtested' rather than invent a number.",
+     "六个引擎在各自页面以各自的严重度标准发出警报。本看板把近期的宏观／跨资产信息流汇于一处，回答真正重要的问题："
+     "它到底有多响（真正的跨资产信念，而非各引擎本地的“高”）、此刻该给多少注意力（一个透明的优先级分数，其构成已公开），"
+     "以及可测的边际是多少。最后一点我们很严格：只有当验证层确实测量过该信号族时，才显示命中率或去偏夏普；"
+     "其余一律标注“有据可查，但未回测”，绝不编造数字。") }}</p>
+  <div class="chips">
+    <span class="chip"><span class="dot d-crit"></span><b>{{ summary.critical }}</b> {{ t('critical','关键') }}</span>
+    <span class="chip"><span class="dot d-major"></span><b>{{ summary.major }}</b> {{ t('major','重要') }}</span>
+    <span class="chip"><span class="dot d-minor"></span><b>{{ summary.minor }}</b> {{ t('minor','次要') }}</span>
+    <span class="chip">⚡ <b>{{ summary.actionable }}</b> {{ t('actionable (act-tier)','可执行（act级）') }}</span>
+    <span class="chip">🔬 <b>{{ summary.backtested }}</b> {{ t('backed by a validated signal','有已验证信号支撑') }}{{ help('A signal-family with a real Signal-Lab verdict (hit / IC / Deflated-Sharpe). The rest carry documented conviction only.','该信号族在信号实验室有真实结论（命中／IC／去偏夏普）。其余仅为有据可查的信念。') }}</span>
+  </div>
+</div>
+
+<!-- shared backdrop: regime · cross-asset · risk · next catalyst -->
+<div class="panel">
+  <h2>{{ t('Backdrop — the same context every alert is read against','背景 — 解读每条警报的共同语境') }}</h2>
+  <div class="ctx">
+    <div class="cell">
+      <div class="k">{{ t('Regime','机制') }}</div>
+      <div class="vv">{{ regime.quad_name or regime.quad or '—' }}</div>
+      <div class="vsub">{{ t('cycle','周期') }}: {{ regime.cycle or '—' }} · {{ regime.transition or '—' }}</div>
+    </div>
+    <div class="cell">
+      <div class="k">{{ t('Cross-asset','跨资产') }} {{ help('Kritzman-Page absorption: are the major markets one bet or genuinely separate? A CONCENTRATED tape corroborates a stress alert; a DIVERSIFIED one argues against chasing it.','吸收比（Kritzman-Page）：主要市场是一个押注还是真正分散？集中的盘面会佐证压力类警报；分散的盘面则不支持追入。') }}</div>
+      <div class="vv {{ 'ca-diverge' if cross_asset.verdict=='concentrated' else ('ca-confirm' if cross_asset.verdict=='diversified') }}">{{ (cross_asset.verdict or '—')|upper }}</div>
+      <div class="vsub">{{ t('one bet','同一押注') }}: {{ cross_asset.dominant_cluster|join(', ') if cross_asset.dominant_cluster else '—' }}</div>
+    </div>
+    <div class="cell">
+      <div class="k">{{ t('Risk backdrop','风险背景') }}</div>
+      <div class="vv">{{ t('recession','衰退') }}: {{ risk_backdrop.recession_band or '—' }}</div>
+      <div class="vsub">{{ t('drawdown','回撤') }}: {{ risk_backdrop.drawdown_band or '—' }} · NFCI {{ risk_backdrop.nfci_state or '—' }}</div>
+    </div>
+    <div class="cell">
+      <div class="k">{{ t('Next catalyst','下一个催化剂') }} {{ help('The nearest high-impact US event. Acting INTO a major print (CPI/FOMC/auction) is itself a risk — the board flags it so you size for the event, not just the signal.','最近的高影响美国事件。在重大数据（CPI/FOMC/拍卖）前行动本身即是风险 — 看板予以标注，使你为事件而非仅为信号定仓。') }}</div>
+      {% if events.next %}
+      <div class="vv">{{ events.next.type }} · {{ events.next.md }}</div>
+      <div class="vsub">{% if events.next.days is not none %}{{ t('in','还有') }} {{ events.next.days }}{{ t('d','天') }}{% endif %}{% if events.next.time_et %} · {{ events.next.time_et }} ET{% endif %}</div>
+      {% else %}<div class="vv">—</div>{% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- filters -->
+<div class="panel" style="padding:11px 16px">
+  <div class="filters">
+    <span class="muted sm" style="margin-right:2px">{{ t('Filter','筛选') }}:</span>
+    <span class="fbtn on" data-f="all" data-grp="sev">{{ t('all','全部') }}</span>
+    <span class="fbtn" data-f="critical" data-grp="sev">{{ t('critical','关键') }}</span>
+    <span class="fbtn" data-f="major" data-grp="sev">{{ t('major','重要') }}</span>
+    <span class="fbtn" data-f="act" data-grp="sev">{{ t('actionable','可执行') }}</span>
+    <span style="flex:1"></span>
+    <span class="fbtn on" data-f="all" data-grp="src">{{ t('all sources','全部来源') }}</span>
+    <span class="fbtn" data-f="macro" data-grp="src">📊 {{ t('macro','宏观') }}</span>
+    <span class="fbtn" data-f="bonds" data-grp="src">🏛️ {{ t('bonds','债券') }}</span>
+    <span class="fbtn" data-f="vector" data-grp="src">₿ BTC</span>
+    <span class="fbtn" data-f="commodity" data-grp="src">🛢 {{ t('commodity','商品') }}</span>
+    <span class="fbtn" data-f="forex" data-grp="src">💱 {{ t('forex','外汇') }}</span>
+  </div>
+</div>
+
+<!-- the ranked board -->
+<div class="feed" id="feed">
+{% for a in alerts %}
+  {% set sevcls = 'crit' if a.severity=='critical' else ('major' if a.severity=='major' else 'minor') %}
+  {% set v = a.validation %}
+  <div class="ac {{ sevcls }}" data-sev="{{ a.severity }}" data-tier="{{ a.tier }}" data-src="{{ a.source }}">
+    <div class="rail">
+      <div class="pr">{{ a.priority }}</div>
+      <div class="prl">{{ t('priority','优先级') }}{{ help(
+        'Triage priority 0-100 — how much this should grab attention NOW, not a probability it is right. = conviction ' ~ a.priority_components.conviction[0] ~ ' (' ~ a.priority_components.conviction[1] ~ ') + severity ' ~ a.priority_components.severity[0] ~ ' (' ~ a.priority_components.severity[1] ~ ') + recency ' ~ a.priority_components.recency[0] ~ ' (' ~ a.priority_components.recency[1] ~ ') + cross-asset ' ~ a.priority_components.cross_asset[0] ~ ' (' ~ a.priority_components.cross_asset[1] ~ ').',
+        '分诊优先级 0-100 — 表示此刻该给多少注意力，并非判断正确的概率。= 信念 ' ~ a.priority_components.conviction[0] ~ ' + 严重度 ' ~ a.priority_components.severity[0] ~ ' + 新鲜度 ' ~ a.priority_components.recency[0] ~ ' + 跨资产 ' ~ a.priority_components.cross_asset[0] ~ '。') }}</div>
+    </div>
+    <div class="body">
+      <div class="meta">
+        <span>{{ a.source_icon }} {{ t(a.source_label, a.source_label_zh) }}</span>
+        <span>·</span>
+        <span class="pill sev-{{ sevcls }}"><span class="dot d-{{ sevcls }}"></span>{{ t(a.severity, {'critical':'关键','major':'重要','minor':'次要'}[a.severity]) }}</span>
+        <span>·</span>
+        <span class="mono">{{ a.ts[:10] }}{% if a.age_days==0 %} · {{ t('today','今天') }}{% elif a.age_days==1 %} · {{ t('1d ago','1天前') }}{% else %} · {{ a.age_days }}{{ t('d ago','天前') }}{% endif %}</span>
+      </div>
+      <div class="hl">{{ t(a.headline, a.headline_zh) }}</div>
+      {% if a.detail %}<div class="dt">{{ t(a.detail[:200], a.detail_zh[:200]) }}</div>{% endif %}
+      <div class="row2">
+        {% set acls = {'high-conviction':'a-high','reduce risk':'a-reduce','confirm first':'a-confirm','watch':'a-watch','context':'a-context'}[a.action] %}
+        <span class="pill {{ acls }}">→ {{ t(a.action, a.action_zh) }}</span>
+        <span class="tier">{{ t(a.tier, {'act':'执行','watch':'观察','context':'背景'}[a.tier]) }}</span>
+        {% if a.cross_asset_tag != 'neutral' %}
+        <span class="tier {{ 'ca-confirm' if a.cross_asset_tag=='confirm' else 'ca-diverge' }}">
+          {{ '✓' if a.cross_asset_tag=='confirm' else '⚠' }} {{ t('cross-asset ' ~ a.cross_asset_tag, '跨资产' ~ ({'confirm':'佐证','diverge':'背离'}[a.cross_asset_tag])) }}</span>
+        {% endif %}
+        <a class="lnk sm" href="{{ a.link }}">{{ t('open →','打开 →') }}</a>
+      </div>
+      <!-- validation: measured edge ONLY where it exists, else honest 'documented' -->
+      <div class="val">
+        {% set vc = 'vp-' ~ (v.verdict if v.verdict in ['scored','confirmer','calibrated','documented','display','killed'] else 'documented') %}
+        <span class="vpill {{ vc }}">{{ t(v.verdict|upper, v.verdict|upper) }}</span>
+        {% if v.hit is not none %}<span class="mono">{{ t('hit','命中') }} {{ pct(v.hit) }}</span>{% endif %}
+        {% if v.ic is not none %}<span class="mono">IC {{ '%+.3f'|format(v.ic) }}</span>{% endif %}
+        {% if v.dsr is not none %}<span class="mono">DSR {{ '%.2f'|format(v.dsr) }}</span>{% endif %}
+        {% if v.horizon %}<span class="muted">· {{ v.horizon }}</span>{% endif %}
+        {% if v.note %}<span class="muted">— {{ t(v.note[:130], (v.note_zh or v.note)[:130]) }}</span>{% endif %}
+        {{ help(
+           (v.note or 'No standalone backtest for this alert family.') ~ (('  Validated as: ' ~ v.scorecard_name ~ '.') if v.scorecard_name else '') ~ (('  [' ~ v.report ~ ']') if v.report else '') ~ '  See Signal Lab for the full battery.',
+           (v.note_zh or v.note or '该警报族无独立回测。') ~ (('  验证为：' ~ v.scorecard_name ~ '。') if v.scorecard_name else '') ~ '  详见信号实验室。') }}
+        <a class="lnk" href="{{ v.link }}">{{ t('Signal Lab →','信号实验室 →') }}</a>
+      </div>
+    </div>
+  </div>
+{% else %}
+  <div class="panel empty">{{ t('No alerts in the window. A quiet tape is a position too.','窗口内无警报。平静的盘面本身也是一种仓位。') }}</div>
+{% endfor %}
+</div>
+
+<div class="panel" style="margin-top:14px">
+  <details class="method">
+    <summary>{{ t('How this board ranks — and why it refuses to fake a hit-rate','本看板如何排序 — 以及为何拒绝编造命中率') }}</summary>
+    <dl>
+      <dt>{{ t('Triage priority (0-100)','分诊优先级 (0-100)') }}</dt>
+      <dd>{{ t('A transparent sum of four parts: conviction (act 40 / watch 22 / context 8), severity (critical 30 / major 18 / minor 6), recency (fresh 20 → old 2), and cross-asset agreement (+10 confirm, −6 diverge). It tells you what to LOOK at first. It is explicitly NOT a probability the call is correct.','四部分的透明加总：信念（执行40／观察22／背景8）、严重度（关键30／重要18／次要6）、新鲜度（新20→旧2）、跨资产一致性（佐证+10、背离−6）。它告诉你先看什么，明确不是判断正确的概率。') }}</dd>
+      <dt>{{ t('Conviction tier ≠ engine severity','信念级别 ≠ 引擎严重度') }}</dt>
+      <dd>{{ t("Each engine has its own 'high/medium' scale, so a per-pair forex flip can read as loud as a credit blow-out. We re-tier every alert by its TRUE cross-asset importance — which is why forex and commodities sit mostly at watch/context and the top is reserved for credit, recession and the BTC risk regime.",'每个引擎有自己的“高／中”刻度，使得单一货币对的翻转看起来与信用崩溃一样响。我们按真正的跨资产重要性重新分级 — 这就是外汇与商品多处于观察／背景、而顶部留给信用、衰退与比特币风险机制的原因。') }}</dd>
+      <dt>{{ t('Measured edge, or silence','可测边际，或保持沉默') }}</dt>
+      <dd>{{ t("A hit-rate / IC / Deflated-Sharpe is shown ONLY where engine.signal_lab already validated that family (e.g. the recession composite, the regime quad, the BTC risk regime, the commodity risk index). For the condition-based alerts that were never backtested as timing signals (liquidity flips, credit widening), we show the documented conviction and say so. Earning real per-alert hit-rates means running a Phase-0 harness per rule — a separate research track, not a number we will guess.",'只有当 engine.signal_lab 已验证该族（如衰退综合、机制四象限、比特币风险机制、商品风险指数）时，才显示命中率／IC／去偏夏普。对于从未作为择时信号回测的条件型警报（流动性翻转、信用走阔），我们展示有据可查的信念并如实说明。要得到真实的逐警报命中率，需为每条规则运行 Phase-0 检验 — 那是另一条研究线，而非我们会去猜的数字。') }}</dd>
+    </dl>
+  </details>
+</div>
+
+<div class="panel">
+  <p class="src muted sm" style="margin:0">
+    {{ t('Assembler','汇编') }}: engine/alert_triage.py · {{ t('feeds','数据源') }}: macro / bonds / forex / vector / commodity ·
+    {{ t('window','窗口') }} {{ window_days }}{{ t('d','天') }} · {{ t('as-of','截至') }} {{ asof or '—' }} ·
+    {{ t('rendered','生成') }} {{ generated_utc }} UTC</p>
+</div>
+
+<script>
+(function(){
+  var sel = {sev:'all', src:'all'};
+  function apply(){
+    document.querySelectorAll('#feed .ac').forEach(function(c){
+      var okS = sel.sev==='all'
+        || (sel.sev==='act' ? c.dataset.tier==='act' : c.dataset.sev===sel.sev);
+      var okR = sel.src==='all' || c.dataset.src===sel.src;
+      c.style.display = (okS && okR) ? '' : 'none';
+    });
+  }
+  document.querySelectorAll('.fbtn').forEach(function(b){
+    b.addEventListener('click', function(){
+      var grp = b.dataset.grp;
+      document.querySelectorAll('.fbtn[data-grp="'+grp+'"]').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+      sel[grp==='sev'?'sev':'src'] = b.dataset.f;
+      apply();
+    });
+  });
+})();
+</script>
+<script src="theme.js"></script>
+</body>
+</html>
