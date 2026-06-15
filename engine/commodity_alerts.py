@@ -32,15 +32,32 @@ from lib import config, store
 
 log = logging.getLogger(__name__)
 
-LABEL = {"gold": "Gold", "silver": "Silver", "copper": "Copper", "oil": "Oil"}
-UNIT = {"gold": "$/oz", "silver": "$/oz", "copper": "$/lb", "oil": "$/bbl"}
+LABEL = {
+    "gold": "Gold", "silver": "Silver", "platinum": "Platinum",
+    "copper": "Copper", "oil": "Oil", "brent": "Brent", "natgas": "Natural Gas",
+    "corn": "Corn", "wheat": "Wheat", "soybeans": "Soybeans",
+}
+UNIT = {
+    "gold": "$/oz", "silver": "$/oz", "platinum": "$/oz", "copper": "$/lb",
+    "oil": "$/bbl", "brent": "$/bbl", "natgas": "$/MMBtu",
+    "corn": "$/bu", "wheat": "$/bu", "soybeans": "$/bu",
+}
 
 # Chinese siblings (Asia red=up convention is handled in CSS, not here — these are
 # just translations). The site ships both languages inline (l-en/l-zh spans) and the
 # active one shows; events carry headline_zh/detail_zh built at source (composed
 # sentences can't be looked up after the fact). Mirrors engine/btc_alerts.py.
-LABEL_ZH = {"gold": "黄金", "silver": "白银", "copper": "铜", "oil": "原油"}
-UNIT_ZH = {"gold": "美元/盎司", "silver": "美元/盎司", "copper": "美元/磅", "oil": "美元/桶"}
+LABEL_ZH = {
+    "gold": "黄金", "silver": "白银", "platinum": "铂金", "copper": "铜",
+    "oil": "WTI原油", "brent": "布伦特原油", "natgas": "天然气",
+    "corn": "玉米", "wheat": "小麦", "soybeans": "大豆",
+}
+UNIT_ZH = {
+    "gold": "美元/盎司", "silver": "美元/盎司", "platinum": "美元/盎司",
+    "copper": "美元/磅", "oil": "美元/桶", "brent": "美元/桶",
+    "natgas": "美元/MMBtu", "corn": "美元/蒲式耳", "wheat": "美元/蒲式耳",
+    "soybeans": "美元/蒲式耳",
+}
 
 # how to READ a residual shock per asset (from the calibration verdicts — stable facts)
 SHOCK_READ = {
@@ -48,12 +65,24 @@ SHOCK_READ = {
     "silver": "Washouts tend to bounce; upside shocks are noisier.",
     "copper": "Historically PERSISTS (structural demand carries forward).",
     "oil": "Historically FADES — war/supply premia mean-revert.",
+    "brent": "Supply/geopolitical premia often mean-revert unless confirmed by inventory tightness.",
+    "natgas": "Weather/storage shocks are volatile and often mean-revert quickly.",
+    "platinum": "Treat as cyclical-industrial unless the move is also confirmed by precious metals.",
+    "corn": "Weather/supply shocks can persist through crop season but fade after confirmation.",
+    "wheat": "Weather/geopolitical shocks can persist, but headlines often overstate the move.",
+    "soybeans": "Weather/export shocks can persist through crop season but fade after confirmation.",
 }
 SHOCK_READ_ZH = {
     "gold": "历史上会持续（央行式买盘往往延续）。",
     "silver": "急跌后往往反弹；上行冲击则更嘈杂。",
     "copper": "历史上会持续（结构性需求往往延续）。",
     "oil": "历史上会消退 — 战争/供给溢价均值回归。",
+    "brent": "供给/地缘溢价通常会均值回归，除非库存紧张确认。",
+    "natgas": "天气/库存冲击波动很大，且常快速均值回归。",
+    "platinum": "除非贵金属同步确认，否则按周期工业品解读。",
+    "corn": "天气/供给冲击可在作物季延续，但确认后常消退。",
+    "wheat": "天气/地缘冲击可延续，但新闻常夸大行情。",
+    "soybeans": "天气/出口冲击可在作物季延续，但确认后常消退。",
 }
 
 # every state-machine token -> Chinese (graceful EN fallback for anything unmapped)
@@ -65,6 +94,11 @@ STATE_ZH = {
     "high_risk": "高风险", "low_risk": "低风险",
     "crowded_long": "多头拥挤", "crowded_short": "空头拥挤",
     "silver_cheap": "白银偏便宜", "silver_rich": "白银偏贵",
+    "platinum_cheap": "铂金偏便宜", "platinum_rich": "铂金偏贵",
+    "natgas_cheap": "天然气偏便宜", "natgas_rich": "天然气偏贵",
+    "corn_cheap": "玉米偏便宜", "corn_rich": "玉米偏贵",
+    "wheat_cheap": "小麦偏便宜", "wheat_rich": "小麦偏贵",
+    "soybeans_cheap": "大豆偏便宜", "soybeans_rich": "大豆偏贵",
     "exogenous_bid": "外生买盘", "exogenous_pressure": "外生压力",
     "Reflation": "再通胀", "Stagflation": "滞胀", "Goldilocks": "理想增长",
     "Deflation-scare": "通缩担忧", "Neutral": "中性",
@@ -102,8 +136,8 @@ def _transitions(state: pd.Series):
 # --------------------------------------------------------------------------- #
 def _asset_events(asset: str, df: pd.DataFrame) -> list[dict]:
     out: list[dict] = []
-    lab, unit = LABEL[asset], UNIT[asset]
-    lab_zh, unit_zh = LABEL_ZH[asset], UNIT_ZH[asset]
+    lab, unit = LABEL.get(asset, asset.title()), UNIT.get(asset, "")
+    lab_zh, unit_zh = LABEL_ZH.get(asset, lab), UNIT_ZH.get(asset, unit)
     close = df["close"]
 
     def px(ts):
@@ -124,12 +158,12 @@ def _asset_events(asset: str, df: pd.DataFrame) -> list[dict]:
             out.append(_ev(asset, "residual_shock", ts, "high",
                            f"{lab}: {word} detected",
                            f"{lab} moved beyond what its macro drivers explain "
-                           f"(shock z {z:+.1f}). {SHOCK_READ[asset]} {px(ts)}.",
+                           f"(shock z {z:+.1f}). {SHOCK_READ.get(asset, SHOCK_READ['copper'])} {px(ts)}.",
                            {"shock_z": round(float(z), 2) if pd.notna(z) else None,
                             "state": to}, to,
                            headline_zh=f"{lab_zh}：检测到{_z(to)}",
                            detail_zh=f"{lab_zh}的走势超出其宏观驱动可解释的范围"
-                           f"（冲击 z {z:+.1f}）。{SHOCK_READ_ZH[asset]} {px_zh(ts)}。"))
+                           f"（冲击 z {z:+.1f}）。{SHOCK_READ_ZH.get(asset, SHOCK_READ_ZH['copper'])} {px_zh(ts)}。"))
 
     # risk regime
     if "risk_regime" in df.columns:
@@ -221,6 +255,16 @@ def _asset_events(asset: str, df: pd.DataFrame) -> list[dict]:
                            headline_zh=f"{lab_zh}：金银比{_z(to)}",
                            detail_zh=f"金银比处于 3 年期第 {df['gsr_pctile'].get(ts, float('nan')):.0f} 百分位 — "
                            f"{'白银相对黄金便宜' if to=='silver_cheap' else '白银相对黄金偏贵'}。"))
+    if "value_state" in df.columns:
+        for ts, frm, to in _transitions(df["value_state"]):
+            if to == "neutral":
+                continue
+            out.append(_ev(asset, "value", ts, "info",
+                           f"{lab}: relative value {to.replace('_', ' ')}",
+                           f"Relative-value ratio at {df['value_pctile'].get(ts, float('nan')):.0f}th %ile (3y).",
+                           {}, to,
+                           headline_zh=f"{lab_zh}：相对价值{_z(to)}",
+                           detail_zh=f"相对价值比率处于 3 年期第 {df['value_pctile'].get(ts, float('nan')):.0f} 百分位。"))
     return out
 
 
@@ -251,12 +295,14 @@ def risk_extreme_events(results: dict, cfg: dict) -> list[dict]:
         hi = df["risk_index"] >= lvl
         streak = hi.groupby((~hi).cumsum()).cumsum()
         for ts in df.index[(streak == ndays).fillna(False)]:
+            lab = LABEL.get(asset, asset.title())
+            lab_zh = LABEL_ZH.get(asset, lab)
             out.append(_ev(asset, "risk_extreme", ts, "info",
-                           f"{LABEL[asset]}: capitulation watch",
+                           f"{lab}: capitulation watch",
                            f"Risk Index held ≥ {lvl} for {ndays} days — at sustained "
                            f"extremes the gauge is contrarian (near-capitulation).",
                            {"risk_index": round(float(df['risk_index'].get(ts)))}, "extreme",
-                           headline_zh=f"{LABEL_ZH[asset]}：投降式抛售观察",
+                           headline_zh=f"{lab_zh}：投降式抛售观察",
                            detail_zh=f"风险指数连续 {ndays} 天 ≥ {lvl} — 在持续极值处"
                            f"该指标为逆向信号（接近投降）。"))
     return out

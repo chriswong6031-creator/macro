@@ -51,7 +51,7 @@ html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4
 .theme-switch{width:56px;height:27px;border-radius:999px;background:#eef1f6;border:1px solid var(--grid);position:relative;cursor:pointer;padding:0;flex:none}
 html[data-theme="dark"] .theme-switch{background:#222732}
 .theme-switch .ic{position:absolute;top:50%;transform:translateY(-50%);font-size:10.5px;opacity:.5;line-height:1}
-.theme-switch .ic.sun{left:8px}.theme-switch .ic.moon{right:8px}
+.theme-switch .ic.sun{right:8px}.theme-switch .ic.moon{left:8px} /* opposite the knob's rest side, else two suns / two moons show */
 .theme-switch .knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 5px rgba(0,0,0,.3);transform:translateX(29px);transition:transform .34s cubic-bezier(.34,1.45,.5,1),background .3s}
 .theme-switch .knob::before{content:"☀️"}
 html[data-theme="dark"] .theme-switch .knob{transform:translateX(0);background:#e8c15a}
@@ -65,6 +65,12 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 .brand{font-weight:800;font-size:21px;color:var(--ink);letter-spacing:-.02em;margin:6px 0 2px}
 .brand .gn{color:var(--blue)}
 .lead{color:var(--muted);font-size:14px;margin:0 0 20px}
+.market-switch{display:inline-flex;align-items:center;gap:3px;background:#eef1f6;border:1px solid var(--grid);border-radius:999px;padding:3px;margin:0 0 18px}
+html[data-theme="dark"] .market-switch{background:#222732}
+.market-switch button{border:0;background:transparent;color:var(--muted);border-radius:999px;padding:7px 12px;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer;white-space:nowrap}
+.market-switch button.active{background:var(--blue);color:#fff}
+.market-panel{display:none}
+body[data-bond-market="us"] .market-panel.us-panel,body[data-bond-market="china-hk"] .market-panel.china-hk-panel{display:block}
 .hero-state{font-size:40px;font-weight:800;letter-spacing:-.02em;margin:6px 0 4px;line-height:1}
 .hero-state small{font-size:18px;color:var(--muted);font-weight:700}
 .hero-meta{font-size:14px;color:var(--text);margin-bottom:8px}.hero-meta b{color:var(--ink)}
@@ -113,12 +119,23 @@ html[data-theme="dark"] .measured-edge{background:rgba(26,127,67,.12)}
 .meta-foot{font-size:12px;color:var(--faint);margin-top:8px}
 </style>
 </head>
-<body>
+<body data-bond-market="us">
 <div class="topbar">
   <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;padding:0;border:none;margin:0 auto">
     <div class="nav-links">
       <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
-      <a class="nav-link" href="macro.html">📊 {{ t('US Macro', '美国宏观') }}</a>
+      <div class="nav-dd">
+        <a class="nav-link" href="macro.html">🇺🇸 {{ t('US Macro', '美国宏观') }} <span class="caret">▾</span></a>
+        <div class="nav-dd-menu">
+          <a href="macro.html">📊 {{ t('Macro dashboard', '宏观仪表盘') }}</a>
+          <a href="discovery.html">🏆 {{ t('Top Picks', '精选股') }}</a>
+          <a href="spvector.html">📈 {{ t('S&P / Macro Vector', '标普宏观向量') }}</a>
+          <a href="gex.html">🧲 {{ t('GEX magnets', 'Gamma磁吸') }}</a>
+          <a href="signal_lab.html">🔬 {{ t('Signal Lab', '信号实验室') }}</a>
+          <a href="validation_timeline.html">🧪 {{ t('Validation timeline', '验证时间线') }}</a>
+          <a href="history.html">📈 {{ t('History', '历史') }}</a>
+        </div>
+      </div>
       <div class="nav-dd">
         <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }} <span class="caret">▾</span></a>
         <div class="nav-dd-menu" role="menu">
@@ -148,6 +165,12 @@ html[data-theme="dark"] .measured-edge{background:rgba(26,127,67,.12)}
   <div class="brand">🏛️ Bonds <span class="gn">&amp; Bond Health</span></div>
   <p class="lead">{{ t('What the bond market says about economic health, regime and the cycle. A health-first read across the curve, credit, real rates, rates-vol and funding plumbing — the same machinery that feeds the cross-asset synthesis. Context, not trade calls.', '债券市场对经济健康、周期状态与所处阶段的判读。以“健康”为先，纵览收益率曲线、信用利差、实际利率、利率波动与资金管道——并为跨资产综合分析供数。仅作背景，非交易建议。') }}
   <span class="faint">· {{ t('As of', '截至') }} {{ as_of }}</span></p>
+  <div class="market-switch" role="group" aria-label="Bond market">
+    <button type="button" class="active" data-bond-market="us">{{ t('US market', '美国市场') }}</button>
+    <button type="button" data-bond-market="china-hk">{{ t('China / HK', '中国/香港') }}</button>
+  </div>
+
+  <section class="market-panel us-panel">
 
   <!-- ===================== HEALTH HERO ===================== -->
   <div class="grid cols-2" style="margin-bottom:18px">
@@ -389,6 +412,90 @@ html[data-theme="dark"] .measured-edge{background:rgba(26,127,67,.12)}
     <div class="sub faint" style="margin-top:10px">{{ t('Deterministic, debounced daily state-changes (durable regime shifts only, not whipsaw). All context, not trade signals.', '确定性、经去抖的每日状态变化（仅持久的状态切换，非来回震荡）。皆为背景，非交易信号。') }}</div>
   </div>
   {% endif %}
+  </section>
+
+  <section class="market-panel china-hk-panel">
+    <div class="grid cols-2" style="margin-bottom:18px">
+      <div class="card">
+        <h2>{{ t('China / HK bond-health proxy', '中国/香港债券健康代理') }}</h2>
+        <div class="hero-state" style="color:{{ regional_vm.health.color }}">{{ regional_vm.health.score if regional_vm.health.score is not none else '—' }}<small>/100 · {{ t(regional_vm.health.label, regional_vm.health.label_zh) }}</small></div>
+        <div class="hero-meta">
+          {{ t('Phase', '阶段') }} <b style="color:{{ regional_vm.health.phase_color }}">{{ t(regional_vm.health.phase_en, regional_vm.health.phase_zh) }}</b>
+          <span class="faint">·</span> {{ t('As of', '截至') }} <b>{{ regional_as_of }}</b>
+        </div>
+        <p class="verdict-lead"><span class="l-en">{{ regional_vm.health.verdict_en }}</span><span class="l-zh">{{ regional_vm.health.verdict_zh }}</span></p>
+        {% if regional_vm.alarms %}{% for a in regional_vm.alarms %}
+        <div class="flag {{ 'alarm' if a.severity=='high' else 'warn' }}">⚑ <span class="l-en">{{ a.en }}</span><span class="l-zh">{{ a.zh }}</span></div>
+        {% endfor %}{% else %}<div class="flag ok">✓ {{ t('No active China/HK bond-stress proxy alarms.', '无活跃的中国/香港债市压力代理警报。') }}</div>{% endif %}
+        {% if regional_vm.health.stress_legs %}
+        <div class="legs">
+          <div class="sub" style="margin-bottom:2px">{{ t('Proxy stress contributions (0 = calm, 100 = max)', '代理压力来源（0=平静，100=最大）') }}</div>
+          {% for leg in regional_vm.health.stress_legs %}
+          <div class="leg"><span class="lname">{{ t(leg.en, leg.zh) }}</span>
+            <span class="lbar"><span class="lfill" style="width:{{ leg.val }}%;background:{{ C.green if leg.val < 50 else C.amber if leg.val < 75 else C.red }}"></span></span>
+            <span class="lval">{{ leg.val }}</span></div>
+          {% endfor %}
+        </div>{% endif %}
+      </div>
+      <div class="card">
+        <h2>{{ t('China / HK health — history', '中国/香港健康度 · 历史') }}</h2>
+        {{ regional_charts.health | safe }}
+        <div class="sub faint" style="margin-top:6px">{{ t('This is not the US HY-OAS/MOVE/SOFR stack. It is a regional proxy built from China rates, TSF credit impulse, China/HK market breadth, CNH/HKD pressure, HKMA liquidity, HIBOR, VHSI and Southbound flow.', '这不是美国高收益OAS/MOVE/SOFR那套指标，而是由中国利率、社融信用脉冲、中港市场广度、人民币/港元压力、金管局流动性、HIBOR、VHSI与南向资金构成的区域代理。') }}</div>
+      </div>
+    </div>
+
+    <div class="sec-head">{{ t('① China rates & ② credit/liquidity impulse', '① 中国利率 与 ② 信用/流动性脉冲') }}</div>
+    <div class="grid cols-2">
+      <div class="card">
+        <h2>{{ t('China rate curve', '中国利率曲线') }}</h2>
+        <div class="kpis">
+          {{ kpi('1y interbank', '1年期利率', regional_vm.rates.rate_1y, '%') }}
+          {{ kpi('3m interbank', '3个月利率', regional_vm.rates.rate_3m, '%') }}
+          {{ kpi('1y−3m curve', '1年−3个月曲线', regional_vm.rates.curve, 'pp') }}
+        </div>
+        <div style="margin-top:14px">{{ regional_charts.rates | safe }}</div>
+        <div class="sub faint" style="margin-top:6px">{{ t('A flatter or inverted local money-market curve is treated as tighter growth/liquidity pressure; a positive curve is healthier.', '本地货币市场曲线走平或倒挂视为增长/流动性压力；正斜率曲线更健康。') }}</div>
+      </div>
+      <div class="card">
+        <h2>{{ t('Credit impulse & Southbound flow', '信用脉冲与南向资金') }}</h2>
+        <div class="kpis">
+          {{ kpi('TSF credit impulse', '社融信用脉冲', regional_vm.liquidity.credit_impulse, '%') }}
+          {{ kpi('Southbound 20d', '南向20日', regional_vm.liquidity.southbound_20d, '×¥100bn') }}
+        </div>
+        <div style="margin-top:14px">{{ regional_charts.liquidity | safe }}</div>
+        <div class="sub faint" style="margin-top:6px">{{ t('TSF credit impulse is the mainland liquidity lead; Southbound flow is the mainland bid into Hong Kong.', '社融信用脉冲是内地流动性领先指标；南向资金代表内地买入香港资产的力量。') }}</div>
+      </div>
+    </div>
+
+    <div class="sec-head">{{ t('③ FX / HK funding & ④ China/HK market breadth', '③ 汇率/香港资金 与 ④ 中港市场广度') }}</div>
+    <div class="grid cols-2">
+      <div class="card">
+        <h2>{{ t('CNH/HKD pressure & HK funding', '人民币/港元压力与香港资金') }}</h2>
+        <div class="kpis">
+          {{ kpi('USDCNY', '美元/人民币', regional_vm.funding.usdcny) }}
+          {{ kpi('USDCNY 60d', '美元/人民币60日', regional_vm.funding.usdcny_60d, '%') }}
+          {{ kpi('USDHKD', '美元/港元', regional_vm.funding.usdhkd) }}
+          {{ kpi('HKD weak pressure', '港元弱方压力', regional_vm.funding.hkd_pressure, '/100') }}
+          {{ kpi('HKMA balance', '金管局总结余', regional_vm.funding.agg_balance, 'bn HKD') }}
+          {{ kpi('HIBOR 1m', '1个月HIBOR', regional_vm.funding.hibor_1m, '%') }}
+          {{ kpi('VHSI', '恒指波幅指数', regional_vm.funding.vhsi) }}
+        </div>
+        <div style="margin-top:14px">{{ regional_charts.funding | safe }}</div>
+        <div class="sub faint" style="margin-top:6px">{{ t('HKD near 7.85 and rising HIBOR mark tighter HK liquidity; a falling aggregate balance shows liquidity being drained during peg defense.', '港元接近7.85且HIBOR上升代表香港流动性趋紧；总结余下降说明联系汇率防守期间流动性被抽走。') }}</div>
+      </div>
+      <div class="card">
+        <h2>{{ t('China / HK breadth', '中国/香港市场广度') }}</h2>
+        <div class="kpis">
+          {{ kpi('China >200d', '中国高于200日线', regional_vm.market.china_200, '%') }}
+          {{ kpi('HK >200d', '香港高于200日线', regional_vm.market.hk_200, '%') }}
+          {{ kpi('China >50d', '中国高于50日线', regional_vm.market.china_50, '%') }}
+          {{ kpi('HK >50d', '香港高于50日线', regional_vm.market.hk_50, '%') }}
+        </div>
+        <div style="margin-top:14px">{{ regional_charts.breadth | safe }}</div>
+        <div class="sub faint" style="margin-top:6px">{{ t('Breadth is the market-health confirmation layer: bond/liquidity easing matters more when more stocks are above trend.', '市场广度是市场健康确认层：当更多股票位于趋势上方时，债券/流动性宽松更有意义。') }}</div>
+      </div>
+    </div>
+  </section>
 
   <!-- ===================== METHODOLOGY / HONESTY ===================== -->
   <div class="card" style="margin-top:22px">
@@ -408,7 +515,22 @@ window.__CHART_SWAP__ = { colors:{}, labels:{
   "Bond health":"债券健康度","Today":"当前","~3mo ago":"约3月前","~1y ago":"约1年前",
   "10y−3m (NY Fed)":"10年−3月（纽约联储）","2s10s":"2年/10年","TP-adjusted 2s10s":"期限溢价调整",
   "HY OAS":"高收益OAS","IG OAS":"投资级OAS","10y real (TIPS)":"10年实际利率","10y breakeven":"10年盈亏平衡通胀",
-  "term premium":"期限溢价","MOVE":"MOVE","63d stock-bond corr":"63日股债相关性"} };
+  "term premium":"期限溢价","MOVE":"MOVE","63d stock-bond corr":"63日股债相关性",
+  "China/HK bond health":"中国/香港债券健康度","China 1y interbank":"中国1年期利率","China 3m interbank":"中国3个月利率",
+  "1y−3m curve":"1年−3个月曲线","China credit impulse":"中国信用脉冲","Southbound 20d (¥100bn)":"南向20日（千亿人民币）",
+  "HKD weak-side pressure":"港元弱方压力","HIBOR 1m percentile":"1个月HIBOR百分位","VHSI":"恒指波幅指数",
+  "China >200d":"中国高于200日线","HK >200d":"香港高于200日线","China >50d":"中国高于50日线","HK >50d":"香港高于50日线"} };
+(function(){
+  const buttons=[...document.querySelectorAll('.market-switch button')];
+  function setMarket(market){
+    document.body.setAttribute('data-bond-market', market);
+    buttons.forEach(btn=>btn.classList.toggle('active', btn.dataset.bondMarket===market));
+    try{localStorage.setItem('bondMarket',market);}catch(e){}
+    setTimeout(()=>{document.querySelectorAll('.js-plotly-plot').forEach(el=>window.Plotly&&Plotly.Plots.resize(el));},40);
+  }
+  buttons.forEach(btn=>btn.addEventListener('click',()=>setMarket(btn.dataset.bondMarket)));
+  try{const saved=localStorage.getItem('bondMarket');if(saved)setMarket(saved);}catch(e){}
+})();
 </script>
 <script src="theme.js"></script>
 <script src="chart_i18n.js"></script>

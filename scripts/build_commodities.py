@@ -6,7 +6,7 @@ weekly calibration verdicts (data/commodity/calibration.json) when present, buil
 per-asset + commodity-complex view-model, renders light-theme Plotly charts, fills
 templates/commodities.html.j2, and writes data/commodity/latest.json for the hub card.
 
-One page, four-asset selector (gold/silver/oil/copper) + a commodity-complex regime
+One page, multi-asset selector + a commodity-complex regime
 hero. Every per-signal claim carries its MEASURED calibration verdict (house rule).
 
 Usage: python -m scripts.build_commodities
@@ -51,12 +51,19 @@ PLOT = dict(
 
 # per-asset display metadata
 META = {
-    "gold":   {"label": "Gold",   "zh": "黄金", "unit": "$/oz",  "color": C["gold"]},
-    "silver": {"label": "Silver", "zh": "白银", "unit": "$/oz",  "color": "#9AA4B2"},
-    "copper": {"label": "Copper", "zh": "铜",   "unit": "$/lb",  "color": "#B5651D"},
-    "oil":    {"label": "Oil · WTI", "zh": "原油", "unit": "$/bbl", "color": "#1F2933"},
+    "gold":     {"label": "Gold", "zh": "黄金", "unit": "$/oz", "color": C["gold"]},
+    "silver":   {"label": "Silver", "zh": "白银", "unit": "$/oz", "color": "#9AA4B2"},
+    "platinum": {"label": "Platinum", "zh": "铂金", "unit": "$/oz", "color": "#7C8794"},
+    "copper":   {"label": "Copper", "zh": "铜", "unit": "$/lb", "color": "#B5651D"},
+    "oil":      {"label": "Oil · WTI", "zh": "WTI原油", "unit": "$/bbl", "color": "#1F2933"},
+    "brent":    {"label": "Oil · Brent", "zh": "布伦特原油", "unit": "$/bbl", "color": "#334155"},
+    "natgas":   {"label": "Natural Gas", "zh": "天然气", "unit": "$/MMBtu", "color": "#2563EB"},
+    "corn":     {"label": "Corn", "zh": "玉米", "unit": "$/bu", "color": "#D39B2A"},
+    "wheat":    {"label": "Wheat", "zh": "小麦", "unit": "$/bu", "color": "#A16207"},
+    "soybeans": {"label": "Soybeans", "zh": "大豆", "unit": "$/bu", "color": "#4D7C0F"},
 }
-ORDER = ["gold", "silver", "copper", "oil"]
+ORDER = ["gold", "silver", "platinum", "copper", "oil", "brent", "natgas",
+         "corn", "wheat", "soybeans"]
 
 # Honest, calibration-derived interpretations (en, zh). These are stable facts from
 # scripts.calibrate_commodities — they tell the user how to READ each signal per asset.
@@ -69,6 +76,18 @@ DRIVER_INTERP = {
                "有方向性 — 增长改善与美元走软的背景往往领先铜价上涨。"),
     "oil":    ("CONFIRMED leader — oil's dollar + inflation + growth axis genuinely leads forward returns.",
                "已确认领先 — 原油的美元+通胀+增长轴确实领先未来收益。"),
+    "brent":  ("Directional — Brent shares oil's dollar + inflation + growth axis, but reads more global-supply than Cushing-local.",
+               "有方向性 — 布伦特共享原油的美元+通胀+增长轴，但更偏全球供给而非库欣本地。"),
+    "natgas": ("Context — natural gas is weather/storage-driven; macro drivers are weaker than price, carry and shock state.",
+               "仅作背景 — 天然气更受天气/库存驱动；宏观驱动弱于价格、期限结构与冲击状态。"),
+    "platinum": ("Directional — platinum mixes precious-metal rates sensitivity with industrial demand.",
+                 "有方向性 — 铂金兼具贵金属利率敏感性与工业需求。"),
+    "corn":   ("Context — grains are dollar/inflation sensitive, but weather and crop-cycle shocks dominate.",
+               "仅作背景 — 谷物受美元/通胀影响，但天气与作物周期冲击占主导。"),
+    "wheat":  ("Context — wheat is most exposed to weather and geopolitics; macro is a secondary filter.",
+               "仅作背景 — 小麦最受天气和地缘影响；宏观只是次要过滤器。"),
+    "soybeans": ("Context — soybeans blend crop-cycle, export demand and dollar sensitivity.",
+                 "仅作背景 — 大豆结合了作物周期、出口需求与美元敏感性。"),
 }
 SHOCK_INTERP = {
     "gold":   ("Bids PERSIST — an unexplained bid (e.g. central-bank buying) has historically carried forward (+8%/126d at the high band).",
@@ -79,6 +98,18 @@ SHOCK_INTERP = {
                "仅作背景 — 无法解释的铜买盘并未可靠延续（高冲击档约 +6%/126天、胜率约51%；未通过前后半段检验）。以驱动/持仓为准。"),
     "oil":    ("Bids FADE — war / supply premia mean-revert (high shock → −4%/126d); washouts bounce (+13%).",
                "买盘消退 — 战争/供给溢价均值回归（高冲击→126天 −4%）；超卖反弹（+13%）。"),
+    "brent":  ("Supply premia often fade unless confirmed by broader tightness; use with Brent-WTI and carry.",
+               "供给溢价若没有更广泛紧张确认，通常会消退；需结合布伦特-WTI与展期收益。"),
+    "natgas": ("Weather/storage shocks mean-revert fastest; treat residual bids as tactical unless carry confirms.",
+               "天气/库存冲击均值回归最快；除非期限结构确认，否则残差买盘偏战术。"),
+    "platinum": ("Residual bids need confirmation from industrial demand or precious metals; otherwise context.",
+                 "残差买盘需由工业需求或贵金属同步确认；否则仅作背景。"),
+    "corn":   ("Crop/weather shocks can persist during planting and harvest windows, but fade once supply is repriced.",
+               "作物/天气冲击可在播种与收割窗口延续，但供给重估后会消退。"),
+    "wheat":  ("Weather/geopolitical shocks can persist, but wheat headlines are noisy — confirm with trend and COT.",
+               "天气/地缘冲击可延续，但小麦新闻噪声大 — 需由趋势与COT确认。"),
+    "soybeans": ("Export/weather shocks can persist through crop season; confirm with relative value and COT.",
+                 "出口/天气冲击可贯穿作物季；需由相对价值与COT确认。"),
 }
 TREND_INTERP = {
     "gold":   ("12-month trend works — up-trend preceded +7.8%/126d (75% hit).", "12个月趋势有效 — 上涨趋势后126天 +7.8%（胜率75%）。"),
@@ -86,6 +117,18 @@ TREND_INTERP = {
     "copper": ("12-month trend is weak/unstable for copper — context.", "12个月趋势对铜较弱/不稳 — 仅作背景。"),
     "oil":    ("INVERTED — oil mean-reverts; a 12-month down-trend preceded +11%/126d. Read as contrarian.",
                "反向 — 原油均值回归；12个月下跌趋势后126天 +11%。作逆向解读。"),
+    "brent":  ("Read crude trend contrarian until calibrated — sustained up-trends often embed supply premia.",
+               "校准前将原油趋势作逆向解读 — 持续上涨往往包含供给溢价。"),
+    "natgas": ("INVERTED prior — natural gas spikes and trend runs mean-revert hard.",
+               "反向先验 — 天然气飙升与趋势行情常强烈均值回归。"),
+    "platinum": ("12-month trend is read with-sign for platinum until calibration says otherwise.",
+                 "校准前铂金12个月趋势按同向解读。"),
+    "corn":   ("12-month trend is context for grains; crop-cycle shocks can override tape momentum.",
+               "谷物12个月趋势仅作背景；作物周期冲击可能压过价格动量。"),
+    "wheat":  ("12-month trend is context for wheat; weather/geopolitics can dominate.",
+               "小麦12个月趋势仅作背景；天气/地缘可能占主导。"),
+    "soybeans": ("12-month trend is context for soybeans; export and crop-cycle shifts matter more.",
+                 "大豆12个月趋势仅作背景；出口与作物周期变化更重要。"),
 }
 
 
@@ -218,7 +261,7 @@ def chart_price(df: pd.DataFrame, asset: str, years: float = 6) -> str:
     """Price (log) + Risk Index area (right axis) + shock markers. Shows the
     risk gauge and the residual-shock episodes against price."""
     d = _tail_years(df, years)
-    meta = META[asset]
+    meta = META.get(asset, {"label": asset.title(), "unit": "", "color": C["blue"]})
     # downsample only the heavy full-history line traces; the sparse shock markers
     # below stay full-resolution and exact.
     pidx = _plot_idx(d.index)
@@ -253,13 +296,16 @@ def chart_complex(results: dict) -> str:
     commodity-complex at a glance."""
     fig = go.Figure()
     for a in ORDER:
+        if a not in results:
+            continue
         s = _tail_years(results[a][["close"]], 2)["close"]
         if s.empty:
             continue
         rb = 100 * s / s.iloc[0]
         pidx = _plot_idx(s.index)
-        fig.add_trace(go.Scatter(x=_dx(pidx), y=_plot_y(rb.reindex(pidx), 2), name=META[a]["label"],
-                                 line={"color": META[a]["color"], "width": 1.8}))
+        fig.add_trace(go.Scatter(x=_dx(pidx), y=_plot_y(rb.reindex(pidx), 2),
+                                 name=META.get(a, {}).get("label", a.title()),
+                                 line={"color": META.get(a, {}).get("color", C["blue"]), "width": 1.8}))
     fig.add_hline(y=100, line={"color": C["faint"], "width": 1, "dash": "dot"})
     fig.update_layout(**{**PLOT, "height": 300,
                          "yaxis": {"title": "Rebased = 100", "gridcolor": C["grid"]}})
@@ -365,8 +411,9 @@ def asset_vm(asset: str, df: pd.DataFrame, calib: dict, drivers: dict | None = N
     alloc_pct = int(round(100 * (last.get("alloc_optimal") or 0)))
     risk_on = last.get("risk_regime") == "low_risk"
     vm = {
-        "key": asset, "label": META[asset]["label"], "zh": META[asset]["zh"],
-        "unit": META[asset]["unit"], "price": _r(close.iloc[-1], 2), "chg": chg,
+        "key": asset, "label": META.get(asset, {}).get("label", asset.title()),
+        "zh": META.get(asset, {}).get("zh", asset.title()),
+        "unit": META.get(asset, {}).get("unit", ""), "price": _r(close.iloc[-1], 2), "chg": chg,
         "alloc_pct": alloc_pct, "market_mode": last.get("market_mode", "—"),
         "risk_on": risk_on, "risk_index": _r(last.get("risk_index"), 0),
         "risk_word": "Calm" if risk_on else "Elevated",
@@ -380,8 +427,9 @@ def asset_vm(asset: str, df: pd.DataFrame, calib: dict, drivers: dict | None = N
         "driver_corr": _r(last.get("driver_corr"), 2),
         "pos_pctile": _r(last.get("pos_pctile"), 0), "pos_state": last.get("pos_state", "—"),
         "verdicts": verdicts, "score": score,
-        "driver_interp": DRIVER_INTERP[asset], "shock_interp": SHOCK_INTERP[asset],
-        "trend_interp": TREND_INTERP[asset],
+        "driver_interp": DRIVER_INTERP.get(asset, DRIVER_INTERP["copper"]),
+        "shock_interp": SHOCK_INTERP.get(asset, SHOCK_INTERP["copper"]),
+        "trend_interp": TREND_INTERP.get(asset, TREND_INTERP["copper"]),
         "signals": cal_a.get("signals", {}),
         "chart": chart_price(df, asset),
     }
@@ -392,6 +440,11 @@ def asset_vm(asset: str, df: pd.DataFrame, calib: dict, drivers: dict | None = N
     if asset == "oil" and "bw_change" in df:
         vm["bw_change"] = _r(last.get("bw_change"), 2)
         vm["bw_pctile"] = _r(last.get("bw_spread_pctile"), 0)
+    if "value_pctile" in df:
+        vm["value_pctile"] = _r(last.get("value_pctile"), 0)
+        vm["value_state"] = last.get("value_state", "—")
+        value_ratio = last.get("platinum_gold", last.get("natgas_oil", last.get("grain_relative", np.nan)))
+        vm["value_ratio"] = _r(value_ratio, 3)
     cy = _carry_read(asset)
     if cy:
         vm["carry"] = cy
@@ -448,9 +501,9 @@ def asset_vm(asset: str, df: pd.DataFrame, calib: dict, drivers: dict | None = N
 
 
 FAVORED = {
-    "Reflation": ["copper", "oil", "silver"],
-    "Stagflation": ["gold", "silver"],
-    "Goldilocks": ["gold", "copper"],
+    "Reflation": ["copper", "oil", "brent", "silver", "platinum"],
+    "Stagflation": ["gold", "silver", "wheat"],
+    "Goldilocks": ["gold", "copper", "soybeans"],
     "Deflation-scare": ["gold"],
     "Neutral": [],
 }
@@ -464,7 +517,7 @@ def complex_vm(results: dict, calib: dict) -> dict:
         "regime": regime,
         "dollar_dir": "weakening" if last.get("dollar_dir", 0) < 0 else ("strengthening" if last.get("dollar_dir", 0) > 0 else "flat"),
         "growth_dir": "rising" if last.get("growth_dir", 0) > 0 else ("falling" if last.get("growth_dir", 0) < 0 else "flat"),
-        "favored": [META[a]["label"] for a in FAVORED.get(regime, [])],
+        "favored": [META[a]["label"] for a in FAVORED.get(regime, []) if a in META],
         "gsr": _r(last.get("gold_silver_ratio"), 1) if "gold_silver_ratio" in cx else _r(last.get("gsr"), 1),
         "copper_gold": _r(last.get("copper_gold"), 4),
         "chart": chart_complex(results),
@@ -506,7 +559,7 @@ def main() -> int:
         log.warning("commodity alerts rebuild failed (%s)", e)
         all_events = commodity_alerts.load_events()
     asof_ts = results["gold"].index.max()
-    tilts = {a: alert_tilt(all_events, a, asof_ts) for a in ORDER}
+    tilts = {a: alert_tilt(all_events, a, asof_ts) for a in ORDER if a in results}
 
     assets = [asset_vm(a, results[a], calib, drivers, extras, conv_calib, tilts.get(a))
               for a in ORDER if a in results]

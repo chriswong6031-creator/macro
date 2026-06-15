@@ -177,7 +177,7 @@ yahoo:
     credit: [HYG, LQD]
     bond_etfs: [TLT, IEF, TIP, EMB]   # Bonds dashboard price/flow proxies: long UST, 7-10y UST, TIPS, EM USD sov
     vol: ["^VIX", "^VIX9D", "^VIX3M", "^MOVE", "^VVIX"]   # ^VVIX = vol-of-vol (option-implied risk layer)
-    fx_commod: ["DX-Y.NYB", "CL=F", "HG=F", "GC=F", "SI=F", "BZ=F"]
+    fx_commod: ["DX-Y.NYB", "CL=F", "BZ=F", "NG=F", "HG=F", "GC=F", "SI=F", "PL=F", "ZC=F", "ZW=F", "ZS=F"]
     fx: ["EURUSD=X", "USDJPY=X", "GBPUSD=X", "AUDUSD=X", "USDCAD=X", "USDCHF=X", "USDMXN=X", "USDBRL=X", "CNH=X", "CNH=F"]   # Forex Vector spot pairs; CNH=F = offshore CNH futures (2013->, real history vs CNH=X spot's 1 row)
     rate_pricing: ["ZQ=F"]        # 30-day fed funds front contract — LOW CONFIDENCE input
     crypto: [BTC-USD, ETH-USD, SOL-USD]   # deep daily history (BTC 2014->); Coinbase = intraday-quality OHLC
@@ -485,6 +485,12 @@ cot:
     copper: ["COPPER- #1", "COPPER - COMMODITY EXCHANGE", "COPPER-GRADE #1"]
     silver: ["SILVER - COMMODITY EXCHANGE"]   # COMEX 5000oz (1986->); excludes CBOT mini contracts
     oil: ["CRUDE OIL, LIGHT 'SWEET' - NEW YORK", "CRUDE OIL, LIGHT SWEET - NEW YORK", "CRUDE OIL, LIGHT SWEET-WTI - ICE"]   # WTI: NYMEX physical (1986-2022) spliced to ICE Europe WTI (2014->) via per-date max-OI dedup; net_spec_pct_oi normalizes the contract handoff
+    brent: ["BRENT CRUDE OIL", "BRENT LAST DAY", "BRENT CRUDE OIL LAST DAY"]
+    natgas: ["NATURAL GAS - NEW YORK MERCANTILE EXCHANGE", "HENRY HUB - NEW YORK MERCANTILE EXCHANGE", "NAT GAS NYME - NEW YORK MERCANTILE EXCHANGE", "NAT GAS ICE LD1 - ICE FUTURES ENERGY DIV"]
+    platinum: ["PLATINUM - NEW YORK MERCANTILE EXCHANGE"]
+    corn: ["CORN - CHICAGO BOARD OF TRADE"]
+    wheat: ["WHEAT-SRW - CHICAGO BOARD OF TRADE", "WHEAT - CHICAGO BOARD OF TRADE"]
+    soybeans: ["SOYBEANS - CHICAGO BOARD OF TRADE"]
     bitcoin: ["BITCOIN - C"]      # CME contract; prefix excludes BITCOIN CASH / MICRO BITCOIN
     # Forex Vector — CME currency futures (contrarian spec positioning). dollar (cot_dollar) above.
     euro_fx: ["EURO FX - CHICAGO MERCANTILE EXCHANGE", "EURO FX"]
@@ -1186,10 +1192,16 @@ credit_cycle:
 
 commodities:
   assets:                          # name: [yahoo price ticker, cot store-series, class]
-    gold:   ["GC=F", cot_gold,   precious]
-    silver: ["SI=F", cot_silver, precious]
-    copper: ["HG=F", cot_copper, industrial]
-    oil:    ["CL=F", cot_oil,    energy]
+    gold:     ["GC=F", cot_gold,     precious]
+    silver:   ["SI=F", cot_silver,   precious]
+    platinum: ["PL=F", cot_platinum, precious]
+    copper:   ["HG=F", cot_copper,   industrial]
+    oil:      ["CL=F", cot_oil,      energy]
+    brent:    ["BZ=F", cot_brent,    energy]
+    natgas:   ["NG=F", cot_natgas,   energy]
+    corn:     ["ZC=F", cot_corn,     agriculture]
+    wheat:    ["ZW=F", cot_wheat,    agriculture]
+    soybeans: ["ZS=F", cot_soybeans, agriculture]
 
   drivers:                         # shared macro series: name -> [store-group, store-name]
     real_yield:    [fred, DFII10]        # 10y TIPS real yield — the gold/silver anchor
@@ -1251,20 +1263,32 @@ commodities:
     change_window_d: 40            # driver direction = sign of N-day change (smoothed)
     smooth_days: 5
     weights:                       # sign = effect of a RISING driver on the commodity price
-      gold:   {real_yield: -1.0, dxy: -1.0, breakeven10: 0.5, fed_balance: 0.5}
-      silver: {real_yield: -1.0, dxy: -1.0, breakeven10: 0.5, indpro: 0.5}
-      copper: {broad_dollar: -1.0, indpro: 1.0, real_yield: -0.5, us10y: 0.3}  # broad$ > DXY for copper (measured)
-      oil:    {broad_dollar: -1.0, breakeven10: 0.5, indpro: 0.5}              # broad$ > DXY for oil (measured)
+      gold:     {real_yield: -1.0, dxy: -1.0, breakeven10: 0.5, fed_balance: 0.5}
+      silver:   {real_yield: -1.0, dxy: -1.0, breakeven10: 0.5, indpro: 0.5}
+      platinum: {real_yield: -0.6, dxy: -0.8, indpro: 0.8, breakeven10: 0.3}
+      copper:   {broad_dollar: -1.0, indpro: 1.0, real_yield: -0.5, us10y: 0.3}  # broad$ > DXY for copper (measured)
+      oil:      {broad_dollar: -1.0, breakeven10: 0.5, indpro: 0.5}              # broad$ > DXY for oil (measured)
+      brent:    {broad_dollar: -1.0, breakeven10: 0.5, indpro: 0.5}
+      natgas:   {broad_dollar: -0.4, us10y: -0.3, indpro: 0.4, vix: -0.3}
+      corn:     {broad_dollar: -0.8, breakeven10: 0.4, indpro: 0.2}
+      wheat:    {broad_dollar: -0.8, breakeven10: 0.4, vix: 0.2}
+      soybeans: {broad_dollar: -0.8, breakeven10: 0.3, indpro: 0.3}
     trigger: 0.34                  # |score| above -> tailwind / headwind regime
     exit: 0.15
 
   residual:                        # exogenous-bid detector (the decoupling shock engine)
     return_window_d: 21            # horizon for actual & model-predicted returns
     drivers:                       # which driver CHANGES feed the regression, per asset
-      gold:   [real_yield, dxy]
-      silver: [real_yield, dxy]
-      copper: [broad_dollar, indpro]
-      oil:    [broad_dollar]
+      gold:     [real_yield, dxy]
+      silver:   [real_yield, dxy]
+      platinum: [dxy, indpro, real_yield]
+      copper:   [broad_dollar, indpro]
+      oil:      [broad_dollar]
+      brent:    [broad_dollar]
+      natgas:   [broad_dollar, us10y, vix]
+      corn:     [broad_dollar, breakeven10]
+      wheat:    [broad_dollar, breakeven10, vix]
+      soybeans: [broad_dollar, breakeven10]
     min_train_d: 504               # >=2y before first fit (expanding, refit monthly — causal)
     refit_every_d: 21
     z_lookback_d: 252              # rolling std for the shock z-score
@@ -1291,6 +1315,11 @@ commodities:
     spread_pctile_lookback_d: 504  # MEASURED: spread WIDENING -> WTI +8.2%/126d vs -1.8% narrowing
     change_window_d: 60
 
+  relative_value:                  # generic cross-commodity value read for added assets
+    pctile_lookback_d: 756
+    low_pctile: 0.20
+    high_pctile: 0.80
+
   # --- Phase 1 of the four-phase factor build-out: roll-yield CARRY -----------
   # Backwardation (front > deferred) earns positive roll yield and is THE dominant
   # long-run commodity return driver (research/QUANT_FACTOR_EXPANSION.md). Built
@@ -1300,9 +1329,14 @@ commodities:
     contracts:                     # asset -> [root, yahoo exchange suffix]
       oil:    ["CL", ".NYM"]
       brent:  ["BZ", ".NYM"]
+      natgas: ["NG", ".NYM"]
       gold:   ["GC", ".CMX"]
       silver: ["SI", ".CMX"]
+      platinum: ["PL", ".NYM"]
       copper: ["HG", ".CMX"]
+      corn:   ["ZC", ".CBT"]
+      wheat:  ["ZW", ".CBT"]
+      soybeans: ["ZS", ".CBT"]
     months_back: 8                 # enumerate contract months from now-8 ...
     months_fwd: 5                  # ... to now+5 (drop non-active months that don't quote)
     history_d: 400                 # bdays of reconstructed carry to keep
@@ -1345,13 +1379,25 @@ commodities:
       enter_pct:                    # ... AND beyond this absolute % (per-asset; commodity
         gold: 3.0                   #     vol << crypto, so thresholds are asset-specific)
         silver: 5.0
+        platinum: 5.0
         copper: 4.0
         oil: 5.0
+        brent: 5.0
+        natgas: 8.0
+        corn: 5.0
+        wheat: 6.0
+        soybeans: 5.0
       extended_pct:                 # |24h move| beyond this -> escalate shock -> extended
         gold: 5.0
         silver: 8.0
+        platinum: 8.0
         copper: 6.0
         oil: 9.0
+        brent: 9.0
+        natgas: 14.0
+        corn: 8.0
+        wheat: 9.0
+        soybeans: 8.0
       stabilize_quiet_h: 12         # quiet hours -> stabilizing
       normal_quiet_h: 48            # quiet hours -> back to normal
       intraday_lookback_d: 60       # trailing hourly window the state machine runs over

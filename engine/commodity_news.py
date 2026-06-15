@@ -36,8 +36,14 @@ GDELT_URL = "https://api.gdeltproject.org/api/v2/doc/doc"
 COMMODITY_QUERY = {
     "gold":   '(gold OR bullion OR XAU)',
     "silver": '(silver OR XAG)',
+    "platinum": '(platinum OR XPT)',
     "oil":    '(oil OR crude OR WTI OR Brent OR OPEC)',
+    "brent":  '(Brent OR crude OR oil OR OPEC)',
+    "natgas": '("natural gas" OR LNG OR "gas storage")',
     "copper": '(copper OR "COMEX copper")',
+    "corn":   '(corn OR maize OR "CBOT corn")',
+    "wheat":  '(wheat OR "CBOT wheat")',
+    "soybeans": '(soybeans OR soybean OR "CBOT soybeans")',
 }
 _CONF_RANK = {"low": 0, "medium": 1, "high": 2}
 

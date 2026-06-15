@@ -68,6 +68,17 @@ FRAG_STATE = {"calm": ("Calm", "平静", C["green"]), "elevated": ("Elevated", "
               "stress": ("Stress", "压力", C["red"])}
 JGB_STATE = {"steep": ("Steepening", "陡峭化", C["amber"]), "flat": ("Flat", "平坦", C["muted"]),
              "inverted": ("Inverted", "倒挂", C["red"])}
+REGIONAL_PHASE = {"policy_support": ("Policy-support window", "政策支持窗口", C["green"]),
+                  "risk_repair": ("Risk repair", "风险修复", C["blue"]),
+                  "funding_stress": ("HK funding stress", "香港资金压力", C["red"]),
+                  "fragile": ("Fragile", "脆弱", C["amber"])}
+REGIONAL_LEG_LABEL = {"curve": ("China curve", "中国曲线"),
+                      "credit_impulse": ("Credit impulse", "信用脉冲"),
+                      "breadth": ("Market breadth", "市场广度"),
+                      "fx": ("CNH/HKD FX", "人民币/港元汇率"),
+                      "hk_funding": ("HK funding", "香港资金"),
+                      "hk_vol": ("HK vol", "香港波动"),
+                      "southbound": ("Southbound", "南向资金")}
 LEG_LABEL = {"recession": ("Recession", "衰退"), "drawdown": ("Drawdown", "回撤"),
              "credit": ("Credit", "信用"), "rates_vol": ("Rates vol", "利率波动"),
              "plumbing": ("Plumbing", "资金管道")}
@@ -313,6 +324,76 @@ def chart_sovereign(fr: pd.DataFrame, years=14) -> str:
     return _html(fig)
 
 
+def chart_regional_health(fr: pd.DataFrame, years=6) -> str:
+    d = _tail_years(fr, years)
+    bcfg = config.load()["bonds"]["health"]
+    fig = go.Figure()
+    fig.add_hrect(y0=bcfg["healthy_score"], y1=100, fillcolor="rgba(26,127,67,0.06)", line_width=0)
+    fig.add_hrect(y0=0, y1=bcfg["stressed_score"], fillcolor="rgba(211,11,11,0.06)", line_width=0)
+    if "health_score" in d:
+        _line(fig, d.index, d["health_score"], "China/HK bond health", C["ink"], width=2, n=1)
+    fig.update_layout(**{**PLOT, "height": 250, "yaxis": {"range": [0, 100], "gridcolor": C["grid"],
+                                                          "title": "health (0–100)"}})
+    return _html(fig)
+
+
+def chart_regional_rates(fr: pd.DataFrame, years=4) -> str:
+    d = _tail_years(fr, years)
+    fig = go.Figure()
+    for col, name, color in (("china_rate_1y", "China 1y interbank", C["blue"]),
+                             ("china_rate_3m", "China 3m interbank", C["teal"]),
+                             ("china_curve_1y3m", "1y−3m curve", C["amber"])):
+        if col in d:
+            _line(fig, d.index, d[col], name, color, n=2)
+    fig.update_layout(**{**PLOT, "height": 270, "yaxis": {"title": "% / pp", "gridcolor": C["grid"]}})
+    return _html(fig)
+
+
+def chart_regional_liquidity(fr: pd.DataFrame, years=6) -> str:
+    d = _tail_years(fr, years)
+    fig = go.Figure()
+    fig.add_hline(y=0, line={"color": C["faint"], "width": 1, "dash": "dot"})
+    if "credit_impulse" in d:
+        _line(fig, d.index, d["credit_impulse"], "China credit impulse", C["blue"], width=2, n=1)
+    if "southbound_20d" in d:
+        _line(fig, d.index, d["southbound_20d"] / 10000.0, "Southbound 20d (¥100bn)", C["green"], axis="y2", n=1)
+    fig.update_layout(**{**PLOT, "height": 280,
+                         "yaxis": {"title": "credit impulse %", "gridcolor": C["grid"]},
+                         "yaxis2": {"overlaying": "y", "side": "right", "showgrid": False,
+                                    "title": "southbound flow"}})
+    return _html(fig)
+
+
+def chart_regional_fx_funding(fr: pd.DataFrame, years=4) -> str:
+    d = _tail_years(fr, years)
+    fig = go.Figure()
+    if "hkd_weak_pressure" in d:
+        _line(fig, d.index, d["hkd_weak_pressure"], "HKD weak-side pressure", C["red"], width=1.8, n=0)
+    if "hibor_1m_pctile" in d:
+        _line(fig, d.index, d["hibor_1m_pctile"] * 100, "HIBOR 1m percentile", C["amber"], n=0)
+    if "vhsi" in d:
+        _line(fig, d.index, d["vhsi"], "VHSI", C["indigo"], axis="y2", n=1)
+    fig.update_layout(**{**PLOT, "height": 280,
+                         "yaxis": {"range": [0, 100], "title": "stress percentile", "gridcolor": C["grid"]},
+                         "yaxis2": {"overlaying": "y", "side": "right", "showgrid": False, "title": "VHSI"}})
+    return _html(fig)
+
+
+def chart_regional_breadth(fr: pd.DataFrame, years=4) -> str:
+    d = _tail_years(fr, years)
+    fig = go.Figure()
+    fig.add_hline(y=50, line={"color": C["faint"], "width": 1, "dash": "dot"})
+    for col, name, color in (("china_pct_above_200", "China >200d", C["blue"]),
+                             ("hk_pct_above_200", "HK >200d", C["indigo"]),
+                             ("china_pct_above_50", "China >50d", C["teal"]),
+                             ("hk_pct_above_50", "HK >50d", C["amber"])):
+        if col in d:
+            _line(fig, d.index, d[col], name, color, n=0)
+    fig.update_layout(**{**PLOT, "height": 280, "yaxis": {"range": [0, 100], "title": "% of universe",
+                                                          "gridcolor": C["grid"]}})
+    return _html(fig)
+
+
 # --------------------------------------------------------------------------- #
 # view-model (display-ready, from the snapshot)
 # --------------------------------------------------------------------------- #
@@ -413,6 +494,53 @@ def _vm(snap: dict, fr: pd.DataFrame, calib: dict | None = None) -> dict:
     }
 
 
+def _regional_vm(snap: dict) -> dict:
+    p = snap["pillars"]
+    rates, liq, mh, fx = p["rates"], p["credit_liquidity"], p["market_health"], p["fx_funding"]
+    hl = snap.get("health_label")
+    ph = REGIONAL_PHASE.get(snap.get("cycle_phase"), (snap.get("cycle_phase") or "—", snap.get("cycle_phase") or "—", C["muted"]))
+    legs = []
+    for k, v in (snap.get("stress_legs") or {}).items():
+        lab = REGIONAL_LEG_LABEL.get(k, (k, k))
+        legs.append({"en": lab[0], "zh": lab[1], "val": _r(v, 0)})
+    return {
+        "health": {
+            "score": snap.get("health_score"), "label": hl,
+            "label_zh": {"healthy": "健康", "mixed": "中性", "stressed": "承压"}.get(hl, hl),
+            "color": HEALTH_COLOR.get(hl, C["muted"]),
+            "phase_en": ph[0], "phase_zh": ph[1], "phase_color": ph[2],
+            "verdict_en": snap.get("verdict_en"), "verdict_zh": snap.get("verdict_zh"),
+            "stress_legs": legs,
+        },
+        "rates": {
+            "rate_1y": _r(rates.get("china_rate_1y")),
+            "rate_3m": _r(rates.get("china_rate_3m")),
+            "curve": _r(rates.get("china_curve_1y3m")),
+        },
+        "liquidity": {
+            "credit_impulse": _r(liq.get("credit_impulse"), 1),
+            "southbound_20d": _r((liq.get("southbound_20d") or 0) / 10000.0, 1) if liq.get("southbound_20d") is not None else None,
+        },
+        "market": {
+            "china_200": _r(mh.get("china_pct_above_200"), 0),
+            "hk_200": _r(mh.get("hk_pct_above_200"), 0),
+            "china_50": _r(mh.get("china_pct_above_50"), 0),
+            "hk_50": _r(mh.get("hk_pct_above_50"), 0),
+        },
+        "funding": {
+            "usdcny": _r(fx.get("usdcny"), 3),
+            "usdcny_60d": _r(fx.get("usdcny_60d_chg"), 1),
+            "usdhkd": _r(fx.get("usdhkd"), 4),
+            "hkd_pressure": _r(fx.get("hkd_weak_pressure"), 0),
+            "agg_balance": _r((fx.get("agg_balance") or 0) / 1000.0, 1) if fx.get("agg_balance") is not None else None,
+            "agg_balance_60d": _r(fx.get("agg_balance_60d_chg"), 1),
+            "hibor_1m": _r(fx.get("hibor_1m"), 2),
+            "vhsi": _r(fx.get("vhsi"), 1),
+        },
+        "alarms": snap.get("alarms") or [],
+    }
+
+
 # --------------------------------------------------------------------------- #
 # alert timeline (mirrors build_forex._group_timeline)
 # --------------------------------------------------------------------------- #
@@ -448,6 +576,8 @@ def main() -> int:
             log.error("no bond-health frame; skipping bonds page")
             return 0
         snap = bonds.bonds_snapshot(f, fr)
+        regional_fr = bonds.china_hk_bond_frame()
+        regional_snap = bonds.china_hk_bond_snapshot(regional_fr)
     except Exception as e:  # noqa: BLE001 — never break the site build
         log.error("bonds engine failed (%s); skipping bonds page", e)
         return 0
@@ -465,6 +595,8 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("fed-path snapshot failed: %s", e)
 
+    regional_vm = _regional_vm(regional_snap)
+
     _CHART_KEYS = ("health", "curve_now", "spreads", "credit", "real", "move", "corr",
                    "sovereign", "policy_path")
     try:
@@ -477,6 +609,19 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — a single chart must never break the page
         log.warning("bonds chart build failed (%s); rendering without charts", e)
         charts = {k: "" for k in _CHART_KEYS}
+
+    _REGIONAL_CHART_KEYS = ("health", "rates", "liquidity", "funding", "breadth")
+    try:
+        regional_charts = {
+            "health": chart_regional_health(regional_fr),
+            "rates": chart_regional_rates(regional_fr),
+            "liquidity": chart_regional_liquidity(regional_fr),
+            "funding": chart_regional_fx_funding(regional_fr),
+            "breadth": chart_regional_breadth(regional_fr),
+        }
+    except Exception as e:  # noqa: BLE001 — a single chart must never break the page
+        log.warning("regional bonds chart build failed (%s); rendering without charts", e)
+        regional_charts = {k: "" for k in _REGIONAL_CHART_KEYS}
 
     # alert timeline (deterministic, recomputed each build)
     acfg = config.load()["bonds"]["alerts"]
@@ -494,6 +639,9 @@ def main() -> int:
     as_of_disp = pd.Timestamp(as_of).strftime("%b %d, %Y")
     lo, hi = fr.index.min(), fr.index.max()
     span = f"{lo.date()}..{hi.date()}" if pd.notna(lo) and pd.notna(hi) else "—"
+    regional_as_of = regional_snap.get("as_of")
+    regional_as_of_disp = pd.Timestamp(regional_as_of).strftime("%b %d, %Y") if regional_as_of else "—"
+    regional_span = f"{regional_fr.index.min().date()}..{regional_fr.index.max().date()}" if not regional_fr.empty else "—"
 
     # global credit cycle (BIS credit-gap + DSR; additive leaf, None if data absent)
     credit_cycle = None
@@ -507,8 +655,10 @@ def main() -> int:
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     env.globals.update(tr=tr, td=td)
     html = env.get_template("bonds.html.j2").render(
-        C=C, as_of=as_of_disp, built=built, span=span, vm=vm, charts=charts, credit_cycle=credit_cycle,
-        fed_path=fed_path,
+        C=C, as_of=as_of_disp, regional_as_of=regional_as_of_disp, built=built,
+        span=span, regional_span=regional_span, vm=vm, regional_vm=regional_vm,
+        charts=charts, regional_charts=regional_charts,
+        credit_cycle=credit_cycle, fed_path=fed_path,
         timeline=timeline, timeline_days=acfg["timeline_days"], n_alerts=len(recent))
     site = config.ROOT / config.load()["storage"]["site_dir"]
     (site / "bonds.html").write_text(html)
@@ -519,11 +669,19 @@ def main() -> int:
     outdir.mkdir(parents=True, exist_ok=True)
     latest = {"date": as_of, "health_score": snap.get("health_score"),
               "health_label": snap.get("health_label"), "cycle_phase": snap.get("cycle_phase"),
-              "verdict_en": snap.get("verdict_en"), "verdict_zh": snap.get("verdict_zh")}
+              "verdict_en": snap.get("verdict_en"), "verdict_zh": snap.get("verdict_zh"),
+              "markets": {"us": {"date": as_of, "health_score": snap.get("health_score"),
+                                  "health_label": snap.get("health_label"),
+                                  "cycle_phase": snap.get("cycle_phase")},
+                          "china_hk": {"date": regional_as_of,
+                                       "health_score": regional_snap.get("health_score"),
+                                       "health_label": regional_snap.get("health_label"),
+                                       "cycle_phase": regional_snap.get("cycle_phase")}}}
     (outdir / "latest.json").write_text(json.dumps(latest, indent=2, default=str, ensure_ascii=False))
     if fed_path is not None:
         snap["fed_path"] = fed_path  # deterministic LLM context on the bonds AI contract
-    (outdir / "bond_health.json").write_text(json.dumps(snap, indent=2, default=str, ensure_ascii=False))
+    health_contract = {**snap, "markets": {"us": snap, "china_hk": regional_snap}}
+    (outdir / "bond_health.json").write_text(json.dumps(health_contract, indent=2, default=str, ensure_ascii=False))
     log.info("wrote data/bonds/{latest,bond_health}.json — health=%s phase=%s",
              snap.get("health_score"), snap.get("cycle_phase"))
     return 0
