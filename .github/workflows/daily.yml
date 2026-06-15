@@ -84,7 +84,7 @@ jobs:
     needs: collect
     if: always()            # a scraper failure must still produce a dashboard from cached data
     runs-on: ubuntu-latest
-    timeout-minutes: 75     # build_site's residual-alpha cross-section (S&P 1500) runs 16-32m; 40 hit the cap and killed build_vector (landing hub). TODO: optimise compute_residual_alpha, then lower this.
+    timeout-minutes: 45     # ~15-20m since the ~22m factor-series month-end walk moved to its own `factor_series` job (below). (residual-alpha measured ~1s — it was never the bottleneck the old comment guessed.)
     steps:
       - uses: actions/checkout@v4
         with:
@@ -150,9 +150,11 @@ jobs:
           # leak-free point-in-time IC scorecard -> data/edgar/ic_scorecard.json, read by
           # build_site's factors page. ~4s, only moves quarterly; additive (never blocks build_site).
           python -m scripts.factor_ic_scorecard --quick || echo "ic scorecard skipped (additive)"
-          # factor portfolio return series -> factordata/factor_series.json (read by the factors
-          # page). ~15s month-end walk; additive (never blocks build_site).
-          python -m scripts.build_factor_series || echo "factor series skipped (additive)"
+          # NOTE: build_factor_series (the ~22-min month-end walk = compute_factors x ~38
+          # month-ends x 2 universes) was MOVED to its own parallel `factor_series` job
+          # below — it, NOT residual-alpha, was the real engine bottleneck. build_site reads
+          # the COMMITTED factor_series.json (degrade-never-raise), so a <=1-run-old series
+          # is fine and the deep walk no longer gates the daily dashboard/deploy.
           run_py "macro dashboard + US stocks (build_site)" scripts.build_site
           exit 0
       - name: build china a-share dashboard
@@ -287,6 +289,70 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: site/
+
+  # The factor-portfolio RETURN SERIES (factors-page chart) is a ~22-min month-end
+  # walk (compute_factors x ~38 month-ends x 2 universes) — it was the real engine
+  # bottleneck that pushed the job past its cap on congested runners. It only moves
+  # at month-ends, build_site reads the COMMITTED factor_series.json
+  # (degrade-never-raise), and the deploy uses the engine artifact — so it runs here
+  # ISOLATED, in parallel with engine, can never gate/slow the daily deploy, and its
+  # refresh lands on main for the next run (<=1 run stale = fine for a ~3y month-end
+  # chart whose fundamental ranks refresh ~yearly). `publish` needs ONLY engine, so a
+  # slow/failed factor_series can never block the dashboard going live.
+  factor_series:
+    needs: collect
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - run: git pull origin main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      # build_factor_series._closes() reads these breadth close caches (broad =
+      # breadth+smallcap+midcap, narrow = breadth). Restore-only — the collect job
+      # produces/saves them.
+      - name: restore breadth (S&P 500) close cache
+        uses: actions/cache/restore@v4
+        with:
+          path: data/breadth/_closes_cache.parquet
+          key: breadth-closes-fseries-${{ github.run_id }}
+          restore-keys: breadth-closes-
+      - name: restore smallcap (S&P 600) close cache
+        uses: actions/cache/restore@v4
+        with:
+          path: data/smallcap_breadth/_closes_cache.parquet
+          key: smallcap-closes-fseries-${{ github.run_id }}
+          restore-keys: smallcap-closes-
+      - name: restore midcap (S&P 400) close cache
+        uses: actions/cache/restore@v4
+        with:
+          path: data/midcap_breadth/_closes_cache.parquet
+          key: midcap-closes-fseries-${{ github.run_id }}
+          restore-keys: midcap-closes-
+      - name: factor return series (build_factor_series)
+        run: python -m scripts.build_factor_series || echo "factor series skipped (additive)"
+      - name: commit factor series
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add site/factordata/factor_series.json
+          if git diff --cached --quiet; then echo "no factor-series changes"; exit 0; fi
+          git commit -m "factor-series: month-end walk $(date -u +%F)"
+          # best-effort push (different file from engine's outputs → rebases clean)
+          for i in 1 2 3 4 5; do
+            if git pull --rebase -X theirs origin main && git push; then
+              echo "pushed factor series on attempt $i"; exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "factor-series push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+          done
+          echo "::warning::could not push factor series after 5 attempts (non-fatal — daily reads the last committed json)"
 
   publish:
     # GitHub Pages can't serve a /site folder from a branch — deploy the
