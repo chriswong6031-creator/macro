@@ -41,9 +41,9 @@
       "tp_repriced_positive": null
     },
     "stress": {
-      "move": 69.35649871826172,
+      "move": 69.37740325927734,
       "move_band": "calm",
-      "move_pctile": 0.30158730158730157,
+      "move_pctile": 0.3055555555555556,
       "move_leads_vix": false,
       "sofr_iorb_bp": 0.0,
       "repo_spike_bp": 9.00000000000003,
@@ -68,7 +68,7 @@
     "recession": 3.8923519743519606,
     "drawdown": 14.78942905596382,
     "credit": 14.2,
-    "rates_vol": 19.35649871826172,
+    "rates_vol": 19.377403259277344,
     "plumbing": 20.0
   },
   "alarms": [],
@@ -99,7 +99,7 @@
   },
   "fed_path": {
     "asof": "2026-06-15",
-    "built": "2026-06-15T21:17:05.004201+00:00",
+    "built": "2026-06-15T22:08:30.576714+00:00",
     "policy_rate": 3.62,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -118,8 +118,8 @@
     "implied_cuts_6m": -1,
     "sofr_path": {
       "m1": null,
-      "m3": 3.72,
-      "m6": 3.83,
+      "m3": 3.71,
+      "m6": 3.82,
       "m12": 3.97
     },
     "dots": [

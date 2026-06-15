@@ -210,11 +210,11 @@
     },
     {
       "ticker": "GC=F",
-      "rs": 5.740365250318687,
-      "mom_20d_pct": -6.86,
-      "mom_60d_pct": -17.9,
+      "rs": 5.737715647156759,
+      "mom_20d_pct": -6.91,
+      "mom_60d_pct": -17.94,
       "above_200d_trend": false,
-      "pctile_252d": 30.2,
+      "pctile_252d": 29.8,
       "rank": 19
     }
   ],
@@ -259,23 +259,10 @@
     },
     "copper_gold": {
       "level": 0.0015,
-      "chg_20d_pct": 8.74
+      "chg_20d_pct": 8.78
     }
   },
-  "alerts": [
-    {
-      "rule": "net_liquidity_roc_flip",
-      "severity": "warn",
-      "message": "Net liquidity 4-week RoC flipped negative (contracting) and held 2d: +1bn -> -27bn",
-      "message_zh": "\u51c0\u6d41\u52a8\u6027 4 \u5468 RoC \u8f6c\u4e3anegative (contracting)\u5e76\u6301\u7eed 2 \u5929\uff1a+1bn -> -27bn"
-    },
-    {
-      "rule": "sector_rs_cross_low",
-      "severity": "info",
-      "message": "XLU RS vs SPY crossed below 10th pctile of 90d (now 9)",
-      "message_zh": "XLU RS \u76f8\u5bf9 SPY \u4e0b\u7a7f 90 \u5929\u7b2c 10 \u767e\u5206\u4f4d\uff08\u73b0\u4e3a 9\uff09"
-    }
-  ],
+  "alerts": [],
   "conditions": {
     "financial_conditions": {
       "nfci": -0.506,
@@ -371,7 +358,7 @@
       "skew_pctile": 0.32043650793650796,
       "stock_bond_corr": 0.6663714594817538,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.5497819487151783,
+      "roro": 0.5517786204689988,
       "roro_state": "risk-on",
       "vol_target_scalar": 0.7843936813944001,
       "news_sentiment": -0.05408370867371559,
@@ -499,7 +486,7 @@
       "China": 0.32,
       "HK": 0.29,
       "Commodities": 0.52,
-      "Dollar": 0.41
+      "Dollar": 0.42
     },
     "dominant_cluster": [
       "US",
@@ -588,15 +575,15 @@
     "dir_sign": -1,
     "confidence": "medium",
     "confidence_zh": "\u4e2d",
-    "strength": 1.43,
-    "dominance_ratio": 1.44,
+    "strength": 1.45,
+    "dominance_ratio": 1.49,
     "agreement": 0.88,
     "runner_up": "crypto_liquidity",
     "runner_up_label": "Crypto liquidity",
     "runner_up_label_zh": "\u52a0\u5bc6\u6d41\u52a8\u6027",
-    "headline": "Oil shock \u2014 oil collapsing \u2014 energy lags, breakevens down. oil (WTI) -1.7\u03c3, energy sector RS -2.0\u03c3, 10y breakeven -1.1\u03c3.",
+    "headline": "Oil shock \u2014 oil collapsing \u2014 energy lags, breakevens down. oil (WTI) -1.8\u03c3, energy sector RS -2.0\u03c3, 10y breakeven -1.1\u03c3.",
     "evidence": [
-      "oil (WTI) -1.7\u03c3",
+      "oil (WTI) -1.8\u03c3",
       "energy sector RS -2.0\u03c3",
       "10y breakeven -1.1\u03c3"
     ],
@@ -604,7 +591,7 @@
       {
         "en": "oil (WTI)",
         "zh": "\u539f\u6cb9(WTI)",
-        "z": -1.7
+        "z": -1.8
       },
       {
         "en": "energy sector RS",
@@ -626,8 +613,8 @@
         "label": "Oil shock",
         "label_zh": "\u6cb9\u4ef7\u51b2\u51fb",
         "family": "inflation",
-        "projection": -1.43,
-        "strength": 1.43,
+        "projection": -1.45,
+        "strength": 1.45,
         "direction": "oil collapsing \u2014 energy lags, breakevens down"
       },
       {
@@ -635,8 +622,8 @@
         "label": "Crypto liquidity",
         "label_zh": "\u52a0\u5bc6\u6d41\u52a8\u6027",
         "family": "crypto",
-        "projection": 1.0,
-        "strength": 1.0,
+        "projection": 0.97,
+        "strength": 0.97,
         "direction": "crypto liquidity surging \u2014 BTC/ETH lead up"
       },
       {
@@ -662,8 +649,8 @@
         "label": "Fed repricing",
         "label_zh": "\u7f8e\u8054\u50a8\u91cd\u5b9a\u4ef7",
         "family": "rates",
-        "projection": -0.34,
-        "strength": 0.34,
+        "projection": -0.35,
+        "strength": 0.35,
         "direction": "dovish repricing \u2014 cuts priced in, front-end down"
       },
       {
@@ -680,8 +667,8 @@
         "label": "Liquidity impulse",
         "label_zh": "\u6d41\u52a8\u6027\u8109\u51b2",
         "family": "liquidity",
-        "projection": 0.3,
-        "strength": 0.3,
+        "projection": 0.29,
+        "strength": 0.29,
         "direction": "net liquidity expanding \u2014 broad risk-on tailwind"
       },
       {
@@ -730,7 +717,7 @@
         },
         "risk_contrib": {
           "US": 0.126,
-          "Crypto": 0.383,
+          "Crypto": 0.382,
           "China": 0.088,
           "HK": 0.094,
           "Commodities": 0.279,
@@ -738,7 +725,7 @@
         },
         "port_vol_ann": 0.134,
         "diversification_ratio": 1.63,
-        "max_risk_contrib": 0.383
+        "max_risk_contrib": 0.382
       },
       "inverse_vol": {
         "scheme": "inverse_vol",
@@ -756,7 +743,7 @@
           "China": 0.162,
           "HK": 0.153,
           "Commodities": 0.206,
-          "Dollar": 0.165
+          "Dollar": 0.166
         },
         "port_vol_ann": 0.086,
         "diversification_ratio": 1.65,
@@ -927,7 +914,7 @@
   },
   "fed_path": {
     "asof": "2026-06-15",
-    "built": "2026-06-15T21:05:05.823882+00:00",
+    "built": "2026-06-15T21:55:35.157037+00:00",
     "policy_rate": 3.62,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -946,8 +933,8 @@
     "implied_cuts_6m": -1,
     "sofr_path": {
       "m1": null,
-      "m3": 3.72,
-      "m6": 3.83,
+      "m3": 3.71,
+      "m6": 3.82,
       "m12": 3.97
     },
     "dots": [
@@ -2368,14 +2355,14 @@
       {
         "ticker": "GC=F",
         "name": "Gold",
-        "price": 4333.0,
+        "price": 4331.0,
         "above50": false,
         "above200": false,
         "pct_vs_50dma": -5.3,
         "pct_vs_200dma": -2.2,
         "rsi14": 44.0,
         "macd_pos": false,
-        "off_52w_high_pct": -18.5,
+        "off_52w_high_pct": -18.6,
         "season_this": "Jun: -0.6% avg, up 42% of years (n=26)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.6%\uff0c42% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
         "mom_60d_pct": -5.2
@@ -2383,17 +2370,17 @@
       {
         "ticker": "CL=F",
         "name": "Crude Oil",
-        "price": 81.35,
+        "price": 81.16,
         "above50": false,
         "above200": true,
-        "pct_vs_50dma": -14.8,
-        "pct_vs_200dma": 10.6,
-        "rsi14": 36.0,
+        "pct_vs_50dma": -15.0,
+        "pct_vs_200dma": 10.3,
+        "rsi14": 35.0,
         "macd_pos": false,
-        "off_52w_high_pct": -28.0,
+        "off_52w_high_pct": -28.1,
         "season_this": "Jun: +2.6% avg, up 65% of years (n=26)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 +2.6%\uff0c65% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": -17.3
+        "mom_60d_pct": -17.5
       },
       {
         "ticker": "HG=F",
@@ -2401,7 +2388,7 @@
         "price": 6.49,
         "above50": true,
         "above200": true,
-        "pct_vs_50dma": 4.9,
+        "pct_vs_50dma": 4.8,
         "pct_vs_200dma": 16.9,
         "rsi14": 57.0,
         "macd_pos": false,
@@ -2413,12 +2400,12 @@
       {
         "ticker": "DX-Y.NYB",
         "name": "US Dollar",
-        "price": 99.68,
+        "price": 99.67,
         "above50": true,
         "above200": true,
         "pct_vs_50dma": 0.8,
         "pct_vs_200dma": 1.0,
-        "rsi14": 57.0,
+        "rsi14": 56.0,
         "macd_pos": false,
         "off_52w_high_pct": -0.8,
         "season_this": "Jun: -0.2% avg, up 45% of years (n=56)",

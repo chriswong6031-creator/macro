@@ -23,7 +23,7 @@
   "global_score": 0.423,
   "risk_state": "Risk-on",
   "peg_state": "weak-side (outflow)",
-  "peg_distance": 0.842,
+  "peg_distance": 0.844,
   "global_snapshot": {
     "score": 0.423,
     "state": "Risk-on",
@@ -31,10 +31,10 @@
       {
         "key": "dxy",
         "label": "US Dollar (DXY)",
-        "z": 0.52,
+        "z": 0.51,
         "sign": -1,
         "risk": "off",
-        "level": 99.683
+        "level": 99.669
       },
       {
         "key": "vix",
@@ -63,10 +63,10 @@
       {
         "key": "usdcny",
         "label": "USD / CNY",
-        "z": -0.98,
+        "z": -0.97,
         "sign": -1,
         "risk": "on",
-        "level": 6.7565
+        "level": 6.757
       },
       {
         "key": "eem",
@@ -86,7 +86,7 @@
       }
     ],
     "peg": {
-      "level": 7.8342,
+      "level": 7.8344,
       "distance": 0.84,
       "state": "weak-side (outflow)"
     },
@@ -262,7 +262,7 @@
       "chg_20d_pct": 4.54
     },
     "usdhkd": {
-      "level": 7.8342,
+      "level": 7.8344,
       "chg_20d_pct": 0.05
     }
   }
