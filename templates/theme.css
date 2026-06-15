@@ -20,6 +20,12 @@
   --chart-bg: transparent;
   --card-shadow: 0 1px 0 rgba(255,255,255,.02);
   --popover-shadow: 0 6px 18px rgba(0,0,0,.5);
+  /* shared magnifier glyph for every search field — a stroked SVG used as a
+     mask so it recolours from the current --muted / --link (theme + zh aware). */
+  --mag-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cline x1='21' y1='21' x2='16.5' y2='16.5'/%3E%3C/svg%3E");
+  /* chevron for custom-styled <select> carets (appearance:none) — colour is
+     baked per theme since a background-image can't read currentColor. */
+  --caret-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b93a1' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
 }
 html[data-theme="light"] {
   /* Light palette tuned to match the Bitcoin Vector dashboard: airy #F7F8FA
@@ -38,6 +44,8 @@ html[data-theme="light"] {
   /* soft, light popover shadow — the dark theme's heavy 50%-black drop shadow
      reads as a murky grey halo on the white light-mode tooltips */
   --popover-shadow: 0 4px 10px rgba(20,30,50,.06), 0 12px 28px rgba(20,30,50,.14);
+  /* darker chevron so the select caret stays legible on the white light canvas */
+  --caret-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235d6b7e' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
 }
 /* ---- Chinese mode: Asia colour convention -----------------------------------
    In Asia red = up/bullish, green = down/bearish — the inverse of the West. So
@@ -197,27 +205,78 @@ html body .prob .pc { font-size: 18px; font-weight: 700; }
 .site-nav a.nav-link:hover, .site-nav a.nav-link.active { color: var(--text);
   background: var(--panel2); }
 
-/* global stock search */
+/* nav dropdown (e.g. US Macro ▾ → dashboard + S&P / Macro Vector); mirrors the
+   inline Bitcoin-Vector dropdown some pages already ship, themed via theme vars */
+.site-nav .nav-dd { position: relative; display: inline-flex; }
+.site-nav .nav-dd > a.nav-link .caret { display: inline-block; margin-left: 3px;
+  font-size: 9px; opacity: .6; transition: transform .2s; }
+.site-nav .nav-dd:hover > a.nav-link .caret { transform: rotate(180deg); }
+.site-nav .nav-dd::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 9px; }
+.site-nav .nav-dd-menu { position: absolute; top: calc(100% + 7px); left: 0; z-index: 90;
+  min-width: 218px; background: var(--panel); border: 1px solid var(--line); border-radius: 13px;
+  box-shadow: var(--popover-shadow); padding: 6px; opacity: 0; visibility: hidden;
+  transform: translateY(-6px); transition: opacity .18s, transform .18s, visibility .18s; }
+.site-nav .nav-dd:hover > .nav-dd-menu, .site-nav .nav-dd:focus-within > .nav-dd-menu {
+  opacity: 1; visibility: visible; transform: translateY(0); }
+.site-nav .nav-dd-menu a { display: block; padding: 9px 12px; border-radius: 9px; font-size: 13.5px;
+  font-weight: 600; color: var(--muted); text-decoration: none; white-space: nowrap;
+  transition: color .18s, background .18s; }
+.site-nav .nav-dd-menu a:hover { color: var(--text); background: var(--panel2); }
+
+/* ---- global stock search -----------------------------------------------------
+   Pill input with a crisp themed magnifier (SVG mask → recolours via
+   --muted/--link rather than a fixed-tint emoji), an animated focus ring, and a
+   soft suggestion popover. Every accent derives from --link via color-mix(), so
+   the whole control adapts to dark / light / zh palettes at paint time. */
 .nav-search { grid-column: 1 / -1; grid-row: 2; position: relative; min-width: 0; max-width: 480px; }
-.nav-search .mag { position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
-  font-size: 12px; opacity: .65; pointer-events: none; }
-.nav-search input { width: 100%; box-sizing: border-box; padding: 8px 12px 8px 32px;
-  border-radius: 10px; border: 1px solid var(--line); background: var(--panel2);
-  color: var(--text); font: inherit; font-size: 13px; outline: none; transition: border-color .18s; }
-.nav-search input::placeholder { color: var(--muted); }
-.nav-search input:focus { border-color: var(--link); }
-.nav-sugg { position: absolute; top: calc(100% + 5px); left: 0; right: 0; z-index: 80;
-  background: var(--panel); border: 1px solid var(--line); border-radius: 11px; overflow: hidden;
-  overflow-y: auto; max-height: 60vh; box-shadow: var(--popover-shadow); display: none; }
-.nav-sugg.show { display: block; }
-.nav-sugg .row { display: flex; align-items: center; gap: 9px; padding: 8px 12px; cursor: pointer; }
-.nav-sugg .row:hover, .nav-sugg .row.sel { background: var(--panel2); }
+.nav-search .mag { position: absolute; left: 13px; top: 50%; width: 15px; height: 15px;
+  transform: translateY(-50%); font-size: 0; pointer-events: none; background-color: var(--muted);
+  -webkit-mask: var(--mag-svg) center / contain no-repeat;
+          mask: var(--mag-svg) center / contain no-repeat;
+  transition: background-color .2s ease, transform .2s ease; }
+.nav-search input { width: 100%; box-sizing: border-box; padding: 9px 14px 9px 38px;
+  border-radius: 11px; border: 1px solid var(--line); background: var(--panel2);
+  color: var(--text); font: inherit; font-size: 13px; outline: none;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.05);
+  transition: border-color .2s ease, background .2s ease, box-shadow .25s ease, transform .2s ease; }
+.nav-search input::placeholder { color: var(--muted); transition: color .2s ease; }
+.nav-search:hover input { border-color: color-mix(in srgb, var(--link) 38%, var(--line)); }
+.nav-search input:focus { border-color: color-mix(in srgb, var(--link) 75%, var(--line));
+  background: var(--panel); transform: translateY(-1px);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--link) 20%, transparent),
+              0 8px 22px color-mix(in srgb, var(--link) 14%, transparent); }
+.nav-search input:focus::placeholder { color: color-mix(in srgb, var(--muted) 55%, transparent); }
+.nav-search:focus-within .mag { background-color: var(--link); transform: translateY(-50%) scale(1.06); }
+
+.nav-sugg { position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 80;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 13px; overflow: hidden;
+  overflow-y: auto; max-height: 60vh; padding: 5px; box-shadow: var(--popover-shadow); display: none; }
+.nav-sugg.show { display: block; animation: suggIn .18s cubic-bezier(.2,.7,.3,1); }
+@keyframes suggIn { from { opacity: 0; transform: translateY(-7px); } to { opacity: 1; transform: translateY(0); } }
+.nav-sugg .row { display: flex; align-items: center; gap: 9px; padding: 8px 11px; cursor: pointer;
+  border-radius: 9px; transition: background .15s ease, padding-left .15s ease; }
+.nav-sugg .row:hover, .nav-sugg .row.sel {
+  background: color-mix(in srgb, var(--link) 13%, var(--panel2)); padding-left: 14px; }
 .nav-sugg .row b { min-width: 58px; font-size: 13px; color: var(--text); font-weight: 600; }
 .nav-sugg .row small { flex: 1; color: var(--muted); font-size: 12px; white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis; }
 .nav-sugg .row .stt { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 6px;
   white-space: nowrap; }
 .nav-sugg .empty { padding: 11px 13px; color: var(--muted); font-size: 12.5px; }
+@media (prefers-reduced-motion: reduce) {
+  .nav-search input, .nav-search .mag, .nav-sugg.show, .nav-sugg .row,
+  .searchwrap input, .searchwrap::before, .searchwrap #sugg, .searchwrap #q,
+  #wl_sugg, #wl_q, .wl-in, .wl-btn, .wl-controls select, .secsel {
+    animation: none !important; transition: none !important; }
+  .nav-search input:focus { transform: none; }
+  .wl-btn:active { transform: none; }
+  /* vendor pseudo-elements must NOT share a selector list — a list with one
+     unknown selector is dropped wholesale, so webkit + moz get their own rule. */
+  .tm-range::-webkit-slider-thumb, .tm-range::-webkit-slider-runnable-track { transition: none !important; }
+  .tm-range::-moz-range-thumb, .tm-range::-moz-range-track { transition: none !important; }
+  .tm-range:hover::-webkit-slider-thumb { transform: none !important; }
+  .tm-range:hover::-moz-range-thumb { transform: none !important; }
+}
 
 .site-nav .nav-ctrls { grid-column: 2; grid-row: 1; justify-self: end; align-self: start;
   margin-top: 2px; display: flex; align-items: center; gap: 10px; }

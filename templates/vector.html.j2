@@ -253,10 +253,28 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 #vtm{padding:20px 22px}
 .vtm-wrap{position:relative;margin:2px 0}
 .vtm-canvas{display:block;width:100%;height:56px;cursor:ew-resize;border-radius:8px;touch-action:none}
-.vtm-range{-webkit-appearance:none;appearance:none;width:100%;height:16px;background:transparent;margin:2px 0 0;cursor:ew-resize}
-.vtm-range::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:var(--grid)}
-.vtm-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:16px;height:16px;margin-top:-6px;border-radius:50%;background:var(--ink);border:2px solid var(--card);box-shadow:0 1px 4px rgba(0,0,0,.3)}
-.vtm-range::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--ink);border:2px solid var(--card)}
+/* BTC-cycle scrubber — neutral thumb for contrast, --blue accent ring/hover/drag */
+.vtm-range{-webkit-appearance:none;appearance:none;width:100%;height:18px;background:transparent;margin:2px 0 0;cursor:ew-resize}
+.vtm-range:focus{outline:none}
+.vtm-range::-webkit-slider-runnable-track{height:5px;border-radius:3px;background:var(--grid);transition:background .2s ease}
+.vtm-range:hover::-webkit-slider-runnable-track{background:color-mix(in srgb,var(--blue) 26%,var(--grid))}
+.vtm-range::-moz-range-track{height:5px;border-radius:3px;background:var(--grid)}
+.vtm-range:hover::-moz-range-track{background:color-mix(in srgb,var(--blue) 26%,var(--grid))}
+.vtm-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:16px;height:16px;margin-top:-5.5px;border-radius:50%;background:var(--ink);border:2px solid var(--card);box-shadow:0 1px 4px rgba(0,0,0,.3);transition:transform .15s ease,box-shadow .2s ease,background .2s ease}
+.vtm-range:hover::-webkit-slider-thumb{transform:scale(1.14)}
+.vtm-range:active::-webkit-slider-thumb{background:var(--blue)}
+.vtm-range:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 4px color-mix(in srgb,var(--blue) 26%,transparent),0 1px 4px rgba(0,0,0,.3)}
+.vtm-range::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--ink);border:2px solid var(--card);box-shadow:0 1px 4px rgba(0,0,0,.3);transition:transform .15s ease,box-shadow .2s ease,background .2s ease}
+.vtm-range:hover::-moz-range-thumb{transform:scale(1.14)}
+.vtm-range:active::-moz-range-thumb{background:var(--blue)}
+.vtm-range:focus-visible::-moz-range-thumb{box-shadow:0 0 0 4px color-mix(in srgb,var(--blue) 26%,transparent)}
+@media (prefers-reduced-motion:reduce){
+  /* keep webkit + moz pseudos in SEPARATE rules — a mixed list is dropped whole */
+  .vtm-range::-webkit-slider-thumb,.vtm-range::-webkit-slider-runnable-track{transition:none!important}
+  .vtm-range::-moz-range-thumb,.vtm-range::-moz-range-track{transition:none!important}
+  .vtm-range:hover::-webkit-slider-thumb{transform:none!important}
+  .vtm-range:hover::-moz-range-thumb{transform:none!important}
+}
 .vtm-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0 4px}
 .vtm-btn{font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;background:var(--bg);border:1px solid var(--grid);border-radius:8px;padding:5px 11px;color:var(--muted);transition:color .15s,border-color .15s}
 .vtm-btn:hover{color:var(--ink);border-color:var(--muted)}

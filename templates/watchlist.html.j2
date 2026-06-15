@@ -29,16 +29,30 @@
   .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px;
            padding:14px 16px; margin-bottom:14px; }
   .topline { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
-  /* ---- search (cloned from the analyzer) ---- */
+  /* ---- search (cloned from the analyzer) — shares the global look (theme.css):
+     SVG-mask magnifier, animated focus ring, soft popover. --mag-svg + suggIn live there. */
   .searchwrap { position:relative; flex:1; min-width:240px; max-width:460px; }
-  #wl_q { width:100%; padding:10px 14px; border-radius:10px; border:1px solid var(--line);
-       background:var(--panel2); color:var(--text); font-size:15px; outline:none; }
-  #wl_q:focus { border-color:var(--link); }
-  #wl_sugg { position:absolute; top:104%; left:0; right:0; background:var(--panel);
-          border:1px solid var(--line); border-radius:10px; z-index:50; max-height:330px;
-          overflow:auto; display:none; box-shadow:var(--popover-shadow); }
-  #wl_sugg div { padding:8px 13px; cursor:pointer; display:flex; gap:10px; align-items:center; }
-  #wl_sugg div:hover, #wl_sugg div.sel { background:var(--panel2); }
+  .searchwrap::before { content:''; position:absolute; left:15px; top:50%; width:16px; height:16px;
+       transform:translateY(-50%); pointer-events:none; background-color:var(--muted);
+       -webkit-mask:var(--mag-svg) center/contain no-repeat; mask:var(--mag-svg) center/contain no-repeat;
+       transition:background-color .2s ease; z-index:1; }
+  .searchwrap:focus-within::before { background-color:var(--link); }
+  #wl_q { width:100%; box-sizing:border-box; padding:11px 16px 11px 44px; border-radius:12px;
+       border:1px solid var(--line); background:var(--panel2); color:var(--text);
+       font:inherit; font-size:15px; outline:none; box-shadow:inset 0 1px 2px rgba(0,0,0,.05);
+       transition:border-color .2s ease, background .2s ease, box-shadow .25s ease; }
+  #wl_q::placeholder { color:var(--muted); }
+  .searchwrap:hover #wl_q { border-color:color-mix(in srgb,var(--link) 38%,var(--line)); }
+  #wl_q:focus { border-color:color-mix(in srgb,var(--link) 75%,var(--line)); background:var(--panel);
+       box-shadow:0 0 0 3px color-mix(in srgb,var(--link) 20%,transparent),
+                  0 8px 22px color-mix(in srgb,var(--link) 14%,transparent); }
+  #wl_sugg { position:absolute; top:calc(100% + 8px); left:0; right:0; background:var(--panel);
+          border:1px solid var(--line); border-radius:13px; z-index:50; max-height:330px;
+          overflow:auto; display:none; box-shadow:var(--popover-shadow); padding:5px;
+          animation:suggIn .18s cubic-bezier(.2,.7,.3,1); }
+  #wl_sugg div { padding:8px 11px; cursor:pointer; display:flex; gap:10px; align-items:center;
+                 border-radius:9px; transition:background .15s ease, padding-left .15s ease; }
+  #wl_sugg div:hover, #wl_sugg div.sel { background:color-mix(in srgb,var(--link) 13%,var(--panel2)); padding-left:14px; }
   #wl_sugg b { min-width:58px; flex:none; }
   #wl_sugg small { color:var(--muted); flex:1 1 auto; min-width:0;
                    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -51,18 +65,39 @@
   .wl-pill-synced { background:color-mix(in srgb,var(--up) 15%,var(--panel)); color:var(--up); }
   .wl-pill-syncing { background:color-mix(in srgb,var(--info) 15%,var(--panel)); color:var(--info); }
   .wl-pill-local, .wl-pill-offline { background:var(--panel2); color:var(--muted); }
-  .wl-in { padding:7px 11px; border-radius:8px; border:1px solid var(--line);
-           background:var(--panel2); color:var(--text); font-size:13px; outline:none; }
+  /* form fields — matched to the search look: soft inset, accent hover + focus ring */
+  .wl-in { padding:8px 12px; border-radius:10px; border:1px solid var(--line);
+           background:var(--panel2); color:var(--text); font:inherit; font-size:13px; outline:none;
+           box-shadow:inset 0 1px 2px rgba(0,0,0,.05);
+           transition:border-color .2s ease, background .2s ease, box-shadow .25s ease; }
+  .wl-in::placeholder { color:var(--muted); }
+  .wl-in:hover { border-color:color-mix(in srgb,var(--link) 32%,var(--line)); }
+  .wl-in:focus { border-color:color-mix(in srgb,var(--link) 70%,var(--line)); background:var(--panel);
+           box-shadow:0 0 0 3px color-mix(in srgb,var(--link) 18%,transparent); }
+  textarea.wl-in { resize:vertical; line-height:1.5; }
   .wl-btn { background:var(--panel2); border:1px solid var(--line); color:var(--link);
-            padding:7px 13px; border-radius:8px; font-size:13px; cursor:pointer; }
-  .wl-btn:hover { border-color:var(--link); }
+            padding:8px 14px; border-radius:10px; font:inherit; font-size:13px; font-weight:600; cursor:pointer;
+            transition:border-color .2s ease, background .2s ease, transform .1s ease, box-shadow .2s ease; }
+  .wl-btn:hover { border-color:color-mix(in srgb,var(--link) 55%,var(--line));
+            background:color-mix(in srgb,var(--link) 10%,var(--panel2)); }
+  .wl-btn:active { transform:translateY(1px); }
+  .wl-btn:focus-visible { outline:none; box-shadow:0 0 0 3px color-mix(in srgb,var(--link) 22%,transparent); }
   .wl-btn:disabled { opacity:.5; cursor:default; }
+  .wl-btn:disabled:hover { border-color:var(--line); background:var(--panel2); }
   #wl_authbox, #wl_codestep, #wl_account { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
   /* ---- controls ---- */
   .wl-controls { display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin:2px 2px 14px; }
   .wl-controls label { display:flex; gap:7px; align-items:center; font-size:13px; color:var(--muted); }
-  .wl-controls select { background:var(--panel2); color:var(--text); border:1px solid var(--line);
-            border-radius:8px; padding:5px 9px; font-size:13px; }
+  .wl-controls select { -webkit-appearance:none; appearance:none; background-color:var(--panel2);
+            background-image:var(--caret-svg); background-repeat:no-repeat;
+            background-position:right 10px center; background-size:11px;
+            color:var(--text); border:1px solid var(--line); border-radius:10px;
+            padding:6px 30px 6px 11px; font:inherit; font-size:13px; cursor:pointer; outline:none;
+            transition:border-color .2s ease, box-shadow .2s ease; }
+  .wl-controls select:hover { border-color:color-mix(in srgb,var(--link) 32%,var(--line)); }
+  .wl-controls select:focus { border-color:color-mix(in srgb,var(--link) 70%,var(--line));
+            box-shadow:0 0 0 3px color-mix(in srgb,var(--link) 18%,transparent); }
+  .wl-controls input[type="checkbox"] { accent-color:var(--link); width:15px; height:15px; cursor:pointer; }
   .wl-soonpill { color:var(--info); font-weight:700; font-size:13px; }
   /* ---- cards ---- */
   .wl-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:12px; }

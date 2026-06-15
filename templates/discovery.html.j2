@@ -78,7 +78,15 @@
   .echip { font-size:10.5px; padding:1px 7px; border-radius:7px; border:1px solid var(--line); white-space:nowrap; }
   .ent-pull { color:var(--up); border-color:var(--up); } .ent-ext { color:var(--down); border-color:var(--down); }
   .ent-intact, .ent-lag, .ent-neutral { color:var(--muted); }
-  .secsel { font:inherit; font-size:13px; padding:6px 10px; border:1px solid var(--line); border-radius:8px; background:var(--panel); color:var(--text); margin-bottom:12px; }
+  .secsel { font:inherit; font-size:13px; -webkit-appearance:none; appearance:none;
+            padding:7px 30px 7px 11px; border:1px solid var(--line); border-radius:10px;
+            background-color:var(--panel); background-image:var(--caret-svg); background-repeat:no-repeat;
+            background-position:right 10px center; background-size:11px; color:var(--text);
+            margin-bottom:12px; cursor:pointer; outline:none;
+            transition:border-color .2s ease, box-shadow .2s ease; }
+  .secsel:hover { border-color:color-mix(in srgb,var(--link) 32%,var(--line)); }
+  .secsel:focus { border-color:color-mix(in srgb,var(--link) 70%,var(--line));
+            box-shadow:0 0 0 3px color-mix(in srgb,var(--link) 18%,transparent); }
   .note { margin:8px 0 0; line-height:1.5; }
   .twocol { display:grid; grid-template-columns:1fr 1fr; gap:18px; } @media (max-width:760px){ .twocol{ grid-template-columns:1fr; } }
 </style>

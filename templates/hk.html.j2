@@ -144,10 +144,21 @@
   /* ---- regime time machine (timemachine.js) -------------------------------- */
   #time-machine .tm-wrap { position: relative; margin: 4px 0 2px; }
   .tm-canvas { display: block; width: 100%; height: 56px; cursor: ew-resize; border-radius: 8px; touch-action: none; }
-  .tm-range { -webkit-appearance: none; appearance: none; width: 100%; height: 16px; background: transparent; margin: 2px 0 0; cursor: ew-resize; }
-  .tm-range::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: var(--line); }
-  .tm-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; margin-top: -6px; border-radius: 50%; background: var(--text); border: 2px solid var(--panel); box-shadow: 0 1px 4px rgba(0,0,0,.35); }
-  .tm-range::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--text); border: 2px solid var(--panel); }
+  /* regime-history scrubber — neutral thumb (contrast on the colour strip) + accent ring/hover/drag */
+  .tm-range { -webkit-appearance: none; appearance: none; width: 100%; height: 18px; background: transparent; margin: 2px 0 0; cursor: ew-resize; }
+  .tm-range:focus { outline: none; }
+  .tm-range::-webkit-slider-runnable-track { height: 5px; border-radius: 3px; background: var(--line); transition: background .2s ease; }
+  .tm-range:hover::-webkit-slider-runnable-track { background: color-mix(in srgb, var(--link) 22%, var(--line)); }
+  .tm-range::-moz-range-track { height: 5px; border-radius: 3px; background: var(--line); }
+  .tm-range:hover::-moz-range-track { background: color-mix(in srgb, var(--link) 22%, var(--line)); }
+  .tm-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; margin-top: -5.5px; border-radius: 50%; background: var(--text); border: 2px solid var(--panel); box-shadow: 0 1px 4px rgba(0,0,0,.35); transition: transform .15s ease, box-shadow .2s ease, background .2s ease; }
+  .tm-range:hover::-webkit-slider-thumb { transform: scale(1.14); }
+  .tm-range:active::-webkit-slider-thumb { background: var(--link); }
+  .tm-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px color-mix(in srgb, var(--link) 22%, transparent), 0 1px 4px rgba(0,0,0,.35); }
+  .tm-range::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--text); border: 2px solid var(--panel); box-shadow: 0 1px 4px rgba(0,0,0,.35); transition: transform .15s ease, box-shadow .2s ease, background .2s ease; }
+  .tm-range:hover::-moz-range-thumb { transform: scale(1.14); }
+  .tm-range:active::-moz-range-thumb { background: var(--link); }
+  .tm-range:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 4px color-mix(in srgb, var(--link) 22%, transparent); }
   .tm-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin: 8px 0 12px; }
   .tm-presets { display: inline-flex; flex-wrap: wrap; gap: 6px; }
   .tm-btn { font: inherit; font-size: 12px; font-weight: 600; color: var(--text); background: var(--panel2); border: 1px solid var(--line); border-radius: 7px; padding: 5px 11px; cursor: pointer; }
