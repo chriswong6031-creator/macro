@@ -45,6 +45,11 @@ FACTORS: dict[str, tuple] = {
     "crypto":   ("yahoo", "BTC-USD", "close", "price", "Crypto", "加密"),
     "oil":      ("yahoo", "CL_F", "close", "price", "Oil", "原油"),
     "rates":    ("fred", "DGS10", "us10y", "yield", "Rates (10y)", "利率(10年)"),
+    "gold":     ("yahoo", "GC_F", "close", "price", "Gold", "黄金"),
+    # NB: a high-yield-credit factor (HYG) was evaluated and DROPPED — in an equity
+    # universe its loaders were an incoherent low-beta mix (redundant with market +
+    # rates), i.e. it fit noise rather than a clean credit dimension. Keep the set
+    # small and clean (the overfit guardrail).
 }
 
 

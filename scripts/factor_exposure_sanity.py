@@ -20,6 +20,7 @@ from lib import config
 EXPECT = {  # ticker -> the factor we expect to dominate (a priori knowledge)
     "NVDA": "semis", "AMD": "semis", "COIN": "crypto", "MARA": "crypto",
     "XLE": "oil", "XOM": "oil", "CVX": "oil",
+    "NEM": "gold", "GOLD": "gold", "AEM": "gold",
 }
 
 
