@@ -261,6 +261,95 @@ def _catalyst_narrative(verdict: str, catalyst: dict | None) -> dict | None:
     }
 
 
+# --------------------------------------------------------------------------- #
+# DETERMINISTIC geopolitical reversibility cross-check (GPR threat/act split).
+# The free, always-available complement to _catalyst_narrative (which needs the
+# default-off LLM). Caldara-Iacoviello (AER 2022): the THREAT component of the
+# Geopolitical Risk index reverts (~3 months) while realized ACTS persist — so a
+# threat-led geopolitical dislocation is a reversible-scare candidate and an
+# act-led one leans regime-break. CONTEXT ONLY: never changes the verdict.
+# --------------------------------------------------------------------------- #
+_GPR_ELEVATED_PCT = 80.0   # only cross-check when geopolitics is actually elevated
+
+
+def _gpr_reading() -> dict | None:
+    """Latest GPR reading from the uncertainty store (collectors/uncertainty_indices):
+    value, percentile of full history, and the THREAT/ACT lean. None if absent/thin."""
+    try:
+        df = store.read("uncertainty", "gpr")
+        if df is None or df.empty or "gpr" not in df.columns:
+            return None
+        s = df["gpr"].dropna()
+        if len(s) < 250:
+            return None
+        v = float(s.iloc[-1])
+        pct = round(float((s <= v).mean()) * 100, 1)
+        last = df.dropna(subset=["gpr"]).iloc[-1]
+        lean = threat = act = None
+        if {"gpr_threat", "gpr_act"} <= set(df.columns):
+            threat, act = float(last["gpr_threat"]), float(last["gpr_act"])
+            lean = "threat" if threat > act else ("act" if act > threat else "balanced")
+        return {"value": round(v, 1), "pct": pct, "lean": lean,
+                "threat": None if threat is None else round(threat, 1),
+                "act": None if act is None else round(act, 1),
+                "asof": str(df.index.max().date())}
+    except Exception:  # noqa: BLE001 — additive, never raise
+        return None
+
+
+def _geopolitical_reversibility(verdict: str, gpr: dict | None) -> dict | None:
+    """Deterministic reversibility read from the GPR threat/act split, framed as
+    agreement/divergence vs the Fed-put verdict — exactly the _catalyst_narrative
+    contract, but free and always available. None unless a geopolitically-driven
+    dislocation with a clear threat/act lean is live. NEVER changes `verdict`."""
+    if not gpr or verdict not in ("buyable_washout", "stand_aside"):
+        return None
+    if (gpr.get("pct") or 0) < _GPR_ELEVATED_PCT:    # geopolitics not elevated -> skip
+        return None
+    lean = gpr.get("lean")
+    if lean not in ("threat", "act"):                # no clear reversibility read
+        return None
+    geo_says = "reversible" if lean == "threat" else "persistent"
+    gate_says = "reversible" if verdict == "buyable_washout" else "persistent"
+    agree = geo_says == gate_says
+    _zh = {"reversible": "可逆", "persistent": "结构性"}
+    basis = "GPR is threat-LED" if lean == "threat" else "GPR is act-LED"
+    basis_zh = "地缘风险以「威胁」为主" if lean == "threat" else "地缘风险以「行动」为主"
+    rev_txt = ("threats historically REVERT (~3mo)" if lean == "threat"
+               else "realized acts historically PERSIST")
+    rev_zh = "威胁历史上往往回落（约3个月）" if lean == "threat" else "已发生的行动历史上更持久"
+    if agree:
+        note = (f"Geopolitical-risk mix corroborates the gate — {basis} ({rev_txt}), "
+                f"matching the Fed-put switch ({verdict.replace('_', ' ')}).")
+        note_zh = f"地缘风险结构印证一道闸 —— {basis_zh}（{rev_zh}），与美联储托底开关一致。"
+    elif verdict == "buyable_washout":
+        note = (f"Divergence — the Fed-put switch reads BUYABLE WASHOUT, but {basis} "
+                "(acts persist → leans structural). The validated gate governs; treat "
+                "the act-driven geopolitics as a caution flag worth a look.")
+        note_zh = (f"背离 —— 美联储托底开关判定为「可买入错杀」，但{basis_zh}（行动更持久→偏结构性）。"
+                   "以经验证的一道闸为准；将以行动驱动的地缘风险视为值得留意的警示。")
+    else:
+        note = (f"Divergence — the Fed-put switch reads STAND ASIDE (knife), but {basis} "
+                f"({rev_txt}). The validated gate governs; the threat-driven reversibility "
+                "is a watch-for-stabilization hint, not a green light.")
+        note_zh = (f"背离 —— 美联储托底开关判定为「观望（接飞刀）」，但{basis_zh}（{rev_zh}）。"
+                   "以经验证的一道闸为准；以威胁驱动的可逆性仅为等待企稳的提示，并非买入许可。")
+    return {
+        "reversibility": geo_says,
+        "reversibility_zh": _zh.get(geo_says),
+        "gpr_pct": gpr.get("pct"),
+        "lean": lean,
+        "threat": gpr.get("threat"),
+        "act": gpr.get("act"),
+        "agreement": "corroborates" if agree else "diverges",
+        "agreement_zh": "印证" if agree else "背离",
+        "note": note,
+        "note_zh": note_zh,
+        "source": "GPR (Caldara-Iacoviello)",
+        "is_context_only": True,
+    }
+
+
 def snapshot(f: pd.DataFrame, conditions: dict | None = None,
              catalyst: dict | None = None) -> dict:
     """latest-day dislocation read. `conditions` = the already-computed
@@ -354,6 +443,7 @@ def snapshot(f: pd.DataFrame, conditions: dict | None = None,
         "dislocation_active": dislocation_active,
         "gate2": _gate2(f, verdict, vix_term, c),
         "catalyst_narrative": _catalyst_narrative(verdict, catalyst),  # context-only LLM cross-check
+        "geo_reversibility": _geopolitical_reversibility(verdict, _gpr_reading()),  # context-only GPR threat/act cross-check
         "inputs": {
             "sahm": sahm,
             "breakeven_10y_1m": None if be21 is None else round(be21, 2),
