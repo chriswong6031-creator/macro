@@ -312,7 +312,15 @@
         <span id="r_eq" class="eqbadge" style="display:none"></span>
         <span id="r_archetype" class="arch" style="display:none"></span>
         <span style="flex:1"></span>
-        <button id="r_afbtn" class="af-toggle" type="button" aria-label="Toggle alert feed" aria-expanded="false" aria-controls="af-feed" style="display:none"></button>
+        <span class="af-wrap">
+          <button id="r_afbtn" class="af-toggle" type="button" aria-label="Toggle alert feed" aria-expanded="false" aria-controls="af-feed" style="display:none"></button>
+          <div class="af-scrim" id="af-scrim"></div>
+          <div class="af" id="af-feed" role="dialog" aria-label="Alerts" aria-hidden="true">
+            <div class="af-bar"><span class="af-bar-t">🔔 {{ t('Alerts','警报') }}</span>
+              <button class="af-x" id="af-close" type="button" aria-label="Close">✕</button></div>
+            <div class="af-body"><div id="r_affeed"></div></div>
+          </div>
+        </span>
         <span id="r_asof" class="muted"></span>
       </div>
       <p id="r_summary" class="muted" style="margin:2px 0 6px; font-size:13.5px"></p>
@@ -320,8 +328,6 @@
       <!-- bold VERDICT + at-a-glance SIGNAL STRIP (replace the thin entry bar) -->
       <div id="r_verdict" class="verdict"></div>
       <div id="r_sigstrip" class="sigstrip"></div>
-      <!-- collapsible alert feed: ladder pinned on top + technical timeline -->
-      <div id="af-feed" class="af" hidden><div id="r_affeed"></div></div>
       <!-- bottom-confidence box (multi-TF, bottoming states only) -->
       <div id="r_bc" class="bcbox" style="display:none"></div>
       <p id="r_age" class="agewhen" style="display:none"></p>
@@ -951,8 +957,7 @@
     el('r_sigstrip').innerHTML = c.join('');
   }
 
-  var afOpen = false;
-  try { afOpen = localStorage.getItem('afOpen') === 'true'; } catch (e) { /* private mode */ }
+  var afCtl;  // floating-popover controller (assigned below); lets render() close it
   var AF_FILTERS = [['all', 'All', '全部'], ['signal', 'Signal', '信号'], ['trend', 'Trend', '趋势'],
     ['momentum', 'Momentum', '动量'], ['strength', 'vs Market', '相对强弱'], ['cycle', 'Cycle', '周期']];
   // chip label per filter group (the slimmed events carry only `filter`, not the label)
@@ -999,23 +1004,46 @@
     btn.innerHTML = '🔔 <span>' + lz('Alerts', '警报') + '</span>' +
       (n ? '<span class="af-badge">' + n + '</span>' : '') + ' <span class="af-caret">▾</span>';
     el('r_affeed').innerHTML = afFeedHTML(a);
-    var feed = el('af-feed');
-    if (afOpen) { feed.removeAttribute('hidden'); btn.setAttribute('aria-expanded', 'true'); }
-    else { feed.setAttribute('hidden', ''); btn.setAttribute('aria-expanded', 'false'); }
+    if (afCtl) afCtl.close();   // each re-render lands with the popover closed
   }
-  // toggle (persists across re-renders) + filter chips (event-delegated)
-  (function () {
-    var btn = el('r_afbtn'), feed = el('af-feed');
+  // floating-popover controller: the feed grows out of the 🔔 button as an
+  // overlay (page never reflows) + filter chips (event-delegated)
+  afCtl = (function () {
+    var btn = el('r_afbtn'), feed = el('af-feed'), scrim = el('af-scrim'), x = el('af-close');
+    function place() {
+      // phone (≤560) is a CSS bottom-sheet — clear any desktop inline pinning
+      if (window.matchMedia('(max-width: 560px)').matches) {
+        feed.style.left = feed.style.top = feed.style.right = feed.style.transformOrigin = '';
+        return;
+      }
+      var b = btn.getBoundingClientRect(), pw = feed.offsetWidth || 470, m = 10;
+      var left = Math.min(b.right - pw, window.innerWidth - m - pw);
+      if (left < m) left = m;
+      feed.style.left = left + 'px'; feed.style.right = 'auto';
+      feed.style.top = (b.bottom + 9) + 'px';
+      // grow from the point directly beneath the bell
+      feed.style.transformOrigin = Math.max(14, Math.min(pw - 14, (b.left + b.right) / 2 - left)) + 'px top';
+    }
+    function set(open) {
+      feed.classList.toggle('af-open', open);
+      if (scrim) scrim.classList.toggle('af-open', open);
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      feed.setAttribute('aria-hidden', open ? 'false' : 'true');
+    }
+    function open() { place(); set(true); document.addEventListener('keydown', onKey);
+      window.addEventListener('scroll', close); window.addEventListener('resize', close); }
+    function close() { set(false); document.removeEventListener('keydown', onKey);
+      window.removeEventListener('scroll', close); window.removeEventListener('resize', close); }
+    function onKey(e) { if (e.key === 'Escape' || e.key === 'Esc') close(); }
     if (btn) btn.addEventListener('click', function () {
-      afOpen = feed.hasAttribute('hidden');
-      try { localStorage.setItem('afOpen', afOpen ? 'true' : 'false'); } catch (e) { /* private mode */ }
-      if (afOpen) { feed.removeAttribute('hidden'); btn.setAttribute('aria-expanded', 'true'); }
-      else { feed.setAttribute('hidden', ''); btn.setAttribute('aria-expanded', 'false'); }
+      feed.classList.contains('af-open') ? close() : open();
     });
+    if (x) x.addEventListener('click', close);
+    if (scrim) scrim.addEventListener('click', close);
     if (feed) feed.addEventListener('click', function (ev) {
       var b = ev.target.closest ? ev.target.closest('.aff') : null;
       if (!b) return;
-      feed.querySelectorAll('.aff').forEach(function (x) { x.classList.remove('active'); });
+      feed.querySelectorAll('.aff').forEach(function (z) { z.classList.remove('active'); });
       b.classList.add('active');
       var f = b.dataset.f;
       feed.querySelectorAll('.af-item').forEach(function (it) { it.hidden = !(f === 'all' || it.dataset.f === f); });
@@ -1024,6 +1052,7 @@
         dd.style.display = any ? '' : 'none';
       });
     });
+    return { open: open, close: close };
   })();
 
   function load(t) {
@@ -1040,7 +1069,7 @@
       document.getElementById('r_verdict').innerHTML = '';
       document.getElementById('r_sigstrip').innerHTML = '';
       document.getElementById('r_afbtn').style.display = 'none';
-      document.getElementById('af-feed').setAttribute('hidden', '');
+      if (afCtl) afCtl.close();
       document.getElementById('r_points').innerHTML = '';
       document.getElementById('r_cyclebox').innerHTML = L('notlibmsg');
       hideFundamentals();
