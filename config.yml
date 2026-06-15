@@ -210,6 +210,30 @@ cboe:
     strike_window_pct: 0.25      # ignore strikes >25% from spot
     max_expiry_days: 365
 
+polygon:
+  # Polygon.io / massive.com options-OI accrual (GEX FOUNDATION) — the per-strike
+  # open interest the free Cboe feed's history discards and that CANNOT be backfilled
+  # (OI is point-in-time only). Snapshots the chain each day -> a raw per-strike store
+  # so any dealer-gamma variant can be recomputed later from real OI. DISPLAY/RESEARCH
+  # ONLY, never scored. Key = POLYGON_API_KEY (.env locally / Actions secret); the
+  # plan is stocks+options entitled — index/futures/fx/crypto are NOT.
+  base_url: https://api.polygon.io
+  api_key_env: POLYGON_API_KEY
+  retries: 3
+  max_pages: 40                  # snapshot pagination cap per underlying (250/page)
+  request_timeout: 60
+  gex:
+    # mirror the Cboe GEX universe (collectors/cboe.DEFAULT_GEX_SYMBOLS) so the two
+    # sources are directly comparable. SPX excluded: index spot (I:SPX) is not entitled.
+    symbols: [SPY, QQQ, IWM, DIA, NVDA, AAPL, TSLA, AMD, META, MSFT]
+    strike_window_pct: 0.30      # keep contracts within +/-30% of spot (gamma lives here)
+    max_expiry_days: 400         # ~13 months; covers the engine's 365d window + buffer
+    contract_multiplier: 100
+    pct_move: 0.01
+    r: 0.043
+  # per-underlying dividend yields for the compute_gex summary (single names -> 0)
+  div_yield: {SPY: 0.013, QQQ: 0.006, IWM: 0.013, DIA: 0.018}
+
 fedboard:
   # Excess Bond Premium (Gilchrist-Zakrajšek): the component of corporate credit
   # spreads NOT explained by default risk = a clean credit-risk-appetite / early-
