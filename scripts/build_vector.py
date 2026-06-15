@@ -731,7 +731,8 @@ def build_landing(site: Path, vm: dict) -> None:
     macro = _macro_state()
     hub = _hub_html(vm, macro, home_alert_feed(), _china_state(), _commodities_state(),
                     _watchlist_state(), _etf_state(), _hk_state(), _forex_state(),
-                    _bonds_state(), _us_stocks_state(), _spvector_state(), _crossasset_state())
+                    _bonds_state(), _us_stocks_state(), _spvector_state(), _crossasset_state(),
+                    _market_stocks_state("china"), _market_stocks_state("hk"))
     (site / "index.html").write_text(hub)
     log.info("wrote landing hub -> index.html")
 
@@ -854,6 +855,18 @@ def _us_stocks_state() -> dict:
                 "date": d.get("date", ""), "present": (site / "us_stocks.html").exists()}
     except Exception:
         return {"label": "—", "n_setups": 0, "date": "", "present": (site / "us_stocks.html").exists()}
+
+
+def _market_stocks_state(market: str) -> dict:
+    """Stock-dashboard stat for the China/HK hero half-cards — the live label/count
+    written by build_china / build_hk to data/<market>_stocks/latest.json (e.g.
+    '12 mean-reversion setups', '24 beta exposures'). Falls back to a generic label."""
+    site = config.ROOT / config.load()["storage"]["site_dir"]
+    try:
+        d = json.loads((config.data_dir() / f"{market}_stocks" / "latest.json").read_text())
+        return {"label": d.get("label") or "—", "n_setups": d.get("n_setups", 0)}
+    except Exception:  # noqa: BLE001
+        return {"label": "", "n_setups": 0}
 
 
 def _spvector_state() -> dict:
@@ -1032,7 +1045,8 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
               etf: dict | None = None, hk: dict | None = None,
               forex: dict | None = None, bonds: dict | None = None,
               us_stocks: dict | None = None,
-              spvector: dict | None = None, crossasset: dict | None = None) -> str:
+              spvector: dict | None = None, crossasset: dict | None = None,
+              china_stocks: dict | None = None, hk_stocks: dict | None = None) -> str:
     # Bilingual via the i18n layer when present, identity fallback when absent.
     try:
         from engine.i18n import t as T, tr as TR
@@ -1154,6 +1168,9 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
   </div>"""
     _cn_href = ("china_stocks.html" if (_site / "china_stocks.html").exists()
                 else ("china_stock.html" if (_site / "china_stock.html").exists() else "china.html"))
+    _cn_n = (china_stocks or {}).get("n_setups") or 0
+    cn_stat = (T(f"{_cn_n} setups · screener", f"{_cn_n} 形态 · 筛选") if _cn_n
+               else T('Setups · screener · lookup', '形态 · 筛选 · 查询'))
     china_hero = ("" if not china.get("present") else f"""
   <div class="c-hero">
     <div class="ch-title"><span class="ch-ico">\U0001F1E8\U0001F1F3</span>{T('China', '中国')}</div>
@@ -1165,13 +1182,16 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
       </a>
       <a class="c-half" href="{_cn_href}">
         <div class="ch-top"><span>\U0001F4C8</span><b>{T('A-share stocks', 'A股个股')}</b><span class="ch-tag">{T('Stocks', '个股')}</span></div>
-        <span class="ch-stat">{T('Setups · screener · lookup', '形态 · 筛选 · 查询')}</span>
+        <span class="ch-stat">{cn_stat}</span>
         <div class="ch-go">{T('Open stock screener →', '打开个股筛选 →')}</div>
       </a>
     </div>
   </div>""")
     _hk_href = ("hk_stocks.html" if (_site / "hk_stocks.html").exists()
                 else ("hk_stock.html" if (_site / "hk_stock.html").exists() else "hk.html"))
+    _hk_n = (hk_stocks or {}).get("n_setups") or 0
+    hk_stat = (T(f"{_hk_n} beta exposures", f"{_hk_n} 个 beta 敞口") if _hk_n
+               else T('Beta exposure · sectors · lookup', 'Beta敞口 · 板块 · 查询'))
     hk_hero = ("" if not hk.get("present") else f"""
   <div class="c-hero">
     <div class="ch-title"><span class="ch-ico">\U0001F1ED\U0001F1F0</span>{T('Hong Kong', '香港')}</div>
@@ -1183,7 +1203,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
       </a>
       <a class="c-half" href="{_hk_href}">
         <div class="ch-top"><span>\U0001F4C8</span><b>{T('HK stocks & exposure', '港股与敞口')}</b><span class="ch-tag">{T('Stocks', '个股')}</span></div>
-        <span class="ch-stat">{T('Beta exposure · sectors · lookup', 'Beta敞口 · 板块 · 查询')}</span>
+        <span class="ch-stat">{hk_stat}</span>
         <div class="ch-go">{T('Open stock board →', '打开个股看板 →')}</div>
       </a>
     </div>

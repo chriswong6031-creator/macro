@@ -161,9 +161,11 @@ def _hk_index_health() -> list[dict]:
     exposure; no raw HSTECH index series in the store)."""
     from engine.technicals import rsi
     out = []
+    # 3033.HK is the Hang Seng TECH ETF (no raw HSTECH index series on disk) — label it
+    # as an ETF so its NAV price reads correctly next to the index-level tiles.
     for tkr, label, zh in [("^HSI", "Hang Seng Index", "恒生指数"),
                            ("^HSCE", "HSCEI (H-shares)", "国企指数"),
-                           ("3033.HK", "Hang Seng TECH", "恒生科技")]:
+                           ("3033.HK", "Hang Seng TECH ETF", "恒生科技 ETF")]:
         df = store.read("hk", tkr)
         if df is None or df.empty or "close" not in df.columns:
             continue
