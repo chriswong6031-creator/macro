@@ -1872,6 +1872,15 @@ def main() -> int:
         _build_spvector()
     except Exception as e:  # noqa: BLE001
         log.error("spvector page failed (%s)", e)
+    try:  # Canada / S&P-TSX dashboard — has no dedicated daily.yml step yet (the PAT that
+          # opened PR #81 lacked `workflow` scope), so it is built here, before the landing
+          # hub reads _canada_state(). Self-sufficient + returns 0; never breaks the build.
+          # TODO: move to a proper daily.yml/weekly.yml `build_canada` step + drop this hook
+          # once a workflow-scoped token is available.
+        from scripts import build_canada as _build_canada
+        _build_canada.main()
+    except Exception as e:  # noqa: BLE001
+        log.error("canada dashboard (via build_vector) failed (%s)", e)
     build_landing(site, vm)
     return 0
 
