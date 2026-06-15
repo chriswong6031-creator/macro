@@ -1693,12 +1693,18 @@ def main() -> int:
     # report) are keyless and always on; filtered headlines + the optional LLM brief
     # only when macro_news.enabled. News NEVER feeds any score.
     macro_catalysts, macro_news_data, macro_brief_data = [], None, None
+    event_strip, catalyst_line = [], ""
     macro_news_disclaimer = macro_news_disclaimer_zh = ""
     try:
+        from engine import event_calendar as _ec
         from engine import macro_news as _mnews
         _mncfg = config.load().get("macro_news", {}) or {}
-        macro_catalysts = _mnews.upcoming_catalysts(
-            horizon_days=_mncfg.get("catalysts_horizon_days", 14))
+        _horizon = _mncfg.get("catalysts_horizon_days", 14)
+        macro_catalysts = _mnews.upcoming_catalysts(horizon_days=_horizon)
+        # compact "US high-impact next 14 days" glance strip + the imminent-catalyst
+        # text line fed to the LLM brief below (context only; never a scored input)
+        event_strip = _ec.high_impact_strip(horizon_days=_horizon)
+        catalyst_line = _ec.imminent_line(horizon_days=_horizon)
         macro_news_data = _mnews.macro_headlines()
         macro_news_disclaimer = _mnews.DISCLAIMER_TEXT
         macro_news_disclaimer_zh = _mnews.DISCLAIMER_TEXT_ZH
@@ -1709,7 +1715,7 @@ def main() -> int:
             macro_brief_data = _mnews.macro_brief(
                 macro_news_data["headlines"],
                 regime_line=str((latest.get("regime") or {}).get("label", "")),
-                sentiment_line=_sent)
+                sentiment_line=_sent, catalyst_line=catalyst_line)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("macro news failed: %s", e)
 
@@ -1725,6 +1731,7 @@ def main() -> int:
     html = env.get_template("dashboard.html.j2").render(
         latest=latest,
         macro_catalysts=macro_catalysts,
+        event_strip=event_strip,
         prediction_markets=prediction_markets,
         macro_news=macro_news_data,
         macro_brief=macro_brief_data,
