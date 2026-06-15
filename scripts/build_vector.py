@@ -709,7 +709,8 @@ def build_landing(site: Path, vm: dict) -> None:
     stored engine state, not from any HTML file build_site emits."""
     macro = _macro_state()
     hub = _hub_html(vm, macro, home_alert_feed(), _china_state(), _commodities_state(),
-                    _watchlist_state(), _etf_state(), _hk_state(), _forex_state(), _bonds_state())
+                    _watchlist_state(), _etf_state(), _hk_state(), _forex_state(), _bonds_state(),
+                    _us_stocks_state())
     (site / "index.html").write_text(hub)
     log.info("wrote landing hub -> index.html")
 
@@ -807,6 +808,18 @@ def _etf_state() -> dict:
     (signals are share-flow decisions, no single regime label to show)."""
     site = config.ROOT / config.load()["storage"]["site_dir"]
     return {"present": (site / "etfs.html").exists()}
+
+
+def _us_stocks_state() -> dict:
+    """US Stock Dashboard stat for the United States hero card's stock half
+    (written by build_site alongside macro.html). Presence-gated on us_stocks.html."""
+    site = config.ROOT / config.load()["storage"]["site_dir"]
+    try:
+        d = json.loads((config.data_dir() / "us_stocks" / "latest.json").read_text())
+        return {"label": d.get("label", "—"), "n_setups": d.get("n_setups", 0),
+                "date": d.get("date", ""), "present": (site / "us_stocks.html").exists()}
+    except Exception:
+        return {"label": "—", "n_setups": 0, "date": "", "present": (site / "us_stocks.html").exists()}
 
 
 MACRO_SEV = {"act": "high", "warn": "medium", "info": "info"}
@@ -968,7 +981,8 @@ def _hub_alert_rows(alerts: list[dict]) -> str:
 def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = None,
               commodities: dict | None = None, watchlist: dict | None = None,
               etf: dict | None = None, hk: dict | None = None,
-              forex: dict | None = None, bonds: dict | None = None) -> str:
+              forex: dict | None = None, bonds: dict | None = None,
+              us_stocks: dict | None = None) -> str:
     # Bilingual via the i18n layer when present, identity fallback when absent.
     try:
         from engine.i18n import t as T, tr as TR
@@ -1023,8 +1037,11 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
     bonds = bonds or {"present": False}
     b_score = bonds.get("score")
     b_phase = bonds.get("phase") or ""
-    b_stat = ((f"{T('Health', '健康度')} {b_score}/100" if b_score is not None else T(bonds.get("label", "—"), TR(bonds.get("label", "—"))))
-              + ((" · " + T(b_phase, TR(b_phase))) if b_phase else ""))
+    # Build with f-strings only (never `str + Markup`, which escapes the left
+    # operand and would print the literal <span> tags from a rendered T()).
+    b_main = (f"{T('Health', '健康度')} {b_score}/100" if b_score is not None
+              else f"{T(bonds.get('label', '—'), TR(bonds.get('label', '—')))}")
+    b_stat = b_main + (f" · {T(b_phase, TR(b_phase))}" if b_phase else "")
     bonds_card = ("" if not bonds.get("present") else f"""
   <a class="c" href="bonds.html">
     <div class="ico">\U0001F3DB️</div>
@@ -1051,6 +1068,73 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
     <span class="stat">{T('Manager and index flows', '经理人与指数资金流')}</span>
     <div class="go">{T('Open ETF Flow Radar →', '打开 ETF 资金雷达 →')}</div>
   </a>""")
+
+    # ---- Row-1 hero cards: the three core markets, each split macro / stocks ----
+    us_stocks = us_stocks or {"present": False}
+    _site = config.ROOT / config.load()["storage"]["site_dir"]
+    _n = us_stocks.get("n_setups") or 0
+    us_stat = (T(f"{_n} standout setups", f"{_n} 只精选个股") if _n else T('Stock signals & flows', '个股信号与资金流'))
+    us_hero = f"""
+  <div class="c-hero">
+    <div class="ch-title"><span class="ch-ico">\U0001F1FA\U0001F1F8</span>{T('United States', '美国')}</div>
+    <div class="ch-halves">
+      <a class="c-half" href="macro.html">
+        <div class="ch-top"><span>\U0001F30D</span><b>{T('Macro regime', '宏观周期')}</b><span class="ch-tag">{T('Macro', '宏观')}</span></div>
+        <span class="ch-stat">{T(macro['label'], TR(macro['label']))}</span>
+        <div class="ch-go">{T('Open macro dashboard →', '打开宏观看板 →')}</div>
+      </a>
+      <a class="c-half" href="us_stocks.html">
+        <div class="ch-top"><span>\U0001F4C8</span><b>{T('US Stocks', '美国个股')}</b><span class="ch-tag">{T('Stocks', '个股')}</span></div>
+        <span class="ch-stat">{us_stat}</span>
+        <div class="ch-go">{T('Open stock dashboard →', '打开个股看板 →')}</div>
+      </a>
+    </div>
+  </div>"""
+    _cn_href = ("china_stocks.html" if (_site / "china_stocks.html").exists()
+                else ("china_stock.html" if (_site / "china_stock.html").exists() else "china.html"))
+    china_hero = ("" if not china.get("present") else f"""
+  <div class="c-hero">
+    <div class="ch-title"><span class="ch-ico">\U0001F1E8\U0001F1F3</span>{T('China', '中国')}</div>
+    <div class="ch-halves">
+      <a class="c-half" href="china.html">
+        <div class="ch-top"><span>\U0001F4CA</span><b>{T('Macro regime', '宏观周期')}</b><span class="ch-tag">{T('Macro', '宏观')}</span></div>
+        <span class="ch-stat">{T(china['label'], TR(china['label']))}</span>
+        <div class="ch-go">{T('Open A-share regime →', '打开A股周期 →')}</div>
+      </a>
+      <a class="c-half" href="{_cn_href}">
+        <div class="ch-top"><span>\U0001F4C8</span><b>{T('A-share stocks', 'A股个股')}</b><span class="ch-tag">{T('Stocks', '个股')}</span></div>
+        <span class="ch-stat">{T('Setups · screener · lookup', '形态 · 筛选 · 查询')}</span>
+        <div class="ch-go">{T('Open stock screener →', '打开个股筛选 →')}</div>
+      </a>
+    </div>
+  </div>""")
+    _hk_href = ("hk_stocks.html" if (_site / "hk_stocks.html").exists()
+                else ("hk_stock.html" if (_site / "hk_stock.html").exists() else "hk.html"))
+    hk_hero = ("" if not hk.get("present") else f"""
+  <div class="c-hero">
+    <div class="ch-title"><span class="ch-ico">\U0001F1ED\U0001F1F0</span>{T('Hong Kong', '香港')}</div>
+    <div class="ch-halves">
+      <a class="c-half" href="hk.html">
+        <div class="ch-top"><span>\U0001F4CA</span><b>{T('Macro regime', '宏观周期')}</b><span class="ch-tag">{T('Macro', '宏观')}</span></div>
+        <span class="ch-stat">{T(hk['label'], TR(hk['label']))}{(' · ' + T(hk_risk, TR(hk_risk))) if hk_risk else ''}</span>
+        <div class="ch-go">{T('Open HK regime →', '打开香港周期 →')}</div>
+      </a>
+      <a class="c-half" href="{_hk_href}">
+        <div class="ch-top"><span>\U0001F4C8</span><b>{T('HK stocks & exposure', '港股与敞口')}</b><span class="ch-tag">{T('Stocks', '个股')}</span></div>
+        <span class="ch-stat">{T('Beta exposure · sectors · lookup', 'Beta敞口 · 板块 · 查询')}</span>
+        <div class="ch-go">{T('Open stock board →', '打开个股看板 →')}</div>
+      </a>
+    </div>
+  </div>""")
+    bitcoin_card = f"""
+  <a class="c" href="vector.html">
+    <div class="ico">₿</div>
+    <h2>{T('Bitcoin Vector', '比特币向量')}</h2>
+    <p>{T('Risk regime, momentum, structure & backtested allocation for Bitcoin.', '比特币的风险状态、动量、结构与经回测的仓位策略。')}</p>
+    <span class="stat {risk_cls}">{T('Risk', '风险')} {T(vm['risk_word'], TR(vm['risk_word']))} · {vm['risk_index']}</span>
+    <span class="stat">{T('Momentum', '动量')} {vm['momentum']}</span>
+    <div class="go">{T('Open Bitcoin Vector →', '打开比特币向量 →')}</div>
+  </a>"""
     return f"""{HUB_MARKER}
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -1109,6 +1193,27 @@ body{{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
 .stat.on{{background:color-mix(in srgb,var(--info) 16%,var(--panel));color:color-mix(in srgb,var(--info) 80%,var(--text))}}
 .stat.off{{background:color-mix(in srgb,var(--act) 16%,var(--panel));color:color-mix(in srgb,var(--act) 80%,var(--text))}}
 .go{{margin-top:18px;font-weight:700;color:var(--link);font-size:14px}}
+/* row 1 — three core-market hero cards, each split macro / stocks */
+.cards-hero{{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;width:100%;max-width:1120px;margin-bottom:22px}}
+@media(max-width:860px){{.cards-hero{{grid-template-columns:1fr}}}}
+.c-hero{{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:18px 18px 16px;display:flex;flex-direction:column}}
+.ch-title{{font-size:22px;font-weight:800;color:var(--text);letter-spacing:-.02em;display:flex;align-items:center;gap:9px;margin-bottom:12px}}
+.ch-title .ch-ico{{font-size:24px}}
+.c-half{{display:block;text-decoration:none;color:inherit;border:1px solid var(--line);border-radius:13px;padding:14px 15px;transition:transform .12s,border-color .12s,background .12s}}
+.c-half + .c-half{{margin-top:11px}}
+.c-half:hover{{border-color:var(--link);background:var(--panel2);transform:translateY(-1px)}}
+.ch-top{{display:flex;align-items:center;gap:8px;margin-bottom:7px}}
+.ch-top b{{font-size:15px;font-weight:700;color:var(--text)}}
+.ch-tag{{margin-left:auto;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:var(--panel2);padding:2px 8px;border-radius:6px}}
+.ch-stat{{display:inline-block;padding:5px 11px;border-radius:8px;background:var(--panel2);color:var(--text);font-weight:700;font-size:13px}}
+.ch-go{{margin-top:9px;font-weight:700;color:var(--link);font-size:13px}}
+/* row 2 — smaller ancillary cards */
+.cards-sub{{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;width:100%;max-width:1120px}}
+@media(max-width:720px){{.cards-sub{{grid-template-columns:1fr}}}}
+.cards-sub .c{{padding:22px;border-radius:16px}}
+.cards-sub .c .ico{{font-size:24px}}
+.cards-sub .c h2{{font-size:19px;margin:10px 0 5px}}
+.cards-sub .c p{{font-size:13px;min-height:34px;margin-bottom:12px}}
 .foot{{margin-top:40px;color:var(--muted);font-size:12px;text-align:center}}
 .site-footer{{width:100%;max-width:880px;margin:30px auto 0;padding-top:22px;
  border-top:1px solid var(--line);text-align:center;line-height:1.6}}
@@ -1127,23 +1232,8 @@ body{{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
 </div>
 <div class="h"><h1>{T('Market Intelligence', '市场情报')}</h1>
 <p>{T('Market regime dashboards, one zero-cost data engine.', '市场周期仪表盘，一套零成本数据引擎。')}</p></div>
-<div class="cards">
-  <a class="c" href="macro.html">
-    <div class="ico">\U0001F30D</div>
-    <h2>{T(macro_label, TR(macro_label))}</h2>
-    <p>{T('Regime, liquidity & sector-flow read across the global business cycle.', '纵观全球商业周期的市场状态、流动性与板块资金流向解读。')}</p>
-    <span class="stat">{T(macro['label'], TR(macro['label']))}</span>
-    <div class="go">{T(f"Open {macro_label} →", f"打开{TR(macro_label)} →")}</div>
-  </a>{china_card}{hk_card}
-  <a class="c" href="vector.html">
-    <div class="ico">₿</div>
-    <h2>{T('Bitcoin Vector', '比特币向量')}</h2>
-    <p>{T('Risk regime, momentum, structure & backtested allocation for Bitcoin.', '比特币的风险状态、动量、结构与经回测的仓位策略。')}</p>
-    <span class="stat {risk_cls}">{T('Risk', '风险')} {T(vm['risk_word'], TR(vm['risk_word']))} · {vm['risk_index']}</span>
-    <span class="stat">{T('Momentum', '动量')} {vm['momentum']}</span>
-    <div class="go">{T('Open Bitcoin Vector →', '打开比特币向量 →')}</div>
-  </a>{commodities_card}{forex_card}{bonds_card}{etf_card}{watchlist_card}
-</div>
+<div class="cards-hero">{us_hero}{china_hero}{hk_hero}</div>
+<div class="cards-sub">{bitcoin_card}{commodities_card}{forex_card}{bonds_card}{etf_card}{watchlist_card}</div>
 <div class="feed">
   <div class="feed-h"><h3>{T('Latest Alerts', '最新警报')}</h3>
     <span class="n">{n_major} {T('major · from both feeds ·', '条重要 · 来自两个数据源 ·')} <a href="vector.html#timeline">{T('full Vector timeline →', '完整向量时间线 →')}</a></span></div>
