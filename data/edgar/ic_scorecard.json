@@ -14,7 +14,7 @@
       "p_hac": 0.3011,
       "hit": 0.636,
       "n": 11,
-      "q_fdr": 0.5538,
+      "q_fdr": 0.5179,
       "survives_fdr": false
     },
     "profitability": {
@@ -26,7 +26,7 @@
       "p_hac": 0.2252,
       "hit": 0.455,
       "n": 11,
-      "q_fdr": 0.5538,
+      "q_fdr": 0.5179,
       "survives_fdr": false
     },
     "quality": {
@@ -38,7 +38,7 @@
       "p_hac": 0.0718,
       "hit": 0.364,
       "n": 11,
-      "q_fdr": 0.3949,
+      "q_fdr": 0.2872,
       "survives_fdr": false
     },
     "investment": {
@@ -62,7 +62,7 @@
       "p_hac": 0.2882,
       "hit": 0.545,
       "n": 11,
-      "q_fdr": 0.5538,
+      "q_fdr": 0.5179,
       "survives_fdr": false
     },
     "low_vol": {
@@ -74,7 +74,7 @@
       "p_hac": 0.6482,
       "hit": 0.556,
       "n": 9,
-      "q_fdr": 0.8913,
+      "q_fdr": 0.7778,
       "survives_fdr": false
     },
     "low_beta": {
@@ -86,7 +86,7 @@
       "p_hac": 0.7306,
       "hit": 0.455,
       "n": 11,
-      "q_fdr": 0.893,
+      "q_fdr": 0.797,
       "survives_fdr": false
     },
     "short_interest": {
@@ -98,7 +98,7 @@
       "p_hac": 0.353,
       "hit": 0.636,
       "n": 11,
-      "q_fdr": 0.5547,
+      "q_fdr": 0.5295,
       "survives_fdr": false
     },
     "accruals": {
@@ -110,8 +110,20 @@
       "p_hac": 0.0437,
       "hit": 0.364,
       "n": 11,
-      "q_fdr": 0.3949,
+      "q_fdr": 0.2622,
       "survives_fdr": false
+    },
+    "sue": {
+      "mean_ic": 0.0386,
+      "ic_vol": 0.0629,
+      "ic_ir": 0.614,
+      "ic_ir_ann": 1.227,
+      "t_hac": 3.162,
+      "p_hac": 0.0016,
+      "hit": 0.818,
+      "n": 11,
+      "q_fdr": 0.0192,
+      "survives_fdr": true
     },
     "composite": {
       "mean_ic": 0.015,
@@ -122,46 +134,47 @@
       "p_hac": 0.3021,
       "hit": 0.727,
       "n": 11,
-      "q_fdr": 0.5538,
+      "q_fdr": 0.5179,
       "survives_fdr": false
     },
     "composite_orth": {
-      "mean_ic": 0.0032,
-      "ic_vol": 0.0923,
-      "ic_ir": 0.035,
-      "ic_ir_ann": 0.069,
-      "t_hac": 0.202,
-      "p_hac": 0.84,
+      "mean_ic": 0.0141,
+      "ic_vol": 0.0968,
+      "ic_ir": 0.146,
+      "ic_ir_ann": 0.291,
+      "t_hac": 0.838,
+      "p_hac": 0.4022,
       "hit": 0.545,
       "n": 11,
-      "q_fdr": 0.924,
+      "q_fdr": 0.5363,
       "survives_fdr": false
     }
   },
   "collinearity": {
-    "mean_abs_corr_raw": 0.126,
-    "mean_abs_corr_orth": 0.054,
+    "mean_abs_corr_raw": 0.112,
+    "mean_abs_corr_orth": 0.05,
     "vif": {
       "value": 1.06,
-      "profitability": 1.11,
-      "quality": 2.21,
+      "profitability": 1.12,
+      "quality": 2.22,
       "investment": 1.22,
-      "payout": 1.18,
-      "low_vol": 2.24,
-      "low_beta": 2.24,
-      "short_interest": 1.1,
-      "accruals": 2.39
+      "payout": 1.19,
+      "low_vol": 2.28,
+      "low_beta": 2.26,
+      "short_interest": 1.11,
+      "accruals": 2.44,
+      "sue": 1.06
     },
     "top_pairs": [
-      {
-        "a": "quality",
-        "b": "accruals",
-        "corr": 0.72
-      },
       {
         "a": "low_vol",
         "b": "low_beta",
         "corr": 0.72
+      },
+      {
+        "a": "quality",
+        "b": "accruals",
+        "corr": 0.71
       }
     ]
   },

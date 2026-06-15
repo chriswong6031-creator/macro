@@ -1,0 +1,520 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><span class="l-en">Cross-Asset Vector — trend · ratios · correlation regime</span><span class="l-zh">跨资产向量 — 趋势 · 比价 · 相关性体制</span></title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  .ca-wrap{max-width:1180px;margin:0 auto;padding:0 4px}
+  .ca-hero{font-size:26px;font-weight:800;margin:2px 0 4px}
+  .ca-sub{color:var(--muted);font-size:13px;margin:0 0 6px}
+  .ca-note{color:var(--muted);font-size:12px;line-height:1.5;border-top:1px solid var(--line);margin-top:10px;padding-top:8px}
+  .ca-verdict{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:6px;background:var(--amber-bg,rgba(217,160,60,.16));color:var(--amber,#c98a2e)}
+  table.ca{border-collapse:collapse;width:100%;font-size:13px}
+  table.ca th,table.ca td{text-align:left;padding:5px 9px;border-bottom:1px solid var(--line);vertical-align:middle}
+  table.ca th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em;font-weight:700}
+  table.ca td.r,table.ca th.r{text-align:right;font-variant-numeric:tabular-nums}
+  .trend-up{color:var(--up,#16a34a);font-weight:700}.trend-down{color:var(--down,#dc2626);font-weight:700}.trend-mixed{color:var(--muted)}
+  .sbar{display:inline-block;width:64px;height:7px;border-radius:4px;background:var(--line);position:relative;vertical-align:middle;margin-right:6px}
+  .sbar i{position:absolute;top:0;height:7px;border-radius:4px}
+  .chip{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;padding:1px 6px;border-radius:5px;background:var(--line);color:var(--muted)}
+  .st-elevated{background:rgba(220,38,38,.16);color:#dc2626}.st-depressed{background:rgba(22,163,74,.16);color:#16a34a}
+  .cmat td,.cmat th{padding:3px 7px;font-size:12px;text-align:center;border:1px solid var(--line)}
+  .pos{color:var(--up,#16a34a)}.neg{color:var(--down,#dc2626)}.muted{color:var(--muted)}.sm{font-size:12px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:820px){.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;padding:0;border:none;margin:0 auto">
+    <div class="nav-links">
+      <a class="nav-link" href="index.html">🏠 <span class="l-en">Home</span><span class="l-zh">首页</span></a>
+      <div class="nav-dd">
+        <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">US Macro</span><span class="l-zh">美国宏观</span> <span class="caret">▾</span></a>
+        <div class="nav-dd-menu">
+          <a href="macro.html">📊 <span class="l-en">Macro dashboard</span><span class="l-zh">宏观仪表盘</span></a>
+          <a href="spvector.html">📈 <span class="l-en">S&amp;P / Macro Vector</span><span class="l-zh">标普宏观向量</span></a>
+          <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span></a>
+          <a href="signal_lab.html">🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></a>
+          <a href="validation_timeline.html">🧪 <span class="l-en">Validation timeline</span><span class="l-zh">验证时间线</span></a>
+        </div>
+      </div>
+      <a class="nav-link" href="vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span></a>
+      <a class="nav-link" href="etfs.html">🐳 <span class="l-en">ETF flows</span><span class="l-zh">ETF 资金流</span></a>
+      <a class="nav-link" href="factors.html">🧮 <span class="l-en">Factors</span><span class="l-zh">因子</span></a>
+      <a class="nav-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国A股</span></a>
+      <a class="nav-link" href="hk.html">🇭🇰 <span class="l-en">Hong Kong</span><span class="l-zh">香港</span></a>
+      <a class="nav-link" href="commodities.html">◆ <span class="l-en">Commodity Vector</span><span class="l-zh">大宗商品向量</span></a>
+      <a class="nav-link" href="forex.html">💱 <span class="l-en">Forex Vector</span><span class="l-zh">外汇向量</span></a>
+      <a class="nav-link" href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span></a>
+      <a class="nav-link active" href="crossasset.html">🧭 <span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></a>
+    </div>
+    <div class="nav-ctrls">
+      <a class="ai-brief-link" href="aibrief.html">🧠 <span class="l-en">AI Daily Brief</span><span class="l-zh">AI每日简报</span></a>
+      <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap ca-wrap">
+
+  <!-- ===================== REGIME HERO ===================== -->
+  
+  <div class="card">
+    <div class="ca-sub">🧭 <span class="l-en">Cross-Asset Vector</span><span class="l-zh">跨资产向量</span> · <span class="l-en">as of</span><span class="l-zh">截至</span> 2026-06-15</div>
+    <div class="ca-hero" style="color:var(--up,#16a34a)"><span class="l-en">risk-on trends</span><span class="l-zh">risk-on trends</span></div>
+    <div class="ca-sub"><span class="l-en">Trend breadth</span><span class="l-zh">趋势广度</span>
+      <b style="color:var(--up,#16a34a)">+0.40</b>
+      <span class="muted">(6 <span class="l-en">up</span><span class="l-zh">上行</span> / 2 <span class="l-en">down</span><span class="l-zh">下行</span> <span class="l-en">of</span><span class="l-zh">/共</span> 10)</span>
+    </div>
+    <p class="ca-note">
+      <span class="ca-verdict"><span class="l-en">contested</span><span class="l-zh">存疑</span></span>
+      <span class="l-en">Cross-asset TREND = time-series momentum (sign of the trailing 3/6/12-month return). The timing carries REAL skill — it beats a permutation null (p≈0.01) — but after an 8bps cost it only matches an equal-weight buy&amp;hold and does NOT clear the Deflated-Sharpe multiple-testing bar (DSR≈0.80). So it is shown here as a REGIME / CONTEXT read of what is trending across asset classes — NOT a strategy or a buy list. AQR’s widely-quoted gross ~1.8 Sharpe is contested and gross-of-cost; our honest after-cost number is in scripts/cross_asset_phase0.py → reports/cross-asset-phase0.md.</span><span class="l-zh">跨资产趋势 = 时间序列动量（过去 3/6/12 个月收益的符号）。其择时确有真实技能——能击败置换检验零假设（p≈0.01）——但在扣除 8bps 成本后仅与等权买入持有持平，且无法通过 Deflated-Sharpe 的多重检验门槛（DSR≈0.80）。因此这里仅作为「各资产类别在趋势什么」的体制/背景判读——并非策略或买入清单。AQR 常被引用的约 1.8 夏普为毛收益且存在争议；我们扣费后的诚实数值见 scripts/cross_asset_phase0.py → reports/cross-asset-phase0.md。</span>
+    </p>
+  </div>
+
+  <!-- ===================== GLOBAL CB LIQUIDITY ===================== -->
+  
+  
+  
+  <div class="card">
+    <h2><span class="l-en">Global central-bank liquidity</span><span class="l-zh">全球央行流动性</span></h2>
+    <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+      <div class="ca-hero" style="font-size:22px;margin:0">$18.2T</div>
+      <div>
+        <span class="chip" style="background:rgba(125,141,163,.16);color:var(--down,#dc2626)"><span class="l-en">contracting</span><span class="l-zh">收缩</span> · <span class="l-en">decelerating</span><span class="l-zh">减速</span></span>
+        <div class="muted sm" style="margin-top:4px">
+          13w <b style="color:var(--down,#dc2626)">-1.5%</b> · 52w <b style="color:var(--down,#dc2626)">-4.1%</b>
+        </div>
+      </div>
+      <svg width="184" height="40" style="margin-left:auto"><polyline points="3.0,7.5 4.7,8.0 6.4,8.4 8.1,8.8 9.8,9.7 11.4,11.9 13.1,12.5 14.8,13.2 16.5,14.0 18.2,13.2 19.9,13.6 21.6,14.2 23.3,8.0 25.0,6.2 26.7,5.8 28.3,4.3 30.0,4.9 31.7,3.0 33.4,3.9 35.1,3.2 36.8,4.3 38.5,4.5 40.2,5.8 41.9,7.8 43.5,8.4 45.2,13.8 46.9,15.8 48.6,20.3 50.3,22.0 52.0,21.4 53.7,22.9 55.4,24.4 57.1,26.4 58.7,25.3 60.4,31.3 62.1,31.1 63.8,31.5 65.5,29.8 67.2,30.7 68.9,29.2 70.6,28.3 72.3,28.7 74.0,31.3 75.6,26.6 77.3,25.7 79.0,25.9 80.7,27.6 82.4,22.2 84.1,19.4 85.8,17.5 87.5,17.9 89.2,14.2 90.8,15.5 92.5,16.0 94.2,15.3 95.9,14.9 97.6,17.7 99.3,15.8 101.0,16.6 102.7,14.9 104.4,15.5 106.0,16.6 107.7,18.4 109.4,16.4 111.1,26.1 112.8,22.9 114.5,23.8 116.2,24.6 117.9,24.0 119.6,26.1 121.3,25.1 122.9,24.4 124.6,26.1 126.3,22.9 128.0,25.1 129.7,23.3 131.4,24.6 133.1,25.9 134.8,30.5 136.5,29.2 138.1,31.1 139.8,30.7 141.5,34.8 143.2,33.5 144.9,33.1 146.6,31.1 148.3,25.9 150.0,29.4 151.7,30.0 153.3,28.1 155.0,24.8 156.7,25.7 158.4,24.4 160.1,26.1 161.8,25.9 163.5,34.1 165.2,35.0 166.9,34.4 168.6,34.8 170.2,33.5 171.9,31.3 173.6,30.5 175.3,32.0 177.0,30.9" fill="none" stroke="var(--down,#dc2626)" stroke-width="1.6"/></svg>
+    </div>
+    <table class="ca" style="margin-top:8px">
+      <tr><th><span class="l-en">central bank</span><span class="l-zh">央行</span></th><th class="r"><span class="l-en">assets ($T)</span><span class="l-zh">资产($万亿)</span></th><th class="r"><span class="l-en">share</span><span class="l-zh">占比</span></th><th style="width:38%"></th></tr>
+      
+      <tr><td><b><span class="l-en">ECB</span><span class="l-zh">欧洲央行</span></b></td>
+        <td class="r">7.27</td><td class="r muted">39.9%</td>
+        <td><span class="sbar" style="width:100%"><i style="left:0;width:40%;background:var(--muted)"></i></span></td></tr>
+      
+      <tr><td><b><span class="l-en">Federal Reserve</span><span class="l-zh">美联储</span></b></td>
+        <td class="r">6.7</td><td class="r muted">36.8%</td>
+        <td><span class="sbar" style="width:100%"><i style="left:0;width:37%;background:var(--muted)"></i></span></td></tr>
+      
+      <tr><td><b><span class="l-en">Bank of Japan</span><span class="l-zh">日本央行</span></b></td>
+        <td class="r">4.23</td><td class="r muted">23.3%</td>
+        <td><span class="sbar" style="width:100%"><i style="left:0;width:23%;background:var(--muted)"></i></span></td></tr>
+      
+    </table>
+    <p class="ca-note"><span class="l-en">Global central-bank balance-sheet liquidity (Fed + ECB + BoJ), summed in USD. The IMPULSE — its rate of change — leads risk assets with a variable lag (weeks to months); rising = a liquidity tailwind. Context, not a signal: BoE (FRED annual-only) and PBoC (no clean keyless series) are omitted.</span><span class="l-zh">全球央行资产负债表流动性（美联储+欧洲央行+日本央行），以美元汇总。其变化率（脉冲）以可变滞后（数周至数月）领先风险资产；上升=流动性顺风。仅作背景，非信号：英格兰银行（FRED 仅年度）与中国央行（无无密钥序列）未纳入。</span></p>
+  </div>
+  
+
+  <!-- ===================== FUNDING / REPO STRESS ===================== -->
+  
+  
+  <div class="card">
+    <h2><span class="l-en">Funding &amp;amp; repo plumbing</span><span class="l-zh">资金与回购管道</span></h2>
+    <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+      <div class="ca-hero" style="font-size:20px;margin:0;color:var(--up,#16a34a)"><span class="l-en">calm</span><span class="l-zh">平静</span></div>
+      <div class="muted sm"><span class="l-en">stress score</span><span class="l-zh">压力分</span> <b style="color:var(--up,#16a34a)">41.0</b>/100 · <span class="l-en">SOFR−EFFR</span><span class="l-zh">SOFR−联邦基金</span> <b>-2bp</b> · <span class="l-en">dispersion</span><span class="l-zh">离散度</span> <b>10.0bp</b></div>
+      <svg width="184" height="40" style="margin-left:auto"><polyline points="3.0,29.7 3.7,30.3 4.4,30.3 5.1,30.3 5.8,30.3 6.5,27.7 7.2,28.3 7.9,30.3 8.5,29.7 9.2,29.7 9.9,29.0 10.6,25.0 11.3,22.3 12.0,23.0 12.7,19.0 13.4,19.7 14.1,22.3 14.8,25.7 15.5,27.0 16.2,26.3 16.9,27.7 17.6,28.3 18.3,28.3 18.9,27.0 19.6,24.3 20.3,26.3 21.0,26.3 21.7,29.0 22.4,30.3 23.1,30.3 23.8,30.3 24.5,29.0 25.2,25.0 25.9,25.0 26.6,25.0 27.3,27.7 28.0,23.0 28.6,26.3 29.3,27.0 30.0,26.3 30.7,26.3 31.4,25.7 32.1,25.7 32.8,26.3 33.5,25.0 34.2,27.0 34.9,26.3 35.6,25.0 36.3,26.3 37.0,27.0 37.7,28.3 38.4,27.7 39.0,25.0 39.7,24.3 40.4,23.7 41.1,25.0 41.8,26.3 42.5,26.3 43.2,23.0 43.9,23.0 44.6,21.7 45.3,21.0 46.0,22.3 46.7,22.3 47.4,23.0 48.1,21.7 48.8,21.0 49.4,15.0 50.1,23.0 50.8,23.7 51.5,23.0 52.2,23.0 52.9,23.7 53.6,25.0 54.3,24.3 55.0,21.0 55.7,22.3 56.4,24.3 57.1,17.0 57.8,19.7 58.5,19.7 59.2,21.0 59.8,23.0 60.5,23.7 61.2,25.7 61.9,25.0 62.6,23.7 63.3,21.0 64.0,14.3 64.7,14.3 65.4,22.3 66.1,23.7 66.8,19.0 67.5,20.3 68.2,18.3 68.9,18.3 69.5,17.0 70.2,14.3 70.9,17.0 71.6,15.7 72.3,3.0 73.0,9.7 73.7,18.3 74.4,24.3 75.1,23.7 75.8,23.0 76.5,21.7 77.2,19.7 77.9,19.0 78.6,22.3 79.3,19.0 79.9,23.0 80.6,25.0 81.3,25.0 82.0,23.7 82.7,21.7 83.4,18.3 84.1,15.7 84.8,11.7 85.5,11.7 86.2,19.0 86.9,23.0 87.6,25.0 88.3,24.3 89.0,23.0 89.7,24.3 90.3,26.3 91.0,25.7 91.7,25.0 92.4,19.7 93.1,23.7 93.8,23.7 94.5,25.7 95.2,25.7 95.9,24.3 96.6,25.7 97.3,25.7 98.0,19.0 98.7,18.3 99.4,22.3 100.1,11.7 100.7,19.7 101.4,23.0 102.1,25.7 102.8,26.3 103.5,27.0 104.2,27.0 104.9,27.0 105.6,26.3 106.3,27.0 107.0,25.7 107.7,26.3 108.4,27.0 109.1,27.7 109.8,27.0 110.5,26.3 111.1,25.7 111.8,25.7 112.5,27.0 113.2,26.3 113.9,24.3 114.6,23.7 115.3,23.7 116.0,26.3 116.7,26.3 117.4,27.0 118.1,27.7 118.8,26.3 119.5,26.3 120.2,26.3 120.8,25.7 121.5,22.3 122.2,21.0 122.9,25.0 123.6,25.7 124.3,25.7 125.0,25.0 125.7,25.0 126.4,25.0 127.1,24.3 127.8,22.3 128.5,23.0 129.2,25.0 129.9,25.7 130.6,26.3 131.2,26.3 131.9,27.0 132.6,27.0 133.3,26.3 134.0,26.3 134.7,23.0 135.4,26.3 136.1,28.3 136.8,28.3 137.5,28.3 138.2,28.3 138.9,27.7 139.6,27.0 140.3,26.3 141.0,27.7 141.6,27.7 142.3,24.3 143.0,26.3 143.7,25.7 144.4,26.3 145.1,28.3 145.8,30.3 146.5,31.7 147.2,29.0 147.9,27.7 148.6,25.7 149.3,21.7 150.0,25.0 150.7,26.3 151.4,27.7 152.0,27.7 152.7,27.0 153.4,26.3 154.1,25.7 154.8,25.7 155.5,27.0 156.2,27.7 156.9,25.7 157.6,27.0 158.3,27.7 159.0,28.3 159.7,29.0 160.4,29.0 161.1,29.0 161.7,29.0 162.4,29.0 163.1,29.7 163.8,31.7 164.5,32.3 165.2,33.7 165.9,34.3 166.6,35.0 167.3,34.3 168.0,31.7 168.7,26.3 169.4,26.3 170.1,27.0 170.8,26.3 171.5,25.0 172.1,26.3 172.8,27.7 173.5,27.0 174.2,26.3 174.9,26.3 175.6,28.3 176.3,29.0 177.0,28.3" fill="none" stroke="var(--up,#16a34a)" stroke-width="1.6"/></svg>
+    </div>
+    <table class="ca" style="margin-top:8px">
+      <tr><th><span class="l-en">gauge</span><span class="l-zh">指标</span></th><th class="r"><span class="l-en">value</span><span class="l-zh">数值</span></th><th class="r"><span class="l-en">%ile (2y)</span><span class="l-zh">分位(2年)</span></th><th style="width:34%"></th></tr>
+      
+      <tr title="SOFR above the Fed&#39;s administered rate = reserves scarce / repo stress."><td><b><span class="l-en">SOFR − EFFR spread</span><span class="l-zh">SOFR − 联邦基金利率</span></b><div class="muted sm">SOFR above the Fed&#39;s administered rate = reserves scarce / repo stress.</div></td>
+        <td class="r">-2.0bp</td><td class="r muted">20</td>
+        <td><span class="sbar" style="width:100%"><i style="left:0;width:20%;background:var(--up,#16a34a)"></i></span></td></tr>
+      
+      <tr title="A fat right tail = some borrowers paying well above the median."><td><b><span class="l-en">SOFR dispersion (99th − SOFR)</span><span class="l-zh">SOFR 离散度 (99分位 − SOFR)</span></b><div class="muted sm">A fat right tail = some borrowers paying well above the median.</div></td>
+        <td class="r">10.0bp</td><td class="r muted">62</td>
+        <td><span class="sbar" style="width:100%"><i style="left:0;width:62%;background:var(--up,#16a34a)"></i></span></td></tr>
+      
+    </table>
+    <div class="muted sm" style="margin-top:6px">SOFR <b>3.6%</b> · EFFR <b>3.62%</b> · OBFR <b>3.62%</b> · Broad GC repo <b>3.58%</b> · Tri-party GC repo <b>3.58%</b></div>
+    <p class="ca-note"><span class="l-en">Funding/repo plumbing from the OFR FRBNY reference rates (keyless). SOFR above EFFR and a widening SOFR distribution flag reserve scarcity / repo stress (the Sep-2019 tell). Each scored vs its trailing ~2y range. Context, not a signal — never wired into any score.</span><span class="l-zh">来自 OFR 纽约联储参考利率（无密钥）的资金/回购管道。SOFR 高于 EFFR 且 SOFR 分布走阔预示准备金稀缺/回购紧张（2019年9月的信号）。各项按其约2年区间打分。仅作背景，非信号——从不进入任何评分。</span></p>
+  </div>
+  
+
+  <!-- ===================== TREND BOARD ===================== -->
+  <div class="card">
+    <h2><span class="l-en">Trend board — time-series momentum by asset</span><span class="l-zh">趋势看板 — 各资产时间序列动量</span></h2>
+    <table class="ca">
+      <tr><th><span class="l-en">asset</span><span class="l-zh">资产</span></th><th><span class="l-en">class</span><span class="l-zh">类别</span></th><th><span class="l-en">trend</span><span class="l-zh">趋势</span></th>
+        <th><span class="l-en">strength</span><span class="l-zh">强度</span></th><th class="r"><span class="l-en">3m</span><span class="l-zh">3月</span></th><th class="r"><span class="l-en">6m</span><span class="l-zh">6月</span></th><th class="r"><span class="l-en">12m</span><span class="l-zh">12月</span></th></tr>
+      
+      
+      
+      <tr>
+        <td><b><span class="l-en">S&amp;P 500</span><span class="l-zh">标普500</span></b></td>
+        <td class="muted sm"><span class="l-en">Equity</span><span class="l-zh">股票</span></td>
+        <td class="trend-up">▲ <span class="l-en">up</span><span class="l-zh">上行</span></td>
+        <td><span class="sbar"><i style="left:50%;width:50%;background:var(--up,#16a34a)"></i></span><span class="muted sm">+1.00</span></td>
+        
+        <td class="r pos">+12%</td>
+        
+        <td class="r pos">+8%</td>
+        
+        <td class="r pos">+25%</td>
+        
+      </tr>
+      
+      
+      
+      <tr>
+        <td><b><span class="l-en">Small caps</span><span class="l-zh">小盘股</span></b></td>
+        <td class="muted sm"><span class="l-en">Equity</span><span class="l-zh">股票</span></td>
+        <td class="trend-up">▲ <span class="l-en">up</span><span class="l-zh">上行</span></td>
+        <td><span class="sbar"><i style="left:50%;width:50%;background:var(--up,#16a34a)"></i></span><span class="muted sm">+1.00</span></td>
+        
+        <td class="r pos">+19%</td>
+        
+        <td class="r pos">+16%</td>
+        
+        <td class="r pos">+39%</td>
+        
+      </tr>
+      
+      
+      
+      <tr>
+        <td><b><span class="l-en">High yield</span><span class="l-zh">高收益债</span></b></td>
+        <td class="muted sm"><span class="l-en">Credit</span><span class="l-zh">信用</span></td>
+        <td class="trend-up">▲ <span class="l-en">up</span><span class="l-zh">上行</span></td>
+        <td><span class="sbar"><i style="left:50%;width:50%;background:var(--up,#16a34a)"></i></span><span class="muted sm">+1.00</span></td>
+        
+        <td class="r pos">+2%</td>
+        
+        <td class="r pos">+2%</td>
+        
+        <td class="r pos">+7%</td>
+        
+      </tr>
+      
+      
+      
+      <tr>
+        <td><b><span class="l-en">Copper</span><span class="l-zh">铜</span></b></td>
+        <td class="muted sm"><span class="l-en">Commodity</span><span class="l-zh">商品</span></td>
+        <td class="trend-up">▲ <span class="l-en">up</span><span class="l-zh">上行</span></td>
+        <td><span class="sbar"><i style="left:50%;width:50%;background:var(--up,#16a34a)"></i></span><span class="muted sm">+1.00</span></td>
+        
+        <td class="r pos">+14%</td>
+        
+        <td class="r pos">+23%</td>
+        
+        <td class="r pos">+35%</td>
+        
+      </tr>
+      
+      
+      
+      <tr>
+        <td><b><span class="l-en">Crude oil</span><span class="l-zh">原油</span></b></td>
+        <td class="muted sm"><span class="l-en">Commodity</span><span class="l-zh">商品</span></td>
+        <td class="trend-up">▲ <span class="l-en">up</span><span class="l-zh">上行</span></td>
+        <td><span class="sbar"><i style="left:50%;width:50%;background:var(--up,#16a34a)"></i></span><span class="muted sm">+1.00</span></td>
+        
+        <td class="r neg">-16%</td>
+        
+        <td class="r pos">+40%</td>
+        
+        <td class="r pos">+12%</td>
+        
+      </tr>
+      
+      
+      
+      <tr>
+        <td><b><span class="l-en">US dollar</span><span class="l-zh">美元</span></b></td>
+        <td class="muted sm"><span class="l-en">Dollar</span><span class="l-zh">美元</span></td>
+        <td class="trend-up">▲ <span class="l-en">up</span><span class="l-zh">上行</span></td>
+        <td><span class="sbar"><i style="left:50%;width:50%;background:var(--up,#16a34a)"></i></span><span class="muted sm">+1.00</span></td>
+        
+        <td class="r pos">+0%</td>
+        
+        <td class="r pos">+1%</td>
+        
+        <td class="r pos">+1%</td>
+        
+      </tr>
+      
+      
+      
+      <tr>
+        <td><b><span class="l-en">Gold</span><span class="l-zh">黄金</span></b></td>
+        <td class="muted sm"><span class="l-en">Commodity</span><span class="l-zh">商品</span></td>
+        <td class="trend-mixed">◦ <span class="l-en">mixed</span><span class="l-zh">分化</span></td>
+        <td><span class="sbar"><i style="left:50%;width:16%;background:var(--up,#16a34a)"></i></span><span class="muted sm">+0.33</span></td>
+        
+        <td class="r neg">-13%</td>
+        
+        <td class="r pos">+1%</td>
+        
+        <td class="r pos">+28%</td>
+        
+      </tr>
+      
+      
+      
+      <tr>
+        <td><b><span class="l-en">Silver</span><span class="l-zh">白银</span></b></td>
+        <td class="muted sm"><span class="l-en">Commodity</span><span class="l-zh">商品</span></td>
+        <td class="trend-mixed">◦ <span class="l-en">mixed</span><span class="l-zh">分化</span></td>
+        <td><span class="sbar"><i style="left:50%;width:16%;background:var(--up,#16a34a)"></i></span><span class="muted sm">+0.33</span></td>
+        
+        <td class="r neg">-11%</td>
+        
+        <td class="r pos">+15%</td>
+        
+        <td class="r pos">+94%</td>
+        
+      </tr>
+      
+      
+      
+      <tr>
+        <td><b><span class="l-en">10Y Treasury</span><span class="l-zh">10年美债</span></b></td>
+        <td class="muted sm"><span class="l-en">Rates</span><span class="l-zh">利率</span></td>
+        <td class="trend-down">▼ <span class="l-en">down</span><span class="l-zh">下行</span></td>
+        <td><span class="sbar"><i style="right:50%;width:50%;background:var(--down,#dc2626)"></i></span><span class="muted sm">-1.00</span></td>
+        
+        <td class="r neg">-1%</td>
+        
+        <td class="r neg">-2%</td>
+        
+        <td class="r pos">+0%</td>
+        
+      </tr>
+      
+      
+      
+      <tr>
+        <td><b><span class="l-en">Bitcoin</span><span class="l-zh">比特币</span></b></td>
+        <td class="muted sm"><span class="l-en">Crypto</span><span class="l-zh">加密</span></td>
+        <td class="trend-down">▼ <span class="l-en">down</span><span class="l-zh">下行</span></td>
+        <td><span class="sbar"><i style="right:50%;width:50%;background:var(--down,#dc2626)"></i></span><span class="muted sm">-1.00</span></td>
+        
+        <td class="r neg">-12%</td>
+        
+        <td class="r neg">-6%</td>
+        
+        <td class="r neg">-47%</td>
+        
+      </tr>
+      
+    </table>
+    <p class="ca-note"><span class="l-en">Trend = average sign of the trailing 3/6/12-month return (most-recent week skipped). ▲ up = the trend is positive across most horizons. Returns are price-only; the bond leg is a duration-return proxy (−7·Δyield) and the dollar leg trends the DXY level. Context, not a buy list.</span><span class="l-zh">趋势 = 过去 3/6/12 个月收益符号的平均（跳过最近一周）。▲上行表示多数周期趋势为正。收益仅为价格收益；债券为久期收益代理（−7·Δ收益率），美元为 DXY 水平趋势。仅作背景，非买入清单。</span></p>
+  </div>
+
+  <div class="grid2">
+    <!-- ===================== INTERMARKET RATIOS ===================== -->
+    <div class="card">
+      <h2><span class="l-en">Intermarket ratios</span><span class="l-zh">跨市场比价</span></h2>
+      <table class="ca">
+        <tr><th><span class="l-en">ratio</span><span class="l-zh">比价</span></th><th class="r"><span class="l-en">value</span><span class="l-zh">数值</span></th><th class="r"><span class="l-en">%ile (2y)</span><span class="l-zh">分位(2年)</span></th><th class="r"><span class="l-en">3m</span><span class="l-zh">3月</span></th></tr>
+        
+        <tr title="Cyclical-growth &amp; bond-yield proxy (Gundlach): rising = growth/yields up.">
+          <td><b><span class="l-en">Copper / Gold</span><span class="l-zh">铜/金</span></b>
+            
+            <div class="muted sm">Cyclical-growth &amp; bond-yield proxy (Gundlach): rising = growth/yields up.</div></td>
+          <td class="r">0.001</td>
+          <td class="r muted">54</td>
+          <td class="r pos">+32%</td>
+        </tr>
+        
+        <tr title="Risk appetite: a high ratio (silver cheap) is defensive / late-cycle.">
+          <td><b><span class="l-en">Gold / Silver</span><span class="l-zh">金/银</span></b>
+            <span class="chip st-depressed"><span class="l-en">depressed</span><span class="l-zh">偏低</span></span>
+            <div class="muted sm">Risk appetite: a high ratio (silver cheap) is defensive / late-cycle.</div></td>
+          <td class="r">61.738</td>
+          <td class="r muted">14</td>
+          <td class="r neg">-2%</td>
+        </tr>
+        
+        <tr title="Real-economy vs safe-haven demand: rising = reflation/growth.">
+          <td><b><span class="l-en">Oil / Gold</span><span class="l-zh">油/金</span></b>
+            
+            <div class="muted sm">Real-economy vs safe-haven demand: rising = reflation/growth.</div></td>
+          <td class="r">0.018</td>
+          <td class="r muted">29</td>
+          <td class="r neg">-6%</td>
+        </tr>
+        
+        <tr title="Risk-asset vs hard-asset preference: rising = risk-on regime.">
+          <td><b><span class="l-en">Stocks / Gold</span><span class="l-zh">股/金</span></b>
+            
+            <div class="muted sm">Risk-asset vs hard-asset preference: rising = risk-on regime.</div></td>
+          <td class="r">0.176</td>
+          <td class="r muted">43</td>
+          <td class="r pos">+32%</td>
+        </tr>
+        
+      </table>
+    </div>
+
+    <!-- ===================== CARRY CONTEXT ===================== -->
+    <div class="card">
+      <h2><span class="l-en">Carry — current state</span><span class="l-zh">套息 — 当前状态</span></h2>
+      <table class="ca">
+        <tr><th><span class="l-en">source</span><span class="l-zh">来源</span></th><th class="r"><span class="l-en">carry</span><span class="l-zh">套息</span></th><th><span class="l-en">state</span><span class="l-zh">状态</span></th></tr>
+        
+        <tr><td><span class="l-en">Rates term-spread (10y-3m)</span><span class="l-zh">利率期限利差 (10年-3月)</span></td>
+          <td class="r pos">0.82%</td>
+          <td class="muted sm">positive carry</td></tr>
+        
+        <tr><td><span class="l-en">Oil roll yield</span><span class="l-zh">oil 展期收益</span></td>
+          <td class="r pos">0.2%/yr</td>
+          <td class="muted sm">backwardation (positive)</td></tr>
+        
+      </table>
+      <p class="ca-note"><span class="l-en">Current-state carry context only. Rates term-spread has deep history; commodity roll-yield is reconstructed from dated futures with &lt;2y of history, so it is NOT backtested as a factor. Context, not a buy list.</span><span class="l-zh">仅为当前状态的套息背景。利率期限利差历史悠久；商品展期收益由近月合约重建、历史不足两年，故未作因子回测。仅作背景。</span></p>
+    </div>
+  </div>
+
+  <!-- ===================== CORRELATION REGIME ===================== -->
+  
+  
+  <div class="card">
+    <h2><span class="l-en">Correlation regime — are the markets one bet?</span><span class="l-zh">相关性体制 — 各市场是否同一笔交易</span></h2>
+    <div class="ca-hero" style="font-size:18px;color:var(--down,#dc2626)"><span class="l-en">concentrated</span><span class="l-zh">高度集中</span></div>
+    <div class="ca-sub"><span class="l-en">Absorption ratio</span><span class="l-zh">吸收比率</span> <b>0.446</b>
+      <span class="muted">(<span class="l-en">PC1 variance share; floor</span><span class="l-zh">PC1 方差占比；下限</span> 0.167)</span>
+       · <span class="l-en">dominant cluster</span><span class="l-zh">主导集群</span>: <b>US, Commodities, Dollar</b>
+    </div>
+    
+    <div style="overflow-x:auto;margin-top:8px">
+      <table class="cmat"><tr><th></th><th>US</th><th>Crypto</th><th>China</th><th>HK</th><th>Commodities</th><th>Dollar</th></tr>
+        <tr><th>US</th>
+          
+          <td style="background:rgba(220,38,38,0.5)">1.00</td>
+          <td style="background:rgba(220,38,38,0.24)">0.49</td>
+          <td style="background:rgba(220,38,38,0.1)">0.21</td>
+          <td style="background:rgba(220,38,38,0.1)">0.20</td>
+          <td style="background:rgba(220,38,38,0.34)">0.68</td>
+          <td style="background:rgba(220,38,38,0.32)">0.64</td>
+        </tr><tr><th>Crypto</th>
+          
+          <td style="background:rgba(220,38,38,0.24)">0.49</td>
+          <td style="background:rgba(220,38,38,0.5)">1.00</td>
+          <td style="background:rgba(22,163,74,0.06)">-0.12</td>
+          <td style="background:rgba(22,163,74,0.07)">-0.14</td>
+          <td style="background:rgba(220,38,38,0.16)">0.32</td>
+          <td style="background:rgba(220,38,38,0.17)">0.33</td>
+        </tr><tr><th>China</th>
+          
+          <td style="background:rgba(220,38,38,0.1)">0.21</td>
+          <td style="background:rgba(22,163,74,0.06)">-0.12</td>
+          <td style="background:rgba(220,38,38,0.5)">1.00</td>
+          <td style="background:rgba(220,38,38,0.37)">0.74</td>
+          <td style="background:rgba(220,38,38,0.21)">0.42</td>
+          <td style="background:rgba(220,38,38,0.03)">0.05</td>
+        </tr><tr><th>HK</th>
+          
+          <td style="background:rgba(220,38,38,0.1)">0.20</td>
+          <td style="background:rgba(22,163,74,0.07)">-0.14</td>
+          <td style="background:rgba(220,38,38,0.37)">0.74</td>
+          <td style="background:rgba(220,38,38,0.5)">1.00</td>
+          <td style="background:rgba(220,38,38,0.17)">0.35</td>
+          <td style="background:rgba(22,163,74,0.01)">-0.01</td>
+        </tr><tr><th>Commodities</th>
+          
+          <td style="background:rgba(220,38,38,0.34)">0.68</td>
+          <td style="background:rgba(220,38,38,0.16)">0.32</td>
+          <td style="background:rgba(220,38,38,0.21)">0.42</td>
+          <td style="background:rgba(220,38,38,0.17)">0.35</td>
+          <td style="background:rgba(220,38,38,0.5)">1.00</td>
+          <td style="background:rgba(220,38,38,0.24)">0.48</td>
+        </tr><tr><th>Dollar</th>
+          
+          <td style="background:rgba(220,38,38,0.32)">0.64</td>
+          <td style="background:rgba(220,38,38,0.17)">0.33</td>
+          <td style="background:rgba(220,38,38,0.03)">0.05</td>
+          <td style="background:rgba(22,163,74,0.01)">-0.01</td>
+          <td style="background:rgba(220,38,38,0.24)">0.48</td>
+          <td style="background:rgba(220,38,38,0.5)">1.00</td>
+        </tr>
+      </table>
+    </div>
+    
+    <p class="ca-note"><span class="l-en">CONCENTRATED — 3 of 6 markets are one bet (US, Commodities, Dollar). Cross-asset correlation is in the top 2% of its 5y range: stacking these views is doubling one liquidity/risk exposure, not diversifying.</span><span class="l-zh">CONCENTRATED — 3 of 6 markets are one bet (US, Commodities, Dollar). Cross-asset correlation is in the top 2% of its 5y range: stacking these views is doubling one liquidity/risk exposure, not diversifying.</span></p>
+  </div>
+  
+
+  <!-- ===================== LEAD / LAG TRANSMISSION ===================== -->
+  
+  
+  <div class="card">
+    <h2><span class="l-en">Lead / lag transmission — what moves first?</span><span class="l-zh">领先/滞后传导 — 谁先动？</span></h2>
+    <div class="ca-hero" style="font-size:18px;color:var(--amber,#c98a2e)"><span class="l-en">Tentative lead</span><span class="l-zh">暂定领先</span></div>
+    <div class="ca-sub"><span class="l-en">Window</span><span class="l-zh">窗口</span> 252d ·
+      6/150 <span class="l-en">pairs survive HAC + FDR</span><span class="l-zh">对通过 HAC + FDR</span>
+       · <span class="l-en">lead asset</span><span class="l-zh">领先资产</span>: <b>US</b></div>
+    <p class="ca-note" style="border-top:none;margin:2px 0 0;padding-top:0"><span class="l-en">US is leading HK by ~1 day (r=+0.33, HAC t=+4.4, FDR q=0.0). US leads 2 markets. Unstable across the prior window — treat as tentative.</span><span class="l-zh">US is leading HK by ~1 day (r=+0.33, HAC t=+4.4, FDR q=0.0). US leads 2 markets. Unstable across the prior window — treat as tentative.</span></p>
+    
+    <div style="overflow-x:auto;margin-top:8px">
+      <table class="ca">
+        <tr><th><span class="l-en">leader → follower</span><span class="l-zh">领先 → 滞后</span></th><th class="r"><span class="l-en">lag</span><span class="l-zh">滞后</span></th>
+            <th class="r">r</th><th class="r"><span class="l-en">HAC t</span><span class="l-zh">HAC t</span></th><th class="r"><span class="l-en">FDR q</span><span class="l-zh">FDR q</span></th></tr>
+        
+        <tr><td><b>US</b> → HK</td>
+            <td class="r">1d</td>
+            <td class="r pos">+0.33</td>
+            <td class="r">+4.4</td>
+            <td class="r">0.0</td></tr>
+        
+        <tr><td><b>Crypto</b> → HK</td>
+            <td class="r">1d</td>
+            <td class="r pos">+0.29</td>
+            <td class="r">+4.1</td>
+            <td class="r">0.0</td></tr>
+        
+        <tr><td><b>US</b> → China</td>
+            <td class="r">1d</td>
+            <td class="r pos">+0.29</td>
+            <td class="r">+4.0</td>
+            <td class="r">0.005</td></tr>
+        
+        <tr><td><b>Dollar</b> → HK</td>
+            <td class="r">1d</td>
+            <td class="r pos">+0.28</td>
+            <td class="r">+3.7</td>
+            <td class="r">0.0075</td></tr>
+        
+        <tr><td><b>Crypto</b> → China</td>
+            <td class="r">1d</td>
+            <td class="r pos">+0.24</td>
+            <td class="r">+3.3</td>
+            <td class="r">0.03</td></tr>
+        
+        <tr><td><b>Dollar</b> → China</td>
+            <td class="r">1d</td>
+            <td class="r pos">+0.17</td>
+            <td class="r">+3.2</td>
+            <td class="r">0.0375</td></tr>
+        
+      </table>
+    </div>
+    
+    <p class="ca-note"><span class="l-en">Lead/lag = mean of z_follower(t)·z_leader(t−k), Newey-West (HAC) t-stat, Benjamini-Hochberg FDR across all ordered pairs×lags. Daily lead/lag is noisy and partly timezone-driven (the US closes before Asia opens) — a transmission/regime gauge, NOT a tradeable hedge ratio.</span><span class="l-zh">Lead/lag = mean of z_follower(t)·z_leader(t−k), Newey-West (HAC) t-stat, Benjamini-Hochberg FDR across all ordered pairs×lags. Daily lead/lag is noisy and partly timezone-driven (the US closes before Asia opens) — a transmission/regime gauge, NOT a tradeable hedge ratio.</span>
+      <span class="l-en">Validation: scripts/cross_asset_leadlag_phase0.py — only timezone lag-1 links are split-half stable.</span><span class="l-zh">验证：scripts/cross_asset_leadlag_phase0.py — 仅时区滞后1日链路两半稳定。</span></p>
+  </div>
+  
+
+  <div class="card">
+    <p class="muted sm" style="margin:0"><span class="l-en">Cross-asset trend = time-series momentum (sign of trailing return), the canonical managed-futures factor — shown as a REGIME read, not a buy list. AQR&#39;s gross Sharpe is contested; the validated, after-cost number is in reports/cross-asset-phase0.md. Carry &amp; ratios are current-state context.</span><span class="l-zh">Cross-asset trend = time-series momentum (sign of trailing return), the canonical managed-futures factor — shown as a REGIME read, not a buy list. AQR&#39;s gross Sharpe is contested; the validated, after-cost number is in reports/cross-asset-phase0.md. Carry &amp; ratios are current-state context.</span> <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-15 09:54 UTC.
+      <span class="l-en">Source: engine/cross_asset_trend.py + the cross-asset correlation leaf, over keyless price stores. Validation: scripts/cross_asset_phase0.py.</span><span class="l-zh">来源：engine/cross_asset_trend.py 及跨资产相关性叶子模块，覆盖无密钥价格库。验证：scripts/cross_asset_phase0.py。</span></p>
+  </div>
+
+</div>
+<script src="theme.js"></script>
+</body>
+</html>

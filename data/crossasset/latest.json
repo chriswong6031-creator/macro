@@ -1,0 +1,13 @@
+{
+  "date": "2026-06-15",
+  "regime": "risk-on trends",
+  "breadth": 0.4,
+  "favored": [
+    "equity_us",
+    "equity_sm",
+    "credit_hy",
+    "copper",
+    "oil"
+  ],
+  "correlation": "concentrated"
+}

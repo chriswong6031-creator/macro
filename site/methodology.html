@@ -47,6 +47,9 @@
         <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&amp;P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
         <a href="seasonality.html">🗓 <span class="l-en">Factor Seasonality</span><span class="l-zh">因子季节性</span><span class="d"><span class="l-en">Ken French monthly, 1926+</span><span class="l-zh">Ken French 月度，1926+</span></span></a>
         <a href="spvector.html">📈 <span class="l-en">S&amp;P / Macro Vector</span><span class="l-zh">标普宏观向量</span><span class="d"><span class="l-en">Tactical equity↔cash allocation</span><span class="l-zh">战术股票↔现金配置</span></span></a>
+        <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked &amp; triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
+        <a href="signal_lab.html">🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></a>
+        <a href="validation_timeline.html">🧪 <span class="l-en">Validation timeline</span><span class="l-zh">验证时间线</span><span class="d"><span class="l-en">Full 2007→ walk-forward backtest</span><span class="l-zh">2007→ 完整滚动回测</span></span></a>
       </div>
     </div>
     <a class="nav-link" href="vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span></a>
@@ -67,6 +70,7 @@
     <div class="nav-sugg"></div>
   </div>
   <div class="nav-ctrls">
+    <a class="ai-brief-link" href="aibrief.html">🧠 <span class="l-en">AI Daily Brief</span><span class="l-zh">AI每日简报</span></a>
     <button class="theme-switch" aria-label="Toggle dark / light mode">
       <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
     </button>
@@ -111,7 +115,7 @@
       <ul>
         <li><b>Fundamentals are ANNUAL.</b> SEC EDGAR's free XBRL "frames" give one clean cross-section per fiscal year, so fundamental factor ranks (value, quality, etc.) refresh roughly <b>once a year per name</b>. Most month-to-month portfolio turnover comes from the price-derived legs (low-volatility, low-beta).</li>
         <li><b>History is ~3 years.</b> The daily price cache spans roughly the last three years, so every Sharpe ships with a block-bootstrap confidence interval (which mostly straddles zero) and long-run behaviour is deferred to the Ken French seasonality page.</li>
-        <li><b>Descriptive, not alpha.</b> On a leak-free point-in-time test, no factor clears the multiple-testing bar (see the <a href="#ic">IC scorecard</a>). These are ranks and context, not a backtested trading system.</li>
+        <li><b>Descriptive, not alpha.</b> On a leak-free point-in-time test, few factors clear the multiple-testing bar (see the <a href="#ic">IC scorecard</a>). These are ranks and context, not a backtested trading system.</li>
       </ul>
 
       <h2 id="data"><span class="l-en">Data sources</span><span class="l-zh">数据来源</span></h2>
@@ -161,7 +165,7 @@
         <li><b>q<sub>FDR</sub></b> — a Benjamini-Hochberg false-discovery-rate control across the whole factor panel (screening many factors inflates false positives);</li>
         <li><b>collinearity</b> — pairwise factor correlation + VIF, with the Löwdin-decorrelated composite to show how much overlap is real.</li>
       </ul>
-      <p class="panel note">Current read over <b>2023-06-30..2025-12-31</b> (11 quarterly rebalances, ~886 names): <b>no factor clears BH-FDR(10%)</b>, and the point-in-time fix made the spreads honestly weaker than a naive latest-data backtest — that gap <i>is</i> the look-ahead/survivorship bias being removed. Judge every number against zero, and against n≈11.</p>
+      <p class="panel note">Current read over <b>2023-06-30..2025-12-31</b> (11 quarterly rebalances, ~886 names): <b>few factors clear BH-FDR(10%)</b>, and the point-in-time fix made the spreads honestly weaker than a naive latest-data backtest — that gap <i>is</i> the look-ahead/survivorship bias being removed. Judge every number against zero, and against n≈11.</p>
 
       <h2 id="sectors"><span class="l-en">Sector monitor</span><span class="l-zh">行业监测</span></h2>
       <p>Each of the 11 GICS sectors is built into a cap-weighted daily series, expressed <b>relative to the S&P</b> at each horizon, and colored by how unusual that relative move is vs the sector's own trailing-year distribution (the same σ z-score). <code>|z| ≥ 2</code> flags an outsized rotation. It is a relational view — sector vs market, normalized by the sector's own history — not an absolute-return ranking.</p>
@@ -183,7 +187,7 @@
         <li>σ uses overlapping windows (autocorrelated); the IC sample is small (n≈11); baskets are hindsight-curated.</li>
         <li>Everything here is <b>read-only analytics for informational purposes only — not investment advice</b>, provided as-is with no guarantee of accuracy, timeliness or completeness.</li>
       </ul>
-      <footer><span class="l-en">Free public data only; no paid feeds. Generated</span><span class="l-zh">仅使用免费公开数据。生成于</span> 2026-06-15 00:19 UTC.</footer>
+      <footer><span class="l-en">Free public data only; no paid feeds. Generated</span><span class="l-zh">仅使用免费公开数据。生成于</span> 2026-06-15 09:54 UTC.</footer>
     </main>
   </div>
 

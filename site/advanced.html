@@ -335,21 +335,21 @@
       
       <tr><td class="l">value</td>
         <td class="pos">0.0307</td>
-        <td>0.307</td><td>1.034</td><td>0.5538</td>
+        <td>0.307</td><td>1.034</td><td>0.5179</td>
         <td>0.636</td>
         <td class="l"><span class="muted">no</span></td>
       </tr>
       
       <tr><td class="l">profitability</td>
         <td class="neg">-0.0403</td>
-        <td>-0.382</td><td>-1.213</td><td>0.5538</td>
+        <td>-0.382</td><td>-1.213</td><td>0.5179</td>
         <td>0.455</td>
         <td class="l"><span class="muted">no</span></td>
       </tr>
       
       <tr><td class="l">quality</td>
         <td class="neg">-0.0226</td>
-        <td>-0.375</td><td>-1.8</td><td>0.3949</td>
+        <td>-0.375</td><td>-1.8</td><td>0.2872</td>
         <td>0.364</td>
         <td class="l"><span class="muted">no</span></td>
       </tr>
@@ -363,49 +363,56 @@
       
       <tr><td class="l">payout</td>
         <td class="pos">0.013</td>
-        <td>0.234</td><td>1.062</td><td>0.5538</td>
+        <td>0.234</td><td>1.062</td><td>0.5179</td>
         <td>0.545</td>
         <td class="l"><span class="muted">no</span></td>
       </tr>
       
       <tr><td class="l">low_vol</td>
         <td class="pos">0.0193</td>
-        <td>0.112</td><td>0.456</td><td>0.8913</td>
+        <td>0.112</td><td>0.456</td><td>0.7778</td>
         <td>0.556</td>
         <td class="l"><span class="muted">no</span></td>
       </tr>
       
       <tr><td class="l">low_beta</td>
         <td class="neg">-0.018</td>
-        <td>-0.079</td><td>-0.344</td><td>0.893</td>
+        <td>-0.079</td><td>-0.344</td><td>0.797</td>
         <td>0.455</td>
         <td class="l"><span class="muted">no</span></td>
       </tr>
       
       <tr><td class="l">short_interest</td>
         <td class="pos">0.0193</td>
-        <td>0.24</td><td>0.929</td><td>0.5547</td>
+        <td>0.24</td><td>0.929</td><td>0.5295</td>
         <td>0.636</td>
         <td class="l"><span class="muted">no</span></td>
       </tr>
       
       <tr><td class="l">accruals</td>
         <td class="neg">-0.0209</td>
-        <td>-0.503</td><td>-2.016</td><td>0.3949</td>
+        <td>-0.503</td><td>-2.016</td><td>0.2622</td>
         <td>0.364</td>
         <td class="l"><span class="muted">no</span></td>
       </tr>
       
+      <tr><td class="l">sue</td>
+        <td class="pos">0.0386</td>
+        <td>0.614</td><td>3.162</td><td>0.0192</td>
+        <td>0.818</td>
+        <td class="l"><span class="pos">✓</span></td>
+      </tr>
+      
       <tr><td class="l">composite</td>
         <td class="pos">0.015</td>
-        <td>0.254</td><td>1.032</td><td>0.5538</td>
+        <td>0.254</td><td>1.032</td><td>0.5179</td>
         <td>0.727</td>
         <td class="l"><span class="muted">no</span></td>
       </tr>
       
       <tr><td class="l">composite_orth</td>
-        <td class="pos">0.0032</td>
-        <td>0.035</td><td>0.202</td><td>0.924</td>
+        <td class="pos">0.0141</td>
+        <td>0.146</td><td>0.838</td><td>0.5363</td>
         <td>0.545</td>
         <td class="l"><span class="muted">no</span></td>
       </tr>
@@ -413,9 +420,9 @@
     </table>
     
     <p class="muted" style="font-size:12px;margin-top:8px"><span class="l-en">Factor overlap</span><span class="l-zh">因子重叠</span>:
-      <span class="l-en">mean |corr|</span><span class="l-zh">平均|相关|</span> 0.126 <span class="l-en">raw →</span><span class="l-zh">原始 →</span>
-      0.054 <span class="l-en">orthogonalized. Most-correlated:</span><span class="l-zh">正交化后。相关性最高：</span>
-      quality↔accruals (0.72); low_vol↔low_beta (0.72)</p>
+      <span class="l-en">mean |corr|</span><span class="l-zh">平均|相关|</span> 0.112 <span class="l-en">raw →</span><span class="l-zh">原始 →</span>
+      0.05 <span class="l-en">orthogonalized. Most-correlated:</span><span class="l-zh">正交化后。相关性最高：</span>
+      low_vol↔low_beta (0.72); quality↔accruals (0.71)</p>
     
     <p class="muted" style="font-size:12px">Point-in-time (EDGAR panel + prices truncated to asof); IC = quarterly cross-sectional rank corr of factor z vs forward return; t_hac = Newey-West; q_fdr = Benjamini-Hochberg across the factor panel. Survivors judged vs ~0.</p>
     

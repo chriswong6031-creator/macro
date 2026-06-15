@@ -192,6 +192,28 @@
   .earnhdr { font-size:13px; } .earnhdr .earndays { font-weight:800; font-size:15px; }
   .earntbl { margin-top:6px; } .earntbl th, .earntbl td { padding:3px 8px; font-size:12.5px; }
   @media (max-width:560px){ .myrow{ grid-template-columns:80px 90px 1fr; } }
+  /* ---- accounting-quality read (display-only context, never scored) ---- */
+  .aq-head { display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:11px;
+             font-size:13px; font-weight:800; border:1px solid var(--line); }
+  .aq-clean { background:color-mix(in srgb,var(--up) 15%,transparent); color:var(--up);
+              border-color:color-mix(in srgb,var(--up) 40%,transparent); }
+  .aq-watch { background:color-mix(in srgb,var(--warn) 16%,transparent); color:var(--warn);
+              border-color:color-mix(in srgb,var(--warn) 42%,transparent); }
+  .aq-warn  { background:color-mix(in srgb,var(--down) 15%,transparent); color:var(--down);
+              border-color:color-mix(in srgb,var(--down) 40%,transparent); }
+  .aq-basis { color:var(--muted); font-size:11.5px; font-weight:400; margin-left:9px; }
+  .aq-reads { margin:11px 0 0; }
+  .aq-read { display:grid; grid-template-columns:14px 144px 1fr; gap:9px; align-items:start;
+             padding:5px 0; border-bottom:1px solid var(--line); font-size:12.5px; }
+  .aq-read .aqk { color:var(--muted); }
+  .aq-read .aqd { color:var(--text); }
+  .aq-dot { width:9px; height:9px; border-radius:50%; margin-top:4px; }
+  .aq-dot.s-good { background:var(--up); }
+  .aq-dot.s-neutral { background:var(--muted); }
+  .aq-dot.s-caution { background:var(--down); }
+  .aq-foot { color:var(--muted); font-size:11px; margin:9px 0 0; font-style:italic; }
+  @media (max-width:560px){ .aq-read{ grid-template-columns:14px 1fr; }
+    .aq-read .aqk{ font-weight:700; } .aq-read .aqd{ grid-column:1 / -1; padding-left:23px; } }
 </style>
 </head>
 <body>
@@ -206,6 +228,9 @@
         <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
         <a href="seasonality.html">🗓 <span class="l-en">Factor Seasonality</span><span class="l-zh">因子季节性</span><span class="d"><span class="l-en">Ken French monthly, 1926+</span><span class="l-zh">Ken French 月度，1926+</span></span></a>
         <a href="spvector.html">📈 <span class="l-en">S&P / Macro Vector</span><span class="l-zh">标普宏观向量</span><span class="d"><span class="l-en">Tactical equity↔cash allocation</span><span class="l-zh">战术股票↔现金配置</span></span></a>
+        <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
+        <a href="signal_lab.html">🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></a>
+        <a href="validation_timeline.html">🧪 <span class="l-en">Validation timeline</span><span class="l-zh">验证时间线</span><span class="d"><span class="l-en">Full 2007→ walk-forward backtest</span><span class="l-zh">2007→ 完整滚动回测</span></span></a>
       </div>
     </div>
     <a class="nav-link" href="vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span></a>
@@ -217,7 +242,6 @@
       <a class="nav-link" href="crossasset.html">🧭 <span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></a>
     <a class="nav-link" href="discovery.html">🏆 <span class="l-en">Alpha leaders</span><span class="l-zh">阿尔法领先股</span></a>
     <a class="nav-link" href="gex.html">🧲 <span class="l-en">GEX magnets</span><span class="l-zh">Gamma磁吸</span></a>
-    <a class="nav-link" href="brief.html">📰 <span class="l-en">Brief</span><span class="l-zh">简报</span></a>
     <a class="nav-link" href="history.html">📈 <span class="l-en">History</span><span class="l-zh">历史</span></a>
   </div>
   <div class="nav-search">
@@ -227,6 +251,7 @@
     <div class="nav-sugg"></div>
   </div>
   <div class="nav-ctrls">
+    <a class="ai-brief-link" href="aibrief.html">🧠 <span class="l-en">AI Daily Brief</span><span class="l-zh">AI每日简报</span></a>
     <button class="theme-switch" aria-label="Toggle dark / light mode">
       <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
     </button>
@@ -302,6 +327,12 @@
       </details>
     </div>
 
+    <div class="panel" id="panel_aq" style="display:none">
+      <h2>🧾 <span class="l-en">Accounting quality</span><span class="l-zh">会计质量</span>
+        <span class="help">?<span class="tip"><span class="l-en">A plain-language read on whether the accounting is deteriorating — composed from this name's accruals (are earnings backed by cash?), working-capital trends (inventory &amp; receivables vs sales), gross profitability, capital discipline (asset growth / dilution) and balance-sheet safety, using the same SEC-derived factor ranks shown below plus multi-year SEC companyfacts trends where they exist. DISPLAY-ONLY context: it is NOT part of any score, ranking or trading signal, and it deliberately does NOT change the technical / alpha call above — it is a fundamental cross-check for you to weigh. Lagged to the filing date; annual data, sparse for some filers.</span><span class="l-zh">用通俗语言判断会计质量是否在恶化——综合该标的的应计利润（盈利是否有现金支撑）、营运资本趋势（存货与应收对销售）、毛利能力、资本纪律（资产增长／股本稀释）与资产负债表安全性，即下方相同的 SEC 因子排名，并在可得时叠加 SEC companyfacts 多年趋势。仅作背景展示：不计入任何评分、排名或交易信号，且刻意不改变上方的技术／阿尔法判断——它只是供你权衡的基本面交叉验证。滞后至申报日；年度数据，对部分公司不全。</span></span></span></h2>
+      <div id="r_aq"></div>
+    </div>
+
     <div class="panel" id="panel_earn" style="display:none">
       <h2>📅 <span class="l-en">Earnings</span><span class="l-zh">财报</span>
         <span class="help">?<span class="tip"><span class="l-en">Next reported earnings date and the recent beat/miss history (SEC + Nasdaq, keyless), plus the SUE earnings-momentum z. SUE (standardized unexpected earnings) measures how far the latest quarter beat its year-ago seasonal expectation, standardized by the company's own history — the post-earnings-announcement-drift (PEAD) effect. It is the ONLY positive factor leg to survive the dashboard's leak-free false-discovery-rate test (see the Factor fingerprint panel / factors page); the z is RELATIVE to the S&P 1500 (0 = average, +2 = top of the pack). Context, not a standalone buy signal.</span><span class="l-zh">下次财报日与近期超预期/不及预期历史（SEC＋纳斯达克，免密钥），以及SUE盈利动量z值。SUE（标准化超预期盈利）衡量最新季度相对去年同期季节性预期超出多少，并以公司自身历史标准化——即盈利公布后漂移（PEAD）效应。它是唯一通过本看板无泄漏错误发现率检验的正向因子（见“因子指纹”面板／因子页）；该z为相对标普1500的排名（0＝平均，+2＝领先）。仅供参考，并非独立买入信号。</span></span></span></h2>
@@ -331,7 +362,7 @@
 
     <div class="panel" id="panel_pos" style="display:none">
       <h2>🩳 <span class="l-en">Positioning</span><span class="l-zh">持仓与做空</span>
-        <span class="help">?<span class="tip"><span class="l-en">Short interest from FINRA (bi-monthly, ~2-week lag). Insider net buying/selling from SEC Form-4 filings. Heavy or rising short interest with insider selling is a caution; insider buying is the higher-conviction signal.</span><span class="l-zh">做空数据来自FINRA（每半月，约两周滞后）。内部人净买卖来自SEC Form-4申报。高或上升的做空＋内部人卖出为警示；内部人买入是更高确信度的信号。</span></span></span></h2>
+        <span class="help">?<span class="tip"><span class="l-en">Short interest from FINRA (bi-monthly, ~2-week lag). Insider net open-market buying/selling from SEC Form-4 filings, shown as a % of market cap (size-normalised so small/mid-cap conviction is not drowned by megacap dollars) with the count of distinct insiders — a cluster of independent buyers is the higher-conviction signal. Heavy or rising short interest with insider selling is a caution.</span><span class="l-zh">做空数据来自FINRA（每半月，约两周滞后）。内部人净公开市场买卖来自SEC Form-4申报，按占市值%显示（经规模标准化，避免小/中盘信念被大盘美元金额淹没），并附不同内部人人数——多名独立买家形成的集群信号确信度更高。高或上升的做空＋内部人卖出为警示。</span></span></span></h2>
       <div id="r_pos" class="twocol"></div>
     </div>
 
@@ -428,7 +459,7 @@
           archhelp:'Archetype from factor ranks', conf:'confidence',
           fwdpe:'Forward P/E', peyf:'P/E (Yahoo)', pmargin:'Profit margin', roe:'ROE', dyield:'Dividend yld',
           short:'Short interest', shortpct:'Short % of float', dtc:'Days to cover', sichg:'SI change (2wk)',
-          insider:'Insider net flow', buys:'buys / sells', fwdnote_lite:'Forward P/E: trailing only — no free forward estimate at S&P-1500 scale.',
+          insider:'Insider net flow', insiderpct:'Net buying (% cap)', buyers:'distinct insiders (B/S)', buys:'buys / sells', fwdnote_lite:'Forward P/E: trailing only — no free forward estimate at S&P-1500 scale.',
           mediansrc:'sector median', scorelab:'Factor score', compos:'composite percentile vs S&P 1500',
           suehelp:'Standardized unexpected earnings — how far the latest quarter beat its year-ago seasonal expectation, standardized by the company’s own history (post-earnings-announcement drift). Cross-sectional winsorized z vs the S&P 1500; the only positive factor leg to survive the leak-free FDR scorecard. Context, not a standalone signal.',
           suevs:'z vs S&P 1500',
@@ -442,7 +473,7 @@
           archhelp:'基于因子排名的画像', conf:'确信度',
           fwdpe:'前瞻市盈率', peyf:'市盈率（雅虎）', pmargin:'利润率', roe:'净资产收益率', dyield:'股息率',
           short:'做空持仓', shortpct:'做空占流通股', dtc:'回补天数', sichg:'做空变化（两周）',
-          insider:'内部人净流向', buys:'买入 / 卖出', fwdnote_lite:'前瞻市盈率：仅历史值——标普1500规模下无免费前瞻预期。',
+          insider:'内部人净流向', insiderpct:'净买入（占市值%）', buyers:'不同内部人（买/卖）', buys:'买入 / 卖出', fwdnote_lite:'前瞻市盈率：仅历史值——标普1500规模下无免费前瞻预期。',
           mediansrc:'行业中位', scorelab:'因子评分', compos:'相对标普1500综合百分位',
           suehelp:'标准化超预期盈利（SUE）——最新季度相对去年同期季节性预期超出多少，并以公司自身历史标准化（盈利公布后漂移效应）。相对标普1500的横截面缩尾z值；是唯一通过无泄漏FDR评分卡的正向因子。仅供参考，并非独立信号。',
           suevs:'相对标普1500的z',
@@ -573,7 +604,7 @@
              low_beta:['Low beta','低贝塔'], accruals:['Low accruals','低应计'], short_interest:['Low short int.','低做空'] };
 
   function hideFundamentals() {
-    ['panel_profile','panel_val','panel_fin','panel_earn','panel_fac','panel_alpha','panel_gex','panel_pos','panel_analyst']
+    ['panel_profile','panel_val','panel_fin','panel_aq','panel_earn','panel_fac','panel_alpha','panel_gex','panel_pos','panel_analyst']
       .forEach(function (id) { show(id, false); });
     show('r_archetype', false); show('r_glance', false);
   }
@@ -669,6 +700,24 @@
       show('panel_fin', true);
     } else show('panel_fin', false);
 
+    var aq = d.accounting_quality;
+    if (aq) {
+      var vcls = aq.verdict === 'clean' ? 'aq-clean' : aq.verdict === 'warn' ? 'aq-warn' : 'aq-watch';
+      var vic = aq.verdict === 'clean' ? '✅' : aq.verdict === 'warn' ? '🚩' : '⚠️';
+      var basis = lz(aq.basis, aq.basis_zh);
+      if (aq.piotroski && aq.piotroski.of) basis += ' · Piotroski F ' + aq.piotroski.score + '/' + aq.piotroski.of;
+      var aqh = '<span class="aq-head ' + vcls + '">' + vic + ' ' + esc(lz(aq.headline, aq.headline_zh)) +
+                '</span><span class="aq-basis">' + esc(basis) + '</span>';
+      var aqr = (aq.reads || []).map(function (r) {
+        return '<div class="aq-read"><span class="aq-dot s-' + esc(r.state) + '"></span>' +
+               '<span class="aqk">' + esc(lz(r.label, r.label_zh)) + '</span>' +
+               '<span class="aqd">' + esc(lz(r.detail, r.detail_zh)) + '</span></div>';
+      }).join('');
+      el('r_aq').innerHTML = aqh + '<div class="aq-reads">' + aqr + '</div>' +
+        '<p class="aq-foot">' + esc(lz(aq.caveat, aq.caveat_zh)) + '</p>';
+      show('panel_aq', true);
+    } else show('panel_aq', false);
+
     if (d.earnings) {
       var ev = d.earnings, eh = '';
       if (ev.next_date) {
@@ -742,12 +791,24 @@
           kvRow(LF('sichg'), s.si_change_pct == null ? LF('na') : signPct(s.si_change_pct), false) + '</div>';
       }
       if (pos.insider) {
-        var ins = pos.insider, net = ins.net_usd_mn;
+        var ins = pos.insider, net = ins.net_usd_mn, irows = '';
+        // headline: net buying as a % of market cap (size-normalised, the validated read)
+        if (ins.net_mcap_bps != null) {
+          var pct = ins.net_mcap_bps / 100, tiny = Math.abs(pct) < 0.005;
+          var pctStr = tiny ? '≈0%' : (pct > 0 ? '+' : '') + pct.toFixed(2) + '%';
+          var pctCls = tiny ? 'muted' : (pct > 0 ? 'pos' : 'neg');
+          irows += kvRow(LF('insiderpct'), '<span class="' + pctCls + '">' + pctStr + '</span>', false);
+        }
         var netstr = net == null ? LF('na') : '<span class="' + (net > 0 ? 'pos' : 'neg') + '">' +
           (net > 0 ? '+' : '-') + '$' + Math.abs(net).toFixed(1) + 'M</span>';
-        html += '<div class="posbox"><h3>' + LF('insider') + '</h3>' +
-          kvRow(LF('insider'), netstr, false) +
-          (ins.n_buys != null ? kvRow(LF('buys'), (ins.n_buys || 0) + ' / ' + (ins.n_sells || 0), false) : '') +
+        irows += kvRow(LF('insider'), netstr, false);
+        // distinct-insider clusters (panel) or buy/sell filing counts (aggregate)
+        if (ins.cluster && ins.n_buyers != null) {
+          irows += kvRow(LF('buyers'), (ins.n_buyers || 0) + ' / ' + (ins.n_sellers || 0), false);
+        } else if (ins.n_buys != null) {
+          irows += kvRow(LF('buys'), (ins.n_buys || 0) + ' / ' + (ins.n_sells || 0), false);
+        }
+        html += '<div class="posbox"><h3>' + LF('insider') + '</h3>' + irows +
           (ins.quarter ? '<p class="srcline">' + esc(ins.quarter) + '</p>' : '') + '</div>';
       }
       el('r_pos').innerHTML = html;
@@ -1233,7 +1294,7 @@
 </script>
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
-<p class="muted" style="font-size:12px">Generated 2026-06-15 02:53 UTC · charts by TradingView ·
+<p class="muted" style="font-size:12px">Generated 2026-06-15 09:21 UTC · charts by TradingView ·
 methodology &amp; caveats: see any sector page footer.</p>
 <footer class="site-footer">
   <span class="made">Made with ❤️ in Canada</span>

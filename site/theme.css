@@ -285,6 +285,16 @@ html body .prob .pc { font-size: 18px; font-weight: 700; }
 .site-nav .nav-ctrls { grid-column: 2; grid-row: 1; justify-self: end; align-self: start;
   margin-top: 2px; display: flex; align-items: center; gap: 10px; }
 
+/* static AI Daily Brief entry — pinned in the nav-ctrls cluster beside the theme +
+   language toggles, so it never scrolls with the main menu */
+.nav-ctrls .ai-brief-link { display: inline-flex; align-items: center; gap: 5px;
+  white-space: nowrap; flex: none; padding: 5px 12px; border-radius: 999px;
+  background: var(--panel2); border: 1px solid var(--line); color: var(--text);
+  font-size: 12.5px; font-weight: 600; line-height: 1; cursor: pointer;
+  transition: background .2s, border-color .2s, color .2s; }
+.nav-ctrls .ai-brief-link:hover { border-color: var(--link); color: var(--link); }
+.nav-ctrls .ai-brief-link.active { background: var(--link); border-color: var(--link); color: #fff; }
+
 /* animated dark / light switch — slides on html[data-theme] */
 .theme-switch { width: 56px; height: 27px; border-radius: 999px; background: var(--panel2);
   border: 1px solid var(--line); position: relative; cursor: pointer; padding: 0; flex: none; }
@@ -450,3 +460,28 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
 .tm-flag:hover .tm-tip, .tm-flag:focus .tm-tip { display: block; }
 /* chips near the right edge of the row open leftward so the tip stays on-screen */
 .tm-flags .tm-flag:nth-child(n+4) .tm-tip { left: auto; right: 0; }
+
+/* ---- Signal stack: consolidated cross-subsystem read (display-only) -------- */
+#signal-stack .sstack-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; align-items: start; }
+@media (max-width: 760px) { #signal-stack .sstack-grid { grid-template-columns: 1fr; } }
+.sstack-legs { display: flex; flex-direction: column; }
+.sstack-leg { display: grid; grid-template-columns: 12px 1fr auto; align-items: center; gap: 11px;
+  padding: 7px 2px; border-bottom: 1px solid var(--line); }
+.sstack-leg:last-child { border-bottom: none; }
+.sstack-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); }
+.sstack-name { font-size: 13.5px; color: var(--text); }
+.sstack-tier { font-size: 9.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
+  border: 1px solid var(--line); border-radius: 4px; padding: 1px 4px; margin-left: 7px; vertical-align: middle; }
+.sstack-state { font-size: 12.5px; font-weight: 600; text-align: right; }
+.sstack-dot.tone-up { background: var(--up); } .sstack-dot.tone-down { background: var(--down); }
+.sstack-dot.tone-flat { background: var(--muted); }
+.sstack-state.tone-up, b.tone-up { color: var(--up); } .sstack-state.tone-down, b.tone-down { color: var(--down); }
+.sstack-state.tone-flat { color: var(--muted); }
+.sstack-verdict { background: var(--panel2); border: 1px solid var(--line); border-radius: 11px;
+  padding: 14px 16px; display: flex; flex-direction: column; gap: 9px; }
+.sstack-final { font-size: 16.5px; color: var(--text); }
+.sstack-final.tone-up { color: var(--up); } .sstack-final.tone-down { color: var(--down); }
+.sstack-agree { font-size: 13px; color: var(--muted); } .sstack-agree b { color: var(--text); }
+.sstack-tally { font-size: 12px; color: var(--muted); } .sstack-tally b { color: var(--text); }
+.sstack-contra { font-size: 13px; color: var(--warn); line-height: 1.45; margin-top: 2px; }
+.sstack-contra.ok { color: var(--ok); }
