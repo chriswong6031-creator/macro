@@ -152,6 +152,43 @@ def _sector_cards(latest: dict) -> list[dict]:
     return cards
 
 
+def _hk_index_health() -> list[dict]:
+    """Health snapshot for the major HK indexes — the 'how is the market itself
+    doing' read that leads the macro page. Price, % off the 52-week high
+    (drawdown), 50/200d trend, RSI(14). Pure price math off the stored daily
+    closes; reuses engine.technicals.rsi. HSI (^HSI, deep history) + HSCEI
+    (^HSCE, H-shares) + Hang Seng TECH (3033.HK ETF — the cleanest stored HSTECH
+    exposure; no raw HSTECH index series in the store)."""
+    from engine.technicals import rsi
+    out = []
+    for tkr, label, zh in [("^HSI", "Hang Seng Index", "恒生指数"),
+                           ("^HSCE", "HSCEI (H-shares)", "国企指数"),
+                           ("3033.HK", "Hang Seng TECH", "恒生科技")]:
+        df = store.read("hk", tkr)
+        if df is None or df.empty or "close" not in df.columns:
+            continue
+        c = df["close"].astype(float).dropna()
+        if len(c) < 60:
+            continue
+        px = float(c.iloc[-1])
+        hi52 = float(c.tail(252).max())
+        ma50 = float(c.tail(50).mean())
+        ma200 = float(c.tail(200).mean()) if len(c) >= 200 else float("nan")
+        try:
+            r = float(rsi(c).iloc[-1])
+        except Exception:  # noqa: BLE001 — never let one index break the panel
+            r = float("nan")
+        out.append({
+            "ticker": tkr, "label": label, "label_zh": zh, "price": round(px, 2),
+            "chg": round(100 * (px / float(c.iloc[-2]) - 1), 2) if len(c) >= 2 else 0.0,
+            "dd": round(100 * (px / hi52 - 1), 1),
+            "above50": bool(px >= ma50),
+            "above200": (bool(px >= ma200) if ma200 == ma200 else None),
+            "rsi": round(r) if r == r else None,
+        })
+    return out
+
+
 def _benchmark_card() -> dict | None:
     """Headline cycle card for the Hang Seng Index (deep 1986-> history)."""
     from engine.cycles import analyze
@@ -399,6 +436,7 @@ def main() -> int:
             "pref": latest.get("preference_check", {}),
             "gv": latest.get("global_snapshot", {}),
             "vhsi": _vhsi_vm(),
+            "index_health": _hk_index_health(),  # macro-page index-health strip
         }
         site = Path(config.load()["storage"]["site_dir"])
         site.mkdir(parents=True, exist_ok=True)
@@ -463,13 +501,32 @@ def main() -> int:
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)
         from engine import i18n
         env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
-        html = env.get_template("hk.html.j2").render(**vm)
+        # One shared view-model feeds BOTH the HK macro-regime page and the HK
+        # Stock & Exposure board — the same hk.html.j2 is rendered twice with a
+        # `mode` flag (macro / stocks) that selects which sections show. No data is
+        # recomputed and the heavy page CSS lives in exactly one template.
+        tmpl = env.get_template("hk.html.j2")
+        html = tmpl.render(**vm, mode="macro")
         (site / "hk.html").write_text(html)
         for a in ASSETS:
             src = Path(config.ROOT) / "templates" / a
             if src.exists():
                 (site / a).write_text(src.read_text())
         log.info("wrote %s/hk.html (%d KB, %d sectors)", site, len(html) // 1024, len(vm["sectors"]))
+
+        # HK Stock & Exposure board — same VM, the "looking for stocks" half.
+        # HK has no validated stock-picking edge — this is beta/sector positioning.
+        html_st = tmpl.render(**vm, mode="stocks")
+        (site / "hk_stocks.html").write_text(html_st)
+        log.info("wrote %s/hk_stocks.html (%d KB)", site, len(html_st) // 1024)
+        # landing-hub card stat (presence-gated by the .html existing)
+        _bt = vm.get("betas") or {}
+        _n = len(_bt.get("amplifiers") or []) + len(_bt.get("cushions") or [])
+        _label = (f"{_n} beta exposures" if _n else "Beta exposure & sector positioning")
+        hkdir = config.data_dir() / "hk_stocks"
+        hkdir.mkdir(parents=True, exist_ok=True)
+        (hkdir / "latest.json").write_text(json.dumps(
+            {"date": latest.get("date", ""), "label": _label, "n_setups": _n}, indent=2))
 
         # HK stock search shell (the per-ticker library was built above, before the
         # hk.html render, so its global-beta board could feed the page)

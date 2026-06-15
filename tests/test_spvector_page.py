@@ -93,6 +93,18 @@ def test_dashboard_compiles_and_splits():
     for m in ("mode == 'stocks'", "mode != 'stocks'", "mode != 'macro'",
               'id="index-health"', 'id="stocks-header"', "Regime-approved sectors"):
         check(f"dashboard has split marker: {m}", m in src, "missing")
+    # China + HK mirror the same macro/stocks mode split (rendered twice by their
+    # builders -> <market>.html + <market>_stocks.html).
+    cn = (ROOT / "templates" / "china.html.j2").read_text()
+    for m in ("mode == 'stocks'", "mode != 'stocks'", "mode != 'macro'",
+              'id="index-health"', 'id="stocks-header"', 'id="top-setups"',
+              "china_stocks.html"):
+        check(f"china has split marker: {m}", m in cn, "missing")
+    hk = (ROOT / "templates" / "hk.html.j2").read_text()
+    for m in ("mode == 'stocks'", "mode != 'stocks'", "mode != 'macro'",
+              'id="index-health"', 'id="stocks-header"', 'id="global-beta"',
+              "hk_stocks.html", "no validated stock-picking edge"):
+        check(f"hk has split marker: {m}", m in hk, "missing")
 
 
 def test_hub_split_cards():

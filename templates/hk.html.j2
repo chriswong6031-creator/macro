@@ -9,7 +9,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ t('Hong Kong Regime', '香港周期') }} — {{ latest.date }}</title>
+<title>{% if mode == 'stocks' %}{{ t('Hong Kong Stock & Exposure Board', '香港个股与敞口看板') }}{% else %}{{ t('Hong Kong Regime', '香港周期') }}{% endif %} — {{ latest.date }}</title>
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
@@ -174,6 +174,24 @@
   .gauge { position: relative; height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--down), var(--line) 50%, var(--up)); }
   .gauge i { position: absolute; top: 50%; width: 12px; height: 12px; border-radius: 50%; background: var(--text); border: 2px solid var(--panel); transform: translate(-50%,-50%); }
   .foot { margin-top: 26px; color: var(--muted); font-size: 12px; text-align: center; line-height: 1.7; }
+  /* major-index health strip (macro page) */
+  .idx-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  @media (max-width: 760px) { .idx-grid { grid-template-columns: 1fr; } }
+  .idx-tile { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; }
+  .idx-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .idx-px { font-variant-numeric: tabular-nums; color: var(--muted); }
+  .idx-row, .idx-trend { display: flex; justify-content: space-between; font-size: 12px; gap: 8px; }
+  .idx-trend { margin-top: 3px; color: var(--muted); }
+  .idx-grid .pos { color: var(--up); } .idx-grid .neg { color: var(--down); } .idx-grid .warn { color: var(--warn); }
+  /* nav split-dropdown (macro / stocks / lookup) */
+  .nav-dd { position: relative; }
+  .nav-dd .caret { font-size: 9px; opacity: .6; }
+  .nav-dd-menu { position: absolute; top: calc(100% + 6px); left: 0; min-width: 210px; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 11px; box-shadow: 0 12px 34px rgba(0,0,0,.28); padding: 6px;
+    opacity: 0; visibility: hidden; transform: translateY(-6px); transition: opacity .16s, transform .16s, visibility .16s; z-index: 70; }
+  .nav-dd:hover > .nav-dd-menu, .nav-dd:focus-within > .nav-dd-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+  .nav-dd-menu a { display: block; padding: 7px 10px; border-radius: 8px; font-size: 13px; color: var(--muted); text-decoration: none; white-space: nowrap; }
+  .nav-dd-menu a:hover, .nav-dd-menu a.active { background: var(--panel2); color: var(--text); }
 </style>
 </head>
 <body>
@@ -192,7 +210,14 @@
     <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }}</a>
     <a class="nav-link" href="etfs.html">🐳 {{ t('ETF flows', 'ETF 资金流') }}</a>
     <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国A股') }}</a>
-    <a class="nav-link active" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }}</a>
+    <div class="nav-dd">
+      <a class="nav-link active" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu">
+        <a class="{{ 'active' if mode != 'stocks' }}" href="hk.html">📊 {{ t('Macro dashboard', '宏观仪表盘') }}</a>
+        <a class="{{ 'active' if mode == 'stocks' }}" href="hk_stocks.html">📈 {{ t('HK stocks & exposure', '港股与敞口') }}</a>
+        <a href="hk_stock.html">🔎 {{ t('Stock lookup', '个股查询') }}</a>
+      </div>
+    </div>
     <a class="nav-link" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }}</a>
     <a class="nav-link" href="forex.html">💱 {{ t('Forex', '外汇') }}</a>
     <a class="nav-link" href="bonds.html">🏛️ {{ t('Bonds', '债券') }}</a>
@@ -220,6 +245,20 @@
 
 <div class="grid">
 
+  {% if mode == 'stocks' %}
+  <!-- ===================== HK STOCK & EXPOSURE BOARD HEADER ===================== -->
+  <div class="panel span12" id="stocks-header">
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+      <h1 style="margin:0">🇭🇰 {{ t('HK Stock & Exposure Board', '港股与敞口看板') }}</h1>
+      <span class="quad-badge quad-{{ latest.quad }}">{{ td(latest.quad_name) }}</span>
+      {% if gv and gv.state %}<span class="risk-badge {{ 'c-up' if gv.state=='Risk-on' else ('c-down' if gv.state=='Risk-off' else 'c-muted') }}">{{ td(gv.state) }}</span>{% endif %}
+    </div>
+    <p class="note" style="margin:8px 0 0;text-transform:none"><b>{{ t('Exposure & risk context', '敞口与风险背景') }}</b> — {{ t('HK has no validated stock-picking edge; this is beta / sector positioning, not alpha. Each name is read by its beta to global risk and its sector, conditioned on the live risk state.', '香港没有经验证的选股优势；这是贝塔／板块定位，而非阿尔法。每只股票按其对全球风险的贝塔与所属板块解读，并结合实时风险状态。') }}
+      <a href="hk.html" style="color:var(--link);font-weight:600">← {{ t('HK macro dashboard', '香港宏观看板') }}</a></p>
+  </div>
+  {% endif %}
+
+  {% if mode != 'stocks' %}
   <!-- regime hero -->
   <div class="panel span8">
     <h1>{{ t('Hong Kong Regime', '香港周期') }}</h1>
@@ -269,6 +308,32 @@
   </div>
   {% endif %}
 
+  <!-- ===================== MAJOR HK INDEXES — HEALTH & RISK ===================== -->
+  {% if index_health %}
+  <div class="panel span12" id="index-health">
+    <h2>{{ t('Major HK index — health & risk', '香港主要指数 — 健康度与风险') }}
+      {{ help("How the market itself is doing, before the macro engine. Price, % below the 52-week high (drawdown), trend vs the 50/200-day averages, and RSI(14) for the major HK indexes (Hang Seng TECH is the 3033.HK ETF, the cleanest stored HSTECH exposure). RSI &gt; 70 is stretched, &lt; 30 is washed out.", "在看宏观引擎之前，先看市场本身。各主要香港指数的价格、距52周高点的回撤、相对50/200日均线的趋势、RSI(14)（恒生科技采用 3033.HK ETF，为库内最干净的恒生科技敞口）。RSI &gt; 70 偏热，&lt; 30 超卖。") }}
+    </h2>
+    <div class="idx-grid">
+      {% for ix in index_health %}
+      <div class="idx-tile">
+        <div class="idx-top"><b>{{ t(ix.label, ix.label_zh) }}</b> <span class="idx-px">{{ '%.2f'|format(ix.price) }}</span></div>
+        <div class="idx-row">
+          <span class="{{ 'pos' if ix.dd >= -1 else ('warn' if ix.dd >= -10 else 'neg') }}">{{ '%+.1f'|format(ix.dd) }}% {{ t('off high', '距高点') }}</span>
+          <span>RSI {{ ix.rsi if ix.rsi is not none else '—' }}</span>
+        </div>
+        <div class="idx-trend">
+          <span class="{{ 'pos' if ix.above200 else 'neg' }}">{{ '✓' if ix.above200 else '✕' }} 200d</span>
+          <span class="{{ 'pos' if ix.above50 else 'neg' }}">{{ '✓' if ix.above50 else '✕' }} 50d</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="note" style="margin:10px 0 0;text-transform:none">{{ t('Looking at individual HK names?', '想看个股？') }}
+      <a href="hk_stocks.html" style="color:var(--link);font-weight:600">→ {{ t('HK stock & exposure board', '港股与敞口看板') }}</a></p>
+  </div>
+  {% endif %}
+
   <!-- GLOBAL RISK OVERLAY — HK's primary high-frequency driver -->
   {% if gv %}
   <div class="panel span12">
@@ -305,6 +370,9 @@
   </div>
   {% endif %}
 
+  {% endif %}{# /mode != stocks — macro group 1 (hero, index health, global risk overlay) #}
+
+  {% if mode != 'macro' %}
   <!-- ===================== GLOBAL-RISK EXPOSURE (amplifiers vs cushions) ===================== -->
   {% if betas and betas.amplifiers %}
   {% set RS = betas.risk_state %}
@@ -358,6 +426,9 @@
   </div>
   {% endif %}
 
+  {% endif %}{# /mode != macro — global-risk exposure (amplifiers vs cushions) #}
+
+  {% if mode != 'stocks' %}
   {% if pb %}
   <!-- ===================== WHERE WE ARE + WHAT'S NEXT ===================== -->
   {% if pb.progress %}
@@ -426,6 +497,7 @@
       </div>
     </div>
     {% if pb.honesty %}<p class="note" style="margin-top:10px">⚖️ {{ t(pb.honesty.en, pb.honesty.zh) }}</p>{% endif %}
+    <p class="note" style="margin:10px 0 0;text-transform:none"><a href="hk_stocks.html" style="color:var(--link);font-weight:600">→ {{ t('HK stock & exposure board — amplifiers vs cushions, sectors & flows', '港股与敞口看板 — 放大器 vs 缓冲、板块与资金流') }}</a></p>
   </div>
   {% endif %}
 
@@ -487,6 +559,9 @@
       '校准区间 2000→2026（折半验证）：三条腿对恒指前瞻收益均有真实且稳定的信号——<b>理想增长</b>是最佳象限（21日 +1.3%、命中率64%，两段均为正），<b>滞胀</b>最差（21日 −0.9%，两段均为负）；<b>扩张</b>的双重流动性（央行＋联汇＋南向）优于收缩（21日 +0.5% vs −0.4%）；全球风险开关呈单调区分——<b>风险偏好 21日 +0.8%（命中率57%）&gt; 风险规避 &gt; 中性</b>。以上为历史基准，而非预测。') }}</p>
   </div>
 
+  {% endif %}{# /mode != stocks — macro group 2 (where/next, how-to-trade, time machine, calibration) #}
+
+  {% if mode != 'macro' %}
   <!-- sector rotation board -->
   <div class="panel span8">
     <h2>{{ t('Sector Rotation', '板块轮动') }} <span class="note" style="text-transform:none">· {{ t('RS vs HSI', '相对恒生指数') }}</span></h2>
@@ -516,6 +591,9 @@
     </table>
   </div>
 
+  {% endif %}{# /mode != macro — sector rotation #}
+
+  {% if mode != 'stocks' %}
   <!-- breadth + cross-market ratios -->
   <div class="panel span4">
     <h2>{{ t('Breadth & Ratios', '宽度与比价') }}</h2>
@@ -539,6 +617,9 @@
     {% endif %}
   </div>
 
+  {% endif %}{# /mode != stocks — breadth & ratios #}
+
+  {% if mode != 'macro' %}
   <!-- ===================== SOUTHBOUND FLOW (南向资金) ===================== -->
   {% if internals and internals.southbound %}{% set sb = internals.southbound %}
   <div class="panel span6">
@@ -554,6 +635,9 @@
   </div>
   {% endif %}
 
+  {% endif %}{# /mode != macro — southbound flow #}
+
+  {% if mode != 'stocks' %}
   <!-- ===================== HKMA PEG FUNDING ===================== -->
   {% if funding %}
   <div class="panel span6">
@@ -569,6 +653,9 @@
   </div>
   {% endif %}
 
+  {% endif %}{# /mode != stocks — HKMA peg funding #}
+
+  {% if mode != 'macro' %}
   <!-- ===================== AH PREMIUM (computed basket) ===================== -->
   {% if ah %}
   <div class="panel span6">
@@ -586,6 +673,9 @@
   </div>
   {% endif %}
 
+  {% endif %}{# /mode != macro — AH premium #}
+
+  {% if mode != 'stocks' %}
   <!-- ===================== CHINA EARNINGS BACKDROP ===================== -->
   {% if internals and (internals.credit or internals.pboc) %}
   <div class="panel span6">
@@ -611,6 +701,8 @@
       {% endfor %}
     </div>
   </div>
+
+  {% endif %}{# /mode != stocks — macro group 3 (China earnings backdrop, sector-leader cycle detail) #}
 
 </div>
 

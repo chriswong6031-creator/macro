@@ -12,7 +12,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ t('China A-Share Regime', '中国A股周期') }} — {{ latest.date }}</title>
+<title>{% if mode == 'stocks' %}{{ t('China A-Share Stock Dashboard', '中国A股个股看板') }}{% else %}{{ t('China A-Share Regime', '中国A股周期') }}{% endif %} — {{ latest.date }}</title>
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
@@ -217,6 +217,24 @@
   table.sortable th.sorted { color: var(--text); }
   table.sortable th.sorted .sarrow { opacity: .9; color: var(--link); }
   .foot { margin-top: 26px; color: var(--muted); font-size: 12px; text-align: center; line-height: 1.7; }
+  /* major-index health strip (macro page) */
+  .idx-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  @media (max-width: 760px) { .idx-grid { grid-template-columns: 1fr; } }
+  .idx-tile { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; }
+  .idx-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .idx-px { font-variant-numeric: tabular-nums; color: var(--muted); }
+  .idx-row, .idx-trend { display: flex; justify-content: space-between; font-size: 12px; gap: 8px; }
+  .idx-trend { margin-top: 3px; color: var(--muted); }
+  .idx-grid .pos { color: var(--up); } .idx-grid .neg { color: var(--down); } .idx-grid .warn { color: var(--warn); }
+  /* nav split-dropdown (macro / stocks / lookup) */
+  .nav-dd { position: relative; }
+  .nav-dd .caret { font-size: 9px; opacity: .6; }
+  .nav-dd-menu { position: absolute; top: calc(100% + 6px); left: 0; min-width: 210px; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 11px; box-shadow: 0 12px 34px rgba(0,0,0,.28); padding: 6px;
+    opacity: 0; visibility: hidden; transform: translateY(-6px); transition: opacity .16s, transform .16s, visibility .16s; z-index: 70; }
+  .nav-dd:hover > .nav-dd-menu, .nav-dd:focus-within > .nav-dd-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+  .nav-dd-menu a { display: block; padding: 7px 10px; border-radius: 8px; font-size: 13px; color: var(--muted); text-decoration: none; white-space: nowrap; }
+  .nav-dd-menu a:hover, .nav-dd-menu a.active { background: var(--panel2); color: var(--text); }
 </style>
 </head>
 <body>
@@ -233,7 +251,14 @@
       </div>
     </div>
     <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin', '比特币') }}</a>
-    <a class="nav-link active" href="china.html">🇨🇳 {{ t('China A', '中国A股') }}</a>
+    <div class="nav-dd">
+      <a class="nav-link active" href="china.html">🇨🇳 {{ t('China A', '中国A股') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu">
+        <a class="{{ 'active' if mode != 'stocks' }}" href="china.html">📊 {{ t('Macro dashboard', '宏观仪表盘') }}</a>
+        <a class="{{ 'active' if mode == 'stocks' }}" href="china_stocks.html">📈 {{ t('A-share stocks', 'A股个股') }}</a>
+        <a href="china_stock.html">🔎 {{ t('Stock lookup', '个股查询') }}</a>
+      </div>
+    </div>
     <a class="nav-link" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }}</a>
     <a class="nav-link" href="discovery.html">🏆 {{ t('Alpha leaders', '阿尔法领先股') }}</a>
     <a class="nav-link" href="china_brief.html">📰 {{ t('Brief', '简报') }}</a>
@@ -259,6 +284,20 @@
 
 <div class="grid">
 
+  {% if mode == 'stocks' %}
+  <!-- ===================== A-SHARE STOCK DASHBOARD HEADER ===================== -->
+  <div class="panel span12" id="stocks-header">
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+      <h1 style="margin:0">🇨🇳 {{ t('A-Share Stock Dashboard', 'A股个股看板') }}</h1>
+      <span class="quad-badge quad-{{ latest.quad }}">{{ td(latest.quad_name) }}</span>
+      {% if pb and pb.dial %}{% set pzh = {'DEFENSIVE':'防御','CAREFUL':'谨慎','NEUTRAL':'中性','CONSTRUCTIVE':'积极','AGGRESSIVE':'进取'} %}<span class="chip c-muted">{{ t(pb.dial.posture, pzh.get(pb.dial.posture, pb.dial.posture)) }}</span>{% endif %}
+    </div>
+    <p class="note" style="margin:8px 0 0;text-transform:none">{{ t('Where to look for A-shares — the validated mean-reversion setups, sector relative strength and residual-alpha context, filtered by the current macro regime.', '在哪里找 A 股 —— 已验证的均值回归形态、板块相对强度与残差阿尔法背景，按当前宏观周期过滤。') }}
+      <a href="china.html" style="color:var(--link);font-weight:600">← {{ t('China macro dashboard', '中国宏观看板') }}</a></p>
+  </div>
+  {% endif %}
+
+  {% if mode != 'stocks' %}
   <!-- regime hero -->
   <div class="panel span8">
     <h1>{{ t('China A-Share Regime', '中国A股周期') }}</h1>
@@ -302,6 +341,32 @@
     <div style="font-size:20px;font-weight:800">{{ '%.2f'|format(benchmark.price) }} <span class="{{ 'pos' if benchmark.chg>=0 else 'neg' }}" style="font-size:14px">{{ '%+.2f'|format(benchmark.chg) }}%</span></div>
     <div style="margin:4px 0 8px"><span class="lad {{ 'up' if benchmark.dir=='up' else ('down' if benchmark.dir=='down' else 'flat') }}">{{ td(benchmark.label or benchmark.state) }}</span></div>
     <div class="mtf" data-mtf='{{ benchmark.mtf_json }}'></div>
+  </div>
+  {% endif %}
+
+  <!-- ===================== MAJOR CHINA INDEXES — HEALTH & RISK ===================== -->
+  {% if index_health %}
+  <div class="panel span12" id="index-health">
+    <h2>{{ t('Major China index — health & risk', '中国主要指数 — 健康度与风险') }}
+      {{ help("How the market itself is doing, before the macro engine. Price, % below the 52-week high (drawdown), trend vs the 50/200-day averages, and RSI(14) for the major mainland indexes. RSI &gt; 70 is stretched, &lt; 30 is washed out.", "在看宏观引擎之前，先看市场本身。各主要内地指数的价格、距52周高点的回撤、相对50/200日均线的趋势、RSI(14)。RSI &gt; 70 偏热，&lt; 30 超卖。") }}
+    </h2>
+    <div class="idx-grid">
+      {% for ix in index_health %}
+      <div class="idx-tile">
+        <div class="idx-top"><b>{{ t(ix.label, ix.label_zh) }}</b> <span class="idx-px">{{ '%.2f'|format(ix.price) }}</span></div>
+        <div class="idx-row">
+          <span class="{{ 'pos' if ix.dd >= -1 else ('warn' if ix.dd >= -10 else 'neg') }}">{{ '%+.1f'|format(ix.dd) }}% {{ t('off high', '距高点') }}</span>
+          <span>RSI {{ ix.rsi if ix.rsi is not none else '—' }}</span>
+        </div>
+        <div class="idx-trend">
+          <span class="{{ 'pos' if ix.above200 else 'neg' }}">{{ '✓' if ix.above200 else '✕' }} 200d</span>
+          <span class="{{ 'pos' if ix.above50 else 'neg' }}">{{ '✓' if ix.above50 else '✕' }} 50d</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="note" style="margin:10px 0 0;text-transform:none">{{ t('Looking for individual A-shares?', '想找个股？') }}
+      <a href="china_stocks.html" style="color:var(--link);font-weight:600">→ {{ t('A-share stock dashboard', 'A股个股看板') }}</a></p>
   </div>
   {% endif %}
 
@@ -376,6 +441,7 @@
       {{ actcol('act-hold', 'Hold', '持有', actions.hold) }}
       {{ actcol('act-avoid', 'Avoid', '回避', actions.avoid) }}
     </div>
+    <p class="note" style="margin:10px 0 0;text-transform:none"><a href="china_stocks.html" style="color:var(--link);font-weight:600">→ {{ t('A-share stock dashboard — setups, reversal watch & relative strength', 'A股个股看板 — 形态、反转观察与相对强度') }}</a></p>
   </div>
   {% endif %}
 
@@ -519,8 +585,11 @@
     {% endif %}
   </div>
 
+  {% endif %}{# /mode != stocks — macro group 1 (hero, index health, time machine, action board, where/next, how-to-trade, calibration, rotation, breadth) #}
+
   {% set SECZH = {'Technology':'科技','Industrials':'工业','Basic Materials':'原材料','Financial Services':'金融','Consumer Cyclical':'可选消费','Healthcare':'医疗保健','Utilities':'公用事业','Consumer Defensive':'必需消费','Energy':'能源','Communication Services':'通信服务','Real Estate':'房地产'} %}
 
+  {% if mode != 'macro' %}
   <!-- ===================== TOP SETUPS (selection × timing) ===================== -->
   {% if setups and setups.buy %}
   <div class="panel span12" id="top-setups">
@@ -631,8 +700,11 @@
   </div>
   {% endif %}
 
+  {% endif %}{# /mode != macro — stock block (top setups, mean-reversion watch, alpha leaders) #}
+
   {% set I = internals or {} %}
 
+  {% if mode != 'stocks' %}
   <!-- ===================== CROWD METER (margin / 融资融券) ===================== -->
   {% if I.margin %}
   <div class="panel span6">
@@ -855,6 +927,8 @@
     </table>
   </div>
   {% endif %}
+
+  {% endif %}{# /mode != stocks — macro group 2 (crowd meter, southbound, connect, PBoC, credit, sentiment, MTF, lifespans, data health) #}
 
 </div>
 
