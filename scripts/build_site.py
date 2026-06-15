@@ -1846,8 +1846,10 @@ def chart_risk_model(cf: pd.DataFrame) -> str:
     chart, integrated onto the macro page. Both are 0-100 composite gauges from
     engine.conditions; band lines mark the elevated/high thresholds."""
     start = cf.index.max() - pd.Timedelta(days=365 * 25)
-    dr = cf.loc[start:, "drawdown_risk"].dropna()
-    rr = cf.loc[start:, "recession_risk"].dropna()
+    # weekly resolution — multi-decade context charts; visually identical at this zoom
+    # and ~5x lighter on the page (macro.html weight discipline, [[plotly-chart-size-gotcha]]).
+    dr = cf.loc[start:, "drawdown_risk"].dropna().resample("W-FRI").last().dropna().round(1)
+    rr = cf.loc[start:, "recession_risk"].dropna().resample("W-FRI").last().dropna().round(1)
     fig = go.Figure()
     rec = store.read("fred", "USRECD")
     if rec is not None and not rec.empty:
@@ -1879,8 +1881,8 @@ def chart_curve(cf: pd.DataFrame) -> str:
     (it's why 2022-24's raw inversion didn't fire the composite). Colours sit
     outside the zh swap map (a curve isn't a price-direction read)."""
     start = cf.index.max() - pd.Timedelta(days=365 * 25)
-    raw = cf.loc[start:, "curve_raw"].dropna()
-    adj = cf.loc[start:, "curve_tp_adj"].dropna()
+    raw = cf.loc[start:, "curve_raw"].dropna().resample("W-FRI").last().dropna().round(2)
+    adj = cf.loc[start:, "curve_tp_adj"].dropna().resample("W-FRI").last().dropna().round(2)
     fig = go.Figure()
     rec = store.read("fred", "USRECD")
     if rec is not None and not rec.empty:
@@ -1907,8 +1909,9 @@ def chart_vix_term(f: pd.DataFrame, cf: pd.DataFrame) -> str:
     a stress / washout marker; the curve re-normalising back below 1.0 is the
     historically constructive 'all-clear'. Colours outside the zh swap map."""
     start = cf.index.max() - pd.Timedelta(days=365 * 10)
-    vix = f.loc[start:, "vix"].dropna() if "vix" in f.columns else pd.Series(dtype=float)
-    term = cf.loc[start:, "vix_term"].dropna()
+    vix = (f.loc[start:, "vix"].dropna().resample("W-FRI").last().dropna().round(1)
+           if "vix" in f.columns else pd.Series(dtype=float))
+    term = cf.loc[start:, "vix_term"].dropna().resample("W-FRI").last().dropna().round(3)
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True, row_heights=[0.55, 0.45],
                         vertical_spacing=0.07)
     if not vix.empty:
