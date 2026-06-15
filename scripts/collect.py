@@ -142,6 +142,27 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("FRED vintages step failed: %s", e)
 
+    # SEC companyfacts multi-year statements (data/edgar/statements.parquet) — feeds
+    # the single-stock Financials trends + the accounting-quality chip's multi-year /
+    # working-capital reads (engine/stock_fundamentals). PAYLOAD-heavy (3.5-7.5 MB/
+    # filer), so refresh on a weekly mtime gate as a capped, RESUMABLE drip — never a
+    # per-build fetch, never fatal. Only on a broad equity collection (mirrors FRED).
+    if "stock_fundamentals" in registry:
+        try:
+            import time
+
+            from collectors import edgar_facts
+            from lib import config as _cfg
+            sp = _cfg.data_dir() / "edgar" / "statements.parquet"
+            stale = not sp.exists() or (time.time() - sp.stat().st_mtime) / 86400.0 >= 7
+            if stale or args.full_history:
+                log.info("=== refreshing EDGAR companyfacts statements (drip) ===")
+                edgar_facts.fetch_statements(max_new=400 if args.full_history else 250)
+            else:
+                log.info("EDGAR statements fresh — skip")
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("EDGAR statements step failed: %s", e)
+
     # Point-in-time index-membership ledger (go-forward survivorship fix): record
     # who is in the S&P 1500 each run so the universe history compounds. Cheap,
     # additive, never fatal. See engine/universe_history.py.

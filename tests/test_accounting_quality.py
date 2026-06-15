@@ -72,13 +72,14 @@ def test_warn_on_deterioration_stack():
     assert "dilution" in cap["detail"]
 
 
-def test_watch_on_single_caution():
+def test_single_isolated_caution_stays_clean():
+    # one flag among up to 5 relative reads is the modal state -> still broadly clean
+    # (the breakdown still surfaces the caution; only 2+ concerns escalate to watch)
     fac = {"accruals": -0.9, "profitability": 0.2, "investment": 0.1, "payout": 0.0}
     fin = {"raw": {"cfo": 90, "ni": 100}, "accruals": 0.02, "asset_growth": 8.0,
            "gross_margin": 30, "debt_to_assets": 25}
     aq = _accounting_quality(fac, fin, None, None)
-    assert aq["verdict"] == "watch"
-    assert aq["n_caution"] == 1
+    assert aq["n_caution"] == 1 and aq["verdict"] == "clean"
     assert _states(aq)["earnings_quality"] == "caution"
 
 
@@ -155,6 +156,58 @@ def test_read_shape_is_well_formed():
         assert set(r) >= {"key", "label", "label_zh", "state", "detail", "detail_zh"}
         assert r["state"] in ("good", "neutral", "caution")
     assert {"verdict", "headline", "headline_zh", "reads", "caveat", "caveat_zh"} <= set(aq)
+
+
+# ---- working-capital read (v2: inventory / receivables vs sales) ------------
+def _wc_rows(inv, recv, rev):
+    """Statement rows carrying inventory / receivables / revenue series (equal len)."""
+    return [{"fy": 2020 + i, "inventory": inv[i], "receivables": recv[i], "revenue": rev[i]}
+            for i in range(len(rev))]
+
+
+def test_working_capital_inventory_building_flags_demand():
+    rows = _wc_rows(inv=[100, 120, 150, 185], recv=[40, 40, 41, 42], rev=[100, 104, 108, 112])
+    aq = _accounting_quality({"profitability": 0.2}, {"raw": {}}, None, rows)
+    wc = next(r for r in aq["reads"] if r["key"] == "working_capital")
+    assert wc["state"] == "caution"
+    assert "inventory" in wc["detail"] and "demand" in wc["detail"]
+
+
+def test_working_capital_receivables_stretch_flags_revenue_quality():
+    rows = _wc_rows(inv=[100, 101, 102, 103], recv=[50, 70, 95, 130], rev=[100, 104, 108, 112])
+    aq = _accounting_quality({"profitability": 0.2}, {"raw": {}}, None, rows)
+    wc = next(r for r in aq["reads"] if r["key"] == "working_capital")
+    assert wc["state"] == "caution"
+    assert "receivables" in wc["detail"] and "revenue-quality" in wc["detail"]
+
+
+def test_working_capital_lean_reads_good():
+    rows = _wc_rows(inv=[100, 98, 96, 94], recv=[50, 48, 46, 44], rev=[100, 115, 130, 150])
+    aq = _accounting_quality({"profitability": 0.2}, {"raw": {}}, None, rows)
+    wc = next(r for r in aq["reads"] if r["key"] == "working_capital")
+    assert wc["state"] == "good"
+
+
+def test_working_capital_absent_without_line_items():
+    # pre-seed names (and banks with no inventory/receivables tags) just hide the read
+    rows = [{"fy": 2020 + i, "ni": 100, "cfo": 100, "assets": 1000, "revenue": 1000} for i in range(4)]
+    aq = _accounting_quality({"profitability": 0.2}, {"raw": {"cfo": 100, "ni": 100}}, None, rows)
+    assert aq is not None and all(r["key"] != "working_capital" for r in aq["reads"])
+
+
+def test_accrual_cluster_dedup_prevents_overwarn():
+    # earnings_quality (aggregate accruals) + working_capital (the line items that drive
+    # them) are ONE phenomenon. Here 3 reads flag (accruals + working-capital + pricing),
+    # but the accrual pair de-dupes to one -> 2 effective cautions -> watch, NOT warn.
+    rows = [{"fy": 2020 + i, "ni": 100, "cfo": 100 - 20 * i, "assets": 1000,
+             "inventory": [100, 150, 200, 260][i], "receivables": [40, 40, 41, 42][i],
+             "revenue": [100, 104, 108, 112][i]} for i in range(4)]
+    aq = _accounting_quality({"profitability": -0.9},
+                             {"raw": {"cfo": 40, "ni": 100}, "accruals": 0.06}, None, rows)
+    st = {r["key"]: r["state"] for r in aq["reads"]}
+    assert st["earnings_quality"] == "caution" and st["working_capital"] == "caution" \
+        and st["pricing_power"] == "caution"
+    assert aq["verdict"] == "watch"   # 3 raw cautions, accrual pair de-duped -> 2 -> watch
 
 
 # ---- honesty invariant: DISPLAY-ONLY, never scored --------------------------
