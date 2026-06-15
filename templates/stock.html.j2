@@ -196,6 +196,28 @@
   .earnhdr { font-size:13px; } .earnhdr .earndays { font-weight:800; font-size:15px; }
   .earntbl { margin-top:6px; } .earntbl th, .earntbl td { padding:3px 8px; font-size:12.5px; }
   @media (max-width:560px){ .myrow{ grid-template-columns:80px 90px 1fr; } }
+  /* ---- accounting-quality read (display-only context, never scored) ---- */
+  .aq-head { display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:11px;
+             font-size:13px; font-weight:800; border:1px solid var(--line); }
+  .aq-clean { background:color-mix(in srgb,var(--up) 15%,transparent); color:var(--up);
+              border-color:color-mix(in srgb,var(--up) 40%,transparent); }
+  .aq-watch { background:color-mix(in srgb,var(--warn) 16%,transparent); color:var(--warn);
+              border-color:color-mix(in srgb,var(--warn) 42%,transparent); }
+  .aq-warn  { background:color-mix(in srgb,var(--down) 15%,transparent); color:var(--down);
+              border-color:color-mix(in srgb,var(--down) 40%,transparent); }
+  .aq-basis { color:var(--muted); font-size:11.5px; font-weight:400; margin-left:9px; }
+  .aq-reads { margin:11px 0 0; }
+  .aq-read { display:grid; grid-template-columns:14px 144px 1fr; gap:9px; align-items:start;
+             padding:5px 0; border-bottom:1px solid var(--line); font-size:12.5px; }
+  .aq-read .aqk { color:var(--muted); }
+  .aq-read .aqd { color:var(--text); }
+  .aq-dot { width:9px; height:9px; border-radius:50%; margin-top:4px; }
+  .aq-dot.s-good { background:var(--up); }
+  .aq-dot.s-neutral { background:var(--muted); }
+  .aq-dot.s-caution { background:var(--down); }
+  .aq-foot { color:var(--muted); font-size:11px; margin:9px 0 0; font-style:italic; }
+  @media (max-width:560px){ .aq-read{ grid-template-columns:14px 1fr; }
+    .aq-read .aqk{ font-weight:700; } .aq-read .aqd{ grid-column:1 / -1; padding-left:23px; } }
 </style>
 </head>
 <body>
@@ -310,6 +332,13 @@
       <details><summary>{{ t('more metrics &amp; financial health', '更多指标与财务健康') }}</summary>
         <div id="r_finmore" style="margin-top:6px"></div>
       </details>
+    </div>
+
+    <div class="panel" id="panel_aq" style="display:none">
+      <h2>🧾 {{ t('Accounting quality', '会计质量') }}
+        {{ help('A plain-language read on whether the accounting is deteriorating — composed from this name\'s accruals (are earnings backed by cash?), gross profitability, capital discipline (asset growth / dilution) and balance-sheet safety, using the same SEC-derived factor ranks shown below plus multi-year SEC companyfacts trends where they exist. DISPLAY-ONLY context: it is NOT part of any score, ranking or trading signal, and it deliberately does NOT change the technical / alpha call above — it is a fundamental cross-check for you to weigh. Lagged to the filing date; annual data, sparse for some filers.',
+          '用通俗语言判断会计质量是否在恶化——综合该标的的应计利润（盈利是否有现金支撑）、毛利能力、资本纪律（资产增长／股本稀释）与资产负债表安全性，即下方相同的 SEC 因子排名，并在可得时叠加 SEC companyfacts 多年趋势。仅作背景展示：不计入任何评分、排名或交易信号，且刻意不改变上方的技术／阿尔法判断——它只是供你权衡的基本面交叉验证。滞后至申报日；年度数据，对部分公司不全。') }}</h2>
+      <div id="r_aq"></div>
     </div>
 
     <div class="panel" id="panel_earn" style="display:none">
@@ -592,7 +621,7 @@
              low_beta:['Low beta','低贝塔'], accruals:['Low accruals','低应计'], short_interest:['Low short int.','低做空'] };
 
   function hideFundamentals() {
-    ['panel_profile','panel_val','panel_fin','panel_earn','panel_fac','panel_alpha','panel_gex','panel_pos','panel_analyst']
+    ['panel_profile','panel_val','panel_fin','panel_aq','panel_earn','panel_fac','panel_alpha','panel_gex','panel_pos','panel_analyst']
       .forEach(function (id) { show(id, false); });
     show('r_archetype', false); show('r_glance', false);
   }
@@ -687,6 +716,24 @@
       el('r_finmore').innerHTML = more.join('');
       show('panel_fin', true);
     } else show('panel_fin', false);
+
+    var aq = d.accounting_quality;
+    if (aq) {
+      var vcls = aq.verdict === 'clean' ? 'aq-clean' : aq.verdict === 'warn' ? 'aq-warn' : 'aq-watch';
+      var vic = aq.verdict === 'clean' ? '✅' : aq.verdict === 'warn' ? '🚩' : '⚠️';
+      var basis = lz(aq.basis, aq.basis_zh);
+      if (aq.piotroski && aq.piotroski.of) basis += ' · Piotroski F ' + aq.piotroski.score + '/' + aq.piotroski.of;
+      var aqh = '<span class="aq-head ' + vcls + '">' + vic + ' ' + esc(lz(aq.headline, aq.headline_zh)) +
+                '</span><span class="aq-basis">' + esc(basis) + '</span>';
+      var aqr = (aq.reads || []).map(function (r) {
+        return '<div class="aq-read"><span class="aq-dot s-' + esc(r.state) + '"></span>' +
+               '<span class="aqk">' + esc(lz(r.label, r.label_zh)) + '</span>' +
+               '<span class="aqd">' + esc(lz(r.detail, r.detail_zh)) + '</span></div>';
+      }).join('');
+      el('r_aq').innerHTML = aqh + '<div class="aq-reads">' + aqr + '</div>' +
+        '<p class="aq-foot">' + esc(lz(aq.caveat, aq.caveat_zh)) + '</p>';
+      show('panel_aq', true);
+    } else show('panel_aq', false);
 
     if (d.earnings) {
       var ev = d.earnings, eh = '';

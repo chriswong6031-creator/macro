@@ -123,7 +123,8 @@ def test_panels_smoke():
     sample = next(iter(p.values()))
     # blocks present are from the known set; archetype key is valid when present
     assert set(sample).issubset({"profile", "valuation", "financials",
-                                 "factors", "positioning", "analyst", "earnings"})
+                                 "factors", "positioning", "analyst", "earnings",
+                                 "accounting_quality"})
     for rec in list(p.values())[:200]:
         arch = (rec.get("profile") or {}).get("archetype")
         if arch:
