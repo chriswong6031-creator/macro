@@ -1,0 +1,180 @@
+{% macro help(en, zh='') -%}
+<span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
+{%- endmacro %}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>AI Daily Brief — {{ as_of }}</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,
+         "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1100px)/2)); } }
+  a { text-decoration:none; }
+  h1 { font-size:20px; margin:0; }
+  h2 { font-size:15px; margin:0 0 6px; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+           padding:14px 16px; margin-bottom:14px; }
+  .muted { color:var(--muted); }
+  .sm { font-size:13px; }
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px;
+          height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted);
+          font-size:10px; font-weight:600; cursor:help; position:relative;
+          vertical-align:middle; margin-left:5px; }
+  .help .tip { display:none; position:absolute; top:140%; left:50%;
+               transform:translateX(-50%); width:330px; max-width:78vw; background:var(--panel);
+               border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60;
+               font-size:12px; line-height:1.45; color:var(--text); font-weight:400;
+               box-shadow:var(--popover-shadow); pointer-events:none; }
+  .help:hover .tip { display:block; }
+  /* market toggle tabs */
+  .brief-tabs { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 14px; }
+  .brief-tab-btn { background:var(--panel); border:1px solid var(--line); color:var(--muted);
+                   border-radius:999px; padding:7px 16px; font:600 13px/1 inherit; cursor:pointer;
+                   font-family:inherit; transition:background .15s,color .15s,border-color .15s; }
+  .brief-tab-btn:hover { color:var(--text); border-color:var(--muted); }
+  .brief-tab-btn.active { background:var(--link); border-color:var(--link); color:#fff; }
+  /* class-driven panel visibility — coexists with aibrief.js setting style.display="" */
+  .brief-tab { display:none; }
+  .brief-tab.active { display:block; }
+  /* shared AI-brief body styling (one rule for all three panels) */
+  .ai-brief .mb-sum { font-size:15px; font-weight:600; margin:0 0 10px; }
+  .ai-brief .mb-sec { margin:10px 0; }
+  .ai-brief .mb-h { font-weight:600; color:var(--link); margin:0 0 4px; }
+  .ai-brief .mb-list { margin:4px 0 0 18px; padding:0; }
+  .ai-brief .mb-list li { margin:3px 0; }
+  .ai-brief .mb-foot { margin-top:12px; color:var(--muted); font-size:12px; }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 {{ t('US Macro', '美国宏观') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">{{ t('Regime dashboard', '宏观周期') }}<span class="d">{{ t('Growth · inflation · MRS · nowcast', '增长 · 通胀 · MRS · 即时预测') }}</span></a>
+        <a href="us_stocks.html">📈 {{ t('US Stocks', '美国个股') }}<span class="d">{{ t('Standouts · sectors · flows', '精选 · 板块 · 资金') }}</span></a>
+        <a href="spvector.html">📈 {{ t('S&P / Macro Vector', '标普宏观向量') }}<span class="d">{{ t('Tactical equity↔cash allocation', '战术股票↔现金配置') }}</span></a>
+        <a href="factors.html">🧮 {{ t('Factor Lab', '因子实验室') }}<span class="d">{{ t('Value · quality · low-vol + point-in-time IC', '价值 · 质量 · 低波动 + 时点 IC') }}</span></a>
+        <a href="baskets.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P', '等权主题篮子 vs 标普') }}</span></a>
+        <a href="seasonality.html">🗓 {{ t('Factor Seasonality', '因子季节性') }}<span class="d">{{ t('Ken French monthly, 1926+', 'Ken French 月度，1926+') }}</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }}</a>
+    <a class="nav-link" href="etfs.html">🐳 {{ t('ETF flows', 'ETF 资金流') }}</a>
+    <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国A股') }}</a>
+    <a class="nav-link" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }}</a>
+    <a class="nav-link" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }}</a>
+    <a class="nav-link" href="forex.html">💱 {{ t('Forex', '外汇') }}</a>
+    <a class="nav-link" href="bonds.html">🏛️ {{ t('Bonds', '债券') }}</a>
+    <a class="nav-link" href="crossasset.html">🧭 {{ t('Cross-Asset', '跨资产') }}</a>
+    <a class="nav-link" href="discovery.html">🏆 {{ t('Alpha leaders', '阿尔法领先股') }}</a>
+    <a class="nav-link" href="gex.html">🧲 {{ t('GEX magnets', 'Gamma磁吸') }}</a>
+    <a class="nav-link" href="history.html">📈 {{ t('History', '历史') }}</a>
+  </div>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link active" href="aibrief.html">🧠 {{ t('AI Daily Brief', 'AI每日简报') }}</a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+<div class="panel">
+  <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px">
+    <h1>🧠 {{ t('AI Daily Brief', 'AI每日简报') }}</h1>
+    <span class="muted">{{ t('every market we cover, synthesised by AI — in one place', '我们覆盖的每个市场，由AI综合 — 集于一处') }}</span>
+  </div>
+  <p class="muted sm" style="margin:10px 0 0">{{ t(
+    'These are AI (LLM) syntheses of the dashboards — they narrate the regime, flag where signals conflict and test the working thesis, with US macro, the dollar, global liquidity and commodities as shared backdrop. RESEARCH CONTEXT ONLY: nothing here feeds a score, signal or allocation, and a brief can be wrong or overconfident — always verify against the underlying panels. Regenerated automatically each day after the close.',
+    '以下为对各看板的 AI（大模型）综合解读 — 解读周期、标注信号冲突、检验当前假设，并以美国宏观、美元、全球流动性与商品为共同背景。仅供研究参考：此处内容不参与任何评分、信号或仓位，且简报可能出错或过度自信 — 请始终对照底层面板核实。每个交易日收盘后自动更新。') }}</p>
+</div>
+
+<div class="brief-tabs" role="tablist" aria-label="{{ t('Market', '市场') }}">
+  <button class="brief-tab-btn active" data-lens="macro" role="tab" aria-selected="true">🇺🇸 {{ t('Macro', '宏观') }}</button>
+  <button class="brief-tab-btn" data-lens="china" role="tab" aria-selected="false">🇨🇳 {{ t('China & Hong Kong', '中国与香港') }}</button>
+  <button class="brief-tab-btn" data-lens="btc" role="tab" aria-selected="false">₿ {{ t('Bitcoin', '比特币') }}</button>
+</div>
+
+{# Each panel is client-fetched from its lens JSON by aibrief.js (written by
+   engine/master_brain.py); the brief schema is identical across lenses. Visibility
+   is class-driven (.brief-tab[.active]) so it never fights aibrief.js's reveal. #}
+<div class="panel ai-brief brief-tab active" data-lens="macro" data-brief-src="master_brief.json">
+  <h2>🇺🇸 {{ t('Macro · cross-asset synthesis', '宏观 · 跨资产综合') }}
+    {{ help('AI synthesis of the macro picture as one cross-asset read — US growth/inflation regime, the dollar, global liquidity, rates, commodities and crypto. RESEARCH CONTEXT only: it narrates the regime, flags conflicting signals and tests the liquidity-rotation thesis; it never feeds a score, signal or allocation. Can be wrong — verify against the panels.', 'AI 将宏观图景作为单一跨资产解读 — 美国增长／通胀周期、美元、全球流动性、利率、商品与加密货币。仅供研究参考：它解读周期、标注信号冲突并检验流动性轮动假设，绝不参与任何评分、信号或仓位。可能出错，请对照各面板核实。') }}
+  </h2>
+  <div data-brief-body class="muted sm">{{ t('Loading the latest AI brief… it regenerates daily after the close.', '正在加载最新AI简报…每个交易日收盘后更新。') }}</div>
+</div>
+
+<div class="panel ai-brief brief-tab" data-lens="china" data-brief-src="china_brief.json">
+  <h2>🇨🇳 {{ t('China & Hong Kong synthesis', '中港综合') }}
+    {{ help('An AI-generated synthesis of the China & Hong-Kong dashboards, with US macro, the dollar, global liquidity and commodities as backdrop. RESEARCH CONTEXT only — it narrates the regime, flags where signals conflict and tests the policy/liquidity thesis (A-shares mean-revert, so leaders read as extended); it never feeds a score, signal or allocation. Can be wrong or overconfident — verify against the underlying panels.', 'AI 对中港看板的综合分析，以美国宏观、美元、全球流动性与商品为背景。仅供研究参考——它解读周期、标注信号冲突并检验政策／流动性假设（A股均值回归，故强势股视为已拉伸），绝不参与任何评分、信号或仓位。可能出错或过度自信，请对照各底层面板核实。') }}
+  </h2>
+  <div data-brief-body class="muted sm">{{ t('Loading the latest AI brief… it regenerates daily after the close.', '正在加载最新AI简报…每个交易日收盘后更新。') }}</div>
+</div>
+
+<div class="panel ai-brief brief-tab" data-lens="btc" data-brief-src="btc_brief.json">
+  <h2>₿ {{ t('Bitcoin synthesis', '比特币综合') }}
+    {{ help('An AI-generated synthesis of the Bitcoin Vector — cycle, valuation, leverage, on-chain activity and ETF flows, with US macro and global liquidity as backdrop (BTC as the long-duration tail of global liquidity). RESEARCH CONTEXT only — it never feeds a score, signal or allocation, and can be wrong or overconfident. Verify against the Bitcoin Vector panels.', 'AI 对比特币向量的综合分析 — 周期、估值、杠杆、链上活动与 ETF 资金流，以美国宏观与全球流动性为背景（比特币为全球流动性的长久期尾部）。仅供研究参考 — 绝不参与任何评分、信号或仓位，且可能出错或过度自信。请对照比特币向量面板核实。') }}
+  </h2>
+  <div data-brief-body class="muted sm">{{ t('Loading the latest AI brief… it regenerates daily after the close.', '正在加载最新AI简报…每个交易日收盘后更新。') }}</div>
+</div>
+
+<div class="panel">
+  <p class="muted" style="font-size:12px;margin:0">{{ t('AI research context, not investment advice — generated by an LLM from the day\'s free public data and the dashboards\' own outputs.', 'AI 研究背景，非投资建议 — 由大模型根据当日免费公开数据及各看板自身输出生成。') }}
+    {% if as_of %} · {{ t('Page built', '页面生成于') }} {{ as_of }}{% endif %}</p>
+</div>
+
+<script src="theme.js"></script>
+<script src="aibrief.js"></script>
+<script>
+/* Market toggle — flips which .ai-brief panel is visible. Visibility is purely
+   class-based so it never conflicts with aibrief.js (which only fills bodies and
+   clears inline display on load). Supports #macro/#china/#btc deep-links. */
+(function () {
+  var btns = document.querySelectorAll(".brief-tab-btn");
+  var panels = document.querySelectorAll(".ai-brief.brief-tab");
+  function show(lens) {
+    for (var i = 0; i < panels.length; i++) {
+      panels[i].classList.toggle("active", panels[i].getAttribute("data-lens") === lens);
+    }
+    for (var j = 0; j < btns.length; j++) {
+      var on = btns[j].getAttribute("data-lens") === lens;
+      btns[j].classList.toggle("active", on);
+      btns[j].setAttribute("aria-selected", on ? "true" : "false");
+    }
+    try { history.replaceState(null, "", "#" + lens); } catch (e) {}
+  }
+  for (var k = 0; k < btns.length; k++) {
+    btns[k].addEventListener("click", function () { show(this.getAttribute("data-lens")); });
+  }
+  var h = (location.hash || "").replace("#", "");
+  if (h === "macro" || h === "china" || h === "btc") show(h);
+})();
+</script>
+<footer class="site-footer">
+  <span class="made">Made with ❤️ in Canada</span>
+  <span class="dev">Developed by Chris Wong</span>
+</footer>
+</body>
+</html>

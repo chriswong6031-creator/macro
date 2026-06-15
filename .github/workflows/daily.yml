@@ -154,7 +154,6 @@ jobs:
           # page). ~15s month-end walk; additive (never blocks build_site).
           python -m scripts.build_factor_series || echo "factor series skipped (additive)"
           run_py "macro dashboard + US stocks (build_site)" scripts.build_site
-          run_py "daily brief (daily_brief)" scripts.daily_brief
           exit 0
       - name: build china a-share dashboard
         # after build_site, before build_vector (which writes the landing hub last):
@@ -234,6 +233,11 @@ jobs:
           cat /tmp/mb.log
           [ "$rc" -ne 0 ] && echo "::warning title=master_brain::rc=$rc (non-fatal)"
           exit 0
+      - name: AI Daily Brief page (build_aibrief)
+        # consolidated page (site/aibrief.html) surfacing the three client-fetched AI
+        # briefs (master/china/btc) as toggle tabs. Pure render — order-independent;
+        # resilient (returns 0). Replaces the retired deterministic daily_brief.
+        run: python -m scripts.build_aibrief
       - name: rebuild stock-search libraries (resilient — guarantees the analyzers ship)
         # build_china/build_hk render their dashboards but SWALLOW errors (return 0),
         # so a failure there silently 404s the per-stock search. This rebuilds the

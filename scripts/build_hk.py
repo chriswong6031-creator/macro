@@ -567,13 +567,6 @@ def main() -> int:
             _build_sector_pages(env)
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("hk sector pages build failed (%s); skipping", e)
-
-        # daily bilingual narrative brief
-        try:
-            from scripts import hk_brief
-            hk_brief.main()
-        except Exception as e:  # noqa: BLE001 — additive, never fatal
-            log.error("hk brief build failed (%s); skipping", e)
     except Exception as e:  # noqa: BLE001
         log.error("hk page render failed (%s); skipping", e)
         return 0

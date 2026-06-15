@@ -683,13 +683,6 @@ def main() -> int:
             _build_sector_pages(env)
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("china sector pages build failed (%s); skipping", e)
-
-        # daily bilingual narrative brief
-        try:
-            from scripts import china_brief
-            china_brief.main()
-        except Exception as e:  # noqa: BLE001 — additive, never fatal
-            log.error("china brief build failed (%s); skipping", e)
     except Exception as e:  # noqa: BLE001
         log.error("china page render failed (%s); skipping", e)
         return 0
