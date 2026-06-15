@@ -1208,6 +1208,23 @@ credit_cycle:
     us: {gap: us_gap, dsr: us_dsr, label_en: "United States", label_zh: "美国"}
     cn: {gap: cn_gap, dsr: cn_dsr, label_en: "China",         label_zh: "中国"}
 
+# =============================================================================
+# Treasury auction RESULTS (collectors/treasury_auctions.py + engine/treasury_supply.py)
+# — the DEMAND side of the Treasury market from the keyless TreasuryDirect
+# TA_WS/securities/auctioned feed. Display-only "supply absorption" panel on the
+# bonds page: per-tenor bid-to-cover / indirect-share / dealer-takedown z-scores vs
+# trailing same-tenor auctions + the bills-vs-coupons issuance mix. NEVER scored.
+treasury_auctions:
+  enabled: true
+  retries: 3
+  history_days: 3650               # the feed caps at the newest ~250 rows/type regardless
+  types: [Bill, Note, Bond, TIPS, FRN]
+  trailing: 8                      # same-tenor auctions in the z-score baseline window
+  min_trailing: 5                  # need this many priors before scoring an auction
+  strong_z: 0.6                    # |absorption z| band for the strong / soft tags
+  recent: 10                       # auctions shown in the recent-auctions table
+  mix_window_days: 90              # bills-vs-coupons mix window (vs the prior 90d)
+
 commodities:
   assets:                          # name: [yahoo price ticker, cot store-series, class]
     gold:   ["GC=F", cot_gold,   precious]

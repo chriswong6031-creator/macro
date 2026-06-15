@@ -358,6 +358,53 @@ html[data-theme="dark"] .measured-edge{background:rgba(26,127,67,.12)}
   </div>
   {% endif %}
 
+  <!-- ===================== TREASURY SUPPLY ABSORPTION (display-only) ===================== -->
+  {% if treasury_supply %}
+  {% set ts = treasury_supply %}
+  {% set TAG = {'strong': (C.green, '强劲'), 'soft': (C.red, '偏弱'), 'in-line': (C.muted, '中性'), 'n/a': (C.faint, '—')} %}
+  <div class="card">
+    <h2>{{ t('Treasury supply absorption — is the market digesting the debt?', '美债供给吸收 · 市场能否顺利消化债务？') }}</h2>
+    <div style="margin:6px 0 6px">
+      {% set sc = C.green if ts.n_strong > ts.n_soft else (C.red if ts.n_soft >= 2 else C.muted) %}
+      <span class="band-chip" style="background:{{ sc }}">{{ t('Recent coupon demand', '近期票息需求') }} · {{ ts.n_soft }}/{{ ts.n_scored }} {{ t('soft', '偏弱') }}</span>
+      {% if ts.supply %}
+      {% set pc = C.amber if ts.supply.pressure == 'coupon supply rising' else (C.teal if ts.supply.pressure == 'coupon supply easing' else C.muted) %}
+      <span class="band-chip" style="background:{{ pc }};margin-left:6px">{{ t('Duration supply', '久期供给') }} · {{ t({'coupon supply rising': 'rising', 'coupon supply easing': 'easing', 'stable': 'stable', 'neutral': 'n/a'}.get(ts.supply.pressure, ts.supply.pressure), {'coupon supply rising': '上升', 'coupon supply easing': '回落', 'stable': '平稳', 'neutral': '—'}.get(ts.supply.pressure, '')) }}</span>
+      {% endif %}
+    </div>
+    <div class="sub faint" style="margin:2px 0 10px"><b>{{ t(ts.headline, '') }}</b> · {{ t('as of', '截至') }} {{ ts.asof }}</div>
+    {% if ts.supply %}
+    <div class="kpis" style="margin-bottom:4px">
+      {{ kpi('Coupon issuance (90d)', '票息发行(90日)', ts.supply.coupon_bn, ' $bn') }}
+      {{ kpi('vs prior 90d', '较前90日', ('%+.1f'|format(ts.supply.coupon_chg_pct)) if ts.supply.coupon_chg_pct is not none else none, '%') }}
+    </div>
+    {% endif %}
+    <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:6px">
+      <tr style="color:var(--muted);font-size:11px;text-transform:uppercase">
+        <th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--grid)">{{ t('auction', '拍卖') }}</th>
+        <th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--grid)">{{ t('tenor', '期限') }}</th>
+        <th style="text-align:right;padding:4px 8px;border-bottom:1px solid var(--grid)">{{ t('bid-to-cover', '认购倍数') }}</th>
+        <th style="text-align:right;padding:4px 8px;border-bottom:1px solid var(--grid)">{{ t('indirect', '间接') }}</th>
+        <th style="text-align:right;padding:4px 8px;border-bottom:1px solid var(--grid)">{{ t('dealer', '交易商') }}</th>
+        <th style="text-align:right;padding:4px 8px;border-bottom:1px solid var(--grid)">{{ t('demand', '需求') }}</th>
+      </tr>
+      {% for r in ts.rows %}
+      {% set tg = TAG.get(r.tag, (C.muted, r.tag)) %}
+      <tr>
+        <td style="padding:5px 8px;border-bottom:1px solid var(--grid);color:var(--muted)">{{ r.date }}{% if r.reopening %} <span class="faint" style="font-size:10px">re</span>{% endif %}</td>
+        <td style="padding:5px 8px;border-bottom:1px solid var(--grid)"><b>{{ r.tenor }}</b> <span class="faint" style="font-size:11px">{{ r.type }}</span></td>
+        <td style="text-align:right;padding:5px 8px;border-bottom:1px solid var(--grid)">{{ '%.2f'|format(r.bid_to_cover) if r.bid_to_cover is not none else '—' }}</td>
+        <td style="text-align:right;padding:5px 8px;border-bottom:1px solid var(--grid)">{{ ('%.0f'|format(r.indirect_pct) ~ '%') if r.indirect_pct is not none else '—' }}</td>
+        <td style="text-align:right;padding:5px 8px;border-bottom:1px solid var(--grid)">{{ ('%.0f'|format(r.dealer_pct) ~ '%') if r.dealer_pct is not none else '—' }}</td>
+        <td style="text-align:right;padding:5px 8px;border-bottom:1px solid var(--grid);color:{{ tg[0] }};font-weight:700">{{ t(r.tag, tg[1]) }}{% if r.absorption_z is not none %} <span class="faint" style="font-weight:400;font-size:11px">{{ '%+.1f'|format(r.absorption_z) }}σ</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    <div class="sub faint" style="margin-top:8px">{{ t('Each auction is z-scored vs the trailing same-tenor auctions: bid-to-cover & indirect (foreign / real-money) share up = stronger; a high primary-dealer takedown = weaker end-demand (the dealers are the backstop). Indirect & dealer are shares of total accepted.', '每场拍卖相对同期限近期拍卖做z-score：认购倍数与间接（外国/真实货币）占比越高=需求越强；一级交易商承接占比高=终端需求越弱（交易商是兜底方）。间接与交易商均为占总中标的比例。') }}</div>
+    <div class="sub faint" style="margin-top:6px">{{ t(ts.note_en, ts.note_zh) }}</div>
+  </div>
+  {% endif %}
+
   <!-- ===================== CROSS-ASSET DRIVERS (AI hand-off) ===================== -->
   <div class="sec-head">{{ t('Cross-asset hand-off — what bonds imply for the other boards', '跨资产传导 · 债券对其他面板的含义') }}</div>
   <div class="card">

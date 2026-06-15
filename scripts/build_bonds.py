@@ -503,12 +503,22 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("credit-cycle snapshot failed: %s", e)
 
+    # Treasury supply absorption (TreasuryDirect auction results; additive leaf, display-
+    # only — per-tenor demand z-scores + duration-supply trend). None if data absent.
+    # NEVER scored, never an MRS leg.
+    treasury_supply = None
+    try:
+        from engine import treasury_supply as _ts
+        treasury_supply = _ts.snapshot()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("treasury-supply snapshot failed: %s", e)
+
     from engine.i18n import tr, td
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     env.globals.update(tr=tr, td=td)
     html = env.get_template("bonds.html.j2").render(
         C=C, as_of=as_of_disp, built=built, span=span, vm=vm, charts=charts, credit_cycle=credit_cycle,
-        fed_path=fed_path,
+        fed_path=fed_path, treasury_supply=treasury_supply,
         timeline=timeline, timeline_days=acfg["timeline_days"], n_alerts=len(recent))
     site = config.ROOT / config.load()["storage"]["site_dir"]
     (site / "bonds.html").write_text(html)

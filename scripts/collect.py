@@ -62,6 +62,7 @@ def all_adapters() -> dict:
         ("ofr", "collectors.ofr", "OfrAdapter"),                   # OFR short-term funding monitor (repo/SOFR plumbing)
         ("prediction_markets", "collectors.prediction_markets", "PredictionMarketsAdapter"),  # Polymarket macro-event odds
         ("bis", "collectors.bis", "BisAdapter"),                   # BIS global credit-cycle (credit-gap + DSR)
+        ("treasury_auctions", "collectors.treasury_auctions", "TreasuryAuctionsAdapter"),  # TreasuryDirect auction RESULTS -> supply-absorption panel (display-only)
         # China A-share dashboard — see research/CHINA_DATA_AUDIT.md
         ("china_prices", "collectors.china_prices", "ChinaPriceAdapter"),
         ("china_macro", "collectors.china_macro", "ChinaMacroAdapter"),
