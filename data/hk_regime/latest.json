@@ -31,18 +31,18 @@
       {
         "key": "dxy",
         "label": "US Dollar (DXY)",
-        "z": 0.47,
+        "z": 0.49,
         "sign": -1,
         "risk": "off",
-        "level": 99.603
+        "level": 99.638
       },
       {
         "key": "vix",
         "label": "Volatility (VIX)",
-        "z": -0.28,
+        "z": -0.29,
         "sign": -1,
         "risk": "neutral",
-        "level": 16.16
+        "level": 16.1
       },
       {
         "key": "spy",
@@ -50,12 +50,12 @@
         "z": 0.49,
         "sign": 1.0,
         "risk": "on",
-        "level": 754.875
+        "level": 754.88
       },
       {
         "key": "copper_gold",
         "label": "Copper / Gold",
-        "z": 1.18,
+        "z": 1.19,
         "sign": 1.0,
         "risk": "on",
         "level": 0.0015
@@ -71,10 +71,10 @@
       {
         "key": "eem",
         "label": "EM equity (EEM)",
-        "z": 0.74,
+        "z": 0.75,
         "sign": 1.0,
         "risk": "on",
-        "level": 69.68
+        "level": 69.78
       },
       {
         "key": "vhsi",
