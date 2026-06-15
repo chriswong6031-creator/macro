@@ -330,6 +330,15 @@ def main() -> int:
     # Computed once over the whole panel; graceful (absent feed => {} => no chip).
     from engine.crowding import compute_fragility
     fragility_map = compute_fragility()
+    # per-stock factor EXPOSURE betas (DISPLAY-ONLY risk decomposition, never scored;
+    # validated in reports/factor-exposure-sanity.md). Factor return panel built once;
+    # each name's betas computed inline below. Graceful: absent proxies => no panel.
+    from engine import factor_exposure as _fexp
+    try:
+        _fac_ret = _fexp.factor_returns()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("factor-exposure proxies unavailable (%s)", e)
+        _fac_ret = None
     index, cand, built, failed = [], [], 0, 0
     for ticker, close, high, name, sector in universe():
         try:
@@ -369,6 +378,13 @@ def main() -> int:
             rec["gex"] = gex_by_ticker[ticker]
         if fragility_map.get(ticker):
             rec["fragility"] = fragility_map[ticker]
+        if _fac_ret is not None and not _fac_ret.empty:
+            try:                                # factor-exposure betas (display-only)
+                exp = _fexp.exposure(close.pct_change(fill_method=None), _fac_ret)
+                if exp:
+                    rec["exposure"] = exp
+            except Exception as e:  # noqa: BLE001 — additive, never fatal
+                log.debug("exposure %s skipped: %s", ticker, e)
         ladder_rows.append(ticker_alerts.ladder_row(ticker, rec.get("ladder"), rec.get("asof")))
         safe = ticker.replace("=", "_").replace("^", "_")
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
