@@ -84,7 +84,7 @@ jobs:
     needs: collect
     if: always()            # a scraper failure must still produce a dashboard from cached data
     runs-on: ubuntu-latest
-    timeout-minutes: 40     # search libraries grew (US ~1500 + China ~800 + HK); headroom vs the 20m cap
+    timeout-minutes: 75     # build_site's residual-alpha cross-section (S&P 1500) runs 16-32m; 40 hit the cap and killed build_vector (landing hub). TODO: optimise compute_residual_alpha, then lower this.
     steps:
       - uses: actions/checkout@v4
         with:
