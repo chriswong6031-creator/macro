@@ -701,6 +701,39 @@
     </details>
   </div>
 
+  <!-- ===================== SIGNAL STACK — consolidated cross-subsystem read ===================== -->
+  {% if signal_stack %}
+  <div class="panel span12" id="signal-stack">
+    <h2>{{ t('Signal stack — where the evidence agrees & disagrees', '信号堆栈 — 证据在何处一致、在何处分歧') }}
+      {{ help("Institutions don't ask 'is it bullish?' — they ask 'which parts of the evidence disagree?'. This collapses the dashboard's subsystem reads into one stack: each leg's lean, the regime-core agreement, and the single biggest contradiction. It re-presents signals detailed below — it invents nothing and is never scored. SCORED legs drive the regime / allocation; CONTEXT legs are positioning colour only.", "机构不会问'是不是看多？'，而是问'证据的哪些部分相互矛盾？'。这把仪表盘各子系统读数汇聚为一个堆栈：每条腿的倾向、周期核心一致度，以及最大的那条矛盾。它只是对下方详述信号的再呈现 — 不创造新信号，也从不计入评分。已评分腿驱动周期／仓位；背景腿仅为仓位色彩。") }}
+    </h2>
+    <div class="sstack-grid">
+      <div class="sstack-legs">
+        {% for leg in signal_stack.legs %}
+        <div class="sstack-leg">
+          <span class="sstack-dot tone-{{ leg.tone }}"></span>
+          <span class="sstack-name">{{ t(leg.label_en, leg.label_zh) }}{% if leg.tier == 'context' %}<span class="sstack-tier">{{ t('context', '背景') }}</span>{% endif %}</span>
+          <span class="sstack-state tone-{{ leg.tone }}">{{ t(leg.state_en, leg.state_zh) }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="sstack-verdict">
+        <div class="sstack-final tone-{{ signal_stack.anchor_tone }}">{{ t('Final', '结论') }}: <b>{{ t(signal_stack.final_en, signal_stack.final_zh) }}</b></div>
+        {% if signal_stack.agreement_pct is not none %}
+        <div class="sstack-agree">{{ t('Regime agreement', '周期一致度') }} <b>{{ signal_stack.agreement_pct }}%</b>{% if signal_stack.quality_en %} — {{ t(signal_stack.quality_en, signal_stack.quality_zh) }}{% endif %}</div>
+        {% endif %}
+        <div class="sstack-tally"><b class="tone-up">{{ signal_stack.n_bull }}</b> {{ t('constructive', '建设性') }} · <b>{{ signal_stack.n_flat }}</b> {{ t('neutral', '中性') }} · <b class="tone-down">{{ signal_stack.n_bear }}</b> {{ t('cautionary', '谨慎') }} {{ t('of', '／共') }} {{ signal_stack.n }}</div>
+        {% if signal_stack.contradiction_en %}
+        <div class="sstack-contra">⚠ {{ t('Main contradiction', '主要矛盾') }}: {{ t(signal_stack.contradiction_en, signal_stack.contradiction_zh) }}</div>
+        {% else %}
+        <div class="sstack-contra ok">✓ {{ t('Broad agreement — no leg is fighting the regime', '广泛一致 — 没有腿与周期相左') }}</div>
+        {% endif %}
+      </div>
+    </div>
+    <p class="muted sm" style="margin:10px 0 0">{{ t('Display-only consolidation of the signals detailed below — it changes no score. The agreement % is the validated regime-core read; the legs are context.', '仅为下方详述信号的展示性汇总 — 不改变任何评分。一致度为经验证的周期核心读数；各腿为背景。') }}</p>
+  </div>
+  {% endif %}
+
   <!-- ===================== MAJOR US INDEXES — HEALTH & RISK ===================== -->
   <div class="panel span12" id="index-health">
     <h2>{{ t('Major US indexes — health & drawdown risk', '美国主要指数 — 健康度与回撤风险') }}

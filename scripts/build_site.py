@@ -2334,6 +2334,7 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("market gamma view failed (%s)", e)
     from engine.alerts import alert_views
+    from engine.signal_stack import build_signal_stack
     # One shared view-model feeds BOTH the macro-regime page and the US Stock
     # Dashboard — the same dashboard.html.j2 is rendered twice with a `mode` flag
     # (macro / stocks) that selects which sections show. No data is recomputed and
@@ -2388,6 +2389,7 @@ def main() -> int:
         chart_vix_term=chart_vix_term(f, _cf),     # VIX level + term-structure ratio
         cross_asset=cross_asset_snap,
         fear_euphoria=fear_euphoria_synthesis(latest, f),
+        signal_stack=build_signal_stack(latest),  # consolidated cross-subsystem read (display-only)
     )
     # Write the macro dashboard straight to macro.html. index.html is owned
     # solely by build_vector.build_landing() (the landing hub) — keeping the raw
