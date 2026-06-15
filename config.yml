@@ -2278,6 +2278,11 @@ china:
     min_mktcap_yi: 30               # liquidity floor (亿 RMB total market cap)
     history_period: "5y"            # yfinance close history per name (engine needs >=300 rows)
     enrich_per_run: 120             # max NEW yfinance get_info name/sector lookups per nightly run
+    # CSI index constituent lists unioned into the search universe (via akshare).
+    # Stocks already in the Sina top-800 are deduplicated; extras get mktcap_yi=30 placeholder.
+    index_constituents:
+      - "000300"                    # CSI 300 (沪深300) — 300 large-caps
+      - "000852"                    # CSI 1000 (中证1000) — 1000 mid-caps
     sina:
       url: https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeData
       node: hs_a                    # Hu-Shen A-share board (Shanghai + Shenzhen; excludes Beijing)
@@ -2567,6 +2572,193 @@ hk:
     calibration:
       start_date: "2005-01-01"
       split_date: "2016-01-01"
+      forward_days: [21, 63]
+      ladder_fwd: 21
+      ladder_step: 10
+
+# ============================================================================
+# Section 5 — Canada / S&P/TSX dashboard.  Full clone of the US/China/HK regime
+# dashboard, re-thought for Canada: see the recon notes baked into this block.
+# The TSX is ~70% Financials + Energy + Materials with almost no mega-cap tech,
+# CAD is a commodity/petro currency (oil + gold), and the BoC tracks the Fed —
+# so the engine LEADS with a commodity / CAD / BoC-vs-Fed cross-asset overlay
+# (the HK global-risk-overlay pattern), not a tech-growth read.  Macro is keyless:
+# Bank of Canada VALET (rates/curve/CPI/FX) + StatsCan WDS (jobs/GDP/CPI) + a few
+# FRED comparables (housing, CAD REER, US rates for the BoC↔Fed coupling spread).
+# Priors mirror hk.engine; calibration + Phase-0 validation are a follow-up, so
+# the overlay legs + reversal/low-vol screeners ship DISPLAY-ONLY until validated.
+# ============================================================================
+canada:
+  # -- Plane A: prices (group=canada) -----------------------------------------
+  yahoo:
+    retries: 3
+    backoff_base_s: 5
+    batch_size: 60
+    benchmark: "^GSPTSE"            # S&P/TSX Composite — sector-RS benchmark + market anchor (deep history)
+    market_index: "^GSPTSE"        # ladder-calibration anchor
+    indices:                       # ticker: display name
+      "^GSPTSE": S&P/TSX Composite
+      "XIU.TO": iShares S&P/TSX 60
+      "XIC.TO": iShares Core S&P/TSX Composite
+    fx:
+      "USDCAD=X": USDCAD
+    sector_etfs:                   # ticker: [plain name, representative-constituent TradingView symbol]
+      "XEG.TO": [Energy, "TSX:CNQ"]
+      "XFN.TO": [Financials, "TSX:RY"]
+      "ZEB.TO": [Banks, "TSX:TD"]
+      "XGD.TO": [Gold Miners, "TSX:ABX"]
+      "XMA.TO": [Materials, "TSX:NTR"]
+      "XBM.TO": [Base Metals, "TSX:TECK.B"]
+      "XIT.TO": [Information Technology, "TSX:SHOP"]
+      "XUT.TO": [Utilities, "TSX:FTS"]
+      "XRE.TO": [Real Estate, "TSX:REI.UN"]
+      "XST.TO": [Consumer Staples, "TSX:ATD"]
+      "XCG.TO": [Consumer Discretionary, "TSX:QSR"]
+      "XCD.TO": [Communication Services, "TSX:BCE"]
+
+  # -- Plane B: macro — Bank of Canada VALET + StatsCan WDS + FRED comparables -
+  # All keyless. The CanadaMacroAdapter fetches each stored_col independently and
+  # degrades (one broken series can't kill the others); history archived forever
+  # by store.upsert. One parquet per stored_col under group `canada_macro`.
+  macro:
+    boc_base_url: https://www.bankofcanada.ca/valet/observations
+    statcan_url: https://www150.statcan.gc.ca/t1/wds/rest/getDataFromVectorsAndLatestNPeriods
+    fred_base_url: https://fred.stlouisfed.org/graph/fredgraph.csv
+    retries: 3
+    boc_recent: 6000               # VALET observations/<series>/json?recent=N (max daily history)
+    enabled: [boc, statcan, fred]  # toggle whole sources
+    boc_series:                    # stored_col: VALET series name
+      policy_rate: V39079          # target overnight (policy) rate
+      corra: AVG.INTWO             # CORRA overnight repo average
+      cpi_yoy: STATIC_TOTALCPICHANGE   # headline CPI YoY % (BoC, fast)
+      goc_2y: BD.CDN.2YR.DQ.YLD    # 2Y GoC benchmark yield
+      goc_5y: BD.CDN.5YR.DQ.YLD
+      goc_10y: BD.CDN.10YR.DQ.YLD  # 10Y GoC
+      goc_long: BD.CDN.LONG.DQ.YLD
+      goc_rrb: BD.CDN.RRB.DQ.YLD   # real-return bond yield (10y - rrb = breakeven inflation)
+      usdcad_boc: FXUSDCAD         # USD/CAD (BoC noon)
+    statcan_vectors:               # stored_col: StatsCan vector id (POST latestN)
+      unemployment: v2062815       # LFS unemployment rate (fastest hard labour read)
+      gdp_monthly: v65201210       # monthly real GDP by industry (index level -> YoY in engine)
+      cpi_index: v41690973         # CPI all-items index
+    fred_series:                   # stored_col: FRED id (comparables + US-coupling)
+      house_prices: QCAR628BIS     # BIS real residential property price (housing fragility)
+      cad_reer: RBCABIS            # BIS real broad effective CAD exchange rate
+      us_2y: DGS2                  # US 2Y (BoC-vs-Fed coupling spread)
+      us_10y: DGS10                # US 10Y
+    statcan_latest_n: 240          # months of history per StatsCan vector
+
+  # -- Breadth / drill-down universe: curated large-cap TSX names by sector -----
+  # Doubles as breadth denominator + per-sector drill-down + stock-search seed.
+  # Verified .TO symbols (dash convention for class/unit shares: GIB-A, RCI-B,
+  # TECK-B, CTC-A, EMP-A, *-UN REIT units). Dead/merged names excluded (MEG, NGT, NVEI).
+  constituents:
+    Financials: ["RY.TO","TD.TO","BNS.TO","BMO.TO","CM.TO","NA.TO","MFC.TO","SLF.TO","GWO.TO","IFC.TO","POW.TO","BN.TO","BAM.TO"]
+    Energy: ["ENB.TO","TRP.TO","CNQ.TO","SU.TO","CVE.TO","IMO.TO","TOU.TO","PPL.TO","ARX.TO","WCP.TO"]
+    Materials: ["ABX.TO","AEM.TO","WPM.TO","FNV.TO","K.TO","NTR.TO","TECK-B.TO","FM.TO","LUN.TO","CCO.TO"]
+    Industrials: ["CP.TO","CNR.TO","WSP.TO","WCN.TO","TFII.TO","GFL.TO","STN.TO"]
+    Technology: ["SHOP.TO","CSU.TO","GIB-A.TO","OTEX.TO","DSG.TO"]
+    Communication: ["BCE.TO","T.TO","RCI-B.TO","QBR-B.TO"]
+    Utilities: ["FTS.TO","EMA.TO","H.TO","AQN.TO","CPX.TO","NPI.TO"]
+    Staples: ["ATD.TO","L.TO","DOL.TO","MRU.TO","WN.TO","SAP.TO","EMP-A.TO"]
+    Discretionary: ["MG.TO","QSR.TO","GIL.TO","CTC-A.TO","ATZ.TO","BYD.TO","DOO.TO"]
+    Real Estate: ["REI-UN.TO","CAR-UN.TO","FCR-UN.TO","GRT-UN.TO","CSH-UN.TO"]
+
+  breadth:
+    lookback_days_live: 1100        # ~3y for 200DMA/NH-NL + cycle analysis on the search library
+    ma_windows: [50, 200]
+    nhnl_window: 252
+    min_coverage: 0.6               # fail the run if < this fraction of curated names resolve
+
+  # -- Stock-search library universe (collectors/canada_universe.py) -----------
+  # DECOUPLED from `constituents` (the curated large-cap BREADTH/calibration gauge,
+  # which must stay stable — the regime engine is tuned on it). This is the BROAD
+  # searchable set + the residual-alpha cross-section: the full S&P/TSX Composite
+  # via the iShares XIC ETF holdings CSV (keyless; gives ticker + proper company
+  # name + GICS sector + weight in one fetch — no get_info enrichment loop needed).
+  # Mirrors the US design (breadth = S&P 500; search = the broader caches) and the
+  # china_search pattern. closes/members committed (small) so the engine CI job has
+  # them via git pull. The build library reads these FIRST, then the breadth cache,
+  # then the sector ETFs / indices.
+  search_universe:
+    enabled: true
+    size: 250                       # top-N Composite names by index weight -> searchable
+    history_period: "5y"            # yfinance close history per name (engine needs >=300 rows)
+    min_coverage: 0.6               # fail the run if < this fraction resolve closes
+    ishares:
+      url: https://www.blackrock.com/ca/investors/en/products/239837/fund/1464253357814.ajax
+      params: {fileType: csv, fileName: XIC_holdings, dataType: fund}
+
+  # -- Global / commodity overlay (the PRIMARY Canada driver) ------------------
+  # Concurrent commodity / CAD / BoC-vs-Fed risk read. sign = +1 if RISING-is-risk-on
+  # for the TSX, -1 if RISING-is-risk-off. copper_gold computed in code from yahoo
+  # HG=F / GC=F. All inputs already collected in the `yahoo` group. DISPLAY-FIRST
+  # (informs the read; not a silently-scored growth/inflation leg pre-validation).
+  global_factors:
+    slope_window: 20
+    baseline_window: 60
+    z_threshold: 0.40
+    risk_on_z: 0.30                 # composite z above this = Risk ON; below -this = Risk OFF
+    min_factors: 3                  # need >= this many factors present, else risk_state = unknown
+    components:
+      oil:    {group: yahoo, ticker: "CL=F",      sign: 1.0, weight: 1.0}      # WTI — CAD terms-of-trade + energy weight
+      gold:   {group: yahoo, ticker: "GC=F",      sign: 1.0, weight: 0.75}     # gold — TSX gold weight + safe-haven
+      copper_gold: {sign: 1.0, weight: 1.0}                                    # HG=F / GC=F — global cyclical pulse
+      usdcad: {group: yahoo, ticker: "USDCAD=X",  sign: -1, weight: 1.0}       # CAD strength (USDCAD down = TSX risk-on)
+      spy:    {group: yahoo, ticker: "SPY",       sign: 1.0, weight: 0.75}     # US equity beta
+      vix:    {group: yahoo, ticker: "^VIX",      sign: -1, weight: 1.0, use_log: true}
+      dxy:    {group: yahoo, ticker: "DX-Y.NYB",  sign: -1, weight: 0.5}       # USD strength = commodity headwind
+    coupling:                       # BoC-vs-Fed policy + GoC-vs-UST curve (display read; canada_macro cols)
+      boc_rate: policy_rate
+      goc_2y: goc_2y
+      goc_10y: goc_10y
+      us_2y: us_2y
+      us_10y: us_10y
+
+  # -- Engine tunables (mirror of hk.engine, Canada inputs) -------------------
+  engine:
+    scoring: {slope_window: 20, baseline_window: 60, z_threshold: 0.45, min_components: 2}
+    growth_axis:
+      components:
+        gdp_trend: {weight: 1.0}            # StatsCan monthly real GDP YoY direction
+        unemployment_trend: {weight: 1.0}   # LFS unemployment direction (inverted in code: falling = growth+)
+        cyclical_defensive: {weight: 1.0}   # energy+materials+gold+banks vs utilities+staples+telecom
+        global_growth: {weight: 0.75}       # copper/gold (global cyclical pulse; TSX is commodity-levered)
+        breadth_direction: {weight: 0.5}    # % above 50d direction
+        tsx_spx: {weight: 0.5}              # TSX/SPX relative — commodity-cyclical leadership vs the US
+      cyclical_basket: ["XEG.TO","XMA.TO","XGD.TO","ZEB.TO","XBM.TO"]   # energy/materials/gold/banks/base-metals
+      defensive_basket: ["XUT.TO","XST.TO","XCD.TO"]                    # utilities/staples/telecom
+    inflation_axis:
+      components:
+        cpi_direction: {weight: 1.5}        # BoC headline CPI YoY direction (strong, fast)
+        breakeven_direction: {weight: 1.0}  # GoC 10y - RRB breakeven direction
+        inflation_beta_basket: {weight: 0.75}  # energy+materials vs utilities+telecom+tech
+      inflation_long_basket: ["XEG.TO","XMA.TO","XGD.TO"]              # commodity beneficiaries
+      inflation_short_basket: ["XUT.TO","XCD.TO","XIT.TO"]            # rate/duration-sensitive
+    liquidity:                              # BoC stance: policy-rate easing + curve steepening
+      components:
+        policy_easing: {weight: 1.0}        # BoC policy rate falling = expanding
+        curve_steepening: {weight: 0.75}    # GoC 10y-2y steepening = easing/expansion ahead
+      roc_window_d: 20
+    quad:
+      hysteresis_days: 7
+      shock_override_z: 0.85
+    cycle:
+      index_near_high_pct: 3.0
+      high_window_d: 60
+    sector_preferences:                     # framework-preferred Canada sector ETFs per quad
+      Goldilocks:   ["XIT.TO","XCG.TO","ZEB.TO","XST.TO"]              # growth+ infl-: tech/discretionary/banks/staples
+      Reflation:    ["XEG.TO","XMA.TO","XGD.TO","XFN.TO"]              # growth+ infl+: energy/materials/gold/financials
+      Stagflation:  ["XEG.TO","XGD.TO","XMA.TO","XUT.TO"]              # growth- infl+: energy/gold/materials/utilities
+      Growth-scare: ["XUT.TO","XST.TO","XCD.TO","ZEB.TO"]             # growth- infl-: utilities/staples/telecom/banks
+    rs_ranking:
+      benchmark: "^GSPTSE"
+      momentum_windows: [20, 60]
+      trend_window: 200
+      percentile_lookback_d: 252
+    calibration:
+      start_date: "2001-01-01"              # TSX sector ETFs start ~2001 (XIU 1999)
+      split_date: "2013-01-01"
       forward_days: [21, 63]
       ladder_fwd: 21
       ladder_step: 10
