@@ -354,6 +354,71 @@ jobs:
           done
           echo "::warning::could not push factor series after 5 attempts (non-fatal — daily reads the last committed json)"
 
+  # AI stock-research briefs = ~30 DeepSeek calls (~20 min) — the heaviest single
+  # step in the build, and what pushed the engine job past its timeout. build_site
+  # now only writes the target ticker list (data/catalyst/brief_targets.json); the
+  # LLM calls run HERE, isolated and in parallel with `publish`. The stock page
+  # fetches site/stockbrief/<T>.json client-side, so the briefs land on main for
+  # the next run (<=1-run stale is fine) and the LLM never gates the daily deploy.
+  # `publish` needs ONLY engine, so a slow/failed briefs job can't block go-live.
+  stock_briefs:
+    needs: engine
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - run: git pull origin main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      # the per-stock technical-signal leg reads constituent closes; restore-only.
+      - name: restore breadth (S&P 500) close cache
+        uses: actions/cache/restore@v4
+        with:
+          path: data/breadth/_closes_cache.parquet
+          key: breadth-closes-briefs-${{ github.run_id }}
+          restore-keys: breadth-closes-
+      - name: restore smallcap (S&P 600) close cache
+        uses: actions/cache/restore@v4
+        with:
+          path: data/smallcap_breadth/_closes_cache.parquet
+          key: smallcap-closes-briefs-${{ github.run_id }}
+          restore-keys: smallcap-closes-
+      - name: restore midcap (S&P 400) close cache
+        uses: actions/cache/restore@v4
+        with:
+          path: data/midcap_breadth/_closes_cache.parquet
+          key: midcap-closes-briefs-${{ github.run_id }}
+          restore-keys: midcap-closes-
+      - name: precompute AI stock briefs (build_stock_briefs)
+        run: python -m scripts.build_stock_briefs || echo "stock briefs skipped (additive)"
+      - name: commit stock briefs
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          # site/stockbrief is gitignored for local-dev cleanliness but must be TRACKED
+          # on main so the committed-tree deploy ships it (-f overrides the ignore).
+          git add -f site/stockbrief 2>/dev/null || true
+          git add data/catalyst/stockbrief_cache 2>/dev/null || true
+          if git diff --cached --quiet; then echo "no stock-brief changes"; exit 0; fi
+          git commit -m "stock-briefs: AI research briefs $(date -u +%F)"
+          # best-effort push (own files → rebases clean against engine/factor_series)
+          for i in 1 2 3 4 5; do
+            if git pull --rebase -X theirs origin main && git push; then
+              echo "pushed stock briefs on attempt $i"; exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "stock-briefs push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+          done
+          echo "::warning::could not push stock briefs after 5 attempts (non-fatal — the stock page falls back to the last committed briefs)"
+
   publish:
     # GitHub Pages can't serve a /site folder from a branch — deploy the
     # artifact instead (repo Settings -> Pages -> Source: GitHub Actions)

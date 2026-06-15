@@ -2487,21 +2487,26 @@ def main() -> int:
                     starters_json=_json.dumps(wl.get("suggested", []))))
             log.info("wrote %s", site / "watchlist.html")
 
-        # 🧠 AI stock briefs (LLM "Option 2") — DEFAULT-OFF LEAF. Precompute a
-        # research brief for a small, bounded set (the action-board standouts +
-        # the watchlist's suggested tickers) into site/stockbrief/<TICKER>.json,
-        # cached per ticker per day. The stock page fetches it client-side; the
-        # static site cannot call the model on demand (no server-side key). Gated
-        # by catalyst_stock.enabled — a no-op (and zero cost) when off.
+        # 🧠 AI stock briefs (LLM "Option 2") — DEFAULT-OFF LEAF. The bounded target
+        # set (action-board standouts + the watchlist's suggested tickers) is written
+        # to data/catalyst/brief_targets.json; the actual ~30 DeepSeek calls — by far
+        # the heaviest step on this critical path (~20m, and it bloated the engine CI
+        # job past its timeout) — run in the PARALLEL `stock_briefs` job
+        # (scripts.build_stock_briefs), which reads this file and writes
+        # site/stockbrief/<TICKER>.json. The stock page fetches those client-side, so a
+        # <=1-run-old brief set is fine and the LLM never gates the daily build/deploy.
+        # Gated by catalyst_stock.enabled — a no-op (and zero cost) when off.
         try:
             from engine import catalyst_stock
             if catalyst_stock.enabled():
                 brief_set = ([n["ticker"] for n in notable]
                              + list(config.load().get("watchlist", {}).get("suggested", [])))
-                briefs = catalyst_stock.precompute_briefs(brief_set, root=config.ROOT, site=site)
-                log.info("precomputed %d AI stock brief(s)", len(briefs))
+                tgt = config.data_dir() / "catalyst" / "brief_targets.json"
+                tgt.parent.mkdir(parents=True, exist_ok=True)
+                tgt.write_text(_json.dumps(brief_set))
+                log.info("wrote %d AI stock-brief target(s) for the parallel stock_briefs job", len(brief_set))
         except Exception as e:  # noqa: BLE001 — additive, never fatal
-            log.error("stock brief precompute failed: %s", e)
+            log.error("stock brief target write failed: %s", e)
     return 0
 
 
