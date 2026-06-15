@@ -1323,6 +1323,12 @@ commodities:
     dollar_trend_window_d: 60
     growth_proxy: copper_gold      # copper/gold ratio = market-implied growth/rates
 
+  market_drivers:                  # daily "what's driving the tape" attribution (DISPLAY-ONLY)
+    window_d: 5                    # attribution horizon — this week's dominant driver
+    z_window_d: 252               # history each leg's move is z-scored against
+    min_strength: 0.6             # below this avg |z| → "quiet" (no dominant driver)
+    dominance_ratio: 1.3          # top must lead the runner-up by this → else "mixed"
+
   gold_silver_ratio:               # precious-metals value/mean-reversion (gold/silver)
     pctile_lookback_d: 756         # ~3y rolling. MEASURED: high GSR (silver cheap) -> silver
     high_pctile: 0.80              # +11.7%/126d vs +3.5% at low GSR; mild same-direction gold
