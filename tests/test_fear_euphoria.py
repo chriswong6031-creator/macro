@@ -212,3 +212,34 @@ def test_lex_completeness():
         zh = i18n.tr(key)
         assert zh != key, key                                   # not English fallback
         assert any("一" <= ch <= "鿿" for ch in zh), key  # contains Han
+
+
+# ---- 13. complacency mirror (display-only euphoria-side block) ----------------
+_COMPLACENCY_FRAGILE = {
+    "calm": 2, "fragility": 2, "warning": True, "strong": True,
+    "state": "hidden_fragility",
+    "vix_low": True, "vix_pctile": 0.04,
+    "contango": True, "vix_term": 0.86,
+    "breadth_div": True, "spy_high_prox": 0.99, "breadth_above200_pctile": 0.12,
+    "credit_widen": True, "hy_oas_chg_21d_bp": 28.0,
+}
+
+
+def test_render_complacency_mirror():
+    latest = {**_LATEST_MIN,
+              "conditions": {**_LATEST_MIN["conditions"],
+                             "complacency": _COMPLACENCY_FRAGILE}}
+    html = _render_fe(latest, _FE_MIN)
+    assert "Complacency" in html and "自满" in html                  # bilingual header
+    assert "hidden fragility" in html and "隐性脆弱" in html          # warning state, both langs
+    assert "breadth not confirming" in html and "广度未确认" in html  # a weak-internals leg
+    assert "VIX low" in html and "HY credit widening" in html        # calm + credit legs
+    assert "never scored" in html                                    # display-only disclaimer
+    assert 'class="pos"' not in html and 'class="neg"' not in html   # neutral (no good/bad)
+
+
+def test_render_complacency_absent_when_missing():
+    # no complacency block -> the mirror simply does not render, panel still fine
+    html = _render_fe(_LATEST_MIN, _FE_MIN)
+    assert 'id="fear-euphoria"' in html
+    assert "hidden fragility" not in html

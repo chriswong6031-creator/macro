@@ -303,6 +303,41 @@ def conditions_frame(f: pd.DataFrame) -> pd.DataFrame:
     if cap_parts:
         out["capitulation_score"] = pd.concat(cap_parts, axis=1).sum(axis=1)
 
+    # Complacency / hidden-fragility gauge (DISPLAY-ONLY mirror of capitulation) -
+    # Capitulation reads extreme FEAR -> a measured bounce. This reads the
+    # opposite tail: a CALM surface (cheap VIX, steep contango) over
+    # DETERIORATING internals (breadth not confirming a strong tape, HY credit
+    # quietly widening) — the 'calm but fragile' backdrop. Stored as additive
+    # columns; surfaced as CONTEXT only — never folded into recession_risk /
+    # drawdown_risk / RORO / MRS / any axis. 'Low VIX' is persistent and
+    # ~neutral on forward returns, so this is explicitly NOT a timing signal
+    # (which is also why the RORO composite above gates nothing).
+    mcfg = cfg["complacency"]
+    calm_legs, frag_legs = [], []
+    if vix is not None:
+        out["vix_pctile"] = pct_rank_window(vix, mcfg["vix_pctile_lookback_d"])
+        calm_legs.append((out["vix_pctile"] < mcfg["vix_calm_pctile"]).astype(float))
+    if "vix_term" in out:
+        calm_legs.append((out["vix_term"] < mcfg["contango_calm"]).astype(float))
+    # breadth not confirming: index near its 1y high while %>200dma sits in a low
+    # percentile (a thinning tape — fewer stocks carrying the index).
+    if spy is not None:
+        out["spy_high_prox"] = spy / spy.rolling(252, min_periods=120).max()
+    b200 = _col(f, "pct_above_200")
+    if b200 is not None:
+        out["breadth_above200_pctile"] = pct_rank_window(b200, mcfg["breadth_pctile_lookback_d"])
+    if "spy_high_prox" in out and "breadth_above200_pctile" in out:
+        frag_legs.append(((out["spy_high_prox"] >= mcfg["breadth_high_prox"]) &
+                          (out["breadth_above200_pctile"] < mcfg["breadth_weak_pctile"])).astype(float))
+    # credit not confirming the calm: HY OAS widening (risk being quietly repriced)
+    if hy is not None:
+        out["hy_oas_chg_21d"] = hy.diff(mcfg["credit_widen_window_d"])
+        frag_legs.append((out["hy_oas_chg_21d"] > 0).astype(float))
+    if calm_legs:
+        out["complacency_calm"] = pd.concat(calm_legs, axis=1).sum(axis=1)
+    if frag_legs:
+        out["complacency_fragility"] = pd.concat(frag_legs, axis=1).sum(axis=1)
+
     return out
 
 
@@ -556,6 +591,41 @@ def conditions_snapshot(f: pd.DataFrame) -> dict:
         "measured_hit_pct": 86 if strong else 75, "base_rate_pct": 2.8,
     }
 
+    # complacency / hidden-fragility gauge — DISPLAY-ONLY mirror of capitulation.
+    # A CALM surface (cheap VIX, steep contango) over WEAKENING internals
+    # (breadth not confirming a strong tape, HY credit widening). The warning
+    # fires only on the CONJUNCTION (calm AND weak); a calm tape on its own is
+    # just calm. NEVER scored — low VIX is persistent and ~neutral on forward
+    # returns, so this names a CONTEXT, not a trade.
+    mcfg = cfg["complacency"]
+    m_calm, m_frag = g("complacency_calm"), g("complacency_fragility")
+    vp, vt = g("vix_pctile"), g("vix_term")
+    prox, b2p = g("spy_high_prox"), g("breadth_above200_pctile")
+    hychg = g("hy_oas_chg_21d")
+    vix_low = vp is not None and vp < mcfg["vix_calm_pctile"]
+    contango = vt is not None and vt < mcfg["contango_calm"]
+    breadth_div = bool(prox is not None and b2p is not None
+                       and prox >= mcfg["breadth_high_prox"] and b2p < mcfg["breadth_weak_pctile"])
+    credit_widen = hychg is not None and hychg > 0
+    c_warn = bool((m_calm or 0) >= 1 and (m_frag or 0) >= 1)
+    c_strong = bool((m_calm or 0) >= 1 and (m_frag or 0) >= 2)
+    complacency = {
+        "calm": None if m_calm is None else int(m_calm),
+        "fragility": None if m_frag is None else int(m_frag),
+        "warning": c_warn,
+        "strong": c_strong,
+        "state": ("hidden_fragility" if c_strong else
+                  ("watch" if c_warn else
+                   ("calm" if (m_calm or 0) >= 1 else "neutral"))),
+        # individual legs (bool) + underlying reads, for a bilingual breakdown
+        "vix_low": bool(vix_low), "vix_pctile": vp,
+        "contango": bool(contango), "vix_term": vt,
+        "breadth_div": breadth_div, "spy_high_prox": prox,
+        "breadth_above200_pctile": b2p,
+        "credit_widen": bool(credit_widen),
+        "hy_oas_chg_21d_bp": None if hychg is None else round(hychg * 100, 0),
+    }
+
     return {
         "financial_conditions": fin,
         "systemic_stress": systemic_stress,
@@ -566,6 +636,7 @@ def conditions_snapshot(f: pd.DataFrame) -> dict:
         "risk_appetite": risk,
         "drawdown_risk": drawdown,
         "capitulation": capitulation,
+        "complacency": complacency,
         "style_tilt": style,
     }
 

@@ -220,3 +220,74 @@ def test_recession_band_change_fires() -> None:
 def test_ebp_widening_handles_short_history() -> None:
     f = _frame(n=10)              # too few distinct EBP prints
     assert ebp_widening(pd.DataFrame(), f) is None
+
+
+# --- complacency / hidden-fragility gauge (DISPLAY-ONLY mirror of capitulation) -
+def _fragile_frame(n: int = 600) -> pd.DataFrame:
+    """A 'calm but fragile' tape: VIX drifting to multi-year lows + steep
+    contango (calm surface) while SPY presses its highs on THINNING breadth and
+    HY credit quietly widens (weak internals)."""
+    f = _frame(n)
+    rng = np.arange(n, dtype=float)
+    f["SPY"] = 300 + np.cumsum(np.full(n, 0.25)) + np.sin(rng / 9) * 0.3   # rising to a high
+    f["vix"] = np.linspace(34, 12, n) + np.sin(rng / 15) * 0.5             # fear -> cheap
+    f["vix3m"] = f["vix"] + 4.0                                            # steep contango
+    f["pct_above_200"] = np.linspace(85, 45, n) + np.sin(rng / 12) * 1.5   # thinning tape
+    hy = np.full(n, 3.0)
+    hy[-30:] = 3.0 + np.arange(30) * 0.03                                  # widening last ~6wk
+    f["hy_oas"] = hy
+    return f
+
+
+def test_snapshot_has_complacency_block() -> None:
+    comp = conditions_snapshot(_frame())["complacency"]
+    for k in ("calm", "fragility", "warning", "strong", "state",
+              "vix_low", "contango", "breadth_div", "credit_widen"):
+        assert k in comp, k
+    assert comp["state"] in ("hidden_fragility", "watch", "calm", "neutral")
+
+
+def test_complacency_warns_on_calm_over_weak_internals() -> None:
+    comp = conditions_snapshot(_fragile_frame())["complacency"]
+    assert comp["calm"] == 2 and comp["fragility"] == 2     # both sides lit
+    assert comp["vix_low"] and comp["contango"]
+    assert comp["breadth_div"] and comp["credit_widen"]
+    assert comp["warning"] and comp["strong"]
+    assert comp["state"] == "hidden_fragility"
+
+
+def test_complacency_calm_alone_is_not_a_warning() -> None:
+    # calm surface (low VIX + contango) but internals CONFIRM: breadth rising,
+    # credit tightening -> no fragility legs, so no warning fires.
+    f = _fragile_frame()
+    rng = np.arange(len(f), dtype=float)
+    f["pct_above_200"] = np.linspace(45, 88, len(f)) + np.sin(rng / 12)     # broadening
+    f["hy_oas"] = np.linspace(4.2, 3.0, len(f))                            # tightening
+    comp = conditions_snapshot(f)["complacency"]
+    assert comp["calm"] >= 1 and comp["fragility"] == 0
+    assert not comp["warning"] and not comp["strong"]
+    assert comp["state"] == "calm"
+
+
+def test_complacency_graceful_without_breadth_or_credit() -> None:
+    # no breadth feed and no HY OAS -> fragility legs simply absent, never crash.
+    f = _frame()
+    f = f.drop(columns=[c for c in ("hy_oas",) if c in f.columns])
+    assert "pct_above_200" not in f.columns
+    comp = conditions_snapshot(f)["complacency"]
+    assert comp["fragility"] is None            # no fragility legs computed
+    assert not comp["warning"]
+    assert comp["state"] in ("calm", "neutral")
+
+
+def test_complacency_is_display_only_never_scored() -> None:
+    # The load-bearing invariant: no SCORING surface may read the complacency
+    # columns — not the quad (regime.py), not the axes, not the macro-risk score.
+    root = Path(__file__).resolve().parent.parent
+    axes_src = (root / "engine" / "axes.py").read_text()
+    regime_src = (root / "engine" / "regime.py").read_text()
+    cond_src = (root / "engine" / "conditions.py").read_text()
+    mrs_region = cond_src[cond_src.index("def _macro_risk_legs"):]   # the MRS surface
+    for src in (axes_src, regime_src, mrs_region):
+        assert "complacency" not in src
+        assert "complacency_calm" not in src and "complacency_fragility" not in src

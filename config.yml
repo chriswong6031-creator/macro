@@ -1022,6 +1022,23 @@ engine:
       vix_panic: 30.0
       cot_washout_pctile: 0.10      # COT ES net-spec wrung out (3y rolling)
       cot_pctile_lookback_d: 756
+    # Complacency / hidden-fragility gauge: the DISPLAY-ONLY mirror of the
+    # capitulation gauge above. Capitulation reads extreme FEAR (-> a measured
+    # contrarian bounce); this reads the opposite tail — a CALM surface (cheap
+    # VIX, steep contango) sitting over DETERIORATING internals (breadth not
+    # confirming a strong tape, HY credit quietly widening): the 'calm but
+    # fragile' backdrop. Deliberately NEVER scored — 'low VIX' is persistent and
+    # ~neutral on forward returns, and the fragility only bites conditional on a
+    # catalyst (the same reason the RORO composite gates nothing). Context, not a
+    # timing signal. The warning fires only on the CONJUNCTION: calm AND weak.
+    complacency:
+      vix_pctile_lookback_d: 504     # ~2y window for the VIX percentile (the 'calm' read)
+      vix_calm_pctile: 0.25          # VIX in the bottom quartile of its 2y range = complacent
+      contango_calm: 0.95            # vix/vix3m below this = steep contango = calm front end
+      breadth_pctile_lookback_d: 504 # ~2y window for the %>200dma percentile
+      breadth_high_prox: 0.97        # SPY within 3% of its 1y high = strong/calm tape
+      breadth_weak_pctile: 0.40      # %>200dma below this %ile WHILE tape strong = not confirming
+      credit_widen_window_d: 21      # HY OAS change window for 'credit not confirming'
 
 # -----------------------------------------------------------------------------
 # Alerts (Phase 3 — rules defined now, wired after validation checkpoint)
