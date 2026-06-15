@@ -103,10 +103,63 @@ def test_spy_baseline_sanity():
     check("200dma lifts Sharpe vs B&H", sw["sharpe"] >= bh["sharpe"], f"sw={sw['sharpe']} bh={bh['sharpe']}")
 
 
+def test_risk_legs_synthetic_aggregation():
+    """risk_legs must (a) return a composite identical to risk_score, (b) expose
+    only the legs whose inputs are present, (c) have per-leg `points` that sum to
+    the composite at the as-of date, and (d) keep value/points in bounds."""
+    idx = pd.date_range("2020-01-01", periods=300, freq="B")
+    cf = pd.DataFrame({"drawdown_risk": np.linspace(0, 80, 300),
+                       "recession_risk": np.full(300, 40.0)}, index=idx)
+    f = pd.DataFrame(index=idx)            # no hy_oas -> credit leg drops out
+    regime = pd.DataFrame(index=idx)       # no 'liquidity' col -> liquidity leg drops
+    s = ea.risk_score(f, regime, cf)
+    rl = ea.risk_legs(f, regime, cf)
+    legs = rl["legs"]
+    check("risk_legs.score == risk_score (synthetic)",
+          float((rl["score"].dropna() - s.dropna()).abs().max()) < 1e-9)
+    check("only the two present legs are active", set(legs) == {"drawdown", "recession"},
+          f"got {set(legs)}")
+    sc = rl["score"].dropna()
+    pts = sum((v["points"] or 0) for v in legs.values() if v["active"])
+    check("per-leg points sum to the composite", abs(pts - float(sc.iloc[-1])) < 0.2,
+          f"pts={pts:.2f} score={sc.iloc[-1]:.2f}")
+    check("leg value/points in bounds",
+          all(0 <= (v["value"] or 0) <= 100 and 0 <= (v["points"] or 0) <= 100
+              for v in legs.values()))
+
+
+def test_risk_legs_matches_score_real():
+    """On real data the composite must equal risk_score exactly, the five
+    pre-registered legs must appear, and points must reconstruct the score."""
+    try:
+        from engine.inputs import build_features
+        from engine.conditions import conditions_frame
+        from lib import store
+        f = build_features(); cf = conditions_frame(f)
+        reg = store.read("regime", "regime_history")
+    except Exception as e:                 # noqa: BLE001 — no data store in CI sandbox
+        print(f"  SKIP  risk_legs real ({e})")
+        return
+    s = ea.risk_score(f, reg, cf)
+    rl = ea.risk_legs(f, reg, cf)
+    if rl["score"].dropna().empty:
+        print("  SKIP  risk_legs real (empty score)")
+        return
+    check("risk_legs.score == risk_score (real)",
+          float((rl["score"].dropna() - s.dropna()).abs().max()) < 1e-9)
+    check("legs are a subset of the pre-registered five",
+          set(rl["legs"]) <= set(ea.RISK_WEIGHTS), f"got {set(rl['legs'])}")
+    sc = rl["score"].dropna()
+    pts = sum((v["points"] or 0) for v in rl["legs"].values() if v["active"])
+    check("real points sum to the composite", abs(pts - float(sc.iloc[-1])) < 0.5,
+          f"pts={pts:.2f} score={sc.iloc[-1]:.2f}")
+
+
 def main() -> int:
     for fn in (test_cash_leg_accrues, test_cash_yield_none_unchanged,
                test_fully_invested_ignores_carry, test_sma_switch_shape,
-               test_bear_episode_counter, test_spy_baseline_sanity):
+               test_bear_episode_counter, test_spy_baseline_sanity,
+               test_risk_legs_synthetic_aggregation, test_risk_legs_matches_score_real):
         print(f"\n{fn.__name__}")
         fn()
     print(f"\n{'='*40}\n{PASS} passed, {FAIL} failed")

@@ -223,6 +223,44 @@ RISK_WEIGHTS = {"drawdown": 1.0, "recession": 1.0, "nfci": 0.5,
 LEG_LAGS = {"drawdown": 10, "recession": 22, "nfci": 5, "hy_widening": 3, "liquidity": 0}
 
 
+# Human-readable labels for the per-leg breakdown (display layer).
+LEG_LABELS = {
+    "drawdown": "Macro-stress drawdown gauge",
+    "recession": "Recession risk",
+    "nfci": "Financial conditions (tight & tightening)",
+    "hy_widening": "Credit stress (HY-OAS widening)",
+    "liquidity": "Net-liquidity contracting",
+}
+
+
+def _assemble_legs(f, regime, cf, weights: dict | None,
+                   leg_lags: dict | None) -> dict:
+    """Build the PIT-lagged per-leg risk components. SINGLE SOURCE OF TRUTH for
+    both risk_score (aggregate) and risk_legs (display breakdown). Returns
+    {name: {"score": Series in [0,1] publication-lagged, "weight": float,
+    "lag": int}} over whatever legs are available each day."""
+    from engine.indicators import pct_rank_window
+    w = weights or RISK_WEIGHTS
+    ll = leg_lags or LEG_LAGS
+    idx = cf.index
+    raw: dict[str, tuple[pd.Series, float]] = {}
+    if "drawdown_risk" in cf:
+        raw["drawdown"] = ((cf["drawdown_risk"] / 100.0).clip(0, 1), w["drawdown"])
+    if "recession_risk" in cf:
+        raw["recession"] = ((cf["recession_risk"] / 100.0).clip(0, 1), w["recession"])
+    if {"nfci", "nfci_pctile", "nfci_chg"} <= set(cf.columns):
+        tight = (cf["nfci"] > 0) & (cf["nfci_chg"] > 0)
+        raw["nfci"] = (cf["nfci_pctile"].where(tight, 0.0).clip(0, 1), w["nfci"])
+    if "hy_oas" in f.columns and f["hy_oas"].notna().any():
+        widen = pct_rank_window(f["hy_oas"].diff(63), 252 * 5).reindex(idx)
+        raw["hy_widening"] = (widen.clip(0, 1), w["hy_widening"])
+    if regime is not None and "liquidity" in regime.columns:
+        liq = regime["liquidity"].reindex(idx, method="ffill")
+        raw["liquidity"] = ((liq == "contracting").astype(float), w["liquidity"])
+    return {n: {"score": s.shift(int(ll.get(n, 0))), "weight": wt,
+                "lag": int(ll.get(n, 0))} for n, (s, wt) in raw.items()}
+
+
 def risk_score(f=None, regime=None, cf=None, weights: dict | None = None,
                leg_lags: dict | None = None, lag_d: int = 0) -> pd.Series:
     """0-100 macro de-risk score (higher = more risk-off). Renormalized weighted
@@ -234,7 +272,6 @@ def risk_score(f=None, regime=None, cf=None, weights: dict | None = None,
     buffer on top (default 0) — used by the calibrator's lag-sensitivity sweep. The
     real fix is ALFRED point-in-time vintages (Phase 3 data step)."""
     from engine.conditions import conditions_frame
-    from engine.indicators import pct_rank_window
     if f is None:
         from engine.inputs import build_features
         f = build_features()
@@ -242,30 +279,59 @@ def risk_score(f=None, regime=None, cf=None, weights: dict | None = None,
         cf = conditions_frame(f)
     if regime is None:
         regime = store.read("regime", "regime_history")
-    w = weights or RISK_WEIGHTS
-    idx = cf.index
-    legs: dict[str, tuple[pd.Series, float]] = {}
-    if "drawdown_risk" in cf:
-        legs["drawdown"] = ((cf["drawdown_risk"] / 100.0).clip(0, 1), w["drawdown"])
-    if "recession_risk" in cf:
-        legs["recession"] = ((cf["recession_risk"] / 100.0).clip(0, 1), w["recession"])
-    if {"nfci", "nfci_pctile", "nfci_chg"} <= set(cf.columns):
-        tight = (cf["nfci"] > 0) & (cf["nfci_chg"] > 0)
-        legs["nfci"] = (cf["nfci_pctile"].where(tight, 0.0).clip(0, 1), w["nfci"])
-    if "hy_oas" in f.columns and f["hy_oas"].notna().any():
-        widen = pct_rank_window(f["hy_oas"].diff(63), 252 * 5).reindex(idx)
-        legs["hy_widening"] = (widen.clip(0, 1), w["hy_widening"])
-    if regime is not None and "liquidity" in regime.columns:
-        liq = regime["liquidity"].reindex(idx, method="ffill")
-        legs["liquidity"] = ((liq == "contracting").astype(float), w["liquidity"])
+    legs = _assemble_legs(f, regime, cf, weights, leg_lags)
     if not legs:
-        return pd.Series(index=idx, dtype=float)
-    ll = leg_lags or LEG_LAGS
-    legs = {n: (s.shift(int(ll.get(n, 0))), wt) for n, (s, wt) in legs.items()}
-    num = sum(s.fillna(0) * wt for s, wt in legs.values())
-    den = sum(s.notna().astype(float) * wt for s, wt in legs.values())
+        return pd.Series(index=cf.index, dtype=float)
+    num = sum(d["score"].fillna(0) * d["weight"] for d in legs.values())
+    den = sum(d["score"].notna().astype(float) * d["weight"] for d in legs.values())
     score = (100.0 * num / den.replace(0, np.nan)).clip(0, 100)
     return score.shift(lag_d) if lag_d else score
+
+
+def risk_legs(f=None, regime=None, cf=None, weights: dict | None = None,
+              leg_lags: dict | None = None) -> dict:
+    """Per-leg BREAKDOWN of the de-risk score, for the display layer (the macro
+    page's index-risk section + the allocation deep-dive). Returns:
+
+        {"score": <composite 0-100 Series, identical to risk_score()>,
+         "legs": {name: {"label", "weight", "lag", "active": bool,
+                         "series": <Series 0-100>,
+                         "value": <last 0-100 intensity or None>,
+                         "points": <points this leg adds to the composite, or None>}}}
+
+    `points` sums (across active legs) to the composite score at the as-of date, so
+    a stacked bar of `points` reconstructs the headline number — that is what makes
+    the score legible instead of a black box. Pass a prebuilt f/cf/regime to avoid
+    recompute."""
+    from engine.conditions import conditions_frame
+    if f is None:
+        from engine.inputs import build_features
+        f = build_features()
+    if cf is None:
+        cf = conditions_frame(f)
+    if regime is None:
+        regime = store.read("regime", "regime_history")
+    legs = _assemble_legs(f, regime, cf, weights, leg_lags)
+    if not legs:
+        return {"score": pd.Series(index=cf.index, dtype=float), "legs": {}}
+    num = sum(d["score"].fillna(0) * d["weight"] for d in legs.values())
+    den = sum(d["score"].notna().astype(float) * d["weight"] for d in legs.values())
+    score = (100.0 * num / den.replace(0, np.nan)).clip(0, 100)
+    sc = score.dropna()
+    asof = sc.index[-1] if len(sc) else None
+    den_at = float(den.loc[asof]) if asof is not None and pd.notna(den.loc[asof]) and den.loc[asof] else None
+    out: dict[str, dict] = {}
+    for n, d in legs.items():
+        si = d["score"].get(asof, np.nan) if asof is not None else np.nan
+        active = pd.notna(si)
+        value = round(100.0 * float(si), 1) if active else None
+        points = (round(100.0 * d["weight"] * float(si) / den_at, 1)
+                  if active and den_at else None)
+        out[n] = {"label": LEG_LABELS.get(n, n), "weight": d["weight"],
+                  "lag": d["lag"], "active": bool(active),
+                  "series": (d["score"] * 100.0).clip(0, 100),
+                  "value": value, "points": points}
+    return {"score": score, "legs": out}
 
 
 def glide_path(score: pd.Series, confirm_days: int = 5,
