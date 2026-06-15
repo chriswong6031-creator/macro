@@ -50,7 +50,7 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-seri
 .h1{font-size:30px;font-weight:800;color:var(--ink);letter-spacing:-.02em;margin:6px 0 2px}
 .tag{display:inline-block;background:#FFF4E0;color:#8a5a00;border-radius:8px;padding:3px 10px;font-size:12.5px;font-weight:700}
 .allocbar{height:54px;border-radius:12px;overflow:hidden;display:flex;font-weight:700;color:#fff;margin:12px 0 4px}
-.allocbar div{display:flex;align-items:center;justify-content:center;font-size:13.5px;min-width:0}
+.allocbar div{display:flex;align-items:center;justify-content:center;gap:8px;font-size:13.5px;min-width:0}
 .seg-spy{background:linear-gradient(90deg,#4a86ff,var(--blue))}
 .seg-cash{background:linear-gradient(90deg,#cfd4dc,#9aa4b2)}
 .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:6px}
@@ -121,8 +121,8 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-seri
     <div class="card">
       <h3>{{ t('Recommended allocation right now','当前建议仓位') }}</h3>
       <div class="allocbar">
-        {% if equity_w %}<div class="seg-spy" style="flex:{{ equity_w }}">{{ t('S&P 500','标普500') }} {{ equity_w }}%</div>{% endif %}
-        {% if cash_w %}<div class="seg-cash" style="flex:{{ cash_w }}">{{ t('T-bills','短债') }} {{ cash_w }}%</div>{% endif %}
+        {% if equity_w %}<div class="seg-spy" style="flex:{{ equity_w }}"><span>{{ t('S&P 500','标普500') }}</span><span>{{ equity_w }}%</span></div>{% endif %}
+        {% if cash_w %}<div class="seg-cash" style="flex:{{ cash_w }}"><span>{{ t('T-bills','短债') }}</span><span>{{ cash_w }}%</span></div>{% endif %}
       </div>
       <div class="legend">
         <span><i style="background:var(--blue)"></i>{{ t('S&P 500 (SPY)','标普500 (SPY)') }}</span>
