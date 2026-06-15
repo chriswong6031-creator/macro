@@ -53,6 +53,8 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import time
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -527,6 +529,16 @@ def _cache_path(root: Path, cfg: dict, safe: str, day: str) -> Path:
     return cdir / f"{safe}_{day}.json"
 
 
+def _brief_workers() -> int:
+    """Thread-pool size for the per-ticker brief LLM calls (I/O-bound on DeepSeek).
+    Precedence: STOCK_BRIEF_WORKERS env (1 = force serial) > config
+    catalyst_stock.brief_workers > 6. Capped at 12 to stay polite to the rate limit."""
+    n = os.environ.get("STOCK_BRIEF_WORKERS") or _cfg().get("brief_workers")
+    if n is None:
+        n = 6
+    return max(1, min(int(n), 12))
+
+
 def precompute_briefs(tickers, root: Path | None = None, site: Path | None = None,
                       force: bool = False) -> list[dict]:
     """Precompute briefs for `tickers` -> site/stockbrief/<safe>.json. De-dups,
@@ -552,27 +564,51 @@ def precompute_briefs(tickers, root: Path | None = None, site: Path | None = Non
         seen: set[str] = set()
         written: list[dict] = []
         dropped = 0
+        # 1) de-dup + apply the cap up front to get the bounded work list, in order.
+        work: list[str] = []
         for t in tickers or []:
             if not t or t in seen:
                 continue
             seen.add(t)
-            if len(written) >= cap:
+            if len(work) >= cap:
                 dropped += 1
                 continue
+            work.append(t)
+
+        # 2) resolve each ticker. A daily cache hit is free; a miss is a DeepSeek
+        # reasoning call (~30-60s). Those calls are independent, thread-safe (each
+        # builds its own record, never raises) and I/O-bound, so fan them across a
+        # small thread pool — the rest stays serial. This is the build's last big
+        # serial stretch after factor-series + the stock library were parallelised.
+        def _resolve(t: str):
             safe = safe_name(t)
             cache = _cache_path(root, cfg, safe, day)
-            rec = None
             if cache.exists():
                 rec = _read_json(cache)
-            if rec is None:
-                rec = brief_for_ticker(t, root=root)
-                if rec is None:             # disabled mid-run (force path) -> stop cleanly
-                    break
-                if rec.get("degraded_reason") is None:   # only cache a usable brief
-                    try:
-                        cache.write_text(json.dumps(rec, default=str))
-                    except Exception:  # noqa: BLE001
-                        pass
+                if rec is not None:
+                    return t, safe, cache, rec, False    # cached -> don't re-write cache
+            return t, safe, cache, brief_for_ticker(t, root=root), True
+
+        workers = _brief_workers()
+        if workers > 1 and len(work) > 1:
+            from concurrent.futures import ThreadPoolExecutor
+            t0 = time.time()
+            with ThreadPoolExecutor(max_workers=workers) as ex:
+                resolved = list(ex.map(_resolve, work))
+            log.info("stock briefs: resolved %d ticker(s) in %.0fs (%d threads)",
+                     len(work), time.time() - t0, workers)
+        else:
+            resolved = [_resolve(t) for t in work]
+
+        # 3) serial: cache + write the per-ticker JSONs, preserving input order.
+        for t, safe, cache, rec, fresh in resolved:
+            if rec is None:                  # master switch flipped off mid-run (force path)
+                continue
+            if fresh and rec.get("degraded_reason") is None:   # only cache a usable brief
+                try:
+                    cache.write_text(json.dumps(rec, default=str))
+                except Exception:  # noqa: BLE001
+                    pass
             try:
                 (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
                 written.append({"ticker": t, "degraded_reason": rec.get("degraded_reason")})
