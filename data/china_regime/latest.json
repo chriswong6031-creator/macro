@@ -212,7 +212,7 @@
       "chg_20d_pct": -2.36
     },
     "usdcny": {
-      "level": 6.757,
+      "level": 6.7565,
       "chg_20d_pct": -0.77
     }
   },
@@ -244,7 +244,7 @@
     "confidence": "medium",
     "confidence_zh": "\u4e2d",
     "strength": 1.5,
-    "dominance_ratio": 1.2,
+    "dominance_ratio": 1.21,
     "agreement": 1.0,
     "runner_up": "china_stimulus",
     "runner_up_label": "Stimulus tape",
@@ -328,8 +328,8 @@
         "label": "PBoC / rates repricing",
         "label_zh": "\u592e\u884c/\u5229\u7387\u91cd\u5b9a\u4ef7",
         "family": "rates",
-        "projection": 0.13,
-        "strength": 0.13,
+        "projection": 0.12,
+        "strength": 0.12,
         "direction": "rates repricing tighter \u2014 SHIBOR & CGB yields up, liquidity drained"
       },
       {
@@ -346,10 +346,10 @@
   },
   "conditions": {
     "roro": {
-      "roro": 0.296,
-      "roro_raw": 0.305,
+      "roro": 0.293,
+      "roro_raw": 0.302,
       "roro_state": "neutral",
-      "china_roro_copper_gold": 1.487,
+      "china_roro_copper_gold": 1.47,
       "china_roro_breadth": -0.726,
       "china_roro_southbound": -0.202,
       "china_roro_m1_m2": 0.029,
@@ -363,7 +363,7 @@
           "key": "copper_gold",
           "name_en": "Copper / Gold",
           "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-          "value": 1.487,
+          "value": 1.47,
           "lean": "risk-on"
         },
         {
@@ -2047,7 +2047,7 @@
           0.228,
           0.019,
           0.206,
-          0.296
+          0.293
         ]
       },
       "recession": {
@@ -6781,7 +6781,7 @@
           83.4,
           67.1,
           82.2,
-          86.4
+          86.0
         ]
       }
     },
@@ -6792,14 +6792,14 @@
     "fe_score": 86,
     "band": "Greed",
     "band_zh": "\u8d2a\u5a6a",
-    "roro": 0.296,
+    "roro": 0.293,
     "roro_state": "neutral",
     "legs": [
       {
         "key": "copper_gold",
         "name_en": "Copper / Gold",
         "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-        "value": 1.487,
+        "value": 1.47,
         "pct": 98,
         "lean": "risk-on"
       },
