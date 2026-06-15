@@ -445,8 +445,10 @@ def _china_index_health() -> list[dict]:
     CSI 300 ETF (510300.SS, the benchmark) + Shenzhen Component (399001.SZ)."""
     from engine.technicals import rsi
     out = []
+    # 510300.SS is the CSI 300 ETF (no raw CSI 300 index series on disk) — label it as
+    # an ETF so its ~unit NAV price reads correctly next to the index-level tiles.
     for tkr, label, zh in [("000001.SS", "Shanghai Composite", "上证综指"),
-                           ("510300.SS", "CSI 300", "沪深300"),
+                           ("510300.SS", "CSI 300 ETF", "沪深300 ETF"),
                            ("399001.SZ", "Shenzhen Component", "深证成指")]:
         df = store.read("china", tkr)
         if df is None or df.empty or "close" not in df.columns:
