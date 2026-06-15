@@ -183,6 +183,13 @@
         'Short interest (shares short + days-to-cover) and insider / institutional ownership, from yfinance. The keyless free read — SEDI Form-4-style insider transactions and IIROC short-interest detail are not machine-readable. Heavy or rising short interest is a caution; high institutional ownership is crowding context. Descriptive, not a signal.',
         '空头（做空股数＋回补天数）与内部人／机构持股，来自 yfinance。免密钥的免费读法——SEDI 式内部人交易与 IIROC 空头明细不可机读。高或上升的空头是警示；高机构持股是拥挤背景。描述性，非信号。') }}</p>
     </div>
+    <div class="panel" id="r_cbeta_panel" style="display:none">
+      <h2>{{ t('Commodity exposure', '商品敞口') }} <span class="note" style="text-transform:none">· {{ t('oil / gold / loonie beta', '原油／黄金／加元贝塔') }}</span></h2>
+      <div id="r_cbeta" class="mtf"></div>
+      <p class="muted" style="font-size:12px; margin-top:8px">{{ t(
+        'This name\'s sensitivity to oil (WTI), gold and the loonie (CAD), with the broad market removed (orthogonal betas) — the dimension that actually separates TSX names, since the Composite is ~70% Energy / Materials / Financials. An energy producer loads on oil, a miner on gold, a bank reads near-zero (market-driven). The "primary driver" is the largest commodity/FX leg; <b>fit R²</b> is how much of the daily move these factors plus the market explain. Descriptive exposure for sizing and pairing, NOT a forecast or a buy signal.',
+        '本股票对原油（WTI）、黄金与加元（CAD）的敏感度，已剔除大盘（正交贝塔）—— 这是真正区分 TSX 个股的维度，因为综合指数约70%为能源／材料／金融。能源生产商对原油敏感，矿企对黄金敏感，银行接近零（由大盘驱动）。"主要驱动"为最大的商品／汇率腿；<b>拟合R²</b>表示这些因子加大盘能解释日内波动的比例。仅作仓位与配对的描述性敞口，并非预测或买入信号。') }}</p>
+    </div>
     <div class="panel">
       <h2>{{ t('Chart', '图表') }}</h2>
       <div id="tvbox"></div>
@@ -215,7 +222,9 @@
           pos_ins: 'insiders', pos_inst: 'institutions', pos_sh: 'shares short',
           e_next: 'Next report', e_in: 'in', e_dd: 'd', e_today: 'today',
           e_soon: '⚠ Reports soon — results risk near-term', e_beats: 'beats', e_of: 'of',
-          e_qtr: 'date', e_eps: 'EPS', e_est: 'est', e_surp: 'surprise' },
+          e_qtr: 'date', e_eps: 'EPS', e_est: 'est', e_surp: 'surprise',
+          cb_oil: 'Oil β', cb_gold: 'Gold β', cb_cad: 'CAD β', cb_primary: 'primary driver',
+          cb_fit: 'fit R²', cb_none: 'market-driven · no commodity tilt' },
     zh: { asof: '数据截至', notlib: '不在库中',
           notlibmsg: '不在每晚更新的标的库中（精选 TSX 大盘股 ＋ 板块 ETF ＋ 指数）。可在 config.yml → canada.constituents 添加。',
           season: '季节性', failed: '⚠ 失败周期 — 价格已跌破启动本周期的低点；此时更大的趋势通常正在转向下行。',
@@ -228,7 +237,9 @@
           pos_ins: '内部持股', pos_inst: '机构持股', pos_sh: '做空股数',
           e_next: '下次财报', e_in: '还有', e_dd: '天', e_today: '今天',
           e_soon: '⚠ 临近财报 —— 短期业绩风险', e_beats: '超预期', e_of: '共',
-          e_qtr: '日期', e_eps: '每股收益', e_est: '预期', e_surp: '超预期幅度' } };
+          e_qtr: '日期', e_eps: '每股收益', e_est: '预期', e_surp: '超预期幅度',
+          cb_oil: '原油β', cb_gold: '黄金β', cb_cad: '加元β', cb_primary: '主要驱动',
+          cb_fit: '拟合R²', cb_none: '市场驱动 · 无商品偏向' } };
   function L(k) { return (T[lang()] || T.en)[k]; }
   function lz(en, zh) { return lang() === 'zh' && zh ? zh : (en || ''); }
   var DISP = {{ state_display_json | safe }};
@@ -475,6 +486,21 @@
       document.getElementById('r_cal').innerHTML = cs;
       calEl.style.display = 'block';
     } else { calEl.style.display = 'none'; }
+
+    // Commodity exposure — oil / gold / CAD betas, market-removed (additive; absent on ETFs)
+    var cbEl = document.getElementById('r_cbeta_panel'), fb = d.factor_beta;
+    if (fb && (fb.oil != null || fb.gold != null || fb.cad != null)) {
+      var bstat = function (lab, x) {
+        if (x == null) return '';
+        return '<span>' + lab + ' <b class="' + (x >= 0 ? 'pos' : 'neg') + '">' + (x >= 0 ? '+' : '') + x.toFixed(2) + '</b></span>';
+      };
+      var cbh = bstat(L('cb_oil'), fb.oil) + bstat(L('cb_gold'), fb.gold) + bstat(L('cb_cad'), fb.cad);
+      if (fb.primary_label) cbh += '<span class="alpha-entry ae-intact">' + lz(fb.primary_label, fb.primary_label_zh) + ' ' + lz('driven', '驱动') + '</span>';
+      else cbh += '<span class="alpha-entry ae-neutral">' + L('cb_none') + '</span>';
+      if (fb.r2 != null) cbh += '<span>' + L('cb_fit') + ' <b>' + fb.r2 + '</b></span>';
+      document.getElementById('r_cbeta').innerHTML = cbh;
+      cbEl.style.display = 'block';
+    } else { cbEl.style.display = 'none'; }
 
     // TradingView embed (works for TSX; the chart is garnish — the analysis above stands alone).
     document.getElementById('tvbox').innerHTML = '<div id="tvchart"></div>';

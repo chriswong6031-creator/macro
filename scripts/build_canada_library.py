@@ -285,12 +285,26 @@ def main(alpha: dict | None = None) -> dict | None:
         earn = canada_fundamentals.earnings_map()
     except Exception as e:  # noqa: BLE001
         log.warning("canada earnings unavailable (%s)", e)
-    for ticker in set(fmap) | set(earn):
+    # commodity / FX factor betas — the TSX-differentiated exposure read (oil / gold / CAD,
+    # market-controlled). Pure function of the close panel + the macro factor levels.
+    betas: dict[str, dict] = {}
+    try:
+        from engine import canada_factor_beta, canada_overlay
+        closes_fb, _, _ = _breadth_panel()
+        mdf = store.read("canada", TSX_INDEX)
+        market_fb = mdf["close"] if (mdf is not None and "close" in mdf.columns) else None
+        betas = canada_factor_beta.compute_betas(
+            closes_fb, canada_overlay.factor_series(), market=market_fb)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("canada factor beta unavailable (%s)", e)
+    for ticker in set(fmap) | set(earn) | set(betas):
         patch: dict = {}
         if fmap.get(ticker):
             patch["fundamentals"] = fmap[ticker]
         if earn.get(ticker):
             patch["earnings"] = earn[ticker]
+        if betas.get(ticker):
+            patch["factor_beta"] = betas[ticker]
         if not patch:
             continue
         safe = ticker.replace("=", "_").replace("^", "_")
@@ -307,7 +321,8 @@ def main(alpha: dict | None = None) -> dict | None:
     for idx in index:
         if idx["t"] in fset:
             idx["f"] = 1
-    log.info("canada context attached: fund %d · earnings %d", len(fmap), len(earn))
+    log.info("canada context attached: fund %d · earnings %d · factor-beta %d",
+             len(fmap), len(earn), len(betas))
     (outdir / "index.json").write_text(json.dumps(index))
 
     cal = config.data_dir() / "canada_regime" / "ladder_calibration.json"
