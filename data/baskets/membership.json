@@ -1,8 +1,8 @@
 {
-  "version": "2026-06-14",
-  "note": "Equal-weight thematic baskets over the FREE S&P-1500 price cache. Membership is explicit, dated and auditable. Curated 2026-06 with knowledge of the period, so the full ~3y series is HINDSIGHT-curated and descriptive — not an out-of-sample backtest.",
+  "version": "2026-06-15",
+  "note": "Equal-weight thematic baskets over the FREE S&P-1500 price cache. Membership is explicit, dated and auditable. Curated 2026-06 with knowledge of the period, so the full ~3y series is HINDSIGHT-curated and descriptive — not an out-of-sample backtest. A few on-thesis names outside that cache (recent IPOs, crypto & nuclear) are carried in a separate baskets-only cache (data/baskets/extras.parquet) and flagged partial where their history is short.",
   "seed_date": "2023-05-09",
-  "curated": "2026-06-14",
+  "curated": "2026-06-15",
   "baskets": {
     "mag7": {
       "name": "Magnificent Seven",
@@ -75,7 +75,7 @@
       "category": "AI & Technology",
       "etf_proxy": "SMH",
       "created": "2023-05-09",
-      "curated": "2026-06-14",
+      "curated": "2026-06-15",
       "omitted": [
         "MRVL (not in free cache)"
       ],
@@ -133,6 +133,36 @@
           "added": "2023-05-09",
           "removed": null,
           "rationale": "Coherent optical for AI data-center interconnect"
+        },
+        {
+          "ticker": "LITE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Lumentum — datacenter optical transceivers & lasers; AI interconnect"
+        },
+        {
+          "ticker": "COHR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Coherent — datacom optics + lasers; the merchant transceiver leader"
+        },
+        {
+          "ticker": "CBRS",
+          "added": "2026-05-14",
+          "removed": null,
+          "rationale": "Cerebras — wafer-scale merchant accelerator; the purest NVDA-alternative"
+        },
+        {
+          "ticker": "NBIS",
+          "added": "2024-10-21",
+          "removed": null,
+          "rationale": "Nebius — scaled GPU neocloud; AI compute capacity as a service"
+        },
+        {
+          "ticker": "CRWV",
+          "added": "2025-03-28",
+          "removed": null,
+          "rationale": "CoreWeave — GPU hyperscaler neocloud; capacity levered to training"
         }
       ],
       "etf_proxy_note": "semis proxy",
@@ -148,6 +178,11 @@
           "date": "2026-06-14",
           "action": "note",
           "note": "Theme names outside the free S&P-1500 cache, excluded: MRVL (not in free cache)."
+        },
+        {
+          "date": "2026-06-15",
+          "action": "add",
+          "note": "Added optics (LITE, COHR) and the merchant-accelerator / neocloud leg (CBRS, NBIS, CRWV — off-index, carried in the baskets extras cache)."
         }
       ]
     },
@@ -158,9 +193,10 @@
       "category": "AI & Technology",
       "etf_proxy": "XLK",
       "created": "2023-05-09",
-      "curated": "2026-06-14",
+      "curated": "2026-06-15",
       "omitted": [
-        "SNOW (not in free cache)"
+        "SNOW (not in free cache)",
+        "CFLT Confluent, IOT Samsara (data infrastructure, not AI-app monetization — thesis fit debatable)"
       ],
       "members": [
         {
@@ -241,8 +277,10 @@
       "category": "Industrials & Defense",
       "etf_proxy": "ITA",
       "created": "2023-05-09",
-      "curated": "2026-06-14",
-      "omitted": [],
+      "curated": "2026-06-15",
+      "omitted": [
+        "LUNR Intuitive Machines, VOYG Voyager, RDW Redwire (thin-liquidity new-space — excluded)"
+      ],
       "members": [
         {
           "ticker": "LMT",
@@ -303,6 +341,30 @@
           "added": "2023-05-09",
           "removed": null,
           "rationale": "Aero-engine structures; aftermarket mix"
+        },
+        {
+          "ticker": "AVAV",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "AeroVironment — tactical UAS / loitering munitions"
+        },
+        {
+          "ticker": "KTOS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Kratos — drones, hypersonics & space; defense-tech beta"
+        },
+        {
+          "ticker": "RKLB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Rocket Lab — small-launch + space systems; the new-space leader"
+        },
+        {
+          "ticker": "ASTS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "AST SpaceMobile — direct-to-cell satellite constellation"
         }
       ],
       "etf_proxy_note": "",
@@ -313,6 +375,11 @@
           "date": "2023-05-09",
           "action": "create",
           "note": "Seeded Defense & Aerospace — 10 equal-weight members from the S&P 1500 cache."
+        },
+        {
+          "date": "2026-06-15",
+          "action": "add",
+          "note": "Added the defense-tech / new-space leg (AVAV, KTOS in-cache; RKLB, ASTS off-index via the extras cache)."
         }
       ]
     },
@@ -323,8 +390,10 @@
       "category": "Energy & Power",
       "etf_proxy": "XLU",
       "created": "2023-05-09",
-      "curated": "2026-06-14",
-      "omitted": [],
+      "curated": "2026-06-15",
+      "omitted": [
+        "NNE NanoNuclear (pre-revenue micro-cap — excluded)"
+      ],
       "members": [
         {
           "ticker": "GEV",
@@ -385,6 +454,42 @@
           "added": "2023-05-09",
           "removed": null,
           "rationale": "Regulated utility; data-center load in its footprint"
+        },
+        {
+          "ticker": "EME",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "EMCOR — datacenter electrical/mechanical construction contractor"
+        },
+        {
+          "ticker": "FIX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Comfort Systems — datacenter HVAC/mechanical contractor; backlog story"
+        },
+        {
+          "ticker": "TLN",
+          "added": "2023-06-02",
+          "removed": null,
+          "rationale": "Talen Energy — nuclear IPP selling 24/7 power to data centers"
+        },
+        {
+          "ticker": "OKLO",
+          "added": "2024-05-13",
+          "removed": null,
+          "rationale": "Oklo — advanced-reactor / SMR developer; AI-power optionality"
+        },
+        {
+          "ticker": "SMR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "NuScale — SMR pure-play; the licensing-led reactor leg"
+        },
+        {
+          "ticker": "LEU",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Centrus — sole US HALEU enricher; the nuclear fuel-cycle completion"
         }
       ],
       "etf_proxy_note": "",
@@ -395,6 +500,11 @@
           "date": "2023-05-09",
           "action": "create",
           "note": "Seeded Power & Grid Buildout — 10 equal-weight members from the S&P 1500 cache."
+        },
+        {
+          "date": "2026-06-15",
+          "action": "add",
+          "note": "Added the datacenter contractors (EME, FIX) and the nuclear-renaissance leg (TLN; OKLO, SMR, LEU off-index via the extras cache)."
         }
       ]
     },
@@ -706,7 +816,7 @@
       "category": "Financials",
       "etf_proxy": "XLF",
       "created": "2023-05-09",
-      "curated": "2026-06-14",
+      "curated": "2026-06-15",
       "omitted": [
         "FI Fiserv (not in free cache)"
       ],
@@ -758,6 +868,12 @@
           "added": "2023-05-09",
           "removed": null,
           "rationale": "Private-label card; consumer-credit beta"
+        },
+        {
+          "ticker": "CRCL",
+          "added": "2025-06-05",
+          "removed": null,
+          "rationale": "Circle — USDC issuer; the listed stablecoin pure-play"
         }
       ],
       "etf_proxy_note": "",
@@ -773,6 +889,11 @@
           "date": "2026-06-14",
           "action": "note",
           "note": "Theme names outside the free S&P-1500 cache, excluded: FI Fiserv (not in free cache)."
+        },
+        {
+          "date": "2026-06-15",
+          "action": "add",
+          "note": "Added CRCL (Circle) — the listed stablecoin name the thesis already references (off-index via the extras cache)."
         }
       ]
     },
@@ -874,7 +995,7 @@
         "XLU"
       ],
       "created": "2023-05-09",
-      "curated": "2026-06-14",
+      "curated": "2026-06-15",
       "omitted": [],
       "members": [
         {
@@ -936,6 +1057,12 @@
           "added": "2023-05-09",
           "removed": null,
           "rationale": "Packaged food; private-label pressure"
+        },
+        {
+          "ticker": "KVUE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Kenvue — consumer-health staple (Tylenol/Listerine); a pure defensive"
         }
       ],
       "etf_proxy_note": "staples proxy",
@@ -946,6 +1073,11 @@
           "date": "2023-05-09",
           "action": "create",
           "note": "Seeded Defensives — 10 equal-weight members from the S&P 1500 cache."
+        },
+        {
+          "date": "2026-06-15",
+          "action": "add",
+          "note": "Added KVUE (Kenvue) — a pure consumer-health staple (the basket had no clean one)."
         }
       ]
     },
@@ -956,7 +1088,7 @@
       "category": "Consumer Cyclical",
       "etf_proxy": "JETS",
       "created": "2023-05-09",
-      "curated": "2026-06-14",
+      "curated": "2026-06-15",
       "omitted": [],
       "members": [
         {
@@ -1036,6 +1168,12 @@
           "added": "2023-05-09",
           "removed": null,
           "rationale": "Vegas + digital-gaming optionality"
+        },
+        {
+          "ticker": "LYV",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Live Nation — concerts & ticketing; the purest 'experiences over goods' name"
         }
       ],
       "etf_proxy_note": "",
@@ -1046,6 +1184,11 @@
           "date": "2023-05-09",
           "action": "create",
           "note": "Seeded Travel & Experiences — 13 equal-weight members from the S&P 1500 cache."
+        },
+        {
+          "date": "2026-06-15",
+          "action": "add",
+          "note": "Added LYV (Live Nation) — the live-entertainment expression the thesis was missing."
         }
       ]
     },
@@ -1056,8 +1199,10 @@
       "category": "Consumer Cyclical",
       "etf_proxy": "XLY",
       "created": "2023-05-09",
-      "curated": "2026-06-14",
-      "omitted": [],
+      "curated": "2026-06-15",
+      "omitted": [
+        "CHWY Chewy, W Wayfair (e-commerce category-killers — off this basket's big-box/off-price/discount thesis)"
+      ],
       "members": [
         {
           "ticker": "WMT",
@@ -1128,6 +1273,79 @@
           "date": "2023-05-09",
           "action": "create",
           "note": "Seeded Retail — 10 equal-weight members from the S&P 1500 cache."
+        }
+      ]
+    },
+    "crypto": {
+      "name": "Crypto & Digital Assets",
+      "name_zh": "加密与数字资产",
+      "theme": "Exchanges, brokerages, miners, treasuries & stablecoins",
+      "category": "Crypto & Digital Assets",
+      "etf_proxy": "IBIT",
+      "created": "2026-06-15",
+      "curated": "2026-06-15",
+      "omitted": [
+        "BLSH Bullish, GEMI Gemini, ETOR eToro, STRC (too-recent / illiquid — excluded)",
+        "BITF, WULF, CIFR, IREN, CORZ (secondary miners — excluded for liquidity)"
+      ],
+      "members": [
+        {
+          "ticker": "COIN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Coinbase — the US exchange & custody bellwether"
+        },
+        {
+          "ticker": "HOOD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Robinhood — retail brokerage with crypto leverage"
+        },
+        {
+          "ticker": "MSTR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Strategy (MicroStrategy) — the listed bitcoin-treasury proxy"
+        },
+        {
+          "ticker": "CRCL",
+          "added": "2025-06-05",
+          "removed": null,
+          "rationale": "Circle — USDC stablecoin issuer"
+        },
+        {
+          "ticker": "GLXY",
+          "added": "2025-05-16",
+          "removed": null,
+          "rationale": "Galaxy Digital — crypto merchant bank & trading"
+        },
+        {
+          "ticker": "MARA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Marathon Digital — bitcoin miner; hashrate beta"
+        },
+        {
+          "ticker": "RIOT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Riot Platforms — bitcoin miner; power + hashrate"
+        },
+        {
+          "ticker": "CLSK",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "CleanSpark — bitcoin miner; low-cost power"
+        }
+      ],
+      "etf_proxy_note": "spot-BTC ETF",
+      "thesis": "Listed crypto-equity beta — the US exchange (COIN), retail brokerage (HOOD), the bitcoin-treasury proxy (MSTR), the USDC stablecoin issuer (CRCL), a crypto merchant bank (GLXY) and the bitcoin miners (MARA/RIOT/CLSK). The cleanest public sensor for the crypto regulatory & liquidity cycle — and by far the highest-beta basket here: it amplifies bitcoin both ways. Several members are 2025 IPOs, so their early history is partial. A regime sensor, not a buy list.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2026-06-15",
+          "action": "create",
+          "note": "Seeded Crypto & Digital Assets — 8 equal-weight members; in-cache (COIN/HOOD/MARA/CLSK) plus off-index names (MSTR/RIOT/CRCL/GLXY) via the baskets extras cache."
         }
       ]
     }

@@ -26,6 +26,7 @@ def _setup(monkeypatch, members):
     spy = pd.DataFrame({"close": 400 * (1.0008 ** np.arange(180)),
                         "volume": np.ones(180)}, index=idx)
     monkeypatch.setattr(bk, "_closes", lambda: closes)
+    monkeypatch.setattr(bk, "_basket_extras", lambda: None)   # hermetic: ignore the real extras cache
     monkeypatch.setattr(bk, "_names_sectors", lambda: {t: (f"{t} Inc", "Tech") for t in "ABCD"})
     monkeypatch.setattr(bk.store, "read", lambda g, n: spy if (g, n) == ("yahoo", "SPY") else None)
     monkeypatch.setattr(bk, "_membership", lambda: {"baskets": members})
@@ -90,3 +91,41 @@ def test_reference_blend_and_market_adjusted(monkeypatch):
 def test_degrades_without_membership(monkeypatch):
     monkeypatch.setattr(bk, "_membership", lambda: None)
     assert bk.compute_baskets() is None
+
+
+def test_extras_union_partial_and_despac(monkeypatch):
+    """Off-index members (data/baskets/extras.parquet) resolve instead of being dropped as
+    `missing`; recent IPOs are flagged short-history `partial` from their first tape; a member
+    only ADDED late (a de-SPAC shell pattern) is flagged from its `added` date, not its early tape."""
+    idx = pd.date_range("2024-01-01", periods=400, freq="B")
+    closes = pd.DataFrame({                                          # the in-cache, full-history names
+        "A": 100 * (1.0010 ** np.arange(400)),
+        "B": 100 * (1.0005 ** np.arange(400)),
+        "C": 100 * (1.0008 ** np.arange(400)),
+    }, index=idx)
+    spy = pd.DataFrame({"close": 400 * (1.0006 ** np.arange(400)), "volume": np.ones(400)}, index=idx)
+    extras = pd.DataFrame({                                          # off-cache names from the extras store
+        "E": np.r_[[np.nan] * 300, 50 * (1.002 ** np.arange(100))],  # recent IPO — tape only the last 100 days
+        "F": 20 * (1.0010 ** np.arange(400)),                        # long tape but added late (de-SPAC shell)
+    }, index=idx)
+    ipo = idx[300].strftime("%Y-%m-%d")
+    late = idx[350].strftime("%Y-%m-%d")
+    members = {"t": {"name": "T", "category": "X", "created": "2024-01-01", "etf_proxy": None, "members": [
+        {"ticker": "A", "added": "2024-01-01", "rationale": "a"},
+        {"ticker": "B", "added": "2024-01-01", "rationale": "b"},
+        {"ticker": "C", "added": "2024-01-01", "rationale": "c"},
+        {"ticker": "E", "added": ipo, "rationale": "ipo"},
+        {"ticker": "F", "added": late, "rationale": "despac"}]}}
+    monkeypatch.setattr(bk, "_closes", lambda: closes)
+    monkeypatch.setattr(bk, "_basket_extras", lambda: extras)
+    monkeypatch.setattr(bk, "_names_sectors", lambda: {})
+    monkeypatch.setattr(bk.store, "read", lambda g, n: spy if (g, n) == ("yahoo", "SPY") else None)
+    monkeypatch.setattr(bk, "_membership", lambda: {"baskets": members})
+
+    b = bk.compute_baskets()["baskets"][0]
+    assert {m["symbol"] for m in b["members"]} == {"A", "B", "C", "E", "F"}   # off-cache members resolved
+    assert b["missing"] == []                                                  # ...not dropped as missing
+    partial = {p["symbol"]: p["from"] for p in b["partial"]}
+    assert partial.get("E") == ipo                  # recent IPO: short-history from its first tape
+    assert partial.get("F") == late                 # de-SPAC: from `added`, NOT its earlier shell tape
+    assert "A" not in partial and "C" not in partial  # full-history names are not flagged

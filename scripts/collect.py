@@ -156,6 +156,17 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("universe membership step failed: %s", e)
 
+    # Baskets-only off-index close cache: on-thesis names outside the free S&P-1500
+    # universe (recent IPOs + crypto/nuclear), derived from membership.json. A separate
+    # store engine.baskets unions in — the breadth/factor universe stays pure. Cheap
+    # (~12 tickers), additive, never fatal. See scripts/fetch_basket_extras.py.
+    try:
+        from scripts.fetch_basket_extras import main as fetch_basket_extras
+        log.info("=== refreshing thematic-basket extras ===")
+        fetch_basket_extras()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("basket extras step failed: %s", e)
+
     status = store.read_status()
     status["last_run"] = datetime.now(timezone.utc).isoformat()
     # merge: a partial --only run must not wipe the health of sources it skipped
