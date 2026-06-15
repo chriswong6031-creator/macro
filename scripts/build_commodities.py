@@ -294,32 +294,69 @@ def backtest(close: pd.Series, alloc: pd.Series) -> dict:
 # view-model
 # --------------------------------------------------------------------------- #
 def _oil_supply_read() -> dict | None:
-    """EIA petroleum supply snapshot for the oil page (Phase 2 — crude stocks vs
-    5y range, 4-week draw/build, production trend, refinery utilization)."""
+    """EIA Weekly Petroleum Status physical-BALANCE read for the oil page.
+
+    DISPLAY-ONLY context (engine.commodity_supply_context): each inventory is shown as
+    a SEASONAL-ANOMALY z (deviation from its 5y same-week-of-year norm — a winter draw
+    is normal), plus days-of-supply, Cushing (WTI delivery point) and SPR. Physical
+    balance is NOT a price-direction signal, so it is neutral-colored and never fed to
+    conviction / alerts / latest.json."""
     from lib import store
-    cs = store.read("eia", "crude_stocks")
-    if cs is None or cs.empty:
+    from engine import commodity_supply_context as _sc
+
+    def col(name: str) -> pd.Series | None:
+        d = store.read("eia", name)
+        return None if d is None or d.empty else d.iloc[:, 0]
+
+    def rz(v: float | None) -> float | None:
+        return None if v is None else round(v, 2)
+
+    crude = col("crude_stocks")
+    if crude is None or _sc.last_value(crude) is None:
         return None
     scfg = config.load()["eia"]["supply"]
-    lb, tw = scfg["range_lookback_d"], scfg["trend_window_d"]
-    s = cs.iloc[:, 0]
-    pct = float(s.tail(lb // 7).rank(pct=True).iloc[-1])     # weekly series -> /7
-    chg4 = float(s.iloc[-1] - s.iloc[-min(4, len(s) - 1)])   # ~4 weekly prints
-    out = {"crude_stocks_mb": round(float(s.iloc[-1]) / 1000, 1),
-           "stocks_pctile": int(round(pct * 100)),
-           "stocks_chg_4w_mb": round(chg4 / 1000, 1),
-           "draw": chg4 < 0}
-    prod = store.read("eia", "crude_production")
-    if prod is not None and not prod.empty:
-        p = prod.iloc[:, 0]
-        out["production_mbd"] = round(float(p.iloc[-1]) / 1000, 2)
-        out["production_chg_4w"] = round(float(p.iloc[-1] - p.iloc[-min(4, len(p) - 1)]) / 1000, 2)
-    util = store.read("eia", "refinery_util")
-    if util is not None and not util.empty:
-        out["refinery_util"] = round(float(util.iloc[:, 0].iloc[-1]), 1)
-    # tightening = low stocks percentile AND drawing
-    out["state"] = ("tightening" if out["stocks_pctile"] < 40 and out["draw"]
-                    else ("loosening" if out["stocks_pctile"] > 60 and not out["draw"] else "neutral"))
+    yrs, dosw = scfg.get("seasonal_years", 5), scfg.get("dos_window_weeks", 4)
+
+    cushing, gasoline, distillate = col("cushing_stocks"), col("gasoline_stocks"), col("distillate_stocks")
+    zmap = {"crude": _sc.seasonal_z(crude, yrs), "cushing": _sc.seasonal_z(cushing, yrs),
+            "gasoline": _sc.seasonal_z(gasoline, yrs), "distillate": _sc.seasonal_z(distillate, yrs)}
+    bz = _sc.balance_z(zmap)
+
+    out = {"crude_stocks_mb": round(_sc.last_value(crude) / 1000, 1),
+           "crude_z": rz(zmap["crude"]),
+           "balance_z": rz(bz), "balance_word": _sc.balance_word(bz),
+           "caveat_en": _sc.SUPPLY_CAVEAT["en"], "caveat_zh": _sc.SUPPLY_CAVEAT["zh"]}
+    d4 = _sc.delta_4w(crude)
+    if d4 is not None:
+        out["crude_chg_4w_mb"], out["draw"] = round(d4 / 1000, 1), d4 < 0
+    # Cushing — WTI delivery-point stress
+    if zmap["cushing"] is not None:
+        out["cushing_mb"], out["cushing_z"] = round(_sc.last_value(cushing) / 1000, 1), rz(zmap["cushing"])
+    # product inventories (seasonal-z) + product days-of-cover
+    if zmap["gasoline"] is not None:
+        out["gasoline_z"] = rz(zmap["gasoline"])
+    if zmap["distillate"] is not None:
+        out["distillate_z"] = rz(zmap["distillate"])
+    for k, st, dm in (("days_supply", crude, col("refinery_inputs")),
+                      ("gasoline_days", gasoline, col("gasoline_supplied")),
+                      ("distillate_days", distillate, col("distillate_supplied"))):
+        dos = _sc.days_of_supply(st, dm, dosw)
+        if dos is not None:
+            out[k] = dos
+    # production + refinery throughput
+    prod = col("crude_production")
+    if prod is not None and _sc.last_value(prod) is not None:
+        out["production_mbd"] = round(_sc.last_value(prod) / 1000, 2)
+        pc = _sc.delta_4w(prod)
+        if pc is not None:
+            out["production_chg_4w"] = round(pc / 1000, 2)
+    util = col("refinery_util")
+    if util is not None and _sc.last_value(util) is not None:
+        out["refinery_util"] = round(_sc.last_value(util), 1)
+    # SPR 4-week change — government supply add (release) / withdraw (refill)
+    spr_d = _sc.delta_4w(col("spr_stocks"))
+    if spr_d is not None:
+        out["spr_chg_4w_mb"] = round(spr_d / 1000, 1)
     return out
 
 

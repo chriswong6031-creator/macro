@@ -445,9 +445,15 @@ eia:
     distillate_stocks: WDISTUS1    # distillate fuel stocks (kbbl)
     crude_production: WCRFPUS2     # field production of crude (kbbl/d)
     refinery_util: WPULEUS3        # refiner % utilization of capacity
-  supply:                          # oil-page supply read
-    range_lookback_d: 1825         # 5y range for the stocks z / percentile
+    spr_stocks: WCSSTUS1           # crude oil ending stocks in the SPR (kbbl)
+    refinery_inputs: WCRRIUS2      # refiner net input of crude (kbbl/d) — days-of-supply denom
+    gasoline_supplied: WGFUPUS2    # product supplied of finished gasoline (kbbl/d) — demand
+    distillate_supplied: WDIUPUS2  # product supplied of distillate (kbbl/d) — freight/industrial demand
+  supply:                          # oil-page PHYSICAL BALANCE read (display-only, never scored)
+    range_lookback_d: 1825         # 5y range for the stocks z / percentile (legacy)
     trend_window_d: 28             # ~4-week stocks/production change
+    seasonal_years: 5              # trailing window for the same-week-of-year climatology z
+    dos_window_weeks: 4            # trailing demand window for days-of-supply
 
 # =============================================================================
 # OFR Financial Stress Index — daily 33-variable global stress with functional +

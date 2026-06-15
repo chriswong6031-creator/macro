@@ -126,8 +126,10 @@ def test_eia_supply_read_if_cache() -> None:
     from scripts.build_commodities import _oil_supply_read
     s = _oil_supply_read()
     assert s is not None
-    assert 0 <= s["stocks_pctile"] <= 100
-    assert s["state"] in ("tightening", "loosening", "neutral")
+    assert s["crude_stocks_mb"] > 0                                  # M bbl
+    assert s["balance_word"] in ("tight", "ample", "balanced", "n/a")
+    assert s["crude_z"] is None or isinstance(s["crude_z"], float)   # seasonal anomaly z
+    assert s["caveat_en"] and "≠" in s["caveat_en"]                  # display-only honesty layer
 
 
 def test_carry_read_if_cache() -> None:
