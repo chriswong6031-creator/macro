@@ -74,6 +74,14 @@ html[data-theme="dark"] .nav-dd-menu a:hover,html[data-theme="dark"] .nav-dd-men
 .score .v{font-size:19px;font-weight:800;color:var(--ink)}
 .chip{display:inline-block;padding:4px 11px;border-radius:9px;font-weight:700;font-size:13px}
 .foot{margin-top:34px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7}
+/* mobile: this page keeps the older brand+nav header (not the unified hamburger
+   nav theme.js injects elsewhere). Stack the brand over the nav so neither wraps
+   mid-word into a tall, crowded block on a phone. */
+@media(max-width:700px){
+  .topbar{flex-wrap:wrap;row-gap:10px;padding:14px 0 12px}
+  .brand{flex-basis:100%}
+  .nav{flex-basis:100%}
+}
 </style></head>
 <body>
 <div class="wrap">

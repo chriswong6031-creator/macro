@@ -121,6 +121,97 @@
     document.addEventListener('click', function (e) { if (!box.contains(e.target)) close(); });
   }
 
+  /* ---- responsive mobile nav ----------------------------------------------
+     The section nav (the .site-nav grid on the macro family; the .topbar flex
+     on the vector / commodities / forex / bonds family) packs ~17 links plus
+     the theme + language toggles onto one row. On a phone that wrapped into a
+     wall of pills that ate half the viewport. We progressively enhance: inject
+     a hamburger button + a scoped stylesheet that, below 700px, collapses the
+     links into a tap-to-open dropdown while the toggles stay on one compact
+     bar. With JS off the original wrapping nav remains (every link reachable).
+     The CSS is injected here — not in theme.css — because the .topbar pages are
+     self-contained and never load theme.css. Fallbacks (var(--x, var(--y)))
+     bridge the macro palette (--line/--panel) and the vector palette
+     (--grid/--card). */
+  var NAV_MOBILE_CSS = [
+    ".nav-toggle{display:none}",
+    "@media (max-width:700px){",
+      ".nav-toggle{display:inline-flex;align-items:center;justify-content:center;width:42px;height:34px;padding:0;flex:none;cursor:pointer;border-radius:10px;border:1px solid var(--line,var(--grid));background:var(--panel2,var(--card));color:var(--text,var(--ink));-webkit-tap-highlight-color:transparent}",
+      ".nav-toggle-bars,.nav-toggle-bars::before,.nav-toggle-bars::after{content:'';display:block;width:18px;height:2px;border-radius:2px;background:currentColor;transition:transform .22s ease,opacity .2s ease}",
+      ".nav-toggle-bars{position:relative}",
+      ".nav-toggle-bars::before{position:absolute;left:0;top:-6px}",
+      ".nav-toggle-bars::after{position:absolute;left:0;top:6px}",
+      ".nav-open .nav-toggle-bars{background:transparent}",
+      ".nav-open .nav-toggle-bars::before{transform:translateY(6px) rotate(45deg)}",
+      ".nav-open .nav-toggle-bars::after{transform:translateY(-6px) rotate(-45deg)}",
+      /* .topbar family: keep the flex row, hamburger first, toggles pushed right.
+         width:100% defeats the shrink-to-fit + margin:0 auto that would otherwise
+         centre the compact bar as a floating group. The padding !important is the
+         one place we must beat an inline style: forex/commodities/bonds set
+         style="padding:0" on .wrap, which would jam the hamburger and toggles flush
+         against the screen edges — normalise every topbar to a 16px gutter. */
+      ".topbar.has-nav-toggle .wrap{width:100%;flex-wrap:wrap;gap:8px;padding-left:16px!important;padding-right:16px!important}",
+      ".topbar.has-nav-toggle .nav-ctrls{margin-left:auto}",
+      /* .site-nav family: flatten the 2-col grid into one flex bar */
+      ".site-nav.has-nav-toggle{display:flex;flex-wrap:wrap;align-items:center;gap:8px;position:relative}",
+      ".site-nav.has-nav-toggle .nav-toggle{order:1}",
+      ".site-nav.has-nav-toggle .nav-ctrls{order:2;margin-left:auto;margin-top:0}",
+      ".site-nav.has-nav-toggle .nav-search{order:3;width:100%;max-width:none}",
+      /* the collapsible link panel (shared by both families) */
+      ".has-nav-toggle .nav-links{display:none;position:absolute;top:100%;left:8px;right:8px;z-index:1000;box-sizing:border-box;flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:1px;margin-top:8px;padding:8px;border-radius:14px;background:var(--panel,var(--card));border:1px solid var(--line,var(--grid));box-shadow:0 18px 44px rgba(16,24,40,.30);max-height:78vh;overflow-y:auto;overflow-x:hidden}",
+      ".has-nav-toggle.nav-open .nav-links{display:flex}",
+      ".has-nav-toggle .nav-links a.nav-link{display:block;width:100%;padding:11px 12px;font-size:15px;border-radius:9px;white-space:normal}",
+      /* nested fly-outs can't hover/tap-open inside a tap menu → flatten inline */
+      ".has-nav-toggle .nav-links .nav-dd{display:block;width:100%}",
+      ".has-nav-toggle .nav-links .nav-dd>a.nav-link .caret{display:none}",
+      ".has-nav-toggle .nav-links .nav-dd::after{display:none}",
+      ".has-nav-toggle .nav-links .nav-dd-menu{position:static;opacity:1;visibility:visible;transform:none;min-width:0;margin:0;padding:0 0 4px 12px;border:none;box-shadow:none;background:transparent}",
+      ".has-nav-toggle .nav-links .nav-dd-menu a{display:block;padding:9px 12px;font-size:14px;font-weight:500;white-space:normal}",
+      ".has-nav-toggle .nav-links .nav-dd-menu a .d{display:block;font-size:11px;opacity:.65;font-weight:400}",
+    "}"
+  ].join('');
+
+  function initMobileNav() {
+    var nav = document.querySelector('.site-nav, .topbar');
+    if (!nav) return;
+    var links = nav.querySelector('.nav-links');
+    if (!links || nav.querySelector('.nav-toggle')) return;  // skip legacy navs / re-runs
+
+    if (!document.getElementById('nav-mobile-css')) {
+      var st = document.createElement('style');
+      st.id = 'nav-mobile-css';
+      st.textContent = NAV_MOBILE_CSS;
+      document.head.appendChild(st);
+    }
+
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'nav-toggle';
+    btn.setAttribute('aria-label', 'Toggle navigation menu');
+    btn.setAttribute('aria-expanded', 'false');
+    btn.innerHTML = '<span class="nav-toggle-bars" aria-hidden="true"></span>';
+
+    // .topbar nests its flex row inside .wrap; .site-nav is the bar itself
+    var bar = nav.classList.contains('topbar') ? (nav.querySelector('.wrap') || nav) : nav;
+    bar.insertBefore(btn, bar.firstChild);
+    nav.classList.add('has-nav-toggle');
+
+    function closeNav() {
+      nav.classList.remove('nav-open');
+      btn.setAttribute('aria-expanded', 'false');
+    }
+    btn.addEventListener('click', function (e) {
+      e.preventDefault(); e.stopPropagation();
+      var open = nav.classList.toggle('nav-open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    // close after a destination is picked, on Escape, on outside tap, on widen
+    links.addEventListener('click', function (e) { if (e.target.closest('a')) closeNav(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeNav(); });
+    document.addEventListener('click', function (e) { if (!nav.contains(e.target)) closeNav(); });
+    window.addEventListener('resize', function () { if (window.innerWidth > 700) closeNav(); });
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     // legacy text buttons (Bitcoin Vector / hub / China — untouched pages)
     document.querySelectorAll('.theme-btn').forEach(function (b) {
@@ -141,6 +232,7 @@
       o.addEventListener('click', function () { setLang(o.getAttribute('data-l')); });
     });
     initNavSearch();
+    initMobileNav();
     themeCharts();
   });
   // charts may finish drawing after DOMContentLoaded; re-theme once more on load
