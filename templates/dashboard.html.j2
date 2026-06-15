@@ -1417,8 +1417,8 @@
   </div>
   {% endif %}{# /mode != stocks — macro group 1 (regime, index health, nowcast, news) #}
 
-  {% if mode != 'stocks' %}
   <!-- ===== FEAR <-> EUPHORIA SYNTHESIS (display-only conditioning lens) ===== -->
+  {% if mode != 'stocks' %}
   <div class="panel span12" id="fear-euphoria">
     <h2>🌡️ {{ t('Fear ↔ Euphoria: regime synthesis', '恐惧 ↔ 欣喜：周期综合') }}
       {{ help("A conditioning lens, NOT a signal. It synthesises components this dashboard already computes — the cross-asset RORO risk-appetite composite, the dislocation verdict and the capitulation gauge — into one Fear↔Euphoria regime read. It does NOT score direction or size positions, and never feeds the quad, the macro-risk score or any axis. 'Contrarian at extremes' is regime-dependent: fear is buyable only when the Fed put is present; in put-absent regimes extreme fear can be a falling knife.", "这是环境视角，不是信号。它综合本仪表盘已计算的成分 — 跨资产 RORO 风险偏好综合、错位读数与投降指标 — 形成单一的恐惧↔欣喜周期读数。它不评分方向、不决定仓位，也绝不进入象限、宏观风险评分或任何轴。'极端时反向操作'取决于周期：只有在美联储托底在位时，恐惧才可买入；托底缺失时，极端恐惧可能是下跌中的刀子。") }}
@@ -1507,8 +1507,8 @@
   </div>
   {% endif %}{# /fear-euphoria — macro only #}
 
-  {% if mode != 'macro' %}
   <!-- ======================= ACTION BOARD ======================= -->
+  {% if mode != 'macro' %}
   {% if action_board %}
   <div class="panel span12">
     <h2>⚡ {{ t('What to act on now', '当前可操作') }}
