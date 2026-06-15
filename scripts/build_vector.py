@@ -732,7 +732,8 @@ def build_landing(site: Path, vm: dict) -> None:
     hub = _hub_html(vm, macro, home_alert_feed(), _china_state(), _commodities_state(),
                     _watchlist_state(), _etf_state(), _hk_state(), _forex_state(),
                     _bonds_state(), _us_stocks_state(), _spvector_state(), _crossasset_state(),
-                    _market_stocks_state("china"), _market_stocks_state("hk"))
+                    _market_stocks_state("china"), _market_stocks_state("hk"),
+                    canada=_canada_state())
     (site / "index.html").write_text(hub)
     log.info("wrote landing hub -> index.html")
 
@@ -771,6 +772,20 @@ def _hk_state() -> dict:
                 "risk": d.get("risk_state", ""), "present": (site / "hk.html").exists()}
     except Exception:
         return {"label": "—", "date": "", "risk": "", "present": (site / "hk.html").exists()}
+
+
+def _canada_state() -> dict:
+    """Canada / S&P/TSX regime for the hub card (written by build_canada, which runs
+    before build_vector). `present` gates the card; surfaces the commodity/CAD overlay
+    risk state as the secondary label (HK-style)."""
+    site = config.ROOT / config.load()["storage"]["site_dir"]
+    try:
+        d = json.loads((config.data_dir() / "canada_regime" / "latest.json").read_text())
+        return {"label": d.get("quad_name", "—"), "date": d.get("date", ""),
+                "risk": (d.get("overlay") or {}).get("state", ""),
+                "present": (site / "canada.html").exists()}
+    except Exception:
+        return {"label": "—", "date": "", "risk": "", "present": (site / "canada.html").exists()}
 
 
 def _commodities_state() -> dict:
@@ -1046,7 +1061,8 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
               forex: dict | None = None, bonds: dict | None = None,
               us_stocks: dict | None = None,
               spvector: dict | None = None, crossasset: dict | None = None,
-              china_stocks: dict | None = None, hk_stocks: dict | None = None) -> str:
+              china_stocks: dict | None = None, hk_stocks: dict | None = None,
+              canada: dict | None = None) -> str:
     # Bilingual via the i18n layer when present, identity fallback when absent.
     try:
         from engine.i18n import t as T, tr as TR
@@ -1077,6 +1093,16 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
     <p>{T('Regime, a primary global risk-on/off overlay, sector rotation & cycle read for the Hang Seng market.', '恒生市场的周期状态、以全球风险开关为主的叠加、板块轮动与周期解读。')}</p>
     <span class="stat">{T(hk['label'], TR(hk['label']))}{(' · ' + T(hk_risk, TR(hk_risk))) if hk_risk else ''}</span>
     <div class="go">{T('Open Hong Kong →', '打开香港 →')}</div>
+  </a>""")
+    canada = canada or {"present": False}
+    canada_risk = canada.get("risk", "")
+    canada_card = ("" if not canada.get("present") else f"""
+  <a class="c" href="canada.html">
+    <div class="ico">\U0001F1E8\U0001F1E6</div>
+    <h2>{T('Canada — S&P/TSX', '加拿大 — 标普/TSX')}</h2>
+    <p>{T('Regime, a commodity / CAD / BoC-vs-Fed overlay, sector rotation & cycle read for the TSX.', 'TSX 的周期状态、大宗商品／加元／央行-美联储叠加、板块轮动与周期解读。')}</p>
+    <span class="stat">{T(canada['label'], TR(canada['label']))}{(' · ' + T(canada_risk, TR(canada_risk))) if canada_risk else ''}</span>
+    <div class="go">{T('Open Canada →', '打开加拿大 →')}</div>
   </a>""")
     commodities = commodities or {"present": False}
     fav = ", ".join(commodities.get("favored", []))
@@ -1325,7 +1351,7 @@ body{{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
 <div class="h"><h1>{T('Market Intelligence', '市场情报')}</h1>
 <p>{T('Market regime dashboards, one zero-cost data engine.', '市场周期仪表盘，一套零成本数据引擎。')}</p></div>
 <div class="cards-hero">{us_hero}{china_hero}{hk_hero}</div>
-<div class="cards-sub">{bitcoin_card}{spvector_card}{commodities_card}{forex_card}{bonds_card}{crossasset_card}{etf_card}{watchlist_card}</div>
+<div class="cards-sub">{canada_card}{bitcoin_card}{spvector_card}{commodities_card}{forex_card}{bonds_card}{crossasset_card}{etf_card}{watchlist_card}</div>
 <div class="feed">
   <div class="feed-h"><h3>{T('Latest Alerts', '最新警报')}</h3>
     <span class="n">{n_major} {T('major · from both feeds ·', '条重要 · 来自两个数据源 ·')} <a href="vector.html#timeline">{T('full Vector timeline →', '完整向量时间线 →')}</a></span></div>

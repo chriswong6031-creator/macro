@@ -35,6 +35,7 @@ import re
 # per-market residual-momentum weight (see module docstring)
 US_ALPHA_WEIGHT = 0.7    # alpha-led: US residual momentum is a validated context leg
 CN_ALPHA_WEIGHT = 0.35   # demoted to a quality tiebreaker: A-share momentum is killed in deep history
+CA_ALPHA_WEIGHT = 0.55   # Canada: developed/momentum-persistent like the US but commodity-cyclical -> alpha-led, between US and CN (PRIOR; to be validated)
 
 # timing tilts (shared across markets)
 _URG_TILT = {"now": 0.9, "imminent": 0.9, "soon": 0.45, "exit": -0.9, "avoid": -0.9}
