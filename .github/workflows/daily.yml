@@ -84,7 +84,7 @@ jobs:
     needs: collect
     if: always()            # a scraper failure must still produce a dashboard from cached data
     runs-on: ubuntu-latest
-    timeout-minutes: 45     # ~15-20m since the ~22m factor-series month-end walk moved to its own `factor_series` job (below). (residual-alpha measured ~1s — it was never the bottleneck the old comment guessed.)
+    timeout-minutes: 70     # moving the ~22m factor-series walk to its own job (below) helped, but the ~15 remaining sequential builders still stretch to ~40m+ on congested 2-core runners (measured engine=42m on a heavily-loaded runner) — so the cap needs real headroom or the job gets cancelled mid-build. residual-alpha measured ~1s (never the bottleneck the old comment guessed). Follow-up to genuinely speed this up: parallelise the regional dashboard builders.
     steps:
       - uses: actions/checkout@v4
         with:
