@@ -204,6 +204,69 @@ def test_neutral_no_pos_neg():
     assert 'class="neg"' not in html
 
 
+# ---- 12b. cross-asset confirmation tally (DISPLAY-ONLY) ----------------------
+def _legs(*leans):
+    """Minimal legs list (the _fe_legs shape) from a sequence of risk-on/off leans."""
+    return [{"key": f"k{i}", "name_en": f"L{i}", "name_zh": f"腿{i}",
+             "value": 0.5 if ln == "risk-on" else -0.5, "pct": 50, "lean": ln}
+            for i, ln in enumerate(leans)]
+
+
+def test_confirmation_none_on_empty():
+    assert bs._roro_confirmation([]) is None
+
+
+def test_confirmation_counts_and_dissent_is_minority():
+    on, off = "risk-on", "risk-off"
+    rc = bs._roro_confirmation(_legs(on, on, on, on, on, off, off))      # 5 on / 2 off
+    assert (rc["n_on"], rc["n_off"], rc["total"], rc["agree"]) == (5, 2, 7, 5)
+    assert rc["direction"] == "risk-on"
+    assert {d["en"] for d in rc["dissent"]} == {"L5", "L6"}             # the 2 risk-off
+    assert {d["en"] for d in rc["confirmed_by"]} == {"L0", "L1", "L2", "L3", "L4"}
+
+
+def test_confirmation_majority_anchors_when_risk_off_dominates():
+    on, off = "risk-on", "risk-off"
+    rc = bs._roro_confirmation(_legs(off, off, off, off, off, on, on))   # 2 on / 5 off
+    assert rc["direction"] == "risk-off" and rc["agree"] == 5
+    assert {d["en"] for d in rc["dissent"]} == {"L5", "L6"}             # minority = the 2 on
+
+
+@pytest.mark.parametrize("n_on,n_off,verdict_en", [
+    (7, 0, "clean risk-on"),
+    (6, 1, "clean risk-on"),
+    (5, 2, "risk-on, not clean"),
+    (4, 3, "divergent (no consensus)"),
+    (3, 4, "divergent (no consensus)"),
+    (2, 5, "risk-off, not clean"),
+    (1, 6, "clean risk-off"),
+    (3, 3, "divergent (split)"),
+])
+def test_confirmation_verdict_grades(n_on, n_off, verdict_en):
+    rc = bs._roro_confirmation(_legs(*(["risk-on"] * n_on + ["risk-off"] * n_off)))
+    assert rc["verdict_en"] == verdict_en
+    assert any("一" <= ch <= "鿿" for ch in rc["verdict_zh"])    # zh present
+
+
+def test_confirmation_all_aligned_has_empty_dissent():
+    rc = bs._roro_confirmation(_legs(*(["risk-on"] * 7)))
+    assert rc["dissent"] == [] and rc["agree"] == 7 and rc["direction"] == "risk-on"
+
+
+def test_confirmation_wired_into_synthesis():
+    latest = {"conditions": {"risk_appetite": {"roro": 0.1, "roro_state": "neutral"}},
+              "dislocation": {"inputs": {"primary_trend": "up"}}}
+    fe = bs.fear_euphoria_synthesis(latest, _frame())
+    assert fe is not None and fe["confirmation"] is not None
+    rc = fe["confirmation"]
+    assert rc["total"] == 7 and rc["n_on"] + rc["n_off"] == 7
+    assert rc["agree"] == max(rc["n_on"], rc["n_off"])
+    assert rc["direction"] in {"risk-on", "risk-off", "split"}
+    # tally agrees with the leg leans it was derived from
+    legs = fe["legs"]
+    assert rc["n_on"] == sum(1 for lg in legs if lg["lean"] == "risk-on")
+
+
 # ---- 12. LEX completeness ----------------------------------------------------
 def test_lex_completeness():
     for key in ["stand_aside", "buyable_washout", "put-present", "put-absent",

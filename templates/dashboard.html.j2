@@ -1194,6 +1194,20 @@
         {% if RA.roro is not none %}
         {% set rocolor = 'var(--up)' if RA.roro_state=='risk-on' else ('var(--down)' if RA.roro_state=='risk-off' else 'var(--muted)') %}
         <div class="kv">RORO <b style="color:{{ rocolor }}">{{ '%+.2f'|format(RA.roro) }}</b> <span class="badge" style="font-size:11px">{{ t(RA.roro_state, {'risk-on':'风险偏好','risk-off':'避险','neutral':'中性'}.get(RA.roro_state, RA.roro_state)) }}</span></div>
+        {% set RC = fear_euphoria.confirmation if (fear_euphoria and fear_euphoria.confirmation) else none %}
+        {% if RC %}
+        {% set _dcol = 'var(--up)' if RC.direction=='risk-on' else ('var(--down)' if RC.direction=='risk-off' else 'var(--muted)') %}
+        <div class="kv" style="margin-top:5px;padding-top:5px;border-top:1px solid var(--line)">{{ t('Cross-asset confirmation', '跨资产确认') }}
+          {{ help("How many of the 7 cross-asset RORO legs (VIX, HY credit, SKEW, vol term structure, financial conditions, copper/gold, the dollar) agree on the dominant risk direction RIGHT NOW — the dispersion the single RORO mean hides. A 5-of-7 split and a unanimous read can average to the same number; this shows which it is. The full 7-leg bar breakdown is in the Fear↔Euphoria panel below. DISPLAY-ONLY: it never scores or sizes anything.", "7 项跨资产 RORO 分量（VIX、高收益信用、SKEW、波动率期限结构、金融条件、铜／金、美元）当前有多少项在主导风险方向上一致 — 这是单一 RORO 均值掩盖的离散度。5/7 的分歧与全体一致可能平均成同一数字；此处揭示究竟是哪种。完整 7 项柱状拆解见下方恐惧↔欣喜面板。仅供显示：绝不评分或决定仓位。") }}
+          <b style="color:{{ _dcol }}">{{ RC.agree }}/{{ RC.total }}</b>
+          <span class="muted sm">{{ t('legs', '项') }} {{ t(RC.direction, {'risk-on':'偏好风险','risk-off':'避险','split':'对半'}.get(RC.direction, RC.direction)) }}</span>
+          <span class="badge" style="font-size:11px">{{ t(RC.verdict_en, RC.verdict_zh) }}</span></div>
+        {% if RC.dissent %}
+        <div class="muted sm" style="margin-top:2px">{{ t('dissent', '背离') }}: {% for d in RC.dissent %}{{ t(d.en, d.zh) }}{% if not loop.last %} · {% endif %}{% endfor %}</div>
+        {% else %}
+        <div class="muted sm" style="margin-top:2px">{{ t('all legs aligned', '全部分量一致') }}</div>
+        {% endif %}
+        {% endif %}
         {% endif %}
         {% if RA.vrp is not none %}<div class="kv">{{ t('Equity vol-risk-premium', '股票波动率风险溢价') }} <b>{{ '%+.1f'|format(RA.vrp) }}</b> <span class="muted sm">{{ ((RA.vrp_pctile or 0)*100)|round|int }}%ile</span></div>{% endif %}
         {% if RA.vix_term is not none %}<div class="kv">{{ t('VIX term structure', 'VIX 期限结构') }} <b>{{ '%.2f'|format(RA.vix_term) }}</b> <span class="muted sm">{{ t('backwardation' if RA.vix_term>=1 else 'contango', '倒挂' if RA.vix_term>=1 else '正向') }}</span></div>{% endif %}

@@ -1239,6 +1239,49 @@ def _fe_legs(cf: pd.DataFrame) -> list[dict]:
     return legs
 
 
+def _roro_confirmation(legs: list[dict]) -> dict | None:
+    """DISPLAY-ONLY cross-asset confirmation tally over the signed RORO legs.
+
+    Reuses _fe_legs (each leg's risk-on-positive contribution + lean): counts how
+    many of the cross-asset legs agree on the dominant risk direction RIGHT NOW and
+    grades the agreement (clean / not-clean / divergent). This is the dispersion the
+    headline RORO mean HIDES — a 5-of-7 split and a unanimous read can average to the
+    same number; this shows which it is. Majority-anchored so it reads in either
+    regime. NEVER scored; never feeds axes / regime / macro_risk.
+    """
+    if not legs:
+        return None
+    on = [lg for lg in legs if lg["lean"] == "risk-on"]
+    off = [lg for lg in legs if lg["lean"] == "risk-off"]
+    n_on, n_off, total = len(on), len(off), len(legs)
+    if n_on > n_off:
+        direction, dir_zh, majority, minority = "risk-on", "偏好风险", on, off
+    elif n_off > n_on:
+        direction, dir_zh, majority, minority = "risk-off", "避险", off, on
+    else:
+        direction, dir_zh, majority, minority = "split", "对半分歧", on, off
+    agree = len(majority)
+    ratio = agree / total
+    if direction == "split":
+        verdict_en, verdict_zh = "divergent (split)", "背离（对半）"
+    elif ratio >= 0.85:                       # ~6-7 of 7 aligned
+        verdict_en, verdict_zh = "clean " + direction, "一致" + dir_zh
+    elif ratio >= 0.70:                       # ~5 of 7 — constructive but not clean
+        verdict_en, verdict_zh = direction + ", not clean", dir_zh + "（不一致）"
+    else:                                     # ~4 of 7 — no real consensus
+        verdict_en, verdict_zh = "divergent (no consensus)", "背离（无共识）"
+
+    def _lab(xs: list[dict]) -> list[dict]:
+        return [{"key": lg["key"], "en": lg["name_en"], "zh": lg["name_zh"]} for lg in xs]
+
+    return {
+        "n_on": n_on, "n_off": n_off, "total": total, "agree": agree,
+        "direction": direction,
+        "confirmed_by": _lab(majority), "dissent": _lab(minority),
+        "verdict_en": verdict_en, "verdict_zh": verdict_zh,
+    }
+
+
 def _fe_positioning(latest: dict, f: pd.DataFrame) -> dict:
     """Positioning confirms/diverges read from US-macro inputs ONLY (no China/HK
     southbound): COT spec washout/crowding (recomputed — the boolean is not
@@ -1289,9 +1332,11 @@ def fear_euphoria_synthesis(latest: dict, f: pd.DataFrame) -> dict | None:
             return None
         fe = _fe_map(pct)
         RA = (latest.get("conditions") or {}).get("risk_appetite") or {}
+        legs = _fe_legs(cf)
         return {"fe_score": fe, "band": _fe_band(fe),
                 "roro": RA.get("roro"), "roro_state": RA.get("roro_state"),
-                "legs": _fe_legs(cf), "positioning": _fe_positioning(latest, f)}
+                "legs": legs, "confirmation": _roro_confirmation(legs),
+                "positioning": _fe_positioning(latest, f)}
     except Exception as e:  # noqa: BLE001 — additive panel, never fatal
         log.warning("fear/euphoria synthesis failed: %s", e)
         return None
