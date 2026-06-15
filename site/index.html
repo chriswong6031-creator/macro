@@ -56,6 +56,27 @@ body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
 .stat.on{background:color-mix(in srgb,var(--info) 16%,var(--panel));color:color-mix(in srgb,var(--info) 80%,var(--text))}
 .stat.off{background:color-mix(in srgb,var(--act) 16%,var(--panel));color:color-mix(in srgb,var(--act) 80%,var(--text))}
 .go{margin-top:18px;font-weight:700;color:var(--link);font-size:14px}
+/* row 1 — three core-market hero cards, each split macro / stocks */
+.cards-hero{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;width:100%;max-width:1120px;margin-bottom:22px}
+@media(max-width:860px){.cards-hero{grid-template-columns:1fr}}
+.c-hero{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:18px 18px 16px;display:flex;flex-direction:column}
+.ch-title{font-size:22px;font-weight:800;color:var(--text);letter-spacing:-.02em;display:flex;align-items:center;gap:9px;margin-bottom:12px}
+.ch-title .ch-ico{font-size:24px}
+.c-half{display:block;text-decoration:none;color:inherit;border:1px solid var(--line);border-radius:13px;padding:14px 15px;transition:transform .12s,border-color .12s,background .12s}
+.c-half + .c-half{margin-top:11px}
+.c-half:hover{border-color:var(--link);background:var(--panel2);transform:translateY(-1px)}
+.ch-top{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.ch-top b{font-size:15px;font-weight:700;color:var(--text)}
+.ch-tag{margin-left:auto;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:var(--panel2);padding:2px 8px;border-radius:6px}
+.ch-stat{display:inline-block;padding:5px 11px;border-radius:8px;background:var(--panel2);color:var(--text);font-weight:700;font-size:13px}
+.ch-go{margin-top:9px;font-weight:700;color:var(--link);font-size:13px}
+/* row 2 — smaller ancillary cards */
+.cards-sub{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;width:100%;max-width:1120px}
+@media(max-width:720px){.cards-sub{grid-template-columns:1fr}}
+.cards-sub .c{padding:22px;border-radius:16px}
+.cards-sub .c .ico{font-size:24px}
+.cards-sub .c h2{font-size:19px;margin:10px 0 5px}
+.cards-sub .c p{font-size:13px;min-height:34px;margin-bottom:12px}
 .foot{margin-top:40px;color:var(--muted);font-size:12px;text-align:center}
 .site-footer{width:100%;max-width:880px;margin:30px auto 0;padding-top:22px;
  border-top:1px solid var(--line);text-align:center;line-height:1.6}
@@ -74,35 +95,53 @@ body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
 </div>
 <div class="h"><h1><span class="l-en">Market Intelligence</span><span class="l-zh">市场情报</span></h1>
 <p><span class="l-en">Market regime dashboards, one zero-cost data engine.</span><span class="l-zh">市场周期仪表盘，一套零成本数据引擎。</span></p></div>
-<div class="cards">
-  <a class="c" href="macro.html">
-    <div class="ico">🌍</div>
-    <h2><span class="l-en">Macro Vector</span><span class="l-zh">宏观向量</span></h2>
-    <p><span class="l-en">Regime, liquidity &amp; sector-flow read across the global business cycle.</span><span class="l-zh">纵观全球商业周期的市场状态、流动性与板块资金流向解读。</span></p>
-    <span class="stat"><span class="l-en">Goldilocks</span><span class="l-zh">理想增长</span></span>
-    <div class="go"><span class="l-en">Open Macro Vector →</span><span class="l-zh">打开宏观向量 →</span></div>
-  </a>
-  <a class="c" href="spvector.html">
-    <div class="ico">📈</div>
-    <h2><span class="l-en">S&amp;P / Macro Vector</span><span class="l-zh">标普宏观向量</span></h2>
-    <p><span class="l-en">Stay-in / step-out allocation for the broad US index vs T-bills — a backtested drawdown &amp; Sharpe engine.</span><span class="l-zh">美国大盘指数与短债之间的进出场配置——经回测、以回撤与夏普为目标的引擎。</span></p>
-    <span class="stat"><span class="l-en">Low risk</span><span class="l-zh">Low risk</span> · 100% <span class="l-en">equity</span><span class="l-zh">股票</span></span>
-    <div class="go"><span class="l-en">Open S&amp;P / Macro Vector →</span><span class="l-zh">打开标普宏观向量 →</span></div>
-  </a>
-  <a class="c" href="china.html">
-    <div class="ico">🇨🇳</div>
-    <h2><span class="l-en">China A-Shares</span><span class="l-zh">中国A股</span></h2>
-    <p><span class="l-en">Regime, sector rotation &amp; cycle read for the Mainland A-share market.</span><span class="l-zh">中国A股市场的周期状态、板块轮动与周期解读。</span></p>
-    <span class="stat"><span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></span>
-    <div class="go"><span class="l-en">Open China A-Shares →</span><span class="l-zh">打开中国A股 →</span></div>
-  </a>
-  <a class="c" href="hk.html">
-    <div class="ico">🇭🇰</div>
-    <h2><span class="l-en">Hong Kong</span><span class="l-zh">香港</span></h2>
-    <p><span class="l-en">Regime, a primary global risk-on/off overlay, sector rotation &amp; cycle read for the Hang Seng market.</span><span class="l-zh">恒生市场的周期状态、以全球风险开关为主的叠加、板块轮动与周期解读。</span></p>
-    <span class="stat"><span class="l-en">Stagflation</span><span class="l-zh">滞胀</span> · <span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
-    <div class="go"><span class="l-en">Open Hong Kong →</span><span class="l-zh">打开香港 →</span></div>
-  </a>
+<div class="cards-hero">
+  <div class="c-hero">
+    <div class="ch-title"><span class="ch-ico">🇺🇸</span><span class="l-en">United States</span><span class="l-zh">美国</span></div>
+    <div class="ch-halves">
+      <a class="c-half" href="macro.html">
+        <div class="ch-top"><span>🌍</span><b><span class="l-en">Macro regime</span><span class="l-zh">宏观周期</span></b><span class="ch-tag"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span></div>
+        <span class="ch-stat"><span class="l-en">Goldilocks</span><span class="l-zh">理想增长</span></span>
+        <div class="ch-go"><span class="l-en">Open macro dashboard →</span><span class="l-zh">打开宏观看板 →</span></div>
+      </a>
+      <a class="c-half" href="us_stocks.html">
+        <div class="ch-top"><span>📈</span><b><span class="l-en">US Stocks</span><span class="l-zh">美国个股</span></b><span class="ch-tag"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span></div>
+        <span class="ch-stat"><span class="l-en">12 standout setups</span><span class="l-zh">12 只精选个股</span></span>
+        <div class="ch-go"><span class="l-en">Open stock dashboard →</span><span class="l-zh">打开个股看板 →</span></div>
+      </a>
+    </div>
+  </div>
+  <div class="c-hero">
+    <div class="ch-title"><span class="ch-ico">🇨🇳</span><span class="l-en">China</span><span class="l-zh">中国</span></div>
+    <div class="ch-halves">
+      <a class="c-half" href="china.html">
+        <div class="ch-top"><span>📊</span><b><span class="l-en">Macro regime</span><span class="l-zh">宏观周期</span></b><span class="ch-tag"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span></div>
+        <span class="ch-stat"><span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></span>
+        <div class="ch-go"><span class="l-en">Open A-share regime →</span><span class="l-zh">打开A股周期 →</span></div>
+      </a>
+      <a class="c-half" href="china_stocks.html">
+        <div class="ch-top"><span>📈</span><b><span class="l-en">A-share stocks</span><span class="l-zh">A股个股</span></b><span class="ch-tag"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span></div>
+        <span class="ch-stat"><span class="l-en">12 setups · screener</span><span class="l-zh">12 形态 · 筛选</span></span>
+        <div class="ch-go"><span class="l-en">Open stock screener →</span><span class="l-zh">打开个股筛选 →</span></div>
+      </a>
+    </div>
+  </div>
+  <div class="c-hero">
+    <div class="ch-title"><span class="ch-ico">🇭🇰</span><span class="l-en">Hong Kong</span><span class="l-zh">香港</span></div>
+    <div class="ch-halves">
+      <a class="c-half" href="hk.html">
+        <div class="ch-top"><span>📊</span><b><span class="l-en">Macro regime</span><span class="l-zh">宏观周期</span></b><span class="ch-tag"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span></div>
+        <span class="ch-stat"><span class="l-en">Stagflation</span><span class="l-zh">滞胀</span> · <span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
+        <div class="ch-go"><span class="l-en">Open HK regime →</span><span class="l-zh">打开香港周期 →</span></div>
+      </a>
+      <a class="c-half" href="hk_stocks.html">
+        <div class="ch-top"><span>📈</span><b><span class="l-en">HK stocks &amp; exposure</span><span class="l-zh">港股与敞口</span></b><span class="ch-tag"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span></div>
+        <span class="ch-stat"><span class="l-en">24 beta exposures</span><span class="l-zh">24 个 beta 敞口</span></span>
+        <div class="ch-go"><span class="l-en">Open stock board →</span><span class="l-zh">打开个股看板 →</span></div>
+      </a>
+    </div>
+  </div></div>
+<div class="cards-sub">
   <a class="c" href="vector.html">
     <div class="ico">₿</div>
     <h2><span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span></h2>
@@ -110,6 +149,13 @@ body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
     <span class="stat off"><span class="l-en">Risk</span><span class="l-zh">风险</span> <span class="l-en">OFF</span><span class="l-zh">关闭</span> · 35</span>
     <span class="stat"><span class="l-en">Momentum</span><span class="l-zh">动量</span> -0.78</span>
     <div class="go"><span class="l-en">Open Bitcoin Vector →</span><span class="l-zh">打开比特币向量 →</span></div>
+  </a>
+  <a class="c" href="spvector.html">
+    <div class="ico">📈</div>
+    <h2><span class="l-en">S&amp;P / Macro Vector</span><span class="l-zh">标普宏观向量</span></h2>
+    <p><span class="l-en">Stay-in / step-out allocation for the broad US index vs T-bills — a backtested drawdown &amp; Sharpe engine.</span><span class="l-zh">美国大盘指数与短债之间的进出场配置——经回测、以回撤与夏普为目标的引擎。</span></p>
+    <span class="stat"><span class="l-en">low</span><span class="l-zh">low</span> · 100% <span class="l-en">equity</span><span class="l-zh">股票</span></span>
+    <div class="go"><span class="l-en">Open S&amp;P / Macro Vector →</span><span class="l-zh">打开标普宏观向量 →</span></div>
   </a>
   <a class="c" href="commodities.html">
     <div class="ico">◆</div>
@@ -129,7 +175,7 @@ body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
     <div class="ico">🏛️</div>
     <h2><span class="l-en">Bonds &amp; Bond Health</span><span class="l-zh">债券与债券健康</span></h2>
     <p><span class="l-en">What the curve, credit, real rates, rates-vol &amp; funding plumbing say about economic health, regime &amp; the cycle.</span><span class="l-zh">收益率曲线、信用利差、实际利率、利率波动与资金管道对经济健康、周期状态与所处阶段的判读。</span></p>
-    <span class="stat">&lt;span class=&#34;l-en&#34;&gt;Health&lt;/span&gt;&lt;span class=&#34;l-zh&#34;&gt;健康度&lt;/span&gt; 86/100 · <span class="l-en">late</span><span class="l-zh">晚期</span></span>
+    <span class="stat"><span class="l-en">Health</span><span class="l-zh">健康度</span> 86/100 · <span class="l-en">late</span><span class="l-zh">晚期</span></span>
     <div class="go"><span class="l-en">Open Bonds →</span><span class="l-zh">打开债券 →</span></div>
   </a>
   <a class="c" href="etfs.html">
@@ -145,8 +191,7 @@ body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
     <p><span class="l-en">Track your own holdings — equities, ETFs, commodities and crypto — each with its live signal.</span><span class="l-zh">跟踪你自己的持仓——股票、ETF、大宗商品与加密货币——每个都附带实时信号。</span></p>
     <span class="stat"><span class="l-en">Your holdings</span><span class="l-zh">你的持仓</span></span>
     <div class="go"><span class="l-en">Open Watchlist →</span><span class="l-zh">打开持仓清单 →</span></div>
-  </a>
-</div>
+  </a></div>
 <div class="feed">
   <div class="feed-h"><h3><span class="l-en">Latest Alerts</span><span class="l-zh">最新警报</span></h3>
     <span class="n">12 <span class="l-en">major · from both feeds ·</span><span class="l-zh">条重要 · 来自两个数据源 ·</span> <a href="vector.html#timeline"><span class="l-en">full Vector timeline →</span><span class="l-zh">完整向量时间线 →</span></a></span></div>
@@ -259,7 +304,7 @@ body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
   <div class="ha-detail"><span class="l-en">Optimal strategy moved 25% → 0% BTC (momentum × risk grid).</span><span class="l-zh">最优策略从 25% 调整为 0% BTC（动量 × 风险网格）。</span><div class="ha-what"><span class="l-en">Backtest: 64.2% CAGR vs 59.0% buy-and-hold; max drawdown -42.8% vs -83.8%.</span><span class="l-zh">回测：64.2% 年化 vs 59.0% 买入并持有；最大回撤 -42.8% vs -83.8%。</span></div><div class="ha-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Strategy output — beat buy-and-hold in backtest.</span><span class="l-zh">策略输出 — 在回测中跑赢买入并持有。</span></div><a class="ha-open" href="vector.html#allocation"><span class="l-en">Open →</span><span class="l-zh">打开 →</span></a></div>
 </details></div>
 </div>
-<div class="foot"><span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-06-15 03:20 UTC · <span class="l-en">mechanical, backtested, free public data · not investment advice</span><span class="l-zh">机械化 · 经回测 · 免费公开数据 · 非投资建议</span></div>
+<div class="foot"><span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-06-15 09:14 UTC · <span class="l-en">mechanical, backtested, free public data · not investment advice</span><span class="l-zh">机械化 · 经回测 · 免费公开数据 · 非投资建议</span></div>
 <footer class="site-footer">
   <span class="made"><span class="l-en">Made with ❤️ in Canada</span><span class="l-zh">用 ❤️ 在加拿大制作</span></span>
   <span class="dev"><span class="l-en">Developed by</span><span class="l-zh">开发者</span> Chris Wong</span>

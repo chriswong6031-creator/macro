@@ -1,0 +1,1002 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><span class="l-en">China A-Share Stock Dashboard</span><span class="l-zh">中国A股个股看板</span> — 2026-06-15</title>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system,
+         "Segoe UI", Roboto, Helvetica, sans-serif; margin: 0; padding: 18px; }
+  @media (min-width: 1100px) { body { padding: 26px max(40px, calc((100vw - 1500px) / 2)); } }
+  html[data-lang="zh"] body { font-family: "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",-apple-system,sans-serif; }
+  a { text-decoration: none; color: var(--link); }
+  h1 { font-size: 21px; margin: 0 0 2px; color: var(--text); }
+  h2 { font-size: 14.5px; margin: 0 0 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+
+  /* ---- hover tooltips (the ? help icons) — hidden until hover ---------------- */
+  .help { display: inline-flex; align-items: center; justify-content: center;
+          width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--muted);
+          color: var(--muted); font-size: 10px; font-weight: 600; cursor: help;
+          position: relative; vertical-align: middle; margin-left: 5px; flex: none; }
+  .help .tip { display: none; position: absolute; bottom: 150%; left: 50%;
+               transform: translateX(-50%); width: 300px;
+               background: var(--panel); border: 1px solid var(--line);
+               padding: 10px 12px; border-radius: 9px; z-index: 60; font-size: 12px;
+               line-height: 1.5; color: var(--text); text-align: left; font-weight: 400;
+               text-transform: none; letter-spacing: normal; box-shadow: var(--popover-shadow);
+               pointer-events: none; white-space: normal; }
+  .help:hover .tip { display: block; }
+  th .help .tip, .help.below .tip { bottom: auto; top: 150%; }
+  .help.edge-right .tip { left: auto; right: 0; transform: none; }
+  .help.edge-left .tip { left: 0; right: auto; transform: none; }
+  /* structured tooltip building blocks (tables / scale bars / tinted rows) */
+  .tip p { margin: 0 0 6px; } .tip p:last-child { margin-bottom: 0; } .tip b { color: var(--text); }
+  .tip table { width: 100%; margin: 7px 0 2px; font-size: 11.5px; border-collapse: collapse; }
+  .tip th, .tip td { padding: 3px 6px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+  .tip th { color: var(--muted); font-weight: 600; }
+  .tip tr:last-child td { border-bottom: none; }
+  .tip .scale { display: flex; height: 15px; border-radius: 7px; overflow: hidden; margin: 8px 0 2px; font-size: 9.5px; font-weight: 700; }
+  .tip .scale span { flex: 1; display: flex; align-items: center; justify-content: center; color: #fff; }
+  .tip .sl { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin: 0 0 4px; }
+  .tip .lad { display: block; padding: 4px 9px; border-radius: 6px; margin: 4px 0; font-size: 11.5px;
+              background: color-mix(in srgb, var(--c, var(--muted)) 16%, var(--panel));
+              color: color-mix(in srgb, var(--c, var(--muted)) 84%, var(--text)); }
+  .tip .lad.up { --c: var(--up); } .tip .lad.down { --c: var(--down); } .tip .lad.warn { --c: var(--warn); }
+  .tip .lad.orange { --c: var(--orange); } .tip .lad.info { --c: var(--info); } .tip .lad.muted { --c: var(--muted); }
+  /* residual-alpha entry tags (extended/pullback/intact/laggard) */
+  .alpha-entry { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px;
+                 border-radius:9px; text-transform:capitalize; border:1px solid var(--line);
+                 white-space:nowrap; }
+  .ae-pullback { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up);
+                 border-color:color-mix(in srgb,var(--up) 40%,transparent); }
+  .ae-extended { background:color-mix(in srgb,var(--warn) 22%,transparent); color:var(--text);
+                 border-color:color-mix(in srgb,var(--warn) 55%,transparent); }
+  .ae-intact { background:color-mix(in srgb,var(--link) 14%,transparent); color:var(--link); }
+  .ae-laggard,.ae-neutral { background:var(--panel2,var(--panel)); color:var(--muted); }
+  /* consolidated stock-screener: segmented mode toggle */
+  .sb-seg { display:inline-flex; flex-wrap:wrap; gap:4px; padding:4px; border-radius:11px;
+            background:var(--panel2,color-mix(in srgb,var(--muted) 10%,var(--panel)));
+            border:1px solid var(--line); margin:2px 0 14px; }
+  .sb-seg button { font:inherit; font-size:12.5px; font-weight:600; cursor:pointer;
+            border:1px solid transparent; background:transparent; color:var(--muted);
+            padding:6px 13px; border-radius:8px; line-height:1.2; transition:all .14s ease;
+            white-space:nowrap; }
+  .sb-seg button:hover { color:var(--text); }
+  .sb-seg button[aria-selected="true"] { background:var(--panel); color:var(--text);
+            border-color:var(--line); box-shadow:var(--popover-shadow,0 1px 3px rgba(0,0,0,.12)); }
+  .sb-cap { margin:0 0 12px; text-transform:none; line-height:1.55; }
+  .sb-table th.th-sort { cursor:pointer; user-select:none; }
+  .sb-table th.th-sort:hover { color:var(--text); }
+  .sb-table th.sorted { color:var(--text); }
+  .sb-table .sarrow { font-size:9px; opacity:.32; margin-left:3px; font-weight:700; }
+  .sb-table th.sorted .sarrow { opacity:.9; color:var(--link); }
+  /* ---- standout-stock cards (ported from the US dashboard) ------------------- */
+  .nbgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; margin-top:11px; }
+  a.nbcard { background:var(--panel2,var(--panel)); border:1px solid var(--line); border-radius:10px;
+             padding:9px 11px 10px; border-left:3px solid var(--muted); display:flex;
+             flex-direction:column; gap:4px; transition:transform .12s, box-shadow .12s, border-color .12s; }
+  a.nbcard:hover { transform:translateY(-2px); box-shadow:0 5px 18px rgba(0,0,0,.22); border-color:var(--link); }
+  .nbcard.nb-up { border-left-color:var(--up); } .nbcard.nb-down { border-left-color:var(--down); }
+  .nbcard.nb-caution { border-left-color:var(--warn); }
+  .nb-top { display:flex; align-items:baseline; gap:6px; }
+  .nb-tk { font-weight:800; font-size:14px; color:var(--text); }
+  .nb-nm { font-size:10px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
+  .nb-px { font-weight:700; font-size:13px; color:var(--text); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .nb-sub { display:flex; justify-content:space-between; font-size:10px; color:var(--muted); }
+  .nbcard .nch { background:transparent; margin:4px 0 2px; width:100%; height:42px; border-radius:5px; }
+  .nb-bot { display:flex; align-items:center; gap:6px; margin-top:1px; }
+  .nb-state { font-size:10px; font-weight:800; letter-spacing:.02em; padding:1px 7px; border-radius:8px; }
+  .nb-up .nb-state { color:var(--up); background:color-mix(in srgb,var(--up) 15%,var(--panel)); }
+  .nb-down .nb-state { color:var(--down); background:color-mix(in srgb,var(--down) 15%,var(--panel)); }
+  .nb-caution .nb-state { color:var(--warn); background:color-mix(in srgb,var(--warn) 15%,var(--panel)); }
+  .nb-eta { font-weight:700; color:var(--info,var(--link)); font-size:10px; }
+  .nb-conf { margin-left:auto; font-size:10px; font-weight:800; padding:1px 6px; border-radius:7px;
+             color:var(--up); background:color-mix(in srgb,var(--up) 14%,var(--panel));
+             border:1px solid color-mix(in srgb,var(--up) 34%,var(--line)); white-space:nowrap; cursor:help; }
+  .nb-alpha { display:flex; align-items:center; gap:6px; font-size:9.5px; margin-top:2px; flex-wrap:wrap; }
+  .nb-az { font-weight:800; font-variant-numeric:tabular-nums; padding:0 5px; border-radius:7px;
+           background:var(--panel); border:1px solid var(--line); color:var(--muted); }
+  .nb-az.az-up { color:var(--up); border-color:color-mix(in srgb,var(--up) 38%,var(--line)); }
+  .nb-az.az-dn { color:var(--down); border-color:color-mix(in srgb,var(--down) 38%,var(--line)); }
+  .nb-rk { color:var(--muted); font-variant-numeric:tabular-nums; }
+  .nb-ent { font-weight:700; padding:0 5px; border-radius:7px; text-transform:capitalize; }
+  .nb-ent.ent-good { color:var(--up); background:color-mix(in srgb,var(--up) 14%,var(--panel)); }
+  .nb-ent.ent-warn { color:var(--warn); background:color-mix(in srgb,var(--warn) 16%,var(--panel)); }
+  .grid { display: grid; gap: 14px; grid-template-columns: repeat(12, 1fr); }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 15px 17px; }
+  .span12 { grid-column: span 12; } .span8 { grid-column: span 8; }
+  .span6 { grid-column: span 6; } .span4 { grid-column: span 4; }
+  @media (max-width: 900px) { .span8, .span6, .span4 { grid-column: span 12; } }
+
+  /* regime hero */
+  .hero { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; }
+  .quad-badge { font-size: 22px; font-weight: 800; padding: 8px 18px; border-radius: 13px; color: #fff; }
+  .quad-Q1 { background: var(--q1); } .quad-Q2 { background: var(--q2); color: #1a1a1a; }
+  .quad-Q3 { background: var(--q3); } .quad-Q4 { background: var(--q4); }
+  .metric { display: flex; flex-direction: column; gap: 1px; }
+  .metric .v { font-size: 18px; font-weight: 700; color: var(--text); }
+  .metric .k { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .chip { display: inline-block; padding: 3px 11px; border-radius: 12px; font-weight: 600; font-size: 12.5px;
+          background: color-mix(in srgb, var(--c, var(--muted)) 16%, var(--panel));
+          color: color-mix(in srgb, var(--c, var(--muted)) 82%, var(--text)); }
+  .c-up { --c: var(--up); } .c-down { --c: var(--down); } .c-warn { --c: var(--warn); }
+  .c-info { --c: var(--info); } .c-muted { --c: var(--muted); }
+
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { text-align: right; padding: 5px 8px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 500; }
+  th:first-child, td:first-child, td.l, th.l { text-align: left; }
+  .pos { color: var(--up); } .neg { color: var(--down); }
+  .lad { display: inline-block; padding: 1px 9px; border-radius: 10px; font-size: 11.5px; font-weight: 700;
+         background: color-mix(in srgb, var(--c, var(--muted)) 16%, var(--panel));
+         color: color-mix(in srgb, var(--c, var(--muted)) 82%, var(--text)); }
+  .lad.up { --c: var(--up); } .lad.down { --c: var(--down); } .lad.flat { --c: var(--muted); }
+  .agechip { font-size: 10.5px; font-weight: 700; color: var(--muted); white-space: nowrap; margin-left: 5px; }
+  .eqmini { font-size: 10.5px; font-weight: 700; white-space: nowrap; margin-left: 5px; cursor: help; }
+  .eqmini.eq-up { color: var(--up); } .eqmini.eq-down { color: var(--down); } .eqmini.eq-flat { color: var(--muted); }
+  .note { font-size: 12.5px; color: var(--muted); line-height: 1.6; }
+  .mtf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  .mtf-card .mtf-name { font-weight: 700; font-size: 13.5px; margin-bottom: 6px; color: var(--text); }
+
+  /* ---- Regime Time Machine (ported from the macro dashboard) ---------------- */
+  #time-machine .tm-wrap { position: relative; margin: 4px 0 2px; }
+  .tm-canvas { display: block; width: 100%; height: 56px; cursor: ew-resize; border-radius: 8px; touch-action: none; }
+  .tm-range { -webkit-appearance: none; appearance: none; width: 100%; height: 16px; background: transparent; margin: 2px 0 0; cursor: ew-resize; }
+  .tm-range::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: var(--line); }
+  .tm-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; margin-top: -6px; border-radius: 50%; background: var(--text); border: 2px solid var(--panel); box-shadow: 0 1px 4px rgba(0,0,0,.35); }
+  .tm-range::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--text); border: 2px solid var(--panel); }
+  .tm-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin: 8px 0 12px; }
+  .tm-presets { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+  .tm-btn { font: inherit; font-size: 12px; font-weight: 600; color: var(--text); background: var(--panel2); border: 1px solid var(--line); border-radius: 7px; padding: 5px 11px; cursor: pointer; }
+  .tm-btn:hover { border-color: var(--link); }
+  .tm-play { display: inline-flex; align-items: center; gap: 7px; }
+  .tm-play-ico { width: 0; height: 0; border-style: solid; border-width: 6px 0 6px 10px; border-color: transparent transparent transparent var(--text); }
+  .tm-play.is-playing .tm-play-ico { width: 9px; height: 11px; border: none; border-left: 3px solid var(--text); border-right: 3px solid var(--text); }
+  .tm-readout { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+  .tm-asof { display: flex; align-items: baseline; gap: 10px; margin-bottom: 9px; }
+  .tm-date { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .tm-state-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 2px 8px; border-radius: 10px; }
+  .tm-state-tag.is-live { color: color-mix(in srgb, var(--up) 85%, var(--text)); background: color-mix(in srgb, var(--up) 16%, var(--panel)); }
+  .tm-state-tag.is-hist { color: var(--muted); background: color-mix(in srgb, var(--muted) 16%, var(--panel)); }
+  .tm-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .tm-gauges { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 22px; margin: 12px 0 4px; }
+  @media (max-width: 640px) { .tm-gauges { grid-template-columns: 1fr; } }
+  .tm-glabel { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 600; margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+  .tm-flags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .tm-flag { font-size: 11.5px; font-weight: 600; padding: 2px 9px; border-radius: 10px; background: color-mix(in srgb, var(--c) 16%, var(--panel)); color: color-mix(in srgb, var(--c) 82%, var(--text)); }
+  .tm-nowarn { font-size: 12px; color: var(--muted); }
+  /* shared badge / kv / gauge primitives the time-machine readout needs */
+  .badge { display: inline-block; padding: 3px 11px; border-radius: 11px; font-weight: 700; font-size: 12.5px; }
+  .badge.quad-Q1 { background: var(--q1); color: #fff; } .badge.quad-Q2 { background: var(--q2); color: #1a1a1a; }
+  .badge.quad-Q3 { background: var(--q3); color: #fff; } .badge.quad-Q4 { background: var(--q4); color: #fff; }
+  .badge.state-STABLE { background: color-mix(in srgb, var(--muted) 16%, var(--panel)); color: color-mix(in srgb, var(--muted) 82%, var(--text)); }
+  .kv { font-size: 12.5px; color: var(--muted); } .kv b { color: var(--text); font-variant-numeric: tabular-nums; }
+  .gauge { position: relative; height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--down), var(--line) 50%, var(--up)); }
+  .gauge i { position: absolute; top: 50%; width: 12px; height: 12px; border-radius: 50%; background: var(--text); border: 2px solid var(--panel); transform: translate(-50%,-50%); }
+
+  /* ---- gauges / dials / tiles for the new internals panels ------------------ */
+  .dial { position: relative; height: 9px; border-radius: 5px; margin: 6px 0 3px;
+          background: linear-gradient(90deg, var(--up), var(--warn) 55%, var(--down)); }
+  .dial.rev { background: linear-gradient(90deg, var(--down), var(--warn) 45%, var(--up)); }
+  .dial i { position: absolute; top: -3px; width: 4px; height: 15px; border-radius: 2px; background: var(--text); transform: translateX(-50%); box-shadow: 0 0 0 2px var(--panel); }
+  .dial-ends { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--muted); }
+  .tiles { display: flex; flex-wrap: wrap; gap: 10px; margin: 4px 0 2px; }
+  .tile { flex: 1 1 90px; background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; min-width: 88px; }
+  .tile .tv { font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--text); }
+  .tile .tk { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+  .bignum { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
+  .sub { font-size: 11.5px; color: var(--muted); }
+  .chart { margin: 4px 0 2px; }
+  /* action board */
+  .act-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .act-col h3 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin: 0 0 6px; }
+  .act-col { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; }
+  .act-item { font-size: 12.5px; padding: 3px 0; border-bottom: 1px solid var(--line); }
+  .act-item:last-child { border-bottom: none; }
+  .act-item .an { font-weight: 600; color: var(--text); }
+  .act-item .at { font-size: 10.5px; color: var(--muted); }
+  .act-now h3 { color: var(--up); } .act-soon h3 { color: var(--info); }
+  .act-tp h3 { color: var(--warn); } .act-avoid h3 { color: var(--down); } .act-hold h3 { color: var(--muted); }
+
+  /* ---- regime hero: quad map + meaning + regime watch ----------------------- */
+  .herogauges { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 22px; max-width: 580px; margin: 16px 0 2px; }
+  .hg-l { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; margin-bottom: 6px; }
+  .hg-l .hv { font-variant-numeric: tabular-nums; }
+  .qmeaning { font-size: 14px; line-height: 1.55; margin: 14px 0 2px; color: var(--text); }
+  .regwatch { font-size: 13px; font-weight: 600; margin: 6px 0 0; padding: 7px 11px; border-radius: 9px;
+              background: color-mix(in srgb, var(--warn) 14%, var(--panel)); color: color-mix(in srgb, var(--warn) 88%, var(--text)); }
+  .qmap { display: grid; grid-template-columns: 78px 1fr 1fr; gap: 8px; margin: 16px 0 4px; }
+  .qmap .ax { font-size: 11px; color: var(--muted); display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.25; }
+  .qmap .cell { border-radius: 12px; padding: 16px 20px; color: #fff; font-weight: 700; font-size: 16.5px; opacity: .42;
+                display: flex; flex-direction: column; justify-content: center; min-height: 168px; transition: opacity .15s; }
+  .qmap .cell small { display: block; font-weight: 500; font-size: 12px; opacity: .92; margin-top: 6px; line-height: 1.4; }
+  .qmap .cell.cur { opacity: 1; box-shadow: inset 0 0 0 2px var(--text); }
+  @media (max-width: 900px) { .qmap .cell { min-height: 96px; font-size: 14px; } }
+  .qmap .q1 { background: var(--q1); } .qmap .q2 { background: var(--q2); color: #1a1a1a; }
+  .qmap .q3 { background: var(--q3); } .qmap .q4 { background: var(--q4); }
+
+  /* ---- playbook: lifespan bar + next-quad odds + exposure dial --------------- */
+  .lifebar { position: relative; height: 16px; border-radius: 8px; overflow: hidden; margin: 12px 0 3px; background: var(--panel2); }
+  .lifebar .zone { position: absolute; top: 0; height: 100%; }
+  .lifebar .marker { position: absolute; top: -2px; height: calc(100% + 4px); width: 3px; background: var(--text); border-radius: 2px; box-shadow: 0 0 0 1px var(--panel); }
+  .lifelabels { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--muted); }
+  .prob { display: flex; align-items: center; gap: 9px; margin: 7px 0; }
+  .prob .nm { flex: 0 0 96px; font-size: 12.5px; font-weight: 600; }
+  .prob .bar { flex: 1; height: 14px; background: var(--panel2); border-radius: 7px; overflow: hidden; }
+  .prob .bar i { display: block; height: 100%; border-radius: 7px; }
+  .prob .pc { flex: 0 0 38px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .pdial { display: flex; gap: 4px; margin: 6px 0 12px; }
+  .pdial > span { flex: 1; text-align: center; font-size: 11.5px; font-weight: 700; padding: 7px 4px; border-radius: 8px;
+                background: var(--panel2); color: var(--muted); border: 1px solid var(--line); }
+  .pdial .on-def { background: color-mix(in srgb, var(--down) 80%, var(--panel)); color: #fff; border-color: transparent; }
+  .pdial .on-car { background: color-mix(in srgb, var(--warn) 75%, var(--panel)); color: #1a1a1a; border-color: transparent; }
+  .pdial .on-neu { background: color-mix(in srgb, var(--muted) 55%, var(--panel)); color: var(--text); border-color: transparent; }
+  .pdial .on-con { background: color-mix(in srgb, var(--up) 62%, var(--panel)); color: #fff; border-color: transparent; }
+  .pdial .on-agg { background: color-mix(in srgb, var(--up) 88%, var(--panel)); color: #fff; border-color: transparent; }
+  .reason { display: flex; align-items: flex-start; gap: 8px; font-size: 12.5px; margin: 5px 0; line-height: 1.45; }
+  .sig { flex: none; width: 17px; height: 17px; border-radius: 50%; font-size: 11px; font-weight: 800; line-height: 17px; text-align: center; }
+  .sig-p { background: color-mix(in srgb, var(--up) 22%, var(--panel)); color: var(--up); }
+  .sig-m { background: color-mix(in srgb, var(--down) 22%, var(--panel)); color: var(--down); }
+  .sig-i { background: color-mix(in srgb, var(--muted) 22%, var(--panel)); color: var(--muted); }
+  .pcard { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 7px 10px; margin: 6px 0; font-size: 12.5px; }
+  .pcard .tk { color: var(--text); }
+  .calltag { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 8px; margin-right: 6px; text-transform: uppercase; letter-spacing: .03em; }
+  .tag-pref { background: color-mix(in srgb, var(--info) 18%, var(--panel)); color: color-mix(in srgb, var(--info) 85%, var(--text)); }
+  .tag-lead { background: color-mix(in srgb, var(--up) 18%, var(--panel)); color: color-mix(in srgb, var(--up) 85%, var(--text)); }
+  .tag-avoid { background: color-mix(in srgb, var(--down) 18%, var(--panel)); color: color-mix(in srgb, var(--down) 85%, var(--text)); }
+  h3 { font-size: 12.5px; margin: 12px 0 6px; color: var(--text); }
+
+  /* ---- sortable tables (tablesort.js) --------------------------------------- */
+  table.sortable th.th-sort { cursor: pointer; user-select: none; }
+  table.sortable th.th-sort:hover { color: var(--text); }
+  table.sortable th .sarrow { font-size: 9px; opacity: .32; margin-left: 3px; font-weight: 700; }
+  table.sortable th.sorted { color: var(--text); }
+  table.sortable th.sorted .sarrow { opacity: .9; color: var(--link); }
+  .foot { margin-top: 26px; color: var(--muted); font-size: 12px; text-align: center; line-height: 1.7; }
+  /* major-index health strip (macro page) */
+  .idx-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  @media (max-width: 760px) { .idx-grid { grid-template-columns: 1fr; } }
+  .idx-tile { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; }
+  .idx-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .idx-px { font-variant-numeric: tabular-nums; color: var(--muted); }
+  .idx-row, .idx-trend { display: flex; justify-content: space-between; font-size: 12px; gap: 8px; }
+  .idx-trend { margin-top: 3px; color: var(--muted); }
+  .idx-grid .pos { color: var(--up); } .idx-grid .neg { color: var(--down); } .idx-grid .warn { color: var(--warn); }
+  /* nav split-dropdown (macro / stocks / lookup) */
+  .nav-dd { position: relative; }
+  .nav-dd .caret { font-size: 9px; opacity: .6; }
+  .nav-dd-menu { position: absolute; top: calc(100% + 6px); left: 0; min-width: 210px; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 11px; box-shadow: 0 12px 34px rgba(0,0,0,.28); padding: 6px;
+    opacity: 0; visibility: hidden; transform: translateY(-6px); transition: opacity .16s, transform .16s, visibility .16s; z-index: 70; }
+  .nav-dd:hover > .nav-dd-menu, .nav-dd:focus-within > .nav-dd-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+  .nav-dd-menu a { display: block; padding: 7px 10px; border-radius: 8px; font-size: 13px; color: var(--muted); text-decoration: none; white-space: nowrap; }
+  .nav-dd-menu a:hover, .nav-dd-menu a.active { background: var(--panel2); color: var(--text); }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 <span class="l-en">Home</span><span class="l-zh">首页</span></a>
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">US Macro</span><span class="l-zh">美国宏观</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html"><span class="l-en">Regime dashboard</span><span class="l-zh">宏观周期</span><span class="d"><span class="l-en">Growth · inflation · MRS · nowcast</span><span class="l-zh">增长 · 通胀 · MRS · 即时预测</span></span></a>
+        <a href="us_stocks.html">📈 <span class="l-en">US Stocks</span><span class="l-zh">美国个股</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <a href="spvector.html">📈 <span class="l-en">S&P / Macro Vector</span><span class="l-zh">标普宏观向量</span><span class="d"><span class="l-en">Tactical equity↔cash allocation</span><span class="l-zh">战术股票↔现金配置</span></span></a>
+        <a href="factors.html">🧮 <span class="l-en">Factor Lab</span><span class="l-zh">因子实验室</span><span class="d"><span class="l-en">Value · quality · low-vol + point-in-time IC</span><span class="l-zh">价值 · 质量 · 低波动 + 时点 IC</span></span></a>
+        <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
+        <a href="seasonality.html">🗓 <span class="l-en">Factor Seasonality</span><span class="l-zh">因子季节性</span><span class="d"><span class="l-en">Ken French monthly, 1926+</span><span class="l-zh">Ken French 月度，1926+</span></span></a>
+        <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
+        <a href="signal_lab.html">🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></a>
+        <a href="validation_timeline.html">🧪 <span class="l-en">Validation timeline</span><span class="l-zh">验证时间线</span><span class="d"><span class="l-en">Full 2007→ walk-forward backtest</span><span class="l-zh">2007→ 完整滚动回测</span></span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="vector.html">₿ <span class="l-en">Bitcoin</span><span class="l-zh">比特币</span></a>
+    <div class="nav-dd">
+      <a class="nav-link active" href="china.html">🇨🇳 <span class="l-en">China A</span><span class="l-zh">中国A股</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu">
+        <a class="" href="china.html">📊 <span class="l-en">Macro dashboard</span><span class="l-zh">宏观仪表盘</span></a>
+        <a class="active" href="china_stocks.html">📈 <span class="l-en">A-share stocks</span><span class="l-zh">A股个股</span></a>
+        <a href="china_stock.html">🔎 <span class="l-en">Stock lookup</span><span class="l-zh">个股查询</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="hk.html">🇭🇰 <span class="l-en">Hong Kong</span><span class="l-zh">香港</span></a>
+    <a class="nav-link" href="gex.html">🧲 <span class="l-en">GEX magnets</span><span class="l-zh">Gamma磁吸</span></a>
+    <a class="nav-link" href="china_history.html">📈 <span class="l-en">History</span><span class="l-zh">历史</span></a>
+  </div>
+  <div class="nav-search" data-lib="chinastockdata/index.json" data-target="china_stock.html">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search A-shares"
+      placeholder="Search any A-share stock…" data-ph-zh="搜索任意 A 股个股…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="aibrief.html">🧠 <span class="l-en">AI Daily Brief</span><span class="l-zh">AI每日简报</span></a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+<div class="grid">
+
+  
+  <!-- ===================== A-SHARE STOCK DASHBOARD HEADER ===================== -->
+  <div class="panel span12" id="stocks-header">
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+      <h1 style="margin:0">🇨🇳 <span class="l-en">A-Share Stock Dashboard</span><span class="l-zh">A股个股看板</span></h1>
+      <span class="quad-badge quad-Q3"><span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></span>
+      <span class="chip c-muted"><span class="l-en">DEFENSIVE</span><span class="l-zh">防御</span></span>
+    </div>
+    <p class="note" style="margin:8px 0 0;text-transform:none"><span class="l-en">Where to look for A-shares — the validated mean-reversion setups, sector relative strength and residual-alpha context, filtered by the current macro regime.</span><span class="l-zh">在哪里找 A 股 —— 已验证的均值回归形态、板块相对强度与残差阿尔法背景，按当前宏观周期过滤。</span>
+      <a href="china.html" style="color:var(--link);font-weight:600">← <span class="l-en">China macro dashboard</span><span class="l-zh">中国宏观看板</span></a></p>
+  </div>
+  
+
+  
+
+  
+
+  
+  <!-- ===================== STANDOUT STOCKS (reversal-led cards · selection × timing) ===================== -->
+  
+  <div class="panel span12" id="standouts">
+    <h2><span class="l-en">⚡ Standout individual stocks</span><span class="l-zh">⚡ 表现突出的个股</span>
+      <span class="note" style="text-transform:none">· <span class="l-en">reversal-led shortlist · cycle-confirmed mean-reversion entries</span><span class="l-zh">反转主导精选 · 周期确认的均值回归入场</span></span>
+      <span class="help">?<span class="tip"><span class="l-en">The actionable per-stock shortlist — the China parallel of the US 'Standout individual stocks' card strip. REVERSAL-led after the deep-history correction: on ~35 years of A-share data, cross-sectional MOMENTUM is NOT a validated edge; short-term <b>reversal</b> is (research/CHINA_HK_STOCK_SIGNALS.md, reports/china-residual-alpha-deep.md). So this surfaces decent-quality names (some residual relative strength) sitting at a <b>cycle-confirmed mean-reversion entry</b> — a recent <b>pullback</b>, not an extended spike. Ranked by the <b>setup</b> score, which LEADS with the validated effects (the calibrated cycle entry + the pullback/reversal overlay); the residual is only a light quality tiebreaker (0.35×). The 🛡🔄 <b>safer rebound</b> chip flags a CONFLUENCE name — one that is BOTH a deep-dip reversal candidate AND a low-vol defensive name (both validated legs agree). An <b>extended</b> name is reversal RISK, not a buy. Context to size and confirm — not a buy list.</span><span class="l-zh">可操作的个股精选名单 —— 美国“表现突出的个股”卡片的中国版。经深度历史校正后改为反转主导：在约35年的A股数据上，横截面动量并非有效优势；短期<b>反转</b>才是（research/CHINA_HK_STOCK_SIGNALS.md、reports/china-residual-alpha-deep.md）。因此这里筛选出具备一定残差相对强度、且处于<b>周期确认的均值回归入场点</b>（近期<b>回调</b>而非急涨过热）的优质个股。按<b>配置分</b>排序，该分以已验证的效应为主（校准的周期入场＋回调/反转叠加）；残差仅作轻量质量加权（0.35×）。🛡🔄 <b>稳健反弹</b>标记表示<b>合流</b>个股 —— 既是深跌反转候选、又是低波防御股（两条已验证支线一致）。<b>extended</b>（急涨）个股是反转风险而非买入。用于定仓与确认的背景 —— 而非买入清单。</span></span></span>
+    </h2>
+    <p class="note" style="margin:0 0 2px;text-transform:none"><span class="l-en">Decent names at a cycle-confirmed mean-reversion entry — the validated A-share read, ranked by setup score (cycle entry + pullback/reversal). A research shortlist to size and confirm, not a buy list.</span><span class="l-zh">处于周期确认均值回归入场点的优质个股 —— 已验证的A股解读，按配置分（周期入场＋回调/反转）排序。用于研究、定仓与确认的名单，而非买入清单。</span></p>
+    <div class="nbgrid">
+    
+      
+      <a class="nbcard nb-up" href="china_stock.html#603156.SS">
+        <div class="nb-top">
+          <span class="nb-tk">603156.SS</span>
+          <span class="nb-nm"><span class="l-en">Hebei Yangyuan ZhiHui Beverage Co., Ltd.</span><span class="l-zh">养元饮品</span></span>
+          <span class="nb-px">42.43</span>
+        </div>
+        <div class="nb-sub"><span><span class="l-en">Consumer Defensive</span><span class="l-zh">必需消费</span></span><span>-15.5% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
+        <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,38.4 3.8,39.5 7.6,39.7 11.4,38.9 15.2,37.9 19.0,37.3 22.9,39.2 26.7,42.0 30.5,41.4 34.3,40.9 38.1,41.1 41.9,40.5 45.7,39.7 49.5,40.4 53.3,39.5 57.1,39.7 61.0,40.5 64.8,40.4 68.6,37.6 72.4,39.1 76.2,39.9 80.0,39.9 83.8,38.0 87.6,38.4 91.4,38.1 95.2,37.4 99.0,37.7 102.9,35.7 106.7,35.3 110.5,35.8 114.3,37.1 118.1,34.0 121.9,34.4 125.7,32.1 129.5,29.7 133.3,24.4 137.1,24.1 141.0,25.2 144.8,22.6 148.6,22.0 152.4,15.9 156.2,15.9 160.0,16.7 163.8,10.1 167.6,14.5 171.4,13.5 175.2,20.4 179.0,19.5 182.9,19.3 186.7,20.4 190.5,20.6 194.3,21.0 198.1,22.4 201.9,23.5 205.7,23.3 209.5,23.2 213.3,22.9 217.1,24.2 221.0,26.5 224.8,26.1 228.6,25.3 232.4,23.7 236.2,22.9 240.0,21.4 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,38.4 3.8,39.5 7.6,39.7 11.4,38.9 15.2,37.9 19.0,37.3 22.9,39.2 26.7,42.0 30.5,41.4 34.3,40.9 38.1,41.1 41.9,40.5 45.7,39.7 49.5,40.4 53.3,39.5 57.1,39.7 61.0,40.5 64.8,40.4 68.6,37.6 72.4,39.1 76.2,39.9 80.0,39.9 83.8,38.0 87.6,38.4 91.4,38.1 95.2,37.4 99.0,37.7 102.9,35.7 106.7,35.3 110.5,35.8 114.3,37.1 118.1,34.0 121.9,34.4 125.7,32.1 129.5,29.7 133.3,24.4 137.1,24.1 141.0,25.2 144.8,22.6 148.6,22.0 152.4,15.9 156.2,15.9 160.0,16.7 163.8,10.1 167.6,14.5 171.4,13.5 175.2,20.4 179.0,19.5 182.9,19.3 186.7,20.4 190.5,20.6 194.3,21.0 198.1,22.4 201.9,23.5 205.7,23.3 209.5,23.2 213.3,22.9 217.1,24.2 221.0,26.5 224.8,26.1 228.6,25.3 232.4,23.7 236.2,22.9 240.0,21.4" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="21.4" r="2.6" fill="var(--up)"/></svg>
+        <div class="nb-bot">
+          <span class="nb-state"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
+          
+        </div>
+        
+        <div class="nb-alpha">
+          <span class="nb-az az-up" title="Sector-neutral residual relative strength (z) — a light quality tiebreaker, not the ranking driver (A-share momentum is not validated). · 板块中性残差相对强度（z）— 轻量质量加权，非排序主导（A股动量未获验证）。">α +1.81</span>
+          <span class="nb-rk" title="Rank within its sector by residual relative strength · 按残差相对强度在其板块内排名">#1/26</span>
+          <span class="nb-ent ent-good" title="A recent pullback — the constructive mean-reversion entry · 近期回调 — 建设性的均值回归入场"><span class="l-en">pullback</span><span class="l-zh">回调</span></span>
+          
+        </div>
+        
+      </a>
+    
+      
+      <a class="nbcard nb-up" href="china_stock.html#301308.SZ">
+        <div class="nb-top">
+          <span class="nb-tk">301308.SZ</span>
+          <span class="nb-nm"><span class="l-en">Shenzhen Longsys Electronics Co., Ltd.</span><span class="l-zh">江波龙</span></span>
+          <span class="nb-px">529.23</span>
+        </div>
+        <div class="nb-sub"><span><span class="l-en">Technology</span><span class="l-zh">科技</span></span><span>-13.3% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
+        <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,38.7 3.8,38.0 7.6,36.0 11.4,37.5 15.2,34.8 19.0,35.1 22.9,37.6 26.7,40.0 30.5,38.3 34.3,36.9 38.1,37.9 41.9,38.6 45.7,39.1 49.5,40.9 53.3,40.7 57.1,41.6 61.0,42.0 64.8,40.8 68.6,38.2 72.4,38.1 76.2,36.5 80.0,35.3 83.8,32.6 87.6,33.6 91.4,33.5 95.2,33.7 99.0,33.2 102.9,33.2 106.7,32.5 110.5,34.9 114.3,33.4 118.1,31.4 121.9,32.6 125.7,29.4 129.5,30.7 133.3,22.9 137.1,22.7 141.0,23.0 144.8,15.5 148.6,15.0 152.4,10.1 156.2,11.3 160.0,12.2 163.8,12.0 167.6,14.9 171.4,14.0 175.2,17.2 179.0,16.2 182.9,14.6 186.7,17.2 190.5,16.0 194.3,16.3 198.1,16.0 201.9,20.5 205.7,19.0 209.5,17.7 213.3,14.2 217.1,19.0 221.0,22.4 224.8,19.5 228.6,20.2 232.4,19.5 236.2,19.5 240.0,18.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,38.7 3.8,38.0 7.6,36.0 11.4,37.5 15.2,34.8 19.0,35.1 22.9,37.6 26.7,40.0 30.5,38.3 34.3,36.9 38.1,37.9 41.9,38.6 45.7,39.1 49.5,40.9 53.3,40.7 57.1,41.6 61.0,42.0 64.8,40.8 68.6,38.2 72.4,38.1 76.2,36.5 80.0,35.3 83.8,32.6 87.6,33.6 91.4,33.5 95.2,33.7 99.0,33.2 102.9,33.2 106.7,32.5 110.5,34.9 114.3,33.4 118.1,31.4 121.9,32.6 125.7,29.4 129.5,30.7 133.3,22.9 137.1,22.7 141.0,23.0 144.8,15.5 148.6,15.0 152.4,10.1 156.2,11.3 160.0,12.2 163.8,12.0 167.6,14.9 171.4,14.0 175.2,17.2 179.0,16.2 182.9,14.6 186.7,17.2 190.5,16.0 194.3,16.3 198.1,16.0 201.9,20.5 205.7,19.0 209.5,17.7 213.3,14.2 217.1,19.0 221.0,22.4 224.8,19.5 228.6,20.2 232.4,19.5 236.2,19.5 240.0,18.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="18.1" r="2.6" fill="var(--up)"/></svg>
+        <div class="nb-bot">
+          <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
+          
+        </div>
+        
+        <div class="nb-alpha">
+          <span class="nb-az az-up" title="Sector-neutral residual relative strength (z) — a light quality tiebreaker, not the ranking driver (A-share momentum is not validated). · 板块中性残差相对强度（z）— 轻量质量加权，非排序主导（A股动量未获验证）。">α +1.59</span>
+          <span class="nb-rk" title="Rank within its sector by residual relative strength · 按残差相对强度在其板块内排名">#14/220</span>
+          <span class="nb-ent ent-good" title="A recent pullback — the constructive mean-reversion entry · 近期回调 — 建设性的均值回归入场"><span class="l-en">pullback</span><span class="l-zh">回调</span></span>
+          
+        </div>
+        
+      </a>
+    
+      
+      <a class="nbcard nb-up" href="china_stock.html#300438.SZ">
+        <div class="nb-top">
+          <span class="nb-tk">300438.SZ</span>
+          <span class="nb-nm"><span class="l-en">Guangzhou Great Power Energy and Technology Co., Ltd</span><span class="l-zh">鹏辉能源</span></span>
+          <span class="nb-px">74.13</span>
+        </div>
+        <div class="nb-sub"><span><span class="l-en">Industrials</span><span class="l-zh">工业</span></span><span>-19.5% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
+        <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,35.5 3.8,35.7 7.6,35.9 11.4,38.0 15.2,38.5 19.0,37.8 22.9,33.6 26.7,34.2 30.5,34.2 34.3,35.1 38.1,35.1 41.9,35.2 45.7,36.0 49.5,36.7 53.3,38.5 57.1,39.8 61.0,42.0 64.8,40.7 68.6,39.6 72.4,38.9 76.2,36.1 80.0,34.4 83.8,29.6 87.6,31.9 91.4,27.6 95.2,27.3 99.0,28.5 102.9,28.7 106.7,28.1 110.5,28.0 114.3,27.1 118.1,27.1 121.9,28.4 125.7,18.4 129.5,14.6 133.3,13.3 137.1,12.1 141.0,15.4 144.8,12.9 148.6,12.1 152.4,16.3 156.2,16.0 160.0,16.7 163.8,14.9 167.6,14.1 171.4,10.1 175.2,15.5 179.0,15.6 182.9,20.2 186.7,20.2 190.5,18.3 194.3,19.9 198.1,21.7 201.9,20.8 205.7,17.0 209.5,17.9 213.3,21.1 217.1,22.3 221.0,25.3 224.8,24.2 228.6,25.5 232.4,26.6 236.2,22.7 240.0,23.4 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,35.5 3.8,35.7 7.6,35.9 11.4,38.0 15.2,38.5 19.0,37.8 22.9,33.6 26.7,34.2 30.5,34.2 34.3,35.1 38.1,35.1 41.9,35.2 45.7,36.0 49.5,36.7 53.3,38.5 57.1,39.8 61.0,42.0 64.8,40.7 68.6,39.6 72.4,38.9 76.2,36.1 80.0,34.4 83.8,29.6 87.6,31.9 91.4,27.6 95.2,27.3 99.0,28.5 102.9,28.7 106.7,28.1 110.5,28.0 114.3,27.1 118.1,27.1 121.9,28.4 125.7,18.4 129.5,14.6 133.3,13.3 137.1,12.1 141.0,15.4 144.8,12.9 148.6,12.1 152.4,16.3 156.2,16.0 160.0,16.7 163.8,14.9 167.6,14.1 171.4,10.1 175.2,15.5 179.0,15.6 182.9,20.2 186.7,20.2 190.5,18.3 194.3,19.9 198.1,21.7 201.9,20.8 205.7,17.0 209.5,17.9 213.3,21.1 217.1,22.3 221.0,25.3 224.8,24.2 228.6,25.5 232.4,26.6 236.2,22.7 240.0,23.4" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="23.4" r="2.6" fill="var(--up)"/></svg>
+        <div class="nb-bot">
+          <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
+          
+        </div>
+        
+        <div class="nb-alpha">
+          <span class="nb-az az-up" title="Sector-neutral residual relative strength (z) — a light quality tiebreaker, not the ranking driver (A-share momentum is not validated). · 板块中性残差相对强度（z）— 轻量质量加权，非排序主导（A股动量未获验证）。">α +0.92</span>
+          <span class="nb-rk" title="Rank within its sector by residual relative strength · 按残差相对强度在其板块内排名">#38/154</span>
+          <span class="nb-ent ent-good" title="A recent pullback — the constructive mean-reversion entry · 近期回调 — 建设性的均值回归入场"><span class="l-en">pullback</span><span class="l-zh">回调</span></span>
+          
+        </div>
+        
+      </a>
+    
+      
+      <a class="nbcard nb-up" href="china_stock.html#601698.SS">
+        <div class="nb-top">
+          <span class="nb-tk">601698.SS</span>
+          <span class="nb-nm"><span class="l-en">China Satellite Communications Co., Ltd.</span><span class="l-zh">中国卫通</span></span>
+          <span class="nb-px">32.77</span>
+        </div>
+        <div class="nb-sub"><span><span class="l-en">Communication Services</span><span class="l-zh">通信服务</span></span><span>-39.2% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
+        <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,20.3 3.8,23.2 7.6,27.7 11.4,31.6 15.2,27.9 19.0,28.4 22.9,31.8 26.7,36.9 30.5,36.1 34.3,34.8 38.1,34.4 41.9,35.3 45.7,32.2 49.5,31.5 53.3,32.7 57.1,34.9 61.0,36.1 64.8,37.5 68.6,31.5 72.4,32.9 76.2,32.7 80.0,32.4 83.8,28.7 87.6,28.5 91.4,28.7 95.2,28.4 99.0,17.7 102.9,15.2 106.7,16.7 110.5,15.1 114.3,21.8 118.1,19.4 121.9,24.9 125.7,23.3 129.5,20.0 133.3,16.3 137.1,16.3 141.0,10.1 144.8,10.1 148.6,15.0 152.4,14.6 156.2,23.0 160.0,24.9 163.8,23.7 167.6,27.4 171.4,28.4 175.2,31.2 179.0,30.4 182.9,30.3 186.7,34.2 190.5,36.3 194.3,35.5 198.1,40.6 201.9,42.0 205.7,41.8 209.5,39.6 213.3,40.7 217.1,34.7 221.0,34.1 224.8,34.9 228.6,38.9 232.4,34.8 236.2,28.9 240.0,32.2 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,20.3 3.8,23.2 7.6,27.7 11.4,31.6 15.2,27.9 19.0,28.4 22.9,31.8 26.7,36.9 30.5,36.1 34.3,34.8 38.1,34.4 41.9,35.3 45.7,32.2 49.5,31.5 53.3,32.7 57.1,34.9 61.0,36.1 64.8,37.5 68.6,31.5 72.4,32.9 76.2,32.7 80.0,32.4 83.8,28.7 87.6,28.5 91.4,28.7 95.2,28.4 99.0,17.7 102.9,15.2 106.7,16.7 110.5,15.1 114.3,21.8 118.1,19.4 121.9,24.9 125.7,23.3 129.5,20.0 133.3,16.3 137.1,16.3 141.0,10.1 144.8,10.1 148.6,15.0 152.4,14.6 156.2,23.0 160.0,24.9 163.8,23.7 167.6,27.4 171.4,28.4 175.2,31.2 179.0,30.4 182.9,30.3 186.7,34.2 190.5,36.3 194.3,35.5 198.1,40.6 201.9,42.0 205.7,41.8 209.5,39.6 213.3,40.7 217.1,34.7 221.0,34.1 224.8,34.9 228.6,38.9 232.4,34.8 236.2,28.9 240.0,32.2" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="32.2" r="2.6" fill="var(--up)"/></svg>
+        <div class="nb-bot">
+          <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
+          
+        </div>
+        
+        <div class="nb-alpha">
+          <span class="nb-az az-up" title="Sector-neutral residual relative strength (z) — a light quality tiebreaker, not the ranking driver (A-share momentum is not validated). · 板块中性残差相对强度（z）— 轻量质量加权，非排序主导（A股动量未获验证）。">α +0.80</span>
+          <span class="nb-rk" title="Rank within its sector by residual relative strength · 按残差相对强度在其板块内排名">#5/14</span>
+          <span class="nb-ent ent-good" title="A recent pullback — the constructive mean-reversion entry · 近期回调 — 建设性的均值回归入场"><span class="l-en">pullback</span><span class="l-zh">回调</span></span>
+          
+        </div>
+        
+      </a>
+    
+      
+      <a class="nbcard nb-up" href="china_stock.html#688234.SS">
+        <div class="nb-top">
+          <span class="nb-tk">688234.SS</span>
+          <span class="nb-nm"><span class="l-en">SICC Co., Ltd.</span><span class="l-zh">天岳先进</span></span>
+          <span class="nb-px">134.97</span>
+        </div>
+        <div class="nb-sub"><span><span class="l-en">Technology</span><span class="l-zh">科技</span></span><span>-20.1% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
+        <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,38.7 3.8,38.8 7.6,37.8 11.4,39.5 15.2,39.4 19.0,40.1 22.9,40.4 26.7,42.0 30.5,41.6 34.3,40.5 38.1,40.4 41.9,40.4 45.7,40.0 49.5,39.1 53.3,37.5 57.1,37.9 61.0,36.3 64.8,36.2 68.6,35.9 72.4,36.3 76.2,34.1 80.0,35.3 83.8,35.6 87.6,36.3 91.4,35.9 95.2,34.7 99.0,33.8 102.9,34.2 106.7,32.0 110.5,30.6 114.3,31.2 118.1,30.5 121.9,31.6 125.7,31.4 129.5,32.8 133.3,29.9 137.1,29.4 141.0,30.2 144.8,24.7 148.6,23.1 152.4,17.5 156.2,10.1 160.0,13.5 163.8,16.5 167.6,16.8 171.4,14.7 175.2,19.9 179.0,15.2 182.9,13.0 186.7,15.1 190.5,10.8 194.3,11.9 198.1,17.4 201.9,21.1 205.7,21.4 209.5,20.9 213.3,20.1 217.1,22.8 221.0,25.9 224.8,20.7 228.6,24.7 232.4,24.4 236.2,25.2 240.0,21.4 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,38.7 3.8,38.8 7.6,37.8 11.4,39.5 15.2,39.4 19.0,40.1 22.9,40.4 26.7,42.0 30.5,41.6 34.3,40.5 38.1,40.4 41.9,40.4 45.7,40.0 49.5,39.1 53.3,37.5 57.1,37.9 61.0,36.3 64.8,36.2 68.6,35.9 72.4,36.3 76.2,34.1 80.0,35.3 83.8,35.6 87.6,36.3 91.4,35.9 95.2,34.7 99.0,33.8 102.9,34.2 106.7,32.0 110.5,30.6 114.3,31.2 118.1,30.5 121.9,31.6 125.7,31.4 129.5,32.8 133.3,29.9 137.1,29.4 141.0,30.2 144.8,24.7 148.6,23.1 152.4,17.5 156.2,10.1 160.0,13.5 163.8,16.5 167.6,16.8 171.4,14.7 175.2,19.9 179.0,15.2 182.9,13.0 186.7,15.1 190.5,10.8 194.3,11.9 198.1,17.4 201.9,21.1 205.7,21.4 209.5,20.9 213.3,20.1 217.1,22.8 221.0,25.9 224.8,20.7 228.6,24.7 232.4,24.4 236.2,25.2 240.0,21.4" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="21.4" r="2.6" fill="var(--up)"/></svg>
+        <div class="nb-bot">
+          <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
+          
+        </div>
+        
+        <div class="nb-alpha">
+          <span class="nb-az az-up" title="Sector-neutral residual relative strength (z) — a light quality tiebreaker, not the ranking driver (A-share momentum is not validated). · 板块中性残差相对强度（z）— 轻量质量加权，非排序主导（A股动量未获验证）。">α +0.50</span>
+          <span class="nb-rk" title="Rank within its sector by residual relative strength · 按残差相对强度在其板块内排名">#74/220</span>
+          <span class="nb-ent ent-good" title="A recent pullback — the constructive mean-reversion entry · 近期回调 — 建设性的均值回归入场"><span class="l-en">pullback</span><span class="l-zh">回调</span></span>
+          
+        </div>
+        
+      </a>
+    
+      
+      <a class="nbcard nb-up" href="china_stock.html#603268.SS">
+        <div class="nb-top">
+          <span class="nb-tk">603268.SS</span>
+          <span class="nb-nm"><span class="l-en">Guangdong Songfa Ceramics Co.,Ltd.</span><span class="l-zh">松发股份</span></span>
+          <span class="nb-px">158.40</span>
+        </div>
+        <div class="nb-sub"><span><span class="l-en">Consumer Cyclical</span><span class="l-zh">可选消费</span></span><span>-4.0% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
+        <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,32.3 3.8,34.3 7.6,35.2 11.4,37.0 15.2,33.6 19.0,35.6 22.9,37.6 26.7,40.1 30.5,36.8 34.3,35.8 38.1,39.2 41.9,39.1 45.7,37.3 49.5,40.7 53.3,37.8 57.1,37.9 61.0,37.9 64.8,36.1 68.6,33.1 72.4,36.0 76.2,37.9 80.0,41.0 83.8,42.0 87.6,38.8 91.4,35.5 95.2,35.5 99.0,28.5 102.9,23.7 106.7,23.9 110.5,23.2 114.3,20.9 118.1,25.2 121.9,23.0 125.7,22.5 129.5,19.1 133.3,18.1 137.1,19.1 141.0,16.2 144.8,12.2 148.6,13.0 152.4,10.1 156.2,14.5 160.0,14.9 163.8,13.3 167.6,17.1 171.4,19.0 175.2,22.4 179.0,23.4 182.9,25.2 186.7,26.2 190.5,25.6 194.3,24.3 198.1,26.1 201.9,28.9 205.7,30.2 209.5,29.4 213.3,25.2 217.1,23.4 221.0,20.6 224.8,16.4 228.6,17.5 232.4,21.8 236.2,20.1 240.0,13.9 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,32.3 3.8,34.3 7.6,35.2 11.4,37.0 15.2,33.6 19.0,35.6 22.9,37.6 26.7,40.1 30.5,36.8 34.3,35.8 38.1,39.2 41.9,39.1 45.7,37.3 49.5,40.7 53.3,37.8 57.1,37.9 61.0,37.9 64.8,36.1 68.6,33.1 72.4,36.0 76.2,37.9 80.0,41.0 83.8,42.0 87.6,38.8 91.4,35.5 95.2,35.5 99.0,28.5 102.9,23.7 106.7,23.9 110.5,23.2 114.3,20.9 118.1,25.2 121.9,23.0 125.7,22.5 129.5,19.1 133.3,18.1 137.1,19.1 141.0,16.2 144.8,12.2 148.6,13.0 152.4,10.1 156.2,14.5 160.0,14.9 163.8,13.3 167.6,17.1 171.4,19.0 175.2,22.4 179.0,23.4 182.9,25.2 186.7,26.2 190.5,25.6 194.3,24.3 198.1,26.1 201.9,28.9 205.7,30.2 209.5,29.4 213.3,25.2 217.1,23.4 221.0,20.6 224.8,16.4 228.6,17.5 232.4,21.8 236.2,20.1 240.0,13.9" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="13.9" r="2.6" fill="var(--up)"/></svg>
+        <div class="nb-bot">
+          <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
+          
+        </div>
+        
+        <div class="nb-alpha">
+          <span class="nb-az az-up" title="Sector-neutral residual relative strength (z) — a light quality tiebreaker, not the ranking driver (A-share momentum is not validated). · 板块中性残差相对强度（z）— 轻量质量加权，非排序主导（A股动量未获验证）。">α +2.48</span>
+          <span class="nb-rk" title="Rank within its sector by residual relative strength · 按残差相对强度在其板块内排名">#1/50</span>
+          
+        </div>
+        
+      </a>
+    
+      
+      <a class="nbcard nb-up" href="china_stock.html#300903.SZ">
+        <div class="nb-top">
+          <span class="nb-tk">300903.SZ</span>
+          <span class="nb-nm"><span class="l-en">Guangdong Kingshine Electronic Technology Co.,Ltd.</span><span class="l-zh">科翔股份</span></span>
+          <span class="nb-px">78.22</span>
+        </div>
+        <div class="nb-sub"><span><span class="l-en">Technology</span><span class="l-zh">科技</span></span><span>-5.6% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
+        <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,35.6 3.8,36.3 7.6,36.7 11.4,38.5 15.2,38.0 19.0,38.8 22.9,38.8 26.7,39.6 30.5,39.2 34.3,38.9 38.1,40.2 41.9,40.6 45.7,41.0 49.5,41.5 53.3,40.8 57.1,41.3 61.0,42.0 64.8,41.8 68.6,40.7 72.4,40.0 76.2,40.2 80.0,40.7 83.8,37.9 87.6,36.7 91.4,37.1 95.2,36.9 99.0,38.0 102.9,37.5 106.7,34.1 110.5,34.9 114.3,36.3 118.1,34.8 121.9,33.1 125.7,30.2 129.5,30.6 133.3,29.1 137.1,25.0 141.0,25.4 144.8,23.7 148.6,18.5 152.4,16.8 156.2,12.3 160.0,14.9 163.8,14.8 167.6,16.7 171.4,14.9 175.2,17.3 179.0,12.2 182.9,10.1 186.7,11.9 190.5,15.3 194.3,14.2 198.1,17.7 201.9,20.1 205.7,20.3 209.5,18.0 213.3,15.7 217.1,16.7 221.0,20.1 224.8,17.9 228.6,20.5 232.4,15.3 236.2,18.0 240.0,12.9 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,35.6 3.8,36.3 7.6,36.7 11.4,38.5 15.2,38.0 19.0,38.8 22.9,38.8 26.7,39.6 30.5,39.2 34.3,38.9 38.1,40.2 41.9,40.6 45.7,41.0 49.5,41.5 53.3,40.8 57.1,41.3 61.0,42.0 64.8,41.8 68.6,40.7 72.4,40.0 76.2,40.2 80.0,40.7 83.8,37.9 87.6,36.7 91.4,37.1 95.2,36.9 99.0,38.0 102.9,37.5 106.7,34.1 110.5,34.9 114.3,36.3 118.1,34.8 121.9,33.1 125.7,30.2 129.5,30.6 133.3,29.1 137.1,25.0 141.0,25.4 144.8,23.7 148.6,18.5 152.4,16.8 156.2,12.3 160.0,14.9 163.8,14.8 167.6,16.7 171.4,14.9 175.2,17.3 179.0,12.2 182.9,10.1 186.7,11.9 190.5,15.3 194.3,14.2 198.1,17.7 201.9,20.1 205.7,20.3 209.5,18.0 213.3,15.7 217.1,16.7 221.0,20.1 224.8,17.9 228.6,20.5 232.4,15.3 236.2,18.0 240.0,12.9" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="12.9" r="2.6" fill="var(--up)"/></svg>
+        <div class="nb-bot">
+          <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
+          
+        </div>
+        
+        <div class="nb-alpha">
+          <span class="nb-az az-up" title="Sector-neutral residual relative strength (z) — a light quality tiebreaker, not the ranking driver (A-share momentum is not validated). · 板块中性残差相对强度（z）— 轻量质量加权，非排序主导（A股动量未获验证）。">α +1.77</span>
+          <span class="nb-rk" title="Rank within its sector by residual relative strength · 按残差相对强度在其板块内排名">#9/220</span>
+          
+        </div>
+        
+      </a>
+    
+      
+      <a class="nbcard nb-up" href="china_stock.html#000426.SZ">
+        <div class="nb-top">
+          <span class="nb-tk">000426.SZ</span>
+          <span class="nb-nm"><span class="l-en">Inner Mongolia Xingye Silver & Tin Mining Co., Ltd</span><span class="l-zh">兴业银锡</span></span>
+          <span class="nb-px">40.26</span>
+        </div>
+        <div class="nb-sub"><span><span class="l-en">Basic Materials</span><span class="l-zh">原材料</span></span><span>-41.5% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
+        <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,14.5 3.8,18.2 7.6,21.3 11.4,22.6 15.2,23.8 19.0,31.4 22.9,33.3 26.7,39.9 30.5,35.6 34.3,31.8 38.1,33.9 41.9,31.9 45.7,31.6 49.5,31.6 53.3,29.0 57.1,32.2 61.0,33.2 64.8,32.9 68.6,24.9 72.4,24.9 76.2,25.4 80.0,26.6 83.8,24.8 87.6,24.3 91.4,22.5 95.2,23.5 99.0,21.1 102.9,22.2 106.7,24.8 110.5,29.9 114.3,31.0 118.1,28.0 121.9,28.7 125.7,25.4 129.5,27.3 133.3,21.7 137.1,15.7 141.0,12.5 144.8,13.4 148.6,10.1 152.4,12.0 156.2,15.7 160.0,23.8 163.8,26.1 167.6,28.6 171.4,29.3 175.2,32.4 179.0,29.1 182.9,28.5 186.7,24.7 190.5,29.8 194.3,32.9 198.1,32.7 201.9,32.7 205.7,26.1 209.5,27.9 213.3,32.3 217.1,35.9 221.0,42.0 224.8,39.9 228.6,41.3 232.4,40.0 236.2,38.5 240.0,31.6 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,14.5 3.8,18.2 7.6,21.3 11.4,22.6 15.2,23.8 19.0,31.4 22.9,33.3 26.7,39.9 30.5,35.6 34.3,31.8 38.1,33.9 41.9,31.9 45.7,31.6 49.5,31.6 53.3,29.0 57.1,32.2 61.0,33.2 64.8,32.9 68.6,24.9 72.4,24.9 76.2,25.4 80.0,26.6 83.8,24.8 87.6,24.3 91.4,22.5 95.2,23.5 99.0,21.1 102.9,22.2 106.7,24.8 110.5,29.9 114.3,31.0 118.1,28.0 121.9,28.7 125.7,25.4 129.5,27.3 133.3,21.7 137.1,15.7 141.0,12.5 144.8,13.4 148.6,10.1 152.4,12.0 156.2,15.7 160.0,23.8 163.8,26.1 167.6,28.6 171.4,29.3 175.2,32.4 179.0,29.1 182.9,28.5 186.7,24.7 190.5,29.8 194.3,32.9 198.1,32.7 201.9,32.7 205.7,26.1 209.5,27.9 213.3,32.3 217.1,35.9 221.0,42.0 224.8,39.9 228.6,41.3 232.4,40.0 236.2,38.5 240.0,31.6" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="31.6" r="2.6" fill="var(--up)"/></svg>
+        <div class="nb-bot">
+          <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
+          
+        </div>
+        
+        <div class="nb-alpha">
+          <span class="nb-az az-up" title="Sector-neutral residual relative strength (z) — a light quality tiebreaker, not the ranking driver (A-share momentum is not validated). · 板块中性残差相对强度（z）— 轻量质量加权，非排序主导（A股动量未获验证）。">α +0.74</span>
+          <span class="nb-rk" title="Rank within its sector by residual relative strength · 按残差相对强度在其板块内排名">#22/126</span>
+          <span class="nb-ent ent-good" title="A recent pullback — the constructive mean-reversion entry · 近期回调 — 建设性的均值回归入场"><span class="l-en">pullback</span><span class="l-zh">回调</span></span>
+          
+        </div>
+        
+      </a>
+    
+      
+      <a class="nbcard nb-caution" href="china_stock.html#002008.SZ">
+        <div class="nb-top">
+          <span class="nb-tk">002008.SZ</span>
+          <span class="nb-nm"><span class="l-en">Han's Laser Technology Industry Group Co., Ltd.</span><span class="l-zh">大族激光</span></span>
+          <span class="nb-px">124.20</span>
+        </div>
+        <div class="nb-sub"><span><span class="l-en">Industrials</span><span class="l-zh">工业</span></span><span>-16.7% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
+        <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,38.1 3.8,38.9 7.6,39.3 11.4,40.6 15.2,40.1 19.0,40.9 22.9,40.3 26.7,42.0 30.5,41.3 34.3,40.6 38.1,41.3 41.9,40.9 45.7,40.6 49.5,41.5 53.3,40.5 57.1,41.4 61.0,40.6 64.8,40.4 68.6,38.1 72.4,36.1 76.2,36.1 80.0,36.3 83.8,33.9 87.6,35.3 91.4,32.4 95.2,32.1 99.0,31.5 102.9,30.2 106.7,29.8 110.5,26.4 114.3,26.8 118.1,26.0 121.9,25.8 125.7,26.5 129.5,27.4 133.3,26.9 137.1,23.2 141.0,19.8 144.8,15.4 148.6,15.3 152.4,10.5 156.2,10.1 160.0,12.2 163.8,13.9 167.6,14.5 171.4,11.8 175.2,12.4 179.0,11.1 182.9,12.5 186.7,14.9 190.5,16.4 194.3,14.7 198.1,16.2 201.9,18.7 205.7,18.0 209.5,16.7 213.3,15.2 217.1,17.6 221.0,20.2 224.8,18.9 228.6,19.6 232.4,19.9 236.2,20.8 240.0,19.0 240,42" fill="var(--muted)" opacity="0.12" stroke="none"/><polyline points="0.0,38.1 3.8,38.9 7.6,39.3 11.4,40.6 15.2,40.1 19.0,40.9 22.9,40.3 26.7,42.0 30.5,41.3 34.3,40.6 38.1,41.3 41.9,40.9 45.7,40.6 49.5,41.5 53.3,40.5 57.1,41.4 61.0,40.6 64.8,40.4 68.6,38.1 72.4,36.1 76.2,36.1 80.0,36.3 83.8,33.9 87.6,35.3 91.4,32.4 95.2,32.1 99.0,31.5 102.9,30.2 106.7,29.8 110.5,26.4 114.3,26.8 118.1,26.0 121.9,25.8 125.7,26.5 129.5,27.4 133.3,26.9 137.1,23.2 141.0,19.8 144.8,15.4 148.6,15.3 152.4,10.5 156.2,10.1 160.0,12.2 163.8,13.9 167.6,14.5 171.4,11.8 175.2,12.4 179.0,11.1 182.9,12.5 186.7,14.9 190.5,16.4 194.3,14.7 198.1,16.2 201.9,18.7 205.7,18.0 209.5,16.7 213.3,15.2 217.1,17.6 221.0,20.2 224.8,18.9 228.6,19.6 232.4,19.9 236.2,20.8 240.0,19.0" fill="none" stroke="var(--muted)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="19.0" r="2.6" fill="var(--muted)"/></svg>
+        <div class="nb-bot">
+          <span class="nb-state"><span class="l-en">COUNTER-TREND BOUNCE</span><span class="l-zh">逆势反弹</span></span>
+          
+        </div>
+        
+        <div class="nb-alpha">
+          <span class="nb-az az-up" title="Sector-neutral residual relative strength (z) — a light quality tiebreaker, not the ranking driver (A-share momentum is not validated). · 板块中性残差相对强度（z）— 轻量质量加权，非排序主导（A股动量未获验证）。">α +2.30</span>
+          <span class="nb-rk" title="Rank within its sector by residual relative strength · 按残差相对强度在其板块内排名">#1/154</span>
+          <span class="nb-ent ent-good" title="A recent pullback — the constructive mean-reversion entry · 近期回调 — 建设性的均值回归入场"><span class="l-en">pullback</span><span class="l-zh">回调</span></span>
+          
+        </div>
+        
+      </a>
+    
+      
+      <a class="nbcard nb-up" href="china_stock.html#300394.SZ">
+        <div class="nb-top">
+          <span class="nb-tk">300394.SZ</span>
+          <span class="nb-nm"><span class="l-en">Suzhou TFC Optical Communication Co., Ltd.</span><span class="l-zh">天孚通信</span></span>
+          <span class="nb-px">305.04</span>
+        </div>
+        <div class="nb-sub"><span><span class="l-en">Technology</span><span class="l-zh">科技</span></span><span>-13.9% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
+        <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,34.1 3.8,35.4 7.6,37.4 11.4,42.0 15.2,38.6 19.0,37.9 22.9,37.3 26.7,39.3 30.5,39.3 34.3,36.4 38.1,35.4 41.9,36.5 45.7,36.6 49.5,38.8 53.3,34.2 57.1,35.7 61.0,34.1 64.8,36.5 68.6,33.6 72.4,32.2 76.2,30.4 80.0,31.6 83.8,32.3 87.6,34.6 91.4,30.9 95.2,27.4 99.0,28.1 102.9,31.3 106.7,28.0 110.5,31.7 114.3,35.6 118.1,35.8 121.9,37.6 125.7,37.4 129.5,38.0 133.3,36.7 137.1,34.9 141.0,35.2 144.8,34.4 148.6,32.8 152.4,27.6 156.2,25.6 160.0,24.4 163.8,26.6 167.6,29.8 171.4,30.4 175.2,33.6 179.0,28.4 182.9,24.9 186.7,23.4 190.5,20.2 194.3,17.4 198.1,16.3 201.9,20.1 205.7,16.0 209.5,10.1 213.3,12.6 217.1,16.0 221.0,20.7 224.8,17.9 228.6,22.8 232.4,22.6 236.2,25.2 240.0,20.3 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,34.1 3.8,35.4 7.6,37.4 11.4,42.0 15.2,38.6 19.0,37.9 22.9,37.3 26.7,39.3 30.5,39.3 34.3,36.4 38.1,35.4 41.9,36.5 45.7,36.6 49.5,38.8 53.3,34.2 57.1,35.7 61.0,34.1 64.8,36.5 68.6,33.6 72.4,32.2 76.2,30.4 80.0,31.6 83.8,32.3 87.6,34.6 91.4,30.9 95.2,27.4 99.0,28.1 102.9,31.3 106.7,28.0 110.5,31.7 114.3,35.6 118.1,35.8 121.9,37.6 125.7,37.4 129.5,38.0 133.3,36.7 137.1,34.9 141.0,35.2 144.8,34.4 148.6,32.8 152.4,27.6 156.2,25.6 160.0,24.4 163.8,26.6 167.6,29.8 171.4,30.4 175.2,33.6 179.0,28.4 182.9,24.9 186.7,23.4 190.5,20.2 194.3,17.4 198.1,16.3 201.9,20.1 205.7,16.0 209.5,10.1 213.3,12.6 217.1,16.0 221.0,20.7 224.8,17.9 228.6,22.8 232.4,22.6 236.2,25.2 240.0,20.3" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="20.3" r="2.6" fill="var(--up)"/></svg>
+        <div class="nb-bot">
+          <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
+          
+        </div>
+        
+        <div class="nb-alpha">
+          <span class="nb-az az-up" title="Sector-neutral residual relative strength (z) — a light quality tiebreaker, not the ranking driver (A-share momentum is not validated). · 板块中性残差相对强度（z）— 轻量质量加权，非排序主导（A股动量未获验证）。">α +1.48</span>
+          <span class="nb-rk" title="Rank within its sector by residual relative strength · 按残差相对强度在其板块内排名">#19/220</span>
+          
+        </div>
+        
+      </a>
+    
+      
+      <a class="nbcard nb-caution" href="china_stock.html#001267.SZ">
+        <div class="nb-top">
+          <span class="nb-tk">001267.SZ</span>
+          <span class="nb-nm"><span class="l-en">Hui Lyu Ecological Technology Groups Co.,Ltd.</span><span class="l-zh">汇绿生态</span></span>
+          <span class="nb-px">52.68</span>
+        </div>
+        <div class="nb-sub"><span><span class="l-en">Industrials</span><span class="l-zh">工业</span></span><span>-24.4% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
+        <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,33.8 3.8,36.6 7.6,37.0 11.4,39.4 15.2,37.8 19.0,39.0 22.9,37.1 26.7,41.3 30.5,39.6 34.3,38.9 38.1,41.0 41.9,40.8 45.7,40.6 49.5,42.0 53.3,40.0 57.1,40.0 61.0,39.4 64.8,39.5 68.6,35.5 72.4,36.5 76.2,35.9 80.0,37.0 83.8,37.9 87.6,38.3 91.4,38.2 95.2,35.1 99.0,36.4 102.9,35.1 106.7,33.5 110.5,28.9 114.3,29.5 118.1,30.5 121.9,28.0 125.7,25.9 129.5,25.9 133.3,27.2 137.1,23.1 141.0,17.5 144.8,16.0 148.6,15.6 152.4,16.4 156.2,10.1 160.0,17.0 163.8,13.0 167.6,15.9 171.4,18.8 175.2,22.4 179.0,19.2 182.9,19.8 186.7,21.6 190.5,23.0 194.3,19.2 198.1,21.8 201.9,26.2 205.7,24.3 209.5,21.2 213.3,22.6 217.1,25.3 221.0,30.7 224.8,29.0 228.6,29.2 232.4,30.7 236.2,30.3 240.0,27.1 240,42" fill="var(--muted)" opacity="0.12" stroke="none"/><polyline points="0.0,33.8 3.8,36.6 7.6,37.0 11.4,39.4 15.2,37.8 19.0,39.0 22.9,37.1 26.7,41.3 30.5,39.6 34.3,38.9 38.1,41.0 41.9,40.8 45.7,40.6 49.5,42.0 53.3,40.0 57.1,40.0 61.0,39.4 64.8,39.5 68.6,35.5 72.4,36.5 76.2,35.9 80.0,37.0 83.8,37.9 87.6,38.3 91.4,38.2 95.2,35.1 99.0,36.4 102.9,35.1 106.7,33.5 110.5,28.9 114.3,29.5 118.1,30.5 121.9,28.0 125.7,25.9 129.5,25.9 133.3,27.2 137.1,23.1 141.0,17.5 144.8,16.0 148.6,15.6 152.4,16.4 156.2,10.1 160.0,17.0 163.8,13.0 167.6,15.9 171.4,18.8 175.2,22.4 179.0,19.2 182.9,19.8 186.7,21.6 190.5,23.0 194.3,19.2 198.1,21.8 201.9,26.2 205.7,24.3 209.5,21.2 213.3,22.6 217.1,25.3 221.0,30.7 224.8,29.0 228.6,29.2 232.4,30.7 236.2,30.3 240.0,27.1" fill="none" stroke="var(--muted)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="27.1" r="2.6" fill="var(--muted)"/></svg>
+        <div class="nb-bot">
+          <span class="nb-state"><span class="l-en">COUNTER-TREND BOUNCE</span><span class="l-zh">逆势反弹</span></span>
+          
+        </div>
+        
+        <div class="nb-alpha">
+          <span class="nb-az az-up" title="Sector-neutral residual relative strength (z) — a light quality tiebreaker, not the ranking driver (A-share momentum is not validated). · 板块中性残差相对强度（z）— 轻量质量加权，非排序主导（A股动量未获验证）。">α +1.99</span>
+          <span class="nb-rk" title="Rank within its sector by residual relative strength · 按残差相对强度在其板块内排名">#4/154</span>
+          <span class="nb-ent ent-good" title="A recent pullback — the constructive mean-reversion entry · 近期回调 — 建设性的均值回归入场"><span class="l-en">pullback</span><span class="l-zh">回调</span></span>
+          
+        </div>
+        
+      </a>
+    
+      
+      <a class="nbcard nb-up" href="china_stock.html#601288.SS">
+        <div class="nb-top">
+          <span class="nb-tk">601288.SS</span>
+          <span class="nb-nm"><span class="l-en">Agricultural Bank of China Limited</span><span class="l-zh">农业银行</span></span>
+          <span class="nb-px">6.68</span>
+        </div>
+        <div class="nb-sub"><span><span class="l-en">Financial Services</span><span class="l-zh">金融</span></span><span>-19.5% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
+        <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,30.5 3.8,31.3 7.6,30.2 11.4,26.1 15.2,26.8 19.0,23.5 22.9,26.1 26.7,36.8 30.5,35.7 34.3,33.9 38.1,35.4 41.9,36.5 45.7,36.1 49.5,28.3 53.3,28.7 57.1,20.1 61.0,23.1 64.8,28.7 68.6,30.9 72.4,32.0 76.2,32.4 80.0,30.5 83.8,26.1 87.6,19.0 91.4,17.1 95.2,14.9 99.0,10.1 102.9,10.5 106.7,14.5 110.5,16.0 114.3,15.7 118.1,20.1 121.9,17.9 125.7,19.4 129.5,20.1 133.3,22.3 137.1,22.0 141.0,20.9 144.8,24.2 148.6,25.3 152.4,24.9 156.2,21.2 160.0,24.6 163.8,27.2 167.6,26.5 171.4,32.5 175.2,30.6 179.0,32.5 182.9,33.3 186.7,34.0 190.5,38.2 194.3,42.0 198.1,37.8 201.9,31.4 205.7,32.9 209.5,36.3 213.3,38.6 217.1,36.3 221.0,28.4 224.8,27.2 228.6,23.0 232.4,24.2 236.2,19.6 240.0,24.2 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,30.5 3.8,31.3 7.6,30.2 11.4,26.1 15.2,26.8 19.0,23.5 22.9,26.1 26.7,36.8 30.5,35.7 34.3,33.9 38.1,35.4 41.9,36.5 45.7,36.1 49.5,28.3 53.3,28.7 57.1,20.1 61.0,23.1 64.8,28.7 68.6,30.9 72.4,32.0 76.2,32.4 80.0,30.5 83.8,26.1 87.6,19.0 91.4,17.1 95.2,14.9 99.0,10.1 102.9,10.5 106.7,14.5 110.5,16.0 114.3,15.7 118.1,20.1 121.9,17.9 125.7,19.4 129.5,20.1 133.3,22.3 137.1,22.0 141.0,20.9 144.8,24.2 148.6,25.3 152.4,24.9 156.2,21.2 160.0,24.6 163.8,27.2 167.6,26.5 171.4,32.5 175.2,30.6 179.0,32.5 182.9,33.3 186.7,34.0 190.5,38.2 194.3,42.0 198.1,37.8 201.9,31.4 205.7,32.9 209.5,36.3 213.3,38.6 217.1,36.3 221.0,28.4 224.8,27.2 228.6,23.0 232.4,24.2 236.2,19.6 240.0,24.2" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="24.2" r="2.6" fill="var(--up)"/></svg>
+        <div class="nb-bot">
+          <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
+          
+        </div>
+        
+        <div class="nb-alpha">
+          <span class="nb-az az-up" title="Sector-neutral residual relative strength (z) — a light quality tiebreaker, not the ranking driver (A-share momentum is not validated). · 板块中性残差相对强度（z）— 轻量质量加权，非排序主导（A股动量未获验证）。">α +1.36</span>
+          <span class="nb-rk" title="Rank within its sector by residual relative strength · 按残差相对强度在其板块内排名">#1/76</span>
+          
+        </div>
+        
+      </a>
+    
+    </div>
+    
+    <p class="note" style="margin:11px 0 5px;text-transform:none"><span class="l-en">Weakest relative momentum (laggards) — distribution risk:</span><span class="l-zh">相对动量最弱（落后股）— 派发风险：</span></p>
+    <p style="margin:0;line-height:2">
+      <a href="china_stock.html#001391.SZ" style="margin-right:14px;white-space:nowrap"><b>001391.SZ</b> <span class="note"><span class="l-en">Air China Cargo Co., Ltd.</span><span class="l-zh">国货航</span></span> <span class="neg">-3.00</span></a><a href="china_stock.html#603501.SS" style="margin-right:14px;white-space:nowrap"><b>603501.SS</b> <span class="note"><span class="l-en">OmniVision Integrated Circuits Group, Inc.</span><span class="l-zh">豪威集团</span></span> <span class="neg">-2.80</span></a><a href="china_stock.html#300474.SZ" style="margin-right:14px;white-space:nowrap"><b>300474.SZ</b> <span class="note"><span class="l-en">Changsha Jingjia Microelectronics Co., Ltd.</span><span class="l-zh">景嘉微</span></span> <span class="neg">-2.35</span></a><a href="china_stock.html#600925.SS" style="margin-right:14px;white-space:nowrap"><b>600925.SS</b> <span class="note"><span class="l-en">Jiangsu Xukuang Energy Co., Ltd.</span><span class="l-zh">苏能股份</span></span> <span class="neg">-2.31</span></a><a href="china_stock.html#302132.SZ" style="margin-right:14px;white-space:nowrap"><b>302132.SZ</b> <span class="note"><span class="l-en">AVIC Chengdu Aircraft Company Limited</span><span class="l-zh">中航成飞</span></span> <span class="neg">-2.24</span></a><a href="china_stock.html#600085.SS" style="margin-right:14px;white-space:nowrap"><b>600085.SS</b> <span class="note"><span class="l-en">Beijing Tongrentang Co., Ltd</span><span class="l-zh">同仁堂</span></span> <span class="neg">-2.13</span></a>
+    </p>
+    
+    <p class="note" style="margin:8px 0 0;font-size:11px"><span class="l-en">Cycle entry + mean-reversion (the validated A-share effects), with residual relative strength as a light quality tiebreaker. Deep-history corrected: A-shares mean-revert — momentum is not an edge. A shortlist to size and confirm, not a buy list; cycle state is a drawdown/structure tool, not a timing oracle.</span><span class="l-zh">周期入场 + 均值回归（A股已验证的效应），残差相对强度仅作轻量质量加权。经深度历史校正：A股均值回归 —— 动量并非优势。用于定仓与确认的名单，而非买入清单；周期状态是回撤/结构工具，而非择时神谕。</span></p>
+  </div>
+  
+
+  <!-- ===================== STOCK SCREENER (consolidated · toggle) ===================== -->
+  
+  <div class="panel span12" id="stock-screener">
+    <h2><span class="l-en">🎯 Stock screener — one board, three validated lenses</span><span class="l-zh">🎯 选股面板 — 一板三镜</span>
+      <span class="note" style="text-transform:none">· <span class="l-en">switch the lens; the table re-sorts</span><span class="l-zh">切换视角；表格随之重排</span> · 2026-06-15</span>
+      <span class="help">?<span class="tip"><span class="l-en">The scattered single-signal screens, consolidated into ONE switchable board. Three lenses, each its own validated (or honestly-flagged) read on ~35 years of A-share data — flip between them with the toggle: <b>Mean-reversion</b> = the deepest 3-month within-sector dips (the one robust, FDR-surviving A-share edge: cross-sectional Sharpe 0.58; a high-variance contrarian signal that buys into weakness). <b>Low-vol defensive</b> = the lowest-volatility names (market-like returns, shallower drawdowns → higher Sharpe; a risk-REDUCING tilt, not a return-maximizer). <b>Sector strength</b> = sector-neutral residual relative strength — but A-share momentum is NOT a validated edge, so read the <b>entry</b> flag (pullback = mean-reversion buy; extended = fade risk), not the alpha ranking. Click any column to sort. Context to size and confirm — NOT a buy list.</span><span class="l-zh">把分散的单一信号筛选合并为一块可切换的面板。三种视角，各自基于约35年A股数据的已验证（或如实标注）解读 —— 用开关切换：<b>均值回归</b>＝板块内近3月跌幅最深者（A股唯一稳健、通过FDR的优势：横截面夏普0.58；高波动逆向信号，买入弱势）。<b>防御低波</b>＝波动率最低的个股（收益与市场相近、回撤更浅→更高夏普；降低风险的倾向，而非收益最大化）。<b>板块强度</b>＝板块中性残差相对强度 —— 但A股动量并非有效优势，故请看<b>入场</b>标记（pullback＝均值回归买入；extended＝做空风险），而非alpha排序。点击任意列排序。用于定仓与确认的背景 —— 而非买入清单。</span></span></span>
+    </h2>
+    <div class="sb-seg" role="tablist" aria-label="screener mode">
+      <button role="tab" data-mode="reversal" aria-selected="true"><span class="l-en">🔄 Mean-reversion</span><span class="l-zh">🔄 均值回归</span></button>
+      <button role="tab" data-mode="lowvol" aria-selected="false"><span class="l-en">🛡 Low-vol defensive</span><span class="l-zh">🛡 防御低波</span></button>
+      <button role="tab" data-mode="alpha" aria-selected="false"><span class="l-en">📊 Sector strength</span><span class="l-zh">📊 板块强度</span></button>
+    </div>
+    <p class="note sb-cap" id="sb-cap"><!-- per-mode caption injected by JS --></p>
+    <table class="sb-table"><thead id="sb-head"></thead><tbody id="sb-body"></tbody></table>
+    <p class="note" style="margin:8px 0 0;font-size:11px"><span class="l-en">Validated A-share effects only: short-term within-sector REVERSAL (Sharpe 0.58) and the LOW-VOL defensive tilt (Sharpe 0.98 vs 0.88 market). Classic momentum / value / quality were tested over ~35 years and do NOT clear FDR on A-shares, so the sector-strength lens is relative-strength CONTEXT (read the entry flag), not a buy ranking. A research surface to size and confirm — not a confident buy list; cycle state is a drawdown/structure tool, not a timing oracle.</span><span class="l-zh">仅采用已验证的A股效应：短期板块内反转（夏普0.58）与低波防御倾向（夏普0.98 对 市场0.88）。经典动量／价值／质量在约35年里测试均未通过FDR，故板块强度视角是相对强度背景（请看入场标记），而非买入排序。用于定仓与确认的研究面板 —— 而非买入清单；周期状态是回撤/结构工具，而非择时神谕。</span></p>
+    <script type="application/json" id="sb-data">{"alpha": [{"alpha": 2.48, "cycle": "BOTTOMING", "cycle_dir": "up", "cycle_zh": "\u7b51\u5e95\u4e2d", "entry": "intact", "name": "Guangdong Songfa Ceramics Co.,Ltd. / \u677e\u53d1\u80a1\u4efd", "price": 158.4, "resid_ann": 134.7, "rev_1m": 2.1, "rev_pctile": 63.0, "rs": 90.0, "rs12m": 85.0, "rs3m": 73.0, "rs6m": 80.0, "sector": "Consumer Cyclical", "sector_n": 50, "sector_rank": 1, "ticker": "603268.SS", "total_mom": 165.8}, {"alpha": 2.32, "cycle": "NEARING A HIGH", "cycle_dir": "up", "cycle_zh": "\u63a5\u8fd1\u9ad8\u70b9", "entry": "extended", "name": "Grace Fabric Technology Co.,Ltd. / \u5b8f\u548c\u79d1\u6280", "price": 228.68, "resid_ann": 211.0, "rev_1m": 57.5, "rev_pctile": 97.0, "rs": 99.0, "rs12m": 99.0, "rs3m": 98.0, "rs6m": 99.0, "sector": "Basic Materials", "sector_n": 126, "sector_rank": 1, "ticker": "603256.SS", "total_mom": 299.2}, {"alpha": 2.3, "cycle": "COUNTER-TREND BOUNCE", "cycle_dir": "caution", "cycle_zh": "\u9006\u52bf\u53cd\u5f39", "entry": "pullback", "name": "Han\u0027s Laser Technology Industry Group Co., Ltd. / \u5927\u65cf\u6fc0\u5149", "price": 124.2, "resid_ann": 118.6, "rev_1m": -12.9, "rev_pctile": 16.0, "rs": 95.0, "rs12m": 91.0, "rs3m": 89.0, "rs6m": 93.0, "sector": "Industrials", "sector_n": 154, "sector_rank": 1, "ticker": "002008.SZ", "total_mom": 200.4}, {"alpha": 2.22, "cycle": "NEARING A HIGH", "cycle_dir": "up", "cycle_zh": "\u63a5\u8fd1\u9ad8\u70b9", "entry": "extended", "name": "Yangtze Optical Fibre And Cable Joint Stock Limited Company / \u957f\u98de\u5149\u7ea4", "price": 450.3, "resid_ann": 181.6, "rev_1m": 21.4, "rev_pctile": 86.0, "rs": 98.0, "rs12m": 98.0, "rs3m": 90.0, "rs6m": 98.0, "sector": "Technology", "sector_n": 220, "sector_rank": 1, "ticker": "601869.SS", "total_mom": 273.7}, {"alpha": 2.21, "cycle": "NEARING A HIGH", "cycle_dir": "up", "cycle_zh": "\u63a5\u8fd1\u9ad8\u70b9", "entry": "extended", "name": "Zhongji Innolight Co., Ltd. / \u4e2d\u9645\u65ed\u521b", "price": 1245.0, "resid_ann": 155.6, "rev_1m": 18.9, "rev_pctile": 84.0, "rs": 99.0, "rs12m": 98.0, "rs3m": 95.0, "rs6m": 86.0, "sector": "Technology", "sector_n": 220, "sector_rank": 2, "ticker": "300308.SZ", "total_mom": 279.2}, {"alpha": 2.12, "cycle": "COUNTER-TREND BOUNCE", "cycle_dir": "caution", "cycle_zh": "\u9006\u52bf\u53cd\u5f39", "entry": "extended", "name": "L\u0026K Engineering (Suzhou) Co.,Ltd. / \u4e9a\u7fd4\u96c6\u6210", "price": 215.39, "resid_ann": 154.9, "rev_1m": 15.8, "rev_pctile": 82.0, "rs": 96.0, "rs12m": 96.0, "rs3m": 88.0, "rs6m": 93.0, "sector": "Industrials", "sector_n": 154, "sector_rank": 2, "ticker": "603929.SS", "total_mom": 219.5}, {"alpha": 2.09, "cycle": "NEARING A HIGH", "cycle_dir": "up", "cycle_zh": "\u63a5\u8fd1\u9ad8\u70b9", "entry": "extended", "name": "Datang International Power Generation Co., Ltd. / \u5927\u5510\u53d1\u7535", "price": 8.73, "resid_ann": 64.5, "rev_1m": 13.6, "rev_pctile": 80.0, "rs": 75.0, "rs12m": 77.0, "rs3m": 92.0, "rs6m": 87.0, "sector": "Utilities", "sector_n": 33, "sector_rank": 1, "ticker": "601991.SS", "total_mom": 105.6}, {"alpha": 2.08, "cycle": "COUNTER-TREND BOUNCE", "cycle_dir": "caution", "cycle_zh": "\u9006\u52bf\u53cd\u5f39", "entry": "intact", "name": "Beijing Sifang Automation Co.,Ltd / \u56db\u65b9\u80a1\u4efd", "price": 70.4, "resid_ann": 105.4, "rev_1m": -5.1, "rev_pctile": 41.0, "rs": 91.0, "rs12m": 88.0, "rs3m": 81.0, "rs6m": 88.0, "sector": "Industrials", "sector_n": 154, "sector_rank": 3, "ticker": "601126.SS", "total_mom": 174.7}, {"alpha": 2.08, "cycle": "UPTREND", "cycle_dir": "up", "cycle_zh": "\u4e0a\u6da8\u8d8b\u52bf", "entry": "extended", "name": "Yantai Jereh Oilfield Services Group Co., Ltd. / \u6770\u745e\u80a1\u4efd", "price": 154.87, "resid_ann": 111.9, "rev_1m": 13.7, "rev_pctile": 80.0, "rs": 90.0, "rs12m": 87.0, "rs3m": 80.0, "rs6m": 86.0, "sector": "Energy", "sector_n": 23, "sector_rank": 1, "ticker": "002353.SZ", "total_mom": 164.9}, {"alpha": 2.04, "cycle": "COUNTER-TREND BOUNCE", "cycle_dir": "caution", "cycle_zh": "\u9006\u52bf\u53cd\u5f39", "entry": "intact", "name": "Jiangsu Lettall Electronic Co.,Ltd / \u5229\u901a\u7535\u5b50", "price": 167.37, "resid_ann": 140.5, "rev_1m": 3.4, "rev_pctile": 66.0, "rs": 96.0, "rs12m": 95.0, "rs3m": 97.0, "rs6m": 99.0, "sector": "Technology", "sector_n": 220, "sector_rank": 3, "ticker": "603629.SS", "total_mom": 226.2}, {"alpha": 2.01, "cycle": "UPTREND", "cycle_dir": "up", "cycle_zh": "\u4e0a\u6da8\u8d8b\u52bf", "entry": "intact", "name": "Jiangsu Etern Company Limited / \u6c38\u9f0e\u80a1\u4efd", "price": 53.53, "resid_ann": 143.1, "rev_1m": 6.1, "rev_pctile": 71.0, "rs": 97.0, "rs12m": 94.0, "rs3m": 92.0, "rs6m": 94.0, "sector": "Technology", "sector_n": 220, "sector_rank": 4, "ticker": "600105.SS", "total_mom": 237.1}, {"alpha": 1.99, "cycle": "COUNTER-TREND BOUNCE", "cycle_dir": "caution", "cycle_zh": "\u9006\u52bf\u53cd\u5f39", "entry": "pullback", "name": "Hui Lyu Ecological Technology Groups Co.,Ltd. / \u6c47\u7eff\u751f\u6001", "price": 52.68, "resid_ann": 150.6, "rev_1m": -14.9, "rev_pctile": 13.0, "rs": 97.0, "rs12m": 95.0, "rs3m": 71.0, "rs6m": 91.0, "sector": "Industrials", "sector_n": 154, "sector_rank": 4, "ticker": "001267.SZ", "total_mom": 234.6}, {"alpha": 1.98, "cycle": "UPTREND", "cycle_dir": "up", "cycle_zh": "\u4e0a\u6da8\u8d8b\u52bf", "entry": "extended", "name": "Yuanjie Semiconductor Technology Co., Ltd. / \u6e90\u6770\u79d1\u6280", "price": 1464.88, "resid_ann": 170.6, "rev_1m": 34.5, "rev_pctile": 93.0, "rs": 99.0, "rs12m": 98.0, "rs3m": 96.0, "rs6m": 96.0, "sector": "Technology", "sector_n": 220, "sector_rank": 5, "ticker": "688498.SS", "total_mom": 298.4}, {"alpha": 1.95, "cycle": "NEARING A HIGH", "cycle_dir": "up", "cycle_zh": "\u63a5\u8fd1\u9ad8\u70b9", "entry": "extended", "name": "Chongqing Polycomp International Corporation / \u56fd\u9645\u590d\u6750", "price": 34.13, "resid_ann": 154.6, "rev_1m": 67.1, "rev_pctile": 99.0, "rs": 95.0, "rs12m": 97.0, "rs3m": 98.0, "rs6m": 98.0, "sector": "Consumer Cyclical", "sector_n": 50, "sector_rank": 2, "ticker": "301526.SZ", "total_mom": 201.9}, {"alpha": 1.88, "cycle": "NEARING A HIGH", "cycle_dir": "up", "cycle_zh": "\u63a5\u8fd1\u9ad8\u70b9", "entry": "extended", "name": "Shareate Tools Ltd. / \u65b0\u9510\u80a1\u4efd", "price": 96.42, "resid_ann": 102.8, "rev_1m": 57.5, "rev_pctile": 97.0, "rs": 93.0, "rs12m": 97.0, "rs3m": 88.0, "rs6m": 97.0, "sector": "Industrials", "sector_n": 154, "sector_rank": 5, "ticker": "688257.SS", "total_mom": 185.5}, {"alpha": 1.86, "cycle": "UPTREND", "cycle_dir": "up", "cycle_zh": "\u4e0a\u6da8\u8d8b\u52bf", "entry": "extended", "name": "Suzhou Dongshan Precision Manufacturing Co., Ltd. / \u4e1c\u5c71\u7cbe\u5bc6", "price": 239.31, "resid_ann": 122.8, "rev_1m": 19.6, "rev_pctile": 85.0, "rs": 97.0, "rs12m": 96.0, "rs3m": 95.0, "rs6m": 93.0, "sector": "Technology", "sector_n": 220, "sector_rank": 6, "ticker": "002384.SZ", "total_mom": 233.5}], "lowvol": [{"beta": -0.03, "cycle": "NEARING A LOW", "cycle_dir": "down", "cycle_zh": "\u63a5\u8fd1\u4f4e\u70b9", "mktcap_yi": 6746.0, "name": "China Yangtze Power Co., Ltd. / \u957f\u6c5f\u7535\u529b", "price": 27.57, "sector": "Utilities", "ticker": "600900.SS", "vol_pct_ann": 11.9, "vol_rank_pct": 0.0}, {"beta": 0.11, "cycle": "COUNTER-TREND BOUNCE", "cycle_dir": "caution", "cycle_zh": "\u9006\u52bf\u53cd\u5f39", "mktcap_yi": 895.0, "name": "Yunnan Baiyao Group Co.,Ltd / \u4e91\u5357\u767d\u836f", "price": 50.15, "sector": "Healthcare", "ticker": "000538.SZ", "vol_pct_ann": 12.7, "vol_rank_pct": 0.0}, {"beta": 0.03, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 1007.0, "name": "Daqin Railway Co., Ltd. / \u5927\u79e6\u94c1\u8def", "price": 5.07, "sector": "Industrials", "ticker": "601006.SS", "vol_pct_ann": 12.7, "vol_rank_pct": 0.0}, {"beta": 0.18, "cycle": "COUNTER-TREND BOUNCE", "cycle_dir": "caution", "cycle_zh": "\u9006\u52bf\u53cd\u5f39", "mktcap_yi": 604.0, "name": "Shanghai Pharmaceuticals Holding Co., Ltd / \u4e0a\u6d77\u533b\u836f", "price": 16.28, "sector": "Healthcare", "ticker": "601607.SS", "vol_pct_ann": 13.1, "vol_rank_pct": 1.0}, {"beta": 0.21, "cycle": "NEARING A LOW", "cycle_dir": "down", "cycle_zh": "\u63a5\u8fd1\u4f4e\u70b9", "mktcap_yi": 1195.0, "name": "China Three Gorges Renewables (Group) Co.,Ltd. / \u4e09\u5ce1\u80fd\u6e90", "price": 4.18, "sector": "Utilities", "ticker": "600905.SS", "vol_pct_ann": 13.7, "vol_rank_pct": 1.0}, {"beta": 0.06, "cycle": "TOPPING", "cycle_dir": "down", "cycle_zh": "\u505a\u9876\u4e2d", "mktcap_yi": 2383.0, "name": "Beijing-Shanghai High-Speed Railway Co., Ltd. / \u4eac\u6caa\u9ad8\u94c1", "price": 4.87, "sector": "Industrials", "ticker": "601816.SS", "vol_pct_ann": 13.7, "vol_rank_pct": 1.0}, {"beta": 0.04, "cycle": "NEARING A LOW", "cycle_dir": "down", "cycle_zh": "\u63a5\u8fd1\u4f4e\u70b9", "mktcap_yi": 20428.0, "name": "China Mobile Limited / \u4e2d\u56fd\u79fb\u52a8", "price": 94.23, "sector": "Communication Services", "ticker": "600941.SS", "vol_pct_ann": 13.8, "vol_rank_pct": 1.0}, {"beta": 0.24, "cycle": "COUNTER-TREND BOUNCE", "cycle_dir": "caution", "cycle_zh": "\u9006\u52bf\u53cd\u5f39", "mktcap_yi": 354.0, "name": "Guangzhou Baiyunshan Pharmaceutical Holdings Company Limited / \u767d\u4e91\u5c71", "price": 21.76, "sector": "Healthcare", "ticker": "600332.SS", "vol_pct_ann": 13.9, "vol_rank_pct": 1.0}, {"beta": 0.13, "cycle": "BOTTOMING", "cycle_dir": "up", "cycle_zh": "\u7b51\u5e95\u4e2d", "mktcap_yi": 1176.0, "name": "Shanghai International Port (Group) Co., Ltd. / \u4e0a\u6e2f\u96c6\u56e2", "price": 5.05, "sector": "Industrials", "ticker": "600018.SS", "vol_pct_ann": 13.9, "vol_rank_pct": 1.0}, {"beta": 0.27, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 325.0, "name": "Shanghai RAAS Blood Products Co., Ltd. / \u4e0a\u6d77\u83b1\u58eb", "price": 4.93, "sector": "Healthcare", "ticker": "002252.SZ", "vol_pct_ann": 14.2, "vol_rank_pct": 1.0}, {"beta": 0.19, "cycle": "COUNTER-TREND BOUNCE", "cycle_dir": "caution", "cycle_zh": "\u9006\u52bf\u53cd\u5f39", "mktcap_yi": 1963.0, "name": "China State Construction Engineering Corporation Limited / \u4e2d\u56fd\u5efa\u7b51", "price": 4.75, "sector": "Industrials", "ticker": "601668.SS", "vol_pct_ann": 14.5, "vol_rank_pct": 1.0}, {"beta": 0.0, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 1639.0, "name": "AVIC Chengdu Aircraft Company Limited / \u4e2d\u822a\u6210\u98de", "price": 61.35, "sector": "Technology", "ticker": "302132.SZ", "vol_pct_ann": 15.0, "vol_rank_pct": 2.0}, {"beta": 0.06, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 837.0, "name": "Henan Shuanghui Investment \u0026 Development Co.,Ltd. / \u53cc\u6c47\u53d1\u5c55", "price": 24.15, "sector": "Consumer Defensive", "ticker": "000895.SZ", "vol_pct_ann": 15.2, "vol_rank_pct": 2.0}, {"beta": 0.35, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 579.0, "name": "Air China Cargo Co., Ltd. / \u56fd\u8d27\u822a", "price": 4.74, "sector": "Industrials", "ticker": "001391.SZ", "vol_pct_ann": 15.4, "vol_rank_pct": 2.0}, {"beta": 0.2, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 340.0, "name": "Beijing Tongrentang Co., Ltd / \u540c\u4ec1\u5802", "price": 24.83, "sector": "Healthcare", "ticker": "600085.SS", "vol_pct_ann": 15.4, "vol_rank_pct": 2.0}, {"beta": 0.12, "cycle": "BOTTOMING", "cycle_dir": "up", "cycle_zh": "\u7b51\u5e95\u4e2d", "mktcap_yi": 344.0, "name": "Youngor Fashion Co., Ltd. / \u96c5\u6208\u5c14", "price": 7.44, "sector": "Consumer Cyclical", "ticker": "600177.SS", "vol_pct_ann": 15.5, "vol_rank_pct": 2.0}], "reversal": [{"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 349.0, "name": "Shenzhen Salubris Pharmaceuticals Co., Ltd. / \u4fe1\u7acb\u6cf0", "price": 31.32, "ret_3m": -39.3, "rev_z": 1.95, "sector": "Healthcare", "sector_n": 44, "sector_rank": 1, "ticker": "002294.SZ"}, {"cycle": "COUNTER-TREND BOUNCE", "cycle_dir": "caution", "cycle_zh": "\u9006\u52bf\u53cd\u5f39", "mktcap_yi": 937.0, "name": "CNPC Capital Company Limited / \u4e2d\u6cb9\u8d44\u672c", "price": 7.41, "ret_3m": -18.4, "rev_z": 1.59, "sector": "Financial Services", "sector_n": 76, "sector_rank": 1, "ticker": "000617.SZ"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 283.0, "name": "Imeik Technology Development Co.,Ltd. / \u7231\u7f8e\u5ba2", "price": 93.61, "ret_3m": -33.5, "rev_z": 1.57, "sector": "Healthcare", "sector_n": 44, "sector_rank": 2, "ticker": "300896.SZ"}, {"cycle": "COUNTER-TREND BOUNCE", "cycle_dir": "caution", "cycle_zh": "\u9006\u52bf\u53cd\u5f39", "mktcap_yi": 394.0, "name": "Capital Securities Corporation Limited / \u9996\u521b\u8bc1\u5238", "price": 14.4, "ret_3m": -18.0, "rev_z": 1.55, "sector": "Financial Services", "sector_n": 76, "sector_rank": 2, "ticker": "601136.SS"}, {"cycle": "COUNTER-TREND BOUNCE", "cycle_dir": "caution", "cycle_zh": "\u9006\u52bf\u53cd\u5f39", "mktcap_yi": 332.0, "name": "Tianfeng Securities Co., Ltd. / \u5929\u98ce\u8bc1\u5238", "price": 3.3, "ret_3m": -17.7, "rev_z": 1.52, "sector": "Financial Services", "sector_n": 76, "sector_rank": 3, "ticker": "601162.SS"}, {"cycle": "COUNTER-TREND BOUNCE", "cycle_dir": "caution", "cycle_zh": "\u9006\u52bf\u53cd\u5f39", "mktcap_yi": 389.0, "name": "Guangzhou Yuexiu Capital Holdings Group Co., Ltd. / \u8d8a\u79c0\u8d44\u672c", "price": 7.75, "ret_3m": -17.6, "rev_z": 1.5, "sector": "Financial Services", "sector_n": 76, "sector_rank": 4, "ticker": "000987.SZ"}, {"cycle": "COUNTER-TREND BOUNCE", "cycle_dir": "caution", "cycle_zh": "\u9006\u52bf\u53cd\u5f39", "mktcap_yi": 426.0, "name": "Sinopec Oilfield Service Corporation / \u77f3\u5316\u6cb9\u670d", "price": 2.25, "ret_3m": -34.2, "rev_z": 1.4, "sector": "Energy", "sector_n": 23, "sector_rank": 1, "ticker": "600871.SS"}, {"cycle": "COUNTER-TREND BOUNCE", "cycle_dir": "caution", "cycle_zh": "\u9006\u52bf\u53cd\u5f39", "mktcap_yi": 3166.0, "name": "The People\u0027s Insurance Company (Group) of China Limited / \u4e2d\u56fd\u4eba\u4fdd", "price": 7.16, "ret_3m": -16.4, "rev_z": 1.38, "sector": "Financial Services", "sector_n": 76, "sector_rank": 5, "ticker": "601319.SS"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 356.0, "name": "Geovis Technology Co.,Ltd / \u4e2d\u79d1\u661f\u56fe", "price": 44.0, "ret_3m": -37.0, "rev_z": 1.36, "sector": "Technology", "sector_n": 227, "sector_rank": 1, "ticker": "688568.SS"}, {"cycle": "COUNTER-TREND BOUNCE", "cycle_dir": "caution", "cycle_zh": "\u9006\u52bf\u53cd\u5f39", "mktcap_yi": 318.0, "name": "Addsino Co., Ltd. / \u822a\u5929\u53d1\u5c55", "price": 19.92, "ret_3m": -36.7, "rev_z": 1.36, "sector": "Technology", "sector_n": 227, "sector_rank": 2, "ticker": "000547.SZ"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 537.0, "name": "Jinko Solar Co., Ltd. / \u6676\u79d1\u80fd\u6e90", "price": 5.23, "ret_3m": -36.6, "rev_z": 1.35, "sector": "Technology", "sector_n": 227, "sector_rank": 3, "ticker": "688223.SS"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 364.0, "name": "Leo Group Co., Ltd. / \u5229\u6b27\u80a1\u4efd", "price": 5.38, "ret_3m": -32.6, "rev_z": 1.35, "sector": "Communication Services", "sector_n": 14, "sector_rank": 1, "ticker": "002131.SZ"}, {"cycle": "COUNTER-TREND BOUNCE", "cycle_dir": "caution", "cycle_zh": "\u9006\u52bf\u53cd\u5f39", "mktcap_yi": 3199.0, "name": "China Pacific Insurance (Group) Co., Ltd. / \u4e2d\u56fd\u592a\u4fdd", "price": 33.25, "ret_3m": -15.8, "rev_z": 1.32, "sector": "Financial Services", "sector_n": 76, "sector_rank": 6, "ticker": "601601.SS"}, {"cycle": "COUNTER-TREND BOUNCE", "cycle_dir": "caution", "cycle_zh": "\u9006\u52bf\u53cd\u5f39", "mktcap_yi": 339.0, "name": "Hangzhou Tigermed Consulting Co., Ltd / \u6cf0\u683c\u533b\u836f", "price": 39.4, "ret_3m": -29.4, "rev_z": 1.3, "sector": "Healthcare", "sector_n": 44, "sector_rank": 3, "ticker": "300347.SZ"}, {"cycle": "COUNTER-TREND BOUNCE", "cycle_dir": "caution", "cycle_zh": "\u9006\u52bf\u53cd\u5f39", "mktcap_yi": 288.0, "name": "JA Solar Technology Co., Ltd. / \u6676\u6fb3\u79d1\u6280", "price": 8.7, "ret_3m": -32.8, "rev_z": 1.29, "sector": "Technology", "sector_n": 227, "sector_rank": 4, "ticker": "002459.SZ"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 462.0, "name": "Giant Network Group Co., Ltd. / \u5de8\u4eba\u7f51\u7edc", "price": 24.31, "ret_3m": -31.8, "rev_z": 1.29, "sector": "Communication Services", "sector_n": 14, "sector_rank": 2, "ticker": "002558.SZ"}]}</script>
+    <script type="application/json" id="sb-seczh">{"Basic Materials": "\u539f\u6750\u6599", "Communication Services": "\u901a\u4fe1\u670d\u52a1", "Consumer Cyclical": "\u53ef\u9009\u6d88\u8d39", "Consumer Defensive": "\u5fc5\u9700\u6d88\u8d39", "Energy": "\u80fd\u6e90", "Financial Services": "\u91d1\u878d", "Healthcare": "\u533b\u7597\u4fdd\u5065", "Industrials": "\u5de5\u4e1a", "Real Estate": "\u623f\u5730\u4ea7", "Technology": "\u79d1\u6280", "Utilities": "\u516c\u7528\u4e8b\u4e1a"}</script>
+    <script>
+    (function () {
+      var DATA, SECZH;
+      try { DATA = JSON.parse(document.getElementById('sb-data').textContent); } catch (e) { return; }
+      try { SECZH = JSON.parse(document.getElementById('sb-seczh').textContent); } catch (e) { SECZH = {}; }
+      var head = document.getElementById('sb-head'), body = document.getElementById('sb-body'),
+          cap = document.getElementById('sb-cap'),
+          seg = document.querySelector('#stock-screener .sb-seg');
+      // bilingual span (CSS shows the active language)
+      function bl(en, zh) { return '<span class="l-en">' + en + '</span><span class="l-zh">' + (zh || en) + '</span>'; }
+      function sgn(v, d) { return (v >= 0 ? '+' : '') + v.toFixed(d); }
+      function cls(v) { return v >= 0 ? 'pos' : 'neg'; }
+      function nm(name) { var p = String(name || '').split(' / '); return bl(p[0], p[1] || p[0]); }
+      function ladDir(d) { return d === 'up' ? 'up' : (d === 'down' ? 'down' : 'flat'); }
+      var COL = {
+        stock: { en: 'Stock', zh: '个股', l: true, key: function (r) { return r.ticker; },
+          cell: function (r) { return '<a href="china_stock.html#' + r.ticker + '"><b>' + r.ticker + '</b></a> <span class="note">' + nm(r.name) + '</span>'; } },
+        sector: { en: 'Sector', zh: '板块', l: true, key: function (r) { return r.sector || ''; },
+          cell: function (r) { return '<span class="note">' + bl(r.sector || '—', SECZH[r.sector] || r.sector || '—') + '</span>'; } },
+        price: { en: 'Price', zh: '价格', key: function (r) { return r.price; },
+          cell: function (r) { return r.price != null ? r.price.toFixed(2) : '—'; } },
+        cycle: { en: 'Cycle', zh: '周期', l: true, key: null,
+          cell: function (r) { return r.cycle ? '<span class="lad ' + ladDir(r.cycle_dir) + '">' + bl(r.cycle, r.cycle_zh || r.cycle) + '</span>' : '—'; } },
+        ret3m: { en: '3-mo', zh: '近3月', key: function (r) { return r.ret_3m; },
+          cell: function (r) { return r.ret_3m != null ? '<span class="neg">' + sgn(r.ret_3m, 1) + '%</span>' : '—'; } },
+        revz: { en: 'rev-z', zh: '反转强度', key: function (r) { return r.rev_z; }, def: 'desc',
+          cell: function (r) { return r.rev_z != null ? '<b>' + r.rev_z.toFixed(2) + '</b>' : '—'; } },
+        srank: { en: 'sector rank', zh: '板块排名', key: function (r) { return r.sector_rank; },
+          cell: function (r) { return r.sector_rank != null ? '<span class="note">' + r.sector_rank + '/' + r.sector_n + '</span>' : '—'; } },
+        mcap: { en: 'mkt cap', zh: '市值', key: function (r) { return r.mktcap_yi; },
+          cell: function (r) { return r.mktcap_yi != null ? '<span class="note">' + Math.round(r.mktcap_yi) + '亿</span>' : '—'; } },
+        vol: { en: 'σ (ann)', zh: '年化波动', key: function (r) { return r.vol_pct_ann; }, def: 'asc',
+          cell: function (r) { return r.vol_pct_ann != null ? '<b>' + r.vol_pct_ann.toFixed(1) + '%</b>' : '—'; } },
+        beta: { en: 'beta', zh: '贝塔', key: function (r) { return r.beta; },
+          cell: function (r) { return r.beta != null ? '<span class="note">' + r.beta.toFixed(2) + '</span>' : '—'; } },
+        alpha: { en: 'alpha z', zh: '阿尔法 z', key: function (r) { return r.alpha; }, def: 'desc',
+          cell: function (r) { return r.alpha != null ? '<b class="' + cls(r.alpha) + '">' + sgn(r.alpha, 2) + '</b>' : '—'; } },
+        rev1m: { en: '1-mo', zh: '近一月', key: function (r) { return r.rev_1m; },
+          cell: function (r) { return r.rev_1m != null ? '<span class="' + cls(r.rev_1m) + '">' + sgn(r.rev_1m, 1) + '%</span>' : '—'; } },
+        entry: { en: 'entry', zh: '入场', l: true, key: null,
+          cell: function (r) { return r.entry ? '<span class="alpha-entry ae-' + r.entry + '">' + r.entry + '</span>' : ''; } }
+      };
+      var MODES = {
+        reversal: { cols: ['stock', 'sector', 'price', 'ret3m', 'revz', 'srank', 'mcap', 'cycle'],
+          cap: bl('The most beaten-down names vs their sector over 3 months — the validated A-share edge (within-sector reversal, Sharpe 0.58). A high-variance contrarian signal that buys into weakness; size small, not a buy list.', '近3个月相对其板块跌幅最深的个股 —— 已验证的A股优势（板块内反转，夏普0.58）。高波动逆向信号，买入弱势；宜小仓位，而非买入清单。') },
+        lowvol: { cols: ['stock', 'sector', 'price', 'vol', 'beta', 'mcap', 'cycle'],
+          cap: bl('The lowest-volatility names — historically market-like returns with shallower drawdowns (the validated defensive tilt, Sharpe 0.98 vs 0.88 market). For risk-aware exposure, not return maximization.', '波动率最低的个股 —— 历史上收益与市场相近但回撤更浅（已验证的防御倾向，夏普0.98 对 市场0.88）。用于风险可控的敞口，而非收益最大化。') },
+        alpha: { cols: ['stock', 'sector', 'price', 'alpha', 'srank', 'rev1m', 'entry', 'cycle'],
+          cap: bl('Sector-neutral residual relative strength. A-share momentum is NOT a validated edge — read the entry flag (pullback = mean-reversion buy; extended = fade risk), not the alpha ranking. Relative-strength context, not a buy list.', '板块中性残差相对强度。A股动量并非有效优势 —— 请看入场标记（pullback＝均值回归买入；extended＝做空风险），而非alpha排序。相对强度背景，而非买入清单。') }
+      };
+      var cur = 'reversal', sortCol = null, sortDir = 'desc';
+      function render() {
+        var spec = MODES[cur], cols = spec.cols.map(function (c) { return COL[c]; });
+        cap.innerHTML = spec.cap;
+        // header
+        var hh = '<tr>';
+        cols.forEach(function (c, i) {
+          var sortable = c.key !== null;
+          var arrow = '';
+          if (sortable) arrow = '<span class="sarrow">' + (sortCol === i ? (sortDir === 'desc' ? '↓' : '↑') : '↕') + '</span>';
+          hh += '<th class="' + (c.l ? 'l ' : '') + (sortable ? 'th-sort ' : '') + (sortCol === i ? 'sorted' : '') + '"'
+              + (sortable ? ' data-i="' + i + '"' : '') + '>' + bl(c.en, c.zh) + arrow + '</th>';
+        });
+        hh += '</tr>';
+        head.innerHTML = hh;
+        // rows
+        var rows = DATA[cur] ? DATA[cur].slice() : [];
+        if (sortCol !== null && cols[sortCol] && cols[sortCol].key) {
+          var kf = cols[sortCol].key, sgnd = sortDir === 'desc' ? -1 : 1;
+          rows.sort(function (a, b) {
+            var va = kf(a), vb = kf(b);
+            if (va == null) va = -Infinity; if (vb == null) vb = -Infinity;
+            if (typeof va === 'string' || typeof vb === 'string')
+              return sgnd * String(va).localeCompare(String(vb), undefined, { numeric: true });
+            return sgnd * (va - vb);
+          });
+        }
+        var bb = '';
+        rows.forEach(function (r) {
+          bb += '<tr>' + cols.map(function (c) {
+            return '<td class="' + (c.l ? 'l' : '') + '">' + c.cell(r) + '</td>';
+          }).join('') + '</tr>';
+        });
+        body.innerHTML = bb || '<tr><td>—</td></tr>';
+      }
+      // default sort per mode
+      function setMode(m) {
+        cur = m;
+        var cols = MODES[cur].cols.map(function (c) { return COL[c]; });
+        sortCol = null; sortDir = 'desc';
+        cols.forEach(function (c, i) { if (c.def && sortCol === null) { sortCol = i; sortDir = c.def; } });
+        Array.prototype.forEach.call(seg.querySelectorAll('button'), function (b) {
+          b.setAttribute('aria-selected', b.getAttribute('data-mode') === m ? 'true' : 'false');
+        });
+        render();
+      }
+      seg.addEventListener('click', function (e) {
+        var b = e.target.closest('button[data-mode]'); if (!b) return;
+        setMode(b.getAttribute('data-mode'));
+      });
+      head.addEventListener('click', function (e) {
+        var th = e.target.closest('th.th-sort'); if (!th) return;
+        var i = parseInt(th.getAttribute('data-i'), 10);
+        if (sortCol === i) sortDir = sortDir === 'desc' ? 'asc' : 'desc';
+        else { sortCol = i; sortDir = 'desc'; }
+        render();
+      });
+      setMode('reversal');
+    })();
+    </script>
+  </div>
+  
+
+  <!-- ===================== ALPHA LEADERS (sector-neutral residual momentum) ===================== -->
+  
+  <div class="panel span12" id="alpha-leaders">
+    <h2><span class="l-en">📊 Sector relative strength — read the mean-reversion flag</span><span class="l-zh">📊 板块相对强度 — 关注均值回归标记</span>
+      <span class="note" style="text-transform:none">· <span class="l-en">sector-neutral residual · vs CSI 300</span><span class="l-zh">板块中性残差 · 相对沪深300</span> · 774 <span class="l-en">names</span><span class="l-zh">只</span></span>
+      <span class="help">?<span class="tip"><span class="l-en">Each stock's return with its MARKET and SECTOR beta stripped — <b>sector-neutral residual relative strength</b> over a 12-1-month window (rank vs the whole A-share cross-section; +2 = top of the pack). <b>IMPORTANT — deep-history correction:</b> on ~35 years of A-share data this momentum is NOT a validated edge — A-shares MEAN-REVERT, so do not read 'high alpha = buy' (research/CHINA_HK_STOCK_SIGNALS.md, reports/china-residual-alpha-deep.md). Read the <b>entry</b> flag instead: a leader that just spiked (“extended”) is a reversal RISK / fade candidate; a leader on a recent pullback (“pullback”) is the constructive MEAN-REVERSION entry — the validated effect. The alpha column is relative-strength CONTEXT (which names have shown strength), not a buy ranking.</span><span class="l-zh">每只股票剔除其市场与板块贝塔后的收益 —— <b>板块中性残差相对强度</b>（12-1 个月；相对全 A 股横截面排名，+2＝最强一档）。<b>重要 —— 深度历史校正：</b>在约35年的A股数据上，该动量并非有效优势 —— A股<b>均值回归</b>，因此切勿把“高 alpha＝买入”（research/CHINA_HK_STOCK_SIGNALS.md、reports/china-residual-alpha-deep.md）。请改看<b>入场</b>标记：刚急涨的领先股（“extended”）是反转风险/做空候选；近期回调的领先股（“pullback”）才是有效的<b>均值回归</b>入场。alpha 列是相对强度<b>背景</b>（哪些个股表现出强势），并非买入排序。</span></span></span>
+    </h2>
+    <table class="sortable">
+      <thead><tr>
+        <th class="l"><span class="l-en">Stock</span><span class="l-zh">个股</span></th>
+        <th class="l"><span class="l-en">Sector</span><span class="l-zh">板块</span></th>
+        <th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th>
+        <th><span class="l-en">sector rank</span><span class="l-zh">板块排名</span></th>
+        <th><span class="l-en">idio ann</span><span class="l-zh">年化残差</span></th>
+        <th><span class="l-en">1-mo</span><span class="l-zh">近一月</span></th>
+        <th class="l"><span class="l-en">entry</span><span class="l-zh">入场</span></th>
+      </tr></thead>
+      <tbody>
+      
+      <tr>
+        <td class="l"><a href="china_stock.html#603268.SS"><b>603268.SS</b></a> <span class="note"><span class="l-en">Guangdong Songfa Ceramics Co.,Ltd.</span><span class="l-zh">松发股份</span></span></td>
+        <td class="l note"><span class="l-en">Consumer Cyclical</span><span class="l-zh">可选消费</span></td>
+        <td><b class="pos">+2.48</b></td>
+        <td class="note">1/50</td>
+        <td class="pos">+135%</td>
+        <td class="pos">+2.1%</td>
+        <td class="l"><span class="alpha-entry ae-intact">intact</span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="china_stock.html#603256.SS"><b>603256.SS</b></a> <span class="note"><span class="l-en">Grace Fabric Technology Co.,Ltd.</span><span class="l-zh">宏和科技</span></span></td>
+        <td class="l note"><span class="l-en">Basic Materials</span><span class="l-zh">原材料</span></td>
+        <td><b class="pos">+2.32</b></td>
+        <td class="note">1/126</td>
+        <td class="pos">+211%</td>
+        <td class="pos">+57.5%</td>
+        <td class="l"><span class="alpha-entry ae-extended">extended</span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="china_stock.html#002008.SZ"><b>002008.SZ</b></a> <span class="note"><span class="l-en">Han's Laser Technology Industry Group Co., Ltd.</span><span class="l-zh">大族激光</span></span></td>
+        <td class="l note"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td>
+        <td><b class="pos">+2.30</b></td>
+        <td class="note">1/154</td>
+        <td class="pos">+119%</td>
+        <td class="neg">-12.9%</td>
+        <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="china_stock.html#601869.SS"><b>601869.SS</b></a> <span class="note"><span class="l-en">Yangtze Optical Fibre And Cable Joint Stock Limited Company</span><span class="l-zh">长飞光纤</span></span></td>
+        <td class="l note"><span class="l-en">Technology</span><span class="l-zh">科技</span></td>
+        <td><b class="pos">+2.22</b></td>
+        <td class="note">1/220</td>
+        <td class="pos">+182%</td>
+        <td class="pos">+21.4%</td>
+        <td class="l"><span class="alpha-entry ae-extended">extended</span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="china_stock.html#300308.SZ"><b>300308.SZ</b></a> <span class="note"><span class="l-en">Zhongji Innolight Co., Ltd.</span><span class="l-zh">中际旭创</span></span></td>
+        <td class="l note"><span class="l-en">Technology</span><span class="l-zh">科技</span></td>
+        <td><b class="pos">+2.21</b></td>
+        <td class="note">2/220</td>
+        <td class="pos">+156%</td>
+        <td class="pos">+18.9%</td>
+        <td class="l"><span class="alpha-entry ae-extended">extended</span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="china_stock.html#603929.SS"><b>603929.SS</b></a> <span class="note"><span class="l-en">L&K Engineering (Suzhou) Co.,Ltd.</span><span class="l-zh">亚翔集成</span></span></td>
+        <td class="l note"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td>
+        <td><b class="pos">+2.12</b></td>
+        <td class="note">2/154</td>
+        <td class="pos">+155%</td>
+        <td class="pos">+15.8%</td>
+        <td class="l"><span class="alpha-entry ae-extended">extended</span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="china_stock.html#601991.SS"><b>601991.SS</b></a> <span class="note"><span class="l-en">Datang International Power Generation Co., Ltd.</span><span class="l-zh">大唐发电</span></span></td>
+        <td class="l note"><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></td>
+        <td><b class="pos">+2.09</b></td>
+        <td class="note">1/33</td>
+        <td class="pos">+64%</td>
+        <td class="pos">+13.6%</td>
+        <td class="l"><span class="alpha-entry ae-extended">extended</span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="china_stock.html#601126.SS"><b>601126.SS</b></a> <span class="note"><span class="l-en">Beijing Sifang Automation Co.,Ltd</span><span class="l-zh">四方股份</span></span></td>
+        <td class="l note"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td>
+        <td><b class="pos">+2.08</b></td>
+        <td class="note">3/154</td>
+        <td class="pos">+105%</td>
+        <td class="neg">-5.1%</td>
+        <td class="l"><span class="alpha-entry ae-intact">intact</span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="china_stock.html#002353.SZ"><b>002353.SZ</b></a> <span class="note"><span class="l-en">Yantai Jereh Oilfield Services Group Co., Ltd.</span><span class="l-zh">杰瑞股份</span></span></td>
+        <td class="l note"><span class="l-en">Energy</span><span class="l-zh">能源</span></td>
+        <td><b class="pos">+2.08</b></td>
+        <td class="note">1/23</td>
+        <td class="pos">+112%</td>
+        <td class="pos">+13.7%</td>
+        <td class="l"><span class="alpha-entry ae-extended">extended</span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="china_stock.html#603629.SS"><b>603629.SS</b></a> <span class="note"><span class="l-en">Jiangsu Lettall Electronic Co.,Ltd</span><span class="l-zh">利通电子</span></span></td>
+        <td class="l note"><span class="l-en">Technology</span><span class="l-zh">科技</span></td>
+        <td><b class="pos">+2.04</b></td>
+        <td class="note">3/220</td>
+        <td class="pos">+140%</td>
+        <td class="pos">+3.4%</td>
+        <td class="l"><span class="alpha-entry ae-intact">intact</span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="china_stock.html#600105.SS"><b>600105.SS</b></a> <span class="note"><span class="l-en">Jiangsu Etern Company Limited</span><span class="l-zh">永鼎股份</span></span></td>
+        <td class="l note"><span class="l-en">Technology</span><span class="l-zh">科技</span></td>
+        <td><b class="pos">+2.01</b></td>
+        <td class="note">4/220</td>
+        <td class="pos">+143%</td>
+        <td class="pos">+6.1%</td>
+        <td class="l"><span class="alpha-entry ae-intact">intact</span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="china_stock.html#001267.SZ"><b>001267.SZ</b></a> <span class="note"><span class="l-en">Hui Lyu Ecological Technology Groups Co.,Ltd.</span><span class="l-zh">汇绿生态</span></span></td>
+        <td class="l note"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td>
+        <td><b class="pos">+1.99</b></td>
+        <td class="note">4/154</td>
+        <td class="pos">+151%</td>
+        <td class="neg">-14.9%</td>
+        <td class="l"><span class="alpha-entry ae-pullback">pullback</span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="china_stock.html#688498.SS"><b>688498.SS</b></a> <span class="note"><span class="l-en">Yuanjie Semiconductor Technology Co., Ltd.</span><span class="l-zh">源杰科技</span></span></td>
+        <td class="l note"><span class="l-en">Technology</span><span class="l-zh">科技</span></td>
+        <td><b class="pos">+1.98</b></td>
+        <td class="note">5/220</td>
+        <td class="pos">+171%</td>
+        <td class="pos">+34.5%</td>
+        <td class="l"><span class="alpha-entry ae-extended">extended</span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="china_stock.html#301526.SZ"><b>301526.SZ</b></a> <span class="note"><span class="l-en">Chongqing Polycomp International Corporation</span><span class="l-zh">国际复材</span></span></td>
+        <td class="l note"><span class="l-en">Consumer Cyclical</span><span class="l-zh">可选消费</span></td>
+        <td><b class="pos">+1.95</b></td>
+        <td class="note">2/50</td>
+        <td class="pos">+155%</td>
+        <td class="pos">+67.1%</td>
+        <td class="l"><span class="alpha-entry ae-extended">extended</span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="china_stock.html#688257.SS"><b>688257.SS</b></a> <span class="note"><span class="l-en">Shareate Tools Ltd.</span><span class="l-zh">新锐股份</span></span></td>
+        <td class="l note"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td>
+        <td><b class="pos">+1.88</b></td>
+        <td class="note">5/154</td>
+        <td class="pos">+103%</td>
+        <td class="pos">+57.5%</td>
+        <td class="l"><span class="alpha-entry ae-extended">extended</span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="china_stock.html#002384.SZ"><b>002384.SZ</b></a> <span class="note"><span class="l-en">Suzhou Dongshan Precision Manufacturing Co., Ltd.</span><span class="l-zh">东山精密</span></span></td>
+        <td class="l note"><span class="l-en">Technology</span><span class="l-zh">科技</span></td>
+        <td><b class="pos">+1.86</b></td>
+        <td class="note">6/220</td>
+        <td class="pos">+123%</td>
+        <td class="pos">+19.6%</td>
+        <td class="l"><span class="alpha-entry ae-extended">extended</span></td>
+      </tr>
+      
+      </tbody>
+    </table>
+    <p class="note" style="margin:6px 0 0;font-size:11px"><span class="l-en">Sector-neutral residual relative strength. Deep-history corrected: A-share momentum is NOT a validated edge (35y, nothing clears FDR) — the robust effect is short-term REVERSAL, so the actionable read is the entry flag (pullback = mean-reversion buy; extended = fade risk), not the alpha ranking. Relative-strength context, not a buy list.</span><span class="l-zh">板块中性残差相对强度。经深度历史校正：A股动量并非有效优势（35年，无一通过FDR）—— 稳健的效应是短期反转，因此可操作的解读是入场标记（pullback＝均值回归买入；extended＝做空风险），而非 alpha 排序。相对强度背景，而非买入清单。</span></p>
+  </div>
+  
+
+  
+
+  
+
+  
+
+</div>
+
+<div class="foot">
+  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-06-15 09:13 UTC ·
+  <span class="l-en">Free public data (yfinance + Eastmoney), mechanical &amp; backtested · not investment advice</span><span class="l-zh">免费公开数据（yfinance + 东方财富），机械化并经回测 · 非投资建议</span><br>
+  <span class="l-en">Sector ETFs ~5y history (display-grade RS); regime &amp; ladder calibrated on the deep 2006–2026 panel.</span><span class="l-zh">板块ETF约5年历史（展示级相对强弱）；周期与阶梯基于2006–2026深度样本校准。</span>
+</div>
+
+<script>
+window.__CHART_SWAP__ = {
+  colors: {"#5fbf7f":"#e07070","#e07070":"#5fbf7f","#2e9e4f":"#d04545","#d04545":"#2e9e4f"},
+  labels: {}
+};
+</script>
+<script src="theme.js"></script>
+<script src="chart_i18n.js"></script>
+<script src="mtf.js"></script>
+<script src="timemachine.js"></script>
+<script src="tablesort.js"></script>
+<script>
+  // keep tooltips on-screen: flip below near the top of the viewport, and anchor to
+  // the nearest side when the help icon is close to the left/right edge
+  document.addEventListener('mouseover', function (e) {
+    var h = e.target.closest('.help'); if (!h) return;
+    var r = h.getBoundingClientRect();
+    h.classList.toggle('below', r.top < 340);
+    var tip = h.querySelector('.tip');
+    var half = ((tip && tip.offsetWidth) || 300) / 2 + 16;
+    h.classList.remove('edge-right', 'edge-left');
+    if (r.left + r.width / 2 + half > window.innerWidth) h.classList.add('edge-right');
+    else if (r.left + r.width / 2 - half < 0) h.classList.add('edge-left');
+  });
+</script>
+</body>
+</html>
