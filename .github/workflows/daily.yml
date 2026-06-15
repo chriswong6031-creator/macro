@@ -194,13 +194,14 @@ jobs:
         # signals); returns 0 even if the crypto engine errors, so it can never
         # break the macro site.
         run: python -m scripts.build_vector
-      - name: master brain (cross-asset LLM synthesis; default-off, resilient)
+      - name: master brain (multi-lens LLM synthesis; default-off, resilient)
         # Runs LAST among the builders — it reads EVERY dashboard's latest.json
-        # (macro/china/hk/commodity/forex + BTC) plus the catalyst digest. Writes
-        # data/regime/master_brief.json + site/master_brief.json (client-fetched by
-        # the dashboard's Master Brief panel). NO-OP unless BOTH config
-        # master_brain.enabled is true AND the DEEPSEEK_API_KEY secret is set.
-        # Self-sufficient; never aborts the deploy.
+        # (macro/china/hk/commodity/forex + BTC) plus the catalyst digest, and writes
+        # one brief per configured lens (master_brain.lenses, default macro+china+btc):
+        #   site/master_brief.json (US dashboard) · site/china_brief.json (china.html)
+        #   · site/btc_brief.json (vector.html) — each client-fetched by its AI brief
+        # panel. NO-OP unless BOTH config master_brain.enabled is true AND the
+        # DEEPSEEK_API_KEY secret is set. Self-sufficient; never aborts the deploy.
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |

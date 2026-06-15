@@ -1462,22 +1462,33 @@ catalyst_tone:
   event_max_records: 8            # headlines fetched for the event digest (keep small)
 
 # =============================================================================
-# Master brain — cross-asset macro SYNTHESIS (LLM Tier-B; engine/master_brain.py).
-# LEAF · DEFAULT-OFF · RESEARCH/CONTEXT-ONLY. Reads every dashboard's deterministic
-# latest.json (macro/china/hk/commodity/forex/BTC) + the catalyst digest and writes
-# an analyst's morning brief to data/regime/master_brief.json. NEVER feeds a score.
+# Master brain — multi-LENS macro SYNTHESIS (LLM Tier-B; engine/master_brain.py).
+# LEAF · DEFAULT-OFF · RESEARCH/CONTEXT-ONLY. Reads the dashboards' deterministic
+# latest.json files and writes an analyst's morning brief per lens. NEVER feeds a score.
+# Three lenses share one engine + one set of LLM creds:
+#   macro -> data/regime/master_brief.json  (cross-asset; shown on the US dashboard)
+#   china -> data/regime/china_brief.json   (China & HK focused; shown on china.html)
+#   btc   -> data/regime/btc_brief.json     (Bitcoin focused; shown on vector.html)
+# Each also writes a site/ copy the dashboard panel fetches at runtime. The daily
+# pipeline step `python -m engine.master_brain` runs every lens in `lenses` (below).
 # Runs on DeepSeek V4 Pro now; swap llm_model/llm_base_url/api_key_env to move to
 # Claude Opus later (e.g. llm_model: claude-opus-4-8, llm_base_url removed,
 # api_key_env: ANTHROPIC_API_KEY). Sends DERIVED state (no holdings) to the provider.
-# Run on-demand: `python -m engine.master_brain --force` (pipeline step is gated by enabled).
+# Run one lens on-demand: `python -m engine.master_brain china --force`.
 # =============================================================================
 master_brain:
   enabled: true                   # MASTER SWITCH — pipeline runs it only when true
+  lenses: [macro, china, btc]     # which briefs to generate (one LLM call each)
   api_key_env: DEEPSEEK_API_KEY
   llm_base_url: https://api.deepseek.com/anthropic
   llm_model: deepseek-v4-pro      # reasoning tier ($0.435/$0.87 per 1M tok)
-  max_tokens: 4000                # the brief is prose-heavy; 2500 truncated mid-JSON
-  # rotation_thesis: "<override the built-in liquidity-rotation hypothesis here>"
+  max_tokens: 8000                # V4 Pro is a REASONING model — thinking tokens count
+                                  # against this cap, so the JSON needs headroom above
+                                  # the ~1.2k it occupies (4000 truncated china/btc mid-JSON)
+  translate_zh: true              # attach a 中文 version (cheap V4-Flash pass) per brief
+  # rotation_thesis: "<override the macro lens's liquidity-rotation hypothesis>"
+  # china_thesis: "<override the china lens's working thesis>"
+  # btc_thesis:   "<override the btc lens's working liquidity thesis>"
 
 # =============================================================================
 # Catalyst stock — single-stock research BRIEF (LLM "Option 2"; engine/catalyst_stock.py).
