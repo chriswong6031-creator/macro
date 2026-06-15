@@ -2241,11 +2241,24 @@ def main() -> int:
         log.error("advanced page failed: %s", e)
     # copy shared static assets (theme + visual widgets) into the site
     for asset in ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
-                  "stockdata.js", "watchlist.js", "auth.js", "tablesort.js", "charts.js",
+                  "stockdata.js", "watchlist.js", "factor_exposure.js", "auth.js",
+                  "tablesort.js", "charts.js",
                   "masterbrief.js", "aibrief.js", "stockbrief.js", "lightweight-charts.js"):
         src = config.ROOT / "templates" / asset
         if src.exists():
             (site / asset).write_text(src.read_text())
+    # per-ticker factor betas for the watchlist's Portfolio Exposure panel — the
+    # client aggregates these against the user's holdings (engine/factor_exposure.py;
+    # validated in reports/factor-exposure-phase0.md). Additive + graceful.
+    try:
+        from engine.factor_exposure import compute_exposure
+        exp = compute_exposure()
+        if exp:
+            (site / "factor_betas.json").write_text(
+                json.dumps(exp, separators=(",", ":"), default=str))
+            log.info("wrote factor_betas.json (%d names)", exp.get("n", 0))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("factor_betas.json failed: %s", e)
     # broad "Top setups" board (selection × timing across the full S&P 1500),
     # written by build_stock_library at the END of the prior build_site run —
     # additive + graceful: absent (first run) => the board simply doesn't render.

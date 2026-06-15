@@ -237,6 +237,8 @@
 
   function render() {
     if (!listEl) return;
+    // feed the Portfolio Factor Exposure panel the current holdings (factor_exposure.js)
+    if (window.FX) window.FX.update(blob.items.map(function (it) { return it.t; }));
     var rows = viewItems();
     // header counter
     var n = buysoonCount();

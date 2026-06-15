@@ -109,6 +109,26 @@
               box-shadow:var(--popover-shadow); opacity:0; pointer-events:none; transition:.25s; z-index:90; }
   .wl-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
   .wl-toast.bad { border-color:var(--down); color:var(--down); }
+  /* ---- portfolio factor exposure (factor_exposure.js) ---- */
+  #fx_panel h2 { margin-bottom:6px; text-transform:none; letter-spacing:0; color:var(--text); font-size:15px; }
+  .fx-head { font-size:14px; margin:0 0 4px; line-height:1.55; }
+  .fx-sub { font-size:12px; margin:0 0 12px; }
+  .fx-grid { display:flex; flex-direction:column; gap:7px; }
+  .fx-row { display:grid; grid-template-columns:132px 46px 1fr 42px; align-items:center; gap:10px; font-size:12.5px; }
+  .fx-lab { color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .fx-beta { text-align:right; font-variant-numeric:tabular-nums; color:var(--muted); }
+  .fx-track { height:9px; background:var(--panel2); border-radius:6px; overflow:hidden; }
+  .fx-track span { display:block; height:100%; border-radius:6px; transition:width .3s ease; }
+  .fx-share { text-align:right; font-weight:700; font-variant-numeric:tabular-nums; }
+  .fx-tag { font-size:10px; color:var(--muted); border:1px solid var(--line); border-radius:5px; padding:0 4px; margin-left:5px; }
+  .fx-shocks { margin-top:13px; border-top:1px solid var(--line); padding-top:10px; }
+  .fx-shock-h { font-size:11px; letter-spacing:.05em; margin-bottom:6px; }
+  .fx-srow { display:flex; justify-content:space-between; font-size:12.5px; padding:3px 0; }
+  .fx-lo { margin-top:11px; }
+  .fx-lo summary { cursor:pointer; font-size:12px; color:var(--muted); }
+  .fx-lo .fx-grid { margin-top:9px; }
+  .fx-cov { font-size:11px; margin:9px 0 0; line-height:1.5; }
+  @media (max-width:480px){ .fx-row{ grid-template-columns:92px 40px 1fr 36px; gap:7px; } }
 </style>
 </head>
 <body>
@@ -155,6 +175,10 @@
 
   <div id="wl_banner" class="wl-banner"></div>
 
+  <!-- Portfolio factor exposure — your book's hidden bet (factor_exposure.js fills
+       it client-side from factor_betas.json; hidden until ≥2 covered holdings) -->
+  <div class="panel" id="fx_panel" style="display:none"></div>
+
   <div class="wl-controls" id="wl_controls" style="display:none">
     <label><span id="wl_sortlbl"></span>
       <select id="wl_sort">
@@ -195,6 +219,7 @@
 
 <script src="stockdata.js"></script>
 <script src="watchlist.js"></script>
+<script src="factor_exposure.js"></script>
 <script src="auth.js"></script>
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
