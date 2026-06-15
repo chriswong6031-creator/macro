@@ -1,0 +1,285 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{% macro help(en, zh='') -%}
+<span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
+{%- endmacro %}
+{% macro num(v, nd=2, plus=False) -%}
+{%- if v is none -%}<span class="muted">—</span>{%- elif plus -%}{{ ('%+.'~nd~'f')|format(v) }}{%- else -%}{{ ('%.'~nd~'f')|format(v) }}{%- endif -%}
+{%- endmacro %}
+{% macro pct(v) -%}
+{%- if v is none -%}<span class="muted">—</span>{%- else -%}{{ '%.0f%%'|format(v*100) }}{%- endif -%}
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ t('Signal Lab — does each signal actually work?', '信号实验室 — 每个信号真的有效吗？') }}</title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,
+         "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1380px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:21px; margin:0; }
+  h2 { font-size:13px; margin:0 0 4px; color:var(--muted); text-transform:uppercase;
+       letter-spacing:.06em; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+           padding:14px 16px; margin-bottom:14px; }
+  .topline { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+  .muted { color:var(--muted); } .sm { font-size:12px; }
+  .lead { font-size:14.5px; max-width:70ch; }
+  table { border-collapse:collapse; width:100%; font-size:12.5px; }
+  th,td { text-align:left; padding:5px 8px; border-bottom:1px solid var(--line);
+          vertical-align:top; }
+  th { color:var(--muted); font-weight:500; white-space:nowrap; }
+  td.r, th.r { text-align:right; font-variant-numeric:tabular-nums; }
+  .pos { color:var(--up); } .neg { color:var(--down); }
+  .sig { font-weight:600; } .mkt { font-size:11px; color:var(--muted); }
+  .src { font-size:10.5px; color:var(--muted); }
+  .extra { font-size:11px; color:var(--muted); margin-top:2px; }
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px;
+          height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted);
+          font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:5px; }
+  .help .tip { display:none; position:absolute; top:140%; left:0; transform:none;
+               width:320px; background:var(--panel); border:1px solid var(--line); padding:9px 11px;
+               border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text);
+               font-weight:400; box-shadow:var(--popover-shadow); pointer-events:none; }
+  .help:hover .tip { display:block; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:4px; }
+  .chip { font-size:12px; padding:4px 10px; border-radius:18px; border:1px solid var(--line);
+          background:var(--panel2); display:inline-flex; align-items:center; gap:6px; }
+  .chip b { font-size:14px; }
+  .pill { font-size:10.5px; font-weight:700; padding:1px 8px; border-radius:8px; white-space:nowrap;
+          border:1px solid var(--line); }
+  .v-scored    { color:var(--up);   border-color:color-mix(in srgb,var(--up) 50%,var(--line)); }
+  .v-confirmer { color:var(--link); border-color:color-mix(in srgb,var(--link) 50%,var(--line)); }
+  .v-display   { color:var(--muted); }
+  .v-killed    { color:var(--down); border-color:color-mix(in srgb,var(--down) 50%,var(--line)); }
+  .v-pending   { color:#b8860b; border-color:#b8860b66; }
+  .dot { width:9px; height:9px; border-radius:50%; display:inline-block; }
+  .d-scored{background:var(--up);} .d-confirmer{background:var(--link);}
+  .d-display{background:var(--muted);} .d-killed{background:var(--down);} .d-pending{background:#b8860b;}
+  .tierhead { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin:2px 0 8px; }
+  .tierhead h2 { margin:0; } .tierhead .bl { font-size:12px; color:var(--muted); max-width:64ch; }
+  .yes { color:var(--up); font-weight:700; } .no { color:var(--muted); }
+  .grave { border-left:3px solid var(--down); }
+  .win   { border-left:3px solid var(--up); }
+  details.method summary { cursor:pointer; font-weight:600; }
+  details.method dl { margin:8px 0 0; } details.method dt { font-weight:600; margin-top:7px; }
+  details.method dd { margin:1px 0 0; color:var(--muted); font-size:12.5px; }
+  .scroll { overflow-x:auto; }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 {{ t('US Macro', '美国宏观') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu">
+        <a href="macro.html">📊 {{ t('Macro dashboard', '宏观仪表盘') }}</a>
+        <a href="discovery.html">🏆 {{ t('Top Picks', '精选股') }}</a>
+        <a href="spvector.html">📈 {{ t('S&P / Macro Vector', '标普宏观向量') }}</a>
+        <a href="gex.html">🧲 {{ t('GEX magnets', 'Gamma磁吸') }}</a>
+        <a href="signal_lab.html">🔬 {{ t('Signal Lab', '信号实验室') }}</a>
+        <a href="validation_timeline.html">🧪 {{ t('Validation timeline', '验证时间线') }}</a>
+        <a href="history.html">📈 {{ t('History', '历史') }}</a>
+      </div>
+    </div>
+    <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }}</a>
+    <a class="nav-link" href="etfs.html">🐳 {{ t('ETF flows', 'ETF 资金流') }}</a>
+    <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国A股') }}</a>
+    <a class="nav-link" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }}</a>
+    <a class="nav-link" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }}</a>
+    <a class="nav-link" href="forex.html">💱 {{ t('Forex', '外汇') }}</a>
+    <a class="nav-link" href="bonds.html">🏛️ {{ t('Bonds', '债券') }}</a>
+  </div>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+<div class="panel">
+  <div class="topline">
+    <h1>🔬 {{ t('Signal Lab', '信号实验室') }}</h1>
+    <span class="muted sm">{{ t('Every signal, and whether it actually survives validation',
+                                '每个信号，以及它是否真正通过验证') }}</span>
+  </div>
+  <p class="lead" style="margin:10px 0 0">{{ t(
+     "What separates a dashboard from a model is honest validation. Every signal here goes "
+     "through the same battery before it earns a place: rank-IC, a Newey-West (HAC) t-stat that "
+     "respects overlapping windows, a Benjamini-Hochberg FDR q that controls for trying many "
+     "ideas, and a Deflated Sharpe that haircuts for the same data-snooping. The point of this "
+     "page is the graveyard: the signals we measured and refused to ship.",
+     "把仪表盘和模型区分开的，是诚实的验证。这里每个信号在获得位置前都经过同一套检验："
+     "秩相关 IC、尊重重叠窗口的 Newey-West (HAC) t 值、控制多重尝试的 Benjamini-Hochberg FDR q，"
+     "以及为同样的数据窥探打折的去偏夏普 (DSR)。本页的重点是“信号墓地”：那些我们测量后拒绝上线的信号。") }}</p>
+  <div class="chips">
+    <span class="chip"><span class="dot d-scored"></span><b>{{ summary.scored }}</b> {{ t('scored','已计分') }}</span>
+    <span class="chip"><span class="dot d-confirmer"></span><b>{{ summary.confirmer }}</b> {{ t('confirmer','确认项') }}</span>
+    <span class="chip"><span class="dot d-display"></span><b>{{ summary.display }}</b> {{ t('display-only','仅展示') }}</span>
+    <span class="chip"><span class="dot d-killed"></span><b>{{ summary.killed }}</b> {{ t('killed (NO-GO)','已否决') }}</span>
+    <span class="chip"><span class="dot d-pending"></span><b>{{ summary.pending }}</b> {{ t('pending','待接入') }}</span>
+    {% if summary.factor_total %}
+    <span class="chip {{ 'grave' if summary.factor_survivors == 0 }}">🧮 <b>{{ summary.factor_survivors }}</b>/{{ summary.factor_total }}
+      {{ t('cross-sectional factors survive FDR','横截面因子通过 FDR') }}</span>
+    {% endif %}
+  </div>
+</div>
+
+{% if factor_rows %}
+<div class="panel grave">
+  <div class="tierhead">
+    <h2>🧮 {{ t('US equity factor cross-section — leak-free, point-in-time','美股因子横截面 — 无泄漏、时点') }}</h2>
+    <span class="bl">{{ t(
+      'The honest centerpiece. Quarterly cross-sectional rank-IC of each factor z-score vs the '
+      ~ (factor_meta.horizon_d or 63) ~ 'd forward return, fully point-in-time (EDGAR + prices '
+      'truncated to as-of). After the PIT fix, NONE of these survive Benjamini-Hochberg FDR at '
+      '10% — which is exactly the cost of refusing to look ahead.',
+      '诚实的核心。每个因子 z 分对 ' ~ (factor_meta.horizon_d or 63) ~ '日前瞻收益的季度横截面秩相关 IC，'
+      '完全时点（EDGAR 与价格截断至当时）。时点修正后，无一通过 10% 的 Benjamini-Hochberg FDR — 这正是拒绝前视的代价。') }}</span>
+  </div>
+  <div class="scroll"><table>
+    <thead><tr>
+      <th>{{ t('Factor','因子') }}</th>
+      <th class="r">{{ t('mean IC','平均 IC') }}{{ help('Cross-sectional rank correlation of the factor z-score with the forward return, averaged over rebalances. Judge vs ~0.','因子 z 分与前瞻收益的横截面秩相关，按调仓平均。对比 ~0 判断。') }}</th>
+      <th class="r">{{ t('IC-IR','IC 信息比') }}</th>
+      <th class="r">{{ t('HAC t','HAC t') }}{{ help('Newey-West t-stat of the IC series — corrects for the autocorrelation that overlapping forward windows create. |t|>~2 is the usual bar.','IC 序列的 Newey-West t 值，校正重叠前瞻窗口造成的自相关。通常门槛 |t|>~2。') }}</th>
+      <th class="r">{{ t('FDR q','FDR q') }}{{ help('Benjamini-Hochberg q across the whole factor panel — the false-discovery rate if you call this factor real. <0.10 = survives.','整组因子的 Benjamini-Hochberg q — 若判定该因子为真的错误发现率。<0.10 = 通过。') }}</th>
+      <th class="r">{{ t('hit','命中') }}</th>
+      <th class="r">n</th>
+      <th class="r">{{ t('survives?','通过？') }}</th>
+    </tr></thead>
+    <tbody>
+    {% for r in factor_rows %}
+      <tr>
+        <td class="sig">{{ t(r.name, r.name_zh) }}</td>
+        <td class="r {{ 'pos' if (r.ic or 0) > 0 else 'neg' }}">{{ num(r.ic, 4, plus=True) }}</td>
+        <td class="r">{{ num(r.ic_ir, 3, plus=True) }}</td>
+        <td class="r">{{ num(r.t_hac, 2, plus=True) }}</td>
+        <td class="r">{{ num(r.q_fdr, 3) }}</td>
+        <td class="r">{{ pct(r.hit) }}</td>
+        <td class="r">{{ r.n if r.n is not none else '—' }}</td>
+        <td class="r">{% if r.survives %}<span class="yes">✓</span>{% else %}<span class="no">✗</span>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% if factor_meta.collinearity %}
+  <p class="extra" style="margin-top:8px">{{ t(
+    'Collinearity: mean |corr| ' ~ factor_meta.collinearity.mean_abs_corr_raw ~ ' raw → '
+    ~ factor_meta.collinearity.mean_abs_corr_orth ~ ' after Löwdin orthogonalisation. '
+    ~ ('Span ' ~ factor_meta.span ~ ' · ' ~ factor_meta.rebalances ~ ' rebalances · ~'
+       ~ factor_meta.median_universe ~ ' names.'),
+    '共线性：平均 |corr| ' ~ factor_meta.collinearity.mean_abs_corr_raw ~ ' 原始 → '
+    ~ factor_meta.collinearity.mean_abs_corr_orth ~ ' 经 Löwdin 正交化后。'
+    ~ ('区间 ' ~ factor_meta.span ~ ' · ' ~ factor_meta.rebalances ~ ' 次调仓 · ~'
+       ~ factor_meta.median_universe ~ ' 只。')) }}</p>
+  {% endif %}
+</div>
+{% endif %}
+
+{% for tier in tiers %}
+<div class="panel {{ 'win' if tier.key=='scored' else ('grave' if tier.key=='killed') }}">
+  <div class="tierhead">
+    <span class="dot d-{{ tier.key }}" style="align-self:center"></span>
+    <h2>{{ t(tier.label, tier.label_zh) }} · {{ tier.count }}</h2>
+    <span class="bl">{{ t(tier.blurb, tier.blurb_zh) }}</span>
+  </div>
+  <div class="scroll"><table>
+    <thead><tr>
+      <th>{{ t('Signal','信号') }}</th>
+      <th class="r">IC</th>
+      <th class="r">HAC t</th>
+      <th class="r">FDR q</th>
+      <th class="r">DSR{{ help('Deflated Sharpe (López de Prado): probability the true Sharpe > 0 after haircutting for the number of trials, skew and kurtosis. >0.90 is our bar.','去偏夏普（López de Prado）：在按试验次数、偏度与峰度打折后，真实夏普 >0 的概率。门槛 >0.90。') }}</th>
+      <th class="r">{{ t('Sharpe','夏普') }}</th>
+      <th class="r">{{ t('hit','命中') }}</th>
+      <th class="r">n</th>
+      <th>{{ t('Verdict','结论') }}</th>
+      <th>{{ t('Why','原因') }}</th>
+    </tr></thead>
+    <tbody>
+    {% for r in tier.rows %}
+      <tr>
+        <td>
+          <div class="sig">{{ t(r.name, r.name_zh) }}
+            {% if r.fdr_survivor %}<span class="yes" title="survives FDR">✓FDR</span>{% endif %}</div>
+          <div class="mkt">{{ r.market }}{% if r.horizon %} · {{ r.horizon }}{% endif %}{% if r.wired %} · {{ r.wired }}{% endif %}</div>
+          {% if r.extra %}<div class="extra">{% for lbl, val in r.extra %}{{ lbl }} {{ val }}{% if not loop.last %} · {% endif %}{% endfor %}</div>{% endif %}
+        </td>
+        <td class="r {{ 'pos' if (r.ic or 0) > 0 else ('neg' if r.ic is not none and r.ic < 0) }}">{{ num(r.ic, 4, plus=True) }}</td>
+        <td class="r">{{ num(r.t_hac, 2, plus=True) }}</td>
+        <td class="r {{ 'yes' if (r.q_fdr is not none and r.q_fdr < 0.10) }}">{{ num(r.q_fdr, 3) }}</td>
+        <td class="r {{ 'yes' if (r.dsr is not none and r.dsr >= 0.90) else ('neg' if r.dsr is not none) }}">{{ num(r.dsr, 3) }}</td>
+        <td class="r {{ 'pos' if (r.sharpe or 0) > 0 else ('neg' if r.sharpe is not none and r.sharpe < 0) }}">{{ num(r.sharpe, 2, plus=True) }}</td>
+        <td class="r">{{ pct(r.hit) }}</td>
+        <td class="r">{{ r.n if r.n is not none else '—' }}</td>
+        <td><span class="pill v-{{ tier.key }}">{{ t(tier.verdict_word, tier.verdict_word_zh) }}</span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm">{{ t(r.why[:120] ~ ('…' if r.why|length > 120 else ''),
+                                      r.why_zh[:80] ~ ('…' if r.why_zh|length > 80 else '')) }}</span>
+          {{ help(r.why ~ '  [' ~ r.source ~ ']', r.why_zh ~ '  [' ~ r.source ~ ']') }}
+          <div class="src">{{ r.source }}</div>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endfor %}
+
+<div class="panel">
+  <details class="method">
+    <summary>{{ t('How to read this page — the metrics, in plain language','如何阅读本页 — 指标的通俗解释') }}</summary>
+    <dl>
+      <dt>{{ t('Information Coefficient (IC)','信息系数 (IC)') }}</dt>
+      <dd>{{ t('The cross-sectional rank correlation between a signal and the forward return. ~0 means no edge; an IC of 0.03 is a real, if modest, equity-factor edge.','信号与前瞻收益的横截面秩相关。~0 表示无边际；IC 0.03 已是真实但温和的股票因子边际。') }}</dd>
+      <dt>{{ t('Newey-West (HAC) t-stat','Newey-West (HAC) t 值') }}</dt>
+      <dd>{{ t('Is the average IC distinguishable from zero, AFTER correcting for the autocorrelation that overlapping forward windows create? Naive t-stats overstate significance here.','在校正重叠前瞻窗口造成的自相关后，平均 IC 是否显著不为零？朴素 t 值在此会高估显著性。') }}</dd>
+      <dt>{{ t('Benjamini-Hochberg FDR q','Benjamini-Hochberg FDR q') }}</dt>
+      <dd>{{ t('If you test many ideas, some will look good by luck. The FDR q controls the false-discovery rate across the whole panel. q<0.10 = survives. Most of our factors do NOT — and we show it.','若测试很多想法，总有些靠运气好看。FDR q 控制整组的错误发现率。q<0.10 = 通过。我们多数因子并未通过 — 我们如实展示。') }}</dd>
+      <dt>{{ t('Deflated Sharpe (DSR)','去偏夏普 (DSR)') }}</dt>
+      <dd>{{ t('A Sharpe ratio haircut for the number of strategies tried, plus return skew/kurtosis (López de Prado). It is the probability the true Sharpe is positive. Our bar is 0.90 — a backtest Sharpe that looks great but has DSR<0.90 is treated as luck.','按尝试的策略数量及收益偏度/峰度对夏普打折（López de Prado）。它是真实夏普为正的概率。门槛 0.90 — 回测夏普好看但 DSR<0.90 的，按运气处理。') }}</dd>
+      <dt>{{ t('Point-in-time (leak-free)','时点（无泄漏）') }}</dt>
+      <dd>{{ t('Fundamentals are stamped at period-end + reporting lag; index membership is reconstructed as it was on each date; indicators are shifted so a backtest only ever sees what was knowable then. This is why the spreads are honestly weaker than a naive backtest.','基本面以“期末+披露滞后”打戳；指数成分按当日实际重建；指标移位，使回测只看到当时可知的信息。这正是价差诚实地弱于朴素回测的原因。') }}</dd>
+    </dl>
+  </details>
+</div>
+
+<div class="panel">
+  <p class="muted sm" style="margin:0">{{ t(
+     'Validation toolkit: engine/validation.py (deflated Sharpe, purged k-fold + embargo, block '
+     'bootstrap, Newey-West HAC, Benjamini-Hochberg FDR, Brier/Platt calibration, cost-aware '
+     'backtest). Verdicts are quoted from the named reports in reports/. The factor cross-section '
+     'reads live from data/edgar/ic_scorecard.json. See also the ',
+     '验证工具：engine/validation.py（去偏夏普、净化 k 折+隔离、分块自助、Newey-West HAC、'
+     'Benjamini-Hochberg FDR、Brier/Platt 校准、含成本回测）。结论引自 reports/ 中具名报告；'
+     '因子横截面实时读取 data/edgar/ic_scorecard.json。另见 ') }}<a href="validation_timeline.html" style="color:var(--link)">{{ t('regime validation timeline','机制验证时间线') }}</a>{{ t('.','。') }}</p>
+  <p class="src" style="margin:8px 0 0">
+    {{ t('data span','数据区间') }} {{ factor_meta.span or '—' }} ·
+    {{ t('dashboard updated','仪表盘更新') }} {{ generated_utc }} UTC ·
+    {{ t('rendered','生成') }} {{ generated_utc }} UTC</p>
+</div>
+
+<script src="theme.js"></script>
+</body>
+</html>
