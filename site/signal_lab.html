@@ -1,0 +1,1006 @@
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><span class="l-en">Signal Lab — does each signal actually work?</span><span class="l-zh">信号实验室 — 每个信号真的有效吗？</span></title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,
+         "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1380px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:21px; margin:0; }
+  h2 { font-size:13px; margin:0 0 4px; color:var(--muted); text-transform:uppercase;
+       letter-spacing:.06em; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+           padding:14px 16px; margin-bottom:14px; }
+  .topline { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+  .muted { color:var(--muted); } .sm { font-size:12px; }
+  .lead { font-size:14.5px; max-width:70ch; }
+  table { border-collapse:collapse; width:100%; font-size:12.5px; }
+  th,td { text-align:left; padding:5px 8px; border-bottom:1px solid var(--line);
+          vertical-align:top; }
+  th { color:var(--muted); font-weight:500; white-space:nowrap; }
+  td.r, th.r { text-align:right; font-variant-numeric:tabular-nums; }
+  .pos { color:var(--up); } .neg { color:var(--down); }
+  .sig { font-weight:600; } .mkt { font-size:11px; color:var(--muted); }
+  .src { font-size:10.5px; color:var(--muted); }
+  .extra { font-size:11px; color:var(--muted); margin-top:2px; }
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px;
+          height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted);
+          font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:5px; }
+  .help .tip { display:none; position:absolute; top:140%; left:0; transform:none;
+               width:320px; background:var(--panel); border:1px solid var(--line); padding:9px 11px;
+               border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text);
+               font-weight:400; box-shadow:var(--popover-shadow); pointer-events:none; }
+  .help:hover .tip { display:block; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:4px; }
+  .chip { font-size:12px; padding:4px 10px; border-radius:18px; border:1px solid var(--line);
+          background:var(--panel2); display:inline-flex; align-items:center; gap:6px; }
+  .chip b { font-size:14px; }
+  .pill { font-size:10.5px; font-weight:700; padding:1px 8px; border-radius:8px; white-space:nowrap;
+          border:1px solid var(--line); }
+  .v-scored    { color:var(--up);   border-color:color-mix(in srgb,var(--up) 50%,var(--line)); }
+  .v-confirmer { color:var(--link); border-color:color-mix(in srgb,var(--link) 50%,var(--line)); }
+  .v-display   { color:var(--muted); }
+  .v-killed    { color:var(--down); border-color:color-mix(in srgb,var(--down) 50%,var(--line)); }
+  .v-pending   { color:#b8860b; border-color:#b8860b66; }
+  .dot { width:9px; height:9px; border-radius:50%; display:inline-block; }
+  .d-scored{background:var(--up);} .d-confirmer{background:var(--link);}
+  .d-display{background:var(--muted);} .d-killed{background:var(--down);} .d-pending{background:#b8860b;}
+  .tierhead { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin:2px 0 8px; }
+  .tierhead h2 { margin:0; } .tierhead .bl { font-size:12px; color:var(--muted); max-width:64ch; }
+  .yes { color:var(--up); font-weight:700; } .no { color:var(--muted); }
+  .grave { border-left:3px solid var(--down); }
+  .win   { border-left:3px solid var(--up); }
+  details.method summary { cursor:pointer; font-weight:600; }
+  details.method dl { margin:8px 0 0; } details.method dt { font-weight:600; margin-top:7px; }
+  details.method dd { margin:1px 0 0; color:var(--muted); font-size:12.5px; }
+  .scroll { overflow-x:auto; }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 <span class="l-en">Home</span><span class="l-zh">首页</span></a>
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">US Macro</span><span class="l-zh">美国宏观</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu">
+        <a href="macro.html">📊 <span class="l-en">Macro dashboard</span><span class="l-zh">宏观仪表盘</span></a>
+        <a href="discovery.html">🏆 <span class="l-en">Top Picks</span><span class="l-zh">精选股</span></a>
+        <a href="spvector.html">📈 <span class="l-en">S&P / Macro Vector</span><span class="l-zh">标普宏观向量</span></a>
+        <a href="gex.html">🧲 <span class="l-en">GEX magnets</span><span class="l-zh">Gamma磁吸</span></a>
+        <a href="signal_lab.html">🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></a>
+        <a href="validation_timeline.html">🧪 <span class="l-en">Validation timeline</span><span class="l-zh">验证时间线</span></a>
+        <a href="history.html">📈 <span class="l-en">History</span><span class="l-zh">历史</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span></a>
+    <a class="nav-link" href="etfs.html">🐳 <span class="l-en">ETF flows</span><span class="l-zh">ETF 资金流</span></a>
+    <a class="nav-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国A股</span></a>
+    <a class="nav-link" href="hk.html">🇭🇰 <span class="l-en">Hong Kong</span><span class="l-zh">香港</span></a>
+    <a class="nav-link" href="commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span></a>
+    <a class="nav-link" href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span></a>
+    <a class="nav-link" href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span></a>
+  </div>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+<div class="panel">
+  <div class="topline">
+    <h1>🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></h1>
+    <span class="muted sm"><span class="l-en">Every signal, and whether it actually survives validation</span><span class="l-zh">每个信号，以及它是否真正通过验证</span></span>
+  </div>
+  <p class="lead" style="margin:10px 0 0"><span class="l-en">What separates a dashboard from a model is honest validation. Every signal here goes through the same battery before it earns a place: rank-IC, a Newey-West (HAC) t-stat that respects overlapping windows, a Benjamini-Hochberg FDR q that controls for trying many ideas, and a Deflated Sharpe that haircuts for the same data-snooping. The point of this page is the graveyard: the signals we measured and refused to ship.</span><span class="l-zh">把仪表盘和模型区分开的，是诚实的验证。这里每个信号在获得位置前都经过同一套检验：秩相关 IC、尊重重叠窗口的 Newey-West (HAC) t 值、控制多重尝试的 Benjamini-Hochberg FDR q，以及为同样的数据窥探打折的去偏夏普 (DSR)。本页的重点是“信号墓地”：那些我们测量后拒绝上线的信号。</span></p>
+  <div class="chips">
+    <span class="chip"><span class="dot d-scored"></span><b>4</b> <span class="l-en">scored</span><span class="l-zh">已计分</span></span>
+    <span class="chip"><span class="dot d-confirmer"></span><b>6</b> <span class="l-en">confirmer</span><span class="l-zh">确认项</span></span>
+    <span class="chip"><span class="dot d-display"></span><b>8</b> <span class="l-en">display-only</span><span class="l-zh">仅展示</span></span>
+    <span class="chip"><span class="dot d-killed"></span><b>7</b> <span class="l-en">killed (NO-GO)</span><span class="l-zh">已否决</span></span>
+    <span class="chip"><span class="dot d-pending"></span><b>1</b> <span class="l-en">pending</span><span class="l-zh">待接入</span></span>
+    
+    <span class="chip grave">🧮 <b>0</b>/11
+      <span class="l-en">cross-sectional factors survive FDR</span><span class="l-zh">横截面因子通过 FDR</span></span>
+    
+  </div>
+</div>
+
+
+<div class="panel grave">
+  <div class="tierhead">
+    <h2>🧮 <span class="l-en">US equity factor cross-section — leak-free, point-in-time</span><span class="l-zh">美股因子横截面 — 无泄漏、时点</span></h2>
+    <span class="bl"><span class="l-en">The honest centerpiece. Quarterly cross-sectional rank-IC of each factor z-score vs the 63d forward return, fully point-in-time (EDGAR + prices truncated to as-of). After the PIT fix, NONE of these survive Benjamini-Hochberg FDR at 10% — which is exactly the cost of refusing to look ahead.</span><span class="l-zh">诚实的核心。每个因子 z 分对 63日前瞻收益的季度横截面秩相关 IC，完全时点（EDGAR 与价格截断至当时）。时点修正后，无一通过 10% 的 Benjamini-Hochberg FDR — 这正是拒绝前视的代价。</span></span>
+  </div>
+  <div class="scroll"><table>
+    <thead><tr>
+      <th><span class="l-en">Factor</span><span class="l-zh">因子</span></th>
+      <th class="r"><span class="l-en">mean IC</span><span class="l-zh">平均 IC</span><span class="help">?<span class="tip"><span class="l-en">Cross-sectional rank correlation of the factor z-score with the forward return, averaged over rebalances. Judge vs ~0.</span><span class="l-zh">因子 z 分与前瞻收益的横截面秩相关，按调仓平均。对比 ~0 判断。</span></span></span></th>
+      <th class="r"><span class="l-en">IC-IR</span><span class="l-zh">IC 信息比</span></th>
+      <th class="r"><span class="l-en">HAC t</span><span class="l-zh">HAC t</span><span class="help">?<span class="tip"><span class="l-en">Newey-West t-stat of the IC series — corrects for the autocorrelation that overlapping forward windows create. |t|>~2 is the usual bar.</span><span class="l-zh">IC 序列的 Newey-West t 值，校正重叠前瞻窗口造成的自相关。通常门槛 |t|>~2。</span></span></span></th>
+      <th class="r"><span class="l-en">FDR q</span><span class="l-zh">FDR q</span><span class="help">?<span class="tip"><span class="l-en">Benjamini-Hochberg q across the whole factor panel — the false-discovery rate if you call this factor real. <0.10 = survives.</span><span class="l-zh">整组因子的 Benjamini-Hochberg q — 若判定该因子为真的错误发现率。<0.10 = 通过。</span></span></span></th>
+      <th class="r"><span class="l-en">hit</span><span class="l-zh">命中</span></th>
+      <th class="r">n</th>
+      <th class="r"><span class="l-en">survives?</span><span class="l-zh">通过？</span></th>
+    </tr></thead>
+    <tbody>
+    
+      <tr>
+        <td class="sig"><span class="l-en">Low short interest</span><span class="l-zh">低做空</span></td>
+        <td class="r pos">+0.0326</td>
+        <td class="r">+0.402</td>
+        <td class="r">+1.73</td>
+        <td class="r">0.323</td>
+        <td class="r">64%</td>
+        <td class="r">11</td>
+        <td class="r"><span class="no">✗</span></td>
+      </tr>
+    
+      <tr>
+        <td class="sig"><span class="l-en">Value</span><span class="l-zh">价值</span></td>
+        <td class="r pos">+0.0285</td>
+        <td class="r">+0.319</td>
+        <td class="r">+1.16</td>
+        <td class="r">0.539</td>
+        <td class="r">73%</td>
+        <td class="r">11</td>
+        <td class="r"><span class="no">✗</span></td>
+      </tr>
+    
+      <tr>
+        <td class="sig"><span class="l-en">Payout yield</span><span class="l-zh">股东收益率</span></td>
+        <td class="r pos">+0.0232</td>
+        <td class="r">+0.409</td>
+        <td class="r">+1.60</td>
+        <td class="r">0.323</td>
+        <td class="r">64%</td>
+        <td class="r">11</td>
+        <td class="r"><span class="no">✗</span></td>
+      </tr>
+    
+      <tr>
+        <td class="sig"><span class="l-en">Composite</span><span class="l-zh">综合</span></td>
+        <td class="r pos">+0.0126</td>
+        <td class="r">+0.134</td>
+        <td class="r">+0.50</td>
+        <td class="r">0.848</td>
+        <td class="r">55%</td>
+        <td class="r">11</td>
+        <td class="r"><span class="no">✗</span></td>
+      </tr>
+    
+      <tr>
+        <td class="sig"><span class="l-en">Low volatility</span><span class="l-zh">低波动</span></td>
+        <td class="r pos">+0.0079</td>
+        <td class="r">+0.037</td>
+        <td class="r">+0.15</td>
+        <td class="r">0.929</td>
+        <td class="r">56%</td>
+        <td class="r">9</td>
+        <td class="r"><span class="no">✗</span></td>
+      </tr>
+    
+      <tr>
+        <td class="sig"><span class="l-en">Composite (orthogonalised)</span><span class="l-zh">综合（正交化）</span></td>
+        <td class="r neg">-0.0021</td>
+        <td class="r">-0.017</td>
+        <td class="r">-0.09</td>
+        <td class="r">0.929</td>
+        <td class="r">55%</td>
+        <td class="r">11</td>
+        <td class="r"><span class="no">✗</span></td>
+      </tr>
+    
+      <tr>
+        <td class="sig"><span class="l-en">Investment (conservative)</span><span class="l-zh">投资（保守）</span></td>
+        <td class="r neg">-0.0051</td>
+        <td class="r">-0.110</td>
+        <td class="r">-0.30</td>
+        <td class="r">0.929</td>
+        <td class="r">46%</td>
+        <td class="r">11</td>
+        <td class="r"><span class="no">✗</span></td>
+      </tr>
+    
+      <tr>
+        <td class="sig"><span class="l-en">Low accruals</span><span class="l-zh">低应计</span></td>
+        <td class="r neg">-0.0171</td>
+        <td class="r">-0.371</td>
+        <td class="r">-1.68</td>
+        <td class="r">0.323</td>
+        <td class="r">46%</td>
+        <td class="r">11</td>
+        <td class="r"><span class="no">✗</span></td>
+      </tr>
+    
+      <tr>
+        <td class="sig"><span class="l-en">Quality</span><span class="l-zh">质量</span></td>
+        <td class="r neg">-0.0213</td>
+        <td class="r">-0.318</td>
+        <td class="r">-1.57</td>
+        <td class="r">0.323</td>
+        <td class="r">46%</td>
+        <td class="r">11</td>
+        <td class="r"><span class="no">✗</span></td>
+      </tr>
+    
+      <tr>
+        <td class="sig"><span class="l-en">Profitability</span><span class="l-zh">盈利能力</span></td>
+        <td class="r neg">-0.0339</td>
+        <td class="r">-0.319</td>
+        <td class="r">-1.01</td>
+        <td class="r">0.569</td>
+        <td class="r">36%</td>
+        <td class="r">11</td>
+        <td class="r"><span class="no">✗</span></td>
+      </tr>
+    
+      <tr>
+        <td class="sig"><span class="l-en">Low beta (BAB)</span><span class="l-zh">低贝塔</span></td>
+        <td class="r neg">-0.0358</td>
+        <td class="r">-0.140</td>
+        <td class="r">-0.65</td>
+        <td class="r">0.814</td>
+        <td class="r">46%</td>
+        <td class="r">11</td>
+        <td class="r"><span class="no">✗</span></td>
+      </tr>
+    
+    </tbody>
+  </table></div>
+  
+  <p class="extra" style="margin-top:8px"><span class="l-en">Collinearity: mean |corr| 0.126 raw → 0.054 after Löwdin orthogonalisation. Span 2023-06-30..2025-12-31 · 11 rebalances · ~1323 names.</span><span class="l-zh">共线性：平均 |corr| 0.126 原始 → 0.054 经 Löwdin 正交化后。区间 2023-06-30..2025-12-31 · 11 次调仓 · ~1323 只。</span></p>
+  
+</div>
+
+
+
+<div class="panel win">
+  <div class="tierhead">
+    <span class="dot d-scored" style="align-self:center"></span>
+    <h2><span class="l-en">Scored — validated & wired into a number</span><span class="l-zh">已计分 — 通过验证并纳入计算</span> · 4</h2>
+    <span class="bl"><span class="l-en">Passed the validation battery AND drives an allocation, composite or score.</span><span class="l-zh">通过验证电池，并实际驱动配置、综合分或评分。</span></span>
+  </div>
+  <div class="scroll"><table>
+    <thead><tr>
+      <th><span class="l-en">Signal</span><span class="l-zh">信号</span></th>
+      <th class="r">IC</th>
+      <th class="r">HAC t</th>
+      <th class="r">FDR q</th>
+      <th class="r">DSR<span class="help">?<span class="tip"><span class="l-en">Deflated Sharpe (López de Prado): probability the true Sharpe > 0 after haircutting for the number of trials, skew and kurtosis. >0.90 is our bar.</span><span class="l-zh">去偏夏普（López de Prado）：在按试验次数、偏度与峰度打折后，真实夏普 >0 的概率。门槛 >0.90。</span></span></span></th>
+      <th class="r"><span class="l-en">Sharpe</span><span class="l-zh">夏普</span></th>
+      <th class="r"><span class="l-en">hit</span><span class="l-zh">命中</span></th>
+      <th class="r">n</th>
+      <th><span class="l-en">Verdict</span><span class="l-zh">结论</span></th>
+      <th><span class="l-en">Why</span><span class="l-zh">原因</span></th>
+    </tr></thead>
+    <tbody>
+    
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">S&P / Macro Vector (macro-timed equity sleeve)</span><span class="l-zh">标普／宏观向量（择时股票仓位）</span>
+            </div>
+          <div class="mkt">US macro · allocation (daily) · spvector.html / vector_allocation</div>
+          <div class="extra">MaxDD −33.2% vs −55.2% B&H · Sharpe 95% CI [0.61, 0.93, 1.25] · split-half 0.83 / 1.02 · perm-null skill p 0.0 · PIT (ALFRED) Sharpe 0.90</div>
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r yes">0.999</td>
+        <td class="r pos">+0.92</td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-scored"><span class="l-en">SCORED</span><span class="l-zh">已计分</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">The strongest validated object in the system. Survives every gate: DSR 0.9994 at n_trials=30, leave-one-crisis-out edge …</span><span class="l-zh">系统中验证最扎实的对象。通过所有关卡：n_trials=30 下 DSR 0.9994、四次危机逐一剔除仍有边际、两半一致、置换零假设技能 p=0.0，且在真实…</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">The strongest validated object in the system. Survives every gate: DSR 0.9994 at n_trials=30, leave-one-crisis-out edge in all 4 crises, split-half consistent, permutation-null skill p=0.0, and holds on genuine point-in-time (ALFRED) data (Sharpe 0.90 vs 0.92). The edge is drawdown + Sharpe, not CAGR: carry-stripped CAGR (10.56%) ≈ buy-and-hold; MaxDD −33% vs −55%.  [spvector-phase1/2/3-audit/pit.md]</span><span class="l-zh">系统中验证最扎实的对象。通过所有关卡：n_trials=30 下 DSR 0.9994、四次危机逐一剔除仍有边际、两半一致、置换零假设技能 p=0.0，且在真实时点（ALFRED）数据上仍成立。边际在回撤与夏普，而非 CAGR。  [spvector-phase1/2/3-audit/pit.md]</span></span></span>
+          <div class="src">spvector-phase1/2/3-audit/pit.md</div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">China reversal (3-month, within-sector)</span><span class="l-zh">中国反转（3个月，行业内）</span>
+            </div>
+          <div class="mkt">China A · 21d / monthly · china.html standout / china_axes</div>
+          <div class="extra">monthly excess +0.558% · MaxDD −37.6%</div>
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r pos">+0.58</td>
+        <td class="r">56%</td>
+        <td class="r">413</td>
+        <td><span class="pill v-scored"><span class="l-en">SCORED</span><span class="l-zh">已计分</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">The honest A-share edge. Deepest-decliners quintile, NO confirmation gating (turn-confirmation and quality filters both …</span><span class="l-zh">A股真实的边际。最深下跌分位，不加确认门槛（确认与质量过滤都会削弱它）。优于 1 个月反转与动量（动量已失效）。</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">The honest A-share edge. Deepest-decliners quintile, NO confirmation gating (turn-confirmation and quality filters both HURT it). Beats 1-month reversal (0.38) and momentum (0.03 — dead). High turnover and deep drawdowns are the cost.  [china-reversal-phase0.md]</span><span class="l-zh">A股真实的边际。最深下跌分位，不加确认门槛（确认与质量过滤都会削弱它）。优于 1 个月反转与动量（动量已失效）。  [china-reversal-phase0.md]</span></span></span>
+          <div class="src">china-reversal-phase0.md</div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">Recession-risk composite (jobless-claims folded in)</span><span class="l-zh">衰退风险综合（已并入初请失业金）</span>
+            </div>
+          <div class="mkt">US macro · multi-month · recession_risk (MRS scoring)</div>
+          <div class="extra">target NBER recession · vs Sahm replace > augment > Sahm-only</div>
+        </td>
+        <td class="r pos">+0.5310</td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-scored"><span class="l-en">SCORED</span><span class="l-zh">已计分</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">Jobless-claims leg validated vs NBER 1967–2026 (beats the Sahm leg standalone, +AUC every horizon, survives both split-h…</span><span class="l-zh">初请失业金腿相对 NBER 1967–2026 验证（独立优于 Sahm，各期限 AUC 提升，两半与时点数据均成立）→ 取代 Sahm 成为衰退综合中的就业腿…</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">Jobless-claims leg validated vs NBER 1967–2026 (beats the Sahm leg standalone, +AUC every horizon, survives both split-halves and PIT/ALFRED) → it REPLACES Sahm as the labor leg in the scored recession composite.  [bonds-calibration.md + validate_claims_recession*.py]</span><span class="l-zh">初请失业金腿相对 NBER 1967–2026 验证（独立优于 Sahm，各期限 AUC 提升，两半与时点数据均成立）→ 取代 Sahm 成为衰退综合中的就业腿。  [bonds-calibration.md + validate_claims_recession*.py]</span></span></span>
+          <div class="src">bonds-calibration.md + validate_claims_recession*.py</div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">Bond-health drawdown gauge</span><span class="l-zh">债券健康回撤量表</span>
+            </div>
+          <div class="mkt">US macro · forward drawdown · bonds.html health composite</div>
+          <div class="extra">hi-tercile uplift +11.7pp · MOVE leg IC 0.168 (confirmed)</div>
+        </td>
+        <td class="r pos">+0.2340</td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-scored"><span class="l-en">SCORED</span><span class="l-zh">已计分</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">Beat the composite's own best single leg on forward S&P drawdown (recursive improvement). High-tercile P(−10% in fwd win…</span><span class="l-zh">在前瞻标普回撤上优于综合自身最佳单腿。高三分位 P(前瞻−10%) 0.244 对基线 0.127（+11.7pp）。</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">Beat the composite's own best single leg on forward S&P drawdown (recursive improvement). High-tercile P(−10% in fwd window) 0.244 vs 0.127 base (+11.7pp).  [bonds-calibration.md]</span><span class="l-zh">在前瞻标普回撤上优于综合自身最佳单腿。高三分位 P(前瞻−10%) 0.244 对基线 0.127（+11.7pp）。  [bonds-calibration.md]</span></span></span>
+          <div class="src">bonds-calibration.md</div>
+        </td>
+      </tr>
+    
+    </tbody>
+  </table></div>
+</div>
+
+<div class="panel ">
+  <div class="tierhead">
+    <span class="dot d-confirmer" style="align-self:center"></span>
+    <h2><span class="l-en">Confirmer / context — validated, but not a standalone sizer</span><span class="l-zh">确认/背景 — 已验证，但非独立定量信号</span> · 6</h2>
+    <span class="bl"><span class="l-en">A measured forward edge used as context or a tiebreaker — never sized on its own.</span><span class="l-zh">有可测的前瞻性边际，用作背景或加分项 — 但不单独定仓。</span></span>
+  </div>
+  <div class="scroll"><table>
+    <thead><tr>
+      <th><span class="l-en">Signal</span><span class="l-zh">信号</span></th>
+      <th class="r">IC</th>
+      <th class="r">HAC t</th>
+      <th class="r">FDR q</th>
+      <th class="r">DSR<span class="help">?<span class="tip"><span class="l-en">Deflated Sharpe (López de Prado): probability the true Sharpe > 0 after haircutting for the number of trials, skew and kurtosis. >0.90 is our bar.</span><span class="l-zh">去偏夏普（López de Prado）：在按试验次数、偏度与峰度打折后，真实夏普 >0 的概率。门槛 >0.90。</span></span></span></th>
+      <th class="r"><span class="l-en">Sharpe</span><span class="l-zh">夏普</span></th>
+      <th class="r"><span class="l-en">hit</span><span class="l-zh">命中</span></th>
+      <th class="r">n</th>
+      <th><span class="l-en">Verdict</span><span class="l-zh">结论</span></th>
+      <th><span class="l-en">Why</span><span class="l-zh">原因</span></th>
+    </tr></thead>
+    <tbody>
+    
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">Insider buying  net_usd_mcap | SN  (mid-cap)</span><span class="l-zh">内部人买入 net_usd_mcap | SN（中小盘）</span>
+            <span class="yes" title="survives FDR">✓FDR</span></div>
+          <div class="mkt">US S&P1500 · 21d + 63d · factors.html + standout 👤 chip</div>
+          
+        </td>
+        <td class="r pos">+0.0289</td>
+        <td class="r">+2.90</td>
+        <td class="r yes">0.100</td>
+        <td class="r neg">0.525</td>
+        <td class="r pos">+0.55</td>
+        <td class="r">63%</td>
+        <td class="r">170</td>
+        <td><span class="pill v-confirmer"><span class="l-en">CONFIRMER</span><span class="l-zh">确认项</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">The ONLY cross-sectional stock factor that survives BH-FDR in the leak-free PIT panel (q=0.0999) — but in the mid-cap ha…</span><span class="l-zh">唯一在无泄漏时点面板中通过 BH-FDR 的横截面个股因子（q=0.0999）— 但仅限中小盘，且 DSR 临界（0.53<0.90），多头优于多空。与动量/规…</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">The ONLY cross-sectional stock factor that survives BH-FDR in the leak-free PIT panel (q=0.0999) — but in the mid-cap habitat, and DSR is borderline (0.53<0.90), and long-only beats L/S. Orthogonal to momentum/size/reversal → shipped as a conviction confirmer chip, NOT a standalone sizer.  [insider-phase0/1.md]</span><span class="l-zh">唯一在无泄漏时点面板中通过 BH-FDR 的横截面个股因子（q=0.0999）— 但仅限中小盘，且 DSR 临界（0.53<0.90），多头优于多空。与动量/规模/反转正交 → 作为信心确认标签上线，而非独立定仓。  [insider-phase0/1.md]</span></span></span>
+          <div class="src">insider-phase0/1.md</div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">US macro regime quad (Goldilocks/Reflation/…)</span><span class="l-zh">美国宏观四象限</span>
+            </div>
+          <div class="mkt">US macro · regime state · macro.html / spvector input</div>
+          <div class="extra">whipsaw <10d 6% (PASS) · regime changes 149</div>
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-confirmer"><span class="l-en">CONFIRMER</span><span class="l-zh">确认项</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">Whipsaw 6% of changes <10 days (target <15%) and transitions align with every major crisis (COVID flagged 2020-02-19). T…</span><span class="l-zh">6% 的切换在 10 天内（目标 <15%），且转变与每次重大危机吻合（COVID 于 2020-02-19 标记）。是向量降险的结构骨架，非独立收益预测。</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">Whipsaw 6% of changes <10 days (target <15%) and transitions align with every major crisis (COVID flagged 2020-02-19). The structural backbone of the Vector de-risk glide — not a standalone return predictor.  [validation.md]</span><span class="l-zh">6% 的切换在 10 天内（目标 <15%），且转变与每次重大危机吻合（COVID 于 2020-02-19 标记）。是向量降险的结构骨架，非独立收益预测。  [validation.md]</span></span></span>
+          <div class="src">validation.md</div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">China / HK regime quad + liquidity overlay</span><span class="l-zh">中港四象限 + 流动性叠加</span>
+            </div>
+          <div class="mkt">China A / HK · 63d · china.html / hk.html</div>
+          
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-confirmer"><span class="l-en">CONFIRMER</span><span class="l-zh">确认项</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">Forward-return differentiated and split-half stable for most regimes (China Growth-scare +6.09% vs Reflation −2.85% fwd-…</span><span class="l-zh">多数象限前瞻收益有区分且两半稳定（中国 增长恐慌 +6.09% 对 再通胀 −2.85%）。港股部分象限两半符号翻转 → 标记不稳定。用作回撤/风险视角。</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">Forward-return differentiated and split-half stable for most regimes (China Growth-scare +6.09% vs Reflation −2.85% fwd-63d; liquidity Expanding 1.71% vs Contracting 0.59%). HK Reflation/Stagflation signs flip across halves → flagged regime-unstable. Used as a drawdown/risk lens.  [china-calibration.md / hk-calibration.md]</span><span class="l-zh">多数象限前瞻收益有区分且两半稳定（中国 增长恐慌 +6.09% 对 再通胀 −2.85%）。港股部分象限两半符号翻转 → 标记不稳定。用作回撤/风险视角。  [china-calibration.md / hk-calibration.md]</span></span></span>
+          <div class="src">china-calibration.md / hk-calibration.md</div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">HK global-risk overlay (risk-on/off)</span><span class="l-zh">港股全球风险叠加</span>
+            </div>
+          <div class="mkt">HK · 63d · hk.html</div>
+          <div class="extra">risk-on / off / neutral fwd-63d +1.9% / +0.84% / +0.36%</div>
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-confirmer"><span class="l-en">CONFIRMER</span><span class="l-zh">确认项</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">Differentiates forward returns by global risk state and stays stable across split-halves: risk-on +1.9% (hit 58.1%) vs r…</span><span class="l-zh">按全球风险状态区分前瞻收益且两半稳定：风险偏好 +1.9%（命中 58.1%）对风险规避 +0.84%（63日）。港股是宏观/全球贝塔产品。</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">Differentiates forward returns by global risk state and stays stable across split-halves: risk-on +1.9% (hit 58.1%) vs risk-off +0.84% fwd-63d. HK is a macro/global-beta product, not stock selection.  [hk-calibration.md]</span><span class="l-zh">按全球风险状态区分前瞻收益且两半稳定：风险偏好 +1.9%（命中 58.1%）对风险规避 +0.84%（63日）。港股是宏观/全球贝塔产品。  [hk-calibration.md]</span></span></span>
+          <div class="src">hk-calibration.md</div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">Commodity risk index (gold/silver/copper/oil)</span><span class="l-zh">大宗商品风险指数</span>
+            </div>
+          <div class="mkt">Commodity · 21d · commodities.html risk gauge</div>
+          
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-confirmer"><span class="l-en">CONFIRMER</span><span class="l-zh">确认项</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">The risk_index is a CONFIRMED near-term drawdown gauge across BOTH split-halves for all four metals/energy; the gold-sil…</span><span class="l-zh">risk_index 在四种金属/能源上、两半均确认为近端回撤量表；金银比分位对前瞻收益有区分。但其配置变体均未通过 DSR（见下）。</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">The risk_index is a CONFIRMED near-term drawdown gauge across BOTH split-halves for all four metals/energy; the gold-silver-ratio percentile band-differentiates forward returns. The ALLOCATION variants, by contrast, all fail DSR (see below).  [commodity-calibration.md]</span><span class="l-zh">risk_index 在四种金属/能源上、两半均确认为近端回撤量表；金银比分位对前瞻收益有区分。但其配置变体均未通过 DSR（见下）。  [commodity-calibration.md]</span></span></span>
+          <div class="src">commodity-calibration.md</div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">Index dealer-gamma regime (market GEX)</span><span class="l-zh">指数做市商Gamma机制（市场GEX）</span>
+            </div>
+          <div class="mkt">US options · intraday/days · macro.html market-gamma note</div>
+          <div class="extra">history accruing (n small)</div>
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-confirmer"><span class="l-en">CONFIRMER</span><span class="l-zh">确认项</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">Validated at the INDEX level: short-gamma days precede higher forward realized vol than long-gamma days → a vol-regime b…</span><span class="l-zh">在指数层面验证：空Gamma日的前瞻已实现波动高于多Gamma日 → 波动机制横幅。个股 GEX 经评估后否决（单名符号过噪）。</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">Validated at the INDEX level: short-gamma days precede higher forward realized vol than long-gamma days → a vol-regime banner. Per-equity GEX was evaluated and DECLINED (single-name sign too noisy).  [gex-validation.md]</span><span class="l-zh">在指数层面验证：空Gamma日的前瞻已实现波动高于多Gamma日 → 波动机制横幅。个股 GEX 经评估后否决（单名符号过噪）。  [gex-validation.md]</span></span></span>
+          <div class="src">gex-validation.md</div>
+        </td>
+      </tr>
+    
+    </tbody>
+  </table></div>
+</div>
+
+<div class="panel ">
+  <div class="tierhead">
+    <span class="dot d-display" style="align-self:center"></span>
+    <h2><span class="l-en">Display-only — shown, but no validated edge</span><span class="l-zh">仅展示 — 显示但无验证边际</span> · 8</h2>
+    <span class="bl"><span class="l-en">Rendered as a research lens or risk context. Failed Phase-0, un-backtestable, or still accruing history. NOT a buy signal.</span><span class="l-zh">作为研究视角或风险背景显示。未通过 Phase-0、无法回测或历史不足。并非买入信号。</span></span>
+  </div>
+  <div class="scroll"><table>
+    <thead><tr>
+      <th><span class="l-en">Signal</span><span class="l-zh">信号</span></th>
+      <th class="r">IC</th>
+      <th class="r">HAC t</th>
+      <th class="r">FDR q</th>
+      <th class="r">DSR<span class="help">?<span class="tip"><span class="l-en">Deflated Sharpe (López de Prado): probability the true Sharpe > 0 after haircutting for the number of trials, skew and kurtosis. >0.90 is our bar.</span><span class="l-zh">去偏夏普（López de Prado）：在按试验次数、偏度与峰度打折后，真实夏普 >0 的概率。门槛 >0.90。</span></span></span></th>
+      <th class="r"><span class="l-en">Sharpe</span><span class="l-zh">夏普</span></th>
+      <th class="r"><span class="l-en">hit</span><span class="l-zh">命中</span></th>
+      <th class="r">n</th>
+      <th><span class="l-en">Verdict</span><span class="l-zh">结论</span></th>
+      <th><span class="l-en">Why</span><span class="l-zh">原因</span></th>
+    </tr></thead>
+    <tbody>
+    
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">US residual-alpha momentum (ranking)</span><span class="l-zh">美国残差Alpha动量（排名）</span>
+            </div>
+          <div class="mkt">US S&P1500 · 21d · discovery.html ranking (context)</div>
+          
+        </td>
+        <td class="r pos">+0.0124</td>
+        <td class="r">+1.50</td>
+        <td class="r ">0.399</td>
+        <td class="r neg">0.001</td>
+        <td class="r neg">-0.29</td>
+        <td class="r">56%</td>
+        <td class="r">291</td>
+        <td><span class="pill v-display"><span class="l-en">DISPLAY</span><span class="l-zh">仅展示</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">Positive but weak IC that FAILS BH-FDR (q=0.40) and the backtest Sharpe is negative with DSR≈0 (0.0014). Shown as a lead…</span><span class="l-zh">IC 为正但弱，未通过 BH-FDR（q=0.40），回测夏普为负且 DSR≈0。作为排行榜/alpha 基线显示，非计分买入信号。</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">Positive but weak IC that FAILS BH-FDR (q=0.40) and the backtest Sharpe is negative with DSR≈0 (0.0014). Shown as a leaderboard / alpha baseline, not a scored buy signal.  [residual-alpha-phase0.md]</span><span class="l-zh">IC 为正但弱，未通过 BH-FDR（q=0.40），回测夏普为负且 DSR≈0。作为排行榜/alpha 基线显示，非计分买入信号。  [residual-alpha-phase0.md]</span></span></span>
+          <div class="src">residual-alpha-phase0.md</div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">US setup-score blend (selection × timing)</span><span class="l-zh">美国 setup 融合分（选股×择时）</span>
+            </div>
+          <div class="mkt">US S&P1500 · 21d/63d · macro/china standout cards (ordering)</div>
+          
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-display"><span class="l-en">DISPLAY</span><span class="l-zh">仅展示</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">Folding cycle-timing + reversal INTO the alpha rank gave NO IC gain and NO Sharpe gain vs alpha alone (setup IC −0.0013 …</span><span class="l-zh">把周期择时+反转并入 alpha 排名相对 alpha 单独无 IC 增益、无夏普增益。已回退为按 alpha 排名；择时作为独立的风险位置背景显示。</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">Folding cycle-timing + reversal INTO the alpha rank gave NO IC gain and NO Sharpe gain vs alpha alone (setup IC −0.0013 / Sharpe −0.18 vs alpha +0.0101 / −0.16). Reverted to rank-by-alpha; timing is shown as separate risk-placement context.  [setup-score-phase0.md]</span><span class="l-zh">把周期择时+反转并入 alpha 排名相对 alpha 单独无 IC 增益、无夏普增益。已回退为按 alpha 排名；择时作为独立的风险位置背景显示。  [setup-score-phase0.md]</span></span></span>
+          <div class="src">setup-score-phase0.md</div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">China quality (ROE) cross-section</span><span class="l-zh">中国质量（ROE）横截面</span>
+            </div>
+          <div class="mkt">China A · quarterly · china context</div>
+          
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r neg">-0.58</td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">120</td>
+        <td><span class="pill v-display"><span class="l-en">DISPLAY</span><span class="l-zh">仅展示</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">No quality premium — junk BEATS quality on A-shares (quality-minus-junk spread Sharpe −0.58 cross-sectional, −0.71 secto…</span><span class="l-zh">无质量溢价 — A股 junk 跑赢 quality（质量减垃圾价差夏普 −0.58 横截面、−0.71 行业中性）。仅作背景。</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">No quality premium — junk BEATS quality on A-shares (quality-minus-junk spread Sharpe −0.58 cross-sectional, −0.71 sector-neutral). Shown as context only.  [china-quality-phase0.md]</span><span class="l-zh">无质量溢价 — A股 junk 跑赢 quality（质量减垃圾价差夏普 −0.58 横截面、−0.71 行业中性）。仅作背景。  [china-quality-phase0.md]</span></span></span>
+          <div class="src">china-quality-phase0.md</div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">China value (earnings yield) cross-section</span><span class="l-zh">中国价值（盈利收益率）横截面</span>
+            </div>
+          <div class="mkt">China A · quarterly · china context</div>
+          
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r neg">-0.46</td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">119</td>
+        <td><span class="pill v-display"><span class="l-en">DISPLAY</span><span class="l-zh">仅展示</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">Cross-sectional value spread negative (−0.46 Sharpe); sector-neutral only marginally positive (+0.06). No robust premium…</span><span class="l-zh">横截面价值价差为负（夏普 −0.46）；行业中性仅微正（+0.06）。无稳健溢价 → 仅作背景。</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">Cross-sectional value spread negative (−0.46 Sharpe); sector-neutral only marginally positive (+0.06). No robust premium → context only.  [china-value-phase0.md]</span><span class="l-zh">横截面价值价差为负（夏普 −0.46）；行业中性仅微正（+0.06）。无稳健溢价 → 仅作背景。  [china-value-phase0.md]</span></span></span>
+          <div class="src">china-value-phase0.md</div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">China low-vol / low-beta cross-section</span><span class="l-zh">中国低波/低贝塔横截面</span>
+            </div>
+          <div class="mkt">China A · quarterly · china context</div>
+          
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-display"><span class="l-en">DISPLAY</span><span class="l-zh">仅展示</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">No low-risk anomaly on A-shares: low-vol long-short spread Sharpe −0.08, low-beta −0.01. Low-risk quintiles do not out-e…</span><span class="l-zh">A股无低风险异象：低波多空价差夏普 −0.08，低贝塔 −0.01。低风险分位并不多赚。作为风险分层背景显示。</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">No low-risk anomaly on A-shares: low-vol long-short spread Sharpe −0.08, low-beta −0.01. Low-risk quintiles do not out-earn. Shown as risk stratification context.  [china-lowvol-phase0.md]</span><span class="l-zh">A股无低风险异象：低波多空价差夏普 −0.08，低贝塔 −0.01。低风险分位并不多赚。作为风险分层背景显示。  [china-lowvol-phase0.md]</span></span></span>
+          <div class="src">china-lowvol-phase0.md</div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">HK total-return momentum</span><span class="l-zh">港股总回报动量</span>
+            </div>
+          <div class="mkt">HK · monthly · hk context</div>
+          
+        </td>
+        <td class="r pos">+0.0317</td>
+        <td class="r">+2.04</td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r neg">0.434</td>
+        <td class="r pos">+0.23</td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-display"><span class="l-en">DISPLAY</span><span class="l-zh">仅展示</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">HK's only positive cross-sectional signal (IC 0.0317, HAC t 2.04) — but it FAILS DSR (0.43<0.90) and it is market BETA, …</span><span class="l-zh">港股唯一为正的横截面信号（IC 0.0317，HAC t 2.04）— 但未通过 DSR（0.43<0.90），且是市场贝塔而非个股 alpha。作为排名显示。</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">HK's only positive cross-sectional signal (IC 0.0317, HAC t 2.04) — but it FAILS DSR (0.43<0.90) and it is market BETA, not stock alpha. Shown as a ranking.  [hk-residual-alpha-phase0.md]</span><span class="l-zh">港股唯一为正的横截面信号（IC 0.0317，HAC t 2.04）— 但未通过 DSR（0.43<0.90），且是市场贝塔而非个股 alpha。作为排名显示。  [hk-residual-alpha-phase0.md]</span></span></span>
+          <div class="src">hk-residual-alpha-phase0.md</div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">Commodity per-asset allocation variants</span><span class="l-zh">大宗商品单资产配置变体</span>
+            </div>
+          <div class="mkt">Commodity · allocation · commodities.html (context)</div>
+          <div class="extra">DSR gold/silver/copper/oil 0.58 / 0.07 / 0.32 / 0.12</div>
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r neg">0.577</td>
+        <td class="r pos">+0.48</td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-display"><span class="l-en">DISPLAY</span><span class="l-zh">仅展示</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">Every optimal single-commodity allocator fails the deflated-Sharpe bar (gold 0.58, silver 0.07, copper 0.32, oil 0.12 — …</span><span class="l-zh">每个最优单一商品配置都未达 DSR 门槛（金 0.58、银 0.07、铜 0.32、油 0.12 — 均 <0.90）。风险指数背景已确认，但配置边际未确认。</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">Every optimal single-commodity allocator fails the deflated-Sharpe bar (gold 0.58, silver 0.07, copper 0.32, oil 0.12 — all <0.90). The risk_index context is confirmed; the allocation edge is not.  [commodity-calibration.md]</span><span class="l-zh">每个最优单一商品配置都未达 DSR 门槛（金 0.58、银 0.07、铜 0.32、油 0.12 — 均 <0.90）。风险指数背景已确认，但配置边际未确认。  [commodity-calibration.md]</span></span></span>
+          <div class="src">commodity-calibration.md</div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">Bitcoin Vector confirmation candidates (funding_z, OI div, VRP…)</span><span class="l-zh">比特币向量确认候选（资金费率、持仓背离、波动溢价…）</span>
+            </div>
+          <div class="mkt">BTC · allocation · vector.html (context)</div>
+          
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-display"><span class="l-en">DISPLAY</span><span class="l-zh">仅展示</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">Allocation-floor/cap candidates have NO pre-2021 footprint → cannot pass the both-halves split test; uplift is confirmat…</span><span class="l-zh">配置下限/上限候选在 2021 年前无足迹 → 无法通过两半检验；增量仅为确认级（2021 后 ΔSharpe~0.07）。作为风险背景确认项保留，从不硬接入配…</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">Allocation-floor/cap candidates have NO pre-2021 footprint → cannot pass the both-halves split test; uplift is confirmation-only (ΔSharpe ~0.07 post-2021). Kept as risk-context confirmers, never hard-wired into the allocation math.  [vector-integration-candidates.md]</span><span class="l-zh">配置下限/上限候选在 2021 年前无足迹 → 无法通过两半检验；增量仅为确认级（2021 后 ΔSharpe~0.07）。作为风险背景确认项保留，从不硬接入配置计算。  [vector-integration-candidates.md]</span></span></span>
+          <div class="src">vector-integration-candidates.md</div>
+        </td>
+      </tr>
+    
+    </tbody>
+  </table></div>
+</div>
+
+<div class="panel grave">
+  <div class="tierhead">
+    <span class="dot d-killed" style="align-self:center"></span>
+    <h2><span class="l-en">Killed (NO-GO) — measured and refused to ship</span><span class="l-zh">已否决 (NO-GO) — 经测量后拒绝上线</span> · 7</h2>
+    <span class="bl"><span class="l-en">The graveyard. Each looked plausible; the validation said no. This is the discipline most dashboards never show.</span><span class="l-zh">信号墓地。每个看似合理，验证却说不。这是大多数仪表盘从不展示的纪律。</span></span>
+  </div>
+  <div class="scroll"><table>
+    <thead><tr>
+      <th><span class="l-en">Signal</span><span class="l-zh">信号</span></th>
+      <th class="r">IC</th>
+      <th class="r">HAC t</th>
+      <th class="r">FDR q</th>
+      <th class="r">DSR<span class="help">?<span class="tip"><span class="l-en">Deflated Sharpe (López de Prado): probability the true Sharpe > 0 after haircutting for the number of trials, skew and kurtosis. >0.90 is our bar.</span><span class="l-zh">去偏夏普（López de Prado）：在按试验次数、偏度与峰度打折后，真实夏普 >0 的概率。门槛 >0.90。</span></span></span></th>
+      <th class="r"><span class="l-en">Sharpe</span><span class="l-zh">夏普</span></th>
+      <th class="r"><span class="l-en">hit</span><span class="l-zh">命中</span></th>
+      <th class="r">n</th>
+      <th><span class="l-en">Verdict</span><span class="l-zh">结论</span></th>
+      <th><span class="l-en">Why</span><span class="l-zh">原因</span></th>
+    </tr></thead>
+    <tbody>
+    
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">RVOL momentum confirmer</span><span class="l-zh">RVOL 动量确认器</span>
+            </div>
+          <div class="mkt">US S&P1500 · 21d · not shipped</div>
+          
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-killed"><span class="l-en">NO-GO</span><span class="l-zh">否决</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">Volume does NOT confirm momentum — it mildly ANTI-confirms (momentum IC +0.013 on high-RVOL vs +0.028 on low-RVOL; uplif…</span><span class="l-zh">成交量并不确认动量 — 反而轻微反向（高 RVOL 动量 IC +0.013 对低 RVOL +0.028；增量为负，无 FDR 幸存者）。看似亮眼的多空是幸存…</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">Volume does NOT confirm momentum — it mildly ANTI-confirms (momentum IC +0.013 on high-RVOL vs +0.028 on low-RVOL; uplift negative, no FDR survivors). The base-confirmed L/S that looked great was a survivorship/concentration artifact.  [rvol-phase0 (research)]</span><span class="l-zh">成交量并不确认动量 — 反而轻微反向（高 RVOL 动量 IC +0.013 对低 RVOL +0.028；增量为负，无 FDR 幸存者）。看似亮眼的多空是幸存者/集中度假象。  [rvol-phase0 (research)]</span></span></span>
+          <div class="src">rvol-phase0 (research)</div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">Constructive-base scanner (IBD pivot)</span><span class="l-zh">建设性底部扫描（IBD 枢轴）</span>
+            </div>
+          <div class="mkt">US S&P1500 · 21d · not shipped</div>
+          
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r neg">0.860</td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-killed"><span class="l-en">NO-GO</span><span class="l-zh">否决</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">Anti-predictive: pivot-proximity / tightness IC significantly NEGATIVE and FDR-surviving (near-pivot = extended = short-…</span><span class="l-zh">反预测：枢轴接近度/紧致度 IC 显著为负且通过 FDR（近枢轴=拉伸=短期反转，与论点相反）。亮眼多空被混杂，诚实试验数下 DSR 0.86<0.90。宽松多…</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">Anti-predictive: pivot-proximity / tightness IC significantly NEGATIVE and FDR-surviving (near-pivot = extended = short-term reversal, the OPPOSITE of the thesis). The L/S that looked great (Sharpe 0.49) is confounded; DSR 0.86<0.90 at honest n_trials. A lenient L/S gate gave a FALSE GO.  [base-scanner-phase0 (research)]</span><span class="l-zh">反预测：枢轴接近度/紧致度 IC 显著为负且通过 FDR（近枢轴=拉伸=短期反转，与论点相反）。亮眼多空被混杂，诚实试验数下 DSR 0.86<0.90。宽松多空门槛给出假 GO。  [base-scanner-phase0 (research)]</span></span></span>
+          <div class="src">base-scanner-phase0 (research)</div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">GBT meta-label (size/trust the BTC call)</span><span class="l-zh">GBT 元标签（为 BTC 信号定量/定信）</span>
+            </div>
+          <div class="mkt">BTC · allocation · not shipped</div>
+          <div class="extra">ΔSharpe −0.43 · configs lost 20 / 20</div>
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-killed"><span class="l-en">NO-GO</span><span class="l-zh">否决</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">A López de Prado meta-label (HistGBT learns P(long call correct)). Honest verdict: DO NOT WIRE — ΔSharpe −0.43, negative…</span><span class="l-zh">López de Prado 元标签（HistGBT 学习 P(做多正确)）。诚实结论：不接入 — ΔSharpe −0.43，校准技能为负，20 种配置全输。</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">A López de Prado meta-label (HistGBT learns P(long call correct)). Honest verdict: DO NOT WIRE — ΔSharpe −0.43, negative calibration skill, all 20 configs lose.  [gbt-meta-label-leaf]</span><span class="l-zh">López de Prado 元标签（HistGBT 学习 P(做多正确)）。诚实结论：不接入 — ΔSharpe −0.43，校准技能为负，20 种配置全输。  [gbt-meta-label-leaf]</span></span></span>
+          <div class="src">gbt-meta-label-leaf</div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">HK residual-alpha (sector-neutral)</span><span class="l-zh">港股残差 Alpha（行业中性）</span>
+            </div>
+          <div class="mkt">HK · monthly · not shipped</div>
+          
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r neg">0.002</td>
+        <td class="r neg">-0.22</td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-killed"><span class="l-en">NO-GO</span><span class="l-zh">否决</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">Stripping beta/sector — which PURIFIED the US/China signals — REMOVES HK's signal entirely (residual IC ≈ 0, Sharpe −0.2…</span><span class="l-zh">剥离贝塔/行业（这净化了美/中信号）反而完全移除港股信号（残差 IC≈0，夏普 −0.22/−0.35，DSR 0.0019）。港股 alpha 即市场贝塔。港…</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">Stripping beta/sector — which PURIFIED the US/China signals — REMOVES HK's signal entirely (residual IC ≈ 0, Sharpe −0.22/−0.35, DSR 0.0019). HK alpha is market beta, not stock-specific. Killed for HK.  [hk-residual-alpha-phase0.md]</span><span class="l-zh">剥离贝塔/行业（这净化了美/中信号）反而完全移除港股信号（残差 IC≈0，夏普 −0.22/−0.35，DSR 0.0019）。港股 alpha 即市场贝塔。港股否决。  [hk-residual-alpha-phase0.md]</span></span></span>
+          <div class="src">hk-residual-alpha-phase0.md</div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">China momentum (deep-history)</span><span class="l-zh">中国动量（深度历史）</span>
+            </div>
+          <div class="mkt">China A · 21d · not shipped (reversal kept instead)</div>
+          
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-killed"><span class="l-en">NO-GO</span><span class="l-zh">否决</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">On 1992–2026 the only FDR-surviving cross-sectional effect is short-term REVERSAL (t −2.7…−5.0, q=0.0) — the OPPOSITE of…</span><span class="l-zh">在 1992–2026 上，唯一通过 FDR 的横截面效应是短期反转（t −2.7…−5.0，q=0.0）— 与动量相反。残差动量 IC 为负。五年窗口曾让动量…</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">On 1992–2026 the only FDR-surviving cross-sectional effect is short-term REVERSAL (t −2.7…−5.0, q=0.0) — the OPPOSITE of momentum. Residual momentum IC is negative (−0.0045, t −0.49). A 5-year window made momentum look alive; deep history kills it.  [china-residual-alpha-deep.md]</span><span class="l-zh">在 1992–2026 上，唯一通过 FDR 的横截面效应是短期反转（t −2.7…−5.0，q=0.0）— 与动量相反。残差动量 IC 为负。五年窗口曾让动量看似有效，深度历史否决之。  [china-residual-alpha-deep.md]</span></span></span>
+          <div class="src">china-residual-alpha-deep.md</div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">Commodity carry as single-asset timing</span><span class="l-zh">大宗商品 carry 作单资产择时</span>
+            </div>
+          <div class="mkt">Commodity · 63d · display-only term structure</div>
+          
+        </td>
+        <td class="r neg">-0.1600</td>
+        <td class="r">-4.60</td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-killed"><span class="l-en">NO-GO</span><span class="l-zh">否决</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">'Backwardation = bullish' is WRONG-SIGNED for single-asset spot timing on 38y of EIA WTI futures (63d IC −0.16, t −4.6).…</span><span class="l-zh">“现货升水=看涨”在 38 年 EIA WTI 期货上对单资产现货择时方向错误（63日 IC −0.16，t −4.6）。横截面 carry ≠ 单资产择时 →…</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">'Backwardation = bullish' is WRONG-SIGNED for single-asset spot timing on 38y of EIA WTI futures (63d IC −0.16, t −4.6). Cross-sectional carry ≠ single-asset timing → display-only term-structure, green/red neutralized.  [commodity-carry-validation]</span><span class="l-zh">“现货升水=看涨”在 38 年 EIA WTI 期货上对单资产现货择时方向错误（63日 IC −0.16，t −4.6）。横截面 carry ≠ 单资产择时 → 仅展示期限结构，红绿中性化。  [commodity-carry-validation]</span></span></span>
+          <div class="src">commodity-carry-validation</div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">SPVector diversified sleeves (SPY + duration)</span><span class="l-zh">标普向量多元化组合（标普+久期）</span>
+            </div>
+          <div class="mkt">US macro · allocation · not shipped</div>
+          
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-killed"><span class="l-en">NO-GO</span><span class="l-zh">否决</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">Adding a Treasury sleeve fails the 2022 gate (−17.3% vs bills −13.5%) because the stock-bond correlation broke; no non-l…</span><span class="l-zh">加入国债组合未通过 2022 关卡（−17.3% 对国库券 −13.5%），因股债相关性破裂；无非滞后相关门槛可修复。两半均逊于 Phase-3。Phase-3…</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">Adding a Treasury sleeve fails the 2022 gate (−17.3% vs bills −13.5%) because the stock-bond correlation broke; no non-lagging correlation gate fixes it. Both halves underperform Phase-3. Phase-3 (SPY + bills) remains the product.  [spvector-phase4.md]</span><span class="l-zh">加入国债组合未通过 2022 关卡（−17.3% 对国库券 −13.5%），因股债相关性破裂；无非滞后相关门槛可修复。两半均逊于 Phase-3。Phase-3（标普+国库券）仍为产品。  [spvector-phase4.md]</span></span></span>
+          <div class="src">spvector-phase4.md</div>
+        </td>
+      </tr>
+    
+    </tbody>
+  </table></div>
+</div>
+
+<div class="panel ">
+  <div class="tierhead">
+    <span class="dot d-pending" style="align-self:center"></span>
+    <h2><span class="l-en">Validated — pending wiring on this branch</span><span class="l-zh">已验证 — 本分支待接入</span> · 1</h2>
+    <span class="bl"><span class="l-en">Passed validation but the code/wiring lives in a worktree or open PR, not yet on the branch this page was built from.</span><span class="l-zh">已通过验证，但代码/接线位于工作树或待合并 PR，尚未进入本页所基于的分支。</span></span>
+  </div>
+  <div class="scroll"><table>
+    <thead><tr>
+      <th><span class="l-en">Signal</span><span class="l-zh">信号</span></th>
+      <th class="r">IC</th>
+      <th class="r">HAC t</th>
+      <th class="r">FDR q</th>
+      <th class="r">DSR<span class="help">?<span class="tip"><span class="l-en">Deflated Sharpe (López de Prado): probability the true Sharpe > 0 after haircutting for the number of trials, skew and kurtosis. >0.90 is our bar.</span><span class="l-zh">去偏夏普（López de Prado）：在按试验次数、偏度与峰度打折后，真实夏普 >0 的概率。门槛 >0.90。</span></span></span></th>
+      <th class="r"><span class="l-en">Sharpe</span><span class="l-zh">夏普</span></th>
+      <th class="r"><span class="l-en">hit</span><span class="l-zh">命中</span></th>
+      <th class="r">n</th>
+      <th><span class="l-en">Verdict</span><span class="l-zh">结论</span></th>
+      <th><span class="l-en">Why</span><span class="l-zh">原因</span></th>
+    </tr></thead>
+    <tbody>
+    
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">SUE — standardized unexpected earnings (earnings momentum)</span><span class="l-zh">SUE — 标准化超预期盈利（盈利动量）</span>
+            <span class="yes" title="survives FDR">✓FDR</span></div>
+          <div class="mkt">US S&P1500 · 63d · origin/qfe only (promote to wire here)</div>
+          
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-pending"><span class="l-en">PENDING</span><span class="l-zh">待接入</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">Built from a new EDGAR quarterly-EPS pipeline and PASSED Phase-0 (survives FDR), scored as a standalone leg on factors.h…</span><span class="l-zh">基于新的 EDGAR 季度 EPS 管线构建并通过 Phase-0（通过 FDR），作为 factors.html 的独立腿计分 — 但该工作经 PR #35 …</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">Built from a new EDGAR quarterly-EPS pipeline and PASSED Phase-0 (survives FDR), scored as a standalone leg on factors.html — but that work is merged to origin/qfe via PR #35, not present on this branch. The one clean free earnings-momentum win.  [data-signal-expansion-2026 / PR #35]</span><span class="l-zh">基于新的 EDGAR 季度 EPS 管线构建并通过 Phase-0（通过 FDR），作为 factors.html 的独立腿计分 — 但该工作经 PR #35 合并至 origin/qfe，本分支尚无。是唯一干净的免费盈利动量胜出。  [data-signal-expansion-2026 / PR #35]</span></span></span>
+          <div class="src">data-signal-expansion-2026 / PR #35</div>
+        </td>
+      </tr>
+    
+    </tbody>
+  </table></div>
+</div>
+
+
+<div class="panel">
+  <details class="method">
+    <summary><span class="l-en">How to read this page — the metrics, in plain language</span><span class="l-zh">如何阅读本页 — 指标的通俗解释</span></summary>
+    <dl>
+      <dt><span class="l-en">Information Coefficient (IC)</span><span class="l-zh">信息系数 (IC)</span></dt>
+      <dd><span class="l-en">The cross-sectional rank correlation between a signal and the forward return. ~0 means no edge; an IC of 0.03 is a real, if modest, equity-factor edge.</span><span class="l-zh">信号与前瞻收益的横截面秩相关。~0 表示无边际；IC 0.03 已是真实但温和的股票因子边际。</span></dd>
+      <dt><span class="l-en">Newey-West (HAC) t-stat</span><span class="l-zh">Newey-West (HAC) t 值</span></dt>
+      <dd><span class="l-en">Is the average IC distinguishable from zero, AFTER correcting for the autocorrelation that overlapping forward windows create? Naive t-stats overstate significance here.</span><span class="l-zh">在校正重叠前瞻窗口造成的自相关后，平均 IC 是否显著不为零？朴素 t 值在此会高估显著性。</span></dd>
+      <dt><span class="l-en">Benjamini-Hochberg FDR q</span><span class="l-zh">Benjamini-Hochberg FDR q</span></dt>
+      <dd><span class="l-en">If you test many ideas, some will look good by luck. The FDR q controls the false-discovery rate across the whole panel. q<0.10 = survives. Most of our factors do NOT — and we show it.</span><span class="l-zh">若测试很多想法，总有些靠运气好看。FDR q 控制整组的错误发现率。q<0.10 = 通过。我们多数因子并未通过 — 我们如实展示。</span></dd>
+      <dt><span class="l-en">Deflated Sharpe (DSR)</span><span class="l-zh">去偏夏普 (DSR)</span></dt>
+      <dd><span class="l-en">A Sharpe ratio haircut for the number of strategies tried, plus return skew/kurtosis (López de Prado). It is the probability the true Sharpe is positive. Our bar is 0.90 — a backtest Sharpe that looks great but has DSR<0.90 is treated as luck.</span><span class="l-zh">按尝试的策略数量及收益偏度/峰度对夏普打折（López de Prado）。它是真实夏普为正的概率。门槛 0.90 — 回测夏普好看但 DSR<0.90 的，按运气处理。</span></dd>
+      <dt><span class="l-en">Point-in-time (leak-free)</span><span class="l-zh">时点（无泄漏）</span></dt>
+      <dd><span class="l-en">Fundamentals are stamped at period-end + reporting lag; index membership is reconstructed as it was on each date; indicators are shifted so a backtest only ever sees what was knowable then. This is why the spreads are honestly weaker than a naive backtest.</span><span class="l-zh">基本面以“期末+披露滞后”打戳；指数成分按当日实际重建；指标移位，使回测只看到当时可知的信息。这正是价差诚实地弱于朴素回测的原因。</span></dd>
+    </dl>
+  </details>
+</div>
+
+<div class="panel">
+  <p class="muted sm" style="margin:0"><span class="l-en">Validation toolkit: engine/validation.py (deflated Sharpe, purged k-fold + embargo, block bootstrap, Newey-West HAC, Benjamini-Hochberg FDR, Brier/Platt calibration, cost-aware backtest). Verdicts are quoted from the named reports in reports/. The factor cross-section reads live from data/edgar/ic_scorecard.json. See also the </span><span class="l-zh">验证工具：engine/validation.py（去偏夏普、净化 k 折+隔离、分块自助、Newey-West HAC、Benjamini-Hochberg FDR、Brier/Platt 校准、含成本回测）。结论引自 reports/ 中具名报告；因子横截面实时读取 data/edgar/ic_scorecard.json。另见 </span><a href="validation_timeline.html" style="color:var(--link)"><span class="l-en">regime validation timeline</span><span class="l-zh">机制验证时间线</span></a><span class="l-en">.</span><span class="l-zh">。</span></p>
+  <p class="src" style="margin:8px 0 0">
+    <span class="l-en">data span</span><span class="l-zh">数据区间</span> 2023-06-30..2025-12-31 ·
+    <span class="l-en">dashboard updated</span><span class="l-zh">仪表盘更新</span> 2026-06-15 04:00 UTC ·
+    <span class="l-en">rendered</span><span class="l-zh">生成</span> 2026-06-15 04:00 UTC</p>
+</div>
+
+<script src="theme.js"></script>
+</body>
+</html>

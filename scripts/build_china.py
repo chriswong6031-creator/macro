@@ -29,7 +29,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_china")
 
 ASSETS = ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
-          "charts.js", "tablesort.js")
+          "charts.js", "tablesort.js", "tvfallback.js", "lightweight-charts.js")
 
 
 def _range_selector() -> dict:
@@ -292,6 +292,7 @@ def _build_sector_pages(env) -> int:
     Output site/sectors/<FUND>.html (e.g. site/sectors/512690.SS.html)."""
     from engine.china_inputs import china_closes
     from engine.cycles import analyze
+    from engine.technicals import chart_series
     from scripts.build_china_library import tv_symbol
     cfg = config.load()["china"]
     names = cfg["yahoo"]["sector_etfs"]
@@ -315,6 +316,9 @@ def _build_sector_pages(env) -> int:
             continue
         s = {"fund": fund, "name": meta[0], "tv": tv_symbol(fund),
              "mtf_json": json.dumps(a["mtf"]), "ladder": a["ladder"], "cycle": a["cycle"],
+             # close history for the China-safe local chart fallback (the embed is
+             # blocked from mainland IPs); see templates/tvfallback.js.
+             "chart_json": json.dumps(chart_series(close)),
              "holdings": []}
         for tick in constituents.get(meta[0], []):
             cser = ccloses[tick].dropna() if tick in ccloses.columns else None
@@ -507,6 +511,60 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("china stock library build failed (%s); skipping", e)
         vm["setups"] = setups
+
+        # "Mean-reversion watch" — the VALIDATED A-share signal (3mo within-sector deep
+        # dips, screened). Separate from the momentum-anchored setups; Phase 0 showed this
+        # is the real edge (reports/china-reversal-phase0.md). Honest contrarian framing.
+        try:
+            from scripts.build_china_library import compute_china_reversal
+            rev = compute_china_reversal()
+            vm["reversal"] = rev
+            if rev:
+                (site / "factordata").mkdir(parents=True, exist_ok=True)
+                (site / "factordata" / "china_reversal.json").write_text(
+                    json.dumps(rev, separators=(",", ":"), default=str))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("china reversal watch failed (%s); skipping", e)
+            vm["reversal"] = None
+
+        # "Defensive (low-vol)" sleeve — the validated A-share defensive tilt (lowest
+        # trailing volatility; low-vol anomaly, reports/china-lowvol-phase0.md). The
+        # conservative complement to the aggressive Mean-reversion watch.
+        try:
+            from scripts.build_china_library import compute_china_lowvol
+            lv = compute_china_lowvol()
+            vm["lowvol"] = lv
+            if lv:
+                (site / "factordata").mkdir(parents=True, exist_ok=True)
+                (site / "factordata" / "china_lowvol.json").write_text(
+                    json.dumps(lv, separators=(",", ":"), default=str))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("china lowvol sleeve failed (%s); skipping", e)
+            vm["lowvol"] = None
+
+        # "Standout individual stocks" — the US notable-cards feature, ported. Enrich the
+        # reversal-led setups shortlist with price + off-52w-high + sparkline + a China
+        # confluence flag (reversal ∩ low-vol). Runs after reversal+lowvol so confluence
+        # can be computed. Updates vm["setups"] in place (falls back to raw setups).
+        try:
+            from scripts.build_china_library import compute_china_standouts
+            vm["setups"] = compute_china_standouts(setups, vm.get("reversal"), vm.get("lowvol"))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("china standouts enrich failed (%s); using raw setups", e)
+
+        # consolidated SCOREBOARD — merge the 4 single-signal screener JSONs (reversal,
+        # low-vol, alpha, setups, + confluence) into one toggle-ready board. Runs last,
+        # after all screener JSONs + the stock library are written.
+        try:
+            from scripts.build_china_library import compute_china_scoreboard
+            sb = compute_china_scoreboard()
+            vm["scoreboard"] = sb
+            if sb:
+                (site / "factordata" / "china_scoreboard.json").write_text(
+                    json.dumps(sb, separators=(",", ":"), default=str))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("china scoreboard build failed (%s); skipping", e)
+            vm["scoreboard"] = None
 
         env = Environment(loader=FileSystemLoader(
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)

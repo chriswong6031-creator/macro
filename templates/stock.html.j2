@@ -179,9 +179,8 @@
     <a class="nav-link" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }}</a>
     <a class="nav-link" href="forex.html">💱 {{ t('Forex', '外汇') }}</a>
     <a class="nav-link" href="bonds.html">🏛️ {{ t('Bonds', '债券') }}</a>
-    <a class="nav-link" href="discovery.html">🏆 {{ t('Alpha leaders', '阿尔法领先股') }}</a>
+    <a class="nav-link" href="discovery.html">🏆 {{ t('Top Picks', '精选股') }}</a>
     <a class="nav-link" href="brief.html">📰 {{ t('Brief', '简报') }}</a>
-    <a class="nav-link" href="history.html">📈 {{ t('History', '历史') }}</a>
   </div>
   <div class="nav-search">
     <span class="mag">🔎</span>
@@ -339,7 +338,7 @@
     </div>
   </div>
 
-<script src="https://s3.tradingview.com/tv.js"></script>
+<script src="tvfallback.js"></script>
 <script>
 (function () {
   var cal = null;  // calibration table data (the nav search bar drives navigation now)
@@ -783,6 +782,16 @@
     var dd = cy.dc_day, band = cy.dc_band, due = (dd != null && band && dd >= band[0]);
     c.push(sigchip(due ? 'warn' : 'neutral', lz('Cycle', '周期'), lz('Day', '第') + ' ' + (dd != null ? dd : '—'),
       band ? lz('of', '/') + ' ' + band[0] + '–' + band[1] : ''));
+    // Offshore (en.wikipedia) abnormal-attention z — a NON-directional over-extension /
+    // fade caution (Da-Engelberg-Gao), amber like the other context chips so it never
+    // inverts under the zh red=up swap. Always-rendered strip → shows on alpha-less names too.
+    var at = d.attention;
+    if (at && at.z != null && at.z >= 2.0) {
+      var acn = /\.(SS|SZ|HK)$/.test(d.ticker || '');   // mainland audience is GFW-blind
+      c.push(sigchip('warn', lz('Attention', '关注度'),
+        '👁 ' + (at.z > 0 ? '+' : '') + Number(at.z).toFixed(1) + 'σ',
+        acn ? lz('intl only', '仅境外') : lz('extension / fade', '过度 / 回吐')));
+    }
     el('r_sigstrip').innerHTML = c.join('');
   }
 
@@ -1013,14 +1022,11 @@
     renderFundFlow(d);
     renderAlpha(d);
 
-    document.getElementById('tvbox').innerHTML = '<div id="tvchart"></div>';
-    try {
-      new TradingView.widget({container_id: 'tvchart', symbol: d.ticker.replace('-USD', 'USD'),
-        interval: 'D', theme: (localStorage.getItem('theme') === 'light' ? 'light' : 'dark'),
-        style: '1', height: 430, width: '100%',
-        hide_side_toolbar: true, allow_symbol_change: true,
-        studies: ['RSI@tv-basicstudies', 'MACD@tv-basicstudies']});
-    } catch (e) { /* chart is garnish — analysis above stands alone */ }
+    // TradingView widget where it's reachable, else a local chart drawn from our
+    // own stored closes (d.chart) — the embed is GFW-blocked in mainland China.
+    // The chart is garnish either way; the analysis above stands alone.
+    window.renderChart(document.getElementById('tvbox'),
+      d.ticker.replace('-USD', 'USD'), d.chart, {height: 430, tvId: 'tvchart'});
   }
   // recolor visuals when the theme flips
   document.addEventListener('themechange', function () {
@@ -1039,7 +1045,8 @@
 </script>
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
-<p class="muted" style="font-size:12px">Generated {{ generated_utc }} UTC · charts by TradingView ·
+<p class="muted" style="font-size:12px">Generated {{ generated_utc }} UTC · charts by TradingView
+(local fallback drawn from our stored prices where the embed is blocked) ·
 methodology &amp; caveats: see any sector page footer.</p>
 <footer class="site-footer">
   <span class="made">Made with ❤️ in Canada</span>

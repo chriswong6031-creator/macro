@@ -1201,6 +1201,32 @@ def build_insider_data(site: Path) -> dict | None:
     return sig
 
 
+def build_attention_data(site: Path) -> dict | None:
+    """Per-ticker OFFSHORE-attention map (abnormal Wikimedia-pageviews z) ->
+    factordata/attention.json, the DISPLAY-ONLY over-extension / fade-risk caution chip on
+    the Top Picks + single-stock pages. Reads data/attention/*.parquet (collectors.wiki_
+    pageviews) and the validated z definition in engine.attention. NEVER a scored leg
+    (research/WIKI_ATTENTION_CHIP_SPEC.md; Phase-0 in scripts/wiki_attention_phase0.py).
+    Additive + graceful: returns/writes nothing when the panel is missing."""
+    from engine.attention import attention_signals, load_panel
+    try:
+        panel = load_panel()
+        if not panel:
+            return None
+        sig = attention_signals(panel)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("attention signals failed: %s", e)
+        return None
+    if not sig:
+        return None
+    fdir = site / "factordata"
+    fdir.mkdir(parents=True, exist_ok=True)
+    (fdir / "attention.json").write_text(
+        json.dumps(sig, separators=(",", ":"), default=str))
+    log.info("wrote attention.json (%d names with offshore-attention z)", len(sig))
+    return sig
+
+
 def build_sector_pages(env: Environment, site: Path, generated: str,
                        alpha: dict | None = None) -> dict:
     """Render sectors/<FUND>.html drill-downs; return per-fund timing summary
@@ -1358,8 +1384,12 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
         ec = etf["close"].dropna()
         # technical snapshot for the at-a-glance signal-chip strip (same shape the
         # stock analyzer reads from its JSON, so both pages render identical chips)
+        from engine.technicals import chart_series as _cs
         from engine.technicals import snapshot as _snap
         s["tech"] = _snap(ec)
+        # close history for the China-safe local chart fallback (the TradingView
+        # embed is GFW-blocked there); see templates/tvfallback.js.
+        s["chart_json"] = _json2.dumps(_cs(ec))
         feed = ticker_alerts.build_feed(
             fund, ec, etf.get("high"), _bench, res.get("ladder"),
             str(ec.index.max().date()), days=_adays, max_events=_amax)
@@ -1480,6 +1510,10 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("insider data failed: %s", e)
     try:
+        build_attention_data(site)             # offshore-attention caution chip; read by library + discovery
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("attention data failed: %s", e)
+    try:
         sector_timing, notable = build_sector_pages(env, site, generated, alpha=alpha_data)
     except Exception as e:  # noqa: BLE001 — drill-downs are additive, never fatal
         log.error("sector pages failed: %s", e)
@@ -1499,7 +1533,8 @@ def main() -> int:
         log.error("signal lab page failed: %s", e)
     # copy shared static assets (theme + visual widgets) into the site
     for asset in ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
-                  "stockdata.js", "watchlist.js", "auth.js", "tablesort.js", "charts.js"):
+                  "stockdata.js", "watchlist.js", "auth.js", "tablesort.js", "charts.js",
+                  "tvfallback.js", "lightweight-charts.js"):
         src = config.ROOT / "templates" / asset
         if src.exists():
             (site / asset).write_text(src.read_text())

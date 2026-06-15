@@ -306,7 +306,18 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
   <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;padding-top:0;padding-bottom:0;border:none;margin:0 auto">
     <div class="nav-links">
       <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
-      <a class="nav-link" href="macro.html">📊 {{ t('US Macro', '美国宏观') }}</a>
+      <div class="nav-dd">
+        <a class="nav-link" href="macro.html">🇺🇸 {{ t('US Macro', '美国宏观') }} <span class="caret">▾</span></a>
+        <div class="nav-dd-menu">
+          <a href="macro.html">📊 {{ t('Macro dashboard', '宏观仪表盘') }}</a>
+          <a href="discovery.html">🏆 {{ t('Top Picks', '精选股') }}</a>
+          <a href="spvector.html">📈 {{ t('S&P / Macro Vector', '标普宏观向量') }}</a>
+          <a href="gex.html">🧲 {{ t('GEX magnets', 'Gamma磁吸') }}</a>
+          <a href="signal_lab.html">🔬 {{ t('Signal Lab', '信号实验室') }}</a>
+          <a href="validation_timeline.html">🧪 {{ t('Validation timeline', '验证时间线') }}</a>
+          <a href="history.html">📈 {{ t('History', '历史') }}</a>
+        </div>
+      </div>
       <div class="nav-dd">
         <a class="nav-link active" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }} <span class="caret">▾</span></a>
         <div class="nav-dd-menu" role="menu">

@@ -116,10 +116,12 @@ LEX: dict[str, str] = {
     # sector category names (tickers stay English)
     "Materials": "原材料",
     "Communications": "通讯",
+    "Communication Services": "通信服务",  # full GICS sector name
     "Energy": "能源",
     "Financials": "金融",
     "Industrials": "工业",
     "Technology": "科技",
+    "Information Technology": "信息技术",  # full GICS sector name
     "Consumer Staples": "必需消费",
     "Real Estate": "房地产",
     "Utilities": "公用事业",
@@ -292,4 +294,14 @@ LEX: dict[str, str] = {
     "Drawdown": "回撤",
     "Rates vol": "利率波动",
     "Plumbing": "资金管道",
+    # Equity factor labels (factors.json factor_labels → factors.html).
+    # "Value" → "估值" already mapped above.
+    "Quality": "质量",
+    "Profitability": "盈利能力",
+    "Investment": "投资",
+    "Shareholder yield": "股东收益率",
+    "Low volatility": "低波动",
+    "Low beta (BAB)": "低贝塔（BAB）",
+    "Low accruals": "低应计",
+    "Low short interest": "低做空",
 }

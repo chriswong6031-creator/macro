@@ -1,6 +1,6 @@
 """Commodity Vector signal engine.
 
-Per-asset signals for the core four (gold/silver/oil/copper):
+Per-asset signals for the configured commodity universe:
 
   PRICE LAYER (asset-agnostic, mirrors engine/btc_signals.py):
     momentum vote-ensemble [-1,+1], structure shift [-1,+1], saturating Risk
@@ -330,6 +330,27 @@ def gold_silver_ratio(gold_close: pd.Series, silver_close: pd.Series, cfg: dict)
     return out
 
 
+def relative_value(asset_close: pd.Series, anchor_close: pd.Series, cfg: dict,
+                   ratio_name: str = "value_ratio",
+                   low_label: str = "cheap", high_label: str = "rich") -> pd.DataFrame:
+    """Generic cross-commodity value signal. The ratio is asset / anchor; a LOW
+    percentile means the asset is cheap versus its anchor and therefore a
+    contrarian bullish value read. This fills the gap for added commodities whose
+    structural value anchor is not gold/silver or Brent-WTI."""
+    idx = asset_close.index.union(anchor_close.index)
+    a = asset_close.reindex(idx).ffill()
+    b = anchor_close.reindex(idx).ffill()
+    ratio = (a / b).replace([np.inf, -np.inf], np.nan).rename(ratio_name)
+    pct = _pctile(ratio, cfg["pctile_lookback_d"])
+    out = pd.DataFrame(index=idx)
+    out[ratio_name] = ratio
+    out["value_pctile"] = pct * 100
+    out["value_score"] = (-(out["value_pctile"] - 50.0) / 50.0).clip(-1, 1)
+    out["value_state"] = np.where(pct < cfg["low_pctile"], low_label,
+                         np.where(pct > cfg["high_pctile"], high_label, "neutral"))
+    return out
+
+
 # --------------------------------------------------------------------------- #
 # commodity-specific: residual shock engine (the "intelligent" exogenous detector)
 # --------------------------------------------------------------------------- #
@@ -469,5 +490,33 @@ def compute_all(inputs: dict | None = None) -> dict[str, pd.DataFrame]:
                                 cfg["gold_silver_ratio"])
         for a in ("gold", "silver"):
             results[a] = results[a].join(gsr.reindex(results[a].index))
+    # Cross-commodity value anchors for the expanded universe. These are
+    # deliberately relative, not absolute-price percentiles: platinum against
+    # gold, natural gas against oil, and each grain against the grain basket.
+    rv_cfg = cfg.get("relative_value", {})
+    if rv_cfg:
+        if {"gold", "platinum"} <= results.keys():
+            rv = relative_value(results["platinum"]["close"], results["gold"]["close"], rv_cfg,
+                                "platinum_gold", "platinum_cheap", "platinum_rich")
+            results["platinum"] = results["platinum"].join(rv.reindex(results["platinum"].index))
+        oil_anchor = "brent" if "brent" in results else "oil"
+        if {"natgas", oil_anchor} <= results.keys():
+            rv = relative_value(results["natgas"]["close"], results[oil_anchor]["close"], rv_cfg,
+                                "natgas_oil", "natgas_cheap", "natgas_rich")
+            results["natgas"] = results["natgas"].join(rv.reindex(results["natgas"].index))
+        grains = [a for a in ("corn", "wheat", "soybeans") if a in results]
+        if len(grains) >= 2:
+            idx = pd.DatetimeIndex(sorted(set().union(*[results[a].index for a in grains])))
+            normed = []
+            for a in grains:
+                s = results[a]["close"].reindex(idx).ffill()
+                normed.append(s / s.rolling(756, min_periods=60).median())
+            basket = pd.concat(normed, axis=1).mean(axis=1).rename("grain_basket")
+            for a in grains:
+                s = results[a]["close"].reindex(idx).ffill()
+                base = s.rolling(756, min_periods=60).median()
+                rv = relative_value(s / base, basket, rv_cfg, "grain_relative",
+                                    f"{a}_cheap", f"{a}_rich")
+                results[a] = results[a].join(rv.reindex(results[a].index))
     results["_complex"] = complex_regime({a: results[a] for a in inputs}, drivers, cfg)
     return results

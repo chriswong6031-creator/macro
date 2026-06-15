@@ -28,7 +28,7 @@ from engine.cycles import analyze  # noqa: E402
 from engine.playbook import SECTOR_NAMES  # noqa: E402
 from engine.setups import US_ALPHA_WEIGHT, rank_setups, setup_score  # noqa: E402
 from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
-from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
+from engine.technicals import chart_series, season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -103,6 +103,10 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
         "season_next": season_line(seas, month % 12 + 1),
         "season_this_zh": season_line(seas, month, zh=True),
         "season_next_zh": season_line(seas, month % 12 + 1, zh=True),
+        # close history for the China-safe local chart fallback (TradingView's
+        # embed is GFW-blocked there); the page draws this when the widget can't
+        # load. See templates/tvfallback.js.
+        "chart": chart_series(c),
         **res,
     }
     # per-ticker alert feed: a backfilled technical signal-change timeline with
@@ -268,6 +272,15 @@ def main() -> int:
             insider_map = json.loads(isp.read_text()) or {}
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("insider_signals.json unreadable (%s)", e)
+    # offshore-attention z (display-only over-extension caution chip; NEVER a scored leg —
+    # not threaded into setup_score). research/WIKI_ATTENTION_CHIP_SPEC.md.
+    attn_map: dict[str, dict] = {}
+    atp = site / "factordata" / "attention.json"
+    if atp.exists():
+        try:
+            attn_map = json.loads(atp.read_text()) or {}
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("attention.json unreadable (%s)", e)
     index, cand, built, failed = [], [], 0, 0
     for ticker, close, high, name, sector in universe():
         try:
@@ -284,6 +297,8 @@ def main() -> int:
             rec.update(fpanels[ticker])
         if flows.get(ticker):
             rec["fund_flows"] = flows[ticker]
+        if attn_map.get(ticker):            # net-new: offshore-attention caution chip (display-only)
+            rec["attention"] = attn_map[ticker]
         if alpha_pt.get(ticker):            # additive: absent => no alpha/setup for this name
             rec["alpha"] = alpha_pt[ticker]
             sc = setup_score(rec, alpha_weight=US_ALPHA_WEIGHT)

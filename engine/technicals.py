@@ -70,6 +70,17 @@ def snapshot(close: pd.Series) -> dict:
     }
 
 
+def chart_series(close: pd.Series, n: int = 504) -> dict:
+    """Compact columnar close history for the client-side chart (the last ~2y of
+    daily closes). The TradingView embed is GFW-blocked in mainland China, so the
+    stock/sector pages fall back to drawing the chart from OUR stored prices via
+    Lightweight Charts (open-source) — same 'the repo is the database' approach
+    the HK pages use. See templates/tvfallback.js."""
+    c = close.dropna().tail(n)
+    return {"t": [str(d.date()) for d in c.index],
+            "c": [round(float(v), 3) for v in c.values]}
+
+
 # ------------------------------------------------------------- seasonality ----
 
 def seasonality(close: pd.Series, min_years: int = 10) -> dict:

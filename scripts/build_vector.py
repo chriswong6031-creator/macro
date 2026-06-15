@@ -1023,8 +1023,16 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
     bonds = bonds or {"present": False}
     b_score = bonds.get("score")
     b_phase = bonds.get("phase") or ""
-    b_stat = ((f"{T('Health', '健康度')} {b_score}/100" if b_score is not None else T(bonds.get("label", "—"), TR(bonds.get("label", "—"))))
-              + ((" · " + T(b_phase, TR(b_phase))) if b_phase else ""))
+    # Build with Markup throughout: mixing a plain f-string (raw <span> HTML) with a
+    # Markup via `+` invokes Markup.__radd__, which escapes the plain part (the
+    # Health/score spans rendered as literal text). Markup.format leaves __html__
+    # operands (T()'s spans) untouched while keeping the whole result safe.
+    from markupsafe import Markup
+    b_stat = (Markup("{} {}/100").format(T('Health', '健康度'), b_score)
+              if b_score is not None
+              else Markup(T(bonds.get("label", "—"), TR(bonds.get("label", "—")))))
+    if b_phase:
+        b_stat = b_stat + Markup(" · ") + T(b_phase, TR(b_phase))
     bonds_card = ("" if not bonds.get("present") else f"""
   <a class="c" href="bonds.html">
     <div class="ico">\U0001F3DB️</div>

@@ -111,9 +111,8 @@
     <a class="nav-link" href="../etfs.html">🐳 {{ t('ETF flows', 'ETF 资金流') }}</a>
     <a class="nav-link" href="../china.html">🇨🇳 {{ t('China', '中国A股') }}</a>
     <a class="nav-link" href="../commodities.html">🛢 {{ t('Commodities', '大宗商品') }}</a>
-    <a class="nav-link" href="../discovery.html">🏆 {{ t('Alpha leaders', '阿尔法领先股') }}</a>
+    <a class="nav-link" href="../discovery.html">🏆 {{ t('Top Picks', '精选股') }}</a>
     <a class="nav-link" href="../brief.html">📰 {{ t('Brief', '简报') }}</a>
-    <a class="nav-link" href="../history.html">📈 {{ t('History', '历史') }}</a>
   </div>
   <div class="nav-search">
     <span class="mag">🔎</span>
@@ -249,8 +248,10 @@
     <div class="tv">
       <div class="tradingview-widget-container">
         <div id="tv_main"></div>
-        <script src="https://s3.tradingview.com/tv.js"></script>
-        <script>new TradingView.widget({"container_id":"tv_main","symbol":"{{ s.fund }}","interval":"D","theme":(localStorage.getItem('theme')==='light'?'light':'dark'),"style":"1","height":440,"width":"100%","hide_side_toolbar":true,"allow_symbol_change":true,"studies":["RSI@tv-basicstudies","MACD@tv-basicstudies"]});</script>
+        <!-- TradingView where reachable, else a local chart from our stored closes
+             (s.chart_json) — the embed is GFW-blocked in mainland China. -->
+        <script>window.__SECTOR_CHART={symbol:"{{ s.fund }}",chart:{{ s.chart_json | default('null', true) | safe }},height:440,studies:true};</script>
+        <script src="tvfallback.js"></script>
       </div>
     </div>
   </div>

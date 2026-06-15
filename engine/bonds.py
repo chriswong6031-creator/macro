@@ -471,6 +471,259 @@ def bonds_snapshot(f: pd.DataFrame, fr: pd.DataFrame | None = None) -> dict:
     return snap
 
 
+# --- China / Hong Kong regional bond-health layer ---------------------------
+def _store_series(group: str, name: str, col: str = "close") -> pd.Series | None:
+    df = store.read(group, name)
+    if df is None or df.empty or col not in df.columns:
+        return None
+    return df[col].dropna()
+
+
+def _put_aligned(out: pd.DataFrame, name: str, s: pd.Series | None, limit: int | None = 5) -> None:
+    if s is None or s.empty:
+        out[name] = np.nan
+        return
+    s = s[~s.index.duplicated(keep="last")].sort_index()
+    union = out.index.union(s.index)
+    v = s.reindex(union)
+    if limit:
+        v = v.ffill(limit=limit)
+    out[name] = v.reindex(out.index)
+
+
+def _pctile_latest(s: pd.Series, window: int = 504) -> pd.Series:
+    if s is None or s.dropna().empty:
+        return pd.Series(dtype=float)
+    return pct_rank_window(s, window)
+
+
+def _regional_credit_impulse() -> pd.Series | None:
+    tsf = store.read("china_credit", "tsf")
+    if tsf is None or tsf.empty or "tsf_total" not in tsf.columns:
+        return None
+    t = tsf["tsf_total"].dropna()
+    if len(t) < 24:
+        return None
+    return t.rolling(12).sum().pct_change(12) * 100.0
+
+
+def _regional_southbound_20d() -> pd.Series | None:
+    sb = store.read("china_connect", "southbound")
+    if sb is None or sb.empty or "net" not in sb.columns:
+        return None
+    return sb["net"].dropna().rolling(20, min_periods=10).sum()
+
+
+def china_hk_bond_frame() -> pd.DataFrame:
+    """Daily China/HK regional bond-health proxies.
+
+    The US dashboard has direct curve/credit/MOVE/funding plumbing series. China
+    and Hong Kong do not have equally free, equally deep public substitutes in this
+    repo, so this frame is explicit proxy work: China interbank/rate curve, TSF
+    credit impulse, China/HK breadth, CNH/HKD FX pressure, Southbound flow, HKMA
+    aggregate balance/HIBOR and VHSI. Missing legs renormalize out.
+    """
+    anchors = [
+        _store_series("china_macro", "rates", "rate_1y"),
+        _store_series("china", "000001.SS"),
+        _store_series("hk", "^HSI"),
+        _store_series("hk", "HKD=X"),
+    ]
+    anchors = [s for s in anchors if s is not None and not s.empty]
+    if not anchors:
+        return pd.DataFrame()
+    start = min(s.index.min() for s in anchors)
+    end = max(s.index.max() for s in anchors)
+    out = pd.DataFrame(index=pd.bdate_range(start, end))
+
+    _put_aligned(out, "china_rate_1y", _store_series("china_macro", "rates", "rate_1y"), 10)
+    _put_aligned(out, "china_rate_3m", _store_series("china_macro", "rates", "rate_3m"), 10)
+    out["china_curve_1y3m"] = out["china_rate_1y"] - out["china_rate_3m"]
+
+    _put_aligned(out, "credit_impulse", _regional_credit_impulse(), 40)
+    _put_aligned(out, "southbound_20d", _regional_southbound_20d(), 5)
+    _put_aligned(out, "usdcny", _store_series("china", "CNY_X"), 5)
+    _put_aligned(out, "usdhkd", _store_series("hk", "HKD_X"), 5)
+    _put_aligned(out, "vhsi", _store_series("hk", "^HSIL"), 5)
+
+    br_cn = store.read("china_breadth", "breadth")
+    br_hk = store.read("hk_breadth", "breadth")
+    _put_aligned(out, "china_pct_above_200", br_cn["pct_above_200"] if br_cn is not None and "pct_above_200" in br_cn else None, 5)
+    _put_aligned(out, "hk_pct_above_200", br_hk["pct_above_200"] if br_hk is not None and "pct_above_200" in br_hk else None, 5)
+    _put_aligned(out, "china_pct_above_50", br_cn["pct_above_50"] if br_cn is not None and "pct_above_50" in br_cn else None, 5)
+    _put_aligned(out, "hk_pct_above_50", br_hk["pct_above_50"] if br_hk is not None and "pct_above_50" in br_hk else None, 5)
+
+    hkma = store.read("hkma", "interbank_liquidity")
+    if hkma is not None:
+        _put_aligned(out, "agg_balance", hkma["agg_balance"] if "agg_balance" in hkma else None, 5)
+        _put_aligned(out, "hibor_1m", hkma["hibor_1m"] if "hibor_1m" in hkma else None, 5)
+        _put_aligned(out, "hibor_on", hkma["hibor_on"] if "hibor_on" in hkma else None, 5)
+        _put_aligned(out, "hk_base_rate", hkma["base_rate"] if "base_rate" in hkma else None, 5)
+    else:
+        for col in ["agg_balance", "hibor_1m", "hibor_on", "hk_base_rate"]:
+            out[col] = np.nan
+
+    out["usdcny_60d_chg"] = out["usdcny"].pct_change(60) * 100.0
+    out["hkd_weak_pressure"] = ((out["usdhkd"] - 7.75) / (7.85 - 7.75) * 100.0).clip(0, 100)
+    out["agg_balance_60d_chg"] = out["agg_balance"].pct_change(60) * 100.0
+    out["hibor_1m_pctile"] = _pctile_latest(out["hibor_1m"], 504).reindex(out.index)
+
+    # Proxy stress legs, 0 = calm and 100 = maximum stress.
+    out["stress_curve"] = out["china_curve_1y3m"].map(
+        lambda v: _interp([-0.5, 0.0, 0.35, 0.8, 1.5], [100, 80, 45, 20, 0], v)
+    )
+    out["stress_credit_impulse"] = out["credit_impulse"].map(
+        lambda v: _interp([-30, -12, 0, 12, 30], [100, 75, 50, 25, 0], v)
+    )
+    breadth = pd.concat([out["china_pct_above_200"], out["hk_pct_above_200"]], axis=1).mean(axis=1)
+    out["stress_breadth"] = (100.0 - breadth).clip(0, 100)
+    cny_pct = _pctile_latest(out["usdcny"], 504).reindex(out.index) * 100.0
+    out["stress_fx"] = pd.concat([cny_pct, out["hkd_weak_pressure"]], axis=1).mean(axis=1)
+    hkd_liq = out["agg_balance_60d_chg"].map(lambda v: _interp([-30, -15, 0, 15], [100, 75, 35, 0], v))
+    hibor = out["hibor_1m_pctile"] * 100.0
+    out["stress_hk_funding"] = pd.concat([hkd_liq, hibor, out["hkd_weak_pressure"]], axis=1).mean(axis=1)
+    out["stress_hk_vol"] = out["vhsi"].map(lambda v: _interp([12, 20, 30, 45], [0, 35, 70, 100], v))
+    south = out["southbound_20d"].map(lambda v: _interp([-80000, -25000, 0, 25000, 80000], [100, 75, 50, 25, 0], v))
+    out["stress_southbound"] = south
+
+    weights = {
+        "stress_curve": 0.8,
+        "stress_credit_impulse": 1.1,
+        "stress_breadth": 0.9,
+        "stress_fx": 0.8,
+        "stress_hk_funding": 0.9,
+        "stress_hk_vol": 0.7,
+        "stress_southbound": 0.6,
+    }
+    legs = out[list(weights)]
+    w = pd.Series(weights)
+    den = legs.notna().mul(w, axis=1).sum(axis=1)
+    stress = legs.fillna(0).mul(w, axis=1).sum(axis=1) / den.replace(0, np.nan)
+    out["health_score"] = (100.0 - stress).clip(0, 100)
+    return out
+
+
+def china_hk_bond_snapshot(fr: pd.DataFrame | None = None) -> dict:
+    bcfg = config.load()["bonds"]["health"]
+    fr = fr if fr is not None else china_hk_bond_frame()
+    d = fr.dropna(how="all")
+    row = d.iloc[-1] if not d.empty else pd.Series(dtype=float)
+
+    def g(name):
+        v = row.get(name)
+        return None if v is None or pd.isna(v) else float(v)
+
+    hs = g("health_score")
+    label = (None if hs is None else
+             ("healthy" if hs >= bcfg["healthy_score"] else
+              ("stressed" if hs < bcfg["stressed_score"] else "mixed")))
+    curve = g("china_curve_1y3m")
+    impulse = g("credit_impulse")
+    breadth = np.nanmean([g("china_pct_above_200"), g("hk_pct_above_200")])
+    phase = (
+        "policy_support" if (impulse is not None and impulse > 8 and (curve is None or curve >= 0)) else
+        "funding_stress" if (g("stress_hk_funding") is not None and g("stress_hk_funding") >= 70) else
+        "risk_repair" if (pd.notna(breadth) and breadth >= 55 and (impulse is None or impulse >= 0)) else
+        "fragile"
+    )
+    snap = {
+        "as_of": d.index.max().strftime("%Y-%m-%d") if not d.empty else None,
+        "market": "china_hk",
+        "health_score": None if hs is None else round(hs),
+        "health_label": label,
+        "cycle_phase": phase,
+        "verdict_en": "",
+        "verdict_zh": "",
+        "pillars": {
+            "rates": {
+                "china_rate_1y": g("china_rate_1y"),
+                "china_rate_3m": g("china_rate_3m"),
+                "china_curve_1y3m": curve,
+            },
+            "credit_liquidity": {
+                "credit_impulse": impulse,
+                "southbound_20d": g("southbound_20d"),
+            },
+            "market_health": {
+                "china_pct_above_200": g("china_pct_above_200"),
+                "hk_pct_above_200": g("hk_pct_above_200"),
+                "china_pct_above_50": g("china_pct_above_50"),
+                "hk_pct_above_50": g("hk_pct_above_50"),
+            },
+            "fx_funding": {
+                "usdcny": g("usdcny"),
+                "usdcny_60d_chg": g("usdcny_60d_chg"),
+                "usdhkd": g("usdhkd"),
+                "hkd_weak_pressure": g("hkd_weak_pressure"),
+                "agg_balance": g("agg_balance"),
+                "agg_balance_60d_chg": g("agg_balance_60d_chg"),
+                "hibor_1m": g("hibor_1m"),
+                "vhsi": g("vhsi"),
+            },
+        },
+        "stress_legs": {k.replace("stress_", ""): g(k) for k in fr.columns
+                        if k.startswith("stress_") and g(k) is not None},
+    }
+    snap["alarms"] = _regional_alarms(snap)
+    snap["verdict_en"], snap["verdict_zh"] = _regional_verdict(snap)
+    return snap
+
+
+def _regional_alarms(s: dict) -> list[dict]:
+    out = []
+    fx = s["pillars"]["fx_funding"]
+    liq = s["pillars"]["credit_liquidity"]
+    mh = s["pillars"]["market_health"]
+    if fx.get("hkd_weak_pressure") is not None and fx["hkd_weak_pressure"] >= 85:
+        out.append({"key": "hkd_weak_side", "severity": "high",
+                    "en": "HKD is near the weak side of the peg — HKMA defense can drain HK liquidity.",
+                    "zh": "港元接近联系汇率弱方 — 金管局防守可能抽走香港流动性。"})
+    if fx.get("agg_balance_60d_chg") is not None and fx["agg_balance_60d_chg"] <= -15:
+        out.append({"key": "hkma_liquidity", "severity": "medium",
+                    "en": "HK aggregate balance has fallen sharply over 60 trading days.",
+                    "zh": "香港银行体系总结余在60个交易日内明显下降。"})
+    if liq.get("credit_impulse") is not None and liq["credit_impulse"] < -5:
+        out.append({"key": "credit_impulse", "severity": "medium",
+                    "en": "China credit impulse is contracting — liquidity support is fading.",
+                    "zh": "中国信用脉冲收缩 — 流动性支持减弱。"})
+    if liq.get("southbound_20d") is not None and liq["southbound_20d"] < -25000:
+        out.append({"key": "southbound_outflow", "severity": "medium",
+                    "en": "Southbound flow is negative over 20 trading days — mainland bid into HK is fading.",
+                    "zh": "南向资金20个交易日为净流出 — 内地对港股买盘减弱。"})
+    cn_b = mh.get("china_pct_above_200")
+    hk_b = mh.get("hk_pct_above_200")
+    if cn_b is not None and hk_b is not None and min(cn_b, hk_b) < 30:
+        out.append({"key": "breadth", "severity": "medium",
+                    "en": "China/HK market breadth is weak under the 200-day trend.",
+                    "zh": "中国/香港市场位于200日趋势上方的比例偏弱。"})
+    return out
+
+
+_REGIONAL_PHASE = {
+    "policy_support": ("Policy-support window", "政策支持窗口"),
+    "risk_repair": ("Risk repair", "风险修复"),
+    "funding_stress": ("HK funding stress", "香港资金压力"),
+    "fragile": ("Fragile", "脆弱"),
+}
+
+
+def _regional_verdict(s: dict) -> tuple[str, str]:
+    label = s.get("health_label") or "—"
+    label_zh = {"healthy": "健康", "mixed": "中性", "stressed": "承压"}.get(label, label)
+    ph_en, ph_zh = _REGIONAL_PHASE.get(s.get("cycle_phase"), (s.get("cycle_phase") or "—", s.get("cycle_phase") or "—"))
+    liq = s["pillars"]["credit_liquidity"]
+    fx = s["pillars"]["fx_funding"]
+    en = [f"China/HK bond-health proxy {label} ({s.get('health_score')}/100), {ph_en}."]
+    zh = [f"中国/香港债券健康代理{label_zh}（{s.get('health_score')}/100），{ph_zh}。"]
+    if liq.get("credit_impulse") is not None:
+        en.append(f"China credit impulse {liq['credit_impulse']:.1f}%.")
+        zh.append(f"中国信用脉冲 {liq['credit_impulse']:.1f}%。")
+    if fx.get("hkd_weak_pressure") is not None:
+        en.append(f"HKD weak-side pressure {fx['hkd_weak_pressure']:.0f}/100.")
+        zh.append(f"港元弱方压力 {fx['hkd_weak_pressure']:.0f}/100。")
+    return " ".join(en), "".join(zh)
+
+
 # --- synthesis: alarms, verdict, cross-asset hand-off ------------------------
 def _alarms(s: dict) -> list[dict]:
     """The transition triggers that are firing — the high-signal watch-items."""

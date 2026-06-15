@@ -190,8 +190,10 @@ def factor_panel(asset: str, sig: pd.DataFrame, drivers: dict,
     # --- value / positioning / shock --------------------------------------- #
     if asset in ("gold", "silver") and "gsr_pctile" in sig:
         f["value"] = _VALUE_SIGN[asset] * ((sig["gsr_pctile"] - 50.0) / 50.0)
-    elif asset == "oil" and "bw_spread_pctile" in sig:
-        f["value"] = ((sig["bw_spread_pctile"] - 50.0) / 50.0)        # widening = bullish
+    elif asset in ("oil", "brent") and "bw_spread_pctile" in sig:
+        f["value"] = ((sig["bw_spread_pctile"] - 50.0) / 50.0)        # widening = global tightness
+    elif "value_score" in sig:
+        f["value"] = sig["value_score"].clip(-1, 1)                  # generic relative value
     if "pos_pctile" in sig:                          # crowded short = contrarian bullish
         f["positioning"] = (-(sig["pos_pctile"] - 50.0) / 50.0)
     if "shock_z" in sig:
@@ -294,7 +296,11 @@ def cycle_segments(close: pd.Series, min_amp: float = 0.20) -> list[dict]:
 
 # per-asset cycle amplitude (more volatile commodities need a larger swing to count
 # a "major" leg). Refined by scripts.research_commodity_conviction -> calibration json.
-_CYCLE_AMP = {"gold": 0.18, "silver": 0.28, "copper": 0.24, "oil": 0.32}
+_CYCLE_AMP = {
+    "gold": 0.18, "silver": 0.28, "platinum": 0.28, "copper": 0.24,
+    "oil": 0.32, "brent": 0.32, "natgas": 0.45,
+    "corn": 0.25, "wheat": 0.30, "soybeans": 0.25,
+}
 
 
 def cycle_position(close: pd.Series, asset: str, min_amp: float = 0.20) -> dict:
@@ -371,9 +377,13 @@ _PRIOR = {
 def default_weights(asset: str) -> dict:
     w = dict(_PRIOR)
     # apply known inversions from the commodity calibration (mirrors commodity_mtf)
-    if asset == "oil":
+    if asset in ("oil", "brent", "natgas"):
         w["trend"] = -abs(w["trend"])
         w["shock"] = -abs(w["shock"])
+    if asset in ("corn", "wheat", "soybeans"):
+        w["riskoff"] = 0.0
+        w["growth"] = 0.0
+        w["inflation"] = abs(w["inflation"])
     if asset == "silver":
         w["positioning"] = abs(w["positioning"])
     return w

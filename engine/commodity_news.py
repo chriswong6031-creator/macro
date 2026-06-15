@@ -36,8 +36,14 @@ GDELT_URL = "https://api.gdeltproject.org/api/v2/doc/doc"
 COMMODITY_QUERY = {
     "gold":   '(gold OR bullion OR XAU)',
     "silver": '(silver OR XAG)',
+    "platinum": '(platinum OR XPT)',
     "oil":    '(oil OR crude OR WTI OR Brent OR OPEC)',
+    "brent":  '(Brent OR crude OR oil OR OPEC)',
+    "natgas": '("natural gas" OR LNG OR "gas storage")',
     "copper": '(copper OR "COMEX copper")',
+    "corn":   '(corn OR maize OR "CBOT corn")',
+    "wheat":  '(wheat OR "CBOT wheat")',
+    "soybeans": '(soybeans OR soybean OR "CBOT soybeans")',
 }
 _CONF_RANK = {"low": 0, "medium": 1, "high": 2}
 
@@ -245,13 +251,13 @@ def upcoming_catalysts(today: date | None = None, horizon_days: int = 14) -> lis
         dd = date.fromisoformat(d)
         if today <= dd <= end:
             out.append({"type": "FOMC", "date": d, "time_et": "14:00",
-                        "label": f"FOMC decision{tag}", "assets": ["gold", "silver", "oil", "copper"],
+                        "label": f"FOMC decision{tag}", "assets": ["gold", "silver", "platinum", "oil", "brent", "natgas", "copper", "corn", "wheat", "soybeans"],
                         "source": "static", "is_context_only": True})
     for d in _OPEC_2026:
         dd = date.fromisoformat(d)
         if today <= dd <= end:
             out.append({"type": "OPEC", "date": d, "time_et": "",
-                        "label": "OPEC ministerial meeting", "assets": ["oil"],
+                        "label": "OPEC ministerial meeting", "assets": ["oil", "brent"],
                         "source": "static", "is_context_only": True})
     # EIA WPSR — every Wednesday 10:30 ET (Thu on holiday-slip weeks)
     d = today
@@ -261,7 +267,7 @@ def upcoming_catalysts(today: date | None = None, horizon_days: int = 14) -> lis
             day = d + timedelta(days=1) if slip else d
             out.append({"type": "EIA_WPSR", "date": day.isoformat(),
                         "time_et": "12:00" if slip else "10:30",
-                        "label": "EIA crude/petroleum inventories", "assets": ["oil"],
+                        "label": "EIA crude/petroleum inventories", "assets": ["oil", "brent"],
                         "source": "static", "is_context_only": True})
         d += timedelta(days=1)
     out.sort(key=lambda c: c["date"])

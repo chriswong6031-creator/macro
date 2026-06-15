@@ -1,45 +1,106 @@
 {
-  "date": "Jun 12, 2026",
+  "date": "Jun 15, 2026",
   "regime": "Goldilocks",
   "favored": [
     "Gold",
-    "Copper"
+    "Copper",
+    "Soybeans"
   ],
   "assets": {
     "gold": {
       "label": "Gold",
-      "price": 4215.0,
-      "chg": -10.3,
+      "price": 4348.1,
+      "chg": -7.1,
       "alloc": 0,
       "risk": "Elevated",
       "trend": "up",
       "action": "STRONG SELL",
-      "conviction": -23.4
+      "conviction": -19.1
     },
     "silver": {
       "label": "Silver",
-      "price": 67.86,
-      "chg": -23.7,
+      "price": 70.53,
+      "chg": -16.9,
       "alloc": 0,
       "risk": "Elevated",
       "trend": "up",
-      "action": "STRONG SELL",
-      "conviction": -36.2
+      "action": "SELL",
+      "conviction": -21.5
+    },
+    "platinum": {
+      "label": "Platinum",
+      "price": 1775.8,
+      "chg": -14.8,
+      "alloc": 0,
+      "risk": "Elevated",
+      "trend": "up",
+      "action": "HOLD",
+      "conviction": -16.9
     },
     "copper": {
       "label": "Copper",
-      "price": 6.43,
-      "chg": -3.1,
-      "alloc": 0,
+      "price": 6.55,
+      "chg": -0.3,
+      "alloc": 50,
       "risk": "Elevated",
       "trend": "up",
       "action": "STRONG BUY",
-      "conviction": 18.7
+      "conviction": 19.6
     },
     "oil": {
       "label": "Oil \u00b7 WTI",
-      "price": 84.88,
-      "chg": -16.0,
+      "price": 80.6,
+      "chg": -20.3,
+      "alloc": 0,
+      "risk": "Elevated",
+      "trend": "up",
+      "action": "SELL",
+      "conviction": -18.8
+    },
+    "brent": {
+      "label": "Oil \u00b7 Brent",
+      "price": 83.36,
+      "chg": -21.2,
+      "alloc": 0,
+      "risk": "Elevated",
+      "trend": "up",
+      "action": "SELL",
+      "conviction": -31.7
+    },
+    "natgas": {
+      "label": "Natural Gas",
+      "price": 3.06,
+      "chg": 5.7,
+      "alloc": 50,
+      "risk": "Calm",
+      "trend": "down",
+      "action": "HOLD",
+      "conviction": 7.1
+    },
+    "corn": {
+      "label": "Corn",
+      "price": 409.5,
+      "chg": -9.3,
+      "alloc": 0,
+      "risk": "Elevated",
+      "trend": "down",
+      "action": "SELL",
+      "conviction": -34.6
+    },
+    "wheat": {
+      "label": "Wheat",
+      "price": 580.0,
+      "chg": -10.4,
+      "alloc": 0,
+      "risk": "Elevated",
+      "trend": "up",
+      "action": "SELL",
+      "conviction": -27.2
+    },
+    "soybeans": {
+      "label": "Soybeans",
+      "price": 1133.5,
+      "chg": -3.5,
       "alloc": 0,
       "risk": "Elevated",
       "trend": "up",

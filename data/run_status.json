@@ -1,14 +1,14 @@
 {
-  "last_run": "2026-06-13T22:31:02.823505+00:00",
+  "last_run": "2026-06-15T04:40:20.075019+00:00",
   "sources": {
     "cot": {
       "source": "cot",
-      "status": "failed",
-      "rows": 0,
-      "last_date": null,
-      "error": "RuntimeError: all COT markets failed: ['es_spx: HTTP 503', 'nasdaq: HTTP 503', 'ust10y: HTTP 503', 'dollar: HTTP 503', 'gold: HTTP 503', 'copper: HTTP 503', 'silver: HTTP 503', 'oil: HTTP 503', 'bitcoin: HTTP 503', 'euro_fx: HTTP 503', 'yen: HTTP 503', 'pound: HTTP 503', 'aussie: HTTP 503', 'cad: HTTP 503', 'swiss: HTTP 503', 'peso: HTTP 503', 'real: HTTP 503']",
+      "status": "ok",
+      "rows": 33689,
+      "last_date": "2026-06-09",
+      "error": null,
       "notes": [],
-      "checked_at": "2026-06-13T22:31:02.823531+00:00"
+      "checked_at": "2026-06-15T04:40:20.075040+00:00"
     },
     "fred": {
       "source": "fred",
@@ -22,11 +22,11 @@
     "yahoo": {
       "source": "yahoo",
       "status": "ok",
-      "rows": 956,
-      "last_date": "2026-06-13",
+      "rows": 365323,
+      "last_date": "2026-06-15",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-13T13:04:07.433952+00:00"
+      "checked_at": "2026-06-15T04:38:37.840835+00:00"
     },
     "treasury": {
       "source": "treasury",
@@ -358,7 +358,7 @@
     "treasury": 0,
     "breadth": 0,
     "nyfed": 0,
-    "cot": 1,
+    "cot": 0,
     "cboe_putcall": 0,
     "cboe_gex": 0,
     "sentiment_naaim": 0,

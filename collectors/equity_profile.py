@@ -11,7 +11,7 @@ slowly; descriptions barely move):
                           → a one-paragraph "what it does" business description
 
 Writes data/profile/profiles.parquet (ticker-indexed: description, sic_description,
-exchange, hq, name, source, as_of). engine/stock_fundamentals reads it into the
+exchange, hq, name, source, as_of, wiki_title). engine/stock_fundamentals reads it into the
 Profile block; a missing row just leaves those chips empty (the page already
 guards for that). Resumable: only tickers absent from the cache (or older than
 refresh_days) are fetched, capped at max_new per run, so a weekly job drips
@@ -355,17 +355,24 @@ def _wiki_summary(title: str, headers: dict) -> dict | None:
         return None
 
 
-def _wiki_description(*names: str, max_check: int = 6) -> str | None:
-    """One-paragraph business description via Wikipedia REST. opensearch ranks a
-    namesake court case / town / chemical above the company for many tickers
-    (especially ALL-CAPS SEC names), so we walk the top candidates of each search
-    term, validate each as a company page, and keep the BEST name match — a full
-    match short-circuits; a mere partial ("Antero Resources" for "Antero
-    Midstream") is rejected so a wrong sibling never wins by ranking first."""
+def _wiki_page(*names: str, max_check: int = 6) -> tuple[str | None, str | None]:
+    """Resolve the company's Wikipedia page → (one-paragraph description, page TITLE).
+    opensearch ranks a namesake court case / town / chemical above the company for
+    many tickers (especially ALL-CAPS SEC names), so we walk the top candidates of
+    each search term, validate each as a company page, and keep the BEST name match —
+    a full match short-circuits; a mere partial ("Antero Resources" for "Antero
+    Midstream") is rejected so a wrong sibling never wins by ranking first.
+
+    The TITLE is returned alongside the description so downstream consumers
+    (collectors.wiki_pageviews) can request offshore pageviews for the SAME validated
+    page without re-incurring the wrong-namesake resolution. Title is non-None exactly
+    when a company page was accepted (score≥2); description may still be empty/None if
+    the extract trimmed away."""
     headers = {"User-Agent": WIKI_UA, "Accept": "application/json"}
     seen: set[str] = set()
     checked = 0
     best_extract: str | None = None
+    best_title: str | None = None
     best_score = 0
     for term in _search_terms(*names):
         r = _get(WIKI_OPENSEARCH.format(quote(term)), headers)
@@ -391,16 +398,31 @@ def _wiki_description(*names: str, max_check: int = 6) -> str | None:
             s = _wiki_summary(title, headers)
             if not s or not _is_company_page(s, *names):
                 continue
-            score = _match_score(s.get("title") or title, *names)
+            ttl = s.get("title") or title
+            score = _match_score(ttl, *names)
             if score >= 3:                      # an unambiguous full-name match
-                return _trim(s.get("extract") or "") or None
+                return (_trim(s.get("extract") or "") or None), ttl
             if score > best_score:              # keep the strongest partial seen
-                best_score, best_extract = score, s.get("extract") or ""
+                best_score, best_extract, best_title = score, s.get("extract") or "", ttl
         if checked >= max_check:
             break
     # accept a held candidate only if it matched the WHOLE distinctive name (>=2);
     # a score-1 partial is the wrong-sibling smell → leave it blank.
-    return (_trim(best_extract or "") or None) if best_score >= 2 else None
+    if best_score >= 2:
+        return (_trim(best_extract or "") or None), best_title
+    return None, None
+
+
+def _wiki_description(*names: str, max_check: int = 6) -> str | None:
+    """Back-compat shim: the description half of `_wiki_page` (title dropped)."""
+    return _wiki_page(*names, max_check=max_check)[0]
+
+
+def resolve_wiki_title(*names: str) -> str | None:
+    """Public: the validated company Wikipedia page TITLE for these name(s), or None.
+    Used by collectors.wiki_pageviews as the per-ticker fallback when the cached
+    profiles.parquet `wiki_title` column has not yet been populated by a re-fetch."""
+    return _wiki_page(*names)[1]
 
 
 def fetch_profiles(force: bool = False, max_new: int = 250,
@@ -437,7 +459,9 @@ def fetch_profiles(force: bool = False, max_new: int = 250,
             rec.update(_sec_submission(cik[t]))    # may overwrite name with the SEC entity
         # Search the clean display name FIRST, the (ALL-CAPS) SEC name as backup:
         # "MICROSOFT CORP" ranks the EU antitrust case ahead of the company.
-        rec["description"] = _wiki_description(display, rec.get("name"))
+        # Persist the resolved page TITLE too (additive `wiki_title` column) so the
+        # offshore-attention collector reuses this namesake-robust resolution.
+        rec["description"], rec["wiki_title"] = _wiki_page(display, rec.get("name"))
         rec["source"] = "wikipedia+sec"
         rows.append(rec)
 

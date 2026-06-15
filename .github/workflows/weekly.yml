@@ -71,8 +71,13 @@ jobs:
           run_py "regime engine (engine.run)" engine.run
           run_py "macro dashboard (build_site)" scripts.build_site
           run_py "daily brief" scripts.daily_brief
+          # descriptive A-share fundamentals (akshare, keyless) — refresh high-value
+          # names + widen the universe ~150/run; the China build reads the cache.
+          run_py "china fundamentals (subset)" collectors.china_fundamentals
+          run_py "china fundamentals (widen)" collectors.china_fundamentals --all --limit 150
           run_py "calibrate china" scripts.calibrate_china
           run_py "build china" scripts.build_china
+          run_py "hk fundamentals" collectors.hk_fundamentals
           run_py "calibrate hk" scripts.calibrate_hk
           run_py "build hk" scripts.build_hk
           run_py "calibrate commodities" scripts.calibrate_commodities

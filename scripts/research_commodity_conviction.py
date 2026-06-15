@@ -38,7 +38,7 @@ from engine import commodity_conviction as CC  # noqa: E402
 
 SPLIT = "2013-01-01"          # split-half boundary (matches signal calibration meta)
 HORIZONS = (63, 126)          # commodities are slow — judge at 3-6 months
-ASSETS = ["gold", "silver", "copper", "oil"]
+ASSETS = list(config.load()["commodities"]["assets"])
 # total weight mass reserved for the cheap PANEL factors (the rest goes to the live
 # confirmation factors cycle/mtf/alerts, added at verdict time).
 PANEL_MASS = 0.80

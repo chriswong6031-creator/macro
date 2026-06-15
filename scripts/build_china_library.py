@@ -20,10 +20,11 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from engine import i18n  # noqa: E402
 from engine.cycles import analyze  # noqa: E402
 from engine.residual_alpha import compute_residual_alpha  # noqa: E402
 from engine.setups import CN_ALPHA_WEIGHT, rank_setups, setup_score  # noqa: E402
-from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
+from engine.technicals import chart_series, season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -60,6 +61,9 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
         "season_next": season_line(seas, month % 12 + 1),
         "season_this_zh": season_line(seas, month, zh=True),
         "season_next_zh": season_line(seas, month % 12 + 1, zh=True),
+        # close history for the China-safe local chart fallback (the TradingView
+        # embed is blocked from mainland IPs). See templates/tvfallback.js.
+        "chart": chart_series(c),
         **res,
     }
 
@@ -140,6 +144,202 @@ def compute_china_alpha() -> dict | None:
     return alpha
 
 
+def compute_china_reversal() -> dict | None:
+    """The "Mean-reversion watch" — the VALIDATED A-share stock signal (3-month
+    within-sector deepest dips, screened for ST/delisting + a market-cap floor).
+    engine/china_reversal.py; reports/china-reversal-phase0.md. Best-effort: every
+    failure path degrades to None, never raises."""
+    from engine.china_reversal import reversal_watch
+    dd = config.data_dir()
+    cp = dd / "china_search" / "closes.parquet"
+    mp = dd / "china_search" / "members.parquet"
+    if not (cp.exists() and mp.exists()):
+        log.warning("china reversal: search panel missing — skipped")
+        return None
+    try:
+        closes = pd.read_parquet(cp).sort_index()
+        closes = closes.loc[:, ~closes.columns.duplicated()]
+        members = pd.read_parquet(mp)
+    except Exception as e:  # noqa: BLE001 — corrupt committed parquet must not break the build
+        log.warning("china reversal: panel unreadable (%s) — skipped", e)
+        return None
+    tkr_sector = {t: (s if s != JUNK_SECTOR else "—") for t, s in members["sector"].items()}
+    tkr_name = {t: str(n) for t, n in members["name"].items()}
+    tkr_name_zh = ({t: str(z) for t, z in members["name_zh"].items()}
+                   if "name_zh" in members.columns else {})
+    tkr_mktcap = ({t: float(v) for t, v in members["mktcap_yi"].items()}
+                  if "mktcap_yi" in members.columns else {})
+    try:
+        out = reversal_watch(closes, tkr_sector, tkr_name, tkr_name_zh=tkr_name_zh,
+                             tkr_mktcap=tkr_mktcap)
+    except Exception as e:  # noqa: BLE001 — additive leg, never fatal
+        log.warning("china reversal engine failed (%s) — skipped", e)
+        return None
+    if out:
+        log.info("china reversal watch: %d names, %d on watch (screened %s)",
+                 out.get("n"), len(out.get("watch", [])), out.get("screened"))
+    return out
+
+
+def compute_china_lowvol() -> dict | None:
+    """The "Defensive (low-vol)" sleeve — the validated A-share defensive tilt (lowest
+    trailing annualized volatility, screened for ST/delisting + a market-cap + vol floor).
+    engine/china_lowvol.py; reports/china-lowvol-phase0.md. Best-effort: every failure
+    path degrades to None, never raises."""
+    from engine.china_lowvol import lowvol_sleeve
+    dd = config.data_dir()
+    cp = dd / "china_search" / "closes.parquet"
+    mp = dd / "china_search" / "members.parquet"
+    if not (cp.exists() and mp.exists()):
+        log.warning("china lowvol: search panel missing — skipped")
+        return None
+    try:
+        closes = pd.read_parquet(cp).sort_index()
+        closes = closes.loc[:, ~closes.columns.duplicated()]
+        members = pd.read_parquet(mp)
+    except Exception as e:  # noqa: BLE001 — corrupt committed parquet must not break the build
+        log.warning("china lowvol: panel unreadable (%s) — skipped", e)
+        return None
+    tkr_sector = {t: (s if s != JUNK_SECTOR else "—") for t, s in members["sector"].items()}
+    tkr_name = {t: str(n) for t, n in members["name"].items()}
+    tkr_name_zh = ({t: str(z) for t, z in members["name_zh"].items()}
+                   if "name_zh" in members.columns else {})
+    tkr_mktcap = ({t: float(v) for t, v in members["mktcap_yi"].items()}
+                  if "mktcap_yi" in members.columns else {})
+    try:
+        out = lowvol_sleeve(closes, tkr_sector, tkr_name, tkr_name_zh=tkr_name_zh,
+                            tkr_mktcap=tkr_mktcap)
+    except Exception as e:  # noqa: BLE001 — additive leg, never fatal
+        log.warning("china lowvol engine failed (%s) — skipped", e)
+        return None
+    if out:
+        log.info("china lowvol: %d names, %d in sleeve (screened %s)",
+                 out.get("n"), len(out.get("sleeve", [])), out.get("screened"))
+    return out
+
+
+def compute_china_scoreboard() -> dict | None:
+    """Merge the per-stock screener JSONs (reversal / low-vol / alpha / setups, already
+    written to site/factordata/) into ONE toggle-ready scoreboard — the consolidation of
+    the scattered single-signal boards into a single switchable table. Each row is
+    enriched with the per-stock price + cycle state (read only for the ~union of listed
+    names, not all 800). Adds a CONFLUENCE mode = names appearing in BOTH the reversal and
+    low-vol screens (beaten-down AND defensive — 'safer rebound'; legs validated, the
+    intersection itself is honest context, not a backtested composite). Best-effort."""
+    site = config.ROOT / config.load()["storage"]["site_dir"]
+    fdir, cd = site / "factordata", site / "chinastockdata"
+
+    def load(f):
+        p = fdir / f
+        try:
+            return json.loads(p.read_text()) if p.exists() else {}
+        except Exception:  # noqa: BLE001
+            return {}
+    rev, lv = load("china_reversal.json"), load("china_lowvol.json")
+    al = load("china_alpha.json")
+    # the three screener boards the page currently shows, consolidated into one toggle
+    # (the momentum-reweight 'setups' feeds the separate Standout card strip, not here)
+    raw = {"reversal": rev.get("watch", []), "lowvol": lv.get("sleeve", []),
+           "alpha": (al.get("top", []) or [])[:16]}
+    if not any(raw.values()):
+        return None
+
+    # per-stock price + cycle, only for the names actually listed (small read, not 800)
+    look: dict[str, dict] = {}
+    for t in {r["ticker"] for rows in raw.values() for r in rows}:
+        p = cd / f"{t.replace('=', '_').replace('^', '_')}.json"
+        if not p.exists():
+            continue
+        try:
+            r = json.loads(p.read_text())
+        except Exception:  # noqa: BLE001
+            continue
+        lad = r.get("ladder", {})
+        cyc = lad.get("label") or lad.get("state")
+        look[t] = {"price": r.get("tech", {}).get("price"),
+                   "cycle": cyc,
+                   "cycle_zh": lad.get("label_zh") or (i18n.tr(cyc) if cyc else None),
+                   "cycle_dir": lad.get("dir")}
+
+    def enrich(rows):
+        return [{**rec, **look.get(rec["ticker"], {})} for rec in rows]
+    modes = {k: enrich(v) for k, v in raw.items()}
+    return {"as_of": rev.get("as_of") or lv.get("as_of") or al.get("as_of"), "modes": modes}
+
+
+def _spark_svg(vals: list[float], color: str = "var(--link)",
+               w: int = 240, h: int = 42) -> str:
+    """Tiny theme-aware inline sparkline (area + line + last-point dot) — the same
+    shape build_site._mini_svg draws for the US standout cards, replicated here to
+    avoid importing the heavy build_site module. `vals` = a clean recent close list."""
+    vals = [float(v) for v in vals if v is not None and v == v]
+    if len(vals) < 2:
+        return ""
+    lo, hi = min(vals), max(vals)
+    rng = (hi - lo) or 1.0
+    n, pad = len(vals), h * 0.12
+
+    def xy(i, v):
+        return (i / (n - 1) * w, (h - pad) - ((v - lo) / rng) * (h - 2 * pad) + pad)
+
+    pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in (xy(i, v) for i, v in enumerate(vals)))
+    lx, ly = xy(n - 1, vals[-1])
+    return (f'<svg class="nch" viewBox="0 0 {w} {h}" preserveAspectRatio="none" '
+            f'width="100%" height="{h}">'
+            f'<polyline points="0,{h} {pts} {w},{h}" fill="{color}" opacity="0.12" stroke="none"/>'
+            f'<polyline points="{pts}" fill="none" stroke="{color}" stroke-width="1.7" '
+            f'stroke-linejoin="round" stroke-linecap="round"/>'
+            f'<circle cx="{lx:.1f}" cy="{ly:.1f}" r="2.6" fill="{color}"/></svg>')
+
+
+def compute_china_standouts(setups: dict | None, reversal: dict | None,
+                            lowvol: dict | None) -> dict | None:
+    """Enrich the reversal-led `setups.buy` shortlist into US-parity 'Standout
+    individual stocks' CARDS — adds per-stock price + off-52w-high + a compact
+    price sparkline, plus a CHINA-UNIQUE 'confluence' flag = a name that sits in
+    BOTH the validated screens (a deep-dip reversal candidate that is ALSO a low-vol
+    defensive name → a structurally 'safer rebound'; both legs are validated, the
+    intersection is honest context, not a backtested composite). Best-effort: returns
+    the setups dict with each buy row enriched; missing fields just don't render."""
+    if not setups or not setups.get("buy"):
+        return setups
+    site = config.ROOT / config.load()["storage"]["site_dir"]
+    cd = site / "chinastockdata"
+    rev_tk = {r["ticker"] for r in (reversal or {}).get("watch", [])}
+    lv_tk = {r["ticker"] for r in (lowvol or {}).get("sleeve", [])}
+
+    # recent closes for the sparklines — one small read for the ~12 listed names
+    closes = None
+    try:
+        p = config.data_dir() / "china_search" / "closes.parquet"
+        if p.exists():
+            closes = pd.read_parquet(p)
+    except Exception:  # noqa: BLE001
+        closes = None
+
+    for r in setups["buy"]:
+        t = r["ticker"]
+        # price + off-52w-high from the per-stock library record
+        f = cd / f"{t.replace('=', '_').replace('^', '_')}.json"
+        if f.exists():
+            try:
+                rec = json.loads(f.read_text())
+                tech = rec.get("tech", {})
+                r["price"] = tech.get("price")
+                r["off_high"] = tech.get("off_52w_high_pct")
+            except Exception:  # noqa: BLE001
+                pass
+        # confluence: in the reversal watch AND the low-vol sleeve (validated both)
+        r["confluence"] = (t in rev_tk) and (t in lv_tk)
+        # compact sparkline coloured by cycle direction
+        if closes is not None and t in closes.columns:
+            s = closes[t].dropna().tail(64).tolist()
+            col = ("var(--up)" if r.get("dir") == "up"
+                   else "var(--down)" if r.get("dir") == "down" else "var(--muted)")
+            r["spark_svg"] = _spark_svg(s, color=col)
+    return setups
+
+
 def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
     """(ticker, close, high|None, name, sector) for everything analyzable."""
     out: list[tuple] = []
@@ -197,7 +397,24 @@ def main(alpha: dict | None = None) -> dict | None:
         (fdir / "china_alpha.json").write_text(
             json.dumps(alpha, separators=(",", ":"), default=str))
 
+    # market caps (亿) for the fundamentals valuation pass — best-effort
+    mktcap_by: dict[str, float] = {}
+    try:
+        mp = config.data_dir() / "china_search" / "members.parquet"
+        if mp.exists():
+            mdf = pd.read_parquet(mp)
+            if mdf.index.name == "ticker" and "ticker" not in mdf.columns:
+                mdf = mdf.reset_index()
+            tcol = "ticker" if "ticker" in mdf.columns else mdf.columns[0]
+            if "mktcap_yi" in mdf.columns:
+                mktcap_by = {str(r[tcol]): float(r["mktcap_yi"])
+                             for _, r in mdf.iterrows() if pd.notna(r.get("mktcap_yi"))}
+    except Exception as e:  # noqa: BLE001
+        log.debug("china mktcap load failed: %s", e)
+
     index, cand, built, failed = [], [], 0, 0
+    price_by: dict[str, float] = {}
+    sector_by: dict[str, str] = {}
     for ticker, close, high, name, sector in universe():
         try:
             rec = _one(ticker, close, high, name, sector)
@@ -218,8 +435,38 @@ def main(alpha: dict | None = None) -> dict | None:
         if rec.get("alpha", {}).get("alpha") is not None:
             idx["a"] = rec["alpha"]["alpha"]          # alpha-z in the index for client ranking
         index.append(idx)
+        price_by[ticker] = rec.get("tech", {}).get("price")
+        sector_by[ticker] = sector
         built += 1
-    (outdir / "index.json").write_text(json.dumps(index))
+
+    # descriptive FUNDAMENTALS (akshare cache) — context, not a signal. Computed for
+    # the cohort at once (needs sector medians), then patched onto the per-stock JSONs.
+    try:
+        from engine import china_fundamentals
+        fmap = china_fundamentals.build_all(price_by, sector_by, mktcap_by)
+        for ticker, fund in fmap.items():
+            safe = ticker.replace("=", "_").replace("^", "_")
+            fp = outdir / f"{safe}.json"
+            if not fp.exists():
+                continue
+            try:
+                rec = json.loads(fp.read_text())
+                rec["fundamentals"] = fund
+                fp.write_text(json.dumps(rec, default=str))
+            except Exception:  # noqa: BLE001
+                continue
+        # flag fundamentals presence in the search index (for a client badge)
+        if fmap:
+            for idx in index:
+                if idx["t"] in fmap:
+                    idx["f"] = 1
+            (outdir / "index.json").write_text(json.dumps(index))
+            log.info("china fundamentals: attached to %d names", len(fmap))
+        else:
+            (outdir / "index.json").write_text(json.dumps(index))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("china fundamentals attach failed (%s); skipping", e)
+        (outdir / "index.json").write_text(json.dumps(index))
     cal = config.data_dir() / "china_regime" / "ladder_calibration.json"
     if cal.exists():
         (outdir / "calibration.json").write_text(cal.read_text())
