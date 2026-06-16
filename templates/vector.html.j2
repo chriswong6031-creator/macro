@@ -663,7 +663,7 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
           <td style="text-align:right"><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:{{ tfc.get(r.trend,'var(--muted)') }}"></i></td>
         </tr>{% endfor %}
       </table>
-      <div class="sub faint" style="margin-top:8px;font-size:12px">{{ t('RSI red >70 / blue <30; StochRSI red >80 / blue <20. The trend dot is each timeframe’s MACD-trend direction — when short timeframes turn up while long ones stay red, it is a counter-trend bounce.', 'RSI 红 >70 / 蓝 <30；StochRSI 红 >80 / 蓝 <20。趋势圆点为各周期 MACD 趋势方向 — 当短周期转多而长周期仍为红时，即为逆势反弹。') }}</div>
+      <div class="sub faint" style="margin-top:8px;font-size:12px">{{ t('RSI red >70 / blue <30; StochRSI red >80 / blue <20. The trend dot is each timeframe’s MACD-trend direction — when short timeframes turn up while long ones stay red, it is an unconfirmed turn (a counter-trend bounce).', 'RSI 红 >70 / 蓝 <30；StochRSI 红 >80 / 蓝 <20。趋势圆点为各周期 MACD 趋势方向 — 当短周期转多而长周期仍为红时，即为未确认转向（逆势反弹）。') }}</div>
     </div>
   </div>{% endif %}
 
