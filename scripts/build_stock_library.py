@@ -119,20 +119,39 @@ def current_vix_context() -> dict | None:
     return vctx or None
 
 
+def _limited_rec(ticker: str, c: pd.Series, name: str, sector: str) -> dict:
+    """A minimal, honest record for a curated extra too new for the cycle model
+    (a days-old IPO). Carries enough for search + the page's renderLimited
+    branch: identity, listing date, session count, and the LIMITED sentinel
+    state (the page keys off `limited` before ever reading the ladder)."""
+    return {
+        "ticker": ticker, "name": name, "sector": sector,
+        "asof": str(c.index.max().date()),
+        "listed": str(c.index.min().date()),
+        "history_days": int(len(c)),
+        "limited": True,
+        "ladder": {"state": "LIMITED"},
+    }
+
+
 def _one(ticker: str, close: pd.Series, high: pd.Series | None,
          name: str, sector: str, liquidity: str | None = None,
          macro_drag: float | None = None, macro_beta: float = 0.0,
          bench: pd.Series | None = None, alert_days: int = 120,
          alert_max: int = 50, vix_ctx: dict | None = None,
-         min_days: int = 300) -> dict | None:
+         min_days: int = 300, allow_limited: bool = False) -> dict | None:
     c = close.dropna()
     # The cycle ladder itself needs ~260 sessions (engine/cycles), so 300 is a
     # conservative margin for the broad library. Curated single-stock extras
     # (recent IPOs / ADRs) pass a lower floor so a fresh listing becomes
     # searchable the moment its ladder is computable, not ~2 months later — the
     # empty-ladder guard below still gates anything the engine can't yet read.
+    # A brand-new listing (e.g. a days-old IPO like SPCX) has no computable
+    # ladder at all; for curated extras we still emit a LIMITED record so the
+    # name is searchable now (header + honest banner + live chart) rather than
+    # invisible for ~a year — see _limited_rec / the page's renderLimited.
     if len(c) < min_days:
-        return None
+        return _limited_rec(ticker, c, name, sector) if allow_limited else None
     # crypto trades 7 days/week — its cycle clock runs longer in calendar days
     # than an equity's, so it gets the crypto cycle preset (Yahoo crypto tickers
     # carry the -USD suffix: BTC-USD, ETH-USD, SOL-USD …).
@@ -142,7 +161,7 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
     res = analyze(c, high, kind=kind, liquidity=liquidity,
                   macro_drag=macro_drag, macro_beta=macro_beta, vix_ctx=vix_ctx)
     if not res.get("ladder"):
-        return None
+        return _limited_rec(ticker, c, name, sector) if allow_limited else None
     month = int(c.index.max().month)
     seas = seasonality(c)
     asof = str(c.index.max().date())
@@ -293,13 +312,14 @@ def _one_task(item):
     ticker, close, high, name, sector = item
     try:
         extras = _SHARED.get("extras") or frozenset()
-        min_days = EXTRAS_MIN_DAYS if ticker in extras else 300
+        is_extra = ticker in extras
+        min_days = EXTRAS_MIN_DAYS if is_extra else 300
         return _one(ticker, close, high, name, sector,
                     liquidity=_SHARED.get("liquidity"), macro_drag=_SHARED.get("macro_drag"),
                     macro_beta=sector_macro_beta(sector), bench=_SHARED.get("bench"),
                     alert_days=_SHARED.get("alert_days", 120),
                     alert_max=_SHARED.get("alert_max", 50), vix_ctx=_SHARED.get("vix_ctx"),
-                    min_days=min_days)
+                    min_days=min_days, allow_limited=is_extra)
     except Exception as e:  # noqa: BLE001 — one bad ticker must not kill the library
         log.debug("library %s failed: %s", ticker, e)
         return None
