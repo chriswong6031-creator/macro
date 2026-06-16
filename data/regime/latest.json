@@ -409,7 +409,7 @@
     "kind": "fomc_statement",
     "doc_id": "fomc_2026-04-29",
     "asof": "2026-04-29",
-    "tone_score": 0.2,
+    "tone_score": 0.0,
     "guidance_direction": "on_hold",
     "risk_delta": 0.0,
     "shock_reversible": "unknown",
@@ -419,11 +419,15 @@
     "evidence": [
       {
         "field": "tone_score",
-        "quote_span": "Inflation is elevated, in part reflecting the recent increase in global energy prices."
+        "quote_span": "The Committee is attentive to the risks to both sides of its dual mandate."
       },
       {
         "field": "guidance_direction",
-        "quote_span": "the Committee decided to maintain the target range for the federal funds rate at 3\u00e2\u0080\u00911/2 to 3\u00e2\u0080\u00913/4 percent."
+        "quote_span": "the Committee decided to maintain the target range for the federal funds rate"
+      },
+      {
+        "field": "risk_delta",
+        "quote_span": "the Committee will continue to monitor the implications of incoming information for the economic outlook."
       }
     ],
     "degraded_reason": null,
@@ -923,7 +927,7 @@
   },
   "fed_path": {
     "asof": "2026-06-15",
-    "built": "2026-06-16T05:50:38.085918+00:00",
+    "built": "2026-06-16T07:14:28.065126+00:00",
     "policy_rate": 3.62,
     "target_low": 3.5,
     "target_high": 3.75,

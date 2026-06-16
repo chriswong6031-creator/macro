@@ -74,6 +74,22 @@
     100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--link) 0%, transparent); }
   }
   .panel.flash { animation: panelflash 2.4s ease-out 1; border-color: var(--link); }
+  /* Dislocation Gate-1 "lit" state: when a real stress dislocation is live the
+     whole panel glows in the verdict colour carried on --lit (green = buyable
+     washout, red = falling knife). Dormant/calm = no glow. engine/dislocation.py */
+  @keyframes disloGlow {
+    0%, 100% { box-shadow: 0 0 0 1px color-mix(in srgb, var(--lit) 32%, transparent),
+                           0 0 17px 1px color-mix(in srgb, var(--lit) 17%, transparent); }
+    50%      { box-shadow: 0 0 0 1px color-mix(in srgb, var(--lit) 58%, transparent),
+                           0 0 30px 5px color-mix(in srgb, var(--lit) 38%, transparent); }
+  }
+  .panel.dislo-lit { border-color: color-mix(in srgb, var(--lit) 60%, var(--line));
+    background: color-mix(in srgb, var(--lit) 7%, var(--panel));
+    animation: disloGlow 3.6s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) {
+    .panel.dislo-lit { animation: none;
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--lit) 50%, transparent),
+                  0 0 22px 2px color-mix(in srgb, var(--lit) 30%, transparent); } }
   .muted { color: var(--muted); }
   .chart { width: 100%; }
   .topline { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
@@ -510,6 +526,13 @@
         <a href="canada.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">TSX · BoC · commodity overlay</span><span class="l-zh">TSX · 加央行 · 商品叠加</span></span></a>
         <a href="canada_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">TSX standouts · sectors · alpha</span><span class="l-zh">TSX精选 · 板块 · 阿尔法</span></span></a>
         <a href="baskets_canada.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P/TSX</span><span class="l-zh">等权主题篮子 vs 标普/多伦多</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="intl.html">🌍 <span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="intl.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        <a href="intl_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Cross-market standouts · sectors</span><span class="l-zh">跨市场精选 · 板块</span></span></a>
       </div>
     </div>
     <div class="nav-dd">

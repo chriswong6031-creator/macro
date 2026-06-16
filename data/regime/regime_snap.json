@@ -42,5 +42,21 @@
     }
   ],
   "magnitude_band": null,
-  "veto": null
+  "veto": {
+    "schema": "regime_snap_veto.v1",
+    "is_context_only": true,
+    "lean": "fragile",
+    "confidence": "medium",
+    "checks": {
+      "catalyst": "Oil price collapse is a market event, not a structural policy shift, signed deal, or hard data surprise. It lacks the durability of a regime-change catalyst.",
+      "premium": "Fear built is moderate (0.504); VIX and credit spreads are flipping, suggesting some premium unwinding, but the move is still building and not fully baked.",
+      "washout": "Recent capitulation (cap_recent true) gives a cleaner foundation, but prior washout alone does not guarantee durability without a structural driver.",
+      "follow_through": "Fast velocity (92nd percentile) and only partial leg flips (3 of 7) raise the risk that the move is tactical and may fade when oil stabilizes or headlines shift."
+    },
+    "read": "This relief snap is building on an oil collapse, not a structural policy or deal catalyst. While it emerges from a washout and shows early cross-asset confirmation, the move is easily reversed and likely fragile.",
+    "model": "deepseek-v4-pro",
+    "generated_at": "2026-06-16T07:18:23.845512+00:00",
+    "degraded_reason": null,
+    "disclaimer": "AI durability read \u2014 context only, never scored or sized. The snap detector is coincident; this is a fallible judgement on whether the relief is structural or a dead-cat, not a trade recommendation."
+  }
 }
