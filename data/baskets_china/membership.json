@@ -1,0 +1,1672 @@
+{
+  "version": "2021-06-15",
+  "seed_date": "2021-06-15",
+  "curated": "2021-06-15",
+  "benchmark": "510300.SS",
+  "benchmark_label": "CSI 300",
+  "benchmark_label_zh": "沪深300",
+  "construction": "Equal-weighted, monthly-rebalanced, buy-and-hold between rebalances; dated membership changes take effect same-day. Benchmark = CSI 300 (沪深300).",
+  "history_note": "Series before a basket's creation date are a backtest of the membership as of creation; live tracking starts at creation. Universe = the free china_search top-market-cap A-share cache (~5y).",
+  "note": "Curated A-share thematic baskets — hindsight-curated and descriptive, not an out-of-sample backtest and not a buy list.",
+  "baskets": {
+    "cn_semis": {
+      "name": "Semiconductors",
+      "name_zh": "半导体",
+      "category": "Technology & AI",
+      "category_zh": "科技与AI",
+      "etf_proxy": "512760.SS",
+      "etf_proxy_note": "半导体ETF — chip-localization basket",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The chip-localization (国产替代) complex: foundries, equipment, design IP and memory racing to build a domestic stack as export controls tighten. The purest read on China's self-sufficiency drive — high-beta, policy- and cycle-sensitive.",
+      "thesis_zh": "国产替代主线：晶圆代工、设备、设计与存储在出口管制下加速构建本土产业链。最纯粹的自主可控读数 — 高弹性，受政策与周期驱动。",
+      "members": [
+        {
+          "ticker": "688981.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中芯国际",
+          "rationale": "SMIC — the flagship foundry; the core of mainland capacity"
+        },
+        {
+          "ticker": "688256.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "寒武纪",
+          "rationale": "Cambricon — domestic AI accelerator; the NVDA-alternative bet"
+        },
+        {
+          "ticker": "002371.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "北方华创",
+          "rationale": "NAURA — leading semiconductor equipment (etch/deposition)"
+        },
+        {
+          "ticker": "688041.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "海光信息",
+          "rationale": "Hygon — x86 server CPUs / DCU compute"
+        },
+        {
+          "ticker": "688347.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "华虹宏力",
+          "rationale": "Hua Hong — mature-node specialty foundry"
+        },
+        {
+          "ticker": "603986.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "兆易创新",
+          "rationale": "GigaDevice — NOR flash + MCU design leader"
+        },
+        {
+          "ticker": "688012.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中微公司",
+          "rationale": "AMEC — etch-tool champion (中微公司)"
+        },
+        {
+          "ticker": "688008.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "澜起科技",
+          "rationale": "Montage — interface/memory-buffer chips (DDR5 cycle)"
+        },
+        {
+          "ticker": "300782.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "卓胜微",
+          "rationale": "Maxscend — RF front-end modules (卓胜微)"
+        },
+        {
+          "ticker": "002049.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "紫光国微",
+          "rationale": "Unigroup Guoxin — FPGA / special-purpose ICs"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Semiconductors — 10 equal-weight A-share members."
+        }
+      ]
+    },
+    "cn_ai_compute": {
+      "name": "AI Compute & Optics",
+      "name_zh": "AI算力与光模块",
+      "category": "Technology & AI",
+      "category_zh": "科技与AI",
+      "etf_proxy": "515000.SS",
+      "etf_proxy_note": "loose — broad Technology ETF",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The AI capex hardware leg: 800G optical modules, AI servers, switch silicon and domestic accelerators that the data-centre build-out is denominated in. China's most explosive 2024-25 momentum theme and its tightest link to the global AI cycle.",
+      "thesis_zh": "AI 资本开支硬件腿：800G 光模块、AI 服务器、交换芯片与国产算力 — 数据中心建设的承载者。2024-25 最具爆发力的动量主题，与全球 AI 周期联系最紧。",
+      "members": [
+        {
+          "ticker": "300308.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中际旭创",
+          "rationale": "Zhongji Innolight — global 800G optical-module leader (中际旭创)"
+        },
+        {
+          "ticker": "300502.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "新易盛",
+          "rationale": "Eoptolink — 800G optics fast-follower (新易盛)"
+        },
+        {
+          "ticker": "601138.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "工业富联",
+          "rationale": "Foxconn Industrial Internet — AI-server ODM scale (工业富联)"
+        },
+        {
+          "ticker": "688256.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "寒武纪",
+          "rationale": "Cambricon — domestic training/inference accelerator"
+        },
+        {
+          "ticker": "000977.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "浪潮信息",
+          "rationale": "Inspur — China's #1 AI-server vendor (浪潮信息)"
+        },
+        {
+          "ticker": "300394.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "天孚通信",
+          "rationale": "TFC Optical — optical passives / components (天孚通信)"
+        },
+        {
+          "ticker": "002281.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "光迅科技",
+          "rationale": "Accelink — optical chips & modules (光迅科技)"
+        },
+        {
+          "ticker": "603019.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中科曙光",
+          "rationale": "Sugon — HPC / AI server + liquid cooling (中科曙光)"
+        },
+        {
+          "ticker": "688041.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "海光信息",
+          "rationale": "Hygon — DCU compute for domestic AI clusters"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded AI Compute & Optics — 9 equal-weight A-share members."
+        }
+      ]
+    },
+    "cn_consumer_elec": {
+      "name": "Consumer Electronics",
+      "name_zh": "消费电子",
+      "category": "Technology & AI",
+      "category_zh": "科技与AI",
+      "etf_proxy": "515000.SS",
+      "etf_proxy_note": "loose — broad Technology ETF",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The Apple/Android hardware supply chain (果链): precision assembly, acoustics, glass, display and PCB. Levered to the smartphone cycle, AI-phone refresh and any handset-AI hardware upgrade.",
+      "thesis_zh": "苹果/安卓硬件供应链（果链）：精密组装、声学、玻璃、面板与 PCB。受智能手机周期、AI 手机换机与端侧 AI 硬件升级驱动。",
+      "members": [
+        {
+          "ticker": "002475.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "立讯精密",
+          "rationale": "Luxshare — top precision-assembly / connectors (立讯精密)"
+        },
+        {
+          "ticker": "002241.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "歌尔股份",
+          "rationale": "GoerTek — acoustics + AR/VR hardware (歌尔股份)"
+        },
+        {
+          "ticker": "300433.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "蓝思科技",
+          "rationale": "Lens Technology — cover glass / casings (蓝思科技)"
+        },
+        {
+          "ticker": "000725.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "京东方Ａ",
+          "rationale": "BOE — the dominant display panel maker (京东方)"
+        },
+        {
+          "ticker": "002384.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "东山精密",
+          "rationale": "Dongshan Precision — FPC / PCB (东山精密)"
+        },
+        {
+          "ticker": "002938.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "鹏鼎控股",
+          "rationale": "Avary Holding — flex-PCB leader (鹏鼎控股)"
+        },
+        {
+          "ticker": "002600.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "领益智造",
+          "rationale": "Lingyi iTech — functional parts / assembly (领益智造)"
+        },
+        {
+          "ticker": "002273.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "水晶光电",
+          "rationale": "Crystal-Optech — optical filters / imaging (水晶光电)"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Consumer Electronics — 8 equal-weight A-share members."
+        }
+      ]
+    },
+    "cn_software": {
+      "name": "Software & AI Apps",
+      "name_zh": "软件与AI应用",
+      "category": "Technology & AI",
+      "category_zh": "科技与AI",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Domestic software, fintech-data and the AIGC application layer (信创 + AI 应用): office suites, speech/LLM, financial terminals and security. Levered to IT-localization mandates and the monetisation of generative AI in China.",
+      "thesis_zh": "国产软件、金融数据与 AIGC 应用层（信创+AI应用）：办公套件、语音/大模型、金融终端与安全。受信创政策与生成式 AI 商业化驱动。",
+      "members": [
+        {
+          "ticker": "688111.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "金山办公",
+          "rationale": "Kingsoft Office — WPS suite + AI copilot (金山办公)"
+        },
+        {
+          "ticker": "002230.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "科大讯飞",
+          "rationale": "iFlytek — speech & LLM platform (科大讯飞)"
+        },
+        {
+          "ticker": "600570.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "恒生电子",
+          "rationale": "Hundsun — financial-institution software (恒生电子)"
+        },
+        {
+          "ticker": "300454.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "深信服",
+          "rationale": "Sangfor — security / cloud infrastructure (深信服)"
+        },
+        {
+          "ticker": "600845.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "宝信软件",
+          "rationale": "Baosight — industrial software (宝信软件)"
+        },
+        {
+          "ticker": "300033.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "同花顺",
+          "rationale": "Hithink RoyalFlush — retail fintech data (同花顺)"
+        },
+        {
+          "ticker": "300418.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "昆仑万维",
+          "rationale": "Kunlun Tech — AIGC / overseas internet (昆仑万维)"
+        },
+        {
+          "ticker": "600588.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "用友网络",
+          "rationale": "Yonyou — enterprise ERP / cloud (用友网络)"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Software & AI Apps — 8 equal-weight A-share members."
+        }
+      ]
+    },
+    "cn_battery": {
+      "name": "Battery & Lithium",
+      "name_zh": "锂电池",
+      "category": "New Energy & Autos",
+      "category_zh": "新能源与汽车",
+      "etf_proxy": "515030.SS",
+      "etf_proxy_note": "新能源车ETF — battery-heavy",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The lithium-battery value chain — cells, lithium resource, separators, electrolyte and anode/cathode. China's dominant export-competitive complex; whipsawed by the lithium price cycle and global EV demand.",
+      "thesis_zh": "锂电池价值链 — 电芯、锂资源、隔膜、电解液与正负极。中国最具出口竞争力的产业集群；受锂价周期与全球电动车需求剧烈牵动。",
+      "members": [
+        {
+          "ticker": "300750.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "宁德时代",
+          "rationale": "CATL — the global cell champion (宁德时代)"
+        },
+        {
+          "ticker": "002594.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "比亚迪",
+          "rationale": "BYD — batteries + the EV scale leader (比亚迪)"
+        },
+        {
+          "ticker": "300014.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "亿纬锂能",
+          "rationale": "EVE Energy — cells + energy storage (亿纬锂能)"
+        },
+        {
+          "ticker": "002460.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "赣锋锂业",
+          "rationale": "Ganfeng Lithium — lithium resource / refining (赣锋锂业)"
+        },
+        {
+          "ticker": "002466.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "天齐锂业",
+          "rationale": "Tianqi Lithium — lithium upstream (天齐锂业)"
+        },
+        {
+          "ticker": "300207.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "欣旺达",
+          "rationale": "Sunwoda — consumer + EV battery packs (欣旺达)"
+        },
+        {
+          "ticker": "002074.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "国轩高科",
+          "rationale": "Gotion High-tech — LFP cells (国轩高科)"
+        },
+        {
+          "ticker": "603659.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "璞泰来",
+          "rationale": "Putailai — anode + coating equipment (璞泰来)"
+        },
+        {
+          "ticker": "002812.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "恩捷股份",
+          "rationale": "Enjie — wet-process separator leader (恩捷股份)"
+        },
+        {
+          "ticker": "002709.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "天赐材料",
+          "rationale": "Tinci Materials — electrolyte leader (天赐材料)"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Battery & Lithium — 10 equal-weight A-share members."
+        }
+      ]
+    },
+    "cn_solar": {
+      "name": "Solar / Photovoltaics",
+      "name_zh": "光伏",
+      "category": "New Energy & Autos",
+      "category_zh": "新能源与汽车",
+      "etf_proxy": "515790.SS",
+      "etf_proxy_note": "光伏ETF",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The solar manufacturing chain — silicon, wafers, cells, modules, inverters and film. A textbook over-capacity / price-war cyclical: huge global volume growth wrestling with brutal margin compression.",
+      "thesis_zh": "光伏制造链 — 硅料、硅片、电池、组件、逆变器与胶膜。典型的产能过剩/价格战周期：全球装机高增长与残酷的盈利压缩并存。",
+      "members": [
+        {
+          "ticker": "601012.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "隆基绿能",
+          "rationale": "LONGi — wafer + module leader (隆基绿能)"
+        },
+        {
+          "ticker": "600438.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "通威股份",
+          "rationale": "Tongwei — polysilicon + cells (通威股份)"
+        },
+        {
+          "ticker": "300274.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "阳光电源",
+          "rationale": "Sungrow — #1 inverter / storage (阳光电源)"
+        },
+        {
+          "ticker": "002129.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "TCL中环",
+          "rationale": "TCL Zhonghuan — silicon wafers (TCL中环)"
+        },
+        {
+          "ticker": "688223.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "晶科能源",
+          "rationale": "Jinko Solar — top global module shipper (晶科能源)"
+        },
+        {
+          "ticker": "688303.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "大全能源",
+          "rationale": "Daqo — polysilicon pure-play (大全能源)"
+        },
+        {
+          "ticker": "603806.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "福斯特",
+          "rationale": "Foster — EVA encapsulant film leader (福斯特)"
+        },
+        {
+          "ticker": "688472.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "阿特斯",
+          "rationale": "CSI Solar — modules + storage (阿特斯)"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Solar / Photovoltaics — 8 equal-weight A-share members."
+        }
+      ]
+    },
+    "cn_autos": {
+      "name": "Autos & NEV Makers",
+      "name_zh": "汽车整车",
+      "category": "New Energy & Autos",
+      "category_zh": "新能源与汽车",
+      "etf_proxy": "515250.SS",
+      "etf_proxy_note": "智能汽车ETF",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Whole-vehicle makers and key suppliers riding the EV/intelligent-driving transition and the export push — legacy OEMs reinventing, new-energy champions scaling, and the parts names (glass, thermal, smart-cockpit) levered to content-per-car.",
+      "thesis_zh": "整车与核心零部件，受电动化/智能化转型与出口浪潮驱动 — 传统车企转身、新能源龙头放量，零部件（玻璃、热管理、智能座舱）受单车价值量提升带动。",
+      "members": [
+        {
+          "ticker": "002594.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "比亚迪",
+          "rationale": "BYD — the NEV scale + export leader (比亚迪)"
+        },
+        {
+          "ticker": "601633.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "长城汽车",
+          "rationale": "Great Wall Motor — SUV/pickup + export (长城汽车)"
+        },
+        {
+          "ticker": "000625.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "长安汽车",
+          "rationale": "Changan — fast NEV transition (长安汽车)"
+        },
+        {
+          "ticker": "600104.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "上汽集团",
+          "rationale": "SAIC Motor — largest legacy OEM (上汽集团)"
+        },
+        {
+          "ticker": "601127.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "赛力斯",
+          "rationale": "Seres — Huawei AITO partner (赛力斯)"
+        },
+        {
+          "ticker": "601238.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "广汽集团",
+          "rationale": "GAC Group — JV + Aion NEV (广汽集团)"
+        },
+        {
+          "ticker": "600660.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "福耀玻璃",
+          "rationale": "Fuyao Glass — global auto-glass leader (福耀玻璃)"
+        },
+        {
+          "ticker": "601689.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "拓普集团",
+          "rationale": "Tuopu — chassis + thermal, Tesla supplier (拓普集团)"
+        },
+        {
+          "ticker": "002920.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "德赛西威",
+          "rationale": "Desay SV — smart-cockpit / ADAS (德赛西威)"
+        },
+        {
+          "ticker": "000338.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "潍柴动力",
+          "rationale": "Weichai Power — heavy-duty powertrain (潍柴动力)"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Autos & NEV Makers — 10 equal-weight A-share members."
+        }
+      ]
+    },
+    "cn_defense": {
+      "name": "Defense & Aerospace",
+      "name_zh": "军工航天",
+      "category": "Advanced Manufacturing",
+      "category_zh": "高端制造",
+      "etf_proxy": "512660.SS",
+      "etf_proxy_note": "军工ETF",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The military-industrial complex — fighters, aero-engines, shipbuilding, milconnectors, infrared and satellites. A policy/order-book theme driven by the defense budget and modernization, largely decoupled from the consumer cycle.",
+      "thesis_zh": "军工产业链 — 战机、航发、船舶、军工连接器、红外与卫星。受国防预算与现代化订单驱动的政策主题，与消费周期基本脱钩。",
+      "members": [
+        {
+          "ticker": "600760.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中航沈飞",
+          "rationale": "AVIC Shenyang — fighter-jet prime (中航沈飞)"
+        },
+        {
+          "ticker": "302132.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中航成飞",
+          "rationale": "AVIC Chengdu — J-series fighters (中航成飞)"
+        },
+        {
+          "ticker": "600893.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "航发动力",
+          "rationale": "AECC Aviation Power — aero-engines (航发动力)"
+        },
+        {
+          "ticker": "000768.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中航西飞",
+          "rationale": "AVIC Xi'an — bombers / transports (中航西飞)"
+        },
+        {
+          "ticker": "002179.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中航光电",
+          "rationale": "Jonhon — defense connectors (中航光电)"
+        },
+        {
+          "ticker": "600150.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国船舶",
+          "rationale": "CSSC — shipbuilding champion (中国船舶)"
+        },
+        {
+          "ticker": "600118.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国卫星",
+          "rationale": "China Spacesat — satellites (中国卫星)"
+        },
+        {
+          "ticker": "002414.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "高德红外",
+          "rationale": "Guide Infrared — thermal imaging (高德红外)"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Defense & Aerospace — 8 equal-weight A-share members."
+        }
+      ]
+    },
+    "cn_robotics": {
+      "name": "Robotics & Automation",
+      "name_zh": "机器人与自动化",
+      "category": "Advanced Manufacturing",
+      "category_zh": "高端制造",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Industrial automation and the humanoid-robot supply chain — servo drives, harmonic reducers, controllers and thermal/actuator parts. A high-beta 2024-25 thematic on the humanoid build-out and factory automation.",
+      "thesis_zh": "工业自动化与人形机器人供应链 — 伺服、谐波减速器、控制器与热管理/执行部件。受人形机器人放量与工厂自动化驱动的高弹性 2024-25 主题。",
+      "members": [
+        {
+          "ticker": "300124.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "汇川技术",
+          "rationale": "Inovance — servo / motion-control leader (汇川技术)"
+        },
+        {
+          "ticker": "688017.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "绿的谐波",
+          "rationale": "Leader Drive — harmonic reducers (绿的谐波)"
+        },
+        {
+          "ticker": "002747.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "埃斯顿",
+          "rationale": "Estun — industrial robots (埃斯顿)"
+        },
+        {
+          "ticker": "300024.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "机器人",
+          "rationale": "Siasun — robotics pioneer (机器人/新松)"
+        },
+        {
+          "ticker": "002472.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "双环传动",
+          "rationale": "Shuanghuan — precision gears / RV reducers (双环传动)"
+        },
+        {
+          "ticker": "002050.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "三花智控",
+          "rationale": "Sanhua — thermal mgmt + humanoid actuators (三花智控)"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Robotics & Automation — 6 equal-weight A-share members."
+        }
+      ]
+    },
+    "cn_baijiu": {
+      "name": "Baijiu / Liquor",
+      "name_zh": "白酒",
+      "category": "Consumer & Brands",
+      "category_zh": "核心消费",
+      "etf_proxy": "512690.SS",
+      "etf_proxy_note": "酒ETF",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The baijiu complex — the bellwether of Chinese premium consumption and the market's quintessential quality-franchise basket. Pricing power and mix versus the property-driven consumption-confidence cycle.",
+      "thesis_zh": "白酒板块 — 中国高端消费的风向标，也是市场最具代表性的优质消费特许经营篮子。提价与产品结构对决地产驱动的消费信心周期。",
+      "members": [
+        {
+          "ticker": "600519.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "贵州茅台",
+          "rationale": "Kweichow Moutai — the ultra-premium anchor (贵州茅台)"
+        },
+        {
+          "ticker": "000858.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "五粮液",
+          "rationale": "Wuliangye — the #2 premium brand (五粮液)"
+        },
+        {
+          "ticker": "000568.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "泸州老窖",
+          "rationale": "Luzhou Laojiao — premium + mid-range (泸州老窖)"
+        },
+        {
+          "ticker": "600809.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "山西汾酒",
+          "rationale": "Shanxi Fenjiu — fast-growing fragrance baijiu (山西汾酒)"
+        },
+        {
+          "ticker": "002304.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "洋河股份",
+          "rationale": "Yanghe — east-China leader (洋河股份)"
+        },
+        {
+          "ticker": "000596.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "古井贡酒",
+          "rationale": "Gujing Gong — regional premium (古井贡酒)"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Baijiu / Liquor — 6 equal-weight A-share members."
+        }
+      ]
+    },
+    "cn_appliances": {
+      "name": "Home Appliances",
+      "name_zh": "家电",
+      "category": "Consumer & Brands",
+      "category_zh": "核心消费",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "White-goods and appliance champions — global-scale, high-ROE, dividend-paying franchises levered to trade-in stimulus (以旧换新), export share gains and the property after-cycle.",
+      "thesis_zh": "白电与家电龙头 — 全球规模、高 ROE、分红型特许经营，受以旧换新刺激、出口份额提升与地产后周期驱动。",
+      "members": [
+        {
+          "ticker": "000333.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "美的集团",
+          "rationale": "Midea — diversified appliance + robotics (美的集团)"
+        },
+        {
+          "ticker": "000651.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "格力电器",
+          "rationale": "Gree — air-conditioning leader (格力电器)"
+        },
+        {
+          "ticker": "600690.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "海尔智家",
+          "rationale": "Haier Smart Home — global premium brands (海尔智家)"
+        },
+        {
+          "ticker": "000921.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "海信家电",
+          "rationale": "Hisense Home Appliances — AC + white goods (海信家电)"
+        },
+        {
+          "ticker": "600060.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "海信视像",
+          "rationale": "Hisense Visual — TV / display (海信视像)"
+        },
+        {
+          "ticker": "002032.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "苏泊尔",
+          "rationale": "Supor — small kitchen appliances (苏泊尔)"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Home Appliances — 6 equal-weight A-share members."
+        }
+      ]
+    },
+    "cn_food_bev": {
+      "name": "Food & Beverage",
+      "name_zh": "食品饮料",
+      "category": "Consumer & Brands",
+      "category_zh": "核心消费",
+      "etf_proxy": "159928.SZ",
+      "etf_proxy_note": "消费ETF — staples",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Staple food and non-alcoholic beverage leaders — dairy, condiments, energy drinks, cooking oil and meat. Defensive consumption with brand power; a barometer of mass-market demand and input-cost cycles.",
+      "thesis_zh": "必选食品与软饮龙头 — 乳制品、调味品、功能饮料、食用油与肉制品。具品牌力的防御性消费，是大众需求与成本周期的晴雨表。",
+      "members": [
+        {
+          "ticker": "600887.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "伊利股份",
+          "rationale": "Yili — the dairy leader (伊利股份)"
+        },
+        {
+          "ticker": "603288.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "海天味业",
+          "rationale": "Haitian — soy sauce / condiments king (海天味业)"
+        },
+        {
+          "ticker": "605499.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "东鹏饮料",
+          "rationale": "Eastroc Beverage — energy-drink growth (东鹏饮料)"
+        },
+        {
+          "ticker": "300999.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "金龙鱼",
+          "rationale": "Arawana — cooking oil / staples (金龙鱼)"
+        },
+        {
+          "ticker": "000895.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "双汇发展",
+          "rationale": "Shuanghui — meat processing leader (双汇发展)"
+        },
+        {
+          "ticker": "600600.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "青岛啤酒",
+          "rationale": "Tsingtao Brewery — premium beer (青岛啤酒)"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Food & Beverage — 6 equal-weight A-share members."
+        }
+      ]
+    },
+    "cn_pharma_cxo": {
+      "name": "Innovative Pharma & CXO",
+      "name_zh": "创新药与CXO",
+      "category": "Healthcare",
+      "category_zh": "医药健康",
+      "etf_proxy": "159992.SZ",
+      "etf_proxy_note": "创新药ETF",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Innovative-drug developers and the CXO outsourcing chain (CRO/CDMO). The R&D-and-globalization growth engine of China healthcare — levered to out-licensing deals, biotech funding and overseas demand.",
+      "thesis_zh": "创新药企与 CXO 外包链（CRO/CDMO）。中国医药的研发与出海成长引擎 — 受对外授权（BD）、生物科技融资与海外需求驱动。",
+      "members": [
+        {
+          "ticker": "603259.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "药明康德",
+          "rationale": "WuXi AppTec — the CXO bellwether (药明康德)"
+        },
+        {
+          "ticker": "600276.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "恒瑞医药",
+          "rationale": "Hengrui — the innovative-drug leader (恒瑞医药)"
+        },
+        {
+          "ticker": "688235.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "百济神州",
+          "rationale": "BeiGene — global oncology biotech (百济神州)"
+        },
+        {
+          "ticker": "300759.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "康龙化成",
+          "rationale": "Pharmaron — pre-clinical CRO (康龙化成)"
+        },
+        {
+          "ticker": "002821.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "凯莱英",
+          "rationale": "Asymchem — small-molecule CDMO (凯莱英)"
+        },
+        {
+          "ticker": "688506.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "百利天恒",
+          "rationale": "Baili Tianheng — ADC out-licensing story (百利天恒)"
+        },
+        {
+          "ticker": "688331.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "荣昌生物",
+          "rationale": "RemeGen — ADC / autoimmune biotech (荣昌生物)"
+        },
+        {
+          "ticker": "002422.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "科伦药业",
+          "rationale": "Kelun — drugs + ADC pipeline (科伦药业)"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Innovative Pharma & CXO — 8 equal-weight A-share members."
+        }
+      ]
+    },
+    "cn_med_devices": {
+      "name": "Medical Devices & TCM",
+      "name_zh": "医疗器械与中药",
+      "category": "Healthcare",
+      "category_zh": "医药健康",
+      "etf_proxy": "512170.SS",
+      "etf_proxy_note": "医疗ETF",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Medical-equipment makers, healthcare services and branded traditional-Chinese-medicine (中药) franchises — domestic-substitution device leaders plus defensive, pricing-power consumer-health brands.",
+      "thesis_zh": "医疗设备、医疗服务与品牌中药特许经营 — 国产替代的器械龙头，叠加具提价能力的防御型消费医疗品牌。",
+      "members": [
+        {
+          "ticker": "300760.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "迈瑞医疗",
+          "rationale": "Mindray — the medical-device leader (迈瑞医疗)"
+        },
+        {
+          "ticker": "688271.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "联影医疗",
+          "rationale": "United Imaging — high-end imaging systems (联影医疗)"
+        },
+        {
+          "ticker": "300015.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "爱尔眼科",
+          "rationale": "Aier Eye — ophthalmology hospital chain (爱尔眼科)"
+        },
+        {
+          "ticker": "000538.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "云南白药",
+          "rationale": "Yunnan Baiyao — branded TCM franchise (云南白药)"
+        },
+        {
+          "ticker": "600436.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "片仔癀",
+          "rationale": "Pientzehuang — ultra-premium TCM (片仔癀)"
+        },
+        {
+          "ticker": "000999.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "华润三九",
+          "rationale": "CR Sanjiu — OTC / TCM brands (华润三九)"
+        },
+        {
+          "ticker": "600085.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "同仁堂",
+          "rationale": "Tongrentang — heritage TCM brand (同仁堂)"
+        },
+        {
+          "ticker": "000963.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "华东医药",
+          "rationale": "Huadong Medicine — pharma + aesthetics (华东医药)"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Medical Devices & TCM — 8 equal-weight A-share members."
+        }
+      ]
+    },
+    "cn_banks": {
+      "name": "Banks",
+      "name_zh": "银行",
+      "category": "Financials & Value",
+      "category_zh": "金融与价值",
+      "etf_proxy": "512800.SS",
+      "etf_proxy_note": "银行ETF",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The banking complex — the big-four state lenders, the joint-stock leaders and the high-growth city/rural banks. The core of the high-dividend (高股息) trade and a direct read on credit, net-interest-margin and property risk.",
+      "thesis_zh": "银行板块 — 国有大行、股份行龙头与高成长城农商行。高股息交易的核心，也是信用、净息差与地产风险的直接读数。",
+      "members": [
+        {
+          "ticker": "601398.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "工商银行",
+          "rationale": "ICBC — the largest state bank (工商银行)"
+        },
+        {
+          "ticker": "601939.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "建设银行",
+          "rationale": "China Construction Bank (建设银行)"
+        },
+        {
+          "ticker": "601288.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "农业银行",
+          "rationale": "Agricultural Bank of China (农业银行)"
+        },
+        {
+          "ticker": "601988.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国银行",
+          "rationale": "Bank of China (中国银行)"
+        },
+        {
+          "ticker": "600036.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "招商银行",
+          "rationale": "China Merchants Bank — premier retail bank (招商银行)"
+        },
+        {
+          "ticker": "601166.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "兴业银行",
+          "rationale": "Industrial Bank (兴业银行)"
+        },
+        {
+          "ticker": "600000.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "浦发银行",
+          "rationale": "SPD Bank (浦发银行)"
+        },
+        {
+          "ticker": "601328.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "交通银行",
+          "rationale": "Bank of Communications (交通银行)"
+        },
+        {
+          "ticker": "601658.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "邮储银行",
+          "rationale": "Postal Savings Bank — retail franchise (邮储银行)"
+        },
+        {
+          "ticker": "000001.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "平安银行",
+          "rationale": "Ping An Bank — retail growth (平安银行)"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Banks — 10 equal-weight A-share members."
+        }
+      ]
+    },
+    "cn_brokers": {
+      "name": "Brokers & Securities",
+      "name_zh": "券商",
+      "category": "Financials & Value",
+      "category_zh": "金融与价值",
+      "etf_proxy": "512880.SS",
+      "etf_proxy_note": "证券ETF",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Securities firms and the fintech-trading platforms — the high-beta vanguard of any A-share bull market. Levered to turnover, margin balances, IPO/M&A activity and consolidation among the majors.",
+      "thesis_zh": "证券公司与金融科技交易平台 — A 股牛市的高弹性先锋。受成交额、两融余额、IPO/并购活动与头部券商整合驱动。",
+      "members": [
+        {
+          "ticker": "600030.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中信证券",
+          "rationale": "CITIC Securities — the #1 broker (中信证券)"
+        },
+        {
+          "ticker": "300059.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "东方财富",
+          "rationale": "East Money — retail fintech-broker (东方财富)"
+        },
+        {
+          "ticker": "601688.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "华泰证券",
+          "rationale": "Huatai Securities (华泰证券)"
+        },
+        {
+          "ticker": "601211.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "国泰海通",
+          "rationale": "Guotai Junan — post-Haitong merger (国泰海通)"
+        },
+        {
+          "ticker": "600999.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "招商证券",
+          "rationale": "China Merchants Securities (招商证券)"
+        },
+        {
+          "ticker": "000776.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "广发证券",
+          "rationale": "GF Securities (广发证券)"
+        },
+        {
+          "ticker": "601066.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中信建投",
+          "rationale": "CSC Financial (中信建投)"
+        },
+        {
+          "ticker": "601995.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中金公司",
+          "rationale": "CICC — top investment bank (中金公司)"
+        },
+        {
+          "ticker": "600958.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "东方证券",
+          "rationale": "Orient Securities (东方证券)"
+        },
+        {
+          "ticker": "000166.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "申万宏源",
+          "rationale": "Shenwan Hongyuan (申万宏源)"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Brokers & Securities — 10 equal-weight A-share members."
+        }
+      ]
+    },
+    "cn_insurers": {
+      "name": "Insurers",
+      "name_zh": "保险",
+      "category": "Financials & Value",
+      "category_zh": "金融与价值",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The big listed insurers — life and P&C franchises whose earnings and book value swing on the equity market, long-bond yields and new-business value. A leveraged play on a domestic risk-on turn.",
+      "thesis_zh": "上市大型险企 — 寿险与财险特许经营，利润与净资产随权益市场、长债收益率与新业务价值波动。对国内风险偏好回升的杠杆化表达。",
+      "members": [
+        {
+          "ticker": "601318.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国平安",
+          "rationale": "Ping An — the integrated insurance leader (中国平安)"
+        },
+        {
+          "ticker": "601628.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国人寿",
+          "rationale": "China Life — largest life insurer (中国人寿)"
+        },
+        {
+          "ticker": "601601.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国太保",
+          "rationale": "China Pacific Insurance (中国太保)"
+        },
+        {
+          "ticker": "601319.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国人保",
+          "rationale": "PICC — P&C leader (中国人保)"
+        },
+        {
+          "ticker": "601336.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "新华保险",
+          "rationale": "New China Life (新华保险)"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Insurers — 5 equal-weight A-share members."
+        }
+      ]
+    },
+    "cn_soe_value": {
+      "name": "SOE Blue Chips (中特估)",
+      "name_zh": "中特估·央企",
+      "category": "Financials & Value",
+      "category_zh": "金融与价值",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The state-owned-enterprise re-rating theme (中国特色估值体系) — the three oil majors, the telecom carriers and the big infrastructure/utility SOEs. A policy-driven, high-dividend value trade on raising returns and valuations of central SOEs.",
+      "thesis_zh": "央企估值重塑主题（中国特色估值体系）— 三桶油、电信运营商与大型基建/公用事业央企。受提升央企回报与估值政策驱动的高股息价值交易。",
+      "members": [
+        {
+          "ticker": "601857.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国石油",
+          "rationale": "PetroChina — oil & gas major (中国石油)"
+        },
+        {
+          "ticker": "600028.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国石化",
+          "rationale": "Sinopec — refining / chemicals major (中国石化)"
+        },
+        {
+          "ticker": "600938.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国海油",
+          "rationale": "CNOOC — offshore E&P, low-cost barrels (中国海油)"
+        },
+        {
+          "ticker": "600941.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国移动",
+          "rationale": "China Mobile — carrier + dividend anchor (中国移动)"
+        },
+        {
+          "ticker": "601728.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国电信",
+          "rationale": "China Telecom (中国电信)"
+        },
+        {
+          "ticker": "600050.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国联通",
+          "rationale": "China Unicom (中国联通)"
+        },
+        {
+          "ticker": "601668.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国建筑",
+          "rationale": "China State Construction (中国建筑)"
+        },
+        {
+          "ticker": "601390.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国中铁",
+          "rationale": "China Railway Group (中国中铁)"
+        },
+        {
+          "ticker": "601186.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国铁建",
+          "rationale": "China Railway Construction (中国铁建)"
+        },
+        {
+          "ticker": "600900.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "长江电力",
+          "rationale": "Yangtze Power — hydro / dividend (长江电力)"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded SOE Blue Chips (中特估) — 10 equal-weight A-share members."
+        }
+      ]
+    },
+    "cn_gold": {
+      "name": "Gold Miners",
+      "name_zh": "黄金",
+      "category": "Cyclicals & Resources",
+      "category_zh": "周期与资源",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The gold-mining complex — producers levered to the bullion price, central-bank buying and the real-rate / de-dollarization narrative. A high-beta way to express the gold cycle from A-shares.",
+      "thesis_zh": "黄金采矿板块 — 受金价、央行购金与实际利率/去美元化叙事驱动的生产商。从 A 股表达黄金周期的高弹性方式。",
+      "members": [
+        {
+          "ticker": "601899.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "紫金矿业",
+          "rationale": "Zijin Mining — gold + copper giant (紫金矿业)"
+        },
+        {
+          "ticker": "600547.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "山东黄金",
+          "rationale": "Shandong Gold — pure-play producer (山东黄金)"
+        },
+        {
+          "ticker": "600489.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中金黄金",
+          "rationale": "Zhongjin Gold — SOE producer (中金黄金)"
+        },
+        {
+          "ticker": "600988.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "赤峰黄金",
+          "rationale": "Chifeng Gold — fast-growing miner (赤峰黄金)"
+        },
+        {
+          "ticker": "002155.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "湖南黄金",
+          "rationale": "Hunan Gold — gold + antimony/tungsten (湖南黄金)"
+        },
+        {
+          "ticker": "000975.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "山金国际",
+          "rationale": "Shanjin International — gold producer (山金国际)"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Gold Miners — 6 equal-weight A-share members."
+        }
+      ]
+    },
+    "cn_metals": {
+      "name": "Industrial Metals",
+      "name_zh": "有色金属",
+      "category": "Cyclicals & Resources",
+      "category_zh": "周期与资源",
+      "etf_proxy": "512400.SS",
+      "etf_proxy_note": "有色金属ETF",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Base and industrial metals — copper, aluminium and molybdenum producers levered to the global growth cycle, the green-capex demand pull and supply discipline. The China read on the commodity super-theme.",
+      "thesis_zh": "基本金属与工业金属 — 铜、铝、钼生产商，受全球增长周期、绿色资本开支需求与供给约束驱动。表达大宗超级主题的中国读数。",
+      "members": [
+        {
+          "ticker": "603993.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "洛阳钼业",
+          "rationale": "CMOC — copper / cobalt / moly (洛阳钼业)"
+        },
+        {
+          "ticker": "600362.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "江西铜业",
+          "rationale": "Jiangxi Copper — copper leader (江西铜业)"
+        },
+        {
+          "ticker": "601600.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国铝业",
+          "rationale": "Chalco — aluminium major (中国铝业)"
+        },
+        {
+          "ticker": "000807.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "云铝股份",
+          "rationale": "Yunnan Aluminium — green-power smelting (云铝股份)"
+        },
+        {
+          "ticker": "000630.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "铜陵有色",
+          "rationale": "Tongling Nonferrous — copper (铜陵有色)"
+        },
+        {
+          "ticker": "002379.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "宏桥控股",
+          "rationale": "Shandong Hongqiao — top aluminium (宏桥/魏桥)"
+        },
+        {
+          "ticker": "002532.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "天山铝业",
+          "rationale": "Tianshan Aluminium — integrated smelter (天山铝业)"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Industrial Metals — 7 equal-weight A-share members."
+        }
+      ]
+    },
+    "cn_rare_earth": {
+      "name": "Rare Earth & Magnets",
+      "name_zh": "稀土永磁",
+      "category": "Cyclicals & Resources",
+      "category_zh": "周期与资源",
+      "etf_proxy": "512400.SS",
+      "etf_proxy_note": "loose — broad nonferrous ETF",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Rare-earth resource and permanent-magnet makers — the upstream of EV motors, wind turbines and robotics, and a strategic export-control chokepoint. A policy-and-price theme on China's near-monopoly in the supply chain.",
+      "thesis_zh": "稀土资源与永磁制造 — 电机、风机与机器人的上游，也是战略出口管制的咽喉。受中国近乎垄断供应链的政策与价格驱动的主题。",
+      "members": [
+        {
+          "ticker": "600111.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "北方稀土",
+          "rationale": "Northern Rare Earth — the resource giant (北方稀土)"
+        },
+        {
+          "ticker": "000831.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国稀土",
+          "rationale": "China Rare Earth — SOE consolidator (中国稀土)"
+        },
+        {
+          "ticker": "300748.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "金力永磁",
+          "rationale": "JL MAG — NdFeB magnets leader (金力永磁)"
+        },
+        {
+          "ticker": "600392.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "盛和资源",
+          "rationale": "Shenghe Resources — rare-earth trade/processing (盛和资源)"
+        },
+        {
+          "ticker": "600549.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "厦门钨业",
+          "rationale": "Xiamen Tungsten — tungsten + rare earth (厦门钨业)"
+        },
+        {
+          "ticker": "000657.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中钨高新",
+          "rationale": "China Tungsten & Hightech — tungsten (中钨高新)"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Rare Earth & Magnets — 6 equal-weight A-share members."
+        }
+      ]
+    },
+    "cn_coal": {
+      "name": "Coal",
+      "name_zh": "煤炭",
+      "category": "Cyclicals & Resources",
+      "category_zh": "周期与资源",
+      "etf_proxy": "515220.SS",
+      "etf_proxy_note": "煤炭ETF",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Thermal and coking coal producers — the heart of the high-dividend (红利) trade: heavy free-cash-flow, high payout ratios and pricing tied to power demand and supply policy. Defensive yield with cyclical tail risk.",
+      "thesis_zh": "动力煤与焦煤生产商 — 红利交易的核心：充沛自由现金流、高分红比例，价格挂钩电力需求与供给政策。带周期尾部风险的防御性高股息。",
+      "members": [
+        {
+          "ticker": "601088.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国神华",
+          "rationale": "China Shenhua — integrated coal/power dividend anchor (中国神华)"
+        },
+        {
+          "ticker": "601225.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "陕西煤业",
+          "rationale": "Shaanxi Coal — low-cost thermal coal (陕西煤业)"
+        },
+        {
+          "ticker": "601898.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中煤能源",
+          "rationale": "China Coal Energy (中煤能源)"
+        },
+        {
+          "ticker": "600188.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "兖矿能源",
+          "rationale": "Yankuang Energy — coal + chemicals (兖矿能源)"
+        },
+        {
+          "ticker": "601699.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "潞安环能",
+          "rationale": "Lu'an Environmental — coking/thermal (潞安环能)"
+        },
+        {
+          "ticker": "000983.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "山西焦煤",
+          "rationale": "Shanxi Coking Coal (山西焦煤)"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Coal — 6 equal-weight A-share members."
+        }
+      ]
+    }
+  }
+}

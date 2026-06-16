@@ -1941,6 +1941,14 @@ def main() -> int:
         _build_canada.main()
     except Exception as e:  # noqa: BLE001
         log.error("canada dashboard (via build_vector) failed (%s)", e)
+    try:  # China A-share thematic baskets page — like build_canada, no dedicated daily.yml
+          # step yet (PAT lacks `workflow` scope), so it is built here off the china_search
+          # cache that the collectors already refresh. Self-sufficient + returns 0; additive.
+          # TODO: promote to a proper daily.yml `build_baskets_china` step beside build_baskets.
+        from scripts import build_baskets_china as _build_baskets_china
+        _build_baskets_china.main()
+    except Exception as e:  # noqa: BLE001
+        log.error("china baskets (via build_vector) failed (%s)", e)
     build_landing(site, vm)
     return 0
 
