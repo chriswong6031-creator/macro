@@ -1,0 +1,63 @@
+{# Shared interactive polish for the self-contained "Vector family" pages
+   (vector, commodities, forex, bonds, spvector, allocations, strategies …).
+   These pages don't link theme.css, so this partial brings them to parity with
+   the rest of the site: the ambient aurora backdrop + the landing's hover feel.
+   Accent = --blue (their primary); surfaces = --card / --grid. The red/green
+   risk colours (--red etc.) are never touched. Included AFTER each page's own
+   <style> so it cleanly overrides the hardcoded nav hovers in both themes. #}
+<style>
+/* ambient aurora — fixed accents blended into transparent, pinned behind all
+   content (paints over the opaque body bg, under the page). Light default gets
+   the airier tint; dark gets the richer wash. */
+html body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+   radial-gradient(680px 440px at 10% -8%,color-mix(in srgb,#416aec 9%,transparent),transparent 68%),
+   radial-gradient(620px 440px at 94% 2%,color-mix(in srgb,#8b5cf6 8%,transparent),transparent 70%),
+   radial-gradient(760px 520px at 50% 112%,color-mix(in srgb,#0ea5e9 7%,transparent),transparent 70%);}
+html[data-theme="dark"] body::before{
+  background:
+   radial-gradient(680px 440px at 10% -8%,color-mix(in srgb,#416aec 20%,transparent),transparent 68%),
+   radial-gradient(620px 440px at 94% 2%,color-mix(in srgb,#8b5cf6 16%,transparent),transparent 70%),
+   radial-gradient(760px 520px at 50% 112%,color-mix(in srgb,#0ea5e9 14%,transparent),transparent 70%);}
+
+/* buttons — smooth transition + a subtle accent glow / lift on hover (additive;
+   vtm/tm only exist on the Bitcoin Vector page, harmless elsewhere) */
+.vtm-btn,.tm-btn,.navbtn,.ai-brief-link{transition:transform .16s ease,border-color .16s ease,
+  color .16s ease,background .16s ease,box-shadow .18s ease;}
+.vtm-btn:hover,.tm-btn:hover,.navbtn:hover{border-color:color-mix(in srgb,var(--blue) 58%,var(--grid));
+  box-shadow:0 4px 13px -5px color-mix(in srgb,var(--blue) 40%,transparent);}
+.ai-brief-link:hover{transform:translateY(-1px);
+  box-shadow:0 5px 14px -5px color-mix(in srgb,var(--blue) 42%,transparent);}
+
+/* menu light-up — accent-tinted hover/active (replaces the hardcoded #eef1f6 /
+   #222732; matched specificity so the dark variants win too) */
+a.nav-link:hover,a.nav-link.active{background:color-mix(in srgb,var(--blue) 12%,var(--card));}
+html[data-theme="dark"] a.nav-link:hover,html[data-theme="dark"] a.nav-link.active{
+  background:color-mix(in srgb,var(--blue) 18%,var(--card));}
+.nav-dd-menu a:hover,.nav-dd-menu a.active{background:color-mix(in srgb,var(--blue) 12%,var(--card));}
+html[data-theme="dark"] .nav-dd-menu a:hover,html[data-theme="dark"] .nav-dd-menu a.active{
+  background:color-mix(in srgb,var(--blue) 18%,var(--card));}
+
+/* toggles — subtle hover feedback (their slide animations are untouched) */
+.theme-switch,.lang-toggle{transition:border-color .18s ease,box-shadow .18s ease;}
+.theme-switch:hover,.lang-toggle:hover{border-color:color-mix(in srgb,var(--blue) 55%,var(--grid));
+  box-shadow:0 3px 11px -5px color-mix(in srgb,var(--blue) 40%,transparent);}
+
+/* clickable card / tile containers — the landing's hover light-up, but only when
+   the card is actually a link (display cards are untouched) */
+a.card,a.actitem,a.idx-alloc{transition:transform .2s cubic-bezier(.2,.7,.3,1),
+  border-color .2s ease,box-shadow .2s ease;}
+a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
+  border-color:color-mix(in srgb,var(--blue) 45%,var(--grid));
+  box-shadow:0 14px 30px -16px color-mix(in srgb,var(--blue) 40%,transparent);}
+
+/* accessible keyboard focus ring */
+:where(.vtm-btn,.tm-btn,.navbtn,.ai-brief-link,a.nav-link,.nav-dd-menu a,.theme-switch,
+  .lang-toggle,a.card,a.actitem,a.idx-alloc):focus-visible{
+  outline:2px solid color-mix(in srgb,var(--blue) 70%,transparent);outline-offset:2px;}
+
+@media (prefers-reduced-motion: reduce){
+  .vtm-btn:hover,.tm-btn:hover,.navbtn:hover,.ai-brief-link:hover,
+  a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:none;}
+}
+</style>
