@@ -138,10 +138,17 @@ def test_bilingual_fields_present():
     assert p["axes"]["selection"]["kind_zh"]
 
 
-@pytest.mark.parametrize("m,tier", [("US", "event-edge"), ("CA", "event-edge"),
+@pytest.mark.parametrize("m,tier", [("US", "event-edge"), ("CA", "context"),
                                     ("CN", "reversal"), ("HK", "screen")])
 def test_trust_tiers(m, tier):
     assert ss.trust_tier(m)["tier"] == tier
+
+
+def test_ca_edge_is_momentum_not_floored():
+    # Canada has no event feeds -> momentum at full strength (no confidence floor), labeled prior
+    z, present = ss._axis_selection({"alpha": 2.5}, "CA")
+    assert present == ["alpha"] and z is not None and z >= 2.0
+    assert ss.trust_tier("CA")["tier"] == "context"
 
 
 # --- v2 EDGE axis: validated event signals drive the rank, momentum is light context ---
@@ -170,6 +177,17 @@ def test_revision_feeds_edge():
     rec = {"revision_z": 2.0}
     z, present = ss._axis_selection(rec, "US")
     assert "revision" in present and z is not None and z > 0.5
+
+
+def test_high_edge_low_quality_is_not_neutral():
+    # strong event edge (SUE) + ok entry + WEAK quality must read 'leader, weak fundamentals'
+    # — never fall through to 'Neutral' (the score-vs-verdict coherence bug we fixed).
+    rec = {"sue": 3.0, "alpha": 1.4, "ladder": {"state": "BOTTOM WATCH", "entry": {"urgency": "now"}},
+           "tech": {"rsi14": 50, "off_52w_high_pct": -8},
+           "factor": {"profitability": -1.5, "quality": -1.2, "value": -0.8, "low_vol": -0.9}}
+    p = ss.conviction_profile(rec, "US")
+    v = p["verdict"].lower()
+    assert "neutral" not in v and "leader" in v and "weak" in v
 
 
 def test_sue_insider_not_in_quality_axis():

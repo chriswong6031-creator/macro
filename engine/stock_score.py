@@ -76,7 +76,11 @@ def trust_tier(market: str, gate_go: bool = False) -> dict:
     if m == "CN":
         return {"tier": "reversal", "en": "Reversal context — validated but high-variance, not a buy list",
                 "zh": "均值回归参考 — 已验证但高波动，非买入清单", "css": "tt-reversal"}
-    # US / CA — v2 EDGE = validated event signals (SUE is the FDR survivor; insider is
+    if m == "CA":
+        # no event feeds on the TSX -> residual-momentum prior, never claimed as validated.
+        return {"tier": "context", "en": "Residual-momentum prior — unvalidated, not a standalone edge",
+                "zh": "残差动量先验 — 未验证，非独立超额收益", "css": "tt-context"}
+    # US — v2 EDGE = validated event signals (SUE is the FDR survivor; insider is
     # FDR-adjacent; analyst revisions are literature-strong and locally accruing).
     if gate_go:
         return {"tier": "validated", "en": "Event edge (earnings + insider + revisions) cleared Phase-0",
@@ -151,6 +155,38 @@ def _sel_kind(market: str, present: list[str]) -> tuple[str, str]:
     return _SEL_KIND.get(market, ("edge", "优势"))
 
 
+_BASIS_LABEL = {"sue": ("SUE", "盈利超预期", "validated"), "insider": ("insider", "内部人", "validated"),
+                "revision": ("revisions", "评级调整", "literature"), "alpha": ("momentum", "动量", "context"),
+                "rev_z": ("reversal", "均值回归", "validated"), "rs": ("rel. strength", "相对强度", "screen")}
+
+
+def _edge_basis(rec: dict, market: str) -> list[dict]:
+    """Per-leg EDGE contributions for the display BASIS panel — which legs are firing and
+    how strongly, each tagged validated / literature / context / screen — so an operator
+    (and the future AI layer) can see WHY the edge score is what it is."""
+    m = market.upper()
+    out: list[dict] = []
+
+    def add(key: str, val: float | None) -> None:
+        if val is None:
+            return
+        lab = _BASIS_LABEL.get(key, (key, key, "context"))
+        out.append({"leg": key, "label": lab[0], "label_zh": lab[1], "tier": lab[2],
+                    "z": round(float(val), 2)})
+    if m == "US":
+        s = _f(rec.get("sue")); add("sue", float(np.clip(s, -3, 3)) if s is not None else None)
+        i = _f(rec.get("insider_bps")); add("insider", float(np.clip(i / 30.0, -1.5, 1.5)) if i is not None else None)
+        r = _f(rec.get("revision_z")); add("revision", float(np.clip(r, -3, 3)) if r is not None else None)
+        a = _f(rec.get("alpha")); add("alpha", float(np.clip(a, -3, 3)) if a is not None else None)
+    elif m == "CN":
+        add("rev_z", _f(rec.get("rev_z"))); add("revision", _f(rec.get("revision_z"))); add("alpha", _f(rec.get("alpha")))
+    elif m == "CA":
+        add("alpha", _f(rec.get("alpha")))
+    else:
+        add("rs", _f(rec.get("rs_z")) if _f(rec.get("rs_z")) is not None else _f(rec.get("alpha")))
+    return out
+
+
 def _axis_selection(rec: dict, market: str) -> tuple[float | None, list[str]]:
     """The EDGE axis — the VALIDATED, event-driven predictive core that DRIVES the rank
     (research/STOCK_CONVICTION_V2). Returns (z, present_legs).
@@ -164,7 +200,11 @@ def _axis_selection(rec: dict, market: str) -> tuple[float | None, list[str]]:
     """
     m = market.upper()
     present: list[str] = []
-    if m in ("US", "CA"):
+    if m == "US":
+        # the validated event edge: SUE + insider + revisions exist for US (EDGAR / Form-4 /
+        # yfinance). Residual momentum is a LIGHT 0.10 context leg, and a CONFIDENCE FLOOR
+        # dampens a US name with NO event signal toward zero — it must not rank like a name
+        # carrying a real earnings/insider/revision edge.
         legs: dict[str, float] = {}
         sue = _f(rec.get("sue"))
         if sue is not None:
@@ -181,12 +221,16 @@ def _axis_selection(rec: dict, market: str) -> tuple[float | None, list[str]]:
         if not legs:
             return None, present
         num = sum(_EDGE_W[k] * v for k, v in legs.items())
-        # CONFIDENCE FLOOR: do NOT fully renormalize. A name with only the 0.10 momentum
-        # context leg (no validated event signal) is heavily dampened toward zero — it
-        # must NOT rank like a name carrying a real earnings/insider/revision edge. The
-        # floor (~the SUE weight) means edge strength scales with validated-leg coverage.
-        den = max(sum(_EDGE_W[k] for k in legs), 0.5)
+        den = max(sum(_EDGE_W[k] for k in legs), 0.5)   # confidence floor (see above)
         return _clipz(num / den), present
+    if m == "CA":
+        # Canada has NO event feeds (no EDGAR / Form-4 / revision data on the TSX), so
+        # residual momentum is its best-available selection leg — kept at full strength and
+        # framed as an UNVALIDATED prior (gate stays NEUTRAL; the board keeps the alpha rank).
+        z = _f(rec.get("alpha"))
+        if z is not None:
+            present.append("alpha")
+        return _clipz(z), present
     if m == "CN":
         z = _f(rec.get("rev_z"))                  # validated A-share reversal
         a = _f(rec.get("alpha"))                  # residual momentum: light context
@@ -416,7 +460,11 @@ def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool) -> dict:
 
     # ---- the constructive cases --------------------------------------------
     ent_ok = (ent is not None and ent > 0)
-    if sel_t == "high" and ent_ok and _tier(qz) != "low":
+    if sel_t == "high" and ent_ok:
+        if _tier(qz) == "low":                 # strong edge but weak fundamentals — flag the risk
+            cautions.append("weak fundamentals")
+            return _v("Leader · weak fundamentals — higher-risk",
+                      "领先 · 基本面偏弱 — 风险偏高", drivers, cautions)
         return _v("High-conviction — leader with a good entry",
                   "高确信 — 领先且入场点良好", drivers, cautions)
     if sel_t == "high" and ent is None:        # absent entry data is NOT 'poor entry'
@@ -474,7 +522,8 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
     axes = {
         "selection": {"z": sel_z, "pct": _logistic_0_100(sel_z), "present": sel_present,
                       "kind": _sel_kind(m, sel_present)[0],
-                      "kind_zh": _sel_kind(m, sel_present)[1]},
+                      "kind_zh": _sel_kind(m, sel_present)[1],
+                      "basis": _edge_basis(rec, m)},
         "entry": {"z": ent_z, "pct": _logistic_0_100(ent_z), "present": ent_present,
                   "blocked": blocked},
         "tailwind": {"z": tw_z, "pct": _logistic_0_100(tw_z), "present": tw_present},

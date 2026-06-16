@@ -1,12 +1,10 @@
 # Unified Conviction Profile — Phase 0 gate
 
-*SHALLOW ~3y live cache (NO deep panel, NO PIT membership — UNDERPOWERED, survivorship-inflated) · 2025-06-30..2025-11-28 · 6 monthly rebalances · ~1506 names/date · residual windows 252/252/21 shrink 0.66 · primary horizon 63d · L/S net of 5bps one-way.*
+*DEEP survivorship-clean panel + PIT membership · 2008-06-30..2025-11-28 · 210 monthly rebalances · ~419 names/date · residual windows 252/252/21 shrink 0.66 · primary horizon 63d · L/S net of 5bps one-way.*
 
 Does the holistic four-AXIS **conviction** composite rank forward returns better than the validated **selection** leg each board ranks by today — well enough to actually re-order the SHIPPED board? Axes are sector-neutral winsor-z; the composite is a Löwdin-orthogonal (equal-risk) blend across axes. The tailwind axis is a declared sector tilt, shown standalone, never folded into the cross-axis rank.
 
 **Gate:** a market earns `GO` (board re-ranked by the composite) only if a composite beats selection on BOTH mean rank-IC AND quintile L/S Sharpe at 63d AND the split-half IC is same-sign. Otherwise `NEUTRAL` (display-only; the board keeps the validated rank and the composite rides as the per-name profile).
-
-> **POWER GUARD ACTIVE.** The deep survivorship-clean matrix (`data/breadth/_closes_deep.parquet`) and PIT membership (`data/breadth/sp500_pit_membership.parquet`) are absent locally, so this is a shallow diagnostic only. Every market's gate is FORCED to `NEUTRAL` — the build will never flip a rank on powerless data. Run `scripts.residual_alpha_fetch` + `scripts.residual_alpha_pit` for a real GO test.
 
 
 ## Market: US — gate: **NEUTRAL**
@@ -16,43 +14,46 @@ Does the holistic four-AXIS **conviction** composite rank forward returns better
 
 | signal | mean IC | IC-IR | HAC t | p | q_FDR | IC h1→h2 | L/S Sharpe | DSR verdict |
 |---|--:|--:|--:|--:|--:|--:|--:|---|
-| selection (BASELINE — validated leg the board ranks by) | -0.0044 | -0.06 | — | — | — | — | -0.35 | FAILS multiple-testing haircut (DSR<0.90) |
-| conviction composite (orthogonal across axes) | -0.0619 | -0.89 | — | — | — | — | -2.09 | FAILS multiple-testing haircut (DSR<0.90) |
-| conviction composite (equal-weight) | -0.0627 | -0.90 | — | — | — | — | -2.3 | FAILS multiple-testing haircut (DSR<0.90) |
-| selection-led blend (0.6 sel + 0.4 entry/quality) | -0.0336 | -0.47 | — | — | — | — | -1.09 | FAILS multiple-testing haircut (DSR<0.90) |
-| entry axis (reversal proxy) | -0.0809 | -1.29 | — | — | — | — | -2.67 | FAILS multiple-testing haircut (DSR<0.90) |
-| quality axis (orth factors + SUE) | -0.0349 | -1.29 | — | — | — | — | -1.83 | FAILS multiple-testing haircut (DSR<0.90) |
-| tailwind axis (sector tilt — declared, not a picker) | n/a | | | | | | None | — |
+| selection (BASELINE — residual momentum, the v1 rank) | +0.0086 | +0.05 | +0.48 | 0.632 | 0.8452 | -0.0031→0.0204 | -0.16 | FAILS multiple-testing haircut (DSR<0.90) |
+| EDGE (v2 — validated event core: SUE; live also folds insider + revisions) | +0.0048 | +0.06 | +0.47 | 0.639 | 0.8452 | 0.0073→0.0023 | -0.12 | FAILS multiple-testing haircut (DSR<0.90) |
+| conviction composite (orthogonal across axes) | -0.0039 | -0.03 | -0.27 | 0.788 | 0.8452 | -0.0195→0.0117 | -0.25 | FAILS multiple-testing haircut (DSR<0.90) |
+| conviction composite (equal-weight) | +0.0030 | +0.02 | +0.20 | 0.845 | 0.8452 | -0.0078→0.0138 | -0.25 | FAILS multiple-testing haircut (DSR<0.90) |
+| selection-led blend (0.6 sel + 0.4 entry/quality) | +0.0083 | +0.06 | +0.50 | 0.618 | 0.8452 | -0.0021→0.0187 | -0.12 | FAILS multiple-testing haircut (DSR<0.90) |
+| entry axis (reversal proxy) | -0.0027 | -0.02 | -0.33 | 0.745 | 0.8452 | 0.0016→-0.0071 | -0.13 | FAILS multiple-testing haircut (DSR<0.90) |
+| quality axis (orth factors + SUE) | +0.0027 | +0.03 | +0.20 | 0.843 | 0.8452 | 0.0118→-0.0063 | -0.06 | FAILS multiple-testing haircut (DSR<0.90) |
+| tailwind axis (sector tilt — declared, not a picker) | +0.0075 | +0.07 | +0.44 | 0.660 | 0.8452 | 0.0339→-0.018 | 0.28 | FAILS multiple-testing haircut (DSR<0.90) |
 
 ### Forward horizon: 21 trading days
 
 | signal | mean IC | IC-IR | HAC t | p | q_FDR | IC h1→h2 | L/S Sharpe | DSR verdict |
 |---|--:|--:|--:|--:|--:|--:|--:|---|
-| selection (BASELINE — validated leg the board ranks by) | -0.0386 | -0.27 | — | — | — | — | -0.11 | FAILS multiple-testing haircut (DSR<0.90) |
-| conviction composite (orthogonal across axes) | -0.0668 | -0.74 | — | — | — | — | -2.11 | FAILS multiple-testing haircut (DSR<0.90) |
-| conviction composite (equal-weight) | -0.0676 | -0.73 | — | — | — | — | -2.26 | FAILS multiple-testing haircut (DSR<0.90) |
-| selection-led blend (0.6 sel + 0.4 entry/quality) | -0.0561 | -0.44 | — | — | — | — | -0.85 | FAILS multiple-testing haircut (DSR<0.90) |
-| entry axis (reversal proxy) | -0.0532 | -0.63 | — | — | — | — | -2.77 | FAILS multiple-testing haircut (DSR<0.90) |
-| quality axis (orth factors + SUE) | -0.0251 | -0.55 | — | — | — | — | -1.89 | FAILS multiple-testing haircut (DSR<0.90) |
-| tailwind axis (sector tilt — declared, not a picker) | n/a | | | | | | None | — |
+| selection (BASELINE — residual momentum, the v1 rank) | +0.0044 | +0.03 | +0.41 | 0.683 | 0.8007 | 0.0015→0.0073 | -0.24 | FAILS multiple-testing haircut (DSR<0.90) |
+| EDGE (v2 — validated event core: SUE; live also folds insider + revisions) | +0.0069 | +0.09 | +1.16 | 0.245 | 0.8007 | 0.006→0.0078 | -0.06 | FAILS multiple-testing haircut (DSR<0.90) |
+| conviction composite (orthogonal across axes) | -0.0036 | -0.03 | -0.39 | 0.701 | 0.8007 | -0.0123→0.0051 | -0.36 | FAILS multiple-testing haircut (DSR<0.90) |
+| conviction composite (equal-weight) | +0.0022 | +0.02 | +0.22 | 0.827 | 0.8269 | -0.0039→0.0082 | -0.33 | FAILS multiple-testing haircut (DSR<0.90) |
+| selection-led blend (0.6 sel + 0.4 entry/quality) | +0.0044 | +0.03 | +0.43 | 0.670 | 0.8007 | -0.0002→0.0091 | -0.24 | FAILS multiple-testing haircut (DSR<0.90) |
+| entry axis (reversal proxy) | -0.0034 | -0.03 | -0.45 | 0.655 | 0.8007 | -0.0066→-0.0003 | -0.16 | FAILS multiple-testing haircut (DSR<0.90) |
+| quality axis (orth factors + SUE) | +0.0045 | +0.04 | +0.55 | 0.584 | 0.8007 | 0.0083→0.0008 | -0.13 | FAILS multiple-testing haircut (DSR<0.90) |
+| tailwind axis (sector tilt — declared, not a picker) | +0.0134 | +0.12 | +0.96 | 0.335 | 0.8007 | 0.0142→0.0126 | 0.17 | FAILS multiple-testing haircut (DSR<0.90) |
 
 ### Forward horizon: 126 trading days
 
 | signal | mean IC | IC-IR | HAC t | p | q_FDR | IC h1→h2 | L/S Sharpe | DSR verdict |
 |---|--:|--:|--:|--:|--:|--:|--:|---|
-| selection (BASELINE — validated leg the board ranks by) | +0.0072 | +0.13 | — | — | — | — | -0.48 | FAILS multiple-testing haircut (DSR<0.90) |
-| conviction composite (orthogonal across axes) | -0.0550 | -1.20 | — | — | — | — | -2.03 | FAILS multiple-testing haircut (DSR<0.90) |
-| conviction composite (equal-weight) | -0.0559 | -1.18 | — | — | — | — | -2.24 | FAILS multiple-testing haircut (DSR<0.90) |
-| selection-led blend (0.6 sel + 0.4 entry/quality) | -0.0199 | -0.39 | — | — | — | — | -1.0 | FAILS multiple-testing haircut (DSR<0.90) |
-| entry axis (reversal proxy) | -0.0890 | -1.65 | — | — | — | — | -2.7 | FAILS multiple-testing haircut (DSR<0.90) |
-| quality axis (orth factors + SUE) | -0.0334 | -1.69 | — | — | — | — | -1.62 | FAILS multiple-testing haircut (DSR<0.90) |
-| tailwind axis (sector tilt — declared, not a picker) | n/a | | | | | | None | — |
+| selection (BASELINE — residual momentum, the v1 rank) | +0.0175 | +0.10 | +0.74 | 0.457 | 0.832 | -0.0015→0.0365 | -0.13 | FAILS multiple-testing haircut (DSR<0.90) |
+| EDGE (v2 — validated event core: SUE; live also folds insider + revisions) | -0.0031 | -0.03 | -0.25 | 0.805 | 0.832 | -0.0085→0.0023 | -0.17 | FAILS multiple-testing haircut (DSR<0.90) |
+| conviction composite (orthogonal across axes) | -0.0040 | -0.03 | -0.21 | 0.831 | 0.832 | -0.0286→0.0206 | -0.26 | FAILS multiple-testing haircut (DSR<0.90) |
+| conviction composite (equal-weight) | +0.0077 | +0.05 | +0.39 | 0.699 | 0.832 | -0.0107→0.0262 | -0.16 | FAILS multiple-testing haircut (DSR<0.90) |
+| selection-led blend (0.6 sel + 0.4 entry/quality) | +0.0162 | +0.10 | +0.74 | 0.462 | 0.832 | -0.0019→0.0342 | -0.15 | FAILS multiple-testing haircut (DSR<0.90) |
+| entry axis (reversal proxy) | -0.0088 | -0.08 | -1.16 | 0.245 | 0.832 | -0.0087→-0.009 | -0.12 | FAILS multiple-testing haircut (DSR<0.90) |
+| quality axis (orth factors + SUE) | +0.0038 | +0.03 | +0.21 | 0.832 | 0.832 | 0.0113→-0.0037 | -0.07 | FAILS multiple-testing haircut (DSR<0.90) |
+| tailwind axis (sector tilt — declared, not a picker) | -0.0080 | -0.08 | -0.63 | 0.526 | 0.832 | 0.0071→-0.0225 | 0.49 | FAILS multiple-testing haircut (DSR<0.90) |
 
 **US verdict (63d):**
-- UNPOWERED shallow run (no deep panel / no PIT membership) — gate FORCED to display-only regardless of the diagnostic above
+- edge: NO — IC≤baseline
 - conviction_orth: NO — IC≤baseline, Sharpe≤baseline, split-half flips/zero
 - conviction_ew: NO — IC≤baseline, Sharpe≤baseline, split-half flips/zero
-- selection_led: NO — IC≤baseline, Sharpe≤baseline, split-half flips/zero
+- selection_led: NO — IC≤baseline, split-half flips/zero
 
 **NEUTRAL — keep the US board on its validated selection rank.** The conviction composite rides as the displayed per-name profile/verdict (the honest product is a readable profile, not a re-order claimed without the power to back it).
 
@@ -73,43 +74,46 @@ _skipped — HK not tested here (no deep survivorship panel for this market in-r
 
 | signal | mean IC | IC-IR | HAC t | p | q_FDR | IC h1→h2 | L/S Sharpe | DSR verdict |
 |---|--:|--:|--:|--:|--:|--:|--:|---|
-| selection (BASELINE — validated leg the board ranks by) | -0.0044 | -0.06 | — | — | — | — | -0.35 | FAILS multiple-testing haircut (DSR<0.90) |
-| conviction composite (orthogonal across axes) | -0.0619 | -0.89 | — | — | — | — | -2.09 | FAILS multiple-testing haircut (DSR<0.90) |
-| conviction composite (equal-weight) | -0.0627 | -0.90 | — | — | — | — | -2.3 | FAILS multiple-testing haircut (DSR<0.90) |
-| selection-led blend (0.6 sel + 0.4 entry/quality) | -0.0336 | -0.47 | — | — | — | — | -1.09 | FAILS multiple-testing haircut (DSR<0.90) |
-| entry axis (reversal proxy) | -0.0809 | -1.29 | — | — | — | — | -2.67 | FAILS multiple-testing haircut (DSR<0.90) |
-| quality axis (orth factors + SUE) | -0.0349 | -1.29 | — | — | — | — | -1.83 | FAILS multiple-testing haircut (DSR<0.90) |
-| tailwind axis (sector tilt — declared, not a picker) | n/a | | | | | | None | — |
+| selection (BASELINE — residual momentum, the v1 rank) | +0.0086 | +0.05 | +0.48 | 0.632 | 0.8452 | -0.0031→0.0204 | -0.16 | FAILS multiple-testing haircut (DSR<0.90) |
+| EDGE (v2 — validated event core: SUE; live also folds insider + revisions) | +0.0048 | +0.06 | +0.47 | 0.639 | 0.8452 | 0.0073→0.0023 | -0.12 | FAILS multiple-testing haircut (DSR<0.90) |
+| conviction composite (orthogonal across axes) | -0.0039 | -0.03 | -0.27 | 0.788 | 0.8452 | -0.0195→0.0117 | -0.25 | FAILS multiple-testing haircut (DSR<0.90) |
+| conviction composite (equal-weight) | +0.0030 | +0.02 | +0.20 | 0.845 | 0.8452 | -0.0078→0.0138 | -0.25 | FAILS multiple-testing haircut (DSR<0.90) |
+| selection-led blend (0.6 sel + 0.4 entry/quality) | +0.0083 | +0.06 | +0.50 | 0.618 | 0.8452 | -0.0021→0.0187 | -0.12 | FAILS multiple-testing haircut (DSR<0.90) |
+| entry axis (reversal proxy) | -0.0027 | -0.02 | -0.33 | 0.745 | 0.8452 | 0.0016→-0.0071 | -0.13 | FAILS multiple-testing haircut (DSR<0.90) |
+| quality axis (orth factors + SUE) | +0.0027 | +0.03 | +0.20 | 0.843 | 0.8452 | 0.0118→-0.0063 | -0.06 | FAILS multiple-testing haircut (DSR<0.90) |
+| tailwind axis (sector tilt — declared, not a picker) | +0.0075 | +0.07 | +0.44 | 0.660 | 0.8452 | 0.0339→-0.018 | 0.28 | FAILS multiple-testing haircut (DSR<0.90) |
 
 ### Forward horizon: 21 trading days
 
 | signal | mean IC | IC-IR | HAC t | p | q_FDR | IC h1→h2 | L/S Sharpe | DSR verdict |
 |---|--:|--:|--:|--:|--:|--:|--:|---|
-| selection (BASELINE — validated leg the board ranks by) | -0.0386 | -0.27 | — | — | — | — | -0.11 | FAILS multiple-testing haircut (DSR<0.90) |
-| conviction composite (orthogonal across axes) | -0.0668 | -0.74 | — | — | — | — | -2.11 | FAILS multiple-testing haircut (DSR<0.90) |
-| conviction composite (equal-weight) | -0.0676 | -0.73 | — | — | — | — | -2.26 | FAILS multiple-testing haircut (DSR<0.90) |
-| selection-led blend (0.6 sel + 0.4 entry/quality) | -0.0561 | -0.44 | — | — | — | — | -0.85 | FAILS multiple-testing haircut (DSR<0.90) |
-| entry axis (reversal proxy) | -0.0532 | -0.63 | — | — | — | — | -2.77 | FAILS multiple-testing haircut (DSR<0.90) |
-| quality axis (orth factors + SUE) | -0.0251 | -0.55 | — | — | — | — | -1.89 | FAILS multiple-testing haircut (DSR<0.90) |
-| tailwind axis (sector tilt — declared, not a picker) | n/a | | | | | | None | — |
+| selection (BASELINE — residual momentum, the v1 rank) | +0.0044 | +0.03 | +0.41 | 0.683 | 0.8007 | 0.0015→0.0073 | -0.24 | FAILS multiple-testing haircut (DSR<0.90) |
+| EDGE (v2 — validated event core: SUE; live also folds insider + revisions) | +0.0069 | +0.09 | +1.16 | 0.245 | 0.8007 | 0.006→0.0078 | -0.06 | FAILS multiple-testing haircut (DSR<0.90) |
+| conviction composite (orthogonal across axes) | -0.0036 | -0.03 | -0.39 | 0.701 | 0.8007 | -0.0123→0.0051 | -0.36 | FAILS multiple-testing haircut (DSR<0.90) |
+| conviction composite (equal-weight) | +0.0022 | +0.02 | +0.22 | 0.827 | 0.8269 | -0.0039→0.0082 | -0.33 | FAILS multiple-testing haircut (DSR<0.90) |
+| selection-led blend (0.6 sel + 0.4 entry/quality) | +0.0044 | +0.03 | +0.43 | 0.670 | 0.8007 | -0.0002→0.0091 | -0.24 | FAILS multiple-testing haircut (DSR<0.90) |
+| entry axis (reversal proxy) | -0.0034 | -0.03 | -0.45 | 0.655 | 0.8007 | -0.0066→-0.0003 | -0.16 | FAILS multiple-testing haircut (DSR<0.90) |
+| quality axis (orth factors + SUE) | +0.0045 | +0.04 | +0.55 | 0.584 | 0.8007 | 0.0083→0.0008 | -0.13 | FAILS multiple-testing haircut (DSR<0.90) |
+| tailwind axis (sector tilt — declared, not a picker) | +0.0134 | +0.12 | +0.96 | 0.335 | 0.8007 | 0.0142→0.0126 | 0.17 | FAILS multiple-testing haircut (DSR<0.90) |
 
 ### Forward horizon: 126 trading days
 
 | signal | mean IC | IC-IR | HAC t | p | q_FDR | IC h1→h2 | L/S Sharpe | DSR verdict |
 |---|--:|--:|--:|--:|--:|--:|--:|---|
-| selection (BASELINE — validated leg the board ranks by) | +0.0072 | +0.13 | — | — | — | — | -0.48 | FAILS multiple-testing haircut (DSR<0.90) |
-| conviction composite (orthogonal across axes) | -0.0550 | -1.20 | — | — | — | — | -2.03 | FAILS multiple-testing haircut (DSR<0.90) |
-| conviction composite (equal-weight) | -0.0559 | -1.18 | — | — | — | — | -2.24 | FAILS multiple-testing haircut (DSR<0.90) |
-| selection-led blend (0.6 sel + 0.4 entry/quality) | -0.0199 | -0.39 | — | — | — | — | -1.0 | FAILS multiple-testing haircut (DSR<0.90) |
-| entry axis (reversal proxy) | -0.0890 | -1.65 | — | — | — | — | -2.7 | FAILS multiple-testing haircut (DSR<0.90) |
-| quality axis (orth factors + SUE) | -0.0334 | -1.69 | — | — | — | — | -1.62 | FAILS multiple-testing haircut (DSR<0.90) |
-| tailwind axis (sector tilt — declared, not a picker) | n/a | | | | | | None | — |
+| selection (BASELINE — residual momentum, the v1 rank) | +0.0175 | +0.10 | +0.74 | 0.457 | 0.832 | -0.0015→0.0365 | -0.13 | FAILS multiple-testing haircut (DSR<0.90) |
+| EDGE (v2 — validated event core: SUE; live also folds insider + revisions) | -0.0031 | -0.03 | -0.25 | 0.805 | 0.832 | -0.0085→0.0023 | -0.17 | FAILS multiple-testing haircut (DSR<0.90) |
+| conviction composite (orthogonal across axes) | -0.0040 | -0.03 | -0.21 | 0.831 | 0.832 | -0.0286→0.0206 | -0.26 | FAILS multiple-testing haircut (DSR<0.90) |
+| conviction composite (equal-weight) | +0.0077 | +0.05 | +0.39 | 0.699 | 0.832 | -0.0107→0.0262 | -0.16 | FAILS multiple-testing haircut (DSR<0.90) |
+| selection-led blend (0.6 sel + 0.4 entry/quality) | +0.0162 | +0.10 | +0.74 | 0.462 | 0.832 | -0.0019→0.0342 | -0.15 | FAILS multiple-testing haircut (DSR<0.90) |
+| entry axis (reversal proxy) | -0.0088 | -0.08 | -1.16 | 0.245 | 0.832 | -0.0087→-0.009 | -0.12 | FAILS multiple-testing haircut (DSR<0.90) |
+| quality axis (orth factors + SUE) | +0.0038 | +0.03 | +0.21 | 0.832 | 0.832 | 0.0113→-0.0037 | -0.07 | FAILS multiple-testing haircut (DSR<0.90) |
+| tailwind axis (sector tilt — declared, not a picker) | -0.0080 | -0.08 | -0.63 | 0.526 | 0.832 | 0.0071→-0.0225 | 0.49 | FAILS multiple-testing haircut (DSR<0.90) |
 
 **CA verdict (63d):**
-- UNPOWERED shallow run (no deep panel / no PIT membership) — gate FORCED to display-only regardless of the diagnostic above
+- edge: NO — IC≤baseline
 - conviction_orth: NO — IC≤baseline, Sharpe≤baseline, split-half flips/zero
 - conviction_ew: NO — IC≤baseline, Sharpe≤baseline, split-half flips/zero
-- selection_led: NO — IC≤baseline, Sharpe≤baseline, split-half flips/zero
+- selection_led: NO — IC≤baseline, split-half flips/zero
 
 **NEUTRAL — keep the CA board on its validated selection rank.** The conviction composite rides as the displayed per-name profile/verdict (the honest product is a readable profile, not a re-order claimed without the power to back it).
 
@@ -119,5 +123,5 @@ _skipped — HK not tested here (no deep survivorship panel for this market in-r
 
 ## Axis overlap diagnostic (US/CA panel)
 
-- mean |cross-axis corr| raw → orth: **0.047** → **0.037**
-- VIF: {'selection': 1.0, 'entry': 1.03, 'tailwind': 1.0, 'quality': 1.04}
+- mean |cross-axis corr| raw → orth: **0.022** → **0.01**
+- VIF: {'selection': 1.01, 'entry': 1.0, 'tailwind': 1.0, 'quality': 1.01}
