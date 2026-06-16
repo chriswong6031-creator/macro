@@ -1,70 +1,262 @@
 {
   "schema": "ai_desk.v1",
   "is_context_only": true,
-  "generated_at": "2026-06-15T23:36:38.898243+00:00",
+  "generated_at": "2026-06-16T02:12:41.639026+00:00",
   "state_asof": "2026-06-15",
   "model": "deepseek-v4-pro",
-  "regime_context": "Flow detector is display-only; no regime snap available. The lens shows coincident concentration in cyclicals (Industrials, Consumer Discretionary, Financials, Real Estate) forming a loose cluster, but cohesion is low across all sectors and there is no validated directional signal. VIX is low (16.2, 32nd pctile), a calm regime where the flow lens's marginal edge weakens further. The following theses are low-conviction, reflecting observed clustering and breadth rather than a forecast.",
+  "regime_context": "Flow detectors show concentrated buying in a risk-on cluster (Consumer Discretionary, Industrials, Financials, Real Estate) with high pair correlation (0.87) but no directional cohesion across the board \u2013 cohesion is low and declining for all sectors. The regime snap is fragile, driven by an unsigned verbal peace deal, with fear only partly unwound at high velocity after recent capitulation; the veto labels it a likely reversal.",
   "theses": [
     {
       "id": "2026-06-15-1",
       "subject": "Consumer Discretionary",
-      "lean": "overweight",
+      "lean": "avoid",
       "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Consumer Discretionary is in the dominant cyclical cluster (with Industrials, corr 0.86) and shows the highest flow score among emerging sectors with broad participation. While low cohesion and no directional signal argue against durability, the current concentration and calm VIX environment could sustain near-term relative attention if the cluster persists.",
+      "horizon_d": 15,
+      "thesis": "Flow concentration lacks genuine theme conviction \u2013 cohesion is 0.24 and declining (-0.097), and leadership is skewed by single-name extreme returns (e.g., VSXY +73%). The display-only flow lens and the skeptic\u2019s strong trap call argue for avoiding the sector.",
       "evidence": [
-        "flow.cluster.dominant_cluster includes Consumer Discretionary",
-        "flow.emerging.sectors Consumer Discretionary flow_score 1.909, breadth 0.739",
-        "cluster top_pair Industials-Consumer Discretionary corr 0.86"
+        "Skeptic analyst: cohesion 0.24, cohesion_chg -0.097, top ticker VSXY ret_20d 0.728 driving apparent strength",
+        "Flow guardrails: overall_verdict 'display_only', no validated forward edge from flow_score",
+        "Base-rate analyst: flow concentration has ~0 IC, purely descriptive"
       ],
-      "dissent": "The sector\u2019s cohesion is very low (0.245) and declining (-0.101), indicating dispersion not a thematic move. The flow lens has no forward edge, and its concentration could reflect outsized single-name moves (VSXY, KSS) without sector-wide follow-through. In calm regimes, the lens's IC is ~0, so this is a judgment call at best.",
+      "dissent": "Structural analyst notes leadership HHI 0.008 across 194 stocks, truly broad participation \u2013 not a single-name mirage; the broad co-movement with Industrials suggests genuine cyclical re-rotation, not noise.",
       "falsifier": {
-        "text": "If the 10-day rolling correlation between Consumer Discretionary and Industrials drops below 0.7, or VIX spikes above 20, the concentration pattern likely fractures and the lean is void.",
+        "text": "If Consumer Discretionary cohesion rises above 0.30 and the high pair correlation with Industrials persists through a VIX rise, the 'trap' thesis is wrong.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "XLY",
           "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 20
+          "op": ">",
+          "threshold": 0.05,
+          "horizon_d": 15
         }
       },
-      "check_by": "2026-07-13"
+      "check_by": "2026-07-06"
     },
     {
       "id": "2026-06-15-2",
       "subject": "Industrials",
-      "lean": "overweight",
+      "lean": "avoid",
       "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Industrials sits in the same high-correlation cyclical cluster with Consumer Discretionary (corr 0.86). Its flow score is elevated (1.305) and breadth is broad, suggesting concentration alongside the cluster leader. If the cluster holds and VIX remains subdued, Industrials may continue to participate.",
+      "horizon_d": 15,
+      "thesis": "As the top pair of the clustered risk-on rotation, Industrials shows low and declining cohesion (0.218, chg -0.066) and no directional confidence. The opportunity analyst and skeptic both lean negative; chasing this concentration in a fragile snap is risky.",
       "evidence": [
-        "flow.cluster.dominant_cluster includes Industrials",
-        "flow.emerging.sectors Industrials flow_score 1.305, breadth 0.707",
-        "cluster top_pair Industials-Consumer Discretionary corr 0.86"
+        "Skeptic analyst: avoid call with strong strength, citing low cohesion and top-pair idiosyncratic risk",
+        "Opportunity analyst: underweight call (weak), citing fragile snap and reversal risk",
+        "Flow detector: cohesion_gate.cohering = false, directional = false, confidence low"
       ],
-      "dissent": "Cohesion is very low (0.203) and declining; top movers (FWRD, RXO) are logistics/transport names with idiosyncratic drivers. No sector-wide catalyst. The flow detector is display-only, and its rank-IC is ~0 in calm VIX; this is an opinion on near-term cluster continuation, not an extracted edge.",
+      "dissent": "Structural analyst points out leadership HHI 0.007 with 253 stocks \u2013 extremely broad participation, contradicting the idea of a narrow, name-driven move. The genuine breadth could support a durable cycle if the snap holds.",
       "falsifier": {
-        "text": "If the Industrials-Consumer Discretionary correlation falls below 0.7, or if the S&P 500 Industrials sector relative strength turns negative on a 10-day basis, the lean is invalid.",
+        "text": "If Industrials cohesion stabilises above 0.25 and the 0.87 correlation with Consumer Discretionary persists beyond the next FOMC, the avoid call is invalidated.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "XLI",
           "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 20
+          "op": ">",
+          "threshold": 0.05,
+          "horizon_d": 15
         }
       },
-      "check_by": "2026-07-13"
+      "check_by": "2026-07-06"
+    },
+    {
+      "id": "2026-06-15-3",
+      "subject": "Information Technology",
+      "lean": "avoid",
+      "conviction": "low",
+      "horizon_d": 15,
+      "thesis": "Confirmed stage but cohesion only 0.18 and relative strength at the 98th percentile; chasing this extreme momentum without directional confidence risks a sharp reversal, as flagged by the skeptic.",
+      "evidence": [
+        "Skeptic analyst: avoid call moderate strength, noting extreme RS and low cohesion",
+        "Flow detector: stage 'confirmed' but directional_confidence 'low', cohesion 0.178 declining -0.016",
+        "Base-rate analyst: flow no edge, so momentum chasing is unvalidated"
+      ],
+      "dissent": "Tech's momentum could be supported by structural AI/cloud capex themes; the low cohesion may reflect differentiation within the sector, not imminent reversal, and the regime snap may extend if the peace deal materialises.",
+      "falsifier": {
+        "text": "If VIX stays subdued (<15) and IT relative strength remains above the 95th percentile with cohesion improving toward 0.25, the momentum continuation argument overtakes the avoid.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "XLK",
+          "vs": "SPY",
+          "op": ">",
+          "threshold": 0.05,
+          "horizon_d": 15
+        }
+      },
+      "check_by": "2026-07-06"
     }
   ],
   "source_verdicts": {
-    "flow": "display_only"
+    "flow": "display_only",
+    "regime_snap": "coincident"
   },
-  "track_record": null,
+  "track_record": {
+    "schema": "ai_desk_track_record.v1",
+    "as_of": "2026-06-16",
+    "scored_total": 0,
+    "open": 2,
+    "unscored_soft": 0,
+    "expired": 0,
+    "overall": {
+      "n": 0,
+      "hits": 0,
+      "misses": 0,
+      "hit_rate": null,
+      "dir_accuracy": null
+    },
+    "by_conviction": {
+      "high": {
+        "n": 0,
+        "hits": 0,
+        "misses": 0,
+        "hit_rate": null,
+        "dir_accuracy": null
+      },
+      "medium": {
+        "n": 0,
+        "hits": 0,
+        "misses": 0,
+        "hit_rate": null,
+        "dir_accuracy": null
+      },
+      "low": {
+        "n": 0,
+        "hits": 0,
+        "misses": 0,
+        "hit_rate": null,
+        "dir_accuracy": null
+      }
+    },
+    "by_kind": {
+      "rel_return": {
+        "n": 0,
+        "hits": 0,
+        "misses": 0,
+        "hit_rate": null,
+        "dir_accuracy": null
+      },
+      "level": {
+        "n": 0,
+        "hits": 0,
+        "misses": 0,
+        "hit_rate": null,
+        "dir_accuracy": null
+      }
+    },
+    "calibration_note": "No theses scored yet \u2014 the track record begins once the first check-by dates pass. Keep conviction modest until it does.",
+    "recent": []
+  },
   "confidence": "low",
-  "raw_text": "{\n  \"regime_context\": \"Flow detector is display-only; no regime snap available. The lens shows coincident concentration in cyclicals (Industrials, Consumer Discretionary, Financials, Real Estate) forming a loose cluster, but cohesion is low across all sectors and there is no validated directional signal. VIX is low (16.2, 32nd pctile), a calm regime where the flow lens's marginal edge weakens further. The following theses are low-conviction, reflecting observed clustering and breadth rather than a forecast.\",\n  \"theses\": [\n    {\n      \"subject\": \"Consumer Discretionary\",\n      \"lean\": \"overweight\",\n      \"conviction\": \"low\",\n      \"horizon_d\": 20,\n      \"thesis\": \"Consumer Discretionary is in the dominant cyclical cluster (with Industrials, corr 0.86) and shows the highest flow score among emerging sectors with broad participation. While low cohesion and no directional signal argue against durability, the current concentration and calm VIX environment could sustain near-term relative attention if the cluster persists.\",\n      \"evidence\": [\n        \"flow.cluster.dominant_cluster includes Consumer Discretionary\",\n        \"flow.emerging.sectors Consumer Discretionary flow_score 1.909, breadth 0.739\",\n        \"cluster top_pair Industials-Consumer Discretionary corr 0.86\"\n      ],\n      \"dissent\": \"The sector\u2019s cohesion is very low (0.245) and declining (-0.101), indicating dispersion not a thematic move. The flow lens has no forward edge, and its concentration could reflect outsized single-name moves (VSXY, KSS) without sector-wide follow-through. In calm regimes, the lens's IC is ~0, so this is a judgment call at best.\",\n      \"falsifier_text\": \"If the 10-day rolling correlation between Consumer Discretionary and Industrials drops below 0.7, or VIX spikes above 20, the concentration pattern likely fractures and the lean is void.\"\n    },\n    {\n      \"subject\": \"Industrials\",\n      \"lean\": \"overweight\",\n      \"conviction\": \"low\",\n      \"horizon_d\": 20,\n      \"thesis\": \"Industrials sits in the same high-correlation cyclical cluster with Consumer Discretionary (corr 0.86). Its flow score is elevated (1.305) and breadth is broad, suggesting concentration alongside the cluster leader. If the cluster holds and VIX remains subdued, Industrials may continue to participate.\",\n      \"evidence\": [\n        \"flow.cluster.dominant_cluster includes Industrials\",\n        \"flow.emerging.sectors Industrials flow_score 1.305, breadth 0.707\",\n        \"cluster top_pair Industials-Consumer Discretionary corr 0.86\"\n      ],\n      \"dissent\": \"Cohesion is very low (0.203) and declining; top movers (FWRD, RXO) are logistics/transport names with idiosyncratic drivers. No sector-wide catalyst. The flow detector is display-only, and its rank-IC is ~0 in calm VIX; this is an opinion on near-term cluster continuation, not an extracted edge.\",\n      \"falsifier_text\": \"If the Industrials-Consumer Discretionary correlation falls below 0.7, or if the S&P 500 Industrials sector relative strength turns negative on a 10-day basis, the lean is invalid.\"\n    }\n  ],\n  \"confidence\": \"low\"\n}",
+  "raw_text": "{\n  \"regime_context\": \"Flow detectors show concentrated buying in a risk-on cluster (Consumer Discretionary, Industrials, Financials, Real Estate) with high pair correlation (0.87) but no directional cohesion across the board \u2013 cohesion is low and declining for all sectors. The regime snap is fragile, driven by an unsigned verbal peace deal, with fear only partly unwound at high velocity after recent capitulation; the veto labels it a likely reversal.\",\n  \"theses\": [\n    {\n      \"subject\": \"Consumer Discretionary\",\n      \"lean\": \"avoid\",\n      \"conviction\": \"low\",\n      \"horizon_d\": 15,\n      \"thesis\": \"Flow concentration lacks genuine theme conviction \u2013 cohesion is 0.24 and declining (-0.097), and leadership is skewed by single-name extreme returns (e.g., VSXY +73%). The display-only flow lens and the skeptic\u2019s strong trap call argue for avoiding the sector.\",\n      \"evidence\": [\n        \"Skeptic analyst: cohesion 0.24, cohesion_chg -0.097, top ticker VSXY ret_20d 0.728 driving apparent strength\",\n        \"Flow guardrails: overall_verdict 'display_only', no validated forward edge from flow_score\",\n        \"Base-rate analyst: flow concentration has ~0 IC, purely descriptive\"\n      ],\n      \"dissent\": \"Structural analyst notes leadership HHI 0.008 across 194 stocks, truly broad participation \u2013 not a single-name mirage; the broad co-movement with Industrials suggests genuine cyclical re-rotation, not noise.\",\n      \"falsifier_text\": \"If Consumer Discretionary cohesion rises above 0.30 and the high pair correlation with Industrials persists through a VIX rise, the 'trap' thesis is wrong.\"\n    },\n    {\n      \"subject\": \"Industrials\",\n      \"lean\": \"avoid\",\n      \"conviction\": \"low\",\n      \"horizon_d\": 15,\n      \"thesis\": \"As the top pair of the clustered risk-on rotation, Industrials shows low and declining cohesion (0.218, chg -0.066) and no directional confidence. The opportunity analyst and skeptic both lean negative; chasing this concentration in a fragile snap is risky.\",\n      \"evidence\": [\n        \"Skeptic analyst: avoid call with strong strength, citing low cohesion and top-pair idiosyncratic risk\",\n        \"Opportunity analyst: underweight call (weak), citing fragile snap and reversal risk\",\n        \"Flow detector: cohesion_gate.cohering = false, directional = false, confidence low\"\n      ],\n      \"dissent\": \"Structural analyst points out leadership HHI 0.007 with 253 stocks \u2013 extremely broad participation, contradicting the idea of a narrow, name-driven move. The genuine breadth could support a durable cycle if the snap holds.\",\n      \"falsifier_text\": \"If Industrials cohesion stabilises above 0.25 and the 0.87 correlation with Consumer Discretionary persists beyond the next FOMC, the avoid call is invalidated.\"\n    },\n    {\n      \"subject\": \"Information Technology\",\n      \"lean\": \"avoid\",\n      \"conviction\": \"low\",\n      \"horizon_d\": 15,\n      \"thesis\": \"Confirmed stage but cohesion only 0.18 and relative strength at the 98th percentile; chasing this extreme momentum without directional confidence risks a sharp reversal, as flagged by the skeptic.\",\n      \"evidence\": [\n        \"Skeptic analyst: avoid call moderate strength, noting extreme RS and low cohesion\",\n        \"Flow detector: stage 'confirmed' but directional_confidence 'low', cohesion 0.178 declining -0.016\",\n        \"Base-rate analyst: flow no edge, so momentum chasing is unvalidated\"\n      ],\n      \"dissent\": \"Tech's momentum could be supported by structural AI/cloud capex themes; the low cohesion may reflect differentiation within the sector, not imminent reversal, and the regime snap may extend if the peace deal materialises.\",\n      \"falsifier_text\": \"If VIX stays subdued (<15) and IT relative strength remains above the 95th percentile with cohesion improving toward 0.25, the momentum continuation argument overtakes the avoid.\"\n    },\n    {\n      \"subject\": \"VIX\",\n      \"lean\": \"fade-fear\",\n      \"conviction\": \"low\",\n      \"horizon_d\": 20,\n      \"thesis\": \"The current fear unwind is driven by an unsigned verbal peace deal and exhibits high velocity (vel_pctile 0.923) with only partial fear reduction (fear_built 0.504) after recent capitulation \u2013 a classic fragile snap likely to reverse, making re-fear the more durable path.\",\n      \"evidence\": [\n        \"Regime snap detector: veto lean 'fragile', fear_built 0.504, vel_pctile 0.923, cap_recent true, verbal catalyst\",\n        \"Opportunity analyst: fade-fear call (weak), rationale matches fragile snap\",\n        \"Base-rate analyst: fade-fear (weak), historically such rhetorically-induced snaps often reverse\",\n        \"Skeptic analyst: fade-fear (moderate), dead-cat bounce prognosis\"\n      ],\n      \"dissent\": \"If the peace deal gets formally signed and VIX prints below 15, the snap could prove structural and a durable low-vol regime would destroy the fade-fear thesis \u2013 exactly the skeptic\u2019s key risk.\",\n      \"falsifier_text\": \"If the peace deal is signed within the next 10 days and VIX subsequently closes below 14 for three consecutive sessions, the fade-fear call is wrong.\"\n    }\n  ],\n  \"confidence\": \"low\"\n}",
   "degraded_reason": null,
-  "disclaimer": "AI desk note \u2014 context only, never scored or sized. The detectors it reads are DISPLAY-ONLY (flow has no validated forward edge; the relief snap is coincident). Each lean is a fallible, FALSIFIABLE judgement with a check-by date, not a trade recommendation or a position size."
+  "disclaimer": "AI desk note \u2014 context only, never scored or sized. The detectors it reads are DISPLAY-ONLY (flow has no validated forward edge; the relief snap is coincident). Each lean is a fallible, FALSIFIABLE judgement with a check-by date, not a trade recommendation or a position size.",
+  "panel": {
+    "opportunity": {
+      "stance": "Flow is concentrating in a tight risk-on cluster (Industrials, Discretionary, Financials, Real Estate) with high pair correlation but no directional cohesion. The coincident relief snap is fragile (unsigned peace deal, high\u2011velocity partial unwinding), suggesting the rotation lacks durability; a lean to fade this relief or avoid its crowded beneficiaries is warranted.",
+      "candidates": [
+        {
+          "subject": "Industrials",
+          "lean": "underweight",
+          "rationale": "Top pair of the concentrated cluster with elevated relative strength (RS 0.69) in a fragile snap; an unwind of risk-on flow would disproportionately reverse this sector.",
+          "strength": "weak"
+        },
+        {
+          "subject": "VIX",
+          "lean": "fade-fear",
+          "rationale": "Relief snap driven by an unsigned verbal catalyst with high velocity and only partial fear unwind after capitulation, making re-fear the more durable path.",
+          "strength": "weak"
+        }
+      ],
+      "key_risk": "If the peace deal becomes signed or policy-backed, the relief would prove durable, invalidating the fragile-snap thesis and supporting sustained cyclical outperformance."
+    },
+    "skeptic": {
+      "stance": "Flow concentration signals in cyclicals and consumer discretionaries lack cohesion and directional confidence; the lens holds no forward edge. The relief snap is fragile and likely to reverse, so apparent opportunities are traps.",
+      "candidates": [
+        {
+          "subject": "Consumer Discretionary",
+          "lean": "avoid",
+          "rationale": "Flow concentration with cohesion 0.24 and declining; leadership by single-name extreme returns (e.g., VSXY +73%) suggests noise, not theme, likely mean-reverting.",
+          "strength": "strong"
+        },
+        {
+          "subject": "Industrials",
+          "lean": "avoid",
+          "rationale": "Low cohesion (0.22), negative change, and top-pair with Consumer Discretionary driven by idiosyncratic names, making the apparent emergence a coincident trap.",
+          "strength": "strong"
+        },
+        {
+          "subject": "Information Technology",
+          "lean": "avoid",
+          "rationale": "Confirmed stage but cohesion only 0.18 and RS in the 98th percentile; chasing this momentum without directional confidence risks a reversal.",
+          "strength": "moderate"
+        },
+        {
+          "subject": "VIX",
+          "lean": "fade-fear",
+          "rationale": "Snap is driven by an unsigned verbal peace deal; fear built partially unwound at high velocity, a classic dead-cat bounce per regime_snap.",
+          "strength": "moderate"
+        }
+      ],
+      "key_risk": "If the peace deal is formally signed and VIX sustains below 15, the snap could prove structural, undermining both the fade-fear call and the fragility of the sector concentration signals."
+    },
+    "base_rate": {
+      "stance": "Flow lens is display-only with rank-IC ~0, providing no valid forward signal; the regime snap is coincident and fragile, suggesting the relief is likely to reverse, but confidence is low.",
+      "candidates": [
+        {
+          "subject": "VIX",
+          "lean": "fade-fear",
+          "rationale": "Snap triggered by an unsigned verbal peace deal with only partial fear unwind at high velocity, a pattern that historically often reverses.",
+          "strength": "weak"
+        },
+        {
+          "subject": "Consumer Discretionary",
+          "lean": "none",
+          "rationale": "Flow concentration noted but no validated edge; purely descriptive.",
+          "strength": "weak"
+        },
+        {
+          "subject": "Industrials",
+          "lean": "none",
+          "rationale": "Flow concentration noted but no validated edge; purely descriptive.",
+          "strength": "weak"
+        },
+        {
+          "subject": "Energy",
+          "lean": "none",
+          "rationale": "Cooling flow score is not a reliable forward signal; edge is not present.",
+          "strength": "weak"
+        }
+      ],
+      "key_risk": "A signed peace agreement could cap fear and unwind the fragility premium, making the fade-fear read obsolete."
+    },
+    "structural": {
+      "stance": "The dominant cluster (Consumer Discretionary, Industrials, Financials, Real Estate) exhibits broad-based co-movement with a 0.87 correlation between the top pair, Industrials and Consumer Discretionary. Leadership breadth is wide (HHI < 0.02 across all four) and no single-name mirage; the cluster suggests genuine cyclical alignment rather than a narrow meme.",
+      "candidates": [
+        {
+          "subject": "Consumer Discretionary",
+          "lean": "none",
+          "rationale": "Highest flow score in the cluster, broad leadership (194 stocks, HHI 0.008), and high correlation with Industrials confirm wide participation rather than a few outliers.",
+          "strength": "moderate"
+        },
+        {
+          "subject": "Industrials",
+          "lean": "none",
+          "rationale": "Top pair with Consumer Discretionary, leadership broad (253 stocks, HHI 0.007); co-movement is genuine, not concentrated.",
+          "strength": "moderate"
+        },
+        {
+          "subject": "Financials",
+          "lean": "none",
+          "rationale": "Part of dominant cluster with 254-stock breadth and low HHI (0.007), supporting the co-movement thesis; no single-name risk.",
+          "strength": "moderate"
+        },
+        {
+          "subject": "Real Estate",
+          "lean": "none",
+          "rationale": "Membership in cluster with 107 stocks and HHI 0.017; breadth is broad but slightly less than others; cyclical linkage intact.",
+          "strength": "weak"
+        }
+      ],
+      "key_risk": "A rapid rise in single-stock concentration (HHI spike) or a breakdown in the correlation between Industrials and Consumer Discretionary would turn this broad co-movement into a mirage; the fragile relief snap (peace deal rhetoric) reversing could fragment risk appetite and disrupt the cluster."
+    }
+  }
 }

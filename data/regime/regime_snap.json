@@ -1,0 +1,62 @@
+{
+  "snap": false,
+  "relief_magnitude": null,
+  "roro": 0.501,
+  "cap_recent": true,
+  "fear_built": 0.504,
+  "roro_velocity": 0.324,
+  "vel_pctile": 0.923,
+  "legs_up": 3,
+  "legs_total": 7,
+  "flipped_legs": [
+    "vix",
+    "hy_oas",
+    "vix_term"
+  ],
+  "days_since_last_snap": 1,
+  "fear_rebuilding": false,
+  "vix_term": 0.837,
+  "status": "building",
+  "gates": {
+    "velocity": true,
+    "legs": false,
+    "fear": true,
+    "washout": true
+  },
+  "min_legs": 4,
+  "flipped_legs_named": [
+    {
+      "key": "vix",
+      "en": "VIX",
+      "zh": "\u6ce2\u52a8\u7387 VIX"
+    },
+    {
+      "key": "hy_oas",
+      "en": "HY credit spread",
+      "zh": "\u9ad8\u6536\u76ca\u4fe1\u7528\u5229\u5dee"
+    },
+    {
+      "key": "vix_term",
+      "en": "VIX term structure",
+      "zh": "VIX \u671f\u9650\u7ed3\u6784"
+    }
+  ],
+  "magnitude_band": null,
+  "veto": {
+    "schema": "regime_snap_veto.v1",
+    "is_context_only": true,
+    "lean": "fragile",
+    "confidence": "medium",
+    "checks": {
+      "catalyst": "verbal \u2014 Trump announces peace deal, unsigned, relies on rhetoric not enacted policy",
+      "premium": "fear_built 0.504, high-velocity unwinding (vel_pctile 0.923) with key legs flipped, roughly half unwound, leaving some premium",
+      "washout": "cap_recent true, days_since_last_snap 1, indicates real capitulation preceded the snap",
+      "follow_through": "verbal catalyst with high-speed relief typically fades; macro risk from upcoming FOMC adds fragility"
+    },
+    "read": "The snap is driven by an unsigned verbal peace deal, a classic fragile catalyst likely to reverse. A recent capitulation supports the bounce's initial force, but the high velocity and only partial fear unwind on rhetoric suggest a knife, not durable relief.",
+    "model": "deepseek-v4-pro",
+    "generated_at": "2026-06-16T01:59:20.868054+00:00",
+    "degraded_reason": null,
+    "disclaimer": "AI durability read \u2014 context only, never scored or sized. The snap detector is coincident; this is a fallible judgement on whether the relief is structural or a dead-cat, not a trade recommendation."
+  }
+}
