@@ -152,7 +152,18 @@ def timeline_chart(f: pd.DataFrame, regime: pd.DataFrame, segments: pd.DataFrame
         '"Microsoft YaHei","Noto Sans CJK SC",sans-serif}'
         '.lang-btn{position:fixed;top:14px;right:16px;z-index:50;cursor:pointer;'
         'background:#fff;border:1px solid #e6e8ec;border-radius:8px;padding:5px 12px;'
-        'font-weight:700;color:#5d6b7e}</style>'
+        'font-weight:700;color:#5d6b7e;'
+        'transition:border-color .16s,box-shadow .18s,transform .16s}'
+        '.lang-btn:hover{border-color:#285fff;transform:translateY(-1px);'
+        'box-shadow:0 4px 12px -4px color-mix(in srgb,#285fff 40%,transparent)}'
+        # ambient aurora backdrop (light tint — this page is a light-only chart),
+        # consistent with the rest of the site
+        'html body::before{content:"";position:fixed;inset:0;z-index:-1;'
+        'pointer-events:none;background:'
+        'radial-gradient(680px 440px at 10% -8%,color-mix(in srgb,#416aec 9%,transparent),transparent 68%),'
+        'radial-gradient(620px 440px at 94% 2%,color-mix(in srgb,#8b5cf6 8%,transparent),transparent 70%),'
+        'radial-gradient(760px 520px at 50% 112%,color-mix(in srgb,#0ea5e9 7%,transparent),transparent 70%)}'
+        '</style>'
     )
     _body = (
         '<button class="lang-btn">中文</button>'
