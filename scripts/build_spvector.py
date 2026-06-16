@@ -43,7 +43,8 @@ LEG_ORDER = ["drawdown", "recession", "hy_widening", "nfci", "liquidity"]
 # charts
 # --------------------------------------------------------------------------- #
 def _chart_strategy(spy: pd.Series, alloc: pd.Series, rs_on_spy: pd.Series,
-                    eq: pd.Series) -> str:
+                    eq: pd.Series, bench_label: str = "S&P 500",
+                    strat_label: str = "Vector strategy") -> str:
     """SPY price + strategy equity overlay, price panel shaded by allocation
     (green=fully in / amber=trimmed / clear=defensive) with buy/sell markers at
     every allocation change; risk row two-toned at the de-risk midpoint; allocation
@@ -63,11 +64,11 @@ def _chart_strategy(spy: pd.Series, alloc: pd.Series, rs_on_spy: pd.Series,
                           y0=0, y1=1, fillcolor=fc, line_width=0, layer="below")
     pidx = _plot_idx(d.index)
     pxs = _dx(pidx)
-    fig.add_trace(go.Scatter(x=pxs, y=_plot_y(d["close"].reindex(pidx), 0), name="S&P 500",
+    fig.add_trace(go.Scatter(x=pxs, y=_plot_y(d["close"].reindex(pidx), 0), name=bench_label,
                              line={"color": C["priceln"], "width": 1.4}), row=1, col=1)
     scale = d["close"].iloc[0] / eqr.iloc[0]
     sx = eqr * scale
-    fig.add_trace(go.Scatter(x=pxs, y=_plot_y(sx.reindex(pidx), 0), name="Vector strategy",
+    fig.add_trace(go.Scatter(x=pxs, y=_plot_y(sx.reindex(pidx), 0), name=strat_label,
                              line={"color": C["blue"], "width": 1.8}), row=1, col=1)
     chg = d["alloc"].diff()
     for mask, sym, col, nm, off in [
@@ -110,7 +111,7 @@ def _chart_strategy(spy: pd.Series, alloc: pd.Series, rs_on_spy: pd.Series,
                                "xaxis3.range": xr, "yaxis.range": yr}]})
         if label == "5Y":
             default_xr, default_yr = xr, yr
-    fig.update_yaxes(title_text="S&P 500", range=default_yr, row=1, col=1)
+    fig.update_yaxes(title_text=bench_label, range=default_yr, row=1, col=1)
     fig.update_xaxes(range=default_xr)
     fig.update_yaxes(title_text="Risk", range=[0, 100], row=2, col=1)
     fig.update_yaxes(title_text="Equity", range=[-0.05, 1.05], row=3, col=1)
@@ -127,10 +128,10 @@ def _chart_strategy(spy: pd.Series, alloc: pd.Series, rs_on_spy: pd.Series,
     return _html(fig)
 
 
-def _chart_growth(eq: pd.Series, hodl: pd.Series) -> str:
+def _chart_growth(eq: pd.Series, hodl: pd.Series, strat_label: str = "Vector") -> str:
     e, h = eq.iloc[::5], hodl.iloc[::5]
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=_dx(e.index), y=_plot_y(e, 2), name="Vector",
+    fig.add_trace(go.Scatter(x=_dx(e.index), y=_plot_y(e, 2), name=strat_label,
                              line={"color": C["blue"], "width": 2}))
     fig.add_trace(go.Scatter(x=_dx(h.index), y=_plot_y(h, 2), name="Buy & hold",
                              line={"color": C["priceln"], "width": 1.5}))
@@ -139,12 +140,12 @@ def _chart_growth(eq: pd.Series, hodl: pd.Series) -> str:
     return _html(fig)
 
 
-def _chart_dd(dd_s: pd.Series, dd_h: pd.Series) -> str:
+def _chart_dd(dd_s: pd.Series, dd_h: pd.Series, strat_label: str = "Vector") -> str:
     s, h = dd_s.iloc[::5], dd_h.iloc[::5]
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=_dx(h.index), y=_plot_y(h, 1), name="Buy & hold", fill="tozeroy",
                              line={"color": C["priceln"], "width": 1}, fillcolor="rgba(154,164,178,0.25)"))
-    fig.add_trace(go.Scatter(x=_dx(s.index), y=_plot_y(s, 1), name="Vector", fill="tozeroy",
+    fig.add_trace(go.Scatter(x=_dx(s.index), y=_plot_y(s, 1), name=strat_label, fill="tozeroy",
                              line={"color": C["blue"], "width": 1.5}, fillcolor="rgba(40,95,255,0.12)"))
     fig.update_layout(**{**PLOT, "height": 300})
     return _html(fig)
