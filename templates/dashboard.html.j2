@@ -2352,7 +2352,8 @@
     <p class="{{ 'neg' if sector_radar.put_absent else 'pos' }}" style="margin:0 2px 12px; font-size:13.5px; line-height:1.5">
       <b>{{ t('Macro gate', '宏观闸门') }}:</b> {{ sector_radar.macro_banner }}
     </p>
-    <table>
+    <div style="overflow-x:auto">
+    <table style="min-width:680px">
       <tr>
         <th class="l">{{ t('sector', '板块') }}</th>
         <th class="l" style="min-width:150px">{{ t('bottom confidence', '见底信心') }} <span class="help">?<span class="tip">
@@ -2384,6 +2385,7 @@
       </tr>
       {% endfor %}
     </table>
+    </div>
     <p class="muted" style="margin:8px 2px 0; font-size:11px">
       {{ t('Risk / durability read — confirm into stabilization, do not anticipate the exact low. Not alpha.', '风险／持久性读数 — 确认企稳后再介入，勿预判精确低点。非超额收益。') }}
       <a href="#sectors" style="margin-left:6px">{{ t('rotation context ↓', '轮动背景 ↓') }}</a>
