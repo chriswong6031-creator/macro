@@ -733,7 +733,7 @@ def build_landing(site: Path, vm: dict) -> None:
                     _watchlist_state(), _etf_state(), _hk_state(), _forex_state(),
                     _bonds_state(), _us_stocks_state(), _strategies_state(), _crossasset_state(),
                     _market_stocks_state("china"), _market_stocks_state("hk"),
-                    canada=_canada_state(), intl=_intl_state())
+                    canada=_canada_state(), intl=_intl_state(), ipo=_ipo_state())
     (site / "index.html").write_text(hub)
     log.info("wrote landing hub -> index.html")
 
@@ -926,6 +926,24 @@ def _strategies_state() -> dict:
         return {"present": present, "n": 0}
 
 
+def _ipo_state() -> dict:
+    """IPO Radar card — gated on the page existing; shows the issuance-window band +
+    the honest aftermarket gap (IPO ETF vs S&P, 5y) from data/regime/ipo_latest.json
+    when build_ipo has run."""
+    site = config.ROOT / config.load()["storage"]["site_dir"]
+    present = (site / "ipo.html").exists()
+    try:
+        import json
+        d = json.loads((config.data_dir() / "regime" / "ipo_latest.json").read_text())
+        gap = d.get("gap_5y")
+        return {"present": present, "band": d.get("window_band") or "—",
+                "verdict": d.get("verdict"), "priced_90d": d.get("priced_90d"),
+                "gap_5y_pp": (round(gap * 100, 1) if gap is not None else None)}
+    except Exception:  # noqa: BLE001
+        return {"present": present, "band": "—", "verdict": None,
+                "priced_90d": None, "gap_5y_pp": None}
+
+
 MACRO_SEV = {"act": "high", "warn": "medium", "info": "info"}
 
 
@@ -1089,7 +1107,8 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
               us_stocks: dict | None = None,
               strategies: dict | None = None, crossasset: dict | None = None,
               china_stocks: dict | None = None, hk_stocks: dict | None = None,
-              canada: dict | None = None, intl: dict | None = None) -> str:
+              canada: dict | None = None, intl: dict | None = None,
+              ipo: dict | None = None) -> str:
     # Bilingual via the i18n layer when present, identity fallback when absent.
     try:
         from engine.i18n import t as T, tr as TR
@@ -1289,6 +1308,19 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
     <span class="stat">{strategies.get('n', 0)} {T('strategies', '个策略')}</span>
     <div class="go">{T('Open Strategy Scorecards →', '打开策略记分卡 →')}</div>
   </a>""")
+    ipo = ipo or {"present": False}
+    _ipo_band = ipo.get("band", "—")
+    _ipo_band_zh = {"OPEN": "开启", "MIXED": "混合", "SHUT": "关闭"}.get(_ipo_band, _ipo_band)
+    _ipo_gap = ipo.get("gap_5y_pp")
+    _ipo_gap_txt = (f" · {T('IPO ETF', '新股ETF')} {_ipo_gap:+.0f}pp/yr" if _ipo_gap is not None else "")
+    ipo_card = ("" if not ipo.get("present") else f"""
+  <a class="c c--ipo" href="ipo.html">
+    <div class="ico">🆕</div>
+    <h2>{T('IPO Radar', '新股雷达')}</h2>
+    <p>{T('Is the IPO window open — and is it worth chasing? The issuance-window read, the aftermarket reality check & the deal calendar. Avoidance + context, never a buy signal.', '新股窗口是否开启——值得追吗？发行窗口读数、二级市场现实检验与交易日历。规避与背景，绝非买入信号。')}</p>
+    <span class="stat">{T('Window', '窗口')} {T(_ipo_band, _ipo_band_zh)}{_ipo_gap_txt}</span>
+    <div class="go">{T('Open IPO Radar →', '打开新股雷达 →')}</div>
+  </a>""")
     return f"""{HUB_MARKER}
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -1362,7 +1394,7 @@ body{{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
 .c:hover{{transform:translateY(-4px);border-color:color-mix(in srgb,var(--accent) 50%,var(--line));
  box-shadow:0 18px 38px -14px color-mix(in srgb,var(--accent) 42%,transparent)}}
 .c:hover::before{{transform:scaleX(1)}} .c:hover::after{{opacity:1}}
-.c--canada{{--accent:#e5484d}} .c--intl{{--accent:#0d9488}} .c--btc{{--accent:#f7931a}} .c--sp{{--accent:#6366f1}} .c--strat{{--accent:#10b981}}
+.c--canada{{--accent:#e5484d}} .c--intl{{--accent:#0d9488}} .c--btc{{--accent:#f7931a}} .c--sp{{--accent:#6366f1}} .c--strat{{--accent:#10b981}} .c--ipo{{--accent:#f59e0b}}
 .c--commodity{{--accent:#d4a12a}} .c--forex{{--accent:#14b8a6}} .c--bonds{{--accent:#0ea5e9}}
 .c--crossasset{{--accent:#8b5cf6}} .c--etf{{--accent:#3b82f6}} .c--watch{{--accent:#64748b}}
 .c .ico{{width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:22px;
@@ -1442,7 +1474,7 @@ body{{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
   <p>{T('Market regime dashboards across every major asset class — one mechanical, backtested engine.', '覆盖各大类资产的市场周期仪表盘——一套机械化、经回测的引擎。')}</p>
 </div>
 <div class="cards-hero">{us_hero}{china_hero}{hk_hero}</div>
-<div class="cards-sub">{canada_card}{intl_card}{bitcoin_card}{strategies_card}{commodities_card}{forex_card}{bonds_card}{crossasset_card}{etf_card}{watchlist_card}</div>
+<div class="cards-sub">{canada_card}{intl_card}{bitcoin_card}{strategies_card}{ipo_card}{commodities_card}{forex_card}{bonds_card}{crossasset_card}{etf_card}{watchlist_card}</div>
 <div class="feed">
   <div class="feed-h"><h3>{T('Latest Alerts', '最新警报')}</h3>
     <span class="n">{n_major} {T('major · from both feeds ·', '条重要 · 来自两个数据源 ·')} <a href="vector.html#timeline">{T('full Vector timeline →', '完整向量时间线 →')}</a></span></div>
@@ -1971,6 +2003,14 @@ def main() -> int:
         _build_strategies()
     except Exception as e:  # noqa: BLE001
         log.error("strategies pages (via build_vector) failed (%s)", e)
+    try:  # IPO Radar (display-only, never-scored) — no dedicated daily.yml step (PAT lacks
+          # `workflow` scope), built here AFTER build_spvector (it reuses the validated
+          # de-risk score from data/regime/spvector_latest.json) and before build_landing
+          # reads _ipo_state(). Refreshes the Nasdaq IPO calendar best-effort; never fatal.
+        from scripts.build_ipo import build as _build_ipo
+        _build_ipo()
+    except Exception as e:  # noqa: BLE001
+        log.error("ipo radar page (via build_vector) failed (%s)", e)
     try:  # Canada / S&P-TSX dashboard — has no dedicated daily.yml step yet (the PAT that
           # opened PR #81 lacked `workflow` scope), so it is built here, before the landing
           # hub reads _canada_state(). Self-sufficient + returns 0; never breaks the build.
