@@ -1097,7 +1097,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
     canada = canada or {"present": False}
     canada_risk = canada.get("risk", "")
     canada_card = ("" if not canada.get("present") else f"""
-  <a class="c" href="canada.html">
+  <a class="c c--canada" href="canada.html">
     <div class="ico">\U0001F1E8\U0001F1E6</div>
     <h2>{T('Canada — S&P/TSX', '加拿大 — 标普/TSX')}</h2>
     <p>{T('Regime, a commodity / CAD / BoC-vs-Fed overlay, sector rotation & cycle read for the TSX.', 'TSX 的周期状态、大宗商品／加元／央行-美联储叠加、板块轮动与周期解读。')}</p>
@@ -1107,7 +1107,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
     commodities = commodities or {"present": False}
     fav = ", ".join(commodities.get("favored", []))
     commodities_card = ("" if not commodities.get("present") else f"""
-  <a class="c" href="commodities.html">
+  <a class="c c--commodity" href="commodities.html">
     <div class="ico">◆</div>
     <h2>{T('Commodity Vector', '大宗商品向量')}</h2>
     <p>{T('Regime, allocation & shock-detection for gold, silver, oil & copper.', '黄金、白银、原油与铜的周期、配置与冲击检测。')}</p>
@@ -1117,7 +1117,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
     forex = forex or {"present": False}
     fx_risk = forex.get("risk", "")
     forex_card = ("" if not forex.get("present") else f"""
-  <a class="c" href="forex.html">
+  <a class="c c--forex" href="forex.html">
     <div class="ico">💱</div>
     <h2>{T('Forex Vector', '外汇向量')}</h2>
     <p>{T('Dollar-first currency board — the dollar-smile regime plus risk-context signals on 9 pairs, each scored on its dollar-orthogonalized residual.', '以美元为先的货币面板——美元微笑格局，以及9个货币对在剥离美元后的风险背景信号。')}</p>
@@ -1133,7 +1133,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
               else f"{T(bonds.get('label', '—'), TR(bonds.get('label', '—')))}")
     b_stat = b_main + (f" · {T(b_phase, TR(b_phase))}" if b_phase else "")
     bonds_card = ("" if not bonds.get("present") else f"""
-  <a class="c" href="bonds.html">
+  <a class="c c--bonds" href="bonds.html">
     <div class="ico">\U0001F3DB️</div>
     <h2>{T('Bonds & Bond Health', '债券与债券健康')}</h2>
     <p>{T('What the curve, credit, real rates, rates-vol & funding plumbing say about economic health, regime & the cycle.', '收益率曲线、信用利差、实际利率、利率波动与资金管道对经济健康、周期状态与所处阶段的判读。')}</p>
@@ -1145,7 +1145,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
                + ((" · " + T(crossasset.get("correlation"), TR(crossasset.get("correlation"))))
                   if crossasset.get("correlation") else ""))
     crossasset_card = ("" if not crossasset.get("present") else f"""
-  <a class="c" href="crossasset.html">
+  <a class="c c--crossasset" href="crossasset.html">
     <div class="ico">🧭</div>
     <h2>{T('Cross-Asset Vector', '跨资产向量')}</h2>
     <p>{T('What is trending across equities, bonds, commodities, the dollar & crypto — time-series momentum, intermarket ratios & the correlation regime. A regime read, not a strategy.', '股票、债券、商品、美元与加密货币之间在趋势什么——时间序列动量、跨市场比价与相关性体制。体制判读，而非策略。')}</p>
@@ -1154,7 +1154,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
   </a>""")
     watchlist = watchlist or {"present": False}
     watchlist_card = ("" if not watchlist.get("present") else f"""
-  <a class="c" href="watchlist.html">
+  <a class="c c--watch" href="watchlist.html">
     <div class="ico">📋</div>
     <h2>{T('Watchlist', '持仓清单')}</h2>
     <p>{T('Track your own holdings — equities, ETFs, commodities and crypto — each with its live signal.', '跟踪你自己的持仓——股票、ETF、大宗商品与加密货币——每个都附带实时信号。')}</p>
@@ -1163,7 +1163,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
   </a>""")
     etf = etf or {"present": False}
     etf_card = ("" if not etf.get("present") else f"""
-  <a class="c" href="etfs.html">
+  <a class="c c--etf" href="etfs.html">
     <div class="ico">🐳</div>
     <h2>{T('ETF Flow Radar', 'ETF 资金雷达')}</h2>
     <p>{T('What funds are accumulating and trimming — flow-normalized share decisions across popular ETFs, tagged manager-conviction vs index-rebalance.', '基金在增持与减持什么——主流 ETF 经资金流标准化的份额决策，并标注“经理人信念”与“指数再平衡”。')}</p>
@@ -1198,7 +1198,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
     cn_stat = (T(f"{_cn_n} setups · screener", f"{_cn_n} 形态 · 筛选") if _cn_n
                else T('Setups · screener · lookup', '形态 · 筛选 · 查询'))
     china_hero = ("" if not china.get("present") else f"""
-  <div class="c-hero">
+  <div class="c-hero c-hero--china">
     <div class="ch-title"><span class="ch-ico">\U0001F1E8\U0001F1F3</span>{T('China', '中国')}</div>
     <div class="ch-halves">
       <a class="c-half" href="china.html">
@@ -1219,7 +1219,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
     hk_stat = (T(f"{_hk_n} beta exposures", f"{_hk_n} 个 beta 敞口") if _hk_n
                else T('Beta exposure · sectors · lookup', 'Beta敞口 · 板块 · 查询'))
     hk_hero = ("" if not hk.get("present") else f"""
-  <div class="c-hero">
+  <div class="c-hero c-hero--hk">
     <div class="ch-title"><span class="ch-ico">\U0001F1ED\U0001F1F0</span>{T('Hong Kong', '香港')}</div>
     <div class="ch-halves">
       <a class="c-half" href="hk.html">
@@ -1235,7 +1235,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
     </div>
   </div>""")
     bitcoin_card = f"""
-  <a class="c" href="vector.html">
+  <a class="c c--btc" href="vector.html">
     <div class="ico">₿</div>
     <h2>{T('Bitcoin Vector', '比特币向量')}</h2>
     <p>{T('Risk regime, momentum, structure & backtested allocation for Bitcoin.', '比特币的风险状态、动量、结构与经回测的仓位策略。')}</p>
@@ -1246,7 +1246,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
     spvector = spvector or {"present": False}
     sp_w = spvector.get("weight")
     spvector_card = ("" if not spvector.get("present") else f"""
-  <a class="c" href="spvector.html">
+  <a class="c c--sp" href="spvector.html">
     <div class="ico">📈</div>
     <h2>{T('S&P / Macro Vector', '标普宏观向量')}</h2>
     <p>{T('Stay-in / step-out allocation for the broad US index vs T-bills — a backtested drawdown & Sharpe engine.', '美国大盘指数与短债之间的进出场配置——经回测、以回撤与夏普为目标的引擎。')}</p>
@@ -1264,25 +1264,44 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
 *{{box-sizing:border-box}}
 body{{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
  font-family:Inter,sans-serif;display:flex;flex-direction:column;align-items:center;
- padding:22px 20px 60px}}
+ padding:22px 20px 64px;position:relative;overflow-x:hidden}}
+/* ambient aurora — fixed accent washes blended into transparent so they read on
+   both the dark and light palettes without overpowering the content */
+body::before{{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+ background:
+  radial-gradient(680px 440px at 10% -10%,color-mix(in srgb,#416aec 15%,transparent),transparent 68%),
+  radial-gradient(620px 440px at 94% 2%,color-mix(in srgb,#8b5cf6 13%,transparent),transparent 70%),
+  radial-gradient(760px 520px at 50% 112%,color-mix(in srgb,#0ea5e9 11%,transparent),transparent 70%)}}
 /* top bar — theme + language toggles pinned to the right of the content column */
 .hub-top{{width:100%;max-width:1120px;display:flex;justify-content:flex-end;
- align-items:center;gap:10px;margin-bottom:22px}}
-.h{{text-align:center;margin-bottom:36px}}
-.h h1{{font-size:40px;font-weight:800;color:var(--text);letter-spacing:-.03em;margin:0 0 8px}}
-.h p{{color:var(--muted);font-size:17px;margin:0}}
+ align-items:center;gap:10px;margin-bottom:8px}}
+.h{{text-align:center;margin:16px 0 38px}}
+.eyebrow{{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;
+ color:var(--muted);background:color-mix(in srgb,var(--panel) 64%,transparent);
+ border:1px solid var(--line);padding:6px 14px;border-radius:999px;margin-bottom:18px;
+ -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}}
+.eyebrow .live{{width:7px;height:7px;border-radius:50%;background:#22c55e;
+ box-shadow:0 0 0 0 color-mix(in srgb,#22c55e 55%,transparent);animation:livepulse 2.4s ease-out infinite}}
+@keyframes livepulse{{0%{{box-shadow:0 0 0 0 color-mix(in srgb,#22c55e 55%,transparent)}}
+ 70%{{box-shadow:0 0 0 8px transparent}}100%{{box-shadow:0 0 0 0 transparent}}}}
+.h h1{{font-size:clamp(34px,5vw,52px);font-weight:800;letter-spacing:-.035em;line-height:1.04;margin:0 0 12px;
+ background:linear-gradient(176deg,var(--text) 28%,color-mix(in srgb,var(--text) 52%,var(--muted)));
+ -webkit-background-clip:text;background-clip:text;color:transparent}}
+.h p{{color:var(--muted);font-size:clamp(15px,2vw,18px);margin:0 auto;max-width:560px;line-height:1.5}}
 .cards{{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px;width:100%;max-width:1120px}}
 @media(max-width:720px){{.cards{{grid-template-columns:1fr}}}}
 /* combined alert feed */
-.feed{{width:100%;max-width:880px;margin-top:30px}}
-.feed-h{{display:flex;align-items:baseline;justify-content:space-between;margin:0 4px 12px}}
-.feed-h h3{{font-size:16px;font-weight:800;color:var(--text);margin:0}}
+.feed{{width:100%;max-width:880px;margin-top:48px}}
+.feed-h{{display:flex;align-items:baseline;justify-content:space-between;margin:0 6px 14px;flex-wrap:wrap;gap:6px}}
+.feed-h h3{{font-size:17px;font-weight:800;color:var(--text);margin:0;letter-spacing:-.01em}}
 .feed-h .n{{font-size:13px;color:var(--muted);font-weight:600}}
-.feed-card{{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:10px 22px}}
+.feed-card{{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:6px 22px;
+ box-shadow:0 1px 3px rgba(16,24,64,.04)}}
 .ha-item{{border-bottom:1px solid var(--line)}}
 .ha-item:last-child{{border-bottom:none}}
-.ha-item summary{{display:flex;align-items:center;gap:11px;padding:13px 0;cursor:pointer;
- list-style:none;flex-wrap:wrap}}
+.ha-item summary{{display:flex;align-items:center;gap:11px;padding:14px 0;cursor:pointer;
+ list-style:none;flex-wrap:wrap;transition:padding-left .18s ease}}
+.ha-item summary:hover{{padding-left:5px}}
 .ha-item summary::-webkit-details-marker{{display:none}}
 .ha-dot{{width:10px;height:10px;border-radius:50%;flex:none}}
 .ha-dot.d-high{{background:var(--act)}} .ha-dot.d-medium{{background:var(--info)}} .ha-dot.d-info{{background:var(--muted)}}
@@ -1300,43 +1319,81 @@ body{{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
 .ha-edge b{{color:var(--muted);font-weight:600}}
 .ha-open{{display:inline-block;color:var(--link);font-weight:700}}
 .ha-empty{{padding:18px;text-align:center;color:var(--muted);font-size:14px}}
-.c{{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:30px;
- text-decoration:none;color:inherit;transition:transform .15s,box-shadow .15s,border-color .15s;display:block}}
-.c:hover{{transform:translateY(-3px);box-shadow:0 12px 30px rgba(16,24,64,.18);border-color:var(--link)}}
-.c .ico{{font-size:30px}}
-.c h2{{font-size:23px;font-weight:800;color:var(--text);margin:14px 0 6px;letter-spacing:-.02em}}
-.c p{{color:var(--muted);font-size:14px;margin:0 0 18px;min-height:40px}}
-.stat{{display:inline-block;padding:6px 12px;border-radius:9px;background:var(--panel2);
- color:var(--text);font-weight:700;font-size:13px;margin-right:8px}}
-.stat.on{{background:color-mix(in srgb,var(--info) 16%,var(--panel));color:color-mix(in srgb,var(--info) 80%,var(--text))}}
-.stat.off{{background:color-mix(in srgb,var(--act) 16%,var(--panel));color:color-mix(in srgb,var(--act) 80%,var(--text))}}
-.go{{margin-top:18px;font-weight:700;color:var(--link);font-size:14px}}
+.c{{--accent:#416aec;position:relative;background:var(--panel);border:1px solid var(--line);border-radius:18px;
+ padding:22px;text-decoration:none;color:inherit;display:flex;flex-direction:column;overflow:hidden;isolation:isolate;
+ transition:transform .2s cubic-bezier(.2,.7,.3,1),box-shadow .2s ease,border-color .2s ease}}
+.c::before{{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+ background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 22%,transparent));
+ transform:scaleX(0);transform-origin:left;transition:transform .3s cubic-bezier(.2,.7,.3,1)}}
+.c::after{{content:'';position:absolute;inset:0;z-index:-1;opacity:0;
+ background:radial-gradient(360px 180px at 100% 0%,color-mix(in srgb,var(--accent) 12%,transparent),transparent 68%);
+ transition:opacity .25s ease}}
+.c:hover{{transform:translateY(-4px);border-color:color-mix(in srgb,var(--accent) 50%,var(--line));
+ box-shadow:0 18px 38px -14px color-mix(in srgb,var(--accent) 42%,transparent)}}
+.c:hover::before{{transform:scaleX(1)}} .c:hover::after{{opacity:1}}
+.c--canada{{--accent:#e5484d}} .c--btc{{--accent:#f7931a}} .c--sp{{--accent:#6366f1}}
+.c--commodity{{--accent:#d4a12a}} .c--forex{{--accent:#14b8a6}} .c--bonds{{--accent:#0ea5e9}}
+.c--crossasset{{--accent:#8b5cf6}} .c--etf{{--accent:#3b82f6}} .c--watch{{--accent:#64748b}}
+.c .ico{{width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:22px;
+ border-radius:12px;background:color-mix(in srgb,var(--accent) 15%,var(--panel2));
+ border:1px solid color-mix(in srgb,var(--accent) 24%,var(--line));margin-bottom:13px;
+ transition:transform .2s cubic-bezier(.2,.7,.3,1)}}
+.c:hover .ico{{transform:scale(1.07) rotate(-4deg)}}
+.c h2{{font-size:18px;font-weight:800;color:var(--text);margin:0 0 6px;letter-spacing:-.02em}}
+.c p{{color:var(--muted);font-size:13px;margin:0 0 13px;line-height:1.5;flex:1}}
+.stat{{display:inline-block;padding:5px 10px;border-radius:8px;
+ background:color-mix(in srgb,var(--accent) 11%,var(--panel2));
+ color:color-mix(in srgb,var(--accent) 70%,var(--text));font-weight:700;font-size:12.5px;
+ margin:0 6px 6px 0;border:1px solid color-mix(in srgb,var(--accent) 16%,transparent)}}
+.stat.on{{background:color-mix(in srgb,var(--info) 16%,var(--panel));color:color-mix(in srgb,var(--info) 80%,var(--text));border-color:color-mix(in srgb,var(--info) 22%,transparent)}}
+.stat.off{{background:color-mix(in srgb,var(--act) 16%,var(--panel));color:color-mix(in srgb,var(--act) 80%,var(--text));border-color:color-mix(in srgb,var(--act) 22%,transparent)}}
+.go{{margin-top:auto;padding-top:2px;font-weight:700;color:var(--accent);font-size:13px;transition:transform .2s ease}}
+.c:hover .go{{transform:translateX(3px)}}
 /* row 1 — three core-market hero cards, each split macro / stocks */
-.cards-hero{{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;width:100%;max-width:1120px;margin-bottom:22px}}
+.cards-hero{{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;width:100%;max-width:1120px;margin-bottom:20px}}
 @media(max-width:860px){{.cards-hero{{grid-template-columns:1fr}}}}
-.c-hero{{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:18px 18px 16px;display:flex;flex-direction:column}}
-.ch-title{{font-size:22px;font-weight:800;color:var(--text);letter-spacing:-.02em;display:flex;align-items:center;gap:9px;margin-bottom:12px}}
-.ch-title .ch-ico{{font-size:24px}}
-.c-half{{display:block;text-decoration:none;color:inherit;border:1px solid var(--line);border-radius:13px;padding:14px 15px;transition:transform .12s,border-color .12s,background .12s}}
-.c-half + .c-half{{margin-top:11px}}
-.c-half:hover{{border-color:var(--link);background:var(--panel2);transform:translateY(-1px)}}
-.ch-top{{display:flex;align-items:center;gap:8px;margin-bottom:7px}}
+.c-hero{{--accent:#416aec;position:relative;background:var(--panel);border:1px solid var(--line);
+ border-radius:20px;padding:18px 18px 16px;display:flex;flex-direction:column;overflow:hidden;isolation:isolate;
+ transition:transform .2s cubic-bezier(.2,.7,.3,1),box-shadow .2s ease,border-color .2s ease}}
+.c-hero::before{{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+ background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 22%,transparent));
+ transform:scaleX(0);transform-origin:left;transition:transform .3s cubic-bezier(.2,.7,.3,1)}}
+.c-hero:hover{{transform:translateY(-3px);border-color:color-mix(in srgb,var(--accent) 42%,var(--line));
+ box-shadow:0 18px 40px -16px color-mix(in srgb,var(--accent) 40%,transparent)}}
+.c-hero:hover::before{{transform:scaleX(1)}}
+.c-hero--china{{--accent:#e35d6a}} .c-hero--hk{{--accent:#a855f7}}
+.ch-title{{font-size:21px;font-weight:800;color:var(--text);letter-spacing:-.02em;display:flex;align-items:center;gap:10px;margin-bottom:13px}}
+.ch-title .ch-ico{{width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:19px;
+ border-radius:10px;background:color-mix(in srgb,var(--accent) 15%,var(--panel2));
+ border:1px solid color-mix(in srgb,var(--accent) 24%,var(--line))}}
+.c-half{{display:block;text-decoration:none;color:inherit;border:1px solid var(--line);border-radius:13px;
+ padding:13px 14px;background:color-mix(in srgb,var(--panel2) 45%,transparent);
+ transition:transform .14s ease,border-color .14s ease,background .14s ease,box-shadow .14s ease}}
+.c-half + .c-half{{margin-top:10px}}
+.c-half:hover{{border-color:color-mix(in srgb,var(--accent) 55%,var(--line));
+ background:color-mix(in srgb,var(--accent) 7%,var(--panel2));transform:translateY(-1px);
+ box-shadow:0 8px 18px -10px color-mix(in srgb,var(--accent) 45%,transparent)}}
+.ch-top{{display:flex;align-items:center;gap:8px;margin-bottom:8px}}
 .ch-top b{{font-size:15px;font-weight:700;color:var(--text)}}
-.ch-tag{{margin-left:auto;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:var(--panel2);padding:2px 8px;border-radius:6px}}
-.ch-stat{{display:inline-block;padding:5px 11px;border-radius:8px;background:var(--panel2);color:var(--text);font-weight:700;font-size:13px}}
-.ch-go{{margin-top:9px;font-weight:700;color:var(--link);font-size:13px}}
-/* row 2 — smaller ancillary cards */
-.cards-sub{{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;width:100%;max-width:1120px}}
+.ch-tag{{margin-left:auto;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+ color:color-mix(in srgb,var(--accent) 68%,var(--text));
+ background:color-mix(in srgb,var(--accent) 12%,var(--panel2));padding:2px 8px;border-radius:6px}}
+.ch-stat{{display:inline-block;padding:5px 11px;border-radius:8px;
+ background:color-mix(in srgb,var(--accent) 11%,var(--panel2));
+ color:color-mix(in srgb,var(--accent) 72%,var(--text));font-weight:700;font-size:12.5px;
+ border:1px solid color-mix(in srgb,var(--accent) 16%,transparent)}}
+.ch-go{{margin-top:9px;font-weight:700;color:var(--accent);font-size:13px}}
+/* row 2 — smaller ancillary cards (styled via .c above, with per-card --accent) */
+.cards-sub{{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:18px;width:100%;max-width:1120px}}
 @media(max-width:720px){{.cards-sub{{grid-template-columns:1fr}}}}
-.cards-sub .c{{padding:22px;border-radius:16px}}
-.cards-sub .c .ico{{font-size:24px}}
-.cards-sub .c h2{{font-size:19px;margin:10px 0 5px}}
-.cards-sub .c p{{font-size:13px;min-height:34px;margin-bottom:12px}}
 .foot{{margin-top:40px;color:var(--muted);font-size:12px;text-align:center}}
 .site-footer{{width:100%;max-width:880px;margin:30px auto 0;padding-top:22px;
  border-top:1px solid var(--line);text-align:center;line-height:1.6}}
 .site-footer .made{{display:block;font-size:13.5px;font-weight:700;color:var(--text);letter-spacing:.2px}}
 .site-footer .dev{{display:block;margin-top:1px;font-size:12px;color:var(--muted)}}
+@media (prefers-reduced-motion: reduce){{.eyebrow .live{{animation:none}}
+ .c,.c .ico,.go,.c-hero,.c-half,.ha-item summary{{transition:none}}
+ .c:hover,.c-hero:hover{{transform:none}}}}
 </style></head><body>
 <div class="hub-top">
   <button class="theme-switch" aria-label="Toggle dark / light mode">
@@ -1348,8 +1405,11 @@ body{{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
     <span class="opt zh-opt" data-l="zh">中文</span>
   </div>
 </div>
-<div class="h"><h1>{T('Market Intelligence', '市场情报')}</h1>
-<p>{T('Market regime dashboards, one zero-cost data engine.', '市场周期仪表盘，一套零成本数据引擎。')}</p></div>
+<div class="h">
+  <span class="eyebrow"><span class="live"></span>{T('Live · zero-cost data engine · updated', '实时 · 零成本数据引擎 · 更新于')} {vm['built']}</span>
+  <h1>{T('Market Intelligence', '市场情报')}</h1>
+  <p>{T('Market regime dashboards across every major asset class — one mechanical, backtested engine.', '覆盖各大类资产的市场周期仪表盘——一套机械化、经回测的引擎。')}</p>
+</div>
 <div class="cards-hero">{us_hero}{china_hero}{hk_hero}</div>
 <div class="cards-sub">{canada_card}{bitcoin_card}{spvector_card}{commodities_card}{forex_card}{bonds_card}{crossasset_card}{etf_card}{watchlist_card}</div>
 <div class="feed">
