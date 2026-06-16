@@ -110,6 +110,29 @@
   table { border-collapse:collapse; width:100%; font-size:13px; }
   th,td { text-align:left; padding:4px 8px; border-bottom:1px solid var(--line); }
   th { color:var(--muted); font-weight:500; }
+  /* ---- unified Conviction Profile hero (SCREEN framing — mirror of US stock.html) ---- */
+  .conv { margin:8px 0 4px; padding:11px 13px; border-radius:11px; background:var(--panel2); border:1px solid var(--line); }
+  .cv-head { display:flex; align-items:center; gap:11px; }
+  .cv-score { font-size:22px; font-weight:800; font-variant-numeric:tabular-nums; min-width:48px;
+              text-align:center; padding:3px 9px; border-radius:10px; border:1px solid var(--line); }
+  .cv-score.band-high { color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,var(--line));
+                        background:color-mix(in srgb,var(--up) 12%,var(--panel)); }
+  .cv-score.band-constructive { color:var(--g-cold); border-color:color-mix(in srgb,var(--g-cold) 40%,var(--line)); }
+  .cv-score.band-neutral { color:var(--muted); }
+  .cv-score.band-low { color:var(--down); border-color:color-mix(in srgb,var(--down) 38%,var(--line)); }
+  .cv-verdict { font-size:15px; font-weight:800; line-height:1.25; }
+  .cv-tier { font-size:11px; color:var(--muted); margin-top:1px; }
+  .cv-axes { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:9px; }
+  .cax { font-size:10.5px; }
+  .cax .caxl { color:var(--muted); display:block; }
+  .cax .caxbar { display:block; height:5px; border-radius:3px; background:var(--line); margin:2px 0; overflow:hidden; }
+  .cax .caxf { display:block; height:100%; background:var(--g-cold); border-radius:3px; }
+  .cax.cax-na .caxf { background:transparent; }
+  .cax .caxv { font-weight:700; font-variant-numeric:tabular-nums; }
+  .cv-cau { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .cv-cau .ccau { font-size:11px; font-weight:700; padding:1px 7px; border-radius:7px;
+                  color:var(--warn); background:color-mix(in srgb,var(--warn) 13%,var(--panel)); }
+  .cv-note { font-size:11px; color:var(--muted); margin-top:8px; line-height:1.5; }
   #result { display:none; }
 </style>
 </head>
@@ -143,6 +166,7 @@
         <span id="r_asof" class="muted"></span>
       </div>
       <p id="r_summary" class="muted" style="margin:2px 0 6px; font-size:13.5px"></p>
+      <div id="r_conviction" class="conv" style="display:none"></div>
       <div id="r_entry" class="entrybar"><span class="entrytag" id="r_tag"></span><span id="r_entrytext"></span></div>
       <p id="r_age" class="agewhen" style="display:none"></p>
       <p id="r_early" class="early" style="display:none"></p>
@@ -310,10 +334,46 @@
       document.getElementById('r_name').textContent = t;
       document.getElementById('r_state').textContent = L('notlib');
       document.getElementById('r_state').className = 'state';
+      document.getElementById('r_conviction').style.display = 'none';   // never show a prior ticker's profile
       document.getElementById('r_entry').style.display = 'none';
       document.getElementById('r_points').innerHTML = '';
       document.getElementById('r_cyclebox').innerHTML = L('notlibmsg');
     });
+  }
+
+  // unified Conviction Profile hero — the SAME engine block the standout cards on
+  // hk.html show, so the two surfaces can never structurally disagree. SCREEN framing:
+  // HK has no validated selection edge, so the SELECTION axis is relative strength,
+  // the trust tier reads "screen", and the verdict never says "Buy" (the cycle caps it).
+  var CAX_LABELS = { selection: ['Rel. strength', '相对强度'], entry: ['Entry', '入场'],
+                     tailwind: ['Tailwind', '顺风'], quality: ['Quality', '质量'] };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function renderConviction(d) {
+    var box = document.getElementById('r_conviction'), c = d.conviction;
+    if (!box) return;
+    if (!c) { box.style.display = 'none'; return; }
+    var tt = c.trust_tier || {};
+    var ax = ['selection', 'entry', 'tailwind', 'quality'].map(function (k) {
+      var a = (c.axes && c.axes[k]) || {}, lab = CAX_LABELS[k], pct = a.pct;
+      return '<div class="cax' + (pct == null ? ' cax-na' : '') + '"><span class="caxl">' +
+        lz(lab[0], lab[1]) + '</span><span class="caxbar"><span class="caxf" style="width:' +
+        (pct == null ? 0 : pct) + '%"></span></span><span class="caxv">' +
+        (pct == null ? '—' : pct) + '</span></div>';
+    }).join('');
+    var cau = (c.cautions || []).map(function (x) {
+      return '<span class="ccau">⚠ ' + esc(x) + '</span>'; }).join('');
+    box.innerHTML =
+      '<div class="cv-head">' +
+        (c.score != null ? '<span class="cv-score band-' + c.band + '">' + c.score + '</span>' : '') +
+        '<div class="cv-vtext"><div class="cv-verdict">' + esc(lz(c.verdict, c.verdict_zh)) + '</div>' +
+        '<div class="cv-tier">' + esc(lz(tt.en, tt.zh)) + '</div></div></div>' +
+      '<div class="cv-axes">' + ax + '</div>' +
+      (cau ? '<div class="cv-cau">' + cau + '</div>' : '') +
+      '<div class="cv-note">' + lz(
+        'A transparent decomposition of legs already shown below — NOT a new edge. HK has no validated stock-selection alpha, so this is a relative-strength / exposure screen: the score is a within-market percentile (display, not a probability) and the cycle state caps the verdict — a downtrend never reads "Buy".',
+        '这是对下方已有维度的透明拆解 —— 并非新的优势。香港没有经验证的选股阿尔法，故此为相对强度／敞口筛选：分数为市场内百分位（展示，而非概率），且周期状态会封顶结论 —— 下行趋势永不显示“买入”。') + '</div>';
+    box.style.display = '';
   }
 
   function render(d) {
@@ -324,6 +384,7 @@
     st.className = 'state st-' + d.ladder.state.replace(/ /g, '_');
     document.getElementById('r_summary').textContent = lz(d.ladder.summary_line, d.ladder.summary_line_zh);
     document.getElementById('r_asof').textContent = L('asof') + ' ' + d.asof;
+    renderConviction(d);
 
     var e = d.ladder.entry || {};
     var eb = document.getElementById('r_entry');

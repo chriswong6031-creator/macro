@@ -157,6 +157,34 @@
   .gchip .gk { color:var(--muted); display:block; font-size:10px; text-transform:uppercase; letter-spacing:.05em; }
   .gchip .gv { font-weight:700; font-size:14px; }
   .gchip.dashed { border-style:dashed; opacity:.7; }
+  /* ---- unified Conviction Profile hero ---- */
+  .conv { margin:8px 0 4px; padding:11px 13px; border-radius:11px; background:var(--panel2);
+          border:1px solid var(--line); }
+  .cv-head { display:flex; align-items:center; gap:11px; }
+  .cv-score { font-size:22px; font-weight:800; font-variant-numeric:tabular-nums; min-width:48px;
+              text-align:center; padding:3px 9px; border-radius:10px; border:1px solid var(--line); }
+  .cv-score.band-high { color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,var(--line));
+                        background:color-mix(in srgb,var(--up) 12%,var(--panel)); }
+  .cv-score.band-constructive { color:var(--g-cold); border-color:color-mix(in srgb,var(--g-cold) 40%,var(--line)); }
+  .cv-score.band-neutral { color:var(--muted); }
+  .cv-score.band-low { color:var(--down); border-color:color-mix(in srgb,var(--down) 38%,var(--line)); }
+  .cv-verdict { font-size:15px; font-weight:800; line-height:1.25; }
+  .cv-tier { font-size:11px; color:var(--muted); margin-top:1px; }
+  .cv-axes { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:9px; }
+  .cax { font-size:10.5px; }
+  .cax .caxl { color:var(--muted); display:block; }
+  .cax .caxbar { display:block; height:5px; border-radius:3px; background:var(--line); margin:2px 0; overflow:hidden; }
+  .cax .caxf { display:block; height:100%; background:var(--g-cold); border-radius:3px; }
+  .cax.cax-na .caxf { background:transparent; }
+  .cax .caxv { font-weight:700; font-variant-numeric:tabular-nums; }
+  .cv-cau { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .cv-cau .ccau { font-size:11px; font-weight:700; padding:1px 7px; border-radius:7px;
+                  color:var(--warn); background:color-mix(in srgb,var(--warn) 13%,var(--panel)); }
+  .cv-note { font-size:11px; color:var(--muted); margin-top:8px; line-height:1.5; }
+  .cvchip { font-weight:800; font-variant-numeric:tabular-nums; padding:0 6px; border-radius:7px;
+            border:1px solid var(--line); }
+  .cvchip.band-high { color:var(--up); } .cvchip.band-constructive { color:var(--g-cold); }
+  .cvchip.band-neutral { color:var(--muted); } .cvchip.band-low { color:var(--down); }
   .chips { display:flex; flex-wrap:wrap; gap:6px; }
   .chip { padding:3px 9px; border-radius:8px; background:var(--panel2); border:1px solid var(--line); font-size:12px; }
   .srcline { color:var(--muted); font-size:11px; margin:8px 0 0; }
@@ -344,6 +372,8 @@
       </div>
       <p id="r_summary" class="muted" style="margin:2px 0 6px; font-size:13.5px"></p>
       <div id="r_glance" class="glance" style="display:none"></div>
+      <!-- unified Conviction Profile hero — the SAME block the standout card shows -->
+      <div id="r_conviction" class="conv" style="display:none"></div>
       <!-- bold VERDICT + at-a-glance SIGNAL STRIP (replace the thin entry bar) -->
       <div id="r_verdict" class="verdict"></div>
       <div id="r_sigstrip" class="sigstrip"></div>
@@ -704,8 +734,13 @@
     if (val && val.shareholder_yield && val.shareholder_yield.v != null)
       chips.push(gchip(LF('shyield'), fmtPct(val.shareholder_yield.v, 2)));
     if (isEquity) {
-      chips.push(gchip(LF('nextearn'), '<span class="muted">' + LF('soon') + '</span>', true));
-      chips.push(gchip(LF('verdict'), '<span class="muted">' + LF('tbd') + '</span>', true));
+      var _earn = d.earnings || {};
+      if (_earn.next_date) chips.push(gchip(LF('nextearn'), '<b>' + esc(_earn.next_date) + '</b>'));
+      else chips.push(gchip(LF('nextearn'), '<span class="muted">' + LF('na') + '</span>', true));
+      var _cv = d.conviction;
+      if (_cv && _cv.score != null)
+        chips.push(gchip(LF('verdict'), '<span class="cvchip band-' + _cv.band + '">' + _cv.score + '</span>'));
+      else chips.push(gchip(LF('verdict'), '<span class="muted">' + LF('na') + '</span>', true));
     }
     var glance = el('r_glance');
     if (chips.length) { glance.innerHTML = chips.join(''); glance.style.display = 'flex'; }
@@ -952,6 +987,39 @@
       '<span class="v-text">' + esc(lz(e.text, e.text_zh)) + '</span>';
   }
 
+  // unified Conviction Profile hero — renders the SAME block as the standout card,
+  // so the dashboard and this page can never structurally disagree. The cycle ladder
+  // below is the calibrated short-term timing read; conviction blends it with the
+  // long-term quality read and is shown as context (the cycle caps the verdict).
+  var CAX_LABELS = { selection: ['Selection', '选股'], entry: ['Entry', '入场'],
+                     tailwind: ['Tailwind', '顺风'], quality: ['Quality', '质量'] };
+  function renderConviction(d) {
+    var box = el('r_conviction'), c = d.conviction;
+    if (!box) return;
+    if (!c) { box.style.display = 'none'; return; }
+    var tt = c.trust_tier || {};
+    var ax = ['selection', 'entry', 'tailwind', 'quality'].map(function (k) {
+      var a = (c.axes && c.axes[k]) || {}, lab = CAX_LABELS[k], pct = a.pct;
+      return '<div class="cax' + (pct == null ? ' cax-na' : '') + '"><span class="caxl">' +
+        lz(lab[0], lab[1]) + '</span><span class="caxbar"><span class="caxf" style="width:' +
+        (pct == null ? 0 : pct) + '%"></span></span><span class="caxv">' +
+        (pct == null ? '—' : pct) + '</span></div>';
+    }).join('');
+    var cau = (c.cautions || []).map(function (x) {
+      return '<span class="ccau">⚠ ' + esc(x) + '</span>'; }).join('');
+    box.innerHTML =
+      '<div class="cv-head">' +
+        (c.score != null ? '<span class="cv-score band-' + c.band + '">' + c.score + '</span>' : '') +
+        '<div class="cv-vtext"><div class="cv-verdict">' + esc(lz(c.verdict, c.verdict_zh)) + '</div>' +
+        '<div class="cv-tier">' + esc(lz(tt.en, tt.zh)) + '</div></div></div>' +
+      '<div class="cv-axes">' + ax + '</div>' +
+      (cau ? '<div class="cv-cau">' + cau + '</div>' : '') +
+      '<div class="cv-note">' + lz(
+        'Conviction blends a calibrated short-term timing read (the cycle below) with an uncalibrated long-term quality read — context, not a probability. The cycle state caps the verdict: a downtrend never reads “Buy”.',
+        '确信度融合了已校准的短期择时读数（下方周期）与未校准的长期质量读数——作为情境，而非概率。周期状态会封顶结论：下行趋势永不显示“买入”。') + '</div>';
+    box.style.display = '';
+  }
+
   function sigchip(cls, k, val, sub) {
     return '<div class="sigchip ' + cls + '"><span class="sc-k">' + k + '</span>' +
       '<span class="sc-v">' + val + '</span>' + (sub ? '<span class="sc-s">' + sub + '</span>' : '') + '</div>';
@@ -1087,6 +1155,7 @@
       document.getElementById('r_state').className = 'state';
       document.getElementById('r_verdict').innerHTML = '';
       document.getElementById('r_sigstrip').innerHTML = '';
+      document.getElementById('r_conviction').style.display = 'none';   // never show a prior ticker's profile
       document.getElementById('r_afbtn').style.display = 'none';
       if (afCtl) afCtl.close();
       document.getElementById('r_points').innerHTML = '';
@@ -1261,6 +1330,7 @@
     document.getElementById('r_summary').textContent = lz(d.ladder.summary_line, d.ladder.summary_line_zh);
     document.getElementById('r_asof').textContent = L('asof') + ' ' + d.asof;
 
+    renderConviction(d);
     renderVerdict(d);
     renderSignalStrip(d);
     renderAlertFeed(d);

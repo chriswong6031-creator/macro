@@ -21,6 +21,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine import i18n  # noqa: E402
+from engine import stock_score  # noqa: E402
 from engine.cycles import analyze  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
@@ -82,12 +83,28 @@ def chart_series(close: pd.Series, n: int = 504) -> dict:
             "c": [round(float(v), 3) for v in c.values]}
 
 
+def current_liquidity() -> str | None:
+    """The live HK DUAL-liquidity regime ("expanding"/"contracting"/"neutral") the HK
+    engine last classified (hk_regime/latest.json `liquidity_overlay` — PBoC M2 +
+    Fed-via-peg + southbound). Threaded into analyze() as the orthogonal macro
+    conviction modifier on buy setups, mirroring the US library. None when
+    unavailable so the ladder simply omits the liquidity context."""
+    p = config.data_dir() / "hk_regime" / "latest.json"
+    if not p.exists():
+        return None
+    try:
+        liq = json.loads(p.read_text()).get("liquidity_overlay")
+    except Exception:  # noqa: BLE001
+        return None
+    return liq if liq in ("expanding", "contracting", "neutral") else None
+
+
 def _one(ticker: str, close: pd.Series, high: pd.Series | None,
-         name: str, sector: str) -> dict | None:
+         name: str, sector: str, liquidity: str | None = None) -> dict | None:
     c = close.dropna()
     if len(c) < 300:
         return None
-    res = analyze(c, high, kind="equity")
+    res = analyze(c, high, kind="equity", liquidity=liquidity)
     if not res.get("ladder"):
         return None
     month = int(c.index.max().month)
@@ -228,7 +245,57 @@ def _spark_svg(vals: list[float], color: str = "var(--link)",
             f'<circle cx="{lx:.1f}" cy="{ly:.1f}" r="2.6" fill="{color}"/></svg>')
 
 
-def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 6) -> dict | None:
+def _basket_tailwind_map() -> dict[str, dict]:
+    """Per-ticker thematic-basket TAILWIND for the Conviction "upside" axis — the
+    strongest HK theme a name belongs to, scored by that basket's 20d return vs the
+    HSI benchmark (engine.baskets_hk). Mirrors build_stock_library._basket_tailwind_map.
+    Best-effort — any failure yields {} and the axis is simply absent (the engine
+    never reads a missing leg as neutral)."""
+    out: dict[str, dict] = {}
+    try:
+        from engine import baskets_hk
+        data = baskets_hk.compute_hk_baskets() or {}
+        for b in (data.get("baskets") or []):
+            rel = ((b.get("perf") or {}).get("20d") or {}).get("rel")
+            if rel is None:
+                continue
+            rel20 = float(rel) * 100.0          # fraction -> percent
+            for m in (b.get("members") or []):
+                sym = m.get("symbol")
+                if not sym:
+                    continue
+                prev = out.get(sym)
+                if prev is None or abs(rel20) > abs(prev["rel20"]):
+                    out[sym] = {"name": b.get("name"), "rel20": rel20}
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("hk basket tailwind map unavailable (%s)", e)
+    return out
+
+
+def _fund_priors_map() -> dict[str, float]:
+    """Optional per-ticker fundamental-PRIORS z from the HK fundamentals cache — a
+    cross-sectional z of the Piotroski F-score (fundamental health, the only
+    health summary we have universe-wide). Clearly CONTEXT (HK has no validated
+    selection edge); fed to the Conviction quality axis as an ex-US prior alongside
+    the (absent) factor composite. Best-effort — {} when the cache is missing."""
+    import statistics
+    try:
+        from engine import hk_fundamentals
+        fmap = hk_fundamentals.build_all({}) or {}
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("hk fund priors unavailable (%s)", e)
+        return {}
+    scores = {t: (f.get("piotroski") or {}).get("score")
+              for t, f in fmap.items() if (f.get("piotroski") or {}).get("score") is not None}
+    if len(scores) < 5:
+        return {}
+    vals = list(scores.values())
+    mu = statistics.fmean(vals)
+    sd = statistics.pstdev(vals) or 1.0
+    return {t: (v - mu) / sd for t, v in scores.items()}
+
+
+def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 100, n_lag: int = 6) -> dict | None:
     """Standout HK names ranked by cross-sectional RELATIVE STRENGTH — each name's
     63-day (~3-month) return z-scored against the HK universe. HK has NO validated
     stock-picking alpha (residual momentum is dead on a 40y panel); this is a
@@ -275,7 +342,7 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
             "rsi": tech.get("rsi14"),
             "label": r.get("cycle"), "label_zh": r.get("cycle_zh"),
             "dir": r.get("cycle_dir") or "flat",
-            "_ret63": ret_63, "_chart": chart,
+            "_ret63": ret_63, "_chart": chart, "_rec": rec, "_path": f,
         })
     if len(enriched) < 4:
         return None
@@ -299,6 +366,41 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
         for i, e in enumerate(lst, 1):
             e["sector_rank"], e["sector_n"] = i, len(lst)
 
+    # ---- unified Conviction Profile (engine/stock_score), HK market ----------
+    # Profile EVERY enriched name so the per-stock detail page and these standout
+    # cards render the SAME block (they can never structurally disagree). HK has no
+    # validated stock-selection edge, so the SELECTION axis is the relative-strength
+    # z (framed as a screen) and trust_tier('HK')='screen' — the engine's verdict()
+    # never says "Buy". The cycle state is a HARD verb modifier. The shipped board
+    # rank STAYS the RS leg (below); the composite rides as the displayed profile.
+    as_of = (scoreboard or {}).get("as_of")
+    basket_tw = _basket_tailwind_map()
+    fund_priors = _fund_priors_map()
+    profiles: dict[str, dict] = {}
+    for e in enriched:
+        t = e["ticker"]
+        rec = e["_rec"]
+        # the standout's RS z lands in the engine's selection slot via rs_z; the
+        # per-name pullback/extended tag rides on alpha_entry so the entry axis reads it.
+        rec_for_norm = {**rec, "alpha": {"entry": e.get("alpha_entry")}}
+        norm = stock_score.normalize_rec(
+            rec_for_norm, "HK", rs_z=e["alpha"],
+            fund_priors_z=fund_priors.get(t), basket=basket_tw.get(t))
+        prof = stock_score.conviction_profile(norm, "HK", ctx={"as_of": as_of})
+        profiles[t] = prof
+        e["conviction"] = prof
+    stock_score.attach_panel_scores(profiles)        # within-market percentile display score
+    # patch the (now percentile-scored) conviction block back into each per-stock
+    # JSON so hk_lookup.html renders the identical hero. The library wrote these
+    # JSONs already; this mirrors the fundamentals / A-H premium patch pattern.
+    for e in enriched:
+        rec, fp = e["_rec"], e["_path"]
+        rec["conviction"] = profiles.get(e["ticker"])
+        try:
+            fp.write_text(json.dumps(rec, default=str))
+        except Exception:  # noqa: BLE001 — additive, never fatal
+            continue
+
     buys = sorted(enriched, key=lambda x: x["alpha"], reverse=True)[:n_buy]
     laggards = sorted(enriched, key=lambda x: x["alpha"])[:n_lag]
     for e in buys:
@@ -307,7 +409,22 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
         e["spark_svg"] = _spark_svg(e["_chart"][-64:], color=col)
     for e in enriched:                                          # drop bulky temp fields
         e.pop("_chart", None); e.pop("_ret63", None)
-    return {"as_of": (scoreboard or {}).get("as_of"), "buy": buys, "laggards": laggards}
+        e.pop("_rec", None); e.pop("_path", None)
+    out = {"as_of": as_of, "buy": buys, "laggards": laggards,
+           "eligible": sum(1 for e in enriched if e["alpha"] >= 0.5),
+           "universe": len(enriched)}
+    # persist the artifact so a transient build failure leaves a stale-but-present
+    # board (mirrors us_standouts.json — fixes the silent-vanish on a bad run).
+    try:
+        fdir = site / "factordata"
+        fdir.mkdir(parents=True, exist_ok=True)
+        (fdir / "hk_standouts.json").write_text(
+            json.dumps(out, separators=(",", ":"), default=str))
+        log.info("wrote hk_standouts.json (%d buy of %d eligible / %d universe)",
+                 len(buys), out["eligible"], out["universe"])
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("hk_standouts.json persist skipped (%s)", e)
+    return out
 
 
 def main(betas: dict | None = None) -> dict | None:
@@ -325,11 +442,13 @@ def main(betas: dict | None = None) -> dict | None:
         (fdir / "hk_global_beta.json").write_text(
             json.dumps(betas, separators=(",", ":"), default=str))
 
+    liq = current_liquidity()
+    log.info("hk dual-liquidity regime for library: %s", liq or "unknown")
     index, built, failed = [], 0, 0
     price_by: dict[str, float] = {}
     for ticker, close, high, name, sector in universe():
         try:
-            rec = _one(ticker, close, high, name, sector)
+            rec = _one(ticker, close, high, name, sector, liquidity=liq)
         except Exception as e:  # noqa: BLE001 — one bad ticker must not kill the library
             log.debug("hk library %s failed: %s", ticker, e)
             rec = None

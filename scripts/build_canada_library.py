@@ -22,6 +22,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from engine import stock_score  # noqa: E402
 from engine.cycles import analyze  # noqa: E402
 from engine.residual_alpha import compute_residual_alpha  # noqa: E402
 from engine.setups import CA_ALPHA_WEIGHT, rank_setups, setup_score  # noqa: E402
@@ -32,6 +33,48 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("canada_library")
 
 TSX_INDEX = "^GSPTSE"   # cap-weighted TSX market proxy for the residual-alpha leg
+
+
+def current_liquidity() -> str | None:
+    """The live Canada net-liquidity / regime overlay the engine last classified
+    (canada_regime/latest.json `liquidity_overlay`). Threaded into analyze() as the
+    orthogonal macro conviction modifier on buy setups (mirrors the US library);
+    None when unavailable so the ladder simply omits the liquidity context."""
+    p = config.data_dir() / "canada_regime" / "latest.json"
+    if not p.exists():
+        return None
+    try:
+        liq = json.loads(p.read_text()).get("liquidity_overlay")
+    except Exception:  # noqa: BLE001
+        return None
+    return liq if liq in ("expanding", "contracting", "neutral") else None
+
+
+def _basket_tailwind_map() -> dict[str, dict]:
+    """Per-ticker thematic-basket TAILWIND for the Conviction "upside" axis (the
+    sector/theme leg): the strongest Canada theme a name belongs to, scored by that
+    basket's 20d return vs the S&P/TSX benchmark. Best-effort — any failure yields {}
+    and the axis is simply absent (the engine never reads a missing leg as neutral).
+    Mirrors build_stock_library._basket_tailwind_map for the US."""
+    out: dict[str, dict] = {}
+    try:
+        from engine import baskets_canada
+        data = baskets_canada.compute_canada_baskets() or {}
+        for b in (data.get("baskets") or []):
+            rel = ((b.get("perf") or {}).get("20d") or {}).get("rel")
+            if rel is None:
+                continue
+            rel20 = float(rel) * 100.0          # fraction -> percent
+            for m in (b.get("members") or []):
+                sym = m.get("symbol")
+                if not sym:
+                    continue
+                prev = out.get(sym)
+                if prev is None or abs(rel20) > abs(prev["rel20"]):
+                    out[sym] = {"name": b.get("name"), "rel20": rel20}
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("canada basket tailwind map unavailable (%s)", e)
+    return out
 
 
 def tv_symbol(ticker: str) -> str:
@@ -45,11 +88,14 @@ def tv_symbol(ticker: str) -> str:
 
 
 def _one(ticker: str, close: pd.Series, high: pd.Series | None,
-         name: str, sector: str) -> dict | None:
+         name: str, sector: str, liquidity: str | None = None) -> dict | None:
     c = close.dropna()
     if len(c) < 300:
         return None
-    res = analyze(c, high, kind="equity")
+    # Canada net-liquidity / regime overlay is a single macro label that conditions
+    # every TSX-listed name's buy-setup conviction (mirrors the US library; macro_drag
+    # / VIX legs are US-only and intentionally dropped here).
+    res = analyze(c, high, kind="equity", liquidity=liquidity)
     if not res.get("ladder"):
         return None
     month = int(c.index.max().month)
@@ -153,7 +199,9 @@ def _spark_svg(vals: list[float], color: str = "var(--link)", w: int = 240, h: i
 def compute_canada_standouts(setups: dict | None) -> dict | None:
     """Enrich the alpha-led `setups.buy` shortlist into US-parity 'Standout
     individual stocks' cards — adds per-stock price + off-52w-high + a compact
-    sparkline. Best-effort: returns setups with each buy row enriched."""
+    sparkline, and (re-)reads the unified Conviction Profile from the per-stock JSON
+    if main() did not already attach it. Best-effort: returns setups with each buy
+    row enriched. Mirrors build_stock_library's us_standouts enrichment."""
     if not setups or not setups.get("buy"):
         return setups
     site = config.ROOT / config.load()["storage"]["site_dir"]
@@ -168,6 +216,8 @@ def compute_canada_standouts(setups: dict | None) -> dict | None:
                 tech = rec.get("tech", {})
                 r["price"] = tech.get("price")
                 r["off_high"] = tech.get("off_52w_high_pct")
+                if r.get("conviction") is None and rec.get("conviction"):
+                    r["conviction"] = rec["conviction"]
             except Exception:  # noqa: BLE001
                 pass
         if not closes.empty and t in closes.columns:
@@ -232,6 +282,19 @@ def main(alpha: dict | None = None) -> dict | None:
     sector_by: dict[str, str] = {}
     uni = universe()
 
+    liq = current_liquidity()                  # macro overlay threaded into analyze()
+    basket_tw = _basket_tailwind_map()         # Conviction "theme tailwind" axis
+    # Phase-0 gate (display framing only; the board rank always stays the validated α leg).
+    gate_go = False
+    _gate = config.data_dir() / "regime" / "stock_conviction_gate.json"
+    if _gate.exists():
+        try:
+            gate_go = (json.loads(_gate.read_text()) or {}).get("CA") == "GO"
+        except Exception:  # noqa: BLE001 — additive, never fatal
+            pass
+    log.info("canada library: net-liquidity overlay %s · basket-tailwind names %d",
+             liq or "unknown", len(basket_tw))
+
     # refresh yfinance fundamentals up front (best-effort, capped) so pretty company
     # display names + the fundamentals panel are available for THIS run's records.
     from engine import canada_fundamentals
@@ -247,10 +310,16 @@ def main(alpha: dict | None = None) -> dict | None:
         log.warning("canada earnings fetch failed (%s)", e)
     names_map = canada_fundamentals.display_names()
 
+    # Conviction profiles (engine/stock_score) per name + the deferred per-stock JSON
+    # writes — deferred so the display score can be the WITHIN-MARKET percentile of the
+    # composite z (set once all names are profiled), not a per-name logistic skin.
+    # Mirrors build_stock_library (US).
+    profiles: dict[str, dict] = {}
+    to_write: dict[str, tuple[str, dict]] = {}   # ticker -> (safe, rec)
     for ticker, close, high, name, sector in uni:
         name = names_map.get(ticker) or name
         try:
-            rec = _one(ticker, close, high, name, sector)
+            rec = _one(ticker, close, high, name, sector, liquidity=liq)
         except Exception as e:  # noqa: BLE001 — one bad ticker must not kill the library
             log.debug("canada library %s failed: %s", ticker, e)
             rec = None
@@ -262,14 +331,31 @@ def main(alpha: dict | None = None) -> dict | None:
             sc = _setup_score(rec)
             if sc:
                 cand.append(sc)
+        # ---- unified Conviction Profile (engine/stock_score) -----------------
+        # The single block both the dashboard standout card AND this name's detail page
+        # render, so the two can never structurally disagree. CA selection = residual
+        # alpha (weak positive-IC context — the trust tier says so); the cycle state is a
+        # HARD verb modifier (a downtrend caps the entry axis and forbids a Buy verb).
+        # Canada carries no validated cross-sectional quality leg (no SUE/insider/factor
+        # composite), so the quality axis is simply absent — never read as neutral.
+        norm = stock_score.normalize_rec(rec, "CA", basket=basket_tw.get(ticker))
+        prof = stock_score.conviction_profile(norm, "CA", ctx={"as_of": (alpha or {}).get("as_of"), "gate_go": gate_go})
+        rec["conviction"] = prof
+        profiles[ticker] = prof
         safe = ticker.replace("=", "_").replace("^", "_")
-        (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
+        to_write[ticker] = (safe, rec)           # deferred: write after percentile scoring
         idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
         if rec.get("alpha", {}).get("alpha") is not None:
             idx["a"] = rec["alpha"]["alpha"]
         index.append(idx)
         sector_by[ticker] = sector
         built += 1
+
+    # within-market percentile display score (mutates each conviction block in place;
+    # rec['conviction'] is the SAME object, so the per-stock JSONs pick it up below).
+    stock_score.attach_panel_scores(profiles)
+    for safe, rec in to_write.values():
+        (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
 
     # descriptive FUNDAMENTALS (yfinance get_info: valuation + forward-val + sell-side
     # consensus + positioning) and EARNINGS (get_earnings_dates: next date + surprise
@@ -334,11 +420,39 @@ def main(alpha: dict | None = None) -> dict | None:
     if cand:
         # alpha-led (rank_by="alpha"): like the US, Canada residual momentum is the
         # positive-IC selection leg; cycle timing is displayed context, not the sort key.
-        # n_buy generous so the Stock Dashboard's "show more" can reveal the full bench.
-        setups = rank_setups(cand, as_of=(alpha or {}).get("as_of"), rank_by="alpha", n_buy=60)
+        # n_buy generous (100) so the Stock Dashboard's "show more" can reveal the full
+        # bench. The SHIPPED rank stays the VALIDATED alpha leg — the Conviction composite
+        # rides as the displayed profile/verdict on each card, never as the sort key.
+        as_of = (alpha or {}).get("as_of")
+        eligible = sum(1 for s, r in cand if (r.get("alpha") or 0) >= 0.5)
+        setups = rank_setups(cand, as_of=as_of, rank_by="alpha", n_buy=100)
+        # attach the unified Conviction Profile to every shipped row (the dashboard card
+        # and the name's own page then render the SAME block — never disagree).
+        for r in setups["buy"] + setups.get("laggards", []):
+            t = r.get("ticker")
+            if profiles.get(t):
+                r["conviction"] = profiles[t]
+        setups["eligible"] = eligible        # how many cleared the +0.5 alpha floor
+        setups["universe"] = len(cand)
         (site / "factordata").mkdir(parents=True, exist_ok=True)
         (site / "factordata" / "canada_setups.json").write_text(
             json.dumps(setups, separators=(",", ":"), default=str))
+        # WIDE "Standout individual stocks" board persisted as its own artifact, so a
+        # transient build failure leaves a stale-but-present file (mirrors us_standouts.json).
+        # Ranked by the validated alpha leg; enriched with price/off-high/sparkline + the
+        # Conviction profile; eligible = how many cleared the +0.5 alpha floor.
+        wide = compute_canada_standouts(
+            rank_setups(cand, as_of=as_of, rank_by="alpha", n_buy=100, n_lag=12))
+        for r in wide["buy"] + wide.get("laggards", []):
+            t = r.get("ticker")
+            if r.get("conviction") is None and profiles.get(t):
+                r["conviction"] = profiles[t]
+        wide["eligible"] = eligible          # how many cleared the +0.5 alpha floor
+        wide["universe"] = len(cand)
+        (site / "factordata" / "canada_standouts.json").write_text(
+            json.dumps(wide, separators=(",", ":"), default=str))
+        log.info("wrote canada_standouts.json (%d buy of %d eligible / %d universe)",
+                 len(wide["buy"]), eligible, len(cand))
     log.info("canada library: %d analyzed, %d skipped (thin history), %d setups",
              built, failed, len(cand))
     return setups

@@ -29,6 +29,7 @@ from engine.conditions import sector_macro_beta  # noqa: E402
 from engine.cycles import analyze, market_vix_context  # noqa: E402
 from engine.playbook import SECTOR_NAMES  # noqa: E402
 from engine.setups import US_ALPHA_WEIGHT, rank_setups, setup_score, sue_confirmer  # noqa: E402
+from engine import stock_score  # noqa: E402
 from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
@@ -325,6 +326,58 @@ def _one_task(item):
         return None
 
 
+def _spark_svg(vals, color: str = "var(--link)", w: int = 240, h: int = 42) -> str:
+    """Tiny theme-aware inline sparkline (area + line + last dot) for the standout
+    cards — same shape as build_china_library._spark_svg / build_site._mini_svg."""
+    vals = [float(v) for v in vals if v is not None and v == v]
+    if len(vals) < 2:
+        return ""
+    lo, hi = min(vals), max(vals)
+    rng = (hi - lo) or 1.0
+    n, pad = len(vals), h * 0.12
+
+    def xy(i, v):
+        return (i / (n - 1) * w, (h - pad) - ((v - lo) / rng) * (h - 2 * pad) + pad)
+
+    pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in (xy(i, v) for i, v in enumerate(vals)))
+    lx, ly = xy(n - 1, vals[-1])
+    return (f'<svg class="nch" viewBox="0 0 {w} {h}" preserveAspectRatio="none" '
+            f'width="100%" height="{h}">'
+            f'<polyline points="0,{h} {pts} {w},{h}" fill="{color}" opacity="0.12" stroke="none"/>'
+            f'<polyline points="{pts}" fill="none" stroke="{color}" stroke-width="1.7" '
+            f'stroke-linejoin="round" stroke-linecap="round"/>'
+            f'<circle cx="{lx:.1f}" cy="{ly:.1f}" r="2.6" fill="{color}"/></svg>')
+
+
+_SPARK_COLOR = {"up": "var(--up)", "down": "var(--down)", "caution": "var(--warn)"}
+
+
+def _basket_tailwind_map() -> dict[str, dict]:
+    """Per-ticker thematic-basket TAILWIND for the Conviction "upside" axis (§2 Axis
+    C): the strongest theme a name belongs to, scored by that basket's 20d return
+    vs the benchmark. Best-effort — any failure yields {} and the axis is simply
+    absent (the engine never reads a missing leg as neutral)."""
+    out: dict[str, dict] = {}
+    try:
+        from engine import baskets
+        data = baskets.compute_baskets() or {}
+        for b in (data.get("baskets") or []):
+            rel = ((b.get("perf") or {}).get("20d") or {}).get("rel")
+            if rel is None:
+                continue
+            rel20 = float(rel) * 100.0          # fraction -> percent
+            for m in (b.get("members") or []):
+                sym = m.get("symbol")
+                if not sym:
+                    continue
+                prev = out.get(sym)
+                if prev is None or abs(rel20) > abs(prev["rel20"]):
+                    out[sym] = {"name": b.get("name"), "rel20": rel20}
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("basket tailwind map unavailable (%s)", e)
+    return out
+
+
 def main() -> int:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     outdir = site / "stockdata"
@@ -424,7 +477,24 @@ def main() -> int:
     # Computed once over the whole panel; graceful (absent feed => {} => no chip).
     from engine.crowding import compute_fragility
     fragility_map = compute_fragility()
+    basket_tw = _basket_tailwind_map()          # Conviction "upside / theme tailwind" axis
+    # Phase-0 gate: the board rank stays the VALIDATED leg unless a deep-CI run proved
+    # the composite beats it (scripts/stock_conviction_phase0.py). Absent / shallow =>
+    # NEUTRAL => gate_go False => Conviction ships as display-only context.
+    gate_go = False
+    _gate = config.data_dir() / "regime" / "stock_conviction_gate.json"
+    if _gate.exists():
+        try:
+            gate_go = (json.loads(_gate.read_text()) or {}).get("US") == "GO"
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("stock_conviction_gate.json unreadable (%s)", e)
     index, cand, built, failed = [], [], 0, 0
+    # Conviction profiles (engine/stock_score) per name + the deferred per-stock JSON
+    # writes — deferred so the display score can be the WITHIN-MARKET percentile of the
+    # composite z (set once all names are profiled), not a per-name logistic skin.
+    profiles: dict[str, dict] = {}
+    disp_map: dict[str, dict] = {}              # price / off-high / sparkline per name
+    to_write: list[tuple[str, dict]] = []
     uni = universe()
     # Heaviest stretch of the whole site build: ~1500 independent _one() calls.
     # Fan them across processes (CI runner = 4 vCPU); the cheap post-processing
@@ -482,14 +552,37 @@ def main() -> int:
             rec["gex"] = gex_by_ticker[ticker]
         if fragility_map.get(ticker):
             rec["fragility"] = fragility_map[ticker]
+        # ---- unified Conviction Profile (engine/stock_score) -----------------
+        # The single block both the dashboard standout card AND this name's detail
+        # page render, so the two can never structurally disagree. Validated US legs
+        # (residual alpha + SUE + insider) lead; the cycle state is a HARD verb
+        # modifier (a downtrend caps the entry axis and forbids a Buy verb).
+        ins = insider_map.get(ticker) or {}
+        ins_bps = ins.get("bps") if (ins.get("buyers", 0) >= 2 and (ins.get("net_mn") or 0) > 0) else None
+        norm = stock_score.normalize_rec(
+            rec, "US", sue=sue_z.get(ticker), insider_bps=ins_bps,
+            basket=basket_tw.get(ticker))
+        prof = stock_score.conviction_profile(norm, "US", ctx={"as_of": alpha_asof, "gate_go": gate_go})
+        rec["conviction"] = prof
+        profiles[ticker] = prof
+        _tech = rec.get("tech") or {}
+        disp_map[ticker] = {
+            "price": _tech.get("price"), "off_high": _tech.get("off_52w_high_pct"),
+            "spark_svg": _spark_svg(list(close.tail(64).values),
+                                    color=_SPARK_COLOR.get((rec.get("ladder") or {}).get("dir"), "var(--link)"))}
         ladder_rows.append(ticker_alerts.ladder_row(ticker, rec.get("ladder"), rec.get("asof")))
         safe = ticker.replace("=", "_").replace("^", "_")
-        (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
+        to_write.append((safe, rec))            # deferred: write after percentile scoring
         idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
         if rec.get("alpha", {}).get("alpha") is not None:
             idx["a"] = rec["alpha"]["alpha"]          # alpha-z in the index for client ranking
         index.append(idx)
         built += 1
+    # within-market percentile display score (mutates the conviction blocks in place;
+    # rec['conviction'] is the SAME object, so the per-stock JSONs pick it up below).
+    stock_score.attach_panel_scores(profiles)
+    for safe, rec in to_write:
+        (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
     # flush the accruing ladder-transition log in one idempotent, atomic write
     try:
         added = ticker_alerts.write_ladder_log_batch(ladder_rows)
@@ -516,6 +609,23 @@ def main() -> int:
             json.dumps(setups, separators=(",", ":"), default=str))
         log.info("wrote setups.json (%d buy, %d laggards, %d candidates)",
                  len(setups["buy"]), len(setups["laggards"]), len(cand))
+        # WIDE "Standout individual stocks" board (the bench the user sees, ~80-120).
+        # Ranked by the VALIDATED residual-alpha leg (the shipped rank stays the
+        # validated leg per Phase-0; the Conviction composite rides as the displayed
+        # profile/verdict on each card). Floor-based: buys = the alpha>=0.5 cross-
+        # section, capped generously so the show-more reveals the full bench.
+        wide = rank_setups(cand, as_of=alpha_asof, rank_by="alpha", n_buy=120, n_lag=12)
+        for r in wide["buy"] + wide["laggards"]:
+            t = r.get("ticker")
+            r["conviction"] = profiles.get(t)
+            r.update({k: v for k, v in (disp_map.get(t) or {}).items() if v is not None})
+        eligible = sum(1 for s, r in cand if (r.get("alpha") or 0) >= 0.5)
+        wide["eligible"] = eligible          # how many cleared the +0.5 alpha floor
+        wide["universe"] = len(cand)
+        (site / "factordata" / "us_standouts.json").write_text(
+            json.dumps(wide, separators=(",", ":"), default=str))
+        log.info("wrote us_standouts.json (%d buy of %d eligible / %d universe)",
+                 len(wide["buy"]), eligible, len(cand))
     # multi-timeframe Bottom-Confidence per-band held-rate (stock.html shows the
     # measured "this band held the low ~N%" line; see research/BOTTOM_CONFIDENCE.md)
     bccal = config.data_dir() / "regime" / "bottom_confidence_calibration.json"

@@ -54,6 +54,28 @@
          background:color-mix(in srgb, var(--c, var(--muted)) 16%, var(--panel)); color:color-mix(in srgb, var(--c, var(--muted)) 82%, var(--text)); }
   .lad.up { --c:var(--up); } .lad.down { --c:var(--down); } .lad.flat { --c:var(--muted); }
   .rk { font-size:12px; font-weight:800; color:var(--muted); }
+  /* ---- unified Conviction Profile on each standout card ---------------- */
+  .nb-conv { display:flex; align-items:center; gap:7px; margin:7px 0 1px; }
+  .nb-cscore { font-size:13px; font-weight:800; font-variant-numeric:tabular-nums;
+               min-width:30px; text-align:center; padding:1px 5px; border-radius:8px;
+               border:1px solid var(--line); color:var(--text); }
+  .nb-cscore.band-high { color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,var(--line));
+                         background:color-mix(in srgb,var(--up) 12%,var(--panel)); }
+  .nb-cscore.band-constructive { color:var(--g-cold);
+                         border-color:color-mix(in srgb,var(--g-cold) 40%,var(--line)); }
+  .nb-cscore.band-neutral { color:var(--muted); }
+  .nb-cscore.band-low { color:var(--down); border-color:color-mix(in srgb,var(--down) 35%,var(--line)); }
+  .nb-verdict { font-size:10.5px; font-weight:700; line-height:1.25; color:var(--text); }
+  .nb-axes { display:flex; gap:4px; margin-top:3px; }
+  .nb-ax { flex:1; }
+  .nb-ax .axl { font-size:8px; color:var(--muted); letter-spacing:.03em; }
+  .nb-ax .axt { height:3px; border-radius:2px; background:var(--line); margin-top:1px; overflow:hidden; }
+  .nb-ax .axf { height:100%; background:var(--g-cold); border-radius:2px; }
+  .nb-ax.ax-na .axf { background:transparent; }
+  .nb-cau { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
+  .nb-cau span { font-size:8.5px; font-weight:700; padding:0 4px; border-radius:6px;
+                 color:var(--warn); background:color-mix(in srgb,var(--warn) 13%,var(--panel)); }
+  .nb-tier { font-size:8px; color:var(--muted); margin-top:3px; letter-spacing:.02em; }
   .ab { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
   .abcol h3 { font-size:12px; margin:0 0 6px; text-transform:uppercase; letter-spacing:.04em; }
   .abcol .it { font-size:12.5px; padding:3px 0; border-bottom:1px solid var(--line); }
@@ -295,10 +317,12 @@
 {% if mode == 'stocks' and setups and setups.buy %}
 <div class="panel">
   <h2>{{ t('⚡ Standout individual stocks', '⚡ 表现突出的个股') }}
-    {{ help('Large-cap TSX names ranked by sector-neutral residual momentum (the positive-IC selection leg), with the cycle entry shown as timing context. Alpha-led like the US (Canada is momentum-persistent). Context, not personalized advice.', '按板块中性残差动量（正 IC 选股腿）排名的大盘 TSX 个股，并以周期入场作为时机背景。与美国一样采用 α 主导（加拿大动量具持续性）。仅作背景，非个性化建议。') }}
+    {% if setups.eligible is defined %}<span class="muted small" style="font-weight:400; text-transform:none; letter-spacing:0">{{ setups.buy|length }} {{ t('of', '/') }} {{ setups.eligible }} {{ t('cleared the +0.5 α floor · each card carries the unified Conviction profile (cycle state caps the verdict)', '只通过 +0.5 α 门槛 · 每张卡片附带统一确信度画像（周期状态会封顶结论）') }}</span>{% endif %}
+    {{ help('Large-cap TSX names ranked by the VALIDATED sector-neutral residual-momentum leg (α, the positive-IC selection leg), with the cycle entry shown as timing context. Alpha-led like the US (Canada is momentum-persistent). Each card then carries the unified Conviction profile: four transparent axes (selection / entry / tailwind / quality) and one honest verdict. The price-cycle state is a HARD modifier — a name in a downtrend or topping can never read \'Buy\', it reads \'strong name, wrong tape\' — so this card and the stock\'s own page never disagree. The 0-100 score is a within-market percentile DISPLAY skin (not a probability). On Canada the selection leg is weak positive-IC CONTEXT and the axis weights are an unvalidated prior — the trust badge says so. Context, not personalized advice.', '按已验证的板块中性残差动量腿（α，正 IC 选股腿）排名的大盘 TSX 个股，并以周期入场作为时机背景。与美国一样采用 α 主导（加拿大动量具持续性）。每张卡片再附带统一确信度画像：四条透明维度（选股／入场／顺风／质量）与一个诚实结论。价格周期状态是硬性修正项——处于下行或做顶的个股永远不会显示"买入"，而显示"强势但趋势不利"——因此该卡片与个股自身页面永不矛盾。0-100 分是市场内百分位的展示皮肤（非概率）。在加拿大，选股腿为弱正 IC 背景，维度权重为未经验证的先验——信任徽标已注明。仅作背景，非个性化建议。') }}
   </h2>
   <div class="cards" data-showmore="12">
     {% for s in setups.buy %}
+    {% set c = s.conviction %}
     <div class="card">
       <div class="row" style="gap:8px">
         <a href="canada_stock.html#{{ s.ticker }}"><b>{{ s.name or s.ticker }}</b></a>
@@ -312,10 +336,27 @@
         {% if s.off_high is not none %}<span>{{ '%.0f'|format(s.off_high) }}% {{ t('off high', '距高点') }}</span>{% endif %}
       </div>
       {% if s.spark_svg %}{{ s.spark_svg | safe }}{% endif %}
+      {% if c %}
+      <div class="nb-conv">
+        {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">{{ c.score }}</span>{% endif %}
+        <span class="nb-verdict"><span class="l-en">{{ c.verdict }}</span><span class="l-zh">{{ c.verdict_zh }}</span></span>
+      </div>
+      <div class="nb-axes">
+        {% for ax, lbl in [('selection','SEL'),('entry','ENT'),('tailwind','TWD'),('quality','QUAL')] %}
+        {% set a = c.axes[ax] %}
+        <div class="nb-ax{{ ' ax-na' if a.pct is none else '' }}" title="{{ lbl }}{% if a.pct is not none %} {{ a.pct }}/100{% else %} — no data{% endif %}">
+          <div class="axl">{{ lbl }}</div>
+          <div class="axt"><div class="axf" style="width:{{ a.pct if a.pct is not none else 0 }}%"></div></div>
+        </div>
+        {% endfor %}
+      </div>
+      {% if c.cautions %}<div class="nb-cau">{% for cau in c.cautions %}<span>⚠ {{ cau }}</span>{% endfor %}</div>{% endif %}
+      <div class="nb-tier"><span class="l-en">{{ c.trust_tier.en }}</span><span class="l-zh">{{ c.trust_tier.zh }}</span></div>
+      {% endif %}
     </div>
     {% endfor %}
   </div>
-  <p class="caveat" style="margin-top:8px">{{ t('Residual-momentum construction is shared with the validated US/China engines; the Canada-specific weights are HK-mirrored priors pending Phase-0 validation.', '残差动量构造与经验证的美国／中国引擎共用；加拿大专属权重为对标香港的先验，待 Phase-0 验证。') }}</p>
+  <p class="caveat" style="margin-top:8px">{{ t('Residual-momentum construction is shared with the validated US/China engines; the Canada-specific axis weights are HK-mirrored priors pending Phase-0 validation. The Conviction composite is displayed context, never the shipped sort key — the board rank stays the validated α leg.', '残差动量构造与经验证的美国／中国引擎共用；加拿大专属维度权重为对标香港的先验，待 Phase-0 验证。确信度综合分仅作情境展示，绝非出货排序键——榜单排名仍以已验证的 α 腿为准。') }}</p>
 </div>
 {% endif %}
 

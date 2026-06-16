@@ -21,6 +21,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine import i18n  # noqa: E402
+from engine import stock_score  # noqa: E402
 from engine.cycles import analyze  # noqa: E402
 from engine.residual_alpha import compute_residual_alpha  # noqa: E402
 from engine.setups import CN_ALPHA_WEIGHT, rank_setups, setup_score  # noqa: E402
@@ -43,12 +44,33 @@ def tv_symbol(ticker: str) -> str:
     return ticker
 
 
+def current_liquidity() -> str | None:
+    """The live China net-liquidity regime ("expanding"/"contracting"/"neutral")
+    the engine last classified (china_regime/latest.json `liquidity_overlay`).
+    Threaded into analyze() as the orthogonal macro conviction modifier on buy
+    setups — the China parallel of build_stock_library.current_liquidity(). None
+    when unavailable so the ladder simply omits the liquidity context. NOTE: the CN
+    regime exposes only liquidity_overlay (no macro_risk/VIX leg), so unlike the US
+    build this is the only macro modifier threaded in."""
+    p = config.data_dir() / "china_regime" / "latest.json"
+    if not p.exists():
+        return None
+    try:
+        liq = json.loads(p.read_text()).get("liquidity_overlay")
+    except Exception:  # noqa: BLE001 — additive context, never fatal
+        return None
+    return liq if liq in ("expanding", "contracting", "neutral") else None
+
+
 def _one(ticker: str, close: pd.Series, high: pd.Series | None,
-         name: str, sector: str) -> dict | None:
+         name: str, sector: str, liquidity: str | None = None) -> dict | None:
     c = close.dropna()
     if len(c) < 300:
         return None
-    res = analyze(c, high, kind="equity")
+    # China net-liquidity is a single market-wide regime applying to every A-share
+    # name (mirrors the US build); the CN regime carries no macro_risk/VIX leg, so
+    # liquidity is the only macro conviction modifier threaded into the ladder.
+    res = analyze(c, high, kind="equity", liquidity=liquidity)
     if not res.get("ladder"):
         return None
     month = int(c.index.max().month)
@@ -289,15 +311,44 @@ def _spark_svg(vals: list[float], color: str = "var(--link)",
             f'<circle cx="{lx:.1f}" cy="{ly:.1f}" r="2.6" fill="{color}"/></svg>')
 
 
+def _basket_tailwind_map() -> dict[str, dict]:
+    """Per-ticker thematic-basket TAILWIND for the Conviction "upside" axis — the
+    China parallel of build_stock_library._basket_tailwind_map(): the strongest
+    A-share theme a name belongs to, scored by that basket's 20d return vs the
+    benchmark (CSI 300). Best-effort — any failure yields {} and the tailwind axis
+    is simply absent (the engine never reads a missing leg as neutral)."""
+    out: dict[str, dict] = {}
+    try:
+        from engine import baskets_china
+        data = baskets_china.compute_china_baskets() or {}
+        for b in (data.get("baskets") or []):
+            rel = ((b.get("perf") or {}).get("20d") or {}).get("rel")
+            if rel is None:
+                continue
+            rel20 = float(rel) * 100.0          # fraction -> percent
+            for m in (b.get("members") or []):
+                sym = m.get("symbol")
+                if not sym:
+                    continue
+                prev = out.get(sym)
+                if prev is None or abs(rel20) > abs(prev["rel20"]):
+                    out[sym] = {"name": b.get("name"), "rel20": rel20}
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("china basket tailwind map unavailable (%s)", e)
+    return out
+
+
 def compute_china_standouts(setups: dict | None, reversal: dict | None,
                             lowvol: dict | None) -> dict | None:
     """Enrich the reversal-led `setups.buy` shortlist into US-parity 'Standout
-    individual stocks' CARDS — adds per-stock price + off-52w-high + a compact
-    price sparkline, plus a CHINA-UNIQUE 'confluence' flag = a name that sits in
-    BOTH the validated screens (a deep-dip reversal candidate that is ALSO a low-vol
-    defensive name → a structurally 'safer rebound'; both legs are validated, the
-    intersection is honest context, not a backtested composite). Best-effort: returns
-    the setups dict with each buy row enriched; missing fields just don't render."""
+    individual stocks' CARDS — adds the unified Conviction profile (engine/
+    stock_score, persisted on each per-stock JSON by main()) + per-stock price +
+    off-52w-high + a compact price sparkline, plus a CHINA-UNIQUE 'confluence' flag =
+    a name that sits in BOTH the validated screens (a deep-dip reversal candidate
+    that is ALSO a low-vol defensive name → a structurally 'safer rebound'; both legs
+    are validated, the intersection is honest context, not a backtested composite).
+    Best-effort: returns the setups dict with each buy row enriched; missing fields
+    just don't render."""
     if not setups or not setups.get("buy"):
         return setups
     site = config.ROOT / config.load()["storage"]["site_dir"]
@@ -316,7 +367,8 @@ def compute_china_standouts(setups: dict | None, reversal: dict | None,
 
     for r in setups["buy"]:
         t = r["ticker"]
-        # price + off-52w-high from the per-stock library record
+        # price + off-52w-high + the unified Conviction profile from the per-stock
+        # library record (main() persisted rec['conviction'] before this runs)
         f = cd / f"{t.replace('=', '_').replace('^', '_')}.json"
         if f.exists():
             try:
@@ -324,6 +376,8 @@ def compute_china_standouts(setups: dict | None, reversal: dict | None,
                 tech = rec.get("tech", {})
                 r["price"] = tech.get("price")
                 r["off_high"] = tech.get("off_52w_high_pct")
+                if rec.get("conviction"):
+                    r["conviction"] = rec["conviction"]
             except Exception:  # noqa: BLE001
                 pass
         # confluence: in the reversal watch AND the low-vol sleeve (validated both)
@@ -426,12 +480,38 @@ def main(alpha: dict | None = None) -> dict | None:
     except Exception as e:  # noqa: BLE001
         log.debug("china mktcap load failed: %s", e)
 
+    # live China net-liquidity regime — the single macro conviction modifier on the
+    # ladder (CN has no macro_risk/VIX leg, unlike the US build)
+    liq = current_liquidity()
+    log.info("net-liquidity regime for china library: %s", liq or "unknown")
+
+    # cross-sectional legs the unified Conviction Profile joins per name (engine/
+    # stock_score): the VALIDATED A-share reversal z (the selection leg for CN) + the
+    # strongest-theme basket tailwind. Both best-effort — a missing leg stays absent,
+    # never read as neutral.
+    rev_z_by: dict[str, float] = {}
+    try:
+        _rev = compute_china_reversal() or {}
+        for _r in _rev.get("watch", []):
+            if _r.get("ticker") and _r.get("rev_z") is not None:
+                rev_z_by[_r["ticker"]] = _r["rev_z"]
+    except Exception as e:  # noqa: BLE001 — additive leg, never fatal
+        log.warning("china reversal-z map unavailable (%s)", e)
+    basket_tw = _basket_tailwind_map()          # Conviction "upside / theme tailwind" axis
+
     index, cand, built, failed = [], [], 0, 0
     price_by: dict[str, float] = {}
     sector_by: dict[str, str] = {}
+    # unified Conviction profiles per name + the DEFERRED per-stock JSON writes —
+    # deferred (mirrors build_stock_library) so the display score can be the WITHIN-
+    # MARKET percentile of the composite z (set once all names are profiled), not a
+    # per-name logistic skin. disp_map carries the standout-card display fields.
+    profiles: dict[str, dict] = {}
+    disp_map: dict[str, dict] = {}
+    to_write: list[tuple[str, dict]] = []
     for ticker, close, high, name, sector in universe():
         try:
-            rec = _one(ticker, close, high, name, sector)
+            rec = _one(ticker, close, high, name, sector, liquidity=liq)
         except Exception as e:  # noqa: BLE001 — one bad ticker must not kill the library
             log.debug("china library %s failed: %s", ticker, e)
             rec = None
@@ -443,8 +523,27 @@ def main(alpha: dict | None = None) -> dict | None:
             sc = _setup_score(rec)
             if sc:
                 cand.append(sc)
+        # ---- unified Conviction Profile (engine/stock_score, CN market) ----------
+        # The single block both the china.html standout card AND china_lookup render,
+        # so the two can never structurally disagree. The CN SELECTION leg is the
+        # VALIDATED reversal z (residual alpha is a light tiebreaker); the cycle state
+        # is a HARD verb modifier (a downtrend caps the entry axis and forbids a Buy
+        # verb). Fund priors are OMITTED — the raw Piotroski/Altman scores are not
+        # unit-variance cross-sectional z's, and a missing leg is honest (never neutral).
+        norm = stock_score.normalize_rec(
+            rec, "CN", rev_z=rev_z_by.get(ticker), basket=basket_tw.get(ticker))
+        prof = stock_score.conviction_profile(norm, "CN", ctx={"as_of": (alpha or {}).get("as_of")})
+        rec["conviction"] = prof
+        profiles[ticker] = prof
+        _tech = rec.get("tech") or {}
+        _dir = (rec.get("ladder") or {}).get("dir")
+        disp_map[ticker] = {
+            "price": _tech.get("price"), "off_high": _tech.get("off_52w_high_pct"),
+            "spark_svg": _spark_svg(
+                list(close.dropna().tail(64).values),
+                color=("var(--up)" if _dir == "up" else "var(--down)" if _dir == "down" else "var(--muted)"))}
         safe = ticker.replace("=", "_").replace("^", "_")
-        (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
+        to_write.append((safe, rec))            # deferred: write after percentile scoring
         idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
         if rec.get("alpha", {}).get("alpha") is not None:
             idx["a"] = rec["alpha"]["alpha"]          # alpha-z in the index for client ranking
@@ -452,6 +551,12 @@ def main(alpha: dict | None = None) -> dict | None:
         price_by[ticker] = rec.get("tech", {}).get("price")
         sector_by[ticker] = sector
         built += 1
+    # within-market percentile display score (mutates the conviction blocks in place;
+    # rec['conviction'] is the SAME object, so the deferred per-stock JSONs below pick
+    # it up — and the fundamentals re-read pass that follows preserves it).
+    stock_score.attach_panel_scores(profiles)
+    for safe, rec in to_write:
+        (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
 
     # descriptive FUNDAMENTALS + additive CONTEXT panels (analyst consensus / earnings
     # calendar / own-history valuation percentile / margin-financing positioning) — all
@@ -513,10 +618,30 @@ def main(alpha: dict | None = None) -> dict | None:
     setups = None
     if cand:
         # n_buy generous so the standout strip's "show more" can reveal the full
-        # ranked shortlist (the card grid shows 12, reveals the rest on demand).
-        setups = rank_setups(cand, as_of=(alpha or {}).get("as_of"), n_buy=60)
+        # ranked shortlist (the card grid shows 12, reveals the rest on demand). The
+        # SHIPPED rank stays CN's VALIDATED leg (rank_by='setup', the reversal-led
+        # construction); the Conviction composite rides as the displayed profile.
+        setups = rank_setups(cand, as_of=(alpha or {}).get("as_of"), n_buy=110)
         (site / "factordata" / "china_setups.json").write_text(
             json.dumps(setups, separators=(",", ":"), default=str))
+        # WIDE "Standout individual stocks" board (the China parallel of
+        # us_standouts.json). Ranked by the VALIDATED reversal-led setup leg; each row
+        # carries the unified Conviction profile + price/off-high/sparkline so a
+        # transient build failure leaves a stale-but-present artifact (the page falls
+        # back to china_setups otherwise). eligible = names clearing the +0.5 alpha
+        # quality floor; universe = the scored candidate count.
+        wide = rank_setups(cand, as_of=(alpha or {}).get("as_of"), n_buy=110, n_lag=12)
+        for r in wide["buy"] + wide["laggards"]:
+            t = r.get("ticker")
+            r["conviction"] = profiles.get(t)
+            r.update({k: v for k, v in (disp_map.get(t) or {}).items() if v is not None})
+        eligible = sum(1 for _s, r in cand if (r.get("alpha") or 0) >= 0.5)
+        wide["eligible"] = eligible
+        wide["universe"] = len(cand)
+        (site / "factordata" / "china_standouts.json").write_text(
+            json.dumps(wide, separators=(",", ":"), default=str))
+        log.info("wrote china_standouts.json (%d buy of %d eligible / %d universe)",
+                 len(wide["buy"]), eligible, len(cand))
     log.info("china library: %d analyzed, %d skipped (thin history), %d setups",
              built, failed, len(cand))
     return setups

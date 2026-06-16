@@ -209,6 +209,58 @@
   .nav-dd:hover > .nav-dd-menu, .nav-dd:focus-within > .nav-dd-menu { opacity: 1; visibility: visible; transform: translateY(0); }
   .nav-dd-menu a { display: block; padding: 7px 10px; border-radius: 8px; font-size: 13px; color: var(--muted); text-decoration: none; white-space: nowrap; }
   .nav-dd-menu a:hover, .nav-dd-menu a.active { background: var(--panel2); color: var(--text); }
+  /* ---- standout-stock cards (mirror of the US dashboard) -------------------- */
+  .nch { display: block; width: 100%; margin: 7px 0 5px; border-radius: 5px; background: var(--panel2); }
+  .nbgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: 10px; margin-top: 11px; }
+  a.nbcard { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px;
+            padding: 9px 11px 10px; border-left: 3px solid var(--muted);
+            display: flex; flex-direction: column; gap: 4px; color: var(--text);
+            transition: transform .12s, box-shadow .12s, border-color .12s; }
+  a.nbcard:hover { transform: translateY(-2px); box-shadow: 0 5px 18px rgba(0,0,0,.22); border-color: var(--link); }
+  .nbcard.nb-up { border-left-color: var(--up); }
+  .nbcard.nb-down { border-left-color: var(--down); }
+  .nbcard.nb-caution { border-left-color: var(--warn); }
+  .nb-top { display: flex; align-items: baseline; gap: 6px; }
+  .nb-tk { font-weight: 800; font-size: 14px; color: var(--text); letter-spacing: .01em; }
+  .nb-nm { font-size: 10px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+  .nb-px { font-weight: 700; font-size: 13px; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .nb-sub { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); }
+  .nbcard .nch { background: transparent; margin: 4px 0 2px; }
+  .nb-bot { display: flex; align-items: center; gap: 6px; margin-top: 1px; }
+  .nb-state { font-size: 10px; font-weight: 800; letter-spacing: .02em; padding: 1px 7px; border-radius: 8px; }
+  .nb-up .nb-state { color: var(--up); background: color-mix(in srgb, var(--up) 15%, var(--panel)); }
+  .nb-down .nb-state { color: var(--down); background: color-mix(in srgb, var(--down) 15%, var(--panel)); }
+  .nb-caution .nb-state { color: var(--warn); background: color-mix(in srgb, var(--warn) 15%, var(--panel)); }
+  .nb-alpha { display: flex; align-items: center; gap: 6px; font-size: 9.5px; margin-top: 2px; flex-wrap: wrap; }
+  .nb-az { font-weight: 800; font-variant-numeric: tabular-nums; padding: 0 5px; border-radius: 7px;
+           background: var(--panel); border: 1px solid var(--line); color: var(--muted); }
+  .nb-az.az-up { color: var(--up); border-color: color-mix(in srgb, var(--up) 38%, var(--line)); }
+  .nb-az.az-dn { color: var(--down); border-color: color-mix(in srgb, var(--down) 38%, var(--line)); }
+  .nb-rk { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .nb-ent { font-weight: 700; padding: 0 5px; border-radius: 7px; }
+  .ent-good { color: var(--up); background: color-mix(in srgb, var(--up) 14%, var(--panel)); }
+  .ent-warn { color: var(--warn); background: color-mix(in srgb, var(--warn) 16%, var(--panel)); }
+  /* ---- unified Conviction Profile on each standout card (SCREEN framing) ----- */
+  .nb-conv { display: flex; align-items: center; gap: 7px; margin: 5px 0 1px; }
+  .nb-cscore { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums;
+               min-width: 30px; text-align: center; padding: 1px 5px; border-radius: 8px;
+               border: 1px solid var(--line); color: var(--text); }
+  .nb-cscore.band-high { color: var(--up); border-color: color-mix(in srgb, var(--up) 45%, var(--line));
+                         background: color-mix(in srgb, var(--up) 12%, var(--panel)); }
+  .nb-cscore.band-constructive { color: var(--g-cold); border-color: color-mix(in srgb, var(--g-cold) 40%, var(--line)); }
+  .nb-cscore.band-neutral { color: var(--muted); }
+  .nb-cscore.band-low { color: var(--down); border-color: color-mix(in srgb, var(--down) 35%, var(--line)); }
+  .nb-verdict { font-size: 10.5px; font-weight: 700; line-height: 1.25; color: var(--text); }
+  .nb-axes { display: flex; gap: 4px; margin-top: 3px; }
+  .nb-ax { flex: 1; }
+  .nb-ax .axl { font-size: 8px; color: var(--muted); letter-spacing: .03em; }
+  .nb-ax .axt { height: 3px; border-radius: 2px; background: var(--line); margin-top: 1px; overflow: hidden; }
+  .nb-ax .axf { height: 100%; background: var(--g-cold); border-radius: 2px; }
+  .nb-ax.ax-na .axf { background: transparent; }
+  .nb-cau { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+  .nb-cau span { font-size: 8.5px; font-weight: 700; padding: 0 4px; border-radius: 6px;
+                 color: var(--warn); background: color-mix(in srgb, var(--warn) 13%, var(--panel)); }
+  .nb-tier { font-size: 8px; color: var(--muted); margin-top: 3px; letter-spacing: .02em; }
 </style>
 </head>
 <body>
@@ -330,10 +382,11 @@
       <span class="note" style="text-transform:none">· {{ t('strongest relative strength · exposure context, not a validated edge', '相对强度最强 · 敞口背景，非已验证优势') }}</span>
       {{ help("The HK names with the strongest cross-sectional RELATIVE STRENGTH — each stock's ~3-month return z-scored against the HK universe. IMPORTANT: Hong Kong has <b>no validated stock-picking edge</b> (residual momentum is dead on a 40-year panel; research/CHINA_HK_STOCK_SIGNALS.md). So unlike the US / China boards this is NOT a selection-alpha shortlist — it is a relative-strength / exposure READ shown for parity, ranked by recent leadership with each name's price-cycle state for context. The <b>extended</b> tag (RSI≥70) flags a stretched name (reversal risk); <b>pullback</b> a leader that has cooled off. The validated HK read is the global-risk exposure board below. Context to size and confirm — never a buy list.", "相对强度最强的港股 —— 每只股票近3个月收益相对港股全体做 z 标准化。重要：香港<b>没有经验证的选股优势</b>（在40年面板上残差动量无效；research/CHINA_HK_STOCK_SIGNALS.md）。因此与美国／中国看板不同，这不是选股阿尔法名单 —— 而是为保持一致性展示的相对强度／敞口读数，按近期领先排序并标注各股价格周期状态作为背景。<b>extended</b>（RSI≥70）表示过热（反转风险）；<b>pullback</b> 表示已回落的强势股。香港已验证的读数是下方的全球风险敞口看板。用于定仓与确认的背景 —— 绝非买入清单。") }}
     </h2>
-    <p class="note" style="margin:0 0 2px;text-transform:none">{{ t('Ranked by ~3-month relative strength vs the HK universe, with each name’s price-cycle state for context. HK has no validated selection edge — this is relative-strength / exposure context, not a buy list.', '按近3个月相对港股全体的相对强度排序，并标注各股价格周期状态作为背景。香港没有经验证的选股优势 —— 这是相对强度／敞口背景，而非买入清单。') }}</p>
+    <p class="note" style="margin:0 0 2px;text-transform:none">{{ t('Ranked by ~3-month relative strength vs the HK universe; each card carries the unified Conviction profile (four axes + a single honest verdict). HK has no validated selection edge, so the trust tier reads "screen" and the verdict never says "Buy" — the cycle state caps it. Relative-strength / exposure context, not a buy list.', '按近3个月相对港股全体的相对强度排序；每张卡片附带统一确信度画像（四条维度＋一个诚实结论）。香港没有经验证的选股优势，故信任等级为“筛选”，结论永不显示“买入” —— 周期状态会封顶。相对强度／敞口背景，而非买入清单。') }}</p>
     <div class="nbgrid" data-showmore="12">
     {% for n in setups.buy %}
       {% set _d = n.dir or 'caution' %}
+      {% set c = n.conviction %}
       <a class="nbcard nb-{{ _d }}" href="hk_lookup.html#{{ n.ticker }}">
         <div class="nb-top">
           <span class="nb-tk">{{ n.ticker }}</span>
@@ -342,6 +395,21 @@
         </div>
         <div class="nb-sub">{% if n.sector %}<span>{{ t(n.sector, n.sector_zh or n.sector) }}</span>{% endif %}{% if n.off_high is not none %}<span>{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}</div>
         {% if n.spark_svg %}{{ n.spark_svg | safe }}{% endif %}
+        {% if c %}
+        <div class="nb-conv">
+          {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" title="Unified Conviction score — within-market percentile (display skin, not a probability). HK has no validated selection edge — this is a screen. · 统一确信度分 — 市场内百分位（展示，非概率）。香港无经验证的选股优势 — 这是筛选。">{{ c.score }}</span>{% endif %}
+          <span class="nb-verdict"><span class="l-en">{{ c.verdict }}</span><span class="l-zh">{{ c.verdict_zh }}</span></span>
+        </div>
+        <div class="nb-axes">
+          {% for ax, lbl in [('selection','RS'),('entry','ENT'),('tailwind','TWD'),('quality','QUAL')] %}
+          {% set a = c.axes[ax] %}
+          <div class="nb-ax{{ ' ax-na' if a.pct is none else '' }}" title="{{ lbl }}{% if a.pct is not none %} {{ a.pct }}/100{% else %} — no data{% endif %}">
+            <div class="axl">{{ lbl }}</div>
+            <div class="axt"><div class="axf" style="width:{{ a.pct if a.pct is not none else 0 }}%"></div></div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
         <div class="nb-bot">
           {% if n.label %}<span class="nb-state">{{ td(n.label) }}</span>{% endif %}
         </div>
@@ -352,6 +420,10 @@
           {% if n.alpha_entry == 'pullback' %}<span class="nb-ent ent-good" title="A leader that has cooled off (RSI≤55) — a less-stretched entry · 已回落的强势股（RSI≤55）— 较不过热的入场">{{ t('pullback', '回调') }}</span>
           {% elif n.alpha_entry == 'extended' %}<span class="nb-ent ent-warn" title="Stretched (RSI≥70) — short-term reversal risk · 过热（RSI≥70）— 短线反转风险">{{ t('extended', '过热') }}</span>{% endif %}
         </div>
+        {% endif %}
+        {% if c %}
+        {% if c.cautions %}<div class="nb-cau">{% for cau in c.cautions %}<span>⚠ {{ cau }}</span>{% endfor %}</div>{% endif %}
+        <div class="nb-tier"><span class="l-en">{{ c.trust_tier.en }}</span><span class="l-zh">{{ c.trust_tier.zh }}</span></div>
         {% endif %}
       </a>
     {% endfor %}

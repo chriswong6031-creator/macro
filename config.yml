@@ -2652,19 +2652,24 @@ hk:
   # these names; RS-ranked vs ^HSI. Doubles as breadth universe + drill-down +
   # stock-search seed. ~6/sector, mostly 2000-2006-> history (probed 2026-06-13).
   # tv = a representative constituent's TradingView symbol for the sector chart.
+  # NOTE: the 73 names above the 2026-06 expansion line stay the FIXED validated set
+  # the breadth gauge + hk_global_beta panel were calibrated on; the expansion only
+  # ADDS genuinely-liquid HSI / HSCEI / HSTECH constituents (cross-sectional reads
+  # simply widen to whatever resolves). Every added ticker is a real, liquid .HK line.
   sectors:
-    "Internet & Tech":      {tv: "HKEX:700",  members: ["0700.HK","9988.HK","3690.HK","9618.HK","1810.HK","9888.HK","1024.HK","0992.HK","0981.HK"]}
-    "Financials & Banks":   {tv: "HKEX:1398", members: ["1398.HK","0939.HK","3988.HK","0005.HK","2388.HK","3328.HK","1288.HK"]}
-    "Insurance":            {tv: "HKEX:2318", members: ["2318.HK","1299.HK","2628.HK","2601.HK","0966.HK"]}
-    "Energy":               {tv: "HKEX:883",  members: ["0883.HK","0857.HK","0386.HK","1088.HK","0934.HK"]}
-    "Materials":            {tv: "HKEX:2600", members: ["2600.HK","0358.HK","1378.HK","3993.HK","0486.HK"]}
-    "Property":             {tv: "HKEX:16",   members: ["0016.HK","1109.HK","0688.HK","0823.HK","0017.HK","1997.HK","0012.HK"]}
-    "Consumer":             {tv: "HKEX:2020", members: ["2020.HK","2331.HK","1929.HK","6862.HK","0291.HK","0288.HK","2319.HK","1044.HK"]}
-    "Healthcare & Pharma":  {tv: "HKEX:1093", members: ["1093.HK","1177.HK","2269.HK","2359.HK","6160.HK","1099.HK"]}
-    "Auto & EV":            {tv: "HKEX:1211", members: ["1211.HK","2015.HK","9868.HK","0175.HK","2238.HK"]}
-    "Telecom & Utilities":  {tv: "HKEX:941",  members: ["0941.HK","0762.HK","0728.HK","0002.HK","0003.HK","1038.HK","0006.HK"]}
-    "Gaming & Leisure":     {tv: "HKEX:27",   members: ["0027.HK","1928.HK","0880.HK","2282.HK"]}
-    "Exchange & Diversified": {tv: "HKEX:388", members: ["0388.HK","0001.HK","0019.HK","0066.HK","0083.HK"]}
+    "Internet & Tech":      {tv: "HKEX:700",  members: ["0700.HK","9988.HK","3690.HK","9618.HK","1810.HK","9888.HK","1024.HK","0992.HK","0981.HK","9999.HK","0285.HK","2382.HK","0241.HK","1347.HK","0268.HK","0772.HK","9698.HK","9626.HK","0780.HK","3888.HK","1833.HK"]}
+    "Financials & Banks":   {tv: "HKEX:1398", members: ["1398.HK","0939.HK","3988.HK","0005.HK","2388.HK","3328.HK","1288.HK","3968.HK","1658.HK","0011.HK","2888.HK","6818.HK","0998.HK","1359.HK","3618.HK"]}
+    "Insurance":            {tv: "HKEX:2318", members: ["2318.HK","1299.HK","2628.HK","2601.HK","0966.HK","1336.HK","6060.HK","2378.HK"]}
+    "Energy":               {tv: "HKEX:883",  members: ["0883.HK","0857.HK","0386.HK","1088.HK","0934.HK","1898.HK","0902.HK","2883.HK","1816.HK","0135.HK","3800.HK"]}
+    "Materials":            {tv: "HKEX:2600", members: ["2600.HK","0358.HK","1378.HK","3993.HK","0486.HK","2899.HK","1799.HK","1208.HK","0639.HK","0323.HK"]}
+    "Property":             {tv: "HKEX:16",   members: ["0016.HK","1109.HK","0688.HK","0823.HK","0017.HK","1997.HK","0012.HK","0101.HK","0960.HK","1113.HK","0014.HK","2007.HK","3333.HK","0884.HK","1209.HK","0683.HK","0778.HK"]}
+    "Consumer":             {tv: "HKEX:2020", members: ["2020.HK","2331.HK","1929.HK","6862.HK","0291.HK","0288.HK","2319.HK","1044.HK","6098.HK","2313.HK","6969.HK","9961.HK","1112.HK","6808.HK","2057.HK","0151.HK","0322.HK","0345.HK","9633.HK","2150.HK"]}
+    "Healthcare & Pharma":  {tv: "HKEX:1093", members: ["1093.HK","1177.HK","2269.HK","2359.HK","6160.HK","1099.HK","2196.HK","1801.HK","6618.HK","9926.HK","2607.HK","3692.HK","1066.HK","0867.HK","2392.HK"]}
+    "Auto & EV":            {tv: "HKEX:1211", members: ["1211.HK","2015.HK","9868.HK","0175.HK","2238.HK","9863.HK","2333.HK","0489.HK","1958.HK","1057.HK"]}
+    "Telecom & Utilities":  {tv: "HKEX:941",  members: ["0941.HK","0762.HK","0728.HK","0002.HK","0003.HK","1038.HK","0006.HK","0836.HK","0257.HK","0371.HK","2688.HK"]}
+    "Gaming & Leisure":     {tv: "HKEX:27",   members: ["0027.HK","1928.HK","0880.HK","2282.HK","0200.HK"]}
+    "Exchange & Diversified": {tv: "HKEX:388", members: ["0388.HK","0001.HK","0019.HK","0066.HK","0083.HK","0316.HK"]}
+    "Industrials & Transport": {tv: "HKEX:2333", members: ["1766.HK","0390.HK","0763.HK","0669.HK","2338.HK","1186.HK","0656.HK","0144.HK","0392.HK","1072.HK"]}
 
   # human names for the curated constituents (search library + drill-down labels)
   names:
@@ -2741,6 +2746,93 @@ hk:
     "0019.HK": Swire Pacific
     "0066.HK": MTR Corporation
     "0083.HK": Sino Land
+    # -- 2026-06 expansion: additional liquid HSI / HSCEI / HSTECH constituents ----
+    "9999.HK": NetEase
+    "0285.HK": BYD Electronic
+    "2382.HK": Sunny Optical
+    "0241.HK": Alibaba Health
+    "1347.HK": Hua Hong Semiconductor
+    "0268.HK": Kingdee International
+    "0772.HK": China Literature
+    "9698.HK": GDS Holdings
+    "9626.HK": Bilibili
+    "0780.HK": Tongcheng Travel
+    "3888.HK": Kingsoft
+    "1833.HK": Ping An Healthcare
+    "3968.HK": China Merchants Bank
+    "1658.HK": Postal Savings Bank of China
+    "0011.HK": Hang Seng Bank
+    "2888.HK": Standard Chartered
+    "6818.HK": China Everbright Bank
+    "0998.HK": CITIC Bank
+    "1359.HK": China Cinda Asset Mgmt
+    "3618.HK": Chongqing Rural Commercial Bank
+    "1336.HK": New China Life Insurance
+    "6060.HK": ZhongAn Online
+    "2378.HK": Prudential
+    "1898.HK": China Coal Energy
+    "0902.HK": Huaneng Power
+    "2883.HK": China Oilfield Services
+    "1816.HK": CGN Power
+    "0135.HK": Kunlun Energy
+    "3800.HK": GCL Technology
+    "2899.HK": Zijin Mining
+    "1799.HK": Xinte Energy
+    "1208.HK": MMG
+    "0639.HK": Shougang Resources
+    "0323.HK": Maanshan Iron & Steel
+    "0101.HK": Hang Lung Properties
+    "0960.HK": Longfor Group
+    "1113.HK": CK Asset Holdings
+    "0014.HK": Hysan Development
+    "2007.HK": Country Garden
+    "3333.HK": China Evergrande
+    "0884.HK": CIFI Holdings
+    "1209.HK": China Resources Mixc
+    "0683.HK": Kerry Properties
+    "0778.HK": Fortune REIT
+    "6098.HK": Country Garden Services
+    "2313.HK": Shenzhou International
+    "6969.HK": Smoore International
+    "9961.HK": Trip.com
+    "1112.HK": Health & Happiness
+    "6808.HK": Sun Art Retail
+    "2057.HK": ZTO Express
+    "0151.HK": Want Want China
+    "0322.HK": Tingyi
+    "0345.HK": Vitasoy
+    "9633.HK": Nongfu Spring
+    "2150.HK": Nayuki Holdings
+    "2196.HK": Shanghai Pharmaceuticals
+    "1801.HK": Innovent Biologics
+    "6618.HK": JD Health
+    "9926.HK": Akeso
+    "2607.HK": Shanghai Henlius Biotech
+    "3692.HK": Hansoh Pharmaceutical
+    "1066.HK": Shandong Weigao
+    "0867.HK": China Medical System
+    "2392.HK": Pharmaron Beijing
+    "9863.HK": Zhejiang Leapmotor
+    "2333.HK": Great Wall Motor
+    "0489.HK": Dongfeng Motor
+    "1958.HK": BAIC Motor
+    "1057.HK": Zhejiang Shibao
+    "0836.HK": China Resources Power
+    "0257.HK": China Everbright Environment
+    "0371.HK": Beijing Enterprises Water
+    "2688.HK": ENN Energy
+    "0200.HK": Melco International
+    "0316.HK": Orient Overseas
+    "1766.HK": CRRC Corporation
+    "0390.HK": China Railway Group
+    "0763.HK": ZTE Corporation
+    "0669.HK": Techtronic Industries
+    "2338.HK": Weichai Power
+    "1186.HK": China Railway Construction
+    "0656.HK": Fosun International
+    "0144.HK": China Merchants Port
+    "0392.HK": Beijing Enterprises
+    "1072.HK": Dongfang Electric
 
   # -- Global Risk Overlay (the PRIMARY HK driver) ----------------------------
   # Composite risk-on/off from factors mostly already in the store. sign = +1 if
