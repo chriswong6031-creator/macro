@@ -88,7 +88,6 @@
       <div class="nav-dd-menu" role="menu">
         <a href="china.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('A-share regime · sectors · flows', 'A股周期 · 板块 · 资金') }}</span></a>
         <a href="china_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Standouts · alpha · setups', '精选 · 阿尔法 · 布局') }}</span></a>
-        <a href="china_lookup.html">🔍 {{ t('Stock Lookup', '股票查询') }}<span class="d">{{ t('Search any A-share', '查询任意A股') }}</span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -96,13 +95,13 @@
       <div class="nav-dd-menu" role="menu">
         <a href="hk.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('HSI · southbound · global risk', 'HSI · 南向 · 全球风险') }}</span></a>
         <a href="hk_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('HK-listed standouts · alpha', 'HK上市精选 · 阿尔法') }}</span></a>
-        <a href="hk_lookup.html">🔍 {{ t('Stock Lookup', '股票查询') }}<span class="d">{{ t('Search any HK stock', '查询任意港股') }}</span></a>
       </div>
     </div>
     <div class="nav-dd">
       <a class="nav-link active" href="canada.html">🇨🇦 {{ t('Canada', '加拿大') }} <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
-        <a class="active" href="canada.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('TSX · BoC · commodity overlay', 'TSX · 加央行 · 商品叠加') }}</span></a>
+        <a class="{{ 'active' if mode != 'stocks' }}" href="canada.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('TSX · BoC · commodity overlay', 'TSX · 加央行 · 商品叠加') }}</span></a>
+        <a class="{{ 'active' if mode == 'stocks' }}" href="canada_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('TSX standouts · sectors · alpha', 'TSX精选 · 板块 · 阿尔法') }}</span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -143,13 +142,24 @@
 
 <div class="panel">
   <div class="row">
+    {% if mode == 'stocks' %}
+    <h1>🇨🇦 {{ t('TSX Stock Dashboard', '标普/TSX 个股看板') }}</h1>
+    {% else %}
     <h1>🇨🇦 {{ t('Canada — S&P/TSX Regime', '加拿大 — 标普/TSX 周期') }}</h1>
+    {% endif %}
     <span style="flex:1"></span>
     <span class="muted small">{{ t('data through', '数据截至') }} {{ latest.date }} · {{ t('built', '生成') }} {{ built }}</span>
   </div>
-  <p class="muted small" style="margin:6px 0 0">{{ t('Commodity-and-bank-cycle market — the TSX is ~70% Financials, Energy & Materials. The growth/inflation quad sets the slow backdrop; the commodity / CAD / BoC-vs-Fed overlay below is the high-frequency driver.', '大宗商品与银行周期市场 — TSX 约 70% 为金融、能源与材料。增长／通胀象限给出慢速背景；下方的大宗商品／加元／央行-美联储叠加为高频驱动。') }}</p>
+  {% if mode == 'stocks' %}
+  <p class="muted small" style="margin:6px 0 0">{{ t('Standout TSX names ranked by sector-neutral residual momentum, with the cycle entry as timing context. Search any TSX stock from the box above; click a card for the full breakdown.', '按板块中性残差动量排名的 TSX 个股精选，并以周期入场作为时机背景。可在上方搜索框查询任意 TSX 个股；点击卡片查看完整拆解。') }}
+    <a href="canada.html" style="color:var(--link);font-weight:600">← {{ t('Canada macro dashboard', '加拿大宏观看板') }}</a></p>
+  {% else %}
+  <p class="muted small" style="margin:6px 0 0">{{ t('Commodity-and-bank-cycle market — the TSX is ~70% Financials, Energy & Materials. The growth/inflation quad sets the slow backdrop; the commodity / CAD / BoC-vs-Fed overlay below is the high-frequency driver.', '大宗商品与银行周期市场 — TSX 约 70% 为金融、能源与材料。增长／通胀象限给出慢速背景；下方的大宗商品／加元／央行-美联储叠加为高频驱动。') }}
+    <a href="canada_stocks.html" style="color:var(--link);font-weight:600">→ {{ t('TSX stock dashboard', 'TSX 个股看板') }}</a></p>
+  {% endif %}
 </div>
 
+{% if mode != 'stocks' %}{# ===== macro-only sections (regime → action board) ===== #}
 <!-- ===== Regime hero ===== -->
 <div class="panel">
   <div class="row" style="gap:18px">
@@ -259,14 +269,15 @@
     {% endfor %}
   </div>
 </div>
+{% endif %}{# /macro-only sections #}
 
-<!-- ===== Standout stocks (alpha-led) ===== -->
-{% if setups and setups.buy %}
+<!-- ===== Standout stocks (alpha-led) — the TSX Stock Dashboard headline ===== -->
+{% if mode == 'stocks' and setups and setups.buy %}
 <div class="panel">
-  <h2>{{ t('Standout TSX stocks — alpha leaders', '标普/TSX 个股精选 — α 领先') }}
+  <h2>{{ t('⚡ Standout individual stocks', '⚡ 表现突出的个股') }}
     {{ help('Large-cap TSX names ranked by sector-neutral residual momentum (the positive-IC selection leg), with the cycle entry shown as timing context. Alpha-led like the US (Canada is momentum-persistent). Context, not personalized advice.', '按板块中性残差动量（正 IC 选股腿）排名的大盘 TSX 个股，并以周期入场作为时机背景。与美国一样采用 α 主导（加拿大动量具持续性）。仅作背景，非个性化建议。') }}
   </h2>
-  <div class="cards">
+  <div class="cards" data-showmore="12">
     {% for s in setups.buy %}
     <div class="card">
       <div class="row" style="gap:8px">
@@ -317,6 +328,7 @@
   {% endif %}
 </div>
 
+{% if mode != 'stocks' %}{# ===== macro-only: housing + data health ===== #}
 <!-- ===== Housing / household-debt context ===== -->
 {% if housing %}
 <div class="panel">
@@ -344,6 +356,7 @@
   </table>
 </div>
 {% endif %}
+{% endif %}{# /macro-only: housing + data health #}
 
 <p class="muted small">{{ t('Generated', '生成于') }} {{ built }} · {{ t('Keyless data: yfinance · Bank of Canada VALET · StatsCan WDS · FRED. Educational context, not investment advice.', '无密钥数据：yfinance · 加拿大央行 VALET · 统计局 WDS · FRED。教育性背景，非投资建议。') }}</p>
 

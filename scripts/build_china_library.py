@@ -512,7 +512,9 @@ def main(alpha: dict | None = None) -> dict | None:
     # china.html. Buys = strong alpha with constructive timing; laggards = weak alpha.
     setups = None
     if cand:
-        setups = rank_setups(cand, as_of=(alpha or {}).get("as_of"))
+        # n_buy generous so the standout strip's "show more" can reveal the full
+        # ranked shortlist (the card grid shows 12, reveals the rest on demand).
+        setups = rank_setups(cand, as_of=(alpha or {}).get("as_of"), n_buy=60)
         (site / "factordata" / "china_setups.json").write_text(
             json.dumps(setups, separators=(",", ":"), default=str))
     log.info("china library: %d analyzed, %d skipped (thin history), %d setups",

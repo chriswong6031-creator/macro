@@ -515,6 +515,14 @@ def main() -> int:
             log.error("hk scoreboard build failed (%s); skipping", e)
             vm["hk_scoreboard"] = None
 
+        # standout cards — HK names ranked by cross-sectional relative strength (NOT a
+        # validated alpha; relative-strength/exposure context for US/China parity).
+        try:
+            vm["setups"] = build_hk_library.compute_hk_standouts(vm.get("hk_scoreboard"))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("hk standouts build failed (%s); skipping", e)
+            vm["setups"] = None
+
         env = Environment(loader=FileSystemLoader(
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)
         from engine import i18n

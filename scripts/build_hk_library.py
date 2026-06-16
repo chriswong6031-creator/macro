@@ -204,6 +204,112 @@ def compute_hk_scoreboard(betas: dict | None = None) -> dict | None:
             "modes": {"amplifiers": amp, "cushions": cush, "all": allr}}
 
 
+def _spark_svg(vals: list[float], color: str = "var(--link)",
+               w: int = 240, h: int = 42) -> str:
+    """Tiny theme-aware inline sparkline (area + line + last-point dot) — same shape
+    as the US/China standout cards, replicated locally to avoid a heavy import."""
+    vals = [float(v) for v in vals if v is not None and v == v]
+    if len(vals) < 2:
+        return ""
+    lo, hi = min(vals), max(vals)
+    rng = (hi - lo) or 1.0
+    n, pad = len(vals), h * 0.12
+
+    def xy(i, v):
+        return (i / (n - 1) * w, (h - pad) - ((v - lo) / rng) * (h - 2 * pad) + pad)
+
+    pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in (xy(i, v) for i, v in enumerate(vals)))
+    lx, ly = xy(n - 1, vals[-1])
+    return (f'<svg class="nch" viewBox="0 0 {w} {h}" preserveAspectRatio="none" '
+            f'width="100%" height="{h}">'
+            f'<polyline points="0,{h} {pts} {w},{h}" fill="{color}" opacity="0.12" stroke="none"/>'
+            f'<polyline points="{pts}" fill="none" stroke="{color}" stroke-width="1.7" '
+            f'stroke-linejoin="round" stroke-linecap="round"/>'
+            f'<circle cx="{lx:.1f}" cy="{ly:.1f}" r="2.6" fill="{color}"/></svg>')
+
+
+def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 6) -> dict | None:
+    """Standout HK names ranked by cross-sectional RELATIVE STRENGTH — each name's
+    63-day (~3-month) return z-scored against the HK universe. HK has NO validated
+    stock-picking alpha (residual momentum is dead on a 40y panel); this is a
+    relative-strength / exposure READ surfaced as cards for parity with the US &
+    China dashboards, NOT a backtested selection edge. Reuses the per-stock library
+    JSON (price, off-52w-high, RSI, cycle, recent closes) and the global-beta
+    scoreboard rows, so no new data is fetched. Returns a setups-shaped dict."""
+    import statistics
+    from collections import defaultdict
+
+    rows = ((scoreboard or {}).get("modes") or {}).get("all") or []
+    if not rows:
+        return None
+    site = config.ROOT / config.load()["storage"]["site_dir"]
+    hd = site / "hkstockdata"
+
+    enriched: list[dict] = []
+    for r in rows:
+        t = r.get("ticker")
+        if not t:
+            continue
+        f = hd / f"{t.replace('=', '_').replace('^', '_')}.json"
+        if not f.exists():
+            continue
+        try:
+            rec = json.loads(f.read_text())
+        except Exception:  # noqa: BLE001
+            continue
+        chart = (rec.get("chart") or {}).get("c") or []
+        if len(chart) < 70:
+            continue
+        try:
+            ret_63 = float(chart[-1]) / float(chart[-64]) - 1.0
+        except Exception:  # noqa: BLE001
+            continue
+        tech = rec.get("tech") or {}
+        enriched.append({
+            "ticker": t,
+            "name": r.get("name") or rec.get("name"),
+            "sector": r.get("sector") or rec.get("sector"),
+            "sector_zh": r.get("sector_zh"),
+            "price": tech.get("price") if tech.get("price") is not None else r.get("price"),
+            "off_high": tech.get("off_52w_high_pct"),
+            "rsi": tech.get("rsi14"),
+            "label": r.get("cycle"), "label_zh": r.get("cycle_zh"),
+            "dir": r.get("cycle_dir") or "flat",
+            "_ret63": ret_63, "_chart": chart,
+        })
+    if len(enriched) < 4:
+        return None
+
+    rets = [e["_ret63"] for e in enriched]
+    mu = statistics.fmean(rets)
+    sd = statistics.pstdev(rets) or 1.0
+    for e in enriched:
+        e["alpha"] = round((e["_ret63"] - mu) / sd, 2)        # relative-strength z
+        rsi = e.get("rsi")
+        if rsi is not None and rsi >= 70:
+            e["alpha_entry"] = "extended"                      # stretched — reversal risk
+        elif rsi is not None and rsi <= 55 and e["alpha"] > 0:
+            e["alpha_entry"] = "pullback"                      # strong name, cooled off
+
+    by_sec: dict = defaultdict(list)
+    for e in enriched:
+        by_sec[e.get("sector")].append(e)
+    for lst in by_sec.values():
+        lst.sort(key=lambda x: x["alpha"], reverse=True)
+        for i, e in enumerate(lst, 1):
+            e["sector_rank"], e["sector_n"] = i, len(lst)
+
+    buys = sorted(enriched, key=lambda x: x["alpha"], reverse=True)[:n_buy]
+    laggards = sorted(enriched, key=lambda x: x["alpha"])[:n_lag]
+    for e in buys:
+        col = ("var(--up)" if e["dir"] == "up" else
+               "var(--down)" if e["dir"] == "down" else "var(--muted)")
+        e["spark_svg"] = _spark_svg(e["_chart"][-64:], color=col)
+    for e in enriched:                                          # drop bulky temp fields
+        e.pop("_chart", None); e.pop("_ret63", None)
+    return {"as_of": (scoreboard or {}).get("as_of"), "buy": buys, "laggards": laggards}
+
+
 def main(betas: dict | None = None) -> dict | None:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     outdir = site / "hkstockdata"

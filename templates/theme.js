@@ -230,6 +230,74 @@
     window.addEventListener('resize', function () { if (window.innerWidth > 700) closeNav(); });
   }
 
+  /* ---- progressive "show more" for standout-stock card grids ---------------
+     Any element with [data-showmore="N"] shows its first N child cards and hides
+     the rest behind a control bar that reveals them in chunks of N (staggered
+     fade-in), or all at once, and can collapse back. Language-aware labels.
+     No-ops when total <= N, so it's safe to add the attribute unconditionally. */
+  function smBL(en, zh) { return '<span class="l-en">' + en + '</span><span class="l-zh">' + zh + '</span>'; }
+  function initShowMore() {
+    document.querySelectorAll('[data-showmore]').forEach(function (grid) {
+      if (grid.dataset.smInit) return;            // idempotent
+      grid.dataset.smInit = '1';
+      var step = parseInt(grid.getAttribute('data-showmore'), 10) || 12;
+      var items = [].filter.call(grid.children, function (el) { return el.nodeType === 1; });
+      var total = items.length;
+      if (total <= step) return;                  // nothing to collapse
+      var shown = step;
+      items.forEach(function (el, i) { if (i >= shown) el.classList.add('sm-hidden'); });
+
+      var bar = document.createElement('div'); bar.className = 'sm-bar';
+      var count = document.createElement('span'); count.className = 'sm-count';
+      var btns = document.createElement('div'); btns.className = 'sm-btns';
+      var more = document.createElement('button'); more.type = 'button'; more.className = 'sm-btn';
+      var all = document.createElement('button'); all.type = 'button'; all.className = 'sm-btn sm-ghost';
+      btns.appendChild(more); btns.appendChild(all);
+      bar.appendChild(count); bar.appendChild(btns);
+      grid.parentNode.insertBefore(bar, grid.nextSibling);
+
+      function render(animateFrom) {
+        items.forEach(function (el, i) {
+          var show = i < shown;
+          if (show && el.classList.contains('sm-hidden')) {
+            el.classList.remove('sm-hidden');
+            if (animateFrom != null && i >= animateFrom) {
+              el.classList.remove('sm-reveal'); void el.offsetWidth;   // restart animation
+              el.style.animationDelay = Math.min((i - animateFrom) * 0.035, 0.45) + 's';
+              el.classList.add('sm-reveal');
+            }
+          } else if (!show) {
+            el.classList.add('sm-hidden'); el.classList.remove('sm-reveal'); el.style.animationDelay = '';
+          }
+        });
+        count.innerHTML = smBL('Showing <b>' + shown + '</b> of <b>' + total + '</b>',
+                               '已显示 <b>' + shown + '</b> / <b>' + total + '</b>');
+        var remaining = total - shown;
+        if (remaining > 0) {
+          var next = Math.min(step, remaining);
+          more.className = 'sm-btn';
+          more.innerHTML = '<span class="sm-ic">▾</span>' + smBL('Show ' + next + ' more', '再显示 ' + next + ' 个');
+          all.style.display = '';
+          all.innerHTML = smBL('Show all ' + total, '全部显示 ' + total);
+        } else {
+          more.className = 'sm-btn sm-collapse';
+          more.innerHTML = '<span class="sm-ic">▾</span>' + smBL('Show fewer', '收起');
+          all.style.display = 'none';
+        }
+      }
+      more.addEventListener('click', function () {
+        if (shown >= total) {                      // collapse back to the first page
+          shown = step; render();
+          grid.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+          var from = shown; shown = Math.min(shown + step, total); render(from);
+        }
+      });
+      all.addEventListener('click', function () { var from = shown; shown = total; render(from); });
+      render();
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     // legacy text buttons (Bitcoin Vector / hub / China — untouched pages)
     document.querySelectorAll('.theme-btn').forEach(function (b) {
@@ -251,6 +319,7 @@
     });
     initNavSearch();
     initMobileNav();
+    initShowMore();
     themeCharts();
   });
   // charts may finish drawing after DOMContentLoaded; re-theme once more on load
