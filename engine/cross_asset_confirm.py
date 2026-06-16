@@ -301,11 +301,11 @@ def snapshot(latest: dict | None = None, root: Path | str | None = None,
         bonds = bonds or {}
         fx = fx or {}
 
-        note_en = ("Cross-asset confirmation: does the fast-family complex (bonds + FX) agree "
+        note_en = ("Bonds & FX cross-check: does the fast-family complex (bonds + FX) agree "
                    "with the equity/macro regime? DISPLAY-ONLY — never scored. Most legs are "
                    "coincident confirmation / fragility gauges; only credit/EBP and the curve have "
                    "a (noisy) leading horizon. Divergences are attention flags, not forecasts.")
-        note_zh = ("跨资产确认：快端板块（债券+外汇）是否与股票/宏观周期一致？仅供展示 — 从不评分。"
+        note_zh = ("债券与外汇交叉验证：快端板块（债券+外汇）是否与股票/宏观周期一致？仅供展示 — 从不评分。"
                    "多数为同步确认/脆弱性计量；仅信用/EBP与曲线具（嘈杂的）领先性。背离为关注信号，非预测。")
         unknown = {"verdict": "unknown", "headline_en": "Cross-asset confirmation unavailable "
                    "(bond / forex contracts not found).", "headline_zh": "跨资产确认不可用（未找到债券/外汇数据）。",

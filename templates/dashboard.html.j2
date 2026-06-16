@@ -825,12 +825,12 @@
   </div>
   {% endif %}
 
-  <!-- ===================== CROSS-ASSET CONFIRMATION — do bonds & FX agree with equities? ===================== -->
+  <!-- ===================== BONDS & FX CROSS-CHECK — do the fast markets confirm equities? ===================== -->
   {% if latest.cross_asset_confirm and latest.cross_asset_confirm.verdict not in [none, 'unknown'] %}
   {% set cac = latest.cross_asset_confirm %}
   {% set _cvtone = 'up' if cac.verdict == 'confirm' else ('down' if cac.verdict == 'diverge' else 'flat') %}
   <div class="panel span12" id="cross-asset-confirm">
-    <h2>{{ t('Cross-asset confirmation — do bonds & FX agree with equities?', '跨资产确认 — 债券与外汇是否与股票一致？') }}
+    <h2>{{ t('Bonds & FX cross-check — do the fast markets confirm equities?', '债券与外汇交叉验证 — 快端市场是否确认股票？') }}
       {{ help("Bonds (credit, curve, rates-vol, sovereign) and FX (the dollar, EM carry) sit at the fast end of the macro complex. This compares their INDEPENDENT reads — the bond credit×curve cycle clock, credit / curve / rates-vol bands, the dollar-smile regime, EM-FX conviction — against the equity cycle & risk read. Honestly graded: only credit/EBP and the curve have a (noisy) leading horizon; rates-vol-vs-VIX, the dollar/EM risk-off read and FX carry are COINCIDENT confirmation, and the stock-bond correlation is a slow regime descriptor. DISPLAY-ONLY — never scored; a divergence is an attention flag, not a forecast.", "债券（信用、曲线、利率波动、主权）与外汇（美元、新兴市场套息）处于宏观体系的快端。本面板将它们的独立读数 — 债券信用×曲线时钟、信用／曲线／利率波动区间、美元微笑周期、新兴市场外汇信念 — 与股票周期与风险读数作对比。诚实分级：仅信用/EBP与曲线具（嘈杂的）领先性；利率波动对VIX、美元/新兴市场避险读数与外汇套息为同步确认，股债相关性为缓慢的周期描述。仅供展示 — 从不评分；背离是关注信号，而非预测。") }}
       <span class="badge tone-{{ _cvtone }}" style="float:right">{{ t(cac.verdict, cac.verdict_zh) }}{% if cac.agree_pct is not none %} · {{ cac.agree_pct }}%{% endif %}{% if cac.confidence %} · {{ t('conf', '信心') }} {{ t(cac.confidence_en or cac.confidence, cac.confidence_zh or cac.confidence) }}{% endif %}</span>
     </h2>
