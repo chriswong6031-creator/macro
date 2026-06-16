@@ -56,6 +56,30 @@
               border-radius:8px; background:color-mix(in srgb,var(--link) 14%,var(--panel2));
               color:var(--link); border:1px solid color-mix(in srgb,var(--link) 30%,var(--line)); }
   .fnd-desc { font-size:13px; color:var(--text); margin:9px 0 4px; line-height:1.55; }
+  /* ---- unified Conviction Profile hero (mirrors stock.html) ---- */
+  .conv { margin:8px 0 4px; padding:11px 13px; border-radius:11px; background:var(--panel2);
+          border:1px solid var(--line); }
+  .cv-head { display:flex; align-items:center; gap:11px; }
+  .cv-score { font-size:22px; font-weight:800; font-variant-numeric:tabular-nums; min-width:48px;
+              text-align:center; padding:3px 9px; border-radius:10px; border:1px solid var(--line); }
+  .cv-score.band-high { color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,var(--line));
+                        background:color-mix(in srgb,var(--up) 12%,var(--panel)); }
+  .cv-score.band-constructive { color:var(--g-cold); border-color:color-mix(in srgb,var(--g-cold) 40%,var(--line)); }
+  .cv-score.band-neutral { color:var(--muted); }
+  .cv-score.band-low { color:var(--down); border-color:color-mix(in srgb,var(--down) 38%,var(--line)); }
+  .cv-verdict { font-size:15px; font-weight:800; line-height:1.25; }
+  .cv-tier { font-size:11px; color:var(--muted); margin-top:1px; }
+  .cv-axes { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:9px; }
+  .cax { font-size:10.5px; }
+  .cax .caxl { color:var(--muted); display:block; }
+  .cax .caxbar { display:block; height:5px; border-radius:3px; background:var(--line); margin:2px 0; overflow:hidden; }
+  .cax .caxf { display:block; height:100%; background:var(--g-cold); border-radius:3px; }
+  .cax.cax-na .caxf { background:transparent; }
+  .cax .caxv { font-weight:700; font-variant-numeric:tabular-nums; }
+  .cv-cau { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .cv-cau .ccau { font-size:11px; font-weight:700; padding:1px 7px; border-radius:7px;
+                  color:var(--warn); background:color-mix(in srgb,var(--warn) 13%,var(--panel)); }
+  .cv-note { font-size:11px; color:var(--muted); margin-top:8px; line-height:1.5; }
   .fnd-grid { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 4px; }
   .fnd-chip { background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:5px 10px; font-size:12px; min-width:78px; }
   .fnd-chip .k { color:var(--muted); font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; }
@@ -146,6 +170,10 @@
       <div id="r_cyclebox" class="cyclebox"></div>
       <p id="r_flags" class="neg" style="margin:4px 0"></p>
       <details><summary>{{ t('full reasoning', '完整推理') }}</summary><p class="muted" id="r_why" style="margin:6px 0"></p></details>
+    </div>
+    <div class="panel" id="r_conviction_panel" style="display:none">
+      <h2>{{ t('Conviction profile', '确信度画像') }} <span class="note" style="text-transform:none">· {{ t('unified verdict — cycle caps it', '统一结论 — 周期封顶') }}</span></h2>
+      <div id="r_conviction" class="conv"></div>
     </div>
     <div class="panel">
       <h2>{{ t('Momentum across timeframes', '跨周期动量') }}</h2>
@@ -314,8 +342,46 @@
       document.getElementById('r_state').className = 'state';
       document.getElementById('r_entry').style.display = 'none';
       document.getElementById('r_points').innerHTML = '';
+      document.getElementById('r_conviction_panel').style.display = 'none';
       document.getElementById('r_cyclebox').innerHTML = L('notlibmsg');
     });
+  }
+
+  // unified Conviction Profile hero — renders the SAME block as the standout card on
+  // canada_stocks.html, so the dashboard and this page can never structurally disagree.
+  // The cycle ladder above is the calibrated short-term timing read; conviction blends
+  // it with the relative-strength / theme read and is shown as context (the cycle caps
+  // the verdict). CA selection is weak positive-IC context — the trust tier says so.
+  var CAX_LABELS = { selection: ['Selection', '选股'], entry: ['Entry', '入场'],
+                     tailwind: ['Tailwind', '顺风'], quality: ['Quality', '质量'] };
+  function renderConviction(d) {
+    var panel = document.getElementById('r_conviction_panel');
+    var box = document.getElementById('r_conviction'), c = d.conviction;
+    if (!box || !panel) return;
+    if (!c) { panel.style.display = 'none'; return; }
+    var tt = c.trust_tier || {};
+    var ax = ['selection', 'entry', 'tailwind', 'quality'].map(function (k) {
+      var a = (c.axes && c.axes[k]) || {}, lab = CAX_LABELS[k], pct = a.pct;
+      return '<div class="cax' + (pct == null ? ' cax-na' : '') + '"><span class="caxl">' +
+        lz(lab[0], lab[1]) + '</span><span class="caxbar"><span class="caxf" style="width:' +
+        (pct == null ? 0 : pct) + '%"></span></span><span class="caxv">' +
+        (pct == null ? '—' : pct) + '</span></div>';
+    }).join('');
+    var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g,
+      function (ch) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]; }); };
+    var cau = (c.cautions || []).map(function (x) {
+      return '<span class="ccau">⚠ ' + esc(x) + '</span>'; }).join('');
+    box.innerHTML =
+      '<div class="cv-head">' +
+        (c.score != null ? '<span class="cv-score band-' + c.band + '">' + c.score + '</span>' : '') +
+        '<div class="cv-vtext"><div class="cv-verdict">' + lz(c.verdict, c.verdict_zh) + '</div>' +
+        '<div class="cv-tier">' + lz(tt.en, tt.zh) + '</div></div></div>' +
+      '<div class="cv-axes">' + ax + '</div>' +
+      (cau ? '<div class="cv-cau">' + cau + '</div>' : '') +
+      '<div class="cv-note">' + lz(
+        'Conviction blends a calibrated short-term timing read (the cycle above) with the relative-strength / theme read — context, not a probability. On Canada the selection leg is weak positive-IC context and the axis weights are an unvalidated prior; there is no validated quality leg, so that axis is shown absent (never neutral). The cycle state caps the verdict: a downtrend never reads “Buy”.',
+        '确信度融合了已校准的短期择时读数（上方周期）与相对强度／主题读数——作为情境，而非概率。在加拿大，选股腿为弱正 IC 背景，维度权重为未经验证的先验；并无经验证的质量腿，故该维度显示为缺失（绝非中性）。周期状态会封顶结论：下行趋势永不显示“买入”。') + '</div>';
+    panel.style.display = 'block';
   }
 
   function render(d) {
@@ -366,6 +432,7 @@
 
     document.getElementById('r_flags').textContent = d.cycle.failed_cycle ? L('failed') : '';
     document.getElementById('r_why').textContent = lz(d.ladder.why, d.ladder.why_zh) + ' ' + L('next') + ' ' + lz(d.ladder.next, d.ladder.next_zh);
+    renderConviction(d);
     window.renderMTF(document.getElementById('r_mtf'), d.mtf);
 
     // Alpha vs sector — sector-neutral residual momentum (additive; absent on ETFs/indices)

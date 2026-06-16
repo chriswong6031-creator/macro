@@ -2418,6 +2418,18 @@ def main() -> int:
             top_setups = json.loads(_sp.read_text())
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("setups.json unreadable (%s)", e)
+    # WIDE "Standout individual stocks" board (~80-120 names ranked by the validated
+    # alpha leg, each carrying the unified Conviction profile/verdict). Written by
+    # build_stock_library at the END of the prior run (one-build lag, like setups.json,
+    # surfaced via the card's as_of). Absent (first run) => the strip degrades to the
+    # action_board notable cards below.
+    us_standouts = None
+    _us = site / "factordata" / "us_standouts.json"
+    if _us.exists():
+        try:
+            us_standouts = json.loads(_us.read_text())
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("us_standouts.json unreadable (%s)", e)
 
     # Macro news & catalysts (LEAF, additive, never fatal). Catalysts (FOMC + jobs
     # report) are keyless and always on; filtered headlines + the optional LLM brief
@@ -2542,6 +2554,7 @@ def main() -> int:
         sector_timing=sector_timing,
         action_board=action_board(sector_timing, notable),
         top_setups=top_setups,
+        us_standouts=us_standouts,
         market_gamma=market_gamma,
         components_confirming=confirming,
         components_contradicting=contradicting,
@@ -2593,8 +2606,9 @@ def main() -> int:
     # landing-hub card stat (presence-gated by the .html existing)
     _ab = vm["action_board"] or {}
     _ts = top_setups or {}
-    _n = len(_ts.get("buy") or []) or len(_ab.get("notable") or [])
-    _us_label = (f"{_n} standout setups" if _n else "Stock signals & flows")
+    _n = (len((us_standouts or {}).get("buy") or [])
+          or len(_ts.get("buy") or []) or len(_ab.get("notable") or []))
+    _us_label = (f"{_n} standout stocks" if _n else "Stock signals & flows")
     usdir = config.data_dir() / "us_stocks"
     usdir.mkdir(parents=True, exist_ok=True)
     (usdir / "latest.json").write_text(json.dumps(
