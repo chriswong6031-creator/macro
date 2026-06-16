@@ -1,0 +1,7 @@
+# Admin-dashboard OPTIONAL deps. NOT referenced by the root requirements.txt, so the
+# CI pipeline (collect/engine/build/notify) never installs these. Install locally only:
+#   .venv/bin/pip install -r admin/requirements.txt
+#
+# The admin core needs nothing beyond the root deps (stdlib http.server + requests +
+# pyyaml, which are already installed). These are ONLY for reading live GA4 traffic.
+google-analytics-data>=0.18   # GA4 Data API client (real-time users + reports)

@@ -4,6 +4,29 @@
 (function () {
   var docEl = document.documentElement;
 
+  /* ---- Google Analytics 4 (gtag.js) ---------------------------------------
+     Injected once on EVERY page via this one shared script (every page loads
+     theme.js), so there's no per-template tag to maintain. Loads gtag.js async
+     and queues the first page_view via dataLayer. Skips localhost / file:// so
+     local dev, previews and the admin tool never pollute the property. Set
+     GA4_ID to '' to disable site-wide. */
+  var GA4_ID = 'G-BZTZ9W1BBB';
+  (function loadGA4() {
+    if (!GA4_ID || window.__ga4_loaded) return;
+    var h = location.hostname;
+    if (!h || h === 'localhost' || h === '127.0.0.1' || h === '[::1]') return;
+    window.__ga4_loaded = true;
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    window.gtag = gtag;
+    gtag('js', new Date());
+    gtag('config', GA4_ID);
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA4_ID;
+    document.head.appendChild(s);
+  })();
+
   /* ---- Plotly charts: re-theme to the active theme -------------------------
      Charts are built transparent with neutral-grey axes (build_site.py); here we
      relayout their font + gridlines crisply for light vs dark — on load and on
