@@ -2308,6 +2308,17 @@ china:
       "512200.SS": [Real Estate, "SSE:600048"]
       "515250.SS": [Automobiles, "SZSE:002594"]
       "512980.SS": [Media, "SZSE:002027"]
+    # -- Allocation-strategy sleeves (china_allocation.py) -----------------------
+    # Onshore RMB ETFs for the tactical income-core + gold/bond de-risk strategy.
+    # Fetched into the same `china` group; roles (core/equity/gold/bond) are mapped
+    # in engine/china_allocation.py, not here. 159201 = the new "cash-cow" FCF ETF
+    # (<1.5y live -> live-read only, excluded from the backtest).
+    allocation_etfs:                # ticker: display name
+      "512890.SS": CSI Dividend Low-Vol     # 红利低波 — income core (2018->)
+      "510880.SS": SSE Dividend             # 红利 — deep-history dividend proxy (2006->)
+      "159201.SZ": Free Cash Flow           # 国证自由现金流 — "cashflow king" (2025->, live-read only)
+      "518880.SS": Gold ETF                 # 黄金 — de-risk leg (2013->)
+      "511010.SS": Treasury Bond ETF        # 国债 5Y — short-bond de-risk leg
 
   # -- Plane B: macro via Eastmoney datacenter JSON (group=china_macro) --------
   # Report-name -> column parsing lives in collectors/china_macro.py (logic, not

@@ -33,6 +33,7 @@ class ChinaPriceAdapter(Adapter):
     def all_tickers(self) -> list[str]:
         out: list[str] = list(self.cfg["indices"].keys())
         out += list(self.cfg["sector_etfs"].keys())
+        out += list(self.cfg.get("allocation_etfs", {}).keys())
         out += list(self.cfg["fx"].keys())
         return list(dict.fromkeys(out))
 

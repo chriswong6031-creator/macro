@@ -294,6 +294,14 @@
   .idx-row, .idx-trend { display: flex; justify-content: space-between; font-size: 12px; gap: 8px; }
   .idx-trend { margin-top: 3px; color: var(--muted); }
   .idx-grid .pos { color: var(--up); } .idx-grid .neg { color: var(--down); } .idx-grid .warn { color: var(--warn); }
+  /* index-health risk row + Income-Vector allocation button (mirrors the US macro page) */
+  .idx-risk { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
+  @media (max-width: 900px) { .idx-risk { grid-template-columns: 1fr; } }
+  .idx-gauge, .idx-alloc { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; }
+  .idx-alloc { display: block; text-decoration: none; color: inherit; border-color: var(--link); }
+  .idx-alloc:hover { background: var(--panel); }
+  .idx-gk { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .idx-gv { font-size: 24px; font-weight: 800; color: var(--text); } .idx-gv small { font-size: 12px; font-weight: 600; color: var(--muted); }
   /* nav split-dropdown (macro / stocks / lookup) */
   .nav-dd { position: relative; }
   .nav-dd .caret { font-size: 9px; opacity: .6; }
@@ -328,6 +336,7 @@
         <a class="{{ 'active' if mode != 'stocks' }}" href="china.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('A-share regime · sectors · flows', 'A股周期 · 板块 · 资金') }}</span></a>
         <a class="{{ 'active' if mode == 'stocks' }}" href="china_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Standouts · alpha · setups', '精选 · 阿尔法 · 布局') }}</span></a>
         <a href="baskets_china.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs CSI 300', '等权主题篮子 vs 沪深300') }}</span></a>
+        <a href="china_allocation.html">◎ {{ t('Allocation Strategy', '仓位策略') }}<span class="d">{{ t('Income · gold · bonds', '红利 · 黄金 · 国债') }}</span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -399,10 +408,10 @@
   {% endif %}
 
   {% if mode != 'stocks' %}
-  <!-- regime hero -->
-  <div class="panel span8" id="regime-hero">
+  <!-- ===================== MACRO REGIME DASHBOARD (compact scorecard) ===================== -->
+  <div class="panel span12" id="regime-hero">
     <h1>{{ t('China A-Share Regime', '中国A股周期') }}</h1>
-    <h2 style="margin-top:1px">{{ t('Market Regime', '市场周期') }} · {{ latest.date }}</h2>
+    <h2 style="margin-top:1px">{{ t('Macro Regime Dashboard', '宏观周期仪表盘') }} · {{ latest.date }}</h2>
     <div class="hero">
       <span class="quad-badge quad-{{ latest.quad }}">{{ td(latest.quad_name) }}</span>
       <div class="metric"><span class="v {{ 'pos' if latest.growth_score>=0 else 'neg' }}">{{ '%+.2f'|format(latest.growth_score) }}</span><span class="k">{{ t('Growth', '增长') }}</span></div>
@@ -421,17 +430,6 @@
       <b>{{ td({'Q1':'Goldilocks','Q2':'Reflation','Q3':'Stagflation','Q4':'Growth scare'}[latest.pending_quad]) }}</b>
       ({{ latest.pending_days }}{{ t(' day(s) so far; the label flips after 7)', ' 天；标签将在第 7 天翻转）') }}</p>
     {% endif %}
-    <div class="qmap">
-      <span class="ax"></span>
-      <span class="ax">{{ t('inflation ↓', '通胀 ↓') }}</span>
-      <span class="ax">{{ t('inflation ↑', '通胀 ↑') }}</span>
-      <span class="ax">{{ t('growth ↑', '增长 ↑') }}</span>
-      <span class="cell q1{{ ' cur' if latest.quad=='Q1' }}">{{ t('Goldilocks', '理想增长') }}<small>{{ t('tech · quality · consumer', '科技 · 质量 · 消费') }}</small></span>
-      <span class="cell q2{{ ' cur' if latest.quad=='Q2' }}">{{ t('Reflation', '再通胀') }}<small>{{ t('cyclicals · brokers · materials', '周期 · 券商 · 材料') }}</small></span>
-      <span class="ax">{{ t('growth ↓', '增长 ↓') }}</span>
-      <span class="cell q4{{ ' cur' if latest.quad=='Q4' }}">{{ t('Growth scare', '增长恐慌') }}<small>{{ t('defensives · banks · staples', '防御 · 银行 · 必需消费') }}</small></span>
-      <span class="cell q3{{ ' cur' if latest.quad=='Q3' }}">{{ t('Stagflation', '滞胀') }}<small>{{ t('materials · banks · upstream', '材料 · 银行 · 上游') }}</small></span>
-    </div>
     {% if latest.confirming %}<p class="note" style="margin:10px 0 0">{{ t('Confirming', '确认') }}: {{ latest.confirming|join(', ') }}{% if latest.contradicting %} · {{ t('Contradicting', '矛盾') }}: {{ latest.contradicting|join(', ') }}{% endif %}</p>{% endif %}
   </div>
 
@@ -457,13 +455,36 @@
   </div>
   {% endif %}
 
-  <!-- benchmark cycle card -->
-  {% if benchmark %}
-  <div class="panel span4">
-    <h2>{{ td(benchmark.name) }}</h2>
-    <div style="font-size:20px;font-weight:800">{{ '%.2f'|format(benchmark.price) }} <span class="{{ 'pos' if benchmark.chg>=0 else 'neg' }}" style="font-size:14px">{{ '%+.2f'|format(benchmark.chg) }}%</span></div>
-    <div style="margin:4px 0 8px"><span class="lad {{ 'up' if benchmark.dir=='up' else ('down' if benchmark.dir=='down' else 'flat') }}">{{ td(benchmark.label or benchmark.state) }}</span></div>
-    <div class="mtf" data-mtf='{{ benchmark.mtf_json }}'></div>
+  <!-- ===================== SIGNAL STACK — consolidated cross-subsystem read ===================== -->
+  {% if signal_stack %}
+  <div class="panel span12" id="signal-stack">
+    <h2>{{ t('Signal stack — where the evidence agrees & disagrees', '信号堆栈 — 证据在何处一致、在何处分歧') }}
+      {{ help("Don't ask 'is it bullish?' — ask 'which parts of the evidence disagree?'. This collapses the dashboard's subsystem reads into one stack: each leg's lean, the regime-core agreement, and the single biggest contradiction. It re-presents signals detailed below — it invents nothing and is never scored. SCORED legs drive the regime; CONTEXT legs are positioning colour only.", "不要问'是不是看多？'，而要问'证据的哪些部分相互矛盾？'。这把仪表盘各子系统读数汇聚为一个堆栈：每条腿的倾向、周期核心一致度，以及最大的那条矛盾。它只是对下方详述信号的再呈现 — 不创造新信号，也从不计入评分。已评分腿驱动周期；背景腿仅为仓位色彩。") }}
+    </h2>
+    <div class="sstack-grid">
+      <div class="sstack-legs">
+        {% for leg in signal_stack.legs %}
+        <div class="sstack-leg">
+          <span class="sstack-dot tone-{{ leg.tone }}"></span>
+          <span class="sstack-name">{{ t(leg.label_en, leg.label_zh) }}{% if leg.tier == 'context' %}<span class="sstack-tier">{{ t('context', '背景') }}</span>{% endif %}</span>
+          <span class="sstack-state tone-{{ leg.tone }}">{{ t(leg.state_en, leg.state_zh) }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="sstack-verdict">
+        <div class="sstack-final tone-{{ signal_stack.anchor_tone }}">{{ t('Final', '结论') }}: <b>{{ t(signal_stack.final_en, signal_stack.final_zh) }}</b></div>
+        {% if signal_stack.agreement_pct is not none %}
+        <div class="sstack-agree">{{ t('Regime agreement', '周期一致度') }} <b>{{ signal_stack.agreement_pct }}%</b>{% if signal_stack.quality_en %} — {{ t(signal_stack.quality_en, signal_stack.quality_zh) }}{% endif %}</div>
+        {% endif %}
+        <div class="sstack-tally"><b class="tone-up">{{ signal_stack.n_bull }}</b> {{ t('constructive', '建设性') }} · <b>{{ signal_stack.n_flat }}</b> {{ t('neutral', '中性') }} · <b class="tone-down">{{ signal_stack.n_bear }}</b> {{ t('cautionary', '谨慎') }} {{ t('of', '／共') }} {{ signal_stack.n }}</div>
+        {% if signal_stack.contradiction_en %}
+        <div class="sstack-contra">⚠ {{ t('Main contradiction', '主要矛盾') }}: {{ t(signal_stack.contradiction_en, signal_stack.contradiction_zh) }}</div>
+        {% else %}
+        <div class="sstack-contra ok">✓ {{ t('Broad agreement — no leg is fighting the regime', '广泛一致 — 没有腿与周期相左') }}</div>
+        {% endif %}
+      </div>
+    </div>
+    <p class="note" style="margin:10px 0 0;text-transform:none;font-size:11px">{{ t('Display-only consolidation of the signals detailed below — it changes no score. The agreement % is the regime-core confidence; the legs are context.', '仅为下方详述信号的展示性汇总 — 不改变任何评分。一致度为周期核心置信度；各腿为背景。') }}</p>
   </div>
   {% endif %}
 
@@ -488,18 +509,119 @@
       </div>
       {% endfor %}
     </div>
+    <div class="idx-risk">
+      {% set rc = latest.conditions.recession if latest.conditions else none %}
+      {% set dr = latest.conditions.drawdown_risk if latest.conditions else none %}
+      <div class="idx-gauge">
+        <div class="idx-gk">{{ t('Slowdown risk', '放缓风险') }}</div>
+        <div class="idx-gv {{ 'neg' if rc and rc.score>=60 else ('warn' if rc and rc.score>=40 else '') }}">{{ rc.score|round|int if rc and rc.score is not none else '—' }}<small>/100</small></div>
+        <div class="muted" style="font-size:11px">{% if rc and rc.label %}{{ t(rc.label, {'low':'低','elevated':'偏高','high':'高'}.get(rc.label, rc.label)) }}{% endif %}</div>
+      </div>
+      <div class="idx-gauge">
+        <div class="idx-gk">{{ t('Drawdown risk', '回撤风险') }}</div>
+        <div class="idx-gv {{ 'neg' if dr and dr.score>=60 else ('warn' if dr and dr.score>=40 else '') }}">{{ dr.score|round|int if dr and dr.score is not none else '—' }}<small>/100</small></div>
+        <div class="muted" style="font-size:11px">{% if dr and dr.band %}{{ t(dr.band, {'calm':'平静','low':'低','elevated':'偏高','high':'高','fragile':'脆弱'}.get(dr.band, dr.band)) }}{% endif %}</div>
+      </div>
+      {% if alloc_card and alloc_card.present %}
+      <a class="idx-alloc" href="china_allocation.html">
+        <div class="idx-gk">◎ {{ t('Income Vector allocation', '红利向量仓位') }} →</div>
+        <div class="idx-gv" style="color:{{ '#1FA971' if alloc_card.band == 'low' else ('var(--warn)' if alloc_card.band == 'elevated' else 'var(--down)') }}">{{ alloc_card.growth_w }}%<small> {{ t('growth', '增长') }} / {{ alloc_card.defensive_w }}% {{ t('defensive', '防御') }}</small></div>
+        <div class="muted" style="font-size:11px">{{ t(alloc_card.label_en, alloc_card.label_zh) }} · Sharpe {{ alloc_card.sharpe }} · MaxDD {{ alloc_card.maxdd }}%</div>
+      </a>
+      {% else %}
+      <a class="idx-alloc" href="china_allocation.html">
+        <div class="idx-gk">◎ {{ t('Allocation strategy', '仓位策略') }} →</div>
+        <div class="muted" style="font-size:12px;margin-top:4px">{{ t('Income core + gold + bonds — a validated drawdown / Sharpe engine.', '红利核心 + 黄金 + 国债 — 经验证的回撤 / 夏普引擎。') }}</div>
+      </a>
+      {% endif %}
+    </div>
     <p class="note" style="margin:10px 0 0;text-transform:none">{{ t('Looking for individual A-shares?', '想找个股？') }}
       <a href="china_stocks.html" style="color:var(--link);font-weight:600">→ {{ t('A-share stock dashboard', 'A股个股看板') }}</a></p>
   </div>
   {% endif %}
 
-  <!-- ===================== DRAWDOWN & SLOWDOWN RISK (uncalibrated, display-only) ===================== -->
+  <!-- ===================== MARKET SNAPSHOT (cross-asset tiles + benchmark cycle) ===================== -->
+  {% if market_tiles or benchmark %}
+  <div class="panel span12" id="market-snapshot">
+    <h2>{{ t('Market snapshot', '市场快照') }}
+      {{ help("The headline cross-asset levels in one glance — the mainland indexes, the offshore yuan, gold and the 10-year government bond yield — each with its 1-day move. A quick orientation; the read and the why live in the panels below.", "一眼看尽跨资产关键水平 — 内地指数、离岸人民币、黄金与10年期国债收益率 — 各附其单日变动。用于快速定位；解读与原因见下方面板。") }}
+    </h2>
+    {% if market_tiles %}
+    <div class="mtiles">
+      {% for tl in market_tiles %}
+      <div class="mtile">
+        <div class="mtile-top"><span class="mtile-lbl">{{ tl.label }}</span><span class="mtile-tag">{{ tl.tag }}</span></div>
+        <div class="mtile-val">{{ tl.level }}</div>
+        <div class="mtile-chg {{ tl.tone }}">{{ tl.chg }} ({{ tl.pct }})</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if benchmark %}
+    <div style="margin-top:14px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+      <b>{{ td(benchmark.name) }}</b>
+      <span style="font-size:18px;font-weight:800">{{ '%.2f'|format(benchmark.price) }}</span>
+      <span class="{{ 'pos' if benchmark.chg>=0 else 'neg' }}" style="font-size:13px">{{ '%+.2f'|format(benchmark.chg) }}%</span>
+      <span class="lad {{ 'up' if benchmark.dir=='up' else ('down' if benchmark.dir=='down' else 'flat') }}">{{ td(benchmark.label or benchmark.state) }}</span>
+    </div>
+    <div class="mtf" data-mtf='{{ benchmark.mtf_json }}'></div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- ===================== REGIME TIME MACHINE ===================== -->
+  {% if lifespan_rows %}
+  <div class="panel span12" id="time-machine" data-timeline="china_regime_timeline.json">
+    <h2>{{ t('⏳ Regime time machine', '⏳ 周期时光机') }}
+      {{ help("Drag the playhead across ~20 years of A-share history and the readout rewinds the regime CORE to that day — quadrant, growth/inflation scores, agreement, PBoC liquidity and the business cycle. China’s engine doesn’t track transition/warning flags, so those stay blank. Hit ▶ to watch the quad ribbon flip at every major turn — 2008, the 2015 bubble, 2018, 2020.", "拖动播放头横扫约 20 年 A 股历史，下方读数会把周期核心回退到那一天 — 象限、增长／通胀分数、一致度、央行流动性与商业周期。中国引擎不追踪转换／预警旗，故此处留空。点击 ▶ 观看周期色带在每个重大转折处翻转 — 2008、2015 泡沫、2018、2020。") }}
+    </h2>
+    <div class="tm-wrap">
+      <canvas id="tm-canvas" class="tm-canvas"></canvas>
+      <input id="tm-range" class="tm-range" type="range" min="0" max="0" value="0" aria-label="Scrub regime history">
+    </div>
+    <div class="tm-controls">
+      <button class="tm-btn tm-play" id="tm-play" aria-label="play/pause" title="Play / pause"><span class="tm-play-ico"></span></button>
+      <span class="tm-presets">
+        <button class="tm-btn" data-tm-jump="now">{{ t('Now', '现在') }}</button>
+        <button class="tm-btn" data-tm-jump="2015-06-12">{{ t('2015 bubble', '2015 泡沫') }}</button>
+        <button class="tm-btn" data-tm-jump="2018-12-28">{{ t('2018 bear', '2018 熊市') }}</button>
+        <button class="tm-btn" data-tm-jump="2020-03-23">{{ t('2020 COVID', '2020 疫情') }}</button>
+      </span>
+    </div>
+    <div class="tm-readout">
+      <div class="tm-asof">
+        <span class="tm-date" id="tm-date">—</span>
+        <span class="tm-state-tag is-live" id="tm-tag">—</span>
+      </div>
+      <div class="tm-badges">
+        <span class="badge" id="tm-quad">—</span>
+        <span class="badge" id="tm-trans">—</span>
+        <span class="kv">{{ t('agreement', '一致度') }} <b id="tm-conf">—</b></span>
+        <span class="kv">{{ t('cycle', '商业周期') }} <b id="tm-cyc">—</b></span>
+        <span class="kv">{{ t('liquidity', '流动性') }} <b id="tm-liq">—</b></span>
+      </div>
+      <div class="tm-gauges">
+        <div class="tm-gauge">
+          <div class="tm-glabel"><span>{{ t('Growth', '增长') }}</span><span class="sub" id="tm-g-v">—</span></div>
+          <div class="gauge"><i id="tm-g-i" style="left:50%"></i></div>
+        </div>
+        <div class="tm-gauge">
+          <div class="tm-glabel"><span>{{ t('Inflation', '通胀') }}</span><span class="sub" id="tm-i-v">—</span></div>
+          <div class="gauge"><i id="tm-i-i" style="left:50%"></i></div>
+        </div>
+      </div>
+      <div class="tm-flags" id="tm-flags"></div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ===================== DRAWDOWN & SLOWDOWN RISK (calibrated, display-only) ===================== -->
   {% if latest.conditions and latest.conditions.recession and latest.conditions.recession.score is not none %}
   {% set CO = latest.conditions %}
   <div class="panel span12" id="china-risk">
     <h2>{{ t('China drawdown & slowdown risk', '中国回撤与放缓风险') }}
-      <span class="note" style="text-transform:none">· {{ t('uncalibrated — display only', '未校准 — 仅展示') }}</span>
-      {{ help("Two China-native risk gauges, both 0–100 and UNCALIBRATED (no forward-return claim — A-shares mean-revert and China cycle history is short, so these are descriptive context, never scored into the regime). <b>Slowdown</b> blends the credit impulse (社融), PPI deflation, manufacturing PMI, the M1−M2 scissors, property breadth and GDP. <b>Drawdown risk</b> is the rank-percentile of stacked stress legs (slowdown, margin froth, a flat CGB curve at low weight since the PBoC pins the front end, the QVIX level and turnover mania).", "两个中国本土风险仪表，均为 0–100 且<b>未校准</b>（不含前瞻收益主张 —— A股均值回归且中国周期历史较短，故为描述性背景，从不计入区制评分）。<b>放缓</b>融合社融信用脉冲、PPI 通缩、制造业 PMI、M1−M2 剪刀差、房价宽度与 GDP。<b>回撤风险</b>是各压力腿（放缓、两融拥挤、低权重的 CGB 平坦曲线[央行锚定短端]、QVIX 水平与成交亢奋）的排名分位。") }}
+      <span class="note" style="text-transform:none">· {{ t('calibrated 2006→2026 · display only', '已校准 2006→2026 · 仅展示') }}</span>
+      {{ help("Two China-native risk gauges, both 0–100. Phase-0 calibrated against 20 years of forward A-share outcomes (scripts/calibrate_china_conditions.py): the bands are now anchored to each gauge's OWN historical distribution, but the study found NO forward-drawdown edge — A-shares mean-revert, so a high reading has historically been flat-to-mildly-contrarian, not bearish. So these stay descriptive context, never scored into the regime. <b>Slowdown</b> blends the credit impulse (社融), PPI deflation, manufacturing PMI, the M1−M2 scissors, property breadth and GDP. <b>Drawdown risk</b> is the rank-percentile of stacked stress legs (slowdown, margin froth, a flat CGB curve at low weight since the PBoC pins the front end, the QVIX level and turnover mania).", "两个中国本土风险仪表，均为 0–100。已用20年A股前瞻数据做 Phase-0 校准（scripts/calibrate_china_conditions.py）：区间现锚定于各自的历史分布，但研究发现<b>无前瞻回撤优势</b> —— A股均值回归，高读数历史上偏平/略逆向，而非看跌。故仍为描述性背景，从不计入区制评分。<b>放缓</b>融合社融信用脉冲、PPI 通缩、制造业 PMI、M1−M2 剪刀差、房价宽度与 GDP。<b>回撤风险</b>是各压力腿（放缓、两融拥挤、低权重的 CGB 平坦曲线[央行锚定短端]、QVIX 水平与成交亢奋）的排名分位。") }}
     </h2>
     <div class="grid" style="gap:18px">
       <div class="span6">
@@ -509,6 +631,7 @@
         </div>
         <div class="dial"><i style="left:{{ CO.recession.score }}%"></i></div>
         <div class="dial-ends"><span>{{ t('expansion', '扩张') }}</span><span>{{ t('contraction', '收缩') }}</span></div>
+        {% if CO.recession.fwd %}<p class="note" style="margin:6px 0 0;font-size:11px;text-transform:none">{{ t('At this band, historically (SHCOMP)', '该区间历史上（上证）') }}: {{ t('3m forward return', '3月前瞻收益') }} <b>{{ CO.recession.fwd.fwd_ret_3m }}%</b> · {{ t('3m max drawdown', '3月最大回撤') }} <b>{{ CO.recession.fwd.fwd_maxdd_3m }}%</b> — {{ t('no forward edge (mean-reverting)', '无前瞻优势（均值回归）') }}</p>{% endif %}
         <table style="margin-top:8px">
           <tbody>
           {% for lg in CO.recession.legs if lg.active %}
@@ -527,11 +650,12 @@
         </div>
         <div class="dial"><i style="left:{{ CO.drawdown_risk.score }}%"></i></div>
         <div class="dial-ends"><span>{{ t('calm', '平静') }}</span><span>{{ t('fragile', '脆弱') }}</span></div>
+        {% if CO.drawdown_risk.fwd %}<p class="note" style="margin:6px 0 0;font-size:11px;text-transform:none">{{ t('At this band, historically (SHCOMP)', '该区间历史上（上证）') }}: {{ t('3m forward return', '3月前瞻收益') }} <b>{{ CO.drawdown_risk.fwd.fwd_ret_3m }}%</b> · {{ t('3m max drawdown', '3月最大回撤') }} <b>{{ CO.drawdown_risk.fwd.fwd_maxdd_3m }}%</b> — {{ t('weak, sign-unstable link', '关联弱且符号不稳') }}</p>{% endif %}
         {% if CO.drawdown_html %}<div class="chart">{{ CO.drawdown_html | safe }}</div>{% endif %}
         {% endif %}
       </div>
     </div>
-    <p class="note" style="margin:8px 0 0;font-size:11px;text-transform:none">{{ t('Uncalibrated narrative gauges — China cycle history is short and regime-unstable, so these are descriptive context, never scored into the quad / axes / playbook.', '未校准的叙事仪表 —— 中国周期历史短且区制不稳，故为描述性背景，从不计入象限／轴／策略评分。') }}</p>
+    <p class="note" style="margin:8px 0 0;font-size:11px;text-transform:none">{{ t('Calibrated against 20y of forward A-share outcomes (scripts/calibrate_china_conditions.py): bands are history-anchored, but the gauges have NO forward-drawdown edge — A-shares mean-revert, so high readings are flat-to-contrarian. Descriptive context only, never scored into the quad / axes / playbook.', '已用20年A股前瞻数据校准（scripts/calibrate_china_conditions.py）：区间为历史锚定，但仪表无前瞻回撤优势 —— A股均值回归，高读数偏平/逆向。仅作描述性背景，从不计入象限／轴／策略评分。') }}</p>
   </div>
   {% endif %}
 
@@ -630,52 +754,6 @@
     </table>
     {% endif %}
     <p class="note" style="margin:8px 0 0;font-size:11px;text-transform:none">{{ t('Scheduling context only — never scored, no event-risk dampener, no news API.', '仅日程背景 —— 从不评分、无事件风险衰减、无新闻接口。') }}</p>
-  </div>
-  {% endif %}
-
-  <!-- ===================== REGIME TIME MACHINE ===================== -->
-  {% if lifespan_rows %}
-  <div class="panel span12" id="time-machine" data-timeline="china_regime_timeline.json">
-    <h2>{{ t('⏳ Regime time machine', '⏳ 周期时光机') }}
-      {{ help("Drag the playhead across ~20 years of A-share history and the readout rewinds the regime CORE to that day — quadrant, growth/inflation scores, agreement, PBoC liquidity and the business cycle. China’s engine doesn’t track transition/warning flags, so those stay blank. Hit ▶ to watch the quad ribbon flip at every major turn — 2008, the 2015 bubble, 2018, 2020.", "拖动播放头横扫约 20 年 A 股历史，下方读数会把周期核心回退到那一天 — 象限、增长／通胀分数、一致度、央行流动性与商业周期。中国引擎不追踪转换／预警旗，故此处留空。点击 ▶ 观看周期色带在每个重大转折处翻转 — 2008、2015 泡沫、2018、2020。") }}
-    </h2>
-    <div class="tm-wrap">
-      <canvas id="tm-canvas" class="tm-canvas"></canvas>
-      <input id="tm-range" class="tm-range" type="range" min="0" max="0" value="0" aria-label="Scrub regime history">
-    </div>
-    <div class="tm-controls">
-      <button class="tm-btn tm-play" id="tm-play" aria-label="play/pause" title="Play / pause"><span class="tm-play-ico"></span></button>
-      <span class="tm-presets">
-        <button class="tm-btn" data-tm-jump="now">{{ t('Now', '现在') }}</button>
-        <button class="tm-btn" data-tm-jump="2015-06-12">{{ t('2015 bubble', '2015 泡沫') }}</button>
-        <button class="tm-btn" data-tm-jump="2018-12-28">{{ t('2018 bear', '2018 熊市') }}</button>
-        <button class="tm-btn" data-tm-jump="2020-03-23">{{ t('2020 COVID', '2020 疫情') }}</button>
-      </span>
-    </div>
-    <div class="tm-readout">
-      <div class="tm-asof">
-        <span class="tm-date" id="tm-date">—</span>
-        <span class="tm-state-tag is-live" id="tm-tag">—</span>
-      </div>
-      <div class="tm-badges">
-        <span class="badge" id="tm-quad">—</span>
-        <span class="badge" id="tm-trans">—</span>
-        <span class="kv">{{ t('agreement', '一致度') }} <b id="tm-conf">—</b></span>
-        <span class="kv">{{ t('cycle', '商业周期') }} <b id="tm-cyc">—</b></span>
-        <span class="kv">{{ t('liquidity', '流动性') }} <b id="tm-liq">—</b></span>
-      </div>
-      <div class="tm-gauges">
-        <div class="tm-gauge">
-          <div class="tm-glabel"><span>{{ t('Growth', '增长') }}</span><span class="sub" id="tm-g-v">—</span></div>
-          <div class="gauge"><i id="tm-g-i" style="left:50%"></i></div>
-        </div>
-        <div class="tm-gauge">
-          <div class="tm-glabel"><span>{{ t('Inflation', '通胀') }}</span><span class="sub" id="tm-i-v">—</span></div>
-          <div class="gauge"><i id="tm-i-i" style="left:50%"></i></div>
-        </div>
-      </div>
-      <div class="tm-flags" id="tm-flags"></div>
-    </div>
   </div>
   {% endif %}
 
