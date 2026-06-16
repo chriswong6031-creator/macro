@@ -314,3 +314,29 @@ def test_profile_carries_regime_banner():
     assert p["regime"] is not None and p["regime"]["state"] == "calm"
     # no regime in ctx -> no banner, and behaviour unchanged
     assert ss.conviction_profile(_rec(), "US")["regime"] is None
+
+
+# --- v3: PEAD freshness decay on the SUE leg --------------------------------
+def test_pead_decay_bounds_and_monotone():
+    assert ss._pead_decay(None) == 1.0            # no filing date -> unchanged
+    assert ss._pead_decay(0.0) == pytest.approx(1.0)
+    assert 0.0 < ss._pead_decay(90.0) < ss._pead_decay(20.0) < 1.0
+    assert ss._pead_decay(-5.0) == pytest.approx(1.0)   # clamp negatives
+
+
+def test_fresh_sue_outranks_stale_sue():
+    # same surprise magnitude: a freshly-filed name carries a stronger EDGE than a stale one
+    fresh, _ = ss._axis_selection({"sue": 2.0, "sue_fresh_days": 5.0}, "US")
+    stale, _ = ss._axis_selection({"sue": 2.0, "sue_fresh_days": 200.0}, "US")
+    none_, _ = ss._axis_selection({"sue": 2.0}, "US")     # no date -> full weight (ceiling)
+    assert none_ >= fresh > stale
+    assert ss._axis_selection({"sue": 2.0, "sue_fresh_days": 0.0}, "US")[0] == pytest.approx(none_)
+
+
+def test_pead_decay_reflected_in_basis():
+    # the displayed SUE basis chip must match what is scored (decay applied to both)
+    b_fresh = ss._edge_basis({"sue": 2.0, "sue_fresh_days": 0.0}, "US")
+    b_stale = ss._edge_basis({"sue": 2.0, "sue_fresh_days": 180.0}, "US")
+    zf = next(x["z"] for x in b_fresh if x["leg"] == "sue")
+    zs = next(x["z"] for x in b_stale if x["leg"] == "sue")
+    assert zf > zs

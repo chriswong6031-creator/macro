@@ -81,6 +81,26 @@ _EDGE_W = {"sue": 0.40, "insider": 0.30, "revision": 0.20, "mom": 0.10}
 _MOM_W_CALM = 0.28      # calm/risk-on tape: residual momentum earns real weight (IC ~+0.03)
 _MOM_W_STRESS = 0.04    # down-trend / high-vol: momentum IC flips negative -> near-zero weight
 
+# PEAD freshness decay (research/STOCK_CONVICTION_V2 + scripts/pead_freshness_phase0.py). The
+# SUE earnings-surprise edge is post-earnings-announcement DRIFT — it decays over the ~60-90d
+# after the filing. The live score pooled every name filed in the last ~7 months at equal
+# weight, so a 6-month-old surprise (drift already consumed) counted like one filed last week.
+# Weighting SUE by exp(-days_since_filing / TAU) concentrates the edge on names still inside
+# the active drift window: on the deep+PIT panel it lifts SUE's IC 0.0065->0.0085, IC-IR
+# 0.084->0.108, and the long-only top-decile 13.3%->14.0% ann / Sharpe .79->.82 / maxDD
+# -38.1%->-36.7% — an improvement on EVERY metric, no trade-off. It also makes the score
+# EARLY/FAST: a fresh surprise ranks above a stale one and fades as the drift plays out.
+# `sue_fresh_days=None` -> decay 1.0 (unchanged), so callers without filing dates are identical.
+_PEAD_TAU = 45.0
+
+
+def _pead_decay(days: float | None) -> float:
+    """Post-earnings drift weight in (0,1]: 1.0 for a just-filed surprise, fading with the
+    days since the filing. None (no filing date) -> 1.0 so behaviour is unchanged."""
+    if days is None:
+        return 1.0
+    return float(math.exp(-max(float(days), 0.0) / _PEAD_TAU))
+
 
 def _edge_weights(calm: float | None) -> dict:
     """The EDGE evidence weights with the momentum leg scaled by the live `calm` regime
@@ -222,7 +242,9 @@ def _edge_basis(rec: dict, market: str) -> list[dict]:
         out.append({"leg": key, "label": lab[0], "label_zh": lab[1], "tier": lab[2],
                     "z": round(float(val), 2)})
     if m == "US":
-        s = _f(rec.get("sue")); add("sue", float(np.clip(s, -3, 3)) if s is not None else None)
+        s = _f(rec.get("sue"))
+        add("sue", float(np.clip(s, -3, 3)) * _pead_decay(_f(rec.get("sue_fresh_days")))
+            if s is not None else None)
         i = _f(rec.get("insider_bps")); add("insider", float(np.clip(i / 30.0, -1.5, 1.5)) if i is not None else None)
         r = _f(rec.get("revision_z")); add("revision", float(np.clip(r, -3, 3)) if r is not None else None)
         a = _f(rec.get("alpha")); add("alpha", float(np.clip(a, -3, 3)) if a is not None else None)
@@ -259,8 +281,9 @@ def _axis_selection(rec: dict, market: str, calm: float | None = None) -> tuple[
         ew = _edge_weights(calm)
         legs: dict[str, float] = {}
         sue = _f(rec.get("sue"))
-        if sue is not None:
-            legs["sue"] = float(np.clip(sue, -3, 3)); present.append("sue")
+        if sue is not None:                       # PEAD freshness decay: a stale surprise
+            d = _pead_decay(_f(rec.get("sue_fresh_days")))   # contributes less than a fresh one
+            legs["sue"] = float(np.clip(sue, -3, 3)) * d; present.append("sue")
         ins = _f(rec.get("insider_bps"))
         if ins is not None:                       # net Form-4 buying, bps of mcap
             legs["insider"] = float(np.clip(ins / 30.0, -1.5, 1.5)); present.append("insider")
@@ -666,6 +689,7 @@ def score_percentiles(comp_z: pd.Series) -> pd.Series:
 # ----------------------------------------------------------------------------
 def normalize_rec(record: dict, market: str, *, rs_z: float | None = None,
                   rev_z: float | None = None, sue: float | None = None,
+                  sue_fresh_days: float | None = None,
                   insider_bps: float | None = None, revision_z: float | None = None,
                   quality_context_z: float | None = None,
                   fund_priors_z: float | None = None,
@@ -695,7 +719,8 @@ def normalize_rec(record: dict, market: str, *, rs_z: float | None = None,
         "factor": {"value": legs.get("value"), "profitability": legs.get("profitability"),
                    "quality": legs.get("quality"), "low_vol": legs.get("low_vol")} if legs else None,
         "quality_context_z": quality_context_z,
-        "sue": sue, "insider_bps": insider_bps, "revision_z": revision_z,
+        "sue": sue, "sue_fresh_days": sue_fresh_days,
+        "insider_bps": insider_bps, "revision_z": revision_z,
         "fund_priors": {"z": fund_priors_z} if fund_priors_z is not None else None,
         "asym": asym,                      # downside-asymmetry DISPLAY read (risk shape, not scored)
         "accounting": record.get("accounting_quality"),

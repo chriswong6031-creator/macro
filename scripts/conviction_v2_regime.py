@@ -142,9 +142,36 @@ def main() -> int:
     #   the proposed engine upgrade — does conditioning on the dashboard's own regime
     #   beat either leg standalone?  static_blend = the naive 50/50 rank average (the
     #   control: switching must beat a static combo to justify the added machinery).
+    # downside-asymmetry (upside-beta minus downside-beta) — the convexity / limited-downside
+    # RISK leg. It has ~zero forward-RETURN IC (measured), so it is NOT a return alpha; the
+    # hypothesis is that tilting toward limited-downside names CUTS the basket's drawdown (the
+    # asymmetry payoff a long owner wants), especially in stress where it matters most.
+    from engine import predictive_signals as _ps  # noqa: E402
+    asym_mat = None
+    try:
+        am = {}
+        for d in grid:
+            s = _ps.downside_asym(closes, d, spy_close, WIN)
+            if s is not None and not s.empty:
+                am[d] = s
+        if am:
+            asym_mat = pd.DataFrame(am).T; asym_mat.index = pd.to_datetime(asym_mat.index)
+            asym_mat = asym_mat.reindex(R.index).ffill(limit=args.horizon)
+            legs["downside_asym"] = asym_mat
+    except Exception as e:  # noqa: BLE001
+        print(f"  [asym] skipped: {e}")
+
+    # low-volatility (Baker-Bradley-Wurgler) — the robust defensive factor. signal = NEGATIVE
+    # trailing 126d realized vol, so the top decile is the LOWEST-vol names. The hypothesis
+    # (the proper 'limited downside' lever the downside-asym proxy failed to deliver): a
+    # stress-conditional low-vol tilt cuts the regime_switch basket's drawdown.
+    rv126 = R.rolling(126, min_periods=80).std()
+    lowvol = -rv126
+    legs["low_vol"] = lowvol.reindex(R.index).ffill(limit=args.horizon)
+
     if "edge_SUE" in legs:
         mom, sue = legs["momentum"], legs["edge_SUE"]
-        sw, bl = {}, {}
+        sw, bl, ra, rlv = {}, {}, {}, {}
         for d in grid:
             calm = (bool(spy_close.get(d, np.nan) >= sma200.get(d, np.nan))
                     and not bool(rvol_hi.get(d)))
@@ -153,12 +180,19 @@ def main() -> int:
                 sw[d] = src.loc[d]
             if d in mom.index and d in sue.index:
                 bl[d] = (mom.loc[d].rank(pct=True) + sue.loc[d].rank(pct=True)) / 2.0
-        if sw:
-            m = pd.DataFrame(sw).T; m.index = pd.to_datetime(m.index)
-            legs["regime_switch"] = m.reindex(R.index).ffill(limit=args.horizon)
-        if bl:
-            m = pd.DataFrame(bl).T; m.index = pd.to_datetime(m.index)
-            legs["static_blend"] = m.reindex(R.index).ffill(limit=args.horizon)
+            sr = src.loc[d].rank(pct=True) if d in src.index else None
+            # static 25% downside-asym risk-tilt (the convexity control)
+            if sr is not None and asym_mat is not None and d in asym_mat.index:
+                ra[d] = 0.75 * sr + 0.25 * asym_mat.loc[d].rank(pct=True)
+            # low-vol tilt ONLY in stress (defensive when it matters; pure edge in calm)
+            if sr is not None and d in lowvol.index:
+                lr = lowvol.loc[d].rank(pct=True)
+                rlv[d] = sr if calm else (0.6 * sr + 0.4 * lr)
+        for name, dd in (("regime_switch", sw), ("static_blend", bl),
+                         ("rs_asym_static", ra), ("rs_lowvol_stress", rlv)):
+            if dd:
+                m = pd.DataFrame(dd).T; m.index = pd.to_datetime(m.index)
+                legs[name] = m.reindex(R.index).ffill(limit=args.horizon)
 
     print(f"[regime] deep+PIT panel {closes.shape} · {len(grid)} rebalances "
           f"{grid[0].date()}..{grid[-1].date()} · horizon {args.horizon}d\n")
