@@ -410,14 +410,19 @@
     "doc_id": "fomc_2026-04-29",
     "asof": "2026-04-29",
     "tone_score": 0.0,
-    "guidance_direction": "unknown",
+    "guidance_direction": "on_hold",
     "risk_delta": 0.0,
     "shock_reversible": "unknown",
-    "confidence": "low",
+    "confidence": "medium",
     "confidence_gated": false,
     "dropped_fields": [],
-    "evidence": [],
-    "degraded_reason": "stop_max_tokens",
+    "evidence": [
+      {
+        "field": "guidance_direction",
+        "quote_span": "decided to maintain the target range for the federal funds rate"
+      }
+    ],
+    "degraded_reason": null,
     "disclaimer": "Context only \u2014 not a signal. This is a machine DIGEST of a public document, produced by an AI model after the fact. The tone / guidance / risk / reversibility readings are background context; they are NOT inputs to any score, signal or allocation unless a downstream, separately-gated step promotes a single field, and even then only as one bounded factor. \u201cunknown\u201d means the evidence was insufficient \u2014 the honest answer. Every non-unknown field is backed by a quote verified to appear verbatim in the source; unverifiable claims are dropped."
   },
   "dislocation": {
@@ -914,7 +919,7 @@
   },
   "fed_path": {
     "asof": "2026-06-15",
-    "built": "2026-06-16T08:30:22.779117+00:00",
+    "built": "2026-06-16T09:46:06.619190+00:00",
     "policy_rate": 3.62,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -997,6 +1002,75 @@
     "size_note_en": "Lower conviction, size smaller, wait for confirmation before extrapolating the trend.",
     "size_note_zh": "\u964d\u4f4e\u786e\u4fe1\u5ea6\u3001\u7f29\u5c0f\u4ed3\u4f4d\uff0c\u5728\u5916\u63a8\u8d8b\u52bf\u524d\u7b49\u5f85\u786e\u8ba4\u3002",
     "note": "Display-only meta-read across cross_asset / market_drivers / conditions / dislocation. A conviction guardrail, never scored."
+  },
+  "cross_asset_confirm": {
+    "verdict": "mixed",
+    "verdict_zh": "\u5206\u6b67",
+    "headline_en": "Bonds & FX broadly track the equity regime, with some cross-currents.",
+    "headline_zh": "\u503a\u5238\u4e0e\u5916\u6c47\u5927\u4f53\u8ddf\u968f\u80a1\u7968\u5468\u671f\uff0c\u4f46\u5b58\u5728\u4e00\u4e9b\u4ea4\u53c9\u4fe1\u53f7\u3002",
+    "confidence": "low",
+    "confidence_en": "low",
+    "confidence_zh": "\u4f4e",
+    "agree_pct": 50,
+    "legs": [
+      {
+        "key": "cycle",
+        "label_en": "Cycle clock",
+        "label_zh": "\u5468\u671f\u65f6\u949f",
+        "equity_en": "mid-cycle",
+        "leading_en": "late-cycle",
+        "agree": false,
+        "dir": -1,
+        "tone": "down",
+        "detail_en": "bonds read late-cycle while equities read mid-cycle \u2014 the bond clock is further along / more adverse",
+        "detail_zh": "\u503a\u5238\u8bfb\u6570\u4e3a\u5468\u671f\u665a\u6bb5\uff0c\u80a1\u7968\u4e3a\u5468\u671f\u4e2d\u6bb5 \u2014 \u503a\u5238\u65f6\u949f\u66f4\u9760\u540e / \u66f4\u4e0d\u5229",
+        "tier": "context"
+      },
+      {
+        "key": "risk",
+        "label_en": "Risk appetite",
+        "label_zh": "\u98ce\u9669\u504f\u597d",
+        "equity_en": "risk-on",
+        "leading_en": "risk-on",
+        "agree": true,
+        "dir": 1,
+        "tone": "up",
+        "detail_en": "bonds & FX confirm the risk-on equity read",
+        "detail_zh": "\u503a\u5238\u4e0e\u5916\u6c47\u786e\u8ba4\u4e86\u504f\u591a\u7684\u80a1\u7968\u8bfb\u6570",
+        "tier": "context",
+        "caution_votes": 0
+      }
+    ],
+    "caution_flags": [],
+    "cycle": {
+      "equity": "mid",
+      "bonds": "late",
+      "bonds_en": "late-cycle",
+      "bonds_zh": "\u5468\u671f\u665a\u6bb5",
+      "fx_regime": "US growth premium",
+      "fx_regime_zh": "\u7f8e\u56fd\u589e\u957f\u6ea2\u4ef7"
+    },
+    "n_legs": 2,
+    "n_agree": 1,
+    "n_diverge": 1,
+    "n_blind_flags": 0,
+    "to_brain": {
+      "verdict": "mixed",
+      "cycle": {
+        "equity": "mid",
+        "bonds": "late",
+        "fx_regime": "US growth premium"
+      },
+      "leading_caution_votes": 0,
+      "fx_risk": "risk-on",
+      "bond_health": 86,
+      "bond_health_label": "healthy",
+      "stock_bond_hedge": "breakdown",
+      "caution_flags": []
+    },
+    "note_en": "Bonds & FX cross-check: does the fast-family complex (bonds + FX) agree with the equity/macro regime? DISPLAY-ONLY \u2014 never scored. Most legs are coincident confirmation / fragility gauges; only credit/EBP and the curve have a (noisy) leading horizon. Divergences are attention flags, not forecasts.",
+    "note_zh": "\u503a\u5238\u4e0e\u5916\u6c47\u4ea4\u53c9\u9a8c\u8bc1\uff1a\u5feb\u7aef\u677f\u5757\uff08\u503a\u5238+\u5916\u6c47\uff09\u662f\u5426\u4e0e\u80a1\u7968/\u5b8f\u89c2\u5468\u671f\u4e00\u81f4\uff1f\u4ec5\u4f9b\u5c55\u793a \u2014 \u4ece\u4e0d\u8bc4\u5206\u3002\u591a\u6570\u4e3a\u540c\u6b65\u786e\u8ba4/\u8106\u5f31\u6027\u8ba1\u91cf\uff1b\u4ec5\u4fe1\u7528/EBP\u4e0e\u66f2\u7ebf\u5177\uff08\u5608\u6742\u7684\uff09\u9886\u5148\u6027\u3002\u80cc\u79bb\u4e3a\u5173\u6ce8\u4fe1\u53f7\uff0c\u975e\u9884\u6d4b\u3002",
+    "asof": "2026-06-15"
   },
   "macro_risk": {
     "score": 0.1344,

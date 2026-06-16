@@ -48,14 +48,14 @@
     "lean": "unclear",
     "confidence": "low",
     "checks": {
-      "catalyst": "Oil collapse driver unknown; no signed deal, policy shift, or hard data surprise provided \u2014 price move alone is not structural.",
-      "premium": "Moderate fear built (0.50), only 3 of 7 legs flipped, VIX term still elevated (0.84) \u2014 substantial fear premium likely remains.",
-      "washout": "Recent capitulation present (cap_recent true) and snap came 1 day after last event \u2014 suggestive of a real washout.",
-      "follow_through": "Cross-asset confirmation (VIX, HY OAS, VIX term) is classic but high velocity (0.92) and commodity-driven; without a structural catalyst, next-session fade risk is high."
+      "catalyst": "No underlying cause for oil collapse is provided; observed repricing without a signed deal or policy change makes it likely verbal/technical.",
+      "premium": "Only 3 of 7 legs flipped (VIX, HY OAS, VIX term); fear built was moderate (0.504) and partial unwinding leaves residual premium.",
+      "washout": "Recent capitulation (cap_recent true) but fear built only moderate, suggesting a shallow washout rather than deep exhaustion.",
+      "follow_through": "Cross-asset confirmation is thin; high velocity (0.923) and unflipped legs raise risk of a rapid fade next session."
     },
-    "read": "Oil collapse triggered a risk-on flip, but the reason for the oil move is absent from headlines, making the catalyst illegible. Despite a decent washout, durability cannot be assessed without knowing whether the oil shock is a structural shift or a transient move.",
+    "read": "Oil collapse drives a fast, narrow relief snap with limited cross-asset backing and no clear structural catalyst. The move is easily reversed unless a concrete demand boost or policy pivot materializes.",
     "model": "deepseek-v4-pro",
-    "generated_at": "2026-06-16T08:34:35.252988+00:00",
+    "generated_at": "2026-06-16T09:50:31.395690+00:00",
     "degraded_reason": null,
     "disclaimer": "AI durability read \u2014 context only, never scored or sized. The snap detector is coincident; this is a fallible judgement on whether the relief is structural or a dead-cat, not a trade recommendation."
   }
