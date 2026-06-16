@@ -175,6 +175,7 @@ yahoo:
     extras: [SMH, IWM, RSP, SPY, QQQ, "^DJI", "^RUT", IJH]   # ^RUT = true Russell 2000 index level; IJH = S&P MidCap 400 (mid-cap leg of the size spectrum)
     style: [IWF, IWD]             # Russell 1000 Growth / Value — style-rotation read (growth vs value leadership)
     factors: [MTUM, QUAL, USMV, SPHB, SPLV]
+    ipo: [IPO, FPX]               # Renaissance IPO ETF + First Trust IPOX — aftermarket new-issue basket reality-check (IPO Radar; the "buy IPOs in the secondary market" trade)
     credit: [HYG, LQD]
     bond_etfs: [TLT, IEF, TIP, EMB]   # Bonds dashboard price/flow proxies: long UST, 7-10y UST, TIPS, EM USD sov
     intl_etfs: [FXI]                  # China large-cap (US-hours) — factor-exposure China proxy + holding
