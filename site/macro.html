@@ -74,6 +74,22 @@
     100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--link) 0%, transparent); }
   }
   .panel.flash { animation: panelflash 2.4s ease-out 1; border-color: var(--link); }
+  /* Dislocation Gate-1 "lit" state: when a real stress dislocation is live the
+     whole panel glows in the verdict colour carried on --lit (green = buyable
+     washout, red = falling knife). Dormant/calm = no glow. engine/dislocation.py */
+  @keyframes disloGlow {
+    0%, 100% { box-shadow: 0 0 0 1px color-mix(in srgb, var(--lit) 32%, transparent),
+                           0 0 17px 1px color-mix(in srgb, var(--lit) 17%, transparent); }
+    50%      { box-shadow: 0 0 0 1px color-mix(in srgb, var(--lit) 58%, transparent),
+                           0 0 30px 5px color-mix(in srgb, var(--lit) 38%, transparent); }
+  }
+  .panel.dislo-lit { border-color: color-mix(in srgb, var(--lit) 60%, var(--line));
+    background: color-mix(in srgb, var(--lit) 7%, var(--panel));
+    animation: disloGlow 3.6s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) {
+    .panel.dislo-lit { animation: none;
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--lit) 50%, transparent),
+                  0 0 22px 2px color-mix(in srgb, var(--lit) 30%, transparent); } }
   .muted { color: var(--muted); }
   .chart { width: 100%; }
   .topline { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
