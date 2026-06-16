@@ -18,7 +18,7 @@ import pandas as pd
 import yfinance as yf
 
 from collectors.base import Adapter
-from lib import config
+from lib import config, store
 
 log = logging.getLogger(__name__)
 
@@ -37,23 +37,40 @@ class ChinaPriceAdapter(Adapter):
         out += list(self.cfg["fx"].keys())
         return list(dict.fromkeys(out))
 
+    def _fetch_plan(self, tickers: list[str], full_history: bool) -> dict[str, list[str]]:
+        """Map yfinance period -> tickers. On an incremental run a NEWLY-ADDED ticker
+        (no parquet, or a shallow one — e.g. a fresh allocation_etf that has only ever
+        seen the 1-month window) is pulled with period='max' so it is BACKFILLED from
+        inception; everything already deep on disk takes the cheap 1-month window.
+        store.upsert dedups by date, so re-pulling 'max' over a shallow series just
+        completes the history (no duplication)."""
+        if full_history:
+            return {"max": tickers}
+        deep, shallow = [], []
+        for t in tickers:
+            df = store.read(self.group, t)
+            (deep if (df is not None and len(df) >= 250) else shallow).append(t)
+        return {"1mo": deep, "max": shallow}
+
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
         tickers = self.all_tickers()
-        period = "max" if full_history else "1mo"
         frames: dict[str, pd.DataFrame] = {}
         bs = self.cfg["batch_size"]
-        for i in range(0, len(tickers), bs):
-            batch = tickers[i:i + bs]
-            df = self._download(batch, period)
-            for t in batch:
-                try:
-                    sub = df[t] if isinstance(df.columns, pd.MultiIndex) else df
-                    sub = sub[["Close", "Volume"]].rename(
-                        columns={"Close": "close", "Volume": "volume"}).dropna(subset=["close"])
-                    if not sub.empty:
-                        frames[t] = sub
-                except KeyError:
-                    log.warning("china_prices: no data for %s", t)
+        for period, tks in self._fetch_plan(tickers, full_history).items():
+            for i in range(0, len(tks), bs):
+                batch = tks[i:i + bs]
+                if not batch:
+                    continue
+                df = self._download(batch, period)
+                for t in batch:
+                    try:
+                        sub = df[t] if isinstance(df.columns, pd.MultiIndex) else df
+                        sub = sub[["Close", "Volume"]].rename(
+                            columns={"Close": "close", "Volume": "volume"}).dropna(subset=["close"])
+                        if not sub.empty:
+                            frames[t] = sub
+                    except KeyError:
+                        log.warning("china_prices: no data for %s", t)
         if len(frames) < len(tickers) * 0.7:
             raise RuntimeError(f"china_prices returned only {len(frames)}/{len(tickers)} tickers")
         return frames
