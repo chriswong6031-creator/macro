@@ -117,13 +117,22 @@ def test_total_return_reconstruction():
 def test_strategy_registry_structure():
     from engine import strategies as S
     keys = [s.key for s in S.STRATEGIES]
-    assert keys == ["spvector", "credit_carry", "duration_timing"]
+    # the original three lead the registry; the broader suite follows
+    assert keys[:3] == ["spvector", "credit_carry", "duration_timing"]
+    assert len(keys) == len(set(keys)), "strategy keys must be unique"
+    assert len(S.STRATEGIES) >= 27, "the tactical suite should expose 24 additional strategies"
     for spec in S.STRATEGIES:
         assert callable(spec.benchmark) and callable(spec.alloc) and callable(spec.cash_yield)
-        assert spec.name_en and spec.name_zh and spec.thesis_en
+        assert callable(spec.risk_yield) and callable(spec.score)
+        assert spec.name_en and spec.name_zh and spec.thesis_en and spec.thesis_zh
+        assert spec.bench_en and spec.cash_en and spec.risk_word_en
         assert len(spec.bands) == 3
-    # only the new strategies are experimental; the validated vector is not
+    # only the validated vector is non-experimental; everything else is under validation
     assert S.by_key("spvector").experimental is False
     assert S.by_key("credit_carry").experimental is True
     assert S.by_key("duration_timing").own_page is None   # uses the generic detail page
     assert S.by_key("spvector").own_page == "spvector.html"
+    # the suite keys are all experimental and use the generic detail page
+    for k in ("nasdaq_trend", "btc_trend", "credit_gate_equity", "ig_carry"):
+        assert S.by_key(k).experimental is True
+        assert S.by_key(k).own_page is None
