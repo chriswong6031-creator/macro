@@ -1,11 +1,86 @@
 {
   "schema": "ai_desk.v1",
   "is_context_only": true,
-  "generated_at": "2026-06-16T19:40:23.175581+00:00",
+  "generated_at": "2026-06-16T21:06:17.873932+00:00",
   "state_asof": "2026-06-15",
   "model": "deepseek-v4-pro",
-  "regime_context": "The flow detector reads as display_only, with cross-sectional concentration in cyclical sectors (Consumer Discretionary, Industrials, Financials, Real Estate) forming a mixed-regime absorption cluster (top pair correlation 0.87). All sector reads lack directional confidence and cohesion is weak across the board. The regime snap shows a fragile, oil-shock-driven relief with moderate fear built (0.504) and only 3 of 7 legs flipped; this relief is easily reversed and does not confirm a durable snap.",
-  "theses": [],
+  "regime_context": "Flow concentrates in Consumer Discretionary, Industrials, Financials, and Real Estate with broad but non-cohering leadership and a fragile building relief snap on an unsigned peace deal. All directional signals are display-only per guardrails; no validated forward edge exists.",
+  "theses": [
+    {
+      "id": "2026-06-15-1",
+      "subject": "Consumer Discretionary",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 10,
+      "thesis": "Top emerging flow score and dominant-cluster membership with industrials, supported by broad leadership, suggest cyclical concentration that could benefit if fragile relief hardens. Low conviction because cohesion is collapsing and catalyst is untethered.",
+      "evidence": [
+        "Opportunity analyst: highest emerging flow score, dominant cluster, tentative relief floor",
+        "Structural analyst: broad leadership (HHI 0.008), top pair correlation with Industrials 0.87"
+      ],
+      "dissent": "Skeptic: cohesion collapsing (-0.097) and very weak relative strength (rs_pctile 0.143) reveal a concentration mirage, not a durable theme; peace-deal reversal would unwind it sharply.",
+      "falsifier": {
+        "text": "VIX spikes above 20 or the U.S.-Iran peace deal is publicly disavowed, causing Consumer Discretionary rs_pctile to fall further and cluster correlation to break.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "XLY",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 10
+        }
+      },
+      "check_by": "2026-06-29"
+    },
+    {
+      "id": "2026-06-15-2",
+      "subject": "Industrials",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 10,
+      "thesis": "Strong flow concentration and top cluster pair with Consumer Discretionary, both showing broad breadth, point to a cyclical rotation that could extend if the relief snap gains legs. Weakened by accelerating cohesion decline and fragile macro driver.",
+      "evidence": [
+        "Opportunity analyst: strong emerging flow score, top cluster pair, reflation beneficiary",
+        "Structural analyst: broad leadership (HHI 0.007), high cross-correlation 0.87, genuine co-movement"
+      ],
+      "dissent": "Skeptic: accelerating cohesion decline (-0.066) and elevated relative strength (rs_pctile 0.687) signal fade risk, and the entire move relies on a reversible geopolitical headline.",
+      "falsifier": {
+        "text": "Industrials rs_pctile breaks below its 50th percentile or the top pair correlation with Consumer Discretionary drops below 0.7.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "XLI",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 10
+        }
+      },
+      "check_by": "2026-06-29"
+    },
+    {
+      "id": "2026-06-15-3",
+      "subject": "Information Technology",
+      "lean": "underweight",
+      "conviction": "low",
+      "horizon_d": 15,
+      "thesis": "Extreme relative strength (rs_pctile 0.984) and low, declining cohesion (0.178, -0.016) characterize narrow leadership masking fragility, creating a mean-reversion risk even if the broader relief holds.",
+      "evidence": [
+        "Skeptic analyst: extreme overbought state with cohesion erosion points to a reversal trap"
+      ],
+      "dissent": "Base-rate analyst: no forward edge exists for any sector from flow or snap, and the extreme reading could persist in a momentum-driven market.",
+      "falsifier": {
+        "text": "Information Technology cohesion rises above 0.30 while its rs_pctile remains above 0.90, indicating genuine broadening and continued strength.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "XLK",
+          "vs": "SPY",
+          "op": ">",
+          "threshold": 0.05,
+          "horizon_d": 15
+        }
+      },
+      "check_by": "2026-07-06"
+    }
+  ],
   "source_verdicts": {
     "flow": "display_only",
     "regime_snap": "coincident"
@@ -71,106 +146,124 @@
   "disclaimer": "AI desk note \u2014 context only, never scored or sized. The detectors it reads are DISPLAY-ONLY (flow has no validated forward edge; the relief snap is coincident). Each lean is a fallible, FALSIFIABLE judgement with a check-by date, not a trade recommendation or a position size.",
   "panel": {
     "opportunity": {
-      "stance": "Flow is concentrating in a cyclical trio\u2014Consumer Discretionary, Industrials, Financials\u2014with broad but low-cohesion leadership and a 0.87 pairwise co-movement. The relief snap is fragile and VIX is not elevated, so no fear to fade. This lens maps where price action is clustering for qualitative focus; it offers no directional edge.",
+      "stance": "Flow is concentrating in cyclical sectors (Consumer Discretionary, Industrials, Financials) near a confirmed capitulation washout; the building relief snap, though fragile, offers a tentative floor for a durable rotation if the peace-deal sentiment holds.",
       "candidates": [
         {
           "subject": "Consumer Discretionary",
           "lean": "overweight",
-          "rationale": "Highest flow score (1.85), very broad leadership (n=194, HHI=0.008), and top cluster member with 0.87 correlation to Industrials.",
+          "rationale": "Highest emerging flow score and part of the dominant cluster with Industrials; cyclical leadership aligns with a risk-on snap if relief extends.",
           "strength": "weak"
         },
         {
           "subject": "Industrials",
           "lean": "overweight",
-          "rationale": "Strong flow score (1.31), broad leadership (n=253, HHI=0.007), and the tight pairing with Consumer Discretionary suggests a durable cyclical chain.",
+          "rationale": "Strong emerging flow score and top cluster pair with Consumer Discretionary; historically benefits from easing fear and reflation, reinforced by the building snap.",
           "strength": "weak"
         },
         {
           "subject": "Financials",
           "lean": "overweight",
-          "rationale": "Part of the dominant cluster, with broad-based leadership (n=254, HHI=0.007) and emerging concentration, though flow score is modest (0.91).",
+          "rationale": "Part of the dominant cluster and shows moderate flow concentration; cyclical exposure with less downside if the snap fails, given still-low rate sensitivity.",
+          "strength": "weak"
+        },
+        {
+          "subject": "VIX",
+          "lean": "fade-fear",
+          "rationale": "Capitulation washout confirmed and snap building suggests incremental fear decay, though residual premium and fragile catalyst limit conviction.",
           "strength": "weak"
         }
       ],
-      "key_risk": "Low cohesion and widespread negative alpha could mean the concentration is noise-driven dispersion rather than a genuine sector rotation, breaking the cluster\u2019s coherence."
+      "key_risk": "A reversal of the fragile U.S.-Iran peace-deal narrative, causing oil to re-spike and re-ignite growth fears, would collapse the relief snap and unwind the cyclical concentration."
     },
     "skeptic": {
-      "stance": "The flow lens shows cyclical sectors and IT strengthening on a fragile oil-shock relief, but low cohesion and absent directional confidence suggest a coincident, mean-reverting trap.",
+      "stance": "The cyclical cluster (Industrials, Consumer Discretionary, Financials, Real Estate) shows coincident relief-driven correlation on a fragile geopolitical catalyst, while sector-level cohesion is deteriorating across the board, signaling trend fragility. The most extreme traps are overbought Info Tech near percentile highs and the flow-summit mirage in Consumer Discretionary.",
       "candidates": [
+        {
+          "subject": "Information Technology",
+          "lean": "underweight",
+          "rationale": "Extreme relative strength (rs_pctile 0.984) with low and declining cohesion (0.178, -0.016) indicates narrow leadership masking fragility and a mean-reversion trap.",
+          "strength": "strong"
+        },
         {
           "subject": "Consumer Discretionary",
           "lean": "underweight",
-          "rationale": "High flow score and strong returns are driven by a fragile oil-shock relief lacking structural backing; likely to mean-revert if oil stabilizes or recession fears intensify.",
+          "rationale": "Top emerging flow score but cohesion collapsing (-0.097) and very weak relative strength (rs_pctile 0.143) reveal a concentration mirage, not a durable theme.",
           "strength": "moderate"
         },
         {
           "subject": "Industrials",
           "lean": "underweight",
-          "rationale": "Highly correlated with Consumer Discretionary (0.87) and riding the same coincident bounce; low cohesion and no directional edge flag a trap.",
+          "rationale": "High relative strength (rs_pctile 0.687) with accelerating cohesion decline (-0.066) and a fragile geopolitical driver flags imminent fade risk in this cyclical leader.",
           "strength": "moderate"
         },
         {
-          "subject": "Information Technology",
-          "lean": "avoid",
-          "rationale": "Extended (rs_pctile 0.984) but cohesion is weak (0.178) and flow is display-only; leaders like VSH, DELL, MU may be mean-reverting.",
+          "subject": "VIX",
+          "lean": "fade-fear",
+          "rationale": "Relief snap is building on an unsigned peace deal with elevated velocity unwind and residual fear premium; the snap's fragility makes current VIX complacency a fade.",
           "strength": "moderate"
         }
       ],
-      "key_risk": "A durable oil stabilization or a structural disinflation narrative that validates the relief would break the fragile snap thesis and could sustain the cyclical bounce."
+      "key_risk": "The U.S.-Iran peace deal hardens into a signed, binding agreement, removing the oil risk premium and validating the cyclical relief rally, which would break the mean-reversion thesis across these fade candidates."
     },
     "base_rate": {
-      "stance": "The flow lens shows a mixed-regime absorption cluster in Consumer Discretionary, Industrials, Financials, and Real Estate with broad but low-cohesion leadership; however, this is a display-only lens with near-zero forward edge, so the read is a qualitative concentration note, not a directional forecast.",
+      "stance": "The flow lens shows concentration in Consumer Discretionary, Industrials, Financials, and Real Estate with broad, low-cohesion leadership; the regime snap is a fragile relief on an unsigned peace deal. Both have zero forward edge, so no directional read can be drawn.",
       "candidates": [
         {
           "subject": "Consumer Discretionary",
           "lean": "none",
-          "rationale": "Cross-sectional flow is concentrating here (emerging, broad leadership), but cohesion is low (0.24), directional confidence is low, and the lens has no validated forward edge.",
+          "rationale": "High flow score (1.85) ranks concentration, not return; forward IC is ~0, so no edge.",
           "strength": "weak"
         },
         {
           "subject": "Industrials",
           "lean": "none",
-          "rationale": "Part of the dominant cluster with strong co-movement (top pair corr 0.87), yet cohesion is low (0.218) and the entire flow signal has rank-IC ~0; only a qualitative grouping.",
+          "rationale": "Flow score (1.31) driven by broad but non-cohering breadth; base rates show no predictive power.",
           "strength": "weak"
         },
         {
           "subject": "Financials",
           "lean": "none",
-          "rationale": "Emerging and broad, but cohesion is weak (0.284) and directional confidence is low; the concentration carries no forecast power, so no lean is warranted.",
+          "rationale": "Concentration (flow score 0.91) with low cohesion change; display-only with rank-IC ~0.",
           "strength": "weak"
         },
         {
           "subject": "Real Estate",
           "lean": "none",
-          "rationale": "Cohesion is slightly higher (0.339) but still sub-threshold; broad leadership but no directional signal, and the flow lens is not predictive beyond describing current cross-sectional flow.",
+          "rationale": "Emerging in dominant cluster but cohesion 0.34 and declining; no forward edge per guardrails.",
           "strength": "weak"
         }
       ],
-      "key_risk": "A single macro shift or a one-week reversal could dissolve the apparent cluster; the flow lens has no validated forward edge and is fragile outside of stress regimes."
+      "key_risk": "A sudden VIX spike above 25 could shift the lens into stress-conditional mode, marginally activating its rare dispersion-recovery signal, but would still lack a reliable forward edge per base rates."
     },
     "structural": {
-      "stance": "The cross-group cluster map reveals a cyclical co-movement anchored by Consumer Discretionary and Industrials (top pair correlation 0.87), with broad, low-HHI leadership across the cluster\u2014indicating a genuine theme spread, not a single-name mirage. However, the fragile relief snap warns this cyclical pulse may be easily reversed.",
+      "stance": "The dominant cross-sector cluster (Consumer Discretionary, Industrials, Financials, Real Estate) shows strong inter-group correlation (top pair 0.87) and each sector exhibits broad, low-HHI leadership, indicating a genuine cyclical theme spread rather than a single-name mirage. However, within-sector cohesion is uniformly low, making the move macro-factor dependent and fragile to shifts in the underlying driver.",
       "candidates": [
         {
           "subject": "Consumer Discretionary",
-          "lean": "overweight",
-          "rationale": "Top pair leader; highest flow score in cluster with extremely broad leadership (HHI 0.008, n=194), signaling genuine theme participation.",
+          "lean": "none",
+          "rationale": "Part of the dominant cluster with top pair correlation 0.87, broad leadership, HHI 0.008 \u2014 genuine co-movement.",
           "strength": "moderate"
         },
         {
           "subject": "Industrials",
-          "lean": "overweight",
-          "rationale": "Second top pair leader; broad diversification (HHI 0.007, n=253) and high correlation with Consumer Discretionary confirm integrated cyclical move.",
+          "lean": "none",
+          "rationale": "Highest cross-correlation with Consumer Discretionary, HHI 0.007, broad breadth \u2014 core of the cyclical theme.",
           "strength": "moderate"
         },
         {
           "subject": "Financials",
-          "lean": "overweight",
-          "rationale": "Part of the dominant cluster with wide breadth (HHI 0.007, n=254); comoves with the leading duo but exhibits lower relative flow score.",
+          "lean": "none",
+          "rationale": "In the dominant cluster, HHI 0.007, broad leadership \u2014 moving in sync with cyclicals.",
+          "strength": "moderate"
+        },
+        {
+          "subject": "Real Estate",
+          "lean": "none",
+          "rationale": "Cluster member with broad leadership and HHI 0.017 \u2014 likely participating in the same macro rotation.",
           "strength": "weak"
         }
       ],
-      "key_risk": "The cyclical co-movement is nested in a fragile, oil-driven relief; a spike in oil or renewed recession fears would rapidly unwind the cluster."
+      "key_risk": "The inter-sector correlation is not supported by within-sector cohesion; if the common macro driver (e.g., rates, growth sentiment) reverses, the cluster could dislocate abruptly, breaking the co-movement read."
     }
   }
 }
