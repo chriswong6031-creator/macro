@@ -38,18 +38,46 @@ COST_DEFAULT = 3.0
 
 # per-leg display metadata (colour + 中文) for the NEW strategies' score breakdown
 LEG_META = {
+    # original three strategies
     "hy_widening": (C["red"], "信用压力（高收益利差走阔）"),
     "recession": (C["amber"], "衰退风险"),
     "vol": ("#7c3aed", "股票波动风险溢价（避险）"),
     "value": (C["blue"], "实际收益率估值（昂贵 → 退避）"),
     "carry": (C["indigo"], "曲线套息（10年 − 3月）"),
     "trend": ("#0891b2", "趋势（时间序列动量）"),
+    # suite legs (strategies 4-27)
+    "realvol": ("#7c3aed", "已实现波动率（避险）"),
+    "abs_mom": (C["indigo"], "绝对动量（低于现金）"),
+    "gcross": (C["blue"], "50/200 日均线交叉"),
+    "vix_term": (C["red"], "VIX 期限结构（贴水）"),
+    "vix_level": (C["amber"], "VIX 水平（避险）"),
+    "liquidity": ("#64748b", "净流动性收缩（美联储 − 逆回购）"),
+    "curve": (C["indigo"], "收益率曲线衰退触发（10年 − 3月）"),
+    "sahm": (C["amber"], "Sahm 失业率衰退触发"),
+    "claims": ("#D98C00", "初请失业金上行"),
+    "hy_level": ("#D98C00", "高收益利差水平"),
+    "nfci": (C["indigo"], "金融条件（紧且收紧）"),
+    "anfci": ("#7c3aed", "调整后金融条件"),
+    "mom_crash": (C["red"], "动量崩溃护盾（自身波动）"),
+    "breadth": ("#0891b2", "广度收窄（等权 vs 市值权重）"),
+    "realrate": (C["blue"], "实际收益率上行（黄金逆风）"),
+    "dollar": ("#0d9488", "美元走强"),
+    "growth": ("#ea580c", "工业增长放缓"),
+    "ig_widening": (C["red"], "投资级信用压力（Baa − Aaa 走阔）"),
+    "dollar_em": (C["amber"], "新兴市场加权美元走强"),
+    "rates_trend": (C["red"], "利率上行（久期逆风）"),
 }
-# compact stance labels per strategy key (risk asset / cash)
+# compact stance labels per strategy key (risk asset / cash). Keys not listed fall
+# back to the spec's own bench/cash labels in _card — only the awkwardly-long ones
+# need an override here.
 STANCE = {
     "spvector": ("S&P 500", "标普500", "T-bills", "短债"),
     "credit_carry": ("HY credit", "高收益债", "Treasuries", "国债"),
     "duration_timing": ("long Tsy", "长债", "T-bills", "短债"),
+    "ig_carry": ("IG credit", "投资级", "Treasuries", "国债"),
+    "em_debt_carry": ("EM debt", "新兴债", "Treasuries", "国债"),
+    "flight_to_quality": ("7-10y Tsy", "中期国债", "T-bills", "短债"),
+    "equalweight_trend": ("Equal-wt S&P", "等权标普", "T-bills", "短债"),
 }
 
 # dial bands (score → label/colour); weights match ea.glide_path defaults (100/66/33/0)
