@@ -861,6 +861,7 @@ stock_search:
     - RIVN   # Rivian
     - LCID   # Lucid Group
     # Space / new-defense
+    - SPCX   # SpaceX (IPO 2026-06-12, Nasdaq — days-old; LIMITED card until it ages)
     - RKLB   # Rocket Lab
     - LUNR   # Intuitive Machines
     - ASTS   # AST SpaceMobile
@@ -874,9 +875,9 @@ stock_search:
     - COIN   # Coinbase
     - GLXY   # Galaxy Digital
     - IREN   # IREN
-    # SpaceX is PRIVATE (no ticker) — DXYZ (Destiny Tech100) is the closest
-    # US-listed proxy (SpaceX is its top holding); named so a "spacex" search hits.
-    - DXYZ   # Destiny Tech100 (SpaceX proxy)
+    # DXYZ (Destiny Tech100) is a closed-end fund whose top holding is SpaceX —
+    # kept alongside the now-public SPCX as a diversified pre-IPO/space proxy.
+    - DXYZ   # Destiny Tech100 (holds SpaceX)
   # ticker -> {name, sector} for the single-stock extras above. build_stock_library
   # reads this so the search index shows the company + its GICS sector instead of
   # "<ticker> / ETF / macro". A ticker present in extra_tickers but missing here
@@ -955,7 +956,8 @@ stock_search:
     COIN: {name: "Coinbase Global", sector: "Financials"}
     GLXY: {name: "Galaxy Digital", sector: "Financials"}
     IREN: {name: "IREN (Iris Energy)", sector: "Information Technology"}
-    DXYZ: {name: "Destiny Tech100 (SpaceX proxy)", sector: "Financials"}
+    SPCX: {name: "SpaceX", sector: "Industrials"}
+    DXYZ: {name: "Destiny Tech100 (holds SpaceX)", sector: "Financials"}
 
 watchlist:
   enabled: true                   # client-side holdings watchlist page (needs stock_search)

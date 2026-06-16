@@ -459,7 +459,7 @@
       <div id="r_smartmoney"></div>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="panel_mtf">
       <h2>{{ t('Momentum across timeframes', '跨周期动量') }}</h2>
       <div id="r_mtf"></div>
     </div>
@@ -467,7 +467,7 @@
       <h2>{{ t('Chart', '图表') }}</h2>
       <div id="tvbox"></div>
     </div>
-    <div class="panel">
+    <div class="panel" id="panel_cal">
       <h2>{{ t('How much to trust the state — measured 2000→2026', '这个状态有多可信 — 实测 2000→2026') }}</h2>
       <table id="r_cal"></table>
       <p class="muted" style="font-size:12px; margin-top:8px">{{ t(
@@ -1252,6 +1252,9 @@
   function render(d) {
     document.getElementById('result').style.display = 'block';
     document.getElementById('r_name').textContent = d.name + ' (' + d.ticker + ')';
+    if (d.limited) { renderLimited(d); return; }
+    // a full record may follow a limited one — re-show the panels it hid
+    ['panel_mtf', 'panel_cal'].forEach(function (id) { var e = document.getElementById(id); if (e) e.style.display = ''; });
     var st = document.getElementById('r_state');
     st.textContent = dlabel(d.ladder.state) || d.ladder.label;
     st.className = 'state st-' + d.ladder.state.replace(/ /g, '_');
@@ -1363,11 +1366,16 @@
     renderFragility(d);
     renderSmartMoney(d);
 
+    tvLoad(d);
+  }
+
+  // TradingView chart loader, shared by the full and limited views. Yahoo encodes
+  // US share classes with a dash (BRK-B); TradingView uses a dot (BRK.B), and a
+  // bare "BRK-B" resolves to a colliding TSX income-strategy ETF. Pin the known
+  // US class-shares to NYSE; otherwise convert the trailing class-dash to a dot.
+  // Crypto keeps its -USD -> USD mapping.
+  function tvLoad(d) {
     document.getElementById('tvbox').innerHTML = '<div id="tvchart"></div>';
-    // Yahoo encodes US share classes with a dash (BRK-B); TradingView uses a dot
-    // (BRK.B), and a bare "BRK-B" resolves to a colliding TSX income-strategy ETF.
-    // Pin the known US class-shares to NYSE; otherwise convert the trailing
-    // class-dash to a dot. Crypto keeps its -USD -> USD mapping.
     var TV_FIX = {'BRK-A': 'NYSE:BRK.A', 'BRK-B': 'NYSE:BRK.B', 'BF-A': 'NYSE:BF.A',
       'BF-B': 'NYSE:BF.B', 'CWEN-A': 'NYSE:CWEN.A', 'MOG-A': 'NYSE:MOG.A',
       'HEI-A': 'NYSE:HEI.A', 'LEN-B': 'NYSE:LEN.B'};
@@ -1380,6 +1388,34 @@
         hide_side_toolbar: true, allow_symbol_change: true,
         studies: ['RSI@tv-basicstudies', 'MACD@tv-basicstudies']});
     } catch (e) { /* chart is garnish — analysis above stands alone */ }
+  }
+
+  // A brand-new listing (a days-old IPO like SPCX) has no computable cycle ladder
+  // yet. Rather than hide it, show an honest limited card: identity + a "too new"
+  // banner + the live chart. Mirrors load()'s not-in-library reset so no stale
+  // analysis from a previously-viewed ticker leaks through.
+  function renderLimited(d) {
+    var st = document.getElementById('r_state');
+    st.textContent = lang() === 'zh' ? '历史不足' : 'LIMITED';
+    st.className = 'state';
+    document.getElementById('r_asof').textContent = L('asof') + ' ' + d.asof;
+    document.getElementById('r_summary').textContent = '';
+    document.getElementById('r_verdict').innerHTML = '';
+    document.getElementById('r_sigstrip').innerHTML = '';
+    document.getElementById('r_points').innerHTML = '';
+    document.getElementById('r_flags').textContent = '';
+    document.getElementById('r_why').textContent = '';
+    ['r_eq', 'r_bc', 'r_age', 'r_early', 'r_macro', 'r_archetype', 'r_glance', 'r_afbtn', 'panel_mtf', 'panel_cal']
+      .forEach(function (id) { var e = document.getElementById(id); if (e) e.style.display = 'none'; });
+    if (afCtl) afCtl.close();
+    hideFundamentals();
+    var n = d.history_days || 0;
+    var msg = lz(
+      'New listing — first traded ' + d.listed + ', only ' + n + ' session' + (n === 1 ? '' : 's') +
+      ' of history. The cycle & momentum model needs ~1 year, so the full read unlocks as data accrues. Live price chart below.',
+      '新上市 —— 首个交易日 ' + d.listed + '，目前仅有 ' + n + ' 个交易日。周期与动量模型需约一年历史，完整解读将随数据积累解锁。下方为实时价格图。');
+    document.getElementById('r_cyclebox').innerHTML = '<div class="cyclebox">🆕 ' + esc(msg) + '</div>';
+    tvLoad(d);
   }
   // recolor visuals when the theme flips
   document.addEventListener('themechange', function () {
