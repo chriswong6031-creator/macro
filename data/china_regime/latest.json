@@ -346,10 +346,10 @@
   },
   "conditions": {
     "roro": {
-      "roro": 0.29,
-      "roro_raw": 0.299,
+      "roro": 0.293,
+      "roro_raw": 0.302,
       "roro_state": "neutral",
-      "china_roro_copper_gold": 1.45,
+      "china_roro_copper_gold": 1.466,
       "china_roro_breadth": -0.726,
       "china_roro_southbound": -0.202,
       "china_roro_m1_m2": 0.029,
@@ -363,7 +363,7 @@
           "key": "copper_gold",
           "name_en": "Copper / Gold",
           "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-          "value": 1.45,
+          "value": 1.466,
           "lean": "risk-on"
         },
         {
@@ -2047,7 +2047,7 @@
           0.228,
           0.019,
           0.206,
-          0.29
+          0.293
         ]
       },
       "recession": {
@@ -6781,7 +6781,7 @@
           83.4,
           67.1,
           82.2,
-          85.7
+          86.0
         ]
       }
     },
@@ -6792,14 +6792,14 @@
     "fe_score": 86,
     "band": "Greed",
     "band_zh": "\u8d2a\u5a6a",
-    "roro": 0.29,
+    "roro": 0.293,
     "roro_state": "neutral",
     "legs": [
       {
         "key": "copper_gold",
         "name_en": "Copper / Gold",
         "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-        "value": 1.45,
+        "value": 1.466,
         "pct": 98,
         "lean": "risk-on"
       },

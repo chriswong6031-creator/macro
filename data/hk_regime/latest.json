@@ -31,10 +31,10 @@
       {
         "key": "dxy",
         "label": "US Dollar (DXY)",
-        "z": 0.51,
+        "z": 0.52,
         "sign": -1,
         "risk": "off",
-        "level": 99.662
+        "level": 99.679
       },
       {
         "key": "vix",
@@ -55,7 +55,7 @@
       {
         "key": "copper_gold",
         "label": "Copper / Gold",
-        "z": 1.16,
+        "z": 1.18,
         "sign": 1.0,
         "risk": "on",
         "level": 0.0015
