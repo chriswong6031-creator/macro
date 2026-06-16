@@ -120,6 +120,53 @@ def current_vix_context() -> dict | None:
     return vctx or None
 
 
+def current_calm(bench: pd.Series | None) -> float | None:
+    """The live `calm` regime score in [0,1] the Conviction EDGE axis uses to scale the
+    residual-momentum leg (engine.stock_score._edge_weights). This is the SAME causal
+    price-tape regime validated in scripts.conviction_v2_regime — trend (SPY vs its 200dma)
+    AND realized-vol (trailing 63d vs its 1y median) — so the live tilt matches the backtest.
+    Returns {0, 0.5, 1.0}: both calm -> 1 (momentum up-weighted), one -> 0.5, both stress ->
+    0 (momentum pulled back, the SUE event edge leads). None when SPY history is too short."""
+    if bench is None or len(bench) < 220:
+        return None
+    c = pd.to_numeric(bench, errors="coerce").dropna()
+    if len(c) < 220:
+        return None
+    sma200 = c.rolling(200).mean()
+    trend_up = bool(c.iloc[-1] >= sma200.iloc[-1])
+    rvol = c.pct_change().rolling(63).std()
+    rvol_med = rvol.rolling(252, min_periods=120).median()
+    lo_vol = bool(rvol.iloc[-1] <= rvol_med.iloc[-1]) if pd.notna(rvol_med.iloc[-1]) else trend_up
+    return 0.5 * float(trend_up) + 0.5 * float(lo_vol)
+
+
+def sue_freshness_days(asof: pd.Timestamp | None = None) -> dict[str, float]:
+    """Per-ticker days since its most recent EDGAR EPS filing became visible — feeds the
+    Conviction EDGE axis's PEAD freshness decay (engine.stock_score._pead_decay), so a fresh
+    earnings surprise outranks a stale one and the score reacts the moment earnings land.
+    Empty dict when the panel is unavailable (decay then no-ops to 1.0). Best-effort.
+
+    CAVEAT: the EPS panel's `asof_date` is a SYNTHETIC period_end + 60d (collectors.edgar_eps
+    does not carry the real filing date), so freshness here is really 'days since fiscal-
+    quarter-end + 60'. It still spreads names across the drift window over the calendar (the
+    backtest validated it on the same field over 213 monthly rebalances), but right after an
+    earnings wave most names cluster at one value. A real EDGAR submissions-API filing date
+    would sharpen this — tracked as a follow-up."""
+    try:
+        from engine import sue as _sue
+        panel = _sue.load_panel()
+    except Exception:  # noqa: BLE001
+        return {}
+    if panel is None or panel.empty:
+        return {}
+    now = pd.Timestamp(asof) if asof is not None else pd.Timestamp.now().normalize()
+    sub = panel[panel["asof_date"] <= now]
+    if sub.empty:
+        return {}
+    latest = sub.groupby("ticker")["asof_date"].max()
+    return {t: float((now - d).days) for t, d in latest.items() if pd.notna(d)}
+
+
 def _limited_rec(ticker: str, c: pd.Series, name: str, sector: str) -> dict:
     """A minimal, honest record for a curated extra too new for the cycle model
     (a days-old IPO). Carries enough for search + the page's renderLimited
@@ -391,6 +438,13 @@ def main() -> int:
     # benchmark for per-ticker relative-strength alerts + the feed window/caps
     spy = store.read("yahoo", "SPY")
     bench = spy["close"] if spy is not None else None
+    # live calm/risk-on regime score (validated price tape) — scales the Conviction EDGE
+    # axis's residual-momentum leg up in calm tape, back toward zero in stress.
+    calm = current_calm(bench)
+    asof_now = bench.index.max() if bench is not None and len(bench) else None
+    sue_fresh = sue_freshness_days(asof_now)   # PEAD freshness per name (days since filing)
+    log.info("conviction regime: calm=%s · SUE freshness for %d names",
+             "n/a" if calm is None else f"{calm:.2f}", len(sue_fresh))
     acfg = config.load().get("alerts", {})
     a_days = int(acfg.get("ticker_timeline_days", 120))
     a_max = int(acfg.get("ticker_max_events", 50))
@@ -586,9 +640,10 @@ def main() -> int:
         ins = insider_map.get(ticker) or {}
         ins_bps = ins.get("bps") if (ins.get("buyers", 0) >= 2 and (ins.get("net_mn") or 0) > 0) else None
         norm = stock_score.normalize_rec(
-            rec, "US", sue=sue_z.get(ticker), insider_bps=ins_bps,
-            revision_z=revision_z.get(ticker), basket=basket_tw.get(ticker))
-        prof = stock_score.conviction_profile(norm, "US", ctx={"as_of": alpha_asof, "gate_go": gate_go})
+            rec, "US", sue=sue_z.get(ticker), sue_fresh_days=sue_fresh.get(ticker),
+            insider_bps=ins_bps, revision_z=revision_z.get(ticker), basket=basket_tw.get(ticker))
+        prof = stock_score.conviction_profile(
+            norm, "US", ctx={"as_of": alpha_asof, "gate_go": gate_go, "regime": {"calm": calm}})
         rec["conviction"] = prof
         profiles[ticker] = prof
         _tech = rec.get("tech") or {}

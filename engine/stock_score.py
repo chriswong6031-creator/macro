@@ -65,6 +65,74 @@ _SEL_KIND = {
 # light directional context only). Renormalized over whichever legs are present per name.
 _EDGE_W = {"sue": 0.40, "insider": 0.30, "revision": 0.20, "mom": 0.10}
 
+# REGIME-CONDITIONAL momentum weight (research/STOCK_CONVICTION_V2 §3 + the regime audit in
+# scripts/conviction_v2_regime.py). The deep+PIT S&P panel (2008-2026, 63d) shows residual
+# momentum's forward edge is STRONGLY regime-switching — sector-neutral rank-IC +0.030 in a
+# calm/risk-on tape (SPY>200dma & low realized-vol) but -0.028 in a down tape and -0.017 in
+# high-vol — while the SUE event edge is regime-ROBUST (+0.002..+0.006 everywhere). Switching
+# momentum→SUE by regime lifts overall IC 0.0098→0.0192 and the long-only top-decile to
+# 15.4% ann / Sortino 1.01 / maxDD -35% (vs SPY 13.4% / -47%). This is literature-grounded,
+# not data-mined: Daniel-Moskowitz (2016) "Momentum Crashes" show momentum suffers severe
+# crashes in panic/bear states and that scaling exposure by bear-state + variance ~doubles
+# its Sharpe. So we scale ONLY the momentum (context) leg by the live `calm` score in [0,1]:
+# near 0 in stress (momentum ~pulled out, SUE/insider dominate), up to _MOM_W_CALM in calm.
+# `calm=None` (no live regime, ex-US, unit tests) keeps the v2 base weight -> behaviour
+# unchanged. The validated SUE/insider/revision core is NEVER scaled down.
+_MOM_W_CALM = 0.28      # calm/risk-on tape: residual momentum earns real weight (IC ~+0.03)
+_MOM_W_STRESS = 0.04    # down-trend / high-vol: momentum IC flips negative -> near-zero weight
+
+# PEAD freshness decay (research/STOCK_CONVICTION_V2 + scripts/pead_freshness_phase0.py). The
+# SUE earnings-surprise edge is post-earnings-announcement DRIFT — it decays over the ~60-90d
+# after the filing. The live score pooled every name filed in the last ~7 months at equal
+# weight, so a 6-month-old surprise (drift already consumed) counted like one filed last week.
+# Weighting SUE by exp(-days_since_filing / TAU) concentrates the edge on names still inside
+# the active drift window: on the deep+PIT panel it lifts SUE's IC 0.0065->0.0085, IC-IR
+# 0.084->0.108, and the long-only top-decile 13.3%->14.0% ann / Sharpe .79->.82 / maxDD
+# -38.1%->-36.7% — an improvement on EVERY metric, no trade-off. It also makes the score
+# EARLY/FAST: a fresh surprise ranks above a stale one and fades as the drift plays out.
+# `sue_fresh_days=None` -> decay 1.0 (unchanged), so callers without filing dates are identical.
+_PEAD_TAU = 45.0
+
+
+def _pead_decay(days: float | None) -> float:
+    """Post-earnings drift weight in (0,1]: 1.0 for a just-filed surprise, fading with the
+    days since the filing. None (no filing date) -> 1.0 so behaviour is unchanged."""
+    if days is None:
+        return 1.0
+    return float(math.exp(-max(float(days), 0.0) / _PEAD_TAU))
+
+
+def _edge_weights(calm: float | None) -> dict:
+    """The EDGE evidence weights with the momentum leg scaled by the live `calm` regime
+    score in [0,1] (1 = calm/risk-on, 0 = stress). `calm is None` -> the v2 base weights
+    (mom 0.10), so every caller that does not supply a regime is byte-identical to v2."""
+    if calm is None:
+        return dict(_EDGE_W)
+    c = float(np.clip(calm, 0.0, 1.0))
+    w = dict(_EDGE_W)
+    w["mom"] = _MOM_W_STRESS + (_MOM_W_CALM - _MOM_W_STRESS) * c
+    return w
+
+
+def _regime_tilt(market: str, calm: float | None) -> dict | None:
+    """Display banner: which regime tilt the EDGE axis is currently applying (research §6).
+    Only US conditions on the live tape (the validated finding); other markets / no-regime
+    return None so the UI shows nothing. `calm` in [0,1]: high = trend up + low vol."""
+    if market.upper() != "US" or calm is None:
+        return None
+    c = float(np.clip(calm, 0.0, 1.0))
+    if c >= 0.75:
+        return {"state": "calm", "css": "rg-calm",
+                "en": "Calm / risk-on tape — trend momentum up-weighted",
+                "zh": "平稳／风险偏好行情 — 上调趋势动量权重"}
+    if c <= 0.25:
+        return {"state": "stress", "css": "rg-stress",
+                "en": "Stressed tape — momentum pulled back, earnings edge leads",
+                "zh": "承压行情 — 下调动量，盈利事件优势主导"}
+    return {"state": "mixed", "css": "rg-mixed",
+            "en": "Mixed tape — balanced momentum / earnings edge",
+            "zh": "混合行情 — 动量与盈利优势均衡"}
+
 # Per-market TRUST TIER — bound to the validated record, NOT to the live number.
 # This is the cross-market honesty badge (research §6.4). `gate_go` flips US/CA/CN
 # to "validated rank" only when the deep-CI Phase-0 said so.
@@ -174,7 +242,9 @@ def _edge_basis(rec: dict, market: str) -> list[dict]:
         out.append({"leg": key, "label": lab[0], "label_zh": lab[1], "tier": lab[2],
                     "z": round(float(val), 2)})
     if m == "US":
-        s = _f(rec.get("sue")); add("sue", float(np.clip(s, -3, 3)) if s is not None else None)
+        s = _f(rec.get("sue"))
+        add("sue", float(np.clip(s, -3, 3)) * _pead_decay(_f(rec.get("sue_fresh_days")))
+            if s is not None else None)
         i = _f(rec.get("insider_bps")); add("insider", float(np.clip(i / 30.0, -1.5, 1.5)) if i is not None else None)
         r = _f(rec.get("revision_z")); add("revision", float(np.clip(r, -3, 3)) if r is not None else None)
         a = _f(rec.get("alpha")); add("alpha", float(np.clip(a, -3, 3)) if a is not None else None)
@@ -187,13 +257,16 @@ def _edge_basis(rec: dict, market: str) -> list[dict]:
     return out
 
 
-def _axis_selection(rec: dict, market: str) -> tuple[float | None, list[str]]:
+def _axis_selection(rec: dict, market: str, calm: float | None = None) -> tuple[float | None, list[str]]:
     """The EDGE axis — the VALIDATED, event-driven predictive core that DRIVES the rank
     (research/STOCK_CONVICTION_V2). Returns (z, present_legs).
 
     * US/CA — evidence-weighted blend of SUE (FDR survivor) + insider net-buying +
       analyst-revision momentum + a LIGHT residual-momentum context (momentum alone is
-      ~noise on clean PIT large-cap data, so it earns only the 0.10 context weight).
+      ~noise on clean PIT large-cap data, so it earns only the 0.10 context weight). The
+      momentum weight is REGIME-CONDITIONAL via `calm` (see `_edge_weights`): it rises in a
+      calm/risk-on tape where momentum predicts and is pulled toward zero in stress where it
+      crashes — the validated lift in the regime audit. `calm=None` keeps the v2 base weight.
     * CN — A-share momentum is dead; the validated effect is short-term REVERSAL, so the
       edge is reversal-led + revisions, residual momentum a light context.
     * HK — no validated stock-selection edge: relative strength only, framed as a screen.
@@ -202,26 +275,28 @@ def _axis_selection(rec: dict, market: str) -> tuple[float | None, list[str]]:
     present: list[str] = []
     if m == "US":
         # the validated event edge: SUE + insider + revisions exist for US (EDGAR / Form-4 /
-        # yfinance). Residual momentum is a LIGHT 0.10 context leg, and a CONFIDENCE FLOOR
-        # dampens a US name with NO event signal toward zero — it must not rank like a name
-        # carrying a real earnings/insider/revision edge.
+        # yfinance). Residual momentum is a LIGHT context leg (regime-scaled), and a CONFIDENCE
+        # FLOOR dampens a US name with NO event signal toward zero — it must not rank like a
+        # name carrying a real earnings/insider/revision edge.
+        ew = _edge_weights(calm)
         legs: dict[str, float] = {}
         sue = _f(rec.get("sue"))
-        if sue is not None:
-            legs["sue"] = float(np.clip(sue, -3, 3)); present.append("sue")
+        if sue is not None:                       # PEAD freshness decay: a stale surprise
+            d = _pead_decay(_f(rec.get("sue_fresh_days")))   # contributes less than a fresh one
+            legs["sue"] = float(np.clip(sue, -3, 3)) * d; present.append("sue")
         ins = _f(rec.get("insider_bps"))
         if ins is not None:                       # net Form-4 buying, bps of mcap
             legs["insider"] = float(np.clip(ins / 30.0, -1.5, 1.5)); present.append("insider")
         rev = _f(rec.get("revision_z"))
         if rev is not None:                       # analyst estimate-revision momentum z
             legs["revision"] = float(np.clip(rev, -3, 3)); present.append("revision")
-        mom = _f(rec.get("alpha"))                # residual momentum — LIGHT context only
+        mom = _f(rec.get("alpha"))                # residual momentum — LIGHT, regime-scaled context
         if mom is not None:
             legs["mom"] = float(np.clip(mom, -3, 3)); present.append("alpha")
         if not legs:
             return None, present
-        num = sum(_EDGE_W[k] * v for k, v in legs.items())
-        den = max(sum(_EDGE_W[k] for k in legs), 0.5)   # confidence floor (see above)
+        num = sum(ew[k] * v for k, v in legs.items())
+        den = max(sum(ew[k] for k in legs), 0.5)   # confidence floor (see above)
         return _clipz(num / den), present
     if m == "CA":
         # Canada has NO event feeds (no EDGAR / Form-4 / revision data on the TSX), so
@@ -513,8 +588,9 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
     """
     ctx = ctx or {}
     m = (market or "US").upper()
+    calm = _f((ctx.get("regime") or {}).get("calm"))   # live calm/risk-on score in [0,1]
 
-    sel_z, sel_present = _axis_selection(rec, m)
+    sel_z, sel_present = _axis_selection(rec, m, calm)
     ent_z, ent_present, blocked = _axis_entry(rec)
     tw_z, tw_present = _axis_tailwind(rec)
     q_z, q_present, q_flags = _axis_quality(rec, m)
@@ -565,6 +641,7 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
         "verdict": vb["verdict"], "verdict_zh": vb["verdict_zh"],
         "drivers": vb["drivers"], "cautions": vb["cautions"],
         "trust_tier": trust_tier(m, bool(ctx.get("gate_go"))),
+        "regime": _regime_tilt(m, calm),
         "axes": axes,
         "n_axes": n_axes,
         "cycle_blocked": blocked,
@@ -612,6 +689,7 @@ def score_percentiles(comp_z: pd.Series) -> pd.Series:
 # ----------------------------------------------------------------------------
 def normalize_rec(record: dict, market: str, *, rs_z: float | None = None,
                   rev_z: float | None = None, sue: float | None = None,
+                  sue_fresh_days: float | None = None,
                   insider_bps: float | None = None, revision_z: float | None = None,
                   quality_context_z: float | None = None,
                   fund_priors_z: float | None = None,
@@ -641,7 +719,8 @@ def normalize_rec(record: dict, market: str, *, rs_z: float | None = None,
         "factor": {"value": legs.get("value"), "profitability": legs.get("profitability"),
                    "quality": legs.get("quality"), "low_vol": legs.get("low_vol")} if legs else None,
         "quality_context_z": quality_context_z,
-        "sue": sue, "insider_bps": insider_bps, "revision_z": revision_z,
+        "sue": sue, "sue_fresh_days": sue_fresh_days,
+        "insider_bps": insider_bps, "revision_z": revision_z,
         "fund_priors": {"z": fund_priors_z} if fund_priors_z is not None else None,
         "asym": asym,                      # downside-asymmetry DISPLAY read (risk shape, not scored)
         "accounting": record.get("accounting_quality"),

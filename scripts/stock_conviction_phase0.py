@@ -18,8 +18,13 @@ beats the selection baseline on BOTH mean rank-IC AND the quintile L/S Sharpe at
 PRE-REGISTERED primary horizon (63d; 21/126 secondary). The honesty contract:
 
   * GATE GO  only if the composite beats the baseline on BOTH axes at 63d AND the
-             split-half IC is same-sign (no half-sample flip).
-  * else     NEUTRAL → display-only.
+             split-half IC is same-sign (no half-sample flip) AND it clears the DSR
+             multiple-testing haircut (DSR>=0.90) — a GO flips the per-card "validated"
+             badge, so it demands ABSOLUTE significance, not just a relative beat. On
+             large-cap monthly dollar-neutral data nothing clears DSR (the v2 finding),
+             so the honest steady state is NEUTRAL/display-only.
+  * else     NEUTRAL → display-only (the composite still rides as the displayed ordering
+             + per-name profile; a beats-baseline-but-DSR<0.90 RELATIVE win is recorded).
 
 What the gate currently governs (CONSERVATIVE BY DESIGN): the per-market verdict is
 persisted to ``data/regime/stock_conviction_gate.json`` (``{"US":"NEUTRAL", ...}``) and
@@ -88,7 +93,13 @@ AXES = ["selection", "entry", "tailwind", "quality"]
 # v2: the EDGE composite is the validated EVENT core the board actually ranks by when the
 # gate is GO. Tested here as the pure sector-neutral SUE leg (the FDR survivor) — a
 # CONSERVATIVE lower bound on the live EDGE, which also folds insider + revisions.
-COMPOSITES = ["edge", "conviction_orth", "conviction_ew", "selection_led"]
+# v3 (research/STOCK_CONVICTION_V2 §8): the two validated levers, tested for a GO under the
+# SAME rigor — `regime_switch` (momentum in a calm tape, SUE in stress), `edge_pead` (SUE
+# weighted by post-announcement freshness decay), and `regime_pead` (regime_switch using the
+# PEAD-weighted SUE as the stress leg = the live v3 EDGE).
+COMPOSITES = ["edge", "edge_pead", "regime_switch", "regime_pead",
+              "conviction_orth", "conviction_ew", "selection_led"]
+_PEAD_TAU = 45.0       # PEAD freshness half-life (days) — matches engine.stock_score._PEAD_TAU
 
 
 def _fmt(v, spec: str) -> str:
@@ -148,7 +159,8 @@ def _sue_proxy(panel: pd.DataFrame, grid: list) -> dict[str, pd.Series]:
     return cache
 
 
-def build_axis_panels(closes, market, tkr_sector, grid, fund_cache, sue_cache):
+def build_axis_panels(closes, market, tkr_sector, grid, fund_cache, sue_cache,
+                      sue_pead_cache=None):
     """Assemble each conviction AXIS as a sector-neutral winsor-z date×ticker matrix,
     then the cross-axis composites → {signal: date×ticker matrix}.
 
@@ -164,6 +176,17 @@ def build_axis_panels(closes, market, tkr_sector, grid, fund_cache, sue_cache):
                              WIN, max(WIN // 2, 40), SHRINK)
     ir = (eps.shift(SKIP).rolling(FORM, min_periods=max(FORM // 2, 20)).mean()
           / eps.shift(SKIP).rolling(FORM, min_periods=max(FORM // 2, 20)).std())
+    # v3 regime: the SAME causal price tape validated in conviction_v2_regime — calm =
+    # SPY above its 200dma AND realized-vol not high. regime_switch tilts to momentum
+    # (selection) in calm, to the SUE edge in stress.
+    spy_close = closes["SPY"] if "SPY" in closes else (1 + pd.Series(market).reindex(R.index).fillna(0)).cumprod()
+    sma200 = spy_close.rolling(200).mean()
+    spy_ret = pd.Series(market).reindex(R.index)
+    rvol = spy_ret.rolling(63).std()
+    rvol_hi = rvol > rvol.rolling(252, min_periods=120).median()
+
+    def _calm(d):
+        return bool(spy_close.get(d, np.nan) >= sma200.get(d, np.nan)) and not bool(rvol_hi.get(d))
     rev_raw = R.rolling(SKIP, min_periods=max(SKIP // 2, 5)).sum()        # 21d return; entry = −this
     # sector EW residual tailwind: how the name's sector is doing beyond the market,
     # broadcast to each member (a declared sector tilt, deliberately NOT name-specific).
@@ -223,6 +246,27 @@ def build_axis_panels(closes, market, tkr_sector, grid, fund_cache, sue_cache):
         edge = qlegs.get("sue")
         if edge is not None and not edge.dropna().empty:
             panels["edge"][d] = edge.dropna()
+        # v3 edge_pead = the PEAD-freshness-weighted SUE (sector-neutral z of the decayed
+        # surprise), built upstream in main() and re-standardized here onto this date's idx.
+        edge_pead = None
+        if sue_pead_cache is not None:
+            sp = sue_pead_cache.get(str(d.date()))
+            if sp is not None and not sp.dropna().empty:
+                edge_pead = _sn_z(sp.reindex(idx), sec).dropna()
+                if not edge_pead.empty:
+                    panels["edge_pead"][d] = edge_pead
+        # v3 regime_switch / regime_pead: selection (momentum) in a calm tape, the SUE edge
+        # in stress (regime_pead uses the PEAD-weighted edge). Both on the same z scale.
+        calm = _calm(d)
+        if calm:
+            panels["regime_switch"][d] = sel.dropna()
+            panels["regime_pead"][d] = sel.dropna()
+        else:
+            if edge is not None and not edge.dropna().empty:
+                panels["regime_switch"][d] = edge.dropna()
+            rp = edge_pead if edge_pead is not None else (edge.dropna() if edge is not None else None)
+            if rp is not None and not rp.empty:
+                panels["regime_pead"][d] = rp
         panels["conviction_orth"][d] = conv_orth.dropna()
         panels["conviction_ew"][d] = conv_ew.dropna()
         panels["selection_led"][d] = sel_led.dropna()
@@ -322,19 +366,33 @@ def decide_gate(results: dict, powered: bool) -> tuple[str, str | None, list[str
     base_ic = r["selection"]["ic"].get("mean_ic", 0) or 0
     base_sh = r["selection"]["ls"].get("sharpe") or 0
     best = None
-    for k in ("edge", "conviction_orth", "conviction_ew", "selection_led"):
+    for k in ("regime_pead", "regime_switch", "edge_pead", "edge",
+              "conviction_orth", "conviction_ew", "selection_led"):
         if k not in r:
             continue
         c_ic = r[k]["ic"].get("mean_ic", 0) or 0
         c_sh = r[k]["ls"].get("sharpe") or 0
+        c_dsr = r[k]["ls"].get("dsr")
         h1, h2 = r[k]["ic"].get("ic_h1"), r[k]["ic"].get("ic_h2")
         same_sign = (h1 is not None and h2 is not None and np.sign(h1) == np.sign(h2) and h1 != 0)
         ic_win, sh_win = c_ic > base_ic, c_sh > base_sh
-        if ic_win and sh_win and same_sign:
+        # A GO flips the per-card trust badge to "validated — cleared Phase-0", so it must
+        # require ABSOLUTE statistical support (the DSR multiple-testing haircut the rest of
+        # the system holds every signal to), NOT just beating the baseline relatively. On
+        # large-cap monthly dollar-neutral data nothing clears DSR>=0.90 (the v2 finding) —
+        # so the honest outcome is NEUTRAL/display-only, never a false "validated" claim.
+        dsr_ok = (c_dsr is not None and c_dsr >= 0.90)
+        if ic_win and sh_win and same_sign and dsr_ok:
             notes.append(f"{k}: beats baseline on BOTH axes ({c_ic:+.4f} IC vs {base_ic:+.4f}, "
-                         f"Sharpe {c_sh} vs {base_sh}) and split-half same-sign ({h1}→{h2})")
+                         f"Sharpe {c_sh} vs {base_sh}), split-half same-sign ({h1}→{h2}), DSR {c_dsr}≥0.90")
             if best is None:
                 best = k
+        elif ic_win and sh_win and same_sign:
+            # the RELATIVE win (documented) — beats the baseline robustly but the absolute
+            # dollar-neutral edge does not clear DSR, so it ships as a better DISPLAY ordering,
+            # not a validated rank. This is the v3 regime_pead case.
+            notes.append(f"{k}: beats baseline (IC {c_ic:+.4f} vs {base_ic:+.4f}, Sharpe {c_sh} vs "
+                         f"{base_sh}, split-half {h1}→{h2}) but DSR {c_dsr}<0.90 → display-only, not validated")
         else:
             why = []
             if not ic_win:
@@ -353,10 +411,13 @@ def decide_gate(results: dict, powered: bool) -> tuple[str, str | None, list[str
     return "NEUTRAL", None, notes
 
 
-ORDER = ["selection", "edge", "conviction_orth", "conviction_ew", "selection_led",
-         "entry", "quality", "tailwind"]
+ORDER = ["selection", "edge", "edge_pead", "regime_switch", "regime_pead",
+         "conviction_orth", "conviction_ew", "selection_led", "entry", "quality", "tailwind"]
 LBL = {"selection": "selection (BASELINE — residual momentum, the v1 rank)",
        "edge": "EDGE (v2 — validated event core: SUE; live also folds insider + revisions)",
+       "edge_pead": "EDGE·PEAD (v3 — SUE weighted by post-announcement freshness decay)",
+       "regime_switch": "regime-switch (v3 — momentum in calm tape, SUE in stress)",
+       "regime_pead": "regime·PEAD (v3 — momentum in calm, PEAD-weighted SUE in stress = live EDGE)",
        "conviction_orth": "conviction composite (orthogonal across axes)",
        "conviction_ew": "conviction composite (equal-weight)",
        "selection_led": "selection-led blend (0.6 sel + 0.4 entry/quality)",
@@ -376,10 +437,13 @@ def render(market_results: dict, gates: dict, span: str, n_reb: int, n_uni: int,
          "actually re-order the SHIPPED board? Axes are sector-neutral winsor-z; the composite "
          "is a Löwdin-orthogonal (equal-risk) blend across axes. The tailwind axis is a declared "
          "sector tilt, shown standalone, never folded into the cross-axis rank.\n",
-         "**Gate:** a market earns `GO` (board re-ranked by the composite) only if a composite "
-         f"beats selection on BOTH mean rank-IC AND quintile L/S Sharpe at {PRIMARY_H}d AND the "
-         "split-half IC is same-sign. Otherwise `NEUTRAL` (display-only; the board keeps the "
-         "validated rank and the composite rides as the per-name profile).\n"]
+         "**Gate:** a market earns `GO` (the per-card trust badge flips to *validated*) only if a "
+         f"composite beats selection on BOTH mean rank-IC AND quintile L/S Sharpe at {PRIMARY_H}d, "
+         "the split-half IC is same-sign, AND it clears the DSR multiple-testing haircut "
+         "(DSR≥0.90). A GO claims absolute significance, so a relative beat alone is not enough — "
+         "on large-cap monthly dollar-neutral data nothing clears DSR (the honest steady state is "
+         "`NEUTRAL`). Otherwise `NEUTRAL` (display-only; the composite still rides as the displayed "
+         "ordering + per-name profile, and any beats-baseline-but-DSR<0.90 relative win is logged).\n"]
     if not powered:
         L.append("> **POWER GUARD ACTIVE.** The deep survivorship-clean matrix "
                  "(`data/breadth/_closes_deep.parquet`) and PIT membership "
@@ -538,6 +602,7 @@ def main() -> int:
     # back to the proxy only if the EPS panel is absent.
     fund_panel = pd.read_parquet(config.data_dir() / "edgar" / "fundamentals_panel.parquet")
     fund_cache = pit_fund_panels(grid, closes, fund_panel)
+    sue_pead_cache: dict | None = None
     try:
         from engine import sue as _sue
         eps_panel = _sue.load_panel()
@@ -545,6 +610,27 @@ def main() -> int:
             sue_cache = {str(d.date()): _sue.sue_cross_section(eps_panel, d) for d in grid}
             log.info("SUE: REAL validated SUE from the quarterly EPS panel (%d names latest)",
                      int(sum(1 for s in sue_cache.values() if s is not None and not s.empty)))
+            # v3 PEAD: weight each name's SUE by exp(-days_since_filing/TAU) so the post-
+            # announcement drift fades. asof_date is the (synthetic) filing-visible date.
+            asof_by_tic = {t: np.sort(g["asof_date"].values)
+                           for t, g in eps_panel.groupby("ticker")}
+            sue_pead_cache = {}
+            for d in grid:
+                s = sue_cache.get(str(d.date()))
+                if s is None or s.empty:
+                    continue
+                dd = np.datetime64(pd.Timestamp(d), "D")
+                days = {}
+                for t in s.index:
+                    arr = asof_by_tic.get(t)
+                    if arr is None or not len(arr):
+                        continue
+                    a = arr.astype("datetime64[D]")
+                    i = np.searchsorted(a, dd, side="right") - 1
+                    if i >= 0:
+                        days[t] = max(int((dd - a[i]) / np.timedelta64(1, "D")), 0)
+                w = pd.Series(days).reindex(s.index)
+                sue_pead_cache[str(d.date())] = s * np.exp(-w / _PEAD_TAU)
         else:
             sue_cache = _sue_proxy(fund_panel, grid)
             log.warning("SUE: EPS panel empty — falling back to the ni-YoY proxy")
@@ -557,7 +643,8 @@ def main() -> int:
     # can only POWER the US/CA construction here; CN/HK are reported as NOT-TESTED and
     # default to NEUTRAL (their shipped trust tier is already display-only by design —
     # CN reversal-context, HK no-edge screen — so a GO there would need their own panel).
-    R2, mats = build_axis_panels(closes, spy, tkr_sector, grid, fund_cache, sue_cache)
+    R2, mats = build_axis_panels(closes, spy, tkr_sector, grid, fund_cache, sue_cache,
+                                 sue_pead_cache=sue_pead_cache)
     diag = overlap_diagnostics(
         pd.concat([mats[k].stack().rename(k) for k in AXES if not mats[k].empty], axis=1)
     ) if all(not mats[k].empty for k in AXES) else {}
