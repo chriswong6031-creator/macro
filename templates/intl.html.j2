@@ -1,0 +1,376 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{% macro help(en, zh='') -%}
+<span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
+{%- endmacro %}
+{% macro num(v, suf='', dp=2) -%}
+{%- if v is none -%}<span class="muted">—</span>{%- else -%}{{ ('%.' ~ dp ~ 'f')|format(v) }}{{ suf }}{%- endif -%}
+{%- endmacro %}
+{% set S = summary %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ t('International Economies', '国际经济体') }} — {{ latest.date }}</title>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system, "Segoe UI", Roboto, Helvetica, sans-serif; margin: 0; padding: 18px; }
+  @media (min-width: 1100px) { body { padding: 24px max(36px, calc((100vw - 1560px) / 2)); } }
+  html[data-lang="zh"] body { font-family: "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",-apple-system,sans-serif; }
+  a { text-decoration: none; color: var(--link); }
+  h1 { font-size: 21px; margin: 0 0 2px; } h3 { font-size: 13px; margin: 0 0 8px; }
+  h2 { font-size: 13px; margin: 0 0 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 11px; padding: 15px 17px; margin-bottom: 14px; }
+  .muted { color: var(--muted); } .small { font-size: 12px; } .stale { color: var(--muted); font-size: 10px; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .pos { color: var(--up); } .neg { color: var(--down); }
+  .chip { display:inline-block; padding:2px 8px; border-radius:8px; font-size:11px; font-weight:700; background:var(--panel2); border:1px solid var(--line); }
+  .chip.warn { background:color-mix(in srgb,var(--down) 14%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 36%,transparent); }
+  .chip.caut { background:color-mix(in srgb,#d4a017 16%,transparent); color:#d4a017; border-color:color-mix(in srgb,#d4a017 38%,transparent); }
+  .chip.ok { background:color-mix(in srgb,var(--up) 14%,transparent); color:var(--up); border-color:color-mix(in srgb,var(--up) 34%,transparent); }
+  /* quad chip */
+  .quad { display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:9px; font-weight:800; font-size:12px; color:#fff; }
+  .q-Q1 { background:#2e9e4f; } .q-Q2 { background:#d4a017; } .q-Q3 { background:#d04545; } .q-Q4 { background:#3f78d8; }
+  .qdot { width:9px;height:9px;border-radius:50%;display:inline-block; }
+  .qd-Q1{background:#2e9e4f}.qd-Q2{background:#d4a017}.qd-Q3{background:#d04545}.qd-Q4{background:#3f78d8}
+  /* comparison grid */
+  .gridwrap { overflow-x:auto; }
+  table.cmp { border-collapse:collapse; width:100%; font-size:12.5px; min-width:1080px; }
+  table.cmp th, table.cmp td { padding:7px 9px; border-bottom:1px solid var(--line); text-align:right; white-space:nowrap; }
+  table.cmp th { color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.03em; position:sticky; top:0; background:var(--panel); }
+  table.cmp td.l, table.cmp th.l { text-align:left; }
+  table.cmp td.eco { position:sticky; left:0; background:var(--panel); font-weight:700; z-index:2; }
+  table.cmp th.eco { position:sticky; left:0; z-index:3; }
+  table.cmp tr:hover td { background:var(--panel2); }
+  table.cmp td.eco:hover, table.cmp tr:hover td.eco { background:var(--panel2); }
+  .grp { border-left:2px solid var(--line); }
+  .flg { font-size:16px; margin-right:5px; }
+  /* gauge bar */
+  .gbar { display:inline-block; width:64px; height:7px; border-radius:5px; background:var(--panel2); border:1px solid var(--line); overflow:hidden; vertical-align:middle; margin-right:6px; }
+  .gfill { display:block; height:100%; }
+  .g-low{background:var(--up)}.g-watch{background:#d4a017}.g-elevated{background:var(--down)}.g-na{background:var(--muted)}
+  /* heatmap scatter */
+  .scatter { position:relative; height:300px; border:1px solid var(--line); border-radius:10px; margin-top:8px; background:
+     linear-gradient(to right, color-mix(in srgb,#3f78d8 7%,transparent), transparent 50%, color-mix(in srgb,#d4a017 7%,transparent)),
+     linear-gradient(to top, color-mix(in srgb,#3f78d8 6%,transparent), transparent 50%, color-mix(in srgb,#2e9e4f 6%,transparent)); }
+  .scatter .axx, .scatter .axy { position:absolute; background:var(--line); }
+  .scatter .axx { left:0; right:0; top:50%; height:1px; } .scatter .axy { top:0; bottom:0; left:50%; width:1px; }
+  .scatter .ql { position:absolute; font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+  .scatter .pt { position:absolute; transform:translate(-50%,-50%); text-align:center; }
+  .scatter .pt .e { font-size:22px; line-height:1; } .scatter .pt .n { font-size:9px; color:var(--muted); }
+  /* rank bars */
+  .ranks { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; }
+  .rb { font-size:12px; padding:3px 0; display:flex; align-items:center; gap:7px; }
+  .rb .bar { flex:1; height:8px; border-radius:5px; background:var(--panel2); overflow:hidden; }
+  .rb .bf { display:block; height:100%; background:var(--link); }
+  .rb .v { width:58px; text-align:right; font-variant-numeric:tabular-nums; }
+  /* stock + sector cards */
+  .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:11px; }
+  .card { background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:11px 13px; }
+  .card .hd { display:flex; align-items:center; gap:7px; } .card .hd .tk { font-weight:800; }
+  .lad { display:inline-block; padding:2px 8px; border-radius:9px; font-weight:700; font-size:11px;
+         background:color-mix(in srgb, var(--c, var(--muted)) 16%, var(--panel)); color:color-mix(in srgb, var(--c, var(--muted)) 82%, var(--text)); }
+  .lad.up { --c:var(--up); } .lad.down { --c:var(--down); } .lad.flat { --c:var(--muted); }
+  table.sb { border-collapse:collapse; width:100%; font-size:12.5px; }
+  table.sb th, table.sb td { padding:5px 9px; border-bottom:1px solid var(--line); text-align:right; }
+  table.sb td.l, table.sb th.l { text-align:left; } table.sb th { color:var(--muted); font-weight:600; }
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:4px; }
+  .help .tip { display:none; position:absolute; bottom:150%; left:50%; transform:translateX(-50%); width:280px; background:var(--panel); border:1px solid var(--line); padding:10px 12px; border-radius:9px; z-index:60; font-size:12px; line-height:1.5; color:var(--text); text-align:left; font-weight:400; text-transform:none; letter-spacing:normal; box-shadow:var(--popover-shadow); pointer-events:none; }
+  .help:hover .tip { display:block; }
+  .caveat { font-size:11.5px; color:var(--muted); font-style:italic; }
+  .more-btn { display:inline-block; margin-top:10px; padding:5px 14px; border-radius:9px; background:var(--panel2); border:1px solid var(--line); color:var(--link); font-weight:600; font-size:12px; cursor:pointer; }
+  .hidden { display:none; }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 {{ t('United States', '美国') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}</a>
+        <a href="us_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}</a>
+        <a href="spvector.html">📐 {{ t('Allocation Strategy', '配置策略') }}</a>
+        <a href="baskets.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}</a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="china.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}</a>
+        <a href="china_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}</a>
+        <a href="baskets_china.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}</a>
+        <a href="china_allocation.html">◎ {{ t('Allocation Strategy', '仓位策略') }}</a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="hk.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}</a>
+        <a href="hk_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}</a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="canada.html">🇨🇦 {{ t('Canada', '加拿大') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="canada.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}</a>
+        <a href="canada_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}</a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link active" href="intl.html">🌍 {{ t('International', '国际') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a class="{{ 'active' if mode != 'stocks' }}" href="intl.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('JP · KR · TW · UK · EU compared', '日 · 韩 · 台 · 英 · 欧 对比') }}</span></a>
+        <a class="{{ 'active' if mode == 'stocks' }}" href="intl_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Cross-market standouts · sectors', '跨市场精选 · 板块') }}</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }}</a>
+    <a class="nav-link" href="forex.html">💱 {{ t('Forex', '外汇') }}</a>
+    <a class="nav-link" href="bonds.html">🏛️ {{ t('Bonds', '债券') }}</a>
+  </div>
+  <div class="nav-search" data-lib="intlstockdata/index.json" data-target="intl_stock.html">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search international stocks"
+      placeholder="Search any JP / KR / TW / UK / EU stock…" data-ph-zh="搜索任意 日／韩／台／英／欧 个股…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <button data-lang="en">EN</button><button data-lang="zh">中文</button>
+    </div>
+  </div>
+</nav>
+
+<div class="panel">
+  <div class="row">
+    {% if mode == 'stocks' %}
+    <h1>🌍 {{ t('International Stock Dashboard', '国际股票看板') }}</h1>
+    {% else %}
+    <h1>🌍 {{ t('International Economies', '国际经济体') }}</h1>
+    {% endif %}
+    <span style="flex:1"></span>
+    <span class="muted small">{{ t('data through', '数据截至') }} {{ latest.date }} · {{ t('built', '生成') }} {{ built }}</span>
+  </div>
+  {% if mode == 'stocks' %}
+  <p class="muted small" style="margin:6px 0 0">{{ t('Standout names pooled from the top constituents of Japan, South Korea, Taiwan, the UK and Europe — ranked by sector-neutral residual momentum computed WITHIN each market (a relative-strength lens, not a forward-edge claim). Each name is flagged by country. Search any name from the box above.', '汇集日本、韩国、台湾、英国与欧洲主要成分股中的精选个股 — 按各自市场内部的板块中性残差动量排名（相对强弱视角，非前瞻收益主张）。每只个股标注所属国家。可在上方搜索框查询。') }}
+    <a href="intl.html" style="color:var(--link);font-weight:600">← {{ t('Macro comparison', '宏观对比') }}</a></p>
+  {% else %}
+  <p class="muted small" style="margin:6px 0 0">{{ t('A side-by-side health check on five major economies outside the US/China bloc. Regime, recession & equity-risk reads are descriptive and history-anchored (display-only, never a scored buy/sell). Macro is keyless (FRED OECD + ECB); some CPI prints lag and Taiwan is data-limited — shown honestly with as-of dates.', '对美中之外五大经济体的并排健康检查。周期、衰退与股市风险读数均为描述性、以历史锚定（仅供展示，不构成买卖评分）。宏观数据无需密钥（FRED OECD + ECB）；部分 CPI 数据滞后，台湾数据受限 — 均如实标注截至日期。') }}
+    <a href="intl_stocks.html" style="color:var(--link);font-weight:600">→ {{ t('Stock dashboard', '股票看板') }}</a></p>
+  {% endif %}
+</div>
+
+{% if mode != 'stocks' %}{# ================= MACRO COMPARISON ================= #}
+
+<!-- ===== Global hero ===== -->
+<div class="panel">
+  <div class="row" style="gap:22px">
+    <div>
+      <h2 style="margin-bottom:4px">{{ t('Global read', '全局读数') }}</h2>
+      <div style="font-size:18px;font-weight:800">{{ t('Dominant regime', '主导周期') }}: {{ td(S.dominant_quad) }}</div>
+    </div>
+    <span style="flex:1"></span>
+    <div><div class="muted small">{{ t('Economies', '经济体') }}</div><b style="font-size:20px">{{ S.n }}</b></div>
+    <div><div class="muted small">{{ t('Recession-watch', '衰退观察') }}</div><b style="font-size:20px" class="{{ 'neg' if S.recession_watch else '' }}">{{ S.recession_watch }}</b></div>
+    <div><div class="muted small">{{ t('Equity drawdown-watch', '股市回撤观察') }}</div><b style="font-size:20px" class="{{ 'neg' if S.drawdown_watch else '' }}">{{ S.drawdown_watch }}</b></div>
+    <div><div class="muted small">{{ t('Avg recession score', '平均衰退分') }}</div><b style="font-size:20px">{{ num(S.avg_recession, '', 0) }}</b></div>
+  </div>
+</div>
+
+<!-- ===== Comparison grid (centerpiece) ===== -->
+<div class="panel">
+  <h2>{{ t('Cross-country comparison', '跨国对比') }} {{ help('Every economy on the same axes. Regime = growth×inflation quad (with confidence). Recession & drawdown-risk are 0-100 history-anchored display gauges. Real yield = 10y − latest CPI. CPI/GDP/unemployment show the latest official print with its as-of month (greyed when stale — FRED OECD series are discontinued for several economies).', '所有经济体使用相同坐标轴。周期 = 增长×通胀象限（含置信度）。衰退与回撤风险为 0-100 历史锚定展示型刻度。实际收益 = 10年 − 最新 CPI。CPI/GDP/失业率显示最新官方数据及截至月份（滞后则置灰 — 多国 FRED OECD 序列已停更）。') }}</h2>
+  <div class="gridwrap">
+  <table class="cmp">
+    <thead><tr>
+      <th class="l eco">{{ t('Economy', '经济体') }}</th>
+      <th class="l">{{ t('Regime', '周期') }}</th>
+      <th class="grp">{{ t('Recession', '衰退') }}</th>
+      <th class="grp">{{ t('Policy', '政策利率') }}</th>
+      <th>{{ t('10y', '10年') }}</th>
+      <th>{{ t('Curve', '曲线') }}</th>
+      <th>{{ t('Real 10y', '实际10年') }}</th>
+      <th class="grp">{{ t('CPI', 'CPI') }}</th>
+      <th>{{ t('GDP', 'GDP') }}</th>
+      <th>{{ t('Unemp', '失业') }}</th>
+      <th class="grp">{{ t('FX 3m', '汇率3月') }}</th>
+      <th>{{ t('Off high', '距高点') }}</th>
+      <th>{{ t('DD risk', '回撤风险') }}</th>
+      <th class="l">{{ t('Equity stretch', '股市拉伸') }}</th>
+    </tr></thead>
+    <tbody>
+    {% for r in records %}
+      {% set m = r.macro %} {% set e = r.equity %} {% set af = r.macro_asof %}
+      <tr>
+        <td class="l eco"><span class="flg">{{ r.flag }}</span>{{ t(r.name, r.name_zh) }}{% if r.data_limited %} <span class="chip caut" title="thin keyless macro">{{ t('data-limited', '数据有限') }}</span>{% endif %}</td>
+        <td class="l"><span class="quad q-{{ r.quad }}">{{ td(r.quad_name) }}</span> <span class="muted small">{{ num(r.confidence,'',2) }}</span></td>
+        <td class="grp"><span class="gbar"><span class="gfill g-{{ r.recession_band }}" style="width:{{ r.recession_score or 0 }}%"></span></span>{{ num(r.recession_score,'',0) }}</td>
+        <td class="grp">{{ num(m.policy_rate,'%',2) }}</td>
+        <td>{{ num(m.yield_10y,'%',2) }}</td>
+        <td class="{{ 'neg' if m.curve is not none and m.curve < 0 }}">{{ num(m.curve,'',2) }}</td>
+        <td>{{ num(m.real_yield,'',2) }}</td>
+        <td class="grp">{{ num(m.cpi_yoy,'%',1) }}{% if af.cpi_yoy %}<span class="stale"> {{ af.cpi_yoy }}</span>{% endif %}</td>
+        <td>{{ num(m.gdp_yoy,'%',1) }}</td>
+        <td>{{ num(m.unemployment,'%',1) }}</td>
+        <td class="grp {{ 'neg' if m.fx_strength_3m is not none and m.fx_strength_3m < 0 else 'pos' if m.fx_strength_3m }}">{{ num(m.fx_strength_3m,'%',1) }}</td>
+        <td class="{{ 'neg' if e.off_52w_high is not none and e.off_52w_high < -5 }}">{{ num(e.off_52w_high,'%',1) }}</td>
+        <td><span class="gbar"><span class="gfill g-{{ e.drawdown_band }}" style="width:{{ e.drawdown_risk or 0 }}%"></span></span>{{ num(e.drawdown_risk,'',0) }}</td>
+        <td class="l">{% if e.ext_grade == 'parabolic' %}<span class="chip warn">{{ t('parabolic', '抛物') }}</span>{% elif e.ext_grade == 'stretched' %}<span class="chip caut">{{ t('stretched', '拉伸') }}</span>{% elif e.bubble_flag %}<span class="chip caut">{{ t('hot', '过热') }}</span>{% else %}<span class="muted small">{{ t('normal', '正常') }}</span>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p class="caveat" style="margin-top:9px">{{ t('Display-only / descriptive — no per-country forward backtest is claimed and nothing here feeds a scored signal. No keyless implied-vol exists for these markets, so equity stretch uses own-history extension (in-trend / stretched / parabolic).', '仅供展示 / 描述性 — 不作任何分国前瞻回测主张，亦不构成评分信号。这些市场无免密钥隐含波动率，故股市拉伸采用自身历史的扩张度（趋势内／拉伸／抛物）。') }}</p>
+</div>
+
+<!-- ===== Regime heatmap (growth × inflation) ===== -->
+<div class="panel">
+  <h2>{{ t('Regime map — growth × inflation', '周期图 — 增长 × 通胀') }}</h2>
+  <div class="scatter">
+    <div class="axx"></div><div class="axy"></div>
+    <div class="ql" style="left:6px;top:6px">↖ {{ t('Stagflation', '滞胀') }}</div>
+    <div class="ql" style="right:6px;top:6px">{{ t('Reflation', '再通胀') }} ↗</div>
+    <div class="ql" style="left:6px;bottom:6px">↙ {{ t('Growth-scare', '增长恐慌') }}</div>
+    <div class="ql" style="right:6px;bottom:6px">{{ t('Goldilocks', '金发女孩') }} ↘</div>
+    {% for h in heatmap %}
+      {% set gx = ((h.growth or 0) + 1) / 2 * 100 %}
+      {% set iy = (1 - ((h.inflation or 0) + 1) / 2) * 100 %}
+      <div class="pt" style="left:{{ '%.1f'|format(gx) }}%;top:{{ '%.1f'|format(iy) }}%" title="{{ h.name }}: g={{ h.growth }} i={{ h.inflation }}">
+        <div class="e">{{ h.flag }}</div><div class="n">{{ h.cc }}</div>
+      </div>
+    {% endfor %}
+  </div>
+  <p class="caveat" style="margin-top:8px">{{ t('Horizontal = growth score, vertical = inflation score (−1…+1). Most economies cluster risk-on (growth positive); the inflation axis leans on each economy current CPI direction where fresh, plus oil and the long-yield trend.', '横轴 = 增长得分，纵轴 = 通胀得分（−1…+1）。多数经济体聚集于风险偏好区（增长为正）；通胀轴在数据新鲜处采用各自当前 CPI 方向，并结合油价与长端收益趋势。') }}</p>
+</div>
+
+<!-- ===== Rankings ===== -->
+<div class="panel">
+  <h2>{{ t('Where each economy ranks', '各经济体排名') }}</h2>
+  <div class="ranks">
+    {% for key in ['recession_score','drawdown_risk','real_yield','yield_10y'] %}
+      {% set rk = rankings.get(key) %}
+      {% if rk %}
+      <div>
+        <h3>{{ t(rk.label_en, rk.label_zh) }}</h3>
+        {% set vals = rk.rows | map(attribute='value') | list %}
+        {% set vmax = vals | map('abs') | max %}
+        {% for row in rk.rows %}
+          <div class="rb"><span class="flg">{{ row.flag }}</span><span style="width:54px" class="muted">{{ row.cc }}</span>
+            <span class="bar"><span class="bf" style="width:{{ '%.0f'|format((row.value|abs) / (vmax or 1) * 100) }}%;background:{{ 'var(--down)' if rk.risk_high else 'var(--up)' }}"></span></span>
+            <span class="v">{{ '%.1f'|format(row.value) }}</span></div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ===== Eurozone periphery ===== -->
+{% if periphery %}
+<div class="panel">
+  <h2>🇪🇺 {{ t('Eurozone fragmentation — peripheral spreads over Bund', '欧元区分化 — 外围国相对德债利差') }} {{ help('Peripheral 10y yields minus the German Bund, in basis points. Widening = stress / fragmentation risk in the periphery; tightening = convergence. The classic Eurozone tail-risk gauge.', '外围国 10 年期收益率减德国国债，单位基点。走阔 = 外围压力／分化风险；收窄 = 收敛。经典的欧元区尾部风险指标。') }}</h2>
+  <table class="sb">
+    <thead><tr><th class="l">{{ t('Spread', '利差') }}</th><th>{{ t('bps', '基点') }}</th><th>{{ t('3m change', '3月变化') }}</th><th class="l">{{ t('Read', '读数') }}</th></tr></thead>
+    <tbody>
+    {% for sp in periphery.spreads %}
+      <tr>
+        <td class="l"><span class="flg">{{ sp.flag }}</span>{{ sp.label }}</td>
+        <td>{{ num(sp.bps,' bps',0) }}</td>
+        <td class="{{ 'neg' if sp.widening else 'pos' }}">{% if sp.chg3m_bps is not none %}{{ '%+.0f'|format(sp.chg3m_bps) }}{% else %}—{% endif %}</td>
+        <td class="l">{% if sp.widening %}<span class="chip caut">{{ t('widening', '走阔') }}</span>{% else %}<span class="chip ok">{{ t('tightening', '收窄') }}</span>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="caveat" style="margin-top:7px">{{ t('As of', '截至') }} {{ periphery.asof }} · {{ t('display-only context', '仅供参考的背景') }}</p>
+</div>
+{% endif %}
+
+<!-- ===== Honesty footer ===== -->
+<div class="panel">
+  <h2>{{ t('Method & honest limits', '方法与诚实声明') }}</h2>
+  <ul class="small muted" style="margin:0;padding-left:18px;line-height:1.7">
+    <li>{{ t('All keyless: equity indices & FX via Yahoo; macro via FRED OECD/ECB CSV; the stock universe via iShares UCITS holdings files.', '全部免密钥：股指与汇率来自 Yahoo；宏观来自 FRED OECD/ECB CSV；个股范围来自 iShares UCITS 持仓文件。') }}</li>
+    <li>{{ t('Regime / recession / drawdown / bubble reads are descriptive and history-anchored — no forward edge is claimed and none drives a scored buy/sell.', '周期／衰退／回撤／泡沫读数均为描述性且以历史锚定 — 不主张前瞻优势，且不驱动评分买卖。') }}</li>
+    <li>{{ t('CPI: FRED OECD series are discontinued for Japan (2021) and lag for the UK/Korea — shown with as-of dates and dropped from scoring when stale. Eurozone uses current Eurostat HICP.', 'CPI：日本（2021 年）FRED OECD 序列已停更，英国／韩国滞后 — 标注截至日期并在过时时退出评分。欧元区采用当前 Eurostat HICP。') }}</li>
+    <li>{{ t('Taiwan has the thinnest keyless macro coverage (no yields/CPI on FRED) — flagged data-limited; its read leans on the equity tape.', '台湾的免密钥宏观覆盖最薄（FRED 无收益率/CPI）— 标注数据有限；其读数依赖股市行情。') }}</li>
+    <li>{{ t('No keyless implied-vol (VSTOXX / Nikkei-VI / VKOSPI) is available, so equity risk uses realised vol + own-history extension.', '无免密钥隐含波动率（VSTOXX / 日经VI / VKOSPI），故股市风险采用已实现波动率 + 自身历史扩张度。') }}</li>
+  </ul>
+</div>
+
+{% else %}{# ================= STOCK DASHBOARD ================= #}
+
+<!-- ===== What to act on now (sector board) ===== -->
+<div class="panel">
+  <h2>{{ t('What to act on now — sector rotation', '现在该关注什么 — 板块轮动') }} {{ help('Region × GICS-sector equal-weight baskets built from the pooled universe constituents, ranked by 3-month relative strength. Each row is flagged by market so you know where the sector is (the buyable analogue is a country/regional sector ETF). Display-only RS — not a forward-edge claim.', '由汇总成分股构建的 地区 × GICS 板块 等权篮子，按 3 个月相对强弱排名。每行标注所属市场（可买入的对应物为相应国家／地区的板块 ETF）。仅展示相对强弱 — 非前瞻收益主张。') }}</h2>
+  {% if sector_board %}
+  <table class="sb sortable">
+    <thead><tr><th>#</th><th class="l">{{ t('Market', '市场') }}</th><th class="l">{{ t('Sector', '板块') }}</th><th>{{ t('60d', '60日') }}</th><th>{{ t('20d', '20日') }}</th><th>{{ t('Trend', '趋势') }}</th><th>{{ t('Names', '数量') }}</th></tr></thead>
+    <tbody>
+    {% for s in sector_board %}
+      <tr class="{{ 'hidden sbmore' if loop.index > 14 }}">
+        <td>{{ s.rank }}</td>
+        <td class="l"><span class="flg">{{ s.flag }}</span>{{ s.market }}</td>
+        <td class="l">{{ s.sector }}</td>
+        <td class="{{ 'pos' if s.mom_60d > 0 else 'neg' }}">{{ '%+.1f'|format(s.mom_60d) }}%</td>
+        <td class="{{ 'pos' if s.mom_20d > 0 else 'neg' }}">{{ '%+.1f'|format(s.mom_20d) }}%</td>
+        <td>{% if s.above_trend %}<span class="chip ok">{{ t('up', '上') }}</span>{% else %}<span class="chip">{{ t('down', '下') }}</span>{% endif %}</td>
+        <td>{{ s.n }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if sector_board|length > 14 %}<button class="more-btn" data-more="sbmore">{{ t('Show all', '显示全部') }} ({{ sector_board|length }})</button>{% endif %}
+  {% else %}<p class="muted small">{{ t('Sector board unavailable.', '板块数据不可用。') }}</p>{% endif %}
+</div>
+
+<!-- ===== Standout stocks ===== -->
+<div class="panel">
+  <h2>{{ t('Standout individual stocks', '个股精选') }} {{ help('Pooled from every market top constituents, ranked by sector-neutral residual momentum computed within each name own market (alpha-led, with the cycle entry as timing). Flagged by country. A relative-strength lens — not a forward-edge claim.', '汇集各市场主要成分股，按各自市场内部的板块中性残差动量排名（阿尔法主导，周期入场为时机）。标注国家。相对强弱视角 — 非前瞻收益主张。') }}</h2>
+  {% set buys = (setups.buy if setups else []) %}
+  {% if buys %}
+  <div class="cards">
+    {% for b in buys %}
+    <a class="card {{ 'hidden stmore' if loop.index > 12 }}" href="intl_stock.html#{{ b.ticker }}">
+      <div class="hd"><span class="flg">{{ b.flag }}</span><span class="tk">{{ b.ticker }}</span>
+        <span style="flex:1"></span>
+        {% if b.dir %}<span class="lad {{ b.dir }}">{{ b.label or b.state }}</span>{% endif %}</div>
+      <div class="muted small" style="margin:3px 0">{{ b.name }}{% if b.sector %} · {{ b.sector }}{% endif %}</div>
+      {% if b.spark_svg %}{{ b.spark_svg|safe }}{% endif %}
+      <div class="row small" style="gap:10px;margin-top:5px">
+        {% if b.alpha is defined and b.alpha is not none %}<span>α <b>{{ '%+.2f'|format(b.alpha) }}</b></span>{% endif %}
+        {% if b.price is not none %}<span class="muted">{{ b.price }}</span>{% endif %}
+        {% if b.off_high is not none %}<span class="muted">{{ '%.0f'|format(b.off_high) }}% {{ t('off high', '距高') }}</span>{% endif %}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% if buys|length > 12 %}<button class="more-btn" data-more="stmore">{{ t('Show more', '显示更多') }} ({{ buys|length }})</button>{% endif %}
+  <p class="caveat" style="margin-top:10px">{{ t('Standout within its own market — alpha is sector-neutral residual momentum computed per market, never pooled raw across currencies. Click a card for the full cycle / momentum breakdown.', '相对其所在市场的精选 — 阿尔法为各市场内部计算的板块中性残差动量，绝不跨币种原始汇总。点击卡片查看完整周期／动量拆解。') }}</p>
+  {% else %}<p class="muted small">{{ t('Standouts unavailable — universe still building.', '精选不可用 — 个股库构建中。') }}</p>{% endif %}
+</div>
+
+{% endif %}
+
+<script>
+document.querySelectorAll('.more-btn[data-more]').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('.' + btn.dataset.more).forEach(function(el){ el.classList.remove('hidden'); });
+    btn.style.display = 'none';
+  });
+});
+</script>
+<script src="theme.js"></script>
+<script src="tablesort.js"></script>
+</body>
+</html>

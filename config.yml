@@ -2859,3 +2859,161 @@ canada:
       forward_days: [21, 63]
       ladder_fwd: 21
       ladder_step: 10
+
+# ===========================================================================
+# International economies — holistic COMPARATIVE dashboard (Japan / South Korea
+# / Taiwan / United Kingdom / Eurozone). ONE vertical, uniform multi-country
+# engine so economies sit side-by-side on the SAME axes (not five Canada
+# clones). All keyless: yfinance (indices/vol/FX), FRED OECD CSV + ECB (macro),
+# UK-domiciled iShares UCITS holdings CSVs (stock universe, same ajax pattern as
+# the canada XIC). Every regime/recession/drawdown/bubble read is DISPLAY-ONLY
+# (history-anchored, never a scored signal). Europe = Eurozone aggregate + a
+# Germany-vs-Italy (BTP-Bund) periphery-fragmentation read; stocks pan-European
+# with per-country flags. Taiwan macro is thin on keyless sources -> degrades.
+# ===========================================================================
+intl:
+  # -- Plane A: prices (group=intl) — yfinance indices + vol + FX -------------
+  yahoo:
+    retries: 3
+    backoff_base_s: 5
+    batch_size: 40
+
+  # -- Plane B: macro — FRED OECD CSV + ECB (group=intl_macro) ----------------
+  # Per-series degrade (one bad id can't kill the plane); FRED CSV is keyless.
+  # Stored col = "<CC>_<metric>" per country plus the shared `extra_series`.
+  macro:
+    fred_base_url: https://fred.stlouisfed.org/graph/fredgraph.csv
+    retries: 3
+    extra_series:                  # stored_col: FRED id (Eurozone policy/liquidity, periphery, US anchor)
+      ez_depo_rate: ECBDFR         # ECB deposit facility rate (policy)
+      ez_refi_rate: ECBMRRFR       # ECB main refinancing rate
+      ez_cb_assets: ECBASSETSW     # ECB total assets (EZ liquidity)
+      de_10y: IRLTLT01DEM156N      # Bund 10y (periphery base)
+      it_10y: IRLTLT01ITM156N      # BTP 10y (it_10y - de_10y = BTP-Bund fragmentation)
+      es_10y: IRLTLT01ESM156N      # Bonos 10y (periphery context)
+      fr_10y: IRLTLT01FRM156N      # OAT 10y
+      us_10y: DGS10                # US anchor (global rate compare)
+      us_2y: DGS2
+
+  # -- Stock-search universe (collectors/intl_universe.py) --------------------
+  # UK-domiciled iShares UCITS holdings CSVs (keyless ajax, same as canada XIC).
+  # CSV columns Ticker/Name/Sector(GICS)/Location/Exchange -> Yahoo suffix +
+  # country flag per row. Combined members + closes committed (small) like
+  # canada_search. size = top-N per fund by index weight.
+  search_universe:
+    enabled: true
+    size: 220                       # top-N per market by index weight
+    history_period: "5y"
+    min_coverage: 0.5
+    ajax_holdings_id: "1472631233320"   # stable UK-site holdings loader id (self-heal: scrape page for [0-9]+\.ajax)
+
+  # -- Countries (5 macro entities; Europe = Eurozone aggregate) --------------
+  # Each: display, primary index + extras (yfinance), optional vol index, FX
+  # pair (+ invert when quoted USD/XXX so "up = currency weaker = stress"),
+  # the iShares UCITS universe fund, and FRED macro ids (degrade where absent).
+  countries:
+    JP:
+      name: Japan
+      name_zh: 日本
+      flag: "🇯🇵"
+      region: Asia
+      index: "^N225"
+      indices: {"^N225": Nikkei 225}
+      vol: null                     # no keyless implied-vol on Yahoo -> engine uses realized vol
+      fx: "USDJPY=X"
+      fx_invert: true               # USD/JPY up = JPY weaker = stress
+      ucits: {product_id: "251866", file_name: IJPN, suffix: ".T", slug: "ishares-msci-japan-ucits-etf-inc-fund"}
+      fred:
+        yield_10y: IRLTLT01JPM156N
+        short_3m: IR3TIB01JPM156N
+        cpi_yoy: CPALTT01JPM659N
+        unemployment: LRHUTTTTJPM156S
+        gdp: JPNRGDPEXP
+        m2: MYAGM2JPM189S
+    KR:
+      name: South Korea
+      name_zh: 韩国
+      flag: "🇰🇷"
+      region: Asia
+      index: "^KS11"
+      indices: {"^KS11": KOSPI}
+      vol: null
+      fx: "USDKRW=X"
+      fx_invert: true
+      ucits: {product_id: "251871", file_name: IKOR, suffix: ".KS", slug: "ishares-msci-korea-ucits-etf-inc-fund"}
+      fred:
+        yield_10y: IRLTLT01KRM156N
+        short_3m: IR3TIB01KRM156N
+        cpi_yoy: CPALTT01KRM659N
+        unemployment: LRHUTTTTKRM156S
+        gdp: NGDPRSAXDCKRQ
+        m2: MYAGM2KRM189S
+    TW:
+      name: Taiwan
+      name_zh: 台湾
+      flag: "🇹🇼"
+      region: Asia
+      index: "^TWII"
+      indices: {"^TWII": TAIEX}
+      vol: null
+      fx: "USDTWD=X"
+      fx_invert: true
+      ucits: {product_id: "251878", file_name: ITWN, suffix: ".TW", slug: "ishares-msci-taiwan-ucits-etf"}
+      fred:                          # Taiwan is sparse on keyless macro sources (honest data gap)
+        cpi_yoy: TWNCPIALLMINMEI
+    GB:
+      name: United Kingdom
+      name_zh: 英国
+      flag: "🇬🇧"
+      region: Europe
+      index: "^FTSE"
+      indices: {"^FTSE": FTSE 100, "^FTMC": FTSE 250}
+      vol: null
+      fx: "GBPUSD=X"
+      fx_invert: false              # GBP/USD up = GBP stronger = risk-on
+      ucits: {product_id: "251795", file_name: ISF, suffix: ".L", slug: "ishares-ftse-100-ucits-etf-inc-fund"}
+      fred:
+        yield_10y: IRLTLT01GBM156N
+        short_3m: IR3TIB01GBM156N
+        cpi_yoy: CPALTT01GBM659N
+        unemployment: LRHUTTTTGBM156S
+        gdp: NGDPRSAXDCGBQ
+        m2: MABMM301GBM189S
+    EZ:
+      name: Eurozone
+      name_zh: 欧元区
+      flag: "🇪🇺"
+      region: Europe
+      index: "^STOXX"
+      indices: {"^STOXX": STOXX Europe 600, "^STOXX50E": Euro Stoxx 50, "^GDAXI": DAX, "^FCHI": CAC 40}
+      vol: null                     # VSTOXX not on Yahoo keyless -> engine uses realized vol
+      fx: "EURUSD=X"
+      fx_invert: false
+      ucits: {product_id: "251860", file_name: IMEU, suffix: "", slug: "ishares-msci-europe-ucits-etf-inc-fund"}
+      fred:
+        yield_10y: IRLTLT01EZM156N
+        short_3m: IR3TIB01EZM156N
+        cpi_yoy: CP0000EZ19M086NEST   # Eurostat HICP index (current; engine auto-computes YoY)
+        unemployment: LRHUTTTTEZM156S
+        gdp: CLVMNACSCAB1GQEA19
+        m2: MYAGM2EZM196N
+
+  # -- Engine (uniform across countries) --------------------------------------
+  engine:
+    scoring: {slope_window: 20, baseline_window: 60, z_threshold: 0.45, min_components: 2}
+    quad: {hysteresis_days: 7, shock_override_z: 0.85}
+    recession:                      # DISPLAY-ONLY composite (history-anchored bands, no forward edge claimed)
+      unemp_window_d: 126           # ~6mo change in unemployment (Sahm-lite uptrend)
+      drawdown_window_d: 252        # equity drawdown from 1y high
+      elevated_band: 45             # composite >= -> "watch"
+      high_band: 65                 # composite >= -> "elevated"
+    equity_risk:
+      high_window_d: 252
+      extension_window: 20          # short-horizon stretch
+      extension_baseline_d: 252     # vs own 1y history
+      froth_band: 1.5               # extension-z >= -> "stretched"
+      bubble_band: 2.0              # extension-z >= -> "parabolic"
+    rs_ranking:                     # sector-rotation board (computed from universe baskets)
+      momentum_windows: [20, 60]
+      trend_window: 120
+      percentile_lookback_d: 252
