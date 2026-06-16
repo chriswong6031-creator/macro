@@ -120,6 +120,26 @@ def current_vix_context() -> dict | None:
     return vctx or None
 
 
+def current_calm(bench: pd.Series | None) -> float | None:
+    """The live `calm` regime score in [0,1] the Conviction EDGE axis uses to scale the
+    residual-momentum leg (engine.stock_score._edge_weights). This is the SAME causal
+    price-tape regime validated in scripts.conviction_v2_regime — trend (SPY vs its 200dma)
+    AND realized-vol (trailing 63d vs its 1y median) — so the live tilt matches the backtest.
+    Returns {0, 0.5, 1.0}: both calm -> 1 (momentum up-weighted), one -> 0.5, both stress ->
+    0 (momentum pulled back, the SUE event edge leads). None when SPY history is too short."""
+    if bench is None or len(bench) < 220:
+        return None
+    c = pd.to_numeric(bench, errors="coerce").dropna()
+    if len(c) < 220:
+        return None
+    sma200 = c.rolling(200).mean()
+    trend_up = bool(c.iloc[-1] >= sma200.iloc[-1])
+    rvol = c.pct_change().rolling(63).std()
+    rvol_med = rvol.rolling(252, min_periods=120).median()
+    lo_vol = bool(rvol.iloc[-1] <= rvol_med.iloc[-1]) if pd.notna(rvol_med.iloc[-1]) else trend_up
+    return 0.5 * float(trend_up) + 0.5 * float(lo_vol)
+
+
 def _limited_rec(ticker: str, c: pd.Series, name: str, sector: str) -> dict:
     """A minimal, honest record for a curated extra too new for the cycle model
     (a days-old IPO). Carries enough for search + the page's renderLimited
@@ -391,6 +411,10 @@ def main() -> int:
     # benchmark for per-ticker relative-strength alerts + the feed window/caps
     spy = store.read("yahoo", "SPY")
     bench = spy["close"] if spy is not None else None
+    # live calm/risk-on regime score (validated price tape) — scales the Conviction EDGE
+    # axis's residual-momentum leg up in calm tape, back toward zero in stress.
+    calm = current_calm(bench)
+    log.info("conviction regime: calm=%s", "n/a" if calm is None else f"{calm:.2f}")
     acfg = config.load().get("alerts", {})
     a_days = int(acfg.get("ticker_timeline_days", 120))
     a_max = int(acfg.get("ticker_max_events", 50))
@@ -588,7 +612,8 @@ def main() -> int:
         norm = stock_score.normalize_rec(
             rec, "US", sue=sue_z.get(ticker), insider_bps=ins_bps,
             revision_z=revision_z.get(ticker), basket=basket_tw.get(ticker))
-        prof = stock_score.conviction_profile(norm, "US", ctx={"as_of": alpha_asof, "gate_go": gate_go})
+        prof = stock_score.conviction_profile(
+            norm, "US", ctx={"as_of": alpha_asof, "gate_go": gate_go, "regime": {"calm": calm}})
         rec["conviction"] = prof
         profiles[ticker] = prof
         _tech = rec.get("tech") or {}

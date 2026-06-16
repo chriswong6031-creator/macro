@@ -258,3 +258,59 @@ def test_logistic_monotone_and_bounded():
     assert ss._logistic_0_100(-5) < ss._logistic_0_100(0) < ss._logistic_0_100(5)
     assert 0 <= ss._logistic_0_100(-10) <= 100
     assert ss._logistic_0_100(None) is None
+
+
+# --- v3: regime-conditional EDGE weighting ----------------------------------
+def test_edge_weights_default_is_v2_base():
+    # no regime supplied -> byte-identical to the v2 base weights (backward-compatible)
+    assert ss._edge_weights(None) == ss._EDGE_W
+    assert ss._edge_weights(None)["mom"] == ss._EDGE_W["mom"]
+
+
+def test_edge_weights_momentum_scales_with_calm():
+    # calm tape up-weights momentum; stress pulls it toward zero; the validated event
+    # legs (SUE/insider/revision) are NEVER scaled down.
+    calm, stress = ss._edge_weights(1.0), ss._edge_weights(0.0)
+    assert calm["mom"] > stress["mom"]
+    assert calm["mom"] == pytest.approx(ss._MOM_W_CALM)
+    assert stress["mom"] == pytest.approx(ss._MOM_W_STRESS)
+    for k in ("sue", "insider", "revision"):
+        assert calm[k] == stress[k] == ss._EDGE_W[k]
+
+
+def test_momentum_name_ranks_higher_in_calm_than_stress():
+    # a strong-momentum, no-event US name scores a higher EDGE in a calm tape than in
+    # stress (the regime tilt) — the central v3 behaviour.
+    rec = {"alpha": 2.5}
+    z_calm, _ = ss._axis_selection(rec, "US", 1.0)
+    z_stress, _ = ss._axis_selection(rec, "US", 0.0)
+    z_none, _ = ss._axis_selection(rec, "US", None)
+    assert z_calm > z_stress
+    assert z_stress is not None and z_calm is not None
+    # the v2 default (mom 0.10) sits between the stress floor and the calm ceiling
+    assert z_stress <= z_none <= z_calm + 1e-9
+
+
+def test_regime_does_not_move_a_pure_event_name():
+    # a name carried only by SUE (no momentum leg) is regime-invariant — we only scale
+    # the momentum leg, never the validated event core.
+    rec = {"sue": 2.5}
+    z_calm, _ = ss._axis_selection(rec, "US", 1.0)
+    z_stress, _ = ss._axis_selection(rec, "US", 0.0)
+    assert z_calm == pytest.approx(z_stress)
+
+
+def test_regime_tilt_banner_states():
+    assert ss._regime_tilt("US", 1.0)["state"] == "calm"
+    assert ss._regime_tilt("US", 0.0)["state"] == "stress"
+    assert ss._regime_tilt("US", 0.5)["state"] == "mixed"
+    # ex-US / no-regime -> no banner (only US conditions on the live tape)
+    assert ss._regime_tilt("CA", 1.0) is None
+    assert ss._regime_tilt("US", None) is None
+
+
+def test_profile_carries_regime_banner():
+    p = ss.conviction_profile(_rec(), "US", ctx={"regime": {"calm": 1.0}})
+    assert p["regime"] is not None and p["regime"]["state"] == "calm"
+    # no regime in ctx -> no banner, and behaviour unchanged
+    assert ss.conviction_profile(_rec(), "US")["regime"] is None
