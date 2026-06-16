@@ -1565,6 +1565,118 @@
   </div>
   {% endif %}{# /mode != stocks — macro group 1 (regime, index health, nowcast, news) #}
 
+  <!-- ===== REGIME SNAP / RELIEF RADAR (display-only velocity complement) ===== -->
+  {% if mode != 'stocks' %}
+  <div class="panel span12" id="relief-radar">
+    <h2>⚡ {{ t('Relief radar: regime-snap detector', '反弹雷达：周期急转探测器') }}
+      {{ help("A fast 'is the regime snapping risk-on RIGHT NOW' radar — the velocity complement to the Fear↔Euphoria level read below. It fires when the cross-asset RORO complex flips risk-on hard and broadly (RORO velocity in its top decile AND several legs flipping together) coming OUT of a capitulation washout — the relief-rally fingerprint. VERIFIED on 55 years: it lights up on every canonical relief (COVID, the 2022 CPI relief, SVB, the 2024 carry-unwind snapback, the 2026-06 relief) but its forward returns are about the base rate — it is COINCIDENT, not predictive. So it is an ATTENTION radar that compresses reaction time (you see the snap on day 1, before slow technicals confirm), NEVER a buy/size signal. Zero new data, never scored — nothing in the quad, macro-risk or any axis reads it.", "一个'周期此刻是否正急转向风险偏好'的快速雷达 — 是下方恐惧↔欣喜水平读数的速度补充。当跨资产 RORO 综合急速且广泛地转向风险偏好（RORO 速度处于最高十分位 且 多项分量同时转向），且发生在一次投降清洗之后时触发 — 这是反弹行情的指纹。经 55 年验证：它在每一次标志性反弹（新冠、2022 年 CPI 反弹、SVB、2024 年套利平仓反弹、2026 年 6 月反弹）都会亮起，但其前瞻收益约等于基准 — 它是同步的，而非预测性的。因此它是压缩反应时间的注意力雷达（第一天就看到急转，先于滞后的技术指标），绝非买入／仓位信号。零新增数据、从不评分 — 象限、宏观风险与任何轴都不读取它。") }}
+      <a href="#fear-euphoria" class="muted" style="font-size:12px;font-weight:400;float:right">{{ t('regime level →', '周期水平 →') }}</a>
+    </h2>
+    <p class="muted sm" style="margin:-4px 0 10px">{{ t('An attention radar, not a buy signal — verified coincident (forward returns about the base rate). It flags a fast risk-on snap out of a washout; it does not predict the snap will last.', '这是注意力雷达而非买入信号 — 经验证为同步（前瞻收益约等于基准）。它标记从清洗中快速转向风险偏好的急转；并不预测急转能否持续。') }}</p>
+    {% if regime_snap %}
+    {% set RS = regime_snap %}
+    {% set _velp = ((RS.vel_pctile*100)|round|int) if RS.vel_pctile is not none else '—' %}
+    <div class="grid">
+
+      <!-- status banner -->
+      <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
+        {% if RS.status == 'firing' %}
+        <div style="font-weight:700">
+          <span style="font-size:18px">⚡ {{ t('Relief snap FIRING', '反弹急转 触发中') }}</span>
+          {% if RS.relief_magnitude is not none %}<span class="badge" style="font-size:11px;vertical-align:middle;background:var(--panel)">{{ t('premium unwinding', '溢价释放') }} {{ RS.relief_magnitude }}/100</span>{% endif %}
+          {% if RS.roro is not none %}<span class="muted sm" style="float:right">RORO {{ '%+.2f'|format(RS.roro) }}</span>{% endif %}
+        </div>
+        <div class="muted sm" style="margin-top:3px">{{ RS.legs_up }}/{{ RS.legs_total }} {{ t('cross-asset legs flipped risk-on', '项跨资产分量转向风险偏好') }} · {{ t('velocity', '速度') }} {{ _velp }}%ile · {{ t('out of a capitulation washout', '发生在投降清洗之后') if RS.cap_recent else t('no recent washout — lower quality', '近期无清洗 — 质量较低') }}</div>
+        {% elif RS.status == 'building' %}
+        <div style="font-weight:700">{{ t('Snap building — watch', '急转酝酿 — 留意') }}{% if RS.roro is not none %}<span class="muted sm" style="float:right">RORO {{ '%+.2f'|format(RS.roro) }}</span>{% endif %}</div>
+        <div class="muted sm" style="margin-top:3px">{{ t('Velocity in the top decile', '速度处于最高十分位') }} ({{ _velp }}%ile) · {{ RS.legs_up }}/{{ RS.legs_total }} {{ t('legs flipping', '项分量转向') }} · {{ t('full trigger not yet met', '完整触发尚未满足') }}</div>
+        {% else %}
+        <div style="font-weight:700">{{ t('No snap — quiet', '无急转 — 平静') }}{% if RS.roro is not none %}<span class="muted sm" style="float:right">RORO {{ '%+.2f'|format(RS.roro) }}</span>{% endif %}</div>
+        <div class="muted sm" style="margin-top:3px">{{ t('velocity', '速度') }} {{ _velp }}%ile{% if RS.days_since_last_snap is not none %} · {{ t('last snap', '上次急转') }} {{ RS.days_since_last_snap }} {{ t('sessions ago', '个交易日前') }}{% endif %}</div>
+        {% endif %}
+      </div>
+
+      <!-- trigger checklist (all four required) -->
+      <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
+        <div style="font-weight:700;margin-bottom:6px">{{ t('Trigger checklist', '触发条件') }} <span class="muted sm">{{ t('all four required', '需四项齐备') }}</span></div>
+        {% set G = RS.gates %}
+        <div class="muted sm" style="margin:4px 0">{{ '✓' if G.velocity else '·' }} {{ t('RORO velocity in top decile', 'RORO 速度处于最高十分位') }}</div>
+        <div class="muted sm" style="margin:4px 0">{{ '✓' if G.legs else '·' }} {{ t('at least', '至少') }} {{ RS.min_legs }}/{{ RS.legs_total }} {{ t('legs flip risk-on', '项分量转向风险偏好') }} <span class="muted">({{ t('now', '当前') }} {{ RS.legs_up }})</span></div>
+        <div class="muted sm" style="margin:4px 0">{{ '✓' if G.fear else '·' }} {{ t('comes out of a fear context', '处于恐惧环境之中') }}</div>
+        <div class="muted sm" style="margin:4px 0">{{ '✓' if G.washout else '·' }} {{ t('a capitulation washout printed (within ~1 month)', '近一个月内出现投降清洗') }}</div>
+      </div>
+
+      <!-- legs flipping risk-on -->
+      <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
+        <div style="font-weight:700;margin-bottom:6px">{{ t('Legs flipping risk-on', '正在转向风险偏好的分量') }} <span class="muted sm">{{ RS.legs_up }}/{{ RS.legs_total }}</span></div>
+        {% if RS.flipped_legs_named %}
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          {% for leg in RS.flipped_legs_named %}<span class="pill" style="background:var(--panel)">{{ t(leg.en, leg.zh) }}</span>{% endfor %}
+        </div>
+        {% else %}
+        <div class="muted sm">{{ t('none today', '今日无') }}</div>
+        {% endif %}
+        {% if RS.relief_magnitude is not none %}
+        <div class="muted sm" style="margin-top:8px">{{ t('Relief magnitude', '反弹幅度') }} {{ RS.relief_magnitude }}/100 — {{ t('the fear premium being unwound (a descriptor, NOT an expected return)', '正在释放的恐惧溢价（描述性指标，并非预期收益）') }}</div>
+        {% endif %}
+      </div>
+
+    </div>
+      {% if RS.status != 'dormant' %}
+      <!-- pre-decided playbook — response scaffold (firing/building only) -->
+      <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-top:10px">
+        <div style="font-weight:700;margin-bottom:6px">📋 {{ t('Pre-decided playbook', '预设行动方案') }} <span class="muted sm">{{ t('decide now, not in the gap-up', '此刻决定，而非急涨当下') }}</span></div>
+        <div class="muted sm" style="margin-bottom:8px">
+          {% if RS.status == 'firing' %}{{ t('Snap confirmed — execute your pre-decided response, but durability is unverified; run the checks before sizing up.', '急转确认 — 执行你预设的应对，但持续性未验证；加仓前先做检查。') }}
+          {% else %}{{ t('Snap building (full trigger not met) — decide your response now, so the next gap-up is execution, not deliberation.', '急转酝酿（完整触发未满）— 现在就决定应对，让下一个急涨成为执行而非临场决策。') }}{% endif %}
+        </div>
+        <div class="grid">
+          <div class="span6">
+            <div style="font-weight:500;margin-bottom:4px">{{ t('This read fades if', '以下情况则读数失效') }}</div>
+            <div class="muted sm" style="margin:3px 0">· {{ t('RORO velocity turns negative', 'RORO 速度转负') }}{% if RS.roro_velocity is not none %} <span class="muted">({{ t('now', '当前') }} {{ '%+.2f'|format(RS.roro_velocity) }})</span>{% endif %}</div>
+            <div class="muted sm" style="margin:3px 0">· {{ t('legs un-flip below', '分量回落至') }} {{ RS.min_legs }} <span class="muted">({{ t('now', '当前') }} {{ RS.legs_up }}/{{ RS.legs_total }})</span></div>
+            <div class="muted sm" style="margin:3px 0">· {{ t('fear re-builds', '恐惧重新累积') }}{% if RS.fear_rebuilding %} — ⚠ {{ t('already ticking up', '已在回升') }}{% endif %}</div>
+            {% if RS.vix_term is not none %}<div class="muted sm" style="margin:3px 0">· {{ t('VIX term back to backwardation', 'VIX 期限重回逆价') }} <span class="muted">(&gt;1.0; {{ t('now', '当前') }} {{ '%.2f'|format(RS.vix_term) }})</span></div>{% endif %}
+          </div>
+          <div class="span6">
+            <div style="font-weight:500;margin-bottom:4px">{{ t('Before sizing — durability checks', '加仓前 — 持续性检查') }} <span class="muted sm">{{ t('next: AI knife-vs-dip veto', '下一步：AI 真假反弹否决') }}</span></div>
+            <div class="muted sm" style="margin:3px 0">· {{ t('Catalyst structural (signed / policy) or just verbal?', '催化是结构性（签署／政策）还是仅口头？') }}</div>
+            <div class="muted sm" style="margin:3px 0">· {{ t('How much premium already unwound vs left?', '溢价已释放多少、还剩多少？') }}</div>
+            <div class="muted sm" style="margin:3px 0">· {{ t('Out of a real washout, or a shallow dip?', '源于真正清洗，还是浅回调？') }}</div>
+            <div class="muted sm" style="margin:3px 0">· {{ t('Does the cross-asset confirmation hold next session?', '跨资产确认能否延续到下一交易日？') }}</div>
+          </div>
+        </div>
+        {% if RS.veto %}
+        {% set V = RS.veto %}
+        {% set _leanzh = {'durable': '较持久', 'fragile': '脆弱', 'unclear': '不明朗'} %}
+        <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--line)">
+          <div style="font-weight:600">🤖 {{ t('AI durability read', 'AI 持续性研判') }} <span class="muted sm">{{ t('knife vs dip', '真假反弹') }}</span>
+            <span class="badge" style="font-size:11px;background:var(--panel);float:right">{{ t(V.lean, _leanzh.get(V.lean, V.lean)) }}{% if V.confidence %} · {{ V.confidence }}{% endif %}</span>
+          </div>
+          {% if V.read %}<div class="muted sm" style="margin:4px 0">{{ V.read }}</div>{% endif %}
+          {% if V.checks %}
+          <div class="muted sm" style="margin-top:2px">
+            {% if V.checks.catalyst %}· {{ t('catalyst', '催化') }}: {{ V.checks.catalyst }}<br>{% endif %}
+            {% if V.checks.premium %}· {{ t('premium', '溢价') }}: {{ V.checks.premium }}<br>{% endif %}
+            {% if V.checks.washout %}· {{ t('washout', '清洗') }}: {{ V.checks.washout }}<br>{% endif %}
+            {% if V.checks.follow_through %}· {{ t('follow-through', '延续') }}: {{ V.checks.follow_through }}{% endif %}
+          </div>
+          {% endif %}
+          <div class="muted sm" style="margin-top:4px;opacity:.7">{{ t('Context only — a fallible AI judgement, never scored or sized.', '仅供参考 — AI 的可错判断，从不评分或决定仓位。') }}</div>
+        </div>
+        {% endif %}
+        <div class="muted sm" style="margin-top:8px">{{ t('Where relief concentrates historically: modestly in high-beta and growth at about 1 month — NOT cyclical / small-cap, NOT the first week. Weak and unverified; do not assume a dash-for-trash.', '历史上反弹的集中处：约一个月维度略偏高贝塔与成长 — 并非周期／小盘，也不在第一周。微弱且未验证；勿臆断"垃圾普涨"。') }}</div>
+        <div class="muted sm" style="margin-top:4px;opacity:.75">{{ t('A decision scaffold, not a trade recommendation — the radar is coincident; size and instrument are your call (and the AI veto, next).', '决策脚手架，而非交易建议 — 雷达是同步的；仓位与标的由你（及下一步的 AI 否决）决定。') }}</div>
+      </div>
+      {% endif %}
+
+    <div class="muted sm" style="margin-top:8px">{{ t('Display-only · never scored. Verified on 55y: fires on every relief episode but forward returns about the base rate (coincident, not predictive). The durability call — relief vs dead-cat — is a separate step.', '纯展示 · 从不评分。经 55 年验证：在每一次反弹事件都会触发，但前瞻收益约等于基准（同步，而非预测）。持续性判断 — 真反弹还是死猫跳 — 是单独的步骤。') }}</div>
+    {% else %}
+    <p class="muted">{{ t('Building…', '构建中…') }}</p>
+    {% endif %}
+  </div>
+  {% endif %}{# /relief-radar — macro only #}
+
   <!-- ===== FEAR <-> EUPHORIA SYNTHESIS (display-only conditioning lens) ===== -->
   {% if mode != 'stocks' %}
   <div class="panel span12" id="fear-euphoria">

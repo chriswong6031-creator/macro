@@ -1342,6 +1342,45 @@ def fear_euphoria_synthesis(latest: dict, f: pd.DataFrame) -> dict | None:
         return None
 
 
+def regime_snap_view(cf: pd.DataFrame) -> dict | None:
+    """DISPLAY-ONLY relief-radar card payload: wraps engine.regime_snap.snap_snapshot
+    (the VELOCITY complement to the Fear<->Euphoria LEVEL read) and adds the
+    display-derived status, gate flags and localized leg names. Zero new data, never
+    scored — a render kwarg only. Verified COINCIDENT (~base-rate forward returns) so
+    it is an ATTENTION radar, not a buy signal. None on shortfall (never fatal)."""
+    try:
+        from engine import regime_snap
+        snap = regime_snap.snap_snapshot(cf)
+        if snap is None:
+            return None
+        c = regime_snap._cfg()
+        vp = snap.get("vel_pctile") or 0.0
+        if snap["snap"]:
+            snap["status"] = "firing"
+        elif vp >= c["vel_min_pctile"] and snap["legs_up"] >= 2:
+            snap["status"] = "building"          # thrust underway, full gate not met
+        else:
+            snap["status"] = "dormant"
+        snap["gates"] = {
+            "velocity": vp >= c["vel_min_pctile"],
+            "legs": snap["legs_up"] >= c["min_legs"],
+            "fear": (snap.get("fear_built") or 0.0) >= c["fear_min"],
+            "washout": bool(snap.get("cap_recent")),
+        }
+        snap["min_legs"] = int(c["min_legs"])
+        meta = {k: (en, zh) for k, en, zh in _FE_LEG_META}
+        snap["flipped_legs_named"] = [
+            {"key": k, "en": meta.get(k, (k, k))[0], "zh": meta.get(k, (k, k))[1]}
+            for k in snap.get("flipped_legs", [])]
+        rm = snap.get("relief_magnitude")
+        snap["magnitude_band"] = (None if rm is None
+                                  else "large" if rm >= 70 else "moderate" if rm >= 40 else "small")
+        return snap
+    except Exception as e:  # noqa: BLE001 — additive panel, never fatal
+        log.warning("regime-snap view failed: %s", e)
+        return None
+
+
 def _fmt_money_mn(v: float) -> str:
     """$ millions -> human string: 1234 -> +$1.2B, -87 -> -$87M."""
     if pd.isna(v):
@@ -2352,6 +2391,29 @@ def main() -> int:
     # Dashboard — the same dashboard.html.j2 is rendered twice with a `mode` flag
     # (macro / stocks) that selects which sections show. No data is recomputed and
     # the heavy page CSS lives in exactly one template.
+    # Relief-radar view (deterministic) + the TRIGGERED AI knife-vs-dip veto: the
+    # veto runs ONLY when a snap is firing/building (so ~never on a normal build) and
+    # is CONTEXT-ONLY — attached to the view for display, never read by any scorer.
+    _rs_view = regime_snap_view(_cf)
+    if _rs_view and _rs_view.get("status") != "dormant":
+        try:
+            from engine import regime_snap_veto
+            _rs_view["veto"] = regime_snap_veto.assess(
+                _rs_view,
+                drivers=latest.get("market_drivers"),
+                headlines=macro_news_data,
+                regime=str((latest.get("regime") or {}).get("label", "")))
+        except Exception as e:  # noqa: BLE001 — additive overlay, never fatal
+            log.warning("regime-snap veto wiring failed: %s", e)
+    # Persist the relief-radar snapshot so the AI Desk (engine.ai_desk.gather_desk_state)
+    # reads it as an artifact and lights up its regime_snap leg. Display-only; never fatal.
+    if _rs_view:
+        try:
+            _rsp = config.data_dir() / "regime" / "regime_snap.json"
+            _rsp.parent.mkdir(parents=True, exist_ok=True)
+            _rsp.write_text(json.dumps(_rs_view, indent=2, default=str))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("regime-snap persist failed: %s", e)
     vm = dict(
         latest=latest,
         macro_catalysts=macro_catalysts,
@@ -2402,6 +2464,7 @@ def main() -> int:
         chart_vix_term=chart_vix_term(f, _cf),     # VIX level + term-structure ratio
         cross_asset=cross_asset_snap,
         fear_euphoria=fear_euphoria_synthesis(latest, f),
+        regime_snap=_rs_view,                     # velocity complement + triggered AI veto (display-only)
         signal_stack=build_signal_stack(latest),  # consolidated cross-subsystem read (display-only)
     )
     # Write the macro dashboard straight to macro.html. index.html is owned

@@ -1070,6 +1070,36 @@ engine:
       breadth_high_prox: 0.97        # SPY within 3% of its 1y high = strong/calm tape
       breadth_weak_pctile: 0.40      # %>200dma below this %ile WHILE tape strong = not confirming
       credit_widen_window_d: 21      # HY OAS change window for 'credit not confirming'
+    # Regime-snap / narrative-relief detector: the VELOCITY complement to the
+    # Fear<->Euphoria LEVEL read (engine/regime_snap.py). Fires when the cross-asset
+    # RORO complex flips risk-on HARD and BROADLY over 1-3 sessions, AFTER a
+    # capitulation washout — the 'relief rally' fingerprint (geopolitical
+    # de-escalation, post-CPI relief, growth-scare reversal, the 2026-06 relief).
+    # DISPLAY-ONLY: zero new data (reads the signed roro_<key> legs + the existing
+    # capitulation gauge), NEVER scored, nothing in axes/regime/macro_risk reads it.
+    # VERIFIED COINCIDENT, NOT PREDICTIVE: historical verification
+    # (scripts/regime_snap_history.py) shows conditioned forward returns ~ base rate
+    # (the velocity thrust alone, WITHOUT the washout gate, is NEGATIVE — a dead-cat
+    # detector). So it is an ATTENTION radar — 'a regime is snapping, react' — never
+    # a buy/size signal; the relief-magnitude describes the fear premium unwinding,
+    # it is NOT an expected return. Promotion to anything scored requires a full
+    # Phase-0 (PIT/FDR/Deflated-Sharpe) that it is NOT expected to pass.
+    regime_snap:
+      window_d: 2                    # 1-3 session change (2 captures a 2-day re-rate)
+      leg_sigma_mult: 1.0            # leg 'flips' when its window-change > 1σ of its own history
+      leg_std_lookback_d: 252
+      min_legs: 4                    # >=4 of ~7 cross-asset legs flip risk-on together
+      vel_pctile_lookback_d: 504     # ~2y window for the RORO-velocity percentile
+      vel_min_pctile: 0.90           # RORO velocity in its top decile = a genuine thrust
+      fear_lookback_d: 21            # 'recent' fear = trailing ~month
+      fear_min: 0.40                 # the thrust must come OUT of a fear context (modest bar)
+      require_capitulation: true     # AND a washout printed recently (the decisive gate)
+      cap_lookback_d: 21             # window for 'a capitulation signal printed recently'
+      veto:                          # AI knife-vs-dip durability read (engine/regime_snap_veto.py)
+        enabled: true                # CONTEXT-ONLY, triggered on firing/building only; needs DEEPSEEK_API_KEY
+        model: deepseek-v4-pro
+        max_tokens: 1500
+        headlines_n: 12              # recent headline titles handed to the model
 
 # -----------------------------------------------------------------------------
 # Alerts (Phase 3 — rules defined now, wired after validation checkpoint)
