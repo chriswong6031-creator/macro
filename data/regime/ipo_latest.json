@@ -8,5 +8,9 @@
   "spac_pct_90d": 50,
   "upcoming_n": 3,
   "verdict": "trails",
-  "built": "2026-06-16 09:11 UTC"
+  "lockups_approaching": 12,
+  "lockups_just_expired": 13,
+  "next_lockup": "FJET",
+  "next_lockup_date": "2026-06-16",
+  "built": "2026-06-16 09:39 UTC"
 }

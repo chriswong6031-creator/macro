@@ -13,6 +13,8 @@ import pandas as pd
 import pytest
 
 import collectors.ipo_calendar as ic
+import collectors.ipo_prospectus as ipro
+import engine.ipo_lockup as il
 import engine.ipo_radar as ir
 
 
@@ -207,9 +209,86 @@ def test_scored_flag_is_false():
 
 
 def test_not_imported_by_any_scoring_module():
-    """ipo_radar must never feed a scored axis/regime/allocation — assert the core
-    scoring modules don't import it."""
+    """ipo_radar/ipo_lockup must never feed a scored axis/regime/allocation — assert
+    the core scoring modules don't import them."""
     root = pathlib.Path(ir.__file__).parent
     for mod in ("axes.py", "conditions.py", "regime.py", "equity_alloc.py"):
         src = (root / mod).read_text()
         assert "ipo_radar" not in src, f"engine/{mod} must not import ipo_radar"
+        assert "ipo_lockup" not in src, f"engine/{mod} must not import ipo_lockup"
+
+
+# --------------------------------------------------------------------------- #
+# Phase 2 — lock-up prospectus parse + overhang engine
+# --------------------------------------------------------------------------- #
+def test_parse_lockup_days_prefers_canonical_over_early_release():
+    # modern lock-ups bury an early-release "after 90 days" next to the word lock-up;
+    # the canonical length phrasing must win → 180
+    txt = ("The common stock is subject to a lock-up agreement. Each holder agrees to a "
+           "lock-up period of 180 days after the date of this prospectus. The lock-up may "
+           "be released early after 90 days if the closing price exceeds 133% of the offer.")
+    assert ipro.parse_lockup_days(txt) == 180
+    assert ipro.parse_lockup_days("subject to a 90-day lock-up") == 90
+    assert ipro.parse_lockup_days("no lock-up language with a number here") is None
+    assert ipro.parse_lockup_days("nothing relevant") is None
+
+
+def _lockcal():
+    today = pd.Timestamp.now("UTC").normalize()
+
+    def iso(days):
+        return (today - timedelta(days=days)).strftime("%Y-%m-%d")
+
+    cols = ["ticker", "company", "status", "priced_date", "is_spac", "offer_value_usd"]
+
+    def row(**kw):
+        r = {c: None for c in cols}
+        r.update(kw)
+        return r
+
+    data = {
+        "a": row(ticker="FRESH", company="Fresh Co", status="priced",
+                 priced_date=iso(10), is_spac=False, offer_value_usd=2e8),       # +170d → locked
+        "b": row(ticker="APPR", company="Approaching Co", status="priced",
+                 priced_date=iso(160), is_spac=False, offer_value_usd=1e8),      # +20d → approaching
+        "c": row(ticker="OVER", company="Overhang Co", status="priced",
+                 priced_date=iso(195), is_spac=False, offer_value_usd=1e8),      # -15d → just-expired
+        "d": row(ticker="OLDX", company="Old Co", status="priced",
+                 priced_date=iso(900), is_spac=False, offer_value_usd=1e8),      # way past
+        "e": row(ticker="SPCU", company="Spac Acquisition Corp", status="priced",
+                 priced_date=iso(160), is_spac=True, offer_value_usd=1e8),       # SPAC → excluded
+    }
+    df = pd.DataFrame.from_dict(data, orient="index")
+    df.index.name = "deal_id"
+    return df
+
+
+def test_lockup_rows_status_excludes_spacs_and_uses_confirmed_days():
+    cal = _lockcal()
+    lk = pd.DataFrame({"lockup_days": [90]}, index=pd.Index(["APPR"], name="ticker"))
+    rows = {r["ticker"]: r for r in il.lockup_rows(cal, lk, lookback_days=300)}
+    assert "SPCU" not in rows                       # SPACs excluded
+    assert "OLDX" not in rows                       # outside lookback
+    assert rows["FRESH"]["status"] == "locked"
+    assert rows["OVER"]["status"] == "just-expired" and rows["OVER"]["days_to"] < 0
+    # APPR has a prospectus-confirmed 90d lock-up → expiry = priced(160d ago)+90 = 70d ago
+    assert rows["APPR"]["lockup_days"] == 90 and rows["APPR"]["source"] == "confirmed"
+    assert rows["FRESH"]["lockup_days"] == 180 and rows["FRESH"]["source"] == "estimate"
+
+
+def test_actionable_tickers_targets_the_window():
+    cal = _lockcal()
+    act = il.actionable_tickers(cal)               # 180d-estimate expiry within [-30,+45]
+    assert "APPR" in act and "OVER" in act
+    assert "FRESH" not in act and "OLDX" not in act
+
+
+def test_lockup_summary_counts():
+    s = il.summary(il.lockup_rows(_lockcal(), None))
+    assert s["approaching"] >= 1 and s["just_expired"] >= 1
+    assert s["next_ticker"] in ("APPR", "FRESH")   # soonest upcoming expiry
+
+
+def test_ipo_lockup_scored_flag_false():
+    assert il.SCORED is False
+    assert il.lockup_rows(pd.DataFrame()) == []     # degrades on empty

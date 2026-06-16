@@ -242,6 +242,35 @@ html[data-theme="dark"] .spac{background:#2c2348;color:#c4a8ff}
     <div class="note b" style="margin-top:10px">{{ t('This is the crux: the day-1 pop accrues to offer-price allocants, not to anyone buying in the open market. A mechanical “own recent IPOs” basket (the Renaissance IPO ETF) has trailed the S&P over five years; the quality-tilted IPOX (FPX) does better but is a large-cap/quality factor tilt, not underpricing capture. The honest edge in IPOs is discipline about what to AVOID.','这是关键：首日爆涨归于发行价配售者，而非任何在公开市场买入的人。机械式“持有近期新股”篮子（复兴新股ETF）五年来跑输标普；偏质量的 IPOX（FPX）表现较好，但那是大盘/质量因子倾斜，并非对低定价的捕获。新股中诚实的优势在于对“应当规避什么”的纪律。') }}</div>
   </div>
 
+  <!-- ===== lock-up expiry overhang (the most watchable leg) ===== -->
+  {% if lockups %}
+  <div class="section-title">{{ t('Lock-up expiry overhang · the most watchable leg','禁售期到期压力 · 最值得关注的一环') }}</div>
+  <div class="card">
+    <div class="sub" style="margin-bottom:8px">{{ t("When a fresh IPO's ~180-day lock-up expires, insider / VC / PE supply hits a thin float — a documented one-sided overhang (Field & Hanka: ~−1.5% / −3% VC-backed 3-day drift, ~+40% volume). The date is deterministic and free from the prospectus. Honest framing: this is an AVOID / don't-add-into-the-cliff flag, NOT a tradeable short — borrow is scarce and the drift is small net of cost.","当新股约180天的禁售期到期时，内部人／风投／私募的供给会冲击稀薄的流通盘 —— 有据可查的单边压力（Field & Hanka：约 −1.5%／风投支持 −3% 的三日漂移，成交量约 +40%）。该日期可从招股书免费且确定地获得。诚实说明：这是“临近解禁回避／勿加仓”的提示，而非可交易做空 —— 借券稀缺，且扣成本后漂移很小。") }}</div>
+    {% if lockup_summary %}
+    <div class="chips" style="margin-bottom:8px">
+      <span class="chip" style="border-color:var(--amber);color:var(--amber)">{{ lockup_summary.approaching }} {{ t('approaching (≤45d)','临近（≤45天）') }}</span>
+      <span class="chip" style="border-color:var(--red);color:var(--red)">{{ lockup_summary.just_expired }} {{ t('overhang active (≤30d)','解禁压力中（≤30天）') }}</span>
+      {% if lockup_summary.confirmed %}<span class="chip">{{ lockup_summary.confirmed }} {{ t('prospectus-confirmed','招股书已确认') }}</span>{% endif %}
+    </div>
+    {% endif %}
+    <table class="tbl">
+      <tr><th>{{ t('Lock-up expiry','禁售期到期') }}</th><th>{{ t('Ticker','代码') }}</th><th>{{ t('Company','公司') }}</th><th class="n">{{ t('Priced','定价') }}</th><th class="n">{{ t('Lock-up','禁售') }}</th><th>{{ t('Status','状态') }}</th></tr>
+      {% for r in lockups %}
+      <tr>
+        <td>{{ r.expiry_date }}<span class="sub"> · {{ t(r.days_en, r.days_zh) }}</span></td>
+        <td><b>{{ r.ticker }}</b></td>
+        <td>{{ r.company }}</td>
+        <td class="n faint">{{ r.priced_date }}</td>
+        <td class="n">{{ r.lockup_days }}d{% if not r.confirmed %}<span class="sub faint"> {{ t('est','估') }}</span>{% endif %}</td>
+        <td><span class="chip" style="border-color:{{ r.color }};color:{{ r.color }}">{{ t(r.status_en, r.status_zh) }}</span></td>
+      </tr>
+      {% endfor %}
+    </table>
+    <div class="sub faint" style="margin-top:10px;font-size:12px">{{ t("Operating companies only (SPACs excluded — different mechanics). Lock-up length is parsed from the final S-1/424B prospectus where confirmed, else the 180-day market standard ('est'). Display-only, never scored — there is no validated forecast here, only a deterministic supply-event calendar.","仅营运公司（剔除 SPAC —— 机制不同）。禁售期长度在已确认处取自最终 S-1／424B 招股书，否则取 180 天市场标准（“估”）。仅供展示，从不计分 —— 此处没有经验证的预测，只有一个确定的供给事件日历。") }}</div>
+  </div>
+  {% endif %}
+
   <!-- ===== issuance pipeline ===== -->
   {% if pipeline.available %}
   <div class="section-title">{{ t('Issuance pipeline · how busy & how frothy','发行管道 · 繁忙度与泡沫度') }}</div>

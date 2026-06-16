@@ -20,6 +20,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 
+from engine import ipo_lockup as il
 from engine import ipo_radar as ir
 from lib import config
 from scripts.build_vector import _html, _dx, _plot_y, PLOT, C
@@ -49,6 +50,13 @@ SIZE_ZH = {"mega": "超大型", "large": "大型", "mid": "中型", "small": "�
 PACE_ZH = {"busy": "繁忙", "normal": "正常", "quiet": "清淡"}
 VERDICT_ZH = {"trails": "跑输", "tracks": "持平", "beats": "跑赢"}
 AFTER_COLOR = {"trails": C["red"], "tracks": C["amber"], "beats": "#1FA971"}
+# lock-up status → (EN label, ZH label, colour)
+LOCK_STATUS = {
+    "approaching": ("⚠ approaching", "⚠ 临近解禁", C["amber"]),
+    "just-expired": ("📉 overhang active", "📉 解禁压力中", C["red"]),
+    "locked": ("🔒 locked", "🔒 锁定中", C["muted"]),
+    "expired": ("expired", "已解禁", C["faint"]),
+}
 
 
 def _pct(x, signed=True) -> str:
@@ -127,6 +135,49 @@ def _chart_aftermarket() -> str | None:
         return None
 
 
+def _lockup_vm() -> dict:
+    """Lock-up expiry overhang calendar (Phase 2). Confirms exact lock-up days for the
+    actionable window via the prospectus (bandwidth-capped), falls back to the 180d
+    standard. Never raises."""
+    try:
+        from collectors.ipo_calendar import load_calendar
+        cal = load_calendar()
+    except Exception:  # noqa: BLE001
+        return {"rows": [], "summary": {}}
+    if cal is None or cal.empty:
+        return {"rows": [], "summary": {}}
+    lk = None
+    try:
+        from collectors.ipo_prospectus import fetch_lockups, load_lockups
+        fetch_lockups(il.actionable_tickers(cal), cap=12)   # confirm the near-window set
+        lk = load_lockups()
+    except Exception:  # noqa: BLE001
+        try:
+            from collectors.ipo_prospectus import load_lockups
+            lk = load_lockups()
+        except Exception:  # noqa: BLE001
+            lk = None
+    rows = il.lockup_rows(cal, lk)
+    # focus on the actionable + near-future window: recently-expired → approaching → soon-locked
+    win = [r for r in rows if -il.RECENT_DAYS <= r["days_to"] <= 120][:24]
+    out = []
+    for r in win:
+        dt = r["days_to"]
+        sl, slz, col = LOCK_STATUS.get(r["status"], ("", "", C["muted"]))
+        out.append({
+            "ticker": r["ticker"] or "—", "company": r["company"] or "—",
+            "priced_date": r["priced_date"], "expiry_date": r["expiry_date"],
+            "days_to": dt,
+            "days_en": ("today" if dt == 0 else (f"in {dt}d" if dt > 0 else f"{-dt}d ago")),
+            "days_zh": ("今天" if dt == 0 else (f"{dt}天后" if dt > 0 else f"{-dt}天前")),
+            "status_en": sl, "status_zh": slz, "color": col,
+            "lockup_days": r["lockup_days"],
+            "confirmed": r["source"] == "confirmed",
+            "size": _usd(r["size_usd"]),
+        })
+    return {"rows": out, "summary": il.summary(rows)}
+
+
 def build() -> str:
     # refresh the calendar (best-effort; keeps the committed seed if CI is walled)
     try:
@@ -200,10 +251,13 @@ def build() -> str:
             "date": r["expected_date"] or "—", "is_spac": r["is_spac"],
         })
 
+    lockvm = _lockup_vm()
+
     vm = {
         "as_of": snap.get("as_of") or "—", "built": snap["built"],
         "window": window, "aftermarket": aftermarket, "pipeline": pipeline,
         "recent": recent, "upcoming": upcoming,
+        "lockups": lockvm["rows"], "lockup_summary": lockvm["summary"],
         "chart_aftermarket": _chart_aftermarket(),
     }
 
@@ -226,6 +280,10 @@ def build() -> str:
         "priced_90d": pipe.get("priced_90d"), "spac_pct_90d": pipe.get("spac_pct_90d"),
         "upcoming_n": pipe.get("upcoming_n"),
         "verdict": after.get("verdict"),
+        "lockups_approaching": lockvm["summary"].get("approaching"),
+        "lockups_just_expired": lockvm["summary"].get("just_expired"),
+        "next_lockup": lockvm["summary"].get("next_ticker"),
+        "next_lockup_date": lockvm["summary"].get("next_date"),
         "built": snap["built"],
     }
     snap_dir = config.data_dir() / "regime"
