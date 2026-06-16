@@ -50,6 +50,9 @@ class IntlMacroAdapter(Adapter):
         return pd.DataFrame({"_": s}).sort_index()
 
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
+        # No cold-start branch needed: fredgraph.csv returns each series' FULL history
+        # every call, so this plane self-seeds on the first run regardless of
+        # `full_history` (unlike the price plane, which is 1mo-incremental).
         plan: list[tuple[str, str]] = []
         for cc, c in self.countries.items():
             for metric, fid in (c.get("fred") or {}).items():

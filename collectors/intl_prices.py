@@ -54,7 +54,16 @@ class IntlPriceAdapter(Adapter):
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
         core, optional = self._ticker_sets()
         tickers = core + optional
-        period = "max" if full_history else "1mo"
+        # Cold-start auto-seed: a fresh deploy (or any run where the `intl` store is
+        # empty) must backfill DEEP history, not just the 1mo incremental window — the
+        # regime engine needs trailing growth/inflation/momentum windows or every
+        # country_record() comes back empty and build_intl skips the page. Once seeded,
+        # store.upsert merges the daily 1mo window onto the archive. (intl_macro fetches
+        # full FRED history every run, so only this price plane needs the cold check.)
+        cold_start = not self.stored_series()
+        period = "max" if (full_history or cold_start) else "1mo"
+        if cold_start and not full_history:
+            log.info("intl_prices: cold store — seeding full history (period=max)")
         frames: dict[str, pd.DataFrame] = {}
         bs = self.ycfg["batch_size"]
         for i in range(0, len(tickers), bs):
