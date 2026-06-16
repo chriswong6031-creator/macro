@@ -132,3 +132,44 @@ class BreadthAdapter(Adapter):
         if members.empty or len(members) < 400:
             raise ValueError(f"constituents list suspicious: {len(members)} rows")
         return members
+
+
+def breadth_summary(br: pd.DataFrame | None, full: bool) -> dict | None:
+    """Latest-row breadth read for the regional dashboard cards (China / HK / Canada).
+
+    Pure function of a computed breadth frame (the 8-column output of
+    ``BreadthAdapter.compute``). Returns the fields the cards already used plus a
+    plain-language participation read — ``state`` (broad / thin / mixed), ``tone``,
+    and ``net_nh`` — mirroring the US S&P-1500 scorecard's thresholds so the regional
+    pages answer the same "how many stocks are actually participating" question.
+    DISPLAY-ONLY (never scored). ``full`` flags whether the source was the full
+    searchable universe (True) or the curated large-cap gauge (False)."""
+    if br is None or br.empty:
+        return None
+    last = br.iloc[-1]
+    pa50 = float(last.get("pct_above_50", float("nan")))
+    nh, nl = int(last.get("nh", 0) or 0), int(last.get("nl", 0) or 0)
+    net_nh = nh - nl
+    # same thresholds as build_site._breadth_read (the US scorecard) — % above the
+    # 50-day line is normalized 0-100 so the bands port across markets unchanged
+    if pa50 >= 60 and net_nh >= 0:
+        state, tone = "broad", "pos"
+    elif pa50 <= 40 or net_nh < 0:
+        state, tone = "thin", "neg"
+    else:
+        state, tone = "mixed", "muted"
+    try:
+        chg20 = round(float(br["pct_above_50"].diff(20).iloc[-1]), 1)
+    except Exception:  # noqa: BLE001 — short history → no 20d change
+        chg20 = 0.0
+    return {
+        "pct_above_50": round(pa50, 1),
+        "pct_above_200": round(float(last.get("pct_above_200", float("nan"))), 1),
+        "nh": nh, "nl": nl, "net_nh": net_nh,
+        "adv": int(last.get("adv", 0) or 0), "dec": int(last.get("dec", 0) or 0),
+        "ad_trend": "up" if br["ad_line"].diff(20).iloc[-1] > 0 else "down",
+        "n_members": int(last.get("n_members", 0) or 0),
+        "pct50_chg20": chg20,
+        "state": state, "tone": tone, "full": bool(full),
+        "asof": pd.Timestamp(last.name).strftime("%Y-%m-%d"),
+    }

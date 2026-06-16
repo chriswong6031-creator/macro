@@ -323,16 +323,25 @@
 <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr))">
   {% if breadth %}
   <div class="panel">
-    <h2>{{ t('Large-cap breadth', '大盘宽度') }}
-      {{ help('Computed from the curated TSX large-cap constituents (not the full Composite). % above the 50/200-day average, new highs vs lows, and the advance/decline trend.', '基于精选的 TSX 大盘成分股计算（非完整综合指数）。50／200 日均线上方占比、新高对新低，以及涨跌线趋势。') }}
+    <h2>{{ t('Market breadth' if breadth.full else 'Large-cap breadth', '市场广度' if breadth.full else '大盘宽度') }}
+      {{ help('Breadth across the full S&P/TSX Composite — how many of the ~' ~ breadth.n_members ~ ' names are advancing, how many hold above their 50/200-day lines, and net new highs. A strong index riding on a shrinking number of stocks is fragile — broad participation confirms a move, thinning breadth is an early warning.' if breadth.full else 'Computed from the curated TSX large-cap constituents (not the full Composite). % above the 50/200-day average, new highs vs lows, and the advance/decline trend.', '覆盖完整标普/TSX 综合指数 — 约 ' ~ breadth.n_members ~ ' 只成分中有多少在上涨、多少守在 50／200 日均线上方，以及净新高。指数走强却只靠越来越少的股票支撑则脆弱 — 广泛参与确认走势，广度变薄是早期预警。' if breadth.full else '基于精选的 TSX 大盘成分股计算（非完整综合指数）。50／200 日均线上方占比、新高对新低，以及涨跌线趋势。') }}
     </h2>
+    <p class="{{ breadth.tone }}" style="margin:2px 0 10px; font-size:13px; line-height:1.5">
+      {{ t('Participation looks', '参与度看起来') }}
+      <b>{% if breadth.state=='broad' %}{{ t('broad', '广泛') }}{% elif breadth.state=='thin' %}{{ t('thin', '稀薄') }}{% else %}{{ t('mixed', '参差') }}{% endif %}</b> —
+      <b>{{ breadth.pct_above_50 }}%</b> {{ t('above their 50-day line', '在50日均线上方') }},
+      <b>{{ breadth.pct_above_200 }}%</b> {{ t('above their 200-day', '在200日上方') }};
+      {{ t('net new highs', '净新高') }} <b>{{ '%+d'|format(breadth.net_nh) }}</b>.
+      <span class="muted">{% if breadth.state=='broad' %}{{ t('Broad participation confirms the move.', '广泛参与确认了走势。') }}{% elif breadth.state=='thin' %}{{ t('Few names hold trend — rallies are fragile.', '守住趋势的个股很少 — 反弹脆弱。') }}{% else %}{{ t('No clear breadth edge either way.', '广度上无明显方向优势。') }}{% endif %}</span>
+    </p>
     <div class="row" style="gap:18px">
       <div class="dial"><span class="lbl">{{ t('above 50d', '50日上方') }}</span><b>{{ breadth.pct_above_50 }}%</b></div>
       <div class="dial"><span class="lbl">{{ t('above 200d', '200日上方') }}</span><b>{{ breadth.pct_above_200 }}%</b></div>
+      <div class="dial"><span class="lbl">{{ t('adv / dec', '涨/跌') }}</span><b><span class="pos">{{ breadth.adv }}</span> / <span class="neg">{{ breadth.dec }}</span></b></div>
       <div class="dial"><span class="lbl">{{ t('NH / NL', '新高/新低') }}</span><b>{{ breadth.nh }} / {{ breadth.nl }}</b></div>
       <div class="dial"><span class="lbl">{{ t('A/D trend', '涨跌趋势') }}</span><b class="{{ 'pos' if breadth.ad_trend=='up' else 'neg' }}">{{ td(breadth.ad_trend) }}</b></div>
     </div>
-    <p class="muted small" style="margin:8px 0 0">{{ t('20d change in % above 50d:', '50日上方占比 20日变化：') }} {{ '%+.1f'|format(breadth.pct50_chg20) }} · {{ breadth.n_members }} {{ t('names', '只成分') }}</p>
+    <p class="muted small" style="margin:8px 0 0">{{ t('20d change in % above 50d:', '50日上方占比 20日变化：') }} {{ '%+.1f'|format(breadth.pct50_chg20) }} · {{ breadth.n_members }} {{ t('names', '只成分') }} · {{ t('full S&P/TSX Composite', '完整标普/TSX 综合') if breadth.full else t('curated large-cap', '精选大盘') }}</p>
   </div>
   {% endif %}
   {% if benchmark %}
