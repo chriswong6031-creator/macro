@@ -644,6 +644,7 @@ def compute_narrative_rotation(region: str = "us") -> dict | None:
                 "rank": rk["rank"], "score": rk["score"], "eligible": rk["eligible"],
                 "z_resid_mom": rk["z_resid_mom"], "z_mom_13612w": rk["z_mom_13612w"],
                 "z_accel": rk["z_accel"], "gate": rk["gate"],
+                "etf_proxy": p.get("etf_proxy"),       # for the AI desk's scorable theme_rel_return falsifier
                 "durability": durab[bid], "crowding": crowd[bid],
             })
 

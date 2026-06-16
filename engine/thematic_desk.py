@@ -1,0 +1,494 @@
+"""AI Desk for Thematic Investing — an accountable LLM reasoning layer on the
+Narrative-Rotation pages (allocation*.html), one desk per market (US/China/HK/Canada).
+
+This is the sibling of engine.ai_desk (the macro/sector desk) pointed at THEMES instead of
+GICS sectors. It reuses that chassis's discipline — quant DETECTS → AI JUDGES → track-record
+GATES — without touching the live macro desk:
+
+  gather → an LLM analyst turns the deterministic narrative_rotation state into a SHORT set
+  of FALSIFIABLE, check-by-date leans → each is logged to an append-only ledger → a scorer
+  grades them against realized proxy-vs-benchmark returns → the track record feeds back so
+  conviction self-calibrates.
+
+HONEST BY CONSTRUCTION (the whole point — see scripts/thematic_rotation_phase0.py):
+  * cross-sectional theme momentum has rank-IC ~0; rotation-timing has NO validated forward
+    edge; the only validated edge is DRAWDOWN control via the absolute-trend gate. So the AI
+    cannot "predict the next narrative". Its leans are FALLIBLE HYPOTHESES expressed as
+    falsifiable conditionals — graded over time — NOT edge extracted from the detectors.
+  * it inherits, inline, the narrative_rotation ai_handoff `do_not_conclude` fences (no
+    fade, no sizing, crowding = size-down only, inflows/attention ≠ buy, no next-theme call).
+  * DISPLAY-ONLY: nothing here feeds any score/size/axis. The desk grades ITSELF.
+
+Scorability: a theme is gradable only when its basket carries a SCALAR `etf_proxy`
+(membership.json → surfaced in allocation.json ranks). overweight ⇒ FALSE if the proxy
+underperforms the market benchmark by ≥ threshold over the horizon; avoid/underweight ⇒
+the mirror. No proxy (or a blend) → the lean is logged `soft` and never scored (honest).
+
+LLM = DeepSeek via engine.master_brain._call_model (the same gated client the macro desk
+uses); when the key/feature is off the desk degrades to no theses and the page shows only
+the deterministic handoff contract.
+"""
+from __future__ import annotations
+
+import json
+import logging
+from datetime import datetime, timezone
+from pathlib import Path
+
+import pandas as pd
+
+from engine import ai_desk as _ad           # reuse _check_by / _extract_json / _cfg
+from engine import master_brain as _mb      # the LLM client (_call_model)
+from lib import config, store
+
+log = logging.getLogger(__name__)
+
+SCHEMA = "thematic_desk.v1"
+
+# region → (benchmark ticker, store group). Proxies live in the SAME store group as the
+# benchmark (US proxies in yahoo; CN/HK/CA proxies in their region store). Mirrors
+# engine.narrative_rotation._region_cfg.
+REGION = {
+    "us":     {"bench": "SPY",       "group": "yahoo",  "bench_label": "S&P 500"},
+    "china":  {"bench": "510300.SS", "group": "china",  "bench_label": "CSI 300"},
+    "hk":     {"bench": "_HSI",      "group": "hk",     "bench_label": "Hang Seng"},
+    "canada": {"bench": "XIC.TO",    "group": "canada", "bench_label": "S&P/TSX"},
+}
+_ALLOC_FILE = {"us": "allocation.json", "china": "allocation_china.json",
+               "hk": "allocation_hk.json", "canada": "allocation_canada.json"}
+_LEANS = ("overweight", "underweight", "avoid")
+_CONVICTIONS = ("low", "medium", "high")
+_LEDGER_DIR = ("data", "thematic_desk")
+
+
+def _cfg() -> dict:
+    """Share the ai_desk LLM config (key/model/max_tokens/enabled/falsifier_defaults)."""
+    return _ad._cfg()
+
+
+def enabled() -> bool:
+    return bool(_cfg().get("enabled", False))
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+# --------------------------------------------------------------------------- #
+# close reads (region-aware via lib.store, unlike ai_desk's yahoo-only helper)
+# --------------------------------------------------------------------------- #
+def _close_asof(group: str, sym: str, on_or_before) -> float | None:
+    try:
+        df = store.read(group, sym)
+        if df is None or "close" not in df.columns:
+            return None
+        s = df["close"].astype(float).dropna()
+        s.index = pd.to_datetime(s.index)
+        s = s[s.index <= pd.Timestamp(on_or_before)]
+        return round(float(s.iloc[-1]), 6) if len(s) else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _close_on_or_after(group: str, sym: str, on_or_after) -> float | None:
+    """First close at/after a date (the scorer's exit read; tolerates weekends/holidays)."""
+    try:
+        df = store.read(group, sym)
+        if df is None or "close" not in df.columns:
+            return None
+        s = df["close"].astype(float).dropna()
+        s.index = pd.to_datetime(s.index)
+        s = s[s.index >= pd.Timestamp(on_or_after)]
+        return round(float(s.iloc[0]), 6) if len(s) else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
+# --------------------------------------------------------------------------- #
+# STATE — slim the narrative_rotation payload into the desk's briefing bundle
+# --------------------------------------------------------------------------- #
+def _alloc_view(region: str, root) -> dict | None:
+    p = Path(root) / "site" / "allocationdata" / _ALLOC_FILE[region]
+    d = _ad._read_json(p)
+    if not d or not d.get("ranks"):
+        return None
+    ranks = [{
+        "name": r.get("name"), "name_zh": r.get("name_zh"), "id": r.get("id"),
+        "category": r.get("category"), "rank": r.get("rank"), "score": r.get("score"),
+        "eligible": r.get("eligible"),
+        "durability_bar": (r.get("durability") or {}).get("bar"),
+        "hurst_tag": (r.get("durability") or {}).get("hurst_tag"),
+        "breadth": (r.get("durability") or {}).get("breadth"),
+        "crowding_z": (r.get("crowding") or {}).get("crowding_z"),
+        "crowded": (r.get("crowding") or {}).get("crowded"),
+        "etf_proxy": r.get("etf_proxy"),
+        "scorable": isinstance(r.get("etf_proxy"), str) and bool(r.get("etf_proxy")),
+    } for r in d["ranks"]]
+    return {
+        "region": region, "market": d.get("market_en"), "as_of": d.get("as_of"),
+        "benchmark": REGION[region]["bench_label"],
+        "headline": d.get("headline"), "ranks": ranks, "rotation": d.get("rotation"),
+        "backtest_verdict": (d.get("backtest") or {}).get("verdict"),
+        "gate_helps": (d.get("backtest") or {}).get("gate_helps"),
+        # carry the fences INLINE so the analyst honours them (mirrors ai_desk._flow_view)
+        "guardrails": (d.get("ai_handoff") or {}),
+    }
+
+
+def gather_thematic_state(region: str, root=None) -> dict | None:
+    """Point-in-time bundle for one market: the narrative_rotation view + the desk's own
+    track record. Returns None only if the allocation artifact is absent."""
+    root = Path(root) if root else config.ROOT
+    nr = _alloc_view(region, root)
+    if nr is None:
+        return None
+    track = _ad._read_json(Path(root).joinpath(*_LEDGER_DIR, "track_record.json"))
+    tr = None
+    if isinstance(track, dict):
+        tr = (track.get("by_market") or {}).get(region) or track.get("overall")
+    return {"as_of": nr.get("as_of"), "region": region, "market": nr.get("market"),
+            "narrative_rotation": nr, "track_record": tr}
+
+
+# --------------------------------------------------------------------------- #
+# the falsifier — theme → its proxy ETF vs the regional benchmark (scorable),
+# else soft (logged, never scored). Reuses the rel_return op/threshold logic.
+# --------------------------------------------------------------------------- #
+def _proxy_for(subject: str, ranks: list) -> tuple[str | None, str | None]:
+    """Match a thesis subject to a theme row → (scalar etf_proxy, theme_id) or (None,None)."""
+    s = (subject or "").strip().lower()
+    for r in ranks:
+        if s in (str(r.get("name") or "").lower(), str(r.get("name_zh") or "").lower(),
+                 str(r.get("id") or "").lower()):
+            p = r.get("etf_proxy")
+            return (p if isinstance(p, str) and p else None), r.get("id")
+    return None, None
+
+
+def _derive_check(subject: str, lean: str, horizon: int, region: str,
+                  ranks: list, cfg: dict) -> dict:
+    thr = float((cfg.get("falsifier_defaults", {}) or {}).get("rel_return", 0.05))
+    proxy, tid = _proxy_for(subject, ranks)
+    if not proxy:
+        return {"kind": "soft", "reason": "theme has no scalar etf_proxy → not cleanly scorable"}
+    if lean == "overweight":
+        op, threshold = "<", -thr                 # FALSE if proxy underperforms bench by ≥ thr
+    elif lean in ("underweight", "avoid"):
+        op, threshold = ">", thr                  # FALSE if proxy outperforms bench by ≥ thr
+    else:
+        return {"kind": "soft", "reason": f"lean '{lean}' has no relative-return rule"}
+    return {"kind": "theme_rel_return", "theme_id": tid, "subject_ticker": proxy,
+            "vs": REGION[region]["bench"], "group": REGION[region]["group"],
+            "op": op, "threshold": threshold, "horizon_d": horizon}
+
+
+def _build_thesis(t: dict, i: int, asof, region: str, ranks: list, cfg: dict) -> dict | None:
+    if not isinstance(t, dict):
+        return None
+    subject = str(t.get("subject") or "").strip()
+    lean = str(t.get("lean") or "").strip().lower()
+    if not subject or lean not in _LEANS:
+        return None
+    try:
+        horizon = int(t.get("horizon_d") or cfg.get("default_horizon_d", 20))
+    except Exception:  # noqa: BLE001
+        horizon = int(cfg.get("default_horizon_d", 20))
+    horizon = max(5, min(60, horizon))
+    conv = str(t.get("conviction") or "low").strip().lower()
+    conv = conv if conv in _CONVICTIONS else "low"
+    return {
+        "id": f"{region}-{asof}-{i + 1}", "market": region, "subject": subject, "lean": lean,
+        "conviction": conv, "horizon_d": horizon, "thesis": t.get("thesis"),
+        "evidence": [str(e) for e in (t.get("evidence") or []) if e][:5],
+        "dissent": t.get("dissent"),
+        "falsifier": {"text": t.get("falsifier_text"),
+                      "check": _derive_check(subject, lean, horizon, region, ranks, cfg)},
+        "check_by": _ad._check_by(asof, horizon),
+    }
+
+
+# --------------------------------------------------------------------------- #
+# the analyst (single structured DeepSeek call; the adversarial panel is a fast-follow)
+# --------------------------------------------------------------------------- #
+_SCHEMA_TAIL = (
+    "Return ONLY a JSON object (no markdown fences) with keys:\n"
+    "  regime_context: string — 1-2 sentences on what the detector state actually shows for "
+    "this market (grounded; no invented numbers). Put any no-view here.\n"
+    "  theses: array of 0..N objects (omit rather than pad — honesty over content), each:\n"
+    "     subject: string — EXACTLY one theme name from narrative_rotation.ranks[].name.\n"
+    "     lean: one of \"overweight\",\"underweight\",\"avoid\". A lean is a DIRECTION, never a size.\n"
+    "     conviction: one of \"low\",\"medium\",\"high\" — be modest; default low.\n"
+    "     horizon_d: integer trading days, 5..60.\n"
+    "     thesis: string — reasoning, naming WHICH detector leg supports it (rank/durability/"
+    "trend-gate/crowding/rotation).\n"
+    "     evidence: array of strings citing the specific legs.\n"
+    "     dissent: string — the single strongest contrary case.\n"
+    "     falsifier_text: string — one concrete condition that would prove this wrong.\n"
+    "  emerging_watch: string|null — at most ONE early-hypothesis to watch (a theme whose "
+    "leadership may be forming OR fading) WITH a kill-criterion; or null. This is a watch, "
+    "not a call.\n"
+    "  confidence: one of \"low\",\"medium\",\"high\"."
+)
+
+_SYSTEM = (
+    "You are the analyst running a THEMATIC desk note for a solo top-down trader, for ONE "
+    "market. You are handed the trader's OWN deterministic Narrative-Rotation detector state "
+    "(theme momentum ranks, an absolute-trend eligibility gate, durability, crowding texture, "
+    "and a rotation radar). Turn it into a SHORT set of accountable, FALSIFIABLE directional "
+    "leans on THEMES.\n\n"
+    "CRITICAL — this detector is TRUST-GRADED and DISPLAY-ONLY:\n"
+    "- Cross-sectional theme momentum has rank-IC ~0 (an attention/FOCUS lens, NOT alpha). "
+    "Rotation-timing has NO validated forward edge. The ONE validated edge is DRAWDOWN/shake-"
+    "out control via the absolute-trend gate. Durability/crowding/rotation are COINCIDENT.\n"
+    "- If narrative_rotation.gate_helps is false, the trend discipline did NOT even cut "
+    "drawdown on THIS market's history (it mean-reverts) — be especially humble; lean low.\n"
+    "- Therefore NEVER claim the detector 'predicts' returns. Your leans are YOUR fallible "
+    "judgement EXPRESSED AS FALSIFIABLE CONDITIONALS — not edge extracted from the detector.\n"
+    "- Honour EVERY item in narrative_rotation.guardrails.do_not_conclude and "
+    ".ai_directive.\n\n"
+    "Rules:\n"
+    "- Reason ONLY over the provided JSON state + well-known market structure. NEVER fabricate "
+    "a level, score or event. If the state doesn't support a view, return fewer (or zero) "
+    "theses and say so in regime_context.\n"
+    "- Prefer subjects that are scorable (ranks[].scorable==true, i.e. have a proxy ETF) so "
+    "the call can be graded. You MAY still lean on an unscorable theme, but mark conviction "
+    "low.\n"
+    "- Crowding is a SIZE-DOWN caution ONLY — never a fade, short, or sell. Do NOT treat the "
+    "leading theme as a buy because it leads, and do NOT fade the dominant theme on a crowding "
+    "flag (reflexivity). Do NOT predict the NEXT narrative; only flag a CONFIRMED handoff.\n"
+    "- NEVER give a position size, weight, dollar amount, or fire a trade — sizing is owned by "
+    "the deterministic allocator. Give a DIRECTION and what would invalidate it.\n"
+    "- Each thesis needs an honest DISSENT (best bear case) and a CONCRETE falsifier.\n"
+    "- If a track_record is present, CALIBRATE conviction to it (if past high-conviction calls "
+    "missed, default lower). Small samples → lean low. This note is GRADED against reality.\n\n"
+    + _SCHEMA_TAIL
+)
+
+
+def _build_user(state: dict) -> str:
+    return ("Today's trust-graded thematic detector state for this market (JSON). Produce "
+            "your desk note per your instructions — accountable, falsifiable, never sized.\n"
+            "<state>\n" + json.dumps(state, indent=2, default=str) + "\n</state>")
+
+
+DISCLAIMER = (
+    "Context only — the desk's fallible, FALSIFIABLE hypotheses, graded against reality over "
+    "time. NOT investment advice, NOT a buy list, NOT a size. The validated edge on this page "
+    "is drawdown control; everything the AI says is display-only.")
+
+
+def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
+    """Run the analyst over a gathered state → a brief record. Never raises. `call` is
+    injectable (defaults to master_brain._call_model) so tests run without an API key."""
+    cfg = cfg or _cfg()
+    region = state.get("region")
+    asof = state.get("as_of")
+    ranks = (state.get("narrative_rotation") or {}).get("ranks") or []
+    brief = {
+        "schema": SCHEMA, "is_context_only": True, "market": region,
+        "generated_at": _now_iso(), "state_asof": asof,
+        "model": cfg.get("llm_model", "deepseek-v4-pro"),
+        "regime_context": None, "emerging_watch": None, "theses": [],
+        "track_record": state.get("track_record"), "confidence": "low",
+        "raw_text": None, "degraded_reason": None, "disclaimer": DISCLAIMER,
+    }
+    fn = call or _mb._call_model
+    reply, reason = fn(_SYSTEM, _build_user(state), cfg)
+    brief["raw_text"] = reply
+    if reply is None:
+        brief["degraded_reason"] = reason
+        return brief
+    parsed = _ad._extract_json(reply)
+    if not isinstance(parsed, dict):
+        brief["degraded_reason"] = reason or "unparseable_reply"
+        return brief
+    brief["regime_context"] = parsed.get("regime_context")
+    brief["emerging_watch"] = parsed.get("emerging_watch")
+    conf = str(parsed.get("confidence") or "low").strip().lower()
+    brief["confidence"] = conf if conf in _CONVICTIONS else "low"
+    raw = parsed.get("theses") if isinstance(parsed.get("theses"), list) else []
+    theses = []
+    for t in raw[: int(cfg.get("max_theses", 3))]:
+        th = _build_thesis(t, len(theses), asof, region, ranks, cfg)
+        if th is not None:
+            theses.append(th)
+    brief["theses"] = theses
+    if reason:
+        brief["degraded_reason"] = reason
+    return brief
+
+
+# --------------------------------------------------------------------------- #
+# ledger (append-only) + public per-market brief
+# --------------------------------------------------------------------------- #
+def _entry_levels(check: dict, asof, root) -> dict:
+    """Snapshot the proxy + bench closes the scorer needs (region-aware)."""
+    out = {}
+    g = check.get("group", "yahoo")
+    for t in (check.get("subject_ticker"), check.get("vs")):
+        if t:
+            lv = _close_asof(g, t, asof)
+            if lv is not None:
+                out[t] = lv
+    return out
+
+
+def _append_ledger(brief: dict, root) -> None:
+    theses = brief.get("theses") or []
+    if not theses:
+        return
+    try:
+        d = Path(root).joinpath(*_LEDGER_DIR)
+        d.mkdir(parents=True, exist_ok=True)
+        asof = brief.get("state_asof")
+        seen = set()
+        lp = d / "theses.jsonl"
+        if lp.exists():
+            for line in lp.read_text().splitlines():
+                try:
+                    seen.add(json.loads(line).get("id"))
+                except Exception:  # noqa: BLE001
+                    pass
+        with open(lp, "a") as fh:
+            for th in theses:
+                if th["id"] in seen:
+                    continue
+                check = (th.get("falsifier") or {}).get("check") or {}
+                row = {**th, "market": brief.get("market"), "logged_at": _now_iso(),
+                       "state_asof": asof, "entry_levels": _entry_levels(check, asof, root)}
+                fh.write(json.dumps(row, default=str) + "\n")
+    except Exception as e:  # noqa: BLE001
+        log.warning("thematic_desk ledger append failed: %s", e)
+
+
+def run(market: str = "us", persist: bool = True, root=None, call=None) -> dict | None:
+    """Gather → synthesize → persist the public brief + ledger for one market. Additive:
+    returns None (and writes nothing) when disabled / no key / no state. Never raises."""
+    region = (market or "us").lower()
+    if region not in REGION:
+        return None
+    if call is None and not enabled():
+        log.info("thematic_desk[%s]: disabled (ai_desk.enabled=false) — skipping", region)
+        return None
+    root = Path(root) if root else config.ROOT
+    try:
+        state = gather_thematic_state(region, root)
+        if state is None:
+            return None
+        brief = synthesize(state, _cfg(), call)
+        if persist:
+            site = Path(root) / "site" / "allocationdata"
+            site.mkdir(parents=True, exist_ok=True)
+            (site / f"ai_desk_{region}.json").write_text(json.dumps(brief, default=str))
+            _append_ledger(brief, root)
+        return brief
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("thematic_desk run[%s] failed: %s", region, e)
+        return None
+
+
+# --------------------------------------------------------------------------- #
+# scorer — grade past-due theses vs realized proxy-vs-bench returns (region-aware)
+# --------------------------------------------------------------------------- #
+def _eval(check: dict, entry: dict, check_by: str) -> dict | None:
+    g = check.get("group", "yahoo")
+    et, vs = check.get("subject_ticker"), check.get("vs")
+    e0 = (entry or {}).get(et) or _close_asof(g, et, check.get("_asof"))
+    b0 = (entry or {}).get(vs) or _close_asof(g, vs, check.get("_asof"))
+    e1 = _close_on_or_after(g, et, check_by)
+    b1 = _close_on_or_after(g, vs, check_by)
+    if None in (e0, e1, b0, b1) or e0 == 0 or b0 == 0:
+        return None
+    realized = (e1 / e0 - 1.0) - (b1 / b0 - 1.0)
+    op, thr = check.get("op"), float(check.get("threshold", 0.0))
+    # FALSE if it moves the wrong way by ≥ threshold (inclusive at the boundary, matching
+    # the documented "by ≥ threshold" falsifier spec).
+    falsified = (realized <= thr) if op == "<" else (realized >= thr)
+    dir_ok = (realized > 0) if op == "<" else (realized < 0)
+    return {"outcome": "miss" if falsified else "hit", "realized": round(realized, 4),
+            "directionally_correct": bool(dir_ok)}
+
+
+def _bucket(rows: list) -> dict:
+    dec = [r for r in rows if r.get("outcome") in ("hit", "miss")]
+    n = len(dec)
+    hits = sum(1 for r in dec if r["outcome"] == "hit")
+    dok = sum(1 for r in dec if r.get("directionally_correct"))
+    return {"n": n, "hits": hits, "misses": n - hits,
+            "hit_rate": round(hits / n, 3) if n else None,
+            "dir_accuracy": round(dok / n, 3) if n else None}
+
+
+def _calibration_note(overall: dict) -> str:
+    if overall["n"] == 0:
+        return ("No thematic theses scored yet — the track record begins once the first "
+                "check-by dates pass. Until then every lean is a provisional hypothesis.")
+    parts = [f"{overall['n']} scored, hit-rate {overall['hit_rate']} "
+             f"(directional accuracy {overall['dir_accuracy']})."]
+    if overall["n"] < 20:
+        parts.append("Sample is small — treat conviction as provisional; the honest "
+                     "expectation is no exploitable forward edge (display-only).")
+    return " ".join(parts)
+
+
+def score_ledger(root=None, today=None) -> dict | None:
+    """Grade every past-due, scorable thesis; write data/thematic_desk/track_record.json
+    (overall + by_market + by_conviction). Additive/idempotent; never raises."""
+    root = Path(root) if root else config.ROOT
+    today = pd.Timestamp(today) if today else pd.Timestamp(datetime.now(timezone.utc).date())
+    d = Path(root).joinpath(*_LEDGER_DIR)
+    lp = d / "theses.jsonl"
+    if not lp.exists():
+        return None
+    try:
+        rows = {}
+        for line in lp.read_text().splitlines():
+            try:
+                r = json.loads(line)
+                if r.get("id"):
+                    rows[r["id"]] = r            # dedupe by id (last wins)
+            except Exception:  # noqa: BLE001
+                pass
+        scored = []
+        for r in rows.values():
+            check = (r.get("falsifier") or {}).get("check") or {}
+            cb = r.get("check_by")
+            base = {"id": r.get("id"), "market": r.get("market"), "subject": r.get("subject"),
+                    "lean": r.get("lean"), "conviction": r.get("conviction"),
+                    "kind": check.get("kind"), "check_by": cb}
+            if check.get("kind") != "theme_rel_return" or not cb:
+                scored.append({**base, "outcome": "unscored"})
+                continue
+            if pd.Timestamp(cb) > today:
+                scored.append({**base, "outcome": "open"})
+                continue
+            check = {**check, "_asof": r.get("state_asof")}
+            res = _eval(check, r.get("entry_levels") or {}, cb)
+            scored.append({**base, **(res or {"outcome": "expired"})})
+        dec = [s for s in scored if s.get("outcome") in ("hit", "miss")]
+        overall = _bucket(dec)
+        track = {
+            "schema": SCHEMA, "as_of": today.date().isoformat(),
+            "scored_total": len(dec),
+            "open": sum(1 for s in scored if s.get("outcome") == "open"),
+            "unscored_soft": sum(1 for s in scored if s.get("outcome") == "unscored"),
+            "overall": overall,
+            "by_market": {m: _bucket([s for s in dec if s.get("market") == m]) for m in REGION},
+            "by_conviction": {c: _bucket([s for s in dec if s.get("conviction") == c])
+                              for c in _CONVICTIONS},
+            "calibration_note": _calibration_note(overall),
+            "recent": [{k: s.get(k) for k in ("id", "market", "subject", "lean",
+                        "conviction", "outcome", "realized", "check_by")}
+                       for s in sorted(dec, key=lambda s: s.get("check_by") or "",
+                                       reverse=True)[:12]],
+        }
+        out = d / "track_record.json"
+        out.write_text(json.dumps(track, indent=2, default=str))
+        # public copy for the page badge
+        pub = Path(root) / "site" / "allocationdata" / "ai_desk_track.json"
+        pub.parent.mkdir(parents=True, exist_ok=True)
+        pub.write_text(json.dumps(track, default=str))
+        return track
+    except Exception as e:  # noqa: BLE001
+        log.error("thematic_desk score_ledger failed: %s", e)
+        return None
