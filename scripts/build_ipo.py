@@ -175,7 +175,14 @@ def _lockup_vm() -> dict:
             "confirmed": r["source"] == "confirmed",
             "size": _usd(r["size_usd"]),
         })
-    return {"rows": out, "summary": il.summary(rows)}
+    phase0 = None
+    try:
+        p = config.data_dir() / "ipo" / "lockup_phase0.json"
+        if p.exists():
+            phase0 = json.loads(p.read_text())
+    except Exception:  # noqa: BLE001
+        phase0 = None
+    return {"rows": out, "summary": il.summary(rows), "phase0": phase0}
 
 
 def build() -> str:
@@ -258,6 +265,7 @@ def build() -> str:
         "window": window, "aftermarket": aftermarket, "pipeline": pipeline,
         "recent": recent, "upcoming": upcoming,
         "lockups": lockvm["rows"], "lockup_summary": lockvm["summary"],
+        "lockup_phase0": lockvm.get("phase0"),
         "chart_aftermarket": _chart_aftermarket(),
     }
 

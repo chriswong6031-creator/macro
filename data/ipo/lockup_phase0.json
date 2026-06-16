@@ -1,0 +1,16 @@
+{
+  "verdict": "DISPLAY-ONLY \u00b7 no measurable edge on our sample",
+  "tier": "none",
+  "focus": "event[-1,+3]",
+  "stat": {
+    "n": 77,
+    "mean_pct": 0.88,
+    "median_pct": 1.04,
+    "trimmed_mean_pct": 1.0,
+    "pct_negative": 44.2,
+    "t": 0.812,
+    "p": 0.4168
+  },
+  "n_names": 77,
+  "as_of": "2026-06-16"
+}
