@@ -6,7 +6,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ t('Thematic baskets — performance vs S&P 500', '主题篮子 — 相对标普 500 表现') }}</title>
+<title>{{ t('Hong Kong thematic baskets — performance vs HSI', '香港主题篮子 — 相对恒指表现') }}</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
@@ -83,12 +83,12 @@
     <div class="nav-links">
     <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
     <div class="nav-dd">
-      <a class="nav-link active" href="macro.html">🇺🇸 {{ t('United States', '美国') }} <span class="caret">▾</span></a>
+      <a class="nav-link" href="macro.html">🇺🇸 {{ t('United States', '美国') }} <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="macro.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('Regime · growth · inflation · nowcast', '周期 · 增长 · 通胀 · 即时预测') }}</span></a>
         <a href="us_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Standouts · sectors · flows', '精选 · 板块 · 资金') }}</span></a>
         <a href="spvector.html">📐 {{ t('Allocation Strategy', '配置策略') }}<span class="d">{{ t('Tactical equity↔cash', '战术股票↔现金') }}</span></a>
-        <a class="active" href="baskets.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P', '等权主题篮子 vs 标普') }}</span></a>
+        <a href="baskets.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P', '等权主题篮子 vs 标普') }}</span></a>
         <a href="alerts.html">🚨 {{ t('Alert Center', '警报中心') }}<span class="d">{{ t('Ranked & triaged alerts', '分级分诊的警报') }}</span></a>
         <a href="gex.html">🧲 {{ t('Options Magnets', '期权磁吸') }}<span class="d">{{ t('Dealer-gamma GEX levels', '做市商Gamma GEX价位') }}</span></a>
         <a href="etfs.html">🐳 {{ t('ETF Flows', 'ETF资金流') }}<span class="d">{{ t('Fund flow monitor', '资金流监控') }}</span></a>
@@ -104,11 +104,11 @@
       </div>
     </div>
     <div class="nav-dd">
-      <a class="nav-link" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }} <span class="caret">▾</span></a>
+      <a class="nav-link active" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }} <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="hk.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('HSI · southbound · global risk', 'HSI · 南向 · 全球风险') }}</span></a>
         <a href="hk_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('HK-listed standouts · alpha', 'HK上市精选 · 阿尔法') }}</span></a>
-        <a href="baskets_hk.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs HSI', '等权主题篮子 vs 恒指') }}</span></a>
+        <a class="active" href="baskets_hk.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs HSI', '等权主题篮子 vs 恒指') }}</span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -160,72 +160,21 @@
 
   <header>
     <div style="display:flex;align-items:baseline;flex-wrap:wrap;gap:12px">
-      <h1>🧺 {{ t('Thematic baskets', '主题篮子') }}</h1>
+      <h1>🧺 {{ t('Hong Kong thematic baskets', '香港主题篮子') }}</h1>
       <span class="asof"><span class="pfx">{{ t('as of', '截至') }} </span><span id="asof">—</span></span>
     </div>
     <p class="story" id="story"></p>
     <p class="tagline">{{ t(
-      'Curated thematic stock baskets — every membership decision dated and documented; equal-weighted, monthly-rebalanced, buy-and-hold between rebalances. Where a listed sector ETF approximates the theme the basket is cross-checked against it daily. A monitoring/structure frame, not a buy list.',
-      '精选主题股票篮子 — 每次成分调整均注明日期与理由；等权重、按月再平衡、调整间买入持有。若有相近行业 ETF，则按日交叉验证。仅作监测/结构参考，并非买入清单。') }}</p>
+      'Curated HK thematic baskets — every membership decision dated and documented; equal-weighted, monthly-rebalanced, buy-and-hold between rebalances. Benchmarked to the Hang Seng Index (HSI). Where a listed sector ETF approximates the theme the basket is cross-checked against it daily. A monitoring/structure frame, not a buy list.',
+      '精选香港主题股票篮子 — 每次成分调整均注明日期与理由；等权重、按月再平衡、调整间买入持有。以恒生指数 (HSI) 为基准。若有相近行业 ETF，则按日交叉验证。仅作监测/结构参考，并非买入清单。') }}</p>
   </header>
-
-  {% if flow %}
-  {% set SZH = {'Information Technology':'信息技术','Health Care':'医疗保健','Financials':'金融','Consumer Discretionary':'非必需消费','Communication Services':'通信服务','Industrials':'工业','Consumer Staples':'必需消费','Energy':'能源','Utilities':'公用事业','Real Estate':'房地产','Materials':'原材料'} %}
-  <div class="panel pad" id="flow-lens" style="margin-top:10px;border-left:3px solid var(--muted)">
-    <h2 style="margin:0 0 4px"><span class="idx">00</span>🌐 {{ t('Flow lens — where rotation is concentrating', '资金流透视 — 轮动集中在哪里') }}
-      <span class="chip" style="vertical-align:middle">{{ t('display-only', '仅展示') }}</span></h2>
-    <p class="tagline" style="margin-top:0">{{ t(
-      'A detection + description layer, NOT a forecast. It ranks where cross-sectional flow is concentrating across the unbiased point-in-time GICS sectors and the thematic baskets — rigorously validated to have NO forward edge (rank-IC ~0 on clean sectors; the basket "edge" was survivorship). Use it to focus attention; never to infer returns.',
-      '这是探测+描述层，并非预测。它在无偏的时点 GICS 行业与主题篮子中，排出资金横截面集中之处 — 经严格验证无前瞻优势（干净行业上 rank-IC≈0；篮子的"优势"实为幸存者偏差）。用于聚焦关注，绝不用于推断收益。') }}</p>
-
-    {% if flow.cluster %}{% set CL = flow.cluster %}
-    <div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 12px;margin:6px 0;font-size:13px">
-      <b>{{ t('Cross-group structure', '跨组结构') }}</b> <span class="muted">{{ t('supply-chain / theme-spread read', '供应链／主题扩散读数') }}</span><br>
-      {{ t('co-movement', '共动度') }} <b>{{ (CL.absorption*100)|round|int }}%</b> ({{ t(CL.regime, {'concentrated':'高度集中','broad':'分散','mixed':'中等'}.get(CL.regime, CL.regime)) }})
-      · {{ t('dominant cluster', '主导集群') }}: {% for s in CL.dominant_cluster %}<span class="chip">{{ t(s, SZH.get(s, s)) }}</span>{% endfor %}
-      {% if CL.top_pair %}· {{ t('tightest pair', '最紧耦合') }} {{ t(CL.top_pair[0], SZH.get(CL.top_pair[0], CL.top_pair[0])) }} ↔ {{ t(CL.top_pair[1], SZH.get(CL.top_pair[1], CL.top_pair[1])) }} ({{ '%.2f'|format(CL.top_pair_corr) }}){% endif %}
-    </div>
-    {% endif %}
-
-    <div class="story" style="margin:8px 0 2px">{{ t('Concentrating now', '当前集中') }}
-      <span class="muted" style="font-size:12px">— {{ t('descriptive flow + read-quality bar; sectors are unbiased, baskets are hindsight-curated (confidence-capped). Do not rank one type against the other.', '描述性资金流 + 读数质量条；行业无偏，篮子为事后筛选（置信度封顶）。勿跨类型排名。') }}</span></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-      {% for col, label, lzh in [(flow.sectors, 'GICS sectors (unbiased)', 'GICS 行业（无偏）'), (flow.baskets, 'Thematic baskets (capped)', '主题篮子（封顶）')] %}
-      <div>
-        <div style="font-weight:650;font-size:12px;margin-bottom:3px">{{ t(label, lzh) }}</div>
-        {% for g in col[:5] %}
-        <div style="display:flex;align-items:center;gap:7px;margin:3px 0">
-          <span style="flex:0 0 12px;font-size:11px" title="{{ g.stage }}">{{ {'emerging':'▲','confirmed':'●','cooling':'▽','quiet':'·'}.get(g.stage,'·') }}</span>
-          <span style="flex:1;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ t(g.name, g.name_zh) }}{% if g.leadership.breadth=='narrow' %} <span class="chip" style="font-size:10px" title="one name dominates the move">⚠{{ t('narrow','集中') }}</span>{% endif %}</span>
-          <div style="flex:0 0 56px;height:6px;background:var(--line);border-radius:4px;overflow:hidden"><div style="height:100%;width:{{ (g.read_quality*100)|round|int }}%;background:var(--muted)"></div></div>
-          <span class="muted" style="flex:0 0 30px;text-align:right;font-size:10.5px">{{ '%.2f'|format(g.read_quality) }}</span>
-        </div>
-        {% endfor %}
-      </div>
-      {% endfor %}
-    </div>
-
-    {% set RG = flow.regime %}
-    {% set cohering = [] %}{% for g in (flow.sectors + flow.baskets) %}{% if g.cohesion_gate.stress_conditional %}{% set _ = cohering.append(g) %}{% endif %}{% endfor %}
-    <div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 12px;margin:10px 0 4px;font-size:12.5px">
-      <b>{{ t('Cohesion gate', '共动门') }}</b> <span class="muted">({{ t('context only · the one measured-but-modest edge, stress-conditional, 20d', '仅上下文 · 唯一实测但有限的边际信号，压力条件下，20日') }})</span><br>
-      {% if RG.elevated and cohering %}⚠ {{ t('Stress regime AND groups cohering', '压力状态 且 多组共动') }}: {% for g in cohering %}<span class="chip">{{ t(g.name, g.name_zh) }}</span>{% endfor %} — {{ t('rotation may be forming (low confidence; a stress dispersion-recovery proxy, not inflows)', '轮动或在形成（低置信度；压力离散修复代理，并非资金流入）') }}
-      {% else %}{{ t('inactive', '未激活') }} — {{ t('VIX', 'VIX') }} {% if RG.pctile is not none %}{{ (RG.pctile*100)|round|int }}%ile{% else %}—{% endif %} ({{ t('not a stress regime; cohesion only carries signal under stress', '非压力状态；共动仅在压力下才有意义') }}){% endif %}
-    </div>
-
-    <div class="muted" style="font-size:11.5px;margin-top:6px">{{ t('Verdict', '结论') }}: <b>{{ flow.verdict }}</b> · {{ t(
-      'never scored, never an axis. The read-quality bar measures data/coherence, NOT directional confidence (there is none). Built on a ~3y cache; reconfirm as data accrues. This is the wide detector that focuses a separate inference layer — it does not draw conclusions itself.',
-      '从不评分、绝不入轴。读数质量条衡量数据/一致性，而非方向置信度（不存在）。基于约3年缓存；随数据积累需复核。这是用于聚焦独立推断层的"宽探测器"，本身不下结论。') }}
-      <a href="#" onclick="return false" class="muted" style="text-decoration:underline" title="See data/group_flow/validation_meta.json">{{ t('how this was validated', '验证方法') }}</a></div>
-  </div>
-  {% endif %}
 
   <div id="content">
     <section id="table-section">
       <h2><span class="idx">01</span>{{ t('Performance table', '表现一览') }}</h2>
       <p class="sub">{{ t(
-        "All baskets, watchlist-style. Click a column to sort; toggle the value between raw return, vs S&P 500, and σ (the move z-scored vs the basket's own trailing year — computed horizons only). Click a name to jump to its members.",
-        '全部篮子，自选股式表格。点击列标题排序；可在原始回报、相对标普 500、σ（相对该篮子自身过去一年的 z 分数 — 仅限定窗）之间切换。点击名称跳转至成分。') }}</p>
+        "All baskets, watchlist-style. Click a column to sort; toggle the value between raw return, vs HSI, and σ (the move z-scored vs the basket's own trailing year — computed horizons only). Click a name to jump to its members.",
+        '全部篮子，自选股式表格。点击列标题排序；可在原始回报、相对恒指、σ（相对该篮子自身过去一年的 z 分数 — 仅限定窗）之间切换。点击名称跳转至成分。') }}</p>
       <div class="chartbar"><span></span><span class="tabs" id="btbl-mode" role="group"></span></div>
       <div class="panel"><div class="ts"><table id="btable"></table></div></div>
     </section>
@@ -233,8 +182,8 @@
     <section id="chart-section">
       <h2><span class="idx">02</span>{{ t('Performance', '走势对比') }}</h2>
       <p class="sub">{{ t(
-        'Rebased to 0% at the start of the selected window. Click legend entries to toggle baskets. The full "All" range is ~3 years (our free-cache ceiling); series before a basket\'s creation date are a backtest of the membership at creation. Powered by TradingView Lightweight Charts.',
-        '在所选窗口起点重设为 0%。点击图例可切换篮子。"全部"区间约 3 年（免费缓存上限）；篮子创建日之前为按创建时成分的回测。由 TradingView Lightweight Charts 提供。') }}</p>
+        'Rebased to 0% at the start of the selected window. Click legend entries to toggle baskets. The full "All" range is ~5 years (our free-cache ceiling); series before a basket\'s creation date are a backtest of the membership at creation. Powered by TradingView Lightweight Charts.',
+        '在所选窗口起点重设为 0%。点击图例可切换篮子。"全部"区间约 5 年（免费缓存上限）；篮子创建日之前为按创建时成分的回测。由 TradingView Lightweight Charts 提供。') }}</p>
       <div class="chartbar">
         <span class="tabs" id="chart-modes" role="group"></span>
         <span class="tabs" id="chart-ranges" role="group"></span>
@@ -253,8 +202,8 @@
 
   <footer>
     {{ t(
-      'Read-only analytics for informational purposes only — not investment advice. Equal-weighted, point-in-time dated membership, buy-and-hold between changes, over the FREE S&P-1500 price cache (~3y). Membership was curated with knowledge of the period, so the series is HINDSIGHT-curated and descriptive — not an out-of-sample backtest and not a buy list. See LIMITATIONS.md.',
-      '仅供参考的只读分析 — 非投资建议。等权重、按时点日期管理成分、调整间买入持有，基于免费标普 1500 价格缓存（约 3 年）。成分在已知该期间表现下整理，故为事后选取的描述性序列 — 并非样本外回测，也非买入清单。参见 LIMITATIONS.md。') }}
+      'Read-only analytics for informational purposes only — not investment advice. Equal-weighted, point-in-time dated membership, buy-and-hold between changes, over the FREE hk_search HK-listed price cache (~5y, HSI/HSCEI names), benchmarked to the Hang Seng Index. Membership was curated with knowledge of the period, so the series is HINDSIGHT-curated and descriptive — not an out-of-sample backtest and not a buy list. See LIMITATIONS.md.',
+      '仅供参考的只读分析 — 非投资建议。等权重、按时点日期管理成分、调整间买入持有，基于免费的 china_search 大市值 A 股价格缓存（约 5 年），以恒生指数 (HSI) 为基准。成分在已知该期间表现下整理，故为事后选取的描述性序列 — 并非样本外回测，也非买入清单。参见 LIMITATIONS.md。') }}
     {{ t('Generated', '生成于') }} <span id="gen">{{ generated_utc }}</span>.
   </footer>
 
@@ -264,13 +213,21 @@ const BASKETS = {{ baskets_json|safe }};
 const CHART   = {{ chart_json|safe }};
 
 const TBL_COLS = ['1d','5d','20d','60d','MTD','YTD'];
-const TBL_MODES = [['raw','Raw'],['rel','vs S&P'],['sigma','σ']];
 const RANGES = [['3M',63],['6M',126],['YTD','ytd'],['1Y',252],['All',0]];
 const HZ_TABS = ['1d','5d','20d','60d','YTD'];
-const PALETTE = ['#5aa7ff','#4ade80','#facc15','#fb923c','#f472b6','#2dd4bf','#a78bfa','#fb7185','#a3e635','#38bdf8','#e879f9','#34d399','#fbbf24','#60a5fa'];
+const PALETTE = ['#5aa7ff','#4ade80','#facc15','#fb923c','#f472b6','#2dd4bf','#a78bfa','#fb7185','#a3e635','#38bdf8','#e879f9','#34d399','#fbbf24','#60a5fa','#c084fc','#22d3ee','#f87171','#bef264','#818cf8','#fcd34d','#5eead4','#fda4af'];
 const colorOf = {}; (BASKETS.baskets||[]).forEach((b,i)=>colorOf[b.id]=PALETTE[i%PALETTE.length]);
 const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const BENCH_COLOR = () => cssv('--muted') || '#94a3b8';
+
+// ---- bilingual helpers (the page re-renders on langchange) -----------------
+const LANG = () => document.documentElement.getAttribute('data-lang')||'en';
+const bn  = b => (LANG()==='zh' && b && b.name_zh) ? b.name_zh : (b?b.name:'');
+const bth = b => (LANG()==='zh' && b && b.thesis_zh) ? b.thesis_zh : (b?b.thesis:'');
+const BENCH = () => LANG()==='zh' ? (BASKETS.benchmark_label_zh||'恒生指数') : (BASKETS.benchmark_label||'HSI');
+const CAT_ZH = {}; (BASKETS.categories||[]).forEach((c,i)=>CAT_ZH[c]=(BASKETS.categories_zh||[])[i]||c);
+const catLabel = c => (LANG()==='zh' && CAT_ZH[c]) ? CAT_ZH[c] : c;
+const VS = () => (LANG()==='zh'?'相对 ':'vs ')+BENCH();
 
 const fmtPct = x => x==null ? '—' : (x>=0?'+':'')+(x*100).toFixed(1)+'%';
 const fmtZ   = x => x==null ? '—' : (x>=0?'+':'')+x.toFixed(1)+'σ';
@@ -309,31 +266,32 @@ function renderTabs(el, opts, active, cb){
 }
 
 // ---- 01 table -------------------------------------------------------------
-let btblMode = localStorage.getItem('fw-btbl-mode')||'rel';
-let btblSort = JSON.parse(localStorage.getItem('fw-btbl-sort')||'{"col":"20d","dir":-1}');
+let btblMode = localStorage.getItem('cnfw-btbl-mode')||'rel';
+let btblSort = JSON.parse(localStorage.getItem('cnfw-btbl-sort')||'{"col":"20d","dir":-1}');
 function renderBTable(){
   const rows = Object.entries(CHART.baskets).map(([id,lv])=>{
     const b=(BASKETS.baskets||[]).find(x=>x.id===id); const rl=ratio(lv);
     const src = btblMode==='raw'?lv:rl;
     const vals={}; TBL_COLS.forEach(c=>{ vals[c]= btblMode==='sigma' ? (/^\d/.test(c)?winZ(rl,c):null) : winRet(src,c); });
-    return {id,name:b?b.name:id,color:colorOf[id]||'#888',spark:sparkTail(src),vals};
+    return {id,name:bn(b),color:colorOf[id]||'#888',spark:sparkTail(src),vals};
   });
   const sc=btblSort.col, dir=btblSort.dir;
   rows.sort((a,b)=>{ if(sc==='name') return a.name.localeCompare(b.name)*dir;
     const x=a.vals[sc], y=b.vals[sc]; if(x==null) return 1; if(y==null) return -1; return (x-y)*dir; });
   const fmt = btblMode==='sigma' ? fmtZ : fmtPct;
   const th = c => `<th class="num ${c===sc?'sel':''}" data-c="${c}">${c}${c===sc?(dir<0?' ▾':' ▴'):''}</th>`;
-  let html = `<thead><tr><th data-c="name">Basket${sc==='name'?(dir<0?' ▾':' ▴'):''}</th><th class="num">60d</th>${TBL_COLS.map(th).join('')}</tr></thead><tbody>`;
+  const nameHdr = LANG()==='zh'?'篮子':'Basket';
+  let html = `<thead><tr><th data-c="name">${nameHdr}${sc==='name'?(dir<0?' ▾':' ▴'):''}</th><th class="num">60d</th>${TBL_COLS.map(th).join('')}</tr></thead><tbody>`;
   html += rows.map(r=>`<tr><td class="bname" data-id="${r.id}"><span class="dot" style="background:${r.color}"></span>${esc(r.name)}</td>
     <td class="num">${sparkSvg(r.spark,{color:r.color})}</td>
     ${TBL_COLS.map(c=>`<td class="num ${cls(r.vals[c])}">${r.vals[c]==null?'<span class="muted">—</span>':fmt(r.vals[c])}</td>`).join('')}</tr>`).join('');
   if(btblMode==='raw'){ const bv={}; TBL_COLS.forEach(c=>bv[c]=winRet(CHART.bench,c));
-    html += `<tr><td class="bname" style="font-weight:500"><span class="dot" style="background:${BENCH_COLOR()}"></span>S&amp;P 500</td><td></td>${TBL_COLS.map(c=>`<td class="num ${cls(bv[c])}">${fmtPct(bv[c])}</td>`).join('')}</tr>`; }
+    html += `<tr><td class="bname" style="font-weight:500"><span class="dot" style="background:${BENCH_COLOR()}"></span>${esc(BENCH())}</td><td></td>${TBL_COLS.map(c=>`<td class="num ${cls(bv[c])}">${fmtPct(bv[c])}</td>`).join('')}</tr>`; }
   html += '</tbody>';
   const tbl=document.getElementById('btable'); tbl.innerHTML=html;
   tbl.querySelectorAll('th[data-c]').forEach(h=>h.onclick=()=>{ const c=h.dataset.c;
     if(c===btblSort.col) btblSort.dir*=-1; else btblSort={col:c,dir:c==='name'?1:-1};
-    localStorage.setItem('fw-btbl-sort',JSON.stringify(btblSort)); renderBTable(); });
+    localStorage.setItem('cnfw-btbl-sort',JSON.stringify(btblSort)); renderBTable(); });
   tbl.querySelectorAll('.bname[data-id]').forEach(n=>n.onclick=()=>openBasket(n.dataset.id));
 }
 
@@ -341,9 +299,9 @@ function renderBTable(){
 let chart=null, chartMode='rel', chartRange=252, hidden={};
 function chartSets(){
   const sets=Object.entries(CHART.baskets).map(([id,levels])=>{ const b=(BASKETS.baskets||[]).find(x=>x.id===id);
-    return {key:id,label:b?b.name:id,color:colorOf[id]||'#888',levels}; });
+    return {key:id,label:bn(b),color:colorOf[id]||'#888',levels}; });
   if(chartMode==='rel') return sets.map(s=>({...s,levels:ratio(s.levels)}));
-  return [...sets,{key:'bench',label:'S&P 500',color:BENCH_COLOR(),levels:CHART.bench}];
+  return [...sets,{key:'bench',label:BENCH(),color:BENCH_COLOR(),levels:CHART.bench}];
 }
 function rangeStart(dates){ if(chartRange==='ytd'){ const y=dates[dates.length-1].slice(0,4); const i=dates.findIndex(d=>d.startsWith(y)); return i<=0?0:i-1; }
   return chartRange?Math.max(0,dates.length-chartRange):0; }
@@ -382,22 +340,24 @@ function initChartDefaults(){
 }
 
 // ---- 03 cards + details ---------------------------------------------------
-let bhz = localStorage.getItem('fw-hz')||'20d';
-function kpi(k,p){ const v=p?p.rel:null; return `<div class="kpi"><div class="v ${cls(v)}">${fmtPct(v)}</div><div class="k">${k} vs S&P</div></div>`; }
+let bhz = localStorage.getItem('cnfw-hz')||'20d';
+function kpi(k,p){ const v=p?p.rel:null; return `<div class="kpi"><div class="v ${cls(v)}">${fmtPct(v)}</div><div class="k">${k} ${esc(VS())}</div></div>`; }
 function renderCards(){
   const el=document.getElementById('cards');
   el.innerHTML=(BASKETS.categories||[]).map(cat=>{
+    const since = LANG()==='zh'?'自':'since';
+    const memberW = LANG()==='zh'?'只 · 等权 · ':' members · equal-weighted · ';
     const cards=(BASKETS.baskets||[]).filter(b=>b.category===cat)
       .sort((a,c)=>((c.perf?.[bhz]?.rel)??-9)-((a.perf?.[bhz]?.rel)??-9))
       .map(b=>{ const spk=sparkTail(ratio(CHART.baskets[b.id]));
-        const ref=b.reference?` · tracks ${esc(b.reference.label)} (r ${b.reference.corr.toFixed(2)})`:'';
+        const ref=b.reference?` · ${LANG()==='zh'?'对标':'tracks'} ${esc(b.reference.label)} (r ${b.reference.corr.toFixed(2)})`:'';
         return `<div class="card" style="--c:${colorOf[b.id]}" data-id="${b.id}">
-          <div class="nm"><span class="dot" style="background:${colorOf[b.id]}"></span>${esc(b.name)}</div>
-          <div class="meta">${b.n_members} members · equal-weighted · since ${esc(b.created)}${ref}</div>
-          <div class="th">${esc(b.thesis)}</div>
+          <div class="nm"><span class="dot" style="background:${colorOf[b.id]}"></span>${esc(bn(b))}</div>
+          <div class="meta">${b.n_members}${memberW}${since} ${esc(b.created)}${ref}</div>
+          <div class="th">${esc(bth(b))}</div>
           <div class="perf">${kpi(hzLabel(bhz),b.perf?.[bhz])}${kpi('YTD',b.perf?.ytd)}<span class="spark">${sparkSvg(spk,{w:96,h:30,color:colorOf[b.id]})}</span></div>
         </div>`; }).join('');
-    return cards?`<h3 class="cat">${esc(cat)}</h3><div class="cards">${cards}</div>`:'';
+    return cards?`<h3 class="cat">${esc(catLabel(cat))}</h3><div class="cards">${cards}</div>`:'';
   }).join('');
   el.querySelectorAll('.card').forEach(c=>c.onclick=()=>openBasket(c.dataset.id));
 }
@@ -405,17 +365,19 @@ function memRows(b){ return (b.members||[]).map(m=>`<tr><td><b>${esc(m.symbol)}<
   <td class="why">${esc(m.rationale)}</td><td class="num muted sm">${esc(m.added)}</td>
   <td class="num ${cls(m.ret_20d)}">${fmtPct(m.ret_20d)}</td><td class="num ${cls(m.ret_ytd)}">${fmtPct(m.ret_ytd)}</td></tr>`).join(''); }
 function detailSection(b){
-  const p=b.perf||{}; const kr=(k,h)=>`<div><div class="k">${k} vs S&P</div><div class="v ${cls(p[h]?.rel)}">${fmtPct(p[h]?.rel)}</div></div>`;
-  const ref=b.reference?`<p class="refline">Cross-checked vs <b>${esc(b.reference.label)}</b>${b.reference.name?' — '+esc(b.reference.name):''}: daily correlation <b>${b.reference.corr.toFixed(2)}</b>, market-adjusted <b>${b.reference.rel_corr.toFixed(2)}</b> over ${b.reference.n} sessions. <span class="muted">(market-adjusted strips shared market beta — basket−S&P vs ETF−S&P.)</span></p>`:'';
-  const warns=[]; if((b.missing||[]).length) warns.push(`<span class="warn">excluded (not in free cache): ${b.missing.map(esc).join(', ')}</span>`);
-  (b.partial||[]).forEach(pp=>warns.push(`<span class="warn">${esc(pp.symbol)} enters ${esc(pp.from)}</span>`));
+  const p=b.perf||{}; const kr=(k,h)=>`<div><div class="k">${k} ${esc(VS())}</div><div class="v ${cls(p[h]?.rel)}">${fmtPct(p[h]?.rel)}</div></div>`;
+  const zh=LANG()==='zh';
+  const ref=b.reference?`<p class="refline">${zh?'交叉验证对标':'Cross-checked vs'} <b>${esc(b.reference.label)}</b>${b.reference.name?' — '+esc(b.reference.name):''}: ${zh?'日相关性':'daily correlation'} <b>${b.reference.corr.toFixed(2)}</b>, ${zh?'市场调整后':'market-adjusted'} <b>${b.reference.rel_corr.toFixed(2)}</b> ${zh?'，共':'over'} ${b.reference.n} ${zh?'个交易日':'sessions'}. <span class="muted">(${zh?'市场调整剥离共同的市场Beta — 篮子−基准 vs ETF−基准。':'market-adjusted strips shared market beta — basket−bench vs ETF−bench.'})</span></p>`:'';
+  const warns=[]; if((b.missing||[]).length) warns.push(`<span class="warn">${zh?'已剔除（不在缓存）':'excluded (not in free cache)'}: ${b.missing.map(esc).join(', ')}</span>`);
+  (b.partial||[]).forEach(pp=>warns.push(`<span class="warn">${esc(pp.symbol)} ${zh?'纳入于':'enters'} ${esc(pp.from)}</span>`));
   const clog=(b.changelog||[]).map(c=>`<li><b>${esc(c.date)}</b> — ${esc(c.action)}: ${esc(c.note)}</li>`).join('');
-  return `<div class="detail" id="b-${b.id}"><h4><span class="dot" style="background:${colorOf[b.id]}"></span>${esc(b.name)} <span class="chip">${esc(b.category)}</span></h4>
-    <p class="th">${esc(b.thesis)}</p>
-    <div class="kpirow">${kr('20d','20d')}${kr('60d','60d')}${kr('MTD','mtd')}${kr('YTD','ytd')}${kr('Full','full')}</div>
+  const memHdr = zh?['代码','理由','纳入','20d','YTD']:['Symbol','Rationale','Added','20d','YTD'];
+  return `<div class="detail" id="b-${b.id}"><h4><span class="dot" style="background:${colorOf[b.id]}"></span>${esc(bn(b))} <span class="chip">${esc(catLabel(b.category))}</span></h4>
+    <p class="th">${esc(bth(b))}</p>
+    <div class="kpirow">${kr('20d','20d')}${kr('60d','60d')}${kr('MTD','mtd')}${kr('YTD','ytd')}${kr(zh?'全程':'Full','full')}</div>
     ${ref}<div>${warns.join(' ')}</div>
-    <details open><summary>Members (${b.n_members}) &amp; changelog</summary>
-      <div class="ts"><table><thead><tr><th>Symbol</th><th>Rationale</th><th class="num">Added</th><th class="num">20d</th><th class="num">YTD</th></tr></thead><tbody>${memRows(b)}</tbody></table></div>
+    <details open><summary>${zh?'成分':'Members'} (${b.n_members}) &amp; ${zh?'变更记录':'changelog'}</summary>
+      <div class="ts"><table><thead><tr><th>${memHdr[0]}</th><th>${memHdr[1]}</th><th class="num">${memHdr[2]}</th><th class="num">${memHdr[3]}</th><th class="num">${memHdr[4]}</th></tr></thead><tbody>${memRows(b)}</tbody></table></div>
       <ul class="clog">${clog}</ul>
     </details></div>`;
 }
@@ -427,27 +389,34 @@ function renderDetails(){
 function openBasket(id){ const d=document.getElementById('b-'+id); if(!d) return; const det=d.querySelector('details'); if(det) det.open=true; d.scrollIntoView({behavior:'smooth',block:'start'}); }
 
 function renderStory(){
-  const s=BASKETS.story; if(!s) return;
+  const s=BASKETS.story; if(!s) return; const zh=LANG()==='zh';
   const dot=id=>`<span class="dot" style="background:${colorOf[id]||'#888'}"></span>`;
   const lead=(BASKETS.baskets||[]).find(b=>b.name===s.leader), lag=(BASKETS.baskets||[]).find(b=>b.name===s.laggard);
-  document.getElementById('story').innerHTML =
-    `${lead?dot(lead.id):''}<b>${esc(s.leader)}</b> leads the themes over 20 days (<span class="${cls(s.leader_rel)}">${fmtPct(s.leader_rel)}</span> vs S&amp;P) · ${lag?dot(lag.id):''}<b>${esc(s.laggard)}</b> lags (<span class="${cls(s.laggard_rel)}">${fmtPct(s.laggard_rel)}</span>) · <b>${s.n_baskets}</b> baskets across <b>${s.n_cats}</b> categories.`;
+  const leadNm=esc(zh?(s.leader_zh||s.leader):s.leader), lagNm=esc(zh?(s.laggard_zh||s.laggard):s.laggard);
+  document.getElementById('story').innerHTML = zh
+    ? `${lead?dot(lead.id):''}<b>${leadNm}</b> 近 20 日领涨主题（<span class="${cls(s.leader_rel)}">${fmtPct(s.leader_rel)}</span> ${esc(VS())}） · ${lag?dot(lag.id):''}<b>${lagNm}</b> 落后（<span class="${cls(s.laggard_rel)}">${fmtPct(s.laggard_rel)}</span>） · 共 <b>${s.n_baskets}</b> 个篮子，跨 <b>${s.n_cats}</b> 个类别。`
+    : `${lead?dot(lead.id):''}<b>${leadNm}</b> leads the themes over 20 days (<span class="${cls(s.leader_rel)}">${fmtPct(s.leader_rel)}</span> ${esc(VS())}) · ${lag?dot(lag.id):''}<b>${lagNm}</b> lags (<span class="${cls(s.laggard_rel)}">${fmtPct(s.laggard_rel)}</span>) · <b>${s.n_baskets}</b> baskets across <b>${s.n_cats}</b> categories.`;
 }
+
+function renderModeTabs(){
+  renderTabs(document.getElementById('btbl-mode'), [['raw', LANG()==='zh'?'原始':'Raw'],['rel',VS()],['sigma','σ']], btblMode, v=>{ btblMode=v; localStorage.setItem('cnfw-btbl-mode',v); renderBTable(); });
+  renderTabs(document.getElementById('chart-modes'), [['rel',VS()],['abs', LANG()==='zh'?'绝对':'Absolute']], chartMode, v=>{ chartMode=v; renderChart(); });
+}
+
+function renderAll(){ renderStory(); renderModeTabs(); renderBTable(); renderChart(); renderCards(); renderDetails(); }
 
 function boot(){
   document.getElementById('asof').textContent=BASKETS.as_of||'—';
-  renderStory();
-  renderTabs(document.getElementById('btbl-mode'), TBL_MODES, btblMode, v=>{ btblMode=v; localStorage.setItem('fw-btbl-mode',v); renderBTable(); });
-  renderTabs(document.getElementById('chart-modes'), [['rel','vs S&P 500'],['abs','Absolute']], chartMode, v=>{ chartMode=v; renderChart(); });
+  renderModeTabs();
   const rel=document.getElementById('chart-ranges');
   rel.innerHTML=RANGES.map(([lab,v])=>`<button data-v="${v}" class="${v===chartRange?'on':''}">${lab}</button>`).join('')+`<input class="rangeN" type="number" min="5" max="600" placeholder="N days">`;
   rel.querySelectorAll('button').forEach(b=>b.onclick=()=>{ chartRange=(b.dataset.v==='ytd')?'ytd':parseInt(b.dataset.v,10); rel.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); renderChart(); });
   rel.querySelector('.rangeN').onchange=function(){ const n=Math.min(600,Math.max(5,parseInt(this.value,10)||252)); chartRange=n; rel.querySelectorAll('button').forEach(x=>x.classList.remove('on')); renderChart(); };
-  renderTabs(document.getElementById('hz-tabs'), HZ_TABS.map(h=>[h,hzLabel(h)]), bhz, v=>{ bhz=v; localStorage.setItem('fw-hz',v); renderCards(); renderDetails(); });
+  renderTabs(document.getElementById('hz-tabs'), HZ_TABS.map(h=>[h,hzLabel(h)]), bhz, v=>{ bhz=v; localStorage.setItem('cnfw-hz',v); renderCards(); renderDetails(); });
   initChartDefaults();
-  renderBTable(); renderChart(); renderCards(); renderDetails();
+  renderStory(); renderBTable(); renderChart(); renderCards(); renderDetails();
   if(location.hash.startsWith('#b-')) setTimeout(()=>openBasket(location.hash.slice(3)),200);
-  document.addEventListener('langchange',()=>{ if(chart){chart.applyOptions(chartOpts());} renderChart(); });
+  document.addEventListener('langchange',()=>{ if(chart){chart.applyOptions(chartOpts());} renderAll(); });
   document.addEventListener('themechange',()=>{ if(chart){chart.applyOptions(chartOpts());} renderChart(); });
 }
 if(document.readyState!=='loading') boot(); else document.addEventListener('DOMContentLoaded',boot);

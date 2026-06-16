@@ -1944,6 +1944,16 @@ def main() -> int:
         _build_baskets_china.main()
     except Exception as e:  # noqa: BLE001
         log.error("china baskets (via build_vector) failed (%s)", e)
+    try:  # Hong Kong thematic baskets page — same pattern, off the hk_search cache.
+        from scripts import build_baskets_hk as _build_baskets_hk
+        _build_baskets_hk.main()
+    except Exception as e:  # noqa: BLE001
+        log.error("hk baskets (via build_vector) failed (%s)", e)
+    try:  # Canada / S&P-TSX thematic baskets page — same pattern, off the canada_search cache.
+        from scripts import build_baskets_canada as _build_baskets_canada
+        _build_baskets_canada.main()
+    except Exception as e:  # noqa: BLE001
+        log.error("canada baskets (via build_vector) failed (%s)", e)
     build_landing(site, vm)
     return 0
 
