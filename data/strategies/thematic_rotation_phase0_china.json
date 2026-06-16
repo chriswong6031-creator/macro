@@ -1,0 +1,124 @@
+{
+  "schema": "thematic_rotation_phase0.v1",
+  "region": "china",
+  "generated_at": "2026-06-16T10:26:40.914962+00:00",
+  "cost_bps": 10.0,
+  "universes": {
+    "sectors": {
+      "n_assets": 16,
+      "span": [
+        "2017-12-31",
+        "2026-06-30"
+      ],
+      "contaminated": false,
+      "algorithm": {
+        "ew_buyhold": {
+          "cagr": 0.0358,
+          "sharpe": 0.27,
+          "max_dd": -0.3733,
+          "calmar": 0.1,
+          "n_months": 102,
+          "dsr": 0.218,
+          "worst_decile_ret": -0.0647
+        },
+        "top3_mom12_rel": {
+          "cagr": 0.0457,
+          "sharpe": 0.3,
+          "max_dd": -0.4245,
+          "calmar": 0.11,
+          "n_months": 90,
+          "dsr": 0.223,
+          "worst_decile_ret": -0.05
+        },
+        "top3_mom6_rel": {
+          "cagr": 0.0446,
+          "sharpe": 0.29,
+          "max_dd": -0.6617,
+          "calmar": 0.07,
+          "n_months": 92,
+          "dsr": 0.225,
+          "worst_decile_ret": -0.0554
+        },
+        "top3_mom12_dual": {
+          "cagr": -0.0264,
+          "sharpe": 0.02,
+          "max_dd": -0.6384,
+          "calmar": -0.04,
+          "n_months": 90,
+          "dsr": 0.064,
+          "worst_decile_ret": -0.0409
+        },
+        "top4_mom12_dual": {
+          "cagr": 0.0111,
+          "sharpe": 0.16,
+          "max_dd": -0.5135,
+          "calmar": 0.02,
+          "n_months": 90,
+          "dsr": 0.128,
+          "worst_decile_ret": -0.0222
+        }
+      },
+      "rank_ic": {
+        "1m": {
+          "mean_ic": 0.0251,
+          "ic_t_hac": 0.767,
+          "hit": 0.522,
+          "n_steps": 90
+        },
+        "3m": {
+          "mean_ic": 0.0731,
+          "ic_t_hac": 1.201,
+          "hit": 0.7,
+          "n_steps": 30
+        }
+      },
+      "tsmom_conditional": {
+        "above_trend": {
+          "mean": 0.0051,
+          "std": 0.0929,
+          "sharpe": 0.19,
+          "p05": -0.1158,
+          "n": 632
+        },
+        "below_trend": {
+          "mean": 0.0058,
+          "std": 0.1092,
+          "sharpe": 0.19,
+          "p05": -0.1209,
+          "n": 781
+        },
+        "mean_diff_t": -0.14,
+        "mean_diff_p": 0.8875
+      },
+      "extension_drawdown": {
+        "fwd_days": 63,
+        "cohorts": {
+          "normal": {
+            "mean_fwd_maxdd": -0.0934,
+            "p05_fwd_maxdd": -0.2422,
+            "n": 18308
+          },
+          "stretched": {
+            "mean_fwd_maxdd": -0.0972,
+            "p05_fwd_maxdd": -0.2211,
+            "n": 3600
+          },
+          "parabolic": {
+            "mean_fwd_maxdd": -0.1077,
+            "p05_fwd_maxdd": -0.246,
+            "n": 1899
+          }
+        },
+        "spearman_ez_vs_fwd_maxdd": -0.023
+      },
+      "years": 8.5
+    }
+  },
+  "gate_helps": false,
+  "verdict": {
+    "relative_momentum": "modest_or_none \u2014 cross-sectional rank-IC weak/insignificant on the clean sector universe; an attention/focus lens, not alpha.",
+    "absolute_trend_gate": "did_NOT_hold_here \u2014 on this market's history the trend gate did not reduce drawdown (mean-reverting tape whipsaws the gate). Treat the allocation as EXPERIMENTAL/display here and lean on the cross-market US/Canada result with caution.",
+    "basket_extension": "no_basket_drawdown_edge \u2014 extension predicts per-NAME crashes, not diversified basket drawdown; keep as constituent texture only.",
+    "rotation_timing": "display_only \u2014 no validated early-handoff forecast (cf. group_flow)."
+  }
+}

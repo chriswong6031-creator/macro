@@ -74,24 +74,25 @@ def main() -> int:
     log.info("wrote %s/baskets.html (%d baskets, %d categories, %d KB)",
              site, len(data["baskets"]), len(data.get("categories", [])), len(html) // 1024)
 
-    # Thematic Narrative-Rotation page (engine.narrative_rotation -> site/allocation.html).
-    # Built here off the same baskets membership + price caches so it ships on every CI run
-    # without a new daily.yml step (the PAT lacks `workflow` scope, like build_canada /
-    # build_baskets_china). First refresh the honest 27y Phase-0 backtest artifact
-    # (data/strategies/thematic_rotation_phase0.json) the page cites — a committed copy is
-    # the fallback if the refresh fails; an absent file simply hides the backtest panel.
-    # Both additive — never fatal. TODO: promote to a dedicated daily.yml `build_allocation`
-    # step once a workflow-scoped token is available.
+    # Thematic Narrative-Rotation pages (engine.narrative_rotation -> site/allocation*.html)
+    # for ALL FOUR markets (US + China + HK + Canada). Built here off the same baskets
+    # membership + price caches the collectors already refresh, so they ship on every CI run
+    # without new daily.yml steps (the PAT lacks `workflow` scope, like build_canada /
+    # build_baskets_china). First refresh the honest Phase-0 backtest artifacts the pages
+    # cite (US 27y + Canada ~24y + China ~8y; HK is too thin → cites the US proxy) — committed
+    # copies are the fallback if a refresh fails; an absent file just hides that panel. Both
+    # additive — never fatal. TODO: promote to dedicated daily.yml steps once a workflow-scoped
+    # token is available.
     try:
-        from scripts.thematic_rotation_phase0 import main as _phase0
-        _phase0()
-    except Exception as e:  # noqa: BLE001 — additive; falls back to the committed artifact
-        log.error("thematic rotation Phase-0 refresh failed (using committed artifact): %s", e)
+        from scripts.thematic_rotation_phase0 import run_all as _phase0_all
+        _phase0_all()                                     # us, canada, china (HK skipped → US proxy)
+    except Exception as e:  # noqa: BLE001 — additive; falls back to the committed artifacts
+        log.error("thematic rotation Phase-0 refresh failed (using committed artifacts): %s", e)
     try:
         from scripts.build_allocation import main as _build_allocation
-        _build_allocation()
+        _build_allocation()                               # builds all four allocation pages
     except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.error("allocation page (via build_baskets) failed: %s", e)
+        log.error("allocation pages (via build_baskets) failed: %s", e)
     return 0
 
 

@@ -29,32 +29,46 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_allocation")
 
 
-def main() -> int:
-    site = config.ROOT / "site"
+# region -> (json filename, html page). US keeps the bare names; the others are suffixed.
+PAGES = {"us": ("allocation.json", "allocation.html"),
+         "china": ("allocation_china.json", "allocation_china.html"),
+         "hk": ("allocation_hk.json", "allocation_hk.html"),
+         "canada": ("allocation_canada.json", "allocation_canada.html")}
+
+
+def build_region(region: str, env, built: str, site) -> bool:
+    """Build one market's Narrative-Rotation page + JSON. Additive — logs and returns False
+    on shortfall (e.g. a market's caches absent locally) so the others still build."""
     try:
         from engine.narrative_rotation import compute_narrative_rotation
-        data = compute_narrative_rotation()
-    except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.error("narrative_rotation engine failed: %s", e)
-        return 0
+        data = compute_narrative_rotation(region)
+    except Exception as e:  # noqa: BLE001
+        log.error("[%s] narrative_rotation engine failed: %s", region, e)
+        return False
     if not data:
-        log.warning("no narrative_rotation data (need baskets membership + caches) — skipping")
-        return 0
-
+        log.warning("[%s] no narrative_rotation data (caches absent?) — skipping", region)
+        return False
+    jname, page = PAGES[region]
     fdir = site / "allocationdata"
     fdir.mkdir(parents=True, exist_ok=True)
-    (fdir / "allocation.json").write_text(json.dumps(data, separators=(",", ":"), default=str))
-
-    built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
+    (fdir / jname).write_text(json.dumps(data, separators=(",", ":"), default=str))
     html = env.get_template("allocation.html.j2").render(
         d=data, data_json=json.dumps(data, separators=(",", ":")), generated_utc=built)
-    (site / "allocation.html").write_text(html)
-    log.info("wrote %s/allocation.html (%d themes, headline=%s)",
-             site, data.get("n_themes", 0),
-             (data.get("headline") or {}).get("name", "—"))
+    (site / page).write_text(html)
+    log.info("[%s] wrote %s (%d themes, headline=%s)", region, page,
+             data.get("n_themes", 0), (data.get("headline") or {}).get("name", "—"))
+    return True
+
+
+def main(regions: list[str] | None = None) -> int:
+    site = config.ROOT / "site"
+    built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
+    for r in (regions or list(PAGES.keys())):
+        build_region(r, env, built, site)
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    args = [a for a in sys.argv[1:] if not a.startswith("-")]
+    sys.exit(main(args or None))

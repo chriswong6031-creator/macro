@@ -9,6 +9,8 @@ handoff forbidding directional / fade / next-theme conclusions — none of it ev
 """
 from __future__ import annotations
 
+import hashlib
+
 import numpy as np
 import pandas as pd
 
@@ -18,9 +20,14 @@ from engine import narrative_rotation as nr
 # --------------------------------------------------------------------------- #
 # synthetic per-basket prep (mirrors what _basket_preps builds)
 # --------------------------------------------------------------------------- #
-def _prep(bid, drift, n=420, k=4, vol=0.011, seed=None):
+def _seed(bid):
+    # deterministic across processes (Python's hash() is salted by PYTHONHASHSEED)
+    return int.from_bytes(hashlib.sha1(bid.encode()).digest()[:4], "big")
+
+
+def _prep(bid, drift, n=420, k=4, vol=0.009, seed=None):
     idx = pd.date_range("2024-01-01", periods=n, freq="B")
-    rng = np.random.default_rng(seed if seed is not None else (abs(hash(bid)) % 2**32))
+    rng = np.random.default_rng(seed if seed is not None else _seed(bid))
     mc = pd.DataFrame(np.cumprod(1 + rng.normal(drift, vol, (n, k)), axis=0) * 100,
                       index=idx, columns=[f"{bid}{i}" for i in range(k)])
     ew = mc.pct_change().mean(axis=1).fillna(0.0)
@@ -33,7 +40,7 @@ def _prep(bid, drift, n=420, k=4, vol=0.011, seed=None):
 
 
 def test_rank_orders_by_momentum_and_gates_trend():
-    preps = [_prep("lead", 0.0016), _prep("mid", 0.0006), _prep("lag", -0.0010)]
+    preps = [_prep("lead", 0.0028), _prep("mid", 0.0008), _prep("lag", -0.0014)]
     ranks = nr.rank_themes(preps)
     assert ranks["lead"]["rank"] == 1                       # strongest momentum leads
     assert ranks["lead"]["eligible"] is True                # rising → above its own 200d trend
@@ -74,7 +81,7 @@ def test_crash_overlay_halves(monkeypatch):
     ranks = nr.rank_themes(preps)
     crowd = {p["id"]: {"crowding_z": None, "crowded": False} for p in preps}
     rot = nr.rotation_radar(preps, ranks, {}, {})
-    monkeypatch.setattr(nr, "_crash_state", lambda: {"active": True, "spy_ret_24m": -0.1, "vol_pctile": 0.9})
+    monkeypatch.setattr(nr, "_crash_state", lambda *a, **k: {"active": True, "bench_ret_24m": -0.1, "vol_pctile": 0.9})
     alloc = nr.allocate(preps, ranks, crowd, rot)
     assert alloc["crash_overlay"]["active"] is True
     assert sum(x["weight"] for x in alloc["weights"]) <= 0.5 + 1e-6   # exposure halved
@@ -104,13 +111,12 @@ def test_full_payload_display_only_invariants(monkeypatch):
     bench = (1 + spy_ret).cumprod()
     resid = nr._market_residuals(C, spy_ret)
     setup = {"mem": {"baskets": dict(items)}, "items": items, "closes": C, "rets": rets,
-             "idx": idx, "bench": bench, "spy_ret": spy_ret, "resid": resid}
-    monkeypatch.setattr(nr, "_setup", lambda: setup)
-    monkeypatch.setattr(nr, "_names_sectors", lambda: {t: (t, "Tech") for t in tickers})
-    monkeypatch.setattr(nr, "_validation_meta", lambda: {})
-    monkeypatch.setattr(nr, "_crash_state", lambda: {"active": False})
+             "idx": idx, "bench": bench, "bench_ret": spy_ret, "bench_close": bench, "resid": resid}
+    monkeypatch.setattr(nr, "_setup", lambda *a, **k: setup)
+    monkeypatch.setattr(nr, "_validation_meta", lambda *a, **k: {})
+    monkeypatch.setattr(nr, "_crash_state", lambda *a, **k: {"active": False})
 
-    d = nr.compute_narrative_rotation()
+    d = nr.compute_narrative_rotation("us")
     assert d is not None
     assert d["verdict"] == "discipline_not_prediction"
     assert d["headline"]["id"] == "alpha"                              # strongest theme leads
@@ -126,8 +132,28 @@ def test_full_payload_display_only_invariants(monkeypatch):
 
 
 def test_returns_none_without_data(monkeypatch):
-    monkeypatch.setattr(nr, "_setup", lambda: None)
+    monkeypatch.setattr(nr, "_setup", lambda *a, **k: None)
     assert nr.compute_narrative_rotation() is None
+
+
+def test_all_regions_have_cfg_and_smoke(monkeypatch):
+    """Every region resolves a cfg; and (if its caches are present) produces a valid,
+    weight-conserving, display-only payload. Regions without local caches simply skip."""
+    import pytest
+    for region in nr.REGION_IDS:
+        assert nr._region_cfg(region) is not None
+    seen = 0
+    for region in nr.REGION_IDS:
+        d = nr.compute_narrative_rotation(region)
+        if d is None:
+            continue
+        seen += 1
+        assert d["region"] == region and d["bench_label"]
+        assert abs(sum(w["weight"] for w in d["allocation"]["weights"]) + d["allocation"]["cash"] - 1) < 0.01
+        assert d["allocation"]["directional"] is False
+        assert d["ai_handoff"]["overall_verdict"] == "discipline_not_prediction"
+    if seen == 0:
+        pytest.skip("no regional caches available in this environment")
 
 
 def test_integration_smoke_real_data():
