@@ -1,0 +1,853 @@
+{
+  "version": "2021-06-15",
+  "seed_date": "2021-06-15",
+  "curated": "2021-06-15",
+  "benchmark": "_HSI",
+  "benchmark_label": "HSI",
+  "benchmark_label_zh": "恒生指数",
+  "construction": "Equal-weighted, monthly-rebalanced, buy-and-hold between rebalances; dated membership changes take effect same-day. Benchmark = Hang Seng Index (HSI).",
+  "history_note": "Series before a basket's creation date are a backtest of the membership as of creation; live tracking starts at creation. Universe = the HK search deep cache (HSI/HSCEI names), trimmed to a ~5y window.",
+  "note": "Curated HK thematic baskets — hindsight-curated and descriptive, not an out-of-sample backtest and not a buy list.",
+  "baskets": {
+    "hk_china_tech": {
+      "name": "China Tech & Internet",
+      "name_zh": "中资科技与互联网",
+      "category": "Tech & Internet",
+      "category_zh": "科技与互联网",
+      "etf_proxy": "3033.HK",
+      "etf_proxy_note": "HS TECH ETF",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The mega-cap China internet & hardware complex that dominates the Hang Seng — platforms, e-commerce, devices and the domestic foundry. The single biggest driver of HK index returns and the core southbound-flow target; levered to China consumption, AI capex and regulatory sentiment.",
+      "thesis_zh": "主导恒指的中资互联网与硬件巨头 — 平台、电商、终端与本土代工。香港指数回报的最大驱动力，也是南向资金的核心标的；受中国消费、AI 资本开支与监管情绪牵动。",
+      "members": [
+        {
+          "ticker": "0700.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Tencent",
+          "rationale": "Tencent — gaming + WeChat super-app + cloud"
+        },
+        {
+          "ticker": "9988.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Alibaba",
+          "rationale": "Alibaba — e-commerce + cloud + AI"
+        },
+        {
+          "ticker": "3690.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Meituan",
+          "rationale": "Meituan — local-services / food-delivery leader"
+        },
+        {
+          "ticker": "9618.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "JD.com",
+          "rationale": "JD.com — self-operated e-commerce + logistics"
+        },
+        {
+          "ticker": "1810.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Xiaomi",
+          "rationale": "Xiaomi — smartphones + IoT + EV"
+        },
+        {
+          "ticker": "9888.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Baidu",
+          "rationale": "Baidu — search + AI / autonomous driving"
+        },
+        {
+          "ticker": "1024.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Kuaishou",
+          "rationale": "Kuaishou — short-video + live commerce"
+        },
+        {
+          "ticker": "0992.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Lenovo",
+          "rationale": "Lenovo — global PC + AI servers"
+        },
+        {
+          "ticker": "0981.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "SMIC",
+          "rationale": "SMIC — the mainland foundry champion"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded China Tech & Internet — 9 equal-weight HK members."
+        }
+      ]
+    },
+    "hk_consumer": {
+      "name": "China Consumer Brands",
+      "name_zh": "中资消费品牌",
+      "category": "Consumer & Healthcare",
+      "category_zh": "消费与医药",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "HK-listed China consumer champions — sportswear, catering, jewellery, beer, dairy and packaged food. A direct read on mainland discretionary demand and premiumisation, and a favourite southbound consumption basket.",
+      "thesis_zh": "港股中资消费龙头 — 运动服饰、餐饮、珠宝、啤酒、乳业与包装食品。直接反映内地可选消费需求与升级趋势，也是南向资金偏好的消费篮子。",
+      "members": [
+        {
+          "ticker": "2020.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Anta Sports",
+          "rationale": "Anta Sports — #1 China sportswear group"
+        },
+        {
+          "ticker": "2331.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Li Ning",
+          "rationale": "Li Ning — premium domestic sportswear"
+        },
+        {
+          "ticker": "1929.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Chow Tai Fook",
+          "rationale": "Chow Tai Fook — gold jewellery leader"
+        },
+        {
+          "ticker": "6862.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Haidilao",
+          "rationale": "Haidilao — hotpot catering chain"
+        },
+        {
+          "ticker": "0291.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "China Resources Beer",
+          "rationale": "China Resources Beer — Snow/Heineken China"
+        },
+        {
+          "ticker": "0288.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "WH Group",
+          "rationale": "WH Group — global pork / packaged meat"
+        },
+        {
+          "ticker": "2319.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Mengniu Dairy",
+          "rationale": "Mengniu Dairy — #2 dairy"
+        },
+        {
+          "ticker": "1044.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hengan International",
+          "rationale": "Hengan — tissue / personal care"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded China Consumer Brands — 8 equal-weight HK members."
+        }
+      ]
+    },
+    "hk_biotech": {
+      "name": "Biotech, Pharma & CXO",
+      "name_zh": "生物医药与CXO",
+      "category": "Consumer & Healthcare",
+      "category_zh": "消费与医药",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The HK healthcare complex — innovative-drug developers, the CRO/CDMO outsourcing chain and the big distributors. The R&D-and-out-licensing growth engine, levered to biotech funding cycles, overseas BD deals and the 18A pipeline.",
+      "thesis_zh": "港股医药板块 — 创新药企、CRO/CDMO 外包链与大型流通商。研发与对外授权的成长引擎，受生物科技融资周期、海外 BD 交易与 18A 管线驱动。",
+      "members": [
+        {
+          "ticker": "1093.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "CSPC Pharmaceutical",
+          "rationale": "CSPC Pharma — branded generics + innovation"
+        },
+        {
+          "ticker": "1177.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Sino Biopharmaceutical",
+          "rationale": "Sino Biopharm — large innovative-drug pipeline"
+        },
+        {
+          "ticker": "2269.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "WuXi Biologics",
+          "rationale": "WuXi Biologics — biologics CDMO leader"
+        },
+        {
+          "ticker": "2359.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "WuXi AppTec",
+          "rationale": "WuXi AppTec — the CXO bellwether"
+        },
+        {
+          "ticker": "6160.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "BeiGene",
+          "rationale": "BeiGene — global oncology biotech"
+        },
+        {
+          "ticker": "1099.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Sinopharm",
+          "rationale": "Sinopharm — pharma distribution giant"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Biotech, Pharma & CXO — 6 equal-weight HK members."
+        }
+      ]
+    },
+    "hk_ev": {
+      "name": "China EV & Autos",
+      "name_zh": "中资电动车",
+      "category": "Autos & EV",
+      "category_zh": "汽车",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The HK-listed China auto transition — the NEV scale leader, the smart-EV start-ups and the legacy OEMs reinventing for electrification and export. A high-beta play on EV penetration, price competition and the overseas push.",
+      "thesis_zh": "港股中资汽车电动化 — 新能源车规模龙头、智能电动车新势力与转型出海的传统车企。受电动化渗透、价格战与出海驱动的高弹性主题。",
+      "members": [
+        {
+          "ticker": "1211.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "BYD",
+          "rationale": "BYD — the NEV scale + export leader"
+        },
+        {
+          "ticker": "2015.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Li Auto",
+          "rationale": "Li Auto — EREV premium SUVs"
+        },
+        {
+          "ticker": "9868.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "XPeng",
+          "rationale": "XPeng — smart-EV / ADAS"
+        },
+        {
+          "ticker": "0175.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Geely Auto",
+          "rationale": "Geely — legacy OEM + Zeekr NEV"
+        },
+        {
+          "ticker": "2238.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Guangzhou Auto",
+          "rationale": "Guangzhou Auto — JV + Aion NEV"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded China EV & Autos — 5 equal-weight HK members."
+        }
+      ]
+    },
+    "hk_banks": {
+      "name": "Banks (H + HK)",
+      "name_zh": "银行",
+      "category": "Financials",
+      "category_zh": "金融",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The banking complex listed in HK — the big mainland state lenders (H-shares) alongside HSBC and BOC Hong Kong. The core of the southbound high-dividend trade and a direct read on China credit, net-interest-margin and HK rates.",
+      "thesis_zh": "在港上市的银行 — 内地国有大行（H 股）加汇丰与中银香港。南向高股息交易的核心，也是中国信用、净息差与香港利率的直接读数。",
+      "members": [
+        {
+          "ticker": "1398.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "ICBC",
+          "rationale": "ICBC — largest state bank (H)"
+        },
+        {
+          "ticker": "0939.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "China Construction Bank",
+          "rationale": "China Construction Bank (H)"
+        },
+        {
+          "ticker": "3988.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Bank of China",
+          "rationale": "Bank of China (H)"
+        },
+        {
+          "ticker": "3328.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Bank of Communications",
+          "rationale": "Bank of Communications (H)"
+        },
+        {
+          "ticker": "1288.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Agricultural Bank of China",
+          "rationale": "Agricultural Bank of China (H)"
+        },
+        {
+          "ticker": "0005.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "HSBC",
+          "rationale": "HSBC — global bank, HK anchor"
+        },
+        {
+          "ticker": "2388.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "BOC Hong Kong",
+          "rationale": "BOC Hong Kong — HK retail/clearing bank"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Banks (H + HK) — 7 equal-weight HK members."
+        }
+      ]
+    },
+    "hk_insurers": {
+      "name": "Insurers",
+      "name_zh": "保险",
+      "category": "Financials",
+      "category_zh": "金融",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The big HK-listed insurers — AIA's pan-Asian life franchise plus the mainland life & P&C majors. Earnings and embedded value swing on equity markets, long-bond yields and new-business value; a leveraged play on an Asia risk-on turn.",
+      "thesis_zh": "港股大型险企 — 友邦的泛亚寿险特许经营加内地寿险与财险龙头。利润与内含价值随权益市场、长债收益率与新业务价值波动；对亚洲风险偏好回升的杠杆化表达。",
+      "members": [
+        {
+          "ticker": "2318.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Ping An Insurance",
+          "rationale": "Ping An — integrated insurance + fintech"
+        },
+        {
+          "ticker": "1299.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "AIA Group",
+          "rationale": "AIA — pan-Asian life champion"
+        },
+        {
+          "ticker": "2628.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "China Life",
+          "rationale": "China Life — largest mainland life (H)"
+        },
+        {
+          "ticker": "2601.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "China Pacific Insurance",
+          "rationale": "China Pacific Insurance (H)"
+        },
+        {
+          "ticker": "0966.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "China Taiping",
+          "rationale": "China Taiping — life + P&C"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Insurers — 5 equal-weight HK members."
+        }
+      ]
+    },
+    "hk_conglo": {
+      "name": "Conglomerates & Exchange",
+      "name_zh": "综合企业与交易所",
+      "category": "Financials",
+      "category_zh": "金融",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The old-economy HK hongs and the exchange operator — sprawling ports/retail/aviation conglomerates plus HKEX, whose earnings track market turnover, listings and southbound activity. A barometer of HK as a financial hub.",
+      "thesis_zh": "香港老牌综合企业与交易所 — 横跨港口/零售/航空的多元集团，加上盈利挂钩成交、上市与南向活动的港交所。香港金融中心地位的晴雨表。",
+      "members": [
+        {
+          "ticker": "0001.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "CK Hutchison",
+          "rationale": "CK Hutchison — ports / retail / telecom / infra"
+        },
+        {
+          "ticker": "0019.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Swire Pacific",
+          "rationale": "Swire Pacific — property / aviation / beverages"
+        },
+        {
+          "ticker": "0388.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "HKEX",
+          "rationale": "HKEX — the exchange operator"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Conglomerates & Exchange — 3 equal-weight HK members."
+        }
+      ]
+    },
+    "hk_property": {
+      "name": "Property & REITs",
+      "name_zh": "地产与REITs",
+      "category": "Property",
+      "category_zh": "地产",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "HK & China property — the big HK developers, the mainland SOE landlords and Link REIT. Levered to HK rates and physical-market sentiment plus the China property cycle; a high-beta, rate-sensitive value sleeve.",
+      "thesis_zh": "香港与内地地产 — 香港大型发展商、内地国有地产商与领展。受香港利率与楼市情绪及内地地产周期驱动；高弹性、对利率敏感的价值板块。",
+      "members": [
+        {
+          "ticker": "0016.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Sun Hung Kai Properties",
+          "rationale": "Sun Hung Kai — the premier HK developer"
+        },
+        {
+          "ticker": "1109.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "China Resources Land",
+          "rationale": "China Resources Land — SOE landlord (H)"
+        },
+        {
+          "ticker": "0688.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "China Overseas Land",
+          "rationale": "China Overseas Land — SOE developer (H)"
+        },
+        {
+          "ticker": "0823.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Link REIT",
+          "rationale": "Link REIT — Asia's largest REIT"
+        },
+        {
+          "ticker": "0017.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "New World Development",
+          "rationale": "New World Development"
+        },
+        {
+          "ticker": "1997.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Wharf REIC",
+          "rationale": "Wharf REIC — HK investment properties"
+        },
+        {
+          "ticker": "0012.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Henderson Land",
+          "rationale": "Henderson Land"
+        },
+        {
+          "ticker": "0083.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Sino Land",
+          "rationale": "Sino Land"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Property & REITs — 8 equal-weight HK members."
+        }
+      ]
+    },
+    "hk_gaming": {
+      "name": "Macau Gaming",
+      "name_zh": "澳门博彩",
+      "category": "Gaming & Tourism",
+      "category_zh": "博彩旅游",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The Macau casino concessionaires — pure-play exposure to gross gaming revenue, mass-market recovery and Chinese outbound travel. A high-beta consumption-reopening basket distinct from the rest of HK.",
+      "thesis_zh": "澳门博彩特许经营商 — 纯粹押注博彩毛收入、中场复苏与中国出境游。区别于其余港股的高弹性消费复苏篮子。",
+      "members": [
+        {
+          "ticker": "0027.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Galaxy Entertainment",
+          "rationale": "Galaxy Entertainment — mass-market leader"
+        },
+        {
+          "ticker": "1928.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Sands China",
+          "rationale": "Sands China — Cotai integrated resorts"
+        },
+        {
+          "ticker": "0880.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "SJM Holdings",
+          "rationale": "SJM Holdings — Grand Lisboa"
+        },
+        {
+          "ticker": "2282.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "MGM China",
+          "rationale": "MGM China"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Macau Gaming — 4 equal-weight HK members."
+        }
+      ]
+    },
+    "hk_energy": {
+      "name": "Energy (H-shares)",
+      "name_zh": "能源",
+      "category": "Energy & Resources",
+      "category_zh": "能源与资源",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The H-share energy majors — the three oil & gas giants plus the top thermal-coal producer. Heavy free-cash-flow, high payout SOEs at the centre of the southbound dividend trade; levered to oil, gas and power demand.",
+      "thesis_zh": "H 股能源龙头 — 三桶油加动力煤龙头。现金流充沛、高分红的央企，处于南向红利交易核心；受油、气与电力需求驱动。",
+      "members": [
+        {
+          "ticker": "0883.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "CNOOC",
+          "rationale": "CNOOC — low-cost offshore E&P"
+        },
+        {
+          "ticker": "0857.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "PetroChina",
+          "rationale": "PetroChina — integrated oil & gas (H)"
+        },
+        {
+          "ticker": "0386.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Sinopec",
+          "rationale": "Sinopec — refining / chemicals (H)"
+        },
+        {
+          "ticker": "1088.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "China Shenhua",
+          "rationale": "China Shenhua — integrated coal/power (H)"
+        },
+        {
+          "ticker": "0934.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Sinopec Kantons",
+          "rationale": "Sinopec Kantons — oil logistics"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Energy (H-shares) — 5 equal-weight HK members."
+        }
+      ]
+    },
+    "hk_materials": {
+      "name": "Materials & Metals",
+      "name_zh": "有色金属",
+      "category": "Energy & Resources",
+      "category_zh": "能源与资源",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The H-share base & industrial-metals producers — aluminium, copper and molybdenum. A China-listed read on the global growth cycle, green-capex demand and supply discipline; a cyclical commodity beta sleeve.",
+      "thesis_zh": "H 股基本金属与工业金属生产商 — 铝、铜与钼。表达全球增长周期、绿色资本开支需求与供给约束的中资读数；周期性大宗 Beta 板块。",
+      "members": [
+        {
+          "ticker": "2600.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Aluminum Corp of China",
+          "rationale": "Aluminum Corp of China (Chalco)"
+        },
+        {
+          "ticker": "0358.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Jiangxi Copper",
+          "rationale": "Jiangxi Copper — copper leader"
+        },
+        {
+          "ticker": "1378.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "China Hongqiao",
+          "rationale": "China Hongqiao — top aluminium"
+        },
+        {
+          "ticker": "3993.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "CMOC Group",
+          "rationale": "CMOC — copper / cobalt / moly"
+        },
+        {
+          "ticker": "0486.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "RUSAL",
+          "rationale": "RUSAL — aluminium"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Materials & Metals — 5 equal-weight HK members."
+        }
+      ]
+    },
+    "hk_telco_util": {
+      "name": "Telecom & Utilities",
+      "name_zh": "电信与公用事业",
+      "category": "Telecom, Utilities & Income",
+      "category_zh": "电信公用与收息",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The defensive carriers and HK utilities/infrastructure — the three mainland telecoms plus power, gas, infra and the mass-transit operator. Stable cash flows and high payouts; a low-beta, rate-sensitive defensive anchor.",
+      "thesis_zh": "防御性运营商与香港公用/基建 — 三大内地电信加电力、燃气、基建与地铁运营商。现金流稳定、分红高；低 Beta、对利率敏感的防御锚。",
+      "members": [
+        {
+          "ticker": "0941.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "China Mobile",
+          "rationale": "China Mobile — carrier + dividend anchor"
+        },
+        {
+          "ticker": "0762.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "China Unicom",
+          "rationale": "China Unicom"
+        },
+        {
+          "ticker": "0728.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "China Telecom",
+          "rationale": "China Telecom"
+        },
+        {
+          "ticker": "0002.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "CLP Holdings",
+          "rationale": "CLP Holdings — HK power utility"
+        },
+        {
+          "ticker": "0003.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "HK & China Gas",
+          "rationale": "HK & China Gas (Towngas)"
+        },
+        {
+          "ticker": "0006.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Power Assets",
+          "rationale": "Power Assets Holdings"
+        },
+        {
+          "ticker": "1038.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "CK Infrastructure",
+          "rationale": "CK Infrastructure"
+        },
+        {
+          "ticker": "0066.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "MTR Corporation",
+          "rationale": "MTR Corporation — rail + property"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Telecom & Utilities — 8 equal-weight HK members."
+        }
+      ]
+    },
+    "hk_dividend": {
+      "name": "High-Dividend Blue Chips",
+      "name_zh": "高股息蓝筹",
+      "category": "Telecom, Utilities & Income",
+      "category_zh": "电信公用与收息",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "A southbound-income blend — the highest-yielding HK mega-caps across banks, telecom, energy and utilities. Built to express the dividend/value factor that has led HK leadership; income with cyclical tail risk, overlaps the sector baskets by design.",
+      "thesis_zh": "南向收息组合 — 横跨银行、电信、能源与公用事业的高股息超大盘。用于表达引领港股的红利/价值因子；高股息但有周期尾部风险，与行业篮子刻意重叠。",
+      "members": [
+        {
+          "ticker": "0005.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "HSBC",
+          "rationale": "HSBC — global bank, high payout"
+        },
+        {
+          "ticker": "0941.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "China Mobile",
+          "rationale": "China Mobile — carrier dividend"
+        },
+        {
+          "ticker": "0883.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "CNOOC",
+          "rationale": "CNOOC — energy free-cash-flow"
+        },
+        {
+          "ticker": "0002.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "CLP Holdings",
+          "rationale": "CLP Holdings — utility yield"
+        },
+        {
+          "ticker": "0006.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Power Assets",
+          "rationale": "Power Assets — utility yield"
+        },
+        {
+          "ticker": "0003.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "HK & China Gas",
+          "rationale": "HK & China Gas"
+        },
+        {
+          "ticker": "1088.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "China Shenhua",
+          "rationale": "China Shenhua — coal/power dividend"
+        },
+        {
+          "ticker": "0386.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Sinopec",
+          "rationale": "Sinopec — refining dividend"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded High-Dividend Blue Chips — 8 equal-weight HK members."
+        }
+      ]
+    }
+  }
+}
