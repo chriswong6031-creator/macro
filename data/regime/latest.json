@@ -201,9 +201,9 @@
     },
     {
       "ticker": "GC=F",
-      "rs": 5.75348065659508,
-      "mom_20d_pct": -6.65,
-      "mom_60d_pct": -17.71,
+      "rs": 5.7430148534806165,
+      "mom_20d_pct": -6.82,
+      "mom_60d_pct": -17.86,
       "above_200d_trend": false,
       "pctile_252d": 30.2,
       "rank": 18
@@ -259,7 +259,7 @@
     },
     "copper_gold": {
       "level": 0.0015,
-      "chg_20d_pct": 8.07
+      "chg_20d_pct": 7.96
     }
   },
   "alerts": [],
@@ -358,7 +358,7 @@
       "skew_pctile": 0.3998015873015873,
       "stock_bond_corr": 0.6663714594817538,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.500616508844178,
+      "roro": 0.49683419705887316,
       "roro_state": "risk-on",
       "vol_target_scalar": 0.7843936813944001,
       "news_sentiment": -0.05408370867371559,
@@ -411,7 +411,7 @@
     "asof": "2026-04-29",
     "tone_score": 0.2,
     "guidance_direction": "on_hold",
-    "risk_delta": 0.3,
+    "risk_delta": 0.0,
     "shock_reversible": "unknown",
     "confidence": "medium",
     "confidence_gated": false,
@@ -423,11 +423,7 @@
       },
       {
         "field": "guidance_direction",
-        "quote_span": "decided to maintain the target range for the federal funds rate at 3\u00e2\u0080\u00911/2 to 3\u00e2\u0080\u00913/4 percent"
-      },
-      {
-        "field": "risk_delta",
-        "quote_span": "Developments in the Middle East are contributing to a high level of uncertainty about the economic outlook."
+        "quote_span": "The Committee decided to maintain the target range for the federal funds rate at 3\u00c2\u20191/2 to 3\u00c2\u20193/4 percent"
       }
     ],
     "degraded_reason": null,
@@ -489,10 +485,10 @@
       "Commodities",
       "Dollar"
     ],
-    "absorption_ratio": 0.445,
+    "absorption_ratio": 0.444,
     "absorption_pctile_5y": 0.97,
     "absorption_floor": 0.167,
-    "mean_abs_corr": 0.339,
+    "mean_abs_corr": 0.338,
     "pc1_loadings": {
       "US": 0.53,
       "Crypto": 0.3,
@@ -537,7 +533,7 @@
         "Crypto": 1.0,
         "China": -0.09,
         "HK": -0.11,
-        "Commodities": 0.31,
+        "Commodities": 0.3,
         "Dollar": 0.35
       },
       "China": {
@@ -545,7 +541,7 @@
         "Crypto": -0.09,
         "China": 1.0,
         "HK": 0.72,
-        "Commodities": 0.39,
+        "Commodities": 0.38,
         "Dollar": 0.03
       },
       "HK": {
@@ -558,8 +554,8 @@
       },
       "Commodities": {
         "US": 0.64,
-        "Crypto": 0.31,
-        "China": 0.39,
+        "Crypto": 0.3,
+        "China": 0.38,
         "HK": 0.35,
         "Commodities": 1.0,
         "Dollar": 0.49
@@ -586,14 +582,14 @@
     "direction": "oil collapsing \u2014 energy lags, breakevens down",
     "direction_zh": "\u6cb9\u4ef7\u5d29\u8dcc \u2014 \u80fd\u6e90\u843d\u540e\u3001\u76c8\u4e8f\u5e73\u8861\u4e0b\u884c",
     "dir_sign": -1,
-    "confidence": "medium",
-    "confidence_zh": "\u4e2d",
-    "strength": 1.36,
-    "dominance_ratio": 1.49,
+    "confidence": "high",
+    "confidence_zh": "\u9ad8",
+    "strength": 1.38,
+    "dominance_ratio": 1.52,
     "agreement": 0.88,
-    "runner_up": "china_stimulus",
-    "runner_up_label": "China stimulus",
-    "runner_up_label_zh": "\u4e2d\u56fd\u523a\u6fc0",
+    "runner_up": "crypto_liquidity",
+    "runner_up_label": "Crypto liquidity",
+    "runner_up_label_zh": "\u52a0\u5bc6\u6d41\u52a8\u6027",
     "headline": "Oil shock \u2014 oil collapsing \u2014 energy lags, breakevens down. oil (WTI) -1.8\u03c3, energy sector RS -2.0\u03c3, 10y breakeven -0.8\u03c3.",
     "evidence": [
       "oil (WTI) -1.8\u03c3",
@@ -626,18 +622,9 @@
         "label": "Oil shock",
         "label_zh": "\u6cb9\u4ef7\u51b2\u51fb",
         "family": "inflation",
-        "projection": -1.36,
-        "strength": 1.36,
+        "projection": -1.38,
+        "strength": 1.38,
         "direction": "oil collapsing \u2014 energy lags, breakevens down"
-      },
-      {
-        "driver": "china_stimulus",
-        "label": "China stimulus",
-        "label_zh": "\u4e2d\u56fd\u523a\u6fc0",
-        "family": "china",
-        "projection": 0.91,
-        "strength": 0.91,
-        "direction": "China risk-on \u2014 A-shares/HK & copper lead up"
       },
       {
         "driver": "crypto_liquidity",
@@ -647,6 +634,15 @@
         "projection": 0.9,
         "strength": 0.9,
         "direction": "crypto liquidity surging \u2014 BTC/ETH lead up"
+      },
+      {
+        "driver": "china_stimulus",
+        "label": "China stimulus",
+        "label_zh": "\u4e2d\u56fd\u523a\u6fc0",
+        "family": "china",
+        "projection": 0.9,
+        "strength": 0.9,
+        "direction": "China risk-on \u2014 A-shares/HK & copper lead up"
       },
       {
         "driver": "ai_semis",
@@ -671,8 +667,8 @@
         "label": "USD shock",
         "label_zh": "\u7f8e\u5143\u51b2\u51fb",
         "family": "fx",
-        "projection": -0.34,
-        "strength": 0.34,
+        "projection": -0.31,
+        "strength": 0.31,
         "direction": "dollar falling \u2014 risk tailwind, commodities & EM bid"
       },
       {
@@ -689,8 +685,8 @@
         "label": "Real-rate shock",
         "label_zh": "\u5b9e\u9645\u5229\u7387\u51b2\u51fb",
         "family": "rates",
-        "projection": -0.19,
-        "strength": 0.19,
+        "projection": -0.17,
+        "strength": 0.17,
         "direction": "real yields falling \u2014 easing, gold & duration bid"
       },
       {
@@ -736,7 +732,7 @@
           "Commodities": 0.279,
           "Dollar": 0.03
         },
-        "port_vol_ann": 0.134,
+        "port_vol_ann": 0.133,
         "diversification_ratio": 1.64,
         "max_risk_contrib": 0.383
       },
@@ -752,23 +748,23 @@
         },
         "risk_contrib": {
           "US": 0.202,
-          "Crypto": 0.11,
+          "Crypto": 0.111,
           "China": 0.162,
-          "HK": 0.153,
-          "Commodities": 0.206,
+          "HK": 0.154,
+          "Commodities": 0.205,
           "Dollar": 0.166
         },
         "port_vol_ann": 0.086,
         "diversification_ratio": 1.65,
-        "max_risk_contrib": 0.206
+        "max_risk_contrib": 0.205
       },
       "erc": {
         "scheme": "erc",
         "weights": {
           "US": 0.144,
-          "Crypto": 0.068,
+          "Crypto": 0.067,
           "China": 0.156,
-          "HK": 0.137,
+          "HK": 0.136,
           "Commodities": 0.065,
           "Dollar": 0.431
         },
@@ -927,7 +923,7 @@
   },
   "fed_path": {
     "asof": "2026-06-15",
-    "built": "2026-06-16T01:55:29.689981+00:00",
+    "built": "2026-06-16T03:09:08.463530+00:00",
     "policy_rate": 3.62,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -936,19 +932,19 @@
       "now": 3.62,
       "m1": 3.63,
       "m3": 3.66,
-      "m6": 3.77,
-      "m12": 3.93
+      "m6": 3.76,
+      "m12": 3.92
     },
     "implied_source_en": "ZQ fed-funds futures",
     "implied_source_zh": "ZQ \u8054\u90a6\u57fa\u91d1\u671f\u8d27",
-    "implied_bp_12m": 31,
+    "implied_bp_12m": 30,
     "implied_cuts_12m": -1,
     "implied_cuts_6m": -1,
     "sofr_path": {
       "m1": null,
-      "m3": 3.72,
-      "m6": 3.83,
-      "m12": 3.97
+      "m3": 3.71,
+      "m6": 3.82,
+      "m12": 3.96
     },
     "dots": [
       {
@@ -968,18 +964,18 @@
       "horizon_label": "end-2026",
       "horizon_months": 6,
       "fed_dot": 3.4,
-      "market": 3.77,
-      "gap_bp": 37,
+      "market": 3.76,
+      "gap_bp": 36,
       "lean_en": "market more hawkish than the Fed",
       "lean_zh": "\u5e02\u573a\u6bd4\u7f8e\u8054\u50a8\u66f4\u9e70\u6d3e"
     },
     "ntfs": 0.75,
     "curve_tp_adj": 0.4,
     "rate_exp_proxy": 0.47,
-    "headline_en": "Market prices ~1 hike over the next 12m (funds 3.62% \u2192 3.93%)",
-    "headline_zh": "\u5e02\u573a\u4e3a\u672a\u676512\u4e2a\u6708\u5b9a\u4ef7\u7ea6\u52a0\u606f1\u6b21\uff08\u57fa\u91d1\u5229\u7387 3.62% \u2192 3.93%\uff09",
-    "read_en": "At end-2026 the market implies 3.77% vs the Fed's 3.40% median dot (+37bp \u2014 market more hawkish than the Fed). The near-term forward spread is positive \u2014 no cuts priced near-term (+0.75pp).",
-    "read_zh": "\u5728end-2026\uff0c\u5e02\u573a\u9690\u542b 3.77% \u5bf9\u6bd4\u7f8e\u8054\u50a8 3.40% \u7684\u4e2d\u4f4d\u70b9\uff08+37\u57fa\u70b9 \u2014 \u5e02\u573a\u6bd4\u7f8e\u8054\u50a8\u66f4\u9e70\u6d3e\uff09\u3002\u8fd1\u7aef\u8fdc\u671f\u5229\u5dee\u4e3a\u6b63\u2014\u2014\u8fd1\u7aef\u672a\u4e3a\u964d\u606f\u5b9a\u4ef7\uff08+0.75\u4e2a\u767e\u5206\u70b9\uff09\u3002",
+    "headline_en": "Market prices ~1 hike over the next 12m (funds 3.62% \u2192 3.92%)",
+    "headline_zh": "\u5e02\u573a\u4e3a\u672a\u676512\u4e2a\u6708\u5b9a\u4ef7\u7ea6\u52a0\u606f1\u6b21\uff08\u57fa\u91d1\u5229\u7387 3.62% \u2192 3.92%\uff09",
+    "read_en": "At end-2026 the market implies 3.76% vs the Fed's 3.40% median dot (+36bp \u2014 market more hawkish than the Fed). The near-term forward spread is positive \u2014 no cuts priced near-term (+0.75pp).",
+    "read_zh": "\u5728end-2026\uff0c\u5e02\u573a\u9690\u542b 3.76% \u5bf9\u6bd4\u7f8e\u8054\u50a8 3.40% \u7684\u4e2d\u4f4d\u70b9\uff08+36\u57fa\u70b9 \u2014 \u5e02\u573a\u6bd4\u7f8e\u8054\u50a8\u66f4\u9e70\u6d3e\uff09\u3002\u8fd1\u7aef\u8fdc\u671f\u5229\u5dee\u4e3a\u6b63\u2014\u2014\u8fd1\u7aef\u672a\u4e3a\u964d\u606f\u5b9a\u4ef7\uff08+0.75\u4e2a\u767e\u5206\u70b9\uff09\u3002",
     "note_en": "Display / LLM-context only. The implied path is a market PRICE (the futures-implied funds rate), not a forecast edge, and repricing is REACTIVE \u2014 it moves after data and the Fed, it does not lead. Never scored, never an MRS leg. ZQ/SR3 = keyless CME futures; dots = FRED FEDTARMD (FOMC SEP median). Cite the CME/FRED.",
     "note_zh": "\u4ec5\u4f9b\u5c55\u793a / LLM \u4e0a\u4e0b\u6587\u3002\u9690\u542b\u8def\u5f84\u662f\u5e02\u573a\u4ef7\u683c\uff08\u671f\u8d27\u9690\u542b\u7684\u57fa\u91d1\u5229\u7387\uff09\uff0c\u5e76\u975e\u9884\u6d4b\u4f18\u52bf\uff0c\u4e14\u91cd\u65b0\u5b9a\u4ef7\u662f\u88ab\u52a8\u7684\u2014\u2014\u5b83\u5728\u6570\u636e\u548c\u7f8e\u8054\u50a8\u4e4b\u540e\u53d8\u52a8\uff0c\u5e76\u4e0d\u9886\u5148\u3002\u4ece\u4e0d\u8bc4\u5206\uff0c\u4ece\u4e0d\u4f5c\u4e3a MRS \u9879\u3002ZQ/SR3=\u65e0\u9700\u5bc6\u94a5\u7684 CME \u671f\u8d27\uff1b\u70b9\u9635\u56fe=FRED FEDTARMD\uff08FOMC SEP \u4e2d\u4f4d\u6570\uff09\u3002\u8bf7\u6ce8\u660e CME/FRED\u3002"
   },
@@ -2368,59 +2364,59 @@
       {
         "ticker": "GC=F",
         "name": "Gold",
-        "price": 4342.9,
+        "price": 4335.0,
         "above50": false,
         "above200": false,
-        "pct_vs_50dma": -5.1,
-        "pct_vs_200dma": -1.9,
-        "rsi14": 45.0,
+        "pct_vs_50dma": -5.3,
+        "pct_vs_200dma": -2.1,
+        "rsi14": 44.0,
         "macd_pos": false,
-        "off_52w_high_pct": -18.3,
+        "off_52w_high_pct": -18.5,
         "season_this": "Jun: -0.6% avg, up 42% of years (n=26)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.6%\uff0c42% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": -5.0
+        "mom_60d_pct": -5.2
       },
       {
         "ticker": "CL=F",
         "name": "Crude Oil",
-        "price": 81.11,
+        "price": 80.9,
         "above50": false,
         "above200": true,
-        "pct_vs_50dma": -15.1,
-        "pct_vs_200dma": 10.2,
+        "pct_vs_50dma": -15.3,
+        "pct_vs_200dma": 10.0,
         "rsi14": 35.0,
         "macd_pos": false,
-        "off_52w_high_pct": -28.2,
+        "off_52w_high_pct": -28.4,
         "season_this": "Jun: +2.6% avg, up 65% of years (n=26)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 +2.6%\uff0c65% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": -17.5
+        "mom_60d_pct": -17.7
       },
       {
         "ticker": "HG=F",
         "name": "Copper",
-        "price": 6.47,
+        "price": 6.45,
         "above50": true,
         "above200": true,
-        "pct_vs_50dma": 4.5,
-        "pct_vs_200dma": 16.5,
-        "rsi14": 56.0,
+        "pct_vs_50dma": 4.2,
+        "pct_vs_200dma": 16.1,
+        "rsi14": 55.0,
         "macd_pos": false,
-        "off_52w_high_pct": -2.8,
+        "off_52w_high_pct": -3.0,
         "season_this": "Jun: -0.4% avg, up 58% of years (n=26)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.4%\uff0c58% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": 21.0
+        "mom_60d_pct": 20.7
       },
       {
         "ticker": "DX-Y.NYB",
         "name": "US Dollar",
-        "price": 99.65,
+        "price": 99.67,
         "above50": true,
         "above200": true,
         "pct_vs_50dma": 0.8,
         "pct_vs_200dma": 1.0,
-        "rsi14": 56.0,
+        "rsi14": 57.0,
         "macd_pos": false,
-        "off_52w_high_pct": -0.9,
+        "off_52w_high_pct": -0.8,
         "season_this": "Jun: -0.2% avg, up 45% of years (n=56)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.2%\uff0c45% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=56\uff09",
         "mom_60d_pct": 0.0

@@ -572,3 +572,28 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
 .sstack-tally { font-size: 12px; color: var(--muted); } .sstack-tally b { color: var(--text); }
 .sstack-contra { font-size: 13px; color: var(--warn); line-height: 1.45; margin-top: 2px; }
 .sstack-contra.ok { color: var(--ok); }
+
+/* ---- progressive "show more" for standout-stock card grids (shared; wired by
+   theme.js initShowMore on any [data-showmore] grid). Cards beyond the initial
+   count are display:none until revealed, then fade-slide in (staggered). ------- */
+.sm-hidden { display: none !important; }
+@keyframes smReveal { from { opacity: 0; transform: translateY(10px) scale(.985); }
+                      to   { opacity: 1; transform: none; } }
+.sm-reveal { animation: smReveal .36s cubic-bezier(.2,.7,.3,1) both; }
+@media (prefers-reduced-motion: reduce) { .sm-reveal { animation: none; } }
+.sm-bar { display: flex; align-items: center; justify-content: center; gap: 10px 14px;
+  flex-wrap: wrap; margin: 15px 0 2px; }
+.sm-count { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+.sm-count b { color: var(--text); font-weight: 700; }
+.sm-btns { display: inline-flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.sm-btn { display: inline-flex; align-items: center; gap: 7px; padding: 8px 18px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--panel2); color: var(--text); font: inherit;
+  font-size: 13px; font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: transform .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease; }
+.sm-btn:hover { border-color: var(--link); color: var(--link); transform: translateY(-1px);
+  box-shadow: 0 5px 16px rgba(0,0,0,.16); }
+.sm-btn:active { transform: translateY(0); box-shadow: none; }
+.sm-btn .sm-ic { font-size: 11px; line-height: 1; transition: transform .25s ease; }
+.sm-btn.sm-ghost { background: transparent; border-color: transparent; color: var(--muted); font-weight: 500; padding: 8px 12px; }
+.sm-btn.sm-ghost:hover { color: var(--link); background: var(--panel2); box-shadow: none; transform: none; }
+.sm-btn.sm-collapse .sm-ic { transform: rotate(180deg); }
