@@ -1,0 +1,124 @@
+{
+  "schema": "thematic_rotation_phase0.v1",
+  "region": "canada",
+  "generated_at": "2026-06-16T10:26:40.237988+00:00",
+  "cost_bps": 10.0,
+  "universes": {
+    "sectors": {
+      "n_assets": 9,
+      "span": [
+        "2002-10-31",
+        "2026-06-30"
+      ],
+      "contaminated": false,
+      "algorithm": {
+        "ew_buyhold": {
+          "cagr": 0.122,
+          "sharpe": 0.91,
+          "max_dd": -0.3754,
+          "calmar": 0.33,
+          "n_months": 284,
+          "dsr": 0.986,
+          "worst_decile_ret": -0.0571
+        },
+        "top3_mom12_rel": {
+          "cagr": 0.1406,
+          "sharpe": 0.86,
+          "max_dd": -0.4332,
+          "calmar": 0.32,
+          "n_months": 272,
+          "dsr": 0.99,
+          "worst_decile_ret": -0.0568
+        },
+        "top3_mom6_rel": {
+          "cagr": 0.1223,
+          "sharpe": 0.73,
+          "max_dd": -0.5005,
+          "calmar": 0.24,
+          "n_months": 274,
+          "dsr": 0.966,
+          "worst_decile_ret": -0.0585
+        },
+        "top3_mom12_dual": {
+          "cagr": 0.1176,
+          "sharpe": 0.86,
+          "max_dd": -0.2426,
+          "calmar": 0.48,
+          "n_months": 272,
+          "dsr": 0.991,
+          "worst_decile_ret": -0.0489
+        },
+        "top4_mom12_dual": {
+          "cagr": 0.111,
+          "sharpe": 0.92,
+          "max_dd": -0.2032,
+          "calmar": 0.55,
+          "n_months": 272,
+          "dsr": 0.995,
+          "worst_decile_ret": -0.0434
+        }
+      },
+      "rank_ic": {
+        "1m": {
+          "mean_ic": 0.0533,
+          "ic_t_hac": 1.908,
+          "hit": 0.551,
+          "n_steps": 272
+        },
+        "3m": {
+          "mean_ic": 0.0841,
+          "ic_t_hac": 1.531,
+          "hit": 0.556,
+          "n_steps": 90
+        }
+      },
+      "tsmom_conditional": {
+        "above_trend": {
+          "mean": 0.0093,
+          "std": 0.0561,
+          "sharpe": 0.57,
+          "p05": -0.0795,
+          "n": 1464
+        },
+        "below_trend": {
+          "mean": 0.0118,
+          "std": 0.0788,
+          "sharpe": 0.52,
+          "p05": -0.1048,
+          "n": 742
+        },
+        "mean_diff_t": -0.77,
+        "mean_diff_p": 0.4394
+      },
+      "extension_drawdown": {
+        "fwd_days": 63,
+        "cohorts": {
+          "normal": {
+            "mean_fwd_maxdd": -0.0669,
+            "p05_fwd_maxdd": -0.2229,
+            "n": 32730
+          },
+          "stretched": {
+            "mean_fwd_maxdd": -0.0565,
+            "p05_fwd_maxdd": -0.1801,
+            "n": 8550
+          },
+          "parabolic": {
+            "mean_fwd_maxdd": -0.0659,
+            "p05_fwd_maxdd": -0.2073,
+            "n": 2299
+          }
+        },
+        "spearman_ez_vs_fwd_maxdd": 0.06
+      },
+      "years": 23.7
+    }
+  },
+  "gate_helps": true,
+  "verdict": {
+    "relative_momentum": "modest_or_none \u2014 cross-sectional rank-IC weak/insignificant on the clean sector universe; an attention/focus lens, not alpha.",
+    "absolute_trend_gate": "validated_risk_control \u2014 no mean-return edge but materially lower volatility & shallower drawdown/tail; the staying-power leg.",
+    "basket_extension": "no_basket_drawdown_edge \u2014 extension predicts per-NAME crashes, not diversified basket drawdown; keep as constituent texture only.",
+    "rotation_timing": "display_only \u2014 no validated early-handoff forecast (cf. group_flow)."
+  }
+}

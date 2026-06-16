@@ -36,7 +36,6 @@ import numpy as np
 import pandas as pd
 
 from engine.baskets import _ew_level
-from engine.equity_factors import _names_sectors
 from lib import config, store
 
 log = logging.getLogger(__name__)
@@ -56,41 +55,84 @@ CROWD_TRIM = 0.5                 # crowding down-size strength (weight *= 1 - z�
 
 
 # =========================================================================== #
-# setup — shared close matrix, SPY bench, and market-residual returns
+# regions — the data plane is parameterized (mirrors engine.baskets_region) so the
+# SAME engine drives the US, China A-share, Hong Kong and Canada/TSX theme pages.
+# Each cfg supplies the loaders + the benchmark store + the Phase-0 artifact to cite.
 # =========================================================================== #
-def _setup() -> dict | None:
-    """Close matrix + SPY bench level exactly as engine.baskets builds them, plus the
-    market-residual return panel for the basket-member union (one rolling-beta pass)."""
-    from engine.baskets import _basket_extras, _membership
-    from engine.equity_factors import _closes
-    mem = _membership()
+REGION_IDS = ("us", "china", "hk", "canada")
+
+
+def _region_cfg(region: str) -> dict | None:
+    region = (region or "us").lower()
+    if region == "us":
+        from engine.baskets import _basket_extras, _membership
+        from engine.equity_factors import _closes
+        return {"id": "us", "market_en": "US", "market_zh": "美国",
+                "bench_label": "S&P 500", "bench_label_zh": "标普500",
+                "group": "yahoo", "bench_default": "SPY", "page": "allocation.html",
+                "phase0_file": "thematic_rotation_phase0.json", "phase0_fallback": None,
+                "membership": _membership, "closes": _closes, "extras": _basket_extras}
+    if region == "china":
+        from engine.baskets_china import BENCHMARK_DEFAULT, _closes, _membership
+        return {"id": "china", "market_en": "China A-shares", "market_zh": "中国A股",
+                "bench_label": "CSI 300", "bench_label_zh": "沪深300",
+                "group": "china", "bench_default": BENCHMARK_DEFAULT, "page": "allocation_china.html",
+                "phase0_file": "thematic_rotation_phase0_china.json", "phase0_fallback": None,
+                "membership": _membership, "closes": _closes, "extras": None}
+    if region == "hk":
+        from engine.baskets_hk import BENCHMARK_DEFAULT, _closes, _membership
+        return {"id": "hk", "market_en": "Hong Kong", "market_zh": "香港",
+                "bench_label": "Hang Seng", "bench_label_zh": "恒生指数",
+                "group": "hk", "bench_default": BENCHMARK_DEFAULT, "page": "allocation_hk.html",
+                # HK sector-ETF coverage is too thin to re-validate locally → cite the US 27y proxy.
+                "phase0_file": "thematic_rotation_phase0_hk.json",
+                "phase0_fallback": "thematic_rotation_phase0.json",
+                "membership": _membership, "closes": _closes, "extras": None}
+    if region == "canada":
+        from engine.baskets_canada import BENCHMARK_DEFAULT, _closes, _membership
+        return {"id": "canada", "market_en": "Canada / TSX", "market_zh": "加拿大",
+                "bench_label": "S&P/TSX", "bench_label_zh": "标普/TSX",
+                "group": "canada", "bench_default": BENCHMARK_DEFAULT, "page": "allocation_canada.html",
+                "phase0_file": "thematic_rotation_phase0_canada.json", "phase0_fallback": None,
+                "membership": _membership, "closes": _closes, "extras": None}
+    return None
+
+
+def _setup(cfg: dict) -> dict | None:
+    """Close matrix + benchmark level + the market-residual return panel for the basket-member
+    union (one rolling-beta pass), for the region in `cfg`. Mirrors engine.baskets_region's
+    data plane so every market is computed identically."""
+    mem = cfg["membership"]()
     if not mem or not mem.get("baskets"):
         return None
-    closes = _closes()
+    closes = cfg["closes"]()
     if closes is None or closes.empty:
         return None
-    extras = _basket_extras()
-    if extras is not None and not extras.empty:
-        add = [c for c in extras.columns if c not in closes.columns]
-        if add:
-            closes = closes.join(extras[add], how="left")
+    if cfg.get("extras"):                                  # US carries off-index members; regions don't
+        extras = cfg["extras"]()
+        if extras is not None and not extras.empty:
+            add = [c for c in extras.columns if c not in closes.columns]
+            if add:
+                closes = closes.join(extras[add], how="left")
     rets = closes.pct_change(fill_method=None)
     idx = rets.index
-    spy = store.read("yahoo", "SPY")
-    if spy is None or "close" not in spy.columns:
+    bdf = store.read(cfg["group"], mem.get("benchmark", cfg["bench_default"]))
+    if bdf is None or "close" not in getattr(bdf, "columns", []):
         return None
-    spy_ret = spy["close"].reindex(idx).ffill().pct_change(fill_method=None)
+    bench_close = bdf["close"].astype(float)
+    bench_ret = bench_close.reindex(idx).ffill().pct_change(fill_method=None)
     bench = pd.Series(np.nan, index=idx)
-    bf = spy_ret.first_valid_index()
-    bench.loc[bf:] = (1.0 + spy_ret.loc[bf:].fillna(0.0)).cumprod()
+    bf = bench_ret.first_valid_index()
+    bench.loc[bf:] = (1.0 + bench_ret.loc[bf:].fillna(0.0)).cumprod()
 
     bdict = mem["baskets"]
     items = bdict.items() if isinstance(bdict, dict) else [(b["id"], b) for b in bdict]
     union = sorted({m["ticker"] for _bid, b in items for m in b.get("members", [])
                     if m["ticker"] in closes.columns})
-    resid = _market_residuals(closes[union], spy_ret) if union else pd.DataFrame()
-    return {"mem": mem, "items": list(items), "closes": closes, "rets": rets,
-            "idx": idx, "bench": bench, "spy_ret": spy_ret, "resid": resid}
+    resid = _market_residuals(closes[union], bench_ret) if union else pd.DataFrame()
+    return {"cfg": cfg, "mem": mem, "items": list(items), "closes": closes, "rets": rets,
+            "idx": idx, "bench": bench, "bench_ret": bench_ret, "bench_close": bench_close,
+            "resid": resid}
 
 
 def _market_residuals(closes_sub: pd.DataFrame, spy_ret: pd.Series,
@@ -111,7 +153,6 @@ def _market_residuals(closes_sub: pd.DataFrame, spy_ret: pd.Series,
 # per-basket primitives (built once, consumed by every subsystem)
 # =========================================================================== #
 def _basket_preps(s: dict) -> list[dict]:
-    nm = _names_sectors()
     out = []
     for bid, b in s["items"]:
         members = b.get("members", [])
@@ -141,7 +182,7 @@ def _basket_preps(s: dict) -> list[dict]:
             "category": b.get("category", "Other"), "thesis": b.get("thesis", ""),
             "etf_proxy": b.get("etf_proxy"), "n_live": len(live), "live": live,
             "lvl": lvl, "rs": rs, "members_closes": s["closes"][live].where(mask[live]),
-            "members_resid": resid, "names": {t: nm.get(t, (t, "—"))[0] for t in live},
+            "members_resid": resid,
         })
     return out
 
@@ -388,7 +429,8 @@ def rotation_radar(preps: list[dict], ranks: dict, durab: dict, s: dict) -> dict
 # =========================================================================== #
 # 5 · ALLOCATE — the low-turnover suggestion ruleset
 # =========================================================================== #
-def allocate(preps: list[dict], ranks: dict, crowd: dict, rot: dict) -> dict:
+def allocate(preps: list[dict], ranks: dict, crowd: dict, rot: dict,
+             bench_close: pd.Series | None = None) -> dict:
     """SUGGESTED target weights (display-framed, not advice). Faithful to what the 27y
     Phase-0 actually validated: EQUAL-WEIGHT the top-N themes that pass the absolute-trend
     gate (the dual-momentum book), with a T-bill cash escape for the unfilled slots when
@@ -427,7 +469,7 @@ def allocate(preps: list[dict], ranks: dict, crowd: dict, rot: dict) -> dict:
             weights[bid] = POS_CAP
 
     # momentum-crash overlay (Daniel-Moskowitz): bear tape + high vol → halve to cash
-    crash = _crash_state()
+    crash = _crash_state(bench_close)
     if crash["active"]:
         for b in list(weights):
             weights[b] *= 0.5
@@ -448,13 +490,16 @@ def allocate(preps: list[dict], ranks: dict, crowd: dict, rot: dict) -> dict:
             "directional": False}
 
 
-def _crash_state() -> dict:
-    """Broad-market panic gate: SPY trailing-24m return < 0 AND realized vol top-quartile.
-    The Daniel-Moskowitz state where laggard up-beta makes momentum crash."""
-    spy = store.read("yahoo", "SPY")
-    if spy is None or "close" not in spy.columns:
-        return {"active": False}
-    p = spy["close"].astype(float).dropna()
+def _crash_state(bench_close: pd.Series | None = None) -> dict:
+    """Broad-market panic gate: the region BENCHMARK's trailing-24m return < 0 AND realized
+    vol top-quartile — the Daniel-Moskowitz state where laggard up-beta makes momentum crash.
+    `bench_close` is the region index level (SPY / CSI300 / HSI / TSX); defaults to SPY."""
+    p = bench_close.astype(float).dropna() if bench_close is not None else None
+    if p is None:
+        spy = store.read("yahoo", "SPY")
+        if spy is None or "close" not in spy.columns:
+            return {"active": False}
+        p = spy["close"].astype(float).dropna()
     if len(p) < 600:
         return {"active": False}
     r24 = float(p.iloc[-1] / p.iloc[-min(504, len(p) - 1)] - 1.0)
@@ -462,14 +507,14 @@ def _crash_state() -> dict:
     vhist = p.pct_change().rolling(21).std().mul(np.sqrt(252)).dropna()
     vpct = float((vhist <= vol).mean()) if len(vhist) else 0.0
     active = bool(r24 < 0 and vpct >= 0.75)
-    return {"active": active, "spy_ret_24m": round(r24, 3), "vol_pctile": round(vpct, 2)}
+    return {"active": active, "bench_ret_24m": round(r24, 3), "vol_pctile": round(vpct, 2)}
 
 
 # =========================================================================== #
 # assemble
 # =========================================================================== #
-def _validation_meta() -> dict:
-    p = config.data_dir() / "strategies" / "thematic_rotation_phase0.json"
+def _validation_meta(fname: str = "thematic_rotation_phase0.json") -> dict:
+    p = config.data_dir() / "strategies" / fname
     try:
         return json.loads(p.read_text()) if p.exists() else {}
     except Exception:  # noqa: BLE001
@@ -481,10 +526,10 @@ def _ai_handoff(rot: dict) -> dict:
         "overall_verdict": "discipline_not_prediction",
         "reader_contract": (
             "This ranks where thematic LEADERSHIP and FLOW are concentrating and suggests a "
-            "trend-following, vol-aware allocation. The ONE validated edge (27y sectors) is "
-            "DRAWDOWN/shake-out avoidance via the absolute-trend gate — NOT return forecasting. "
-            "Momentum rank ≈ a focus lens (rank-IC ~0 on clean sectors). Use to size & de-risk, "
-            "then judge narrative durability yourself."),
+            "trend-following, vol-aware allocation. The ONE validated edge (multi-decade sector "
+            "backtests) is DRAWDOWN/shake-out avoidance via the absolute-trend gate — NOT return "
+            "forecasting. Momentum rank ≈ a focus lens (rank-IC ~0 on clean sectors). Use to "
+            "size & de-risk, then judge narrative durability yourself."),
         "do_not_conclude": [
             "Do NOT read the momentum rank as a return forecast or a buy list.",
             "Do NOT treat crowding/extension as a SELL, a SHORT, or a basket-drawdown timer "
@@ -542,11 +587,15 @@ def _narrate(rot: dict, alloc: dict, ranks: dict, durab: dict, crowd: dict,
     return {"en": "; ".join(bits_en) + ".", "zh": "；".join(bits_zh) + "。"}
 
 
-def compute_narrative_rotation(cfg: dict | None = None) -> dict | None:
+def compute_narrative_rotation(region: str = "us") -> dict | None:
     """Top-level: assemble the five subsystems into one display payload + AI handoff +
-    deterministic desk read. PURE/additive — returns None on shortfall, never raises."""
+    deterministic desk read, for `region` ∈ {us, china, hk, canada}. PURE/additive —
+    returns None on shortfall, never raises."""
     try:
-        s = _setup()
+        cfg = _region_cfg(region)
+        if cfg is None:
+            return None
+        s = _setup(cfg)
         if s is None:
             return None
         preps = _basket_preps(s)
@@ -581,7 +630,7 @@ def compute_narrative_rotation(cfg: dict | None = None) -> dict | None:
             crowd[p["id"]] = tc.basket_crowding(p["members_resid"], p["rs"], ext_rows, dtc)
 
         rot = rotation_radar(preps, ranks, durab, s)
-        alloc = allocate(preps, ranks, crowd, rot)
+        alloc = allocate(preps, ranks, crowd, rot, s["bench_close"])
         narr = _narrate(rot, alloc, ranks, durab, crowd, preps)
 
         # per-basket table (display)
@@ -598,10 +647,18 @@ def compute_narrative_rotation(cfg: dict | None = None) -> dict | None:
                 "durability": durab[bid], "crowding": crowd[bid],
             })
 
-        vm = _validation_meta()
+        vm = _validation_meta(cfg["phase0_file"])
         sect = (vm.get("universes", {}) or {}).get("sectors", {})
+        borrowed_from = None
+        if not sect and cfg.get("phase0_fallback"):       # HK: too few sector ETFs → cite US 27y
+            fb = _validation_meta(cfg["phase0_fallback"])
+            fbsect = (fb.get("universes", {}) or {}).get("sectors", {})
+            if fbsect:
+                sect, vm, borrowed_from = fbsect, fb, "US — 27-year SPDR sectors"
         bt = {
             "verdict": vm.get("verdict", {}),
+            "gate_helps": vm.get("gate_helps"),
+            "borrowed_from": borrowed_from,
             "sectors": {
                 "span": sect.get("span"),
                 "dual": sect.get("algorithm", {}).get("top4_mom12_dual"),
@@ -628,6 +685,8 @@ def compute_narrative_rotation(cfg: dict | None = None) -> dict | None:
 
         return {
             "as_of": s["idx"].max().strftime("%Y-%m-%d"),
+            "region": cfg["id"], "market_en": cfg["market_en"], "market_zh": cfg["market_zh"],
+            "bench_label": cfg["bench_label"], "bench_label_zh": cfg["bench_label_zh"],
             "n_themes": len(preps),
             "headline": headline,
             "narration": narr,

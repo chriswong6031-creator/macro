@@ -478,8 +478,17 @@ Forex Vector` entry in DECISIONS.md.
 - **Cycle tag (early/mid/late) is heuristic** — curve shape + credit + breadth
   rules, not a fitted model. Treat as context, not signal.
 
-## Thematic Narrative-Rotation (allocation.html)
+## Thematic Narrative-Rotation (allocation.html · +china/hk/canada)
 
+- **Per-market validation differs — and the page says which holds.** The trend-gate edge
+  is re-tested on each market's own sector-ETF history (`scripts/thematic_rotation_phase0.py`,
+  `gate_helps` flag): **US** (27y) and **Canada** (~24y) — the gate cuts max drawdown
+  (US −49%→−24%, Canada −37.5%→−20.3%) → validated risk control. **China A-shares** (~8y) —
+  the gate does NOT hold (dual-momentum DD −51% is WORSE than buy-&-hold −37%; A-shares
+  mean-revert and the gate whipsaws) → the China page is flagged **EXPERIMENTAL** and tells
+  you so. **Hong Kong** — only one sector ETF exists (3033.HK), so there is no local
+  cross-sectional backtest; the HK page cites the **US cross-market proxy** and labels it a
+  prior, not local proof. Same engine, honest per-market verdict.
 - **The momentum rank is a focus lens, not a return forecast.** On the unbiased
   27-year SPDR-sector universe the cross-sectional rank-IC of theme momentum is ~0
   (t≈0.4; `scripts/thematic_rotation_phase0.py`). The suggested book is therefore
