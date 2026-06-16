@@ -65,6 +65,10 @@
   .dbar { display:inline-block; width:46px; height:6px; background:var(--grid,var(--panel2)); border-radius:4px; overflow:hidden; vertical-align:middle; }
   .dbar > i { display:block; height:100%; background:var(--up); }
   .legrow { font-size:11.5px; color:var(--muted); }
+  a.tlink { cursor:pointer; border-bottom:1px dashed var(--line); }
+  a.tlink:hover { color:var(--link); border-bottom-color:var(--link); }
+  a.tlink .jump { font-size:10px; color:var(--muted); margin-left:3px; }
+  a.tlink:hover .jump { color:var(--link); }
   details > summary { cursor:pointer; font-size:12.5px; color:var(--muted); margin:8px 0 2px; }
   .kpis { display:flex; flex-wrap:wrap; gap:20px; margin:6px 0; }
   .kpis .k { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
@@ -255,7 +259,9 @@
   <span class="chip">{{ t('rank = focus lens, not a forecast', '排名=关注透镜，非预测') }}</span></h2>
 <p class="sub">{{ t(
   'Every theme ranked by ensemble momentum (residual + raw + acceleration), with its trend-eligibility gate, durability, and crowding texture. Durability CONFIRMS a trend (it lags ~half a window) — it does not forecast the handoff.',
-  '所有主题按集成动量（残差+原始+加速度）排名，并附趋势准入门、持续性与拥挤纹理。持续性是对趋势的"确认"（滞后约半个窗口）— 并不预测交接。') }}</p>
+  '所有主题按集成动量（残差+原始+加速度）排名，并附趋势准入门、持续性与拥挤纹理。持续性是对趋势的"确认"（滞后约半个窗口）— 并不预测交接。') }}
+  <span class="muted">{{ t('Click a theme name to open its constituents on the Thematic Baskets page.', '点击主题名称可在主题篮子页面查看其成分。') }}</span></p>
+{% set BASKETS_PAGE = {'us':'baskets.html','china':'baskets_china.html','hk':'baskets_hk.html','canada':'baskets_canada.html'}.get(d.region, 'baskets.html') %}
 <div class="panel"><div class="ts">
 <table>
   <thead><tr>
@@ -271,7 +277,7 @@
   {% for r in d.ranks %}
   {% set du = r.durability %}{% set cr = r.crowding %}
   <tr class="{{ '' if r.eligible else 'inelig' }}">
-    <td><b>{{ t(r.name, r.name_zh) }}</b>
+    <td><b><a class="tlink" href="{{ BASKETS_PAGE }}#b-{{ r.id }}">{{ t(r.name, r.name_zh) }}<span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
       {% if r.rank==1 %}<span class="stage lead">{{ t('LEADER', '领跑') }}</span>{% endif %}
       <div class="legrow">{{ r.category }} · {{ r.n_live }} {{ t('names', '只') }}</div></td>
     <td class="num"><b>{{ '%.2f'|format(r.score) if r.score is not none else '—' }}</b></td>
