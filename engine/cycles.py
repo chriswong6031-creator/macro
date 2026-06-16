@@ -409,11 +409,15 @@ STATE_DISPLAY = {
                       "label_zh": "接近高点", "action_zh": "止盈"},
     "ROLLING OVER":  {"label": "TOPPING",        "action": "SELL SETUP",   "dir": "down",
                       "label_zh": "做顶中", "action_zh": "卖出预备"},
-    # daily bottoming setup INSIDE a bearish higher-timeframe regime: a real
-    # bounce may come, but it's counter-trend and high-risk — never a "buy".
-    "COUNTERTREND BOUNCE": {"label": "COUNTER-TREND BOUNCE",
+    # daily bottoming setup INSIDE a bearish higher-timeframe regime — an
+    # UNCONFIRMED TURN: short-term up while the weekly/investor cycle hasn't
+    # confirmed. Because weekly confirmation lags price, this same reading covers
+    # BOTH bounces that fail AND the first leg of a genuine new cycle, so it's a
+    # risk/size signal (high-risk, nimble-only), never a confirmed "buy". The
+    # internal KEY stays "COUNTERTREND BOUNCE" so the calibration JSON keeps matching.
+    "COUNTERTREND BOUNCE": {"label": "UNCONFIRMED TURN",
                             "action": "HIGH-RISK · NIMBLE ONLY", "dir": "caution",
-                            "label_zh": "逆势反弹", "action_zh": "高风险 · 仅限灵活操作"},
+                            "label_zh": "未确认转向", "action_zh": "高风险 · 仅限灵活操作"},
 }
 
 # Daily-cycle phase -> plain-language descriptor (answers "are we overextended?")
@@ -494,13 +498,14 @@ def entry_timing(state: str, cyc: dict, mtf: dict) -> dict:
 
     if state == "COUNTERTREND BOUNCE":
         inval = cyc.get("cand_price") or cyc.get("dcl_price")
-        return {"tag": "BOUNCE — HIGH RISK", "tag_zh": "反弹 — 高风险", "urgency": "caution",
-                "text": "Counter-trend bounce inside a bearish bigger picture. For nimble "
-                        f"traders only — small size, tight stop below {inval}. If the daily "
-                        "low fails it cascades toward the larger cycle low; not an investment buy.",
-                "text_zh": "处于看空大局中的逆势反弹。仅限灵活交易者——小仓位、"
-                           f"将止损紧贴 {inval} 下方。若日线低点失守，将向更大周期低点蔓延；"
-                           "并非投资性买入。"}
+        return {"tag": "UNCONFIRMED — HIGH RISK", "tag_zh": "未确认 — 高风险", "urgency": "caution",
+                "text": "An unconfirmed turn: a daily low is forming while the bigger picture is "
+                        f"still bearish. Nimble traders only — small size, defined stop below {inval}. "
+                        "Not an investment buy until the weekly confirms; most of these fail, a "
+                        "minority start a new cycle.",
+                "text_zh": "未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、"
+                           f"止损设于 {inval} 下方。在周线确认前并非投资性买入；多数最终失败，"
+                           "少数则开启新周期。"}
     if state == "FRESH BUY":
         return {"tag": "BUY NOW", "tag_zh": "立即买入", "urgency": "now",
                 "text": "Confirmed cycle low — the entry window is open now, "
@@ -818,27 +823,32 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
     if bullish_tactical and (regime["regime"] == "bear" or hard_fail):
         inval = cyc.get("cand_price") or cyc.get("dcl_price")
         state = "COUNTERTREND BOUNCE"
-        why = ("Short-term, a daily bottoming setup is forming — but the bigger picture is "
-               "bearish (" + (regime["why"] or "weekly / investor timeframe pointing down")
-               + "). A bounce here is COUNTER-TREND: daily-cycle lows that don't line up with "
-                 "a weekly-cycle low tend to be left-translated and fail, then cascade toward "
-                 "the larger cycle low — exactly the trap of buying a daily low in a falling "
-                 "investor cycle."
-               + (" The daily cycle has already failed (broke its own start low)."
-                  if cyc.get("failed_cycle") else ""))
-        why_zh = ("短期来看，正在形成日线筑底形态——但大局看空（"
-                  + (regime["why"] or "weekly / investor timeframe pointing down")
-                  + "）。此处的反弹属于逆势：与周线周期低点不对齐的日线周期低点往往"
-                    "呈左移结构并最终失败，随后向更大周期低点蔓延——这正是在下行的"
-                    "投资者周期中买入日线低点的陷阱。"
-                  + ("日线周期已经失败（跌破其自身的起始低点）。"
+        why = ("A daily bottoming setup is forming (swing low in, momentum turned up) — but the "
+               "higher timeframes haven't confirmed it: the bigger picture is still bearish ("
+               + (regime["why"] or "weekly / investor timeframe pointing down")
+               + "). This is an UNCONFIRMED TURN, not a confirmed buy. Weekly confirmation lags "
+                 "price, so this exact reading covers BOTH bounces that fail AND the first leg of "
+                 "a genuine new cycle — you can't tell which in real time, so treat it as a "
+                 "risk/size signal, not a direction call. Measured: weekly-unconfirmed bottoming "
+                 "setups held the low ~49% of the time vs ~68% once the weekly turns up."
+               + (" The daily cycle has also failed (broke its own start low), which tilts the "
+                  "odds toward failure here." if cyc.get("failed_cycle") else ""))
+        why_zh = ("正在形成日线筑底形态（摆动低点已现、动量转向上行）——但更高周期尚未确认："
+                  "大局仍偏空（"
+                  + (regime["why_zh"] or regime["why"] or "周线 / 投资者周期向下")
+                  + "）。这是「未确认转向」，并非已确认的买入。周线确认滞后于价格，因此同样的"
+                    "读数既涵盖最终失败的反弹，也涵盖真正新周期的第一段——实时无法判定属于哪一种，"
+                    "故应将其视为风险/仓位信号，而非方向判断。实测：周线未确认的筑底形态约 49% 守住"
+                    "低点，周线转向后升至约 68%。"
+                  + ("日线周期同样已经失败（跌破其自身起始低点），此处概率更偏向失败。"
                      if cyc.get("failed_cycle") else ""))
-        nxt = ("Nimble traders only — small size, tight stop below "
-               f"{inval}. Not an investment buy; wait for the weekly timeframe to actually "
-               "turn up (or a fresh investor-cycle low to confirm) before trusting it.")
-        nxt_zh = ("仅限灵活交易者——小仓位、将止损紧贴 "
-                  f"{inval} 下方。并非投资性买入；在采信之前，请等待周线周期真正"
-                  "转向上行（或出现新的投资者周期低点予以确认）。")
+        nxt = ("Nimble traders only — small size, defined stop below "
+               f"{inval}. Not an investment buy yet. What would upgrade it: weekly momentum "
+               "turning up, a reclaim of the investor-cycle low, or the first daily cycle "
+               "right-translating — add on confirmation, not ahead of it.")
+        nxt_zh = ("仅限灵活交易者——小仓位、止损设于 "
+                  f"{inval} 下方。暂非投资性买入。何种情形会升级：周线动量转为向上、"
+                  "收复投资者周期低点、或首个日线周期呈右移结构——在确认之后加仓，而非提前。")
 
     # ── Extension / late-cross gate ──────────────────────────────────────────
     # A daily buy setup is only a BOTTOMING entry while price is still near the
@@ -1416,7 +1426,7 @@ def entry_quality_fields(eq: dict, state: str | None = None) -> dict:
     if sr >= 15:
         arrow = "▲"
         if state == "COUNTERTREND BOUNCE":
-            dirn, dirn_zh = "high-risk bounce", "高风险反弹"
+            dirn, dirn_zh = "unconfirmed turn", "未确认转向"
         elif state in ("BOTTOM WATCH", "TURN SIGNALED"):
             dirn, dirn_zh = "buy setting up", "买入构筑中"
         else:

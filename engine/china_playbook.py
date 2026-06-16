@@ -172,7 +172,7 @@ def build(latest: dict, hist: pd.DataFrame | None, sectors: list[dict], internal
                      if s.get("above200") and (s.get("mom20") or 0) > 0 and s.get("dir") == "up"][:5]
     pb["avoid"] = [{"ticker": s["ticker"], "name": s["name"], "state": s.get("label") or s.get("state")}
                    for s in sectors
-                   if s.get("dir") == "down" or s.get("state") in ("DECLINE", "COUNTERTREND_BOUNCE")][:5]
+                   if s.get("dir") == "down" or s.get("state") in ("DECLINE", "COUNTERTREND BOUNCE")][:5]
 
     pb["honesty"] = {
         "en": "China regimes are shorter and less stable than the US — this is a risk-context map with "

@@ -142,11 +142,14 @@ def _lean(value, polarity: int) -> int:
 # verdict prose, EN + ZH, keyed by (long_sign, short_sign) bucket — verbatim from
 # engine/btc_mtf.py so a commodity reads the same way as BTC and the stock analyzer.
 _VERDICTS = {
-    "counter": ("Counter-trend bounce within a bearish bigger picture",
-                "Short-term momentum is up, but the weekly/monthly trend and the cycle are down. "
-                "High risk — nimble traders only, not an investment-grade buy.", "CAUTION",
-                "在偏空大格局内的反弹", "短期动量向上，但周线/月线趋势与周期向下。高风险 — 仅适合灵活短线，"
-                "并非适合投资的买入。", "谨慎"),
+    "counter": ("Unconfirmed turn within a bearish bigger picture",
+                "Short-term momentum has turned up, but the weekly/monthly trend and the cycle "
+                "haven't confirmed. Most such turns fail, a minority begin a new cycle — you can't "
+                "tell which until the higher timeframes confirm. High risk: small size, defined "
+                "stop, not an investment-grade buy.", "CAUTION",
+                "偏空大格局内的未确认转向", "短期动量已转向上行，但周线/月线趋势与周期尚未确认。"
+                "多数此类转向最终失败，少数则开启新周期——在更高周期确认前无法判定。"
+                "高风险：小仓位、设定止损，并非适合投资的买入。", "谨慎"),
     "dip": ("Healthy pullback within an uptrend",
             "The bigger picture is up; the short-term dip is a buy-the-dip setup, not a trend change.",
             "BUY-THE-DIP", "上升趋势内的健康回调", "大格局向上；短期回调是逢低买入的机会，而非趋势反转。", "逢低买入"),
