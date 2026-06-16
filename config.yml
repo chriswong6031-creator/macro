@@ -787,7 +787,175 @@ stock_search:
   # actually collected nightly: the YahooAdapter pulls these into data/yahoo/,
   # so any liquid US ticker listed here becomes searchable (fixes the prior
   # dead hook that only worked if a parquet already happened to exist).
-  extra_tickers: []
+  #
+  # This list is for liquid US-listed names that fall OUTSIDE the S&P Composite
+  # 1500 — chiefly foreign ADRs (Chinese internet/EV, Taiwan Semi…) and recent
+  # IPOs not yet index-eligible (Circle, CoreWeave, Reddit, Arm…). Give each a
+  # real company name + GICS sector under `extra_names` below so search shows
+  # the company, not a bare ticker tagged "ETF / macro".
+  extra_tickers:
+    # Chinese / HK ADRs (US-listed)
+    - BABA   # Alibaba
+    - PDD    # PDD Holdings (Temu / Pinduoduo)
+    - JD     # JD.com
+    - BIDU   # Baidu
+    - NTES   # NetEase
+    - TCOM   # Trip.com
+    - BILI   # Bilibili
+    - NIO    # NIO
+    - LI     # Li Auto
+    - XPEV   # XPeng
+    - TME    # Tencent Music
+    - BEKE   # KE Holdings (Beike)
+    - YUMC   # Yum China
+    - ZTO    # ZTO Express
+    # Recent IPOs / off-index growth (not yet S&P 1500)
+    - CRCL   # Circle Internet Group (USDC issuer)
+    - CRWV   # CoreWeave
+    - RDDT   # Reddit
+    - ARM    # Arm Holdings
+    - CART   # Maplebear (Instacart)
+    - KVYO   # Klaviyo
+    - BIRK   # Birkenstock
+    - RBRK   # Rubrik
+    - ALAB   # Astera Labs
+    - TEM    # Tempus AI
+    - SMR    # NuScale Power
+    - OKLO   # Oklo
+    - NBIS   # Nebius Group
+    # Other foreign ADRs (US-listed)
+    - TSM    # Taiwan Semiconductor
+    - SE     # Sea Limited
+    - NU     # Nu Holdings (Nubank)
+    - GRAB   # Grab Holdings
+    - SPOT   # Spotify
+    # More Chinese / Asia ADRs (US-listed)
+    - FUTU   # Futu Holdings
+    - TIGR   # UP Fintech (Tiger Brokers)
+    - MNSO   # Miniso
+    - VIPS   # Vipshop
+    - EDU    # New Oriental Education
+    - TAL    # TAL Education
+    - WB     # Weibo
+    - BZ     # Kanzhun (BOSS Zhipin)
+    - QFIN   # Qifu Technology
+    - GDS    # GDS Holdings
+    - CPNG   # Coupang
+    # More recent IPOs / off-index growth
+    - HOOD   # Robinhood
+    - SOFI   # SoFi Technologies
+    - AFRM   # Affirm
+    - RBLX   # Roblox
+    - U      # Unity Software
+    - PATH   # UiPath
+    - GTLB   # GitLab
+    - S      # SentinelOne
+    - DUOL   # Duolingo
+    - TOST   # Toast
+    - CAVA   # CAVA Group
+    - SG     # Sweetgreen
+    - HIMS   # Hims & Hers Health
+    - ONON   # On Holding
+    - BROS   # Dutch Bros
+    - CHWY   # Chewy
+    - RIVN   # Rivian
+    - LCID   # Lucid Group
+    # Space / new-defense
+    - RKLB   # Rocket Lab
+    - LUNR   # Intuitive Machines
+    - ASTS   # AST SpaceMobile
+    - ACHR   # Archer Aviation
+    - JOBY   # Joby Aviation
+    # Crypto-equity (bitcoin-treasury / miners / exchange)
+    - MSTR   # Strategy (MicroStrategy)
+    - MARA   # MARA Holdings
+    - RIOT   # Riot Platforms
+    - CLSK   # CleanSpark
+    - COIN   # Coinbase
+    - GLXY   # Galaxy Digital
+    - IREN   # IREN
+    # SpaceX is PRIVATE (no ticker) — DXYZ (Destiny Tech100) is the closest
+    # US-listed proxy (SpaceX is its top holding); named so a "spacex" search hits.
+    - DXYZ   # Destiny Tech100 (SpaceX proxy)
+  # ticker -> {name, sector} for the single-stock extras above. build_stock_library
+  # reads this so the search index shows the company + its GICS sector instead of
+  # "<ticker> / ETF / macro". A ticker present in extra_tickers but missing here
+  # still becomes searchable; it just falls back to the bare-ticker ETF label.
+  extra_names:
+    BABA: {name: "Alibaba Group (ADR)", sector: "Consumer Discretionary"}
+    PDD:  {name: "PDD Holdings (ADR)", sector: "Consumer Discretionary"}
+    JD:   {name: "JD.com (ADR)", sector: "Consumer Discretionary"}
+    BIDU: {name: "Baidu (ADR)", sector: "Communication Services"}
+    NTES: {name: "NetEase (ADR)", sector: "Communication Services"}
+    TCOM: {name: "Trip.com Group (ADR)", sector: "Consumer Discretionary"}
+    BILI: {name: "Bilibili (ADR)", sector: "Communication Services"}
+    NIO:  {name: "NIO (ADR)", sector: "Consumer Discretionary"}
+    LI:   {name: "Li Auto (ADR)", sector: "Consumer Discretionary"}
+    XPEV: {name: "XPeng (ADR)", sector: "Consumer Discretionary"}
+    TME:  {name: "Tencent Music (ADR)", sector: "Communication Services"}
+    BEKE: {name: "KE Holdings (ADR)", sector: "Real Estate"}
+    YUMC: {name: "Yum China", sector: "Consumer Discretionary"}
+    ZTO:  {name: "ZTO Express (ADR)", sector: "Industrials"}
+    CRCL: {name: "Circle Internet Group", sector: "Financials"}
+    CRWV: {name: "CoreWeave", sector: "Information Technology"}
+    RDDT: {name: "Reddit", sector: "Communication Services"}
+    ARM:  {name: "Arm Holdings (ADR)", sector: "Information Technology"}
+    CART: {name: "Maplebear (Instacart)", sector: "Consumer Discretionary"}
+    KVYO: {name: "Klaviyo", sector: "Information Technology"}
+    BIRK: {name: "Birkenstock", sector: "Consumer Discretionary"}
+    RBRK: {name: "Rubrik", sector: "Information Technology"}
+    ALAB: {name: "Astera Labs", sector: "Information Technology"}
+    TEM:  {name: "Tempus AI", sector: "Health Care"}
+    SMR:  {name: "NuScale Power", sector: "Utilities"}
+    OKLO: {name: "Oklo", sector: "Utilities"}
+    NBIS: {name: "Nebius Group", sector: "Information Technology"}
+    TSM:  {name: "Taiwan Semiconductor (ADR)", sector: "Information Technology"}
+    SE:   {name: "Sea Limited (ADR)", sector: "Communication Services"}
+    NU:   {name: "Nu Holdings", sector: "Financials"}
+    GRAB: {name: "Grab Holdings", sector: "Industrials"}
+    SPOT: {name: "Spotify (ADR)", sector: "Communication Services"}
+    FUTU: {name: "Futu Holdings (ADR)", sector: "Financials"}
+    TIGR: {name: "UP Fintech / Tiger Brokers (ADR)", sector: "Financials"}
+    MNSO: {name: "Miniso (ADR)", sector: "Consumer Discretionary"}
+    VIPS: {name: "Vipshop (ADR)", sector: "Consumer Discretionary"}
+    EDU:  {name: "New Oriental Education (ADR)", sector: "Consumer Discretionary"}
+    TAL:  {name: "TAL Education (ADR)", sector: "Consumer Discretionary"}
+    WB:   {name: "Weibo (ADR)", sector: "Communication Services"}
+    BZ:   {name: "Kanzhun / BOSS Zhipin (ADR)", sector: "Communication Services"}
+    QFIN: {name: "Qifu Technology (ADR)", sector: "Financials"}
+    GDS:  {name: "GDS Holdings (ADR)", sector: "Information Technology"}
+    CPNG: {name: "Coupang", sector: "Consumer Discretionary"}
+    HOOD: {name: "Robinhood Markets", sector: "Financials"}
+    SOFI: {name: "SoFi Technologies", sector: "Financials"}
+    AFRM: {name: "Affirm Holdings", sector: "Financials"}
+    RBLX: {name: "Roblox", sector: "Communication Services"}
+    U:    {name: "Unity Software", sector: "Information Technology"}
+    PATH: {name: "UiPath", sector: "Information Technology"}
+    GTLB: {name: "GitLab", sector: "Information Technology"}
+    S:    {name: "SentinelOne", sector: "Information Technology"}
+    DUOL: {name: "Duolingo", sector: "Information Technology"}
+    TOST: {name: "Toast", sector: "Information Technology"}
+    CAVA: {name: "CAVA Group", sector: "Consumer Discretionary"}
+    SG:   {name: "Sweetgreen", sector: "Consumer Discretionary"}
+    HIMS: {name: "Hims & Hers Health", sector: "Health Care"}
+    ONON: {name: "On Holding (ADR)", sector: "Consumer Discretionary"}
+    BROS: {name: "Dutch Bros", sector: "Consumer Discretionary"}
+    CHWY: {name: "Chewy", sector: "Consumer Discretionary"}
+    RIVN: {name: "Rivian Automotive", sector: "Consumer Discretionary"}
+    LCID: {name: "Lucid Group", sector: "Consumer Discretionary"}
+    RKLB: {name: "Rocket Lab", sector: "Industrials"}
+    LUNR: {name: "Intuitive Machines", sector: "Industrials"}
+    ASTS: {name: "AST SpaceMobile", sector: "Communication Services"}
+    ACHR: {name: "Archer Aviation", sector: "Industrials"}
+    JOBY: {name: "Joby Aviation", sector: "Industrials"}
+    MSTR: {name: "Strategy (MicroStrategy)", sector: "Information Technology"}
+    MARA: {name: "MARA Holdings", sector: "Information Technology"}
+    RIOT: {name: "Riot Platforms", sector: "Information Technology"}
+    CLSK: {name: "CleanSpark", sector: "Information Technology"}
+    COIN: {name: "Coinbase Global", sector: "Financials"}
+    GLXY: {name: "Galaxy Digital", sector: "Financials"}
+    IREN: {name: "IREN (Iris Energy)", sector: "Information Technology"}
+    DXYZ: {name: "Destiny Tech100 (SpaceX proxy)", sector: "Financials"}
 
 watchlist:
   enabled: true                   # client-side holdings watchlist page (needs stock_search)
