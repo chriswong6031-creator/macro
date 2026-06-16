@@ -48,15 +48,34 @@ def _vm() -> dict:
     }
 
 
-def test_canada_macro_template_renders():
+def _env():
     env = Environment(loader=FileSystemLoader(
         str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)
     env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
-    html = env.get_template("canada.html.j2").render(**_vm())
+    return env
+
+
+def test_canada_macro_template_renders():
+    # macro mode = the regime story; the standout names now live on the Stock Dashboard
+    html = _env().get_template("canada.html.j2").render(**_vm(), mode="macro")
     assert "Canada — S&P/TSX Regime" in html
     assert "Goldilocks" in html
     assert "Risk-off" in html
     assert "Commodity / CAD" in html
-    assert "XEG.TO" in html and "TD Bank" in html
-    assert "canadastockdata/index.json" in html      # nav search wired
+    assert "XEG.TO" in html                            # sector rotation stays on macro
+    assert "TD Bank" not in html                       # standouts moved to the stock dashboard
+    assert "canada_stocks.html" in html                # cross-link to the stock dashboard
+    assert "canadastockdata/index.json" in html        # nav search wired
+    assert len(html) > 8000
+
+
+def test_canada_stocks_template_renders():
+    # stocks mode = the new TSX Stock Dashboard: standout cards + show-more, no regime hero
+    html = _env().get_template("canada.html.j2").render(**_vm(), mode="stocks")
+    assert "TSX Stock Dashboard" in html
+    assert "Standout individual stocks" in html
+    assert "TD Bank" in html                            # the standout setup renders here
+    assert 'data-showmore="12"' in html                 # the progressive reveal is wired
+    assert "Commodity / CAD" not in html                # overlay hero is macro-only
+    assert "Housing & household-debt" not in html       # housing is macro-only
     assert len(html) > 8000

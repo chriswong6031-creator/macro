@@ -233,7 +233,6 @@
       <div class="nav-dd-menu" role="menu">
         <a href="china.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('A-share regime · sectors · flows', 'A股周期 · 板块 · 资金') }}</span></a>
         <a href="china_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Standouts · alpha · setups', '精选 · 阿尔法 · 布局') }}</span></a>
-        <a href="china_lookup.html">🔍 {{ t('Stock Lookup', '股票查询') }}<span class="d">{{ t('Search any A-share', '查询任意A股') }}</span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -241,13 +240,13 @@
       <div class="nav-dd-menu" role="menu">
         <a class="{{ 'active' if mode != 'stocks' }}" href="hk.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('HSI · southbound · global risk', 'HSI · 南向 · 全球风险') }}</span></a>
         <a class="{{ 'active' if mode == 'stocks' }}" href="hk_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('HK-listed standouts · alpha', 'HK上市精选 · 阿尔法') }}</span></a>
-        <a href="hk_lookup.html">🔍 {{ t('Stock Lookup', '股票查询') }}<span class="d">{{ t('Search any HK stock', '查询任意港股') }}</span></a>
       </div>
     </div>
     <div class="nav-dd">
       <a class="nav-link" href="canada.html">🇨🇦 {{ t('Canada', '加拿大') }} <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="canada.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('TSX · BoC · commodity overlay', 'TSX · 加央行 · 商品叠加') }}</span></a>
+        <a href="canada_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('TSX standouts · sectors · alpha', 'TSX精选 · 板块 · 阿尔法') }}</span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -270,7 +269,7 @@
       </div>
     </div>
   </div>
-  <div class="nav-search" data-lib="hkstockdata/index.json" data-target="hk_stock.html">
+  <div class="nav-search" data-lib="hkstockdata/index.json" data-target="hk_lookup.html">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search HK stocks"
       placeholder="Search any HK stock…" data-ph-zh="搜索任意港股…">
@@ -301,6 +300,49 @@
     </div>
     <p class="note" style="margin:8px 0 0;text-transform:none"><b>{{ t('Exposure & risk context', '敞口与风险背景') }}</b> — {{ t('HK has no validated stock-picking edge; this is beta / sector positioning, not alpha. Each name is read by its beta to global risk and its sector, conditioned on the live risk state.', '香港没有经验证的选股优势；这是贝塔／板块定位，而非阿尔法。每只股票按其对全球风险的贝塔与所属板块解读，并结合实时风险状态。') }}
       <a href="hk.html" style="color:var(--link);font-weight:600">← {{ t('HK macro dashboard', '香港宏观看板') }}</a></p>
+  </div>
+  {% endif %}
+
+  <!-- ===================== STANDOUT STOCKS (relative-strength cards) ===================== -->
+  {% if mode == 'stocks' and setups and setups.buy %}
+  <div class="panel span12" id="standouts">
+    <h2>{{ t('⚡ Standout individual stocks', '⚡ 表现突出的个股') }}
+      <span class="note" style="text-transform:none">· {{ t('strongest relative strength · exposure context, not a validated edge', '相对强度最强 · 敞口背景，非已验证优势') }}</span>
+      {{ help("The HK names with the strongest cross-sectional RELATIVE STRENGTH — each stock's ~3-month return z-scored against the HK universe. IMPORTANT: Hong Kong has <b>no validated stock-picking edge</b> (residual momentum is dead on a 40-year panel; research/CHINA_HK_STOCK_SIGNALS.md). So unlike the US / China boards this is NOT a selection-alpha shortlist — it is a relative-strength / exposure READ shown for parity, ranked by recent leadership with each name's price-cycle state for context. The <b>extended</b> tag (RSI≥70) flags a stretched name (reversal risk); <b>pullback</b> a leader that has cooled off. The validated HK read is the global-risk exposure board below. Context to size and confirm — never a buy list.", "相对强度最强的港股 —— 每只股票近3个月收益相对港股全体做 z 标准化。重要：香港<b>没有经验证的选股优势</b>（在40年面板上残差动量无效；research/CHINA_HK_STOCK_SIGNALS.md）。因此与美国／中国看板不同，这不是选股阿尔法名单 —— 而是为保持一致性展示的相对强度／敞口读数，按近期领先排序并标注各股价格周期状态作为背景。<b>extended</b>（RSI≥70）表示过热（反转风险）；<b>pullback</b> 表示已回落的强势股。香港已验证的读数是下方的全球风险敞口看板。用于定仓与确认的背景 —— 绝非买入清单。") }}
+    </h2>
+    <p class="note" style="margin:0 0 2px;text-transform:none">{{ t('Ranked by ~3-month relative strength vs the HK universe, with each name’s price-cycle state for context. HK has no validated selection edge — this is relative-strength / exposure context, not a buy list.', '按近3个月相对港股全体的相对强度排序，并标注各股价格周期状态作为背景。香港没有经验证的选股优势 —— 这是相对强度／敞口背景，而非买入清单。') }}</p>
+    <div class="nbgrid" data-showmore="12">
+    {% for n in setups.buy %}
+      {% set _d = n.dir or 'caution' %}
+      <a class="nbcard nb-{{ _d }}" href="hk_lookup.html#{{ n.ticker }}">
+        <div class="nb-top">
+          <span class="nb-tk">{{ n.ticker }}</span>
+          <span class="nb-nm">{{ n.name }}</span>
+          {% if n.price is not none %}<span class="nb-px">{{ '%.2f'|format(n.price) }}</span>{% endif %}
+        </div>
+        <div class="nb-sub">{% if n.sector %}<span>{{ t(n.sector, n.sector_zh or n.sector) }}</span>{% endif %}{% if n.off_high is not none %}<span>{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}</div>
+        {% if n.spark_svg %}{{ n.spark_svg | safe }}{% endif %}
+        <div class="nb-bot">
+          {% if n.label %}<span class="nb-state">{{ td(n.label) }}</span>{% endif %}
+        </div>
+        {% if n.alpha is not none or n.alpha_entry %}
+        <div class="nb-alpha">
+          {% if n.alpha is not none %}<span class="nb-az {{ 'az-up' if n.alpha>0 else ('az-dn' if n.alpha<0 else '') }}" title="Cross-sectional relative strength (z) — ~3-month return vs the HK universe. A descriptive leadership read, not a validated alpha. · 横截面相对强度（z）— 近3个月相对港股全体的收益。描述性领先读数，非已验证阿尔法。">RS {{ '%+.2f'|format(n.alpha) }}</span>{% endif %}
+          {% if n.sector_rank %}<span class="nb-rk" title="Rank within its sector by relative strength · 按相对强度在其板块内排名">#{{ n.sector_rank }}/{{ n.sector_n }}</span>{% endif %}
+          {% if n.alpha_entry == 'pullback' %}<span class="nb-ent ent-good" title="A leader that has cooled off (RSI≤55) — a less-stretched entry · 已回落的强势股（RSI≤55）— 较不过热的入场">{{ t('pullback', '回调') }}</span>
+          {% elif n.alpha_entry == 'extended' %}<span class="nb-ent ent-warn" title="Stretched (RSI≥70) — short-term reversal risk · 过热（RSI≥70）— 短线反转风险">{{ t('extended', '过热') }}</span>{% endif %}
+        </div>
+        {% endif %}
+      </a>
+    {% endfor %}
+    </div>
+    {% if setups.laggards %}
+    <p class="note" style="margin:13px 0 5px;text-transform:none;color:var(--down);font-weight:700">⚠ {{ t('Weakest relative strength (laggards) — distribution risk:', '相对强度最弱（落后股）— 派发风险：') }}</p>
+    <p style="margin:0;line-height:2">
+      {% for r in setups.laggards %}<a href="hk_lookup.html#{{ r.ticker }}" style="margin-right:14px;white-space:nowrap"><b>{{ r.ticker }}</b> <span class="note">{{ r.name }}</span> <span class="neg">{{ '%+.2f'|format(r.alpha) }}</span></a>{% endfor %}
+    </p>
+    {% endif %}
+    <p class="note" style="margin:8px 0 0;font-size:11px">{{ t('Relative strength is descriptive, not predictive: HK has no validated stock-picking edge (residual momentum is dead on a 40-year panel). For the validated read, use the global-risk exposure board below. A research surface to size and confirm — not a buy list.', '相对强度是描述性的，而非预测性的：香港没有经验证的选股优势（40年面板上残差动量无效）。已验证的读数请使用下方的全球风险敞口看板。用于研究、定仓与确认的面板 —— 而非买入清单。') }}</p>
   </div>
   {% endif %}
 
@@ -454,7 +496,7 @@
       var TILT = { favored: ['favored', '占优'], exposed: ['exposed', '最受冲击'], lag: ['lags', '滞后'], neutral: ['—', '—'] };
       var COL = {
         stock: { en: 'Stock', zh: '个股', l: true, key: function (r) { return r.ticker; },
-          cell: function (r) { return '<a href="hk_stock.html#' + r.ticker + '"><b>' + r.ticker + '</b></a>' + (r.name ? ' <span class="note">' + r.name + '</span>' : ''); } },
+          cell: function (r) { return '<a href="hk_lookup.html#' + r.ticker + '"><b>' + r.ticker + '</b></a>' + (r.name ? ' <span class="note">' + r.name + '</span>' : ''); } },
         sector: { en: 'Sector', zh: '板块', l: true, key: function (r) { return r.sector || ''; },
           cell: function (r) { return '<span class="note">' + bl(r.sector || '—', r.sector_zh || r.sector || '—') + '</span>'; } },
         price: { en: 'Price', zh: '价格', key: function (r) { return r.price; },

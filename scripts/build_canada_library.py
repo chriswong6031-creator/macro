@@ -334,7 +334,8 @@ def main(alpha: dict | None = None) -> dict | None:
     if cand:
         # alpha-led (rank_by="alpha"): like the US, Canada residual momentum is the
         # positive-IC selection leg; cycle timing is displayed context, not the sort key.
-        setups = rank_setups(cand, as_of=(alpha or {}).get("as_of"), rank_by="alpha")
+        # n_buy generous so the Stock Dashboard's "show more" can reveal the full bench.
+        setups = rank_setups(cand, as_of=(alpha or {}).get("as_of"), rank_by="alpha", n_buy=60)
         (site / "factordata").mkdir(parents=True, exist_ok=True)
         (site / "factordata" / "canada_setups.json").write_text(
             json.dumps(setups, separators=(",", ":"), default=str))

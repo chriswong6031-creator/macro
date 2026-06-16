@@ -1013,7 +1013,9 @@ def action_board(sector_timing: dict, notable: list[dict]) -> dict:
     # crowding out the board — the best names per sector fill first, then any spare
     # slots backfill from the overflow (already in rank order). Dual-class listings
     # (GOOG + GOOGL) are collapsed to the best-ranked variant.
-    CAP, FLOOR, PER_SECTOR = 24, 15, 5
+    # CAP generous so the standout strip's "show more" can reveal a deep bench; the
+    # per-sector cap still shapes the diverse top-of-list that's visible by default.
+    CAP, FLOOR, PER_SECTOR = 60, 15, 5
     strong = [n for n in notable if _conv(n) >= FLOOR]
     pool = strong if len(strong) >= 6 else notable
     seen, seen_name, by_sec, picked, overflow = set(), set(), {}, [], []

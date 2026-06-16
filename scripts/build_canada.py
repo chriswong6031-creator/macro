@@ -435,13 +435,31 @@ def main() -> int:
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)
         from engine import i18n
         env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
-        html = env.get_template("canada.html.j2").render(**vm)
+        # One shared view-model feeds BOTH the Canada macro-regime page and the new
+        # TSX Stock Dashboard — the same canada.html.j2 is rendered twice with a `mode`
+        # flag (macro / stocks) that selects which sections show. Mirrors China / HK.
+        tmpl = env.get_template("canada.html.j2")
+        html = tmpl.render(**vm, mode="macro")
         (site / "canada.html").write_text(html)
         for a in ASSETS:
             src = Path(config.ROOT) / "templates" / a
             if src.exists():
                 (site / a).write_text(src.read_text())
         log.info("wrote %s/canada.html (%d KB, %d sectors)", site, len(html) // 1024, len(vm["sectors"]))
+
+        # TSX Stock Dashboard — same VM, the standout-names half (show-more card strip).
+        html_st = tmpl.render(**vm, mode="stocks")
+        (site / "canada_stocks.html").write_text(html_st)
+        log.info("wrote %s/canada_stocks.html (%d KB)", site, len(html_st) // 1024)
+        # landing-hub card stat (presence-gated by the .html existing)
+        _su = vm.get("setups") or {}
+        _n = len(_su.get("buy") or [])
+        cadir = config.data_dir() / "canada_stocks"
+        cadir.mkdir(parents=True, exist_ok=True)
+        (cadir / "latest.json").write_text(json.dumps(
+            {"date": latest.get("date", ""),
+             "label": (f"{_n} standout TSX names" if _n else "TSX standouts · alpha · setups"),
+             "n_setups": _n}, indent=2))
 
         # TSX stock search shell (the per-ticker library was built above)
         try:
