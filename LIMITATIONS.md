@@ -477,3 +477,34 @@ Forex Vector` entry in DECISIONS.md.
   accumulates.
 - **Cycle tag (early/mid/late) is heuristic** — curve shape + credit + breadth
   rules, not a fitted model. Treat as context, not signal.
+
+## Thematic Narrative-Rotation (allocation.html)
+
+- **The momentum rank is a focus lens, not a return forecast.** On the unbiased
+  27-year SPDR-sector universe the cross-sectional rank-IC of theme momentum is ~0
+  (t≈0.4; `scripts/thematic_rotation_phase0.py`). The suggested book is therefore
+  EQUAL-weight across the trend-passers — we ride leaders, we do not bet conviction
+  on the exact order. It ranks *where to look*, not *what will win*.
+- **The only validated edge is drawdown / shake-out control, not alpha.** The
+  absolute-trend (200d / dual-momentum) gate has NO mean-return edge (above vs below
+  trend, forward return is statistically identical, p≈0.9) — but it roughly halves
+  volatility, max drawdown (−49%→−24% on sectors) and the worst-decile-month tail.
+  Don't read the suggested allocation as a return-maximizing portfolio; it is a
+  trend-following, crash-aware discipline.
+- **Crowding is texture, never a timer.** Basket-AGGREGATE extension/crowding has no
+  forward-drawdown edge on the clean universe (Spearman ≈0.07) — the parabolic→crash
+  link is a single-NAME effect that diversifies away. `engine/theme_crowding.py` is
+  used ASYMMETRICALLY (only ever down-sizes; never fades, shorts, or up-sizes) and
+  never feeds a score.
+- **Durability and rotation are coincident, display-only.** Persistence / breadth /
+  cohesion / Hurst CONFIRM a trend (rolling estimators lag ~½ window); the rotation
+  radar flags a *confirmed* leadership handoff, it does not predict the next theme
+  (rotation-timing has no validated edge, even with foresight). All carry
+  `directional:false` and are barred from the scoring path (invariant tests).
+- **The baskets themselves are hindsight-curated and ~3y** — the live-product theme
+  universe cannot validate anything (the basket-universe Phase-0 panel is flagged
+  `contaminated`). The algorithm is validated on the long *sector* proxy, then applied
+  to the live themes with that caveat shown on the page.
+- **No transaction-cost / capacity model in the live view.** The Phase-0 backtest is
+  net of 10bps/turnover; the on-page suggested weights are a monthly-rebalance target,
+  not a tradeable, slippage-aware order list.

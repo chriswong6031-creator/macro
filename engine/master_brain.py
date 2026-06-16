@@ -86,14 +86,23 @@ MASTER_SYSTEM_TMPL = (
     "You are a senior cross-asset macro strategist writing a SHORT morning brief for "
     "a solo top-down trader. You are given the trader's OWN deterministic dashboard "
     "outputs (already computed, validated signals) across macro regime, China, Hong "
-    "Kong, commodities, FX, and Bitcoin, plus an optional FOMC catalyst digest. Your "
-    "job is SYNTHESIS across them — not to recompute or invent numbers.\n\n"
+    "Kong, commodities, FX, BONDS (the leading-family credit / curve / rates-vol / "
+    "sovereign read), and Bitcoin, plus an optional FOMC catalyst digest. Your job is "
+    "SYNTHESIS across them — not to recompute or invent numbers.\n\n"
     "Rules:\n"
     "- Use ONLY the provided state. Never fabricate a level, score, or signal. If "
     "something isn't in the state, say it's not available.\n"
     "- Your value is the CROSS-ASSET view: the unified regime read, where signals "
     "CONFLICT (e.g. risk-on FX vs a cautious macro-risk gauge) and what that implies, "
     "and second-order transmission chains worth watching.\n"
+    "- Use the `bonds` block and `cross_asset_confirm` as the LEADING-FAMILY cross-check: "
+    "state plainly whether bonds + FX CONFIRM or DIVERGE from the equity regime, and lean "
+    "on the bond `drivers_for` hand-off for what bonds imply for FX / commodities / BTC / "
+    "equities. Be honest about lead-lag: only credit/EBP and the curve (NTFS) have a "
+    "defensible — and noisy — LEADING horizon; rates-vol-vs-VIX, the dollar/EM-FX risk-off "
+    "read and FX carry are COINCIDENT confirmation / fragility gauges, and the stock-bond "
+    "correlation is a slow regime descriptor. Do NOT claim bonds 'predict' an equity move. "
+    "A `cross_asset_confirm` divergence is an attention flag, not a forecast.\n"
     "- OPEN with the dominant driver in `macro.market_drivers` when one is present — "
     "name it, the evidence, and what would invalidate it. It is a DETERMINISTIC "
     "cross-asset attribution: narrate it, do not recompute it. If it reads 'mixed' or "
@@ -238,6 +247,65 @@ def _macro_backdrop(m: dict | None) -> dict | None:
     }
 
 
+def _bonds_backdrop(root: Path | None = None) -> dict | None:
+    """Bond-health backdrop for the cross-asset brain — the INDEPENDENT bond reads
+    (cycle clock, credit / curve / rates-vol / sovereign states, the `drivers_for`
+    hand-off built for exactly this). Deliberately EXCLUDES the bond contract's
+    recession_risk / drawdown_risk / stock_bond_corr numbers, which are byte-identical
+    to the macro `conditions` the brain already has (the bonds engine reuses
+    engine.conditions) — passing them would double-count."""
+    root = Path(root) if root else config.ROOT
+    b = _read_json(root / "data/bonds/bond_health.json")
+    if not b:
+        return None
+    p = b.get("pillars") or {}
+
+    def gp(*ks):
+        cur = p
+        for k in ks:
+            if not isinstance(cur, dict):
+                return None
+            cur = cur.get(k)
+        return cur
+
+    return {
+        "as_of": b.get("as_of"),
+        "health_score": b.get("health_score"), "health_label": b.get("health_label"),
+        "cycle_phase": b.get("cycle_phase"), "verdict": b.get("verdict_en"),
+        "curve": {"taxonomy": gp("curve", "move_taxonomy"), "inverted": gp("curve", "inverted"),
+                  "ntfs": gp("curve", "ntfs"), "uninversion_alarm": gp("curve", "uninversion_alarm")},
+        "credit": {"distress_band": gp("credit", "distress_band"),
+                   "direction": gp("credit", "direction"), "hy_oas": gp("credit", "hy_oas"),
+                   "ebp": gp("credit", "ebp")},
+        "real_inflation": {"real_10y": gp("real_inflation", "real_10y"),
+                           "breakeven_5y5y": gp("real_inflation", "breakeven_5y5y"),
+                           "term_premium": gp("real_inflation", "term_premium")},
+        "stress": {"move_band": gp("stress", "move_band"),
+                   "move_leads_vix": gp("stress", "move_leads_vix"),
+                   "repo_stress": gp("stress", "repo_stress")},
+        "stock_bond_corr_regime": gp("cross_asset", "regime"),
+        "hedge_working": gp("cross_asset", "hedge_working"),
+        "sovereign": {"frag_state": gp("sovereign", "frag_state"),
+                      "jgb_state": gp("sovereign", "jgb_state")},
+        "alarms": b.get("alarms") or [],
+        "drivers_for": b.get("drivers_for"),
+    }
+
+
+def _confirm_summary(macro: dict | None) -> dict | None:
+    """Compact cross-asset CONFIRMATION read (bonds + FX vs the equity regime) for the
+    brain — the verdict + headline + the engine's own `to_brain` payload."""
+    c = (macro or {}).get("cross_asset_confirm")
+    if not isinstance(c, dict) or c.get("verdict") in (None, "unknown"):
+        return None
+    out = {"verdict": c.get("verdict"), "headline": c.get("headline_en"),
+           "agree_pct": c.get("agree_pct")}
+    tb = c.get("to_brain")
+    if isinstance(tb, dict):
+        out.update(tb)
+    return out
+
+
 _BTC_SMALL_COLS = ("composite_state", "risk_regime", "momentum", "mvrv_z",
                    "funding_z", "net_liquidity_bn", "macro_regime")
 
@@ -321,6 +389,15 @@ def gather_state(root: Path | None = None) -> dict:
     fx = _read_json(root / "data/forex/latest.json")
     if fx:
         state["forex"] = {k: fx.get(k) for k in ("date", "regime", "favored", "risk")}
+    # Bonds: the leading-family credit/curve/rates-vol backdrop — built (drivers_for)
+    # for exactly this synthesis, but never wired in until now.
+    bonds = _bonds_backdrop(root)
+    if bonds:
+        state["bonds"] = bonds
+    # Cross-asset confirmation: do bonds + FX confirm or diverge from the equity regime?
+    conf = _confirm_summary(macro)
+    if conf:
+        state["cross_asset_confirm"] = conf
     btc = _btc_summary(root)
     if btc:
         state["btc"] = btc
@@ -357,6 +434,10 @@ def gather_china_state(root: Path | None = None) -> dict:
     fx = _read_json(root / "data/forex/latest.json")
     if fx:
         state["forex"] = {k: fx.get(k) for k in ("date", "regime", "favored", "risk")}
+    # bonds backdrop — global rate-differential / risk-off context that pushes on HK & A-shares
+    bonds = _bonds_backdrop(root)
+    if bonds:
+        state["bonds"] = bonds
     return state
 
 
@@ -371,6 +452,12 @@ def gather_btc_state(root: Path | None = None) -> dict:
     backdrop = _macro_backdrop(_read_json(root / "data/regime/latest.json"))
     if backdrop:
         state["us_macro_backdrop"] = backdrop
+    # bonds backdrop — BTC is a long-duration, real-rate-sensitive liquidity asset, so the
+    # real-10y / credit / rates-vol read (and the bond layer's `drivers_for.bitcoin` gate) is
+    # directly relevant.
+    bonds = _bonds_backdrop(root)
+    if bonds:
+        state["bonds"] = bonds
     return state
 
 

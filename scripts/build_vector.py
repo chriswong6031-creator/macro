@@ -2011,6 +2011,17 @@ def main() -> int:
         _build_ipo()
     except Exception as e:  # noqa: BLE001
         log.error("ipo radar page (via build_vector) failed (%s)", e)
+    try:  # China Strategy Scorecards hub + detail pages (same hook rationale as the US hub;
+          # the China Income Vector card pulls from build_china_allocation, so this runs after it).
+        from scripts.build_china_strategies import build as _build_china_strategies
+        _build_china_strategies()
+    except Exception as e:  # noqa: BLE001
+        log.error("china strategies pages (via build_vector) failed (%s)", e)
+    try:  # Commodity Strategy Scorecards (per-commodity toggle grid) + detail pages.
+        from scripts.build_commodity_strategies import build as _build_commodity_strategies
+        _build_commodity_strategies()
+    except Exception as e:  # noqa: BLE001
+        log.error("commodity strategies pages (via build_vector) failed (%s)", e)
     try:  # Canada / S&P-TSX dashboard — has no dedicated daily.yml step yet (the PAT that
           # opened PR #81 lacked `workflow` scope), so it is built here, before the landing
           # hub reads _canada_state(). Self-sufficient + returns 0; never breaks the build.

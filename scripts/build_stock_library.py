@@ -29,6 +29,7 @@ from engine.conditions import sector_macro_beta  # noqa: E402
 from engine.cycles import analyze, market_vix_context  # noqa: E402
 from engine.playbook import SECTOR_NAMES  # noqa: E402
 from engine.setups import US_ALPHA_WEIGHT, rank_setups, setup_score, sue_confirmer  # noqa: E402
+from engine import stock_score  # noqa: E402
 from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
@@ -119,14 +120,39 @@ def current_vix_context() -> dict | None:
     return vctx or None
 
 
+def _limited_rec(ticker: str, c: pd.Series, name: str, sector: str) -> dict:
+    """A minimal, honest record for a curated extra too new for the cycle model
+    (a days-old IPO). Carries enough for search + the page's renderLimited
+    branch: identity, listing date, session count, and the LIMITED sentinel
+    state (the page keys off `limited` before ever reading the ladder)."""
+    return {
+        "ticker": ticker, "name": name, "sector": sector,
+        "asof": str(c.index.max().date()),
+        "listed": str(c.index.min().date()),
+        "history_days": int(len(c)),
+        "limited": True,
+        "ladder": {"state": "LIMITED"},
+    }
+
+
 def _one(ticker: str, close: pd.Series, high: pd.Series | None,
          name: str, sector: str, liquidity: str | None = None,
          macro_drag: float | None = None, macro_beta: float = 0.0,
          bench: pd.Series | None = None, alert_days: int = 120,
-         alert_max: int = 50, vix_ctx: dict | None = None) -> dict | None:
+         alert_max: int = 50, vix_ctx: dict | None = None,
+         min_days: int = 300, allow_limited: bool = False) -> dict | None:
     c = close.dropna()
-    if len(c) < 300:
-        return None
+    # The cycle ladder itself needs ~260 sessions (engine/cycles), so 300 is a
+    # conservative margin for the broad library. Curated single-stock extras
+    # (recent IPOs / ADRs) pass a lower floor so a fresh listing becomes
+    # searchable the moment its ladder is computable, not ~2 months later — the
+    # empty-ladder guard below still gates anything the engine can't yet read.
+    # A brand-new listing (e.g. a days-old IPO like SPCX) has no computable
+    # ladder at all; for curated extras we still emit a LIMITED record so the
+    # name is searchable now (header + honest banner + live chart) rather than
+    # invisible for ~a year — see _limited_rec / the page's renderLimited.
+    if len(c) < min_days:
+        return _limited_rec(ticker, c, name, sector) if allow_limited else None
     # crypto trades 7 days/week — its cycle clock runs longer in calendar days
     # than an equity's, so it gets the crypto cycle preset (Yahoo crypto tickers
     # carry the -USD suffix: BTC-USD, ETH-USD, SOL-USD …).
@@ -136,7 +162,7 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
     res = analyze(c, high, kind=kind, liquidity=liquidity,
                   macro_drag=macro_drag, macro_beta=macro_beta, vix_ctx=vix_ctx)
     if not res.get("ladder"):
-        return None
+        return _limited_rec(ticker, c, name, sector) if allow_limited else None
     month = int(c.index.max().month)
     seas = seasonality(c)
     asof = str(c.index.max().date())
@@ -223,18 +249,26 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
             added += 1
         log.info("stock library universe: +%d from %s", added, grp)
 
-    # ETFs / commodities / crypto from the yahoo store
+    # ETFs / commodities / crypto from the yahoo store, then the searchable
+    # single-stock extras (foreign ADRs + recent IPOs outside the S&P 1500).
     ycfg = config.load()["yahoo"]["tickers"]
     etfs = (ycfg["sectors"] + ycfg["extras"] + ycfg.get("factors", [])
             + ycfg.get("credit", []) + ycfg.get("fx_commod", [])
             + ycfg.get("crypto", []))
-    for t in etfs + config.load().get("stock_search", {}).get("extra_tickers", []):
+    scfg = config.load().get("stock_search", {})
+    extra_names = scfg.get("extra_names", {}) or {}
+    for t in etfs + (scfg.get("extra_tickers", []) or []):
         if t in seen or t.startswith("^"):
             continue
         df = store.read("yahoo", t)
         if df is None:
             continue
-        out.append((t, df["close"], None, ETF_LABELS.get(t, t), "ETF / macro"))
+        lbl = extra_names.get(t)
+        if lbl:  # a real single stock: show the company name + its GICS sector
+            out.append((t, df["close"], df.get("high"),
+                        str(lbl.get("name", t)), str(lbl.get("sector", ""))))
+        else:    # an ETF / macro proxy
+            out.append((t, df["close"], None, ETF_LABELS.get(t, t), "ETF / macro"))
         seen.add(t)
     return out
 
@@ -261,9 +295,15 @@ def _library_workers() -> int:
     return max(1, min(int(n), 8))
 
 
-def _winit(liq, drag, bench, a_days, a_max, vctx) -> None:
+# Lower history floor for curated extras (recent IPOs / ADRs) — one trading
+# year. The empty-ladder guard in _one still governs, so this just trims the
+# conservative 300-session margin for the names we hand-pick to be searchable.
+EXTRAS_MIN_DAYS = 252
+
+
+def _winit(liq, drag, bench, a_days, a_max, vctx, extras=frozenset()) -> None:
     _SHARED.update(liquidity=liq, macro_drag=drag, bench=bench,
-                   alert_days=a_days, alert_max=a_max, vix_ctx=vctx)
+                   alert_days=a_days, alert_max=a_max, vix_ctx=vctx, extras=extras)
 
 
 def _one_task(item):
@@ -272,14 +312,70 @@ def _one_task(item):
     one-bad-ticker-can't-kill-the-library guard."""
     ticker, close, high, name, sector = item
     try:
+        extras = _SHARED.get("extras") or frozenset()
+        is_extra = ticker in extras
+        min_days = EXTRAS_MIN_DAYS if is_extra else 300
         return _one(ticker, close, high, name, sector,
                     liquidity=_SHARED.get("liquidity"), macro_drag=_SHARED.get("macro_drag"),
                     macro_beta=sector_macro_beta(sector), bench=_SHARED.get("bench"),
                     alert_days=_SHARED.get("alert_days", 120),
-                    alert_max=_SHARED.get("alert_max", 50), vix_ctx=_SHARED.get("vix_ctx"))
+                    alert_max=_SHARED.get("alert_max", 50), vix_ctx=_SHARED.get("vix_ctx"),
+                    min_days=min_days, allow_limited=is_extra)
     except Exception as e:  # noqa: BLE001 — one bad ticker must not kill the library
         log.debug("library %s failed: %s", ticker, e)
         return None
+
+
+def _spark_svg(vals, color: str = "var(--link)", w: int = 240, h: int = 42) -> str:
+    """Tiny theme-aware inline sparkline (area + line + last dot) for the standout
+    cards — same shape as build_china_library._spark_svg / build_site._mini_svg."""
+    vals = [float(v) for v in vals if v is not None and v == v]
+    if len(vals) < 2:
+        return ""
+    lo, hi = min(vals), max(vals)
+    rng = (hi - lo) or 1.0
+    n, pad = len(vals), h * 0.12
+
+    def xy(i, v):
+        return (i / (n - 1) * w, (h - pad) - ((v - lo) / rng) * (h - 2 * pad) + pad)
+
+    pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in (xy(i, v) for i, v in enumerate(vals)))
+    lx, ly = xy(n - 1, vals[-1])
+    return (f'<svg class="nch" viewBox="0 0 {w} {h}" preserveAspectRatio="none" '
+            f'width="100%" height="{h}">'
+            f'<polyline points="0,{h} {pts} {w},{h}" fill="{color}" opacity="0.12" stroke="none"/>'
+            f'<polyline points="{pts}" fill="none" stroke="{color}" stroke-width="1.7" '
+            f'stroke-linejoin="round" stroke-linecap="round"/>'
+            f'<circle cx="{lx:.1f}" cy="{ly:.1f}" r="2.6" fill="{color}"/></svg>')
+
+
+_SPARK_COLOR = {"up": "var(--up)", "down": "var(--down)", "caution": "var(--warn)"}
+
+
+def _basket_tailwind_map() -> dict[str, dict]:
+    """Per-ticker thematic-basket TAILWIND for the Conviction "upside" axis (§2 Axis
+    C): the strongest theme a name belongs to, scored by that basket's 20d return
+    vs the benchmark. Best-effort — any failure yields {} and the axis is simply
+    absent (the engine never reads a missing leg as neutral)."""
+    out: dict[str, dict] = {}
+    try:
+        from engine import baskets
+        data = baskets.compute_baskets() or {}
+        for b in (data.get("baskets") or []):
+            rel = ((b.get("perf") or {}).get("20d") or {}).get("rel")
+            if rel is None:
+                continue
+            rel20 = float(rel) * 100.0          # fraction -> percent
+            for m in (b.get("members") or []):
+                sym = m.get("symbol")
+                if not sym:
+                    continue
+                prev = out.get(sym)
+                if prev is None or abs(rel20) > abs(prev["rel20"]):
+                    out[sym] = {"name": b.get("name"), "rel20": rel20}
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("basket tailwind map unavailable (%s)", e)
+    return out
 
 
 def main() -> int:
@@ -381,14 +477,33 @@ def main() -> int:
     # Computed once over the whole panel; graceful (absent feed => {} => no chip).
     from engine.crowding import compute_fragility
     fragility_map = compute_fragility()
+    basket_tw = _basket_tailwind_map()          # Conviction "upside / theme tailwind" axis
+    # Phase-0 gate: the board rank stays the VALIDATED leg unless a deep-CI run proved
+    # the composite beats it (scripts/stock_conviction_phase0.py). Absent / shallow =>
+    # NEUTRAL => gate_go False => Conviction ships as display-only context.
+    gate_go = False
+    _gate = config.data_dir() / "regime" / "stock_conviction_gate.json"
+    if _gate.exists():
+        try:
+            gate_go = (json.loads(_gate.read_text()) or {}).get("US") == "GO"
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("stock_conviction_gate.json unreadable (%s)", e)
     index, cand, built, failed = [], [], 0, 0
+    # Conviction profiles (engine/stock_score) per name + the deferred per-stock JSON
+    # writes — deferred so the display score can be the WITHIN-MARKET percentile of the
+    # composite z (set once all names are profiled), not a per-name logistic skin.
+    profiles: dict[str, dict] = {}
+    disp_map: dict[str, dict] = {}              # price / off-high / sparkline per name
+    to_write: list[tuple[str, dict]] = []
     uni = universe()
     # Heaviest stretch of the whole site build: ~1500 independent _one() calls.
     # Fan them across processes (CI runner = 4 vCPU); the cheap post-processing
     # below (shared-map merges, setup scoring, JSON writes) stays serial and in
     # universe() order, so the output is byte-identical to the serial build.
     # Graceful: any pool error — or workers<=1 — drops back to the serial path.
-    _winit(liq, drag, bench, a_days, a_max, vctx)   # also primes the serial path
+    extra_set = frozenset(
+        config.load().get("stock_search", {}).get("extra_tickers", []) or [])
+    _winit(liq, drag, bench, a_days, a_max, vctx, extra_set)   # also primes the serial path
     workers = _library_workers()
     recs: list[dict | None] | None = None
     if workers > 1 and len(uni) > 50:
@@ -396,7 +511,7 @@ def main() -> int:
             from concurrent.futures import ProcessPoolExecutor
             t0 = time.time()
             with ProcessPoolExecutor(max_workers=workers, initializer=_winit,
-                                     initargs=(liq, drag, bench, a_days, a_max, vctx)) as ex:
+                                     initargs=(liq, drag, bench, a_days, a_max, vctx, extra_set)) as ex:
                 recs = list(ex.map(_one_task, uni, chunksize=8))
             log.info("stock library: analysed %d names in %.0fs (%d processes)",
                      len(uni), time.time() - t0, workers)
@@ -437,14 +552,37 @@ def main() -> int:
             rec["gex"] = gex_by_ticker[ticker]
         if fragility_map.get(ticker):
             rec["fragility"] = fragility_map[ticker]
+        # ---- unified Conviction Profile (engine/stock_score) -----------------
+        # The single block both the dashboard standout card AND this name's detail
+        # page render, so the two can never structurally disagree. Validated US legs
+        # (residual alpha + SUE + insider) lead; the cycle state is a HARD verb
+        # modifier (a downtrend caps the entry axis and forbids a Buy verb).
+        ins = insider_map.get(ticker) or {}
+        ins_bps = ins.get("bps") if (ins.get("buyers", 0) >= 2 and (ins.get("net_mn") or 0) > 0) else None
+        norm = stock_score.normalize_rec(
+            rec, "US", sue=sue_z.get(ticker), insider_bps=ins_bps,
+            basket=basket_tw.get(ticker))
+        prof = stock_score.conviction_profile(norm, "US", ctx={"as_of": alpha_asof, "gate_go": gate_go})
+        rec["conviction"] = prof
+        profiles[ticker] = prof
+        _tech = rec.get("tech") or {}
+        disp_map[ticker] = {
+            "price": _tech.get("price"), "off_high": _tech.get("off_52w_high_pct"),
+            "spark_svg": _spark_svg(list(close.tail(64).values),
+                                    color=_SPARK_COLOR.get((rec.get("ladder") or {}).get("dir"), "var(--link)"))}
         ladder_rows.append(ticker_alerts.ladder_row(ticker, rec.get("ladder"), rec.get("asof")))
         safe = ticker.replace("=", "_").replace("^", "_")
-        (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
+        to_write.append((safe, rec))            # deferred: write after percentile scoring
         idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
         if rec.get("alpha", {}).get("alpha") is not None:
             idx["a"] = rec["alpha"]["alpha"]          # alpha-z in the index for client ranking
         index.append(idx)
         built += 1
+    # within-market percentile display score (mutates the conviction blocks in place;
+    # rec['conviction'] is the SAME object, so the per-stock JSONs pick it up below).
+    stock_score.attach_panel_scores(profiles)
+    for safe, rec in to_write:
+        (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
     # flush the accruing ladder-transition log in one idempotent, atomic write
     try:
         added = ticker_alerts.write_ladder_log_batch(ladder_rows)
@@ -471,6 +609,23 @@ def main() -> int:
             json.dumps(setups, separators=(",", ":"), default=str))
         log.info("wrote setups.json (%d buy, %d laggards, %d candidates)",
                  len(setups["buy"]), len(setups["laggards"]), len(cand))
+        # WIDE "Standout individual stocks" board (the bench the user sees, ~80-120).
+        # Ranked by the VALIDATED residual-alpha leg (the shipped rank stays the
+        # validated leg per Phase-0; the Conviction composite rides as the displayed
+        # profile/verdict on each card). Floor-based: buys = the alpha>=0.5 cross-
+        # section, capped generously so the show-more reveals the full bench.
+        wide = rank_setups(cand, as_of=alpha_asof, rank_by="alpha", n_buy=120, n_lag=12)
+        for r in wide["buy"] + wide["laggards"]:
+            t = r.get("ticker")
+            r["conviction"] = profiles.get(t)
+            r.update({k: v for k, v in (disp_map.get(t) or {}).items() if v is not None})
+        eligible = sum(1 for s, r in cand if (r.get("alpha") or 0) >= 0.5)
+        wide["eligible"] = eligible          # how many cleared the +0.5 alpha floor
+        wide["universe"] = len(cand)
+        (site / "factordata" / "us_standouts.json").write_text(
+            json.dumps(wide, separators=(",", ":"), default=str))
+        log.info("wrote us_standouts.json (%d buy of %d eligible / %d universe)",
+                 len(wide["buy"]), eligible, len(cand))
     # multi-timeframe Bottom-Confidence per-band held-rate (stock.html shows the
     # measured "this band held the low ~N%" line; see research/BOTTOM_CONFIDENCE.md)
     bccal = config.data_dir() / "regime" / "bottom_confidence_calibration.json"

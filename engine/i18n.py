@@ -91,7 +91,7 @@ LEX: dict[str, str] = {
     "UPTREND": "上涨趋势",
     "NEARING A HIGH": "接近高点",
     "TOPPING": "做顶中",
-    "COUNTER-TREND BOUNCE": "逆势反弹",
+    "UNCONFIRMED TURN": "未确认转向",
     # cycle-ladder actions (STATE_DISPLAY 'action')
     "AVOID": "回避",
     "GET READY": "准备",

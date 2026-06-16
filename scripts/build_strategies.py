@@ -156,14 +156,18 @@ def _bands_table(risk_w: int) -> list[dict]:
     return out
 
 
-def _detail_vm(ev: dict, built: str) -> dict:
+def _detail_vm(ev: dict, built: str, leg_meta: dict | None = None,
+               back_href: str = "strategies.html", back_label: tuple = ("Strategies", "策略")) -> dict:
     """Assemble the view-model for templates/strategy_detail.html.j2 from an _evaluate
-    result (used for the NEW strategies; spvector keeps its bespoke page)."""
+    result (used for the NEW strategies; spvector keeps its bespoke page). `leg_meta`
+    lets a sibling builder (China / commodities) supply its own leg colour + 中文 map;
+    `back_href`/`back_label` point the breadcrumb at the owning grid (defaults = US hub)."""
+    leg_meta = leg_meta if leg_meta is not None else LEG_META
     spec = ev["spec"]
     band_label, band_label_zh, band_color = _band_by_weight(ev["risk_w"])
     legs = []
     for name, lg in ev["legs_raw"].items():
-        color, label_zh = LEG_META.get(name, (C["muted"], lg["label"]))
+        color, label_zh = leg_meta.get(name, (C["muted"], lg["label"]))
         legs.append({**lg, "color": color, "label_zh": label_zh})
 
     score_on_bench = (ev["score_series"].reindex(ev["bench"].index, method="ffill")
@@ -191,13 +195,15 @@ def _detail_vm(ev: dict, built: str) -> dict:
         "last_switch": ev["last_switch"], "legs": legs, "sc": ev["sc"], "at": ev["at"],
         "dsr": ev["dsr"], "bands": _bands_table(ev["risk_w"]), "episodes": ev["episodes"],
         "charts": charts,
+        "back_href": back_href, "back_label_en": back_label[0], "back_label_zh": back_label[1],
     }
 
 
-def _card(ev: dict) -> dict:
+def _card(ev: dict, stance: dict | None = None) -> dict:
+    stance = stance if stance is not None else STANCE
     spec, sc = ev["spec"], ev["sc"]
-    rs_en, rs_zh, cs_en, cs_zh = STANCE.get(spec.key, (spec.bench_en, spec.bench_zh,
-                                                        spec.cash_en, spec.cash_zh))
+    rs_en, rs_zh, cs_en, cs_zh = stance.get(spec.key, (spec.bench_en, spec.bench_zh,
+                                                       spec.cash_en, spec.cash_zh))
     stance_en = f"{ev['risk_w']}% {rs_en} · {ev['cash_w']}% {cs_en}"
     stance_zh = f"{ev['risk_w']}% {rs_zh} · {ev['cash_w']}% {cs_zh}"
     return {

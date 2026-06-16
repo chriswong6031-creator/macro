@@ -115,6 +115,28 @@
   .nb-ent { font-weight:700; padding:0 5px; border-radius:7px; text-transform:capitalize; }
   .nb-ent.ent-good { color:var(--up); background:color-mix(in srgb,var(--up) 14%,var(--panel)); }
   .nb-ent.ent-warn { color:var(--warn); background:color-mix(in srgb,var(--warn) 16%,var(--panel)); }
+  /* ---- unified Conviction Profile on each standout card (ported from the US dashboard) ---- */
+  .nb-conv { display:flex; align-items:center; gap:7px; margin:5px 0 1px; }
+  .nb-cscore { font-size:13px; font-weight:800; font-variant-numeric:tabular-nums;
+               min-width:30px; text-align:center; padding:1px 5px; border-radius:8px;
+               border:1px solid var(--line); color:var(--text); }
+  .nb-cscore.band-high { color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,var(--line));
+                         background:color-mix(in srgb,var(--up) 12%,var(--panel)); }
+  .nb-cscore.band-constructive { color:var(--g-cold);
+                         border-color:color-mix(in srgb,var(--g-cold) 40%,var(--line)); }
+  .nb-cscore.band-neutral { color:var(--muted); }
+  .nb-cscore.band-low { color:var(--down); border-color:color-mix(in srgb,var(--down) 35%,var(--line)); }
+  .nb-verdict { font-size:10.5px; font-weight:700; line-height:1.25; color:var(--text); }
+  .nb-axes { display:flex; gap:4px; margin-top:3px; }
+  .nb-ax { flex:1; }
+  .nb-ax .axl { font-size:8px; color:var(--muted); letter-spacing:.03em; }
+  .nb-ax .axt { height:3px; border-radius:2px; background:var(--line); margin-top:1px; overflow:hidden; }
+  .nb-ax .axf { height:100%; background:var(--g-cold); border-radius:2px; }
+  .nb-ax.ax-na .axf { background:transparent; }
+  .nb-cau { display:flex; flex-wrap:wrap; gap:4px; margin-top:3px; }
+  .nb-cau span { font-size:8.5px; font-weight:700; padding:0 4px; border-radius:6px;
+                 color:var(--warn); background:color-mix(in srgb,var(--warn) 13%,var(--panel)); }
+  .nb-tier { font-size:8px; color:var(--muted); margin-top:3px; letter-spacing:.02em; }
   .grid { display: grid; gap: 14px; grid-template-columns: repeat(12, 1fr); }
   .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 15px 17px; }
   .span12 { grid-column: span 12; } .span8 { grid-column: span 8; }
@@ -327,6 +349,7 @@
         <a href="spvector.html">📐 {{ t('S&P / Macro Vector', '标普宏观向量') }}<span class="d">{{ t('Tactical equity↔cash', '战术股票↔现金') }}</span></a>
         <a href="ipo.html">🆕 {{ t('IPO Radar', '新股雷达') }}<span class="d">{{ t('IPO window · aftermarket reality', '新股窗口 · 二级市场现实') }}</span></a>
         <a href="baskets.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P', '等权主题篮子 vs 标普') }}</span></a>
+        <a href="allocation.html">🔄 {{ t('Narrative Rotation', '主题轮动') }}<span class="d">{{ t('Which theme to hold & when to rotate', '持有哪个主题 · 何时轮动') }}</span></a>
         <a href="alerts.html">🚨 {{ t('Alert Center', '警报中心') }}<span class="d">{{ t('Ranked & triaged alerts', '分级分诊的警报') }}</span></a>
         <a href="gex.html">🧲 {{ t('Options Magnets', '期权磁吸') }}<span class="d">{{ t('Dealer-gamma GEX levels', '做市商Gamma GEX价位') }}</span></a>
         <a href="etfs.html">🐳 {{ t('ETF Flows', 'ETF资金流') }}<span class="d">{{ t('Fund flow monitor', '资金流监控') }}</span></a>
@@ -371,7 +394,13 @@
         <a href="vector_allocation.html">◎ {{ t('Allocation Strategy', '仓位策略') }}<span class="d">{{ t('BTC · ETH · alts · cash', 'BTC · ETH · 山寨 · 现金') }}</span></a>
       </div>
     </div>
-    <a class="nav-link" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }}</a>
+    <div class="nav-dd">
+      <a class="nav-link" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="commodities.html">📊 {{ t('Commodity Dashboard', '商品仪表盘') }}<span class="d">{{ t('Gold · silver · copper · oil · complex', '金 · 银 · 铜 · 油 · 综合') }}</span></a>
+        <a href="commodity_strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Per-commodity tactical strategies', '分品种战术策略') }}</span></a>
+      </div>
+    </div>
     <a class="nav-link" href="forex.html">💱 {{ t('Forex', '外汇') }}</a>
     <a class="nav-link" href="bonds.html">🏛️ {{ t('Bonds', '债券') }}</a>
     <div class="nav-dd">
@@ -938,8 +967,17 @@
   <div class="panel span4">
     <h2>{{ t('Breadth & Ratios', '宽度与比价') }}</h2>
     {% if breadth %}
-    <p class="note" style="margin:0 0 8px">{{ t('Large-cap breadth', '大盘宽度') }} ({{ breadth.n_members }} {{ t('names', '只') }})</p>
+    <p class="note" style="margin:0 0 6px">{{ t('Market breadth' if breadth.full else 'Large-cap breadth', '市场广度' if breadth.full else '大盘宽度') }} — {{ t('how many stocks are participating', '有多少股票在参与') }} ({{ breadth.n_members }} {{ t('names', '只') }})</p>
+    <p class="{{ breadth.tone }}" style="margin:0 0 10px; font-size:12.5px; line-height:1.45">
+      {{ t('Participation looks', '参与度看起来') }}
+      <b>{% if breadth.state=='broad' %}{{ t('broad', '广泛') }}{% elif breadth.state=='thin' %}{{ t('thin', '稀薄') }}{% else %}{{ t('mixed', '参差') }}{% endif %}</b> —
+      <b>{{ breadth.pct_above_50 }}%</b> {{ t('above 50-day', '在50日上方') }},
+      <b>{{ breadth.pct_above_200 }}%</b> {{ t('above 200-day', '在200日上方') }};
+      {{ t('net new highs', '净新高') }} <b>{{ '%+d'|format(breadth.net_nh) }}</b>.
+      <span class="muted">{% if breadth.state=='broad' %}{{ t('Broad participation confirms the move.', '广泛参与确认了走势。') }}{% elif breadth.state=='thin' %}{{ t('Few names hold trend — rallies are fragile.', '守住趋势的个股很少 — 反弹脆弱。') }}{% else %}{{ t('No clear breadth edge either way.', '广度上无明显方向优势。') }}{% endif %}</span>
+    </p>
     <table>
+      <tr><td class="l">{{ t('advancing vs declining', '上涨对下跌') }}</td><td><span class="pos">{{ breadth.adv }}</span> / <span class="neg">{{ breadth.dec }}</span></td></tr>
       <tr><td class="l">{{ t('% above 50-day', '50日上方占比') }}</td><td>{{ breadth.pct_above_50 }}% <span class="note">({{ '%+.0f'|format(breadth.pct50_chg20) }})</span></td></tr>
       <tr><td class="l">{{ t('% above 200-day', '200日上方占比') }}</td><td>{{ breadth.pct_above_200 }}%</td></tr>
       <tr><td class="l">{{ t('New highs − lows', '新高−新低') }}</td><td>{{ breadth.nh }} − {{ breadth.nl }}</td></tr>
@@ -968,7 +1006,7 @@
       <span class="note" style="text-transform:none">· {{ t('reversal-led shortlist · cycle-confirmed mean-reversion entries', '反转主导精选 · 周期确认的均值回归入场') }}</span>
       {{ help("The actionable per-stock shortlist — the China parallel of the US 'Standout individual stocks' card strip. REVERSAL-led after the deep-history correction: on ~35 years of A-share data, cross-sectional MOMENTUM is NOT a validated edge; short-term <b>reversal</b> is (research/CHINA_HK_STOCK_SIGNALS.md, reports/china-residual-alpha-deep.md). So this surfaces decent-quality names (some residual relative strength) sitting at a <b>cycle-confirmed mean-reversion entry</b> — a recent <b>pullback</b>, not an extended spike. Ranked by the <b>setup</b> score, which LEADS with the validated effects (the calibrated cycle entry + the pullback/reversal overlay); the residual is only a light quality tiebreaker (0.35×). The 🛡🔄 <b>safer rebound</b> chip flags a CONFLUENCE name — one that is BOTH a deep-dip reversal candidate AND a low-vol defensive name (both validated legs agree). An <b>extended</b> name is reversal RISK, not a buy. Context to size and confirm — not a buy list.", "可操作的个股精选名单 —— 美国“表现突出的个股”卡片的中国版。经深度历史校正后改为反转主导：在约35年的A股数据上，横截面动量并非有效优势；短期<b>反转</b>才是（research/CHINA_HK_STOCK_SIGNALS.md、reports/china-residual-alpha-deep.md）。因此这里筛选出具备一定残差相对强度、且处于<b>周期确认的均值回归入场点</b>（近期<b>回调</b>而非急涨过热）的优质个股。按<b>配置分</b>排序，该分以已验证的效应为主（校准的周期入场＋回调/反转叠加）；残差仅作轻量质量加权（0.35×）。🛡🔄 <b>稳健反弹</b>标记表示<b>合流</b>个股 —— 既是深跌反转候选、又是低波防御股（两条已验证支线一致）。<b>extended</b>（急涨）个股是反转风险而非买入。用于定仓与确认的背景 —— 而非买入清单。") }}
     </h2>
-    <p class="note" style="margin:0 0 2px;text-transform:none">{{ t('Decent names at a cycle-confirmed mean-reversion entry — the validated A-share read, ranked by setup score (cycle entry + pullback/reversal). A research shortlist to size and confirm, not a buy list.', '处于周期确认均值回归入场点的优质个股 —— 已验证的A股解读，按配置分（周期入场＋回调/反转）排序。用于研究、定仓与确认的名单，而非买入清单。') }}</p>
+    <p class="note" style="margin:0 0 2px;text-transform:none">{{ t('Decent names at a cycle-confirmed mean-reversion entry — the validated A-share read, ranked by setup score (cycle entry + pullback/reversal). Each card carries the unified Conviction profile — four transparent axes (selection / entry / tailwind / quality) and one honest verdict; the cycle state caps the verdict, so a downtrend never reads “Buy”. The selection axis is the validated reversal context (high-variance, not a buy list). A research shortlist to size and confirm, not a buy list.', '处于周期确认均值回归入场点的优质个股 —— 已验证的A股解读，按配置分（周期入场＋回调/反转）排序。每张卡片附带统一确信度画像 —— 四条透明维度（选股／入场／顺风／质量）与一个诚实结论；周期状态会封顶结论，下行趋势永不显示“买入”。选股维度即已验证的均值回归参考（高波动，非买入清单）。用于研究、定仓与确认的名单，而非买入清单。') }}</p>
     <div class="nbgrid" data-showmore="12">
     {% for n in setups.buy %}
       {% set _d = n.dir or 'caution' %}
@@ -980,6 +1018,22 @@
         </div>
         <div class="nb-sub"><span>{{ t(n.sector, SECZH.get(n.sector, n.sector)) }}</span>{% if n.off_high is not none %}<span>{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}</div>
         {% if n.spark_svg %}{{ n.spark_svg | safe }}{% endif %}
+        {% set c = n.conviction %}
+        {% if c %}
+        <div class="nb-conv">
+          {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">{{ c.score }}</span>{% endif %}
+          <span class="nb-verdict"><span class="l-en">{{ c.verdict }}</span><span class="l-zh">{{ c.verdict_zh }}</span></span>
+        </div>
+        <div class="nb-axes">
+          {% for ax, lbl in [('selection','SEL'),('entry','ENT'),('tailwind','TWD'),('quality','QUAL')] %}
+          {% set a = c.axes[ax] %}
+          <div class="nb-ax{{ ' ax-na' if a.pct is none else '' }}" title="{{ lbl }}{% if a.pct is not none %} {{ a.pct }}/100{% else %} — no data{% endif %}">
+            <div class="axl">{{ lbl }}</div>
+            <div class="axt"><div class="axf" style="width:{{ a.pct if a.pct is not none else 0 }}%"></div></div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
         <div class="nb-bot">
           <span class="nb-state">{{ td(n.label or n.state) }}</span>
           {% if n.confluence %}<span class="nb-conf" title="In BOTH validated screens — a deep-dip reversal candidate that is ALSO a low-vol defensive name (a structurally safer rebound). · 同时进入两条已验证筛选 —— 既是深跌反转候选又是低波防御股（结构上更稳健的反弹）。">🛡🔄 {{ t('safer rebound', '稳健反弹') }}</span>{% endif %}
@@ -991,6 +1045,10 @@
           {% if n.alpha_entry == 'pullback' %}<span class="nb-ent ent-good" title="A recent pullback — the constructive mean-reversion entry · 近期回调 — 建设性的均值回归入场">{{ t('pullback', '回调') }}</span>
           {% elif n.alpha_entry == 'extended' %}<span class="nb-ent ent-warn" title="A recent spike — short-term reversal risk · 近期急涨 — 短线反转风险">{{ t('extended', '过热') }}</span>{% endif %}
         </div>
+        {% endif %}
+        {% if c %}
+        {% if c.cautions %}<div class="nb-cau">{% for cau in c.cautions %}<span>⚠ {{ cau }}</span>{% endfor %}</div>{% endif %}
+        <div class="nb-tier"><span class="l-en">{{ c.trust_tier.en }}</span><span class="l-zh">{{ c.trust_tier.zh }}</span></div>
         {% endif %}
       </a>
     {% endfor %}
