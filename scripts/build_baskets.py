@@ -73,6 +73,25 @@ def main() -> int:
         (site / "lightweight-charts.js").write_text(lwc.read_text())
     log.info("wrote %s/baskets.html (%d baskets, %d categories, %d KB)",
              site, len(data["baskets"]), len(data.get("categories", [])), len(html) // 1024)
+
+    # Thematic Narrative-Rotation page (engine.narrative_rotation -> site/allocation.html).
+    # Built here off the same baskets membership + price caches so it ships on every CI run
+    # without a new daily.yml step (the PAT lacks `workflow` scope, like build_canada /
+    # build_baskets_china). First refresh the honest 27y Phase-0 backtest artifact
+    # (data/strategies/thematic_rotation_phase0.json) the page cites — a committed copy is
+    # the fallback if the refresh fails; an absent file simply hides the backtest panel.
+    # Both additive — never fatal. TODO: promote to a dedicated daily.yml `build_allocation`
+    # step once a workflow-scoped token is available.
+    try:
+        from scripts.thematic_rotation_phase0 import main as _phase0
+        _phase0()
+    except Exception as e:  # noqa: BLE001 — additive; falls back to the committed artifact
+        log.error("thematic rotation Phase-0 refresh failed (using committed artifact): %s", e)
+    try:
+        from scripts.build_allocation import main as _build_allocation
+        _build_allocation()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("allocation page (via build_baskets) failed: %s", e)
     return 0
 
 
