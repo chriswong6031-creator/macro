@@ -45,17 +45,17 @@
   "veto": {
     "schema": "regime_snap_veto.v1",
     "is_context_only": true,
-    "lean": "fragile",
-    "confidence": "medium",
+    "lean": "unclear",
+    "confidence": "low",
     "checks": {
-      "catalyst": "Oil price collapse is a market event, not a structural policy shift, signed deal, or hard data surprise. It lacks the durability of a regime-change catalyst.",
-      "premium": "Fear built is moderate (0.504); VIX and credit spreads are flipping, suggesting some premium unwinding, but the move is still building and not fully baked.",
-      "washout": "Recent capitulation (cap_recent true) gives a cleaner foundation, but prior washout alone does not guarantee durability without a structural driver.",
-      "follow_through": "Fast velocity (92nd percentile) and only partial leg flips (3 of 7) raise the risk that the move is tactical and may fade when oil stabilizes or headlines shift."
+      "catalyst": "Oil collapse driver unknown; no signed deal, policy shift, or hard data surprise provided \u2014 price move alone is not structural.",
+      "premium": "Moderate fear built (0.50), only 3 of 7 legs flipped, VIX term still elevated (0.84) \u2014 substantial fear premium likely remains.",
+      "washout": "Recent capitulation present (cap_recent true) and snap came 1 day after last event \u2014 suggestive of a real washout.",
+      "follow_through": "Cross-asset confirmation (VIX, HY OAS, VIX term) is classic but high velocity (0.92) and commodity-driven; without a structural catalyst, next-session fade risk is high."
     },
-    "read": "This relief snap is building on an oil collapse, not a structural policy or deal catalyst. While it emerges from a washout and shows early cross-asset confirmation, the move is easily reversed and likely fragile.",
+    "read": "Oil collapse triggered a risk-on flip, but the reason for the oil move is absent from headlines, making the catalyst illegible. Despite a decent washout, durability cannot be assessed without knowing whether the oil shock is a structural shift or a transient move.",
     "model": "deepseek-v4-pro",
-    "generated_at": "2026-06-16T07:18:23.845512+00:00",
+    "generated_at": "2026-06-16T08:34:35.252988+00:00",
     "degraded_reason": null,
     "disclaimer": "AI durability read \u2014 context only, never scored or sized. The snap detector is coincident; this is a fallible judgement on whether the relief is structural or a dead-cat, not a trade recommendation."
   }
