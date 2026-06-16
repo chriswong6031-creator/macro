@@ -95,6 +95,7 @@ def _cfg() -> dict:
         "llm_model": "deepseek-v4-pro",
         "max_tokens": 8000,               # reasoning model — thinking tokens count vs cap
         "max_theses": 3,
+        "interval_days": 1,               # regenerate the desk note every N days (1..7)
         "default_horizon_d": 20,
         "falsifier_defaults": {"rel_return": 0.05},   # ±5% rel move = the wrong-way threshold
         "panel": {"enabled": True},                   # Phase B: adversarial analyst panel
@@ -120,6 +121,23 @@ def _now_iso() -> str:
 def _read_json(path):
     try:
         return json.loads(Path(path).read_text())
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _brief_age_days(prev) -> float | None:
+    """Age in days of a previously-generated desk note from its `generated_at`. None
+    when missing/unparseable (→ treat as DUE). Drives the regenerate-every-N-days gate."""
+    if not isinstance(prev, dict):
+        return None
+    ts = prev.get("generated_at")
+    if not isinstance(ts, str) or not ts.strip():
+        return None
+    try:
+        gen = datetime.fromisoformat(ts)
+        if gen.tzinfo is None:
+            gen = gen.replace(tzinfo=timezone.utc)
+        return (datetime.now(timezone.utc) - gen).total_seconds() / 86400.0
     except Exception:  # noqa: BLE001
         return None
 
@@ -578,6 +596,22 @@ def run(persist: bool = True, root=None, force: bool = False, call=None) -> dict
         return None
     try:
         root = Path(root) if root else config.ROOT
+        # Interval gate — only regenerate every N days (1..7). When the prior note is
+        # younger than the interval, skip the LLM call AND the ledger append (avoids
+        # duplicate theses corrupting the Phase-C scorer); the committed ai_desk.json
+        # stays live and deploys unchanged. `force` always bypasses the gate.
+        if not force:
+            try:
+                interval = max(1, min(7, int(cfg.get("interval_days", 1))))
+            except Exception:  # noqa: BLE001
+                interval = 1
+            if interval > 1:
+                prev = _read_json(Path(root) / "data" / "regime" / "ai_desk.json")
+                age = _brief_age_days(prev)
+                if age is not None and age < interval:
+                    log.info("ai_desk: note is %.1fd old (< %dd interval) — skipping "
+                             "regen, keeping prior note", age, interval)
+                    return prev
         state = gather_desk_state(root)
         if state is None:
             log.info("ai_desk: no flow/regime_snap artifacts present — nothing to brief")

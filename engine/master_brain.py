@@ -193,6 +193,24 @@ def _read_json(path: Path):
         return None
 
 
+def _brief_age_days(prev: dict | None) -> float | None:
+    """Age in days of a previously-generated brief, from its `generated_at`. Returns
+    None when missing/unparseable so the caller treats the brief as DUE (regenerate).
+    Used by the regenerate-every-N-days interval gate in run()."""
+    if not isinstance(prev, dict):
+        return None
+    ts = prev.get("generated_at")
+    if not isinstance(ts, str) or not ts.strip():
+        return None
+    try:
+        gen = datetime.fromisoformat(ts)
+        if gen.tzinfo is None:
+            gen = gen.replace(tzinfo=timezone.utc)
+        return (datetime.now(timezone.utc) - gen).total_seconds() / 86400.0
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def _leg(x):
     """Compact a conditions leg dict down to its headline fields."""
     if isinstance(x, dict):
@@ -664,6 +682,24 @@ def run(persist: bool = True, root: Path | None = None, force: bool = False,
         return None
     try:
         root = Path(root) if root else config.ROOT
+        # Interval gate — only regenerate every N days (1..7). When the existing brief
+        # is younger than the interval, skip the (paid) LLM call and KEEP the prior
+        # brief live: the committed data/regime/<out> + site/<out> are left untouched
+        # so the dashboard deploys the previous note verbatim. `force` (CLI/on-demand)
+        # always bypasses the gate. Anchored off data/regime (the canonical write
+        # target); a missing/unparseable generated_at falls through to regeneration.
+        if not force:
+            try:
+                interval = max(1, min(7, int(cfg.get("interval_days", 1))))
+            except Exception:  # noqa: BLE001
+                interval = 1
+            if interval > 1:
+                prev = _read_json(root / "data" / "regime" / spec["out"])
+                age = _brief_age_days(prev)
+                if age is not None and age < interval:
+                    log.info("master_brain: lens=%s brief is %.1fd old (< %dd interval) "
+                             "— skipping regen, keeping prior brief", lens, age, interval)
+                    return prev
         state = spec["state_fn"](root)
         brief = synthesize(state, cfg, lens=lens)
         _translate_brief(brief, cfg)          # attach brief['zh'] for the 中文 toggle

@@ -1,0 +1,134 @@
+"""GitHub Actions integration: watch builds and trigger a rebuild/redeploy.
+
+Reads run status unauthenticated (public repo) and POSTs a workflow_dispatch when a
+token is present (env GH_TOKEN or GITHUB_TOKEN, optionally via <repo>/.env). The live
+site is rebuilt by daily.yml and redeployed by pages.yml — both expose workflow_dispatch.
+"""
+from __future__ import annotations
+
+import os
+import re
+import subprocess
+
+from .paths import ROOT
+
+API = "https://api.github.com"
+_REPO_CACHE: tuple[str, str] | None = None
+
+try:
+    import requests  # already a project dependency
+except Exception:  # noqa: BLE001
+    requests = None  # type: ignore
+
+
+def repo() -> tuple[str | None, str | None]:
+    """(owner, name) parsed from `git remote get-url origin`. Cached."""
+    global _REPO_CACHE
+    if _REPO_CACHE is not None:
+        return _REPO_CACHE
+    owner = name = None
+    try:
+        url = subprocess.run(
+            ["git", "remote", "get-url", "origin"],
+            cwd=str(ROOT), capture_output=True, text=True, timeout=5,
+        ).stdout.strip().rstrip("/")
+        m = re.search(r"[:/]([^/]+)/([^/]+?)(?:\.git)?$", url)
+        if m:
+            owner, name = m.group(1), m.group(2)
+    except Exception:  # noqa: BLE001
+        pass
+    _REPO_CACHE = (owner, name)
+    return _REPO_CACHE
+
+
+def token() -> str | None:
+    for k in ("GH_TOKEN", "GITHUB_TOKEN"):
+        v = os.environ.get(k, "").strip()
+        if v:
+            return v
+    return None
+
+
+def _headers() -> dict:
+    h = {"Accept": "application/vnd.github+json",
+         "X-GitHub-Api-Version": "2022-11-28",
+         "User-Agent": "macro-admin"}
+    t = token()
+    if t:
+        h["Authorization"] = f"Bearer {t}"
+    return h
+
+
+def available() -> dict:
+    owner, name = repo()
+    return {
+        "ok": bool(requests and owner and name),
+        "owner": owner, "repo": name,
+        "has_token": bool(token()),
+        "lib": bool(requests),
+    }
+
+
+def _slim_run(r: dict) -> dict:
+    return {
+        "id": r.get("id"),
+        "name": r.get("name"),
+        "display_title": r.get("display_title"),
+        "status": r.get("status"),
+        "conclusion": r.get("conclusion"),
+        "event": r.get("event"),
+        "branch": r.get("head_branch"),
+        "created_at": r.get("created_at"),
+        "run_started_at": r.get("run_started_at"),
+        "updated_at": r.get("updated_at"),
+        "html_url": r.get("html_url"),
+        "workflow": (r.get("path") or "").replace(".github/workflows/", ""),
+    }
+
+
+def list_runs(per_page: int = 15, workflow: str | None = None) -> dict:
+    """Recent workflow runs (newest first). Works without a token on a public repo."""
+    if requests is None:
+        return {"ok": False, "error": "requests not installed", "runs": []}
+    owner, name = repo()
+    if not (owner and name):
+        return {"ok": False, "error": "could not detect owner/repo from git remote", "runs": []}
+    base = f"{API}/repos/{owner}/{name}/actions"
+    url = (f"{base}/workflows/{workflow}/runs" if workflow else f"{base}/runs")
+    try:
+        resp = requests.get(url, headers=_headers(),
+                            params={"per_page": per_page}, timeout=12)
+        if resp.status_code != 200:
+            return {"ok": False, "error": f"HTTP {resp.status_code}", "runs": []}
+        runs = [_slim_run(r) for r in resp.json().get("workflow_runs", [])]
+        return {"ok": True, "runs": runs}
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e), "runs": []}
+
+
+def dispatch(workflow: str = "daily.yml", ref: str = "main",
+             inputs: dict | None = None) -> dict:
+    """Trigger a workflow_dispatch. Requires a token with Actions: write."""
+    if requests is None:
+        return {"ok": False, "error": "requests not installed"}
+    if not token():
+        return {"ok": False, "error": "no GH_TOKEN / GITHUB_TOKEN set (needs Actions:write)"}
+    owner, name = repo()
+    if not (owner and name):
+        return {"ok": False, "error": "could not detect owner/repo"}
+    url = f"{API}/repos/{owner}/{name}/actions/workflows/{workflow}/dispatches"
+    body: dict = {"ref": ref}
+    if inputs:
+        body["inputs"] = inputs
+    try:
+        resp = requests.post(url, headers=_headers(), json=body, timeout=12)
+        if resp.status_code == 204:
+            return {"ok": True, "workflow": workflow, "ref": ref}
+        msg = ""
+        try:
+            msg = resp.json().get("message", "")
+        except Exception:  # noqa: BLE001
+            msg = resp.text[:300]
+        return {"ok": False, "error": f"HTTP {resp.status_code}: {msg}"}
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)}
