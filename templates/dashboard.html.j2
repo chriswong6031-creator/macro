@@ -2235,6 +2235,54 @@
   </div>
   {% endif %}
 
+  <!-- ===================== SECTOR BOTTOM RADAR ===================== -->
+  {% if sector_radar and sector_radar.washed %}
+  <div class="panel span12" id="sector-bottom-radar">
+    <h2>{{ t('Sector Bottom Radar — washout durability, not rotation', '板块见底雷达 — 错杀的持久性，而非轮动') }}
+      {{ help("The buy-side complement to the heat board below. It runs the SAME validated 'Bottom Confidence' score we compute per stock (walk-forward calibrated monotone on 69k evals) on each sector ETF: how DURABLE a washing-out sector's low looks — high = the kind of selloff whose low has historically held with a SHALLOWER drawdown — discounted when the turn isn't confirmed on the weekly/monthly and when price is a deep falling-knife below its 200-day. The whole board is then conditioned by the index Fed-put gate: in a put-absent regime (recession or inflation-locked Fed) the same washout signals kept falling in 2000/2008/2022. This is a RISK / DURABILITY read, NOT a return forecast and NOT alpha — it trades some of the explosive bounce for a much higher chance the low holds. The heat board describes what's already hot (and late); this finds where a durable low may be forming. Validated in research/SECTOR_BOTTOM_RADAR.md.", "下方热度榜的买方补充。它在每个板块 ETF 上运行与个股相同的、经验证的「见底信心」分数（经 6.9 万次步进式校准、单调有效）：衡量一个正被错杀的板块其低点有多持久——分数越高，代表这类抛售的低点历史上更易守住、回撤更浅——当周线／月线尚未确认转向、或价格深跌破 200 日线（接飞刀）时会打折。整个看板再由指数层面的美联储托底闸门来条件化：在托底缺位（衰退或通胀锁死）的格局下，同类超卖信号在 2000／2008／2022 年持续下跌。这是风险／持久性读数，并非收益预测、也非超额收益——它以让出部分爆发式反弹，换取低点守住的更高概率。热度榜描述的是已经火热（且偏晚）的板块；本雷达则寻找可能正在形成的持久低点。验证见 research/SECTOR_BOTTOM_RADAR.md。") }}
+    </h2>
+    <p class="{{ 'neg' if sector_radar.put_absent else 'pos' }}" style="margin:0 2px 12px; font-size:13.5px; line-height:1.5">
+      <b>{{ t('Macro gate', '宏观闸门') }}:</b> {{ sector_radar.macro_banner }}
+    </p>
+    <table>
+      <tr>
+        <th class="l">{{ t('sector', '板块') }}</th>
+        <th class="l" style="min-width:150px">{{ t('bottom confidence', '见底信心') }} <span class="help">?<span class="tip">
+          <span class="l-en"><b>Bottom Confidence</b> 0-100 — how durable, low-drawdown this sector's low looks. <b>Measured (sector ETFs, 1998-2026):</b> sectors scoring 60+ held their cycle low ~79% of the time vs ~34% at 0-20, with a shallower drawdown tail. Higher = a more durable low, <i>not</i> a bigger bounce (the deepest washouts bounce hardest but rarely hold). Risk/durability, never a return forecast.</span>
+          <span class="l-zh"><b>见底信心</b> 0-100 — 衡量该板块的低点有多持久、回撤有多浅。<b>实测（板块 ETF，1998-2026）：</b>得分 60+ 的板块约 79% 守住其周期低点，而 0-20 区间仅约 34%，且回撤尾部更浅。分数越高代表低点越持久，<i>而非</i>反弹更大（最深的错杀反弹最猛，却很少守住）。这是风险／持久性，绝非收益预测。</span>
+        </span></span></th>
+        <th>{{ t('verdict', '判定') }}</th>
+        <th class="l">{{ t('members washed / turning', '成分股超卖／转向') }} {{ help("Live breadth confirmer: of the sector's S&P 500 members, the share below their 200-day (washed out) and, of those, the share reclaiming their 10-day (turning up). Displayed context only — the breadth cache is ~1y deep so this leg is not deep-backtested and never enters the score.", "实时宽度确认：在该板块的标普500成分股中，跌破 200 日线（超卖）的比例，以及其中已收复 10 日线（转向）的比例。仅作背景参考——宽度缓存约 1 年深度，该项未经深度回测，且不计入分数。") }}</th>
+        <th class="l">{{ t('read', '解读') }}</th>
+      </tr>
+      {% for r in sector_radar.washed %}
+      <tr>
+        <td class="l"><b>{{ td(r.name) }}</b> <span class="muted" style="font-size:11px">{{ r.ticker }}</span></td>
+        <td class="l" data-sort="{{ r.bc_pct }}">
+          {% if r.bottom_confidence is not none %}
+          <span class="help">
+            <span style="display:inline-flex;align-items:center;gap:7px">
+              <span style="display:inline-block;width:60px;height:9px;background:var(--panel2);border-radius:5px;overflow:hidden"><i style="display:block;height:100%;width:{{ r.bc_pct }}%;background:{{ r.v_color }}"></i></span>
+              <b>{{ r.bc_pct }}</b>
+              {% if r.bc_grade_t %}<span class="muted" style="font-size:11px">{{ r.bc_grade_t }}</span>{% endif %}
+            </span>
+            {% if r.bc_line %}<span class="tip"><span class="l-en">{{ r.bc_line }}{% if r.bc_knife_line %}<br>{{ r.bc_knife_line }}{% endif %}</span><span class="l-zh">{{ r.bc_line_zh or r.bc_line }}{% if r.bc_knife_line_zh %}<br>{{ r.bc_knife_line_zh }}{% endif %}</span></span>{% endif %}
+          </span>
+          {% else %}<span class="muted">—</span>{% endif %}
+        </td>
+        <td><span class="pill {{ r.v_tone }}" style="border-color:{{ r.v_color }};color:{{ r.v_color }}">{{ r.v_pill }}</span></td>
+        <td class="l muted" style="font-size:12px">{% if r.breadth_str %}{{ r.breadth_str }}{% else %}—{% endif %}</td>
+        <td class="l muted" style="font-size:12px;max-width:340px">{{ r.label_t }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    <p class="muted" style="margin:8px 2px 0; font-size:11px">
+      {{ t('Risk / durability read — confirm into stabilization, do not anticipate the exact low. Not alpha.', '风险／持久性读数 — 确认企稳后再介入，勿预判精确低点。非超额收益。') }}
+      <a href="#sectors" style="margin-left:6px">{{ t('rotation context ↓', '轮动背景 ↓') }}</a>
+    </p>
+  </div>
+  {% endif %}
+
   <!-- ======================= SECTOR HEAT BOARD ======================= -->
   <div class="panel span12" id="sectors">
     <h2>{{ t('Sector heat board — regime × tape × technicals × seasonality', '板块热度榜 — 周期 × 盘面 × 技术 × 季节性') }}
