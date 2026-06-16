@@ -1,0 +1,325 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>China Allocation Strategy — Income Vector</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+<style>
+:root{
+  --blue:#285FFF; --indigo:#4559DC; --r2:#B8C6FA; --r3:#8FA5F6; --ink:#0B1733;
+  --text:#344054; --muted:#6F6F6F; --faint:#A0A0A0; --red:#D30B0B; --amber:#F5AD42;
+  --grid:#EAECF0; --card:#FFFFFF; --bg:#F7F8FA; --green:#1FA971;
+}
+*{box-sizing:border-box}
+html:not([data-lang="zh"]) .l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 0 14px;border-bottom:1px solid var(--grid);margin-bottom:24px;position:sticky;top:0;background:var(--bg);z-index:20}
+.nav-links{display:flex;align-items:center;gap:2px;flex-wrap:wrap}
+a.nav-link{padding:7px 11px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;white-space:nowrap;transition:color .18s,background .18s}
+a.nav-link:hover,a.nav-link.active{color:var(--ink);background:#eef1f6}
+.nav-dd{position:relative;display:inline-flex}
+.nav-dd>a.nav-link .caret{display:inline-block;margin-left:3px;font-size:9px;opacity:.6;transition:transform .2s}
+.nav-dd:hover>a.nav-link .caret,.nav-dd:focus-within>a.nav-link .caret{transform:rotate(180deg)}
+.nav-dd::after{content:"";position:absolute;left:0;right:0;top:100%;height:9px}
+.nav-dd-menu{position:absolute;top:calc(100% + 7px);left:0;min-width:218px;background:var(--card);border:1px solid var(--grid);border-radius:13px;box-shadow:0 12px 34px rgba(16,24,40,.14);padding:6px;opacity:0;visibility:hidden;transform:translateY(-6px);transition:opacity .18s ease,transform .18s ease,visibility .18s;z-index:70}
+.nav-dd:hover>.nav-dd-menu,.nav-dd:focus-within>.nav-dd-menu{opacity:1;visibility:visible;transform:translateY(0)}
+.nav-dd-menu a{display:block;padding:9px 12px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--text);text-decoration:none;white-space:nowrap;transition:background .15s,color .15s}
+.nav-dd-menu a .d{display:block;font-size:11.5px;font-weight:400;color:var(--muted);margin-top:2px}
+.nav-dd-menu a:hover,.nav-dd-menu a.active{background:#eef1f6;color:var(--ink)}
+.nav-ctrls{display:flex;align-items:center;gap:10px;flex:none}
+.nav-ctrls .ai-brief-link{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;flex:none;padding:5px 12px;border-radius:999px;background:var(--card);border:1px solid var(--grid);color:var(--text);font-size:12.5px;font-weight:600;line-height:1;text-decoration:none;transition:border-color .15s,color .15s}
+.nav-ctrls .ai-brief-link:hover{border-color:var(--blue);color:var(--blue)}
+.lang-toggle{display:inline-flex;position:relative;background:#eef1f6;border:1px solid var(--grid);border-radius:999px;padding:3px;cursor:pointer;flex:none}
+.lang-toggle .pill{position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);border-radius:999px;background:var(--blue);transition:transform .34s cubic-bezier(.34,1.4,.5,1)}
+html[data-lang="zh"] .lang-toggle .pill{transform:translateX(100%)}
+.lang-toggle .opt{position:relative;z-index:1;min-width:28px;text-align:center;padding:3px 9px;font-size:11.5px;font-weight:600;color:var(--muted);transition:color .25s;user-select:none}
+html:not([data-lang="zh"]) .lang-toggle .en-opt{color:#fff}
+html[data-lang="zh"] .lang-toggle .zh-opt{color:#fff}
+.theme-switch{width:56px;height:27px;border-radius:999px;background:#eef1f6;border:1px solid var(--grid);position:relative;cursor:pointer;padding:0;flex:none}
+.theme-switch .ic{position:absolute;top:50%;transform:translateY(-50%);font-size:10.5px;opacity:.5;line-height:1}
+.theme-switch .ic.sun{right:8px}.theme-switch .ic.moon{left:8px}
+.theme-switch .knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 5px rgba(0,0,0,.3);transform:translateX(29px);transition:transform .34s cubic-bezier(.34,1.45,.5,1),background .3s}
+.theme-switch .knob::before{content:"☀️"}
+html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280}
+html[data-theme="dark"] a.nav-link:hover,html[data-theme="dark"] a.nav-link.active{background:#222732}
+html[data-theme="dark"] .nav-dd-menu a:hover,html[data-theme="dark"] .nav-dd-menu a.active{background:#222732}
+html[data-theme="dark"] .lang-toggle{background:#222732}
+html[data-theme="dark"] .theme-switch{background:#222732}
+html[data-theme="dark"] .theme-switch .knob{transform:translateX(0);background:#e8c15a}
+html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
+html[data-theme="dark"] .gtable td.cur{background:#1b2740}
+html[data-theme="dark"] .score .s>div{background:var(--grid)}
+.grid{display:grid;gap:18px}
+.cols-2{grid-template-columns:1.05fr .95fr}
+.cols-3{grid-template-columns:repeat(3,1fr)}
+.cols-4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:900px){.cols-2,.cols-3,.cols-4{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:22px}
+.card h3{margin:0 0 14px;font-size:18px;font-weight:700;color:var(--ink)}
+.sub{color:var(--muted);font-size:13px} .faint{color:var(--faint)}
+.section-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:30px 4px 12px}
+.h1{font-size:30px;font-weight:800;color:var(--ink);letter-spacing:-.02em;margin:6px 0 2px}
+.tag{display:inline-block;background:#E7F3EC;color:#1c6b41;border-radius:8px;padding:3px 10px;font-size:12.5px;font-weight:700}
+html[data-theme="dark"] .tag{background:#163024;color:#7fd6a6}
+.allocbar{height:56px;border-radius:12px;overflow:hidden;display:flex;font-weight:700;color:#fff;margin:12px 0 4px}
+.allocbar div{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:12.5px;min-width:0;padding:0 4px;text-align:center;line-height:1.15}
+.allocbar div small{font-size:11px;font-weight:600;opacity:.92}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:middle}
+.bignums{display:flex;gap:26px;flex-wrap:wrap;margin-top:4px}
+.bignums .n{font-size:40px;font-weight:800;line-height:1;letter-spacing:-.02em}
+.bignums .k{font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600;margin-top:6px}
+.bignums .vs{font-size:12px;color:var(--faint);margin-top:3px}
+.pill{display:inline-block;padding:5px 12px;border-radius:9px;font-weight:700;font-size:13px;color:#fff}
+.sleevetiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:900px){.sleevetiles{grid-template-columns:repeat(2,1fr)}}
+.sleevetile{background:var(--bg);border:1px solid var(--grid);border-radius:12px;padding:13px 14px;border-left:4px solid var(--c,var(--muted))}
+.sleevetile .nm{font-size:12.5px;font-weight:700;color:var(--ink)}
+.sleevetile .px{font-size:18px;font-weight:800;color:var(--ink);margin-top:4px}
+.sleevetile .meta{font-size:11.5px;color:var(--muted);margin-top:3px}
+.win{color:var(--green)} .lose{color:var(--red)}
+.gtable{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+.gtable td,.gtable th{padding:9px 8px;border:1px solid var(--grid);text-align:center}
+.gtable th{background:var(--bg);color:var(--muted);font-weight:600;font-size:12px}
+.gtable td.rh{text-align:left;font-weight:700;color:var(--ink);background:var(--bg)}
+.gtable td.cur{background:#E8EEFF;font-weight:700;color:var(--ink);outline:2px solid var(--blue)}
+.score .s{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:4px}
+.score .s>div{background:var(--bg);border-radius:10px;padding:12px;text-align:center}
+.score .k{font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600}
+.score .v{font-size:21px;font-weight:800;color:var(--ink)}
+.score .v small{font-size:12px;font-weight:600;color:var(--muted)}
+.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
+.tbl td,.tbl th{padding:7px 10px;border-bottom:1px solid var(--grid);text-align:left}
+.tbl td.n{text-align:right;font-variant-numeric:tabular-nums}
+.note{border-left:3px solid var(--amber);padding:6px 0 6px 14px;margin:8px 0;color:var(--text);font-size:13.5px}
+.note.r{border-color:var(--red)} .note.b{border-color:var(--blue)} .note.g{border-color:var(--green)}
+.minibar{height:24px;border-radius:7px;overflow:hidden;display:flex;font-size:11px;font-weight:700;color:#fff}
+.minibar div{display:flex;align-items:center;justify-content:center;min-width:0}
+.foot{margin-top:34px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+      <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 <span class="l-en">Home</span><span class="l-zh">首页</span></a>
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
+        <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <a href="spvector.html">📐 <span class="l-en">Allocation Strategy</span><span class="l-zh">配置策略</span><span class="d"><span class="l-en">Tactical equity↔cash</span><span class="l-zh">战术股票↔现金</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link active" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
+        <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
+        <a class="active" href="china_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">Income · gold · bonds</span><span class="l-zh">红利 · 黄金 · 国债</span></span></a>
+        <a href="china_lookup.html">🔍 <span class="l-en">Stock Lookup</span><span class="l-zh">股票查询</span><span class="d"><span class="l-en">Search any A-share</span><span class="l-zh">查询任意A股</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="hk.html">🇭🇰 <span class="l-en">Hong Kong</span><span class="l-zh">香港</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="hk.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">HSI · southbound · global risk</span><span class="l-zh">HSI · 南向 · 全球风险</span></span></a>
+        <a href="hk_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">HK-listed standouts · alpha</span><span class="l-zh">HK上市精选 · 阿尔法</span></span></a>
+        <a href="baskets_hk.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs HSI</span><span class="l-zh">等权主题篮子 vs 恒指</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="canada.html">🇨🇦 <span class="l-en">Canada</span><span class="l-zh">加拿大</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="canada.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">TSX · BoC · commodity overlay</span><span class="l-zh">TSX · 加央行 · 商品叠加</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
+        <a href="vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span></a>
+    <a class="nav-link" href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span></a>
+    <a class="nav-link" href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span></a>
+  </div>
+    <div class="nav-ctrls">
+      <a class="ai-brief-link" href="aibrief.html">🧠 <span class="l-en">AI Daily Brief</span><span class="l-zh">AI每日简报</span></a>
+      <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title"><span class="l-en">China Allocation · Income Vector</span><span class="l-zh">中国仓位 · 红利向量</span></div>
+  <div class="h1"><span class="l-en">A diversified income portfolio for a cyclical market</span><span class="l-zh">为周期性市场打造的多元化收益组合</span></div>
+  <div class="sub" style="margin-bottom:6px"><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-06-16 · <span class="l-en">onshore RMB ETFs</span><span class="l-zh">在岸人民币 ETF</span></div>
+  <div class="tag"><span class="l-en">Diversification — not momentum — is the edge in China</span><span class="l-zh">在中国，优势来自分散 —— 而非动量</span></div>
+
+  <div class="note b" style="margin-top:12px"><span class="l-en">China is cyclical and mean-reverting, and its cash leg is broken (10Y government bonds ~1.7%, money funds ~0.8%), so the US playbook — time the index versus T-bills — does not transfer. What works here is a static, diversified income core: a dividend / cashflow ETF blended with GOLD and short BONDS, the two liquid onshore assets uncorrelated to A-shares. That blend roughly doubles the Sharpe ratio and cuts the drawdown of buy-and-hold by more than half.</span><span class="l-zh">中国市场具周期性且均值回归，现金腿收益极低（10年期国债约 1.7%，货币基金约 0.8%），因此美式打法 —— 在指数与短债间择时 —— 并不适用。真正有效的是静态、分散的收益核心：红利/现金流 ETF 搭配黄金与短久期国债（这两类在岸资产与 A 股不相关）。该组合大致使夏普翻倍，并将买入持有的回撤削减一半以上。</span></div>
+
+  <!-- ===== recommended split + headline stats ===== -->
+  <div class="grid cols-2" style="margin-top:14px">
+    <div class="card">
+      <h3><span class="l-en">Recommended allocation</span><span class="l-zh">建议仓位</span> · <span style="color:var(--blue)"><span class="l-en">Balanced</span><span class="l-zh">均衡</span></span></h3>
+      <div class="allocbar">
+        <div style="flex:35;background:#C0392B"><span class="l-en">Dividend (income core)</span><span class="l-zh">红利（收入核心）</span><small>35%</small></div><div style="flex:30;background:#D4A017"><span class="l-en">Gold</span><span class="l-zh">黄金</span><small>30%</small></div><div style="flex:35;background:#27AE60"><span class="l-en">Treasury bonds</span><span class="l-zh">国债</span><small>35%</small></div>
+      </div>
+      <div class="legend">
+        <span><i style="background:#C0392B"></i><span class="l-en">Dividend (income core)</span><span class="l-zh">红利（收入核心）</span></span><span><i style="background:#D4A017"></i><span class="l-en">Gold</span><span class="l-zh">黄金</span></span><span><i style="background:#27AE60"></i><span class="l-en">Treasury bonds</span><span class="l-zh">国债</span></span>
+      </div>
+      <div class="sub faint" style="margin-top:12px;font-size:12px"><span class="l-en">Rebalanced quarterly back to target. Three risk variants below; pick by how much drawdown you can hold.</span><span class="l-zh">按季再平衡至目标权重。下方提供三种风险档；按你能承受的回撤选择。</span></div>
+    </div>
+    <div class="card">
+      <h3><span class="l-en">What this blend has delivered</span><span class="l-zh">该组合的历史表现</span> <span class="faint" style="font-weight:500">(2026-05-19→)</span></h3>
+      <div class="bignums">
+        <div><div class="n" style="color:var(--green)">-2.12</div><div class="k">Sharpe</div><div class="vs"><span class="l-en">CSI 300</span><span class="l-zh">沪深300</span> 1.02</div></div>
+        <div><div class="n" style="color:var(--blue)">-3.5%</div><div class="k"><span class="l-en">Max drawdown</span><span class="l-zh">最大回撤</span></div><div class="vs"><span class="l-en">CSI 300</span><span class="l-zh">沪深300</span> -4.7%</div></div>
+        <div><div class="n">-21.19%</div><div class="k">CAGR</div><div class="vs"><span class="l-en">CSI 300</span><span class="l-zh">沪深300</span> 20.86%</div></div>
+      </div>
+      
+      <div class="sub faint" style="margin-top:6px;font-size:12px"><span class="l-en">Versus CSI 300 buy &amp; hold over the same window. Short China history → judged on the independent bear-episode count (below), not a bare ratio.</span><span class="l-zh">与同期沪深300买入持有相比。中国历史较短 → 以下方独立熊市事件数为判据，而非单一比率。</span></div>
+    </div>
+  </div>
+
+  <!-- ===== where each sleeve is now ===== -->
+  <div class="section-title"><span class="l-en">Where each sleeve is now</span><span class="l-zh">各组成部分现状</span></div>
+  <div class="card">
+    <div class="sleevetiles">
+      
+      <div class="sleevetile" style="--c:#C0392B">
+        <div class="nm"><span class="l-en">Dividend (income core)</span><span class="l-zh">红利（收入核心）</span></div>
+        <div class="px">3.208 <span style="font-size:12px" class="lose">-2.88%</span></div>
+        <div class="meta">-3.6% <span class="l-en">off high</span><span class="l-zh">距高点</span></div>
+      </div>
+      
+      <div class="sleevetile" style="--c:#2E86DE">
+        <div class="nm"><span class="l-en">CSI 300 (growth kicker)</span><span class="l-zh">沪深300（增长）</span></div>
+        <div class="px">4.923 <span style="font-size:12px" class="win">+0.08%</span></div>
+        <div class="meta">-1.9% <span class="l-en">off high</span><span class="l-zh">距高点</span> · <span class="win">✓ 200d</span></div>
+      </div>
+      
+      <div class="sleevetile" style="--c:#D4A017">
+        <div class="nm"><span class="l-en">Gold</span><span class="l-zh">黄金</span></div>
+        <div class="px">8.948 <span style="font-size:12px" class="win">+3.34%</span></div>
+        <div class="meta">-6.0% <span class="l-en">off high</span><span class="l-zh">距高点</span></div>
+      </div>
+      
+      <div class="sleevetile" style="--c:#27AE60">
+        <div class="nm"><span class="l-en">Treasury bonds</span><span class="l-zh">国债</span></div>
+        <div class="px">141.210 <span style="font-size:12px" class="win">+0.03%</span></div>
+        <div class="meta">-0.2% <span class="l-en">off high</span><span class="l-zh">距高点</span></div>
+      </div>
+      
+    </div>
+  </div>
+
+  <!-- ===== growth + drawdown ===== -->
+  <div class="section-title"><span class="l-en">Growth of ¥1 and drawdown · vs CSI 300</span><span class="l-zh">¥1 增长与回撤 · 对比沪深300</span></div>
+  <div class="grid cols-2">
+    <div class="card"><h3><span class="l-en">Growth of ¥1 (log)</span><span class="l-zh">¥1 增长（对数）</span></h3><div style="height:320px; width:100%;">                            <div id="2266bc4f-3598-4e47-81e8-0c74cfea838f" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("2266bc4f-3598-4e47-81e8-0c74cfea838f")) {                    Plotly.newPlot(                        "2266bc4f-3598-4e47-81e8-0c74cfea838f",                        [{"line":{"color":"#9AA4B2","width":1.4},"name":"CSI 300 buy & hold","x":["2026-05-19","2026-05-26","2026-06-02","2026-06-09"],"y":[1.0035,1.0247,1.0173,0.9946],"type":"scatter"},{"line":{"color":"#F5AD42","width":1.3},"name":"Income core only","x":["2026-05-19","2026-05-26","2026-06-02","2026-06-09"],"y":[1.0016,0.9904,1.0283,1.023],"type":"scatter"},{"line":{"color":"#285FFF","width":2.2},"name":"China Income Vector","x":["2026-05-19","2026-05-26","2026-06-02","2026-06-09"],"y":[1.0009,0.9951,1.0077,0.9925],"type":"scatter"}],                        {"template":{"data":{"barpolar":[{"marker":{"line":{"color":"white","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"white","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"#C8D4E3","linecolor":"#C8D4E3","minorgridcolor":"#C8D4E3","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"#C8D4E3","linecolor":"#C8D4E3","minorgridcolor":"#C8D4E3","startlinecolor":"#2a3f5f"},"type":"carpet"}],"choropleth":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"choropleth"}],"contourcarpet":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"contourcarpet"}],"contour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"contour"}],"heatmap":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"heatmap"}],"histogram2dcontour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2dcontour"}],"histogram2d":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2d"}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"mesh3d":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"mesh3d"}],"parcoords":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"parcoords"}],"pie":[{"automargin":true,"type":"pie"}],"scatter3d":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatter3d"}],"scattercarpet":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattercarpet"}],"scattergeo":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattergeo"}],"scattergl":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattergl"}],"scattermapbox":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattermapbox"}],"scattermap":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattermap"}],"scatterpolargl":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolargl"}],"scatterpolar":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolar"}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"scatterternary":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterternary"}],"surface":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"surface"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}]},"layout":{"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"autotypenumbers":"strict","coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]],"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]},"colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"geo":{"bgcolor":"white","lakecolor":"white","landcolor":"white","showlakes":true,"showland":true,"subunitcolor":"#C8D4E3"},"hoverlabel":{"align":"left"},"hovermode":"closest","mapbox":{"style":"light"},"paper_bgcolor":"white","plot_bgcolor":"white","polar":{"angularaxis":{"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":""},"bgcolor":"white","radialaxis":{"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":""}},"scene":{"xaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"},"yaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"},"zaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"ternary":{"aaxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""},"baxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""},"bgcolor":"white","caxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""}},"title":{"x":0.05},"xaxis":{"automargin":true,"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":"","title":{"standoff":15},"zerolinecolor":"#EBF0F8","zerolinewidth":2},"yaxis":{"automargin":true,"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":"","title":{"standoff":15},"zerolinecolor":"#EBF0F8","zerolinewidth":2}}},"yaxis":{"type":"log","gridcolor":"#EAECF0","zeroline":false},"font":{"size":11,"color":"#344054","family":"Inter, sans-serif"},"margin":{"l":48,"r":52,"t":8,"b":28},"legend":{"orientation":"h","y":1.1,"x":0},"xaxis":{"gridcolor":"#EAECF0","zeroline":false},"paper_bgcolor":"rgba(0,0,0,0)","plot_bgcolor":"rgba(0,0,0,0)","height":320},                        {"displayModeBar": false, "responsive": true}                    )                };            </script>        </div>
+      <div class="sub faint" style="font-size:12px"><span class="l-en">Blue = the diversified blend, amber = the income core alone, grey = CSI 300 buy &amp; hold.</span><span class="l-zh">蓝 = 多元组合，琥珀 = 仅收益核心，灰 = 沪深300买入持有。</span></div></div>
+    <div class="card"><h3><span class="l-en">Underwater (drawdown)</span><span class="l-zh">水下回撤</span></h3><div style="height:320px; width:100%;">                            <div id="f6ef39a2-13f9-4177-aeed-1bb21c569641" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("f6ef39a2-13f9-4177-aeed-1bb21c569641")) {                    Plotly.newPlot(                        "f6ef39a2-13f9-4177-aeed-1bb21c569641",                        [{"fill":"tozeroy","fillcolor":"rgba(154,164,178,0.22)","line":{"color":"#9AA4B2","width":1},"name":"CSI 300 buy & hold","x":["2026-05-19","2026-05-26","2026-06-02","2026-06-09"],"y":[0.0,0.0,-0.72,-2.94],"type":"scatter"},{"fill":"tozeroy","fillcolor":"rgba(40,95,255,0.12)","line":{"color":"#285FFF","width":1.6},"name":"China Income Vector","x":["2026-05-19","2026-05-26","2026-06-02","2026-06-09"],"y":[0.0,-0.58,0.0,-1.51],"type":"scatter"}],                        {"template":{"data":{"barpolar":[{"marker":{"line":{"color":"white","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"white","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"#C8D4E3","linecolor":"#C8D4E3","minorgridcolor":"#C8D4E3","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"#C8D4E3","linecolor":"#C8D4E3","minorgridcolor":"#C8D4E3","startlinecolor":"#2a3f5f"},"type":"carpet"}],"choropleth":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"choropleth"}],"contourcarpet":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"contourcarpet"}],"contour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"contour"}],"heatmap":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"heatmap"}],"histogram2dcontour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2dcontour"}],"histogram2d":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2d"}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"mesh3d":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"mesh3d"}],"parcoords":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"parcoords"}],"pie":[{"automargin":true,"type":"pie"}],"scatter3d":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatter3d"}],"scattercarpet":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattercarpet"}],"scattergeo":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattergeo"}],"scattergl":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattergl"}],"scattermapbox":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattermapbox"}],"scattermap":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattermap"}],"scatterpolargl":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolargl"}],"scatterpolar":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolar"}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"scatterternary":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterternary"}],"surface":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"surface"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}]},"layout":{"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"autotypenumbers":"strict","coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]],"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]},"colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"geo":{"bgcolor":"white","lakecolor":"white","landcolor":"white","showlakes":true,"showland":true,"subunitcolor":"#C8D4E3"},"hoverlabel":{"align":"left"},"hovermode":"closest","mapbox":{"style":"light"},"paper_bgcolor":"white","plot_bgcolor":"white","polar":{"angularaxis":{"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":""},"bgcolor":"white","radialaxis":{"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":""}},"scene":{"xaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"},"yaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"},"zaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"ternary":{"aaxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""},"baxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""},"bgcolor":"white","caxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""}},"title":{"x":0.05},"xaxis":{"automargin":true,"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":"","title":{"standoff":15},"zerolinecolor":"#EBF0F8","zerolinewidth":2},"yaxis":{"automargin":true,"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":"","title":{"standoff":15},"zerolinecolor":"#EBF0F8","zerolinewidth":2}}},"font":{"size":11,"color":"#344054","family":"Inter, sans-serif"},"margin":{"l":48,"r":52,"t":8,"b":28},"legend":{"orientation":"h","y":1.1,"x":0},"xaxis":{"gridcolor":"#EAECF0","zeroline":false},"yaxis":{"gridcolor":"#EAECF0","zeroline":false},"paper_bgcolor":"rgba(0,0,0,0)","plot_bgcolor":"rgba(0,0,0,0)","height":320},                        {"displayModeBar": false, "responsive": true}                    )                };            </script>        </div>
+      <div class="sub faint" style="font-size:12px"><span class="l-en">The blend (blue) barely dips where the index (grey) loses ~45%. Gold and bonds absorb the equity drawdown.</span><span class="l-zh">在指数（灰）回撤约45%处，组合（蓝）几乎不动。黄金与国债吸收了股票回撤。</span></div></div>
+  </div>
+
+  <!-- ===== variants / rule-book ===== -->
+  <div class="section-title"><span class="l-en">The three variants · pick your drawdown tolerance</span><span class="l-zh">三种风险档 · 按回撤承受力选择</span></div>
+  <div class="card">
+    <table class="gtable">
+      <tr><th><span class="l-en">Variant</span><span class="l-zh">档位</span></th><th><span class="l-en">Mix</span><span class="l-zh">配比</span></th><th>CAGR</th><th>Sharpe</th><th><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></th><th><span class="l-en">Vol</span><span class="l-zh">波动</span></th></tr>
+      
+      <tr>
+        <td class="rh "><span class="l-en">Conservative</span><span class="l-zh">保守</span></td>
+        <td class="" style="padding:6px">
+          <div class="minibar"><div style="flex:25;background:#C0392B" title="Dividend (income core) 25%">25</div><div style="flex:25;background:#D4A017" title="Gold 25%">25</div><div style="flex:50;background:#27AE60" title="Treasury bonds 50%">50</div></div>
+        </td>
+        <td class="">-17.72%</td>
+        <td class=""><b>-2.19</b></td>
+        <td class="">-2.9%</td>
+        <td class="">8.4%</td>
+      </tr>
+      
+      <tr>
+        <td class="rh cur"><span class="l-en">Balanced</span><span class="l-zh">均衡</span> ◀</td>
+        <td class="cur" style="padding:6px">
+          <div class="minibar"><div style="flex:35;background:#C0392B" title="Dividend (income core) 35%">35</div><div style="flex:30;background:#D4A017" title="Gold 30%">30</div><div style="flex:35;background:#27AE60" title="Treasury bonds 35%">35</div></div>
+        </td>
+        <td class="cur">-21.19%</td>
+        <td class="cur"><b>-2.12</b></td>
+        <td class="cur">-3.5%</td>
+        <td class="cur">10.6%</td>
+      </tr>
+      
+      <tr>
+        <td class="rh "><span class="l-en">Growth</span><span class="l-zh">进取</span></td>
+        <td class="" style="padding:6px">
+          <div class="minibar"><div style="flex:22;background:#C0392B" title="Dividend (income core) 22%">22</div><div style="flex:22;background:#2E86DE" title="CSI 300 (growth kicker) 22%">22</div><div style="flex:30;background:#D4A017" title="Gold 30%">30</div><div style="flex:25;background:#27AE60" title="Treasury bonds 25%">25</div></div>
+        </td>
+        <td class="">-17.4%</td>
+        <td class=""><b>-1.47</b></td>
+        <td class="">-4.2%</td>
+        <td class="">12.1%</td>
+      </tr>
+      
+    </table>
+    <div class="sub faint" style="margin-top:8px;font-size:12px">
+      <span style="margin-right:14px"><b style="color:var(--ink)"><span class="l-en">Conservative</span><span class="l-zh">保守</span></b> — <span class="l-en">Bond-heavy — shallowest drawdown, steadiest line.</span><span class="l-zh">偏债 —— 回撤最浅、曲线最稳。</span></span><span style="margin-right:14px"><b style="color:var(--ink)"><span class="l-en">Balanced</span><span class="l-zh">均衡</span></b> — <span class="l-en">The risk-parity-style default — best Sharpe per unit of drawdown.</span><span class="l-zh">类风险平价的默认 —— 单位回撤的夏普最佳。</span></span><span style="margin-right:14px"><b style="color:var(--ink)"><span class="l-en">Growth</span><span class="l-zh">进取</span></b> — <span class="l-en">Adds a CSI 300 sleeve — higher return, still ~quarter the index drawdown.</span><span class="l-zh">加入沪深300 —— 更高收益，回撤仍约为指数的四分之一。</span></span>
+    </div>
+  </div>
+
+  <!-- ===== momentum A/B — the honest "we tested timing" panel ===== -->
+  
+  <div class="section-title"><span class="l-en">We tested a momentum overlay — here is why it is OFF</span><span class="l-zh">我们测试了动量叠加 —— 这是它被关闭的原因</span></div>
+  <div class="card" style="border-color:var(--amber)">
+    <div class="sub" style="margin-bottom:10px"><span class="l-en">You asked for a momentum / trend overlay to cut drawdown. We built and backtested one — a slow (200-day, monthly) trend filter that rotates the equity sleeves into bonds during downtrends. In China&#39;s mean-reverting market it WHIPSAWS: it does not improve the Sharpe ratio or reduce drawdown versus simply holding the diversified blend. So the strategy is static by design. The comparison is shown in full — no cherry-picking.</span><span class="l-zh">你希望加入动量/趋势叠加以削减回撤。我们做了并回测了一个 —— 慢速（200日、按月）趋势过滤，在下行趋势中将股票腿轮动至国债。在均值回归的中国市场里它会反复打脸：相比直接持有多元组合，既不改善夏普也不减少回撤。因此策略刻意保持静态。完整对比如下 —— 不做挑选。</span></div>
+    <table class="tbl">
+      <tr><th><span class="l-en">Approach</span><span class="l-zh">方法</span></th><th class="n">Sharpe</th><th class="n"><span class="l-en">Max drawdown</span><span class="l-zh">最大回撤</span></th><th class="n">CAGR</th></tr>
+      <tr><td><b><span class="l-en">Static blend (what we ship)</span><span class="l-zh">静态组合（采用）</span></b></td><td class="n win"><b>-2.12</b></td><td class="n">-3.5%</td><td class="n">-21.19%</td></tr>
+      <tr><td><span class="l-en">+ 200-day trend overlay</span><span class="l-zh">+ 200日趋势叠加</span></td><td class="n lose">-2.47</td><td class="n">-3.3%</td><td class="n">-20.29%</td></tr>
+    </table>
+    <div class="note g" style="margin-top:10px"><span class="l-en">Timing LOWERS the Sharpe ratio and does not reduce drawdown — diversification, not momentum, is the edge in China.</span><span class="l-zh">择时降低夏普且不减回撤 —— 在中国，优势来自分散而非动量。</span></div>
+  </div>
+  
+
+  <!-- ===== instruments ===== -->
+  <div class="section-title"><span class="l-en">The instruments · liquid onshore ETFs</span><span class="l-zh">所用工具 · 流动性强的在岸 ETF</span></div>
+  <div class="card">
+    <table class="tbl">
+      <tr><th><span class="l-en">Role</span><span class="l-zh">角色</span></th><th><span class="l-en">ETF</span><span class="l-zh">ETF</span></th><th><span class="l-en">Tracks</span><span class="l-zh">跟踪</span></th></tr>
+      <tr><td><span class="l-en">Income core</span><span class="l-zh">收益核心</span></td><td><b>510880</b></td><td><span class="l-en">SSE Dividend (高股息红利)</span><span class="l-zh">上证红利（高股息）</span></td></tr>
+      <tr><td><span class="l-en">Growth kicker</span><span class="l-zh">增长</span></td><td><b>510300</b></td><td><span class="l-en">CSI 300 large-caps</span><span class="l-zh">沪深300大盘</span></td></tr>
+      <tr><td><span class="l-en">Crisis diversifier</span><span class="l-zh">危机分散</span></td><td><b>518880</b></td><td><span class="l-en">Gold</span><span class="l-zh">黄金</span></td></tr>
+      <tr><td><span class="l-en">Low-vol ballast</span><span class="l-zh">低波压舱</span></td><td><b>511010</b></td><td><span class="l-en">Treasury bonds (5Y)</span><span class="l-zh">国债（5年）</span></td></tr>
+    </table>
+    
+    <div class="sub" style="margin-top:12px;font-weight:600;color:var(--ink)"><span class="l-en">Drop-in income-core alternatives</span><span class="l-zh">可替换的收益核心</span></div>
+    <div class="sub faint" style="font-size:12px;margin-top:4px">
+      <span style="margin-right:14px"><b style="color:var(--ink)">510880</b> <span class="l-en">SSE Dividend</span><span class="l-zh">上证红利</span> <span class="faint">(2008→)</span></span><span style="margin-right:14px"><b style="color:var(--ink)">512890</b> <span class="l-en">CSI Dividend Low-Vol</span><span class="l-zh">中证红利低波</span> <span class="faint">(2018→)</span></span><span style="margin-right:14px"><b style="color:var(--ink)">159201</b> <span class="l-en">Free Cash Flow (&#39;cash-cow&#39;)</span><span class="l-zh">自由现金流（现金牛）</span> <span class="faint">(2025→)</span></span>
+    </div>
+    <div class="sub faint" style="font-size:11.5px;margin-top:6px"><span class="l-en">The low-vol dividend (512890) cuts drawdown a touch more; the free-cash-flow ETF (159201, the &#34;cash-cow&#34;) is the newest income factor but has under 1.5 years of live history, so it is shown as an option, not in the backtest.</span><span class="l-zh">红利低波（512890）回撤更小一些；自由现金流 ETF（159201，&#34;现金牛&#34;）是最新的收益因子，但实盘历史不足1.5年，故仅作为可选项，未纳入回测。</span></div>
+    
+  </div>
+
+  <!-- ===== bear ledger ===== -->
+  
+
+  <div class="note r"><span class="l-en">Not investment advice. A static, diversified allocation is an educational research tool, not a managed product or a forecast. Onshore ETFs carry tracking, liquidity and policy risk; gold and bonds can fall together in a liquidity squeeze. China’s investable history is short (this blend backtests from 2013), so treat every statistic as indicative.</span><span class="l-zh">非投资建议。静态多元配置是教育性研究工具，并非受管理产品或预测。在岸 ETF 存在跟踪、流动性与政策风险；流动性紧缩时黄金与债券可能同跌。中国可投资历史较短（该组合自2013年回测），故所有统计仅供参考。</span></div>
+
+  <div class="foot">
+    <span class="l-en">Mechanical, backtested on free public data (onshore ETF closes via yfinance; gold/bond from 2013). Independent of and never scored into the A-share regime engine (china_axes / china_regime / china_playbook). The strategy is a drawdown / risk-adjusted-return engine; it does not promise to beat the index. Built</span><span class="l-zh">机械化 · 基于免费公开数据回测（在岸 ETF 收盘价经 yfinance 获取；黄金/国债自2013年）。独立于 A 股周期引擎且从不计入其评分（china_axes / china_regime / china_playbook）。该策略为回撤 / 风险调整收益引擎，不承诺跑赢指数。生成于</span> 2026-06-16 04:09 UTC.
+  </div>
+</div>
+<script src="theme.js"></script>
+</body></html>

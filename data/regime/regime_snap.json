@@ -1,10 +1,10 @@
 {
   "snap": false,
   "relief_magnitude": null,
-  "roro": 0.497,
+  "roro": 0.493,
   "cap_recent": true,
   "fear_built": 0.504,
-  "roro_velocity": 0.321,
+  "roro_velocity": 0.317,
   "vel_pctile": 0.921,
   "legs_up": 3,
   "legs_total": 7,
@@ -42,21 +42,5 @@
     }
   ],
   "magnitude_band": null,
-  "veto": {
-    "schema": "regime_snap_veto.v1",
-    "is_context_only": true,
-    "lean": "fragile",
-    "confidence": "medium",
-    "checks": {
-      "catalyst": "Verbal \u2014 Trump announces a peace deal; no signed treaty or concrete sanctions relief outlined, easily reversed.",
-      "premium": "Fear built 0.504; VIX, HY OAS, VIX term flipped, so roughly half of the fear premium unwound, leaving residual downside cushion.",
-      "washout": "Capitulation recent (cap_recent true, 1 day since last snap) \u2014 the move emerges from a real flush, not a shallow dip.",
-      "follow_through": "Cross-asset confirmation is present (vol, credit, vol term), but verbal catalysts often fade intraday or next session without material follow-up."
-    },
-    "read": "The snap is building on a verbal peace-deal headline rather than a structural policy shift, making the relief likely fragile once details are scrutinized. While a recent capitulation lends some washout support, the catalyst class points to a knife-like bounce that could reverse quickly.",
-    "model": "deepseek-v4-pro",
-    "generated_at": "2026-06-16T03:12:52.716214+00:00",
-    "degraded_reason": null,
-    "disclaimer": "AI durability read \u2014 context only, never scored or sized. The snap detector is coincident; this is a fallible judgement on whether the relief is structural or a dead-cat, not a trade recommendation."
-  }
+  "veto": null
 }
