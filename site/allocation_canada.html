@@ -63,6 +63,10 @@
   .dbar { display:inline-block; width:46px; height:6px; background:var(--grid,var(--panel2)); border-radius:4px; overflow:hidden; vertical-align:middle; }
   .dbar > i { display:block; height:100%; background:var(--up); }
   .legrow { font-size:11.5px; color:var(--muted); }
+  a.tlink { cursor:pointer; border-bottom:1px dashed var(--line); }
+  a.tlink:hover { color:var(--link); border-bottom-color:var(--link); }
+  a.tlink .jump { font-size:10px; color:var(--muted); margin-left:3px; }
+  a.tlink:hover .jump { color:var(--link); }
   details > summary { cursor:pointer; font-size:12.5px; color:var(--muted); margin:8px 0 2px; }
   .kpis { display:flex; flex-wrap:wrap; gap:20px; margin:6px 0; }
   .kpis .k { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
@@ -260,7 +264,9 @@
 <!-- ============ 02 NARRATIVE LIFECYCLE BOARD ============ -->
 <h2><span class="idx">02</span><span class="l-en">Narrative lifecycle board</span><span class="l-zh">叙事生命周期看板</span>
   <span class="chip"><span class="l-en">rank = focus lens, not a forecast</span><span class="l-zh">排名=关注透镜，非预测</span></span></h2>
-<p class="sub"><span class="l-en">Every theme ranked by ensemble momentum (residual + raw + acceleration), with its trend-eligibility gate, durability, and crowding texture. Durability CONFIRMS a trend (it lags ~half a window) — it does not forecast the handoff.</span><span class="l-zh">所有主题按集成动量（残差+原始+加速度）排名，并附趋势准入门、持续性与拥挤纹理。持续性是对趋势的&#34;确认&#34;（滞后约半个窗口）— 并不预测交接。</span></p>
+<p class="sub"><span class="l-en">Every theme ranked by ensemble momentum (residual + raw + acceleration), with its trend-eligibility gate, durability, and crowding texture. Durability CONFIRMS a trend (it lags ~half a window) — it does not forecast the handoff.</span><span class="l-zh">所有主题按集成动量（残差+原始+加速度）排名，并附趋势准入门、持续性与拥挤纹理。持续性是对趋势的&#34;确认&#34;（滞后约半个窗口）— 并不预测交接。</span>
+  <span class="muted"><span class="l-en">Click a theme name to open its constituents on the Thematic Baskets page.</span><span class="l-zh">点击主题名称可在主题篮子页面查看其成分。</span></span></p>
+
 <div class="panel"><div class="ts">
 <table>
   <thead><tr>
@@ -276,7 +282,7 @@
   
   
   <tr class="">
-    <td><b><span class="l-en">Base Metals &amp; Copper</span><span class="l-zh">基本金属与铜</span></b>
+    <td><b><a class="tlink" href="baskets_canada.html#b-ca_base_metals"><span class="l-en">Base Metals &amp; Copper</span><span class="l-zh">基本金属与铜</span><span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
       <span class="stage lead"><span class="l-en">LEADER</span><span class="l-zh">领跑</span></span>
       <div class="legrow">Materials · 7 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
     <td class="num"><b>1.61</b></td>
@@ -289,7 +295,7 @@
   
   
   <tr class="">
-    <td><b><span class="l-en">Big Banks</span><span class="l-zh">大型银行</span></b>
+    <td><b><a class="tlink" href="baskets_canada.html#b-ca_banks"><span class="l-en">Big Banks</span><span class="l-zh">大型银行</span><span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
       
       <div class="legrow">Financials · 7 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
     <td class="num"><b>1.18</b></td>
@@ -302,7 +308,7 @@
   
   
   <tr class="">
-    <td><b><span class="l-en">Insurers</span><span class="l-zh">保险</span></b>
+    <td><b><a class="tlink" href="baskets_canada.html#b-ca_insurers"><span class="l-en">Insurers</span><span class="l-zh">保险</span><span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
       
       <div class="legrow">Financials · 6 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
     <td class="num"><b>0.43</b></td>
@@ -315,7 +321,7 @@
   
   
   <tr class="">
-    <td><b><span class="l-en">Uranium &amp; Nuclear</span><span class="l-zh">铀与核能</span></b>
+    <td><b><a class="tlink" href="baskets_canada.html#b-ca_uranium"><span class="l-en">Uranium &amp; Nuclear</span><span class="l-zh">铀与核能</span><span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
       
       <div class="legrow">Energy · 4 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
     <td class="num"><b>0.14</b></td>
@@ -328,7 +334,7 @@
   
   
   <tr class="">
-    <td><b><span class="l-en">Pipelines &amp; Midstream</span><span class="l-zh">管道与中游</span></b>
+    <td><b><a class="tlink" href="baskets_canada.html#b-ca_pipelines"><span class="l-en">Pipelines &amp; Midstream</span><span class="l-zh">管道与中游</span><span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
       
       <div class="legrow">Energy · 6 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
     <td class="num"><b>0.12</b></td>
@@ -341,7 +347,7 @@
   
   
   <tr class="">
-    <td><b><span class="l-en">Asset Managers &amp; Alternatives</span><span class="l-zh">资产管理与另类投资</span></b>
+    <td><b><a class="tlink" href="baskets_canada.html#b-ca_asset_mgrs"><span class="l-en">Asset Managers &amp; Alternatives</span><span class="l-zh">资产管理与另类投资</span><span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
       
       <div class="legrow">Financials · 7 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
     <td class="num"><b>0.10</b></td>
@@ -354,7 +360,7 @@
   
   
   <tr class="">
-    <td><b><span class="l-en">Utilities &amp; Renewables</span><span class="l-zh">公用事业与可再生能源</span></b>
+    <td><b><a class="tlink" href="baskets_canada.html#b-ca_utilities"><span class="l-en">Utilities &amp; Renewables</span><span class="l-zh">公用事业与可再生能源</span><span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
       
       <div class="legrow">Utilities &amp; Telecom · 9 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
     <td class="num"><b>0.03</b></td>
@@ -367,7 +373,7 @@
   
   
   <tr class="">
-    <td><b><span class="l-en">REITs</span><span class="l-zh">房地产信托</span></b>
+    <td><b><a class="tlink" href="baskets_canada.html#b-ca_reits"><span class="l-en">REITs</span><span class="l-zh">房地产信托</span><span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
       
       <div class="legrow">Consumer &amp; Real Estate · 7 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
     <td class="num"><b>-0.07</b></td>
@@ -380,7 +386,7 @@
   
   
   <tr class="">
-    <td><b><span class="l-en">Telecom</span><span class="l-zh">电信</span></b>
+    <td><b><a class="tlink" href="baskets_canada.html#b-ca_telecom"><span class="l-en">Telecom</span><span class="l-zh">电信</span><span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
       
       <div class="legrow">Utilities &amp; Telecom · 5 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
     <td class="num"><b>-0.16</b></td>
@@ -393,7 +399,7 @@
   
   
   <tr class="inelig">
-    <td><b><span class="l-en">Gold Miners</span><span class="l-zh">黄金矿业</span></b>
+    <td><b><a class="tlink" href="baskets_canada.html#b-ca_gold"><span class="l-en">Gold Miners</span><span class="l-zh">黄金矿业</span><span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
       
       <div class="legrow">Precious Metals · 8 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
     <td class="num"><b>-0.31</b></td>
@@ -406,7 +412,7 @@
   
   
   <tr class="">
-    <td><b><span class="l-en">Oil &amp; Gas Producers</span><span class="l-zh">油气生产</span></b>
+    <td><b><a class="tlink" href="baskets_canada.html#b-ca_oil_gas"><span class="l-en">Oil &amp; Gas Producers</span><span class="l-zh">油气生产</span><span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
       
       <div class="legrow">Energy · 7 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
     <td class="num"><b>-0.36</b></td>
@@ -419,7 +425,7 @@
   
   
   <tr class="inelig">
-    <td><b><span class="l-en">Technology</span><span class="l-zh">科技</span></b>
+    <td><b><a class="tlink" href="baskets_canada.html#b-ca_tech"><span class="l-en">Technology</span><span class="l-zh">科技</span><span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
       
       <div class="legrow">Industrials &amp; Tech · 7 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
     <td class="num"><b>-0.38</b></td>
@@ -432,7 +438,7 @@
   
   
   <tr class="">
-    <td><b><span class="l-en">Consumer Staples &amp; Retail</span><span class="l-zh">必需消费与零售</span></b>
+    <td><b><a class="tlink" href="baskets_canada.html#b-ca_consumer"><span class="l-en">Consumer Staples &amp; Retail</span><span class="l-zh">必需消费与零售</span><span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
       
       <div class="legrow">Consumer &amp; Real Estate · 7 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
     <td class="num"><b>-0.41</b></td>
@@ -445,7 +451,7 @@
   
   
   <tr class="">
-    <td><b><span class="l-en">Silver &amp; Royalties</span><span class="l-zh">白银与特许权金</span></b>
+    <td><b><a class="tlink" href="baskets_canada.html#b-ca_silver_royalty"><span class="l-en">Silver &amp; Royalties</span><span class="l-zh">白银与特许权金</span><span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
       
       <div class="legrow">Precious Metals · 7 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
     <td class="num"><b>-0.48</b></td>
@@ -458,7 +464,7 @@
   
   
   <tr class="">
-    <td><b><span class="l-en">Rails &amp; Industrials</span><span class="l-zh">铁路与工业</span></b>
+    <td><b><a class="tlink" href="baskets_canada.html#b-ca_rails_ind"><span class="l-en">Rails &amp; Industrials</span><span class="l-zh">铁路与工业</span><span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
       
       <div class="legrow">Industrials &amp; Tech · 7 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
     <td class="num"><b>-0.62</b></td>
@@ -471,7 +477,7 @@
   
   
   <tr class="">
-    <td><b><span class="l-en">Fertilizer, Chemicals &amp; Forestry</span><span class="l-zh">化肥化工与林业</span></b>
+    <td><b><a class="tlink" href="baskets_canada.html#b-ca_materials"><span class="l-en">Fertilizer, Chemicals &amp; Forestry</span><span class="l-zh">化肥化工与林业</span><span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
       
       <div class="legrow">Materials · 6 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
     <td class="num"><b>-0.83</b></td>
@@ -584,7 +590,7 @@
 
 <footer>
   <span class="l-en">Read-only analytics for informational purposes only — NOT investment advice and NOT a buy/sell list. The thematic baskets are equal-weight, point-in-time dated-membership trackers over a free ~3-5y price cache, benchmarked to S&amp;P/TSX and curated with knowledge of the period — so they are HINDSIGHT-descriptive, not an out-of-sample backtest. The allocation ALGORITHM is validated on multi-decade sector-ETF history (see panel 04), where its only repeatable edge is drawdown/shake-out control via the absolute-trend gate; cross-sectional momentum has ~0 forward rank-IC and basket-level crowding has no forward drawdown edge (it only sizes down). Durability, crowding and rotation are coincident, display-only context — none of them feeds any score. See LIMITATIONS.md and scripts/thematic_rotation_phase0.py.</span><span class="l-zh">仅供参考的只读分析 — 非投资建议，也非买卖清单。主题篮子为等权、按时点日期管理成分、基于免费约3-5年价格缓存，以 S&amp;P/TSX 为基准，且在已知该期表现下整理 — 故为事后描述性序列，并非样本外回测。该配置&#34;算法&#34;在跨越数十年的行业 ETF 历史上验证（见面板04），其唯一可重复的优势是通过绝对趋势门控制回撤/被甩出；横截面动量前瞻rank-IC约为0，篮子层面拥挤无前瞻回撤优势（仅用于降仓）。持续性、拥挤与轮动均为同步的、仅展示的背景 — 都不进入任何评分。参见 LIMITATIONS.md 与 scripts/thematic_rotation_phase0.py。</span>
-  <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-16 10:26 UTC.
+  <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-16 10:35 UTC.
 </footer>
 <script src="theme.js"></script>
 </body>
