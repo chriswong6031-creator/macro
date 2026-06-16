@@ -1600,6 +1600,10 @@ ai_desk:
   default_horizon_d: 20           # trading-day horizon when the model omits one
   falsifier_defaults:
     rel_return: 0.05              # ±5% sector-vs-SPY move = the wrong-way threshold
+  panel:
+    enabled: true                # Phase B: 4-analyst adversarial panel (opportunity/
+                                 # skeptic/base-rate/structural) -> desk-head adjudicator.
+                                 # false = single analyst (cheaper: 1 LLM call vs 5).
 
 # =============================================================================
 # Catalyst stock — single-stock research BRIEF (LLM "Option 2"; engine/catalyst_stock.py).
