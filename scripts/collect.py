@@ -84,6 +84,10 @@ def all_adapters() -> dict:
         ("canada_macro", "collectors.canada_macro", "CanadaMacroAdapter"),     # BoC VALET + StatsCan WDS + FRED comparables
         ("canada_breadth", "collectors.canada_breadth", "CanadaBreadthAdapter"),
         ("canada_universe", "collectors.canada_universe", "CanadaUniverseAdapter"),  # full S&P/TSX Composite SEARCH set (iShares XIC; decoupled from breadth)
+        # international comparative dashboard (JP/KR/TW/GB/EZ) — all keyless
+        ("intl_prices", "collectors.intl_prices", "IntlPriceAdapter"),         # yfinance indices + vol + FX
+        ("intl_macro", "collectors.intl_macro", "IntlMacroAdapter"),           # FRED OECD CSV + ECB (degrade per-series)
+        ("intl_universe", "collectors.intl_universe", "IntlUniverseAdapter"),  # pooled top-N per market via iShares UCITS holdings CSVs
         # crypto (Bitcoin Vector) — see research/VECTOR_DATA_AUDIT.md
         ("coinmetrics", "collectors.coinmetrics", "CoinMetricsAdapter"),
         ("bgeo", "collectors.bgeo", "BgeoAdapter"),

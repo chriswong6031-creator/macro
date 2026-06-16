@@ -733,7 +733,7 @@ def build_landing(site: Path, vm: dict) -> None:
                     _watchlist_state(), _etf_state(), _hk_state(), _forex_state(),
                     _bonds_state(), _us_stocks_state(), _strategies_state(), _crossasset_state(),
                     _market_stocks_state("china"), _market_stocks_state("hk"),
-                    canada=_canada_state())
+                    canada=_canada_state(), intl=_intl_state())
     (site / "index.html").write_text(hub)
     log.info("wrote landing hub -> index.html")
 
@@ -786,6 +786,20 @@ def _canada_state() -> dict:
                 "present": (site / "canada.html").exists()}
     except Exception:
         return {"label": "—", "date": "", "risk": "", "present": (site / "canada.html").exists()}
+
+
+def _intl_state() -> dict:
+    """International comparative dashboard summary for the hub card (written by
+    build_intl, which runs before build_vector). `present` gates the card."""
+    site = config.ROOT / config.load()["storage"]["site_dir"]
+    try:
+        d = json.loads((config.data_dir() / "intl" / "hub.json").read_text())
+        rw = d.get("recession_watch", 0)
+        return {"label": d.get("label", "—"), "date": d.get("date", ""),
+                "risk": (f"{rw} recession-watch" if rw else ""),
+                "present": (site / "intl.html").exists()}
+    except Exception:
+        return {"label": "—", "date": "", "risk": "", "present": (site / "intl.html").exists()}
 
 
 def _commodities_state() -> dict:
@@ -1075,7 +1089,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
               us_stocks: dict | None = None,
               strategies: dict | None = None, crossasset: dict | None = None,
               china_stocks: dict | None = None, hk_stocks: dict | None = None,
-              canada: dict | None = None) -> str:
+              canada: dict | None = None, intl: dict | None = None) -> str:
     # Bilingual via the i18n layer when present, identity fallback when absent.
     try:
         from engine.i18n import t as T, tr as TR
@@ -1116,6 +1130,16 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
     <p>{T('Regime, a commodity / CAD / BoC-vs-Fed overlay, sector rotation & cycle read for the TSX.', 'TSX 的周期状态、大宗商品／加元／央行-美联储叠加、板块轮动与周期解读。')}</p>
     <span class="stat">{T(canada['label'], TR(canada['label']))}{(' · ' + T(canada_risk, TR(canada_risk))) if canada_risk else ''}</span>
     <div class="go">{T('Open Canada →', '打开加拿大 →')}</div>
+  </a>""")
+    intl = intl or {"present": False}
+    intl_risk = intl.get("risk", "")
+    intl_card = ("" if not intl.get("present") else f"""
+  <a class="c c--intl" href="intl.html">
+    <div class="ico">\U0001F30D</div>
+    <h2>{T('International', '国际经济体')}</h2>
+    <p>{T('Japan, South Korea, Taiwan, the UK & Europe compared side-by-side — regime, recession & equity-risk, plus cross-market stock standouts.', '日本、韩国、台湾、英国与欧洲并排对比 — 周期、衰退与股市风险，以及跨市场个股精选。')}</p>
+    <span class="stat">{T(intl['label'], TR(intl['label']))}{(' · ' + T(intl_risk, TR(intl_risk))) if intl_risk else ''}</span>
+    <div class="go">{T('Open International →', '打开国际 →')}</div>
   </a>""")
     commodities = commodities or {"present": False}
     fav = ", ".join(commodities.get("favored", []))
@@ -1338,7 +1362,7 @@ body{{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
 .c:hover{{transform:translateY(-4px);border-color:color-mix(in srgb,var(--accent) 50%,var(--line));
  box-shadow:0 18px 38px -14px color-mix(in srgb,var(--accent) 42%,transparent)}}
 .c:hover::before{{transform:scaleX(1)}} .c:hover::after{{opacity:1}}
-.c--canada{{--accent:#e5484d}} .c--btc{{--accent:#f7931a}} .c--sp{{--accent:#6366f1}} .c--strat{{--accent:#10b981}}
+.c--canada{{--accent:#e5484d}} .c--intl{{--accent:#0d9488}} .c--btc{{--accent:#f7931a}} .c--sp{{--accent:#6366f1}} .c--strat{{--accent:#10b981}}
 .c--commodity{{--accent:#d4a12a}} .c--forex{{--accent:#14b8a6}} .c--bonds{{--accent:#0ea5e9}}
 .c--crossasset{{--accent:#8b5cf6}} .c--etf{{--accent:#3b82f6}} .c--watch{{--accent:#64748b}}
 .c .ico{{width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:22px;
@@ -1418,7 +1442,7 @@ body{{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
   <p>{T('Market regime dashboards across every major asset class — one mechanical, backtested engine.', '覆盖各大类资产的市场周期仪表盘——一套机械化、经回测的引擎。')}</p>
 </div>
 <div class="cards-hero">{us_hero}{china_hero}{hk_hero}</div>
-<div class="cards-sub">{canada_card}{bitcoin_card}{strategies_card}{commodities_card}{forex_card}{bonds_card}{crossasset_card}{etf_card}{watchlist_card}</div>
+<div class="cards-sub">{canada_card}{intl_card}{bitcoin_card}{strategies_card}{commodities_card}{forex_card}{bonds_card}{crossasset_card}{etf_card}{watchlist_card}</div>
 <div class="feed">
   <div class="feed-h"><h3>{T('Latest Alerts', '最新警报')}</h3>
     <span class="n">{n_major} {T('major · from both feeds ·', '条重要 · 来自两个数据源 ·')} <a href="vector.html#timeline">{T('full Vector timeline →', '完整向量时间线 →')}</a></span></div>
@@ -1956,6 +1980,14 @@ def main() -> int:
         _build_canada.main()
     except Exception as e:  # noqa: BLE001
         log.error("canada dashboard (via build_vector) failed (%s)", e)
+    try:  # International comparative dashboard (JP/KR/TW/UK/EU) — same hook pattern as
+          # build_canada (PAT lacks `workflow` scope for a dedicated daily.yml step), built
+          # here before the landing hub reads _intl_state(). Self-sufficient + returns 0.
+          # TODO: promote to a proper daily.yml `build_intl` step once a workflow token exists.
+        from scripts import build_intl as _build_intl
+        _build_intl.main()
+    except Exception as e:  # noqa: BLE001
+        log.error("international dashboard (via build_vector) failed (%s)", e)
     try:  # China A-share thematic baskets page — like build_canada, no dedicated daily.yml
           # step yet (PAT lacks `workflow` scope), so it is built here off the china_search
           # cache that the collectors already refresh. Self-sufficient + returns 0; additive.
