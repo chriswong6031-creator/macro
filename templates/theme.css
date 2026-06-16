@@ -238,11 +238,24 @@ html body .prob .pc { font-size: 18px; font-weight: 700; }
   border-radius: 11px; border: 1px solid var(--line); background: var(--panel2);
   color: var(--text); font: inherit; font-size: 13px; outline: none;
   box-shadow: inset 0 1px 2px rgba(0,0,0,.05);
-  transition: border-color .2s ease, background .2s ease, box-shadow .25s ease, transform .2s ease; }
+  transition: border-color .2s ease, background .2s ease, box-shadow .25s ease, transform .2s ease;
+  /* idle: a calm blue glow that breathes in and out, drawing the eye to the
+     search without shouting. Stops dead on focus (see :focus) so typing feels
+     solid and steady. */
+  animation: searchBreathe 3.8s ease-in-out infinite; }
+@keyframes searchBreathe {
+  0%, 100% { border-color: color-mix(in srgb, #416aec 30%, var(--line));
+    box-shadow: inset 0 1px 2px rgba(0,0,0,.05),
+                0 0 0 0 rgba(65,106,236,0),
+                0 0 5px 0 rgba(65,106,236,.10); }
+  50% { border-color: #416aec;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,.05),
+                0 0 0 3px rgba(65,106,236,.22),
+                0 0 16px 2px rgba(65,106,236,.38); } }
 .nav-search input::placeholder { color: var(--muted); transition: color .2s ease; }
 .nav-search:hover input { border-color: color-mix(in srgb, var(--link) 38%, var(--line)); }
 .nav-search input:focus { border-color: color-mix(in srgb, var(--link) 75%, var(--line));
-  background: var(--panel); transform: translateY(-1px);
+  background: var(--panel); transform: translateY(-1px); animation: none;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--link) 20%, transparent),
               0 8px 22px color-mix(in srgb, var(--link) 14%, transparent); }
 .nav-search input:focus::placeholder { color: color-mix(in srgb, var(--muted) 55%, transparent); }
