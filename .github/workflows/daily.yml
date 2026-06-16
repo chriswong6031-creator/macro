@@ -237,6 +237,33 @@ jobs:
           cat /tmp/mb.log
           [ "$rc" -ne 0 ] && echo "::warning title=master_brain::rc=$rc (non-fatal)"
           exit 0
+      - name: AI desk scorer (durability loop; deterministic, resilient)
+        # Grades past-due theses in data/ai_desk/theses.jsonl against realized closes,
+        # appends data/ai_desk/scored.jsonl, and writes data/ai_desk/track_record.json
+        # which the desk step below reads back to calibrate conviction. Deterministic
+        # (no API key); runs BEFORE the desk so today's note sees the freshest record.
+        run: |
+          set +e
+          python -m engine.ai_desk_scorer > /tmp/aidesk_score.log 2>&1; rc=$?
+          cat /tmp/aidesk_score.log
+          [ "$rc" -ne 0 ] && echo "::warning title=ai_desk_scorer::rc=$rc (non-fatal)"
+          exit 0
+      - name: AI desk (accountable analyst layer; context-only, resilient)
+        # Runs right after master_brain (shares the keyed LLM step family). Reads the
+        # TRUST-GRADED detectors — site/basketdata/flow.json (from build_baskets) +
+        # data/regime/regime_snap.json (when Engine-2 is present) — and writes a
+        # FALSIFIABLE desk note (data/regime/ai_desk.json + site/ai_desk.json) while
+        # appending data/ai_desk/theses.jsonl for the Phase-C scorer to grade. NO-OP
+        # unless BOTH config ai_desk.enabled is true AND DEEPSEEK_API_KEY is set.
+        # Context-only (never scored/sized); self-sufficient; never aborts the deploy.
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          set +e
+          python -m engine.ai_desk > /tmp/aidesk.log 2>&1; rc=$?
+          cat /tmp/aidesk.log
+          [ "$rc" -ne 0 ] && echo "::warning title=ai_desk::rc=$rc (non-fatal)"
+          exit 0
       - name: AI Daily Brief page (build_aibrief)
         # consolidated page (site/aibrief.html) surfacing the three client-fetched AI
         # briefs (master/china/btc) as toggle tabs. Pure render — order-independent;

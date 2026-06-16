@@ -1,0 +1,70 @@
+{
+  "schema": "ai_desk.v1",
+  "is_context_only": true,
+  "generated_at": "2026-06-15T23:36:38.898243+00:00",
+  "state_asof": "2026-06-15",
+  "model": "deepseek-v4-pro",
+  "regime_context": "Flow detector is display-only; no regime snap available. The lens shows coincident concentration in cyclicals (Industrials, Consumer Discretionary, Financials, Real Estate) forming a loose cluster, but cohesion is low across all sectors and there is no validated directional signal. VIX is low (16.2, 32nd pctile), a calm regime where the flow lens's marginal edge weakens further. The following theses are low-conviction, reflecting observed clustering and breadth rather than a forecast.",
+  "theses": [
+    {
+      "id": "2026-06-15-1",
+      "subject": "Consumer Discretionary",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Consumer Discretionary is in the dominant cyclical cluster (with Industrials, corr 0.86) and shows the highest flow score among emerging sectors with broad participation. While low cohesion and no directional signal argue against durability, the current concentration and calm VIX environment could sustain near-term relative attention if the cluster persists.",
+      "evidence": [
+        "flow.cluster.dominant_cluster includes Consumer Discretionary",
+        "flow.emerging.sectors Consumer Discretionary flow_score 1.909, breadth 0.739",
+        "cluster top_pair Industials-Consumer Discretionary corr 0.86"
+      ],
+      "dissent": "The sector\u2019s cohesion is very low (0.245) and declining (-0.101), indicating dispersion not a thematic move. The flow lens has no forward edge, and its concentration could reflect outsized single-name moves (VSXY, KSS) without sector-wide follow-through. In calm regimes, the lens's IC is ~0, so this is a judgment call at best.",
+      "falsifier": {
+        "text": "If the 10-day rolling correlation between Consumer Discretionary and Industrials drops below 0.7, or VIX spikes above 20, the concentration pattern likely fractures and the lean is void.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "XLY",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 20
+        }
+      },
+      "check_by": "2026-07-13"
+    },
+    {
+      "id": "2026-06-15-2",
+      "subject": "Industrials",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Industrials sits in the same high-correlation cyclical cluster with Consumer Discretionary (corr 0.86). Its flow score is elevated (1.305) and breadth is broad, suggesting concentration alongside the cluster leader. If the cluster holds and VIX remains subdued, Industrials may continue to participate.",
+      "evidence": [
+        "flow.cluster.dominant_cluster includes Industrials",
+        "flow.emerging.sectors Industrials flow_score 1.305, breadth 0.707",
+        "cluster top_pair Industials-Consumer Discretionary corr 0.86"
+      ],
+      "dissent": "Cohesion is very low (0.203) and declining; top movers (FWRD, RXO) are logistics/transport names with idiosyncratic drivers. No sector-wide catalyst. The flow detector is display-only, and its rank-IC is ~0 in calm VIX; this is an opinion on near-term cluster continuation, not an extracted edge.",
+      "falsifier": {
+        "text": "If the Industrials-Consumer Discretionary correlation falls below 0.7, or if the S&P 500 Industrials sector relative strength turns negative on a 10-day basis, the lean is invalid.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "XLI",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 20
+        }
+      },
+      "check_by": "2026-07-13"
+    }
+  ],
+  "source_verdicts": {
+    "flow": "display_only"
+  },
+  "track_record": null,
+  "confidence": "low",
+  "raw_text": "{\n  \"regime_context\": \"Flow detector is display-only; no regime snap available. The lens shows coincident concentration in cyclicals (Industrials, Consumer Discretionary, Financials, Real Estate) forming a loose cluster, but cohesion is low across all sectors and there is no validated directional signal. VIX is low (16.2, 32nd pctile), a calm regime where the flow lens's marginal edge weakens further. The following theses are low-conviction, reflecting observed clustering and breadth rather than a forecast.\",\n  \"theses\": [\n    {\n      \"subject\": \"Consumer Discretionary\",\n      \"lean\": \"overweight\",\n      \"conviction\": \"low\",\n      \"horizon_d\": 20,\n      \"thesis\": \"Consumer Discretionary is in the dominant cyclical cluster (with Industrials, corr 0.86) and shows the highest flow score among emerging sectors with broad participation. While low cohesion and no directional signal argue against durability, the current concentration and calm VIX environment could sustain near-term relative attention if the cluster persists.\",\n      \"evidence\": [\n        \"flow.cluster.dominant_cluster includes Consumer Discretionary\",\n        \"flow.emerging.sectors Consumer Discretionary flow_score 1.909, breadth 0.739\",\n        \"cluster top_pair Industials-Consumer Discretionary corr 0.86\"\n      ],\n      \"dissent\": \"The sector\u2019s cohesion is very low (0.245) and declining (-0.101), indicating dispersion not a thematic move. The flow lens has no forward edge, and its concentration could reflect outsized single-name moves (VSXY, KSS) without sector-wide follow-through. In calm regimes, the lens's IC is ~0, so this is a judgment call at best.\",\n      \"falsifier_text\": \"If the 10-day rolling correlation between Consumer Discretionary and Industrials drops below 0.7, or VIX spikes above 20, the concentration pattern likely fractures and the lean is void.\"\n    },\n    {\n      \"subject\": \"Industrials\",\n      \"lean\": \"overweight\",\n      \"conviction\": \"low\",\n      \"horizon_d\": 20,\n      \"thesis\": \"Industrials sits in the same high-correlation cyclical cluster with Consumer Discretionary (corr 0.86). Its flow score is elevated (1.305) and breadth is broad, suggesting concentration alongside the cluster leader. If the cluster holds and VIX remains subdued, Industrials may continue to participate.\",\n      \"evidence\": [\n        \"flow.cluster.dominant_cluster includes Industrials\",\n        \"flow.emerging.sectors Industrials flow_score 1.305, breadth 0.707\",\n        \"cluster top_pair Industials-Consumer Discretionary corr 0.86\"\n      ],\n      \"dissent\": \"Cohesion is very low (0.203) and declining; top movers (FWRD, RXO) are logistics/transport names with idiosyncratic drivers. No sector-wide catalyst. The flow detector is display-only, and its rank-IC is ~0 in calm VIX; this is an opinion on near-term cluster continuation, not an extracted edge.\",\n      \"falsifier_text\": \"If the Industrials-Consumer Discretionary correlation falls below 0.7, or if the S&P 500 Industrials sector relative strength turns negative on a 10-day basis, the lean is invalid.\"\n    }\n  ],\n  \"confidence\": \"low\"\n}",
+  "degraded_reason": null,
+  "disclaimer": "AI desk note \u2014 context only, never scored or sized. The detectors it reads are DISPLAY-ONLY (flow has no validated forward edge; the relief snap is coincident). Each lean is a fallible, FALSIFIABLE judgement with a check-by date, not a trade recommendation or a position size."
+}
