@@ -42,5 +42,21 @@
     }
   ],
   "magnitude_band": null,
-  "veto": null
+  "veto": {
+    "schema": "regime_snap_veto.v1",
+    "is_context_only": true,
+    "lean": "fragile",
+    "confidence": "medium",
+    "checks": {
+      "catalyst": "Oil-driven move with no signed deal or policy shift \u2013 purely a market price reaction, easily reversible.",
+      "premium": "Fear built moderate (0.504), not extreme, some premium likely remains but not a deep discount.",
+      "washout": "Recent capitulation detected, suggesting genuine washout, but the trigger lacks structural backing.",
+      "follow_through": "Oil collapse can reverse on a headline; without a structural anchor, cross-asset relief likely fades next session."
+    },
+    "read": "The snap is driven by falling oil, not a structural catalyst like a signed deal or policy change. With moderate fear unwound and recent capitulation, it has a washout base, but the lack of a durable catalyst makes a reversal likely.",
+    "model": "deepseek-v4-pro",
+    "generated_at": "2026-06-16T23:24:34.308166+00:00",
+    "degraded_reason": null,
+    "disclaimer": "AI durability read \u2014 context only, never scored or sized. The snap detector is coincident; this is a fallible judgement on whether the relief is structural or a dead-cat, not a trade recommendation."
+  }
 }

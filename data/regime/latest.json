@@ -409,7 +409,7 @@
     "kind": "fomc_statement",
     "doc_id": "fomc_2026-04-29",
     "asof": "2026-04-29",
-    "tone_score": 0.2,
+    "tone_score": 0.3,
     "guidance_direction": "on_hold",
     "risk_delta": 0.3,
     "shock_reversible": "unknown",
@@ -927,7 +927,7 @@
   },
   "fed_path": {
     "asof": "2026-06-15",
-    "built": "2026-06-16T22:01:09.851465+00:00",
+    "built": "2026-06-16T23:20:22.661382+00:00",
     "policy_rate": 3.62,
     "target_low": 3.5,
     "target_high": 3.75,
