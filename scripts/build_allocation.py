@@ -60,12 +60,41 @@ def build_region(region: str, env, built: str, site) -> bool:
     return True
 
 
+def _run_thematic_desk(regions: list[str]) -> None:
+    """AI Desk for Thematic Investing — after the allocation JSONs are written, let the LLM
+    desk produce falsifiable per-theme leans for each market (site/allocationdata/ai_desk_*.json)
+    and grade the past-due ledger. GATED (engine.thematic_desk.run skips unless the AI layer is
+    enabled + a key is present) and fully additive — a failure never breaks the pages, which
+    fetch the brief client-side and degrade to the static handoff contract when it's absent."""
+    try:
+        from engine import thematic_desk as td
+    except Exception as e:  # noqa: BLE001
+        log.error("thematic_desk import failed: %s", e)
+        return
+    for r in regions:
+        try:
+            td.run(r)
+        except Exception as e:  # noqa: BLE001 — one market must not sink the others
+            log.error("thematic_desk run[%s] failed: %s", r, e)
+    try:
+        td.score_ledger()      # grade past-due theses → track_record + public ai_desk_track.json
+    except Exception as e:  # noqa: BLE001
+        log.error("thematic_desk score_ledger failed: %s", e)
+
+
 def main(regions: list[str] | None = None) -> int:
     site = config.ROOT / "site"
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
-    for r in (regions or list(PAGES.keys())):
+    regions = regions or list(PAGES.keys())
+    for r in regions:
         build_region(r, env, built, site)
+    # ship the live-desk renderer alongside the pages (self-contained, like build_baskets'
+    # lightweight-charts.js) so the new JS is always present when the page is built.
+    js = config.ROOT / "templates" / "ai_desk_thematic.js"
+    if js.exists():
+        (site / "ai_desk_thematic.js").write_text(js.read_text())
+    _run_thematic_desk(regions)        # additive AI layer; gated + never fatal
     return 0
 
 
