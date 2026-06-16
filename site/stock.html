@@ -180,6 +180,17 @@
   .cv-blab { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
   .cv-bchip { font-size:11px; font-weight:700; padding:1px 7px; border-radius:7px;
               border:1px solid var(--line); font-variant-numeric:tabular-nums; }
+  .cv-regime { display:flex; align-items:center; gap:6px; margin-top:9px; font-size:11px;
+               font-weight:700; padding:3px 9px; border-radius:7px; width:fit-content;
+               color:var(--muted); background:color-mix(in srgb,var(--muted) 10%,var(--panel));
+               border:1px solid color-mix(in srgb,var(--muted) 24%,var(--line)); }
+  .cv-regime .cv-rgdot { width:7px; height:7px; border-radius:50%; background:currentColor; flex:0 0 auto; }
+  .cv-regime.rg-calm { color:var(--up); background:color-mix(in srgb,var(--up) 11%,var(--panel));
+                       border-color:color-mix(in srgb,var(--up) 30%,var(--line)); }
+  .cv-regime.rg-stress { color:var(--warn); background:color-mix(in srgb,var(--warn) 12%,var(--panel));
+                         border-color:color-mix(in srgb,var(--warn) 30%,var(--line)); }
+  .cv-regime.rg-mixed { color:var(--g-cold); background:color-mix(in srgb,var(--g-cold) 10%,var(--panel));
+                        border-color:color-mix(in srgb,var(--g-cold) 26%,var(--line)); }
   .cv-note { font-size:11px; color:var(--muted); margin-top:8px; line-height:1.5; }
   .cvchip { font-weight:800; font-variant-numeric:tabular-nums; padding:0 6px; border-radius:7px;
             border:1px solid var(--line); }
@@ -1009,6 +1020,12 @@
         col + ' 35%,var(--line))" title="' + esc(b.tier) + '">' + esc(lz(b.label, b.label_zh)) +
         ' ' + (b.z >= 0 ? '+' : '') + b.z + '</span>';
     }).join('');
+    // regime tilt banner — which way the live tape is currently weighting the edge
+    // (calm/risk-on up-weights trend momentum; stress lets the earnings edge lead). The
+    // validated regime-conditional weighting (research/STOCK_CONVICTION_V2 §3).
+    var rg = c.regime;
+    var rgbar = rg ? '<div class="cv-regime ' + esc(rg.css || '') + '"><span class="cv-rgdot"></span>' +
+      esc(lz(rg.en, rg.zh)) + '</div>' : '';
     box.innerHTML =
       '<div class="cv-head">' +
         (c.score != null ? '<span class="cv-score band-' + c.band + '">' + c.score + '</span>' : '') +
@@ -1016,6 +1033,7 @@
         '<div class="cv-tier">' + esc(lz(tt.en, tt.zh)) + '</div></div></div>' +
       (basis ? '<div class="cv-basis"><span class="cv-blab">' + lz('edge basis', '优势构成') +
         '</span>' + basis + '</div>' : '') +
+      rgbar +
       '<div class="cv-axes">' + ax + '</div>' +
       (cau ? '<div class="cv-cau">' + cau + '</div>' : '') +
       '<div class="cv-note">' + lz(
@@ -1508,7 +1526,7 @@
 </script>
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
-<p class="muted" style="font-size:12px">Generated 2026-06-16 20:43 UTC · charts by TradingView ·
+<p class="muted" style="font-size:12px">Generated 2026-06-16 22:02 UTC · charts by TradingView ·
 methodology &amp; caveats: see any sector page footer.</p>
 <footer class="site-footer">
   <span class="made">Made with ❤️ in Canada</span>
