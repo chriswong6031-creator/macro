@@ -731,7 +731,7 @@ def build_landing(site: Path, vm: dict) -> None:
     macro = _macro_state()
     hub = _hub_html(vm, macro, home_alert_feed(), _china_state(), _commodities_state(),
                     _watchlist_state(), _etf_state(), _hk_state(), _forex_state(),
-                    _bonds_state(), _us_stocks_state(), _spvector_state(), _crossasset_state(),
+                    _bonds_state(), _us_stocks_state(), _strategies_state(), _crossasset_state(),
                     _market_stocks_state("china"), _market_stocks_state("hk"),
                     canada=_canada_state())
     (site / "index.html").write_text(hub)
@@ -899,6 +899,19 @@ def _spvector_state() -> dict:
         return {"label": "Index ↔ T-bills", "weight": None, "present": present}
 
 
+def _strategies_state() -> dict:
+    """Strategy Scorecards umbrella card — gated on the hub page existing; shows the
+    strategy count from data/regime/strategies_latest.json when build_strategies has run."""
+    site = config.ROOT / config.load()["storage"]["site_dir"]
+    present = (site / "strategies.html").exists()
+    try:
+        import json
+        d = json.loads((config.data_dir() / "regime" / "strategies_latest.json").read_text())
+        return {"present": present, "n": d.get("n", 0)}
+    except Exception:  # noqa: BLE001
+        return {"present": present, "n": 0}
+
+
 MACRO_SEV = {"act": "high", "warn": "medium", "info": "info"}
 
 
@@ -1060,7 +1073,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
               etf: dict | None = None, hk: dict | None = None,
               forex: dict | None = None, bonds: dict | None = None,
               us_stocks: dict | None = None,
-              spvector: dict | None = None, crossasset: dict | None = None,
+              strategies: dict | None = None, crossasset: dict | None = None,
               china_stocks: dict | None = None, hk_stocks: dict | None = None,
               canada: dict | None = None) -> str:
     # Bilingual via the i18n layer when present, identity fallback when absent.
@@ -1243,15 +1256,14 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
     <span class="stat">{T('Momentum', '动量')} {vm['momentum']}</span>
     <div class="go">{T('Open Bitcoin Vector →', '打开比特币向量 →')}</div>
   </a>"""
-    spvector = spvector or {"present": False}
-    sp_w = spvector.get("weight")
-    spvector_card = ("" if not spvector.get("present") else f"""
-  <a class="c c--sp" href="spvector.html">
-    <div class="ico">📈</div>
-    <h2>{T('S&P / Macro Vector', '标普宏观向量')}</h2>
-    <p>{T('Stay-in / step-out allocation for the broad US index vs T-bills — a backtested drawdown & Sharpe engine.', '美国大盘指数与短债之间的进出场配置——经回测、以回撤与夏普为目标的引擎。')}</p>
-    <span class="stat">{T(spvector['label'], TR(spvector['label']))}{(' · ' + str(int(sp_w)) + '% ' + T('equity', '股票')) if sp_w is not None else ''}</span>
-    <div class="go">{T('Open S&P / Macro Vector →', '打开标普宏观向量 →')}</div>
+    strategies = strategies or {"present": False}
+    strategies_card = ("" if not strategies.get("present") else f"""
+  <a class="c c--strat" href="strategies.html">
+    <div class="ico">🎛️</div>
+    <h2>{T('Strategy Scorecards', '策略记分卡')}</h2>
+    <p>{T('Macro-factor tactical strategies — shift allocations on signals to lift risk-adjusted yield and dodge the drawdowns.', '宏观因子战术策略——按信号切换配置，提升风险调整后收益并规避回撤。')}</p>
+    <span class="stat">{strategies.get('n', 0)} {T('strategies', '个策略')}</span>
+    <div class="go">{T('Open Strategy Scorecards →', '打开策略记分卡 →')}</div>
   </a>""")
     return f"""{HUB_MARKER}
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
@@ -1326,7 +1338,7 @@ body{{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
 .c:hover{{transform:translateY(-4px);border-color:color-mix(in srgb,var(--accent) 50%,var(--line));
  box-shadow:0 18px 38px -14px color-mix(in srgb,var(--accent) 42%,transparent)}}
 .c:hover::before{{transform:scaleX(1)}} .c:hover::after{{opacity:1}}
-.c--canada{{--accent:#e5484d}} .c--btc{{--accent:#f7931a}} .c--sp{{--accent:#6366f1}}
+.c--canada{{--accent:#e5484d}} .c--btc{{--accent:#f7931a}} .c--sp{{--accent:#6366f1}} .c--strat{{--accent:#10b981}}
 .c--commodity{{--accent:#d4a12a}} .c--forex{{--accent:#14b8a6}} .c--bonds{{--accent:#0ea5e9}}
 .c--crossasset{{--accent:#8b5cf6}} .c--etf{{--accent:#3b82f6}} .c--watch{{--accent:#64748b}}
 .c .ico{{width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:22px;
@@ -1406,7 +1418,7 @@ body{{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
   <p>{T('Market regime dashboards across every major asset class — one mechanical, backtested engine.', '覆盖各大类资产的市场周期仪表盘——一套机械化、经回测的引擎。')}</p>
 </div>
 <div class="cards-hero">{us_hero}{china_hero}{hk_hero}</div>
-<div class="cards-sub">{canada_card}{bitcoin_card}{spvector_card}{commodities_card}{forex_card}{bonds_card}{crossasset_card}{etf_card}{watchlist_card}</div>
+<div class="cards-sub">{canada_card}{bitcoin_card}{strategies_card}{commodities_card}{forex_card}{bonds_card}{crossasset_card}{etf_card}{watchlist_card}</div>
 <div class="feed">
   <div class="feed-h"><h3>{T('Latest Alerts', '最新警报')}</h3>
     <span class="n">{n_major} {T('major · from both feeds ·', '条重要 · 来自两个数据源 ·')} <a href="vector.html#timeline">{T('full Vector timeline →', '完整向量时间线 →')}</a></span></div>
@@ -1927,6 +1939,14 @@ def main() -> int:
         _build_spvector()
     except Exception as e:  # noqa: BLE001
         log.error("spvector page failed (%s)", e)
+    try:  # Strategy Scorecards hub + per-strategy detail pages (+ data/regime/strategies_latest
+          # .json for the umbrella hub card). No dedicated daily.yml step yet (PAT lacks
+          # `workflow` scope), so it is built here, after build_spvector (its spvector card links
+          # spvector.html) and before build_landing reads _strategies_state(). Never fatal.
+        from scripts.build_strategies import build as _build_strategies
+        _build_strategies()
+    except Exception as e:  # noqa: BLE001
+        log.error("strategies pages (via build_vector) failed (%s)", e)
     try:  # Canada / S&P-TSX dashboard — has no dedicated daily.yml step yet (the PAT that
           # opened PR #81 lacked `workflow` scope), so it is built here, before the landing
           # hub reads _canada_state(). Self-sufficient + returns 0; never breaks the build.
