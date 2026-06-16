@@ -64,12 +64,11 @@ def treasury_tr(yield_key: str = "DGS10", col: str = "us10y",
 
 
 def long_treasury_tr() -> pd.Series:
-    """Long-Treasury TOTAL return for the Duration strategy benchmark. Authoritative
-    ICE BofA 15+yr Treasury TR if its parquet lands (CI) → else TLT adjusted close
-    (already total return, 2002→) → else a synthetic 30y CMT index (pre-2002)."""
-    auth = store.read("fred", "BAMLCC0A0CMTRIV")     # placeholder authoritative key (absent today)
-    if auth is not None and not auth.empty:
-        return auth[auth.columns[0]].astype(float).dropna()
+    """Long-Treasury TOTAL return for the Duration strategy benchmark = TLT adjusted
+    close (already total return, 2002→) → else a synthetic 30y CMT index (pre-2002).
+    NB: there is no clean ICE BofA US *Treasury* total-return index on public FRED, so
+    (unlike hy_tr) there is no authoritative-upgrade hook here — TLT's dividend-adjusted
+    close already IS the total return. (Do NOT substitute a CORPORATE TR index here.)"""
     tlt = _adj_close("TLT")
     if tlt is not None:
         return tlt

@@ -40,6 +40,7 @@ fred:
       BAMLH0A0HYM2: hy_oas        # rolling 3y window on FRED since Apr 2026 — cache forever
       BAMLC0A0CM: ig_oas          # same caveat
       BAMLEMCBPIOAS: em_oas       # ICE BofA EM corporate OAS — EM/RORO risk leg (Forex Vector)
+      BAMLHYH0A0HYM2TRIV: hy_total_return   # ICE BofA US HY TOTAL-RETURN index (1986->); engine.total_return.hy_tr auto-upgrades to it for a deeper Credit-Carry backtest
     risk:
       VIXCLS: vix_close
     dollar:

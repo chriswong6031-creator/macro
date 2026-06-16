@@ -205,11 +205,16 @@ CREDIT_CARRY = StrategySpec(
     benchmark=_credit_bench, alloc=_credit_alloc, cash_yield=_credit_cash,
     risk_yield=_credit_riskyield, score=_credit_score,
     experimental=True,
-    caveat_en="High-yield total return = HYG dividend-adjusted close (≈ ICE BofA HY TR; "
-              "the authoritative index is used when cached in CI). History begins 2007 "
-              "(HYG inception) — a small independent-bear sample. Experimental, under validation.",
-    caveat_zh="高收益总回报 = HYG 经分红调整收盘价（≈ ICE BofA 高收益总回报指数；CI 缓存时使用权威指数）。"
-              "历史自 2007 年（HYG 成立）起，独立熊市样本较小。实验性，验证中。")
+    caveat_en="Phase-0 (2007→ HYG): the drawdown-control edge is robust — MaxDD −15% vs −34% "
+              "buy & hold, survives leave-one-crisis-out, dd-reduction CI excludes zero — but it "
+              "does NOT beat a naive 200-day trend on HY (Sharpe 0.75 vs 0.83). DISPLAY-ONLY / "
+              "experimental, not a scored signal. Benchmark = HYG dividend-adjusted close; a "
+              "deeper-history re-run awaits the ICE BofA HY total-return index (1986→) in CI. "
+              "See reports/credit-carry-phase0.md. Not investment advice.",
+    caveat_zh="Phase-0（2007 起，HYG）：回撤控制优势稳健——最大回撤 −15% 对比买入持有 −34%，通过留一危机检验，"
+              "回撤缩减置信区间不含零——但并未跑赢 HY 上的朴素 200 日趋势（夏普 0.75 对 0.83）。仅展示 / 实验性，"
+              "非评分信号。基准 = HYG 经分红调整收盘价；更深历史的复跑有待 CI 中的 ICE BofA 高收益总回报指数"
+              "（1986 起）。见 reports/credit-carry-phase0.md。非投资建议。")
 
 
 # =========================================================================== #
@@ -281,12 +286,17 @@ DURATION_TIMING = StrategySpec(
     benchmark=_duration_bench, alloc=_duration_alloc, cash_yield=_duration_cash,
     risk_yield=_duration_riskyield, score=_duration_score,
     experimental=True,
-    caveat_en="Long-Treasury total return = TLT dividend-adjusted close (2002→). A long-only "
-              "single-ETF timer is far weaker than the leveraged multi-country bond-factor "
-              "research; its real job is crisis convexity + standing aside in 2022-type regimes. "
-              "Experimental, under validation.",
-    caveat_zh="长期国债总回报 = TLT 经分红调整收盘价（2002 年起）。仅做多的单一 ETF 择时远弱于"
-              "带杠杆的多国债券因子研究；其真正作用是危机凸性 + 在 2022 式行情中退守。实验性，验证中。")
+    caveat_en="Phase-0 (2002→ TLT): the drawdown-control edge is robust — MaxDD −18% vs −48% buy & "
+              "hold, beats the naive baselines, survives leave-one-crisis-out — but the deflated "
+              "Sharpe is marginal (0.83 < 0.90), so the risk-adjusted edge may be noise at this "
+              "sample depth. DISPLAY-ONLY / experimental, not a scored signal: a long-only single-ETF "
+              "timer is far weaker than the leveraged multi-country bond-factor research; its real job "
+              "is crisis convexity + standing aside in 2022-type regimes. See "
+              "reports/duration-timing-phase0.md. Not investment advice.",
+    caveat_zh="Phase-0（2002 起，TLT）：回撤控制优势稳健——最大回撤 −18% 对比买入持有 −48%，跑赢朴素基准，"
+              "通过留一危机检验——但贬值夏普处于临界（0.83 < 0.90），在此样本深度下风险调整后优势可能是噪声。"
+              "仅展示 / 实验性，非评分信号：仅做多的单一 ETF 择时远弱于带杠杆的多国债券因子研究；其真正作用是"
+              "危机凸性 + 在 2022 式行情中退守。见 reports/duration-timing-phase0.md。非投资建议。")
 
 
 STRATEGIES: list[StrategySpec] = [SPVECTOR, CREDIT_CARRY, DURATION_TIMING]
