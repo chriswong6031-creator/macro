@@ -307,7 +307,7 @@ html[data-theme="dark"] .spac{background:#2c2348;color:#c4a8ff}
       </tr>
       {% endfor %}
     </table>
-    <div class="sub faint" style="margin-top:10px;font-size:12px">{{ t('“vs offer” shows only where we already hold the price series — most fresh IPOs are outside our coverage universe, so it is usually blank by design (we do not chase per-name quotes for a context page). SPACs are flagged, never dropped: they price at $10, rarely pop, and distort IPO base rates.','“对比发行”仅在我们已持有该价格序列时显示 —— 多数新上市公司不在我们的覆盖范围内，故通常按设计留空（背景页不逐一抓取报价）。SPAC 被标记而非剔除：它们以 $10 定价、极少爆涨，会扭曲新股基准比率。') }}</div>
+    <div class="sub faint" style="margin-top:10px;font-size:12px">{{ t('“vs offer” shows only where we already hold the price series — most fresh IPOs are outside our coverage universe, so it is usually blank by design (we do not chase per-name quotes for a context page). SPACs are flagged, never dropped: they price at $10, rarely pop, and distort IPO base rates. Post-listing quality/factor coverage (accruals, profitability, valuation-vs-comps) only switches on after a name has its first annual report (~12 months) or joins an index — so fresh IPOs sit in a deliberate coverage hole rather than getting a fabricated quality score.','“对比发行”仅在我们已持有该价格序列时显示 —— 多数新上市公司不在我们的覆盖范围内，故通常按设计留空（背景页不逐一抓取报价）。SPAC 被标记而非剔除：它们以 $10 定价、极少爆涨，会扭曲新股基准比率。上市后的质量/因子覆盖（应计、盈利能力、相对估值）只有在公司发布首份年报（约12个月）或被纳入指数后才会启用 —— 因此新上市公司处于刻意的覆盖空窗，而非被赋予虚构的质量评分。') }}</div>
   </div>
   {% endif %}
 
@@ -327,6 +327,28 @@ html[data-theme="dark"] .spac{background:#2c2348;color:#c4a8ff}
       </tr>
       {% endfor %}
     </table>
+  </div>
+  {% endif %}
+
+  <!-- ===== Hong Kong IPO backdrop (Phase 3) ===== -->
+  {% if hk and hk.available %}
+  <div class="section-title">{{ t('Hong Kong IPO backdrop · the more retail-tradeable market','香港新股背景 · 更适合散户参与的市场') }}</div>
+  <div class="card">
+    <div class="dialwrap" style="margin-bottom:8px">
+      <div class="dialnum" style="font-size:30px;color:{{ hk.color }}">{{ t(hk.verdict, hk.verdict_zh) }}</div>
+      <div class="sub">{{ t('Liquidity-backdrop read','流动性背景读数') }}{% if hk.as_of %} · {{ t('as of','截至') }} {{ hk.as_of }}{% endif %}</div>
+    </div>
+    <table class="legtbl">
+      <tr><th class="l">{{ t('Backdrop leg','背景分项') }}</th><th>{{ t('Reading','读数') }}</th><th>{{ t('State','状态') }}</th></tr>
+      {% for l in hk.legs %}
+      <tr>
+        <td class="l">{{ t(l.label, l.label_zh) }}<div class="sub faint" style="font-size:11.5px">{{ l.note }}</div></td>
+        <td><b>{{ t(l.value, l.value_zh) }}</b></td>
+        <td><span class="chip" style="border-color:{{ l.color }};color:{{ l.color }}">{{ t(l.state, l.state_zh) }}</span></td>
+      </tr>
+      {% endfor %}
+    </table>
+    <div class="note b" style="margin-top:10px">{{ t(hk.note, hk.note_zh) }}</div>
   </div>
   {% endif %}
 

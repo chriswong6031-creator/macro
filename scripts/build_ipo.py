@@ -20,6 +20,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 
+from engine import ipo_hk
 from engine import ipo_lockup as il
 from engine import ipo_radar as ir
 from lib import config
@@ -57,6 +58,17 @@ LOCK_STATUS = {
     "locked": ("🔒 locked", "🔒 锁定中", C["muted"]),
     "expired": ("expired", "已解禁", C["faint"]),
 }
+HK_VERDICT_ZH = {"receptive": "接纳", "mixed": "混合", "poor": "低迷", "unavailable": "不可用"}
+HK_VERDICT_COLOR = {"receptive": "#1FA971", "mixed": C["amber"], "poor": C["red"], "unavailable": C["muted"]}
+HK_LEG_ZH = {
+    "Southbound flow (20d net)": "南向资金（20日净额）",
+    "Subscription funding (1M HIBOR)": "认购融资成本（1个月 HIBOR）",
+    "HKD peg pressure": "港元联系汇率压力",
+    "HK risk appetite": "香港风险偏好",
+}
+HK_NOTE_ZH = ("仅为流动性背景 —— 香港在结构上更适合散户参与（公开发售部分＋回拨机制、公开的"
+              "超额认购倍数、暗盘），但这些免密钥的一级市场数据目前失效／受阻，故此处是发行环境而非"
+              "交易级信号。从不计分。")
 
 
 def _pct(x, signed=True) -> str:
@@ -185,6 +197,44 @@ def _lockup_vm() -> dict:
     return {"rows": out, "summary": il.summary(rows), "phase0": phase0}
 
 
+def _hk_vm() -> dict:
+    """Hong Kong IPO liquidity-backdrop view-model (Phase 3). Display-only."""
+    try:
+        b = ipo_hk.hk_backdrop()
+    except Exception:  # noqa: BLE001
+        return {"available": False}
+    if not b.get("available"):
+        return {"available": False}
+    try:
+        from engine import i18n
+        tr = i18n.tr
+    except Exception:  # noqa: BLE001
+        def tr(x):
+            return x
+    legs = []
+    for l in b["legs"]:
+        v = l["value"]
+        if l["key"] == "southbound":
+            vdisp = f"{v:+,} {'HK$mn'}"
+            vzh = vdisp
+        elif l["key"] == "hibor":
+            vdisp = f"{v:.2f}%"
+            vzh = vdisp
+        else:                                   # peg / risk are text values → glossary
+            vdisp, vzh = str(v), tr(str(v))
+        legs.append({
+            "label": l["label"], "label_zh": HK_LEG_ZH.get(l["label"], l["label"]),
+            "value": vdisp, "value_zh": vzh,
+            "state": l["state"], "state_zh": STATE_ZH.get(l["state"], l["state"]),
+            "color": STATE_COLOR.get(l["state"], C["muted"]), "note": l["note"],
+        })
+    return {"available": True, "verdict": b["verdict"].upper(),
+            "verdict_zh": HK_VERDICT_ZH.get(b["verdict"], b["verdict"]),
+            "color": HK_VERDICT_COLOR.get(b["verdict"], C["muted"]),
+            "legs": legs, "as_of": b.get("as_of"),
+            "note": b["note"], "note_zh": HK_NOTE_ZH}
+
+
 def build() -> str:
     # refresh the calendar (best-effort; keeps the committed seed if CI is walled)
     try:
@@ -266,6 +316,7 @@ def build() -> str:
         "recent": recent, "upcoming": upcoming,
         "lockups": lockvm["rows"], "lockup_summary": lockvm["summary"],
         "lockup_phase0": lockvm.get("phase0"),
+        "hk": _hk_vm(),
         "chart_aftermarket": _chart_aftermarket(),
     }
 

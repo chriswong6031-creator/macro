@@ -14,6 +14,7 @@ import pytest
 
 import collectors.ipo_calendar as ic
 import collectors.ipo_prospectus as ipro
+import engine.ipo_hk as ihk
 import engine.ipo_lockup as il
 import engine.ipo_radar as ir
 
@@ -214,8 +215,19 @@ def test_not_imported_by_any_scoring_module():
     root = pathlib.Path(ir.__file__).parent
     for mod in ("axes.py", "conditions.py", "regime.py", "equity_alloc.py"):
         src = (root / mod).read_text()
-        assert "ipo_radar" not in src, f"engine/{mod} must not import ipo_radar"
-        assert "ipo_lockup" not in src, f"engine/{mod} must not import ipo_lockup"
+        for layer in ("ipo_radar", "ipo_lockup", "ipo_hk"):
+            assert layer not in src, f"engine/{mod} must not import {layer}"
+
+
+def test_ipo_hk_backdrop_shape_and_not_scored():
+    assert ihk.SCORED is False
+    b = ihk.hk_backdrop()
+    assert {"available", "legs", "verdict"} <= set(b)
+    assert isinstance(b["legs"], list)
+    assert b["verdict"] in ("receptive", "mixed", "poor", "unavailable")
+    if b["available"]:
+        for l in b["legs"]:
+            assert l["state"] in ("constructive", "neutral", "cautious")
 
 
 # --------------------------------------------------------------------------- #
