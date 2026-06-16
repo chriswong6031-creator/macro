@@ -1,0 +1,555 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><span class="l-en">Narrative Rotation — where to allocate across themes</span><span class="l-zh">主题轮动 — 主题间配置去向</span></title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:24px max(34px,calc((100vw - 1340px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:21px; margin:0; }
+  h2 { font-size:15px; margin:28px 0 4px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  h2 .idx { font-size:11px; color:var(--muted); border:1px solid var(--line); border-radius:6px; padding:1px 6px; font-weight:600; }
+  .muted { color:var(--muted); } .sm { font-size:12px; }
+  .pos { color:var(--up); } .neg { color:var(--down); }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:14px; margin-top:8px; }
+  .tagline { color:var(--muted); font-size:12.5px; max-width:94ch; margin:4px 0 0; line-height:1.5; }
+  .sub { color:var(--muted); font-size:12.5px; margin:2px 0 10px; max-width:94ch; }
+  .chip { display:inline-block; font-size:11px; padding:1px 7px; margin:0 4px 4px 0; border-radius:7px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
+  .chip.warn { background:rgba(250,204,21,.12); border-color:rgba(250,204,21,.4); color:var(--warn); }
+  .chip.ok { background:rgba(34,197,94,.12); border-color:rgba(34,197,94,.4); color:var(--up); }
+  .chip.hot { background:rgba(239,68,68,.12); border-color:rgba(239,68,68,.4); color:var(--down); }
+  .asof { font-size:12px; color:var(--muted); margin-left:auto; }
+  .pfx { color:var(--muted); }
+  /* headline */
+  .hero { display:flex; flex-wrap:wrap; gap:18px; align-items:stretch; }
+  .hero .big { flex:1 1 360px; background:var(--panel); border:1px solid var(--line); border-left:4px solid var(--accent,#5aa7ff); border-radius:12px; padding:16px 18px; }
+  .hero .lead { font-size:12px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); }
+  .hero .name { font-size:26px; font-weight:700; margin:2px 0 6px; }
+  .hero .wt { font-size:14px; }
+  .hero .wt b { font-size:20px; }
+  .hero .chips { margin-top:9px; }
+  .gauge { flex:0 0 168px; display:flex; flex-direction:column; gap:8px; }
+  .gz { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:9px 11px; }
+  .gz .k { font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+  .gz .v { font-size:19px; font-weight:700; font-variant-numeric:tabular-nums; }
+  /* allocation bars */
+  .alloc { display:grid; grid-template-columns:1fr; gap:7px; }
+  .arow { display:flex; align-items:center; gap:10px; }
+  .arow .nm { flex:0 0 200px; font-weight:600; font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .arow .bar { flex:1; height:22px; background:var(--grid,var(--panel2)); border-radius:6px; overflow:hidden; position:relative; }
+  .arow .fill { height:100%; background:linear-gradient(90deg,var(--accent,#5aa7ff),#7c5cff); }
+  .arow .wv { flex:0 0 56px; text-align:right; font-variant-numeric:tabular-nums; font-weight:650; }
+  .arow.cash .fill { background:var(--muted); opacity:.5; }
+  /* table */
+  .ts { overflow-x:auto; }
+  table { border-collapse:collapse; width:100%; font-size:13px; }
+  th,td { padding:7px 9px; border-bottom:1px solid var(--line); white-space:nowrap; vertical-align:middle; }
+  th { color:var(--muted); font-weight:500; text-align:right; }
+  th:first-child,td:first-child { text-align:left; }
+  td.num,th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  tr.inelig td { opacity:.5; }
+  .stage { font-size:11px; padding:1px 6px; border-radius:6px; border:1px solid var(--line); }
+  .stage.lead { background:rgba(90,167,255,.14); border-color:rgba(90,167,255,.45); color:var(--link); }
+  .minibars { display:flex; gap:3px; align-items:flex-end; height:18px; }
+  .minibars i { width:7px; background:var(--muted); border-radius:1px; display:inline-block; opacity:.85; }
+  .dbar { display:inline-block; width:46px; height:6px; background:var(--grid,var(--panel2)); border-radius:4px; overflow:hidden; vertical-align:middle; }
+  .dbar > i { display:block; height:100%; background:var(--up); }
+  .legrow { font-size:11.5px; color:var(--muted); }
+  details > summary { cursor:pointer; font-size:12.5px; color:var(--muted); margin:8px 0 2px; }
+  .kpis { display:flex; flex-wrap:wrap; gap:20px; margin:6px 0; }
+  .kpis .k { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .kpis .v { font-size:18px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .verdict { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; margin-top:8px; }
+  .vcard { background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:10px 12px; font-size:12.5px; }
+  .vcard b { font-size:12px; }
+  .banner { border-radius:10px; padding:11px 14px; margin:10px 0; font-size:13px; }
+  .banner.dom { background:rgba(124,92,255,.10); border:1px solid rgba(124,92,255,.4); }
+  .banner.crash { background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.45); }
+  ul.dnc { margin:6px 0 0; padding-left:18px; font-size:12px; color:var(--muted); }
+  ul.dnc li { margin:3px 0; }
+  footer { color:var(--muted); font-size:11.5px; margin-top:28px; border-top:1px solid var(--line); padding-top:12px; max-width:96ch; line-height:1.6; }
+</style>
+</head>
+<body>
+<nav class="site-nav">
+    <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 <span class="l-en">Home</span><span class="l-zh">首页</span></a>
+    <div class="nav-dd">
+      <a class="nav-link active" href="macro.html">🇺🇸 <span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
+        <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="spvector.html">📐 <span class="l-en">S&amp;P / Macro Vector</span><span class="l-zh">标普宏观向量</span><span class="d"><span class="l-en">Tactical equity↔cash</span><span class="l-zh">战术股票↔现金</span></span></a>
+        <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&amp;P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
+        <a class="active" href="allocation.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold &amp; when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+        <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked &amp; triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
+        <a href="gex.html">🧲 <span class="l-en">Options Magnets</span><span class="l-zh">期权磁吸</span><span class="d"><span class="l-en">Dealer-gamma GEX levels</span><span class="l-zh">做市商Gamma GEX价位</span></span></a>
+        <a href="etfs.html">🐳 <span class="l-en">ETF Flows</span><span class="l-zh">ETF资金流</span><span class="d"><span class="l-en">Fund flow monitor</span><span class="l-zh">资金流监控</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
+        <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
+        <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300</span><span class="l-zh">等权主题篮子 vs 沪深300</span></span></a>
+        <a href="china_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">Income · gold · bonds</span><span class="l-zh">红利 · 黄金 · 国债</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="hk.html">🇭🇰 <span class="l-en">Hong Kong</span><span class="l-zh">香港</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="hk.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">HSI · southbound · global risk</span><span class="l-zh">HSI · 南向 · 全球风险</span></span></a>
+        <a href="hk_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">HK-listed standouts · alpha</span><span class="l-zh">HK上市精选 · 阿尔法</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="canada.html">🇨🇦 <span class="l-en">Canada</span><span class="l-zh">加拿大</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="canada.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">TSX · BoC · commodity overlay</span><span class="l-zh">TSX · 加央行 · 商品叠加</span></span></a>
+        <a href="canada_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">TSX standouts · sectors · alpha</span><span class="l-zh">TSX精选 · 板块 · 阿尔法</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
+        <a href="vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span></a>
+    <a class="nav-link" href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span></a>
+    <a class="nav-link" href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span></a>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="crossasset.html">🧭 <span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></a>
+        <a href="signal_lab.html">🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></a>
+        <a href="factors.html">🧮 <span class="l-en">Factors &amp; Seasonality</span><span class="l-zh">因子 &amp; 季节性</span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></a>
+      </div>
+    </div>
+  </div>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="aibrief.html">🧠 <span class="l-en">AI Daily Brief</span><span class="l-zh">AI每日简报</span></a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+<header>
+  <div style="display:flex;align-items:baseline;flex-wrap:wrap;gap:12px">
+    <h1>🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span></h1>
+    <span class="asof"><span class="pfx"><span class="l-en">as of</span><span class="l-zh">截至</span> </span>2026-06-15</span>
+  </div>
+  <p class="tagline"><span class="l-en">Identify the prevailing narrative, judge its durability, ride it while it trends, and step aside before the music stops. The one edge validated on 27 years of data is NOT picking next year&#39;s winner — it is avoiding the crash that ends a crowded trend. So this is a discipline, not a prediction.</span><span class="l-zh">识别当前主导叙事，评估其持续性，趋势在时持有，音乐停前退场。在27年数据上得到验证的优势并非&#34;押中明年赢家&#34;，而是&#34;避开终结拥挤趋势的那次崩盘&#34;。因此这是纪律，而非预测。</span></p>
+</header>
+
+<!-- ============ HEADLINE: current best place to allocate ============ -->
+
+
+<section class="hero" style="margin-top:14px">
+  <div class="big">
+    <div class="lead"><span class="l-en">Prevailing narrative — current best place to allocate</span><span class="l-zh">主导叙事 — 当前最佳配置去向</span></div>
+    <div class="name"><span class="l-en">AI Infrastructure</span><span class="l-zh">AI 基础设施</span></div>
+    <div class="wt"><span class="l-en">Suggested weight</span><span class="l-zh">建议权重</span> <b>24%</b>
+      · <span class="l-en">cash</span><span class="l-zh">现金</span> 28%</div>
+    <div class="chips">
+      <span class="chip "><span class="l-en">durability</span><span class="l-zh">持续性</span> 60/100</span>
+      <span class="chip"><span class="l-en">trend regime</span><span class="l-zh">趋势状态</span>: <span class="l-en">mixed</span><span class="l-zh">混合</span></span>
+      
+      
+    </div>
+    <p class="tagline" style="margin-top:10px"><span class="l-en">Read</span><span class="l-zh">解读</span>: <span class="l-en"><b>AI Infrastructure</b> leads the themes (durability firm); leadership is broad (12/15 themes in uptrend); suggested cash 28%.</span><span class="l-zh"><b>AI 基础设施</b> 领跑主题（持续性中）；领跑面 广泛（12/15 个主题处于上行趋势）；建议现金 28%。</span></p>
+  </div>
+  <div class="gauge">
+    <div class="gz"><div class="k"><span class="l-en">Themes in uptrend</span><span class="l-zh">上行趋势主题</span></div><div class="v">12/15</div></div>
+    <div class="gz"><div class="k"><span class="l-en">Suggested cash</span><span class="l-zh">建议现金</span></div><div class="v">28%</div></div>
+    <div class="gz"><div class="k"><span class="l-en">One-narrative gauge</span><span class="l-zh">单一叙事度</span></div><div class="v">38%</div></div>
+  </div>
+</section>
+
+
+
+
+
+
+<!-- ============ 01 SUGGESTED ALLOCATION ============ -->
+<h2><span class="idx">01</span><span class="l-en">Suggested allocation</span><span class="l-zh">建议配置</span></h2>
+<p class="sub">Equal-weight the top-4 themes above their own 200d trend (the validated dual-momentum book); idle slots sit in T-bills; crowded themes are trimmed toward cash; capped at 30%/theme.</p>
+<div class="panel">
+  <div class="alloc">
+    
+    <div class="arow">
+      <span class="nm">#1 <span class="l-en">AI Infrastructure</span><span class="l-zh">AI 基础设施</span>
+        </span>
+      <span class="bar"><span class="fill" style="width:69.1%"></span></span>
+      <span class="wv">24%</span>
+    </div>
+    
+    <div class="arow">
+      <span class="nm">#2 <span class="l-en">Travel &amp; Experiences</span><span class="l-zh">旅行与体验</span>
+        </span>
+      <span class="bar"><span class="fill" style="width:55.7%"></span></span>
+      <span class="wv">20%</span>
+    </div>
+    
+    <div class="arow">
+      <span class="nm">#3 <span class="l-en">Managed Care &amp; Insurers</span><span class="l-zh">管理式医疗与保险</span>
+        <span class="chip hot" style="margin-left:4px"><span class="l-en">crowded</span><span class="l-zh">拥挤</span></span></span>
+      <span class="bar"><span class="fill" style="width:35.7%"></span></span>
+      <span class="wv">12%</span>
+    </div>
+    
+    <div class="arow">
+      <span class="nm">#4 <span class="l-en">Regional Banks</span><span class="l-zh">区域银行</span>
+        </span>
+      <span class="bar"><span class="fill" style="width:44.6%"></span></span>
+      <span class="wv">16%</span>
+    </div>
+    
+    <div class="arow cash">
+      <span class="nm"><span class="l-en">Cash / T-bills</span><span class="l-zh">现金 / 短债</span></span>
+      <span class="bar"><span class="fill" style="width:80.3%"></span></span>
+      <span class="wv">28%</span>
+    </div>
+  </div>
+  <p class="tagline" style="margin-top:10px"><span class="l-en">Equal-weight by design — the momentum rank has ~0 forward information coefficient on the clean universe, so we ride the trending leaders without betting conviction on the exact order. Crowded themes are trimmed toward cash (a sizing caution, never a sell or a short).</span><span class="l-zh">刻意采用等权 — 在干净样本上动量排名的前瞻信息系数约为0，因此我们持有处于趋势中的领跑者，但不对其精确排序押注信心。拥挤主题被向现金削减（仅为仓位审慎，绝非卖出或做空）。</span></p>
+</div>
+
+<!-- ============ 02 NARRATIVE LIFECYCLE BOARD ============ -->
+<h2><span class="idx">02</span><span class="l-en">Narrative lifecycle board</span><span class="l-zh">叙事生命周期看板</span>
+  <span class="chip"><span class="l-en">rank = focus lens, not a forecast</span><span class="l-zh">排名=关注透镜，非预测</span></span></h2>
+<p class="sub"><span class="l-en">Every theme ranked by ensemble momentum (residual + raw + acceleration), with its trend-eligibility gate, durability, and crowding texture. Durability CONFIRMS a trend (it lags ~half a window) — it does not forecast the handoff.</span><span class="l-zh">所有主题按集成动量（残差+原始+加速度）排名，并附趋势准入门、持续性与拥挤纹理。持续性是对趋势的&#34;确认&#34;（滞后约半个窗口）— 并不预测交接。</span></p>
+<div class="panel"><div class="ts">
+<table>
+  <thead><tr>
+    <th><span class="l-en">Theme</span><span class="l-zh">主题</span></th>
+    <th class="num"><span class="l-en">Score</span><span class="l-zh">评分</span></th>
+    <th><span class="l-en">Trend</span><span class="l-zh">趋势</span></th>
+    <th class="num" title="durability bar"><span class="l-en">Durability</span><span class="l-zh">持续性</span></th>
+    <th class="num" title="own-history regime"><span class="l-en">Hurst</span><span class="l-zh">赫斯特</span></th>
+    <th class="num" title="% members above 50d MA"><span class="l-en">Breadth</span><span class="l-zh">广度</span></th>
+    <th class="num"><span class="l-en">Crowding</span><span class="l-zh">拥挤度</span></th>
+  </tr></thead>
+  <tbody>
+  
+  
+  <tr class="">
+    <td><b><span class="l-en">AI Infrastructure</span><span class="l-zh">AI 基础设施</span></b>
+      <span class="stage lead"><span class="l-en">LEADER</span><span class="l-zh">领跑</span></span>
+      <div class="legrow">AI &amp; Technology · 14 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
+    <td class="num"><b>2.38</b></td>
+    <td><span class="stage" style="color:var(--up)">▲ <span class="l-en">in trend</span><span class="l-zh">趋势内</span></span></td>
+    <td class="num"><span class="dbar"><i style="width:60%"></i></span> 60</td>
+    <td class="num">0.48<span class="muted sm"> ~</span></td>
+    <td class="num">50%</td>
+    <td class="num"><span class="muted">+0.06σ</span></td>
+  </tr>
+  
+  
+  <tr class="">
+    <td><b><span class="l-en">Travel &amp; Experiences</span><span class="l-zh">旅行与体验</span></b>
+      
+      <div class="legrow">Consumer Cyclical · 14 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
+    <td class="num"><b>0.84</b></td>
+    <td><span class="stage" style="color:var(--up)">▲ <span class="l-en">in trend</span><span class="l-zh">趋势内</span></span></td>
+    <td class="num"><span class="dbar"><i style="width:71%"></i></span> 71</td>
+    <td class="num">0.49<span class="muted sm"> ~</span></td>
+    <td class="num">93%</td>
+    <td class="num"><span class="muted">+0.44σ</span></td>
+  </tr>
+  
+  
+  <tr class="">
+    <td><b><span class="l-en">Managed Care &amp; Insurers</span><span class="l-zh">管理式医疗与保险</span></b>
+      
+      <div class="legrow">Healthcare · 6 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
+    <td class="num"><b>0.71</b></td>
+    <td><span class="stage" style="color:var(--up)">▲ <span class="l-en">in trend</span><span class="l-zh">趋势内</span></span></td>
+    <td class="num"><span class="dbar"><i style="width:82%"></i></span> 82</td>
+    <td class="num">0.6<span class="muted sm"> ↗</span></td>
+    <td class="num">100%</td>
+    <td class="num"><span class="neg">+1.77σ</span> <span class="chip hot" style="margin:0"><span class="l-en">hot</span><span class="l-zh">热</span></span></td>
+  </tr>
+  
+  
+  <tr class="">
+    <td><b><span class="l-en">Regional Banks</span><span class="l-zh">区域银行</span></b>
+      
+      <div class="legrow">Financials · 8 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
+    <td class="num"><b>0.43</b></td>
+    <td><span class="stage" style="color:var(--up)">▲ <span class="l-en">in trend</span><span class="l-zh">趋势内</span></span></td>
+    <td class="num"><span class="dbar"><i style="width:71%"></i></span> 71</td>
+    <td class="num">0.476<span class="muted sm"> ~</span></td>
+    <td class="num">88%</td>
+    <td class="num"><span class="muted">+0.75σ</span></td>
+  </tr>
+  
+  
+  <tr class="">
+    <td><b><span class="l-en">Reshoring &amp; Industrial Capex</span><span class="l-zh">回流与工业资本开支</span></b>
+      
+      <div class="legrow">Industrials &amp; Defense · 9 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
+    <td class="num"><b>0.25</b></td>
+    <td><span class="stage" style="color:var(--up)">▲ <span class="l-en">in trend</span><span class="l-zh">趋势内</span></span></td>
+    <td class="num"><span class="dbar"><i style="width:75%"></i></span> 75</td>
+    <td class="num">0.52<span class="muted sm"> ~</span></td>
+    <td class="num">100%</td>
+    <td class="num"><span class="neg">+1.11σ</span> <span class="chip hot" style="margin:0"><span class="l-en">hot</span><span class="l-zh">热</span></span></td>
+  </tr>
+  
+  
+  <tr class="">
+    <td><b><span class="l-en">Retail</span><span class="l-zh">零售</span></b>
+      
+      <div class="legrow">Consumer Cyclical · 10 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
+    <td class="num"><b>-0.07</b></td>
+    <td><span class="stage" style="color:var(--up)">▲ <span class="l-en">in trend</span><span class="l-zh">趋势内</span></span></td>
+    <td class="num"><span class="dbar"><i style="width:63%"></i></span> 63</td>
+    <td class="num">0.455<span class="muted sm"> ~</span></td>
+    <td class="num">70%</td>
+    <td class="num"><span class="muted">-0.16σ</span></td>
+  </tr>
+  
+  
+  <tr class="">
+    <td><b><span class="l-en">Crypto &amp; Digital Assets</span><span class="l-zh">加密与数字资产</span></b>
+      
+      <div class="legrow">Crypto &amp; Digital Assets · 8 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
+    <td class="num"><b>-0.23</b></td>
+    <td><span class="stage" style="color:var(--up)">▲ <span class="l-en">in trend</span><span class="l-zh">趋势内</span></span></td>
+    <td class="num"><span class="dbar"><i style="width:68%"></i></span> 68</td>
+    <td class="num">0.586<span class="muted sm"> ↗</span></td>
+    <td class="num">50%</td>
+    <td class="num"><span class="muted">-0.55σ</span></td>
+  </tr>
+  
+  
+  <tr class="">
+    <td><b><span class="l-en">Power &amp; Grid Buildout</span><span class="l-zh">电力与电网</span></b>
+      
+      <div class="legrow">Energy &amp; Power · 15 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
+    <td class="num"><b>-0.36</b></td>
+    <td><span class="stage" style="color:var(--up)">▲ <span class="l-en">in trend</span><span class="l-zh">趋势内</span></span></td>
+    <td class="num"><span class="dbar"><i style="width:49%"></i></span> 49</td>
+    <td class="num">0.489<span class="muted sm"> ~</span></td>
+    <td class="num">27%</td>
+    <td class="num"><span class="muted">-0.9σ</span></td>
+  </tr>
+  
+  
+  <tr class="inelig">
+    <td><b><span class="l-en">Housing Chain</span><span class="l-zh">住房产业链</span></b>
+      
+      <div class="legrow">Consumer Cyclical · 9 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
+    <td class="num"><b>-0.48</b></td>
+    <td><span class="stage" style="color:var(--muted)">▽ <span class="l-en">off trend</span><span class="l-zh">趋势外</span></span></td>
+    <td class="num"><span class="dbar"><i style="width:44%"></i></span> 44</td>
+    <td class="num">0.547<span class="muted sm"> ~</span></td>
+    <td class="num">78%</td>
+    <td class="num"><span class="muted">-0.31σ</span></td>
+  </tr>
+  
+  
+  <tr class="">
+    <td><b><span class="l-en">Defense &amp; Aerospace</span><span class="l-zh">国防与航空航天</span></b>
+      
+      <div class="legrow">Industrials &amp; Defense · 12 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
+    <td class="num"><b>-0.53</b></td>
+    <td><span class="stage" style="color:var(--up)">▲ <span class="l-en">in trend</span><span class="l-zh">趋势内</span></span></td>
+    <td class="num"><span class="dbar"><i style="width:61%"></i></span> 61</td>
+    <td class="num">0.493<span class="muted sm"> ~</span></td>
+    <td class="num">58%</td>
+    <td class="num"><span class="muted">+0.3σ</span></td>
+  </tr>
+  
+  
+  <tr class="inelig">
+    <td><b><span class="l-en">AI Software &amp; Platforms</span><span class="l-zh">AI 软件与平台</span></b>
+      
+      <div class="legrow">AI &amp; Technology · 9 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
+    <td class="num"><b>-0.63</b></td>
+    <td><span class="stage" style="color:var(--muted)">▽ <span class="l-en">off trend</span><span class="l-zh">趋势外</span></span></td>
+    <td class="num"><span class="dbar"><i style="width:34%"></i></span> 34</td>
+    <td class="num">0.574<span class="muted sm"> ↗</span></td>
+    <td class="num">44%</td>
+    <td class="num"><span class="muted">-0.17σ</span></td>
+  </tr>
+  
+  
+  <tr class="">
+    <td><b><span class="l-en">Magnificent Seven</span><span class="l-zh">七巨头</span></b>
+      
+      <div class="legrow">AI &amp; Technology · 7 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
+    <td class="num"><b>-0.65</b></td>
+    <td><span class="stage" style="color:var(--up)">▲ <span class="l-en">in trend</span><span class="l-zh">趋势内</span></span></td>
+    <td class="num"><span class="dbar"><i style="width:67%"></i></span> 67</td>
+    <td class="num">0.657<span class="muted sm"> ↗</span></td>
+    <td class="num">57%</td>
+    <td class="num"><span class="muted">-0.32σ</span></td>
+  </tr>
+  
+  
+  <tr class="">
+    <td><b><span class="l-en">Defensives</span><span class="l-zh">防御板块</span></b>
+      
+      <div class="legrow">Consumer Defensive · 11 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
+    <td class="num"><b>-0.82</b></td>
+    <td><span class="stage" style="color:var(--up)">▲ <span class="l-en">in trend</span><span class="l-zh">趋势内</span></span></td>
+    <td class="num"><span class="dbar"><i style="width:62%"></i></span> 62</td>
+    <td class="num">0.531<span class="muted sm"> ~</span></td>
+    <td class="num">64%</td>
+    <td class="num"><span class="muted">+0.71σ</span></td>
+  </tr>
+  
+  
+  <tr class="">
+    <td><b><span class="l-en">US Energy Complex</span><span class="l-zh">美国能源综合</span></b>
+      
+      <div class="legrow">Energy &amp; Power · 11 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
+    <td class="num"><b>-0.93</b></td>
+    <td><span class="stage" style="color:var(--up)">▲ <span class="l-en">in trend</span><span class="l-zh">趋势内</span></span></td>
+    <td class="num"><span class="dbar"><i style="width:64%"></i></span> 64</td>
+    <td class="num">0.642<span class="muted sm"> ↗</span></td>
+    <td class="num">27%</td>
+    <td class="num"><span class="muted">+0.78σ</span></td>
+  </tr>
+  
+  
+  <tr class="inelig">
+    <td><b><span class="l-en">Payments &amp; Fintech</span><span class="l-zh">支付与金融科技</span></b>
+      
+      <div class="legrow">Financials · 9 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
+    <td class="num"><b>-1.28</b></td>
+    <td><span class="stage" style="color:var(--muted)">▽ <span class="l-en">off trend</span><span class="l-zh">趋势外</span></span></td>
+    <td class="num"><span class="dbar"><i style="width:29%"></i></span> 29</td>
+    <td class="num">0.446<span class="muted sm"> ↺</span></td>
+    <td class="num">44%</td>
+    <td class="num"><span class="muted">-1.17σ</span></td>
+  </tr>
+  
+  </tbody>
+</table>
+</div></div>
+
+<!-- ============ 03 ROTATION RADAR ============ -->
+
+<h2><span class="idx">03</span><span class="l-en">Rotation radar</span><span class="l-zh">轮动雷达</span> <span class="chip"><span class="l-en">display-only</span><span class="l-zh">仅展示</span></span></h2>
+<p class="sub"><span class="l-en">Leadership now, and how broad it is. A handoff is only flagged when CONFIRMED (a challenger overtakes with margin) — the engine never predicts the next narrative (rotation-timing has no validated edge, even with foresight).</span><span class="l-zh">当前领跑及其广度。仅在&#34;确认&#34;后才提示交接（挑战者带优势超越）— 引擎从不预测下一叙事（即便有先知，轮动择时也无可验证优势）。</span></p>
+<div class="panel">
+  <div class="kpis">
+    <div><div class="k"><span class="l-en">Leader</span><span class="l-zh">领跑</span></div><div class="v"><span class="l-en">AI Infrastructure</span><span class="l-zh">AI 基础设施</span></div></div>
+    <div><div class="k"><span class="l-en">Challenger</span><span class="l-zh">挑战者</span></div><div class="v" style="font-size:15px;color:var(--muted)"><span class="l-en">Travel &amp; Experiences</span><span class="l-zh">旅行与体验</span></div></div>
+    <div><div class="k"><span class="l-en">Lead margin</span><span class="l-zh">领先优势</span></div><div class="v">1.542</div></div>
+    <div><div class="k"><span class="l-en">Breadth of rotation</span><span class="l-zh">轮动广度</span></div><div class="v">12/15
+      <span class="chip" style="vertical-align:middle"><span class="l-en">broad</span><span class="l-zh">广泛</span></span></div></div>
+  </div>
+  <p class="tagline"><span class="l-en">Broadening leadership = a healthy, durable trend regime. Narrowing leadership (a few names carrying it) = late-cycle fragility — the engine raises cash as fewer themes trend.</span><span class="l-zh">领跑面扩散=健康、可持续的趋势环境。领跑面收窄（少数名字支撑）=周期后段的脆弱性 — 趋势主题越少，引擎现金越高。</span></p>
+</div>
+
+<!-- ============ 04 THE WORKHORSE BACKTEST (honest) ============ -->
+
+
+<h2><span class="idx">04</span><span class="l-en">What is actually validated — 27-year sector backtest</span><span class="l-zh">真正验证过的 — 27年行业回测</span></h2>
+<p class="sub"><span class="l-en">The theme baskets are only ~3 years old and hindsight-curated, so they cannot validate anything. The ALGORITHM, however, runs on 27 years of clean SPDR sectors through the dot-com bust, GFC and 2022. The verdict below is what survives.</span><span class="l-zh">主题篮子仅约3年且为事后整理，无法验证任何东西。但该&#34;算法&#34;可在27年干净的SPDR行业上运行 — 穿越互联网泡沫、金融危机与2022年。下方结论即为存活下来的部分。</span>
+  <span class="muted">(1998-12-31 → 2026-06-30)</span></p>
+<div class="panel">
+  <div class="ts"><table>
+    <thead><tr><th><span class="l-en">Strategy</span><span class="l-zh">策略</span></th><th class="num">CAGR</th><th class="num">Sharpe</th><th class="num"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></th><th class="num" title="avg return in the worst-decile down months"><span class="l-en">Crash months</span><span class="l-zh">崩盘月</span></th><th class="num" title="deflated Sharpe — survives multiple testing if >=0.90">DSR</th></tr></thead>
+    <tbody>
+    
+    
+    <tr style="background:rgba(90,167,255,.07)">
+      <td><b><span class="l-en">Dual-momentum book (this engine)</span><span class="l-zh">双动量组合（本引擎）</span></b></td>
+      <td class="num">7.3%</td>
+      <td class="num">0.67</td>
+      <td class="num neg">-24.1%</td>
+      <td class="num neg">-4.2%</td>
+      <td class="num"><b class="pos">0.958</b></td>
+    </tr>
+    
+    
+    <tr>
+      <td><span class="l-en">Relative-momentum only</span><span class="l-zh">仅相对动量</span></td>
+      <td class="num">9.1%</td>
+      <td class="num">0.66</td>
+      <td class="num neg">-41.4%</td>
+      <td class="num neg">-6.6%</td>
+      <td class="num"><b class="pos">0.95</b></td>
+    </tr>
+    
+    
+    <tr>
+      <td><span class="l-en">Equal-weight buy &amp; hold</span><span class="l-zh">等权买入持有</span></td>
+      <td class="num">8.9%</td>
+      <td class="num">0.66</td>
+      <td class="num neg">-49.1%</td>
+      <td class="num neg">-7.2%</td>
+      <td class="num"><b class="pos">0.954</b></td>
+    </tr>
+    
+    </tbody>
+  </table></div>
+  
+  <p class="tagline" style="margin-top:10px"><b><span class="l-en">The validated edge is risk control, not alpha.</span><span class="l-zh">验证过的优势是风险控制，而非阿尔法。</span></b>
+    <span class="l-en">Above vs below the trend gate, forward return is statistically identical, but Sharpe is</span><span class="l-zh">在趋势门上方 vs 下方，前瞻收益在统计上一致，但夏普为</span>
+    <b>0.65</b> <span class="l-en">vs</span><span class="l-zh">对</span> <b>0.38</b>
+    <span class="l-en">and the bad-month tail is</span><span class="l-zh">且坏月尾部为</span> <b>-6.7%</b> <span class="l-en">vs</span><span class="l-zh">对</span> <b>-12.0%</b>.
+    <span class="l-en">Cross-sectional rank-IC is ≈0 (momentum ranks where to look, the trend gate decides whether to be in at all).</span><span class="l-zh">横截面 rank-IC≈0（动量决定&#34;看哪里&#34;，趋势门决定&#34;是否在场&#34;）。</span></p>
+  
+  
+  <div class="verdict">
+    
+    <div class="vcard"><b><span class="l-en">Momentum rank</span><span class="l-zh">动量排名</span></b><br><span class="muted">modest_or_none — cross-sectional rank-IC weak/insignificant on the clean sector universe; an attention/focus lens, not alpha.</span></div>
+    
+    <div class="vcard"><b><span class="l-en">Trend gate</span><span class="l-zh">趋势门</span></b><br><span class="muted">validated_risk_control — no mean-return edge but materially lower volatility &amp; shallower drawdown/tail; the staying-power leg.</span></div>
+    
+    <div class="vcard"><b><span class="l-en">Basket crowding</span><span class="l-zh">篮子拥挤</span></b><br><span class="muted">no_basket_drawdown_edge — extension predicts per-NAME crashes, not diversified basket drawdown; keep as constituent texture only.</span></div>
+    
+    <div class="vcard"><b><span class="l-en">Rotation timing</span><span class="l-zh">轮动择时</span></b><br><span class="muted">display_only — no validated early-handoff forecast (cf. group_flow).</span></div>
+    
+  </div>
+  
+</div>
+
+
+<!-- ============ 05 AI DESK HANDOFF ============ -->
+
+<h2><span class="idx">05</span><span class="l-en">AI desk — what the inference layer may and may not conclude</span><span class="l-zh">AI 桌 — 推断层可与不可下的结论</span></h2>
+<p class="sub"><span class="l-en">This page is the quant DETECTION layer. It hands a structured, falsifiability-bounded contract to the AI judge so the narrative read stays honest — the AI focuses analysis, it does not invent edge.</span><span class="l-zh">本页是量化&#34;探测&#34;层。它向 AI 裁判交付一份带可证伪边界的结构化契约，使叙事解读保持诚实 — AI 用于聚焦分析，而非凭空制造优势。</span></p>
+<div class="panel">
+  <p style="font-size:13px;margin:0 0 6px"><b><span class="l-en">Verdict</span><span class="l-zh">结论</span>:</b> discipline_not_prediction</p>
+  <p class="tagline" style="margin-top:0">This ranks where thematic LEADERSHIP and FLOW are concentrating and suggests a trend-following, vol-aware allocation. The ONE validated edge (27y sectors) is DRAWDOWN/shake-out avoidance via the absolute-trend gate — NOT return forecasting. Momentum rank ≈ a focus lens (rank-IC ~0 on clean sectors). Use to size &amp; de-risk, then judge narrative durability yourself.</p>
+  <div style="margin-top:8px;font-size:12.5px"><b><span class="l-en">The AI is FORBIDDEN to conclude</span><span class="l-zh">AI 被禁止得出的结论</span>:</b>
+  <ul class="dnc"><li>Do NOT read the momentum rank as a return forecast or a buy list.</li><li>Do NOT treat crowding/extension as a SELL, a SHORT, or a basket-drawdown timer (it has no basket-level forward edge; it only DOWN-SIZES).</li><li>Do NOT fade the dominant theme on a crowding flag — cap it, do not fade it (reflexivity; fading the leader is the documented failure mode).</li><li>Do NOT predict the NEXT narrative — only flag a CONFIRMED leadership handoff.</li><li>Do NOT treat thematic-ETF inflows or attention spikes as a BUY (they mark tops).</li></ul></div>
+  <p class="tagline" style="margin-top:8px"><b><span class="l-en">Directive</span><span class="l-zh">指令</span>:</b> Permitted: name the prevailing narrative, judge its durability from breadth/cohesion/trend-health, flag crowding as a sizing caution, and describe the one-narrative-vs-everything structure. Produce ONE falsifiable conditional lean with a check-by horizon. FORBIDDEN: directional certainty, fade calls, next-theme prediction, or letting any of this feed a score.</p>
+</div>
+
+<footer>
+  <span class="l-en">Read-only analytics for informational purposes only — NOT investment advice and NOT a buy/sell list. The thematic baskets are equal-weight, point-in-time dated-membership trackers over the free S&amp;P-1500 cache (~3y), curated with knowledge of the period — so they are HINDSIGHT-descriptive, not an out-of-sample backtest. The allocation ALGORITHM is validated on 27 years of SPDR sectors, where its only repeatable edge is drawdown/shake-out control via the absolute-trend gate; cross-sectional momentum has ~0 forward rank-IC and basket-level crowding has no forward drawdown edge (it only sizes down). Durability, crowding and rotation are coincident, display-only context — none of them feeds any score. See LIMITATIONS.md and scripts/thematic_rotation_phase0.py.</span><span class="l-zh">仅供参考的只读分析 — 非投资建议，也非买卖清单。主题篮子为等权、按时点日期管理成分、基于免费标普1500缓存（约3年），且在已知该期表现下整理 — 故为事后描述性序列，并非样本外回测。该配置&#34;算法&#34;在27年SPDR行业上验证，其唯一可重复的优势是通过绝对趋势门控制回撤/被甩出；横截面动量前瞻rank-IC约为0，篮子层面拥挤无前瞻回撤优势（仅用于降仓）。持续性、拥挤与轮动均为同步的、仅展示的背景 — 都不进入任何评分。参见 LIMITATIONS.md 与 scripts/thematic_rotation_phase0.py。</span>
+  <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-16 08:19 UTC.
+</footer>
+<script src="theme.js"></script>
+</body>
+</html>
