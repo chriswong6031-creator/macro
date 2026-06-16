@@ -1,0 +1,530 @@
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><span class="l-en">International Economies</span><span class="l-zh">国际经济体</span> — 2026-06-16</title>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system, "Segoe UI", Roboto, Helvetica, sans-serif; margin: 0; padding: 18px; }
+  @media (min-width: 1100px) { body { padding: 24px max(36px, calc((100vw - 1560px) / 2)); } }
+  html[data-lang="zh"] body { font-family: "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",-apple-system,sans-serif; }
+  a { text-decoration: none; color: var(--link); }
+  h1 { font-size: 21px; margin: 0 0 2px; } h3 { font-size: 13px; margin: 0 0 8px; }
+  h2 { font-size: 13px; margin: 0 0 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 11px; padding: 15px 17px; margin-bottom: 14px; }
+  .muted { color: var(--muted); } .small { font-size: 12px; } .stale { color: var(--muted); font-size: 10px; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .pos { color: var(--up); } .neg { color: var(--down); }
+  .chip { display:inline-block; padding:2px 8px; border-radius:8px; font-size:11px; font-weight:700; background:var(--panel2); border:1px solid var(--line); }
+  .chip.warn { background:color-mix(in srgb,var(--down) 14%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 36%,transparent); }
+  .chip.caut { background:color-mix(in srgb,#d4a017 16%,transparent); color:#d4a017; border-color:color-mix(in srgb,#d4a017 38%,transparent); }
+  .chip.ok { background:color-mix(in srgb,var(--up) 14%,transparent); color:var(--up); border-color:color-mix(in srgb,var(--up) 34%,transparent); }
+  /* quad chip */
+  .quad { display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:9px; font-weight:800; font-size:12px; color:#fff; }
+  .q-Q1 { background:#2e9e4f; } .q-Q2 { background:#d4a017; } .q-Q3 { background:#d04545; } .q-Q4 { background:#3f78d8; }
+  .qdot { width:9px;height:9px;border-radius:50%;display:inline-block; }
+  .qd-Q1{background:#2e9e4f}.qd-Q2{background:#d4a017}.qd-Q3{background:#d04545}.qd-Q4{background:#3f78d8}
+  /* comparison grid */
+  .gridwrap { overflow-x:auto; }
+  table.cmp { border-collapse:collapse; width:100%; font-size:12.5px; min-width:1080px; }
+  table.cmp th, table.cmp td { padding:7px 9px; border-bottom:1px solid var(--line); text-align:right; white-space:nowrap; }
+  table.cmp th { color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.03em; position:sticky; top:0; background:var(--panel); }
+  table.cmp td.l, table.cmp th.l { text-align:left; }
+  table.cmp td.eco { position:sticky; left:0; background:var(--panel); font-weight:700; z-index:2; }
+  table.cmp th.eco { position:sticky; left:0; z-index:3; }
+  table.cmp tr:hover td { background:var(--panel2); }
+  table.cmp td.eco:hover, table.cmp tr:hover td.eco { background:var(--panel2); }
+  .grp { border-left:2px solid var(--line); }
+  .flg { font-size:16px; margin-right:5px; }
+  /* gauge bar */
+  .gbar { display:inline-block; width:64px; height:7px; border-radius:5px; background:var(--panel2); border:1px solid var(--line); overflow:hidden; vertical-align:middle; margin-right:6px; }
+  .gfill { display:block; height:100%; }
+  .g-low{background:var(--up)}.g-watch{background:#d4a017}.g-elevated{background:var(--down)}.g-na{background:var(--muted)}
+  /* heatmap scatter */
+  .scatter { position:relative; height:300px; border:1px solid var(--line); border-radius:10px; margin-top:8px; background:
+     linear-gradient(to right, color-mix(in srgb,#3f78d8 7%,transparent), transparent 50%, color-mix(in srgb,#d4a017 7%,transparent)),
+     linear-gradient(to top, color-mix(in srgb,#3f78d8 6%,transparent), transparent 50%, color-mix(in srgb,#2e9e4f 6%,transparent)); }
+  .scatter .axx, .scatter .axy { position:absolute; background:var(--line); }
+  .scatter .axx { left:0; right:0; top:50%; height:1px; } .scatter .axy { top:0; bottom:0; left:50%; width:1px; }
+  .scatter .ql { position:absolute; font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+  .scatter .pt { position:absolute; transform:translate(-50%,-50%); text-align:center; }
+  .scatter .pt .e { font-size:22px; line-height:1; } .scatter .pt .n { font-size:9px; color:var(--muted); }
+  /* rank bars */
+  .ranks { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; }
+  .rb { font-size:12px; padding:3px 0; display:flex; align-items:center; gap:7px; }
+  .rb .bar { flex:1; height:8px; border-radius:5px; background:var(--panel2); overflow:hidden; }
+  .rb .bf { display:block; height:100%; background:var(--link); }
+  .rb .v { width:58px; text-align:right; font-variant-numeric:tabular-nums; }
+  /* stock + sector cards */
+  .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:11px; }
+  .card { background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:11px 13px; }
+  .card .hd { display:flex; align-items:center; gap:7px; } .card .hd .tk { font-weight:800; }
+  .lad { display:inline-block; padding:2px 8px; border-radius:9px; font-weight:700; font-size:11px;
+         background:color-mix(in srgb, var(--c, var(--muted)) 16%, var(--panel)); color:color-mix(in srgb, var(--c, var(--muted)) 82%, var(--text)); }
+  .lad.up { --c:var(--up); } .lad.down { --c:var(--down); } .lad.flat { --c:var(--muted); }
+  table.sb { border-collapse:collapse; width:100%; font-size:12.5px; }
+  table.sb th, table.sb td { padding:5px 9px; border-bottom:1px solid var(--line); text-align:right; }
+  table.sb td.l, table.sb th.l { text-align:left; } table.sb th { color:var(--muted); font-weight:600; }
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:4px; }
+  .help .tip { display:none; position:absolute; bottom:150%; left:50%; transform:translateX(-50%); width:280px; background:var(--panel); border:1px solid var(--line); padding:10px 12px; border-radius:9px; z-index:60; font-size:12px; line-height:1.5; color:var(--text); text-align:left; font-weight:400; text-transform:none; letter-spacing:normal; box-shadow:var(--popover-shadow); pointer-events:none; }
+  .help:hover .tip { display:block; }
+  .caveat { font-size:11.5px; color:var(--muted); font-style:italic; }
+  .more-btn { display:inline-block; margin-top:10px; padding:5px 14px; border-radius:9px; background:var(--panel2); border:1px solid var(--line); color:var(--link); font-weight:600; font-size:12px; cursor:pointer; }
+  .hidden { display:none; }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 <span class="l-en">Home</span><span class="l-zh">首页</span></a>
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span></a>
+        <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span></a>
+        <a href="spvector.html">📐 <span class="l-en">Allocation Strategy</span><span class="l-zh">配置策略</span></a>
+        <a href="ipo.html">🆕 <span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></a>
+        <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span></a>
+        <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span></a>
+        <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span></a>
+        <a href="china_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span></a>
+        <a href="allocation_china.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="hk.html">🇭🇰 <span class="l-en">Hong Kong</span><span class="l-zh">香港</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="hk.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span></a>
+        <a href="hk_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="canada.html">🇨🇦 <span class="l-en">Canada</span><span class="l-zh">加拿大</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="canada.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span></a>
+        <a href="canada_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link active" href="intl.html">🌍 <span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a class="active" href="intl.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        <a class="" href="intl_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Cross-market standouts · sectors</span><span class="l-zh">跨市场精选 · 板块</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
+        <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span></a>
+    <a class="nav-link" href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span></a>
+  </div>
+  <div class="nav-search" data-lib="intlstockdata/index.json" data-target="intl_stock.html">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search international stocks"
+      placeholder="Search any JP / KR / TW / UK / EU stock…" data-ph-zh="搜索任意 日／韩／台／英／欧 个股…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <button data-lang="en">EN</button><button data-lang="zh">中文</button>
+    </div>
+  </div>
+</nav>
+
+<div class="panel">
+  <div class="row">
+    
+    <h1>🌍 <span class="l-en">International Economies</span><span class="l-zh">国际经济体</span></h1>
+    
+    <span style="flex:1"></span>
+    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-06-16 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-06-16 19:36 UTC</span>
+  </div>
+  
+  <p class="muted small" style="margin:6px 0 0"><span class="l-en">A side-by-side health check on five major economies outside the US/China bloc. Regime, recession & equity-risk reads are descriptive and history-anchored (display-only, never a scored buy/sell). Macro is keyless (FRED OECD + ECB); some CPI prints lag and Taiwan is data-limited — shown honestly with as-of dates.</span><span class="l-zh">对美中之外五大经济体的并排健康检查。周期、衰退与股市风险读数均为描述性、以历史锚定（仅供展示，不构成买卖评分）。宏观数据无需密钥（FRED OECD + ECB）；部分 CPI 数据滞后，台湾数据受限 — 均如实标注截至日期。</span>
+    <a href="intl_stocks.html" style="color:var(--link);font-weight:600">→ <span class="l-en">Stock dashboard</span><span class="l-zh">股票看板</span></a></p>
+  
+</div>
+
+
+
+<!-- ===== Global hero ===== -->
+<div class="panel">
+  <div class="row" style="gap:22px">
+    <div>
+      <h2 style="margin-bottom:4px"><span class="l-en">Global read</span><span class="l-zh">全局读数</span></h2>
+      <div style="font-size:18px;font-weight:800"><span class="l-en">Dominant regime</span><span class="l-zh">主导周期</span>: <span class="l-en">Reflation</span><span class="l-zh">再通胀</span></div>
+    </div>
+    <span style="flex:1"></span>
+    <div><div class="muted small"><span class="l-en">Economies</span><span class="l-zh">经济体</span></div><b style="font-size:20px">5</b></div>
+    <div><div class="muted small"><span class="l-en">Recession-watch</span><span class="l-zh">衰退观察</span></div><b style="font-size:20px" class="">0</b></div>
+    <div><div class="muted small"><span class="l-en">Equity drawdown-watch</span><span class="l-zh">股市回撤观察</span></div><b style="font-size:20px" class="">0</b></div>
+    <div><div class="muted small"><span class="l-en">Avg recession score</span><span class="l-zh">平均衰退分</span></div><b style="font-size:20px">6</b></div>
+  </div>
+</div>
+
+<!-- ===== Comparison grid (centerpiece) ===== -->
+<div class="panel">
+  <h2><span class="l-en">Cross-country comparison</span><span class="l-zh">跨国对比</span> <span class="help">?<span class="tip"><span class="l-en">Every economy on the same axes. Regime = growth×inflation quad (with confidence). Recession & drawdown-risk are 0-100 history-anchored display gauges. Real yield = 10y − latest CPI. CPI/GDP/unemployment show the latest official print with its as-of month (greyed when stale — FRED OECD series are discontinued for several economies).</span><span class="l-zh">所有经济体使用相同坐标轴。周期 = 增长×通胀象限（含置信度）。衰退与回撤风险为 0-100 历史锚定展示型刻度。实际收益 = 10年 − 最新 CPI。CPI/GDP/失业率显示最新官方数据及截至月份（滞后则置灰 — 多国 FRED OECD 序列已停更）。</span></span></span></h2>
+  <div class="gridwrap">
+  <table class="cmp">
+    <thead><tr>
+      <th class="l eco"><span class="l-en">Economy</span><span class="l-zh">经济体</span></th>
+      <th class="l"><span class="l-en">Regime</span><span class="l-zh">周期</span></th>
+      <th class="grp"><span class="l-en">Recession</span><span class="l-zh">衰退</span></th>
+      <th class="grp"><span class="l-en">Policy</span><span class="l-zh">政策利率</span></th>
+      <th><span class="l-en">10y</span><span class="l-zh">10年</span></th>
+      <th><span class="l-en">Curve</span><span class="l-zh">曲线</span></th>
+      <th><span class="l-en">Real 10y</span><span class="l-zh">实际10年</span></th>
+      <th class="grp"><span class="l-en">CPI</span><span class="l-zh">CPI</span></th>
+      <th><span class="l-en">GDP</span><span class="l-zh">GDP</span></th>
+      <th><span class="l-en">Unemp</span><span class="l-zh">失业</span></th>
+      <th class="grp"><span class="l-en">FX 3m</span><span class="l-zh">汇率3月</span></th>
+      <th><span class="l-en">Off high</span><span class="l-zh">距高点</span></th>
+      <th><span class="l-en">DD risk</span><span class="l-zh">回撤风险</span></th>
+      <th class="l"><span class="l-en">Equity stretch</span><span class="l-zh">股市拉伸</span></th>
+    </tr></thead>
+    <tbody>
+    
+        
+      <tr>
+        <td class="l eco"><span class="flg">🇯🇵</span><span class="l-en">Japan</span><span class="l-zh">日本</span></td>
+        <td class="l"><span class="quad q-Q2"><span class="l-en">Reflation</span><span class="l-zh">再通胀</span></span> <span class="muted small">0.61</span></td>
+        <td class="grp"><span class="gbar"><span class="gfill g-low" style="width:1.0%"></span></span>1</td>
+        <td class="grp">1.24%</td>
+        <td>2.65%</td>
+        <td class="">1.41</td>
+        <td>0.56</td>
+        <td class="grp">-0.5%<span class="stale"> 2021-06</span></td>
+        <td>0.3%</td>
+        <td>2.5%</td>
+        <td class="grp neg">-0.7%</td>
+        <td class="">0.0%</td>
+        <td><span class="gbar"><span class="gfill g-low" style="width:15.0%"></span></span>15</td>
+        <td class="l"><span class="chip caut"><span class="l-en">stretched</span><span class="l-zh">拉伸</span></span></td>
+      </tr>
+    
+        
+      <tr>
+        <td class="l eco"><span class="flg">🇰🇷</span><span class="l-en">South Korea</span><span class="l-zh">韩国</span></td>
+        <td class="l"><span class="quad q-Q2"><span class="l-en">Reflation</span><span class="l-zh">再通胀</span></span> <span class="muted small">0.30</span></td>
+        <td class="grp"><span class="gbar"><span class="gfill g-low" style="width:7.0%"></span></span>7</td>
+        <td class="grp">2.82%</td>
+        <td>4.08%</td>
+        <td class="">1.26</td>
+        <td>0.09</td>
+        <td class="grp">3.3%<span class="stale"> 2023-11</span></td>
+        <td>3.8%</td>
+        <td>2.8%</td>
+        <td class="grp neg">-1.7%</td>
+        <td class="">-2.9%</td>
+        <td><span class="gbar"><span class="gfill g-low" style="width:26.0%"></span></span>26</td>
+        <td class="l"><span class="chip warn"><span class="l-en">parabolic</span><span class="l-zh">抛物</span></span></td>
+      </tr>
+    
+        
+      <tr>
+        <td class="l eco"><span class="flg">🇹🇼</span><span class="l-en">Taiwan</span><span class="l-zh">台湾</span> <span class="chip caut" title="thin keyless macro"><span class="l-en">data-limited</span><span class="l-zh">数据有限</span></span></td>
+        <td class="l"><span class="quad q-Q1"><span class="l-en">Goldilocks</span><span class="l-zh">理想增长</span></span> <span class="muted small">0.50</span></td>
+        <td class="grp"><span class="gbar"><span class="gfill g-low" style="width:9.0%"></span></span>9</td>
+        <td class="grp"><span class="muted">—</span></td>
+        <td><span class="muted">—</span></td>
+        <td class=""><span class="muted">—</span></td>
+        <td><span class="muted">—</span></td>
+        <td class="grp"><span class="muted">—</span></td>
+        <td><span class="muted">—</span></td>
+        <td><span class="muted">—</span></td>
+        <td class="grp pos">0.8%</td>
+        <td class="">-2.3%</td>
+        <td><span class="gbar"><span class="gfill g-low" style="width:20.0%"></span></span>20</td>
+        <td class="l"><span class="chip caut"><span class="l-en">stretched</span><span class="l-zh">拉伸</span></span></td>
+      </tr>
+    
+        
+      <tr>
+        <td class="l eco"><span class="flg">🇬🇧</span><span class="l-en">United Kingdom</span><span class="l-zh">英国</span></td>
+        <td class="l"><span class="quad q-Q2"><span class="l-en">Reflation</span><span class="l-zh">再通胀</span></span> <span class="muted small">0.35</span></td>
+        <td class="grp"><span class="gbar"><span class="gfill g-low" style="width:15.0%"></span></span>15</td>
+        <td class="grp">3.71%</td>
+        <td>4.94%</td>
+        <td class="">1.23</td>
+        <td>1.12</td>
+        <td class="grp">3.4%<span class="stale"> 2025-03</span></td>
+        <td>1.1%</td>
+        <td>4.9%</td>
+        <td class="grp pos">1.2%</td>
+        <td class="">-3.8%</td>
+        <td><span class="gbar"><span class="gfill g-low" style="width:8.0%"></span></span>8</td>
+        <td class="l"><span class="muted small"><span class="l-en">normal</span><span class="l-zh">正常</span></span></td>
+      </tr>
+    
+        
+      <tr>
+        <td class="l eco"><span class="flg">🇪🇺</span><span class="l-en">Eurozone</span><span class="l-zh">欧元区</span></td>
+        <td class="l"><span class="quad q-Q2"><span class="l-en">Reflation</span><span class="l-zh">再通胀</span></span> <span class="muted small">0.38</span></td>
+        <td class="grp"><span class="gbar"><span class="gfill g-low" style="width:0%"></span></span>0</td>
+        <td class="grp">2.00%</td>
+        <td>3.22%</td>
+        <td class="">1.19</td>
+        <td>0.22</td>
+        <td class="grp">3.0%<span class="stale"> 2026-04</span></td>
+        <td>0.3%</td>
+        <td>6.7%</td>
+        <td class="grp pos">1.3%</td>
+        <td class="">0.0%</td>
+        <td><span class="gbar"><span class="gfill g-low" style="width:0%"></span></span>0</td>
+        <td class="l"><span class="muted small"><span class="l-en">normal</span><span class="l-zh">正常</span></span></td>
+      </tr>
+    
+    </tbody>
+  </table>
+  </div>
+  <p class="caveat" style="margin-top:9px"><span class="l-en">Display-only / descriptive — no per-country forward backtest is claimed and nothing here feeds a scored signal. No keyless implied-vol exists for these markets, so equity stretch uses own-history extension (in-trend / stretched / parabolic).</span><span class="l-zh">仅供展示 / 描述性 — 不作任何分国前瞻回测主张，亦不构成评分信号。这些市场无免密钥隐含波动率，故股市拉伸采用自身历史的扩张度（趋势内／拉伸／抛物）。</span></p>
+</div>
+
+<!-- ===== Regime heatmap (growth × inflation) ===== -->
+<div class="panel">
+  <h2><span class="l-en">Regime map — growth × inflation</span><span class="l-zh">周期图 — 增长 × 通胀</span></h2>
+  <div class="scatter">
+    <div class="axx"></div><div class="axy"></div>
+    <div class="ql" style="left:6px;top:6px">↖ <span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></div>
+    <div class="ql" style="right:6px;top:6px"><span class="l-en">Reflation</span><span class="l-zh">再通胀</span> ↗</div>
+    <div class="ql" style="left:6px;bottom:6px">↙ <span class="l-en">Growth-scare</span><span class="l-zh">增长恐慌</span></div>
+    <div class="ql" style="right:6px;bottom:6px"><span class="l-en">Goldilocks</span><span class="l-zh">金发女孩</span> ↘</div>
+    
+      
+      
+      <div class="pt" style="left:85.7%;top:75.0%" title="Japan: g=0.714 i=-0.5">
+        <div class="e">🇯🇵</div><div class="n">JP</div>
+      </div>
+    
+      
+      
+      <div class="pt" style="left:57.1%;top:75.0%" title="South Korea: g=0.143 i=-0.5">
+        <div class="e">🇰🇷</div><div class="n">KR</div>
+      </div>
+    
+      
+      
+      <div class="pt" style="left:100.0%;top:100.0%" title="Taiwan: g=1.0 i=-1.0">
+        <div class="e">🇹🇼</div><div class="n">TW</div>
+      </div>
+    
+      
+      
+      <div class="pt" style="left:60.0%;top:75.0%" title="United Kingdom: g=0.2 i=-0.5">
+        <div class="e">🇬🇧</div><div class="n">GB</div>
+      </div>
+    
+      
+      
+      <div class="pt" style="left:80.0%;top:33.4%" title="Eurozone: g=0.6 i=0.333">
+        <div class="e">🇪🇺</div><div class="n">EZ</div>
+      </div>
+    
+  </div>
+  <p class="caveat" style="margin-top:8px"><span class="l-en">Horizontal = growth score, vertical = inflation score (−1…+1). Most economies cluster risk-on (growth positive); the inflation axis leans on each economy current CPI direction where fresh, plus oil and the long-yield trend.</span><span class="l-zh">横轴 = 增长得分，纵轴 = 通胀得分（−1…+1）。多数经济体聚集于风险偏好区（增长为正）；通胀轴在数据新鲜处采用各自当前 CPI 方向，并结合油价与长端收益趋势。</span></p>
+</div>
+
+<!-- ===== Rankings ===== -->
+<div class="panel">
+  <h2><span class="l-en">Where each economy ranks</span><span class="l-zh">各经济体排名</span></h2>
+  <div class="ranks">
+    
+      
+      
+      <div>
+        <h3><span class="l-en">Recession pressure</span><span class="l-zh">衰退压力</span></h3>
+        
+        
+        
+          <div class="rb"><span class="flg">🇬🇧</span><span style="width:54px" class="muted">GB</span>
+            <span class="bar"><span class="bf" style="width:100%;background:var(--down)"></span></span>
+            <span class="v">15.0</span></div>
+        
+          <div class="rb"><span class="flg">🇹🇼</span><span style="width:54px" class="muted">TW</span>
+            <span class="bar"><span class="bf" style="width:60%;background:var(--down)"></span></span>
+            <span class="v">9.0</span></div>
+        
+          <div class="rb"><span class="flg">🇰🇷</span><span style="width:54px" class="muted">KR</span>
+            <span class="bar"><span class="bf" style="width:47%;background:var(--down)"></span></span>
+            <span class="v">7.0</span></div>
+        
+          <div class="rb"><span class="flg">🇯🇵</span><span style="width:54px" class="muted">JP</span>
+            <span class="bar"><span class="bf" style="width:7%;background:var(--down)"></span></span>
+            <span class="v">1.0</span></div>
+        
+          <div class="rb"><span class="flg">🇪🇺</span><span style="width:54px" class="muted">EZ</span>
+            <span class="bar"><span class="bf" style="width:0%;background:var(--down)"></span></span>
+            <span class="v">0.0</span></div>
+        
+      </div>
+      
+    
+      
+      
+      <div>
+        <h3><span class="l-en">Equity drawdown risk</span><span class="l-zh">股市回撤风险</span></h3>
+        
+        
+        
+          <div class="rb"><span class="flg">🇰🇷</span><span style="width:54px" class="muted">KR</span>
+            <span class="bar"><span class="bf" style="width:100%;background:var(--down)"></span></span>
+            <span class="v">26.0</span></div>
+        
+          <div class="rb"><span class="flg">🇹🇼</span><span style="width:54px" class="muted">TW</span>
+            <span class="bar"><span class="bf" style="width:77%;background:var(--down)"></span></span>
+            <span class="v">20.0</span></div>
+        
+          <div class="rb"><span class="flg">🇯🇵</span><span style="width:54px" class="muted">JP</span>
+            <span class="bar"><span class="bf" style="width:58%;background:var(--down)"></span></span>
+            <span class="v">15.0</span></div>
+        
+          <div class="rb"><span class="flg">🇬🇧</span><span style="width:54px" class="muted">GB</span>
+            <span class="bar"><span class="bf" style="width:31%;background:var(--down)"></span></span>
+            <span class="v">8.0</span></div>
+        
+          <div class="rb"><span class="flg">🇪🇺</span><span style="width:54px" class="muted">EZ</span>
+            <span class="bar"><span class="bf" style="width:0%;background:var(--down)"></span></span>
+            <span class="v">0.0</span></div>
+        
+      </div>
+      
+    
+      
+      
+      <div>
+        <h3><span class="l-en">Real 10y yield</span><span class="l-zh">实际10年收益</span></h3>
+        
+        
+        
+          <div class="rb"><span class="flg">🇰🇷</span><span style="width:54px" class="muted">KR</span>
+            <span class="bar"><span class="bf" style="width:8%;background:var(--up)"></span></span>
+            <span class="v">0.1</span></div>
+        
+          <div class="rb"><span class="flg">🇪🇺</span><span style="width:54px" class="muted">EZ</span>
+            <span class="bar"><span class="bf" style="width:20%;background:var(--up)"></span></span>
+            <span class="v">0.2</span></div>
+        
+          <div class="rb"><span class="flg">🇯🇵</span><span style="width:54px" class="muted">JP</span>
+            <span class="bar"><span class="bf" style="width:50%;background:var(--up)"></span></span>
+            <span class="v">0.6</span></div>
+        
+          <div class="rb"><span class="flg">🇬🇧</span><span style="width:54px" class="muted">GB</span>
+            <span class="bar"><span class="bf" style="width:100%;background:var(--up)"></span></span>
+            <span class="v">1.1</span></div>
+        
+      </div>
+      
+    
+      
+      
+      <div>
+        <h3><span class="l-en">10y yield</span><span class="l-zh">10年期收益</span></h3>
+        
+        
+        
+          <div class="rb"><span class="flg">🇯🇵</span><span style="width:54px" class="muted">JP</span>
+            <span class="bar"><span class="bf" style="width:54%;background:var(--up)"></span></span>
+            <span class="v">2.6</span></div>
+        
+          <div class="rb"><span class="flg">🇪🇺</span><span style="width:54px" class="muted">EZ</span>
+            <span class="bar"><span class="bf" style="width:65%;background:var(--up)"></span></span>
+            <span class="v">3.2</span></div>
+        
+          <div class="rb"><span class="flg">🇰🇷</span><span style="width:54px" class="muted">KR</span>
+            <span class="bar"><span class="bf" style="width:83%;background:var(--up)"></span></span>
+            <span class="v">4.1</span></div>
+        
+          <div class="rb"><span class="flg">🇬🇧</span><span style="width:54px" class="muted">GB</span>
+            <span class="bar"><span class="bf" style="width:100%;background:var(--up)"></span></span>
+            <span class="v">4.9</span></div>
+        
+      </div>
+      
+    
+  </div>
+</div>
+
+<!-- ===== Eurozone periphery ===== -->
+
+<div class="panel">
+  <h2>🇪🇺 <span class="l-en">Eurozone fragmentation — peripheral spreads over Bund</span><span class="l-zh">欧元区分化 — 外围国相对德债利差</span> <span class="help">?<span class="tip"><span class="l-en">Peripheral 10y yields minus the German Bund, in basis points. Widening = stress / fragmentation risk in the periphery; tightening = convergence. The classic Eurozone tail-risk gauge.</span><span class="l-zh">外围国 10 年期收益率减德国国债，单位基点。走阔 = 外围压力／分化风险；收窄 = 收敛。经典的欧元区尾部风险指标。</span></span></span></h2>
+  <table class="sb">
+    <thead><tr><th class="l"><span class="l-en">Spread</span><span class="l-zh">利差</span></th><th><span class="l-en">bps</span><span class="l-zh">基点</span></th><th><span class="l-en">3m change</span><span class="l-zh">3月变化</span></th><th class="l"><span class="l-en">Read</span><span class="l-zh">读数</span></th></tr></thead>
+    <tbody>
+    
+      <tr>
+        <td class="l"><span class="flg">🇮🇹</span>Italy (BTP)</td>
+        <td>77 bps</td>
+        <td class="pos">-26</td>
+        <td class="l"><span class="chip ok"><span class="l-en">tightening</span><span class="l-zh">收窄</span></span></td>
+      </tr>
+    
+      <tr>
+        <td class="l"><span class="flg">🇪🇸</span>Spain (Bonos)</td>
+        <td>44 bps</td>
+        <td class="pos">-24</td>
+        <td class="l"><span class="chip ok"><span class="l-en">tightening</span><span class="l-zh">收窄</span></span></td>
+      </tr>
+    
+      <tr>
+        <td class="l"><span class="flg">🇫🇷</span>France (OAT)</td>
+        <td>70 bps</td>
+        <td class="neg">+40</td>
+        <td class="l"><span class="chip caut"><span class="l-en">widening</span><span class="l-zh">走阔</span></span></td>
+      </tr>
+    
+    </tbody>
+  </table>
+  <p class="caveat" style="margin-top:7px"><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-05-01 · <span class="l-en">display-only context</span><span class="l-zh">仅供参考的背景</span></p>
+</div>
+
+
+<!-- ===== Honesty footer ===== -->
+<div class="panel">
+  <h2><span class="l-en">Method & honest limits</span><span class="l-zh">方法与诚实声明</span></h2>
+  <ul class="small muted" style="margin:0;padding-left:18px;line-height:1.7">
+    <li><span class="l-en">All keyless: equity indices & FX via Yahoo; macro via FRED OECD/ECB CSV; the stock universe via iShares UCITS holdings files.</span><span class="l-zh">全部免密钥：股指与汇率来自 Yahoo；宏观来自 FRED OECD/ECB CSV；个股范围来自 iShares UCITS 持仓文件。</span></li>
+    <li><span class="l-en">Regime / recession / drawdown / bubble reads are descriptive and history-anchored — no forward edge is claimed and none drives a scored buy/sell.</span><span class="l-zh">周期／衰退／回撤／泡沫读数均为描述性且以历史锚定 — 不主张前瞻优势，且不驱动评分买卖。</span></li>
+    <li><span class="l-en">CPI: FRED OECD series are discontinued for Japan (2021) and lag for the UK/Korea — shown with as-of dates and dropped from scoring when stale. Eurozone uses current Eurostat HICP.</span><span class="l-zh">CPI：日本（2021 年）FRED OECD 序列已停更，英国／韩国滞后 — 标注截至日期并在过时时退出评分。欧元区采用当前 Eurostat HICP。</span></li>
+    <li><span class="l-en">Taiwan has the thinnest keyless macro coverage (no yields/CPI on FRED) — flagged data-limited; its read leans on the equity tape.</span><span class="l-zh">台湾的免密钥宏观覆盖最薄（FRED 无收益率/CPI）— 标注数据有限；其读数依赖股市行情。</span></li>
+    <li><span class="l-en">No keyless implied-vol (VSTOXX / Nikkei-VI / VKOSPI) is available, so equity risk uses realised vol + own-history extension.</span><span class="l-zh">无免密钥隐含波动率（VSTOXX / 日经VI / VKOSPI），故股市风险采用已实现波动率 + 自身历史扩张度。</span></li>
+  </ul>
+</div>
+
+
+
+<script>
+document.querySelectorAll('.more-btn[data-more]').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('.' + btn.dataset.more).forEach(function(el){ el.classList.remove('hidden'); });
+    btn.style.display = 'none';
+  });
+});
+</script>
+<script src="theme.js"></script>
+<script src="tablesort.js"></script>
+</body>
+</html>

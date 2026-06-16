@@ -42,5 +42,21 @@
     }
   ],
   "magnitude_band": null,
-  "veto": null
+  "veto": {
+    "schema": "regime_snap_veto.v1",
+    "is_context_only": true,
+    "lean": "fragile",
+    "confidence": "medium",
+    "checks": {
+      "catalyst": "Driven by an oil price shock (WTI -1.8\u03c3) with no signed deal, policy shift, or hard data surprise; easily reversed by an OPEC headline or demand data.",
+      "premium": "Fear built moderate (0.504), only 3 of 7 legs flipped; a meaningful portion of the fear premium remains, though the initial crack has begun.",
+      "washout": "Capitulation was recently detected (cap_recent true), providing some washout foundation, but it does not override the catalyst\u2019s low structurality.",
+      "follow_through": "Cross-asset relief (VIX, HY OAS, VIX term) rests on a disinflation narrative that could quickly flip into a recession scare; likely to fade if oil stabilizes or recession fears intensify."
+    },
+    "read": "The snap is built on a volatile oil price move, not a structural change; oil\u2019s collapse can be easily reversed, making relief fragile. Underlying fear washed out, but the catalyst lacks durability, so a dead-cat bounce risk is elevated.",
+    "model": "deepseek-v4-pro",
+    "generated_at": "2026-06-16T19:23:05.232234+00:00",
+    "degraded_reason": null,
+    "disclaimer": "AI durability read \u2014 context only, never scored or sized. The snap detector is coincident; this is a fallible judgement on whether the relief is structural or a dead-cat, not a trade recommendation."
+  }
 }

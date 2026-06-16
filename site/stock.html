@@ -176,6 +176,10 @@
   .cv-cau { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
   .cv-cau .ccau { font-size:11px; font-weight:700; padding:1px 7px; border-radius:7px;
                   color:var(--warn); background:color-mix(in srgb,var(--warn) 13%,var(--panel)); }
+  .cv-basis { display:flex; flex-wrap:wrap; gap:5px; align-items:center; margin-top:9px; }
+  .cv-blab { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .cv-bchip { font-size:11px; font-weight:700; padding:1px 7px; border-radius:7px;
+              border:1px solid var(--line); font-variant-numeric:tabular-nums; }
   .cv-note { font-size:11px; color:var(--muted); margin-top:8px; line-height:1.5; }
   .cvchip { font-weight:800; font-variant-numeric:tabular-nums; padding:0 6px; border-radius:7px;
             border:1px solid var(--line); }
@@ -994,11 +998,24 @@
     }).join('');
     var cau = (c.cautions || []).map(function (x) {
       return '<span class="ccau">⚠ ' + esc(x) + '</span>'; }).join('');
+    // EDGE basis — which legs are firing + how strong, each tagged validated / literature /
+    // context / screen, so a user (and the AI layer) sees WHY the edge score is what it is.
+    var TIER_C = { validated: 'var(--up)', literature: 'var(--g-cold)',
+                   context: 'var(--muted)', screen: 'var(--warn)' };
+    var bl = (c.axes && c.axes.selection && c.axes.selection.basis) || [];
+    var basis = bl.map(function (b) {
+      var col = TIER_C[b.tier] || 'var(--muted)';
+      return '<span class="cv-bchip" style="color:' + col + ';border-color:color-mix(in srgb,' +
+        col + ' 35%,var(--line))" title="' + esc(b.tier) + '">' + esc(lz(b.label, b.label_zh)) +
+        ' ' + (b.z >= 0 ? '+' : '') + b.z + '</span>';
+    }).join('');
     box.innerHTML =
       '<div class="cv-head">' +
         (c.score != null ? '<span class="cv-score band-' + c.band + '">' + c.score + '</span>' : '') +
         '<div class="cv-vtext"><div class="cv-verdict">' + esc(lz(c.verdict, c.verdict_zh)) + '</div>' +
         '<div class="cv-tier">' + esc(lz(tt.en, tt.zh)) + '</div></div></div>' +
+      (basis ? '<div class="cv-basis"><span class="cv-blab">' + lz('edge basis', '优势构成') +
+        '</span>' + basis + '</div>' : '') +
       '<div class="cv-axes">' + ax + '</div>' +
       (cau ? '<div class="cv-cau">' + cau + '</div>' : '') +
       '<div class="cv-note">' + lz(
@@ -1491,7 +1508,7 @@
 </script>
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
-<p class="muted" style="font-size:12px">Generated 2026-06-16 17:01 UTC · charts by TradingView ·
+<p class="muted" style="font-size:12px">Generated 2026-06-16 19:20 UTC · charts by TradingView ·
 methodology &amp; caveats: see any sector page footer.</p>
 <footer class="site-footer">
   <span class="made">Made with ❤️ in Canada</span>
