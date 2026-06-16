@@ -97,6 +97,7 @@ def _cfg() -> dict:
         "max_theses": 3,
         "default_horizon_d": 20,
         "falsifier_defaults": {"rel_return": 0.05},   # ±5% rel move = the wrong-way threshold
+        "panel": {"enabled": True},                   # Phase B: adversarial analyst panel
     }
     try:
         v = config.load().get("ai_desk", {}) or {}
@@ -359,6 +360,111 @@ def _source_verdicts(state: dict) -> dict:
     return out
 
 
+# --------------------------------------------------------------------------- #
+# STAGE 1b — the adversarial PANEL (Phase B). Four independent analysts argue the
+# SAME bundle from distinct mandates; a DESK-HEAD adjudicator collapses them into the
+# final theses, preserving the skeptic's objection as dissent and gating conviction
+# on disagreement. The adjudicator emits the SAME schema as the single analyst, so
+# the falsifier / ledger / scorer downstream are untouched. Falls back to the single
+# analyst if the panel is disabled or unavailable.
+# --------------------------------------------------------------------------- #
+_PANEL_CAVEAT = (
+    "The detectors are TRUST-GRADED and DISPLAY-ONLY: the flow lens has NO validated "
+    "forward edge (rank-IC ~0 on the unbiased point-in-time sector universe) and the "
+    "relief snap is COINCIDENT. Reason ONLY over the provided JSON state; never "
+    "fabricate levels or events; honour flow.guardrails; never give a size or a trade. "
+    "Subjects must be sector names from flow.sectors (or \"VIX\" for a fear call). ")
+
+_PANEL_TAIL = (
+    "Return ONLY a JSON object (no fences): {\"stance\": \"<= 2 sentences, the read "
+    "from THIS lens only\", \"candidates\": [{\"subject\": \"<sector name or VIX>\", "
+    "\"lean\": \"overweight|underweight|avoid|fade-fear|none\", \"rationale\": \"<1 "
+    "sentence>\", \"strength\": \"weak|moderate|strong\"}], \"key_risk\": \"<the one "
+    "thing that would break this lens's read>\"}")
+
+_PANEL_SYSTEMS = {
+    "opportunity": (
+        "ROLE: OPPORTUNITY analyst on a markets desk. Argue the STRONGEST honest case "
+        "FOR a durable directional lean given where flow is concentrating and any "
+        "relief snap. Be specific about which leg supports each idea. " + _PANEL_CAVEAT
+        + _PANEL_TAIL),
+    "skeptic": (
+        "ROLE: SKEPTIC analyst. Your job is to FALSIFY, not to balance. For each "
+        "apparent opportunity argue why it is a TRAP: already priced-in, coincident not "
+        "predictive, a survivorship artifact, narrow / single-name (not a theme), or "
+        "mean-reverting. Name the candidates you would FADE. " + _PANEL_CAVEAT
+        + _PANEL_TAIL),
+    "base_rate": (
+        "ROLE: BASE-RATE analyst. Ignore the narrative. Ask what this SETUP "
+        "unconditionally resolves to and anchor on base rates, not the story. "
+        "EXPLICITLY weigh that the flow lens is display-only (rank-IC ~0) and the snap "
+        "is coincident — so the prior on any edge is weak. " + _PANEL_CAVEAT
+        + _PANEL_TAIL),
+    "structural": (
+        "ROLE: STRUCTURAL analyst. Read ONLY the cross-group cluster map and leadership "
+        "breadth. Distinguish genuine co-movement (a supply-chain / theme spread) from a "
+        "narrow, high-HHI single-name mirage; say which group actually leads. "
+        + _PANEL_CAVEAT + _PANEL_TAIL),
+}
+
+_ADJ_SYSTEM = (
+    "ROLE: DESK HEAD adjudicator. Four independent analysts (opportunity, skeptic, "
+    "base-rate, structural) have argued over the SAME trust-graded detector state; "
+    "their JSON stances are given alongside the raw state. Synthesize the FINAL set of "
+    "accountable, FALSIFIABLE directional leans for a solo top-down trader.\n\n"
+    "Rules:\n"
+    "- Keep a lean ONLY if it survives the SKEPTIC. Put the skeptic's strongest "
+    "objection to that specific lean in `dissent` — do not soften it.\n"
+    "- Calibrate conviction DOWN on disagreement: when analysts conflict, when the "
+    "base-rate analyst flags ~0 IC / display-only, or when the move is narrow / "
+    "single-name. Reserve \"high\" for genuine multi-analyst agreement (it should be "
+    "rare). Default \"low\".\n"
+    "- If a track_record is present, calibrate to it (past high-conviction misses → "
+    "lean lower).\n"
+    "- In `evidence`, cite which analyst and which detector leg supports each lean. "
+    "Honour flow.guardrails. NEVER a position size, weight, or trade.\n"
+    "- Prefer sector or VIX subjects (machine-checkable). Omit theses rather than pad "
+    "— honesty over content.\n\n"
+    + _SCHEMA_TAIL)
+
+
+def _run_panel(state: dict, cfg: dict, call=None) -> dict:
+    """Run the four analysts over the same bundle (in parallel). Returns
+    {key: stance_dict|None}; never raises."""
+    fn = call or _mb._call_model
+    user = _build_user(state)
+
+    def _one(key):
+        try:
+            reply, _ = fn(_PANEL_SYSTEMS[key], user, cfg)
+            if reply is None:
+                return key, None
+            parsed = _extract_json(reply)
+            return key, (parsed if isinstance(parsed, dict) else None)
+        except Exception:  # noqa: BLE001 — one analyst failing must not sink the panel
+            return key, None
+
+    keys = list(_PANEL_SYSTEMS)
+    try:
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=len(keys)) as ex:
+            results = list(ex.map(_one, keys))
+    except Exception:  # noqa: BLE001 — fall back to sequential if threads unavailable
+        results = [_one(k) for k in keys]
+    return dict(results)
+
+
+def _adjudicate(state: dict, panel: dict, cfg: dict, call=None):
+    """DESK-HEAD synthesis over the panel + raw state → (reply_text, degraded_reason)."""
+    fn = call or _mb._call_model
+    payload = {"detector_state": state,
+               "analyst_panel": {k: v for k, v in panel.items() if v}}
+    user = ("The detector state and the four analysts' stances (JSON). Adjudicate into "
+            "the FINAL falsifiable leans per your instructions.\n<input>\n"
+            + json.dumps(payload, indent=2, default=str) + "\n</input>")
+    return fn(_ADJ_SYSTEM, user, cfg)
+
+
 def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
     """Run the analyst over a gathered state. Always returns a brief record (degraded
     fields flagged); never raises. `call` is injectable (defaults to
@@ -375,7 +481,16 @@ def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
         "confidence": "low",
         "raw_text": None, "degraded_reason": None, "disclaimer": DISCLAIMER,
     }
-    reply, reason = (call or _mb._call_model)(_SYSTEM, _build_user(state), cfg)
+    panel_on = bool((cfg.get("panel") or {}).get("enabled", True))
+    if panel_on:
+        panel = _run_panel(state, cfg, call)
+        brief["panel"] = {k: v for k, v in panel.items() if v}     # transparency for the page
+        if any(panel.values()):
+            reply, reason = _adjudicate(state, panel, cfg, call)   # desk-head synthesis
+        else:                                                      # whole panel unavailable
+            reply, reason = (call or _mb._call_model)(_SYSTEM, _build_user(state), cfg)
+    else:
+        reply, reason = (call or _mb._call_model)(_SYSTEM, _build_user(state), cfg)
     brief["raw_text"] = reply
     if reply is None:
         brief["degraded_reason"] = reason

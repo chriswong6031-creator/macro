@@ -269,6 +269,11 @@ jobs:
         # briefs (master/china/btc) as toggle tabs. Pure render — order-independent;
         # resilient (returns 0). Replaces the retired deterministic daily_brief.
         run: python -m scripts.build_aibrief
+      - name: AI Desk page (build_ai_desk_page)
+        # static page (site/ai_desk.html) surfacing the accountable analyst desk
+        # (site/ai_desk.json: falsifiable leans + dissent + falsifier + track record +
+        # the analyst panel). Pure render — order-independent; resilient (returns 0).
+        run: python -m scripts.build_ai_desk_page
       - name: rebuild stock-search libraries (resilient — guarantees the analyzers ship)
         # build_china/build_hk render their dashboards but SWALLOW errors (return 0),
         # so a failure there silently 404s the per-stock search. This rebuilds the

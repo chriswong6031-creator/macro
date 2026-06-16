@@ -1,0 +1,166 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>AI Desk — {{ as_of }}</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,
+         "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1100px)/2)); } }
+  a { text-decoration:none; }
+  h1 { font-size:20px; margin:0; }
+  h2 { font-size:15px; margin:0 0 8px; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+           padding:14px 16px; margin-bottom:14px; }
+  .muted { color:var(--muted); }
+  .sm { font-size:13px; }
+  .mono { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; }
+  /* thesis cards */
+  .thesis { border:1px solid var(--line); border-radius:9px; padding:12px 14px; margin:10px 0;
+            background:var(--bg); }
+  .thesis-head { display:flex; flex-wrap:wrap; align-items:center; gap:9px; margin-bottom:6px; }
+  .thesis-subj { font-weight:700; font-size:15px; }
+  .chip { border-radius:999px; padding:3px 10px; font:600 12px/1 inherit; border:1px solid var(--line); }
+  .chip.ow { background:rgba(34,160,90,.14); color:#1f9d57; border-color:rgba(34,160,90,.4); }
+  .chip.uw, .chip.avoid { background:rgba(210,70,70,.14); color:#cf4b4b; border-color:rgba(210,70,70,.4); }
+  .chip.fade { background:rgba(70,120,210,.14); color:#3f72d6; border-color:rgba(70,120,210,.4); }
+  .chip.conv { background:var(--grid); color:var(--muted); }
+  .thesis .body { margin:6px 0; }
+  .thesis .row { margin:6px 0; }
+  .thesis .k { font-weight:600; color:var(--link); margin-right:4px; }
+  .thesis .dissent { background:rgba(210,140,40,.10); border-left:3px solid rgba(210,140,40,.6);
+                     padding:6px 10px; border-radius:0 6px 6px 0; margin:6px 0; }
+  .thesis .fals { background:var(--grid); border-radius:6px; padding:7px 10px; margin:6px 0; }
+  ul.ev { margin:4px 0 0 18px; padding:0; } ul.ev li { margin:2px 0; }
+  /* track-record badge */
+  .tr-grid { display:flex; flex-wrap:wrap; gap:10px; margin:8px 0 0; }
+  .tr-cell { border:1px solid var(--line); border-radius:8px; padding:8px 12px; min-width:96px; }
+  .tr-cell .v { font-size:18px; font-weight:700; } .tr-cell .l { font-size:11px; color:var(--muted); }
+  /* panel accordion */
+  details.panel-acc { margin:8px 0 0; }
+  details.panel-acc > summary { cursor:pointer; font-weight:600; color:var(--link); }
+  .stance { border:1px solid var(--line); border-radius:8px; padding:9px 11px; margin:8px 0; }
+  .stance .role { font-weight:700; text-transform:capitalize; }
+  .stance .risk { color:var(--muted); font-size:12px; margin-top:4px; }
+  .out-hit { color:#1f9d57; font-weight:700; } .out-miss { color:#cf4b4b; font-weight:700; }
+  .out-open { color:var(--muted); }
+  table.rec { width:100%; border-collapse:collapse; font-size:12.5px; margin-top:6px; }
+  table.rec th, table.rec td { text-align:left; padding:5px 8px; border-bottom:1px solid var(--line); }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 {{ t('United States', '美国') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('Regime · growth · inflation · nowcast', '周期 · 增长 · 通胀 · 即时预测') }}</span></a>
+        <a href="us_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Standouts · sectors · flows', '精选 · 板块 · 资金') }}</span></a>
+        <a href="spvector.html">📐 {{ t('Allocation Strategy', '配置策略') }}<span class="d">{{ t('Tactical equity↔cash', '战术股票↔现金') }}</span></a>
+        <a href="baskets.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P', '等权主题篮子 vs 标普') }}</span></a>
+        <a href="alerts.html">🚨 {{ t('Alert Center', '警报中心') }}<span class="d">{{ t('Ranked & triaged alerts', '分级分诊的警报') }}</span></a>
+        <a href="gex.html">🧲 {{ t('Options Magnets', '期权磁吸') }}<span class="d">{{ t('Dealer-gamma GEX levels', '做市商Gamma GEX价位') }}</span></a>
+        <a href="etfs.html">🐳 {{ t('ETF Flows', 'ETF资金流') }}<span class="d">{{ t('Fund flow monitor', '资金流监控') }}</span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="china.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('A-share regime · sectors · flows', 'A股周期 · 板块 · 资金') }}</span></a>
+        <a href="china_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Standouts · alpha · setups', '精选 · 阿尔法 · 布局') }}</span></a>
+        <a href="china_lookup.html">🔍 {{ t('Stock Lookup', '股票查询') }}<span class="d">{{ t('Search any A-share', '查询任意A股') }}</span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="hk.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('HSI · southbound · global risk', 'HSI · 南向 · 全球风险') }}</span></a>
+        <a href="hk_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('HK-listed standouts · alpha', 'HK上市精选 · 阿尔法') }}</span></a>
+        <a href="hk_lookup.html">🔍 {{ t('Stock Lookup', '股票查询') }}<span class="d">{{ t('Search any HK stock', '查询任意港股') }}</span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="canada.html">🇨🇦 {{ t('Canada', '加拿大') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="canada.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('TSX · BoC · commodity overlay', 'TSX · 加央行 · 商品叠加') }}</span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="vector.html">📊 {{ t('Overview', '总览') }}<span class="d">{{ t('Market state · risk · momentum', '市场状态 · 风险 · 动量') }}</span></a>
+        <a href="vector_allocation.html">◎ {{ t('Allocation Strategy', '仓位策略') }}<span class="d">{{ t('BTC · ETH · alts · cash', 'BTC · ETH · 山寨 · 现金') }}</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }}</a>
+    <a class="nav-link" href="forex.html">💱 {{ t('Forex', '外汇') }}</a>
+    <a class="nav-link" href="bonds.html">🏛️ {{ t('Bonds', '债券') }}</a>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">🔬 {{ t('Research', '研究') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="ai_desk.html">🖥️ {{ t('AI Desk', 'AI交易台') }}<span class="d">{{ t('Falsifiable leans + track record', '可证伪倾向 + 战绩') }}</span></a>
+        <a href="crossasset.html">🧭 {{ t('Cross-Asset', '跨资产') }}<span class="d">{{ t('Correlations · trend · global liquidity', '相关性 · 趋势 · 全球流动性') }}</span></a>
+        <a href="signal_lab.html">🔬 {{ t('Signal Lab', '信号实验室') }}<span class="d">{{ t('Consolidated validation scorecard', '验证记分卡汇总') }}</span></a>
+        <a href="factors.html">🧮 {{ t('Factors & Seasonality', '因子 & 季节性') }}<span class="d">{{ t('Value · quality · low-vol · monthly calendar', '价值 · 质量 · 低波动 · 月历') }}</span></a>
+        <a href="validation_timeline.html">🧪 {{ t('Validation Timeline', '验证时间线') }}<span class="d">{{ t('Full 2007→ walk-forward backtest', '2007→ 完整滚动回测') }}</span></a>
+      </div>
+    </div>
+  </div>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="aibrief.html">🧠 {{ t('AI Daily Brief', 'AI每日简报') }}</a>
+    <a class="ai-brief-link active" href="ai_desk.html">🖥️ {{ t('AI Desk', 'AI交易台') }}</a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+<div class="panel">
+  <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px">
+    <h1>🖥️ {{ t('AI Desk', 'AI交易台') }}</h1>
+    <span class="muted">{{ t('accountable, falsifiable leans on the trust-graded detectors — graded over time', '在可信分级检测器之上的可问责、可证伪倾向 — 并持续打分') }}</span>
+  </div>
+  <p class="muted sm" style="margin:10px 0 0">{{ t(
+    'An AI analyst PANEL (opportunity / skeptic / base-rate / structural) reads the thematic-flow and relief-radar detectors, and a desk-head adjudicates a short set of directional leans. Each lean ships with the bear case (dissent) and a CONCRETE falsifier + check-by date, and is scored against realised prices so conviction is earned, not asserted. RESEARCH CONTEXT ONLY: a lean is a direction, never a position size or a trade — the detectors are display-only (the flow lens has no validated forward edge; the relief snap is coincident). Regenerated each day after the close.',
+    '一个 AI 分析师小组（机会派／怀疑派／基率派／结构派）研读主题资金流与避险雷达检测器，再由“交易台主管”裁决出一小组方向性倾向。每个倾向都附带反方观点（异议）与一个具体的证伪条件＋检验日期，并对照真实价格打分 — 信心由战绩赢得，而非自我宣称。仅供研究参考：倾向只是方向，绝非仓位或交易 — 检测器仅作展示（资金流无经验证的前瞻性，避险信号为同步指标）。每个交易日收盘后更新。') }}</p>
+</div>
+
+{# All content is client-fetched from ai_desk.json (written by engine/ai_desk.py) and
+   rendered by ai_desk.js — this page does no data work and is order-independent. #}
+<div id="desk-root" data-src="ai_desk.json">
+  <div class="panel muted sm">{{ t('Loading the AI desk note… it regenerates daily after the close.', '正在加载 AI 交易台笔记…每个交易日收盘后更新。') }}</div>
+</div>
+
+<div class="panel">
+  <p class="muted" style="font-size:12px;margin:0">{{ t('AI research context, not investment advice — leans are generated by an LLM and graded mechanically; they can be wrong. Nothing here feeds a score, signal, or allocation.', 'AI 研究背景，非投资建议 — 倾向由大模型生成并以机械方式打分，可能出错。此处内容不参与任何评分、信号或仓位。') }}
+    {% if as_of %} · {{ t('Page built', '页面生成于') }} {{ as_of }}{% endif %}</p>
+</div>
+
+<script src="theme.js"></script>
+<script src="ai_desk.js"></script>
+<footer class="site-footer">
+  <span class="made">Made with ❤️ in Canada</span>
+  <span class="dev">Developed by Chris Wong</span>
+</footer>
+</body>
+</html>

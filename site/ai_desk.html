@@ -1,0 +1,161 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>AI Desk — 2026-06-16 01:08 UTC</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,
+         "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1100px)/2)); } }
+  a { text-decoration:none; }
+  h1 { font-size:20px; margin:0; }
+  h2 { font-size:15px; margin:0 0 8px; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+           padding:14px 16px; margin-bottom:14px; }
+  .muted { color:var(--muted); }
+  .sm { font-size:13px; }
+  .mono { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; }
+  /* thesis cards */
+  .thesis { border:1px solid var(--line); border-radius:9px; padding:12px 14px; margin:10px 0;
+            background:var(--bg); }
+  .thesis-head { display:flex; flex-wrap:wrap; align-items:center; gap:9px; margin-bottom:6px; }
+  .thesis-subj { font-weight:700; font-size:15px; }
+  .chip { border-radius:999px; padding:3px 10px; font:600 12px/1 inherit; border:1px solid var(--line); }
+  .chip.ow { background:rgba(34,160,90,.14); color:#1f9d57; border-color:rgba(34,160,90,.4); }
+  .chip.uw, .chip.avoid { background:rgba(210,70,70,.14); color:#cf4b4b; border-color:rgba(210,70,70,.4); }
+  .chip.fade { background:rgba(70,120,210,.14); color:#3f72d6; border-color:rgba(70,120,210,.4); }
+  .chip.conv { background:var(--grid); color:var(--muted); }
+  .thesis .body { margin:6px 0; }
+  .thesis .row { margin:6px 0; }
+  .thesis .k { font-weight:600; color:var(--link); margin-right:4px; }
+  .thesis .dissent { background:rgba(210,140,40,.10); border-left:3px solid rgba(210,140,40,.6);
+                     padding:6px 10px; border-radius:0 6px 6px 0; margin:6px 0; }
+  .thesis .fals { background:var(--grid); border-radius:6px; padding:7px 10px; margin:6px 0; }
+  ul.ev { margin:4px 0 0 18px; padding:0; } ul.ev li { margin:2px 0; }
+  /* track-record badge */
+  .tr-grid { display:flex; flex-wrap:wrap; gap:10px; margin:8px 0 0; }
+  .tr-cell { border:1px solid var(--line); border-radius:8px; padding:8px 12px; min-width:96px; }
+  .tr-cell .v { font-size:18px; font-weight:700; } .tr-cell .l { font-size:11px; color:var(--muted); }
+  /* panel accordion */
+  details.panel-acc { margin:8px 0 0; }
+  details.panel-acc > summary { cursor:pointer; font-weight:600; color:var(--link); }
+  .stance { border:1px solid var(--line); border-radius:8px; padding:9px 11px; margin:8px 0; }
+  .stance .role { font-weight:700; text-transform:capitalize; }
+  .stance .risk { color:var(--muted); font-size:12px; margin-top:4px; }
+  .out-hit { color:#1f9d57; font-weight:700; } .out-miss { color:#cf4b4b; font-weight:700; }
+  .out-open { color:var(--muted); }
+  table.rec { width:100%; border-collapse:collapse; font-size:12.5px; margin-top:6px; }
+  table.rec th, table.rec td { text-align:left; padding:5px 8px; border-bottom:1px solid var(--line); }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 <span class="l-en">Home</span><span class="l-zh">首页</span></a>
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
+        <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <a href="spvector.html">📐 <span class="l-en">Allocation Strategy</span><span class="l-zh">配置策略</span><span class="d"><span class="l-en">Tactical equity↔cash</span><span class="l-zh">战术股票↔现金</span></span></a>
+        <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
+        <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
+        <a href="gex.html">🧲 <span class="l-en">Options Magnets</span><span class="l-zh">期权磁吸</span><span class="d"><span class="l-en">Dealer-gamma GEX levels</span><span class="l-zh">做市商Gamma GEX价位</span></span></a>
+        <a href="etfs.html">🐳 <span class="l-en">ETF Flows</span><span class="l-zh">ETF资金流</span><span class="d"><span class="l-en">Fund flow monitor</span><span class="l-zh">资金流监控</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
+        <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
+        <a href="china_lookup.html">🔍 <span class="l-en">Stock Lookup</span><span class="l-zh">股票查询</span><span class="d"><span class="l-en">Search any A-share</span><span class="l-zh">查询任意A股</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="hk.html">🇭🇰 <span class="l-en">Hong Kong</span><span class="l-zh">香港</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="hk.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">HSI · southbound · global risk</span><span class="l-zh">HSI · 南向 · 全球风险</span></span></a>
+        <a href="hk_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">HK-listed standouts · alpha</span><span class="l-zh">HK上市精选 · 阿尔法</span></span></a>
+        <a href="hk_lookup.html">🔍 <span class="l-en">Stock Lookup</span><span class="l-zh">股票查询</span><span class="d"><span class="l-en">Search any HK stock</span><span class="l-zh">查询任意港股</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="canada.html">🇨🇦 <span class="l-en">Canada</span><span class="l-zh">加拿大</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="canada.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">TSX · BoC · commodity overlay</span><span class="l-zh">TSX · 加央行 · 商品叠加</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
+        <a href="vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span></a>
+    <a class="nav-link" href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span></a>
+    <a class="nav-link" href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span></a>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="ai_desk.html">🖥️ <span class="l-en">AI Desk</span><span class="l-zh">AI交易台</span><span class="d"><span class="l-en">Falsifiable leans + track record</span><span class="l-zh">可证伪倾向 + 战绩</span></span></a>
+        <a href="crossasset.html">🧭 <span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></a>
+        <a href="signal_lab.html">🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></a>
+        <a href="factors.html">🧮 <span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></a>
+        <a href="validation_timeline.html">🧪 <span class="l-en">Validation Timeline</span><span class="l-zh">验证时间线</span><span class="d"><span class="l-en">Full 2007→ walk-forward backtest</span><span class="l-zh">2007→ 完整滚动回测</span></span></a>
+      </div>
+    </div>
+  </div>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="aibrief.html">🧠 <span class="l-en">AI Daily Brief</span><span class="l-zh">AI每日简报</span></a>
+    <a class="ai-brief-link active" href="ai_desk.html">🖥️ <span class="l-en">AI Desk</span><span class="l-zh">AI交易台</span></a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+<div class="panel">
+  <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px">
+    <h1>🖥️ <span class="l-en">AI Desk</span><span class="l-zh">AI交易台</span></h1>
+    <span class="muted"><span class="l-en">accountable, falsifiable leans on the trust-graded detectors — graded over time</span><span class="l-zh">在可信分级检测器之上的可问责、可证伪倾向 — 并持续打分</span></span>
+  </div>
+  <p class="muted sm" style="margin:10px 0 0"><span class="l-en">An AI analyst PANEL (opportunity / skeptic / base-rate / structural) reads the thematic-flow and relief-radar detectors, and a desk-head adjudicates a short set of directional leans. Each lean ships with the bear case (dissent) and a CONCRETE falsifier + check-by date, and is scored against realised prices so conviction is earned, not asserted. RESEARCH CONTEXT ONLY: a lean is a direction, never a position size or a trade — the detectors are display-only (the flow lens has no validated forward edge; the relief snap is coincident). Regenerated each day after the close.</span><span class="l-zh">一个 AI 分析师小组（机会派／怀疑派／基率派／结构派）研读主题资金流与避险雷达检测器，再由“交易台主管”裁决出一小组方向性倾向。每个倾向都附带反方观点（异议）与一个具体的证伪条件＋检验日期，并对照真实价格打分 — 信心由战绩赢得，而非自我宣称。仅供研究参考：倾向只是方向，绝非仓位或交易 — 检测器仅作展示（资金流无经验证的前瞻性，避险信号为同步指标）。每个交易日收盘后更新。</span></p>
+</div>
+
+
+<div id="desk-root" data-src="ai_desk.json">
+  <div class="panel muted sm"><span class="l-en">Loading the AI desk note… it regenerates daily after the close.</span><span class="l-zh">正在加载 AI 交易台笔记…每个交易日收盘后更新。</span></div>
+</div>
+
+<div class="panel">
+  <p class="muted" style="font-size:12px;margin:0"><span class="l-en">AI research context, not investment advice — leans are generated by an LLM and graded mechanically; they can be wrong. Nothing here feeds a score, signal, or allocation.</span><span class="l-zh">AI 研究背景，非投资建议 — 倾向由大模型生成并以机械方式打分，可能出错。此处内容不参与任何评分、信号或仓位。</span>
+     · <span class="l-en">Page built</span><span class="l-zh">页面生成于</span> 2026-06-16 01:08 UTC</p>
+</div>
+
+<script src="theme.js"></script>
+<script src="ai_desk.js"></script>
+<footer class="site-footer">
+  <span class="made">Made with ❤️ in Canada</span>
+  <span class="dev">Developed by Chris Wong</span>
+</footer>
+</body>
+</html>
