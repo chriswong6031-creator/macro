@@ -252,6 +252,23 @@ _REC_LEG_META = {
     "property": (1.2, "Property cycle", "地产周期"),
     "gdp": (1.0, "GDP trend", "GDP 趋势"),
 }
+# Phase-0 calibration (scripts/calibrate_china_conditions.py → reports/china-conditions-
+# calibration.md). The slowdown band edges are the 33rd/66th percentiles of the gauge's
+# OWN 2006-> distribution on SHCOMP, so "high" = top tercile vs China's own record (the
+# old 40/66 were arbitrary). _REC_FWD is the MEASURED forward conditional per band — and
+# it is flat/contrarian, the empirical proof the gauge has NO forward-drawdown edge
+# (A-shares mean-revert). Surfaced as honest context; the gauge stays display-only.
+_REC_BANDS = (26.0, 45.0)
+_REC_FWD = {  # median forward 3-month return / max-drawdown by band (SHCOMP 2006->2026)
+    "low":      {"fwd_ret_3m": 1.1, "fwd_maxdd_3m": -5.2},
+    "elevated": {"fwd_ret_3m": -0.8, "fwd_maxdd_3m": -5.7},
+    "high":     {"fwd_ret_3m": 1.9, "fwd_maxdd_3m": -4.5},
+}
+_CALIB_NOTE = ("calibrated vs 20y of forward A-share outcomes: NO forward-drawdown edge "
+               "(A-shares mean-revert — high readings are flat-to-contrarian); bands are "
+               "history-anchored percentiles. Descriptive context, never scored.")
+_CALIB_NOTE_ZH = ("已用20年A股前瞻数据校准：无前瞻回撤优势（A股均值回归 —— 高读数偏平/逆向）；"
+                  "区间为历史分位锚定。描述性背景，从不计入评分。")
 
 
 def _recession_legs(f: pd.DataFrame) -> dict:
@@ -328,7 +345,7 @@ def china_recession(f: pd.DataFrame) -> dict:
     score, legs = _recession_score_series(f)
     sc = score.dropna()
     if sc.empty:
-        return {"score": None, "label": None, "legs": [], "uncalibrated": True}
+        return {"score": None, "label": None, "legs": [], "uncalibrated": False, "calibrated": True}
     asof = sc.index[-1]
     num = sum(d["score"].fillna(0) * d["weight"] for d in legs.values())
     den = sum(d["score"].notna().astype(float) * d["weight"] for d in legs.values())
@@ -344,9 +361,10 @@ def china_recession(f: pd.DataFrame) -> dict:
                          "weight": d["weight"], "active": bool(active),
                          "value": value, "points": points})
     val = round(float(sc.iloc[-1]), 1)
-    label = ("high" if val >= 66 else "elevated" if val >= 40 else "low")
-    return {"score": val, "label": label, "legs": leg_rows, "uncalibrated": True,
-            "note": "uncalibrated narrative gauge — China history is short/regime-unstable; never scored"}
+    label = ("high" if val >= _REC_BANDS[1] else "elevated" if val >= _REC_BANDS[0] else "low")
+    return {"score": val, "label": label, "legs": leg_rows, "uncalibrated": False,
+            "calibrated": True, "bands": list(_REC_BANDS), "fwd": _REC_FWD.get(label),
+            "note": _CALIB_NOTE, "note_zh": _CALIB_NOTE_ZH}
 
 
 # --------------------------------------------------------------------------- #
@@ -356,6 +374,16 @@ def china_recession(f: pd.DataFrame) -> dict:
 # inverts its curve (PBoC pins the front end) so the CGB-curve leg is CONTEXT at
 # a low weight. UNCALIBRATED — no measured P(drawdown) claim, unlike the US side.
 _DD_CURVE_WEIGHT = 0.3   # CGB curve = context only (PBoC pins the front end)
+# Phase-0 calibration (see scripts/calibrate_china_conditions.py). The gauge is ALREADY an
+# expanding rank-percentile, so its bands ARE history-anchored by construction (50 = above
+# median stress, 75 = top quartile, 90 = top decile). The measured forward conditional
+# below is weak + sign-unstable across split-halves → no reliable forward edge; surfaced as
+# honest context only. Display-only.
+_DD_FWD = {  # median forward 3-month return / max-drawdown by band (SHCOMP)
+    "low":      {"fwd_ret_3m": 0.0, "fwd_maxdd_3m": -5.1},
+    "elevated": {"fwd_ret_3m": 0.8, "fwd_maxdd_3m": -5.7},
+    "high":     {"fwd_ret_3m": -0.8, "fwd_maxdd_3m": -7.0},
+}
 
 
 def _drawdown_components(f: pd.DataFrame, rec_score: pd.Series) -> dict:
@@ -406,12 +434,17 @@ def china_drawdown(f: pd.DataFrame, rec_score: pd.Series | None = None) -> dict:
         rec_score, _ = _recession_score_series(f)
     series = _drawdown_score_series(f, rec_score).dropna()
     if series.empty:
-        return {"score": None, "band": None, "uncalibrated": True}
+        return {"score": None, "band": None, "uncalibrated": False, "calibrated": True}
     val = round(float(series.iloc[-1]), 1)
     band = ("extreme" if val >= 90 else "high" if val >= 75
             else "elevated" if val >= 50 else "low")
-    return {"score": val, "band": band, "uncalibrated": True,
-            "note": "uncalibrated rank-percentile of A-share stress legs — display-only, never scored"}
+    # forward conditional keyed by the coarse low/elevated/high split (extreme rolls into high)
+    fwd_key = "high" if val >= 75 else "elevated" if val >= 50 else "low"
+    return {"score": val, "band": band, "uncalibrated": False, "calibrated": True,
+            "fwd": _DD_FWD.get(fwd_key),
+            "note": ("history-anchored rank-percentile of A-share stress legs; calibration "
+                     "found only a weak, sign-unstable forward link — display-only context, never scored"),
+            "note_zh": ("A股压力腿的历史分位排名；校准显示前瞻关联弱且符号不稳 —— 仅作展示性背景，从不计入评分")}
 
 
 # --------------------------------------------------------------------------- #

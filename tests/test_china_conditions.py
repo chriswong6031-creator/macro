@@ -69,10 +69,13 @@ def test_roro_in_bounds_and_state(f):
 # --- (2) recession / slowdown gauge ----------------------------------------
 def test_recession_bounds_and_legs(f):
     rec = cc.china_recession(f)
-    assert rec["uncalibrated"] is True
+    # Phase-0 calibrated (history-anchored bands + measured forward conditional), but the
+    # invariant is unchanged: the gauge stays display-only / never scored (see snapshot test).
+    assert rec["calibrated"] is True and rec["uncalibrated"] is False
     if rec["score"] is not None:
         assert 0.0 <= rec["score"] <= 100.0
         assert rec["label"] in ("low", "elevated", "high")
+        assert rec["fwd"] is None or {"fwd_ret_3m", "fwd_maxdd_3m"} <= set(rec["fwd"])
     for lg in rec["legs"]:
         assert lg["label"] and lg["label_zh"]    # bilingual
         if lg["active"]:
@@ -92,7 +95,7 @@ def test_recession_points_sum_to_score(f):
 # --- (3) drawdown gauge -----------------------------------------------------
 def test_drawdown_bounds(f):
     dd = cc.china_drawdown(f)
-    assert dd["uncalibrated"] is True
+    assert dd["calibrated"] is True and dd["uncalibrated"] is False
     if dd["score"] is not None:
         assert 0.0 <= dd["score"] <= 100.0
         assert dd["band"] in ("low", "elevated", "high", "extreme")
@@ -145,7 +148,7 @@ def test_none_safety_on_empty_frame():
     rf = cc.roro_frame(empty)
     assert isinstance(rf, pd.DataFrame)
     rec = cc.china_recession(empty)
-    assert rec["uncalibrated"] is True
+    assert rec["calibrated"] is True
     assert rec["score"] is None or 0.0 <= rec["score"] <= 100.0
     dd = cc.china_drawdown(empty)
     assert dd["score"] is None or 0.0 <= dd["score"] <= 100.0

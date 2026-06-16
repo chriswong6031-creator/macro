@@ -18,6 +18,7 @@ from pathlib import Path
 
 import pandas as pd
 from jinja2 import Environment, FileSystemLoader
+from markupsafe import Markup
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -437,6 +438,69 @@ def _breadth() -> dict | None:
     }
 
 
+def _china_signal_stack(latest: dict) -> dict | None:
+    """Consolidated cross-subsystem 'signal stack' read (display-only). Pure function of
+    the China `latest` state; never fatal."""
+    try:
+        from engine.china_signal_stack import build_china_signal_stack
+        return build_china_signal_stack(latest)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("china signal stack failed (%s); skipping", e)
+        return None
+
+
+def _china_market_tiles() -> list[dict]:
+    """Cross-asset 'market snapshot' tiles — level + 1-day move for the headline A-share /
+    macro instruments already on disk (SHCOMP, CSI 300, ChiNext, offshore yuan, gold, the
+    10Y CGB yield, copper). Coloured by raw sign; semantic read lives in the panels below."""
+    # (store group, ticker, column, en, zh, tag_en, tag_zh, decimals, is_rate, invert_tone)
+    spec = [
+        ("china", "000001.SS", "close", "Shanghai Comp", "上证综指", "index", "指数", 1, False, False),
+        ("china", "510300.SS", "close", "CSI 300 ETF", "沪深300", "large-cap", "大盘", 2, False, False),
+        ("china", "159915.SZ", "close", "ChiNext ETF", "创业板", "growth", "成长", 2, False, False),
+        ("china", "CNH_F", "close", "Offshore yuan", "离岸人民币", "USDCNH", "美元离岸", 3, False, True),
+        ("yahoo", "GC_F", "close", "Gold", "黄金", "USD/oz", "美元/盎司", 0, False, False),
+        ("china_property", "cgb", "cgb_10y", "10Y CGB", "10年国债", "yield", "收益率", 2, True, False),
+    ]
+    out: list[dict] = []
+    for grp, name, col, en, zh, ten, tzh, dec, is_rate, invert in spec:
+        try:
+            df = store.read(grp, name)
+            if df is None or df.empty or col not in df.columns:
+                continue
+            s = df[col].astype(float).dropna()
+            if len(s) < 2:
+                continue
+            last, prev = float(s.iloc[-1]), float(s.iloc[-2])
+            chg = last - prev
+            pct = (last / prev - 1) * 100 if prev else 0.0
+            tone = "pos" if chg > 0 else "neg" if chg < 0 else "muted"
+            if invert and tone != "muted":      # a weaker yuan (USDCNH up) = risk-off
+                tone = "neg" if chg > 0 else "pos"
+            out.append({
+                "label": Markup('<span class="l-en">{}</span><span class="l-zh">{}</span>').format(en, zh),
+                "tag": Markup('<span class="l-en">{}</span><span class="l-zh">{}</span>').format(ten, tzh),
+                "level": (f"{last:.{dec}f}%" if is_rate else f"{last:,.{dec}f}"),
+                "chg": f"{chg:+.{dec}f}", "pct": f"{pct:+.1f}%", "tone": tone,
+            })
+        except Exception:  # noqa: BLE001 — a single bad series never breaks the strip
+            continue
+    return out
+
+
+def _china_alloc_card() -> dict:
+    """Compact China Income Vector card for the index-health allocation button (the
+    blue link → china_allocation.html). Reads data/china_regime/china_alloc_latest.json
+    GRACEFULLY (mirrors build_site._spvector_state for the US side) — a missing file just
+    yields a present=False default so the macro page never depends on the allocation build."""
+    try:
+        p = config.data_dir() / "china_regime" / "china_alloc_latest.json"
+        d = json.loads(p.read_text())
+        return d if d.get("present") else {"present": False}
+    except Exception:  # noqa: BLE001 — button is additive, never fatal
+        return {"present": False}
+
+
 def _china_index_health() -> list[dict]:
     """Health snapshot for the major China indexes — the 'how is the market
     itself doing' read that leads the macro page. Price, % off the 52-week high
@@ -501,6 +565,16 @@ def main() -> int:
         log.error("china engine failed (%s); skipping china page", e)
         return 0
 
+    # China Income Vector allocation deep-dive (site/china_allocation.html) +
+    # data/china_regime/china_alloc_latest.json — built here (no workflow edit needed) so
+    # it runs on every CI build of build_china, BEFORE the index-health button reads its
+    # card. Wrapped so an allocation-data gap never breaks the macro page.
+    try:
+        from scripts.build_china_allocation import build as _build_alloc
+        _build_alloc()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("china allocation build failed (%s); skipping", e)
+
     try:
         sectors = _sector_cards(latest)
         vm = {
@@ -514,6 +588,9 @@ def main() -> int:
             "actions": _china_action_board(sectors),
             "health": _health_rows(),
             "index_health": _china_index_health(),  # macro-page index-health strip
+            "alloc_card": _china_alloc_card(),       # China Income Vector button (blue card)
+            "signal_stack": _china_signal_stack(latest),  # consolidated cross-subsystem read
+            "market_tiles": _china_market_tiles(),   # cross-asset market-snapshot tiles
         }
         site = Path(config.load()["storage"]["site_dir"])
         site.mkdir(parents=True, exist_ok=True)
