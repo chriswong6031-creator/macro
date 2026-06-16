@@ -179,7 +179,7 @@
     },
     "copper_gold": {
       "level": 0.0015,
-      "chg_20d_pct": 7.91
+      "chg_20d_pct": 8.72
     }
   },
   "overlay": {
@@ -192,20 +192,20 @@
         "z": -1.3,
         "sign": 1.0,
         "risk": "off",
-        "level": 80.67
+        "level": 80.75
       },
       {
         "key": "gold",
         "label": "Gold",
-        "z": -0.61,
+        "z": -0.65,
         "sign": 1.0,
         "risk": "off",
-        "level": 4343.0
+        "level": 4328.0
       },
       {
         "key": "copper_gold",
         "label": "Copper / Gold",
-        "z": 1.09,
+        "z": 1.2,
         "sign": 1.0,
         "risk": "on",
         "level": 0.0015

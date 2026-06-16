@@ -6,11 +6,11 @@
   "label_zh": "\u5747\u8861",
   "growth_w": 35,
   "defensive_w": 65,
-  "sharpe": -2.12,
-  "maxdd": -3.5,
-  "cagr": -21.19,
-  "band": "low",
-  "years": 0.1,
-  "bench_csi_sharpe": 1.02,
-  "bench_csi_maxdd": -4.7
+  "sharpe": 0.95,
+  "maxdd": -17.2,
+  "cagr": 7.84,
+  "band": "elevated",
+  "years": 12.9,
+  "bench_csi_sharpe": 0.47,
+  "bench_csi_maxdd": -45.5
 }
