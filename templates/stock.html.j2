@@ -1356,8 +1356,17 @@
     renderSmartMoney(d);
 
     document.getElementById('tvbox').innerHTML = '<div id="tvchart"></div>';
+    // Yahoo encodes US share classes with a dash (BRK-B); TradingView uses a dot
+    // (BRK.B), and a bare "BRK-B" resolves to a colliding TSX income-strategy ETF.
+    // Pin the known US class-shares to NYSE; otherwise convert the trailing
+    // class-dash to a dot. Crypto keeps its -USD -> USD mapping.
+    var TV_FIX = {'BRK-A': 'NYSE:BRK.A', 'BRK-B': 'NYSE:BRK.B', 'BF-A': 'NYSE:BF.A',
+      'BF-B': 'NYSE:BF.B', 'CWEN-A': 'NYSE:CWEN.A', 'MOG-A': 'NYSE:MOG.A',
+      'HEI-A': 'NYSE:HEI.A', 'LEN-B': 'NYSE:LEN.B'};
+    var tvsym = TV_FIX[d.ticker] || (d.ticker.indexOf('-USD') >= 0
+      ? d.ticker.replace('-USD', 'USD') : d.ticker.replace(/-([A-Z])$/, '.$1'));
     try {
-      new TradingView.widget({container_id: 'tvchart', symbol: d.ticker.replace('-USD', 'USD'),
+      new TradingView.widget({container_id: 'tvchart', symbol: tvsym,
         interval: 'D', theme: (localStorage.getItem('theme') === 'light' ? 'light' : 'dark'),
         style: '1', height: 430, width: '100%',
         hide_side_toolbar: true, allow_symbol_change: true,

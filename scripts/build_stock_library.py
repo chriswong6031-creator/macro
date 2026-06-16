@@ -123,9 +123,15 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
          name: str, sector: str, liquidity: str | None = None,
          macro_drag: float | None = None, macro_beta: float = 0.0,
          bench: pd.Series | None = None, alert_days: int = 120,
-         alert_max: int = 50, vix_ctx: dict | None = None) -> dict | None:
+         alert_max: int = 50, vix_ctx: dict | None = None,
+         min_days: int = 300) -> dict | None:
     c = close.dropna()
-    if len(c) < 300:
+    # The cycle ladder itself needs ~260 sessions (engine/cycles), so 300 is a
+    # conservative margin for the broad library. Curated single-stock extras
+    # (recent IPOs / ADRs) pass a lower floor so a fresh listing becomes
+    # searchable the moment its ladder is computable, not ~2 months later — the
+    # empty-ladder guard below still gates anything the engine can't yet read.
+    if len(c) < min_days:
         return None
     # crypto trades 7 days/week — its cycle clock runs longer in calendar days
     # than an equity's, so it gets the crypto cycle preset (Yahoo crypto tickers
@@ -223,18 +229,26 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
             added += 1
         log.info("stock library universe: +%d from %s", added, grp)
 
-    # ETFs / commodities / crypto from the yahoo store
+    # ETFs / commodities / crypto from the yahoo store, then the searchable
+    # single-stock extras (foreign ADRs + recent IPOs outside the S&P 1500).
     ycfg = config.load()["yahoo"]["tickers"]
     etfs = (ycfg["sectors"] + ycfg["extras"] + ycfg.get("factors", [])
             + ycfg.get("credit", []) + ycfg.get("fx_commod", [])
             + ycfg.get("crypto", []))
-    for t in etfs + config.load().get("stock_search", {}).get("extra_tickers", []):
+    scfg = config.load().get("stock_search", {})
+    extra_names = scfg.get("extra_names", {}) or {}
+    for t in etfs + (scfg.get("extra_tickers", []) or []):
         if t in seen or t.startswith("^"):
             continue
         df = store.read("yahoo", t)
         if df is None:
             continue
-        out.append((t, df["close"], None, ETF_LABELS.get(t, t), "ETF / macro"))
+        lbl = extra_names.get(t)
+        if lbl:  # a real single stock: show the company name + its GICS sector
+            out.append((t, df["close"], df.get("high"),
+                        str(lbl.get("name", t)), str(lbl.get("sector", ""))))
+        else:    # an ETF / macro proxy
+            out.append((t, df["close"], None, ETF_LABELS.get(t, t), "ETF / macro"))
         seen.add(t)
     return out
 
@@ -261,9 +275,15 @@ def _library_workers() -> int:
     return max(1, min(int(n), 8))
 
 
-def _winit(liq, drag, bench, a_days, a_max, vctx) -> None:
+# Lower history floor for curated extras (recent IPOs / ADRs) — one trading
+# year. The empty-ladder guard in _one still governs, so this just trims the
+# conservative 300-session margin for the names we hand-pick to be searchable.
+EXTRAS_MIN_DAYS = 252
+
+
+def _winit(liq, drag, bench, a_days, a_max, vctx, extras=frozenset()) -> None:
     _SHARED.update(liquidity=liq, macro_drag=drag, bench=bench,
-                   alert_days=a_days, alert_max=a_max, vix_ctx=vctx)
+                   alert_days=a_days, alert_max=a_max, vix_ctx=vctx, extras=extras)
 
 
 def _one_task(item):
@@ -272,11 +292,14 @@ def _one_task(item):
     one-bad-ticker-can't-kill-the-library guard."""
     ticker, close, high, name, sector = item
     try:
+        extras = _SHARED.get("extras") or frozenset()
+        min_days = EXTRAS_MIN_DAYS if ticker in extras else 300
         return _one(ticker, close, high, name, sector,
                     liquidity=_SHARED.get("liquidity"), macro_drag=_SHARED.get("macro_drag"),
                     macro_beta=sector_macro_beta(sector), bench=_SHARED.get("bench"),
                     alert_days=_SHARED.get("alert_days", 120),
-                    alert_max=_SHARED.get("alert_max", 50), vix_ctx=_SHARED.get("vix_ctx"))
+                    alert_max=_SHARED.get("alert_max", 50), vix_ctx=_SHARED.get("vix_ctx"),
+                    min_days=min_days)
     except Exception as e:  # noqa: BLE001 — one bad ticker must not kill the library
         log.debug("library %s failed: %s", ticker, e)
         return None
@@ -388,7 +411,9 @@ def main() -> int:
     # below (shared-map merges, setup scoring, JSON writes) stays serial and in
     # universe() order, so the output is byte-identical to the serial build.
     # Graceful: any pool error — or workers<=1 — drops back to the serial path.
-    _winit(liq, drag, bench, a_days, a_max, vctx)   # also primes the serial path
+    extra_set = frozenset(
+        config.load().get("stock_search", {}).get("extra_tickers", []) or [])
+    _winit(liq, drag, bench, a_days, a_max, vctx, extra_set)   # also primes the serial path
     workers = _library_workers()
     recs: list[dict | None] | None = None
     if workers > 1 and len(uni) > 50:
@@ -396,7 +421,7 @@ def main() -> int:
             from concurrent.futures import ProcessPoolExecutor
             t0 = time.time()
             with ProcessPoolExecutor(max_workers=workers, initializer=_winit,
-                                     initargs=(liq, drag, bench, a_days, a_max, vctx)) as ex:
+                                     initargs=(liq, drag, bench, a_days, a_max, vctx, extra_set)) as ex:
                 recs = list(ex.map(_one_task, uni, chunksize=8))
             log.info("stock library: analysed %d names in %.0fs (%d processes)",
                      len(uni), time.time() - t0, workers)
