@@ -81,6 +81,29 @@ html body { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
   Roboto, Helvetica, Arial, sans-serif; font-size: 15px;
   -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 
+/* ---- ambient aurora backdrop (site-wide) ------------------------------------
+   The landing hub's soft accent washes, shared by every page. A fixed, full-
+   viewport pseudo-element pinned behind all content (z-index:-1) — it paints
+   over the opaque `body { background:var(--bg) }` but under the page's own
+   content, so it reads as faint colour in the margins/gaps without touching
+   legibility. Dark and light get SEPARATE tunings: richer, jewel-toned washes
+   on the dark canvas; airier, lighter tints on the white canvas. Colours are
+   fixed accents blended into transparent via color-mix, so only the alpha
+   differs between themes. Non-animated, so no reduced-motion concern. */
+html body::before {
+  content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(680px 440px at 10% -8%, color-mix(in srgb, #416aec 20%, transparent), transparent 68%),
+    radial-gradient(620px 440px at 94% 2%, color-mix(in srgb, #8b5cf6 16%, transparent), transparent 70%),
+    radial-gradient(760px 520px at 50% 112%, color-mix(in srgb, #0ea5e9 14%, transparent), transparent 70%);
+}
+html[data-theme="light"] body::before {
+  background:
+    radial-gradient(680px 440px at 10% -8%, color-mix(in srgb, #416aec 9%, transparent), transparent 68%),
+    radial-gradient(620px 440px at 94% 2%, color-mix(in srgb, #8b5cf6 8%, transparent), transparent 70%),
+    radial-gradient(760px 520px at 50% 112%, color-mix(in srgb, #0ea5e9 7%, transparent), transparent 70%);
+}
+
 /* ---- Vector polish: airier cards + a little more headline hierarchy ---------
    Bitcoin Vector breathes more than this data-dense dashboard. These nudge (not
    restructure) toward its feel; `html body …` out-specifies each page's own

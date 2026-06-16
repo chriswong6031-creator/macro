@@ -10,13 +10,8 @@
 body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
  font-family:Inter,sans-serif;display:flex;flex-direction:column;align-items:center;
  padding:22px 20px 64px;position:relative;overflow-x:hidden}
-/* ambient aurora — fixed accent washes blended into transparent so they read on
-   both the dark and light palettes without overpowering the content */
-body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
- background:
-  radial-gradient(680px 440px at 10% -10%,color-mix(in srgb,#416aec 15%,transparent),transparent 68%),
-  radial-gradient(620px 440px at 94% 2%,color-mix(in srgb,#8b5cf6 13%,transparent),transparent 70%),
-  radial-gradient(760px 520px at 50% 112%,color-mix(in srgb,#0ea5e9 11%,transparent),transparent 70%)}
+/* the ambient aurora backdrop now lives in theme.css (html body::before), shared
+   by every page with separate dark / light tunings */
 /* top bar — theme + language toggles pinned to the right of the content column */
 .hub-top{width:100%;max-width:1120px;display:flex;justify-content:flex-end;
  align-items:center;gap:10px;margin-bottom:8px}
