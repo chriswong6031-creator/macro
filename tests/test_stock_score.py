@@ -138,10 +138,47 @@ def test_bilingual_fields_present():
     assert p["axes"]["selection"]["kind_zh"]
 
 
-@pytest.mark.parametrize("m,tier", [("US", "context"), ("CA", "context"),
+@pytest.mark.parametrize("m,tier", [("US", "event-edge"), ("CA", "event-edge"),
                                     ("CN", "reversal"), ("HK", "screen")])
 def test_trust_tiers(m, tier):
     assert ss.trust_tier(m)["tier"] == tier
+
+
+# --- v2 EDGE axis: validated event signals drive the rank, momentum is light context ---
+def test_edge_is_event_driven_not_momentum():
+    # strong SUE + insider but only mild momentum -> still a HIGH edge (events lead)
+    rec = {"sue": 2.5, "insider_bps": 40.0, "alpha": 0.2}
+    z, present = ss._axis_selection(rec, "US")
+    assert {"sue", "insider"} <= set(present)
+    assert z is not None and z >= 1.0           # event legs carry it
+    assert ss._sel_kind("US", present)[0].startswith("earnings")
+
+
+def test_momentum_alone_is_weak_edge():
+    # momentum-only (no validated event leg) is heavily dampened by the confidence floor:
+    # even an extreme alpha cannot manufacture a strong edge on noise.
+    rec = {"alpha": 3.0}
+    z, present = ss._axis_selection(rec, "US")
+    assert present == ["alpha"]
+    assert z is not None and z < 1.0            # 0.10*3.0/0.5 = 0.6 — weak, ranks low
+    # whereas a real SUE of the same magnitude dominates
+    z2, _ = ss._axis_selection({"sue": 3.0}, "US")
+    assert z2 > z + 0.5
+
+
+def test_revision_feeds_edge():
+    rec = {"revision_z": 2.0}
+    z, present = ss._axis_selection(rec, "US")
+    assert "revision" in present and z is not None and z > 0.5
+
+
+def test_sue_insider_not_in_quality_axis():
+    # they moved to EDGE in v2 — quality is durability (factors/priors) only
+    rec = {"sue": 3.0, "insider_bps": 50.0,
+           "factor": {"profitability": 0.4, "quality": 0.3, "value": 0.1, "low_vol": 0.0}}
+    qz, present, flags = ss._axis_quality(rec, "US")
+    assert "sue" not in present and "insider" not in present
+    assert "factors" in present
 
 
 def test_us_go_flag_promotes_trust_tier():
@@ -176,7 +213,7 @@ def test_parabolic_gets_specific_dont_chase_verdict():
 
 def test_absent_entry_is_unknown_not_poor():
     # strong selection, NO entry legs at all -> 'entry unknown', never asserts 'poor entry'
-    p = ss.conviction_profile({"alpha": 2.0, "ladder": {"state": "FRESH BUY",
+    p = ss.conviction_profile({"sue": 3.0, "ladder": {"state": "FRESH BUY",
                               "entry": {"urgency": "zzz"}}}, "US")
     v = p["verdict"].lower()
     assert "unknown" in v and "poor entry" not in v

@@ -48,13 +48,22 @@ import pandas as pd
 # ----------------------------------------------------------------------------
 MARKETS = ("US", "CN", "HK", "CA")
 
-# what the SELECTION axis is per market, and the on-card label for it.
+# fallback on-card label for the EDGE axis per market (see _sel_kind for the dynamic,
+# leg-aware label). v2: the US/CA EDGE is the VALIDATED event core (earnings surprise +
+# insider buying + analyst revisions) — residual momentum is demoted to a light context
+# leg because on clean PIT large-cap data it does not predict (research/STOCK_CONVICTION_V2).
 _SEL_KIND = {
-    "US": ("residual alpha", "残差动量"),
-    "CA": ("residual alpha", "残差动量"),
+    "US": ("event edge", "事件驱动优势"),
+    "CA": ("event edge", "事件驱动优势"),
     "CN": ("mean-reversion", "均值回归"),
     "HK": ("relative strength", "相对强度"),
 }
+
+# EDGE evidence weights (US/CA), anchored on the deep-PIT IC audit: SUE (IC .039, the only
+# FDR survivor, L/S Sharpe 1.26) > insider net-buy (.029, FDR-adjacent) > analyst-revision
+# momentum (literature IC ~.23, locally accruing) > residual momentum (.012, FAILS FDR -> a
+# light directional context only). Renormalized over whichever legs are present per name.
+_EDGE_W = {"sue": 0.40, "insider": 0.30, "revision": 0.20, "mom": 0.10}
 
 # Per-market TRUST TIER — bound to the validated record, NOT to the live number.
 # This is the cross-market honesty badge (research §6.4). `gate_go` flips US/CA/CN
@@ -67,20 +76,24 @@ def trust_tier(market: str, gate_go: bool = False) -> dict:
     if m == "CN":
         return {"tier": "reversal", "en": "Reversal context — validated but high-variance, not a buy list",
                 "zh": "均值回归参考 — 已验证但高波动，非买入清单", "css": "tt-reversal"}
-    # US / CA
+    # US / CA — v2 EDGE = validated event signals (SUE is the FDR survivor; insider is
+    # FDR-adjacent; analyst revisions are literature-strong and locally accruing).
     if gate_go:
-        return {"tier": "validated", "en": "Composite cleared Phase-0 on this market",
-                "zh": "该市场综合评分已通过 Phase-0", "css": "tt-go"}
-    return {"tier": "context", "en": "Selection leg is weak positive-IC context — not a standalone edge",
-            "zh": "选股因子为弱正信息系数参考 — 非独立超额收益", "css": "tt-context"}
+        return {"tier": "validated", "en": "Event edge (earnings + insider + revisions) cleared Phase-0",
+                "zh": "事件驱动优势（盈利＋内部人＋评级调整）已通过 Phase-0", "css": "tt-go"}
+    return {"tier": "event-edge",
+            "en": "Event edge: earnings surprise + insider buying (SUE FDR-validated) · revisions accruing",
+            "zh": "事件驱动优势：盈利超预期＋内部人买入（SUE 已通过 FDR）· 评级调整累积中", "css": "tt-context"}
 
 # Per-market DISPLAY weights for the composite roll-up (labeled uncalibrated PRIOR;
 # the SHIPPED rank does not use these unless gate GO). Default behaviour is
 # equal-weight over the axes that are actually present (research §4).
+# v2: EDGE-dominant — the validated event core (selection) carries the most weight; entry
+# is timing context; quality is durability; tailwind is a small sector tilt.
 _WEIGHT_PRIOR = {
-    "US": {"selection": 0.40, "entry": 0.15, "tailwind": 0.15, "quality": 0.30},
-    "CA": {"selection": 0.40, "entry": 0.20, "tailwind": 0.15, "quality": 0.25},
-    "CN": {"selection": 0.40, "entry": 0.25, "tailwind": 0.15, "quality": 0.20},
+    "US": {"selection": 0.45, "entry": 0.15, "tailwind": 0.10, "quality": 0.30},
+    "CA": {"selection": 0.45, "entry": 0.18, "tailwind": 0.12, "quality": 0.25},
+    "CN": {"selection": 0.42, "entry": 0.25, "tailwind": 0.13, "quality": 0.20},
     "HK": {"selection": 0.35, "entry": 0.25, "tailwind": 0.20, "quality": 0.20},
 }
 
@@ -124,41 +137,71 @@ def _logistic_0_100(z: float | None, k: float = 0.62) -> int | None:
 # axis sub-scores (per-name; legs are already cross-sectional z's)
 # ----------------------------------------------------------------------------
 def _sel_kind(market: str, present: list[str]) -> tuple[str, str]:
-    """The on-card label for the selection axis, derived from the leg that ACTUALLY
-    contributed (not just the market) so a residual-momentum fallback on A-shares is
-    never mislabeled 'mean-reversion'."""
+    """The on-card label for the EDGE axis, derived from the legs that ACTUALLY
+    contributed — so the validated event edge is named honestly and a residual-momentum
+    fallback is never mislabeled."""
+    if any(k in present for k in ("sue", "insider", "revision")):
+        return ("earnings · insider · revisions", "盈利 · 内部人 · 评级调整")
     if "rev_z" in present:
         return ("mean-reversion", "均值回归")
     if "rs" in present:
         return ("relative strength", "相对强度")
     if "alpha" in present:
         return ("residual momentum", "残差动量")
-    return _SEL_KIND.get(market, ("selection", "选股"))
+    return _SEL_KIND.get(market, ("edge", "优势"))
 
 
 def _axis_selection(rec: dict, market: str) -> tuple[float | None, list[str]]:
-    """The validated selection leg, market-dependent. Returns (z, present_legs)."""
+    """The EDGE axis — the VALIDATED, event-driven predictive core that DRIVES the rank
+    (research/STOCK_CONVICTION_V2). Returns (z, present_legs).
+
+    * US/CA — evidence-weighted blend of SUE (FDR survivor) + insider net-buying +
+      analyst-revision momentum + a LIGHT residual-momentum context (momentum alone is
+      ~noise on clean PIT large-cap data, so it earns only the 0.10 context weight).
+    * CN — A-share momentum is dead; the validated effect is short-term REVERSAL, so the
+      edge is reversal-led + revisions, residual momentum a light context.
+    * HK — no validated stock-selection edge: relative strength only, framed as a screen.
+    """
     m = market.upper()
     present: list[str] = []
     if m in ("US", "CA"):
-        z = _f((rec.get("alpha")))
-        if z is not None:
-            present.append("alpha")
-        return _clipz(z), present
+        legs: dict[str, float] = {}
+        sue = _f(rec.get("sue"))
+        if sue is not None:
+            legs["sue"] = float(np.clip(sue, -3, 3)); present.append("sue")
+        ins = _f(rec.get("insider_bps"))
+        if ins is not None:                       # net Form-4 buying, bps of mcap
+            legs["insider"] = float(np.clip(ins / 30.0, -1.5, 1.5)); present.append("insider")
+        rev = _f(rec.get("revision_z"))
+        if rev is not None:                       # analyst estimate-revision momentum z
+            legs["revision"] = float(np.clip(rev, -3, 3)); present.append("revision")
+        mom = _f(rec.get("alpha"))                # residual momentum — LIGHT context only
+        if mom is not None:
+            legs["mom"] = float(np.clip(mom, -3, 3)); present.append("alpha")
+        if not legs:
+            return None, present
+        num = sum(_EDGE_W[k] * v for k, v in legs.items())
+        # CONFIDENCE FLOOR: do NOT fully renormalize. A name with only the 0.10 momentum
+        # context leg (no validated event signal) is heavily dampened toward zero — it
+        # must NOT rank like a name carrying a real earnings/insider/revision edge. The
+        # floor (~the SUE weight) means edge strength scales with validated-leg coverage.
+        den = max(sum(_EDGE_W[k] for k in legs), 0.5)
+        return _clipz(num / den), present
     if m == "CN":
-        z = _f(rec.get("rev_z"))
-        a = _f(rec.get("alpha"))      # residual momentum: a light quality leg on A-shares
+        z = _f(rec.get("rev_z"))                  # validated A-share reversal
+        a = _f(rec.get("alpha"))                  # residual momentum: light context
+        rev = _f(rec.get("revision_z"))
+        legs: list[tuple[float, float]] = []
         if z is not None:
-            present.append("rev_z")
-            if a is not None:
-                present.append("alpha")
-                return _clipz(0.7 * z + 0.3 * a), present
-            return _clipz(z), present
-        # reversal absent (the common case — only the watch subset carries rev_z):
-        # fall back to residual momentum, and RECORD it so provenance is honest.
+            legs.append((z, 0.55)); present.append("rev_z")
+        if rev is not None:
+            legs.append((float(np.clip(rev, -3, 3)), 0.25)); present.append("revision")
         if a is not None:
-            present.append("alpha")
-        return _clipz(a), present
+            legs.append((float(np.clip(a, -3, 3)), 0.20)); present.append("alpha")
+        if not legs:
+            return None, present
+        num = sum(v * w for v, w in legs); den = sum(w for _, w in legs)
+        return _clipz(num / den), present
     # HK — relative strength only, framed as a screen
     z = _f(rec.get("rs_z"))
     if z is None:
@@ -257,46 +300,31 @@ def _axis_tailwind(rec: dict) -> tuple[float | None, list[str]]:
 
 
 def _axis_quality(rec: dict, market: str) -> tuple[float | None, list[str], dict]:
-    """Quality: validated (SUE, insider) + context (orthogonal factor composite /
-    ex-US priors), CAPPED by the accounting verdict. Returns (z, present, flags)."""
+    """DURABILITY — will the business survive the hold (NOT 'will it go up' — the
+    earnings/insider edge moved to the EDGE axis in v2). Gross profitability (Novy-Marx,
+    the cleanest durable-business leg = the factor 'profitability' = GP/assets) + the
+    orthogonal factor composite + ex-US fundamental priors, CAPPED by the accounting
+    verdict (accruals are decayed as a return leg → used only as a filter)."""
     present: list[str] = []
-    validated: list[float | None] = []
-    context: list[float | None] = []
+    parts: list[float | None] = []
 
-    sue = _f(rec.get("sue"))
-    if sue is not None:
-        validated.append(float(np.clip(sue, -3, 3))); present.append("sue")
-    ins = _f(rec.get("insider_bps"))
-    if ins is not None:                       # net Form-4 buying, bps of mcap
-        validated.append(float(np.clip(ins / 30.0, -1.5, 1.5))); present.append("insider")
-
-    # context: prefer a precomputed orthogonal composite; else mean of raw factor z
+    # prefer a precomputed orthogonal composite; else mean of the durable factor legs
+    # (profitability first — gross profitability is the validated durability proxy).
     qc = _f(rec.get("quality_context_z"))
     if qc is None:
         fac = rec.get("factor") or {}
         qc = _mean_avail([_f(fac.get(k)) for k in
-                          ("value", "profitability", "quality", "low_vol")])
-        if qc is not None:
-            present.append("factors")
-    else:
-        present.append("factors")
+                          ("profitability", "quality", "value", "low_vol")])
     if qc is not None:
-        context.append(float(np.clip(qc, -3, 3)))
+        parts.append(float(np.clip(qc, -3, 3))); present.append("factors")
 
     # ex-US fundamental priors (Piotroski/Altman/valuation), clearly context
     fp = _f((rec.get("fund_priors") or {}).get("z"))
     if fp is not None:
-        context.append(float(np.clip(fp, -3, 3))); present.append("priors")
+        parts.append(float(np.clip(fp, -3, 3))); present.append("priors")
 
-    z_val = _mean_avail(validated)
-    z_ctx = _mean_avail(context)
-    # validated legs lead 2:1 over context where both exist
-    if z_val is not None and z_ctx is not None:
-        z = (2.0 * z_val + z_ctx) / 3.0
-    else:
-        z = z_val if z_val is not None else z_ctx
-
-    flags = {"accounting": None, "validated": bool(validated)}
+    z = _mean_avail(parts)
+    flags = {"accounting": None}
     acct = (rec.get("accounting") or {}).get("verdict")
     if acct:
         flags["accounting"] = acct
@@ -340,7 +368,7 @@ def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool) -> dict:
     drivers: list[str] = []
     cautions: list[str] = []
     if sel_t in ("high", "mid"):
-        drivers.append(_SEL_KIND.get(m, ("selection", "选股"))[0])
+        drivers.append((axes.get("selection", {}).get("kind")) or _SEL_KIND.get(m, ("edge", "优势"))[0])
     if _tier(ent) in ("high", "mid"):
         drivers.append("entry")
     if _tier(qz) in ("high", "mid"):
@@ -535,11 +563,11 @@ def score_percentiles(comp_z: pd.Series) -> pd.Series:
 # ----------------------------------------------------------------------------
 def normalize_rec(record: dict, market: str, *, rs_z: float | None = None,
                   rev_z: float | None = None, sue: float | None = None,
-                  insider_bps: float | None = None,
+                  insider_bps: float | None = None, revision_z: float | None = None,
                   quality_context_z: float | None = None,
                   fund_priors_z: float | None = None,
                   sector_rs: dict | None = None, basket: dict | None = None,
-                  ext: dict | None = None) -> dict:
+                  asym: dict | None = None, ext: dict | None = None) -> dict:
     """Build the normalized ``rec`` the engine consumes from a per-stock library
     ``record`` (the dict written to ``<mkt>stockdata/<T>.json``) plus the
     cross-sectional legs the build joins in. Missing legs stay absent (None) —
@@ -564,8 +592,9 @@ def normalize_rec(record: dict, market: str, *, rs_z: float | None = None,
         "factor": {"value": legs.get("value"), "profitability": legs.get("profitability"),
                    "quality": legs.get("quality"), "low_vol": legs.get("low_vol")} if legs else None,
         "quality_context_z": quality_context_z,
-        "sue": sue, "insider_bps": insider_bps,
+        "sue": sue, "insider_bps": insider_bps, "revision_z": revision_z,
         "fund_priors": {"z": fund_priors_z} if fund_priors_z is not None else None,
+        "asym": asym,                      # downside-asymmetry DISPLAY read (risk shape, not scored)
         "accounting": record.get("accounting_quality"),
     }
 
