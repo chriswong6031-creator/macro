@@ -42,21 +42,5 @@
     }
   ],
   "magnitude_band": null,
-  "veto": {
-    "schema": "regime_snap_veto.v1",
-    "is_context_only": true,
-    "lean": "unclear",
-    "confidence": "low",
-    "checks": {
-      "catalyst": "Oil price collapse is a market move, not a clearly identifiable structural event (signed deal, policy shift, or hard data surprise). The headline gives no specific trigger, so catalyst legibility is absent.",
-      "premium": "Fear built (0.504) is moderate, and relief is still building with no snap yet, so significant fear premium likely remains to be unwound.",
-      "washout": "Capitulation was recent (cap_recent true, 1 day since last snap), indicating a real washout occurred, which historically supports a more durable bottom.",
-      "follow_through": "Cross-asset confirmation is present (VIX, HY OAS, VIX term flipped) with high velocity, but without a structural catalyst, the move risks fading in the next session if oil reverses."
-    },
-    "read": "The relief snap is building from a recent capitulation with good cross-asset breadth, but the driver is an oil collapse without a clear structural catalyst. Without identifiable policy or data anchor, the move could easily reverse, so durability is unclear.",
-    "model": "deepseek-v4-pro",
-    "generated_at": "2026-06-16T04:53:03.080032+00:00",
-    "degraded_reason": null,
-    "disclaimer": "AI durability read \u2014 context only, never scored or sized. The snap detector is coincident; this is a fallible judgement on whether the relief is structural or a dead-cat, not a trade recommendation."
-  }
+  "veto": null
 }
