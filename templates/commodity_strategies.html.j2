@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<title>Strategy Scorecards — Market Intelligence</title>
+<title>Commodity Strategy Scorecards — Market Intelligence</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -80,6 +80,13 @@ html[data-theme="dark"] .metrics>div{background:var(--grid)}
 html[data-theme="dark"] .stance{background:var(--grid)}
 .go{font-weight:700;color:var(--blue);font-size:14px}
 .foot{margin-top:40px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7;max-width:900px}
+.cmdy-toggle{display:flex;gap:8px;flex-wrap:wrap;margin:22px 0 4px}
+.cmdy-tab{appearance:none;cursor:pointer;border:1px solid var(--grid);background:var(--card);color:var(--muted);font-weight:700;font-size:14px;padding:9px 18px;border-radius:11px;transition:all .15s;display:inline-flex;align-items:center;gap:7px}
+.cmdy-tab:hover{color:var(--ink);border-color:var(--blue)}
+.cmdy-tab.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.cmdy-grid{display:none}
+.cmdy-grid.active{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:20px;margin-top:18px}
+@media(max-width:720px){.cmdy-grid.active{grid-template-columns:1fr}}
 </style>{% include "_vector_polish.html.j2" %}
 </head>
 <body>
@@ -88,14 +95,13 @@ html[data-theme="dark"] .stance{background:var(--grid)}
       <div class="nav-links">
     <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
     <div class="nav-dd">
-      <a class="nav-link active" href="macro.html">🇺🇸 {{ t('United States', '美国') }} <span class="caret">▾</span></a>
+      <a class="nav-link" href="macro.html">🇺🇸 {{ t('United States', '美国') }} <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="macro.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('Regime · growth · inflation · nowcast', '周期 · 增长 · 通胀 · 即时预测') }}</span></a>
         <a href="us_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Standouts · sectors · flows', '精选 · 板块 · 资金') }}</span></a>
-        <a class="active" href="strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
+        <a href="strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
         <a href="spvector.html">📐 {{ t('S&P / Macro Vector', '标普宏观向量') }}<span class="d">{{ t('Tactical equity↔cash', '战术股票↔现金') }}</span></a>
         <a href="baskets.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P', '等权主题篮子 vs 标普') }}</span></a>
-        <a href="allocation.html">🔄 {{ t('Narrative Rotation', '主题轮动') }}<span class="d">{{ t('Which theme to hold & when to rotate', '持有哪个主题 · 何时轮动') }}</span></a>
         <a href="alerts.html">🚨 {{ t('Alert Center', '警报中心') }}<span class="d">{{ t('Ranked & triaged alerts', '分级分诊的警报') }}</span></a>
         <a href="gex.html">🧲 {{ t('Options Magnets', '期权磁吸') }}<span class="d">{{ t('Dealer-gamma GEX levels', '做市商Gamma GEX价位') }}</span></a>
         <a href="etfs.html">🐳 {{ t('ETF Flows', 'ETF资金流') }}<span class="d">{{ t('Fund flow monitor', '资金流监控') }}</span></a>
@@ -107,6 +113,8 @@ html[data-theme="dark"] .stance{background:var(--grid)}
         <a href="china.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('A-share regime · sectors · flows', 'A股周期 · 板块 · 资金') }}</span></a>
         <a href="china_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Standouts · alpha · setups', '精选 · 阿尔法 · 布局') }}</span></a>
         <a href="china_strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
+        <a href="baskets_china.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs CSI 300', '等权主题篮子 vs 沪深300') }}</span></a>
+        <a href="china_allocation.html">◎ {{ t('Allocation Strategy', '仓位策略') }}<span class="d">{{ t('Income · gold · bonds', '红利 · 黄金 · 国债') }}</span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -131,10 +139,10 @@ html[data-theme="dark"] .stance{background:var(--grid)}
       </div>
     </div>
     <div class="nav-dd">
-      <a class="nav-link" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }} <span class="caret">▾</span></a>
+      <a class="nav-link active" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }} <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="commodities.html">📊 {{ t('Commodity Dashboard', '商品仪表盘') }}<span class="d">{{ t('Gold · silver · copper · oil · complex', '金 · 银 · 铜 · 油 · 综合') }}</span></a>
-        <a href="commodity_strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Per-commodity tactical strategies', '分品种战术策略') }}</span></a>
+        <a class="active" href="commodity_strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Per-commodity tactical strategies', '分品种战术策略') }}</span></a>
       </div>
     </div>
     <a class="nav-link" href="forex.html">💱 {{ t('Forex', '外汇') }}</a>
@@ -160,12 +168,18 @@ html[data-theme="dark"] .stance{background:var(--grid)}
     </div>
   </div>
 
-  <div class="h1">🎛️ {{ t('Strategy Scorecards','策略记分卡') }}</div>
-  <div class="intro">{{ t('Macro-factor-driven tactical strategies. Each shifts its allocation on signals and macro factors to lift risk-adjusted yield and sidestep the drawdowns that normally destroy it. Click a card for the full backtest, the live recommendation, and the rule-book.','由宏观因子驱动的战术策略。每个策略都按信号与宏观因子切换配置，以提升风险调整后收益并规避通常会吞噬收益的回撤。点击卡片查看完整回测、实时建议与规则手册。') }}</div>
-  <div class="note">{{ t('Honest framing: the durable edge in a "yield" strategy is not timing the yield — it is timing the LEFT TAIL that destroys it (de-risk before the recession / credit / rate shock). These give up some buy-&-hold CAGR but cut the max drawdown and lift the Sharpe. Backtests are net of cost and total-return; CAGR / MaxDD are vs buy-and-hold the same risk asset.','诚实说明：「收益」策略的持久优势并非择时收益本身，而是择时吞噬收益的左尾（在衰退/信用/利率冲击前降险）。这些策略会让出部分买入持有的年化，但能压低最大回撤并提升夏普。回测均扣除成本且基于总回报；CAGR / 最大回撤对比买入持有同一风险资产。') }}</div>
+  <div class="h1">🛢 {{ t('Commodity Strategy Scorecards','商品策略记分卡') }}</div>
+  <div class="intro">{{ t('Per-commodity tactical strategies. Each commodity rises and falls for different reasons — gold on real yields and the dollar, copper on global growth, oil on inventories and the futures curve — so each gets its own factor model. Toggle a commodity below to see its strategies; each pairs a simple risk on/off trend swap with a deeper, commodity-specific multi-factor model.','分品种战术策略。每种商品的涨跌逻辑各异——黄金看实际收益率与美元、铜看全球增长、原油看库存与期货曲线——因此各有其因子模型。点击下方切换品种查看其策略；每个品种都包含一个简单的风险开关趋势策略与一个更深入的、品种特定的多因子模型。') }}</div>
+  <div class="note">{{ t('Goal: not just winning strategies, but understanding what makes each commodity move — so the allocation can anticipate the turns, raising CAGR and Sharpe while lowering drawdown. Each card shows whether it beats buy-&-hold the same commodity, computed not asserted. Backtests are net of cost; the de-risked sleeve earns the T-bill yield.','目标：不只是寻找制胜策略，更是理解每种商品的驱动因素——使配置能够预判拐点，在降低回撤的同时提升年化与夏普。每张卡片显示其是否跑赢同品种买入持有，均为计算所得。回测扣除成本；降险时空仓腿赚取短期国债收益。') }}</div>
 
-  <div class="sgrid">
-    {% for c in cards %}
+  <div class="cmdy-toggle" role="tablist">
+    {% for g in groups %}
+    <button class="cmdy-tab{{ ' active' if loop.first }}" data-grp="{{ g.key }}" role="tab">{{ g.icon }} {{ t(g.label_en, g.label_zh) }}</button>
+    {% endfor %}
+  </div>
+  {% for g in groups %}
+  <div class="sgrid cmdy-grid{{ ' active' if loop.first }}" data-grp="{{ g.key }}">
+    {% for c in g.cards %}
     <a class="scard" href="{{ c.href }}">
       <div class="scard-top">
         <span class="ico">{{ c.icon }}</span>
@@ -186,10 +200,25 @@ html[data-theme="dark"] .stance{background:var(--grid)}
     </a>
     {% endfor %}
   </div>
+  {% endfor %}
 
   <div class="foot">
     {{ t('Mechanical, backtested on free public data, net of 3 bps one-way transaction cost, positions acting next-bar (no look-ahead). Total-return benchmarks (dividend/coupon-adjusted). Not investment advice — these are drawdown / risk-adjusted-return engines, not yield-maximizers or CAGR-beaters. Experimental strategies are pending full Phase-0 validation (leave-one-crisis-out, deflated-Sharpe gate). Built','机械化 · 基于免费公开数据回测，扣除 3 个基点单边交易成本，仓位次日生效（无前视）。总回报基准（经分红/票息调整）。非投资建议 —— 这些是回撤 / 风险调整收益引擎，并非收益最大化或跑赢年化的工具。实验性策略尚待完整 Phase-0 验证（留一危机、贬值夏普门槛）。生成于') }} {{ built }}.
   </div>
 </div>
+<script>
+(function(){
+  document.querySelectorAll('.cmdy-tab').forEach(function(tab){
+    tab.addEventListener('click', function(){
+      var g = tab.getAttribute('data-grp');
+      document.querySelectorAll('.cmdy-tab').forEach(function(t){t.classList.toggle('active', t.getAttribute('data-grp')===g);});
+      document.querySelectorAll('.cmdy-grid').forEach(function(gr){gr.classList.toggle('active', gr.getAttribute('data-grp')===g);});
+      try{history.replaceState(null,'','#'+g);}catch(e){}
+    });
+  });
+  var h=(location.hash||'').replace('#','');
+  if(h){var b=document.querySelector('.cmdy-tab[data-grp="'+h+'"]');if(b)b.click();}
+})();
+</script>
 <script src="theme.js"></script>
 </body></html>
