@@ -944,8 +944,17 @@
   <div class="panel span4">
     <h2>{{ t('Breadth & Ratios', '宽度与比价') }}</h2>
     {% if breadth %}
-    <p class="note" style="margin:0 0 8px">{{ t('Large-cap breadth', '大盘宽度') }} ({{ breadth.n_members }} {{ t('names', '只') }})</p>
+    <p class="note" style="margin:0 0 6px">{{ t('Market breadth' if breadth.full else 'Large-cap breadth', '市场广度' if breadth.full else '大盘宽度') }} — {{ t('how many stocks are participating', '有多少股票在参与') }} ({{ breadth.n_members }} {{ t('names', '只') }})</p>
+    <p class="{{ breadth.tone }}" style="margin:0 0 10px; font-size:12.5px; line-height:1.45">
+      {{ t('Participation looks', '参与度看起来') }}
+      <b>{% if breadth.state=='broad' %}{{ t('broad', '广泛') }}{% elif breadth.state=='thin' %}{{ t('thin', '稀薄') }}{% else %}{{ t('mixed', '参差') }}{% endif %}</b> —
+      <b>{{ breadth.pct_above_50 }}%</b> {{ t('above 50-day', '在50日上方') }},
+      <b>{{ breadth.pct_above_200 }}%</b> {{ t('above 200-day', '在200日上方') }};
+      {{ t('net new highs', '净新高') }} <b>{{ '%+d'|format(breadth.net_nh) }}</b>.
+      <span class="muted">{% if breadth.state=='broad' %}{{ t('Broad participation confirms the move.', '广泛参与确认了走势。') }}{% elif breadth.state=='thin' %}{{ t('Few names hold trend — rallies are fragile.', '守住趋势的个股很少 — 反弹脆弱。') }}{% else %}{{ t('No clear breadth edge either way.', '广度上无明显方向优势。') }}{% endif %}</span>
+    </p>
     <table>
+      <tr><td class="l">{{ t('advancing vs declining', '上涨对下跌') }}</td><td><span class="pos">{{ breadth.adv }}</span> / <span class="neg">{{ breadth.dec }}</span></td></tr>
       <tr><td class="l">{{ t('% above 50-day', '50日上方占比') }}</td><td>{{ breadth.pct_above_50 }}% <span class="note">({{ '%+.0f'|format(breadth.pct50_chg20) }})</span></td></tr>
       <tr><td class="l">{{ t('% above 200-day', '200日上方占比') }}</td><td>{{ breadth.pct_above_200 }}%</td></tr>
       <tr><td class="l">{{ t('New highs − lows', '新高−新低') }}</td><td>{{ breadth.nh }} − {{ breadth.nl }}</td></tr>

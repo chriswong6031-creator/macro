@@ -231,18 +231,15 @@ def _sector_cards(latest: dict) -> list[dict]:
 
 
 def _breadth() -> dict | None:
-    br = store.read("canada_breadth", "breadth")
-    if br is None or br.empty:
-        return None
-    last = br.iloc[-1]
-    return {
-        "pct_above_50": round(float(last.get("pct_above_50", float("nan"))), 1),
-        "pct_above_200": round(float(last.get("pct_above_200", float("nan"))), 1),
-        "nh": int(last.get("nh", 0)), "nl": int(last.get("nl", 0)),
-        "ad_trend": "up" if br["ad_line"].diff(20).iloc[-1] > 0 else "down",
-        "n_members": int(last.get("n_members", 0)),
-        "pct50_chg20": round(float(br["pct_above_50"].diff(20).iloc[-1]), 1),
-    }
+    """Market breadth — how many TSX names are actually participating. Computed across
+    the FULL S&P/TSX Composite universe (~220 names via the XIC holdings cache) for a
+    true full-market read, not just the curated large-cap gauge; falls back to the
+    curated breadth.parquet if the universe cache is missing/sparse. DISPLAY-ONLY."""
+    from collectors.breadth import BreadthAdapter, breadth_summary
+    closes = store.read("canada_search", "closes")
+    if closes is not None and not closes.empty and closes.shape[1] >= 120:
+        return breadth_summary(BreadthAdapter().compute(closes), full=True)
+    return breadth_summary(store.read("canada_breadth", "breadth"), full=False)
 
 
 def _benchmark_card() -> dict | None:

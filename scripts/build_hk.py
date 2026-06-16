@@ -211,18 +211,12 @@ def _benchmark_card() -> dict | None:
 
 
 def _breadth() -> dict | None:
-    br = store.read("hk_breadth", "breadth")
-    if br is None or br.empty:
-        return None
-    last = br.iloc[-1]
-    return {
-        "pct_above_50": round(float(last.get("pct_above_50", float("nan"))), 1),
-        "pct_above_200": round(float(last.get("pct_above_200", float("nan"))), 1),
-        "nh": int(last.get("nh", 0)), "nl": int(last.get("nl", 0)),
-        "ad_trend": "up" if br["ad_line"].diff(20).iloc[-1] > 0 else "down",
-        "n_members": int(last.get("n_members", 0)),
-        "pct50_chg20": round(float(br["pct_above_50"].diff(20).iloc[-1]), 1),
-    }
+    """Market breadth — how many HK large-caps are actually participating. HK's
+    searchable universe (~73 liquid names) IS its breadth list, so this reads the
+    existing curated breadth.parquet (fresher than the deep-history cache) and adds
+    the same broad/thin/mixed participation read the US/CN/CA cards use. DISPLAY-ONLY."""
+    from collectors.breadth import breadth_summary
+    return breadth_summary(store.read("hk_breadth", "breadth"), full=False)
 
 
 def _build_sector_pages(env) -> int:
