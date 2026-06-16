@@ -825,6 +825,48 @@
   </div>
   {% endif %}
 
+  <!-- ===================== CROSS-ASSET CONFIRMATION — do bonds & FX agree with equities? ===================== -->
+  {% if latest.cross_asset_confirm and latest.cross_asset_confirm.verdict not in [none, 'unknown'] %}
+  {% set cac = latest.cross_asset_confirm %}
+  {% set _cvtone = 'up' if cac.verdict == 'confirm' else ('down' if cac.verdict == 'diverge' else 'flat') %}
+  <div class="panel span12" id="cross-asset-confirm">
+    <h2>{{ t('Cross-asset confirmation — do bonds & FX agree with equities?', '跨资产确认 — 债券与外汇是否与股票一致？') }}
+      {{ help("Bonds (credit, curve, rates-vol, sovereign) and FX (the dollar, EM carry) sit at the fast end of the macro complex. This compares their INDEPENDENT reads — the bond credit×curve cycle clock, credit / curve / rates-vol bands, the dollar-smile regime, EM-FX conviction — against the equity cycle & risk read. Honestly graded: only credit/EBP and the curve have a (noisy) leading horizon; rates-vol-vs-VIX, the dollar/EM risk-off read and FX carry are COINCIDENT confirmation, and the stock-bond correlation is a slow regime descriptor. DISPLAY-ONLY — never scored; a divergence is an attention flag, not a forecast.", "债券（信用、曲线、利率波动、主权）与外汇（美元、新兴市场套息）处于宏观体系的快端。本面板将它们的独立读数 — 债券信用×曲线时钟、信用／曲线／利率波动区间、美元微笑周期、新兴市场外汇信念 — 与股票周期与风险读数作对比。诚实分级：仅信用/EBP与曲线具（嘈杂的）领先性；利率波动对VIX、美元/新兴市场避险读数与外汇套息为同步确认，股债相关性为缓慢的周期描述。仅供展示 — 从不评分；背离是关注信号，而非预测。") }}
+      <span class="badge tone-{{ _cvtone }}" style="float:right">{{ t(cac.verdict, cac.verdict_zh) }}{% if cac.agree_pct is not none %} · {{ cac.agree_pct }}%{% endif %}{% if cac.confidence %} · {{ t('conf', '信心') }} {{ t(cac.confidence_en or cac.confidence, cac.confidence_zh or cac.confidence) }}{% endif %}</span>
+    </h2>
+    <div style="background:var(--panel2);border:1px solid var(--line);border-left:3px solid var({{ '--up' if _cvtone=='up' else ('--down' if _cvtone=='down' else '--muted') }});border-radius:8px;padding:10px 12px;font-weight:600">
+      {{ t(cac.headline_en, cac.headline_zh) }}
+    </div>
+    {% if cac.cycle %}
+    <div class="muted sm" style="margin-top:8px">
+      {{ t('Cycle clock', '周期时钟') }}: {{ t('equities', '股票') }} <b>{{ td(cac.cycle.equity) if cac.cycle.equity else '—' }}</b>
+      · {{ t('bonds', '债券') }} <b>{{ t(cac.cycle.bonds_en or cac.cycle.bonds or '—', cac.cycle.bonds_zh or cac.cycle.bonds or '—') }}</b>
+      {% if cac.cycle.fx_regime %} · {{ t('dollar-smile', '美元微笑') }} <b>{{ t(cac.cycle.fx_regime, cac.cycle.fx_regime_zh or cac.cycle.fx_regime) }}</b>{% endif %}
+    </div>
+    {% endif %}
+    <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px">
+      {% for leg in cac.legs %}
+      <div style="display:flex;gap:8px;align-items:flex-start">
+        <span class="sstack-dot tone-{{ leg.tone }}" style="margin-top:5px;flex:0 0 auto"></span>
+        <div><b>{{ t(leg.label_en, leg.label_zh) }}</b> — <span class="muted">{{ t(leg.detail_en, leg.detail_zh) }}</span></div>
+      </div>
+      {% endfor %}
+    </div>
+    {% if cac.caution_flags %}
+    <div style="margin-top:10px">
+      <div class="sm" style="font-weight:600;margin-bottom:4px">{{ t('Cross-asset caution flags', '跨资产关注信号') }}</div>
+      {% for f in cac.caution_flags %}
+      <div class="sm" style="padding:4px 8px;margin:3px 0;border-left:3px solid var({{ '--down' if f.severity=='high' else ('--warn' if f.severity=='medium' else '--muted') }});background:var(--panel2);border-radius:4px">
+        {{ t(f.en, f.zh) }}
+        <span class="badge sm" style="margin-left:4px">{{ f.owner|upper }} · {{ t('leading', '领先') if f.lead=='leading' else t('coincident', '同步') }}{% if f.equity_blind %} · {{ t('equities not yet showing it', '股票尚未显示') }}{% endif %}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <p class="muted sm" style="margin:10px 0 0">{{ t(cac.note_en, cac.note_zh) }}</p>
+  </div>
+  {% endif %}
+
   <!-- ===================== MAJOR US INDEXES — HEALTH & RISK ===================== -->
   <div class="panel span12" id="index-health">
     <h2>{{ t('Major US indexes — health & drawdown risk', '美国主要指数 — 健康度与回撤风险') }}

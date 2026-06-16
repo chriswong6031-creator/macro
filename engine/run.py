@@ -191,6 +191,21 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("turning-point layer failed: %s", e)
         latest["turning_point"] = None
+    # Cross-asset confirmation: does the leading-family complex (BONDS + FX) CONFIRM
+    # or DIVERGE from the equity/macro regime computed above? Reads the two dedicated
+    # dashboards' contracts (data/bonds/bond_health.json, data/forex/latest.json) — whose
+    # rich signal vectors were otherwise orphaned — and compares their INDEPENDENT reads
+    # (bond cycle-clock phase, credit/curve/rates-vol/sovereign bands, the dollar-smile
+    # regime, EM-FX conviction) to the equity cycle/RORO/drawdown read. DISPLAY-ONLY leaf
+    # (engine/cross_asset_confirm.py): never scored, never fatal. Honestly graded — most
+    # legs are coincident confirmation / fragility gauges, not predictors (research/
+    # CROSS_ASSET_CONFIRMATION.md). Needs `latest` (the equity regime it compares against).
+    try:
+        from engine.cross_asset_confirm import snapshot as confirm_snapshot
+        latest["cross_asset_confirm"] = confirm_snapshot(latest)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("cross-asset-confirm layer failed: %s", e)
+        latest["cross_asset_confirm"] = None
     # Macro-risk score (MRS, 0..1): one deterministic risk-OFF gauge folded from
     # the conditions/regime legs above. Derived from macro_risk_series (one coherent
     # as-of date) — NOT from the latest dict, whose legs can straddle two release
