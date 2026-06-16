@@ -217,6 +217,32 @@ def _since_offer(ticker: str | None, offer: float | None) -> float | None:
     return float(s.iloc[-1] / offer - 1.0)
 
 
+def price_revision(offer, mlo, mhi) -> dict | None:
+    """Final offer price vs the marketed range = the Hanley partial-adjustment demand
+    proxy. DISPLAY-ONLY: it is the single strongest day-1 predictor in the literature
+    but is finalized the night before trading and the pop accrues to allocation, so it
+    is context, never a buy signal. None unless a marketed range was captured."""
+    try:
+        offer, mlo, mhi = float(offer), float(mlo), float(mhi)
+    except (TypeError, ValueError):
+        return None
+    if any(v != v for v in (offer, mlo, mhi)):       # NaN guard (NaN floats slip past float())
+        return None
+    if mhi <= mlo or mlo <= 0 or offer <= 0:         # need a valid marketed range
+        return None
+    mid = (mlo + mhi) / 2.0
+    if offer > mhi:
+        label = "above-range"
+    elif offer >= mid:
+        label = "top-half"
+    elif offer > mlo:
+        label = "bottom-half"
+    else:
+        label = "below-range"
+    return {"pct": (offer - mid) / mid, "label": label,
+            "low": round(mlo, 2), "high": round(mhi, 2), "mid": round(mid, 2)}
+
+
 def recent_listings(cal: pd.DataFrame | None = None, days: int = 120,
                     limit: int = 30) -> list[dict]:
     cal = _load() if cal is None else cal
@@ -238,6 +264,7 @@ def recent_listings(cal: pd.DataFrame | None = None, days: int = 120,
             "priced_date": r.get("priced_date"), "days_since": int(r["_dsl"]),
             "is_spac": bool(r.get("is_spac")),
             "since_offer": _since_offer(r.get("ticker"), offer),
+            "revision": price_revision(offer, r.get("marketed_low"), r.get("marketed_high")),
         })
     return rows
 

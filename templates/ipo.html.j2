@@ -295,7 +295,7 @@ html[data-theme="dark"] .spac{background:#2c2348;color:#c4a8ff}
   <div class="section-title">{{ t('Recently priced · last 120 days','近期定价 · 最近120天') }}</div>
   <div class="card">
     <table class="tbl">
-      <tr><th>{{ t('Priced','定价日') }}</th><th>{{ t('Ticker','代码') }}</th><th>{{ t('Company','公司') }}</th><th class="n">{{ t('Offer','发行价') }}</th><th class="n">{{ t('Size','规模') }}</th><th class="n">{{ t('vs offer','对比发行') }}</th></tr>
+      <tr><th>{{ t('Priced','定价日') }}</th><th>{{ t('Ticker','代码') }}</th><th>{{ t('Company','公司') }}</th><th class="n">{{ t('Offer','发行价') }}</th><th class="n">{{ t('Size','规模') }}</th><th>{{ t('Demand (vs range)','需求（对比区间）') }}</th><th class="n">{{ t('vs offer','对比发行') }}</th></tr>
       {% for r in recent %}
       <tr>
         <td class="faint">{{ r.date }}<span class="sub"> · d+{{ r.days_since }}</span></td>
@@ -303,11 +303,13 @@ html[data-theme="dark"] .spac{background:#2c2348;color:#c4a8ff}
         <td>{{ r.company }}{% if r.is_spac %}<span class="spac">SPAC</span>{% endif %}</td>
         <td class="n">{{ r.offer_price }}</td>
         <td class="n">{{ r.size }}</td>
+        <td>{% if r.has_rev %}<span class="chip" style="border-color:{{ r.rev_col }};color:{{ r.rev_col }};font-size:11.5px;padding:3px 8px">{{ t(r.rev_en, r.rev_zh) }}{{ r.rev_pct }}</span>{% else %}<span class="faint">—</span>{% endif %}</td>
         <td class="n" style="color:{{ r.since_color }}">{{ r.since_offer }}</td>
       </tr>
       {% endfor %}
     </table>
     <div class="sub faint" style="margin-top:10px;font-size:12px">{{ t('“vs offer” shows only where we already hold the price series — most fresh IPOs are outside our coverage universe, so it is usually blank by design (we do not chase per-name quotes for a context page). SPACs are flagged, never dropped: they price at $10, rarely pop, and distort IPO base rates. Post-listing quality/factor coverage (accruals, profitability, valuation-vs-comps) only switches on after a name has its first annual report (~12 months) or joins an index — so fresh IPOs sit in a deliberate coverage hole rather than getting a fabricated quality score.','“对比发行”仅在我们已持有该价格序列时显示 —— 多数新上市公司不在我们的覆盖范围内，故通常按设计留空（背景页不逐一抓取报价）。SPAC 被标记而非剔除：它们以 $10 定价、极少爆涨，会扭曲新股基准比率。上市后的质量/因子覆盖（应计、盈利能力、相对估值）只有在公司发布首份年报（约12个月）或被纳入指数后才会启用 —— 因此新上市公司处于刻意的覆盖空窗，而非被赋予虚构的质量评分。') }}</div>
+    <div class="sub faint" style="margin-top:6px;font-size:12px">{{ t('“Demand (vs range)” = the final offer price vs the marketed range (partial-adjustment, Hanley) — the single strongest day-1 predictor, but it is finalised the night before trading and is not capturable without an allocation, so it is context, never a buy signal. It accrues forward as deals move from the upcoming calendar to priced.','“需求（对比区间）” = 最终发行价相对营销区间（部分调整，Hanley）—— 单日最强的预测因子，但在交易前夜才敲定，且没有配售便无法捕获，故为背景而非买入信号。它随着交易从“即将”日历转为“已定价”而向前累积。') }}</div>
   </div>
   {% endif %}
 

@@ -208,6 +208,31 @@ def fetch_ipo_calendar(lookback: int = LOOKBACK_MONTHS, ahead: int = AHEAD_MONTH
         existing = existing.copy()
         if "deal_id" in existing.columns:           # legacy frame stored deal_id as a column
             existing = existing.set_index("deal_id")
+
+    # MARKETED offering range — captured while a deal shows a real range (upcoming/filed),
+    # PRESERVED across the transition to priced (the priced row carries only the final
+    # single price). This is the only clean source for the price-revision / partial-
+    # adjustment demand proxy (the prospectus cover range lives in un-parseable HTML
+    # tables). Forward-accruing: it populates as deals move upcoming -> priced.
+    prior_mkt: dict = {}
+    if not existing.empty and "marketed_low" in existing.columns:
+        for did, r in existing.iterrows():
+            ml = r.get("marketed_low")
+            if ml is not None and pd.notna(ml):
+                prior_mkt[did] = (ml, r.get("marketed_high"))
+    mlo, mhi = [], []
+    for did, r in new_df.iterrows():
+        lo, hi = r.get("range_low"), r.get("range_high")
+        if lo is not None and hi is not None and lo != hi:   # a real marketed range
+            mlo.append(lo); mhi.append(hi)
+        elif did in prior_mkt:                               # carry forward across pricing
+            mlo.append(prior_mkt[did][0]); mhi.append(prior_mkt[did][1])
+        else:
+            mlo.append(None); mhi.append(None)
+    new_df["marketed_low"] = mlo
+    new_df["marketed_high"] = mhi
+
+    if not existing.empty:
         # newer status wins; deals that aged out of the window are preserved as-is
         keep = existing[~existing.index.isin(new_df.index)]
         out = pd.concat([keep, new_df])

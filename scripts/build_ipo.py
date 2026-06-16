@@ -58,6 +58,13 @@ LOCK_STATUS = {
     "locked": ("🔒 locked", "🔒 锁定中", C["muted"]),
     "expired": ("expired", "已解禁", C["faint"]),
 }
+# price-revision (partial-adjustment) label → (EN, ZH, colour)
+REV_LABEL = {
+    "above-range": ("▲ above range", "▲ 高于区间", "#1FA971"),
+    "top-half": ("top of range", "区间上沿", "#1FA971"),
+    "bottom-half": ("bottom of range", "区间下沿", C["amber"]),
+    "below-range": ("▼ below range", "▼ 低于区间", C["red"]),
+}
 HK_VERDICT_ZH = {"receptive": "接纳", "mixed": "混合", "poor": "低迷", "unavailable": "不可用"}
 HK_VERDICT_COLOR = {"receptive": "#1FA971", "mixed": C["amber"], "poor": C["red"], "unavailable": C["muted"]}
 HK_LEG_ZH = {
@@ -286,6 +293,13 @@ def build() -> str:
     # recent / upcoming tables
     recent = []
     for r in snap["recent"]:
+        rev = r.get("revision")
+        rev_en, rev_zh, rev_col = ("—", "—", C["muted"])
+        rev_pct = ""
+        if rev:
+            rev_en, rev_zh, rev_col = REV_LABEL.get(rev["label"], ("—", "—", C["muted"]))
+            if rev.get("pct") is not None:
+                rev_pct = f" {rev['pct'] * 100:+.0f}%"
         recent.append({
             "ticker": r["ticker"] or "—", "company": r["company"] or "—",
             "exchange": r["exchange"] or "", "offer": _usd(r["offer_price"]).replace("$", "$") if r["offer_price"] else "—",
@@ -295,6 +309,8 @@ def build() -> str:
             "date": r["priced_date"], "days_since": r["days_since"],
             "is_spac": r["is_spac"], "since_offer": _pct(r["since_offer"]),
             "since_color": ("#1FA971" if (r["since_offer"] or 0) > 0 else C["red"]) if r["since_offer"] is not None else C["muted"],
+            "rev_en": rev_en, "rev_zh": rev_zh, "rev_col": rev_col, "rev_pct": rev_pct,
+            "has_rev": bool(rev),
         })
     upcoming = []
     for r in snap["upcoming"]:

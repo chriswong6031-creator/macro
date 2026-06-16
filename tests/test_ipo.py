@@ -219,6 +219,17 @@ def test_not_imported_by_any_scoring_module():
             assert layer not in src, f"engine/{mod} must not import {layer}"
 
 
+def test_price_revision_partial_adjustment():
+    assert ir.price_revision(40, 31, 34)["label"] == "above-range"     # strong demand
+    assert ir.price_revision(34, 31, 34)["label"] == "top-half"
+    assert ir.price_revision(31.5, 31, 34)["label"] == "bottom-half"
+    assert ir.price_revision(28, 31, 34)["label"] == "below-range"     # weak demand
+    assert round(ir.price_revision(40, 31, 34)["pct"], 3) == 0.231
+    assert ir.price_revision(34, float("nan"), float("nan")) is None   # NaN guard
+    assert ir.price_revision(34, 34, 34) is None                       # flat = no real range
+    assert ir.price_revision(None, 31, 34) is None
+
+
 def test_ipo_hk_backdrop_shape_and_not_scored():
     assert ihk.SCORED is False
     b = ihk.hk_backdrop()
