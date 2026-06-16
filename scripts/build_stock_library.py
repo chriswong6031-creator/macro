@@ -488,6 +488,32 @@ def main() -> int:
             gate_go = (json.loads(_gate.read_text()) or {}).get("US") == "GO"
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("stock_conviction_gate.json unreadable (%s)", e)
+    # analyst estimate-REVISION momentum — the fast/early EDGE leg. Drip a capped batch each
+    # build (resumable, never fatal), then read the latest readings into a cross-sectional z.
+    try:
+        from collectors.equity_revisions import fetch_revisions
+        fetch_revisions(max_new=int(config.load().get("equity_profile", {}).get("per_build", 200)))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("revision drip skipped (%s)", e)
+    revision_z: dict[str, float] = {}
+    _rp = config.data_dir() / "revisions" / "latest.parquet"
+    if _rp.exists():
+        try:
+            _rv = pd.read_parquet(_rp)
+            raw = {}
+            for t, r in _rv.iterrows():
+                b = r.get("breadth"); e = r.get("est_chg_30d")
+                xs = [x for x in (b, (max(-15, min(15, e)) / 10.0 if e is not None and e == e else None))
+                      if x is not None and x == x]
+                if xs:
+                    raw[t] = float(sum(xs) / len(xs))
+            if len(raw) >= 5:
+                s = pd.Series(raw); mu, sd = s.mean(), s.std(ddof=0) or 1.0
+                revision_z = ((s - mu) / sd).clip(-3, 3).round(3).to_dict()
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("revisions latest.parquet unreadable (%s)", e)
+    log.info("revision-momentum: %d names with a cross-sectional z%s", len(revision_z),
+             " · GATE GO → board ranks by EDGE" if gate_go else "")
     index, cand, built, failed = [], [], 0, 0
     # Conviction profiles (engine/stock_score) per name + the deferred per-stock JSON
     # writes — deferred so the display score can be the WITHIN-MARKET percentile of the
@@ -553,15 +579,15 @@ def main() -> int:
         if fragility_map.get(ticker):
             rec["fragility"] = fragility_map[ticker]
         # ---- unified Conviction Profile (engine/stock_score) -----------------
-        # The single block both the dashboard standout card AND this name's detail
-        # page render, so the two can never structurally disagree. Validated US legs
-        # (residual alpha + SUE + insider) lead; the cycle state is a HARD verb
-        # modifier (a downtrend caps the entry axis and forbids a Buy verb).
+        # The single block both the dashboard standout card AND this name's detail page
+        # render, so the two can never structurally disagree. v2: the EDGE = the VALIDATED
+        # event core (SUE + insider + analyst-revisions), residual momentum a light context;
+        # the cycle state is a HARD verb modifier (a downtrend caps entry + forbids a Buy verb).
         ins = insider_map.get(ticker) or {}
         ins_bps = ins.get("bps") if (ins.get("buyers", 0) >= 2 and (ins.get("net_mn") or 0) > 0) else None
         norm = stock_score.normalize_rec(
             rec, "US", sue=sue_z.get(ticker), insider_bps=ins_bps,
-            basket=basket_tw.get(ticker))
+            revision_z=revision_z.get(ticker), basket=basket_tw.get(ticker))
         prof = stock_score.conviction_profile(norm, "US", ctx={"as_of": alpha_asof, "gate_go": gate_go})
         rec["conviction"] = prof
         profiles[ticker] = prof
@@ -610,22 +636,36 @@ def main() -> int:
         log.info("wrote setups.json (%d buy, %d laggards, %d candidates)",
                  len(setups["buy"]), len(setups["laggards"]), len(cand))
         # WIDE "Standout individual stocks" board (the bench the user sees, ~80-120).
-        # Ranked by the VALIDATED residual-alpha leg (the shipped rank stays the
-        # validated leg per Phase-0; the Conviction composite rides as the displayed
-        # profile/verdict on each card). Floor-based: buys = the alpha>=0.5 cross-
-        # section, capped generously so the show-more reveals the full bench.
-        wide = rank_setups(cand, as_of=alpha_asof, rank_by="alpha", n_buy=120, n_lag=12)
+        # v2: when the deep-PIT gate is GO (the validated EVENT edge beats the momentum
+        # baseline), rank the board by the holistic Conviction composite (EDGE-dominant);
+        # otherwise keep the validated residual-alpha rank. Either way each card carries
+        # the full Conviction profile/verdict + per-leg basis.
+        # Rank the board by the holistic multi-factor Conviction composite (a DISPLAY
+        # ordering that integrates the validated event EDGE + entry timing + quality +
+        # tailwind — surfacing the event-edge names the alpha-only rank would bury). This
+        # is NOT claimed as a validated standalone alpha: the deep-PIT gate found nothing
+        # cleanly beats noise at this horizon (residual momentum ALSO fails DSR), so the
+        # per-card trust tier + α chip + per-leg basis show exactly what is validated vs
+        # context. `gate_go` (currently NEUTRAL) would flip the trust tier to 'validated'.
+        row_by_t = {r.get("ticker"): r for _, r in cand}
+        scored = [(t, p) for t, p in profiles.items()
+                  if p.get("composite_z") is not None and t in row_by_t]
+        scored.sort(key=lambda kv: -(kv[1]["composite_z"]))
+        wide = {"as_of": alpha_asof, "rank_by": ("edge-validated" if gate_go else "conviction"),
+                "gate_go": gate_go,
+                "buy": [row_by_t[t] for t, _ in scored[:120]],
+                "laggards": [row_by_t[t] for t, _ in scored[-12:][::-1]] if len(scored) > 24 else []}
+        eligible = sum(1 for _, p in scored if (p.get("composite_z") or 0) > 0)
         for r in wide["buy"] + wide["laggards"]:
             t = r.get("ticker")
             r["conviction"] = profiles.get(t)
             r.update({k: v for k, v in (disp_map.get(t) or {}).items() if v is not None})
-        eligible = sum(1 for s, r in cand if (r.get("alpha") or 0) >= 0.5)
-        wide["eligible"] = eligible          # how many cleared the +0.5 alpha floor
+        wide["eligible"] = eligible
         wide["universe"] = len(cand)
         (site / "factordata" / "us_standouts.json").write_text(
             json.dumps(wide, separators=(",", ":"), default=str))
-        log.info("wrote us_standouts.json (%d buy of %d eligible / %d universe)",
-                 len(wide["buy"]), eligible, len(cand))
+        log.info("wrote us_standouts.json (%d buy · rank_by=%s · %d eligible / %d universe)",
+                 len(wide["buy"]), wide["rank_by"], eligible, len(cand))
     # multi-timeframe Bottom-Confidence per-band held-rate (stock.html shows the
     # measured "this band held the low ~N%" line; see research/BOTTOM_CONFIDENCE.md)
     bccal = config.data_dir() / "regime" / "bottom_confidence_calibration.json"

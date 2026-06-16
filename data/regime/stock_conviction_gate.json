@@ -1,0 +1,18 @@
+{
+  "US": "NEUTRAL",
+  "CN": "NEUTRAL",
+  "HK": "NEUTRAL",
+  "CA": "NEUTRAL",
+  "_meta": {
+    "powered": true,
+    "span": "2008-06-30..2025-11-28",
+    "primary_horizon": 63,
+    "winner": {
+      "US": null,
+      "CN": null,
+      "HK": null,
+      "CA": null
+    },
+    "note": "deep+PIT run"
+  }
+}

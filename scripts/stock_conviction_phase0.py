@@ -85,7 +85,10 @@ MARKETS = ("US", "CN", "HK", "CA")
 # the axes we assemble + the cross-axis composites we try. n_trials for the DSR is
 # composites × horizons (the family we actually screened).
 AXES = ["selection", "entry", "tailwind", "quality"]
-COMPOSITES = ["conviction_orth", "conviction_ew", "selection_led"]
+# v2: the EDGE composite is the validated EVENT core the board actually ranks by when the
+# gate is GO. Tested here as the pure sector-neutral SUE leg (the FDR survivor) — a
+# CONSERVATIVE lower bound on the live EDGE, which also folds insider + revisions.
+COMPOSITES = ["edge", "conviction_orth", "conviction_ew", "selection_led"]
 
 
 def _fmt(v, spec: str) -> str:
@@ -216,6 +219,10 @@ def build_axis_panels(closes, market, tkr_sector, grid, fund_cache, sue_cache):
 
         for k in AXES:
             panels[k][d] = A[k].dropna()
+        # v2 EDGE = the validated event core (SUE), the leg the board ranks by when GO.
+        edge = qlegs.get("sue")
+        if edge is not None and not edge.dropna().empty:
+            panels["edge"][d] = edge.dropna()
         panels["conviction_orth"][d] = conv_orth.dropna()
         panels["conviction_ew"][d] = conv_ew.dropna()
         panels["selection_led"][d] = sel_led.dropna()
@@ -315,7 +322,7 @@ def decide_gate(results: dict, powered: bool) -> tuple[str, str | None, list[str
     base_ic = r["selection"]["ic"].get("mean_ic", 0) or 0
     base_sh = r["selection"]["ls"].get("sharpe") or 0
     best = None
-    for k in ("conviction_orth", "conviction_ew", "selection_led"):
+    for k in ("edge", "conviction_orth", "conviction_ew", "selection_led"):
         if k not in r:
             continue
         c_ic = r[k]["ic"].get("mean_ic", 0) or 0
@@ -346,9 +353,10 @@ def decide_gate(results: dict, powered: bool) -> tuple[str, str | None, list[str
     return "NEUTRAL", None, notes
 
 
-ORDER = ["selection", "conviction_orth", "conviction_ew", "selection_led",
+ORDER = ["selection", "edge", "conviction_orth", "conviction_ew", "selection_led",
          "entry", "quality", "tailwind"]
-LBL = {"selection": "selection (BASELINE — validated leg the board ranks by)",
+LBL = {"selection": "selection (BASELINE — residual momentum, the v1 rank)",
+       "edge": "EDGE (v2 — validated event core: SUE; live also folds insider + revisions)",
        "conviction_orth": "conviction composite (orthogonal across axes)",
        "conviction_ew": "conviction composite (equal-weight)",
        "selection_led": "selection-led blend (0.6 sel + 0.4 entry/quality)",
@@ -524,10 +532,25 @@ def main() -> int:
 
     log.info("grid: %d monthly rebalances %s..%s", len(grid), grid[0].date(), grid[-1].date())
 
-    # PIT fundamentals (deep) + the SUE proxy — both cached to parquet (horizon-free).
+    # PIT fundamentals (deep) + SUE. Prefer the REAL validated SUE (engine.sue, the FDR
+    # survivor: point-in-time standardized unexpected earnings vs the seasonal expectation
+    # from the quarterly EPS panel) — the crude ni-YoY _sue_proxy understates it badly. Fall
+    # back to the proxy only if the EPS panel is absent.
     fund_panel = pd.read_parquet(config.data_dir() / "edgar" / "fundamentals_panel.parquet")
     fund_cache = pit_fund_panels(grid, closes, fund_panel)
-    sue_cache = _sue_proxy(fund_panel, grid)
+    try:
+        from engine import sue as _sue
+        eps_panel = _sue.load_panel()
+        if eps_panel is not None and not eps_panel.empty:
+            sue_cache = {str(d.date()): _sue.sue_cross_section(eps_panel, d) for d in grid}
+            log.info("SUE: REAL validated SUE from the quarterly EPS panel (%d names latest)",
+                     int(sum(1 for s in sue_cache.values() if s is not None and not s.empty)))
+        else:
+            sue_cache = _sue_proxy(fund_panel, grid)
+            log.warning("SUE: EPS panel empty — falling back to the ni-YoY proxy")
+    except Exception as e:  # noqa: BLE001
+        log.warning("SUE: real-SUE path failed (%s) — using the ni-YoY proxy", e)
+        sue_cache = _sue_proxy(fund_panel, grid)
 
     # The axis construction (residual alpha, fundamentals, factor maths) is the US/CA
     # equity panel. CN/HK have NO deep survivorship panel in this repo, so the harness

@@ -457,6 +457,13 @@
   .nb-cau span { font-size: 8.5px; font-weight: 700; padding: 0 4px; border-radius: 6px;
                  color: var(--warn); background: color-mix(in srgb, var(--warn) 13%, var(--panel)); }
   .nb-tier { font-size: 8px; color: var(--muted); margin-top: 3px; letter-spacing: .02em; }
+  /* per-leg EDGE basis chips (top-3 firing legs, tier-colored) */
+  .nb-basis { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 3px; }
+  .nbb { font-size: 8.5px; font-weight: 700; padding: 0 4px; border-radius: 6px;
+         border: 1px solid var(--line); font-variant-numeric: tabular-nums; color: var(--muted); }
+  .nbb-validated { color: var(--up); border-color: color-mix(in srgb, var(--up) 35%, var(--line)); }
+  .nbb-literature { color: var(--g-cold); border-color: color-mix(in srgb, var(--g-cold) 35%, var(--line)); }
+  .nbb-screen { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 35%, var(--line)); }
   /* market dealer-gamma vol-regime context banner */
   .gamma-note { margin-top: 9px; padding: 7px 11px; border-radius: 9px; font-size: 11.5px;
                 line-height: 1.5; border: 1px solid var(--line); border-left-width: 3px; }
@@ -1981,6 +1988,8 @@
             </div>
             {% endfor %}
           </div>
+          {% set _basis = (c.axes.selection.basis or [])[:3] %}
+          {% if _basis %}<div class="nb-basis">{% for b in _basis %}<span class="nbb nbb-{{ b.tier }}">{{ b.label }} {{ '%+.1f'|format(b.z) }}</span>{% endfor %}</div>{% endif %}
           <div class="nb-bot">
             {% if n.label %}<span class="nb-state">{{ td(n.label) }}</span>{% endif %}
             {% if n.alpha is not none %}<span class="nb-az {{ 'az-up' if n.alpha > 0 else ('az-dn' if n.alpha < 0 else '') }}" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α {{ '%+.2f'|format(n.alpha) }}</span>{% endif %}
