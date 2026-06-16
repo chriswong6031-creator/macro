@@ -200,21 +200,21 @@
       "rank": 17
     },
     {
+      "ticker": "GC=F",
+      "rs": 5.749373642318936,
+      "mom_20d_pct": -6.72,
+      "mom_60d_pct": -17.77,
+      "above_200d_trend": false,
+      "pctile_252d": 30.2,
+      "rank": 18
+    },
+    {
       "ticker": "XLE",
       "rs": 0.07359272681182828,
       "mom_20d_pct": -8.48,
       "mom_60d_pct": -17.89,
       "above_200d_trend": true,
       "pctile_252d": 63.9,
-      "rank": 18
-    },
-    {
-      "ticker": "GC=F",
-      "rs": 5.739437630461704,
-      "mom_20d_pct": -6.88,
-      "mom_60d_pct": -17.91,
-      "above_200d_trend": false,
-      "pctile_252d": 30.2,
       "rank": 19
     }
   ],
@@ -259,7 +259,7 @@
     },
     "copper_gold": {
       "level": 0.0015,
-      "chg_20d_pct": 8.6
+      "chg_20d_pct": 8.41
     }
   },
   "alerts": [],
@@ -358,7 +358,7 @@
       "skew_pctile": 0.32043650793650796,
       "stock_bond_corr": 0.6663714594817538,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.5500390535758111,
+      "roro": 0.5472397116008219,
       "roro_state": "risk-on",
       "vol_target_scalar": 0.7843936813944001,
       "news_sentiment": -0.05408370867371559,
@@ -410,27 +410,14 @@
     "doc_id": "fomc_2026-04-29",
     "asof": "2026-04-29",
     "tone_score": 0.0,
-    "guidance_direction": "on_hold",
-    "risk_delta": 0.3,
+    "guidance_direction": "unknown",
+    "risk_delta": 0.0,
     "shock_reversible": "unknown",
-    "confidence": "medium",
+    "confidence": "low",
     "confidence_gated": false,
     "dropped_fields": [],
-    "evidence": [
-      {
-        "field": "tone_score",
-        "quote_span": "the Committee decided to maintain the target range for the federal funds rate at 3\u00e2\u0080\u00911/2 to 3\u00e2\u0080\u00913/4 percent"
-      },
-      {
-        "field": "guidance_direction",
-        "quote_span": "the Committee decided to maintain the target range for the federal funds rate at 3\u00e2\u0080\u00911/2 to 3\u00e2\u0080\u00913/4 percent"
-      },
-      {
-        "field": "risk_delta",
-        "quote_span": "Developments in the Middle East are contributing to a high level of uncertainty about the economic outlook"
-      }
-    ],
-    "degraded_reason": null,
+    "evidence": [],
+    "degraded_reason": "stop_max_tokens",
     "disclaimer": "Context only \u2014 not a signal. This is a machine DIGEST of a public document, produced by an AI model after the fact. The tone / guidance / risk / reversibility readings are background context; they are NOT inputs to any score, signal or allocation unless a downstream, separately-gated step promotes a single field, and even then only as one bounded factor. \u201cunknown\u201d means the evidence was insufficient \u2014 the honest answer. Every non-unknown field is backed by a quote verified to appear verbatim in the source; unverifiable claims are dropped."
   },
   "dislocation": {
@@ -589,7 +576,7 @@
     "confidence": "medium",
     "confidence_zh": "\u4e2d",
     "strength": 1.34,
-    "dominance_ratio": 1.43,
+    "dominance_ratio": 1.44,
     "agreement": 0.88,
     "runner_up": "china_stimulus",
     "runner_up_label": "China stimulus",
@@ -635,8 +622,8 @@
         "label": "China stimulus",
         "label_zh": "\u4e2d\u56fd\u523a\u6fc0",
         "family": "china",
-        "projection": 0.94,
-        "strength": 0.94,
+        "projection": 0.93,
+        "strength": 0.93,
         "direction": "China risk-on \u2014 A-shares/HK & copper lead up"
       },
       {
@@ -658,15 +645,6 @@
         "direction": "AI/semis leadership \u2014 narrow tech-led tape"
       },
       {
-        "driver": "fed_repricing",
-        "label": "Fed repricing",
-        "label_zh": "\u7f8e\u8054\u50a8\u91cd\u5b9a\u4ef7",
-        "family": "rates",
-        "projection": -0.35,
-        "strength": 0.35,
-        "direction": "dovish repricing \u2014 cuts priced in, front-end down"
-      },
-      {
         "driver": "usd_shock",
         "label": "USD shock",
         "label_zh": "\u7f8e\u5143\u51b2\u51fb",
@@ -674,6 +652,15 @@
         "projection": -0.35,
         "strength": 0.35,
         "direction": "dollar falling \u2014 risk tailwind, commodities & EM bid"
+      },
+      {
+        "driver": "fed_repricing",
+        "label": "Fed repricing",
+        "label_zh": "\u7f8e\u8054\u50a8\u91cd\u5b9a\u4ef7",
+        "family": "rates",
+        "projection": -0.35,
+        "strength": 0.35,
+        "direction": "dovish repricing \u2014 cuts priced in, front-end down"
       },
       {
         "driver": "liquidity_impulse",
@@ -689,8 +676,8 @@
         "label": "Real-rate shock",
         "label_zh": "\u5b9e\u9645\u5229\u7387\u51b2\u51fb",
         "family": "rates",
-        "projection": -0.19,
-        "strength": 0.19,
+        "projection": -0.2,
+        "strength": 0.2,
         "direction": "real yields falling \u2014 easing, gold & duration bid"
       },
       {
@@ -927,7 +914,7 @@
   },
   "fed_path": {
     "asof": "2026-06-15",
-    "built": "2026-06-15T23:14:15.124005+00:00",
+    "built": "2026-06-16T00:09:32.601937+00:00",
     "policy_rate": 3.62,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -935,20 +922,20 @@
     "implied": {
       "now": 3.62,
       "m1": 3.63,
-      "m3": 3.66,
+      "m3": 3.67,
       "m6": 3.77,
-      "m12": 3.94
+      "m12": 3.93
     },
     "implied_source_en": "ZQ fed-funds futures",
     "implied_source_zh": "ZQ \u8054\u90a6\u57fa\u91d1\u671f\u8d27",
-    "implied_bp_12m": 32,
+    "implied_bp_12m": 31,
     "implied_cuts_12m": -1,
     "implied_cuts_6m": -1,
     "sofr_path": {
       "m1": null,
       "m3": 3.71,
       "m6": 3.83,
-      "m12": 3.98
+      "m12": 3.97
     },
     "dots": [
       {
@@ -976,8 +963,8 @@
     "ntfs": 0.75,
     "curve_tp_adj": 0.4,
     "rate_exp_proxy": 0.47,
-    "headline_en": "Market prices ~1 hike over the next 12m (funds 3.62% \u2192 3.94%)",
-    "headline_zh": "\u5e02\u573a\u4e3a\u672a\u676512\u4e2a\u6708\u5b9a\u4ef7\u7ea6\u52a0\u606f1\u6b21\uff08\u57fa\u91d1\u5229\u7387 3.62% \u2192 3.94%\uff09",
+    "headline_en": "Market prices ~1 hike over the next 12m (funds 3.62% \u2192 3.93%)",
+    "headline_zh": "\u5e02\u573a\u4e3a\u672a\u676512\u4e2a\u6708\u5b9a\u4ef7\u7ea6\u52a0\u606f1\u6b21\uff08\u57fa\u91d1\u5229\u7387 3.62% \u2192 3.93%\uff09",
     "read_en": "At end-2026 the market implies 3.77% vs the Fed's 3.40% median dot (+37bp \u2014 market more hawkish than the Fed). The near-term forward spread is positive \u2014 no cuts priced near-term (+0.75pp).",
     "read_zh": "\u5728end-2026\uff0c\u5e02\u573a\u9690\u542b 3.77% \u5bf9\u6bd4\u7f8e\u8054\u50a8 3.40% \u7684\u4e2d\u4f4d\u70b9\uff08+37\u57fa\u70b9 \u2014 \u5e02\u573a\u6bd4\u7f8e\u8054\u50a8\u66f4\u9e70\u6d3e\uff09\u3002\u8fd1\u7aef\u8fdc\u671f\u5229\u5dee\u4e3a\u6b63\u2014\u2014\u8fd1\u7aef\u672a\u4e3a\u964d\u606f\u5b9a\u4ef7\uff08+0.75\u4e2a\u767e\u5206\u70b9\uff09\u3002",
     "note_en": "Display / LLM-context only. The implied path is a market PRICE (the futures-implied funds rate), not a forecast edge, and repricing is REACTIVE \u2014 it moves after data and the Fed, it does not lead. Never scored, never an MRS leg. ZQ/SR3 = keyless CME futures; dots = FRED FEDTARMD (FOMC SEP median). Cite the CME/FRED.",
@@ -2368,22 +2355,22 @@
       {
         "ticker": "GC=F",
         "name": "Gold",
-        "price": 4332.3,
+        "price": 4339.8,
         "above50": false,
         "above200": false,
-        "pct_vs_50dma": -5.3,
-        "pct_vs_200dma": -2.2,
-        "rsi14": 44.0,
+        "pct_vs_50dma": -5.2,
+        "pct_vs_200dma": -2.0,
+        "rsi14": 45.0,
         "macd_pos": false,
-        "off_52w_high_pct": -18.5,
+        "off_52w_high_pct": -18.4,
         "season_this": "Jun: -0.6% avg, up 42% of years (n=26)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.6%\uff0c42% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": -5.2
+        "mom_60d_pct": -5.0
       },
       {
         "ticker": "CL=F",
         "name": "Crude Oil",
-        "price": 81.42,
+        "price": 81.46,
         "above50": false,
         "above200": true,
         "pct_vs_50dma": -14.7,
@@ -2393,7 +2380,7 @@
         "off_52w_high_pct": -27.9,
         "season_this": "Jun: +2.6% avg, up 65% of years (n=26)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 +2.6%\uff0c65% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": -17.2
+        "mom_60d_pct": -17.1
       },
       {
         "ticker": "HG=F",
