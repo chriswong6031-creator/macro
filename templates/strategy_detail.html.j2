@@ -130,6 +130,7 @@ html[data-theme="dark"] .tag.exp{background:#3a1d2b;color:#f08bb4}
       <div class="nav-dd-menu" role="menu">
         <a href="china.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('A-share regime · sectors · flows', 'A股周期 · 板块 · 资金') }}</span></a>
         <a href="china_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Standouts · alpha · setups', '精选 · 阿尔法 · 布局') }}</span></a>
+        <a href="china_strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -153,7 +154,13 @@ html[data-theme="dark"] .tag.exp{background:#3a1d2b;color:#f08bb4}
         <a href="vector_allocation.html">◎ {{ t('Allocation Strategy', '仓位策略') }}<span class="d">{{ t('BTC · ETH · alts · cash', 'BTC · ETH · 山寨 · 现金') }}</span></a>
       </div>
     </div>
-    <a class="nav-link" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }}</a>
+    <div class="nav-dd">
+      <a class="nav-link" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="commodities.html">📊 {{ t('Commodity Dashboard', '商品仪表盘') }}<span class="d">{{ t('Gold · silver · copper · oil · complex', '金 · 银 · 铜 · 油 · 综合') }}</span></a>
+        <a href="commodity_strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Per-commodity tactical strategies', '分品种战术策略') }}</span></a>
+      </div>
+    </div>
     <a class="nav-link" href="forex.html">💱 {{ t('Forex', '外汇') }}</a>
     <a class="nav-link" href="bonds.html">🏛️ {{ t('Bonds', '债券') }}</a>
     <div class="nav-dd">
@@ -177,7 +184,7 @@ html[data-theme="dark"] .tag.exp{background:#3a1d2b;color:#f08bb4}
     </div>
   </div>
 
-  <div class="section-title"><a href="strategies.html" style="color:inherit;text-decoration:none">← {{ t('Strategies','策略') }}</a> · {{ s.icon }} {{ t('Tactical strategy','战术策略') }}</div>
+  <div class="section-title"><a href="{{ back_href|default('strategies.html') }}" style="color:inherit;text-decoration:none">← {{ t(back_label_en|default('Strategies'), back_label_zh|default('策略')) }}</a> · {{ s.icon }} {{ t('Tactical strategy','战术策略') }}</div>
   <div class="h1">{{ t(s.name_en, s.name_zh) }}</div>
   <div class="sub" style="margin-bottom:6px">{{ t(s.thesis_en, s.thesis_zh) }}</div>
   <div class="sub faint" style="margin-bottom:8px">{{ t('As of','截至') }} {{ as_of }} · {{ t(s.bench_en, s.bench_zh) }} · {{ t('current income','当前票息') }} ~{{ income_now }}%</div>

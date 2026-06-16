@@ -62,6 +62,7 @@ class StrategySpec:
     caveat_en: str = ""
     caveat_zh: str = ""
     own_page: str | None = None   # if set, the hub card links here instead of strategy_<key>.html
+    group: str | None = None      # optional grouping key (e.g. commodity) for toggle-grid pages
 
 
 def _ctx() -> dict:

@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<title>Strategy Scorecards — Market Intelligence</title>
+<title>China Strategy Scorecards — Market Intelligence</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -88,11 +88,11 @@ html[data-theme="dark"] .stance{background:var(--grid)}
       <div class="nav-links">
     <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
     <div class="nav-dd">
-      <a class="nav-link active" href="macro.html">🇺🇸 {{ t('United States', '美国') }} <span class="caret">▾</span></a>
+      <a class="nav-link" href="macro.html">🇺🇸 {{ t('United States', '美国') }} <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="macro.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('Regime · growth · inflation · nowcast', '周期 · 增长 · 通胀 · 即时预测') }}</span></a>
         <a href="us_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Standouts · sectors · flows', '精选 · 板块 · 资金') }}</span></a>
-        <a class="active" href="strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
+        <a href="strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
         <a href="spvector.html">📐 {{ t('S&P / Macro Vector', '标普宏观向量') }}<span class="d">{{ t('Tactical equity↔cash', '战术股票↔现金') }}</span></a>
         <a href="baskets.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P', '等权主题篮子 vs 标普') }}</span></a>
         <a href="alerts.html">🚨 {{ t('Alert Center', '警报中心') }}<span class="d">{{ t('Ranked & triaged alerts', '分级分诊的警报') }}</span></a>
@@ -101,11 +101,13 @@ html[data-theme="dark"] .stance{background:var(--grid)}
       </div>
     </div>
     <div class="nav-dd">
-      <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国') }} <span class="caret">▾</span></a>
+      <a class="nav-link active" href="china.html">🇨🇳 {{ t('China', '中国') }} <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="china.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('A-share regime · sectors · flows', 'A股周期 · 板块 · 资金') }}</span></a>
         <a href="china_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Standouts · alpha · setups', '精选 · 阿尔法 · 布局') }}</span></a>
-        <a href="china_strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
+        <a class="active" href="china_strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
+        <a href="baskets_china.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs CSI 300', '等权主题篮子 vs 沪深300') }}</span></a>
+        <a href="china_allocation.html">◎ {{ t('Allocation Strategy', '仓位策略') }}<span class="d">{{ t('Income · gold · bonds', '红利 · 黄金 · 国债') }}</span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -159,9 +161,9 @@ html[data-theme="dark"] .stance{background:var(--grid)}
     </div>
   </div>
 
-  <div class="h1">🎛️ {{ t('Strategy Scorecards','策略记分卡') }}</div>
-  <div class="intro">{{ t('Macro-factor-driven tactical strategies. Each shifts its allocation on signals and macro factors to lift risk-adjusted yield and sidestep the drawdowns that normally destroy it. Click a card for the full backtest, the live recommendation, and the rule-book.','由宏观因子驱动的战术策略。每个策略都按信号与宏观因子切换配置，以提升风险调整后收益并规避通常会吞噬收益的回撤。点击卡片查看完整回测、实时建议与规则手册。') }}</div>
-  <div class="note">{{ t('Honest framing: the durable edge in a "yield" strategy is not timing the yield — it is timing the LEFT TAIL that destroys it (de-risk before the recession / credit / rate shock). These give up some buy-&-hold CAGR but cut the max drawdown and lift the Sharpe. Backtests are net of cost and total-return; CAGR / MaxDD are vs buy-and-hold the same risk asset.','诚实说明：「收益」策略的持久优势并非择时收益本身，而是择时吞噬收益的左尾（在衰退/信用/利率冲击前降险）。这些策略会让出部分买入持有的年化，但能压低最大回撤并提升夏普。回测均扣除成本且基于总回报；CAGR / 最大回撤对比买入持有同一风险资产。') }}</div>
+  <div class="h1">🎛️ {{ t('China Strategy Scorecards','中国策略记分卡') }}</div>
+  <div class="intro">{{ t('Tactical strategies for onshore China (A-shares). China is cyclical and mean-reverting, so naive price-trend timing whipsaws — the durable edges here are DIVERSIFICATION and signals orthogonal to price (the credit cycle, retail-leverage extremes, volatility regime). Click a card for the full backtest, the live recommendation, and the rule-book.','面向中国境内（A股）的战术策略。A股具周期性且均值回归，朴素的价格趋势择时会频繁打脸——这里的持久优势来自分散化以及与价格正交的信号（信用周期、散户杠杆极值、波动率状态）。点击卡片查看完整回测、实时建议与规则手册。') }}</div>
+  <div class="note">{{ t('Honest framing: in China the cash leg earns almost nothing (CGB ~1.7%, money-market ~0.8%), so de-risking into cash is a drawdown trade, not a carry trade. Each card shows whether it beats CSI 300 buy-&-hold on CAGR, Sharpe and max drawdown — computed, not asserted. Backtests are net of cost and total-return.','诚实说明：在中国，现金腿几乎无收益（10年国债约1.7%、货币市场约0.8%），因此退守现金是回撤交易而非套息交易。每张卡片都显示其在年化、夏普与最大回撤上是否跑赢沪深300买入持有——均为计算所得，而非断言。回测扣除成本且基于总回报。') }}</div>
 
   <div class="sgrid">
     {% for c in cards %}
