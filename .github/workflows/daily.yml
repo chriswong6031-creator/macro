@@ -237,6 +237,17 @@ jobs:
           cat /tmp/mb.log
           [ "$rc" -ne 0 ] && echo "::warning title=master_brain::rc=$rc (non-fatal)"
           exit 0
+      - name: AI desk scorer (durability loop; deterministic, resilient)
+        # Grades past-due theses in data/ai_desk/theses.jsonl against realized closes,
+        # appends data/ai_desk/scored.jsonl, and writes data/ai_desk/track_record.json
+        # which the desk step below reads back to calibrate conviction. Deterministic
+        # (no API key); runs BEFORE the desk so today's note sees the freshest record.
+        run: |
+          set +e
+          python -m engine.ai_desk_scorer > /tmp/aidesk_score.log 2>&1; rc=$?
+          cat /tmp/aidesk_score.log
+          [ "$rc" -ne 0 ] && echo "::warning title=ai_desk_scorer::rc=$rc (non-fatal)"
+          exit 0
       - name: AI desk (accountable analyst layer; context-only, resilient)
         # Runs right after master_brain (shares the keyed LLM step family). Reads the
         # TRUST-GRADED detectors — site/basketdata/flow.json (from build_baskets) +
