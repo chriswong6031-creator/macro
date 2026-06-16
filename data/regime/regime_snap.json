@@ -42,21 +42,5 @@
     }
   ],
   "magnitude_band": null,
-  "veto": {
-    "schema": "regime_snap_veto.v1",
-    "is_context_only": true,
-    "lean": "unclear",
-    "confidence": "low",
-    "checks": {
-      "catalyst": "The driver is an oil price collapse, a market move with no attached structural policy shift or hard data surprise; likely a supply/demand technical dislocation, not a signed deal or rate action.",
-      "premium": "Fear built was moderate at 0.504, relief has flipped 3 of 7 legs with high velocity, but magnitude unknown; some premium likely unwound but residual fear may remain.",
-      "washout": "Capitulation flag is true, indicating the move followed a genuine washout, which supports durability.",
-      "follow_through": "Only 3 legs flipped, snap not confirmed, and vix term remains elevated at 0.837; cross-asset breadth is narrow, suggesting fading risk."
-    },
-    "read": "Oil collapse drives a fast risk-on pop, but without a structural catalyst the move looks like a short-squeeze after capitulation. Low confidence that it holds next session; fragile until confirmed by broader leg participation.",
-    "model": "deepseek-v4-pro",
-    "generated_at": "2026-06-16T12:29:02.150676+00:00",
-    "degraded_reason": null,
-    "disclaimer": "AI durability read \u2014 context only, never scored or sized. The snap detector is coincident; this is a fallible judgement on whether the relief is structural or a dead-cat, not a trade recommendation."
-  }
+  "veto": null
 }
