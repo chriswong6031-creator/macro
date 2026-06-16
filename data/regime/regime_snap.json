@@ -45,17 +45,17 @@
   "veto": {
     "schema": "regime_snap_veto.v1",
     "is_context_only": true,
-    "lean": "unclear",
-    "confidence": "low",
+    "lean": "durable",
+    "confidence": "medium",
     "checks": {
-      "catalyst": "No underlying cause for oil collapse is provided; observed repricing without a signed deal or policy change makes it likely verbal/technical.",
-      "premium": "Only 3 of 7 legs flipped (VIX, HY OAS, VIX term); fear built was moderate (0.504) and partial unwinding leaves residual premium.",
-      "washout": "Recent capitulation (cap_recent true) but fear built only moderate, suggesting a shallow washout rather than deep exhaustion.",
-      "follow_through": "Cross-asset confirmation is thin; high velocity (0.923) and unflipped legs raise risk of a rapid fade next session."
+      "catalyst": "structural (oil price collapse is a hard data surprise that lowers inflation expectations, not a verbal promise)",
+      "premium": "moderate fear built (0.5) partially unwound with 3 of 7 legs flipped, some premium likely remains",
+      "washout": "real capitulation recently (cap_recent true, days since last snap 1), suggesting a genuine washout",
+      "follow_through": "cross-asset confirmation building (VIX, HY OAS, VIX term flipped) and likely to hold in the near session given the disinflationary impulse, though oil reversals could challenge it"
     },
-    "read": "Oil collapse drives a fast, narrow relief snap with limited cross-asset backing and no clear structural catalyst. The move is easily reversed unless a concrete demand boost or policy pivot materializes.",
+    "read": "Oil\u2019s sharp decline is a hard, disinflationary catalyst that sparked a relief rally following genuine capitulation. Cross-asset signals are constructive and the washout was real, making the bounce more durable than a verbal rumor-driven kick, though sustainability depends on oil not reversing violently.",
     "model": "deepseek-v4-pro",
-    "generated_at": "2026-06-16T09:50:31.395690+00:00",
+    "generated_at": "2026-06-16T11:08:34.189585+00:00",
     "degraded_reason": null,
     "disclaimer": "AI durability read \u2014 context only, never scored or sized. The snap detector is coincident; this is a fallible judgement on whether the relief is structural or a dead-cat, not a trade recommendation."
   }
