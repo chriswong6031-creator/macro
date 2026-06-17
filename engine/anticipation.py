@@ -229,7 +229,7 @@ def anticipate(close: pd.Series, high: pd.Series | None = None, low: pd.Series |
     # and NEVER for a single name. Replaces the coin-flip center ONLY at a scored horizon;
     # for an index whose horizon is NOT validated it pins P(up)=0.5 (honest coin-flip).
     dir_block = None
-    if asset in index_direction.INDEX_PRESETS:
+    if asset in index_direction.PRESETS:
         try:
             dir_block = index_direction.forecast(close, asset=asset, gate=direction_gate(asset))
         except Exception:  # noqa: BLE001 — additive, never break the cone
