@@ -93,6 +93,11 @@ def main() -> int:
         _build_allocation()                               # builds all four allocation pages
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("allocation pages (via build_baskets) failed: %s", e)
+    try:
+        from scripts.build_anticipation import main as _build_anticipation
+        _build_anticipation()                             # anticipation.html + per-ticker cones
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("anticipation page (via build_baskets) failed: %s", e)
     return 0
 
 
