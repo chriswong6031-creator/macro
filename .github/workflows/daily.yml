@@ -275,15 +275,16 @@ jobs:
         # the analyst panel). Pure render — order-independent; resilient (returns 0).
         run: python -m scripts.build_ai_desk_page
       - name: rebuild stock-search libraries (resilient — guarantees the analyzers ship)
-        # build_china/build_hk (and build_canada via build_vector) render their
-        # dashboards but SWALLOW errors (return 0), so a failure there silently 404s
-        # the per-stock search. This rebuilds the search JSON (site/chinastockdata,
-        # site/hkstockdata, site/canadastockdata) directly from the committed caches —
-        # independent of the dashboard render — and surfaces any failure as an
-        # annotation without aborting the deploy. Idempotent.
+        # build_china/build_hk (and build_canada/build_intl via build_vector hooks)
+        # render their dashboards but SWALLOW errors (return 0), so a failure there
+        # silently 404s the per-stock search. This rebuilds the search JSON
+        # (site/chinastockdata, site/hkstockdata, site/canadastockdata,
+        # site/intlstockdata) directly from the committed caches — independent of the
+        # dashboard render — and surfaces any failure as an annotation without
+        # aborting the deploy. Idempotent.
         run: |
           set +e
-          for mod in scripts.build_china_library scripts.build_hk_library scripts.build_canada_library; do
+          for mod in scripts.build_china_library scripts.build_hk_library scripts.build_canada_library scripts.build_intl_library; do
             echo "::group::$mod"; python -m "$mod" > /tmp/lib.log 2>&1; rc=$?; cat /tmp/lib.log; echo "::endgroup::"
             if [ "$rc" -ne 0 ]; then
               echo "::error title=$mod failed (rc=$rc)::$(tail -n 2 /tmp/lib.log | tr '\n' ' ' | tail -c 600)"
@@ -311,6 +312,13 @@ jobs:
           # but (unlike them) force-added here so the committed-tree deploy ships it —
           # otherwise canada_stock.html's search 404s on canadastockdata/index.json.
           git add -f site/canadastockdata 2>/dev/null || true
+          # International stock-search library: same gitignore situation — force-add so
+          # the committed-tree deploy ships it (else intl_stock.html search 404s).
+          git add -f site/intlstockdata 2>/dev/null || true
+          # US stock-search library (built by build_site -> build_stock_library): only a
+          # ~534-name legacy subset was ever tracked while the index lists ~1595, so the
+          # untracked long tail 404'd on click. Force-add the whole dir so every name ships.
+          git add -f site/stockdata 2>/dev/null || true
           if git diff --cached --quiet; then echo "no engine output changes"; exit 0; fi
           git commit -m "engine: regime update $(date -u +%F)"
           # best-effort push (see commit-data). The deploy below uses the uploaded

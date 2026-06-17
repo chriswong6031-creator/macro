@@ -90,13 +90,14 @@ jobs:
           run_py "AI brief page (build_aibrief)" scripts.build_aibrief
           exit 0
       - name: rebuild stock-search libraries (resilient — guarantees the analyzers ship)
-        # build_china/build_hk (and build_canada via build_vector) swallow errors;
-        # rebuild the per-stock search JSON (site/chinastockdata, site/hkstockdata,
-        # site/canadastockdata) directly from committed caches so the A-Share / HK /
-        # TSX analyzers always ship. Idempotent; non-fatal.
+        # build_china/build_hk (and build_canada/build_intl via build_vector hooks)
+        # swallow errors; rebuild the per-stock search JSON (site/chinastockdata,
+        # site/hkstockdata, site/canadastockdata, site/intlstockdata) directly from
+        # committed caches so the A-Share / HK / TSX / intl analyzers always ship.
+        # Idempotent; non-fatal.
         run: |
           set +e
-          for mod in scripts.build_china_library scripts.build_hk_library scripts.build_canada_library; do
+          for mod in scripts.build_china_library scripts.build_hk_library scripts.build_canada_library scripts.build_intl_library; do
             echo "::group::$mod"; python -m "$mod" > /tmp/lib.log 2>&1; rc=$?; cat /tmp/lib.log; echo "::endgroup::"
             if [ "$rc" -ne 0 ]; then
               echo "::error title=$mod failed (rc=$rc)::$(tail -n 2 /tmp/lib.log | tr '\n' ' ' | tail -c 600)"
@@ -109,9 +110,12 @@ jobs:
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/ reports/ site/
-          # Canada stock-search library is gitignored — force-add so the committed-tree
-          # deploy ships it (otherwise canada_stock.html search 404s). See daily.yml.
+          # Canada / International / US stock-search libraries are gitignored — force-add
+          # so the committed-tree deploy ships them (otherwise canada_stock.html,
+          # intl_stock.html and stock.html search 404 on their index/detail JSON). See daily.yml.
           git add -f site/canadastockdata 2>/dev/null || true
+          git add -f site/intlstockdata 2>/dev/null || true
+          git add -f site/stockdata 2>/dev/null || true
           if git diff --cached --quiet; then echo "no weekly changes to commit"; exit 0; fi
           git commit -m "weekly: deep-dive $(date -u +%F)"
           # best-effort push: losing a race with a concurrent push must NOT fail the
