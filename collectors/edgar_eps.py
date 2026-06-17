@@ -5,10 +5,18 @@ which cannot express the QUARTERLY earnings surprise (SUE / post-earnings-announ
 drift) the literature documents. This module fetches the quarterly
 EarningsPerShareDiluted frames (CY{year}Q{1..4}, uom USD-per-shares) — one keyless
 call per calendar quarter, ~5k filers each — and builds a long point-in-time panel
-keyed (ticker, period_end). The frames API does not carry the filing date, so we
-stamp a synthetic as-of date = period_end + a reporting lag (mirroring the annual
-panel's PIT convention in collectors/edgar.py). See scripts/validate_sue.py and
-research/DATA_SIGNAL_EXPANSION_2026.md.
+keyed (ticker, period_end).
+
+The frames API does NOT carry the filing date, so for the PIT as-of we overlay the
+REAL earliest SEC filing date of each quarter's diluted-EPS, fetched per company from
+the keyless companyconcept API (`fetch_eps_filing_dates`, full history in one call/CIK,
+earliest `filed` per `end` = the original disclosure, ignoring later comparative re-tags).
+This is the date the surprise actually became public (median ~34d after quarter-end, vs
+the old synthetic +60d which made every surprise look ~26d staler and clustered ~74% of
+names at one value) — it sharpens the PEAD-freshness decay in engine.stock_score and is
+strictly more point-in-time-accurate. A company whose filing date is unavailable falls
+back to the synthetic period_end + `quarterly_lag_days`. See scripts/validate_sue.py,
+scripts/pead_freshness_phase0.py and research/DATA_SIGNAL_EXPANSION_2026.md.
 """
 from __future__ import annotations
 
@@ -17,17 +25,105 @@ from datetime import datetime, timezone
 
 import pandas as pd
 
-from collectors.edgar import _cfg, _frame, _ticker_cik_map, _universe_tickers
+import time
+
+from collectors.edgar import _cfg, _frame, _get_json, _ticker_cik_map, _universe_tickers
 from lib import config
 
 log = logging.getLogger(__name__)
 
 EPS_CONCEPT = "EarningsPerShareDiluted"
 EPS_UNIT = "USD-per-shares"
+# companyconcept reports the unit as "USD/shares" (the frames endpoint uses "USD-per-shares").
+_CC_UNITS = ("USD/shares", "USD-per-shares")
+# only the ORIGINAL periodic reports tag the canonical quarter/year EPS. Excluding the
+# amendments (10-K/A, 10-Q/A) and the 8-K earnings release keeps the filing-date source
+# CONSISTENT across names (amendments file later anyway, so min() would skip them; 8-K EPS
+# tagging is inconsistent and only ~a few days earlier than the 10-Q).
+_ORIG_FORMS = {"10-Q", "10-K"}
 
 
 def eps_panel_path():
     return config.data_dir() / "edgar" / "eps_quarterly.parquet"
+
+
+def _filing_dates_path():
+    return config.data_dir() / "edgar" / "eps_filing_dates.parquet"
+
+
+def fetch_eps_filing_dates(cik2tic: dict[int, str], *, max_age_days: int = 7,
+                           force: bool = False) -> pd.DataFrame:
+    """Per (ticker, period_end) the REAL earliest SEC filing date of that quarter's
+    diluted-EPS, from the keyless EDGAR companyconcept API — one call per CIK, full
+    history. For each (cik, end) we take min(`filed`) across all facts so amendments and
+    later comparative re-tags (a Q1 value re-reported in next year's 10-Q) NEVER overwrite
+    the ORIGINAL disclosure date. This becomes the SUE panel's PIT as-of (the date the
+    surprise became public) in place of the synthetic period_end + lag — sharpening the
+    PEAD-freshness decay in engine.stock_score.
+
+    Weekly-cached to data/edgar/eps_filing_dates.parquet (like the panel). Graceful: a CIK
+    that 404s or lacks the concept is simply skipped (its rows fall back to the synthetic
+    lag), and any hard failure leaves the prior cache in place. Columns: ticker,
+    period_end, filed_date."""
+    p = _filing_dates_path()
+    if not force and p.exists():
+        age_d = (datetime.now(timezone.utc).timestamp() - p.stat().st_mtime) / 86400.0
+        if age_d < max_age_days:
+            log.info("eps_filing_dates cache fresh (%.1fd) — skip fetch", age_d)
+            return pd.read_parquet(p)
+    host = _cfg()["base_url"].split("/api/")[0]            # https://data.sec.gov
+    retries = int(_cfg().get("retries", 3))
+    rows: list[tuple[str, str, str]] = []
+    n_ok = 0
+    for cik, tic in cik2tic.items():
+        url = f"{host}/api/xbrl/companyconcept/CIK{int(cik):010d}/us-gaap/{EPS_CONCEPT}.json"
+        data = _get_json(url, retries)
+        time.sleep(0.12)                                  # SEC fair-access pacing (<10 req/s)
+        if not data:
+            continue
+        units = data.get("units") or {}
+        facts = next((units[u] for u in _CC_UNITS if u in units), [])
+        earliest: dict[str, str] = {}
+        for f in facts:
+            end, filed = f.get("end"), f.get("filed")
+            if not end or not filed or f.get("form") not in _ORIG_FORMS:
+                continue
+            cur = earliest.get(end)
+            if cur is None or filed < cur:                # ISO dates sort lexicographically
+                earliest[end] = filed
+        if earliest:
+            n_ok += 1
+            rows.extend((tic, end, filed) for end, filed in earliest.items())
+    if not rows:
+        log.warning("no companyconcept filing dates fetched — synthetic lag retained")
+        return pd.read_parquet(p) if p.exists() else pd.DataFrame(
+            columns=["ticker", "period_end", "filed_date"])
+    fd = pd.DataFrame(rows, columns=["ticker", "period_end", "filed_date"])
+    fd["period_end"] = pd.to_datetime(fd["period_end"], errors="coerce")
+    fd["filed_date"] = pd.to_datetime(fd["filed_date"], errors="coerce")
+    fd = fd.dropna(subset=["period_end", "filed_date"]).drop_duplicates(["ticker", "period_end"])
+    p.parent.mkdir(parents=True, exist_ok=True)
+    fd.to_parquet(p)
+    log.info("eps_filing_dates: %d (ticker,quarter) rows from %d/%d CIKs",
+             len(fd), n_ok, len(cik2tic))
+    return fd
+
+
+def _apply_filing_dates(df: pd.DataFrame, fd: pd.DataFrame | None, *, lag: int) -> pd.DataFrame:
+    """Overlay the real SEC filing date onto `asof_date` where available and valid
+    (filed_date >= period_end — a date earlier than the period close is junk and is
+    ignored). Rows without a real date KEEP their synthetic period_end + lag as-of, so a
+    missing filing date degrades to the conservative fallback, never to NaT (NaT would
+    silently hide the row in sue_cross_section's asof_date<=d gate). Pure → unit-tested."""
+    if fd is None or fd.empty:
+        return df
+    out = df.merge(fd, on=["ticker", "period_end"], how="left")
+    real = out["filed_date"].notna() & (out["filed_date"] >= out["period_end"])
+    out.loc[real, "asof_date"] = out.loc[real, "filed_date"]
+    log.info("eps_quarterly: %d/%d rows (%.0f%%) use the REAL filing date "
+             "(rest fall back to period_end + %dd)",
+             int(real.sum()), len(out), 100.0 * (real.mean() if len(out) else 0), lag)
+    return out.drop(columns=["filed_date"])
 
 
 def build_eps_panel(start_year: int = 2008, end_year: int | None = None,
@@ -70,7 +166,14 @@ def build_eps_panel(start_year: int = 2008, end_year: int | None = None,
     df = df.dropna(subset=["period_end"]).sort_values("period_end")
     # one EPS per (ticker, period_end): a duration frame may carry near-dup rows
     df = df.drop_duplicates(["ticker", "period_end"], keep="last").reset_index(drop=True)
+    # synthetic period_end + lag is the FALLBACK as-of; overlay the real SEC filing date
+    # (the actual public date of the surprise) wherever companyconcept supplies it.
     df["asof_date"] = df["period_end"] + pd.Timedelta(days=lag)
+    try:
+        df = _apply_filing_dates(df, fetch_eps_filing_dates(cik2tic, force=force), lag=lag)
+    except Exception as e:  # noqa: BLE001 — overlay is additive, never fatal
+        log.warning("real filing-date overlay skipped (%s) — synthetic lag retained", e)
+        df = df.drop(columns=[c for c in ("filed_date",) if c in df.columns])
     p = eps_panel_path()
     p.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(p)
