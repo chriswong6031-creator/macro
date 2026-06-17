@@ -264,47 +264,29 @@
   },
   "alerts": [
     {
-      "rule": "transition_state_change",
-      "severity": "warn",
-      "message": "Transition state TRANSITIONING -> WEAKENING (2 flags active)",
-      "message_zh": "\u8f6c\u6362\u72b6\u6001 TRANSITIONING -> WEAKENING\uff082 \u4e2a\u9884\u8b66\u6fc0\u6d3b\uff09"
-    },
-    {
-      "rule": "circuit_breaker_open",
-      "severity": "warn",
-      "message": "Source 'sentiment_aaii' marked dead after 3 consecutive failures \u2014 collector skipped until it recovers; affected signals degrade",
-      "message_zh": "\u6570\u636e\u6e90 'sentiment_aaii' \u8fde\u7eed 3 \u6b21\u5931\u8d25\u540e\u88ab\u6807\u8bb0\u4e3a\u4e2d\u65ad \u2014\u91c7\u96c6\u5668\u6682\u505c\u76f4\u81f3\u6062\u590d\uff1b\u76f8\u5173\u4fe1\u53f7\u7f6e\u4fe1\u5ea6\u4e0b\u964d"
-    },
-    {
-      "rule": "circuit_breaker_open",
-      "severity": "warn",
-      "message": "Source 'edgar_13f' marked dead after 3 consecutive failures \u2014 collector skipped until it recovers; affected signals degrade",
-      "message_zh": "\u6570\u636e\u6e90 'edgar_13f' \u8fde\u7eed 3 \u6b21\u5931\u8d25\u540e\u88ab\u6807\u8bb0\u4e3a\u4e2d\u65ad \u2014\u91c7\u96c6\u5668\u6682\u505c\u76f4\u81f3\u6062\u590d\uff1b\u76f8\u5173\u4fe1\u53f7\u7f6e\u4fe1\u5ea6\u4e0b\u964d"
+      "rule": "holdings_active_change",
+      "severity": "info",
+      "message": "ARKK: manager cut ROKU by -31% of position (2026-06-11..2026-06-17, flow-normalized)",
+      "message_zh": "ARKK\uff1a\u7ecf\u7406 cut ROKU \u4ed3\u4f4d -31%\uff082026-06-11..2026-06-17\uff0c\u5df2\u6309\u8d44\u91d1\u6d41\u6807\u51c6\u5316\uff09"
     },
     {
       "rule": "holdings_active_change",
       "severity": "info",
-      "message": "ARKK: manager cut ROKU by -30% of position (2026-06-11..2026-06-16, flow-normalized)",
-      "message_zh": "ARKK\uff1a\u7ecf\u7406 cut ROKU \u4ed3\u4f4d -30%\uff082026-06-11..2026-06-16\uff0c\u5df2\u6309\u8d44\u91d1\u6d41\u6807\u51c6\u5316\uff09"
-    },
-    {
-      "rule": "holdings_active_change",
-      "severity": "info",
-      "message": "ARKW: manager cut BIDU by -97% of position (2026-06-11..2026-06-16, flow-normalized)",
-      "message_zh": "ARKW\uff1a\u7ecf\u7406 cut BIDU \u4ed3\u4f4d -97%\uff082026-06-11..2026-06-16\uff0c\u5df2\u6309\u8d44\u91d1\u6d41\u6807\u51c6\u5316\uff09"
+      "message": "ARKW: manager cut BIDU by -97% of position (2026-06-11..2026-06-17, flow-normalized)",
+      "message_zh": "ARKW\uff1a\u7ecf\u7406 cut BIDU \u4ed3\u4f4d -97%\uff082026-06-11..2026-06-17\uff0c\u5df2\u6309\u8d44\u91d1\u6d41\u6807\u51c6\u5316\uff09"
     }
   ],
   "conditions": {
     "financial_conditions": {
-      "nfci": -0.506,
-      "nfci_pctile": 0.23134920634920636,
-      "nfci_change_13w": -0.03799999999999998,
+      "nfci": -0.505,
+      "nfci_pctile": 0.23531746031746031,
+      "nfci_change_13w": -0.03699999999999998,
       "state": "loose",
       "trend": "loosening",
       "subindices": {
-        "nfci_risk": -0.602,
-        "nfci_credit": -0.035,
-        "nfci_leverage": 0.453
+        "nfci_risk": -0.594,
+        "nfci_credit": -0.042,
+        "nfci_leverage": 0.498
       },
       "stlfsi": -0.8681
     },
@@ -389,7 +371,7 @@
       "skew_pctile": 0.32341269841269843,
       "stock_bond_corr": 0.6704958373947398,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.6116491753317602,
+      "roro": 0.5608560723465181,
       "roro_state": "risk-on",
       "vol_target_scalar": 0.7751224108569222,
       "news_sentiment": -0.05408370867371559,
@@ -397,7 +379,7 @@
       "news_sentiment_state": "pessimistic"
     },
     "drawdown_risk": {
-      "score": 14.067688829223487,
+      "score": 14.809581007560235,
       "band": "low",
       "dd10_prob_pct": 8,
       "base_rate_pct": 8
@@ -425,7 +407,7 @@
       "spy_high_prox": 0.9878352355342133,
       "breadth_above200_pctile": 0.6190476190476191,
       "credit_widen": false,
-      "hy_oas_chg_21d_bp": -17.0
+      "hy_oas_chg_21d_bp": -12.0
     },
     "style_tilt": {
       "yield_chg_1m_bp": -14.0,
@@ -441,27 +423,14 @@
     "doc_id": "fomc_2026-04-29",
     "asof": "2026-04-29",
     "tone_score": 0.0,
-    "guidance_direction": "on_hold",
+    "guidance_direction": "unknown",
     "risk_delta": 0.0,
     "shock_reversible": "unknown",
-    "confidence": "high",
+    "confidence": "low",
     "confidence_gated": false,
     "dropped_fields": [],
-    "evidence": [
-      {
-        "field": "tone_score",
-        "quote_span": "The Committee is attentive to the risks to both sides of its dual mandate"
-      },
-      {
-        "field": "guidance_direction",
-        "quote_span": "the Committee decided to maintain the target range for the federal funds rate at 3\u00e2\u0080\u00911/2 to 3\u00e2\u0080\u00913/4 percent"
-      },
-      {
-        "field": "risk_delta",
-        "quote_span": "the Committee will carefully assess incoming data, the evolving outlook, and the balance of risks"
-      }
-    ],
-    "degraded_reason": null,
+    "evidence": [],
+    "degraded_reason": "stop_max_tokens",
     "disclaimer": "Context only \u2014 not a signal. This is a machine DIGEST of a public document, produced by an AI model after the fact. The tone / guidance / risk / reversibility readings are background context; they are NOT inputs to any score, signal or allocation unless a downstream, separately-gated step promotes a single field, and even then only as one bounded factor. \u201cunknown\u201d means the evidence was insufficient \u2014 the honest answer. Every non-unknown field is backed by a quote verified to appear verbatim in the source; unverifiable claims are dropped."
   },
   "dislocation": {
@@ -520,7 +489,7 @@
       "Commodities",
       "Dollar"
     ],
-    "absorption_ratio": 0.442,
+    "absorption_ratio": 0.443,
     "absorption_pctile_5y": 0.96,
     "absorption_floor": 0.167,
     "mean_abs_corr": 0.344,
@@ -620,7 +589,7 @@
     "confidence": "medium",
     "confidence_zh": "\u4e2d",
     "strength": 1.5,
-    "dominance_ratio": 1.28,
+    "dominance_ratio": 1.29,
     "agreement": 0.88,
     "runner_up": "crypto_liquidity",
     "runner_up_label": "Crypto liquidity",
@@ -689,15 +658,6 @@
         "direction": "dovish repricing \u2014 cuts priced in, front-end down"
       },
       {
-        "driver": "credit_stress",
-        "label": "Credit stress",
-        "label_zh": "\u4fe1\u7528\u538b\u529b",
-        "family": "credit",
-        "projection": -0.43,
-        "strength": 0.43,
-        "direction": "credit spreads compressing \u2014 risk-on"
-      },
-      {
         "driver": "china_stimulus",
         "label": "China stimulus",
         "label_zh": "\u4e2d\u56fd\u523a\u6fc0",
@@ -705,6 +665,15 @@
         "projection": 0.36,
         "strength": 0.36,
         "direction": "China risk-on \u2014 A-shares/HK & copper lead up"
+      },
+      {
+        "driver": "credit_stress",
+        "label": "Credit stress",
+        "label_zh": "\u4fe1\u7528\u538b\u529b",
+        "family": "credit",
+        "projection": -0.21,
+        "strength": 0.21,
+        "direction": "credit spreads compressing \u2014 risk-on"
       },
       {
         "driver": "usd_shock",
@@ -716,6 +685,15 @@
         "direction": "dollar falling \u2014 risk tailwind, commodities & EM bid"
       },
       {
+        "driver": "liquidity_impulse",
+        "label": "Liquidity impulse",
+        "label_zh": "\u6d41\u52a8\u6027\u8109\u51b2",
+        "family": "liquidity",
+        "projection": -0.16,
+        "strength": 0.16,
+        "direction": "net liquidity draining \u2014 risk headwind"
+      },
+      {
         "driver": "ai_semis",
         "label": "AI / semis",
         "label_zh": "AI/\u534a\u5bfc\u4f53",
@@ -723,15 +701,6 @@
         "projection": 0.16,
         "strength": 0.16,
         "direction": "AI/semis leadership \u2014 narrow tech-led tape"
-      },
-      {
-        "driver": "liquidity_impulse",
-        "label": "Liquidity impulse",
-        "label_zh": "\u6d41\u52a8\u6027\u8109\u51b2",
-        "family": "liquidity",
-        "projection": -0.15,
-        "strength": 0.15,
-        "direction": "net liquidity draining \u2014 risk headwind"
       }
     ],
     "note": "Deterministic cross-asset attribution \u2014 a regime READ, not a signal; never gates a score."
@@ -761,7 +730,7 @@
         },
         "risk_contrib": {
           "US": 0.126,
-          "Crypto": 0.383,
+          "Crypto": 0.384,
           "China": 0.087,
           "HK": 0.095,
           "Commodities": 0.279,
@@ -769,7 +738,7 @@
         },
         "port_vol_ann": 0.134,
         "diversification_ratio": 1.63,
-        "max_risk_contrib": 0.383
+        "max_risk_contrib": 0.384
       },
       "inverse_vol": {
         "scheme": "inverse_vol",
@@ -958,7 +927,7 @@
   },
   "fed_path": {
     "asof": "2026-06-16",
-    "built": "2026-06-17T06:39:54.585333+00:00",
+    "built": "2026-06-17T14:18:11.969347+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -967,19 +936,19 @@
       "now": 3.63,
       "m1": 3.63,
       "m3": 3.67,
-      "m6": 3.77,
-      "m12": 3.91
+      "m6": 3.78,
+      "m12": 3.92
     },
     "implied_source_en": "ZQ fed-funds futures",
     "implied_source_zh": "ZQ \u8054\u90a6\u57fa\u91d1\u671f\u8d27",
-    "implied_bp_12m": 28,
+    "implied_bp_12m": 29,
     "implied_cuts_12m": -1,
     "implied_cuts_6m": -1,
     "sofr_path": {
       "m1": null,
       "m3": 3.72,
       "m6": 3.83,
-      "m12": 3.94
+      "m12": 3.95
     },
     "dots": [
       {
@@ -999,7 +968,7 @@
       "horizon_label": "end-2026",
       "horizon_months": 6,
       "fed_dot": 3.4,
-      "market": 3.77,
+      "market": 3.78,
       "gap_bp": 38,
       "lean_en": "market more hawkish than the Fed",
       "lean_zh": "\u5e02\u573a\u6bd4\u7f8e\u8054\u50a8\u66f4\u9e70\u6d3e"
@@ -1007,10 +976,10 @@
     "ntfs": 0.72,
     "curve_tp_adj": 1.15,
     "rate_exp_proxy": 0.44,
-    "headline_en": "Market prices ~1 hike over the next 12m (funds 3.63% \u2192 3.91%)",
-    "headline_zh": "\u5e02\u573a\u4e3a\u672a\u676512\u4e2a\u6708\u5b9a\u4ef7\u7ea6\u52a0\u606f1\u6b21\uff08\u57fa\u91d1\u5229\u7387 3.63% \u2192 3.91%\uff09",
-    "read_en": "At end-2026 the market implies 3.77% vs the Fed's 3.40% median dot (+38bp \u2014 market more hawkish than the Fed). The near-term forward spread is positive \u2014 no cuts priced near-term (+0.72pp).",
-    "read_zh": "\u5728end-2026\uff0c\u5e02\u573a\u9690\u542b 3.77% \u5bf9\u6bd4\u7f8e\u8054\u50a8 3.40% \u7684\u4e2d\u4f4d\u70b9\uff08+38\u57fa\u70b9 \u2014 \u5e02\u573a\u6bd4\u7f8e\u8054\u50a8\u66f4\u9e70\u6d3e\uff09\u3002\u8fd1\u7aef\u8fdc\u671f\u5229\u5dee\u4e3a\u6b63\u2014\u2014\u8fd1\u7aef\u672a\u4e3a\u964d\u606f\u5b9a\u4ef7\uff08+0.72\u4e2a\u767e\u5206\u70b9\uff09\u3002",
+    "headline_en": "Market prices ~1 hike over the next 12m (funds 3.63% \u2192 3.92%)",
+    "headline_zh": "\u5e02\u573a\u4e3a\u672a\u676512\u4e2a\u6708\u5b9a\u4ef7\u7ea6\u52a0\u606f1\u6b21\uff08\u57fa\u91d1\u5229\u7387 3.63% \u2192 3.92%\uff09",
+    "read_en": "At end-2026 the market implies 3.78% vs the Fed's 3.40% median dot (+38bp \u2014 market more hawkish than the Fed). The near-term forward spread is positive \u2014 no cuts priced near-term (+0.72pp).",
+    "read_zh": "\u5728end-2026\uff0c\u5e02\u573a\u9690\u542b 3.78% \u5bf9\u6bd4\u7f8e\u8054\u50a8 3.40% \u7684\u4e2d\u4f4d\u70b9\uff08+38\u57fa\u70b9 \u2014 \u5e02\u573a\u6bd4\u7f8e\u8054\u50a8\u66f4\u9e70\u6d3e\uff09\u3002\u8fd1\u7aef\u8fdc\u671f\u5229\u5dee\u4e3a\u6b63\u2014\u2014\u8fd1\u7aef\u672a\u4e3a\u964d\u606f\u5b9a\u4ef7\uff08+0.72\u4e2a\u767e\u5206\u70b9\uff09\u3002",
     "note_en": "Display / LLM-context only. The implied path is a market PRICE (the futures-implied funds rate), not a forecast edge, and repricing is REACTIVE \u2014 it moves after data and the Fed, it does not lead. Never scored, never an MRS leg. ZQ/SR3 = keyless CME futures; dots = FRED FEDTARMD (FOMC SEP median). Cite the CME/FRED.",
     "note_zh": "\u4ec5\u4f9b\u5c55\u793a / LLM \u4e0a\u4e0b\u6587\u3002\u9690\u542b\u8def\u5f84\u662f\u5e02\u573a\u4ef7\u683c\uff08\u671f\u8d27\u9690\u542b\u7684\u57fa\u91d1\u5229\u7387\uff09\uff0c\u5e76\u975e\u9884\u6d4b\u4f18\u52bf\uff0c\u4e14\u91cd\u65b0\u5b9a\u4ef7\u662f\u88ab\u52a8\u7684\u2014\u2014\u5b83\u5728\u6570\u636e\u548c\u7f8e\u8054\u50a8\u4e4b\u540e\u53d8\u52a8\uff0c\u5e76\u4e0d\u9886\u5148\u3002\u4ece\u4e0d\u8bc4\u5206\uff0c\u4ece\u4e0d\u4f5c\u4e3a MRS \u9879\u3002ZQ/SR3=\u65e0\u9700\u5bc6\u94a5\u7684 CME \u671f\u8d27\uff1b\u70b9\u9635\u56fe=FRED FEDTARMD\uff08FOMC SEP \u4e2d\u4f4d\u6570\uff09\u3002\u8bf7\u6ce8\u660e CME/FRED\u3002"
   },
@@ -1086,8 +1055,8 @@
       "bonds": "late",
       "bonds_en": "late-cycle",
       "bonds_zh": "\u5468\u671f\u665a\u6bb5",
-      "fx_regime": "US growth premium",
-      "fx_regime_zh": "\u7f8e\u56fd\u589e\u957f\u6ea2\u4ef7"
+      "fx_regime": "Global reflation",
+      "fx_regime_zh": "\u5168\u7403\u518d\u901a\u80c0"
     },
     "n_legs": 2,
     "n_agree": 1,
@@ -1098,7 +1067,7 @@
       "cycle": {
         "equity": "mid",
         "bonds": "late",
-        "fx_regime": "US growth premium"
+        "fx_regime": "Global reflation"
       },
       "leading_caution_votes": 0,
       "fx_risk": "risk-on",
@@ -1109,14 +1078,14 @@
     },
     "note_en": "Bonds & FX cross-check: does the fast-family complex (bonds + FX) agree with the equity/macro regime? DISPLAY-ONLY \u2014 never scored. Most legs are coincident confirmation / fragility gauges; only credit/EBP and the curve have a (noisy) leading horizon. Divergences are attention flags, not forecasts.",
     "note_zh": "\u503a\u5238\u4e0e\u5916\u6c47\u4ea4\u53c9\u9a8c\u8bc1\uff1a\u5feb\u7aef\u677f\u5757\uff08\u503a\u5238+\u5916\u6c47\uff09\u662f\u5426\u4e0e\u80a1\u7968/\u5b8f\u89c2\u5468\u671f\u4e00\u81f4\uff1f\u4ec5\u4f9b\u5c55\u793a \u2014 \u4ece\u4e0d\u8bc4\u5206\u3002\u591a\u6570\u4e3a\u540c\u6b65\u786e\u8ba4/\u8106\u5f31\u6027\u8ba1\u91cf\uff1b\u4ec5\u4fe1\u7528/EBP\u4e0e\u66f2\u7ebf\u5177\uff08\u5608\u6742\u7684\uff09\u9886\u5148\u6027\u3002\u80cc\u79bb\u4e3a\u5173\u6ce8\u4fe1\u53f7\uff0c\u975e\u9884\u6d4b\u3002",
-    "asof": "2026-06-15"
+    "asof": "2026-06-16"
   },
   "macro_risk": {
-    "score": 0.0937,
+    "score": 0.096,
     "label": "low",
     "components": {
       "recession": 0.039,
-      "drawdown": 0.141,
+      "drawdown": 0.148,
       "nfci": 0.0,
       "liquidity": 0.0,
       "transition": 0.5
@@ -2457,62 +2426,62 @@
       {
         "ticker": "GC=F",
         "name": "Gold",
-        "price": 4342.0,
+        "price": 4352.9,
         "above50": false,
         "above200": false,
-        "pct_vs_50dma": -4.8,
-        "pct_vs_200dma": -2.1,
-        "rsi14": 45.0,
+        "pct_vs_50dma": -4.6,
+        "pct_vs_200dma": -1.9,
+        "rsi14": 46.0,
         "macd_pos": true,
-        "off_52w_high_pct": -18.4,
+        "off_52w_high_pct": -18.2,
         "season_this": "Jun: -0.6% avg, up 42% of years (n=26)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.6%\uff0c42% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": -1.3
+        "mom_60d_pct": -1.1
       },
       {
         "ticker": "CL=F",
         "name": "Crude Oil",
-        "price": 74.81,
+        "price": 75.86,
         "above50": false,
         "above200": true,
-        "pct_vs_50dma": -20.7,
-        "pct_vs_200dma": 1.5,
+        "pct_vs_50dma": -19.6,
+        "pct_vs_200dma": 3.0,
         "rsi14": 30.0,
         "macd_pos": false,
-        "off_52w_high_pct": -33.8,
+        "off_52w_high_pct": -32.8,
         "season_this": "Jun: +2.4% avg, up 65% of years (n=26)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 +2.4%\uff0c65% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": -19.0
+        "mom_60d_pct": -17.9
       },
       {
         "ticker": "HG=F",
         "name": "Copper",
-        "price": 6.52,
+        "price": 6.51,
         "above50": true,
         "above200": true,
-        "pct_vs_50dma": 4.7,
-        "pct_vs_200dma": 16.9,
-        "rsi14": 58.0,
+        "pct_vs_50dma": 4.5,
+        "pct_vs_200dma": 16.8,
+        "rsi14": 57.0,
         "macd_pos": false,
-        "off_52w_high_pct": -2.0,
+        "off_52w_high_pct": -2.2,
         "season_this": "Jun: -0.4% avg, up 58% of years (n=26)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.4%\uff0c58% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": 20.2
+        "mom_60d_pct": 20.0
       },
       {
         "ticker": "DX-Y.NYB",
         "name": "US Dollar",
-        "price": 99.52,
+        "price": 99.61,
         "above50": true,
         "above200": true,
-        "pct_vs_50dma": 0.6,
-        "pct_vs_200dma": 0.9,
-        "rsi14": 53.0,
+        "pct_vs_50dma": 0.7,
+        "pct_vs_200dma": 1.0,
+        "rsi14": 55.0,
         "macd_pos": false,
-        "off_52w_high_pct": -1.0,
+        "off_52w_high_pct": -0.9,
         "season_this": "Jun: -0.2% avg, up 45% of years (n=56)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.2%\uff0c45% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=56\uff09",
-        "mom_60d_pct": 0.1
+        "mom_60d_pct": 0.2
       }
     ],
     "evidence": {
@@ -2559,14 +2528,14 @@
         "avg_worst_dd63_pct": NaN
       },
       "conditions_nfci_tightening": {
-        "n": 717,
-        "fwd21_avg_pct": 0.54,
-        "fwd21_hit_pct": 60.7,
+        "n": 715,
+        "fwd21_avg_pct": 0.52,
+        "fwd21_hit_pct": 60.6,
         "avg_worst_dd63_pct": NaN
       },
       "conditions_nfci_loosening": {
-        "n": 834,
-        "fwd21_avg_pct": 1.04,
+        "n": 836,
+        "fwd21_avg_pct": 1.05,
         "fwd21_hit_pct": 69.1,
         "avg_worst_dd63_pct": NaN
       },

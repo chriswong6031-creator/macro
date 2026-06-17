@@ -1,6 +1,6 @@
 {
   "n": 27,
-  "built": "2026-06-17 06:55 UTC",
+  "built": "2026-06-17 14:28 UTC",
   "cards": [
     {
       "key": "spvector",
@@ -14,10 +14,10 @@
     {
       "key": "credit_carry",
       "name": "Credit Carry",
-      "cagr": 6.96,
+      "cagr": 6.95,
       "sharpe": 2.9,
       "maxdd": -2.4,
-      "income": 5.94,
+      "income": 5.97,
       "experimental": true
     },
     {
@@ -185,7 +185,7 @@
     {
       "key": "oil_trend",
       "name": "Crude-Oil Trend",
-      "cagr": 2.83,
+      "cagr": 2.89,
       "sharpe": 0.24,
       "maxdd": -44.4,
       "income": 1.24,
@@ -194,7 +194,7 @@
     {
       "key": "copper_growth",
       "name": "Copper Growth Cyclical",
-      "cagr": 7.45,
+      "cagr": 7.44,
       "sharpe": 0.58,
       "maxdd": -32.9,
       "income": 1.24,
