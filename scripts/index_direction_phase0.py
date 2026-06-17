@@ -23,14 +23,16 @@ from engine.validation import _norm_cdf
 
 INDEXES = ["SPY", "QQQ", "IWM"]          # DIA deferred: no data/yahoo/DIA.parquet (use _DJI proxy later)
 SECTORS = ["XLK", "XLF", "XLE", "XLU", "XLRE", "XLB", "XLI", "XLY", "XLP", "XLV", "XLC"]
-ALL_TICKERS = INDEXES + SECTORS
+THEMES = ["SMH", "SOXX", "IGV", "XBI", "IBB", "GDX", "GDXJ", "KRE", "KBE", "ITB", "XHB",
+          "XME", "XOP", "OIH", "XRT", "TAN"]   # narrow, purer-driver thematic ETFs (deep history)
+ALL_TICKERS = INDEXES + SECTORS + THEMES
 H = idr.MEDIUM_TD                          # 42td medium horizon
 STEP = 21                                  # monthly rebalance
 MIN_TRAIN = 2520                           # ~10y before the first OOS prediction
 # FROZEN multiple-testing count for the DSR haircut: every index+sector × candidate leg ×
 # horizon screened across the whole program (~15 assets × ~6 legs × 2 horizons). Counted from
 # first screen (critique #3 — no under-reporting). Asserted in tests so it cannot drift.
-N_TRIALS = 200
+N_TRIALS = 400
 DATA, REGIME = Path("data"), Path("data/regime")
 
 

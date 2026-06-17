@@ -49,7 +49,7 @@
   },
   "INDEX_DIRECTION": {
     "_meta": {
-      "n_trials": 200,
+      "n_trials": 400,
       "horizons_td": {
         "medium": 42,
         "long": 189
@@ -72,7 +72,7 @@
         "cw_p": 0.5459,
         "cw_q": null,
         "brier_skill_recal": -0.001,
-        "dsr": 0.751,
+        "dsr": 0.6766,
         "p_up_band": [
           0.4,
           0.62
@@ -91,7 +91,7 @@
         "cw_p": 0.5625,
         "cw_q": null,
         "brier_skill_recal": 0.004,
-        "dsr": 0.7143,
+        "dsr": 0.6355,
         "p_up_band": [
           0.4,
           0.62
@@ -115,7 +115,7 @@
         "cw_p": 0.0034,
         "cw_q": 0.0034,
         "brier_skill_recal": 0.006,
-        "dsr": 0.8336,
+        "dsr": 0.7732,
         "p_up_band": [
           0.4,
           0.62
@@ -133,7 +133,7 @@
         "cw_p": 0.9885,
         "cw_q": null,
         "brier_skill_recal": 0.0,
-        "dsr": 0.9045,
+        "dsr": 0.8618,
         "p_up_band": [
           0.4,
           0.62
@@ -154,7 +154,7 @@
         "cw_p": 0.7554,
         "cw_q": null,
         "brier_skill_recal": 0.013,
-        "dsr": 0.3358,
+        "dsr": 0.2601,
         "p_up_band": [
           0.4,
           0.62
@@ -172,7 +172,7 @@
         "cw_p": 0.8111,
         "cw_q": null,
         "brier_skill_recal": 0.015,
-        "dsr": 0.4019,
+        "dsr": 0.32,
         "p_up_band": [
           0.4,
           0.62
@@ -195,7 +195,7 @@
         "cw_p": 0.0,
         "cw_q": 0.0,
         "brier_skill_recal": -0.001,
-        "dsr": 0.8334,
+        "dsr": 0.7729,
         "p_up_band": [
           0.4,
           0.62
@@ -213,7 +213,7 @@
         "cw_p": 0.8308,
         "cw_q": null,
         "brier_skill_recal": 0.004,
-        "dsr": 0.9145,
+        "dsr": 0.8749,
         "p_up_band": [
           0.4,
           0.62
@@ -234,7 +234,7 @@
         "cw_p": 0.7689,
         "cw_q": null,
         "brier_skill_recal": -0.002,
-        "dsr": 0.4868,
+        "dsr": 0.4003,
         "p_up_band": [
           0.4,
           0.62
@@ -253,7 +253,7 @@
         "cw_p": 0.8587,
         "cw_q": null,
         "brier_skill_recal": 0.002,
-        "dsr": 0.3875,
+        "dsr": 0.3067,
         "p_up_band": [
           0.4,
           0.62
@@ -273,7 +273,7 @@
         "cw_p": 0.9166,
         "cw_q": null,
         "brier_skill_recal": -0.002,
-        "dsr": 0.0894,
+        "dsr": 0.0589,
         "p_up_band": [
           0.4,
           0.62
@@ -290,7 +290,7 @@
         "cw_p": 0.7317,
         "cw_q": null,
         "brier_skill_recal": 0.018,
-        "dsr": 0.1156,
+        "dsr": 0.0783,
         "p_up_band": [
           0.4,
           0.62
@@ -306,7 +306,7 @@
         "cw_p": null,
         "cw_q": null,
         "brier_skill_recal": null,
-        "dsr": 0.4812,
+        "dsr": 0.3949,
         "p_up_band": [
           0.4,
           0.62
@@ -339,7 +339,7 @@
         "cw_p": 0.9246,
         "cw_q": null,
         "brier_skill_recal": 0.007,
-        "dsr": 0.1574,
+        "dsr": 0.1104,
         "p_up_band": [
           0.4,
           0.62
@@ -353,7 +353,7 @@
         "cw_p": null,
         "cw_q": null,
         "brier_skill_recal": 0.092,
-        "dsr": 0.0701,
+        "dsr": 0.0451,
         "p_up_band": [
           0.4,
           0.62
@@ -373,7 +373,7 @@
         "cw_p": 0.857,
         "cw_q": null,
         "brier_skill_recal": 0.004,
-        "dsr": 0.6319,
+        "dsr": 0.5469,
         "p_up_band": [
           0.4,
           0.62
@@ -390,7 +390,7 @@
         "cw_p": 0.6705,
         "cw_q": null,
         "brier_skill_recal": 0.001,
-        "dsr": 0.6709,
+        "dsr": 0.5883,
         "p_up_band": [
           0.4,
           0.62
@@ -410,7 +410,7 @@
         "cw_p": 0.3253,
         "cw_q": null,
         "brier_skill_recal": 0.001,
-        "dsr": 0.5608,
+        "dsr": 0.4736,
         "p_up_band": [
           0.4,
           0.62
@@ -429,7 +429,7 @@
         "cw_p": 0.4512,
         "cw_q": null,
         "brier_skill_recal": -0.005,
-        "dsr": 0.7845,
+        "dsr": 0.715,
         "p_up_band": [
           0.4,
           0.62
@@ -448,7 +448,7 @@
         "cw_p": 0.1978,
         "cw_q": null,
         "brier_skill_recal": 0.001,
-        "dsr": 0.635,
+        "dsr": 0.5501,
         "p_up_band": [
           0.4,
           0.62
@@ -468,7 +468,7 @@
         "cw_p": 0.0052,
         "cw_q": 0.0052,
         "brier_skill_recal": 0.011,
-        "dsr": 0.6262,
+        "dsr": 0.5409,
         "p_up_band": [
           0.4,
           0.62
@@ -500,7 +500,565 @@
         "cw_p": 0.1357,
         "cw_q": null,
         "brier_skill_recal": 0.052,
-        "dsr": 0.5709,
+        "dsr": 0.4838,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      }
+    },
+    "SMH": {
+      "medium": {
+        "scored": false,
+        "legs": {
+          "real_rate": "GO",
+          "vrp": "NEUTRAL",
+          "tsmom": "GO"
+        },
+        "platt": null,
+        "oos_r2": 0.03985,
+        "cw_p": 0.0018,
+        "cw_q": 0.0027,
+        "brier_skill_recal": 0.01,
+        "dsr": 0.7426,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      },
+      "long": {
+        "scored": true,
+        "legs": {
+          "real_rate": "GO",
+          "tsmom": "NEUTRAL"
+        },
+        "platt": {
+          "a": 0.406,
+          "b": 1.07
+        },
+        "oos_r2": 0.09305,
+        "cw_p": 0.0006,
+        "cw_q": 0.0012,
+        "brier_skill_recal": 0.002,
+        "dsr": 0.8551,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      }
+    },
+    "SOXX": {
+      "medium": {
+        "scored": false,
+        "legs": {
+          "real_rate": "NEUTRAL",
+          "tsmom": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": 0.01017,
+        "cw_p": 0.0442,
+        "cw_q": null,
+        "brier_skill_recal": -0.005,
+        "dsr": 0.7086,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      },
+      "long": {
+        "scored": false,
+        "legs": {
+          "real_rate": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": 0.02439,
+        "cw_p": 0.1153,
+        "cw_q": null,
+        "brier_skill_recal": -0.004,
+        "dsr": 0.4572,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      }
+    },
+    "IGV": {
+      "medium": {
+        "scored": false,
+        "legs": {
+          "real_rate": "NEUTRAL",
+          "vrp": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": 0.00722,
+        "cw_p": 0.1416,
+        "cw_q": null,
+        "brier_skill_recal": 0.009,
+        "dsr": 0.3119,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      },
+      "long": {
+        "scored": false,
+        "legs": {
+          "real_rate": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": -0.00482,
+        "cw_p": 0.4556,
+        "cw_q": null,
+        "brier_skill_recal": -0.003,
+        "dsr": 0.3399,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      }
+    },
+    "XBI": {
+      "medium": {
+        "scored": false,
+        "legs": {},
+        "platt": null,
+        "oos_r2": null,
+        "cw_p": null,
+        "cw_q": null,
+        "brier_skill_recal": null,
+        "dsr": null,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      },
+      "long": {
+        "scored": false,
+        "legs": {
+          "real_rate": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": 0.00269,
+        "cw_p": 0.2756,
+        "cw_q": null,
+        "brier_skill_recal": 0.007,
+        "dsr": 0.0606,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      }
+    },
+    "IBB": {
+      "medium": {
+        "scored": false,
+        "legs": {},
+        "platt": null,
+        "oos_r2": null,
+        "cw_p": null,
+        "cw_q": null,
+        "brier_skill_recal": null,
+        "dsr": 0.25,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      },
+      "long": {
+        "scored": false,
+        "legs": {
+          "real_rate": "NEUTRAL",
+          "tsmom": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": -0.00087,
+        "cw_p": 0.4391,
+        "cw_q": null,
+        "brier_skill_recal": 0.022,
+        "dsr": 0.206,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      }
+    },
+    "GDX": {
+      "medium": {
+        "scored": false,
+        "legs": {
+          "real_rate": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": -0.02084,
+        "cw_p": 0.9325,
+        "cw_q": null,
+        "brier_skill_recal": -0.008,
+        "dsr": 0.0352,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      },
+      "long": {
+        "scored": false,
+        "legs": {},
+        "platt": null,
+        "oos_r2": null,
+        "cw_p": null,
+        "cw_q": null,
+        "brier_skill_recal": null,
+        "dsr": 0.1188,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      }
+    },
+    "GDXJ": {
+      "medium": {
+        "scored": false,
+        "legs": {
+          "real_rate": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": -0.0279,
+        "cw_p": 0.8912,
+        "cw_q": null,
+        "brier_skill_recal": -0.0,
+        "dsr": 0.0156,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      },
+      "long": {
+        "scored": false,
+        "legs": {
+          "real_rate": "NEUTRAL",
+          "gold": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": -0.03727,
+        "cw_p": 0.8298,
+        "cw_q": null,
+        "brier_skill_recal": 0.036,
+        "dsr": 0.0174,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      }
+    },
+    "KRE": {
+      "medium": {
+        "scored": false,
+        "legs": {
+          "credit": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": -0.01761,
+        "cw_p": 0.8696,
+        "cw_q": null,
+        "brier_skill_recal": 0.0,
+        "dsr": 0.0842,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      },
+      "long": {
+        "scored": false,
+        "legs": {
+          "credit_vel": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": -0.05255,
+        "cw_p": 0.9126,
+        "cw_q": null,
+        "brier_skill_recal": 0.069,
+        "dsr": 0.0835,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      }
+    },
+    "KBE": {
+      "medium": {
+        "scored": false,
+        "legs": {
+          "credit": "NEUTRAL",
+          "credit_vel": "NEUTRAL",
+          "tsmom": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": -0.02995,
+        "cw_p": 0.8893,
+        "cw_q": null,
+        "brier_skill_recal": 0.004,
+        "dsr": 0.0262,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      },
+      "long": {
+        "scored": false,
+        "legs": {
+          "credit": "NEUTRAL",
+          "credit_vel": "NEUTRAL",
+          "tsmom": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": -0.06245,
+        "cw_p": 0.9578,
+        "cw_q": null,
+        "brier_skill_recal": 0.052,
+        "dsr": 0.0528,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      }
+    },
+    "ITB": {
+      "medium": {
+        "scored": false,
+        "legs": {
+          "real_rate": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": 0.01254,
+        "cw_p": 0.1995,
+        "cw_q": null,
+        "brier_skill_recal": -0.004,
+        "dsr": 0.1259,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      },
+      "long": {
+        "scored": false,
+        "legs": {
+          "real_rate": "NEUTRAL",
+          "tsmom": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": -0.00209,
+        "cw_p": 0.3349,
+        "cw_q": null,
+        "brier_skill_recal": 0.024,
+        "dsr": 0.1105,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      }
+    },
+    "XHB": {
+      "medium": {
+        "scored": false,
+        "legs": {
+          "real_rate": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": 0.02143,
+        "cw_p": 0.1504,
+        "cw_q": null,
+        "brier_skill_recal": 0.003,
+        "dsr": 0.1677,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      },
+      "long": {
+        "scored": false,
+        "legs": {
+          "real_rate": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": 0.01045,
+        "cw_p": 0.2349,
+        "cw_q": null,
+        "brier_skill_recal": 0.002,
+        "dsr": 0.1891,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      }
+    },
+    "XME": {
+      "medium": {
+        "scored": false,
+        "legs": {
+          "dollar": "NEUTRAL",
+          "oil_mom": "NEUTRAL",
+          "tsmom": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": -0.02214,
+        "cw_p": 0.7679,
+        "cw_q": null,
+        "brier_skill_recal": -0.0,
+        "dsr": 0.2307,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      },
+      "long": {
+        "scored": false,
+        "legs": {
+          "dollar": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": -0.02499,
+        "cw_p": 0.6777,
+        "cw_q": null,
+        "brier_skill_recal": 0.006,
+        "dsr": 0.0776,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      }
+    },
+    "XOP": {
+      "medium": {
+        "scored": false,
+        "legs": {
+          "dollar": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": -0.01057,
+        "cw_p": 0.8261,
+        "cw_q": null,
+        "brier_skill_recal": -0.007,
+        "dsr": 0.0099,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      },
+      "long": {
+        "scored": false,
+        "legs": {
+          "dollar": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": 0.01383,
+        "cw_p": 0.1974,
+        "cw_q": null,
+        "brier_skill_recal": 0.012,
+        "dsr": 0.0017,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      }
+    },
+    "OIH": {
+      "medium": {
+        "scored": false,
+        "legs": {
+          "oil_mom": "NEUTRAL",
+          "dollar": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": -0.0249,
+        "cw_p": 0.929,
+        "cw_q": null,
+        "brier_skill_recal": 0.005,
+        "dsr": 0.0,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      },
+      "long": {
+        "scored": false,
+        "legs": {
+          "dollar": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": 0.0183,
+        "cw_p": 0.2271,
+        "cw_q": null,
+        "brier_skill_recal": -0.005,
+        "dsr": 0.0021,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      }
+    },
+    "XRT": {
+      "medium": {
+        "scored": false,
+        "legs": {
+          "real_rate": "NEUTRAL",
+          "vrp": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": -0.02546,
+        "cw_p": 0.8347,
+        "cw_q": null,
+        "brier_skill_recal": 0.02,
+        "dsr": 0.0373,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      },
+      "long": {
+        "scored": false,
+        "legs": {
+          "real_rate": "NEUTRAL",
+          "vrp": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": -0.02837,
+        "cw_p": 0.843,
+        "cw_q": null,
+        "brier_skill_recal": 0.004,
+        "dsr": 0.0646,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      }
+    },
+    "TAN": {
+      "medium": {
+        "scored": false,
+        "legs": {
+          "tsmom": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": 0.0079,
+        "cw_p": 0.2594,
+        "cw_q": null,
+        "brier_skill_recal": 0.017,
+        "dsr": 0.0163,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      },
+      "long": {
+        "scored": false,
+        "legs": {
+          "tsmom": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": -0.00882,
+        "cw_p": 0.9115,
+        "cw_q": null,
+        "brier_skill_recal": 0.298,
+        "dsr": 0.0127,
         "p_up_band": [
           0.4,
           0.62
