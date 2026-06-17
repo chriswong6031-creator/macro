@@ -48,14 +48,14 @@
     "lean": "fragile",
     "confidence": "medium",
     "checks": {
-      "catalyst": "oil price collapse is a market move, not a structural policy shift, signed deal, or hard data surprise \u2014 easily reversible",
-      "premium": "fear built to 0.504 with recent capitulation, and VIX/HY OAS/term structure flipped suggest a chunk unwound, but full relief magnitude unclear",
-      "washout": "cap_recent true indicates the relief came out of a genuine fear washout, not a shallow dip",
-      "follow_through": "cross\u2011asset confirmation is present but driven by a volatile commodity shock; deflationary interpretation could quickly reverse into recession fears, fading next session"
+      "catalyst": "Oil collapsing is a risk-off market move, not a structural positive catalyst; no signed deal, policy shift, or hard data surprise.",
+      "premium": "Fear built only moderate (0.504), suggesting limited premium to unwind.",
+      "washout": "Recent capitulation present (cap_recent=true), but oil shock introduces a new, unrelated risk factor that can override prior washout dynamics.",
+      "follow_through": "Unlikely; oil's decline and its broad deflationary signal are likely to reassert pressure, causing relief to fade next session."
     },
-    "read": "The snap builds on an oil collapse that lacks any durable policy anchor, making it inherently fragile. Despite a real capitulation washout and flipping risk\u2011on legs, the catalyst\u2019s reversibility points to a likely dead\u2011cat bounce.",
+    "read": "Oil collapsing is a fresh negative driver, not a structural catalyst for durable relief. Despite prior capitulation, the relief is fragile and likely to reverse as oil's risk-off signal persists.",
     "model": "deepseek-v4-pro",
-    "generated_at": "2026-06-17T03:30:56.529439+00:00",
+    "generated_at": "2026-06-17T04:50:14.896621+00:00",
     "degraded_reason": null,
     "disclaimer": "AI durability read \u2014 context only, never scored or sized. The snap detector is coincident; this is a fallible judgement on whether the relief is structural or a dead-cat, not a trade recommendation."
   }

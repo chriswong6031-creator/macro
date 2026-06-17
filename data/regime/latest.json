@@ -409,15 +409,24 @@
     "kind": "fomc_statement",
     "doc_id": "fomc_2026-04-29",
     "asof": "2026-04-29",
-    "tone_score": 0.0,
-    "guidance_direction": "unknown",
+    "tone_score": 0.1,
+    "guidance_direction": "on_hold",
     "risk_delta": 0.0,
     "shock_reversible": "unknown",
-    "confidence": "low",
+    "confidence": "medium",
     "confidence_gated": false,
     "dropped_fields": [],
-    "evidence": [],
-    "degraded_reason": "stop_max_tokens",
+    "evidence": [
+      {
+        "field": "tone_score",
+        "quote_span": "Developments in the Middle East are contributing to a high level of uncertainty about the economic outlook."
+      },
+      {
+        "field": "guidance_direction",
+        "quote_span": "The Committee decided to maintain the target range for the federal funds rate at 3\u00e2\u0080\u00911/2 to 3\u00e2\u0080\u00913/4 percent."
+      }
+    ],
+    "degraded_reason": null,
     "disclaimer": "Context only \u2014 not a signal. This is a machine DIGEST of a public document, produced by an AI model after the fact. The tone / guidance / risk / reversibility readings are background context; they are NOT inputs to any score, signal or allocation unless a downstream, separately-gated step promotes a single field, and even then only as one bounded factor. \u201cunknown\u201d means the evidence was insufficient \u2014 the honest answer. Every non-unknown field is backed by a quote verified to appear verbatim in the source; unverifiable claims are dropped."
   },
   "dislocation": {
@@ -914,7 +923,7 @@
   },
   "fed_path": {
     "asof": "2026-06-15",
-    "built": "2026-06-17T03:26:33.993232+00:00",
+    "built": "2026-06-17T04:46:27.793822+00:00",
     "policy_rate": 3.62,
     "target_low": 3.5,
     "target_high": 3.75,
