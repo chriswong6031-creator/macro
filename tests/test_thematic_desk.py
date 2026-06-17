@@ -164,3 +164,45 @@ def test_panel_all_unavailable_falls_back_to_analyst():
 
     b = td.synthesize(_state(), call=call)
     assert b["regime_context"] == "analyst fallback"                         # fell back, not adjudicated
+
+
+def test_macro_narrative_backdrop_in_state(tmp_path):
+    import json as _j
+    ad = tmp_path / "site" / "allocationdata"
+    ad.mkdir(parents=True)
+    # the BUILD SCRIPT writes this JSON; engine/ stays free of the news bus (the invariant)
+    (ad / "macro_narrative.json").write_text(_j.dumps({"window_days": 5, "n_recent": 30,
+        "unscheduled_share": 0.6, "dominant_themes": [{"theme": "geopolitics", "n": 22},
+        {"theme": "monetary", "n": 5}], "top_headlines": [{"title": "x", "theme": "geopolitics"}]}))
+    (ad / "allocation.json").write_text(_j.dumps({"as_of": "2026-01-05", "market_en": "US",
+        "ranks": [{"name": "AI", "id": "ai", "rank": 1, "etf_proxy": "SMH",
+                   "durability": {}, "crowding": {}}], "ai_handoff": {}}))
+    st = td.gather_thematic_state("us", root=tmp_path)
+    mn = st["macro_narrative"]
+    assert mn and mn["dominant_themes"][0]["theme"] == "geopolitics"
+    assert mn["unscheduled_share"] == 0.6 and len(mn["top_headlines"]) == 1
+    # and it flows into the brief for display
+    b = td.synthesize(st, call=lambda s, u, c: (_j.dumps(
+        {"regime_context": "x", "theses": [], "confidence": "low"}), None))
+    assert b["macro_narrative"]["dominant_themes"][0]["theme"] == "geopolitics"
+
+
+def test_theme_discovery_candidates_in_state(monkeypatch, tmp_path):
+    import json as _j
+    ad = tmp_path / "site" / "allocationdata"; ad.mkdir(parents=True)
+    (ad / "allocation.json").write_text(_j.dumps({"as_of": "2026-01-05", "market_en": "US",
+        "ranks": [{"name": "AI", "id": "ai", "rank": 1, "etf_proxy": "SMH",
+                   "durability": {}, "crowding": {}}], "ai_handoff": {}}))
+    (ad / "theme_candidates.json").write_text(_j.dumps({"verdict": "display_only_candidate_radar",
+        "candidates": [{"label": "Cybersecurity", "n": 6, "cohesion": 0.6, "cohesion_chg": 0.3,
+                        "ipo_wave": False, "constituents": [{"ticker": "CRWD"}, {"ticker": "PANW"}]}]}))
+    monkeypatch.setattr(td, "_macro_narrative", lambda *a, **k: None)
+    st = td.gather_thematic_state("us", root=tmp_path)
+    tc = st["theme_candidates"]
+    assert tc and tc["candidates"][0]["label"] == "Cybersecurity"
+    assert tc["candidates"][0]["tickers"] == ["CRWD", "PANW"]
+    # non-US markets get no candidate radar (US-only for now)
+    (tmp_path / "site" / "allocationdata" / "allocation_china.json").write_text(_j.dumps(
+        {"as_of": "2026-01-05", "market_en": "China", "ranks": [{"name": "x", "id": "x",
+         "etf_proxy": None, "durability": {}, "crowding": {}}], "ai_handoff": {}}))
+    assert td.gather_thematic_state("china", root=tmp_path)["theme_candidates"] is None

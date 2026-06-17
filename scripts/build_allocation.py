@@ -60,6 +60,55 @@ def build_region(region: str, env, built: str, site) -> bool:
     return True
 
 
+def _run_macro_narrative() -> None:
+    """Write the market-level macro-narrative backdrop (keyless GDELT news bus) the AI desk
+    reads as COINCIDENT regime context. The BUILD SCRIPT owns engine.news_vector so engine/
+    stays free of the bus (the scoring-isolation invariant). Additive/never fatal."""
+    try:
+        from engine import news_vector as nv
+        panel = nv.recent_panel(days=5, top_n=6)
+        ev = (panel or {}).get("events")
+        if not ev:
+            return
+        top = sorted((ev.get("by_theme") or {}).items(), key=lambda kv: -kv[1])[:4]
+        heads = [{"title": it.get("title"), "theme": it.get("theme"), "domain": it.get("domain")}
+                 for it in (ev.get("items") or []) if int(it.get("tier", 9)) == 1][:4]
+        out = {"dominant_themes": [{"theme": t, "n": n} for t, n in top],
+               "n_recent": ev.get("n_recent"), "unscheduled_share": ev.get("unscheduled_share"),
+               "top_headlines": heads, "window_days": (panel or {}).get("window_days"),
+               "note": "market-level macro/policy/geo narrative flow; coincident, not per-theme, never a trigger"}
+        d = config.ROOT / "site" / "allocationdata"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "macro_narrative.json").write_text(json.dumps(out, separators=(",", ":"), default=str))
+        log.info("macro_narrative: %d themes", len(out["dominant_themes"]))
+    except Exception as e:  # noqa: BLE001
+        log.error("macro_narrative backdrop failed: %s", e)
+
+
+def _run_theme_discovery() -> None:
+    """Theme-discovery radar — a DISPLAY-ONLY candidate generator for emerging US themes
+    (site/allocationdata/theme_candidates.json + a copy of the committed Phase-0 verdict).
+    Run BEFORE the desk so the narrative-scout can see the candidates. Additive/never fatal."""
+    try:
+        from engine.theme_discovery import discover_candidates
+        d = discover_candidates("us")
+        if not d:
+            return
+        out = config.ROOT / "site" / "allocationdata"
+        out.mkdir(parents=True, exist_ok=True)
+        # fold in the committed offline Phase-0 verdict so the page can show "how validated"
+        p0 = config.data_dir() / "theme_discovery" / "phase0.json"
+        if p0.exists():
+            try:
+                d["phase0"] = json.loads(p0.read_text())
+            except Exception:  # noqa: BLE001
+                pass
+        (out / "theme_candidates.json").write_text(json.dumps(d, separators=(",", ":"), default=str))
+        log.info("theme_discovery: %d US candidates", len(d.get("candidates", [])))
+    except Exception as e:  # noqa: BLE001
+        log.error("theme_discovery failed: %s", e)
+
+
 def _run_thematic_desk(regions: list[str]) -> None:
     """AI Desk for Thematic Investing — after the allocation JSONs are written, let the LLM
     desk produce falsifiable per-theme leans for each market (site/allocationdata/ai_desk_*.json)
@@ -94,6 +143,8 @@ def main(regions: list[str] | None = None) -> int:
     js = config.ROOT / "templates" / "ai_desk_thematic.js"
     if js.exists():
         (site / "ai_desk_thematic.js").write_text(js.read_text())
+    _run_macro_narrative()             # GDELT macro-narrative backdrop the desk reads (bus owned here)
+    _run_theme_discovery()             # candidate-theme radar (US) → feeds the scout + a page panel
     _run_thematic_desk(regions)        # additive AI layer; gated + never fatal
     return 0
 
