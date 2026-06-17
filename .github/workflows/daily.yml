@@ -298,6 +298,15 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: python -m scripts.notify
+      - name: archive signal layer (append-only point-in-time model outputs; resilient)
+        # LAST data-producing step: append today's latest.json / bond_health.json /
+        # regime_snap.json / forex + commodity reads to data/signal_archive/<label>.parquet
+        # (keep-first per as-of date). A clean, queryable, point-in-time record of what
+        # each model SAID each day — distinct from regime_history.parquet, which is
+        # RECOMPUTED from scratch every run (so it carries data revisions + today's code
+        # backwards = lookahead). Lossless via a snapshot_json column. Display/research-
+        # only, never read back into a score; the script always exits 0.
+        run: python -m scripts.archive_signals || true
       - name: commit engine outputs
         run: |
           git config user.name "dashboard-bot"
