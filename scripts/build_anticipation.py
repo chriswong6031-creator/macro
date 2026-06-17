@@ -28,7 +28,7 @@ from engine import anticipation  # noqa: E402
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_anticipation")
 
-INDEX = [("SPY", "S&P 500"), ("QQQ", "Nasdaq 100")]
+INDEX = [("SPY", "S&P 500"), ("QQQ", "Nasdaq 100"), ("IWM", "Russell 2000")]
 SECTORS = {"XLK": "Technology", "XLF": "Financials", "XLE": "Energy", "XLV": "Health Care",
            "XLI": "Industrials", "XLY": "Cons. Discretionary", "XLP": "Cons. Staples",
            "XLU": "Utilities", "XLB": "Materials", "XLRE": "Real Estate",
