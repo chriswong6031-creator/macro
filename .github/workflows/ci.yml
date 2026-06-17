@@ -1,0 +1,21 @@
+name: ci
+# Pre-merge guards for the committed site. Runs on PRs that touch site/ so a
+# blank-page regression (a malformed inline <script> that aborts the page IIFE)
+# shows up as a red check BEFORE it reaches main — complementing the same guard
+# that gates the Pages deploy in pages.yml.
+on:
+  pull_request:
+    branches: [main]
+    paths: ["site/**", "scripts/check_inline_js.py", ".github/workflows/ci.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inline-js:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: inline JS must parse
+        run: python3 scripts/check_inline_js.py site

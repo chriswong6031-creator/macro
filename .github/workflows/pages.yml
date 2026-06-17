@@ -24,6 +24,12 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      # Guard: refuse to deploy if any committed inline <script> has a JS syntax
+      # error (e.g. an empty template var like `var DISP = ;` that renders the
+      # page BLANK). A failed guard aborts this deploy, so GitHub Pages keeps the
+      # last-good site live instead of shipping a broken page. See PRs #152/#155.
+      - name: guard — inline JS must parse
+        run: python3 scripts/check_inline_js.py site
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site/
