@@ -1592,12 +1592,16 @@
       (a.macro?' · '+T('market stress','市场压力')+' '+Math.round(a.macro.stress_pct)+'% ×'+a.macro.width_mult:'');
     document.getElementById('ant_cone').innerHTML=cone(a);
     var ch=''; HN.forEach(function(n){var h=a.horizons[n];if(!h)return;var nm={short:'Short',medium:'Medium',long:'Long'}[n],nz={short:'短期',medium:'中期',long:'长期'}[n];
+      var dl=h.direction_scored?(' · <span style="color:var(--up)">'+T('P(up)','上涨概率')+' '+Math.round((h.p_up||0.5)*100)+'% ✓</span>'):'';
       ch+='<div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 9px'+(h.thin?';opacity:.7':'')+'">'+
         '<div class="muted" style="font-size:11px">'+T(nm,nz)+' '+(h.range_td?h.range_td.join('–'):'')+'d</div>'+
         '<div style="font-size:16px;font-weight:700">'+pct(h.dd_avg)+'</div>'+
-        '<div class="neg" style="font-size:11px">'+T('worst','最坏')+' '+pct(h.dd_tail)+'</div></div>';});
+        '<div class="neg" style="font-size:11px">'+T('worst','最坏')+' '+pct(h.dd_tail)+dl+'</div></div>';});
     document.getElementById('ant_cards').innerHTML=ch;
-    document.getElementById('ant_note').innerHTML=T('Risk cone is the validated read; direction is a measured coin-flip. Bands p05–p95, downside emphasized.','风险锥为已验证读数；方向为实测抛硬币。区间 p05–p95，强调下行。');
+    var anyScored=HN.some(function(n){return a.horizons[n]&&a.horizons[n].direction_scored;});
+    document.getElementById('ant_note').innerHTML=anyScored
+      ? T('Direction shown is a validated out-of-sample lean (Clark-West) at the marked horizon; short stays a coin-flip. Cone bands p05–p95, downside emphasized.','所示方向为标记周期上经验证的样本外倾向（Clark-West）；短期仍为抛硬币。锥区间 p05–p95，强调下行。')
+      : T('Risk cone is the validated read; direction is a measured coin-flip. Bands p05–p95, downside emphasized.','风险锥为已验证读数；方向为实测抛硬币。区间 p05–p95，强调下行。');
     panel.style.display='';
   }
   function cur(){try{return decodeURIComponent((location.hash||'').replace(/^#/,'')).trim().toUpperCase();}catch(e){return '';}}

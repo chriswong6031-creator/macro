@@ -26,7 +26,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from engine import forward_dist, indicators, velocity, vol_forecast
+from engine import forward_dist, index_direction, indicators, velocity, vol_forecast
 
 # (lo_td, hi_td, representative_window_td) — ranges justified in research/ANTICIPATION_ENGINE.md
 HORIZONS = {"short": (1, 10, 5), "medium": (21, 63, 42), "long": (126, 252, 189)}
@@ -47,6 +47,16 @@ def load_gate(asset_class: str = "US") -> dict:
     try:
         g = json.loads(_GATE_PATH.read_text())
         return g.get(asset_class, g.get("US", {})) if isinstance(g, dict) else {}
+    except Exception:
+        return {}
+
+
+def direction_gate(asset: str) -> dict:
+    """The INDEX_DIRECTION[asset] block (per-index directional model). Missing ⇒ {} ⇒
+    the index stays a coin-flip / display-only, mirroring the risk-gate rule."""
+    try:
+        g = json.loads(_GATE_PATH.read_text())
+        return (g.get("INDEX_DIRECTION", {}) or {}).get(asset, {})
     except Exception:
         return {}
 
@@ -208,11 +218,22 @@ def anticipate(close: pd.Series, high: pd.Series | None = None, low: pd.Series |
     # 0..100 index = percentile of current confluence in its own history (display)
     idx_pct = float(conf.rank(pct=True).iloc[-1] * 100) if conf.notna().any() else None
 
-    # direction cell: trend × vol_band (the measured coin-flip)
+    # direction cell: trend × vol_band (the measured coin-flip baseline)
     vmed = L["vol_pct"].median()
     vol_band = np.where(L["vol_pct"] > vmed, "hi", "lo")
     cell_key = pd.Series(np.where(L["trend_vel"] > 0, "up_", "dn_"), index=close.index) \
         + pd.Series(vol_band, index=close.index)
+
+    # per-index DIRECTIONAL model — gated on INDEX MEMBERSHIP (not asset_class), so it
+    # fires for SPY/QQQ/IWM/DIA whether they arrive as 'index' or via the stock library,
+    # and NEVER for a single name. Replaces the coin-flip center ONLY at a scored horizon;
+    # for an index whose horizon is NOT validated it pins P(up)=0.5 (honest coin-flip).
+    dir_block = None
+    if asset in index_direction.INDEX_PRESETS:
+        try:
+            dir_block = index_direction.forecast(close, asset=asset, gate=direction_gate(asset))
+        except Exception:  # noqa: BLE001 — additive, never break the cone
+            dir_block = None
 
     # assemble per-horizon
     H = {}
@@ -220,16 +241,28 @@ def anticipate(close: pd.Series, high: pd.Series | None = None, low: pd.Series |
         c = cone["horizons"].get(name, {})
         p_up, n_cell, _cell = forward_dist.cond_up_prob(close, cell_key, rep)
         thin = bool(c.get("thin", True) or c.get("n", 0) < 150)
-        long_underpowered = (name == "long" and asset_class == "us_equity"
+        long_underpowered = (name == "long" and asset_class in ("us_equity", "index")
                              and (close.index[-1] - close.index[0]).days / 365.25 < 25)
+        rq = c.get("ret_q")
+        dh = (dir_block or {}).get("horizons", {}).get(name)
+        dir_scored = bool(dh and dh.get("scored"))
+        if dh is not None and name != "short":
+            p_up = dh["p_up"]                          # index: validated center, else 0.5 (coin-flip)
+            if dir_scored and rq and dh.get("r_hat") is not None:
+                shift = dh["r_hat"] - rq.get("p50", 0.0)
+                rq = {k: round(v + shift, 2) for k, v in rq.items()}   # recenter to r̂; WIDTH unchanged
+        direction = ("coin-flip" if name == "short" else
+                     (dh["direction"] if dir_scored else
+                      ("up-lean" if p_up > 0.52 else ("down-lean" if p_up < 0.48 else "neutral"))))
         H[name] = {
             "range_td": [lo_td, hi_td], "window_td": rep,
             "p_up": round(p_up, 3), "conviction": _conviction(p_up, name),
-            "direction": ("coin-flip" if name == "short" else
-                          ("up-lean" if p_up > 0.52 else ("down-lean" if p_up < 0.48 else "neutral"))),
-            "ret_q": c.get("ret_q"), "dd_avg": c.get("dd_avg"), "dd_tail": c.get("dd_tail"),
+            "direction": direction, "direction_scored": dir_scored,
+            "ret_q": rq, "dd_avg": c.get("dd_avg"), "dd_tail": c.get("dd_tail"),
             "mfe_med": c.get("mfe_med"), "cell_n": c.get("n", 0), "thin": thin,
             "underpowered": bool(long_underpowered),
+            "r_hat": (dh or {}).get("r_hat") if dir_scored else None,
+            "oos_r2": (dh or {}).get("oos_r2") if dir_scored else None,
         }
 
     # vol cone width (annualized HAR-style estimate)
@@ -262,6 +295,9 @@ def anticipate(close: pd.Series, high: pd.Series | None = None, low: pd.Series |
     drivers.sort(key=lambda d: -abs(d["value"]))
     drivers = macro_drivers + drivers
 
+    scored_h = [n for n, h in H.items() if h.get("direction_scored")]
+    dir_trust = (f"scored (Clark-West OOS-R²>0, calibrated) at {', '.join(scored_h)}" if scored_h
+                 else "display-only (measured coin-flip)")
     out = {
         "asset": asset, "asset_class": asset_class, "as_of": as_of,
         "anticipation_index": round(idx_pct, 1) if idx_pct is not None else None,
@@ -270,11 +306,14 @@ def anticipate(close: pd.Series, high: pd.Series | None = None, low: pd.Series |
         "vol_cone_ann": round(cv, 3) if cv is not None else None,
         "horizons": H,
         "drivers": drivers[:8],
-        "direction_trust": "display-only (measured coin-flip)",
-        "guards": {"short_direction": "coin-flip", "direction": "display-only",
+        "direction_trust": dir_trust,
+        "guards": {"short_direction": "coin-flip",
+                   "direction": ("scored at " + ", ".join(scored_h)) if scored_h else "display-only",
                    "scored_legs": sorted(go), "display_only_until_go": True},
         "caveats": [
-            "Risk cone (drawdown/vol) is the validated read; DIRECTION is display-only (measured coin-flip).",
+            ("Direction at " + ", ".join(scored_h) + " is a validated OOS lean; short stays a coin-flip."
+             if scored_h else
+             "Risk cone (drawdown/vol) is the validated read; DIRECTION is display-only (measured coin-flip)."),
             "Cone widens with horizon; downside tail is the forecastable left side.",
         ] + (["Long per-name cone is thin/under-powered — defer to the sector cone."]
              if H.get("long", {}).get("underpowered") else []),
@@ -285,4 +324,9 @@ def anticipate(close: pd.Series, high: pd.Series | None = None, low: pd.Series |
                         "go_legs": macro["go_legs"]}
         if macro["stress_pct"] >= 70:
             out["caveats"].append("Market overlay: elevated credit/conditions stress — cone widened.")
+    if dir_block and dir_block.get("horizons"):
+        md = dir_block["horizons"].get("medium", {})
+        out["direction_model"] = {"trust": dir_block.get("trust"),
+                                  "medium_legs_used": md.get("used", []),
+                                  "medium_oos_r2": md.get("oos_r2"), "medium_cw_p": md.get("cw_p")}
     return out

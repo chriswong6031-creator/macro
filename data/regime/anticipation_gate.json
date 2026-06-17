@@ -46,5 +46,73 @@
       "m_breadth_vel"
     ],
     "note": "display-only until GO; cone (drawdown) validated, direction is coin-flip short-horizon (display-only)"
+  },
+  "INDEX_DIRECTION": {
+    "_meta": {
+      "n_trials": 64,
+      "horizon_td": 42,
+      "benchmark": "expanding historical mean",
+      "note": "display-only until scored; per-index, no transfer; short stays coin-flip"
+    },
+    "SPY": {
+      "medium": {
+        "scored": false,
+        "legs": {
+          "vrp": "NEUTRAL",
+          "tsmom": "NEUTRAL",
+          "netliq": "NEUTRAL",
+          "credit": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": -0.00678,
+        "cw_p": 0.5459,
+        "brier_skill": -0.07,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      }
+    },
+    "QQQ": {
+      "medium": {
+        "scored": true,
+        "legs": {
+          "vrp": "NEUTRAL",
+          "real_rate": "GO",
+          "tsmom": "NEUTRAL",
+          "netliq": "NEUTRAL"
+        },
+        "platt": {
+          "a": 0.457,
+          "b": 0.627
+        },
+        "oos_r2": 0.02714,
+        "cw_p": 0.0034,
+        "brier_skill": -0.041,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      }
+    },
+    "IWM": {
+      "medium": {
+        "scored": false,
+        "legs": {
+          "credit": "NEUTRAL",
+          "credit_vel": "NEUTRAL",
+          "anfci": "NEUTRAL",
+          "vrp": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": -0.01475,
+        "cw_p": 0.7565,
+        "brier_skill": -0.082,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      }
+    }
   }
 }
