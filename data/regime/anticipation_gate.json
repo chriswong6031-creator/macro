@@ -1,0 +1,50 @@
+{
+  "US": {
+    "det_z": "NEUTRAL",
+    "confluence": "GO",
+    "neg_trend_vel": "GO",
+    "neg_trend_accel": "NEUTRAL",
+    "neg_rs_vel": "NEUTRAL",
+    "neg_impulse": "NEUTRAL",
+    "rvar_vel": "GO",
+    "ext_z": "NEUTRAL",
+    "vol_pct": "GO",
+    "m_vix": "NEUTRAL",
+    "m_vix_term": "NEUTRAL",
+    "m_move": "NEUTRAL",
+    "m_hy_oas": "GO",
+    "m_hy_vel": "GO",
+    "m_curve_inv": "NEUTRAL",
+    "m_dollar_vel": "NEUTRAL",
+    "m_netliq_vel": "NEUTRAL",
+    "m_nfci": "GO",
+    "m_gpr": "NEUTRAL",
+    "m_gpr_act": "NEUTRAL",
+    "m_epu": "NEUTRAL",
+    "m_breadth_vel": "NEUTRAL"
+  },
+  "_meta": {
+    "horizons_td": {
+      "short": 5,
+      "medium": 42,
+      "long": 189
+    },
+    "n_rows": 1175039,
+    "macro_legs": [
+      "m_vix",
+      "m_vix_term",
+      "m_move",
+      "m_hy_oas",
+      "m_hy_vel",
+      "m_curve_inv",
+      "m_dollar_vel",
+      "m_netliq_vel",
+      "m_nfci",
+      "m_gpr",
+      "m_gpr_act",
+      "m_epu",
+      "m_breadth_vel"
+    ],
+    "note": "display-only until GO; cone (drawdown) validated, direction is coin-flip short-horizon (display-only)"
+  }
+}

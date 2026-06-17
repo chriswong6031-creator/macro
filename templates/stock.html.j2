@@ -261,6 +261,7 @@
       <div class="nav-dd-menu" role="menu">
         <a href="macro.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('Regime · growth · inflation · nowcast', '周期 · 增长 · 通胀 · 即时预测') }}</span></a>
         <a class="active" href="us_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Standouts · sectors · flows', '精选 · 板块 · 资金') }}</span></a>
+        <a href="anticipation.html">🔮 {{ t('Anticipation', '预判') }}<span class="d">{{ t('Multi-horizon outcome cones', '多周期结果锥') }}</span></a>
         <a href="strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
         <a href="spvector.html">📐 {{ t('S&P / Macro Vector', '标普宏观向量') }}<span class="d">{{ t('Tactical equity↔cash', '战术股票↔现金') }}</span></a>
         <a href="ipo.html">🆕 {{ t('IPO Radar', '新股雷达') }}<span class="d">{{ t('IPO window · aftermarket reality', '新股窗口 · 二级市场现实') }}</span></a>
@@ -394,6 +395,14 @@
       <div id="r_cyclebox" class="cyclebox"></div>
       <p id="r_flags" class="neg" style="margin:4px 0"></p>
       <details><summary>{{ t('full reasoning', '完整推理') }}</summary><p class="muted" id="r_why" style="margin:6px 0"></p></details>
+    </div>
+    <div class="panel" id="panel_anticipation" style="display:none">
+      <h2>🔮 {{ t('Anticipation — multi-horizon outcome cone', '预判 — 多周期结果锥') }}
+        <a href="anticipation.html" class="muted" style="font-size:12px;font-weight:400;margin-left:6px">{{ t('all assets →', '全部标的 →') }}</a></h2>
+      <p class="muted" style="font-size:12.5px;margin:2px 0 8px" id="ant_sub"></p>
+      <div id="ant_cone"></div>
+      <div id="ant_cards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px"></div>
+      <p class="muted" style="font-size:11.5px;margin:8px 0 0" id="ant_note"></p>
     </div>
     <div class="panel" id="stock-brief" style="display:none">
       <h2>🧠 {{ t('AI brief — research context', 'AI 简报 — 研究背景') }}</h2>
@@ -1525,6 +1534,60 @@
 </script>
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
+<script>
+/* Anticipation panel — additive; fetches anticipationdata/<ticker>.json (watchlist/
+   sectors/index for now), renders a compact forward-outcome cone. Graceful 404. */
+(function(){
+  var panel=document.getElementById('panel_anticipation'); if(!panel) return;
+  function safeT(t){return String(t).replace(/[=^]/g,'_');}
+  function T(en,zh){return '<span class="l-en">'+en+'</span><span class="l-zh">'+(zh||en)+'</span>';}
+  function f1(x){return (x==null||isNaN(x))?'—':Math.round(x*10)/10;}
+  function pct(x){return (x==null||isNaN(x))?'—':((x>=0?'+':'')+f1(x)+'%');}
+  var HN=['short','medium','long'];
+  function Y(r,lo,hi,top,bot){return top+(hi-r)/(hi-lo)*(bot-top);}
+  function cone(a){
+    var hs=HN.map(function(n){return [n,a.horizons[n]];}).filter(function(p){return p[1]&&p[1].ret_q;});
+    if(!hs.length) return '';
+    var lo=0,hi=0; hs.forEach(function(p){var q=p[1].ret_q;lo=Math.min(lo,q.p5);hi=Math.max(hi,q.p95);});
+    lo*=1.08;hi*=1.08; if(hi-lo<8){hi+=4;lo-=4;}
+    var top=24,bot=208,X={},xs=[210,410,628]; hs.forEach(function(p,i){X[p[0]]=xs[i]||(210+i*140);});
+    var y0=Y(0,lo,hi,top,bot);
+    function ed(k){var s='M64,'+y0;hs.forEach(function(p){s+=' L'+X[p[0]]+','+Y(p[1].ret_q[k],lo,hi,top,bot);});return s;}
+    function rv(k){var s='';for(var i=hs.length-1;i>=0;i--){s+=' L'+X[hs[i][0]]+','+Y(hs[i][1].ret_q[k],lo,hi,top,bot);}return s+' L64,'+y0;}
+    var lab='<text x="64" y="226" style="fill:var(--muted)" font-size="11">'+T('now','现在')+'</text>';
+    hs.forEach(function(p){var m=p[1].range_td||[];var nm={short:'short',medium:'medium',long:'long'}[p[0]],nz={short:'短期',medium:'中期',long:'长期'}[p[0]];
+      lab+='<text x="'+X[p[0]]+'" y="226" text-anchor="middle" style="fill:var(--text)" font-size="11">'+T(nm,nz)+' '+(m[0]||'')+'–'+(m[1]||'')+'d</text>';});
+    return '<svg viewBox="0 0 680 238" style="width:100%;height:auto;display:block" role="img" aria-label="forward outcome cone">'+
+      '<line x1="56" y1="'+y0+'" x2="650" y2="'+y0+'" style="stroke:var(--muted)" stroke-width="1" stroke-dasharray="1 4"/>'+
+      '<path d="'+ed('p95')+rv('p75')+' Z" fill="#888780" fill-opacity="0.10"/>'+
+      '<path d="'+ed('p75')+rv('p25')+' Z" fill="#888780" fill-opacity="0.20"/>'+
+      '<path d="'+ed('p25')+rv('p5')+' Z" fill="#E24B4A" fill-opacity="0.18"/>'+
+      '<path d="'+ed('p50')+'" fill="none" style="stroke:var(--text)" stroke-width="1.3" stroke-dasharray="5 4"/>'+lab+'</svg>';
+  }
+  function show(a){
+    document.getElementById('ant_sub').innerHTML=T('Index','指数')+' '+(a.anticipation_index!=null?Math.round(a.anticipation_index):'—')+' · '+a.index_band+
+      (a.macro?' · '+T('market stress','市场压力')+' '+Math.round(a.macro.stress_pct)+'% ×'+a.macro.width_mult:'');
+    document.getElementById('ant_cone').innerHTML=cone(a);
+    var ch=''; HN.forEach(function(n){var h=a.horizons[n];if(!h)return;var nm={short:'Short',medium:'Medium',long:'Long'}[n],nz={short:'短期',medium:'中期',long:'长期'}[n];
+      ch+='<div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 9px'+(h.thin?';opacity:.7':'')+'">'+
+        '<div class="muted" style="font-size:11px">'+T(nm,nz)+' '+(h.range_td?h.range_td.join('–'):'')+'d</div>'+
+        '<div style="font-size:16px;font-weight:700">'+pct(h.dd_avg)+'</div>'+
+        '<div class="neg" style="font-size:11px">'+T('worst','最坏')+' '+pct(h.dd_tail)+'</div></div>';});
+    document.getElementById('ant_cards').innerHTML=ch;
+    document.getElementById('ant_note').innerHTML=T('Risk cone is the validated read; direction is a measured coin-flip. Bands p05–p95, downside emphasized.','风险锥为已验证读数；方向为实测抛硬币。区间 p05–p95，强调下行。');
+    panel.style.display='';
+  }
+  function cur(){try{return decodeURIComponent((location.hash||'').replace(/^#/,'')).trim().toUpperCase();}catch(e){return '';}}
+  function load(){var t=cur(); if(!t){panel.style.display='none';return;}
+    // full universe: the per-stock library JSON carries .anticipation; sectors/index
+    // (not in the stock library) fall back to the standalone builder's per-ticker JSON.
+    fetch('stockdata/'+safeT(t)+'.json').then(function(r){return r.ok?r.json():null;}).then(function(j){
+      if(j&&j.anticipation){ show(j.anticipation); return; }
+      return fetch('anticipationdata/'+safeT(t)+'.json').then(function(r){if(!r.ok)throw 0;return r.json();}).then(show);
+    }).catch(function(){panel.style.display='none';});}
+  window.addEventListener('hashchange',load); load();
+})();
+</script>
 <p class="muted" style="font-size:12px">Generated {{ generated_utc }} UTC · charts by TradingView ·
 methodology &amp; caveats: see any sector page footer.</p>
 <footer class="site-footer">

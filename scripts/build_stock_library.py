@@ -140,7 +140,9 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
          macro_drag: float | None = None, macro_beta: float = 0.0,
          bench: pd.Series | None = None, alert_days: int = 120,
          alert_max: int = 50, vix_ctx: dict | None = None,
-         min_days: int = 300, allow_limited: bool = False) -> dict | None:
+         min_days: int = 300, allow_limited: bool = False,
+         macro_frame=None, ant_gate: dict | None = None,
+         breadth: pd.Series | None = None) -> dict | None:
     c = close.dropna()
     # The cycle ladder itself needs ~260 sessions (engine/cycles), so 300 is a
     # conservative margin for the broad library. Curated single-stock extras
@@ -184,6 +186,17 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
     rec["alerts"] = ticker_alerts.compact_feed(ticker_alerts.build_feed(
         ticker, c, high, bench, res.get("ladder"), asof,
         days=alert_days, max_events=alert_max))
+    # multi-horizon anticipation cone (DISPLAY-ONLY risk read; only GO legs score, and
+    # only for us_equity — crypto gets no scored gate until its own per-class Phase-0).
+    try:
+        from engine import anticipation as _antic
+        a = _antic.anticipate(c, high, bench=bench, breadth=breadth, asset=ticker,
+                              asset_class=("crypto" if kind == "crypto" else "us_equity"),
+                              macro_frame=macro_frame, gate=(ant_gate if kind == "equity" else {}))
+        if a:
+            rec["anticipation"] = a
+    except Exception:  # noqa: BLE001 — additive; one cone error must not drop the name
+        pass
     return rec
 
 
@@ -301,9 +314,11 @@ def _library_workers() -> int:
 EXTRAS_MIN_DAYS = 252
 
 
-def _winit(liq, drag, bench, a_days, a_max, vctx, extras=frozenset()) -> None:
+def _winit(liq, drag, bench, a_days, a_max, vctx, extras=frozenset(),
+           macro_frame=None, ant_gate=None, breadth=None) -> None:
     _SHARED.update(liquidity=liq, macro_drag=drag, bench=bench,
-                   alert_days=a_days, alert_max=a_max, vix_ctx=vctx, extras=extras)
+                   alert_days=a_days, alert_max=a_max, vix_ctx=vctx, extras=extras,
+                   macro_frame=macro_frame, ant_gate=ant_gate, breadth=breadth)
 
 
 def _one_task(item):
@@ -320,7 +335,9 @@ def _one_task(item):
                     macro_beta=sector_macro_beta(sector), bench=_SHARED.get("bench"),
                     alert_days=_SHARED.get("alert_days", 120),
                     alert_max=_SHARED.get("alert_max", 50), vix_ctx=_SHARED.get("vix_ctx"),
-                    min_days=min_days, allow_limited=is_extra)
+                    min_days=min_days, allow_limited=is_extra,
+                    macro_frame=_SHARED.get("macro_frame"), ant_gate=_SHARED.get("ant_gate"),
+                    breadth=_SHARED.get("breadth"))
     except Exception as e:  # noqa: BLE001 — one bad ticker must not kill the library
         log.debug("library %s failed: %s", ticker, e)
         return None
@@ -529,7 +546,23 @@ def main() -> int:
     # Graceful: any pool error — or workers<=1 — drops back to the serial path.
     extra_set = frozenset(
         config.load().get("stock_search", {}).get("extra_tickers", []) or [])
-    _winit(liq, drag, bench, a_days, a_max, vctx, extra_set)   # also primes the serial path
+    # anticipation cone inputs (shared, read-only): the validated macro overlay frame +
+    # Phase-0 gate + market breadth — built ONCE and installed into every worker (pickled
+    # at pool init, not per task). The cone rides this heavy parallel stretch for ~free.
+    try:
+        from engine import anticipation as _antic
+        _amf = _antic.macro_legs_frame()
+        ant_macro = None if (_amf is None or _amf.empty) else _amf
+        ant_gate = _antic.load_gate("US")
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("anticipation overlay unavailable (%s)", e)
+        ant_macro, ant_gate = None, None
+    try:
+        ant_breadth = pd.read_parquet(config.data_dir() / "breadth" / "breadth.parquet")["pct_above_200"]
+    except Exception:  # noqa: BLE001
+        ant_breadth = None
+    _winit(liq, drag, bench, a_days, a_max, vctx, extra_set,
+           ant_macro, ant_gate, ant_breadth)                  # also primes the serial path
     workers = _library_workers()
     recs: list[dict | None] | None = None
     if workers > 1 and len(uni) > 50:
@@ -537,7 +570,8 @@ def main() -> int:
             from concurrent.futures import ProcessPoolExecutor
             t0 = time.time()
             with ProcessPoolExecutor(max_workers=workers, initializer=_winit,
-                                     initargs=(liq, drag, bench, a_days, a_max, vctx, extra_set)) as ex:
+                                     initargs=(liq, drag, bench, a_days, a_max, vctx, extra_set,
+                                               ant_macro, ant_gate, ant_breadth)) as ex:
                 recs = list(ex.map(_one_task, uni, chunksize=8))
             log.info("stock library: analysed %d names in %.0fs (%d processes)",
                      len(uni), time.time() - t0, workers)

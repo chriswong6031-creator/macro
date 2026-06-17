@@ -187,6 +187,19 @@ def purged_folds(index, k: int, embargo: int) -> dict:
     return out
 
 
+def fold_robust(full_sign: int, fold_signs: list, want: int) -> bool:
+    """Purged-CV robustness: the full-sample sign matches `want`, NO non-empty fold
+    flips to the opposite sign, and all-but-one of the non-empty folds agree. Stricter
+    than the pre/post split it complements. (Lifted from calibrate_vector so engine
+    leaves — anticipation — can import it directly rather than from a CLI script.)"""
+    nz = [s for s in fold_signs if s != 0]
+    if not nz:
+        return False
+    flip = sum(1 for s in nz if s == -want)
+    agree = sum(1 for s in nz if s == want)
+    return full_sign == want and flip == 0 and agree >= max(1, len(nz) - 1)
+
+
 def _sharpe(r, ann: int) -> float:
     sd = float(np.std(r))
     return float(np.mean(r) / sd * math.sqrt(ann)) if sd else float("nan")
@@ -393,3 +406,47 @@ def resid_z(z: pd.Series, basis: list, win: int, min_p: int) -> pd.Series:
         beta = (cov / var.replace(0, np.nan)).shift(1)            # causal
         e = (e - beta * b).where(beta.notna(), e)                 # raw until estimable
     return e
+
+
+# --------------------------------------------------------------------------- #
+# CRPS — the one net-new primitive (Anticipation Engine). brier_reliability only
+# scores a BINARY forecast; the multi-horizon cone is a DISTRIBUTION (return
+# quantiles + drawdown), so we need a proper scoring rule for the whole forecast.
+# Continuous Ranked Probability Score is the distributional analogue of MAE:
+# CRPS(F, y) = E|X - y| - ½E|X - X'|, X,X' ~ F. Lower is better; it rewards a
+# forecast that is BOTH sharp and calibrated, and collapses to |x-y| for a point
+# forecast. Pure numpy (no scipy), via the sorted-ensemble identity.
+# --------------------------------------------------------------------------- #
+def crps_ensemble(samples, y) -> float:
+    """CRPS of an ENSEMBLE forecast (a set of Monte-Carlo / empirical-analog sample
+    outcomes) against a scalar realization `y`. O(m log m) via the closed form
+    E|X-X'| = (2/m²)·Σ_i (2i-m-1)·x_(i) on the sorted ensemble. NaN if empty."""
+    s = np.sort(np.asarray(samples, float))
+    s = s[np.isfinite(s)]
+    m = len(s)
+    if m == 0 or y is None or not np.isfinite(y):
+        return float("nan")
+    mae = float(np.mean(np.abs(s - y)))
+    i = np.arange(1, m + 1)
+    ediff = float((2.0 / (m * m)) * np.sum((2 * i - m - 1) * s))
+    return mae - 0.5 * ediff
+
+
+def crps_score(sample_sets, ys, clim=None) -> dict:
+    """Mean CRPS over many (forecast-ensemble, realization) pairs, plus a SKILL
+    score vs an unconditional climatology forecast `clim` (a single fixed ensemble —
+    e.g. the pooled outcome distribution — used for every obs). skill = 1 - crps/crps_clim;
+    >0 means the conditional cone beats 'always predict the base distribution'. Pass a
+    SUBSAMPLED clim (a few hundred points) — the climatology leg is O(len(ys)·|clim|)."""
+    ys = np.asarray(ys, float)
+    vals = [crps_ensemble(s, y) for s, y in zip(sample_sets, ys) if s is not None]
+    pairs = [(v, y) for v, y in zip(vals, ys) if np.isfinite(v)]
+    if len(pairs) < 10:
+        return {}
+    mc = float(np.mean([v for v, _ in pairs]))
+    out = {"crps": round(mc, 4), "n": len(pairs)}
+    if clim is not None and len(clim):
+        cv = float(np.mean([crps_ensemble(clim, y) for _, y in pairs]))
+        out["crps_clim"] = round(cv, 4)
+        out["skill"] = round(1 - mc / cv, 3) if cv else None
+    return out

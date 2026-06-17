@@ -1,0 +1,305 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ t('Anticipation — multi-horizon forward outcome cones', '预判 — 多周期前瞻结果锥') }}</title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:24px max(34px,calc((100vw - 1320px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:21px; margin:0; }
+  h2 { font-size:15px; margin:26px 0 4px; }
+  .muted { color:var(--muted); } .sm { font-size:12px; }
+  .pos { color:var(--up); } .neg { color:var(--down); }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:14px; margin-top:10px; }
+  .tagline { color:var(--muted); font-size:12.5px; max-width:96ch; margin:4px 0 0; line-height:1.55; }
+  .asof { font-size:12px; color:var(--muted); }
+  .banner { border-radius:10px; padding:11px 14px; margin:12px 0; font-size:13px; background:var(--panel2); border:1px solid var(--line); display:flex; gap:9px; align-items:flex-start; }
+  .banner b { color:var(--text); }
+  .chip { display:inline-block; font-size:11px; padding:2px 8px; margin:0 5px 5px 0; border-radius:7px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
+  .chip.warn { background:rgba(250,204,21,.12); border-color:rgba(250,204,21,.4); color:var(--warn); }
+  .chip.hot { background:rgba(239,68,68,.12); border-color:rgba(239,68,68,.4); color:var(--down); }
+  .chip.ok  { background:rgba(34,197,94,.12); border-color:rgba(34,197,94,.4); color:var(--up); }
+  /* selector */
+  .selwrap { margin:12px 0 2px; }
+  .selgrp { margin:6px 0; }
+  .selgrp .gl { font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-right:8px; }
+  .pick { display:inline-block; cursor:pointer; font-size:12.5px; font-weight:600; padding:4px 10px; margin:0 5px 6px 0; border-radius:8px; background:var(--panel); border:1px solid var(--line); color:var(--text); }
+  .pick:hover { border-color:var(--link); color:var(--link); }
+  .pick.on { background:var(--accent,#5aa7ff); border-color:var(--accent,#5aa7ff); color:#fff; }
+  /* hero */
+  .hero { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:14px; align-items:start; }
+  @media (max-width:880px){ .hero{ grid-template-columns:1fr; } }
+  .htitle { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .htitle .nm { font-size:24px; font-weight:700; }
+  .htitle .grp { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+  .idxbadge { font-size:11px; font-weight:700; padding:2px 9px; border-radius:7px; text-transform:uppercase; letter-spacing:.04em; }
+  .b-calm{background:rgba(34,197,94,.14);color:var(--up);} .b-elevated{background:rgba(250,204,21,.16);color:var(--warn);}
+  .b-high{background:rgba(249,115,22,.16);color:#f97316;} .b-extreme{background:rgba(239,68,68,.16);color:var(--down);}
+  .cards { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:10px; }
+  @media (max-width:560px){ .cards{ grid-template-columns:1fr; } }
+  .hc { background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; }
+  .hc .k { font-size:12px; color:var(--muted); }
+  .hc .v { font-size:19px; font-weight:700; font-variant-numeric:tabular-nums; margin-top:2px; }
+  .hc .t2 { font-size:12px; color:var(--down); margin-top:1px; }
+  .hc .dir { display:inline-block; margin-top:7px; font-size:11px; padding:2px 8px; border-radius:7px; background:var(--panel); border:1px solid var(--line); color:var(--muted); }
+  .hc.thin { opacity:.72; }
+  .drv { display:flex; align-items:center; gap:8px; font-size:12.5px; margin:5px 0; }
+  .drv .lab { flex:0 0 178px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .drv .bar { flex:1; position:relative; height:14px; }
+  .drv .bar i { position:absolute; top:0; height:14px; border-radius:3px; }
+  .drv .bar i.up { left:50%; background:rgba(34,197,94,.55); }
+  .drv .bar i.dn { right:50%; background:rgba(239,68,68,.55); }
+  .drv .bar i.dispo { background:transparent; border:1px dashed var(--line); }
+  .drv .vv { flex:0 0 42px; text-align:right; font-variant-numeric:tabular-nums; }
+  .drv .sc { flex:0 0 14px; text-align:center; font-size:10px; color:var(--up); }
+  /* table */
+  .ts { overflow-x:auto; margin-top:8px; }
+  table { border-collapse:collapse; width:100%; font-size:13px; }
+  th,td { padding:7px 9px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  th { color:var(--muted); font-weight:500; text-align:right; cursor:pointer; }
+  th:first-child,td:first-child { text-align:left; }
+  td.num,th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  tbody tr { cursor:pointer; }
+  tbody tr:hover { background:var(--panel2); }
+  tbody tr.on { background:rgba(90,167,255,.10); }
+  .tband { font-size:10.5px; font-weight:700; padding:1px 6px; border-radius:6px; }
+  footer { color:var(--muted); font-size:11.5px; margin-top:28px; border-top:1px solid var(--line); padding-top:12px; max-width:98ch; line-height:1.6; }
+  .conebox svg { width:100%; height:auto; display:block; }
+</style>
+</head>
+<body>
+<nav class="site-nav">
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 {{ t('United States', '美国') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('Regime · growth · inflation', '周期 · 增长 · 通胀') }}</span></a>
+        <a href="us_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Standouts · sectors · flows', '精选 · 板块 · 资金') }}</span></a>
+        <a class="active" href="anticipation.html">🔮 {{ t('Anticipation', '预判') }}<span class="d">{{ t('Multi-horizon outcome cones', '多周期结果锥') }}</span></a>
+        <a href="strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
+        <a href="baskets.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets', '等权主题篮子') }}</span></a>
+        <a href="allocation.html">🔄 {{ t('Narrative Rotation', '主题轮动') }}<span class="d">{{ t('Which theme & when to rotate', '持有哪个主题 · 何时轮动') }}</span></a>
+        <a href="alerts.html">🚨 {{ t('Alert Center', '警报中心') }}<span class="d">{{ t('Ranked & triaged alerts', '分级分诊的警报') }}</span></a>
+        <a href="gex.html">🧲 {{ t('Options Magnets', '期权磁吸') }}<span class="d">{{ t('Dealer-gamma GEX levels', '做市商Gamma GEX价位') }}</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国') }}</a>
+    <a class="nav-link" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }}</a>
+    <a class="nav-link" href="canada.html">🇨🇦 {{ t('Canada', '加拿大') }}</a>
+    <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin', '比特币') }}</a>
+    <a class="nav-link" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }}</a>
+  </div>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="aibrief.html">🧠 {{ t('AI Daily Brief', 'AI每日简报') }}</a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;">
+  <h1>🔮 {{ t('Anticipation', '预判') }}</h1>
+  <span class="asof">{{ t('as of', '截至') }} <span id="asof"></span> · <span id="ngo"></span></span>
+</div>
+<p class="tagline">{{ t(
+  'A probability game, not a price oracle. For each asset we condition the FORWARD DISTRIBUTION (return quantiles + drawdown) on a confluence of validated signals, over three horizons. We lead with the forecastable quantity — the risk cone — and label short-horizon DIRECTION as the coin-flip it measurably is.',
+  '这是概率游戏，而非价格预言。对每个标的，我们用一组经验证的信号合流，对其前瞻分布（收益分位 + 回撤）在三个周期上进行条件化。我们以可预测的量 — 风险锥 — 为主，并将短期方向标注为其本质：抛硬币。') }}</p>
+
+<div class="banner">
+  <span style="font-size:16px;">⚖️</span>
+  <span>{{ t('Validated by Phase-0 on 1.17M observations: the strongest forward-drawdown predictors are credit spreads, volatility regime and the VELOCITY of deteriorating technicals. Direction is a measured coin-flip; geopolitical risk is coincident, not leading. The cone is the product — not a buy/sell signal.',
+    '基于117万样本的 Phase-0 验证：最强的前瞻回撤预测因子是信用利差、波动率状态与技术面恶化的"速度"。方向为实测的抛硬币；地缘政治风险是同步而非领先。锥体是产品 — 并非买卖信号。') }}</span>
+</div>
+
+<div class="selwrap" id="selwrap"></div>
+
+<div class="hero">
+  <div>
+    <div class="htitle" id="htitle"></div>
+    <div class="panel conebox" id="conebox"></div>
+    <div class="cards" id="cards"></div>
+  </div>
+  <div>
+    <div class="panel">
+      <h2 style="margin-top:0">{{ t('Drivers', '驱动因子') }} <span class="sm muted">({{ t('★ = validated / scored · dashed = display-only', '★ = 已验证/计分 · 虚线 = 仅展示') }})</span></h2>
+      <div id="drivers"></div>
+    </div>
+    <div class="panel" id="trust"></div>
+  </div>
+</div>
+
+<h2>{{ t('All assets — ranked by anticipation index (stress)', '全部标的 — 按预判指数（压力）排序') }}</h2>
+<p class="sub muted sm">{{ t('Higher index = more confluence stress (a wider, more left-skewed cone), NOT a sell call. Click a row to load its cone.',
+  '指数越高 = 合流压力越大（锥体更宽、更左偏），并非卖出信号。点击行加载其锥体。') }}</p>
+<div class="ts panel" style="padding:4px 8px;">
+  <table id="tbl">
+    <thead><tr>
+      <th data-k="name">{{ t('Asset', '标的') }}</th>
+      <th data-k="anticipation_index" class="num">{{ t('Index', '指数') }}</th>
+      <th class="num">{{ t('Band', '区间') }}</th>
+      <th data-k="s_typ" class="num">{{ t('Short typical / worst', '短期 常见/最坏') }}</th>
+      <th data-k="m_p50" class="num">{{ t('Med p50 / tail', '中期 中位/尾部') }}</th>
+      <th class="num">{{ t('Direction', '方向') }}</th>
+      <th>{{ t('Top driver', '首要驱动') }}</th>
+    </tr></thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<footer>
+  {{ t(
+    'Read-only analytics for informational purposes only — NOT investment advice and NOT a buy/sell list. The cone is the empirical forward distribution conditioned on the current confluence state (Growth-at-Risk style), calibrated point-in-time on the validated GO legs only (data/regime/anticipation_gate.json); display-only legs are shown for context but never score. Short-horizon direction is a measured coin-flip; the per-name LONG cone is effective-N under-powered and should be read against the sector cone. Method + evidence: research/ANTICIPATION_ENGINE.md and research/ANTICIPATION_PHASE0.md.',
+    '仅供参考的只读分析 — 非投资建议，也非买卖清单。锥体为以当前合流状态为条件的经验前瞻分布（Growth-at-Risk 思路），仅在经验证的 GO 因子上做时点校准（data/regime/anticipation_gate.json）；仅展示因子作为背景，不计分。短期方向为实测抛硬币；个股长周期锥体有效样本不足，应对照行业锥体阅读。方法与证据：research/ANTICIPATION_ENGINE.md 与 research/ANTICIPATION_PHASE0.md。') }}
+  {{ t('Generated', '生成于') }} {{ generated_utc }}.
+</footer>
+
+<script id="cone-data" type="application/json">{{ data_json|safe }}</script>
+<script>
+(function(){
+  var DATA = JSON.parse(document.getElementById('cone-data').textContent);
+  var A = DATA.assets, BY = {}; A.forEach(function(a){ BY[a.asset]=a; });
+  var HN = ['short','medium','long'];
+  function T(en,zh){ return '<span class="l-en">'+en+'</span><span class="l-zh">'+(zh||en)+'</span>'; }
+  function f1(x){ return (x==null||isNaN(x))?'—':(Math.round(x*10)/10); }
+  function pct(x){ return (x==null||isNaN(x))?'—':((x>=0?'+':'')+f1(x)+'%'); }
+  document.getElementById('asof').textContent = DATA.as_of||'';
+  document.getElementById('ngo').innerHTML = (DATA.go_legs?DATA.go_legs.length:0)+' '+T('validated legs','已验证因子');
+
+  function Y(ret, lo, hi, top, bot){ return top + (hi-ret)/(hi-lo)*(bot-top); }
+  function renderCone(a){
+    var hs = HN.map(function(n){ return [n, a.horizons[n]]; }).filter(function(p){ return p[1] && p[1].ret_q; });
+    if(!hs.length) return '<p class="muted sm" style="padding:20px">'+T('No cone — insufficient history.','无锥体 — 历史不足。')+'</p>';
+    var lo=0, hi=0;
+    hs.forEach(function(p){ var q=p[1].ret_q; lo=Math.min(lo,q.p5); hi=Math.max(hi,q.p95); });
+    lo*=1.08; hi*=1.08; if(hi-lo<8){hi+=4;lo-=4;}
+    var W=680,H=300,top=28,bot=262;
+    var X={now:72}; var xs=[210,410,625]; hs.forEach(function(p,i){ X[p[0]]=xs[i] || (210+i*140); });
+    var y0=Y(0,lo,hi,top,bot);
+    function edge(key){ var pts='M72,'+y0; hs.forEach(function(p){ pts+=' L'+X[p[0]]+','+Y(p[1].ret_q[key],lo,hi,top,bot); }); return pts; }
+    function rev(key){ var pts=''; for(var i=hs.length-1;i>=0;i--){ pts+=' L'+X[hs[i][0]]+','+Y(hs[i][1].ret_q[key],lo,hi,top,bot); } return pts+' L72,'+y0; }
+    var rib_up = edge('p95')+rev('p75')+' Z';
+    var rib_iqr= edge('p75')+rev('p25')+' Z';
+    var rib_dn = edge('p25')+rev('p5')+' Z';
+    var med = edge('p50');
+    // y ticks
+    var ticks='', step = (hi-lo)>120?40:((hi-lo)>50?20:10);
+    for(var v=Math.ceil(lo/step)*step; v<=hi; v+=step){ var yy=Y(v,lo,hi,top,bot);
+      ticks+='<line x1="60" y1="'+yy+'" x2="650" y2="'+yy+'" style="stroke:var(--line)" stroke-width="0.5"/>'+
+             '<text x="54" y="'+(yy+3)+'" text-anchor="end" style="fill:var(--muted)" font-size="11">'+(v>0?'+':'')+v+'%</text>'; }
+    var xlab='<text x="72" y="280" style="fill:var(--muted)" font-size="11">'+T('now','现在')+'</text>';
+    var meta=DATA.horizons_meta||{short:[1,10],medium:[21,63],long:[126,252]};
+    hs.forEach(function(p){ var m=meta[p[0]]||[]; var nm={short:'short',medium:'medium',long:'long'}[p[0]];
+      var nmzh={short:'短期',medium:'中期',long:'长期'}[p[0]];
+      xlab+='<text x="'+X[p[0]]+'" y="280" text-anchor="middle" style="fill:var(--text)" font-size="11.5">'+T(nm,nmzh)+' '+(m[0]||'')+'–'+(m[1]||'')+'d</text>'; });
+    var lastH=hs[hs.length-1], lx=X[lastH[0]];
+    var endlab='<text x="'+(lx+4)+'" y="'+(Y(lastH[1].ret_q.p95,lo,hi,top,bot)+3)+'" style="fill:#A32D2D" font-size="11">p95 '+pct(lastH[1].ret_q.p95)+'</text>'+
+               '<text x="'+(lx+4)+'" y="'+(Y(lastH[1].ret_q.p5,lo,hi,top,bot)+3)+'" style="fill:#A32D2D" font-size="11">p05 '+pct(lastH[1].ret_q.p5)+'</text>';
+    return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="forward outcome cone">'+ticks+
+      '<line x1="60" y1="'+y0+'" x2="650" y2="'+y0+'" style="stroke:var(--muted)" stroke-width="1" stroke-dasharray="1 4"/>'+
+      '<path d="'+rib_up+'" fill="#888780" fill-opacity="0.10"/>'+
+      '<path d="'+rib_iqr+'" fill="#888780" fill-opacity="0.20"/>'+
+      '<path d="'+rib_dn+'" fill="#E24B4A" fill-opacity="0.18"/>'+
+      '<path d="'+med+'" fill="none" style="stroke:var(--text)" stroke-width="1.4" stroke-dasharray="5 4"/>'+
+      '<circle cx="72" cy="'+y0+'" r="2.5" style="fill:var(--muted)"/>'+xlab+endlab+'</svg>'+
+      '<div class="sm muted" style="margin-top:4px">'+T('Bands p05–p95; downside tail emphasized; median dashed (coin-flip short-horizon). Each horizon computed on its own window.','区间 p05–p95；强调下行尾部；中位线虚线（短期抛硬币）。各周期各自独立窗口计算。')+'</div>';
+  }
+
+  function bandClass(b){ return 'b-'+(b||'calm'); }
+  function setAsset(tk){
+    var a=BY[tk]; if(!a) return;
+    document.querySelectorAll('.pick').forEach(function(e){ e.classList.toggle('on', e.dataset.tk===tk); });
+    document.querySelectorAll('#tbody tr').forEach(function(e){ e.classList.toggle('on', e.dataset.tk===tk); });
+    document.getElementById('htitle').innerHTML =
+      '<span class="nm">'+a.asset+'</span><span class="grp">'+a.name+' · '+a.group+'</span>'+
+      '<span class="idxbadge '+bandClass(a.index_band)+'">'+(a.anticipation_index!=null?Math.round(a.anticipation_index):'—')+' · '+a.index_band+'</span>'+
+      (a.macro?'<span class="chip '+(a.macro.stress_pct>=70?'hot':(a.macro.stress_pct>=50?'warn':'ok'))+'">'+T('market stress','市场压力')+' '+Math.round(a.macro.stress_pct)+'% · ×'+a.macro.width_mult+'</span>':'');
+    document.getElementById('conebox').innerHTML = renderCone(a);
+    // horizon cards
+    var ch='';
+    HN.forEach(function(n){ var h=a.horizons[n]; if(!h) return; var rq=h.ret_q||{};
+      var nm={short:'Short',medium:'Medium',long:'Long'}[n], nmzh={short:'短期',medium:'中期',long:'长期'}[n];
+      var dirw = h.direction==='coin-flip'?T('coin-flip','抛硬币'):(h.direction==='up-lean'?T('up-lean','偏多'):(h.direction==='down-lean'?T('down-lean','偏空'):T('neutral','中性')));
+      ch+='<div class="hc'+(h.thin?' thin':'')+'"><div class="k">'+T(nm,nmzh)+' · '+(h.range_td?h.range_td.join('–'):'')+'d</div>'+
+        '<div class="v">'+pct(h.dd_avg)+' <span class="muted sm">'+T('typical dip','常见回撤')+'</span></div>'+
+        '<div class="t2">'+T('worst','最坏')+' '+pct(h.dd_tail)+' · p50 '+pct(rq.p50)+'</div>'+
+        '<div class="dir">'+dirw+' · '+h.conviction+(h.thin?' · '+T('thin','样本薄'):'')+'</div></div>';
+    });
+    document.getElementById('cards').innerHTML = ch;
+    // drivers
+    var dh=''; (a.drivers||[]).forEach(function(d){ var up=d.value>=0?'':'up', dn=d.value>=0?'dn':'';
+      // oriented "higher=worse": positive value = dangerous (down pressure) -> red bar on left
+      var danger=d.value>=0; var w=Math.min(48,Math.abs(d.value)*16);
+      var bar = d.display_only
+        ? '<i class="dispo" style="'+(danger?'right:50%':'left:50%')+';width:'+w+'%"></i>'
+        : '<i class="'+(danger?'dn':'up')+'" style="width:'+w+'%"></i>';
+      dh+='<div class="drv"><span class="lab">'+T(d.label.en,d.label.zh)+'</span><span class="bar">'+bar+'</span>'+
+        '<span class="vv">'+(d.value>=0?'+':'')+d.value+'</span><span class="sc">'+(d.scored?'★':'')+'</span></div>';
+    });
+    document.getElementById('drivers').innerHTML = dh || '<span class="muted sm">—</span>';
+    // trust
+    var cav=(a.caveats||[]).map(function(c){ return '<li>'+c+'</li>'; }).join('');
+    document.getElementById('trust').innerHTML =
+      '<h2 style="margin-top:0">'+T('Trust & honesty','可信度与诚实')+'</h2>'+
+      '<div>'+
+        '<span class="chip ok">'+T('cone validated','锥体已验证')+'</span>'+
+        '<span class="chip">'+T('direction display-only','方向仅展示')+'</span>'+
+        '<span class="chip'+(a.horizons.long&&a.horizons.long.underpowered?' warn':'')+'">'+T('long n','长周期 n')+' '+((a.horizons.long||{}).cell_n||0)+'</span>'+
+        (a.macro?'<span class="chip">'+T('macro overlay','宏观叠加')+' '+(a.macro.go_legs||[]).length+'</span>':'')+
+      '</div><ul class="tagline" style="margin:8px 0 0;padding-left:18px">'+cav+'</ul>';
+  }
+
+  // selector
+  var groups=[['index','Index','指数'],['sector','Sectors','板块'],['stock','Watchlist','自选']];
+  var sh=''; groups.forEach(function(g){ var items=A.filter(function(a){return a.group===g[0];});
+    if(!items.length) return; sh+='<div class="selgrp"><span class="gl">'+T(g[1],g[2])+'</span>';
+    items.forEach(function(a){ sh+='<span class="pick" data-tk="'+a.asset+'">'+a.asset+'</span>'; }); sh+='</div>'; });
+  document.getElementById('selwrap').innerHTML=sh;
+  document.querySelectorAll('.pick').forEach(function(e){ e.addEventListener('click',function(){ setAsset(e.dataset.tk); }); });
+
+  // table
+  function shortTyp(a){ var h=a.horizons.short||{}; return h.dd_avg; }
+  function rowHtml(a){ var s=a.horizons.short||{}, m=a.horizons.medium||{}, l=a.horizons.long||{};
+    var mdir = (m.direction||'').replace('-lean','');
+    var top=(a.drivers||[])[0];
+    return '<tr data-tk="'+a.asset+'"><td><b>'+a.asset+'</b> <span class="muted sm">'+a.name+'</span></td>'+
+      '<td class="num"><span class="tband '+bandClass(a.index_band)+'">'+(a.anticipation_index!=null?Math.round(a.anticipation_index):'—')+'</span></td>'+
+      '<td class="num muted sm">'+a.index_band+'</td>'+
+      '<td class="num">'+pct(s.dd_avg)+' / <span class="neg">'+pct(s.dd_tail)+'</span></td>'+
+      '<td class="num">'+pct((m.ret_q||{}).p50)+' / <span class="neg">'+pct(m.dd_tail)+'</span></td>'+
+      '<td class="num muted sm">'+(mdir||'—')+'</td>'+
+      '<td class="muted sm">'+(top?T(top.label.en,top.label.zh)+(top.scored?' ★':''):'—')+'</td></tr>';
+  }
+  var sortK='anticipation_index', sortDesc=true;
+  function renderTable(){ var rows=A.slice().sort(function(x,y){
+      var vx,vy; if(sortK==='name'){vx=x.asset;vy=y.asset;} else if(sortK==='s_typ'){vx=shortTyp(x);vy=shortTyp(y);}
+      else if(sortK==='m_p50'){vx=(x.horizons.medium||{}).ret_q?x.horizons.medium.ret_q.p50:0;vy=(y.horizons.medium||{}).ret_q?y.horizons.medium.ret_q.p50:0;}
+      else {vx=x[sortK];vy=y[sortK];}
+      if(vx==null)vx=-1e9; if(vy==null)vy=-1e9;
+      if(vx<vy)return sortDesc?1:-1; if(vx>vy)return sortDesc?-1:1; return 0; });
+    document.getElementById('tbody').innerHTML=rows.map(rowHtml).join('');
+    document.querySelectorAll('#tbody tr').forEach(function(e){ e.addEventListener('click',function(){ setAsset(e.dataset.tk); }); });
+    var cur=document.querySelector('.pick.on'); if(cur){ var t=cur.dataset.tk; var r=document.querySelector('#tbody tr[data-tk="'+t+'"]'); if(r)r.classList.add('on'); }
+  }
+  document.querySelectorAll('#tbl th[data-k]').forEach(function(th){ th.addEventListener('click',function(){
+    var k=th.dataset.k; if(sortK===k)sortDesc=!sortDesc; else {sortK=k;sortDesc=(k!=='name');} renderTable(); }); });
+  renderTable();
+  setAsset(A[0].asset);
+})();
+</script>
+<script src="theme.js"></script>
+</body>
+</html>
