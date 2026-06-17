@@ -111,3 +111,56 @@ def test_scorer_open_until_check_by(monkeypatch, tmp_path):
     (led / "theses.jsonl").write_text(json.dumps(row) + "\n")
     tr = td.score_ledger(root=tmp_path, today="2026-03-01")
     assert tr["open"] == 1 and tr["scored_total"] == 0                          # future date → open
+
+
+def test_panel_runs_four_roles_then_adjudicates():
+    seen = {"roles": []}
+
+    def call(system, user, cfg):
+        if "DESK-HEAD adjudicator" in system:
+            seen["roles"].append("ADJ")
+            return (json.dumps({"regime_context": "adj", "theses": [
+                {"subject": "AI Infra", "lean": "overweight", "conviction": "low",
+                 "horizon_d": 20, "thesis": "ride trend", "evidence": ["trend_rider"],
+                 "dissent": "crowding_skeptic: crowded", "falsifier_text": "lags"}],
+                "emerging_watch": "watch", "confidence": "low"}), None)
+        role = ("trend_rider" if "TREND-RIDER" in system else
+                "crowding_skeptic" if "CROWDING-SKEPTIC" in system else
+                "narrative_scout" if "NARRATIVE-EMERGENCE" in system else "macro_regime")
+        seen["roles"].append(role)
+        return json.dumps({"regime_context": role, "theses": [], "confidence": "low"}), None
+
+    b = td.synthesize(_state(), call=call)
+    assert sorted(seen["roles"]) == ["ADJ", "crowding_skeptic", "macro_regime",
+                                     "narrative_scout", "trend_rider"]      # 4 panel + desk head
+    assert set(b["panel"].keys()) == {"trend_rider", "crowding_skeptic",
+                                      "narrative_scout", "macro_regime"}     # stances carried
+    assert len(b["theses"]) == 1 and b["theses"][0]["dissent"].startswith("crowding_skeptic")
+
+
+def test_panel_disabled_uses_single_analyst():
+    cfg = {**td._cfg(), "panel": {"enabled": False}}
+    n = {"c": 0}
+
+    def call(system, user, cfg):
+        n["c"] += 1
+        return json.dumps({"regime_context": "x", "theses": [], "confidence": "low"}), None
+
+    td.synthesize(_state(), cfg=cfg, call=call)
+    assert n["c"] == 1                                                        # no panel → one call
+
+
+def test_panel_all_unavailable_falls_back_to_analyst():
+    calls = {"c": 0}
+
+    def call(system, user, cfg):
+        calls["c"] += 1
+        if "DESK-HEAD adjudicator" in system:                                # adjudicator never reached
+            raise AssertionError("should not adjudicate when the panel is empty")
+        if system.startswith("ROLE:"):                                       # every panelist fails
+            return None, "no_client_or_key"
+        return json.dumps({"regime_context": "analyst fallback", "theses": [],
+                           "confidence": "low"}), None                       # the single-analyst path
+
+    b = td.synthesize(_state(), call=call)
+    assert b["regime_context"] == "analyst fallback"                         # fell back, not adjudicated

@@ -81,6 +81,8 @@
   .banner.crash { background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.45); }
   ul.dnc { margin:6px 0 0; padding-left:18px; font-size:12px; color:var(--muted); }
   ul.dnc li { margin:3px 0; }
+  #td-panel .pstance { font-size:12px; color:var(--muted); margin:4px 0; line-height:1.45; }
+  #td-panel .pstance b { color:var(--text); }
   .cards-td { display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:11px; margin-top:8px; }
   .tcard { background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--c,#7c5cff); border-radius:10px; padding:11px 13px; }
   .tcard .lean { font-weight:650; font-size:14px; }
@@ -399,6 +401,10 @@
   <p id="td-regime" class="story" style="display:none;font-size:13.5px"></p>
   <div id="td-cards" class="cards-td"></div>
   <p id="td-watch" class="tagline" style="display:none;margin-top:8px"></p>
+  <details id="td-panel-wrap" style="display:none;margin-top:6px">
+    <summary class="muted" style="font-size:12px;cursor:pointer">{{ t('What the analysts argued (adversarial panel)', '分析师论点（对抗式专家组）') }}</summary>
+    <div id="td-panel"></div>
+  </details>
   <p id="td-empty" class="tagline" style="display:none">{{ t(
     'The live desk note has not been generated yet (the AI layer runs in the daily build). The contract above still governs what it may conclude.',
     '实时桌面简报尚未生成（AI 层在每日构建中运行）。上方契约仍约束其可下的结论。') }}</p>

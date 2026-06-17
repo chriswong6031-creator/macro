@@ -83,5 +83,23 @@
         watchEl.innerHTML = '<b>🔭 ' + L('Emerging-narrative watch', '新兴叙事观察') + ':</b> ' + esc(brief.emerging_watch);
         watchEl.style.display = 'block';
       }
+
+      // adversarial panel transparency — what each analyst argued (collapsed)
+      var panel = brief.panel || {};
+      var roles = Object.keys(panel);
+      var panelEl = document.getElementById('td-panel');
+      var panelWrap = document.getElementById('td-panel-wrap');
+      if (roles.length && panelEl && panelWrap) {
+        var ROLE = { trend_rider: ['Trend-rider', '趋势跟随'], crowding_skeptic: ['Crowding-skeptic', '拥挤质疑'],
+                     narrative_scout: ['Narrative scout', '叙事侦察'], macro_regime: ['Macro regime', '宏观环境'] };
+        panelEl.innerHTML = roles.map(function (k) {
+          var p = panel[k] || {}; var lab = ROLE[k] || [k, k];
+          var leans = (p.leans || []).filter(function (l) { return l && l.subject; })
+            .map(function (l) { return esc(l.lean) + ' ' + esc(l.subject); }).join(', ');
+          return '<div class="pstance"><b>' + L(lab[0], lab[1]) + ':</b> ' + esc(p.stance || '') +
+            (leans ? ' <span class="muted">[' + leans + ']</span>' : '') + '</div>';
+        }).join('');
+        panelWrap.style.display = 'block';
+      }
     });
 })();
