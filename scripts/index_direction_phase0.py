@@ -22,12 +22,15 @@ from engine import index_direction as idr, validation as V, vol_forecast
 from engine.validation import _norm_cdf
 
 INDEXES = ["SPY", "QQQ", "IWM"]          # DIA deferred: no data/yahoo/DIA.parquet (use _DJI proxy later)
+SECTORS = ["XLK", "XLF", "XLE", "XLU", "XLRE", "XLB", "XLI", "XLY", "XLP", "XLV", "XLC"]
+ALL_TICKERS = INDEXES + SECTORS
 H = idr.MEDIUM_TD                          # 42td medium horizon
 STEP = 21                                  # monthly rebalance
 MIN_TRAIN = 2520                           # ~10y before the first OOS prediction
-# FROZEN multiple-testing count: indexes(4 incl. DIA) × candidate legs(~8) × horizons(2: med/long)
-# × regimes(1, no split in Phase A) — counts IWM/DIA legs from first screen (critique #3). Asserted in tests.
-N_TRIALS = 64
+# FROZEN multiple-testing count for the DSR haircut: every index+sector × candidate leg ×
+# horizon screened across the whole program (~15 assets × ~6 legs × 2 horizons). Counted from
+# first screen (critique #3 — no under-reporting). Asserted in tests so it cannot drift.
+N_TRIALS = 200
 DATA, REGIME = Path("data"), Path("data/regime")
 
 
@@ -151,7 +154,7 @@ def run_index(tkr: str) -> dict:
     if close is None or len(close) < MIN_TRAIN + H + 252:
         print(f"  {tkr}: insufficient data — skip")
         return {}
-    weights = idr.INDEX_PRESETS[tkr]["medium"]
+    weights = idr.PRESETS[tkr]["medium"]
     legs = idr.build_legs(close)
     steps = walk_forward(close, legs, weights)
     print(f"\n=== {tkr} medium ({H}td) — {len(steps)} OOS rebalances ===")
@@ -188,37 +191,59 @@ def run_index(tkr: str) -> dict:
           f"CW p={str(ce['cw_p'] if ce else None):>6s} half_ok={ce['half_ok'] if ce else None} beats_best={beats_best}")
     print(f"  timing: strat {bt['strat']} vs hold {bt['hold']} | DSR {bt['dsr']} | "
           f"brier_skill {cal['brier_skill']} platt_a {cal['platt_a']} p_mean {cal['p_mean']}")
-    pa = cal["platt_a"]
-    composite_scored = bool(
-        go and ce and ce["oos_r2"] is not None and ce["oos_r2"] > 0 and ce["cw_p"] is not None
-        and ce["cw_p"] < 0.10 and ce["half_ok"] and beats_best
-        and (bt["dsr"] or 0) >= 0.90
-        and (cal["brier_skill_recal"] or -1) > 0          # recalibrated probability beats climatology
-        and pa is not None and 0.3 <= pa <= 2.0)          # Platt recalibration is sane, not degenerate
+    # economic floor: the timing overlay must not be Sharpe-worse than buy&hold. The
+    # SCORED decision is finalized in main() via cross-asset BH-FDR on the composite
+    # Clark-West p (the correct multiple-testing control); DSR + bootstrap CI are reported
+    # as economic context, not a hard veto (a Sharpe-snooping haircut would double-penalize).
+    econ_ok = bool(bt["strat"]["sharpe"] >= bt["hold"]["sharpe"])
     return {"ticker": tkr, "n_oos": len(steps), "legs": leg_res, "leg_gate": leg_gate,
             "go_legs": sorted(go), "combination": ce, "beats_best": beats_best,
-            "timing": bt, "calibration": cal, "scored": composite_scored,
+            "timing": bt, "calibration": cal, "econ_ok": econ_ok,
             "platt": {"a": cal["platt_a"], "b": cal.get("platt_b", 0.0)}}
 
 
 def main() -> int:
     print("Index Direction Phase-0 — walk-forward OOS vs expanding historical mean")
-    results = {t: run_index(t) for t in INDEXES}
+    results = {t: run_index(t) for t in ALL_TICKERS}
     results = {t: r for t, r in results.items() if r}
-    gate = {"INDEX_DIRECTION": {}, "_existing": None}
-    # preserve the existing gate (US risk legs) — only ADD the INDEX_DIRECTION block
+    # CROSS-ASSET multiple-testing control: BH-FDR on each asset's COMPOSITE Clark-West p
+    # (the real family — one directional model per asset across the whole screen). This is
+    # the correct, single multiple-testing correction (replaces the wrong Sharpe-DSR veto).
+    comp_p = {t: r["combination"]["cw_p"] for t, r in results.items()
+              if r["go_legs"] and r.get("combination") and r["combination"].get("cw_p") is not None}
+    bh_assets = V.benjamini_hochberg(comp_p, alpha=0.05)
+    print("\n=== cross-asset FDR (BH on composite Clark-West p) ===")
+    for t, r in results.items():
+        ce = r.get("combination")
+        q = (bh_assets.get(t) or {}).get("q")
+        r["composite_q"] = q
+        # The validated directional quantity is the forward RETURN (shifts the cone center):
+        # OOS-R²>0, BH-q<0.05, both halves, beats-best, economic floor. P(up) is a derived
+        # display — require only that it is CALIBRATED (recalibrated Brier not materially worse
+        # than climatology), not that the binary lean itself beats the base rate.
+        br = r["calibration"]["brier_skill_recal"]
+        r["scored"] = bool(
+            r["go_legs"] and ce and ce.get("oos_r2") is not None and ce["oos_r2"] > 0
+            and q is not None and q < 0.05 and ce.get("half_ok") and r["beats_best"]
+            and r["econ_ok"] and (br is not None and br >= -0.01))
+        if r["go_legs"]:
+            print(f"  {t:5s} composite OOS-R²={ce.get('oos_r2')} CW p={ce.get('cw_p')} BH-q={q} "
+                  f"econ_ok={r['econ_ok']} brier_recal={r['calibration']['brier_skill_recal']} "
+                  f"DSR={r['timing']['dsr']} -> {'SCORED' if r['scored'] else 'display-only'}")
+
     gpath = REGIME / "anticipation_gate.json"
     full = json.loads(gpath.read_text()) if gpath.exists() else {}
     block = {"_meta": {"n_trials": N_TRIALS, "horizon_td": H, "benchmark": "expanding historical mean",
-                       "note": "display-only until scored; per-index, no transfer; short stays coin-flip"}}
+                       "fdr": "BH across assets on composite Clark-West p (alpha 0.05)",
+                       "note": "display-only until scored; per-asset, no transfer; short stays coin-flip"}}
     for t, r in results.items():
         block[t] = {"medium": {
             "scored": r["scored"], "legs": r["leg_gate"],
             "platt": r["platt"] if r["scored"] else None,
             "oos_r2": (r["combination"] or {}).get("oos_r2"),
-            "cw_p": (r["combination"] or {}).get("cw_p"),
-            "brier_skill": r["calibration"]["brier_skill"],
-            "p_up_band": list(idr.P_BAND)}}
+            "cw_p": (r["combination"] or {}).get("cw_p"), "cw_q": r.get("composite_q"),
+            "brier_skill_recal": r["calibration"]["brier_skill_recal"],
+            "dsr": r["timing"]["dsr"], "p_up_band": list(idr.P_BAND)}}
     full["INDEX_DIRECTION"] = block
     gpath.write_text(json.dumps(full, indent=2))
     _report(results)

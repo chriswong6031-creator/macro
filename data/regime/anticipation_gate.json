@@ -49,10 +49,11 @@
   },
   "INDEX_DIRECTION": {
     "_meta": {
-      "n_trials": 64,
+      "n_trials": 200,
       "horizon_td": 42,
       "benchmark": "expanding historical mean",
-      "note": "display-only until scored; per-index, no transfer; short stays coin-flip"
+      "fdr": "BH across assets on composite Clark-West p (alpha 0.05)",
+      "note": "display-only until scored; per-asset, no transfer; short stays coin-flip"
     },
     "SPY": {
       "medium": {
@@ -66,7 +67,9 @@
         "platt": null,
         "oos_r2": -0.00678,
         "cw_p": 0.5459,
-        "brier_skill": -0.07,
+        "cw_q": null,
+        "brier_skill_recal": -0.001,
+        "dsr": 0.7557,
         "p_up_band": [
           0.4,
           0.62
@@ -88,7 +91,9 @@
         },
         "oos_r2": 0.02714,
         "cw_p": 0.0034,
-        "brier_skill": -0.041,
+        "cw_q": 0.0034,
+        "brier_skill_recal": 0.006,
+        "dsr": 0.8367,
         "p_up_band": [
           0.4,
           0.62
@@ -107,7 +112,183 @@
         "platt": null,
         "oos_r2": -0.01475,
         "cw_p": 0.7565,
-        "brier_skill": -0.082,
+        "cw_q": null,
+        "brier_skill_recal": 0.013,
+        "dsr": 0.3391,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      }
+    },
+    "XLK": {
+      "medium": {
+        "scored": true,
+        "legs": {
+          "real_rate": "GO",
+          "vrp": "NEUTRAL",
+          "tsmom": "NEUTRAL"
+        },
+        "platt": {
+          "a": 0.142,
+          "b": 0.852
+        },
+        "oos_r2": 0.07334,
+        "cw_p": 0.0,
+        "cw_q": 0.0,
+        "brier_skill_recal": -0.001,
+        "dsr": 0.8344,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      }
+    },
+    "XLF": {
+      "medium": {
+        "scored": false,
+        "legs": {
+          "credit": "NEUTRAL",
+          "credit_vel": "NEUTRAL",
+          "tsmom": "NEUTRAL",
+          "vrp": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": -0.02225,
+        "cw_p": 0.7689,
+        "cw_q": null,
+        "brier_skill_recal": -0.002,
+        "dsr": 0.4895,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      }
+    },
+    "XLE": {
+      "medium": {
+        "scored": false,
+        "legs": {
+          "dollar": "NEUTRAL",
+          "tsmom": "NEUTRAL",
+          "vrp": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": -0.02872,
+        "cw_p": 0.9166,
+        "cw_q": null,
+        "brier_skill_recal": -0.002,
+        "dsr": 0.0912,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      }
+    },
+    "XLU": {
+      "medium": {
+        "scored": false,
+        "legs": {},
+        "platt": null,
+        "oos_r2": null,
+        "cw_p": null,
+        "cw_q": null,
+        "brier_skill_recal": null,
+        "dsr": 0.4885,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      }
+    },
+    "XLB": {
+      "medium": {
+        "scored": false,
+        "legs": {
+          "dollar": "NEUTRAL",
+          "oil_mom": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": -0.07339,
+        "cw_p": 0.9246,
+        "cw_q": null,
+        "brier_skill_recal": 0.007,
+        "dsr": 0.1613,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      }
+    },
+    "XLI": {
+      "medium": {
+        "scored": false,
+        "legs": {
+          "tsmom": "NEUTRAL",
+          "oil_mom": "NEUTRAL",
+          "credit": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": -0.02191,
+        "cw_p": 0.857,
+        "cw_q": null,
+        "brier_skill_recal": 0.004,
+        "dsr": 0.6326,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      }
+    },
+    "XLY": {
+      "medium": {
+        "scored": false,
+        "legs": {
+          "credit": "NEUTRAL",
+          "real_rate": "NEUTRAL",
+          "vrp": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": 0.00073,
+        "cw_p": 0.3253,
+        "cw_q": null,
+        "brier_skill_recal": 0.001,
+        "dsr": 0.573,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      }
+    },
+    "XLP": {
+      "medium": {
+        "scored": false,
+        "legs": {
+          "real_rate": "NEUTRAL",
+          "tsmom": "NEUTRAL"
+        },
+        "platt": null,
+        "oos_r2": 0.00107,
+        "cw_p": 0.1978,
+        "cw_q": null,
+        "brier_skill_recal": 0.001,
+        "dsr": 0.65,
+        "p_up_band": [
+          0.4,
+          0.62
+        ]
+      }
+    },
+    "XLV": {
+      "medium": {
+        "scored": false,
+        "legs": {},
+        "platt": null,
+        "oos_r2": null,
+        "cw_p": null,
+        "cw_q": null,
+        "brier_skill_recal": null,
+        "dsr": 0.0,
         "p_up_band": [
           0.4,
           0.62

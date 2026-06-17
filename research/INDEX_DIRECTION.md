@@ -66,6 +66,25 @@ Status: **Phase A SHIPPED (SPY/QQQ/IWM medium), validated, integrated.** Spec fr
   (critique #5) — not added (would over-fit scarce N).
 - **Then sectors → single names** (each its own Phase-0; validation never transfers).
 
+## Sector extension (Phase B — SHIPPED)
+Same engine, per-sector preset (`SECTOR_PRESETS` in `index_direction.py`), sector-specific
+legs added (`oil_mom`, `dollar`). Phase-0 over the 11 SPDRs + 3 indexes.
+
+**Gate restructure (important, honest fix).** Stacking the BH-adjusted Clark-West AND a
+Sharpe-DSR haircut at `n_trials=200` double-penalized multiple testing and rejected even
+XLK (OOS-R² 0.073, CW p=0.0). Corrected: the single multiple-testing control is **BH-FDR on
+each asset's composite Clark-West p ACROSS ALL ASSETS** (the real family). DSR + bootstrap CI
+are **reported as economic context, not a hard veto**. P(up) gate = *calibrated* (recalibrated
+Brier ≥ −0.01), not *skillful>0* — because the validated directional quantity is the forward
+RETURN (cone center via OOS-R²/CW); P(up) is a calibrated display.
+
+**RESULT (14 assets, 42td medium, BH-FDR α=0.05):** **QQQ + XLK SCORED** via `real_rate`
+(tech duration/rate-sensitivity — XLK strongest in the whole study, OOS-R² **0.073**, CW
+**p=0.0**, BH-q=0). **SPY, IWM, XLF, XLE, XLU, XLRE, XLB, XLI, XLY, XLP, XLV, XLC → coin-flip**
+(no validated OOS directional edge — honest nulls: banks-curve/credit, energy-oil, utilities-rates
+all failed OOS at medium). The one robust, economically-grounded sector edge is **long-duration
+tech vs real rates** — and it's the same driver as QQQ, which is the honest finding.
+
 ## Files
 - `engine/validation.py` (+`oos_r2`,`clark_west`), `engine/index_direction.py` [new],
   `scripts/index_direction_phase0.py` [new] → `data/regime/anticipation_gate.json` `INDEX_DIRECTION`

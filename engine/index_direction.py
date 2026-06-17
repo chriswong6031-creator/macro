@@ -38,6 +38,24 @@ INDEX_PRESETS = {
     "IWM": {"medium": {"credit": "HIGH", "credit_vel": "HIGH", "anfci": "HIGH", "term": "MED", "tsmom": "MED", "vrp": "MED"}},
     "DIA": {"medium": {"term": "MED", "tsmom": "MED", "vrp": "MED", "credit": "LOW"}},
 }
+# Sector SPDRs — each tied to a SPECIFIC driver (the per-asset edge). All legs oriented
+# bullish (sign +1); validation never transfers, each gets its own gate block + Phase-0.
+SECTOR_PRESETS = {
+    "XLK": {"medium": {"real_rate": "HIGH", "vrp": "HIGH", "tsmom": "MED", "netliq": "MED"}},   # tech ~ QQQ (duration)
+    "XLF": {"medium": {"term": "HIGH", "credit": "HIGH", "credit_vel": "MED", "tsmom": "MED", "vrp": "MED"}},  # banks: curve+credit
+    "XLE": {"medium": {"oil_mom": "HIGH", "dollar": "MED", "tsmom": "MED", "vrp": "LOW"}},        # energy: oil
+    "XLU": {"medium": {"real_rate": "HIGH", "term": "MED", "vrp": "MED"}},                        # utilities: bond proxy
+    "XLRE": {"medium": {"real_rate": "HIGH", "term": "MED", "credit": "MED", "vrp": "LOW"}},      # REITs: rates+credit
+    "XLB": {"medium": {"dollar": "HIGH", "oil_mom": "MED", "term": "MED", "tsmom": "MED"}},       # materials: dollar/commod
+    "XLI": {"medium": {"term": "MED", "tsmom": "MED", "oil_mom": "LOW", "credit": "LOW"}},        # industrials: cyclical
+    "XLY": {"medium": {"credit": "MED", "real_rate": "MED", "tsmom": "MED", "vrp": "LOW"}},       # discretionary
+    "XLP": {"medium": {"real_rate": "MED", "vrp": "MED", "tsmom": "LOW"}},                        # staples (defensive)
+    "XLV": {"medium": {"vrp": "MED", "tsmom": "MED", "real_rate": "LOW"}},                        # health (defensive)
+    "XLC": {"medium": {"real_rate": "MED", "tsmom": "MED", "credit": "LOW"}},                     # comm services
+}
+# Unified per-ticker directional presets (indexes + sectors). The engine + Phase-0 key
+# off membership here; sectors default display-only until their own block passes Phase-0.
+PRESETS = {**INDEX_PRESETS, **SECTOR_PRESETS}
 MEDIUM_TD = 42
 # honest P(up) band for a scored medium-horizon index lean (the equity-premium drift
 # alone gives ~0.55-0.58; a real conditional tilt nudges modestly around it)
@@ -71,9 +89,16 @@ def _market() -> dict:
             vix = pd.read_parquet(Y / "_VIX.parquet")["close"].replace(0, np.nan)
         except Exception:
             vix = pd.Series(dtype=float)
+    oil = g(F / "DCOILWTICO.parquet")
+    if oil.empty:
+        try:
+            oil = pd.read_parquet(Y / "CL_F.parquet")["close"]
+        except Exception:
+            oil = pd.Series(dtype=float)
     _MKT = {"vix": vix, "walcl": g(F / "WALCL.parquet"), "rrp": g(F / "RRPONTSYD.parquet"),
             "real10": g(F / "DFII10.parquet"), "hy_oas": g(F / "BAMLH0A0HYM2.parquet"),
-            "t10y3m": g(F / "T10Y3M.parquet"), "anfci": g(F / "ANFCI.parquet")}
+            "t10y3m": g(F / "T10Y3M.parquet"), "anfci": g(F / "ANFCI.parquet"),
+            "dollar": g(F / "DTWEXBGS.parquet"), "oil": oil}
     return _MKT
 
 
@@ -106,6 +131,11 @@ def build_legs(close: pd.Series) -> pd.DataFrame:
         out["term"] = _z(R(mkt["t10y3m"]))                     # steep curve → +
     if not mkt["anfci"].empty:
         out["anfci"] = -_z(R(mkt["anfci"]))                    # loose conditions → +
+    if not mkt.get("oil", pd.Series(dtype=float)).empty:
+        oil = R(mkt["oil"]).replace(0, np.nan)
+        out["oil_mom"] = _z(oil.pct_change(60, fill_method=None))   # rising oil → energy/materials +
+    if not mkt.get("dollar", pd.Series(dtype=float)).empty:
+        out["dollar"] = -_z(R(mkt["dollar"]).diff(60))         # FALLING broad $ → commodities/materials +
     return out
 
 
@@ -198,7 +228,7 @@ def sigma_h(close: pd.Series, h: int) -> float:
 def forecast(close: pd.Series, *, asset: str, gate: dict | None = None) -> dict:
     """Live per-index directional read for the scored horizons. Returns {} if the asset
     has no preset. `gate` = the INDEX_DIRECTION[asset] block (None ⇒ display-only)."""
-    preset = INDEX_PRESETS.get(asset)
+    preset = PRESETS.get(asset)
     close = close.dropna().astype(float)
     if not preset or len(close) < 800:
         return {}
