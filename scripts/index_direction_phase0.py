@@ -149,22 +149,21 @@ def _calibration(close, dates, f, r, h):
             "p_mean": round(float(np.nanmean(p)), 3)}
 
 
-def run_index(tkr: str) -> dict:
+def run_index(tkr: str, hname: str, h: int) -> dict:
     close = _close(tkr)
-    if close is None or len(close) < MIN_TRAIN + H + 252:
-        print(f"  {tkr}: insufficient data — skip")
+    if close is None or len(close) < MIN_TRAIN + h + 252:
         return {}
-    weights = idr.PRESETS[tkr]["medium"]
+    weights = idr.PRESETS[tkr]["medium"]          # reuse the medium leg set at each horizon
     legs = idr.build_legs(close)
-    steps = walk_forward(close, legs, weights)
-    print(f"\n=== {tkr} medium ({H}td) — {len(steps)} OOS rebalances ===")
+    steps = walk_forward(close, legs, weights, h=h)
+    print(f"\n=== {tkr} {hname} ({h}td) — {len(steps)} OOS rebalances ===")
     # --- per-leg OOS ---
     leg_res, pvals = {}, {}
     for leg in weights:
         _, f, r, b = _leg_series(steps, leg)
         if len(r) < 60:
             continue
-        e = _eval(r, f, b, hac=max(4, H // STEP))
+        e = _eval(r, f, b, hac=max(4, h // STEP))
         if e:
             leg_res[leg] = e
             pvals[leg] = e["cw_p"]
@@ -182,9 +181,9 @@ def run_index(tkr: str) -> dict:
     # --- composite over the GO legs (fall back to ALL legs only for context timing/report) ---
     subset = go if go else set(weights)
     dC, fC, rC, bC = _composite_series(steps, subset, weights)
-    ce = _eval(rC, fC, bC, hac=max(4, H // STEP)) if len(rC) >= 60 else None
-    bt = _timing_backtest(close, dC, fC, H)
-    cal = _calibration(close, dC, fC, rC, H)
+    ce = _eval(rC, fC, bC, hac=max(4, h // STEP)) if len(rC) >= 60 else None
+    bt = _timing_backtest(close, dC, fC, h)
+    cal = _calibration(close, dC, fC, rC, h)
     best_go = max([leg_res[l]["oos_r2"] for l in go if leg_res[l]["oos_r2"] is not None], default=-9.0)
     beats_best = bool(ce and ce["oos_r2"] is not None and (not go or ce["oos_r2"] >= best_go - 1e-9))
     print(f"  GO-COMPOSITE [{','.join(sorted(go)) or 'none'}]  OOS-R²={str(ce['oos_r2'] if ce else None):>8s} "
@@ -196,86 +195,104 @@ def run_index(tkr: str) -> dict:
     # Clark-West p (the correct multiple-testing control); DSR + bootstrap CI are reported
     # as economic context, not a hard veto (a Sharpe-snooping haircut would double-penalize).
     econ_ok = bool(bt["strat"]["sharpe"] >= bt["hold"]["sharpe"])
-    return {"ticker": tkr, "n_oos": len(steps), "legs": leg_res, "leg_gate": leg_gate,
-            "go_legs": sorted(go), "combination": ce, "beats_best": beats_best,
-            "timing": bt, "calibration": cal, "econ_ok": econ_ok,
+    return {"ticker": tkr, "hname": hname, "horizon_td": h, "n_oos": len(steps),
+            "legs": leg_res, "leg_gate": leg_gate, "go_legs": sorted(go),
+            "combination": ce, "beats_best": beats_best, "timing": bt,
+            "calibration": cal, "econ_ok": econ_ok,
             "platt": {"a": cal["platt_a"], "b": cal.get("platt_b", 0.0)}}
 
 
+HORIZONS = {"medium": idr.MEDIUM_TD, "long": 189}    # multi-horizon (medium 1-3mo, long 6-12mo)
+
+
+def _score_one(r, q):
+    """SCORED iff validated forward-RETURN (OOS-R²>0, BH-q<0.05 across assets, both halves,
+    beats-best, economic floor) + a CALIBRATED P(up) (recal Brier ≥ −0.01)."""
+    ce = r.get("combination")
+    br = r["calibration"]["brier_skill_recal"]
+    return bool(r["go_legs"] and ce and ce.get("oos_r2") is not None and ce["oos_r2"] > 0
+                and q is not None and q < 0.05 and ce.get("half_ok") and r["beats_best"]
+                and r["econ_ok"] and (br is not None and br >= -0.01))
+
+
 def main() -> int:
-    print("Index Direction Phase-0 — walk-forward OOS vs expanding historical mean")
-    results = {t: run_index(t) for t in ALL_TICKERS}
-    results = {t: r for t, r in results.items() if r}
-    # CROSS-ASSET multiple-testing control: BH-FDR on each asset's COMPOSITE Clark-West p
-    # (the real family — one directional model per asset across the whole screen). This is
-    # the correct, single multiple-testing correction (replaces the wrong Sharpe-DSR veto).
-    comp_p = {t: r["combination"]["cw_p"] for t, r in results.items()
-              if r["go_legs"] and r.get("combination") and r["combination"].get("cw_p") is not None}
-    bh_assets = V.benjamini_hochberg(comp_p, alpha=0.05)
-    print("\n=== cross-asset FDR (BH on composite Clark-West p) ===")
-    for t, r in results.items():
-        ce = r.get("combination")
-        q = (bh_assets.get(t) or {}).get("q")
-        r["composite_q"] = q
-        # The validated directional quantity is the forward RETURN (shifts the cone center):
-        # OOS-R²>0, BH-q<0.05, both halves, beats-best, economic floor. P(up) is a derived
-        # display — require only that it is CALIBRATED (recalibrated Brier not materially worse
-        # than climatology), not that the binary lean itself beats the base rate.
-        br = r["calibration"]["brier_skill_recal"]
-        r["scored"] = bool(
-            r["go_legs"] and ce and ce.get("oos_r2") is not None and ce["oos_r2"] > 0
-            and q is not None and q < 0.05 and ce.get("half_ok") and r["beats_best"]
-            and r["econ_ok"] and (br is not None and br >= -0.01))
-        if r["go_legs"]:
-            print(f"  {t:5s} composite OOS-R²={ce.get('oos_r2')} CW p={ce.get('cw_p')} BH-q={q} "
-                  f"econ_ok={r['econ_ok']} brier_recal={r['calibration']['brier_skill_recal']} "
-                  f"DSR={r['timing']['dsr']} -> {'SCORED' if r['scored'] else 'display-only'}")
+    print("Index Direction Phase-0 — walk-forward OOS vs expanding historical mean (multi-horizon)")
+    results = {}
+    for hname, h in HORIZONS.items():
+        for t in ALL_TICKERS:
+            r = run_index(t, hname, h)
+            if r:
+                results[(t, hname)] = r
+    # CROSS-ASSET multiple-testing control PER HORIZON: BH-FDR on each asset's composite
+    # Clark-West p within the horizon family (the correct single correction).
+    for hname in HORIZONS:
+        comp_p = {t: r["combination"]["cw_p"] for (t, hn), r in results.items()
+                  if hn == hname and r["go_legs"] and r.get("combination")
+                  and r["combination"].get("cw_p") is not None}
+        bh_h = V.benjamini_hochberg(comp_p, alpha=0.05)
+        print(f"\n=== cross-asset FDR ({hname}) — BH on composite Clark-West p ===")
+        for (t, hn), r in results.items():
+            if hn != hname:
+                continue
+            q = (bh_h.get(t) or {}).get("q")
+            r["composite_q"] = q
+            r["scored"] = _score_one(r, q)
+            if r["go_legs"]:
+                ce = r["combination"]
+                print(f"  {t:5s} OOS-R²={ce.get('oos_r2')} CW p={ce.get('cw_p')} BH-q={q} "
+                      f"econ_ok={r['econ_ok']} brier_recal={r['calibration']['brier_skill_recal']} "
+                      f"-> {'SCORED' if r['scored'] else 'display-only'}")
 
     gpath = REGIME / "anticipation_gate.json"
     full = json.loads(gpath.read_text()) if gpath.exists() else {}
-    block = {"_meta": {"n_trials": N_TRIALS, "horizon_td": H, "benchmark": "expanding historical mean",
-                       "fdr": "BH across assets on composite Clark-West p (alpha 0.05)",
+    block = {"_meta": {"n_trials": N_TRIALS, "horizons_td": HORIZONS, "benchmark": "expanding historical mean",
+                       "fdr": "BH across assets on composite Clark-West p, per horizon (alpha 0.05)",
                        "note": "display-only until scored; per-asset, no transfer; short stays coin-flip"}}
-    for t, r in results.items():
-        block[t] = {"medium": {
+    for (t, hname), r in results.items():
+        block.setdefault(t, {})[hname] = {
             "scored": r["scored"], "legs": r["leg_gate"],
             "platt": r["platt"] if r["scored"] else None,
             "oos_r2": (r["combination"] or {}).get("oos_r2"),
             "cw_p": (r["combination"] or {}).get("cw_p"), "cw_q": r.get("composite_q"),
             "brier_skill_recal": r["calibration"]["brier_skill_recal"],
-            "dsr": r["timing"]["dsr"], "p_up_band": list(idr.P_BAND)}}
+            "dsr": r["timing"]["dsr"], "p_up_band": list(idr.P_BAND)}
     full["INDEX_DIRECTION"] = block
     gpath.write_text(json.dumps(full, indent=2))
     _report(results)
     n_scored = sum(1 for r in results.values() if r["scored"])
-    print(f"\nWrote INDEX_DIRECTION gate ({n_scored}/{len(results)} indexes scored) + research/INDEX_DIRECTION_PHASE0.md")
+    cells = {t for t, r in results.items() if r["scored"]}
+    print(f"\nWrote INDEX_DIRECTION gate ({n_scored} scored cells: {sorted(cells)}) + research/INDEX_DIRECTION_PHASE0.md")
     return 0
 
 
 def _report(results):
-    L = ["# Index Direction — Phase-0 results", "",
-         f"Walk-forward OOS (expanding, sign-restricted, monthly, embargo={H}td) vs the recursive "
-         f"historical mean. A leg/combination is GO only if OOS-R² > 0 AND Clark-West nested test "
-         f"significant (BH-adjusted p<0.10) AND positive in BOTH date-halves; the combination also "
-         f"needs DSR≥0.90 (n_trials={N_TRIALS}), Brier skill>0, and must beat its best single leg. "
-         f"Benchmark = 'always predict the mean' (Goyal-Welch random walk).", ""]
-    for t, r in results.items():
-        L += [f"## {t} — medium ({H}td), {r['n_oos']} OOS rebalances", "",
-              "| leg | OOS-R² | Clark-West p | both halves | gate |", "|---|---|---|---|---|"]
-        for leg, e in r["legs"].items():
-            L.append(f"| `{leg}` | {e['oos_r2']} | {e['cw_p']} | {'✓' if e['half_ok'] else '—'} | "
-                     f"**{r['leg_gate'].get(leg)}** |")
+    L = ["# Index Direction — Phase-0 results (multi-horizon)", "",
+         "Walk-forward OOS (expanding, sign-restricted, monthly, embargo=horizon) vs the recursive "
+         "historical mean, at MEDIUM (42td) and LONG (189td). A cell is SCORED only if the GO-leg "
+         "composite has OOS-R²>0 AND Clark-West nested test BH-significant ACROSS ASSETS (q<0.05) AND "
+         "positive in BOTH date-halves AND beats its best single leg AND the timing overlay is not "
+         "Sharpe-worse than buy&hold AND P(up) is calibrated (recal Brier ≥ −0.01). DSR + bootstrap CI "
+         "are reported as economic context. Benchmark = 'always predict the mean' (Goyal-Welch).", ""]
+    # SCORED summary table first
+    scored = [(t, hn, r) for (t, hn), r in results.items() if r["scored"]]
+    L += ["## Scored cells (validated directional lean)", "",
+          "| asset | horizon | GO legs | OOS-R² | Clark-West p | BH-q |", "|---|---|---|---|---|---|"]
+    for t, hn, r in sorted(scored):
+        ce = r["combination"]
+        L.append(f"| **{t}** | {hn} | {', '.join(r['go_legs'])} | {ce['oos_r2']} | {ce['cw_p']} | {r.get('composite_q')} |")
+    if not scored:
+        L.append("| _(none)_ | | | | | |")
+    L += ["", "## All cells", ""]
+    for (t, hn), r in sorted(results.items()):
         ce, bt, cal = r["combination"], r["timing"], r["calibration"]
-        L += ["",
-              f"**Combination:** OOS-R² {ce['oos_r2'] if ce else None}, Clark-West p {ce['cw_p'] if ce else None}, "
-              f"beats-best-leg {r['beats_best']}, both-halves {ce['half_ok'] if ce else None}.",
-              f"**Timing backtest** (long when forecast>0, costed): strat "
-              f"{bt['strat']['cagr']}%/{bt['strat']['sharpe']}/{bt['strat']['maxdd']}% vs buy&hold "
-              f"{bt['hold']['cagr']}%/{bt['hold']['sharpe']}/{bt['hold']['maxdd']}% · exposure {bt['exposure']} · DSR {bt['dsr']}.",
-              f"**Calibration:** Brier skill {cal['brier_skill']} (base up-rate {cal['base_up']}), Platt a {cal['platt_a']}, mean P(up) {cal['p_mean']}.",
-              f"**Verdict:** {'SCORED — directional lean is live' if r['scored'] else 'display-only (combination did not clear the OOS bar)'}.", ""]
-    L += ["_Generated by scripts/index_direction_phase0.py. Short horizon stays a coin-flip; "
-          "long horizon pending a valuation (Shiller) collector. Re-run after data updates._", ""]
+        L += [f"### {t} — {hn} ({r['horizon_td']}td), {r['n_oos']} OOS rebalances",
+              f"- GO legs: {r['go_legs'] or '—'}; composite OOS-R² {ce['oos_r2'] if ce else None}, "
+              f"Clark-West p {ce['cw_p'] if ce else None}, BH-q {r.get('composite_q')}, both-halves {ce['half_ok'] if ce else None}.",
+              f"- timing: strat {bt['strat']['cagr']}%/{bt['strat']['sharpe']}/{bt['strat']['maxdd']}% vs "
+              f"hold {bt['hold']['cagr']}%/{bt['hold']['sharpe']}/{bt['hold']['maxdd']}% · DSR {bt['dsr']} · "
+              f"recal-Brier {cal['brier_skill_recal']} → **{'SCORED' if r['scored'] else 'display-only'}**", ""]
+    L += ["_Generated by scripts/index_direction_phase0.py. Short horizon stays a coin-flip. "
+          "Re-run after data updates._", ""]
     Path("research").mkdir(exist_ok=True)
     Path("research/INDEX_DIRECTION_PHASE0.md").write_text("\n".join(L))
 
