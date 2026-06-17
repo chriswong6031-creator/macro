@@ -57,6 +57,7 @@ SECTOR_PRESETS = {
 # off membership here; sectors default display-only until their own block passes Phase-0.
 PRESETS = {**INDEX_PRESETS, **SECTOR_PRESETS}
 MEDIUM_TD = 42
+HORIZONS_TD = {"medium": 42, "long": 189}   # the directional model spans medium + long
 # honest P(up) band for a scored medium-horizon index lean (the equity-premium drift
 # alone gives ~0.55-0.58; a real conditional tilt nudges modestly around it)
 P_BAND = (0.40, 0.62)
@@ -233,10 +234,10 @@ def forecast(close: pd.Series, *, asset: str, gate: dict | None = None) -> dict:
     if not preset or len(close) < 800:
         return {}
     legs = build_legs(close)
+    weights = preset.get("medium", {})          # one leg manifest, applied at each horizon
     g = gate or {}
     horizons = {}
-    for hname, weights in preset.items():
-        h = MEDIUM_TD if hname == "medium" else MEDIUM_TD
+    for hname, h in HORIZONS_TD.items():
         gblock = g.get(hname, {})
         scored = bool(gblock.get("scored"))
         go_legs = {l for l, v in (gblock.get("legs") or {}).items() if v == "GO"} if scored else set()

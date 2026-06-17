@@ -85,6 +85,19 @@ RETURN (cone center via OOS-R²/CW); P(up) is a calibrated display.
 all failed OOS at medium). The one robust, economically-grounded sector edge is **long-duration
 tech vs real rates** — and it's the same driver as QQQ, which is the honest finding.
 
+## Multi-horizon deepening (Phase C — SHIPPED)
+Tested every asset at LONG (189td) too, per-horizon BH-FDR. Honest findings:
+- **QQQ/XLK real-rate is a MEDIUM-horizon effect, NOT long** (long OOS-R² negative — tested → null).
+  The tech-rate signal is a 1-3mo repricing, not a 6-12mo drift. Regime-conditioning the sign was
+  NOT added — it already holds in both pre/post-2021 halves, so conditioning would overfit.
+- **NEW: XLP (staples) SCORED at LONG** via `real_rate` (OOS-R² 0.15, CW p=0.005, both halves) —
+  staples are a rate-sensitive bond proxy; falling real rates → staples up over ~9mo. Effective-N
+  ~22 independent windows (thin but HAC-corrected); shown with the long-horizon caveat.
+
+**Scored cells now: QQQ-medium, XLK-medium (tech vs real rates) · XLP-long (staples vs real rates).**
+Everything else, every horizon = honest coin-flip. The throughline: **real rates are the one
+robustly-priced equity directional driver** — fast for tech, slow for staples.
+
 ## Files
 - `engine/validation.py` (+`oos_r2`,`clark_west`), `engine/index_direction.py` [new],
   `scripts/index_direction_phase0.py` [new] → `data/regime/anticipation_gate.json` `INDEX_DIRECTION`

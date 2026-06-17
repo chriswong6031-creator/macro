@@ -1,157 +1,111 @@
-# Index Direction — Phase-0 results
+# Index Direction — Phase-0 results (multi-horizon)
 
-Walk-forward OOS (expanding, sign-restricted, monthly, embargo=42td) vs the recursive historical mean. A leg/combination is GO only if OOS-R² > 0 AND Clark-West nested test significant (BH-adjusted p<0.10) AND positive in BOTH date-halves; the combination also needs DSR≥0.90 (n_trials=200), Brier skill>0, and must beat its best single leg. Benchmark = 'always predict the mean' (Goyal-Welch random walk).
+Walk-forward OOS (expanding, sign-restricted, monthly, embargo=horizon) vs the recursive historical mean, at MEDIUM (42td) and LONG (189td). A cell is SCORED only if the GO-leg composite has OOS-R²>0 AND Clark-West nested test BH-significant ACROSS ASSETS (q<0.05) AND positive in BOTH date-halves AND beats its best single leg AND the timing overlay is not Sharpe-worse than buy&hold AND P(up) is calibrated (recal Brier ≥ −0.01). DSR + bootstrap CI are reported as economic context. Benchmark = 'always predict the mean' (Goyal-Welch).
 
-## SPY — medium (42td), 279 OOS rebalances
+## Scored cells (validated directional lean)
 
-| leg | OOS-R² | Clark-West p | both halves | gate |
-|---|---|---|---|---|
-| `vrp` | -0.00378 | 0.4411 | — | **NEUTRAL** |
-| `tsmom` | -0.02665 | 0.5953 | — | **NEUTRAL** |
-| `netliq` | -0.04003 | 0.9843 | — | **NEUTRAL** |
-| `credit` | -0.01977 | 0.5274 | — | **NEUTRAL** |
+| asset | horizon | GO legs | OOS-R² | Clark-West p | BH-q |
+|---|---|---|---|---|---|
+| **QQQ** | medium | real_rate | 0.02714 | 0.0034 | 0.0034 |
+| **XLK** | medium | real_rate | 0.07334 | 0.0 | 0.0 |
+| **XLP** | long | real_rate | 0.1545 | 0.0052 | 0.0052 |
 
-**Combination:** OOS-R² -0.00678, Clark-West p 0.5459, beats-best-leg True, both-halves False.
-**Timing backtest** (long when forecast>0, costed): strat 8.1%/0.6/-48.2% vs buy&hold 10.8%/0.65/-55.2% · exposure 0.69 · DSR 0.7557.
-**Calibration:** Brier skill -0.07 (base up-rate 0.717), Platt a 0.055, mean P(up) 0.662.
-**Verdict:** display-only (combination did not clear the OOS bar).
+## All cells
 
-## QQQ — medium (42td), 205 OOS rebalances
+### IWM — long (189td), 184 OOS rebalances
+- GO legs: —; composite OOS-R² -0.05058, Clark-West p 0.8111, BH-q None, both-halves False.
+- timing: strat 7.0%/0.5/-31.9% vs hold 8.7%/0.47/-58.6% · DSR 0.4019 · recal-Brier 0.015 → **display-only**
 
-| leg | OOS-R² | Clark-West p | both halves | gate |
-|---|---|---|---|---|
-| `vrp` | -0.11372 | 0.9698 | — | **NEUTRAL** |
-| `real_rate` | 0.02714 | 0.0034 | ✓ | **GO** |
-| `tsmom` | -0.04363 | 0.7216 | — | **NEUTRAL** |
-| `netliq` | 0.0693 | 0.0024 | — | **NEUTRAL** |
+### IWM — medium (42td), 191 OOS rebalances
+- GO legs: —; composite OOS-R² -0.01468, Clark-West p 0.7554, BH-q None, both-halves False.
+- timing: strat 6.4%/0.46/-31.9% vs hold 8.7%/0.47/-58.6% · DSR 0.3358 · recal-Brier 0.013 → **display-only**
 
-**Combination:** OOS-R² 0.02714, Clark-West p 0.0034, beats-best-leg True, both-halves True.
-**Timing backtest** (long when forecast>0, costed): strat 10.7%/0.72/-42.1% vs buy&hold 10.9%/0.52/-83.0% · exposure 0.58 · DSR 0.8367.
-**Calibration:** Brier skill -0.041 (base up-rate 0.712), Platt a 0.457, mean P(up) 0.644.
-**Verdict:** SCORED — directional lean is live.
+### QQQ — long (189td), 198 OOS rebalances
+- GO legs: —; composite OOS-R² -0.10929, Clark-West p 0.9885, BH-q None, both-halves False.
+- timing: strat 11.7%/0.79/-35.1% vs hold 10.9%/0.52/-83.0% · DSR 0.9045 · recal-Brier 0.0 → **display-only**
 
-## IWM — medium (42td), 190 OOS rebalances
+### QQQ — medium (42td), 205 OOS rebalances
+- GO legs: ['real_rate']; composite OOS-R² 0.02714, Clark-West p 0.0034, BH-q 0.0034, both-halves True.
+- timing: strat 10.6%/0.72/-42.1% vs hold 10.9%/0.52/-83.0% · DSR 0.8336 · recal-Brier 0.006 → **SCORED**
 
-| leg | OOS-R² | Clark-West p | both halves | gate |
-|---|---|---|---|---|
-| `credit` | -0.03532 | 0.7153 | — | **NEUTRAL** |
-| `credit_vel` | -0.00509 | 0.676 | — | **NEUTRAL** |
-| `anfci` | -0.04098 | 0.6658 | — | **NEUTRAL** |
-| `vrp` | -0.02416 | 0.8552 | — | **NEUTRAL** |
+### SPY — long (189td), 272 OOS rebalances
+- GO legs: —; composite OOS-R² -0.02348, Clark-West p 0.5625, BH-q None, both-halves False.
+- timing: strat 8.1%/0.58/-55.2% vs hold 10.8%/0.65/-55.2% · DSR 0.7143 · recal-Brier 0.004 → **display-only**
 
-**Combination:** OOS-R² -0.01475, Clark-West p 0.7565, beats-best-leg True, both-halves False.
-**Timing backtest** (long when forecast>0, costed): strat 6.4%/0.46/-31.9% vs buy&hold 8.8%/0.47/-58.6% · exposure 0.61 · DSR 0.3391.
-**Calibration:** Brier skill -0.082 (base up-rate 0.674), Platt a -0.331, mean P(up) 0.615.
-**Verdict:** display-only (combination did not clear the OOS bar).
+### SPY — medium (42td), 279 OOS rebalances
+- GO legs: —; composite OOS-R² -0.00678, Clark-West p 0.5459, BH-q None, both-halves False.
+- timing: strat 8.0%/0.6/-48.2% vs hold 10.8%/0.65/-55.2% · DSR 0.751 · recal-Brier -0.001 → **display-only**
 
-## XLK — medium (42td), 208 OOS rebalances
+### XLB — long (189td), 201 OOS rebalances
+- GO legs: —; composite OOS-R² None, Clark-West p None, BH-q None, both-halves None.
+- timing: strat 2.3%/0.25/-39.0% vs hold 8.4%/0.46/-59.8% · DSR 0.0701 · recal-Brier 0.092 → **display-only**
 
-| leg | OOS-R² | Clark-West p | both halves | gate |
-|---|---|---|---|---|
-| `real_rate` | 0.07334 | 0.0 | ✓ | **GO** |
-| `vrp` | -0.10957 | 0.898 | — | **NEUTRAL** |
-| `tsmom` | -0.01447 | 0.4877 | — | **NEUTRAL** |
+### XLB — medium (42td), 208 OOS rebalances
+- GO legs: —; composite OOS-R² -0.07339, Clark-West p 0.9246, BH-q None, both-halves False.
+- timing: strat 4.1%/0.34/-37.3% vs hold 8.4%/0.46/-59.8% · DSR 0.1574 · recal-Brier 0.007 → **display-only**
 
-**Combination:** OOS-R² 0.07334, Clark-West p 0.0, beats-best-leg True, both-halves True.
-**Timing backtest** (long when forecast>0, costed): strat 11.1%/0.72/-31.5% vs buy&hold 10.5%/0.52/-82.0% · exposure 0.57 · DSR 0.8344.
-**Calibration:** Brier skill -0.104 (base up-rate 0.716), Platt a 0.142, mean P(up) 0.616.
-**Verdict:** SCORED — directional lean is live.
+### XLE — long (189td), 201 OOS rebalances
+- GO legs: —; composite OOS-R² -0.06041, Clark-West p 0.7317, BH-q None, both-halves False.
+- timing: strat 4.2%/0.3/-71.3% vs hold 8.5%/0.43/-71.3% · DSR 0.1156 · recal-Brier 0.018 → **display-only**
 
-## XLF — medium (42td), 208 OOS rebalances
+### XLE — medium (42td), 208 OOS rebalances
+- GO legs: —; composite OOS-R² -0.02872, Clark-West p 0.9166, BH-q None, both-halves False.
+- timing: strat 3.6%/0.27/-75.2% vs hold 8.5%/0.43/-71.3% · DSR 0.0894 · recal-Brier -0.002 → **display-only**
 
-| leg | OOS-R² | Clark-West p | both halves | gate |
-|---|---|---|---|---|
-| `credit` | -0.03668 | 0.7193 | — | **NEUTRAL** |
-| `credit_vel` | -0.00526 | 0.9221 | — | **NEUTRAL** |
-| `tsmom` | -0.02564 | 0.8525 | — | **NEUTRAL** |
-| `vrp` | -0.04475 | 0.7166 | — | **NEUTRAL** |
+### XLF — long (189td), 201 OOS rebalances
+- GO legs: —; composite OOS-R² -0.05807, Clark-West p 0.8587, BH-q None, both-halves False.
+- timing: strat 6.8%/0.48/-42.9% vs hold 5.9%/0.34/-82.7% · DSR 0.3875 · recal-Brier 0.002 → **display-only**
 
-**Combination:** OOS-R² -0.02225, Clark-West p 0.7689, beats-best-leg True, both-halves False.
-**Timing backtest** (long when forecast>0, costed): strat 7.2%/0.53/-33.7% vs buy&hold 5.9%/0.35/-82.7% · exposure 0.59 · DSR 0.4895.
-**Calibration:** Brier skill -0.03 (base up-rate 0.654), Platt a 0.567, mean P(up) 0.589.
-**Verdict:** display-only (combination did not clear the OOS bar).
+### XLF — medium (42td), 208 OOS rebalances
+- GO legs: —; composite OOS-R² -0.02225, Clark-West p 0.7689, BH-q None, both-halves False.
+- timing: strat 7.2%/0.52/-33.7% vs hold 5.9%/0.34/-82.7% · DSR 0.4868 · recal-Brier -0.002 → **display-only**
 
-## XLE — medium (42td), 208 OOS rebalances
+### XLI — long (189td), 201 OOS rebalances
+- GO legs: —; composite OOS-R² -0.05144, Clark-West p 0.6705, BH-q None, both-halves False.
+- timing: strat 8.6%/0.62/-42.3% vs hold 9.6%/0.54/-62.3% · DSR 0.6709 · recal-Brier 0.001 → **display-only**
 
-| leg | OOS-R² | Clark-West p | both halves | gate |
-|---|---|---|---|---|
-| `dollar` | -0.05561 | 0.8385 | — | **NEUTRAL** |
-| `tsmom` | -0.0096 | 0.8598 | — | **NEUTRAL** |
-| `vrp` | 0.00167 | 0.2666 | — | **NEUTRAL** |
+### XLI — medium (42td), 208 OOS rebalances
+- GO legs: —; composite OOS-R² -0.02191, Clark-West p 0.857, BH-q None, both-halves False.
+- timing: strat 8.3%/0.6/-42.3% vs hold 9.6%/0.54/-62.3% · DSR 0.6319 · recal-Brier 0.004 → **display-only**
 
-**Combination:** OOS-R² -0.02872, Clark-West p 0.9166, beats-best-leg True, both-halves False.
-**Timing backtest** (long when forecast>0, costed): strat 3.6%/0.28/-75.2% vs buy&hold 8.6%/0.43/-71.3% · exposure 0.61 · DSR 0.0912.
-**Calibration:** Brier skill -0.032 (base up-rate 0.587), Platt a 0.115, mean P(up) 0.588.
-**Verdict:** display-only (combination did not clear the OOS bar).
+### XLK — long (189td), 201 OOS rebalances
+- GO legs: —; composite OOS-R² -0.05304, Clark-West p 0.8308, BH-q None, both-halves False.
+- timing: strat 12.2%/0.79/-33.6% vs hold 10.5%/0.52/-82.0% · DSR 0.9145 · recal-Brier 0.004 → **display-only**
 
-## XLU — medium (42td), 208 OOS rebalances
+### XLK — medium (42td), 208 OOS rebalances
+- GO legs: ['real_rate']; composite OOS-R² 0.07334, Clark-West p 0.0, BH-q 0.0, both-halves True.
+- timing: strat 11.1%/0.72/-31.5% vs hold 10.5%/0.52/-82.0% · DSR 0.8334 · recal-Brier -0.001 → **SCORED**
 
-| leg | OOS-R² | Clark-West p | both halves | gate |
-|---|---|---|---|---|
+### XLP — long (189td), 201 OOS rebalances
+- GO legs: ['real_rate']; composite OOS-R² 0.1545, Clark-West p 0.0052, BH-q 0.0052, both-halves True.
+- timing: strat 5.9%/0.6/-24.5% vs hold 6.7%/0.5/-35.9% · DSR 0.6262 · recal-Brier 0.011 → **SCORED**
 
-**Combination:** OOS-R² None, Clark-West p None, beats-best-leg False, both-halves None.
-**Timing backtest** (long when forecast>0, costed): strat 6.6%/0.52/-36.1% vs buy&hold 7.7%/0.48/-52.3% · exposure 0.64 · DSR 0.4885.
-**Calibration:** Brier skill None (base up-rate None), Platt a None, mean P(up) 0.654.
-**Verdict:** display-only (combination did not clear the OOS bar).
+### XLP — medium (42td), 208 OOS rebalances
+- GO legs: —; composite OOS-R² 0.00107, Clark-West p 0.1978, BH-q None, both-halves False.
+- timing: strat 6.2%/0.6/-24.5% vs hold 6.7%/0.5/-35.9% · DSR 0.635 · recal-Brier 0.001 → **display-only**
 
-## XLB — medium (42td), 208 OOS rebalances
+### XLU — long (189td), 201 OOS rebalances
+- GO legs: —; composite OOS-R² None, Clark-West p None, BH-q None, both-halves None.
+- timing: strat 0.0%/nan/0.0% vs hold 7.7%/0.48/-52.3% · DSR None · recal-Brier None → **display-only**
 
-| leg | OOS-R² | Clark-West p | both halves | gate |
-|---|---|---|---|---|
-| `dollar` | -0.14807 | 0.9232 | — | **NEUTRAL** |
-| `oil_mom` | -0.00583 | 0.7203 | — | **NEUTRAL** |
+### XLU — medium (42td), 208 OOS rebalances
+- GO legs: —; composite OOS-R² None, Clark-West p None, BH-q None, both-halves None.
+- timing: strat 6.5%/0.52/-36.1% vs hold 7.7%/0.48/-52.3% · DSR 0.4812 · recal-Brier None → **display-only**
 
-**Combination:** OOS-R² -0.07339, Clark-West p 0.9246, beats-best-leg True, both-halves False.
-**Timing backtest** (long when forecast>0, costed): strat 4.2%/0.34/-37.3% vs buy&hold 8.4%/0.46/-59.8% · exposure 0.57 · DSR 0.1613.
-**Calibration:** Brier skill -0.094 (base up-rate 0.663), Platt a -0.255, mean P(up) 0.596.
-**Verdict:** display-only (combination did not clear the OOS bar).
+### XLV — long (189td), 201 OOS rebalances
+- GO legs: —; composite OOS-R² 0.02924, Clark-West p 0.1357, BH-q None, both-halves False.
+- timing: strat 6.0%/0.57/-28.4% vs hold 8.3%/0.54/-39.2% · DSR 0.5709 · recal-Brier 0.052 → **display-only**
 
-## XLI — medium (42td), 208 OOS rebalances
+### XLV — medium (42td), 208 OOS rebalances
+- GO legs: —; composite OOS-R² None, Clark-West p None, BH-q None, both-halves None.
+- timing: strat -0.6%/-0.33/-20.0% vs hold 8.3%/0.54/-39.2% · DSR 0.0 · recal-Brier None → **display-only**
 
-| leg | OOS-R² | Clark-West p | both halves | gate |
-|---|---|---|---|---|
-| `tsmom` | -0.02335 | 0.8016 | — | **NEUTRAL** |
-| `oil_mom` | -0.01264 | 0.8599 | — | **NEUTRAL** |
-| `credit` | -0.04324 | 0.778 | — | **NEUTRAL** |
+### XLY — long (189td), 201 OOS rebalances
+- GO legs: —; composite OOS-R² -0.00413, Clark-West p 0.4512, BH-q None, both-halves False.
+- timing: strat 10.3%/0.69/-39.7% vs hold 9.6%/0.52/-59.0% · DSR 0.7845 · recal-Brier -0.005 → **display-only**
 
-**Combination:** OOS-R² -0.02191, Clark-West p 0.857, beats-best-leg True, both-halves False.
-**Timing backtest** (long when forecast>0, costed): strat 8.3%/0.6/-42.3% vs buy&hold 9.6%/0.54/-62.3% · exposure 0.61 · DSR 0.6326.
-**Calibration:** Brier skill -0.088 (base up-rate 0.697), Platt a -0.149, mean P(up) 0.623.
-**Verdict:** display-only (combination did not clear the OOS bar).
+### XLY — medium (42td), 208 OOS rebalances
+- GO legs: —; composite OOS-R² 0.00073, Clark-West p 0.3253, BH-q None, both-halves False.
+- timing: strat 7.9%/0.56/-36.5% vs hold 9.6%/0.52/-59.0% · DSR 0.5608 · recal-Brier 0.001 → **display-only**
 
-## XLY — medium (42td), 208 OOS rebalances
-
-| leg | OOS-R² | Clark-West p | both halves | gate |
-|---|---|---|---|---|
-| `credit` | -0.03318 | 0.7785 | — | **NEUTRAL** |
-| `real_rate` | 0.0006 | 0.1545 | — | **NEUTRAL** |
-| `vrp` | -0.01366 | 0.4327 | — | **NEUTRAL** |
-
-**Combination:** OOS-R² 0.00073, Clark-West p 0.3253, beats-best-leg True, both-halves False.
-**Timing backtest** (long when forecast>0, costed): strat 8.0%/0.57/-36.5% vs buy&hold 9.7%/0.52/-59.0% · exposure 0.61 · DSR 0.573.
-**Calibration:** Brier skill -0.078 (base up-rate 0.697), Platt a -0.045, mean P(up) 0.628.
-**Verdict:** display-only (combination did not clear the OOS bar).
-
-## XLP — medium (42td), 208 OOS rebalances
-
-| leg | OOS-R² | Clark-West p | both halves | gate |
-|---|---|---|---|---|
-| `real_rate` | 0.00595 | 0.1017 | — | **NEUTRAL** |
-| `tsmom` | -0.01523 | 0.9254 | — | **NEUTRAL** |
-
-**Combination:** OOS-R² 0.00107, Clark-West p 0.1978, beats-best-leg True, both-halves False.
-**Timing backtest** (long when forecast>0, costed): strat 6.3%/0.61/-24.5% vs buy&hold 6.8%/0.51/-35.9% · exposure 0.63 · DSR 0.65.
-**Calibration:** Brier skill -0.059 (base up-rate 0.683), Platt a -0.059, mean P(up) 0.641.
-**Verdict:** display-only (combination did not clear the OOS bar).
-
-## XLV — medium (42td), 208 OOS rebalances
-
-| leg | OOS-R² | Clark-West p | both halves | gate |
-|---|---|---|---|---|
-
-**Combination:** OOS-R² None, Clark-West p None, beats-best-leg False, both-halves None.
-**Timing backtest** (long when forecast>0, costed): strat -0.6%/-0.33/-20.0% vs buy&hold 8.4%/0.54/-39.2% · exposure 0.0 · DSR 0.0.
-**Calibration:** Brier skill None (base up-rate None), Platt a None, mean P(up) 0.501.
-**Verdict:** display-only (combination did not clear the OOS bar).
-
-_Generated by scripts/index_direction_phase0.py. Short horizon stays a coin-flip; long horizon pending a valuation (Shiller) collector. Re-run after data updates._
+_Generated by scripts/index_direction_phase0.py. Short horizon stays a coin-flip. Re-run after data updates._
