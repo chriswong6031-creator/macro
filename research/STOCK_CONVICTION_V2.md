@@ -145,8 +145,10 @@ measure-before-score, literature prior not data-mining, long-only durability is 
   `exp(−days_since_filing/45)` lifts SUE IC **0.0065 → 0.0085**, IC-IR 0.084 → 0.108, and the
   long-only top-decile **13.3% → 14.0% ann / Sharpe .79 → .82 / maxDD −38.1% → −36.7%** — an
   improvement on EVERY metric, no trade-off. Makes the score early/fast. → `_pead_decay(days)`.
-  CAVEAT: `edgar_eps` stamps a synthetic period_end+60d, not the real filing date → freshness
-  is coarse (fiscal-quarter-end-driven); a real EDGAR-submissions filing date is the follow-up.
+  FOLLOW-UP DONE: `collectors/edgar_eps.py` now overlays the REAL earliest SEC filing date per
+  quarter (EDGAR companyconcept, min `filed` over original 10-Q/10-K), replacing the synthetic
+  period_end+60d — the real ~34d-median, per-name-staggered date breaks the old ~74% one-value
+  cluster and sharpens the freshness decay (synthetic kept only as a per-row fallback). PIT-safe.
 
 **REJECTED (measured, do NOT score — adding them is noise, not power):**
 - **Asymmetry / downside-asym (convexity).** Standalone forward IC is NEGATIVE (−0.008); its

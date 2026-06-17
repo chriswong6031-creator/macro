@@ -81,25 +81,18 @@ _EDGE_W = {"sue": 0.40, "insider": 0.30, "revision": 0.20, "mom": 0.10}
 _MOM_W_CALM = 0.28      # calm/risk-on tape: residual momentum earns real weight (IC ~+0.03)
 _MOM_W_STRESS = 0.04    # down-trend / high-vol: momentum IC flips negative -> near-zero weight
 
-# PEAD freshness decay (research/STOCK_CONVICTION_V2 + scripts/pead_freshness_phase0.py). The
-# SUE earnings-surprise edge is post-earnings-announcement DRIFT — it decays over the ~60-90d
-# after the filing. The live score pooled every name filed in the last ~7 months at equal
-# weight, so a 6-month-old surprise (drift already consumed) counted like one filed last week.
-# Weighting SUE by exp(-days_since_filing / TAU) concentrates the edge on names still inside
-# the active drift window: on the deep+PIT panel it lifts SUE's IC 0.0065->0.0085, IC-IR
-# 0.084->0.108, and the long-only top-decile 13.3%->14.0% ann / Sharpe .79->.82 / maxDD
-# -38.1%->-36.7% — an improvement on EVERY metric, no trade-off. It also makes the score
-# EARLY/FAST: a fresh surprise ranks above a stale one and fades as the drift plays out.
-# `sue_fresh_days=None` -> decay 1.0 (unchanged), so callers without filing dates are identical.
-_PEAD_TAU = 45.0
-
-
-def _pead_decay(days: float | None) -> float:
-    """Post-earnings drift weight in (0,1]: 1.0 for a just-filed surprise, fading with the
-    days since the filing. None (no filing date) -> 1.0 so behaviour is unchanged."""
-    if days is None:
-        return 1.0
-    return float(math.exp(-max(float(days), 0.0) / _PEAD_TAU))
+# PEAD freshness — DISPLAY-ONLY (the decay was retired; see below). SUE earnings drift fades
+# over ~60-90d, so v3 weighted the SUE leg by exp(-days_since_filing / 45). That helped on the
+# SYNTHETIC asof (period_end+60d), but once collectors/edgar_eps.py supplied the REAL filing
+# date (~26d earlier, per-name staggered) the re-validation (scripts/pead_freshness_phase0.py,
+# deep+PIT, τ swept 45/63/90) was decisive: the decay raises cross-sectional IC at every τ
+# (0.0079->0.009+) but CONSISTENTLY LOWERS the long-only top-decile (13.6% flat -> 12.7-12.9%
+# decayed, Sharpe .80 -> .73-.75) — recency-bias contaminates the extreme top decile (the names
+# the board actually shows) with noisy just-reported surprises. The robust win is the REAL DATES
+# improving the FLAT SUE's PIT (IC 0.0065->0.0079, long-only 13.3->13.6%, maxDD -38.1->-36.0%).
+# So we score FLAT SUE and surface freshness (sue_fresh_days) as DISPLAY context only — never a
+# score weight. (Kept honest per the no-overfit discipline: the better data overrode the
+# synthetic-tuned weighting.)
 
 
 def _edge_weights(calm: float | None) -> dict:
@@ -235,16 +228,19 @@ def _edge_basis(rec: dict, market: str) -> list[dict]:
     m = market.upper()
     out: list[dict] = []
 
-    def add(key: str, val: float | None) -> None:
+    def add(key: str, val: float | None, fresh: float | None = None) -> None:
         if val is None:
             return
         lab = _BASIS_LABEL.get(key, (key, key, "context"))
-        out.append({"leg": key, "label": lab[0], "label_zh": lab[1], "tier": lab[2],
-                    "z": round(float(val), 2)})
+        chip = {"leg": key, "label": lab[0], "label_zh": lab[1], "tier": lab[2],
+                "z": round(float(val), 2)}
+        if fresh is not None:                     # DISPLAY-only filing recency (not scored)
+            chip["fresh_days"] = int(round(fresh))
+        out.append(chip)
     if m == "US":
         s = _f(rec.get("sue"))
-        add("sue", float(np.clip(s, -3, 3)) * _pead_decay(_f(rec.get("sue_fresh_days")))
-            if s is not None else None)
+        add("sue", float(np.clip(s, -3, 3)) if s is not None else None,
+            fresh=_f(rec.get("sue_fresh_days")))
         i = _f(rec.get("insider_bps")); add("insider", float(np.clip(i / 30.0, -1.5, 1.5)) if i is not None else None)
         r = _f(rec.get("revision_z")); add("revision", float(np.clip(r, -3, 3)) if r is not None else None)
         a = _f(rec.get("alpha")); add("alpha", float(np.clip(a, -3, 3)) if a is not None else None)
@@ -281,9 +277,8 @@ def _axis_selection(rec: dict, market: str, calm: float | None = None) -> tuple[
         ew = _edge_weights(calm)
         legs: dict[str, float] = {}
         sue = _f(rec.get("sue"))
-        if sue is not None:                       # PEAD freshness decay: a stale surprise
-            d = _pead_decay(_f(rec.get("sue_fresh_days")))   # contributes less than a fresh one
-            legs["sue"] = float(np.clip(sue, -3, 3)) * d; present.append("sue")
+        if sue is not None:                       # FLAT SUE — freshness is display-only (the
+            legs["sue"] = float(np.clip(sue, -3, 3)); present.append("sue")  # decay hurt the LO board
         ins = _f(rec.get("insider_bps"))
         if ins is not None:                       # net Form-4 buying, bps of mcap
             legs["insider"] = float(np.clip(ins / 30.0, -1.5, 1.5)); present.append("insider")
