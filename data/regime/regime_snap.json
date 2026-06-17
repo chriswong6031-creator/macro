@@ -1,24 +1,22 @@
 {
   "snap": false,
   "relief_magnitude": null,
-  "roro": 0.505,
+  "roro": 0.612,
   "cap_recent": true,
   "fear_built": 0.504,
-  "roro_velocity": 0.329,
-  "vel_pctile": 0.923,
-  "legs_up": 3,
+  "roro_velocity": 0.129,
+  "vel_pctile": 0.722,
+  "legs_up": 1,
   "legs_total": 7,
   "flipped_legs": [
-    "vix",
-    "hy_oas",
-    "vix_term"
+    "hy_oas"
   ],
-  "days_since_last_snap": 1,
+  "days_since_last_snap": 2,
   "fear_rebuilding": false,
-  "vix_term": 0.837,
-  "status": "building",
+  "vix_term": 0.848,
+  "status": "dormant",
   "gates": {
-    "velocity": true,
+    "velocity": false,
     "legs": false,
     "fear": true,
     "washout": true
@@ -26,37 +24,10 @@
   "min_legs": 4,
   "flipped_legs_named": [
     {
-      "key": "vix",
-      "en": "VIX",
-      "zh": "\u6ce2\u52a8\u7387 VIX"
-    },
-    {
       "key": "hy_oas",
       "en": "HY credit spread",
       "zh": "\u9ad8\u6536\u76ca\u4fe1\u7528\u5229\u5dee"
-    },
-    {
-      "key": "vix_term",
-      "en": "VIX term structure",
-      "zh": "VIX \u671f\u9650\u7ed3\u6784"
     }
   ],
-  "magnitude_band": null,
-  "veto": {
-    "schema": "regime_snap_veto.v1",
-    "is_context_only": true,
-    "lean": "fragile",
-    "confidence": "medium",
-    "checks": {
-      "catalyst": "Oil collapsing is a risk-off market move, not a structural positive catalyst; no signed deal, policy shift, or hard data surprise.",
-      "premium": "Fear built only moderate (0.504), suggesting limited premium to unwind.",
-      "washout": "Recent capitulation present (cap_recent=true), but oil shock introduces a new, unrelated risk factor that can override prior washout dynamics.",
-      "follow_through": "Unlikely; oil's decline and its broad deflationary signal are likely to reassert pressure, causing relief to fade next session."
-    },
-    "read": "Oil collapsing is a fresh negative driver, not a structural catalyst for durable relief. Despite prior capitulation, the relief is fragile and likely to reverse as oil's risk-off signal persists.",
-    "model": "deepseek-v4-pro",
-    "generated_at": "2026-06-17T04:50:14.896621+00:00",
-    "degraded_reason": null,
-    "disclaimer": "AI durability read \u2014 context only, never scored or sized. The snap detector is coincident; this is a fallible judgement on whether the relief is structural or a dead-cat, not a trade recommendation."
-  }
+  "magnitude_band": null
 }

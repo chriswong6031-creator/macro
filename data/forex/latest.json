@@ -1,71 +1,73 @@
 {
-  "date": "Jun 16, 2026",
-  "regime": "US growth premium",
+  "date": "Jun 17, 2026",
+  "regime": "Global reflation",
   "favored": [
-    "USD"
+    "AUD",
+    "commodity FX",
+    "EM"
   ],
   "risk": "risk-on",
   "pairs": {
     "EURUSD": {
       "label": "EUR/USD",
-      "quote": 1.1583,
-      "chg": -0.6,
+      "quote": 1.1617,
+      "chg": 0.1,
       "action": "FLAT",
-      "score": 14.1
+      "score": 16.2
     },
     "GBPUSD": {
       "label": "GBP/USD",
-      "quote": 1.34,
-      "chg": -0.2,
+      "quote": 1.3434,
+      "chg": 0.3,
       "action": "FLAT",
-      "score": 12.3
+      "score": 12.7
     },
     "USDJPY": {
       "label": "USD/JPY",
-      "quote": 160.251,
-      "chg": 0.8,
+      "quote": 160.274,
+      "chg": 0.9,
       "action": "SHORT",
-      "score": -35.0
+      "score": -35.8
     },
     "USDCHF": {
       "label": "USD/CHF",
-      "quote": 0.7955,
-      "chg": 0.8,
+      "quote": 0.7918,
+      "chg": 0.6,
       "action": "FLAT",
-      "score": 11.3
+      "score": 11.2
     },
     "AUDUSD": {
       "label": "AUD/USD",
-      "quote": 0.7055,
-      "chg": -0.7,
+      "quote": 0.7065,
+      "chg": -1.2,
       "action": "SHORT",
-      "score": -26.4
+      "score": -27.2
     },
     "USDCAD": {
       "label": "USD/CAD",
-      "quote": 1.4012,
-      "chg": 1.9,
+      "quote": 1.3996,
+      "chg": 1.8,
       "action": "FLAT",
-      "score": 13.9
+      "score": 14.4
     },
     "USDMXN": {
       "label": "USD/MXN",
-      "quote": 17.2267,
-      "chg": -1.0,
+      "quote": 17.197,
+      "chg": -0.6,
       "action": "SHORT",
-      "score": -46.5
+      "score": -44.7
     },
     "USDBRL": {
       "label": "USD/BRL",
-      "quote": 5.0529,
-      "chg": -0.1,
+      "quote": 5.0878,
+      "chg": 1.5,
       "action": "FLAT",
-      "score": -4.7
+      "score": -6.2
     },
     "USDCNH": {
       "label": "USD/CNH",
-      "quote": 6.721,
-      "chg": -1.0,
+      "quote": 6.716,
+      "chg": -1.3,
       "action": "FLAT",
       "score": 15.0
     }
