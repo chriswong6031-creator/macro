@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-06-17T06:38:09.031826+00:00",
+  "last_run": "2026-06-17T14:16:33.661453+00:00",
   "sources": {
     "cot": {
       "source": "cot",
@@ -8,43 +8,43 @@
       "last_date": "2026-06-09",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.031922+00:00"
+      "checked_at": "2026-06-17T14:16:33.661545+00:00"
     },
     "fred": {
       "source": "fred",
       "status": "ok",
-      "rows": 551679,
+      "rows": 551693,
       "last_date": "2028-01-01",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.031862+00:00"
+      "checked_at": "2026-06-17T14:16:33.661486+00:00"
     },
     "yahoo": {
       "source": "yahoo",
       "status": "ok",
-      "rows": 2806,
+      "rows": 2810,
       "last_date": "2026-06-17",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.031876+00:00"
+      "checked_at": "2026-06-17T14:16:33.661499+00:00"
     },
     "treasury": {
       "source": "treasury",
       "status": "ok",
-      "rows": 24,
+      "rows": 19,
       "last_date": "2026-06-15",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.031885+00:00"
+      "checked_at": "2026-06-17T14:16:33.661509+00:00"
     },
     "nyfed": {
       "source": "nyfed",
       "status": "ok",
-      "rows": 1267,
+      "rows": 1268,
       "last_date": "2026-06-16",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.031893+00:00"
+      "checked_at": "2026-06-17T14:16:33.661517+00:00"
     },
     "breadth": {
       "source": "breadth",
@@ -53,7 +53,7 @@
       "last_date": "2026-06-16",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.031901+00:00"
+      "checked_at": "2026-06-17T14:16:33.661524+00:00"
     },
     "cboe_putcall": {
       "source": "cboe_putcall",
@@ -62,7 +62,7 @@
       "last_date": "2026-06-17",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.031929+00:00"
+      "checked_at": "2026-06-17T14:16:33.661552+00:00"
     },
     "cboe_gex": {
       "source": "cboe_gex",
@@ -71,7 +71,7 @@
       "last_date": "2026-06-17",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.031935+00:00"
+      "checked_at": "2026-06-17T14:16:33.661558+00:00"
     },
     "sentiment_naaim": {
       "source": "sentiment_naaim",
@@ -80,7 +80,7 @@
       "last_date": "2026-06-10",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032024+00:00"
+      "checked_at": "2026-06-17T14:16:33.661626+00:00"
     },
     "sentiment_aaii": {
       "source": "sentiment_aaii",
@@ -89,16 +89,16 @@
       "last_date": null,
       "error": "circuit open (3 consecutive failures)",
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032031+00:00"
+      "checked_at": "2026-06-17T14:16:33.661633+00:00"
     },
     "sector_flows": {
       "source": "sector_flows",
       "status": "ok",
       "rows": 11,
-      "last_date": "2026-06-15",
+      "last_date": "2026-06-16",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032037+00:00"
+      "checked_at": "2026-06-17T14:16:33.661639+00:00"
     },
     "holdings": {
       "source": "holdings",
@@ -107,7 +107,7 @@
       "last_date": "2026-06-17",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032043+00:00"
+      "checked_at": "2026-06-17T14:16:33.661646+00:00"
     },
     "fundamentals": {
       "source": "fundamentals",
@@ -116,16 +116,16 @@
       "last_date": "2026-06-17",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032069+00:00"
+      "checked_at": "2026-06-17T14:16:33.661670+00:00"
     },
     "coinmetrics": {
       "source": "coinmetrics",
       "status": "ok",
-      "rows": 70,
+      "rows": 60,
       "last_date": "2026-06-16",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032234+00:00"
+      "checked_at": "2026-06-17T14:16:33.661828+00:00"
     },
     "okx": {
       "source": "okx",
@@ -134,16 +134,16 @@
       "last_date": "2026-06-17",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032253+00:00"
+      "checked_at": "2026-06-17T14:16:33.661847+00:00"
     },
     "deribit": {
       "source": "deribit",
       "status": "ok",
-      "rows": 6,
+      "rows": 5,
       "last_date": "2026-06-17",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032259+00:00"
+      "checked_at": "2026-06-17T14:16:33.661853+00:00"
     },
     "feargreed": {
       "source": "feargreed",
@@ -152,7 +152,7 @@
       "last_date": "2026-06-17",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032266+00:00"
+      "checked_at": "2026-06-17T14:16:33.661860+00:00"
     },
     "coingecko": {
       "source": "coingecko",
@@ -161,7 +161,7 @@
       "last_date": "2026-06-17",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032273+00:00"
+      "checked_at": "2026-06-17T14:16:33.661866+00:00"
     },
     "defillama": {
       "source": "defillama",
@@ -170,7 +170,7 @@
       "last_date": "2026-06-17",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032279+00:00"
+      "checked_at": "2026-06-17T14:16:33.661872+00:00"
     },
     "mempool": {
       "source": "mempool",
@@ -179,25 +179,25 @@
       "last_date": "2026-06-17",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032285+00:00"
+      "checked_at": "2026-06-17T14:16:33.661878+00:00"
     },
     "bgeo": {
       "source": "bgeo",
       "status": "ok",
-      "rows": 20,
+      "rows": 11,
       "last_date": "2026-06-16",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032240+00:00"
+      "checked_at": "2026-06-17T14:16:33.661834+00:00"
     },
     "coinbase": {
       "source": "coinbase",
       "status": "ok",
-      "rows": 32,
+      "rows": 14,
       "last_date": "2026-06-17",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032247+00:00"
+      "checked_at": "2026-06-17T14:16:33.661841+00:00"
     },
     "china_macro": {
       "source": "china_macro",
@@ -206,7 +206,7 @@
       "last_date": "2026-06-17",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032119+00:00"
+      "checked_at": "2026-06-17T14:16:33.661718+00:00"
     },
     "china_prices": {
       "source": "china_prices",
@@ -215,7 +215,7 @@
       "last_date": "2026-06-17",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032113+00:00"
+      "checked_at": "2026-06-17T14:16:33.661712+00:00"
     },
     "china_breadth": {
       "source": "china_breadth",
@@ -224,7 +224,7 @@
       "last_date": "2026-06-17",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032126+00:00"
+      "checked_at": "2026-06-17T14:16:33.661724+00:00"
     },
     "hk_prices": {
       "source": "hk_prices",
@@ -233,7 +233,7 @@
       "last_date": "2026-06-17",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032170+00:00"
+      "checked_at": "2026-06-17T14:16:33.661767+00:00"
     },
     "hk_breadth": {
       "source": "hk_breadth",
@@ -242,7 +242,7 @@
       "last_date": "2026-06-17",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032176+00:00"
+      "checked_at": "2026-06-17T14:16:33.661773+00:00"
     },
     "smallcap_breadth": {
       "source": "smallcap_breadth",
@@ -251,7 +251,7 @@
       "last_date": "2026-06-15",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.031908+00:00"
+      "checked_at": "2026-06-17T14:16:33.661531+00:00"
     },
     "etf_holdings": {
       "source": "etf_holdings",
@@ -260,7 +260,7 @@
       "last_date": "2026-06-17",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032050+00:00"
+      "checked_at": "2026-06-17T14:16:33.661652+00:00"
     },
     "sector_holdings": {
       "source": "sector_holdings",
@@ -269,7 +269,7 @@
       "last_date": "2026-06-17",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032056+00:00"
+      "checked_at": "2026-06-17T14:16:33.661657+00:00"
     },
     "stock_prices": {
       "source": "stock_prices",
@@ -278,7 +278,7 @@
       "last_date": "2026-06-16",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032063+00:00"
+      "checked_at": "2026-06-17T14:16:33.661664+00:00"
     },
     "stock_fundamentals": {
       "source": "stock_fundamentals",
@@ -287,7 +287,7 @@
       "last_date": "2026-06-17",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032075+00:00"
+      "checked_at": "2026-06-17T14:16:33.661676+00:00"
     },
     "china_universe": {
       "source": "china_universe",
@@ -296,7 +296,7 @@
       "last_date": "2026-06-17",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032133+00:00"
+      "checked_at": "2026-06-17T14:16:33.661730+00:00"
     },
     "midcap_breadth": {
       "source": "midcap_breadth",
@@ -305,7 +305,7 @@
       "last_date": "2026-06-15",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.031915+00:00"
+      "checked_at": "2026-06-17T14:16:33.661538+00:00"
     },
     "cboe_skew": {
       "source": "cboe_skew",
@@ -314,7 +314,7 @@
       "last_date": "2026-06-16",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.031941+00:00"
+      "checked_at": "2026-06-17T14:16:33.661564+00:00"
     },
     "fedboard_ebp": {
       "source": "fedboard_ebp",
@@ -323,7 +323,7 @@
       "last_date": "2026-05-01",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.031954+00:00"
+      "checked_at": "2026-06-17T14:16:33.661577+00:00"
     },
     "eia": {
       "source": "eia",
@@ -332,7 +332,7 @@
       "last_date": "2026-06-05",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032000+00:00"
+      "checked_at": "2026-06-17T14:16:33.661602+00:00"
     },
     "china_margin": {
       "source": "china_margin",
@@ -341,16 +341,16 @@
       "last_date": "2026-06-16",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032139+00:00"
+      "checked_at": "2026-06-17T14:16:33.661737+00:00"
     },
     "china_connect": {
       "source": "china_connect",
       "status": "ok",
       "rows": 180,
-      "last_date": "2026-06-16",
+      "last_date": "2026-06-17",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032145+00:00"
+      "checked_at": "2026-06-17T14:16:33.661743+00:00"
     },
     "china_flows": {
       "source": "china_flows",
@@ -359,7 +359,7 @@
       "last_date": "2026-06-17",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032151+00:00"
+      "checked_at": "2026-06-17T14:16:33.661749+00:00"
     },
     "china_credit": {
       "source": "china_credit",
@@ -368,16 +368,16 @@
       "last_date": "2026-04-01",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032157+00:00"
+      "checked_at": "2026-06-17T14:16:33.661755+00:00"
     },
     "hkma": {
       "source": "hkma",
-      "status": "failed",
-      "rows": 0,
-      "last_date": null,
-      "error": "ReadTimeout: HTTPSConnectionPool(host='api.hkma.gov.hk', port=443): Read timed out. (read timeout=40)",
+      "status": "ok",
+      "rows": 100,
+      "last_date": "2026-06-17",
+      "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032183+00:00"
+      "checked_at": "2026-06-17T14:16:33.661779+00:00"
     },
     "cboe_vix_futures": {
       "source": "cboe_vix_futures",
@@ -386,16 +386,16 @@
       "last_date": "2026-06-16",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.031948+00:00"
+      "checked_at": "2026-06-17T14:16:33.661570+00:00"
     },
     "sovereign": {
       "source": "sovereign",
       "status": "ok",
-      "rows": 39425,
-      "last_date": "2026-06-15",
+      "rows": 39428,
+      "last_date": "2026-06-16",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.031980+00:00"
+      "checked_at": "2026-06-17T14:16:33.661583+00:00"
     },
     "frbsf_sentiment": {
       "source": "frbsf_sentiment",
@@ -404,7 +404,7 @@
       "last_date": "2026-06-14",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.031986+00:00"
+      "checked_at": "2026-06-17T14:16:33.661589+00:00"
     },
     "french": {
       "source": "french",
@@ -413,7 +413,7 @@
       "last_date": "2026-04-30",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.031993+00:00"
+      "checked_at": "2026-06-17T14:16:33.661596+00:00"
     },
     "edgar_13f": {
       "source": "edgar_13f",
@@ -422,7 +422,7 @@
       "last_date": null,
       "error": "circuit open (3 consecutive failures)",
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032081+00:00"
+      "checked_at": "2026-06-17T14:16:33.661682+00:00"
     },
     "ofr_fsi": {
       "source": "ofr_fsi",
@@ -431,7 +431,7 @@
       "last_date": "2026-06-12",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032006+00:00"
+      "checked_at": "2026-06-17T14:16:33.661608+00:00"
     },
     "rate_futures": {
       "source": "rate_futures",
@@ -440,7 +440,7 @@
       "last_date": "2026-06-17",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032012+00:00"
+      "checked_at": "2026-06-17T14:16:33.661614+00:00"
     },
     "ofr": {
       "source": "ofr",
@@ -449,7 +449,7 @@
       "last_date": "2026-06-17",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032087+00:00"
+      "checked_at": "2026-06-17T14:16:33.661688+00:00"
     },
     "prediction_markets": {
       "source": "prediction_markets",
@@ -458,7 +458,7 @@
       "last_date": "2026-06-17",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032094+00:00"
+      "checked_at": "2026-06-17T14:16:33.661694+00:00"
     },
     "bis": {
       "source": "bis",
@@ -467,16 +467,16 @@
       "last_date": "2026-06-17",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032100+00:00"
+      "checked_at": "2026-06-17T14:16:33.661700+00:00"
     },
     "china_property": {
       "source": "china_property",
       "status": "ok",
-      "rows": 7994,
-      "last_date": "2026-06-16",
+      "rows": 7996,
+      "last_date": "2026-06-17",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032164+00:00"
+      "checked_at": "2026-06-17T14:16:33.661761+00:00"
     },
     "uncertainty_indices": {
       "source": "uncertainty_indices",
@@ -485,7 +485,7 @@
       "last_date": "2026-06-16",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032018+00:00"
+      "checked_at": "2026-06-17T14:16:33.661620+00:00"
     },
     "treasury_auctions": {
       "source": "treasury_auctions",
@@ -494,7 +494,7 @@
       "last_date": "2026-06-17",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032106+00:00"
+      "checked_at": "2026-06-17T14:16:33.661706+00:00"
     },
     "canada_prices": {
       "source": "canada_prices",
@@ -503,16 +503,16 @@
       "last_date": "2026-06-17",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032189+00:00"
+      "checked_at": "2026-06-17T14:16:33.661785+00:00"
     },
     "canada_macro": {
       "source": "canada_macro",
       "status": "ok",
-      "rows": 43916,
+      "rows": 43917,
       "last_date": "2026-06-16",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032196+00:00"
+      "checked_at": "2026-06-17T14:16:33.661791+00:00"
     },
     "canada_breadth": {
       "source": "canada_breadth",
@@ -521,7 +521,7 @@
       "last_date": "2026-06-16",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032202+00:00"
+      "checked_at": "2026-06-17T14:16:33.661798+00:00"
     },
     "canada_universe": {
       "source": "canada_universe",
@@ -530,16 +530,16 @@
       "last_date": "2026-06-16",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032208+00:00"
+      "checked_at": "2026-06-17T14:16:33.661804+00:00"
     },
     "intl_prices": {
       "source": "intl_prices",
       "status": "ok",
-      "rows": 310,
+      "rows": 316,
       "last_date": "2026-06-17",
       "error": null,
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032215+00:00"
+      "checked_at": "2026-06-17T14:16:33.661810+00:00"
     },
     "intl_macro": {
       "source": "intl_macro",
@@ -548,16 +548,16 @@
       "last_date": null,
       "error": "RuntimeError: intl_macro: every FRED series failed (FRED unreachable?)",
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032221+00:00"
+      "checked_at": "2026-06-17T14:16:33.661816+00:00"
     },
     "intl_universe": {
       "source": "intl_universe",
-      "status": "ok",
-      "rows": 1,
-      "last_date": "2026-06-17",
-      "error": null,
+      "status": "failed",
+      "rows": 0,
+      "last_date": null,
+      "error": "RuntimeError: intl_universe: no closes downloaded",
       "notes": [],
-      "checked_at": "2026-06-17T06:38:09.032228+00:00"
+      "checked_at": "2026-06-17T14:16:33.661822+00:00"
     }
   },
   "circuit_breaker": {
@@ -602,7 +602,7 @@
     "china_connect": 0,
     "china_flows": 0,
     "china_credit": 0,
-    "hkma": 1,
+    "hkma": 0,
     "cboe_vix_futures": 0,
     "sovereign": 0,
     "frbsf_sentiment": 0,
@@ -621,7 +621,7 @@
     "canada_breadth": 0,
     "canada_universe": 0,
     "intl_prices": 0,
-    "intl_macro": 1,
-    "intl_universe": 0
+    "intl_macro": 2,
+    "intl_universe": 1
   }
 }
