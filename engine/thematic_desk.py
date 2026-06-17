@@ -277,6 +277,109 @@ DISCLAIMER = (
     "is drawdown control; everything the AI says is display-only.")
 
 
+# --------------------------------------------------------------------------- #
+# the adversarial panel — four roles debate the SAME state in parallel, then a
+# desk-head adjudicates into the final falsifiable leans (mirrors engine.ai_desk).
+# The adjudicator's schema is unchanged, so the falsifier/ledger/scorer downstream
+# are untouched — the panel only improves the QUALITY of the leans.
+# --------------------------------------------------------------------------- #
+_PANEL_CAVEAT = (
+    "\nCRITICAL — the detector is TRUST-GRADED and DISPLAY-ONLY: theme momentum rank-IC ~0 "
+    "(a FOCUS lens, not alpha), rotation-timing has NO validated edge, the ONLY validated edge "
+    "is DRAWDOWN control via the absolute-trend gate, and durability/crowding/rotation are "
+    "COINCIDENT. If narrative_rotation.gate_helps is false the discipline did not even cut "
+    "drawdown on this market (it mean-reverts) — be especially humble. Honour every item in "
+    "narrative_rotation.guardrails.do_not_conclude. NEVER a position size, weight, or trade. "
+    "Your view is a fallible, falsifiable conditional — not edge extracted from the detector.")
+
+_PANEL_SYSTEMS = {
+    "trend_rider": (
+        "ROLE: TREND-RIDER analyst on a thematic desk. Argue the STRONGEST honest case FOR "
+        "staying with the leading durable theme(s) — because the absolute-trend gate (staying "
+        "with the trend, not calling tops) is the one validated edge here. Cite the rank, the "
+        "durability bar, and the trend gate for each idea." + _PANEL_CAVEAT),
+    "crowding_skeptic": (
+        "ROLE: CROWDING-SKEPTIC analyst. Your job is to FALSIFY the longs, not to balance. "
+        "Name which theme is most over-extended / crowded (crowding_z, rs-stretch, % parabolic, "
+        "thinning breadth, narrowing leadership) and argue it is therefore a SIZE-DOWN. You are "
+        "FORBIDDEN to call a fade/short/sell (reflexivity — crowding is a sizing caution only). "
+        "Put the sharpest bear case on each long." + _PANEL_CAVEAT),
+    "narrative_scout": (
+        "ROLE: NARRATIVE-EMERGENCE SCOUT. Look for ONE early-hypothesis worth watching — a theme "
+        "whose leadership may be FORMING or FADING — and give it a kill-criterion. Remember "
+        "emergence usually reads LATE and attention/inflow spikes mark TOPS, so a watch is a "
+        "hypothesis to grade, never a buy. Put it in emerging_watch; keep theses minimal." + _PANEL_CAVEAT),
+    "macro_regime": (
+        "ROLE: MACRO-REGIME analyst. Read only the regime signals — breadth-of-rotation, the "
+        "one-narrative/absorption gauge, gate_helps, and the headline cash level. Say whether "
+        "the regime supports risk-on theme exposure AT ALL, or argues for more cash / smaller "
+        "size. Do not pick individual winners." + _PANEL_CAVEAT),
+}
+
+_ADJ_SYSTEM = (
+    "ROLE: DESK-HEAD adjudicator for a THEMATIC desk. Four independent analysts (trend-rider, "
+    "crowding-skeptic, narrative-scout, macro-regime) argued over the SAME trust-graded "
+    "detector state; their JSON stances are given alongside the raw state. Synthesize the FINAL "
+    "set of accountable, FALSIFIABLE per-theme leans for a solo top-down trader.\n\n"
+    "Rules:\n"
+    "- Keep a long lean ONLY if it survives the CROWDING-SKEPTIC; put that analyst's sharpest "
+    "objection to the specific theme in `dissent` — do not soften it.\n"
+    "- Calibrate conviction DOWN on disagreement: when analysts conflict, when the macro-regime "
+    "analyst says risk-off / raise cash, when gate_helps is false, or when leadership is narrow. "
+    "Reserve \"high\" for genuine multi-analyst agreement (rare). Default \"low\".\n"
+    "- Crowding is a SIZE-DOWN caution only — never emit a fade/short/sell. Do NOT predict the "
+    "next narrative; route the scout's idea into emerging_watch (a graded hypothesis), not a "
+    "thesis, unless a handoff is already CONFIRMED.\n"
+    "- If a track_record is present, calibrate to it (past high-conviction misses → lean lower).\n"
+    "- In `evidence`, cite which analyst and which detector leg supports each lean. Honour "
+    "narrative_rotation.guardrails. NEVER a size/weight/trade. Prefer scorable subjects "
+    "(ranks[].scorable). Omit theses rather than pad — honesty over content.\n\n"
+    + _SCHEMA_TAIL)
+
+
+def _slim_stance(s: dict) -> dict:
+    """A compact view of one analyst's stance for the page (transparency, not scored)."""
+    if not isinstance(s, dict):
+        return {}
+    leans = [{"subject": t.get("subject"), "lean": t.get("lean")}
+             for t in (s.get("theses") or []) if isinstance(t, dict) and t.get("subject")][:3]
+    return {"stance": s.get("regime_context"), "leans": leans,
+            "watch": s.get("emerging_watch")}
+
+
+def _run_panel(state: dict, cfg: dict, call=None) -> dict:
+    """Run the four analysts over the same bundle in parallel. {role: stance|None}; never raises."""
+    fn = call or _mb._call_model
+    user = _build_user(state)
+
+    def _one(key):
+        try:
+            reply, _ = fn(_PANEL_SYSTEMS[key], user, cfg)
+            parsed = _ad._extract_json(reply) if reply is not None else None
+            return key, (parsed if isinstance(parsed, dict) else None)
+        except Exception:  # noqa: BLE001 — one analyst failing must not sink the panel
+            return key, None
+
+    keys = list(_PANEL_SYSTEMS)
+    try:
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=len(keys)) as ex:
+            results = list(ex.map(_one, keys))
+    except Exception:  # noqa: BLE001 — sequential fallback
+        results = [_one(k) for k in keys]
+    return dict(results)
+
+
+def _adjudicate(state: dict, panel: dict, cfg: dict, call=None):
+    """Desk-head synthesis over the panel + raw state → (reply_text, degraded_reason)."""
+    fn = call or _mb._call_model
+    payload = {"detector_state": state, "analyst_panel": {k: v for k, v in panel.items() if v}}
+    user = ("The detector state and the four analysts' stances (JSON). Adjudicate into the FINAL "
+            "falsifiable per-theme leans per your instructions.\n<input>\n"
+            + json.dumps(payload, indent=2, default=str) + "\n</input>")
+    return fn(_ADJ_SYSTEM, user, cfg)
+
+
 def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
     """Run the analyst over a gathered state → a brief record. Never raises. `call` is
     injectable (defaults to master_brain._call_model) so tests run without an API key."""
@@ -292,8 +395,17 @@ def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
         "track_record": state.get("track_record"), "confidence": "low",
         "raw_text": None, "degraded_reason": None, "disclaimer": DISCLAIMER,
     }
-    fn = call or _mb._call_model
-    reply, reason = fn(_SYSTEM, _build_user(state), cfg)
+    # adversarial panel (default on) → desk-head adjudication; analyst-only fallback.
+    panel_on = bool((cfg.get("panel") or {}).get("enabled", True))
+    if panel_on:
+        panel = _run_panel(state, cfg, call)
+        brief["panel"] = {k: _slim_stance(v) for k, v in panel.items() if v}
+        if any(panel.values()):
+            reply, reason = _adjudicate(state, panel, cfg, call)
+        else:                                          # whole panel unavailable → single analyst
+            reply, reason = (call or _mb._call_model)(_SYSTEM, _build_user(state), cfg)
+    else:
+        reply, reason = (call or _mb._call_model)(_SYSTEM, _build_user(state), cfg)
     brief["raw_text"] = reply
     if reply is None:
         brief["degraded_reason"] = reason
