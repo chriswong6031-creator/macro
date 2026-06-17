@@ -1,0 +1,263 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>{{ s.name_en }} — Active Strategy</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+<style>
+:root{
+  --blue:{{C.blue}}; --indigo:{{C.indigo}}; --r2:{{C.r2}}; --r3:{{C.r3}}; --ink:{{C.ink}};
+  --text:{{C.text}}; --muted:{{C.muted}}; --faint:{{C.faint}}; --red:{{C.red}}; --amber:{{C.amber}};
+  --grid:{{C.grid}}; --card:{{C.card}}; --bg:{{C.bg}}; --green:#1FA971;
+}
+*{box-sizing:border-box}
+html:not([data-lang="zh"]) .l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 0 14px;border-bottom:1px solid var(--grid);margin-bottom:24px;position:sticky;top:0;background:var(--bg);z-index:20}
+.nav-links{display:flex;align-items:center;gap:2px;flex-wrap:wrap}
+a.nav-link{padding:7px 11px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;white-space:nowrap;transition:color .18s,background .18s}
+a.nav-link:hover,a.nav-link.active{color:var(--ink);background:#eef1f6}
+.nav-dd{position:relative;display:inline-flex}
+.nav-dd>a.nav-link .caret{display:inline-block;margin-left:3px;font-size:9px;opacity:.6;transition:transform .2s}
+.nav-dd:hover>a.nav-link .caret,.nav-dd:focus-within>a.nav-link .caret{transform:rotate(180deg)}
+.nav-dd::after{content:"";position:absolute;left:0;right:0;top:100%;height:9px}
+.nav-dd-menu{position:absolute;top:calc(100% + 7px);left:0;min-width:218px;background:var(--card);border:1px solid var(--grid);border-radius:13px;box-shadow:0 12px 34px rgba(16,24,40,.14);padding:6px;opacity:0;visibility:hidden;transform:translateY(-6px);transition:opacity .18s ease,transform .18s ease,visibility .18s;z-index:70}
+.nav-dd:hover>.nav-dd-menu,.nav-dd:focus-within>.nav-dd-menu{opacity:1;visibility:visible;transform:translateY(0)}
+.nav-dd-menu a{display:block;padding:9px 12px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--text);text-decoration:none;white-space:nowrap;transition:background .15s,color .15s}
+.nav-dd-menu a .d{display:block;font-size:11.5px;font-weight:400;color:var(--muted);margin-top:2px}
+.nav-dd-menu a:hover,.nav-dd-menu a.active{background:#eef1f6;color:var(--ink)}
+.nav-ctrls{display:flex;align-items:center;gap:10px;flex:none}
+.nav-ctrls .ai-brief-link{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;flex:none;padding:5px 12px;border-radius:999px;background:var(--card);border:1px solid var(--grid);color:var(--text);font-size:12.5px;font-weight:600;line-height:1;text-decoration:none;transition:border-color .15s,color .15s}
+.nav-ctrls .ai-brief-link:hover{border-color:var(--blue);color:var(--blue)}
+.lang-toggle{display:inline-flex;position:relative;background:#eef1f6;border:1px solid var(--grid);border-radius:999px;padding:3px;cursor:pointer;flex:none}
+.lang-toggle .pill{position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);border-radius:999px;background:var(--blue);transition:transform .34s cubic-bezier(.34,1.4,.5,1)}
+html[data-lang="zh"] .lang-toggle .pill{transform:translateX(100%)}
+.lang-toggle .opt{position:relative;z-index:1;min-width:28px;text-align:center;padding:3px 9px;font-size:11.5px;font-weight:600;color:var(--muted);transition:color .25s;user-select:none}
+html:not([data-lang="zh"]) .lang-toggle .en-opt{color:#fff}
+html[data-lang="zh"] .lang-toggle .zh-opt{color:#fff}
+.theme-switch{width:56px;height:27px;border-radius:999px;background:#eef1f6;border:1px solid var(--grid);position:relative;cursor:pointer;padding:0;flex:none}
+.theme-switch .ic{position:absolute;top:50%;transform:translateY(-50%);font-size:10.5px;opacity:.5;line-height:1}
+.theme-switch .ic.sun{right:8px}.theme-switch .ic.moon{left:8px}
+.theme-switch .knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 5px rgba(0,0,0,.3);transform:translateX(29px);transition:transform .34s cubic-bezier(.34,1.45,.5,1),background .3s}
+.theme-switch .knob::before{content:"☀️"}
+html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280}
+html[data-theme="dark"] a.nav-link:hover,html[data-theme="dark"] a.nav-link.active{background:#222732}
+html[data-theme="dark"] .nav-dd-menu a:hover,html[data-theme="dark"] .nav-dd-menu a.active{background:#222732}
+html[data-theme="dark"] .lang-toggle{background:#222732}
+html[data-theme="dark"] .theme-switch{background:#222732}
+html[data-theme="dark"] .theme-switch .knob{transform:translateX(0);background:#e8c15a}
+html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
+html[data-theme="dark"] .riskbar{background:repeating-linear-gradient(90deg,#222732,#222732 24px,#2a2f3a 24px,#2a2f3a 25px)}
+html[data-theme="dark"] .gtable td.cur{background:#1b2740}
+html[data-theme="dark"] .score .s>div{background:var(--grid)}
+.grid{display:grid;gap:18px}
+.cols-2{grid-template-columns:1.05fr .95fr}
+.cols-3{grid-template-columns:repeat(3,1fr)}
+.cols-4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:900px){.cols-2,.cols-3,.cols-4{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:22px}
+.card h3{margin:0 0 14px;font-size:18px;font-weight:700;color:var(--ink)}
+.sub{color:var(--muted);font-size:13px} .faint{color:var(--faint)}
+.section-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:30px 4px 12px}
+.h1{font-size:30px;font-weight:800;color:var(--ink);letter-spacing:-.02em;margin:6px 0 2px}
+.tag{display:inline-block;background:#FFF4E0;color:#8a5a00;border-radius:8px;padding:3px 10px;font-size:12.5px;font-weight:700}
+.tag.exp{background:#fde7ef;color:#a01457}
+html[data-theme="dark"] .tag{background:#3a2f17;color:#e0b25a}
+html[data-theme="dark"] .tag.exp{background:#3a1d2b;color:#f08bb4}
+.allocbar{height:54px;border-radius:12px;overflow:hidden;display:flex;font-weight:700;color:#fff;margin:12px 0 4px}
+.allocbar div{display:flex;align-items:center;justify-content:center;gap:8px;font-size:13.5px;min-width:0}
+.seg-spy{background:linear-gradient(90deg,#4a86ff,var(--blue))}
+.seg-cash{background:linear-gradient(90deg,#cfd4dc,#9aa4b2)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:middle}
+.dialwrap{display:flex;align-items:center;gap:18px;margin-top:2px}
+.dialnum{font-size:54px;font-weight:800;line-height:1;letter-spacing:-.02em}
+.pill{display:inline-block;padding:5px 12px;border-radius:9px;font-weight:700;font-size:13px;color:#fff}
+.riskbar{height:26px;border-radius:8px;overflow:hidden;display:flex;background:repeating-linear-gradient(90deg,#f0f2f6,#f0f2f6 24px,#e9ecf1 24px,#e9ecf1 25px);border:1px solid var(--grid);margin:8px 0}
+.riskbar div{height:100%}
+.legtbl{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
+.legtbl td,.legtbl th{padding:7px 8px;border-bottom:1px solid var(--grid);text-align:right}
+.legtbl td.l,.legtbl th.l{text-align:left}
+.legtbl .dot{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:7px;vertical-align:middle}
+.gtable{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+.gtable td,.gtable th{padding:9px 8px;border:1px solid var(--grid);text-align:center}
+.gtable th{background:var(--bg);color:var(--muted);font-weight:600;font-size:12px}
+.gtable td.rh{text-align:left;font-weight:700;color:var(--ink);background:var(--bg)}
+.gtable td.cur{background:#E8EEFF;font-weight:700;color:var(--ink);outline:2px solid var(--blue)}
+.score .s{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:4px}
+.score .s>div{background:var(--bg);border-radius:10px;padding:12px;text-align:center}
+.score .k{font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600}
+.score .v{font-size:21px;font-weight:800;color:var(--ink)}
+.score .v small{font-size:12px;font-weight:600;color:var(--muted)}
+.win{color:var(--green)} .lose{color:var(--red)}
+.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
+.tbl td,.tbl th{padding:7px 10px;border-bottom:1px solid var(--grid);text-align:left}
+.tbl td.n{text-align:right;font-variant-numeric:tabular-nums}
+.note{border-left:3px solid var(--amber);padding:6px 0 6px 14px;margin:8px 0;color:var(--text);font-size:13.5px}
+.note.r{border-color:var(--red)} .note.b{border-color:var(--blue)}
+.foot{margin-top:34px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7}
+.lev{font-size:54px;font-weight:800;line-height:1;letter-spacing:-.02em;color:var(--ink)}
+.oostbl{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:6px}
+.oostbl td,.oostbl th{padding:8px 10px;border-bottom:1px solid var(--grid);text-align:right}
+.oostbl td.l,.oostbl th.l{text-align:left}
+.badge{display:inline-block;padding:3px 10px;border-radius:8px;font-size:12px;font-weight:700}
+.badge.ok{background:#dff5ea;color:#1FA971}.badge.no{background:#fde7ef;color:#a01457}
+html[data-theme="dark"] .badge.ok{background:#16321f;color:#48d39a}html[data-theme="dark"] .badge.no{background:#3a1d2b;color:#f08bb4}
+.allocrow{display:flex;align-items:center;gap:10px;margin:6px 0;font-size:13px}
+.allocrow .nm{width:140px;color:var(--text)}.allocrow .br{flex:1;height:16px;border-radius:5px;background:var(--bg);overflow:hidden}
+html[data-theme="dark"] .allocrow .br{background:var(--grid)}
+.allocrow .fill{height:100%;background:linear-gradient(90deg,#4a86ff,var(--blue))}
+.allocrow .pc{width:54px;text-align:right;font-weight:700;color:var(--ink)}
+.factbar{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.factchip{font-size:12px;padding:5px 10px;border-radius:8px;background:var(--bg);border:1px solid var(--grid);color:var(--text)}
+html[data-theme="dark"] .factchip{background:var(--grid)}
+.factchip b{color:var(--ink)}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+      <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
+    <div class="nav-dd">
+      <a class="nav-link active" href="macro.html">🇺🇸 {{ t('United States', '美国') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('Regime · growth · inflation · nowcast', '周期 · 增长 · 通胀 · 即时预测') }}</span></a>
+        <a href="us_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Standouts · sectors · flows', '精选 · 板块 · 资金') }}</span></a>
+        <a class="active" href="strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
+        <a href="spvector.html">📐 {{ t('S&P / Macro Vector', '标普宏观向量') }}<span class="d">{{ t('Tactical equity↔cash', '战术股票↔现金') }}</span></a>
+        <a href="baskets.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P', '等权主题篮子 vs 标普') }}</span></a>
+        <a href="allocation.html">🔄 {{ t('Narrative Rotation', '主题轮动') }}<span class="d">{{ t('Which theme to hold & when to rotate', '持有哪个主题 · 何时轮动') }}</span></a>
+        <a href="alerts.html">🚨 {{ t('Alert Center', '警报中心') }}<span class="d">{{ t('Ranked & triaged alerts', '分级分诊的警报') }}</span></a>
+        <a href="gex.html">🧲 {{ t('Options Magnets', '期权磁吸') }}<span class="d">{{ t('Dealer-gamma GEX levels', '做市商Gamma GEX价位') }}</span></a>
+        <a href="etfs.html">🐳 {{ t('ETF Flows', 'ETF资金流') }}<span class="d">{{ t('Fund flow monitor', '资金流监控') }}</span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="china.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('A-share regime · sectors · flows', 'A股周期 · 板块 · 资金') }}</span></a>
+        <a href="china_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Standouts · alpha · setups', '精选 · 阿尔法 · 布局') }}</span></a>
+        <a href="china_strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="hk.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('HSI · southbound · global risk', 'HSI · 南向 · 全球风险') }}</span></a>
+        <a href="hk_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('HK-listed standouts · alpha', 'HK上市精选 · 阿尔法') }}</span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="canada.html">🇨🇦 {{ t('Canada', '加拿大') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="canada.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('TSX · BoC · commodity overlay', 'TSX · 加央行 · 商品叠加') }}</span></a>
+        <a href="canada_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('TSX standouts · sectors · alpha', 'TSX精选 · 板块 · 阿尔法') }}</span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="vector.html">📊 {{ t('Overview', '总览') }}<span class="d">{{ t('Market state · risk · momentum', '市场状态 · 风险 · 动量') }}</span></a>
+        <a href="vector_allocation.html">◎ {{ t('Allocation Strategy', '仓位策略') }}<span class="d">{{ t('BTC · ETH · alts · cash', 'BTC · ETH · 山寨 · 现金') }}</span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="commodities.html">📊 {{ t('Commodity Dashboard', '商品仪表盘') }}<span class="d">{{ t('Gold · silver · copper · oil · complex', '金 · 银 · 铜 · 油 · 综合') }}</span></a>
+        <a href="commodity_strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Per-commodity tactical strategies', '分品种战术策略') }}</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="forex.html">💱 {{ t('Forex', '外汇') }}</a>
+    <a class="nav-link" href="bonds.html">🏛️ {{ t('Bonds', '债券') }}</a>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">🔬 {{ t('Research', '研究') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="masterminds.html">🧠 {{ t('Masterminds', '操盘大师') }}<span class="d">{{ t('Multi-asset active GTAA strategies', '多资产主动配置策略') }}</span></a>
+        <a href="crossasset.html">🧭 {{ t('Cross-Asset', '跨资产') }}<span class="d">{{ t('Correlations · trend · global liquidity', '相关性 · 趋势 · 全球流动性') }}</span></a>
+        <a href="signal_lab.html">🔬 {{ t('Signal Lab', '信号实验室') }}<span class="d">{{ t('Consolidated validation scorecard', '验证记分卡汇总') }}</span></a>
+        <a href="factors.html">🧮 {{ t('Factors & Seasonality', '因子 & 季节性') }}<span class="d">{{ t('Value · quality · low-vol · monthly calendar', '价值 · 质量 · 低波动 · 月历') }}</span></a>
+        <a href="validation_timeline.html">🧪 {{ t('Validation Timeline', '验证时间线') }}<span class="d">{{ t('Full 2007→ walk-forward backtest', '2007→ 完整滚动回测') }}</span></a>
+      </div>
+    </div>
+  </div>
+    <div class="nav-ctrls">
+      <a class="ai-brief-link" href="aibrief.html">🧠 {{ t('AI Daily Brief', 'AI每日简报') }}</a>
+      <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title"><a href="{{ back_href }}" style="color:inherit;text-decoration:none">← {{ t(back_label_en, back_label_zh) }}</a> · {{ s.icon }} {{ t('Active strategy','主动策略') }}</div>
+  <div class="h1">{{ t(s.name_en, s.name_zh) }}</div>
+  <div class="sub" style="margin-bottom:6px">{{ t(s.thesis_en, s.thesis_zh) }}</div>
+  <div class="sub faint" style="margin-bottom:8px">{{ t('As of','截至') }} {{ as_of }} · {{ t(s.bench_en, s.bench_zh) }}</div>
+  <span class="tag exp">⚗ {{ t('Experimental — under validation','实验性 — 验证中') }}</span>
+  <span class="tag">{{ t('Active · vol-targeted · leverage-capable','主动 · 波动率目标 · 可加杠杆') }}</span>
+
+  <div class="grid cols-2" style="margin-top:14px">
+    <div class="card">
+      <h3>{{ t(exposure_title_en, exposure_title_zh) }}</h3>
+      {% if alloc %}
+        {% for a in alloc %}
+        <div class="allocrow"><span class="nm">{{ t(a.label_en, a.label_zh) }}</span><span class="br"><span class="fill" style="width:{{ (a.weight/alloc_max*100)|round }}%"></span></span><span class="pc">{{ a.weight }}%</span></div>
+        {% endfor %}
+        <div class="sub faint" style="margin-top:8px;font-size:12px">{{ t('Gross exposure now','当前总敞口') }}: <b style="color:var(--ink)">{{ gross_now }}x</b> · {{ t('weekly rebalance, vol-targeted','每周再平衡，波动率目标') }}</div>
+      {% else %}
+        <div class="dialwrap"><div class="lev">{{ lev_now }}x</div>
+          <div><span class="pill" style="background:{{ lev_color }}">{{ t(lev_label_en, lev_label_zh) }}</span>
+          <div class="sub" style="margin-top:8px">{{ t('Current vol-targeted position in the asset. >1x = levered (financed at the bill + 1%); 0x = fully in T-bills. Conviction sets the size; realized volatility scales it.','当前在该资产上的波动率目标仓位。>1x = 加杠杆（按短债 + 1% 融资）；0x = 全部短债。信念决定大小，已实现波动率进行缩放。') }}</div></div>
+        </div>
+        <div class="factbar">{% for f in factors %}<span class="factchip">{{ t(f.label_en, f.label_zh) }} <b>{{ f.value }}</b></span>{% endfor %}</div>
+      {% endif %}
+    </div>
+    <div class="card">
+      <h3>{{ t('Backtest scorecard','回测记分卡') }} <span class="faint" style="font-weight:500">· {{ sc.years }}y {{ t('vs','对比') }} {{ t(bench_label_en, bench_label_zh) }}</span></h3>
+      <div class="score"><div class="s">
+        <div><div class="k">CAGR</div><div class="v {{ 'win' if sc.cagr >= sc.hodl_cagr else 'lose' }}">{{ sc.cagr }}%</div><div class="sub">{{ t('B&H','买持') }} {{ sc.hodl_cagr }}%</div></div>
+        <div><div class="k">Sharpe</div><div class="v {{ 'win' if sc.sharpe >= sc.hodl_sharpe else 'lose' }}">{{ sc.sharpe }}</div><div class="sub">{{ t('B&H','买持') }} {{ sc.hodl_sharpe }}</div></div>
+        <div><div class="k">{{ t('Max DD','最大回撤') }}</div><div class="v {{ 'win' if sc.maxdd >= sc.hodl_maxdd else 'lose' }}">{{ sc.maxdd }}%</div><div class="sub">{{ t('B&H','买持') }} {{ sc.hodl_maxdd }}%</div></div>
+        <div><div class="k">{{ t('Avg leverage','平均杠杆') }}</div><div class="v">{{ sc.avg_leverage }}x</div><div class="sub">{{ sc.turnover_annual }}x {{ t('turnover/yr','换手/年') }}</div></div>
+      </div></div>
+      <div class="note b" style="margin-top:12px">{{ t('Net of 3 bps cost + a 1% financing spread on the levered part. The de-risked sleeve earns the T-bill yield.','扣除 3 个基点成本 + 杠杆部分 1% 融资利差。降险部分赚取短债收益。') }}</div>
+    </div>
+  </div>
+
+  <div class="grid cols-2">
+    <div class="card"><h3>{{ t('Growth of $1 (log) — vs buy & hold','1美元增长（对数）— 对比买入持有') }}</h3>{{ charts.growth|safe }}</div>
+    <div class="card"><h3>{{ t('Underwater (drawdown) — vs buy & hold','水下回撤 — 对比买入持有') }}</h3>{{ charts.dd|safe }}</div>
+  </div>
+  <div class="card" style="margin-top:18px"><h3>{{ t('Exposure / leverage over time','敞口 / 杠杆走势') }}</h3>{{ charts.lev|safe }}
+    <div class="sub faint" style="margin-top:6px;font-size:12px">{{ t('The vol-targeted position (gross exposure). It runs hot in strong, calm trends and light in turmoil — that is how an active book can out-CAGR buy-&-hold without simply taking more risk all the time.','波动率目标仓位（总敞口）。在强劲而平静的趋势中加大、在动荡中减小——这正是主动组合能在不始终承担更高风险的情况下跑赢买入持有年化的方式。') }}</div>
+  </div>
+
+  <!-- OOS honesty panel -->
+  <div class="section-title">{{ t('Out-of-sample honesty · does the edge hold in both halves?','样本外诚实检验 · 优势在两个半段是否成立？') }}</div>
+  <div class="card">
+    <table class="oostbl">
+      <tr><th class="l">{{ t('Window','区间') }}</th><th>{{ t('Strategy CAGR','策略年化') }}</th><th>{{ t('Buy & hold','买入持有') }}</th><th>{{ t('Strategy Sharpe','策略夏普') }}</th><th>{{ t('B&H Sharpe','买持夏普') }}</th><th>{{ t('Beats?','跑赢？') }}</th></tr>
+      <tr><td class="l"><b>{{ t('Full sample','全样本') }}</b></td><td>{{ sc.cagr }}%</td><td>{{ sc.hodl_cagr }}%</td><td>{{ sc.sharpe }}</td><td>{{ sc.hodl_sharpe }}</td><td>{% if sc.cagr>=sc.hodl_cagr %}<span class="badge ok">{{ t('CAGR','年化') }}</span>{% endif %}</td></tr>
+      {% if oos.first %}<tr><td class="l">{{ t('First half','前半段') }}</td><td>{{ oos.first.cagr }}%</td><td>{{ oos.first.hodl_cagr }}%</td><td>{{ oos.first.sharpe }}</td><td>{{ oos.first.hodl_sharpe }}</td><td>{% if oos.first.beats_cagr %}<span class="badge ok">✓</span>{% else %}<span class="badge no">✗</span>{% endif %}</td></tr>{% endif %}
+      {% if oos.second %}<tr><td class="l">{{ t('Second half','后半段') }}</td><td>{{ oos.second.cagr }}%</td><td>{{ oos.second.hodl_cagr }}%</td><td>{{ oos.second.sharpe }}</td><td>{{ oos.second.hodl_sharpe }}</td><td>{% if oos.second.beats_cagr %}<span class="badge ok">✓</span>{% else %}<span class="badge no">✗</span>{% endif %}</td></tr>{% endif %}
+    </table>
+    <div class="note {{ 'b' if oos.robust else 'r' }}" style="margin-top:10px">{{ t(verdict_en, verdict_zh) }}</div>
+  </div>
+
+  {% if caveat_en %}<div class="note r">{{ t(caveat_en, caveat_zh) }}</div>{% endif %}
+  <div class="foot">{{ t('Mechanical, backtested on free public data, net of cost + financing, positions acting next-bar (no look-ahead). Not investment advice — leverage amplifies losses as well as gains. Experimental: full Phase-0 (leave-one-crisis-out, deflated-Sharpe, pre-registration) is a fast-follow. Built','机械化 · 基于免费公开数据回测，扣除成本+融资，仓位次日生效（无前视）。非投资建议——杠杆会同时放大盈亏。实验性：完整 Phase-0（留一危机、贬值夏普、预先登记）为后续跟进。生成于') }} {{ built }}.</div>
+</div>
+<script src="theme.js"></script>
+</body></html>

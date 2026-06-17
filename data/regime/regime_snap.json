@@ -1,62 +1,25 @@
 {
   "snap": false,
   "relief_magnitude": null,
-  "roro": 0.505,
+  "roro": 0.561,
   "cap_recent": true,
   "fear_built": 0.504,
-  "roro_velocity": 0.329,
-  "vel_pctile": 0.923,
-  "legs_up": 3,
+  "roro_velocity": 0.082,
+  "vel_pctile": 0.657,
+  "legs_up": 0,
   "legs_total": 7,
-  "flipped_legs": [
-    "vix",
-    "hy_oas",
-    "vix_term"
-  ],
-  "days_since_last_snap": 1,
+  "flipped_legs": [],
+  "days_since_last_snap": 2,
   "fear_rebuilding": false,
-  "vix_term": 0.837,
-  "status": "building",
+  "vix_term": 0.848,
+  "status": "dormant",
   "gates": {
-    "velocity": true,
+    "velocity": false,
     "legs": false,
     "fear": true,
     "washout": true
   },
   "min_legs": 4,
-  "flipped_legs_named": [
-    {
-      "key": "vix",
-      "en": "VIX",
-      "zh": "\u6ce2\u52a8\u7387 VIX"
-    },
-    {
-      "key": "hy_oas",
-      "en": "HY credit spread",
-      "zh": "\u9ad8\u6536\u76ca\u4fe1\u7528\u5229\u5dee"
-    },
-    {
-      "key": "vix_term",
-      "en": "VIX term structure",
-      "zh": "VIX \u671f\u9650\u7ed3\u6784"
-    }
-  ],
-  "magnitude_band": null,
-  "veto": {
-    "schema": "regime_snap_veto.v1",
-    "is_context_only": true,
-    "lean": "fragile",
-    "confidence": "medium",
-    "checks": {
-      "catalyst": "oil price collapse is a market move, not a structural policy shift, signed deal, or hard data surprise \u2014 easily reversible",
-      "premium": "fear built to 0.504 with recent capitulation, and VIX/HY OAS/term structure flipped suggest a chunk unwound, but full relief magnitude unclear",
-      "washout": "cap_recent true indicates the relief came out of a genuine fear washout, not a shallow dip",
-      "follow_through": "cross\u2011asset confirmation is present but driven by a volatile commodity shock; deflationary interpretation could quickly reverse into recession fears, fading next session"
-    },
-    "read": "The snap builds on an oil collapse that lacks any durable policy anchor, making it inherently fragile. Despite a real capitulation washout and flipping risk\u2011on legs, the catalyst\u2019s reversibility points to a likely dead\u2011cat bounce.",
-    "model": "deepseek-v4-pro",
-    "generated_at": "2026-06-17T03:30:56.529439+00:00",
-    "degraded_reason": null,
-    "disclaimer": "AI durability read \u2014 context only, never scored or sized. The snap detector is coincident; this is a fallible judgement on whether the relief is structural or a dead-cat, not a trade recommendation."
-  }
+  "flipped_legs_named": [],
+  "magnitude_band": null
 }

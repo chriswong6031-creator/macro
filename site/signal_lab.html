@@ -76,6 +76,7 @@
       <div class="nav-dd-menu" role="menu">
         <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
         <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <a href="anticipation.html">🔮 <span class="l-en">Anticipation</span><span class="l-zh">预判</span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></a>
         <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
         <a href="spvector.html">📐 <span class="l-en">S&P / Macro Vector</span><span class="l-zh">标普宏观向量</span><span class="d"><span class="l-en">Tactical equity↔cash</span><span class="l-zh">战术股票↔现金</span></span></a>
         <a href="ipo.html">🆕 <span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></a>
@@ -224,7 +225,7 @@
         <td class="r pos">+0.0307</td>
         <td class="r">+0.307</td>
         <td class="r">+1.03</td>
-        <td class="r">0.520</td>
+        <td class="r">0.516</td>
         <td class="r">64%</td>
         <td class="r">11</td>
         <td class="r"><span class="no">✗</span></td>
@@ -232,10 +233,10 @@
     
       <tr>
         <td class="sig"><span class="l-en">Low volatility</span><span class="l-zh">低波动</span></td>
-        <td class="r pos">+0.0195</td>
-        <td class="r">+0.113</td>
+        <td class="r pos">+0.0197</td>
+        <td class="r">+0.114</td>
         <td class="r">+0.46</td>
-        <td class="r">0.774</td>
+        <td class="r">0.771</td>
         <td class="r">56%</td>
         <td class="r">9</td>
         <td class="r"><span class="no">✗</span></td>
@@ -255,9 +256,9 @@
       <tr>
         <td class="sig"><span class="l-en">Composite</span><span class="l-zh">综合</span></td>
         <td class="r pos">+0.0150</td>
-        <td class="r">+0.254</td>
+        <td class="r">+0.255</td>
         <td class="r">+1.03</td>
-        <td class="r">0.520</td>
+        <td class="r">0.516</td>
         <td class="r">73%</td>
         <td class="r">11</td>
         <td class="r"><span class="no">✗</span></td>
@@ -265,10 +266,10 @@
     
       <tr>
         <td class="sig"><span class="l-en">Composite (orthogonalised)</span><span class="l-zh">综合（正交化）</span></td>
-        <td class="r pos">+0.0139</td>
-        <td class="r">+0.144</td>
+        <td class="r pos">+0.0141</td>
+        <td class="r">+0.145</td>
         <td class="r">+0.83</td>
-        <td class="r">0.545</td>
+        <td class="r">0.538</td>
         <td class="r">55%</td>
         <td class="r">11</td>
         <td class="r"><span class="no">✗</span></td>
@@ -279,7 +280,7 @@
         <td class="r pos">+0.0130</td>
         <td class="r">+0.234</td>
         <td class="r">+1.06</td>
-        <td class="r">0.520</td>
+        <td class="r">0.516</td>
         <td class="r">55%</td>
         <td class="r">11</td>
         <td class="r"><span class="no">✗</span></td>
@@ -298,10 +299,10 @@
     
       <tr>
         <td class="sig"><span class="l-en">Low beta (BAB)</span><span class="l-zh">低贝塔</span></td>
-        <td class="r neg">-0.0184</td>
-        <td class="r">-0.081</td>
+        <td class="r neg">-0.0182</td>
+        <td class="r">-0.080</td>
         <td class="r">-0.35</td>
-        <td class="r">0.790</td>
+        <td class="r">0.794</td>
         <td class="r">46%</td>
         <td class="r">11</td>
         <td class="r"><span class="no">✗</span></td>
@@ -334,7 +335,7 @@
         <td class="r neg">-0.0403</td>
         <td class="r">-0.382</td>
         <td class="r">-1.21</td>
-        <td class="r">0.520</td>
+        <td class="r">0.516</td>
         <td class="r">46%</td>
         <td class="r">11</td>
         <td class="r"><span class="no">✗</span></td>
@@ -1110,8 +1111,8 @@
   <p class="muted sm" style="margin:0"><span class="l-en">Validation toolkit: engine/validation.py (deflated Sharpe, purged k-fold + embargo, block bootstrap, Newey-West HAC, Benjamini-Hochberg FDR, Brier/Platt calibration, cost-aware backtest). Verdicts are quoted from the named reports in reports/. The factor cross-section reads live from data/edgar/ic_scorecard.json. See also the </span><span class="l-zh">验证工具：engine/validation.py（去偏夏普、净化 k 折+隔离、分块自助、Newey-West HAC、Benjamini-Hochberg FDR、Brier/Platt 校准、含成本回测）。结论引自 reports/ 中具名报告；因子横截面实时读取 data/edgar/ic_scorecard.json。另见 </span><a href="validation_timeline.html" style="color:var(--link)"><span class="l-en">regime validation timeline</span><span class="l-zh">机制验证时间线</span></a><span class="l-en">.</span><span class="l-zh">。</span></p>
   <p class="src" style="margin:8px 0 0">
     <span class="l-en">data span</span><span class="l-zh">数据区间</span> 2023-06-30..2025-12-31 ·
-    <span class="l-en">dashboard updated</span><span class="l-zh">仪表盘更新</span> 2026-06-17 03:27 UTC ·
-    <span class="l-en">rendered</span><span class="l-zh">生成</span> 2026-06-17 03:27 UTC</p>
+    <span class="l-en">dashboard updated</span><span class="l-zh">仪表盘更新</span> 2026-06-17 14:19 UTC ·
+    <span class="l-en">rendered</span><span class="l-zh">生成</span> 2026-06-17 14:19 UTC</p>
 </div>
 
 <script src="theme.js"></script>
