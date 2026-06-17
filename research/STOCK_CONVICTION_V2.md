@@ -126,3 +126,40 @@ so an operator (and the future AI layer) can see WHY the score moved.
 6. Wire builds (US/CN/CA; HK stays screen) + per-leg basis JSON.
 7. Templates: basis panel, asymmetry axis, "why now" line, regime banner.
 8. Calibrate + full Phase-0 report + tests + browser-verify + ship.
+
+## 8. v3 — "reason and improve" findings (deep+PIT regime audit, 2008–2026, 63d)
+
+Two harnesses, the owner's two lenses (`scripts/conviction_v2_regime.py` regime-conditional
+IC + long-only top-decile; `scripts/pead_freshness_phase0.py` PEAD freshness). Discipline:
+measure-before-score, literature prior not data-mining, long-only durability is the objective.
+
+**WON (built into the engine, US only):**
+- **`regime_switch` — the EDGE momentum leg is regime-conditional.** Residual momentum's
+  forward IC is +0.030 in a calm/risk-on tape (SPY>200dma & lo-vol) but −0.028 in a down
+  tape / −0.017 hi-vol; SUE is regime-robust (+0.002..+0.006). Conditioning lifts overall IC
+  **0.0098 → 0.0192** and the long-only top-decile to **15.4% ann / Sortino 1.01 / maxDD −35%**
+  (SPY 13.4% / −47%) — beats both legs AND a static 50/50 blend. Daniel-Moskowitz (2016)
+  "Momentum Crashes" prior. → `_edge_weights(calm)` scales ONLY the momentum context leg
+  (0.04 stress → 0.28 calm); `current_calm(SPY)` supplies the live tape; `_regime_tilt` banner.
+- **PEAD freshness decay on SUE.** SUE drift decays post-announcement; weighting by
+  `exp(−days_since_filing/45)` lifts SUE IC **0.0065 → 0.0085**, IC-IR 0.084 → 0.108, and the
+  long-only top-decile **13.3% → 14.0% ann / Sharpe .79 → .82 / maxDD −38.1% → −36.7%** — an
+  improvement on EVERY metric, no trade-off. Makes the score early/fast. → `_pead_decay(days)`.
+  FOLLOW-UP DONE: `collectors/edgar_eps.py` now overlays the REAL earliest SEC filing date per
+  quarter (EDGAR companyconcept, min `filed` over original 10-Q/10-K), replacing the synthetic
+  period_end+60d — the real ~34d-median, per-name-staggered date breaks the old ~74% one-value
+  cluster and sharpens the freshness decay (synthetic kept only as a per-row fallback). PIT-safe.
+
+**REJECTED (measured, do NOT score — adding them is noise, not power):**
+- **Asymmetry / downside-asym (convexity).** Standalone forward IC is NEGATIVE (−0.008); its
+  top-decile is high-vol growth (vol 25.7%, DD −47%), not limited-downside. A 25% blend bumps
+  Sharpe (0.86) only by adding hidden bull-market beta — IC DROPS to 0.0154 and DD WORSENS.
+  Stays DISPLAY-ONLY risk-shape (as v2 had it). `near_52w_high` (−0.009) and `max_caution`
+  (−0.006) also negative on this sector-neutral 63d panel.
+- **Low-volatility defensive tilt.** Pure low-vol gives the shallowest DD (−32.5%) but BELOW-
+  SPY return (11.8%); a stress-conditional low-vol tilt on `regime_switch` gives up more
+  return/Sharpe (0.81 vs 0.83) than the ~1pp of drawdown it saves. Poor exchange rate.
+
+**Net:** `regime_switch` is the robust ceiling for price+SUE legs on large-caps; the genuine
+remaining power is the validated EVENT edge (SUE) used at its native cadence/freshness, not
+more price axes. The honest invariants and the NEUTRAL gate (badge, not rank) are unchanged.

@@ -6,11 +6,11 @@
   "gap_5y": -0.1520446880070082,
   "priced_90d": 102,
   "spac_pct_90d": 50,
-  "upcoming_n": 5,
+  "upcoming_n": 4,
   "verdict": "trails",
   "lockups_approaching": 12,
-  "lockups_just_expired": 13,
-  "next_lockup": "FJET",
-  "next_lockup_date": "2026-06-16",
-  "built": "2026-06-16 17:15 UTC"
+  "lockups_just_expired": 14,
+  "next_lockup": "BUDA",
+  "next_lockup_date": "2026-07-07",
+  "built": "2026-06-17 03:41 UTC"
 }

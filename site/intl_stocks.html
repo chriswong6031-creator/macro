@@ -1,0 +1,1432 @@
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><span class="l-en">International Economies</span><span class="l-zh">国际经济体</span> — 2026-06-16</title>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system, "Segoe UI", Roboto, Helvetica, sans-serif; margin: 0; padding: 18px; }
+  @media (min-width: 1100px) { body { padding: 24px max(36px, calc((100vw - 1560px) / 2)); } }
+  html[data-lang="zh"] body { font-family: "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",-apple-system,sans-serif; }
+  a { text-decoration: none; color: var(--link); }
+  h1 { font-size: 21px; margin: 0 0 2px; } h3 { font-size: 13px; margin: 0 0 8px; }
+  h2 { font-size: 13px; margin: 0 0 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 11px; padding: 15px 17px; margin-bottom: 14px; }
+  .muted { color: var(--muted); } .small { font-size: 12px; } .stale { color: var(--muted); font-size: 10px; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .pos { color: var(--up); } .neg { color: var(--down); }
+  .chip { display:inline-block; padding:2px 8px; border-radius:8px; font-size:11px; font-weight:700; background:var(--panel2); border:1px solid var(--line); }
+  .chip.warn { background:color-mix(in srgb,var(--down) 14%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 36%,transparent); }
+  .chip.caut { background:color-mix(in srgb,#d4a017 16%,transparent); color:#d4a017; border-color:color-mix(in srgb,#d4a017 38%,transparent); }
+  .chip.ok { background:color-mix(in srgb,var(--up) 14%,transparent); color:var(--up); border-color:color-mix(in srgb,var(--up) 34%,transparent); }
+  /* quad chip */
+  .quad { display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:9px; font-weight:800; font-size:12px; color:#fff; }
+  .q-Q1 { background:#2e9e4f; } .q-Q2 { background:#d4a017; } .q-Q3 { background:#d04545; } .q-Q4 { background:#3f78d8; }
+  .qdot { width:9px;height:9px;border-radius:50%;display:inline-block; }
+  .qd-Q1{background:#2e9e4f}.qd-Q2{background:#d4a017}.qd-Q3{background:#d04545}.qd-Q4{background:#3f78d8}
+  /* comparison grid */
+  .gridwrap { overflow-x:auto; }
+  table.cmp { border-collapse:collapse; width:100%; font-size:12.5px; min-width:1080px; }
+  table.cmp th, table.cmp td { padding:7px 9px; border-bottom:1px solid var(--line); text-align:right; white-space:nowrap; }
+  table.cmp th { color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.03em; position:sticky; top:0; background:var(--panel); }
+  table.cmp td.l, table.cmp th.l { text-align:left; }
+  table.cmp td.eco { position:sticky; left:0; background:var(--panel); font-weight:700; z-index:2; }
+  table.cmp th.eco { position:sticky; left:0; z-index:3; }
+  table.cmp tr:hover td { background:var(--panel2); }
+  table.cmp td.eco:hover, table.cmp tr:hover td.eco { background:var(--panel2); }
+  .grp { border-left:2px solid var(--line); }
+  .flg { font-size:16px; margin-right:5px; }
+  /* gauge bar */
+  .gbar { display:inline-block; width:64px; height:7px; border-radius:5px; background:var(--panel2); border:1px solid var(--line); overflow:hidden; vertical-align:middle; margin-right:6px; }
+  .gfill { display:block; height:100%; }
+  .g-low{background:var(--up)}.g-watch{background:#d4a017}.g-elevated{background:var(--down)}.g-na{background:var(--muted)}
+  /* heatmap scatter */
+  .scatter { position:relative; height:300px; border:1px solid var(--line); border-radius:10px; margin-top:8px; background:
+     linear-gradient(to right, color-mix(in srgb,#3f78d8 7%,transparent), transparent 50%, color-mix(in srgb,#d4a017 7%,transparent)),
+     linear-gradient(to top, color-mix(in srgb,#3f78d8 6%,transparent), transparent 50%, color-mix(in srgb,#2e9e4f 6%,transparent)); }
+  .scatter .axx, .scatter .axy { position:absolute; background:var(--line); }
+  .scatter .axx { left:0; right:0; top:50%; height:1px; } .scatter .axy { top:0; bottom:0; left:50%; width:1px; }
+  .scatter .ql { position:absolute; font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+  .scatter .pt { position:absolute; transform:translate(-50%,-50%); text-align:center; }
+  .scatter .pt .e { font-size:22px; line-height:1; } .scatter .pt .n { font-size:9px; color:var(--muted); }
+  /* rank bars */
+  .ranks { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; }
+  .rb { font-size:12px; padding:3px 0; display:flex; align-items:center; gap:7px; }
+  .rb .bar { flex:1; height:8px; border-radius:5px; background:var(--panel2); overflow:hidden; }
+  .rb .bf { display:block; height:100%; background:var(--link); }
+  .rb .v { width:58px; text-align:right; font-variant-numeric:tabular-nums; }
+  /* stock + sector cards */
+  .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:11px; }
+  .card { background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:11px 13px; }
+  .card .hd { display:flex; align-items:center; gap:7px; } .card .hd .tk { font-weight:800; }
+  .lad { display:inline-block; padding:2px 8px; border-radius:9px; font-weight:700; font-size:11px;
+         background:color-mix(in srgb, var(--c, var(--muted)) 16%, var(--panel)); color:color-mix(in srgb, var(--c, var(--muted)) 82%, var(--text)); }
+  .lad.up { --c:var(--up); } .lad.down { --c:var(--down); } .lad.flat { --c:var(--muted); }
+  table.sb { border-collapse:collapse; width:100%; font-size:12.5px; }
+  table.sb th, table.sb td { padding:5px 9px; border-bottom:1px solid var(--line); text-align:right; }
+  table.sb td.l, table.sb th.l { text-align:left; } table.sb th { color:var(--muted); font-weight:600; }
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:4px; }
+  .help .tip { display:none; position:absolute; bottom:150%; left:50%; transform:translateX(-50%); width:280px; background:var(--panel); border:1px solid var(--line); padding:10px 12px; border-radius:9px; z-index:60; font-size:12px; line-height:1.5; color:var(--text); text-align:left; font-weight:400; text-transform:none; letter-spacing:normal; box-shadow:var(--popover-shadow); pointer-events:none; }
+  .help:hover .tip { display:block; }
+  .caveat { font-size:11.5px; color:var(--muted); font-style:italic; }
+  .more-btn { display:inline-block; margin-top:10px; padding:5px 14px; border-radius:9px; background:var(--panel2); border:1px solid var(--line); color:var(--link); font-weight:600; font-size:12px; cursor:pointer; }
+  .hidden { display:none; }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 <span class="l-en">Home</span><span class="l-zh">首页</span></a>
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span></a>
+        <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span></a>
+        <a href="spvector.html">📐 <span class="l-en">Allocation Strategy</span><span class="l-zh">配置策略</span></a>
+        <a href="ipo.html">🆕 <span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></a>
+        <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span></a>
+        <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span></a>
+        <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span></a>
+        <a href="china_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span></a>
+        <a href="allocation_china.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="hk.html">🇭🇰 <span class="l-en">Hong Kong</span><span class="l-zh">香港</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="hk.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span></a>
+        <a href="hk_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="canada.html">🇨🇦 <span class="l-en">Canada</span><span class="l-zh">加拿大</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="canada.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span></a>
+        <a href="canada_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link active" href="intl.html">🌍 <span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a class="" href="intl.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        <a class="active" href="intl_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Cross-market standouts · sectors</span><span class="l-zh">跨市场精选 · 板块</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
+        <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span></a>
+    <a class="nav-link" href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span></a>
+  </div>
+  <div class="nav-search" data-lib="intlstockdata/index.json" data-target="intl_stock.html">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search international stocks"
+      placeholder="Search any JP / KR / TW / UK / EU stock…" data-ph-zh="搜索任意 日／韩／台／英／欧 个股…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <button data-lang="en">EN</button><button data-lang="zh">中文</button>
+    </div>
+  </div>
+</nav>
+
+<div class="panel">
+  <div class="row">
+    
+    <h1>🌍 <span class="l-en">International Stock Dashboard</span><span class="l-zh">国际股票看板</span></h1>
+    
+    <span style="flex:1"></span>
+    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-06-16 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-06-17 03:44 UTC</span>
+  </div>
+  
+  <p class="muted small" style="margin:6px 0 0"><span class="l-en">Standout names pooled from the top constituents of Japan, South Korea, Taiwan, the UK and Europe — ranked by sector-neutral residual momentum computed WITHIN each market (a relative-strength lens, not a forward-edge claim). Each name is flagged by country. Search any name from the box above.</span><span class="l-zh">汇集日本、韩国、台湾、英国与欧洲主要成分股中的精选个股 — 按各自市场内部的板块中性残差动量排名（相对强弱视角，非前瞻收益主张）。每只个股标注所属国家。可在上方搜索框查询。</span>
+    <a href="intl.html" style="color:var(--link);font-weight:600">← <span class="l-en">Macro comparison</span><span class="l-zh">宏观对比</span></a></p>
+  
+</div>
+
+
+
+<!-- ===== What to act on now (sector board) ===== -->
+<div class="panel">
+  <h2><span class="l-en">What to act on now — sector rotation</span><span class="l-zh">现在该关注什么 — 板块轮动</span> <span class="help">?<span class="tip"><span class="l-en">Region × GICS-sector equal-weight baskets built from the pooled universe constituents, ranked by 3-month relative strength. Each row is flagged by market so you know where the sector is (the buyable analogue is a country/regional sector ETF). Display-only RS — not a forward-edge claim.</span><span class="l-zh">由汇总成分股构建的 地区 × GICS 板块 等权篮子，按 3 个月相对强弱排名。每行标注所属市场（可买入的对应物为相应国家／地区的板块 ETF）。仅展示相对强弱 — 非前瞻收益主张。</span></span></span></h2>
+  
+  <table class="sb sortable">
+    <thead><tr><th>#</th><th class="l"><span class="l-en">Market</span><span class="l-zh">市场</span></th><th class="l"><span class="l-en">Sector</span><span class="l-zh">板块</span></th><th><span class="l-en">60d</span><span class="l-zh">60日</span></th><th><span class="l-en">20d</span><span class="l-zh">20日</span></th><th><span class="l-en">Trend</span><span class="l-zh">趋势</span></th><th><span class="l-en">Names</span><span class="l-zh">数量</span></th></tr></thead>
+    <tbody>
+    
+      <tr class="">
+        <td>1</td>
+        <td class="l"><span class="flg">🇰🇷</span>South Korea</td>
+        <td class="l">Information Technology</td>
+        <td class="pos">+55.3%</td>
+        <td class="pos">+21.3%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>8</td>
+      </tr>
+    
+      <tr class="">
+        <td>2</td>
+        <td class="l"><span class="flg">🇹🇼</span>Taiwan</td>
+        <td class="l">Information Technology</td>
+        <td class="pos">+51.5%</td>
+        <td class="pos">+19.6%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>34</td>
+      </tr>
+    
+      <tr class="">
+        <td>3</td>
+        <td class="l"><span class="flg">🇪🇺</span>Eurozone</td>
+        <td class="l">Information Technology</td>
+        <td class="pos">+48.6%</td>
+        <td class="pos">+16.1%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>9</td>
+      </tr>
+    
+      <tr class="">
+        <td>4</td>
+        <td class="l"><span class="flg">🇯🇵</span>Japan</td>
+        <td class="l">Information Technology</td>
+        <td class="pos">+46.5%</td>
+        <td class="pos">+22.2%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>20</td>
+      </tr>
+    
+      <tr class="">
+        <td>5</td>
+        <td class="l"><span class="flg">🇰🇷</span>South Korea</td>
+        <td class="l">Consumer Discretionary</td>
+        <td class="pos">+24.1%</td>
+        <td class="pos">+2.5%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>7</td>
+      </tr>
+    
+      <tr class="">
+        <td>6</td>
+        <td class="l"><span class="flg">🇹🇼</span>Taiwan</td>
+        <td class="l">Financials</td>
+        <td class="pos">+23.0%</td>
+        <td class="pos">+18.5%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>16</td>
+      </tr>
+    
+      <tr class="">
+        <td>7</td>
+        <td class="l"><span class="flg">🇯🇵</span>Japan</td>
+        <td class="l">Financials</td>
+        <td class="pos">+21.2%</td>
+        <td class="pos">+4.4%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>21</td>
+      </tr>
+    
+      <tr class="">
+        <td>8</td>
+        <td class="l"><span class="flg">🇪🇺</span>Eurozone</td>
+        <td class="l">Financials</td>
+        <td class="pos">+18.7%</td>
+        <td class="pos">+6.0%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>42</td>
+      </tr>
+    
+      <tr class="">
+        <td>9</td>
+        <td class="l"><span class="flg">🇯🇵</span>Japan</td>
+        <td class="l">Materials</td>
+        <td class="pos">+13.9%</td>
+        <td class="pos">+5.0%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>13</td>
+      </tr>
+    
+      <tr class="">
+        <td>10</td>
+        <td class="l"><span class="flg">🇹🇼</span>Taiwan</td>
+        <td class="l">Communication</td>
+        <td class="pos">+13.5%</td>
+        <td class="pos">+7.0%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>3</td>
+      </tr>
+    
+      <tr class="">
+        <td>11</td>
+        <td class="l"><span class="flg">🇪🇺</span>Eurozone</td>
+        <td class="l">Materials</td>
+        <td class="pos">+12.2%</td>
+        <td class="pos">+4.1%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>11</td>
+      </tr>
+    
+      <tr class="">
+        <td>12</td>
+        <td class="l"><span class="flg">🇪🇺</span>Eurozone</td>
+        <td class="l">Consumer Discretionary</td>
+        <td class="pos">+12.0%</td>
+        <td class="pos">+7.2%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>15</td>
+      </tr>
+    
+      <tr class="">
+        <td>13</td>
+        <td class="l"><span class="flg">🇰🇷</span>South Korea</td>
+        <td class="l">Industrials</td>
+        <td class="pos">+11.0%</td>
+        <td class="pos">+5.3%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>27</td>
+      </tr>
+    
+      <tr class="">
+        <td>14</td>
+        <td class="l"><span class="flg">🇬🇧</span>United Kingdom</td>
+        <td class="l">Consumer Discretionary</td>
+        <td class="pos">+10.7%</td>
+        <td class="pos">+6.6%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>13</td>
+      </tr>
+    
+      <tr class="hidden sbmore">
+        <td>15</td>
+        <td class="l"><span class="flg">🇬🇧</span>United Kingdom</td>
+        <td class="l">Financials</td>
+        <td class="pos">+10.7%</td>
+        <td class="pos">+3.3%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>24</td>
+      </tr>
+    
+      <tr class="hidden sbmore">
+        <td>16</td>
+        <td class="l"><span class="flg">🇰🇷</span>South Korea</td>
+        <td class="l">Consumer Staples</td>
+        <td class="pos">+9.9%</td>
+        <td class="neg">-4.1%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>4</td>
+      </tr>
+    
+      <tr class="hidden sbmore">
+        <td>17</td>
+        <td class="l"><span class="flg">🇪🇺</span>Eurozone</td>
+        <td class="l">Industrials</td>
+        <td class="pos">+9.8%</td>
+        <td class="pos">+4.0%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>32</td>
+      </tr>
+    
+      <tr class="hidden sbmore">
+        <td>18</td>
+        <td class="l"><span class="flg">🇹🇼</span>Taiwan</td>
+        <td class="l">Materials</td>
+        <td class="pos">+9.5%</td>
+        <td class="pos">+12.7%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>5</td>
+      </tr>
+    
+      <tr class="hidden sbmore">
+        <td>19</td>
+        <td class="l"><span class="flg">🇪🇺</span>Eurozone</td>
+        <td class="l">Health Care</td>
+        <td class="pos">+8.7%</td>
+        <td class="pos">+4.8%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>15</td>
+      </tr>
+    
+      <tr class="hidden sbmore">
+        <td>20</td>
+        <td class="l"><span class="flg">🇬🇧</span>United Kingdom</td>
+        <td class="l">Materials</td>
+        <td class="pos">+7.5%</td>
+        <td class="pos">+0.2%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>8</td>
+      </tr>
+    
+      <tr class="hidden sbmore">
+        <td>21</td>
+        <td class="l"><span class="flg">🇯🇵</span>Japan</td>
+        <td class="l">Industrials</td>
+        <td class="pos">+6.6%</td>
+        <td class="neg">-1.1%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>43</td>
+      </tr>
+    
+      <tr class="hidden sbmore">
+        <td>22</td>
+        <td class="l"><span class="flg">🇪🇺</span>Eurozone</td>
+        <td class="l">Utilities</td>
+        <td class="pos">+6.1%</td>
+        <td class="pos">+2.5%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>11</td>
+      </tr>
+    
+      <tr class="hidden sbmore">
+        <td>23</td>
+        <td class="l"><span class="flg">🇬🇧</span>United Kingdom</td>
+        <td class="l">Energy</td>
+        <td class="pos">+6.1%</td>
+        <td class="neg">-0.1%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>3</td>
+      </tr>
+    
+      <tr class="hidden sbmore">
+        <td>24</td>
+        <td class="l"><span class="flg">🇪🇺</span>Eurozone</td>
+        <td class="l">Consumer Staples</td>
+        <td class="pos">+5.0%</td>
+        <td class="pos">+3.6%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>9</td>
+      </tr>
+    
+      <tr class="hidden sbmore">
+        <td>25</td>
+        <td class="l"><span class="flg">🇬🇧</span>United Kingdom</td>
+        <td class="l">Real Estate</td>
+        <td class="pos">+5.0%</td>
+        <td class="pos">+7.8%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>5</td>
+      </tr>
+    
+      <tr class="hidden sbmore">
+        <td>26</td>
+        <td class="l"><span class="flg">🇰🇷</span>South Korea</td>
+        <td class="l">Energy</td>
+        <td class="pos">+4.6%</td>
+        <td class="neg">-4.4%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>3</td>
+      </tr>
+    
+      <tr class="hidden sbmore">
+        <td>27</td>
+        <td class="l"><span class="flg">🇬🇧</span>United Kingdom</td>
+        <td class="l">Industrials</td>
+        <td class="pos">+4.5%</td>
+        <td class="pos">+4.6%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>17</td>
+      </tr>
+    
+      <tr class="hidden sbmore">
+        <td>28</td>
+        <td class="l"><span class="flg">🇹🇼</span>Taiwan</td>
+        <td class="l">Industrials</td>
+        <td class="pos">+4.2%</td>
+        <td class="pos">+4.3%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>7</td>
+      </tr>
+    
+      <tr class="hidden sbmore">
+        <td>29</td>
+        <td class="l"><span class="flg">🇪🇺</span>Eurozone</td>
+        <td class="l">Communication</td>
+        <td class="pos">+3.6%</td>
+        <td class="neg">-1.4%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>9</td>
+      </tr>
+    
+      <tr class="hidden sbmore">
+        <td>30</td>
+        <td class="l"><span class="flg">🇯🇵</span>Japan</td>
+        <td class="l">Consumer Discretionary</td>
+        <td class="pos">+3.2%</td>
+        <td class="pos">+0.8%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>25</td>
+      </tr>
+    
+      <tr class="hidden sbmore">
+        <td>31</td>
+        <td class="l"><span class="flg">🇰🇷</span>South Korea</td>
+        <td class="l">Financials</td>
+        <td class="pos">+3.1%</td>
+        <td class="pos">+6.9%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>13</td>
+      </tr>
+    
+      <tr class="hidden sbmore">
+        <td>32</td>
+        <td class="l"><span class="flg">🇬🇧</span>United Kingdom</td>
+        <td class="l">Communication</td>
+        <td class="pos">+1.6%</td>
+        <td class="pos">+3.4%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>6</td>
+      </tr>
+    
+      <tr class="hidden sbmore">
+        <td>33</td>
+        <td class="l"><span class="flg">🇰🇷</span>South Korea</td>
+        <td class="l">Communication</td>
+        <td class="pos">+1.6%</td>
+        <td class="pos">+3.2%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>6</td>
+      </tr>
+    
+      <tr class="hidden sbmore">
+        <td>34</td>
+        <td class="l"><span class="flg">🇯🇵</span>Japan</td>
+        <td class="l">Consumer Staples</td>
+        <td class="neg">-1.0%</td>
+        <td class="neg">-3.5%</td>
+        <td><span class="chip"><span class="l-en">down</span><span class="l-zh">下</span></span></td>
+        <td>11</td>
+      </tr>
+    
+      <tr class="hidden sbmore">
+        <td>35</td>
+        <td class="l"><span class="flg">🇬🇧</span>United Kingdom</td>
+        <td class="l">Consumer Staples</td>
+        <td class="neg">-1.2%</td>
+        <td class="pos">+4.9%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>11</td>
+      </tr>
+    
+      <tr class="hidden sbmore">
+        <td>36</td>
+        <td class="l"><span class="flg">🇯🇵</span>Japan</td>
+        <td class="l">Communication</td>
+        <td class="neg">-1.9%</td>
+        <td class="neg">-1.8%</td>
+        <td><span class="chip"><span class="l-en">down</span><span class="l-zh">下</span></span></td>
+        <td>10</td>
+      </tr>
+    
+      <tr class="hidden sbmore">
+        <td>37</td>
+        <td class="l"><span class="flg">🇯🇵</span>Japan</td>
+        <td class="l">Utilities</td>
+        <td class="neg">-4.2%</td>
+        <td class="neg">-3.5%</td>
+        <td><span class="chip"><span class="l-en">down</span><span class="l-zh">下</span></span></td>
+        <td>4</td>
+      </tr>
+    
+      <tr class="hidden sbmore">
+        <td>38</td>
+        <td class="l"><span class="flg">🇯🇵</span>Japan</td>
+        <td class="l">Health Care</td>
+        <td class="neg">-4.6%</td>
+        <td class="neg">-6.6%</td>
+        <td><span class="chip"><span class="l-en">down</span><span class="l-zh">下</span></span></td>
+        <td>11</td>
+      </tr>
+    
+      <tr class="hidden sbmore">
+        <td>39</td>
+        <td class="l"><span class="flg">🇪🇺</span>Eurozone</td>
+        <td class="l">Energy</td>
+        <td class="neg">-6.1%</td>
+        <td class="neg">-8.3%</td>
+        <td><span class="chip ok"><span class="l-en">up</span><span class="l-zh">上</span></span></td>
+        <td>5</td>
+      </tr>
+    
+      <tr class="hidden sbmore">
+        <td>40</td>
+        <td class="l"><span class="flg">🇬🇧</span>United Kingdom</td>
+        <td class="l">Health Care</td>
+        <td class="neg">-6.9%</td>
+        <td class="pos">+0.1%</td>
+        <td><span class="chip"><span class="l-en">down</span><span class="l-zh">下</span></span></td>
+        <td>5</td>
+      </tr>
+    
+      <tr class="hidden sbmore">
+        <td>41</td>
+        <td class="l"><span class="flg">🇯🇵</span>Japan</td>
+        <td class="l">Energy</td>
+        <td class="neg">-8.8%</td>
+        <td class="neg">-10.4%</td>
+        <td><span class="chip"><span class="l-en">down</span><span class="l-zh">下</span></span></td>
+        <td>3</td>
+      </tr>
+    
+      <tr class="hidden sbmore">
+        <td>42</td>
+        <td class="l"><span class="flg">🇰🇷</span>South Korea</td>
+        <td class="l">Health Care</td>
+        <td class="neg">-9.3%</td>
+        <td class="neg">-5.6%</td>
+        <td><span class="chip"><span class="l-en">down</span><span class="l-zh">下</span></span></td>
+        <td>6</td>
+      </tr>
+    
+      <tr class="hidden sbmore">
+        <td>43</td>
+        <td class="l"><span class="flg">🇬🇧</span>United Kingdom</td>
+        <td class="l">Utilities</td>
+        <td class="neg">-9.7%</td>
+        <td class="neg">-0.3%</td>
+        <td><span class="chip"><span class="l-en">down</span><span class="l-zh">下</span></span></td>
+        <td>5</td>
+      </tr>
+    
+      <tr class="hidden sbmore">
+        <td>44</td>
+        <td class="l"><span class="flg">🇯🇵</span>Japan</td>
+        <td class="l">Real Estate</td>
+        <td class="neg">-11.2%</td>
+        <td class="neg">-4.1%</td>
+        <td><span class="chip"><span class="l-en">down</span><span class="l-zh">下</span></span></td>
+        <td>7</td>
+      </tr>
+    
+    </tbody>
+  </table>
+  <button class="more-btn" data-more="sbmore"><span class="l-en">Show all</span><span class="l-zh">显示全部</span> (44)</button>
+  
+</div>
+
+<!-- ===== Standout stocks ===== -->
+<div class="panel">
+  <h2><span class="l-en">Standout individual stocks</span><span class="l-zh">个股精选</span> <span class="help">?<span class="tip"><span class="l-en">Pooled from every market top constituents, ranked by sector-neutral residual momentum computed within each name own market (alpha-led, with the cycle entry as timing). Flagged by country. A relative-strength lens — not a forward-edge claim.</span><span class="l-zh">汇集各市场主要成分股，按各自市场内部的板块中性残差动量排名（阿尔法主导，周期入场为时机）。标注国家。相对强弱视角 — 非前瞻收益主张。</span></span></span></h2>
+  
+  
+  <div class="cards">
+    
+    <a class="card " href="intl_stock.html#4004.T">
+      <div class="hd"><span class="flg">🇯🇵</span><span class="tk">4004.T</span>
+        <span style="flex:1"></span>
+        <span class="lad caution">UNCONFIRMED TURN</span></div>
+      <div class="muted small" style="margin:3px 0">Resonac Holdings · Materials</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,36.3 3.8,37.7 7.6,37.8 11.4,39.3 15.2,36.4 19.0,37.4 22.9,40.0 26.7,39.5 30.5,38.8 34.3,38.0 38.1,38.8 41.9,39.9 45.7,42.0 49.5,38.9 53.3,39.5 57.1,37.0 61.0,35.2 64.8,35.4 68.6,32.2 72.4,31.3 76.2,30.1 80.0,30.4 83.8,29.8 87.6,31.8 91.4,30.8 95.2,33.2 99.0,33.1 102.9,30.3 106.7,26.6 110.5,28.9 114.3,28.9 118.1,28.1 121.9,27.6 125.7,27.4 129.5,28.0 133.3,22.9 137.1,21.5 141.0,18.7 144.8,15.5 148.6,15.5 152.4,12.6 156.2,17.5 160.0,19.2 163.8,20.5 167.6,21.8 171.4,17.2 175.2,14.8 179.0,10.1 182.9,11.3 186.7,11.2 190.5,13.2 194.3,12.5 198.1,13.5 201.9,15.5 205.7,12.6 209.5,15.3 213.3,17.1 217.1,21.6 221.0,19.6 224.8,23.7 228.6,20.3 232.4,18.4 236.2,13.6 240.0,12.7 240,42" fill="var(--muted)" opacity="0.12" stroke="none"/><polyline points="0.0,36.3 3.8,37.7 7.6,37.8 11.4,39.3 15.2,36.4 19.0,37.4 22.9,40.0 26.7,39.5 30.5,38.8 34.3,38.0 38.1,38.8 41.9,39.9 45.7,42.0 49.5,38.9 53.3,39.5 57.1,37.0 61.0,35.2 64.8,35.4 68.6,32.2 72.4,31.3 76.2,30.1 80.0,30.4 83.8,29.8 87.6,31.8 91.4,30.8 95.2,33.2 99.0,33.1 102.9,30.3 106.7,26.6 110.5,28.9 114.3,28.9 118.1,28.1 121.9,27.6 125.7,27.4 129.5,28.0 133.3,22.9 137.1,21.5 141.0,18.7 144.8,15.5 148.6,15.5 152.4,12.6 156.2,17.5 160.0,19.2 163.8,20.5 167.6,21.8 171.4,17.2 175.2,14.8 179.0,10.1 182.9,11.3 186.7,11.2 190.5,13.2 194.3,12.5 198.1,13.5 201.9,15.5 205.7,12.6 209.5,15.3 213.3,17.1 217.1,21.6 221.0,19.6 224.8,23.7 228.6,20.3 232.4,18.4 236.2,13.6 240.0,12.7" fill="none" stroke="var(--muted)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="12.7" r="2.6" fill="var(--muted)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+3.00</b></span>
+        <span class="muted">18650.0</span>
+        <span class="muted">-4% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card " href="intl_stock.html#5706.T">
+      <div class="hd"><span class="flg">🇯🇵</span><span class="tk">5706.T</span>
+        <span style="flex:1"></span>
+        <span class="lad caution">UNCONFIRMED TURN</span></div>
+      <div class="muted small" style="margin:3px 0">Mitsui Kinzoku Limited Ltd · Materials</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,38.3 3.8,38.0 7.6,37.9 11.4,39.7 15.2,37.0 19.0,38.5 22.9,40.8 26.7,39.7 30.5,37.9 34.3,38.8 38.1,38.3 41.9,40.2 45.7,42.0 49.5,38.8 53.3,40.1 57.1,37.9 61.0,37.3 64.8,37.8 68.6,33.7 72.4,34.0 76.2,31.1 80.0,32.0 83.8,29.9 87.6,32.9 91.4,30.5 95.2,31.9 99.0,33.2 102.9,30.9 106.7,29.9 110.5,31.6 114.3,29.4 118.1,28.6 121.9,26.2 125.7,25.0 129.5,26.5 133.3,18.2 137.1,15.9 141.0,14.4 144.8,14.9 148.6,10.1 152.4,15.1 156.2,19.9 160.0,19.1 163.8,22.1 167.6,22.6 171.4,19.9 175.2,16.4 179.0,11.9 182.9,11.5 186.7,13.8 190.5,17.4 194.3,14.0 198.1,11.3 201.9,16.4 205.7,18.8 209.5,20.6 213.3,22.5 217.1,26.2 221.0,28.4 224.8,31.4 228.6,31.0 232.4,23.2 236.2,22.2 240.0,18.4 240,42" fill="var(--muted)" opacity="0.12" stroke="none"/><polyline points="0.0,38.3 3.8,38.0 7.6,37.9 11.4,39.7 15.2,37.0 19.0,38.5 22.9,40.8 26.7,39.7 30.5,37.9 34.3,38.8 38.1,38.3 41.9,40.2 45.7,42.0 49.5,38.8 53.3,40.1 57.1,37.9 61.0,37.3 64.8,37.8 68.6,33.7 72.4,34.0 76.2,31.1 80.0,32.0 83.8,29.9 87.6,32.9 91.4,30.5 95.2,31.9 99.0,33.2 102.9,30.9 106.7,29.9 110.5,31.6 114.3,29.4 118.1,28.6 121.9,26.2 125.7,25.0 129.5,26.5 133.3,18.2 137.1,15.9 141.0,14.4 144.8,14.9 148.6,10.1 152.4,15.1 156.2,19.9 160.0,19.1 163.8,22.1 167.6,22.6 171.4,19.9 175.2,16.4 179.0,11.9 182.9,11.5 186.7,13.8 190.5,17.4 194.3,14.0 198.1,11.3 201.9,16.4 205.7,18.8 209.5,20.6 213.3,22.5 217.1,26.2 221.0,28.4 224.8,31.4 228.6,31.0 232.4,23.2 236.2,22.2 240.0,18.4" fill="none" stroke="var(--muted)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="18.4" r="2.6" fill="var(--muted)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+3.00</b></span>
+        <span class="muted">47900.0</span>
+        <span class="muted">-13% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card " href="intl_stock.html#285A.T">
+      <div class="hd"><span class="flg">🇯🇵</span><span class="tk">285A.T</span>
+        <span style="flex:1"></span>
+        <span class="lad up">NEARING A HIGH</span></div>
+      <div class="muted small" style="margin:3px 0">Kioxia Holdings Corp · Information Technology</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,41.1 3.8,41.2 7.6,40.6 11.4,41.0 15.2,40.2 19.0,40.7 22.9,41.0 26.7,41.2 30.5,40.6 34.3,41.1 38.1,41.5 41.9,41.6 45.7,42.0 49.5,40.9 53.3,41.2 57.1,40.9 61.0,40.5 64.8,40.3 68.6,38.5 72.4,38.5 76.2,37.5 80.0,37.0 83.8,35.5 87.6,36.6 91.4,36.0 95.2,37.3 99.0,37.3 102.9,36.4 106.7,35.6 110.5,35.3 114.3,35.7 118.1,35.3 121.9,35.0 125.7,34.5 129.5,34.9 133.3,32.1 137.1,31.6 141.0,31.0 144.8,31.0 148.6,29.2 152.4,30.0 156.2,31.6 160.0,28.8 163.8,29.5 167.6,28.8 171.4,27.2 175.2,26.3 179.0,23.1 182.9,24.3 186.7,25.1 190.5,24.8 194.3,22.9 198.1,20.2 201.9,18.1 205.7,17.9 209.5,18.4 213.3,17.9 217.1,20.4 221.0,18.6 224.8,21.0 228.6,19.0 232.4,16.6 236.2,12.7 240.0,10.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,41.1 3.8,41.2 7.6,40.6 11.4,41.0 15.2,40.2 19.0,40.7 22.9,41.0 26.7,41.2 30.5,40.6 34.3,41.1 38.1,41.5 41.9,41.6 45.7,42.0 49.5,40.9 53.3,41.2 57.1,40.9 61.0,40.5 64.8,40.3 68.6,38.5 72.4,38.5 76.2,37.5 80.0,37.0 83.8,35.5 87.6,36.6 91.4,36.0 95.2,37.3 99.0,37.3 102.9,36.4 106.7,35.6 110.5,35.3 114.3,35.7 118.1,35.3 121.9,35.0 125.7,34.5 129.5,34.9 133.3,32.1 137.1,31.6 141.0,31.0 144.8,31.0 148.6,29.2 152.4,30.0 156.2,31.6 160.0,28.8 163.8,29.5 167.6,28.8 171.4,27.2 175.2,26.3 179.0,23.1 182.9,24.3 186.7,25.1 190.5,24.8 194.3,22.9 198.1,20.2 201.9,18.1 205.7,17.9 209.5,18.4 213.3,17.9 217.1,20.4 221.0,18.6 224.8,21.0 228.6,19.0 232.4,16.6 236.2,12.7 240.0,10.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="10.1" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+2.87</b></span>
+        <span class="muted">97220.0</span>
+        <span class="muted">0% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card " href="intl_stock.html#ACS.MC">
+      <div class="hd"><span class="flg">🇪🇸</span><span class="tk">ACS.MC</span>
+        <span style="flex:1"></span>
+        <span class="lad caution">UNCONFIRMED TURN</span></div>
+      <div class="muted small" style="margin:3px 0">Acs Actividades De Construccion Y · Industrials</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,39.6 3.8,41.3 7.6,39.2 11.4,37.5 15.2,36.6 19.0,39.8 22.9,41.5 26.7,39.6 30.5,39.2 34.3,38.2 38.1,40.2 41.9,42.0 45.7,41.9 49.5,40.1 53.3,33.8 57.1,34.8 61.0,34.3 64.8,28.0 68.6,26.8 72.4,27.3 76.2,27.9 80.0,23.4 83.8,25.2 87.6,25.5 91.4,25.1 95.2,24.8 99.0,26.2 102.9,25.4 106.7,24.0 110.5,25.3 114.3,26.7 118.1,28.0 121.9,27.8 125.7,25.1 129.5,25.7 133.3,15.6 137.1,10.1 141.0,12.1 144.8,12.8 148.6,13.8 152.4,19.8 156.2,16.8 160.0,12.9 163.8,16.1 167.6,17.4 171.4,23.6 175.2,22.0 179.0,23.7 182.9,24.2 186.7,22.5 190.5,22.9 194.3,22.2 198.1,22.9 201.9,23.6 205.7,25.0 209.5,24.7 213.3,23.2 217.1,22.4 221.0,22.3 224.8,23.8 228.6,29.7 232.4,29.1 236.2,24.2 240.0,22.6 240,42" fill="var(--muted)" opacity="0.12" stroke="none"/><polyline points="0.0,39.6 3.8,41.3 7.6,39.2 11.4,37.5 15.2,36.6 19.0,39.8 22.9,41.5 26.7,39.6 30.5,39.2 34.3,38.2 38.1,40.2 41.9,42.0 45.7,41.9 49.5,40.1 53.3,33.8 57.1,34.8 61.0,34.3 64.8,28.0 68.6,26.8 72.4,27.3 76.2,27.9 80.0,23.4 83.8,25.2 87.6,25.5 91.4,25.1 95.2,24.8 99.0,26.2 102.9,25.4 106.7,24.0 110.5,25.3 114.3,26.7 118.1,28.0 121.9,27.8 125.7,25.1 129.5,25.7 133.3,15.6 137.1,10.1 141.0,12.1 144.8,12.8 148.6,13.8 152.4,19.8 156.2,16.8 160.0,12.9 163.8,16.1 167.6,17.4 171.4,23.6 175.2,22.0 179.0,23.7 182.9,24.2 186.7,22.5 190.5,22.9 194.3,22.2 198.1,22.9 201.9,23.6 205.7,25.0 209.5,24.7 213.3,23.2 217.1,22.4 221.0,22.3 224.8,23.8 228.6,29.7 232.4,29.1 236.2,24.2 240.0,22.6" fill="none" stroke="var(--muted)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="22.6" r="2.6" fill="var(--muted)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+2.71</b></span>
+        <span class="muted">125.5</span>
+        <span class="muted">-11% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card " href="intl_stock.html#5801.T">
+      <div class="hd"><span class="flg">🇯🇵</span><span class="tk">5801.T</span>
+        <span style="flex:1"></span>
+        <span class="lad caution">UNCONFIRMED TURN</span></div>
+      <div class="muted small" style="margin:3px 0">Furukawa Electric Ltd · Industrials</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,40.6 3.8,38.9 7.6,40.1 11.4,42.0 15.2,40.8 19.0,40.1 22.9,41.8 26.7,41.4 30.5,38.3 34.3,37.4 38.1,38.7 41.9,38.4 45.7,40.5 49.5,36.9 53.3,37.0 57.1,33.7 61.0,32.2 64.8,33.0 68.6,26.8 72.4,25.1 76.2,24.0 80.0,24.5 83.8,23.0 87.6,25.5 91.4,24.1 95.2,24.8 99.0,26.6 102.9,25.5 106.7,25.7 110.5,27.2 114.3,26.8 118.1,27.1 121.9,26.8 125.7,27.3 129.5,28.5 133.3,23.5 137.1,24.9 141.0,26.3 144.8,19.5 148.6,12.0 152.4,12.9 156.2,15.6 160.0,15.2 163.8,19.7 167.6,19.1 171.4,20.6 175.2,16.4 179.0,12.1 182.9,10.1 186.7,14.0 190.5,18.0 194.3,17.9 198.1,17.9 201.9,19.0 205.7,16.9 209.5,18.9 213.3,20.8 217.1,24.5 221.0,23.3 224.8,28.6 228.6,28.9 232.4,27.6 236.2,25.8 240.0,23.0 240,42" fill="var(--muted)" opacity="0.12" stroke="none"/><polyline points="0.0,40.6 3.8,38.9 7.6,40.1 11.4,42.0 15.2,40.8 19.0,40.1 22.9,41.8 26.7,41.4 30.5,38.3 34.3,37.4 38.1,38.7 41.9,38.4 45.7,40.5 49.5,36.9 53.3,37.0 57.1,33.7 61.0,32.2 64.8,33.0 68.6,26.8 72.4,25.1 76.2,24.0 80.0,24.5 83.8,23.0 87.6,25.5 91.4,24.1 95.2,24.8 99.0,26.6 102.9,25.5 106.7,25.7 110.5,27.2 114.3,26.8 118.1,27.1 121.9,26.8 125.7,27.3 129.5,28.5 133.3,23.5 137.1,24.9 141.0,26.3 144.8,19.5 148.6,12.0 152.4,12.9 156.2,15.6 160.0,15.2 163.8,19.7 167.6,19.1 171.4,20.6 175.2,16.4 179.0,12.1 182.9,10.1 186.7,14.0 190.5,18.0 194.3,17.9 198.1,17.9 201.9,19.0 205.7,16.9 209.5,18.9 213.3,20.8 217.1,24.5 221.0,23.3 224.8,28.6 228.6,28.9 232.4,27.6 236.2,25.8 240.0,23.0" fill="none" stroke="var(--muted)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="23.0" r="2.6" fill="var(--muted)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+2.39</b></span>
+        <span class="muted">46800.0</span>
+        <span class="muted">-22% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card " href="intl_stock.html#017670.KS">
+      <div class="hd"><span class="flg">🇰🇷</span><span class="tk">017670.KS</span>
+        <span style="flex:1"></span>
+        <span class="lad down">NEARING A LOW</span></div>
+      <div class="muted small" style="margin:3px 0">Sk Telecom Ltd · Communication</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,41.5 3.8,40.7 7.6,38.6 11.4,37.7 15.2,39.5 19.0,39.2 22.9,42.0 26.7,40.5 30.5,38.6 34.3,38.4 38.1,38.4 41.9,39.5 45.7,40.7 49.5,39.4 53.3,39.8 57.1,37.9 61.0,38.2 64.8,37.5 68.6,32.9 72.4,30.0 76.2,30.5 80.0,30.8 83.8,28.9 87.6,27.3 91.4,28.7 95.2,27.2 99.0,28.3 102.9,25.9 106.7,26.0 110.5,26.9 114.3,26.2 118.1,27.4 121.9,28.1 125.7,28.9 129.5,29.2 133.3,27.8 137.1,28.9 141.0,30.3 144.8,30.2 148.6,27.3 152.4,24.1 156.2,22.6 160.0,24.5 163.8,25.4 167.6,25.9 171.4,27.6 175.2,27.3 179.0,24.5 182.9,24.5 186.7,24.9 190.5,25.9 194.3,27.6 198.1,25.3 201.9,18.1 205.7,10.1 209.5,20.2 213.3,21.7 217.1,21.5 221.0,20.7 224.8,22.1 228.6,25.7 232.4,23.8 236.2,22.3 240.0,24.9 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,41.5 3.8,40.7 7.6,38.6 11.4,37.7 15.2,39.5 19.0,39.2 22.9,42.0 26.7,40.5 30.5,38.6 34.3,38.4 38.1,38.4 41.9,39.5 45.7,40.7 49.5,39.4 53.3,39.8 57.1,37.9 61.0,38.2 64.8,37.5 68.6,32.9 72.4,30.0 76.2,30.5 80.0,30.8 83.8,28.9 87.6,27.3 91.4,28.7 95.2,27.2 99.0,28.3 102.9,25.9 106.7,26.0 110.5,26.9 114.3,26.2 118.1,27.4 121.9,28.1 125.7,28.9 129.5,29.2 133.3,27.8 137.1,28.9 141.0,30.3 144.8,30.2 148.6,27.3 152.4,24.1 156.2,22.6 160.0,24.5 163.8,25.4 167.6,25.9 171.4,27.6 175.2,27.3 179.0,24.5 182.9,24.5 186.7,24.9 190.5,25.9 194.3,27.6 198.1,25.3 201.9,18.1 205.7,10.1 209.5,20.2 213.3,21.7 217.1,21.5 221.0,20.7 224.8,22.1 228.6,25.7 232.4,23.8 236.2,22.3 240.0,24.9" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="24.9" r="2.6" fill="var(--down)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+2.39</b></span>
+        <span class="muted">101200.0</span>
+        <span class="muted">-19% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card " href="intl_stock.html#PRY.MI">
+      <div class="hd"><span class="flg">🇮🇹</span><span class="tk">PRY.MI</span>
+        <span style="flex:1"></span>
+        <span class="lad caution">UNCONFIRMED TURN</span></div>
+      <div class="muted small" style="margin:3px 0">Prysmian · Industrials</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,39.8 3.8,40.0 7.6,39.9 11.4,38.9 15.2,41.6 19.0,42.0 22.9,41.5 26.7,41.5 30.5,39.8 34.3,41.0 38.1,41.9 41.9,41.5 45.7,39.6 49.5,36.7 53.3,36.6 57.1,36.6 61.0,31.5 64.8,31.2 68.6,29.1 72.4,29.2 76.2,28.0 80.0,28.3 83.8,28.5 87.6,28.2 91.4,28.4 95.2,28.9 99.0,28.0 102.9,27.3 106.7,24.9 110.5,26.3 114.3,27.0 118.1,26.4 121.9,24.6 125.7,25.4 129.5,18.7 133.3,16.6 137.1,16.7 141.0,12.5 144.8,10.1 148.6,14.1 152.4,11.2 156.2,10.4 160.0,12.0 163.8,14.6 167.6,18.3 171.4,16.3 175.2,13.9 179.0,13.6 182.9,12.0 186.7,13.4 190.5,15.3 194.3,13.4 198.1,14.5 201.9,13.9 205.7,11.2 209.5,11.5 213.3,13.2 217.1,15.9 221.0,14.2 224.8,17.3 228.6,20.4 232.4,17.1 236.2,16.6 240.0,15.8 240,42" fill="var(--muted)" opacity="0.12" stroke="none"/><polyline points="0.0,39.8 3.8,40.0 7.6,39.9 11.4,38.9 15.2,41.6 19.0,42.0 22.9,41.5 26.7,41.5 30.5,39.8 34.3,41.0 38.1,41.9 41.9,41.5 45.7,39.6 49.5,36.7 53.3,36.6 57.1,36.6 61.0,31.5 64.8,31.2 68.6,29.1 72.4,29.2 76.2,28.0 80.0,28.3 83.8,28.5 87.6,28.2 91.4,28.4 95.2,28.9 99.0,28.0 102.9,27.3 106.7,24.9 110.5,26.3 114.3,27.0 118.1,26.4 121.9,24.6 125.7,25.4 129.5,18.7 133.3,16.6 137.1,16.7 141.0,12.5 144.8,10.1 148.6,14.1 152.4,11.2 156.2,10.4 160.0,12.0 163.8,14.6 167.6,18.3 171.4,16.3 175.2,13.9 179.0,13.6 182.9,12.0 186.7,13.4 190.5,15.3 194.3,13.4 198.1,14.5 201.9,13.9 205.7,11.2 209.5,11.5 213.3,13.2 217.1,15.9 221.0,14.2 224.8,17.3 228.6,20.4 232.4,17.1 236.2,16.6 240.0,15.8" fill="none" stroke="var(--muted)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="15.8" r="2.6" fill="var(--muted)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+2.17</b></span>
+        <span class="muted">145.55</span>
+        <span class="muted">-7% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card " href="intl_stock.html#6752.T">
+      <div class="hd"><span class="flg">🇯🇵</span><span class="tk">6752.T</span>
+        <span style="flex:1"></span>
+        <span class="lad up">UPTREND</span></div>
+      <div class="muted small" style="margin:3px 0">Panasonic Holdings Corp · Consumer Discretionary</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,39.9 3.8,39.9 7.6,40.7 11.4,40.0 15.2,39.1 19.0,40.1 22.9,42.0 26.7,41.0 30.5,39.5 34.3,38.2 38.1,38.7 41.9,39.7 45.7,40.0 49.5,36.2 53.3,36.8 57.1,37.4 61.0,36.0 64.8,34.9 68.6,32.5 72.4,33.1 76.2,34.4 80.0,34.0 83.8,33.3 87.6,33.1 91.4,31.7 95.2,33.7 99.0,32.0 102.9,31.2 106.7,31.9 110.5,33.5 114.3,34.1 118.1,29.5 121.9,30.4 125.7,27.5 129.5,25.0 133.3,24.5 137.1,25.2 141.0,24.8 144.8,23.4 148.6,26.0 152.4,24.0 156.2,25.7 160.0,24.5 163.8,24.4 167.6,27.4 171.4,23.1 175.2,21.3 179.0,20.1 182.9,19.3 186.7,20.1 190.5,20.6 194.3,17.4 198.1,19.5 201.9,19.5 205.7,13.0 209.5,15.4 213.3,16.3 217.1,20.0 221.0,12.9 224.8,16.3 228.6,16.1 232.4,15.4 236.2,11.1 240.0,10.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,39.9 3.8,39.9 7.6,40.7 11.4,40.0 15.2,39.1 19.0,40.1 22.9,42.0 26.7,41.0 30.5,39.5 34.3,38.2 38.1,38.7 41.9,39.7 45.7,40.0 49.5,36.2 53.3,36.8 57.1,37.4 61.0,36.0 64.8,34.9 68.6,32.5 72.4,33.1 76.2,34.4 80.0,34.0 83.8,33.3 87.6,33.1 91.4,31.7 95.2,33.7 99.0,32.0 102.9,31.2 106.7,31.9 110.5,33.5 114.3,34.1 118.1,29.5 121.9,30.4 125.7,27.5 129.5,25.0 133.3,24.5 137.1,25.2 141.0,24.8 144.8,23.4 148.6,26.0 152.4,24.0 156.2,25.7 160.0,24.5 163.8,24.4 167.6,27.4 171.4,23.1 175.2,21.3 179.0,20.1 182.9,19.3 186.7,20.1 190.5,20.6 194.3,17.4 198.1,19.5 201.9,19.5 205.7,13.0 209.5,15.4 213.3,16.3 217.1,20.0 221.0,12.9 224.8,16.3 228.6,16.1 232.4,15.4 236.2,11.1 240.0,10.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="10.1" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+2.16</b></span>
+        <span class="muted">4062.0</span>
+        <span class="muted">0% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card " href="intl_stock.html#278470.KS">
+      <div class="hd"><span class="flg">🇰🇷</span><span class="tk">278470.KS</span>
+        <span style="flex:1"></span>
+        <span class="lad caution">UNCONFIRMED TURN</span></div>
+      <div class="muted small" style="margin:3px 0">Apr Ltd · Consumer Staples</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,35.1 3.8,38.1 7.6,33.8 11.4,31.0 15.2,29.5 19.0,31.5 22.9,38.9 26.7,37.2 30.5,38.1 34.3,42.0 38.1,38.4 41.9,38.3 45.7,36.0 49.5,34.6 53.3,35.4 57.1,38.1 61.0,36.2 64.8,40.0 68.6,36.3 72.4,29.9 76.2,24.1 80.0,22.7 83.8,25.6 87.6,19.8 91.4,19.5 95.2,18.5 99.0,19.5 102.9,20.5 106.7,15.4 110.5,15.0 114.3,12.0 118.1,12.2 121.9,10.1 125.7,11.8 129.5,17.4 133.3,16.6 137.1,17.9 141.0,22.3 144.8,15.4 148.6,14.5 152.4,19.3 156.2,22.2 160.0,17.3 163.8,21.8 167.6,22.2 171.4,23.1 175.2,24.7 179.0,22.7 182.9,24.5 186.7,24.8 190.5,25.8 194.3,22.5 198.1,23.6 201.9,17.0 205.7,22.4 209.5,21.5 213.3,24.9 217.1,29.8 221.0,21.5 224.8,20.4 228.6,20.4 232.4,23.9 236.2,19.2 240.0,21.2 240,42" fill="var(--muted)" opacity="0.12" stroke="none"/><polyline points="0.0,35.1 3.8,38.1 7.6,33.8 11.4,31.0 15.2,29.5 19.0,31.5 22.9,38.9 26.7,37.2 30.5,38.1 34.3,42.0 38.1,38.4 41.9,38.3 45.7,36.0 49.5,34.6 53.3,35.4 57.1,38.1 61.0,36.2 64.8,40.0 68.6,36.3 72.4,29.9 76.2,24.1 80.0,22.7 83.8,25.6 87.6,19.8 91.4,19.5 95.2,18.5 99.0,19.5 102.9,20.5 106.7,15.4 110.5,15.0 114.3,12.0 118.1,12.2 121.9,10.1 125.7,11.8 129.5,17.4 133.3,16.6 137.1,17.9 141.0,22.3 144.8,15.4 148.6,14.5 152.4,19.3 156.2,22.2 160.0,17.3 163.8,21.8 167.6,22.2 171.4,23.1 175.2,24.7 179.0,22.7 182.9,24.5 186.7,24.8 190.5,25.8 194.3,22.5 198.1,23.6 201.9,17.0 205.7,22.4 209.5,21.5 213.3,24.9 217.1,29.8 221.0,21.5 224.8,20.4 228.6,20.4 232.4,23.9 236.2,19.2 240.0,21.2" fill="none" stroke="var(--muted)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="21.2" r="2.6" fill="var(--muted)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+2.11</b></span>
+        <span class="muted">406500.0</span>
+        <span class="muted">-11% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card " href="intl_stock.html#NHY.OL">
+      <div class="hd"><span class="flg">🇳🇴</span><span class="tk">NHY.OL</span>
+        <span style="flex:1"></span>
+        <span class="lad down">NEARING A LOW</span></div>
+      <div class="muted small" style="margin:3px 0">Norsk Hydro · Materials</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,38.5 3.8,35.6 7.6,32.5 11.4,33.0 15.2,34.7 19.0,35.2 22.9,37.8 26.7,42.0 30.5,41.7 34.3,40.5 38.1,40.1 41.9,36.8 45.7,37.3 49.5,36.0 53.3,28.4 57.1,27.5 61.0,27.4 64.8,23.9 68.6,24.7 72.4,23.8 76.2,22.1 80.0,21.3 83.8,23.2 87.6,22.9 91.4,22.3 95.2,27.3 99.0,26.0 102.9,24.4 106.7,23.4 110.5,24.1 114.3,23.4 118.1,24.7 121.9,24.7 125.7,26.7 129.5,27.7 133.3,24.7 137.1,22.7 141.0,23.9 144.8,24.1 148.6,23.7 152.4,22.7 156.2,23.6 160.0,21.2 163.8,22.1 167.6,21.7 171.4,23.4 175.2,20.9 179.0,18.1 182.9,17.6 186.7,13.4 190.5,16.1 194.3,15.1 198.1,15.6 201.9,14.4 205.7,10.1 209.5,10.7 213.3,11.3 217.1,13.1 221.0,14.4 224.8,15.7 228.6,18.4 232.4,17.8 236.2,18.6 240.0,24.5 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,38.5 3.8,35.6 7.6,32.5 11.4,33.0 15.2,34.7 19.0,35.2 22.9,37.8 26.7,42.0 30.5,41.7 34.3,40.5 38.1,40.1 41.9,36.8 45.7,37.3 49.5,36.0 53.3,28.4 57.1,27.5 61.0,27.4 64.8,23.9 68.6,24.7 72.4,23.8 76.2,22.1 80.0,21.3 83.8,23.2 87.6,22.9 91.4,22.3 95.2,27.3 99.0,26.0 102.9,24.4 106.7,23.4 110.5,24.1 114.3,23.4 118.1,24.7 121.9,24.7 125.7,26.7 129.5,27.7 133.3,24.7 137.1,22.7 141.0,23.9 144.8,24.1 148.6,23.7 152.4,22.7 156.2,23.6 160.0,21.2 163.8,22.1 167.6,21.7 171.4,23.4 175.2,20.9 179.0,18.1 182.9,17.6 186.7,13.4 190.5,16.1 194.3,15.1 198.1,15.6 201.9,14.4 205.7,10.1 209.5,10.7 213.3,11.3 217.1,13.1 221.0,14.4 224.8,15.7 228.6,18.4 232.4,17.8 236.2,18.6 240.0,24.5" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="24.5" r="2.6" fill="var(--down)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+2.06</b></span>
+        <span class="muted">103.05</span>
+        <span class="muted">-14% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card " href="intl_stock.html#HLMA.L">
+      <div class="hd"><span class="flg">🇬🇧</span><span class="tk">HLMA.L</span>
+        <span style="flex:1"></span>
+        <span class="lad down">DOWNTREND</span></div>
+      <div class="muted small" style="margin:3px 0">Halma Plc · Information Technology</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,33.6 3.8,35.4 7.6,36.4 11.4,37.5 15.2,36.5 19.0,40.2 22.9,42.0 26.7,38.9 30.5,38.5 34.3,36.3 38.1,38.2 41.9,39.4 45.7,38.9 49.5,37.3 53.3,36.0 57.1,35.2 61.0,37.0 64.8,31.4 68.6,30.2 72.4,28.2 76.2,29.0 80.0,25.7 83.8,27.7 87.6,22.0 91.4,19.2 95.2,20.2 99.0,20.6 102.9,20.8 106.7,21.0 110.5,21.5 114.3,20.9 118.1,21.7 121.9,22.5 125.7,22.0 129.5,19.0 133.3,19.3 137.1,15.6 141.0,16.5 144.8,18.3 148.6,17.2 152.4,19.7 156.2,18.1 160.0,14.7 163.8,20.0 167.6,20.0 171.4,22.2 175.2,20.8 179.0,19.9 182.9,18.0 186.7,17.0 190.5,16.2 194.3,16.0 198.1,15.0 201.9,13.8 205.7,12.1 209.5,10.1 213.3,10.1 217.1,15.5 221.0,14.0 224.8,16.4 228.6,16.1 232.4,34.1 236.2,34.9 240.0,31.9 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,33.6 3.8,35.4 7.6,36.4 11.4,37.5 15.2,36.5 19.0,40.2 22.9,42.0 26.7,38.9 30.5,38.5 34.3,36.3 38.1,38.2 41.9,39.4 45.7,38.9 49.5,37.3 53.3,36.0 57.1,35.2 61.0,37.0 64.8,31.4 68.6,30.2 72.4,28.2 76.2,29.0 80.0,25.7 83.8,27.7 87.6,22.0 91.4,19.2 95.2,20.2 99.0,20.6 102.9,20.8 106.7,21.0 110.5,21.5 114.3,20.9 118.1,21.7 121.9,22.5 125.7,22.0 129.5,19.0 133.3,19.3 137.1,15.6 141.0,16.5 144.8,18.3 148.6,17.2 152.4,19.7 156.2,18.1 160.0,14.7 163.8,20.0 167.6,20.0 171.4,22.2 175.2,20.8 179.0,19.9 182.9,18.0 186.7,17.0 190.5,16.2 194.3,16.0 198.1,15.0 201.9,13.8 205.7,12.1 209.5,10.1 213.3,10.1 217.1,15.5 221.0,14.0 224.8,16.4 228.6,16.1 232.4,34.1 236.2,34.9 240.0,31.9" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="31.9" r="2.6" fill="var(--down)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+2.05</b></span>
+        <span class="muted">4018.0</span>
+        <span class="muted">-18% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card " href="intl_stock.html#PCT.L">
+      <div class="hd"><span class="flg">🇬🇧</span><span class="tk">PCT.L</span>
+        <span style="flex:1"></span>
+        <span class="lad up">BOTTOMING</span></div>
+      <div class="muted small" style="margin:3px 0">Polar Capital Technology Trust Plc · Financials</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,39.5 3.8,39.8 7.6,39.5 11.4,39.1 15.2,38.3 19.0,39.0 22.9,39.6 26.7,40.1 30.5,39.7 34.3,38.6 38.1,40.2 41.9,41.7 45.7,42.0 49.5,41.6 53.3,38.3 57.1,38.0 61.0,37.6 64.8,34.1 68.6,34.1 72.4,32.8 76.2,32.4 80.0,30.6 83.8,30.3 87.6,30.1 91.4,28.5 95.2,29.1 99.0,27.8 102.9,27.2 106.7,26.7 110.5,25.9 114.3,25.5 118.1,27.1 121.9,26.7 125.7,26.3 129.5,25.2 133.3,23.3 137.1,21.0 141.0,20.3 144.8,19.3 148.6,18.5 152.4,19.8 156.2,17.5 160.0,16.0 163.8,17.8 167.6,19.3 171.4,21.4 175.2,18.9 179.0,18.6 182.9,16.7 186.7,14.2 190.5,14.1 194.3,13.6 198.1,12.8 201.9,12.1 205.7,10.1 209.5,10.7 213.3,13.0 217.1,16.2 221.0,16.6 224.8,18.9 228.6,20.0 232.4,18.6 236.2,15.2 240.0,12.0 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,39.5 3.8,39.8 7.6,39.5 11.4,39.1 15.2,38.3 19.0,39.0 22.9,39.6 26.7,40.1 30.5,39.7 34.3,38.6 38.1,40.2 41.9,41.7 45.7,42.0 49.5,41.6 53.3,38.3 57.1,38.0 61.0,37.6 64.8,34.1 68.6,34.1 72.4,32.8 76.2,32.4 80.0,30.6 83.8,30.3 87.6,30.1 91.4,28.5 95.2,29.1 99.0,27.8 102.9,27.2 106.7,26.7 110.5,25.9 114.3,25.5 118.1,27.1 121.9,26.7 125.7,26.3 129.5,25.2 133.3,23.3 137.1,21.0 141.0,20.3 144.8,19.3 148.6,18.5 152.4,19.8 156.2,17.5 160.0,16.0 163.8,17.8 167.6,19.3 171.4,21.4 175.2,18.9 179.0,18.6 182.9,16.7 186.7,14.2 190.5,14.1 194.3,13.6 198.1,12.8 201.9,12.1 205.7,10.1 209.5,10.7 213.3,13.0 217.1,16.2 221.0,16.6 224.8,18.9 228.6,20.0 232.4,18.6 236.2,15.2 240.0,12.0" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="12.0" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+2.03</b></span>
+        <span class="muted">718.0</span>
+        <span class="muted">-2% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#TIT.MI">
+      <div class="hd"><span class="flg">🇮🇹</span><span class="tk">TIT.MI</span>
+        <span style="flex:1"></span>
+        <span class="lad up">NEARING A HIGH</span></div>
+      <div class="muted small" style="margin:3px 0">Telecom Italia · Communication</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,39.5 3.8,38.0 7.6,35.3 11.4,34.7 15.2,40.1 19.0,42.0 22.9,37.9 26.7,38.3 30.5,38.9 34.3,38.8 38.1,39.6 41.9,39.0 45.7,38.5 49.5,35.2 53.3,34.8 57.1,34.0 61.0,32.9 64.8,32.0 68.6,32.5 72.4,30.1 76.2,29.7 80.0,29.0 83.8,29.6 87.6,28.5 91.4,28.4 95.2,29.4 99.0,28.8 102.9,29.4 106.7,29.3 110.5,29.2 114.3,28.4 118.1,28.0 121.9,27.7 125.7,30.0 129.5,30.3 133.3,28.7 137.1,25.0 141.0,24.0 144.8,22.6 148.6,23.2 152.4,23.5 156.2,22.0 160.0,22.0 163.8,19.7 167.6,20.9 171.4,19.7 175.2,20.6 179.0,20.6 182.9,19.5 186.7,19.3 190.5,20.3 194.3,20.4 198.1,19.1 201.9,18.6 205.7,18.7 209.5,19.2 213.3,18.4 217.1,18.1 221.0,15.9 224.8,15.3 228.6,13.3 232.4,13.8 236.2,10.1 240.0,10.4 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,39.5 3.8,38.0 7.6,35.3 11.4,34.7 15.2,40.1 19.0,42.0 22.9,37.9 26.7,38.3 30.5,38.9 34.3,38.8 38.1,39.6 41.9,39.0 45.7,38.5 49.5,35.2 53.3,34.8 57.1,34.0 61.0,32.9 64.8,32.0 68.6,32.5 72.4,30.1 76.2,29.7 80.0,29.0 83.8,29.6 87.6,28.5 91.4,28.4 95.2,29.4 99.0,28.8 102.9,29.4 106.7,29.3 110.5,29.2 114.3,28.4 118.1,28.0 121.9,27.7 125.7,30.0 129.5,30.3 133.3,28.7 137.1,25.0 141.0,24.0 144.8,22.6 148.6,23.2 152.4,23.5 156.2,22.0 160.0,22.0 163.8,19.7 167.6,20.9 171.4,19.7 175.2,20.6 179.0,20.6 182.9,19.5 186.7,19.3 190.5,20.3 194.3,20.4 198.1,19.1 201.9,18.6 205.7,18.7 209.5,19.2 213.3,18.4 217.1,18.1 221.0,15.9 224.8,15.3 228.6,13.3 232.4,13.8 236.2,10.1 240.0,10.4" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="10.4" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+2.01</b></span>
+        <span class="muted">7.87</span>
+        <span class="muted">-0% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#3665.TW">
+      <div class="hd"><span class="flg">🇹🇼</span><span class="tk">3665.TW</span>
+        <span style="flex:1"></span>
+        <span class="lad down">NEARING A LOW</span></div>
+      <div class="muted small" style="margin:3px 0">Bizlink Holding Inc · Industrials</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,42.0 3.8,39.7 7.6,40.9 11.4,40.2 15.2,37.6 19.0,38.9 22.9,39.9 26.7,38.1 30.5,37.8 34.3,36.7 38.1,36.2 41.9,39.7 45.7,35.5 49.5,35.3 53.3,33.5 57.1,32.9 61.0,30.0 64.8,28.3 68.6,27.7 72.4,26.0 76.2,24.6 80.0,23.5 83.8,24.3 87.6,21.9 91.4,22.8 95.2,19.6 99.0,14.6 102.9,14.4 106.7,17.7 110.5,17.7 114.3,14.0 118.1,14.3 121.9,10.1 125.7,11.7 129.5,14.9 133.3,14.0 137.1,14.8 141.0,10.9 144.8,14.1 148.6,20.9 152.4,27.1 156.2,30.9 160.0,32.6 163.8,33.5 167.6,34.1 171.4,29.4 175.2,27.7 179.0,23.8 182.9,26.7 186.7,30.4 190.5,30.4 194.3,31.2 198.1,30.3 201.9,28.4 205.7,25.7 209.5,29.4 213.3,28.3 217.1,30.9 221.0,29.4 224.8,29.4 228.6,29.3 232.4,25.6 236.2,26.7 240.0,30.3 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,42.0 3.8,39.7 7.6,40.9 11.4,40.2 15.2,37.6 19.0,38.9 22.9,39.9 26.7,38.1 30.5,37.8 34.3,36.7 38.1,36.2 41.9,39.7 45.7,35.5 49.5,35.3 53.3,33.5 57.1,32.9 61.0,30.0 64.8,28.3 68.6,27.7 72.4,26.0 76.2,24.6 80.0,23.5 83.8,24.3 87.6,21.9 91.4,22.8 95.2,19.6 99.0,14.6 102.9,14.4 106.7,17.7 110.5,17.7 114.3,14.0 118.1,14.3 121.9,10.1 125.7,11.7 129.5,14.9 133.3,14.0 137.1,14.8 141.0,10.9 144.8,14.1 148.6,20.9 152.4,27.1 156.2,30.9 160.0,32.6 163.8,33.5 167.6,34.1 171.4,29.4 175.2,27.7 179.0,23.8 182.9,26.7 186.7,30.4 190.5,30.4 194.3,31.2 198.1,30.3 201.9,28.4 205.7,25.7 209.5,29.4 213.3,28.3 217.1,30.9 221.0,29.4 224.8,29.4 228.6,29.3 232.4,25.6 236.2,26.7 240.0,30.3" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="30.3" r="2.6" fill="var(--down)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.93</b></span>
+        <span class="muted">2120.0</span>
+        <span class="muted">-28% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#5803.T">
+      <div class="hd"><span class="flg">🇯🇵</span><span class="tk">5803.T</span>
+        <span style="flex:1"></span>
+        <span class="lad up">UPTREND</span></div>
+      <div class="muted small" style="margin:3px 0">Fujikura Ltd · Industrials</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,40.1 3.8,39.0 7.6,40.2 11.4,41.6 15.2,40.1 19.0,40.6 22.9,42.0 26.7,40.2 30.5,37.6 34.3,36.8 38.1,37.4 41.9,38.1 45.7,41.5 49.5,38.6 53.3,39.9 57.1,37.2 61.0,37.3 64.8,39.2 68.6,35.0 72.4,33.7 76.2,28.7 80.0,28.1 83.8,26.1 87.6,28.2 91.4,26.0 95.2,27.6 99.0,29.5 102.9,26.5 106.7,25.7 110.5,26.5 114.3,25.3 118.1,22.7 121.9,23.2 125.7,25.8 129.5,27.2 133.3,21.4 137.1,20.7 141.0,18.6 144.8,12.0 148.6,10.1 152.4,22.6 156.2,27.1 160.0,28.5 163.8,36.5 167.6,39.8 171.4,38.1 175.2,35.2 179.0,29.3 182.9,31.2 186.7,32.8 190.5,33.8 194.3,35.9 198.1,36.6 201.9,37.5 205.7,33.9 209.5,35.6 213.3,36.1 217.1,38.9 221.0,38.1 224.8,40.7 228.6,41.1 232.4,40.2 236.2,39.4 240.0,35.9 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,40.1 3.8,39.0 7.6,40.2 11.4,41.6 15.2,40.1 19.0,40.6 22.9,42.0 26.7,40.2 30.5,37.6 34.3,36.8 38.1,37.4 41.9,38.1 45.7,41.5 49.5,38.6 53.3,39.9 57.1,37.2 61.0,37.3 64.8,39.2 68.6,35.0 72.4,33.7 76.2,28.7 80.0,28.1 83.8,26.1 87.6,28.2 91.4,26.0 95.2,27.6 99.0,29.5 102.9,26.5 106.7,25.7 110.5,26.5 114.3,25.3 118.1,22.7 121.9,23.2 125.7,25.8 129.5,27.2 133.3,21.4 137.1,20.7 141.0,18.6 144.8,12.0 148.6,10.1 152.4,22.6 156.2,27.1 160.0,28.5 163.8,36.5 167.6,39.8 171.4,38.1 175.2,35.2 179.0,29.3 182.9,31.2 186.7,32.8 190.5,33.8 194.3,35.9 198.1,36.6 201.9,37.5 205.7,33.9 209.5,35.6 213.3,36.1 217.1,38.9 221.0,38.1 224.8,40.7 228.6,41.1 232.4,40.2 236.2,39.4 240.0,35.9" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="35.9" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.88</b></span>
+        <span class="muted">4771.0</span>
+        <span class="muted">-39% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#SAND.ST">
+      <div class="hd"><span class="flg">🇸🇪</span><span class="tk">SAND.ST</span>
+        <span style="flex:1"></span>
+        <span class="lad up">UPTREND</span></div>
+      <div class="muted small" style="margin:3px 0">Sandvik · Industrials</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,23.2 3.8,22.7 7.6,32.8 11.4,32.8 15.2,34.3 19.0,31.8 22.9,40.5 26.7,42.0 30.5,38.7 34.3,37.6 38.1,34.0 41.9,36.4 45.7,37.6 49.5,37.2 53.3,32.3 57.1,26.3 61.0,28.5 64.8,27.0 68.6,17.3 72.4,16.7 76.2,13.4 80.0,15.6 83.8,14.6 87.6,16.9 91.4,15.6 95.2,12.7 99.0,15.0 102.9,17.6 106.7,17.7 110.5,14.4 114.3,16.2 118.1,18.4 121.9,21.1 125.7,20.2 129.5,19.0 133.3,23.2 137.1,19.5 141.0,10.1 144.8,18.5 148.6,25.0 152.4,25.4 156.2,28.8 160.0,28.7 163.8,31.5 167.6,28.1 171.4,28.5 175.2,24.4 179.0,21.8 182.9,19.3 186.7,16.2 190.5,17.0 194.3,17.2 198.1,21.9 201.9,21.8 205.7,24.8 209.5,19.2 213.3,20.1 217.1,19.3 221.0,20.4 224.8,21.9 228.6,24.6 232.4,26.7 236.2,25.0 240.0,20.9 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,23.2 3.8,22.7 7.6,32.8 11.4,32.8 15.2,34.3 19.0,31.8 22.9,40.5 26.7,42.0 30.5,38.7 34.3,37.6 38.1,34.0 41.9,36.4 45.7,37.6 49.5,37.2 53.3,32.3 57.1,26.3 61.0,28.5 64.8,27.0 68.6,17.3 72.4,16.7 76.2,13.4 80.0,15.6 83.8,14.6 87.6,16.9 91.4,15.6 95.2,12.7 99.0,15.0 102.9,17.6 106.7,17.7 110.5,14.4 114.3,16.2 118.1,18.4 121.9,21.1 125.7,20.2 129.5,19.0 133.3,23.2 137.1,19.5 141.0,10.1 144.8,18.5 148.6,25.0 152.4,25.4 156.2,28.8 160.0,28.7 163.8,31.5 167.6,28.1 171.4,28.5 175.2,24.4 179.0,21.8 182.9,19.3 186.7,16.2 190.5,17.0 194.3,17.2 198.1,21.9 201.9,21.8 205.7,24.8 209.5,19.2 213.3,20.1 217.1,19.3 221.0,20.4 224.8,21.9 228.6,24.6 232.4,26.7 236.2,25.0 240.0,20.9" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="20.9" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.87</b></span>
+        <span class="muted">378.6</span>
+        <span class="muted">-6% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#5802.T">
+      <div class="hd"><span class="flg">🇯🇵</span><span class="tk">5802.T</span>
+        <span style="flex:1"></span>
+        <span class="lad up">BOTTOMING</span></div>
+      <div class="muted small" style="margin:3px 0">Sumitomo Electric Industries Ltd · Consumer Discretionary</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,31.3 3.8,31.2 7.6,32.5 11.4,36.1 15.2,33.3 19.0,33.7 22.9,37.8 26.7,36.2 30.5,32.2 34.3,34.0 38.1,36.3 41.9,38.5 45.7,42.0 49.5,36.9 53.3,37.9 57.1,36.2 61.0,35.4 64.8,37.4 68.6,30.9 72.4,30.4 76.2,29.4 80.0,33.2 83.8,32.3 87.6,35.3 91.4,31.9 95.2,32.9 99.0,32.9 102.9,31.0 106.7,28.7 110.5,31.6 114.3,32.7 118.1,32.4 121.9,31.7 125.7,31.7 129.5,33.3 133.3,25.1 137.1,25.3 141.0,25.8 144.8,23.3 148.6,16.9 152.4,20.7 156.2,27.1 160.0,24.9 163.8,27.9 167.6,29.7 171.4,28.6 175.2,22.3 179.0,19.8 182.9,21.7 186.7,21.2 190.5,21.6 194.3,18.0 198.1,14.6 201.9,15.5 205.7,10.1 209.5,12.9 213.3,15.5 217.1,20.5 221.0,21.1 224.8,29.1 228.6,31.3 232.4,27.2 236.2,24.0 240.0,18.6 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,31.3 3.8,31.2 7.6,32.5 11.4,36.1 15.2,33.3 19.0,33.7 22.9,37.8 26.7,36.2 30.5,32.2 34.3,34.0 38.1,36.3 41.9,38.5 45.7,42.0 49.5,36.9 53.3,37.9 57.1,36.2 61.0,35.4 64.8,37.4 68.6,30.9 72.4,30.4 76.2,29.4 80.0,33.2 83.8,32.3 87.6,35.3 91.4,31.9 95.2,32.9 99.0,32.9 102.9,31.0 106.7,28.7 110.5,31.6 114.3,32.7 118.1,32.4 121.9,31.7 125.7,31.7 129.5,33.3 133.3,25.1 137.1,25.3 141.0,25.8 144.8,23.3 148.6,16.9 152.4,20.7 156.2,27.1 160.0,24.9 163.8,27.9 167.6,29.7 171.4,28.6 175.2,22.3 179.0,19.8 182.9,21.7 186.7,21.2 190.5,21.6 194.3,18.0 198.1,14.6 201.9,15.5 205.7,10.1 209.5,12.9 213.3,15.5 217.1,20.5 221.0,21.1 224.8,29.1 228.6,31.3 232.4,27.2 236.2,24.0 240.0,18.6" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="18.6" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.86</b></span>
+        <span class="muted">12470.0</span>
+        <span class="muted">-11% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#005380.KS">
+      <div class="hd"><span class="flg">🇰🇷</span><span class="tk">005380.KS</span>
+        <span style="flex:1"></span>
+        <span class="lad caution">UNCONFIRMED TURN</span></div>
+      <div class="muted small" style="margin:3px 0">Hyundai Motor · Consumer Discretionary</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,34.6 3.8,35.7 7.6,34.1 11.4,31.7 15.2,34.1 19.0,34.6 22.9,37.9 26.7,37.2 30.5,36.2 34.3,37.4 38.1,36.9 41.9,39.5 45.7,42.0 49.5,37.6 53.3,39.9 57.1,39.4 61.0,39.6 64.8,39.1 68.6,35.5 72.4,37.4 76.2,37.4 80.0,38.6 83.8,37.2 87.6,35.5 91.4,32.8 95.2,32.4 99.0,33.5 102.9,31.6 106.7,32.1 110.5,33.0 114.3,35.0 118.1,33.8 121.9,30.6 125.7,30.5 129.5,33.1 133.3,32.3 137.1,31.1 141.0,28.9 144.8,24.6 148.6,21.2 152.4,21.2 156.2,14.5 160.0,14.3 163.8,15.6 167.6,19.4 171.4,25.5 175.2,26.8 179.0,19.1 182.9,20.2 186.7,16.7 190.5,17.5 194.3,17.7 198.1,12.9 201.9,10.1 205.7,12.3 209.5,15.3 213.3,15.3 217.1,21.7 221.0,21.7 224.8,25.5 228.6,26.0 232.4,25.0 236.2,20.8 240.0,21.7 240,42" fill="var(--muted)" opacity="0.12" stroke="none"/><polyline points="0.0,34.6 3.8,35.7 7.6,34.1 11.4,31.7 15.2,34.1 19.0,34.6 22.9,37.9 26.7,37.2 30.5,36.2 34.3,37.4 38.1,36.9 41.9,39.5 45.7,42.0 49.5,37.6 53.3,39.9 57.1,39.4 61.0,39.6 64.8,39.1 68.6,35.5 72.4,37.4 76.2,37.4 80.0,38.6 83.8,37.2 87.6,35.5 91.4,32.8 95.2,32.4 99.0,33.5 102.9,31.6 106.7,32.1 110.5,33.0 114.3,35.0 118.1,33.8 121.9,30.6 125.7,30.5 129.5,33.1 133.3,32.3 137.1,31.1 141.0,28.9 144.8,24.6 148.6,21.2 152.4,21.2 156.2,14.5 160.0,14.3 163.8,15.6 167.6,19.4 171.4,25.5 175.2,26.8 179.0,19.1 182.9,20.2 186.7,16.7 190.5,17.5 194.3,17.7 198.1,12.9 201.9,10.1 205.7,12.3 209.5,15.3 213.3,15.3 217.1,21.7 221.0,21.7 224.8,25.5 228.6,26.0 232.4,25.0 236.2,20.8 240.0,21.7" fill="none" stroke="var(--muted)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="21.7" r="2.6" fill="var(--muted)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.86</b></span>
+        <span class="muted">639000.0</span>
+        <span class="muted">-15% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#7769.TW">
+      <div class="hd"><span class="flg">🇹🇼</span><span class="tk">7769.TW</span>
+        <span style="flex:1"></span>
+        <span class="lad caution">UNCONFIRMED TURN</span></div>
+      <div class="muted small" style="margin:3px 0">Honprecision Inc · Information Technology</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,38.2 3.8,37.1 7.6,36.1 11.4,37.6 15.2,38.0 19.0,39.0 22.9,40.6 26.7,39.6 30.5,39.7 34.3,40.1 38.1,40.6 41.9,42.0 45.7,39.7 49.5,39.8 53.3,38.6 57.1,36.9 61.0,37.0 64.8,37.3 68.6,38.0 72.4,37.4 76.2,36.9 80.0,36.7 83.8,35.3 87.6,35.7 91.4,35.6 95.2,33.7 99.0,33.2 102.9,33.8 106.7,32.2 110.5,31.3 114.3,30.5 118.1,32.3 121.9,29.4 125.7,27.9 129.5,27.2 133.3,26.4 137.1,26.6 141.0,22.7 144.8,19.4 148.6,15.6 152.4,14.8 156.2,19.2 160.0,20.9 163.8,21.2 167.6,18.7 171.4,14.0 175.2,13.6 179.0,14.2 182.9,12.5 186.7,13.2 190.5,13.8 194.3,10.1 198.1,15.1 201.9,17.4 205.7,15.0 209.5,16.0 213.3,16.7 217.1,18.3 221.0,18.9 224.8,19.6 228.6,18.2 232.4,17.1 236.2,17.2 240.0,16.2 240,42" fill="var(--muted)" opacity="0.12" stroke="none"/><polyline points="0.0,38.2 3.8,37.1 7.6,36.1 11.4,37.6 15.2,38.0 19.0,39.0 22.9,40.6 26.7,39.6 30.5,39.7 34.3,40.1 38.1,40.6 41.9,42.0 45.7,39.7 49.5,39.8 53.3,38.6 57.1,36.9 61.0,37.0 64.8,37.3 68.6,38.0 72.4,37.4 76.2,36.9 80.0,36.7 83.8,35.3 87.6,35.7 91.4,35.6 95.2,33.7 99.0,33.2 102.9,33.8 106.7,32.2 110.5,31.3 114.3,30.5 118.1,32.3 121.9,29.4 125.7,27.9 129.5,27.2 133.3,26.4 137.1,26.6 141.0,22.7 144.8,19.4 148.6,15.6 152.4,14.8 156.2,19.2 160.0,20.9 163.8,21.2 167.6,18.7 171.4,14.0 175.2,13.6 179.0,14.2 182.9,12.5 186.7,13.2 190.5,13.8 194.3,10.1 198.1,15.1 201.9,17.4 205.7,15.0 209.5,16.0 213.3,16.7 217.1,18.3 221.0,18.9 224.8,19.6 228.6,18.2 232.4,17.1 236.2,17.2 240.0,16.2" fill="none" stroke="var(--muted)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="16.2" r="2.6" fill="var(--muted)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.86</b></span>
+        <span class="muted">7355.0</span>
+        <span class="muted">-11% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#298040.KS">
+      <div class="hd"><span class="flg">🇰🇷</span><span class="tk">298040.KS</span>
+        <span style="flex:1"></span>
+        <span class="lad caution">UNCONFIRMED TURN</span></div>
+      <div class="muted small" style="margin:3px 0">Hyosung Heavy Industries Corp · Industrials</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,40.0 3.8,41.1 7.6,40.7 11.4,37.9 15.2,38.5 19.0,37.8 22.9,40.0 26.7,38.4 30.5,34.1 34.3,36.0 38.1,38.7 41.9,41.3 45.7,42.0 49.5,39.1 53.3,41.1 57.1,40.5 61.0,39.4 64.8,39.7 68.6,34.9 72.4,35.7 76.2,34.8 80.0,33.0 83.8,33.3 87.6,34.4 91.4,34.1 95.2,34.2 99.0,33.8 102.9,33.9 106.7,32.7 110.5,29.9 114.3,25.7 118.1,19.9 121.9,19.4 125.7,19.3 129.5,20.3 133.3,15.6 137.1,10.1 141.0,10.1 144.8,13.1 148.6,14.1 152.4,16.1 156.2,16.1 160.0,18.7 163.8,22.8 167.6,23.0 171.4,25.3 175.2,25.4 179.0,20.1 182.9,18.9 186.7,21.5 190.5,23.8 194.3,24.2 198.1,23.7 201.9,21.8 205.7,25.8 209.5,26.6 213.3,28.2 217.1,31.0 221.0,27.0 224.8,27.4 228.6,30.2 232.4,28.3 236.2,22.7 240.0,19.8 240,42" fill="var(--muted)" opacity="0.12" stroke="none"/><polyline points="0.0,40.0 3.8,41.1 7.6,40.7 11.4,37.9 15.2,38.5 19.0,37.8 22.9,40.0 26.7,38.4 30.5,34.1 34.3,36.0 38.1,38.7 41.9,41.3 45.7,42.0 49.5,39.1 53.3,41.1 57.1,40.5 61.0,39.4 64.8,39.7 68.6,34.9 72.4,35.7 76.2,34.8 80.0,33.0 83.8,33.3 87.6,34.4 91.4,34.1 95.2,34.2 99.0,33.8 102.9,33.9 106.7,32.7 110.5,29.9 114.3,25.7 118.1,19.9 121.9,19.4 125.7,19.3 129.5,20.3 133.3,15.6 137.1,10.1 141.0,10.1 144.8,13.1 148.6,14.1 152.4,16.1 156.2,16.1 160.0,18.7 163.8,22.8 167.6,23.0 171.4,25.3 175.2,25.4 179.0,20.1 182.9,18.9 186.7,21.5 190.5,23.8 194.3,24.2 198.1,23.7 201.9,21.8 205.7,25.8 209.5,26.6 213.3,28.2 217.1,31.0 221.0,27.0 224.8,27.4 228.6,30.2 232.4,28.3 236.2,22.7 240.0,19.8" fill="none" stroke="var(--muted)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="19.8" r="2.6" fill="var(--muted)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.84</b></span>
+        <span class="muted">3946000.0</span>
+        <span class="muted">-14% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#VOD.L">
+      <div class="hd"><span class="flg">🇬🇧</span><span class="tk">VOD.L</span>
+        <span style="flex:1"></span>
+        <span class="lad up">BOTTOMING</span></div>
+      <div class="muted small" style="margin:3px 0">Vodafone Group Plc · Communication</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,41.6 3.8,38.1 7.6,37.1 11.4,33.2 15.2,38.1 19.0,42.0 22.9,41.2 26.7,41.7 30.5,35.9 34.3,34.5 38.1,33.1 41.9,35.4 45.7,29.6 49.5,27.9 53.3,27.0 57.1,23.5 61.0,22.5 64.8,17.1 68.6,15.8 72.4,16.3 76.2,20.5 80.0,22.3 83.8,21.0 87.6,20.1 91.4,25.0 95.2,19.6 99.0,27.7 102.9,25.9 106.7,20.5 110.5,20.3 114.3,22.8 118.1,23.8 121.9,24.9 125.7,18.0 129.5,14.3 133.3,20.8 137.1,15.5 141.0,17.5 144.8,14.5 148.6,10.1 152.4,31.2 156.2,23.8 160.0,21.1 163.8,34.1 167.6,30.6 171.4,28.2 175.2,26.1 179.0,31.1 182.9,32.7 186.7,35.9 190.5,33.2 194.3,32.6 198.1,32.6 201.9,32.2 205.7,31.0 209.5,27.9 213.3,34.7 217.1,35.1 221.0,31.4 224.8,36.4 228.6,29.0 232.4,26.8 236.2,21.7 240.0,29.8 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,41.6 3.8,38.1 7.6,37.1 11.4,33.2 15.2,38.1 19.0,42.0 22.9,41.2 26.7,41.7 30.5,35.9 34.3,34.5 38.1,33.1 41.9,35.4 45.7,29.6 49.5,27.9 53.3,27.0 57.1,23.5 61.0,22.5 64.8,17.1 68.6,15.8 72.4,16.3 76.2,20.5 80.0,22.3 83.8,21.0 87.6,20.1 91.4,25.0 95.2,19.6 99.0,27.7 102.9,25.9 106.7,20.5 110.5,20.3 114.3,22.8 118.1,23.8 121.9,24.9 125.7,18.0 129.5,14.3 133.3,20.8 137.1,15.5 141.0,17.5 144.8,14.5 148.6,10.1 152.4,31.2 156.2,23.8 160.0,21.1 163.8,34.1 167.6,30.6 171.4,28.2 175.2,26.1 179.0,31.1 182.9,32.7 186.7,35.9 190.5,33.2 194.3,32.6 198.1,32.6 201.9,32.2 205.7,31.0 209.5,27.9 213.3,34.7 217.1,35.1 221.0,31.4 224.8,36.4 228.6,29.0 232.4,26.8 236.2,21.7 240.0,29.8" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="29.8" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.84</b></span>
+        <span class="muted">112.5</span>
+        <span class="muted">-6% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#009150.KS">
+      <div class="hd"><span class="flg">🇰🇷</span><span class="tk">009150.KS</span>
+        <span style="flex:1"></span>
+        <span class="lad up">NEARING A HIGH</span></div>
+      <div class="muted small" style="margin:3px 0">Samsung Electro Mechanics Ltd · Information Technology</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,42.0 3.8,41.8 7.6,41.1 11.4,40.8 15.2,40.5 19.0,40.8 22.9,41.5 26.7,41.3 30.5,41.0 34.3,41.0 38.1,41.0 41.9,41.5 45.7,41.9 49.5,41.2 53.3,41.7 57.1,41.0 61.0,40.9 64.8,41.0 68.6,39.9 72.4,39.9 76.2,39.0 80.0,38.9 83.8,38.6 87.6,38.1 91.4,37.6 95.2,36.9 99.0,36.8 102.9,35.1 106.7,34.4 110.5,35.1 114.3,34.8 118.1,34.7 121.9,33.9 125.7,34.1 129.5,34.0 133.3,32.4 137.1,32.5 141.0,32.5 144.8,32.5 148.6,32.8 152.4,31.7 156.2,30.4 160.0,30.5 163.8,30.7 167.6,30.3 171.4,31.2 175.2,29.8 179.0,27.1 182.9,24.6 186.7,20.3 190.5,19.3 194.3,15.2 198.1,10.1 201.9,12.3 205.7,15.9 209.5,17.7 213.3,16.9 217.1,18.6 221.0,13.0 224.8,16.0 228.6,16.0 232.4,17.7 236.2,12.4 240.0,11.7 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,42.0 3.8,41.8 7.6,41.1 11.4,40.8 15.2,40.5 19.0,40.8 22.9,41.5 26.7,41.3 30.5,41.0 34.3,41.0 38.1,41.0 41.9,41.5 45.7,41.9 49.5,41.2 53.3,41.7 57.1,41.0 61.0,40.9 64.8,41.0 68.6,39.9 72.4,39.9 76.2,39.0 80.0,38.9 83.8,38.6 87.6,38.1 91.4,37.6 95.2,36.9 99.0,36.8 102.9,35.1 106.7,34.4 110.5,35.1 114.3,34.8 118.1,34.7 121.9,33.9 125.7,34.1 129.5,34.0 133.3,32.4 137.1,32.5 141.0,32.5 144.8,32.5 148.6,32.8 152.4,31.7 156.2,30.4 160.0,30.5 163.8,30.7 167.6,30.3 171.4,31.2 175.2,29.8 179.0,27.1 182.9,24.6 186.7,20.3 190.5,19.3 194.3,15.2 198.1,10.1 201.9,12.3 205.7,15.9 209.5,17.7 213.3,16.9 217.1,18.6 221.0,13.0 224.8,16.0 228.6,16.0 232.4,17.7 236.2,12.4 240.0,11.7" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="11.7" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.75</b></span>
+        <span class="muted">2038000.0</span>
+        <span class="muted">-4% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#2914.T">
+      <div class="hd"><span class="flg">🇯🇵</span><span class="tk">2914.T</span>
+        <span style="flex:1"></span>
+        <span class="lad up">BOTTOMING</span></div>
+      <div class="muted small" style="margin:3px 0">Japan Tobacco Inc · Consumer Staples</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,42.0 3.8,39.9 7.6,36.1 11.4,33.2 15.2,29.7 19.0,34.5 22.9,40.7 26.7,35.6 30.5,30.3 34.3,29.0 38.1,29.2 41.9,26.1 45.7,27.5 49.5,25.3 53.3,28.1 57.1,24.1 61.0,24.4 64.8,24.9 68.6,25.1 72.4,26.9 76.2,29.4 80.0,30.2 83.8,32.5 87.6,32.5 91.4,34.5 95.2,36.4 99.0,36.8 102.9,38.1 106.7,41.5 110.5,33.7 114.3,35.2 118.1,37.1 121.9,37.2 125.7,33.7 129.5,32.9 133.3,30.9 137.1,37.6 141.0,21.7 144.8,26.0 148.6,21.1 152.4,18.1 156.2,16.2 160.0,14.5 163.8,10.1 167.6,14.4 171.4,18.9 175.2,22.9 179.0,24.4 182.9,23.5 186.7,23.7 190.5,24.4 194.3,21.6 198.1,25.6 201.9,23.0 205.7,23.8 209.5,27.3 213.3,29.4 217.1,22.9 221.0,25.5 224.8,21.7 228.6,16.0 232.4,21.2 236.2,25.5 240.0,26.0 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,42.0 3.8,39.9 7.6,36.1 11.4,33.2 15.2,29.7 19.0,34.5 22.9,40.7 26.7,35.6 30.5,30.3 34.3,29.0 38.1,29.2 41.9,26.1 45.7,27.5 49.5,25.3 53.3,28.1 57.1,24.1 61.0,24.4 64.8,24.9 68.6,25.1 72.4,26.9 76.2,29.4 80.0,30.2 83.8,32.5 87.6,32.5 91.4,34.5 95.2,36.4 99.0,36.8 102.9,38.1 106.7,41.5 110.5,33.7 114.3,35.2 118.1,37.1 121.9,37.2 125.7,33.7 129.5,32.9 133.3,30.9 137.1,37.6 141.0,21.7 144.8,26.0 148.6,21.1 152.4,18.1 156.2,16.2 160.0,14.5 163.8,10.1 167.6,14.4 171.4,18.9 175.2,22.9 179.0,24.4 182.9,23.5 186.7,23.7 190.5,24.4 194.3,21.6 198.1,25.6 201.9,23.0 205.7,23.8 209.5,27.3 213.3,29.4 217.1,22.9 221.0,25.5 224.8,21.7 228.6,16.0 232.4,21.2 236.2,25.5 240.0,26.0" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="26.0" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.74</b></span>
+        <span class="muted">6057.0</span>
+        <span class="muted">-6% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#WRT1V.HE">
+      <div class="hd"><span class="flg">🇫🇮</span><span class="tk">WRT1V.HE</span>
+        <span style="flex:1"></span>
+        <span class="lad up">BOTTOMING</span></div>
+      <div class="muted small" style="margin:3px 0">Wartsila · Industrials</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,36.4 3.8,35.8 7.6,39.5 11.4,38.1 15.2,36.4 19.0,33.7 22.9,38.5 26.7,42.0 30.5,37.3 34.3,36.9 38.1,34.7 41.9,37.4 45.7,41.2 49.5,41.7 53.3,40.0 57.1,34.1 61.0,34.6 64.8,36.8 68.6,27.0 72.4,28.0 76.2,25.0 80.0,26.2 83.8,25.1 87.6,26.7 91.4,23.8 95.2,19.6 99.0,21.4 102.9,22.3 106.7,19.9 110.5,10.1 114.3,14.1 118.1,15.4 121.9,24.1 125.7,24.9 129.5,24.7 133.3,25.3 137.1,23.8 141.0,20.0 144.8,23.1 148.6,28.3 152.4,27.7 156.2,30.0 160.0,23.0 163.8,30.0 167.6,29.5 171.4,32.8 175.2,28.8 179.0,29.2 182.9,25.7 186.7,24.7 190.5,21.4 194.3,22.5 198.1,25.6 201.9,28.9 205.7,34.5 209.5,29.9 213.3,25.4 217.1,24.1 221.0,25.2 224.8,23.2 228.6,26.0 232.4,32.7 236.2,35.1 240.0,34.9 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,36.4 3.8,35.8 7.6,39.5 11.4,38.1 15.2,36.4 19.0,33.7 22.9,38.5 26.7,42.0 30.5,37.3 34.3,36.9 38.1,34.7 41.9,37.4 45.7,41.2 49.5,41.7 53.3,40.0 57.1,34.1 61.0,34.6 64.8,36.8 68.6,27.0 72.4,28.0 76.2,25.0 80.0,26.2 83.8,25.1 87.6,26.7 91.4,23.8 95.2,19.6 99.0,21.4 102.9,22.3 106.7,19.9 110.5,10.1 114.3,14.1 118.1,15.4 121.9,24.1 125.7,24.9 129.5,24.7 133.3,25.3 137.1,23.8 141.0,20.0 144.8,23.1 148.6,28.3 152.4,27.7 156.2,30.0 160.0,23.0 163.8,30.0 167.6,29.5 171.4,32.8 175.2,28.8 179.0,29.2 182.9,25.7 186.7,24.7 190.5,21.4 194.3,22.5 198.1,25.6 201.9,28.9 205.7,34.5 209.5,29.9 213.3,25.4 217.1,24.1 221.0,25.2 224.8,23.2 228.6,26.0 232.4,32.7 236.2,35.1 240.0,34.9" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="34.9" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.73</b></span>
+        <span class="muted">33.06</span>
+        <span class="muted">-17% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#AAF.L">
+      <div class="hd"><span class="flg">🇬🇧</span><span class="tk">AAF.L</span>
+        <span style="flex:1"></span>
+        <span class="lad up">UPTREND</span></div>
+      <div class="muted small" style="margin:3px 0">Airtel Africa Plc · Communication</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,31.4 3.8,30.8 7.6,28.3 11.4,22.5 15.2,23.5 19.0,28.2 22.9,30.1 26.7,29.6 30.5,27.7 34.3,26.4 38.1,30.3 41.9,30.0 45.7,31.6 49.5,32.5 53.3,30.5 57.1,30.0 61.0,28.9 64.8,21.1 68.6,19.8 72.4,20.7 76.2,21.9 80.0,24.2 83.8,27.7 87.6,30.8 91.4,29.2 95.2,29.3 99.0,29.6 102.9,27.7 106.7,26.4 110.5,29.4 114.3,31.8 118.1,29.3 121.9,30.7 125.7,29.6 129.5,30.0 133.3,28.9 137.1,26.2 141.0,26.5 144.8,25.9 148.6,10.1 152.4,12.0 156.2,28.1 160.0,25.5 163.8,37.4 167.6,42.0 171.4,35.7 175.2,35.6 179.0,38.3 182.9,36.1 186.7,35.0 190.5,33.1 194.3,32.6 198.1,30.2 201.9,30.1 205.7,35.5 209.5,35.1 213.3,33.6 217.1,34.0 221.0,32.8 224.8,31.8 228.6,31.8 232.4,29.0 236.2,24.7 240.0,26.2 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,31.4 3.8,30.8 7.6,28.3 11.4,22.5 15.2,23.5 19.0,28.2 22.9,30.1 26.7,29.6 30.5,27.7 34.3,26.4 38.1,30.3 41.9,30.0 45.7,31.6 49.5,32.5 53.3,30.5 57.1,30.0 61.0,28.9 64.8,21.1 68.6,19.8 72.4,20.7 76.2,21.9 80.0,24.2 83.8,27.7 87.6,30.8 91.4,29.2 95.2,29.3 99.0,29.6 102.9,27.7 106.7,26.4 110.5,29.4 114.3,31.8 118.1,29.3 121.9,30.7 125.7,29.6 129.5,30.0 133.3,28.9 137.1,26.2 141.0,26.5 144.8,25.9 148.6,10.1 152.4,12.0 156.2,28.1 160.0,25.5 163.8,37.4 167.6,42.0 171.4,35.7 175.2,35.6 179.0,38.3 182.9,36.1 186.7,35.0 190.5,33.1 194.3,32.6 198.1,30.2 201.9,30.1 205.7,35.5 209.5,35.1 213.3,33.6 217.1,34.0 221.0,32.8 224.8,31.8 228.6,31.8 232.4,29.0 236.2,24.7 240.0,26.2" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="26.2" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.71</b></span>
+        <span class="muted">365.8</span>
+        <span class="muted">-13% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#ABBN.SW">
+      <div class="hd"><span class="flg">🇨🇭</span><span class="tk">ABBN.SW</span>
+        <span style="flex:1"></span>
+        <span class="lad up">BOTTOMING</span></div>
+      <div class="muted small" style="margin:3px 0">Abb Ltd · Industrials</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,36.0 3.8,35.9 7.6,37.6 11.4,37.6 15.2,37.4 19.0,36.2 22.9,38.4 26.7,40.2 30.5,38.5 34.3,37.6 38.1,35.5 41.9,38.7 45.7,40.7 49.5,42.0 53.3,40.6 57.1,36.5 61.0,37.1 64.8,38.3 68.6,31.4 72.4,30.5 76.2,29.1 80.0,29.5 83.8,28.6 87.6,28.4 91.4,28.3 95.2,24.3 99.0,25.9 102.9,26.0 106.7,22.6 110.5,20.8 114.3,21.0 118.1,21.4 121.9,23.0 125.7,22.7 129.5,20.3 133.3,20.3 137.1,17.4 141.0,15.0 144.8,16.6 148.6,15.5 152.4,13.5 156.2,16.7 160.0,14.4 163.8,15.5 167.6,16.8 171.4,18.6 175.2,16.4 179.0,15.3 182.9,13.1 186.7,11.7 190.5,13.3 194.3,13.6 198.1,13.4 201.9,13.7 205.7,10.1 209.5,10.8 213.3,12.0 217.1,14.1 221.0,14.6 224.8,17.5 228.6,18.8 232.4,16.5 236.2,16.1 240.0,14.8 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,36.0 3.8,35.9 7.6,37.6 11.4,37.6 15.2,37.4 19.0,36.2 22.9,38.4 26.7,40.2 30.5,38.5 34.3,37.6 38.1,35.5 41.9,38.7 45.7,40.7 49.5,42.0 53.3,40.6 57.1,36.5 61.0,37.1 64.8,38.3 68.6,31.4 72.4,30.5 76.2,29.1 80.0,29.5 83.8,28.6 87.6,28.4 91.4,28.3 95.2,24.3 99.0,25.9 102.9,26.0 106.7,22.6 110.5,20.8 114.3,21.0 118.1,21.4 121.9,23.0 125.7,22.7 129.5,20.3 133.3,20.3 137.1,17.4 141.0,15.0 144.8,16.6 148.6,15.5 152.4,13.5 156.2,16.7 160.0,14.4 163.8,15.5 167.6,16.8 171.4,18.6 175.2,16.4 179.0,15.3 182.9,13.1 186.7,11.7 190.5,13.3 194.3,13.6 198.1,13.4 201.9,13.7 205.7,10.1 209.5,10.8 213.3,12.0 217.1,14.1 221.0,14.6 224.8,17.5 228.6,18.8 232.4,16.5 236.2,16.1 240.0,14.8" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="14.8" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.66</b></span>
+        <span class="muted">82.58</span>
+        <span class="muted">-4% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#8802.T">
+      <div class="hd"><span class="flg">🇯🇵</span><span class="tk">8802.T</span>
+        <span style="flex:1"></span>
+        <span class="lad caution">UNCONFIRMED TURN</span></div>
+      <div class="muted small" style="margin:3px 0">Mitsubishi Estate Co Ltd · Real Estate</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,10.1 3.8,13.8 7.6,15.3 11.4,14.4 15.2,10.3 19.0,15.4 22.9,28.8 26.7,22.6 30.5,19.7 34.3,20.8 38.1,24.8 41.9,28.9 45.7,27.2 49.5,21.6 53.3,22.8 57.1,22.6 61.0,22.8 64.8,22.3 68.6,11.4 72.4,16.8 76.2,18.0 80.0,17.7 83.8,14.6 87.6,15.8 91.4,14.7 95.2,21.1 99.0,19.1 102.9,18.3 106.7,23.2 110.5,20.2 114.3,22.0 118.1,23.6 121.9,21.1 125.7,23.3 129.5,25.0 133.3,24.9 137.1,25.2 141.0,21.3 144.8,20.4 148.6,21.5 152.4,27.2 156.2,33.6 160.0,38.7 163.8,38.0 167.6,39.6 171.4,34.6 175.2,36.4 179.0,35.1 182.9,33.8 186.7,37.0 190.5,37.8 194.3,36.5 198.1,41.0 201.9,39.4 205.7,39.9 209.5,40.8 213.3,39.1 217.1,42.0 221.0,39.9 224.8,32.8 228.6,33.9 232.4,31.6 236.2,28.7 240.0,31.0 240,42" fill="var(--muted)" opacity="0.12" stroke="none"/><polyline points="0.0,10.1 3.8,13.8 7.6,15.3 11.4,14.4 15.2,10.3 19.0,15.4 22.9,28.8 26.7,22.6 30.5,19.7 34.3,20.8 38.1,24.8 41.9,28.9 45.7,27.2 49.5,21.6 53.3,22.8 57.1,22.6 61.0,22.8 64.8,22.3 68.6,11.4 72.4,16.8 76.2,18.0 80.0,17.7 83.8,14.6 87.6,15.8 91.4,14.7 95.2,21.1 99.0,19.1 102.9,18.3 106.7,23.2 110.5,20.2 114.3,22.0 118.1,23.6 121.9,21.1 125.7,23.3 129.5,25.0 133.3,24.9 137.1,25.2 141.0,21.3 144.8,20.4 148.6,21.5 152.4,27.2 156.2,33.6 160.0,38.7 163.8,38.0 167.6,39.6 171.4,34.6 175.2,36.4 179.0,35.1 182.9,33.8 186.7,37.0 190.5,37.8 194.3,36.5 198.1,41.0 201.9,39.4 205.7,39.9 209.5,40.8 213.3,39.1 217.1,42.0 221.0,39.9 224.8,32.8 228.6,33.9 232.4,31.6 236.2,28.7 240.0,31.0" fill="none" stroke="var(--muted)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="31.0" r="2.6" fill="var(--muted)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.65</b></span>
+        <span class="muted">4213.0</span>
+        <span class="muted">-20% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#BATS.L">
+      <div class="hd"><span class="flg">🇬🇧</span><span class="tk">BATS.L</span>
+        <span style="flex:1"></span>
+        <span class="lad up">BOTTOMING</span></div>
+      <div class="muted small" style="margin:3px 0">British American Tobacco · Consumer Staples</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,29.4 3.8,26.7 7.6,24.7 11.4,25.8 15.2,31.9 19.0,32.9 22.9,34.5 26.7,35.5 30.5,33.7 34.3,33.5 38.1,33.8 41.9,33.0 45.7,30.2 49.5,32.2 53.3,34.4 57.1,30.9 61.0,29.8 64.8,30.3 68.6,33.6 72.4,33.0 76.2,33.1 80.0,37.8 83.8,38.7 87.6,40.5 91.4,40.8 95.2,37.8 99.0,42.0 102.9,40.8 106.7,38.4 110.5,34.8 114.3,37.3 118.1,34.5 121.9,36.4 125.7,34.0 129.5,33.8 133.3,34.7 137.1,31.5 141.0,35.5 144.8,36.4 148.6,31.9 152.4,22.4 156.2,15.9 160.0,10.1 163.8,13.8 167.6,11.4 171.4,12.4 175.2,12.7 179.0,12.7 182.9,13.3 186.7,15.4 190.5,17.2 194.3,19.6 198.1,24.0 201.9,24.4 205.7,28.7 209.5,31.1 213.3,34.2 217.1,31.0 221.0,27.5 224.8,28.3 228.6,24.9 232.4,24.3 236.2,22.5 240.0,24.7 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,29.4 3.8,26.7 7.6,24.7 11.4,25.8 15.2,31.9 19.0,32.9 22.9,34.5 26.7,35.5 30.5,33.7 34.3,33.5 38.1,33.8 41.9,33.0 45.7,30.2 49.5,32.2 53.3,34.4 57.1,30.9 61.0,29.8 64.8,30.3 68.6,33.6 72.4,33.0 76.2,33.1 80.0,37.8 83.8,38.7 87.6,40.5 91.4,40.8 95.2,37.8 99.0,42.0 102.9,40.8 106.7,38.4 110.5,34.8 114.3,37.3 118.1,34.5 121.9,36.4 125.7,34.0 129.5,33.8 133.3,34.7 137.1,31.5 141.0,35.5 144.8,36.4 148.6,31.9 152.4,22.4 156.2,15.9 160.0,10.1 163.8,13.8 167.6,11.4 171.4,12.4 175.2,12.7 179.0,12.7 182.9,13.3 186.7,15.4 190.5,17.2 194.3,19.6 198.1,24.0 201.9,24.4 205.7,28.7 209.5,31.1 213.3,34.2 217.1,31.0 221.0,27.5 224.8,28.3 228.6,24.9 232.4,24.3 236.2,22.5 240.0,24.7" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="24.7" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.65</b></span>
+        <span class="muted">4573.0</span>
+        <span class="muted">-8% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#BOL.ST">
+      <div class="hd"><span class="flg">🇸🇪</span><span class="tk">BOL.ST</span>
+        <span style="flex:1"></span>
+        <span class="lad up">BOTTOMING</span></div>
+      <div class="muted small" style="margin:3px 0">Boliden · Materials</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,10.1 3.8,11.4 7.6,14.6 11.4,14.5 15.2,14.9 19.0,16.7 22.9,25.7 26.7,29.0 30.5,25.4 34.3,23.6 38.1,20.9 41.9,40.9 45.7,41.4 49.5,42.0 53.3,38.3 57.1,33.4 61.0,35.3 64.8,34.9 68.6,30.2 72.4,30.3 76.2,28.3 80.0,28.3 83.8,27.1 87.6,27.4 91.4,27.9 95.2,25.3 99.0,26.7 102.9,28.9 106.7,28.5 110.5,27.2 114.3,30.5 118.1,33.5 121.9,36.2 125.7,37.6 129.5,37.4 133.3,38.0 137.1,35.6 141.0,29.4 144.8,27.9 148.6,31.6 152.4,28.6 156.2,30.0 160.0,25.9 163.8,31.2 167.6,33.1 171.4,34.5 175.2,30.0 179.0,28.3 182.9,27.7 186.7,23.8 190.5,23.3 194.3,23.5 198.1,21.1 201.9,20.6 205.7,21.2 209.5,16.7 213.3,19.7 217.1,21.7 221.0,25.9 224.8,27.1 228.6,31.2 232.4,33.5 236.2,31.0 240.0,28.0 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,10.1 3.8,11.4 7.6,14.6 11.4,14.5 15.2,14.9 19.0,16.7 22.9,25.7 26.7,29.0 30.5,25.4 34.3,23.6 38.1,20.9 41.9,40.9 45.7,41.4 49.5,42.0 53.3,38.3 57.1,33.4 61.0,35.3 64.8,34.9 68.6,30.2 72.4,30.3 76.2,28.3 80.0,28.3 83.8,27.1 87.6,27.4 91.4,27.9 95.2,25.3 99.0,26.7 102.9,28.9 106.7,28.5 110.5,27.2 114.3,30.5 118.1,33.5 121.9,36.2 125.7,37.6 129.5,37.4 133.3,38.0 137.1,35.6 141.0,29.4 144.8,27.9 148.6,31.6 152.4,28.6 156.2,30.0 160.0,25.9 163.8,31.2 167.6,33.1 171.4,34.5 175.2,30.0 179.0,28.3 182.9,27.7 186.7,23.8 190.5,23.3 194.3,23.5 198.1,21.1 201.9,20.6 205.7,21.2 209.5,16.7 213.3,19.7 217.1,21.7 221.0,25.9 224.8,27.1 228.6,31.2 232.4,33.5 236.2,31.0 240.0,28.0" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="28.0" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.63</b></span>
+        <span class="muted">533.6</span>
+        <span class="muted">-24% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#4503.T">
+      <div class="hd"><span class="flg">🇯🇵</span><span class="tk">4503.T</span>
+        <span style="flex:1"></span>
+        <span class="lad down">DOWNTREND</span></div>
+      <div class="muted small" style="margin:3px 0">Astellas Pharma Inc · Health Care</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,28.7 3.8,29.3 7.6,30.1 11.4,27.4 15.2,24.4 19.0,28.1 22.9,29.3 26.7,22.2 30.5,19.2 34.3,19.4 38.1,15.1 41.9,15.8 45.7,18.1 49.5,10.1 53.3,13.4 57.1,14.2 61.0,13.0 64.8,12.7 68.6,12.0 72.4,13.4 76.2,13.0 80.0,15.7 83.8,18.0 87.6,13.1 91.4,14.3 95.2,16.1 99.0,15.2 102.9,17.8 106.7,19.2 110.5,20.6 114.3,21.1 118.1,25.9 121.9,30.5 125.7,34.8 129.5,36.2 133.3,30.7 137.1,30.8 141.0,29.4 144.8,29.2 148.6,26.3 152.4,26.9 156.2,29.4 160.0,30.8 163.8,29.8 167.6,31.1 171.4,32.1 175.2,32.6 179.0,32.7 182.9,34.7 186.7,40.4 190.5,41.0 194.3,31.8 198.1,38.1 201.9,38.4 205.7,38.9 209.5,39.5 213.3,38.9 217.1,39.6 221.0,39.8 224.8,40.1 228.6,42.0 232.4,40.1 236.2,39.4 240.0,41.4 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,28.7 3.8,29.3 7.6,30.1 11.4,27.4 15.2,24.4 19.0,28.1 22.9,29.3 26.7,22.2 30.5,19.2 34.3,19.4 38.1,15.1 41.9,15.8 45.7,18.1 49.5,10.1 53.3,13.4 57.1,14.2 61.0,13.0 64.8,12.7 68.6,12.0 72.4,13.4 76.2,13.0 80.0,15.7 83.8,18.0 87.6,13.1 91.4,14.3 95.2,16.1 99.0,15.2 102.9,17.8 106.7,19.2 110.5,20.6 114.3,21.1 118.1,25.9 121.9,30.5 125.7,34.8 129.5,36.2 133.3,30.7 137.1,30.8 141.0,29.4 144.8,29.2 148.6,26.3 152.4,26.9 156.2,29.4 160.0,30.8 163.8,29.8 167.6,31.1 171.4,32.1 175.2,32.6 179.0,32.7 182.9,34.7 186.7,40.4 190.5,41.0 194.3,31.8 198.1,38.1 201.9,38.4 205.7,38.9 209.5,39.5 213.3,38.9 217.1,39.6 221.0,39.8 224.8,40.1 228.6,42.0 232.4,40.1 236.2,39.4 240.0,41.4" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="41.4" r="2.6" fill="var(--down)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.60</b></span>
+        <span class="muted">2117.0</span>
+        <span class="muted">-20% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#IHG.L">
+      <div class="hd"><span class="flg">🇬🇧</span><span class="tk">IHG.L</span>
+        <span style="flex:1"></span>
+        <span class="lad up">NEARING A HIGH</span></div>
+      <div class="muted small" style="margin:3px 0">Intercontinental Hotels Group Plc · Consumer Discretionary</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,38.2 3.8,40.3 7.6,41.9 11.4,40.9 15.2,38.5 19.0,39.2 22.9,41.3 26.7,42.0 30.5,40.0 34.3,40.1 38.1,38.4 41.9,39.4 45.7,41.0 49.5,41.5 53.3,40.8 57.1,38.9 61.0,37.6 64.8,40.5 68.6,32.8 72.4,32.7 76.2,31.7 80.0,33.1 83.8,29.2 87.6,30.6 91.4,32.1 95.2,26.0 99.0,27.5 102.9,29.2 106.7,31.3 110.5,29.7 114.3,27.1 118.1,29.2 121.9,27.9 125.7,30.3 129.5,29.5 133.3,27.9 137.1,30.4 141.0,27.2 144.8,25.4 148.6,24.0 152.4,24.8 156.2,23.4 160.0,24.0 163.8,22.5 167.6,25.0 171.4,23.4 175.2,23.1 179.0,19.5 182.9,22.1 186.7,21.8 190.5,21.7 194.3,17.8 198.1,17.4 201.9,20.3 205.7,21.1 209.5,16.9 213.3,15.5 217.1,15.7 221.0,13.9 224.8,13.1 228.6,15.3 232.4,13.6 236.2,15.1 240.0,10.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,38.2 3.8,40.3 7.6,41.9 11.4,40.9 15.2,38.5 19.0,39.2 22.9,41.3 26.7,42.0 30.5,40.0 34.3,40.1 38.1,38.4 41.9,39.4 45.7,41.0 49.5,41.5 53.3,40.8 57.1,38.9 61.0,37.6 64.8,40.5 68.6,32.8 72.4,32.7 76.2,31.7 80.0,33.1 83.8,29.2 87.6,30.6 91.4,32.1 95.2,26.0 99.0,27.5 102.9,29.2 106.7,31.3 110.5,29.7 114.3,27.1 118.1,29.2 121.9,27.9 125.7,30.3 129.5,29.5 133.3,27.9 137.1,30.4 141.0,27.2 144.8,25.4 148.6,24.0 152.4,24.8 156.2,23.4 160.0,24.0 163.8,22.5 167.6,25.0 171.4,23.4 175.2,23.1 179.0,19.5 182.9,22.1 186.7,21.8 190.5,21.7 194.3,17.8 198.1,17.4 201.9,20.3 205.7,21.1 209.5,16.9 213.3,15.5 217.1,15.7 221.0,13.9 224.8,13.1 228.6,15.3 232.4,13.6 236.2,15.1 240.0,10.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="10.1" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.60</b></span>
+        <span class="muted">166.45</span>
+        <span class="muted">0% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#9984.T">
+      <div class="hd"><span class="flg">🇯🇵</span><span class="tk">9984.T</span>
+        <span style="flex:1"></span>
+        <span class="lad up">UPTREND</span></div>
+      <div class="muted small" style="margin:3px 0">Softbank Group Corp · Communication</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,40.5 3.8,41.6 7.6,41.4 11.4,41.8 15.2,40.5 19.0,41.7 22.9,42.0 26.7,41.9 30.5,40.1 34.3,40.0 38.1,39.3 41.9,40.8 45.7,41.7 49.5,40.4 53.3,41.4 57.1,41.3 61.0,41.1 64.8,41.6 68.6,40.0 72.4,40.3 76.2,40.3 80.0,40.4 83.8,37.4 87.6,36.1 91.4,34.7 95.2,35.6 99.0,34.1 102.9,31.6 106.7,28.8 110.5,27.5 114.3,26.7 118.1,27.4 121.9,31.0 125.7,31.3 129.5,30.0 133.3,23.8 137.1,25.6 141.0,28.1 144.8,26.5 148.6,26.4 152.4,27.9 156.2,28.0 160.0,29.0 163.8,30.4 167.6,32.4 171.4,26.2 175.2,21.7 179.0,19.8 182.9,15.0 186.7,18.5 190.5,19.5 194.3,17.2 198.1,10.6 201.9,10.1 205.7,12.1 209.5,17.9 213.3,17.6 217.1,20.4 221.0,19.9 224.8,23.6 228.6,24.1 232.4,23.5 236.2,19.4 240.0,19.5 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,40.5 3.8,41.6 7.6,41.4 11.4,41.8 15.2,40.5 19.0,41.7 22.9,42.0 26.7,41.9 30.5,40.1 34.3,40.0 38.1,39.3 41.9,40.8 45.7,41.7 49.5,40.4 53.3,41.4 57.1,41.3 61.0,41.1 64.8,41.6 68.6,40.0 72.4,40.3 76.2,40.3 80.0,40.4 83.8,37.4 87.6,36.1 91.4,34.7 95.2,35.6 99.0,34.1 102.9,31.6 106.7,28.8 110.5,27.5 114.3,26.7 118.1,27.4 121.9,31.0 125.7,31.3 129.5,30.0 133.3,23.8 137.1,25.6 141.0,28.1 144.8,26.5 148.6,26.4 152.4,27.9 156.2,28.0 160.0,29.0 163.8,30.4 167.6,32.4 171.4,26.2 175.2,21.7 179.0,19.8 182.9,15.0 186.7,18.5 190.5,19.5 194.3,17.2 198.1,10.6 201.9,10.1 205.7,12.1 209.5,17.9 213.3,17.6 217.1,20.4 221.0,19.9 224.8,23.6 228.6,24.1 232.4,23.5 236.2,19.4 240.0,19.5" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="19.5" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.58</b></span>
+        <span class="muted">7119.0</span>
+        <span class="muted">-18% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#KER.PA">
+      <div class="hd"><span class="flg">🇫🇷</span><span class="tk">KER.PA</span>
+        <span style="flex:1"></span>
+        <span class="lad up">BUY ZONE</span></div>
+      <div class="muted small" style="margin:3px 0">Kering Sa · Consumer Discretionary</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,29.0 3.8,28.4 7.6,29.7 11.4,32.0 15.2,38.8 19.0,37.8 22.9,31.1 26.7,29.5 30.5,27.0 34.3,26.9 38.1,29.3 41.9,24.3 45.7,24.2 49.5,20.2 53.3,19.0 57.1,23.5 61.0,11.7 64.8,13.4 68.6,12.2 72.4,14.9 76.2,10.1 80.0,25.8 83.8,30.5 87.6,26.1 91.4,29.3 95.2,32.3 99.0,35.4 102.9,35.4 106.7,34.3 110.5,32.0 114.3,36.6 118.1,38.8 121.9,38.7 125.7,42.0 129.5,41.6 133.3,32.3 137.1,30.2 141.0,30.7 144.8,35.2 148.6,34.8 152.4,33.9 156.2,31.7 160.0,36.2 163.8,34.6 167.6,33.5 171.4,29.4 175.2,31.5 179.0,33.1 182.9,29.9 186.7,34.4 190.5,28.0 194.3,27.7 198.1,25.0 201.9,29.6 205.7,23.8 209.5,30.2 213.3,27.1 217.1,26.9 221.0,27.1 224.8,23.4 228.6,22.9 232.4,20.9 236.2,15.3 240.0,18.8 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,29.0 3.8,28.4 7.6,29.7 11.4,32.0 15.2,38.8 19.0,37.8 22.9,31.1 26.7,29.5 30.5,27.0 34.3,26.9 38.1,29.3 41.9,24.3 45.7,24.2 49.5,20.2 53.3,19.0 57.1,23.5 61.0,11.7 64.8,13.4 68.6,12.2 72.4,14.9 76.2,10.1 80.0,25.8 83.8,30.5 87.6,26.1 91.4,29.3 95.2,32.3 99.0,35.4 102.9,35.4 106.7,34.3 110.5,32.0 114.3,36.6 118.1,38.8 121.9,38.7 125.7,42.0 129.5,41.6 133.3,32.3 137.1,30.2 141.0,30.7 144.8,35.2 148.6,34.8 152.4,33.9 156.2,31.7 160.0,36.2 163.8,34.6 167.6,33.5 171.4,29.4 175.2,31.5 179.0,33.1 182.9,29.9 186.7,34.4 190.5,28.0 194.3,27.7 198.1,25.0 201.9,29.6 205.7,23.8 209.5,30.2 213.3,27.1 217.1,26.9 221.0,27.1 224.8,23.4 228.6,22.9 232.4,20.9 236.2,15.3 240.0,18.8" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="18.8" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.57</b></span>
+        <span class="muted">262.7</span>
+        <span class="muted">-23% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#8015.T">
+      <div class="hd"><span class="flg">🇯🇵</span><span class="tk">8015.T</span>
+        <span style="flex:1"></span>
+        <span class="lad caution">UNCONFIRMED TURN</span></div>
+      <div class="muted small" style="margin:3px 0">Toyota Tsusho Corp · Industrials</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,33.4 3.8,34.4 7.6,33.1 11.4,31.7 15.2,26.4 19.0,35.0 22.9,42.0 26.7,38.6 30.5,36.0 34.3,36.3 38.1,36.8 41.9,40.1 45.7,40.5 49.5,32.2 53.3,38.2 57.1,37.8 61.0,39.4 64.8,38.9 68.6,29.5 72.4,26.8 76.2,26.6 80.0,31.4 83.8,31.4 87.6,34.1 91.4,32.5 95.2,34.4 99.0,33.5 102.9,32.9 106.7,35.8 110.5,36.2 114.3,36.9 118.1,35.2 121.9,31.5 125.7,37.4 129.5,21.2 133.3,21.8 137.1,23.8 141.0,18.6 144.8,15.7 148.6,10.1 152.4,10.6 156.2,10.3 160.0,17.1 163.8,17.3 167.6,23.4 171.4,22.4 175.2,19.0 179.0,16.4 182.9,18.5 186.7,21.8 190.5,24.1 194.3,19.9 198.1,26.5 201.9,29.7 205.7,29.0 209.5,30.3 213.3,29.9 217.1,36.0 221.0,37.3 224.8,37.5 228.6,40.1 232.4,35.8 236.2,28.9 240.0,30.0 240,42" fill="var(--muted)" opacity="0.12" stroke="none"/><polyline points="0.0,33.4 3.8,34.4 7.6,33.1 11.4,31.7 15.2,26.4 19.0,35.0 22.9,42.0 26.7,38.6 30.5,36.0 34.3,36.3 38.1,36.8 41.9,40.1 45.7,40.5 49.5,32.2 53.3,38.2 57.1,37.8 61.0,39.4 64.8,38.9 68.6,29.5 72.4,26.8 76.2,26.6 80.0,31.4 83.8,31.4 87.6,34.1 91.4,32.5 95.2,34.4 99.0,33.5 102.9,32.9 106.7,35.8 110.5,36.2 114.3,36.9 118.1,35.2 121.9,31.5 125.7,37.4 129.5,21.2 133.3,21.8 137.1,23.8 141.0,18.6 144.8,15.7 148.6,10.1 152.4,10.6 156.2,10.3 160.0,17.1 163.8,17.3 167.6,23.4 171.4,22.4 175.2,19.0 179.0,16.4 182.9,18.5 186.7,21.8 190.5,24.1 194.3,19.9 198.1,26.5 201.9,29.7 205.7,29.0 209.5,30.3 213.3,29.9 217.1,36.0 221.0,37.3 224.8,37.5 228.6,40.1 232.4,35.8 236.2,28.9 240.0,30.0" fill="none" stroke="var(--muted)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="30.0" r="2.6" fill="var(--muted)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.56</b></span>
+        <span class="muted">6449.0</span>
+        <span class="muted">-13% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#1303.TW">
+      <div class="hd"><span class="flg">🇹🇼</span><span class="tk">1303.TW</span>
+        <span style="flex:1"></span>
+        <span class="lad up">UPTREND</span></div>
+      <div class="muted small" style="margin:3px 0">Nan Ya Plastics Corp · Materials</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,29.9 3.8,32.6 7.6,32.1 11.4,33.5 15.2,37.6 19.0,40.9 22.9,42.0 26.7,39.4 30.5,40.2 34.3,40.6 38.1,35.5 41.9,40.9 45.7,37.4 49.5,38.6 53.3,36.1 57.1,32.9 61.0,32.8 64.8,35.4 68.6,32.4 72.4,30.1 76.2,30.4 80.0,29.0 83.8,31.0 87.6,32.4 91.4,30.5 95.2,29.8 99.0,32.8 102.9,32.3 106.7,30.9 110.5,29.7 114.3,28.2 118.1,29.6 121.9,30.5 125.7,26.5 129.5,26.6 133.3,29.1 137.1,30.4 141.0,28.3 144.8,30.0 148.6,31.9 152.4,32.7 156.2,32.7 160.0,33.5 163.8,35.3 167.6,35.9 171.4,31.3 175.2,31.7 179.0,31.4 182.9,28.8 186.7,25.4 190.5,29.0 194.3,23.6 198.1,16.9 201.9,13.3 205.7,12.9 209.5,14.4 213.3,19.0 217.1,24.0 221.0,22.8 224.8,25.9 228.6,24.4 232.4,17.6 236.2,10.1 240.0,11.5 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,29.9 3.8,32.6 7.6,32.1 11.4,33.5 15.2,37.6 19.0,40.9 22.9,42.0 26.7,39.4 30.5,40.2 34.3,40.6 38.1,35.5 41.9,40.9 45.7,37.4 49.5,38.6 53.3,36.1 57.1,32.9 61.0,32.8 64.8,35.4 68.6,32.4 72.4,30.1 76.2,30.4 80.0,29.0 83.8,31.0 87.6,32.4 91.4,30.5 95.2,29.8 99.0,32.8 102.9,32.3 106.7,30.9 110.5,29.7 114.3,28.2 118.1,29.6 121.9,30.5 125.7,26.5 129.5,26.6 133.3,29.1 137.1,30.4 141.0,28.3 144.8,30.0 148.6,31.9 152.4,32.7 156.2,32.7 160.0,33.5 163.8,35.3 167.6,35.9 171.4,31.3 175.2,31.7 179.0,31.4 182.9,28.8 186.7,25.4 190.5,29.0 194.3,23.6 198.1,16.9 201.9,13.3 205.7,12.9 209.5,14.4 213.3,19.0 217.1,24.0 221.0,22.8 224.8,25.9 228.6,24.4 232.4,17.6 236.2,10.1 240.0,11.5" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="11.5" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.56</b></span>
+        <span class="muted">115.0</span>
+        <span class="muted">-2% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#2885.TW">
+      <div class="hd"><span class="flg">🇹🇼</span><span class="tk">2885.TW</span>
+        <span style="flex:1"></span>
+        <span class="lad up">NEARING A HIGH</span></div>
+      <div class="muted small" style="margin:3px 0">Yuanta Financial Holding Ltd · Financials</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,41.4 3.8,41.3 7.6,41.3 11.4,41.9 15.2,42.0 19.0,42.0 22.9,40.7 26.7,39.6 30.5,39.3 34.3,40.4 38.1,41.6 41.9,41.2 45.7,37.7 49.5,39.6 53.3,38.6 57.1,37.7 61.0,36.4 64.8,36.8 68.6,37.2 72.4,34.1 76.2,32.8 80.0,32.3 83.8,33.1 87.6,31.6 91.4,31.9 95.2,33.2 99.0,33.1 102.9,33.5 106.7,32.2 110.5,30.1 114.3,30.0 118.1,30.1 121.9,28.8 125.7,25.4 129.5,24.2 133.3,24.3 137.1,23.7 141.0,23.7 144.8,26.6 148.6,24.8 152.4,25.2 156.2,26.3 160.0,27.0 163.8,26.4 167.6,25.8 171.4,26.4 175.2,25.8 179.0,24.3 182.9,22.6 186.7,19.3 190.5,19.9 194.3,19.1 198.1,19.7 201.9,19.1 205.7,13.0 209.5,12.8 213.3,10.7 217.1,15.6 221.0,11.4 224.8,15.1 228.6,16.2 232.4,12.8 236.2,11.1 240.0,10.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,41.4 3.8,41.3 7.6,41.3 11.4,41.9 15.2,42.0 19.0,42.0 22.9,40.7 26.7,39.6 30.5,39.3 34.3,40.4 38.1,41.6 41.9,41.2 45.7,37.7 49.5,39.6 53.3,38.6 57.1,37.7 61.0,36.4 64.8,36.8 68.6,37.2 72.4,34.1 76.2,32.8 80.0,32.3 83.8,33.1 87.6,31.6 91.4,31.9 95.2,33.2 99.0,33.1 102.9,33.5 106.7,32.2 110.5,30.1 114.3,30.0 118.1,30.1 121.9,28.8 125.7,25.4 129.5,24.2 133.3,24.3 137.1,23.7 141.0,23.7 144.8,26.6 148.6,24.8 152.4,25.2 156.2,26.3 160.0,27.0 163.8,26.4 167.6,25.8 171.4,26.4 175.2,25.8 179.0,24.3 182.9,22.6 186.7,19.3 190.5,19.9 194.3,19.1 198.1,19.7 201.9,19.1 205.7,13.0 209.5,12.8 213.3,10.7 217.1,15.6 221.0,11.4 224.8,15.1 228.6,16.2 232.4,12.8 236.2,11.1 240.0,10.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="10.1" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.55</b></span>
+        <span class="muted">65.7</span>
+        <span class="muted">0% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#ORA.PA">
+      <div class="hd"><span class="flg">🇫🇷</span><span class="tk">ORA.PA</span>
+        <span style="flex:1"></span>
+        <span class="lad caution">UNCONFIRMED TURN</span></div>
+      <div class="muted small" style="margin:3px 0">Orange Sa · Communication</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,32.0 3.8,31.2 7.6,28.5 11.4,33.7 15.2,38.3 19.0,39.2 22.9,42.0 26.7,37.7 30.5,37.6 34.3,36.7 38.1,35.9 41.9,32.3 45.7,29.2 49.5,29.2 53.3,25.3 57.1,23.4 61.0,24.0 64.8,22.0 68.6,24.3 72.4,29.4 76.2,27.4 80.0,26.7 83.8,21.6 87.6,38.8 91.4,28.0 95.2,29.7 99.0,34.8 102.9,24.6 106.7,29.6 110.5,34.4 114.3,32.0 118.1,32.0 121.9,27.5 125.7,29.0 129.5,24.9 133.3,21.2 137.1,29.3 141.0,26.4 144.8,18.9 148.6,17.3 152.4,15.4 156.2,13.8 160.0,19.4 163.8,16.6 167.6,10.1 171.4,12.1 175.2,17.5 179.0,19.7 182.9,20.8 186.7,23.3 190.5,20.7 194.3,21.7 198.1,24.5 201.9,25.1 205.7,29.5 209.5,28.6 213.3,32.4 217.1,33.5 221.0,26.9 224.8,29.5 228.6,23.0 232.4,19.5 236.2,18.1 240.0,23.7 240,42" fill="var(--muted)" opacity="0.12" stroke="none"/><polyline points="0.0,32.0 3.8,31.2 7.6,28.5 11.4,33.7 15.2,38.3 19.0,39.2 22.9,42.0 26.7,37.7 30.5,37.6 34.3,36.7 38.1,35.9 41.9,32.3 45.7,29.2 49.5,29.2 53.3,25.3 57.1,23.4 61.0,24.0 64.8,22.0 68.6,24.3 72.4,29.4 76.2,27.4 80.0,26.7 83.8,21.6 87.6,38.8 91.4,28.0 95.2,29.7 99.0,34.8 102.9,24.6 106.7,29.6 110.5,34.4 114.3,32.0 118.1,32.0 121.9,27.5 125.7,29.0 129.5,24.9 133.3,21.2 137.1,29.3 141.0,26.4 144.8,18.9 148.6,17.3 152.4,15.4 156.2,13.8 160.0,19.4 163.8,16.6 167.6,10.1 171.4,12.1 175.2,17.5 179.0,19.7 182.9,20.8 186.7,23.3 190.5,20.7 194.3,21.7 198.1,24.5 201.9,25.1 205.7,29.5 209.5,28.6 213.3,32.4 217.1,33.5 221.0,26.9 224.8,29.5 228.6,23.0 232.4,19.5 236.2,18.1 240.0,23.7" fill="none" stroke="var(--muted)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="23.7" r="2.6" fill="var(--muted)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.53</b></span>
+        <span class="muted">17.53</span>
+        <span class="muted">-4% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#2383.TW">
+      <div class="hd"><span class="flg">🇹🇼</span><span class="tk">2383.TW</span>
+        <span style="flex:1"></span>
+        <span class="lad up">UPTREND</span></div>
+      <div class="muted small" style="margin:3px 0">Elite Material Ltd · Information Technology</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,42.0 3.8,40.7 7.6,40.7 11.4,38.7 15.2,39.5 19.0,39.7 22.9,40.9 26.7,39.2 30.5,38.1 34.3,38.4 38.1,39.8 41.9,41.8 45.7,39.0 49.5,39.8 53.3,38.7 57.1,35.6 61.0,35.1 64.8,32.9 68.6,33.9 72.4,30.8 76.2,28.6 80.0,28.3 83.8,28.7 87.6,28.2 91.4,27.1 95.2,25.8 99.0,25.4 102.9,21.3 106.7,18.6 110.5,22.4 114.3,21.7 118.1,20.6 121.9,18.3 125.7,18.6 129.5,16.1 133.3,16.0 137.1,18.3 141.0,17.2 144.8,16.7 148.6,16.4 152.4,16.5 156.2,19.8 160.0,20.6 163.8,20.7 167.6,22.2 171.4,19.0 175.2,15.5 179.0,10.1 182.9,12.4 186.7,12.3 190.5,15.0 194.3,14.3 198.1,14.8 201.9,17.1 205.7,17.5 209.5,17.5 213.3,16.9 217.1,18.1 221.0,14.9 224.8,16.3 228.6,14.6 232.4,17.5 236.2,15.3 240.0,14.6 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,42.0 3.8,40.7 7.6,40.7 11.4,38.7 15.2,39.5 19.0,39.7 22.9,40.9 26.7,39.2 30.5,38.1 34.3,38.4 38.1,39.8 41.9,41.8 45.7,39.0 49.5,39.8 53.3,38.7 57.1,35.6 61.0,35.1 64.8,32.9 68.6,33.9 72.4,30.8 76.2,28.6 80.0,28.3 83.8,28.7 87.6,28.2 91.4,27.1 95.2,25.8 99.0,25.4 102.9,21.3 106.7,18.6 110.5,22.4 114.3,21.7 118.1,20.6 121.9,18.3 125.7,18.6 129.5,16.1 133.3,16.0 137.1,18.3 141.0,17.2 144.8,16.7 148.6,16.4 152.4,16.5 156.2,19.8 160.0,20.6 163.8,20.7 167.6,22.2 171.4,19.0 175.2,15.5 179.0,10.1 182.9,12.4 186.7,12.3 190.5,15.0 194.3,14.3 198.1,14.8 201.9,17.1 205.7,17.5 209.5,17.5 213.3,16.9 217.1,18.1 221.0,14.9 224.8,16.3 228.6,14.6 232.4,17.5 236.2,15.3 240.0,14.6" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="14.6" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.52</b></span>
+        <span class="muted">5095.0</span>
+        <span class="muted">-7% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#FRES.L">
+      <div class="hd"><span class="flg">🇬🇧</span><span class="tk">FRES.L</span>
+        <span style="flex:1"></span>
+        <span class="lad up">BOTTOMING</span></div>
+      <div class="muted small" style="margin:3px 0">Fresnillo Plc · Materials</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,15.2 3.8,22.6 7.6,21.9 11.4,21.2 15.2,25.4 19.0,33.5 22.9,33.8 26.7,30.5 30.5,29.4 34.3,27.6 38.1,30.8 41.9,30.2 45.7,30.3 49.5,26.0 53.3,19.6 57.1,21.6 61.0,23.9 64.8,15.4 68.6,18.5 72.4,16.3 76.2,18.7 80.0,13.2 83.8,16.9 87.6,17.8 91.4,10.2 95.2,14.1 99.0,16.5 102.9,14.2 106.7,21.9 110.5,23.8 114.3,25.9 118.1,28.1 121.9,32.3 125.7,28.3 129.5,27.6 133.3,32.2 137.1,20.7 141.0,13.7 144.8,17.1 148.6,12.9 152.4,14.8 156.2,10.1 160.0,12.6 163.8,24.9 167.6,25.0 171.4,29.6 175.2,25.3 179.0,26.2 182.9,28.2 186.7,27.3 190.5,28.8 194.3,28.1 198.1,26.6 201.9,28.0 205.7,26.4 209.5,30.5 213.3,29.9 217.1,36.5 221.0,36.2 224.8,40.4 228.6,42.0 232.4,40.3 236.2,36.0 240.0,29.4 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,15.2 3.8,22.6 7.6,21.9 11.4,21.2 15.2,25.4 19.0,33.5 22.9,33.8 26.7,30.5 30.5,29.4 34.3,27.6 38.1,30.8 41.9,30.2 45.7,30.3 49.5,26.0 53.3,19.6 57.1,21.6 61.0,23.9 64.8,15.4 68.6,18.5 72.4,16.3 76.2,18.7 80.0,13.2 83.8,16.9 87.6,17.8 91.4,10.2 95.2,14.1 99.0,16.5 102.9,14.2 106.7,21.9 110.5,23.8 114.3,25.9 118.1,28.1 121.9,32.3 125.7,28.3 129.5,27.6 133.3,32.2 137.1,20.7 141.0,13.7 144.8,17.1 148.6,12.9 152.4,14.8 156.2,10.1 160.0,12.6 163.8,24.9 167.6,25.0 171.4,29.6 175.2,25.3 179.0,26.2 182.9,28.2 186.7,27.3 190.5,28.8 194.3,28.1 198.1,26.6 201.9,28.0 205.7,26.4 209.5,30.5 213.3,29.9 217.1,36.5 221.0,36.2 224.8,40.4 228.6,42.0 232.4,40.3 236.2,36.0 240.0,29.4" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="29.4" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.51</b></span>
+        <span class="muted">3200.0</span>
+        <span class="muted">-28% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#URW.PA">
+      <div class="hd"><span class="flg">🇫🇷</span><span class="tk">URW.PA</span>
+        <span style="flex:1"></span>
+        <span class="lad up">UPTREND</span></div>
+      <div class="muted small" style="margin:3px 0">Unibail Rodamco We Stapled Units · Real Estate</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,38.1 3.8,32.7 7.6,31.4 11.4,29.9 15.2,35.4 19.0,38.1 22.9,36.7 26.7,36.5 30.5,38.7 34.3,38.6 38.1,42.0 41.9,36.9 45.7,36.0 49.5,29.0 53.3,28.1 57.1,29.5 61.0,19.4 64.8,18.7 68.6,19.2 72.4,20.4 76.2,16.0 80.0,15.6 83.8,15.4 87.6,10.1 91.4,12.6 95.2,14.1 99.0,13.1 102.9,14.5 106.7,15.9 110.5,17.3 114.3,16.0 118.1,19.0 121.9,17.8 125.7,20.3 129.5,19.1 133.3,15.0 137.1,19.9 141.0,20.5 144.8,20.8 148.6,23.1 152.4,23.3 156.2,21.3 160.0,26.0 163.8,23.6 167.6,23.2 171.4,21.3 175.2,19.8 179.0,19.9 182.9,18.3 186.7,19.7 190.5,18.0 194.3,17.1 198.1,15.9 201.9,18.1 205.7,17.2 209.5,19.8 213.3,18.1 217.1,19.5 221.0,19.7 224.8,20.2 228.6,16.7 232.4,14.9 236.2,12.7 240.0,13.6 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,38.1 3.8,32.7 7.6,31.4 11.4,29.9 15.2,35.4 19.0,38.1 22.9,36.7 26.7,36.5 30.5,38.7 34.3,38.6 38.1,42.0 41.9,36.9 45.7,36.0 49.5,29.0 53.3,28.1 57.1,29.5 61.0,19.4 64.8,18.7 68.6,19.2 72.4,20.4 76.2,16.0 80.0,15.6 83.8,15.4 87.6,10.1 91.4,12.6 95.2,14.1 99.0,13.1 102.9,14.5 106.7,15.9 110.5,17.3 114.3,16.0 118.1,19.0 121.9,17.8 125.7,20.3 129.5,19.1 133.3,15.0 137.1,19.9 141.0,20.5 144.8,20.8 148.6,23.1 152.4,23.3 156.2,21.3 160.0,26.0 163.8,23.6 167.6,23.2 171.4,21.3 175.2,19.8 179.0,19.9 182.9,18.3 186.7,19.7 190.5,18.0 194.3,17.1 198.1,15.9 201.9,18.1 205.7,17.2 209.5,19.8 213.3,18.1 217.1,19.5 221.0,19.7 224.8,20.2 228.6,16.7 232.4,14.9 236.2,12.7 240.0,13.6" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="13.6" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.51</b></span>
+        <span class="muted">100.3</span>
+        <span class="muted">-2% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#000660.KS">
+      <div class="hd"><span class="flg">🇰🇷</span><span class="tk">000660.KS</span>
+        <span style="flex:1"></span>
+        <span class="lad up">NEARING A HIGH</span></div>
+      <div class="muted small" style="margin:3px 0">Sk Hynix Inc · Information Technology</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,39.9 3.8,38.6 7.6,38.7 11.4,36.9 15.2,37.8 19.0,37.9 22.9,39.4 26.7,38.3 30.5,38.2 34.3,39.4 38.1,39.4 41.9,40.7 45.7,42.0 49.5,40.2 53.3,41.5 57.1,40.6 61.0,40.4 64.8,39.8 68.6,37.4 72.4,38.1 76.2,37.5 80.0,37.2 83.8,35.9 87.6,35.3 91.4,34.9 95.2,35.4 99.0,34.7 102.9,33.5 106.7,33.5 110.5,33.5 114.3,33.5 118.1,32.1 121.9,31.9 125.7,32.1 129.5,32.2 133.3,28.9 137.1,25.8 141.0,24.7 144.8,24.0 148.6,20.1 152.4,21.0 156.2,18.1 160.0,18.2 163.8,21.3 167.6,20.9 171.4,22.8 175.2,22.8 179.0,18.8 182.9,18.8 186.7,16.5 190.5,12.6 194.3,11.7 198.1,10.8 201.9,10.2 205.7,10.2 209.5,11.5 213.3,16.2 217.1,19.4 221.0,13.2 224.8,16.6 228.6,15.5 232.4,14.5 236.2,11.7 240.0,10.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,39.9 3.8,38.6 7.6,38.7 11.4,36.9 15.2,37.8 19.0,37.9 22.9,39.4 26.7,38.3 30.5,38.2 34.3,39.4 38.1,39.4 41.9,40.7 45.7,42.0 49.5,40.2 53.3,41.5 57.1,40.6 61.0,40.4 64.8,39.8 68.6,37.4 72.4,38.1 76.2,37.5 80.0,37.2 83.8,35.9 87.6,35.3 91.4,34.9 95.2,35.4 99.0,34.7 102.9,33.5 106.7,33.5 110.5,33.5 114.3,33.5 118.1,32.1 121.9,31.9 125.7,32.1 129.5,32.2 133.3,28.9 137.1,25.8 141.0,24.7 144.8,24.0 148.6,20.1 152.4,21.0 156.2,18.1 160.0,18.2 163.8,21.3 167.6,20.9 171.4,22.8 175.2,22.8 179.0,18.8 182.9,18.8 186.7,16.5 190.5,12.6 194.3,11.7 198.1,10.8 201.9,10.2 205.7,10.2 209.5,11.5 213.3,16.2 217.1,19.4 221.0,13.2 224.8,16.6 228.6,15.5 232.4,14.5 236.2,11.7 240.0,10.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="10.1" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.47</b></span>
+        <span class="muted">2368000.0</span>
+        <span class="muted">0% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#8591.T">
+      <div class="hd"><span class="flg">🇯🇵</span><span class="tk">8591.T</span>
+        <span style="flex:1"></span>
+        <span class="lad up">BOTTOMING</span></div>
+      <div class="muted small" style="margin:3px 0">Orix Corp · Financials</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,37.2 3.8,38.3 7.6,38.7 11.4,37.9 15.2,36.2 19.0,39.1 22.9,42.0 26.7,40.3 30.5,37.8 34.3,38.5 38.1,38.3 41.9,40.4 45.7,40.2 49.5,37.6 53.3,39.0 57.1,38.5 61.0,38.9 64.8,38.1 68.6,35.2 72.4,36.2 76.2,35.5 80.0,36.3 83.8,33.8 87.6,32.9 91.4,32.3 95.2,33.3 99.0,32.8 102.9,34.4 106.7,35.2 110.5,36.0 114.3,36.1 118.1,35.7 121.9,27.5 125.7,28.7 129.5,29.9 133.3,29.1 137.1,28.7 141.0,24.6 144.8,16.5 148.6,16.0 152.4,20.0 156.2,20.2 160.0,20.1 163.8,17.8 167.6,15.4 171.4,12.2 175.2,12.3 179.0,11.4 182.9,10.1 186.7,13.6 190.5,14.2 194.3,12.2 198.1,12.8 201.9,12.5 205.7,11.1 209.5,12.0 213.3,14.4 217.1,14.6 221.0,12.1 224.8,13.4 228.6,15.4 232.4,14.7 236.2,13.4 240.0,12.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,37.2 3.8,38.3 7.6,38.7 11.4,37.9 15.2,36.2 19.0,39.1 22.9,42.0 26.7,40.3 30.5,37.8 34.3,38.5 38.1,38.3 41.9,40.4 45.7,40.2 49.5,37.6 53.3,39.0 57.1,38.5 61.0,38.9 64.8,38.1 68.6,35.2 72.4,36.2 76.2,35.5 80.0,36.3 83.8,33.8 87.6,32.9 91.4,32.3 95.2,33.3 99.0,32.8 102.9,34.4 106.7,35.2 110.5,36.0 114.3,36.1 118.1,35.7 121.9,27.5 125.7,28.7 129.5,29.9 133.3,29.1 137.1,28.7 141.0,24.6 144.8,16.5 148.6,16.0 152.4,20.0 156.2,20.2 160.0,20.1 163.8,17.8 167.6,15.4 171.4,12.2 175.2,12.3 179.0,11.4 182.9,10.1 186.7,13.6 190.5,14.2 194.3,12.2 198.1,12.8 201.9,12.5 205.7,11.1 209.5,12.0 213.3,14.4 217.1,14.6 221.0,12.1 224.8,13.4 228.6,15.4 232.4,14.7 236.2,13.4 240.0,12.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="12.1" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.46</b></span>
+        <span class="muted">6242.0</span>
+        <span class="muted">-2% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#NN.AS">
+      <div class="hd"><span class="flg">🇳🇱</span><span class="tk">NN.AS</span>
+        <span style="flex:1"></span>
+        <span class="lad caution">UNCONFIRMED TURN</span></div>
+      <div class="muted small" style="margin:3px 0">Nn Group Nv · Financials</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,41.0 3.8,40.5 7.6,37.6 11.4,35.0 15.2,40.0 19.0,41.8 22.9,41.3 26.7,42.0 30.5,39.1 34.3,40.9 38.1,41.4 41.9,40.0 45.7,38.1 49.5,32.0 53.3,31.1 57.1,31.5 61.0,28.6 64.8,26.1 68.6,26.2 72.4,23.7 76.2,22.4 80.0,22.0 83.8,21.9 87.6,20.3 91.4,20.8 95.2,19.8 99.0,20.1 102.9,20.9 106.7,21.9 110.5,20.9 114.3,19.7 118.1,20.2 121.9,18.3 125.7,20.1 129.5,19.2 133.3,14.5 137.1,14.9 141.0,16.5 144.8,13.1 148.6,16.7 152.4,14.8 156.2,13.1 160.0,14.4 163.8,13.8 167.6,17.8 171.4,16.2 175.2,15.0 179.0,14.1 182.9,10.7 186.7,10.1 190.5,12.6 194.3,16.8 198.1,18.8 201.9,18.8 205.7,18.5 209.5,19.3 213.3,20.1 217.1,19.8 221.0,19.9 224.8,19.4 228.6,18.3 232.4,16.8 236.2,14.3 240.0,13.2 240,42" fill="var(--muted)" opacity="0.12" stroke="none"/><polyline points="0.0,41.0 3.8,40.5 7.6,37.6 11.4,35.0 15.2,40.0 19.0,41.8 22.9,41.3 26.7,42.0 30.5,39.1 34.3,40.9 38.1,41.4 41.9,40.0 45.7,38.1 49.5,32.0 53.3,31.1 57.1,31.5 61.0,28.6 64.8,26.1 68.6,26.2 72.4,23.7 76.2,22.4 80.0,22.0 83.8,21.9 87.6,20.3 91.4,20.8 95.2,19.8 99.0,20.1 102.9,20.9 106.7,21.9 110.5,20.9 114.3,19.7 118.1,20.2 121.9,18.3 125.7,20.1 129.5,19.2 133.3,14.5 137.1,14.9 141.0,16.5 144.8,13.1 148.6,16.7 152.4,14.8 156.2,13.1 160.0,14.4 163.8,13.8 167.6,17.8 171.4,16.2 175.2,15.0 179.0,14.1 182.9,10.7 186.7,10.1 190.5,12.6 194.3,16.8 198.1,18.8 201.9,18.8 205.7,18.5 209.5,19.3 213.3,20.1 217.1,19.8 221.0,19.9 224.8,19.4 228.6,18.3 232.4,16.8 236.2,14.3 240.0,13.2" fill="none" stroke="var(--muted)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="13.2" r="2.6" fill="var(--muted)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.46</b></span>
+        <span class="muted">73.66</span>
+        <span class="muted">-2% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#032830.KS">
+      <div class="hd"><span class="flg">🇰🇷</span><span class="tk">032830.KS</span>
+        <span style="flex:1"></span>
+        <span class="lad up">BOTTOMING</span></div>
+      <div class="muted small" style="margin:3px 0">Samsung Life Ltd · Financials</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,41.3 3.8,41.8 7.6,41.2 11.4,39.1 15.2,39.6 19.0,39.5 22.9,41.2 26.7,40.6 30.5,40.0 34.3,40.6 38.1,40.5 41.9,40.9 45.7,42.0 49.5,40.3 53.3,41.2 57.1,40.8 61.0,40.2 64.8,40.6 68.6,38.7 72.4,39.7 76.2,39.2 80.0,39.1 83.8,37.8 87.6,36.4 91.4,36.4 95.2,36.9 99.0,36.9 102.9,36.6 106.7,37.6 110.5,36.7 114.3,38.0 118.1,37.3 121.9,37.1 125.7,37.1 129.5,37.4 133.3,35.5 137.1,31.6 141.0,31.4 144.8,32.0 148.6,31.5 152.4,31.5 156.2,30.7 160.0,27.8 163.8,30.2 167.6,29.8 171.4,30.0 175.2,30.0 179.0,24.9 182.9,23.8 186.7,25.7 190.5,24.9 194.3,24.6 198.1,20.9 201.9,18.4 205.7,10.1 209.5,15.1 213.3,18.1 217.1,22.5 221.0,20.4 224.8,23.3 228.6,23.7 232.4,21.3 236.2,16.8 240.0,16.6 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,41.3 3.8,41.8 7.6,41.2 11.4,39.1 15.2,39.6 19.0,39.5 22.9,41.2 26.7,40.6 30.5,40.0 34.3,40.6 38.1,40.5 41.9,40.9 45.7,42.0 49.5,40.3 53.3,41.2 57.1,40.8 61.0,40.2 64.8,40.6 68.6,38.7 72.4,39.7 76.2,39.2 80.0,39.1 83.8,37.8 87.6,36.4 91.4,36.4 95.2,36.9 99.0,36.9 102.9,36.6 106.7,37.6 110.5,36.7 114.3,38.0 118.1,37.3 121.9,37.1 125.7,37.1 129.5,37.4 133.3,35.5 137.1,31.6 141.0,31.4 144.8,32.0 148.6,31.5 152.4,31.5 156.2,30.7 160.0,27.8 163.8,30.2 167.6,29.8 171.4,30.0 175.2,30.0 179.0,24.9 182.9,23.8 186.7,25.7 190.5,24.9 194.3,24.6 198.1,20.9 201.9,18.4 205.7,10.1 209.5,15.1 213.3,18.1 217.1,22.5 221.0,20.4 224.8,23.3 228.6,23.7 232.4,21.3 236.2,16.8 240.0,16.6" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="16.6" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.44</b></span>
+        <span class="muted">425000.0</span>
+        <span class="muted">-12% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#SDZ.SW">
+      <div class="hd"><span class="flg">🇨🇭</span><span class="tk">SDZ.SW</span>
+        <span style="flex:1"></span>
+        <span class="lad up">BOTTOMING</span></div>
+      <div class="muted small" style="margin:3px 0">Sandoz Group Ag · Health Care</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,36.6 3.8,35.1 7.6,34.0 11.4,31.5 15.2,30.6 19.0,32.0 22.9,36.6 26.7,38.0 30.5,42.0 34.3,40.8 38.1,36.4 41.9,38.4 45.7,39.0 49.5,39.2 53.3,34.7 57.1,26.5 61.0,26.8 64.8,29.6 68.6,22.1 72.4,23.1 76.2,17.5 80.0,16.6 83.8,10.9 87.6,10.1 91.4,19.3 95.2,12.8 99.0,14.9 102.9,22.2 106.7,27.4 110.5,22.2 114.3,26.4 118.1,28.1 121.9,28.8 125.7,33.8 129.5,29.2 133.3,28.1 137.1,17.0 141.0,12.6 144.8,15.7 148.6,13.8 152.4,14.1 156.2,10.7 160.0,10.6 163.8,18.8 167.6,20.5 171.4,19.5 175.2,17.3 179.0,19.9 182.9,22.5 186.7,21.2 190.5,22.2 194.3,19.3 198.1,18.3 201.9,23.2 205.7,27.9 209.5,27.9 213.3,25.4 217.1,22.6 221.0,20.9 224.8,21.9 228.6,16.8 232.4,16.7 236.2,13.2 240.0,13.3 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,36.6 3.8,35.1 7.6,34.0 11.4,31.5 15.2,30.6 19.0,32.0 22.9,36.6 26.7,38.0 30.5,42.0 34.3,40.8 38.1,36.4 41.9,38.4 45.7,39.0 49.5,39.2 53.3,34.7 57.1,26.5 61.0,26.8 64.8,29.6 68.6,22.1 72.4,23.1 76.2,17.5 80.0,16.6 83.8,10.9 87.6,10.1 91.4,19.3 95.2,12.8 99.0,14.9 102.9,22.2 106.7,27.4 110.5,22.2 114.3,26.4 118.1,28.1 121.9,28.8 125.7,33.8 129.5,29.2 133.3,28.1 137.1,17.0 141.0,12.6 144.8,15.7 148.6,13.8 152.4,14.1 156.2,10.7 160.0,10.6 163.8,18.8 167.6,20.5 171.4,19.5 175.2,17.3 179.0,19.9 182.9,22.5 186.7,21.2 190.5,22.2 194.3,19.3 198.1,18.3 201.9,23.2 205.7,27.9 209.5,27.9 213.3,25.4 217.1,22.6 221.0,20.9 224.8,21.9 228.6,16.8 232.4,16.7 236.2,13.2 240.0,13.3" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="13.3" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.44</b></span>
+        <span class="muted">67.02</span>
+        <span class="muted">-6% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#RWE.DE">
+      <div class="hd"><span class="flg">🇩🇪</span><span class="tk">RWE.DE</span>
+        <span style="flex:1"></span>
+        <span class="lad down">NEARING A LOW</span></div>
+      <div class="muted small" style="margin:3px 0">Rwe Ag · Utilities</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,31.7 3.8,30.7 7.6,24.6 11.4,27.6 15.2,28.5 19.0,35.4 22.9,40.8 26.7,39.7 30.5,32.1 34.3,36.2 38.1,42.0 41.9,34.2 45.7,28.8 49.5,24.3 53.3,23.1 57.1,24.5 61.0,25.8 64.8,23.4 68.6,22.9 72.4,25.0 76.2,23.6 80.0,22.7 83.8,27.0 87.6,36.6 91.4,30.2 95.2,26.3 99.0,18.0 102.9,16.1 106.7,19.0 110.5,15.5 114.3,12.0 118.1,15.9 121.9,10.1 125.7,14.4 129.5,12.4 133.3,16.1 137.1,20.4 141.0,19.2 144.8,15.5 148.6,21.5 152.4,27.1 156.2,29.1 160.0,34.9 163.8,29.4 167.6,29.6 171.4,28.6 175.2,29.0 179.0,28.5 182.9,25.4 186.7,26.8 190.5,35.0 194.3,38.1 198.1,37.7 201.9,34.7 205.7,35.2 209.5,26.3 213.3,32.2 217.1,31.3 221.0,30.9 224.8,31.2 228.6,33.1 232.4,24.7 236.2,24.8 240.0,30.5 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,31.7 3.8,30.7 7.6,24.6 11.4,27.6 15.2,28.5 19.0,35.4 22.9,40.8 26.7,39.7 30.5,32.1 34.3,36.2 38.1,42.0 41.9,34.2 45.7,28.8 49.5,24.3 53.3,23.1 57.1,24.5 61.0,25.8 64.8,23.4 68.6,22.9 72.4,25.0 76.2,23.6 80.0,22.7 83.8,27.0 87.6,36.6 91.4,30.2 95.2,26.3 99.0,18.0 102.9,16.1 106.7,19.0 110.5,15.5 114.3,12.0 118.1,15.9 121.9,10.1 125.7,14.4 129.5,12.4 133.3,16.1 137.1,20.4 141.0,19.2 144.8,15.5 148.6,21.5 152.4,27.1 156.2,29.1 160.0,34.9 163.8,29.4 167.6,29.6 171.4,28.6 175.2,29.0 179.0,28.5 182.9,25.4 186.7,26.8 190.5,35.0 194.3,38.1 198.1,37.7 201.9,34.7 205.7,35.2 209.5,26.3 213.3,32.2 217.1,31.3 221.0,30.9 224.8,31.2 228.6,33.1 232.4,24.7 236.2,24.8 240.0,30.5" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="30.5" r="2.6" fill="var(--down)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.40</b></span>
+        <span class="muted">56.18</span>
+        <span class="muted">-8% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#402340.KS">
+      <div class="hd"><span class="flg">🇰🇷</span><span class="tk">402340.KS</span>
+        <span style="flex:1"></span>
+        <span class="lad up">NEARING A HIGH</span></div>
+      <div class="muted small" style="margin:3px 0">Sk Square Ltd · Industrials</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,39.2 3.8,39.9 7.6,39.0 11.4,38.2 15.2,36.8 19.0,37.4 22.9,37.5 26.7,39.1 30.5,37.9 34.3,37.6 38.1,39.1 41.9,39.5 45.7,40.6 49.5,42.0 53.3,40.9 57.1,41.9 61.0,41.5 64.8,41.4 68.6,41.0 72.4,38.5 76.2,39.0 80.0,38.8 83.8,38.4 87.6,36.5 91.4,35.7 95.2,34.9 99.0,35.2 102.9,34.6 106.7,34.0 110.5,34.0 114.3,33.7 118.1,33.8 121.9,31.8 125.7,31.1 129.5,30.5 133.3,30.2 137.1,25.4 141.0,22.3 144.8,22.0 148.6,22.0 152.4,19.2 156.2,21.1 160.0,19.1 163.8,19.7 167.6,22.0 171.4,22.1 175.2,24.5 179.0,24.2 182.9,19.4 186.7,19.2 190.5,19.4 194.3,16.3 198.1,17.6 201.9,17.7 205.7,17.0 209.5,14.1 213.3,13.7 217.1,16.9 221.0,21.4 224.8,16.6 228.6,19.3 232.4,17.9 236.2,13.8 240.0,10.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,39.2 3.8,39.9 7.6,39.0 11.4,38.2 15.2,36.8 19.0,37.4 22.9,37.5 26.7,39.1 30.5,37.9 34.3,37.6 38.1,39.1 41.9,39.5 45.7,40.6 49.5,42.0 53.3,40.9 57.1,41.9 61.0,41.5 64.8,41.4 68.6,41.0 72.4,38.5 76.2,39.0 80.0,38.8 83.8,38.4 87.6,36.5 91.4,35.7 95.2,34.9 99.0,35.2 102.9,34.6 106.7,34.0 110.5,34.0 114.3,33.7 118.1,33.8 121.9,31.8 125.7,31.1 129.5,30.5 133.3,30.2 137.1,25.4 141.0,22.3 144.8,22.0 148.6,22.0 152.4,19.2 156.2,21.1 160.0,19.1 163.8,19.7 167.6,22.0 171.4,22.1 175.2,24.5 179.0,24.2 182.9,19.4 186.7,19.2 190.5,19.4 194.3,16.3 198.1,17.6 201.9,17.7 205.7,17.0 209.5,14.1 213.3,13.7 217.1,16.9 221.0,21.4 224.8,16.6 228.6,19.3 232.4,17.9 236.2,13.8 240.0,10.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="10.1" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.38</b></span>
+        <span class="muted">1474000.0</span>
+        <span class="muted">0% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#NOKIA.HE">
+      <div class="hd"><span class="flg">🇫🇮</span><span class="tk">NOKIA.HE</span>
+        <span style="flex:1"></span>
+        <span class="lad up">BOTTOMING</span></div>
+      <div class="muted small" style="margin:3px 0">Nokia · Information Technology</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,41.9 3.8,40.6 7.6,40.4 11.4,39.2 15.2,39.3 19.0,39.8 22.9,40.8 26.7,41.5 30.5,41.6 34.3,41.0 38.1,40.0 41.9,40.3 45.7,41.7 49.5,41.4 53.3,42.0 57.1,40.7 61.0,39.8 64.8,39.3 68.6,37.1 72.4,36.9 76.2,37.0 80.0,34.7 83.8,34.2 87.6,35.0 91.4,34.8 95.2,34.6 99.0,33.4 102.9,33.8 106.7,35.1 110.5,33.0 114.3,33.4 118.1,31.9 121.9,31.3 125.7,27.7 129.5,26.5 133.3,23.4 137.1,23.2 141.0,23.5 144.8,26.8 148.6,25.2 152.4,23.4 156.2,24.6 160.0,21.2 163.8,21.3 167.6,22.0 171.4,22.6 175.2,22.0 179.0,20.6 182.9,15.8 186.7,16.6 190.5,13.5 194.3,15.0 198.1,16.1 201.9,18.6 205.7,15.6 209.5,11.3 213.3,10.1 217.1,13.1 221.0,16.5 224.8,17.0 228.6,20.7 232.4,21.1 236.2,21.7 240.0,17.0 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,41.9 3.8,40.6 7.6,40.4 11.4,39.2 15.2,39.3 19.0,39.8 22.9,40.8 26.7,41.5 30.5,41.6 34.3,41.0 38.1,40.0 41.9,40.3 45.7,41.7 49.5,41.4 53.3,42.0 57.1,40.7 61.0,39.8 64.8,39.3 68.6,37.1 72.4,36.9 76.2,37.0 80.0,34.7 83.8,34.2 87.6,35.0 91.4,34.8 95.2,34.6 99.0,33.4 102.9,33.8 106.7,35.1 110.5,33.0 114.3,33.4 118.1,31.9 121.9,31.3 125.7,27.7 129.5,26.5 133.3,23.4 137.1,23.2 141.0,23.5 144.8,26.8 148.6,25.2 152.4,23.4 156.2,24.6 160.0,21.2 163.8,21.3 167.6,22.0 171.4,22.6 175.2,22.0 179.0,20.6 182.9,15.8 186.7,16.6 190.5,13.5 194.3,15.0 198.1,16.1 201.9,18.6 205.7,15.6 209.5,11.3 213.3,10.1 217.1,13.1 221.0,16.5 224.8,17.0 228.6,20.7 232.4,21.1 236.2,21.7 240.0,17.0" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="17.0" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.37</b></span>
+        <span class="muted">12.97</span>
+        <span class="muted">-12% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#3037.TW">
+      <div class="hd"><span class="flg">🇹🇼</span><span class="tk">3037.TW</span>
+        <span style="flex:1"></span>
+        <span class="lad up">UPTREND</span></div>
+      <div class="muted small" style="margin:3px 0">Unimicron Technology Corp · Information Technology</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,36.8 3.8,37.1 7.6,35.2 11.4,35.2 15.2,36.5 19.0,39.3 22.9,41.2 26.7,38.9 30.5,39.1 34.3,39.0 38.1,39.6 41.9,42.0 45.7,39.8 49.5,38.3 53.3,36.0 57.1,33.3 61.0,33.0 64.8,32.4 68.6,33.0 72.4,34.4 76.2,33.4 80.0,32.0 83.8,32.1 87.6,30.4 91.4,28.8 95.2,28.5 99.0,27.9 102.9,24.8 106.7,22.3 110.5,23.0 114.3,24.1 118.1,20.1 121.9,18.8 125.7,19.2 129.5,21.4 133.3,19.5 137.1,23.4 141.0,21.2 144.8,20.5 148.6,19.7 152.4,20.2 156.2,23.2 160.0,23.5 163.8,23.4 167.6,23.1 171.4,19.1 175.2,15.8 179.0,14.8 182.9,10.1 186.7,10.3 190.5,13.1 194.3,11.6 198.1,11.8 201.9,15.6 205.7,14.3 209.5,15.8 213.3,17.7 217.1,18.8 221.0,15.9 224.8,20.1 228.6,21.6 232.4,19.2 236.2,16.3 240.0,15.2 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,36.8 3.8,37.1 7.6,35.2 11.4,35.2 15.2,36.5 19.0,39.3 22.9,41.2 26.7,38.9 30.5,39.1 34.3,39.0 38.1,39.6 41.9,42.0 45.7,39.8 49.5,38.3 53.3,36.0 57.1,33.3 61.0,33.0 64.8,32.4 68.6,33.0 72.4,34.4 76.2,33.4 80.0,32.0 83.8,32.1 87.6,30.4 91.4,28.8 95.2,28.5 99.0,27.9 102.9,24.8 106.7,22.3 110.5,23.0 114.3,24.1 118.1,20.1 121.9,18.8 125.7,19.2 129.5,21.4 133.3,19.5 137.1,23.4 141.0,21.2 144.8,20.5 148.6,19.7 152.4,20.2 156.2,23.2 160.0,23.5 163.8,23.4 167.6,23.1 171.4,19.1 175.2,15.8 179.0,14.8 182.9,10.1 186.7,10.3 190.5,13.1 194.3,11.6 198.1,11.8 201.9,15.6 205.7,14.3 209.5,15.8 213.3,17.7 217.1,18.8 221.0,15.9 224.8,20.1 228.6,21.6 232.4,19.2 236.2,16.3 240.0,15.2" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="15.2" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.36</b></span>
+        <span class="muted">983.0</span>
+        <span class="muted">-9% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#1519.TW">
+      <div class="hd"><span class="flg">🇹🇼</span><span class="tk">1519.TW</span>
+        <span style="flex:1"></span>
+        <span class="lad down">NEARING A LOW</span></div>
+      <div class="muted small" style="margin:3px 0">Fortune Electric Ltd · Industrials</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,15.1 3.8,12.8 7.6,11.2 11.4,12.6 15.2,13.8 19.0,18.8 22.9,20.5 26.7,11.8 30.5,18.0 34.3,23.6 38.1,29.6 41.9,38.7 45.7,33.9 49.5,36.8 53.3,39.1 57.1,30.4 61.0,35.0 64.8,33.5 68.6,32.9 72.4,30.4 76.2,21.3 80.0,22.3 83.8,22.3 87.6,18.6 91.4,13.2 95.2,13.9 99.0,21.3 102.9,19.6 106.7,19.2 110.5,21.7 114.3,22.5 118.1,19.2 121.9,13.6 125.7,17.8 129.5,19.4 133.3,18.6 137.1,17.6 141.0,12.8 144.8,14.1 148.6,17.8 152.4,22.7 156.2,31.7 160.0,35.4 163.8,39.5 167.6,42.0 171.4,36.2 175.2,31.2 179.0,30.4 182.9,26.3 186.7,21.1 190.5,27.3 194.3,21.9 198.1,22.7 201.9,26.5 205.7,10.1 209.5,14.9 213.3,26.3 217.1,33.3 221.0,27.9 224.8,37.9 228.6,41.4 232.4,37.9 236.2,38.3 240.0,39.1 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,15.1 3.8,12.8 7.6,11.2 11.4,12.6 15.2,13.8 19.0,18.8 22.9,20.5 26.7,11.8 30.5,18.0 34.3,23.6 38.1,29.6 41.9,38.7 45.7,33.9 49.5,36.8 53.3,39.1 57.1,30.4 61.0,35.0 64.8,33.5 68.6,32.9 72.4,30.4 76.2,21.3 80.0,22.3 83.8,22.3 87.6,18.6 91.4,13.2 95.2,13.9 99.0,21.3 102.9,19.6 106.7,19.2 110.5,21.7 114.3,22.5 118.1,19.2 121.9,13.6 125.7,17.8 129.5,19.4 133.3,18.6 137.1,17.6 141.0,12.8 144.8,14.1 148.6,17.8 152.4,22.7 156.2,31.7 160.0,35.4 163.8,39.5 167.6,42.0 171.4,36.2 175.2,31.2 179.0,30.4 182.9,26.3 186.7,21.1 190.5,27.3 194.3,21.9 198.1,22.7 201.9,26.5 205.7,10.1 209.5,14.9 213.3,26.3 217.1,33.3 221.0,27.9 224.8,37.9 228.6,41.4 232.4,37.9 236.2,38.3 240.0,39.1" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="39.1" r="2.6" fill="var(--down)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.35</b></span>
+        <span class="muted">785.0</span>
+        <span class="muted">-27% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#BT-A.L">
+      <div class="hd"><span class="flg">🇬🇧</span><span class="tk">BT-A.L</span>
+        <span style="flex:1"></span>
+        <span class="lad down">DOWNTREND</span></div>
+      <div class="muted small" style="margin:3px 0">Bt Group Plc · Communication</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,31.8 3.8,29.1 7.6,29.0 11.4,24.9 15.2,25.9 19.0,26.7 22.9,30.7 26.7,40.3 30.5,35.1 34.3,37.6 38.1,36.5 41.9,36.9 45.7,33.6 49.5,32.1 53.3,31.3 57.1,27.8 61.0,29.2 64.8,26.5 68.6,28.3 72.4,28.0 76.2,28.5 80.0,24.9 83.8,25.8 87.6,24.5 91.4,26.7 95.2,25.7 99.0,24.9 102.9,27.6 106.7,24.7 110.5,22.6 114.3,26.6 118.1,27.8 121.9,29.7 125.7,27.5 129.5,27.3 133.3,24.5 137.1,21.9 141.0,23.7 144.8,14.2 148.6,10.1 152.4,13.2 156.2,12.6 160.0,13.9 163.8,19.9 167.6,15.5 171.4,15.5 175.2,16.6 179.0,25.3 182.9,21.3 186.7,23.4 190.5,27.2 194.3,32.9 198.1,33.4 201.9,35.8 205.7,36.6 209.5,37.8 213.3,38.8 217.1,38.9 221.0,36.6 224.8,42.0 228.6,38.0 232.4,35.4 236.2,32.9 240.0,38.2 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,31.8 3.8,29.1 7.6,29.0 11.4,24.9 15.2,25.9 19.0,26.7 22.9,30.7 26.7,40.3 30.5,35.1 34.3,37.6 38.1,36.5 41.9,36.9 45.7,33.6 49.5,32.1 53.3,31.3 57.1,27.8 61.0,29.2 64.8,26.5 68.6,28.3 72.4,28.0 76.2,28.5 80.0,24.9 83.8,25.8 87.6,24.5 91.4,26.7 95.2,25.7 99.0,24.9 102.9,27.6 106.7,24.7 110.5,22.6 114.3,26.6 118.1,27.8 121.9,29.7 125.7,27.5 129.5,27.3 133.3,24.5 137.1,21.9 141.0,23.7 144.8,14.2 148.6,10.1 152.4,13.2 156.2,12.6 160.0,13.9 163.8,19.9 167.6,15.5 171.4,15.5 175.2,16.6 179.0,25.3 182.9,21.3 186.7,23.4 190.5,27.2 194.3,32.9 198.1,33.4 201.9,35.8 205.7,36.6 209.5,37.8 213.3,38.8 217.1,38.9 221.0,36.6 224.8,42.0 228.6,38.0 232.4,35.4 236.2,32.9 240.0,38.2" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="38.2" r="2.6" fill="var(--down)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.35</b></span>
+        <span class="muted">202.5</span>
+        <span class="muted">-15% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#6981.T">
+      <div class="hd"><span class="flg">🇯🇵</span><span class="tk">6981.T</span>
+        <span style="flex:1"></span>
+        <span class="lad up">NEARING A HIGH</span></div>
+      <div class="muted small" style="margin:3px 0">Murata Manufacturing Ltd · Information Technology</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,40.8 3.8,41.1 7.6,41.3 11.4,40.5 15.2,40.3 19.0,40.7 22.9,41.7 26.7,41.6 30.5,41.1 34.3,40.8 38.1,40.7 41.9,41.5 45.7,42.0 49.5,40.9 53.3,41.7 57.1,40.4 61.0,40.3 64.8,40.4 68.6,39.5 72.4,39.5 76.2,38.8 80.0,38.7 83.8,38.1 87.6,37.2 91.4,36.1 95.2,36.9 99.0,36.3 102.9,36.0 106.7,35.6 110.5,36.0 114.3,35.5 118.1,35.6 121.9,35.9 125.7,34.5 129.5,34.6 133.3,32.4 137.1,31.6 141.0,31.1 144.8,30.6 148.6,30.5 152.4,29.5 156.2,30.3 160.0,30.2 163.8,30.1 167.6,30.2 171.4,27.8 175.2,26.1 179.0,22.7 182.9,22.0 186.7,23.1 190.5,20.1 194.3,15.4 198.1,11.7 201.9,12.8 205.7,12.0 209.5,14.2 213.3,15.1 217.1,19.3 221.0,15.1 224.8,19.6 228.6,18.2 232.4,20.0 236.2,13.5 240.0,10.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,40.8 3.8,41.1 7.6,41.3 11.4,40.5 15.2,40.3 19.0,40.7 22.9,41.7 26.7,41.6 30.5,41.1 34.3,40.8 38.1,40.7 41.9,41.5 45.7,42.0 49.5,40.9 53.3,41.7 57.1,40.4 61.0,40.3 64.8,40.4 68.6,39.5 72.4,39.5 76.2,38.8 80.0,38.7 83.8,38.1 87.6,37.2 91.4,36.1 95.2,36.9 99.0,36.3 102.9,36.0 106.7,35.6 110.5,36.0 114.3,35.5 118.1,35.6 121.9,35.9 125.7,34.5 129.5,34.6 133.3,32.4 137.1,31.6 141.0,31.1 144.8,30.6 148.6,30.5 152.4,29.5 156.2,30.3 160.0,30.2 163.8,30.1 167.6,30.2 171.4,27.8 175.2,26.1 179.0,22.7 182.9,22.0 186.7,23.1 190.5,20.1 194.3,15.4 198.1,11.7 201.9,12.8 205.7,12.0 209.5,14.2 213.3,15.1 217.1,19.3 221.0,15.1 224.8,19.6 228.6,18.2 232.4,20.0 236.2,13.5 240.0,10.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="10.1" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.32</b></span>
+        <span class="muted">10870.0</span>
+        <span class="muted">0% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#HSBA.L">
+      <div class="hd"><span class="flg">🇬🇧</span><span class="tk">HSBA.L</span>
+        <span style="flex:1"></span>
+        <span class="lad caution">UNCONFIRMED TURN</span></div>
+      <div class="muted small" style="margin:3px 0">Hsbc Holdings Plc · Financials</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,26.6 3.8,35.8 7.6,37.7 11.4,35.8 15.2,34.4 19.0,34.2 22.9,38.7 26.7,42.0 30.5,37.3 34.3,37.5 38.1,34.7 41.9,35.6 45.7,35.3 49.5,33.9 53.3,32.7 57.1,24.9 61.0,26.5 64.8,27.1 68.6,19.1 72.4,19.2 76.2,18.5 80.0,17.9 83.8,18.5 87.6,18.7 91.4,15.4 95.2,17.3 99.0,16.7 102.9,18.2 106.7,18.7 110.5,20.8 114.3,20.9 118.1,19.4 121.9,19.6 125.7,17.4 129.5,16.1 133.3,25.7 137.1,18.1 141.0,19.0 144.8,21.4 148.6,19.6 152.4,21.0 156.2,18.6 160.0,17.3 163.8,20.4 167.6,18.8 171.4,20.1 175.2,16.1 179.0,16.3 182.9,14.4 186.7,12.9 190.5,10.8 194.3,13.5 198.1,12.0 201.9,13.3 205.7,10.1 209.5,12.2 213.3,15.2 217.1,16.0 221.0,14.7 224.8,21.9 228.6,24.1 232.4,20.7 236.2,14.5 240.0,13.1 240,42" fill="var(--muted)" opacity="0.12" stroke="none"/><polyline points="0.0,26.6 3.8,35.8 7.6,37.7 11.4,35.8 15.2,34.4 19.0,34.2 22.9,38.7 26.7,42.0 30.5,37.3 34.3,37.5 38.1,34.7 41.9,35.6 45.7,35.3 49.5,33.9 53.3,32.7 57.1,24.9 61.0,26.5 64.8,27.1 68.6,19.1 72.4,19.2 76.2,18.5 80.0,17.9 83.8,18.5 87.6,18.7 91.4,15.4 95.2,17.3 99.0,16.7 102.9,18.2 106.7,18.7 110.5,20.8 114.3,20.9 118.1,19.4 121.9,19.6 125.7,17.4 129.5,16.1 133.3,25.7 137.1,18.1 141.0,19.0 144.8,21.4 148.6,19.6 152.4,21.0 156.2,18.6 160.0,17.3 163.8,20.4 167.6,18.8 171.4,20.1 175.2,16.1 179.0,16.3 182.9,14.4 186.7,12.9 190.5,10.8 194.3,13.5 198.1,12.0 201.9,13.3 205.7,10.1 209.5,12.2 213.3,15.2 217.1,16.0 221.0,14.7 224.8,21.9 228.6,24.1 232.4,20.7 236.2,14.5 240.0,13.1" fill="none" stroke="var(--muted)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="13.1" r="2.6" fill="var(--muted)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.32</b></span>
+        <span class="muted">1384.6</span>
+        <span class="muted">-2% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#4062.T">
+      <div class="hd"><span class="flg">🇯🇵</span><span class="tk">4062.T</span>
+        <span style="flex:1"></span>
+        <span class="lad up">BOTTOMING</span></div>
+      <div class="muted small" style="margin:3px 0">Ibiden Ltd · Information Technology</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,41.4 3.8,41.0 7.6,40.4 11.4,39.7 15.2,39.8 19.0,40.2 22.9,41.7 26.7,41.1 30.5,39.8 34.3,39.8 38.1,40.2 41.9,41.2 45.7,42.0 49.5,40.6 53.3,41.2 57.1,40.3 61.0,39.6 64.8,39.3 68.6,37.1 72.4,37.0 76.2,36.9 80.0,37.9 83.8,36.8 87.6,37.9 91.4,37.5 95.2,38.2 99.0,37.5 102.9,35.5 106.7,34.2 110.5,34.3 114.3,31.4 118.1,31.2 121.9,31.4 125.7,29.5 129.5,29.7 133.3,23.6 137.1,25.4 141.0,25.1 144.8,23.3 148.6,22.2 152.4,22.4 156.2,25.1 160.0,25.1 163.8,25.8 167.6,25.1 171.4,20.5 175.2,17.7 179.0,14.3 182.9,14.2 186.7,15.3 190.5,16.7 194.3,10.1 198.1,12.5 201.9,13.9 205.7,12.2 209.5,15.9 213.3,18.7 217.1,22.2 221.0,19.1 224.8,21.5 228.6,19.9 232.4,18.0 236.2,10.6 240.0,10.7 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,41.4 3.8,41.0 7.6,40.4 11.4,39.7 15.2,39.8 19.0,40.2 22.9,41.7 26.7,41.1 30.5,39.8 34.3,39.8 38.1,40.2 41.9,41.2 45.7,42.0 49.5,40.6 53.3,41.2 57.1,40.3 61.0,39.6 64.8,39.3 68.6,37.1 72.4,37.0 76.2,36.9 80.0,37.9 83.8,36.8 87.6,37.9 91.4,37.5 95.2,38.2 99.0,37.5 102.9,35.5 106.7,34.2 110.5,34.3 114.3,31.4 118.1,31.2 121.9,31.4 125.7,29.5 129.5,29.7 133.3,23.6 137.1,25.4 141.0,25.1 144.8,23.3 148.6,22.2 152.4,22.4 156.2,25.1 160.0,25.1 163.8,25.8 167.6,25.1 171.4,20.5 175.2,17.7 179.0,14.3 182.9,14.2 186.7,15.3 190.5,16.7 194.3,10.1 198.1,12.5 201.9,13.9 205.7,12.2 209.5,15.9 213.3,18.7 217.1,22.2 221.0,19.1 224.8,21.5 228.6,19.9 232.4,18.0 236.2,10.6 240.0,10.7" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="10.7" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.31</b></span>
+        <span class="muted">22695.0</span>
+        <span class="muted">-1% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#4578.T">
+      <div class="hd"><span class="flg">🇯🇵</span><span class="tk">4578.T</span>
+        <span style="flex:1"></span>
+        <span class="lad down">DOWNTREND</span></div>
+      <div class="muted small" style="margin:3px 0">Otsuka Holdings Ltd · Health Care</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,24.7 3.8,25.0 7.6,26.3 11.4,24.1 15.2,22.6 19.0,31.0 22.9,36.2 26.7,33.4 30.5,25.8 34.3,23.2 38.1,16.7 41.9,20.0 45.7,24.9 49.5,14.6 53.3,18.4 57.1,20.5 61.0,21.4 64.8,21.0 68.6,24.1 72.4,26.6 76.2,32.5 80.0,36.0 83.8,36.8 87.6,34.7 91.4,31.4 95.2,35.0 99.0,31.8 102.9,34.0 106.7,29.9 110.5,27.9 114.3,29.1 118.1,32.6 121.9,21.4 125.7,16.7 129.5,20.5 133.3,19.7 137.1,24.6 141.0,25.4 144.8,25.4 148.6,22.1 152.4,16.6 156.2,20.2 160.0,21.4 163.8,22.5 167.6,16.6 171.4,10.6 175.2,11.4 179.0,14.1 182.9,16.0 186.7,18.6 190.5,22.2 194.3,10.1 198.1,16.7 201.9,18.5 205.7,23.1 209.5,29.9 213.3,34.0 217.1,34.6 221.0,40.4 224.8,40.6 228.6,41.6 232.4,42.0 236.2,41.4 240.0,40.7 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,24.7 3.8,25.0 7.6,26.3 11.4,24.1 15.2,22.6 19.0,31.0 22.9,36.2 26.7,33.4 30.5,25.8 34.3,23.2 38.1,16.7 41.9,20.0 45.7,24.9 49.5,14.6 53.3,18.4 57.1,20.5 61.0,21.4 64.8,21.0 68.6,24.1 72.4,26.6 76.2,32.5 80.0,36.0 83.8,36.8 87.6,34.7 91.4,31.4 95.2,35.0 99.0,31.8 102.9,34.0 106.7,29.9 110.5,27.9 114.3,29.1 118.1,32.6 121.9,21.4 125.7,16.7 129.5,20.5 133.3,19.7 137.1,24.6 141.0,25.4 144.8,25.4 148.6,22.1 152.4,16.6 156.2,20.2 160.0,21.4 163.8,22.5 167.6,16.6 171.4,10.6 175.2,11.4 179.0,14.1 182.9,16.0 186.7,18.6 190.5,22.2 194.3,10.1 198.1,16.7 201.9,18.5 205.7,23.1 209.5,29.9 213.3,34.0 217.1,34.6 221.0,40.4 224.8,40.6 228.6,41.6 232.4,42.0 236.2,41.4 240.0,40.7" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="40.7" r="2.6" fill="var(--down)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.30</b></span>
+        <span class="muted">10260.0</span>
+        <span class="muted">-12% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#2308.TW">
+      <div class="hd"><span class="flg">🇹🇼</span><span class="tk">2308.TW</span>
+        <span style="flex:1"></span>
+        <span class="lad down">NEARING A LOW</span></div>
+      <div class="muted small" style="margin:3px 0">Delta Electronics Inc · Information Technology</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,42.0 3.8,39.8 7.6,39.1 11.4,39.4 15.2,38.8 19.0,40.6 22.9,40.5 26.7,36.8 30.5,37.7 34.3,37.9 38.1,38.6 41.9,41.4 45.7,38.8 49.5,40.1 53.3,37.7 57.1,33.6 61.0,34.2 64.8,31.7 68.6,31.5 72.4,31.3 76.2,30.3 80.0,28.7 83.8,28.8 87.6,27.1 91.4,24.0 95.2,24.0 99.0,24.9 102.9,22.3 106.7,23.8 110.5,20.9 114.3,19.8 118.1,19.8 121.9,18.3 125.7,19.8 129.5,18.6 133.3,16.7 137.1,18.9 141.0,17.6 144.8,19.0 148.6,19.8 152.4,20.1 156.2,22.3 160.0,23.8 163.8,26.7 167.6,26.7 171.4,23.6 175.2,21.8 179.0,16.4 182.9,14.8 186.7,10.1 190.5,13.7 194.3,12.1 198.1,12.8 201.9,14.5 205.7,11.9 209.5,12.7 213.3,16.1 217.1,17.4 221.0,13.0 224.8,18.9 228.6,20.0 232.4,18.5 236.2,18.6 240.0,18.1 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,42.0 3.8,39.8 7.6,39.1 11.4,39.4 15.2,38.8 19.0,40.6 22.9,40.5 26.7,36.8 30.5,37.7 34.3,37.9 38.1,38.6 41.9,41.4 45.7,38.8 49.5,40.1 53.3,37.7 57.1,33.6 61.0,34.2 64.8,31.7 68.6,31.5 72.4,31.3 76.2,30.3 80.0,28.7 83.8,28.8 87.6,27.1 91.4,24.0 95.2,24.0 99.0,24.9 102.9,22.3 106.7,23.8 110.5,20.9 114.3,19.8 118.1,19.8 121.9,18.3 125.7,19.8 129.5,18.6 133.3,16.7 137.1,18.9 141.0,17.6 144.8,19.0 148.6,19.8 152.4,20.1 156.2,22.3 160.0,23.8 163.8,26.7 167.6,26.7 171.4,23.6 175.2,21.8 179.0,16.4 182.9,14.8 186.7,10.1 190.5,13.7 194.3,12.1 198.1,12.8 201.9,14.5 205.7,11.9 209.5,12.7 213.3,16.1 217.1,17.4 221.0,13.0 224.8,18.9 228.6,20.0 232.4,18.5 236.2,18.6 240.0,18.1" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="18.1" r="2.6" fill="var(--down)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.30</b></span>
+        <span class="muted">2230.0</span>
+        <span class="muted">-12% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#2503.T">
+      <div class="hd"><span class="flg">🇯🇵</span><span class="tk">2503.T</span>
+        <span style="flex:1"></span>
+        <span class="lad up">UPTREND</span></div>
+      <div class="muted small" style="margin:3px 0">Kirin Holdings Ltd · Consumer Staples</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,26.5 3.8,24.2 7.6,23.4 11.4,24.7 15.2,24.8 19.0,34.9 22.9,42.0 26.7,37.5 30.5,35.4 34.3,35.2 38.1,32.1 41.9,32.7 45.7,30.7 49.5,24.2 53.3,23.0 57.1,29.4 61.0,22.7 64.8,21.7 68.6,20.4 72.4,19.8 76.2,21.4 80.0,23.0 83.8,24.3 87.6,23.6 91.4,24.0 95.2,25.0 99.0,26.6 102.9,26.2 106.7,31.3 110.5,34.2 114.3,32.2 118.1,33.9 121.9,33.2 125.7,34.5 129.5,33.0 133.3,28.9 137.1,33.1 141.0,35.0 144.8,34.9 148.6,31.6 152.4,30.7 156.2,22.5 160.0,24.3 163.8,11.9 167.6,13.1 171.4,10.1 175.2,14.3 179.0,15.3 182.9,11.6 186.7,14.1 190.5,14.3 194.3,14.5 198.1,23.4 201.9,26.1 205.7,21.3 209.5,22.1 213.3,23.8 217.1,20.9 221.0,21.3 224.8,14.4 228.6,12.7 232.4,14.3 236.2,17.5 240.0,16.0 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,26.5 3.8,24.2 7.6,23.4 11.4,24.7 15.2,24.8 19.0,34.9 22.9,42.0 26.7,37.5 30.5,35.4 34.3,35.2 38.1,32.1 41.9,32.7 45.7,30.7 49.5,24.2 53.3,23.0 57.1,29.4 61.0,22.7 64.8,21.7 68.6,20.4 72.4,19.8 76.2,21.4 80.0,23.0 83.8,24.3 87.6,23.6 91.4,24.0 95.2,25.0 99.0,26.6 102.9,26.2 106.7,31.3 110.5,34.2 114.3,32.2 118.1,33.9 121.9,33.2 125.7,34.5 129.5,33.0 133.3,28.9 137.1,33.1 141.0,35.0 144.8,34.9 148.6,31.6 152.4,30.7 156.2,22.5 160.0,24.3 163.8,11.9 167.6,13.1 171.4,10.1 175.2,14.3 179.0,15.3 182.9,11.6 186.7,14.1 190.5,14.3 194.3,14.5 198.1,23.4 201.9,26.1 205.7,21.3 209.5,22.1 213.3,23.8 217.1,20.9 221.0,21.3 224.8,14.4 228.6,12.7 232.4,14.3 236.2,17.5 240.0,16.0" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="16.0" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.28</b></span>
+        <span class="muted">2700.0</span>
+        <span class="muted">-3% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#6857.T">
+      <div class="hd"><span class="flg">🇯🇵</span><span class="tk">6857.T</span>
+        <span style="flex:1"></span>
+        <span class="lad up">UPTREND</span></div>
+      <div class="muted small" style="margin:3px 0">Advantest Corp · Information Technology</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,30.2 3.8,32.6 7.6,31.2 11.4,32.9 15.2,28.4 19.0,31.7 22.9,35.2 26.7,36.3 30.5,33.2 34.3,34.6 38.1,37.1 41.9,40.3 45.7,42.0 49.5,35.8 53.3,39.7 57.1,38.5 61.0,37.4 64.8,36.7 68.6,28.0 72.4,29.2 76.2,28.7 80.0,29.0 83.8,22.9 87.6,21.3 91.4,18.3 95.2,20.5 99.0,22.7 102.9,22.4 106.7,20.4 110.5,20.4 114.3,16.0 118.1,10.1 121.9,15.1 125.7,19.3 129.5,20.6 133.3,15.2 137.1,14.7 141.0,17.9 144.8,18.1 148.6,19.3 152.4,18.3 156.2,24.8 160.0,25.4 163.8,27.8 167.6,26.9 171.4,23.7 175.2,23.4 179.0,20.8 182.9,25.6 186.7,22.6 190.5,24.8 194.3,25.3 198.1,26.7 201.9,24.9 205.7,21.1 209.5,19.6 213.3,23.6 217.1,28.0 221.0,24.9 224.8,28.0 228.6,28.2 232.4,22.0 236.2,16.0 240.0,11.6 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,30.2 3.8,32.6 7.6,31.2 11.4,32.9 15.2,28.4 19.0,31.7 22.9,35.2 26.7,36.3 30.5,33.2 34.3,34.6 38.1,37.1 41.9,40.3 45.7,42.0 49.5,35.8 53.3,39.7 57.1,38.5 61.0,37.4 64.8,36.7 68.6,28.0 72.4,29.2 76.2,28.7 80.0,29.0 83.8,22.9 87.6,21.3 91.4,18.3 95.2,20.5 99.0,22.7 102.9,22.4 106.7,20.4 110.5,20.4 114.3,16.0 118.1,10.1 121.9,15.1 125.7,19.3 129.5,20.6 133.3,15.2 137.1,14.7 141.0,17.9 144.8,18.1 148.6,19.3 152.4,18.3 156.2,24.8 160.0,25.4 163.8,27.8 167.6,26.9 171.4,23.7 175.2,23.4 179.0,20.8 182.9,25.6 186.7,22.6 190.5,24.8 194.3,25.3 198.1,26.7 201.9,24.9 205.7,21.1 209.5,19.6 213.3,23.6 217.1,28.0 221.0,24.9 224.8,28.0 228.6,28.2 232.4,22.0 236.2,16.0 240.0,11.6" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="11.6" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.24</b></span>
+        <span class="muted">30970.0</span>
+        <span class="muted">-2% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#STAN.L">
+      <div class="hd"><span class="flg">🇬🇧</span><span class="tk">STAN.L</span>
+        <span style="flex:1"></span>
+        <span class="lad up">BOTTOMING</span></div>
+      <div class="muted small" style="margin:3px 0">Standard Chartered Plc · Financials</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,37.3 3.8,40.3 7.6,40.1 11.4,37.0 15.2,35.4 19.0,42.0 22.9,41.9 26.7,39.2 30.5,38.6 34.3,35.5 38.1,39.8 41.9,41.0 45.7,40.6 49.5,39.8 53.3,36.5 57.1,37.7 61.0,37.5 64.8,29.9 68.6,30.8 72.4,29.6 76.2,30.2 80.0,27.6 83.8,26.3 87.6,26.7 91.4,23.7 95.2,25.4 99.0,25.1 102.9,26.6 106.7,28.0 110.5,28.8 114.3,27.6 118.1,26.5 121.9,26.1 125.7,21.8 129.5,21.0 133.3,24.3 137.1,19.3 141.0,19.8 144.8,20.3 148.6,21.6 152.4,23.3 156.2,20.5 160.0,18.9 163.8,20.3 167.6,18.4 171.4,20.8 175.2,18.0 179.0,17.5 182.9,16.9 186.7,15.0 190.5,14.5 194.3,15.9 198.1,14.1 201.9,13.2 205.7,10.1 209.5,13.1 213.3,16.4 217.1,17.7 221.0,17.7 224.8,24.8 228.6,26.0 232.4,22.4 236.2,18.0 240.0,15.5 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,37.3 3.8,40.3 7.6,40.1 11.4,37.0 15.2,35.4 19.0,42.0 22.9,41.9 26.7,39.2 30.5,38.6 34.3,35.5 38.1,39.8 41.9,41.0 45.7,40.6 49.5,39.8 53.3,36.5 57.1,37.7 61.0,37.5 64.8,29.9 68.6,30.8 72.4,29.6 76.2,30.2 80.0,27.6 83.8,26.3 87.6,26.7 91.4,23.7 95.2,25.4 99.0,25.1 102.9,26.6 106.7,28.0 110.5,28.8 114.3,27.6 118.1,26.5 121.9,26.1 125.7,21.8 129.5,21.0 133.3,24.3 137.1,19.3 141.0,19.8 144.8,20.3 148.6,21.6 152.4,23.3 156.2,20.5 160.0,18.9 163.8,20.3 167.6,18.4 171.4,20.8 175.2,18.0 179.0,17.5 182.9,16.9 186.7,15.0 190.5,14.5 194.3,15.9 198.1,14.1 201.9,13.2 205.7,10.1 209.5,13.1 213.3,16.4 217.1,17.7 221.0,17.7 224.8,24.8 228.6,26.0 232.4,22.4 236.2,18.0 240.0,15.5" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="15.5" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.24</b></span>
+        <span class="muted">1970.0</span>
+        <span class="muted">-4% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+    <a class="card hidden stmore" href="intl_stock.html#267250.KS">
+      <div class="hd"><span class="flg">🇰🇷</span><span class="tk">267250.KS</span>
+        <span style="flex:1"></span>
+        <span class="lad up">UPTREND</span></div>
+      <div class="muted small" style="margin:3px 0">Hd Hyundai Ltd · Energy</div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,30.8 3.8,30.6 7.6,28.2 11.4,25.2 15.2,31.4 19.0,29.5 22.9,40.3 26.7,34.0 30.5,29.7 34.3,29.1 38.1,32.9 41.9,37.9 45.7,40.9 49.5,37.9 53.3,39.6 57.1,38.3 61.0,39.2 64.8,42.0 68.6,35.7 72.4,34.2 76.2,35.3 80.0,38.8 83.8,36.2 87.6,34.0 91.4,32.3 95.2,32.1 99.0,34.0 102.9,33.2 106.7,29.9 110.5,23.2 114.3,19.8 118.1,21.3 121.9,23.0 125.7,14.2 129.5,10.1 133.3,13.5 137.1,20.9 141.0,18.9 144.8,19.4 148.6,17.4 152.4,20.2 156.2,15.3 160.0,23.7 163.8,27.8 167.6,28.0 171.4,29.7 175.2,32.3 179.0,24.3 182.9,22.4 186.7,19.1 190.5,20.3 194.3,24.6 198.1,23.8 201.9,22.3 205.7,24.2 209.5,22.7 213.3,26.4 217.1,36.6 221.0,39.6 224.8,38.9 228.6,37.6 232.4,38.3 236.2,27.9 240.0,25.9 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,30.8 3.8,30.6 7.6,28.2 11.4,25.2 15.2,31.4 19.0,29.5 22.9,40.3 26.7,34.0 30.5,29.7 34.3,29.1 38.1,32.9 41.9,37.9 45.7,40.9 49.5,37.9 53.3,39.6 57.1,38.3 61.0,39.2 64.8,42.0 68.6,35.7 72.4,34.2 76.2,35.3 80.0,38.8 83.8,36.2 87.6,34.0 91.4,32.3 95.2,32.1 99.0,34.0 102.9,33.2 106.7,29.9 110.5,23.2 114.3,19.8 118.1,21.3 121.9,23.0 125.7,14.2 129.5,10.1 133.3,13.5 137.1,20.9 141.0,18.9 144.8,19.4 148.6,17.4 152.4,20.2 156.2,15.3 160.0,23.7 163.8,27.8 167.6,28.0 171.4,29.7 175.2,32.3 179.0,24.3 182.9,22.4 186.7,19.1 190.5,20.3 194.3,24.6 198.1,23.8 201.9,22.3 205.7,24.2 209.5,22.7 213.3,26.4 217.1,36.6 221.0,39.6 224.8,38.9 228.6,37.6 232.4,38.3 236.2,27.9 240.0,25.9" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="25.9" r="2.6" fill="var(--up)"/></svg>
+      <div class="row small" style="gap:10px;margin-top:5px">
+        <span>α <b>+1.22</b></span>
+        <span class="muted">272500.0</span>
+        <span class="muted">-12% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+      </div>
+    </a>
+    
+  </div>
+  <button class="more-btn" data-more="stmore"><span class="l-en">Show more</span><span class="l-zh">显示更多</span> (60)</button>
+  <p class="caveat" style="margin-top:10px"><span class="l-en">Standout within its own market — alpha is sector-neutral residual momentum computed per market, never pooled raw across currencies. Click a card for the full cycle / momentum breakdown.</span><span class="l-zh">相对其所在市场的精选 — 阿尔法为各市场内部计算的板块中性残差动量，绝不跨币种原始汇总。点击卡片查看完整周期／动量拆解。</span></p>
+  
+</div>
+
+
+
+<script>
+document.querySelectorAll('.more-btn[data-more]').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('.' + btn.dataset.more).forEach(function(el){ el.classList.remove('hidden'); });
+    btn.style.display = 'none';
+  });
+});
+</script>
+<script src="theme.js"></script>
+<script src="tablesort.js"></script>
+</body>
+</html>

@@ -1769,6 +1769,10 @@ catalyst_tone:
 # =============================================================================
 master_brain:
   enabled: true                   # MASTER SWITCH — pipeline runs it only when true
+  interval_days: 1                # regenerate the briefs every N days (1..7). 1 = every
+                                  # build (default); >1 keeps the prior brief live and
+                                  # skips the (paid) LLM call until it's that many days old
+                                  # — set from the admin dashboard's AI Brief panel.
   lenses: [macro, china, btc]     # which briefs to generate (one LLM call each)
   api_key_env: DEEPSEEK_API_KEY
   llm_base_url: https://api.deepseek.com/anthropic
@@ -1794,6 +1798,9 @@ master_brain:
 # =============================================================================
 ai_desk:
   enabled: true                   # MASTER SWITCH — pipeline runs it only when true
+  interval_days: 1                # regenerate the desk note every N days (1..7); 1 =
+                                  # every build. >1 keeps the prior note live (and skips
+                                  # the ledger append) until it's that many days old.
   api_key_env: DEEPSEEK_API_KEY
   llm_base_url: https://api.deepseek.com/anthropic
   llm_model: deepseek-v4-pro      # reasoning tier; swap to claude-opus-4-8 later

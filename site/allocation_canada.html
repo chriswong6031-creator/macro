@@ -79,6 +79,19 @@
   .banner.crash { background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.45); }
   ul.dnc { margin:6px 0 0; padding-left:18px; font-size:12px; color:var(--muted); }
   ul.dnc li { margin:3px 0; }
+  #td-panel .pstance { font-size:12px; color:var(--muted); margin:4px 0; line-height:1.45; }
+  #td-panel .pstance b { color:var(--text); }
+  .cards-td { display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:11px; margin-top:8px; }
+  .tcard { background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--c,#7c5cff); border-radius:10px; padding:11px 13px; }
+  .tcard .lean { font-weight:650; font-size:14px; }
+  .tcard .lean .dir { text-transform:uppercase; letter-spacing:.03em; font-size:11px; padding:1px 6px; border-radius:6px; border:1px solid var(--line); margin-right:6px; }
+  .tcard .conv { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+  .tcard .body { font-size:12.5px; line-height:1.5; margin:6px 0; }
+  .tcard .ev { font-size:11.5px; color:var(--muted); margin:4px 0; }
+  .tcard .dis { font-size:12px; font-style:italic; color:var(--muted); border-left:2px solid var(--line); padding-left:8px; margin:6px 0; }
+  .tcard .fals { font-size:11.5px; color:var(--muted); margin-top:6px; }
+  .tcard .fals b { color:var(--text); }
+  .tcard .cby { font-variant-numeric:tabular-nums; }
   footer { color:var(--muted); font-size:11.5px; margin-top:28px; border-top:1px solid var(--line); padding-top:12px; max-width:96ch; line-height:1.6; }
 </style>
 </head>
@@ -588,10 +601,26 @@
   <p class="tagline" style="margin-top:8px"><b><span class="l-en">Directive</span><span class="l-zh">指令</span>:</b> Permitted: name the prevailing narrative, judge its durability from breadth/cohesion/trend-health, flag crowding as a sizing caution, and describe the one-narrative-vs-everything structure. Produce ONE falsifiable conditional lean with a check-by horizon. FORBIDDEN: directional certainty, fade calls, next-theme prediction, or letting any of this feed a score.</p>
 </div>
 
+<!-- live desk: falsifiable per-theme leans (fetched client-side; degrades to the contract above) -->
+<div id="thematic-desk" data-region="canada" style="margin-top:12px">
+  <div class="story" style="margin:6px 0 2px"><span class="l-en">Desk read — falsifiable hypotheses, graded over time</span><span class="l-zh">桌面解读 — 可证伪假设，长期被打分</span>
+    <span class="chip"><span class="l-en">display-only</span><span class="l-zh">仅展示</span></span><span id="td-track" class="chip" style="display:none"></span></div>
+  <p class="tagline" style="margin-top:0"><span class="l-en">The desk&#39;s fallible, falsifiable leans — each with a check-by date and graded against reality over time, so you learn whether to trust it. Never a buy list, never a size; the validated edge on this page is drawdown control.</span><span class="l-zh">桌面给出的可证伪方向性判断 — 每条都有检验截止日，并随时间对照现实打分，让你判断是否值得信任。绝非买入清单、绝非仓位；本页验证过的优势是回撤控制。</span></p>
+  <p id="td-regime" class="story" style="display:none;font-size:13.5px"></p>
+  <div id="td-cards" class="cards-td"></div>
+  <p id="td-watch" class="tagline" style="display:none;margin-top:8px"></p>
+  <details id="td-panel-wrap" style="display:none;margin-top:6px">
+    <summary class="muted" style="font-size:12px;cursor:pointer"><span class="l-en">What the analysts argued (adversarial panel)</span><span class="l-zh">分析师论点（对抗式专家组）</span></summary>
+    <div id="td-panel"></div>
+  </details>
+  <p id="td-empty" class="tagline" style="display:none"><span class="l-en">The live desk note has not been generated yet (the AI layer runs in the daily build). The contract above still governs what it may conclude.</span><span class="l-zh">实时桌面简报尚未生成（AI 层在每日构建中运行）。上方契约仍约束其可下的结论。</span></p>
+</div>
+
 <footer>
   <span class="l-en">Read-only analytics for informational purposes only — NOT investment advice and NOT a buy/sell list. The thematic baskets are equal-weight, point-in-time dated-membership trackers over a free ~3-5y price cache, benchmarked to S&amp;P/TSX and curated with knowledge of the period — so they are HINDSIGHT-descriptive, not an out-of-sample backtest. The allocation ALGORITHM is validated on multi-decade sector-ETF history (see panel 04), where its only repeatable edge is drawdown/shake-out control via the absolute-trend gate; cross-sectional momentum has ~0 forward rank-IC and basket-level crowding has no forward drawdown edge (it only sizes down). Durability, crowding and rotation are coincident, display-only context — none of them feeds any score. See LIMITATIONS.md and scripts/thematic_rotation_phase0.py.</span><span class="l-zh">仅供参考的只读分析 — 非投资建议，也非买卖清单。主题篮子为等权、按时点日期管理成分、基于免费约3-5年价格缓存，以 S&amp;P/TSX 为基准，且在已知该期表现下整理 — 故为事后描述性序列，并非样本外回测。该配置&#34;算法&#34;在跨越数十年的行业 ETF 历史上验证（见面板04），其唯一可重复的优势是通过绝对趋势门控制回撤/被甩出；横截面动量前瞻rank-IC约为0，篮子层面拥挤无前瞻回撤优势（仅用于降仓）。持续性、拥挤与轮动均为同步的、仅展示的背景 — 都不进入任何评分。参见 LIMITATIONS.md 与 scripts/thematic_rotation_phase0.py。</span>
-  <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-16 17:12 UTC.
+  <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-17 03:38 UTC.
 </footer>
+<script src="ai_desk_thematic.js"></script>
 <script src="theme.js"></script>
 </body>
 </html>
