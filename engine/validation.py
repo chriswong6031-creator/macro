@@ -450,3 +450,58 @@ def crps_score(sample_sets, ys, clim=None) -> dict:
         out["crps_clim"] = round(cv, 4)
         out["skill"] = round(1 - mc / cv, 3) if cv else None
     return out
+
+
+# --------------------------------------------------------------------------- #
+# OUT-OF-SAMPLE return-prediction tests (Index Direction model). The single
+# honest bar for any directional/return forecast: does it beat the EXPANDING
+# HISTORICAL MEAN (the Goyal-Welch random-walk benchmark) out-of-sample? Two
+# net-new primitives — both pure-numpy, layered on newey_west_tstat.
+# --------------------------------------------------------------------------- #
+def oos_r2(realized, forecast, bench=None, min_n: int = 60) -> dict:
+    """Campbell-Thompson out-of-sample R²: 1 - Σ(r-f)² / Σ(r-bench)², where bench is
+    the recursive/EXPANDING historical mean (passed in, or computed causally here as
+    the shifted expanding mean of `realized` when None). OOS_R² > 0 ⇒ the forecast
+    beats 'always predict the mean' out-of-sample. `realized`/`forecast` must be
+    TIME-ORDERED. Returns {} if fewer than min_n aligned points."""
+    r = np.asarray(realized, float)
+    f = np.asarray(forecast, float)
+    if bench is None:
+        b = pd.Series(r).expanding(min_periods=1).mean().shift(1).to_numpy()
+    else:
+        b = np.asarray(bench, float)
+    m = np.isfinite(r) & np.isfinite(f) & np.isfinite(b)
+    r, f, b = r[m], f[m], b[m]
+    if len(r) < min_n:
+        return {}
+    sse_f = float(np.sum((r - f) ** 2))
+    sse_b = float(np.sum((r - b) ** 2))
+    return {"oos_r2": round(1.0 - sse_f / sse_b, 5) if sse_b else None,
+            "mspe_fcst": round(sse_f / len(r), 6), "mspe_bench": round(sse_b / len(r), 6),
+            "n": int(len(r))}
+
+
+def clark_west(realized, forecast, bench=None, hac_lags: int = 4) -> dict:
+    """Clark-West (2007) adjusted test of OOS_R² > 0 for NESTED models (forecast nests
+    the historical-mean benchmark). The naive MSPE comparison is biased against the
+    larger model because estimating the extra parameter adds noise under the null; CW
+    adds back (bench-f)². f_adj = (r-bench)² - (r-f)² + (bench-f)²; a positive mean
+    (HAC t-stat via newey_west_tstat) ⇒ the predictor has genuine OOS content. Returns
+    {cw_t, cw_p (ONE-sided), mean_adj, n}."""
+    r = np.asarray(realized, float)
+    f = np.asarray(forecast, float)
+    if bench is None:
+        b = pd.Series(r).expanding(min_periods=1).mean().shift(1).to_numpy()
+    else:
+        b = np.asarray(bench, float)
+    m = np.isfinite(r) & np.isfinite(f) & np.isfinite(b)
+    r, f, b = r[m], f[m], b[m]
+    if len(r) < 8:
+        return {}
+    f_adj = (r - b) ** 2 - (r - f) ** 2 + (b - f) ** 2
+    nw = newey_west_tstat(f_adj, lags=hac_lags)
+    t = nw.get("t")
+    one_sided = (nw["p"] / 2.0 if (t is not None and t > 0) else
+                 (1.0 - nw["p"] / 2.0 if t is not None else None))
+    return {"cw_t": t, "cw_p": round(one_sided, 4) if one_sided is not None else None,
+            "mean_adj": nw.get("mean"), "n": int(len(r))}

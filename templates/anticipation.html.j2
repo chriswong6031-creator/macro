@@ -233,10 +233,13 @@
     HN.forEach(function(n){ var h=a.horizons[n]; if(!h) return; var rq=h.ret_q||{};
       var nm={short:'Short',medium:'Medium',long:'Long'}[n], nmzh={short:'短期',medium:'中期',long:'长期'}[n];
       var dirw = h.direction==='coin-flip'?T('coin-flip','抛硬币'):(h.direction==='up-lean'?T('up-lean','偏多'):(h.direction==='down-lean'?T('down-lean','偏空'):T('neutral','中性')));
+      var pu = Math.round((h.p_up||0.5)*100);
+      var badge = h.direction_scored ? ' · <span style="color:var(--up)">'+T('validated OOS','已验证OOS')+'</span>'
+                  : (n==='short' ? '' : ' · <span class="muted">'+T('coin-flip','抛硬币')+'</span>');
       ch+='<div class="hc'+(h.thin?' thin':'')+'"><div class="k">'+T(nm,nmzh)+' · '+(h.range_td?h.range_td.join('–'):'')+'d</div>'+
         '<div class="v">'+pct(h.dd_avg)+' <span class="muted sm">'+T('typical dip','常见回撤')+'</span></div>'+
         '<div class="t2">'+T('worst','最坏')+' '+pct(h.dd_tail)+' · p50 '+pct(rq.p50)+'</div>'+
-        '<div class="dir">'+dirw+' · '+h.conviction+(h.thin?' · '+T('thin','样本薄'):'')+'</div></div>';
+        '<div class="dir">'+dirw+' · '+T('P(up)','上涨概率')+' '+pu+'%'+badge+'</div></div>';
     });
     document.getElementById('cards').innerHTML = ch;
     // drivers
