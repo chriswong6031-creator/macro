@@ -266,7 +266,7 @@
   }
 
   // selector
-  var groups=[['index','Index','指数'],['sector','Sectors','板块'],['stock','Watchlist','自选']];
+  var groups=[['index','Index','指数'],['sector','Sectors','板块'],['theme','Themes','主题'],['stock','Watchlist','自选']];
   var sh=''; groups.forEach(function(g){ var items=A.filter(function(a){return a.group===g[0];});
     if(!items.length) return; sh+='<div class="selgrp"><span class="gl">'+T(g[1],g[2])+'</span>';
     items.forEach(function(a){ sh+='<span class="pick" data-tk="'+a.asset+'">'+a.asset+'</span>'; }); sh+='</div>'; });

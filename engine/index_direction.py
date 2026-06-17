@@ -53,9 +53,30 @@ SECTOR_PRESETS = {
     "XLV": {"medium": {"vrp": "MED", "tsmom": "MED", "real_rate": "LOW"}},                        # health (defensive)
     "XLC": {"medium": {"real_rate": "MED", "tsmom": "MED", "credit": "LOW"}},                     # comm services
 }
-# Unified per-ticker directional presets (indexes + sectors). The engine + Phase-0 key
-# off membership here; sectors default display-only until their own block passes Phase-0.
-PRESETS = {**INDEX_PRESETS, **SECTOR_PRESETS}
+# Thematic ETFs — NARROWER, purer-driver exposures than broad sectors (deep tradeable
+# history, unlike the ~3y hand-curated synthetic baskets which can't be OOS-validated).
+# Each tied to its specific driver; all legs oriented bullish; own gate + Phase-0.
+THEME_PRESETS = {
+    "SMH": {"medium": {"real_rate": "HIGH", "vrp": "HIGH", "tsmom": "MED"}},          # semis (purest duration)
+    "SOXX": {"medium": {"real_rate": "HIGH", "vrp": "HIGH", "tsmom": "MED"}},
+    "IGV": {"medium": {"real_rate": "HIGH", "vrp": "HIGH", "tsmom": "MED"}},           # software
+    "XBI": {"medium": {"real_rate": "HIGH", "vrp": "MED", "tsmom": "MED"}},            # biotech (rate/risk)
+    "IBB": {"medium": {"real_rate": "HIGH", "vrp": "MED", "tsmom": "MED"}},
+    "GDX": {"medium": {"real_rate": "HIGH", "gold": "HIGH", "dollar": "MED", "tsmom": "MED"}},  # gold miners
+    "GDXJ": {"medium": {"real_rate": "HIGH", "gold": "HIGH", "dollar": "MED", "tsmom": "MED"}},
+    "KRE": {"medium": {"term": "HIGH", "credit": "HIGH", "credit_vel": "MED", "tsmom": "MED"}},  # regional banks
+    "KBE": {"medium": {"term": "HIGH", "credit": "HIGH", "credit_vel": "MED", "tsmom": "MED"}},
+    "ITB": {"medium": {"real_rate": "HIGH", "term": "MED", "credit": "MED", "tsmom": "MED"}},   # homebuilders (mortgage~rates)
+    "XHB": {"medium": {"real_rate": "HIGH", "term": "MED", "credit": "MED", "tsmom": "MED"}},
+    "XME": {"medium": {"dollar": "HIGH", "oil_mom": "MED", "term": "MED", "tsmom": "MED"}},      # metals & mining
+    "XOP": {"medium": {"oil_mom": "HIGH", "dollar": "MED", "tsmom": "MED"}},                     # oil & gas E&P
+    "OIH": {"medium": {"oil_mom": "HIGH", "dollar": "MED", "tsmom": "MED"}},                     # oil services
+    "XRT": {"medium": {"credit": "MED", "real_rate": "MED", "tsmom": "MED", "vrp": "LOW"}},      # retail
+    "TAN": {"medium": {"real_rate": "HIGH", "oil_mom": "MED", "tsmom": "MED"}},                  # solar (rate-sensitive)
+}
+# Unified per-ticker directional presets (indexes + sectors + themes). The engine + Phase-0
+# key off membership here; each defaults display-only until its own block passes Phase-0.
+PRESETS = {**INDEX_PRESETS, **SECTOR_PRESETS, **THEME_PRESETS}
 MEDIUM_TD = 42
 HORIZONS_TD = {"medium": 42, "long": 189}   # the directional model spans medium + long
 # honest P(up) band for a scored medium-horizon index lean (the equity-premium drift
@@ -96,10 +117,15 @@ def _market() -> dict:
             oil = pd.read_parquet(Y / "CL_F.parquet")["close"]
         except Exception:
             oil = pd.Series(dtype=float)
+    gold = pd.Series(dtype=float)
+    try:
+        gold = pd.read_parquet(Y / "GC_F.parquet")["close"].replace(0, np.nan)
+    except Exception:
+        pass
     _MKT = {"vix": vix, "walcl": g(F / "WALCL.parquet"), "rrp": g(F / "RRPONTSYD.parquet"),
             "real10": g(F / "DFII10.parquet"), "hy_oas": g(F / "BAMLH0A0HYM2.parquet"),
             "t10y3m": g(F / "T10Y3M.parquet"), "anfci": g(F / "ANFCI.parquet"),
-            "dollar": g(F / "DTWEXBGS.parquet"), "oil": oil}
+            "dollar": g(F / "DTWEXBGS.parquet"), "oil": oil, "gold": gold}
     return _MKT
 
 
@@ -137,6 +163,8 @@ def build_legs(close: pd.Series) -> pd.DataFrame:
         out["oil_mom"] = _z(oil.pct_change(60, fill_method=None))   # rising oil → energy/materials +
     if not mkt.get("dollar", pd.Series(dtype=float)).empty:
         out["dollar"] = -_z(R(mkt["dollar"]).diff(60))         # FALLING broad $ → commodities/materials +
+    if not mkt.get("gold", pd.Series(dtype=float)).empty:
+        out["gold"] = _z(R(mkt["gold"]).pct_change(60, fill_method=None))   # rising gold → miners +
     return out
 
 

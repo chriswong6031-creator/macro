@@ -33,6 +33,11 @@ SECTORS = {"XLK": "Technology", "XLF": "Financials", "XLE": "Energy", "XLV": "He
            "XLI": "Industrials", "XLY": "Cons. Discretionary", "XLP": "Cons. Staples",
            "XLU": "Utilities", "XLB": "Materials", "XLRE": "Real Estate",
            "XLC": "Communication"}
+# Narrow thematic ETFs (deep history) — purer-driver exposures than broad sectors.
+THEMES = {"SMH": "Semiconductors", "SOXX": "Semis (SOXX)", "IGV": "Software", "XBI": "Biotech",
+          "IBB": "Biotech (IBB)", "GDX": "Gold Miners", "GDXJ": "Jr Gold Miners",
+          "KRE": "Regional Banks", "ITB": "Homebuilders", "XME": "Metals & Mining",
+          "XOP": "Oil & Gas E&P", "OIH": "Oil Services", "XRT": "Retail", "TAN": "Solar"}
 # Default watchlist — the most-watched US mega-caps (one-line change; all in data/stocks).
 WATCHLIST = ["NVDA", "AAPL", "MSFT", "GOOGL", "AMZN", "META", "TSLA", "AVGO", "AMD",
              "JPM", "XOM", "LLY", "UNH", "COST", "V", "MA", "HD", "WMT", "BRK-B", "CAT"]
@@ -64,6 +69,7 @@ def main() -> int:
 
         groups = ([("index", t, n) for t, n in INDEX]
                   + [("sector", t, n) for t, n in SECTORS.items()]
+                  + [("theme", t, n) for t, n in THEMES.items()]
                   + [("stock", t, t) for t in WATCHLIST])
         assets = []
         for group, tkr, name in groups:

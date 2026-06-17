@@ -98,6 +98,28 @@ Tested every asset at LONG (189td) too, per-horizon BH-FDR. Honest findings:
 Everything else, every horizon = honest coin-flip. The throughline: **real rates are the one
 robustly-priced equity directional driver** — fast for tech, slow for staples.
 
+## Thematic ETF extension (Phase D — SHIPPED)
+Hypothesis (user): narrower thematic baskets may have cleaner directional edges than broad
+sectors. Tested honestly — NOT on the repo's ~3y hindsight-curated synthetic baskets (too
+short + contaminated to OOS-validate) but on **15 deep-history (16-25y) thematic ETFs** fetched
+into the store (SMH/SOXX/IGV/XBI/IBB/GDX/GDXJ/KRE/KBE/ITB/XHB/XME/XOP/OIH/XRT/TAN). Added a
+`gold` leg (GC_F) for miners. Same per-horizon BH-FDR battery across all 30 assets.
+
+**RESULT — hypothesis PARTIALLY validated, precisely:**
+- **SMH (semiconductors) SCORED at LONG** via `real_rate` (OOS-R² **0.093**, CW p=0.0006, both
+  halves) — the narrowest, purest long-duration play produced a strong clean edge, exactly the
+  user's intuition. (SMH-medium narrowly failed both-halves; the semi rate-repricing is a
+  long-horizon effect.)
+- **Every OTHER theme = coin-flip.** Gold miners (gold/real-rate), regional banks (curve/credit),
+  homebuilders (mortgage~rates), oil E&P/services (oil), metals (dollar), biotech, software,
+  retail, solar — NONE had a single leg clear the OOS gate. Their drivers don't predict them OOS.
+
+**Conclusion:** "narrower" is NOT universally cleaner — it's *driver-specific*. The one robustly
+OOS-priced equity directional driver across indexes + sectors + themes is **real rates**, and it
+works only where the exposure is a clean rate play: growth/duration (QQQ-med, XLK-med, SMH-long)
+and defensive bond-proxy (XLP-long). Everything else, every horizon, is an honest coin-flip.
+The 15 theme ETFs are now collected (config extras) + on the Anticipation page (Themes group).
+
 ## Files
 - `engine/validation.py` (+`oos_r2`,`clark_west`), `engine/index_direction.py` [new],
   `scripts/index_direction_phase0.py` [new] → `data/regime/anticipation_gate.json` `INDEX_DIRECTION`
