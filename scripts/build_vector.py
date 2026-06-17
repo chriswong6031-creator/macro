@@ -2022,6 +2022,11 @@ def main() -> int:
         _build_commodity_strategies()
     except Exception as e:  # noqa: BLE001
         log.error("commodity strategies pages (via build_vector) failed (%s)", e)
+    try:  # Mastermind multi-asset GTAA flagship (3 risk profiles) + detail pages.
+        from scripts.build_masterminds import build as _build_masterminds
+        _build_masterminds()
+    except Exception as e:  # noqa: BLE001
+        log.error("mastermind pages (via build_vector) failed (%s)", e)
     try:  # Canada / S&P-TSX dashboard — has no dedicated daily.yml step yet (the PAT that
           # opened PR #81 lacked `workflow` scope), so it is built here, before the landing
           # hub reads _canada_state(). Self-sufficient + returns 0; never breaks the build.

@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<title>Strategy Scorecards — Market Intelligence</title>
+<title>Mastermind Strategies — Market Intelligence</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -88,12 +88,12 @@ html[data-theme="dark"] .stance{background:var(--grid)}
       <div class="nav-links">
     <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
     <div class="nav-dd">
-      <a class="nav-link active" href="macro.html">🇺🇸 {{ t('United States', '美国') }} <span class="caret">▾</span></a>
+      <a class="nav-link" href="macro.html">🇺🇸 {{ t('United States', '美国') }} <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="macro.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('Regime · growth · inflation · nowcast', '周期 · 增长 · 通胀 · 即时预测') }}</span></a>
         <a href="us_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Standouts · sectors · flows', '精选 · 板块 · 资金') }}</span></a>
         <a href="anticipation.html">🔮 {{ t('Anticipation', '预判') }}<span class="d">{{ t('Multi-horizon outcome cones', '多周期结果锥') }}</span></a>
-        <a class="active" href="strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
+        <a href="strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
         <a href="spvector.html">📐 {{ t('S&P / Macro Vector', '标普宏观向量') }}<span class="d">{{ t('Tactical equity↔cash', '战术股票↔现金') }}</span></a>
         <a href="ipo.html">🆕 {{ t('IPO Radar', '新股雷达') }}<span class="d">{{ t('IPO window · aftermarket reality', '新股窗口 · 二级市场现实') }}</span></a>
         <a href="baskets.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P', '等权主题篮子 vs 标普') }}</span></a>
@@ -145,6 +145,7 @@ html[data-theme="dark"] .stance{background:var(--grid)}
       <a class="nav-link" href="javascript:void(0)">🔬 {{ t('Research', '研究') }} <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="masterminds.html">🧠 {{ t('Masterminds', '操盘大师') }}<span class="d">{{ t('Multi-asset active GTAA strategies', '多资产主动配置策略') }}</span></a>
+        <a class="active" href="masterminds.html">🧠 {{ t('Masterminds', '操盘大师') }}<span class="d">{{ t('Multi-asset active GTAA strategies', '多资产主动配置策略') }}</span></a>
         <a href="crossasset.html">🧭 {{ t('Cross-Asset', '跨资产') }}<span class="d">{{ t('Correlations · trend · global liquidity', '相关性 · 趋势 · 全球流动性') }}</span></a>
         <a href="signal_lab.html">🔬 {{ t('Signal Lab', '信号实验室') }}<span class="d">{{ t('Consolidated validation scorecard', '验证记分卡汇总') }}</span></a>
         <a href="factors.html">🧮 {{ t('Factors & Seasonality', '因子 & 季节性') }}<span class="d">{{ t('Value · quality · low-vol · monthly calendar', '价值 · 质量 · 低波动 · 月历') }}</span></a>
@@ -163,9 +164,9 @@ html[data-theme="dark"] .stance{background:var(--grid)}
     </div>
   </div>
 
-  <div class="h1">🎛️ {{ t('Strategy Scorecards','策略记分卡') }}</div>
-  <div class="intro">{{ t('Macro-factor-driven tactical strategies. Each shifts its allocation on signals and macro factors to lift risk-adjusted yield and sidestep the drawdowns that normally destroy it. Click a card for the full backtest, the live recommendation, and the rule-book.','由宏观因子驱动的战术策略。每个策略都按信号与宏观因子切换配置，以提升风险调整后收益并规避通常会吞噬收益的回撤。点击卡片查看完整回测、实时建议与规则手册。') }}</div>
-  <div class="note">{{ t('Honest framing: the durable edge in a "yield" strategy is not timing the yield — it is timing the LEFT TAIL that destroys it (de-risk before the recession / credit / rate shock). These give up some buy-&-hold CAGR but cut the max drawdown and lift the Sharpe. Backtests are net of cost and total-return; CAGR / MaxDD are vs buy-and-hold the same risk asset.','诚实说明：「收益」策略的持久优势并非择时收益本身，而是择时吞噬收益的左尾（在衰退/信用/利率冲击前降险）。这些策略会让出部分买入持有的年化，但能压低最大回撤并提升夏普。回测均扣除成本且基于总回报；CAGR / 最大回撤对比买入持有同一风险资产。') }}</div>
+  <div class="h1">🧠 {{ t('Mastermind Strategies','操盘大师策略') }}</div>
+  <div class="intro">{{ t('Active, multi-asset, conviction-weighted, vol-targeted global tactical asset allocation — full freedom across equities, Treasuries, credit, gold/copper and crypto, with leverage. This is where the most robust risk-adjusted edge lives: cross-asset diversification + trend + carry + regime-rotation. Three risk profiles for three goals.','主动、多资产、按信念加权、以波动率为目标的全球战术资产配置——在股票、国债、信用、黄金/铜与加密之间完全自由，并可加杠杆。这里是最稳健的风险调整优势所在：跨资产分散 + 趋势 + 套息 + 周期轮动。三种风险档对应三种目标。') }}</div>
+  <div class="note">{{ t('Honest framing: the robust, out-of-sample-stable edge is the SHARPE and the DRAWDOWN (these run ~1.5-2x the Sharpe of their benchmark with far shallower drawdowns). The raw-CAGR beat is era-dependent — the Aggressive profile beats the S&P on CAGR in both backtest halves; Moderate beats it full-sample; Conservative is built to beat 60/40 on risk-adjusted terms. Net of cost + financing. Benchmarks: the S&P 500 and a 60/40.','诚实说明：稳健且样本外稳定的优势在于夏普与回撤（其夏普约为基准的 1.5-2 倍，回撤浅得多）。原始年化的跑赢取决于时代——进取档在回测两个半段均跑赢标普；均衡档全样本跑赢；保守档旨在风险调整后跑赢 60/40。扣除成本+融资。基准：标普500 与 60/40。') }}</div>
 
   <div class="sgrid">
     {% for c in cards %}
@@ -177,10 +178,10 @@ html[data-theme="dark"] .stance{background:var(--grid)}
       </div>
       <p>{{ t(c.thesis_en, c.thesis_zh) }}</p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v {{ 'win' if c.cagr >= c.hodl_cagr else 'lose' }}">{{ c.cagr }}%</span><span class="m-sub">{{ t('B&H','买持') }} {{ c.hodl_cagr }}%</span></div>
-        <div><span class="m-k">Sharpe</span><span class="m-v {{ 'win' if c.sharpe >= c.hodl_sharpe else 'lose' }}">{{ c.sharpe }}</span><span class="m-sub">{{ t('B&H','买持') }} {{ c.hodl_sharpe }}</span></div>
-        <div><span class="m-k">{{ t('Max DD','最大回撤') }}</span><span class="m-v {{ 'win' if c.maxdd >= c.hodl_maxdd else 'lose' }}">{{ c.maxdd }}%</span><span class="m-sub">{{ t('B&H','买持') }} {{ c.hodl_maxdd }}%</span></div>
-        <div><span class="m-k">{{ t('Income','票息') }}</span><span class="m-v">{{ c.income }}%</span><span class="m-sub">{{ c.years }}y</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v {{ 'win' if c.cagr >= c.hodl_cagr else 'lose' }}">{{ c.cagr }}%</span><span class="m-sub">{{ t('Bench','基准') }} {{ c.hodl_cagr }}%</span></div>
+        <div><span class="m-k">Sharpe</span><span class="m-v {{ 'win' if c.sharpe >= c.hodl_sharpe else 'lose' }}">{{ c.sharpe }}</span><span class="m-sub">{{ t('Bench','基准') }} {{ c.hodl_sharpe }}</span></div>
+        <div><span class="m-k">{{ t('Max DD','最大回撤') }}</span><span class="m-v {{ 'win' if c.maxdd >= c.hodl_maxdd else 'lose' }}">{{ c.maxdd }}%</span><span class="m-sub">{{ t('Bench','基准') }} {{ c.hodl_maxdd }}%</span></div>
+        <div><span class="m-k">{{ t('Avg lev','平均杠杆') }}</span><span class="m-v">{{ c.income }}x</span><span class="m-sub">{{ c.years }}y</span></div>
       </div>
       <div class="scard-foot">
         <span class="stance">{{ t(c.stance_en, c.stance_zh) }}</span>
