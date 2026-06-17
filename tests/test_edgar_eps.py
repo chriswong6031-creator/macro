@@ -102,3 +102,31 @@ def test_apply_empty_fd_is_noop():
     df = _panel([("AAA", "2024-03-31", 1.0)])
     out = ee._apply_filing_dates(df, pd.DataFrame(), lag=60)
     assert out.iloc[0]["asof_date"] == pd.Timestamp("2024-05-30")
+
+
+def _write_prior_cache(tmp_path):
+    prior = pd.DataFrame({"ticker": ["OLD"], "period_end": [pd.Timestamp("2023-03-31")],
+                          "filed_date": [pd.Timestamp("2023-05-01")]})
+    prior.to_parquet(tmp_path / "fd.parquet")
+
+
+def test_partial_pass_retains_prior_cache(monkeypatch, tmp_path):
+    # only 1 of 4 CIKs returns data -> coverage 0.25 < min_coverage 0.5 -> keep the good
+    # prior cache rather than clobber it with a throttled partial pass.
+    _write_prior_cache(tmp_path)
+    _patch_fetch(monkeypatch, tmp_path, {1: _cc([("2024-03-31", "2024-05-05", "10-Q", 2.0)])})
+    fd = ee.fetch_eps_filing_dates({1: "A", 2: "B", 3: "C", 4: "D"}, force=True, min_coverage=0.5)
+    assert set(fd.ticker) == {"OLD"}        # prior retained, partial NOT written
+
+
+def test_wall_clock_budget_caps_and_retains_prior(monkeypatch, tmp_path):
+    # the monotonic clock jumps past the budget on the first loop check -> stop immediately,
+    # never hammering SEC for the full universe, and keep the prior cache.
+    _write_prior_cache(tmp_path)
+    _patch_fetch(monkeypatch, tmp_path,
+                 {i: _cc([("2024-03-31", "2024-05-05", "10-Q", 2.0)]) for i in range(1, 6)})
+    ticks = iter([0.0] + [1000.0] * 10)     # t0=0, first in-loop check=1000 > budget
+    monkeypatch.setattr(ee.time, "monotonic", lambda: next(ticks))
+    fd = ee.fetch_eps_filing_dates({i: f"T{i}" for i in range(1, 6)},
+                                   force=True, max_seconds=10.0)
+    assert set(fd.ticker) == {"OLD"}        # budget-capped before any fetch -> prior kept

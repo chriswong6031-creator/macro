@@ -51,20 +51,32 @@ def _filing_dates_path():
     return config.data_dir() / "edgar" / "eps_filing_dates.parquet"
 
 
+def _fd_frame(rows: list[tuple[str, str, str]]) -> pd.DataFrame:
+    fd = pd.DataFrame(rows, columns=["ticker", "period_end", "filed_date"])
+    fd["period_end"] = pd.to_datetime(fd["period_end"], errors="coerce")
+    fd["filed_date"] = pd.to_datetime(fd["filed_date"], errors="coerce")
+    return fd.dropna(subset=["period_end", "filed_date"]).drop_duplicates(["ticker", "period_end"])
+
+
 def fetch_eps_filing_dates(cik2tic: dict[int, str], *, max_age_days: int = 7,
-                           force: bool = False) -> pd.DataFrame:
+                           force: bool = False, max_seconds: float = 540.0,
+                           min_coverage: float = 0.5) -> pd.DataFrame:
     """Per (ticker, period_end) the REAL earliest SEC filing date of that quarter's
     diluted-EPS, from the keyless EDGAR companyconcept API — one call per CIK, full
-    history. For each (cik, end) we take min(`filed`) across all facts so amendments and
-    later comparative re-tags (a Q1 value re-reported in next year's 10-Q) NEVER overwrite
-    the ORIGINAL disclosure date. This becomes the SUE panel's PIT as-of (the date the
-    surprise became public) in place of the synthetic period_end + lag — sharpening the
-    PEAD-freshness decay in engine.stock_score.
+    history. For each (cik, end) we take min(`filed`) across the ORIGINAL 10-Q/10-K facts
+    so amendments and later comparative re-tags (a Q1 value re-reported in next year's
+    10-Q) NEVER overwrite the ORIGINAL disclosure date. This becomes the SUE panel's PIT
+    as-of (the date the surprise became public) in place of the synthetic period_end + lag
+    — sharpening the PEAD-freshness decay in engine.stock_score.
 
-    Weekly-cached to data/edgar/eps_filing_dates.parquet (like the panel). Graceful: a CIK
-    that 404s or lacks the concept is simply skipped (its rows fall back to the synthetic
-    lag), and any hard failure leaves the prior cache in place. Columns: ticker,
-    period_end, filed_date."""
+    Weekly-cached to data/edgar/eps_filing_dates.parquet (mtime convention). HARDENED for
+    CI (runs inside the time-boxed engine job): a `max_seconds` wall-clock BUDGET bounds the
+    ~1100-CIK pass so an SEC 429/throttle episode (whose per-call backoff could otherwise
+    run ~85min) can never blow the job timeout — on a budget hit we keep what we have and
+    stop. And a partial / budget-capped / empty pass (coverage < `min_coverage`) NEVER
+    overwrites a good prior cache (returns it instead), so one throttled run can't poison the
+    cache for a week. Graceful throughout: a CIK that 404s is skipped (its rows fall back to
+    the synthetic lag). Columns: ticker, period_end, filed_date."""
     p = _filing_dates_path()
     if not force and p.exists():
         age_d = (datetime.now(timezone.utc).timestamp() - p.stat().st_mtime) / 86400.0
@@ -74,8 +86,15 @@ def fetch_eps_filing_dates(cik2tic: dict[int, str], *, max_age_days: int = 7,
     host = _cfg()["base_url"].split("/api/")[0]            # https://data.sec.gov
     retries = int(_cfg().get("retries", 3))
     rows: list[tuple[str, str, str]] = []
-    n_ok = 0
+    n_ok, n_seen, capped = 0, 0, False
+    t0 = time.monotonic()
     for cik, tic in cik2tic.items():
+        if time.monotonic() - t0 > max_seconds:           # wall-clock budget — never blow CI
+            capped = True
+            log.warning("eps_filing_dates: %.0fs budget hit after %d/%d CIKs — stopping",
+                        max_seconds, n_seen, len(cik2tic))
+            break
+        n_seen += 1
         url = f"{host}/api/xbrl/companyconcept/CIK{int(cik):010d}/us-gaap/{EPS_CONCEPT}.json"
         data = _get_json(url, retries)
         time.sleep(0.12)                                  # SEC fair-access pacing (<10 req/s)
@@ -94,18 +113,23 @@ def fetch_eps_filing_dates(cik2tic: dict[int, str], *, max_age_days: int = 7,
         if earliest:
             n_ok += 1
             rows.extend((tic, end, filed) for end, filed in earliest.items())
-    if not rows:
-        log.warning("no companyconcept filing dates fetched — synthetic lag retained")
-        return pd.read_parquet(p) if p.exists() else pd.DataFrame(
-            columns=["ticker", "period_end", "filed_date"])
-    fd = pd.DataFrame(rows, columns=["ticker", "period_end", "filed_date"])
-    fd["period_end"] = pd.to_datetime(fd["period_end"], errors="coerce")
-    fd["filed_date"] = pd.to_datetime(fd["filed_date"], errors="coerce")
-    fd = fd.dropna(subset=["period_end", "filed_date"]).drop_duplicates(["ticker", "period_end"])
+    coverage = n_ok / max(len(cik2tic), 1)
+    if not rows or capped or coverage < min_coverage:
+        # a partial/aborted pass must not clobber a good prior cache.
+        if p.exists():
+            log.warning("eps_filing_dates: partial pass (%.0f%% coverage%s) — retaining prior cache",
+                        100 * coverage, ", budget-capped" if capped else "")
+            return pd.read_parquet(p)
+        if not rows:
+            return pd.DataFrame(columns=["ticker", "period_end", "filed_date"])
+        log.warning("eps_filing_dates: partial cold pass (%.0f%%) — using %d rows WITHOUT caching "
+                    "(next build retries)", 100 * coverage, len(rows))
+        return _fd_frame(rows)
+    fd = _fd_frame(rows)
     p.parent.mkdir(parents=True, exist_ok=True)
     fd.to_parquet(p)
-    log.info("eps_filing_dates: %d (ticker,quarter) rows from %d/%d CIKs",
-             len(fd), n_ok, len(cik2tic))
+    log.info("eps_filing_dates: %d (ticker,quarter) rows from %d/%d CIKs (%.0f%% coverage)",
+             len(fd), n_ok, len(cik2tic), 100 * coverage)
     return fd
 
 
