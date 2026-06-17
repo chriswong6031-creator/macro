@@ -442,6 +442,35 @@ def _basket_tailwind_map() -> dict[str, dict]:
     return out
 
 
+def _basket_membership_map() -> dict[str, list[dict]]:
+    """All active thematic basket memberships per ticker — for the detail page.
+    Reads membership.json (no live performance data needed). Returns
+    {ticker: [{"slug", "name", "name_zh", "category", "theme", "rationale"}]}.
+    Display-only — never touches any score."""
+    out: dict[str, list[dict]] = {}
+    try:
+        mf = config.data_dir() / "baskets" / "membership.json"
+        if not mf.exists():
+            return out
+        data = json.loads(mf.read_text())
+        for slug, b in (data.get("baskets") or {}).items():
+            for m in (b.get("members") or []):
+                tick = m.get("ticker")
+                if not tick or m.get("removed"):
+                    continue
+                out.setdefault(tick, []).append({
+                    "slug": slug,
+                    "name": b.get("name", ""),
+                    "name_zh": b.get("name_zh", ""),
+                    "category": b.get("category", ""),
+                    "theme": b.get("theme", ""),
+                    "rationale": m.get("rationale", ""),
+                })
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("basket membership map unavailable (%s)", e)
+    return out
+
+
 def main() -> int:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     outdir = site / "stockdata"
@@ -549,6 +578,7 @@ def main() -> int:
     from engine.crowding import compute_fragility
     fragility_map = compute_fragility()
     basket_tw = _basket_tailwind_map()          # Conviction "upside / theme tailwind" axis
+    bsk_mem = _basket_membership_map()          # all active basket memberships (display-only)
     # Phase-0 gate: the board rank stays the VALIDATED leg unless a deep-CI run proved
     # the composite beats it (scripts/stock_conviction_phase0.py). Absent / shallow =>
     # NEUTRAL => gate_go False => Conviction ships as display-only context.
@@ -666,6 +696,8 @@ def main() -> int:
             rec["gex"] = gex_by_ticker[ticker]
         if fragility_map.get(ticker):
             rec["fragility"] = fragility_map[ticker]
+        if bsk_mem.get(ticker):
+            rec["baskets_membership"] = bsk_mem[ticker]
         # ---- unified Conviction Profile (engine/stock_score) -----------------
         # The single block both the dashboard standout card AND this name's detail page
         # render, so the two can never structurally disagree. v2: the EDGE = the VALIDATED
