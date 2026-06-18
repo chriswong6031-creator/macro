@@ -69,8 +69,8 @@
   .fcard h3 { font-size:13px; margin:0 0 7px; display:flex; align-items:center; }
   .fcard .badge { margin-left:auto; font-size:10.5px; padding:1px 7px; border-radius:8px;
                   background:var(--panel); border:1px solid var(--line); color:var(--muted); }
-  .twocol { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
-  @media (max-width:760px){ .twocol{ grid-template-columns:1fr; } }
+  .twocol { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:18px; }
+  @media (max-width:760px){ .twocol{ grid-template-columns:minmax(0,1fr); } }
   .zpos { color:var(--up); font-weight:600; } .zneg { color:var(--down); font-weight:600; }
   .chip { display:inline-block; font-size:11px; padding:1px 7px; margin:0 4px 4px 0; border-radius:8px;
           background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
