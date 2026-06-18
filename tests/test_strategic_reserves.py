@@ -105,6 +105,52 @@ def test_caveat_is_bilingual_and_non_directional():
     assert "not a price signal" in sr.SPR_CAVEAT["en"]
 
 
+def _annual(values, start_year=2022):
+    idx = pd.to_datetime([f"{start_year + i}-12-31" for i in range(len(values))])
+    return pd.Series(values, index=idx, dtype="float64")
+
+
+def test_gold_value_share():
+    assert sr.gold_value_share(100.0, 25.0) == {"value_usd": 75.0, "share_pct": 75.0}
+    assert sr.gold_value_share(None, 25.0)["value_usd"] is None
+    assert sr.gold_value_share(0.0, 0.0)["value_usd"] is None
+    assert sr.gold_value_share(100.0, 120.0)["value_usd"] is None   # negative -> guarded
+
+
+def test_total_official_tonnes():
+    rows = [{"tonnes": 8133.5}, {"tonnes": 2280.0}, {"tonnes": None}]
+    assert sr.total_official_tonnes(rows) == 10414.0
+    assert sr.total_official_tonnes([]) is None
+
+
+def test_merge_gold_row_live():
+    cfg = {"iso": "USA", "name": "United States", "flag": "🇺🇸", "tonnes": 8133.5,
+           "trend": "stable"}
+    total = _annual([770.0, 910.0])     # 2022, 2023
+    exgold = _annual([220.0, 228.0])
+    row = sr.merge_gold_row(cfg, total, exgold)
+    assert row["tonnes"] == 8133.5
+    assert row["trend_en"] == "stable"
+    assert row["value_usd"] == 910.0 - 228.0          # latest gold value
+    assert row["share_pct"] == round(100 * 682 / 910, 1)
+    # YoY value vs prior year: (910-228)/(770-220) - 1
+    assert row["value_yoy_pct"] == round(100 * (682 / 550 - 1), 1)
+
+
+def test_merge_gold_row_no_wb():
+    cfg = {"iso": "TWN", "name": "Taiwan", "flag": "🇹🇼", "tonnes": 423.6,
+           "trend": "stable", "no_wb": True}
+    row = sr.merge_gold_row(cfg, _annual([1, 2]), _annual([1, 1]))
+    assert row["tonnes"] == 423.6
+    assert row["value_usd"] is None and row["share_pct"] is None   # suppressed
+
+
+def test_gold_caveat_bilingual():
+    for k in ("en", "zh"):
+        assert k in sr.GOLD_CAVEAT and len(sr.GOLD_CAVEAT[k]) > 40
+    assert "not a trade signal" in sr.GOLD_CAVEAT["en"]
+
+
 def test_leaf_is_never_wired_into_a_scoring_path():
     """Guardrail: strategic reserves are DISPLAY-ONLY. The leaf must not import any
     scoring/alert/conviction module."""

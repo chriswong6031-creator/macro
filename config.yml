@@ -579,6 +579,54 @@ strategic_reserves:
        source: "Vortexa / Kpler estimate", as_of: "2025-12"}
 
 # =============================================================================
+# World Bank Open Data — official reserve assets (keyless, stable). Two annual
+# indicators; the engine derives gold value (TOTL-XGLD) + gold share of reserves.
+# Feeds the Gold Reserves section of the Strategic Reserves page. See collectors/worldbank.py.
+# =============================================================================
+worldbank:
+  api_url: https://api.worldbank.org/v2/country/{countries}/indicator/{indicator}?format=json&per_page=2000&date={start}:{end}&page={page}
+  user_agent: "Mozilla/5.0 (macro-dashboard research)"
+  retries: 3
+  start_year: 2000
+  indicators:
+    reserves_total: FI.RES.TOTL.CD    # total reserves INCLUDING gold (US$)
+    reserves_exgold: FI.RES.XGLD.CD   # total reserves EXCLUDING gold (US$)
+  countries: [USA, CHN, DEU, ITA, FRA, RUS, CHE, JPN, IND, NLD, TUR, POL, PRT, SAU, GBR, SGP, KAZ]
+
+# =============================================================================
+# Gold Reserves section (site/spr.html) — DISPLAY-ONLY. Live gold VALUE + share of
+# reserves come from World Bank (annual, USD, derived above); the per-country TONNES
+# and the "who's accumulating" trend are curated below (no clean keyless tonnes feed
+# exists — WGC is login-gated, IMF IFS API is mid-migration). Figures: World Gold
+# Council / IMF IFS, as of 2025. Update here, not in code. iso = ISO3 (matches WB).
+# =============================================================================
+gold_reserves:
+  as_of: "2025"
+  source: "World Gold Council / IMF IFS"
+  global_tonnes: 36000              # approx total official-sector holdings (reference)
+  cb_net_buying_note_en: "Central banks bought a record ~1,000+ tonnes/yr in 2022-2024 — the structural bid behind gold."
+  cb_net_buying_note_zh: "央行在2022-2024年以每年约1000+吨的纪录速度增持——黄金背后的结构性买盘。"
+  countries:
+    - {iso: USA, name: United States, name_zh: 美国, flag: "🇺🇸", tonnes: 8133.5, trend: stable}
+    - {iso: DEU, name: Germany, name_zh: 德国, flag: "🇩🇪", tonnes: 3351.5, trend: stable}
+    - {iso: ITA, name: Italy, name_zh: 意大利, flag: "🇮🇹", tonnes: 2451.8, trend: stable}
+    - {iso: FRA, name: France, name_zh: 法国, flag: "🇫🇷", tonnes: 2437.0, trend: stable}
+    - {iso: RUS, name: Russia, name_zh: 俄罗斯, flag: "🇷🇺", tonnes: 2335.9, trend: stable}
+    - {iso: CHN, name: China, name_zh: 中国, flag: "🇨🇳", tonnes: 2280.0, trend: accumulating}
+    - {iso: CHE, name: Switzerland, name_zh: 瑞士, flag: "🇨🇭", tonnes: 1040.0, trend: stable}
+    - {iso: IND, name: India, name_zh: 印度, flag: "🇮🇳", tonnes: 880.2, trend: accumulating}
+    - {iso: JPN, name: Japan, name_zh: 日本, flag: "🇯🇵", tonnes: 845.9, trend: stable}
+    - {iso: NLD, name: Netherlands, name_zh: 荷兰, flag: "🇳🇱", tonnes: 612.5, trend: stable}
+    - {iso: TUR, name: Turkey, name_zh: 土耳其, flag: "🇹🇷", tonnes: 595.0, trend: accumulating}
+    - {iso: POL, name: Poland, name_zh: 波兰, flag: "🇵🇱", tonnes: 509.0, trend: accumulating}
+    - {iso: TWN, name: Taiwan, name_zh: 台湾, flag: "🇹🇼", tonnes: 423.6, trend: stable, no_wb: true}
+    - {iso: PRT, name: Portugal, name_zh: 葡萄牙, flag: "🇵🇹", tonnes: 382.6, trend: stable}
+    - {iso: SAU, name: Saudi Arabia, name_zh: 沙特阿拉伯, flag: "🇸🇦", tonnes: 323.1, trend: stable}
+    - {iso: GBR, name: United Kingdom, name_zh: 英国, flag: "🇬🇧", tonnes: 310.3, trend: stable}
+    - {iso: KAZ, name: Kazakhstan, name_zh: 哈萨克斯坦, flag: "🇰🇿", tonnes: 285.0, trend: accumulating}
+    - {iso: SGP, name: Singapore, name_zh: 新加坡, flag: "🇸🇬", tonnes: 220.0, trend: accumulating}
+
+# =============================================================================
 # OFR Financial Stress Index — daily 33-variable global stress with functional +
 # regional decomposition (keyless CSV). Feeds engine/conditions.systemic_stress;
 # the Funding leg embeds a free offshore-dollar / x-ccy-basis proxy and the EM leg
