@@ -1,5 +1,6 @@
 """Pure-function tests for the prediction-markets collector + engine — no network."""
 import sys
+from datetime import date, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -21,15 +22,19 @@ def test_extract_outcomes_list_and_json():
 
 
 def test_match_event_nearest_end_and_volume():
+    # Forward-relative end dates so "nearest_end" (endDate >= today) is not time-bombed.
+    soon = (date.today() + timedelta(days=3)).isoformat() + "T00:00:00Z"
+    later = (date.today() + timedelta(days=45)).isoformat() + "T00:00:00Z"
+    other = (date.today() + timedelta(days=14)).isoformat()
     evs = [
-        {"title": "Fed Decision in June?", "endDate": "2026-06-17T00:00:00Z", "markets": [1], "volume": 10},
-        {"title": "Fed Decision in July?", "endDate": "2026-07-29T00:00:00Z", "markets": [1], "volume": 99},
-        {"title": "World Cup", "endDate": "2026-07-01", "markets": [1], "volume": 999},
+        {"title": "Fed Decision (soon)?", "endDate": soon, "markets": [1], "volume": 10},
+        {"title": "Fed Decision (later)?", "endDate": later, "markets": [1], "volume": 99},
+        {"title": "World Cup", "endDate": other, "markets": [1], "volume": 999},
     ]
     near = pmc.match_event(evs, "Fed Decision", "nearest_end")
-    assert near["title"] == "Fed Decision in June?"          # soonest future end
+    assert near["title"] == "Fed Decision (soon)?"           # soonest future end
     vol = pmc.match_event(evs, "Fed Decision", "max_volume")
-    assert vol["title"] == "Fed Decision in July?"           # highest volume
+    assert vol["title"] == "Fed Decision (later)?"           # highest volume
     assert pmc.match_event(evs, "recession", "nearest_end") is None
 
 
