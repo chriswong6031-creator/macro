@@ -63,6 +63,10 @@
 
 <div class="pw-wrap">
 
+  {% if dates and dates.staleness and dates.staleness.stale %}
+  <div class="callout warn" style="margin-top:16px">⏳ <b>{{ t('Intel is', '情报已') }} {{ dates.staleness.age_days }} {{ t('days old', '天未更新') }}</b> — {{ t('re-verify before acting; this layer is time-sensitive (truces, ceasefires and pending rulings move).', '行动前请重新核实；该层具时效性（休战、停火与待决裁决随时变化）。') }}{% if dates.overdue_predictions %} · {{ dates.overdue_predictions }} {{ t('prediction(s) past check-by', '条预测已过核查日') }}{% endif %}</div>
+  {% endif %}
+
   <div class="callout key" style="margin-top:16px">
     <span class="co-h">{{ t('The thesis', '核心论点') }}</span>
     {{ bl(intel.thesis.en, intel.thesis.zh) }}
@@ -129,6 +133,8 @@
       <div class="cn">{{ bl(tf.name_en, tf.name_zh) }}</div>
       <div class="cmeta">
         <span class="b b-open">{{ t('check by', '核查于') }} {{ tf.check_by }}</span>
+        {% set td = (dates.task_forces[tf.id] if dates and dates.task_forces and tf.id in dates.task_forces else None) %}
+        {% if td and td.days_to is not none %}{% if td.overdue %}<span class="b b-miss">{{ t('overdue', '已逾期') }}</span>{% else %}<span class="conf">{{ t('in', '剩') }} {{ td.days_to }}{{ t('d', '天') }}</span>{% endif %}{% endif %}
         <span class="b {{ 'b-fact' if 'FACT' in tf.basis else 'b-inf' }}">{{ tf.basis }}</span>
         <span class="conf">{{ tf.confidence }}</span>
       </div>
@@ -211,6 +217,7 @@
     <span><b>{{ counts.open }}</b> {{ t('open', '未结') }}</span>
     <span><b>{{ counts.hit }}</b> {{ t('hit', '命中') }}</span>
     <span><b>{{ counts.miss }}</b> {{ t('miss', '落空') }}</span>
+    {% if dates and dates.overdue_predictions %}<span><b>{{ dates.overdue_predictions }}</b> {{ t('past check-by', '已过核查') }}</span>{% endif %}
     <span>{{ counts.policy_action }} {{ t('policy-action', '政策行动') }} · {{ counts.market_outcome }} {{ t('market-outcome', '市场结果') }}</span>
   </div>
   <table class="data">
@@ -223,7 +230,7 @@
       <td>{{ p.check_by }}</td>
       <td><span class="conf">{{ p.tier }}</span></td>
       <td><span class="conf">{{ p.confidence }}</span></td>
-      <td><span class="b b-{{ p.status }}">{{ p.status }}</span></td>
+      <td><span class="b b-{{ p.status }}">{{ p.status }}</span>{% set pdt = (dates.predictions[p.id] if dates and dates.predictions and p.id in dates.predictions else None) %}{% if pdt and pdt.overdue %} <span class="b b-miss">{{ t('due', '待结') }}</span>{% endif %}</td>
     </tr>
     {% endfor %}
   </table>
