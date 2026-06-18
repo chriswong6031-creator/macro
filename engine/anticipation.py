@@ -61,6 +61,25 @@ def direction_gate(asset: str) -> dict:
         return {}
 
 
+def name_direction_gate() -> dict:
+    """The shared NAME_DIRECTION block (single-name macro-transmission model). ONE block for
+    ALL names. Missing/all-display-only ⇒ {} ⇒ every name stays a coin-flip (the validated
+    default — single-name real-rate transmission is a Phase-0 null)."""
+    try:
+        g = json.loads(_GATE_PATH.read_text())
+        return g.get("NAME_DIRECTION", {}) or {}
+    except Exception:
+        return {}
+
+
+def name_direction_scored(gate: dict | None = None) -> bool:
+    """True iff the shared NAME_DIRECTION gate has at least one scored horizon — the cheap
+    check build_stock_library uses to decide whether to compute per-name betas at all (so a
+    NULL gate adds ZERO cost to the daily build)."""
+    g = gate if gate is not None else name_direction_gate()
+    return any((g.get(h) or {}).get("scored") for h in ("medium", "long"))
+
+
 def macro_legs_frame() -> pd.DataFrame:
     """Date-indexed market overlay legs (oriented higher = more dangerous), forward-
     filled to daily. The single source of truth shared with the Phase-0 harness.
@@ -198,10 +217,13 @@ def _conviction(p_up: float, horizon_name: str) -> str:
 def anticipate(close: pd.Series, high: pd.Series | None = None, low: pd.Series | None = None,
                *, bench: pd.Series | None = None, breadth: pd.Series | None = None,
                asset: str = "", asset_class: str = "us_equity", gate: dict | None = None,
-               macro_frame: pd.DataFrame | None = None, horizons: dict = HORIZONS) -> dict:
+               macro_frame: pd.DataFrame | None = None, horizons: dict = HORIZONS,
+               name_dir_inputs: dict | None = None) -> dict:
     """Multi-horizon anticipation cone for one asset. Returns {} if too little history.
     `gate` overrides the on-disk gate (for tests); `macro_frame` is the shared market
-    overlay (build once via macro_legs_frame(); None ⇒ no overlay)."""
+    overlay (build once via macro_legs_frame(); None ⇒ no overlay). `name_dir_inputs`
+    (single-name macro-transmission lean: {inputs, gate, dur_prior}) is passed ONLY for
+    equities AND only when the NAME_DIRECTION gate has a scored horizon — None ⇒ coin-flip."""
     close = close.dropna().astype(float)
     if len(close) < 300:
         return {}
@@ -232,6 +254,19 @@ def anticipate(close: pd.Series, high: pd.Series | None = None, low: pd.Series |
     if asset in index_direction.PRESETS:
         try:
             dir_block = index_direction.forecast(close, asset=asset, gate=direction_gate(asset))
+        except Exception:  # noqa: BLE001 — additive, never break the cone
+            dir_block = None
+    elif asset_class == "us_equity" and name_dir_inputs is not None:
+        # single-name macro-transmission lean (real_rate duration), shared NAME_DIRECTION gate.
+        # Reaches here only when that gate has a scored horizon (build_stock_library passes
+        # inputs only then) → unscored/null is a pure coin-flip at zero per-name cost. Same
+        # block shape as index_direction.forecast, so the assembly below is reused verbatim.
+        try:
+            from engine import name_direction
+            dir_block = name_direction.forecast(
+                close, inputs=name_dir_inputs.get("inputs"),
+                gate=name_dir_inputs.get("gate"),
+                dur_prior=float(name_dir_inputs.get("dur_prior", 0.0) or 0.0))
         except Exception:  # noqa: BLE001 — additive, never break the cone
             dir_block = None
 
