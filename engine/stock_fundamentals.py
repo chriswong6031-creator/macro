@@ -664,12 +664,14 @@ def _load_earnings() -> dict[str, dict]:
 
 
 def _earnings(row: dict | None, sue_z=None) -> dict | None:
-    """Next-date + beat/miss summary for the Earnings panel, plus the validated
-    SUE earnings-momentum z. SUE (standardized unexpected earnings — the post-
-    earnings-announcement-drift effect) is the only positive factor leg to survive
-    the leak-free BH-FDR scorecard (engine/sue.py, surfaced on factors.html; see
-    research/DATA_SIGNAL_EXPANSION_2026.md) — a cross-sectional winsorized z vs the
-    S&P 1500, so it belongs beside the surprise history as the earnings-quality read.
+    """Next-date + beat/miss summary for the Earnings panel, plus the SUE
+    earnings-momentum z. SUE (standardized unexpected earnings — the post-
+    earnings-announcement-drift effect) was the strongest factor and lone BH-FDR
+    survivor on the shallow 2023-2025 window, but its cross-sectional edge COLLAPSES
+    to ~0 on deep 2011-2026 history (engine/sue.py, factors.html; see
+    reports/sue-deep-history-phase0.md) — kept as the earnings-quality / PEAD context
+    read (a cross-sectional winsorized z vs the S&P 1500) beside the surprise history,
+    not a validated standalone alpha.
     Days-to-earnings is NOT baked (it would go stale in the static JSON) — the page
     computes the countdown client-side from next_date."""
     row = row or {}

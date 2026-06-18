@@ -50,10 +50,12 @@ BUY_MIN, LAG_MAX, N_BUY, N_LAG = 0.5, -0.3, 12, 6
 # the insider buy-cluster chip: a CONFIRMER shown beside the card, NEVER folded into
 # setup_score. The setup ranking is validated as rank-by-alpha — timing and confirmers
 # are displayed risk context, not scored (research/US_STANDOUT_SETUP_SCORE.md). SUE is
-# the post-earnings-announcement-drift leg and the only positive factor to survive the
-# leak-free FDR scorecard (engine/sue.py); a positive z means the latest quarter beat
-# its seasonal expectation and tends to keep drifting — earnings momentum AGREES with
-# the setup. Gated to a real positive tailwind so it stays a confirmer, not noise.
+# the post-earnings-announcement-drift leg; it was the lone FDR survivor on the shallow
+# 2023-2025 window but its cross-sectional edge collapses on deep history (engine/sue.py;
+# reports/sue-deep-history-phase0.md), so it is shown as a confluence confirmer only. A
+# positive z means the latest quarter beat its seasonal expectation and tends to keep
+# drifting — earnings momentum AGREES with the setup. Gated to a real positive tailwind
+# so it stays a confirmer, not noise.
 SUE_CONFIRM = 1.0
 
 
