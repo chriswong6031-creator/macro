@@ -22,6 +22,15 @@ On modern point-in-time, survivorship-aware data, the validated cross-sectional 
 **v1's central flaw: it ranks by the weak leg (residual momentum) and buries the
 validated edges (SUE, insider) as display chips.** v2 inverts this.
 
+> **⚠️ Superseded for SUE (2026 — see `reports/sue-deep-history-phase0.md`).** The +0.039 SUE
+> row above is the SHALLOW 2023-2025 read. A deep 2011-2026 re-test collapses SUE's
+> cross-sectional edge to ~0 (IC 0.0006, HAC t 0.06, fails BH-FDR); **insider net-buying is now
+> the lone (borderline) cross-sectional FDR survivor.** SUE is accordingly demoted
+> scored→display on factors.html and re-weighted in `engine/stock_score.py` from the dominant
+> EDGE leg to a secondary per-name PEAD confluence leg (insider now leads). This doc is kept as
+> the v2 design record; the reconciliation supersedes the SUE "FDR survivor / PRIMARY scored
+> leg" claims here and in §2.
+
 From the literature, the highest-value signals NOT yet built (effect sizes cited in
 `reports/` research output): **analyst estimate-revision momentum** (Mill Street: top
 decile 15.6% vs 8.0% bottom; monthly IC ~0.23 — the fastest, strongest, *early* signal),

@@ -485,8 +485,8 @@
 
     <div class="panel" id="panel_earn" style="display:none">
       <h2>📅 {{ t('Earnings', '财报') }}
-        {{ help('Next reported earnings date and the recent beat/miss history (SEC + Nasdaq, keyless), plus the SUE earnings-momentum z. SUE (standardized unexpected earnings) measures how far the latest quarter beat its year-ago seasonal expectation, standardized by the company\'s own history — the post-earnings-announcement-drift (PEAD) effect. It is the ONLY positive factor leg to survive the dashboard\'s leak-free false-discovery-rate test (see the Factor fingerprint panel / factors page); the z is RELATIVE to the S&P 1500 (0 = average, +2 = top of the pack). Context, not a standalone buy signal.',
-          '下次财报日与近期超预期/不及预期历史（SEC＋纳斯达克，免密钥），以及SUE盈利动量z值。SUE（标准化超预期盈利）衡量最新季度相对去年同期季节性预期超出多少，并以公司自身历史标准化——即盈利公布后漂移（PEAD）效应。它是唯一通过本看板无泄漏错误发现率检验的正向因子（见“因子指纹”面板／因子页）；该z为相对标普1500的排名（0＝平均，+2＝领先）。仅供参考，并非独立买入信号。') }}</h2>
+        {{ help('Next reported earnings date and the recent beat/miss history (SEC + Nasdaq, keyless), plus the SUE earnings-momentum z. SUE (standardized unexpected earnings) measures how far the latest quarter beat its year-ago seasonal expectation, standardized by the company\'s own history — the post-earnings-announcement-drift (PEAD) effect. It was the strongest factor and lone false-discovery-rate survivor on the shallow 2023-2025 window, but a deep 2011-2026 re-test (survivorship-biased, an optimistic bound) collapses its CROSS-SECTIONAL edge to ~zero (see the factors page) — so it is shown as earnings-momentum / PEAD context, not a validated standalone alpha; the z is RELATIVE to the S&P 1500 (0 = average, +2 = top of the pack). Context, not a standalone buy signal.',
+          '下次财报日与近期超预期/不及预期历史（SEC＋纳斯达克，免密钥），以及SUE盈利动量z值。SUE（标准化超预期盈利）衡量最新季度相对去年同期季节性预期超出多少，并以公司自身历史标准化——即盈利公布后漂移（PEAD）效应。它在浅窗口（2023-2025）曾是最强正向因子且唯一通过无泄漏错误发现率检验，但 2011-2026 深度复检（含幸存者偏差，乐观上界）使其横截面优势崩塌至约零（见因子页）——故仅作盈利动量／PEAD 背景展示，并非已验证的独立超额收益；该z为相对标普1500的排名（0＝平均，+2＝领先）。仅供参考，并非独立买入信号。') }}</h2>
       <div id="r_earn"></div>
     </div>
 
@@ -620,7 +620,7 @@
           short:'Short interest', shortpct:'Short % of float', dtc:'Days to cover', sichg:'SI change (2wk)',
           insider:'Insider net flow', insiderpct:'Net buying (% cap)', buyers:'distinct insiders (B/S)', buys:'buys / sells', fwdnote_lite:'Forward P/E: trailing only — no free forward estimate at S&P-1500 scale.',
           mediansrc:'sector median', scorelab:'Factor score', compos:'composite percentile vs S&P 1500',
-          suehelp:'Standardized unexpected earnings — how far the latest quarter beat its year-ago seasonal expectation, standardized by the company’s own history (post-earnings-announcement drift). Cross-sectional winsorized z vs the S&P 1500; the only positive factor leg to survive the leak-free FDR scorecard. Context, not a standalone signal.',
+          suehelp:'Standardized unexpected earnings — how far the latest quarter beat its year-ago seasonal expectation, standardized by the company’s own history (post-earnings-announcement drift). Cross-sectional winsorized z vs the S&P 1500. Standout on the shallow 2023-2025 window, but its cross-sectional edge does NOT persist on deep 2011-2026 history (see the factors page) — earnings-momentum / PEAD context, not a standalone signal.',
           suevs:'z vs S&P 1500',
           piotroski:'Piotroski F · Altman Z', ph2:'Phase 2' },
     zh: { building:'建设中——将在后续阶段加入。',
@@ -634,7 +634,7 @@
           short:'做空持仓', shortpct:'做空占流通股', dtc:'回补天数', sichg:'做空变化（两周）',
           insider:'内部人净流向', insiderpct:'净买入（占市值%）', buyers:'不同内部人（买/卖）', buys:'买入 / 卖出', fwdnote_lite:'前瞻市盈率：仅历史值——标普1500规模下无免费前瞻预期。',
           mediansrc:'行业中位', scorelab:'因子评分', compos:'相对标普1500综合百分位',
-          suehelp:'标准化超预期盈利（SUE）——最新季度相对去年同期季节性预期超出多少，并以公司自身历史标准化（盈利公布后漂移效应）。相对标普1500的横截面缩尾z值；是唯一通过无泄漏FDR评分卡的正向因子。仅供参考，并非独立信号。',
+          suehelp:'标准化超预期盈利（SUE）——最新季度相对去年同期季节性预期超出多少，并以公司自身历史标准化（盈利公布后漂移效应）。相对标普1500的横截面缩尾z值。在浅窗口（2023-2025）曾突出，但其横截面优势在 2011-2026 深度历史中不再成立（见因子页）——仅作盈利动量／PEAD 背景，并非独立信号。',
           suevs:'相对标普1500的z',
           piotroski:'Piotroski F · Altman Z', ph2:'第二阶段' } };
   function LF(k) { return (TF[lang()] || TF.en)[k]; }
