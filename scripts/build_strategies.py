@@ -240,7 +240,19 @@ def build() -> str:
             html = env.get_template("strategy_detail.html.j2").render(**_detail_vm(ev, built), C=C)
             (site / f"strategy_{spec.key}.html").write_text(html)
 
-    hub = env.get_template("strategies.html.j2").render(cards=cards, built=built, C=C)
+    # Pinned "Mastermind Flagships" hero — the 3 multi-asset GTAA cards, fetched from the
+    # SAME source build_masterminds renders (engine.masterminds via M.backtest), so the
+    # pinned section here and the full masterminds.html hub stay in sync on every build.
+    masterminds = []
+    try:
+        from scripts.build_masterminds import mastermind_cards
+        masterminds = mastermind_cards()
+    except Exception as e:  # noqa: BLE001 — additive; the hub still builds without the hero
+        import logging
+        logging.getLogger(__name__).warning("mastermind hero cards unavailable (%s)", e)
+
+    hub = env.get_template("strategies.html.j2").render(cards=cards, masterminds=masterminds,
+                                                        built=built, C=C)
     (site / "strategies.html").write_text(hub)
 
     snap = {"n": len(cards), "built": built,
