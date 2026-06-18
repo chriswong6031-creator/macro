@@ -1380,10 +1380,16 @@ html[data-lang="zh"] .gd-r-cd .l-zh,html[data-lang="zh"] .gd-r-txt .l-zh{display
  animation:sky-breathe 7.5s ease-in-out infinite}
 @keyframes sky-spin{to{transform:rotate(360deg)}}
 @keyframes sky-breathe{0%,100%{opacity:.6}50%{opacity:.95}}
-/* headline legibility over the sun/moon is handled by a soft --bg glyph halo on
-   the text itself (see .h h1 / .h p) — no backdrop scrim, so nothing draws an
-   edge across the celestial body */
+/* headline legibility: a soft --bg glyph halo on the text (see .h h1 / .h p) PLUS
+   a gentle lens scrim that fades to 0 at BOTH the top and bottom and peaks in the
+   middle behind the text — so there's no hard edge on either end to cut the
+   sun/moon, just a soft pool of --bg behind the words. Sides feathered too. */
 .h{position:relative}
+.h::before{content:'';position:absolute;z-index:-1;left:50%;top:50%;transform:translate(-50%,-50%);
+ width:min(900px,95vw);height:calc(100% + 130px);pointer-events:none;
+ background:linear-gradient(180deg,transparent 0%,color-mix(in srgb,var(--bg) 64%,transparent) 26%,var(--bg) 50%,color-mix(in srgb,var(--bg) 64%,transparent) 74%,transparent 100%);
+ -webkit-mask:linear-gradient(90deg,transparent 0%,#000 14%,#000 86%,transparent 100%);
+ mask:linear-gradient(90deg,transparent 0%,#000 14%,#000 86%,transparent 100%)}
 @media (prefers-reduced-motion: reduce){
  #sky-sun,#sky-moon{transition:none}
  #sky-sun::before,#sky-sun::after,#sky-moon::after{animation:none}}
