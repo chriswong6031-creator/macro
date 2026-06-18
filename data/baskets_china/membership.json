@@ -90,13 +90,97 @@
           "removed": null,
           "name_zh": "紫光国微",
           "rationale": "Unigroup Guoxin — FPGA / special-purpose ICs"
+        },
+        {
+          "ticker": "688082.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "盛美上海",
+          "rationale": "ACM Research Shanghai — cleaning / plating equipment (盛美上海)"
+        },
+        {
+          "ticker": "688072.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "拓荆科技",
+          "rationale": "Piotech — thin-film deposition (PECVD) equipment (拓荆科技)"
+        },
+        {
+          "ticker": "688120.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "华海清科",
+          "rationale": "Hwatsing — CMP polishing equipment (华海清科)"
+        },
+        {
+          "ticker": "688126.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "沪硅产业",
+          "rationale": "NSIG — 300mm silicon-wafer leader (沪硅产业)"
+        },
+        {
+          "ticker": "600584.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "长电科技",
+          "rationale": "JCET — #1 OSAT advanced packaging (长电科技)"
+        },
+        {
+          "ticker": "002156.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "通富微电",
+          "rationale": "Tongfu Micro — OSAT packaging, AMD JV (通富微电)"
+        },
+        {
+          "ticker": "600460.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "士兰微",
+          "rationale": "Silan Micro — power-semi IDM (士兰微)"
+        },
+        {
+          "ticker": "603501.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "豪威集团",
+          "rationale": "Will Semi / OmniVision — CMOS image sensors (豪威集团)"
+        },
+        {
+          "ticker": "300661.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "圣邦股份",
+          "rationale": "SG Micro — analog IC leader (圣邦股份)"
+        },
+        {
+          "ticker": "688385.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "复旦微电",
+          "rationale": "Fudan Micro — FPGA + security ICs (复旦微电)"
+        },
+        {
+          "ticker": "688019.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "安集科技",
+          "rationale": "Anji Micro — CMP slurry / process materials (安集科技)"
+        },
+        {
+          "ticker": "688249.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "晶合集成",
+          "rationale": "Nexchip — display-driver specialty foundry (晶合集成)"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded Semiconductors — 10 equal-weight A-share members."
+          "note": "Seeded Semiconductors — 22 equal-weight A-share members."
         }
       ]
     },
@@ -174,13 +258,69 @@
           "removed": null,
           "name_zh": "海光信息",
           "rationale": "Hygon — DCU compute for domestic AI clusters"
+        },
+        {
+          "ticker": "688795.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "摩尔线程",
+          "rationale": "Moore Threads — domestic AI / GPU accelerator (摩尔线程)"
+        },
+        {
+          "ticker": "688802.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "沐曦股份",
+          "rationale": "MetaX — domestic GPGPU accelerator (沐曦股份)"
+        },
+        {
+          "ticker": "300476.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "胜宏科技",
+          "rationale": "Victory Giant — high-layer-count AI / HDI PCB (胜宏科技)"
+        },
+        {
+          "ticker": "002463.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "沪电股份",
+          "rationale": "WUS Printed Circuit — AI-server PCB (沪电股份)"
+        },
+        {
+          "ticker": "300620.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "光库科技",
+          "rationale": "Advanced Fiber Resources — LiNbO3 modulators for 1.6T optics (光库科技)"
+        },
+        {
+          "ticker": "300442.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "润泽科技",
+          "rationale": "Range Intelligent Computing — AI data-centre / IDC operator (润泽科技)"
+        },
+        {
+          "ticker": "688702.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "盛科通信",
+          "rationale": "Centec — Ethernet switch silicon (盛科通信)"
+        },
+        {
+          "ticker": "002837.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "英维克",
+          "rationale": "Envicool — AI data-centre liquid cooling (英维克)"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded AI Compute & Optics — 9 equal-weight A-share members."
+          "note": "Seeded AI Compute & Optics — 17 equal-weight A-share members."
         }
       ]
     },
@@ -251,13 +391,62 @@
           "removed": null,
           "name_zh": "水晶光电",
           "rationale": "Crystal-Optech — optical filters / imaging (水晶光电)"
+        },
+        {
+          "ticker": "002916.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "深南电路",
+          "rationale": "Shennan Circuits — PCB + IC substrates (深南电路)"
+        },
+        {
+          "ticker": "000100.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "TCL科技",
+          "rationale": "TCL Technology — LCD / Mini-LED panels (TCL科技)"
+        },
+        {
+          "ticker": "002138.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "顺络电子",
+          "rationale": "Sunlord — inductors / passives (顺络电子)"
+        },
+        {
+          "ticker": "300136.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "信维通信",
+          "rationale": "Sunway Communication — RF / antenna modules (信维通信)"
+        },
+        {
+          "ticker": "300866.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "安克创新",
+          "rationale": "Anker Innovations — global consumer-electronics brand (安克创新)"
+        },
+        {
+          "ticker": "688036.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "传音控股",
+          "rationale": "Transsion — emerging-market handset OEM (传音控股)"
+        },
+        {
+          "ticker": "002456.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "欧菲光",
+          "rationale": "OFILM — camera modules (欧菲光)"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded Consumer Electronics — 8 equal-weight A-share members."
+          "note": "Seeded Consumer Electronics — 15 equal-weight A-share members."
         }
       ]
     },
@@ -328,13 +517,62 @@
           "removed": null,
           "name_zh": "用友网络",
           "rationale": "Yonyou — enterprise ERP / cloud (用友网络)"
+        },
+        {
+          "ticker": "300496.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中科创达",
+          "rationale": "Thundersoft — edge-AI / OS / smart-cockpit software (中科创达)"
+        },
+        {
+          "ticker": "688692.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "达梦数据",
+          "rationale": "Dameng — domestic database, 信创 (达梦数据)"
+        },
+        {
+          "ticker": "301236.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "软通动力",
+          "rationale": "iSoftStone — IT services / 信创 integrator (软通动力)"
+        },
+        {
+          "ticker": "300339.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "润和软件",
+          "rationale": "Hoperun — fintech software / HarmonyOS (润和软件)"
+        },
+        {
+          "ticker": "300803.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "指南针",
+          "rationale": "Compass — retail fintech terminal (指南针)"
+        },
+        {
+          "ticker": "301269.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "华大九天",
+          "rationale": "Empyrean — domestic EDA software (华大九天)"
+        },
+        {
+          "ticker": "601360.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "三六零",
+          "rationale": "Qihoo 360 — security + AI-model platform (三六零)"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded Software & AI Apps — 8 equal-weight A-share members."
+          "note": "Seeded Software & AI Apps — 15 equal-weight A-share members."
         }
       ]
     },
@@ -419,13 +657,62 @@
           "removed": null,
           "name_zh": "天赐材料",
           "rationale": "Tinci Materials — electrolyte leader (天赐材料)"
+        },
+        {
+          "ticker": "300037.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "新宙邦",
+          "rationale": "Capchem — electrolyte leader (新宙邦)"
+        },
+        {
+          "ticker": "300919.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中伟新材",
+          "rationale": "CNGR — ternary precursor leader (中伟新材)"
+        },
+        {
+          "ticker": "300073.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "当升科技",
+          "rationale": "Easpring — NCM cathode (当升科技)"
+        },
+        {
+          "ticker": "301358.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "湖南裕能",
+          "rationale": "Hunan Yuneng — LFP cathode leader (湖南裕能)"
+        },
+        {
+          "ticker": "603799.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "华友钴业",
+          "rationale": "Huayou Cobalt — cobalt / nickel + precursors (华友钴业)"
+        },
+        {
+          "ticker": "002850.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "科达利",
+          "rationale": "Kedali — battery structural components (科达利)"
+        },
+        {
+          "ticker": "002340.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "格林美",
+          "rationale": "GEM — battery recycling / precursors (格林美)"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded Battery & Lithium — 10 equal-weight A-share members."
+          "note": "Seeded Battery & Lithium — 17 equal-weight A-share members."
         }
       ]
     },
@@ -496,13 +783,62 @@
           "removed": null,
           "name_zh": "阿特斯",
           "rationale": "CSI Solar — modules + storage (阿特斯)"
+        },
+        {
+          "ticker": "688599.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "天合光能",
+          "rationale": "Trina Solar — global module shipper (天合光能)"
+        },
+        {
+          "ticker": "002459.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "晶澳科技",
+          "rationale": "JA Solar — top module maker (晶澳科技)"
+        },
+        {
+          "ticker": "300763.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "锦浪科技",
+          "rationale": "Ginlong Solis — string inverters (锦浪科技)"
+        },
+        {
+          "ticker": "688390.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "固德威",
+          "rationale": "GoodWe — inverters + storage (固德威)"
+        },
+        {
+          "ticker": "605117.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "德业股份",
+          "rationale": "Deye — hybrid / micro-inverters + storage (德业股份)"
+        },
+        {
+          "ticker": "300316.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "晶盛机电",
+          "rationale": "Jingsheng — crystal-growth equipment (晶盛机电)"
+        },
+        {
+          "ticker": "300751.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "迈为股份",
+          "rationale": "Maxwell — HJT cell-process equipment (迈为股份)"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded Solar / Photovoltaics — 8 equal-weight A-share members."
+          "note": "Seeded Solar / Photovoltaics — 15 equal-weight A-share members."
         }
       ]
     },
@@ -587,13 +923,55 @@
           "removed": null,
           "name_zh": "潍柴动力",
           "rationale": "Weichai Power — heavy-duty powertrain (潍柴动力)"
+        },
+        {
+          "ticker": "600741.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "华域汽车",
+          "rationale": "Huayu Automotive — the largest parts group (华域汽车)"
+        },
+        {
+          "ticker": "601799.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "星宇股份",
+          "rationale": "Xingyu — automotive lighting (星宇股份)"
+        },
+        {
+          "ticker": "002126.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "银轮股份",
+          "rationale": "Yinlun — thermal management (银轮股份)"
+        },
+        {
+          "ticker": "600066.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "宇通客车",
+          "rationale": "Yutong Bus — buses + EV export (宇通客车)"
+        },
+        {
+          "ticker": "000800.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "一汽解放",
+          "rationale": "FAW Jiefang — heavy-truck OEM (一汽解放)"
+        },
+        {
+          "ticker": "600418.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "江淮汽车",
+          "rationale": "JAC — OEM, Huawei / NIO partner (江淮汽车)"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded Autos & NEV Makers — 10 equal-weight A-share members."
+          "note": "Seeded Autos & NEV Makers — 16 equal-weight A-share members."
         }
       ]
     },
@@ -664,13 +1042,55 @@
           "removed": null,
           "name_zh": "高德红外",
           "rationale": "Guide Infrared — thermal imaging (高德红外)"
+        },
+        {
+          "ticker": "600372.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中航机载",
+          "rationale": "AVIC Airborne Systems — avionics (中航机载)"
+        },
+        {
+          "ticker": "600879.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "航天电子",
+          "rationale": "Aerospace Times Electronics — missiles / electronics (航天电子)"
+        },
+        {
+          "ticker": "002025.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "航天电器",
+          "rationale": "Guizhou Space Appliance — mil connectors (航天电器)"
+        },
+        {
+          "ticker": "688297.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中无人机",
+          "rationale": "AVIC UAS — military drones (中无人机)"
+        },
+        {
+          "ticker": "600562.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "国睿科技",
+          "rationale": "Glarun — defense radar (国睿科技)"
+        },
+        {
+          "ticker": "000733.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "振华科技",
+          "rationale": "China Zhenhua — military electronic components (振华科技)"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded Defense & Aerospace — 8 equal-weight A-share members."
+          "note": "Seeded Defense & Aerospace — 14 equal-weight A-share members."
         }
       ]
     },
@@ -727,13 +1147,48 @@
           "removed": null,
           "name_zh": "三花智控",
           "rationale": "Sanhua — thermal mgmt + humanoid actuators (三花智控)"
+        },
+        {
+          "ticker": "601689.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "拓普集团",
+          "rationale": "Tuopu — humanoid linear-actuator supplier (拓普集团)"
+        },
+        {
+          "ticker": "601100.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "恒立液压",
+          "rationale": "Hengli Hydraulic — actuators / electric cylinders (恒立液压)"
+        },
+        {
+          "ticker": "002046.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "国机精工",
+          "rationale": "Sinomach Precision — high-precision bearings (国机精工)"
+        },
+        {
+          "ticker": "688322.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "奥比中光",
+          "rationale": "Orbbec — 3D vision sensors for robots (奥比中光)"
+        },
+        {
+          "ticker": "002851.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "麦格米特",
+          "rationale": "Megmeet — motion / power-electronics control (麦格米特)"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded Robotics & Automation — 6 equal-weight A-share members."
+          "note": "Seeded Robotics & Automation — 11 equal-weight A-share members."
         }
       ]
     },
@@ -790,13 +1245,20 @@
           "removed": null,
           "name_zh": "古井贡酒",
           "rationale": "Gujing Gong — regional premium (古井贡酒)"
+        },
+        {
+          "ticker": "603369.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "今世缘",
+          "rationale": "King's Luck — fast-growing Jiangsu baijiu (今世缘)"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded Baijiu / Liquor — 6 equal-weight A-share members."
+          "note": "Seeded Baijiu / Liquor — 7 equal-weight A-share members."
         }
       ]
     },
@@ -853,13 +1315,27 @@
           "removed": null,
           "name_zh": "苏泊尔",
           "rationale": "Supor — small kitchen appliances (苏泊尔)"
+        },
+        {
+          "ticker": "603486.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "科沃斯",
+          "rationale": "Ecovacs — robot vacuums / smart home (科沃斯)"
+        },
+        {
+          "ticker": "600839.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "四川长虹",
+          "rationale": "Sichuan Changhong — TV + white goods (四川长虹)"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded Home Appliances — 6 equal-weight A-share members."
+          "note": "Seeded Home Appliances — 8 equal-weight A-share members."
         }
       ]
     },
@@ -916,13 +1392,48 @@
           "removed": null,
           "name_zh": "青岛啤酒",
           "rationale": "Tsingtao Brewery — premium beer (青岛啤酒)"
+        },
+        {
+          "ticker": "000729.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "燕京啤酒",
+          "rationale": "Yanjing Brewery — beer (燕京啤酒)"
+        },
+        {
+          "ticker": "600298.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "安琪酵母",
+          "rationale": "Angel Yeast — yeast / food ingredients (安琪酵母)"
+        },
+        {
+          "ticker": "603345.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "安井食品",
+          "rationale": "Anjoy Foods — frozen prepared foods (安井食品)"
+        },
+        {
+          "ticker": "603156.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "养元饮品",
+          "rationale": "Yangyuan — Six Walnuts plant-protein drink (养元饮品)"
+        },
+        {
+          "ticker": "002311.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "海大集团",
+          "rationale": "Haid Group — animal feed / aquaculture (海大集团)"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded Food & Beverage — 6 equal-weight A-share members."
+          "note": "Seeded Food & Beverage — 11 equal-weight A-share members."
         }
       ]
     },
@@ -993,13 +1504,55 @@
           "removed": null,
           "name_zh": "科伦药业",
           "rationale": "Kelun — drugs + ADC pipeline (科伦药业)"
+        },
+        {
+          "ticker": "300347.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "泰格医药",
+          "rationale": "Tigermed — clinical CRO (泰格医药)"
+        },
+        {
+          "ticker": "688428.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "诺诚健华",
+          "rationale": "InnoCare — innovative-oncology biotech (诺诚健华)"
+        },
+        {
+          "ticker": "688180.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "君实生物",
+          "rationale": "Junshi Biosciences — PD-1 / antibody biotech (君实生物)"
+        },
+        {
+          "ticker": "688578.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "艾力斯",
+          "rationale": "Allist — EGFR lung-cancer drugs (艾力斯)"
+        },
+        {
+          "ticker": "600196.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "复星医药",
+          "rationale": "Fosun Pharma — pharma + CXO + innovation (复星医药)"
+        },
+        {
+          "ticker": "603087.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "甘李药业",
+          "rationale": "Gan & Lee — domestic insulin franchise (甘李药业)"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded Innovative Pharma & CXO — 8 equal-weight A-share members."
+          "note": "Seeded Innovative Pharma & CXO — 14 equal-weight A-share members."
         }
       ]
     },
@@ -1070,13 +1623,55 @@
           "removed": null,
           "name_zh": "华东医药",
           "rationale": "Huadong Medicine — pharma + aesthetics (华东医药)"
+        },
+        {
+          "ticker": "688617.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "惠泰医疗",
+          "rationale": "APT Medical — electrophysiology devices (惠泰医疗)"
+        },
+        {
+          "ticker": "300832.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "新产业",
+          "rationale": "New Industries — chemiluminescence IVD (新产业)"
+        },
+        {
+          "ticker": "688301.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "奕瑞科技",
+          "rationale": "iRay — X-ray flat-panel detectors (奕瑞科技)"
+        },
+        {
+          "ticker": "300896.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "爱美客",
+          "rationale": "Imeik — medical-aesthetics filler leader (爱美客)"
+        },
+        {
+          "ticker": "000423.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "东阿阿胶",
+          "rationale": "Dong-E-E-Jiao — branded ejiao TCM (东阿阿胶)"
+        },
+        {
+          "ticker": "600332.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "白云山",
+          "rationale": "Baiyunshan — pharma + TCM brands (白云山)"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded Medical Devices & TCM — 8 equal-weight A-share members."
+          "note": "Seeded Medical Devices & TCM — 14 equal-weight A-share members."
         }
       ]
     },
@@ -1161,13 +1756,69 @@
           "removed": null,
           "name_zh": "平安银行",
           "rationale": "Ping An Bank — retail growth (平安银行)"
+        },
+        {
+          "ticker": "601998.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中信银行",
+          "rationale": "CITIC Bank — joint-stock lender (中信银行)"
+        },
+        {
+          "ticker": "600016.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "民生银行",
+          "rationale": "Minsheng Bank — joint-stock lender (民生银行)"
+        },
+        {
+          "ticker": "601818.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "光大银行",
+          "rationale": "Everbright Bank — joint-stock lender (光大银行)"
+        },
+        {
+          "ticker": "002142.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "宁波银行",
+          "rationale": "Bank of Ningbo — top-tier city bank (宁波银行)"
+        },
+        {
+          "ticker": "600919.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "江苏银行",
+          "rationale": "Bank of Jiangsu — leading city bank (江苏银行)"
+        },
+        {
+          "ticker": "601169.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "北京银行",
+          "rationale": "Bank of Beijing — largest city bank (北京银行)"
+        },
+        {
+          "ticker": "601009.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "南京银行",
+          "rationale": "Bank of Nanjing — city bank (南京银行)"
+        },
+        {
+          "ticker": "601229.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "上海银行",
+          "rationale": "Bank of Shanghai — city bank (上海银行)"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded Banks — 10 equal-weight A-share members."
+          "note": "Seeded Banks — 18 equal-weight A-share members."
         }
       ]
     },
@@ -1252,13 +1903,48 @@
           "removed": null,
           "name_zh": "申万宏源",
           "rationale": "Shenwan Hongyuan (申万宏源)"
+        },
+        {
+          "ticker": "601881.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国银河",
+          "rationale": "China Galaxy Securities (中国银河)"
+        },
+        {
+          "ticker": "002736.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "国信证券",
+          "rationale": "Guosen Securities (国信证券)"
+        },
+        {
+          "ticker": "000783.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "长江证券",
+          "rationale": "Changjiang Securities (长江证券)"
+        },
+        {
+          "ticker": "601788.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "光大证券",
+          "rationale": "Everbright Securities (光大证券)"
+        },
+        {
+          "ticker": "601377.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "兴业证券",
+          "rationale": "Industrial Securities (兴业证券)"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded Brokers & Securities — 10 equal-weight A-share members."
+          "note": "Seeded Brokers & Securities — 15 equal-weight A-share members."
         }
       ]
     },
@@ -1399,13 +2085,55 @@
           "removed": null,
           "name_zh": "长江电力",
           "rationale": "Yangtze Power — hydro / dividend (长江电力)"
+        },
+        {
+          "ticker": "601800.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国交建",
+          "rationale": "China Communications Construction — infra major (中国交建)"
+        },
+        {
+          "ticker": "601618.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国中冶",
+          "rationale": "MCC — metallurgical / infra SOE (中国中冶)"
+        },
+        {
+          "ticker": "601669.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国电建",
+          "rationale": "PowerChina — power-grid / infra SOE (中国电建)"
+        },
+        {
+          "ticker": "601766.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国中车",
+          "rationale": "CRRC — rolling-stock champion (中国中车)"
+        },
+        {
+          "ticker": "601117.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国化学",
+          "rationale": "China National Chemical Eng. (中国化学)"
+        },
+        {
+          "ticker": "601919.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中远海控",
+          "rationale": "COSCO Shipping Holdings — container shipping SOE (中远海控)"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded SOE Blue Chips (中特估) — 10 equal-weight A-share members."
+          "note": "Seeded SOE Blue Chips (中特估) — 16 equal-weight A-share members."
         }
       ]
     },
@@ -1532,13 +2260,55 @@
           "removed": null,
           "name_zh": "天山铝业",
           "rationale": "Tianshan Aluminium — integrated smelter (天山铝业)"
+        },
+        {
+          "ticker": "601899.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "紫金矿业",
+          "rationale": "Zijin Mining — copper / gold giant (紫金矿业)"
+        },
+        {
+          "ticker": "000878.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "云南铜业",
+          "rationale": "Yunnan Copper (云南铜业)"
+        },
+        {
+          "ticker": "601168.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "西部矿业",
+          "rationale": "Western Mining — copper / zinc / lead (西部矿业)"
+        },
+        {
+          "ticker": "601958.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "金钼股份",
+          "rationale": "Jinduicheng Molybdenum — moly (金钼股份)"
+        },
+        {
+          "ticker": "000960.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "锡业股份",
+          "rationale": "Yunnan Tin — global tin leader (锡业股份)"
+        },
+        {
+          "ticker": "000060.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中金岭南",
+          "rationale": "Zhongjin Lingnan — lead / zinc (中金岭南)"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded Industrial Metals — 7 equal-weight A-share members."
+          "note": "Seeded Industrial Metals — 13 equal-weight A-share members."
         }
       ]
     },
@@ -1595,13 +2365,34 @@
           "removed": null,
           "name_zh": "中钨高新",
           "rationale": "China Tungsten & Hightech — tungsten (中钨高新)"
+        },
+        {
+          "ticker": "002056.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "横店东磁",
+          "rationale": "DMEGC — NdFeB + ferrite magnets (横店东磁)"
+        },
+        {
+          "ticker": "002378.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "章源钨业",
+          "rationale": "Zhangyuan Tungsten — tungsten (章源钨业)"
+        },
+        {
+          "ticker": "600259.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中稀有色",
+          "rationale": "Rising Nonferrous — rare-earth processing (中稀有色)"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded Rare Earth & Magnets — 6 equal-weight A-share members."
+          "note": "Seeded Rare Earth & Magnets — 9 equal-weight A-share members."
         }
       ]
     },
@@ -1658,13 +2449,41 @@
           "removed": null,
           "name_zh": "山西焦煤",
           "rationale": "Shanxi Coking Coal (山西焦煤)"
+        },
+        {
+          "ticker": "600985.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "淮北矿业",
+          "rationale": "Huaibei Mining — coking coal (淮北矿业)"
+        },
+        {
+          "ticker": "601001.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "晋控煤业",
+          "rationale": "Jinkong Coal — Shanxi thermal coal (晋控煤业)"
+        },
+        {
+          "ticker": "600348.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "华阳股份",
+          "rationale": "Huayang — anthracite / new-energy materials (华阳股份)"
+        },
+        {
+          "ticker": "600925.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "苏能股份",
+          "rationale": "Jiangsu Xukuang Energy — coal + power (苏能股份)"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded Coal — 6 equal-weight A-share members."
+          "note": "Seeded Coal — 10 equal-weight A-share members."
         }
       ]
     }
