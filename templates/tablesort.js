@@ -103,7 +103,11 @@
     var cnt = document.createElement('span');
     cnt.className = 'cnt';
     wrap.appendChild(input); wrap.appendChild(cnt);
-    table.parentNode.insertBefore(wrap, table);
+    // if the table is inside a horizontal-scroll wrapper (theme.js wrapTables), put the
+    // filter ABOVE the wrapper so it stays fixed while the table scrolls sideways
+    var anchor = (table.parentNode && table.parentNode.classList.contains('tbl-scroll'))
+      ? table.parentNode : table;
+    anchor.parentNode.insertBefore(wrap, anchor);
 
     function apply() {
       var q = input.value.trim().toLowerCase();

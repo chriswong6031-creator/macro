@@ -93,7 +93,7 @@
   .nbcard.nb-caution { border-left-color:var(--warn); }
   .nb-top { display:flex; align-items:baseline; gap:6px; }
   .nb-tk { font-weight:800; font-size:14px; color:var(--text); }
-  .nb-nm { font-size:10px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
+  .nb-nm { font-size:10px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0; }
   .nb-px { font-weight:700; font-size:13px; color:var(--text); font-variant-numeric:tabular-nums; white-space:nowrap; }
   .nb-sub { display:flex; justify-content:space-between; font-size:10px; color:var(--muted); }
   .nbcard .nch { background:transparent; margin:4px 0 2px; width:100%; height:42px; border-radius:5px; }
@@ -1061,7 +1061,7 @@
     {% if setups.laggards %}
     <p class="note" style="margin:13px 0 5px;text-transform:none;color:var(--down);font-weight:700">⚠ {{ t('Weakest relative momentum (laggards) — distribution risk:', '相对动量最弱（落后股）— 派发风险：') }}</p>
     <p style="margin:0;display:flex;flex-wrap:wrap;gap:4px 0;align-items:center">
-      {% for r in setups.laggards %}<a href="china_lookup.html#{{ r.ticker }}" style="margin-right:14px;white-space:nowrap"><b>{{ r.ticker }}</b> <span class="note">{{ nm(r.name) }}</span> <span class="neg">{{ '%+.2f'|format(r.alpha) }}</span></a>{% endfor %}
+      {% for r in setups.laggards %}<a href="china_lookup.html#{{ r.ticker }}" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>{{ r.ticker }}</b> <span class="note">{{ nm(r.name) }}</span> <span class="neg">{{ '%+.2f'|format(r.alpha) }}</span></a>{% endfor %}
     </p>
     {% endif %}
     <p class="note" style="margin:8px 0 0;font-size:11px">{{ t('Cycle entry + mean-reversion (the validated A-share effects), with residual relative strength as a light quality tiebreaker. Deep-history corrected: A-shares mean-revert — momentum is not an edge. A shortlist to size and confirm, not a buy list; cycle state is a drawdown/structure tool, not a timing oracle.', '周期入场 + 均值回归（A股已验证的效应），残差相对强度仅作轻量质量加权。经深度历史校正：A股均值回归 —— 动量并非优势。用于定仓与确认的名单，而非买入清单；周期状态是回撤/结构工具，而非择时神谕。') }}</p>

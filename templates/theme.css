@@ -359,6 +359,17 @@ html body :is(a.actitem, a.idx-alloc, a.nbcard, a.scard):hover {
   white-space: nowrap; }
 .nav-sugg .empty { padding: 11px 13px; color: var(--muted); font-size: 12.5px; }
 
+/* ---- responsive data tables ------------------------------------------------
+   Wide data tables (screeners, scoreboards, flow tables) are wrapped by theme.js
+   in this container so they scroll horizontally WITHIN their card on narrow screens
+   instead of bleeding past the viewport. width:100% tables keep filling the card on
+   desktop (content fits, no scroll); only genuine overflow scrolls. The thin styled
+   scrollbar hints the table is scrollable. */
+.tbl-scroll { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain; }
+.tbl-scroll::-webkit-scrollbar { height: 6px; }
+.tbl-scroll::-webkit-scrollbar-thumb { background: var(--line); border-radius: 6px; }
+
 /* ---- live table filter (injected by tablesort.js into long data tables) -----
    The little searchbar that auto-appears above any scorecard / data table with
    ≥12 rows (Data health, screeners, …). Built as <div.tbl-filter><input
