@@ -328,6 +328,7 @@
       <div class="nav-dd-menu" role="menu">
         <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
         <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
+        <a href="spr.html">🛢️ <span class="l-en">Strategic Reserves</span><span class="l-zh">战略储备</span><span class="d"><span class="l-en">SPR levels by country vs oil prices</span><span class="l-zh">各国战略储备水平与油价</span></span></a>
       </div>
     </div>
     <a class="nav-link" href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span></a>
@@ -335,7 +336,9 @@
     <div class="nav-dd">
       <a class="nav-link" href="javascript:void(0)">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
+        <a href="reports.html">📰 <span class="l-en">Research Reports</span><span class="l-zh">研究报告</span><span class="d"><span class="l-en">In-depth market & macro reports</span><span class="l-zh">深度市场与宏观报告</span></span></a>
         <a href="masterminds.html">🧠 <span class="l-en">Masterminds</span><span class="l-zh">操盘大师</span><span class="d"><span class="l-en">Multi-asset active GTAA strategies</span><span class="l-zh">多资产主动配置策略</span></span></a>
+        <a href="transmission.html">🔀 <span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></a>
         <a href="crossasset.html">🧭 <span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></a>
         <a href="signal_lab.html">🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></a>
         <a href="factors.html">🧮 <span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></a>
@@ -407,8 +410,9 @@
     <div class="panel" id="panel_anticipation" style="display:none">
       <h2>🔮 <span class="l-en">Anticipation — multi-horizon outcome cone</span><span class="l-zh">预判 — 多周期结果锥</span>
         <a href="anticipation.html" class="muted" style="font-size:12px;font-weight:400;margin-left:6px"><span class="l-en">all assets →</span><span class="l-zh">全部标的 →</span></a></h2>
-      <p class="muted" style="font-size:12.5px;margin:2px 0 8px" id="ant_sub"></p>
+      <p style="font-size:12.5px;margin:2px 0 8px" id="ant_sub"></p>
       <div id="ant_cone"></div>
+      <div class="ap-legend" id="ant_legend"></div>
       <div id="ant_cards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px"></div>
       <p class="muted" style="font-size:11.5px;margin:8px 0 0" id="ant_note"></p>
     </div>
@@ -1540,6 +1544,34 @@
 </script>
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
+<style>
+/* Anticipation panel — scoped DIRECTION/RISK card styling (mirrors anticipation.html) */
+#panel_anticipation .ap-badge{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:7px;text-transform:uppercase;letter-spacing:.04em;}
+#panel_anticipation .ap-b-calm{background:rgba(34,197,94,.14);color:var(--up);}
+#panel_anticipation .ap-b-elev{background:rgba(250,204,21,.16);color:var(--warn);}
+#panel_anticipation .ap-b-high{background:rgba(249,115,22,.16);color:#f97316;}
+#panel_anticipation .ap-b-ext{background:rgba(239,68,68,.16);color:var(--down);}
+#panel_anticipation .ap-chip{font-size:10.5px;padding:2px 8px;border-radius:7px;border:1px solid var(--line);color:var(--muted);margin-left:6px;white-space:nowrap;}
+#panel_anticipation .ap-legend{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 10px;margin:8px 0 0;font-size:11px;color:var(--muted);line-height:1.65;}
+#panel_anticipation .ap-legend b{color:var(--text);font-weight:600;}
+#panel_anticipation .hc{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--line);border-radius:9px;padding:0;overflow:hidden;}
+#panel_anticipation .hc.up{border-left-color:var(--up);} #panel_anticipation .hc.down{border-left-color:var(--down);}
+#panel_anticipation .hc.thin{opacity:.72;}
+#panel_anticipation .hc .hk{font-size:10px;color:var(--muted);padding:6px 9px 0;}
+#panel_anticipation .hc .dblock{padding:4px 9px 8px;}
+#panel_anticipation .hc .dlab,#panel_anticipation .hc .rlab{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+#panel_anticipation .hc .dirv{font-size:13px;font-weight:700;margin-top:1px;}
+#panel_anticipation .hc .pup{float:right;font-variant-numeric:tabular-nums;font-weight:700;font-size:12px;}
+#panel_anticipation .hc .why{font-size:10px;color:var(--muted);margin-top:3px;line-height:1.4;}
+#panel_anticipation .hc .pill{display:inline-block;font-size:9.5px;padding:1px 5px;border-radius:5px;margin-top:5px;}
+#panel_anticipation .hc .pill.ok{background:rgba(34,197,94,.14);color:var(--up);}
+#panel_anticipation .hc .pill.flip{background:var(--panel);color:var(--muted);border:1px solid var(--line);}
+#panel_anticipation .hc .rblock{padding:6px 9px 8px;border-top:1px solid var(--line);background:var(--panel);}
+#panel_anticipation .hc .rv{font-size:12px;font-variant-numeric:tabular-nums;margin-top:1px;}
+#panel_anticipation .hc .rv2{font-size:10.5px;color:var(--muted);margin-top:1px;}
+#panel_anticipation .dir-up{color:var(--up);} #panel_anticipation .dir-down{color:var(--down);} #panel_anticipation .dir-flip{color:var(--muted);}
+@media (max-width:560px){ #panel_anticipation #ant_cards{ grid-template-columns:1fr !important; } }
+</style>
 <script>
 /* Anticipation panel — additive; fetches anticipationdata/<ticker>.json (watchlist/
    sectors/index for now), renders a compact forward-outcome cone. Graceful 404. */
@@ -1570,21 +1602,54 @@
       '<path d="'+ed('p25')+rv('p5')+' Z" fill="#E24B4A" fill-opacity="0.18"/>'+
       '<path d="'+ed('p50')+'" fill="none" style="stroke:var(--text)" stroke-width="1.3" stroke-dasharray="5 4"/>'+lab+'</svg>';
   }
+  var BANDWORD={calm:['low','低'],elevated:['moderate','中等'],high:['high','偏高'],extreme:['very high','很高']};
+  var BANDCLS={calm:'ap-b-calm',elevated:'ap-b-elev',high:'ap-b-high',extreme:'ap-b-ext'};
+  var LEGLAB={real_rate:['real rates','实际利率'],beta_real_rate:['real-rate exposure','实际利率敞口'],
+    copper_gold:['copper/gold cyclical impulse','铜金周期脉冲'],vrp:['volatility risk premium','波动风险溢价'],
+    tsmom:['trend','趋势'],credit:['credit spreads','信用利差'],credit_vel:['credit-spread velocity','信用利差速度'],
+    term:['yield curve','收益率曲线'],netliq:['net liquidity','净流动性'],anfci:['financial conditions','金融条件'],
+    oil_mom:['oil momentum','油价动量'],dollar:['the US dollar','美元'],gold:['gold','黄金'],
+    oil_vrp:['oil variance premium','油价方差溢价'],mtg:['mortgage rates','按揭利率'],
+    steepen_vel:['curve-steepening velocity','曲线陡峭化速度'],slope_x_credit:['curve×credit','曲线×信用'],
+    rr_x_growth:['real-rate×growth','实际利率×增长'],rr_x_gold:['real-rate×gold','实际利率×黄金'],
+    oil_x_dollar:['oil×dollar','油价×美元']};
+  function legName(h){ if(!h.dir_legs||!h.dir_legs.length) return null; return LEGLAB[h.dir_legs[0]]||[h.dir_legs[0],h.dir_legs[0]]; }
   function show(a){
-    document.getElementById('ant_sub').innerHTML=T('Index','指数')+' '+(a.anticipation_index!=null?Math.round(a.anticipation_index):'—')+' · '+a.index_band+
-      (a.macro?' · '+T('market stress','市场压力')+' '+Math.round(a.macro.stress_pct)+'% ×'+a.macro.width_mult:'');
+    var bw=BANDWORD[a.index_band]||['n/a','—'], bc=BANDCLS[a.index_band]||'ap-b-elev';
+    document.getElementById('ant_sub').innerHTML=
+      '<span class="ap-badge '+bc+'">'+T('Stretch/Fragility','拉伸/脆弱度')+' '+(a.anticipation_index!=null?Math.round(a.anticipation_index):'—')+'/100 · '+T(bw[0],bw[1])+'</span>'+
+      (a.macro?'<span class="ap-chip">'+T('market stress','市场压力')+' '+Math.round(a.macro.stress_pct)+'% · '+T('widens cone','加宽锥体')+' ×'+a.macro.width_mult+'</span>':'');
     document.getElementById('ant_cone').innerHTML=cone(a);
-    var ch=''; HN.forEach(function(n){var h=a.horizons[n];if(!h)return;var nm={short:'Short',medium:'Medium',long:'Long'}[n],nz={short:'短期',medium:'中期',long:'长期'}[n];
-      var dl=h.direction_scored?(' · <span style="color:var(--up)">'+T('P(up)','上涨概率')+' '+Math.round((h.p_up||0.5)*100)+'% ✓</span>'):'';
-      ch+='<div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 9px'+(h.thin?';opacity:.7':'')+'">'+
-        '<div class="muted" style="font-size:11px">'+T(nm,nz)+' '+(h.range_td?h.range_td.join('–'):'')+'d</div>'+
-        '<div style="font-size:16px;font-weight:700">'+pct(h.dd_avg)+'</div>'+
-        '<div class="neg" style="font-size:11px">'+T('worst','最坏')+' '+pct(h.dd_tail)+dl+'</div></div>';});
+    document.getElementById('ant_legend').innerHTML=
+      '<span class="dir-up">▲ '+T('up-lean','偏多')+'</span> · <span class="dir-flip">▬ '+T('coin-flip','抛硬币')+'</span> · <span class="dir-down">▼ '+T('down-lean','偏空')+'</span> — '+
+      T('color shows direction <b>only where validated out-of-sample</b>; the cone (range &amp; typical dip) is the validated read.','颜色仅在<b>经样本外验证</b>处显示方向；锥体（区间与常见回撤）为已验证读数。');
+    var ch=''; HN.forEach(function(n){var h=a.horizons[n];if(!h)return;var rq=h.ret_q||{};
+      var nm={short:'Short',medium:'Medium',long:'Long'}[n],nz={short:'短期',medium:'中期',long:'长期'}[n];
+      var scored=h.direction_scored;
+      var cls=scored?(h.direction==='up-lean'?'up':(h.direction==='down-lean'?'down':'')):'';
+      var dcls=scored?(h.direction==='up-lean'?'dir-up':(h.direction==='down-lean'?'dir-down':'dir-flip')):'dir-flip';
+      var arrow=(scored&&h.direction==='up-lean')?'▲':((scored&&h.direction==='down-lean')?'▼':'▬');
+      var dword=!scored?T('Coin-flip','抛硬币'):(h.direction==='up-lean'?T('Up-lean','偏多'):(h.direction==='down-lean'?T('Down-lean','偏空'):T('Neutral','中性')));
+      var pu=Math.round((h.p_up||0.5)*100);
+      var pill=scored?'<span class="pill ok">✓ '+T('validated','已验证')+'</span>'
+                     :'<span class="pill flip">'+(n==='short'?T('not predictable','不可预测'):T('coin-flip','抛硬币'))+'</span>';
+      var ln=legName(h);
+      var why=scored?'<div class="why">'+T('driven by','驱动：')+' '+(ln?T(ln[0],ln[1]):T('a validated signal','已验证信号'))+(h.oos_r2!=null?' · R² '+h.oos_r2:'')+'</div>'
+                    :'<div class="why">'+T('no validated direction','无已验证方向')+'</div>';
+      ch+='<div class="hc '+cls+(h.thin?' thin':'')+'">'+
+        '<div class="hk">'+T(nm,nz)+' '+(h.range_td?h.range_td.join('–'):'')+'d</div>'+
+        '<div class="dblock"><div class="dlab">'+T('DIRECTION','方向')+'</div>'+
+          '<div class="dirv '+dcls+'">'+arrow+' '+dword+'<span class="pup">'+pu+'%</span></div>'+
+          why+pill+'</div>'+
+        '<div class="rblock"><div class="rlab">'+T('RISK','风险')+'</div>'+
+          '<div class="rv"><span class="neg">'+T('typ dip','常见回撤')+' '+pct(h.dd_avg)+'</span> · <span class="neg">'+T('worst','最坏')+' '+pct(h.dd_tail)+'</span></div>'+
+          '<div class="rv2">'+T('median','中位')+' '+pct(rq.p50)+'</div>'+
+        '</div></div>';});
     document.getElementById('ant_cards').innerHTML=ch;
     var anyScored=HN.some(function(n){return a.horizons[n]&&a.horizons[n].direction_scored;});
     document.getElementById('ant_note').innerHTML=anyScored
-      ? T('Direction shown is a validated out-of-sample lean (Clark-West) at the marked horizon; short stays a coin-flip. Cone bands p05–p95, downside emphasized.','所示方向为标记周期上经验证的样本外倾向（Clark-West）；短期仍为抛硬币。锥区间 p05–p95，强调下行。')
-      : T('Risk cone is the validated read; direction is a measured coin-flip. Bands p05–p95, downside emphasized.','风险锥为已验证读数；方向为实测抛硬币。区间 p05–p95，强调下行。');
+      ? T('Direction is a validated out-of-sample lean (Clark-West) at the marked horizon; short stays a coin-flip. Risk cone p05–p95, downside emphasized. Display-only — not investment advice.','所示方向为标记周期上经验证的样本外倾向（Clark-West）；短期仍为抛硬币。风险锥 p05–p95，强调下行。仅供参考，非投资建议。')
+      : T('Risk cone is the validated read; direction here is a measured coin-flip. Cone p05–p95, downside emphasized. Display-only — not investment advice.','风险锥为已验证读数；此处方向为实测抛硬币。锥 p05–p95，强调下行。仅供参考，非投资建议。');
     panel.style.display='';
   }
   function cur(){try{return decodeURIComponent((location.hash||'').replace(/^#/,'')).trim().toUpperCase();}catch(e){return '';}}
@@ -1598,7 +1663,7 @@
   window.addEventListener('hashchange',load); load();
 })();
 </script>
-<p class="muted" style="font-size:12px">Generated 2026-06-18 00:10 UTC · charts by TradingView ·
+<p class="muted" style="font-size:12px">Generated 2026-06-18 01:31 UTC · charts by TradingView ·
 methodology &amp; caveats: see any sector page footer.</p>
 <footer class="site-footer">
   <span class="made">Made with ❤️ in Canada</span>

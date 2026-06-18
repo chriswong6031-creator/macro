@@ -30,10 +30,10 @@
       {
         "key": "dxy",
         "label": "US Dollar (DXY)",
-        "z": 0.91,
+        "z": 0.87,
         "sign": -1,
         "risk": "off",
-        "level": 100.338
+        "level": 100.28
       },
       {
         "key": "vix",
@@ -54,7 +54,7 @@
       {
         "key": "copper_gold",
         "label": "Copper / Gold",
-        "z": 1.09,
+        "z": 0.99,
         "sign": 1.0,
         "risk": "on",
         "level": 0.0015
@@ -96,9 +96,9 @@
       "ticker": "Financials & Banks",
       "name": "Financials & Banks",
       "tv": "HKEX:1398",
-      "rs": 9.388546461716963e-05,
-      "mom_20d_pct": 6.78,
-      "mom_60d_pct": 19.28,
+      "rs": 9.390553753000838e-05,
+      "mom_20d_pct": 6.8,
+      "mom_60d_pct": 19.31,
       "above_200d_trend": true,
       "pctile_252d": 99.2,
       "rank": 1

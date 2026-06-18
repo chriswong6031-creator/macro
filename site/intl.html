@@ -7,7 +7,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title><span class="l-en">International Economies</span><span class="l-zh">国际经济体</span> — 2026-06-17</title>
+<title><span class="l-en">International Economies</span><span class="l-zh">国际经济体</span> — 2026-06-18</title>
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
@@ -133,10 +133,22 @@
       <div class="nav-dd-menu" role="menu">
         <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
         <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
+        <a href="spr.html">🛢️ <span class="l-en">Strategic Reserves</span><span class="l-zh">战略储备</span><span class="d"><span class="l-en">SPR levels by country vs oil prices</span><span class="l-zh">各国战略储备水平与油价</span></span></a>
       </div>
     </div>
     <a class="nav-link" href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span></a>
     <a class="nav-link" href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span></a>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="reports.html">📰 <span class="l-en">Research Reports</span><span class="l-zh">研究报告</span><span class="d"><span class="l-en">In-depth market & macro reports</span><span class="l-zh">深度市场与宏观报告</span></span></a>
+        <a href="masterminds.html">🧠 <span class="l-en">Masterminds</span><span class="l-zh">操盘大师</span><span class="d"><span class="l-en">Multi-asset active GTAA strategies</span><span class="l-zh">多资产主动配置策略</span></span></a>
+        <a href="crossasset.html">🧭 <span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></a>
+        <a href="signal_lab.html">🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></a>
+        <a href="factors.html">🧮 <span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></a>
+        <a href="validation_timeline.html">🧪 <span class="l-en">Validation Timeline</span><span class="l-zh">验证时间线</span><span class="d"><span class="l-en">Full 2007→ walk-forward backtest</span><span class="l-zh">2007→ 完整滚动回测</span></span></a>
+      </div>
+    </div>
   </div>
   <div class="nav-search" data-lib="intlstockdata/index.json" data-target="intl_stock.html">
     <span class="mag">🔎</span>
@@ -160,7 +172,7 @@
     <h1>🌍 <span class="l-en">International Economies</span><span class="l-zh">国际经济体</span></h1>
     
     <span style="flex:1"></span>
-    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-06-17 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-06-18 00:27 UTC</span>
+    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-06-18 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-06-18 01:51 UTC</span>
   </div>
   
   <p class="muted small" style="margin:6px 0 0"><span class="l-en">A side-by-side health check on five major economies outside the US/China bloc. Regime, recession & equity-risk reads are descriptive and history-anchored (display-only, never a scored buy/sell). Macro is keyless (FRED OECD + ECB); some CPI prints lag and Taiwan is data-limited — shown honestly with as-of dates.</span><span class="l-zh">对美中之外五大经济体的并排健康检查。周期、衰退与股市风险读数均为描述性、以历史锚定（仅供展示，不构成买卖评分）。宏观数据无需密钥（FRED OECD + ECB）；部分 CPI 数据滞后，台湾数据受限 — 均如实标注截至日期。</span>
@@ -181,7 +193,7 @@
     <div><div class="muted small"><span class="l-en">Economies</span><span class="l-zh">经济体</span></div><b style="font-size:20px">5</b></div>
     <div><div class="muted small"><span class="l-en">Recession-watch</span><span class="l-zh">衰退观察</span></div><b style="font-size:20px" class="">0</b></div>
     <div><div class="muted small"><span class="l-en">Equity drawdown-watch</span><span class="l-zh">股市回撤观察</span></div><b style="font-size:20px" class="">0</b></div>
-    <div><div class="muted small"><span class="l-en">Avg recession score</span><span class="l-zh">平均衰退分</span></div><b style="font-size:20px">5</b></div>
+    <div><div class="muted small"><span class="l-en">Avg recession score</span><span class="l-zh">平均衰退分</span></div><b style="font-size:20px">4</b></div>
   </div>
 </div>
 
@@ -220,10 +232,10 @@
         <td class="grp">-0.5%<span class="stale"> 2021-06</span></td>
         <td>0.3%</td>
         <td>2.5%</td>
-        <td class="grp neg">-1.6%</td>
+        <td class="grp neg">-0.9%</td>
         <td class="">0.0%</td>
         <td><span class="gbar"><span class="gfill g-low" style="width:15.0%"></span></span>15</td>
-        <td class="l"><span class="chip caut"><span class="l-en">stretched</span><span class="l-zh">拉伸</span></span></td>
+        <td class="l"><span class="chip warn"><span class="l-en">parabolic</span><span class="l-zh">抛物</span></span></td>
       </tr>
     
         
@@ -238,7 +250,7 @@
         <td class="grp">3.3%<span class="stale"> 2023-11</span></td>
         <td>3.8%</td>
         <td>2.8%</td>
-        <td class="grp neg">-1.4%</td>
+        <td class="grp neg">-1.3%</td>
         <td class="">0.0%</td>
         <td><span class="gbar"><span class="gfill g-low" style="width:20.0%"></span></span>20</td>
         <td class="l"><span class="chip warn"><span class="l-en">parabolic</span><span class="l-zh">抛物</span></span></td>
@@ -248,7 +260,7 @@
       <tr>
         <td class="l eco"><span class="flg">🇹🇼</span><span class="l-en">Taiwan</span><span class="l-zh">台湾</span> <span class="chip caut" title="thin keyless macro"><span class="l-en">data-limited</span><span class="l-zh">数据有限</span></span></td>
         <td class="l"><span class="quad q-Q1"><span class="l-en">Goldilocks</span><span class="l-zh">理想增长</span></span> <span class="muted small">0.50</span></td>
-        <td class="grp"><span class="gbar"><span class="gfill g-low" style="width:5.0%"></span></span>5</td>
+        <td class="grp"><span class="gbar"><span class="gfill g-low" style="width:0%"></span></span>0</td>
         <td class="grp"><span class="muted">—</span></td>
         <td><span class="muted">—</span></td>
         <td class=""><span class="muted">—</span></td>
@@ -256,9 +268,9 @@
         <td class="grp"><span class="muted">—</span></td>
         <td><span class="muted">—</span></td>
         <td><span class="muted">—</span></td>
-        <td class="grp pos">0.8%</td>
-        <td class="">-1.3%</td>
-        <td><span class="gbar"><span class="gfill g-low" style="width:17.0%"></span></span>17</td>
+        <td class="grp pos">1.3%</td>
+        <td class="">-0.1%</td>
+        <td><span class="gbar"><span class="gfill g-low" style="width:14.0%"></span></span>14</td>
         <td class="l"><span class="chip caut"><span class="l-en">stretched</span><span class="l-zh">拉伸</span></span></td>
       </tr>
     
@@ -364,10 +376,6 @@
             <span class="bar"><span class="bf" style="width:100%;background:var(--down)"></span></span>
             <span class="v">15.0</span></div>
         
-          <div class="rb"><span class="flg">🇹🇼</span><span style="width:54px" class="muted">TW</span>
-            <span class="bar"><span class="bf" style="width:33%;background:var(--down)"></span></span>
-            <span class="v">5.0</span></div>
-        
           <div class="rb"><span class="flg">🇰🇷</span><span style="width:54px" class="muted">KR</span>
             <span class="bar"><span class="bf" style="width:20%;background:var(--down)"></span></span>
             <span class="v">3.0</span></div>
@@ -375,6 +383,10 @@
           <div class="rb"><span class="flg">🇯🇵</span><span style="width:54px" class="muted">JP</span>
             <span class="bar"><span class="bf" style="width:7%;background:var(--down)"></span></span>
             <span class="v">1.0</span></div>
+        
+          <div class="rb"><span class="flg">🇹🇼</span><span style="width:54px" class="muted">TW</span>
+            <span class="bar"><span class="bf" style="width:0%;background:var(--down)"></span></span>
+            <span class="v">0.0</span></div>
         
           <div class="rb"><span class="flg">🇪🇺</span><span style="width:54px" class="muted">EZ</span>
             <span class="bar"><span class="bf" style="width:0%;background:var(--down)"></span></span>
@@ -394,13 +406,13 @@
             <span class="bar"><span class="bf" style="width:100%;background:var(--down)"></span></span>
             <span class="v">20.0</span></div>
         
-          <div class="rb"><span class="flg">🇹🇼</span><span style="width:54px" class="muted">TW</span>
-            <span class="bar"><span class="bf" style="width:85%;background:var(--down)"></span></span>
-            <span class="v">17.0</span></div>
-        
           <div class="rb"><span class="flg">🇯🇵</span><span style="width:54px" class="muted">JP</span>
             <span class="bar"><span class="bf" style="width:75%;background:var(--down)"></span></span>
             <span class="v">15.0</span></div>
+        
+          <div class="rb"><span class="flg">🇹🇼</span><span style="width:54px" class="muted">TW</span>
+            <span class="bar"><span class="bf" style="width:70%;background:var(--down)"></span></span>
+            <span class="v">14.0</span></div>
         
           <div class="rb"><span class="flg">🇬🇧</span><span style="width:54px" class="muted">GB</span>
             <span class="bar"><span class="bf" style="width:35%;background:var(--down)"></span></span>
