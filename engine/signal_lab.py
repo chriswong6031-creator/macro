@@ -350,22 +350,23 @@ REGISTRY: list[dict] = [
          source="spvector-phase4.md", horizon="allocation",
          wired="not shipped"),
 
-    # ---- SCORED (cont.) — the clean earnings-momentum win ------------------
+    # ---- DEMOTED — SUE failed deep re-validation (was scored) --------------
     _row("SUE — standardized unexpected earnings (earnings momentum)",
-         "SUE — 标准化超预期盈利（盈利动量）", "US S&P1500", "scored",
-         why="The one clean free earnings-momentum win. Built from a new EDGAR quarterly-EPS "
-             "pipeline (on-disk EDGAR is annual-only) and the only POSITIVE factor that survives "
-             "BH-FDR in the leak-free PIT panel (IC +0.035, q=0.077). Scored as a standalone leg "
-             "on factors.html. ⚠️ DEEP RE-VAL (2011-2026, survivorship-OPTIMISTIC) COLLAPSES it — "
-             "IC 0.0005, t 0.06, L/S Sharpe 0.09 (a ~2.5y-window artifact; PEAD decay). FLAGGED FOR "
-             "DEMOTION; kept scored pending operator review of the factors.html production leg.",
-         why_zh="唯一干净的免费盈利动量胜出。基于新的 EDGAR 季度 EPS 管线（磁盘 EDGAR 仅年度）构建，"
-                "是无泄漏时点面板中唯一为正且通过 BH-FDR 的因子（IC +0.035，q=0.077）。作为 factors.html 的独立腿计分。",
-         source="factor-ic-scorecard.md / PR #35 / sue-deep-history-phase0.md", horizon="63d",
-         ic=0.0354, t_hac=2.34, q_fdr=0.0768, fdr_survivor=True,
-         wired="factors.html scored leg",
-         extra=[("shallow 2023-2025", "IC 0.038, q 0.047, L/S Sharpe 1.45 (lone FDR survivor)"),
-                ("deep 2011-2026 (surv-opt.)", "IC 0.0005 · t 0.06 · L/S Sharpe 0.09 → edge GONE, flagged for demotion")]),
+         "SUE — 标准化超预期盈利（盈利动量）", "US S&P1500", "display",
+         why="DEMOTED from scored (2026-06-17). It WAS the lone FDR survivor on the shallow "
+             "2023-2025 window (IC +0.038, q=0.077) and shipped as a scored leg — but a deep "
+             "2011-2026 re-validation (survivorship-OPTIMISTIC, the one bias that helps a factor) "
+             "collapses it to ~zero: IC 0.0005, HAC t 0.06, quintile L/S Sharpe 0.09. The win was a "
+             "~2.5y-window artifact (PEAD post-publication decay). Still computed/shown on "
+             "factors.html with the deep caveat; a clean delisting-recovered deep panel could revisit.",
+         why_zh="已从“计分”降级（2026-06-17）。它曾是浅窗口（2023-2025）唯一通过 FDR 的正向因子（IC +0.038，q=0.077）并作为计分腿上线，"
+                "但深度 2011-2026 复验（且对因子有利的幸存者偏差下）将其压至接近零：IC 0.0005、HAC t 0.06、五分位多空夏普 0.09。"
+                "该胜出只是约2.5年窗口的产物（盈利公布后漂移的发表后衰减）。仍在 factors.html 展示但附深度警示。",
+         source="sue-deep-history-phase0.md / factor-ic-scorecard.md / PR #35", horizon="63d",
+         ic=0.0005, t_hac=0.061, sharpe=0.094, fdr_survivor=False,
+         wired="factors.html (descriptive — deep-caveated)",
+         extra=[("shallow 2023-2025 (was scored)", "IC 0.038, q 0.047, L/S Sharpe 1.45"),
+                ("deep 2011-2026 (surv-opt.)", "IC 0.0005 · t 0.06 · L/S Sharpe 0.09 → edge GONE")]),
 
     # ---- DISPLAY-ONLY (cont.) — origin cross-asset / macro leaves ----------
     _row("Cross-asset TSMOM trend (managed-futures style)",
