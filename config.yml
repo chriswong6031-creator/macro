@@ -85,6 +85,30 @@ fred:
       CORESTICKM157SFRBATL: core_sticky_cpi
       FLEXCPIM157SFRBATL: flex_cpi         # flexible-price CPI index (transitory)
       MEDCPIM158SFRBCLE: median_cpi        # Cleveland median CPI (1m annualized %)
+    # --- Official inflation RELEASES (research/RATE_INFLATION_TRANSMISSION.md) -----
+    # The actual prints (not the Atlanta/Cleveland model nowcasts above): headline &
+    # core CPI, headline & core PCE (the Fed's TARGET is core PCE), PPI, ECI wage
+    # growth, plus the shelter / core-services decomposition that drives the
+    # disinflation debate. All are index LEVELS — engine/inputs.py derives YoY/MoM.
+    # All revision-prone → added to the ALFRED vintage matrix (collectors/fred.py
+    # DEFAULT_VINTAGE_SERIES) so point-in-time backtests read what was knowable.
+    inflation_releases:
+      CPIAUCSL: headline_cpi      # CPI-U all items, SA index (the headline print)
+      CPILFESL: core_cpi          # CPI less food & energy, SA (core CPI)
+      PCEPI: headline_pce         # PCE price index, SA (headline PCE)
+      PCEPILFE: core_pce          # PCE less food & energy — the FOMC's 2% target gauge
+      PPIFIS: ppi_final_demand    # PPI final demand, SA (pipeline / margin pressure)
+      PPIFES: ppi_core            # PPI final demand less foods & energy (core PPI)
+      ECIALLCIV: eci_comp         # Employment Cost Index, total comp (quarterly, SA) — wage inflation
+      ECIWAG: eci_wages           # ECI wages & salaries (quarterly, SA)
+      CUSR0000SASLE: cpi_core_services  # CPI services less energy (the "core services" / sticky leg)
+      CUSR0000SAH1: cpi_shelter   # CPI shelter (the lagging rent component vs core services)
+    inflation_expectations:       # the market / survey / MODEL expectations triangle
+      # Market = breakevens (T5YIE/T10YIE/T5YIFR, in rates/inflation_extra above);
+      # Survey = UMich MICH (below). MODEL = Cleveland Fed expected-inflation curve.
+      EXPINF1YR: infl_exp_1y      # Cleveland model 1y expected inflation (%)
+      EXPINF5YR: infl_exp_5y      # Cleveland model 5y expected inflation (%)
+      EXPINF10YR: infl_exp_10y    # Cleveland model 10y expected inflation (%)
     survey:                       # consumer sentiment / household inflation expectations
       UMCSENT: umich_sentiment    # UMich consumer sentiment (monthly)
       MICH: umich_infl_exp        # UMich 1y inflation expectations (%)
@@ -1435,6 +1459,40 @@ credit_cycle:
   countries:
     us: {gap: us_gap, dsr: us_dsr, label_en: "United States", label_zh: "美国"}
     cn: {gap: cn_gap, dsr: cn_dsr, label_en: "China",         label_zh: "中国"}
+
+# =============================================================================
+# Rate & inflation TRANSMISSION (engine/rate_inflation_transmission.py +
+# scripts/calibrate_rate_inflation.py). A DISPLAY-ONLY leaf that traces how the
+# interest-rate / rate-expectations / inflation (CPI, core PCE) state propagates —
+# first/second/third order — into per-asset-class headwind/tailwind, with honest
+# conditional scenarios. The per-asset pass-through COEFFICIENTS are MEASURED
+# (data/transmission/calibration.json: signed split-half forward IC); this block
+# holds only the tunables. NEVER scored: the calibrator's scored-leg gate found no
+# rate/inflation leg that beats the forward-drawdown bar with purged-CV robustness,
+# so every flag below defaults OFF (repricing is reactive; rate-of-change>level).
+transmission:
+  enabled: true
+  calibration:
+    split_date: "2015-01-01"         # split-half boundary for the forward-IC robustness check
+  z_cap: 2.5                         # clip a driver's current z at +/- this when scoring contribution
+  z_active: 0.7                      # |driver z| above this = "currently active / extended"
+  effect_cut: 0.06                   # |net contribution| above this = headwind/tailwind (else neutral)
+  min_ic: 0.04                       # ignore measured cells weaker than this when aggregating
+  # display-only conditional scenarios — the shock sizes the page projects per-asset
+  # moves for, using the MEASURED 63d sensitivity. Each is caveated (reactive, regime-
+  # dependent, not a forecast).
+  scenarios:
+    - {key: real_up50,   driver: real10y_chg63,  shock_bp: 50,  label_en: "Real 10y +50bp (persists a quarter)",  label_zh: "实际10年期收益率 +50基点（持续一季度）"}
+    - {key: real_dn50,   driver: real10y_chg63,  shock_bp: -50, label_en: "Real 10y -50bp (easing)",               label_zh: "实际10年期收益率 -50基点（宽松）"}
+    - {key: be_up30,     driver: be10y_chg63,     shock_bp: 30,  label_en: "Breakeven +30bp (inflation scare)",     label_zh: "盈亏平衡通胀 +30基点（通胀恐慌）"}
+    - {key: steepen,     driver: curve_tp_adj,    shock_bp: 50,  label_en: "Curve bull-steepens +50bp (cuts priced)", label_zh: "收益率曲线牛市变陡 +50基点（计入降息）"}
+  # SCORED-LEG GATE flags — a rate/inflation risk leg is wired into the macro-risk
+  # score ONLY if its flag is true AND it passed the calibrator's gate. All OFF: the
+  # 2026-06 calibration found NONE eligible (real-rate SPEED is the strongest but is
+  # regime-dependent / fails purged-CV). Flip on only after a refresh confirms.
+  scored_legs:
+    real_rate_shock: false           # real10y_chg63 -> MRS (DIRECTIONAL only, not robust)
+    sticky_inflation: false          # corepce_gap -> MRS
 
 # =============================================================================
 # Treasury auction RESULTS (collectors/treasury_auctions.py + engine/treasury_supply.py)

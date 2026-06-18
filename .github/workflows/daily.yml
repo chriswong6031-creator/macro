@@ -214,6 +214,13 @@ jobs:
         # price stores -> site/crossasset.html + data/crossasset/latest.json.
         # Self-sufficient; returns 0 on any engine error.
         run: python -m scripts.build_crossasset
+      - name: rate & inflation transmission (build_transmission)
+        # after build_site (engine.run already wrote the latest.json block) and the
+        # cross-asset/bonds pages: recomputes the display-only transmission read and
+        # renders site/transmission.html + data/transmission/latest.json. Reads the
+        # MEASURED coefficient matrix (data/transmission/calibration.json, refreshed
+        # weekly by calibrate_rate_inflation). Self-sufficient; returns 0 on any error.
+        run: python -m scripts.build_transmission
       - name: build bitcoin vector + landing hub
         # installs the landing hub at index.html (rendered from stored engine
         # state, so ordering vs build_site no longer matters — build_site writes

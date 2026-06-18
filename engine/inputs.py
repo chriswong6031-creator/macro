@@ -192,6 +192,36 @@ def build_features() -> pd.DataFrame:
     # Household sentiment / inflation expectations (monthly).
     put("umich_sentiment", series.get("umich_sentiment"), ffill_limit=45)
     put("umich_infl_exp", series.get("umich_infl_exp"), ffill_limit=45)
+    # --- Official inflation RELEASES (research/RATE_INFLATION_TRANSMISSION.md) ------
+    # The actual CPI/PCE/PPI/ECI prints (not the model nowcasts above), stored on FRED
+    # as index LEVELS. We derive YoY (12-month %) and a 3-month-annualized momentum
+    # read here so the transmission engine + UI read ready numbers. Monthly prints
+    # publish with a ~2-week (CPI/PPI) to ~1-month (PCE) lag; ffill carries the last
+    # print until its successor (60 bdays = the honest step representation).
+    def _rel(col: str) -> pd.Series | None:
+        s = series.get(col)
+        if s is None or s.empty:
+            return None
+        return s[~s.index.duplicated(keep="last")].sort_index()
+
+    for col in ["headline_cpi", "core_cpi", "headline_pce", "core_pce",
+                "ppi_final_demand", "ppi_core", "cpi_core_services", "cpi_shelter"]:
+        s = _rel(col)
+        put(f"{col}_yoy", (s.pct_change(12) * 100.0) if s is not None and len(s) > 12 else None,
+            ffill_limit=60)
+        # 3-month annualized run-rate — the momentum read (is inflation re-accelerating?)
+        put(f"{col}_3m_ann", (((s / s.shift(3)) ** 4 - 1.0) * 100.0)
+            if s is not None and len(s) > 3 else None, ffill_limit=60)
+    # ECI is QUARTERLY (publish ~1 month after quarter-end) → YoY = 4-period change,
+    # carried a full quarter (130 bdays) until the next release.
+    for col in ["eci_comp", "eci_wages"]:
+        s = _rel(col)
+        put(f"{col}_yoy", (s.pct_change(4) * 100.0) if s is not None and len(s) > 4 else None,
+            ffill_limit=130)
+    # Cleveland MODEL expected-inflation curve (already %, no transform) — the third
+    # leg of the market(breakevens) / survey(UMich) / model expectations triangle.
+    for col in ["infl_exp_1y", "infl_exp_5y", "infl_exp_10y"]:
+        put(col, series.get(col), ffill_limit=45)
     # Fuller curve + 5y inflation leg. (us1y/us3y/us7y added for the Bonds
     # dashboard's near-term-forward spread + curve interpolation; additive — the
     # macro engine does not read them.)
