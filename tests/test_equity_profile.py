@@ -8,9 +8,13 @@ pytest is not installed in the venv — run as a plain script:
     python tests/test_equity_profile.py
 """
 import sys
+import tempfile
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+import pandas as pd  # noqa: E402
 
 from collectors import equity_profile as EP  # noqa: E402
 
@@ -157,6 +161,93 @@ def test_trim_protects_single_letter_initials():
 def test_trim_empty():
     assert EP._trim("") == ""
     assert EP._trim(None) == ""
+
+
+def test_cell_coerces_missing_to_none():
+    # round-tripped parquet object columns come back as float NaN, which is truthy
+    # as a string ("nan") — _cell must normalise it to None
+    assert EP._cell(float("nan")) is None
+    assert EP._cell(None) is None
+    assert EP._cell("Apple Inc.") == "Apple Inc."
+    assert EP._cell(3) == 3
+
+
+def test_int0_safe_counts():
+    assert EP._int0(float("nan")) == 0
+    assert EP._int0(None) == 0
+    assert EP._int0(2.0) == 2          # parquet stores int cols as float
+    assert EP._int0("3") == 3
+    assert EP._int0("garbage") == 0
+
+
+def _fetch_with_stubs(existing: pd.DataFrame, wiki):
+    """Run fetch_profiles against a temp cache with the network stubbed out: SEC
+    skipped (empty cik map), universe = the cache's own rows, Wikipedia = `wiki`."""
+    saved = (EP._cache_path, EP._cik_map, EP._universe, EP._wiki_description, EP._sec_submission)
+    with tempfile.TemporaryDirectory() as d:
+        cache = Path(d) / "profiles.parquet"
+        existing.to_parquet(cache)
+        EP._cache_path = lambda: cache
+        EP._cik_map = lambda: {}                                  # SEC skipped entirely
+        EP._universe = lambda: {t: f"{t} Inc" for t in existing.index}
+        EP._wiki_description = wiki
+        EP._sec_submission = lambda cik: {}
+        try:
+            return EP.fetch_profiles()
+        finally:
+            (EP._cache_path, EP._cik_map, EP._universe,
+             EP._wiki_description, EP._sec_submission) = saved
+
+
+def test_fetch_retries_only_eligible_description_gaps():
+    """The core fix: a description-less row is retried on the short DESC_RETRY_DAYS
+    cadence (bounded by MAX_DESC_TRIES) instead of being frozen for REFRESH_DAYS —
+    while good/too-recent/exhausted rows are left untouched, and prior identity +
+    a previously-good blurb are never regressed by a failed retry."""
+    def iso(days):
+        return (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+
+    existing = pd.DataFrame(
+        {
+            # ticker:        description,    as_of,        desc_tries, sic_description
+            "GOOD":         ["Good co desc", iso(1),       float("nan"), "Apples"],
+            "RETRY_OK":     [None,           iso(5),       2.0,          "Widgets"],
+            "RETRY_FAIL":   [None,           iso(5),       2.0,          "Gadgets"],
+            "TOO_SOON":     [None,           iso(1),       1.0,          "Sprockets"],
+            "EXHAUSTED":    [None,           iso(10),      float(EP.MAX_DESC_TRIES), "Cogs"],
+            "STALE_REGRESS":["Keep me",      iso(200),     float("nan"), "Bolts"],
+        },
+        index=["description", "as_of", "desc_tries", "sic_description"],
+    ).T
+    existing.index.name = "ticker"
+
+    # Wikipedia succeeds for everyone EXCEPT names carrying FAIL/REGRESS in them
+    def wiki(*names):
+        nm = " ".join(str(n) for n in names if n)
+        if "FAIL" in nm or "REGRESS" in nm:
+            return None
+        return f"{names[0]} is a company."
+
+    out = _fetch_with_stubs(existing, wiki)
+
+    # eligible gap retried and filled; counter reset; identity preserved
+    assert isinstance(out.loc["RETRY_OK", "description"], str) and out.loc["RETRY_OK", "description"]
+    assert EP._int0(out.loc["RETRY_OK", "desc_tries"]) == 0
+    assert out.loc["RETRY_OK", "sic_description"] == "Widgets"
+
+    # eligible gap retried, still empty → counter increments, identity preserved
+    assert EP._cell(out.loc["RETRY_FAIL", "description"]) is None
+    assert EP._int0(out.loc["RETRY_FAIL", "desc_tries"]) == 3
+    assert out.loc["RETRY_FAIL", "sic_description"] == "Gadgets"
+
+    # too-recent and try-exhausted gaps are left alone (still empty, counter unchanged)
+    assert EP._cell(out.loc["TOO_SOON", "description"]) is None
+    assert EP._int0(out.loc["TOO_SOON", "desc_tries"]) == 1
+    assert EP._int0(out.loc["EXHAUSTED", "desc_tries"]) == EP.MAX_DESC_TRIES
+
+    # a good blurb is untouched; a stale refresh that fails must NOT erase it
+    assert out.loc["GOOD", "description"] == "Good co desc"
+    assert out.loc["STALE_REGRESS", "description"] == "Keep me"
 
 
 def _run():
