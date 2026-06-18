@@ -1,0 +1,643 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span> — <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span></title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  /* ---------- shared Research-Reports chrome ---------- */
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:0 18px 60px; }
+  a { color:var(--link); text-decoration:none; }
+  .wrap { max-width:1060px; margin:0 auto; }
+  /* unambiguous move colours (NOT tied to the zh red=up swap) */
+  .r-neg { color:#d23f3f; font-weight:600; }
+  .r-pos { color:#1f9a55; font-weight:600; }
+  html[data-theme="dark"] .r-neg { color:#ef6a6a; }
+  html[data-theme="dark"] .r-pos { color:#3fc07e; }
+  .mut { color:var(--muted); }
+  /* tags / chips */
+  .chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; line-height:1; padding:5px 10px; border-radius:999px;
+          background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+  .chip.tag-macro   { color:#5b8def; border-color:#5b8def55; }
+  .chip.tag-fed     { color:#c77dff; border-color:#c77dff55; }
+  .chip.tag-rates   { color:#3fb6c0; border-color:#3fb6c055; }
+  .chip.tag-equities{ color:#46b87a; border-color:#46b87a55; }
+  .chip.tag-crypto  { color:#e0973a; border-color:#e0973a55; }
+  .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
+  footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
+  
+  /* callouts (this page extends report_base, not article_base) */
+  .callout { border-radius:12px; padding:14px 17px; margin:14px 0; border:1px solid var(--line); background:var(--panel2); font-size:14px; line-height:1.6; }
+  .callout .co-h { font-weight:700; display:block; margin-bottom:4px; }
+  .callout.key  { border-left:4px solid #46b87a; background:color-mix(in srgb,#46b87a 8%,var(--panel2)); }
+  .callout.warn { border-left:4px solid var(--warn); background:color-mix(in srgb,var(--warn) 9%,var(--panel2)); }
+  .pw-hero { max-width:1060px; margin:18px auto 0; }
+  .pw-hero .eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); font-weight:600; margin:0 0 8px; }
+  .pw-hero h1 { font-size:29px; margin:0 0 8px; letter-spacing:-.01em; }
+  html[data-lang="zh"] .pw-hero h1 { letter-spacing:0; }
+  .pw-hero .lens { font-size:12px; color:var(--muted); }
+  .pw-wrap { max-width:1060px; margin:0 auto; }
+  h2.sec { font-size:19px; margin:30px 0 8px; padding-top:6px; display:flex; align-items:baseline; gap:9px; border-top:1px solid var(--line); padding-top:18px; }
+  h3.sub { font-size:14px; margin:16px 0 6px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+  .lede { font-size:14px; line-height:1.6; }
+  /* basis / status / confidence badges */
+  .b { display:inline-block; font-size:10px; font-weight:700; letter-spacing:.03em; padding:2px 7px; border-radius:6px; white-space:nowrap; }
+  .b-fact { color:#1f9a55; background:color-mix(in srgb,#1f9a55 13%,transparent); }
+  .b-inf  { color:#c77dff; background:color-mix(in srgb,#c77dff 14%,transparent); }
+  .b-prior{ color:#e0973a; background:color-mix(in srgb,#e0973a 14%,transparent); }
+  .b-open { color:var(--muted); background:var(--panel2); }
+  .b-hit  { color:#1f9a55; background:color-mix(in srgb,#1f9a55 13%,transparent); }
+  .b-miss { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
+  .th-fed{color:#c77dff}.th-treasury{color:#3fb6c0}.th-policy{color:#5b8def}.th-rotation{color:#46b87a}
+  .conf { font-size:11px; color:var(--muted); }
+  /* task-force + lever cards */
+  .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:12px; margin:12px 0; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+  .card .cn { font-weight:700; font-size:14.5px; margin:0 0 2px; }
+  .card .cmeta { font-size:11px; color:var(--muted); margin-bottom:7px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .card .cch { font-size:12.5px; line-height:1.5; margin:5px 0; }
+  .card .crp { font-size:12.5px; line-height:1.5; color:var(--text); opacity:.86; border-left:2px solid var(--link); padding-left:9px; margin-top:7px; }
+  .card .crp b { color:var(--link); font-weight:600; }
+  table.data { border-collapse:collapse; width:100%; font-size:12.5px; margin:10px 0; }
+  table.data th { text-align:left; padding:7px 9px; background:var(--panel2); color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); }
+  table.data td { padding:7px 9px; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.data tr:hover td { background:var(--panel2); }
+  .prox { font-family:ui-monospace,Menlo,monospace; font-size:11px; }
+  .led-stat { display:flex; gap:18px; flex-wrap:wrap; margin:8px 0 4px; font-size:12.5px; color:var(--muted); }
+  .led-stat b { color:var(--text); font-size:16px; }
+  .monitor a { color:var(--link); }
+  .monitor li { margin:5px 0; font-size:13px; }
+  .srcs { font-size:11.5px; color:var(--muted); word-break:break-word; }
+  .srcs a { color:var(--link); }
+
+</style>
+
+</head>
+<body>
+<nav class="site-nav">
+    <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 <span class="l-en">Home</span><span class="l-zh">首页</span></a>
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
+        <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <a href="anticipation.html">🔮 <span class="l-en">Anticipation</span><span class="l-zh">预判</span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></a>
+        <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="spvector.html">📐 <span class="l-en">S&P / Macro Vector</span><span class="l-zh">标普宏观向量</span><span class="d"><span class="l-en">Tactical equity↔cash</span><span class="l-zh">战术股票↔现金</span></span></a>
+        <a href="ipo.html">🆕 <span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></a>
+        <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
+        <a href="allocation.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+        <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
+        <a href="gex.html">🧲 <span class="l-en">Options Magnets</span><span class="l-zh">期权磁吸</span><span class="d"><span class="l-en">Dealer-gamma GEX levels</span><span class="l-zh">做市商Gamma GEX价位</span></span></a>
+        <a href="etfs.html">🐳 <span class="l-en">ETF Flows</span><span class="l-zh">ETF资金流</span><span class="d"><span class="l-en">Fund flow monitor</span><span class="l-zh">资金流监控</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
+        <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
+        <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300</span><span class="l-zh">等权主题篮子 vs 沪深300</span></span></a>
+        <a href="china_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">Income · gold · bonds</span><span class="l-zh">红利 · 黄金 · 国债</span></span></a>
+        <a href="allocation_china.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="hk.html">🇭🇰 <span class="l-en">Hong Kong</span><span class="l-zh">香港</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="hk.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">HSI · southbound · global risk</span><span class="l-zh">HSI · 南向 · 全球风险</span></span></a>
+        <a href="hk_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">HK-listed standouts · alpha</span><span class="l-zh">HK上市精选 · 阿尔法</span></span></a>
+        <a href="baskets_hk.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs HSI</span><span class="l-zh">等权主题篮子 vs 恒指</span></span></a>
+        <a href="allocation_hk.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="canada.html">🇨🇦 <span class="l-en">Canada</span><span class="l-zh">加拿大</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="canada.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">TSX · BoC · commodity overlay</span><span class="l-zh">TSX · 加央行 · 商品叠加</span></span></a>
+        <a href="canada_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">TSX standouts · sectors · alpha</span><span class="l-zh">TSX精选 · 板块 · 阿尔法</span></span></a>
+        <a href="baskets_canada.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P/TSX</span><span class="l-zh">等权主题篮子 vs 标普/多伦多</span></span></a>
+        <a href="allocation_canada.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="intl.html">🌍 <span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="intl.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        <a href="intl_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Cross-market standouts · sectors</span><span class="l-zh">跨市场精选 · 板块</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
+        <a href="vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
+        <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span></a>
+    <a class="nav-link" href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span></a>
+    <div class="nav-dd">
+      <a class="nav-link active" href="javascript:void(0)">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="reports.html" class="">📰 <span class="l-en">Research Reports</span><span class="l-zh">研究报告</span><span class="d"><span class="l-en">In-depth market & macro reports</span><span class="l-zh">深度市场与宏观报告</span></span></a>
+        <a href="policy_watch.html" class="active">🏛️ <span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></a>
+        <a href="masterminds.html">🧠 <span class="l-en">Masterminds</span><span class="l-zh">操盘大师</span><span class="d"><span class="l-en">Multi-asset active GTAA strategies</span><span class="l-zh">多资产主动配置策略</span></span></a>
+        <a href="crossasset.html">🧭 <span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></a>
+        <a href="signal_lab.html">🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></a>
+        <a href="factors.html">🧮 <span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></a>
+        <a href="validation_timeline.html">🧪 <span class="l-en">Validation Timeline</span><span class="l-zh">验证时间线</span><span class="d"><span class="l-en">Full 2007→ walk-forward backtest</span><span class="l-zh">2007→ 完整滚动回测</span></span></a>
+      </div>
+    </div>
+  </div>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="aibrief.html">🧠 <span class="l-en">AI Daily Brief</span><span class="l-zh">AI每日简报</span></a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+
+<section class="pw-hero">
+  <p class="eyebrow">🏛️ <span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></p>
+  <h1><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></h1>
+  <p class="lens"><span class="l-en">Realpolitik / revealed-preference lens · non-partisan · as of</span><span class="l-zh">现实政治／显示性偏好视角 · 非党派 · 截至</span> 2026-06-18</p>
+</section>
+
+<div class="pw-wrap">
+
+  <div class="callout key" style="margin-top:16px">
+    <span class="co-h"><span class="l-en">The thesis</span><span class="l-zh">核心论点</span></span>
+    <span class="l-en">A coordinated regime of low-real-yield engineering + strategic re-industrialization. The Fed under Warsh institutionalizes a narrower, more discretionary, framework-resetting central bank (strict 2% target, less unconventional easing, no self-binding forward guidance), while Treasury under Bessent runs explicit yield suppression via bill-heavy issuance, buybacks, dealer-intermediation reform, and a de-facto funding alignment with the Fed. Industrial policy (advanced-chip tariffs, nuclear-for-AI) steers capital toward strategic domestic capacity.</span><span class="l-zh">一个协调一致的“压低实际收益率 + 战略再工业化”政策体制。沃什治下的美联储将其制度化为一个更收窄、更具相机抉择、重置框架的央行（严格2%目标、减少非常规宽松、不再自缚式前瞻指引）；贝森特治下的财政部则通过偏短端发债、回购、做市商中介改革，以及与美联储事实上的融资协同，明确压低收益率。产业政策（先进芯片关税、为AI供电的核能）将资本引向战略性国内产能。</span>
+  </div>
+  <div class="callout warn">
+    <span class="co-h"><span class="l-en">Narrative vs revealed interest</span><span class="l-zh">叙事 vs 真实利益</span></span>
+    <span class="l-en">The market-relevant divergence: the consensus narrative casts Warsh as a dovish Trump instrument (Warren&#39;s &#39;sock puppet&#39;), yet his revealed debut was a hawkish hold with a possible-hike dot. The low-yield outcome the administration wants is being pursued STRUCTURALLY — framework reset, balance-sheet posture, and Treasury issuance — not via near-term cuts. Trade the structure, not the rhetoric.</span><span class="l-zh">对市场最关键的背离：主流叙事把沃什描绘成特朗普的鸽派工具（沃伦称其“提线木偶”），但他实际的首秀却是鹰派按兵不动、并暗示年内可能加息。政府想要的低收益率结果，是通过“结构性”手段实现的——框架重置、资产负债表姿态、财政部发债结构——而非近期降息。交易结构，而非言辞。</span>
+  </div>
+
+  <!-- ================= THE FED ================= -->
+  <h2 class="sec">🏦 <span class="l-en">The Fed under Warsh</span><span class="l-zh">沃什治下的美联储</span></h2>
+  <p class="lede"><span class="l-en">Warsh&#39;s revealed agenda (CFR confirmation-hearing analysis + his June 17 debut): narrow the Fed&#39;s mandate, revert to a strict 2% target (abandoning 2020 flexible-average-inflation-targeting), cut reliance on unconventional tools (QE/balance sheet), and abandon forward guidance — potentially making the dot plot obsolete. He withheld his own dot, dropped guidance, issued a ~114-word statement, and chartered five reform task forces. Revealed interest: a personal institutional legacy / structural Fed redesign that outlasts any one president.</span><span class="l-zh">沃什的实际议程（CFR对其确认听证会的分析 + 6月17日首秀）：收窄美联储职责、回归严格2%目标（放弃2020年的灵活平均通胀目标制）、减少对非常规工具（QE/资产负债表）的依赖、并放弃前瞻指引——点阵图或将作废。他未提交自己的点位、取消指引、发布约114词的声明、并设立五个改革工作组。其真实利益：打造个人的制度遗产 / 一个能超越任一总统任期的结构性美联储重设。</span></p>
+
+  <h3 class="sub"><span class="l-en">Reform task forces — dated, falsifiable</span><span class="l-zh">改革工作组 — 有日期、可证伪</span></h3>
+  <div class="cards">
+    
+    <div class="card">
+      <div class="cn"><span class="l-en">Communications</span><span class="l-zh">沟通</span></div>
+      <div class="cmeta">
+        <span class="b b-open"><span class="l-en">check by</span><span class="l-zh">核查于</span> 2026-12-31</span>
+        <span class="b b-fact">FACT (charter) · INFERENCE (read)</span>
+        <span class="conf">high</span>
+      </div>
+      <div class="cch"><span class="l-en">Review Fed communications, the SEP/dot-plot, transcript release practice, and the press conference; recommendations due ~end-2026; the vote on changes is deferred until it reports.</span><span class="l-zh">审查美联储沟通方式、SEP/点阵图、纪要发布做法及新闻发布会；建议约于2026年底出炉；相关变更的表决推迟至其汇报后。</span></div>
+      <div class="crp"><b><span class="l-en">Realpolitik read</span><span class="l-zh">现实政治解读</span>:</b> <span class="l-en">Institutionalizes killing forward guidance and the dot plot — more chair discretion, less market self-binding.</span><span class="l-zh">将“废除前瞻指引与点阵图”制度化——主席相机抉择空间更大，对市场的自我约束更少。</span></div>
+    </div>
+    
+    <div class="card">
+      <div class="cn"><span class="l-en">Balance-sheet policy</span><span class="l-zh">资产负债表政策</span></div>
+      <div class="cmeta">
+        <span class="b b-open"><span class="l-en">check by</span><span class="l-zh">核查于</span> 2026-12-31</span>
+        <span class="b b-fact">FACT (charter) · INFERENCE (read)</span>
+        <span class="conf">high</span>
+      </div>
+      <div class="cch"><span class="l-en">Reconsider the Fed&#39;s balance-sheet framework and tools.</span><span class="l-zh">重新审视美联储的资产负债表框架与工具。</span></div>
+      <div class="crp"><b><span class="l-en">Realpolitik read</span><span class="l-zh">现实政治解读</span>:</b> <span class="l-en">Codifies a smaller, less-interventionist balance sheet and the &#39;bills-from-MBS&#39; reinvestment that conveniently aids Treasury&#39;s bill-heavy funding (the Fed/Treasury nexus).</span><span class="l-zh">将“更小、更少干预的资产负债表”及“以MBS回流资金购买短期国库券”的再投资姿态制度化——恰好配合财政部偏短端的融资需求（美联储/财政部联结点）。</span></div>
+    </div>
+    
+    <div class="card">
+      <div class="cn"><span class="l-en">Data sources</span><span class="l-zh">数据来源</span></div>
+      <div class="cmeta">
+        <span class="b b-open"><span class="l-en">check by</span><span class="l-zh">核查于</span> 2026-12-31</span>
+        <span class="b b-fact">FACT (charter) · INFERENCE (read)</span>
+        <span class="conf">medium</span>
+      </div>
+      <div class="cch"><span class="l-en">Review the Fed&#39;s use of and reliance on existing data sources.</span><span class="l-zh">审查美联储对现有数据来源的使用与依赖。</span></div>
+      <div class="crp"><b><span class="l-en">Realpolitik read</span><span class="l-zh">现实政治解读</span>:</b> <span class="l-en">Revisits which data the Fed trusts (deemphasizing soft/lagging series), widening interpretive latitude for policy.</span><span class="l-zh">重新界定美联储信任哪些数据（弱化软性/滞后序列），为政策解读拓宽空间。</span></div>
+    </div>
+    
+    <div class="card">
+      <div class="cn"><span class="l-en">Productivity, jobs &amp; AI</span><span class="l-zh">生产率、就业与AI</span></div>
+      <div class="cmeta">
+        <span class="b b-open"><span class="l-en">check by</span><span class="l-zh">核查于</span> 2026-12-31</span>
+        <span class="b b-fact">FACT (charter) · INFERENCE (read)</span>
+        <span class="conf">medium</span>
+      </div>
+      <div class="cch"><span class="l-en">Study productivity and jobs in an era of transformation (AI).</span><span class="l-zh">研究AI变革时代下的生产率与就业。</span></div>
+      <div class="crp"><b><span class="l-en">Realpolitik read</span><span class="l-zh">现实政治解读</span>:</b> <span class="l-en">Builds the intellectual case that AI lifts productivity/potential growth — justification to tolerate stronger demand without hiking. A supply-side narrative aligned with the administration&#39;s AI-dominance agenda.</span><span class="l-zh">构建“AI提升生产率/潜在增长”的理论依据——为“容忍更强需求而不加息”背书。这一供给侧叙事与政府的AI主导议程一致。</span></div>
+    </div>
+    
+    <div class="card">
+      <div class="cn"><span class="l-en">Inflation frameworks</span><span class="l-zh">通胀框架</span></div>
+      <div class="cmeta">
+        <span class="b b-open"><span class="l-en">check by</span><span class="l-zh">核查于</span> 2026-12-31</span>
+        <span class="b b-fact">FACT (charter) · INFERENCE (read)</span>
+        <span class="conf">high</span>
+      </div>
+      <div class="cch"><span class="l-en">Re-examine the Fed&#39;s inflation frameworks.</span><span class="l-zh">重新检视美联储的通胀框架。</span></div>
+      <div class="crp"><b><span class="l-en">Realpolitik read</span><span class="l-zh">现实政治解读</span>:</b> <span class="l-en">The vehicle to formally bury 2020 FAIT and lock in a strict 2% target — the doctrinal core of the reset.</span><span class="l-zh">正式埋葬2020年FAIT、锁定严格2%目标的载体——本次重置的教义核心。</span></div>
+    </div>
+    
+  </div>
+  <p class="lede" style="color:var(--muted)">⏳ <span class="l-en">Each task force pairs internal Fed staff with external experts Warsh is &#39;still recruiting&#39; — NO external members named as of the June 17 debut. First named member is itself a tracked signal.</span><span class="l-zh">每个工作组由美联储内部人员搭配外部专家组成，沃什表示仍在“招募中”——截至6月17日首秀尚无外部成员公布。首位公布的成员本身即是一个被追踪的信号。</span></p>
+
+  <!-- ================= THE ADMINISTRATION ================= -->
+  <h2 class="sec">🇺🇸 <span class="l-en">The Administration</span><span class="l-zh">行政当局</span></h2>
+  <p class="lede"><span class="l-en">Treasury&#39;s revealed strategy under Bessent is yield suppression — &#39;Making America Affordable Again&#39; — via short-end/bill-heavy funding rather than long-end coupons or deficit elimination, plus market-structure reform to expand dealer capacity to absorb Treasuries (eSLR reform, SEC central-clearing, buyback expansion). The objective Bessent states plainly: keep the risk-free rate low to lower mortgage and car payments. Pair this with concrete industrial policy (chip tariffs, nuclear-for-AI) and the picture is reflation-with-repression: hold real yields down while steering capital into strategic domestic capacity.</span><span class="l-zh">贝森特治下财政部的实际策略是压低收益率——“让美国重新负担得起”——通过偏短端/票据为主的发债（而非增加长端票息或消除赤字），并辅以扩大做市商承接国债能力的市场结构改革（eSLR改革、SEC中央清算、扩大回购）。贝森特直言其目标：压低无风险利率以降低房贷与车贷。再叠加具体的产业政策（芯片关税、为AI供电的核能），整体图景即“带金融抑制的再通胀”：压住实际收益率，同时把资本引向战略性国内产能。</span></p>
+  <p class="conf"><span class="l-en">Decision-makers tracked</span><span class="l-zh">追踪的决策者</span>: Donald Trump (President) · Scott Bessent (Treasury Secretary) · DOE Sec. Chris Wright (energy/nuclear)</p>
+
+  <h3 class="sub"><span class="l-en">Verified policy levers</span><span class="l-zh">已核实的政策杠杆</span></h3>
+  <div class="cards">
+    
+    <div class="card">
+      <div class="cn"><span class="l-en">Bill-heavy issuance (&#39;Bessent put&#39;)</span><span class="l-zh">偏短端发债（“贝森特托底”）</span></div>
+      <div class="cmeta">
+        <span class="b b-fact">FACT</span>
+        <span class="conf">high</span>
+      </div>
+      <div class="cch"><span class="l-en">Treasury guided it likely will NOT change coupon auction sizes for several quarters, using T-bills as the issuance &#39;shock absorber&#39; (SB0314, Nov 2025; held at Feb &amp; May 2026 refundings).</span><span class="l-zh">财政部已指引未来数个季度很可能不调整票息拍卖规模，以短期国库券作为发债的“减震器”（SB0314，2025年11月；并在2026年2月与5月再融资中维持）。</span></div>
+    </div>
+    
+    <div class="card">
+      <div class="cn"><span class="l-en">Dealer-intermediation reform</span><span class="l-zh">做市商中介改革</span></div>
+      <div class="cmeta">
+        <span class="b b-fact">FACT</span>
+        <span class="conf">high</span>
+      </div>
+      <div class="cch"><span class="l-en">Buyback program expanded (counterparty set widened H1 2026, final amendments Mar 30 2026), eSLR reform supported, SEC central-clearing backed — all to clear dealer balance-sheet capacity to absorb Treasuries.</span><span class="l-zh">扩大回购计划（2026年上半年扩大交易对手范围，3月30日定稿修订）、支持eSLR改革、支持SEC中央清算——皆为释放做市商资产负债表空间以承接国债。</span></div>
+    </div>
+    
+    <div class="card">
+      <div class="cn"><span class="l-en">De-facto Fed/Treasury funding nexus</span><span class="l-zh">事实上的美联储/财政部融资联结</span></div>
+      <div class="cmeta">
+        <span class="b b-fact">FACT + INFERENCE</span>
+        <span class="conf">medium-high</span>
+      </div>
+      <div class="cch"><span class="l-en">Bessent explicitly cites the FOMC&#39;s shift to buying T-bills with MBS-runoff proceeds as a development that aids Treasury&#39;s bill-heavy funding. (FACT: the Fed reinvestment. INFERENCE: &#39;alignment&#39; is the analyst&#39;s read.)</span><span class="l-zh">贝森特明确将FOMC“以MBS回流资金购买短期国库券”列为有助于其偏短端融资的进展。（事实：美联储的再投资；推断：“协同”为分析判断。）</span></div>
+    </div>
+    
+    <div class="card">
+      <div class="cn"><span class="l-en">25% advanced-chip tariff</span><span class="l-zh">25%先进芯片关税</span></div>
+      <div class="cmeta">
+        <span class="b b-fact">FACT</span>
+        <span class="conf">high</span>
+      </div>
+      <div class="cch"><span class="l-en">Jan 14 2026 Section 232 25% tariff on certain advanced computing chips, naming NVIDIA H200 &amp; AMD MI325X. NOTE: a reshoring exemption for fab-input chips was REFUTED — do not assume a clean domestic-fab carve-out.</span><span class="l-zh">2026年1月14日依据232条款对部分先进计算芯片征收25%关税，点名英伟达H200与AMD MI325X。注意：所谓“为建厂进口芯片豁免”已被证伪——不要假设存在干净的国内建厂豁免。</span></div>
+    </div>
+    
+    <div class="card">
+      <div class="cn"><span class="l-en">Nuclear-for-AI build-out</span><span class="l-zh">为AI供电的核能建设</span></div>
+      <div class="cmeta">
+        <span class="b b-fact">FACT (directive) · CAVEAT (execution slipping)</span>
+        <span class="conf">high</span>
+      </div>
+      <div class="cch"><span class="l-en">EO 14299 (May 23 2025): quadruple nuclear to 400 GW by 2050; 3 pilot reactors to criticality by Jul 4 2026; ≥20 MT HALEU released for private/AI projects; AI/critical-infra reactor by Oct 2027; DoD reactor. CAVEAT: targets are aspirational and slipping (only 1–2 of 3 pilots may hit Jul 4; Antares Mark-0 reached criticality early June 2026).</span><span class="l-zh">第14299号行政令（2025年5月23日）：到2050年将核电翻两番至400吉瓦；3座试点反应堆于2026年7月4日前达临界；释放≥20公吨HALEU用于私营/AI项目；2027年10月前建成AI/关键基础设施反应堆；国防部反应堆。警告：目标偏理想且在滑期（3座试点或仅1–2座能赶上7月4日；Antares Mark-0已于2026年6月初达临界）。</span></div>
+    </div>
+    
+  </div>
+  <div class="callout warn">
+    <span class="co-h">⚠ <span class="l-en">Unverified priors (not facts)</span><span class="l-zh">未核实的先验（非事实）</span></span>
+    <span class="l-en">Requested but NOT covered by the verified claim set — treat as realpolitik PRIORS, not facts: China decoupling/export-control specifics, the 2026 Iran/Middle-East energy situation, NATO burden-sharing/defense-spending numbers, and the &#39;Mar-a-Lago Accord&#39; / currency-realignment thesis. Flagged open; to be sourced in the next research pass.</span><span class="l-zh">用户要求但未被已核实claim集覆盖——按realpolitik“先验”而非事实对待：对华脱钩/出口管制细节、2026年伊朗/中东能源局势、北约分摊/国防开支数字，以及“海湖庄园协议”/货币重整论。标记为待解，将在下一轮研究中取证。</span>
+  </div>
+
+  <!-- ================= CAPITAL ROTATION ================= -->
+  <h2 class="sec">🧭 <span class="l-en">Capital-rotation map</span><span class="l-zh">资本轮动地图</span></h2>
+  <h3 class="sub">🎯 <span class="l-en">Targeted / protected / subsidized</span><span class="l-zh">受益 / 受保护 / 受补贴</span></h3>
+  <table class="data">
+    <tr><th><span class="l-en">Theme</span><span class="l-zh">主题</span></th><th><span class="l-en">Mechanism</span><span class="l-zh">机制</span></th><th><span class="l-en">Proxies</span><span class="l-zh">代理标的</span></th><th><span class="l-en">Basis</span><span class="l-zh">依据</span></th></tr>
+    
+    <tr>
+      <td><strong><span class="l-en">Nuclear · uranium · HALEU/fuel cycle</span><span class="l-zh">核能·铀·HALEU燃料循环</span></strong></td>
+      <td><span class="l-en">EO 14299 quadruple-to-400GW; HALEU released for AI; DoD/pilot reactors</span><span class="l-zh">第14299号行政令翻两番至400吉瓦；为AI释放HALEU；国防部/试点反应堆</span></td>
+      <td class="prox">URA URNM NLR SMR OKLO CCJ LEU</td>
+      <td><span class="b b-fact">FACT mechanism · INFERENCE proxies</span><br><span class="conf">high</span></td>
+    </tr>
+    
+    <tr>
+      <td><strong><span class="l-en">Power · grid · datacenter capex (AI compute)</span><span class="l-zh">电力·电网·数据中心资本开支（AI算力）</span></strong></td>
+      <td><span class="l-en">AI build-out + nuclear-for-AI demand on the grid</span><span class="l-zh">AI建设 + 为AI供电对电网的需求</span></td>
+      <td class="prox">GEV VST CEG ETN PWR GRID</td>
+      <td><span class="b b-fact">FACT mechanism · INFERENCE proxies</span><br><span class="conf">high</span></td>
+    </tr>
+    
+    <tr>
+      <td><strong><span class="l-en">Domestic semiconductors / fabs</span><span class="l-zh">国内半导体/晶圆厂</span></strong></td>
+      <td><span class="l-en">25% Section-232 chip tariff pressures import channels (no verified fab-input exemption)</span><span class="l-zh">25%的232条款芯片关税挤压进口渠道（无已核实的建厂进口豁免）</span></td>
+      <td class="prox">SMH SOXX</td>
+      <td><span class="b b-fact">FACT mechanism · INFERENCE proxies</span><br><span class="conf">medium-high</span></td>
+    </tr>
+    
+    <tr>
+      <td><strong><span class="l-en">Financials / dealer banks</span><span class="l-zh">金融/做市商银行</span></strong></td>
+      <td><span class="l-en">eSLR reform + central-clearing + buyback expansion ease bank Treasury intermediation</span><span class="l-zh">eSLR改革+中央清算+扩大回购，缓解银行承接国债的约束</span></td>
+      <td class="prox">XLF KBE</td>
+      <td><span class="b b-fact">FACT mechanism · INFERENCE proxies</span><br><span class="conf">high</span></td>
+    </tr>
+    
+    <tr>
+      <td><strong><span class="l-en">Front-end Treasuries</span><span class="l-zh">短端美债</span></strong></td>
+      <td><span class="l-en">Bill-heavy issuance + yield suppression + Fed bills-from-MBS</span><span class="l-zh">偏短端发债+压低收益率+美联储以MBS资金购买短债</span></td>
+      <td class="prox">BIL SHV</td>
+      <td><span class="b b-fact">FACT mechanism · INFERENCE proxies</span><br><span class="conf">high</span></td>
+    </tr>
+    
+    <tr>
+      <td><strong><span class="l-en">Defense</span><span class="l-zh">国防</span></strong></td>
+      <td><span class="l-en">NATO burden-sharing / defense-spending posture (thinly sourced — PRIOR)</span><span class="l-zh">北约分摊/国防开支姿态（来源较薄——属先验）</span></td>
+      <td class="prox">ITA XAR PPA</td>
+      <td><span class="b b-prior">PRIOR (thinly sourced)</span><br><span class="conf">low</span></td>
+    </tr>
+    
+    <tr>
+      <td><strong><span class="l-en">Critical minerals / rare earths</span><span class="l-zh">关键矿产/稀土</span></strong></td>
+      <td><span class="l-en">Supply-chain de-risking (thinly sourced — PRIOR)</span><span class="l-zh">供应链去风险（来源较薄——属先验）</span></td>
+      <td class="prox">REMX MP</td>
+      <td><span class="b b-prior">PRIOR (thinly sourced)</span><br><span class="conf">low</span></td>
+    </tr>
+    
+  </table>
+  <h3 class="sub">🥶 <span class="l-en">Starved / pressured</span><span class="l-zh">受冷落 / 承压</span></h3>
+  <table class="data">
+    <tr><th><span class="l-en">Theme</span><span class="l-zh">主题</span></th><th><span class="l-en">Mechanism</span><span class="l-zh">机制</span></th><th><span class="l-en">Proxies</span><span class="l-zh">代理标的</span></th><th><span class="l-en">Basis</span><span class="l-zh">依据</span></th></tr>
+    
+    <tr>
+      <td><strong><span class="l-en">Import-dependent advanced-chip channels</span><span class="l-zh">依赖进口的先进芯片渠道</span></strong></td>
+      <td><span class="l-en">25% tariff raises cost of imported compute (H200/MI325X named)</span><span class="l-zh">25%关税抬高进口算力成本（点名H200/MI325X）</span></td>
+      <td class="prox">—</td>
+      <td><span class="b b-fact">FACT mechanism</span><br><span class="conf">high</span></td>
+    </tr>
+    
+    <tr>
+      <td><strong><span class="l-en">Long-duration / term-premium-sensitive</span><span class="l-zh">长久期/对期限溢价敏感</span></strong></td>
+      <td><span class="l-en">Assets that &#39;fight the Bessent put&#39; if yield suppression holds (policy-contested, not a clean short)</span><span class="l-zh">若压低收益率持续，与“贝森特托底”对抗的资产（政策博弈中，并非干净的做空）</span></td>
+      <td class="prox">TLT</td>
+      <td><span class="b b-prior">INFERENCE / PRIOR</span><br><span class="conf">low-medium</span></td>
+    </tr>
+    
+    <tr>
+      <td><strong><span class="l-en">Old transparent-guidance rates-vol strategies</span><span class="l-zh">依赖透明指引的利率波动率策略</span></strong></td>
+      <td><span class="l-en">A less-predictable communications regime raises event-vol around a guidance-free Fed</span><span class="l-zh">更不可预测的沟通体制抬高了“无指引美联储”前后的事件性波动</span></td>
+      <td class="prox">—</td>
+      <td><span class="b b-inf">INFERENCE</span><br><span class="conf">medium</span></td>
+    </tr>
+    
+  </table>
+
+  <!-- ================= PREDICTION LEDGER ================= -->
+  <h2 class="sec">🎯 <span class="l-en">Falsifiable prediction ledger</span><span class="l-zh">可证伪预测台账</span></h2>
+  <p class="lede" style="color:var(--muted)"><span class="l-en">The accountability spine: each call has a measurable outcome and a check-by date. Outcomes get scored over time so this layer earns a track record instead of being vibes. Policy-action calls (high-confidence, track explicit directives) are scored separately from market-outcome calls (lower-confidence inference).</span><span class="l-zh">问责脊柱：每条判断都有可衡量的结果与核查日期。结果将随时间被评分，使该层积累真实战绩而非凭感觉。政策行动类判断（高置信、追踪明确指令）与市场结果类判断（低置信、属推断）分开评分。</span></p>
+  <div class="led-stat">
+    <span><b>18</b> <span class="l-en">total</span><span class="l-zh">总计</span></span>
+    <span><b>18</b> <span class="l-en">open</span><span class="l-zh">未结</span></span>
+    <span><b>0</b> <span class="l-en">hit</span><span class="l-zh">命中</span></span>
+    <span><b>0</b> <span class="l-en">miss</span><span class="l-zh">落空</span></span>
+    <span>14 <span class="l-en">policy-action</span><span class="l-zh">政策行动</span> · 4 <span class="l-en">market-outcome</span><span class="l-zh">市场结果</span></span>
+  </div>
+  <table class="data">
+    <tr><th>#</th><th><span class="l-en">Thread</span><span class="l-zh">线索</span></th><th><span class="l-en">Prediction</span><span class="l-zh">预测</span></th><th><span class="l-en">Check by</span><span class="l-zh">核查于</span></th><th><span class="l-en">Tier</span><span class="l-zh">层级</span></th><th><span class="l-en">Conf</span><span class="l-zh">置信</span></th><th><span class="l-en">Status</span><span class="l-zh">状态</span></th></tr>
+    
+    <tr>
+      <td><strong>P1</strong></td>
+      <td><span class="th-fed">fed</span></td>
+      <td><span class="l-en">Fed releases a revised SEP/communications framework (new dot-plot format, or formal discontinuation, or transcript/presser changes).</span><span class="l-zh">美联储发布修订后的SEP/沟通框架（点阵图改版、正式停用、或纪要/发布会变更）。</span></td>
+      <td>2026-12-31</td>
+      <td><span class="conf">policy-action</span></td>
+      <td><span class="conf">high</span></td>
+      <td><span class="b b-open">open</span></td>
+    </tr>
+    
+    <tr>
+      <td><strong>P2</strong></td>
+      <td><span class="th-fed">fed</span></td>
+      <td><span class="l-en">Inflation-frameworks task force formally recommends abandoning 2020 FAIT for a strict 2% target.</span><span class="l-zh">通胀框架工作组正式建议放弃2020年FAIT、回归严格2%目标。</span></td>
+      <td>2026-12-31</td>
+      <td><span class="conf">policy-action</span></td>
+      <td><span class="conf">high</span></td>
+      <td><span class="b b-open">open</span></td>
+    </tr>
+    
+    <tr>
+      <td><strong>P3</strong></td>
+      <td><span class="th-fed">fed</span></td>
+      <td><span class="l-en">Warsh keeps withholding his own dot OR the dot plot is suspended over the next 2–3 meetings.</span><span class="l-zh">未来2–3次会议中，沃什继续不提交自己的点位，或点阵图被暂停。</span></td>
+      <td>2026-09-30</td>
+      <td><span class="conf">policy-action</span></td>
+      <td><span class="conf">high</span></td>
+      <td><span class="b b-open">open</span></td>
+    </tr>
+    
+    <tr>
+      <td><strong>P4</strong></td>
+      <td><span class="th-fed">fed</span></td>
+      <td><span class="l-en">At least one named external task-force expert is announced.</span><span class="l-zh">至少公布一位具名的外部工作组专家。</span></td>
+      <td>2026-09-30</td>
+      <td><span class="conf">policy-action</span></td>
+      <td><span class="conf">medium</span></td>
+      <td><span class="b b-open">open</span></td>
+    </tr>
+    
+    <tr>
+      <td><strong>P5</strong></td>
+      <td><span class="th-fed">fed</span></td>
+      <td><span class="l-en">The Fed does NOT cut at the July and September 2026 meetings (hold or hike). Falsified by any 2026 cut ahead of the median path.</span><span class="l-zh">美联储在2026年7月与9月会议上不降息（按兵或加息）。若年内先于中值路径降息则证伪。</span></td>
+      <td>2026-09-30</td>
+      <td><span class="conf">policy-action</span></td>
+      <td><span class="conf">high</span></td>
+      <td><span class="b b-open">open</span></td>
+    </tr>
+    
+    <tr>
+      <td><strong>P6</strong></td>
+      <td><span class="th-treasury">treasury</span></td>
+      <td><span class="l-en">No coupon auction-size INCREASE at the Aug 2026 refunding (bills stay the shock absorber). Falsified by any coupon-size hike.</span><span class="l-zh">2026年8月再融资不上调票息拍卖规模（短债仍为减震器）。若上调票息规模则证伪。</span></td>
+      <td>2026-08-31</td>
+      <td><span class="conf">policy-action</span></td>
+      <td><span class="conf">high</span></td>
+      <td><span class="b b-open">open</span></td>
+    </tr>
+    
+    <tr>
+      <td><strong>P7</strong></td>
+      <td><span class="th-treasury">treasury</span></td>
+      <td><span class="l-en">Treasury keeps publicly framing policy as keeping the risk-free rate low / affordability.</span><span class="l-zh">财政部继续公开将政策表述为压低无风险利率/可负担性。</span></td>
+      <td>2026-12-31</td>
+      <td><span class="conf">policy-action</span></td>
+      <td><span class="conf">high</span></td>
+      <td><span class="b b-open">open</span></td>
+    </tr>
+    
+    <tr>
+      <td><strong>P8</strong></td>
+      <td><span class="th-treasury">treasury</span></td>
+      <td><span class="l-en">Concrete eSLR-reform progress (a proposed or final rule from a banking regulator).</span><span class="l-zh">eSLR改革取得具体进展（银行监管机构出台拟议或最终规则）。</span></td>
+      <td>2026-12-31</td>
+      <td><span class="conf">policy-action</span></td>
+      <td><span class="conf">medium</span></td>
+      <td><span class="b b-open">open</span></td>
+    </tr>
+    
+    <tr>
+      <td><strong>P9</strong></td>
+      <td><span class="th-treasury">treasury</span></td>
+      <td><span class="l-en">SEC advances Treasury central-clearing expansion (a rule or compliance milestone).</span><span class="l-zh">SEC推进国债中央清算扩容（规则或合规里程碑）。</span></td>
+      <td>2026-12-31</td>
+      <td><span class="conf">policy-action</span></td>
+      <td><span class="conf">medium</span></td>
+      <td><span class="b b-open">open</span></td>
+    </tr>
+    
+    <tr>
+      <td><strong>P10</strong></td>
+      <td><span class="th-fed">fed</span></td>
+      <td><span class="l-en">The Fed keeps reinvesting MBS runoff into T-bills through 2026.</span><span class="l-zh">美联储在2026年内持续将MBS回流资金再投资于短期国库券。</span></td>
+      <td>2026-12-31</td>
+      <td><span class="conf">policy-action</span></td>
+      <td><span class="conf">high</span></td>
+      <td><span class="b b-open">open</span></td>
+    </tr>
+    
+    <tr>
+      <td><strong>P11</strong></td>
+      <td><span class="th-policy">policy</span></td>
+      <td><span class="l-en">The 25% advanced-chip tariff stays in force (not rescinded) and/or the covered list expands.</span><span class="l-zh">25%先进芯片关税继续生效（未被撤销）且/或覆盖清单扩大。</span></td>
+      <td>2026-12-31</td>
+      <td><span class="conf">policy-action</span></td>
+      <td><span class="conf">high</span></td>
+      <td><span class="b b-open">open</span></td>
+    </tr>
+    
+    <tr>
+      <td><strong>P12</strong></td>
+      <td><span class="th-policy">policy</span></td>
+      <td><span class="l-en">At least one of the three pilot reactors reaches criticality (partial-pass already likely — Antares Mark-0, early June 2026).</span><span class="l-zh">三座试点反应堆中至少一座达临界（已可能部分达成——Antares Mark-0，2026年6月初）。</span></td>
+      <td>2026-07-04</td>
+      <td><span class="conf">policy-action</span></td>
+      <td><span class="conf">medium</span></td>
+      <td><span class="b b-open">open</span></td>
+    </tr>
+    
+    <tr>
+      <td><strong>P13</strong></td>
+      <td><span class="th-policy">policy</span></td>
+      <td><span class="l-en">DOE releases ≥20 MT HALEU into the fuel bank for private/AI projects.</span><span class="l-zh">美国能源部向燃料库释放≥20公吨HALEU用于私营/AI项目。</span></td>
+      <td>2026-12-31</td>
+      <td><span class="conf">policy-action</span></td>
+      <td><span class="conf">medium</span></td>
+      <td><span class="b b-open">open</span></td>
+    </tr>
+    
+    <tr>
+      <td><strong>P14</strong></td>
+      <td><span class="th-policy">policy</span></td>
+      <td><span class="l-en">The AI/critical-infrastructure reactor program shows a contracted/sited project.</span><span class="l-zh">AI/关键基础设施反应堆计划出现已签约/选址的项目。</span></td>
+      <td>2027-10-31</td>
+      <td><span class="conf">policy-action</span></td>
+      <td><span class="conf">low</span></td>
+      <td><span class="b b-open">open</span></td>
+    </tr>
+    
+    <tr>
+      <td><strong>P15</strong></td>
+      <td><span class="th-rotation">rotation</span></td>
+      <td><span class="l-en">Nuclear/uranium proxies (URA/URNM/SMR/OKLO/CCJ) outperform the S&amp;P 500 over the next 2 quarters. Falsified by sustained underperformance.</span><span class="l-zh">核能/铀代理（URA/URNM/SMR/OKLO/CCJ）未来两个季度跑赢标普500。若持续跑输则证伪。</span></td>
+      <td>2026-12-31</td>
+      <td><span class="conf">market-outcome</span></td>
+      <td><span class="conf">low</span></td>
+      <td><span class="b b-open">open</span></td>
+    </tr>
+    
+    <tr>
+      <td><strong>P16</strong></td>
+      <td><span class="th-rotation">rotation</span></td>
+      <td><span class="l-en">Front-end Treasury demand stays robust (bill auctions well-covered, no forced coupon shift).</span><span class="l-zh">短端美债需求保持强劲（票据拍卖认购充分，未被迫调整票息）。</span></td>
+      <td>2026-08-31</td>
+      <td><span class="conf">market-outcome</span></td>
+      <td><span class="conf">medium</span></td>
+      <td><span class="b b-open">open</span></td>
+    </tr>
+    
+    <tr>
+      <td><strong>P17</strong></td>
+      <td><span class="th-rotation">rotation</span></td>
+      <td><span class="l-en">Financials/dealer-bank proxies (XLF) benefit on eSLR-reform headlines.</span><span class="l-zh">金融/做市商银行代理（XLF）受益于eSLR改革相关消息。</span></td>
+      <td>2026-12-31</td>
+      <td><span class="conf">market-outcome</span></td>
+      <td><span class="conf">low</span></td>
+      <td><span class="b b-open">open</span></td>
+    </tr>
+    
+    <tr>
+      <td><strong>P18</strong></td>
+      <td><span class="th-rotation">rotation</span></td>
+      <td><span class="l-en">Long-duration Treasuries (TLT) do NOT sustain a term-premium blowout that overrides the suppression campaign in H2 2026. Falsified by a disorderly long-end selloff.</span><span class="l-zh">长久期美债（TLT）在2026下半年不出现压过压制行动的期限溢价飙升。若长端无序抛售则证伪。</span></td>
+      <td>2026-12-31</td>
+      <td><span class="conf">market-outcome</span></td>
+      <td><span class="conf">low</span></td>
+      <td><span class="b b-open">open</span></td>
+    </tr>
+    
+  </table>
+
+  <!-- ================= MONITOR ================= -->
+  <h2 class="sec">📡 <span class="l-en">Monitor — highest-signal sources</span><span class="l-zh">监测 — 最高信号来源</span></h2>
+  <ul class="monitor">
+    
+    <li><a href="https://www.federalreserve.gov/newsevents/pressreleases.htm" target="_blank" rel="noopener">FOMC statements · presser transcripts · SEP tables</a> — <span class="conf">Federal Reserve · each meeting; task-force reports ~year-end 2026</span></li>
+    
+    <li><a href="https://home.treasury.gov/news/press-releases" target="_blank" rel="noopener">Treasury quarterly refunding + Bessent remarks + TBAC</a> — <span class="conf">US Treasury · quarterly (next Aug 2026) + ad hoc</span></li>
+    
+    <li><a href="https://www.whitehouse.gov/presidential-actions/" target="_blank" rel="noopener">Section-232 chip-tariff modifications / covered-list changes</a> — <span class="conf">White House · ad hoc</span></li>
+    
+    <li><a href="https://www.energy.gov/ne/listings/ne-articles" target="_blank" rel="noopener">Nuclear: pilot-reactor criticality · HALEU releases · reprocessing</a> — <span class="conf">DOE Office of Nuclear Energy · ad hoc</span></li>
+    
+    <li><a href="https://www.federalreserve.gov/newsevents/pressreleases/bcreg.htm" target="_blank" rel="noopener">eSLR reform rules</a> — <span class="conf">Fed / OCC / FDIC · ad hoc</span></li>
+    
+    <li><a href="https://www.sec.gov/rules-regulations" target="_blank" rel="noopener">Treasury central-clearing rulemaking</a> — <span class="conf">SEC · ad hoc</span></li>
+    
+    <li><strong>Principals to track for hawkish/dovish &amp; policy drift</strong> — <span class="conf">Warsh · Bessent · DOE Sec. Wright · FOMC dot participants · continuous</span></li>
+    
+  </ul>
+
+  <!-- ================= SOURCES + CAVEATS ================= -->
+  <h2 class="sec">📚 <span class="l-en">Sources & caveats</span><span class="l-zh">来源与说明</span></h2>
+  <div class="callout">
+    <span class="l-en">Realpolitik reads, the &#39;de-facto Fed/Treasury alignment&#39; framing, all ticker proxies, and market-outcome predictions (P15–P18) are INFERENCE, not source-endorsed fact. China/Iran/NATO/Mar-a-Lago threads are UNVERIFIED priors. Nuclear targets are aspirational and already slipping. The chip-tariff reshoring-exemption was REFUTED. Time-sensitive: anchored to June 17 2026; re-verify before trading. Context only — not investment advice.</span><span class="l-zh">realpolitik解读、“事实上的美联储/财政部协同”表述、所有代理标的、以及市场结果类预测（P15–P18）均为推断，而非来源背书的事实。中国/伊朗/北约/海湖庄园等线索为未核实的先验。核能目标偏理想且已在滑期。芯片关税的建厂豁免已被证伪。具时效性：锚定于2026年6月17日，交易前请重新核实。仅供参考，不构成投资建议。</span>
+  </div>
+  <p class="srcs"><strong><span class="l-en">Primary sources</span><span class="l-zh">一手来源</span>:</strong>
+    <a href="https://www.federalreserve.gov/mediacenter/files/FOMCpresconf20260617.pdf" target="_blank" rel="noopener">[1]</a> <a href="https://www.federalreserve.gov/monetarypolicy/files/fomcprojtabl20260617.pdf" target="_blank" rel="noopener">[2]</a> <a href="https://www.cfr.org/articles/what-kevin-warshs-confirmation-hearing-revealed-about-the-future-of-the-fed" target="_blank" rel="noopener">[3]</a> <a href="https://home.treasury.gov/news/press-releases/sb0314" target="_blank" rel="noopener">[4]</a> <a href="https://www.whitehouse.gov/fact-sheets/2026/01/fact-sheet-president-donald-j-trump-takes-action-on-certain-advanced-computing-chips-to-protect-americas-economic-and-national-security/" target="_blank" rel="noopener">[5]</a> <a href="https://www.energy.gov/ne/articles/9-key-takeaways-president-trumps-executive-orders-nuclear-energy" target="_blank" rel="noopener">[6]</a> <a href="https://www.cnbc.com/2026/06/17/kevin-warsh-fed-interest-rates-risk-analysis.html" target="_blank" rel="noopener">[7]</a> <a href="https://www.npr.org/2026/06/17/nx-s1-5860084/fed-chief-warsh-first-fomc-meeting" target="_blank" rel="noopener">[8]</a> 
+  </p>
+  <p class="conf"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-18 01:23 UTC · <span class="l-en">display / context only — not investment advice</span><span class="l-zh">仅供展示／参考——不构成投资建议</span></p>
+
+</div>
+
+
+<footer class="rfoot">
+  <span class="l-en">Research Reports are read-only analysis for informational purposes only — not investment advice. Figures are point-in-time and may be revised.</span><span class="l-zh">研究报告仅为信息性分析，不构成投资建议。数据为特定时点快照，可能被修订。</span>
+</footer>
+
+<script src="theme.js"></script>
+</body>
+</html>
