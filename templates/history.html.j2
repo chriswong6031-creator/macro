@@ -153,14 +153,12 @@
     <div class="topline">
       <h1>{{ t('Regime history & charts', '周期历史与图表') }}</h1>
       <span class="muted">{{ t('data through', '数据截至') }} {{ latest.date }}</span>
-      <span style="flex:1"></span>
-      <a class="navbtn" href="validation_timeline.html">{{ t('Full 2007→ backtest', '2007→ 完整回测') }}</a>
     </div>
   </div>
 
   <div class="panel">
     <h2>{{ t('Three years of regimes over the S&P 500', '标普500 三年周期叠加') }}
-      {{ help("The S&P 500 with the regime active at each time shaded behind it — how the classifier actually behaved in real conditions. For the full 2007-onward record including the validation stats, use the backtest link above.", "标普500 走势，并以底色标出每个时段所处的周期 — 展示分类器在真实环境中的实际表现。如需自 2007 年起的完整记录及验证统计，请使用上方的回测链接。") }}
+      {{ help("The S&P 500 with the regime active at each time shaded behind it — how the classifier actually behaved in real conditions.", "标普500 走势，并以底色标出每个时段所处的周期 — 展示分类器在真实环境中的实际表现。") }}
     </h2>
     {{ chart_regime | safe }}
     <div class="legend">
