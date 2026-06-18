@@ -46,6 +46,13 @@
   /* sector + standout cards */
   .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:11px; }
   .card { background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:11px 13px; }
+  /* The shared mtf.js paints a .mtf-grid of D/3D/W panels; theme.css forces
+     repeat(3,1fr), which overflows the ~260px sector/benchmark cards (the
+     "RSI 74 overbought" row spills past the edge). Let the timeframe panels
+     stack when the card is narrow and spread out only when there's room. */
+  .card .mtf-grid, .mtf-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .card .mtf-card { padding: 8px 10px; min-width: 0; }
+  .card svg { max-width: 100%; }
   .lad { display:inline-block; padding:2px 9px; border-radius:10px; font-weight:700; font-size:11.5px;
          background:color-mix(in srgb, var(--c, var(--muted)) 16%, var(--panel)); color:color-mix(in srgb, var(--c, var(--muted)) 82%, var(--text)); }
   .lad.up { --c:var(--up); } .lad.down { --c:var(--down); } .lad.flat { --c:var(--muted); }
