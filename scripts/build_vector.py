@@ -1275,7 +1275,7 @@ a:focus-visible,.links a:focus-visible{outline:2px solid var(--link);outline-off
 .gd-canvas{width:100%;height:100%;display:block;touch-action:none;cursor:grab;outline:none}
 .gd-canvas:focus-visible{outline:2px solid var(--link);outline-offset:-2px}
 .gd-poster{position:absolute;inset:0;width:100%;height:100%;transition:opacity .6s ease;pointer-events:none}
-.gd-legend{position:absolute;left:12px;right:12px;bottom:10px;display:flex;gap:6px;flex-wrap:wrap;margin:0;padding:0;list-style:none;z-index:3}
+.gd-legend{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap;margin:0;padding:0;border:0;list-style:none}
 .gd-leg{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--text);cursor:pointer;
  background:color-mix(in srgb,var(--panel) 70%,transparent);border:1px solid var(--line);border-radius:999px;padding:3px 9px;
  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}

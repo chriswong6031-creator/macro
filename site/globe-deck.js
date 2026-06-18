@@ -399,6 +399,15 @@
         (m.macro_asof ? ' · ' + bilingual("as of " + m.macro_asof, m.macro_asof) : '') + '</div>' +
       '<a class="gd-tip-go" href="' + m.href + '">' + bilingual("Open dashboard →", "打开看板 →") + '</a>';
     tip.hidden = false;
+    tip.classList.toggle("pinned", !!pinned);
+    // mobile: a pinned tooltip becomes a BOTTOM SHEET — always fully on-screen even
+    // when the tap came from the sidebar far below the globe (no more half-off-screen).
+    if (pinned && window.innerWidth <= 560) {
+      tip.style.left = "10px"; tip.style.right = "10px"; tip.style.width = "auto";
+      tip.style.top = "auto"; tip.style.bottom = "12px";
+      return;
+    }
+    tip.style.right = ""; tip.style.bottom = ""; tip.style.width = "";  // clear any prior bottom-sheet
     var tw = tip.offsetWidth, th = tip.offsetHeight, pad = 10, x, y;
     if (pinned) {
       // a clicked country flies to the globe centre, so anchor the tooltip BESIDE
