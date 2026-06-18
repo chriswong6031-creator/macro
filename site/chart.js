@@ -200,6 +200,9 @@
   // ---- the chart instance ---------------------------------------------------
   function Instance(host, ticker, opts) {
     this.host = host; this.ticker = ticker; this.opts = opts || {};
+    // Per-market data location: US fetches ohlc/<T>.json; CN/CA/intl pass their own
+    // dir (chinaohlc/…); HK passes opts.data inline (it already ships a close series).
+    this.ohlcDir = this.opts.ohlcDir || 'ohlc';
     this.chart = null; this.S = {};            // series refs
     var pr = loadPrefs();
     this.tf = pr.tf || '1D';
@@ -217,8 +220,7 @@
     this.host.appendChild(this.wrap);
     this.renderMsg(tt('Loading chart…', '正在加载图表…'));
     var self = this;
-    var url = 'ohlc/' + safeName(this.ticker) + '.json';
-    fetch(url).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+    function use(j) {
       if (!j || !j.bars || !j.bars.length) { self.renderMsg(tt(
         'Live chart unavailable for this name — the analysis above stands on its own.',
         '该标的暂无图表数据 —— 上方分析独立成立。')); return; }
@@ -229,7 +231,12 @@
       self.rerender();
       document.addEventListener('themechange', self._onTheme);
       document.addEventListener('langchange', self._onLang);
-    }).catch(function () { self.renderMsg(tt('Chart failed to load.', '图表加载失败。')); });
+    }
+    // Inline data (HK) renders without a round-trip; otherwise fetch the market's dir.
+    if (this.opts.data) { use(this.opts.data); return this; }
+    var url = this.ohlcDir + '/' + safeName(this.ticker) + '.json';
+    fetch(url).then(function (r) { return r.ok ? r.json() : null; }).then(use)
+      .catch(function () { self.renderMsg(tt('Chart failed to load.', '图表加载失败。')); });
     return this;
   };
 

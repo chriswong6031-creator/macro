@@ -366,6 +366,10 @@ jobs:
           # gitignored like the search libraries, so force-add it or the committed-tree
           # deploy ships no price data and every stock chart renders empty.
           git add -f site/ohlc 2>/dev/null || true
+          # Non-US bespoke chart OHLC (built by build_{china,canada,intl}_library): same
+          # gitignore + force-add situation as their stockdata libraries (HK needs none —
+          # its per-stock JSON carries the chart series inline).
+          git add -f site/chinaohlc site/canadaohlc site/intlohlc 2>/dev/null || true
           if git diff --cached --quiet; then echo "no engine output changes"; exit 0; fi
           git commit -m "engine: regime update $(date -u +%F)"
           # best-effort push (see commit-data). The deploy below uses the uploaded

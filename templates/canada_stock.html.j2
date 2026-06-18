@@ -231,7 +231,8 @@
     </div>
   </div>
 
-<script src="https://s3.tradingview.com/tv.js"></script>
+<script src="lightweight-charts-v5.js"></script>
+<script src="chart.js"></script>
 <script>
 (function () {
   var idx = [], cal = null, sel = -1, items = [];
@@ -569,15 +570,12 @@
       cbEl.style.display = 'block';
     } else { cbEl.style.display = 'none'; }
 
-    // TradingView embed (works for TSX; the chart is garnish — the analysis above stands alone).
-    document.getElementById('tvbox').innerHTML = '<div id="tvchart"></div>';
-    try {
-      new TradingView.widget({container_id: 'tvchart', symbol: d.tv || d.ticker,
-        interval: 'D', theme: (localStorage.getItem('theme') === 'light' ? 'light' : 'dark'),
-        style: '1', height: 430, width: '100%',
-        hide_side_toolbar: true, allow_symbol_change: true,
-        studies: ['RSI@tv-basicstudies', 'MACD@tv-basicstudies']});
-    } catch (e) { /* chart is garnish */ }
+    // Bespoke self-hosted chart (chart.js) from our own TSX closes (canadaohlc/<T>.json):
+    // area + client-side RSI/Stoch/MACD/Stoch-RSI/EMA, 1D/3D/1W. Garnish — fails quietly.
+    if (window.StockChart) {
+      try { window.StockChart.mount(document.getElementById('tvbox'), d.ticker, {name: d.name, ohlcDir: 'canadaohlc'}); }
+      catch (e) { /* chart is garnish */ }
+    }
   }
   document.addEventListener('themechange', function () {
     var h = (location.hash || '').slice(1); if (h) load(decodeURIComponent(h));

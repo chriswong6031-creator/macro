@@ -609,6 +609,15 @@ def main(alpha: dict | None = None) -> dict | None:
     log.info("china context attached: fund %d · consensus %d · earnings %d · val_pct %d · margin %d",
              len(fmap), len(cons), len(earn), len(vpct), len(marg))
     (outdir / "index.json").write_text(json.dumps(index))
+    # Bespoke chart OHLC (close-only area series) read by china_lookup.html's chart.js —
+    # pure serialisation of china_search closes; never break the library over the garnish.
+    try:
+        from scripts.build_chart_data import emit_close_only
+        nc = emit_close_only(outdir / "index.json", config.data_dir() / "china_search" / "closes.parquet",
+                             outdir.parent / "chinaohlc", "china")
+        log.info("china chart data: %d ohlc files", nc)
+    except Exception as e:  # noqa: BLE001
+        log.warning("china chart data step failed (%s)", e)
     cal = config.data_dir() / "china_regime" / "ladder_calibration.json"
     if cal.exists():
         (outdir / "calibration.json").write_text(cal.read_text())
