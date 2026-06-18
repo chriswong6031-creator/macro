@@ -2200,6 +2200,13 @@ def main() -> int:
         _build_ipo()
     except Exception as e:  # noqa: BLE001
         log.error("ipo radar page (via build_vector) failed (%s)", e)
+    try:  # China Mastermind GTAA flagships — detail pages + snapshot. MUST run BEFORE
+          # build_china_strategies so strategy_cnmm_*.html exist when the pinned hero links to them.
+          # (PAT lacks workflow scope → piggyback on build_vector; promote to a daily.yml step later.)
+        from scripts.build_china_masterminds import build as _build_china_masterminds
+        _build_china_masterminds()
+    except Exception as e:  # noqa: BLE001
+        log.error("china mastermind flagship pages (via build_vector) failed (%s)", e)
     try:  # China Strategy Scorecards hub + detail pages (same hook rationale as the US hub;
           # the China Income Vector card pulls from build_china_allocation, so this runs after it).
         from scripts.build_china_strategies import build as _build_china_strategies
