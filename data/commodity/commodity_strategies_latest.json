@@ -6,7 +6,7 @@
     "copper",
     "oil"
   ],
-  "built": "2026-06-18 01:47 UTC",
+  "built": "2026-06-18 02:42 UTC",
   "cards": [
     {
       "key": "cm_gold_swap",
@@ -53,14 +53,14 @@
     {
       "key": "cm_oil_swap",
       "name": "Oil Trend Swap",
-      "cagr": 2.86,
+      "cagr": 2.83,
       "sharpe": 0.24,
       "maxdd": -44.4
     },
     {
       "key": "cm_oil_macro",
       "name": "Oil Macro Multifactor",
-      "cagr": 5.42,
+      "cagr": 5.39,
       "sharpe": 0.38,
       "maxdd": -43.5
     },
