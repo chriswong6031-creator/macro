@@ -45,6 +45,10 @@ DISCLAIMER = (
     "a fallible, FALSIFIABLE judgement (proxy vs SPY, with a check-by date), not a trade "
     "or a position size. Intent is inferred from interests; treat it as a hypothesis with "
     "a track record, not an oracle.")
+DISCLAIMER_ZH = (
+    "意图台 —— 现实政治、仅供参考，从不评分或定仓。每条判断都是可证伪、会出错的判断"
+    "（代理标的 vs SPY，附核查日期），并非交易或仓位大小。意图由利益推断而来；请将其"
+    "视为有战绩记录的假设，而非神谕。")
 
 _LEANS = ("overweight", "underweight", "avoid")
 _CONVICTIONS = ("low", "medium", "high")
@@ -151,9 +155,12 @@ def _build_thesis(t: dict, i: int, asof, cfg: dict, run_token: str = "") -> dict
         "conviction": conv,
         "horizon_d": horizon,
         "thesis": t.get("thesis"),
+        "thesis_zh": t.get("thesis_zh"),
         "evidence": [str(e) for e in (t.get("evidence") or []) if e],
         "dissent": t.get("dissent"),
+        "dissent_zh": t.get("dissent_zh"),
         "falsifier": {"text": t.get("falsifier_text"),
+                      "text_zh": t.get("falsifier_text_zh"),
                       "check": _derive_check(subject, lean, horizon, cfg)},
         "check_by": _desk._check_by(asof, horizon),
     }
@@ -203,6 +210,8 @@ _SCHEMA_TAIL = (
     "Return ONLY a JSON object (no markdown fences) with keys:\n"
     "  regime_context: string — 1-2 sentences on the policy regime + where the consensus "
     "narrative diverges from revealed interest (grounded; no invented numbers).\n"
+    "  regime_context_zh: string — a faithful Simplified-Chinese (简体中文) translation of "
+    "regime_context. Preserve tickers, acronyms and proper nouns; translate the rest.\n"
     "  theses: array of 0..N objects (omit rather than pad), each:\n"
     "     actor: \"fed\" or \"admin\" — whose intent drives it.\n"
     "     subject: a TICKER from allowed_subjects (PREFER scorable_subjects so it can be "
@@ -211,10 +220,14 @@ _SCHEMA_TAIL = (
     "     conviction: \"low\" | \"medium\" | \"high\" — modest; default low.\n"
     "     horizon_d: integer trading days, 10..126.\n"
     "     thesis: string — the realpolitik reasoning (which policy lever / interest).\n"
+    "     thesis_zh: string — faithful 简体中文 translation of thesis (preserve tickers).\n"
     "     evidence: array of strings — cite the specific theater / lever / prediction.\n"
     "     dissent: string — the single strongest contrary case.\n"
+    "     dissent_zh: string — faithful 简体中文 translation of dissent (preserve tickers).\n"
     "     falsifier_text: string — one concrete condition that would prove it wrong.\n"
-    "  confidence: \"low\" | \"medium\" | \"high\"."
+    "     falsifier_text_zh: string — faithful 简体中文 translation of falsifier_text.\n"
+    "  confidence: \"low\" | \"medium\" | \"high\".\n"
+    "Every *_zh field is REQUIRED and must be natural Simplified Chinese, not English."
 )
 
 _SYSTEM = (
@@ -257,9 +270,10 @@ def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
         "schema": SCHEMA, "is_context_only": True, "lens": "realpolitik",
         "generated_at": _now_iso(), "state_asof": asof,
         "model": cfg.get("llm_model", "deepseek-v4-pro"),
-        "regime_context": None, "theses": [],
+        "regime_context": None, "regime_context_zh": None, "theses": [],
         "track_record": state.get("track_record"),
-        "confidence": "low", "raw_text": None, "degraded_reason": None, "disclaimer": DISCLAIMER,
+        "confidence": "low", "raw_text": None, "degraded_reason": None,
+        "disclaimer": DISCLAIMER, "disclaimer_zh": DISCLAIMER_ZH,
     }
     reply, reason = (call or _mb._call_model)(_SYSTEM, _build_user(state), cfg)
     brief["raw_text"] = reply
@@ -271,6 +285,7 @@ def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
         brief["degraded_reason"] = reason or "unparseable_reply"
         return brief
     brief["regime_context"] = parsed.get("regime_context")
+    brief["regime_context_zh"] = parsed.get("regime_context_zh")
     conf = str(parsed.get("confidence") or "low").strip().lower()
     brief["confidence"] = conf if conf in _CONVICTIONS else "low"
     raw = parsed.get("theses") if isinstance(parsed.get("theses"), list) else []

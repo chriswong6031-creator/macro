@@ -164,6 +164,7 @@ def test_track_record_aggregates_by_conviction():
     assert track["by_conviction"]["high"]["hit_rate"] == 1.0
     assert track["by_conviction"]["low"]["hit_rate"] == 0.0
     assert "scored" in track["calibration_note"].lower()
+    assert "已评分" in track["calibration_note_zh"]                     # bilingual note (display)
 
 
 # --- the feedback loop closes: ai_desk reads track_record back ------------ #
