@@ -2024,6 +2024,25 @@ ai_desk:
                                  # false = single analyst (cheaper: 1 LLM call vs 5).
 
 # =============================================================================
+# Policy Intent Desk — the realpolitik LLM layer on the Fed/Admin intel substrate
+# (engine/policy_intent_desk.py). LEAF · NEVER-SCORED · no-op without DEEPSEEK_API_KEY.
+# Reads data/policy/intel.json + live market state -> dated, FALSIFIABLE intent leans
+# (a proxy ticker vs SPY) appended to data/policy_intent/theses.jsonl and scored over
+# time (reuses ai_desk_scorer evaluators). Surfaced on site/policy_watch.html.
+# =============================================================================
+policy_intent_desk:
+  enabled: true                  # runs in the pipeline; degrades to no-op without the key
+  api_key_env: DEEPSEEK_API_KEY
+  llm_base_url: https://api.deepseek.com/anthropic
+  llm_model: deepseek-v4-pro
+  max_tokens: 8000
+  interval_days: 7               # slow-moving policy layer — weekly regen (keeps prior note live between)
+  max_theses: 5
+  default_horizon_d: 40          # policy horizons run longer than flow (10..126 td)
+  falsifier_defaults:
+    rel_return: 0.05             # ±5% proxy-vs-SPY move = the wrong-way threshold
+
+# =============================================================================
 # Catalyst stock — single-stock research BRIEF (LLM "Option 2"; engine/catalyst_stock.py).
 # LEAF · DEFAULT-OFF · RESEARCH/CONTEXT-ONLY. The per-stock analogue of master_brain:
 # assembles ONE ticker's PUBLIC context (cycle/ladder signal + technical state +

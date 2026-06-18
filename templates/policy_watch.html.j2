@@ -72,6 +72,42 @@
     {{ bl(intel.regime_read.en, intel.regime_read.zh) }}
   </div>
 
+  <!-- ================= INTENT DESK (LLM, accountable) ================= -->
+  {% if desk %}
+  <h2 class="sec">🤖 {{ t('Intent Desk — accountable realpolitik leans', '意图台 — 可问责的现实政治判断') }}</h2>
+  <p class="lede" style="color:var(--muted)">{{ t('An LLM reads the sourced intel + live market state and emits dated, FALSIFIABLE leans (a proxy ticker vs SPY) that are scored over time. Context only — never a size or a trade; intent is a tracked hypothesis, not an oracle.',
+      '由LLM读取来源情报+实时市场状态，给出有日期、可证伪的判断（某代理标的 vs SPY），并随时间评分。仅供参考——绝非仓位或交易；意图是被追踪的假设，而非神谕。') }}</p>
+  {% if desk.regime_context %}<div class="callout">{{ desk.regime_context }}</div>{% endif %}
+  {% if desk.track_record and desk.track_record.overall and desk.track_record.overall.n %}
+  <div class="led-stat">
+    <span><b>{{ desk.track_record.overall.n }}</b> {{ t('scored', '已评分') }}</span>
+    {% if desk.track_record.overall.hit_rate is not none %}<span><b>{{ (desk.track_record.overall.hit_rate*100)|round|int }}%</b> {{ t('not falsified', '未被证伪') }}</span>{% endif %}
+    {% if desk.track_record.open %}<span>{{ desk.track_record.open }} {{ t('open', '未结') }}</span>{% endif %}
+    <span class="conf">{{ desk.track_record.calibration_note }}</span>
+  </div>
+  {% endif %}
+  {% if desk.theses %}
+  <div class="cards">
+    {% for th in desk.theses %}
+    <div class="card">
+      <div class="cn"><span class="th-{{ 'fed' if th.actor=='fed' else 'policy' }}">{{ (th.actor or 'admin')|upper }}</span> · {{ th.subject }} — <span class="b {{ 'b-fact' if th.lean=='overweight' else 'b-miss' }}">{{ th.lean }}</span></div>
+      <div class="cmeta">
+        <span class="conf">{{ th.conviction }} {{ t('conviction', '置信') }}</span>
+        <span class="b b-open">{{ t('check by', '核查于') }} {{ th.check_by }}</span>
+        <span class="conf">{{ th.falsifier.check.kind if th.falsifier and th.falsifier.check else 'soft' }}</span>
+      </div>
+      <div class="cch">{{ th.thesis }}</div>
+      {% if th.dissent %}<div class="cch" style="color:var(--muted)"><b>{{ t('Dissent', '反方') }}:</b> {{ th.dissent }}</div>{% endif %}
+      {% if th.falsifier and th.falsifier.text %}<div class="crp"><b>{{ t('Falsifier', '证伪条件') }}:</b> {{ th.falsifier.text }}</div>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% elif desk.degraded_reason %}
+  <div class="callout warn">{{ t('Desk note pending — the LLM layer generates in CI (needs the model key).', '台注待生成 —— LLM层在CI中生成（需模型密钥）。') }} <span class="conf">({{ desk.degraded_reason }})</span></div>
+  {% endif %}
+  <p class="conf">{{ desk.disclaimer }}</p>
+  {% endif %}
+
   <!-- ================= THE FED ================= -->
   <h2 class="sec">🏦 {{ t('The Fed under Warsh', '沃什治下的美联储') }}</h2>
   <p class="lede">{{ bl(intel.fed.profile.en, intel.fed.profile.zh) }}</p>
