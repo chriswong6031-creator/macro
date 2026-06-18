@@ -3418,3 +3418,11 @@ intl:
       momentum_windows: [20, 60]
       trend_window: 120
       percentile_lookback_d: 252
+    performance:                    # DISPLAY-ONLY USD-return / rotation desk (engine.intl_performance)
+      benchmark: "^GSPC"            # US price index — apples-to-apples vs the intl price indices
+      horizons_d: {1m: 21, 3m: 63, 6m: 126, 12m: 252}
+      correlation_window_d: 252     # daily-return window for the cross-market correlation map
+      rrg_window_d: 63              # relative-strength momentum lookback (US-vs-world rotation)
+    rates:                          # rates / curve / carry desk (engine.intl_rates)
+      carry_anchor: us_10y          # carry = country 10y - US 10y
+      liquidity_impulse_w: [13, 52] # ECB balance-sheet 13/52-week % change
