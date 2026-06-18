@@ -5,7 +5,7 @@ frame (engine.bonds.bonds_frame) rather than per-instrument frames. Deterministi
 idempotent events recomputed from the frame's state columns:
 
   curve-move REGIME shift (bull/bear x steepener/flattener), curve UN-INVERSION
-  (the ~66-day pre-recession alarm), HY credit DISTRESS-BAND crossings, MOVE
+  (the re-steepening late-cycle handoff, ~13m pre-recession), HY credit DISTRESS-BAND crossings, MOVE
   rates-vol BAND crossings, funding-PLUMBING stress (repo spike / reserve
   scarcity), the STOCK-BOND CORRELATION regime flip, and RECESSION-RISK band
   crossings.
@@ -111,13 +111,14 @@ def compute_all_events(fr: pd.DataFrame, cfg: dict | None = None) -> list[dict]:
             out.append(_ev("curve", "uninversion", ts, "high",
                            "Curve un-inverted" + (" (bull-steepening)" if bull else ""),
                            "The yield curve dis-inverted after a prior inversion. Historically the "
-                           "dis-inversion — not the inversion — leads recession (~66 days on average)" +
-                           (", and a bull-steepening un-inversion (short rates falling) is the ominous one."
+                           "re-steepening — not the inversion — is the late-cycle handoff: recessions have "
+                           "begun ~13 months (range ~8–19) after the curve re-steepens" +
+                           (", and a bull-steepening un-inversion (short rates falling, cuts priced) is the ominous one."
                             if bull else "."),
                            {"bull_steepener": bull}, "uninverted",
                            headline_zh="曲线解除倒挂" + ("（牛市陡峭）" if bull else ""),
-                           detail_zh="收益率曲线在此前倒挂后解除。历史上引领衰退的是解除倒挂而非倒挂本身"
-                                     "（平均约66天）" + ("，且牛市陡峭式解除（短端利率下行）最为不祥。" if bull else "。")))
+                           detail_zh="收益率曲线在此前倒挂后解除。历史上是重新陡峭（而非倒挂本身）作为周期晚段交接："
+                                     "衰退在曲线重新陡峭后约13个月（区间约8–19个月）开始" + ("，且牛市陡峭式解除（短端利率下行、定价降息）最为不祥。" if bull else "。")))
 
     # HY credit DISTRESS-BAND crossing -------------------------------------------
     if "hy_oas" in fr.columns:
