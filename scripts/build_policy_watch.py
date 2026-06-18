@@ -79,19 +79,23 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.warning("fed_stance skipped: %s", e)
 
-    # rotation realized-check — grade each targeted theme's proxies vs SPY (coincident)
+    # rotation realized-check — grade each targeted theme's proxies vs SPY (coincident),
+    # accrue it forward (idempotent per day) + read back a per-theme trailing hit-rate.
     rot = None
+    rot_hist = {}
     try:
         from engine import policy_rotation_check as _rotc
         rot = _rotc.check(intel)
+        rot_hist = _rotc.history_summary()   # PRIOR accrued reads (today's verdict is in the chip)
+        _rotc.append_history(rot)            # then record today for future reads
     except Exception as e:  # noqa: BLE001
         log.warning("rotation check skipped: %s", e)
 
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     html = env.get_template("policy_watch.html.j2").render(
-        intel=intel, counts=counts, desk=desk, fed_stance=fed_stance, rot=rot, generated_utc=built,
-        active_section="research", active_page="policy_watch",
+        intel=intel, counts=counts, desk=desk, fed_stance=fed_stance, rot=rot, rot_hist=rot_hist,
+        generated_utc=built, active_section="research", active_page="policy_watch",
     )
     (site / "policy_watch.html").write_text(html)
     log.info("wrote %s/policy_watch.html (%d preds, %d task forces, %d KB)",

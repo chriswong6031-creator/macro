@@ -73,3 +73,81 @@ def check(intel: dict, root=None, window: int = 63, loader=None) -> dict:
         avg = round(sum(x["rel"] for x in rows) / len(rows), 4) if rows else None
         out[theme] = {"avg_rel": avg, "verdict": _verdict(avg), "n": len(rows), "proxies": rows}
     return {"window": window, "as_of": str(date.today()), "themes": out}
+
+
+# --------------------------------------------------------------------------- #
+# forward-accruing history — grade the rotation thesis over time (accountability)
+# --------------------------------------------------------------------------- #
+def _hist_path(root):
+    from pathlib import Path
+    return Path(root) / "data" / "policy" / "rotation_history.jsonl"
+
+
+def append_history(result: dict, root=None) -> bool:
+    """Append today's per-theme verdicts to data/policy/rotation_history.jsonl.
+    Idempotent per as_of date. Returns True if a row was written. Never raises."""
+    try:
+        from lib import config
+        import json
+        root = root or config.ROOT
+        p = _hist_path(root)
+        asof = (result or {}).get("as_of")
+        themes = (result or {}).get("themes") or {}
+        if not asof or not themes:
+            return False
+        rows = []
+        if p.exists():
+            for line in p.read_text().splitlines():
+                line = line.strip()
+                if line:
+                    try:
+                        rows.append(json.loads(line))
+                    except ValueError:
+                        pass
+        if any(r.get("date") == asof for r in rows):
+            return False
+        rows.append({"date": asof,
+                     "verdicts": {t: v.get("verdict") for t, v in themes.items()},
+                     "avg_rels": {t: v.get("avg_rel") for t, v in themes.items()}})
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in rows) + "\n")
+        return True
+    except Exception as e:  # noqa: BLE001
+        log.warning("rotation history append failed: %s", e)
+        return False
+
+
+def history_summary(root=None, lookback: int = 20) -> dict:
+    """Per-theme trailing hit-rate over the last `lookback` reads: how often a TARGETED
+    theme actually printed 'working'. {theme: {reads, working, working_rate}}. Never raises."""
+    try:
+        from lib import config
+        import json
+        root = root or config.ROOT
+        p = _hist_path(root)
+        if not p.exists():
+            return {}
+        rows = []
+        for line in p.read_text().splitlines():
+            line = line.strip()
+            if line:
+                try:
+                    rows.append(json.loads(line))
+                except ValueError:
+                    pass
+        rows = sorted(rows, key=lambda r: r.get("date") or "")[-lookback:]
+        out: dict[str, dict] = {}
+        for r in rows:
+            for theme, verdict in (r.get("verdicts") or {}).items():
+                if verdict in (None, "na"):
+                    continue
+                d = out.setdefault(theme, {"reads": 0, "working": 0})
+                d["reads"] += 1
+                if verdict == "working":
+                    d["working"] += 1
+        for theme, d in out.items():
+            d["working_rate"] = round(d["working"] / d["reads"], 2) if d["reads"] else None
+        return out
+    except Exception as e:  # noqa: BLE001
+        log.warning("rotation history summary failed: %s", e)
+        return {}
