@@ -1338,6 +1338,48 @@ a:focus-visible,.links a:focus-visible{outline:2px solid var(--link);outline-off
 .gd-clock .l-zh{display:none} html[data-lang="zh"] .gd-clock .l-en{display:none} html[data-lang="zh"] .gd-clock .l-zh{display:inline}
 .gd-r-cd .l-zh,.gd-r-txt .l-zh{display:none} html[data-lang="zh"] .gd-r-cd .l-en,html[data-lang="zh"] .gd-r-txt .l-en{display:none}
 html[data-lang="zh"] .gd-r-cd .l-zh,html[data-lang="zh"] .gd-r-txt .l-zh{display:inline}
+
+/* ===== celestial day/night backdrop (sky.js) =====
+   #sky floats at z-index:-1 — ABOVE the ambient aurora (body::before, also -1
+   but earlier in tree order) and BEHIND all page content. Sun parks on a
+   time-of-day arc in light mode; a breathing starfield + moon take over in dark. */
+#sky{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;--cs:clamp(116px,14vw,232px)}
+#sky-stars{position:absolute;inset:0;width:100%;height:100%;display:block}
+#sky-sun,#sky-moon{position:absolute;width:var(--cs);height:var(--cs);border-radius:50%;
+ transform:translate(-50%,calc(-50% + 80vh));opacity:0;
+ transition:transform 1.7s cubic-bezier(.16,.78,.29,1),opacity 1.25s ease}
+#sky[data-sky="day"] #sky-sun{transform:translate(-50%,-50%);opacity:1}
+#sky[data-sky="night"] #sky-moon{transform:translate(-50%,-50%);opacity:1}
+/* sun */
+#sky-sun{background:radial-gradient(circle at 50% 50%,#fff 0%,#ffe7a6 17%,var(--g-hot) 45%,color-mix(in srgb,var(--g-hot) 42%,transparent) 64%,transparent 72%);
+ box-shadow:0 0 72px 20px color-mix(in srgb,var(--g-hot) 46%,transparent),0 0 170px 64px color-mix(in srgb,var(--g-hot) 22%,transparent)}
+#sky-sun::before{content:'';position:absolute;inset:-44%;border-radius:50%;
+ background:repeating-conic-gradient(from 0deg,color-mix(in srgb,var(--g-hot) 30%,transparent) 0deg 4deg,transparent 4deg 14deg);
+ -webkit-mask:radial-gradient(circle,transparent 52%,#000 57%,transparent 80%);mask:radial-gradient(circle,transparent 52%,#000 57%,transparent 80%);
+ animation:sky-spin 64s linear infinite;opacity:.55}
+#sky-sun::after{content:'';position:absolute;inset:-8%;border-radius:50%;
+ background:radial-gradient(circle,color-mix(in srgb,var(--g-hot) 20%,transparent) 0%,transparent 62%);
+ animation:sky-breathe 6.5s ease-in-out infinite}
+/* moon */
+#sky-moon{background:radial-gradient(circle at 38% 33%,#fdfdff 0%,#e2e9f6 42%,var(--g-cold) 97%);
+ box-shadow:0 0 52px 12px color-mix(in srgb,var(--g-cold) 36%,transparent),0 0 130px 46px color-mix(in srgb,var(--g-cold) 17%,transparent),inset -16px -13px 32px color-mix(in srgb,#0a1430 42%,transparent)}
+#sky-moon::before{content:'';position:absolute;inset:0;border-radius:50%;opacity:.5;
+ background:radial-gradient(circle at 64% 29%,color-mix(in srgb,var(--g-cold) 60%,#7b8aa8) 0 6%,transparent 7%),
+  radial-gradient(circle at 39% 61%,color-mix(in srgb,var(--g-cold) 60%,#7b8aa8) 0 4%,transparent 5%),
+  radial-gradient(circle at 71% 66%,color-mix(in srgb,var(--g-cold) 60%,#7b8aa8) 0 3%,transparent 4%)}
+#sky-moon::after{content:'';position:absolute;inset:-32%;border-radius:50%;
+ background:radial-gradient(circle,color-mix(in srgb,var(--g-cold) 16%,transparent) 0%,transparent 60%);
+ animation:sky-breathe 7.5s ease-in-out infinite}
+@keyframes sky-spin{to{transform:rotate(360deg)}}
+@keyframes sky-breathe{0%,100%{opacity:.55;transform:scale(1)}50%{opacity:.95;transform:scale(1.05)}}
+/* keep the header headline legible when the sun/moon glow drifts behind it */
+.h{position:relative}
+.h::before{content:'';position:absolute;z-index:-1;left:50%;top:48%;transform:translate(-50%,-50%);
+ width:min(840px,96vw);height:180%;pointer-events:none;
+ background:radial-gradient(ellipse at center,var(--bg) 0%,color-mix(in srgb,var(--bg) 66%,transparent) 50%,transparent 80%)}
+@media (prefers-reduced-motion: reduce){
+ #sky-sun,#sky-moon{transition:none}
+ #sky-sun::before,#sky-sun::after,#sky-moon::after{animation:none}}
 </style>"""
 
 _GLOBE_DECK_DOM = r"""<section class="globe-deck command" aria-label="Global macro regime globe">
@@ -1631,12 +1673,13 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
             '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">\n'
             '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
             '<title>Market Intelligence</title>\n'
-            "<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>\n"
+            "<script>try{var h=new Date().getHours(),tod=(h>=7&&h<19)?'light':'dark',t=localStorage.getItem('theme'),a=localStorage.getItem('themeAuto');if(!t||a){t=tod;localStorage.setItem('theme',t);localStorage.setItem('themeAuto','1');}document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>\n"
             '<link rel="stylesheet" href="theme.css">\n'
             '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">\n'
             + _GLOBE_HUB_CSS + "</head><body>")
 
     body = (
+        '<div id="sky" aria-hidden="true"><canvas id="sky-stars"></canvas><div id="sky-sun"></div><div id="sky-moon"></div></div>'
         '<div class="wrap">'
         '<div class="hub-top">'
         '<button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>'
@@ -1659,6 +1702,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
         '<script defer src="vendor/d3-geo.min.js"></script>'
         '<script defer src="vendor/topojson-client.min.js"></script>'
         '<script defer src="globe-deck.js"></script>'
+        '<script defer src="sky.js"></script>'
         '<script src="theme.js"></script>'
         '</body></html>'
     )

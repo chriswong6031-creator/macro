@@ -679,3 +679,30 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
 .sm-btn.sm-ghost { background: transparent; border-color: transparent; color: var(--muted); font-weight: 500; padding: 8px 12px; }
 .sm-btn.sm-ghost:hover { color: var(--link); background: var(--panel2); box-shadow: none; transform: none; }
 .sm-btn.sm-collapse .sm-ic { transform: rotate(180deg); }
+
+/* ---- sitewide theme-toggle flourish (theme.js skyToggleFx) ------------------
+   A glowing sun rising (→ light) or setting (→ dark) in the centre of the
+   screen on every page EXCEPT the landing hub (which runs its own richer
+   sun/moon choreography and sets window.__skyDeck). Pure CSS, self-removing. */
+.sky-fx { position: fixed; inset: 0; z-index: 2147483600; pointer-events: none;
+  display: grid; place-items: center; overflow: hidden; }
+.sky-fx .orb { width: clamp(96px, 16vw, 150px); height: clamp(96px, 16vw, 150px);
+  border-radius: 50%; position: relative;
+  background: radial-gradient(circle at 50% 45%, #fff 0%, #ffe6a3 23%, var(--g-hot) 58%, color-mix(in srgb, var(--g-hot) 38%, transparent) 70%, transparent 76%);
+  box-shadow: 0 0 64px 18px color-mix(in srgb, var(--g-hot) 50%, transparent),
+              0 0 150px 56px color-mix(in srgb, var(--g-hot) 24%, transparent); }
+.sky-fx .orb::before { content: ''; position: absolute; inset: -42%; border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--g-hot) 36%, transparent) 0deg 5deg, transparent 5deg 16deg);
+  -webkit-mask: radial-gradient(circle, transparent 50%, #000 55%, transparent 80%);
+  mask: radial-gradient(circle, transparent 50%, #000 55%, transparent 80%); }
+.sky-fx.rise { animation: skyfx-fade 1.2s ease forwards; }
+.sky-fx.rise .orb { animation: skyfx-rise 1.2s cubic-bezier(.16,.8,.3,1) forwards; }
+.sky-fx.rise .orb::before { animation: skyfx-spin 1.2s linear; }
+.sky-fx.set { animation: skyfx-fade 1.1s ease forwards; }
+.sky-fx.set .orb { animation: skyfx-set 1.1s cubic-bezier(.4,.08,.7,1) forwards; }
+.sky-fx.set .orb::before { animation: skyfx-spin 1.1s linear reverse; }
+@keyframes skyfx-rise { 0% { transform: translateY(58vh) scale(.6); opacity: 0; } 42% { opacity: 1; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+@keyframes skyfx-set { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(54vh) scale(.58); opacity: 0; } }
+@keyframes skyfx-fade { 0% { opacity: 0; } 18% { opacity: 1; } 72% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes skyfx-spin { to { transform: rotate(130deg); } }
+@media (prefers-reduced-motion: reduce) { .sky-fx { display: none !important; } }
