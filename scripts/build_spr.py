@@ -165,6 +165,30 @@ def _countries_vm(scfg: dict, us_level_mb: float | None) -> list[dict]:
     return rows
 
 
+def _gold_vm(gcfg: dict) -> dict:
+    """Official central-bank gold reserves: curated tonnes + live World Bank gold
+    value & share of reserves. Display-only."""
+    wb_tot = store.read("worldbank", "reserves_total")
+    wb_xg = store.read("worldbank", "reserves_exgold")
+
+    def col(df, iso):
+        return df[iso] if (df is not None and iso in df.columns) else None
+
+    rows = [sr.merge_gold_row(c, col(wb_tot, c["iso"]), col(wb_xg, c["iso"]))
+            for c in gcfg["countries"]]
+    wb_year = next((r["wb_year"] for r in rows if r.get("wb_year")), None)
+    return {
+        "rows": rows,
+        "top_tonnes": sr.total_official_tonnes(rows),
+        "global_tonnes": gcfg.get("global_tonnes"),
+        "as_of": gcfg.get("as_of", ""), "source": gcfg.get("source", ""),
+        "wb_year": wb_year,
+        "note_en": gcfg.get("cb_net_buying_note_en", ""),
+        "note_zh": gcfg.get("cb_net_buying_note_zh", ""),
+        "caveat_en": sr.GOLD_CAVEAT["en"], "caveat_zh": sr.GOLD_CAVEAT["zh"],
+    }
+
+
 def main() -> int:
     scfg = config.load()["strategic_reserves"]
     spr_df = store.read("eia", "spr_stocks")
@@ -212,10 +236,12 @@ def main() -> int:
     from engine.i18n import tr, td
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     env.globals.update(tr=tr, td=td)
+    gold = _gold_vm(config.load().get("gold_reserves", {"countries": []}))
+
     html = env.get_template("spr.html.j2").render(
         C=C, as_of=as_of, built=built, us=us, countries=countries, agg=agg,
         charts=charts, scfg=scfg, caveat=sr.SPR_CAVEAT,
-        assess_word=sr.ASSESS_WORD)
+        assess_word=sr.ASSESS_WORD, gold=gold)
     site = config.ROOT / config.load()["storage"]["site_dir"]
     (site / "spr.html").write_text(html)
     log.info("wrote %s/spr.html (%d KB)", site, len(html) // 1024)

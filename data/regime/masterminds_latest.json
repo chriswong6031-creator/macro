@@ -1,6 +1,6 @@
 {
   "n": 3,
-  "built": "2026-06-18 04:27 UTC",
+  "built": "2026-06-18 02:43 UTC",
   "cards": [
     {
       "key": "mm_conservative",
@@ -12,7 +12,7 @@
     {
       "key": "mm_moderate",
       "name": "Mastermind \u2014 Moderate",
-      "cagr": 11.5,
+      "cagr": 11.51,
       "sharpe": 1.07,
       "maxdd": -24.1
     },

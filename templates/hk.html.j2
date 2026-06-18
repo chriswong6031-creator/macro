@@ -261,6 +261,37 @@
   .nb-cau span { font-size: 8.5px; font-weight: 700; padding: 0 4px; border-radius: 6px;
                  color: var(--warn); background: color-mix(in srgb, var(--warn) 13%, var(--panel)); }
   .nb-tier { font-size: 8px; color: var(--muted); margin-top: 3px; letter-spacing: .02em; }
+
+  /* ---- US/China-parity panels ported to HK (dial / bignum / alerts / risk gauges) ---- */
+  .dial { position: relative; height: 9px; border-radius: 5px; margin: 6px 0 3px;
+          background: linear-gradient(90deg, var(--up), var(--warn) 55%, var(--down)); }
+  .dial.rev { background: linear-gradient(90deg, var(--down), var(--warn) 45%, var(--up)); }
+  .dial i { position: absolute; top: -3px; width: 4px; height: 15px; border-radius: 2px; background: var(--text); transform: translateX(-50%); box-shadow: 0 0 0 2px var(--panel); }
+  .dial-ends { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--muted); }
+  .bignum { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
+  /* fired alerts (ported from the US/China dashboard) */
+  .alert { display: block; padding: 10px 13px; border-radius: 8px; margin: 8px 0;
+           background: var(--panel2, var(--panel)); border-left: 3px solid var(--muted);
+           color: var(--text); transition: transform .12s, box-shadow .12s; }
+  a.alert:hover { transform: translateX(2px); box-shadow: 0 3px 14px rgba(0,0,0,.22); }
+  .alert-high { border-left-color: var(--down); }
+  .alert-warn { border-left-color: var(--warn); }
+  .alert-info { border-left-color: var(--info); }
+  .alert-head { display: flex; align-items: baseline; gap: 8px; }
+  .alert-ico { font-size: 15px; flex: none; line-height: 1; }
+  .alert-head b { font-size: 13.5px; color: var(--text); }
+  .alert-jump { margin-left: auto; font-size: 11px; font-weight: 700;
+                color: var(--link); flex: none; white-space: nowrap; }
+  .alert-detail { margin: 6px 0 0; font-size: 12.5px; color: var(--text); font-variant-numeric: tabular-nums; }
+  .alert-what { margin: 6px 0 0; padding-top: 6px; border-top: 1px solid var(--line);
+                font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .alert-edge { margin: 5px 0 0; font-size: 12px; color: var(--text); line-height: 1.45; }
+  .alert-edge b { color: var(--muted); font-weight: 600; }
+  /* AI master brief */
+  .ai-brief .mb-sum { font-size: 15px; font-weight: 600; margin: 0 0 10px; }
+  .ai-brief .mb-sec { margin: 10px 0; } .ai-brief .mb-h { font-weight: 600; color: var(--link); margin: 0 0 4px; }
+  .ai-brief .mb-list { margin: 4px 0 0 18px; padding: 0; } .ai-brief .mb-list li { margin: 3px 0; }
+  .ai-brief .mb-foot { margin-top: 12px; color: var(--muted); font-size: 12px; }
 </style>
 </head>
 <body>
@@ -341,12 +372,12 @@
       <a class="nav-link" href="javascript:void(0)">🔬 {{ t('Research', '研究') }} <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="reports.html">📰 {{ t('Research Reports', '研究报告') }}<span class="d">{{ t('In-depth market & macro reports', '深度市场与宏观报告') }}</span></a>
+        <a href="policy_watch.html">🏛️ {{ t('Fed & Policy Watch', '美联储与政策观察') }}<span class="d">{{ t('Fed + Administration intent & capital rotation', '美联储+政府意图与资本轮动') }}</span></a>
         <a href="masterminds.html">🧠 {{ t('Masterminds', '操盘大师') }}<span class="d">{{ t('Multi-asset active GTAA strategies', '多资产主动配置策略') }}</span></a>
         <a href="transmission.html">🔀 {{ t('Rate & Inflation Transmission', '利率与通胀传导') }}<span class="d">{{ t('How rates & inflation move every asset', '利率与通胀如何驱动各类资产') }}</span></a>
         <a href="crossasset.html">🧭 {{ t('Cross-Asset', '跨资产') }}<span class="d">{{ t('Correlations · trend · global liquidity', '相关性 · 趋势 · 全球流动性') }}</span></a>
         <a href="signal_lab.html">🔬 {{ t('Signal Lab', '信号实验室') }}<span class="d">{{ t('Consolidated validation scorecard', '验证记分卡汇总') }}</span></a>
         <a href="factors.html">🧮 {{ t('Factors & Seasonality', '因子 & 季节性') }}<span class="d">{{ t('Value · quality · low-vol · monthly calendar', '价值 · 质量 · 低波动 · 月历') }}</span></a>
-        <a href="validation_timeline.html">🧪 {{ t('Validation Timeline', '验证时间线') }}<span class="d">{{ t('Full 2007→ walk-forward backtest', '2007→ 完整滚动回测') }}</span></a>
       </div>
     </div>
   </div>
@@ -449,7 +480,7 @@
 
   {% if mode != 'stocks' %}
   <!-- regime hero -->
-  <div class="panel span8">
+  <div class="panel span8" id="regime-hero">
     <h1>{{ t('Hong Kong Regime', '香港周期') }}</h1>
     <h2 style="margin-top:1px">{{ t('Market Regime', '市场周期') }} · {{ latest.date }}</h2>
     <div class="hero">
@@ -512,7 +543,7 @@
           <span>RSI {{ ix.rsi if ix.rsi is not none else '—' }}</span>
         </div>
         <div class="idx-trend">
-          <span class="{{ 'pos' if ix.above200 else 'neg' }}">{{ '✓' if ix.above200 else '✕' }} 200d</span>
+          <span class="{{ 'pos' if ix.above200 else ('' if ix.above200 is none else 'neg') }}">{{ '✓' if ix.above200 else ('—' if ix.above200 is none else '✕') }} 200d</span>
           <span class="{{ 'pos' if ix.above50 else 'neg' }}">{{ '✓' if ix.above50 else '✕' }} 50d</span>
         </div>
       </div>
@@ -525,7 +556,7 @@
 
   <!-- GLOBAL RISK OVERLAY — HK's primary high-frequency driver -->
   {% if gv %}
-  <div class="panel span12">
+  <div class="panel span12" id="global-risk">
     <h2>{{ t('Global Risk Overlay', '全球风险开关') }} · {{ t('HK\'s primary driver', '香港主驱动') }}</h2>
     <div class="hero">
       <span class="risk-badge {{ 'c-up' if gv.state=='Risk-on' else ('c-down' if gv.state=='Risk-off' else 'c-muted') }}">{{ td(gv.state) }}</span>
@@ -558,6 +589,325 @@
     <p class="note" style="margin:13px 0 0">{{ t('Hong Kong is ~2x more globally sensitive than the Mainland — this risk-on/off composite (dollar, volatility, US equity, copper/gold, USD-CNY, EM) plus the HKD peg is HK\'s primary high-frequency driver. It is a concurrent risk STATE, not a forecast.', '香港对全球因素的敏感度约为内地的2倍——此风险开关综合指标（美元、波动率、美股、铜金比、美元兑人民币、新兴市场）加上港元联系汇率，是香港最主要的高频驱动。它是同步的风险状态，而非预测。') }}</p>
   </div>
   {% endif %}
+
+  <!-- ===================== FIRED ALERTS (today) ===================== -->
+  {% set ALERTS = latest.alerts %}
+  {% if ALERTS %}
+  <div class="panel span12" id="hk-fired-alerts">
+    <h2>🚨 {{ t('Fired alerts (today)', '已触发警报（今日）') }}
+      {{ help("Alerts fire only when something CHANGES — a confidence drop, a peg approaching the weak side, a risk-state flip, a HIBOR spike, a southbound surge — never just because a level is high. Rare by design; read every one. Click any alert to jump to its panel. All display-only — never scored into the regime.", "警报只在某物发生变化时触发 — 置信度下降、港元逼近弱方、风险开关翻转、HIBOR 飙升、南向激增 — 绝不仅因水平偏高而触发。刻意设计得稀少；每一条都要读。点击警报可跳转其面板。全部仅展示 — 从不计入区制评分。") }}
+    </h2>
+    {% for a in ALERTS %}
+      <a class="alert alert-{{ a.severity }}" {% if a.anchor %}href="#{{ a.anchor }}"{% endif %}>
+        <div class="alert-head">
+          <span class="alert-ico">{{ a.icon }}</span>
+          <b><span class="l-en">{{ a.plain_en }}</span><span class="l-zh">{{ a.plain_zh }}</span></b>
+          {% if a.anchor %}<span class="alert-jump">{{ t('View panel ↓', '查看面板 ↓') }}</span>{% endif %}
+        </div>
+        <div class="alert-detail"><span class="l-en">{{ a.message }}</span><span class="l-zh">{{ a.message_zh or a.message }}</span></div>
+        {% if a.what_en %}<div class="alert-what"><span class="l-en">{{ a.what_en }}</span><span class="l-zh">{{ a.what_zh or a.what_en }}</span></div>{% endif %}
+        {% if a.edge_en %}<div class="alert-edge"><b>{{ t('Conviction:', '可信度：') }}</b> <span class="l-en">{{ a.edge_en }}</span><span class="l-zh">{{ a.edge_zh or a.edge_en }}</span></div>{% endif %}
+      </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ===================== SIGNAL STACK — consolidated cross-subsystem read ===================== -->
+  {% if signal_stack %}
+  <div class="panel span12" id="signal-stack">
+    <h2>{{ t('Signal stack — where the evidence agrees & disagrees', '信号堆栈 — 证据在何处一致、在何处分歧') }}
+      {{ help("Don't ask 'is it bullish?' — ask 'which parts of the evidence disagree?'. This collapses the dashboard's subsystem reads into one stack: each leg's lean, the regime-core agreement, and the single biggest contradiction. It re-presents signals detailed below — it invents nothing and is never scored. SCORED legs (quad, growth, global risk, dual liquidity) drive the regime; CONTEXT legs are positioning colour only.", "不要问'是不是看多？'，而要问'证据的哪些部分相互矛盾？'。这把仪表盘各子系统读数汇聚为一个堆栈：每条腿的倾向、周期核心一致度，以及最大的那条矛盾。它只是对下方详述信号的再呈现 — 不创造新信号，也从不计入评分。已评分腿（象限、增长、全球风险、双重流动性）驱动周期；背景腿仅为仓位色彩。") }}
+    </h2>
+    <div class="sstack-grid">
+      <div class="sstack-legs">
+        {% for leg in signal_stack.legs %}
+        <div class="sstack-leg">
+          <span class="sstack-dot tone-{{ leg.tone }}"></span>
+          <span class="sstack-name">{{ t(leg.label_en, leg.label_zh) }}{% if leg.tier == 'context' %}<span class="sstack-tier">{{ t('context', '背景') }}</span>{% endif %}</span>
+          <span class="sstack-state tone-{{ leg.tone }}">{{ t(leg.state_en, leg.state_zh) }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="sstack-verdict">
+        <div class="sstack-final tone-{{ signal_stack.anchor_tone }}">{{ t('Final', '结论') }}: <b>{{ t(signal_stack.final_en, signal_stack.final_zh) }}</b></div>
+        {% if signal_stack.agreement_pct is not none %}
+        <div class="sstack-agree">{{ t('Regime agreement', '周期一致度') }} <b>{{ signal_stack.agreement_pct }}%</b>{% if signal_stack.quality_en %} — {{ t(signal_stack.quality_en, signal_stack.quality_zh) }}{% endif %}</div>
+        {% endif %}
+        <div class="sstack-tally"><b class="tone-up">{{ signal_stack.n_bull }}</b> {{ t('constructive', '建设性') }} · <b>{{ signal_stack.n_flat }}</b> {{ t('neutral', '中性') }} · <b class="tone-down">{{ signal_stack.n_bear }}</b> {{ t('cautionary', '谨慎') }} {{ t('of', '／共') }} {{ signal_stack.n }}</div>
+        {% if signal_stack.contradiction_en %}
+        <div class="sstack-contra">⚠ {{ t('Main contradiction', '主要矛盾') }}: {{ t(signal_stack.contradiction_en, signal_stack.contradiction_zh) }}</div>
+        {% else %}
+        <div class="sstack-contra ok">✓ {{ t('Broad agreement — no leg is fighting the regime', '广泛一致 — 没有腿与周期相左') }}</div>
+        {% endif %}
+      </div>
+    </div>
+    <p class="note" style="margin:10px 0 0;text-transform:none;font-size:11px">{{ t('Display-only consolidation of the signals detailed below — it changes no score. The agreement % is the regime-core confidence; the legs are context.', '仅为下方详述信号的展示性汇总 — 不改变任何评分。一致度为周期核心置信度；各腿为背景。') }}</p>
+  </div>
+  {% endif %}
+
+  <!-- ===================== MARKET SNAPSHOT (cross-asset tiles) ===================== -->
+  {% if market_tiles %}
+  <div class="panel span12" id="market-snapshot">
+    <h2>{{ t('Market snapshot', '市场快照') }}
+      {{ help("The headline cross-asset levels HK keys off, in one glance — the HS-TECH index, the USD/HKD peg, the offshore yuan, gold, the US dollar and overnight HIBOR — each with its 1-day move. A quick orientation; the read and the why live in the panels below. Tone is inverted where a higher level is risk-off (a weaker HKD / yuan, a stronger dollar).", "一眼看尽香港所依赖的跨资产关键水平 — 恒生科技、美元兑港元联汇、离岸人民币、黄金、美元指数与隔夜 HIBOR — 各附其单日变动。用于快速定位；解读与原因见下方面板。当水平上行代表避险时（港元/人民币走弱、美元走强），色彩反转。") }}
+    </h2>
+    <div class="mtiles">
+      {% for tl in market_tiles %}
+      <div class="mtile">
+        <div class="mtile-top"><span class="mtile-lbl">{{ tl.label }}</span><span class="mtile-tag">{{ tl.tag }}</span></div>
+        <div class="mtile-val">{{ tl.level }}</div>
+        <div class="mtile-chg {{ tl.tone }}">{{ tl.chg }} ({{ tl.pct }})</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ===================== DRAWDOWN & SLOWDOWN RISK (uncalibrated, display-only) ===================== -->
+  {% if latest.conditions and latest.conditions.recession and latest.conditions.recession.score is not none %}
+  {% set CO = latest.conditions %}
+  <div class="panel span12" id="hk-risk">
+    <h2>{{ t('HK drawdown & slowdown risk', '香港回撤与放缓风险') }}
+      <span class="note" style="text-transform:none">· {{ t('uncalibrated · display only', '未校准 · 仅展示') }}</span>
+      {{ help("Two HK-native risk gauges, both 0–100. UNCALIBRATED: HK history is short and globally coupled, so no measured forward-drawdown edge is claimed — the bands are each gauge's OWN history percentiles, and these stay descriptive context, never scored. <b>Slowdown</b> blends China PMI, PPI deflation, the M1−M2 scissors, southbound drought, HKD-peg funding stress and the China GDP / IP trend (HSI earnings are ~75% China-driven). <b>Drawdown risk</b> is the rank-percentile of stacked HK stress legs — slowdown, VHSI, peg stress, a HIBOR spike and breadth collapse.", "两个香港本土风险仪表，均为 0–100。未校准：香港历史短且与全球高度耦合，不声称任何前瞻回撤优势 — 区间为各仪表自身的历史分位，仅作描述性背景，从不计入评分。<b>放缓</b>融合中国 PMI、PPI 通缩、M1−M2 剪刀差、南向流出、港元联汇资金压力与中国 GDP／工业增加值趋势（恒指盈利约 75% 由中国驱动）。<b>回撤风险</b>是各香港压力腿（放缓、VHSI、联汇压力、HIBOR 飙升、宽度崩塌）的排名分位。") }}
+    </h2>
+    <div class="grid" style="gap:18px">
+      <div class="span6">
+        <div style="display:flex;align-items:baseline;gap:10px">
+          <span class="bignum {{ 'neg' if CO.recession.score>=60 else ('warn' if CO.recession.score>=40 else 'pos') }}">{{ CO.recession.score|round|int }}</span>
+          <span class="sub">{{ t('Slowdown score', '放缓评分') }} · {{ t(CO.recession.label, {'low':'低','elevated':'偏高','high':'高'}.get(CO.recession.label, CO.recession.label)) }}</span>
+        </div>
+        <div class="dial"><i style="left:{{ CO.recession.score }}%"></i></div>
+        <div class="dial-ends"><span>{{ t('expansion', '扩张') }}</span><span>{{ t('contraction', '收缩') }}</span></div>
+        <table style="margin-top:8px">
+          <tbody>
+          {% for lg in CO.recession.legs if lg.active %}
+          <tr><td class="l">{{ t(lg.label, lg.label_zh) }}</td>
+            <td>{{ '%.0f'|format(lg.points) if lg.points is not none else '—' }}</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        {% if CO.recession_html %}<div class="chart">{{ CO.recession_html | safe }}</div>{% endif %}
+      </div>
+      <div class="span6">
+        {% if CO.drawdown_risk and CO.drawdown_risk.score is not none %}
+        <div style="display:flex;align-items:baseline;gap:10px">
+          <span class="bignum {{ 'neg' if CO.drawdown_risk.score>=60 else ('warn' if CO.drawdown_risk.score>=40 else 'pos') }}">{{ CO.drawdown_risk.score|round|int }}</span>
+          <span class="sub">{{ t('Drawdown-risk percentile', '回撤风险分位') }} · {{ t(CO.drawdown_risk.band, {'calm':'平静','low':'低','elevated':'偏高','high':'高','extreme':'极端'}.get(CO.drawdown_risk.band, CO.drawdown_risk.band)) }}</span>
+        </div>
+        <div class="dial"><i style="left:{{ CO.drawdown_risk.score }}%"></i></div>
+        <div class="dial-ends"><span>{{ t('calm', '平静') }}</span><span>{{ t('fragile', '脆弱') }}</span></div>
+        {% if CO.drawdown_html %}<div class="chart">{{ CO.drawdown_html | safe }}</div>{% endif %}
+        {% endif %}
+        {% if property %}
+        <div style="margin-top:14px;display:flex;align-items:baseline;gap:10px">
+          <span class="bignum {{ 'pos' if property.regime.tone=='up' else ('neg' if property.regime.tone=='down' else '') }}">{{ property.ccl.level }}</span>
+          <span class="sub">{{ t('Centaline CCL', '中原城市领先指数') }} · {{ t(property.regime.label_en, property.regime.label_zh) }}{% if property.ccl.chg_52w is not none %} · {{ '%+.1f'|format(property.ccl.chg_52w) }}% {{ t('YoY', '同比') }}{% endif %}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    <p class="note" style="margin:8px 0 0;font-size:11px;text-transform:none">{{ t('Uncalibrated, display-only context — HK history is short / globally coupled, so no forward-drawdown edge is claimed. Bands are own-history percentiles. Never scored into the quad / axes / playbook.', '未校准的展示性背景 — 香港历史短且与全球高度耦合，不声称前瞻回撤优势。区间为历史分位。从不计入象限／轴／策略评分。') }}</p>
+  </div>
+  {% endif %}
+
+  <!-- ===================== WHAT'S DRIVING THE TAPE (market drivers) ===================== -->
+  {% if latest.market_drivers and latest.market_drivers.verdict not in [none, 'unknown'] %}
+  {% set MD = latest.market_drivers %}
+  <div class="panel span12" id="market-drivers">
+    <h2>{{ t("What's driving the HK tape", '香港市场驱动因素') }}
+      <span class="note" style="text-transform:none">· {{ t('past week', '过去一周') }}{% if MD.window_d %} · {{ MD.window_d }}d z{% endif %}</span>
+      {{ help("Deterministic cross-asset attribution — which macro <b>fingerprint</b> best explains the last week's HK moves. NO news feed: it z-scores HK cross-asset legs (global S&P/VIX/dollar/EM, China stimulus spillover via H-shares & southbound, HKD-peg & HIBOR funding stress, US-rate repricing, tech-internet leadership and a VHSI/breadth washout) and attributes the day to the driver whose legs line up best. A regime READ, never a signal — it never gates the quad or any score.", "确定性的跨资产归因 — 哪个宏观<b>指纹</b>最能解释过去一周的香港走势。无新闻源：它对香港跨资产分腿（全球标普/VIX/美元/新兴市场、经 H 股与南向的中国刺激外溢、港元联汇与 HIBOR 资金压力、美息重定价、科技互联网领涨、以及 VHSI/宽度的出清）进行 z 标准化，并把当下归因于分腿最吻合的驱动。这是区制解读，而非信号 — 从不决定象限或任何评分。") }}
+    </h2>
+    <div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:10px">
+      <span class="chip c-{{ 'info' if MD.verdict=='clear' else ('warn' if MD.verdict=='mixed' else 'muted') }}"><span class="l-en">{{ MD.verdict }}</span><span class="l-zh">{{ MD.verdict_zh }}</span></span>
+      <span style="font-size:18px;font-weight:800">{{ t(MD.primary_label, MD.primary_label_zh) }}</span>
+      <span class="sub">{{ t('confidence', '置信度') }} <span class="l-en">{{ MD.confidence }}</span><span class="l-zh">{{ MD.confidence_zh }}</span> · {{ t('agreement', '一致度') }} {{ (MD.agreement*100)|round|int }}%</span>
+    </div>
+    <p class="note" style="margin:8px 0 8px;text-transform:none"><span class="l-en">{{ MD.direction }}</span><span class="l-zh">{{ MD.direction_zh }}</span></p>
+    {% if MD.evidence_legs %}
+    <div style="display:flex;flex-direction:column;gap:5px;max-width:560px">
+      {% for lg in MD.evidence_legs %}
+      {% set w = (([lg.z|abs, 3]|min)/3*50)|round(1) %}
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="flex:0 0 160px;font-size:12.5px">{{ t(lg.en, lg.zh) }}</span>
+        <div style="flex:1;height:9px;border-radius:5px;background:var(--panel2);position:relative">
+          <i style="position:absolute;top:0;height:100%;border-radius:5px;{{ 'right:50%;background:var(--down)' if lg.z<0 else 'left:50%;background:var(--up)' }};width:{{ w }}%"></i>
+          <span style="position:absolute;left:50%;top:-2px;height:13px;width:1px;background:var(--muted)"></span>
+        </div>
+        <span class="sub" style="flex:0 0 48px;text-align:right">{{ '%+.1f'|format(lg.z) }}σ</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if MD.runner_up_label %}<p class="sub" style="margin:8px 0 0">{{ t('Runner-up', '次因') }}: {{ t(MD.runner_up_label, MD.runner_up_label_zh) }}</p>{% endif %}
+    <p class="note" style="margin:6px 0 0;font-size:11px;text-transform:none"><span class="l-en">{{ MD.note }}{% if MD.invalidation %} · {{ MD.invalidation }}{% endif %}</span><span class="l-zh">确定性的香港跨资产归因 — 区制解读，而非信号；从不决定评分或象限。{% if MD.invalidation_zh %} · {{ MD.invalidation_zh }}{% endif %}</span></p>
+  </div>
+  {% endif %}
+
+  <!-- ===================== FEAR ↔ EUPHORIA + RORO ===================== -->
+  {% if latest.fear_euphoria %}
+  {% set FE = latest.fear_euphoria %}
+  <div class="panel span12" id="fear-euphoria">
+    <h2>{{ t('🌡️ Fear ↔ Euphoria — HK regime synthesis', '🌡️ 恐惧 ↔ 欣喜 — 香港情绪综合') }}
+      <span class="note" style="text-transform:none">{% if FE.roro is not none %}· RORO {{ '%+.2f'|format(FE.roro) }} ({{ td(FE.roro_state) }}){% endif %}{% if FE.warming_up %} · {{ t('history warming up', '历史预热中') }}{% endif %}</span>
+      {{ help("A 0–100 sentiment synthesis: the rolling-5y percentile of an HK risk-on/risk-off (RORO) composite. The RORO is the equal-weight mean of causal-z legs — copper/gold, the S&P, EM equity, southbound smart-money and breadth (risk-ON), against VIX, a stronger dollar, a weaker yuan, VHSI, a weak-side peg, the A/H premium and rising HIBOR (risk-OFF). The confirmation tally shows whether the legs agree or the tape is internally divergent. Display-only — never scored.", "0–100 的情绪综合：香港风险偏好（RORO）综合指标的滚动 5 年分位。RORO 是因果 z 分腿的等权平均 — 铜/金、标普、新兴市场股票、南向聪明钱与宽度（偏多），对 VIX、美元走强、人民币走弱、VHSI、弱方联汇、A/H 溢价与 HIBOR 上行（偏空）。确认计数显示各腿是否一致、或市场内部背离。仅展示 — 从不评分。") }}
+    </h2>
+    {% if FE.fe_score is not none %}
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+      <span class="bignum">{{ FE.fe_score }}</span>
+      <span class="chip c-{{ 'down' if FE.fe_score>=75 else ('up' if FE.fe_score<=25 else 'muted') }}" style="font-size:15px">{{ t(FE.band, FE.band_zh) }}</span>
+      <span class="sub">{{ t('0 = Panic · 100 = Euphoria', '0＝恐慌 · 100＝欣喜') }}</span>
+    </div>
+    <div class="dial"><i style="left:{{ FE.fe_score }}%"></i></div>
+    <div class="dial-ends"><span>{{ t('Panic', '恐慌') }}</span><span>{{ t('Neutral', '中性') }}</span><span>{{ t('Euphoria', '欣喜') }}</span></div>
+    {% endif %}
+    {% if FE.chart_html %}<div class="chart">{{ FE.chart_html | safe }}</div>{% endif %}
+    {% if FE.legs %}
+    <h3>{{ t('Risk-on / risk-off legs (percentile)', '风险偏好分腿（分位）') }}</h3>
+    <div style="display:flex;flex-direction:column;gap:5px;max-width:600px">
+      {% for lg in FE.legs %}
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="flex:0 0 180px;font-size:12.5px">{{ t(lg.name_en, lg.name_zh) }}</span>
+        <div style="flex:1;height:9px;border-radius:5px;background:var(--panel2);position:relative">
+          <i style="position:absolute;top:0;left:0;height:100%;border-radius:5px;background:{{ 'var(--up)' if lg.lean=='risk-on' else ('var(--down)' if lg.lean=='risk-off' else 'var(--muted)') }};width:{{ lg.pct }}%"></i>
+        </div>
+        <span class="sub" style="flex:0 0 34px;text-align:right">{{ lg.pct }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if FE.confirmation %}
+    <p class="note" style="margin:9px 0 0;text-transform:none">{{ t('Cross-asset confirmation', '跨资产确认') }}:
+      <b><span class="l-en">{{ FE.confirmation.verdict_en }}</span><span class="l-zh">{{ FE.confirmation.verdict_zh }}</span></b>
+      — {{ FE.confirmation.n_on }} {{ t('risk-on', '偏多') }} / {{ FE.confirmation.n_off }} {{ t('risk-off', '偏空') }}.</p>
+    {% endif %}
+    <p class="note" style="margin:6px 0 0;font-size:11px;text-transform:none">{{ t('Display-only sentiment synthesis — never scored into the HK regime.', '仅展示的情绪综合 — 从不计入香港区制评分。') }}</p>
+  </div>
+  {% endif %}
+
+  <!-- ===================== HK MACRO CALENDAR (HK / US / China, display-only) ===================== -->
+  {% if calendar %}
+  <div class="panel span12" id="hk-calendar">
+    <h2>📅 {{ t('Macro calendar — HK · US · China', '宏观日历 — 香港 · 美国 · 中国') }}
+      <span class="note" style="text-transform:none">· {{ t('next 14 days', '未来14天') }}</span>
+      {{ help("Scheduled releases that move the Hang Seng, from three planes: HK-native prints (CPI, GDP, trade, retail, unemployment, the S&P Global HK PMI + the HKMA base rate), US drivers that reach HK via the peg + global risk (FOMC, US CPI, payrolls), and the China prints that drive HSI earnings (PMI, CPI/PPI, credit, LPR, GDP). All CONTEXT — none of it feeds any score or regime, and there is no event-risk dampener. Dates are pure cadence arithmetic, not forecasts; NO news feed.", "三个平面上推动恒指的排定数据：香港本土数据（CPI、GDP、贸易、零售、失业率、标普全球香港 PMI 与金管局基本利率）、经联汇与全球风险传导至香港的美国驱动（FOMC、美国 CPI、非农），以及驱动恒指盈利的中国数据（PMI、CPI/PPI、信贷、LPR、GDP）。全部为背景 — 不进入任何评分或区制，亦无事件风险衰减。日期为纯节律推算，而非预测；不使用新闻源。") }}
+    </h2>
+    {% if imminent %}<p class="note" style="margin:0 0 8px;text-transform:none"><b>{{ t('Imminent', '临近') }}:</b> <span class="l-en">{{ imminent.en }}</span><span class="l-zh">{{ imminent.zh }}</span></p>{% endif %}
+    <table>
+      <thead><tr><th class="l">{{ t('Date', '日期') }}</th><th class="l">{{ t('In', '距今') }}</th><th class="l">{{ t('Release', '数据') }}</th><th class="l">{{ t('Region', '地区') }}</th></tr></thead>
+      <tbody>
+      {% for c in calendar %}
+      <tr>
+        <td class="l">{{ c.date }}</td>
+        <td class="l note">+{{ c.days_until }}{{ t('d', '天') }}</td>
+        <td class="l">{% if c.importance=='high' %}<b>{{ t(c.name_en, c.name_zh) }}</b>{% else %}{{ t(c.name_en, c.name_zh) }}{% endif %}</td>
+        <td class="l"><span class="chip c-{{ 'info' if c.region=='HK' else ('warn' if c.region=='US' else 'muted') }}" style="font-size:10.5px">{{ c.region }}</span></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <p class="note" style="margin:8px 0 0;font-size:11px;text-transform:none">{{ t('Scheduling context only — never scored, no event-risk dampener, no news API.', '仅日程背景 — 从不评分、无事件风险衰减、无新闻接口。') }}</p>
+  </div>
+  {% endif %}
+
+  <!-- ===================== HK PROPERTY (Centaline CCL) ===================== -->
+  {% if property %}
+  <div class="panel span6" id="hk-property">
+    <h2>🏗️ {{ t('HK residential property', '香港住宅地产') }} <span class="note" style="text-transform:none">· {{ t('Centaline CCL', '中原城市领先指数') }}</span>
+      {{ help("The Centa-City Leading Index (CCL) — Hong Kong's most-watched weekly residential home-price index, from Centaline. Property is a major HK wealth / credit channel (negative equity, developer balance sheets, consumption), so it colours the regime — but it is display/context only, never scored. The reading shows the level, the quarter and year trend, and where the level sits in its own history.", "中原城市领先指数（CCL）— 香港最受关注的每周住宅楼价指数，来自中原地产。地产是香港重要的财富／信贷渠道（负资产、发展商资产负债表、消费），故为区制着色 — 但仅作展示／背景，从不评分。读数显示水平、季度与同比趋势，以及水平在自身历史中的位置。") }}
+    </h2>
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+      <span class="bignum {{ 'pos' if property.regime.tone=='up' else ('neg' if property.regime.tone=='down' else '') }}">{{ property.ccl.level }}</span>
+      <span class="chip c-{{ 'up' if property.regime.tone=='up' else ('down' if property.regime.tone=='down' else 'muted') }}" style="font-size:14px">{{ t(property.regime.label_en, property.regime.label_zh) }}</span>
+      <span class="sub">{{ t('pctile', '分位') }} {{ property.ccl.pctile }}</span>
+    </div>
+    <div class="sub" style="margin:6px 0 0">
+      {% if property.ccl.chg_13w is not none %}{{ t('13-week', '13周') }} <b class="{{ 'pos' if property.ccl.chg_13w>=0 else 'neg' }}">{{ '%+.1f'|format(property.ccl.chg_13w) }}%</b>{% endif %}
+      {% if property.ccl.chg_52w is not none %} · {{ t('1-year', '一年') }} <b class="{{ 'pos' if property.ccl.chg_52w>=0 else 'neg' }}">{{ '%+.1f'|format(property.ccl.chg_52w) }}%</b>{% endif %}
+      {% if property.ccl.mass %} · {{ t('Mass', '大型屋苑') }} {{ property.ccl.mass }}{% endif %}
+      · {{ t('as of', '截至') }} {{ property.ccl.asof }}
+    </div>
+    {% if property.chart_html %}<div class="chart">{{ property.chart_html | safe }}</div>{% endif %}
+    <p class="note" style="margin:6px 0 0;font-size:11px;text-transform:none">{{ t('Display / context only — never scored into the HK regime.', '仅展示／背景 — 从不计入香港区制评分。') }}</p>
+  </div>
+  {% endif %}
+
+  <!-- ===================== HK VALUATION (PE / PB market-median) ===================== -->
+  {% if valuation %}
+  <div class="panel span6" id="hk-valuation">
+    <h2>{{ t('HK index valuation', '香港指数估值') }} <span class="note" style="text-transform:none">· {{ t('PE / PB market-median', '市盈率／市净率 中位数') }}</span>
+      {{ help("The currency-clean valuation read the per-stock fundamentals page deliberately skips: the daily market-median trailing PE and PB across a big-cap HSI cohort (Baidu data). Each is shown with where it sits in its own multi-year history (a low percentile = historically cheap). Dividend yield isn't served for this universe. Display-only context.", "个股基本面页面刻意跳过的、币种干净的估值读数：大盘恒指样本的每日市场中位 TTM 市盈率与市净率（百度数据）。各项显示其在自身多年历史中的位置（低分位＝历史上便宜）。该样本不提供股息率。仅展示背景。") }}
+    </h2>
+    <div style="display:flex;gap:26px;flex-wrap:wrap">
+      {% if valuation.pe %}
+      <div>
+        <div style="display:flex;align-items:baseline;gap:8px"><span class="bignum">{{ valuation.pe.level }}</span><span class="sub">{{ t('PE (TTM)', '市盈率') }}</span></div>
+        <div class="sub">{{ t('pctile', '分位') }} {{ valuation.pe.pctile }}{% if valuation.pe.chg_1y is not none %} · {{ '%+.1f'|format(valuation.pe.chg_1y) }}% {{ t('1y', '一年') }}{% endif %}</div>
+      </div>
+      {% endif %}
+      {% if valuation.pb %}
+      <div>
+        <div style="display:flex;align-items:baseline;gap:8px"><span class="bignum">{{ valuation.pb.level }}</span><span class="sub">{{ t('PB', '市净率') }}</span></div>
+        <div class="sub">{{ t('pctile', '分位') }} {{ valuation.pb.pctile }}{% if valuation.pb.chg_1y is not none %} · {{ '%+.1f'|format(valuation.pb.chg_1y) }}% {{ t('1y', '一年') }}{% endif %}</div>
+      </div>
+      {% endif %}
+    </div>
+    {% if valuation.pe_chart_html %}<div class="chart">{{ valuation.pe_chart_html | safe }}</div>{% endif %}
+    <p class="note" style="margin:6px 0 0;font-size:11px;text-transform:none">{% if valuation.n %}{{ valuation.n }} {{ t('names · ', '只成分 · ') }}{% endif %}{% if valuation.pe %}{{ valuation.pe.span }} · {% endif %}{{ t('display-only valuation context.', '仅展示的估值背景。') }}</p>
+  </div>
+  {% endif %}
+
+  <!-- ===================== OFFICIAL A-H PREMIUM INDEX ===================== -->
+  {% if ah_official %}
+  <div class="panel span6" id="ah-premium">
+    <h2>{{ t('A/H premium — official index', 'A/H 溢价 — 官方指数') }} <span class="note" style="text-transform:none">· {{ t('~190 dual-listed pairs', '约190只两地上市') }}</span>
+      {{ help("How much DEARER mainland A-shares trade vs their HK-listed H twins, across the full ~190-pair dual-listed universe (the official-style cross-check of the computed 12-pair basket on the stock board). A high premium means HK-listed H is the cheaper way to own the same company — and when it mean-reverts, the rotation tends to favour Hong Kong. Display-only rotation context.", "在全部约 190 只两地上市的范围内，内地 A 股相对其香港 H 股孪生贵多少（对个股板上 12 对计算篮子的官方式交叉验证）。高溢价意味着港股 H 是拥有同一公司更便宜的方式 — 当其均值回归时，轮动往往偏向香港。仅展示的轮动背景。") }}
+    </h2>
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+      {% if ah_official.premium_pct is not none %}<span class="bignum">{{ ah_official.premium_pct }}%</span>
+      <span class="sub">{{ t('reconstructed daily index', '重构日度指数') }} · {{ t('pctile', '分位') }} {{ ah_official.pctile }}{% if ah_official.chg_1y is not none %} · {{ '%+.1f'|format(ah_official.chg_1y) }}pp {{ t('1y', '一年') }}{% endif %}</span>{% endif %}
+    </div>
+    {% if ah_official.spot_mean is not none %}<div class="sub" style="margin:6px 0 0">{{ t('Today, market-wide', '今日全市场') }}: {{ t('mean', '均值') }} <b>{{ ah_official.spot_mean }}%</b>{% if ah_official.spot_median is not none %} · {{ t('median', '中位') }} {{ ah_official.spot_median }}%{% endif %}{% if ah_official.n_pairs %} · {{ ah_official.n_pairs }} {{ t('pairs', '对') }}{% endif %}</div>{% endif %}
+    {% if ah_official.chart_html %}<div class="chart">{{ ah_official.chart_html | safe }}</div>{% endif %}
+    <p class="note" style="margin:6px 0 0;font-size:11px;text-transform:none">{{ t('Display-only — never scored. Lean on the trend / percentile, not the absolute level.', '仅展示 — 从不评分。关注趋势／分位，而非绝对水平。') }}</p>
+  </div>
+  {% endif %}
+
+  <!-- ===================== SOUTHBOUND MOMENTUM (per-channel) ===================== -->
+  {% if sb_channels %}
+  <div class="panel span6" id="southbound">
+    <h2>🇭🇰 {{ t('Southbound flow momentum', '南向资金动能') }} <span class="note" style="text-transform:none">· {{ t('per Connect channel', '分互联互通通道') }}</span>
+      {{ help("Southbound Stock Connect is mainland money buying Hong Kong — the #1 HK capital flow. This splits it into the Shanghai (港股通沪) and Shenzhen (港股通深) legs, with each channel's latest net, its 20- and 60-day cumulative net, and the running mainland holdings. Channel divergence (one leg buying while the other sells) is a rotation tell. Display-only flow context.", "南向港股通是内地资金买入香港 — 香港第一大资金流。此处拆分为沪市（港股通沪）与深市（港股通深）两腿，给出各通道最新净额、20 日与 60 日累计净额，以及累计内地持股。通道背离（一腿买、另一腿卖）是轮动信号。仅展示的资金背景。") }}
+    </h2>
+    <table>
+      <thead><tr><th class="l">{{ t('Channel', '通道') }}</th><th>{{ t('Net (today)', '今日净额') }}</th><th>{{ t('20d', '20日') }}</th><th>{{ t('60d', '60日') }}</th></tr></thead>
+      <tbody>
+      {% for k in ['sh', 'sz'] if sb_channels[k] %}
+      {% set c = sb_channels[k] %}
+      <tr>
+        <td class="l">{{ t(c.label_en, c.label_zh) }}</td>
+        <td class="{{ 'pos' if c.net>=0 else 'neg' }}">{{ '%+.1f'|format(c.net) }}</td>
+        <td class="{{ 'pos' if c.sum_20d>=0 else 'neg' }}">{{ '%+.0f'|format(c.sum_20d) }}</td>
+        <td class="{{ 'pos' if c.sum_60d>=0 else 'neg' }}">{{ '%+.0f'|format(c.sum_60d) }}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <p class="note" style="margin:6px 0 0;font-size:11px;text-transform:none">{{ t('Net flows in ¥100m (亿元). Additive to the combined southbound series. Display-only.', '净额单位亿元。对合并南向序列为补充。仅展示。') }}</p>
+  </div>
+  {% endif %}
+
+  <!-- ===================== AI MASTER BRIEF (China & HK synthesis) ===================== -->
+  {# Client-fetched from china_brief.json (engine/master_brain.py covers China + HK);
+     hidden until a usable brief loads. Research context only — never a signal. #}
+  <div class="panel span12 ai-brief" id="hk-brief" data-brief-src="china_brief.json" style="display:none">
+    <h2>🧠 {{ t('AI Master Brief · China & HK synthesis', 'AI 主脑简报 · 中港综合') }}
+      {{ help('An AI-generated synthesis of the Hong-Kong & China dashboards, with US macro, the dollar, global liquidity and commodities as backdrop. RESEARCH CONTEXT only — it narrates the regime, flags where signals conflict and tests the policy/liquidity thesis; it never feeds a score, signal or allocation. Can be wrong or overconfident — verify against the underlying panels.', 'AI 对中港看板的综合分析，以美国宏观、美元、全球流动性与商品为背景。仅供研究参考 — 它解读周期、标注信号冲突并检验政策／流动性假设，绝不参与任何评分、信号或仓位。可能出错或过度自信，请对照各底层面板核实。') }}
+    </h2>
+    <div data-brief-body class="muted sm"></div>
+  </div>
+  <script src="aibrief.js"></script>
 
   {% endif %}{# /mode != stocks — macro group 1 (hero, index health, global risk overlay) #}
 
@@ -855,6 +1205,11 @@
       {{ t('net new highs', '净新高') }} <b>{{ '%+d'|format(breadth.net_nh) }}</b>.
       <span class="muted">{% if breadth.state=='broad' %}{{ t('Broad participation confirms the move.', '广泛参与确认了走势。') }}{% elif breadth.state=='thin' %}{{ t('Few names hold trend — rallies are fragile.', '守住趋势的个股很少 — 反弹脆弱。') }}{% else %}{{ t('No clear breadth edge either way.', '广度上无明显方向优势。') }}{% endif %}</span>
     </p>
+    {% if full_breadth %}
+    <p class="note" style="margin:0 0 10px;text-transform:none;font-size:12px">{{ t('Full main board', '全主板') }} ({{ full_breadth.n_members }} {{ t('names', '只') }}):
+      <span class="pos">{{ full_breadth.adv }}</span> {{ t('up', '涨') }} / <span class="neg">{{ full_breadth.dec }}</span> {{ t('down', '跌') }} ·
+      <b>{{ full_breadth.pct_up }}%</b> {{ t('green', '上涨') }} <span class="muted">({{ full_breadth.asof }})</span></p>
+    {% endif %}
     <table>
       <tr><td class="l">{{ t('advancing vs declining', '上涨对下跌') }}</td><td><span class="pos">{{ breadth.adv }}</span> / <span class="neg">{{ breadth.dec }}</span></td></tr>
       <tr><td class="l">{{ t('% above 50-day', '50日上方占比') }}</td><td>{{ breadth.pct_above_50 }}% <span class="note">({{ '%+.0f'|format(breadth.pct50_chg20) }})</span></td></tr>
@@ -914,7 +1269,7 @@
   {% if mode != 'stocks' %}
   <!-- ===================== HKMA PEG FUNDING ===================== -->
   {% if funding %}
-  <div class="panel span6">
+  <div class="panel span6" id="peg-funding">
     <h2>{{ t('HKMA peg funding', '金管局联汇流动性') }} <span class="note" style="text-transform:none">· {{ t('Aggregate Balance + HIBOR', '总结余 + HIBOR') }}</span>
       {{ help("The Aggregate Balance is HK banks' settlement liquidity; it mechanically SHRINKS when the HKMA sells USD to defend the 7.85 weak-side peg — the real driver of HIBOR spikes and HSI funding headwinds. Falling balance + rising HIBOR = tightening.", "总结余是香港银行体系的结算流动性；当金管局卖出美元捍卫 7.85 弱方兑换保证时会机械性收缩 — 这是 HIBOR 抽升与港股资金面逆风的真正成因。总结余下降＋HIBOR 上行＝收紧。") }}</h2>
     <div class="stat-row">

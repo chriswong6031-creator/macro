@@ -148,11 +148,24 @@ def compute_baskets() -> dict | None:
     closes = _closes()
     if closes is None or closes.empty:
         return None
-    extras = _basket_extras()                              # off-index members, aligned to the cache calendar
+    # Deep-history store (data/baskets/extras.parquet, from fetch_basket_extras): off-index members
+    # AND a deep (~3y) tape for in-cache names the breadth caches only hold shallowly — the large-cap
+    # cache is a ~15-month rolling window, so a large-cap-heavy basket would otherwise stub at ~15m and
+    # flag every member `partial`. PREFER the deep extras series where present (the breadth column only
+    # backfills any extras gap); new off-index columns are added outright.
+    extras = _basket_extras()                              # off-index + deep tape, aligned to the cache calendar
     if extras is not None and not extras.empty:
-        add = [c for c in extras.columns if c not in closes.columns]
-        if add:
-            closes = closes.join(extras[add], how="left")
+        closes.index = pd.DatetimeIndex(closes.index).as_unit("ns")
+        extras = extras.copy()
+        extras.index = pd.DatetimeIndex(extras.index).as_unit("ns")
+        extras = extras.reindex(closes.index)
+        overlap = [c for c in extras.columns if c in closes.columns]
+        fresh = [c for c in extras.columns if c not in closes.columns]
+        if overlap:                                        # deep extras wins; shallow breadth backfills gaps
+            closes[overlap] = extras[overlap].combine_first(closes[overlap])
+        if fresh:                                          # off-index members -> add outright
+            closes = pd.concat([closes, extras[fresh]], axis=1)
+        closes = closes.copy()                             # de-fragment after the column-block updates
     rets = closes.pct_change(fill_method=None)
     idx = rets.index
     nm = _names_sectors()

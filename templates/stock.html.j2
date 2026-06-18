@@ -46,6 +46,28 @@
   .macro-caution { margin:6px 0; padding:8px 12px; border-radius:8px;
            background:color-mix(in srgb, var(--down) 10%, var(--panel2));
            border-left:3px solid var(--down); font-size:13px; color:var(--text); }
+  /* Macro sensitivity (display-only rate/inflation read) — left border colours by the
+     live-regime verdict; sub-chips for the duration / rate-beta tier / inflation label. */
+  .macro-sens { margin:6px 0; padding:8px 12px; border-radius:8px; background:var(--panel2);
+           border-left:3px solid var(--link); font-size:13px; color:var(--text); }
+  .macro-sens.ms-headwind { border-left-color:var(--down);
+           background:color-mix(in srgb, var(--down) 8%, var(--panel2)); }
+  .macro-sens.ms-tailwind { border-left-color:var(--up);
+           background:color-mix(in srgb, var(--up) 8%, var(--panel2)); }
+  .macro-sens .ms-head { font-weight:600; }
+  .macro-sens .ms-ttl { font-size:11px; font-weight:800; letter-spacing:.03em;
+           text-transform:uppercase; color:var(--muted); margin-right:6px; }
+  .macro-sens .ms-chips { display:flex; flex-wrap:wrap; gap:6px; margin:6px 0 0; }
+  .macro-sens .ms-chip { display:inline-flex; align-items:center; gap:5px; padding:2px 9px;
+           border-radius:9px; font-size:11.5px; border:1px solid var(--line);
+           background:var(--panel); white-space:nowrap; }
+  .macro-sens .ms-chip b { font-weight:700; }
+  .ms-chip.ms-long { color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
+  .ms-chip.ms-short { color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
+  .ms-chip.ms-hedge { color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
+  .ms-chip.ms-negative { color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
+  .ms-chip.ms-tier-low { color:var(--muted); }
+  .macro-sens .ms-cav { margin:6px 0 0; font-size:11px; color:var(--muted); font-style:italic; }
   .agewhen { margin:6px 0; padding:7px 11px; border-radius:8px; background:var(--panel2);
              border-left:3px solid var(--link); font-size:13px; color:var(--text); }
   .eqbadge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px;
@@ -341,12 +363,12 @@
       <a class="nav-link" href="javascript:void(0)">🔬 {{ t('Research', '研究') }} <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="reports.html">📰 {{ t('Research Reports', '研究报告') }}<span class="d">{{ t('In-depth market & macro reports', '深度市场与宏观报告') }}</span></a>
+        <a href="policy_watch.html">🏛️ {{ t('Fed & Policy Watch', '美联储与政策观察') }}<span class="d">{{ t('Fed + Administration intent & capital rotation', '美联储+政府意图与资本轮动') }}</span></a>
         <a href="masterminds.html">🧠 {{ t('Masterminds', '操盘大师') }}<span class="d">{{ t('Multi-asset active GTAA strategies', '多资产主动配置策略') }}</span></a>
         <a href="transmission.html">🔀 {{ t('Rate & Inflation Transmission', '利率与通胀传导') }}<span class="d">{{ t('How rates & inflation move every asset', '利率与通胀如何驱动各类资产') }}</span></a>
         <a href="crossasset.html">🧭 {{ t('Cross-Asset', '跨资产') }}<span class="d">{{ t('Correlations · trend · global liquidity', '相关性 · 趋势 · 全球流动性') }}</span></a>
         <a href="signal_lab.html">🔬 {{ t('Signal Lab', '信号实验室') }}<span class="d">{{ t('Consolidated validation scorecard', '验证记分卡汇总') }}</span></a>
         <a href="factors.html">🧮 {{ t('Factors & Seasonality', '因子 & 季节性') }}<span class="d">{{ t('Value · quality · low-vol · monthly calendar', '价值 · 质量 · 低波动 · 月历') }}</span></a>
-        <a href="validation_timeline.html">🧪 {{ t('Validation Timeline', '验证时间线') }}<span class="d">{{ t('Full 2007→ walk-forward backtest', '2007→ 完整滚动回测') }}</span></a>
       </div>
     </div>
   </div>
@@ -407,6 +429,7 @@
       <p id="r_age" class="agewhen" style="display:none"></p>
       <p id="r_early" class="early" style="display:none"></p>
       <p id="r_macro" class="macro-caution" style="display:none"></p>
+      <div id="r_macrosens" class="macro-sens" style="display:none"></div>
       <ul id="r_points" class="points"></ul>
       <div id="r_cyclebox" class="cyclebox"></div>
       <p id="r_flags" class="neg" style="margin:4px 0"></p>
@@ -743,6 +766,35 @@
     ['panel_profile','panel_val','panel_fin','panel_aq','panel_earn','panel_fac','panel_alpha','panel_gex','panel_pos','panel_analyst']
       .forEach(function (id) { show(id, false); });
     show('r_archetype', false); show('r_glance', false);
+  }
+
+  // Macro sensitivity chip (engine/stock_macro_sensitivity.py) — rate-beta tier +
+  // duration bucket + live-regime head/tailwind + inflation label. Display-only, never
+  // scored; every render carries the mandatory single-name-noise caveat.
+  function renderMacroSens(d) {
+    var box = el('r_macrosens'), ms = d.macro_sensitivity;
+    if (!box) return;
+    if (!ms) { box.style.display = 'none'; return; }
+    box.className = 'macro-sens' + (ms.regime ? ' ms-' + ms.regime : '');
+    var ttl = lang() === 'zh' ? '宏观敏感性' : 'Macro sensitivity';
+    var chips = [];
+    chips.push('<span class="ms-chip ms-' + ms.duration + '">' +
+      lz(ms.duration_label.en, ms.duration_label.zh) + '</span>');
+    var betaTxt = (ms.rate_beta >= 0 ? '+' : '') + ms.rate_beta.toFixed(2) +
+      (ms.rate_beta_se != null ? ' ± ' + ms.rate_beta_se.toFixed(2) : '');
+    chips.push('<span class="ms-chip ms-tier-' + ms.tier + '">' +
+      (lang() === 'zh' ? '利率beta' : 'Rate β') + ' <b>' + betaTxt + '</b> · ' +
+      lz(ms.tier_label.en, ms.tier_label.zh) + '</span>');
+    chips.push('<span class="ms-chip ms-' + ms.inflation + '">' +
+      lz(ms.inflation_label.en, ms.inflation_label.zh) + '</span>');
+    box.innerHTML =
+      '<div class="ms-head"><span class="ms-ttl">' + ttl + '</span>' +
+        esc(lz(ms.headline.en, ms.headline.zh)) + '</div>' +
+      '<div class="ms-chips">' + chips.join('') + '</div>' +
+      '<div class="muted" style="font-size:12px;margin-top:5px">' +
+        esc(lz(ms.detail.en, ms.detail.zh)) + '</div>' +
+      '<div class="ms-cav">' + esc(lz(ms.caveat.en, ms.caveat.zh)) + '</div>';
+    box.style.display = 'block';
   }
 
   function renderFundamentals(d) {
@@ -1467,6 +1519,7 @@
     var macro = document.getElementById('r_macro');
     if (d.ladder.macro_line) { macro.textContent = '⚠ ' + lz(d.ladder.macro_line, d.ladder.macro_line_zh); macro.style.display = 'block'; }
     else { macro.style.display = 'none'; }
+    renderMacroSens(d);
 
     document.getElementById('r_flags').textContent = d.cycle.failed_cycle ? L('failed') : '';
     document.getElementById('r_why').textContent = lz(d.ladder.why, d.ladder.why_zh) + ' ' + L('next') + ' ' + lz(d.ladder.next, d.ladder.next_zh);
@@ -1532,7 +1585,7 @@
     document.getElementById('r_points').innerHTML = '';
     document.getElementById('r_flags').textContent = '';
     document.getElementById('r_why').textContent = '';
-    ['r_eq', 'r_bc', 'r_age', 'r_early', 'r_macro', 'r_archetype', 'r_glance', 'r_afbtn', 'panel_mtf', 'panel_cal']
+    ['r_eq', 'r_bc', 'r_age', 'r_early', 'r_macro', 'r_macrosens', 'r_archetype', 'r_glance', 'r_afbtn', 'panel_mtf', 'panel_cal']
       .forEach(function (id) { var e = document.getElementById(id); if (e) e.style.display = 'none'; });
     if (afCtl) afCtl.close();
     hideFundamentals();

@@ -217,6 +217,11 @@ jobs:
         # registry-driven static blog/article section -> site/reports.html + one page per
         # report (templates/report_*.html.j2). Depends on no live JSON; additive, returns 0.
         run: python -m scripts.build_reports || echo "reports skipped (additive)"
+      - name: fed & policy watch (build_policy_watch)
+        # realpolitik Fed + Administration intel page -> site/policy_watch.html from the
+        # curated data/policy/intel.json substrate (falsifiable prediction ledger + rotation
+        # map). Display/context-only; additive, returns 0 on any error.
+        run: python -m scripts.build_policy_watch || echo "policy watch skipped (additive)"
       - name: cross-asset vector (build_crossasset)
         # after the commodity/forex/bonds pages, before build_vector (hub last):
         # TSMOM trend + intermarket ratios + correlation regime over keyless

@@ -80,6 +80,47 @@ html[data-theme="dark"] .metrics>div{background:var(--grid)}
 html[data-theme="dark"] .stance{background:var(--grid)}
 .go{font-weight:700;color:var(--blue);font-size:14px}
 .foot{margin-top:40px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7;max-width:900px}
+/* ===== Mastermind Strategies — full-page enveloped UI ===== */
+body{background:radial-gradient(900px 480px at 12% -5%,rgba(31,169,113,.07),transparent 60%),radial-gradient(900px 480px at 88% -5%,rgba(168,85,247,.09),transparent 60%),var(--bg)}
+.mm-stage{position:relative;margin:18px 0 10px;padding:26px 24px 28px;border-radius:24px;
+  background:linear-gradient(var(--card),var(--card)) padding-box,linear-gradient(120deg,#1FA971,#285fff,#a855f7) border-box;
+  border:1.5px solid transparent;box-shadow:0 18px 60px rgba(40,95,255,.10)}
+html[data-theme="dark"] .mm-stage{box-shadow:0 22px 72px rgba(120,80,255,.20)}
+.mm-flag{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#fff;
+  background:linear-gradient(120deg,#1FA971,#285fff,#a855f7);background-size:200% 100%;padding:5px 12px;border-radius:999px;animation:mm-flow 6s linear infinite}
+@keyframes mm-flow{to{background-position:200% 0}}
+.mm-h1{font-size:34px;font-weight:800;letter-spacing:-.02em;margin:12px 0 6px;
+  background:linear-gradient(90deg,#1FA971,#285fff,#a855f7,#1FA971);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:mm-shimmer 9s linear infinite}
+@keyframes mm-shimmer{to{background-position:300% 0}}
+.mm-lead{color:var(--muted);font-size:14px;max-width:840px;line-height:1.55}
+.mm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:22px}
+@media(max-width:860px){.mm-grid{grid-template-columns:1fr}}
+.mm-card{position:relative;overflow:hidden;display:flex;flex-direction:column;text-decoration:none;color:inherit;background:var(--bg);
+  border:1px solid var(--grid);border-top:3px solid var(--accent);border-radius:18px;padding:22px;transition:transform .2s ease,box-shadow .2s ease}
+html[data-theme="dark"] .mm-card{background:var(--grid)}
+.mm-card:hover{transform:translateY(-6px);box-shadow:0 20px 50px color-mix(in srgb,var(--accent) 34%,transparent)}
+.mm-glow{position:absolute;inset:0;pointer-events:none;opacity:.5;transition:opacity .25s;
+  background:radial-gradient(160px 110px at 82% -14%,color-mix(in srgb,var(--accent) 32%,transparent),transparent 72%)}
+.mm-card:hover .mm-glow{opacity:1}
+.mm-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.mm-ico{font-size:26px}
+.mm-prof{font-size:18px;font-weight:800;color:var(--ink)}
+.mm-prof::after{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--accent);margin-left:9px;vertical-align:middle;box-shadow:0 0 9px var(--accent)}
+.mm-cagr{font-size:42px;font-weight:800;color:var(--ink);line-height:1;letter-spacing:-.02em;display:flex;align-items:baseline;gap:9px}
+.mm-cagr small{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.mm-bench{font-size:12px;color:var(--faint);margin:6px 0 14px}
+.mm-bench b{color:var(--accent);font-weight:800}
+.mm-meter{height:7px;border-radius:999px;background:linear-gradient(90deg,#1FA971,#e0a106,#a855f7);position:relative;margin:2px 0 6px}
+.mm-meter::after{content:"";position:absolute;top:50%;left:calc(var(--pos) * 100%);transform:translate(-50%,-50%);width:15px;height:15px;border-radius:50%;background:#fff;border:3px solid var(--accent);box-shadow:0 1px 5px rgba(0,0,0,.35)}
+.mm-meter-l{display:flex;justify-content:space-between;font-size:9.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px}
+.mm-mets{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px}
+.mm-mets>div{text-align:center;background:var(--card);border-radius:11px;padding:9px 4px}
+html[data-theme="dark"] .mm-mets>div{background:var(--bg)}
+.mm-k{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.03em}
+.mm-v{display:block;font-size:17px;font-weight:800;color:var(--ink);margin-top:2px}
+.mm-d{display:block;font-size:10px;color:var(--faint)}
+.mm-thesis{color:var(--muted);font-size:12.5px;line-height:1.5;margin-bottom:14px;flex:1}
+.mm-go{font-size:13.5px;font-weight:800;color:var(--accent);margin-top:auto}
 </style>{% include "_vector_polish.html.j2" %}
 </head>
 <body>
@@ -146,13 +187,13 @@ html[data-theme="dark"] .stance{background:var(--grid)}
       <a class="nav-link" href="javascript:void(0)">🔬 {{ t('Research', '研究') }} <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="reports.html">📰 {{ t('Research Reports', '研究报告') }}<span class="d">{{ t('In-depth market & macro reports', '深度市场与宏观报告') }}</span></a>
+        <a href="policy_watch.html">🏛️ {{ t('Fed & Policy Watch', '美联储与政策观察') }}<span class="d">{{ t('Fed + Administration intent & capital rotation', '美联储+政府意图与资本轮动') }}</span></a>
         <a href="masterminds.html">🧠 {{ t('Masterminds', '操盘大师') }}<span class="d">{{ t('Multi-asset active GTAA strategies', '多资产主动配置策略') }}</span></a>
         <a class="active" href="masterminds.html">🧠 {{ t('Masterminds', '操盘大师') }}<span class="d">{{ t('Multi-asset active GTAA strategies', '多资产主动配置策略') }}</span></a>
         <a href="transmission.html">🔀 {{ t('Rate & Inflation Transmission', '利率与通胀传导') }}<span class="d">{{ t('How rates & inflation move every asset', '利率与通胀如何驱动各类资产') }}</span></a>
         <a href="crossasset.html">🧭 {{ t('Cross-Asset', '跨资产') }}<span class="d">{{ t('Correlations · trend · global liquidity', '相关性 · 趋势 · 全球流动性') }}</span></a>
         <a href="signal_lab.html">🔬 {{ t('Signal Lab', '信号实验室') }}<span class="d">{{ t('Consolidated validation scorecard', '验证记分卡汇总') }}</span></a>
         <a href="factors.html">🧮 {{ t('Factors & Seasonality', '因子 & 季节性') }}<span class="d">{{ t('Value · quality · low-vol · monthly calendar', '价值 · 质量 · 低波动 · 月历') }}</span></a>
-        <a href="validation_timeline.html">🧪 {{ t('Validation Timeline', '验证时间线') }}<span class="d">{{ t('Full 2007→ walk-forward backtest', '2007→ 完整滚动回测') }}</span></a>
       </div>
     </div>
   </div>
@@ -167,31 +208,30 @@ html[data-theme="dark"] .stance{background:var(--grid)}
     </div>
   </div>
 
-  <div class="h1">🧠 {{ t('Mastermind Strategies','操盘大师策略') }}</div>
-  <div class="intro">{{ t('Active, multi-asset, conviction-weighted, vol-targeted global tactical asset allocation — full freedom across equities, Treasuries, credit, gold/copper and crypto, with leverage. This is where the most robust risk-adjusted edge lives: cross-asset diversification + trend + carry + regime-rotation. Three risk profiles for three goals.','主动、多资产、按信念加权、以波动率为目标的全球战术资产配置——在股票、国债、信用、黄金/铜与加密之间完全自由，并可加杠杆。这里是最稳健的风险调整优势所在：跨资产分散 + 趋势 + 套息 + 周期轮动。三种风险档对应三种目标。') }}</div>
-  <div class="note">{{ t('Honest framing: the robust, out-of-sample-stable edge is the SHARPE and the DRAWDOWN (these run ~1.5-2x the Sharpe of their benchmark with far shallower drawdowns). The raw-CAGR beat is era-dependent — the Aggressive profile beats the S&P on CAGR in both backtest halves; Moderate beats it full-sample; Conservative is built to beat 60/40 on risk-adjusted terms. Net of cost + financing. Benchmarks: the S&P 500 and a 60/40.','诚实说明：稳健且样本外稳定的优势在于夏普与回撤（其夏普约为基准的 1.5-2 倍，回撤浅得多）。原始年化的跑赢取决于时代——进取档在回测两个半段均跑赢标普；均衡档全样本跑赢；保守档旨在风险调整后跑赢 60/40。扣除成本+融资。基准：标普500 与 60/40。') }}</div>
-
-  <div class="sgrid">
-    {% for c in cards %}
-    <a class="scard" href="{{ c.href }}">
-      <div class="scard-top">
-        <span class="ico">{{ c.icon }}</span>
-        <h2>{{ t(c.name_en, c.name_zh) }}</h2>
-        {% if c.experimental %}<span class="exp">⚗ {{ t('Experimental','实验性') }}</span>{% endif %}
-      </div>
-      <p>{{ t(c.thesis_en, c.thesis_zh) }}</p>
-      <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v {{ 'win' if c.cagr >= c.hodl_cagr else 'lose' }}">{{ c.cagr }}%</span><span class="m-sub">{{ t('Bench','基准') }} {{ c.hodl_cagr }}%</span></div>
-        <div><span class="m-k">Sharpe</span><span class="m-v {{ 'win' if c.sharpe >= c.hodl_sharpe else 'lose' }}">{{ c.sharpe }}</span><span class="m-sub">{{ t('Bench','基准') }} {{ c.hodl_sharpe }}</span></div>
-        <div><span class="m-k">{{ t('Max DD','最大回撤') }}</span><span class="m-v {{ 'win' if c.maxdd >= c.hodl_maxdd else 'lose' }}">{{ c.maxdd }}%</span><span class="m-sub">{{ t('Bench','基准') }} {{ c.hodl_maxdd }}%</span></div>
-        <div><span class="m-k">{{ t('Avg lev','平均杠杆') }}</span><span class="m-v">{{ c.income }}x</span><span class="m-sub">{{ c.years }}y</span></div>
-      </div>
-      <div class="scard-foot">
-        <span class="stance">{{ t(c.stance_en, c.stance_zh) }}</span>
-        <span class="go">{{ t('Open →','打开 →') }}</span>
-      </div>
-    </a>
-    {% endfor %}
+  <div class="mm-stage">
+    <span class="mm-flag">★ {{ t('Flagship strategies','旗舰策略') }}</span>
+    <div class="mm-h1">🧠 {{ t('Mastermind Strategies','操盘大师策略') }}</div>
+    <div class="mm-lead">{{ t('Active, multi-asset, conviction-weighted, vol-targeted global tactical asset allocation — full freedom across equities, Treasuries, credit, gold/copper and crypto, with leverage. The most robust risk-adjusted edge there is: cross-asset diversification + trend + carry + regime-rotation. Three risk profiles for three goals.','主动、多资产、按信念加权、以波动率为目标的全球战术资产配置——在股票、国债、信用、黄金/铜与加密之间完全自由，并可加杠杆。最稳健的风险调整优势：跨资产分散 + 趋势 + 套息 + 周期轮动。三种风险档对应三种目标。') }}</div>
+    <div class="mm-grid">
+      {% for m in cards %}
+      <a class="mm-card" href="{{ m.href }}" style="--accent:{{ m.accent }};--pos:{{ m.riskpos }}">
+        <span class="mm-glow"></span>
+        <div class="mm-top"><span class="mm-ico">{{ m.icon }}</span><span class="mm-prof">{{ t(m.profile_en, m.profile_zh) }}</span></div>
+        <div class="mm-cagr">{{ m.cagr }}%<small>CAGR</small></div>
+        <div class="mm-bench">{{ t('vs','对比') }} {{ t(m.bench_en, m.bench_zh) }} {{ m.hodl_cagr }}%{% if m.sharpe_mult %} · <b>{{ m.sharpe_mult }}× {{ t('its Sharpe','其夏普') }}</b>{% endif %}</div>
+        <div class="mm-meter"></div>
+        <div class="mm-meter-l"><span>{{ t('Safer','更稳健') }}</span><span>{{ t('Aggressive','进取') }}</span></div>
+        <div class="mm-mets">
+          <div><span class="mm-k">Sharpe</span><span class="mm-v">{{ m.sharpe }}</span><span class="mm-d">{{ t('B&H','买持') }} {{ m.hodl_sharpe }}</span></div>
+          <div><span class="mm-k">{{ t('Max DD','最大回撤') }}</span><span class="mm-v">{{ m.maxdd }}%</span><span class="mm-d">{{ t('B&H','买持') }} {{ m.hodl_maxdd }}%</span></div>
+          <div><span class="mm-k">{{ t('Leverage','杠杆') }}</span><span class="mm-v">{{ m.gross_now }}x</span><span class="mm-d">{{ m.years }}y</span></div>
+        </div>
+        <div class="mm-thesis">{{ t(m.thesis_en, m.thesis_zh) }}</div>
+        <div class="mm-go">{{ t('Open strategy','打开策略') }} →</div>
+      </a>
+      {% endfor %}
+    </div>
+    <div class="note" style="margin-top:22px">{{ t('Honest framing: the robust, out-of-sample-stable edge is the SHARPE and the DRAWDOWN (~1.5-2x the benchmark Sharpe, far shallower drawdowns). The raw-CAGR beat is era-dependent — Aggressive beats the S&P on CAGR in both backtest halves; Moderate beats it full-sample; Conservative is built to beat 60/40 on risk-adjusted terms. Net of cost + financing. Benchmarks: the S&P 500 and a 60/40.','诚实说明：稳健且样本外稳定的优势在于夏普与回撤（约为基准夏普的 1.5-2 倍，回撤浅得多）。原始年化的跑赢取决于时代——进取档在回测两个半段均跑赢标普；均衡档全样本跑赢；保守档旨在风险调整后跑赢 60/40。扣除成本+融资。基准：标普500 与 60/40。') }}</div>
   </div>
 
   <div class="foot">

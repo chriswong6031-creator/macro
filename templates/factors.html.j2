@@ -23,7 +23,7 @@
   'low_beta': ['Betting-Against-Beta (Frazzini-Pedersen): low-beta stocks have had high risk-adjusted returns because leverage-constrained investors bid up high-beta names.', 'Betting-Against-Beta：低贝塔。'],
   'accruals': ['Low accruals = earnings backed by cash flow, not estimates (Sloan). High-accrual earnings tend to reverse.', '低应计：盈利由现金流支撑。'],
   'short_interest': ['Low short interest. High days-to-cover (short interest / avg daily volume, FINRA bi-monthly) negatively predicts the cross-section (Hong-Li-Rajan-Sherman) — leaders here are the LEAST shorted; the laggards are the crowded shorts.', '低做空。高回补天数（FINRA 双月）在横截面上负向预测。'],
-  'sue': ['Earnings momentum (SUE = standardized unexpected earnings). Latest quarterly EPS vs the same quarter a year ago, standardized by its own history — the post-earnings-announcement-drift effect: beats keep drifting up. Built point-in-time from free SEC EDGAR quarterly EPS frames; in our leak-free IC scorecard it is the STRONGEST positive factor and the one that survives the FDR control (validated on the 2023-2025 price window, like the rest of the zoo).', '盈利动量（SUE = 标准化超预期盈利）。最新季度 EPS 对比去年同季、以自身历史标准化 — 盈利公布后漂移效应。基于 SEC EDGAR 季度 EPS 逐期点时构建；在防泄漏 IC 评分中为最强正向因子且通过 FDR。'],
+  'sue': ['Earnings momentum (SUE = standardized unexpected earnings). Latest quarterly EPS vs the same quarter a year ago, standardized by its own history — the post-earnings-announcement-drift effect: beats keep drifting up. Built point-in-time from free SEC EDGAR quarterly EPS frames; in our leak-free IC scorecard it is the STRONGEST positive factor and the one that survives the FDR control (validated on the 2023-2025 price window, like the rest of the zoo). ⚠️ A deep 2011-2026 re-validation (survivorship-optimistic) collapsed this edge to ~zero (IC 0.0005, HAC t 0.06, L/S Sharpe 0.09) — it held only on that shallow window (PEAD post-publication decay), so treat SUE as descriptive, not a validated scored factor.', '盈利动量（SUE = 标准化超预期盈利）。最新季度 EPS 对比去年同季、以自身历史标准化 — 盈利公布后漂移效应。基于 SEC EDGAR 季度 EPS 逐期点时构建；在防泄漏 IC 评分中（浅窗口）为最强正向因子且通过 FDR。⚠️ 深度 2011-2026 复验显示该边际接近零（IC 0.0005，t 0.06），仅在浅窗口成立 — 视为展示性因子，非已验证计分因子。'],
 } %}
 <!DOCTYPE html>
 <html lang="en">
@@ -201,12 +201,12 @@
       <a class="nav-link active" href="javascript:void(0)">🔬 {{ t('Research', '研究') }} <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="reports.html">📰 {{ t('Research Reports', '研究报告') }}<span class="d">{{ t('In-depth market & macro reports', '深度市场与宏观报告') }}</span></a>
+        <a href="policy_watch.html">🏛️ {{ t('Fed & Policy Watch', '美联储与政策观察') }}<span class="d">{{ t('Fed + Administration intent & capital rotation', '美联储+政府意图与资本轮动') }}</span></a>
         <a href="masterminds.html">🧠 {{ t('Masterminds', '操盘大师') }}<span class="d">{{ t('Multi-asset active GTAA strategies', '多资产主动配置策略') }}</span></a>
         <a href="transmission.html">🔀 {{ t('Rate & Inflation Transmission', '利率与通胀传导') }}<span class="d">{{ t('How rates & inflation move every asset', '利率与通胀如何驱动各类资产') }}</span></a>
         <a href="crossasset.html">🧭 {{ t('Cross-Asset', '跨资产') }}<span class="d">{{ t('Correlations · trend · global liquidity', '相关性 · 趋势 · 全球流动性') }}</span></a>
         <a href="signal_lab.html">🔬 {{ t('Signal Lab', '信号实验室') }}<span class="d">{{ t('Consolidated validation scorecard', '验证记分卡汇总') }}</span></a>
         <a class="active" href="factors.html">🧮 {{ t('Factors & Seasonality', '因子 & 季节性') }}<span class="d">{{ t('Value · quality · low-vol · monthly calendar', '价值 · 质量 · 低波动 · 月历') }}</span></a>
-        <a href="validation_timeline.html">🧪 {{ t('Validation Timeline', '验证时间线') }}<span class="d">{{ t('Full 2007→ walk-forward backtest', '2007→ 完整滚动回测') }}</span></a>
       </div>
     </div>
   </div>

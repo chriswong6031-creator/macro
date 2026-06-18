@@ -1,0 +1,17 @@
+{
+  "schema": "theme_discovery_phase0.v1",
+  "generated_at": "2026-06-17T04:44:30.753728+00:00",
+  "step_d": 21,
+  "fwd_d": 63,
+  "n_flags": 116,
+  "persistence_rate": 0.103,
+  "fwd_rel_return": {
+    "n": 116,
+    "mean": -0.0161,
+    "median": -0.0164,
+    "p25": -0.089,
+    "p75": 0.0514,
+    "skew": 0.09
+  },
+  "verdict": "display_only_candidate_radar \u2014 flags are coherent ~10% persist, but forward EW-vs-SPY mean -0.0161 (skew 0.09) shows NO front-run edge. Use as a watchlist / avoid-the-peak / diversification radar, never a buy signal; never feeds a score."
+}

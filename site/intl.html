@@ -7,7 +7,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title><span class="l-en">International Economies</span><span class="l-zh">国际经济体</span> — 2026-06-17</title>
+<title><span class="l-en">International Economies</span><span class="l-zh">国际经济体</span> — 2026-06-18</title>
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
@@ -78,6 +78,117 @@
   .caveat { font-size:11.5px; color:var(--muted); font-style:italic; }
   .more-btn { display:inline-block; margin-top:10px; padding:5px 14px; border-radius:9px; background:var(--panel2); border:1px solid var(--line); color:var(--link); font-weight:600; font-size:12px; cursor:pointer; }
   .hidden { display:none; }
+
+  /* =================== bespoke "Global Macro Compass" accent UI =================== */
+  :root { --acc1:#2f8af0; --acc2:#14b8a6; --acc3:#8b5cf6; --acc-grad:linear-gradient(115deg,var(--acc1),var(--acc2),var(--acc3)); }
+  /* flagship gradient-bordered hero stage */
+  .stage { position:relative; margin:0 0 16px; padding:22px 22px 20px; border-radius:20px;
+    background:linear-gradient(var(--panel),var(--panel)) padding-box, var(--acc-grad) border-box;
+    border:1.5px solid transparent; box-shadow:0 18px 56px -28px color-mix(in srgb,var(--acc1) 55%,transparent); }
+  .stage-flag { display:inline-flex; align-items:center; gap:7px; font-size:10.5px; font-weight:800; letter-spacing:.13em;
+    text-transform:uppercase; color:#fff; background:var(--acc-grad); background-size:200% 100%;
+    padding:5px 12px; border-radius:999px; animation:accflow 7s linear infinite; }
+  @keyframes accflow { to { background-position:200% 0; } }
+  .stage-h1 { font-size:30px; font-weight:800; letter-spacing:-.02em; margin:11px 0 6px;
+    background:linear-gradient(90deg,var(--acc1),var(--acc2),var(--acc3),var(--acc1)); background-size:300% 100%;
+    -webkit-background-clip:text; background-clip:text; color:transparent; animation:accshim 10s linear infinite; }
+  @keyframes accshim { to { background-position:300% 0; } }
+  @media (prefers-reduced-motion: reduce) { .stage-flag,.stage-h1 { animation:none; } }
+  .stage-read { color:var(--text); font-size:14px; line-height:1.55; max-width:1000px; margin:2px 0 0; }
+  .stage-read b { color:var(--text); font-weight:700; }
+  /* KPI strip */
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:11px; margin-top:16px; }
+  .kpi { background:var(--panel2); border:1px solid var(--line); border-radius:13px; padding:12px 14px; }
+  .kpi .k { font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:700; }
+  .kpi .v { font-size:21px; font-weight:800; color:var(--text); margin:3px 0 1px; line-height:1.1; }
+  .kpi .s { font-size:11.5px; color:var(--muted); }
+  .kpi .v.up { color:var(--up); } .kpi .v.down { color:var(--down); } .kpi .v.warn { color:var(--warn); }
+  /* risk dial meter */
+  .dial { height:8px; border-radius:999px; background:linear-gradient(90deg,var(--down),var(--warn),var(--up)); position:relative; margin:7px 0 3px; }
+  .dial::after { content:""; position:absolute; top:50%; left:calc(var(--p,.5)*100%); transform:translate(-50%,-50%);
+    width:14px; height:14px; border-radius:50%; background:var(--text); border:3px solid var(--panel); box-shadow:0 1px 5px rgba(0,0,0,.4); }
+
+  /* section heads */
+  .sec-h { display:flex; align-items:baseline; gap:11px; flex-wrap:wrap; margin:0 0 4px; }
+  .sec-h h2 { margin:0; } .sec-h .sub { font-size:12px; color:var(--muted); }
+  /* segmented control */
+  .seg { display:inline-flex; gap:3px; background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:3px; }
+  .seg button { background:none; border:0; color:var(--muted); font:inherit; font-size:12px; font-weight:700; padding:5px 12px;
+    border-radius:7px; cursor:pointer; transition:color .15s, background .15s; }
+  .seg button.on { background:var(--link); color:#fff; }
+  .seg button:hover:not(.on) { color:var(--text); }
+
+  /* ===== USD performance leaderboard ===== */
+  .lb { display:flex; flex-direction:column; gap:3px; margin-top:12px; }
+  .lb-row { display:grid; grid-template-columns:168px 132px 1fr 152px; align-items:center; gap:14px;
+    padding:9px 8px; border-radius:10px; transition:background .15s; }
+  .lb-row:hover { background:var(--panel2); }
+  .lb-row .eco { display:flex; align-items:center; gap:8px; font-weight:700; min-width:0; }
+  .lb-row .eco .flg { font-size:17px; } .lb-row .eco small { color:var(--muted); font-weight:500; font-size:11px; display:block; }
+  .lb-row .nch { display:block; opacity:.9; }
+  .lb-bar { position:relative; height:24px; }
+  .lb-bar .axis { position:absolute; top:0; bottom:0; left:50%; width:1px; background:var(--line); }
+  .lb-seg { position:absolute; top:4px; height:16px; }
+  .lb-seg.equity { background:color-mix(in srgb,var(--info) 55%,transparent); border-radius:3px; }
+  .lb-seg.fx-pos { background:color-mix(in srgb,var(--up) 80%,transparent); border-radius:3px; }
+  .lb-seg.fx-neg { background:color-mix(in srgb,var(--down) 80%,transparent); border-radius:3px; }
+  .lb-usd { position:absolute; top:-1px; width:3px; height:26px; background:var(--text); border-radius:2px; }
+  .lb-vals { text-align:right; font-variant-numeric:tabular-nums; font-size:12px; }
+  .lb-vals .big { font-size:16px; font-weight:800; } .lb-vals small { color:var(--muted); display:block; font-size:10.5px; }
+  .lb-legend { display:flex; gap:16px; flex-wrap:wrap; font-size:11.5px; color:var(--muted); margin-top:11px; align-items:center; }
+  .lb-legend i { display:inline-block; width:11px; height:11px; border-radius:3px; vertical-align:middle; margin-right:5px; }
+  .lb-spark { min-width:0; }
+  @media (max-width:760px){ .lb-row { grid-template-columns:108px 1fr 92px; gap:9px; } .lb-spark { display:none; } }
+
+  /* ===== RRG rotation scatter ===== */
+  .rrg { position:relative; height:340px; border:1px solid var(--line); border-radius:12px; margin-top:10px; overflow:hidden;
+    background:
+      linear-gradient(to right, color-mix(in srgb,var(--down) 6%,transparent), transparent 50%, color-mix(in srgb,var(--up) 6%,transparent)),
+      linear-gradient(to top, color-mix(in srgb,var(--down) 5%,transparent), transparent 50%, color-mix(in srgb,var(--up) 5%,transparent)); }
+  .rrg .ax { position:absolute; background:var(--line); }
+  .rrg .ax.h { left:0; right:0; top:50%; height:1px; } .rrg .ax.v { top:0; bottom:0; left:50%; width:1px; }
+  .rrg .ql { position:absolute; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; opacity:.8; }
+  .rrg .ql.lead { right:10px; top:8px; color:var(--up); } .rrg .ql.impr { left:10px; top:8px; color:var(--info); }
+  .rrg .ql.weak { right:10px; bottom:8px; color:var(--warn); } .rrg .ql.lag { left:10px; bottom:8px; color:var(--down); }
+  .rrg .axl { position:absolute; font-size:9.5px; color:var(--muted); }
+  .rrg .pt { position:absolute; transform:translate(-50%,-50%); text-align:center; z-index:2; }
+  .rrg .pt .dot { width:13px; height:13px; border-radius:50%; margin:0 auto; box-shadow:0 0 0 4px color-mix(in srgb,var(--c) 22%,transparent); background:var(--c); }
+  .rrg .pt .e { font-size:19px; line-height:1; } .rrg .pt .n { font-size:9px; color:var(--muted); margin-top:1px; }
+  .rrg .pt.q-lead { --c:var(--up); } .rrg .pt.q-impr { --c:var(--info); } .rrg .pt.q-weak { --c:var(--warn); } .rrg .pt.q-lag { --c:var(--down); }
+  .tilt { display:inline-flex; align-items:center; gap:8px; padding:6px 13px; border-radius:10px; font-weight:700; font-size:13px;
+    background:color-mix(in srgb,var(--c,var(--muted)) 14%,var(--panel2)); color:color-mix(in srgb,var(--c,var(--muted)) 84%,var(--text));
+    border:1px solid color-mix(in srgb,var(--c,var(--muted)) 32%,transparent); }
+  .tilt.ex_us { --c:var(--up); } .tilt.us { --c:var(--info); } .tilt.mixed { --c:var(--warn); }
+
+  /* ===== rates desk ===== */
+  .rdesk { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin-top:12px; }
+  .rcard { background:var(--panel2); border:1px solid var(--line); border-radius:13px; padding:13px 15px; }
+  .rcard .rh { display:flex; align-items:center; gap:8px; margin-bottom:8px; } .rcard .rh .flg { font-size:18px; }
+  .rcard .rh b { font-size:14px; } .rcard .rh .shape { margin-left:auto; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:7px;
+    background:color-mix(in srgb,var(--c,var(--muted)) 16%,var(--panel)); color:color-mix(in srgb,var(--c,var(--muted)) 82%,var(--text)); }
+  .rcard .shape.inverted { --c:var(--down); } .rcard .shape.flat { --c:var(--warn); } .rcard .shape.normal { --c:var(--up); } .rcard .shape.steep { --c:var(--info); }
+  .rcard .rgrid { display:grid; grid-template-columns:1fr 1fr; gap:6px 12px; font-size:12px; }
+  .rcard .rk { color:var(--muted); } .rcard .rv { text-align:right; font-weight:700; font-variant-numeric:tabular-nums; }
+  /* curve slope mini-viz: 3m dot -> 10y dot */
+  .curve { position:relative; height:30px; margin:9px 0 4px; }
+  .curve .ln { position:absolute; top:50%; height:2px; background:color-mix(in srgb,var(--c,var(--link)) 60%,transparent); }
+  .curve .d { position:absolute; top:50%; transform:translate(-50%,-50%); width:8px; height:8px; border-radius:50%; background:var(--c,var(--link)); }
+  .curve .lab { position:absolute; font-size:9px; color:var(--muted); top:calc(50% + 7px); transform:translateX(-50%); white-space:nowrap; }
+  .anchor-card { background:linear-gradient(var(--panel2),var(--panel2)) padding-box, var(--acc-grad) border-box; border:1.5px solid transparent; }
+
+  /* ===== correlation heatmap ===== */
+  .heatwrap { overflow-x:auto; margin-top:12px; }
+  table.heat { border-collapse:separate; border-spacing:3px; font-size:12px; }
+  table.heat th { color:var(--muted); font-weight:600; font-size:11px; padding:3px 5px; white-space:nowrap; }
+  table.heat td { width:46px; height:38px; text-align:center; border-radius:7px; font-weight:700; font-variant-numeric:tabular-nums;
+    color:#fff; }
+  table.heat td.diag { opacity:.45; }
+  table.heat th.l { text-align:right; }
+
+  /* ===== generic panel-accent + index spark cell ===== */
+  .gridwrap .nch { display:block; width:74px; height:24px; }
+  .panel.accent { background:linear-gradient(var(--panel),var(--panel)) padding-box, var(--acc-grad) border-box; border:1.5px solid transparent; }
+  .twocol { display:grid; grid-template-columns:1fr 1fr; gap:14px; } @media (max-width:860px){ .twocol { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
@@ -142,6 +253,7 @@
       <a class="nav-link" href="javascript:void(0)">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="reports.html">📰 <span class="l-en">Research Reports</span><span class="l-zh">研究报告</span><span class="d"><span class="l-en">In-depth market & macro reports</span><span class="l-zh">深度市场与宏观报告</span></span></a>
+        <a href="policy_watch.html">🏛️ <span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></a>
         <a href="masterminds.html">🧠 <span class="l-en">Masterminds</span><span class="l-zh">操盘大师</span><span class="d"><span class="l-en">Multi-asset active GTAA strategies</span><span class="l-zh">多资产主动配置策略</span></span></a>
         <a href="crossasset.html">🧭 <span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></a>
         <a href="signal_lab.html">🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></a>
@@ -166,44 +278,172 @@
   </div>
 </nav>
 
-<div class="panel">
-  <div class="row">
+
+
+
+
+
+
+
+
+
+<!-- ===== Flagship stage hero ===== -->
+<div class="stage">
+  <span class="stage-flag">🌍 <span class="l-en">Global Macro Compass</span><span class="l-zh">全球宏观罗盘</span></span>
+  <div class="stage-h1"><span class="l-en">International Economies</span><span class="l-zh">国际经济体</span></div>
+  <p class="stage-read"><span class="l-en">5 economies, dominant regime Goldilocks. In USD, South Korea leads (+159% 12m) and Eurozone lags (+16% 12m). Mixed — no decisive US/ex-US rotation. Cross-market risk appetite risk-on (100/100).</span><span class="l-zh">5 个经济体，主导周期 Goldilocks。以美元计，韩国 领先（+159% 12m），欧元区 落后（+16% 12m）。分化 — 美国与非美无明显轮动。跨市场风险偏好风险偏好（100/100）。</span></p>
+  <div class="kpis">
+    <div class="kpi"><div class="k"><span class="l-en">Dominant regime</span><span class="l-zh">主导周期</span></div>
+      <div class="v"><span class="l-en">Goldilocks</span><span class="l-zh">理想增长</span></div><div class="s">5 <span class="l-en">economies</span><span class="l-zh">经济体</span></div></div>
+    <div class="kpi"><div class="k"><span class="l-en">Risk appetite</span><span class="l-zh">风险偏好</span></div>
+      <div class="v up">100 <span class="s" style="font-size:12px;font-weight:600">/100</span></div>
+      <div class="dial" style="--p:1.00"></div>
+      <div class="s"><span class="l-en">Risk-on</span><span class="l-zh">风险偏好</span> · 5/5 <span class="l-en">above 200d</span><span class="l-zh">站上200日</span></div></div>
+    <div class="kpi"><div class="k"><span class="l-en">US vs World</span><span class="l-zh">美国 vs 全球</span></div>
+      <div class="v" style="font-size:15px;line-height:1.2"><span class="l-en">Mixed — no decisive US/ex-US rotation</span><span class="l-zh">分化 — 美国与非美无明显轮动</span></div>
+      <div class="s">3/5 <span class="l-en">ex-US markets gaining</span><span class="l-zh">非美市场占优</span></div></div>
     
-    <h1>🌍 <span class="l-en">International Economies</span><span class="l-zh">国际经济体</span></h1>
-    
-    <span style="flex:1"></span>
-    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-06-17 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-06-18 04:14 UTC</span>
+    <div class="kpi"><div class="k"><span class="l-en">USD leader</span><span class="l-zh">美元领涨</span></div>
+      <div class="v up">🇰🇷 KR</div>
+      <div class="s">+159% <span class="l-en">in USD</span><span class="l-zh">美元计</span></div></div>
+    <div class="kpi"><div class="k"><span class="l-en">Recession-watch</span><span class="l-zh">衰退观察</span></div>
+      <div class="v ">0</div>
+      <div class="s"><span class="l-en">of</span><span class="l-zh">共</span> 5 · <span class="l-en">drawdown-watch</span><span class="l-zh">回撤观察</span> 0</div></div>
+    <div class="kpi"><div class="k"><span class="l-en">Avg correlation</span><span class="l-zh">平均相关性</span></div>
+      <div class="v">0.59</div><div class="s"><span class="l-en">cross-market, USD</span><span class="l-zh">跨市场，美元</span></div></div>
   </div>
-  
-  <p class="muted small" style="margin:6px 0 0"><span class="l-en">A side-by-side health check on five major economies outside the US/China bloc. Regime, recession & equity-risk reads are descriptive and history-anchored (display-only, never a scored buy/sell). Macro is keyless (FRED OECD + ECB); some CPI prints lag and Taiwan is data-limited — shown honestly with as-of dates.</span><span class="l-zh">对美中之外五大经济体的并排健康检查。周期、衰退与股市风险读数均为描述性、以历史锚定（仅供展示，不构成买卖评分）。宏观数据无需密钥（FRED OECD + ECB）；部分 CPI 数据滞后，台湾数据受限 — 均如实标注截至日期。</span>
-    <a href="intl_stocks.html" style="color:var(--link);font-weight:600">→ <span class="l-en">Stock dashboard</span><span class="l-zh">股票看板</span></a></p>
-  
+  <p class="caveat" style="margin-top:13px"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-06-18 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-06-18 03:30 UTC · <span class="l-en">display-only / descriptive — nothing here is a scored buy/sell</span><span class="l-zh">仅供展示 / 描述性 — 此处无评分买卖</span>
+    · <a href="intl_stocks.html" style="color:var(--link);font-weight:700"><span class="l-en">Stock dashboard</span><span class="l-zh">股票看板</span> →</a></p>
+</div>
+
+<!-- ===== USD performance leaderboard (centerpiece) ===== -->
+
+<div class="panel accent">
+  <div class="sec-h"><h2><span class="l-en">Performance in US dollars</span><span class="l-zh">以美元计的表现</span> <span class="help">?<span class="tip"><span class="l-en">Each market’s primary index rebuilt in US dollars (local index × FX, or ÷ FX for USD-quoted pairs) and ranked over the chosen horizon. The bar splits the USD move into its EQUITY leg (the local index) and its CURRENCY leg (FX) — which sum exactly to the USD return by construction — so you can see when a roaring local market is handed back to a weak currency (Japan ran +90% locally but a sliding yen left only +58% in USD). Price-return indices, not total return.</span><span class="l-zh">每个市场的主指数以美元重建（本币指数 × 汇率，USD 报价对则 ÷ 汇率）并按所选周期排名。柱状图将美元涨跌拆分为股票腿（本币指数）与货币腿（汇率）—— 二者精确相加等于美元收益 —— 由此可见火热的本币市场被弱势货币吞噬（日本本币 +90%，但日元走弱后美元仅 +58%）。价格指数，非全收益。</span></span></span></h2>
+    <span class="sub"><span class="l-en">local equity + currency = USD return</span><span class="l-zh">本币股票 + 货币 = 美元收益</span></span>
+    <span style="flex:1"></span>
+    <div class="seg" id="lb-seg"><button type="button" data-h="1m"><span class="l-en">1M</span><span class="l-zh">1月</span></button><button type="button" data-h="3m"><span class="l-en">3M</span><span class="l-zh">3月</span></button><button type="button" data-h="6m"><span class="l-en">6M</span><span class="l-zh">6月</span></button><button type="button" data-h="12m" class="on"><span class="l-en">12M</span><span class="l-zh">12月</span></button><button type="button" data-h="ytd"><span class="l-en">YTD</span><span class="l-zh">年初至今</span></button></div>
+  </div>
+  <div class="lb" id="lb-board"></div>
+  <div class="lb-legend">
+    <span><i style="background:color-mix(in srgb,var(--info) 55%,transparent)"></i><span class="l-en">local equity</span><span class="l-zh">本币股票</span></span>
+    <span><i style="background:var(--up)"></i><span class="l-en">currency tailwind</span><span class="l-zh">货币顺风</span></span>
+    <span><i style="background:var(--down)"></i><span class="l-en">currency drag</span><span class="l-zh">货币拖累</span></span>
+    <span><i style="background:var(--text);width:3px;height:13px;border-radius:2px"></i><span class="l-en">net USD return</span><span class="l-zh">美元净收益</span></span>
+  </div>
 </div>
 
 
+<!-- ===== US vs the World rotation (RRG) ===== -->
 
-<!-- ===== Global hero ===== -->
 <div class="panel">
-  <div class="row" style="gap:22px">
-    <div>
-      <h2 style="margin-bottom:4px"><span class="l-en">Global read</span><span class="l-zh">全局读数</span></h2>
-      <div style="font-size:18px;font-weight:800"><span class="l-en">Dominant regime</span><span class="l-zh">主导周期</span>: <span class="l-en">Goldilocks</span><span class="l-zh">理想增长</span></div>
+  <div class="sec-h"><h2><span class="l-en">US vs the World — capital rotation</span><span class="l-zh">美国 vs 全球 — 资本轮动</span> <span class="help">?<span class="tip"><span class="l-en">A relative-rotation map. Each market’s relative-strength line vs the US (S&P 500 price index, already in USD) is placed by RELATIVE LEVEL (left↔right: behind vs ahead of the US over the past year) and RELATIVE MOMENTUM (down↔up: losing vs gaining ground). The four corners: Leading (ahead & accelerating), Weakening (ahead but rolling over), Improving (behind but catching up), Lagging (behind & still slipping). The tilt verdict reads whether capital is, net, rotating out of US exceptionalism. Display-only.</span><span class="l-zh">相对轮动图。每个市场相对美国（标普500价格指数，已是美元）的相对强弱线，按相对水平（左右：过去一年落后/领先美国）与相对动量（上下：失去/获得动能）定位。四角：领先（领先且加速）、走弱（领先但回落）、改善（落后但追赶）、落后（落后且继续下滑）。倾向判断衡量资本是否净流出美国例外论。仅供展示。</span></span></span></h2>
+    <span style="flex:1"></span><span class="tilt mixed"><span class="l-en">Mixed — no decisive US/ex-US rotation</span><span class="l-zh">分化 — 美国与非美无明显轮动</span></span></div>
+  <div class="twocol">
+    <div class="rrg">
+      <div class="ax h"></div><div class="ax v"></div>
+      <div class="ql impr">↖ <span class="l-en">Improving</span><span class="l-zh">改善</span></div><div class="ql lead"><span class="l-en">Leading</span><span class="l-zh">领先</span> ↗</div>
+      <div class="ql lag">↙ <span class="l-en">Lagging</span><span class="l-zh">落后</span></div><div class="ql weak"><span class="l-en">Weakening</span><span class="l-zh">走弱</span> ↘</div>
+      <div class="axl" style="left:6px;top:50%;transform:translateY(-50%)"><span class="l-en">behind US</span><span class="l-zh">落后美国</span></div>
+      <div class="axl" style="right:6px;top:50%;transform:translateY(-50%)"><span class="l-en">ahead</span><span class="l-zh">领先</span></div>
+      
+        
+        
+        
+        
+        <div class="pt q-lead" style="left:92.0%;top:8.0%" title="South Korea · level 152.1 · mom 28.0">
+          <div class="dot"></div><div class="e">🇰🇷</div><div class="n">KR</div>
+        </div>
+      
+        
+        
+        
+        
+        <div class="pt q-lead" style="left:82.9%;top:17.7%" title="Taiwan · level 131.3 · mom 19.2">
+          <div class="dot"></div><div class="e">🇹🇼</div><div class="n">TW</div>
+        </div>
+      
+        
+        
+        
+        
+        <div class="pt q-lead" style="left:65.0%;top:35.2%" title="Japan · level 114.3 · mom 8.8">
+          <div class="dot"></div><div class="e">🇯🇵</div><div class="n">JP</div>
+        </div>
+      
+        
+        
+        
+        
+        <div class="pt q-lag" style="left:47.8%;top:57.9%" title="Eurozone · level 97.9 · mom -4.7">
+          <div class="dot"></div><div class="e">🇪🇺</div><div class="n">EZ</div>
+        </div>
+      
+        
+        
+        
+        
+        <div class="pt q-lag" style="left:47.0%;top:64.3%" title="United Kingdom · level 97.1 · mom -8.5">
+          <div class="dot"></div><div class="e">🇬🇧</div><div class="n">GB</div>
+        </div>
+      
     </div>
-    <span style="flex:1"></span>
-    <div><div class="muted small"><span class="l-en">Economies</span><span class="l-zh">经济体</span></div><b style="font-size:20px">5</b></div>
-    <div><div class="muted small"><span class="l-en">Recession-watch</span><span class="l-zh">衰退观察</span></div><b style="font-size:20px" class="">0</b></div>
-    <div><div class="muted small"><span class="l-en">Equity drawdown-watch</span><span class="l-zh">股市回撤观察</span></div><b style="font-size:20px" class="">0</b></div>
-    <div><div class="muted small"><span class="l-en">Avg recession score</span><span class="l-zh">平均衰退分</span></div><b style="font-size:20px">5</b></div>
+    <div>
+      <table class="sb">
+        <thead><tr><th class="l"><span class="l-en">Market</span><span class="l-zh">市场</span></th><th class="l"><span class="l-en">Phase</span><span class="l-zh">阶段</span></th><th><span class="l-en">vs US 3m</span><span class="l-zh">对美3月</span></th><th><span class="l-en">6m</span><span class="l-zh">6月</span></th><th><span class="l-en">12m</span><span class="l-zh">12月</span></th></tr></thead>
+        <tbody>
+        
+          <tr><td class="l"><span class="flg">🇰🇷</span><span class="l-en">South Korea</span><span class="l-zh">韩国</span></td>
+            <td class="l"><span class="tilt q-lead" style="padding:2px 8px;font-size:11px"><span class="l-en">Leading</span><span class="l-zh">领先</span></span></td>
+            <td class="pos">+28.0%</td>
+            <td class="pos">+76.1%</td>
+            <td class="pos">+103.5%</td>
+          </tr>
+        
+          <tr><td class="l"><span class="flg">🇹🇼</span><span class="l-en">Taiwan</span><span class="l-zh">台湾</span></td>
+            <td class="l"><span class="tilt q-lead" style="padding:2px 8px;font-size:11px"><span class="l-en">Leading</span><span class="l-zh">领先</span></span></td>
+            <td class="pos">+19.2%</td>
+            <td class="pos">+42.2%</td>
+            <td class="pos">+50.8%</td>
+          </tr>
+        
+          <tr><td class="l"><span class="flg">🇯🇵</span><span class="l-en">Japan</span><span class="l-zh">日本</span></td>
+            <td class="l"><span class="tilt q-lead" style="padding:2px 8px;font-size:11px"><span class="l-en">Leading</span><span class="l-zh">领先</span></span></td>
+            <td class="pos">+8.8%</td>
+            <td class="pos">+18.4%</td>
+            <td class="pos">+26.0%</td>
+          </tr>
+        
+          <tr><td class="l"><span class="flg">🇪🇺</span><span class="l-en">Eurozone</span><span class="l-zh">欧元区</span></td>
+            <td class="l"><span class="tilt q-lag" style="padding:2px 8px;font-size:11px"><span class="l-en">Lagging</span><span class="l-zh">落后</span></span></td>
+            <td class="neg">-4.7%</td>
+            <td class="pos">+1.0%</td>
+            <td class="neg">-5.9%</td>
+          </tr>
+        
+          <tr><td class="l"><span class="flg">🇬🇧</span><span class="l-en">United Kingdom</span><span class="l-zh">英国</span></td>
+            <td class="l"><span class="tilt q-lag" style="padding:2px 8px;font-size:11px"><span class="l-en">Lagging</span><span class="l-zh">落后</span></span></td>
+            <td class="neg">-8.5%</td>
+            <td class="pos">+1.3%</td>
+            <td class="neg">-4.9%</td>
+          </tr>
+        
+        </tbody>
+      </table>
+      <p class="caveat" style="margin-top:10px"><span class="l-en">Relative to the S&P 500 price index (USD). Positive = the market out-ran the US over that window. A relative-strength lens, not a forward-edge claim.</span><span class="l-zh">相对标普500价格指数（美元）。正值 = 该市场在该周期跑赢美国。相对强弱视角，非前瞻收益主张。</span></p>
+    </div>
   </div>
 </div>
 
-<!-- ===== Comparison grid (centerpiece) ===== -->
+
+<!-- ===== Cross-country comparison grid (the reference table) ===== -->
 <div class="panel">
-  <h2><span class="l-en">Cross-country comparison</span><span class="l-zh">跨国对比</span> <span class="help">?<span class="tip"><span class="l-en">Every economy on the same axes. Regime = growth×inflation quad (with confidence). Recession & drawdown-risk are 0-100 history-anchored display gauges. Real yield = 10y − latest CPI. CPI/GDP/unemployment show the latest official print with its as-of month (greyed when stale — FRED OECD series are discontinued for several economies).</span><span class="l-zh">所有经济体使用相同坐标轴。周期 = 增长×通胀象限（含置信度）。衰退与回撤风险为 0-100 历史锚定展示型刻度。实际收益 = 10年 − 最新 CPI。CPI/GDP/失业率显示最新官方数据及截至月份（滞后则置灰 — 多国 FRED OECD 序列已停更）。</span></span></span></h2>
+  <h2><span class="l-en">Cross-country comparison</span><span class="l-zh">跨国对比</span> <span class="help">?<span class="tip"><span class="l-en">Every economy on the same axes. Regime = growth×inflation quad (with confidence). Recession & drawdown-risk are 0-100 history-anchored display gauges. Real yield = 10y − latest CPI. CPI/GDP/unemployment show the latest official print with its as-of month (greyed when stale — FRED OECD series are discontinued for several economies). The 1Y spark is the index in USD.</span><span class="l-zh">所有经济体使用相同坐标轴。周期 = 增长×通胀象限（含置信度）。衰退与回撤风险为 0-100 历史锚定展示型刻度。实际收益 = 10年 − 最新 CPI。CPI/GDP/失业率显示最新官方数据及截至月份（滞后则置灰 — 多国 FRED OECD 序列已停更）。1年走势为美元计指数。</span></span></span></h2>
   <div class="gridwrap">
   <table class="cmp">
     <thead><tr>
       <th class="l eco"><span class="l-en">Economy</span><span class="l-zh">经济体</span></th>
+      <th class="l"><span class="l-en">1Y · USD</span><span class="l-zh">1年 · 美元</span></th>
       <th class="l"><span class="l-en">Regime</span><span class="l-zh">周期</span></th>
       <th class="grp"><span class="l-en">Recession</span><span class="l-zh">衰退</span></th>
       <th class="grp"><span class="l-en">Policy</span><span class="l-zh">政策利率</span></th>
@@ -221,46 +461,52 @@
     <tbody>
     
         
+      
       <tr>
         <td class="l eco"><span class="flg">🇯🇵</span><span class="l-en">Japan</span><span class="l-zh">日本</span></td>
+        <td class="l"><svg class="nch" viewBox="0 0 200 40" preserveAspectRatio="none" width="100%" height="40"><polyline points="0,40 0.0,38.1 2.4,38.7 4.8,39.4 7.2,40.0 9.6,39.7 12.0,39.6 14.5,37.4 16.9,38.9 19.3,39.0 21.7,38.0 24.1,36.2 26.5,35.3 28.9,35.9 31.3,35.8 33.7,35.8 36.1,36.4 38.6,35.9 41.0,34.6 43.4,33.5 45.8,32.5 48.2,32.6 50.6,33.6 53.0,33.9 55.4,30.3 57.8,30.7 60.2,32.7 62.7,31.0 65.1,29.6 67.5,28.6 69.9,27.5 72.3,27.8 74.7,28.8 77.1,28.3 79.5,29.4 81.9,30.9 84.3,32.2 86.7,30.1 89.2,30.4 91.6,29.4 94.0,30.1 96.4,30.7 98.8,30.7 101.2,30.0 103.6,29.9 106.0,30.2 108.4,28.3 110.8,28.9 113.3,26.4 115.7,27.7 118.1,26.8 120.5,24.9 122.9,26.9 125.3,26.2 127.7,21.4 130.1,20.7 132.5,20.6 134.9,21.5 137.3,20.1 139.8,23.4 142.2,24.3 144.6,25.3 147.0,27.3 149.4,27.8 151.8,28.6 154.2,27.8 156.6,26.9 159.0,27.8 161.4,24.5 163.9,22.4 166.3,21.7 168.7,20.5 171.1,19.5 173.5,21.2 175.9,19.6 178.3,15.7 180.7,15.5 183.1,18.8 185.5,17.9 188.0,14.1 190.4,12.7 192.8,10.6 195.2,15.8 197.6,15.7 200.0,9.6 200,40" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,38.1 2.4,38.7 4.8,39.4 7.2,40.0 9.6,39.7 12.0,39.6 14.5,37.4 16.9,38.9 19.3,39.0 21.7,38.0 24.1,36.2 26.5,35.3 28.9,35.9 31.3,35.8 33.7,35.8 36.1,36.4 38.6,35.9 41.0,34.6 43.4,33.5 45.8,32.5 48.2,32.6 50.6,33.6 53.0,33.9 55.4,30.3 57.8,30.7 60.2,32.7 62.7,31.0 65.1,29.6 67.5,28.6 69.9,27.5 72.3,27.8 74.7,28.8 77.1,28.3 79.5,29.4 81.9,30.9 84.3,32.2 86.7,30.1 89.2,30.4 91.6,29.4 94.0,30.1 96.4,30.7 98.8,30.7 101.2,30.0 103.6,29.9 106.0,30.2 108.4,28.3 110.8,28.9 113.3,26.4 115.7,27.7 118.1,26.8 120.5,24.9 122.9,26.9 125.3,26.2 127.7,21.4 130.1,20.7 132.5,20.6 134.9,21.5 137.3,20.1 139.8,23.4 142.2,24.3 144.6,25.3 147.0,27.3 149.4,27.8 151.8,28.6 154.2,27.8 156.6,26.9 159.0,27.8 161.4,24.5 163.9,22.4 166.3,21.7 168.7,20.5 171.1,19.5 173.5,21.2 175.9,19.6 178.3,15.7 180.7,15.5 183.1,18.8 185.5,17.9 188.0,14.1 190.4,12.7 192.8,10.6 195.2,15.8 197.6,15.7 200.0,9.6" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="200.0" cy="9.6" r="2.6" fill="var(--up)"/></svg></td>
         <td class="l"><span class="quad q-Q1"><span class="l-en">Goldilocks</span><span class="l-zh">理想增长</span></span> <span class="muted small">0.61</span></td>
         <td class="grp"><span class="gbar"><span class="gfill g-low" style="width:1.0%"></span></span>1</td>
         <td class="grp">1.24%</td>
         <td>2.65%</td>
         <td class="">1.41</td>
-        <td>0.56</td>
+        <td><span class="muted">—</span></td>
         <td class="grp">-0.5%<span class="stale"> 2021-06</span></td>
         <td>0.3%</td>
         <td>2.5%</td>
-        <td class="grp neg">-1.6%</td>
+        <td class="grp neg">-0.9%</td>
         <td class="">0.0%</td>
         <td><span class="gbar"><span class="gfill g-low" style="width:15.0%"></span></span>15</td>
         <td class="l"><span class="chip caut"><span class="l-en">stretched</span><span class="l-zh">拉伸</span></span></td>
       </tr>
     
         
+      
       <tr>
         <td class="l eco"><span class="flg">🇰🇷</span><span class="l-en">South Korea</span><span class="l-zh">韩国</span></td>
+        <td class="l"><svg class="nch" viewBox="0 0 200 40" preserveAspectRatio="none" width="100%" height="40"><polyline points="0,40 0.0,39.9 2.4,39.5 4.8,39.8 7.2,39.4 9.6,39.5 12.0,39.4 14.5,39.3 16.9,39.3 19.3,40.0 21.7,39.4 24.1,39.4 26.5,39.2 28.9,39.7 31.3,39.8 33.7,39.6 36.1,39.8 38.6,39.5 41.0,39.1 43.4,38.3 45.8,38.0 48.2,37.9 50.6,38.0 53.0,38.2 55.4,37.6 57.8,37.7 60.2,37.7 62.7,36.6 65.1,36.1 67.5,35.7 69.9,34.7 72.3,33.9 74.7,35.3 77.1,35.1 79.5,35.8 81.9,36.1 84.3,36.8 86.7,36.0 89.2,35.9 91.6,35.4 94.0,35.1 96.4,35.4 98.8,36.0 101.2,35.3 103.6,34.1 106.0,33.7 108.4,32.3 110.8,32.0 113.3,31.1 115.7,30.8 118.1,30.0 120.5,28.3 122.9,30.0 125.3,29.0 127.7,28.1 130.1,26.5 132.5,26.5 134.9,24.6 137.3,21.4 139.8,25.1 142.2,26.9 144.6,26.6 147.0,27.6 149.4,26.5 151.8,27.2 154.2,28.4 156.6,28.0 159.0,28.3 161.4,25.8 163.9,24.6 166.3,23.4 168.7,22.3 171.1,20.8 173.5,21.3 175.9,19.0 178.3,15.1 180.7,14.3 183.1,16.3 185.5,14.7 188.0,13.8 190.4,10.8 192.8,9.6 195.2,18.0 197.6,15.7 200.0,9.9 200,40" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,39.9 2.4,39.5 4.8,39.8 7.2,39.4 9.6,39.5 12.0,39.4 14.5,39.3 16.9,39.3 19.3,40.0 21.7,39.4 24.1,39.4 26.5,39.2 28.9,39.7 31.3,39.8 33.7,39.6 36.1,39.8 38.6,39.5 41.0,39.1 43.4,38.3 45.8,38.0 48.2,37.9 50.6,38.0 53.0,38.2 55.4,37.6 57.8,37.7 60.2,37.7 62.7,36.6 65.1,36.1 67.5,35.7 69.9,34.7 72.3,33.9 74.7,35.3 77.1,35.1 79.5,35.8 81.9,36.1 84.3,36.8 86.7,36.0 89.2,35.9 91.6,35.4 94.0,35.1 96.4,35.4 98.8,36.0 101.2,35.3 103.6,34.1 106.0,33.7 108.4,32.3 110.8,32.0 113.3,31.1 115.7,30.8 118.1,30.0 120.5,28.3 122.9,30.0 125.3,29.0 127.7,28.1 130.1,26.5 132.5,26.5 134.9,24.6 137.3,21.4 139.8,25.1 142.2,26.9 144.6,26.6 147.0,27.6 149.4,26.5 151.8,27.2 154.2,28.4 156.6,28.0 159.0,28.3 161.4,25.8 163.9,24.6 166.3,23.4 168.7,22.3 171.1,20.8 173.5,21.3 175.9,19.0 178.3,15.1 180.7,14.3 183.1,16.3 185.5,14.7 188.0,13.8 190.4,10.8 192.8,9.6 195.2,18.0 197.6,15.7 200.0,9.9" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="200.0" cy="9.9" r="2.6" fill="var(--up)"/></svg></td>
         <td class="l"><span class="quad q-Q2"><span class="l-en">Reflation</span><span class="l-zh">再通胀</span></span> <span class="muted small">0.30</span></td>
         <td class="grp"><span class="gbar"><span class="gfill g-low" style="width:3.0%"></span></span>3</td>
         <td class="grp">2.82%</td>
         <td>4.08%</td>
         <td class="">1.26</td>
-        <td>0.09</td>
+        <td><span class="muted">—</span></td>
         <td class="grp">3.3%<span class="stale"> 2023-11</span></td>
         <td>3.8%</td>
         <td>2.8%</td>
-        <td class="grp neg">-1.4%</td>
+        <td class="grp neg">-1.3%</td>
         <td class="">0.0%</td>
         <td><span class="gbar"><span class="gfill g-low" style="width:20.0%"></span></span>20</td>
         <td class="l"><span class="chip warn"><span class="l-en">parabolic</span><span class="l-zh">抛物</span></span></td>
       </tr>
     
         
+      
       <tr>
         <td class="l eco"><span class="flg">🇹🇼</span><span class="l-en">Taiwan</span><span class="l-zh">台湾</span> <span class="chip caut" title="thin keyless macro"><span class="l-en">data-limited</span><span class="l-zh">数据有限</span></span></td>
+        <td class="l"><svg class="nch" viewBox="0 0 200 40" preserveAspectRatio="none" width="100%" height="40"><polyline points="0,40 0.0,40.0 2.4,39.2 4.8,39.8 7.2,39.4 9.6,39.2 12.0,38.7 14.5,38.5 16.9,39.3 19.3,39.2 21.7,39.2 24.1,38.1 26.5,38.1 28.9,38.0 31.3,39.4 33.7,38.4 36.1,39.0 38.6,39.1 41.0,37.7 43.4,36.7 45.8,36.5 48.2,36.1 50.6,36.1 53.0,36.5 55.4,35.1 57.8,34.8 60.2,35.2 62.7,34.1 65.1,33.9 67.5,34.5 69.9,33.1 72.3,33.3 74.7,34.1 77.1,34.3 79.5,35.1 81.9,36.2 84.3,36.5 86.7,35.0 89.2,35.2 91.6,34.6 94.0,33.7 96.4,34.7 98.8,35.6 101.2,34.3 103.6,33.4 106.0,32.6 108.4,31.4 110.8,31.3 113.3,30.9 115.7,29.7 118.1,29.4 120.5,27.6 122.9,29.9 125.3,29.8 127.7,27.9 130.1,27.0 132.5,26.9 134.9,26.9 137.3,24.3 139.8,26.2 142.2,27.7 144.6,26.8 147.0,28.4 149.4,27.7 151.8,28.9 154.2,28.4 156.6,28.3 159.0,29.1 161.4,25.7 163.9,23.7 166.3,22.8 168.7,21.3 171.1,18.8 173.5,20.1 175.9,17.5 178.3,16.0 180.7,16.5 183.1,17.4 185.5,16.7 188.0,13.5 190.4,11.8 192.8,9.6 195.2,13.8 197.6,14.4 200.0,10.6 200,40" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,40.0 2.4,39.2 4.8,39.8 7.2,39.4 9.6,39.2 12.0,38.7 14.5,38.5 16.9,39.3 19.3,39.2 21.7,39.2 24.1,38.1 26.5,38.1 28.9,38.0 31.3,39.4 33.7,38.4 36.1,39.0 38.6,39.1 41.0,37.7 43.4,36.7 45.8,36.5 48.2,36.1 50.6,36.1 53.0,36.5 55.4,35.1 57.8,34.8 60.2,35.2 62.7,34.1 65.1,33.9 67.5,34.5 69.9,33.1 72.3,33.3 74.7,34.1 77.1,34.3 79.5,35.1 81.9,36.2 84.3,36.5 86.7,35.0 89.2,35.2 91.6,34.6 94.0,33.7 96.4,34.7 98.8,35.6 101.2,34.3 103.6,33.4 106.0,32.6 108.4,31.4 110.8,31.3 113.3,30.9 115.7,29.7 118.1,29.4 120.5,27.6 122.9,29.9 125.3,29.8 127.7,27.9 130.1,27.0 132.5,26.9 134.9,26.9 137.3,24.3 139.8,26.2 142.2,27.7 144.6,26.8 147.0,28.4 149.4,27.7 151.8,28.9 154.2,28.4 156.6,28.3 159.0,29.1 161.4,25.7 163.9,23.7 166.3,22.8 168.7,21.3 171.1,18.8 173.5,20.1 175.9,17.5 178.3,16.0 180.7,16.5 183.1,17.4 185.5,16.7 188.0,13.5 190.4,11.8 192.8,9.6 195.2,13.8 197.6,14.4 200.0,10.6" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="200.0" cy="10.6" r="2.6" fill="var(--up)"/></svg></td>
         <td class="l"><span class="quad q-Q1"><span class="l-en">Goldilocks</span><span class="l-zh">理想增长</span></span> <span class="muted small">0.50</span></td>
-        <td class="grp"><span class="gbar"><span class="gfill g-low" style="width:5.0%"></span></span>5</td>
+        <td class="grp"><span class="gbar"><span class="gfill g-low" style="width:2.0%"></span></span>2</td>
         <td class="grp"><span class="muted">—</span></td>
         <td><span class="muted">—</span></td>
         <td class=""><span class="muted">—</span></td>
@@ -268,15 +514,17 @@
         <td class="grp"><span class="muted">—</span></td>
         <td><span class="muted">—</span></td>
         <td><span class="muted">—</span></td>
-        <td class="grp pos">0.8%</td>
-        <td class="">-1.3%</td>
-        <td><span class="gbar"><span class="gfill g-low" style="width:17.0%"></span></span>17</td>
+        <td class="grp pos">1.4%</td>
+        <td class="">-0.4%</td>
+        <td><span class="gbar"><span class="gfill g-low" style="width:15.0%"></span></span>15</td>
         <td class="l"><span class="chip caut"><span class="l-en">stretched</span><span class="l-zh">拉伸</span></span></td>
       </tr>
     
         
+      
       <tr>
         <td class="l eco"><span class="flg">🇬🇧</span><span class="l-en">United Kingdom</span><span class="l-zh">英国</span></td>
+        <td class="l"><svg class="nch" viewBox="0 0 200 40" preserveAspectRatio="none" width="100%" height="40"><polyline points="0,40 0.0,39.3 2.4,39.0 4.8,38.8 7.2,38.0 9.6,40.0 12.0,38.5 14.5,35.0 16.9,37.2 19.3,39.7 21.7,37.4 24.1,36.5 26.5,34.4 28.9,35.0 31.3,33.9 33.7,34.3 36.1,34.9 38.6,35.2 41.0,33.7 43.4,32.8 45.8,33.2 48.2,34.8 50.6,35.2 53.0,33.3 55.4,31.1 57.8,30.5 60.2,33.0 62.7,32.3 65.1,32.5 67.5,30.1 69.9,29.0 72.3,31.3 74.7,31.7 77.1,28.0 79.5,31.2 81.9,34.0 84.3,34.1 86.7,30.2 89.2,30.5 91.6,29.8 94.0,30.2 96.4,28.1 98.8,26.7 101.2,24.9 103.6,25.0 106.0,23.9 108.4,22.2 110.8,22.0 113.3,20.0 115.7,22.0 118.1,20.8 120.5,17.0 122.9,15.8 125.3,16.7 127.7,15.6 130.1,14.9 132.5,11.9 134.9,12.3 137.3,9.6 139.8,16.7 142.2,20.3 144.6,18.6 147.0,21.1 149.4,24.6 151.8,24.3 154.2,25.2 156.6,20.4 159.0,20.0 161.4,15.2 163.9,13.7 166.3,12.7 168.7,15.7 171.1,18.0 173.5,17.4 175.9,19.3 178.3,18.8 180.7,17.7 183.1,20.3 185.5,17.1 188.0,15.6 190.4,17.5 192.8,18.5 195.2,19.2 197.6,20.0 200.0,16.5 200,40" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,39.3 2.4,39.0 4.8,38.8 7.2,38.0 9.6,40.0 12.0,38.5 14.5,35.0 16.9,37.2 19.3,39.7 21.7,37.4 24.1,36.5 26.5,34.4 28.9,35.0 31.3,33.9 33.7,34.3 36.1,34.9 38.6,35.2 41.0,33.7 43.4,32.8 45.8,33.2 48.2,34.8 50.6,35.2 53.0,33.3 55.4,31.1 57.8,30.5 60.2,33.0 62.7,32.3 65.1,32.5 67.5,30.1 69.9,29.0 72.3,31.3 74.7,31.7 77.1,28.0 79.5,31.2 81.9,34.0 84.3,34.1 86.7,30.2 89.2,30.5 91.6,29.8 94.0,30.2 96.4,28.1 98.8,26.7 101.2,24.9 103.6,25.0 106.0,23.9 108.4,22.2 110.8,22.0 113.3,20.0 115.7,22.0 118.1,20.8 120.5,17.0 122.9,15.8 125.3,16.7 127.7,15.6 130.1,14.9 132.5,11.9 134.9,12.3 137.3,9.6 139.8,16.7 142.2,20.3 144.6,18.6 147.0,21.1 149.4,24.6 151.8,24.3 154.2,25.2 156.6,20.4 159.0,20.0 161.4,15.2 163.9,13.7 166.3,12.7 168.7,15.7 171.1,18.0 173.5,17.4 175.9,19.3 178.3,18.8 180.7,17.7 183.1,20.3 185.5,17.1 188.0,15.6 190.4,17.5 192.8,18.5 195.2,19.2 197.6,20.0 200.0,16.5" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="200.0" cy="16.5" r="2.6" fill="var(--up)"/></svg></td>
         <td class="l"><span class="quad q-Q1"><span class="l-en">Goldilocks</span><span class="l-zh">理想增长</span></span> <span class="muted small">0.35</span></td>
         <td class="grp"><span class="gbar"><span class="gfill g-low" style="width:15.0%"></span></span>15</td>
         <td class="grp">3.71%</td>
@@ -293,8 +541,10 @@
       </tr>
     
         
+      
       <tr>
         <td class="l eco"><span class="flg">🇪🇺</span><span class="l-en">Eurozone</span><span class="l-zh">欧元区</span></td>
+        <td class="l"><svg class="nch" viewBox="0 0 200 40" preserveAspectRatio="none" width="100%" height="40"><polyline points="0,40 0.0,37.3 2.4,35.7 4.8,35.9 7.2,35.9 9.6,38.8 12.0,37.1 14.5,33.7 16.9,36.5 19.3,40.0 21.7,39.3 24.1,36.8 26.5,33.9 28.9,33.4 31.3,33.1 33.7,34.7 36.1,34.9 38.6,35.7 41.0,33.6 43.4,33.3 45.8,32.7 48.2,33.7 50.6,34.5 53.0,32.4 55.4,29.0 57.8,29.0 60.2,31.8 62.7,29.7 65.1,29.3 67.5,29.0 69.9,28.5 72.3,31.2 74.7,32.9 77.1,28.6 79.5,29.0 81.9,33.5 84.3,34.2 86.7,29.4 89.2,29.1 91.6,27.8 94.0,28.1 96.4,25.3 98.8,24.5 101.2,23.1 103.6,22.9 106.0,22.2 108.4,19.6 110.8,18.9 113.3,17.5 115.7,21.0 118.1,17.7 120.5,13.7 122.9,13.7 125.3,16.0 127.7,11.8 130.1,13.3 132.5,10.3 134.9,10.9 137.3,9.6 139.8,19.7 142.2,22.6 144.6,21.5 147.0,25.2 149.4,28.9 151.8,28.1 154.2,30.3 156.6,23.4 159.0,24.6 161.4,17.9 163.9,14.1 166.3,12.0 168.7,16.2 171.1,18.3 173.5,17.9 175.9,18.2 178.3,16.9 180.7,17.1 183.1,19.2 185.5,16.1 188.0,13.8 190.4,14.2 192.8,16.0 195.2,17.4 197.6,17.2 200.0,12.2 200,40" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,37.3 2.4,35.7 4.8,35.9 7.2,35.9 9.6,38.8 12.0,37.1 14.5,33.7 16.9,36.5 19.3,40.0 21.7,39.3 24.1,36.8 26.5,33.9 28.9,33.4 31.3,33.1 33.7,34.7 36.1,34.9 38.6,35.7 41.0,33.6 43.4,33.3 45.8,32.7 48.2,33.7 50.6,34.5 53.0,32.4 55.4,29.0 57.8,29.0 60.2,31.8 62.7,29.7 65.1,29.3 67.5,29.0 69.9,28.5 72.3,31.2 74.7,32.9 77.1,28.6 79.5,29.0 81.9,33.5 84.3,34.2 86.7,29.4 89.2,29.1 91.6,27.8 94.0,28.1 96.4,25.3 98.8,24.5 101.2,23.1 103.6,22.9 106.0,22.2 108.4,19.6 110.8,18.9 113.3,17.5 115.7,21.0 118.1,17.7 120.5,13.7 122.9,13.7 125.3,16.0 127.7,11.8 130.1,13.3 132.5,10.3 134.9,10.9 137.3,9.6 139.8,19.7 142.2,22.6 144.6,21.5 147.0,25.2 149.4,28.9 151.8,28.1 154.2,30.3 156.6,23.4 159.0,24.6 161.4,17.9 163.9,14.1 166.3,12.0 168.7,16.2 171.1,18.3 173.5,17.9 175.9,18.2 178.3,16.9 180.7,17.1 183.1,19.2 185.5,16.1 188.0,13.8 190.4,14.2 192.8,16.0 195.2,17.4 197.6,17.2 200.0,12.2" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="200.0" cy="12.2" r="2.6" fill="var(--up)"/></svg></td>
         <td class="l"><span class="quad q-Q2"><span class="l-en">Reflation</span><span class="l-zh">再通胀</span></span> <span class="muted small">0.38</span></td>
         <td class="grp"><span class="gbar"><span class="gfill g-low" style="width:0%"></span></span>0</td>
         <td class="grp">2.00%</td>
@@ -307,7 +557,7 @@
         <td class="grp pos">0.3%</td>
         <td class="">0.0%</td>
         <td><span class="gbar"><span class="gfill g-low" style="width:0%"></span></span>0</td>
-        <td class="l"><span class="muted small"><span class="l-en">normal</span><span class="l-zh">正常</span></span></td>
+        <td class="l"><span class="chip caut"><span class="l-en">stretched</span><span class="l-zh">拉伸</span></span></td>
       </tr>
     
     </tbody>
@@ -316,49 +566,393 @@
   <p class="caveat" style="margin-top:9px"><span class="l-en">Display-only / descriptive — no per-country forward backtest is claimed and nothing here feeds a scored signal. No keyless implied-vol exists for these markets, so equity stretch uses own-history extension (in-trend / stretched / parabolic).</span><span class="l-zh">仅供展示 / 描述性 — 不作任何分国前瞻回测主张，亦不构成评分信号。这些市场无免密钥隐含波动率，故股市拉伸采用自身历史的扩张度（趋势内／拉伸／抛物）。</span></p>
 </div>
 
-<!-- ===== Regime heatmap (growth × inflation) ===== -->
+<!-- ===== Rates & curve desk ===== -->
+
+
 <div class="panel">
-  <h2><span class="l-en">Regime map — growth × inflation</span><span class="l-zh">周期图 — 增长 × 通胀</span></h2>
+  <div class="sec-h"><h2><span class="l-en">Rates & curve desk</span><span class="l-zh">利率与曲线室</span> <span class="help">?<span class="tip"><span class="l-en">The rates story made visual: each market’s yield-curve shape (10y − 3m), real 10y (10y − latest CPI), the 3-month drift of the long end, and the CARRY each 10y offers over the US 10y anchor — the biggest single pull on global fixed-income flows. The mini-curve plots the 3m and 10y points; the spark is the 10y-yield history. Monthly OECD/ECB data on FRED; several series lag or are discontinued and are dated honestly.</span><span class="l-zh">将利率故事可视化：每个市场的收益率曲线形态（10年 − 3月）、实际10年（10年 − 最新CPI）、长端的3月漂移，以及各国10年相对美国10年锚的套息 —— 全球固收资金的最大单一引力。迷你曲线绘制3月与10年两点；走势线为10年收益率历史。FRED 上的月度 OECD/ECB 数据；部分序列滞后或停更，均如实标注。</span></span></span></h2>
+    <span style="flex:1"></span>
+    <span class="sub"><span class="l-en">US anchor</span><span class="l-zh">美国锚</span>: <b style="color:var(--text)">4.43%</b> 10y · 4.05% 2y · <span class="l-en">curve</span><span class="l-zh">曲线</span> +0.38</span>
+  </div>
+  <div class="rdesk">
+    
+    <div class="rcard">
+      <div class="rh"><span class="flg">🇯🇵</span><b><span class="l-en">Japan</span><span class="l-zh">日本</span></b>
+        <span class="shape normal"><span class="l-en">normal</span><span class="l-zh">正常</span></span></div>
+      
+      <div class="curve" style="--c:var(--link)">
+        
+        
+        <div class="ln" style="left:18%;width:20%"></div>
+        <div class="d" style="left:18%"></div><div class="lab" style="left:18%">3m 1.2</div>
+        <div class="d" style="left:38%"></div><div class="lab" style="left:38%">10y 2.6</div>
+      </div>
+      <div class="rgrid">
+        <span class="rk"><span class="l-en">Curve 10y−3m</span><span class="l-zh">曲线 10年−3月</span></span><span class="rv ">1.41</span>
+        <span class="rk"><span class="l-en">Real 10y</span><span class="l-zh">实际10年</span></span><span class="rv "><span class="muted">—</span></span>
+        <span class="rk"><span class="l-en">Carry vs US</span><span class="l-zh">对美套息</span></span><span class="rv neg">-1.78</span>
+        <span class="rk"><span class="l-en">10y · 3m drift</span><span class="l-zh">10年 · 3月漂移</span></span><span class="rv neg">+0.30</span>
+      </div>
+      <div style="margin-top:8px;opacity:.85"><svg class="nch" viewBox="0 0 130 34" preserveAspectRatio="none" width="100%" height="34"><polyline points="0,34 0.0,34.0 1.8,33.7 3.6,33.9 5.4,33.6 7.2,33.9 9.0,33.6 10.8,33.7 12.6,33.8 14.4,33.5 16.2,32.5 18.1,32.8 19.9,33.1 21.7,33.2 23.5,33.5 25.3,33.9 27.1,33.8 28.9,33.4 30.7,33.1 32.5,33.5 34.3,33.3 36.1,32.3 37.9,32.2 39.7,32.0 41.5,31.9 43.3,31.7 45.1,31.8 46.9,32.2 48.8,31.9 50.6,31.7 52.4,31.6 54.2,31.6 56.0,30.0 57.8,29.2 59.6,29.1 61.4,30.9 63.2,30.2 65.0,29.8 66.8,30.1 68.6,28.2 70.4,27.8 72.2,26.5 74.0,24.7 75.8,27.6 77.6,28.0 79.4,26.9 81.2,27.1 83.1,26.9 84.9,25.5 86.7,23.6 88.5,23.8 90.3,23.8 92.1,25.3 93.9,25.7 95.7,24.9 97.5,23.8 99.3,23.4 101.1,21.9 102.9,20.6 104.7,19.5 106.5,21.2 108.3,19.4 110.1,20.2 111.9,18.9 113.8,18.4 115.6,18.0 117.4,17.9 119.2,16.4 121.0,13.9 122.8,12.2 124.6,13.4 126.4,11.1 128.2,9.5 130.0,8.2 130,34" fill="var(--link)" opacity="0.12" stroke="none"/><polyline points="0.0,34.0 1.8,33.7 3.6,33.9 5.4,33.6 7.2,33.9 9.0,33.6 10.8,33.7 12.6,33.8 14.4,33.5 16.2,32.5 18.1,32.8 19.9,33.1 21.7,33.2 23.5,33.5 25.3,33.9 27.1,33.8 28.9,33.4 30.7,33.1 32.5,33.5 34.3,33.3 36.1,32.3 37.9,32.2 39.7,32.0 41.5,31.9 43.3,31.7 45.1,31.8 46.9,32.2 48.8,31.9 50.6,31.7 52.4,31.6 54.2,31.6 56.0,30.0 57.8,29.2 59.6,29.1 61.4,30.9 63.2,30.2 65.0,29.8 66.8,30.1 68.6,28.2 70.4,27.8 72.2,26.5 74.0,24.7 75.8,27.6 77.6,28.0 79.4,26.9 81.2,27.1 83.1,26.9 84.9,25.5 86.7,23.6 88.5,23.8 90.3,23.8 92.1,25.3 93.9,25.7 95.7,24.9 97.5,23.8 99.3,23.4 101.1,21.9 102.9,20.6 104.7,19.5 106.5,21.2 108.3,19.4 110.1,20.2 111.9,18.9 113.8,18.4 115.6,18.0 117.4,17.9 119.2,16.4 121.0,13.9 122.8,12.2 124.6,13.4 126.4,11.1 128.2,9.5 130.0,8.2" fill="none" stroke="var(--link)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="130.0" cy="8.2" r="2.6" fill="var(--link)"/></svg></div>
+      
+    </div>
+    
+    <div class="rcard">
+      <div class="rh"><span class="flg">🇰🇷</span><b><span class="l-en">South Korea</span><span class="l-zh">韩国</span></b>
+        <span class="shape normal"><span class="l-en">normal</span><span class="l-zh">正常</span></span></div>
+      
+      <div class="curve" style="--c:var(--link)">
+        
+        
+        <div class="ln" style="left:40%;width:18%"></div>
+        <div class="d" style="left:40%"></div><div class="lab" style="left:40%">3m 2.8</div>
+        <div class="d" style="left:58%"></div><div class="lab" style="left:58%">10y 4.1</div>
+      </div>
+      <div class="rgrid">
+        <span class="rk"><span class="l-en">Curve 10y−3m</span><span class="l-zh">曲线 10年−3月</span></span><span class="rv ">1.26</span>
+        <span class="rk"><span class="l-en">Real 10y</span><span class="l-zh">实际10年</span></span><span class="rv "><span class="muted">—</span></span>
+        <span class="rk"><span class="l-en">Carry vs US</span><span class="l-zh">对美套息</span></span><span class="rv neg">-0.35</span>
+        <span class="rk"><span class="l-en">10y · 3m drift</span><span class="l-zh">10年 · 3月漂移</span></span><span class="rv neg">+0.35</span>
+      </div>
+      <div style="margin-top:8px;opacity:.85"><svg class="nch" viewBox="0 0 130 34" preserveAspectRatio="none" width="100%" height="34"><polyline points="0,34 0.0,33.7 1.8,33.7 3.6,34.0 5.4,33.9 7.2,32.8 9.0,32.7 10.8,31.8 12.6,31.2 14.4,30.7 16.2,29.7 18.1,28.0 19.9,28.0 21.7,27.2 23.5,27.4 25.3,28.5 27.1,29.2 28.9,27.8 30.7,24.8 32.5,25.2 34.3,26.7 36.1,24.0 37.9,22.2 39.7,21.4 41.5,17.5 43.3,16.8 45.1,13.8 46.9,16.8 48.8,16.6 50.6,11.5 52.4,8.2 54.2,11.3 56.0,14.6 57.8,15.8 59.6,15.5 61.4,15.5 63.2,16.6 65.0,15.9 66.8,14.0 68.6,13.4 70.4,11.8 72.2,11.0 74.0,8.2 75.8,11.5 77.6,15.8 79.4,16.3 81.2,15.6 83.1,16.0 84.9,14.4 86.7,14.8 88.5,16.5 90.3,17.9 92.1,19.5 93.9,19.3 95.7,18.8 97.5,19.4 99.3,21.5 101.1,21.0 102.9,21.0 104.7,21.3 106.5,22.5 108.3,22.0 110.1,20.8 111.9,20.9 113.8,21.1 115.6,20.8 117.4,20.0 119.2,17.2 121.0,16.2 122.8,15.1 124.6,14.0 126.4,13.0 128.2,12.9 130.0,9.9 130,34" fill="var(--link)" opacity="0.12" stroke="none"/><polyline points="0.0,33.7 1.8,33.7 3.6,34.0 5.4,33.9 7.2,32.8 9.0,32.7 10.8,31.8 12.6,31.2 14.4,30.7 16.2,29.7 18.1,28.0 19.9,28.0 21.7,27.2 23.5,27.4 25.3,28.5 27.1,29.2 28.9,27.8 30.7,24.8 32.5,25.2 34.3,26.7 36.1,24.0 37.9,22.2 39.7,21.4 41.5,17.5 43.3,16.8 45.1,13.8 46.9,16.8 48.8,16.6 50.6,11.5 52.4,8.2 54.2,11.3 56.0,14.6 57.8,15.8 59.6,15.5 61.4,15.5 63.2,16.6 65.0,15.9 66.8,14.0 68.6,13.4 70.4,11.8 72.2,11.0 74.0,8.2 75.8,11.5 77.6,15.8 79.4,16.3 81.2,15.6 83.1,16.0 84.9,14.4 86.7,14.8 88.5,16.5 90.3,17.9 92.1,19.5 93.9,19.3 95.7,18.8 97.5,19.4 99.3,21.5 101.1,21.0 102.9,21.0 104.7,21.3 106.5,22.5 108.3,22.0 110.1,20.8 111.9,20.9 113.8,21.1 115.6,20.8 117.4,20.0 119.2,17.2 121.0,16.2 122.8,15.1 124.6,14.0 126.4,13.0 128.2,12.9 130.0,9.9" fill="none" stroke="var(--link)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="130.0" cy="9.9" r="2.6" fill="var(--link)"/></svg></div>
+      
+    </div>
+    
+    <div class="rcard">
+      <div class="rh"><span class="flg">🇹🇼</span><b><span class="l-en">Taiwan</span><span class="l-zh">台湾</span></b>
+        <span class="shape na"><span class="l-en">—</span><span class="l-zh">—</span></span></div>
+      
+      <p class="muted small" style="margin:6px 0"><span class="l-en">No keyless yield curve for this market — read leans on the equity tape.</span><span class="l-zh">该市场无免密钥收益率曲线 — 读数依赖股市行情。</span></p>
+      
+    </div>
+    
+    <div class="rcard">
+      <div class="rh"><span class="flg">🇬🇧</span><b><span class="l-en">United Kingdom</span><span class="l-zh">英国</span></b>
+        <span class="shape normal"><span class="l-en">normal</span><span class="l-zh">正常</span></span></div>
+      
+      <div class="curve" style="--c:var(--link)">
+        
+        
+        <div class="ln" style="left:53%;width:18%"></div>
+        <div class="d" style="left:53%"></div><div class="lab" style="left:53%">3m 3.7</div>
+        <div class="d" style="left:71%"></div><div class="lab" style="left:71%">10y 4.9</div>
+      </div>
+      <div class="rgrid">
+        <span class="rk"><span class="l-en">Curve 10y−3m</span><span class="l-zh">曲线 10年−3月</span></span><span class="rv ">1.23</span>
+        <span class="rk"><span class="l-en">Real 10y</span><span class="l-zh">实际10年</span></span><span class="rv ">1.12</span>
+        <span class="rk"><span class="l-en">Carry vs US</span><span class="l-zh">对美套息</span></span><span class="rv pos">+0.51</span>
+        <span class="rk"><span class="l-en">10y · 3m drift</span><span class="l-zh">10年 · 3月漂移</span></span><span class="rv neg">+0.24</span>
+      </div>
+      <div style="margin-top:8px;opacity:.85"><svg class="nch" viewBox="0 0 130 34" preserveAspectRatio="none" width="100%" height="34"><polyline points="0,34 0.0,33.6 1.8,33.6 3.6,34.0 5.4,33.7 7.2,33.7 9.0,33.5 10.8,33.0 12.6,33.4 14.4,33.1 16.2,31.7 18.1,30.5 19.9,30.5 21.7,30.2 23.5,30.5 25.3,31.3 27.1,31.6 28.9,30.8 30.7,29.2 32.5,30.0 34.3,30.6 36.1,28.6 37.9,27.0 39.7,26.7 41.5,25.1 43.3,24.7 45.1,22.1 46.9,23.4 48.8,22.4 50.6,16.0 52.4,12.7 54.2,16.5 56.0,16.0 57.8,16.0 59.6,15.7 61.4,15.7 63.2,15.2 65.0,13.5 66.8,11.3 68.6,10.9 70.4,10.4 72.2,11.0 74.0,10.2 75.8,11.8 77.6,14.1 79.4,13.7 81.2,12.6 83.1,13.1 84.9,12.1 86.7,12.1 88.5,12.4 90.3,12.5 92.1,13.6 93.9,13.8 95.7,12.2 97.5,11.0 99.3,10.9 101.1,9.7 102.9,10.5 104.7,9.8 106.5,10.2 108.3,10.0 110.1,10.4 111.9,10.1 113.8,9.8 115.6,9.5 117.4,10.2 119.2,10.6 121.0,10.7 122.8,10.8 124.6,10.9 126.4,9.5 128.2,8.8 130.0,8.2 130,34" fill="var(--link)" opacity="0.12" stroke="none"/><polyline points="0.0,33.6 1.8,33.6 3.6,34.0 5.4,33.7 7.2,33.7 9.0,33.5 10.8,33.0 12.6,33.4 14.4,33.1 16.2,31.7 18.1,30.5 19.9,30.5 21.7,30.2 23.5,30.5 25.3,31.3 27.1,31.6 28.9,30.8 30.7,29.2 32.5,30.0 34.3,30.6 36.1,28.6 37.9,27.0 39.7,26.7 41.5,25.1 43.3,24.7 45.1,22.1 46.9,23.4 48.8,22.4 50.6,16.0 52.4,12.7 54.2,16.5 56.0,16.0 57.8,16.0 59.6,15.7 61.4,15.7 63.2,15.2 65.0,13.5 66.8,11.3 68.6,10.9 70.4,10.4 72.2,11.0 74.0,10.2 75.8,11.8 77.6,14.1 79.4,13.7 81.2,12.6 83.1,13.1 84.9,12.1 86.7,12.1 88.5,12.4 90.3,12.5 92.1,13.6 93.9,13.8 95.7,12.2 97.5,11.0 99.3,10.9 101.1,9.7 102.9,10.5 104.7,9.8 106.5,10.2 108.3,10.0 110.1,10.4 111.9,10.1 113.8,9.8 115.6,9.5 117.4,10.2 119.2,10.6 121.0,10.7 122.8,10.8 124.6,10.9 126.4,9.5 128.2,8.8 130.0,8.2" fill="none" stroke="var(--link)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="130.0" cy="8.2" r="2.6" fill="var(--link)"/></svg></div>
+      
+    </div>
+    
+    <div class="rcard">
+      <div class="rh"><span class="flg">🇪🇺</span><b><span class="l-en">Eurozone</span><span class="l-zh">欧元区</span></b>
+        <span class="shape normal"><span class="l-en">normal</span><span class="l-zh">正常</span></span></div>
+      
+      <div class="curve" style="--c:var(--link)">
+        
+        
+        <div class="ln" style="left:29%;width:17%"></div>
+        <div class="d" style="left:29%"></div><div class="lab" style="left:29%">3m 2.0</div>
+        <div class="d" style="left:46%"></div><div class="lab" style="left:46%">10y 3.2</div>
+      </div>
+      <div class="rgrid">
+        <span class="rk"><span class="l-en">Curve 10y−3m</span><span class="l-zh">曲线 10年−3月</span></span><span class="rv ">1.19</span>
+        <span class="rk"><span class="l-en">Real 10y</span><span class="l-zh">实际10年</span></span><span class="rv ">0.22</span>
+        <span class="rk"><span class="l-en">Carry vs US</span><span class="l-zh">对美套息</span></span><span class="rv neg">-1.21</span>
+        <span class="rk"><span class="l-en">10y · 3m drift</span><span class="l-zh">10年 · 3月漂移</span></span><span class="rv ">+0.00</span>
+      </div>
+      <div style="margin-top:8px;opacity:.85"><svg class="nch" viewBox="0 0 130 34" preserveAspectRatio="none" width="100%" height="34"><polyline points="0,34 0.0,31.2 1.8,32.5 3.6,30.8 5.4,29.6 7.2,30.1 9.0,31.0 10.8,31.9 12.6,32.3 14.4,32.5 16.2,33.4 18.1,33.7 19.9,34.0 21.7,33.8 23.5,32.9 25.3,32.4 27.1,32.0 28.9,30.8 30.7,31.3 32.5,32.3 34.3,33.0 36.1,32.0 37.9,31.0 39.7,31.3 41.5,31.5 43.3,29.8 45.1,27.0 46.9,26.2 48.8,22.8 50.6,20.7 52.4,16.9 54.2,19.2 56.0,19.4 57.8,14.3 59.6,11.8 61.4,13.5 63.2,13.1 65.0,12.8 66.8,11.6 68.6,11.5 70.4,11.7 72.2,11.7 74.0,11.9 75.8,11.2 77.6,10.7 79.4,9.6 81.2,8.2 83.1,10.2 84.9,14.0 86.7,13.7 88.5,12.9 90.3,13.4 92.1,12.6 93.9,12.2 95.7,11.9 97.5,12.3 99.3,13.7 101.1,14.2 102.9,14.0 104.7,13.5 106.5,14.3 108.3,12.5 110.1,13.1 111.9,10.9 113.8,12.4 115.6,12.6 117.4,12.5 119.2,11.9 121.0,11.7 122.8,11.5 124.6,12.2 126.4,12.1 128.2,11.4 130.0,11.6 130,34" fill="var(--link)" opacity="0.12" stroke="none"/><polyline points="0.0,31.2 1.8,32.5 3.6,30.8 5.4,29.6 7.2,30.1 9.0,31.0 10.8,31.9 12.6,32.3 14.4,32.5 16.2,33.4 18.1,33.7 19.9,34.0 21.7,33.8 23.5,32.9 25.3,32.4 27.1,32.0 28.9,30.8 30.7,31.3 32.5,32.3 34.3,33.0 36.1,32.0 37.9,31.0 39.7,31.3 41.5,31.5 43.3,29.8 45.1,27.0 46.9,26.2 48.8,22.8 50.6,20.7 52.4,16.9 54.2,19.2 56.0,19.4 57.8,14.3 59.6,11.8 61.4,13.5 63.2,13.1 65.0,12.8 66.8,11.6 68.6,11.5 70.4,11.7 72.2,11.7 74.0,11.9 75.8,11.2 77.6,10.7 79.4,9.6 81.2,8.2 83.1,10.2 84.9,14.0 86.7,13.7 88.5,12.9 90.3,13.4 92.1,12.6 93.9,12.2 95.7,11.9 97.5,12.3 99.3,13.7 101.1,14.2 102.9,14.0 104.7,13.5 106.5,14.3 108.3,12.5 110.1,13.1 111.9,10.9 113.8,12.4 115.6,12.6 117.4,12.5 119.2,11.9 121.0,11.7 122.8,11.5 124.6,12.2 126.4,12.1 128.2,11.4 130.0,11.6" fill="none" stroke="var(--link)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="130.0" cy="11.6" r="2.6" fill="var(--link)"/></svg></div>
+      
+    </div>
+    
+  </div>
+
+  <div class="twocol" style="margin-top:14px">
+    <!-- Eurozone periphery -->
+    
+    <div>
+      <h3>🇪🇺 <span class="l-en">Eurozone fragmentation — peripheral spreads over Bund</span><span class="l-zh">欧元区分化 — 外围国相对德债利差</span> <span class="help">?<span class="tip"><span class="l-en">Peripheral 10y yields minus the German Bund, in basis points. Widening = stress / fragmentation risk; tightening = convergence. The classic Eurozone tail-risk gauge.</span><span class="l-zh">外围国 10 年期收益率减德国国债，单位基点。走阔 = 外围压力／分化风险；收窄 = 收敛。经典的欧元区尾部风险指标。</span></span></span></h3>
+      <table class="sb">
+        <thead><tr><th class="l"><span class="l-en">Spread</span><span class="l-zh">利差</span></th><th><span class="l-en">bps</span><span class="l-zh">基点</span></th><th><span class="l-en">3m</span><span class="l-zh">3月</span></th><th class="l"><span class="l-en">Read</span><span class="l-zh">读数</span></th></tr></thead>
+        <tbody>
+        
+          <tr><td class="l"><span class="flg">🇮🇹</span><span class="l-en">Italy (BTP)</span><span class="l-zh">意大利 (BTP)</span></td>
+            <td>77 bps</td>
+            <td class="pos">-26</td>
+            <td class="l"><span class="chip ok"><span class="l-en">tightening</span><span class="l-zh">收窄</span></span></td></tr>
+        
+          <tr><td class="l"><span class="flg">🇪🇸</span><span class="l-en">Spain (Bonos)</span><span class="l-zh">西班牙 (Bonos)</span></td>
+            <td>44 bps</td>
+            <td class="pos">-24</td>
+            <td class="l"><span class="chip ok"><span class="l-en">tightening</span><span class="l-zh">收窄</span></span></td></tr>
+        
+          <tr><td class="l"><span class="flg">🇫🇷</span><span class="l-en">France (OAT)</span><span class="l-zh">法国 (OAT)</span></td>
+            <td>70 bps</td>
+            <td class="neg">+40</td>
+            <td class="l"><span class="chip caut"><span class="l-en">widening</span><span class="l-zh">走阔</span></span></td></tr>
+        
+        </tbody>
+      </table>
+      <p class="caveat" style="margin-top:6px"><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-05-01</p>
+    </div>
+    
+    <!-- ECB liquidity impulse -->
+    
+    
+    <div class="rcard " style="align-self:start">
+      <div class="rh"><span class="flg">🏦</span><b><span class="l-en">ECB balance-sheet impulse</span><span class="l-zh">欧央行资产负债表脉冲</span></b>
+        <span class="shape inverted" style="--c:var(--down)"><span class="l-en">QT</span><span class="l-zh">缩表</span></span></div>
+      <div class="rgrid">
+        <span class="rk"><span class="l-en">Total assets</span><span class="l-zh">总资产</span></span><span class="rv">€6.14T</span>
+        <span class="rk"><span class="l-en">13-week</span><span class="l-zh">13周</span></span><span class="rv neg">-0.5%</span>
+        <span class="rk"><span class="l-en">52-week</span><span class="l-zh">52周</span></span><span class="rv neg">-1.6%</span>
+        <span class="rk"><span class="l-en">As of</span><span class="l-zh">截至</span></span><span class="rv" style="font-weight:600;color:var(--muted)">2026-06-14</span>
+      </div>
+      <div style="margin-top:8px;opacity:.85"><svg class="nch" viewBox="0 0 200 40" preserveAspectRatio="none" width="100%" height="40"><polyline points="0,40 0.0,9.6 3.8,10.3 7.7,10.5 11.5,10.4 15.4,10.2 19.2,10.3 23.1,13.6 26.9,19.3 30.8,19.9 34.6,20.5 38.5,20.6 42.3,21.9 46.2,21.8 50.0,22.0 53.8,27.6 57.7,28.0 61.5,28.1 65.4,29.2 69.2,29.8 73.1,29.8 76.9,30.6 80.8,31.1 84.6,31.7 88.5,31.9 92.3,34.3 96.2,34.7 100.0,35.0 103.8,35.4 107.7,35.8 111.5,35.9 115.4,36.1 119.2,36.4 123.1,36.8 126.9,37.0 130.8,36.4 134.6,37.0 138.5,37.9 142.3,37.3 146.2,37.7 150.0,38.3 153.8,39.4 157.7,39.8 161.5,40.0 165.4,38.6 169.2,39.0 173.1,39.3 176.9,39.1 180.8,37.8 184.6,38.3 188.5,39.2 192.3,38.5 196.2,38.9 200.0,39.4 200,40" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,9.6 3.8,10.3 7.7,10.5 11.5,10.4 15.4,10.2 19.2,10.3 23.1,13.6 26.9,19.3 30.8,19.9 34.6,20.5 38.5,20.6 42.3,21.9 46.2,21.8 50.0,22.0 53.8,27.6 57.7,28.0 61.5,28.1 65.4,29.2 69.2,29.8 73.1,29.8 76.9,30.6 80.8,31.1 84.6,31.7 88.5,31.9 92.3,34.3 96.2,34.7 100.0,35.0 103.8,35.4 107.7,35.8 111.5,35.9 115.4,36.1 119.2,36.4 123.1,36.8 126.9,37.0 130.8,36.4 134.6,37.0 138.5,37.9 142.3,37.3 146.2,37.7 150.0,38.3 153.8,39.4 157.7,39.8 161.5,40.0 165.4,38.6 169.2,39.0 173.1,39.3 176.9,39.1 180.8,37.8 184.6,38.3 188.5,39.2 192.3,38.5 196.2,38.9 200.0,39.4" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="200.0" cy="39.4" r="2.6" fill="var(--down)"/></svg></div>
+      <p class="caveat" style="margin-top:6px"><span class="l-en">QT — balance sheet still draining</span><span class="l-zh">缩表 — 资产负债表仍在收缩</span> · <span class="l-en">ECB only — the one major CB with a clean keyless weekly series here.</span><span class="l-zh">仅欧央行 — 此处唯一具有干净免密钥周度序列的主要央行。</span></p>
+    </div>
+    
+  </div>
+</div>
+
+
+<!-- ===== Growth × inflation regime map ===== -->
+<div class="panel">
+  <h2><span class="l-en">Regime map — growth × inflation</span><span class="l-zh">周期图 — 增长 × 通胀</span> <span class="help">?<span class="tip"><span class="l-en">Where each economy sits on the macro clock. Horizontal = growth score, vertical = inflation score (−1…+1). Reflation (top-right) and Goldilocks (bottom-right) are growth-positive; Stagflation (top-left) and Growth-scare (bottom-left) are growth-negative. The inflation axis leans on each economy’s current CPI direction where fresh, plus oil and the long-yield trend.</span><span class="l-zh">每个经济体在宏观时钟上的位置。横轴 = 增长得分，纵轴 = 通胀得分（−1…+1）。再通胀（右上）与金发女孩（右下）增长为正；滞胀（左上）与增长恐慌（左下）增长为负。通胀轴在数据新鲜处采用各自当前 CPI 方向，并结合油价与长端收益趋势。</span></span></span></h2>
   <div class="scatter">
     <div class="axx"></div><div class="axy"></div>
-    <div class="ql" style="left:6px;top:6px">↖ <span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></div>
-    <div class="ql" style="right:6px;top:6px"><span class="l-en">Reflation</span><span class="l-zh">再通胀</span> ↗</div>
-    <div class="ql" style="left:6px;bottom:6px">↙ <span class="l-en">Growth-scare</span><span class="l-zh">增长恐慌</span></div>
-    <div class="ql" style="right:6px;bottom:6px"><span class="l-en">Goldilocks</span><span class="l-zh">金发女孩</span> ↘</div>
+    <div class="ql" style="left:8px;top:8px">↖ <span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></div>
+    <div class="ql" style="right:8px;top:8px"><span class="l-en">Reflation</span><span class="l-zh">再通胀</span> ↗</div>
+    <div class="ql" style="left:8px;bottom:8px">↙ <span class="l-en">Growth-scare</span><span class="l-zh">增长恐慌</span></div>
+    <div class="ql" style="right:8px;bottom:8px"><span class="l-en">Goldilocks</span><span class="l-zh">金发女孩</span> ↘</div>
     
       
       
-      <div class="pt" style="left:85.7%;top:75.0%" title="Japan: g=0.714 i=-0.5">
+      <div class="pt" style="left:76.4%;top:68.5%" title="Japan: g=0.714 i=-0.5">
         <div class="e">🇯🇵</div><div class="n">JP</div>
       </div>
     
       
       
-      <div class="pt" style="left:57.1%;top:75.0%" title="South Korea: g=0.143 i=-0.5">
+      <div class="pt" style="left:55.3%;top:68.5%" title="South Korea: g=0.143 i=-0.5">
         <div class="e">🇰🇷</div><div class="n">KR</div>
       </div>
     
       
       
-      <div class="pt" style="left:100.0%;top:100.0%" title="Taiwan: g=1.0 i=-1.0">
+      <div class="pt" style="left:87.0%;top:87.0%" title="Taiwan: g=1.0 i=-1.0">
         <div class="e">🇹🇼</div><div class="n">TW</div>
       </div>
     
       
       
-      <div class="pt" style="left:60.0%;top:75.0%" title="United Kingdom: g=0.2 i=-0.5">
+      <div class="pt" style="left:57.4%;top:68.5%" title="United Kingdom: g=0.2 i=-0.5">
         <div class="e">🇬🇧</div><div class="n">GB</div>
       </div>
     
       
       
-      <div class="pt" style="left:80.0%;top:33.4%" title="Eurozone: g=0.6 i=0.333">
+      <div class="pt" style="left:72.2%;top:37.7%" title="Eurozone: g=0.6 i=0.333">
         <div class="e">🇪🇺</div><div class="n">EZ</div>
       </div>
     
   </div>
-  <p class="caveat" style="margin-top:8px"><span class="l-en">Horizontal = growth score, vertical = inflation score (−1…+1). Most economies cluster risk-on (growth positive); the inflation axis leans on each economy current CPI direction where fresh, plus oil and the long-yield trend.</span><span class="l-zh">横轴 = 增长得分，纵轴 = 通胀得分（−1…+1）。多数经济体聚集于风险偏好区（增长为正）；通胀轴在数据新鲜处采用各自当前 CPI 方向，并结合油价与长端收益趋势。</span></p>
+  <p class="caveat" style="margin-top:8px"><span class="l-en">Most economies cluster risk-on (growth positive). Descriptive snapshot of the growth/inflation mix — not a forward forecast.</span><span class="l-zh">多数经济体聚集于风险偏好区（增长为正）。增长／通胀组合的描述性快照 — 非前瞻预测。</span></p>
 </div>
+
+<!-- ===== Correlation & diversification heatmap ===== -->
+
+<div class="panel">
+  <div class="sec-h"><h2><span class="l-en">Cross-market correlation</span><span class="l-zh">跨市场相关性</span> <span class="help">?<span class="tip"><span class="l-en">Pairwise correlation of the daily USD-return streams (the five international markets + the US) over the trailing window. High everywhere = these markets move together and offer little diversification; lower = real diversification on offer. The average off-diagonal is the one-number read.</span><span class="l-zh">过去窗口内各市场每日美元收益的两两相关性（五个国际市场 + 美国）。处处偏高 = 同涨同跌、分散价值低；偏低 = 存在真正的分散空间。平均非对角值为单一读数。</span></span></span></h2>
+    <span style="flex:1"></span><span class="sub"><span class="l-en">avg</span><span class="l-zh">平均</span> <b style="color:var(--text)">0.59</b> · 252d</span></div>
+  <div class="heatwrap">
+    <table class="heat">
+      <thead><tr><th></th><th>🇯🇵 JP</th><th>🇰🇷 KR</th><th>🇹🇼 TW</th><th>🇬🇧 GB</th><th>🇪🇺 EZ</th><th>🇺🇸 US</th></tr></thead>
+      <tbody>
+      
+        
+        <tr><th class="l">🇯🇵 JP</th>
+          
+            
+            <td class="diag" style="background:var(--muted)">1</td>
+            
+          
+            
+            
+            <td style="background:color-mix(in srgb, var(--down) 80%, var(--up))">0.80</td>
+          
+            
+            
+            <td style="background:color-mix(in srgb, var(--down) 83%, var(--up))">0.83</td>
+          
+            
+            
+            <td style="background:color-mix(in srgb, var(--down) 47%, var(--up))">0.47</td>
+          
+            
+            
+            <td style="background:color-mix(in srgb, var(--down) 54%, var(--up))">0.54</td>
+          
+            
+            
+            <td style="background:color-mix(in srgb, var(--down) 56%, var(--up))">0.56</td>
+          
+        </tr>
+      
+        
+        <tr><th class="l">🇰🇷 KR</th>
+          
+            
+            
+            <td style="background:color-mix(in srgb, var(--down) 80%, var(--up))">0.80</td>
+          
+            
+            <td class="diag" style="background:var(--muted)">1</td>
+            
+          
+            
+            
+            <td style="background:color-mix(in srgb, var(--down) 86%, var(--up))">0.86</td>
+          
+            
+            
+            <td style="background:color-mix(in srgb, var(--down) 42%, var(--up))">0.42</td>
+          
+            
+            
+            <td style="background:color-mix(in srgb, var(--down) 51%, var(--up))">0.51</td>
+          
+            
+            
+            <td style="background:color-mix(in srgb, var(--down) 52%, var(--up))">0.52</td>
+          
+        </tr>
+      
+        
+        <tr><th class="l">🇹🇼 TW</th>
+          
+            
+            
+            <td style="background:color-mix(in srgb, var(--down) 83%, var(--up))">0.83</td>
+          
+            
+            
+            <td style="background:color-mix(in srgb, var(--down) 86%, var(--up))">0.86</td>
+          
+            
+            <td class="diag" style="background:var(--muted)">1</td>
+            
+          
+            
+            
+            <td style="background:color-mix(in srgb, var(--down) 34%, var(--up))">0.34</td>
+          
+            
+            
+            <td style="background:color-mix(in srgb, var(--down) 41%, var(--up))">0.41</td>
+          
+            
+            
+            <td style="background:color-mix(in srgb, var(--down) 44%, var(--up))">0.44</td>
+          
+        </tr>
+      
+        
+        <tr><th class="l">🇬🇧 GB</th>
+          
+            
+            
+            <td style="background:color-mix(in srgb, var(--down) 47%, var(--up))">0.47</td>
+          
+            
+            
+            <td style="background:color-mix(in srgb, var(--down) 42%, var(--up))">0.42</td>
+          
+            
+            
+            <td style="background:color-mix(in srgb, var(--down) 34%, var(--up))">0.34</td>
+          
+            
+            <td class="diag" style="background:var(--muted)">1</td>
+            
+          
+            
+            
+            <td style="background:color-mix(in srgb, var(--down) 93%, var(--up))">0.93</td>
+          
+            
+            
+            <td style="background:color-mix(in srgb, var(--down) 58%, var(--up))">0.58</td>
+          
+        </tr>
+      
+        
+        <tr><th class="l">🇪🇺 EZ</th>
+          
+            
+            
+            <td style="background:color-mix(in srgb, var(--down) 54%, var(--up))">0.54</td>
+          
+            
+            
+            <td style="background:color-mix(in srgb, var(--down) 51%, var(--up))">0.51</td>
+          
+            
+            
+            <td style="background:color-mix(in srgb, var(--down) 41%, var(--up))">0.41</td>
+          
+            
+            
+            <td style="background:color-mix(in srgb, var(--down) 93%, var(--up))">0.93</td>
+          
+            
+            <td class="diag" style="background:var(--muted)">1</td>
+            
+          
+            
+            
+            <td style="background:color-mix(in srgb, var(--down) 71%, var(--up))">0.71</td>
+          
+        </tr>
+      
+        
+        <tr><th class="l">🇺🇸 US</th>
+          
+            
+            
+            <td style="background:color-mix(in srgb, var(--down) 56%, var(--up))">0.56</td>
+          
+            
+            
+            <td style="background:color-mix(in srgb, var(--down) 52%, var(--up))">0.52</td>
+          
+            
+            
+            <td style="background:color-mix(in srgb, var(--down) 44%, var(--up))">0.44</td>
+          
+            
+            
+            <td style="background:color-mix(in srgb, var(--down) 58%, var(--up))">0.58</td>
+          
+            
+            
+            <td style="background:color-mix(in srgb, var(--down) 71%, var(--up))">0.71</td>
+          
+            
+            <td class="diag" style="background:var(--muted)">1</td>
+            
+          
+        </tr>
+      
+      </tbody>
+    </table>
+  </div>
+  <p class="caveat" style="margin-top:9px"><span class="l-en">Moderately correlated — some diversification on offer</span><span class="l-zh">中度相关 — 有一定分散空间</span> · <span class="l-en">Redder = more correlated (less diversification); greener = lower correlation. USD weekly returns (week-end closes, so the five markets’ different holiday calendars line up without injecting spurious zero-return days). Display-only.</span><span class="l-zh">越红 = 相关性越高（分散越少）；越绿 = 相关性越低。美元周度收益（采用周末收盘价，使五个市场不同的假期日历对齐，避免引入虚假的零收益日）。仅供展示。</span></p>
+</div>
+
 
 <!-- ===== Rankings ===== -->
 <div class="panel">
@@ -376,13 +970,13 @@
             <span class="bar"><span class="bf" style="width:100%;background:var(--down)"></span></span>
             <span class="v">15.0</span></div>
         
-          <div class="rb"><span class="flg">🇹🇼</span><span style="width:54px" class="muted">TW</span>
-            <span class="bar"><span class="bf" style="width:33%;background:var(--down)"></span></span>
-            <span class="v">5.0</span></div>
-        
           <div class="rb"><span class="flg">🇰🇷</span><span style="width:54px" class="muted">KR</span>
             <span class="bar"><span class="bf" style="width:20%;background:var(--down)"></span></span>
             <span class="v">3.0</span></div>
+        
+          <div class="rb"><span class="flg">🇹🇼</span><span style="width:54px" class="muted">TW</span>
+            <span class="bar"><span class="bf" style="width:13%;background:var(--down)"></span></span>
+            <span class="v">2.0</span></div>
         
           <div class="rb"><span class="flg">🇯🇵</span><span style="width:54px" class="muted">JP</span>
             <span class="bar"><span class="bf" style="width:7%;background:var(--down)"></span></span>
@@ -406,11 +1000,11 @@
             <span class="bar"><span class="bf" style="width:100%;background:var(--down)"></span></span>
             <span class="v">20.0</span></div>
         
-          <div class="rb"><span class="flg">🇹🇼</span><span style="width:54px" class="muted">TW</span>
-            <span class="bar"><span class="bf" style="width:85%;background:var(--down)"></span></span>
-            <span class="v">17.0</span></div>
-        
           <div class="rb"><span class="flg">🇯🇵</span><span style="width:54px" class="muted">JP</span>
+            <span class="bar"><span class="bf" style="width:75%;background:var(--down)"></span></span>
+            <span class="v">15.0</span></div>
+        
+          <div class="rb"><span class="flg">🇹🇼</span><span style="width:54px" class="muted">TW</span>
             <span class="bar"><span class="bf" style="width:75%;background:var(--down)"></span></span>
             <span class="v">15.0</span></div>
         
@@ -432,17 +1026,9 @@
         
         
         
-          <div class="rb"><span class="flg">🇰🇷</span><span style="width:54px" class="muted">KR</span>
-            <span class="bar"><span class="bf" style="width:8%;background:var(--up)"></span></span>
-            <span class="v">0.1</span></div>
-        
           <div class="rb"><span class="flg">🇪🇺</span><span style="width:54px" class="muted">EZ</span>
             <span class="bar"><span class="bf" style="width:20%;background:var(--up)"></span></span>
             <span class="v">0.2</span></div>
-        
-          <div class="rb"><span class="flg">🇯🇵</span><span style="width:54px" class="muted">JP</span>
-            <span class="bar"><span class="bf" style="width:50%;background:var(--up)"></span></span>
-            <span class="v">0.6</span></div>
         
           <div class="rb"><span class="flg">🇬🇧</span><span style="width:54px" class="muted">GB</span>
             <span class="bar"><span class="bf" style="width:100%;background:var(--up)"></span></span>
@@ -480,49 +1066,16 @@
   </div>
 </div>
 
-<!-- ===== Eurozone periphery ===== -->
-
-<div class="panel">
-  <h2>🇪🇺 <span class="l-en">Eurozone fragmentation — peripheral spreads over Bund</span><span class="l-zh">欧元区分化 — 外围国相对德债利差</span> <span class="help">?<span class="tip"><span class="l-en">Peripheral 10y yields minus the German Bund, in basis points. Widening = stress / fragmentation risk in the periphery; tightening = convergence. The classic Eurozone tail-risk gauge.</span><span class="l-zh">外围国 10 年期收益率减德国国债，单位基点。走阔 = 外围压力／分化风险；收窄 = 收敛。经典的欧元区尾部风险指标。</span></span></span></h2>
-  <table class="sb">
-    <thead><tr><th class="l"><span class="l-en">Spread</span><span class="l-zh">利差</span></th><th><span class="l-en">bps</span><span class="l-zh">基点</span></th><th><span class="l-en">3m change</span><span class="l-zh">3月变化</span></th><th class="l"><span class="l-en">Read</span><span class="l-zh">读数</span></th></tr></thead>
-    <tbody>
-    
-      <tr>
-        <td class="l"><span class="flg">🇮🇹</span>Italy (BTP)</td>
-        <td>77 bps</td>
-        <td class="pos">-26</td>
-        <td class="l"><span class="chip ok"><span class="l-en">tightening</span><span class="l-zh">收窄</span></span></td>
-      </tr>
-    
-      <tr>
-        <td class="l"><span class="flg">🇪🇸</span>Spain (Bonos)</td>
-        <td>44 bps</td>
-        <td class="pos">-24</td>
-        <td class="l"><span class="chip ok"><span class="l-en">tightening</span><span class="l-zh">收窄</span></span></td>
-      </tr>
-    
-      <tr>
-        <td class="l"><span class="flg">🇫🇷</span>France (OAT)</td>
-        <td>70 bps</td>
-        <td class="neg">+40</td>
-        <td class="l"><span class="chip caut"><span class="l-en">widening</span><span class="l-zh">走阔</span></span></td>
-      </tr>
-    
-    </tbody>
-  </table>
-  <p class="caveat" style="margin-top:7px"><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-05-01 · <span class="l-en">display-only context</span><span class="l-zh">仅供参考的背景</span></p>
-</div>
-
-
-<!-- ===== Honesty footer ===== -->
+<!-- ===== Method & honest limits ===== -->
 <div class="panel">
   <h2><span class="l-en">Method & honest limits</span><span class="l-zh">方法与诚实声明</span></h2>
   <ul class="small muted" style="margin:0;padding-left:18px;line-height:1.7">
     <li><span class="l-en">All keyless: equity indices & FX via Yahoo; macro via FRED OECD/ECB CSV; the stock universe via iShares UCITS holdings files.</span><span class="l-zh">全部免密钥：股指与汇率来自 Yahoo；宏观来自 FRED OECD/ECB CSV；个股范围来自 iShares UCITS 持仓文件。</span></li>
+    <li><span class="l-en">USD performance rebuilds each price index in dollars (index × FX, or ÷ FX for USD-quoted pairs like USD/JPY); the equity and currency legs are both measured on the same calendar and sum exactly to the USD return. These are PRICE-return indices (no dividends) — fine for cross-market comparison, not a total-return claim.</span><span class="l-zh">美元表现将每个价格指数以美元重建（指数 × 汇率，USD 报价对如美元／日元则 ÷ 汇率）；股票腿与货币腿在同一日历上计量，且精确相加等于美元收益。这些是价格指数（不含股息）—— 适合跨市场对比，非全收益主张。</span></li>
+    <li><span class="l-en">US-vs-world rotation & correlation use the S&P 500 PRICE index for an apples-to-apples comparison with the other price indices. Relative strength is a focus lens, not a scored signal.</span><span class="l-zh">美国对全球轮动与相关性采用标普500价格指数，以与其他价格指数同口径对比。相对强弱是聚焦视角，非评分信号。</span></li>
     <li><span class="l-en">Regime / recession / drawdown / bubble reads are descriptive and history-anchored — no forward edge is claimed and none drives a scored buy/sell.</span><span class="l-zh">周期／衰退／回撤／泡沫读数均为描述性且以历史锚定 — 不主张前瞻优势，且不驱动评分买卖。</span></li>
     <li><span class="l-en">CPI: FRED OECD series are discontinued for Japan (2021) and lag for the UK/Korea — shown with as-of dates and dropped from scoring when stale. Eurozone uses current Eurostat HICP.</span><span class="l-zh">CPI：日本（2021 年）FRED OECD 序列已停更，英国／韩国滞后 — 标注截至日期并在过时时退出评分。欧元区采用当前 Eurostat HICP。</span></li>
-    <li><span class="l-en">Taiwan has the thinnest keyless macro coverage (no yields/CPI on FRED) — flagged data-limited; its read leans on the equity tape.</span><span class="l-zh">台湾的免密钥宏观覆盖最薄（FRED 无收益率/CPI）— 标注数据有限；其读数依赖股市行情。</span></li>
+    <li><span class="l-en">Taiwan has the thinnest keyless macro coverage (no yields/CPI on FRED) — flagged data-limited; its read leans on the equity tape. The liquidity impulse is ECB-only (the one clean keyless weekly CB series).</span><span class="l-zh">台湾的免密钥宏观覆盖最薄（FRED 无收益率/CPI）— 标注数据有限；其读数依赖股市行情。流动性脉冲仅含欧央行（唯一干净的免密钥周度央行序列）。</span></li>
     <li><span class="l-en">No keyless implied-vol (VSTOXX / Nikkei-VI / VKOSPI) is available, so equity risk uses realised vol + own-history extension.</span><span class="l-zh">无免密钥隐含波动率（VSTOXX / 日经VI / VKOSPI），故股市风险采用已实现波动率 + 自身历史扩张度。</span></li>
   </ul>
 </div>
@@ -537,6 +1090,52 @@ document.querySelectorAll('.more-btn[data-more]').forEach(function(btn){
   });
 });
 </script>
+
+
+<script>window.INTL_PERF = {"correlation": {"avg_offdiag": 0.59, "cells": [[1.0, 0.8, 0.83, 0.47, 0.54, 0.56], [0.8, 1.0, 0.86, 0.42, 0.51, 0.52], [0.83, 0.86, 1.0, 0.34, 0.41, 0.44], [0.47, 0.42, 0.34, 1.0, 0.93, 0.58], [0.54, 0.51, 0.41, 0.93, 1.0, 0.71], [0.56, 0.52, 0.44, 0.58, 0.71, 1.0]], "labels": {"EZ": {"flag": "\ud83c\uddea\ud83c\uddfa", "name": "Eurozone"}, "GB": {"flag": "\ud83c\uddec\ud83c\udde7", "name": "United Kingdom"}, "JP": {"flag": "\ud83c\uddef\ud83c\uddf5", "name": "Japan"}, "KR": {"flag": "\ud83c\uddf0\ud83c\uddf7", "name": "South Korea"}, "TW": {"flag": "\ud83c\uddf9\ud83c\uddfc", "name": "Taiwan"}, "US": {"flag": "\ud83c\uddfa\ud83c\uddf8", "name": "United States"}}, "order": ["JP", "KR", "TW", "GB", "EZ", "US"], "read_en": "Moderately correlated \u2014 some diversification on offer", "read_zh": "\u4e2d\u5ea6\u76f8\u5173 \u2014 \u6709\u4e00\u5b9a\u5206\u6563\u7a7a\u95f4", "window_d": 252}, "global_read": {"dominant_quad": "Goldilocks", "en": "5 economies, dominant regime Goldilocks. In USD, South Korea leads (+159% 12m) and Eurozone lags (+16% 12m). Mixed \u2014 no decisive US/ex-US rotation. Cross-market risk appetite risk-on (100/100).", "zh": "5 \u4e2a\u7ecf\u6d4e\u4f53\uff0c\u4e3b\u5bfc\u5468\u671f Goldilocks\u3002\u4ee5\u7f8e\u5143\u8ba1\uff0c\u97e9\u56fd \u9886\u5148\uff08+159% 12m\uff09\uff0c\u6b27\u5143\u533a \u843d\u540e\uff08+16% 12m\uff09\u3002\u5206\u5316 \u2014 \u7f8e\u56fd\u4e0e\u975e\u7f8e\u65e0\u660e\u663e\u8f6e\u52a8\u3002\u8de8\u5e02\u573a\u98ce\u9669\u504f\u597d\u98ce\u9669\u504f\u597d\uff08100/100\uff09\u3002"}, "horizons": [{"en": "1M", "key": "1m", "zh": "1\u6708"}, {"en": "3M", "key": "3m", "zh": "3\u6708"}, {"en": "6M", "key": "6m", "zh": "6\u6708"}, {"en": "12M", "key": "12m", "zh": "12\u6708"}, {"en": "YTD", "key": "ytd", "zh": "\u5e74\u521d\u81f3\u4eca"}], "leaderboard": [{"above_200d_usd": true, "cc": "KR", "flag": "\ud83c\uddf0\ud83c\uddf7", "index_name": "KOSPI", "name": "South Korea", "name_zh": "\u97e9\u56fd", "region": "Asia", "returns": {"12m": {"fx": -32.6, "local": 191.3, "usd": 158.8}, "1m": {"fx": -1.2, "local": 23.5, "usd": 22.3}, "3m": {"fx": -2.1, "local": 64.7, "usd": 62.7}, "6m": {"fx": -7.0, "local": 116.8, "usd": 109.8}, "ytd": {"fx": -11.8, "local": 111.3, "usd": 99.4}}, "spark": [100.0, 102.11, 100.59, 102.71, 102.02, 102.5, 103.1, 103.3, 99.52, 102.39, 102.58, 103.86, 100.87, 100.5, 101.5, 100.46, 102.25, 104.44, 108.48, 109.99, 110.28, 109.78, 108.64, 112.09, 111.38, 111.35, 117.17, 119.56, 121.86, 127.05, 131.32, 124.15, 125.19, 121.25, 119.76, 116.33, 120.35, 120.63, 123.62, 125.05, 123.29, 120.3, 123.76, 129.99, 132.52, 139.82, 141.08, 145.58, 147.39, 151.39, 160.24, 151.66, 156.99, 161.36, 169.66, 169.77, 179.79, 196.22, 177.04, 167.57, 169.09, 164.05, 169.97, 165.99, 160.07, 161.78, 160.31, 173.59, 179.38, 185.99, 191.75, 199.13, 196.95, 208.63, 228.8, 233.23, 222.86, 231.34, 235.84, 251.64, 257.63, 213.74, 226.0, 255.99], "spark_svg": "\u003csvg class=\"nch\" viewBox=\"0 0 200 40\" preserveAspectRatio=\"none\" width=\"100%\" height=\"40\"\u003e\u003cpolyline points=\"0,40 0.0,39.9 2.4,39.5 4.8,39.8 7.2,39.4 9.6,39.5 12.0,39.4 14.5,39.3 16.9,39.3 19.3,40.0 21.7,39.4 24.1,39.4 26.5,39.2 28.9,39.7 31.3,39.8 33.7,39.6 36.1,39.8 38.6,39.5 41.0,39.1 43.4,38.3 45.8,38.0 48.2,37.9 50.6,38.0 53.0,38.2 55.4,37.6 57.8,37.7 60.2,37.7 62.7,36.6 65.1,36.1 67.5,35.7 69.9,34.7 72.3,33.9 74.7,35.3 77.1,35.1 79.5,35.8 81.9,36.1 84.3,36.8 86.7,36.0 89.2,35.9 91.6,35.4 94.0,35.1 96.4,35.4 98.8,36.0 101.2,35.3 103.6,34.1 106.0,33.7 108.4,32.3 110.8,32.0 113.3,31.1 115.7,30.8 118.1,30.0 120.5,28.3 122.9,30.0 125.3,29.0 127.7,28.1 130.1,26.5 132.5,26.5 134.9,24.6 137.3,21.4 139.8,25.1 142.2,26.9 144.6,26.6 147.0,27.6 149.4,26.5 151.8,27.2 154.2,28.4 156.6,28.0 159.0,28.3 161.4,25.8 163.9,24.6 166.3,23.4 168.7,22.3 171.1,20.8 173.5,21.3 175.9,19.0 178.3,15.1 180.7,14.3 183.1,16.3 185.5,14.7 188.0,13.8 190.4,10.8 192.8,9.6 195.2,18.0 197.6,15.7 200.0,9.9 200,40\" fill=\"var(--up)\" opacity=\"0.12\" stroke=\"none\"/\u003e\u003cpolyline points=\"0.0,39.9 2.4,39.5 4.8,39.8 7.2,39.4 9.6,39.5 12.0,39.4 14.5,39.3 16.9,39.3 19.3,40.0 21.7,39.4 24.1,39.4 26.5,39.2 28.9,39.7 31.3,39.8 33.7,39.6 36.1,39.8 38.6,39.5 41.0,39.1 43.4,38.3 45.8,38.0 48.2,37.9 50.6,38.0 53.0,38.2 55.4,37.6 57.8,37.7 60.2,37.7 62.7,36.6 65.1,36.1 67.5,35.7 69.9,34.7 72.3,33.9 74.7,35.3 77.1,35.1 79.5,35.8 81.9,36.1 84.3,36.8 86.7,36.0 89.2,35.9 91.6,35.4 94.0,35.1 96.4,35.4 98.8,36.0 101.2,35.3 103.6,34.1 106.0,33.7 108.4,32.3 110.8,32.0 113.3,31.1 115.7,30.8 118.1,30.0 120.5,28.3 122.9,30.0 125.3,29.0 127.7,28.1 130.1,26.5 132.5,26.5 134.9,24.6 137.3,21.4 139.8,25.1 142.2,26.9 144.6,26.6 147.0,27.6 149.4,26.5 151.8,27.2 154.2,28.4 156.6,28.0 159.0,28.3 161.4,25.8 163.9,24.6 166.3,23.4 168.7,22.3 171.1,20.8 173.5,21.3 175.9,19.0 178.3,15.1 180.7,14.3 183.1,16.3 185.5,14.7 188.0,13.8 190.4,10.8 192.8,9.6 195.2,18.0 197.6,15.7 200.0,9.9\" fill=\"none\" stroke=\"var(--up)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/\u003e\u003ccircle cx=\"200.0\" cy=\"9.9\" r=\"2.6\" fill=\"var(--up)\"/\u003e\u003c/svg\u003e"}, {"above_200d_usd": true, "cc": "TW", "flag": "\ud83c\uddf9\ud83c\uddfc", "index_name": "TAIEX", "name": "Taiwan", "name_zh": "\u53f0\u6e7e", "region": "Asia", "returns": {"12m": {"fx": -17.8, "local": 105.0, "usd": 87.1}, "1m": {"fx": 0.6, "local": 15.6, "usd": 16.2}, "3m": {"fx": 2.0, "local": 41.4, "usd": 43.5}, "6m": {"fx": -0.3, "local": 64.4, "usd": 64.1}, "ytd": {"fx": -1.6, "local": 59.8, "usd": 58.2}}, "spark": [100.0, 102.5, 100.57, 101.71, 102.5, 103.86, 104.52, 102.27, 102.44, 102.39, 105.7, 105.83, 106.03, 101.81, 104.94, 102.97, 102.89, 107.13, 109.95, 110.68, 111.97, 112.04, 110.82, 114.84, 115.86, 114.78, 118.08, 118.57, 116.95, 121.11, 120.34, 118.06, 117.3, 115.07, 111.72, 110.56, 115.27, 114.77, 116.62, 119.19, 116.32, 113.52, 117.37, 120.03, 122.57, 126.34, 126.48, 127.82, 131.6, 132.29, 137.85, 130.9, 131.32, 136.99, 139.84, 140.02, 140.11, 148.06, 142.29, 137.67, 140.36, 135.52, 137.5, 133.81, 135.57, 135.79, 133.22, 143.67, 149.96, 152.46, 157.29, 164.73, 160.9, 168.67, 173.25, 171.7, 169.24, 171.19, 180.93, 186.1, 192.94, 180.04, 178.23, 190.0], "spark_svg": "\u003csvg class=\"nch\" viewBox=\"0 0 200 40\" preserveAspectRatio=\"none\" width=\"100%\" height=\"40\"\u003e\u003cpolyline points=\"0,40 0.0,40.0 2.4,39.2 4.8,39.8 7.2,39.4 9.6,39.2 12.0,38.7 14.5,38.5 16.9,39.3 19.3,39.2 21.7,39.2 24.1,38.1 26.5,38.1 28.9,38.0 31.3,39.4 33.7,38.4 36.1,39.0 38.6,39.1 41.0,37.7 43.4,36.7 45.8,36.5 48.2,36.1 50.6,36.1 53.0,36.5 55.4,35.1 57.8,34.8 60.2,35.2 62.7,34.1 65.1,33.9 67.5,34.5 69.9,33.1 72.3,33.3 74.7,34.1 77.1,34.3 79.5,35.1 81.9,36.2 84.3,36.5 86.7,35.0 89.2,35.2 91.6,34.6 94.0,33.7 96.4,34.7 98.8,35.6 101.2,34.3 103.6,33.4 106.0,32.6 108.4,31.4 110.8,31.3 113.3,30.9 115.7,29.7 118.1,29.4 120.5,27.6 122.9,29.9 125.3,29.8 127.7,27.9 130.1,27.0 132.5,26.9 134.9,26.9 137.3,24.3 139.8,26.2 142.2,27.7 144.6,26.8 147.0,28.4 149.4,27.7 151.8,28.9 154.2,28.4 156.6,28.3 159.0,29.1 161.4,25.7 163.9,23.7 166.3,22.8 168.7,21.3 171.1,18.8 173.5,20.1 175.9,17.5 178.3,16.0 180.7,16.5 183.1,17.4 185.5,16.7 188.0,13.5 190.4,11.8 192.8,9.6 195.2,13.8 197.6,14.4 200.0,10.6 200,40\" fill=\"var(--up)\" opacity=\"0.12\" stroke=\"none\"/\u003e\u003cpolyline points=\"0.0,40.0 2.4,39.2 4.8,39.8 7.2,39.4 9.6,39.2 12.0,38.7 14.5,38.5 16.9,39.3 19.3,39.2 21.7,39.2 24.1,38.1 26.5,38.1 28.9,38.0 31.3,39.4 33.7,38.4 36.1,39.0 38.6,39.1 41.0,37.7 43.4,36.7 45.8,36.5 48.2,36.1 50.6,36.1 53.0,36.5 55.4,35.1 57.8,34.8 60.2,35.2 62.7,34.1 65.1,33.9 67.5,34.5 69.9,33.1 72.3,33.3 74.7,34.1 77.1,34.3 79.5,35.1 81.9,36.2 84.3,36.5 86.7,35.0 89.2,35.2 91.6,34.6 94.0,33.7 96.4,34.7 98.8,35.6 101.2,34.3 103.6,33.4 106.0,32.6 108.4,31.4 110.8,31.3 113.3,30.9 115.7,29.7 118.1,29.4 120.5,27.6 122.9,29.9 125.3,29.8 127.7,27.9 130.1,27.0 132.5,26.9 134.9,26.9 137.3,24.3 139.8,26.2 142.2,27.7 144.6,26.8 147.0,28.4 149.4,27.7 151.8,28.9 154.2,28.4 156.6,28.3 159.0,29.1 161.4,25.7 163.9,23.7 166.3,22.8 168.7,21.3 171.1,18.8 173.5,20.1 175.9,17.5 178.3,16.0 180.7,16.5 183.1,17.4 185.5,16.7 188.0,13.5 190.4,11.8 192.8,9.6 195.2,13.8 197.6,14.4 200.0,10.6\" fill=\"none\" stroke=\"var(--up)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/\u003e\u003ccircle cx=\"200.0\" cy=\"10.6\" r=\"2.6\" fill=\"var(--up)\"/\u003e\u003c/svg\u003e"}, {"above_200d_usd": true, "cc": "JP", "flag": "\ud83c\uddef\ud83c\uddf5", "index_name": "Nikkei 225", "name": "Japan", "name_zh": "\u65e5\u672c", "region": "Asia", "returns": {"12m": {"fx": -17.6, "local": 75.7, "usd": 58.1}, "1m": {"fx": -1.2, "local": 18.9, "usd": 17.8}, "3m": {"fx": -1.2, "local": 38.1, "usd": 36.9}, "6m": {"fx": -3.3, "local": 41.1, "usd": 37.8}, "ytd": {"fx": -3.7, "local": 41.3, "usd": 37.6}}, "spark": [100.0, 98.95, 97.52, 96.34, 96.95, 97.04, 101.42, 98.49, 98.34, 100.32, 103.71, 105.62, 104.4, 104.57, 104.55, 103.45, 104.27, 106.96, 109.03, 110.91, 110.75, 108.84, 108.26, 115.25, 114.43, 110.52, 113.99, 116.74, 118.68, 120.86, 120.1, 118.21, 119.19, 117.07, 114.13, 111.5, 115.64, 115.09, 117.1, 115.76, 114.57, 114.43, 115.93, 116.13, 115.51, 119.27, 118.11, 122.85, 120.48, 122.17, 125.87, 122.01, 123.34, 132.79, 134.0, 134.18, 132.41, 135.27, 128.7, 126.97, 125.15, 121.14, 120.12, 118.57, 120.19, 121.87, 120.22, 126.71, 130.73, 132.1, 134.45, 136.43, 133.1, 136.15, 143.81, 144.31, 137.69, 139.61, 147.05, 149.77, 153.77, 143.61, 143.86, 155.77], "spark_svg": "\u003csvg class=\"nch\" viewBox=\"0 0 200 40\" preserveAspectRatio=\"none\" width=\"100%\" height=\"40\"\u003e\u003cpolyline points=\"0,40 0.0,38.1 2.4,38.7 4.8,39.4 7.2,40.0 9.6,39.7 12.0,39.6 14.5,37.4 16.9,38.9 19.3,39.0 21.7,38.0 24.1,36.2 26.5,35.3 28.9,35.9 31.3,35.8 33.7,35.8 36.1,36.4 38.6,35.9 41.0,34.6 43.4,33.5 45.8,32.5 48.2,32.6 50.6,33.6 53.0,33.9 55.4,30.3 57.8,30.7 60.2,32.7 62.7,31.0 65.1,29.6 67.5,28.6 69.9,27.5 72.3,27.8 74.7,28.8 77.1,28.3 79.5,29.4 81.9,30.9 84.3,32.2 86.7,30.1 89.2,30.4 91.6,29.4 94.0,30.1 96.4,30.7 98.8,30.7 101.2,30.0 103.6,29.9 106.0,30.2 108.4,28.3 110.8,28.9 113.3,26.4 115.7,27.7 118.1,26.8 120.5,24.9 122.9,26.9 125.3,26.2 127.7,21.4 130.1,20.7 132.5,20.6 134.9,21.5 137.3,20.1 139.8,23.4 142.2,24.3 144.6,25.3 147.0,27.3 149.4,27.8 151.8,28.6 154.2,27.8 156.6,26.9 159.0,27.8 161.4,24.5 163.9,22.4 166.3,21.7 168.7,20.5 171.1,19.5 173.5,21.2 175.9,19.6 178.3,15.7 180.7,15.5 183.1,18.8 185.5,17.9 188.0,14.1 190.4,12.7 192.8,10.6 195.2,15.8 197.6,15.7 200.0,9.6 200,40\" fill=\"var(--up)\" opacity=\"0.12\" stroke=\"none\"/\u003e\u003cpolyline points=\"0.0,38.1 2.4,38.7 4.8,39.4 7.2,40.0 9.6,39.7 12.0,39.6 14.5,37.4 16.9,38.9 19.3,39.0 21.7,38.0 24.1,36.2 26.5,35.3 28.9,35.9 31.3,35.8 33.7,35.8 36.1,36.4 38.6,35.9 41.0,34.6 43.4,33.5 45.8,32.5 48.2,32.6 50.6,33.6 53.0,33.9 55.4,30.3 57.8,30.7 60.2,32.7 62.7,31.0 65.1,29.6 67.5,28.6 69.9,27.5 72.3,27.8 74.7,28.8 77.1,28.3 79.5,29.4 81.9,30.9 84.3,32.2 86.7,30.1 89.2,30.4 91.6,29.4 94.0,30.1 96.4,30.7 98.8,30.7 101.2,30.0 103.6,29.9 106.0,30.2 108.4,28.3 110.8,28.9 113.3,26.4 115.7,27.7 118.1,26.8 120.5,24.9 122.9,26.9 125.3,26.2 127.7,21.4 130.1,20.7 132.5,20.6 134.9,21.5 137.3,20.1 139.8,23.4 142.2,24.3 144.6,25.3 147.0,27.3 149.4,27.8 151.8,28.6 154.2,27.8 156.6,26.9 159.0,27.8 161.4,24.5 163.9,22.4 166.3,21.7 168.7,20.5 171.1,19.5 173.5,21.2 175.9,19.6 178.3,15.7 180.7,15.5 183.1,18.8 185.5,17.9 188.0,14.1 190.4,12.7 192.8,10.6 195.2,15.8 197.6,15.7 200.0,9.6\" fill=\"none\" stroke=\"var(--up)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/\u003e\u003ccircle cx=\"200.0\" cy=\"9.6\" r=\"2.6\" fill=\"var(--up)\"/\u003e\u003c/svg\u003e"}, {"above_200d_usd": true, "cc": "GB", "flag": "\ud83c\uddec\ud83c\udde7", "index_name": "FTSE 100", "name": "United Kingdom", "name_zh": "\u82f1\u56fd", "region": "Europe", "returns": {"12m": {"fx": -3.6, "local": 19.4, "usd": 15.8}, "1m": {"fx": -0.7, "local": 0.7, "usd": 0.1}, "3m": {"fx": -0.2, "local": 6.2, "usd": 6.0}, "6m": {"fx": -0.5, "local": 6.5, "usd": 6.0}, "ytd": {"fx": -1.2, "local": 5.8, "usd": 4.6}}, "spark": [100.0, 100.2, 100.36, 101.01, 99.47, 100.6, 103.24, 101.55, 99.66, 101.4, 102.12, 103.72, 103.27, 104.07, 103.79, 103.32, 103.07, 104.21, 104.86, 104.6, 103.36, 103.12, 104.53, 106.18, 106.62, 104.77, 105.23, 105.14, 106.95, 107.78, 106.01, 105.72, 108.49, 106.12, 103.99, 103.89, 106.82, 106.62, 107.14, 106.87, 108.45, 109.47, 110.82, 110.79, 111.55, 112.86, 113.0, 114.51, 113.05, 113.94, 116.79, 117.69, 117.03, 117.87, 118.37, 120.59, 120.3, 122.35, 116.97, 114.29, 115.59, 113.72, 111.06, 111.3, 110.59, 114.2, 114.49, 118.16, 119.29, 120.04, 117.75, 116.05, 116.47, 115.04, 115.41, 116.29, 114.31, 116.72, 117.8, 116.43, 115.65, 115.09, 114.54, 117.13], "spark_svg": "\u003csvg class=\"nch\" viewBox=\"0 0 200 40\" preserveAspectRatio=\"none\" width=\"100%\" height=\"40\"\u003e\u003cpolyline points=\"0,40 0.0,39.3 2.4,39.0 4.8,38.8 7.2,38.0 9.6,40.0 12.0,38.5 14.5,35.0 16.9,37.2 19.3,39.7 21.7,37.4 24.1,36.5 26.5,34.4 28.9,35.0 31.3,33.9 33.7,34.3 36.1,34.9 38.6,35.2 41.0,33.7 43.4,32.8 45.8,33.2 48.2,34.8 50.6,35.2 53.0,33.3 55.4,31.1 57.8,30.5 60.2,33.0 62.7,32.3 65.1,32.5 67.5,30.1 69.9,29.0 72.3,31.3 74.7,31.7 77.1,28.0 79.5,31.2 81.9,34.0 84.3,34.1 86.7,30.2 89.2,30.5 91.6,29.8 94.0,30.2 96.4,28.1 98.8,26.7 101.2,24.9 103.6,25.0 106.0,23.9 108.4,22.2 110.8,22.0 113.3,20.0 115.7,22.0 118.1,20.8 120.5,17.0 122.9,15.8 125.3,16.7 127.7,15.6 130.1,14.9 132.5,11.9 134.9,12.3 137.3,9.6 139.8,16.7 142.2,20.3 144.6,18.6 147.0,21.1 149.4,24.6 151.8,24.3 154.2,25.2 156.6,20.4 159.0,20.0 161.4,15.2 163.9,13.7 166.3,12.7 168.7,15.7 171.1,18.0 173.5,17.4 175.9,19.3 178.3,18.8 180.7,17.7 183.1,20.3 185.5,17.1 188.0,15.6 190.4,17.5 192.8,18.5 195.2,19.2 197.6,20.0 200.0,16.5 200,40\" fill=\"var(--up)\" opacity=\"0.12\" stroke=\"none\"/\u003e\u003cpolyline points=\"0.0,39.3 2.4,39.0 4.8,38.8 7.2,38.0 9.6,40.0 12.0,38.5 14.5,35.0 16.9,37.2 19.3,39.7 21.7,37.4 24.1,36.5 26.5,34.4 28.9,35.0 31.3,33.9 33.7,34.3 36.1,34.9 38.6,35.2 41.0,33.7 43.4,32.8 45.8,33.2 48.2,34.8 50.6,35.2 53.0,33.3 55.4,31.1 57.8,30.5 60.2,33.0 62.7,32.3 65.1,32.5 67.5,30.1 69.9,29.0 72.3,31.3 74.7,31.7 77.1,28.0 79.5,31.2 81.9,34.0 84.3,34.1 86.7,30.2 89.2,30.5 91.6,29.8 94.0,30.2 96.4,28.1 98.8,26.7 101.2,24.9 103.6,25.0 106.0,23.9 108.4,22.2 110.8,22.0 113.3,20.0 115.7,22.0 118.1,20.8 120.5,17.0 122.9,15.8 125.3,16.7 127.7,15.6 130.1,14.9 132.5,11.9 134.9,12.3 137.3,9.6 139.8,16.7 142.2,20.3 144.6,18.6 147.0,21.1 149.4,24.6 151.8,24.3 154.2,25.2 156.6,20.4 159.0,20.0 161.4,15.2 163.9,13.7 166.3,12.7 168.7,15.7 171.1,18.0 173.5,17.4 175.9,19.3 178.3,18.8 180.7,17.7 183.1,20.3 185.5,17.1 188.0,15.6 190.4,17.5 192.8,18.5 195.2,19.2 197.6,20.0 200.0,16.5\" fill=\"none\" stroke=\"var(--up)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/\u003e\u003ccircle cx=\"200.0\" cy=\"16.5\" r=\"2.6\" fill=\"var(--up)\"/\u003e\u003c/svg\u003e"}, {"above_200d_usd": true, "cc": "EZ", "flag": "\ud83c\uddea\ud83c\uddfa", "index_name": "STOXX Europe 600", "name": "Eurozone", "name_zh": "\u6b27\u5143\u533a", "region": "Europe", "returns": {"12m": {"fx": -1.8, "local": 17.6, "usd": 15.8}, "1m": {"fx": -0.8, "local": 3.1, "usd": 2.3}, "3m": {"fx": -0.4, "local": 10.8, "usd": 10.4}, "6m": {"fx": -1.8, "local": 9.0, "usd": 7.2}, "ytd": {"fx": -2.1, "local": 7.8, "usd": 5.7}}, "spark": [100.0, 101.06, 100.88, 100.89, 99.06, 100.13, 102.29, 100.53, 98.26, 98.68, 100.31, 102.18, 102.52, 102.67, 101.7, 101.55, 101.03, 102.4, 102.55, 102.96, 102.3, 101.78, 103.14, 105.35, 105.33, 103.55, 104.86, 105.15, 105.36, 105.66, 103.91, 102.84, 105.6, 105.31, 102.46, 102.02, 105.08, 105.25, 106.14, 105.89, 107.7, 108.26, 109.11, 109.26, 109.71, 111.38, 111.85, 112.74, 110.51, 112.63, 115.18, 115.21, 113.7, 116.43, 115.47, 117.36, 117.01, 117.83, 111.36, 109.46, 110.2, 107.79, 105.39, 105.9, 104.52, 108.96, 108.16, 112.5, 114.92, 116.29, 113.56, 112.26, 112.5, 112.28, 113.11, 113.02, 111.62, 113.63, 115.11, 114.9, 113.71, 112.84, 112.93, 116.14], "spark_svg": "\u003csvg class=\"nch\" viewBox=\"0 0 200 40\" preserveAspectRatio=\"none\" width=\"100%\" height=\"40\"\u003e\u003cpolyline points=\"0,40 0.0,37.3 2.4,35.7 4.8,35.9 7.2,35.9 9.6,38.8 12.0,37.1 14.5,33.7 16.9,36.5 19.3,40.0 21.7,39.3 24.1,36.8 26.5,33.9 28.9,33.4 31.3,33.1 33.7,34.7 36.1,34.9 38.6,35.7 41.0,33.6 43.4,33.3 45.8,32.7 48.2,33.7 50.6,34.5 53.0,32.4 55.4,29.0 57.8,29.0 60.2,31.8 62.7,29.7 65.1,29.3 67.5,29.0 69.9,28.5 72.3,31.2 74.7,32.9 77.1,28.6 79.5,29.0 81.9,33.5 84.3,34.2 86.7,29.4 89.2,29.1 91.6,27.8 94.0,28.1 96.4,25.3 98.8,24.5 101.2,23.1 103.6,22.9 106.0,22.2 108.4,19.6 110.8,18.9 113.3,17.5 115.7,21.0 118.1,17.7 120.5,13.7 122.9,13.7 125.3,16.0 127.7,11.8 130.1,13.3 132.5,10.3 134.9,10.9 137.3,9.6 139.8,19.7 142.2,22.6 144.6,21.5 147.0,25.2 149.4,28.9 151.8,28.1 154.2,30.3 156.6,23.4 159.0,24.6 161.4,17.9 163.9,14.1 166.3,12.0 168.7,16.2 171.1,18.3 173.5,17.9 175.9,18.2 178.3,16.9 180.7,17.1 183.1,19.2 185.5,16.1 188.0,13.8 190.4,14.2 192.8,16.0 195.2,17.4 197.6,17.2 200.0,12.2 200,40\" fill=\"var(--up)\" opacity=\"0.12\" stroke=\"none\"/\u003e\u003cpolyline points=\"0.0,37.3 2.4,35.7 4.8,35.9 7.2,35.9 9.6,38.8 12.0,37.1 14.5,33.7 16.9,36.5 19.3,40.0 21.7,39.3 24.1,36.8 26.5,33.9 28.9,33.4 31.3,33.1 33.7,34.7 36.1,34.9 38.6,35.7 41.0,33.6 43.4,33.3 45.8,32.7 48.2,33.7 50.6,34.5 53.0,32.4 55.4,29.0 57.8,29.0 60.2,31.8 62.7,29.7 65.1,29.3 67.5,29.0 69.9,28.5 72.3,31.2 74.7,32.9 77.1,28.6 79.5,29.0 81.9,33.5 84.3,34.2 86.7,29.4 89.2,29.1 91.6,27.8 94.0,28.1 96.4,25.3 98.8,24.5 101.2,23.1 103.6,22.9 106.0,22.2 108.4,19.6 110.8,18.9 113.3,17.5 115.7,21.0 118.1,17.7 120.5,13.7 122.9,13.7 125.3,16.0 127.7,11.8 130.1,13.3 132.5,10.3 134.9,10.9 137.3,9.6 139.8,19.7 142.2,22.6 144.6,21.5 147.0,25.2 149.4,28.9 151.8,28.1 154.2,30.3 156.6,23.4 159.0,24.6 161.4,17.9 163.9,14.1 166.3,12.0 168.7,16.2 171.1,18.3 173.5,17.9 175.9,18.2 178.3,16.9 180.7,17.1 183.1,19.2 185.5,16.1 188.0,13.8 190.4,14.2 192.8,16.0 195.2,17.4 197.6,17.2 200.0,12.2\" fill=\"none\" stroke=\"var(--up)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/\u003e\u003ccircle cx=\"200.0\" cy=\"12.2\" r=\"2.6\" fill=\"var(--up)\"/\u003e\u003c/svg\u003e"}], "risk_appetite": {"breadth_above_200d": "5/5", "label_en": "Risk-on", "label_zh": "\u98ce\u9669\u504f\u597d", "median_mom_3m": 36.9, "score": 100.0, "tone": "up"}, "rrg": {"benchmark": "^GSPC", "median_mom": 8.8, "n": 5, "n_leading": 3, "n_outperf_6m": 5, "rows": [{"cc": "KR", "flag": "\ud83c\uddf0\ud83c\uddf7", "name": "South Korea", "name_zh": "\u97e9\u56fd", "q": "lead", "quad": "leading", "region": "Asia", "rel_ret": {"12m": 103.5, "3m": 28.0, "6m": 76.1}, "rs_level": 152.1, "rs_mom": 28.0}, {"cc": "TW", "flag": "\ud83c\uddf9\ud83c\uddfc", "name": "Taiwan", "name_zh": "\u53f0\u6e7e", "q": "lead", "quad": "leading", "region": "Asia", "rel_ret": {"12m": 50.8, "3m": 19.2, "6m": 42.2}, "rs_level": 131.3, "rs_mom": 19.2}, {"cc": "JP", "flag": "\ud83c\uddef\ud83c\uddf5", "name": "Japan", "name_zh": "\u65e5\u672c", "q": "lead", "quad": "leading", "region": "Asia", "rel_ret": {"12m": 26.0, "3m": 8.8, "6m": 18.4}, "rs_level": 114.3, "rs_mom": 8.8}, {"cc": "EZ", "flag": "\ud83c\uddea\ud83c\uddfa", "name": "Eurozone", "name_zh": "\u6b27\u5143\u533a", "q": "lag", "quad": "lagging", "region": "Europe", "rel_ret": {"12m": -5.9, "3m": -4.7, "6m": 1.0}, "rs_level": 97.9, "rs_mom": -4.7}, {"cc": "GB", "flag": "\ud83c\uddec\ud83c\udde7", "name": "United Kingdom", "name_zh": "\u82f1\u56fd", "q": "lag", "quad": "lagging", "region": "Europe", "rel_ret": {"12m": -4.9, "3m": -8.5, "6m": 1.3}, "rs_level": 97.1, "rs_mom": -8.5}], "tilt": "mixed", "tilt_en": "Mixed \u2014 no decisive US/ex-US rotation", "tilt_zh": "\u5206\u5316 \u2014 \u7f8e\u56fd\u4e0e\u975e\u7f8e\u65e0\u660e\u663e\u8f6e\u52a8"}};</script>
+<script>
+(function(){
+  var P = window.INTL_PERF; if (!P || !P.leaderboard) return;
+  var board = document.getElementById('lb-board'); if (!board) return;
+  function fmt(x){ return (x >= 0 ? '+' : '') + x.toFixed(1) + '%'; }
+  function render(h){
+    var rows = P.leaderboard.filter(function(b){ return b.returns[h]; });
+    rows.sort(function(a, b){ return b.returns[h].usd - a.returns[h].usd; });
+    var maxabs = 1;
+    rows.forEach(function(r){ var x = r.returns[h]; maxabs = Math.max(maxabs, Math.abs(x.usd), Math.abs(x.local)); });
+    function px(v){ return 50 + (v / maxabs) * 48; }   // % on the axis, 0 at centre (50%)
+    board.innerHTML = rows.map(function(r){
+      var x = r.returns[h], usd = x.usd, loc = x.local, fxc = x.fx;
+      var x0 = px(0), xl = px(loc), xu = px(usd);
+      var eqL = Math.min(x0, xl), eqW = Math.abs(xl - x0);
+      var fxL = Math.min(xl, xu), fxW = Math.abs(xu - xl);
+      var fxCls = fxc >= 0 ? 'fx-pos' : 'fx-neg';
+      return '<div class="lb-row">'
+        + '<div class="eco"><span class="flg">' + r.flag + '</span><span>'
+          + '<span class="l-en">' + r.name + '</span><span class="l-zh">' + (r.name_zh || r.name) + '</span>'
+          + '<small>' + r.index_name + '</small></span></div>'
+        + '<div class="lb-spark">' + (r.spark_svg || '') + '</div>'
+        + '<div class="lb-bar"><div class="axis"></div>'
+          + '<div class="lb-seg equity" style="left:' + eqL + '%;width:' + eqW + '%"></div>'
+          + '<div class="lb-seg ' + fxCls + '" style="left:' + fxL + '%;width:' + fxW + '%"></div>'
+          + '<div class="lb-usd" style="left:' + xu + '%"></div></div>'
+        + '<div class="lb-vals"><span class="big ' + (usd >= 0 ? 'pos' : 'neg') + '">' + fmt(usd) + '</span>'
+          + '<small><span class="l-en">eq </span><span class="l-zh">股 </span>' + fmt(loc)
+          + ' · <span class="l-en">fx </span><span class="l-zh">汇 </span>' + fmt(fxc) + '</small></div>'
+        + '</div>';
+    }).join('');
+  }
+  render('12m');
+  var seg = document.getElementById('lb-seg');
+  if (seg) seg.querySelectorAll('button').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      seg.querySelectorAll('button').forEach(function(b){ b.classList.remove('on'); });
+      btn.classList.add('on'); render(btn.dataset.h);
+    });
+  });
+})();
+</script>
+
 <script src="theme.js"></script>
 <script src="tablesort.js"></script>
 </body>

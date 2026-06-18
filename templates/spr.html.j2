@@ -102,6 +102,10 @@ html[data-theme="dark"] .pill{background:var(--grid)}
 .tbadge{display:inline-block;padding:1px 7px;border-radius:6px;font-size:10.5px;font-weight:700;white-space:nowrap}
 .tb-gov{background:#E3F5E9;color:var(--green)} .tb-ind{background:#E8EEFF;color:var(--blue)}
 .tb-com{background:var(--grid);color:var(--muted)} .tb-est{background:#FFF2D9;color:#9a6a00}
+.trd{display:inline-block;padding:1px 7px;border-radius:6px;font-size:10.5px;font-weight:700;white-space:nowrap}
+.trd-accumulating{background:#E3F5E9;color:var(--green)} .trd-stable{background:var(--grid);color:var(--muted)} .trd-reducing{background:#FDEBEB;color:var(--red)}
+.sharebar{position:relative;height:7px;border-radius:5px;background:var(--grid);width:96px;margin-top:5px;overflow:hidden}
+.sharebar .sf{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:linear-gradient(90deg,#C8A53B,#e8c15a)}
 .qbadge{display:inline-block;padding:1px 6px;border-radius:5px;font-size:10px;font-weight:700;background:var(--grid);color:var(--muted);margin-left:5px}
 .qbadge.q1{background:#E3F5E9;color:var(--green)} .qbadge.q3{background:#FFF2D9;color:#9a6a00}
 .caveat{margin-top:2px;padding:13px 16px;border:1px solid var(--grid);border-radius:12px;background:var(--bg);font-size:13px;line-height:1.6;color:var(--text)}
@@ -248,9 +252,45 @@ html[data-theme="dark"] .iea-row .ie{background:var(--grid)}
     </div>
   </div>
 
+  <!-- ===================== OFFICIAL GOLD RESERVES ===================== -->
+  {% if gold and gold.rows %}
+  <div class="section-title">{{ t('Official gold reserves — central banks', '官方黄金储备 — 央行') }}</div>
+  <div class="card">
+    <div class="iea-row" style="margin-bottom:6px">
+      {% if gold.top_tonnes %}<div class="ie"><div class="k">{{ t('Top holders (shown)','上榜持有量') }}</div><div class="v">{{ '{:,.0f}'.format(gold.top_tonnes) }}</div><div class="h">{{ t('tonnes · official','吨 · 官方') }}</div></div>{% endif %}
+      {% if gold.global_tonnes %}<div class="ie"><div class="k">{{ t('Global official gold','全球官方黄金') }}</div><div class="v">~{{ '{:,.0f}'.format(gold.global_tonnes) }}</div><div class="h">{{ t('tonnes · all central banks','吨 · 全部央行') }}</div></div>{% endif %}
+      <div class="ie" style="flex:2;min-width:240px"><div class="k">{{ t('The structural bid','结构性买盘') }}</div><div class="h" style="font-size:13px;color:var(--text);margin-top:5px">{{ t(gold.note_en, gold.note_zh) }}</div></div>
+    </div>
+    <div class="sub" style="margin:8px 0 12px">{{ t('Tonnes = curated (World Gold Council / IMF IFS, as of','吨位 = 人工整理（世界黄金协会／IMF IFS，截至') }} {{ gold.as_of }}{{ t('). Gold value & share of reserves = live World Bank','）。黄金价值与占储备比例 = 世界银行实时数据') }}{% if gold.wb_year %} ({{ gold.wb_year }}){% endif %}{{ t(', valued at market.','，按市价计。') }}</div>
+    <div class="tbl-scroll">
+    <table class="catbl">
+      <thead><tr>
+        <th>{{ t('Country','国家') }}</th>
+        <th class="r">{{ t('Gold (tonnes)','黄金（吨）') }}</th>
+        <th>{{ t('Trend','趋势') }}</th>
+        <th class="r">{{ t('Gold value','黄金价值') }}</th>
+        <th>{{ t('Share of reserves','占储备比例') }}</th>
+      </tr></thead>
+      <tbody>
+      {% for r in gold.rows %}
+      <tr>
+        <td class="a">{{ r.flag }} {{ t(r.name, r.name_zh) }}</td>
+        <td class="r"><span class="num">{{ '{:,.0f}'.format(r.tonnes) if r.tonnes is not none else '—' }}</span> <span class="sm">t</span></td>
+        <td>{% if r.trend %}<span class="trd trd-{{ r.trend }}">{{ t(r.trend_en, r.trend_zh) }}</span>{% else %}—{% endif %}</td>
+        <td class="r">{% if r.value_usd is not none %}<span class="num">${{ '{:,.0f}'.format(r.value_usd / 1e9) }}B</span>{% if r.value_yoy_pct is not none %}<div class="sm {{ 'up' if r.value_yoy_pct > 0 else ('down' if r.value_yoy_pct < 0 else '') }}">{{ '%+.0f'|format(r.value_yoy_pct) }}%/yr</div>{% endif %}{% else %}<span class="sm">{{ t('n/a','无') }}</span>{% endif %}</td>
+        <td>{% if r.share_pct is not none %}<span class="num">{{ r.share_pct }}%</span><div class="sharebar"><div class="sf" style="width:{{ r.share_pct }}%"></div></div>{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    <div class="caveat" style="margin-top:14px"><div class="hd">{{ t('How to read this','如何解读') }}</div>{{ t(gold.caveat_en, gold.caveat_zh) }}</div>
+  </div>
+  {% endif %}
+
   <div class="foot">
     {{ t('Strategic Reserves · built','战略储备 · 生成于') }} {{ built }} · {{ t('data as of','数据截至') }} {{ as_of }}.
-    {{ t('Sources: US SPR — EIA Weekly Petroleum Status Report (live). National crude stocks — JODI-Oil World Database (monthly, total stocks, reconciled to barrels). Strategic-reserve figures — EIA, IEA & national agencies (ISPRL, METI), each dated above.','数据来源：美国战略储备 — EIA 每周石油状况报告（实时）。各国原油库存 — JODI 石油世界数据库（月度，总库存，已换算为桶）。战略储备数据 — EIA、IEA 及各国机构（ISPRL、METI），均在上表注明日期。') }}
+    {{ t('Sources: US SPR — EIA Weekly Petroleum Status Report (live). National crude stocks — JODI-Oil World Database (monthly, total stocks, reconciled to barrels). Strategic-reserve figures — EIA, IEA & national agencies (ISPRL, METI), each dated above. Official gold — World Bank (value & share of reserves, live) + World Gold Council / IMF IFS (tonnes, curated).','数据来源：美国战略储备 — EIA 每周石油状况报告（实时）。各国原油库存 — JODI 石油世界数据库（月度，总库存，已换算为桶）。战略储备数据 — EIA、IEA 及各国机构（ISPRL、METI），均在上表注明日期。官方黄金 — 世界银行（价值与占储备比例，实时）+ 世界黄金协会／IMF IFS（吨位，人工整理）。') }}
     {{ t('Display-only and never scored — strategic reserves are a policy lever, not a forecasting signal. Not investment advice.','仅供展示，从不计入评分——战略储备是政策杠杆，而非预测信号。非投资建议。') }}
     {{ t('Limitations:','局限性：') }} <a href="https://github.com/chriswong6031-creator/macro/blob/main/LIMITATIONS.md">LIMITATIONS.md</a>.
   </div>

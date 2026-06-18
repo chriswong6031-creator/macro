@@ -147,7 +147,37 @@ def gather_thematic_state(region: str, root=None) -> dict | None:
     if isinstance(track, dict):
         tr = (track.get("by_market") or {}).get(region) or track.get("overall")
     return {"as_of": nr.get("as_of"), "region": region, "market": nr.get("market"),
-            "narrative_rotation": nr, "track_record": tr}
+            "narrative_rotation": nr, "track_record": tr, "macro_narrative": _macro_narrative(root),
+            "theme_candidates": _theme_candidates(region, root)}
+
+
+def _theme_candidates(region: str, root) -> dict | None:
+    """Slim view of the theme-discovery radar (US only) — coherent NEW groups of names not in
+    a basket, for the narrative-scout to consider. DISPLAY-ONLY candidate generator; flags are
+    noisy and carry NO forward edge (data/theme_discovery/phase0.json). Never a buy list."""
+    if region != "us":
+        return None
+    d = _ad._read_json(Path(root) / "site" / "allocationdata" / "theme_candidates.json")
+    if not d or not d.get("candidates"):
+        return None
+    cands = [{"label": c.get("label"), "n": c.get("n"), "cohesion": c.get("cohesion"),
+              "cohesion_chg": c.get("cohesion_chg"), "ipo_wave": c.get("ipo_wave"),
+              "tickers": [m.get("ticker") for m in (c.get("constituents") or [])][:8]}
+             for c in d["candidates"][:5]]
+    return {"candidates": cands, "verdict": d.get("verdict"),
+            "note": "noisy candidate radar — for human review/watchlist, NO forward edge, never a buy"}
+
+
+def _macro_narrative(root=None) -> dict | None:
+    """A slim MARKET-LEVEL narrative backdrop (which macro/policy/geo narrative dominates
+    headlines + the unscheduled-surprise share) — COINCIDENT context for the desk's regime
+    read; NOT per-theme news and NEVER a buy/sell trigger. Read from the JSON artifact the
+    BUILD writes (scripts.build_allocation._run_macro_narrative, which owns the GDELT news
+    bus) so engine/ stays free of that bus module (the scoring-isolation invariant). None
+    when absent. Never raises."""
+    root = Path(root) if root else config.ROOT
+    d = _ad._read_json(root / "site" / "allocationdata" / "macro_narrative.json")
+    return d if isinstance(d, dict) and d.get("dominant_themes") else None
 
 
 # --------------------------------------------------------------------------- #
@@ -245,7 +275,11 @@ _SYSTEM = (
     "- Therefore NEVER claim the detector 'predicts' returns. Your leans are YOUR fallible "
     "judgement EXPRESSED AS FALSIFIABLE CONDITIONALS — not edge extracted from the detector.\n"
     "- Honour EVERY item in narrative_rotation.guardrails.do_not_conclude and "
-    ".ai_directive.\n\n"
+    ".ai_directive.\n"
+    "- A state.macro_narrative backdrop (which macro/policy/geo narrative dominates "
+    "headlines + the unscheduled-surprise share) may be present. It is COINCIDENT, "
+    "market-level context for the regime read — NOT per-theme news and NEVER a buy "
+    "trigger.\n\n"
     "Rules:\n"
     "- Reason ONLY over the provided JSON state + well-known market structure. NEVER fabricate "
     "a level, score or event. If the state doesn't support a view, return fewer (or zero) "
@@ -306,14 +340,20 @@ _PANEL_SYSTEMS = {
         "Put the sharpest bear case on each long." + _PANEL_CAVEAT),
     "narrative_scout": (
         "ROLE: NARRATIVE-EMERGENCE SCOUT. Look for ONE early-hypothesis worth watching — a theme "
-        "whose leadership may be FORMING or FADING — and give it a kill-criterion. Remember "
-        "emergence usually reads LATE and attention/inflow spikes mark TOPS, so a watch is a "
-        "hypothesis to grade, never a buy. Put it in emerging_watch; keep theses minimal." + _PANEL_CAVEAT),
+        "whose leadership may be FORMING or FADING — and give it a kill-criterion. You may draw "
+        "on state.theme_candidates (a DISPLAY-ONLY radar of coherent NEW name-groups not yet in a "
+        "basket) — but it is NOISY (only ~10% persist) and has NO forward edge, so treat any "
+        "candidate as a watch-hypothesis to grade, never a buy, and let IPO-wave/hype RAISE the "
+        "bar. Remember emergence usually reads LATE and attention/inflow spikes mark TOPS. Put it "
+        "in emerging_watch; keep theses minimal." + _PANEL_CAVEAT),
     "macro_regime": (
-        "ROLE: MACRO-REGIME analyst. Read only the regime signals — breadth-of-rotation, the "
-        "one-narrative/absorption gauge, gate_helps, and the headline cash level. Say whether "
-        "the regime supports risk-on theme exposure AT ALL, or argues for more cash / smaller "
-        "size. Do not pick individual winners." + _PANEL_CAVEAT),
+        "ROLE: MACRO-REGIME analyst. Read the regime signals — breadth-of-rotation, the "
+        "one-narrative/absorption gauge, gate_helps, the headline cash level — AND the "
+        "state.macro_narrative backdrop (which macro/policy/geo narrative is dominating "
+        "headlines + the unscheduled/surprise share). Say whether the regime supports risk-on "
+        "theme exposure AT ALL, or argues for more cash / smaller size. The news backdrop is "
+        "COINCIDENT market-level context (not per-theme) — use it to read risk appetite, never "
+        "as a buy trigger. Do not pick individual winners." + _PANEL_CAVEAT),
 }
 
 _ADJ_SYSTEM = (
@@ -393,6 +433,7 @@ def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
         "model": cfg.get("llm_model", "deepseek-v4-pro"),
         "regime_context": None, "emerging_watch": None, "theses": [],
         "track_record": state.get("track_record"), "confidence": "low",
+        "macro_narrative": state.get("macro_narrative"),    # coincident backdrop, for display
         "raw_text": None, "degraded_reason": None, "disclaimer": DISCLAIMER,
     }
     # adversarial panel (default on) → desk-head adjudication; analyst-only fallback.

@@ -8,7 +8,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from lib import store
+from engine import intl_inputs
 
 # (key, label_en, label_zh, higher_is_riskier) — the comparison metrics ranked
 RANK_METRICS = [
@@ -54,16 +54,16 @@ def regime_heatmap(records: list[dict]) -> list[dict]:
 def periphery_panel() -> dict | None:
     """Eurozone fragmentation: peripheral 10y spreads over the Bund (BTP/Bonos/OAT
     minus DE). Widening = risk-off in the periphery. Display-only."""
-    def s(col):
-        df = store.read("intl_macro", col)
-        return df.iloc[:, 0].dropna() if (df is not None and not df.empty) else None
-
+    s = intl_inputs.read_intl_macro_col      # shared single-column intl_macro reader
     de = s("de_10y")
     if de is None:
         return None
     out = {"asof": str(de.index[-1].date()), "spreads": []}
-    for col, label, flag in [("it_10y", "Italy (BTP)", "🇮🇹"), ("es_10y", "Spain (Bonos)", "🇪🇸"),
-                             ("fr_10y", "France (OAT)", "🇫🇷")]:
+    for col, label, label_zh, flag in [
+        ("it_10y", "Italy (BTP)", "意大利 (BTP)", "🇮🇹"),
+        ("es_10y", "Spain (Bonos)", "西班牙 (Bonos)", "🇪🇸"),
+        ("fr_10y", "France (OAT)", "法国 (OAT)", "🇫🇷"),
+    ]:
         x = s(col)
         if x is None:
             continue
@@ -74,7 +74,7 @@ def periphery_panel() -> dict | None:
         last = float(spread.iloc[-1]) * 100  # -> basis points
         chg3m = (float(spread.iloc[-1] - spread.iloc[-64]) * 100) if len(spread) > 64 else None
         out["spreads"].append({
-            "label": label, "flag": flag, "bps": round(last, 0),
+            "label": label, "label_zh": label_zh, "flag": flag, "bps": round(last, 0),
             "chg3m_bps": round(chg3m, 0) if chg3m is not None else None,
             "widening": bool(chg3m is not None and chg3m > 0),
         })

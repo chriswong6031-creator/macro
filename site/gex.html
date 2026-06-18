@@ -114,6 +114,7 @@
       <div class="nav-dd-menu" role="menu">
         <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
         <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
+        <a href="spr.html">🛢️ <span class="l-en">Strategic Reserves</span><span class="l-zh">战略储备</span><span class="d"><span class="l-en">SPR levels by country vs oil prices</span><span class="l-zh">各国战略储备水平与油价</span></span></a>
       </div>
     </div>
     <a class="nav-link" href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span></a>
@@ -121,7 +122,10 @@
     <div class="nav-dd">
       <a class="nav-link" href="javascript:void(0)">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
+        <a href="reports.html">📰 <span class="l-en">Research Reports</span><span class="l-zh">研究报告</span><span class="d"><span class="l-en">In-depth market &amp; macro reports</span><span class="l-zh">深度市场与宏观报告</span></span></a>
+        <a href="policy_watch.html">🏛️ <span class="l-en">Fed &amp; Policy Watch</span><span class="l-zh">美联储与政策观察</span><span class="d"><span class="l-en">Fed + Administration intent &amp; capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></a>
         <a href="masterminds.html">🧠 <span class="l-en">Masterminds</span><span class="l-zh">操盘大师</span><span class="d"><span class="l-en">Multi-asset active GTAA strategies</span><span class="l-zh">多资产主动配置策略</span></span></a>
+        <a href="transmission.html">🔀 <span class="l-en">Rate &amp; Inflation Transmission</span><span class="l-zh">利率与通胀传导</span><span class="d"><span class="l-en">How rates &amp; inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></a>
         <a href="crossasset.html">🧭 <span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></a>
         <a href="signal_lab.html">🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></a>
         <a href="factors.html">🧮 <span class="l-en">Factors &amp; Seasonality</span><span class="l-zh">因子 &amp; 季节性</span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></a>
@@ -163,18 +167,18 @@
 
 <div class="panel sympanel" id="gx-SPX" data-grp="sym">
   <div class="hero">
-    <span class="regbadge reg-long"><span class="l-en">Long gamma · pins / mean-revert</span><span class="l-zh">多头Gamma · 磁吸/均值回归</span>
+    <span class="regbadge reg-short"><span class="l-en">Short gamma · trends / amplifies</span><span class="l-zh">空头Gamma · 趋势/放大</span>
       <span class="help">?<span class="tip"><span class="l-en">Long gamma (spot above the flip): dealers sell rallies / buy dips → price pins to high-OI strikes, lower realized vol. Short gamma (spot below the flip): dealers chase the move → trends amplify, higher realized vol. Regime, not direction.</span><span class="l-zh">多头Gamma（现价在翻转价之上）：做市商高抛低吸 → 价格磁吸到高未平仓量行权价、波动更低。空头Gamma（现价在翻转价之下）：做市商追涨杀跌 → 趋势放大、波动更高。是体制，非方向。</span></span></span></span>
     <span class="heronum"><span class="muted sm"><span class="l-en">Spot</span><span class="l-zh">现价</span></span> <b>7420.1</b></span>
-    <span class="heronum"><span class="muted sm"><span class="l-en">Net GEX</span><span class="l-zh">净GEX</span></span> <b class="pos">+0.2 $bn</b></span>
-    <span class="heronum"><span class="muted sm"><span class="l-en">Gamma flip</span><span class="l-zh">Gamma翻转</span></span> <b>7419.26</b> <span class="muted sm">(+0.0%)</span></span>
+    <span class="heronum"><span class="muted sm"><span class="l-en">Net GEX</span><span class="l-zh">净GEX</span></span> <b class="neg">-1.1 $bn</b></span>
+    <span class="heronum"><span class="muted sm"><span class="l-en">Gamma flip</span><span class="l-zh">Gamma翻转</span></span> <b>7423.71</b> <span class="muted sm">(-0.1%)</span></span>
   </div>
 
   <div class="cards">
     <div class="gcard"><div class="muted" style="font-size:12px"><span class="l-en">Magnet ↑</span><span class="l-zh">上磁吸</span></div><div class="gval">8000.0</div></div>
     <div class="gcard"><div class="muted" style="font-size:12px"><span class="l-en">Magnet ↓</span><span class="l-zh">下磁吸</span></div><div class="gval">7000.0</div></div>
     <div class="gcard"><div class="muted" style="font-size:12px"><span class="l-en">Charm anchor</span><span class="l-zh">Charm锚</span></div><div class="gval">7100.0</div></div>
-    <div class="gcard"><div class="muted" style="font-size:12px"><span class="l-en">IV30</span><span class="l-zh">IV30</span></div><div class="gval">15.3%</div></div>
+    <div class="gcard"><div class="muted" style="font-size:12px"><span class="l-en">IV30</span><span class="l-zh">IV30</span></div><div class="gval">15.2%</div></div>
     <div class="gcard"><div class="muted" style="font-size:12px"><span class="l-en">Put/call OI</span><span class="l-zh">认沽/认购OI</span></div><div class="gval">1.07</div></div>
     <div class="gcard"><div class="muted" style="font-size:12px"><span class="l-en">Max pain</span><span class="l-zh">最大痛点</span></div><div class="gval">7025.0</div></div>
   </div>
@@ -185,158 +189,158 @@
     
     <div class="lad-row mag">
       <span class="lad-k"><b>8000</b></span>
-      <span class="lad-bar"><i style="left:50%;width:35.5%;background:var(--up)"></i><i class="mid"></i></span>
-      <span class="lad-v pos">2340.5<span class="magtag"><span class="l-en">mag↑</span><span class="l-zh">↑</span></span></span>
+      <span class="lad-bar"><i style="left:50%;width:33.4%;background:var(--up)"></i><i class="mid"></i></span>
+      <span class="lad-v pos">2524.1<span class="magtag"><span class="l-en">mag↑</span><span class="l-zh">↑</span></span></span>
     </div>
     
     <div class="lad-row ">
       <span class="lad-k">7900</span>
-      <span class="lad-bar"><i style="left:50%;width:32.8%;background:var(--up)"></i><i class="mid"></i></span>
-      <span class="lad-v pos">2163.9</span>
+      <span class="lad-bar"><i style="left:50%;width:31.1%;background:var(--up)"></i><i class="mid"></i></span>
+      <span class="lad-v pos">2352.3</span>
     </div>
     
     <div class="lad-row ">
       <span class="lad-k">7800</span>
-      <span class="lad-bar"><i style="left:50%;width:46.5%;background:var(--up)"></i><i class="mid"></i></span>
-      <span class="lad-v pos">3073.9</span>
+      <span class="lad-bar"><i style="left:50%;width:43.6%;background:var(--up)"></i><i class="mid"></i></span>
+      <span class="lad-v pos">3296.1</span>
     </div>
     
     <div class="lad-row ">
       <span class="lad-k">7750</span>
-      <span class="lad-bar"><i style="left:50%;width:22.7%;background:var(--up)"></i><i class="mid"></i></span>
-      <span class="lad-v pos">1497.5</span>
+      <span class="lad-bar"><i style="left:50%;width:22.3%;background:var(--up)"></i><i class="mid"></i></span>
+      <span class="lad-v pos">1688.0</span>
     </div>
     
     <div class="lad-row ">
       <span class="lad-k">7700</span>
       <span class="lad-bar"><i style="left:50%;width:50.0%;background:var(--up)"></i><i class="mid"></i></span>
-      <span class="lad-v pos">3300.0</span>
+      <span class="lad-v pos">3780.7</span>
     </div>
     
     <div class="lad-row ">
       <span class="lad-k">7650</span>
-      <span class="lad-bar"><i style="left:50%;width:30.5%;background:var(--up)"></i><i class="mid"></i></span>
-      <span class="lad-v pos">2013.7</span>
+      <span class="lad-bar"><i style="left:50%;width:30.7%;background:var(--up)"></i><i class="mid"></i></span>
+      <span class="lad-v pos">2321.0</span>
+    </div>
+    
+    <div class="lad-row ">
+      <span class="lad-k">7625</span>
+      <span class="lad-bar"><i style="left:50%;width:14.0%;background:var(--up)"></i><i class="mid"></i></span>
+      <span class="lad-v pos">1059.8</span>
     </div>
     
     <div class="lad-row ">
       <span class="lad-k">7600</span>
-      <span class="lad-bar"><i style="left:50%;width:43.7%;background:var(--up)"></i><i class="mid"></i></span>
-      <span class="lad-v pos">2883.6</span>
+      <span class="lad-bar"><i style="left:50%;width:44.4%;background:var(--up)"></i><i class="mid"></i></span>
+      <span class="lad-v pos">3355.7</span>
     </div>
     
     <div class="lad-row ">
       <span class="lad-k">7575</span>
-      <span class="lad-bar"><i style="left:50%;width:16.7%;background:var(--up)"></i><i class="mid"></i></span>
-      <span class="lad-v pos">1103.0</span>
+      <span class="lad-bar"><i style="left:50%;width:16.0%;background:var(--up)"></i><i class="mid"></i></span>
+      <span class="lad-v pos">1210.1</span>
     </div>
     
     <div class="lad-row ">
       <span class="lad-k">7550</span>
-      <span class="lad-bar"><i style="left:50%;width:14.2%;background:var(--up)"></i><i class="mid"></i></span>
-      <span class="lad-v pos">932.9</span>
+      <span class="lad-bar"><i style="left:50%;width:13.2%;background:var(--up)"></i><i class="mid"></i></span>
+      <span class="lad-v pos">997.4</span>
     </div>
     
     <div class="lad-row ">
       <span class="lad-k">7525</span>
-      <span class="lad-bar"><i style="left:50%;width:14.3%;background:var(--up)"></i><i class="mid"></i></span>
-      <span class="lad-v pos">948.6</span>
+      <span class="lad-bar"><i style="left:50%;width:13.3%;background:var(--up)"></i><i class="mid"></i></span>
+      <span class="lad-v pos">1005.0</span>
     </div>
     
     <div class="lad-row ">
       <span class="lad-k">7500</span>
-      <span class="lad-bar"><i style="left:50%;width:14.7%;background:var(--up)"></i><i class="mid"></i></span>
-      <span class="lad-v pos">967.2</span>
+      <span class="lad-bar"><i style="left:50%;width:11.2%;background:var(--up)"></i><i class="mid"></i></span>
+      <span class="lad-v pos">849.2</span>
     </div>
     
     <div class="lad-row ">
       <span class="lad-k">7475</span>
       <span class="lad-bar"><i style="right:50%;width:1.9%;background:var(--down)"></i><i class="mid"></i></span>
-      <span class="lad-v neg">-127.3</span>
+      <span class="lad-v neg">-143.6</span>
     </div>
     
     <div class="lad-row ">
       <span class="lad-k">7450</span>
-      <span class="lad-bar"><i style="left:50%;width:3.0%;background:var(--up)"></i><i class="mid"></i></span>
-      <span class="lad-v pos">197.4</span>
+      <span class="lad-bar"><i style="left:50%;width:2.4%;background:var(--up)"></i><i class="mid"></i></span>
+      <span class="lad-v pos">178.9</span>
     </div>
     
     <div class="lad-row ">
       <span class="lad-k">7425</span>
-      <span class="lad-bar"><i style="right:50%;width:4.0%;background:var(--down)"></i><i class="mid"></i></span>
-      <span class="lad-v neg">-264.1</span>
+      <span class="lad-bar"><i style="right:50%;width:3.2%;background:var(--down)"></i><i class="mid"></i></span>
+      <span class="lad-v neg">-243.4</span>
     </div>
     
     <div class="lad-row ">
       <span class="lad-k">7400</span>
-      <span class="lad-bar"><i style="right:50%;width:25.5%;background:var(--down)"></i><i class="mid"></i></span>
-      <span class="lad-v neg">-1682.1</span>
+      <span class="lad-bar"><i style="right:50%;width:20.5%;background:var(--down)"></i><i class="mid"></i></span>
+      <span class="lad-v neg">-1550.0</span>
     </div>
     
     <div class="lad-row ">
       <span class="lad-k">7375</span>
-      <span class="lad-bar"><i style="right:50%;width:5.5%;background:var(--down)"></i><i class="mid"></i></span>
-      <span class="lad-v neg">-358.7</span>
+      <span class="lad-bar"><i style="right:50%;width:4.3%;background:var(--down)"></i><i class="mid"></i></span>
+      <span class="lad-v neg">-329.1</span>
     </div>
     
     <div class="lad-row ">
       <span class="lad-k">7350</span>
-      <span class="lad-bar"><i style="right:50%;width:11.8%;background:var(--down)"></i><i class="mid"></i></span>
-      <span class="lad-v neg">-783.3</span>
+      <span class="lad-bar"><i style="right:50%;width:8.9%;background:var(--down)"></i><i class="mid"></i></span>
+      <span class="lad-v neg">-674.9</span>
     </div>
     
     <div class="lad-row ">
       <span class="lad-k">7300</span>
-      <span class="lad-bar"><i style="right:50%;width:36.0%;background:var(--down)"></i><i class="mid"></i></span>
-      <span class="lad-v neg">-2374.7</span>
+      <span class="lad-bar"><i style="right:50%;width:27.8%;background:var(--down)"></i><i class="mid"></i></span>
+      <span class="lad-v neg">-2100.6</span>
     </div>
     
     <div class="lad-row ">
       <span class="lad-k">7250</span>
-      <span class="lad-bar"><i style="right:50%;width:11.0%;background:var(--down)"></i><i class="mid"></i></span>
-      <span class="lad-v neg">-727.2</span>
+      <span class="lad-bar"><i style="right:50%;width:7.8%;background:var(--down)"></i><i class="mid"></i></span>
+      <span class="lad-v neg">-590.1</span>
     </div>
     
     <div class="lad-row ">
       <span class="lad-k">7200</span>
-      <span class="lad-bar"><i style="right:50%;width:35.0%;background:var(--down)"></i><i class="mid"></i></span>
-      <span class="lad-v neg">-2309.3</span>
+      <span class="lad-bar"><i style="right:50%;width:26.9%;background:var(--down)"></i><i class="mid"></i></span>
+      <span class="lad-v neg">-2036.9</span>
     </div>
     
     <div class="lad-row ">
       <span class="lad-k">7150</span>
-      <span class="lad-bar"><i style="right:50%;width:16.9%;background:var(--down)"></i><i class="mid"></i></span>
-      <span class="lad-v neg">-1113.0</span>
+      <span class="lad-bar"><i style="right:50%;width:12.5%;background:var(--down)"></i><i class="mid"></i></span>
+      <span class="lad-v neg">-945.0</span>
     </div>
     
     <div class="lad-row ">
       <span class="lad-k">7100</span>
-      <span class="lad-bar"><i style="right:50%;width:28.0%;background:var(--down)"></i><i class="mid"></i></span>
-      <span class="lad-v neg">-1848.1</span>
-    </div>
-    
-    <div class="lad-row ">
-      <span class="lad-k">7050</span>
-      <span class="lad-bar"><i style="right:50%;width:12.1%;background:var(--down)"></i><i class="mid"></i></span>
-      <span class="lad-v neg">-798.6</span>
+      <span class="lad-bar"><i style="right:50%;width:21.2%;background:var(--down)"></i><i class="mid"></i></span>
+      <span class="lad-v neg">-1605.2</span>
     </div>
     
     <div class="lad-row mag">
       <span class="lad-k"><b>7000</b></span>
-      <span class="lad-bar"><i style="right:50%;width:22.4%;background:var(--down)"></i><i class="mid"></i></span>
-      <span class="lad-v neg">-1477.1<span class="magtag"><span class="l-en">mag↓</span><span class="l-zh">↓</span></span></span>
+      <span class="lad-bar"><i style="right:50%;width:16.8%;background:var(--down)"></i><i class="mid"></i></span>
+      <span class="lad-v neg">-1270.8<span class="magtag"><span class="l-en">mag↓</span><span class="l-zh">↓</span></span></span>
     </div>
     
     <div class="lad-row ">
       <span class="lad-k">6900</span>
-      <span class="lad-bar"><i style="right:50%;width:10.1%;background:var(--down)"></i><i class="mid"></i></span>
-      <span class="lad-v neg">-665.8</span>
+      <span class="lad-bar"><i style="right:50%;width:7.6%;background:var(--down)"></i><i class="mid"></i></span>
+      <span class="lad-v neg">-573.1</span>
     </div>
     
     <div class="lad-row ">
       <span class="lad-k">6850</span>
-      <span class="lad-bar"><i style="right:50%;width:8.6%;background:var(--down)"></i><i class="mid"></i></span>
-      <span class="lad-v neg">-568.9</span>
+      <span class="lad-bar"><i style="right:50%;width:6.3%;background:var(--down)"></i><i class="mid"></i></span>
+      <span class="lad-v neg">-480.8</span>
     </div>
     
   </div>
@@ -1409,7 +1413,7 @@
 
 <div class="panel">
   <p class="muted" style="font-size:12px;margin:0"><span class="l-en">Source: Cboe delayed option chains (free, keyless) → engine/gex_engine.py. Greeks computed dividend-adjusted; the gamma-flip is grid-reevaluated. Daily EOD levels, delayed — NOT live intraday flow (OI updates once per day). A regime + levels map, not predictive alpha. See LIMITATIONS.md.</span><span class="l-zh">来源：Cboe 延迟期权链（免费、无需密钥）→ engine/gex_engine.py。希腊字母经股息调整计算；Gamma翻转采用网格重估。每日延迟价位 — 并非实时盘中流动（OI每日更新一次）。体制+价位地图，而非预测性超额收益。</span>
-    <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-18 00:21 UTC</p>
+    <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-18 02:38 UTC</p>
 </div>
 
 <script>

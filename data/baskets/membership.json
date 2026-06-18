@@ -1,8 +1,8 @@
 {
-  "version": "2026-06-15",
-  "note": "Equal-weight thematic baskets over the FREE S&P-1500 price cache. Membership is explicit, dated and auditable. Curated 2026-06 with knowledge of the period, so the full ~3y series is HINDSIGHT-curated and descriptive — not an out-of-sample backtest. A few on-thesis names outside that cache (recent IPOs, crypto & nuclear) are carried in a separate baskets-only cache (data/baskets/extras.parquet) and flagged partial where their history is short.",
+  "version": "2026-06-18",
+  "note": "Equal-weight thematic baskets over the FREE price universe. Membership is explicit, dated and auditable. Curated 2026-06 with knowledge of the period, so the full ~3y series is HINDSIGHT-curated and descriptive — not an out-of-sample backtest. Prices come from the breadth caches plus a baskets-only DEEP close store (data/baskets/extras.parquet): it carries on-thesis names outside the S&P-1500 (recent IPOs, crypto & nuclear) AND a deep ~3y tape for large-caps the breadth cache only holds in a ~15-month rolling window — so baskets render full history instead of a short stub. Recent IPOs / late entrants are still flagged partial where their own tape is short.",
   "seed_date": "2023-05-09",
-  "curated": "2026-06-15",
+  "curated": "2026-06-18",
   "baskets": {
     "mag7": {
       "name": "Magnificent Seven",
@@ -75,7 +75,7 @@
       "category": "AI & Technology",
       "etf_proxy": "SMH",
       "created": "2023-05-09",
-      "curated": "2026-06-15",
+      "curated": "2026-06-18",
       "omitted": [
         "MRVL (not in free cache)"
       ],
@@ -163,6 +163,66 @@
           "added": "2025-03-28",
           "removed": null,
           "rationale": "CoreWeave — GPU hyperscaler neocloud; capacity levered to training"
+        },
+        {
+          "ticker": "AMAT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Applied Materials — WFE leader; deposition/etch into leading-edge & HBM"
+        },
+        {
+          "ticker": "LRCX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Lam Research — etch & deposition; the memory/HBM capex lever"
+        },
+        {
+          "ticker": "KLAC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "KLA — process control monopoly; yield-critical at advanced nodes"
+        },
+        {
+          "ticker": "QCOM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Qualcomm — on-device/edge AI SoCs; inference at the handset"
+        },
+        {
+          "ticker": "TER",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Teradyne — semiconductor test; AI-accelerator volume read-through"
+        },
+        {
+          "ticker": "APH",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Amphenol — high-speed connectors & cabling for AI fabrics"
+        },
+        {
+          "ticker": "GLW",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Corning — optical fiber for AI data-center interconnect"
+        },
+        {
+          "ticker": "MPWR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Monolithic Power — power management into AI server/GPU boards"
+        },
+        {
+          "ticker": "MRVL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Marvell — custom AI silicon + optical DSPs (was off-cache; now in the deep store)"
+        },
+        {
+          "ticker": "ARM",
+          "added": "2023-09-14",
+          "removed": null,
+          "rationale": "Arm Holdings — CPU IP licensing levered to AI compute (IPO 2023-09)"
         }
       ],
       "etf_proxy_note": "semis proxy",
@@ -183,6 +243,11 @@
           "date": "2026-06-15",
           "action": "add",
           "note": "Added optics (LITE, COHR) and the merchant-accelerator / neocloud leg (CBRS, NBIS, CRWV — off-index, carried in the baskets extras cache)."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "add",
+          "note": "Expanded membership with on-thesis, liquid names (10 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: AMAT, LRCX, KLAC, QCOM, TER, APH, GLW, MPWR, MRVL, ARM."
         }
       ]
     },
@@ -193,7 +258,7 @@
       "category": "AI & Technology",
       "etf_proxy": "XLK",
       "created": "2023-05-09",
-      "curated": "2026-06-15",
+      "curated": "2026-06-18",
       "omitted": [
         "SNOW (not in free cache)",
         "CFLT Confluent, IOT Samsara (data infrastructure, not AI-app monetization — thesis fit debatable)"
@@ -252,6 +317,54 @@
           "added": "2023-05-09",
           "removed": null,
           "rationale": "Observability volume scales with AI workloads"
+        },
+        {
+          "ticker": "INTU",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Intuit — AI woven into tax/QuickBooks; consumer + SMB AI monetization"
+        },
+        {
+          "ticker": "IBM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "IBM — watsonx + consulting; the enterprise hybrid-AI distribution"
+        },
+        {
+          "ticker": "WDAY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Workday — AI in HCM/finance system-of-record; seat-expansion tell"
+        },
+        {
+          "ticker": "PANW",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Palo Alto Networks — AI-native security platform consolidation"
+        },
+        {
+          "ticker": "CRWD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "CrowdStrike — AI-driven endpoint/SecOps; data-flywheel moat"
+        },
+        {
+          "ticker": "APP",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "AppLovin — AXON AI ad engine; the clearest AI-revenue inflection"
+        },
+        {
+          "ticker": "SNOW",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Snowflake — data cloud + Cortex AI (was off-cache; now in the deep store)"
+        },
+        {
+          "ticker": "NET",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Cloudflare — edge inference + developer AI platform"
         }
       ],
       "etf_proxy_note": "loose — broad tech",
@@ -267,6 +380,11 @@
           "date": "2026-06-14",
           "action": "note",
           "note": "Theme names outside the free S&P-1500 cache, excluded: SNOW (not in free cache)."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "add",
+          "note": "Expanded membership with on-thesis, liquid names (8 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: INTU, IBM, WDAY, PANW, CRWD, APP, SNOW, NET."
         }
       ]
     },
@@ -277,7 +395,7 @@
       "category": "Industrials & Defense",
       "etf_proxy": "ITA",
       "created": "2023-05-09",
-      "curated": "2026-06-15",
+      "curated": "2026-06-18",
       "omitted": [
         "LUNR Intuitive Machines, VOYG Voyager, RDW Redwire (thin-liquidity new-space — excluded)"
       ],
@@ -365,6 +483,42 @@
           "added": "2023-05-09",
           "removed": null,
           "rationale": "AST SpaceMobile — direct-to-cell satellite constellation"
+        },
+        {
+          "ticker": "GE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "GE Aerospace — engines + aftermarket; the commercial/defense propulsion core"
+        },
+        {
+          "ticker": "LDOS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Leidos — defense IT, ISR & autonomy integration"
+        },
+        {
+          "ticker": "TXT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Textron — Bell rotorcraft (FLRAA) + unmanned systems"
+        },
+        {
+          "ticker": "CW",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Curtiss-Wright — naval-nuclear & defense electronics components"
+        },
+        {
+          "ticker": "TDY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Teledyne — sensors, imaging & ISR payloads"
+        },
+        {
+          "ticker": "HEI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Heico — aftermarket parts & niche defense electronics compounder"
         }
       ],
       "etf_proxy_note": "",
@@ -380,6 +534,11 @@
           "date": "2026-06-15",
           "action": "add",
           "note": "Added the defense-tech / new-space leg (AVAV, KTOS in-cache; RKLB, ASTS off-index via the extras cache)."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "add",
+          "note": "Expanded membership with on-thesis, liquid names (6 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: GE, LDOS, TXT, CW, TDY, HEI."
         }
       ]
     },
@@ -390,7 +549,7 @@
       "category": "Energy & Power",
       "etf_proxy": "XLU",
       "created": "2023-05-09",
-      "curated": "2026-06-15",
+      "curated": "2026-06-18",
       "omitted": [
         "NNE NanoNuclear (pre-revenue micro-cap — excluded)"
       ],
@@ -490,6 +649,48 @@
           "added": "2023-05-09",
           "removed": null,
           "rationale": "Centrus — sole US HALEU enricher; the nuclear fuel-cycle completion"
+        },
+        {
+          "ticker": "DUK",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Duke Energy — regulated utility with Southeast data-center load growth"
+        },
+        {
+          "ticker": "SO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Southern Company — regulated utility; Vogtle nuclear + load growth"
+        },
+        {
+          "ticker": "AEP",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "American Electric Power — largest US grid footprint; transmission capex"
+        },
+        {
+          "ticker": "SRE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Sempra — Texas/California grid + LNG-linked power demand"
+        },
+        {
+          "ticker": "HUBB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Hubbell — grid & electrical components into utility/datacenter capex"
+        },
+        {
+          "ticker": "GNRC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Generac — backup/distributed power; grid-resilience demand"
+        },
+        {
+          "ticker": "BWXT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "BWX Technologies — naval-nuclear + SMR/advanced-reactor components"
         }
       ],
       "etf_proxy_note": "",
@@ -505,6 +706,11 @@
           "date": "2026-06-15",
           "action": "add",
           "note": "Added the datacenter contractors (EME, FIX) and the nuclear-renaissance leg (TLN; OKLO, SMR, LEU off-index via the extras cache)."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "add",
+          "note": "Expanded membership with on-thesis, liquid names (7 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: DUK, SO, AEP, SRE, HUBB, GNRC, BWXT."
         }
       ]
     },
@@ -515,7 +721,7 @@
       "category": "Industrials & Defense",
       "etf_proxy": "XLI",
       "created": "2023-05-09",
-      "curated": "2026-06-14",
+      "curated": "2026-06-18",
       "omitted": [
         "GGG (not in free cache)"
       ],
@@ -573,6 +779,48 @@
           "added": "2023-05-09",
           "removed": null,
           "rationale": "Industrial distribution; reshoring volume tell"
+        },
+        {
+          "ticker": "HON",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Honeywell — automation & industrial software for new plants"
+        },
+        {
+          "ticker": "ITW",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Illinois Tool Works — diversified industrial bellwether"
+        },
+        {
+          "ticker": "DOV",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Dover — industrial pumps/components; capex-cycle read-through"
+        },
+        {
+          "ticker": "AME",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Ametek — instruments & electromechanical for advanced manufacturing"
+        },
+        {
+          "ticker": "IR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Ingersoll Rand — compressors/flow for factory build-outs"
+        },
+        {
+          "ticker": "NDSN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Nordson — precision dispensing into electronics/EV reshoring"
+        },
+        {
+          "ticker": "GNRC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Generac — distributed power for new industrial sites"
         }
       ],
       "etf_proxy_note": "industrials proxy",
@@ -588,6 +836,11 @@
           "date": "2026-06-14",
           "action": "note",
           "note": "Theme names outside the free S&P-1500 cache, excluded: GGG (not in free cache)."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "add",
+          "note": "Expanded membership with on-thesis, liquid names (7 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: HON, ITW, DOV, AME, IR, NDSN, GNRC."
         }
       ]
     },
@@ -598,7 +851,7 @@
       "category": "Financials",
       "etf_proxy": "KRE",
       "created": "2023-05-09",
-      "curated": "2026-06-14",
+      "curated": "2026-06-18",
       "omitted": [
         "ZION, CMA (not in free cache)"
       ],
@@ -650,6 +903,48 @@
           "added": "2023-05-09",
           "removed": null,
           "rationale": "Largest regional; fee-income diversification"
+        },
+        {
+          "ticker": "PNC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "PNC — super-regional scale; the national-franchise read"
+        },
+        {
+          "ticker": "WAL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Western Alliance — commercial niche lender; deposit-beta watched"
+        },
+        {
+          "ticker": "EWBC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "East West Bancorp — US-Asia commercial franchise"
+        },
+        {
+          "ticker": "CFR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Cullen/Frost — Texas deposit-rich franchise; conservative underwriter"
+        },
+        {
+          "ticker": "FHN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "First Horizon — Southeast regional post-failed-merger"
+        },
+        {
+          "ticker": "WTFC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Wintrust — Chicago commercial growth lender"
+        },
+        {
+          "ticker": "WBS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Webster — Northeast commercial + HSA deposit moat"
         }
       ],
       "etf_proxy_note": "",
@@ -665,6 +960,11 @@
           "date": "2026-06-14",
           "action": "note",
           "note": "Theme names outside the free S&P-1500 cache, excluded: ZION, CMA (not in free cache)."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "add",
+          "note": "Expanded membership with on-thesis, liquid names (7 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: PNC, WAL, EWBC, CFR, FHN, WTFC, WBS."
         }
       ]
     },
@@ -675,7 +975,7 @@
       "category": "Healthcare",
       "etf_proxy": "XLV",
       "created": "2023-05-09",
-      "curated": "2026-06-14",
+      "curated": "2026-06-18",
       "omitted": [],
       "members": [
         {
@@ -713,6 +1013,24 @@
           "added": "2023-05-09",
           "removed": null,
           "rationale": "Lean Medicaid managed-care operator"
+        },
+        {
+          "ticker": "CVS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "CVS Health — Aetna + Caremark PBM + pharmacy; integrated payer-provider"
+        },
+        {
+          "ticker": "ALHC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Alignment Healthcare — tech-driven Medicare-Advantage challenger"
+        },
+        {
+          "ticker": "OSCR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Oscar Health — ACA-exchange insurer; the marketplace-growth play"
         }
       ],
       "etf_proxy_note": "loose — broad health",
@@ -723,6 +1041,11 @@
           "date": "2023-05-09",
           "action": "create",
           "note": "Seeded Managed Care & Insurers — 6 equal-weight members from the S&P 1500 cache."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "add",
+          "note": "Expanded membership with on-thesis, liquid names (3 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: CVS, ALHC, OSCR."
         }
       ]
     },
@@ -733,7 +1056,7 @@
       "category": "Consumer Cyclical",
       "etf_proxy": "XHB",
       "created": "2023-05-09",
-      "curated": "2026-06-14",
+      "curated": "2026-06-18",
       "omitted": [
         "WHR (not in free cache)"
       ],
@@ -791,6 +1114,54 @@
           "added": "2023-05-09",
           "removed": null,
           "rationale": "DIY-tilted home-improvement #2"
+        },
+        {
+          "ticker": "TOL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Toll Brothers — luxury builder; move-up demand"
+        },
+        {
+          "ticker": "KBH",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "KB Home — entry-level builder; affordability-sensitive"
+        },
+        {
+          "ticker": "BLD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "TopBuild — insulation distribution/installation scale"
+        },
+        {
+          "ticker": "OC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Owens Corning — roofing & insulation building products"
+        },
+        {
+          "ticker": "FBIN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Fortune Brands — water/outdoors/security building products"
+        },
+        {
+          "ticker": "CARR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Carrier — residential/commercial HVAC; electrification tilt"
+        },
+        {
+          "ticker": "MHK",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Mohawk — flooring; repair-remodel cyclicality"
+        },
+        {
+          "ticker": "LII",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Lennox — HVAC pure-play; replacement-cycle pricing"
         }
       ],
       "etf_proxy_note": "",
@@ -806,6 +1177,11 @@
           "date": "2026-06-14",
           "action": "note",
           "note": "Theme names outside the free S&P-1500 cache, excluded: WHR (not in free cache)."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "add",
+          "note": "Expanded membership with on-thesis, liquid names (8 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: TOL, KBH, BLD, OC, FBIN, CARR, MHK, LII."
         }
       ]
     },
@@ -816,7 +1192,7 @@
       "category": "Financials",
       "etf_proxy": "XLF",
       "created": "2023-05-09",
-      "curated": "2026-06-15",
+      "curated": "2026-06-18",
       "omitted": [
         "FI Fiserv (not in free cache)"
       ],
@@ -874,6 +1250,54 @@
           "added": "2025-06-05",
           "removed": null,
           "rationale": "Circle — USDC issuer; the listed stablecoin pure-play"
+        },
+        {
+          "ticker": "XYZ",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Block — Square + Cash App; SMB acquiring + consumer fintech"
+        },
+        {
+          "ticker": "FOUR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Shift4 — integrated payments; share-gaining acquirer"
+        },
+        {
+          "ticker": "JKHY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Jack Henry — core banking + payments processing"
+        },
+        {
+          "ticker": "WU",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Western Union — cross-border remittance; disruption gauge"
+        },
+        {
+          "ticker": "FI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Fiserv — Clover + merchant/bank processing (was off-cache; now in the deep store)"
+        },
+        {
+          "ticker": "AFRM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Affirm — BNPL pure-play; consumer-credit + checkout share"
+        },
+        {
+          "ticker": "SOFI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "SoFi — digital bank + lending; the neobank expression"
+        },
+        {
+          "ticker": "TOST",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Toast — restaurant payments + software vertical"
         }
       ],
       "etf_proxy_note": "",
@@ -894,6 +1318,11 @@
           "date": "2026-06-15",
           "action": "add",
           "note": "Added CRCL (Circle) — the listed stablecoin name the thesis already references (off-index via the extras cache)."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "add",
+          "note": "Expanded membership with on-thesis, liquid names (8 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: XYZ, FOUR, JKHY, WU, FI, AFRM, SOFI, TOST."
         }
       ]
     },
@@ -904,7 +1333,7 @@
       "category": "Energy & Power",
       "etf_proxy": "XLE",
       "created": "2023-05-09",
-      "curated": "2026-06-14",
+      "curated": "2026-06-18",
       "omitted": [],
       "members": [
         {
@@ -972,6 +1401,54 @@
           "added": "2023-05-09",
           "removed": null,
           "rationale": "Natgas pipelines; LNG/power feedgas"
+        },
+        {
+          "ticker": "FANG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Diamondback — low-cost Permian E&P"
+        },
+        {
+          "ticker": "DVN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Devon — multi-basin E&P; variable-dividend model"
+        },
+        {
+          "ticker": "HAL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Halliburton — pressure pumping; North-America services beta"
+        },
+        {
+          "ticker": "BKR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Baker Hughes — LNG equipment + oilfield services"
+        },
+        {
+          "ticker": "OKE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Oneok — NGL/gas midstream; gathering & processing"
+        },
+        {
+          "ticker": "TRGP",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Targa Resources — Permian NGL midstream growth"
+        },
+        {
+          "ticker": "EQT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "EQT — largest US natural-gas producer; LNG-demand levered"
+        },
+        {
+          "ticker": "LNG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Cheniere — US LNG export leader (deep-store; the gas-export expression)"
         }
       ],
       "etf_proxy_note": "energy proxy",
@@ -982,6 +1459,11 @@
           "date": "2023-05-09",
           "action": "create",
           "note": "Seeded US Energy Complex — 11 equal-weight members from the S&P 1500 cache."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "add",
+          "note": "Expanded membership with on-thesis, liquid names (8 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: FANG, DVN, HAL, BKR, OKE, TRGP, EQT, LNG."
         }
       ]
     },
@@ -995,7 +1477,7 @@
         "XLU"
       ],
       "created": "2023-05-09",
-      "curated": "2026-06-15",
+      "curated": "2026-06-18",
       "omitted": [],
       "members": [
         {
@@ -1063,6 +1545,48 @@
           "added": "2023-05-09",
           "removed": null,
           "rationale": "Kenvue — consumer-health staple (Tylenol/Listerine); a pure defensive"
+        },
+        {
+          "ticker": "MO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Altria — domestic tobacco; pricing power + yield"
+        },
+        {
+          "ticker": "PM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Philip Morris — global tobacco + smoke-free (Zyn) growth"
+        },
+        {
+          "ticker": "CHD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Church & Dwight — value + premium household/personal-care mix"
+        },
+        {
+          "ticker": "CLX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Clorox — cleaning staples; input-cost & pricing lever"
+        },
+        {
+          "ticker": "HSY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Hershey — confection pricing power; cocoa-cost cross-current"
+        },
+        {
+          "ticker": "KDP",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Keurig Dr Pepper — coffee + beverages; staple cash flows"
+        },
+        {
+          "ticker": "MKC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "McCormick — spices/flavor; defensive pricing compounder"
         }
       ],
       "etf_proxy_note": "staples proxy",
@@ -1078,6 +1602,11 @@
           "date": "2026-06-15",
           "action": "add",
           "note": "Added KVUE (Kenvue) — a pure consumer-health staple (the basket had no clean one)."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "add",
+          "note": "Expanded membership with on-thesis, liquid names (7 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: MO, PM, CHD, CLX, HSY, KDP, MKC."
         }
       ]
     },
@@ -1088,7 +1617,7 @@
       "category": "Consumer Cyclical",
       "etf_proxy": "JETS",
       "created": "2023-05-09",
-      "curated": "2026-06-15",
+      "curated": "2026-06-18",
       "omitted": [],
       "members": [
         {
@@ -1174,6 +1703,42 @@
           "added": "2023-05-09",
           "removed": null,
           "rationale": "Live Nation — concerts & ticketing; the purest 'experiences over goods' name"
+        },
+        {
+          "ticker": "AAL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "American Airlines — network carrier; balance-sheet beta"
+        },
+        {
+          "ticker": "WYNN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Wynn Resorts — Macau + Vegas premium gaming"
+        },
+        {
+          "ticker": "CZR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Caesars — US regional gaming + digital optionality"
+        },
+        {
+          "ticker": "H",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Hyatt — asset-light luxury/resort lodging mix"
+        },
+        {
+          "ticker": "WH",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Wyndham — economy/midscale franchised lodging"
+        },
+        {
+          "ticker": "DKNG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "DraftKings — online sports-betting/iGaming; experiences-spend beta"
         }
       ],
       "etf_proxy_note": "",
@@ -1189,6 +1754,11 @@
           "date": "2026-06-15",
           "action": "add",
           "note": "Added LYV (Live Nation) — the live-entertainment expression the thesis was missing."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "add",
+          "note": "Expanded membership with on-thesis, liquid names (6 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: AAL, WYNN, CZR, H, WH, DKNG."
         }
       ]
     },
@@ -1199,7 +1769,7 @@
       "category": "Consumer Cyclical",
       "etf_proxy": "XLY",
       "created": "2023-05-09",
-      "curated": "2026-06-15",
+      "curated": "2026-06-18",
       "omitted": [
         "CHWY Chewy, W Wayfair (e-commerce category-killers — off this basket's big-box/off-price/discount thesis)"
       ],
@@ -1263,6 +1833,54 @@
           "added": "2023-05-09",
           "removed": null,
           "rationale": "Consumer-electronics replacement cycle"
+        },
+        {
+          "ticker": "AZO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "AutoZone — auto-parts retail; defensive DIY/DIFM demand"
+        },
+        {
+          "ticker": "ORLY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "O'Reilly — auto-parts dual-market share gainer"
+        },
+        {
+          "ticker": "ULTA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Ulta Beauty — beauty category specialist; loyalty engine"
+        },
+        {
+          "ticker": "BJ",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "BJ's Wholesale — membership warehouse; value trade-down"
+        },
+        {
+          "ticker": "FIVE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Five Below — extreme-value teen/discount growth retail"
+        },
+        {
+          "ticker": "BURL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Burlington — off-price share gainer"
+        },
+        {
+          "ticker": "DKS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Dick's Sporting Goods — category-leading sporting big-box"
+        },
+        {
+          "ticker": "TSCO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Tractor Supply — rural lifestyle retail; consumable-led traffic"
         }
       ],
       "etf_proxy_note": "loose — broad cons. disc.",
@@ -1273,6 +1891,11 @@
           "date": "2023-05-09",
           "action": "create",
           "note": "Seeded Retail — 10 equal-weight members from the S&P 1500 cache."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "add",
+          "note": "Expanded membership with on-thesis, liquid names (8 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: AZO, ORLY, ULTA, BJ, FIVE, BURL, DKS, TSCO."
         }
       ]
     },
@@ -1283,7 +1906,7 @@
       "category": "Crypto & Digital Assets",
       "etf_proxy": "IBIT",
       "created": "2026-06-15",
-      "curated": "2026-06-15",
+      "curated": "2026-06-18",
       "omitted": [
         "BLSH Bullish, GEMI Gemini, ETOR eToro, STRC (too-recent / illiquid — excluded)",
         "BITF, WULF, CIFR, IREN, CORZ (secondary miners — excluded for liquidity)"
@@ -1336,6 +1959,24 @@
           "added": "2023-05-09",
           "removed": null,
           "rationale": "CleanSpark — bitcoin miner; low-cost power"
+        },
+        {
+          "ticker": "IREN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "IREN (Iris Energy) — bitcoin miner pivoting to AI/HPC cloud"
+        },
+        {
+          "ticker": "CORZ",
+          "added": "2024-01-16",
+          "removed": null,
+          "rationale": "Core Scientific — miner + AI/HPC hosting (relisted 2024-01)"
+        },
+        {
+          "ticker": "HUT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Hut 8 — bitcoin miner + energy/compute infrastructure"
         }
       ],
       "etf_proxy_note": "spot-BTC ETF",
@@ -1346,6 +1987,11 @@
           "date": "2026-06-15",
           "action": "create",
           "note": "Seeded Crypto & Digital Assets — 8 equal-weight members; in-cache (COIN/HOOD/MARA/CLSK) plus off-index names (MSTR/RIOT/CRCL/GLXY) via the baskets extras cache."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "add",
+          "note": "Expanded membership with on-thesis, liquid names (3 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: IREN, CORZ, HUT."
         }
       ]
     }

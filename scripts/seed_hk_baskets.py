@@ -239,6 +239,124 @@ BASKETS: dict[str, dict] = {
     },
 }
 
+CURATED = "2026-06-18"   # member-expansion pass (deep cache widened 73 → ~157 HK names)
+
+# ── 2026-06-18 expansion: on-thesis adds now that the hk_search deep cache covers the full
+# ~157-name HKEX constituent set (was 73). bid -> [(ticker, rationale)]; validated like the rest.
+EXPANSION: dict[str, list[tuple[str, str]]] = {
+    "hk_china_tech": [
+        ("9999.HK", "NetEase — gaming + music; the #2 China game publisher"),
+        ("9626.HK", "Bilibili — Gen-Z video community + games"),
+        ("9698.HK", "GDS Holdings — China data-center / AI capacity"),
+        ("2382.HK", "Sunny Optical — smartphone + auto optics leader"),
+        ("0285.HK", "BYD Electronic — handset/EV electronics assembly"),
+        ("3888.HK", "Kingsoft — office software (WPS) + games + cloud"),
+        ("0268.HK", "Kingdee — enterprise SaaS / cloud ERP"),
+        ("1347.HK", "Hua Hong Semiconductor — mature-node foundry"),
+        ("0763.HK", "ZTE — telecom equipment + 5G/networking"),
+        ("0772.HK", "China Literature — online literature / IP (Tencent)"),
+    ],
+    "hk_consumer": [
+        ("9633.HK", "Nongfu Spring — #1 bottled water + beverages"),
+        ("0322.HK", "Tingyi — instant noodles + beverages (Master Kong)"),
+        ("0151.HK", "Want Want — rice crackers / dairy snacks"),
+        ("0345.HK", "Vitasoy — soy/plant beverages"),
+        ("2313.HK", "Shenzhou International — knitwear OEM (Nike/Adidas)"),
+        ("1112.HK", "Health & Happiness — infant formula / supplements"),
+        ("6969.HK", "Smoore — global vaping device ODM"),
+        ("9961.HK", "Trip.com — China online-travel leader"),
+        ("6808.HK", "Sun Art Retail — hypermarket / grocery"),
+    ],
+    "hk_biotech": [
+        ("1801.HK", "Innovent — PD-1 / oncology innovator"),
+        ("9926.HK", "Akeso — bispecific antibody platform (ivonescimab)"),
+        ("3692.HK", "Hansoh Pharma — innovative oncology/CNS"),
+        ("2392.HK", "Pharmaron — CRO/CDMO across modalities"),
+        ("2607.HK", "Shanghai Henlius — biosimilars + biologics"),
+        ("6618.HK", "JD Health — online pharmacy / healthcare platform"),
+        ("0867.HK", "China Medical System — specialty pharma distribution"),
+        ("2196.HK", "Shanghai Pharmaceuticals — pharma distribution + manufacturing"),
+        ("1066.HK", "Shandong Weigao — medical devices / consumables"),
+    ],
+    "hk_ev": [
+        ("9863.HK", "Leapmotor — value smart-EV scaler (Stellantis-backed)"),
+        ("2333.HK", "Great Wall Motor — SUV/pickup OEM + NEV/export"),
+        ("1958.HK", "BAIC Motor — legacy OEM + premium JV"),
+    ],
+    "hk_banks": [
+        ("3968.HK", "China Merchants Bank — premier retail bank (H)"),
+        ("1658.HK", "Postal Savings Bank — vast retail deposit franchise (H)"),
+        ("0998.HK", "CITIC Bank — national joint-stock lender (H)"),
+        ("6818.HK", "China Everbright Bank (H)"),
+        ("3618.HK", "Chongqing Rural Commercial Bank (H)"),
+        ("2888.HK", "Standard Chartered — EM/Asia-focused global bank"),
+    ],
+    "hk_insurers": [
+        ("1336.HK", "New China Life — mainland life insurer (H)"),
+        ("2378.HK", "Prudential — pan-Asia/Africa life franchise"),
+        ("6060.HK", "ZhongAn Online — digital P&C insurer"),
+    ],
+    "hk_conglo": [
+        ("0656.HK", "Fosun International — diversified investment conglomerate"),
+        ("0392.HK", "Beijing Enterprises — gas / infrastructure conglomerate"),
+    ],
+    "hk_property": [
+        ("1113.HK", "CK Asset — the flagship HK developer/landlord"),
+        ("0960.HK", "Longfor — quality mainland developer (H)"),
+        ("1209.HK", "CR Mixc — asset-light mall/property management"),
+        ("0101.HK", "Hang Lung Properties — HK + mainland malls"),
+        ("0014.HK", "Hysan Development — Causeway Bay landlord"),
+        ("0683.HK", "Kerry Properties — HK/mainland developer"),
+        ("0778.HK", "Fortune REIT — HK suburban retail REIT"),
+    ],
+    "hk_gaming": [
+        ("0200.HK", "Melco International — Macau/Cotai casino operator"),
+    ],
+    "hk_energy": [
+        ("0902.HK", "Huaneng Power — large IPP / thermal power (H)"),
+        ("1816.HK", "CGN Power — nuclear generation leader (H)"),
+        ("1898.HK", "China Coal Energy — integrated coal (H)"),
+        ("2883.HK", "China Oilfield Services — offshore oil services (H)"),
+        ("0135.HK", "Kunlun Energy — natural-gas distribution (PetroChina)"),
+    ],
+    "hk_materials": [
+        ("2899.HK", "Zijin Mining — global gold + copper major (H)"),
+        ("1208.HK", "MMG — copper / zinc (Las Bambas)"),
+        ("0323.HK", "Maanshan Iron & Steel (H)"),
+        ("0639.HK", "Shougang Resources — coking coal"),
+        ("1799.HK", "Xinte Energy — polysilicon / solar materials"),
+        ("3800.HK", "GCL Technology — polysilicon for solar"),
+    ],
+    "hk_telco_util": [
+        ("0836.HK", "China Resources Power — IPP + renewables (H)"),
+        ("2688.HK", "ENN Energy — city-gas distribution"),
+        ("0257.HK", "China Everbright Environment — waste-to-energy"),
+        ("0371.HK", "Beijing Enterprises Water — water treatment"),
+    ],
+}
+
+# wholly new basket created in the same pass (the HKEX industrial/infra cluster had no home)
+NEW_BASKETS: dict[str, dict] = {
+    "hk_industrials": {
+        "name": "Industrials & Infrastructure", "name_zh": "工业与基建",
+        "category": "Industrials & Transport", "category_zh": "工业与运输",
+        "etf_proxy": None, "etf_proxy_note": "",
+        "thesis": "The HK-listed industrial & infrastructure complex — power tools, rail-equipment and rolling stock, heavy machinery, the construction SOEs, ports and express logistics. A capex- and China-growth-cyclical sleeve geared to infrastructure spend, the export machine and global tool demand.",
+        "thesis_zh": "港股工业与基建集群 — 电动工具、轨交装备与机车、重型机械、建筑央企、港口与快递物流。受基建投资、出口机器与全球工具需求驱动、对中国增长敏感的周期性板块。",
+        "members": [
+            ("0669.HK", "Techtronic — global power tools (Milwaukee/Ryobi)"),
+            ("1766.HK", "CRRC — the rolling-stock / rail-equipment giant (H)"),
+            ("2338.HK", "Weichai Power — diesel engines / heavy-duty powertrains (H)"),
+            ("0390.HK", "China Railway Group — construction SOE (H)"),
+            ("1186.HK", "China Railway Construction — infra construction SOE (H)"),
+            ("1072.HK", "Dongfang Electric — power-generation equipment (H)"),
+            ("0144.HK", "China Merchants Port — port operator"),
+            ("0316.HK", "Orient Overseas (OOIL) — container shipping"),
+            ("2057.HK", "ZTO Express — China express-delivery leader"),
+        ],
+    },
+}
+
 CONSTRUCTION = ("Equal-weighted, monthly-rebalanced, buy-and-hold between rebalances; dated "
                 "membership changes take effect same-day. Benchmark = Hang Seng Index (HSI).")
 HISTORY_NOTE = ("Series before a basket's creation date are a backtest of the membership as of "
@@ -253,13 +371,18 @@ def main() -> int:
     closes = pd.read_parquet(config.data_dir() / "hk_search" / "closes_deep.parquet")
     cols = set(closes.columns)
 
+    # fold the 2026-06-18 expansion into the base definitions before materialising
+    baskets = {**BASKETS, **NEW_BASKETS}
+    for bid, adds in EXPANSION.items():
+        baskets[bid]["members"] = list(baskets[bid]["members"]) + list(adds)
+
     def en_name(t: str) -> str:
         if t in con.index:
             return str(con.loc[t, "name"])
         return t
 
     out_baskets, missing = {}, []
-    for bid, b in BASKETS.items():
+    for bid, b in baskets.items():
         members = []
         for ticker, rationale in b["members"]:
             if ticker not in cols:
@@ -267,14 +390,22 @@ def main() -> int:
                 continue
             members.append({"ticker": ticker, "added": SEED, "removed": None,
                             "name": en_name(ticker), "rationale": rationale})
+        if bid in NEW_BASKETS:
+            cl = [{"date": CURATED, "action": "create",
+                   "note": f"Created {b['name']} — {len(members)} equal-weight HK members."}]
+        else:
+            cl = [{"date": SEED, "action": "create",
+                   "note": f"Seeded {b['name']} — equal-weight HK members."}]
+            if bid in EXPANSION:
+                cl.append({"date": CURATED, "action": "expand",
+                           "note": f"Expanded to {len(members)} members (deep cache widened to ~157 HK names)."})
         out_baskets[bid] = {
             "name": b["name"], "name_zh": b["name_zh"],
             "category": b["category"], "category_zh": b["category_zh"],
             "etf_proxy": b["etf_proxy"], "etf_proxy_note": b["etf_proxy_note"],
             "created": SEED, "weighting": "equal",
             "thesis": b["thesis"], "thesis_zh": b["thesis_zh"], "members": members,
-            "changelog": [{"date": SEED, "action": "create",
-                           "note": f"Seeded {b['name']} — {len(members)} equal-weight HK members."}],
+            "changelog": cl,
         }
 
     if missing:
@@ -282,7 +413,7 @@ def main() -> int:
         return 1
 
     payload = {
-        "version": SEED, "seed_date": SEED, "curated": SEED,
+        "version": CURATED, "seed_date": SEED, "curated": CURATED,
         "benchmark": "_HSI", "benchmark_label": "HSI", "benchmark_label_zh": "恒生指数",
         "construction": CONSTRUCTION, "history_note": HISTORY_NOTE, "note": NOTE,
         "baskets": out_baskets,

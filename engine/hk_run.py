@@ -77,6 +77,39 @@ def run() -> dict:
         "preference_check": preference_check(row["quad_name"], table),
         "pair_ratios": pair_ratios_snapshot(f),
     }
+    # --- DISPLAY-ONLY leaves (mirror engine/china_run.py:79-103) ---------------
+    # Each attaches in its own try/except so an additive leaf can never break the
+    # engine, and NONE of them feed hk_axes / hk_regime / hk_playbook scoring.
+    # HK residential-property cycle context (Centaline CCL) — display/regime only.
+    try:
+        from engine import hk_property
+        latest["property"] = hk_property.regime_context()
+    except Exception as e:  # noqa: BLE001 — additive context, never break the engine
+        log.warning("hk property context failed: %s", e)
+    # "What's driving the tape" — deterministic cross-asset attribution.
+    try:
+        from engine.hk_market_drivers import append_log, snapshot
+        latest["market_drivers"] = snapshot()
+        append_log(latest["market_drivers"])
+    except Exception as e:  # noqa: BLE001
+        log.warning("hk market-drivers layer failed: %s", e)
+        latest["market_drivers"] = None
+    # RORO composite + Fear↔Euphoria + uncalibrated slowdown/drawdown gauges.
+    try:
+        from engine import hk_conditions
+        latest["conditions"] = hk_conditions.snapshot(f)
+        latest["fear_euphoria"] = hk_conditions.fear_euphoria(f)
+    except Exception as e:  # noqa: BLE001
+        log.warning("hk conditions layer failed: %s", e)
+        latest["conditions"] = None
+        latest["fear_euphoria"] = None
+    # Fired alerts — display-only change detectors over today's engine output.
+    try:
+        from engine.hk_alerts import evaluate, log_and_dedup
+        latest["alerts"] = log_and_dedup(evaluate(f=f, regime=regime, latest=latest), asof)
+    except Exception as e:  # noqa: BLE001
+        log.warning("hk alerts layer failed: %s", e)
+        latest["alerts"] = []
     with open(p / "latest.json", "w") as fh:
         json.dump(latest, fh, indent=2, default=str)
     log.info("hk regime %s (%s) conf=%.2f liq=%s risk=%s cycle=%s",

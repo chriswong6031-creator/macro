@@ -432,7 +432,8 @@ def gather_state(root: Path | None = None) -> dict:
         state["commodity"] = {k: co.get(k) for k in ("date", "regime", "favored")}
     fx = _read_json(root / "data/forex/latest.json")
     if fx:
-        state["forex"] = {k: fx.get(k) for k in ("date", "regime", "favored", "risk")}
+        state["forex"] = {k: fx.get(k) for k in
+                          ("date", "regime", "favored", "risk", "dollar_desk", "transmission")}
     # Bonds: the leading-family credit/curve/rates-vol backdrop — built (drivers_for)
     # for exactly this synthesis, but never wired in until now.
     bonds = _bonds_backdrop(root)
@@ -474,6 +475,27 @@ def gather_china_state(root: Path | None = None) -> dict:
             "liquidity_overlay", "cycle_tag", "global_score", "risk_state",
             "peg_state", "peg_distance", "confirming", "contradicting",
             "sector_rs", "pair_ratios") if k in hk}
+        # compact display-only leaves (RORO / slowdown / drawdown / fear-euphoria /
+        # tape drivers / property) — context for the narrator; never scored.
+        cond = hk.get("conditions") or {}
+        if cond:
+            state["hk"]["conditions"] = {
+                "roro_state": (cond.get("roro") or {}).get("roro_state"),
+                "slowdown_score": (cond.get("recession") or {}).get("score"),
+                "slowdown_label": (cond.get("recession") or {}).get("label"),
+                "drawdown_band": (cond.get("drawdown_risk") or {}).get("band"),
+            }
+        fe = hk.get("fear_euphoria") or {}
+        if fe:
+            state["hk"]["fear_euphoria"] = {k: fe.get(k) for k in ("fe_score", "band") if k in fe}
+        md = hk.get("market_drivers") or {}
+        if md.get("verdict") not in (None, "unknown"):
+            state["hk"]["market_drivers"] = {k: md.get(k) for k in
+                                             ("verdict", "primary_label", "direction") if k in md}
+        prop = hk.get("property") or {}
+        if prop:
+            state["hk"]["property"] = {k: prop.get(k) for k in
+                                       ("regime", "ccl_chg_52w") if k in prop}
     backdrop = _macro_backdrop(_read_json(root / "data/regime/latest.json"))
     if backdrop:
         state["us_macro_backdrop"] = backdrop
@@ -482,7 +504,8 @@ def gather_china_state(root: Path | None = None) -> dict:
         state["commodity"] = {k: co.get(k) for k in ("date", "regime", "favored")}
     fx = _read_json(root / "data/forex/latest.json")
     if fx:
-        state["forex"] = {k: fx.get(k) for k in ("date", "regime", "favored", "risk")}
+        state["forex"] = {k: fx.get(k) for k in
+                          ("date", "regime", "favored", "risk", "dollar_desk", "transmission")}
     # bonds backdrop — global rate-differential / risk-off context that pushes on HK & A-shares
     bonds = _bonds_backdrop(root)
     if bonds:

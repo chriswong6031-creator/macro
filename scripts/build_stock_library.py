@@ -30,6 +30,7 @@ from engine.cycles import analyze, market_vix_context  # noqa: E402
 from engine.playbook import SECTOR_NAMES  # noqa: E402
 from engine.setups import US_ALPHA_WEIGHT, rank_setups, setup_score, sue_confirmer  # noqa: E402
 from engine import stock_score  # noqa: E402
+from engine import stock_macro_sensitivity as macro_sens  # noqa: E402
 from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
@@ -579,6 +580,16 @@ def main() -> int:
     fragility_map = compute_fragility()
     basket_tw = _basket_tailwind_map()          # Conviction "upside / theme tailwind" axis
     bsk_mem = _basket_membership_map()          # all active basket memberships (display-only)
+    # per-stock Macro-sensitivity context (rate-beta tier + duration + live-regime
+    # head/tailwind + inflation label) — reads factor_betas.json (written by build_site
+    # just before this) + data/transmission/latest.json (the Rate & Inflation Transmission
+    # foundation). DISPLAY-ONLY, never scored; absent files => no chip. (engine/
+    # stock_macro_sensitivity.py)
+    try:
+        macro_sens_ctx = macro_sens.load_context(site)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("macro-sensitivity context unavailable (%s)", e)
+        macro_sens_ctx = None
     # Phase-0 gate: the board rank stays the VALIDATED leg unless a deep-CI run proved
     # the composite beats it (scripts/stock_conviction_phase0.py). Absent / shallow =>
     # NEUTRAL => gate_go False => Conviction ships as display-only context.
@@ -712,6 +723,18 @@ def main() -> int:
             norm, "US", ctx={"as_of": alpha_asof, "gate_go": gate_go, "regime": {"calm": calm}})
         rec["conviction"] = prof
         profiles[ticker] = prof
+        # ---- Macro sensitivity (display-only, never scored) -------------------
+        # rate-beta tier + duration bucket + live-regime head/tailwind + inflation
+        # label. Uses the archetype merged from fpanels above + the shared context.
+        if macro_sens_ctx is not None:
+            try:
+                arche_key = ((rec.get("profile") or {}).get("archetype") or {}).get("key")
+                ms = macro_sens.assess(ticker, sector, arche_key, macro_sens_ctx,
+                                       sector_macro_beta_val=sector_macro_beta(sector))
+                if ms:
+                    rec["macro_sensitivity"] = ms
+            except Exception as e:  # noqa: BLE001 — additive, never fatal
+                log.warning("macro-sensitivity for %s failed (%s)", ticker, e)
         _tech = rec.get("tech") or {}
         disp_map[ticker] = {
             "price": _tech.get("price"), "off_high": _tech.get("off_52w_high_pct"),

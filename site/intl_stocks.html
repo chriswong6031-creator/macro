@@ -7,7 +7,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title><span class="l-en">International Economies</span><span class="l-zh">国际经济体</span> — 2026-06-17</title>
+<title><span class="l-en">International Economies</span><span class="l-zh">国际经济体</span> — 2026-06-18</title>
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
@@ -78,6 +78,117 @@
   .caveat { font-size:11.5px; color:var(--muted); font-style:italic; }
   .more-btn { display:inline-block; margin-top:10px; padding:5px 14px; border-radius:9px; background:var(--panel2); border:1px solid var(--line); color:var(--link); font-weight:600; font-size:12px; cursor:pointer; }
   .hidden { display:none; }
+
+  /* =================== bespoke "Global Macro Compass" accent UI =================== */
+  :root { --acc1:#2f8af0; --acc2:#14b8a6; --acc3:#8b5cf6; --acc-grad:linear-gradient(115deg,var(--acc1),var(--acc2),var(--acc3)); }
+  /* flagship gradient-bordered hero stage */
+  .stage { position:relative; margin:0 0 16px; padding:22px 22px 20px; border-radius:20px;
+    background:linear-gradient(var(--panel),var(--panel)) padding-box, var(--acc-grad) border-box;
+    border:1.5px solid transparent; box-shadow:0 18px 56px -28px color-mix(in srgb,var(--acc1) 55%,transparent); }
+  .stage-flag { display:inline-flex; align-items:center; gap:7px; font-size:10.5px; font-weight:800; letter-spacing:.13em;
+    text-transform:uppercase; color:#fff; background:var(--acc-grad); background-size:200% 100%;
+    padding:5px 12px; border-radius:999px; animation:accflow 7s linear infinite; }
+  @keyframes accflow { to { background-position:200% 0; } }
+  .stage-h1 { font-size:30px; font-weight:800; letter-spacing:-.02em; margin:11px 0 6px;
+    background:linear-gradient(90deg,var(--acc1),var(--acc2),var(--acc3),var(--acc1)); background-size:300% 100%;
+    -webkit-background-clip:text; background-clip:text; color:transparent; animation:accshim 10s linear infinite; }
+  @keyframes accshim { to { background-position:300% 0; } }
+  @media (prefers-reduced-motion: reduce) { .stage-flag,.stage-h1 { animation:none; } }
+  .stage-read { color:var(--text); font-size:14px; line-height:1.55; max-width:1000px; margin:2px 0 0; }
+  .stage-read b { color:var(--text); font-weight:700; }
+  /* KPI strip */
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:11px; margin-top:16px; }
+  .kpi { background:var(--panel2); border:1px solid var(--line); border-radius:13px; padding:12px 14px; }
+  .kpi .k { font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:700; }
+  .kpi .v { font-size:21px; font-weight:800; color:var(--text); margin:3px 0 1px; line-height:1.1; }
+  .kpi .s { font-size:11.5px; color:var(--muted); }
+  .kpi .v.up { color:var(--up); } .kpi .v.down { color:var(--down); } .kpi .v.warn { color:var(--warn); }
+  /* risk dial meter */
+  .dial { height:8px; border-radius:999px; background:linear-gradient(90deg,var(--down),var(--warn),var(--up)); position:relative; margin:7px 0 3px; }
+  .dial::after { content:""; position:absolute; top:50%; left:calc(var(--p,.5)*100%); transform:translate(-50%,-50%);
+    width:14px; height:14px; border-radius:50%; background:var(--text); border:3px solid var(--panel); box-shadow:0 1px 5px rgba(0,0,0,.4); }
+
+  /* section heads */
+  .sec-h { display:flex; align-items:baseline; gap:11px; flex-wrap:wrap; margin:0 0 4px; }
+  .sec-h h2 { margin:0; } .sec-h .sub { font-size:12px; color:var(--muted); }
+  /* segmented control */
+  .seg { display:inline-flex; gap:3px; background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:3px; }
+  .seg button { background:none; border:0; color:var(--muted); font:inherit; font-size:12px; font-weight:700; padding:5px 12px;
+    border-radius:7px; cursor:pointer; transition:color .15s, background .15s; }
+  .seg button.on { background:var(--link); color:#fff; }
+  .seg button:hover:not(.on) { color:var(--text); }
+
+  /* ===== USD performance leaderboard ===== */
+  .lb { display:flex; flex-direction:column; gap:3px; margin-top:12px; }
+  .lb-row { display:grid; grid-template-columns:168px 132px 1fr 152px; align-items:center; gap:14px;
+    padding:9px 8px; border-radius:10px; transition:background .15s; }
+  .lb-row:hover { background:var(--panel2); }
+  .lb-row .eco { display:flex; align-items:center; gap:8px; font-weight:700; min-width:0; }
+  .lb-row .eco .flg { font-size:17px; } .lb-row .eco small { color:var(--muted); font-weight:500; font-size:11px; display:block; }
+  .lb-row .nch { display:block; opacity:.9; }
+  .lb-bar { position:relative; height:24px; }
+  .lb-bar .axis { position:absolute; top:0; bottom:0; left:50%; width:1px; background:var(--line); }
+  .lb-seg { position:absolute; top:4px; height:16px; }
+  .lb-seg.equity { background:color-mix(in srgb,var(--info) 55%,transparent); border-radius:3px; }
+  .lb-seg.fx-pos { background:color-mix(in srgb,var(--up) 80%,transparent); border-radius:3px; }
+  .lb-seg.fx-neg { background:color-mix(in srgb,var(--down) 80%,transparent); border-radius:3px; }
+  .lb-usd { position:absolute; top:-1px; width:3px; height:26px; background:var(--text); border-radius:2px; }
+  .lb-vals { text-align:right; font-variant-numeric:tabular-nums; font-size:12px; }
+  .lb-vals .big { font-size:16px; font-weight:800; } .lb-vals small { color:var(--muted); display:block; font-size:10.5px; }
+  .lb-legend { display:flex; gap:16px; flex-wrap:wrap; font-size:11.5px; color:var(--muted); margin-top:11px; align-items:center; }
+  .lb-legend i { display:inline-block; width:11px; height:11px; border-radius:3px; vertical-align:middle; margin-right:5px; }
+  .lb-spark { min-width:0; }
+  @media (max-width:760px){ .lb-row { grid-template-columns:108px 1fr 92px; gap:9px; } .lb-spark { display:none; } }
+
+  /* ===== RRG rotation scatter ===== */
+  .rrg { position:relative; height:340px; border:1px solid var(--line); border-radius:12px; margin-top:10px; overflow:hidden;
+    background:
+      linear-gradient(to right, color-mix(in srgb,var(--down) 6%,transparent), transparent 50%, color-mix(in srgb,var(--up) 6%,transparent)),
+      linear-gradient(to top, color-mix(in srgb,var(--down) 5%,transparent), transparent 50%, color-mix(in srgb,var(--up) 5%,transparent)); }
+  .rrg .ax { position:absolute; background:var(--line); }
+  .rrg .ax.h { left:0; right:0; top:50%; height:1px; } .rrg .ax.v { top:0; bottom:0; left:50%; width:1px; }
+  .rrg .ql { position:absolute; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; opacity:.8; }
+  .rrg .ql.lead { right:10px; top:8px; color:var(--up); } .rrg .ql.impr { left:10px; top:8px; color:var(--info); }
+  .rrg .ql.weak { right:10px; bottom:8px; color:var(--warn); } .rrg .ql.lag { left:10px; bottom:8px; color:var(--down); }
+  .rrg .axl { position:absolute; font-size:9.5px; color:var(--muted); }
+  .rrg .pt { position:absolute; transform:translate(-50%,-50%); text-align:center; z-index:2; }
+  .rrg .pt .dot { width:13px; height:13px; border-radius:50%; margin:0 auto; box-shadow:0 0 0 4px color-mix(in srgb,var(--c) 22%,transparent); background:var(--c); }
+  .rrg .pt .e { font-size:19px; line-height:1; } .rrg .pt .n { font-size:9px; color:var(--muted); margin-top:1px; }
+  .rrg .pt.q-lead { --c:var(--up); } .rrg .pt.q-impr { --c:var(--info); } .rrg .pt.q-weak { --c:var(--warn); } .rrg .pt.q-lag { --c:var(--down); }
+  .tilt { display:inline-flex; align-items:center; gap:8px; padding:6px 13px; border-radius:10px; font-weight:700; font-size:13px;
+    background:color-mix(in srgb,var(--c,var(--muted)) 14%,var(--panel2)); color:color-mix(in srgb,var(--c,var(--muted)) 84%,var(--text));
+    border:1px solid color-mix(in srgb,var(--c,var(--muted)) 32%,transparent); }
+  .tilt.ex_us { --c:var(--up); } .tilt.us { --c:var(--info); } .tilt.mixed { --c:var(--warn); }
+
+  /* ===== rates desk ===== */
+  .rdesk { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin-top:12px; }
+  .rcard { background:var(--panel2); border:1px solid var(--line); border-radius:13px; padding:13px 15px; }
+  .rcard .rh { display:flex; align-items:center; gap:8px; margin-bottom:8px; } .rcard .rh .flg { font-size:18px; }
+  .rcard .rh b { font-size:14px; } .rcard .rh .shape { margin-left:auto; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:7px;
+    background:color-mix(in srgb,var(--c,var(--muted)) 16%,var(--panel)); color:color-mix(in srgb,var(--c,var(--muted)) 82%,var(--text)); }
+  .rcard .shape.inverted { --c:var(--down); } .rcard .shape.flat { --c:var(--warn); } .rcard .shape.normal { --c:var(--up); } .rcard .shape.steep { --c:var(--info); }
+  .rcard .rgrid { display:grid; grid-template-columns:1fr 1fr; gap:6px 12px; font-size:12px; }
+  .rcard .rk { color:var(--muted); } .rcard .rv { text-align:right; font-weight:700; font-variant-numeric:tabular-nums; }
+  /* curve slope mini-viz: 3m dot -> 10y dot */
+  .curve { position:relative; height:30px; margin:9px 0 4px; }
+  .curve .ln { position:absolute; top:50%; height:2px; background:color-mix(in srgb,var(--c,var(--link)) 60%,transparent); }
+  .curve .d { position:absolute; top:50%; transform:translate(-50%,-50%); width:8px; height:8px; border-radius:50%; background:var(--c,var(--link)); }
+  .curve .lab { position:absolute; font-size:9px; color:var(--muted); top:calc(50% + 7px); transform:translateX(-50%); white-space:nowrap; }
+  .anchor-card { background:linear-gradient(var(--panel2),var(--panel2)) padding-box, var(--acc-grad) border-box; border:1.5px solid transparent; }
+
+  /* ===== correlation heatmap ===== */
+  .heatwrap { overflow-x:auto; margin-top:12px; }
+  table.heat { border-collapse:separate; border-spacing:3px; font-size:12px; }
+  table.heat th { color:var(--muted); font-weight:600; font-size:11px; padding:3px 5px; white-space:nowrap; }
+  table.heat td { width:46px; height:38px; text-align:center; border-radius:7px; font-weight:700; font-variant-numeric:tabular-nums;
+    color:#fff; }
+  table.heat td.diag { opacity:.45; }
+  table.heat th.l { text-align:right; }
+
+  /* ===== generic panel-accent + index spark cell ===== */
+  .gridwrap .nch { display:block; width:74px; height:24px; }
+  .panel.accent { background:linear-gradient(var(--panel),var(--panel)) padding-box, var(--acc-grad) border-box; border:1.5px solid transparent; }
+  .twocol { display:grid; grid-template-columns:1fr 1fr; gap:14px; } @media (max-width:860px){ .twocol { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
@@ -142,6 +253,7 @@
       <a class="nav-link" href="javascript:void(0)">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="reports.html">📰 <span class="l-en">Research Reports</span><span class="l-zh">研究报告</span><span class="d"><span class="l-en">In-depth market & macro reports</span><span class="l-zh">深度市场与宏观报告</span></span></a>
+        <a href="policy_watch.html">🏛️ <span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></a>
         <a href="masterminds.html">🧠 <span class="l-en">Masterminds</span><span class="l-zh">操盘大师</span><span class="d"><span class="l-en">Multi-asset active GTAA strategies</span><span class="l-zh">多资产主动配置策略</span></span></a>
         <a href="crossasset.html">🧭 <span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></a>
         <a href="signal_lab.html">🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></a>
@@ -166,19 +278,17 @@
   </div>
 </nav>
 
+
 <div class="panel">
   <div class="row">
-    
     <h1>🌍 <span class="l-en">International Stock Dashboard</span><span class="l-zh">国际股票看板</span></h1>
-    
     <span style="flex:1"></span>
-    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-06-17 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-06-18 04:14 UTC</span>
+    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-06-18 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-06-18 03:30 UTC</span>
   </div>
-  
   <p class="muted small" style="margin:6px 0 0"><span class="l-en">Standout names pooled from the top constituents of Japan, South Korea, Taiwan, the UK and Europe — ranked by sector-neutral residual momentum computed WITHIN each market (a relative-strength lens, not a forward-edge claim). Each name is flagged by country. Search any name from the box above.</span><span class="l-zh">汇集日本、韩国、台湾、英国与欧洲主要成分股中的精选个股 — 按各自市场内部的板块中性残差动量排名（相对强弱视角，非前瞻收益主张）。每只个股标注所属国家。可在上方搜索框查询。</span>
     <a href="intl.html" style="color:var(--link);font-weight:600">← <span class="l-en">Macro comparison</span><span class="l-zh">宏观对比</span></a></p>
-  
 </div>
+
 
 
 
@@ -1449,6 +1559,8 @@ document.querySelectorAll('.more-btn[data-more]').forEach(function(btn){
   });
 });
 </script>
+
+
 <script src="theme.js"></script>
 <script src="tablesort.js"></script>
 </body>

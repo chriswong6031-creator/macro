@@ -79,19 +79,6 @@ def _verdict(prof_key: str, oos: dict, sc: dict) -> tuple[str, str]:
             f"（并非两个半段都赢）。这是真实的风险调整阿尔法加杠杆——而非单纯承担更高风险。")
 
 
-def _card(prof_key: str, res: dict) -> dict:
-    prof = M.PROFILES[prof_key]
-    sc, bench_en, bench_zh, _ = _bench_scorecard(prof_key, res["scorecard"], res.get("bench6040"))
-    return {"key": f"mm_{prof_key}", "icon": prof["icon"], "href": f"strategy_mm_{prof_key}.html",
-            "name_en": f"Mastermind — {prof['label_en']}", "name_zh": f"操盘大师 — {prof['label_zh']}",
-            "thesis_en": prof["thesis_en"], "thesis_zh": prof["thesis_zh"], "experimental": True,
-            "cagr": sc["cagr"], "hodl_cagr": sc["hodl_cagr"], "sharpe": sc["sharpe"],
-            "hodl_sharpe": sc["hodl_sharpe"], "maxdd": sc["maxdd"], "hodl_maxdd": sc["hodl_maxdd"],
-            "income": sc["avg_leverage"], "years": sc["years"],
-            "stance_en": f"vs {bench_en} · {res['gross_now']}x gross",
-            "stance_zh": f"对比{bench_zh} · {res['gross_now']}x 总敞口"}
-
-
 # per-profile accent for the pinned/highlighted UI (conservative→green, moderate→blue,
 # aggressive→violet). Single source of truth shared with the Strategy Scorecards pinned hero.
 _ACCENT = {"conservative": "#1FA971", "moderate": "#285fff", "aggressive": "#a855f7"}
@@ -99,31 +86,36 @@ _ACCENT = {"conservative": "#1FA971", "moderate": "#285fff", "aggressive": "#a85
 _RISKPOS = {"conservative": 0.16, "moderate": 0.5, "aggressive": 0.9}
 
 
+def _rich_card(pk: str, res: dict) -> dict:
+    """The rich mastermind card dict — the SINGLE source of truth for the accent UI used by
+    BOTH the masterminds.html page and the strategies.html pinned hero (computed from
+    engine.masterminds via M.backtest), so any future change flows to both on the next build."""
+    prof = M.PROFILES[pk]
+    sc, bench_en, bench_zh, _ = _bench_scorecard(pk, res["scorecard"], res.get("bench6040"))
+    return {
+        "key": f"mm_{pk}", "href": f"strategy_mm_{pk}.html", "icon": prof["icon"],
+        "name_en": f"Mastermind — {prof['label_en']}", "name_zh": f"操盘大师 — {prof['label_zh']}",
+        "profile_en": prof["label_en"], "profile_zh": prof["label_zh"],
+        "accent": _ACCENT[pk], "riskpos": _RISKPOS[pk],
+        "thesis_en": prof["thesis_en"], "thesis_zh": prof["thesis_zh"],
+        "cagr": sc["cagr"], "hodl_cagr": sc["hodl_cagr"], "sharpe": sc["sharpe"],
+        "hodl_sharpe": sc["hodl_sharpe"], "maxdd": sc["maxdd"], "hodl_maxdd": sc["hodl_maxdd"],
+        "sharpe_mult": round(sc["sharpe"] / sc["hodl_sharpe"], 1) if sc.get("hodl_sharpe") else None,
+        "bench_en": bench_en, "bench_zh": bench_zh, "gross_now": res["gross_now"], "years": sc["years"],
+    }
+
+
 def mastermind_cards(P=None) -> list[dict]:
-    """The 3 mastermind flagship cards, computed from engine.masterminds (M.backtest).
-    SHARED source of truth: scripts.build_strategies renders these in its pinned hero and
-    scripts.build_masterminds renders the full hub — both call THIS, so any future change to
-    the mastermind engine/data flows to both pages automatically on the next build."""
+    """The 3 mastermind flagship cards (shared by the masterminds.html page + the
+    strategies.html pinned hero)."""
     P = P if P is not None else M._prices()
     if P.empty:
         return []
     out = []
     for pk in ("conservative", "moderate", "aggressive"):
         res = M.backtest(pk, P)
-        if res.get("error"):
-            continue
-        prof = M.PROFILES[pk]
-        sc, bench_en, bench_zh, _ = _bench_scorecard(pk, res["scorecard"], res.get("bench6040"))
-        out.append({
-            "key": f"mm_{pk}", "href": f"strategy_mm_{pk}.html", "icon": prof["icon"],
-            "profile_en": prof["label_en"], "profile_zh": prof["label_zh"],
-            "accent": _ACCENT[pk], "riskpos": _RISKPOS[pk],
-            "thesis_en": prof["thesis_en"], "thesis_zh": prof["thesis_zh"],
-            "cagr": sc["cagr"], "hodl_cagr": sc["hodl_cagr"], "sharpe": sc["sharpe"],
-            "hodl_sharpe": sc["hodl_sharpe"], "maxdd": sc["maxdd"], "hodl_maxdd": sc["hodl_maxdd"],
-            "sharpe_mult": round(sc["sharpe"] / sc["hodl_sharpe"], 1) if sc.get("hodl_sharpe") else None,
-            "bench_en": bench_en, "bench_zh": bench_zh, "gross_now": res["gross_now"], "years": sc["years"],
-        })
+        if not res.get("error"):
+            out.append(_rich_card(pk, res))
     return out
 
 
@@ -143,7 +135,7 @@ def build() -> str:
         res = M.backtest(pk, P)
         if res.get("error"):
             continue
-        cards.append(_card(pk, res))
+        cards.append(_rich_card(pk, res))          # same rich card as the strategies.html hero
         html = env.get_template("active_detail.html.j2").render(**_detail_vm(pk, res, built), C=C)
         (site / f"strategy_mm_{pk}.html").write_text(html)
 

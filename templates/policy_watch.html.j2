@@ -1,0 +1,202 @@
+{% extends "report_base.html.j2" %}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
+{%- endmacro %}
+{% macro bl(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+
+{% block title %}{{ t('Fed & Policy Watch', '美联储与政策观察') }} — {{ t('Macro Dashboard', '宏观仪表盘') }}{% endblock %}
+
+{% block base_css %}
+  /* callouts (this page extends report_base, not article_base) */
+  .callout { border-radius:12px; padding:14px 17px; margin:14px 0; border:1px solid var(--line); background:var(--panel2); font-size:14px; line-height:1.6; }
+  .callout .co-h { font-weight:700; display:block; margin-bottom:4px; }
+  .callout.key  { border-left:4px solid #46b87a; background:color-mix(in srgb,#46b87a 8%,var(--panel2)); }
+  .callout.warn { border-left:4px solid var(--warn); background:color-mix(in srgb,var(--warn) 9%,var(--panel2)); }
+  .pw-hero { max-width:1060px; margin:18px auto 0; }
+  .pw-hero .eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); font-weight:600; margin:0 0 8px; }
+  .pw-hero h1 { font-size:29px; margin:0 0 8px; letter-spacing:-.01em; }
+  html[data-lang="zh"] .pw-hero h1 { letter-spacing:0; }
+  .pw-hero .lens { font-size:12px; color:var(--muted); }
+  .pw-wrap { max-width:1060px; margin:0 auto; }
+  h2.sec { font-size:19px; margin:30px 0 8px; padding-top:6px; display:flex; align-items:baseline; gap:9px; border-top:1px solid var(--line); padding-top:18px; }
+  h3.sub { font-size:14px; margin:16px 0 6px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+  .lede { font-size:14px; line-height:1.6; }
+  /* basis / status / confidence badges */
+  .b { display:inline-block; font-size:10px; font-weight:700; letter-spacing:.03em; padding:2px 7px; border-radius:6px; white-space:nowrap; }
+  .b-fact { color:#1f9a55; background:color-mix(in srgb,#1f9a55 13%,transparent); }
+  .b-inf  { color:#c77dff; background:color-mix(in srgb,#c77dff 14%,transparent); }
+  .b-prior{ color:#e0973a; background:color-mix(in srgb,#e0973a 14%,transparent); }
+  .b-open { color:var(--muted); background:var(--panel2); }
+  .b-hit  { color:#1f9a55; background:color-mix(in srgb,#1f9a55 13%,transparent); }
+  .b-miss { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
+  .th-fed{color:#c77dff}.th-treasury{color:#3fb6c0}.th-policy{color:#5b8def}.th-rotation{color:#46b87a}
+  .conf { font-size:11px; color:var(--muted); }
+  /* task-force + lever cards */
+  .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:12px; margin:12px 0; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+  .card .cn { font-weight:700; font-size:14.5px; margin:0 0 2px; }
+  .card .cmeta { font-size:11px; color:var(--muted); margin-bottom:7px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .card .cch { font-size:12.5px; line-height:1.5; margin:5px 0; }
+  .card .crp { font-size:12.5px; line-height:1.5; color:var(--text); opacity:.86; border-left:2px solid var(--link); padding-left:9px; margin-top:7px; }
+  .card .crp b { color:var(--link); font-weight:600; }
+  table.data { border-collapse:collapse; width:100%; font-size:12.5px; margin:10px 0; }
+  table.data th { text-align:left; padding:7px 9px; background:var(--panel2); color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); }
+  table.data td { padding:7px 9px; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.data tr:hover td { background:var(--panel2); }
+  .prox { font-family:ui-monospace,Menlo,monospace; font-size:11px; }
+  .led-stat { display:flex; gap:18px; flex-wrap:wrap; margin:8px 0 4px; font-size:12.5px; color:var(--muted); }
+  .led-stat b { color:var(--text); font-size:16px; }
+  .monitor a { color:var(--link); }
+  .monitor li { margin:5px 0; font-size:13px; }
+  .srcs { font-size:11.5px; color:var(--muted); word-break:break-word; }
+  .srcs a { color:var(--link); }
+{% endblock %}
+
+{% block content %}
+<section class="pw-hero">
+  <p class="eyebrow">🏛️ {{ t('Fed & Policy Watch', '美联储与政策观察') }}</p>
+  <h1>{{ t('Fed & Policy Watch', '美联储与政策观察') }}</h1>
+  <p class="lens">{{ t('Realpolitik / revealed-preference lens · non-partisan · as of', '现实政治／显示性偏好视角 · 非党派 · 截至') }} {{ intel.as_of }}</p>
+</section>
+
+<div class="pw-wrap">
+
+  <div class="callout key" style="margin-top:16px">
+    <span class="co-h">{{ t('The thesis', '核心论点') }}</span>
+    {{ bl(intel.thesis.en, intel.thesis.zh) }}
+  </div>
+  <div class="callout warn">
+    <span class="co-h">{{ t('Narrative vs revealed interest', '叙事 vs 真实利益') }}</span>
+    {{ bl(intel.regime_read.en, intel.regime_read.zh) }}
+  </div>
+
+  <!-- ================= THE FED ================= -->
+  <h2 class="sec">🏦 {{ t('The Fed under Warsh', '沃什治下的美联储') }}</h2>
+  <p class="lede">{{ bl(intel.fed.profile.en, intel.fed.profile.zh) }}</p>
+
+  <h3 class="sub">{{ t('Reform task forces — dated, falsifiable', '改革工作组 — 有日期、可证伪') }}</h3>
+  <div class="cards">
+    {% for tf in intel.fed.task_forces %}
+    <div class="card">
+      <div class="cn">{{ bl(tf.name_en, tf.name_zh) }}</div>
+      <div class="cmeta">
+        <span class="b b-open">{{ t('check by', '核查于') }} {{ tf.check_by }}</span>
+        <span class="b {{ 'b-fact' if 'FACT' in tf.basis else 'b-inf' }}">{{ tf.basis }}</span>
+        <span class="conf">{{ tf.confidence }}</span>
+      </div>
+      <div class="cch">{{ bl(tf.charter_en, tf.charter_zh) }}</div>
+      <div class="crp"><b>{{ t('Realpolitik read', '现实政治解读') }}:</b> {{ bl(tf.realpolitik_en, tf.realpolitik_zh) }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  <p class="lede" style="color:var(--muted)">⏳ {{ bl(intel.fed.staffing_note.en, intel.fed.staffing_note.zh) }}</p>
+
+  <!-- ================= THE ADMINISTRATION ================= -->
+  <h2 class="sec">🇺🇸 {{ t('The Administration', '行政当局') }}</h2>
+  <p class="lede">{{ bl(intel.administration.grand_strategy.en, intel.administration.grand_strategy.zh) }}</p>
+  <p class="conf">{{ t('Decision-makers tracked', '追踪的决策者') }}: {{ intel.administration.decision_makers | join(' · ') }}</p>
+
+  <h3 class="sub">{{ t('Verified policy levers', '已核实的政策杠杆') }}</h3>
+  <div class="cards">
+    {% for lv in intel.administration.verified_levers %}
+    <div class="card">
+      <div class="cn">{{ bl(lv.title_en, lv.title_zh) }}</div>
+      <div class="cmeta">
+        <span class="b {{ 'b-fact' if lv.basis.startswith('FACT') else 'b-inf' }}">{{ lv.basis }}</span>
+        <span class="conf">{{ lv.confidence }}</span>
+      </div>
+      <div class="cch">{{ bl(lv.detail_en, lv.detail_zh) }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  <h3 class="sub">{{ t('Geopolitical theaters', '地缘政治战区') }}</h3>
+  <div class="cards">
+    {% for th in intel.administration.theaters %}
+    <div class="card">
+      <div class="cn">{{ bl(th.title_en, th.title_zh) }}</div>
+      <div class="cmeta">
+        <span class="b {{ 'b-fact' if th.basis.startswith('FACT') else 'b-prior' }}">{{ th.basis }}</span>
+        <span class="conf">{{ th.confidence }}</span>
+      </div>
+      <div class="cch">{{ bl(th.facts_en, th.facts_zh) }}</div>
+      <div class="crp"><b>{{ t('Realpolitik', '现实政治') }}:</b> {{ bl(th.realpolitik_en, th.realpolitik_zh) }}</div>
+      <div class="cch" style="margin-top:6px"><b>💰 {{ t('Capital', '资本') }}:</b> {{ bl(th.capital_en, th.capital_zh) }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- ================= CAPITAL ROTATION ================= -->
+  <h2 class="sec">🧭 {{ t('Capital-rotation map', '资本轮动地图') }}</h2>
+  <h3 class="sub">🎯 {{ t('Targeted / protected / subsidized', '受益 / 受保护 / 受补贴') }}</h3>
+  <table class="data">
+    <tr><th>{{ t('Theme', '主题') }}</th><th>{{ t('Mechanism', '机制') }}</th><th>{{ t('Proxies', '代理标的') }}</th><th>{{ t('Basis', '依据') }}</th></tr>
+    {% for r in intel.rotation.targeted %}
+    <tr>
+      <td><strong>{{ bl(r.theme_en, r.theme_zh) }}</strong></td>
+      <td>{{ bl(r.mechanism_en, r.mechanism_zh) }}</td>
+      <td class="prox">{{ r.proxies | join(' ') if r.proxies else '—' }}</td>
+      <td><span class="b {{ 'b-prior' if 'PRIOR' in r.basis else ('b-fact' if 'FACT' in r.basis else 'b-inf') }}">{{ r.basis }}</span><br><span class="conf">{{ r.confidence }}</span></td>
+    </tr>
+    {% endfor %}
+  </table>
+  <h3 class="sub">🥶 {{ t('Starved / pressured', '受冷落 / 承压') }}</h3>
+  <table class="data">
+    <tr><th>{{ t('Theme', '主题') }}</th><th>{{ t('Mechanism', '机制') }}</th><th>{{ t('Proxies', '代理标的') }}</th><th>{{ t('Basis', '依据') }}</th></tr>
+    {% for r in intel.rotation.starved %}
+    <tr>
+      <td><strong>{{ bl(r.theme_en, r.theme_zh) }}</strong></td>
+      <td>{{ bl(r.mechanism_en, r.mechanism_zh) }}</td>
+      <td class="prox">{{ r.proxies | join(' ') if r.proxies else '—' }}</td>
+      <td><span class="b {{ 'b-prior' if 'PRIOR' in r.basis else ('b-fact' if 'FACT' in r.basis else 'b-inf') }}">{{ r.basis }}</span><br><span class="conf">{{ r.confidence }}</span></td>
+    </tr>
+    {% endfor %}
+  </table>
+
+  <!-- ================= PREDICTION LEDGER ================= -->
+  <h2 class="sec">🎯 {{ t('Falsifiable prediction ledger', '可证伪预测台账') }}</h2>
+  <p class="lede" style="color:var(--muted)">{{ t('The accountability spine: each call has a measurable outcome and a check-by date. Outcomes get scored over time so this layer earns a track record instead of being vibes. Policy-action calls (high-confidence, track explicit directives) are scored separately from market-outcome calls (lower-confidence inference).',
+      '问责脊柱：每条判断都有可衡量的结果与核查日期。结果将随时间被评分，使该层积累真实战绩而非凭感觉。政策行动类判断（高置信、追踪明确指令）与市场结果类判断（低置信、属推断）分开评分。') }}</p>
+  <div class="led-stat">
+    <span><b>{{ counts.total }}</b> {{ t('total', '总计') }}</span>
+    <span><b>{{ counts.open }}</b> {{ t('open', '未结') }}</span>
+    <span><b>{{ counts.hit }}</b> {{ t('hit', '命中') }}</span>
+    <span><b>{{ counts.miss }}</b> {{ t('miss', '落空') }}</span>
+    <span>{{ counts.policy_action }} {{ t('policy-action', '政策行动') }} · {{ counts.market_outcome }} {{ t('market-outcome', '市场结果') }}</span>
+  </div>
+  <table class="data">
+    <tr><th>#</th><th>{{ t('Thread', '线索') }}</th><th>{{ t('Prediction', '预测') }}</th><th>{{ t('Check by', '核查于') }}</th><th>{{ t('Tier', '层级') }}</th><th>{{ t('Conf', '置信') }}</th><th>{{ t('Status', '状态') }}</th></tr>
+    {% for p in intel.predictions %}
+    <tr>
+      <td><strong>{{ p.id }}</strong></td>
+      <td><span class="th-{{ p.thread }}">{{ p.thread }}</span></td>
+      <td>{{ bl(p.text_en, p.text_zh) }}</td>
+      <td>{{ p.check_by }}</td>
+      <td><span class="conf">{{ p.tier }}</span></td>
+      <td><span class="conf">{{ p.confidence }}</span></td>
+      <td><span class="b b-{{ p.status }}">{{ p.status }}</span></td>
+    </tr>
+    {% endfor %}
+  </table>
+
+  <!-- ================= MONITOR ================= -->
+  <h2 class="sec">📡 {{ t('Monitor — highest-signal sources', '监测 — 最高信号来源') }}</h2>
+  <ul class="monitor">
+    {% for m in intel.monitor %}
+    <li>{% if m.url %}<a href="{{ m.url }}" target="_blank" rel="noopener">{{ m.name }}</a>{% else %}<strong>{{ m.name }}</strong>{% endif %} — <span class="conf">{{ m.who }} · {{ m.cadence }}</span></li>
+    {% endfor %}
+  </ul>
+
+  <!-- ================= SOURCES + CAVEATS ================= -->
+  <h2 class="sec">📚 {{ t('Sources & caveats', '来源与说明') }}</h2>
+  <div class="callout">
+    {{ bl(intel.caveats.en, intel.caveats.zh) }}
+  </div>
+  <p class="srcs"><strong>{{ t('Primary sources', '一手来源') }}:</strong>
+    {% for s in intel.sources %}<a href="{{ s }}" target="_blank" rel="noopener">[{{ loop.index }}]</a> {% endfor %}
+  </p>
+  <p class="conf">{{ t('Generated', '生成于') }} {{ generated_utc }} · {{ t('display / context only — not investment advice', '仅供展示／参考——不构成投资建议') }}</p>
+
+</div>
+{% endblock %}

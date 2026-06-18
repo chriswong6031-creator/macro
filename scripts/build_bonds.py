@@ -313,9 +313,96 @@ def chart_sovereign(fr: pd.DataFrame, years=14) -> str:
     return _html(fig)
 
 
+_INTL_COLOR = {"US": C["blue"], "DE": C["amber"], "JP": C["red"], "GB": C["teal"],
+               "CA": C["indigo"], "AU": C["gold"], "CH": C["muted"]}
+_INTL_NAME = {"US": "US", "DE": "Bund", "JP": "JGB", "GB": "UK", "CA": "Canada",
+              "AU": "Australia", "CH": "Switzerland"}
+
+
+def chart_intl_yields(f: pd.DataFrame, years=6) -> str:
+    """Global sovereign 10y yields — the world's cost of capital, side by side."""
+    from engine import intl_bonds
+    hist = intl_bonds.history(f)
+    if not hist:
+        return ""
+    fig = go.Figure()
+    for code in ("US", "DE", "JP", "GB", "CA", "AU", "CH"):
+        s = hist.get(code)
+        if s is None:
+            continue
+        d = _tail_years(s.to_frame("y"), years)["y"]
+        _line(fig, d.index, d, _INTL_NAME.get(code, code), _INTL_COLOR.get(code, C["muted"]), n=2)
+    fig.update_layout(**{**PLOT, "height": 280, "yaxis": {"title": "10y yield %", "gridcolor": C["grid"]}})
+    return _html(fig)
+
+
+def chart_tp_decomp(f: pd.DataFrame, years=9) -> str:
+    """The 10y nominal yield decomposed: real (TIPS) + breakeven inflation = nominal,
+    with the ACM term premium overlaid — the cleanest 'why are long yields here?' read."""
+    cols = {c: f[c] for c in ("us10y", "us10y_real", "breakeven_10y", "term_premium_10y") if c in f}
+    if "us10y_real" not in cols or "breakeven_10y" not in cols:
+        return ""
+    d = _tail_years(pd.DataFrame(cols).dropna(how="all"), years)
+    pidx = _plot_idx(d.index)
+    fig = go.Figure()
+    # stacked area: real (base) + breakeven (on top) = nominal
+    fig.add_trace(go.Scatter(x=_dx(pidx), y=_plot_y(d["us10y_real"].reindex(pidx), 2), name="Real 10y (TIPS)",
+                             mode="lines", line={"color": C["blue"], "width": 1.2}, stackgroup="one",
+                             fillcolor="rgba(40,95,255,0.18)"))
+    fig.add_trace(go.Scatter(x=_dx(pidx), y=_plot_y(d["breakeven_10y"].reindex(pidx), 2), name="Breakeven inflation",
+                             mode="lines", line={"color": C["green"], "width": 1.2}, stackgroup="one",
+                             fillcolor="rgba(26,127,67,0.16)"))
+    if "us10y" in d:
+        _line(fig, d.index, d["us10y"], "Nominal 10y", C["ink"], width=1.8, n=2)
+    if "term_premium_10y" in d:
+        _line(fig, d.index, d["term_premium_10y"], "Term premium", C["amber"], width=1.4, dash="dot", n=2)
+    fig.add_hline(y=0, line={"color": C["faint"], "width": 1, "dash": "dot"})
+    fig.update_layout(**{**PLOT, "height": 280, "yaxis": {"title": "yield %", "gridcolor": C["grid"]}})
+    return _html(fig)
+
+
+def chart_xasset_betas(xasset: dict | None) -> str:
+    """Horizontal 'tornado' of each asset's weekly co-movement (corr) with its primary
+    bond driver — comparable across drivers, signed, the at-a-glance transmission map."""
+    if not xasset or not xasset.get("assets"):
+        return ""
+    rows = sorted(xasset["assets"], key=lambda a: (a.get("corr") or 0))
+    names = [f"{a['en']}" for a in rows]
+    corrs = [a.get("corr") or 0 for a in rows]
+    # neutral semantics: the SIGN is a structural relationship, not good/bad
+    colors = [C["amber"] if c < 0 else C["blue"] for c in corrs]
+    fig = go.Figure(go.Bar(x=corrs, y=names, orientation="h", marker_color=colors,
+                           text=[a.get("beta_disp", "") for a in rows], textposition="auto",
+                           textfont={"size": 9}))
+    fig.add_vline(x=0, line={"color": C["faint"], "width": 1})
+    fig.update_layout(**{**PLOT, "height": 360, "margin": {"l": 110, "r": 30, "t": 10, "b": 28},
+                         "xaxis": {"title": "weekly co-movement (corr)", "gridcolor": C["grid"], "range": [-0.8, 0.8]},
+                         "yaxis": {"gridcolor": C["grid"]}})
+    return _html(fig)
+
+
 # --------------------------------------------------------------------------- #
 # view-model (display-ready, from the snapshot)
 # --------------------------------------------------------------------------- #
+_XA_VERDICT = {"tailwind": (C["green"], "Tailwind", "顺风"), "headwind": (C["red"], "Headwind", "逆风"),
+               "neutral": (C["muted"], "Neutral", "中性")}
+
+
+def _xasset_vm(xasset: dict | None) -> dict | None:
+    """Light view-model: per-asset display color + bilingual verdict + |corr| bar width."""
+    if not xasset or not xasset.get("assets"):
+        return None
+    out = {"as_of": xasset.get("as_of"), "drivers_now": xasset.get("drivers_now"),
+           "verdict_en": xasset.get("verdict_en"), "verdict_zh": xasset.get("verdict_zh"), "assets": []}
+    for a in xasset["assets"]:
+        col, ven, vzh = _XA_VERDICT.get(a.get("verdict"), (C["muted"], a.get("verdict"), a.get("verdict")))
+        conf = abs(a.get("corr") or 0)
+        out["assets"].append({**a, "vcolor": col, "verdict_en": ven, "verdict_zh": vzh,
+                              "conf_pct": round(conf * 100), "conf_label": ("strong" if conf >= 0.4
+                              else "moderate" if conf >= 0.2 else "weak")})
+    return out
+
+
 def _vm(snap: dict, fr: pd.DataFrame, calib: dict | None = None) -> dict:
     calib = calib or {}
     csig = calib.get("signals", {})
@@ -513,12 +600,44 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("treasury-supply snapshot failed: %s", e)
 
+    # NEW world-class layers (additive, display-only leaves; never scored, never MRS):
+    #   intl_bonds       — Global Sovereign Bond Scorecard (G10 + EM + global yield tide)
+    #   bond_compass     — directional Duration & Curve Compass (factor blend)
+    #   bond_cross_asset — quantitative Bonds→Everything transmission (measured betas)
+    intl, compass, xasset = None, None, None
+    try:
+        from engine import intl_bonds as _ib
+        intl = _ib.snapshot(f)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("intl-bonds snapshot failed: %s", e)
+    try:
+        from engine import bond_compass as _bc
+        compass = _bc.snapshot(f)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("bond-compass snapshot failed: %s", e)
+    try:
+        from engine import bond_cross_asset as _bx
+        xasset = _bx.snapshot(f)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("bond-cross-asset snapshot failed: %s", e)
+
+    # extra charts for the new sections (each guarded — a chart must never break the page)
+    for key, fn in (("intl_yields", lambda: chart_intl_yields(f)),
+                    ("tp_decomp", lambda: chart_tp_decomp(f)),
+                    ("xasset_betas", lambda: chart_xasset_betas(xasset))):
+        try:
+            charts[key] = fn()
+        except Exception as e:  # noqa: BLE001
+            log.warning("bonds chart %s failed (%s)", key, e)
+            charts[key] = ""
+
     from engine.i18n import tr, td
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     env.globals.update(tr=tr, td=td)
     html = env.get_template("bonds.html.j2").render(
         C=C, as_of=as_of_disp, built=built, span=span, vm=vm, charts=charts, credit_cycle=credit_cycle,
         fed_path=fed_path, treasury_supply=treasury_supply,
+        intl=intl, compass=compass, xasset=xasset, xasset_vm=_xasset_vm(xasset),
         timeline=timeline, timeline_days=acfg["timeline_days"], n_alerts=len(recent))
     site = config.ROOT / config.load()["storage"]["site_dir"]
     (site / "bonds.html").write_text(html)
@@ -533,6 +652,13 @@ def main() -> int:
     (outdir / "latest.json").write_text(json.dumps(latest, indent=2, default=str, ensure_ascii=False))
     if fed_path is not None:
         snap["fed_path"] = fed_path  # deterministic LLM context on the bonds AI contract
+    # ADDITIVE contract extensions for the cross-asset brain (existing keys untouched):
+    if intl is not None:
+        snap["intl_bonds"] = intl              # global sovereign scorecard + US-vs-world premium
+    if compass is not None:
+        snap["bond_compass"] = compass         # directional duration / curve lean (display-only)
+    if xasset is not None:
+        snap["bond_cross_asset"] = xasset      # measured bond→asset transmission betas
     (outdir / "bond_health.json").write_text(json.dumps(snap, indent=2, default=str, ensure_ascii=False))
     log.info("wrote data/bonds/{latest,bond_health}.json — health=%s phase=%s",
              snap.get("health_score"), snap.get("cycle_phase"))
