@@ -501,8 +501,8 @@
 
     // Fundamentals — descriptive context (akshare). Additive; absent on ETFs/indices/uncovered names.
     var fpEl = document.getElementById('r_fund_panel'), f = d.fundamentals;
-    if (f && f.valuation) {
-      var v = f.valuation, fin = f.financials || {}, sh = f.shareholders || {};
+    if (f && (f.valuation || (f.description && (f.description.main_business || f.description.scope)))) {
+      var v = f.valuation || {}, fin = f.financials || {}, sh = f.shareholders || {};
       var fnum = function (x, n) { return x == null ? '—' : (+x).toFixed(n == null ? 1 : n); };
       var yi = function (x) { return x == null ? '—' : (x / 1e8).toFixed(0); };  // yuan -> 亿
       // valuation chips (neutral colouring — cheap is NOT a buy signal on A-shares)
@@ -513,8 +513,10 @@
       }
       var fhtml = '<div><span class="fnd-arch">' + lz(f.archetype_label, f.archetype_label_zh) + '</span>'
         + (f.fy ? ' <span class="muted" style="font-size:11px">' + L('f_year') + ' ' + f.fy + '</span>' : '') + '</div>';
-      var desc = f.description && f.description.main_business;
-      if (desc) fhtml += '<p class="fnd-desc">' + desc + '</p>';
+      // 主营业务 — the company's "what it does" line (akshare via 同花顺); fall back to
+      // the broader 经营范围 (business scope) when the concise main-business line is blank
+      var desc = f.description && (f.description.main_business || f.description.scope);
+      if (desc) fhtml += '<p class="fnd-desc">' + esc(desc) + '</p>';
       fhtml += '<div class="fnd-grid">'
         + chip('PE', v.pe, v.pe_sector_med) + chip('PB', v.pb, v.pb_sector_med)
         + chip('PS', v.ps, null) + chip('ROE', v.roe, v.roe_sector_med, '%')

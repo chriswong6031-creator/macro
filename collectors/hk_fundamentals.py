@@ -4,7 +4,9 @@ The HK parallel of collectors/china_fundamentals.py. HK has RICHER free data tha
 the A-share side — including an analyst-consensus forecast A-shares lack:
 
   - stock_hk_company_profile_em            -> company profile (industry, employees,
-                                              founding date, registered location)
+                                              founding date, registered location) +
+                                              公司介绍, a one-paragraph business
+                                              description (the "what it does" blurb)
   - stock_financial_hk_analysis_indicator_em (年度) -> annual indicators already
                                               computed: revenue, EPS, BPS, gross/net
                                               margin, ROE, ROA, debt ratio, current
@@ -31,6 +33,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import re
 import sys
 import warnings
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -93,6 +96,22 @@ def _financials(ak, sym: str) -> list[dict]:
     return rows
 
 
+def _trim_desc(text, max_sentences: int = 3, max_chars: int = 260):
+    """First couple of sentences of the 公司介绍 blurb, length-capped — the raw text
+    is a full paragraph and the card only has room for the lead. Splits on Chinese
+    AND Latin sentence enders so mixed CN/EN intros trim cleanly; a single over-long
+    sentence is hard-sliced so the card never overflows."""
+    s = " ".join(str(text or "").split())
+    if not s:
+        return None
+    out = ""
+    for i, part in enumerate(re.split(r"(?<=[。！？!?])\s*", s)):
+        if i >= max_sentences or (out and len(out) + len(part) > max_chars):
+            break
+        out += part
+    return (out.strip()[:max_chars]).rstrip() or None
+
+
 def _profile(ak, sym: str) -> dict:
     try:
         df = ak.stock_hk_company_profile_em(symbol=sym)
@@ -106,7 +125,9 @@ def _profile(ak, sym: str) -> dict:
         emp = _num(r.get("员工人数"))
         return {"industry": g("所属行业"), "employees": int(emp) if emp else None,
                 "founded": g("公司成立日期"), "domicile": g("注册地"),
-                "name_full": g("公司名称")}
+                "name_full": g("公司名称"),
+                # 公司介绍 = one-paragraph business description (the "what it does" blurb)
+                "description": _trim_desc(g("公司介绍"))}
     except Exception:  # noqa: BLE001
         return {}
 
