@@ -22,6 +22,9 @@
   var LWC = window.LightweightCharts;
   var PREF_KEY = 'bchart.prefs';
   var IND_ORDER = ['vol', 'rsi', 'stoch', 'macd', 'stochrsi'];   // pane stacking order
+  // crisp inline icons (unicode glyphs render inconsistently across mobile fonts)
+  var FS_EXPAND = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>';
+  var FS_COLLAPSE = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>';
 
   // ---- one-time scoped styles (injected like theme.js so the template stays lean)
   function injectCSS() {
@@ -47,6 +50,14 @@
       '.bchart-legend .k{opacity:.75} .bchart-legend .v{color:var(--text)}',
       '.bchart-legend .row{margin-top:1px}',
       '.bchart-msg{display:flex;align-items:center;justify-content:center;height:var(--bchart-h,520px);color:var(--muted);font-size:13px;border:1px dashed var(--line);border-radius:12px;text-align:center;padding:0 20px}',
+      // fullscreen control: a floating button (top-right of the chart) + a fixed overlay.
+      // CSS overlay (NOT the Fullscreen API, which iOS Safari refuses on non-<video>) so
+      // it works on every device; no CSS rotation, so touch pinch/pan stay pixel-accurate.
+      '.bchart-fsbtn{position:absolute;top:8px;right:8px;z-index:4;appearance:none;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);background:color-mix(in srgb,var(--panel) 82%,transparent);color:var(--muted);border-radius:8px;cursor:pointer;-webkit-tap-highlight-color:transparent}',
+      '.bchart-fsbtn:hover{color:var(--text);border-color:color-mix(in srgb,var(--link) 55%,var(--line))}',
+      '.bchart-full{position:fixed;inset:0;z-index:10000;margin:0;box-sizing:border-box;height:100vh;height:100dvh;background:var(--bg);padding:max(10px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}',
+      '.bchart-full .bchart-canvas{flex:1 1 auto;height:auto;overscroll-behavior:contain}',
+      'html.bchart-lock,html.bchart-lock body{overflow:hidden!important}',
       '@media (max-width:640px){.bchart-canvas{--bchart-h:430px}.bchart-msg{--bchart-h:430px}.bchart-chips{margin-left:0}}'
     ].join('');
     document.head.appendChild(s);
@@ -211,6 +222,8 @@
     this.rows = null; this.data = null;
     this._onTheme = this.rerender.bind(this);
     this._onLang = this.rebuildUI.bind(this);
+    var self = this;
+    this._onKey = function (e) { if (e.key === 'Escape' || e.keyCode === 27) self.exitFull(); };
   }
 
   Instance.prototype.mount = function () {
@@ -231,6 +244,7 @@
       self.rerender();
       document.addEventListener('themechange', self._onTheme);
       document.addEventListener('langchange', self._onLang);
+      document.addEventListener('keydown', self._onKey);
     }
     // Inline data (HK) renders without a round-trip; otherwise fetch the market's dir.
     if (this.opts.data) { use(this.opts.data); return this; }
@@ -277,12 +291,39 @@
     bar.appendChild(chips);
     this.bar = bar; this.wrap.appendChild(bar);
 
-    // canvas + legend
+    // canvas + legend + fullscreen button
     var canvas = document.createElement('div'); canvas.className = 'bchart-canvas';
     this.legend = document.createElement('div'); this.legend.className = 'bchart-legend';
     this.plot = document.createElement('div'); this.plot.className = 'bchart-plot';
-    canvas.appendChild(this.legend); canvas.appendChild(this.plot);
+    this.fsbtn = document.createElement('button'); this.fsbtn.type = 'button';
+    this.fsbtn.className = 'bchart-fsbtn';
+    var isFull = this.wrap.classList.contains('bchart-full');
+    this.fsbtn.innerHTML = isFull ? FS_COLLAPSE : FS_EXPAND;
+    this.fsbtn.setAttribute('aria-label', tt('Full screen', '全屏'));
+    this.fsbtn.onclick = function () { self.toggleFull(); };
+    canvas.appendChild(this.legend); canvas.appendChild(this.plot); canvas.appendChild(this.fsbtn);
     this.wrap.appendChild(canvas);
+  };
+
+  // CSS-overlay fullscreen (works on iOS, unlike requestFullscreen). Resize + restore
+  // the visible range after the box changes so bars never re-cram or reset zoom.
+  Instance.prototype.toggleFull = function () {
+    var full = this.wrap.classList.toggle('bchart-full');
+    document.documentElement.classList.toggle('bchart-lock', full);
+    if (this.fsbtn) {
+      this.fsbtn.innerHTML = full ? FS_COLLAPSE : FS_EXPAND;
+      this.fsbtn.setAttribute('aria-label', full ? tt('Exit full screen', '退出全屏') : tt('Full screen', '全屏'));
+    }
+    var self = this;
+    requestAnimationFrame(function () {
+      if (!self.chart) return;
+      var keep = null; try { keep = self.chart.timeScale().getVisibleLogicalRange(); } catch (e) {}
+      try { self.chart.resize(self.plot.clientWidth, self.plot.clientHeight); } catch (e) {}
+      if (keep) { try { self.chart.timeScale().setVisibleLogicalRange(keep); } catch (e) {} }
+    });
+  };
+  Instance.prototype.exitFull = function () {
+    if (this.wrap && this.wrap.classList.contains('bchart-full')) this.toggleFull();
   };
   Instance.prototype.rebuildUI = function () { if (this.rows) { this.buildUI(); this.rerender(); } };
   Instance.prototype.syncBar = function () {
@@ -549,6 +590,10 @@
   Instance.prototype.destroy = function () {
     document.removeEventListener('themechange', this._onTheme);
     document.removeEventListener('langchange', this._onLang);
+    document.removeEventListener('keydown', this._onKey);
+    // releasing the chart (e.g. navigating to another ticker) must not leave the
+    // page scroll-locked if it was destroyed while fullscreen.
+    document.documentElement.classList.remove('bchart-lock');
     if (this._ro) { try { this._ro.disconnect(); } catch (e) {} this._ro = null; }
     if (this._io) { try { this._io.disconnect(); } catch (e) {} this._io = null; }
     if (this.chart) { try { this.chart.remove(); } catch (e) {} this.chart = null; }
