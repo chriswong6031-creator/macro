@@ -4,58 +4,9 @@
     {
       "name": "macro-site",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-c", "import os,functools,http.server,socketserver;h=functools.partial(http.server.SimpleHTTPRequestHandler,directory='/Users/chriswong/Documents/Cluade/Macro Dashboard/site');socketserver.TCPServer(('',int(os.environ.get('PORT') or 8847)),h).serve_forever()"],
+      "runtimeArgs": ["-c", "import os,functools,http.server,socketserver;h=functools.partial(http.server.SimpleHTTPRequestHandler,directory='site');socketserver.TCPServer(('',int(os.environ.get('PORT') or 8847)),h).serve_forever()"],
       "port": 8847,
       "autoPort": true
-    },
-    {
-      "name": "hk-verify",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8851", "--directory", "/Users/chriswong/Documents/Cluade/Macro Dashboard/site"],
-      "port": 8851
-    },
-    {
-      "name": "feed-verify",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8862", "--directory", "/tmp/preview_site"],
-      "port": 8862
-    },
-    {
-      "name": "dash-lab",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8872", "--directory", "/tmp/dash-wt/site"],
-      "port": 8872
-    },
-    {
-      "name": "intg-verify",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8991", "--directory", "/Users/chriswong/Documents/Cluade/Macro Dashboard/site"],
-      "port": 8991
-    },
-    {
-      "name": "bc-verify",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8894", "--directory", "/tmp/bc-wt/site"],
-      "port": 8894
-    },
-    {
-      "name": "bonds-verify",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8139", "--directory", "/Users/chriswong/Documents/Cluade/Macro Dashboard/site"],
-      "port": 8139
-    },
-    {
-      "name": "china-alpha",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "--directory", "/Users/chriswong/Documents/Cluade/Macro Dashboard/site"],
-      "port": 8766,
-      "autoPort": true
-    },
-    {
-      "name": "fw-verify",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8773", "--directory", "/Users/chriswong/Documents/Cluade/Macro-Dashboard-fw/site"],
-      "port": 8773
     }
   ]
 }
