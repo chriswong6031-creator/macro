@@ -85,7 +85,7 @@
   // ---- projection & sizing -------------------------------------------------
   var projection = d3.geoOrthographic().precision(0.4);
   var path = d3.geoPath(projection, ctx);
-  var rot = [-30, -12];     // [lambda, phi]
+  var rot = [98, -38];      // [lambda, phi] — start centered on North America (98W, 38N)
   var fitScale = 240, scale = 240, W = 0, H = 0, R = 0, dpr = 1;
 
   function size() {
