@@ -123,3 +123,12 @@ composite, mirroring short_interest) → factors.html leaderboard + IC scorecard
 existing factor zoo carries (committed `ic_scorecard.json` spans the same 11 rebalances); the EPS history is
 deep, so a deep-history + PIT-survivorship re-validation (as the insider factor earned separately) is the
 honest follow-up. Deferred follow-ups: a per-stock SUE chip on stock.html + a `setups.py` SUE confirmer.
+
+> **⚠️ Follow-up DONE → SUE DEMOTED (2026 — `reports/sue-deep-history-phase0.md`).** The
+> deep-history + PIT-survivorship re-validation flagged above is complete: on deep 2011-2026 closes
+> SUE's cross-sectional edge COLLAPSES (IC 0.033→0.0006, HAC t 2.81→0.06, no longer survives BH-FDR;
+> the lone marginal survivor is now `payout`, on a survivorship-biased / optimistic panel). SUE is
+> demoted scored→display on factors.html / signal_lab.html and reframed everywhere downstream
+> (stock.html, the `engine/stock_score.py` EDGE leg, the dashboard SUE chips) as earnings-momentum /
+> PEAD context — not a validated standalone alpha. The "SHIPPED (scored factor)" status above is the
+> original record.

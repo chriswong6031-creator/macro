@@ -49,9 +49,11 @@ import pandas as pd
 MARKETS = ("US", "CN", "HK", "CA")
 
 # fallback on-card label for the EDGE axis per market (see _sel_kind for the dynamic,
-# leg-aware label). v2: the US/CA EDGE is the VALIDATED event core (earnings surprise +
-# insider buying + analyst revisions) — residual momentum is demoted to a light context
-# leg because on clean PIT large-cap data it does not predict (research/STOCK_CONVICTION_V2).
+# leg-aware label). v2: the US/CA EDGE leads with the event-evidence core (insider net-buying
+# — the lone borderline cross-sectional FDR survivor — + earnings surprise + analyst revisions)
+# — residual momentum is demoted to a light context leg because on clean PIT large-cap data it
+# does not predict (research/STOCK_CONVICTION_V2; SUE deep-history reconciliation in
+# reports/sue-deep-history-phase0.md).
 _SEL_KIND = {
     "US": ("event edge", "事件驱动优势"),
     "CA": ("event edge", "事件驱动优势"),
@@ -59,11 +61,18 @@ _SEL_KIND = {
     "HK": ("relative strength", "相对强度"),
 }
 
-# EDGE evidence weights (US/CA), anchored on the deep-PIT IC audit: SUE (IC .039, the only
-# FDR survivor, L/S Sharpe 1.26) > insider net-buy (.029, FDR-adjacent) > analyst-revision
-# momentum (literature IC ~.23, locally accruing) > residual momentum (.012, FAILS FDR -> a
-# light directional context only). Renormalized over whichever legs are present per name.
-_EDGE_W = {"sue": 0.40, "insider": 0.30, "revision": 0.20, "mom": 0.10}
+# EDGE evidence weights (US/CA). The SHALLOW 2023-2025 audit ranked SUE first (IC .039, lone
+# FDR survivor), but the DEEP 2011-2026 re-test (reports/sue-deep-history-phase0.md) COLLAPSED
+# SUE's cross-sectional edge to ~0 (IC .039->.0006, HAC t 2.85->0.06, fails BH-FDR). The lone
+# (borderline) cross-sectional FDR survivor is now insider net-buying (q~0.10, mid-cap habitat
+# — a confirmer, not a standalone sizer; engine/signal_lab.py, factors.html), so insider LEADS
+# the blend. SUE is kept as a per-name PEAD CONFLUENCE leg, not the dominant anchor: the deep
+# collapse is cross-sectional + survivorship-biased (an optimistic bound), and PEAD as a
+# per-name event effect can persist where the rank-IC is thin — but it no longer outweighs the
+# leg that actually survives FDR. Revision is literature-strong; residual momentum is light,
+# regime-scaled context. None is a standalone alpha -> this is a DISPLAY/confluence composite,
+# never a validated sizer. Renormalized over whichever legs are present per name.
+_EDGE_W = {"insider": 0.40, "sue": 0.30, "revision": 0.20, "mom": 0.10}
 
 # REGIME-CONDITIONAL momentum weight (research/STOCK_CONVICTION_V2 §3 + the regime audit in
 # scripts/conviction_v2_regime.py). The deep+PIT S&P panel (2008-2026, 63d) shows residual
@@ -141,14 +150,16 @@ def trust_tier(market: str, gate_go: bool = False) -> dict:
         # no event feeds on the TSX -> residual-momentum prior, never claimed as validated.
         return {"tier": "context", "en": "Residual-momentum prior — unvalidated, not a standalone edge",
                 "zh": "残差动量先验 — 未验证，非独立超额收益", "css": "tt-context"}
-    # US — v2 EDGE = validated event signals (SUE is the FDR survivor; insider is
-    # FDR-adjacent; analyst revisions are literature-strong and locally accruing).
+    # US — v2 EDGE = event-evidence signals. Insider net-buying is the lone (borderline)
+    # cross-sectional FDR survivor; SUE's cross-sectional edge COLLAPSED on deep history
+    # (reports/sue-deep-history-phase0.md) so it is kept as PEAD context, not a validated leg;
+    # analyst revisions are literature-strong and locally accruing.
     if gate_go:
-        return {"tier": "validated", "en": "Event edge (earnings + insider + revisions) cleared Phase-0",
-                "zh": "事件驱动优势（盈利＋内部人＋评级调整）已通过 Phase-0", "css": "tt-go"}
+        return {"tier": "validated", "en": "Event edge (insider + earnings + revisions) cleared Phase-0",
+                "zh": "事件驱动优势（内部人＋盈利＋评级调整）已通过 Phase-0", "css": "tt-go"}
     return {"tier": "event-edge",
-            "en": "Event edge: earnings surprise + insider buying (SUE FDR-validated) · revisions accruing",
-            "zh": "事件驱动优势：盈利超预期＋内部人买入（SUE 已通过 FDR）· 评级调整累积中", "css": "tt-context"}
+            "en": "Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha",
+            "zh": "事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益", "css": "tt-context"}
 
 # Per-market DISPLAY weights for the composite roll-up (labeled uncalibrated PRIOR;
 # the SHIPPED rank does not use these unless gate GO). Default behaviour is
@@ -257,9 +268,11 @@ def _axis_selection(rec: dict, market: str, calm: float | None = None) -> tuple[
     """The EDGE axis — the VALIDATED, event-driven predictive core that DRIVES the rank
     (research/STOCK_CONVICTION_V2). Returns (z, present_legs).
 
-    * US/CA — evidence-weighted blend of SUE (FDR survivor) + insider net-buying +
-      analyst-revision momentum + a LIGHT residual-momentum context (momentum alone is
-      ~noise on clean PIT large-cap data, so it earns only the 0.10 context weight). The
+    * US/CA — evidence-weighted blend LED by insider net-buying (the lone borderline FDR
+      survivor) + earnings-surprise SUE (a per-name PEAD confluence leg — its cross-sectional
+      edge collapsed on deep history, reports/sue-deep-history-phase0.md) + analyst-revision
+      momentum + a LIGHT residual-momentum context (momentum alone is ~noise on clean PIT
+      large-cap data, so it earns only the 0.10 context weight). The
       momentum weight is REGIME-CONDITIONAL via `calm` (see `_edge_weights`): it rises in a
       calm/risk-on tape where momentum predicts and is pulled toward zero in stress where it
       crashes — the validated lift in the regime audit. `calm=None` keeps the v2 base weight.
@@ -270,10 +283,10 @@ def _axis_selection(rec: dict, market: str, calm: float | None = None) -> tuple[
     m = market.upper()
     present: list[str] = []
     if m == "US":
-        # the validated event edge: SUE + insider + revisions exist for US (EDGAR / Form-4 /
-        # yfinance). Residual momentum is a LIGHT context leg (regime-scaled), and a CONFIDENCE
-        # FLOOR dampens a US name with NO event signal toward zero — it must not rank like a
-        # name carrying a real earnings/insider/revision edge.
+        # the event-evidence edge: insider (lone FDR survivor) + SUE (PEAD context) + revisions
+        # exist for US (Form-4 / EDGAR / yfinance). Residual momentum is a LIGHT context leg
+        # (regime-scaled), and a CONFIDENCE FLOOR dampens a US name with NO event signal toward
+        # zero — it must not rank like a name carrying a real insider/earnings/revision edge.
         ew = _edge_weights(calm)
         legs: dict[str, float] = {}
         sue = _f(rec.get("sue"))
