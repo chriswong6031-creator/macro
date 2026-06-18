@@ -90,6 +90,21 @@ class Adapter:
         raise last_exc  # type: ignore[misc]
 
 
+def is_connection_error(exc: Exception) -> bool:
+    """True when *exc* means the HOST is unreachable (timeout / refused / DNS), as
+    opposed to a data-level problem (404, empty series). Lets a multi-series
+    collector fail fast on a dead endpoint instead of retrying EVERY series through
+    its full timeout+backoff — a single FRED-frontend outage once turned the
+    intl_macro plane into a ~56-minute no-op (34 series x 3 retries x 30s)."""
+    if isinstance(exc, (requests.exceptions.ConnectionError,
+                        requests.exceptions.Timeout)):   # covers Connect/ReadTimeout
+        return True
+    s = str(exc).lower()
+    return ("timed out" in s or "max retries" in s
+            or "failed to establish a new connection" in s
+            or "connection aborted" in s or "connection refused" in s)
+
+
 def _breaker_state() -> dict:
     return store.read_status().get("circuit_breaker", {})
 
