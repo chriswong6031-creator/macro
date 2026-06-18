@@ -76,3 +76,79 @@ def snapshot(latest: dict | None) -> dict:
         "note_en": "Explicit reaction-function read off fed_path + the FOMC-statement guidance. A market price is reactive, not a forecast; display only.",
         "note_zh": "基于 fed_path 与 FOMC 声明指引的显式“反应函数”读数。市场价格是被动反应而非预测；仅供展示。",
     }
+
+
+# --------------------------------------------------------------------------- #
+# forward-accruing stance history — track shifts in the reaction function
+# --------------------------------------------------------------------------- #
+def _hist_path(root):
+    from pathlib import Path
+    return Path(root) / "data" / "regime" / "fed_stance_history.jsonl"
+
+
+def _read_hist(p):
+    import json
+    rows = []
+    if p.exists():
+        for line in p.read_text().splitlines():
+            line = line.strip()
+            if line:
+                try:
+                    rows.append(json.loads(line))
+                except ValueError:
+                    pass
+    return sorted(rows, key=lambda r: r.get("date") or "")
+
+
+def append_history(snap: dict | None, root=None, today=None) -> bool:
+    """Append today's stance to data/regime/fed_stance_history.jsonl (idempotent per
+    date). Returns True if written. Never raises."""
+    try:
+        from lib import config
+        from datetime import date as _date
+        import json
+        if not snap or snap.get("stance") in (None, "unknown"):
+            return False
+        root = root or config.ROOT
+        today = (today or _date.today()).isoformat()
+        p = _hist_path(root)
+        rows = _read_hist(p)
+        if any(r.get("date") == today for r in rows):
+            return False
+        rows.append({"date": today, "stance": snap.get("stance"), "label_en": snap.get("label_en")})
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in rows) + "\n")
+        return True
+    except Exception as e:  # noqa: BLE001
+        log.warning("fed_stance history append failed: %s", e)
+        return False
+
+
+def history_summary(root=None, lookback: int = 60) -> dict:
+    """Current stance streak: {current, since, days_in_stance, changed_recently, recent[]}.
+    'since' = first date of the current contiguous stance run. Never raises."""
+    try:
+        from lib import config
+        from datetime import date as _date
+        root = root or config.ROOT
+        rows = _read_hist(_hist_path(root))[-lookback:]
+        if not rows:
+            return {}
+        current = rows[-1]["stance"]
+        since = rows[-1]["date"]
+        for r in reversed(rows):
+            if r["stance"] == current:
+                since = r["date"]
+            else:
+                break
+        try:
+            days = (_date.today() - _date.fromisoformat(since)).days
+        except Exception:  # noqa: BLE001
+            days = None
+        changed = len({r["stance"] for r in rows[-5:]}) > 1
+        return {"current": current, "since": since, "days_in_stance": days,
+                "changed_recently": changed,
+                "recent": [{"date": r["date"], "stance": r["stance"]} for r in rows[-6:]]}
+    except Exception as e:  # noqa: BLE001
+        log.warning("fed_stance history summary failed: %s", e)
+        return {}

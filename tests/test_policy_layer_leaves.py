@@ -84,3 +84,23 @@ def test_rotation_history_accrues_and_summarizes(tmp_path):
 
 def test_rotation_history_summary_empty_when_absent(tmp_path):
     assert prc.history_summary(root=tmp_path) == {}
+
+
+def test_fed_stance_history_streak(tmp_path):
+    from datetime import date
+    (tmp_path / "data" / "regime").mkdir(parents=True)
+    haw = {"stance": "hawkish", "label_en": "Hawkish"}
+    neu = {"stance": "neutral", "label_en": "Neutral"}
+    assert fs.append_history(neu, root=tmp_path, today=date(2026, 6, 10)) is True
+    assert fs.append_history(haw, root=tmp_path, today=date(2026, 6, 12)) is True
+    assert fs.append_history(haw, root=tmp_path, today=date(2026, 6, 12)) is False   # idempotent per date
+    assert fs.append_history(haw, root=tmp_path, today=date(2026, 6, 15)) is True
+    assert fs.append_history({"stance": "unknown"}, root=tmp_path, today=date(2026, 6, 16)) is False  # skip unknown
+    h = fs.history_summary(root=tmp_path)
+    assert h["current"] == "hawkish" and h["since"] == "2026-06-12"   # streak began at the turn
+    assert h["changed_recently"] is True                              # neutral->hawkish within last 5
+    assert [r["stance"] for r in h["recent"]] == ["neutral", "hawkish", "hawkish"]
+
+
+def test_fed_stance_history_empty(tmp_path):
+    assert fs.history_summary(root=tmp_path) == {}
