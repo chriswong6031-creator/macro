@@ -64,3 +64,23 @@ def test_check_gld_alias_resolves():
     intel = {"rotation": {"targeted": [{"theme_en": "Gold", "proxies": ["GLD"]}]}}
     out = prc.check(intel, root=None, window=2, loader=lambda t, r: closes.get(t))
     assert out["themes"]["Gold"]["verdict"] == "working"   # GLD -> GC_F resolved
+
+
+def test_rotation_history_accrues_and_summarizes(tmp_path):
+    (tmp_path / "data" / "policy").mkdir(parents=True)
+    r1 = {"as_of": "2026-06-18", "themes": {"A": {"verdict": "working", "avg_rel": 0.05},
+                                            "B": {"verdict": "lagging", "avg_rel": -0.04},
+                                            "C": {"verdict": "na", "avg_rel": None}}}
+    assert prc.append_history(r1, root=tmp_path) is True
+    assert prc.append_history(r1, root=tmp_path) is False          # idempotent per date
+    r2 = {"as_of": "2026-06-19", "themes": {"A": {"verdict": "working", "avg_rel": 0.03},
+                                            "B": {"verdict": "working", "avg_rel": 0.02}}}
+    assert prc.append_history(r2, root=tmp_path) is True
+    h = prc.history_summary(root=tmp_path)
+    assert h["A"] == {"reads": 2, "working": 2, "working_rate": 1.0}
+    assert h["B"]["reads"] == 2 and h["B"]["working"] == 1 and h["B"]["working_rate"] == 0.5
+    assert "C" not in h                                            # 'na' reads excluded
+
+
+def test_rotation_history_summary_empty_when_absent(tmp_path):
+    assert prc.history_summary(root=tmp_path) == {}
