@@ -634,6 +634,17 @@ def main() -> int:
             log.error("china calendar build failed (%s); skipping", e)
             vm["calendar"], vm["event_strip"], vm["imminent"] = [], [], None
 
+        # Macro news & official policy tone — CCTV 新闻联播 z-scored policy tone +
+        # Eastmoney 全球财经快讯 filtered flashes (engine/china_news.py). Keyless,
+        # display-only, never scored; degrades to None before the collector has
+        # accrued tone history or if the flash fetch is unavailable. None-safe.
+        try:
+            from engine import china_news as cnews
+            vm["china_news"] = cnews.panel()
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("china news panel failed (%s); skipping", e)
+            vm["china_news"] = None
+
         # regime history -> Time Machine JSON + lifespan base rates on the main page
         hist = store.read("china_regime", "regime_history")
         if hist is not None and "quad" in hist.columns:
