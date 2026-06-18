@@ -4,8 +4,9 @@
    honesty caveats, and has no double-escaped entities.
  - dashboard.html.j2 compiles (the macro/stocks mode-conditional if/endif balance)
    and carries the split markers; same for the nav-edited china/gex/hk templates.
- - the landing hub emits the three split market cards and degrades gracefully when
-   a market didn't build.
+ - the landing hub (Aurora Flight Deck bento) emits the risk-pulse gauge, regime
+   matrix, two-half market tiles + vector bento, and degrades gracefully when a
+   market didn't build.
 
 Run as a script (no pytest needed): python -m tests.test_spvector_page
 """
@@ -118,13 +119,20 @@ def test_hub_split_cards():
         us_stocks={"label": "12 standout setups", "n_setups": 12, "present": True},
         commodities={"present": False}, forex={"present": False}, bonds={"present": False},
         etf={"present": False}, watchlist={"present": False})
-    nh = html.count('class="c-half"')
-    check("hub has cards-hero row", "cards-hero" in html)
+    # Aurora Flight Deck bento: a command region (hero risk-pulse + regime matrix +
+    # two-half market tiles) and the asset-class vector bento below.
+    nh = html.count('class="half"')
+    check("hub has bento deck", 'class="deck"' in html and "cmd-left" in html)
+    check("hub has risk-pulse gauge", "gauge-num" in html)
+    check("hub has regime matrix", "mx-row" in html)
     check("hub has >=6 split-card halves", nh >= 6, f"halves={nh}")
-    check("hub has cards-sub row", "cards-sub" in html)
-    for s in ("United States", "macro.html", "us_stocks.html"):
+    check("hub has vectors bento", 'class="vectors' in html)
+    for s in ("United States", "macro.html", "us_stocks.html", "china_stocks.html"):
         check(f"hub contains: {s}", s in html, "missing")
     check("no double-escaped entities in hub", "&amp;amp;" not in html)
+    # Markup+str / markup-in-attribute regressions ESCAPE the bilingual spans -> the
+    # tell-tale is a literal escaped "&lt;span" anywhere in the rendered hub.
+    check("no escaped-markup leak in hub", "&lt;span" not in html)
     # graceful: China/HK didn't build -> still renders, US hero present
     html2 = bv._hub_html(
         vm, macro, [], china={"present": False}, hk={"present": False},
