@@ -55,7 +55,8 @@
   function curTheme() { return docEl.getAttribute('data-theme') || 'dark'; }
   function setTheme(tm) {
     docEl.setAttribute('data-theme', tm);
-    try { localStorage.setItem('theme', tm); } catch (e) {}
+    // an explicit choice ends time-of-day auto mode (see each page's no-flash init)
+    try { localStorage.setItem('theme', tm); localStorage.removeItem('themeAuto'); } catch (e) {}
     document.querySelectorAll('.theme-btn').forEach(function (b) {
       b.innerHTML = tm === 'light'
         ? '<span class="l-en">🌙 Dark</span><span class="l-zh">🌙 深色</span>'
@@ -64,6 +65,24 @@
     if (window.hydrateMTF) window.hydrateMTF();
     themeCharts();
     document.dispatchEvent(new CustomEvent('themechange', { detail: tm }));
+    skyToggleFx(tm);
+  }
+  /* Sitewide theme-toggle flourish: a luminous sun (→ light) or a crescent moon
+     (→ dark) blooms in the centre of the screen, then fades. The landing page runs
+     its own richer sun/moon choreography, so it sets window.__skyDeck — bow out there. */
+  function skyToggleFx(tm) {
+    if (window.__skyDeck) return;
+    try {
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      var prev = document.querySelector('.sky-fx');   // a rapid re-toggle replaces the in-flight one
+      if (prev && prev.parentNode) prev.parentNode.removeChild(prev);
+      var o = document.createElement('div');
+      o.className = 'sky-fx ' + (tm === 'light' ? 'sun' : 'moon');
+      o.setAttribute('aria-hidden', 'true');
+      o.innerHTML = '<div class="orb"><span class="disc"></span><span class="ring"></span></div>';
+      document.body.appendChild(o);
+      setTimeout(function () { if (o.parentNode) o.parentNode.removeChild(o); }, 1100);
+    } catch (e) {}
   }
   window.toggleTheme = function () { setTheme(curTheme() === 'light' ? 'dark' : 'light'); };
 
