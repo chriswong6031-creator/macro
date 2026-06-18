@@ -339,6 +339,9 @@ _BTC_RICH_COLS = (
     "risk_index", "risk_regime", "momentum", "momentum_state", "structure_state",
     "impulse_state", "efficiency_ratio",
     "cycle_phase", "cycle_pct", "days_since_halving", "vdd_multiple", "cycle_position",
+    # bottom-anchored 1064/364 cycle clock (the chart's theory) — parity with the halving
+    # phase above; CONTEXT only, lets the synthesis cite the projected pivot + maturity
+    "cphase_phase", "cphase_pct", "cphase_days_left", "cphase_next_pivot", "cphase_status",
     "mvrv_z", "mvrv_z_pctile", "valuation_state", "nupl", "mayer", "reserve_risk_pctile",
     "market_extreme", "extreme_score",
     "vol_state", "dvol", "dvol_pctile", "rv_cone_pctile", "vrp", "rr_25d", "skew_term",
