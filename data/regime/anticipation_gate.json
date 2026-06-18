@@ -1083,5 +1083,70 @@
         ]
       }
     }
+  },
+  "NAME_DIRECTION": {
+    "_meta": {
+      "n_trials": 4,
+      "horizons_td": {
+        "medium": 42,
+        "long": 189
+      },
+      "driver": "real_rate",
+      "beta_win": 252,
+      "shrink": 0.66,
+      "p_up_band": [
+        0.44,
+        0.58
+      ],
+      "decision_panel": "PIT (S&P-1500 membership)",
+      "gate": "pooled OOS-R\u00b2>0 & CW q<0.05 & IC-IR HAC>0 & both-halves & beats-driver-only & recal-Brier\u2265\u22120.01; BH across horizons; DSR/bootstrap=context",
+      "note": "macro-transmission overlay (real_rate); display-only until scored; shared block for ALL names; default coin-flip; long horizon underpowered (DFII10 from 2003)"
+    },
+    "medium": {
+      "scored": false,
+      "pooled_slope": null,
+      "platt": null,
+      "p_up_band": [
+        0.44,
+        0.58
+      ],
+      "oos_r2": -0.00744,
+      "oos_r2_driver_only": -0.00638,
+      "cw_p": 0.9541,
+      "cw_q": 0.9541,
+      "ic_ir": -0.051,
+      "ic_t_hac": -0.691,
+      "brier_skill_recal": -0.002,
+      "beats_driver_only": false,
+      "half_ok": false,
+      "long_underpowered": false,
+      "n_oos_dates": 262,
+      "span": "2004-06-21..2026-04-02",
+      "deep_oos_r2": -0.00036,
+      "relu_oos_r2": -0.00013
+    },
+    "long": {
+      "scored": false,
+      "pooled_slope": null,
+      "platt": null,
+      "p_up_band": [
+        0.44,
+        0.58
+      ],
+      "oos_r2": -0.02556,
+      "oos_r2_driver_only": -0.02226,
+      "cw_p": 0.9128,
+      "cw_q": 0.9541,
+      "ic_ir": -0.051,
+      "ic_t_hac": -0.586,
+      "brier_skill_recal": -0.005,
+      "beats_driver_only": false,
+      "half_ok": false,
+      "long_underpowered": true,
+      "n_oos_dates": 248,
+      "span": "2005-01-19..2025-09-02",
+      "deep_oos_r2": -0.00164,
+      "relu_oos_r2": -0.00323
+    }
   }
 }

@@ -190,7 +190,8 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
          alert_max: int = 50, vix_ctx: dict | None = None,
          min_days: int = 300, allow_limited: bool = False,
          macro_frame=None, ant_gate: dict | None = None,
-         breadth: pd.Series | None = None) -> dict | None:
+         breadth: pd.Series | None = None,
+         name_dir_inputs: dict | None = None) -> dict | None:
     c = close.dropna()
     # The cycle ladder itself needs ~260 sessions (engine/cycles), so 300 is a
     # conservative margin for the broad library. Curated single-stock extras
@@ -240,7 +241,8 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
         from engine import anticipation as _antic
         a = _antic.anticipate(c, high, bench=bench, breadth=breadth, asset=ticker,
                               asset_class=("crypto" if kind == "crypto" else "us_equity"),
-                              macro_frame=macro_frame, gate=(ant_gate if kind == "equity" else {}))
+                              macro_frame=macro_frame, gate=(ant_gate if kind == "equity" else {}),
+                              name_dir_inputs=(name_dir_inputs if kind == "equity" else None))
         if a:
             rec["anticipation"] = a
     except Exception:  # noqa: BLE001 — additive; one cone error must not drop the name
@@ -363,10 +365,11 @@ EXTRAS_MIN_DAYS = 252
 
 
 def _winit(liq, drag, bench, a_days, a_max, vctx, extras=frozenset(),
-           macro_frame=None, ant_gate=None, breadth=None) -> None:
+           macro_frame=None, ant_gate=None, breadth=None, name_dir_inputs=None) -> None:
     _SHARED.update(liquidity=liq, macro_drag=drag, bench=bench,
                    alert_days=a_days, alert_max=a_max, vix_ctx=vctx, extras=extras,
-                   macro_frame=macro_frame, ant_gate=ant_gate, breadth=breadth)
+                   macro_frame=macro_frame, ant_gate=ant_gate, breadth=breadth,
+                   name_dir_inputs=name_dir_inputs)
 
 
 def _one_task(item):
@@ -385,7 +388,7 @@ def _one_task(item):
                     alert_max=_SHARED.get("alert_max", 50), vix_ctx=_SHARED.get("vix_ctx"),
                     min_days=min_days, allow_limited=is_extra,
                     macro_frame=_SHARED.get("macro_frame"), ant_gate=_SHARED.get("ant_gate"),
-                    breadth=_SHARED.get("breadth"))
+                    breadth=_SHARED.get("breadth"), name_dir_inputs=_SHARED.get("name_dir_inputs"))
     except Exception as e:  # noqa: BLE001 — one bad ticker must not kill the library
         log.debug("library %s failed: %s", ticker, e)
         return None
@@ -656,8 +659,25 @@ def main() -> int:
         ant_breadth = pd.read_parquet(config.data_dir() / "breadth" / "breadth.parquet")["pct_above_200"]
     except Exception:  # noqa: BLE001
         ant_breadth = None
+    # single-name macro-transmission lean (NAME_DIRECTION): build the shared rate inputs ONCE
+    # — but ONLY when the Phase-0 gate has a scored horizon. Single-name real-rate transmission
+    # is currently a validated NULL (research/NAME_DIRECTION_PHASE0.md), so this stays None and
+    # the per-name beta pass is skipped entirely → ZERO added cost on the daily critical path.
+    name_dir_inputs = None
+    try:
+        from engine import anticipation as _antic2, name_direction as _nd
+        nd_gate = _antic2.name_direction_gate()
+        if _antic2.name_direction_scored(nd_gate):
+            ri = _nd.rate_inputs(bench)
+            if ri is not None:
+                # cross-sectional mean duration prior (latest) for the live Vasicek shrink
+                dur_prior = 0.0  # conservative default; refined when the channel ever scores
+                name_dir_inputs = {"inputs": ri, "gate": nd_gate, "dur_prior": dur_prior}
+                log.info("NAME_DIRECTION active — single-name macro lean enabled")
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("name-direction inputs unavailable (%s)", e)
     _winit(liq, drag, bench, a_days, a_max, vctx, extra_set,
-           ant_macro, ant_gate, ant_breadth)                  # also primes the serial path
+           ant_macro, ant_gate, ant_breadth, name_dir_inputs)  # also primes the serial path
     workers = _library_workers()
     recs: list[dict | None] | None = None
     if workers > 1 and len(uni) > 50:
