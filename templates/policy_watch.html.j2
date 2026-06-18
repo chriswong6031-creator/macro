@@ -120,7 +120,7 @@
   {% set scls = 'b-miss' if fed_stance.color=='down' else ('b-fact' if fed_stance.color=='up' else 'b-open') %}
   <div class="callout">
     <span class="co-h">{{ t('Reaction function (explicit, display-only)', '反应函数（显式，仅展示）') }}
-      <span class="b {{ scls }}">{{ bl(fed_stance.label_en, fed_stance.label_zh) }}</span></span>
+      <span class="b {{ scls }}">{{ bl(fed_stance.label_en, fed_stance.label_zh) }}</span>{% if fed_hist and fed_hist.days_in_stance is not none %} <span class="conf">{{ t('for', '已持续') }} {{ fed_hist.days_in_stance }}{{ t('d', '天') }} ({{ t('since', '自') }} {{ fed_hist.since }}){% if fed_hist.changed_recently %} <span class="b b-open">{{ t('recently shifted', '近期转变') }}</span>{% endif %}</span>{% endif %}</span>
     {% if fed_stance.drivers_en %}<span class="l-en">{{ fed_stance.drivers_en | join(' · ') }}</span><span class="l-zh">{{ fed_stance.drivers_zh | join(' · ') }}</span>. {% endif %}
     <span class="conf">{{ bl(fed_stance.note_en, fed_stance.note_zh) }}</span>
   </div>
