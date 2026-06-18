@@ -800,6 +800,51 @@
   </div>
   {% endif %}
 
+  <!-- ===================== MACRO NEWS & OFFICIAL POLICY TONE (display-only) ===================== -->
+  {% if mode != 'stocks' and china_news %}
+  {% set CN = china_news %}
+  <style>
+    #china-news .muted{color:var(--muted);font-weight:400}
+    #china-news .cn-tone{display:flex;gap:8px;align-items:baseline;font-size:14px;margin:2px 0 6px;flex-wrap:wrap}
+    #china-news .cn-badge{font-weight:700;padding:1px 9px;border-radius:6px}
+    #china-news .cn-b-supportive{background:#1f4733;color:#a0ffc4}
+    #china-news .cn-b-cautious{background:#4f2422;color:#ff9c9c}
+    #china-news .cn-b-steady,#china-news .cn-b-building,#china-news .cn-b-unknown{background:var(--line);color:var(--muted)}
+    #china-news .cn-brief{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.5;margin:8px 0 6px}
+    #china-news .section-title{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:12px 0 6px;font-weight:700}
+    #china-news .cn-item{display:block;padding:7px 0;border-bottom:1px solid var(--panel2);color:var(--text);font-size:13px;line-height:1.45}
+    #china-news a.cn-item:hover{color:var(--up)}
+    #china-news .cn-theme{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.02em;padding:1px 6px;border-radius:5px;background:var(--line);color:var(--muted);margin-right:7px;vertical-align:1px}
+    #china-news .cn-when{color:var(--muted);font-size:11px;margin-left:6px;white-space:nowrap}
+    #china-news .cn-disc{font-size:11px;color:var(--muted);margin:10px 0 0;text-transform:none;line-height:1.5}
+  </style>
+  <div class="panel span12" id="china-news">
+    <h2>📰 {{ t('Macro news & official policy tone', '宏观新闻与官方政策基调') }}
+      {{ help("Two keyless, display-only legs. (1) Official policy tone — a z-score of a crude keyword proxy on the daily CCTV 新闻联播 (Xinwen Lianbo) broadcast: does official language lean supportive/pro-growth or cautious/risk-tilted? Read RELATIVE (z vs a trailing window), never as an absolute sentiment. (2) Filtered Eastmoney 全球财经快讯 flash headlines — kept only when they match a China macro theme (PBoC / inflation / growth / credit / fiscal / policy / markets), each tagged, deduped, newest-first. No per-headline AI. Nothing here feeds any score, signal, regime or allocation, and the mechanical model never sees it.", "两条无需密钥、仅展示的分腿。（1）官方政策基调 —— 对每日央视《新闻联播》文本的粗略关键词代理做 z 标准化：官方措辞偏积极/稳增长，还是偏谨慎/防风险？按相对值（相对滚动窗口的 z）解读，而非绝对情绪。（2）已筛选的东方财富《全球财经快讯》头条 —— 仅保留命中中国宏观主题（央行/物价/增长/信用/财政/政策/市场）的条目，逐条标注、去重、最新优先。无逐条新闻 AI。这里没有任何内容会进入任何评分、信号、区制或配置，机械模型也从不读取它们。") }}
+    </h2>
+    {% if CN.tone %}
+    <div class="cn-tone">
+      <span class="muted">{{ t('Official policy tone (CCTV 新闻联播):', '官方政策基调（央视新闻联播）：') }}</span>
+      <span class="cn-badge cn-b-{{ CN.tone.band }}">{{ t(CN.tone.label_en, CN.tone.label_zh) }}</span>
+      <span class="muted">· z {{ '%+.2f'|format(CN.tone.z) }} · {{ CN.tone.n_days }}{{ t('d series', '天序列') }} · {{ CN.tone.asof }}</span>
+    </div>
+    {% endif %}
+    {% if CN.brief and CN.brief.text %}
+    <div class="cn-brief">🤖 <b>{{ t('AI brief (context)', 'AI 摘要（背景）') }}:</b> {{ CN.brief.text }}</div>
+    {% endif %}
+    <div class="section-title">{{ t('Filtered macro flashes', '已筛选的宏观快讯') }}{% if CN.news and CN.news.n_raw %} <span class="muted">({{ CN.news.n_kept }}/{{ CN.news.n_raw }})</span>{% endif %} <span class="muted" style="text-transform:none">· {{ t('Eastmoney 全球财经快讯', '东方财富 全球财经快讯') }}</span></div>
+    {% if CN.news and CN.news.headlines %}
+      {% for h in CN.news.headlines %}
+      {% set tl = CN.theme_label.get(h.theme, [h.theme, h.theme]) %}
+      {% if h.url %}<a class="cn-item" href="{{ h.url }}" target="_blank" rel="noopener">{% else %}<span class="cn-item">{% endif %}<span class="cn-theme">{{ t(tl[0], tl[1]) }}</span>{{ h.title }}{% if h.time %}<span class="cn-when">{{ h.time }}</span>{% endif %}{% if h.url %}</a>{% else %}</span>{% endif %}
+      {% endfor %}
+    {% else %}
+      <p class="note" style="text-transform:none">{{ t('No macro flashes right now — the flash fetch is off (default) or temporarily unavailable.', '暂无宏观快讯 —— 快讯抓取已关闭（默认）或暂不可用。') }}</p>
+    {% endif %}
+    <p class="cn-disc">{{ t(CN.disclaimer, CN.disclaimer_zh) }}</p>
+  </div>
+  {% endif %}
+
   <!-- ===================== ACTION BOARD ===================== -->
   {% if actions and (actions.buy_now or actions.buy_soon or actions.take_profits or actions.hold or actions.avoid) %}
   <div class="panel span12">
