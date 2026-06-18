@@ -208,6 +208,10 @@ jobs:
         # after build_site/build_factor_series/build_baskets: documents the construction +
         # injects a few live stats from the JSONs. Standalone; returns 0 on any error.
         run: python -m scripts.build_methodology || echo "methodology skipped (additive)"
+      - name: research reports section (build_reports)
+        # registry-driven static blog/article section -> site/reports.html + one page per
+        # report (templates/report_*.html.j2). Depends on no live JSON; additive, returns 0.
+        run: python -m scripts.build_reports || echo "reports skipped (additive)"
       - name: cross-asset vector (build_crossasset)
         # after the commodity/forex/bonds pages, before build_vector (hub last):
         # TSMOM trend + intermarket ratios + correlation regime over keyless

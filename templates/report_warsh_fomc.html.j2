@@ -1,0 +1,158 @@
+{% extends "article_base.html.j2" %}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
+{%- endmacro %}
+
+{% block art_kicker %}{{ t('FOMC Special Report · United States', 'FOMC 专题报告 · 美国') }}{% endblock %}
+
+{% block art_toc %}
+  <a href="#setup">{{ t('1 · The setup', '1 · 前情') }}</a>
+  <a href="#fed">{{ t('2 · What the Fed delivered', '2 · 美联储交出了什么') }}</a>
+  <a href="#intraday">{{ t('3 · Intraday play-by-play', '3 · 盘中三幕') }}</a>
+  <a href="#crossasset">{{ t('4 · Cross-asset scorecard', '4 · 跨资产成绩单') }}</a>
+  <a href="#guidance">{{ t('5 · The guidance question', '5 · 指引之问') }}</a>
+  <a href="#outlook">{{ t('6 · What it means ahead', '6 · 后市研判') }}</a>
+  <a href="#watch">{{ t('7 · What to watch', '7 · 观察清单') }}</a>
+  <a href="#verdict">{{ t('8 · Scare or regime change?', '8 · 恐慌还是格局之变') }}</a>
+  <a href="#sources">{{ t('Sources', '资料来源') }}</a>
+{% endblock %}
+
+{% block art_body %}
+
+<div class="callout key">
+  <span class="co-h">{{ t('Bottom line', '核心结论') }}</span>
+  {{ t('This was mostly a genuine regime change, amplified by a fragile setup — neither a pure "confusion scare" nor a fresh bear market. Three things actually changed: (1) the Fed’s reaction function flipped from easing-biased to hawkish (the dot plot’s sign inverted from an implied cut to an implied hike); (2) Chair Warsh removed forward guidance entirely and abstained from the dot plot, stripping out the "verbal Fed put"; and (3) event-volatility is now structurally higher. What did not change: the actual policy rate (held), a low-recession / calm-credit economy, and a live oil-led disinflation pulse. The size of the one-day crash overstated the change in the rate path — that part was a positioning flush into a complacent, stretched, hedge-less tape.',
+        '这主要是一次真实的政策范式转变，并被脆弱的市场结构放大 —— 既非单纯的"困惑式恐慌"，也不是一轮新熊市。三件事真正改变了：（1）美联储"反应函数"由偏宽松转向鹰派（点阵图的方向从"隐含降息"翻转为"隐含加息"）；（2）沃什主席彻底取消前瞻指引并放弃提交自己的点位，抽走了"口头美联储托底"；（3）事件性波动率从此结构性走高。而没有改变的是：实际政策利率（维持不变）、低衰退/信用平稳的经济，以及仍在发挥作用的油价驱动反通胀脉冲。单日暴跌的幅度夸大了利率路径本身的变化 —— 那一部分是在一个自满、拥挤、缺乏对冲的盘面上发生的仓位踩踏。') }}
+</div>
+
+<h2 id="setup"><span class="num">1</span>{{ t('The setup — where markets were coming in', '前情 —— 市场带着怎样的仓位进入会议') }}</h2>
+<p>{{ t('The dashboard’s pre-meeting snapshot (data as-of 2026-06-16, generated 10:32am ET, before the 2pm decision) had quietly pre-loaded every ingredient for a sharp air-pocket:',
+      '仪表盘的会前快照（数据截至 2026-06-16，生成于美东时间上午10:32，即下午2点决议之前）其实已悄然集齐了一次急速下挫所需的全部要素：') }}</p>
+<ul>
+  <li>{{ t('<strong>The market was already priced hawkish.</strong> Funds futures had the rate rising 3.63% to 3.92% over 12 months — roughly one hike already priced, and 38bp more hawkish than the Fed’s old 3.40% dot. The dots converged up to the market, not past it.',
+        '<strong>市场早已按鹰派定价。</strong>利率期货已隐含未来12个月政策利率从 3.63% 升至 3.92% —— 即已price-in约一次加息，比美联储旧的 3.40% 中值点还鹰派 38 个基点。点阵图是"向上收敛到"市场，而非超越市场。') }}</li>
+  <li>{{ t('<strong>Leadership was stretched and un-chaseable.</strong> Semis (SMH) were +38% over 60 days at the 97.6th percentile; tech (XLK) at the 96.8th, tagged "DON’T CHASE." A long-duration growth bet built on falling yields — the exact bet a hawkish dot reverses.',
+        '<strong>领涨板块已极度拉伸、不可追高。</strong>半导体（SMH）60日 +38%，处于 97.6 百分位；科技（XLK）处于 96.8 百分位，被标记"不要追高"。这是建立在"收益率下行"之上的长久期成长押注 —— 鹰派点阵图恰恰逆转了这一前提。') }}</li>
+  <li>{{ t('<strong>The hedge was broken.</strong> Stock-bond correlation at +0.67 ("breakdown" regime, bonds not hedging) — so any rate/growth scare hits a 60/40 book with no offset.',
+        '<strong>对冲失效。</strong>股债相关性 +0.67（"失效"状态，债券无法对冲）—— 任何利率/增长惊吓打到 60/40 组合上都没有缓冲。') }}</li>
+  <li>{{ t('<strong>Dangerous concentration.</strong> The absorption ratio sat at the 96th percentile (top 4% of 5 years) — US equities + commodities + the dollar were effectively "one bet," so a de-rating compounds instead of diversifying.',
+        '<strong>危险的高度集中。</strong>吸收比率处于 96 百分位（5年区间前4%）—— 美股 + 大宗商品 + 美元实际上是"同一笔押注"，一旦重估是叠加放大而非分散。') }}</li>
+  <li>{{ t('<strong>Complacency:</strong> VIX dormant near 16, the S&P within 1.2% of its high, NAAIM exposure still 79.',
+        '<strong>自满情绪：</strong>VIX 蛰伏在约16，标普距其高点仅 1.2%，NAAIM 多头仓位仍高达 79。') }}</li>
+  <li>{{ t('<strong>But the foundation was benign:</strong> recession risk LOW, GDPNow 2.83%, credit pristine (HY OAS 2.71, 12th pctile), plumbing calm, Fed put present — a solid floor under any selloff.',
+        '<strong>但基本面地基稳固：</strong>衰退风险低、GDPNow 2.83%、信用极干净（HY OAS 2.71，12百分位）、货币市场管道平稳、美联储托底仍在 —— 为任何抛售提供了坚实底部。') }}</li>
+</ul>
+<div class="callout lead">{{ t('In one line: a complacent, stretched, hedge-less tape that had already priced the hawkish path walked into a meeting designed to remove its safety net.',
+      '一句话：一个自满、拉伸、缺乏对冲、且已按鹰派路径定价的盘面，撞上了一场旨在撤走其安全网的会议。') }}</div>
+
+<h2 id="fed"><span class="num">2</span>{{ t('What the Fed actually delivered', '美联储实际交出了什么') }}</h2>
+<p>{{ t('The decision was a non-event — held at 3.50–3.75%, unanimous 12–0, a fourth straight hold. The shock was the Summary of Economic Projections (SEP) / dot plot, released at 2:00pm:',
+      '决议本身是非事件 —— 维持利率在 3.50–3.75%，以 12–0 全票通过，为连续第四次按兵不动。真正的冲击来自下午2点公布的经济预测摘要（SEP）/ 点阵图：') }}</p>
+<table class="data">
+  <tr><th>{{ t('Projection (median)', '预测（中值）') }}</th><th>{{ t('Mar 2026', '2026年3月') }}</th><th>{{ t('Jun 2026', '2026年6月') }}</th><th>{{ t('Shift', '变化') }}</th></tr>
+  <tr><td><strong>{{ t('Fed funds, end-2026', '联邦基金利率，2026年底') }}</strong></td><td class="num">3.4% <span class="mut">({{ t('cut', '降息') }})</span></td><td class="num r-neg">3.8% ({{ t('~1 HIKE', '约1次加息') }})</td><td>{{ t('sign flipped', '方向翻转') }}</td></tr>
+  <tr><td>{{ t('Fed funds, end-2027', '联邦基金，2027年底') }}</td><td class="num">3.1%</td><td class="num">3.6%</td><td class="num">+0.5pp</td></tr>
+  <tr><td>{{ t('Fed funds, end-2028', '联邦基金，2028年底') }}</td><td class="num">3.1%</td><td class="num">3.4%</td><td class="num">+0.3pp</td></tr>
+  <tr><td>{{ t('Longer-run (neutral)', '长期（中性）') }}</td><td class="num">3.1%</td><td class="num">3.1%</td><td>{{ t('unchanged', '不变') }}</td></tr>
+  <tr><td><strong>{{ t('PCE inflation 2026', 'PCE 通胀 2026') }}</strong></td><td class="num">2.7%</td><td class="num r-neg">3.6%</td><td class="num">+0.9pp</td></tr>
+  <tr><td>{{ t('Core PCE 2026', '核心 PCE 2026') }}</td><td class="num">2.7%</td><td class="num">3.3%</td><td class="num">+0.6pp</td></tr>
+  <tr><td>{{ t('Real GDP 2026', '实际 GDP 2026') }}</td><td class="num">2.4%</td><td class="num">2.2%</td><td class="num">−0.2pp</td></tr>
+  <tr><td>{{ t('Unemployment 2026', '失业率 2026') }}</td><td class="num">4.4%</td><td class="num">4.3%</td><td class="num">−0.1pp</td></tr>
+</table>
+<p>{{ t('<strong>The dot distribution</strong> (verified against the official Fed table): <strong>9 hike / 8 hold / 1 cut</strong> — not the "9–9" widely reported. The entire 2026–28 path now sits above the unchanged 3.1% neutral rate. It is a stagflation-lite revision: inflation marked sharply up, growth trimmed.',
+      '<strong>点阵分布</strong>（已与美联储官方表格核对）：<strong>9票加息 / 8票不变 / 1票降息</strong> —— 并非外界广传的"9对9"。2026–28 全程路径如今都高于不变的 3.1% 中性利率。这是一次"轻度滞胀"式修正：通胀大幅上调，增长被下调。') }}</p>
+<p>{{ t('<strong>Two Warsh-specific bombshells:</strong>', '<strong>两枚"沃什专属"重磅炸弹：</strong>') }}</p>
+<ul>
+  <li>{{ t('<strong>He withheld his own dot</strong> — the first sitting Fed Chair to skip the SEP since the dot plot launched in 2012. ("I did not submit a dot. For me, it’s not helpful in the conduct of policy." The submissions, he said, came in "with pencils — those kind with the big erasers.")',
+        '<strong>他没有提交自己的点位</strong> —— 自2012年点阵图设立以来，首位不参与 SEP 的在任美联储主席。（"我没有提交点位。对我而言，它对货币政策执行没有帮助。"他说提交上来的预测都是用"带大橡皮擦的铅笔"写的。）') }}</li>
+  <li>{{ t('<strong>The statement was gutted to ~114 words</strong> (CNBC rounded to "~130," from 341 in April), explicitly deleting forward guidance and the easing-bias language. He launched five reform task forces but defended the 2% target: "The ‘two’ is to the left of the decimal point. For now, ‘zero’ is to the right."',
+        '<strong>声明被砍到约114个单词</strong>（CNBC 概括为"约130词"，较4月341词大幅缩减），明确删去前瞻指引与偏宽松措辞。他成立五个改革工作组，但捍卫2%目标："小数点左边是‘2’，目前小数点右边是‘0’。"') }}</li>
+</ul>
+
+<h2 id="intraday"><span class="num">3</span>{{ t('The intraday play-by-play — and the three "why"s', '盘中三幕 —— 以及三个"为什么"') }}</h2>
+<p class="mut">{{ t('Morning (pre-2pm): risk-on. The Dow hit a fresh all-time intraday record, the S&P high was 7,532, May retail sales were strong (+0.9%).',
+      '上午（下午2点前）：风险偏好高涨。道指刷新盘中历史新高，标普高见 7,532，5月零售销售强劲（+0.9%）。') }}</p>
+<h3>{{ t('① 2:00pm — the drop. Why it fell first.', '① 下午2:00 —— 下跌。为何最初会跌。') }}</h3>
+<p>{{ t('The hawkish dots hit. The median flipped to an implied hike, nine officials penciled in higher rates, and the Fed ratified the hawkish lean rather than pushing back. The 2-year yield rocketed and equities turned negative (S&P −0.34% by 2:20pm). The proximate cause was the dot plot and the resulting yield surge — not the communication style. (Economist Claudia Sahm, in real time: "The market reaction… is largely to the dot plot being much more hawkish.")',
+      '鹰派点阵图来袭。中值翻转为隐含加息，9名官员预测利率走高，而美联储选择认可这一鹰派倾向而非出面"压一压"。2年期美债收益率飙升，股市转跌（到2:20标普 −0.34%）。直接原因是点阵图及由此引发的收益率飙升 —— 而非沟通风格。（经济学家 Claudia Sahm 当时即评："市场反应……主要是因为点阵图鹰派得多。"）') }}</p>
+<h3>{{ t('② ~2:30pm — the rebound. Why it bounced.', '② 约下午2:30 —— 反弹。为何会回升。') }}</h3>
+<p>{{ t('Two transient reliefs as the presser opened: (a) a comment that policy looks restrictive toward housing but not financial markets (read as "the Fed isn’t targeting stocks"), and (b) initial relief as Warsh detailed five reform task forces — first parsed as modernization, not tightening. The Nasdaq briefly turned positive; the Dow’s loss narrowed to ~214 points. A misread that faded.',
+      '发布会一开场出现两个短暂宽慰：（a）有评论称政策对房地产有抑制、但对金融市场没有（被解读为"美联储并非盯着股市"）；（b）沃什详述五个改革工作组，初期被理解为"现代化"而非紧缩。纳指一度转涨，道指跌幅收窄至约214点。这是一次很快消退的误读。') }}</p>
+<h3>{{ t('③ Into the close — the crash. Why it cratered again.', '③ 临近收盘 —— 再度暴跌。为何二次崩跌。') }}</h3>
+<p>{{ t('In Q&A, Warsh refused to restore the safety net: "Forward guidance isn’t the business we should be in"… "I can’t give you any guidance on what we’re going to do next." Asked what would trigger a hike, he deflected: "We’ve dropped forward guidance." He hammered price stability, defended 2%, and pointedly declined to talk down the selloff, saying he valued the "unfiltered" market reaction. Markets realized the accommodative tilt some had hoped for from a Trump appointee was not coming — and the comfort blanket of guidance was gone. Indexes sold to session lows into the bell — the worst first-Fed-day for a new chair since 1994 (Bespoke).',
+      '在问答环节，沃什拒绝重建安全网："前瞻指引不该是我们要做的事"……"我无法就下一步会怎么做给你任何指引。"被问及什么会触发加息时，他回避道："我们已放弃前瞻指引。"他反复强调价格稳定、捍卫2%目标，并明确拒绝出面安抚抛售，称他重视市场"未经过滤"的真实反应。市场意识到：某些人原本指望这位特朗普提名者会偏宽松，但这不会出现 —— 而那张"指引安抚牌"已被收走。指数尾盘跌至当日低点 —— 这是1994年以来新任主席首场会议表现最差的一天（Bespoke 数据）。') }}</p>
+
+<h2 id="crossasset"><span class="num">4</span>{{ t('Cross-asset scorecard', '跨资产成绩单') }} <span class="mut" style="font-size:13px;font-weight:400">· {{ t('June 17 close', '6月17日收盘') }}</span></h2>
+<table class="data">
+  <tr><th>{{ t('Asset', '资产') }}</th><th>{{ t('Move', '变动') }}</th><th>{{ t('Level', '水平') }}</th><th>{{ t('Note', '备注') }}</th></tr>
+  <tr><td><strong>{{ t('S&P 500', '标普500') }}</strong></td><td class="num r-neg">−1.21%</td><td class="num">7,420.10</td><td>{{ t('from high 7,532; closed near lows', '自高点 7,532 回落；收于接近低点') }}</td></tr>
+  <tr><td><strong>{{ t('Nasdaq', '纳斯达克') }}</strong></td><td class="num r-neg">−1.34%</td><td class="num">26,021.66</td><td>{{ t('worst major — most growth-heavy', '最差大盘 —— 成长权重最高') }}</td></tr>
+  <tr><td><strong>{{ t('Dow', '道琼斯') }}</strong></td><td class="num r-neg">−0.98% (−507)</td><td class="num">51,492.55</td><td>{{ t('reversed from a fresh record high', '自刚刷新的历史新高反转') }}</td></tr>
+  <tr><td><strong>{{ t('Russell 2000', '罗素2000') }}</strong></td><td class="num r-neg">−0.72%</td><td class="num">2,917.98</td><td>{{ t('best relative; green most of morning', '相对最强；上午多数收涨') }}</td></tr>
+  <tr><td><strong>VIX</strong></td><td class="num r-neg">+12.4%</td><td class="num">18.44</td><td>{{ t('repricing, not panic', '是重估，而非恐慌') }}</td></tr>
+  <tr><td><strong>{{ t('2Y Treasury', '2年期美债') }}</strong></td><td class="num r-neg">+~16bp</td><td class="num">~4.22%</td><td>{{ t('now above the 3.75% range ceiling', '现已高于 3.75% 区间上限') }}</td></tr>
+  <tr><td><strong>{{ t('10Y Treasury', '10年期美债') }}</strong></td><td class="num r-neg">+~7bp</td><td class="num">~4.50%</td><td>{{ t('bear-flattening (front end led)', '熊市趋平（短端主导）') }}</td></tr>
+  <tr><td><strong>{{ t('Dollar (DXY)', '美元指数') }}</strong></td><td class="num r-pos">+~0.9%</td><td class="num">~100.4</td><td>{{ t('broke 100; USD/JPY ~160.8', '突破100；美元/日元约160.8') }}</td></tr>
+  <tr><td><strong>{{ t('Gold', '黄金') }}</strong></td><td class="num r-neg">−1.8% / −2.3%</td><td class="num">~$4,255–4,275</td><td>{{ t('real-yield / dollar hit; haven failed', '实际利率/美元打压；避险失灵') }}</td></tr>
+  <tr><td><strong>{{ t('Silver', '白银') }}</strong></td><td class="num r-neg">−3.8%</td><td class="num">~$70</td><td>{{ t('high-beta precious', '高贝塔贵金属') }}</td></tr>
+  <tr><td><strong>{{ t('Copper', '铜') }}</strong></td><td class="num r-pos">+0.35%</td><td class="num">~$6.51</td><td>{{ t('bucked it — pro-cyclical (Iran + AI)', '逆势 —— 顺周期（伊朗 + AI）') }}</td></tr>
+  <tr><td><strong>{{ t('WTI crude', 'WTI 原油') }}</strong></td><td class="num r-neg">−5.8%</td><td class="num">~$75</td><td>{{ t('⚠ mostly the US–Iran deal, not the Fed', '⚠ 主要源于美伊协议，非美联储') }}</td></tr>
+  <tr><td><strong>{{ t('Bitcoin', '比特币') }}</strong></td><td class="num r-neg">~−2%</td><td class="num">{{ t('mid-$64k', '$64k 中段') }}</td><td>{{ t('"sell the news"; MSTR −4.3%', '"利好兑现即抛售"；MSTR −4.3%') }}</td></tr>
+</table>
+<p>{{ t('<strong>The sector cross-section tells the story:</strong> worst were the longest-duration groups — communication services −2.91%, consumer discretionary −2.34%, megacap tech all red. Banks were the relative winner — JPMorgan +1% to a fresh all-time intraday high on the steeper-curve narrative. The speculative tail was crushed (DraftKings −7.16%, SpaceX/SPCX ~−5%); semis showed dispersion, not blanket selling (ASML +4%). Gold, stocks and bonds all fell together — the signature of a discount-rate / "higher-for-longer" shock, not a growth-scare flight to safety.',
+      '<strong>板块横截面道出真相：</strong>跌幅最大的是久期最长的板块 —— 通信服务 −2.91%、非必需消费 −2.34%，大型科技股全线收跌。银行是相对赢家 —— 摩根大通 +1% 刷新盘中历史新高，受益于"曲线更陡"叙事。投机性尾部被血洗（DraftKings −7.16%，SpaceX/SPCX 约 −5%）；半导体内部分化而非全面抛售（ASML +4%）。黄金、股票和债券同时下跌 —— 这是"贴现率/更高更久"冲击的特征，而非增长惊吓引发的避险出逃。') }}</p>
+
+<h2 id="guidance"><span class="num">5</span>{{ t('Why the dovish guidance some expected never came', '为何某些人期待的鸽派指引始终没有出现') }}</h2>
+<ul>
+  <li>{{ t('<strong>On the data and rate path, the market was not positioned for dovish.</strong> Futures already priced ~1 hike; December hike-odds had surged to ~71–77% (from &lt;50% in early June) after a hot June 10 CPI (4.2%, a 3-year high).',
+        '<strong>就数据与利率路径而言，市场并未押注鸽派。</strong>期货早已price-in约一次加息；在6月10日炙热的CPI（4.2%，三年新高）之后，12月加息概率已从6月初不到50%飙升至约71–77%。') }}</li>
+  <li>{{ t('<strong>On Warsh personally, there was a dovish hope.</strong> As a Trump appointee, some expected accommodation. Instead he delivered hawkish dots, a defended 2% target, and a refusal to soothe markets — showing, as Fortune put it, that he is "decisively not Trump’s sock puppet."',
+        '<strong>就沃什本人而言，确实存在一份鸽派期待。</strong>作为特朗普提名者，一些人预期他会偏宽松。结果他交出的是鹰派点阵图、对2%目标的坚守，以及拒绝安抚市场 —— 正如《财富》所言，他"明确表明自己不是特朗普的提线木偶"。') }}</li>
+  <li>{{ t('<strong>The real disappointment was structural.</strong> Beyond the absence of a dovish lean, markets lost the guidance mechanism itself. Powell-era markets traded on the Fed telling them what comes next; Warsh killed that and abstained from the dot plot, raising the uncertainty / risk premium on every long-duration asset — a second, separate tightening of financial conditions on top of the higher rate path.',
+        '<strong>真正的失望是结构性的。</strong>除了没有鸽派倾向，市场更失去了"指引"这套机制本身。鲍威尔时代的市场靠美联储"预告下一步"来交易；沃什终结了这一点并放弃点阵图，从而抬高了每一项长久期资产的不确定性/风险溢价 —— 这是在更高利率路径之上、又一次独立的金融条件收紧。') }}</li>
+</ul>
+
+<h2 id="outlook"><span class="num">6</span>{{ t('What it means going forward', '对后市意味着什么') }}</h2>
+<table class="data scn">
+  <tr><th>{{ t('Horizon', '时间维度') }}</th><th>{{ t('Call', '判断') }}</th><th>{{ t('Rough odds', '大致概率') }}</th></tr>
+  <tr><td>{{ t('Tomorrow (Jun 18)', '次日 (6月18日)') }}</td><td>{{ t('Stabilization / digestion with a downside skew, not a clean bounce. Watch the 2Y (~4.22%), DXY (holds 100?), and whether SMH/XLK find a bid.', '企稳/消化，偏下行，而非干净反弹。盯住2年期（约4.22%）、美元（能否守住100），以及 SMH/XLK 是否获得买盘。') }}</td><td>{{ t('~60% ±1% · ~25% lower · ~15% bounce', '约60% 收于±1% · 约25% 续跌 · 约15% 反弹') }}</td></tr>
+  <tr><td>{{ t('Short (→ Jul 2 jobs)', '短期 (至7月2日非农)') }}</td><td>{{ t('Range-bound consolidation, downside bias. VIX high-teens, USD firm, front-end sticky, growth/gold/BTC underperform. ~3–7% peak-to-trough S&P band.', '区间盘整，偏下行。VIX 十几高位、美元偏强、短端利率黏性、成长/黄金/比特币跑输。标普高低点回撤约3–7%。') }}</td><td>{{ t('~55% digest · ~25% deeper · ~20% bought', '约55% 消化 · 约25% 更深 · 约20% 买回') }}</td></tr>
+  <tr><td>{{ t('Medium (1–3mo)', '中期 (1–3个月)') }}<br><span class="mut">{{ t('fulcrum = Jul 14 CPI', '支点 = 7月14日 CPI') }}</span></td><td>{{ t('Data-determined. Disinflation-relief & dip-bought, OR hawkish-confirmed 8–15% correction, OR a hike-delivered / oil-spike stagflation tail.', '由数据决定。要么通胀降温带来宽慰、逢低买入；要么鹰派被确认、回调8–15%；要么落地加息/油价飙升引发滞胀尾部。') }}</td><td>{{ t('~45% relief · ~40% correction · ~15% tail', '约45% 宽慰 · 约40% 回调 · 约15% 尾部') }}</td></tr>
+  <tr><td>{{ t('Long (6–12mo)', '长期 (6–12个月)') }}</td><td>{{ t('Higher-for-longer grind to net-new highs on broadening/rotation; OR late-cycle growth-scare/recession bear; OR disinflation-wins reflation bull. Event-vol structurally higher across all branches.', '"更高更久"下的磨升、靠广度扩散/轮动创新高；或晚周期增长惊吓/衰退熊市；或通胀获胜的再通胀牛市。各情形下事件性波动率都结构性更高。') }}</td><td>{{ t('~45% grind · ~30% bear · ~25% reflation', '约45% 磨升 · 约30% 熊市 · 约25% 再通胀') }}</td></tr>
+</table>
+
+<h2 id="watch"><span class="num">7</span>{{ t('The watch-list that decides which branch', '决定走向哪个分支的观察清单') }}</h2>
+<ul>
+  <li>{{ t('<strong>① July 14 — June CPI</strong> (May was 4.2%). The single most important print. Hot → hawkish regime confirmed; soft → dots erased, dip bought.',
+        '<strong>① 7月14日 —— 6月CPI</strong>（5月为4.2%）。最重要的单一数据。偏热 → 鹰派范式被确认；偏冷 → 点阵图被"擦掉"，逢低买入。') }}</li>
+  <li>{{ t('<strong>② July 2 — June jobs.</strong> A labor crack (Sahm rising from 0.10) flips the regime to growth-scare and re-hedges bonds.',
+        '<strong>② 7月2日 —— 6月非农。</strong>劳动力裂痕（Sahm 指标从0.10抬升）会把范式翻向"增长惊吓"，并让债券重新具备对冲功能。') }}</li>
+  <li>{{ t('<strong>③ Oil / WTI (~$75).</strong> The disinflation hinge. Sustained-soft = bullish; a Mid-East spike &gt;$85–90 = worst case (validates the stagflation dots).',
+        '<strong>③ 油价 / WTI（约$75）。</strong>反通胀的关键铰链。持续偏软 = 利好；中东冲击升破 $85–90 = 最差情形（坐实滞胀点阵）。') }}</li>
+  <li>{{ t('<strong>④ 2Y yield + HY OAS + stock-bond correlation.</strong> A 2Y that retraces below the range top = overreaction confirmed. HY OAS &gt;3.0 = escalation from "multiple event" to "distress event." Correlation flipping negative = market re-pricing a growth scare (buy duration).',
+        '<strong>④ 2年期收益率 + HY OAS信用利差 + 股债相关性。</strong>2年期若回落至区间上限之下 = 印证"反应过度"。HY OAS 升破 3.0 = 从"估值事件"升级为"困境事件"。相关性翻负 = 市场改为为"增长惊吓"定价（可买入久期）。') }}</li>
+  <li>{{ t('<strong>⑤ Warsh follow-up speeches</strong> now carry outsized weight (no guidance = every comment moves markets); plus the task-force outputs (SEP redesign, balance sheet) due by fall.',
+        '<strong>⑤ 沃什后续讲话</strong>如今分量极重（没有指引 = 每句话都能撼动市场）；外加将于秋季出炉的工作组成果（SEP重新设计、资产负债表）。') }}</li>
+</ul>
+
+<h2 id="verdict"><span class="num">8</span>{{ t('So — confusion scare, or has the landscape changed?', '所以 —— 困惑式恐慌，还是格局已变？') }}</h2>
+<div class="callout warn">
+  <span class="co-h">{{ t('Both, in specific proportions', '两者皆是，但比例明确') }}</span>
+  {{ t('The landscape changed at the Fed reaction-function level: the cut-cycle hope is dead, the easing bias is gone, the verbal Fed put is gone, and event-vol is permanently higher under Warsh. That is real and durable. But the economy did not change (low recession risk, calm credit, live disinflation pulse), the actual rate did not change, and the rate path barely moved beyond what futures already had — so the magnitude of the one-day crash was a positioning flush in a fragile, complacent, hedge-less tape.',
+        '在美联储反应函数层面，格局确实变了：降息周期的指望已死、宽松倾向已撤、口头美联储托底已失，且沃什治下事件性波动率永久走高。这是真实且持久的。但经济没变（低衰退风险、信用平稳、反通胀脉冲仍在），实际利率没变，利率路径也几乎没有超出期货早已price-in的水平 —— 因此单日暴跌的幅度，是在脆弱、自满、缺乏对冲的盘面上发生的仓位踩踏。') }}
+</div>
+<p>{{ t('Net: treat it as a regime re-rating in discount rate and volatility — most of which can be digested rather than cascading — with the verdict on whether it deepens into a real correction resting almost entirely on the July 14 CPI. The actual "Fed put" (a dovish pivot on a growth scare) is still present given low recession risk; it is the verbal / forward-guidance put that died. The disciplined read: do not chase the bounce, do not panic quality, and watch the 2Y and CPI before adding risk.',
+      '结论：应将其视为一次贴现率与波动率层面的范式重估 —— 其中大部分可被消化，而非引发连环下跌 —— 而它是否会深化为真正的回调，几乎完全取决于7月14日的CPI。真正的"美联储托底"（在增长惊吓下转鸽）鉴于低衰退风险仍然存在；今天死掉的是口头/前瞻指引那张托底牌。稳健的解读：不要追反弹，不要恐慌抛售优质资产，在加仓之前先盯紧2年期收益率与CPI。') }}</p>
+
+<h2 id="sources">{{ t('Sources', '资料来源') }}</h2>
+<div class="sources">
+  <p><strong>{{ t('Primary', '一手来源') }}:</strong>
+    <a href="https://www.federalreserve.gov/monetarypolicy/fomcprojtabl20260617.htm">{{ t('Fed June 2026 projection table', '美联储2026年6月预测表') }}</a> ·
+    <a href="https://www.federalreserve.gov/monetarypolicy/fomcprojtabl20260318.htm">{{ t('March table', '3月预测表') }}</a> ·
+    <a href="https://www.federalreserve.gov/newsevents/pressreleases/monetary20260617a.htm">{{ t('June FOMC statement', '6月FOMC声明') }}</a> ·
+    <a href="https://www.federalreserve.gov/mediacenter/files/FOMCpresconf20260617.pdf">{{ t('Warsh presser transcript', '沃什发布会记录') }}</a></p>
+  <p><strong>{{ t('Coverage', '媒体报道') }}:</strong> CNBC ({{ t('five takeaways; yield surge; rate decision; statement redline', '五大要点；收益率飙升；利率决议；声明对比') }}), Kiplinger, NPR, CNN, FXStreet, Yahoo/Bloomberg, TradingEconomics, BeInCrypto, Benzinga.</p>
+  <p><strong>{{ t('Pre-FOMC positioning', '会前仓位') }}:</strong> {{ t('Macro Dashboard internal state', '宏观仪表盘内部状态') }} <span class="mut">(master_brief, btc_brief, regime, bond_health — as-of 2026-06-16)</span></p>
+</div>
+
+{% endblock %}

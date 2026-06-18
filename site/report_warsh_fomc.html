@@ -1,0 +1,369 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Warsh Shock — <span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  /* ---------- shared Research-Reports chrome ---------- */
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:0 18px 60px; }
+  a { color:var(--link); text-decoration:none; }
+  .wrap { max-width:1060px; margin:0 auto; }
+  /* unambiguous move colours (NOT tied to the zh red=up swap) */
+  .r-neg { color:#d23f3f; font-weight:600; }
+  .r-pos { color:#1f9a55; font-weight:600; }
+  html[data-theme="dark"] .r-neg { color:#ef6a6a; }
+  html[data-theme="dark"] .r-pos { color:#3fc07e; }
+  .mut { color:var(--muted); }
+  /* tags / chips */
+  .chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; line-height:1; padding:5px 10px; border-radius:999px;
+          background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+  .chip.tag-macro   { color:#5b8def; border-color:#5b8def55; }
+  .chip.tag-fed     { color:#c77dff; border-color:#c77dff55; }
+  .chip.tag-rates   { color:#3fb6c0; border-color:#3fb6c055; }
+  .chip.tag-equities{ color:#46b87a; border-color:#46b87a55; }
+  .chip.tag-crypto  { color:#e0973a; border-color:#e0973a55; }
+  .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
+  footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
+  
+  /* ---------- article layout ---------- */
+  .crumb { max-width:1060px; margin:16px auto 0; font-size:12.5px; }
+  .crumb a { color:var(--muted); }
+  .crumb a:hover { color:var(--text); }
+  .art-hero { max-width:1060px; margin:14px auto 0; background:var(--panel); border:1px solid var(--line);
+              border-radius:16px; padding:26px 30px; position:relative; overflow:hidden; box-shadow:var(--card-shadow); }
+  .art-hero::before { content:""; position:absolute; inset:0 0 auto 0; height:4px;
+              background:linear-gradient(90deg,#5b8def,#c77dff 55%,#e0607a); }
+  .art-kicker { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); margin:0 0 10px; font-weight:600; }
+  .art-hero h1 { font-size:30px; line-height:1.18; margin:0 0 12px; letter-spacing:-.01em; }
+  .art-dek { font-size:16px; line-height:1.55; color:var(--text); opacity:.86; margin:0 0 16px; max-width:80ch; }
+  .art-meta { display:flex; flex-wrap:wrap; align-items:center; gap:9px 14px; font-size:12.5px; color:var(--muted); }
+  .art-meta .dot { opacity:.4; }
+  .art-meta .tags { display:inline-flex; flex-wrap:wrap; gap:6px; }
+  html[data-lang="zh"] .art-hero h1 { letter-spacing:0; }
+
+  .layout { max-width:1060px; margin:26px auto 0; display:grid; grid-template-columns:212px minmax(0,1fr); gap:40px; align-items:start; }
+  @media (max-width:900px){ .layout{ grid-template-columns:1fr; gap:8px; } .toc{ display:none; } }
+  .toc { position:sticky; top:16px; font-size:12.5px; border-left:1px solid var(--line); padding-left:14px; }
+  .toc .toc-h { font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin:0 0 8px; }
+  .toc a { display:block; color:var(--muted); padding:4px 0; line-height:1.35; border-left:2px solid transparent; margin-left:-16px; padding-left:14px; transition:color .15s,border-color .15s; }
+  .toc a:hover { color:var(--text); }
+  .toc a.active { color:var(--text); border-left-color:var(--link); font-weight:600; }
+
+  article.body { font-size:15px; line-height:1.72; min-width:0; }
+  article.body h2 { font-size:20px; margin:34px 0 10px; scroll-margin-top:16px; padding-top:4px; display:flex; align-items:baseline; gap:10px; }
+  article.body h2 .num { font-size:13px; color:var(--link); font-weight:700; font-variant-numeric:tabular-nums; }
+  article.body h3 { font-size:15.5px; margin:20px 0 4px; color:var(--text); }
+  article.body p { margin:9px 0; opacity:.93; }
+  article.body ul { margin:9px 0; padding-left:20px; }
+  article.body li { margin:6px 0; opacity:.93; }
+  article.body strong { color:var(--text); font-weight:680; }
+  article.body em { color:var(--text); opacity:.8; font-style:italic; }
+
+  .callout { border-radius:12px; padding:15px 18px; margin:16px 0; border:1px solid var(--line); background:var(--panel2); }
+  .callout .co-h { font-weight:700; display:block; margin-bottom:4px; }
+  .callout.lead   { border-left:4px solid var(--link); }
+  .callout.warn   { border-left:4px solid var(--warn); background:color-mix(in srgb, var(--warn) 8%, var(--panel2)); }
+  .callout.key    { border-left:4px solid #46b87a; background:color-mix(in srgb, #46b87a 8%, var(--panel2)); }
+
+  table.data { border-collapse:collapse; width:100%; font-size:13px; margin:14px 0; }
+  table.data th { text-align:left; padding:8px 10px; background:var(--panel2); color:var(--muted); font-weight:600;
+                  border-bottom:2px solid var(--line); position:sticky; }
+  table.data td { padding:7px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.data tr:hover td { background:var(--panel2); }
+  table.data .num { font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .scn td:first-child { font-weight:600; }
+
+  .sources { font-size:12.5px; color:var(--muted); }
+  .sources a { color:var(--link); word-break:break-word; }
+  .disc { font-size:12px; color:var(--muted); border-top:1px solid var(--line); margin-top:22px; padding-top:12px; }
+
+  .prevnext { max-width:1060px; margin:30px auto 0; display:flex; gap:12px; flex-wrap:wrap; }
+  .prevnext a { flex:1 1 280px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:13px 16px; transition:border-color .15s, transform .15s; }
+  .prevnext a:hover { border-color:var(--link); transform:translateY(-2px); }
+  .prevnext .lbl { font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+  .prevnext .ttl { display:block; margin-top:3px; color:var(--text); font-weight:600; font-size:13.5px; }
+  .backbtn { display:inline-flex; align-items:center; gap:7px; margin:26px auto 0; max-width:1060px; }
+  .backbtn a { font-size:13px; color:var(--link); }
+
+</style>
+
+</head>
+<body>
+<nav class="site-nav">
+    <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 <span class="l-en">Home</span><span class="l-zh">首页</span></a>
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
+        <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <a href="anticipation.html">🔮 <span class="l-en">Anticipation</span><span class="l-zh">预判</span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></a>
+        <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="spvector.html">📐 <span class="l-en">S&P / Macro Vector</span><span class="l-zh">标普宏观向量</span><span class="d"><span class="l-en">Tactical equity↔cash</span><span class="l-zh">战术股票↔现金</span></span></a>
+        <a href="ipo.html">🆕 <span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></a>
+        <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
+        <a href="allocation.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+        <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
+        <a href="gex.html">🧲 <span class="l-en">Options Magnets</span><span class="l-zh">期权磁吸</span><span class="d"><span class="l-en">Dealer-gamma GEX levels</span><span class="l-zh">做市商Gamma GEX价位</span></span></a>
+        <a href="etfs.html">🐳 <span class="l-en">ETF Flows</span><span class="l-zh">ETF资金流</span><span class="d"><span class="l-en">Fund flow monitor</span><span class="l-zh">资金流监控</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
+        <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
+        <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300</span><span class="l-zh">等权主题篮子 vs 沪深300</span></span></a>
+        <a href="china_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">Income · gold · bonds</span><span class="l-zh">红利 · 黄金 · 国债</span></span></a>
+        <a href="allocation_china.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="hk.html">🇭🇰 <span class="l-en">Hong Kong</span><span class="l-zh">香港</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="hk.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">HSI · southbound · global risk</span><span class="l-zh">HSI · 南向 · 全球风险</span></span></a>
+        <a href="hk_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">HK-listed standouts · alpha</span><span class="l-zh">HK上市精选 · 阿尔法</span></span></a>
+        <a href="baskets_hk.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs HSI</span><span class="l-zh">等权主题篮子 vs 恒指</span></span></a>
+        <a href="allocation_hk.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="canada.html">🇨🇦 <span class="l-en">Canada</span><span class="l-zh">加拿大</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="canada.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">TSX · BoC · commodity overlay</span><span class="l-zh">TSX · 加央行 · 商品叠加</span></span></a>
+        <a href="canada_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">TSX standouts · sectors · alpha</span><span class="l-zh">TSX精选 · 板块 · 阿尔法</span></span></a>
+        <a href="baskets_canada.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P/TSX</span><span class="l-zh">等权主题篮子 vs 标普/多伦多</span></span></a>
+        <a href="allocation_canada.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="intl.html">🌍 <span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="intl.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        <a href="intl_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Cross-market standouts · sectors</span><span class="l-zh">跨市场精选 · 板块</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
+        <a href="vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
+        <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span></a>
+    <a class="nav-link" href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span></a>
+    <div class="nav-dd">
+      <a class="nav-link active" href="javascript:void(0)">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="reports.html" class="active">📰 <span class="l-en">Research Reports</span><span class="l-zh">研究报告</span><span class="d"><span class="l-en">In-depth market & macro reports</span><span class="l-zh">深度市场与宏观报告</span></span></a>
+        <a href="masterminds.html">🧠 <span class="l-en">Masterminds</span><span class="l-zh">操盘大师</span><span class="d"><span class="l-en">Multi-asset active GTAA strategies</span><span class="l-zh">多资产主动配置策略</span></span></a>
+        <a href="crossasset.html">🧭 <span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></a>
+        <a href="signal_lab.html">🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></a>
+        <a href="factors.html">🧮 <span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></a>
+        <a href="validation_timeline.html">🧪 <span class="l-en">Validation Timeline</span><span class="l-zh">验证时间线</span><span class="d"><span class="l-en">Full 2007→ walk-forward backtest</span><span class="l-zh">2007→ 完整滚动回测</span></span></a>
+      </div>
+    </div>
+  </div>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="aibrief.html">🧠 <span class="l-en">AI Daily Brief</span><span class="l-zh">AI每日简报</span></a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+
+<div class="crumb">
+  <a href="reports.html">📰 <span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></a> <span class="mut">/</span>
+  <span class="mut">The Warsh Shock</span>
+</div>
+
+<header class="art-hero">
+  <p class="art-kicker"><span class="l-en">FOMC Special Report · United States</span><span class="l-zh">FOMC 专题报告 · 美国</span></p>
+  <h1><span class="l-en">The Warsh Shock</span><span class="l-zh">沃什冲击</span></h1>
+  <p class="art-dek"><span class="l-en">Kevin Warsh&#39;s first FOMC as Fed Chair — the hawkish dot-plot turn, the press conference that removed forward guidance, the cross-asset reaction, and what it means for markets next.</span><span class="l-zh">凯文·沃什出任美联储主席后的首次 FOMC —— 鹰派点阵图的转向、取消前瞻指引的发布会、跨资产反应，以及对后市的意义。</span></p>
+  <div class="art-meta">
+    <span>🗓 June 17, 2026</span>
+    <span class="dot">·</span>
+    <span>⏱ 9 <span class="l-en">min read</span><span class="l-zh">分钟阅读</span></span>
+    <span class="dot">·</span>
+    <span class="tags">
+      <span class="chip tag-fed"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span><span class="chip tag-rates"><span class="l-en">Rates</span><span class="l-zh">利率</span></span><span class="chip tag-equities"><span class="l-en">Equities</span><span class="l-zh">股票</span></span><span class="chip tag-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span>
+    </span>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" id="toc">
+    <p class="toc-h"><span class="l-en">Contents</span><span class="l-zh">目录</span></p>
+    
+  <a href="#setup"><span class="l-en">1 · The setup</span><span class="l-zh">1 · 前情</span></a>
+  <a href="#fed"><span class="l-en">2 · What the Fed delivered</span><span class="l-zh">2 · 美联储交出了什么</span></a>
+  <a href="#intraday"><span class="l-en">3 · Intraday play-by-play</span><span class="l-zh">3 · 盘中三幕</span></a>
+  <a href="#crossasset"><span class="l-en">4 · Cross-asset scorecard</span><span class="l-zh">4 · 跨资产成绩单</span></a>
+  <a href="#guidance"><span class="l-en">5 · The guidance question</span><span class="l-zh">5 · 指引之问</span></a>
+  <a href="#outlook"><span class="l-en">6 · What it means ahead</span><span class="l-zh">6 · 后市研判</span></a>
+  <a href="#watch"><span class="l-en">7 · What to watch</span><span class="l-zh">7 · 观察清单</span></a>
+  <a href="#verdict"><span class="l-en">8 · Scare or regime change?</span><span class="l-zh">8 · 恐慌还是格局之变</span></a>
+  <a href="#sources"><span class="l-en">Sources</span><span class="l-zh">资料来源</span></a>
+
+  </nav>
+  <article class="body">
+    
+
+<div class="callout key">
+  <span class="co-h"><span class="l-en">Bottom line</span><span class="l-zh">核心结论</span></span>
+  <span class="l-en">This was mostly a genuine regime change, amplified by a fragile setup — neither a pure "confusion scare" nor a fresh bear market. Three things actually changed: (1) the Fed’s reaction function flipped from easing-biased to hawkish (the dot plot’s sign inverted from an implied cut to an implied hike); (2) Chair Warsh removed forward guidance entirely and abstained from the dot plot, stripping out the "verbal Fed put"; and (3) event-volatility is now structurally higher. What did not change: the actual policy rate (held), a low-recession / calm-credit economy, and a live oil-led disinflation pulse. The size of the one-day crash overstated the change in the rate path — that part was a positioning flush into a complacent, stretched, hedge-less tape.</span><span class="l-zh">这主要是一次真实的政策范式转变，并被脆弱的市场结构放大 —— 既非单纯的"困惑式恐慌"，也不是一轮新熊市。三件事真正改变了：（1）美联储"反应函数"由偏宽松转向鹰派（点阵图的方向从"隐含降息"翻转为"隐含加息"）；（2）沃什主席彻底取消前瞻指引并放弃提交自己的点位，抽走了"口头美联储托底"；（3）事件性波动率从此结构性走高。而没有改变的是：实际政策利率（维持不变）、低衰退/信用平稳的经济，以及仍在发挥作用的油价驱动反通胀脉冲。单日暴跌的幅度夸大了利率路径本身的变化 —— 那一部分是在一个自满、拥挤、缺乏对冲的盘面上发生的仓位踩踏。</span>
+</div>
+
+<h2 id="setup"><span class="num">1</span><span class="l-en">The setup — where markets were coming in</span><span class="l-zh">前情 —— 市场带着怎样的仓位进入会议</span></h2>
+<p><span class="l-en">The dashboard’s pre-meeting snapshot (data as-of 2026-06-16, generated 10:32am ET, before the 2pm decision) had quietly pre-loaded every ingredient for a sharp air-pocket:</span><span class="l-zh">仪表盘的会前快照（数据截至 2026-06-16，生成于美东时间上午10:32，即下午2点决议之前）其实已悄然集齐了一次急速下挫所需的全部要素：</span></p>
+<ul>
+  <li><span class="l-en"><strong>The market was already priced hawkish.</strong> Funds futures had the rate rising 3.63% to 3.92% over 12 months — roughly one hike already priced, and 38bp more hawkish than the Fed’s old 3.40% dot. The dots converged up to the market, not past it.</span><span class="l-zh"><strong>市场早已按鹰派定价。</strong>利率期货已隐含未来12个月政策利率从 3.63% 升至 3.92% —— 即已price-in约一次加息，比美联储旧的 3.40% 中值点还鹰派 38 个基点。点阵图是"向上收敛到"市场，而非超越市场。</span></li>
+  <li><span class="l-en"><strong>Leadership was stretched and un-chaseable.</strong> Semis (SMH) were +38% over 60 days at the 97.6th percentile; tech (XLK) at the 96.8th, tagged "DON’T CHASE." A long-duration growth bet built on falling yields — the exact bet a hawkish dot reverses.</span><span class="l-zh"><strong>领涨板块已极度拉伸、不可追高。</strong>半导体（SMH）60日 +38%，处于 97.6 百分位；科技（XLK）处于 96.8 百分位，被标记"不要追高"。这是建立在"收益率下行"之上的长久期成长押注 —— 鹰派点阵图恰恰逆转了这一前提。</span></li>
+  <li><span class="l-en"><strong>The hedge was broken.</strong> Stock-bond correlation at +0.67 ("breakdown" regime, bonds not hedging) — so any rate/growth scare hits a 60/40 book with no offset.</span><span class="l-zh"><strong>对冲失效。</strong>股债相关性 +0.67（"失效"状态，债券无法对冲）—— 任何利率/增长惊吓打到 60/40 组合上都没有缓冲。</span></li>
+  <li><span class="l-en"><strong>Dangerous concentration.</strong> The absorption ratio sat at the 96th percentile (top 4% of 5 years) — US equities + commodities + the dollar were effectively "one bet," so a de-rating compounds instead of diversifying.</span><span class="l-zh"><strong>危险的高度集中。</strong>吸收比率处于 96 百分位（5年区间前4%）—— 美股 + 大宗商品 + 美元实际上是"同一笔押注"，一旦重估是叠加放大而非分散。</span></li>
+  <li><span class="l-en"><strong>Complacency:</strong> VIX dormant near 16, the S&P within 1.2% of its high, NAAIM exposure still 79.</span><span class="l-zh"><strong>自满情绪：</strong>VIX 蛰伏在约16，标普距其高点仅 1.2%，NAAIM 多头仓位仍高达 79。</span></li>
+  <li><span class="l-en"><strong>But the foundation was benign:</strong> recession risk LOW, GDPNow 2.83%, credit pristine (HY OAS 2.71, 12th pctile), plumbing calm, Fed put present — a solid floor under any selloff.</span><span class="l-zh"><strong>但基本面地基稳固：</strong>衰退风险低、GDPNow 2.83%、信用极干净（HY OAS 2.71，12百分位）、货币市场管道平稳、美联储托底仍在 —— 为任何抛售提供了坚实底部。</span></li>
+</ul>
+<div class="callout lead"><span class="l-en">In one line: a complacent, stretched, hedge-less tape that had already priced the hawkish path walked into a meeting designed to remove its safety net.</span><span class="l-zh">一句话：一个自满、拉伸、缺乏对冲、且已按鹰派路径定价的盘面，撞上了一场旨在撤走其安全网的会议。</span></div>
+
+<h2 id="fed"><span class="num">2</span><span class="l-en">What the Fed actually delivered</span><span class="l-zh">美联储实际交出了什么</span></h2>
+<p><span class="l-en">The decision was a non-event — held at 3.50–3.75%, unanimous 12–0, a fourth straight hold. The shock was the Summary of Economic Projections (SEP) / dot plot, released at 2:00pm:</span><span class="l-zh">决议本身是非事件 —— 维持利率在 3.50–3.75%，以 12–0 全票通过，为连续第四次按兵不动。真正的冲击来自下午2点公布的经济预测摘要（SEP）/ 点阵图：</span></p>
+<table class="data">
+  <tr><th><span class="l-en">Projection (median)</span><span class="l-zh">预测（中值）</span></th><th><span class="l-en">Mar 2026</span><span class="l-zh">2026年3月</span></th><th><span class="l-en">Jun 2026</span><span class="l-zh">2026年6月</span></th><th><span class="l-en">Shift</span><span class="l-zh">变化</span></th></tr>
+  <tr><td><strong><span class="l-en">Fed funds, end-2026</span><span class="l-zh">联邦基金利率，2026年底</span></strong></td><td class="num">3.4% <span class="mut">(<span class="l-en">cut</span><span class="l-zh">降息</span>)</span></td><td class="num r-neg">3.8% (<span class="l-en">~1 HIKE</span><span class="l-zh">约1次加息</span>)</td><td><span class="l-en">sign flipped</span><span class="l-zh">方向翻转</span></td></tr>
+  <tr><td><span class="l-en">Fed funds, end-2027</span><span class="l-zh">联邦基金，2027年底</span></td><td class="num">3.1%</td><td class="num">3.6%</td><td class="num">+0.5pp</td></tr>
+  <tr><td><span class="l-en">Fed funds, end-2028</span><span class="l-zh">联邦基金，2028年底</span></td><td class="num">3.1%</td><td class="num">3.4%</td><td class="num">+0.3pp</td></tr>
+  <tr><td><span class="l-en">Longer-run (neutral)</span><span class="l-zh">长期（中性）</span></td><td class="num">3.1%</td><td class="num">3.1%</td><td><span class="l-en">unchanged</span><span class="l-zh">不变</span></td></tr>
+  <tr><td><strong><span class="l-en">PCE inflation 2026</span><span class="l-zh">PCE 通胀 2026</span></strong></td><td class="num">2.7%</td><td class="num r-neg">3.6%</td><td class="num">+0.9pp</td></tr>
+  <tr><td><span class="l-en">Core PCE 2026</span><span class="l-zh">核心 PCE 2026</span></td><td class="num">2.7%</td><td class="num">3.3%</td><td class="num">+0.6pp</td></tr>
+  <tr><td><span class="l-en">Real GDP 2026</span><span class="l-zh">实际 GDP 2026</span></td><td class="num">2.4%</td><td class="num">2.2%</td><td class="num">−0.2pp</td></tr>
+  <tr><td><span class="l-en">Unemployment 2026</span><span class="l-zh">失业率 2026</span></td><td class="num">4.4%</td><td class="num">4.3%</td><td class="num">−0.1pp</td></tr>
+</table>
+<p><span class="l-en"><strong>The dot distribution</strong> (verified against the official Fed table): <strong>9 hike / 8 hold / 1 cut</strong> — not the "9–9" widely reported. The entire 2026–28 path now sits above the unchanged 3.1% neutral rate. It is a stagflation-lite revision: inflation marked sharply up, growth trimmed.</span><span class="l-zh"><strong>点阵分布</strong>（已与美联储官方表格核对）：<strong>9票加息 / 8票不变 / 1票降息</strong> —— 并非外界广传的"9对9"。2026–28 全程路径如今都高于不变的 3.1% 中性利率。这是一次"轻度滞胀"式修正：通胀大幅上调，增长被下调。</span></p>
+<p><span class="l-en"><strong>Two Warsh-specific bombshells:</strong></span><span class="l-zh"><strong>两枚"沃什专属"重磅炸弹：</strong></span></p>
+<ul>
+  <li><span class="l-en"><strong>He withheld his own dot</strong> — the first sitting Fed Chair to skip the SEP since the dot plot launched in 2012. ("I did not submit a dot. For me, it’s not helpful in the conduct of policy." The submissions, he said, came in "with pencils — those kind with the big erasers.")</span><span class="l-zh"><strong>他没有提交自己的点位</strong> —— 自2012年点阵图设立以来，首位不参与 SEP 的在任美联储主席。（"我没有提交点位。对我而言，它对货币政策执行没有帮助。"他说提交上来的预测都是用"带大橡皮擦的铅笔"写的。）</span></li>
+  <li><span class="l-en"><strong>The statement was gutted to ~114 words</strong> (CNBC rounded to "~130," from 341 in April), explicitly deleting forward guidance and the easing-bias language. He launched five reform task forces but defended the 2% target: "The ‘two’ is to the left of the decimal point. For now, ‘zero’ is to the right."</span><span class="l-zh"><strong>声明被砍到约114个单词</strong>（CNBC 概括为"约130词"，较4月341词大幅缩减），明确删去前瞻指引与偏宽松措辞。他成立五个改革工作组，但捍卫2%目标："小数点左边是‘2’，目前小数点右边是‘0’。"</span></li>
+</ul>
+
+<h2 id="intraday"><span class="num">3</span><span class="l-en">The intraday play-by-play — and the three "why"s</span><span class="l-zh">盘中三幕 —— 以及三个"为什么"</span></h2>
+<p class="mut"><span class="l-en">Morning (pre-2pm): risk-on. The Dow hit a fresh all-time intraday record, the S&P high was 7,532, May retail sales were strong (+0.9%).</span><span class="l-zh">上午（下午2点前）：风险偏好高涨。道指刷新盘中历史新高，标普高见 7,532，5月零售销售强劲（+0.9%）。</span></p>
+<h3><span class="l-en">① 2:00pm — the drop. Why it fell first.</span><span class="l-zh">① 下午2:00 —— 下跌。为何最初会跌。</span></h3>
+<p><span class="l-en">The hawkish dots hit. The median flipped to an implied hike, nine officials penciled in higher rates, and the Fed ratified the hawkish lean rather than pushing back. The 2-year yield rocketed and equities turned negative (S&P −0.34% by 2:20pm). The proximate cause was the dot plot and the resulting yield surge — not the communication style. (Economist Claudia Sahm, in real time: "The market reaction… is largely to the dot plot being much more hawkish.")</span><span class="l-zh">鹰派点阵图来袭。中值翻转为隐含加息，9名官员预测利率走高，而美联储选择认可这一鹰派倾向而非出面"压一压"。2年期美债收益率飙升，股市转跌（到2:20标普 −0.34%）。直接原因是点阵图及由此引发的收益率飙升 —— 而非沟通风格。（经济学家 Claudia Sahm 当时即评："市场反应……主要是因为点阵图鹰派得多。"）</span></p>
+<h3><span class="l-en">② ~2:30pm — the rebound. Why it bounced.</span><span class="l-zh">② 约下午2:30 —— 反弹。为何会回升。</span></h3>
+<p><span class="l-en">Two transient reliefs as the presser opened: (a) a comment that policy looks restrictive toward housing but not financial markets (read as "the Fed isn’t targeting stocks"), and (b) initial relief as Warsh detailed five reform task forces — first parsed as modernization, not tightening. The Nasdaq briefly turned positive; the Dow’s loss narrowed to ~214 points. A misread that faded.</span><span class="l-zh">发布会一开场出现两个短暂宽慰：（a）有评论称政策对房地产有抑制、但对金融市场没有（被解读为"美联储并非盯着股市"）；（b）沃什详述五个改革工作组，初期被理解为"现代化"而非紧缩。纳指一度转涨，道指跌幅收窄至约214点。这是一次很快消退的误读。</span></p>
+<h3><span class="l-en">③ Into the close — the crash. Why it cratered again.</span><span class="l-zh">③ 临近收盘 —— 再度暴跌。为何二次崩跌。</span></h3>
+<p><span class="l-en">In Q&A, Warsh refused to restore the safety net: "Forward guidance isn’t the business we should be in"… "I can’t give you any guidance on what we’re going to do next." Asked what would trigger a hike, he deflected: "We’ve dropped forward guidance." He hammered price stability, defended 2%, and pointedly declined to talk down the selloff, saying he valued the "unfiltered" market reaction. Markets realized the accommodative tilt some had hoped for from a Trump appointee was not coming — and the comfort blanket of guidance was gone. Indexes sold to session lows into the bell — the worst first-Fed-day for a new chair since 1994 (Bespoke).</span><span class="l-zh">在问答环节，沃什拒绝重建安全网："前瞻指引不该是我们要做的事"……"我无法就下一步会怎么做给你任何指引。"被问及什么会触发加息时，他回避道："我们已放弃前瞻指引。"他反复强调价格稳定、捍卫2%目标，并明确拒绝出面安抚抛售，称他重视市场"未经过滤"的真实反应。市场意识到：某些人原本指望这位特朗普提名者会偏宽松，但这不会出现 —— 而那张"指引安抚牌"已被收走。指数尾盘跌至当日低点 —— 这是1994年以来新任主席首场会议表现最差的一天（Bespoke 数据）。</span></p>
+
+<h2 id="crossasset"><span class="num">4</span><span class="l-en">Cross-asset scorecard</span><span class="l-zh">跨资产成绩单</span> <span class="mut" style="font-size:13px;font-weight:400">· <span class="l-en">June 17 close</span><span class="l-zh">6月17日收盘</span></span></h2>
+<table class="data">
+  <tr><th><span class="l-en">Asset</span><span class="l-zh">资产</span></th><th><span class="l-en">Move</span><span class="l-zh">变动</span></th><th><span class="l-en">Level</span><span class="l-zh">水平</span></th><th><span class="l-en">Note</span><span class="l-zh">备注</span></th></tr>
+  <tr><td><strong><span class="l-en">S&P 500</span><span class="l-zh">标普500</span></strong></td><td class="num r-neg">−1.21%</td><td class="num">7,420.10</td><td><span class="l-en">from high 7,532; closed near lows</span><span class="l-zh">自高点 7,532 回落；收于接近低点</span></td></tr>
+  <tr><td><strong><span class="l-en">Nasdaq</span><span class="l-zh">纳斯达克</span></strong></td><td class="num r-neg">−1.34%</td><td class="num">26,021.66</td><td><span class="l-en">worst major — most growth-heavy</span><span class="l-zh">最差大盘 —— 成长权重最高</span></td></tr>
+  <tr><td><strong><span class="l-en">Dow</span><span class="l-zh">道琼斯</span></strong></td><td class="num r-neg">−0.98% (−507)</td><td class="num">51,492.55</td><td><span class="l-en">reversed from a fresh record high</span><span class="l-zh">自刚刷新的历史新高反转</span></td></tr>
+  <tr><td><strong><span class="l-en">Russell 2000</span><span class="l-zh">罗素2000</span></strong></td><td class="num r-neg">−0.72%</td><td class="num">2,917.98</td><td><span class="l-en">best relative; green most of morning</span><span class="l-zh">相对最强；上午多数收涨</span></td></tr>
+  <tr><td><strong>VIX</strong></td><td class="num r-neg">+12.4%</td><td class="num">18.44</td><td><span class="l-en">repricing, not panic</span><span class="l-zh">是重估，而非恐慌</span></td></tr>
+  <tr><td><strong><span class="l-en">2Y Treasury</span><span class="l-zh">2年期美债</span></strong></td><td class="num r-neg">+~16bp</td><td class="num">~4.22%</td><td><span class="l-en">now above the 3.75% range ceiling</span><span class="l-zh">现已高于 3.75% 区间上限</span></td></tr>
+  <tr><td><strong><span class="l-en">10Y Treasury</span><span class="l-zh">10年期美债</span></strong></td><td class="num r-neg">+~7bp</td><td class="num">~4.50%</td><td><span class="l-en">bear-flattening (front end led)</span><span class="l-zh">熊市趋平（短端主导）</span></td></tr>
+  <tr><td><strong><span class="l-en">Dollar (DXY)</span><span class="l-zh">美元指数</span></strong></td><td class="num r-pos">+~0.9%</td><td class="num">~100.4</td><td><span class="l-en">broke 100; USD/JPY ~160.8</span><span class="l-zh">突破100；美元/日元约160.8</span></td></tr>
+  <tr><td><strong><span class="l-en">Gold</span><span class="l-zh">黄金</span></strong></td><td class="num r-neg">−1.8% / −2.3%</td><td class="num">~$4,255–4,275</td><td><span class="l-en">real-yield / dollar hit; haven failed</span><span class="l-zh">实际利率/美元打压；避险失灵</span></td></tr>
+  <tr><td><strong><span class="l-en">Silver</span><span class="l-zh">白银</span></strong></td><td class="num r-neg">−3.8%</td><td class="num">~$70</td><td><span class="l-en">high-beta precious</span><span class="l-zh">高贝塔贵金属</span></td></tr>
+  <tr><td><strong><span class="l-en">Copper</span><span class="l-zh">铜</span></strong></td><td class="num r-pos">+0.35%</td><td class="num">~$6.51</td><td><span class="l-en">bucked it — pro-cyclical (Iran + AI)</span><span class="l-zh">逆势 —— 顺周期（伊朗 + AI）</span></td></tr>
+  <tr><td><strong><span class="l-en">WTI crude</span><span class="l-zh">WTI 原油</span></strong></td><td class="num r-neg">−5.8%</td><td class="num">~$75</td><td><span class="l-en">⚠ mostly the US–Iran deal, not the Fed</span><span class="l-zh">⚠ 主要源于美伊协议，非美联储</span></td></tr>
+  <tr><td><strong><span class="l-en">Bitcoin</span><span class="l-zh">比特币</span></strong></td><td class="num r-neg">~−2%</td><td class="num"><span class="l-en">mid-$64k</span><span class="l-zh">$64k 中段</span></td><td><span class="l-en">"sell the news"; MSTR −4.3%</span><span class="l-zh">"利好兑现即抛售"；MSTR −4.3%</span></td></tr>
+</table>
+<p><span class="l-en"><strong>The sector cross-section tells the story:</strong> worst were the longest-duration groups — communication services −2.91%, consumer discretionary −2.34%, megacap tech all red. Banks were the relative winner — JPMorgan +1% to a fresh all-time intraday high on the steeper-curve narrative. The speculative tail was crushed (DraftKings −7.16%, SpaceX/SPCX ~−5%); semis showed dispersion, not blanket selling (ASML +4%). Gold, stocks and bonds all fell together — the signature of a discount-rate / "higher-for-longer" shock, not a growth-scare flight to safety.</span><span class="l-zh"><strong>板块横截面道出真相：</strong>跌幅最大的是久期最长的板块 —— 通信服务 −2.91%、非必需消费 −2.34%，大型科技股全线收跌。银行是相对赢家 —— 摩根大通 +1% 刷新盘中历史新高，受益于"曲线更陡"叙事。投机性尾部被血洗（DraftKings −7.16%，SpaceX/SPCX 约 −5%）；半导体内部分化而非全面抛售（ASML +4%）。黄金、股票和债券同时下跌 —— 这是"贴现率/更高更久"冲击的特征，而非增长惊吓引发的避险出逃。</span></p>
+
+<h2 id="guidance"><span class="num">5</span><span class="l-en">Why the dovish guidance some expected never came</span><span class="l-zh">为何某些人期待的鸽派指引始终没有出现</span></h2>
+<ul>
+  <li><span class="l-en"><strong>On the data and rate path, the market was not positioned for dovish.</strong> Futures already priced ~1 hike; December hike-odds had surged to ~71–77% (from &lt;50% in early June) after a hot June 10 CPI (4.2%, a 3-year high).</span><span class="l-zh"><strong>就数据与利率路径而言，市场并未押注鸽派。</strong>期货早已price-in约一次加息；在6月10日炙热的CPI（4.2%，三年新高）之后，12月加息概率已从6月初不到50%飙升至约71–77%。</span></li>
+  <li><span class="l-en"><strong>On Warsh personally, there was a dovish hope.</strong> As a Trump appointee, some expected accommodation. Instead he delivered hawkish dots, a defended 2% target, and a refusal to soothe markets — showing, as Fortune put it, that he is "decisively not Trump’s sock puppet."</span><span class="l-zh"><strong>就沃什本人而言，确实存在一份鸽派期待。</strong>作为特朗普提名者，一些人预期他会偏宽松。结果他交出的是鹰派点阵图、对2%目标的坚守，以及拒绝安抚市场 —— 正如《财富》所言，他"明确表明自己不是特朗普的提线木偶"。</span></li>
+  <li><span class="l-en"><strong>The real disappointment was structural.</strong> Beyond the absence of a dovish lean, markets lost the guidance mechanism itself. Powell-era markets traded on the Fed telling them what comes next; Warsh killed that and abstained from the dot plot, raising the uncertainty / risk premium on every long-duration asset — a second, separate tightening of financial conditions on top of the higher rate path.</span><span class="l-zh"><strong>真正的失望是结构性的。</strong>除了没有鸽派倾向，市场更失去了"指引"这套机制本身。鲍威尔时代的市场靠美联储"预告下一步"来交易；沃什终结了这一点并放弃点阵图，从而抬高了每一项长久期资产的不确定性/风险溢价 —— 这是在更高利率路径之上、又一次独立的金融条件收紧。</span></li>
+</ul>
+
+<h2 id="outlook"><span class="num">6</span><span class="l-en">What it means going forward</span><span class="l-zh">对后市意味着什么</span></h2>
+<table class="data scn">
+  <tr><th><span class="l-en">Horizon</span><span class="l-zh">时间维度</span></th><th><span class="l-en">Call</span><span class="l-zh">判断</span></th><th><span class="l-en">Rough odds</span><span class="l-zh">大致概率</span></th></tr>
+  <tr><td><span class="l-en">Tomorrow (Jun 18)</span><span class="l-zh">次日 (6月18日)</span></td><td><span class="l-en">Stabilization / digestion with a downside skew, not a clean bounce. Watch the 2Y (~4.22%), DXY (holds 100?), and whether SMH/XLK find a bid.</span><span class="l-zh">企稳/消化，偏下行，而非干净反弹。盯住2年期（约4.22%）、美元（能否守住100），以及 SMH/XLK 是否获得买盘。</span></td><td><span class="l-en">~60% ±1% · ~25% lower · ~15% bounce</span><span class="l-zh">约60% 收于±1% · 约25% 续跌 · 约15% 反弹</span></td></tr>
+  <tr><td><span class="l-en">Short (→ Jul 2 jobs)</span><span class="l-zh">短期 (至7月2日非农)</span></td><td><span class="l-en">Range-bound consolidation, downside bias. VIX high-teens, USD firm, front-end sticky, growth/gold/BTC underperform. ~3–7% peak-to-trough S&P band.</span><span class="l-zh">区间盘整，偏下行。VIX 十几高位、美元偏强、短端利率黏性、成长/黄金/比特币跑输。标普高低点回撤约3–7%。</span></td><td><span class="l-en">~55% digest · ~25% deeper · ~20% bought</span><span class="l-zh">约55% 消化 · 约25% 更深 · 约20% 买回</span></td></tr>
+  <tr><td><span class="l-en">Medium (1–3mo)</span><span class="l-zh">中期 (1–3个月)</span><br><span class="mut"><span class="l-en">fulcrum = Jul 14 CPI</span><span class="l-zh">支点 = 7月14日 CPI</span></span></td><td><span class="l-en">Data-determined. Disinflation-relief & dip-bought, OR hawkish-confirmed 8–15% correction, OR a hike-delivered / oil-spike stagflation tail.</span><span class="l-zh">由数据决定。要么通胀降温带来宽慰、逢低买入；要么鹰派被确认、回调8–15%；要么落地加息/油价飙升引发滞胀尾部。</span></td><td><span class="l-en">~45% relief · ~40% correction · ~15% tail</span><span class="l-zh">约45% 宽慰 · 约40% 回调 · 约15% 尾部</span></td></tr>
+  <tr><td><span class="l-en">Long (6–12mo)</span><span class="l-zh">长期 (6–12个月)</span></td><td><span class="l-en">Higher-for-longer grind to net-new highs on broadening/rotation; OR late-cycle growth-scare/recession bear; OR disinflation-wins reflation bull. Event-vol structurally higher across all branches.</span><span class="l-zh">"更高更久"下的磨升、靠广度扩散/轮动创新高；或晚周期增长惊吓/衰退熊市；或通胀获胜的再通胀牛市。各情形下事件性波动率都结构性更高。</span></td><td><span class="l-en">~45% grind · ~30% bear · ~25% reflation</span><span class="l-zh">约45% 磨升 · 约30% 熊市 · 约25% 再通胀</span></td></tr>
+</table>
+
+<h2 id="watch"><span class="num">7</span><span class="l-en">The watch-list that decides which branch</span><span class="l-zh">决定走向哪个分支的观察清单</span></h2>
+<ul>
+  <li><span class="l-en"><strong>① July 14 — June CPI</strong> (May was 4.2%). The single most important print. Hot → hawkish regime confirmed; soft → dots erased, dip bought.</span><span class="l-zh"><strong>① 7月14日 —— 6月CPI</strong>（5月为4.2%）。最重要的单一数据。偏热 → 鹰派范式被确认；偏冷 → 点阵图被"擦掉"，逢低买入。</span></li>
+  <li><span class="l-en"><strong>② July 2 — June jobs.</strong> A labor crack (Sahm rising from 0.10) flips the regime to growth-scare and re-hedges bonds.</span><span class="l-zh"><strong>② 7月2日 —— 6月非农。</strong>劳动力裂痕（Sahm 指标从0.10抬升）会把范式翻向"增长惊吓"，并让债券重新具备对冲功能。</span></li>
+  <li><span class="l-en"><strong>③ Oil / WTI (~$75).</strong> The disinflation hinge. Sustained-soft = bullish; a Mid-East spike &gt;$85–90 = worst case (validates the stagflation dots).</span><span class="l-zh"><strong>③ 油价 / WTI（约$75）。</strong>反通胀的关键铰链。持续偏软 = 利好；中东冲击升破 $85–90 = 最差情形（坐实滞胀点阵）。</span></li>
+  <li><span class="l-en"><strong>④ 2Y yield + HY OAS + stock-bond correlation.</strong> A 2Y that retraces below the range top = overreaction confirmed. HY OAS &gt;3.0 = escalation from "multiple event" to "distress event." Correlation flipping negative = market re-pricing a growth scare (buy duration).</span><span class="l-zh"><strong>④ 2年期收益率 + HY OAS信用利差 + 股债相关性。</strong>2年期若回落至区间上限之下 = 印证"反应过度"。HY OAS 升破 3.0 = 从"估值事件"升级为"困境事件"。相关性翻负 = 市场改为为"增长惊吓"定价（可买入久期）。</span></li>
+  <li><span class="l-en"><strong>⑤ Warsh follow-up speeches</strong> now carry outsized weight (no guidance = every comment moves markets); plus the task-force outputs (SEP redesign, balance sheet) due by fall.</span><span class="l-zh"><strong>⑤ 沃什后续讲话</strong>如今分量极重（没有指引 = 每句话都能撼动市场）；外加将于秋季出炉的工作组成果（SEP重新设计、资产负债表）。</span></li>
+</ul>
+
+<h2 id="verdict"><span class="num">8</span><span class="l-en">So — confusion scare, or has the landscape changed?</span><span class="l-zh">所以 —— 困惑式恐慌，还是格局已变？</span></h2>
+<div class="callout warn">
+  <span class="co-h"><span class="l-en">Both, in specific proportions</span><span class="l-zh">两者皆是，但比例明确</span></span>
+  <span class="l-en">The landscape changed at the Fed reaction-function level: the cut-cycle hope is dead, the easing bias is gone, the verbal Fed put is gone, and event-vol is permanently higher under Warsh. That is real and durable. But the economy did not change (low recession risk, calm credit, live disinflation pulse), the actual rate did not change, and the rate path barely moved beyond what futures already had — so the magnitude of the one-day crash was a positioning flush in a fragile, complacent, hedge-less tape.</span><span class="l-zh">在美联储反应函数层面，格局确实变了：降息周期的指望已死、宽松倾向已撤、口头美联储托底已失，且沃什治下事件性波动率永久走高。这是真实且持久的。但经济没变（低衰退风险、信用平稳、反通胀脉冲仍在），实际利率没变，利率路径也几乎没有超出期货早已price-in的水平 —— 因此单日暴跌的幅度，是在脆弱、自满、缺乏对冲的盘面上发生的仓位踩踏。</span>
+</div>
+<p><span class="l-en">Net: treat it as a regime re-rating in discount rate and volatility — most of which can be digested rather than cascading — with the verdict on whether it deepens into a real correction resting almost entirely on the July 14 CPI. The actual "Fed put" (a dovish pivot on a growth scare) is still present given low recession risk; it is the verbal / forward-guidance put that died. The disciplined read: do not chase the bounce, do not panic quality, and watch the 2Y and CPI before adding risk.</span><span class="l-zh">结论：应将其视为一次贴现率与波动率层面的范式重估 —— 其中大部分可被消化，而非引发连环下跌 —— 而它是否会深化为真正的回调，几乎完全取决于7月14日的CPI。真正的"美联储托底"（在增长惊吓下转鸽）鉴于低衰退风险仍然存在；今天死掉的是口头/前瞻指引那张托底牌。稳健的解读：不要追反弹，不要恐慌抛售优质资产，在加仓之前先盯紧2年期收益率与CPI。</span></p>
+
+<h2 id="sources"><span class="l-en">Sources</span><span class="l-zh">资料来源</span></h2>
+<div class="sources">
+  <p><strong><span class="l-en">Primary</span><span class="l-zh">一手来源</span>:</strong>
+    <a href="https://www.federalreserve.gov/monetarypolicy/fomcprojtabl20260617.htm"><span class="l-en">Fed June 2026 projection table</span><span class="l-zh">美联储2026年6月预测表</span></a> ·
+    <a href="https://www.federalreserve.gov/monetarypolicy/fomcprojtabl20260318.htm"><span class="l-en">March table</span><span class="l-zh">3月预测表</span></a> ·
+    <a href="https://www.federalreserve.gov/newsevents/pressreleases/monetary20260617a.htm"><span class="l-en">June FOMC statement</span><span class="l-zh">6月FOMC声明</span></a> ·
+    <a href="https://www.federalreserve.gov/mediacenter/files/FOMCpresconf20260617.pdf"><span class="l-en">Warsh presser transcript</span><span class="l-zh">沃什发布会记录</span></a></p>
+  <p><strong><span class="l-en">Coverage</span><span class="l-zh">媒体报道</span>:</strong> CNBC (<span class="l-en">five takeaways; yield surge; rate decision; statement redline</span><span class="l-zh">五大要点；收益率飙升；利率决议；声明对比</span>), Kiplinger, NPR, CNN, FXStreet, Yahoo/Bloomberg, TradingEconomics, BeInCrypto, Benzinga.</p>
+  <p><strong><span class="l-en">Pre-FOMC positioning</span><span class="l-zh">会前仓位</span>:</strong> <span class="l-en">Macro Dashboard internal state</span><span class="l-zh">宏观仪表盘内部状态</span> <span class="mut">(master_brief, btc_brief, regime, bond_health — as-of 2026-06-16)</span></p>
+</div>
+
+
+    <div class="disc"><span class="l-en">Sources & method: compiled from primary Federal Reserve releases, market wraps, and the dashboard’s own pre-event positioning data. Where intraday prints differ across outlets, best estimates are shown and ranges noted; direction is high-confidence. Informational only — not investment advice.</span><span class="l-zh">来源与方法：综合自美联储一手发布、市场综述，以及本仪表盘的会前仓位数据。当各家盘中数据不一致时，采用最佳估计并标注区间；方向判断为高置信度。仅供参考，不构成投资建议。</span></div>
+  </article>
+</div>
+
+
+<div class="backbtn"><a href="reports.html">← <span class="l-en">All research reports</span><span class="l-zh">全部研究报告</span></a></div>
+
+
+<footer class="rfoot">
+  <span class="l-en">Research Reports are read-only analysis for informational purposes only — not investment advice. Figures are point-in-time and may be revised.</span><span class="l-zh">研究报告仅为信息性分析，不构成投资建议。数据为特定时点快照，可能被修订。</span>
+</footer>
+
+<script>
+  (function(){ var ls=[].slice.call(document.querySelectorAll('.toc a')),
+      hs=ls.map(function(a){return document.querySelector(a.getAttribute('href'));});
+    function spy(){ var y=window.scrollY+96, act=0; hs.forEach(function(h,i){ if(h&&h.offsetTop<=y) act=i; });
+      ls.forEach(function(a,i){ a.classList.toggle('active',i===act); }); }
+    window.addEventListener('scroll',spy,{passive:true}); spy(); })();
+</script>
+
+<script src="theme.js"></script>
+</body>
+</html>

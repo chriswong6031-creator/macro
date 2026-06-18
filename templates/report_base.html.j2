@@ -1,49 +1,39 @@
-{% macro help(en, zh='') -%}
-<span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
-{%- endmacro %}
 {% macro t(en, zh='') -%}
-<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
 {%- endmacro %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Regime History — {{ latest.date }}</title>
-<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>{% block title %}{{ t('Research Reports', '研究报告') }}{% endblock %}</title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
-<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 <style>
-  * { box-sizing: border-box; }
-  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,
-         "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
-  a { text-decoration:none; }
-  h1 { font-size:20px; margin:0; }
-  h2 { font-size:15px; margin:0 0 10px; color:var(--muted);
-       text-transform:uppercase; letter-spacing:.06em; }
-  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px;
-           padding:14px 16px; margin-bottom:14px; }
-  .topline { display:flex; flex-wrap:wrap; align-items:center; gap:14px; }
-  .muted { color:var(--muted); }
-  .legend { display:flex; flex-wrap:wrap; gap:12px; margin-top:8px; font-size:12px; }
-  .legend i { display:inline-block; width:12px; height:12px; border-radius:3px;
-              margin-right:5px; vertical-align:-1px; }
-  .help { display:inline-flex; align-items:center; justify-content:center; width:15px;
-          height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted);
-          font-size:10px; font-weight:600; cursor:help; position:relative;
-          vertical-align:middle; margin-left:5px; flex:none; }
-  .help .tip { display:none; position:absolute; bottom:140%; left:50%;
-               transform:translateX(-50%); width:290px; background:var(--panel);
-               border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60;
-               font-size:12px; line-height:1.45; color:var(--text); text-align:left;
-               font-weight:400; text-transform:none; letter-spacing:normal;
-               box-shadow:var(--popover-shadow); pointer-events:none; }
-  .help:hover .tip { display:block; }
-  table { border-collapse:collapse; width:100%; font-size:13px; }
-  th,td { text-align:right; padding:4px 8px; border-bottom:1px solid var(--line); }
-  th { color:var(--muted); font-weight:500; }
-  th:first-child,td:first-child { text-align:left; }
+  /* ---------- shared Research-Reports chrome ---------- */
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:0 18px 60px; }
+  a { color:var(--link); text-decoration:none; }
+  .wrap { max-width:1060px; margin:0 auto; }
+  /* unambiguous move colours (NOT tied to the zh red=up swap) */
+  .r-neg { color:#d23f3f; font-weight:600; }
+  .r-pos { color:#1f9a55; font-weight:600; }
+  html[data-theme="dark"] .r-neg { color:#ef6a6a; }
+  html[data-theme="dark"] .r-pos { color:#3fc07e; }
+  .mut { color:var(--muted); }
+  /* tags / chips */
+  .chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; line-height:1; padding:5px 10px; border-radius:999px;
+          background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+  .chip.tag-macro   { color:#5b8def; border-color:#5b8def55; }
+  .chip.tag-fed     { color:#c77dff; border-color:#c77dff55; }
+  .chip.tag-rates   { color:#3fb6c0; border-color:#3fb6c055; }
+  .chip.tag-equities{ color:#46b87a; border-color:#46b87a55; }
+  .chip.tag-crypto  { color:#e0973a; border-color:#e0973a55; }
+  .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
+  footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
+  {% block base_css %}{% endblock %}
 </style>
+{% block head_extra %}{% endblock %}
 </head>
 <body>
 <nav class="site-nav">
@@ -118,11 +108,10 @@
     <a class="nav-link" href="forex.html">💱 {{ t('Forex', '外汇') }}</a>
     <a class="nav-link" href="bonds.html">🏛️ {{ t('Bonds', '债券') }}</a>
     <div class="nav-dd">
-      <a class="nav-link" href="javascript:void(0)">🔬 {{ t('Research', '研究') }} <span class="caret">▾</span></a>
+      <a class="nav-link {{ 'active' if active_section == 'research' else '' }}" href="javascript:void(0)">🔬 {{ t('Research', '研究') }} <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
-        <a href="reports.html">📰 {{ t('Research Reports', '研究报告') }}<span class="d">{{ t('In-depth market & macro reports', '深度市场与宏观报告') }}</span></a>
+        <a href="reports.html" class="{{ 'active' if active_section == 'research' }}">📰 {{ t('Research Reports', '研究报告') }}<span class="d">{{ t('In-depth market & macro reports', '深度市场与宏观报告') }}</span></a>
         <a href="masterminds.html">🧠 {{ t('Masterminds', '操盘大师') }}<span class="d">{{ t('Multi-asset active GTAA strategies', '多资产主动配置策略') }}</span></a>
-        <a href="transmission.html">🔀 {{ t('Rate & Inflation Transmission', '利率与通胀传导') }}<span class="d">{{ t('How rates & inflation move every asset', '利率与通胀如何驱动各类资产') }}</span></a>
         <a href="crossasset.html">🧭 {{ t('Cross-Asset', '跨资产') }}<span class="d">{{ t('Correlations · trend · global liquidity', '相关性 · 趋势 · 全球流动性') }}</span></a>
         <a href="signal_lab.html">🔬 {{ t('Signal Lab', '信号实验室') }}<span class="d">{{ t('Consolidated validation scorecard', '验证记分卡汇总') }}</span></a>
         <a href="factors.html">🧮 {{ t('Factors & Seasonality', '因子 & 季节性') }}<span class="d">{{ t('Value · quality · low-vol · monthly calendar', '价值 · 质量 · 低波动 · 月历') }}</span></a>
@@ -148,61 +137,14 @@
     </div>
   </div>
 </nav>
-  <div class="panel">
-    <div class="topline">
-      <h1>{{ t('Regime history & charts', '周期历史与图表') }}</h1>
-      <span class="muted">{{ t('data through', '数据截至') }} {{ latest.date }}</span>
-      <span style="flex:1"></span>
-      <a class="navbtn" href="validation_timeline.html">{{ t('Full 2007→ backtest', '2007→ 完整回测') }}</a>
-    </div>
-  </div>
 
-  <div class="panel">
-    <h2>{{ t('Three years of regimes over the S&P 500', '标普500 三年周期叠加') }}
-      {{ help("The S&P 500 with the regime active at each time shaded behind it — how the classifier actually behaved in real conditions. For the full 2007-onward record including the validation stats, use the backtest link above.", "标普500 走势，并以底色标出每个时段所处的周期 — 展示分类器在真实环境中的实际表现。如需自 2007 年起的完整记录及验证统计，请使用上方的回测链接。") }}
-    </h2>
-    {{ chart_regime | safe }}
-    <div class="legend">
-      <span><i style="background:var(--q1)"></i><b>{{ t('Goldilocks', '理想增长（金发女孩）') }}</b> — {{ t('growth ↑ inflation ↓ (best for tech/quality)', '增长 ↑ 通胀 ↓（最利好科技／质量股）') }}</span>
-      <span><i style="background:var(--q2)"></i><b>{{ t('Reflation', '再通胀') }}</b> — {{ t('growth ↑ inflation ↑ (cyclicals/energy/banks)', '增长 ↑ 通胀 ↑（周期股／能源／银行）') }}</span>
-      <span><i style="background:var(--q3)"></i><b>{{ t('Stagflation', '滞胀') }}</b> — {{ t('growth ↓ inflation ↑ (historically the dangerous one)', '增长 ↓ 通胀 ↑（历史上最危险的一种）') }}</span>
-      <span><i style="background:var(--q4)"></i><b>{{ t('Growth scare', '增长恐慌') }}</b> — {{ t('growth ↓ inflation ↓ (defensives/bonds)', '增长 ↓ 通胀 ↓（防御股／债券）') }}</span>
-    </div>
-  </div>
+{% block content %}{% endblock %}
 
-  <div class="panel">
-    <h2>{{ t('The two dials over time', '两大指标随时间变化') }}
-      {{ help("History of the growth (green) and inflation (red) scores. Zero-line crossings are where regimes change; persistent readings near ±0.5 are strong regimes; hovering near zero = mixed, choppy environment.", "增长（绿）与通胀（红）评分的历史走势。穿越零轴处即周期切换；持续接近 ±0.5 的读数代表强周期；徘徊在零附近 = 混杂、震荡的环境。") }}
-    </h2>
-    {{ chart_axes | safe }}
-  </div>
-
-  <div class="panel">
-    <h2>{{ t('Regime lifespans — the base rates behind "what\'s next"', '周期存续期 — “下一步”背后的基准概率') }}
-      {{ help("Every regime period since 2007 in this classifier: how many there were, how long they typically lasted, and where they went when they ended. These are the base rates the front page's odds come from.", "本分类器自 2007 年以来的每一个周期时段：共出现多少次、通常持续多久，以及结束后转向何处。首页的概率即来自这些基准概率。") }}
-    </h2>
-    <table>
-      <tr><th>{{ t('regime', '周期') }}</th><th>{{ t('periods', '次数') }}</th><th>{{ t('median length (days)', '存续中位数（天）') }}</th><th>{{ t('most common next', '最常见的下一周期') }}</th></tr>
-      {% for row in lifespan_rows %}
-      <tr><td>{{ td(row.name) }}</td><td>{{ row.n }}</td><td>{{ row.median }}</td><td>{{ t(row.next, row.next_zh) }}</td></tr>
-      {% endfor %}
-    </table>
-  </div>
-
-  <p class="muted">{{ t('Generated', '生成于') }} {{ generated_utc }} UTC</p>
-<script>
-window.__CHART_SWAP__ = {
-  colors: {"#5fbf7f":"#e07070","#e07070":"#5fbf7f","#2e9e4f":"#d04545","#d04545":"#2e9e4f"},
-  labels: {"growth":"增长","inflation":"通胀","net liquidity":"净流动性","4w RoC":"4周变化",
-           "HY OAS %":"高收益债利差 %","% S&P500 > 50DMA":"标普500 高于50日均线 %"}
-};
-</script>
-<script src="theme.js"></script>
-<script src="chart_i18n.js"></script>
-<script src="charts.js"></script>
-<footer class="site-footer">
-  <span class="made">Made with ❤️ in Canada</span>
-  <span class="dev">Developed by Chris Wong</span>
+<footer class="rfoot">
+  {{ t('Research Reports are read-only analysis for informational purposes only — not investment advice. Figures are point-in-time and may be revised.',
+        '研究报告仅为信息性分析，不构成投资建议。数据为特定时点快照，可能被修订。') }}
 </footer>
+{% block body_scripts %}{% endblock %}
+<script src="theme.js"></script>
 </body>
 </html>
