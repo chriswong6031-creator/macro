@@ -113,6 +113,12 @@ MASTER_SYSTEM_TMPL = (
     "name it, the evidence, and what would invalidate it. It is a DETERMINISTIC "
     "cross-asset attribution: narrate it, do not recompute it. If it reads 'mixed' or "
     "'quiet', say so plainly rather than inventing a driver.\n"
+    "- If `fed_stance` is present, anchor the rate read with the EXPLICIT Fed reaction "
+    "function (hawkish/neutral/dovish) + the market-vs-Fed gap — a display-only read off "
+    "the implied path + statement guidance (reactive, not a forecast). If `policy_intel` "
+    "is present, factor the interest-driven (realpolitik) Fed/Admin thesis and the "
+    "targeted-vs-starved capital rotation into your regime_read and rotation_check, "
+    "honoring its FACT/INFERENCE/PRIOR labels — never trade a PRIOR or THEORY as fact.\n"
     "- Evaluate the trader's working rotation thesis against the actual state; say "
     "explicitly where reality tracks it and where it diverges.\n"
     "- Do NOT give position sizes or fire trades — the deterministic system does "
@@ -414,6 +420,22 @@ def _transmission_summary(macro: dict | None) -> dict | None:
     }
 
 
+def _policy_intel_summary(root: Path) -> dict | None:
+    """Compact realpolitik policy-layer read for the macro brief (Fed/Admin intent +
+    capital rotation). Context only — carries its own FACT/INFERENCE/PRIOR labels."""
+    intel = _read_json(root / "data/policy/intel.json")
+    if not intel:
+        return None
+    rot = intel.get("rotation") or {}
+    return {
+        "thesis": (intel.get("thesis") or {}).get("en"),
+        "regime_read": (intel.get("regime_read") or {}).get("en"),
+        "targeted": [r.get("theme_en") for r in (rot.get("targeted") or [])][:7],
+        "starved": [r.get("theme_en") for r in (rot.get("starved") or [])][:4],
+        "open_predictions_n": sum(1 for p in (intel.get("predictions") or []) if p.get("status") == "open"),
+    }
+
+
 def gather_state(root: Path | None = None) -> dict:
     """Compact cross-asset state assembled from each dashboard's latest.json.
     Excludes holdings / watchlist composition by design. (macro lens)"""
@@ -456,6 +478,14 @@ def gather_state(root: Path | None = None) -> dict:
         state["btc"] = btc
     if macro.get("catalyst_tone"):
         state["catalyst_tone"] = macro.get("catalyst_tone")
+    # explicit Fed reaction-function stance (display-only leaf) + the realpolitik policy layer
+    if macro.get("fed_stance"):
+        fsd = macro["fed_stance"]
+        state["fed_stance"] = {k: fsd.get(k) for k in
+                               ("stance", "label_en", "guidance", "implied_cuts_12m", "market_vs_fed_en")}
+    pol = _policy_intel_summary(root)
+    if pol:
+        state["policy_intel"] = pol
     return state
 
 
