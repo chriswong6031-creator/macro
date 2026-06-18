@@ -1270,8 +1270,8 @@ a:focus-visible,.links a:focus-visible{outline:2px solid var(--link);outline-off
 }
 /* the globe is UNBOUNDED — no card; it floats on the page's aurora. The canvas is
    transparent outside the sphere, so body::before's aurora shows through. */
-.gd-stage{min-height:560px;display:flex;overflow:visible;background:none;border:none;box-shadow:none;min-width:0}
-@media(max-width:880px){.gd-stage{min-height:0;height:min(86vw,460px)}}
+.gd-stage{min-height:640px;display:flex;overflow:visible;background:none;border:none;box-shadow:none;min-width:0}
+@media(max-width:880px){.gd-stage{min-height:0;height:min(94vw,500px)}}
 .gd-canvas{width:100%;max-width:100%;height:100%;display:block;touch-action:none;cursor:grab;outline:none}
 .gd-canvas:focus-visible{outline:2px solid var(--link);outline-offset:-2px}
 .gd-poster{position:absolute;inset:0;width:100%;height:100%;transition:opacity .6s ease;pointer-events:none}
@@ -1343,35 +1343,38 @@ html[data-lang="zh"] .gd-r-cd .l-zh,html[data-lang="zh"] .gd-r-txt .l-zh{display
    #sky floats at z-index:-1 — ABOVE the ambient aurora (body::before, also -1
    but earlier in tree order) and BEHIND all page content. Sun parks on a
    time-of-day arc in light mode; a breathing starfield + moon take over in dark. */
-#sky{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;--cs:clamp(116px,14vw,232px)}
+#sky{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;--cs:clamp(120px,13vw,214px)}
 #sky-stars{position:absolute;inset:0;width:100%;height:100%;display:block}
 #sky-sun,#sky-moon{position:absolute;width:var(--cs);height:var(--cs);border-radius:50%;
  transform:translate(-50%,calc(-50% + 80vh));opacity:0;
  transition:transform 1.7s cubic-bezier(.16,.78,.29,1),opacity 1.25s ease}
 #sky[data-sky="day"] #sky-sun{transform:translate(-50%,-50%);opacity:1}
 #sky[data-sky="night"] #sky-moon{transform:translate(-50%,-50%);opacity:1}
-/* sun */
-#sky-sun{background:radial-gradient(circle at 50% 50%,#fff 0%,#ffe7a6 17%,var(--g-hot) 45%,color-mix(in srgb,var(--g-hot) 42%,transparent) 64%,transparent 72%);
- box-shadow:0 0 72px 20px color-mix(in srgb,var(--g-hot) 46%,transparent),0 0 170px 64px color-mix(in srgb,var(--g-hot) 22%,transparent)}
-#sky-sun::before{content:'';position:absolute;inset:-44%;border-radius:50%;
- background:repeating-conic-gradient(from 0deg,color-mix(in srgb,var(--g-hot) 30%,transparent) 0deg 4deg,transparent 4deg 14deg);
- -webkit-mask:radial-gradient(circle,transparent 52%,#000 57%,transparent 80%);mask:radial-gradient(circle,transparent 52%,#000 57%,transparent 80%);
- animation:sky-spin 64s linear infinite;opacity:.55}
-#sky-sun::after{content:'';position:absolute;inset:-8%;border-radius:50%;
- background:radial-gradient(circle,color-mix(in srgb,var(--g-hot) 20%,transparent) 0%,transparent 62%);
+/* sun — a luminous light source: white-hot core, warm body, big soft bloom + a
+   faint blurred corona flare (no hard cartoon spokes) */
+#sky-sun{background:radial-gradient(circle at 50% 50%,#fffdf7 0%,#fff2cc 20%,#ffd87f 40%,#ffb84d 58%,rgba(255,156,54,.34) 76%,transparent 84%);
+ box-shadow:0 0 46px 6px rgba(255,226,150,.6),0 0 110px 28px rgba(255,192,92,.38),0 0 220px 86px rgba(255,170,68,.18),0 0 360px 160px rgba(255,160,60,.08)}
+#sky-sun::before{content:'';position:absolute;inset:-46%;border-radius:50%;filter:blur(11px);opacity:.5;
+ background:repeating-conic-gradient(from 0deg,rgba(255,222,150,.16) 0deg 7deg,transparent 7deg 22deg);
+ -webkit-mask:radial-gradient(circle,transparent 46%,#000 62%,transparent 92%);mask:radial-gradient(circle,transparent 46%,#000 62%,transparent 92%);
+ animation:sky-spin 90s linear infinite}
+#sky-sun::after{content:'';position:absolute;inset:12%;border-radius:50%;mix-blend-mode:screen;
+ background:radial-gradient(circle at 44% 40%,rgba(255,255,255,.95) 0%,rgba(255,247,214,.25) 42%,transparent 62%);
  animation:sky-breathe 6.5s ease-in-out infinite}
-/* moon */
-#sky-moon{background:radial-gradient(circle at 38% 33%,#fdfdff 0%,#e2e9f6 42%,var(--g-cold) 97%);
- box-shadow:0 0 52px 12px color-mix(in srgb,var(--g-cold) 36%,transparent),0 0 130px 46px color-mix(in srgb,var(--g-cold) 17%,transparent),inset -16px -13px 32px color-mix(in srgb,#0a1430 42%,transparent)}
-#sky-moon::before{content:'';position:absolute;inset:0;border-radius:50%;opacity:.5;
- background:radial-gradient(circle at 64% 29%,color-mix(in srgb,var(--g-cold) 60%,#7b8aa8) 0 6%,transparent 7%),
-  radial-gradient(circle at 39% 61%,color-mix(in srgb,var(--g-cold) 60%,#7b8aa8) 0 4%,transparent 5%),
-  radial-gradient(circle at 71% 66%,color-mix(in srgb,var(--g-cold) 60%,#7b8aa8) 0 3%,transparent 4%)}
-#sky-moon::after{content:'';position:absolute;inset:-32%;border-radius:50%;
- background:radial-gradient(circle,color-mix(in srgb,var(--g-cold) 16%,transparent) 0%,transparent 60%);
+/* moon — a 3-D shaded sphere: soft terminator, faint craters, cool halo */
+#sky-moon{background:radial-gradient(circle at 34% 28%,#ffffff 0%,#eef2fb 26%,#cdd8ee 58%,#9fafcf 100%);
+ box-shadow:inset -24px -20px 50px rgba(16,26,54,.58),inset 12px 9px 24px rgba(255,255,255,.42),0 0 56px 10px rgba(150,182,242,.3),0 0 160px 60px rgba(120,162,232,.15)}
+#sky-moon::before{content:'';position:absolute;inset:0;border-radius:50%;opacity:.3;
+ background:radial-gradient(circle at 63% 31%,rgba(116,132,166,.6) 0 5%,transparent 6%),
+  radial-gradient(circle at 39% 58%,rgba(116,132,166,.5) 0 3.6%,transparent 4.6%),
+  radial-gradient(circle at 71% 64%,rgba(116,132,166,.45) 0 2.6%,transparent 3.6%),
+  radial-gradient(circle at 30% 37%,rgba(116,132,166,.4) 0 2%,transparent 3%),
+  radial-gradient(circle at 52% 72%,rgba(116,132,166,.4) 0 2.4%,transparent 3.4%)}
+#sky-moon::after{content:'';position:absolute;inset:-30%;border-radius:50%;
+ background:radial-gradient(circle,rgba(150,182,242,.16) 0%,transparent 62%);
  animation:sky-breathe 7.5s ease-in-out infinite}
 @keyframes sky-spin{to{transform:rotate(360deg)}}
-@keyframes sky-breathe{0%,100%{opacity:.55;transform:scale(1)}50%{opacity:.95;transform:scale(1.05)}}
+@keyframes sky-breathe{0%,100%{opacity:.6}50%{opacity:.95}}
 /* keep the header headline legible when the sun/moon glow drifts behind it */
 .h{position:relative}
 .h::before{content:'';position:absolute;z-index:-1;left:50%;top:48%;transform:translate(-50%,-50%);

@@ -67,9 +67,9 @@
     document.dispatchEvent(new CustomEvent('themechange', { detail: tm }));
     skyToggleFx(tm);
   }
-  /* Sitewide theme-toggle flourish: a sun rising (→ light) or setting (→ dark)
-     in the centre of the screen. The landing page runs its own richer sun/moon
-     choreography, so it sets window.__skyDeck and we bow out there. */
+  /* Sitewide theme-toggle flourish: a luminous sun (→ light) or a crescent moon
+     (→ dark) blooms in the centre of the screen, then fades. The landing page runs
+     its own richer sun/moon choreography, so it sets window.__skyDeck — bow out there. */
   function skyToggleFx(tm) {
     if (window.__skyDeck) return;
     try {
@@ -77,11 +77,11 @@
       var prev = document.querySelector('.sky-fx');   // a rapid re-toggle replaces the in-flight one
       if (prev && prev.parentNode) prev.parentNode.removeChild(prev);
       var o = document.createElement('div');
-      o.className = 'sky-fx ' + (tm === 'light' ? 'rise' : 'set');
+      o.className = 'sky-fx ' + (tm === 'light' ? 'sun' : 'moon');
       o.setAttribute('aria-hidden', 'true');
-      o.innerHTML = '<div class="orb"></div>';
+      o.innerHTML = '<div class="orb"><span class="disc"></span><span class="ring"></span></div>';
       document.body.appendChild(o);
-      setTimeout(function () { if (o.parentNode) o.parentNode.removeChild(o); }, tm === 'light' ? 1250 : 1150);
+      setTimeout(function () { if (o.parentNode) o.parentNode.removeChild(o); }, 1100);
     } catch (e) {}
   }
   window.toggleTheme = function () { setTheme(curTheme() === 'light' ? 'dark' : 'light'); };

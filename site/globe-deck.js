@@ -98,7 +98,8 @@
     canvas.width = W * dpr; canvas.height = H * dpr;
     canvas.style.width = W + "px"; canvas.style.height = H + "px";
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    R = Math.min(W, H) * 0.43;   // leaves room for the 1.16x atmosphere halo (never clipped)
+    R = Math.min(W, H) * 0.37;   // small fit factor → the globe + 1.13x halo float clear of
+                                 // the canvas rect even when a country-select zooms in (edgeless)
     fitScale = R; scale = scale === 240 ? R : Math.min(R * 2.2, Math.max(R * 0.8, scale));
     apply();
   }
@@ -145,12 +146,12 @@
     }
 
     // atmosphere rim-glow (outside the disc)
-    var atmo = ctx.createRadialGradient(cx, cy, scale * 0.92, cx, cy, scale * 1.16);
+    var atmo = ctx.createRadialGradient(cx, cy, scale * 0.92, cx, cy, scale * 1.13);
     atmo.addColorStop(0, rgba(PAL["--info"], 0));
     atmo.addColorStop(0.55, rgba(PAL["--info"], dark ? 0.22 : 0.12));
     atmo.addColorStop(1, rgba(PAL["--info"], 0));
     ctx.fillStyle = atmo;
-    ctx.beginPath(); ctx.arc(cx, cy, scale * 1.16, 0, 6.283); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx, cy, scale * 1.13, 0, 6.283); ctx.fill();
 
     // ocean sphere
     var oc = ctx.createRadialGradient(cx - scale * 0.3, cy - scale * 0.3, scale * 0.2, cx, cy, scale);
@@ -333,7 +334,7 @@
   canvas.addEventListener("pointerleave", function () { if (!dragging) { hovered = null; hideTip(); } });
   canvas.addEventListener("wheel", function (e) {
     e.preventDefault(); lastInteract = performance.now();
-    scale = Math.max(fitScale * 0.8, Math.min(fitScale * 2.4, scale * (e.deltaY < 0 ? 1.08 : 0.93))); apply();
+    scale = Math.max(fitScale * 0.8, Math.min(fitScale * 1.7, scale * (e.deltaY < 0 ? 1.08 : 0.93))); apply();
   }, { passive: false });
 
   function pick(cx, cy) {
@@ -358,7 +359,7 @@
   function selectMarket(m, cx, cy) {
     selected = m.cc; lastInteract = performance.now();
     var ll = m.kind === "marker" ? m.marker_lonlat : (byCC[m.cc] && paintCentroid(m.cc)) || [0, 0];
-    flying = { t0: performance.now(), dur: 700, a0: rot[0], b0: rot[1], a1: -ll[0], b1: clampLat(-ll[1]), s0: scale, s1: Math.min(fitScale * 1.5, fitScale * 1.22) };
+    flying = { t0: performance.now(), dur: 700, a0: rot[0], b0: rot[1], a1: -ll[0], b1: clampLat(-ll[1]), s0: scale, s1: fitScale * 1.12 };
     showTip(m, cx || (W / 2 + stage.getBoundingClientRect().left), cy || (H / 2 + stage.getBoundingClientRect().top), true);
     syncRows();
     if (live) live.textContent = m.name_en + ": " + m.quad_name_en;
@@ -514,7 +515,7 @@
     var k = e.key; lastInteract = performance.now();
     if (k === "ArrowLeft") rot[0] -= 8; else if (k === "ArrowRight") rot[0] += 8;
     else if (k === "ArrowUp") rot[1] = clampLat(rot[1] + 6); else if (k === "ArrowDown") rot[1] = clampLat(rot[1] - 6);
-    else if (k === "+" || k === "=") scale = Math.min(fitScale * 2.4, scale * 1.1);
+    else if (k === "+" || k === "=") scale = Math.min(fitScale * 1.7, scale * 1.1);
     else if (k === "-") scale = Math.max(fitScale * 0.8, scale * 0.9);
     else if (k === "Escape") { selected = null; hideTip(); syncRows(); }
     else return;
