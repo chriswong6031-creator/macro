@@ -18,7 +18,9 @@ say "you are walking into this event positioned fragile" — still non-direction
 """
 from __future__ import annotations
 
+import json
 from datetime import date
+from pathlib import Path
 
 # Typical 1-day |S&P 500| move around the event and historical up-rate (approximate,
 # long-run ballparks — DISPLAY calibration only, never a forecast). up_rate near 0.5
@@ -189,4 +191,120 @@ def snapshot(latest: dict | None = None, events: list[dict] | None = None,
         "sub_en": sub_en,
         "sub_zh": sub_zh,
         "asof": today.isoformat(),
+    }
+
+
+# --------------------------------------------------------------------------- #
+# Alert surface — emit the banner as a dashboard alert (display-only).
+# --------------------------------------------------------------------------- #
+_TIER_EN = {"high": "high", "elevated": "elevated", "normal": "normal"}
+_TIER_ZH = {"high": "偏高", "elevated": "升高", "normal": "正常"}
+
+
+def as_alert(snap: dict | None) -> dict | None:
+    """Map an event-risk snapshot to an {rule,severity,message,message_zh} alert
+    dict (consumed by engine.alerts.alert_views). NON-directional. None if hidden."""
+    if not snap or not snap.get("show"):
+        return None
+    label = snap.get("label", "")
+    when_en, when_zh = snap.get("when_en", ""), snap.get("when_zh", "")
+    tier = snap.get("vol_tier", "elevated")
+    frag = " · positioned fragile" if snap.get("fragility", {}).get("fragile") else ""
+    frag_zh = " · 仓位脆弱" if snap.get("fragility", {}).get("fragile") else ""
+    en = (f"Event-risk window: {label} {when_en} — {_TIER_EN.get(tier, tier)} two-sided "
+          f"volatility expected{frag}. Not a sell signal; size for the noise.")
+    zh = (f"事件风险窗口：{label}（{when_zh}）—— 预计{_TIER_ZH.get(tier, tier)}的两面性波动{frag_zh}。"
+          f"非卖出信号；按噪声调整仓位。")
+    return {"rule": "event_risk", "severity": "warn", "message": en, "message_zh": zh}
+
+
+# --------------------------------------------------------------------------- #
+# Forward-accruing scorecard — log each event-day firing, resolve the realized
+# move afterward, build an honest track record (NOT a base-rate recompute; the
+# repo's event-date sample is too thin for that — this accrues forward).
+# --------------------------------------------------------------------------- #
+def _log_path(path: str | Path | None = None) -> Path:
+    if path:
+        return Path(path)
+    from lib import config
+    return config.data_dir() / "event_risk" / "log.jsonl"
+
+
+def _read_log(p: Path) -> list[dict]:
+    if not p.exists():
+        return []
+    rows = []
+    for line in p.read_text().splitlines():
+        line = line.strip()
+        if line:
+            try:
+                rows.append(json.loads(line))
+            except ValueError:
+                pass
+    return rows
+
+
+def _write_log(p: Path, rows: list[dict]) -> None:
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in rows) + "\n")
+
+
+def append_log(snap: dict | None, path: str | Path | None = None) -> bool:
+    """On the EVENT DAY (days_to==0), append one row (realized move filled later by
+    resolve()). Idempotent per (date,type). Returns True if a row was added."""
+    if not snap or not snap.get("show") or snap.get("days_to") != 0:
+        return False
+    p = _log_path(path)
+    rows = _read_log(p)
+    d, ty = snap.get("asof"), snap.get("type")
+    if any(r.get("date") == d and r.get("type") == ty for r in rows):
+        return False
+    rows.append({"date": d, "type": ty, "vol_tier": snap.get("vol_tier"),
+                 "fragile": bool(snap.get("fragility", {}).get("fragile")),
+                 "realized_abs": None, "up": None})
+    _write_log(p, rows)
+    return True
+
+
+def resolve(spy_closes: dict, path: str | Path | None = None) -> int:
+    """Fill realized event-day move (close_t / close_{t-1} - 1) for unresolved rows
+    whose date is present in `spy_closes` ({iso_date: close}). Returns # resolved."""
+    p = _log_path(path)
+    rows = _read_log(p)
+    if not rows or not spy_closes:
+        return 0
+    dates = sorted(spy_closes)
+    n = 0
+    for r in rows:
+        if r.get("realized_abs") is not None or r.get("date") not in spy_closes:
+            continue
+        i = dates.index(r["date"])
+        if i == 0:
+            continue
+        prev, cur = spy_closes[dates[i - 1]], spy_closes[r["date"]]
+        if not prev:
+            continue
+        ret = cur / prev - 1.0
+        r["realized_abs"] = round(abs(ret) * 100, 2)
+        r["up"] = ret >= 0
+        n += 1
+    if n:
+        _write_log(p, rows)
+    return n
+
+
+def track_record(path: str | Path | None = None) -> dict:
+    """Summarize resolved firings: n, avg |move|, up-rate, and fragile-vs-calm avg."""
+    rows = [r for r in _read_log(_log_path(path)) if r.get("realized_abs") is not None]
+    if not rows:
+        return {"n": 0}
+    moves = [r["realized_abs"] for r in rows]
+    ups = [1 for r in rows if r.get("up")]
+    frag = [r["realized_abs"] for r in rows if r.get("fragile")]
+    return {
+        "n": len(rows),
+        "avg_abs": round(sum(moves) / len(moves), 2),
+        "up_rate": round(len(ups) / len(rows), 2),
+        "n_fragile": len(frag),
+        "avg_abs_fragile": round(sum(frag) / len(frag), 2) if frag else None,
     }

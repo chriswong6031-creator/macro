@@ -2452,6 +2452,24 @@ def main() -> int:
         # Never a dampener / never scored (see engine/event_risk.py discipline note).
         from engine import event_risk as _erisk
         event_risk = _erisk.snapshot(latest, events=event_strip, horizon_days=_horizon)
+        # scorecard: append today's firing (event-day only) + resolve realized moves
+        # from SPY closes; attach the running track record to the banner. Best-effort.
+        try:
+            _erisk.append_log(event_risk)
+            import pandas as _pd
+            _sp = _pd.read_parquet(config.data_dir() / "yahoo" / "SPY.parquet")
+            _spy = {str(i)[:10]: float(c) for i, c in _sp["close"].dropna().items()}
+            _erisk.resolve(_spy)
+        except Exception as _e:  # noqa: BLE001
+            log.warning("event_risk scorecard skipped: %s", _e)
+        try:
+            event_risk["track"] = _erisk.track_record()
+        except Exception:  # noqa: BLE001
+            pass
+        # surface the banner as a (display-only) dashboard alert
+        _ea = _erisk.as_alert(event_risk)
+        if _ea:
+            latest.setdefault("alerts", []).append(_ea)
         macro_news_data = _mnews.macro_headlines()
         macro_news_disclaimer = _mnews.DISCLAIMER_TEXT
         macro_news_disclaimer_zh = _mnews.DISCLAIMER_TEXT_ZH

@@ -822,6 +822,12 @@
           </ul>
         </div>
         {% endif %}
+        {% if ER.track and ER.track.n %}
+        <div class="sm muted" style="margin-top:9px;border-top:1px solid var(--line);padding-top:7px">
+          <b>{{ t('Our track record', '我们的战绩') }}:</b>
+          {{ t('across', '过去') }} {{ ER.track.n }} {{ t('flagged event-days the S&P realized ±', '次标记事件当日，标普实际波动 ±') }}{{ ER.track.avg_abs }}% ({{ t('up', '上涨') }} {{ (ER.track.up_rate*100)|round|int }}%) — {{ t('the base rate this banner is calibrated against (two-sided).', '本横幅据以校准的基准（两面性）。') }}
+        </div>
+        {% endif %}
       </div>
     </div>
   </div>
