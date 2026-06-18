@@ -46,6 +46,13 @@
   /* sector + standout cards */
   .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:11px; }
   .card { background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:11px 13px; }
+  /* The shared mtf.js paints a .mtf-grid of D/3D/W panels; theme.css forces
+     repeat(3,1fr), which overflows the ~260px sector/benchmark cards (the
+     "RSI 74 overbought" row spills past the edge). Let the timeframe panels
+     stack when the card is narrow and spread out only when there's room. */
+  .card .mtf-grid, .mtf-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .card .mtf-card { padding: 8px 10px; min-width: 0; }
+  .card svg { max-width: 100%; }
   .lad { display:inline-block; padding:2px 9px; border-radius:10px; font-weight:700; font-size:11.5px;
          background:color-mix(in srgb, var(--c, var(--muted)) 16%, var(--panel)); color:color-mix(in srgb, var(--c, var(--muted)) 82%, var(--text)); }
   .lad.up { --c:var(--up); } .lad.down { --c:var(--down); } .lad.flat { --c:var(--muted); }
@@ -168,7 +175,6 @@
         <a href="crossasset.html">🧭 <span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></a>
         <a href="signal_lab.html">🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></a>
         <a href="factors.html">🧮 <span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></a>
-        <a href="validation_timeline.html">🧪 <span class="l-en">Validation Timeline</span><span class="l-zh">验证时间线</span><span class="d"><span class="l-en">Full 2007→ walk-forward backtest</span><span class="l-zh">2007→ 完整滚动回测</span></span></a>
       </div>
     </div>
   </div>
@@ -196,7 +202,7 @@
     <h1>🇨🇦 <span class="l-en">TSX Stock Dashboard</span><span class="l-zh">标普/TSX 个股看板</span></h1>
     
     <span style="flex:1"></span>
-    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-06-17 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-06-18 02:43 UTC</span>
+    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-06-17 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-06-18 06:55 UTC</span>
   </div>
   
   <p class="muted small" style="margin:6px 0 0"><span class="l-en">Standout TSX names ranked by sector-neutral residual momentum, with the cycle entry as timing context. Search any TSX stock from the box above; click a card for the full breakdown.</span><span class="l-zh">按板块中性残差动量排名的 TSX 个股精选，并以周期入场作为时机背景。可在上方搜索框查询任意 TSX 个股；点击卡片查看完整拆解。</span>
@@ -231,7 +237,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,40.1 3.8,38.5 7.6,40.8 11.4,38.2 15.2,35.9 19.0,35.6 22.9,39.8 26.7,38.7 30.5,42.0 34.3,38.3 38.1,37.5 41.9,36.4 45.7,36.8 49.5,36.0 53.3,32.8 57.1,31.7 61.0,28.1 64.8,26.1 68.6,23.4 72.4,24.0 76.2,24.0 80.0,22.0 83.8,21.5 87.6,21.1 91.4,21.3 95.2,22.6 99.0,20.0 102.9,18.3 106.7,27.4 110.5,25.0 114.3,20.4 118.1,19.1 121.9,18.7 125.7,19.1 129.5,19.7 133.3,24.0 137.1,25.1 141.0,24.3 144.8,25.3 148.6,25.5 152.4,24.1 156.2,27.2 160.0,30.4 163.8,29.3 167.6,28.0 171.4,25.8 175.2,24.1 179.0,25.3 182.9,27.3 186.7,28.4 190.5,23.1 194.3,17.1 198.1,10.1 201.9,11.9 205.7,16.8 209.5,24.6 213.3,22.5 217.1,24.9 221.0,25.9 224.8,22.5 228.6,21.2 232.4,19.8 236.2,22.9 240.0,22.6 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,40.1 3.8,38.5 7.6,40.8 11.4,38.2 15.2,35.9 19.0,35.6 22.9,39.8 26.7,38.7 30.5,42.0 34.3,38.3 38.1,37.5 41.9,36.4 45.7,36.8 49.5,36.0 53.3,32.8 57.1,31.7 61.0,28.1 64.8,26.1 68.6,23.4 72.4,24.0 76.2,24.0 80.0,22.0 83.8,21.5 87.6,21.1 91.4,21.3 95.2,22.6 99.0,20.0 102.9,18.3 106.7,27.4 110.5,25.0 114.3,20.4 118.1,19.1 121.9,18.7 125.7,19.1 129.5,19.7 133.3,24.0 137.1,25.1 141.0,24.3 144.8,25.3 148.6,25.5 152.4,24.1 156.2,27.2 160.0,30.4 163.8,29.3 167.6,28.0 171.4,25.8 175.2,24.1 179.0,25.3 182.9,27.3 186.7,28.4 190.5,23.1 194.3,17.1 198.1,10.1 201.9,11.9 205.7,16.8 209.5,24.6 213.3,22.5 217.1,24.9 221.0,25.9 224.8,22.5 228.6,21.2 232.4,19.8 236.2,22.9 240.0,22.6" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="22.6" r="2.6" fill="var(--down)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">97</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">100</span>
         <span class="nb-verdict"><span class="l-en">Leader · poor entry — wait for a base</span><span class="l-zh">领先 · 入场点欠佳 — 等待筑底</span></span>
       </div>
       <div class="nb-axes">
@@ -249,9 +255,9 @@
         </div>
         
         
-        <div class="nb-ax" title="TWD 54/100">
+        <div class="nb-ax" title="TWD 62/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:54%"></div></div>
+          <div class="axt"><div class="axf" style="width:62%"></div></div>
         </div>
         
         
@@ -333,7 +339,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,36.7 3.8,39.7 7.6,41.9 11.4,37.0 15.2,38.3 19.0,38.8 22.9,41.5 26.7,42.0 30.5,42.0 34.3,37.9 38.1,35.4 41.9,37.2 45.7,37.5 49.5,32.9 53.3,25.3 57.1,25.3 61.0,24.3 64.8,24.4 68.6,21.2 72.4,27.0 76.2,26.3 80.0,24.3 83.8,27.4 87.6,28.9 91.4,26.9 95.2,24.4 99.0,25.4 102.9,24.2 106.7,26.0 110.5,24.3 114.3,24.0 118.1,18.8 121.9,18.4 125.7,18.7 129.5,14.3 133.3,18.8 137.1,18.8 141.0,19.7 144.8,17.4 148.6,14.2 152.4,11.9 156.2,13.3 160.0,16.6 163.8,21.0 167.6,21.2 171.4,14.3 175.2,11.8 179.0,13.3 182.9,11.5 186.7,10.8 190.5,10.3 194.3,16.1 198.1,13.5 201.9,13.2 205.7,10.1 209.5,13.7 213.3,13.9 217.1,14.7 221.0,28.6 224.8,25.4 228.6,25.0 232.4,23.0 236.2,20.8 240.0,28.2 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,36.7 3.8,39.7 7.6,41.9 11.4,37.0 15.2,38.3 19.0,38.8 22.9,41.5 26.7,42.0 30.5,42.0 34.3,37.9 38.1,35.4 41.9,37.2 45.7,37.5 49.5,32.9 53.3,25.3 57.1,25.3 61.0,24.3 64.8,24.4 68.6,21.2 72.4,27.0 76.2,26.3 80.0,24.3 83.8,27.4 87.6,28.9 91.4,26.9 95.2,24.4 99.0,25.4 102.9,24.2 106.7,26.0 110.5,24.3 114.3,24.0 118.1,18.8 121.9,18.4 125.7,18.7 129.5,14.3 133.3,18.8 137.1,18.8 141.0,19.7 144.8,17.4 148.6,14.2 152.4,11.9 156.2,13.3 160.0,16.6 163.8,21.0 167.6,21.2 171.4,14.3 175.2,11.8 179.0,13.3 182.9,11.5 186.7,10.8 190.5,10.3 194.3,16.1 198.1,13.5 201.9,13.2 205.7,10.1 209.5,13.7 213.3,13.9 217.1,14.7 221.0,28.6 224.8,25.4 228.6,25.0 232.4,23.0 236.2,20.8 240.0,28.2" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="28.2" r="2.6" fill="var(--down)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">94</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">95</span>
         <span class="nb-verdict"><span class="l-en">Strong name · wrong tape — wait for a base</span><span class="l-zh">强势个股 · 趋势不利 — 等待筑底</span></span>
       </div>
       <div class="nb-axes">
@@ -351,9 +357,9 @@
         </div>
         
         
-        <div class="nb-ax" title="TWD 41/100">
+        <div class="nb-ax" title="TWD 48/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:41%"></div></div>
+          <div class="axt"><div class="axf" style="width:48%"></div></div>
         </div>
         
         
@@ -384,7 +390,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,39.5 3.8,40.1 7.6,42.0 11.4,40.3 15.2,40.1 19.0,38.9 22.9,40.1 26.7,41.4 30.5,40.9 34.3,39.1 38.1,38.1 41.9,37.2 45.7,36.5 49.5,35.5 53.3,33.7 57.1,32.3 61.0,31.3 64.8,30.3 68.6,29.3 72.4,28.7 76.2,28.9 80.0,27.6 83.8,26.7 87.6,27.7 91.4,28.6 95.2,27.9 99.0,28.1 102.9,27.7 106.7,27.7 110.5,28.6 114.3,26.0 118.1,26.4 121.9,27.4 125.7,27.6 129.5,24.6 133.3,25.4 137.1,25.5 141.0,25.9 144.8,25.1 148.6,26.1 152.4,24.3 156.2,24.5 160.0,24.5 163.8,22.9 167.6,20.9 171.4,19.7 175.2,18.3 179.0,19.1 182.9,19.4 186.7,18.6 190.5,17.4 194.3,20.7 198.1,18.2 201.9,18.5 205.7,17.2 209.5,17.4 213.3,16.1 217.1,15.8 221.0,16.0 224.8,14.0 228.6,12.7 232.4,12.5 236.2,11.6 240.0,10.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,39.5 3.8,40.1 7.6,42.0 11.4,40.3 15.2,40.1 19.0,38.9 22.9,40.1 26.7,41.4 30.5,40.9 34.3,39.1 38.1,38.1 41.9,37.2 45.7,36.5 49.5,35.5 53.3,33.7 57.1,32.3 61.0,31.3 64.8,30.3 68.6,29.3 72.4,28.7 76.2,28.9 80.0,27.6 83.8,26.7 87.6,27.7 91.4,28.6 95.2,27.9 99.0,28.1 102.9,27.7 106.7,27.7 110.5,28.6 114.3,26.0 118.1,26.4 121.9,27.4 125.7,27.6 129.5,24.6 133.3,25.4 137.1,25.5 141.0,25.9 144.8,25.1 148.6,26.1 152.4,24.3 156.2,24.5 160.0,24.5 163.8,22.9 167.6,20.9 171.4,19.7 175.2,18.3 179.0,19.1 182.9,19.4 186.7,18.6 190.5,17.4 194.3,20.7 198.1,18.2 201.9,18.5 205.7,17.2 209.5,17.4 213.3,16.1 217.1,15.8 221.0,16.0 224.8,14.0 228.6,12.7 232.4,12.5 236.2,11.6 240.0,10.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="10.1" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">95</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">96</span>
         <span class="nb-verdict"><span class="l-en">Strong name · wrong tape — wait for a base</span><span class="l-zh">强势个股 · 趋势不利 — 等待筑底</span></span>
       </div>
       <div class="nb-axes">
@@ -402,9 +408,9 @@
         </div>
         
         
-        <div class="nb-ax" title="TWD 61/100">
+        <div class="nb-ax" title="TWD 62/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:61%"></div></div>
+          <div class="axt"><div class="axf" style="width:62%"></div></div>
         </div>
         
         
@@ -435,7 +441,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,38.5 3.8,39.6 7.6,41.5 11.4,38.5 15.2,37.9 19.0,36.6 22.9,40.3 26.7,41.0 30.5,42.0 34.3,38.1 38.1,36.5 41.9,36.1 45.7,35.0 49.5,33.5 53.3,30.6 57.1,28.7 61.0,27.6 64.8,26.0 68.6,24.3 72.4,23.0 76.2,23.1 80.0,21.1 83.8,20.1 87.6,22.0 91.4,21.9 95.2,22.0 99.0,20.7 102.9,19.9 106.7,20.6 110.5,22.9 114.3,19.0 118.1,18.1 121.9,20.8 125.7,20.6 129.5,17.6 133.3,19.6 137.1,20.0 141.0,18.8 144.8,17.7 148.6,19.7 152.4,17.0 156.2,17.3 160.0,16.2 163.8,13.6 167.6,12.5 171.4,11.2 175.2,10.1 179.0,10.9 182.9,11.3 186.7,19.6 190.5,20.0 194.3,23.7 198.1,20.4 201.9,21.2 205.7,19.0 209.5,18.7 213.3,17.7 217.1,16.1 221.0,16.9 224.8,14.6 228.6,12.1 232.4,11.6 236.2,11.0 240.0,11.6 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,38.5 3.8,39.6 7.6,41.5 11.4,38.5 15.2,37.9 19.0,36.6 22.9,40.3 26.7,41.0 30.5,42.0 34.3,38.1 38.1,36.5 41.9,36.1 45.7,35.0 49.5,33.5 53.3,30.6 57.1,28.7 61.0,27.6 64.8,26.0 68.6,24.3 72.4,23.0 76.2,23.1 80.0,21.1 83.8,20.1 87.6,22.0 91.4,21.9 95.2,22.0 99.0,20.7 102.9,19.9 106.7,20.6 110.5,22.9 114.3,19.0 118.1,18.1 121.9,20.8 125.7,20.6 129.5,17.6 133.3,19.6 137.1,20.0 141.0,18.8 144.8,17.7 148.6,19.7 152.4,17.0 156.2,17.3 160.0,16.2 163.8,13.6 167.6,12.5 171.4,11.2 175.2,10.1 179.0,10.9 182.9,11.3 186.7,19.6 190.5,20.0 194.3,23.7 198.1,20.4 201.9,21.2 205.7,19.0 209.5,18.7 213.3,17.7 217.1,16.1 221.0,16.9 224.8,14.6 228.6,12.1 232.4,11.6 236.2,11.0 240.0,11.6" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="11.6" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">99</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">100</span>
         <span class="nb-verdict"><span class="l-en">High-conviction — leader with a good entry</span><span class="l-zh">高确信 — 领先且入场点良好</span></span>
       </div>
       <div class="nb-axes">
@@ -453,9 +459,9 @@
         </div>
         
         
-        <div class="nb-ax" title="TWD 61/100">
+        <div class="nb-ax" title="TWD 62/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:61%"></div></div>
+          <div class="axt"><div class="axf" style="width:62%"></div></div>
         </div>
         
         
@@ -486,7 +492,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,40.2 3.8,39.9 7.6,41.1 11.4,40.0 15.2,39.9 19.0,37.2 22.9,40.6 26.7,41.3 30.5,42.0 34.3,41.2 38.1,40.4 41.9,39.5 45.7,39.2 49.5,40.8 53.3,37.7 57.1,33.3 61.0,32.5 64.8,32.3 68.6,31.2 72.4,31.0 76.2,31.9 80.0,31.1 83.8,32.2 87.6,33.0 91.4,31.6 95.2,29.4 99.0,29.3 102.9,26.1 106.7,28.2 110.5,24.3 114.3,24.3 118.1,20.6 121.9,15.0 125.7,13.9 129.5,10.1 133.3,13.7 137.1,18.0 141.0,18.0 144.8,24.1 148.6,24.6 152.4,24.7 156.2,22.7 160.0,27.8 163.8,31.5 167.6,34.0 171.4,34.1 175.2,33.6 179.0,31.7 182.9,32.0 186.7,34.2 190.5,34.5 194.3,35.3 198.1,34.5 201.9,35.5 205.7,33.4 209.5,33.7 213.3,34.6 217.1,34.8 221.0,38.7 224.8,38.5 228.6,40.0 232.4,34.7 236.2,34.8 240.0,37.4 240,42" fill="var(--muted)" opacity="0.12" stroke="none"/><polyline points="0.0,40.2 3.8,39.9 7.6,41.1 11.4,40.0 15.2,39.9 19.0,37.2 22.9,40.6 26.7,41.3 30.5,42.0 34.3,41.2 38.1,40.4 41.9,39.5 45.7,39.2 49.5,40.8 53.3,37.7 57.1,33.3 61.0,32.5 64.8,32.3 68.6,31.2 72.4,31.0 76.2,31.9 80.0,31.1 83.8,32.2 87.6,33.0 91.4,31.6 95.2,29.4 99.0,29.3 102.9,26.1 106.7,28.2 110.5,24.3 114.3,24.3 118.1,20.6 121.9,15.0 125.7,13.9 129.5,10.1 133.3,13.7 137.1,18.0 141.0,18.0 144.8,24.1 148.6,24.6 152.4,24.7 156.2,22.7 160.0,27.8 163.8,31.5 167.6,34.0 171.4,34.1 175.2,33.6 179.0,31.7 182.9,32.0 186.7,34.2 190.5,34.5 194.3,35.3 198.1,34.5 201.9,35.5 205.7,33.4 209.5,33.7 213.3,34.6 217.1,34.8 221.0,38.7 224.8,38.5 228.6,40.0 232.4,34.7 236.2,34.8 240.0,37.4" fill="none" stroke="var(--muted)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="37.4" r="2.6" fill="var(--muted)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">98</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">99</span>
         <span class="nb-verdict"><span class="l-en">Leader · poor entry — wait for a base</span><span class="l-zh">领先 · 入场点欠佳 — 等待筑底</span></span>
       </div>
       <div class="nb-axes">
@@ -537,7 +543,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,40.2 3.8,42.0 7.6,41.7 11.4,38.5 15.2,34.8 19.0,32.2 22.9,35.0 26.7,35.1 30.5,40.5 34.3,37.5 38.1,36.3 41.9,37.3 45.7,37.8 49.5,37.6 53.3,33.6 57.1,33.4 61.0,31.0 64.8,30.5 68.6,32.3 72.4,33.6 76.2,34.1 80.0,34.3 83.8,32.2 87.6,34.2 91.4,34.5 95.2,35.2 99.0,34.7 102.9,35.3 106.7,36.8 110.5,38.0 114.3,35.6 118.1,31.9 121.9,31.0 125.7,31.5 129.5,30.0 133.3,27.9 137.1,27.3 141.0,25.7 144.8,24.7 148.6,22.7 152.4,22.6 156.2,23.2 160.0,20.2 163.8,17.6 167.6,17.9 171.4,15.1 175.2,14.1 179.0,10.1 182.9,13.1 186.7,14.2 190.5,18.5 194.3,21.5 198.1,14.8 201.9,18.2 205.7,17.6 209.5,21.8 213.3,18.5 217.1,25.6 221.0,28.7 224.8,23.1 228.6,24.5 232.4,23.1 236.2,22.2 240.0,22.2 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,40.2 3.8,42.0 7.6,41.7 11.4,38.5 15.2,34.8 19.0,32.2 22.9,35.0 26.7,35.1 30.5,40.5 34.3,37.5 38.1,36.3 41.9,37.3 45.7,37.8 49.5,37.6 53.3,33.6 57.1,33.4 61.0,31.0 64.8,30.5 68.6,32.3 72.4,33.6 76.2,34.1 80.0,34.3 83.8,32.2 87.6,34.2 91.4,34.5 95.2,35.2 99.0,34.7 102.9,35.3 106.7,36.8 110.5,38.0 114.3,35.6 118.1,31.9 121.9,31.0 125.7,31.5 129.5,30.0 133.3,27.9 137.1,27.3 141.0,25.7 144.8,24.7 148.6,22.7 152.4,22.6 156.2,23.2 160.0,20.2 163.8,17.6 167.6,17.9 171.4,15.1 175.2,14.1 179.0,10.1 182.9,13.1 186.7,14.2 190.5,18.5 194.3,21.5 198.1,14.8 201.9,18.2 205.7,17.6 209.5,21.8 213.3,18.5 217.1,25.6 221.0,28.7 224.8,23.1 228.6,24.5 232.4,23.1 236.2,22.2 240.0,22.2" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="22.2" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">100</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">98</span>
         <span class="nb-verdict"><span class="l-en">High-conviction — leader with a good entry</span><span class="l-zh">高确信 — 领先且入场点良好</span></span>
       </div>
       <div class="nb-axes">
@@ -555,9 +561,9 @@
         </div>
         
         
-        <div class="nb-ax ax-na" title="TWD — no data">
+        <div class="nb-ax" title="TWD 47/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
+          <div class="axt"><div class="axf" style="width:47%"></div></div>
         </div>
         
         
@@ -588,7 +594,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,37.8 3.8,39.2 7.6,41.8 11.4,39.4 15.2,40.7 19.0,37.1 22.9,39.5 26.7,40.2 30.5,42.0 34.3,37.3 38.1,32.8 41.9,37.1 45.7,35.2 49.5,37.6 53.3,32.7 57.1,32.3 61.0,33.2 64.8,33.5 68.6,26.4 72.4,29.5 76.2,32.4 80.0,30.1 83.8,31.5 87.6,33.6 91.4,35.7 95.2,37.4 99.0,38.5 102.9,39.4 106.7,40.7 110.5,39.5 114.3,22.8 118.1,23.7 121.9,25.9 125.7,24.4 129.5,20.1 133.3,21.4 137.1,22.7 141.0,27.8 144.8,28.8 148.6,30.1 152.4,29.7 156.2,31.9 160.0,30.2 163.8,24.7 167.6,22.4 171.4,20.1 175.2,20.3 179.0,21.1 182.9,22.0 186.7,19.5 190.5,15.2 194.3,10.1 198.1,10.4 201.9,11.4 205.7,11.9 209.5,17.2 213.3,18.1 217.1,16.9 221.0,18.3 224.8,14.5 228.6,15.4 232.4,15.7 236.2,15.7 240.0,17.8 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,37.8 3.8,39.2 7.6,41.8 11.4,39.4 15.2,40.7 19.0,37.1 22.9,39.5 26.7,40.2 30.5,42.0 34.3,37.3 38.1,32.8 41.9,37.1 45.7,35.2 49.5,37.6 53.3,32.7 57.1,32.3 61.0,33.2 64.8,33.5 68.6,26.4 72.4,29.5 76.2,32.4 80.0,30.1 83.8,31.5 87.6,33.6 91.4,35.7 95.2,37.4 99.0,38.5 102.9,39.4 106.7,40.7 110.5,39.5 114.3,22.8 118.1,23.7 121.9,25.9 125.7,24.4 129.5,20.1 133.3,21.4 137.1,22.7 141.0,27.8 144.8,28.8 148.6,30.1 152.4,29.7 156.2,31.9 160.0,30.2 163.8,24.7 167.6,22.4 171.4,20.1 175.2,20.3 179.0,21.1 182.9,22.0 186.7,19.5 190.5,15.2 194.3,10.1 198.1,10.4 201.9,11.4 205.7,11.9 209.5,17.2 213.3,18.1 217.1,16.9 221.0,18.3 224.8,14.5 228.6,15.4 232.4,15.7 236.2,15.7 240.0,17.8" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="17.8" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">100</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">97</span>
         <span class="nb-verdict"><span class="l-en">High-conviction — leader with a good entry</span><span class="l-zh">高确信 — 领先且入场点良好</span></span>
       </div>
       <div class="nb-axes">
@@ -606,9 +612,9 @@
         </div>
         
         
-        <div class="nb-ax ax-na" title="TWD — no data">
+        <div class="nb-ax" title="TWD 48/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
+          <div class="axt"><div class="axf" style="width:48%"></div></div>
         </div>
         
         
@@ -639,7 +645,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,39.3 3.8,37.0 7.6,36.5 11.4,39.8 15.2,38.8 19.0,38.4 22.9,36.8 26.7,32.2 30.5,34.0 34.3,33.9 38.1,41.4 41.9,36.9 45.7,34.3 49.5,33.4 53.3,41.5 57.1,42.0 61.0,39.6 64.8,34.9 68.6,38.4 72.4,37.7 76.2,36.6 80.0,39.6 83.8,37.6 87.6,35.1 91.4,30.9 95.2,28.4 99.0,30.1 102.9,25.0 106.7,20.8 110.5,20.0 114.3,21.6 118.1,21.0 121.9,20.7 125.7,21.2 129.5,28.1 133.3,26.8 137.1,28.0 141.0,25.9 144.8,23.5 148.6,24.1 152.4,21.1 156.2,16.0 160.0,15.2 163.8,19.4 167.6,20.7 171.4,21.6 175.2,28.2 179.0,24.3 182.9,28.5 186.7,20.4 190.5,21.8 194.3,20.1 198.1,17.8 201.9,13.7 205.7,10.1 209.5,16.4 213.3,11.1 217.1,18.6 221.0,15.2 224.8,16.9 228.6,19.2 232.4,21.7 236.2,22.9 240.0,23.8 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,39.3 3.8,37.0 7.6,36.5 11.4,39.8 15.2,38.8 19.0,38.4 22.9,36.8 26.7,32.2 30.5,34.0 34.3,33.9 38.1,41.4 41.9,36.9 45.7,34.3 49.5,33.4 53.3,41.5 57.1,42.0 61.0,39.6 64.8,34.9 68.6,38.4 72.4,37.7 76.2,36.6 80.0,39.6 83.8,37.6 87.6,35.1 91.4,30.9 95.2,28.4 99.0,30.1 102.9,25.0 106.7,20.8 110.5,20.0 114.3,21.6 118.1,21.0 121.9,20.7 125.7,21.2 129.5,28.1 133.3,26.8 137.1,28.0 141.0,25.9 144.8,23.5 148.6,24.1 152.4,21.1 156.2,16.0 160.0,15.2 163.8,19.4 167.6,20.7 171.4,21.6 175.2,28.2 179.0,24.3 182.9,28.5 186.7,20.4 190.5,21.8 194.3,20.1 198.1,17.8 201.9,13.7 205.7,10.1 209.5,16.4 213.3,11.1 217.1,18.6 221.0,15.2 224.8,16.9 228.6,19.2 232.4,21.7 236.2,22.9 240.0,23.8" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="23.8" r="2.6" fill="var(--down)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">98</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">94</span>
         <span class="nb-verdict"><span class="l-en">High-conviction — leader with a good entry</span><span class="l-zh">高确信 — 领先且入场点良好</span></span>
       </div>
       <div class="nb-axes">
@@ -657,9 +663,9 @@
         </div>
         
         
-        <div class="nb-ax ax-na" title="TWD — no data">
+        <div class="nb-ax" title="TWD 35/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
+          <div class="axt"><div class="axf" style="width:35%"></div></div>
         </div>
         
         
@@ -690,7 +696,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,37.5 3.8,39.6 7.6,41.8 11.4,38.4 15.2,37.8 19.0,35.1 22.9,36.9 26.7,38.2 30.5,38.7 34.3,35.9 38.1,33.7 41.9,35.1 45.7,34.4 49.5,37.2 53.3,35.3 57.1,35.5 61.0,35.0 64.8,35.0 68.6,33.4 72.4,34.6 76.2,37.5 80.0,34.7 83.8,36.1 87.6,37.0 91.4,38.0 95.2,37.5 99.0,37.3 102.9,37.3 106.7,39.2 110.5,40.4 114.3,39.9 118.1,39.4 121.9,40.2 125.7,37.1 129.5,34.1 133.3,35.4 137.1,41.2 141.0,42.0 144.8,35.7 148.6,34.9 152.4,33.0 156.2,33.3 160.0,34.8 163.8,31.4 167.6,30.3 171.4,28.3 175.2,28.3 179.0,26.8 182.9,22.0 186.7,20.8 190.5,18.7 194.3,19.7 198.1,16.2 201.9,16.8 205.7,16.2 209.5,19.2 213.3,17.3 217.1,16.7 221.0,17.4 224.8,13.2 228.6,11.3 232.4,12.4 236.2,10.1 240.0,11.6 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,37.5 3.8,39.6 7.6,41.8 11.4,38.4 15.2,37.8 19.0,35.1 22.9,36.9 26.7,38.2 30.5,38.7 34.3,35.9 38.1,33.7 41.9,35.1 45.7,34.4 49.5,37.2 53.3,35.3 57.1,35.5 61.0,35.0 64.8,35.0 68.6,33.4 72.4,34.6 76.2,37.5 80.0,34.7 83.8,36.1 87.6,37.0 91.4,38.0 95.2,37.5 99.0,37.3 102.9,37.3 106.7,39.2 110.5,40.4 114.3,39.9 118.1,39.4 121.9,40.2 125.7,37.1 129.5,34.1 133.3,35.4 137.1,41.2 141.0,42.0 144.8,35.7 148.6,34.9 152.4,33.0 156.2,33.3 160.0,34.8 163.8,31.4 167.6,30.3 171.4,28.3 175.2,28.3 179.0,26.8 182.9,22.0 186.7,20.8 190.5,18.7 194.3,19.7 198.1,16.2 201.9,16.8 205.7,16.2 209.5,19.2 213.3,17.3 217.1,16.7 221.0,17.4 224.8,13.2 228.6,11.3 232.4,12.4 236.2,10.1 240.0,11.6" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="11.6" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">96</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">93</span>
         <span class="nb-verdict"><span class="l-en">Leader · poor entry — wait for a base</span><span class="l-zh">领先 · 入场点欠佳 — 等待筑底</span></span>
       </div>
       <div class="nb-axes">
@@ -708,9 +714,9 @@
         </div>
         
         
-        <div class="nb-ax ax-na" title="TWD — no data">
+        <div class="nb-ax" title="TWD 48/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
+          <div class="axt"><div class="axf" style="width:48%"></div></div>
         </div>
         
         
@@ -741,7 +747,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,38.8 3.8,42.0 7.6,40.7 11.4,39.3 15.2,39.4 19.0,37.2 22.9,38.3 26.7,39.1 30.5,39.0 34.3,37.3 38.1,35.8 41.9,35.6 45.7,35.4 49.5,36.1 53.3,36.3 57.1,34.0 61.0,33.5 64.8,30.9 68.6,29.4 72.4,28.6 76.2,30.9 80.0,29.4 83.8,30.8 87.6,31.0 91.4,30.4 95.2,30.2 99.0,29.8 102.9,29.0 106.7,27.8 110.5,28.5 114.3,26.5 118.1,25.9 121.9,26.5 125.7,24.7 129.5,24.0 133.3,22.7 137.1,22.0 141.0,23.2 144.8,21.1 148.6,22.3 152.4,20.4 156.2,21.6 160.0,20.5 163.8,18.8 167.6,18.4 171.4,19.4 175.2,18.9 179.0,18.9 182.9,20.1 186.7,19.4 190.5,17.1 194.3,18.4 198.1,16.4 201.9,18.0 205.7,16.4 209.5,16.4 213.3,17.6 217.1,15.4 221.0,16.0 224.8,14.4 228.6,13.1 232.4,11.6 236.2,11.1 240.0,10.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,38.8 3.8,42.0 7.6,40.7 11.4,39.3 15.2,39.4 19.0,37.2 22.9,38.3 26.7,39.1 30.5,39.0 34.3,37.3 38.1,35.8 41.9,35.6 45.7,35.4 49.5,36.1 53.3,36.3 57.1,34.0 61.0,33.5 64.8,30.9 68.6,29.4 72.4,28.6 76.2,30.9 80.0,29.4 83.8,30.8 87.6,31.0 91.4,30.4 95.2,30.2 99.0,29.8 102.9,29.0 106.7,27.8 110.5,28.5 114.3,26.5 118.1,25.9 121.9,26.5 125.7,24.7 129.5,24.0 133.3,22.7 137.1,22.0 141.0,23.2 144.8,21.1 148.6,22.3 152.4,20.4 156.2,21.6 160.0,20.5 163.8,18.8 167.6,18.4 171.4,19.4 175.2,18.9 179.0,18.9 182.9,20.1 186.7,19.4 190.5,17.1 194.3,18.4 198.1,16.4 201.9,18.0 205.7,16.4 209.5,16.4 213.3,17.6 217.1,15.4 221.0,16.0 224.8,14.4 228.6,13.1 232.4,11.6 236.2,11.1 240.0,10.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="10.1" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">91</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">92</span>
         <span class="nb-verdict"><span class="l-en">Strong name · wrong tape — wait for a base</span><span class="l-zh">强势个股 · 趋势不利 — 等待筑底</span></span>
       </div>
       <div class="nb-axes">
@@ -759,9 +765,9 @@
         </div>
         
         
-        <div class="nb-ax" title="TWD 50/100">
+        <div class="nb-ax" title="TWD 49/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:50%"></div></div>
+          <div class="axt"><div class="axf" style="width:49%"></div></div>
         </div>
         
         
@@ -810,9 +816,9 @@
         </div>
         
         
-        <div class="nb-ax ax-na" title="TWD — no data">
+        <div class="nb-ax" title="TWD 62/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
+          <div class="axt"><div class="axf" style="width:62%"></div></div>
         </div>
         
         
@@ -843,7 +849,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,37.1 3.8,36.1 7.6,37.2 11.4,38.4 15.2,37.0 19.0,35.3 22.9,36.6 26.7,35.5 30.5,39.2 34.3,37.8 38.1,42.0 41.9,40.9 45.7,40.8 49.5,39.6 53.3,38.0 57.1,37.6 61.0,36.2 64.8,33.3 68.6,31.6 72.4,29.4 76.2,28.6 80.0,31.2 83.8,29.1 87.6,30.5 91.4,25.2 95.2,23.4 99.0,20.6 102.9,21.2 106.7,21.7 110.5,17.8 114.3,16.7 118.1,15.4 121.9,14.0 125.7,12.6 129.5,15.9 133.3,10.1 137.1,14.7 141.0,16.4 144.8,14.9 148.6,13.6 152.4,12.3 156.2,11.2 160.0,10.4 163.8,11.5 167.6,13.7 171.4,12.7 175.2,16.6 179.0,14.0 182.9,20.6 186.7,22.7 190.5,22.2 194.3,20.5 198.1,17.0 201.9,17.7 205.7,15.9 209.5,24.6 213.3,21.8 217.1,22.3 221.0,25.7 224.8,24.9 228.6,23.9 232.4,24.6 236.2,26.0 240.0,25.2 240,42" fill="var(--muted)" opacity="0.12" stroke="none"/><polyline points="0.0,37.1 3.8,36.1 7.6,37.2 11.4,38.4 15.2,37.0 19.0,35.3 22.9,36.6 26.7,35.5 30.5,39.2 34.3,37.8 38.1,42.0 41.9,40.9 45.7,40.8 49.5,39.6 53.3,38.0 57.1,37.6 61.0,36.2 64.8,33.3 68.6,31.6 72.4,29.4 76.2,28.6 80.0,31.2 83.8,29.1 87.6,30.5 91.4,25.2 95.2,23.4 99.0,20.6 102.9,21.2 106.7,21.7 110.5,17.8 114.3,16.7 118.1,15.4 121.9,14.0 125.7,12.6 129.5,15.9 133.3,10.1 137.1,14.7 141.0,16.4 144.8,14.9 148.6,13.6 152.4,12.3 156.2,11.2 160.0,10.4 163.8,11.5 167.6,13.7 171.4,12.7 175.2,16.6 179.0,14.0 182.9,20.6 186.7,22.7 190.5,22.2 194.3,20.5 198.1,17.0 201.9,17.7 205.7,15.9 209.5,24.6 213.3,21.8 217.1,22.3 221.0,25.7 224.8,24.9 228.6,23.9 232.4,24.6 236.2,26.0 240.0,25.2" fill="none" stroke="var(--muted)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="25.2" r="2.6" fill="var(--muted)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">97</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">98</span>
         <span class="nb-verdict"><span class="l-en">High-conviction — leader with a good entry</span><span class="l-zh">高确信 — 领先且入场点良好</span></span>
       </div>
       <div class="nb-axes">
@@ -912,9 +918,9 @@
         </div>
         
         
-        <div class="nb-ax" title="TWD 61/100">
+        <div class="nb-ax" title="TWD 59/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:61%"></div></div>
+          <div class="axt"><div class="axf" style="width:59%"></div></div>
         </div>
         
         
@@ -945,7 +951,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,33.2 3.8,39.7 7.6,42.0 11.4,42.0 15.2,41.0 19.0,34.5 22.9,36.3 26.7,30.5 30.5,27.9 34.3,21.4 38.1,17.3 41.9,19.9 45.7,19.6 49.5,18.0 53.3,19.5 57.1,19.9 61.0,17.3 64.8,18.9 68.6,14.1 72.4,17.1 76.2,17.4 80.0,13.7 83.8,19.1 87.6,28.3 91.4,26.7 95.2,28.6 99.0,29.6 102.9,31.5 106.7,35.0 110.5,38.9 114.3,36.9 118.1,36.4 121.9,37.2 125.7,39.2 129.5,33.3 133.3,32.9 137.1,29.9 141.0,26.4 144.8,24.3 148.6,22.3 152.4,18.7 156.2,27.2 160.0,33.1 163.8,32.8 167.6,32.8 171.4,31.1 175.2,24.7 179.0,21.0 182.9,22.3 186.7,23.8 190.5,15.5 194.3,19.4 198.1,16.7 201.9,22.5 205.7,22.3 209.5,30.2 213.3,29.7 217.1,32.8 221.0,36.3 224.8,31.6 228.6,20.8 232.4,10.1 236.2,14.8 240.0,15.7 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,33.2 3.8,39.7 7.6,42.0 11.4,42.0 15.2,41.0 19.0,34.5 22.9,36.3 26.7,30.5 30.5,27.9 34.3,21.4 38.1,17.3 41.9,19.9 45.7,19.6 49.5,18.0 53.3,19.5 57.1,19.9 61.0,17.3 64.8,18.9 68.6,14.1 72.4,17.1 76.2,17.4 80.0,13.7 83.8,19.1 87.6,28.3 91.4,26.7 95.2,28.6 99.0,29.6 102.9,31.5 106.7,35.0 110.5,38.9 114.3,36.9 118.1,36.4 121.9,37.2 125.7,39.2 129.5,33.3 133.3,32.9 137.1,29.9 141.0,26.4 144.8,24.3 148.6,22.3 152.4,18.7 156.2,27.2 160.0,33.1 163.8,32.8 167.6,32.8 171.4,31.1 175.2,24.7 179.0,21.0 182.9,22.3 186.7,23.8 190.5,15.5 194.3,19.4 198.1,16.7 201.9,22.5 205.7,22.3 209.5,30.2 213.3,29.7 217.1,32.8 221.0,36.3 224.8,31.6 228.6,20.8 232.4,10.1 236.2,14.8 240.0,15.7" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="15.7" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">96</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">97</span>
         <span class="nb-verdict"><span class="l-en">High-conviction — leader with a good entry</span><span class="l-zh">高确信 — 领先且入场点良好</span></span>
       </div>
       <div class="nb-axes">
@@ -996,7 +1002,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,36.2 3.8,40.0 7.6,41.4 11.4,40.2 15.2,41.4 19.0,40.5 22.9,41.7 26.7,41.0 30.5,42.0 34.3,38.8 38.1,35.9 41.9,36.2 45.7,36.5 49.5,36.4 53.3,33.1 57.1,34.6 61.0,30.3 64.8,29.7 68.6,28.6 72.4,27.3 76.2,10.7 80.0,11.7 83.8,12.7 87.6,13.4 91.4,13.6 95.2,11.4 99.0,12.7 102.9,12.8 106.7,12.9 110.5,12.6 114.3,11.8 118.1,11.9 121.9,12.1 125.7,11.0 129.5,10.6 133.3,11.2 137.1,11.5 141.0,10.9 144.8,12.7 148.6,14.4 152.4,13.8 156.2,13.8 160.0,14.1 163.8,12.2 167.6,10.8 171.4,10.1 175.2,10.1 179.0,10.5 182.9,10.2 186.7,10.2 190.5,10.1 194.3,12.1 198.1,12.8 201.9,13.9 205.7,14.8 209.5,12.3 213.3,12.7 217.1,11.4 221.0,12.3 224.8,11.2 228.6,10.7 232.4,13.8 236.2,14.2 240.0,16.2 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,36.2 3.8,40.0 7.6,41.4 11.4,40.2 15.2,41.4 19.0,40.5 22.9,41.7 26.7,41.0 30.5,42.0 34.3,38.8 38.1,35.9 41.9,36.2 45.7,36.5 49.5,36.4 53.3,33.1 57.1,34.6 61.0,30.3 64.8,29.7 68.6,28.6 72.4,27.3 76.2,10.7 80.0,11.7 83.8,12.7 87.6,13.4 91.4,13.6 95.2,11.4 99.0,12.7 102.9,12.8 106.7,12.9 110.5,12.6 114.3,11.8 118.1,11.9 121.9,12.1 125.7,11.0 129.5,10.6 133.3,11.2 137.1,11.5 141.0,10.9 144.8,12.7 148.6,14.4 152.4,13.8 156.2,13.8 160.0,14.1 163.8,12.2 167.6,10.8 171.4,10.1 175.2,10.1 179.0,10.5 182.9,10.2 186.7,10.2 190.5,10.1 194.3,12.1 198.1,12.8 201.9,13.9 205.7,14.8 209.5,12.3 213.3,12.7 217.1,11.4 221.0,12.3 224.8,11.2 228.6,10.7 232.4,13.8 236.2,14.2 240.0,16.2" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="16.2" r="2.6" fill="var(--down)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">90</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">91</span>
         <span class="nb-verdict"><span class="l-en">Strong name · wrong tape — wait for a base</span><span class="l-zh">强势个股 · 趋势不利 — 等待筑底</span></span>
       </div>
       <div class="nb-axes">
@@ -1014,9 +1020,9 @@
         </div>
         
         
-        <div class="nb-ax" title="TWD 48/100">
+        <div class="nb-ax" title="TWD 47/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:48%"></div></div>
+          <div class="axt"><div class="axf" style="width:47%"></div></div>
         </div>
         
         
@@ -1047,7 +1053,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,41.0 3.8,42.0 7.6,41.6 11.4,41.1 15.2,40.6 19.0,38.6 22.9,37.5 26.7,37.0 30.5,37.3 34.3,36.5 38.1,35.4 41.9,35.0 45.7,34.6 49.5,34.7 53.3,32.4 57.1,30.1 61.0,28.5 64.8,28.2 68.6,27.6 72.4,30.8 76.2,31.5 80.0,32.0 83.8,30.6 87.6,30.1 91.4,29.8 95.2,29.2 99.0,28.5 102.9,27.5 106.7,26.6 110.5,26.3 114.3,25.4 118.1,23.7 121.9,20.6 125.7,20.0 129.5,19.1 133.3,21.8 137.1,21.7 141.0,22.8 144.8,24.8 148.6,25.6 152.4,24.3 156.2,16.4 160.0,16.1 163.8,17.3 167.6,17.0 171.4,16.1 175.2,16.0 179.0,14.5 182.9,16.8 186.7,16.4 190.5,17.0 194.3,17.6 198.1,12.9 201.9,11.7 205.7,10.1 209.5,14.1 213.3,14.6 217.1,15.4 221.0,16.2 224.8,15.0 228.6,16.7 232.4,13.6 236.2,13.5 240.0,14.7 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,41.0 3.8,42.0 7.6,41.6 11.4,41.1 15.2,40.6 19.0,38.6 22.9,37.5 26.7,37.0 30.5,37.3 34.3,36.5 38.1,35.4 41.9,35.0 45.7,34.6 49.5,34.7 53.3,32.4 57.1,30.1 61.0,28.5 64.8,28.2 68.6,27.6 72.4,30.8 76.2,31.5 80.0,32.0 83.8,30.6 87.6,30.1 91.4,29.8 95.2,29.2 99.0,28.5 102.9,27.5 106.7,26.6 110.5,26.3 114.3,25.4 118.1,23.7 121.9,20.6 125.7,20.0 129.5,19.1 133.3,21.8 137.1,21.7 141.0,22.8 144.8,24.8 148.6,25.6 152.4,24.3 156.2,16.4 160.0,16.1 163.8,17.3 167.6,17.0 171.4,16.1 175.2,16.0 179.0,14.5 182.9,16.8 186.7,16.4 190.5,17.0 194.3,17.6 198.1,12.9 201.9,11.7 205.7,10.1 209.5,14.1 213.3,14.6 217.1,15.4 221.0,16.2 224.8,15.0 228.6,16.7 232.4,13.6 236.2,13.5 240.0,14.7" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="14.7" r="2.6" fill="var(--down)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">95</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">96</span>
         <span class="nb-verdict"><span class="l-en">High-conviction — leader with a good entry</span><span class="l-zh">高确信 — 领先且入场点良好</span></span>
       </div>
       <div class="nb-axes">
@@ -1098,7 +1104,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,18.4 3.8,19.5 7.6,16.3 11.4,18.1 15.2,18.1 19.0,18.5 22.9,17.4 26.7,11.8 30.5,16.4 34.3,17.5 38.1,24.8 41.9,23.3 45.7,23.6 49.5,23.2 53.3,22.4 57.1,22.7 61.0,21.3 64.8,18.4 68.6,23.3 72.4,20.8 76.2,19.9 80.0,27.3 83.8,24.1 87.6,23.7 91.4,18.1 95.2,15.4 99.0,12.3 102.9,12.9 106.7,12.7 110.5,11.2 114.3,10.1 118.1,10.9 121.9,13.4 125.7,11.9 129.5,16.4 133.3,20.7 137.1,22.4 141.0,22.2 144.8,23.4 148.6,23.1 152.4,21.8 156.2,17.5 160.0,13.3 163.8,13.7 167.6,12.9 171.4,15.2 175.2,22.4 179.0,19.1 182.9,24.3 186.7,27.4 190.5,26.1 194.3,24.7 198.1,23.3 201.9,22.1 205.7,18.7 209.5,26.8 213.3,24.8 217.1,26.7 221.0,30.0 224.8,30.8 228.6,30.2 232.4,33.7 236.2,38.3 240.0,42.0 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,18.4 3.8,19.5 7.6,16.3 11.4,18.1 15.2,18.1 19.0,18.5 22.9,17.4 26.7,11.8 30.5,16.4 34.3,17.5 38.1,24.8 41.9,23.3 45.7,23.6 49.5,23.2 53.3,22.4 57.1,22.7 61.0,21.3 64.8,18.4 68.6,23.3 72.4,20.8 76.2,19.9 80.0,27.3 83.8,24.1 87.6,23.7 91.4,18.1 95.2,15.4 99.0,12.3 102.9,12.9 106.7,12.7 110.5,11.2 114.3,10.1 118.1,10.9 121.9,13.4 125.7,11.9 129.5,16.4 133.3,20.7 137.1,22.4 141.0,22.2 144.8,23.4 148.6,23.1 152.4,21.8 156.2,17.5 160.0,13.3 163.8,13.7 167.6,12.9 171.4,15.2 175.2,22.4 179.0,19.1 182.9,24.3 186.7,27.4 190.5,26.1 194.3,24.7 198.1,23.3 201.9,22.1 205.7,18.7 209.5,26.8 213.3,24.8 217.1,26.7 221.0,30.0 224.8,30.8 228.6,30.2 232.4,33.7 236.2,38.3 240.0,42.0" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="42.0" r="2.6" fill="var(--down)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">92</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">93</span>
         <span class="nb-verdict"><span class="l-en">Strong name · wrong tape — wait for a base</span><span class="l-zh">强势个股 · 趋势不利 — 等待筑底</span></span>
       </div>
       <div class="nb-axes">
@@ -1149,7 +1155,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,20.9 3.8,23.7 7.6,21.2 11.4,17.4 15.2,17.2 19.0,19.0 22.9,22.4 26.7,21.4 30.5,19.1 34.3,17.1 38.1,18.2 41.9,16.3 45.7,15.3 49.5,15.4 53.3,12.8 57.1,12.6 61.0,10.1 64.8,28.4 68.6,33.1 72.4,38.7 76.2,42.0 80.0,40.0 83.8,39.1 87.6,39.7 91.4,36.4 95.2,34.2 99.0,32.2 102.9,32.0 106.7,31.0 110.5,29.0 114.3,27.4 118.1,28.1 121.9,27.9 125.7,26.5 129.5,30.2 133.3,26.9 137.1,26.9 141.0,31.6 144.8,31.7 148.6,30.6 152.4,32.6 156.2,33.9 160.0,28.7 163.8,24.4 167.6,25.1 171.4,26.2 175.2,25.2 179.0,27.9 182.9,26.5 186.7,26.9 190.5,23.4 194.3,23.6 198.1,22.9 201.9,20.5 205.7,21.4 209.5,20.8 213.3,27.6 217.1,24.9 221.0,25.4 224.8,25.6 228.6,24.4 232.4,25.0 236.2,26.2 240.0,29.9 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,20.9 3.8,23.7 7.6,21.2 11.4,17.4 15.2,17.2 19.0,19.0 22.9,22.4 26.7,21.4 30.5,19.1 34.3,17.1 38.1,18.2 41.9,16.3 45.7,15.3 49.5,15.4 53.3,12.8 57.1,12.6 61.0,10.1 64.8,28.4 68.6,33.1 72.4,38.7 76.2,42.0 80.0,40.0 83.8,39.1 87.6,39.7 91.4,36.4 95.2,34.2 99.0,32.2 102.9,32.0 106.7,31.0 110.5,29.0 114.3,27.4 118.1,28.1 121.9,27.9 125.7,26.5 129.5,30.2 133.3,26.9 137.1,26.9 141.0,31.6 144.8,31.7 148.6,30.6 152.4,32.6 156.2,33.9 160.0,28.7 163.8,24.4 167.6,25.1 171.4,26.2 175.2,25.2 179.0,27.9 182.9,26.5 186.7,26.9 190.5,23.4 194.3,23.6 198.1,22.9 201.9,20.5 205.7,21.4 209.5,20.8 213.3,27.6 217.1,24.9 221.0,25.4 224.8,25.6 228.6,24.4 232.4,25.0 236.2,26.2 240.0,29.9" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="29.9" r="2.6" fill="var(--down)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">93</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">94</span>
         <span class="nb-verdict"><span class="l-en">High-conviction — leader with a good entry</span><span class="l-zh">高确信 — 领先且入场点良好</span></span>
       </div>
       <div class="nb-axes">
@@ -1167,9 +1173,9 @@
         </div>
         
         
-        <div class="nb-ax" title="TWD 51/100">
+        <div class="nb-ax" title="TWD 52/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:51%"></div></div>
+          <div class="axt"><div class="axf" style="width:52%"></div></div>
         </div>
         
         
@@ -1218,9 +1224,9 @@
         </div>
         
         
-        <div class="nb-ax" title="TWD 50/100">
+        <div class="nb-ax" title="TWD 49/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:50%"></div></div>
+          <div class="axt"><div class="axf" style="width:49%"></div></div>
         </div>
         
         
@@ -1251,7 +1257,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,39.6 3.8,41.0 7.6,42.0 11.4,40.5 15.2,39.8 19.0,38.7 22.9,40.5 26.7,41.5 30.5,41.7 34.3,38.9 38.1,37.9 41.9,37.7 45.7,37.5 49.5,37.0 53.3,35.4 57.1,34.2 61.0,33.0 64.8,32.1 68.6,31.0 72.4,30.1 76.2,30.8 80.0,28.5 83.8,28.6 87.6,29.8 91.4,30.9 95.2,30.9 99.0,30.0 102.9,29.3 106.7,28.5 110.5,29.9 114.3,27.7 118.1,27.3 121.9,29.2 125.7,29.1 129.5,26.3 133.3,26.7 137.1,27.2 141.0,28.0 144.8,27.4 148.6,28.6 152.4,27.1 156.2,27.2 160.0,27.0 163.8,24.6 167.6,23.5 171.4,22.7 175.2,21.9 179.0,21.9 182.9,21.3 186.7,22.9 190.5,22.3 194.3,24.2 198.1,21.2 201.9,21.5 205.7,19.6 209.5,20.4 213.3,19.7 217.1,18.8 221.0,18.8 224.8,17.2 228.6,14.9 232.4,13.9 236.2,12.5 240.0,10.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,39.6 3.8,41.0 7.6,42.0 11.4,40.5 15.2,39.8 19.0,38.7 22.9,40.5 26.7,41.5 30.5,41.7 34.3,38.9 38.1,37.9 41.9,37.7 45.7,37.5 49.5,37.0 53.3,35.4 57.1,34.2 61.0,33.0 64.8,32.1 68.6,31.0 72.4,30.1 76.2,30.8 80.0,28.5 83.8,28.6 87.6,29.8 91.4,30.9 95.2,30.9 99.0,30.0 102.9,29.3 106.7,28.5 110.5,29.9 114.3,27.7 118.1,27.3 121.9,29.2 125.7,29.1 129.5,26.3 133.3,26.7 137.1,27.2 141.0,28.0 144.8,27.4 148.6,28.6 152.4,27.1 156.2,27.2 160.0,27.0 163.8,24.6 167.6,23.5 171.4,22.7 175.2,21.9 179.0,21.9 182.9,21.3 186.7,22.9 190.5,22.3 194.3,24.2 198.1,21.2 201.9,21.5 205.7,19.6 209.5,20.4 213.3,19.7 217.1,18.8 221.0,18.8 224.8,17.2 228.6,14.9 232.4,13.9 236.2,12.5 240.0,10.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="10.1" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">88</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">90</span>
         <span class="nb-verdict"><span class="l-en">Strong name · wrong tape — wait for a base</span><span class="l-zh">强势个股 · 趋势不利 — 等待筑底</span></span>
       </div>
       <div class="nb-axes">
@@ -1269,9 +1275,9 @@
         </div>
         
         
-        <div class="nb-ax" title="TWD 61/100">
+        <div class="nb-ax" title="TWD 62/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:61%"></div></div>
+          <div class="axt"><div class="axf" style="width:62%"></div></div>
         </div>
         
         
@@ -1302,7 +1308,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,40.6 3.8,42.0 7.6,41.7 11.4,39.2 15.2,39.0 19.0,37.3 22.9,39.5 26.7,39.1 30.5,39.3 34.3,37.4 38.1,36.7 41.9,36.4 45.7,36.2 49.5,35.7 53.3,33.8 57.1,33.1 61.0,32.1 64.8,32.1 68.6,33.4 72.4,35.0 76.2,34.5 80.0,32.4 83.8,32.7 87.6,32.4 91.4,32.7 95.2,27.4 99.0,25.2 102.9,23.7 106.7,23.4 110.5,23.8 114.3,22.3 118.1,22.4 121.9,22.4 125.7,21.0 129.5,18.3 133.3,19.6 137.1,19.6 141.0,20.5 144.8,20.5 148.6,20.7 152.4,18.7 156.2,17.9 160.0,16.5 163.8,16.8 167.6,17.9 171.4,18.3 175.2,18.5 179.0,17.6 182.9,16.9 186.7,16.7 190.5,16.8 194.3,15.8 198.1,15.5 201.9,15.2 205.7,13.5 209.5,13.1 213.3,10.1 217.1,10.5 221.0,12.9 224.8,13.2 228.6,11.3 232.4,11.8 236.2,13.9 240.0,18.7 240,42" fill="var(--muted)" opacity="0.12" stroke="none"/><polyline points="0.0,40.6 3.8,42.0 7.6,41.7 11.4,39.2 15.2,39.0 19.0,37.3 22.9,39.5 26.7,39.1 30.5,39.3 34.3,37.4 38.1,36.7 41.9,36.4 45.7,36.2 49.5,35.7 53.3,33.8 57.1,33.1 61.0,32.1 64.8,32.1 68.6,33.4 72.4,35.0 76.2,34.5 80.0,32.4 83.8,32.7 87.6,32.4 91.4,32.7 95.2,27.4 99.0,25.2 102.9,23.7 106.7,23.4 110.5,23.8 114.3,22.3 118.1,22.4 121.9,22.4 125.7,21.0 129.5,18.3 133.3,19.6 137.1,19.6 141.0,20.5 144.8,20.5 148.6,20.7 152.4,18.7 156.2,17.9 160.0,16.5 163.8,16.8 167.6,17.9 171.4,18.3 175.2,18.5 179.0,17.6 182.9,16.9 186.7,16.7 190.5,16.8 194.3,15.8 198.1,15.5 201.9,15.2 205.7,13.5 209.5,13.1 213.3,10.1 217.1,10.5 221.0,12.9 224.8,13.2 228.6,11.3 232.4,11.8 236.2,13.9 240.0,18.7" fill="none" stroke="var(--muted)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="18.7" r="2.6" fill="var(--muted)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">94</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">95</span>
         <span class="nb-verdict"><span class="l-en">High-conviction — leader with a good entry</span><span class="l-zh">高确信 — 领先且入场点良好</span></span>
       </div>
       <div class="nb-axes">
@@ -1353,7 +1359,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,32.8 3.8,39.4 7.6,42.0 11.4,35.3 15.2,34.5 19.0,33.4 22.9,35.3 26.7,36.6 30.5,38.6 34.3,35.8 38.1,33.0 41.9,35.7 45.7,35.7 49.5,36.3 53.3,34.9 57.1,31.5 61.0,30.4 64.8,30.4 68.6,27.7 72.4,32.5 76.2,27.9 80.0,25.0 83.8,24.6 87.6,23.9 91.4,20.1 95.2,20.9 99.0,20.2 102.9,19.6 106.7,23.5 110.5,23.7 114.3,20.4 118.1,20.4 121.9,21.0 125.7,22.4 129.5,18.9 133.3,22.3 137.1,22.7 141.0,22.5 144.8,23.7 148.6,14.0 152.4,16.1 156.2,17.2 160.0,24.6 163.8,25.0 167.6,23.9 171.4,18.7 175.2,15.8 179.0,16.3 182.9,14.9 186.7,13.2 190.5,14.6 194.3,12.6 198.1,12.9 201.9,10.7 205.7,10.1 209.5,16.7 213.3,16.1 217.1,18.2 221.0,26.9 224.8,26.0 228.6,23.5 232.4,19.6 236.2,17.6 240.0,22.1 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,32.8 3.8,39.4 7.6,42.0 11.4,35.3 15.2,34.5 19.0,33.4 22.9,35.3 26.7,36.6 30.5,38.6 34.3,35.8 38.1,33.0 41.9,35.7 45.7,35.7 49.5,36.3 53.3,34.9 57.1,31.5 61.0,30.4 64.8,30.4 68.6,27.7 72.4,32.5 76.2,27.9 80.0,25.0 83.8,24.6 87.6,23.9 91.4,20.1 95.2,20.9 99.0,20.2 102.9,19.6 106.7,23.5 110.5,23.7 114.3,20.4 118.1,20.4 121.9,21.0 125.7,22.4 129.5,18.9 133.3,22.3 137.1,22.7 141.0,22.5 144.8,23.7 148.6,14.0 152.4,16.1 156.2,17.2 160.0,24.6 163.8,25.0 167.6,23.9 171.4,18.7 175.2,15.8 179.0,16.3 182.9,14.9 186.7,13.2 190.5,14.6 194.3,12.6 198.1,12.9 201.9,10.7 205.7,10.1 209.5,16.7 213.3,16.1 217.1,18.2 221.0,26.9 224.8,26.0 228.6,23.5 232.4,19.6 236.2,17.6 240.0,22.1" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="22.1" r="2.6" fill="var(--down)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">92</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">89</span>
         <span class="nb-verdict"><span class="l-en">High-conviction — leader with a good entry</span><span class="l-zh">高确信 — 领先且入场点良好</span></span>
       </div>
       <div class="nb-axes">
@@ -1371,9 +1377,9 @@
         </div>
         
         
-        <div class="nb-ax ax-na" title="TWD — no data">
+        <div class="nb-ax" title="TWD 48/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
+          <div class="axt"><div class="axf" style="width:48%"></div></div>
         </div>
         
         
@@ -1455,7 +1461,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,36.1 3.8,36.1 7.6,37.8 11.4,36.0 15.2,36.1 19.0,36.0 22.9,38.2 26.7,40.5 30.5,42.0 34.3,37.9 38.1,36.7 41.9,33.9 45.7,33.5 49.5,36.5 53.3,34.1 57.1,33.7 61.0,35.4 64.8,34.3 68.6,34.3 72.4,31.1 76.2,31.2 80.0,29.5 83.8,24.8 87.6,24.7 91.4,12.6 95.2,26.6 99.0,20.7 102.9,18.8 106.7,20.6 110.5,21.2 114.3,17.9 118.1,19.9 121.9,21.5 125.7,18.3 129.5,13.2 133.3,11.2 137.1,11.7 141.0,10.1 144.8,11.9 148.6,10.9 152.4,10.8 156.2,18.8 160.0,21.6 163.8,20.3 167.6,18.8 171.4,19.6 175.2,18.7 179.0,20.4 182.9,22.2 186.7,16.5 190.5,17.0 194.3,14.7 198.1,15.6 201.9,18.3 205.7,14.5 209.5,10.7 213.3,13.0 217.1,15.1 221.0,17.2 224.8,16.9 228.6,19.7 232.4,20.3 236.2,20.8 240.0,21.2 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,36.1 3.8,36.1 7.6,37.8 11.4,36.0 15.2,36.1 19.0,36.0 22.9,38.2 26.7,40.5 30.5,42.0 34.3,37.9 38.1,36.7 41.9,33.9 45.7,33.5 49.5,36.5 53.3,34.1 57.1,33.7 61.0,35.4 64.8,34.3 68.6,34.3 72.4,31.1 76.2,31.2 80.0,29.5 83.8,24.8 87.6,24.7 91.4,12.6 95.2,26.6 99.0,20.7 102.9,18.8 106.7,20.6 110.5,21.2 114.3,17.9 118.1,19.9 121.9,21.5 125.7,18.3 129.5,13.2 133.3,11.2 137.1,11.7 141.0,10.1 144.8,11.9 148.6,10.9 152.4,10.8 156.2,18.8 160.0,21.6 163.8,20.3 167.6,18.8 171.4,19.6 175.2,18.7 179.0,20.4 182.9,22.2 186.7,16.5 190.5,17.0 194.3,14.7 198.1,15.6 201.9,18.3 205.7,14.5 209.5,10.7 213.3,13.0 217.1,15.1 221.0,17.2 224.8,16.9 228.6,19.7 232.4,20.3 236.2,20.8 240.0,21.2" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="21.2" r="2.6" fill="var(--down)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">90</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">91</span>
         <span class="nb-verdict"><span class="l-en">Leader · poor entry — wait for a base</span><span class="l-zh">领先 · 入场点欠佳 — 等待筑底</span></span>
       </div>
       <div class="nb-axes">
@@ -1557,7 +1563,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,37.3 3.8,40.0 7.6,41.5 11.4,40.4 15.2,41.0 19.0,40.4 22.9,41.3 26.7,41.5 30.5,42.0 34.3,39.9 38.1,36.2 41.9,35.3 45.7,35.3 49.5,34.5 53.3,32.0 57.1,34.2 61.0,31.8 64.8,31.5 68.6,29.6 72.4,29.8 76.2,24.4 80.0,23.0 83.8,25.4 87.6,26.1 91.4,26.7 95.2,25.2 99.0,24.9 102.9,25.6 106.7,24.0 110.5,24.3 114.3,23.8 118.1,23.2 121.9,20.9 125.7,21.0 129.5,19.9 133.3,20.0 137.1,19.3 141.0,20.2 144.8,20.8 148.6,24.3 152.4,23.2 156.2,23.6 160.0,23.7 163.8,20.8 167.6,19.0 171.4,18.2 175.2,18.0 179.0,18.9 182.9,17.7 186.7,18.2 190.5,16.7 194.3,18.5 198.1,17.0 201.9,18.4 205.7,17.3 209.5,14.3 213.3,15.1 217.1,12.8 221.0,14.0 224.8,13.6 228.6,10.1 232.4,12.8 236.2,12.3 240.0,14.1 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,37.3 3.8,40.0 7.6,41.5 11.4,40.4 15.2,41.0 19.0,40.4 22.9,41.3 26.7,41.5 30.5,42.0 34.3,39.9 38.1,36.2 41.9,35.3 45.7,35.3 49.5,34.5 53.3,32.0 57.1,34.2 61.0,31.8 64.8,31.5 68.6,29.6 72.4,29.8 76.2,24.4 80.0,23.0 83.8,25.4 87.6,26.1 91.4,26.7 95.2,25.2 99.0,24.9 102.9,25.6 106.7,24.0 110.5,24.3 114.3,23.8 118.1,23.2 121.9,20.9 125.7,21.0 129.5,19.9 133.3,20.0 137.1,19.3 141.0,20.2 144.8,20.8 148.6,24.3 152.4,23.2 156.2,23.6 160.0,23.7 163.8,20.8 167.6,19.0 171.4,18.2 175.2,18.0 179.0,18.9 182.9,17.7 186.7,18.2 190.5,16.7 194.3,18.5 198.1,17.0 201.9,18.4 205.7,17.3 209.5,14.3 213.3,15.1 217.1,12.8 221.0,14.0 224.8,13.6 228.6,10.1 232.4,12.8 236.2,12.3 240.0,14.1" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="14.1" r="2.6" fill="var(--down)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">81</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">83</span>
         <span class="nb-verdict"><span class="l-en">Strong name · wrong tape — wait for a base</span><span class="l-zh">强势个股 · 趋势不利 — 等待筑底</span></span>
       </div>
       <div class="nb-axes">
@@ -1575,9 +1581,9 @@
         </div>
         
         
-        <div class="nb-ax" title="TWD 48/100">
+        <div class="nb-ax" title="TWD 47/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:48%"></div></div>
+          <div class="axt"><div class="axf" style="width:47%"></div></div>
         </div>
         
         
@@ -1626,9 +1632,9 @@
         </div>
         
         
-        <div class="nb-ax" title="TWD 48/100">
+        <div class="nb-ax" title="TWD 47/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:48%"></div></div>
+          <div class="axt"><div class="axf" style="width:47%"></div></div>
         </div>
         
         
@@ -1659,7 +1665,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,37.3 3.8,40.2 7.6,42.0 11.4,40.8 15.2,38.8 19.0,35.8 22.9,38.8 26.7,36.0 30.5,36.9 34.3,33.3 38.1,31.8 41.9,32.1 45.7,31.7 49.5,31.3 53.3,31.2 57.1,31.3 61.0,29.9 64.8,28.7 68.6,25.9 72.4,26.2 76.2,24.9 80.0,24.1 83.8,26.3 87.6,28.7 91.4,25.7 95.2,27.4 99.0,25.8 102.9,25.9 106.7,29.1 110.5,30.8 114.3,28.5 118.1,27.4 121.9,27.6 125.7,28.2 129.5,23.5 133.3,21.3 137.1,20.8 141.0,14.8 144.8,12.7 148.6,10.1 152.4,13.7 156.2,20.2 160.0,26.4 163.8,25.4 167.6,26.7 171.4,28.6 175.2,26.0 179.0,25.2 182.9,27.7 186.7,25.5 190.5,24.3 194.3,23.2 198.1,21.7 201.9,26.1 205.7,25.5 209.5,33.9 213.3,33.6 217.1,36.5 221.0,38.9 224.8,34.2 228.6,30.3 232.4,25.8 236.2,23.6 240.0,26.9 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,37.3 3.8,40.2 7.6,42.0 11.4,40.8 15.2,38.8 19.0,35.8 22.9,38.8 26.7,36.0 30.5,36.9 34.3,33.3 38.1,31.8 41.9,32.1 45.7,31.7 49.5,31.3 53.3,31.2 57.1,31.3 61.0,29.9 64.8,28.7 68.6,25.9 72.4,26.2 76.2,24.9 80.0,24.1 83.8,26.3 87.6,28.7 91.4,25.7 95.2,27.4 99.0,25.8 102.9,25.9 106.7,29.1 110.5,30.8 114.3,28.5 118.1,27.4 121.9,27.6 125.7,28.2 129.5,23.5 133.3,21.3 137.1,20.8 141.0,14.8 144.8,12.7 148.6,10.1 152.4,13.7 156.2,20.2 160.0,26.4 163.8,25.4 167.6,26.7 171.4,28.6 175.2,26.0 179.0,25.2 182.9,27.7 186.7,25.5 190.5,24.3 194.3,23.2 198.1,21.7 201.9,26.1 205.7,25.5 209.5,33.9 213.3,33.6 217.1,36.5 221.0,38.9 224.8,34.2 228.6,30.3 232.4,25.8 236.2,23.6 240.0,26.9" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="26.9" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">93</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">90</span>
         <span class="nb-verdict"><span class="l-en">High-conviction — leader with a good entry</span><span class="l-zh">高确信 — 领先且入场点良好</span></span>
       </div>
       <div class="nb-axes">
@@ -1677,9 +1683,9 @@
         </div>
         
         
-        <div class="nb-ax ax-na" title="TWD — no data">
+        <div class="nb-ax" title="TWD 49/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
+          <div class="axt"><div class="axf" style="width:49%"></div></div>
         </div>
         
         
@@ -1710,7 +1716,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,39.9 3.8,41.2 7.6,42.0 11.4,40.4 15.2,39.8 19.0,39.1 22.9,40.3 26.7,41.4 30.5,41.4 34.3,38.9 38.1,38.0 41.9,37.8 45.7,37.1 49.5,36.5 53.3,34.4 57.1,33.7 61.0,32.7 64.8,32.2 68.6,31.4 72.4,30.9 76.2,31.2 80.0,29.7 83.8,28.9 87.6,30.4 91.4,31.1 95.2,31.1 99.0,31.0 102.9,30.5 106.7,29.4 110.5,30.9 114.3,28.8 118.1,28.9 121.9,29.8 125.7,29.4 129.5,27.2 133.3,27.2 137.1,26.7 141.0,27.4 144.8,26.2 148.6,27.6 152.4,24.9 156.2,24.9 160.0,24.9 163.8,22.6 167.6,21.0 171.4,20.3 175.2,19.3 179.0,20.2 182.9,20.5 186.7,21.0 190.5,19.1 194.3,20.8 198.1,19.1 201.9,18.5 205.7,16.0 209.5,16.2 213.3,15.2 217.1,13.6 221.0,13.7 224.8,12.6 228.6,12.2 232.4,12.4 236.2,10.9 240.0,10.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,39.9 3.8,41.2 7.6,42.0 11.4,40.4 15.2,39.8 19.0,39.1 22.9,40.3 26.7,41.4 30.5,41.4 34.3,38.9 38.1,38.0 41.9,37.8 45.7,37.1 49.5,36.5 53.3,34.4 57.1,33.7 61.0,32.7 64.8,32.2 68.6,31.4 72.4,30.9 76.2,31.2 80.0,29.7 83.8,28.9 87.6,30.4 91.4,31.1 95.2,31.1 99.0,31.0 102.9,30.5 106.7,29.4 110.5,30.9 114.3,28.8 118.1,28.9 121.9,29.8 125.7,29.4 129.5,27.2 133.3,27.2 137.1,26.7 141.0,27.4 144.8,26.2 148.6,27.6 152.4,24.9 156.2,24.9 160.0,24.9 163.8,22.6 167.6,21.0 171.4,20.3 175.2,19.3 179.0,20.2 182.9,20.5 186.7,21.0 190.5,19.1 194.3,20.8 198.1,19.1 201.9,18.5 205.7,16.0 209.5,16.2 213.3,15.2 217.1,13.6 221.0,13.7 224.8,12.6 228.6,12.2 232.4,12.4 236.2,10.9 240.0,10.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="10.1" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">77</span>
+        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">79</span>
         <span class="nb-verdict"><span class="l-en">Strong name · wrong tape — wait for a base</span><span class="l-zh">强势个股 · 趋势不利 — 等待筑底</span></span>
       </div>
       <div class="nb-axes">
@@ -1728,9 +1734,9 @@
         </div>
         
         
-        <div class="nb-ax" title="TWD 61/100">
+        <div class="nb-ax" title="TWD 62/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:61%"></div></div>
+          <div class="axt"><div class="axf" style="width:62%"></div></div>
         </div>
         
         
@@ -1761,7 +1767,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,15.0 3.8,22.6 7.6,24.8 11.4,23.4 15.2,22.2 19.0,19.7 22.9,24.9 26.7,22.8 30.5,23.4 34.3,16.0 38.1,12.5 41.9,17.8 45.7,14.1 49.5,19.0 53.3,15.5 57.1,15.2 61.0,15.5 64.8,13.4 68.6,11.1 72.4,15.8 76.2,15.0 80.0,12.5 83.8,15.8 87.6,28.9 91.4,27.6 95.2,29.5 99.0,29.0 102.9,29.8 106.7,31.4 110.5,32.6 114.3,29.5 118.1,28.9 121.9,29.2 125.7,32.1 129.5,10.1 133.3,18.5 137.1,19.5 141.0,16.7 144.8,14.9 148.6,17.4 152.4,23.4 156.2,29.6 160.0,33.2 163.8,31.0 167.6,31.4 171.4,32.1 175.2,28.7 179.0,29.1 182.9,29.7 186.7,29.8 190.5,26.6 194.3,25.2 198.1,24.6 201.9,28.6 205.7,27.3 209.5,33.3 213.3,34.5 217.1,37.5 221.0,42.0 224.8,39.4 228.6,36.6 232.4,27.7 236.2,25.4 240.0,26.0 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,15.0 3.8,22.6 7.6,24.8 11.4,23.4 15.2,22.2 19.0,19.7 22.9,24.9 26.7,22.8 30.5,23.4 34.3,16.0 38.1,12.5 41.9,17.8 45.7,14.1 49.5,19.0 53.3,15.5 57.1,15.2 61.0,15.5 64.8,13.4 68.6,11.1 72.4,15.8 76.2,15.0 80.0,12.5 83.8,15.8 87.6,28.9 91.4,27.6 95.2,29.5 99.0,29.0 102.9,29.8 106.7,31.4 110.5,32.6 114.3,29.5 118.1,28.9 121.9,29.2 125.7,32.1 129.5,10.1 133.3,18.5 137.1,19.5 141.0,16.7 144.8,14.9 148.6,17.4 152.4,23.4 156.2,29.6 160.0,33.2 163.8,31.0 167.6,31.4 171.4,32.1 175.2,28.7 179.0,29.1 182.9,29.7 186.7,29.8 190.5,26.6 194.3,25.2 198.1,24.6 201.9,28.6 205.7,27.3 209.5,33.3 213.3,34.5 217.1,37.5 221.0,42.0 224.8,39.4 228.6,36.6 232.4,27.7 236.2,25.4 240.0,26.0" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="26.0" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">83</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">85</span>
         <span class="nb-verdict"><span class="l-en">High-conviction — leader with a good entry</span><span class="l-zh">高确信 — 领先且入场点良好</span></span>
       </div>
       <div class="nb-axes">
@@ -1779,9 +1785,9 @@
         </div>
         
         
-        <div class="nb-ax" title="TWD 50/100">
+        <div class="nb-ax" title="TWD 49/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:50%"></div></div>
+          <div class="axt"><div class="axf" style="width:49%"></div></div>
         </div>
         
         
@@ -1812,7 +1818,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,29.6 3.8,30.5 7.6,32.5 11.4,30.9 15.2,35.0 19.0,36.8 22.9,38.2 26.7,40.4 30.5,42.0 34.3,39.7 38.1,39.0 41.9,37.3 45.7,34.9 49.5,35.5 53.3,34.6 57.1,33.5 61.0,33.1 64.8,32.4 68.6,29.6 72.4,28.3 76.2,27.4 80.0,27.7 83.8,28.9 87.6,29.5 91.4,28.5 95.2,30.6 99.0,31.6 102.9,33.2 106.7,34.1 110.5,35.6 114.3,33.9 118.1,33.5 121.9,33.4 125.7,33.8 129.5,31.6 133.3,29.1 137.1,28.6 141.0,24.9 144.8,24.9 148.6,23.7 152.4,22.5 156.2,24.0 160.0,22.8 163.8,21.3 167.6,19.9 171.4,17.2 175.2,17.7 179.0,15.0 182.9,12.9 186.7,10.1 190.5,15.3 194.3,18.0 198.1,17.3 201.9,20.6 205.7,19.5 209.5,22.8 213.3,22.3 217.1,23.6 221.0,23.6 224.8,19.5 228.6,24.0 232.4,22.9 236.2,23.6 240.0,21.4 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,29.6 3.8,30.5 7.6,32.5 11.4,30.9 15.2,35.0 19.0,36.8 22.9,38.2 26.7,40.4 30.5,42.0 34.3,39.7 38.1,39.0 41.9,37.3 45.7,34.9 49.5,35.5 53.3,34.6 57.1,33.5 61.0,33.1 64.8,32.4 68.6,29.6 72.4,28.3 76.2,27.4 80.0,27.7 83.8,28.9 87.6,29.5 91.4,28.5 95.2,30.6 99.0,31.6 102.9,33.2 106.7,34.1 110.5,35.6 114.3,33.9 118.1,33.5 121.9,33.4 125.7,33.8 129.5,31.6 133.3,29.1 137.1,28.6 141.0,24.9 144.8,24.9 148.6,23.7 152.4,22.5 156.2,24.0 160.0,22.8 163.8,21.3 167.6,19.9 171.4,17.2 175.2,17.7 179.0,15.0 182.9,12.9 186.7,10.1 190.5,15.3 194.3,18.0 198.1,17.3 201.9,20.6 205.7,19.5 209.5,22.8 213.3,22.3 217.1,23.6 221.0,23.6 224.8,19.5 228.6,24.0 232.4,22.9 236.2,23.6 240.0,21.4" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="21.4" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">91</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">87</span>
         <span class="nb-verdict"><span class="l-en">High-conviction — leader with a good entry</span><span class="l-zh">高确信 — 领先且入场点良好</span></span>
       </div>
       <div class="nb-axes">
@@ -1830,9 +1836,9 @@
         </div>
         
         
-        <div class="nb-ax ax-na" title="TWD — no data">
+        <div class="nb-ax" title="TWD 48/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
+          <div class="axt"><div class="axf" style="width:48%"></div></div>
         </div>
         
         
@@ -1863,7 +1869,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,36.2 3.8,40.3 7.6,42.0 11.4,40.7 15.2,41.6 19.0,39.1 22.9,40.8 26.7,40.1 30.5,40.5 34.3,38.1 38.1,34.6 41.9,33.2 45.7,32.5 49.5,32.2 53.3,30.7 57.1,31.1 61.0,28.2 64.8,26.0 68.6,25.0 72.4,24.0 76.2,22.0 80.0,22.0 83.8,24.0 87.6,24.9 91.4,26.3 95.2,25.8 99.0,24.2 102.9,24.2 106.7,23.1 110.5,23.5 114.3,23.8 118.1,22.8 121.9,24.3 125.7,24.3 129.5,22.4 133.3,22.9 137.1,20.7 141.0,20.1 144.8,21.8 148.6,24.9 152.4,23.7 156.2,23.6 160.0,25.1 163.8,21.4 167.6,19.4 171.4,19.6 175.2,18.1 179.0,19.1 182.9,18.2 186.7,17.1 190.5,16.6 194.3,17.8 198.1,16.1 201.9,18.1 205.7,17.7 209.5,16.6 213.3,16.2 217.1,13.7 221.0,15.0 224.8,13.2 228.6,10.1 232.4,11.0 236.2,11.3 240.0,12.0 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,36.2 3.8,40.3 7.6,42.0 11.4,40.7 15.2,41.6 19.0,39.1 22.9,40.8 26.7,40.1 30.5,40.5 34.3,38.1 38.1,34.6 41.9,33.2 45.7,32.5 49.5,32.2 53.3,30.7 57.1,31.1 61.0,28.2 64.8,26.0 68.6,25.0 72.4,24.0 76.2,22.0 80.0,22.0 83.8,24.0 87.6,24.9 91.4,26.3 95.2,25.8 99.0,24.2 102.9,24.2 106.7,23.1 110.5,23.5 114.3,23.8 118.1,22.8 121.9,24.3 125.7,24.3 129.5,22.4 133.3,22.9 137.1,20.7 141.0,20.1 144.8,21.8 148.6,24.9 152.4,23.7 156.2,23.6 160.0,25.1 163.8,21.4 167.6,19.4 171.4,19.6 175.2,18.1 179.0,19.1 182.9,18.2 186.7,17.1 190.5,16.6 194.3,17.8 198.1,16.1 201.9,18.1 205.7,17.7 209.5,16.6 213.3,16.2 217.1,13.7 221.0,15.0 224.8,13.2 228.6,10.1 232.4,11.0 236.2,11.3 240.0,12.0" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="12.0" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">84</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">86</span>
         <span class="nb-verdict"><span class="l-en">Leader · poor entry — wait for a base</span><span class="l-zh">领先 · 入场点欠佳 — 等待筑底</span></span>
       </div>
       <div class="nb-axes">
@@ -1914,7 +1920,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,33.3 3.8,36.5 7.6,39.5 11.4,34.9 15.2,36.0 19.0,32.0 22.9,34.7 26.7,31.7 30.5,30.5 34.3,24.0 38.1,17.7 41.9,18.5 45.7,18.0 49.5,16.0 53.3,14.9 57.1,14.2 61.0,12.0 64.8,10.1 68.6,11.0 72.4,16.0 76.2,16.8 80.0,13.5 83.8,16.1 87.6,22.7 91.4,21.1 95.2,23.4 99.0,23.6 102.9,25.6 106.7,28.1 110.5,31.0 114.3,31.3 118.1,31.7 121.9,34.2 125.7,35.1 129.5,28.4 133.3,29.3 137.1,27.5 141.0,26.7 144.8,26.4 148.6,26.1 152.4,27.4 156.2,33.1 160.0,37.3 163.8,33.7 167.6,31.6 171.4,31.5 175.2,26.6 179.0,27.2 182.9,31.2 186.7,32.7 190.5,29.8 194.3,32.9 198.1,30.5 201.9,27.3 205.7,25.1 209.5,33.8 213.3,33.4 217.1,35.4 221.0,42.0 224.8,34.5 228.6,33.4 232.4,26.7 236.2,23.4 240.0,28.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,33.3 3.8,36.5 7.6,39.5 11.4,34.9 15.2,36.0 19.0,32.0 22.9,34.7 26.7,31.7 30.5,30.5 34.3,24.0 38.1,17.7 41.9,18.5 45.7,18.0 49.5,16.0 53.3,14.9 57.1,14.2 61.0,12.0 64.8,10.1 68.6,11.0 72.4,16.0 76.2,16.8 80.0,13.5 83.8,16.1 87.6,22.7 91.4,21.1 95.2,23.4 99.0,23.6 102.9,25.6 106.7,28.1 110.5,31.0 114.3,31.3 118.1,31.7 121.9,34.2 125.7,35.1 129.5,28.4 133.3,29.3 137.1,27.5 141.0,26.7 144.8,26.4 148.6,26.1 152.4,27.4 156.2,33.1 160.0,37.3 163.8,33.7 167.6,31.6 171.4,31.5 175.2,26.6 179.0,27.2 182.9,31.2 186.7,32.7 190.5,29.8 194.3,32.9 198.1,30.5 201.9,27.3 205.7,25.1 209.5,33.8 213.3,33.4 217.1,35.4 221.0,42.0 224.8,34.5 228.6,33.4 232.4,26.7 236.2,23.4 240.0,28.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="28.1" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">83</span>
+        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">76</span>
         <span class="nb-verdict"><span class="l-en">Leader · poor entry — wait for a base</span><span class="l-zh">领先 · 入场点欠佳 — 等待筑底</span></span>
       </div>
       <div class="nb-axes">
@@ -1932,9 +1938,9 @@
         </div>
         
         
-        <div class="nb-ax ax-na" title="TWD — no data">
+        <div class="nb-ax" title="TWD 43/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
+          <div class="axt"><div class="axf" style="width:43%"></div></div>
         </div>
         
         
@@ -1965,7 +1971,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,19.8 3.8,27.3 7.6,33.3 11.4,27.4 15.2,28.5 19.0,27.3 22.9,33.6 26.7,31.3 30.5,41.0 34.3,34.3 38.1,29.8 41.9,30.8 45.7,31.3 49.5,33.0 53.3,29.9 57.1,28.7 61.0,29.9 64.8,29.2 68.6,25.6 72.4,24.9 76.2,21.1 80.0,20.0 83.8,20.5 87.6,26.5 91.4,23.6 95.2,27.1 99.0,28.2 102.9,27.5 106.7,30.2 110.5,32.0 114.3,29.9 118.1,28.4 121.9,28.2 125.7,31.9 129.5,20.7 133.3,22.0 137.1,19.4 141.0,13.5 144.8,10.1 148.6,11.6 152.4,12.8 156.2,20.0 160.0,30.0 163.8,31.0 167.6,29.0 171.4,27.8 175.2,24.5 179.0,27.1 182.9,27.1 186.7,24.9 190.5,23.7 194.3,22.7 198.1,20.8 201.9,26.3 205.7,27.3 209.5,37.9 213.3,37.3 217.1,40.2 221.0,42.0 224.8,37.1 228.6,33.3 232.4,27.6 236.2,26.2 240.0,27.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,19.8 3.8,27.3 7.6,33.3 11.4,27.4 15.2,28.5 19.0,27.3 22.9,33.6 26.7,31.3 30.5,41.0 34.3,34.3 38.1,29.8 41.9,30.8 45.7,31.3 49.5,33.0 53.3,29.9 57.1,28.7 61.0,29.9 64.8,29.2 68.6,25.6 72.4,24.9 76.2,21.1 80.0,20.0 83.8,20.5 87.6,26.5 91.4,23.6 95.2,27.1 99.0,28.2 102.9,27.5 106.7,30.2 110.5,32.0 114.3,29.9 118.1,28.4 121.9,28.2 125.7,31.9 129.5,20.7 133.3,22.0 137.1,19.4 141.0,13.5 144.8,10.1 148.6,11.6 152.4,12.8 156.2,20.0 160.0,30.0 163.8,31.0 167.6,29.0 171.4,27.8 175.2,24.5 179.0,27.1 182.9,27.1 186.7,24.9 190.5,23.7 194.3,22.7 198.1,20.8 201.9,26.3 205.7,27.3 209.5,37.9 213.3,37.3 217.1,40.2 221.0,42.0 224.8,37.1 228.6,33.3 232.4,27.6 236.2,26.2 240.0,27.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="27.1" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">87</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">88</span>
         <span class="nb-verdict"><span class="l-en">High-conviction — leader with a good entry</span><span class="l-zh">高确信 — 领先且入场点良好</span></span>
       </div>
       <div class="nb-axes">
@@ -2016,7 +2022,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,35.6 3.8,39.0 7.6,42.0 11.4,36.6 15.2,36.9 19.0,33.6 22.9,38.1 26.7,36.3 30.5,37.9 34.3,30.6 38.1,29.6 41.9,29.8 45.7,29.7 49.5,29.5 53.3,23.4 57.1,24.0 61.0,20.7 64.8,20.1 68.6,17.9 72.4,16.9 76.2,16.8 80.0,18.3 83.8,18.9 87.6,24.8 91.4,23.8 95.2,24.4 99.0,25.1 102.9,25.9 106.7,31.4 110.5,32.3 114.3,30.2 118.1,30.5 121.9,32.9 125.7,32.6 129.5,27.0 133.3,27.5 137.1,25.2 141.0,21.7 144.8,17.6 148.6,14.6 152.4,16.0 156.2,21.9 160.0,24.6 163.8,23.5 167.6,23.7 171.4,23.7 175.2,19.2 179.0,20.7 182.9,19.8 186.7,15.5 190.5,16.4 194.3,14.5 198.1,10.1 201.9,14.0 205.7,13.4 209.5,25.0 213.3,23.2 217.1,25.1 221.0,28.1 224.8,25.8 228.6,23.6 232.4,19.3 236.2,16.2 240.0,21.7 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,35.6 3.8,39.0 7.6,42.0 11.4,36.6 15.2,36.9 19.0,33.6 22.9,38.1 26.7,36.3 30.5,37.9 34.3,30.6 38.1,29.6 41.9,29.8 45.7,29.7 49.5,29.5 53.3,23.4 57.1,24.0 61.0,20.7 64.8,20.1 68.6,17.9 72.4,16.9 76.2,16.8 80.0,18.3 83.8,18.9 87.6,24.8 91.4,23.8 95.2,24.4 99.0,25.1 102.9,25.9 106.7,31.4 110.5,32.3 114.3,30.2 118.1,30.5 121.9,32.9 125.7,32.6 129.5,27.0 133.3,27.5 137.1,25.2 141.0,21.7 144.8,17.6 148.6,14.6 152.4,16.0 156.2,21.9 160.0,24.6 163.8,23.5 167.6,23.7 171.4,23.7 175.2,19.2 179.0,20.7 182.9,19.8 186.7,15.5 190.5,16.4 194.3,14.5 198.1,10.1 201.9,14.0 205.7,13.4 209.5,25.0 213.3,23.2 217.1,25.1 221.0,28.1 224.8,25.8 228.6,23.6 232.4,19.3 236.2,16.2 240.0,21.7" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="21.7" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">82</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">84</span>
         <span class="nb-verdict"><span class="l-en">Hold off — timing against you</span><span class="l-zh">暂缓 — 时机不利</span></span>
       </div>
       <div class="nb-axes">
@@ -2067,7 +2073,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,33.7 3.8,35.5 7.6,41.9 11.4,42.0 15.2,39.1 19.0,33.5 22.9,33.0 26.7,30.8 30.5,29.2 34.3,30.8 38.1,31.3 41.9,27.8 45.7,28.3 49.5,27.2 53.3,25.9 57.1,23.1 61.0,15.0 64.8,22.3 68.6,23.8 72.4,27.4 76.2,30.3 80.0,31.7 83.8,35.3 87.6,35.7 91.4,36.8 95.2,32.1 99.0,32.0 102.9,31.5 106.7,29.5 110.5,28.9 114.3,30.7 118.1,30.4 121.9,30.8 125.7,29.1 129.5,31.8 133.3,30.6 137.1,30.7 141.0,27.8 144.8,29.8 148.6,28.5 152.4,25.7 156.2,26.8 160.0,25.1 163.8,21.9 167.6,19.8 171.4,16.9 175.2,25.1 179.0,21.7 182.9,23.9 186.7,26.0 190.5,29.1 194.3,30.5 198.1,23.4 201.9,18.2 205.7,15.6 209.5,13.3 213.3,17.6 217.1,14.1 221.0,10.1 224.8,11.2 228.6,12.5 232.4,16.0 236.2,17.4 240.0,20.0 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,33.7 3.8,35.5 7.6,41.9 11.4,42.0 15.2,39.1 19.0,33.5 22.9,33.0 26.7,30.8 30.5,29.2 34.3,30.8 38.1,31.3 41.9,27.8 45.7,28.3 49.5,27.2 53.3,25.9 57.1,23.1 61.0,15.0 64.8,22.3 68.6,23.8 72.4,27.4 76.2,30.3 80.0,31.7 83.8,35.3 87.6,35.7 91.4,36.8 95.2,32.1 99.0,32.0 102.9,31.5 106.7,29.5 110.5,28.9 114.3,30.7 118.1,30.4 121.9,30.8 125.7,29.1 129.5,31.8 133.3,30.6 137.1,30.7 141.0,27.8 144.8,29.8 148.6,28.5 152.4,25.7 156.2,26.8 160.0,25.1 163.8,21.9 167.6,19.8 171.4,16.9 175.2,25.1 179.0,21.7 182.9,23.9 186.7,26.0 190.5,29.1 194.3,30.5 198.1,23.4 201.9,18.2 205.7,15.6 209.5,13.3 213.3,17.6 217.1,14.1 221.0,10.1 224.8,11.2 228.6,12.5 232.4,16.0 236.2,17.4 240.0,20.0" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="20.0" r="2.6" fill="var(--down)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">85</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">84</span>
         <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
       </div>
       <div class="nb-axes">
@@ -2085,9 +2091,9 @@
         </div>
         
         
-        <div class="nb-ax ax-na" title="TWD — no data">
+        <div class="nb-ax" title="TWD 51/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
+          <div class="axt"><div class="axf" style="width:51%"></div></div>
         </div>
         
         
@@ -2118,7 +2124,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,38.4 3.8,39.5 7.6,41.7 11.4,39.2 15.2,39.4 19.0,38.5 22.9,41.7 26.7,42.0 30.5,41.8 34.3,39.1 38.1,38.0 41.9,38.4 45.7,37.6 49.5,37.0 53.3,35.5 57.1,34.3 61.0,32.9 64.8,31.9 68.6,30.4 72.4,29.8 76.2,30.2 80.0,28.3 83.8,27.5 87.6,28.8 91.4,29.3 95.2,28.6 99.0,28.4 102.9,28.5 106.7,28.8 110.5,30.2 114.3,28.1 118.1,27.8 121.9,29.6 125.7,28.8 129.5,25.6 133.3,27.3 137.1,26.8 141.0,26.7 144.8,26.9 148.6,28.6 152.4,26.4 156.2,26.4 160.0,25.3 163.8,22.7 167.6,20.9 171.4,19.6 175.2,18.4 179.0,18.9 182.9,17.9 186.7,19.2 190.5,18.7 194.3,18.1 198.1,16.0 201.9,17.9 205.7,15.6 209.5,15.8 213.3,15.6 217.1,15.1 221.0,15.8 224.8,14.1 228.6,12.5 232.4,12.4 236.2,11.5 240.0,10.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,38.4 3.8,39.5 7.6,41.7 11.4,39.2 15.2,39.4 19.0,38.5 22.9,41.7 26.7,42.0 30.5,41.8 34.3,39.1 38.1,38.0 41.9,38.4 45.7,37.6 49.5,37.0 53.3,35.5 57.1,34.3 61.0,32.9 64.8,31.9 68.6,30.4 72.4,29.8 76.2,30.2 80.0,28.3 83.8,27.5 87.6,28.8 91.4,29.3 95.2,28.6 99.0,28.4 102.9,28.5 106.7,28.8 110.5,30.2 114.3,28.1 118.1,27.8 121.9,29.6 125.7,28.8 129.5,25.6 133.3,27.3 137.1,26.8 141.0,26.7 144.8,26.9 148.6,28.6 152.4,26.4 156.2,26.4 160.0,25.3 163.8,22.7 167.6,20.9 171.4,19.6 175.2,18.4 179.0,18.9 182.9,17.9 186.7,19.2 190.5,18.7 194.3,18.1 198.1,16.0 201.9,17.9 205.7,15.6 209.5,15.8 213.3,15.6 217.1,15.1 221.0,15.8 224.8,14.1 228.6,12.5 232.4,12.4 236.2,11.5 240.0,10.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="10.1" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">75</span>
+        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">76</span>
         <span class="nb-verdict"><span class="l-en">Hold off — timing against you</span><span class="l-zh">暂缓 — 时机不利</span></span>
       </div>
       <div class="nb-axes">
@@ -2136,9 +2142,9 @@
         </div>
         
         
-        <div class="nb-ax" title="TWD 61/100">
+        <div class="nb-ax" title="TWD 62/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:61%"></div></div>
+          <div class="axt"><div class="axf" style="width:62%"></div></div>
         </div>
         
         
@@ -2169,7 +2175,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,31.5 3.8,37.3 7.6,42.0 11.4,38.4 15.2,40.1 19.0,38.0 22.9,40.0 26.7,40.4 30.5,40.7 34.3,39.0 38.1,32.9 41.9,28.9 45.7,31.0 49.5,31.0 53.3,28.4 57.1,29.6 61.0,25.1 64.8,25.0 68.6,20.9 72.4,20.3 76.2,19.3 80.0,16.6 83.8,19.2 87.6,18.9 91.4,20.6 95.2,18.0 99.0,18.8 102.9,18.3 106.7,17.5 110.5,20.3 114.3,19.2 118.1,18.6 121.9,18.5 125.7,20.5 129.5,17.8 133.3,13.7 137.1,12.0 141.0,10.9 144.8,14.7 148.6,18.5 152.4,15.3 156.2,18.8 160.0,20.7 163.8,17.9 167.6,16.9 171.4,13.6 175.2,13.0 179.0,13.6 182.9,13.0 186.7,12.8 190.5,13.4 194.3,15.9 198.1,15.2 201.9,16.6 205.7,15.0 209.5,13.1 213.3,12.8 217.1,11.0 221.0,16.2 224.8,10.8 228.6,10.1 232.4,12.7 236.2,11.4 240.0,14.9 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,31.5 3.8,37.3 7.6,42.0 11.4,38.4 15.2,40.1 19.0,38.0 22.9,40.0 26.7,40.4 30.5,40.7 34.3,39.0 38.1,32.9 41.9,28.9 45.7,31.0 49.5,31.0 53.3,28.4 57.1,29.6 61.0,25.1 64.8,25.0 68.6,20.9 72.4,20.3 76.2,19.3 80.0,16.6 83.8,19.2 87.6,18.9 91.4,20.6 95.2,18.0 99.0,18.8 102.9,18.3 106.7,17.5 110.5,20.3 114.3,19.2 118.1,18.6 121.9,18.5 125.7,20.5 129.5,17.8 133.3,13.7 137.1,12.0 141.0,10.9 144.8,14.7 148.6,18.5 152.4,15.3 156.2,18.8 160.0,20.7 163.8,17.9 167.6,16.9 171.4,13.6 175.2,13.0 179.0,13.6 182.9,13.0 186.7,12.8 190.5,13.4 194.3,15.9 198.1,15.2 201.9,16.6 205.7,15.0 209.5,13.1 213.3,12.8 217.1,11.0 221.0,16.2 224.8,10.8 228.6,10.1 232.4,12.7 236.2,11.4 240.0,14.9" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="14.9" r="2.6" fill="var(--down)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">71</span>
+        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">73</span>
         <span class="nb-verdict"><span class="l-en">Hold off — timing against you</span><span class="l-zh">暂缓 — 时机不利</span></span>
       </div>
       <div class="nb-axes">
@@ -2187,9 +2193,9 @@
         </div>
         
         
-        <div class="nb-ax" title="TWD 48/100">
+        <div class="nb-ax" title="TWD 47/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:48%"></div></div>
+          <div class="axt"><div class="axf" style="width:47%"></div></div>
         </div>
         
         
@@ -2220,7 +2226,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,38.4 3.8,41.1 7.6,42.0 11.4,39.1 15.2,36.9 19.0,34.1 22.9,35.1 26.7,36.8 30.5,38.2 34.3,33.9 38.1,32.9 41.9,35.2 45.7,36.0 49.5,37.2 53.3,31.6 57.1,31.0 61.0,30.8 64.8,30.4 68.6,31.3 72.4,34.1 76.2,33.8 80.0,26.7 83.8,24.4 87.6,25.0 91.4,25.6 95.2,23.9 99.0,22.8 102.9,24.3 106.7,24.6 110.5,24.7 114.3,22.2 118.1,27.2 121.9,29.4 125.7,28.2 129.5,23.5 133.3,25.9 137.1,22.3 141.0,23.2 144.8,23.7 148.6,23.3 152.4,21.5 156.2,25.8 160.0,27.8 163.8,25.1 167.6,20.5 171.4,17.5 175.2,16.1 179.0,16.3 182.9,14.1 186.7,14.9 190.5,17.3 194.3,16.3 198.1,10.8 201.9,10.1 205.7,10.1 209.5,13.6 213.3,12.4 217.1,13.5 221.0,17.4 224.8,14.2 228.6,12.1 232.4,11.3 236.2,14.1 240.0,14.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,38.4 3.8,41.1 7.6,42.0 11.4,39.1 15.2,36.9 19.0,34.1 22.9,35.1 26.7,36.8 30.5,38.2 34.3,33.9 38.1,32.9 41.9,35.2 45.7,36.0 49.5,37.2 53.3,31.6 57.1,31.0 61.0,30.8 64.8,30.4 68.6,31.3 72.4,34.1 76.2,33.8 80.0,26.7 83.8,24.4 87.6,25.0 91.4,25.6 95.2,23.9 99.0,22.8 102.9,24.3 106.7,24.6 110.5,24.7 114.3,22.2 118.1,27.2 121.9,29.4 125.7,28.2 129.5,23.5 133.3,25.9 137.1,22.3 141.0,23.2 144.8,23.7 148.6,23.3 152.4,21.5 156.2,25.8 160.0,27.8 163.8,25.1 167.6,20.5 171.4,17.5 175.2,16.1 179.0,16.3 182.9,14.1 186.7,14.9 190.5,17.3 194.3,16.3 198.1,10.8 201.9,10.1 205.7,10.1 209.5,13.6 213.3,12.4 217.1,13.5 221.0,17.4 224.8,14.2 228.6,12.1 232.4,11.3 236.2,14.1 240.0,14.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="14.1" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">85</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">82</span>
         <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
       </div>
       <div class="nb-axes">
@@ -2238,9 +2244,9 @@
         </div>
         
         
-        <div class="nb-ax ax-na" title="TWD — no data">
+        <div class="nb-ax" title="TWD 48/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
+          <div class="axt"><div class="axf" style="width:48%"></div></div>
         </div>
         
         
@@ -2271,7 +2277,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,25.9 3.8,28.3 7.6,32.1 11.4,28.7 15.2,27.8 19.0,25.5 22.9,28.7 26.7,28.9 30.5,32.6 34.3,26.2 38.1,27.6 41.9,28.2 45.7,27.8 49.5,29.2 53.3,26.4 57.1,26.6 61.0,26.3 64.8,23.2 68.6,22.7 72.4,18.2 76.2,18.4 80.0,20.0 83.8,16.7 87.6,20.0 91.4,12.9 95.2,15.3 99.0,20.6 102.9,17.5 106.7,19.6 110.5,23.0 114.3,16.7 118.1,16.4 121.9,16.6 125.7,18.3 129.5,10.1 133.3,10.6 137.1,16.9 141.0,15.1 144.8,18.2 148.6,20.8 152.4,23.0 156.2,26.5 160.0,34.2 163.8,32.3 167.6,28.4 171.4,27.6 175.2,26.1 179.0,26.3 182.9,26.7 186.7,26.4 190.5,27.1 194.3,29.1 198.1,22.5 201.9,27.2 205.7,29.7 209.5,37.8 213.3,36.7 217.1,39.7 221.0,42.0 224.8,37.1 228.6,37.2 232.4,35.2 236.2,36.0 240.0,35.8 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,25.9 3.8,28.3 7.6,32.1 11.4,28.7 15.2,27.8 19.0,25.5 22.9,28.7 26.7,28.9 30.5,32.6 34.3,26.2 38.1,27.6 41.9,28.2 45.7,27.8 49.5,29.2 53.3,26.4 57.1,26.6 61.0,26.3 64.8,23.2 68.6,22.7 72.4,18.2 76.2,18.4 80.0,20.0 83.8,16.7 87.6,20.0 91.4,12.9 95.2,15.3 99.0,20.6 102.9,17.5 106.7,19.6 110.5,23.0 114.3,16.7 118.1,16.4 121.9,16.6 125.7,18.3 129.5,10.1 133.3,10.6 137.1,16.9 141.0,15.1 144.8,18.2 148.6,20.8 152.4,23.0 156.2,26.5 160.0,34.2 163.8,32.3 167.6,28.4 171.4,27.6 175.2,26.1 179.0,26.3 182.9,26.7 186.7,26.4 190.5,27.1 194.3,29.1 198.1,22.5 201.9,27.2 205.7,29.7 209.5,37.8 213.3,36.7 217.1,39.7 221.0,42.0 224.8,37.1 228.6,37.2 232.4,35.2 236.2,36.0 240.0,35.8" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="35.8" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">76</span>
+        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">77</span>
         <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
       </div>
       <div class="nb-axes">
@@ -2322,7 +2328,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,39.6 3.8,39.9 7.6,42.0 11.4,39.5 15.2,39.0 19.0,37.6 22.9,39.0 26.7,41.3 30.5,40.9 34.3,38.3 38.1,37.2 41.9,38.0 45.7,37.8 49.5,38.0 53.3,32.9 57.1,32.1 61.0,31.8 64.8,30.9 68.6,30.4 72.4,28.6 76.2,29.1 80.0,25.8 83.8,25.7 87.6,26.8 91.4,25.9 95.2,25.2 99.0,24.3 102.9,26.4 106.7,26.3 110.5,25.8 114.3,24.2 118.1,22.8 121.9,26.0 125.7,25.3 129.5,22.0 133.3,24.8 137.1,21.8 141.0,23.3 144.8,22.0 148.6,24.0 152.4,23.9 156.2,26.0 160.0,28.5 163.8,25.9 167.6,24.7 171.4,25.5 175.2,23.3 179.0,20.6 182.9,20.9 186.7,18.3 190.5,18.8 194.3,18.9 198.1,17.2 201.9,16.2 205.7,15.9 209.5,17.4 213.3,16.6 217.1,14.9 221.0,16.0 224.8,13.5 228.6,12.3 232.4,10.1 236.2,12.8 240.0,14.8 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,39.6 3.8,39.9 7.6,42.0 11.4,39.5 15.2,39.0 19.0,37.6 22.9,39.0 26.7,41.3 30.5,40.9 34.3,38.3 38.1,37.2 41.9,38.0 45.7,37.8 49.5,38.0 53.3,32.9 57.1,32.1 61.0,31.8 64.8,30.9 68.6,30.4 72.4,28.6 76.2,29.1 80.0,25.8 83.8,25.7 87.6,26.8 91.4,25.9 95.2,25.2 99.0,24.3 102.9,26.4 106.7,26.3 110.5,25.8 114.3,24.2 118.1,22.8 121.9,26.0 125.7,25.3 129.5,22.0 133.3,24.8 137.1,21.8 141.0,23.3 144.8,22.0 148.6,24.0 152.4,23.9 156.2,26.0 160.0,28.5 163.8,25.9 167.6,24.7 171.4,25.5 175.2,23.3 179.0,20.6 182.9,20.9 186.7,18.3 190.5,18.8 194.3,18.9 198.1,17.2 201.9,16.2 205.7,15.9 209.5,17.4 213.3,16.6 217.1,14.9 221.0,16.0 224.8,13.5 228.6,12.3 232.4,10.1 236.2,12.8 240.0,14.8" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="14.8" r="2.6" fill="var(--down)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">81</span>
+        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">78</span>
         <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
       </div>
       <div class="nb-axes">
@@ -2340,9 +2346,9 @@
         </div>
         
         
-        <div class="nb-ax ax-na" title="TWD — no data">
+        <div class="nb-ax" title="TWD 52/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
+          <div class="axt"><div class="axf" style="width:52%"></div></div>
         </div>
         
         
@@ -2373,7 +2379,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,37.9 3.8,40.6 7.6,42.0 11.4,40.2 15.2,39.9 19.0,37.2 22.9,39.9 26.7,38.3 30.5,39.1 34.3,34.8 38.1,32.4 41.9,33.2 45.7,32.9 49.5,32.7 53.3,28.6 57.1,29.3 61.0,27.3 64.8,27.2 68.6,25.4 72.4,26.4 76.2,26.4 80.0,24.3 83.8,25.0 87.6,29.0 91.4,27.1 95.2,28.6 99.0,28.1 102.9,27.9 106.7,31.0 110.5,32.1 114.3,31.0 118.1,31.6 121.9,33.9 125.7,32.5 129.5,28.7 133.3,29.0 137.1,26.3 141.0,25.2 144.8,21.4 148.6,20.0 152.4,21.1 156.2,26.1 160.0,28.6 163.8,27.3 167.6,26.6 171.4,27.2 175.2,22.3 179.0,22.4 182.9,22.1 186.7,18.6 190.5,16.3 194.3,12.9 198.1,10.1 201.9,13.2 205.7,13.6 209.5,23.9 213.3,22.8 217.1,24.0 221.0,26.0 224.8,21.5 228.6,18.7 232.4,16.4 236.2,15.6 240.0,17.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,37.9 3.8,40.6 7.6,42.0 11.4,40.2 15.2,39.9 19.0,37.2 22.9,39.9 26.7,38.3 30.5,39.1 34.3,34.8 38.1,32.4 41.9,33.2 45.7,32.9 49.5,32.7 53.3,28.6 57.1,29.3 61.0,27.3 64.8,27.2 68.6,25.4 72.4,26.4 76.2,26.4 80.0,24.3 83.8,25.0 87.6,29.0 91.4,27.1 95.2,28.6 99.0,28.1 102.9,27.9 106.7,31.0 110.5,32.1 114.3,31.0 118.1,31.6 121.9,33.9 125.7,32.5 129.5,28.7 133.3,29.0 137.1,26.3 141.0,25.2 144.8,21.4 148.6,20.0 152.4,21.1 156.2,26.1 160.0,28.6 163.8,27.3 167.6,26.6 171.4,27.2 175.2,22.3 179.0,22.4 182.9,22.1 186.7,18.6 190.5,16.3 194.3,12.9 198.1,10.1 201.9,13.2 205.7,13.6 209.5,23.9 213.3,22.8 217.1,24.0 221.0,26.0 224.8,21.5 228.6,18.7 232.4,16.4 236.2,15.6 240.0,17.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="17.1" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">86</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">88</span>
         <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
       </div>
       <div class="nb-axes">
@@ -2475,7 +2481,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,42.0 3.8,38.9 7.6,39.2 11.4,41.3 15.2,36.9 19.0,39.0 22.9,37.6 26.7,29.9 30.5,27.9 34.3,24.3 38.1,33.5 41.9,28.8 45.7,27.7 49.5,26.8 53.3,33.0 57.1,34.6 61.0,30.6 64.8,27.2 68.6,30.4 72.4,27.4 76.2,24.3 80.0,31.9 83.8,28.8 87.6,25.5 91.4,23.3 95.2,20.5 99.0,24.6 102.9,22.5 106.7,20.3 110.5,17.2 114.3,17.2 118.1,17.7 121.9,15.7 125.7,15.6 129.5,21.7 133.3,23.6 137.1,22.0 141.0,18.6 144.8,18.1 148.6,17.1 152.4,15.1 156.2,12.8 160.0,10.1 163.8,15.6 167.6,17.8 171.4,17.2 175.2,23.4 179.0,22.0 182.9,26.1 186.7,25.1 190.5,27.7 194.3,22.6 198.1,22.0 201.9,18.4 205.7,16.7 209.5,22.2 213.3,18.9 217.1,23.7 221.0,21.5 224.8,21.2 228.6,24.0 232.4,26.1 236.2,28.9 240.0,30.0 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,42.0 3.8,38.9 7.6,39.2 11.4,41.3 15.2,36.9 19.0,39.0 22.9,37.6 26.7,29.9 30.5,27.9 34.3,24.3 38.1,33.5 41.9,28.8 45.7,27.7 49.5,26.8 53.3,33.0 57.1,34.6 61.0,30.6 64.8,27.2 68.6,30.4 72.4,27.4 76.2,24.3 80.0,31.9 83.8,28.8 87.6,25.5 91.4,23.3 95.2,20.5 99.0,24.6 102.9,22.5 106.7,20.3 110.5,17.2 114.3,17.2 118.1,17.7 121.9,15.7 125.7,15.6 129.5,21.7 133.3,23.6 137.1,22.0 141.0,18.6 144.8,18.1 148.6,17.1 152.4,15.1 156.2,12.8 160.0,10.1 163.8,15.6 167.6,17.8 171.4,17.2 175.2,23.4 179.0,22.0 182.9,26.1 186.7,25.1 190.5,27.7 194.3,22.6 198.1,22.0 201.9,18.4 205.7,16.7 209.5,22.2 213.3,18.9 217.1,23.7 221.0,21.5 224.8,21.2 228.6,24.0 232.4,26.1 236.2,28.9 240.0,30.0" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="30.0" r="2.6" fill="var(--down)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">73</span>
+        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">75</span>
         <span class="nb-verdict"><span class="l-en">Hold off — timing against you</span><span class="l-zh">暂缓 — 时机不利</span></span>
       </div>
       <div class="nb-axes">
@@ -2526,7 +2532,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,41.1 3.8,42.0 7.6,41.9 11.4,39.3 15.2,39.0 19.0,38.0 22.9,38.3 26.7,38.6 30.5,38.3 34.3,36.3 38.1,35.6 41.9,35.1 45.7,33.9 49.5,33.4 53.3,31.0 57.1,29.6 61.0,30.2 64.8,29.5 68.6,29.2 72.4,30.5 76.2,28.2 80.0,26.4 83.8,24.6 87.6,24.8 91.4,24.6 95.2,23.5 99.0,23.2 102.9,23.6 106.7,20.4 110.5,22.2 114.3,21.6 118.1,21.9 121.9,25.5 125.7,24.9 129.5,23.1 133.3,23.5 137.1,23.1 141.0,23.8 144.8,24.8 148.6,25.3 152.4,21.1 156.2,21.7 160.0,22.0 163.8,19.1 167.6,19.4 171.4,18.1 175.2,17.8 179.0,16.8 182.9,16.3 186.7,16.0 190.5,15.3 194.3,14.0 198.1,12.9 201.9,12.6 205.7,11.8 209.5,12.0 213.3,10.1 217.1,11.9 221.0,14.8 224.8,12.3 228.6,11.3 232.4,13.5 236.2,14.9 240.0,18.2 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,41.1 3.8,42.0 7.6,41.9 11.4,39.3 15.2,39.0 19.0,38.0 22.9,38.3 26.7,38.6 30.5,38.3 34.3,36.3 38.1,35.6 41.9,35.1 45.7,33.9 49.5,33.4 53.3,31.0 57.1,29.6 61.0,30.2 64.8,29.5 68.6,29.2 72.4,30.5 76.2,28.2 80.0,26.4 83.8,24.6 87.6,24.8 91.4,24.6 95.2,23.5 99.0,23.2 102.9,23.6 106.7,20.4 110.5,22.2 114.3,21.6 118.1,21.9 121.9,25.5 125.7,24.9 129.5,23.1 133.3,23.5 137.1,23.1 141.0,23.8 144.8,24.8 148.6,25.3 152.4,21.1 156.2,21.7 160.0,22.0 163.8,19.1 167.6,19.4 171.4,18.1 175.2,17.8 179.0,16.8 182.9,16.3 186.7,16.0 190.5,15.3 194.3,14.0 198.1,12.9 201.9,12.6 205.7,11.8 209.5,12.0 213.3,10.1 217.1,11.9 221.0,14.8 224.8,12.3 228.6,11.3 232.4,13.5 236.2,14.9 240.0,18.2" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="18.2" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">80</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">85</span>
         <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
       </div>
       <div class="nb-axes">
@@ -2544,9 +2550,9 @@
         </div>
         
         
-        <div class="nb-ax" title="TWD 41/100">
+        <div class="nb-ax" title="TWD 48/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:41%"></div></div>
+          <div class="axt"><div class="axf" style="width:48%"></div></div>
         </div>
         
         
@@ -2577,7 +2583,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,34.9 3.8,39.3 7.6,41.7 11.4,39.6 15.2,41.0 19.0,40.7 22.9,42.0 26.7,41.1 30.5,41.0 34.3,37.8 38.1,34.8 41.9,33.0 45.7,32.7 49.5,32.4 53.3,29.7 57.1,30.0 61.0,27.6 64.8,27.5 68.6,25.7 72.4,27.0 76.2,23.1 80.0,17.8 83.8,21.4 87.6,23.3 91.4,23.6 95.2,20.6 99.0,21.9 102.9,21.4 106.7,18.8 110.5,19.6 114.3,19.2 118.1,20.1 121.9,19.0 125.7,18.6 129.5,15.3 133.3,18.0 137.1,17.2 141.0,15.3 144.8,17.7 148.6,22.0 152.4,21.1 156.2,20.5 160.0,22.9 163.8,19.8 167.6,15.6 171.4,14.8 175.2,12.9 179.0,13.2 182.9,15.7 186.7,17.2 190.5,19.7 194.3,19.7 198.1,18.2 201.9,18.2 205.7,18.7 209.5,16.2 213.3,17.0 217.1,15.0 221.0,17.3 224.8,17.8 228.6,11.7 232.4,11.4 236.2,10.1 240.0,12.8 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,34.9 3.8,39.3 7.6,41.7 11.4,39.6 15.2,41.0 19.0,40.7 22.9,42.0 26.7,41.1 30.5,41.0 34.3,37.8 38.1,34.8 41.9,33.0 45.7,32.7 49.5,32.4 53.3,29.7 57.1,30.0 61.0,27.6 64.8,27.5 68.6,25.7 72.4,27.0 76.2,23.1 80.0,17.8 83.8,21.4 87.6,23.3 91.4,23.6 95.2,20.6 99.0,21.9 102.9,21.4 106.7,18.8 110.5,19.6 114.3,19.2 118.1,20.1 121.9,19.0 125.7,18.6 129.5,15.3 133.3,18.0 137.1,17.2 141.0,15.3 144.8,17.7 148.6,22.0 152.4,21.1 156.2,20.5 160.0,22.9 163.8,19.8 167.6,15.6 171.4,14.8 175.2,12.9 179.0,13.2 182.9,15.7 186.7,17.2 190.5,19.7 194.3,19.7 198.1,18.2 201.9,18.2 205.7,18.7 209.5,16.2 213.3,17.0 217.1,15.0 221.0,17.3 224.8,17.8 228.6,11.7 232.4,11.4 236.2,10.1 240.0,12.8" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="12.8" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">80</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">82</span>
         <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
       </div>
       <div class="nb-axes">
@@ -2679,7 +2685,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,38.5 3.8,39.6 7.6,40.4 11.4,42.0 15.2,40.7 19.0,40.4 22.9,39.7 26.7,37.9 30.5,37.2 34.3,39.1 38.1,40.7 41.9,37.4 45.7,35.4 49.5,35.0 53.3,36.5 57.1,37.4 61.0,36.8 64.8,37.9 68.6,40.6 72.4,37.4 76.2,34.1 80.0,36.6 83.8,35.2 87.6,36.9 91.4,39.2 95.2,33.3 99.0,33.0 102.9,31.2 106.7,31.0 110.5,29.8 114.3,28.7 118.1,23.7 121.9,22.7 125.7,24.3 129.5,29.2 133.3,29.1 137.1,29.3 141.0,26.4 144.8,24.3 148.6,23.5 152.4,21.3 156.2,19.9 160.0,18.4 163.8,21.7 167.6,19.8 171.4,16.7 175.2,19.0 179.0,18.1 182.9,18.1 186.7,17.3 190.5,19.3 194.3,18.5 198.1,18.3 201.9,16.7 205.7,12.6 209.5,11.1 213.3,15.3 217.1,14.5 221.0,10.1 224.8,11.3 228.6,13.3 232.4,13.5 236.2,18.0 240.0,17.4 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,38.5 3.8,39.6 7.6,40.4 11.4,42.0 15.2,40.7 19.0,40.4 22.9,39.7 26.7,37.9 30.5,37.2 34.3,39.1 38.1,40.7 41.9,37.4 45.7,35.4 49.5,35.0 53.3,36.5 57.1,37.4 61.0,36.8 64.8,37.9 68.6,40.6 72.4,37.4 76.2,34.1 80.0,36.6 83.8,35.2 87.6,36.9 91.4,39.2 95.2,33.3 99.0,33.0 102.9,31.2 106.7,31.0 110.5,29.8 114.3,28.7 118.1,23.7 121.9,22.7 125.7,24.3 129.5,29.2 133.3,29.1 137.1,29.3 141.0,26.4 144.8,24.3 148.6,23.5 152.4,21.3 156.2,19.9 160.0,18.4 163.8,21.7 167.6,19.8 171.4,16.7 175.2,19.0 179.0,18.1 182.9,18.1 186.7,17.3 190.5,19.3 194.3,18.5 198.1,18.3 201.9,16.7 205.7,12.6 209.5,11.1 213.3,15.3 217.1,14.5 221.0,10.1 224.8,11.3 228.6,13.3 232.4,13.5 236.2,18.0 240.0,17.4" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="17.4" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">88</span>
+        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">79</span>
         <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
       </div>
       <div class="nb-axes">
@@ -2697,9 +2703,9 @@
         </div>
         
         
-        <div class="nb-ax ax-na" title="TWD — no data">
+        <div class="nb-ax" title="TWD 38/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
+          <div class="axt"><div class="axf" style="width:38%"></div></div>
         </div>
         
         
@@ -2730,7 +2736,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,35.1 3.8,37.9 7.6,42.0 11.4,40.4 15.2,39.9 19.0,38.6 22.9,40.2 26.7,38.8 30.5,39.9 34.3,36.8 38.1,30.8 41.9,29.2 45.7,27.9 49.5,28.6 53.3,26.0 57.1,28.6 61.0,27.0 64.8,25.6 68.6,23.3 72.4,22.2 76.2,20.1 80.0,18.8 83.8,21.2 87.6,25.2 91.4,23.9 95.2,22.0 99.0,22.4 102.9,23.4 106.7,20.9 110.5,23.4 114.3,22.2 118.1,22.3 121.9,22.7 125.7,22.9 129.5,21.1 133.3,21.7 137.1,21.5 141.0,21.1 144.8,21.9 148.6,23.0 152.4,23.3 156.2,22.3 160.0,22.0 163.8,16.8 167.6,16.6 171.4,15.9 175.2,17.2 179.0,17.7 182.9,18.3 186.7,17.9 190.5,19.0 194.3,20.9 198.1,18.7 201.9,18.4 205.7,18.7 209.5,17.7 213.3,18.0 217.1,15.6 221.0,15.9 224.8,15.4 228.6,11.3 232.4,10.1 236.2,10.1 240.0,11.8 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,35.1 3.8,37.9 7.6,42.0 11.4,40.4 15.2,39.9 19.0,38.6 22.9,40.2 26.7,38.8 30.5,39.9 34.3,36.8 38.1,30.8 41.9,29.2 45.7,27.9 49.5,28.6 53.3,26.0 57.1,28.6 61.0,27.0 64.8,25.6 68.6,23.3 72.4,22.2 76.2,20.1 80.0,18.8 83.8,21.2 87.6,25.2 91.4,23.9 95.2,22.0 99.0,22.4 102.9,23.4 106.7,20.9 110.5,23.4 114.3,22.2 118.1,22.3 121.9,22.7 125.7,22.9 129.5,21.1 133.3,21.7 137.1,21.5 141.0,21.1 144.8,21.9 148.6,23.0 152.4,23.3 156.2,22.3 160.0,22.0 163.8,16.8 167.6,16.6 171.4,15.9 175.2,17.2 179.0,17.7 182.9,18.3 186.7,17.9 190.5,19.0 194.3,20.9 198.1,18.7 201.9,18.4 205.7,18.7 209.5,17.7 213.3,18.0 217.1,15.6 221.0,15.9 224.8,15.4 228.6,11.3 232.4,10.1 236.2,10.1 240.0,11.8" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="11.8" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">77</span>
+        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">72</span>
         <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
       </div>
       <div class="nb-axes">
@@ -2748,9 +2754,9 @@
         </div>
         
         
-        <div class="nb-ax ax-na" title="TWD — no data">
+        <div class="nb-ax" title="TWD 47/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
+          <div class="axt"><div class="axf" style="width:47%"></div></div>
         </div>
         
         
@@ -2781,7 +2787,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,26.5 3.8,32.4 7.6,36.8 11.4,33.1 15.2,33.0 19.0,28.8 22.9,32.9 26.7,29.7 30.5,29.6 34.3,22.7 38.1,18.8 41.9,19.3 45.7,19.4 49.5,17.4 53.3,15.6 57.1,14.5 61.0,12.5 64.8,12.3 68.6,10.8 72.4,13.8 76.2,15.4 80.0,10.1 83.8,10.9 87.6,21.2 91.4,17.5 95.2,19.0 99.0,17.2 102.9,18.3 106.7,23.1 110.5,26.6 114.3,27.8 118.1,28.5 121.9,32.0 125.7,31.2 129.5,23.4 133.3,25.0 137.1,21.1 141.0,18.7 144.8,17.6 148.6,17.6 152.4,20.0 156.2,28.4 160.0,33.5 163.8,31.3 167.6,30.7 171.4,31.6 175.2,26.8 179.0,25.6 182.9,29.2 186.7,27.9 190.5,24.2 194.3,27.2 198.1,25.4 201.9,29.2 205.7,28.2 209.5,38.3 213.3,36.2 217.1,37.5 221.0,42.0 224.8,36.0 228.6,32.5 232.4,27.1 236.2,22.4 240.0,23.0 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,26.5 3.8,32.4 7.6,36.8 11.4,33.1 15.2,33.0 19.0,28.8 22.9,32.9 26.7,29.7 30.5,29.6 34.3,22.7 38.1,18.8 41.9,19.3 45.7,19.4 49.5,17.4 53.3,15.6 57.1,14.5 61.0,12.5 64.8,12.3 68.6,10.8 72.4,13.8 76.2,15.4 80.0,10.1 83.8,10.9 87.6,21.2 91.4,17.5 95.2,19.0 99.0,17.2 102.9,18.3 106.7,23.1 110.5,26.6 114.3,27.8 118.1,28.5 121.9,32.0 125.7,31.2 129.5,23.4 133.3,25.0 137.1,21.1 141.0,18.7 144.8,17.6 148.6,17.6 152.4,20.0 156.2,28.4 160.0,33.5 163.8,31.3 167.6,30.7 171.4,31.6 175.2,26.8 179.0,25.6 182.9,29.2 186.7,27.9 190.5,24.2 194.3,27.2 198.1,25.4 201.9,29.2 205.7,28.2 209.5,38.3 213.3,36.2 217.1,37.5 221.0,42.0 224.8,36.0 228.6,32.5 232.4,27.1 236.2,22.4 240.0,23.0" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="23.0" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">75</span>
+        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">68</span>
         <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
       </div>
       <div class="nb-axes">
@@ -2799,9 +2805,9 @@
         </div>
         
         
-        <div class="nb-ax ax-na" title="TWD — no data">
+        <div class="nb-ax" title="TWD 43/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
+          <div class="axt"><div class="axf" style="width:43%"></div></div>
         </div>
         
         
@@ -2832,7 +2838,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,25.1 3.8,30.4 7.6,33.1 11.4,29.5 15.2,25.8 19.0,22.6 22.9,28.3 26.7,22.8 30.5,26.6 34.3,19.6 38.1,16.9 41.9,17.9 45.7,19.7 49.5,20.3 53.3,22.2 57.1,23.3 61.0,23.4 64.8,22.8 68.6,20.1 72.4,21.7 76.2,22.3 80.0,20.6 83.8,20.7 87.6,26.3 91.4,23.3 95.2,25.5 99.0,24.6 102.9,24.8 106.7,28.6 110.5,30.5 114.3,28.3 118.1,27.7 121.9,29.2 125.7,30.3 129.5,22.3 133.3,21.5 137.1,19.4 141.0,12.7 144.8,10.1 148.6,10.9 152.4,15.9 156.2,24.6 160.0,30.8 163.8,26.6 167.6,26.4 171.4,28.0 175.2,24.7 179.0,24.6 182.9,26.9 186.7,23.5 190.5,21.5 194.3,22.4 198.1,21.9 201.9,26.2 205.7,26.3 209.5,36.9 213.3,36.3 217.1,38.9 221.0,42.0 224.8,37.2 228.6,34.1 232.4,29.2 236.2,26.9 240.0,29.9 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,25.1 3.8,30.4 7.6,33.1 11.4,29.5 15.2,25.8 19.0,22.6 22.9,28.3 26.7,22.8 30.5,26.6 34.3,19.6 38.1,16.9 41.9,17.9 45.7,19.7 49.5,20.3 53.3,22.2 57.1,23.3 61.0,23.4 64.8,22.8 68.6,20.1 72.4,21.7 76.2,22.3 80.0,20.6 83.8,20.7 87.6,26.3 91.4,23.3 95.2,25.5 99.0,24.6 102.9,24.8 106.7,28.6 110.5,30.5 114.3,28.3 118.1,27.7 121.9,29.2 125.7,30.3 129.5,22.3 133.3,21.5 137.1,19.4 141.0,12.7 144.8,10.1 148.6,10.9 152.4,15.9 156.2,24.6 160.0,30.8 163.8,26.6 167.6,26.4 171.4,28.0 175.2,24.7 179.0,24.6 182.9,26.9 186.7,23.5 190.5,21.5 194.3,22.4 198.1,21.9 201.9,26.2 205.7,26.3 209.5,36.9 213.3,36.3 217.1,38.9 221.0,42.0 224.8,37.2 228.6,34.1 232.4,29.2 236.2,26.9 240.0,29.9" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="29.9" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">68</span>
+        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">72</span>
         <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
       </div>
       <div class="nb-axes">
@@ -2850,9 +2856,9 @@
         </div>
         
         
-        <div class="nb-ax" title="TWD 43/100">
+        <div class="nb-ax" title="TWD 49/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:43%"></div></div>
+          <div class="axt"><div class="axf" style="width:49%"></div></div>
         </div>
         
         
@@ -2883,7 +2889,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,31.0 3.8,37.0 7.6,41.3 11.4,41.5 15.2,38.0 19.0,35.5 22.9,34.9 26.7,33.8 30.5,32.2 34.3,31.6 38.1,31.5 41.9,26.9 45.7,28.6 49.5,25.7 53.3,25.5 57.1,23.7 61.0,19.9 64.8,27.9 68.6,28.8 72.4,29.1 76.2,33.7 80.0,34.2 83.8,35.5 87.6,37.3 91.4,42.0 95.2,35.2 99.0,35.1 102.9,35.6 106.7,32.2 110.5,33.1 114.3,33.8 118.1,34.2 121.9,32.5 125.7,31.3 129.5,31.1 133.3,34.5 137.1,32.8 141.0,30.9 144.8,31.9 148.6,31.1 152.4,29.2 156.2,32.3 160.0,28.0 163.8,27.6 167.6,23.9 171.4,21.3 175.2,22.0 179.0,19.4 182.9,18.2 186.7,18.6 190.5,24.4 194.3,28.1 198.1,26.0 201.9,20.2 205.7,18.5 209.5,15.8 213.3,18.7 217.1,17.4 221.0,12.7 224.8,11.7 228.6,11.4 232.4,10.1 236.2,11.5 240.0,13.8 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,31.0 3.8,37.0 7.6,41.3 11.4,41.5 15.2,38.0 19.0,35.5 22.9,34.9 26.7,33.8 30.5,32.2 34.3,31.6 38.1,31.5 41.9,26.9 45.7,28.6 49.5,25.7 53.3,25.5 57.1,23.7 61.0,19.9 64.8,27.9 68.6,28.8 72.4,29.1 76.2,33.7 80.0,34.2 83.8,35.5 87.6,37.3 91.4,42.0 95.2,35.2 99.0,35.1 102.9,35.6 106.7,32.2 110.5,33.1 114.3,33.8 118.1,34.2 121.9,32.5 125.7,31.3 129.5,31.1 133.3,34.5 137.1,32.8 141.0,30.9 144.8,31.9 148.6,31.1 152.4,29.2 156.2,32.3 160.0,28.0 163.8,27.6 167.6,23.9 171.4,21.3 175.2,22.0 179.0,19.4 182.9,18.2 186.7,18.6 190.5,24.4 194.3,28.1 198.1,26.0 201.9,20.2 205.7,18.5 209.5,15.8 213.3,18.7 217.1,17.4 221.0,12.7 224.8,11.7 228.6,11.4 232.4,10.1 236.2,11.5 240.0,13.8" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="13.8" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">79</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">82</span>
         <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
       </div>
       <div class="nb-axes">
@@ -2901,9 +2907,9 @@
         </div>
         
         
-        <div class="nb-ax" title="TWD 50/100">
+        <div class="nb-ax" title="TWD 51/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:50%"></div></div>
+          <div class="axt"><div class="axf" style="width:51%"></div></div>
         </div>
         
         
@@ -2934,7 +2940,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,40.4 3.8,39.1 7.6,36.6 11.4,42.0 15.2,41.6 19.0,41.2 22.9,41.6 26.7,41.2 30.5,39.1 34.3,28.4 38.1,28.8 41.9,25.5 45.7,23.4 49.5,26.3 53.3,21.7 57.1,20.9 61.0,19.2 64.8,18.8 68.6,19.2 72.4,21.3 76.2,24.7 80.0,16.7 83.8,17.6 87.6,18.8 91.4,18.4 95.2,18.0 99.0,18.8 102.9,18.8 106.7,14.7 110.5,13.4 114.3,18.0 118.1,14.7 121.9,13.4 125.7,18.0 129.5,16.7 133.3,14.7 137.1,18.0 141.0,18.0 144.8,18.0 148.6,17.2 152.4,17.2 156.2,17.6 160.0,15.5 163.8,17.2 167.6,14.2 171.4,13.8 175.2,13.8 179.0,13.0 182.9,12.2 186.7,10.1 190.5,18.8 194.3,16.7 198.1,17.2 201.9,14.2 205.7,16.7 209.5,16.7 213.3,15.1 217.1,14.2 221.0,14.7 224.8,14.7 228.6,14.7 232.4,11.7 236.2,15.1 240.0,13.8 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,40.4 3.8,39.1 7.6,36.6 11.4,42.0 15.2,41.6 19.0,41.2 22.9,41.6 26.7,41.2 30.5,39.1 34.3,28.4 38.1,28.8 41.9,25.5 45.7,23.4 49.5,26.3 53.3,21.7 57.1,20.9 61.0,19.2 64.8,18.8 68.6,19.2 72.4,21.3 76.2,24.7 80.0,16.7 83.8,17.6 87.6,18.8 91.4,18.4 95.2,18.0 99.0,18.8 102.9,18.8 106.7,14.7 110.5,13.4 114.3,18.0 118.1,14.7 121.9,13.4 125.7,18.0 129.5,16.7 133.3,14.7 137.1,18.0 141.0,18.0 144.8,18.0 148.6,17.2 152.4,17.2 156.2,17.6 160.0,15.5 163.8,17.2 167.6,14.2 171.4,13.8 175.2,13.8 179.0,13.0 182.9,12.2 186.7,10.1 190.5,18.8 194.3,16.7 198.1,17.2 201.9,14.2 205.7,16.7 209.5,16.7 213.3,15.1 217.1,14.2 221.0,14.7 224.8,14.7 228.6,14.7 232.4,11.7 236.2,15.1 240.0,13.8" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="13.8" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">82</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">83</span>
         <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
       </div>
       <div class="nb-axes">
@@ -2952,9 +2958,9 @@
         </div>
         
         
-        <div class="nb-ax" title="TWD 61/100">
+        <div class="nb-ax" title="TWD 62/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:61%"></div></div>
+          <div class="axt"><div class="axf" style="width:62%"></div></div>
         </div>
         
         
@@ -2985,7 +2991,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,36.4 3.8,38.6 7.6,40.4 11.4,36.9 15.2,34.6 19.0,32.4 22.9,38.0 26.7,33.8 30.5,32.4 34.3,27.3 38.1,19.6 41.9,21.3 45.7,21.5 49.5,20.9 53.3,22.4 57.1,21.3 61.0,20.0 64.8,20.2 68.6,14.2 72.4,16.1 76.2,15.5 80.0,10.1 83.8,14.2 87.6,20.4 91.4,16.9 95.2,23.5 99.0,24.0 102.9,24.9 106.7,29.2 110.5,32.7 114.3,32.1 118.1,31.4 121.9,33.4 125.7,33.5 129.5,26.3 133.3,24.0 137.1,20.8 141.0,17.5 144.8,13.6 148.6,15.3 152.4,19.3 156.2,24.2 160.0,30.6 163.8,29.5 167.6,31.2 171.4,32.2 175.2,30.2 179.0,32.4 182.9,35.8 186.7,34.0 190.5,30.3 194.3,34.8 198.1,27.3 201.9,33.4 205.7,32.9 209.5,39.1 213.3,37.1 217.1,39.6 221.0,42.0 224.8,37.3 228.6,34.3 232.4,29.6 236.2,25.5 240.0,28.0 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,36.4 3.8,38.6 7.6,40.4 11.4,36.9 15.2,34.6 19.0,32.4 22.9,38.0 26.7,33.8 30.5,32.4 34.3,27.3 38.1,19.6 41.9,21.3 45.7,21.5 49.5,20.9 53.3,22.4 57.1,21.3 61.0,20.0 64.8,20.2 68.6,14.2 72.4,16.1 76.2,15.5 80.0,10.1 83.8,14.2 87.6,20.4 91.4,16.9 95.2,23.5 99.0,24.0 102.9,24.9 106.7,29.2 110.5,32.7 114.3,32.1 118.1,31.4 121.9,33.4 125.7,33.5 129.5,26.3 133.3,24.0 137.1,20.8 141.0,17.5 144.8,13.6 148.6,15.3 152.4,19.3 156.2,24.2 160.0,30.6 163.8,29.5 167.6,31.2 171.4,32.2 175.2,30.2 179.0,32.4 182.9,35.8 186.7,34.0 190.5,30.3 194.3,34.8 198.1,27.3 201.9,33.4 205.7,32.9 209.5,39.1 213.3,37.1 217.1,39.6 221.0,42.0 224.8,37.3 228.6,34.3 232.4,29.6 236.2,25.5 240.0,28.0" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="28.0" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">82</span>
+        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">78</span>
         <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
       </div>
       <div class="nb-axes">
@@ -3003,9 +3009,9 @@
         </div>
         
         
-        <div class="nb-ax ax-na" title="TWD — no data">
+        <div class="nb-ax" title="TWD 49/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
+          <div class="axt"><div class="axf" style="width:49%"></div></div>
         </div>
         
         
@@ -3036,7 +3042,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,36.1 3.8,40.2 7.6,42.0 11.4,39.4 15.2,39.2 19.0,35.8 22.9,40.3 26.7,38.2 30.5,39.4 34.3,31.9 38.1,28.4 41.9,29.8 45.7,28.5 49.5,28.5 53.3,23.3 57.1,24.6 61.0,22.5 64.8,21.1 68.6,16.7 72.4,20.0 76.2,19.5 80.0,18.5 83.8,18.4 87.6,25.6 91.4,22.2 95.2,24.9 99.0,24.6 102.9,21.5 106.7,24.2 110.5,27.2 114.3,25.5 118.1,25.6 121.9,28.9 125.7,29.0 129.5,21.3 133.3,24.1 137.1,21.2 141.0,19.8 144.8,15.5 148.6,16.9 152.4,18.8 156.2,27.9 160.0,33.6 163.8,31.4 167.6,31.0 171.4,31.1 175.2,26.2 179.0,25.4 182.9,26.3 186.7,23.4 190.5,21.0 194.3,14.7 198.1,10.1 201.9,16.0 205.7,17.8 209.5,29.6 213.3,28.4 217.1,30.6 221.0,31.9 224.8,27.4 228.6,19.0 232.4,15.4 236.2,14.8 240.0,19.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,36.1 3.8,40.2 7.6,42.0 11.4,39.4 15.2,39.2 19.0,35.8 22.9,40.3 26.7,38.2 30.5,39.4 34.3,31.9 38.1,28.4 41.9,29.8 45.7,28.5 49.5,28.5 53.3,23.3 57.1,24.6 61.0,22.5 64.8,21.1 68.6,16.7 72.4,20.0 76.2,19.5 80.0,18.5 83.8,18.4 87.6,25.6 91.4,22.2 95.2,24.9 99.0,24.6 102.9,21.5 106.7,24.2 110.5,27.2 114.3,25.5 118.1,25.6 121.9,28.9 125.7,29.0 129.5,21.3 133.3,24.1 137.1,21.2 141.0,19.8 144.8,15.5 148.6,16.9 152.4,18.8 156.2,27.9 160.0,33.6 163.8,31.4 167.6,31.0 171.4,31.1 175.2,26.2 179.0,25.4 182.9,26.3 186.7,23.4 190.5,21.0 194.3,14.7 198.1,10.1 201.9,16.0 205.7,17.8 209.5,29.6 213.3,28.4 217.1,30.6 221.0,31.9 224.8,27.4 228.6,19.0 232.4,15.4 236.2,14.8 240.0,19.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="19.1" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">73</span>
+        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">79</span>
         <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
       </div>
       <div class="nb-axes">
@@ -3054,9 +3060,9 @@
         </div>
         
         
-        <div class="nb-ax ax-na" title="TWD — no data">
+        <div class="nb-ax" title="TWD 65/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
+          <div class="axt"><div class="axf" style="width:65%"></div></div>
         </div>
         
         
@@ -3087,7 +3093,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,17.1 3.8,23.0 7.6,25.6 11.4,21.2 15.2,21.7 19.0,21.8 22.9,27.7 26.7,24.9 30.5,23.1 34.3,18.0 38.1,13.8 41.9,15.7 45.7,17.0 49.5,14.3 53.3,13.1 57.1,11.4 61.0,10.4 64.8,10.8 68.6,10.1 72.4,14.3 76.2,13.5 80.0,10.1 83.8,11.5 87.6,14.4 91.4,12.1 95.2,16.3 99.0,15.7 102.9,17.7 106.7,22.1 110.5,24.8 114.3,22.2 118.1,24.3 121.9,25.6 125.7,26.7 129.5,19.6 133.3,23.7 137.1,18.5 141.0,16.0 144.8,11.4 148.6,10.5 152.4,13.2 156.2,19.8 160.0,25.2 163.8,23.6 167.6,25.4 171.4,27.1 175.2,21.5 179.0,21.6 182.9,25.5 186.7,25.6 190.5,22.9 194.3,27.8 198.1,26.0 201.9,29.4 205.7,28.4 209.5,36.5 213.3,35.1 217.1,38.7 221.0,42.0 224.8,38.1 228.6,34.6 232.4,29.4 236.2,26.7 240.0,29.2 240,42" fill="var(--muted)" opacity="0.12" stroke="none"/><polyline points="0.0,17.1 3.8,23.0 7.6,25.6 11.4,21.2 15.2,21.7 19.0,21.8 22.9,27.7 26.7,24.9 30.5,23.1 34.3,18.0 38.1,13.8 41.9,15.7 45.7,17.0 49.5,14.3 53.3,13.1 57.1,11.4 61.0,10.4 64.8,10.8 68.6,10.1 72.4,14.3 76.2,13.5 80.0,10.1 83.8,11.5 87.6,14.4 91.4,12.1 95.2,16.3 99.0,15.7 102.9,17.7 106.7,22.1 110.5,24.8 114.3,22.2 118.1,24.3 121.9,25.6 125.7,26.7 129.5,19.6 133.3,23.7 137.1,18.5 141.0,16.0 144.8,11.4 148.6,10.5 152.4,13.2 156.2,19.8 160.0,25.2 163.8,23.6 167.6,25.4 171.4,27.1 175.2,21.5 179.0,21.6 182.9,25.5 186.7,25.6 190.5,22.9 194.3,27.8 198.1,26.0 201.9,29.4 205.7,28.4 209.5,36.5 213.3,35.1 217.1,38.7 221.0,42.0 224.8,38.1 228.6,34.6 232.4,29.4 236.2,26.7 240.0,29.2" fill="none" stroke="var(--muted)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="29.2" r="2.6" fill="var(--muted)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">74</span>
+        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">68</span>
         <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
       </div>
       <div class="nb-axes">
@@ -3105,9 +3111,9 @@
         </div>
         
         
-        <div class="nb-ax ax-na" title="TWD — no data">
+        <div class="nb-ax" title="TWD 43/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
+          <div class="axt"><div class="axf" style="width:43%"></div></div>
         </div>
         
         
@@ -3138,7 +3144,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,33.5 3.8,35.1 7.6,37.8 11.4,35.1 15.2,34.0 19.0,32.0 22.9,32.5 26.7,33.9 30.5,34.7 34.3,32.4 38.1,29.4 41.9,31.9 45.7,32.9 49.5,36.0 53.3,31.6 57.1,31.2 61.0,31.0 64.8,29.7 68.6,29.2 72.4,42.0 76.2,38.8 80.0,36.5 83.8,34.6 87.6,34.6 91.4,34.1 95.2,32.7 99.0,33.2 102.9,33.3 106.7,34.8 110.5,34.9 114.3,27.0 118.1,28.5 121.9,26.7 125.7,28.3 129.5,27.3 133.3,22.0 137.1,21.3 141.0,21.2 144.8,22.3 148.6,19.9 152.4,18.6 156.2,21.3 160.0,23.6 163.8,24.2 167.6,22.0 171.4,17.8 175.2,15.1 179.0,16.4 182.9,13.7 186.7,13.9 190.5,14.0 194.3,12.9 198.1,10.9 201.9,10.5 205.7,10.1 209.5,12.4 213.3,10.7 217.1,12.5 221.0,15.0 224.8,13.9 228.6,12.9 232.4,13.0 236.2,13.5 240.0,15.5 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,33.5 3.8,35.1 7.6,37.8 11.4,35.1 15.2,34.0 19.0,32.0 22.9,32.5 26.7,33.9 30.5,34.7 34.3,32.4 38.1,29.4 41.9,31.9 45.7,32.9 49.5,36.0 53.3,31.6 57.1,31.2 61.0,31.0 64.8,29.7 68.6,29.2 72.4,42.0 76.2,38.8 80.0,36.5 83.8,34.6 87.6,34.6 91.4,34.1 95.2,32.7 99.0,33.2 102.9,33.3 106.7,34.8 110.5,34.9 114.3,27.0 118.1,28.5 121.9,26.7 125.7,28.3 129.5,27.3 133.3,22.0 137.1,21.3 141.0,21.2 144.8,22.3 148.6,19.9 152.4,18.6 156.2,21.3 160.0,23.6 163.8,24.2 167.6,22.0 171.4,17.8 175.2,15.1 179.0,16.4 182.9,13.7 186.7,13.9 190.5,14.0 194.3,12.9 198.1,10.9 201.9,10.5 205.7,10.1 209.5,12.4 213.3,10.7 217.1,12.5 221.0,15.0 224.8,13.9 228.6,12.9 232.4,13.0 236.2,13.5 240.0,15.5" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="15.5" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">85</span>
+        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">81</span>
         <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
       </div>
       <div class="nb-axes">
@@ -3156,9 +3162,9 @@
         </div>
         
         
-        <div class="nb-ax ax-na" title="TWD — no data">
+        <div class="nb-ax" title="TWD 48/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
+          <div class="axt"><div class="axf" style="width:48%"></div></div>
         </div>
         
         
@@ -3189,7 +3195,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,28.2 3.8,34.5 7.6,28.6 11.4,26.5 15.2,25.3 19.0,24.9 22.9,27.8 26.7,24.6 30.5,29.9 34.3,22.9 38.1,27.2 41.9,23.4 45.7,23.1 49.5,23.4 53.3,17.1 57.1,16.2 61.0,12.6 64.8,27.6 68.6,26.5 72.4,27.2 76.2,25.7 80.0,25.7 83.8,23.3 87.6,24.4 91.4,22.0 95.2,18.9 99.0,18.8 102.9,26.2 106.7,23.5 110.5,34.3 114.3,34.2 118.1,35.4 121.9,40.8 125.7,38.8 129.5,39.2 133.3,14.5 137.1,29.0 141.0,36.0 144.8,39.6 148.6,42.0 152.4,41.0 156.2,40.3 160.0,34.3 163.8,31.5 167.6,29.4 171.4,28.4 175.2,27.8 179.0,30.4 182.9,25.8 186.7,24.3 190.5,23.4 194.3,24.7 198.1,25.1 201.9,20.6 205.7,18.8 209.5,17.0 213.3,19.0 217.1,15.1 221.0,13.9 224.8,10.1 228.6,13.8 232.4,13.0 236.2,15.0 240.0,13.7 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,28.2 3.8,34.5 7.6,28.6 11.4,26.5 15.2,25.3 19.0,24.9 22.9,27.8 26.7,24.6 30.5,29.9 34.3,22.9 38.1,27.2 41.9,23.4 45.7,23.1 49.5,23.4 53.3,17.1 57.1,16.2 61.0,12.6 64.8,27.6 68.6,26.5 72.4,27.2 76.2,25.7 80.0,25.7 83.8,23.3 87.6,24.4 91.4,22.0 95.2,18.9 99.0,18.8 102.9,26.2 106.7,23.5 110.5,34.3 114.3,34.2 118.1,35.4 121.9,40.8 125.7,38.8 129.5,39.2 133.3,14.5 137.1,29.0 141.0,36.0 144.8,39.6 148.6,42.0 152.4,41.0 156.2,40.3 160.0,34.3 163.8,31.5 167.6,29.4 171.4,28.4 175.2,27.8 179.0,30.4 182.9,25.8 186.7,24.3 190.5,23.4 194.3,24.7 198.1,25.1 201.9,20.6 205.7,18.8 209.5,17.0 213.3,19.0 217.1,15.1 221.0,13.9 224.8,10.1 228.6,13.8 232.4,13.0 236.2,15.0 240.0,13.7" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="13.7" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">74</span>
+        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">73</span>
         <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
       </div>
       <div class="nb-axes">
@@ -3207,9 +3213,9 @@
         </div>
         
         
-        <div class="nb-ax ax-na" title="TWD — no data">
+        <div class="nb-ax" title="TWD 52/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
+          <div class="axt"><div class="axf" style="width:52%"></div></div>
         </div>
         
         
@@ -3495,7 +3501,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,40.5 3.8,39.2 7.6,40.7 11.4,41.3 15.2,40.5 19.0,38.3 22.9,36.8 26.7,34.2 30.5,32.7 34.3,30.1 38.1,36.8 41.9,35.7 45.7,31.6 49.5,30.1 53.3,38.8 57.1,42.0 61.0,39.4 64.8,36.0 68.6,37.7 72.4,38.1 76.2,35.9 80.0,42.0 83.8,38.6 87.6,35.5 91.4,31.9 95.2,28.8 99.0,29.3 102.9,25.6 106.7,19.7 110.5,15.2 114.3,17.6 118.1,19.5 121.9,16.5 125.7,12.9 129.5,19.1 133.3,22.3 137.1,22.6 141.0,23.6 144.8,20.4 148.6,19.7 152.4,19.3 156.2,14.2 160.0,10.1 163.8,13.8 167.6,15.3 171.4,13.8 175.2,20.7 179.0,20.1 182.9,24.0 186.7,20.5 190.5,20.8 194.3,18.8 198.1,17.9 201.9,15.6 205.7,15.5 209.5,22.7 213.3,18.6 217.1,24.4 221.0,23.3 224.8,24.9 228.6,25.9 232.4,31.8 236.2,35.9 240.0,38.8 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,40.5 3.8,39.2 7.6,40.7 11.4,41.3 15.2,40.5 19.0,38.3 22.9,36.8 26.7,34.2 30.5,32.7 34.3,30.1 38.1,36.8 41.9,35.7 45.7,31.6 49.5,30.1 53.3,38.8 57.1,42.0 61.0,39.4 64.8,36.0 68.6,37.7 72.4,38.1 76.2,35.9 80.0,42.0 83.8,38.6 87.6,35.5 91.4,31.9 95.2,28.8 99.0,29.3 102.9,25.6 106.7,19.7 110.5,15.2 114.3,17.6 118.1,19.5 121.9,16.5 125.7,12.9 129.5,19.1 133.3,22.3 137.1,22.6 141.0,23.6 144.8,20.4 148.6,19.7 152.4,19.3 156.2,14.2 160.0,10.1 163.8,13.8 167.6,15.3 171.4,13.8 175.2,20.7 179.0,20.1 182.9,24.0 186.7,20.5 190.5,20.8 194.3,18.8 198.1,17.9 201.9,15.6 205.7,15.5 209.5,22.7 213.3,18.6 217.1,24.4 221.0,23.3 224.8,24.9 228.6,25.9 232.4,31.8 236.2,35.9 240.0,38.8" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="38.8" r="2.6" fill="var(--down)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">78</span>
+        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">67</span>
         <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
       </div>
       <div class="nb-axes">
@@ -3513,9 +3519,9 @@
         </div>
         
         
-        <div class="nb-ax ax-na" title="TWD — no data">
+        <div class="nb-ax" title="TWD 35/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
+          <div class="axt"><div class="axf" style="width:35%"></div></div>
         </div>
         
         
@@ -3546,7 +3552,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,31.3 3.8,38.5 7.6,42.0 11.4,40.3 15.2,38.5 19.0,35.0 22.9,39.7 26.7,36.1 30.5,36.0 34.3,28.0 38.1,23.6 41.9,25.2 45.7,27.1 49.5,26.3 53.3,23.1 57.1,23.5 61.0,19.9 64.8,22.0 68.6,19.5 72.4,22.4 76.2,24.9 80.0,22.1 83.8,23.6 87.6,31.6 91.4,30.8 95.2,32.3 99.0,29.7 102.9,31.3 106.7,35.8 110.5,38.2 114.3,36.3 118.1,37.7 121.9,39.1 125.7,37.7 129.5,28.2 133.3,27.2 137.1,22.8 141.0,10.1 144.8,13.8 148.6,17.0 152.4,22.3 156.2,30.5 160.0,34.1 163.8,29.5 167.6,27.9 171.4,29.5 175.2,23.9 179.0,25.1 182.9,27.5 186.7,26.3 190.5,22.6 194.3,23.4 198.1,20.6 201.9,24.2 205.7,21.2 209.5,32.1 213.3,31.7 217.1,33.0 221.0,39.4 224.8,32.9 228.6,28.9 232.4,23.2 236.2,20.0 240.0,23.7 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,31.3 3.8,38.5 7.6,42.0 11.4,40.3 15.2,38.5 19.0,35.0 22.9,39.7 26.7,36.1 30.5,36.0 34.3,28.0 38.1,23.6 41.9,25.2 45.7,27.1 49.5,26.3 53.3,23.1 57.1,23.5 61.0,19.9 64.8,22.0 68.6,19.5 72.4,22.4 76.2,24.9 80.0,22.1 83.8,23.6 87.6,31.6 91.4,30.8 95.2,32.3 99.0,29.7 102.9,31.3 106.7,35.8 110.5,38.2 114.3,36.3 118.1,37.7 121.9,39.1 125.7,37.7 129.5,28.2 133.3,27.2 137.1,22.8 141.0,10.1 144.8,13.8 148.6,17.0 152.4,22.3 156.2,30.5 160.0,34.1 163.8,29.5 167.6,27.9 171.4,29.5 175.2,23.9 179.0,25.1 182.9,27.5 186.7,26.3 190.5,22.6 194.3,23.4 198.1,20.6 201.9,24.2 205.7,21.2 209.5,32.1 213.3,31.7 217.1,33.0 221.0,39.4 224.8,32.9 228.6,28.9 232.4,23.2 236.2,20.0 240.0,23.7" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="23.7" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">76</span>
+        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">75</span>
         <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
       </div>
       <div class="nb-axes">
@@ -3564,9 +3570,9 @@
         </div>
         
         
-        <div class="nb-ax" title="TWD 47/100">
+        <div class="nb-ax" title="TWD 43/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:47%"></div></div>
+          <div class="axt"><div class="axf" style="width:43%"></div></div>
         </div>
         
         
@@ -3597,7 +3603,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,27.3 3.8,24.6 7.6,24.5 11.4,28.6 15.2,26.0 19.0,30.5 22.9,29.8 26.7,25.7 30.5,24.9 34.3,23.4 38.1,31.0 41.9,23.6 45.7,23.6 49.5,22.6 53.3,37.8 57.1,36.8 61.0,28.3 64.8,25.8 68.6,30.1 72.4,33.3 76.2,32.7 80.0,38.6 83.8,30.9 87.6,29.5 91.4,27.0 95.2,24.0 99.0,26.0 102.9,22.4 106.7,23.2 110.5,14.9 114.3,16.2 118.1,20.4 121.9,18.0 125.7,10.1 129.5,17.5 133.3,19.1 137.1,20.1 141.0,18.3 144.8,24.0 148.6,23.8 152.4,25.4 156.2,24.7 160.0,26.2 163.8,30.2 167.6,31.1 171.4,28.5 175.2,33.1 179.0,32.8 182.9,37.4 186.7,40.2 190.5,42.0 194.3,28.0 198.1,23.5 201.9,25.7 205.7,25.4 209.5,28.6 213.3,26.0 217.1,32.5 221.0,30.9 224.8,27.0 228.6,26.6 232.4,33.7 236.2,37.9 240.0,35.9 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,27.3 3.8,24.6 7.6,24.5 11.4,28.6 15.2,26.0 19.0,30.5 22.9,29.8 26.7,25.7 30.5,24.9 34.3,23.4 38.1,31.0 41.9,23.6 45.7,23.6 49.5,22.6 53.3,37.8 57.1,36.8 61.0,28.3 64.8,25.8 68.6,30.1 72.4,33.3 76.2,32.7 80.0,38.6 83.8,30.9 87.6,29.5 91.4,27.0 95.2,24.0 99.0,26.0 102.9,22.4 106.7,23.2 110.5,14.9 114.3,16.2 118.1,20.4 121.9,18.0 125.7,10.1 129.5,17.5 133.3,19.1 137.1,20.1 141.0,18.3 144.8,24.0 148.6,23.8 152.4,25.4 156.2,24.7 160.0,26.2 163.8,30.2 167.6,31.1 171.4,28.5 175.2,33.1 179.0,32.8 182.9,37.4 186.7,40.2 190.5,42.0 194.3,28.0 198.1,23.5 201.9,25.7 205.7,25.4 209.5,28.6 213.3,26.0 217.1,32.5 221.0,30.9 224.8,27.0 228.6,26.6 232.4,33.7 236.2,37.9 240.0,35.9" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="35.9" r="2.6" fill="var(--down)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">67</span>
+        <span class="nb-cscore band-neutral" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">56</span>
         <span class="nb-verdict"><span class="l-en">Hold off — timing against you</span><span class="l-zh">暂缓 — 时机不利</span></span>
       </div>
       <div class="nb-axes">
@@ -3615,9 +3621,9 @@
         </div>
         
         
-        <div class="nb-ax ax-na" title="TWD — no data">
+        <div class="nb-ax" title="TWD 35/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
+          <div class="axt"><div class="axf" style="width:35%"></div></div>
         </div>
         
         
@@ -3750,7 +3756,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,40.4 3.8,41.8 7.6,42.0 11.4,38.0 15.2,36.9 19.0,35.1 22.9,35.9 26.7,35.6 30.5,37.8 34.3,35.6 38.1,38.3 41.9,40.8 45.7,38.1 49.5,37.2 53.3,33.9 57.1,33.8 61.0,29.6 64.8,27.4 68.6,28.6 72.4,33.0 76.2,30.9 80.0,29.4 83.8,29.1 87.6,28.2 91.4,23.2 95.2,24.9 99.0,25.5 102.9,23.8 106.7,23.6 110.5,24.2 114.3,21.6 118.1,23.0 121.9,25.5 125.7,24.9 129.5,24.7 133.3,23.0 137.1,23.6 141.0,28.4 144.8,26.8 148.6,25.8 152.4,25.5 156.2,26.9 160.0,31.3 163.8,29.8 167.6,27.2 171.4,20.2 175.2,15.6 179.0,14.9 182.9,13.1 186.7,15.7 190.5,13.6 194.3,10.1 198.1,14.5 201.9,17.2 205.7,16.3 209.5,18.5 213.3,18.5 217.1,14.5 221.0,19.0 224.8,17.6 228.6,16.9 232.4,15.3 236.2,14.2 240.0,17.3 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,40.4 3.8,41.8 7.6,42.0 11.4,38.0 15.2,36.9 19.0,35.1 22.9,35.9 26.7,35.6 30.5,37.8 34.3,35.6 38.1,38.3 41.9,40.8 45.7,38.1 49.5,37.2 53.3,33.9 57.1,33.8 61.0,29.6 64.8,27.4 68.6,28.6 72.4,33.0 76.2,30.9 80.0,29.4 83.8,29.1 87.6,28.2 91.4,23.2 95.2,24.9 99.0,25.5 102.9,23.8 106.7,23.6 110.5,24.2 114.3,21.6 118.1,23.0 121.9,25.5 125.7,24.9 129.5,24.7 133.3,23.0 137.1,23.6 141.0,28.4 144.8,26.8 148.6,25.8 152.4,25.5 156.2,26.9 160.0,31.3 163.8,29.8 167.6,27.2 171.4,20.2 175.2,15.6 179.0,14.9 182.9,13.1 186.7,15.7 190.5,13.6 194.3,10.1 198.1,14.5 201.9,17.2 205.7,16.3 209.5,18.5 213.3,18.5 217.1,14.5 221.0,19.0 224.8,17.6 228.6,16.9 232.4,15.3 236.2,14.2 240.0,17.3" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="17.3" r="2.6" fill="var(--down)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">68</span>
+        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">69</span>
         <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
       </div>
       <div class="nb-axes">
@@ -3801,7 +3807,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,37.8 3.8,40.8 7.6,42.0 11.4,40.8 15.2,40.9 19.0,39.7 22.9,41.2 26.7,42.0 30.5,41.4 34.3,40.1 38.1,37.1 41.9,34.1 45.7,34.7 49.5,33.6 53.3,31.4 57.1,33.5 61.0,32.4 64.8,30.7 68.6,29.0 72.4,29.1 76.2,26.4 80.0,24.1 83.8,26.5 87.6,26.5 91.4,28.5 95.2,26.2 99.0,26.5 102.9,27.4 106.7,27.0 110.5,27.5 114.3,26.8 118.1,25.5 121.9,25.8 125.7,24.7 129.5,23.2 133.3,25.3 137.1,24.9 141.0,25.2 144.8,26.6 148.6,28.8 152.4,27.4 156.2,27.7 160.0,27.3 163.8,23.9 167.6,21.7 171.4,20.2 175.2,19.5 179.0,19.8 182.9,19.1 186.7,19.7 190.5,19.6 194.3,21.7 198.1,20.0 201.9,20.8 205.7,20.0 209.5,19.1 213.3,18.6 217.1,15.5 221.0,16.0 224.8,14.1 228.6,10.1 232.4,11.0 236.2,10.9 240.0,13.0 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,37.8 3.8,40.8 7.6,42.0 11.4,40.8 15.2,40.9 19.0,39.7 22.9,41.2 26.7,42.0 30.5,41.4 34.3,40.1 38.1,37.1 41.9,34.1 45.7,34.7 49.5,33.6 53.3,31.4 57.1,33.5 61.0,32.4 64.8,30.7 68.6,29.0 72.4,29.1 76.2,26.4 80.0,24.1 83.8,26.5 87.6,26.5 91.4,28.5 95.2,26.2 99.0,26.5 102.9,27.4 106.7,27.0 110.5,27.5 114.3,26.8 118.1,25.5 121.9,25.8 125.7,24.7 129.5,23.2 133.3,25.3 137.1,24.9 141.0,25.2 144.8,26.6 148.6,28.8 152.4,27.4 156.2,27.7 160.0,27.3 163.8,23.9 167.6,21.7 171.4,20.2 175.2,19.5 179.0,19.8 182.9,19.1 186.7,19.7 190.5,19.6 194.3,21.7 198.1,20.0 201.9,20.8 205.7,20.0 209.5,19.1 213.3,18.6 217.1,15.5 221.0,16.0 224.8,14.1 228.6,10.1 232.4,11.0 236.2,10.9 240.0,13.0" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="13.0" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">64</span>
+        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">65</span>
         <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
       </div>
       <div class="nb-axes">
@@ -3819,9 +3825,9 @@
         </div>
         
         
-        <div class="nb-ax" title="TWD 48/100">
+        <div class="nb-ax" title="TWD 47/100">
           <div class="axl">TWD</div>
-          <div class="axt"><div class="axf" style="width:48%"></div></div>
+          <div class="axt"><div class="axf" style="width:47%"></div></div>
         </div>
         
         
@@ -3852,7 +3858,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,29.9 3.8,27.5 7.6,28.8 11.4,28.1 15.2,23.7 19.0,20.9 22.9,24.8 26.7,19.6 30.5,20.3 34.3,18.4 38.1,21.5 41.9,19.1 45.7,20.7 49.5,15.9 53.3,21.1 57.1,23.9 61.0,22.3 64.8,21.7 68.6,26.9 72.4,30.8 76.2,30.2 80.0,36.1 83.8,35.5 87.6,33.5 91.4,31.2 95.2,28.7 99.0,32.9 102.9,30.9 106.7,27.5 110.5,22.4 114.3,18.7 118.1,27.3 121.9,23.7 125.7,20.0 129.5,27.7 133.3,30.5 137.1,28.3 141.0,23.5 144.8,18.2 148.6,20.6 152.4,19.1 156.2,14.9 160.0,10.1 163.8,16.5 167.6,15.8 171.4,16.5 175.2,22.6 179.0,23.0 182.9,30.1 186.7,34.1 190.5,40.1 194.3,35.9 198.1,30.1 201.9,26.0 205.7,24.4 209.5,32.1 213.3,30.3 217.1,36.5 221.0,34.6 224.8,32.8 228.6,31.9 232.4,33.6 236.2,37.6 240.0,42.0 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,29.9 3.8,27.5 7.6,28.8 11.4,28.1 15.2,23.7 19.0,20.9 22.9,24.8 26.7,19.6 30.5,20.3 34.3,18.4 38.1,21.5 41.9,19.1 45.7,20.7 49.5,15.9 53.3,21.1 57.1,23.9 61.0,22.3 64.8,21.7 68.6,26.9 72.4,30.8 76.2,30.2 80.0,36.1 83.8,35.5 87.6,33.5 91.4,31.2 95.2,28.7 99.0,32.9 102.9,30.9 106.7,27.5 110.5,22.4 114.3,18.7 118.1,27.3 121.9,23.7 125.7,20.0 129.5,27.7 133.3,30.5 137.1,28.3 141.0,23.5 144.8,18.2 148.6,20.6 152.4,19.1 156.2,14.9 160.0,10.1 163.8,16.5 167.6,15.8 171.4,16.5 175.2,22.6 179.0,23.0 182.9,30.1 186.7,34.1 190.5,40.1 194.3,35.9 198.1,30.1 201.9,26.0 205.7,24.4 209.5,32.1 213.3,30.3 217.1,36.5 221.0,34.6 224.8,32.8 228.6,31.9 232.4,33.6 236.2,37.6 240.0,42.0" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="42.0" r="2.6" fill="var(--down)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-neutral" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">52</span>
+        <span class="nb-cscore band-neutral" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">53</span>
         <span class="nb-verdict"><span class="l-en">Hold off — timing against you</span><span class="l-zh">暂缓 — 时机不利</span></span>
       </div>
       <div class="nb-axes">
@@ -3925,14 +3931,14 @@
       <span class="neg">-0.75%</span>
       <span class="lad up"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
     </div>
-    <div data-mtf='{"D": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": true, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 58.0, "rsi5": 59.0, "stoch": 69.0, "spark_rsi": [59.0, 59.9, 63.1, 61.6, 56.7, 58.2, 61.8, 61.0, 66.7, 58.9, 64.0, 50.9, 51.7, 50.7, 47.0, 54.3, 57.5, 61.2, 62.4, 57.9], "spark_stoch": [55.7, 81.1, 94.9, 95.1, 81.0, 69.4, 69.9, 80.3, 91.9, 80.3, 80.2, 50.1, 33.4, 5.1, 1.8, 12.3, 30.2, 54.3, 68.1, 68.8], "spark_hist": [0.633, 17.837, 42.268, 49.154, 33.665, 27.057, 35.604, 34.895, 58.26, 44.136, 57.162, 8.586, -20.63, -44.569, -76.187, -60.97, -33.254, 5.469, 34.773, 32.404]}, "3D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 61.0, "rsi5": 63.0, "stoch": 46.0, "spark_rsi": [53.5, 56.0, 59.6, 61.3, 62.5, 59.8, 60.5, 54.1, 56.8, 58.6, 61.9, 56.7, 59.4, 63.5, 61.0, 65.6, 57.3, 54.7, 62.5, 61.0], "spark_stoch": [10.0, 23.4, 41.5, 51.9, 60.4, 60.6, 59.5, 54.1, 57.7, 63.9, 79.6, 79.4, 81.0, 82.1, 85.0, 91.3, 67.1, 44.1, 35.2, 46.0], "spark_hist": [-241.859, -185.832, -112.864, -49.043, 0.348, 11.5, 19.752, -17.783, -24.176, -17.221, 11.586, -4.335, 2.696, 38.709, 41.766, 78.724, 44.972, 0.079, 39.04, 47.074]}, "W": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 66.0, "rsi5": 73.0, "stoch": 92.0, "spark_rsi": [67.6, 70.8, 74.3, 76.4, 63.0, 58.3, 49.2, 53.3, 59.6, 62.4, 65.2, 61.8, 61.7, 62.6, 60.5, 64.0, 65.5, 62.1, 65.0, 66.0], "spark_stoch": [39.7, 18.9, 37.8, 54.4, 41.9, 22.9, 0.0, 4.2, 14.7, 28.1, 40.2, 42.5, 44.4, 44.5, 45.6, 48.4, 51.8, 64.4, 78.7, 92.1], "spark_hist": [-21.393, -14.059, 27.435, 73.978, 7.559, -80.601, -221.15, -267.465, -219.502, -150.193, -66.781, -48.484, -44.451, -36.738, -54.543, -30.973, -4.351, -18.895, -2.275, 11.493]}, "M": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 15.7, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 80.0, "rsi5": 81.0, "stoch": 63.0, "spark_rsi": [73.3, 66.2, 69.0, 68.0, 64.4, 63.8, 69.1, 71.4, 72.7, 76.4, 79.7, 80.2, 82.4, 83.0, 83.4, 87.0, 75.5, 77.9, 79.3, 80.0], "spark_stoch": [100.0, 88.5, 80.2, 69.6, 61.4, 48.2, 49.3, 64.7, 84.8, 94.3, 98.6, 100.0, 100.0, 100.0, 100.0, 100.0, 83.5, 70.4, 59.4, 62.9], "spark_hist": [386.058, 351.544, 354.416, 319.469, 240.452, 162.947, 180.013, 213.479, 237.159, 310.487, 420.184, 468.085, 530.103, 545.96, 523.196, 616.994, 522.991, 491.68, 475.2, 439.155]}}' style="margin-top:8px"></div>
+    <div data-mtf='{"D": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": true, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 58.0, "rsi5": 59.0, "stoch": 69.0, "spark_rsi": [59.0, 59.9, 63.1, 61.6, 56.7, 58.2, 61.8, 61.0, 66.7, 58.9, 64.0, 50.9, 51.7, 50.7, 47.0, 54.3, 57.5, 61.2, 62.4, 57.9], "spark_stoch": [55.7, 81.1, 94.9, 95.1, 81.0, 69.4, 69.9, 80.3, 91.9, 80.3, 80.2, 50.1, 33.4, 5.1, 1.8, 12.3, 30.2, 54.3, 68.1, 68.8], "spark_hist": [0.633, 17.837, 42.268, 49.154, 33.665, 27.057, 35.604, 34.895, 58.26, 44.136, 57.162, 8.586, -20.63, -44.569, -76.187, -60.97, -33.254, 5.469, 34.773, 32.403]}, "3D": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 61.0, "rsi5": 63.0, "stoch": 46.0, "spark_rsi": [53.5, 56.0, 59.6, 61.3, 62.5, 59.8, 60.5, 54.1, 56.8, 58.6, 61.9, 56.7, 59.4, 63.5, 61.0, 65.6, 57.3, 54.7, 62.5, 61.0], "spark_stoch": [10.0, 23.4, 41.5, 51.9, 60.4, 60.6, 59.5, 54.1, 57.7, 63.9, 79.6, 79.4, 81.0, 82.1, 85.0, 91.3, 67.1, 44.1, 35.2, 46.0], "spark_hist": [-241.859, -185.832, -112.864, -49.043, 0.348, 11.5, 19.752, -17.783, -24.176, -17.221, 11.586, -4.335, 2.696, 38.709, 41.766, 78.724, 44.972, 0.079, 39.04, 47.074]}, "W": {"macd_pos": true, "macd_cross_up": true, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 66.0, "rsi5": 73.0, "stoch": 92.0, "spark_rsi": [67.6, 70.8, 74.3, 76.4, 63.0, 58.3, 49.2, 53.3, 59.6, 62.4, 65.2, 61.8, 61.7, 62.6, 60.5, 64.0, 65.5, 62.1, 65.0, 66.0], "spark_stoch": [39.7, 18.9, 37.8, 54.4, 41.9, 22.9, 0.0, 4.2, 14.7, 28.1, 40.2, 42.5, 44.4, 44.5, 45.6, 48.4, 51.8, 64.4, 78.7, 92.1], "spark_hist": [-21.393, -14.059, 27.435, 73.978, 7.559, -80.601, -221.15, -267.465, -219.502, -150.193, -66.781, -48.484, -44.451, -36.738, -54.543, -30.973, -4.351, -18.895, -2.275, 11.492]}, "M": {"macd_pos": true, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": true, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 15.7, "stoch_cross_up": false, "stoch_cross_dn": true, "rsi14": 80.0, "rsi5": 81.0, "stoch": 63.0, "spark_rsi": [73.3, 66.2, 69.0, 68.0, 64.4, 63.8, 69.1, 71.4, 72.7, 76.4, 79.7, 80.2, 82.4, 83.0, 83.4, 87.0, 75.5, 77.9, 79.3, 80.0], "spark_stoch": [100.0, 88.5, 80.2, 69.6, 61.4, 48.2, 49.3, 64.7, 84.8, 94.3, 98.6, 100.0, 100.0, 100.0, 100.0, 100.0, 83.5, 70.4, 59.4, 62.9], "spark_hist": [386.058, 351.544, 354.416, 319.469, 240.452, 162.947, 180.013, 213.479, 237.159, 310.487, 420.184, 468.085, 530.103, 545.96, 523.196, 616.994, 522.991, 491.68, 475.2, 439.155]}}' style="margin-top:8px"></div>
   </div>
   
 </div>
 
 
 
-<p class="muted small"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-18 02:43 UTC · <span class="l-en">Keyless data: yfinance · Bank of Canada VALET · StatsCan WDS · FRED. Educational context, not investment advice.</span><span class="l-zh">无密钥数据：yfinance · 加拿大央行 VALET · 统计局 WDS · FRED。教育性背景，非投资建议。</span></p>
+<p class="muted small"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-18 06:55 UTC · <span class="l-en">Keyless data: yfinance · Bank of Canada VALET · StatsCan WDS · FRED. Educational context, not investment advice.</span><span class="l-zh">无密钥数据：yfinance · 加拿大央行 VALET · 统计局 WDS · FRED。教育性背景，非投资建议。</span></p>
 
 <script src="mtf.js"></script>
 <script src="theme.js"></script>

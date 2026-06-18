@@ -1,0 +1,117 @@
+{
+  "schema": "policy_intent_desk.v1",
+  "is_context_only": true,
+  "lens": "realpolitik",
+  "generated_at": "2026-06-18T06:50:43.970454+00:00",
+  "state_asof": "2026-06-18",
+  "model": "deepseek-v4-pro",
+  "regime_context": "A coordinated low-real-yield regime is forming: the Fed under Warsh institutionalizes a strict 2% target and restraint on unorthodox easing, while Treasury (Bessent) runs explicit yield suppression via bill-heavy issuance and dealer-intermediation reform. Strategic re-industrialization (chip tariffs, nuclear-for-AI) directs capital domestically. The consensus narrative that a 'Mar-a-Lago Accord' seeks deliberate dollar weakening diverges from revealed interest: policy actions\u2014front-end bill dominance, stablecoin promotion, and no dollar intervention\u2014reinforce dollar demand and low real yields for funding, not depreciation.",
+  "theses": [
+    {
+      "id": "2026-06-18-065043-1",
+      "actor": "admin",
+      "subject": "BIL",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 126,
+      "thesis": "Treasury's bill-heavy issuance, the Fed's commitment to reinvest MBS runoff into T-bills, and growing stablecoin demand create a structural bid for front-end Treasuries. In a turning-point Goldilocks regime with elevated equity drawdown risk, BIL should act as a relative safe haven vs SPY.",
+      "evidence": [
+        "Treasury keeping public framing on risk-free rate affordability; no coupon auction-size increase at Aug 2026 refunding.",
+        "Fed perpetuates MBS runoff reinvestment into T-bills through 2026.",
+        "Stablecoin issuers/rails as a structural T-bill bid confirmed in dollar/debt theater.",
+        "Market state shows drawdown_risk ~14.8% and turning_point true, supporting defensive rotation."
+      ],
+      "dissent": "If the market's hawkish rate expectations push front-end yields higher, BIL prices may stagnate while SPY benefits from strong nominal growth in Goldilocks.",
+      "falsifier": {
+        "text": "Treasury announces a coupon auction-size increase at the Aug 2026 refunding.",
+        "check": {
+          "kind": "soft",
+          "reason": "'BIL' not a scorable proxy (no local price series)"
+        }
+      },
+      "check_by": "2026-12-11"
+    },
+    {
+      "id": "2026-06-18-065043-2",
+      "actor": "admin",
+      "subject": "ITA",
+      "lean": "overweight",
+      "conviction": "medium",
+      "horizon_d": 126,
+      "thesis": "A structural defense spending super-cycle driven by NATO commitments, missile defense (Golden Dome), shipbuilding, and munitions restocking is a high-confidence policy vector. ITA benefits from multi-year procurement visibility independent of fragile Iran ceasefire headlines.",
+      "evidence": [
+        "NATO budget commitments cited as FACT (budget/NATO).",
+        "Golden Dome/missile defense, shipbuilding, drones explicitly highlighted in defense theater.",
+        "Defense was a high-inflow theme sustaining Q1 2026 ETF flows.",
+        "Ceasefire in Iran does not unwind the super-cycle; defense bid persists regardless."
+      ],
+      "dissent": "A rapid geopolitical de-escalation and subsequent US budget reallocation could cap defense spending and trigger sector underperformance.",
+      "falsifier": {
+        "text": "A major peace treaty leads to announced cuts in US defense procurement budgets for the upcoming fiscal year.",
+        "check": {
+          "kind": "soft",
+          "reason": "'ITA' not a scorable proxy (no local price series)"
+        }
+      },
+      "check_by": "2026-12-11"
+    },
+    {
+      "id": "2026-06-18-065043-3",
+      "actor": "admin",
+      "subject": "SMH",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 90,
+      "thesis": "The 25% advanced-chip tariff stays in force and the covered list may expand, creating a protective moat for domestic semiconductor capacity. SMH holds key beneficiaries of this import substitution drive.",
+      "evidence": [
+        "Open prediction: 25% advanced-chip tariff remains in force and/or covered list expands.",
+        "China tech war in a negotiated PAUSE still includes de-risking mandate funding domestic chip onshoring.",
+        "Domestic semiconductors/fabs listed as a FACT-mechanism rotation target."
+      ],
+      "dissent": "A SCOTUS strike-down or a bilateral trade deal eliminating the tariff would immediately unwind the moat, causing SMH to underperform SPY.",
+      "falsifier": {
+        "text": "The 25% advanced-chip tariff is rescinded or ruled unconstitutional.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "SMH",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 90
+        }
+      },
+      "check_by": "2026-10-22"
+    },
+    {
+      "id": "2026-06-18-065043-4",
+      "actor": "admin",
+      "subject": "XLF",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 126,
+      "thesis": "Treasury's dealer-intermediation reforms, SEC central-clearing expansion, and expected eSLR reform progress improve the operating environment for dealer banks, while the low-real-yield regime steepens the curve and boosts net interest margins relative to flat/inverted expectations.",
+      "evidence": [
+        "Open predictions: concrete eSLR-reform progress and SEC central-clearing expansion.",
+        "Treasury buybacks and intermediation changes listed as FACT mechanisms for financials/dealer banks.",
+        "Market's hawkish path relative to the dot implies steepening potential if front-end yields stay anchored."
+      ],
+      "dissent": "If regulatory reforms stall and the yield curve remains inverted, net interest margins could compress, undercutting financials vs SPY.",
+      "falsifier": {
+        "text": "The eSLR reform proposal is formally abandoned or delayed beyond 2026 by all banking regulators.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "XLF",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 126
+        }
+      },
+      "check_by": "2026-12-11"
+    }
+  ],
+  "track_record": null,
+  "confidence": "low",
+  "degraded_reason": null,
+  "disclaimer": "Policy intent desk \u2014 realpolitik, context only, never scored or sized. Each lean is a fallible, FALSIFIABLE judgement (proxy vs SPY, with a check-by date), not a trade or a position size. Intent is inferred from interests; treat it as a hypothesis with a track record, not an oracle."
+}
