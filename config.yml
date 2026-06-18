@@ -1840,6 +1840,31 @@ news_vector:
   query_terms: []                 # GDELT OR-clause override (default = narrative core)
 
 # =============================================================================
+# China macro news, official policy-tone & narrative regime (engine/china_news.py +
+# collectors/china_news.py) — the China sibling of macro_news/narrative_regime, powering
+# the "📰 Macro news, sentiment & catalysts" panel on china.html. KEYLESS, DISPLAY-ONLY,
+# never scored. The CCTV 新闻联播 policy-tone series is accrued by the collector; the
+# Eastmoney 全球财经快讯 flash headlines are fetched at build time and cached.
+# =============================================================================
+china_news:
+  enabled: true                   # MASTER SWITCH for the Eastmoney headline fetch + LLM brief
+  backfill_days: 120              # collector: CCTV days fetched on --full-history (tone series seed)
+  incremental_days: 6             # collector: CCTV days re-fetched each run (fills weekend/missed gaps)
+  request_pace_s: 0.4             # collector: politeness pause between CCTV day-page fetches
+  tone_window: 90                 # engine: z-score window (trading days) for the policy-tone
+  tone_smooth: 5                  # engine: rolling-mean smoothing of the sparse daily tone
+  max_records: 60                 # Eastmoney flashes pulled before the macro-theme gate
+  max_show: 12                    # macro headlines shown after filtering
+  cache_dir: data/china_news/flash_cache
+  cache_ttl_hours: 12
+  # OPTIONAL AI brief — the only AI; off even if a key is present. Provider-agnostic
+  # (DeepSeek/Anthropic wire), degrade-to-keyless, never scored.
+  llm_brief: false
+  llm_model: deepseek-chat
+  base_url: https://api.deepseek.com/anthropic   # omit / null for native Anthropic
+  api_key_env: DEEPSEEK_API_KEY
+
+# =============================================================================
 # Company-profile translation (engine/translate.py + scripts/translate_profiles.py).
 # The single-stock analyzer's "Business profile" blurb is sourced English free text
 # (Wikipedia/SEC) — not a UI string, so it can't be dual-emitted like the rest of the
@@ -2023,6 +2048,12 @@ forex:
     spy:          [yahoo, SPY]
     eem:          [hk, EEM]             # EM-equity risk proxy (already collected under hk)
     cny_onshore:  [fred, DEXCHUS]       # onshore USD/CNY — vs offshore CNH=F = the CNH basis
+    btc:          [yahoo, "BTC-USD"]    # bitcoin — dollar cross-asset transmission leg (2014->)
+    us10y_real:   [fred, DFII10]        # US 10y TIPS real yield — the dollar's structural anchor (2003->)
+    breakeven_10y: [fred, T10YIE]       # 10y inflation breakeven — real-vs-reflation smile arm
+    fed_bs:       [fred, WALCL]          # Fed balance sheet (weekly) — USD-liquidity leg
+    on_rrp:       [fred, RRPONTSYD]      # overnight RRP (daily) — net-liquidity drain
+    reer_us:      [fred, RBUSBIS]        # US BIS real-effective rate — dollar valuation (monthly, lagged)
 
   cnh:                                  # offshore(CNH)-onshore(CNY) basis = China stress / capital-flow gauge
     stress_bps: 150                     # basis above this (offshore yuan weaker) = depreciation / outflow stress
@@ -2124,6 +2155,91 @@ forex:
     timeline_days: 60
     shock:                          # per-pair |move| % that flags an FX shock (lower vol than commods)
       enter_pct: {EURUSD: 1.5, USDJPY: 2.0, GBPUSD: 1.8, AUDUSD: 2.0, USDCAD: 1.5, USDCHF: 1.8, USDMXN: 3.0, USDBRL: 3.5, USDCNH: 1.2}
+
+  # ---------------------------------------------------------------------------
+  # DOLLAR DESK — a deepened, multi-signal read of the master variable (broad USD).
+  # ALL DISPLAY-ONLY / never scored: FX violates UIP, the dollar move is often the
+  # tightening itself (coincident), and every forex conviction backtest fails the
+  # deflated-Sharpe bar. These are REGIME / CONTEXT reads, not trade calls. See
+  # research/FOREX_DASHBOARD.md + reports/forex-calibration.md.
+  # ---------------------------------------------------------------------------
+  dollar_desk:
+    real_rate:                      # US 10y real yield (DFII10) + 10y breakeven regime
+      z_lookback_d: 504             # ~2y z-score window for the real-yield level
+      chg_window_d: 63             # breakeven / real-yield change horizon
+      high_z: 0.5                   # real-yield z above this = restrictive (USD-supportive)
+      low_z: -0.5
+      be_high_z: 0.3                # breakeven-change z above this = reflation arm
+      be_low_z: -0.3               # ...below this = disinflation arm
+    fed_path:                       # implied Fed-funds path from ZQ futures (US leg only)
+      group: rate_futures
+      name: zq_path                 # cols m1,m3,m6,m12 (annualized % implied policy rate)
+      near: m1
+      far: m12
+      reprice_window_d: 21         # change in the 12m-ahead implied rate = repricing momentum
+      reprice_bps: 10              # |Δ| beyond this (bps) = a hawkish/dovish repricing lean
+    positioning:                    # CFTC COT net-spec on the US Dollar Index (cot_dollar)
+      cot: cot_dollar
+      pctile_lookback_d: 756        # ~3y rolling percentile (min-periods guarded for thin tails)
+      crowded_long_pctile: 0.85
+      crowded_short_pctile: 0.15
+    valuation:                      # US BIS REER vs its long-run mean (reuse value_signal)
+      gap_window_d: 1260
+      z_lookback_d: 1260
+      pub_lag_d: 45
+      stretch_z: 1.5               # |z| beyond this = "stretched" rich/cheap (position-size damper)
+      rich_gap: 0.01               # |log REER gap| beyond this labels rich / cheap (else fair)
+    trend:                          # broad-USD multi-horizon trend STACK (breadth/coherence read)
+      horizons_d: [21, 63, 126, 252]
+      up_frac: 0.75                # >= this fraction of horizons up = "up"; <= 1-this = "down"
+    liquidity:                      # net Fed liquidity (WALCL - RRP) rate-of-change (context only)
+      chg_window_d: 63
+      z_lookback_d: 252
+    smile:                          # enrich the existing 4-quad smile with a confirmation tally
+      triple_red_window_d: 21       # USD- & SPY- & UST- together over this window = haven loss
+
+  # ---------------------------------------------------------------------------
+  # DOLLAR CROSS-ASSET TRANSMISSION — how today's broad-USD move co-moves with the
+  # other markets (equities / commodities / bonds / EM / crypto). CONTEMPORANEOUS,
+  # unstable, regime-dependent CO-MOVEMENT — never a forecast or a trade signal.
+  # Betas are computed LIVE from the store (no hardcoded literature numbers).
+  # ---------------------------------------------------------------------------
+  transmission:
+    fast_window_d: 63               # ~quarter rolling beta/corr (the "now" read)
+    slow_window_d: 252             # ~year rolling beta/corr (the structural read)
+    stale_corr: 0.10               # |fast corr| below this = "decoupled / indeterminate"
+    flat_roc: 0.005                # |broad-USD ROC over the fast window| below this = "flat"
+    assets:                         # label -> [store-group, name, sign_note]; sign computed live
+      SPY:    [yahoo, SPY,             "US equities"]
+      EEM:    [hk,    EEM,             "EM equities"]
+      "GC=F": [yahoo, "GC=F",          "gold"]
+      "CL=F": [yahoo, "CL=F",          "oil"]
+      "HG=F": [yahoo, "HG=F",          "copper"]
+      UST10:  [fred,  DGS10,           "10y Treasury (price = -yield)"]
+      BTC:    [yahoo, "BTC-USD",       "bitcoin"]
+
+  # ---------------------------------------------------------------------------
+  # CURRENCY STRENGTH METER — rank each currency by trailing trend strength,
+  # independent of any single pair. DESCRIPTIVE, never predictive (green != buy).
+  # Built from the per-pair dollar-orthogonalized residuals + the broad-USD trend.
+  # ---------------------------------------------------------------------------
+  strength:
+    horizons_d: {"1w": 5, "1m": 21, "3m": 63}
+    default_horizon: "1m"
+
+  # ---------------------------------------------------------------------------
+  # INTERNATIONAL SCORECARDS — honest PIT backtests (reuse validation.backtest_core).
+  # Carry harvests a real risk premium with a FAT LEFT TAIL; trend-following the
+  # dollar is weak/whippy. Shown with a pre/post-2008 regime split; experimental.
+  # ---------------------------------------------------------------------------
+  scorecards:
+    cost_bps: 2                     # one-way spread cost per unit |Δpos|
+    split_date: "2008-09-15"        # Lehman — the carry-crash regime boundary
+    carry:
+      top_n: 3                      # long the top-N carry currencies, short the bottom-N
+      rebalance_d: 21              # monthly rebalance
+      vol_target: true             # inverse-vol scale the basket (carry-crash haircut)
+      vol_window_d: 63
 
 # -----------------------------------------------------------------------------
 # Bitcoin Vector signal engine (Phase 2). Architecture reverse-engineered from

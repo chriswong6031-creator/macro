@@ -136,6 +136,70 @@ table.tbl th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:
 .meta-foot{font-size:12px;color:var(--faint);margin-top:8px}
 .note{font-size:13px;color:var(--muted);line-height:1.6}
 .note b{color:var(--ink)}
+/* ===================== Dollar Desk ===================== */
+.section-h{display:flex;align-items:baseline;gap:8px;margin:30px 0 4px;flex-wrap:wrap}
+.section-h .sn{color:var(--blue);font-weight:800;font-size:13px}
+.section-h h2{margin:0;font-size:15px;font-weight:800;color:var(--ink);text-transform:none;letter-spacing:-.01em}
+.section-h .sh-sub{font-size:12px;color:var(--muted);margin-left:2px}
+.desk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-top:14px}
+.desk-tile{background:#f6f8fc;border:1px solid var(--grid);border-radius:12px;padding:12px 13px}
+html[data-theme="dark"] .desk-tile{background:#11151c}
+.dt-lab{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.dt-val{font-size:16px;font-weight:800;color:var(--ink);margin:4px 0 2px;line-height:1.25}
+.dt-sub{font-size:11.5px;color:var(--muted);line-height:1.45}
+.lead-tag{display:inline-block;margin-top:7px;padding:2px 7px;border-radius:6px;font-size:9.5px;font-weight:700;letter-spacing:.02em;text-transform:uppercase}
+.lead-tag.coincident{background:rgba(245,173,66,.14);color:#9a6a10}
+.lead-tag.context{background:#eef1f6;color:var(--muted)}
+html[data-theme="dark"] .lead-tag.context{background:#222732}
+.dt-chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700}
+.dt-chip.up,.dt-chip.supportive,.dt-chip.rich{background:rgba(26,127,67,.13);color:var(--green)}
+.dt-chip.down,.dt-chip.soft,.dt-chip.cheap{background:rgba(211,11,11,.12);color:var(--red)}
+.dt-chip.mixed,.dt-chip.neutral,.dt-chip.fair,.dt-chip.steady{background:#eef1f6;color:var(--muted)}
+html[data-theme="dark"] .dt-chip.mixed,html[data-theme="dark"] .dt-chip.neutral,html[data-theme="dark"] .dt-chip.fair,html[data-theme="dark"] .dt-chip.steady{background:#222732}
+.hstack{display:flex;gap:3px;margin-top:7px}
+.hbar{flex:1;height:20px;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;line-height:1}
+.hbar small{font-size:8px;opacity:.85;font-weight:600}
+.hbar.up{background:var(--green)}.hbar.down{background:var(--red)}
+.desk-lean{display:inline-block;margin-top:2px;padding:5px 14px;border-radius:999px;font-size:14px;font-weight:800}
+.desk-lean.supportive{background:rgba(26,127,67,.13);color:var(--green)}
+.desk-lean.soft{background:rgba(211,11,11,.12);color:var(--red)}
+.desk-lean.mixed{background:#eef1f6;color:var(--muted)}
+html[data-theme="dark"] .desk-lean.mixed{background:#222732}
+.tr-flag{display:inline-block;margin-top:8px;padding:4px 10px;border-radius:8px;font-size:11.5px;font-weight:700;background:rgba(211,11,11,.12);color:var(--red)}
+/* transmission */
+.stab{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.stab.stable{background:var(--green)}.stab.flipping{background:var(--amber)}.stab.decoupled{background:var(--faint)}
+.eff.headwind{color:var(--red);font-weight:700}.eff.tailwind{color:var(--green);font-weight:700}.eff.neutral{color:var(--muted)}
+.tnote{font-size:11.5px;color:var(--muted);margin-top:3px}
+/* currency strength meter */
+.seg-toggle{display:inline-flex;gap:4px}
+.seg-btn{padding:3px 11px;border-radius:999px;font-size:11.5px;font-weight:600;color:var(--muted);background:#eef1f6;border:1px solid var(--grid);cursor:pointer}
+.seg-btn.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+html[data-theme="dark"] .seg-btn{background:#222732}
+.smeter[hidden]{display:none}
+.srow{display:grid;grid-template-columns:72px 1fr 60px;align-items:center;gap:12px;margin:6px 0}
+.sccy{font-weight:800;color:var(--ink);font-size:13.5px}
+.sccy .em{font-size:9px;color:var(--amber);font-weight:700;margin-left:4px;vertical-align:middle}
+.sbar{position:relative;height:16px;background:#eef1f6;border-radius:8px;overflow:hidden}
+html[data-theme="dark"] .sbar{background:#222732}
+.sbar .smid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--faint);opacity:.6}
+.sbar .sfill{position:absolute;top:0;bottom:0}
+.sbar .sfill.pos{background:var(--green);border-radius:0 8px 8px 0}
+.sbar .sfill.neg{background:var(--red);border-radius:8px 0 0 8px}
+.spct{text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted)}
+/* scorecards */
+.sc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(305px,1fr));gap:16px;margin-top:6px}
+.sc-card{background:var(--card);border:1px solid var(--grid);border-radius:14px;padding:18px}
+.sc-name{font-size:16px;font-weight:800;color:var(--ink)}
+.sc-thesis{font-size:12px;color:var(--muted);margin:4px 0 10px;line-height:1.5}
+.sc-met{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:8px 0}
+.sc-met .m{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+.sc-met .m b{display:block;font-size:16px;color:var(--ink);font-weight:800;margin-top:2px}
+.sc-split{font-size:12px;margin-top:8px}
+.sc-split .sr{display:grid;grid-template-columns:54px 1fr 1fr 1fr;gap:6px;padding:3px 0;border-bottom:1px solid var(--grid);font-variant-numeric:tabular-nums}
+.sc-split .sr.h{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.03em;border:none}
+.sc-pos{color:var(--green);font-weight:700}.sc-neg{color:var(--red);font-weight:700}
+.sc-tilt{font-size:11.5px;color:var(--muted);margin-top:8px}
 </style>
 {% include "_vector_polish.html.j2" %}
 </head>
@@ -243,8 +307,16 @@ table.tbl th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:
   <p class="lead">{{ t('A dollar-first currency board. The broad-dollar regime sits on top; each pair is scored on its move AFTER stripping the shared dollar beta, so the board is not one repeated dollar bet. Verdicts are RISK-CONTEXT, not trade calls.', '以美元为先的货币面板。广义美元格局置于顶部；每个货币对在剥离共同的美元贝塔后再评分，因此整个面板并非重复押注美元。结论为风险背景，而非交易建议。') }}
   <span class="faint">· {{ t('As of', '截至') }} {{ as_of }}</span></p>
 
-  <!-- ===================== BROAD-DOLLAR MASTER HERO ===================== -->
-  <div class="grid cols-2" style="margin-bottom:18px">
+  {# state-word -> (en, zh) maps for the desk chips #}
+  {% set LEAN = {'supportive': ('USD-supportive','偏多美元'), 'soft': ('USD-soft','偏空美元'), 'neutral': ('Neutral','中性')} %}
+  {% set POSST = {'crowded_long': ('Crowded long','拥挤做多'), 'crowded_short': ('Crowded short','拥挤做空'), 'neutral': ('Neutral','中性')} %}
+  {% set VALL = {'rich': ('Rich','偏贵'), 'cheap': ('Cheap','偏便宜'), 'fair': ('Fair','合理')} %}
+  {% set CONF = {'high': ('High','高'), 'medium': ('Medium','中'), 'low': ('Low','低'), 'none': ('None','无')} %}
+
+  <!-- ===================== §01 · DOLLAR DESK ===================== -->
+  <div class="section-h"><span class="sn">§01</span><h2>{{ t('Dollar Desk — the master variable', '美元桌 · 主控变量') }}</h2>
+    <span class="sh-sub">{{ t('the dollar routes ~89% of FX turnover and conditions commodities, equities, bonds & crypto', '美元承载约89%的外汇交易量，并影响大宗商品、股票、债券与加密货币') }}</span></div>
+  <div class="grid cols-2" style="margin-bottom:14px">
     <div class="card">
       <h2>{{ t('Broad-dollar master · the dollar smile', '广义美元主控 · 美元微笑') }}</h2>
       <div class="hero-state" style="color:{{ dollar.color }}">{{ t(dollar.regime, dollar.regime_zh) }}</div>
@@ -254,6 +326,11 @@ table.tbl th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:
         {{ t('risk', '风险') }} <b>{{ t(dollar.risk_word, dollar.risk_word_zh) }}</b>
         <span class="faint">({{ dollar.risk_off }})</span>
       </div>
+      {% if desk and desk.lean %}
+      {% set lc = 'supportive' if 'supportive' in desk.lean else ('soft' if 'soft' in desk.lean else 'mixed') %}
+      <div style="margin-top:10px"><span class="desk-lean {{ lc }}">{{ t(desk.lean, desk.lean_zh) }}</span>
+        <span class="sub faint" style="margin-left:6px">{{ t('balance of context flags — a summary, not a score', '背景信号的平衡 — 仅为汇总，非评分') }}</span></div>
+      {% endif %}
       <div style="margin-top:12px">
         {% if dollar.favored %}<span class="sub">{{ t('Favored:', '受青睐：') }}</span>
         {% for f in dollar.favored %}<span class="pill fav">{{ f }}</span>{% endfor %}
@@ -266,16 +343,147 @@ table.tbl th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:
         <div class="kpi">{{ t('EM leg', '新兴经济体') }}<b>{{ dollar.eme }}</b></div>
       </div>
       {% if dollar.dollar_day %}<span class="flag warn">⚑ {{ t('Dollar day — broad-$ move dominates; per-pair confidence is haircut.', '美元日 — 广义美元波动主导；各货币对信心已折减。') }}</span>{% endif %}
+      {% if desk and desk.smile and desk.smile.triple_red %}<span class="tr-flag">⚑ {{ t('Triple-red — USD, equities & Treasuries falling together: the dollar is NOT acting as a haven.', '三红 — 美元、股票与国债同步下跌：美元未发挥避险作用。') }}</span>{% endif %}
       <div class="sub" style="margin-top:12px">{{ t('The smile: the dollar tends to strengthen at BOTH ends — a US-led growth premium and a global risk-off haven bid — and weaken in the calm, synchronized-growth middle. This regime conditions every pair below.', '美元微笑：美元在两端都倾向走强 — 美国增长溢价与全球避险买盘 — 而在平静的同步增长中段走软。该格局影响下方每个货币对。') }}</div>
     </div>
     <div class="card">
       <h2>{{ t('Broad dollar & risk-off composite', '广义美元与避险综合') }}</h2>
       {{ dollar.chart | safe }}
+      {% if real_rate_chart %}<div style="margin-top:8px">{{ real_rate_chart | safe }}</div>
+      <div class="sub faint">{{ t('US 10y real yield is the dollar\'s structural anchor (rising real yields tend to support the USD — coincident, not a forecast).', '美国10年期实际收益率是美元的结构性锚（实际收益率上行通常支撑美元 — 同步关系，非预测）。') }}</div>{% endif %}
     </div>
   </div>
 
-  <!-- ===================== PER-PAIR SIGNAL BOARD ===================== -->
-  <h2 style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:24px 0 10px">{{ t('Currency board · idiosyncratic (ex-dollar) signals', '货币面板 · 特异（剥离美元）信号') }}</h2>
+  {% if desk %}
+  <div class="card" style="margin-bottom:18px">
+    <h2>{{ t('Dollar signal stack', '美元信号栈') }} <span class="faint">· {{ t('all display-only context — never scored', '皆为展示性背景 — 从不评分') }}</span></h2>
+    <div class="desk-grid">
+      {% if desk.real_rate %}{% set r = desk.real_rate %}
+      <div class="desk-tile">
+        <div class="dt-lab">{{ t('Real-rate regime', '实际利率格局') }}</div>
+        <div class="dt-val">{{ t(r.regime, r.regime_zh) }}</div>
+        <div class="dt-sub">{{ t('10y real', '10年实际') }} <b>{{ r.real_yield }}%</b>{% if r.breakeven %} · {{ t('breakeven', '盈亏平衡') }} {{ r.breakeven }}%{% endif %}
+          · <span class="dt-chip {{ r.lean }}">{{ t(LEAN[r.lean][0], LEAN[r.lean][1]) }}</span></div>
+        <span class="lead-tag coincident">{{ t('coincident', '同步') }}</span>
+      </div>{% endif %}
+
+      {% if desk.fed_path %}{% set f = desk.fed_path %}
+      <div class="desk-tile">
+        <div class="dt-lab">{{ t('Fed policy path (US leg)', '美联储路径（美国端）') }}</div>
+        <div class="dt-val">{{ '%+g'|format(f.path_bps) }}bp <span style="font-size:11px;font-weight:600;color:var(--muted)">{{ t('priced to 12m', '12个月定价') }}</span></div>
+        <div class="dt-sub">{{ f.near_rate }}% → {{ f.far_rate }}% · <span class="dt-chip {{ 'up' if f.lean=='hawkish_repricing' else ('down' if f.lean=='dovish_repricing' else 'steady') }}">{{ t(f.lean_label, f.lean_zh) }}</span></div>
+        <span class="lead-tag coincident">{{ t('coincident', '同步') }}</span>
+      </div>{% endif %}
+
+      {% if desk.positioning %}{% set p = desk.positioning %}
+      <div class="desk-tile">
+        <div class="dt-lab">{{ t('USD positioning (COT)', '美元持仓（COT）') }}</div>
+        <div class="dt-val">{{ p.pctile|round|int }}<span style="font-size:11px">{{ t('th pctile', '百分位') }}</span></div>
+        <div class="dt-sub"><span class="dt-chip {{ 'up' if p.state=='crowded_long' else ('down' if p.state=='crowded_short' else 'neutral') }}">{{ t(POSST[p.state][0], POSST[p.state][1]) }}</span>{% if p.net_pct_oi is not none %} · {{ t('spec net', '投机净') }} {{ p.net_pct_oi }}% OI{% endif %}</div>
+        <span class="lead-tag context">{{ t('context · unmeasured', '背景 · 未测') }}</span>
+      </div>{% endif %}
+
+      {% if desk.valuation %}{% set v = desk.valuation %}
+      <div class="desk-tile">
+        <div class="dt-lab">{{ t('Valuation (REER)', '估值（REER）') }}</div>
+        <div class="dt-val">{{ '%+.1f'|format(v.gap_pct) }}% <span style="font-size:11px;font-weight:600;color:var(--muted)">{{ t('vs 5y mean', '相对5年均值') }}</span></div>
+        <div class="dt-sub"><span class="dt-chip {{ v.label }}">{{ t(VALL[v.label][0], VALL[v.label][1]) }}</span>{% if v.stretched %} · <b>{{ t('stretched', '偏离') }}</b>{% endif %}</div>
+        <span class="lead-tag context">{{ t('context · multi-year', '背景 · 多年') }}</span>
+      </div>{% endif %}
+
+      {% if desk.trend %}{% set trd = desk.trend %}
+      <div class="desk-tile">
+        <div class="dt-lab">{{ t('Trend stack (broad USD)', '趋势栈（广义美元）') }}</div>
+        <div class="dt-val">{{ trd.n_up }}/{{ trd.n_tot }} <span style="font-size:11px;font-weight:600;color:var(--muted)">{{ t('horizons up', '周期上行') }}</span></div>
+        <div class="hstack">{% for h in trd.horizons %}<div class="hbar {{ 'up' if h.up else 'down' }}">{{ h.d }}d<small>{{ '%+.1f'|format(h.roc_pct) }}%</small></div>{% endfor %}</div>
+        <span class="lead-tag context">{{ t('context · breadth', '背景 · 广度') }}</span>
+      </div>{% endif %}
+
+      {% if desk.liquidity %}{% set l = desk.liquidity %}
+      <div class="desk-tile">
+        <div class="dt-lab">{{ t('USD liquidity', '美元流动性') }}</div>
+        <div class="dt-val">{{ '%+g'|format(l.net_chg_bn) }}B <span style="font-size:11px;font-weight:600;color:var(--muted)">/ {{ l.window_d }}d</span></div>
+        <div class="dt-sub">{{ t('net Fed liquidity (WALCL−RRP)', '净美联储流动性（WALCL−RRP）') }} · <span class="dt-chip {{ l.dir }}">{{ t(LEAN[l.dir][0], LEAN[l.dir][1]) }}</span></div>
+        <span class="lead-tag context">{{ t('context · slow', '背景 · 缓慢') }}</span>
+      </div>{% endif %}
+
+      {% if desk.smile %}{% set s = desk.smile %}
+      <div class="desk-tile">
+        <div class="dt-lab">{{ t('Smile confirmation', '微笑确认') }}</div>
+        <div class="dt-val">{{ t(CONF[s.confidence][0], CONF[s.confidence][1]) }} <span style="font-size:11px;font-weight:600;color:var(--muted)">· {{ s.n_confirm }}/3 {{ t('legs', '项') }}</span></div>
+        <div class="dt-sub">{% if s.confirms %}{{ t('confirmed by', '确认于') }} {{ s.confirms|join(', ') }}{% else %}{{ t('no corroborating legs', '无佐证项') }}{% endif %}</div>
+        <span class="lead-tag coincident">{{ t('coincident', '同步') }}</span>
+      </div>{% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ===================== §02 · DOLLAR TRANSMISSION ===================== -->
+  {% if transmission and transmission.rows %}
+  <div class="section-h"><span class="sn">§02</span><h2>{{ t('Dollar transmission — what a stronger/weaker USD pushes on', '美元传导 · 美元强弱推动了什么') }}</h2>
+    <span class="sh-sub">{{ t('contemporaneous co-movement, not a forecast', '同步共动，非预测') }}</span></div>
+  <div class="grid cols-2">
+    <div class="card">
+      <h2>{{ t('Cross-asset co-movement with the broad dollar', '与广义美元的跨资产共动') }}</h2>
+      <p class="sub" style="margin:2px 0 8px"><b>{{ t(transmission.read, transmission.read_zh) }}</b></p>
+      <table class="tbl">
+        <thead><tr>
+          <th>{{ t('Asset', '资产') }}</th>
+          <th>{{ transmission.fast_d }}d {{ t('corr', '相关') }}</th>
+          <th>{{ transmission.slow_d }}d</th>
+          <th>{{ t('If USD ↑', '若美元↑') }}</th>
+          <th>{{ t('Stability', '稳定性') }}</th>
+        </tr></thead>
+        <tbody>
+        {% for r in transmission.rows %}
+          <tr>
+            <td>{{ t(r.label, r.label_zh) }}{% if r.real_corr is defined %}<br><span class="tnote">{{ t('real-rate leg', '实际利率项') }} {{ '%+.2f'|format(r.real_corr) }} {{ t('vs Δreal-yield', '对Δ实际收益率') }}</span>{% endif %}{% if r.regime_split is defined %}<br><span class="tnote">{{ t('calm', '平静') }} {{ r.regime_split.get('calm','—') }} · {{ t('stress', '压力') }} {{ r.regime_split.get('stress','—') }}</span>{% endif %}</td>
+            <td>{{ '%+.2f'|format(r.corr_fast) if r.corr_fast is not none else '—' }}</td>
+            <td>{{ '%+.2f'|format(r.corr_slow) if r.corr_slow is not none else '—' }}</td>
+            <td><span class="eff {{ r.effect }}">{% if r.effect=='headwind' %}{{ t('headwind', '逆风') }}{% elif r.effect=='tailwind' %}{{ t('tailwind', '顺风') }}{% else %}{{ t('decoupled', '脱钩') }}{% endif %}</span></td>
+            <td><span class="stab {{ r.stability }}"></span>{% if r.stability=='stable' %}{{ t('stable', '稳定') }}{% elif r.stability=='flipping' %}{{ t('flipping', '翻转') }}{% else %}{{ t('decoupled', '脱钩') }}{% endif %}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h2>{{ t('Correlation to the broad dollar', '与广义美元的相关性') }} <span class="faint">· {{ transmission.fast_d }}d</span></h2>
+      {{ transmission.chart | safe }}
+      <div class="sub faint" style="margin-top:8px">{{ t('CONTEMPORANEOUS co-movement, not causation or a forecast. Dollar↔asset betas are regime-dependent and unstable — sign flips happen (the dollar move is often the same risk/tightening impulse). "If USD ↑" reads off today\'s sign and can reverse. The EM channel has a slow (~1–1.5y) financial-conditions lead in the literature; everything in this grid is daily and coincident.', '同步共动，非因果或预测。美元与各资产的贝塔随格局变化且不稳定 — 符号会翻转（美元波动往往就是同一个风险/紧缩脉冲）。"若美元↑"读取的是当前符号，可能反转。文献中新兴市场渠道存在约1–1.5年的金融条件领先；本表均为日频同步关系。') }}</div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ===================== §03 · CURRENCY STRENGTH METER ===================== -->
+  {% if strength and strength.horizons %}
+  <div class="section-h"><span class="sn">§03</span><h2>{{ t('Currency strength meter', '货币强弱计') }}</h2>
+    <span class="sh-sub">{{ t('which currencies lead, independent of any single pair — descriptive trend, not a buy list', '哪些货币领先，独立于任一货币对 — 描述性趋势，非买入清单') }}</span></div>
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <h2 style="margin:0">{{ t('Trailing strength vs the average currency', '相对平均货币的近端强弱') }}</h2>
+      <div class="seg-toggle" id="strength-toggle">
+        {% for hk in strength.order %}<button class="seg-btn {{ 'on' if hk==strength.default else '' }}" data-h="{{ hk }}">{{ hk }}</button>{% endfor %}
+      </div>
+    </div>
+    {% for hk, rows in strength.horizons.items() %}
+    <div class="smeter" data-h="{{ hk }}" {% if hk != strength.default %}hidden{% endif %}>
+      {% for r in rows %}
+      <div class="srow">
+        <div class="sccy">{{ r.ccy }}{% if r.em %}<span class="em" title="EM / managed">{{ t('EM', '新兴') }}</span>{% endif %}</div>
+        <div class="sbar"><span class="smid"></span><span class="sfill {{ 'pos' if r.strength>=0 else 'neg' }}" style="width:{{ (r.strength*50)|abs|round(1) }}%;{{ 'left:50%' if r.strength>=0 else 'right:50%' }}"></span></div>
+        <div class="spct">{{ '%+.1f'|format(r.vs_usd_pct) }}%</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+    <div class="sub faint" style="margin-top:8px">{{ t('Each currency\'s average appreciation against all the others over the window (bars, standardized), with its move vs USD on the right. Built from the dollar-orthogonalized pair residuals. DESCRIPTIVE trailing trend — green never means buy. EM/managed currencies (CNH, MXN, BRL) are noisier.', '每种货币在该周期内相对其他所有货币的平均升值（柱状，标准化），右侧为其相对美元的变动。基于剥离美元的货币对残差构建。描述性近端趋势 — 绿色绝不代表买入。新兴/受管理货币（离岸人民币、墨西哥比索、巴西雷亚尔）噪声更大。') }}</div>
+  </div>
+  {% endif %}
+
+  <!-- ===================== §04 · PER-PAIR SIGNAL BOARD ===================== -->
+  <div class="section-h"><span class="sn">§04</span><h2>{{ t('Currency board — idiosyncratic (ex-dollar) signals', '货币面板 · 特异（剥离美元）信号') }}</h2>
+    <span class="sh-sub">{{ t('each pair scored on its move AFTER stripping the shared dollar beta — the only calibrated, scored leg', '每个货币对在剥离共同美元贝塔后评分 — 唯一经校准、参与评分的部分') }}</span></div>
   {% for sec in sections %}
   <div class="sec-head">{{ t(sec.label, sec.zh) }} <span class="faint">· {{ sec.pairs|length }}</span></div>
   <div class="board-grid">
@@ -359,8 +567,9 @@ table.tbl th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:
   </div>
   {% endfor %}
 
-  <!-- ===================== CARRY & VALUATION TABLE ===================== -->
-  <div class="card" style="margin-top:20px">
+  <!-- ===================== §05 · CARRY & VALUATION TABLE ===================== -->
+  <div class="section-h"><span class="sn">§05</span><h2>{{ t('Carry & valuation — cross-pair', '套息与估值 · 跨货币对') }}</h2></div>
+  <div class="card">
     <h2>{{ t('Carry & valuation — cross-pair', '套息与估值 · 跨货币对') }}</h2>
     <table class="tbl">
       <thead><tr>
@@ -386,6 +595,48 @@ table.tbl th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:
     </table>
     <div class="sub faint" style="margin-top:8px">{{ t('Carry % = foreign minus US short rate (annualized). Carry/vol penalizes fragile high-vol carry. REER gap = real-effective rate vs its 5y mean (+ = rich → mean-reversion headwind). Carry has fat-tailed crash risk — see the honesty note below.', '套息 % = 外币减美国短端利率（年化）。套息/波动惩罚高波动的脆弱套息。REER偏离 = 实际有效汇率相对5年均值（+ = 偏贵 → 均值回归阻力）。套息具肥尾崩盘风险 — 见下方诚信说明。') }}</div>
   </div>
+
+  <!-- ===================== §06 · INTERNATIONAL SCORECARDS ===================== -->
+  {% if scorecards %}
+  {% macro scrow(seg, m) %}<div class="sr"><span>{{ seg }}</span>
+    <span class="{{ 'sc-pos' if (m.cagr or 0)>=0 else 'sc-neg' }}">{{ '%+.1f'|format(m.cagr) if m.cagr is not none else '—' }}%</span>
+    <span>{{ '%.2f'|format(m.sharpe) if m.sharpe is not none else '—' }}</span>
+    <span class="sc-neg">{{ '%.0f'|format(m.maxdd) if m.maxdd is not none else '—' }}%</span></div>{% endmacro %}
+  <div class="section-h"><span class="sn">§06</span><h2>{{ t('International scorecards', '国际记分卡') }}</h2>
+    <span class="sh-sub">{{ t('honest PIT backtests — risk premia with fat tails, not free alpha', '诚实的时点回测 — 带肥尾的风险溢价，非免费超额收益') }}</span></div>
+  <div class="sc-grid">
+    {% for c in scorecards %}
+    <div class="sc-card">
+      {% if c.key == 'carry' %}
+        <div class="sc-name">{{ t('G10 carry basket', 'G10套息篮子') }}</div>
+        <div class="sc-thesis">{{ t('Long the highest-carry G10 currencies vs USD, short the lowest (vol-scaled, monthly). Carry harvests a REAL risk premium but crashes in risk-off — the Sharpe flatters; the drawdown and negative skew are the truth.', '做多套息最高的G10货币、做空最低者（按波动缩放，月度调仓）。套息是真实的风险溢价，但在避险时崩盘 — 夏普比率具误导性，回撤与负偏度才是真相。') }}</div>
+      {% elif c.key == 'dollar_trend' %}
+        <div class="sc-name">{{ t('Dollar trend overlay', '美元趋势叠加') }}</div>
+        <div class="sc-thesis">{{ t('Long the dollar index when its 12-month trend is up, else flat. A crash-avoidance overlay vs buy & hold — NOT alpha (broad-dollar trend is weak and whippy).', '当美元指数12个月趋势向上时做多，否则空仓。相对买入持有的避险叠加 — 非超额收益（广义美元趋势弱且反复）。') }}</div>
+      {% endif %}
+      {% set fm = c.metrics.full %}
+      <div class="sc-met">
+        <div class="m">{{ t('CAGR', '年化') }}<b class="{{ 'warn-pos' if (fm.cagr or 0)>=0 else 'warn-neg' }}">{{ '%+.1f'|format(fm.cagr) if fm.cagr is not none else '—' }}%</b></div>
+        <div class="m">{{ t('Sharpe', '夏普') }}<b>{{ '%.2f'|format(fm.sharpe) if fm.sharpe is not none else '—' }}</b></div>
+        <div class="m">{{ t('Max DD', '最大回撤') }}<b class="warn-neg">{{ '%.0f'|format(fm.maxdd) if fm.maxdd is not none else '—' }}%</b></div>
+      </div>
+      <div class="sc-split">
+        <div class="sr h"><span></span><span>{{ t('CAGR', '年化') }}</span><span>{{ t('Sharpe', '夏普') }}</span><span>{{ t('MaxDD', '回撤') }}</span></div>
+        {{ scrow(t('Full', '全样本'), c.metrics.full) }}
+        {% if c.metrics.pre %}{{ scrow(t('Pre-08', '08前'), c.metrics.pre) }}{% endif %}
+        {% if c.metrics.post %}{{ scrow(t('Post-08', '08后'), c.metrics.post) }}{% endif %}
+        {% if c.metrics.full.skew is not none %}<div class="sr"><span>{{ t('Skew', '偏度') }}</span><span class="{{ 'sc-neg' if c.metrics.full.skew<0 else '' }}" style="grid-column:span 2">{{ '%.2f'|format(c.metrics.full.skew) }}</span><span class="sc-neg">{{ '%.0f'|format(c.metrics.full.worst_month) }}%</span></div>{% endif %}
+      </div>
+      {% if c.key == 'carry' and c.longs %}
+      <div class="sc-tilt">{{ t('Now', '当前') }}: {{ t('long', '做多') }} <b>{{ c.longs|join(' ') }}</b> · {{ t('short', '做空') }} <b>{{ c.shorts|join(' ') }}</b></div>
+      {% elif c.key == 'dollar_trend' %}
+      <div class="sc-tilt">{{ t('Now', '当前') }}: <b>{% if c.in_market %}{{ t('long the dollar (trend up)', '做多美元（趋势向上）') }}{% else %}{{ t('flat (trend down)', '空仓（趋势向下）') }}{% endif %}</b>{% if c.hold %} · {{ t('buy & hold MaxDD', '买入持有最大回撤') }} {{ '%.0f'|format(c.hold.maxdd) }}%{% endif %}</div>
+      {% endif %}
+      <div class="sub faint" style="margin-top:8px;font-size:11px">{{ t('Net of', '净额扣除') }} {{ '2' }}bp {{ t('one-way cost · display-only / experimental · span', '单边成本 · 仅供展示/实验 · 区间') }} {{ c.span }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
 
   <!-- ===================== ALERT TIMELINE ===================== -->
   {% if timeline %}
@@ -413,9 +664,10 @@ table.tbl th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:
     <div class="note">
       <p>{{ t('Each pair is scored by a multi-factor conviction engine — the same machinery as the Commodity Vector — over its DOLLAR-ORTHOGONALIZED residual: trend & structure (idiosyncratic, ex-dollar), carry (foreign minus US short rate, vol-penalized), risk appetite (the global risk-off composite times the currency\'s archetype beta — havens rally, risk currencies fall in stress), the per-pair risk index, residual shocks, and COT positioning when available. The score maps to a LONG / SHORT / FLAT bias on the BASE currency vs USD.', '每个货币对由一个多因子信心引擎评分 — 与大宗商品向量同一套机制 — 基于其剥离美元后的残差：趋势与结构（特异、去美元）、套息（外币减美国短端利率，按波动折减）、风险偏好（全球避险综合乘以货币原型贝塔 — 避险货币上涨、风险货币在压力下下跌）、单货币对风险指数、残差冲击，以及（可用时）COT持仓。评分映射为基础货币对美元的做多/做空/观望倾向。') }}</p>
       <p><b>{{ t('Honesty bar.', '诚信底线。') }}</b> {{ t('FX violates uncovered interest parity (the carry "puzzle"), and carry has fat-tailed crash risk that clusters with equity crises (1998 / 2008 / 2015 / 2020 / 2024). So these are RISK-CONTEXT reads, not trade signals or measured alpha. Weights are MEASURED by split-half forward-return calibration (Spearman IC, split 2015, peg windows excised) — the glyph on each factor marks its verdict: ✓ CONFIRMED (held sign in both halves), ⇄ INVERTED (robustly predicts the opposite — e.g. the carry forward-premium puzzle), ~ DIRECTIONAL (full sample only), · CONTEXT (weak). Most FX factors land DIRECTIONAL or CONTEXT, so confidence stays dampened until a pair has ≥2 robust factors. Pegs & intervention zones (USD/JPY MoF, SNB, managed USD/CNH) cap or flatten the verdict.', '外汇违反无抛补利率平价（套息“谜题”），且套息具有与股市危机同步聚集的肥尾崩盘风险（1998/2008/2015/2020/2024）。因此这些是风险背景解读，而非交易信号或已测得的超额收益。权重由前后半段远期收益校准测得（Spearman IC，2015分割，剔除挂钩窗口）— 每个因子的字形标注其判定：✓ 已确认（两半段同号）、⇄ 反向（稳健预测相反方向，如套息远期溢价之谜）、~ 有方向（仅全样本）、· 背景（弱）。多数外汇因子落入有方向或背景，故在某货币对具备≥2个稳健因子前信心保持折减。挂钩与干预区间（美元/日元财务省、瑞士央行、受管理的美元/离岸人民币）会限制或抹平结论。') }}</p>
-      <p><b>{{ t('Data.', '数据。') }}</b> {{ t('Free / keyless: Yahoo FX spot, FRED policy & short rates + broad-dollar legs, CFTC Commitments of Traders.', '免费/无密钥：Yahoo外汇即期、FRED政策与短端利率+广义美元分项、CFTC交易商持仓报告。') }}
+      <p><b>{{ t('The Dollar Desk (§01) is display-only.', '美元桌（§01）仅供展示。') }}</b> {{ t('The dollar is the master variable — it conditions commodities, equities, bonds and crypto — so we read it deeply: real-rate regime, the Fed policy path (US leg of the rate differential), COT positioning, REER valuation, a multi-horizon trend stack, USD liquidity, and a smile-confirmation tally. But NONE of it is scored. The dollar move is often the tightening itself (coincident), FX direction is famously unforecastable (Meese-Rogoff), and every dollar leg is labeled coincident or context. The "lean" is a balance of context flags — a summary, not a trade call. There is deliberately no aggregate "USD → BUY/SELL".', '美元是主控变量 — 它影响大宗商品、股票、债券与加密货币 — 因此我们深入解读：实际利率格局、美联储政策路径（利差的美国端）、COT持仓、REER估值、多周期趋势栈、美元流动性，以及微笑确认计数。但这些都不参与评分。美元波动往往就是紧缩本身（同步），外汇方向出了名地不可预测（Meese-Rogoff），每个美元项都标注为同步或背景。"倾向"是背景信号的平衡 — 仅为汇总，非交易建议。我们刻意不给出汇总的"美元→买/卖"。') }}</p>
+      <p><b>{{ t('Transmission (§02) is contemporaneous.', '传导（§02）为同步关系。') }}</b> {{ t('Dollar↔asset correlations are computed live and are regime-dependent and unstable — sign flips happen, and the stability dot flags them. Gold is shown with its real-rate leg; the 10y-Treasury sign is unstable because the rate channel and haven channel oppose each other. This is a map of how today\'s dollar move is rippling, not a forecast — and it complements the cross-asset PCA on the Cross-Asset page (which asks "are the markets one bet?") rather than duplicating it. Scorecards (§06) are honest PIT backtests of risk premia with fat tails; the Max-DD and skew are the truth the Sharpe hides.', '美元与各资产的相关性为实时计算，随格局变化且不稳定 — 符号会翻转，稳定性圆点会标记之。黄金附带其实际利率项；10年期国债符号不稳定，因为利率渠道与避险渠道相互抵消。这是当前美元波动如何扩散的地图，而非预测 — 它与跨资产页面的PCA（"各市场是否同一笔交易？"）互补而非重复。记分卡（§06）是对带肥尾风险溢价的诚实时点回测；最大回撤与偏度才是夏普比率掩盖的真相。') }}</p>
+      <p><b>{{ t('Data.', '数据。') }}</b> {{ t('Free / keyless: Yahoo FX spot, FRED policy & short rates + broad-dollar legs + real yields (DFII10) + breakevens + Fed balance sheet & RRP + BIS REER, CFTC Commitments of Traders, and Fed-funds (ZQ) futures for the policy path.', '免费/无密钥：Yahoo外汇即期、FRED政策与短端利率+广义美元分项+实际收益率（DFII10）+盈亏平衡+美联储资产负债表与RRP+BIS实际有效汇率、CFTC交易商持仓、以及联邦基金（ZQ）期货政策路径。') }}
       {% if not cot_ok %}<span class="flag info">ℹ {{ t('COT positioning is temporarily unavailable (CFTC endpoint outage); it populates on the next successful collection.', 'COT持仓暂不可用（CFTC接口故障）；将在下次成功采集时填充。') }}</span>{% endif %}</p>
-      <p class="meta-foot">{{ t('Coming next: REER value & real-rate factors, the full pair board (GBP, CAD, CHF, EM tiles), positioning + carry tables, MTF confluence, and an alert timeline.', '后续：REER估值与实际利率因子、完整货币对面板（英镑、加元、瑞郎、新兴市场）、持仓+套息表、多周期共振、警报时间线。') }}</p>
       <p class="meta-foot">{{ t('History', '历史') }} {{ cal_span }} · {{ t('built', '构建于') }} {{ built }}</p>
     </div>
   </div>
@@ -424,7 +676,22 @@ table.tbl th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:
 <script>
 window.__CHART_SWAP__ = { colors:{}, labels:{
   "Broad USD":"广义美元","Risk-off":"避险","Rebased = 100":"再基准化 = 100",
-  "Idiosyncratic (ex-$)":"特异（去美元）","exogenous bid":"外生买盘","exogenous pressure":"外生压力"} };
+  "Idiosyncratic (ex-$)":"特异（去美元）","exogenous bid":"外生买盘","exogenous pressure":"外生压力",
+  "US 10y real yield":"美国10年实际收益率","Broad USD = 100":"广义美元 = 100"} };
+</script>
+<script>
+/* Currency strength meter — horizon toggle (1w / 1m / 3m) */
+(function(){
+  var wrap = document.getElementById('strength-toggle');
+  if(!wrap) return;
+  wrap.addEventListener('click', function(e){
+    var btn = e.target.closest('.seg-btn');
+    if(!btn) return;
+    var h = btn.getAttribute('data-h');
+    wrap.querySelectorAll('.seg-btn').forEach(function(b){ b.classList.toggle('on', b===btn); });
+    document.querySelectorAll('.smeter').forEach(function(m){ m.hidden = (m.getAttribute('data-h') !== h); });
+  });
+})();
 </script>
 <script src="theme.js"></script>
 <script src="chart_i18n.js"></script>
