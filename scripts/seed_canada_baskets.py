@@ -293,6 +293,103 @@ BASKETS: dict[str, dict] = {
     },
 }
 
+CURATED = "2026-06-18"   # member-expansion pass
+
+# ── 2026-06-18 expansion: on-thesis adds from the canada_search cache. bid -> [(ticker, rationale)];
+# validated against the close cache like the base set (fail-loud on a miss).
+EXPANSION: dict[str, list[tuple[str, str]]] = {
+    "ca_banks": [
+        ("GSY.TO", "goeasy — non-prime consumer lender"),
+    ],
+    "ca_insurers": [
+        ("DFY.TO", "Definity Financial — P&C insurer (demutualized)"),
+        ("TSU.TO", "Trisura — specialty insurance"),
+    ],
+    "ca_asset_mgrs": [
+        ("BBUC.TO", "Brookfield Business — listed PE / business services"),
+    ],
+    "ca_gold": [
+        ("CG.TO", "Centerra Gold — diversified producer"),
+        ("EQX.TO", "Equinox Gold — Americas producer"),
+        ("OGC.TO", "OceanaGold"),
+        ("TXG.TO", "Torex Gold — Mexico producer"),
+        ("WDO.TO", "Wesdome — high-grade Canadian gold"),
+        ("DPM.TO", "DPM Metals — low-cost producer + smelting"),
+        ("OLA.TO", "Orla Mining — growth producer"),
+        ("KNT.TO", "K92 Mining — high-grade PNG"),
+    ],
+    "ca_silver_royalty": [
+        ("EDR.TO", "Endeavour Silver — primary silver producer"),
+        ("AYA.TO", "Aya Gold & Silver — Morocco silver"),
+        ("SVM.TO", "Silvercorp — China silver/lead/zinc"),
+        ("VZLA.TO", "Vizsla Silver — Mexico silver developer"),
+        ("DSV.TO", "Discovery Silver — silver/gold developer"),
+    ],
+    "ca_oil_gas": [
+        ("VET.TO", "Vermilion Energy — intl gas + oil"),
+        ("BTE.TO", "Baytex Energy — heavy oil + Eagle Ford"),
+        ("TVE.TO", "Tamarack Valley — Clearwater oil"),
+        ("PEY.TO", "Peyto — low-cost gas"),
+        ("AAV.TO", "Advantage Energy — Montney gas"),
+        ("BIR.TO", "Birchcliff — Montney gas"),
+        ("POU.TO", "Paramount Resources — liquids-rich gas"),
+        ("PXT.TO", "Parex Resources — Colombia oil"),
+    ],
+    "ca_pipelines": [
+        ("ALA.TO", "AltaGas — gas distribution + midstream"),
+        ("TPZ.TO", "Topaz Energy — royalty + infrastructure"),
+        ("SES.TO", "Secure — energy-waste infrastructure"),
+    ],
+    "ca_base_metals": [
+        ("TKO.TO", "Taseko Mines — copper"),
+        ("NGEX.TO", "NGEx Minerals — copper-gold developer"),
+    ],
+    "ca_materials": [
+        ("LAC.TO", "Lithium Americas — US lithium (Thacker Pass)"),
+        ("VNP.TO", "5N Plus — specialty semiconductor/solar materials"),
+        ("LIF.TO", "Labrador Iron Ore Royalty — iron-ore royalty"),
+    ],
+    "ca_rails_ind": [
+        ("BBD-B.TO", "Bombardier — business jets"),
+        ("CAE.TO", "CAE — flight simulation & training"),
+        ("ATS.TO", "ATS Corp — factory automation"),
+        ("STN.TO", "Stantec — engineering / design"),
+        ("MDA.TO", "MDA Space — space robotics & satellites"),
+        ("FTT.TO", "Finning — Caterpillar dealer"),
+        ("RBA.TO", "RB Global — industrial auctions (Ritchie Bros)"),
+        ("EIF.TO", "Exchange Income — aviation + manufacturing"),
+        ("MG.TO", "Magna International — global auto parts"),
+        ("LNR.TO", "Linamar — auto parts + industrial/agri"),
+    ],
+    "ca_tech": [
+        ("BB.TO", "BlackBerry — automotive software (QNX) + cyber"),
+        ("LSPD.TO", "Lightspeed Commerce — POS/commerce SaaS"),
+        ("TRI.TO", "Thomson Reuters — info-services + AI"),
+    ],
+    "ca_utilities": [
+        ("ACO-X.TO", "ATCO — utilities + structures/logistics"),
+        ("BIP-UN.TO", "Brookfield Infrastructure — global infra"),
+        ("TA.TO", "TransAlta — power generation"),
+        ("SPB.TO", "Superior Plus — propane/energy distribution"),
+    ],
+    "ca_consumer": [
+        ("PBH.TO", "Premium Brands — specialty food manufacturing/distribution"),
+        ("MFI.TO", "Maple Leaf Foods — packaged meats"),
+        ("EMP-A.TO", "Empire — Sobeys grocery"),
+        ("NWC.TO", "North West Company — remote-community retail"),
+        ("CTC-A.TO", "Canadian Tire — retail + financial services"),
+        ("ATZ.TO", "Aritzia — premium apparel retailer"),
+    ],
+    "ca_reits": [
+        ("BEI-UN.TO", "Boardwalk — apartment REIT"),
+        ("IIP-UN.TO", "InterRent — apartment REIT"),
+        ("KMP-UN.TO", "Killam — apartment REIT"),
+        ("HR-UN.TO", "H&R — diversified REIT"),
+        ("CRT-UN.TO", "CT REIT — Canadian Tire-anchored retail"),
+        ("AP-UN.TO", "Allied Properties — urban office"),
+    ],
+}
+
 CONSTRUCTION = ("Equal-weighted, monthly-rebalanced, buy-and-hold between rebalances; dated "
                 "membership changes take effect same-day. Benchmark = S&P/TSX Composite (XIC.TO).")
 HISTORY_NOTE = ("Series before a basket's creation date are a backtest of the membership as of "
@@ -312,8 +409,13 @@ def main() -> int:
             return str(meta.loc[t, "name"])
         return t
 
+    # fold the 2026-06-18 expansion into the base definitions before materialising
+    baskets = {k: dict(v) for k, v in BASKETS.items()}
+    for bid, adds in EXPANSION.items():
+        baskets[bid]["members"] = list(baskets[bid]["members"]) + list(adds)
+
     out_baskets, missing = {}, []
-    for bid, b in BASKETS.items():
+    for bid, b in baskets.items():
         members = []
         for ticker, rationale in b["members"]:
             if ticker not in cols:
@@ -321,14 +423,18 @@ def main() -> int:
                 continue
             members.append({"ticker": ticker, "added": SEED, "removed": None,
                             "name": name_of(ticker), "rationale": rationale})
+        cl = [{"date": SEED, "action": "create",
+               "note": f"Seeded {b['name']} — equal-weight TSX members."}]
+        if bid in EXPANSION:
+            cl.append({"date": CURATED, "action": "expand",
+                       "note": f"Expanded to {len(members)} members."})
         out_baskets[bid] = {
             "name": b["name"], "name_zh": b["name_zh"],
             "category": b["category"], "category_zh": b["category_zh"],
             "etf_proxy": b["etf_proxy"], "etf_proxy_note": b["etf_proxy_note"],
             "created": SEED, "weighting": "equal",
             "thesis": b["thesis"], "thesis_zh": b["thesis_zh"], "members": members,
-            "changelog": [{"date": SEED, "action": "create",
-                           "note": f"Seeded {b['name']} — {len(members)} equal-weight TSX members."}],
+            "changelog": cl,
         }
 
     if missing:
@@ -336,7 +442,7 @@ def main() -> int:
         return 1
 
     payload = {
-        "version": SEED, "seed_date": SEED, "curated": SEED,
+        "version": CURATED, "seed_date": SEED, "curated": CURATED,
         "benchmark": "XIC.TO", "benchmark_label": "S&P/TSX", "benchmark_label_zh": "标普/多伦多",
         "construction": CONSTRUCTION, "history_note": HISTORY_NOTE, "note": NOTE,
         "baskets": out_baskets,
