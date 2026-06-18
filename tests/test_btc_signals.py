@@ -127,6 +127,71 @@ def test_allocation_conviction_and_brake_unit_range() -> None:
         assert not set(col.round(6).unique()) <= {0.0, 0.5, 1.0}
 
 
+def _flat_inputs(start, end, price=100.0):
+    idx = pd.date_range(start, end, freq="D")
+    close = pd.Series(float(price), index=idx)
+    return {"price": pd.DataFrame({"close": close}, index=idx)}
+
+
+def test_cycle_phase_clock_phase_and_projection() -> None:
+    cfg = {"bottoms": ["2019-06-01", "2023-06-01"], "tops": ["2021-06-01"],
+           "up_days": 730, "down_days": 365, "overdue_pct": 1.10}
+    out = S.cycle_phase_clock(_flat_inputs("2019-01-01", "2024-01-01"), cfg)
+    up = out.loc["2020-06-01"]
+    assert up["cphase_phase"] == "markup" and up["cphase_next_kind"] == "top"
+    # next pivot == anchor + leg length (deterministic projection)
+    assert up["cphase_next_pivot"] == (pd.Timestamp("2019-06-01")
+                                       + pd.Timedelta(days=730)).strftime("%Y-%m-%d")
+    dn = out.loc["2022-01-01"]
+    assert dn["cphase_phase"] == "markdown" and dn["cphase_next_kind"] == "bottom"
+    # before the first anchor -> no phase (PIT: nothing has happened yet)
+    assert pd.isna(out.loc["2019-03-01"]["cphase_phase"])
+    # pct & days_left are internally consistent
+    assert abs(up["cphase_days_in"] + up["cphase_days_left"] - up["cphase_len"]) < 1e-6
+
+
+def test_cycle_phase_clock_status_invalidation_and_overdue() -> None:
+    # markdown that prints a NEW HIGH above the anchor top -> invalidated
+    inv = _flat_inputs("2021-01-01", "2022-12-31")
+    inv["price"].loc["2022-01-01":, "close"] = 150.0     # > the 100 "top" price
+    cfg = {"bottoms": ["2020-01-01"], "tops": ["2021-06-01"],
+           "up_days": 500, "down_days": 365, "overdue_pct": 1.10}
+    out = S.cycle_phase_clock(inv, cfg)
+    assert out.loc["2022-06-01"]["cphase_status"] == "invalidated"
+    assert out.loc["2021-09-01"]["cphase_status"] == "on_track"
+    # a markup that runs far past its window with no new pivot -> overdue
+    ov = _flat_inputs("2021-01-01", "2023-12-31")
+    cfg2 = {"bottoms": ["2021-02-01"], "tops": [], "up_days": 300, "down_days": 364,
+            "overdue_pct": 1.10}
+    out2 = S.cycle_phase_clock(ov, cfg2)
+    assert out2.loc["2023-06-01"]["cphase_status"] == "overdue"
+    assert out2.loc["2021-06-01"]["cphase_status"] == "on_track"
+
+
+def test_cycle_phase_clock_config_locks_1064_364() -> None:
+    # regression lock on the accuracy claim: the shipped anchors must reproduce the
+    # measured 1064/364 fit (up within 15d, down within 20d — the weaker leg).
+    cfg = config.load()["vector"]["cycle_phase_clock"]
+    bots = [pd.Timestamp(d) for d in cfg["bottoms"]]
+    tops = [pd.Timestamp(d) for d in cfg["tops"]]
+    for b, t in zip(bots, tops):
+        assert abs((t - b).days - cfg["up_days"]) <= 15
+    for t, b in zip(tops, bots[1:]):
+        assert abs((b - t).days - cfg["down_days"]) <= 20
+
+
+def test_cycle_phase_clock_no_lookahead() -> None:
+    inp = _flat_inputs("2019-01-01", "2024-01-01")
+    inp["price"]["close"] = np.linspace(100, 200, len(inp["price"]))
+    cfg = {"bottoms": ["2019-06-01", "2023-06-01"], "tops": ["2021-06-01"],
+           "up_days": 730, "down_days": 365, "overdue_pct": 1.10}
+    full = S.cycle_phase_clock(inp, cfg)
+    trunc = S.cycle_phase_clock({"price": inp["price"].loc[:"2022-01-01"]}, cfg)
+    overlap = trunc.index
+    assert (full.loc[overlap, "cphase_phase"].fillna("X")
+            == trunc["cphase_phase"].fillna("X")).all()
+
+
 def test_no_lookahead_smoke() -> None:
     # truncating the series must not change earlier signal values
     inp = _synthetic(n=500, seed=6)
@@ -145,6 +210,10 @@ if __name__ == "__main__":
                test_conviction_multiplier_monotone_in_tier,
                test_drawdown_brake_reduces_exposure_when_underwater,
                test_allocation_conviction_and_brake_unit_range,
+               test_cycle_phase_clock_phase_and_projection,
+               test_cycle_phase_clock_status_invalidation_and_overdue,
+               test_cycle_phase_clock_config_locks_1064_364,
+               test_cycle_phase_clock_no_lookahead,
                test_no_lookahead_smoke]:
         fn()
         print(f"PASS {fn.__name__}")
