@@ -102,6 +102,20 @@ def days_of_cover(level: float | None, daily_demand: float | None) -> float | No
     return round(float(level) / daily, 1)
 
 
+def net_imports(imports_s: pd.Series | pd.DataFrame | None,
+                exports_s: pd.Series | pd.DataFrame | None, window: int = 12) -> float | None:
+    """Net crude imports (kbd) = mean(imports) − mean(exports) over the trailing `window`
+    observations. Smoothed because single-period net trade is very noisy (weekly US net
+    imports swing through zero). Missing exports → 0. None if imports unavailable.
+    (Negative = net exporter → import-cover is undefined and callers should skip it.)"""
+    imp = series(imports_s)
+    if imp is None or imp.empty:
+        return None
+    exp = series(exports_s)
+    ni = float(imp.tail(window).mean()) - (float(exp.tail(window).mean()) if exp is not None and not exp.empty else 0.0)
+    return round(ni, 1)
+
+
 def trend_word(s: pd.Series | None, months: int = 6, eps_pct: float = 1.0) -> str:
     """Coarse rising/falling/flat over the last `months` (by % change). Neutral label."""
     pc = pct_change(s, months)
@@ -134,7 +148,9 @@ def global_aggregate(jodi_crude: dict[str, pd.Series | pd.DataFrame]) -> dict:
 
 
 def merge_country_row(cfg: dict, jodi_crude: pd.DataFrame | pd.Series | None,
-                      live_level_mb: float | None = None) -> dict:
+                      live_level_mb: float | None = None,
+                      jodi_imports: pd.DataFrame | pd.Series | None = None,
+                      jodi_exports: pd.DataFrame | pd.Series | None = None) -> dict:
     """Build one comparison-table row: curated strategic figure + live JODI TOTAL crude.
 
     `cfg` is one entry of config.strategic_reserves.countries.
@@ -173,6 +189,89 @@ def merge_country_row(cfg: dict, jodi_crude: pd.DataFrame | pd.Series | None,
         except Exception:  # noqa: BLE001
             code = None
         row["jodi_assess"] = None if code is None else int(code)
+        # live trade flows -> net imports + total-stocks days of import cover
+        if not cfg.get("no_jodi"):
+            ni = net_imports(jodi_imports, jodi_exports)
+            if ni is not None:
+                row["net_imports_kbd"] = ni
+                # days of cover on TOTAL crude stocks (not strategic): kbbl ÷ net-import kbd
+                row["stock_cover_days"] = days_of_cover(float(s.iloc[-1]), ni) if ni > 0 else None
     else:
         row["jodi_total_mb"] = None
     return row
+
+
+# --------------------------------------------------------------------------- #
+# official gold reserves (central banks) — curated tonnes + live World Bank value
+# --------------------------------------------------------------------------- #
+TONNES_PER_MT = 1.0  # curated figures are already in metric tonnes
+TREND_WORD = {"accumulating": ("accumulating", "增持"), "stable": ("stable", "持平"),
+              "reducing": ("reducing", "减持")}
+
+
+def gold_value_share(total_usd: float | None, exgold_usd: float | None) -> dict:
+    """Gold reserve value (US$) + gold as % of total reserves, from World Bank's
+    total-incl-gold minus total-excl-gold. None-safe."""
+    if total_usd is None or exgold_usd is None or total_usd <= 0:
+        return {"value_usd": None, "share_pct": None}
+    gold = float(total_usd) - float(exgold_usd)
+    if gold < 0:
+        return {"value_usd": None, "share_pct": None}
+    return {"value_usd": gold, "share_pct": round(100.0 * gold / float(total_usd), 1)}
+
+
+def total_official_tonnes(rows: list[dict]) -> float | None:
+    """Sum of the curated per-country tonnes (display context)."""
+    vals = [r.get("tonnes") for r in rows if r.get("tonnes") is not None]
+    return round(float(sum(vals)), 0) if vals else None
+
+
+def merge_gold_row(cfg: dict, total_s: pd.Series | None, exgold_s: pd.Series | None) -> dict:
+    """One gold-table row: curated tonnes + trend, plus live World Bank gold value &
+    share of reserves (annual) where the country reports. `cfg` is one entry of
+    config.gold_reserves.countries; total_s / exgold_s are that country's WB columns."""
+    row = {
+        "iso": cfg["iso"], "name": cfg["name"], "name_zh": cfg.get("name_zh", cfg["name"]),
+        "flag": cfg.get("flag", ""), "tonnes": cfg.get("tonnes"),
+        "trend": cfg.get("trend", ""),
+        "trend_en": TREND_WORD.get(cfg.get("trend", ""), ("", ""))[0],
+        "trend_zh": TREND_WORD.get(cfg.get("trend", ""), ("", ""))[1],
+        "value_usd": None, "share_pct": None, "value_yoy_pct": None, "wb_year": None,
+    }
+    if cfg.get("no_wb"):
+        return row
+    tot, xg = series(total_s), series(exgold_s)
+    if tot is None or xg is None:
+        return row
+    last = tot.index.max()
+    if last not in xg.index:
+        common = tot.index.intersection(xg.index)
+        if common.empty:
+            return row
+        last = common.max()
+    vs = gold_value_share(float(tot.loc[last]), float(xg.loc[last]))
+    row.update(vs)
+    row["wb_year"] = int(last.year)
+    # YoY change in gold VALUE (price + any buying), prior annual obs
+    prev = tot.index[tot.index < last]
+    if len(prev) and vs["value_usd"] is not None:
+        p = prev.max()
+        if p in xg.index:
+            pv = gold_value_share(float(tot.loc[p]), float(xg.loc[p]))["value_usd"]
+            if pv:
+                row["value_yoy_pct"] = round(100.0 * (vs["value_usd"] / pv - 1.0), 1)
+    return row
+
+
+GOLD_CAVEAT = {
+    "en": ("Tonnes are curated from the World Gold Council / IMF IFS (no clean keyless "
+           "feed exists) and updated periodically; the gold value and share-of-reserves "
+           "are live from the World Bank (annual, valued at market). Central-bank gold "
+           "is the one official-reserve series with documented forward content — sustained "
+           "official buying has historically carried gold higher — but this remains a "
+           "context read, not a trade signal."),
+    "zh": ("吨位数据来自世界黄金协会／IMF IFS 的人工整理（无干净的免密钥数据源），定期更新；"
+           "黄金价值与占储备比例为世界银行实时数据（年度，按市价计）。央行黄金是官方储备中"
+           "唯一具有可考前瞻性的序列——持续的官方增持历史上推动金价上行——但这仍是背景参考，"
+           "而非交易信号。"),
+}

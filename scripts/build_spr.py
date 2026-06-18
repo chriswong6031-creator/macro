@@ -152,6 +152,21 @@ def _us_spr_vm(spr_kbbl: pd.Series, scfg: dict) -> dict:
     ri = sr.series(store.read("eia", "refinery_inputs"))
     if ri is not None:
         vm["days_cover"] = sr.days_of_cover(last_kbbl, float(ri.iloc[-1]))
+    # LIVE days of net-import cover (SPR ÷ EIA net crude imports) + US oil-trade context.
+    # Weekly net imports are very noisy (the US is near crude-trade balance), so smooth the
+    # denominator + the displayed trade rates with a trailing 1y (52-week) mean.
+    ni = sr.series(store.read("eia", "crude_net_imports"))
+    if ni is not None:
+        ni_avg = float(ni.tail(52).mean())
+        if ni_avg > 0:
+            vm["import_cover_days"] = sr.days_of_cover(last_kbbl, ni_avg)
+            vm["net_imports_mbd"] = round(ni_avg / 1000, 2)
+    imp, exp = sr.series(store.read("eia", "crude_imports")), sr.series(store.read("eia", "crude_exports"))
+    if imp is not None:
+        vm["imports_mbd"] = round(float(imp.tail(52).mean()) / 1000, 2)
+    if exp is not None:
+        vm["exports_mbd"] = round(float(exp.tail(52).mean()) / 1000, 2)
+    vm["trade_basis"] = True   # values are 1y averages
     return vm
 
 
@@ -159,10 +174,38 @@ def _countries_vm(scfg: dict, us_level_mb: float | None) -> list[dict]:
     rows = []
     for cfg in scfg["countries"]:
         iso = cfg["iso"]
-        jodi = None if cfg.get("no_jodi") else store.read("jodi", f"crude_{iso.lower()}")
+        no_jodi = cfg.get("no_jodi")
+        jodi = None if no_jodi else store.read("jodi", f"crude_{iso.lower()}")
+        imp = None if no_jodi else store.read("jodi", f"imports_{iso.lower()}")
+        exp = None if no_jodi else store.read("jodi", f"exports_{iso.lower()}")
         live = us_level_mb if cfg.get("live") == "spr" else None
-        rows.append(sr.merge_country_row(cfg, jodi, live_level_mb=live))
+        rows.append(sr.merge_country_row(cfg, jodi, live_level_mb=live,
+                                         jodi_imports=imp, jodi_exports=exp))
     return rows
+
+
+def _gold_vm(gcfg: dict) -> dict:
+    """Official central-bank gold reserves: curated tonnes + live World Bank gold
+    value & share of reserves. Display-only."""
+    wb_tot = store.read("worldbank", "reserves_total")
+    wb_xg = store.read("worldbank", "reserves_exgold")
+
+    def col(df, iso):
+        return df[iso] if (df is not None and iso in df.columns) else None
+
+    rows = [sr.merge_gold_row(c, col(wb_tot, c["iso"]), col(wb_xg, c["iso"]))
+            for c in gcfg["countries"]]
+    wb_year = next((r["wb_year"] for r in rows if r.get("wb_year")), None)
+    return {
+        "rows": rows,
+        "top_tonnes": sr.total_official_tonnes(rows),
+        "global_tonnes": gcfg.get("global_tonnes"),
+        "as_of": gcfg.get("as_of", ""), "source": gcfg.get("source", ""),
+        "wb_year": wb_year,
+        "note_en": gcfg.get("cb_net_buying_note_en", ""),
+        "note_zh": gcfg.get("cb_net_buying_note_zh", ""),
+        "caveat_en": sr.GOLD_CAVEAT["en"], "caveat_zh": sr.GOLD_CAVEAT["zh"],
+    }
 
 
 def main() -> int:
@@ -212,10 +255,12 @@ def main() -> int:
     from engine.i18n import tr, td
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     env.globals.update(tr=tr, td=td)
+    gold = _gold_vm(config.load().get("gold_reserves", {"countries": []}))
+
     html = env.get_template("spr.html.j2").render(
         C=C, as_of=as_of, built=built, us=us, countries=countries, agg=agg,
         charts=charts, scfg=scfg, caveat=sr.SPR_CAVEAT,
-        assess_word=sr.ASSESS_WORD)
+        assess_word=sr.ASSESS_WORD, gold=gold)
     site = config.ROOT / config.load()["storage"]["site_dir"]
     (site / "spr.html").write_text(html)
     log.info("wrote %s/spr.html (%d KB)", site, len(html) // 1024)

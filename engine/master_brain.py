@@ -113,6 +113,12 @@ MASTER_SYSTEM_TMPL = (
     "name it, the evidence, and what would invalidate it. It is a DETERMINISTIC "
     "cross-asset attribution: narrate it, do not recompute it. If it reads 'mixed' or "
     "'quiet', say so plainly rather than inventing a driver.\n"
+    "- If `fed_stance` is present, anchor the rate read with the EXPLICIT Fed reaction "
+    "function (hawkish/neutral/dovish) + the market-vs-Fed gap — a display-only read off "
+    "the implied path + statement guidance (reactive, not a forecast). If `policy_intel` "
+    "is present, factor the interest-driven (realpolitik) Fed/Admin thesis and the "
+    "targeted-vs-starved capital rotation into your regime_read and rotation_check, "
+    "honoring its FACT/INFERENCE/PRIOR labels — never trade a PRIOR or THEORY as fact.\n"
     "- Evaluate the trader's working rotation thesis against the actual state; say "
     "explicitly where reality tracks it and where it diverges.\n"
     "- Do NOT give position sizes or fire trades — the deterministic system does "
@@ -339,6 +345,9 @@ _BTC_RICH_COLS = (
     "risk_index", "risk_regime", "momentum", "momentum_state", "structure_state",
     "impulse_state", "efficiency_ratio",
     "cycle_phase", "cycle_pct", "days_since_halving", "vdd_multiple", "cycle_position",
+    # bottom-anchored 1064/364 cycle clock (the chart's theory) — parity with the halving
+    # phase above; CONTEXT only, lets the synthesis cite the projected pivot + maturity
+    "cphase_phase", "cphase_pct", "cphase_days_left", "cphase_next_pivot", "cphase_status",
     "mvrv_z", "mvrv_z_pctile", "valuation_state", "nupl", "mayer", "reserve_risk_pctile",
     "market_extreme", "extreme_score",
     "vol_state", "dvol", "dvol_pctile", "rv_cone_pctile", "vrp", "rr_25d", "skew_term",
@@ -411,6 +420,22 @@ def _transmission_summary(macro: dict | None) -> dict | None:
     }
 
 
+def _policy_intel_summary(root: Path) -> dict | None:
+    """Compact realpolitik policy-layer read for the macro brief (Fed/Admin intent +
+    capital rotation). Context only — carries its own FACT/INFERENCE/PRIOR labels."""
+    intel = _read_json(root / "data/policy/intel.json")
+    if not intel:
+        return None
+    rot = intel.get("rotation") or {}
+    return {
+        "thesis": (intel.get("thesis") or {}).get("en"),
+        "regime_read": (intel.get("regime_read") or {}).get("en"),
+        "targeted": [r.get("theme_en") for r in (rot.get("targeted") or [])][:7],
+        "starved": [r.get("theme_en") for r in (rot.get("starved") or [])][:4],
+        "open_predictions_n": sum(1 for p in (intel.get("predictions") or []) if p.get("status") == "open"),
+    }
+
+
 def gather_state(root: Path | None = None) -> dict:
     """Compact cross-asset state assembled from each dashboard's latest.json.
     Excludes holdings / watchlist composition by design. (macro lens)"""
@@ -432,7 +457,8 @@ def gather_state(root: Path | None = None) -> dict:
         state["commodity"] = {k: co.get(k) for k in ("date", "regime", "favored")}
     fx = _read_json(root / "data/forex/latest.json")
     if fx:
-        state["forex"] = {k: fx.get(k) for k in ("date", "regime", "favored", "risk")}
+        state["forex"] = {k: fx.get(k) for k in
+                          ("date", "regime", "favored", "risk", "dollar_desk", "transmission")}
     # Bonds: the leading-family credit/curve/rates-vol backdrop — built (drivers_for)
     # for exactly this synthesis, but never wired in until now.
     bonds = _bonds_backdrop(root)
@@ -452,6 +478,14 @@ def gather_state(root: Path | None = None) -> dict:
         state["btc"] = btc
     if macro.get("catalyst_tone"):
         state["catalyst_tone"] = macro.get("catalyst_tone")
+    # explicit Fed reaction-function stance (display-only leaf) + the realpolitik policy layer
+    if macro.get("fed_stance"):
+        fsd = macro["fed_stance"]
+        state["fed_stance"] = {k: fsd.get(k) for k in
+                               ("stance", "label_en", "guidance", "implied_cuts_12m", "market_vs_fed_en")}
+    pol = _policy_intel_summary(root)
+    if pol:
+        state["policy_intel"] = pol
     return state
 
 
@@ -474,6 +508,27 @@ def gather_china_state(root: Path | None = None) -> dict:
             "liquidity_overlay", "cycle_tag", "global_score", "risk_state",
             "peg_state", "peg_distance", "confirming", "contradicting",
             "sector_rs", "pair_ratios") if k in hk}
+        # compact display-only leaves (RORO / slowdown / drawdown / fear-euphoria /
+        # tape drivers / property) — context for the narrator; never scored.
+        cond = hk.get("conditions") or {}
+        if cond:
+            state["hk"]["conditions"] = {
+                "roro_state": (cond.get("roro") or {}).get("roro_state"),
+                "slowdown_score": (cond.get("recession") or {}).get("score"),
+                "slowdown_label": (cond.get("recession") or {}).get("label"),
+                "drawdown_band": (cond.get("drawdown_risk") or {}).get("band"),
+            }
+        fe = hk.get("fear_euphoria") or {}
+        if fe:
+            state["hk"]["fear_euphoria"] = {k: fe.get(k) for k in ("fe_score", "band") if k in fe}
+        md = hk.get("market_drivers") or {}
+        if md.get("verdict") not in (None, "unknown"):
+            state["hk"]["market_drivers"] = {k: md.get(k) for k in
+                                             ("verdict", "primary_label", "direction") if k in md}
+        prop = hk.get("property") or {}
+        if prop:
+            state["hk"]["property"] = {k: prop.get(k) for k in
+                                       ("regime", "ccl_chg_52w") if k in prop}
     backdrop = _macro_backdrop(_read_json(root / "data/regime/latest.json"))
     if backdrop:
         state["us_macro_backdrop"] = backdrop
@@ -482,7 +537,8 @@ def gather_china_state(root: Path | None = None) -> dict:
         state["commodity"] = {k: co.get(k) for k in ("date", "regime", "favored")}
     fx = _read_json(root / "data/forex/latest.json")
     if fx:
-        state["forex"] = {k: fx.get(k) for k in ("date", "regime", "favored", "risk")}
+        state["forex"] = {k: fx.get(k) for k in
+                          ("date", "regime", "favored", "risk", "dollar_desk", "transmission")}
     # bonds backdrop — global rate-differential / risk-off context that pushes on HK & A-shares
     bonds = _bonds_backdrop(root)
     if bonds:

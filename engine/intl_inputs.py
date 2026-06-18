@@ -44,6 +44,13 @@ def _intl_closes() -> pd.DataFrame:
     return pd.DataFrame(cols).sort_index()
 
 
+def read_intl_macro_col(col: str) -> pd.Series | None:
+    """One `intl_macro` stored column as a clean Series (None if absent/empty).
+    Shared single-column reader (engine.intl_rates + engine.intl_compare)."""
+    df = store.read("intl_macro", col)
+    return df.iloc[:, 0].dropna() if (df is not None and not df.empty) else None
+
+
 def _macro_frame() -> pd.DataFrame:
     parts = []
     cc_metrics = [f"{cc}_{m}" for cc in countries() for m in _METRICS]
@@ -181,10 +188,25 @@ def latest_macro_snapshot(cc: str, f: pd.DataFrame) -> dict:
             return None
         return round(float(s.iloc[-1] - s.iloc[-1 - n]), nd)
 
+    def real_yield():
+        # real 10y = 10y − CPI, but ONLY when CPI is recent. Several keyless OECD
+        # CPI series are discontinued (JP ends 2021, KR 2023), so the real_yield
+        # column's last-valid value can be a years-old composite — showing it as a
+        # current "real yield" would be a mislabel. Gate on the CPI leg being fresh.
+        if "real_yield" not in f or "cpi_yoy" not in f:
+            return None
+        cpi = f["cpi_yoy"].dropna()
+        ry = f["real_yield"].dropna()
+        if cpi.empty or ry.empty:
+            return None
+        if (f.index[-1] - cpi.index[-1]).days > 490:      # CPI print >~16mo stale
+            return None
+        return round(float(ry.iloc[-1]), 2)
+
     return {
         "yield_10y": lvl("yield_10y"), "yield_10y_chg3m": chg("yield_10y"),
         "short_3m": lvl("short_3m"), "policy_rate": lvl("policy_rate"),
-        "curve": lvl("curve"), "real_yield": lvl("real_yield"),
+        "curve": lvl("curve"), "real_yield": real_yield(),
         "cpi_yoy": lvl("cpi_yoy"), "cpi_chg3m": chg("cpi_yoy"),
         "gdp_yoy": lvl("gdp_yoy"), "unemployment": lvl("unemployment"),
         "unemployment_chg6m": chg("unemployment", 126),

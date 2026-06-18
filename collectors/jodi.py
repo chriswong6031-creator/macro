@@ -37,8 +37,6 @@ from lib import config
 
 log = logging.getLogger(__name__)
 
-_PRODUCT_PREFIX = {"CRUDEOIL": "crude", "TOTPRODS": "prods"}
-
 
 class JodiAdapter(Adapter):
     name = "jodi"
@@ -77,10 +75,27 @@ class JodiAdapter(Adapter):
             log.warning("JODI year %d unavailable: %s", year, last_err)
         return None
 
+    @staticmethod
+    def _reconcile(level: pd.DataFrame, acode: pd.DataFrame, unit_kind: str) -> pd.DataFrame:
+        """Resolve the per-(country,product,month) value + its assessment code.
+        stock -> kbbl (KBBL else KTONS*CONVBBL); rate -> kbd (KBD, a flow rate)."""
+        def colof(df, c):
+            s = df.get(c)
+            return s if s is not None else pd.Series(index=df.index, dtype="float64")
+        if unit_kind == "rate":
+            return pd.DataFrame({"level": colof(level, "KBD"), "assess": colof(acode, "KBD")})
+        kbbl, ktons, conv = colof(level, "KBBL"), colof(level, "KTONS"), colof(level, "CONVBBL")
+        use_kbbl = kbbl.notna() & (kbbl > 0)
+        return pd.DataFrame({
+            "level": kbbl.where(use_kbbl, ktons * conv),
+            "assess": colof(acode, "KBBL").where(use_kbbl, colof(acode, "KTONS")),
+        })
+
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
         roster = {c.upper() for c in self.cfg["countries"]}
-        products = list(self.cfg.get("products", ["CRUDEOIL", "TOTPRODS"]))
-        flow = self.cfg.get("flow", "CLOSTLV")
+        products = list(self.cfg.get("products", ["CRUDEOIL"]))
+        flows = self.cfg.get("flows") or {self.cfg.get("flow", "CLOSTLV"):
+                                          {"prefix": "crude", "unit": "stock"}}
 
         raw: list[pd.DataFrame] = []
         for y in self._years(full_history):
@@ -90,53 +105,36 @@ class JodiAdapter(Adapter):
         if not raw:
             raise RuntimeError("no JODI annual files could be fetched")
         df = pd.concat(raw, ignore_index=True)
-
-        df = df[(df["FLOW_BREAKDOWN"] == flow)
-                & df["ENERGY_PRODUCT"].isin(products)
+        df = df[df["FLOW_BREAKDOWN"].isin(flows) & df["ENERGY_PRODUCT"].isin(products)
                 & df["REF_AREA"].isin(roster)].copy()
         if df.empty:
-            raise RuntimeError("JODI returned no rows for the configured roster/products")
-
+            raise RuntimeError("JODI returned no rows for the configured roster/flows")
         df["val"] = pd.to_numeric(df["OBS_VALUE"], errors="coerce")   # '-','x','..' -> NaN
         df["acode"] = pd.to_numeric(df["ASSESSMENT_CODE"], errors="coerce")
         keys = ["REF_AREA", "ENERGY_PRODUCT", "TIME_PERIOD"]
-        level = df.pivot_table(index=keys, columns="UNIT_MEASURE", values="val", aggfunc="first")
-        acode = df.pivot_table(index=keys, columns="UNIT_MEASURE", values="acode", aggfunc="first")
-
-        kbbl = level.get("KBBL")
-        ktons = level.get("KTONS")
-        conv = level.get("CONVBBL")
-        if kbbl is None:
-            kbbl = pd.Series(index=level.index, dtype="float64")
-        derived = (ktons * conv) if (ktons is not None and conv is not None) else pd.Series(
-            index=level.index, dtype="float64")
-        use_kbbl = kbbl.notna() & (kbbl > 0)
-        out = pd.DataFrame({"level": kbbl.where(use_kbbl, derived)})
-        # assessment of whichever unit supplied the level (fall back to the best/lowest code)
-        a_kbbl = acode.get("KBBL")
-        a_ktons = acode.get("KTONS")
-        if a_kbbl is None:
-            a_kbbl = pd.Series(index=acode.index, dtype="float64")
-        if a_ktons is None:
-            a_ktons = pd.Series(index=acode.index, dtype="float64")
-        out["assess"] = a_kbbl.where(use_kbbl, a_ktons)
-        out = out.dropna(subset=["level"])
-        out = out[out["level"] > 0]
 
         frames: dict[str, pd.DataFrame] = {}
-        out = out.reset_index()
-        out["ts"] = pd.to_datetime(out["TIME_PERIOD"], errors="coerce")
-        out = out.dropna(subset=["ts"])
-        for (iso, product), g in out.groupby(["REF_AREA", "ENERGY_PRODUCT"]):
-            prefix = _PRODUCT_PREFIX.get(product)
-            if not prefix:
+        for flow_code, spec in flows.items():
+            sub = df[df["FLOW_BREAKDOWN"] == flow_code]
+            if sub.empty:
                 continue
-            frame = (g.set_index("ts")[["level", "assess"]]
-                     .sort_index().dropna(subset=["level"]))
-            if frame.empty:
-                continue
-            frame["assess"] = frame["assess"].fillna(3).astype("int64")
-            frames[f"{prefix}_{iso.lower()}"] = frame
+            prefix, unit_kind = spec["prefix"], spec.get("unit", "stock")
+            level = sub.pivot_table(index=keys, columns="UNIT_MEASURE", values="val", aggfunc="first")
+            acode = sub.pivot_table(index=keys, columns="UNIT_MEASURE", values="acode", aggfunc="first")
+            out = self._reconcile(level, acode, unit_kind).dropna(subset=["level"])
+            if unit_kind == "stock":
+                out = out[out["level"] > 0]      # a 0 stock is missing; a 0 flow (e.g. no exports) is real
+            else:
+                out = out[out["level"] >= 0]
+            out = out.reset_index()
+            out["ts"] = pd.to_datetime(out["TIME_PERIOD"], errors="coerce")
+            out = out.dropna(subset=["ts"])
+            for iso, g in out.groupby("REF_AREA"):
+                frame = g.set_index("ts")[["level", "assess"]].sort_index().dropna(subset=["level"])
+                if frame.empty:
+                    continue
+                frame["assess"] = frame["assess"].fillna(3).astype("int64")
+                frames[f"{prefix}_{iso.lower()}"] = frame
         if not frames:
             raise RuntimeError("JODI: every roster series was empty after reconciliation")
         return frames

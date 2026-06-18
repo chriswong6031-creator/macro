@@ -164,9 +164,10 @@ def curve_move_taxonomy(f: pd.DataFrame, window: int) -> tuple[str | None, pd.Se
 
 def uninversion(spread: pd.Series, lookback: int) -> tuple[bool, pd.Series]:
     """Un-inversion alarm: the curve dis-inverting AFTER a prior inversion. The
-    dis-inversion leads recession by ~66 days on average (vs ~334d from the first
-    inversion), so it is the genuinely ominous configuration. Returns (latest flag,
-    per-day flag Series)."""
+    re-steepening — not the inversion — is the late-cycle handoff: recessions have
+    historically begun on average ~13 months (range ~8–19) AFTER the curve re-steepens
+    (often a BULL steepener as the first cuts get priced), so a fresh dis-inversion is
+    the genuinely ominous configuration. Returns (latest flag, per-day flag Series)."""
     inverted = spread < 0
     was_inv = inverted.rolling(lookback, min_periods=1).max().astype(bool)
     # un-inverted today = positive now AND inverted somewhere in the lookback AND
@@ -404,7 +405,11 @@ def bonds_snapshot(f: pd.DataFrame, fr: pd.DataFrame | None = None) -> dict:
     move = g("move")
     move_z = _last(_z(_col(fr, "move"), bcfg["rates_vol"]["z_window_d"])) if "move" in fr else None
     vix_z = _last(_z(_col(f, "vix"), bcfg["rates_vol"]["z_window_d"])) if _col(f, "vix") is not None else None
-    move_leads_vix = bool(move_z is not None and vix_z is not None and move_z > vix_z + 0.5)
+    # MOVE-leads-VIX is a popular MYTH outside crises: Granger tests show VIX leads MOVE in
+    # NORMAL regimes; the lead reverses ONLY when both sit in their stress tail (~>75th pctile,
+    # z≳0.7 — March-2023, April-2025). So gate the flag on BOTH being elevated, not just the gap.
+    move_leads_vix = bool(move_z is not None and vix_z is not None
+                          and move_z > vix_z + 0.5 and move_z > 0.7 and vix_z > 0.4)
     si_bp = g("sofr_iorb_bp")
     repo_bp = g("repo_spike_bp")
     stress = {
@@ -478,9 +483,11 @@ def _alarms(s: dict) -> list[dict]:
     c, cr, st = s["pillars"]["curve"], s["pillars"]["credit"], s["pillars"]["stress"]
     if c.get("bull_steepener_uninversion"):
         out.append({"key": "uninversion", "severity": "high",
-                    "en": "Bull-steepening un-inversion — the curve dis-inverted while short rates fall; "
-                          "historically the ~66-day pre-recession configuration.",
-                    "zh": "牛市陡峭式解除倒挂 — 收益率曲线在短端利率下行时解除倒挂；历史上是衰退前约66天的形态。"})
+                    "en": "Bull-steepening un-inversion — the curve dis-inverted while short rates fall (cuts being "
+                          "priced). Historically the late-cycle handoff: recessions have begun on average ~13 months "
+                          "(range ~8–19) AFTER the curve re-steepens, and the bull-steepening form is the ominous one.",
+                    "zh": "牛市陡峭式解除倒挂 — 曲线在短端利率下行（市场定价降息）时解除倒挂。历史上为周期晚段的交接："
+                          "衰退平均在曲线重新陡峭后约13个月（区间约8–19个月）开始，且牛市陡峭形态最为不祥。"})
     elif c.get("uninversion_alarm"):
         out.append({"key": "uninversion", "severity": "medium",
                     "en": "Curve un-inverted after a prior inversion — the dis-inversion, not the inversion, "

@@ -1,7 +1,7 @@
 {
-  "version": "2021-06-14",
+  "version": "2026-06-18",
   "seed_date": "2021-06-14",
-  "curated": "2021-06-14",
+  "curated": "2026-06-18",
   "benchmark": "XIC.TO",
   "benchmark_label": "S&P/TSX",
   "benchmark_label_zh": "标普/多伦多",
@@ -69,13 +69,25 @@
           "removed": null,
           "name": "Laurentian Bank Of Canada",
           "rationale": "Laurentian Bank"
+        },
+        {
+          "ticker": "GSY.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Goeasy Ltd",
+          "rationale": "goeasy — non-prime consumer lender"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-14",
           "action": "create",
-          "note": "Seeded Big Banks — 7 equal-weight TSX members."
+          "note": "Seeded Big Banks — equal-weight TSX members."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "expand",
+          "note": "Expanded to 8 members."
         }
       ]
     },
@@ -132,13 +144,32 @@
           "removed": null,
           "name": "Fairfax Financial Holdings Sub Vot",
           "rationale": "Fairfax — insurance + investments"
+        },
+        {
+          "ticker": "DFY.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Definity Financial Corp",
+          "rationale": "Definity Financial — P&C insurer (demutualized)"
+        },
+        {
+          "ticker": "TSU.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Trisura Group Ltd",
+          "rationale": "Trisura — specialty insurance"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-14",
           "action": "create",
-          "note": "Seeded Insurers — 6 equal-weight TSX members."
+          "note": "Seeded Insurers — equal-weight TSX members."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "expand",
+          "note": "Expanded to 8 members."
         }
       ]
     },
@@ -202,13 +233,25 @@
           "removed": null,
           "name": "Sprott Inc",
           "rationale": "Sprott — precious-metals asset manager"
+        },
+        {
+          "ticker": "BBUC.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Brookfield Business Corp Class A",
+          "rationale": "Brookfield Business — listed PE / business services"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-14",
           "action": "create",
-          "note": "Seeded Asset Managers & Alternatives — 7 equal-weight TSX members."
+          "note": "Seeded Asset Managers & Alternatives — equal-weight TSX members."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "expand",
+          "note": "Expanded to 8 members."
         }
       ]
     },
@@ -279,13 +322,74 @@
           "removed": null,
           "name": "Lundin Gold Inc",
           "rationale": "Lundin Gold — Fruta del Norte"
+        },
+        {
+          "ticker": "CG.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Centerra Gold Inc",
+          "rationale": "Centerra Gold — diversified producer"
+        },
+        {
+          "ticker": "EQX.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Equinox Gold Corp",
+          "rationale": "Equinox Gold — Americas producer"
+        },
+        {
+          "ticker": "OGC.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Oceanagold Corporation Corp",
+          "rationale": "OceanaGold"
+        },
+        {
+          "ticker": "TXG.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Torex Gold Resources Inc",
+          "rationale": "Torex Gold — Mexico producer"
+        },
+        {
+          "ticker": "WDO.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Wesdome Gold Mines Ltd",
+          "rationale": "Wesdome — high-grade Canadian gold"
+        },
+        {
+          "ticker": "DPM.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Dpm Metals Inc",
+          "rationale": "DPM Metals — low-cost producer + smelting"
+        },
+        {
+          "ticker": "OLA.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Orla Mining Ltd",
+          "rationale": "Orla Mining — growth producer"
+        },
+        {
+          "ticker": "KNT.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "K92 Mining Inc",
+          "rationale": "K92 Mining — high-grade PNG"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-14",
           "action": "create",
-          "note": "Seeded Gold Miners — 8 equal-weight TSX members."
+          "note": "Seeded Gold Miners — equal-weight TSX members."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "expand",
+          "note": "Expanded to 16 members."
         }
       ]
     },
@@ -349,13 +453,53 @@
           "removed": null,
           "name": "Fortuna Mining Corp",
           "rationale": "Fortuna Mining"
+        },
+        {
+          "ticker": "EDR.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Endeavour Silver Corp",
+          "rationale": "Endeavour Silver — primary silver producer"
+        },
+        {
+          "ticker": "AYA.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Aya Gold & Silver Inc",
+          "rationale": "Aya Gold & Silver — Morocco silver"
+        },
+        {
+          "ticker": "SVM.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Silvercorp Metals Inc",
+          "rationale": "Silvercorp — China silver/lead/zinc"
+        },
+        {
+          "ticker": "VZLA.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Vizsla Silver Corp",
+          "rationale": "Vizsla Silver — Mexico silver developer"
+        },
+        {
+          "ticker": "DSV.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Discovery Silver Corp",
+          "rationale": "Discovery Silver — silver/gold developer"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-14",
           "action": "create",
-          "note": "Seeded Silver & Royalties — 7 equal-weight TSX members."
+          "note": "Seeded Silver & Royalties — equal-weight TSX members."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "expand",
+          "note": "Expanded to 12 members."
         }
       ]
     },
@@ -419,13 +563,74 @@
           "removed": null,
           "name": "Whitecap Resources Inc",
           "rationale": "Whitecap Resources"
+        },
+        {
+          "ticker": "VET.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Vermilion Energy Inc",
+          "rationale": "Vermilion Energy — intl gas + oil"
+        },
+        {
+          "ticker": "BTE.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Baytex Energy Corp",
+          "rationale": "Baytex Energy — heavy oil + Eagle Ford"
+        },
+        {
+          "ticker": "TVE.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Tamarack Valley Energy Ltd",
+          "rationale": "Tamarack Valley — Clearwater oil"
+        },
+        {
+          "ticker": "PEY.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Peyto Exploration & Development Co",
+          "rationale": "Peyto — low-cost gas"
+        },
+        {
+          "ticker": "AAV.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Advantage Energy Ltd",
+          "rationale": "Advantage Energy — Montney gas"
+        },
+        {
+          "ticker": "BIR.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Birchcliff Energy Ltd",
+          "rationale": "Birchcliff — Montney gas"
+        },
+        {
+          "ticker": "POU.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Paramount Resource Ltd Class A",
+          "rationale": "Paramount Resources — liquids-rich gas"
+        },
+        {
+          "ticker": "PXT.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Parex Resources Inc",
+          "rationale": "Parex Resources — Colombia oil"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-14",
           "action": "create",
-          "note": "Seeded Oil & Gas Producers — 7 equal-weight TSX members."
+          "note": "Seeded Oil & Gas Producers — equal-weight TSX members."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "expand",
+          "note": "Expanded to 15 members."
         }
       ]
     },
@@ -482,13 +687,39 @@
           "removed": null,
           "name": "South Bow Corp",
           "rationale": "South Bow — liquids pipelines (TRP spin-off)"
+        },
+        {
+          "ticker": "ALA.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Altagas Ltd",
+          "rationale": "AltaGas — gas distribution + midstream"
+        },
+        {
+          "ticker": "TPZ.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Topaz Energy Corp",
+          "rationale": "Topaz Energy — royalty + infrastructure"
+        },
+        {
+          "ticker": "SES.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Secure Waste Infrastructure Corp",
+          "rationale": "Secure — energy-waste infrastructure"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-14",
           "action": "create",
-          "note": "Seeded Pipelines & Midstream — 6 equal-weight TSX members."
+          "note": "Seeded Pipelines & Midstream — equal-weight TSX members."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "expand",
+          "note": "Expanded to 9 members."
         }
       ]
     },
@@ -537,7 +768,7 @@
         {
           "date": "2021-06-14",
           "action": "create",
-          "note": "Seeded Uranium & Nuclear — 4 equal-weight TSX members."
+          "note": "Seeded Uranium & Nuclear — equal-weight TSX members."
         }
       ]
     },
@@ -601,13 +832,32 @@
           "removed": null,
           "name": "Ero Copper Corp",
           "rationale": "Ero Copper"
+        },
+        {
+          "ticker": "TKO.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Taseko Mines Ltd",
+          "rationale": "Taseko Mines — copper"
+        },
+        {
+          "ticker": "NGEX.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Ngex Minerals Ltd",
+          "rationale": "NGEx Minerals — copper-gold developer"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-14",
           "action": "create",
-          "note": "Seeded Base Metals & Copper — 7 equal-weight TSX members."
+          "note": "Seeded Base Metals & Copper — equal-weight TSX members."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "expand",
+          "note": "Expanded to 9 members."
         }
       ]
     },
@@ -664,13 +914,39 @@
           "removed": null,
           "name": "Winpak Ltd",
           "rationale": "Winpak — packaging"
+        },
+        {
+          "ticker": "LAC.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Lithium Americas Corp",
+          "rationale": "Lithium Americas — US lithium (Thacker Pass)"
+        },
+        {
+          "ticker": "VNP.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "5N Plus Inc",
+          "rationale": "5N Plus — specialty semiconductor/solar materials"
+        },
+        {
+          "ticker": "LIF.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Labrador Iron Ore Royalty Corp",
+          "rationale": "Labrador Iron Ore Royalty — iron-ore royalty"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-14",
           "action": "create",
-          "note": "Seeded Fertilizer, Chemicals & Forestry — 6 equal-weight TSX members."
+          "note": "Seeded Fertilizer, Chemicals & Forestry — equal-weight TSX members."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "expand",
+          "note": "Expanded to 9 members."
         }
       ]
     },
@@ -734,13 +1010,88 @@
           "removed": null,
           "name": "Gfl Environmental Subordinate Voti",
           "rationale": "GFL Environmental"
+        },
+        {
+          "ticker": "BBD-B.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Bombardier Inc Class B",
+          "rationale": "Bombardier — business jets"
+        },
+        {
+          "ticker": "CAE.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Cae Inc",
+          "rationale": "CAE — flight simulation & training"
+        },
+        {
+          "ticker": "ATS.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Ats Corp",
+          "rationale": "ATS Corp — factory automation"
+        },
+        {
+          "ticker": "STN.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Stantec Inc",
+          "rationale": "Stantec — engineering / design"
+        },
+        {
+          "ticker": "MDA.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Mda Space Ltd",
+          "rationale": "MDA Space — space robotics & satellites"
+        },
+        {
+          "ticker": "FTT.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Finning International Inc",
+          "rationale": "Finning — Caterpillar dealer"
+        },
+        {
+          "ticker": "RBA.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Rb Global Inc",
+          "rationale": "RB Global — industrial auctions (Ritchie Bros)"
+        },
+        {
+          "ticker": "EIF.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Exchange Income Corp",
+          "rationale": "Exchange Income — aviation + manufacturing"
+        },
+        {
+          "ticker": "MG.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Magna International Inc",
+          "rationale": "Magna International — global auto parts"
+        },
+        {
+          "ticker": "LNR.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Linamar Corp",
+          "rationale": "Linamar — auto parts + industrial/agri"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-14",
           "action": "create",
-          "note": "Seeded Rails & Industrials — 7 equal-weight TSX members."
+          "note": "Seeded Rails & Industrials — equal-weight TSX members."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "expand",
+          "note": "Expanded to 17 members."
         }
       ]
     },
@@ -804,13 +1155,39 @@
           "removed": null,
           "name": "Kinaxis Inc",
           "rationale": "Kinaxis — supply-chain SaaS"
+        },
+        {
+          "ticker": "BB.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Blackberry Ltd",
+          "rationale": "BlackBerry — automotive software (QNX) + cyber"
+        },
+        {
+          "ticker": "LSPD.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Lightspeed Commerce Inc",
+          "rationale": "Lightspeed Commerce — POS/commerce SaaS"
+        },
+        {
+          "ticker": "TRI.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Thomson Reuters Corp",
+          "rationale": "Thomson Reuters — info-services + AI"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-14",
           "action": "create",
-          "note": "Seeded Technology — 7 equal-weight TSX members."
+          "note": "Seeded Technology — equal-weight TSX members."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "expand",
+          "note": "Expanded to 10 members."
         }
       ]
     },
@@ -888,13 +1265,46 @@
           "removed": null,
           "name": "Algonquin Power Utilities Corp",
           "rationale": "Algonquin Power"
+        },
+        {
+          "ticker": "ACO-X.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Atco Ltd Class I",
+          "rationale": "ATCO — utilities + structures/logistics"
+        },
+        {
+          "ticker": "BIP-UN.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Brookfield Infrastructure Partners",
+          "rationale": "Brookfield Infrastructure — global infra"
+        },
+        {
+          "ticker": "TA.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Transalta Corp",
+          "rationale": "TransAlta — power generation"
+        },
+        {
+          "ticker": "SPB.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Superior Plus Corp",
+          "rationale": "Superior Plus — propane/energy distribution"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-14",
           "action": "create",
-          "note": "Seeded Utilities & Renewables — 9 equal-weight TSX members."
+          "note": "Seeded Utilities & Renewables — equal-weight TSX members."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "expand",
+          "note": "Expanded to 13 members."
         }
       ]
     },
@@ -950,7 +1360,7 @@
         {
           "date": "2021-06-14",
           "action": "create",
-          "note": "Seeded Telecom — 5 equal-weight TSX members."
+          "note": "Seeded Telecom — equal-weight TSX members."
         }
       ]
     },
@@ -1014,13 +1424,60 @@
           "removed": null,
           "name": "Saputo Inc",
           "rationale": "Saputo — dairy processing"
+        },
+        {
+          "ticker": "PBH.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Premium Brands Holdings Corp",
+          "rationale": "Premium Brands — specialty food manufacturing/distribution"
+        },
+        {
+          "ticker": "MFI.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Maple Leaf Foods Inc",
+          "rationale": "Maple Leaf Foods — packaged meats"
+        },
+        {
+          "ticker": "EMP-A.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Empire Ltd Class A",
+          "rationale": "Empire — Sobeys grocery"
+        },
+        {
+          "ticker": "NWC.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "North West Company Inc",
+          "rationale": "North West Company — remote-community retail"
+        },
+        {
+          "ticker": "CTC-A.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Canadian Tire Ltd Class A",
+          "rationale": "Canadian Tire — retail + financial services"
+        },
+        {
+          "ticker": "ATZ.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Aritzia Subordinate Voting Inc",
+          "rationale": "Aritzia — premium apparel retailer"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-14",
           "action": "create",
-          "note": "Seeded Consumer Staples & Retail — 7 equal-weight TSX members."
+          "note": "Seeded Consumer Staples & Retail — equal-weight TSX members."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "expand",
+          "note": "Expanded to 13 members."
         }
       ]
     },
@@ -1084,13 +1541,60 @@
           "removed": null,
           "name": "Dream Industrial Real Estate Inves",
           "rationale": "Dream Industrial"
+        },
+        {
+          "ticker": "BEI-UN.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Boardwalk Real Estate Investment T",
+          "rationale": "Boardwalk — apartment REIT"
+        },
+        {
+          "ticker": "IIP-UN.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Interrent Real Estate Investment T",
+          "rationale": "InterRent — apartment REIT"
+        },
+        {
+          "ticker": "KMP-UN.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Killam Apartment Reit Units Class",
+          "rationale": "Killam — apartment REIT"
+        },
+        {
+          "ticker": "HR-UN.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Handr Real Estate Investment Trust",
+          "rationale": "H&R — diversified REIT"
+        },
+        {
+          "ticker": "CRT-UN.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Ct Reit Units Trust",
+          "rationale": "CT REIT — Canadian Tire-anchored retail"
+        },
+        {
+          "ticker": "AP-UN.TO",
+          "added": "2021-06-14",
+          "removed": null,
+          "name": "Allied Properties Real Estate Invt",
+          "rationale": "Allied Properties — urban office"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-14",
           "action": "create",
-          "note": "Seeded REITs — 7 equal-weight TSX members."
+          "note": "Seeded REITs — equal-weight TSX members."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "expand",
+          "note": "Expanded to 13 members."
         }
       ]
     }

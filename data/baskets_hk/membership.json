@@ -1,7 +1,7 @@
 {
-  "version": "2021-06-15",
+  "version": "2026-06-18",
   "seed_date": "2021-06-15",
-  "curated": "2021-06-15",
+  "curated": "2026-06-18",
   "benchmark": "_HSI",
   "benchmark_label": "HSI",
   "benchmark_label_zh": "恒生指数",
@@ -83,13 +83,88 @@
           "removed": null,
           "name": "SMIC",
           "rationale": "SMIC — the mainland foundry champion"
+        },
+        {
+          "ticker": "9999.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "NetEase",
+          "rationale": "NetEase — gaming + music; the #2 China game publisher"
+        },
+        {
+          "ticker": "9626.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Bilibili",
+          "rationale": "Bilibili — Gen-Z video community + games"
+        },
+        {
+          "ticker": "9698.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "GDS Holdings",
+          "rationale": "GDS Holdings — China data-center / AI capacity"
+        },
+        {
+          "ticker": "2382.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Sunny Optical",
+          "rationale": "Sunny Optical — smartphone + auto optics leader"
+        },
+        {
+          "ticker": "0285.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "BYD Electronic",
+          "rationale": "BYD Electronic — handset/EV electronics assembly"
+        },
+        {
+          "ticker": "3888.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Kingsoft",
+          "rationale": "Kingsoft — office software (WPS) + games + cloud"
+        },
+        {
+          "ticker": "0268.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Kingdee International",
+          "rationale": "Kingdee — enterprise SaaS / cloud ERP"
+        },
+        {
+          "ticker": "1347.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hua Hong Semiconductor",
+          "rationale": "Hua Hong Semiconductor — mature-node foundry"
+        },
+        {
+          "ticker": "0763.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "ZTE Corporation",
+          "rationale": "ZTE — telecom equipment + 5G/networking"
+        },
+        {
+          "ticker": "0772.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "China Literature",
+          "rationale": "China Literature — online literature / IP (Tencent)"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded China Tech & Internet — 9 equal-weight HK members."
+          "note": "Seeded China Tech & Internet — equal-weight HK members."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "expand",
+          "note": "Expanded to 19 members (deep cache widened to ~157 HK names)."
         }
       ]
     },
@@ -160,13 +235,81 @@
           "removed": null,
           "name": "Hengan International",
           "rationale": "Hengan — tissue / personal care"
+        },
+        {
+          "ticker": "9633.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Nongfu Spring",
+          "rationale": "Nongfu Spring — #1 bottled water + beverages"
+        },
+        {
+          "ticker": "0322.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Tingyi",
+          "rationale": "Tingyi — instant noodles + beverages (Master Kong)"
+        },
+        {
+          "ticker": "0151.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Want Want China",
+          "rationale": "Want Want — rice crackers / dairy snacks"
+        },
+        {
+          "ticker": "0345.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Vitasoy",
+          "rationale": "Vitasoy — soy/plant beverages"
+        },
+        {
+          "ticker": "2313.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Shenzhou International",
+          "rationale": "Shenzhou International — knitwear OEM (Nike/Adidas)"
+        },
+        {
+          "ticker": "1112.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Health & Happiness",
+          "rationale": "Health & Happiness — infant formula / supplements"
+        },
+        {
+          "ticker": "6969.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Smoore International",
+          "rationale": "Smoore — global vaping device ODM"
+        },
+        {
+          "ticker": "9961.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Trip.com",
+          "rationale": "Trip.com — China online-travel leader"
+        },
+        {
+          "ticker": "6808.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Sun Art Retail",
+          "rationale": "Sun Art Retail — hypermarket / grocery"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded China Consumer Brands — 8 equal-weight HK members."
+          "note": "Seeded China Consumer Brands — equal-weight HK members."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "expand",
+          "note": "Expanded to 17 members (deep cache widened to ~157 HK names)."
         }
       ]
     },
@@ -223,13 +366,81 @@
           "removed": null,
           "name": "Sinopharm",
           "rationale": "Sinopharm — pharma distribution giant"
+        },
+        {
+          "ticker": "1801.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Innovent Biologics",
+          "rationale": "Innovent — PD-1 / oncology innovator"
+        },
+        {
+          "ticker": "9926.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Akeso",
+          "rationale": "Akeso — bispecific antibody platform (ivonescimab)"
+        },
+        {
+          "ticker": "3692.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hansoh Pharmaceutical",
+          "rationale": "Hansoh Pharma — innovative oncology/CNS"
+        },
+        {
+          "ticker": "2392.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Pharmaron Beijing",
+          "rationale": "Pharmaron — CRO/CDMO across modalities"
+        },
+        {
+          "ticker": "2607.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Shanghai Henlius Biotech",
+          "rationale": "Shanghai Henlius — biosimilars + biologics"
+        },
+        {
+          "ticker": "6618.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "JD Health",
+          "rationale": "JD Health — online pharmacy / healthcare platform"
+        },
+        {
+          "ticker": "0867.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "China Medical System",
+          "rationale": "China Medical System — specialty pharma distribution"
+        },
+        {
+          "ticker": "2196.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Shanghai Pharmaceuticals",
+          "rationale": "Shanghai Pharmaceuticals — pharma distribution + manufacturing"
+        },
+        {
+          "ticker": "1066.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Shandong Weigao",
+          "rationale": "Shandong Weigao — medical devices / consumables"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded Biotech, Pharma & CXO — 6 equal-weight HK members."
+          "note": "Seeded Biotech, Pharma & CXO — equal-weight HK members."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "expand",
+          "note": "Expanded to 15 members (deep cache widened to ~157 HK names)."
         }
       ]
     },
@@ -279,13 +490,39 @@
           "removed": null,
           "name": "Guangzhou Auto",
           "rationale": "Guangzhou Auto — JV + Aion NEV"
+        },
+        {
+          "ticker": "9863.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Zhejiang Leapmotor",
+          "rationale": "Leapmotor — value smart-EV scaler (Stellantis-backed)"
+        },
+        {
+          "ticker": "2333.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Great Wall Motor",
+          "rationale": "Great Wall Motor — SUV/pickup OEM + NEV/export"
+        },
+        {
+          "ticker": "1958.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "BAIC Motor",
+          "rationale": "BAIC Motor — legacy OEM + premium JV"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded China EV & Autos — 5 equal-weight HK members."
+          "note": "Seeded China EV & Autos — equal-weight HK members."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "expand",
+          "note": "Expanded to 8 members (deep cache widened to ~157 HK names)."
         }
       ]
     },
@@ -349,13 +586,60 @@
           "removed": null,
           "name": "BOC Hong Kong",
           "rationale": "BOC Hong Kong — HK retail/clearing bank"
+        },
+        {
+          "ticker": "3968.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "China Merchants Bank",
+          "rationale": "China Merchants Bank — premier retail bank (H)"
+        },
+        {
+          "ticker": "1658.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Postal Savings Bank of China",
+          "rationale": "Postal Savings Bank — vast retail deposit franchise (H)"
+        },
+        {
+          "ticker": "0998.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "CITIC Bank",
+          "rationale": "CITIC Bank — national joint-stock lender (H)"
+        },
+        {
+          "ticker": "6818.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "China Everbright Bank",
+          "rationale": "China Everbright Bank (H)"
+        },
+        {
+          "ticker": "3618.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Chongqing Rural Commercial Bank",
+          "rationale": "Chongqing Rural Commercial Bank (H)"
+        },
+        {
+          "ticker": "2888.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Standard Chartered",
+          "rationale": "Standard Chartered — EM/Asia-focused global bank"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded Banks (H + HK) — 7 equal-weight HK members."
+          "note": "Seeded Banks (H + HK) — equal-weight HK members."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "expand",
+          "note": "Expanded to 13 members (deep cache widened to ~157 HK names)."
         }
       ]
     },
@@ -405,13 +689,39 @@
           "removed": null,
           "name": "China Taiping",
           "rationale": "China Taiping — life + P&C"
+        },
+        {
+          "ticker": "1336.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "New China Life Insurance",
+          "rationale": "New China Life — mainland life insurer (H)"
+        },
+        {
+          "ticker": "2378.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Prudential",
+          "rationale": "Prudential — pan-Asia/Africa life franchise"
+        },
+        {
+          "ticker": "6060.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "ZhongAn Online",
+          "rationale": "ZhongAn Online — digital P&C insurer"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded Insurers — 5 equal-weight HK members."
+          "note": "Seeded Insurers — equal-weight HK members."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "expand",
+          "note": "Expanded to 8 members (deep cache widened to ~157 HK names)."
         }
       ]
     },
@@ -447,13 +757,32 @@
           "removed": null,
           "name": "HKEX",
           "rationale": "HKEX — the exchange operator"
+        },
+        {
+          "ticker": "0656.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Fosun International",
+          "rationale": "Fosun International — diversified investment conglomerate"
+        },
+        {
+          "ticker": "0392.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Beijing Enterprises",
+          "rationale": "Beijing Enterprises — gas / infrastructure conglomerate"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded Conglomerates & Exchange — 3 equal-weight HK members."
+          "note": "Seeded Conglomerates & Exchange — equal-weight HK members."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "expand",
+          "note": "Expanded to 5 members (deep cache widened to ~157 HK names)."
         }
       ]
     },
@@ -524,13 +853,67 @@
           "removed": null,
           "name": "Sino Land",
           "rationale": "Sino Land"
+        },
+        {
+          "ticker": "1113.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "CK Asset Holdings",
+          "rationale": "CK Asset — the flagship HK developer/landlord"
+        },
+        {
+          "ticker": "0960.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Longfor Group",
+          "rationale": "Longfor — quality mainland developer (H)"
+        },
+        {
+          "ticker": "1209.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "China Resources Mixc",
+          "rationale": "CR Mixc — asset-light mall/property management"
+        },
+        {
+          "ticker": "0101.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hang Lung Properties",
+          "rationale": "Hang Lung Properties — HK + mainland malls"
+        },
+        {
+          "ticker": "0014.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hysan Development",
+          "rationale": "Hysan Development — Causeway Bay landlord"
+        },
+        {
+          "ticker": "0683.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Kerry Properties",
+          "rationale": "Kerry Properties — HK/mainland developer"
+        },
+        {
+          "ticker": "0778.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Fortune REIT",
+          "rationale": "Fortune REIT — HK suburban retail REIT"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded Property & REITs — 8 equal-weight HK members."
+          "note": "Seeded Property & REITs — equal-weight HK members."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "expand",
+          "note": "Expanded to 15 members (deep cache widened to ~157 HK names)."
         }
       ]
     },
@@ -573,13 +956,25 @@
           "removed": null,
           "name": "MGM China",
           "rationale": "MGM China"
+        },
+        {
+          "ticker": "0200.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Melco International",
+          "rationale": "Melco International — Macau/Cotai casino operator"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded Macau Gaming — 4 equal-weight HK members."
+          "note": "Seeded Macau Gaming — equal-weight HK members."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "expand",
+          "note": "Expanded to 5 members (deep cache widened to ~157 HK names)."
         }
       ]
     },
@@ -629,13 +1024,53 @@
           "removed": null,
           "name": "Sinopec Kantons",
           "rationale": "Sinopec Kantons — oil logistics"
+        },
+        {
+          "ticker": "0902.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Huaneng Power",
+          "rationale": "Huaneng Power — large IPP / thermal power (H)"
+        },
+        {
+          "ticker": "1816.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "CGN Power",
+          "rationale": "CGN Power — nuclear generation leader (H)"
+        },
+        {
+          "ticker": "1898.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "China Coal Energy",
+          "rationale": "China Coal Energy — integrated coal (H)"
+        },
+        {
+          "ticker": "2883.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "China Oilfield Services",
+          "rationale": "China Oilfield Services — offshore oil services (H)"
+        },
+        {
+          "ticker": "0135.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Kunlun Energy",
+          "rationale": "Kunlun Energy — natural-gas distribution (PetroChina)"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded Energy (H-shares) — 5 equal-weight HK members."
+          "note": "Seeded Energy (H-shares) — equal-weight HK members."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "expand",
+          "note": "Expanded to 10 members (deep cache widened to ~157 HK names)."
         }
       ]
     },
@@ -685,13 +1120,60 @@
           "removed": null,
           "name": "RUSAL",
           "rationale": "RUSAL — aluminium"
+        },
+        {
+          "ticker": "2899.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Zijin Mining",
+          "rationale": "Zijin Mining — global gold + copper major (H)"
+        },
+        {
+          "ticker": "1208.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "MMG",
+          "rationale": "MMG — copper / zinc (Las Bambas)"
+        },
+        {
+          "ticker": "0323.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Maanshan Iron & Steel",
+          "rationale": "Maanshan Iron & Steel (H)"
+        },
+        {
+          "ticker": "0639.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Shougang Resources",
+          "rationale": "Shougang Resources — coking coal"
+        },
+        {
+          "ticker": "1799.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Xinte Energy",
+          "rationale": "Xinte Energy — polysilicon / solar materials"
+        },
+        {
+          "ticker": "3800.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "GCL Technology",
+          "rationale": "GCL Technology — polysilicon for solar"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded Materials & Metals — 5 equal-weight HK members."
+          "note": "Seeded Materials & Metals — equal-weight HK members."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "expand",
+          "note": "Expanded to 11 members (deep cache widened to ~157 HK names)."
         }
       ]
     },
@@ -762,13 +1244,46 @@
           "removed": null,
           "name": "MTR Corporation",
           "rationale": "MTR Corporation — rail + property"
+        },
+        {
+          "ticker": "0836.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "China Resources Power",
+          "rationale": "China Resources Power — IPP + renewables (H)"
+        },
+        {
+          "ticker": "2688.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "ENN Energy",
+          "rationale": "ENN Energy — city-gas distribution"
+        },
+        {
+          "ticker": "0257.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "China Everbright Environment",
+          "rationale": "China Everbright Environment — waste-to-energy"
+        },
+        {
+          "ticker": "0371.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Beijing Enterprises Water",
+          "rationale": "Beijing Enterprises Water — water treatment"
         }
       ],
       "changelog": [
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded Telecom & Utilities — 8 equal-weight HK members."
+          "note": "Seeded Telecom & Utilities — equal-weight HK members."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "expand",
+          "note": "Expanded to 12 members (deep cache widened to ~157 HK names)."
         }
       ]
     },
@@ -845,7 +1360,91 @@
         {
           "date": "2021-06-15",
           "action": "create",
-          "note": "Seeded High-Dividend Blue Chips — 8 equal-weight HK members."
+          "note": "Seeded High-Dividend Blue Chips — equal-weight HK members."
+        }
+      ]
+    },
+    "hk_industrials": {
+      "name": "Industrials & Infrastructure",
+      "name_zh": "工业与基建",
+      "category": "Industrials & Transport",
+      "category_zh": "工业与运输",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The HK-listed industrial & infrastructure complex — power tools, rail-equipment and rolling stock, heavy machinery, the construction SOEs, ports and express logistics. A capex- and China-growth-cyclical sleeve geared to infrastructure spend, the export machine and global tool demand.",
+      "thesis_zh": "港股工业与基建集群 — 电动工具、轨交装备与机车、重型机械、建筑央企、港口与快递物流。受基建投资、出口机器与全球工具需求驱动、对中国增长敏感的周期性板块。",
+      "members": [
+        {
+          "ticker": "0669.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Techtronic Industries",
+          "rationale": "Techtronic — global power tools (Milwaukee/Ryobi)"
+        },
+        {
+          "ticker": "1766.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "CRRC Corporation",
+          "rationale": "CRRC — the rolling-stock / rail-equipment giant (H)"
+        },
+        {
+          "ticker": "2338.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Weichai Power",
+          "rationale": "Weichai Power — diesel engines / heavy-duty powertrains (H)"
+        },
+        {
+          "ticker": "0390.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "China Railway Group",
+          "rationale": "China Railway Group — construction SOE (H)"
+        },
+        {
+          "ticker": "1186.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "China Railway Construction",
+          "rationale": "China Railway Construction — infra construction SOE (H)"
+        },
+        {
+          "ticker": "1072.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Dongfang Electric",
+          "rationale": "Dongfang Electric — power-generation equipment (H)"
+        },
+        {
+          "ticker": "0144.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "China Merchants Port",
+          "rationale": "China Merchants Port — port operator"
+        },
+        {
+          "ticker": "0316.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Orient Overseas",
+          "rationale": "Orient Overseas (OOIL) — container shipping"
+        },
+        {
+          "ticker": "2057.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "ZTO Express",
+          "rationale": "ZTO Express — China express-delivery leader"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2026-06-18",
+          "action": "create",
+          "note": "Created Industrials & Infrastructure — 9 equal-weight HK members."
         }
       ]
     }

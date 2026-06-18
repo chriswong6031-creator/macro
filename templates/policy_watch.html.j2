@@ -63,6 +63,10 @@
 
 <div class="pw-wrap">
 
+  {% if dates and dates.staleness and dates.staleness.stale %}
+  <div class="callout warn" style="margin-top:16px">⏳ <b>{{ t('Intel is', '情报已') }} {{ dates.staleness.age_days }} {{ t('days old', '天未更新') }}</b> — {{ t('re-verify before acting; this layer is time-sensitive (truces, ceasefires and pending rulings move).', '行动前请重新核实；该层具时效性（休战、停火与待决裁决随时变化）。') }}{% if dates.overdue_predictions %} · {{ dates.overdue_predictions }} {{ t('prediction(s) past check-by', '条预测已过核查日') }}{% endif %}</div>
+  {% endif %}
+
   <div class="callout key" style="margin-top:16px">
     <span class="co-h">{{ t('The thesis', '核心论点') }}</span>
     {{ bl(intel.thesis.en, intel.thesis.zh) }}
@@ -72,9 +76,55 @@
     {{ bl(intel.regime_read.en, intel.regime_read.zh) }}
   </div>
 
+  <!-- ================= INTENT DESK (LLM, accountable) ================= -->
+  {% if desk %}
+  <h2 class="sec">🤖 {{ t('Intent Desk — accountable realpolitik leans', '意图台 — 可问责的现实政治判断') }}</h2>
+  <p class="lede" style="color:var(--muted)">{{ t('An LLM reads the sourced intel + live market state and emits dated, FALSIFIABLE leans (a proxy ticker vs SPY) that are scored over time. Context only — never a size or a trade; intent is a tracked hypothesis, not an oracle.',
+      '由LLM读取来源情报+实时市场状态，给出有日期、可证伪的判断（某代理标的 vs SPY），并随时间评分。仅供参考——绝非仓位或交易；意图是被追踪的假设，而非神谕。') }}</p>
+  {% if desk.regime_context %}<div class="callout">{{ desk.regime_context }}</div>{% endif %}
+  {% if desk.track_record and desk.track_record.overall and desk.track_record.overall.n %}
+  <div class="led-stat">
+    <span><b>{{ desk.track_record.overall.n }}</b> {{ t('scored', '已评分') }}</span>
+    {% if desk.track_record.overall.hit_rate is not none %}<span><b>{{ (desk.track_record.overall.hit_rate*100)|round|int }}%</b> {{ t('not falsified', '未被证伪') }}</span>{% endif %}
+    {% if desk.track_record.open %}<span>{{ desk.track_record.open }} {{ t('open', '未结') }}</span>{% endif %}
+    <span class="conf">{{ desk.track_record.calibration_note }}</span>
+  </div>
+  {% endif %}
+  {% if desk.theses %}
+  <div class="cards">
+    {% for th in desk.theses %}
+    <div class="card">
+      <div class="cn"><span class="th-{{ 'fed' if th.actor=='fed' else 'policy' }}">{{ (th.actor or 'admin')|upper }}</span> · {{ th.subject }} — <span class="b {{ 'b-fact' if th.lean=='overweight' else 'b-miss' }}">{{ th.lean }}</span></div>
+      <div class="cmeta">
+        <span class="conf">{{ th.conviction }} {{ t('conviction', '置信') }}</span>
+        <span class="b b-open">{{ t('check by', '核查于') }} {{ th.check_by }}</span>
+        <span class="conf">{{ th.falsifier.check.kind if th.falsifier and th.falsifier.check else 'soft' }}</span>
+      </div>
+      <div class="cch">{{ th.thesis }}</div>
+      {% if th.dissent %}<div class="cch" style="color:var(--muted)"><b>{{ t('Dissent', '反方') }}:</b> {{ th.dissent }}</div>{% endif %}
+      {% if th.falsifier and th.falsifier.text %}<div class="crp"><b>{{ t('Falsifier', '证伪条件') }}:</b> {{ th.falsifier.text }}</div>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% elif desk.degraded_reason %}
+  <div class="callout warn">{{ t('Desk note pending — the LLM layer generates in CI (needs the model key).', '台注待生成 —— LLM层在CI中生成（需模型密钥）。') }} <span class="conf">({{ desk.degraded_reason }})</span></div>
+  {% endif %}
+  <p class="conf">{{ desk.disclaimer }}</p>
+  {% endif %}
+
   <!-- ================= THE FED ================= -->
   <h2 class="sec">🏦 {{ t('The Fed under Warsh', '沃什治下的美联储') }}</h2>
   <p class="lede">{{ bl(intel.fed.profile.en, intel.fed.profile.zh) }}</p>
+
+  {% if fed_stance and fed_stance.stance != 'unknown' %}
+  {% set scls = 'b-miss' if fed_stance.color=='down' else ('b-fact' if fed_stance.color=='up' else 'b-open') %}
+  <div class="callout">
+    <span class="co-h">{{ t('Reaction function (explicit, display-only)', '反应函数（显式，仅展示）') }}
+      <span class="b {{ scls }}">{{ bl(fed_stance.label_en, fed_stance.label_zh) }}</span></span>
+    {% if fed_stance.drivers_en %}<span class="l-en">{{ fed_stance.drivers_en | join(' · ') }}</span><span class="l-zh">{{ fed_stance.drivers_zh | join(' · ') }}</span>. {% endif %}
+    <span class="conf">{{ bl(fed_stance.note_en, fed_stance.note_zh) }}</span>
+  </div>
+  {% endif %}
 
   <h3 class="sub">{{ t('Reform task forces — dated, falsifiable', '改革工作组 — 有日期、可证伪') }}</h3>
   <div class="cards">
@@ -83,6 +133,8 @@
       <div class="cn">{{ bl(tf.name_en, tf.name_zh) }}</div>
       <div class="cmeta">
         <span class="b b-open">{{ t('check by', '核查于') }} {{ tf.check_by }}</span>
+        {% set td = (dates.task_forces[tf.id] if dates and dates.task_forces and tf.id in dates.task_forces else None) %}
+        {% if td and td.days_to is not none %}{% if td.overdue %}<span class="b b-miss">{{ t('overdue', '已逾期') }}</span>{% else %}<span class="conf">{{ t('in', '剩') }} {{ td.days_to }}{{ t('d', '天') }}</span>{% endif %}{% endif %}
         <span class="b {{ 'b-fact' if 'FACT' in tf.basis else 'b-inf' }}">{{ tf.basis }}</span>
         <span class="conf">{{ tf.confidence }}</span>
       </div>
@@ -111,25 +163,38 @@
     </div>
     {% endfor %}
   </div>
-  <div class="callout warn">
-    <span class="co-h">⚠ {{ t('Unverified priors (not facts)', '未核实的先验（非事实）') }}</span>
-    {{ bl(intel.administration.unverified_priors.en, intel.administration.unverified_priors.zh) }}
+  <h3 class="sub">{{ t('Geopolitical theaters', '地缘政治战区') }}</h3>
+  <div class="cards">
+    {% for th in intel.administration.theaters %}
+    <div class="card">
+      <div class="cn">{{ bl(th.title_en, th.title_zh) }}</div>
+      <div class="cmeta">
+        <span class="b {{ 'b-fact' if th.basis.startswith('FACT') else 'b-prior' }}">{{ th.basis }}</span>
+        <span class="conf">{{ th.confidence }}</span>
+      </div>
+      <div class="cch">{{ bl(th.facts_en, th.facts_zh) }}</div>
+      <div class="crp"><b>{{ t('Realpolitik', '现实政治') }}:</b> {{ bl(th.realpolitik_en, th.realpolitik_zh) }}</div>
+      <div class="cch" style="margin-top:6px"><b>💰 {{ t('Capital', '资本') }}:</b> {{ bl(th.capital_en, th.capital_zh) }}</div>
+    </div>
+    {% endfor %}
   </div>
 
   <!-- ================= CAPITAL ROTATION ================= -->
   <h2 class="sec">🧭 {{ t('Capital-rotation map', '资本轮动地图') }}</h2>
   <h3 class="sub">🎯 {{ t('Targeted / protected / subsidized', '受益 / 受保护 / 受补贴') }}</h3>
   <table class="data">
-    <tr><th>{{ t('Theme', '主题') }}</th><th>{{ t('Mechanism', '机制') }}</th><th>{{ t('Proxies', '代理标的') }}</th><th>{{ t('Basis', '依据') }}</th></tr>
+    <tr><th>{{ t('Theme', '主题') }}</th><th>{{ t('Mechanism', '机制') }}</th><th>{{ t('Proxies', '代理标的') }}</th><th>{{ t('Realized 63d vs SPY', '近63日 vs 标普') }}</th><th>{{ t('Basis', '依据') }}</th></tr>
     {% for r in intel.rotation.targeted %}
     <tr>
       <td><strong>{{ bl(r.theme_en, r.theme_zh) }}</strong></td>
       <td>{{ bl(r.mechanism_en, r.mechanism_zh) }}</td>
       <td class="prox">{{ r.proxies | join(' ') if r.proxies else '—' }}</td>
+      <td class="num">{% set rc = (rot.themes[r.theme_en] if rot and rot.themes and (r.theme_en in rot.themes) else None) %}{% set rh = (rot_hist[r.theme_en] if rot_hist and (r.theme_en in rot_hist) else None) %}{% if rc and rc.verdict != 'na' %}<span class="b {{ {'working':'b-fact','lagging':'b-miss','mixed':'b-open'}[rc.verdict] }}">{{ rc.verdict }}</span> {{ '%+.1f'|format(rc.avg_rel*100) }}%{% if rh and rh.reads %}<br><span class="conf">{{ t('working', '达标') }} {{ rh.working }}/{{ rh.reads }}</span>{% endif %}{% else %}<span class="conf">—</span>{% endif %}</td>
       <td><span class="b {{ 'b-prior' if 'PRIOR' in r.basis else ('b-fact' if 'FACT' in r.basis else 'b-inf') }}">{{ r.basis }}</span><br><span class="conf">{{ r.confidence }}</span></td>
     </tr>
     {% endfor %}
   </table>
+  {% if rot %}<p class="conf">{{ t('Realized = mean trailing-63d return of the theme&#39;s proxies minus SPY (coincident, display-only — a persistently lagging TARGETED theme is evidence against the rotation call).', '“近63日”= 该主题代理标的过去63个交易日相对标普的平均超额收益（同步、仅展示——长期跑输的受益主题即是对该轮动判断的反证）。') }}</p>{% endif %}
   <h3 class="sub">🥶 {{ t('Starved / pressured', '受冷落 / 承压') }}</h3>
   <table class="data">
     <tr><th>{{ t('Theme', '主题') }}</th><th>{{ t('Mechanism', '机制') }}</th><th>{{ t('Proxies', '代理标的') }}</th><th>{{ t('Basis', '依据') }}</th></tr>
@@ -152,6 +217,7 @@
     <span><b>{{ counts.open }}</b> {{ t('open', '未结') }}</span>
     <span><b>{{ counts.hit }}</b> {{ t('hit', '命中') }}</span>
     <span><b>{{ counts.miss }}</b> {{ t('miss', '落空') }}</span>
+    {% if dates and dates.overdue_predictions %}<span><b>{{ dates.overdue_predictions }}</b> {{ t('past check-by', '已过核查') }}</span>{% endif %}
     <span>{{ counts.policy_action }} {{ t('policy-action', '政策行动') }} · {{ counts.market_outcome }} {{ t('market-outcome', '市场结果') }}</span>
   </div>
   <table class="data">
@@ -164,7 +230,7 @@
       <td>{{ p.check_by }}</td>
       <td><span class="conf">{{ p.tier }}</span></td>
       <td><span class="conf">{{ p.confidence }}</span></td>
-      <td><span class="b b-{{ p.status }}">{{ p.status }}</span></td>
+      <td><span class="b b-{{ p.status }}">{{ p.status }}</span>{% set pdt = (dates.predictions[p.id] if dates and dates.predictions and p.id in dates.predictions else None) %}{% if pdt and pdt.overdue %} <span class="b b-miss">{{ t('due', '待结') }}</span>{% endif %}</td>
     </tr>
     {% endfor %}
   </table>

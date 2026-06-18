@@ -504,6 +504,9 @@ eia:
     refinery_inputs: WCRRIUS2      # refiner net input of crude (kbbl/d) — days-of-supply denom
     gasoline_supplied: WGFUPUS2    # product supplied of finished gasoline (kbbl/d) — demand
     distillate_supplied: WDIUPUS2  # product supplied of distillate (kbbl/d) — freight/industrial demand
+    crude_imports: WCEIMUS2        # weekly crude oil imports (kbbl/d)
+    crude_exports: WCREXUS2        # weekly crude oil exports (kbbl/d)
+    crude_net_imports: WCRNTUS2    # weekly NET crude imports (kbbl/d) — SPR days-of-import-cover denom
   supply:                          # oil-page PHYSICAL BALANCE read (display-only, never scored)
     range_lookback_d: 1825         # 5y range for the stocks z / percentile (legacy)
     trend_window_d: 28             # ~4-week stocks/production change
@@ -524,8 +527,11 @@ jodi:
   retries: 3
   start_year: 2002                 # full-history floor (JODI begins Jan-2002)
   recent_years: 2                  # incremental runs pull the last N annual files
-  flow: CLOSTLV                    # closing stock level
-  products: [CRUDEOIL]             # crude only (PRIMARY file; refined products live in JODI's secondary db). Level reconciled to kbbl.
+  products: [CRUDEOIL]             # crude only (PRIMARY file; refined products live in JODI's secondary db)
+  flows:                           # flow_code -> {prefix for the stored series, unit kind}
+    CLOSTLV:  {prefix: crude,   unit: stock}   # closing stock LEVEL -> kbbl (KBBL else KTONS*CONVBBL)
+    TOTIMPSB: {prefix: imports, unit: rate}    # total crude imports -> kbd
+    TOTEXPSB: {prefix: exports, unit: rate}    # total crude exports -> kbd
   countries: [US, CN, JP, KR, IN, DE, FR, IT, ES, GB, NL, CA, SA, AE, BR, MX, AU]
 
 # =============================================================================
@@ -577,6 +583,54 @@ strategic_reserves:
        strategic_mb: 82, strategic_type: commercial,
        ownership_en: "On-land commercial inventories (no public SPR breakout)", ownership_zh: "境内商业库存（无公开战略储备拆分）",
        source: "Vortexa / Kpler estimate", as_of: "2025-12"}
+
+# =============================================================================
+# World Bank Open Data — official reserve assets (keyless, stable). Two annual
+# indicators; the engine derives gold value (TOTL-XGLD) + gold share of reserves.
+# Feeds the Gold Reserves section of the Strategic Reserves page. See collectors/worldbank.py.
+# =============================================================================
+worldbank:
+  api_url: https://api.worldbank.org/v2/country/{countries}/indicator/{indicator}?format=json&per_page=2000&date={start}:{end}&page={page}
+  user_agent: "Mozilla/5.0 (macro-dashboard research)"
+  retries: 3
+  start_year: 2000
+  indicators:
+    reserves_total: FI.RES.TOTL.CD    # total reserves INCLUDING gold (US$)
+    reserves_exgold: FI.RES.XGLD.CD   # total reserves EXCLUDING gold (US$)
+  countries: [USA, CHN, DEU, ITA, FRA, RUS, CHE, JPN, IND, NLD, TUR, POL, PRT, SAU, GBR, SGP, KAZ]
+
+# =============================================================================
+# Gold Reserves section (site/spr.html) — DISPLAY-ONLY. Live gold VALUE + share of
+# reserves come from World Bank (annual, USD, derived above); the per-country TONNES
+# and the "who's accumulating" trend are curated below (no clean keyless tonnes feed
+# exists — WGC is login-gated, IMF IFS API is mid-migration). Figures: World Gold
+# Council / IMF IFS, as of 2025. Update here, not in code. iso = ISO3 (matches WB).
+# =============================================================================
+gold_reserves:
+  as_of: "2025"
+  source: "World Gold Council / IMF IFS"
+  global_tonnes: 36000              # approx total official-sector holdings (reference)
+  cb_net_buying_note_en: "Central banks bought a record ~1,000+ tonnes/yr in 2022-2024 — the structural bid behind gold."
+  cb_net_buying_note_zh: "央行在2022-2024年以每年约1000+吨的纪录速度增持——黄金背后的结构性买盘。"
+  countries:
+    - {iso: USA, name: United States, name_zh: 美国, flag: "🇺🇸", tonnes: 8133.5, trend: stable}
+    - {iso: DEU, name: Germany, name_zh: 德国, flag: "🇩🇪", tonnes: 3351.5, trend: stable}
+    - {iso: ITA, name: Italy, name_zh: 意大利, flag: "🇮🇹", tonnes: 2451.8, trend: stable}
+    - {iso: FRA, name: France, name_zh: 法国, flag: "🇫🇷", tonnes: 2437.0, trend: stable}
+    - {iso: RUS, name: Russia, name_zh: 俄罗斯, flag: "🇷🇺", tonnes: 2335.9, trend: stable}
+    - {iso: CHN, name: China, name_zh: 中国, flag: "🇨🇳", tonnes: 2280.0, trend: accumulating}
+    - {iso: CHE, name: Switzerland, name_zh: 瑞士, flag: "🇨🇭", tonnes: 1040.0, trend: stable}
+    - {iso: IND, name: India, name_zh: 印度, flag: "🇮🇳", tonnes: 880.2, trend: accumulating}
+    - {iso: JPN, name: Japan, name_zh: 日本, flag: "🇯🇵", tonnes: 845.9, trend: stable}
+    - {iso: NLD, name: Netherlands, name_zh: 荷兰, flag: "🇳🇱", tonnes: 612.5, trend: stable}
+    - {iso: TUR, name: Turkey, name_zh: 土耳其, flag: "🇹🇷", tonnes: 595.0, trend: accumulating}
+    - {iso: POL, name: Poland, name_zh: 波兰, flag: "🇵🇱", tonnes: 509.0, trend: accumulating}
+    - {iso: TWN, name: Taiwan, name_zh: 台湾, flag: "🇹🇼", tonnes: 423.6, trend: stable, no_wb: true}
+    - {iso: PRT, name: Portugal, name_zh: 葡萄牙, flag: "🇵🇹", tonnes: 382.6, trend: stable}
+    - {iso: SAU, name: Saudi Arabia, name_zh: 沙特阿拉伯, flag: "🇸🇦", tonnes: 323.1, trend: stable}
+    - {iso: GBR, name: United Kingdom, name_zh: 英国, flag: "🇬🇧", tonnes: 310.3, trend: stable}
+    - {iso: KAZ, name: Kazakhstan, name_zh: 哈萨克斯坦, flag: "🇰🇿", tonnes: 285.0, trend: accumulating}
+    - {iso: SGP, name: Singapore, name_zh: 新加坡, flag: "🇸🇬", tonnes: 220.0, trend: accumulating}
 
 # =============================================================================
 # OFR Financial Stress Index — daily 33-variable global stress with functional +
@@ -1840,6 +1894,31 @@ news_vector:
   query_terms: []                 # GDELT OR-clause override (default = narrative core)
 
 # =============================================================================
+# China macro news, official policy-tone & narrative regime (engine/china_news.py +
+# collectors/china_news.py) — the China sibling of macro_news/narrative_regime, powering
+# the "📰 Macro news, sentiment & catalysts" panel on china.html. KEYLESS, DISPLAY-ONLY,
+# never scored. The CCTV 新闻联播 policy-tone series is accrued by the collector; the
+# Eastmoney 全球财经快讯 flash headlines are fetched at build time and cached.
+# =============================================================================
+china_news:
+  enabled: true                   # MASTER SWITCH for the Eastmoney headline fetch + LLM brief
+  backfill_days: 120              # collector: CCTV days fetched on --full-history (tone series seed)
+  incremental_days: 6             # collector: CCTV days re-fetched each run (fills weekend/missed gaps)
+  request_pace_s: 0.4             # collector: politeness pause between CCTV day-page fetches
+  tone_window: 90                 # engine: z-score window (trading days) for the policy-tone
+  tone_smooth: 5                  # engine: rolling-mean smoothing of the sparse daily tone
+  max_records: 60                 # Eastmoney flashes pulled before the macro-theme gate
+  max_show: 12                    # macro headlines shown after filtering
+  cache_dir: data/china_news/flash_cache
+  cache_ttl_hours: 12
+  # OPTIONAL AI brief — the only AI; off even if a key is present. Provider-agnostic
+  # (DeepSeek/Anthropic wire), degrade-to-keyless, never scored.
+  llm_brief: false
+  llm_model: deepseek-chat
+  base_url: https://api.deepseek.com/anthropic   # omit / null for native Anthropic
+  api_key_env: DEEPSEEK_API_KEY
+
+# =============================================================================
 # Company-profile translation (engine/translate.py + scripts/translate_profiles.py).
 # The single-stock analyzer's "Business profile" blurb is sourced English free text
 # (Wikipedia/SEC) — not a UI string, so it can't be dual-emitted like the rest of the
@@ -1945,6 +2024,25 @@ ai_desk:
                                  # false = single analyst (cheaper: 1 LLM call vs 5).
 
 # =============================================================================
+# Policy Intent Desk — the realpolitik LLM layer on the Fed/Admin intel substrate
+# (engine/policy_intent_desk.py). LEAF · NEVER-SCORED · no-op without DEEPSEEK_API_KEY.
+# Reads data/policy/intel.json + live market state -> dated, FALSIFIABLE intent leans
+# (a proxy ticker vs SPY) appended to data/policy_intent/theses.jsonl and scored over
+# time (reuses ai_desk_scorer evaluators). Surfaced on site/policy_watch.html.
+# =============================================================================
+policy_intent_desk:
+  enabled: true                  # runs in the pipeline; degrades to no-op without the key
+  api_key_env: DEEPSEEK_API_KEY
+  llm_base_url: https://api.deepseek.com/anthropic
+  llm_model: deepseek-v4-pro
+  max_tokens: 8000
+  interval_days: 7               # slow-moving policy layer — weekly regen (keeps prior note live between)
+  max_theses: 5
+  default_horizon_d: 40          # policy horizons run longer than flow (10..126 td)
+  falsifier_defaults:
+    rel_return: 0.05             # ±5% proxy-vs-SPY move = the wrong-way threshold
+
+# =============================================================================
 # Catalyst stock — single-stock research BRIEF (LLM "Option 2"; engine/catalyst_stock.py).
 # LEAF · DEFAULT-OFF · RESEARCH/CONTEXT-ONLY. The per-stock analogue of master_brain:
 # assembles ONE ticker's PUBLIC context (cycle/ladder signal + technical state +
@@ -2023,6 +2121,12 @@ forex:
     spy:          [yahoo, SPY]
     eem:          [hk, EEM]             # EM-equity risk proxy (already collected under hk)
     cny_onshore:  [fred, DEXCHUS]       # onshore USD/CNY — vs offshore CNH=F = the CNH basis
+    btc:          [yahoo, "BTC-USD"]    # bitcoin — dollar cross-asset transmission leg (2014->)
+    us10y_real:   [fred, DFII10]        # US 10y TIPS real yield — the dollar's structural anchor (2003->)
+    breakeven_10y: [fred, T10YIE]       # 10y inflation breakeven — real-vs-reflation smile arm
+    fed_bs:       [fred, WALCL]          # Fed balance sheet (weekly) — USD-liquidity leg
+    on_rrp:       [fred, RRPONTSYD]      # overnight RRP (daily) — net-liquidity drain
+    reer_us:      [fred, RBUSBIS]        # US BIS real-effective rate — dollar valuation (monthly, lagged)
 
   cnh:                                  # offshore(CNH)-onshore(CNY) basis = China stress / capital-flow gauge
     stress_bps: 150                     # basis above this (offshore yuan weaker) = depreciation / outflow stress
@@ -2124,6 +2228,94 @@ forex:
     timeline_days: 60
     shock:                          # per-pair |move| % that flags an FX shock (lower vol than commods)
       enter_pct: {EURUSD: 1.5, USDJPY: 2.0, GBPUSD: 1.8, AUDUSD: 2.0, USDCAD: 1.5, USDCHF: 1.8, USDMXN: 3.0, USDBRL: 3.5, USDCNH: 1.2}
+
+  # ---------------------------------------------------------------------------
+  # DOLLAR DESK — a deepened, multi-signal read of the master variable (broad USD).
+  # ALL DISPLAY-ONLY / never scored: FX violates UIP, the dollar move is often the
+  # tightening itself (coincident), and every forex conviction backtest fails the
+  # deflated-Sharpe bar. These are REGIME / CONTEXT reads, not trade calls. See
+  # research/FOREX_DASHBOARD.md + reports/forex-calibration.md.
+  # ---------------------------------------------------------------------------
+  dollar_desk:
+    real_rate:                      # US 10y real yield (DFII10) + 10y breakeven regime
+      z_lookback_d: 504             # ~2y z-score window for the real-yield level
+      chg_window_d: 63             # breakeven / real-yield change horizon
+      high_z: 0.5                   # real-yield z above this = restrictive (USD-supportive)
+      low_z: -0.5
+      be_high_z: 0.3                # breakeven-change z above this = reflation arm
+      be_low_z: -0.3               # ...below this = disinflation arm
+    fed_path:                       # implied Fed-funds path from ZQ futures (US leg only)
+      group: rate_futures
+      name: zq_path                 # cols m1,m3,m6,m12 (annualized % implied policy rate)
+      near: m1
+      far: m12
+      reprice_window_d: 21         # change in the 12m-ahead implied rate = repricing momentum
+      reprice_bps: 10              # |Δ| beyond this (bps) = a hawkish/dovish repricing lean
+    positioning:                    # CFTC COT net-spec on the US Dollar Index (cot_dollar)
+      cot: cot_dollar
+      pctile_lookback_d: 756        # ~3y rolling percentile (min-periods guarded for thin tails)
+      crowded_long_pctile: 0.85
+      crowded_short_pctile: 0.15
+    valuation:                      # US BIS REER vs its long-run mean (reuse value_signal)
+      gap_window_d: 1260
+      z_lookback_d: 1260
+      pub_lag_d: 45
+      stretch_z: 1.5               # |z| beyond this = "stretched" rich/cheap (position-size damper)
+      rich_gap: 0.01               # |log REER gap| beyond this labels rich / cheap (else fair)
+    trend:                          # broad-USD multi-horizon trend STACK (breadth/coherence read)
+      horizons_d: [21, 63, 126, 252]
+      up_frac: 0.75                # >= this fraction of horizons up = "up"; <= 1-this = "down"
+    liquidity:                      # net Fed liquidity (WALCL - RRP) rate-of-change (context only)
+      chg_window_d: 63
+      z_lookback_d: 252
+    smile:                          # enrich the existing 4-quad smile with a confirmation tally
+      triple_red_window_d: 21       # USD- & SPY- & UST- together over this window = haven loss
+
+  # ---------------------------------------------------------------------------
+  # DOLLAR CROSS-ASSET TRANSMISSION — how today's broad-USD move co-moves with the
+  # other markets (equities / commodities / bonds / EM / crypto). CONTEMPORANEOUS,
+  # unstable, regime-dependent CO-MOVEMENT — never a forecast or a trade signal.
+  # Betas are computed LIVE from the store (no hardcoded literature numbers).
+  # ---------------------------------------------------------------------------
+  transmission:
+    fast_window_d: 63               # ~quarter rolling beta/corr (the "now" read)
+    slow_window_d: 252             # ~year rolling beta/corr (the structural read)
+    stale_corr: 0.10               # |fast corr| below this = "decoupled / indeterminate"
+    flat_roc: 0.005                # |broad-USD ROC over the fast window| below this = "flat"
+    assets:                         # label -> [store-group, name, sign_note]; sign computed live
+      SPY:    [yahoo, SPY,             "US equities"]
+      EEM:    [hk,    EEM,             "EM equities"]
+      "GC=F": [yahoo, "GC=F",          "gold"]
+      "CL=F": [yahoo, "CL=F",          "oil"]
+      "HG=F": [yahoo, "HG=F",          "copper"]
+      UST10:  [fred,  DGS10,           "10y Treasury (price = -yield)"]
+      BTC:    [yahoo, "BTC-USD",       "bitcoin"]
+
+  # ---------------------------------------------------------------------------
+  # CURRENCY STRENGTH METER — rank each currency by trailing trend strength,
+  # independent of any single pair. DESCRIPTIVE, never predictive (green != buy).
+  # Built from the per-pair dollar-orthogonalized residuals + the broad-USD trend.
+  # ---------------------------------------------------------------------------
+  strength:
+    horizons_d: {"1w": 5, "1m": 21, "3m": 63}
+    default_horizon: "1m"
+
+  # ---------------------------------------------------------------------------
+  # INTERNATIONAL SCORECARDS — honest PIT backtests (reuse validation.backtest_core).
+  # Carry harvests a real risk premium with a FAT LEFT TAIL; trend-following the
+  # dollar is weak/whippy. Shown with a pre/post-2008 regime split; experimental.
+  # ---------------------------------------------------------------------------
+  scorecards:
+    cost_bps: 2                     # one-way spread cost per unit |Δpos|
+    split_date: "2008-09-15"        # Lehman — the carry-crash regime boundary
+    carry:
+      top_n: 3                      # long the top-N carry currencies, short the bottom-N
+      rebalance_d: 21              # monthly rebalance
+      vol_target: true             # inverse-vol scale the basket (carry-crash haircut)
+      vol_window_d: 63
+    haven:                          # risk-off haven basket — long havens (JPY/CHF) vs short
+      vol_target: true             # risk currencies (AUD/CAD/EM); the MIRROR of carry —
+      vol_window_d: 63             # bleeds carry as insurance, pays in risk-off
 
 # -----------------------------------------------------------------------------
 # Bitcoin Vector signal engine (Phase 2). Architecture reverse-engineered from
@@ -2384,7 +2576,9 @@ vector:
     prob_floor: 0.30              # cap probabilities to [floor, ceil] (anti-overfit)
     prob_ceil: 0.70
     macro_tilt_pp: 5              # macro tailwind/headwind nudges the prob +/- this (pp)
-    cycle_tilt_pp: 5             # halving-phase prior: accumulation +, markdown - (pp)
+    cycle_tilt_pp: 5             # cycle-phase prior: markup +, markdown - (pp); now driven
+                                 # by the bottom-anchored 1064/364 phase (tighter than halving)
+    cycle_top_zone: 0.85         # last 15% of a leg = reversal zone -> the tilt flips sign
     atr_dvol_ref: 55              # DVOL ~= this -> ATR bands unscaled; higher widens them
     conv_band_pp: [3, 7]          # conviction cuts (pp from 50%): TOSS-UP <=3, LEAN <=7, EDGE >7.
                                   # Calibrated to the MEASURED reliable-cell up-rate spread
@@ -2401,6 +2595,17 @@ vector:
     accumulation_end: 0.22
     markup_end: 0.42
     markdown_end: 0.70
+
+  cycle_phase_clock:              # bottom-anchored 1064/364 time structure (the chart's
+    # "1064 days up / 364 days down" theory). A tighter view of the SAME ~4yr axis as
+    # cycle_clock, anchored on observed lows/highs. Measured fit vs our own price history:
+    # up 1067/1059/1050d, down 364/378d -> mean-abs-err 7.2d, but only n=3 (in-sample).
+    # CONTEXT + soft prior, never a trigger. Timing only — NOT amplitude, NO price target.
+    bottoms: ["2015-01-14", "2018-12-15", "2022-11-21"]   # observed cycle lows
+    tops:    ["2017-12-16", "2021-11-08", "2025-10-06"]   # observed cycle highs
+    up_days: 1064                 # markup leg length (mean of 1067/1059/1050)
+    down_days: 364                # markdown leg length (n=2: 364/378 — the weak leg)
+    overdue_pct: 1.10             # days_in > len*this w/o a new pivot -> status "overdue"
 
   positioning:                    # CME COT net-spec (already collected, now wired)
     z_window_d: 730               # ~2y z-score of net_spec_pct_oi (crowding extremes)
@@ -3418,3 +3623,11 @@ intl:
       momentum_windows: [20, 60]
       trend_window: 120
       percentile_lookback_d: 252
+    performance:                    # DISPLAY-ONLY USD-return / rotation desk (engine.intl_performance)
+      benchmark: "^GSPC"            # US price index — apples-to-apples vs the intl price indices
+      horizons_d: {1m: 21, 3m: 63, 6m: 126, 12m: 252}
+      correlation_window_d: 252     # daily-return window for the cross-market correlation map
+      rrg_window_d: 63              # relative-strength momentum lookback (US-vs-world rotation)
+    rates:                          # rates / curve / carry desk (engine.intl_rates)
+      carry_anchor: us_10y          # carry = country 10y - US 10y
+      liquidity_impulse_w: [13, 52] # ECB balance-sheet 13/52-week % change

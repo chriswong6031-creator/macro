@@ -12,18 +12,18 @@
   },
   "assets": {
     "EURUSD": {
-      "span": "2004-01-01..2026-06-12",
-      "rows": 5823,
+      "span": "2004-01-01..2026-06-18",
+      "rows": 5828,
       "weights": {
-        "trend": -0.3064,
-        "structure": 0.034,
-        "carry": -0.1277,
-        "rates": 0.0468,
-        "value": 0.1362,
-        "riskoff": 0.1277,
-        "positioning": 0.1532,
-        "risk": 0.0383,
-        "shock": 0.0298
+        "trend": -0.2748,
+        "structure": 0.0305,
+        "carry": -0.1145,
+        "rates": 0.042,
+        "value": 0.1221,
+        "riskoff": 0.1145,
+        "positioning": -0.1374,
+        "risk": -0.1374,
+        "shock": 0.0267
       },
       "score_reliable": true,
       "signals": {
@@ -43,7 +43,7 @@
           "verdict": "DIRECTIONAL",
           "ic_full": -0.121,
           "ic_pre": -0.217,
-          "ic_post": 0.01
+          "ic_post": 0.011
         },
         "rates": {
           "verdict": "CONTEXT",
@@ -59,21 +59,21 @@
         },
         "riskoff": {
           "verdict": "DIRECTIONAL",
-          "ic_full": 0.052,
+          "ic_full": 0.051,
           "ic_pre": 0.032,
           "ic_post": 0.086
         },
         "positioning": {
-          "verdict": "UNMEASURED",
-          "ic_full": null,
-          "ic_pre": null,
-          "ic_post": null
+          "verdict": "INVERTED",
+          "ic_full": -0.135,
+          "ic_pre": -0.194,
+          "ic_post": -0.067
         },
         "risk": {
-          "verdict": "CONTEXT",
-          "ic_full": -0.014,
-          "ic_pre": 0.01,
-          "ic_post": -0.067
+          "verdict": "INVERTED",
+          "ic_full": -0.062,
+          "ic_pre": -0.029,
+          "ic_post": -0.114
         },
         "shock": {
           "verdict": "CONTEXT",
@@ -83,56 +83,56 @@
         }
       },
       "allocation": {
-        "cagr": 0.4,
+        "cagr": 0.8,
         "hold_cagr": -0.4,
-        "cagr_gross": 0.5,
+        "cagr_gross": 0.9,
         "cost_drag_pp": 0.1,
-        "sharpe": 0.15,
+        "sharpe": 0.31,
         "hold_sharpe": 0.02,
-        "sharpe_gross": 0.18,
-        "sortino": 0.19,
+        "sharpe_gross": 0.35,
+        "sortino": 0.4,
         "hold_sortino": 0.03,
-        "maxdd": -9.7,
+        "maxdd": -5.4,
         "hold_maxdd": -40.0,
         "time_in_market": 100.0,
-        "avg_exposure": 17.6,
-        "net_long_pct": 52.6,
-        "turnover_annual": 4.3,
+        "avg_exposure": 15.2,
+        "net_long_pct": 30.2,
+        "turnover_annual": 4.8,
         "cost_bps": 2.0,
-        "final_vs_hold": 1.18,
-        "sharpe_daily": 0.00933,
-        "skew": 3.0771,
-        "kurt": 142.5239,
-        "n_obs": 5823
+        "final_vs_hold": 1.32,
+        "sharpe_daily": 0.019653,
+        "skew": 5.7955,
+        "kurt": 307.0519,
+        "n_obs": 5828
       },
       "multiple_testing": {
-        "dsr": 0.0005,
-        "sr_daily": 0.00933,
-        "sr_annual": 0.15,
-        "sr0_daily": 0.0519,
-        "sr0_annual": 0.82,
+        "dsr": 0.0033,
+        "sr_daily": 0.019653,
+        "sr_annual": 0.31,
+        "sr0_daily": 0.053667,
+        "sr0_annual": 0.85,
         "n_trials": 60,
-        "T": 5823,
-        "skew": 3.077,
-        "kurt": 142.524,
+        "T": 5828,
+        "skew": 5.795,
+        "kurt": 307.052,
         "sr_variance_source": "max(cross-pair Sharpe dispersion, null SR-sampling proxy)",
         "verdict": "FAILS multiple-testing haircut (DSR<0.90)",
         "note": "DSR = P(true Sharpe>0) for the conviction long/short after deflating for n_trials factor\u00d7pair configs screened, sample length, skew & kurtosis. Weights are in-sample, so this haircut is the honest counterweight \u2014 a low DSR means the edge is likely selection bias."
       }
     },
     "USDJPY": {
-      "span": "2004-01-01..2026-06-13",
-      "rows": 5824,
+      "span": "2004-01-01..2026-06-18",
+      "rows": 5829,
       "weights": {
-        "trend": 0.3051,
-        "structure": 0.0339,
-        "carry": 0.0636,
-        "rates": 0.0466,
-        "value": -0.1356,
-        "riskoff": 0.1271,
-        "positioning": 0.1525,
-        "risk": -0.0763,
-        "shock": 0.0593
+        "trend": 0.3303,
+        "structure": 0.0367,
+        "carry": 0.0688,
+        "rates": 0.0505,
+        "value": -0.1468,
+        "riskoff": 0.1376,
+        "positioning": -0.0826,
+        "risk": -0.0826,
+        "shock": 0.0642
       },
       "score_reliable": true,
       "signals": {
@@ -173,16 +173,16 @@
           "ic_post": 0.019
         },
         "positioning": {
-          "verdict": "UNMEASURED",
-          "ic_full": null,
-          "ic_pre": null,
-          "ic_post": null
+          "verdict": "DIRECTIONAL",
+          "ic_full": -0.055,
+          "ic_pre": -0.094,
+          "ic_post": -0.046
         },
         "risk": {
           "verdict": "DIRECTIONAL",
-          "ic_full": -0.049,
-          "ic_pre": -0.147,
-          "ic_post": 0.069
+          "ic_full": -0.063,
+          "ic_pre": -0.159,
+          "ic_post": 0.046
         },
         "shock": {
           "verdict": "DIRECTIONAL",
@@ -196,52 +196,52 @@
         "hold_cagr": -1.8,
         "cagr_gross": 1.0,
         "cost_drag_pp": 0.1,
-        "sharpe": 0.21,
+        "sharpe": 0.19,
         "hold_sharpe": -0.09,
-        "sharpe_gross": 0.23,
-        "sortino": 0.22,
+        "sharpe_gross": 0.21,
+        "sortino": 0.2,
         "hold_sortino": -0.13,
-        "maxdd": -13.7,
+        "maxdd": -13.5,
         "hold_maxdd": -53.1,
-        "time_in_market": 93.3,
-        "avg_exposure": 25.1,
-        "net_long_pct": 39.9,
-        "turnover_annual": 5.6,
+        "time_in_market": 93.2,
+        "avg_exposure": 26.2,
+        "net_long_pct": 40.1,
+        "turnover_annual": 5.5,
         "cost_bps": 2.0,
-        "final_vs_hold": 1.83,
-        "sharpe_daily": 0.01315,
-        "skew": -0.952,
-        "kurt": 505.4537,
-        "n_obs": 5824
+        "final_vs_hold": 1.82,
+        "sharpe_daily": 0.012049,
+        "skew": -0.531,
+        "kurt": 512.043,
+        "n_obs": 5829
       },
       "multiple_testing": {
-        "dsr": 0.0018,
-        "sr_daily": 0.01315,
-        "sr_annual": 0.21,
-        "sr0_daily": 0.0519,
-        "sr0_annual": 0.82,
+        "dsr": 0.0008,
+        "sr_daily": 0.012049,
+        "sr_annual": 0.19,
+        "sr0_daily": 0.053667,
+        "sr0_annual": 0.85,
         "n_trials": 60,
-        "T": 5824,
-        "skew": -0.952,
-        "kurt": 505.454,
+        "T": 5829,
+        "skew": -0.531,
+        "kurt": 512.043,
         "sr_variance_source": "max(cross-pair Sharpe dispersion, null SR-sampling proxy)",
         "verdict": "FAILS multiple-testing haircut (DSR<0.90)",
         "note": "DSR = P(true Sharpe>0) for the conviction long/short after deflating for n_trials factor\u00d7pair configs screened, sample length, skew & kurtosis. Weights are in-sample, so this haircut is the honest counterweight \u2014 a low DSR means the edge is likely selection bias."
       }
     },
     "AUDUSD": {
-      "span": "2006-05-16..2026-06-13",
-      "rows": 5223,
+      "span": "2006-05-16..2026-06-18",
+      "rows": 5228,
       "weights": {
-        "trend": 0.1011,
-        "structure": 0.0449,
-        "carry": 0.0843,
-        "rates": 0.0618,
-        "value": 0.1798,
-        "riskoff": 0.0843,
-        "positioning": 0.2022,
-        "risk": -0.2022,
-        "shock": 0.0393
+        "trend": 0.1192,
+        "structure": 0.053,
+        "carry": 0.0993,
+        "rates": 0.0728,
+        "value": 0.2119,
+        "riskoff": 0.0993,
+        "positioning": 0.0596,
+        "risk": -0.2384,
+        "shock": 0.0464
       },
       "score_reliable": true,
       "signals": {
@@ -282,16 +282,16 @@
           "ic_post": -0.026
         },
         "positioning": {
-          "verdict": "UNMEASURED",
-          "ic_full": null,
-          "ic_pre": null,
-          "ic_post": null
+          "verdict": "CONTEXT",
+          "ic_full": 0.019,
+          "ic_pre": 0.062,
+          "ic_post": -0.026
         },
         "risk": {
           "verdict": "INVERTED",
-          "ic_full": -0.091,
-          "ic_pre": -0.152,
-          "ic_post": -0.06
+          "ic_full": -0.08,
+          "ic_pre": -0.151,
+          "ic_post": -0.049
         },
         "shock": {
           "verdict": "CONTEXT",
@@ -301,56 +301,56 @@
         }
       },
       "allocation": {
-        "cagr": -0.2,
+        "cagr": -0.3,
         "hold_cagr": -0.4,
-        "cagr_gross": -0.1,
+        "cagr_gross": -0.2,
         "cost_drag_pp": 0.1,
-        "sharpe": -0.08,
+        "sharpe": -0.15,
         "hold_sharpe": 0.03,
-        "sharpe_gross": -0.02,
-        "sortino": -0.1,
+        "sharpe_gross": -0.1,
+        "sortino": -0.19,
         "hold_sortino": 0.04,
-        "maxdd": -10.0,
+        "maxdd": -11.1,
         "hold_maxdd": -48.0,
         "time_in_market": 100.0,
-        "avg_exposure": 15.6,
-        "net_long_pct": 26.2,
-        "turnover_annual": 5.7,
+        "avg_exposure": 15.0,
+        "net_long_pct": 23.0,
+        "turnover_annual": 5.1,
         "cost_bps": 2.0,
-        "final_vs_hold": 1.05,
-        "sharpe_daily": -0.00495,
-        "skew": -0.4024,
-        "kurt": 15.4306,
-        "n_obs": 5223
+        "final_vs_hold": 1.02,
+        "sharpe_daily": -0.009366,
+        "skew": -0.3711,
+        "kurt": 14.5239,
+        "n_obs": 5228
       },
       "multiple_testing": {
         "dsr": 0.0,
-        "sr_daily": -0.00495,
-        "sr_annual": -0.08,
-        "sr0_daily": 0.0519,
-        "sr0_annual": 0.82,
+        "sr_daily": -0.009366,
+        "sr_annual": -0.15,
+        "sr0_daily": 0.053667,
+        "sr0_annual": 0.85,
         "n_trials": 60,
-        "T": 5223,
-        "skew": -0.402,
-        "kurt": 15.431,
+        "T": 5228,
+        "skew": -0.371,
+        "kurt": 14.524,
         "sr_variance_source": "max(cross-pair Sharpe dispersion, null SR-sampling proxy)",
         "verdict": "FAILS multiple-testing haircut (DSR<0.90)",
         "note": "DSR = P(true Sharpe>0) for the conviction long/short after deflating for n_trials factor\u00d7pair configs screened, sample length, skew & kurtosis. Weights are in-sample, so this haircut is the honest counterweight \u2014 a low DSR means the edge is likely selection bias."
       }
     },
     "GBPUSD": {
-      "span": "2004-01-01..2026-06-12",
-      "rows": 5835,
+      "span": "2004-01-01..2026-06-18",
+      "rows": 5840,
       "weights": {
-        "trend": -0.2353,
-        "structure": 0.0261,
-        "carry": -0.1961,
-        "rates": 0.0359,
-        "value": 0.0523,
-        "riskoff": 0.1961,
-        "positioning": 0.1176,
-        "risk": -0.1176,
-        "shock": 0.0229
+        "trend": -0.2667,
+        "structure": 0.0296,
+        "carry": -0.2222,
+        "rates": 0.0407,
+        "value": 0.0593,
+        "riskoff": 0.2222,
+        "positioning": 0.0667,
+        "risk": -0.0667,
+        "shock": 0.0259
       },
       "score_reliable": true,
       "signals": {
@@ -391,20 +391,20 @@
           "ic_post": 0.089
         },
         "positioning": {
-          "verdict": "UNMEASURED",
-          "ic_full": null,
-          "ic_pre": null,
-          "ic_post": null
+          "verdict": "DIRECTIONAL",
+          "ic_full": 0.052,
+          "ic_pre": 0.046,
+          "ic_post": 0.052
         },
         "risk": {
-          "verdict": "INVERTED",
-          "ic_full": -0.067,
-          "ic_pre": -0.015,
-          "ic_post": -0.122
+          "verdict": "DIRECTIONAL",
+          "ic_full": -0.049,
+          "ic_pre": -0.005,
+          "ic_post": -0.092
         },
         "shock": {
           "verdict": "CONTEXT",
-          "ic_full": -0.035,
+          "ic_full": -0.036,
           "ic_pre": -0.015,
           "ic_post": -0.048
         }
@@ -412,86 +412,86 @@
       "allocation": {
         "cagr": 0.5,
         "hold_cagr": -1.3,
-        "cagr_gross": 0.6,
+        "cagr_gross": 0.5,
         "cost_drag_pp": 0.1,
-        "sharpe": 0.31,
+        "sharpe": 0.27,
         "hold_sharpe": -0.09,
-        "sharpe_gross": 0.36,
-        "sortino": 0.39,
+        "sharpe_gross": 0.31,
+        "sortino": 0.33,
         "hold_sortino": -0.12,
-        "maxdd": -6.7,
+        "maxdd": -7.3,
         "hold_maxdd": -49.1,
         "time_in_market": 100.0,
-        "avg_exposure": 15.6,
-        "net_long_pct": 35.0,
-        "turnover_annual": 4.5,
+        "avg_exposure": 15.1,
+        "net_long_pct": 39.1,
+        "turnover_annual": 3.7,
         "cost_bps": 2.0,
         "final_vs_hold": 1.49,
-        "sharpe_daily": 0.019236,
-        "skew": -0.0964,
-        "kurt": 12.9198,
-        "n_obs": 5835
+        "sharpe_daily": 0.016772,
+        "skew": -0.3025,
+        "kurt": 15.653,
+        "n_obs": 5840
       },
       "multiple_testing": {
-        "dsr": 0.0064,
-        "sr_daily": 0.019236,
-        "sr_annual": 0.31,
-        "sr0_daily": 0.0519,
-        "sr0_annual": 0.82,
+        "dsr": 0.0025,
+        "sr_daily": 0.016772,
+        "sr_annual": 0.27,
+        "sr0_daily": 0.053667,
+        "sr0_annual": 0.85,
         "n_trials": 60,
-        "T": 5835,
-        "skew": -0.096,
-        "kurt": 12.92,
+        "T": 5840,
+        "skew": -0.302,
+        "kurt": 15.653,
         "sr_variance_source": "max(cross-pair Sharpe dispersion, null SR-sampling proxy)",
         "verdict": "FAILS multiple-testing haircut (DSR<0.90)",
         "note": "DSR = P(true Sharpe>0) for the conviction long/short after deflating for n_trials factor\u00d7pair configs screened, sample length, skew & kurtosis. Weights are in-sample, so this haircut is the honest counterweight \u2014 a low DSR means the edge is likely selection bias."
       }
     },
     "USDCAD": {
-      "span": "2004-01-01..2026-06-13",
-      "rows": 5839,
+      "span": "2004-01-01..2026-06-18",
+      "rows": 5844,
       "weights": {
-        "trend": 0.0763,
-        "structure": -0.0678,
-        "carry": -0.2542,
-        "rates": 0.0466,
-        "value": 0.0678,
-        "riskoff": 0.0636,
-        "positioning": 0.1525,
-        "risk": -0.1525,
-        "shock": -0.1186
+        "trend": 0.0826,
+        "structure": -0.0734,
+        "carry": -0.2752,
+        "rates": 0.0505,
+        "value": 0.0734,
+        "riskoff": 0.0688,
+        "positioning": 0.1651,
+        "risk": -0.0826,
+        "shock": -0.1284
       },
       "score_reliable": true,
       "signals": {
         "trend": {
           "verdict": "CONTEXT",
-          "ic_full": 0.037,
+          "ic_full": 0.036,
           "ic_pre": 0.15,
-          "ic_post": -0.184
+          "ic_post": -0.185
         },
         "structure": {
           "verdict": "DIRECTIONAL",
           "ic_full": -0.046,
           "ic_pre": 0.036,
-          "ic_post": -0.166
+          "ic_post": -0.167
         },
         "carry": {
           "verdict": "INVERTED",
-          "ic_full": -0.203,
+          "ic_full": -0.201,
           "ic_pre": -0.345,
-          "ic_post": -0.148
+          "ic_post": -0.146
         },
         "rates": {
           "verdict": "CONTEXT",
-          "ic_full": -0.01,
+          "ic_full": -0.009,
           "ic_pre": -0.015,
-          "ic_post": -0.001
+          "ic_post": 0.0
         },
         "value": {
           "verdict": "DIRECTIONAL",
-          "ic_full": 0.045,
+          "ic_full": 0.044,
           "ic_pre": 0.065,
-          "ic_post": 0.06
+          "ic_post": 0.059
         },
         "riskoff": {
           "verdict": "CONTEXT",
@@ -500,16 +500,16 @@
           "ic_post": -0.029
         },
         "positioning": {
-          "verdict": "UNMEASURED",
-          "ic_full": null,
-          "ic_pre": null,
-          "ic_post": null
+          "verdict": "CONFIRMED",
+          "ic_full": 0.112,
+          "ic_pre": 0.01,
+          "ic_post": 0.235
         },
         "risk": {
-          "verdict": "INVERTED",
-          "ic_full": -0.069,
-          "ic_pre": -0.039,
-          "ic_post": -0.104
+          "verdict": "DIRECTIONAL",
+          "ic_full": -0.053,
+          "ic_pre": -0.043,
+          "ic_post": -0.057
         },
         "shock": {
           "verdict": "INVERTED",
@@ -520,55 +520,55 @@
       },
       "allocation": {
         "cagr": 1.5,
-        "hold_cagr": -0.3,
-        "cagr_gross": 1.7,
+        "hold_cagr": -0.4,
+        "cagr_gross": 1.6,
         "cost_drag_pp": 0.2,
-        "sharpe": 1.02,
-        "hold_sharpe": 0.0,
-        "sharpe_gross": 1.14,
-        "sortino": 1.41,
-        "hold_sortino": 0.01,
-        "maxdd": -6.3,
+        "sharpe": 1.07,
+        "hold_sharpe": -0.0,
+        "sharpe_gross": 1.18,
+        "sortino": 1.51,
+        "hold_sortino": -0.0,
+        "maxdd": -4.4,
         "hold_maxdd": -37.6,
         "time_in_market": 100.0,
-        "avg_exposure": 13.8,
-        "net_long_pct": 31.0,
-        "turnover_annual": 9.0,
+        "avg_exposure": 13.9,
+        "net_long_pct": 43.0,
+        "turnover_annual": 7.6,
         "cost_bps": 2.0,
-        "final_vs_hold": 1.5,
-        "sharpe_daily": 0.064172,
-        "skew": 0.9748,
-        "kurt": 20.757,
-        "n_obs": 5839
+        "final_vs_hold": 1.52,
+        "sharpe_daily": 0.067561,
+        "skew": 0.8323,
+        "kurt": 16.252,
+        "n_obs": 5844
       },
       "multiple_testing": {
-        "dsr": 0.831,
-        "sr_daily": 0.064172,
-        "sr_annual": 1.02,
-        "sr0_daily": 0.0519,
-        "sr0_annual": 0.82,
+        "dsr": 0.8607,
+        "sr_daily": 0.067561,
+        "sr_annual": 1.07,
+        "sr0_daily": 0.053667,
+        "sr0_annual": 0.85,
         "n_trials": 60,
-        "T": 5839,
-        "skew": 0.975,
-        "kurt": 20.757,
+        "T": 5844,
+        "skew": 0.832,
+        "kurt": 16.252,
         "sr_variance_source": "max(cross-pair Sharpe dispersion, null SR-sampling proxy)",
         "verdict": "FAILS multiple-testing haircut (DSR<0.90)",
         "note": "DSR = P(true Sharpe>0) for the conviction long/short after deflating for n_trials factor\u00d7pair configs screened, sample length, skew & kurtosis. Weights are in-sample, so this haircut is the honest counterweight \u2014 a low DSR means the edge is likely selection bias."
       }
     },
     "USDCHF": {
-      "span": "2004-01-01..2026-06-13",
-      "rows": 5837,
+      "span": "2004-01-01..2026-06-18",
+      "rows": 5842,
       "weights": {
-        "trend": -0.233,
-        "structure": -0.1036,
-        "carry": -0.1942,
-        "rates": 0.0712,
-        "value": 0.0259,
-        "riskoff": 0.0485,
-        "positioning": 0.1165,
-        "risk": -0.1165,
-        "shock": -0.0906
+        "trend": -0.2553,
+        "structure": -0.1135,
+        "carry": -0.2128,
+        "rates": 0.078,
+        "value": 0.0284,
+        "riskoff": 0.0532,
+        "positioning": 0.0319,
+        "risk": -0.1277,
+        "shock": -0.0993
       },
       "score_reliable": true,
       "signals": {
@@ -582,13 +582,13 @@
           "verdict": "INVERTED",
           "ic_full": -0.121,
           "ic_pre": -0.077,
-          "ic_post": -0.177
+          "ic_post": -0.176
         },
         "carry": {
           "verdict": "INVERTED",
           "ic_full": -0.073,
           "ic_pre": -0.045,
-          "ic_post": -0.15
+          "ic_post": -0.149
         },
         "rates": {
           "verdict": "DIRECTIONAL",
@@ -600,7 +600,7 @@
           "verdict": "CONTEXT",
           "ic_full": -0.035,
           "ic_pre": 0.001,
-          "ic_post": -0.091
+          "ic_post": -0.09
         },
         "riskoff": {
           "verdict": "CONTEXT",
@@ -609,16 +609,16 @@
           "ic_post": -0.058
         },
         "positioning": {
-          "verdict": "UNMEASURED",
-          "ic_full": null,
-          "ic_pre": null,
-          "ic_post": null
+          "verdict": "CONTEXT",
+          "ic_full": 0.031,
+          "ic_pre": -0.03,
+          "ic_post": 0.097
         },
         "risk": {
           "verdict": "INVERTED",
-          "ic_full": -0.073,
-          "ic_pre": -0.053,
-          "ic_post": -0.108
+          "ic_full": -0.082,
+          "ic_pre": -0.063,
+          "ic_post": -0.113
         },
         "shock": {
           "verdict": "INVERTED",
@@ -628,69 +628,69 @@
         }
       },
       "allocation": {
-        "cagr": 1.9,
+        "cagr": 1.8,
         "hold_cagr": 2.0,
-        "cagr_gross": 2.1,
+        "cagr_gross": 2.0,
         "cost_drag_pp": 0.2,
-        "sharpe": 0.58,
+        "sharpe": 0.57,
         "hold_sharpe": 0.23,
-        "sharpe_gross": 0.64,
-        "sortino": 0.93,
+        "sharpe_gross": 0.63,
+        "sortino": 0.92,
         "hold_sortino": 0.36,
-        "maxdd": -15.0,
+        "maxdd": -15.1,
         "hold_maxdd": -29.8,
         "time_in_market": 100.0,
-        "avg_exposure": 19.1,
-        "net_long_pct": 44.1,
-        "turnover_annual": 9.5,
+        "avg_exposure": 18.6,
+        "net_long_pct": 43.4,
+        "turnover_annual": 9.0,
         "cost_bps": 2.0,
-        "final_vs_hold": 0.98,
-        "sharpe_daily": 0.036522,
-        "skew": 15.5533,
-        "kurt": 674.8392,
-        "n_obs": 5837
+        "final_vs_hold": 0.97,
+        "sharpe_daily": 0.035996,
+        "skew": 15.5882,
+        "kurt": 676.1759,
+        "n_obs": 5842
       },
       "multiple_testing": {
-        "dsr": 0.0736,
-        "sr_daily": 0.036522,
-        "sr_annual": 0.58,
-        "sr0_daily": 0.0519,
-        "sr0_annual": 0.82,
+        "dsr": 0.0479,
+        "sr_daily": 0.035996,
+        "sr_annual": 0.57,
+        "sr0_daily": 0.053667,
+        "sr0_annual": 0.85,
         "n_trials": 60,
-        "T": 5837,
-        "skew": 15.553,
-        "kurt": 674.839,
+        "T": 5842,
+        "skew": 15.588,
+        "kurt": 676.176,
         "sr_variance_source": "max(cross-pair Sharpe dispersion, null SR-sampling proxy)",
         "verdict": "FAILS multiple-testing haircut (DSR<0.90)",
         "note": "DSR = P(true Sharpe>0) for the conviction long/short after deflating for n_trials factor\u00d7pair configs screened, sample length, skew & kurtosis. Weights are in-sample, so this haircut is the honest counterweight \u2014 a low DSR means the edge is likely selection bias."
       }
     },
     "USDMXN": {
-      "span": "2004-01-01..2026-06-13",
-      "rows": 5845,
+      "span": "2004-01-01..2026-06-18",
+      "rows": 5850,
       "weights": {
-        "trend": -0.2581,
-        "structure": -0.1147,
-        "rates": 0.1577,
-        "value": 0.0573,
-        "riskoff": 0.0538,
-        "positioning": 0.129,
-        "risk": -0.129,
-        "shock": -0.1004
+        "trend": -0.2759,
+        "structure": -0.1226,
+        "rates": 0.1686,
+        "value": 0.0613,
+        "riskoff": 0.0575,
+        "positioning": 0.069,
+        "risk": -0.1379,
+        "shock": -0.1073
       },
       "score_reliable": true,
       "signals": {
         "trend": {
           "verdict": "INVERTED",
-          "ic_full": -0.081,
+          "ic_full": -0.079,
           "ic_pre": -0.178,
-          "ic_post": -0.053
+          "ic_post": -0.051
         },
         "structure": {
           "verdict": "INVERTED",
           "ic_full": -0.096,
           "ic_pre": -0.146,
-          "ic_post": -0.062
+          "ic_post": -0.061
         },
         "rates": {
           "verdict": "UNMEASURED",
@@ -711,88 +711,88 @@
           "ic_post": -0.051
         },
         "positioning": {
-          "verdict": "UNMEASURED",
-          "ic_full": null,
-          "ic_pre": null,
-          "ic_post": null
+          "verdict": "DIRECTIONAL",
+          "ic_full": 0.05,
+          "ic_pre": 0.066,
+          "ic_post": 0.044
         },
         "risk": {
           "verdict": "INVERTED",
-          "ic_full": -0.107,
-          "ic_pre": -0.127,
-          "ic_post": -0.097
+          "ic_full": -0.099,
+          "ic_pre": -0.131,
+          "ic_post": -0.082
         },
         "shock": {
           "verdict": "INVERTED",
-          "ic_full": -0.086,
+          "ic_full": -0.087,
           "ic_pre": -0.104,
-          "ic_post": -0.079
+          "ic_post": -0.08
         }
       },
       "allocation": {
-        "cagr": 2.0,
+        "cagr": 1.9,
         "hold_cagr": -1.9,
-        "cagr_gross": 2.2,
-        "cost_drag_pp": 0.3,
-        "sharpe": 0.41,
+        "cagr_gross": 2.1,
+        "cost_drag_pp": 0.2,
+        "sharpe": 0.42,
         "hold_sharpe": -0.09,
-        "sharpe_gross": 0.46,
-        "sortino": 0.52,
+        "sharpe_gross": 0.47,
+        "sortino": 0.53,
         "hold_sortino": -0.12,
-        "maxdd": -14.1,
+        "maxdd": -13.3,
         "hold_maxdd": -61.1,
         "time_in_market": 100.0,
-        "avg_exposure": 31.0,
-        "net_long_pct": 41.4,
-        "turnover_annual": 13.3,
+        "avg_exposure": 29.7,
+        "net_long_pct": 40.1,
+        "turnover_annual": 12.1,
         "cost_bps": 2.0,
-        "final_vs_hold": 2.39,
-        "sharpe_daily": 0.025834,
-        "skew": 0.1459,
-        "kurt": 28.2836,
-        "n_obs": 5845
+        "final_vs_hold": 2.34,
+        "sharpe_daily": 0.026143,
+        "skew": 0.2126,
+        "kurt": 26.0092,
+        "n_obs": 5850
       },
       "multiple_testing": {
-        "dsr": 0.0232,
-        "sr_daily": 0.025834,
-        "sr_annual": 0.41,
-        "sr0_daily": 0.0519,
-        "sr0_annual": 0.82,
+        "dsr": 0.0176,
+        "sr_daily": 0.026143,
+        "sr_annual": 0.42,
+        "sr0_daily": 0.053667,
+        "sr0_annual": 0.85,
         "n_trials": 60,
-        "T": 5845,
-        "skew": 0.146,
-        "kurt": 28.284,
+        "T": 5850,
+        "skew": 0.213,
+        "kurt": 26.009,
         "sr_variance_source": "max(cross-pair Sharpe dispersion, null SR-sampling proxy)",
         "verdict": "FAILS multiple-testing haircut (DSR<0.90)",
         "note": "DSR = P(true Sharpe>0) for the conviction long/short after deflating for n_trials factor\u00d7pair configs screened, sample length, skew & kurtosis. Weights are in-sample, so this haircut is the honest counterweight \u2014 a low DSR means the edge is likely selection bias."
       }
     },
     "USDBRL": {
-      "span": "2004-01-01..2026-06-13",
-      "rows": 5406,
+      "span": "2004-01-01..2026-06-18",
+      "rows": 5411,
       "weights": {
         "trend": 0.1818,
         "structure": 0.0404,
         "rates": 0.2222,
         "value": 0.0808,
         "riskoff": 0.0758,
-        "positioning": 0.1818,
+        "positioning": -0.1818,
         "risk": -0.1818,
         "shock": 0.0354
       },
-      "score_reliable": false,
+      "score_reliable": true,
       "signals": {
         "trend": {
           "verdict": "DIRECTIONAL",
-          "ic_full": 0.064,
+          "ic_full": 0.065,
           "ic_pre": 0.145,
-          "ic_post": -0.01
+          "ic_post": -0.009
         },
         "structure": {
           "verdict": "CONTEXT",
           "ic_full": 0.028,
           "ic_pre": 0.032,
-          "ic_post": 0.018
+          "ic_post": 0.017
         },
         "rates": {
           "verdict": "UNMEASURED",
@@ -813,65 +813,65 @@
           "ic_post": 0.003
         },
         "positioning": {
-          "verdict": "UNMEASURED",
-          "ic_full": null,
-          "ic_pre": null,
-          "ic_post": null
+          "verdict": "INVERTED",
+          "ic_full": -0.178,
+          "ic_pre": -0.141,
+          "ic_post": -0.194
         },
         "risk": {
           "verdict": "INVERTED",
-          "ic_full": -0.093,
-          "ic_pre": -0.076,
-          "ic_post": -0.119
+          "ic_full": -0.114,
+          "ic_pre": -0.093,
+          "ic_post": -0.133
         },
         "shock": {
           "verdict": "CONTEXT",
           "ic_full": -0.002,
           "ic_pre": -0.007,
-          "ic_post": 0.001
+          "ic_post": -0.0
         }
       },
       "allocation": {
-        "cagr": -0.1,
+        "cagr": 0.4,
         "hold_cagr": -2.5,
-        "cagr_gross": -0.0,
+        "cagr_gross": 0.5,
         "cost_drag_pp": 0.1,
-        "sharpe": 0.01,
+        "sharpe": 0.09,
         "hold_sharpe": -0.04,
-        "sharpe_gross": 0.03,
-        "sortino": 0.0,
+        "sharpe_gross": 0.12,
+        "sortino": 0.09,
         "hold_sortino": -0.06,
         "maxdd": -28.5,
         "hold_maxdd": -75.7,
         "time_in_market": 100.0,
-        "avg_exposure": 19.9,
-        "net_long_pct": 24.3,
-        "turnover_annual": 7.1,
+        "avg_exposure": 22.0,
+        "net_long_pct": 31.5,
+        "turnover_annual": 6.8,
         "cost_bps": 2.0,
-        "final_vs_hold": 1.69,
-        "sharpe_daily": 0.000315,
-        "skew": -22.8179,
-        "kurt": 1134.7202,
-        "n_obs": 5406
+        "final_vs_hold": 1.91,
+        "sharpe_daily": 0.005846,
+        "skew": -18.8587,
+        "kurt": 872.4762,
+        "n_obs": 5411
       },
       "multiple_testing": {
-        "dsr": 0.0001,
-        "sr_daily": 0.000315,
-        "sr_annual": 0.01,
-        "sr0_daily": 0.0519,
-        "sr0_annual": 0.82,
+        "dsr": 0.0004,
+        "sr_daily": 0.005846,
+        "sr_annual": 0.09,
+        "sr0_daily": 0.053667,
+        "sr0_annual": 0.85,
         "n_trials": 60,
-        "T": 5406,
-        "skew": -22.818,
-        "kurt": 1134.72,
+        "T": 5411,
+        "skew": -18.859,
+        "kurt": 872.476,
         "sr_variance_source": "max(cross-pair Sharpe dispersion, null SR-sampling proxy)",
         "verdict": "FAILS multiple-testing haircut (DSR<0.90)",
         "note": "DSR = P(true Sharpe>0) for the conviction long/short after deflating for n_trials factor\u00d7pair configs screened, sample length, skew & kurtosis. Weights are in-sample, so this haircut is the honest counterweight \u2014 a low DSR means the edge is likely selection bias."
       }
     },
     "USDCNH": {
-      "span": "2013-02-11..2026-06-12",
-      "rows": 3284,
+      "span": "2013-02-11..2026-06-18",
+      "rows": 3289,
       "weights": {
         "trend": 0.2118,
         "structure": 0.0941,
@@ -936,8 +936,55 @@
       "allocation": {}
     }
   },
+  "dollar": {
+    "factor": "value (REER)",
+    "target": "broad USD (DTWEXBGS)",
+    "span": "2006-01-02..2026-06-12",
+    "rows": 5126,
+    "ic_full": 0.065,
+    "ic_pre": 0.077,
+    "ic_post": 0.06,
+    "verdict": "CONFIRMED",
+    "allocation": {
+      "cagr": -0.2,
+      "hold_cagr": 0.8,
+      "cagr_gross": -0.1,
+      "cost_drag_pp": 0.0,
+      "sharpe": -0.04,
+      "hold_sharpe": 0.18,
+      "sharpe_gross": -0.03,
+      "sortino": -0.05,
+      "hold_sortino": 0.26,
+      "maxdd": -18.1,
+      "hold_maxdd": -19.4,
+      "time_in_market": 89.8,
+      "avg_exposure": 35.5,
+      "net_long_pct": 40.5,
+      "turnover_annual": 1.4,
+      "cost_bps": 2.0,
+      "final_vs_hold": 0.82,
+      "sharpe_daily": -0.002556,
+      "skew": 1.2334,
+      "kurt": 25.0225,
+      "n_obs": 5126
+    },
+    "multiple_testing": {
+      "dsr": 0.0056,
+      "sr_daily": -0.002556,
+      "sr_annual": -0.04,
+      "sr0_daily": 0.0329,
+      "sr0_annual": 0.52,
+      "n_trials": 61,
+      "T": 5126,
+      "skew": 1.233,
+      "kurt": 25.023,
+      "verdict": "FAILS multiple-testing haircut (DSR<0.90)"
+    },
+    "promotable": false,
+    "display_only": true
+  },
   "trial_log": {
-    "asof": "2026-06-13",
+    "asof": "2026-06-18",
     "n_trials_declared": 60,
     "cost_bps_one_way": 2.0,
     "pairs_tested": [

@@ -61,11 +61,49 @@ def main() -> int:
     resolved = counts["hit"] + counts["miss"]
     counts["hit_rate"] = (counts["hit"] / resolved) if resolved else None
 
+    # the LLM intent desk output (generated in CI by engine.policy_intent_desk; absent
+    # locally -> the section simply hides). Drop raw_text defensively.
+    desk = None
+    try:
+        dj = json.loads((site / "policy_intent.json").read_text())
+        desk = {k: v for k, v in dj.items() if k != "raw_text"}
+    except Exception:  # noqa: BLE001
+        desk = None
+
+    # explicit Fed reaction-function read (display-only) from the regime latest.json
+    fed_stance = None
+    try:
+        from engine import fed_stance as _fs
+        latest = json.loads((config.data_dir() / "regime" / "latest.json").read_text())
+        fed_stance = _fs.snapshot(latest)
+    except Exception as e:  # noqa: BLE001
+        log.warning("fed_stance skipped: %s", e)
+
+    # rotation realized-check — grade each targeted theme's proxies vs SPY (coincident),
+    # accrue it forward (idempotent per day) + read back a per-theme trailing hit-rate.
+    rot = None
+    rot_hist = {}
+    try:
+        from engine import policy_rotation_check as _rotc
+        rot = _rotc.check(intel)
+        rot_hist = _rotc.history_summary()   # PRIOR accrued reads (today's verdict is in the chip)
+        _rotc.append_history(rot)            # then record today for future reads
+    except Exception as e:  # noqa: BLE001
+        log.warning("rotation check skipped: %s", e)
+
+    # live dating: intel staleness + task-force countdowns + overdue-prediction flags
+    dates = None
+    try:
+        from engine import policy_dates as _pd
+        dates = _pd.annotate(intel)
+    except Exception as e:  # noqa: BLE001
+        log.warning("policy dates skipped: %s", e)
+
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     html = env.get_template("policy_watch.html.j2").render(
-        intel=intel, counts=counts, generated_utc=built,
-        active_section="research", active_page="policy_watch",
+        intel=intel, counts=counts, desk=desk, fed_stance=fed_stance, rot=rot, rot_hist=rot_hist,
+        dates=dates, generated_utc=built, active_section="research", active_page="policy_watch",
     )
     (site / "policy_watch.html").write_text(html)
     log.info("wrote %s/policy_watch.html (%d preds, %d task forces, %d KB)",

@@ -773,6 +773,73 @@ def cycle_clock(inputs: dict, cfg: dict) -> pd.DataFrame:
     return out
 
 
+def cycle_phase_clock(inputs: dict, cfg: dict) -> pd.DataFrame:
+    """Bottom-anchored 1064/364-day cycle-time structure — the chart's "1064 days up /
+    364 days down" theory. A SECOND, tighter view of the same ~4yr axis as cycle_clock(),
+    anchored on the OBSERVED cycle lows/highs rather than the halving. Measured fit vs the
+    repo's own spliced price history (objective global extrema, window-insensitive): up-legs
+    1067/1059/1050d (theory 1064), down-legs 364/378d (theory 364) -> mean-abs-err 7.2d, but
+    only n=3 cycles (in-sample, 2-param) — so a soft CONTEXT/PRIOR, it tilts, never triggers.
+    TIMING ONLY — not amplitude, and NO price target. PIT-honest: each row reads only the
+    pivots that had occurred on/before that date (no look-ahead)."""
+    px = inputs["price"]
+    close = px["close"]
+    idx = pd.to_datetime(px.index)
+    out = pd.DataFrame(index=px.index)
+
+    pivots = sorted([(pd.Timestamp(d), "bottom") for d in cfg["bottoms"]]
+                    + [(pd.Timestamp(d), "top") for d in cfg["tops"]], key=lambda x: x[0])
+    if not pivots:
+        return out
+    up, dn = float(cfg["up_days"]), float(cfg["down_days"])
+    overdue = float(cfg.get("overdue_pct", 1.10))
+    # compare as integer-nanosecond stamps (Timestamp.value is always ns, dodging
+    # datetime64 unit mismatches between the index [us/ns] and the pivot dates)
+    pv_ns = np.array([p[0].value for p in pivots], dtype="int64")
+    pv_price = [float(close.asof(p[0])) if pd.notna(close.asof(p[0])) else np.nan for p in pivots]
+    idx_ns = np.fromiter((t.value for t in idx), dtype="int64", count=len(idx))
+    pos = np.searchsorted(pv_ns, idx_ns, side="right") - 1  # last pivot on/before each row
+
+    phase, anchor, length, days_in, nxt, kind, status = ([] for _ in range(7))
+    cval = close.values
+    for i, p in enumerate(pos):
+        if p < 0:                                   # before the first anchor
+            phase.append(None); anchor.append(None); length.append(np.nan)
+            days_in.append(np.nan); nxt.append(None); kind.append(None); status.append(None)
+            continue
+        pdate, pkind = pivots[p]
+        is_up = (pkind == "bottom")
+        ph = "markup" if is_up else "markdown"
+        ln = up if is_up else dn
+        di = (idx[i] - pdate).days
+        npiv = pdate + pd.Timedelta(days=int(ln))
+        nk = "top" if is_up else "bottom"
+        # status: invalidated if price breaks the anchor's own extreme (new low under a
+        # markup's low / new high over a markdown's high); else overdue past the window.
+        ap = pv_price[p]
+        if pd.notna(ap) and ((is_up and cval[i] < ap) or ((not is_up) and cval[i] > ap)):
+            stt = "invalidated"
+        elif di > ln * overdue:
+            stt = "overdue"
+        else:
+            stt = "on_track"
+        phase.append(ph); anchor.append(pdate.strftime("%Y-%m-%d")); length.append(ln)
+        days_in.append(float(di)); nxt.append(npiv.strftime("%Y-%m-%d")); kind.append(nk)
+        status.append(stt)
+
+    out["cphase_phase"] = phase
+    out["cphase_anchor_date"] = anchor
+    out["cphase_len"] = length
+    out["cphase_days_in"] = days_in
+    pct = pd.Series(days_in, index=out.index) / pd.Series(length, index=out.index)
+    out["cphase_pct"] = pct.clip(0, 1.4)
+    out["cphase_days_left"] = (pd.Series(length, index=out.index) - pd.Series(days_in, index=out.index))
+    out["cphase_next_pivot"] = nxt
+    out["cphase_next_kind"] = kind
+    out["cphase_status"] = status
+    return out
+
+
 def positioning(inputs: dict, cfg: dict) -> pd.DataFrame:
     """CME COT net-spec positioning — already collected (cot_bitcoin) but never
     wired in. The only REGULATED, real-money, weekly positioning input (everything
@@ -1184,6 +1251,7 @@ def compute_all(inputs: dict | None = None) -> pd.DataFrame:
     ef = etf_flow(inputs, cfg["etf_flow"])
     im = impulse(inputs, cfg["impulse"])
     cc = cycle_clock(inputs, cfg["cycle_clock"])
+    cp = cycle_phase_clock(inputs, cfg["cycle_phase_clock"])  # bottom-anchored 1064/364 structure
     po = positioning(inputs, cfg["positioning"])
     xa = cross_asset_corr(inputs, cfg["cross_asset"])
     bh = behaviour(inputs, cfg["cross_asset"])
@@ -1196,7 +1264,7 @@ def compute_all(inputs: dict | None = None) -> pd.DataFrame:
                     close=inputs["price"]["close"])
 
     out = pd.concat([inputs["price"][["close"]], mom, rk, bf, st, gg, al,
-                     va, mn, cb, ex, op, lv, ma, oc, ef, im, cc, po, xa, bh, gl, sc, cm], axis=1)
+                     va, mn, cb, ex, op, lv, ma, oc, ef, im, cc, cp, po, xa, bh, gl, sc, cm], axis=1)
     out["cycle_position"] = cycle_stage(mom["momentum"], rk["risk_index"])
     alt = btc_vs_alts(inputs, cfg["btc_vs_alts"])
     if alt is not None:
