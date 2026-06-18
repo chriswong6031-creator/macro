@@ -1,0 +1,271 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{% macro mb(v) -%}{% if v is none %}—{% else %}{{ '{:,.0f}'.format(v) }}{% endif %}{%- endmacro %}
+{% macro tbadge(kind) -%}
+{% set m = {'government':[t('Government','政府'),'tb-gov'],'industry':[t('Industry-mandated','行业强制'),'tb-ind'],'commercial':[t('Commercial','商业'),'tb-com'],'estimate':[t('Estimate','估算'),'tb-est']} %}
+{% set e = m.get(kind) %}{% if e %}<span class="tbadge {{ e[1] }}">{{ e[0] }}</span>{% endif %}
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>Strategic Petroleum Reserves — {{ as_of }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+<style>
+:root{
+  --blue:{{C.blue}}; --indigo:{{C.indigo}}; --r1:{{C.r1}}; --r2:{{C.r2}}; --r3:{{C.r3}};
+  --r4:{{C.r4}}; --r5:{{C.r5}}; --ink:{{C.ink}}; --text:{{C.text}}; --muted:{{C.muted}};
+  --faint:{{C.faint}}; --red:{{C.red}}; --redfill:{{C.redfill}}; --amber:{{C.amber}};
+  --green:{{C.green}}; --grid:{{C.grid}}; --card:{{C.card}}; --bg:{{C.bg}};
+}
+*{box-sizing:border-box}
+html:not([data-lang="zh"]) .l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB",
+  "Microsoft YaHei","Noto Sans CJK SC","Microsoft JhengHei","Heiti SC",Inter,sans-serif}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;
+  font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:var(--blue);text-decoration:none}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
+.topbar{display:flex;align-items:center;justify-content:space-between;
+  padding:18px 0 14px;border-bottom:1px solid var(--grid);margin-bottom:24px;
+  position:sticky;top:0;background:var(--bg);z-index:20}
+.nav-links{display:flex;align-items:center;gap:2px;flex-wrap:wrap}
+a.nav-link{padding:7px 11px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;white-space:nowrap;transition:color .18s,background .18s}
+a.nav-link:hover,a.nav-link.active{color:var(--ink);background:#eef1f6}
+html[data-theme="dark"] a.nav-link:hover,html[data-theme="dark"] a.nav-link.active{background:#222732}
+.nav-dd{position:relative;display:inline-flex}
+.nav-dd>a.nav-link .caret{display:inline-block;margin-left:3px;font-size:9px;opacity:.6;transition:transform .2s}
+.nav-dd:hover>a.nav-link .caret,.nav-dd:focus-within>a.nav-link .caret{transform:rotate(180deg)}
+.nav-dd::after{content:"";position:absolute;left:0;right:0;top:100%;height:9px}
+.nav-dd-menu{position:absolute;top:calc(100% + 7px);left:0;min-width:218px;background:var(--card);border:1px solid var(--grid);border-radius:13px;box-shadow:0 12px 34px rgba(16,24,40,.14);padding:6px;opacity:0;visibility:hidden;transform:translateY(-6px);transition:opacity .18s ease,transform .18s ease,visibility .18s;z-index:70}
+.nav-dd:hover>.nav-dd-menu,.nav-dd:focus-within>.nav-dd-menu{opacity:1;visibility:visible;transform:translateY(0)}
+.nav-dd-menu a{display:block;padding:9px 12px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--text);text-decoration:none;white-space:nowrap;transition:background .15s,color .15s}
+.nav-dd-menu a .d{display:block;font-size:11.5px;font-weight:400;color:var(--muted);margin-top:2px}
+.nav-dd-menu a:hover,.nav-dd-menu a.active{background:#eef1f6;color:var(--ink)}
+html[data-theme="dark"] .nav-dd-menu a:hover,html[data-theme="dark"] .nav-dd-menu a.active{background:#222732}
+.lang-toggle{display:inline-flex;position:relative;background:#eef1f6;border:1px solid var(--grid);border-radius:999px;padding:3px;cursor:pointer;flex:none}
+.lang-toggle .pill{position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);border-radius:999px;background:var(--blue);transition:transform .34s cubic-bezier(.34,1.4,.5,1)}
+html[data-lang="zh"] .lang-toggle .pill{transform:translateX(100%)}
+.lang-toggle .opt{position:relative;z-index:1;min-width:28px;text-align:center;padding:3px 9px;font-size:11.5px;font-weight:600;color:var(--muted);transition:color .25s;user-select:none}
+html:not([data-lang="zh"]) .lang-toggle .en-opt{color:#fff}
+html[data-lang="zh"] .lang-toggle .zh-opt{color:#fff}
+.nav-ctrls{display:flex;align-items:center;gap:10px;flex:none}
+html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280;--r1:#1b2740;--r2:#243352}
+.theme-switch{width:56px;height:27px;border-radius:999px;background:#eef1f6;border:1px solid var(--grid);position:relative;cursor:pointer;padding:0;flex:none}
+html[data-theme="dark"] .theme-switch{background:#222732}
+.theme-switch .ic{position:absolute;top:50%;transform:translateY(-50%);font-size:10.5px;opacity:.5;line-height:1}
+.theme-switch .ic.sun{right:8px}.theme-switch .ic.moon{left:8px}
+.theme-switch .knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 5px rgba(0,0,0,.3);transform:translateX(29px);transition:transform .34s cubic-bezier(.34,1.45,.5,1),background .3s}
+.theme-switch .knob::before{content:"☀️"}
+html[data-theme="dark"] .theme-switch .knob{transform:translateX(0);background:#e8c15a}
+html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
+.ai-brief-link{font-weight:600;font-size:13px;color:var(--muted)}
+.grid{display:grid;gap:18px}
+.cols-2{grid-template-columns:1.05fr .95fr} .cols-3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:900px){.cols-2,.cols-3{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:22px}
+.card h2{margin:0 0 4px;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.card h3{margin:0 0 12px;font-size:18px;font-weight:700;color:var(--ink)}
+.sub{color:var(--muted);font-size:13px} .mut{color:var(--muted)} .faint{color:var(--faint)}
+.section-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:30px 4px 12px}
+.hero-num{font-size:52px;font-weight:800;color:var(--ink);line-height:1.02;letter-spacing:-.03em}
+.hero-num small{font-size:20px;font-weight:700;color:var(--muted);margin-left:6px}
+.hero-sub{margin-top:6px;font-size:14px;color:var(--muted)}
+.up{color:var(--green)} .down{color:var(--red)}
+.pill{display:inline-block;padding:5px 12px;border-radius:9px;background:var(--bg);font-weight:700;font-size:13px;margin:3px 6px 3px 0}
+html[data-theme="dark"] .pill{background:var(--grid)}
+/* fill gauge */
+.fillbar{position:relative;height:16px;border-radius:9px;background:var(--grid);overflow:hidden;margin:18px 0 8px}
+.fillbar .ff{position:absolute;left:0;top:0;bottom:0;border-radius:9px;background:linear-gradient(90deg,var(--r4),var(--blue))}
+.fillbar-labels{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);font-weight:600}
+.metric-row{display:flex;flex-wrap:wrap;margin-top:16px;border-top:1px solid var(--grid);padding-top:14px}
+.metric-row .m{flex:1;min-width:120px;text-align:center;padding:4px 6px}
+.metric-row .m .k{font-size:11.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+.metric-row .m .v{font-size:18px;font-weight:700;color:var(--ink);margin-top:3px}
+.metric-row .m .v small{font-size:12px;color:var(--muted);font-weight:600}
+.sigline{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--grid)}
+.sigline:last-child{border:none} .sigline .l{font-weight:600;color:var(--ink)} .sigline .r{text-align:right}
+/* country table */
+.tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.catbl{width:100%;border-collapse:collapse;min-width:760px}
+.catbl td,.catbl th{padding:10px 8px;border-bottom:1px solid var(--grid);font-size:13.5px;text-align:left;vertical-align:top}
+.catbl th{color:var(--muted);font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em}
+.catbl td.a{font-weight:700;color:var(--ink);white-space:nowrap} .catbl td.r,.catbl th.r{text-align:right;white-space:nowrap}
+.catbl tr:last-child td{border-bottom:none}
+.catbl .num{font-weight:700;color:var(--ink)} .catbl .sm{font-size:11.5px;color:var(--faint)}
+.tbadge{display:inline-block;padding:1px 7px;border-radius:6px;font-size:10.5px;font-weight:700;white-space:nowrap}
+.tb-gov{background:#E3F5E9;color:var(--green)} .tb-ind{background:#E8EEFF;color:var(--blue)}
+.tb-com{background:var(--grid);color:var(--muted)} .tb-est{background:#FFF2D9;color:#9a6a00}
+.qbadge{display:inline-block;padding:1px 6px;border-radius:5px;font-size:10px;font-weight:700;background:var(--grid);color:var(--muted);margin-left:5px}
+.qbadge.q1{background:#E3F5E9;color:var(--green)} .qbadge.q3{background:#FFF2D9;color:#9a6a00}
+.caveat{margin-top:2px;padding:13px 16px;border:1px solid var(--grid);border-radius:12px;background:var(--bg);font-size:13px;line-height:1.6;color:var(--text)}
+html[data-theme="dark"] .caveat{background:var(--grid)}
+.caveat .hd{font-weight:700;color:var(--ink);margin-bottom:5px}
+.iea-row{display:flex;flex-wrap:wrap;gap:14px;margin-top:8px}
+.iea-row .ie{flex:1;min-width:150px;background:var(--bg);border-radius:12px;padding:14px 16px}
+html[data-theme="dark"] .iea-row .ie{background:var(--grid)}
+.iea-row .ie .k{font-size:11.5px;color:var(--muted);font-weight:600;text-transform:uppercase}
+.iea-row .ie .v{font-size:22px;font-weight:800;color:var(--ink);margin-top:3px}
+.iea-row .ie .h{font-size:11.5px;color:var(--faint);margin-top:2px}
+.chart{margin-top:6px}
+.foot{margin-top:34px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7}
+.site-footer{max-width:1180px;margin:40px auto 8px;padding-top:22px;border-top:1px solid var(--grid);text-align:center;line-height:1.6}
+.site-footer .made{display:block;font-size:13.5px;font-weight:700;color:var(--ink);letter-spacing:.2px}
+.site-footer .dev{display:block;margin-top:1px;font-size:12px;color:var(--muted)}
+</style>
+{% include "_vector_polish.html.j2" %}
+</head>
+<body>
+<div class="topbar">
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
+    <a class="nav-link" href="macro.html">🇺🇸 {{ t('United States', '美国') }}</a>
+    <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国') }}</a>
+    <a class="nav-link" href="intl.html">🌍 {{ t('International', '国际') }}</a>
+    <div class="nav-dd">
+      <a class="nav-link active" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="commodities.html">📊 {{ t('Commodity Dashboard', '商品仪表盘') }}<span class="d">{{ t('Gold · silver · copper · oil · complex', '金 · 银 · 铜 · 油 · 综合') }}</span></a>
+        <a href="commodity_strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Per-commodity tactical strategies', '分品种战术策略') }}</span></a>
+        <a class="active" href="spr.html">🛢️ {{ t('Strategic Reserves', '战略储备') }}<span class="d">{{ t('SPR levels by country vs oil prices', '各国战略储备水平与油价') }}</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="forex.html">💱 {{ t('Forex', '外汇') }}</a>
+    <a class="nav-link" href="bonds.html">🏛️ {{ t('Bonds', '债券') }}</a>
+  </div>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="aibrief.html">🧠 {{ t('AI Daily Brief', 'AI每日简报') }}</a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="section-title">{{ t('Strategic Petroleum Reserves', '战略石油储备') }}</div>
+
+  <!-- ===================== US SPR HERO + CONTEXT ===================== -->
+  <div class="grid cols-2">
+    <div class="card">
+      <h2>🇺🇸 {{ t('United States SPR · live (EIA, weekly)', '美国战略石油储备 · 实时（EIA，每周）') }}</h2>
+      <div class="hero-num">{{ mb(us.level_mb) }}<small>{{ t('MMbbl', '百万桶') }}</small></div>
+      <div class="hero-sub">{{ t('Government-owned strategic crude · authorized capacity', '政府持有战略原油 · 授权容量') }} {{ mb(us.capacity_mb) }} {{ t('MMbbl','百万桶') }}</div>
+      {% if us.fill_pct is not none %}
+      <div class="fillbar"><div class="ff" style="width:{{ us.fill_pct }}%"></div></div>
+      <div class="fillbar-labels"><span>{{ us.fill_pct }}% {{ t('full','已注满') }}</span><span>{{ mb(us.capacity_mb) }} {{ t('MMbbl','百万桶') }}</span></div>
+      {% endif %}
+      <div class="metric-row">
+        <div class="m"><div class="k">{{ t('4-week','4周') }}</div><div class="v {{ 'up' if (us.chg_4w_mb or 0) > 0 else ('down' if (us.chg_4w_mb or 0) < 0 else '') }}">{{ '%+.1f'|format(us.chg_4w_mb) if us.chg_4w_mb is not none else '—' }}<small> M</small></div></div>
+        <div class="m"><div class="k">{{ t('52-week','52周') }}</div><div class="v {{ 'up' if (us.chg_52w_mb or 0) > 0 else ('down' if (us.chg_52w_mb or 0) < 0 else '') }}">{{ '%+.0f'|format(us.chg_52w_mb) if us.chg_52w_mb is not none else '—' }}<small> M</small></div></div>
+        {% if us.days_cover is not none %}<div class="m"><div class="k">{{ t('Days cover','可供天数') }}</div><div class="v">{{ us.days_cover }}<small> {{ t('d','天') }}</small></div></div>{% endif %}
+      </div>
+    </div>
+    <div class="card">
+      <h2>{{ t('Strategic context', '战略背景') }}</h2>
+      <div class="sigline"><span class="l">{{ t('All-time peak','历史峰值') }}</span><span class="r"><b>{{ mb(us.peak_mb) }} M</b> <span class="faint">{{ us.peak_date }}</span></span></div>
+      <div class="sigline"><span class="l">{{ t('Below peak','低于峰值') }}</span><span class="r"><b class="down">−{{ mb(us.below_peak_mb) }} M</b></span></div>
+      <div class="sigline"><span class="l">{{ t('Record low','历史低点') }}</span><span class="r"><b>{{ mb(us.low_mb) }} M</b> <span class="faint">{{ us.low_date }}</span></span></div>
+      <div class="sigline"><span class="l">{{ t('Above low','高于低点') }}</span><span class="r"><b class="up">+{{ mb(us.above_low_mb) }} M</b></span></div>
+      <div class="sigline"><span class="l">{{ t('Days of US refinery runs','美国炼厂可供天数') }}</span><span class="r"><b>{{ us.days_cover if us.days_cover is not none else '—' }}</b> <span class="faint">{{ t('SPR alone','仅战略储备') }}</span></span></div>
+      <div class="caveat" style="margin-top:14px">
+        <div class="hd">{{ t('Read this as context, not a signal', '请作为背景而非信号解读') }}</div>
+        {{ t(caveat.en, caveat.zh) }}
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== SPR vs OIL PRICE ===================== -->
+  <div class="section-title">{{ t('SPR vs oil price', '战略储备与油价') }}</div>
+  <div class="card">
+    <h3>{{ t('US SPR level vs WTI / Brent', '美国战略储备水平 vs WTI / 布伦特') }}</h3>
+    <div class="sub">{{ t('The 2022 release (~180 MMbbl) and the subsequent refill against crude prices. SPR moves are political supply events — they coincide with, but do not reliably lead, price.', '2022年释放（约1.8亿桶）及随后的回补对照原油价格。战略储备变动属政治性供给事件——与价格同步发生，但并不可靠地领先价格。') }}</div>
+    <div class="chart">{{ charts.vs_price|safe }}</div>
+  </div>
+  <div class="card" style="margin-top:18px">
+    <h3>{{ t('US SPR — full history (1982→)', '美国战略储备 — 完整历史（1982年至今）') }}</h3>
+    <div class="sub">{{ t('The Cold-War strategic build, the 2022 drawdown to a ~40-year low, and the refill.', '冷战时期的战略储备建设、2022年降至约40年低点的释放，以及随后的回补。') }}</div>
+    <div class="chart">{{ charts.history|safe }}</div>
+  </div>
+
+  <!-- ===================== COUNTRY COMPARISON ===================== -->
+  <div class="section-title">{{ t('Major countries — strategic reserves & national crude stocks', '主要国家 — 战略储备与国家原油库存') }}</div>
+  <div class="card">
+    <div class="sub" style="margin-bottom:12px">{{ t('Strategic reserve = government-held (curated, dated, sourced — only the US & Japan publish a clean government breakout). Total crude stocks = live JODI national inventory (government + industry + commercial), lagged ~1-2 months.', '战略储备 = 政府持有（人工整理、注明日期与来源——仅美国与日本公布清晰的政府拆分）。原油总库存 = JODI 实时国家库存（政府+行业+商业），滞后约1-2个月。') }}</div>
+    <div class="tbl-scroll">
+    <table class="catbl">
+      <thead><tr>
+        <th>{{ t('Country','国家') }}</th>
+        <th class="r">{{ t('Strategic reserve','战略储备') }}</th>
+        <th class="r">{{ t('Total crude stocks (JODI)','原油总库存（JODI）') }}</th>
+        <th class="r">{{ t('Days cover','可供天数') }}</th>
+        <th>{{ t('Ownership / notes','持有方 / 备注') }}</th>
+        <th>{{ t('Source · as of','来源 · 截至') }}</th>
+      </tr></thead>
+      <tbody>
+      {% for c in countries %}
+      <tr>
+        <td class="a">{{ c.flag }} {{ t(c.name, c.name_zh) }}</td>
+        <td class="r">
+          {% if c.strategic_mb is not none %}<span class="num">{{ mb(c.strategic_mb) }}</span> <span class="sm">M</span>{% if c.live %} <span class="qbadge q1">{{ t('live','实时') }}</span>{% endif %}<br>{{ tbadge(c.strategic_type) }}
+          {% if c.capacity_mb %}<div class="sm">{{ t('cap','容量') }} {{ mb(c.capacity_mb) }}M · {{ c.fill_pct }}%</div>{% endif %}
+          {% if c.industry_mb %}<div class="sm">+{{ mb(c.industry_mb) }}M {{ t('industry','行业') }}</div>{% endif %}
+          {% else %}—{% endif %}
+        </td>
+        <td class="r">
+          {% if c.jodi_total_mb is not none %}<span class="num">{{ '{:,.0f}'.format(c.jodi_total_mb) }}</span> <span class="sm">M</span>{% if c.jodi_assess %}<span class="qbadge q{{ c.jodi_assess }}">{{ t(assess_word.get(c.jodi_assess,''), '') }}</span>{% endif %}
+            {% if c.jodi_mom_mb is not none %}<div class="sm {{ 'up' if c.jodi_mom_mb > 0 else ('down' if c.jodi_mom_mb < 0 else '') }}">{{ '%+.1f'|format(c.jodi_mom_mb) }}M/mo · {{ c.jodi_as_of }}</div>{% endif %}
+          {% elif c.curated_total_mb %}<span class="num">~{{ '{:,.0f}'.format(c.curated_total_mb) }}</span> <span class="sm">M {{ t('est','估算') }}</span>{% else %}<span class="sm">{{ t('not reported to JODI','未向 JODI 报送') }}</span>{% endif %}
+        </td>
+        <td class="r">{% if c.days_cover is not none %}<span class="num">{{ c.days_cover }}</span><div class="sm">{{ t(c.days_basis_en, c.days_basis_zh) }}</div>{% else %}—{% endif %}</td>
+        <td>{{ t(c.ownership_en, c.ownership_zh) }}</td>
+        <td class="sm">{{ c.source }}<br>{{ c.as_of }}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <!-- ===================== GLOBAL AGGREGATE ===================== -->
+  <div class="section-title">{{ t('Global picture', '全球概览') }}</div>
+  <div class="card">
+    <h3>{{ t('Emergency oil stocks worldwide', '全球应急石油储备') }}</h3>
+    <div class="iea-row">
+      <div class="ie"><div class="k">{{ t('IEA public emergency','IEA 公共应急储备') }}</div><div class="v">{{ '{:,.0f}'.format(scfg.iea_public_mb) }}</div><div class="h">{{ t('MMbbl · government-held','百万桶 · 政府持有') }}</div></div>
+      <div class="ie"><div class="k">{{ t('Industry-mandated','行业强制储备') }}</div><div class="v">{{ '{:,.0f}'.format(scfg.iea_industry_mb) }}</div><div class="h">{{ t('MMbbl · on call by governments','百万桶 · 政府可调用') }}</div></div>
+      {% if agg.total_mb %}<div class="ie"><div class="k">{{ t('JODI reporters — total crude','JODI 报送国 — 原油合计') }}</div><div class="v">{{ '{:,.0f}'.format(agg.total_mb) }}</div><div class="h">{{ agg.n_reporting }} {{ t('countries · all stock types','国 · 含各类库存') }}</div></div>{% endif %}
+      <div class="ie"><div class="k">{{ t('IEA obligation','IEA 义务') }}</div><div class="v">{{ scfg.iea_min_days }}<small style="font-size:13px"> {{ t('days','天') }}</small></div><div class="h">{{ t('min net-import cover per member','成员国净进口最低覆盖') }}</div></div>
+    </div>
+  </div>
+
+  <div class="foot">
+    {{ t('Strategic Reserves · built','战略储备 · 生成于') }} {{ built }} · {{ t('data as of','数据截至') }} {{ as_of }}.
+    {{ t('Sources: US SPR — EIA Weekly Petroleum Status Report (live). National crude stocks — JODI-Oil World Database (monthly, total stocks, reconciled to barrels). Strategic-reserve figures — EIA, IEA & national agencies (ISPRL, METI), each dated above.','数据来源：美国战略储备 — EIA 每周石油状况报告（实时）。各国原油库存 — JODI 石油世界数据库（月度，总库存，已换算为桶）。战略储备数据 — EIA、IEA 及各国机构（ISPRL、METI），均在上表注明日期。') }}
+    {{ t('Display-only and never scored — strategic reserves are a policy lever, not a forecasting signal. Not investment advice.','仅供展示，从不计入评分——战略储备是政策杠杆，而非预测信号。非投资建议。') }}
+    {{ t('Limitations:','局限性：') }} <a href="https://github.com/chriswong6031-creator/macro/blob/main/LIMITATIONS.md">LIMITATIONS.md</a>.
+  </div>
+</div>
+
+<script>
+window.__CHART_SWAP__ = { colors:{}, labels:{
+  "US SPR":"美国战略储备","US SPR (MMbbl)":"美国战略储备（百万桶）",
+  "WTI ($/bbl)":"WTI（美元/桶）","Brent ($/bbl)":"布伦特（美元/桶）"} };
+</script>
+<script src="theme.js"></script>
+<script src="chart_i18n.js"></script>
+<footer class="site-footer">
+  <span class="made">{{ t('Made with ❤️ in Canada', '用 ❤️ 在加拿大制作') }}</span>
+  <span class="dev">{{ t('Developed by', '开发者') }} Chris Wong</span>
+</footer>
+</body>
+</html>
