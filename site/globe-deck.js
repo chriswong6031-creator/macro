@@ -98,9 +98,10 @@
     canvas.width = W * dpr; canvas.height = H * dpr;
     canvas.style.width = W + "px"; canvas.style.height = H + "px";
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    R = Math.min(W, H) * 0.37;   // small fit factor → the globe + 1.13x halo float clear of
-                                 // the canvas rect even when a country-select zooms in (edgeless)
-    fitScale = R; scale = scale === 240 ? R : Math.min(R * 2.2, Math.max(R * 0.8, scale));
+    R = Math.min(W, H) * 0.34;   // small fit factor → the globe + 1.13x halo float clear of
+                                 // the canvas rect at EVERY zoom level (capped below), so it's
+                                 // never cut off by the canvas edge — desktop and mobile alike
+    fitScale = R; scale = scale === 240 ? R : Math.min(R * 1.35, Math.max(R * 0.8, scale));
     apply();
   }
   function apply() { projection.rotate([rot[0], rot[1], 0]).scale(scale).translate([W / 2, H / 2]); }
@@ -334,7 +335,7 @@
   canvas.addEventListener("pointerleave", function () { if (!dragging) { hovered = null; hideTip(); } });
   canvas.addEventListener("wheel", function (e) {
     e.preventDefault(); lastInteract = performance.now();
-    scale = Math.max(fitScale * 0.8, Math.min(fitScale * 1.7, scale * (e.deltaY < 0 ? 1.08 : 0.93))); apply();
+    scale = Math.max(fitScale * 0.8, Math.min(fitScale * 1.3, scale * (e.deltaY < 0 ? 1.08 : 0.93))); apply();
   }, { passive: false });
 
   function pick(cx, cy) {
@@ -518,7 +519,7 @@
     var k = e.key; lastInteract = performance.now();
     if (k === "ArrowLeft") rot[0] -= 8; else if (k === "ArrowRight") rot[0] += 8;
     else if (k === "ArrowUp") rot[1] = clampLat(rot[1] + 6); else if (k === "ArrowDown") rot[1] = clampLat(rot[1] - 6);
-    else if (k === "+" || k === "=") scale = Math.min(fitScale * 1.7, scale * 1.1);
+    else if (k === "+" || k === "=") scale = Math.min(fitScale * 1.3, scale * 1.1);
     else if (k === "-") scale = Math.max(fitScale * 0.8, scale * 0.9);
     else if (k === "Escape") { selected = null; hideTip(); syncRows(); }
     else return;
