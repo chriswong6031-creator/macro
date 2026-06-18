@@ -10,52 +10,52 @@
   "pairs": {
     "EURUSD": {
       "label": "EUR/USD",
-      "quote": 1.1514,
+      "quote": 1.1505,
       "chg": -1.0,
       "action": "FLAT",
-      "score": -16.3
+      "score": -15.8
     },
     "GBPUSD": {
       "label": "GBP/USD",
-      "quote": 1.3296,
-      "chg": -1.0,
+      "quote": 1.3275,
+      "chg": -1.2,
       "action": "FLAT",
-      "score": 17.6
+      "score": 17.3
     },
     "USDJPY": {
       "label": "USD/JPY",
-      "quote": 160.624,
+      "quote": 160.626,
       "chg": 1.0,
       "action": "SHORT",
       "score": -40.0
     },
     "USDCHF": {
       "label": "USD/CHF",
-      "quote": 0.7996,
-      "chg": 1.7,
+      "quote": 0.8015,
+      "chg": 1.9,
       "action": "LONG",
-      "score": 25.2
+      "score": 26.9
     },
     "AUDUSD": {
       "label": "AUD/USD",
-      "quote": 0.7034,
-      "chg": -1.6,
+      "quote": 0.7029,
+      "chg": -1.7,
       "action": "SHORT",
-      "score": -23.1
+      "score": -23.0
     },
     "USDCAD": {
       "label": "USD/CAD",
-      "quote": 1.4108,
+      "quote": 1.4109,
       "chg": 2.4,
       "action": "LONG",
       "score": 25.6
     },
     "USDMXN": {
       "label": "USD/MXN",
-      "quote": 17.2761,
+      "quote": 17.2836,
       "chg": -0.1,
       "action": "SHORT",
-      "score": -48.9
+      "score": -48.5
     },
     "USDBRL": {
       "label": "USD/BRL",
@@ -66,8 +66,8 @@
     },
     "USDCNH": {
       "label": "USD/CNH",
-      "quote": 6.7255,
-      "chg": -0.9,
+      "quote": 6.7245,
+      "chg": -1.0,
       "action": "FLAT",
       "score": 15.0
     }
@@ -76,7 +76,7 @@
     "lean": "mixed backdrop",
     "real_rate_regime": "Disinflation \u2014 falling breakevens",
     "real_rate_z": 0.5,
-    "fed_path_bps": 43.0,
+    "fed_path_bps": 44.0,
     "fed_path_lean": "hawkish_repricing",
     "usd_pos_pctile": 42.0,
     "usd_pos_state": "neutral",
