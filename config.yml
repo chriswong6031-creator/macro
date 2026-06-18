@@ -2313,6 +2313,9 @@ forex:
       rebalance_d: 21              # monthly rebalance
       vol_target: true             # inverse-vol scale the basket (carry-crash haircut)
       vol_window_d: 63
+    haven:                          # risk-off haven basket — long havens (JPY/CHF) vs short
+      vol_target: true             # risk currencies (AUD/CAD/EM); the MIRROR of carry —
+      vol_window_d: 63             # bleeds carry as insurance, pays in risk-off
 
 # -----------------------------------------------------------------------------
 # Bitcoin Vector signal engine (Phase 2). Architecture reverse-engineered from

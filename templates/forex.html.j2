@@ -387,8 +387,9 @@ html[data-theme="dark"] .sbar{background:#222732}
       <div class="desk-tile">
         <div class="dt-lab">{{ t('Valuation (REER)', '估值（REER）') }}</div>
         <div class="dt-val">{{ '%+.1f'|format(v.gap_pct) }}% <span style="font-size:11px;font-weight:600;color:var(--muted)">{{ t('vs 5y mean', '相对5年均值') }}</span></div>
-        <div class="dt-sub"><span class="dt-chip {{ v.label }}">{{ t(VALL[v.label][0], VALL[v.label][1]) }}</span>{% if v.stretched %} · <b>{{ t('stretched', '偏离') }}</b>{% endif %}</div>
-        <span class="lead-tag context">{{ t('context · multi-year', '背景 · 多年') }}</span>
+        <div class="dt-sub"><span class="dt-chip {{ v.label }}">{{ t(VALL[v.label][0], VALL[v.label][1]) }}</span>{% if v.stretched %} · <b>{{ t('stretched', '偏离') }}</b>{% endif %}
+          {% if v.verdict %}<span class="vg {{ v.verdict|lower }}" title="{{ t('Split-half forward-IC verdict for the dollar REER value factor (measured by scripts.calibrate_forex). ', '美元REER估值因子的前后半段远期IC判定。') }}{{ v.verdict }}{% if v.ic_full is not none %} · IC {{ '%+.3f'|format(v.ic_full) }}{% endif %}{% if v.verdict == 'CONFIRMED' and not v.promotable %} — but fails the deflated-Sharpe gate, so display-only{% endif %}">{{ {'CONFIRMED':'✓','INVERTED':'⇄','DIRECTIONAL':'~','CONTEXT':'·','UNMEASURED':'–'}.get(v.verdict,'') }}</span>{% endif %}</div>
+        <span class="lead-tag context">{{ t('context · multi-year', '背景 · 多年') }}{% if v.verdict == 'CONFIRMED' %} · {{ t('forward-IC confirmed', '远期IC已确认') }}{% endif %}</span>
       </div>{% endif %}
 
       {% if desk.trend %}{% set trd = desk.trend %}
@@ -610,6 +611,9 @@ html[data-theme="dark"] .sbar{background:#222732}
       {% if c.key == 'carry' %}
         <div class="sc-name">{{ t('G10 carry basket', 'G10套息篮子') }}</div>
         <div class="sc-thesis">{{ t('Long the highest-carry G10 currencies vs USD, short the lowest (vol-scaled, monthly). Carry harvests a REAL risk premium but crashes in risk-off — the Sharpe flatters; the drawdown and negative skew are the truth.', '做多套息最高的G10货币、做空最低者（按波动缩放，月度调仓）。套息是真实的风险溢价，但在避险时崩盘 — 夏普比率具误导性，回撤与负偏度才是真相。') }}</div>
+      {% elif c.key == 'haven' %}
+        <div class="sc-name">{{ t('Risk-off haven basket', '避险货币篮子') }}</div>
+        <div class="sc-thesis">{{ t('The MIRROR of carry: long the havens (JPY, CHF) vs short the risk currencies (AUD, CAD, EM). It bleeds the carry differential as an insurance premium most of the time — but pays in risk-off. The calm-vs-stress split below is the whole point.', '套息的镜像：做多避险货币（日元、瑞郎）、做空风险货币（澳元、加元、新兴市场）。多数时候作为保险金消耗套息利差 — 但在避险时获利。下方的平静vs压力分解才是关键。') }}</div>
       {% elif c.key == 'dollar_trend' %}
         <div class="sc-name">{{ t('Dollar trend overlay', '美元趋势叠加') }}</div>
         <div class="sc-thesis">{{ t('Long the dollar index when its 12-month trend is up, else flat. A crash-avoidance overlay vs buy & hold — NOT alpha (broad-dollar trend is weak and whippy).', '当美元指数12个月趋势向上时做多，否则空仓。相对买入持有的避险叠加 — 非超额收益（广义美元趋势弱且反复）。') }}</div>
@@ -629,6 +633,9 @@ html[data-theme="dark"] .sbar{background:#222732}
       </div>
       {% if c.key == 'carry' and c.longs %}
       <div class="sc-tilt">{{ t('Now', '当前') }}: {{ t('long', '做多') }} <b>{{ c.longs|join(' ') }}</b> · {{ t('short', '做空') }} <b>{{ c.shorts|join(' ') }}</b></div>
+      {% elif c.key == 'haven' %}
+      <div class="sc-tilt">{{ t('Static', '静态') }}: {{ t('long', '做多') }} <b>{{ c.longs|join(' ') }}</b> · {{ t('short', '做空') }} <b>{{ c.shorts|join(' ') }}</b>
+        {% if c.regime %}<br>{{ t('annualized return', '年化收益') }}: {{ t('calm', '平静') }} <span class="{{ 'sc-neg' if (c.regime.calm_ann or 0)<0 else 'sc-pos' }}">{{ '%+.0f'|format(c.regime.calm_ann) if c.regime.calm_ann is not none else '—' }}%</span> · {{ t('risk-off', '避险') }} <span class="{{ 'sc-pos' if (c.regime.stress_ann or 0)>=0 else 'sc-neg' }}">{{ '%+.0f'|format(c.regime.stress_ann) if c.regime.stress_ann is not none else '—' }}%</span>{% endif %}</div>
       {% elif c.key == 'dollar_trend' %}
       <div class="sc-tilt">{{ t('Now', '当前') }}: <b>{% if c.in_market %}{{ t('long the dollar (trend up)', '做多美元（趋势向上）') }}{% else %}{{ t('flat (trend down)', '空仓（趋势向下）') }}{% endif %}</b>{% if c.hold %} · {{ t('buy & hold MaxDD', '买入持有最大回撤') }} {{ '%.0f'|format(c.hold.maxdd) }}%{% endif %}</div>
       {% endif %}

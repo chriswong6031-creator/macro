@@ -162,12 +162,85 @@ def dollar_trend(dxy: pd.Series | None, cfg: dict, lookback: int = 252) -> dict:
         return {}
 
 
-def scorecards(results: dict, assets_cfg: dict, dxy: pd.Series | None, cfg: dict) -> list[dict]:
+# --------------------------------------------------------------------------- #
+# Risk-off haven basket (the mirror of carry)
+# --------------------------------------------------------------------------- #
+def haven_basket(results: dict, assets_cfg: dict, risk_off: pd.Series | None, cfg: dict) -> dict:
+    """Long the haven/funder currencies (JPY, CHF) vs short the risk currencies
+    (AUD, CAD, EM), static weights. This is the MIRROR of the carry trade: it bleeds
+    the carry differential as an insurance premium most of the time, but PAYS in
+    risk-off when havens rally and risk currencies fall. We surface its calm-vs-stress
+    annualized return (split on the risk-off composite) — the whole point."""
+    try:
+        hcfg = cfg.get("haven", {})
+        cost_bps = cfg.get("cost_bps", 2)
+        longs, shorts, closes, carries = [], [], {}, {}
+        for p, df in results.items():
+            if p == "_dollar" or df is None or df.empty or "close" not in df.columns:
+                continue
+            arch = assets_cfg.get(p, {}).get("archetype", "")
+            base = assets_cfg.get(p, {}).get("base", p)
+            if arch == "haven-funder":
+                longs.append(base)
+            elif arch in ("commodity-dollar", "em", "em-managed"):
+                shorts.append(base)
+            else:
+                continue
+            closes[base] = df["close"]
+            carries[base] = df["carry_diff"] if "carry_diff" in df.columns else None
+        if len(longs) < 1 or len(shorts) < 1:
+            return {}
+        close = pd.DataFrame(closes).sort_index()
+        idx = close.index
+        ret = close.pct_change()
+        w = pd.Series(0.0, index=close.columns)
+        for b in longs:
+            w[b] = 1.0 / len(longs)
+        for b in shorts:
+            w[b] = -1.0 / len(shorts)
+        # total return = spot move + the carry differential earned (havens & shorted
+        # high-yielders both BLEED carry -> a net negative-carry insurance basket)
+        days = pd.Series(idx, index=idx).diff().dt.days.fillna(0).clip(lower=0)
+        carry_df = pd.DataFrame({b: (carries[b] if carries.get(b) is not None
+                                     else pd.Series(0.0, index=idx)) for b in close.columns})
+        carry_df = carry_df.reindex(idx).ffill()
+        carry_income = (carry_df / 100.0 * w).sum(axis=1) * (days.values / 365.0)
+        net = (ret * w).sum(axis=1) + carry_income          # static weights -> ~no turnover cost
+        net = net - (cost_bps / 1e4) * 0.0
+        if hcfg.get("vol_target", True):
+            vw = hcfg.get("vol_window_d", 63)
+            rv = net.rolling(vw).std() * ANN
+            scale = (0.10 / rv.replace(0, np.nan)).clip(0.2, 3.0).shift(1).fillna(1.0)
+            net = net * scale
+        net = net.dropna()
+        m = _split_metrics(net, cfg.get("split_date", "2008-09-15"))
+        if not m.get("full"):
+            return {}
+        regime = None
+        if risk_off is not None:
+            j = pd.concat([net.rename("r"), risk_off.reindex(net.index).rename("ro")],
+                          axis=1).dropna()
+            if len(j) > 200:
+                calm, stress = j[j["ro"] <= 0]["r"], j[j["ro"] > 0]["r"]
+                regime = {"calm_ann": round(100 * float(calm.mean()) * 252, 1) if len(calm) else None,
+                          "stress_ann": round(100 * float(stress.mean()) * 252, 1) if len(stress) else None}
+        return {"key": "haven", "metrics": m, "longs": longs, "shorts": shorts,
+                "regime": regime, "span": f"{idx.min().date()}..{idx.max().date()}"}
+    except Exception as e:  # noqa: BLE001
+        log.warning("haven_basket scorecard failed (%s)", e)
+        return {}
+
+
+def scorecards(results: dict, assets_cfg: dict, dxy: pd.Series | None,
+               cfg: dict, risk_off: pd.Series | None = None) -> list[dict]:
     """Assemble the scorecard list (skips any that fail to compute)."""
     out = []
     c = g10_carry(results, assets_cfg, cfg)
     if c:
         out.append(c)
+    h = haven_basket(results, assets_cfg, risk_off, cfg)
+    if h:
+        out.append(h)
     d = dollar_trend(dxy, cfg)
     if d:
         out.append(d)

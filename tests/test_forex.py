@@ -398,6 +398,60 @@ def test_dollar_desk_assembles_gracefully():
     assert isinstance(out, dict) and "lean" in out and out["smile"]["confidence"] == "none"
 
 
+# --------------------------------------------------------------------------- #
+# Follow-ups: haven basket · dollar-index calibration · cross-page link
+# --------------------------------------------------------------------------- #
+def test_haven_basket_is_carry_mirror():
+    """The haven basket is long havens / short risk currencies, and (the whole point)
+    its return is BETTER in risk-off than in calm — the mirror of the carry trade."""
+    idx = _idx(1500)
+    rng = np.random.default_rng(11)
+    risk_off = pd.Series(rng.normal(0, 0.5, len(idx)), index=idx)        # stress when >0
+    results, acfg = {}, {}
+    # havens (JPY/CHF) rally in stress; risk ccys (AUD/CAD) fall in stress
+    specs = [("USDJPY", "JPY", "haven-funder", +1), ("USDCHF", "CHF", "haven-funder", +1),
+             ("AUDUSD", "AUD", "commodity-dollar", -1), ("USDCAD", "CAD", "commodity-dollar", -1)]
+    for p, base, arch, beta in specs:
+        shock = beta * risk_off.clip(lower=0) * 0.01                     # move with stress
+        r = pd.Series(rng.normal(0, 0.004, len(idx)), index=idx) + shock
+        df = pd.DataFrame({"close": np.exp(r.cumsum())})
+        df["carry_diff"] = -1.0 if arch == "haven-funder" else 2.0
+        results[p], acfg[p] = df, {"base": base, "archetype": arch}
+    h = FSC.haven_basket(results, acfg, risk_off, CFG["scorecards"])
+    assert set(h["longs"]) == {"JPY", "CHF"} and set(h["shorts"]) == {"AUD", "CAD"}
+    assert h["regime"]["stress_ann"] > h["regime"]["calm_ann"]           # pays in risk-off
+
+
+def test_calibrate_dollar_reer_leg():
+    """The dollar-index REER calibration leg runs (scipy-free) and returns a verdict
+    with a deflated-Sharpe gate; it is display-only (never auto-promoted)."""
+    from scripts import calibrate_forex
+    cfg = config.load()["forex"]
+    inputs = forex_inputs.load_all(cfg, active_only=False)
+    out = calibrate_forex.calibrate_dollar(inputs, cfg["calibration"], cfg, n_trials=60)
+    if out is None:
+        return                                                          # store may be empty in CI sandbox
+    assert out["verdict"] in ("CONFIRMED", "INVERTED", "DIRECTIONAL", "CONTEXT")
+    assert out["display_only"] is True
+    assert isinstance(out["promotable"], bool)
+
+
+def test_forex_link_reads_and_degrades():
+    """forex_link.asset_corr maps a transmission key to a corr dict, and returns None
+    when the block is absent (so consumer pages never crash on build order)."""
+    from lib import forex_link
+    tr = {"corr": {"GC=F": -0.5, "HG=F": -0.6}, "unstable": ["Copper"], "usd_dir": "strengthening"}
+    g = forex_link.asset_corr("GC=F", tr)
+    assert g and g["corr"] == -0.5 and g["stable"] is True               # Gold not in unstable
+    c = forex_link.asset_corr("HG=F", tr)
+    assert c and c["stable"] is False                                    # Copper IS unstable
+    assert forex_link.asset_corr("SPY", tr) is None                      # key absent -> None
+    assert forex_link.asset_corr("GC=F", {}) is None                    # empty block -> None
+
+
+from engine import forex_inputs  # noqa: E402  (used by the calibration test)
+
+
 if __name__ == "__main__":
     for fn in [test_orthogonalize_strips_dollar_beta, test_carry_sign_and_vol_penalty,
                test_riskoff_factor_archetype_sign, test_factor_panel_naive_bullish_bounds,
@@ -412,7 +466,8 @@ if __name__ == "__main__":
                test_dollar_positioning_crowded, test_trend_stack_all_up,
                test_strength_meter_zero_sum_and_usd, test_transmission_known_inverse,
                test_transmission_flipping_flag, test_scorecards_finite_and_maxdd_nonpositive,
-               test_dollar_desk_assembles_gracefully]:
+               test_dollar_desk_assembles_gracefully, test_haven_basket_is_carry_mirror,
+               test_calibrate_dollar_reer_leg, test_forex_link_reads_and_degrades]:
         fn()
         print(f"PASS {fn.__name__}")
     print("all forex engine tests passed")

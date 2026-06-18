@@ -398,6 +398,12 @@ html[data-theme="dark"] .tl-asset{background:var(--grid)} /* --bg is near-black 
           {{ t('12-mo trend', '12月趋势') }} <b>{{ td(a.ts_trend|capitalize) }}</b> ·
           {{ t('mode', '模式') }} <b>{{ td(a.market_mode) }}</b>
         </div>
+        {% if a.dollar_corr is not none %}
+        <div style="margin-top:9px;font-size:13px;color:var(--muted)">{{ t('USD sensitivity', '美元敏感度') }}:
+          <b class="{{ 'down' if a.dollar_corr<0 else 'up' }}">{{ '%+.2f'|format(a.dollar_corr) }}</b>
+          <span style="font-size:12px;color:var(--muted);opacity:.85">{{ t('63d corr to the broad dollar — ', '63日对广义美元相关 — ') }}{% if a.dollar_corr < 0 %}{{ t('a stronger USD is a headwind', '美元走强为逆风') }}{% else %}{{ t('currently moves with USD', '当前与美元同向') }}{% endif %}{% if not a.dollar_stable %} · <b>{{ t('sign-unstable', '符号不稳定') }}</b>{% endif %}{{ t(' · contemporaneous, not a forecast', ' · 同步，非预测') }}</span>
+        </div>
+        {% endif %}
         <div class="slider">
           <div class="track"><div class="knob" style="left:{{ a.cycle_pos }}%"></div></div>
           <div class="labels">
