@@ -362,6 +362,10 @@ jobs:
           # ~534-name legacy subset was ever tracked while the index lists ~1595, so the
           # untracked long tail 404'd on click. Force-add the whole dir so every name ships.
           git add -f site/stockdata 2>/dev/null || true
+          # Bespoke single-stock chart OHLC (built by build_site -> build_chart_data):
+          # gitignored like the search libraries, so force-add it or the committed-tree
+          # deploy ships no price data and every stock chart renders empty.
+          git add -f site/ohlc 2>/dev/null || true
           if git diff --cached --quiet; then echo "no engine output changes"; exit 0; fi
           git commit -m "engine: regime update $(date -u +%F)"
           # best-effort push (see commit-data). The deploy below uses the uploaded

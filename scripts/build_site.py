@@ -2684,6 +2684,18 @@ def main() -> int:
         from scripts.build_stock_library import main as build_library
         build_library()
 
+        # Bespoke single-stock chart data: a compact per-ticker OHLC JSON
+        # (site/ohlc/<T>.json) read client-side by chart.js. Pure serialisation of
+        # price data already on disk (no engine compute) and depends on the stock
+        # index.json the library just wrote, so it runs right after. Garnish —
+        # never break the build if it fails; charts just degrade to "no data".
+        try:
+            from scripts.build_chart_data import build_us as build_chart_data
+            n_chart, n_candle = build_chart_data(site)
+            log.info("chart data: %d ohlc files (%d candle-capable)", n_chart, n_candle)
+        except Exception as e:  # noqa: BLE001
+            log.warning("chart data step failed (%s); stock charts degrade to no-data", e)
+
         # holdings watchlist: a pure client-state page over the same library
         # (selection persists in the browser; signals re-resolve from index.json
         # each load). Optional Supabase cloud sync is config-gated; blank => local-only.

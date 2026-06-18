@@ -576,7 +576,8 @@
     </div>
   </div>
 
-<script src="https://s3.tradingview.com/tv.js"></script>
+<script src="lightweight-charts-v5.js"></script>
+<script src="chart.js"></script>
 <script src="stockbrief.js"></script>
 <script>
 (function () {
@@ -1549,25 +1550,17 @@
     tvLoad(d);
   }
 
-  // TradingView chart loader, shared by the full and limited views. Yahoo encodes
-  // US share classes with a dash (BRK-B); TradingView uses a dot (BRK.B), and a
-  // bare "BRK-B" resolves to a colliding TSX income-strategy ETF. Pin the known
-  // US class-shares to NYSE; otherwise convert the trailing class-dash to a dot.
-  // Crypto keeps its -USD -> USD mapping.
+  // Bespoke chart loader, shared by the full and limited views. Replaces the old
+  // TradingView iframe widget with our self-hosted Lightweight Charts engine
+  // (site/chart.js) driven by our own OHLC data (ohlc/<ticker>.json): candles +
+  // multi-timeframe RSI / Stoch / MACD / Stoch-RSI, computed client-side. The
+  // chart is garnish — if data or the library is missing it fails quietly and the
+  // analysis above stands alone, exactly as the old loader did.
   function tvLoad(d) {
-    document.getElementById('tvbox').innerHTML = '<div id="tvchart"></div>';
-    var TV_FIX = {'BRK-A': 'NYSE:BRK.A', 'BRK-B': 'NYSE:BRK.B', 'BF-A': 'NYSE:BF.A',
-      'BF-B': 'NYSE:BF.B', 'CWEN-A': 'NYSE:CWEN.A', 'MOG-A': 'NYSE:MOG.A',
-      'HEI-A': 'NYSE:HEI.A', 'LEN-B': 'NYSE:LEN.B'};
-    var tvsym = TV_FIX[d.ticker] || (d.ticker.indexOf('-USD') >= 0
-      ? d.ticker.replace('-USD', 'USD') : d.ticker.replace(/-([A-Z])$/, '.$1'));
-    try {
-      new TradingView.widget({container_id: 'tvchart', symbol: tvsym,
-        interval: 'D', theme: (localStorage.getItem('theme') === 'light' ? 'light' : 'dark'),
-        style: '1', height: 430, width: '100%',
-        hide_side_toolbar: true, allow_symbol_change: true,
-        studies: ['RSI@tv-basicstudies', 'MACD@tv-basicstudies']});
-    } catch (e) { /* chart is garnish — analysis above stands alone */ }
+    var box = document.getElementById('tvbox');
+    if (!box || !window.StockChart) return;
+    try { window.StockChart.mount(box, d.ticker, {name: d.name}); }
+    catch (e) { /* chart is garnish — analysis above stands alone */ }
   }
 
   // A brand-new listing (a days-old IPO like SPCX) has no computable cycle ladder
@@ -1733,8 +1726,8 @@
   window.addEventListener('hashchange',load); load();
 })();
 </script>
-<p class="muted" style="font-size:12px">Generated {{ generated_utc }} UTC · charts by TradingView ·
-methodology &amp; caveats: see any sector page footer.</p>
+<p class="muted" style="font-size:12px">Generated {{ generated_utc }} UTC · charts rendered in-house with
+Lightweight Charts™ on our own price data · methodology &amp; caveats: see any sector page footer.</p>
 <footer class="site-footer">
   <span class="made">Made with ❤️ in Canada</span>
   <span class="dev">Developed by Chris Wong</span>

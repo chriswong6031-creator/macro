@@ -6,6 +6,7 @@ __pycache__/
 .env
 site/_tmp/
 site/stockdata/
+site/ohlc/
 site/stockbrief/
 site/chinastockdata/
 site/hkstockdata/
