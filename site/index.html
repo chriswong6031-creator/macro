@@ -198,6 +198,7 @@ a:focus-visible,.links a:focus-visible{outline:2px solid var(--link);outline-off
 /* ===== tooltip ===== */
 .gd-tip{position:fixed;z-index:50;width:264px;padding:13px 14px;border-radius:14px;pointer-events:none;
  box-shadow:var(--popover-shadow);transition:opacity .12s ease}
+.gd-tip.pinned{pointer-events:auto}   /* a clicked (pinned) tooltip is interactive so its "Open dashboard" link works */
 .gd-tip[hidden]{display:none}
 .gd-tip-h{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .gd-tip-flag{font-size:18px}

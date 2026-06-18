@@ -347,17 +347,20 @@
     return null;
   }
   function hoverAt(cx, cy) {
+    // while a country is selected the tooltip is PINNED (and interactive) — keep it
+    // locked so moving the cursor toward its "Open dashboard" link doesn't swap it out
+    if (selected) { canvas.style.cursor = "grab"; return; }
     var m = pick(cx, cy);
     hovered = m ? m.cc : null;
     canvas.style.cursor = m ? "pointer" : "grab";
-    if (m) showTip(m, cx, cy); else if (!selected) hideTip();
+    if (m) showTip(m, cx, cy); else hideTip();
   }
   function clickAt(cx, cy) {
     var m = pick(cx, cy);
     if (m) selectMarket(m, cx, cy); else { selected = null; hideTip(); syncRows(); }
   }
   function selectMarket(m, cx, cy) {
-    selected = m.cc; lastInteract = performance.now();
+    selected = m.cc; hovered = null; lastInteract = performance.now();
     var ll = m.kind === "marker" ? m.marker_lonlat : (byCC[m.cc] && paintCentroid(m.cc)) || [0, 0];
     flying = { t0: performance.now(), dur: 700, a0: rot[0], b0: rot[1], a1: -ll[0], b1: clampLat(-ll[1]), s0: scale, s1: fitScale * 1.12 };
     showTip(m, cx || (W / 2 + stage.getBoundingClientRect().left), cy || (H / 2 + stage.getBoundingClientRect().top), true);
