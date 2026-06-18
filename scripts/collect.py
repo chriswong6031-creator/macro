@@ -75,11 +75,18 @@ def all_adapters() -> dict:
         ("china_qvix", "collectors.china_qvix", "ChinaQvixAdapter"),           # 300/50ETF option-implied vol ("China VIX") — fear/euphoria + drawdown
         ("china_credit", "collectors.china_credit", "ChinaCreditAdapter"),     # 社融 TSF (mofcom, legacy-SSL)
         ("china_property", "collectors.china_property", "ChinaPropertyAdapter"),  # 70-city price breadth + climate + CGB + rebar/iron-ore
+        ("china_news", "collectors.china_news", "ChinaNewsAdapter"),           # CCTV 新闻联播 official policy-tone series (keyless; display-only news/sentiment panel)
         # Hong Kong / Hang Seng dashboard — see research/HK_DATA_AUDIT.md
         # (macro reused from china_macro; flows reused from china_connect/china_flows)
         ("hk_prices", "collectors.hk_prices", "HkPriceAdapter"),
         ("hk_breadth", "collectors.hk_breadth", "HkBreadthAdapter"),
         ("hkma", "collectors.hkma", "HkmaAdapter"),                            # peg-funding: Aggregate Balance + HIBOR + TWI
+        ("hk_indices", "collectors.hk_indices", "HkIndicesAdapter"),           # true Hang Seng TECH (HSTECH) index OHLCV — retires the 3033.HK ETF proxy
+        ("hk_ah_official", "collectors.hk_ah_official", "HkAhOfficialAdapter"),  # official ~190-pair A/H premium snapshot + reconstructed daily index
+        ("hk_connect_channels", "collectors.hk_connect_channels", "HkConnectChannelsAdapter"),  # 港股通沪/深 per-channel southbound history (additive to china_connect)
+        ("hk_valuation", "collectors.hk_valuation", "HkValuationAdapter"),     # Baidu PE/PB market-median (currency-neutral; the read hk_fundamentals skips)
+        ("hk_property", "collectors.hk_property", "HkPropertyAdapter"),         # Centaline CCL weekly HK home-price index (+ CVI/CSI) — DISPLAY only (fragile->blocked)
+        ("hk_full_breadth", "collectors.hk_full_breadth", "HkFullBreadthAdapter"),  # full HK main-board adv/dec participation (Eastmoney spot; fragile->blocked)
         # Canada / S&P/TSX dashboard — keyless: yfinance prices + BoC VALET / StatsCan WDS / FRED macro
         ("canada_prices", "collectors.canada_prices", "CanadaPriceAdapter"),
         ("canada_macro", "collectors.canada_macro", "CanadaMacroAdapter"),     # BoC VALET + StatsCan WDS + FRED comparables
@@ -162,10 +169,11 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("universe membership step failed: %s", e)
 
-    # Baskets-only off-index close cache: on-thesis names outside the free S&P-1500
-    # universe (recent IPOs + crypto/nuclear), derived from membership.json. A separate
-    # store engine.baskets unions in — the breadth/factor universe stays pure. Cheap
-    # (~12 tickers), additive, never fatal. See scripts/fetch_basket_extras.py.
+    # Baskets-only DEEP close store: off-index names (recent IPOs + crypto/nuclear) PLUS a deep
+    # (~3y) tape for the large-caps the breadth cache only holds shallowly (~15m rolling window),
+    # all derived from membership.json. A separate store engine.baskets prefers — the breadth/factor
+    # universe stays pure. Batched + merged onto prior, additive, never fatal. See
+    # scripts/fetch_basket_extras.py.
     try:
         from scripts.fetch_basket_extras import main as fetch_basket_extras
         log.info("=== refreshing thematic-basket extras ===")
