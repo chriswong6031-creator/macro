@@ -593,6 +593,7 @@
       <div class="nav-dd-menu" role="menu">
         <a href="commodities.html">📊 {{ t('Commodity Dashboard', '商品仪表盘') }}<span class="d">{{ t('Gold · silver · copper · oil · complex', '金 · 银 · 铜 · 油 · 综合') }}</span></a>
         <a href="commodity_strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Per-commodity tactical strategies', '分品种战术策略') }}</span></a>
+        <a href="spr.html">🛢️ {{ t('Strategic Reserves', '战略储备') }}<span class="d">{{ t('SPR levels by country vs oil prices', '各国战略储备水平与油价') }}</span></a>
       </div>
     </div>
     <a class="nav-link" href="forex.html">💱 {{ t('Forex', '外汇') }}</a>
@@ -600,7 +601,9 @@
     <div class="nav-dd">
       <a class="nav-link" href="javascript:void(0)">🔬 {{ t('Research', '研究') }} <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
+        <a href="reports.html">📰 {{ t('Research Reports', '研究报告') }}<span class="d">{{ t('In-depth market & macro reports', '深度市场与宏观报告') }}</span></a>
         <a href="masterminds.html">🧠 {{ t('Masterminds', '操盘大师') }}<span class="d">{{ t('Multi-asset active GTAA strategies', '多资产主动配置策略') }}</span></a>
+        <a href="transmission.html">🔀 {{ t('Rate & Inflation Transmission', '利率与通胀传导') }}<span class="d">{{ t('How rates & inflation move every asset', '利率与通胀如何驱动各类资产') }}</span></a>
         <a href="crossasset.html">🧭 {{ t('Cross-Asset', '跨资产') }}<span class="d">{{ t('Correlations · trend · global liquidity', '相关性 · 趋势 · 全球流动性') }}</span></a>
         <a href="signal_lab.html">🔬 {{ t('Signal Lab', '信号实验室') }}<span class="d">{{ t('Consolidated validation scorecard', '验证记分卡汇总') }}</span></a>
         <a href="factors.html">🧮 {{ t('Factors & Seasonality', '因子 & 季节性') }}<span class="d">{{ t('Value · quality · low-vol · monthly calendar', '价值 · 质量 · 低波动 · 月历') }}</span></a>
@@ -857,6 +860,33 @@
       </div>
     </div>
     <p class="muted sm" style="margin:10px 0 0">{{ t('Display-only consolidation of the signals detailed below — it changes no score. The agreement % is the validated regime-core read; the legs are context.', '仅为下方详述信号的展示性汇总 — 不改变任何评分。一致度为经验证的周期核心读数；各腿为背景。') }}</p>
+  </div>
+  {% endif %}
+
+  <!-- ===================== RATE & INFLATION TRANSMISSION (compact; full page = transmission.html) ===================== -->
+  {% if latest.rate_inflation_transmission and latest.rate_inflation_transmission.state %}
+  {% set rit = latest.rate_inflation_transmission %}
+  <div class="panel span12" id="rate-transmission">
+    <h2>{{ t('Rate & inflation transmission — what it’s pushing on now', '利率与通胀传导 — 当前在推动什么') }}
+      {{ help("How the current interest-rate, rate-expectations and inflation (CPI / core PCE) state propagates into each asset class — the headwind / tailwind each faces and which causal chains are live. Coefficients are MEASURED forward IC; display-only, never scored (repricing is reactive). The full cause→1st/2nd/3rd-order cascade, conditional scenarios and the inflation decomposition are on the Transmission page.", "当前利率、利率预期与通胀（CPI／核心PCE）状态如何传导至各类资产——各自面临的逆风/顺风及哪些因果链处于活跃。系数为实测前瞻IC；仅供展示、从不计分（重定价是被动的）。完整的“因→一/二/三阶”级联、情景推演与通胀分解见“传导”页面。") }}
+      <a href="transmission.html" style="float:right;font-size:12px;font-weight:600">{{ t('Full page →', '完整页面 →') }}</a>
+    </h2>
+    <div style="display:flex;flex-wrap:wrap;gap:8px 18px;margin:4px 0 12px;font-size:13px">
+      <span>{{ t('Rates','利率') }}: <b><span class="l-en">{{ rit.state.rates.label.en }}</span><span class="l-zh">{{ rit.state.rates.label.zh }}</span></b></span>
+      <span>{{ t('Inflation','通胀') }}: <b><span class="l-en">{{ rit.state.inflation.label.en }}</span><span class="l-zh">{{ rit.state.inflation.label.zh }}</span></b></span>
+      <span>{{ t('Expectations','预期') }}: <b><span class="l-en">{{ rit.state.expectations.label.en }}</span><span class="l-zh">{{ rit.state.expectations.label.zh }}</span></b></span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;font-size:13px">
+      <div><span class="tone-down" style="font-weight:700">{{ t('Headwind','逆风') }}</span>
+        {% for h in rit.headwinds[:4] %}<div style="margin-top:3px"><span class="l-en">{{ h.label.en }}</span><span class="l-zh">{{ h.label.zh }}</span> <b class="tone-down">{{ '%.2f'|format(h.net) }}</b></div>{% else %}<div class="muted">—</div>{% endfor %}
+      </div>
+      <div><span class="tone-up" style="font-weight:700">{{ t('Tailwind','顺风') }}</span>
+        {% for h in rit.tailwinds[:4] %}<div style="margin-top:3px"><span class="l-en">{{ h.label.en }}</span><span class="l-zh">{{ h.label.zh }}</span> <b class="tone-up">+{{ '%.2f'|format(h.net) }}</b></div>{% else %}<div class="muted">—</div>{% endfor %}
+      </div>
+    </div>
+    {% set ac = rit.chains|selectattr('active')|list %}
+    {% if ac %}<div class="muted sm" style="margin-top:10px">{{ t('Active chains','活跃传导链') }}: {% for c in ac %}<span class="l-en">{{ c.title.en }}</span><span class="l-zh">{{ c.title.zh }}</span>{% if not loop.last %} · {% endif %}{% endfor %}</div>{% endif %}
+    <p class="muted sm" style="margin:8px 0 0">{{ t('Display-only — never scored. The scored-leg gate found no rate/inflation leg robust enough to time returns; these flag risk, not return.', '仅供展示，从不计分。可计分腿检验未发现足够稳健以择时回报的利率/通胀腿；它们标示风险而非回报。') }}</p>
   </div>
   {% endif %}
 

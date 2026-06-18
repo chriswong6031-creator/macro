@@ -175,6 +175,19 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("fed-path layer failed: %s", e)
         latest["fed_path"] = None
+    # Rate & inflation TRANSMISSION (research/RATE_INFLATION_TRANSMISSION.md): how the
+    # current rate / rate-expectations / inflation (CPI, core PCE) state propagates —
+    # first/second/third order — into per-asset-class headwind/tailwind, with honest
+    # conditional scenarios + an inflation decomposition. DISPLAY-ONLY leaf
+    # (engine/rate_inflation_transmission.py): the coefficients are the MEASURED forward
+    # IC (data/transmission/calibration.json) and the scored-leg gate found NONE robust
+    # enough to score — repricing is reactive. Never scored, never an MRS leg, never fatal.
+    try:
+        from engine.rate_inflation_transmission import snapshot as transmission_snapshot
+        latest["rate_inflation_transmission"] = transmission_snapshot(f)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("rate/inflation transmission layer failed: %s", e)
+        latest["rate_inflation_transmission"] = None
     # Turning-point fragility meta-layer (engine/turning_point.py): reads ACROSS the
     # leaves above (cross_asset / market_drivers / conditions / dislocation / fed_path)
     # and raises a DISPLAY-ONLY caution when the tape is a one-factor macro-shock

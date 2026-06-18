@@ -41,21 +41,42 @@ INDEX_PRESETS = {
 # Sector SPDRs — each tied to a SPECIFIC driver (the per-asset edge). All legs oriented
 # bullish (sign +1); validation never transfers, each gets its own gate block + Phase-0.
 SECTOR_PRESETS = {
-    "XLK": {"medium": {"real_rate": "HIGH", "vrp": "HIGH", "tsmom": "MED", "netliq": "MED"}},   # tech ~ QQQ (duration)
-    "XLF": {"medium": {"term": "HIGH", "credit": "HIGH", "credit_vel": "MED", "tsmom": "MED", "vrp": "MED"}},  # banks: curve+credit
-    "XLE": {"medium": {"oil_mom": "HIGH", "dollar": "MED", "tsmom": "MED", "vrp": "LOW"}},        # energy: oil
+    "XLK": {"medium": {"real_rate": "HIGH", "vrp": "HIGH", "tsmom": "MED", "netliq": "MED", "rr_x_growth": "LOW"}},   # tech (duration)
+    "XLF": {"medium": {"term": "HIGH", "credit": "HIGH", "slope_x_credit": "MED", "steepen_vel": "LOW", "tsmom": "MED", "vrp": "MED"}},  # banks: curve×credit
+    "XLE": {"medium": {"oil_mom": "HIGH", "oil_vrp": "HIGH", "dollar": "MED", "oil_x_dollar": "LOW", "tsmom": "MED"}},  # energy: oil + oil-VRP
     "XLU": {"medium": {"real_rate": "HIGH", "term": "MED", "vrp": "MED"}},                        # utilities: bond proxy
     "XLRE": {"medium": {"real_rate": "HIGH", "term": "MED", "credit": "MED", "vrp": "LOW"}},      # REITs: rates+credit
-    "XLB": {"medium": {"dollar": "HIGH", "oil_mom": "MED", "term": "MED", "tsmom": "MED"}},       # materials: dollar/commod
-    "XLI": {"medium": {"term": "MED", "tsmom": "MED", "oil_mom": "LOW", "credit": "LOW"}},        # industrials: cyclical
+    "XLB": {"medium": {"dollar": "HIGH", "copper_gold": "MED", "oil_mom": "MED", "tsmom": "MED"}},  # materials: dollar/copper
+    "XLI": {"medium": {"copper_gold": "MED", "term": "MED", "tsmom": "MED", "credit": "LOW"}},    # industrials: cyclical
     "XLY": {"medium": {"credit": "MED", "real_rate": "MED", "tsmom": "MED", "vrp": "LOW"}},       # discretionary
     "XLP": {"medium": {"real_rate": "MED", "vrp": "MED", "tsmom": "LOW"}},                        # staples (defensive)
     "XLV": {"medium": {"vrp": "MED", "tsmom": "MED", "real_rate": "LOW"}},                        # health (defensive)
     "XLC": {"medium": {"real_rate": "MED", "tsmom": "MED", "credit": "LOW"}},                     # comm services
 }
-# Unified per-ticker directional presets (indexes + sectors). The engine + Phase-0 key
-# off membership here; sectors default display-only until their own block passes Phase-0.
-PRESETS = {**INDEX_PRESETS, **SECTOR_PRESETS}
+# Thematic ETFs — NARROWER, purer-driver exposures than broad sectors (deep tradeable
+# history, unlike the ~3y hand-curated synthetic baskets which can't be OOS-validated).
+# Each tied to its specific driver; all legs oriented bullish; own gate + Phase-0.
+THEME_PRESETS = {
+    "SMH": {"medium": {"real_rate": "HIGH", "vrp": "HIGH", "tsmom": "MED", "rr_x_growth": "LOW"}},   # semis (purest duration)
+    "SOXX": {"medium": {"real_rate": "HIGH", "vrp": "HIGH", "tsmom": "MED", "rr_x_growth": "LOW"}},
+    "IGV": {"medium": {"real_rate": "HIGH", "vrp": "HIGH", "tsmom": "MED", "rr_x_growth": "LOW"}},   # software
+    "XBI": {"medium": {"real_rate": "HIGH", "credit": "MED", "credit_vel": "MED", "vrp": "MED", "tsmom": "MED"}},  # biotech: rate + funding window
+    "IBB": {"medium": {"real_rate": "HIGH", "credit": "MED", "vrp": "MED", "tsmom": "MED"}},
+    "GDX": {"medium": {"real_rate": "HIGH", "gold": "HIGH", "rr_x_gold": "LOW", "dollar": "MED", "tsmom": "MED"}},  # gold miners
+    "GDXJ": {"medium": {"real_rate": "HIGH", "gold": "HIGH", "rr_x_gold": "LOW", "dollar": "MED", "tsmom": "MED"}},
+    "KRE": {"medium": {"term": "HIGH", "credit": "HIGH", "slope_x_credit": "MED", "steepen_vel": "LOW", "tsmom": "MED"}},  # regional banks
+    "KBE": {"medium": {"term": "HIGH", "credit": "HIGH", "slope_x_credit": "MED", "steepen_vel": "LOW", "tsmom": "MED"}},
+    "ITB": {"medium": {"real_rate": "HIGH", "mtg": "HIGH", "term": "MED", "credit": "MED", "tsmom": "MED"}},   # homebuilders (mortgage)
+    "XHB": {"medium": {"real_rate": "HIGH", "mtg": "HIGH", "term": "MED", "credit": "MED", "tsmom": "MED"}},
+    "XME": {"medium": {"copper_gold": "HIGH", "dollar": "HIGH", "oil_mom": "MED", "tsmom": "MED"}},  # metals & mining
+    "XOP": {"medium": {"oil_mom": "HIGH", "oil_vrp": "HIGH", "dollar": "MED", "oil_x_dollar": "LOW", "tsmom": "MED"}},  # oil E&P
+    "OIH": {"medium": {"oil_mom": "HIGH", "oil_vrp": "HIGH", "dollar": "MED", "tsmom": "MED"}},  # oil services
+    "XRT": {"medium": {"credit": "MED", "real_rate": "MED", "tsmom": "MED", "vrp": "LOW"}},      # retail
+    "TAN": {"medium": {"real_rate": "HIGH", "oil_mom": "MED", "tsmom": "MED"}},                  # solar (rate-sensitive)
+}
+# Unified per-ticker directional presets (indexes + sectors + themes). The engine + Phase-0
+# key off membership here; each defaults display-only until its own block passes Phase-0.
+PRESETS = {**INDEX_PRESETS, **SECTOR_PRESETS, **THEME_PRESETS}
 MEDIUM_TD = 42
 HORIZONS_TD = {"medium": 42, "long": 189}   # the directional model spans medium + long
 # honest P(up) band for a scored medium-horizon index lean (the equity-premium drift
@@ -96,10 +117,19 @@ def _market() -> dict:
             oil = pd.read_parquet(Y / "CL_F.parquet")["close"]
         except Exception:
             oil = pd.Series(dtype=float)
+    def y(rel: Path) -> pd.Series:
+        try:
+            return pd.read_parquet(rel)["close"].replace(0, np.nan)
+        except Exception:
+            return pd.Series(dtype=float)
     _MKT = {"vix": vix, "walcl": g(F / "WALCL.parquet"), "rrp": g(F / "RRPONTSYD.parquet"),
             "real10": g(F / "DFII10.parquet"), "hy_oas": g(F / "BAMLH0A0HYM2.parquet"),
             "t10y3m": g(F / "T10Y3M.parquet"), "anfci": g(F / "ANFCI.parquet"),
-            "dollar": g(F / "DTWEXBGS.parquet"), "oil": oil}
+            "dollar": g(F / "DTWEXBGS.parquet"), "oil": oil, "gold": y(Y / "GC_F.parquet"),
+            # bespoke per-sector drivers (research/INDEX_DIRECTION.md v2)
+            "ovx": g(F / "OVXCLS.parquet"), "mtg": g(F / "MORTGAGE30US.parquet"),
+            "copper": y(Y / "HG_F.parquet"), "baa": g(F / "DBAA.parquet"),
+            "aaa": g(F / "DAAA.parquet"), "wei": g(F / "WEI.parquet")}
     return _MKT
 
 
@@ -137,7 +167,35 @@ def build_legs(close: pd.Series) -> pd.DataFrame:
         out["oil_mom"] = _z(oil.pct_change(60, fill_method=None))   # rising oil → energy/materials +
     if not mkt.get("dollar", pd.Series(dtype=float)).empty:
         out["dollar"] = -_z(R(mkt["dollar"]).diff(60))         # FALLING broad $ → commodities/materials +
+    if not mkt.get("gold", pd.Series(dtype=float)).empty:
+        out["gold"] = _z(R(mkt["gold"]).pct_change(60, fill_method=None))   # rising gold → miners +
+    # ---- BESPOKE per-sector drivers (v2) — each a single sign-restricted column ----
+    if not mkt.get("ovx", pd.Series(dtype=float)).empty and not mkt.get("oil", pd.Series(dtype=float)).empty:
+        rv_oil = mkt["oil"].pct_change(fill_method=None).rolling(22).std(ddof=0) * np.sqrt(252) * 100.0
+        out["oil_vrp"] = _z(R(mkt["ovx"]) - R(rv_oil))                      # energy VRP (oil IV − realized)
+    if not mkt.get("copper", pd.Series(dtype=float)).empty and not mkt.get("gold", pd.Series(dtype=float)).empty:
+        out["copper_gold"] = _z((R(mkt["copper"]) / R(mkt["gold"])).pct_change(60, fill_method=None))  # cyclical impulse
+    if not mkt.get("mtg", pd.Series(dtype=float)).empty:
+        out["mtg"] = -_z(R(mkt["mtg"]).diff(60))                           # falling mortgage rate → homebuilders +
+    if not mkt.get("t10y3m", pd.Series(dtype=float)).empty:
+        out["steepen_vel"] = indicators.slope_z(R(mkt["t10y3m"]), 20, 60, use_log=False)  # curve steepening velocity
+    # ---- 2nd-order INTERACTIONS (product of two mechanism-paired z-legs, re-standardized) ----
+    if "term" in out and not mkt.get("baa", pd.Series(dtype=float)).empty and not mkt.get("aaa", pd.Series(dtype=float)).empty:
+        credit_benign = -_z(R(mkt["baa"]) - R(mkt["aaa"]))
+        out["slope_x_credit"] = _z(out["term"] * credit_benign)           # steep curve WHEN credit benign
+    if "real_rate" in out and not mkt.get("wei", pd.Series(dtype=float)).empty:
+        g_soft = 1.0 / (1.0 + np.exp(_z(R(mkt["wei"]))))                  # high when growth soft
+        out["rr_x_growth"] = _z(out["real_rate"] * g_soft)                # rate-relief, growth-soft
+    if "real_rate" in out and "gold" in out:
+        out["rr_x_gold"] = _z(out["real_rate"] * out["gold"])             # miners: falling-rate AND rising-gold
+    if "oil_mom" in out and "dollar" in out:
+        out["oil_x_dollar"] = _z(out["oil_mom"] * out["dollar"])         # oil rally on a falling dollar
     return out
+
+
+# interaction legs must beat their PARENT legs' additive content OOS (anti-spurious gate)
+INTERACTION_PARENTS = {"slope_x_credit": ["term", "credit"], "rr_x_growth": ["real_rate"],
+                       "rr_x_gold": ["real_rate", "gold"], "oil_x_dollar": ["oil_mom", "dollar"]}
 
 
 def fwd_return(close: pd.Series, h: int) -> pd.Series:

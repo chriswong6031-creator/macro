@@ -103,6 +103,12 @@ MASTER_SYSTEM_TMPL = (
     "read and FX carry are COINCIDENT confirmation / fragility gauges, and the stock-bond "
     "correlation is a slow regime descriptor. Do NOT claim bonds 'predict' an equity move. "
     "A `cross_asset_confirm` divergence is an attention flag, not a forecast.\n"
+    "- Use `rate_inflation_transmission` for the rate/inflation backdrop: state the rates "
+    "regime, the inflation read (core PCE vs the 2% target) and whether expectations are "
+    "anchored, then name which assets it is a current headwind / tailwind for and which "
+    "causal chains are active. The coefficients are MEASURED forward IC but `scored` is "
+    "false on purpose — the gate found no leg robust enough to time returns, so frame it "
+    "as RISK (which assets are pressured), never as a return forecast.\n"
     "- OPEN with the dominant driver in `macro.market_drivers` when one is present — "
     "name it, the evidence, and what would invalidate it. It is a DETERMINISTIC "
     "cross-asset attribution: narrate it, do not recompute it. If it reads 'mixed' or "
@@ -385,6 +391,26 @@ def _btc_summary(root: Path) -> dict | None:
     return _btc_signals_row(root, _BTC_SMALL_COLS)
 
 
+def _transmission_summary(macro: dict | None) -> dict | None:
+    """Slim rate/inflation transmission read for the LLM brief: the current state, the
+    top headwind/tailwind assets, and which causal chains are active. DISPLAY-ONLY
+    context (the scored-leg gate found none robust) — narrate, never call it a signal."""
+    t = (macro or {}).get("rate_inflation_transmission")
+    if not t:
+        return None
+    st = t.get("state") or {}
+    def lab(d):  # the EN side of a bilingual label dict
+        return (d or {}).get("label", {}).get("en") if isinstance(d, dict) else None
+    return {
+        "rates": lab(st.get("rates")), "inflation": lab(st.get("inflation")),
+        "expectations": lab(st.get("expectations")),
+        "headwinds": [h.get("asset") for h in (t.get("headwinds") or [])[:4]],
+        "tailwinds": [h.get("asset") for h in (t.get("tailwinds") or [])[:4]],
+        "active_chains": [c.get("id") for c in (t.get("chains") or []) if c.get("active")],
+        "scored": False,
+    }
+
+
 def gather_state(root: Path | None = None) -> dict:
     """Compact cross-asset state assembled from each dashboard's latest.json.
     Excludes holdings / watchlist composition by design. (macro lens)"""
@@ -416,6 +442,11 @@ def gather_state(root: Path | None = None) -> dict:
     conf = _confirm_summary(macro)
     if conf:
         state["cross_asset_confirm"] = conf
+    # Rate & inflation transmission: the current rate/inflation state + which assets it
+    # is a headwind/tailwind for + which causal chains are active (display-only context).
+    tr = _transmission_summary(macro)
+    if tr:
+        state["rate_inflation_transmission"] = tr
     btc = _btc_summary(root)
     if btc:
         state["btc"] = btc

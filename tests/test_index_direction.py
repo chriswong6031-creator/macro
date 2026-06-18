@@ -42,7 +42,7 @@ def test_oos_r2_and_clark_west():
 
 def test_n_trials_frozen():
     from scripts import index_direction_phase0 as p0
-    assert p0.N_TRIALS == 200, "n_trials must stay frozen (DSR multiple-testing honesty)"
+    assert p0.N_TRIALS == 520, "n_trials must stay frozen (DSR multiple-testing honesty)"
     print("ok test_n_trials_frozen")
 
 

@@ -1,0 +1,91 @@
+{#
+  ============================================================================
+  REUSABLE REPORT STARTER  —  copy this file to create a new Research Report.
+
+  HOW TO ADD A REPORT (3 steps):
+    1. Copy this file:   templates/_report_TEMPLATE.html.j2
+                    ->   templates/report_<your_slug>.html.j2
+    2. Fill the three blocks below (art_kicker / art_toc / art_body). Every
+       reader-facing string is bilingual via  t('English', '中文') .
+    3. Append one dict to REPORTS in  scripts/build_reports.py  (see the
+       commented EXAMPLE there) with a matching  slug + template  and the
+       metadata (date / title / dek / tags / read_min). Then run
+         python -m scripts.build_reports
+       (or just let daily.yml do it on the next build). The index page
+       auto-sorts by date, links the page, and wires prev/next.
+
+  CONVENTIONS:
+    • t('en','zh')         bilingual span (HTML allowed inside — it is |safe).
+    • Apostrophes:         use the curly ’  (a plain ' ends the Jinja string).
+    • Quotation marks:     use straight "double quotes" inside t(), never
+                           'single quotes' (they end the Jinja string).
+    • Move colours:        <span class="r-neg">−1.2%</span> (red, always down)
+                           <span class="r-pos">+0.9%</span> (green, always up)
+                           — these do NOT flip under the zh red=up convention.
+    • Tables:              <table class="data"> … </table>  (add class="scn"
+                           for a label-first scenarios table).
+    • Callouts:            <div class="callout key|lead|warn">…</div>
+    • Section headings:    <h2 id="anchor"><span class="num">1</span>Title</h2>
+                           and add a matching <a href="#anchor"> to art_toc.
+    • Tag chip colours live in report_base.html.j2 (.chip.tag-<key>); add a
+      rule there if you introduce a new tag key.
+  ============================================================================
+#}
+{% extends "article_base.html.j2" %}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
+{%- endmacro %}
+
+{# Small label above the title in the hero band. #}
+{% block art_kicker %}{{ t('Research Report · Region/Topic', '研究报告 · 区域/主题') }}{% endblock %}
+
+{# Sidebar table of contents — one <a> per <h2 id> in art_body. #}
+{% block art_toc %}
+  <a href="#section-1">{{ t('1 · First section', '1 · 第一节') }}</a>
+  <a href="#section-2">{{ t('2 · Second section', '2 · 第二节') }}</a>
+  <a href="#outlook">{{ t('3 · Outlook', '3 · 展望') }}</a>
+  <a href="#sources">{{ t('Sources', '资料来源') }}</a>
+{% endblock %}
+
+{% block art_body %}
+
+{# --- Lead / bottom-line callout (optional but recommended) --- #}
+<div class="callout key">
+  <span class="co-h">{{ t('Bottom line', '核心结论') }}</span>
+  {{ t('One or two sentences with the single most important takeaway of the report.',
+        '用一两句话给出本报告最重要的结论。') }}
+</div>
+
+{# --- A normal prose section with a bullet list --- #}
+<h2 id="section-1"><span class="num">1</span>{{ t('First section', '第一节') }}</h2>
+<p>{{ t('Opening paragraph. Use <strong>bold</strong> for emphasis and <em>italics</em> for nuance; HTML is allowed inside t().',
+      '开篇段落。可用 <strong>加粗</strong> 强调、<em>斜体</em> 表达细微差别；t() 内允许 HTML。') }}</p>
+<ul>
+  <li>{{ t('<strong>Point one.</strong> Supporting detail.', '<strong>要点一。</strong>支撑细节。') }}</li>
+  <li>{{ t('<strong>Point two.</strong> Supporting detail.', '<strong>要点二。</strong>支撑细节。') }}</li>
+</ul>
+
+{# --- A data section with a colour-coded table --- #}
+<h2 id="section-2"><span class="num">2</span>{{ t('Second section', '第二节') }}</h2>
+<table class="data">
+  <tr><th>{{ t('Asset', '资产') }}</th><th>{{ t('Move', '变动') }}</th><th>{{ t('Level', '水平') }}</th><th>{{ t('Note', '备注') }}</th></tr>
+  <tr><td><strong>{{ t('Example A', '示例 A') }}</strong></td><td class="num r-neg">−1.2%</td><td class="num">123.4</td><td>{{ t('red = down', '红 = 下跌') }}</td></tr>
+  <tr><td><strong>{{ t('Example B', '示例 B') }}</strong></td><td class="num r-pos">+0.9%</td><td class="num">56.7</td><td>{{ t('green = up', '绿 = 上涨') }}</td></tr>
+</table>
+
+{# --- An outlook section with a label-first scenarios table --- #}
+<h2 id="outlook"><span class="num">3</span>{{ t('Outlook', '展望') }}</h2>
+<table class="data scn">
+  <tr><th>{{ t('Horizon', '时间维度') }}</th><th>{{ t('Call', '判断') }}</th><th>{{ t('Rough odds', '大致概率') }}</th></tr>
+  <tr><td>{{ t('Short term', '短期') }}</td><td>{{ t('What you expect and why.', '预期及理由。') }}</td><td>{{ t('~XX%', '约XX%') }}</td></tr>
+  <tr><td>{{ t('Medium term', '中期') }}</td><td>{{ t('What you expect and why.', '预期及理由。') }}</td><td>{{ t('~XX%', '约XX%') }}</td></tr>
+</table>
+
+{# --- Sources (keep it; credibility) --- #}
+<h2 id="sources">{{ t('Sources', '资料来源') }}</h2>
+<div class="sources">
+  <p><strong>{{ t('Primary', '一手来源') }}:</strong> <a href="https://example.com">{{ t('source name', '来源名称') }}</a></p>
+  <p><strong>{{ t('Coverage', '媒体报道') }}:</strong> {{ t('outlets…', '媒体……') }}</p>
+</div>
+
+{% endblock %}

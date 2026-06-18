@@ -174,6 +174,11 @@ jobs:
         # last): writes commodities.html + commodity/latest.json so the hub picks up
         # the Commodity card. Self-sufficient; returns 0 on any engine error.
         run: python -m scripts.build_commodities
+      - name: build strategic reserves dashboard
+        # after build_commodities, before build_vector (which writes the hub last):
+        # writes spr.html + spr/latest.json (hub card). Reads the live EIA SPR series +
+        # JODI national crude stocks + curated reserve table. Returns 0 on any error.
+        run: python -m scripts.build_spr
       - name: build forex vector dashboard
         # after build_commodities, before build_vector (which writes the hub last):
         # writes forex.html + forex/latest.json so the hub picks up the Forex card.
@@ -208,12 +213,23 @@ jobs:
         # after build_site/build_factor_series/build_baskets: documents the construction +
         # injects a few live stats from the JSONs. Standalone; returns 0 on any error.
         run: python -m scripts.build_methodology || echo "methodology skipped (additive)"
+      - name: research reports section (build_reports)
+        # registry-driven static blog/article section -> site/reports.html + one page per
+        # report (templates/report_*.html.j2). Depends on no live JSON; additive, returns 0.
+        run: python -m scripts.build_reports || echo "reports skipped (additive)"
       - name: cross-asset vector (build_crossasset)
         # after the commodity/forex/bonds pages, before build_vector (hub last):
         # TSMOM trend + intermarket ratios + correlation regime over keyless
         # price stores -> site/crossasset.html + data/crossasset/latest.json.
         # Self-sufficient; returns 0 on any engine error.
         run: python -m scripts.build_crossasset
+      - name: rate & inflation transmission (build_transmission)
+        # after build_site (engine.run already wrote the latest.json block) and the
+        # cross-asset/bonds pages: recomputes the display-only transmission read and
+        # renders site/transmission.html + data/transmission/latest.json. Reads the
+        # MEASURED coefficient matrix (data/transmission/calibration.json, refreshed
+        # weekly by calibrate_rate_inflation). Self-sufficient; returns 0 on any error.
+        run: python -m scripts.build_transmission
       - name: build bitcoin vector + landing hub
         # installs the landing hub at index.html (rendered from stored engine
         # state, so ordering vs build_site no longer matters — build_site writes
@@ -298,6 +314,15 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: python -m scripts.notify
+      - name: archive signal layer (append-only point-in-time model outputs; resilient)
+        # LAST data-producing step: append today's latest.json / bond_health.json /
+        # regime_snap.json / forex + commodity reads to data/signal_archive/<label>.parquet
+        # (keep-first per as-of date). A clean, queryable, point-in-time record of what
+        # each model SAID each day — distinct from regime_history.parquet, which is
+        # RECOMPUTED from scratch every run (so it carries data revisions + today's code
+        # backwards = lookahead). Lossless via a snapshot_json column. Display/research-
+        # only, never read back into a score; the script always exits 0.
+        run: python -m scripts.archive_signals || true
       - name: commit engine outputs
         run: |
           git config user.name "dashboard-bot"

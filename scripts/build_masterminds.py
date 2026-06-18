@@ -92,6 +92,41 @@ def _card(prof_key: str, res: dict) -> dict:
             "stance_zh": f"对比{bench_zh} · {res['gross_now']}x 总敞口"}
 
 
+# per-profile accent for the pinned/highlighted UI (conservative→green, moderate→blue,
+# aggressive→violet). Single source of truth shared with the Strategy Scorecards pinned hero.
+_ACCENT = {"conservative": "#1FA971", "moderate": "#285fff", "aggressive": "#a855f7"}
+# risk-spectrum marker position (0=left/safe .. 1=right/aggressive) for the mini risk meter
+_RISKPOS = {"conservative": 0.16, "moderate": 0.5, "aggressive": 0.9}
+
+
+def mastermind_cards(P=None) -> list[dict]:
+    """The 3 mastermind flagship cards, computed from engine.masterminds (M.backtest).
+    SHARED source of truth: scripts.build_strategies renders these in its pinned hero and
+    scripts.build_masterminds renders the full hub — both call THIS, so any future change to
+    the mastermind engine/data flows to both pages automatically on the next build."""
+    P = P if P is not None else M._prices()
+    if P.empty:
+        return []
+    out = []
+    for pk in ("conservative", "moderate", "aggressive"):
+        res = M.backtest(pk, P)
+        if res.get("error"):
+            continue
+        prof = M.PROFILES[pk]
+        sc, bench_en, bench_zh, _ = _bench_scorecard(pk, res["scorecard"], res.get("bench6040"))
+        out.append({
+            "key": f"mm_{pk}", "href": f"strategy_mm_{pk}.html", "icon": prof["icon"],
+            "profile_en": prof["label_en"], "profile_zh": prof["label_zh"],
+            "accent": _ACCENT[pk], "riskpos": _RISKPOS[pk],
+            "thesis_en": prof["thesis_en"], "thesis_zh": prof["thesis_zh"],
+            "cagr": sc["cagr"], "hodl_cagr": sc["hodl_cagr"], "sharpe": sc["sharpe"],
+            "hodl_sharpe": sc["hodl_sharpe"], "maxdd": sc["maxdd"], "hodl_maxdd": sc["hodl_maxdd"],
+            "sharpe_mult": round(sc["sharpe"] / sc["hodl_sharpe"], 1) if sc.get("hodl_sharpe") else None,
+            "bench_en": bench_en, "bench_zh": bench_zh, "gross_now": res["gross_now"], "years": sc["years"],
+        })
+    return out
+
+
 def build() -> str:
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)

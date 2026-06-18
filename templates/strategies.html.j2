@@ -80,6 +80,49 @@ html[data-theme="dark"] .metrics>div{background:var(--grid)}
 html[data-theme="dark"] .stance{background:var(--grid)}
 .go{font-weight:700;color:var(--blue);font-size:14px}
 .foot{margin-top:40px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7;max-width:900px}
+/* ===== Mastermind Flagships — pinned, highlighted hero ===== */
+.mm-hero{position:relative;margin:22px 0 8px;padding:20px 20px 22px;border-radius:20px;
+  background:linear-gradient(var(--card),var(--card)) padding-box,linear-gradient(120deg,#1FA971,#285fff,#a855f7) border-box;
+  border:1.5px solid transparent;box-shadow:0 10px 40px rgba(40,95,255,.10)}
+html[data-theme="dark"] .mm-hero{box-shadow:0 14px 50px rgba(120,80,255,.18)}
+.mm-hero-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.mm-pin{font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#fff;
+  background:linear-gradient(120deg,#285fff,#a855f7);padding:4px 10px;border-radius:999px;animation:mm-pulse 2.6s ease-out infinite}
+@keyframes mm-pulse{0%{box-shadow:0 0 0 0 rgba(168,85,247,.45)}70%{box-shadow:0 0 0 9px rgba(168,85,247,0)}100%{box-shadow:0 0 0 0 rgba(168,85,247,0)}}
+.mm-title{font-size:20px;font-weight:800;letter-spacing:-.02em;
+  background:linear-gradient(90deg,#1FA971,#285fff,#a855f7,#1FA971);background-size:300% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;animation:mm-shimmer 9s linear infinite}
+@keyframes mm-shimmer{to{background-position:300% 0}}
+.mm-sub{color:var(--muted);font-size:13px}
+.mm-hub-link{margin-left:auto;font-size:13px;font-weight:700;color:var(--blue);text-decoration:none;white-space:nowrap}
+.mm-hub-link:hover{text-decoration:underline}
+.mm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:760px){.mm-grid{grid-template-columns:1fr}}
+.mm-card{position:relative;overflow:hidden;display:block;text-decoration:none;color:inherit;background:var(--bg);
+  border:1px solid var(--grid);border-top:3px solid var(--accent);border-radius:16px;padding:18px 18px 16px;
+  transition:transform .18s ease,box-shadow .18s ease,border-color .18s}
+html[data-theme="dark"] .mm-card{background:var(--grid)}
+.mm-card:hover{transform:translateY(-5px);box-shadow:0 16px 42px color-mix(in srgb,var(--accent) 32%,transparent)}
+.mm-glow{position:absolute;inset:0;pointer-events:none;opacity:.45;transition:opacity .25s;
+  background:radial-gradient(130px 90px at 82% -12%,color-mix(in srgb,var(--accent) 30%,transparent),transparent 72%)}
+.mm-card:hover .mm-glow{opacity:1}
+.mm-top{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.mm-ico{font-size:22px}
+.mm-prof{font-size:16px;font-weight:800;color:var(--ink)}
+.mm-prof::after{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);margin-left:8px;vertical-align:middle;box-shadow:0 0 8px var(--accent)}
+.mm-cagr{font-size:34px;font-weight:800;color:var(--ink);line-height:1;letter-spacing:-.02em;display:flex;align-items:baseline;gap:8px}
+.mm-cagr small{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.mm-bench{font-size:11.5px;color:var(--faint);margin:5px 0 10px}
+.mm-bench b{color:var(--accent);font-weight:800}
+.mm-meter{height:6px;border-radius:999px;background:linear-gradient(90deg,#1FA971,#e0a106,#a855f7);position:relative;margin:2px 2px 13px}
+.mm-meter::after{content:"";position:absolute;top:50%;left:calc(var(--pos) * 100%);transform:translate(-50%,-50%);width:13px;height:13px;border-radius:50%;background:#fff;border:2.5px solid var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.mm-mets{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.mm-mets>div{text-align:center;background:var(--card);border-radius:9px;padding:7px 4px}
+html[data-theme="dark"] .mm-mets>div{background:var(--bg)}
+.mm-k{display:block;font-size:9.5px;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.03em}
+.mm-v{display:block;font-size:15px;font-weight:800;color:var(--ink);margin-top:2px}
+.mm-d{display:block;font-size:9.5px;color:var(--faint)}
+.mm-go{font-size:13px;font-weight:800;color:var(--accent)}
 </style>{% include "_vector_polish.html.j2" %}
 </head>
 <body>
@@ -137,6 +180,7 @@ html[data-theme="dark"] .stance{background:var(--grid)}
       <div class="nav-dd-menu" role="menu">
         <a href="commodities.html">📊 {{ t('Commodity Dashboard', '商品仪表盘') }}<span class="d">{{ t('Gold · silver · copper · oil · complex', '金 · 银 · 铜 · 油 · 综合') }}</span></a>
         <a href="commodity_strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Per-commodity tactical strategies', '分品种战术策略') }}</span></a>
+        <a href="spr.html">🛢️ {{ t('Strategic Reserves', '战略储备') }}<span class="d">{{ t('SPR levels by country vs oil prices', '各国战略储备水平与油价') }}</span></a>
       </div>
     </div>
     <a class="nav-link" href="forex.html">💱 {{ t('Forex', '外汇') }}</a>
@@ -144,7 +188,9 @@ html[data-theme="dark"] .stance{background:var(--grid)}
     <div class="nav-dd">
       <a class="nav-link" href="javascript:void(0)">🔬 {{ t('Research', '研究') }} <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
+        <a href="reports.html">📰 {{ t('Research Reports', '研究报告') }}<span class="d">{{ t('In-depth market & macro reports', '深度市场与宏观报告') }}</span></a>
         <a href="masterminds.html">🧠 {{ t('Masterminds', '操盘大师') }}<span class="d">{{ t('Multi-asset active GTAA strategies', '多资产主动配置策略') }}</span></a>
+        <a href="transmission.html">🔀 {{ t('Rate & Inflation Transmission', '利率与通胀传导') }}<span class="d">{{ t('How rates & inflation move every asset', '利率与通胀如何驱动各类资产') }}</span></a>
         <a href="crossasset.html">🧭 {{ t('Cross-Asset', '跨资产') }}<span class="d">{{ t('Correlations · trend · global liquidity', '相关性 · 趋势 · 全球流动性') }}</span></a>
         <a href="signal_lab.html">🔬 {{ t('Signal Lab', '信号实验室') }}<span class="d">{{ t('Consolidated validation scorecard', '验证记分卡汇总') }}</span></a>
         <a href="factors.html">🧮 {{ t('Factors & Seasonality', '因子 & 季节性') }}<span class="d">{{ t('Value · quality · low-vol · monthly calendar', '价值 · 质量 · 低波动 · 月历') }}</span></a>
@@ -165,6 +211,34 @@ html[data-theme="dark"] .stance{background:var(--grid)}
 
   <div class="h1">🎛️ {{ t('Strategy Scorecards','策略记分卡') }}</div>
   <div class="intro">{{ t('Macro-factor-driven tactical strategies. Each shifts its allocation on signals and macro factors to lift risk-adjusted yield and sidestep the drawdowns that normally destroy it. Click a card for the full backtest, the live recommendation, and the rule-book.','由宏观因子驱动的战术策略。每个策略都按信号与宏观因子切换配置，以提升风险调整后收益并规避通常会吞噬收益的回撤。点击卡片查看完整回测、实时建议与规则手册。') }}</div>
+  {% if masterminds %}
+  <div class="mm-hero">
+    <div class="mm-hero-head">
+      <span class="mm-pin">★ {{ t('Pinned','置顶') }}</span>
+      <span class="mm-title">🧠 {{ t('Mastermind Flagships','操盘大师旗舰') }}</span>
+      <span class="mm-sub">{{ t('Multi-asset active allocation · the flagship tier','多资产主动配置 · 旗舰系列') }}</span>
+      <a class="mm-hub-link" href="masterminds.html">{{ t('Full hub','完整中心') }} →</a>
+    </div>
+    <div class="mm-grid">
+      {% for m in masterminds %}
+      <a class="mm-card" href="{{ m.href }}" style="--accent:{{ m.accent }};--pos:{{ m.riskpos }}">
+        <span class="mm-glow"></span>
+        <div class="mm-top"><span class="mm-ico">{{ m.icon }}</span><span class="mm-prof">{{ t(m.profile_en, m.profile_zh) }}</span></div>
+        <div class="mm-cagr">{{ m.cagr }}%<small>CAGR</small></div>
+        <div class="mm-bench">{{ t('vs','对比') }} {{ t(m.bench_en, m.bench_zh) }} {{ m.hodl_cagr }}%{% if m.sharpe_mult %} · <b>{{ m.sharpe_mult }}× {{ t('its Sharpe','其夏普') }}</b>{% endif %}</div>
+        <div class="mm-meter"></div>
+        <div class="mm-mets">
+          <div><span class="mm-k">Sharpe</span><span class="mm-v">{{ m.sharpe }}</span><span class="mm-d">{{ t('B&H','买持') }} {{ m.hodl_sharpe }}</span></div>
+          <div><span class="mm-k">{{ t('Max DD','最大回撤') }}</span><span class="mm-v">{{ m.maxdd }}%</span><span class="mm-d">{{ t('B&H','买持') }} {{ m.hodl_maxdd }}%</span></div>
+          <div><span class="mm-k">{{ t('Leverage','杠杆') }}</span><span class="mm-v">{{ m.gross_now }}x</span><span class="mm-d">{{ m.years }}y</span></div>
+        </div>
+        <div class="mm-go">{{ t('Open strategy','打开策略') }} →</div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
   <div class="note">{{ t('Honest framing: the durable edge in a "yield" strategy is not timing the yield — it is timing the LEFT TAIL that destroys it (de-risk before the recession / credit / rate shock). These give up some buy-&-hold CAGR but cut the max drawdown and lift the Sharpe. Backtests are net of cost and total-return; CAGR / MaxDD are vs buy-and-hold the same risk asset.','诚实说明：「收益」策略的持久优势并非择时收益本身，而是择时吞噬收益的左尾（在衰退/信用/利率冲击前降险）。这些策略会让出部分买入持有的年化，但能压低最大回撤并提升夏普。回测均扣除成本且基于总回报；CAGR / 最大回撤对比买入持有同一风险资产。') }}</div>
 
   <div class="sgrid">

@@ -45,12 +45,28 @@
   .b-high{background:rgba(249,115,22,.16);color:#f97316;} .b-extreme{background:rgba(239,68,68,.16);color:var(--down);}
   .cards { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:10px; }
   @media (max-width:560px){ .cards{ grid-template-columns:1fr; } }
-  .hc { background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; }
-  .hc .k { font-size:12px; color:var(--muted); }
-  .hc .v { font-size:19px; font-weight:700; font-variant-numeric:tabular-nums; margin-top:2px; }
-  .hc .t2 { font-size:12px; color:var(--down); margin-top:1px; }
-  .hc .dir { display:inline-block; margin-top:7px; font-size:11px; padding:2px 8px; border-radius:7px; background:var(--panel); border:1px solid var(--line); color:var(--muted); }
+  /* two-block horizon card: DIRECTION (top, colored) + RISK (bottom, neutral) */
+  .hc { background:var(--panel2); border:1px solid var(--line); border-left:3px solid var(--line); border-radius:10px; padding:0; overflow:hidden; }
+  .hc.up { border-left-color:var(--up); } .hc.down { border-left-color:var(--down); }
+  .hc .hk { font-size:11px; color:var(--muted); padding:8px 11px 0; }
+  .hc .dblock { padding:5px 11px 9px; }
+  .hc .dlab, .hc .rlab { font-size:9.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+  .hc .dirv { font-size:15px; font-weight:700; margin-top:1px; }
+  .hc .pup { float:right; font-variant-numeric:tabular-nums; font-weight:700; }
+  .hc .why { font-size:11px; color:var(--muted); margin-top:3px; line-height:1.4; }
+  .hc .pill { display:inline-block; font-size:10px; padding:1px 6px; border-radius:6px; margin-top:5px; }
+  .hc .pill.ok { background:rgba(34,197,94,.14); color:var(--up); }
+  .hc .pill.flip { background:var(--panel); color:var(--muted); border:1px solid var(--line); }
+  .hc .rblock { padding:7px 11px 9px; border-top:1px solid var(--line); background:var(--panel); }
+  .hc .rv { font-size:14px; font-variant-numeric:tabular-nums; margin-top:1px; }
+  .hc .rv2 { font-size:11.5px; color:var(--muted); margin-top:1px; }
   .hc.thin { opacity:.72; }
+  .dir-up{color:var(--up);} .dir-down{color:var(--down);} .dir-flip{color:var(--muted);}
+  .legend { background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:9px 13px; margin:12px 0; font-size:12px; color:var(--muted); line-height:1.75; }
+  .legend b{color:var(--text);font-weight:600;}
+  .help{position:relative;cursor:help;border-bottom:1px dotted var(--muted);}
+  .help .tip{visibility:hidden;position:absolute;left:0;top:135%;z-index:30;width:300px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:11.5px;color:var(--text);line-height:1.5;box-shadow:0 4px 16px rgba(0,0,0,.25);}
+  .help:hover .tip{visibility:visible;}
   .drv { display:flex; align-items:center; gap:8px; font-size:12.5px; margin:5px 0; }
   .drv .lab { flex:0 0 178px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .drv .bar { flex:1; position:relative; height:14px; }
@@ -97,6 +113,19 @@
     <a class="nav-link" href="canada.html">🇨🇦 {{ t('Canada', '加拿大') }}</a>
     <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin', '比特币') }}</a>
     <a class="nav-link" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }}</a>
+    <a class="nav-link" href="forex.html">💱 {{ t('Forex', '外汇') }}</a>
+    <a class="nav-link" href="bonds.html">🏛️ {{ t('Bonds', '债券') }}</a>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">🔬 {{ t('Research', '研究') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="reports.html">📰 {{ t('Research Reports', '研究报告') }}<span class="d">{{ t('In-depth market & macro reports', '深度市场与宏观报告') }}</span></a>
+        <a href="masterminds.html">🧠 {{ t('Masterminds', '操盘大师') }}<span class="d">{{ t('Multi-asset active GTAA strategies', '多资产主动配置策略') }}</span></a>
+        <a href="crossasset.html">🧭 {{ t('Cross-Asset', '跨资产') }}<span class="d">{{ t('Correlations · trend · global liquidity', '相关性 · 趋势 · 全球流动性') }}</span></a>
+        <a href="signal_lab.html">🔬 {{ t('Signal Lab', '信号实验室') }}<span class="d">{{ t('Consolidated validation scorecard', '验证记分卡汇总') }}</span></a>
+        <a href="factors.html">🧮 {{ t('Factors & Seasonality', '因子 & 季节性') }}<span class="d">{{ t('Value · quality · low-vol · monthly calendar', '价值 · 质量 · 低波动 · 月历') }}</span></a>
+        <a href="validation_timeline.html">🧪 {{ t('Validation Timeline', '验证时间线') }}<span class="d">{{ t('Full 2007→ walk-forward backtest', '2007→ 完整滚动回测') }}</span></a>
+      </div>
+    </div>
   </div>
   <div class="nav-ctrls">
     <a class="ai-brief-link" href="aibrief.html">🧠 {{ t('AI Daily Brief', 'AI每日简报') }}</a>
@@ -116,13 +145,16 @@
   <span class="asof">{{ t('as of', '截至') }} <span id="asof"></span> · <span id="ngo"></span></span>
 </div>
 <p class="tagline">{{ t(
-  'A probability game, not a price oracle. For each asset we condition the FORWARD DISTRIBUTION (return quantiles + drawdown) on a confluence of validated signals, over three horizons. We lead with the forecastable quantity — the risk cone — and label short-horizon DIRECTION as the coin-flip it measurably is.',
-  '这是概率游戏，而非价格预言。对每个标的，我们用一组经验证的信号合流，对其前瞻分布（收益分位 + 回撤）在三个周期上进行条件化。我们以可预测的量 — 风险锥 — 为主，并将短期方向标注为其本质：抛硬币。') }}</p>
+  'Two separate reads per asset: (1) a RISK cone — the range of returns and the typical / worst drawdown over each horizon (always shown, the validated core); and (2) a DIRECTION lean — P(up), shown in color ONLY where it passed out-of-sample validation. Everywhere else, direction is the coin-flip it measurably is.',
+  '每个标的有两类读数：(1) 风险锥 — 各周期的收益区间与常见/最坏回撤（始终显示，经验证的核心）；(2) 方向倾向 — 上涨概率，仅在通过样本外验证处以彩色显示。其余皆为实测的抛硬币。') }}</p>
 
-<div class="banner">
-  <span style="font-size:16px;">⚖️</span>
-  <span>{{ t('Validated by Phase-0 on 1.17M observations: the strongest forward-drawdown predictors are credit spreads, volatility regime and the VELOCITY of deteriorating technicals. Direction is a measured coin-flip; geopolitical risk is coincident, not leading. The cone is the product — not a buy/sell signal.',
-    '基于117万样本的 Phase-0 验证：最强的前瞻回撤预测因子是信用利差、波动率状态与技术面恶化的"速度"。方向为实测的抛硬币；地缘政治风险是同步而非领先。锥体是产品 — 并非买卖信号。') }}</span>
+<div class="legend">
+  {{ t('HOW TO READ', '如何阅读') }}: &nbsp;
+  <span class="dir-up">▲ {{ t('up-lean (green, validated)', '偏多（绿色，已验证）') }}</span> &nbsp;·&nbsp;
+  <span class="dir-flip">▬ {{ t('coin-flip (grey, not predictable)', '抛硬币（灰色，不可预测）') }}</span> &nbsp;·&nbsp;
+  <span class="dir-down">▼ {{ t('down-lean (red, validated)', '偏空（红色，已验证）') }}</span><br>
+  <b>{{ t('Cone', '锥体') }}</b> = {{ t('return range p05–p95; the red lower half is the downside / drawdown.', '收益区间 p05–p95；红色下半部为下行 / 回撤。') }} &nbsp;
+  <b>{{ t('Stretch / Fragility', '拉伸 / 脆弱度') }}</b> = {{ t('how stretched vs the asset’s OWN history → only WIDENS the cone (display-only, NOT a valuation or sell call).', '相对自身历史的拉伸程度 → 仅使锥体更宽（仅展示，并非估值或卖出信号）。') }}
 </div>
 
 <div class="selwrap" id="selwrap"></div>
@@ -149,11 +181,11 @@
   <table id="tbl">
     <thead><tr>
       <th data-k="name">{{ t('Asset', '标的') }}</th>
-      <th data-k="anticipation_index" class="num">{{ t('Index', '指数') }}</th>
+      <th data-k="anticipation_index" class="num">{{ t('Stretch', '拉伸') }}</th>
       <th class="num">{{ t('Band', '区间') }}</th>
-      <th data-k="s_typ" class="num">{{ t('Short typical / worst', '短期 常见/最坏') }}</th>
-      <th data-k="m_p50" class="num">{{ t('Med p50 / tail', '中期 中位/尾部') }}</th>
-      <th class="num">{{ t('Direction', '方向') }}</th>
+      <th data-k="s_typ" class="num">{{ t('Short dip (typ/worst)', '短期回撤 常见/最坏') }}</th>
+      <th data-k="m_p50" class="num">{{ t('Med return / worst dip', '中期 收益/最坏回撤') }}</th>
+      <th class="num">{{ t('Direction (validated)', '方向（已验证）') }}</th>
       <th>{{ t('Top driver', '首要驱动') }}</th>
     </tr></thead>
     <tbody id="tbody"></tbody>
@@ -219,27 +251,47 @@
   }
 
   function bandClass(b){ return 'b-'+(b||'calm'); }
+  var BANDWORD={calm:['low','低'],elevated:['moderate','中等'],high:['high','偏高'],extreme:['very high','很高']};
+  var LEGLAB={real_rate:['real rates','实际利率'],copper_gold:['copper/gold cyclical impulse','铜金周期脉冲'],
+    oil_vrp:['oil vol premium','油波动溢价'],oil_mom:['oil momentum','油价动量'],credit:['credit spreads','信用利差'],
+    term:['yield curve','收益率曲线'],gold:['gold','黄金'],vrp:['volatility premium','波动率溢价'],
+    tsmom:['price trend','价格趋势'],dollar:['the dollar','美元'],netliq:['net liquidity','净流动性'],mtg:['mortgage rates','按揭利率']};
+  function legName(h){ if(!h.dir_legs||!h.dir_legs.length) return null; return LEGLAB[h.dir_legs[0]]||[h.dir_legs[0],h.dir_legs[0]]; }
   function setAsset(tk){
     var a=BY[tk]; if(!a) return;
     document.querySelectorAll('.pick').forEach(function(e){ e.classList.toggle('on', e.dataset.tk===tk); });
     document.querySelectorAll('#tbody tr').forEach(function(e){ e.classList.toggle('on', e.dataset.tk===tk); });
+    var bw=BANDWORD[a.index_band]||['n/a','—'];
+    var idxTip=T('Percentile of how stretched / fragile this asset looks vs its OWN history (trend extension, vol regime, deterioration velocity). Display-only: a higher score only makes the cone WIDER and more left-skewed. It is NOT a valuation, a crash forecast, or a sell signal.','相对自身历史的拉伸/脆弱度百分位（趋势拉伸、波动率状态、恶化速度）。仅展示：分数越高仅使锥体更宽、更左偏。并非估值、崩盘预测或卖出信号。');
     document.getElementById('htitle').innerHTML =
       '<span class="nm">'+a.asset+'</span><span class="grp">'+a.name+' · '+a.group+'</span>'+
-      '<span class="idxbadge '+bandClass(a.index_band)+'">'+(a.anticipation_index!=null?Math.round(a.anticipation_index):'—')+' · '+a.index_band+'</span>'+
-      (a.macro?'<span class="chip '+(a.macro.stress_pct>=70?'hot':(a.macro.stress_pct>=50?'warn':'ok'))+'">'+T('market stress','市场压力')+' '+Math.round(a.macro.stress_pct)+'% · ×'+a.macro.width_mult+'</span>':'');
+      '<span class="idxbadge '+bandClass(a.index_band)+' help">'+T('Stretch/Fragility','拉伸/脆弱度')+' '+(a.anticipation_index!=null?Math.round(a.anticipation_index):'—')+'/100 · '+T(bw[0],bw[1])+'<span class="tip">'+idxTip+'</span></span>'+
+      (a.macro?'<span class="chip '+(a.macro.stress_pct>=70?'hot':(a.macro.stress_pct>=50?'warn':'ok'))+'">'+T('market stress','市场压力')+' '+Math.round(a.macro.stress_pct)+'% · '+T('widens cone','加宽锥体')+' ×'+a.macro.width_mult+'</span>':'');
     document.getElementById('conebox').innerHTML = renderCone(a);
-    // horizon cards
+    // horizon cards — DIRECTION block (colored) + RISK block (neutral), split
     var ch='';
     HN.forEach(function(n){ var h=a.horizons[n]; if(!h) return; var rq=h.ret_q||{};
       var nm={short:'Short',medium:'Medium',long:'Long'}[n], nmzh={short:'短期',medium:'中期',long:'长期'}[n];
-      var dirw = h.direction==='coin-flip'?T('coin-flip','抛硬币'):(h.direction==='up-lean'?T('up-lean','偏多'):(h.direction==='down-lean'?T('down-lean','偏空'):T('neutral','中性')));
+      var scored=h.direction_scored;
+      var cls = scored ? (h.direction==='up-lean'?'up':(h.direction==='down-lean'?'down':'')) : '';
+      var dcls = scored ? (h.direction==='up-lean'?'dir-up':(h.direction==='down-lean'?'dir-down':'dir-flip')) : 'dir-flip';
+      var arrow = (scored && h.direction==='up-lean')?'▲':((scored && h.direction==='down-lean')?'▼':'▬');
+      var dword = !scored ? T('Coin-flip','抛硬币') : (h.direction==='up-lean'?T('Up-lean','偏多'):(h.direction==='down-lean'?T('Down-lean','偏空'):T('Neutral','中性')));
       var pu = Math.round((h.p_up||0.5)*100);
-      var badge = h.direction_scored ? ' · <span style="color:var(--up)">'+T('validated OOS','已验证OOS')+'</span>'
-                  : (n==='short' ? '' : ' · <span class="muted">'+T('coin-flip','抛硬币')+'</span>');
-      ch+='<div class="hc'+(h.thin?' thin':'')+'"><div class="k">'+T(nm,nmzh)+' · '+(h.range_td?h.range_td.join('–'):'')+'d</div>'+
-        '<div class="v">'+pct(h.dd_avg)+' <span class="muted sm">'+T('typical dip','常见回撤')+'</span></div>'+
-        '<div class="t2">'+T('worst','最坏')+' '+pct(h.dd_tail)+' · p50 '+pct(rq.p50)+'</div>'+
-        '<div class="dir">'+dirw+' · '+T('P(up)','上涨概率')+' '+pu+'%'+badge+'</div></div>';
+      var pill = scored ? '<span class="pill ok">✓ '+T('validated OOS','已验证OOS')+'</span>'
+                 : '<span class="pill flip">'+(n==='short'?T('not predictable here','此处不可预测'):T('coin-flip','抛硬币'))+'</span>';
+      var ln = legName(h);
+      var why = scored ? '<div class="why">'+T('driven by','驱动：')+' '+(ln?T(ln[0],ln[1]):T('a validated signal','已验证信号'))+' · OOS-R² '+(h.oos_r2!=null?h.oos_r2:'—')+'</div>'
+                : '<div class="why">'+T('no validated directional signal here','此处无已验证方向信号')+'</div>';
+      ch+='<div class="hc '+cls+(h.thin?' thin':'')+'">'+
+        '<div class="hk">'+T(nm,nmzh)+' · '+(h.range_td?h.range_td.join('–'):'')+'d</div>'+
+        '<div class="dblock"><div class="dlab">'+T('DIRECTION','方向')+'</div>'+
+          '<div class="dirv '+dcls+'">'+arrow+' '+dword+'<span class="pup">'+T('P(up)','上涨概率')+' '+pu+'%</span></div>'+
+          why+pill+'</div>'+
+        '<div class="rblock"><div class="rlab">'+T('RISK · validated','风险 · 已验证')+'</div>'+
+          '<div class="rv"><span class="neg">'+T('typical dip','常见回撤')+' '+pct(h.dd_avg)+'</span> · <span class="neg">'+T('worst','最坏')+' '+pct(h.dd_tail)+'</span></div>'+
+          '<div class="rv2">'+T('median return','中位收益')+' '+pct(rq.p50)+(h.thin?' · '+T('low-n','样本少'):'')+'</div>'+
+        '</div></div>';
     });
     document.getElementById('cards').innerHTML = ch;
     // drivers
@@ -266,7 +318,7 @@
   }
 
   // selector
-  var groups=[['index','Index','指数'],['sector','Sectors','板块'],['stock','Watchlist','自选']];
+  var groups=[['index','Index','指数'],['sector','Sectors','板块'],['theme','Themes','主题'],['stock','Watchlist','自选']];
   var sh=''; groups.forEach(function(g){ var items=A.filter(function(a){return a.group===g[0];});
     if(!items.length) return; sh+='<div class="selgrp"><span class="gl">'+T(g[1],g[2])+'</span>';
     items.forEach(function(a){ sh+='<span class="pick" data-tk="'+a.asset+'">'+a.asset+'</span>'; }); sh+='</div>'; });
@@ -276,14 +328,19 @@
   // table
   function shortTyp(a){ var h=a.horizons.short||{}; return h.dd_avg; }
   function rowHtml(a){ var s=a.horizons.short||{}, m=a.horizons.medium||{}, l=a.horizons.long||{};
-    var mdir = (m.direction||'').replace('-lean','');
+    // surface the scored lean from WHICHEVER horizon validated (medium first, else long)
+    var sc = m.direction_scored ? {d:m,tag:'med'} : (l.direction_scored ? {d:l,tag:'long'} : null);
+    var dcell;
+    if(sc){ var up=sc.d.direction==='up-lean'; dcell='<span class="'+(up?'dir-up':'dir-down')+'">'+(up?'▲':'▼')+' '+(up?T('up','偏多'):T('down','偏空'))+' '+sc.tag+' ✓</span>'; }
+    else { dcell='<span class="dir-flip">▬ '+T('coin-flip','抛硬币')+'</span>'; }
+    var bw=BANDWORD[a.index_band]||['n/a','—'];
     var top=(a.drivers||[])[0];
     return '<tr data-tk="'+a.asset+'"><td><b>'+a.asset+'</b> <span class="muted sm">'+a.name+'</span></td>'+
       '<td class="num"><span class="tband '+bandClass(a.index_band)+'">'+(a.anticipation_index!=null?Math.round(a.anticipation_index):'—')+'</span></td>'+
-      '<td class="num muted sm">'+a.index_band+'</td>'+
+      '<td class="num muted sm">'+T(bw[0],bw[1])+'</td>'+
       '<td class="num">'+pct(s.dd_avg)+' / <span class="neg">'+pct(s.dd_tail)+'</span></td>'+
       '<td class="num">'+pct((m.ret_q||{}).p50)+' / <span class="neg">'+pct(m.dd_tail)+'</span></td>'+
-      '<td class="num muted sm">'+(mdir||'—')+'</td>'+
+      '<td class="num sm">'+dcell+'</td>'+
       '<td class="muted sm">'+(top?T(top.label.en,top.label.zh)+(top.scored?' ★':''):'—')+'</td></tr>';
   }
   var sortK='anticipation_index', sortDesc=true;

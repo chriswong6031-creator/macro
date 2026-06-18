@@ -43,6 +43,9 @@ fred:
       BAMLHYH0A0HYM2TRIV: hy_total_return   # ICE BofA US HY TOTAL-RETURN index (1986->); engine.total_return.hy_tr auto-upgrades to it for a deeper Credit-Carry backtest
     risk:
       VIXCLS: vix_close
+      OVXCLS: ovx_oil             # CBOE oil VIX (2007->); energy-sector VRP leg (index_direction)
+    housing:
+      MORTGAGE30US: mortgage_30y  # 30y mortgage rate (weekly, 1971->); homebuilder affordability leg
     dollar:
       DTWEXBGS: broad_dollar      # broad trade-weighted USD (2006->); better commodity driver than DXY for copper/oil (EM/China weight)
     liquidity:
@@ -85,6 +88,30 @@ fred:
       CORESTICKM157SFRBATL: core_sticky_cpi
       FLEXCPIM157SFRBATL: flex_cpi         # flexible-price CPI index (transitory)
       MEDCPIM158SFRBCLE: median_cpi        # Cleveland median CPI (1m annualized %)
+    # --- Official inflation RELEASES (research/RATE_INFLATION_TRANSMISSION.md) -----
+    # The actual prints (not the Atlanta/Cleveland model nowcasts above): headline &
+    # core CPI, headline & core PCE (the Fed's TARGET is core PCE), PPI, ECI wage
+    # growth, plus the shelter / core-services decomposition that drives the
+    # disinflation debate. All are index LEVELS — engine/inputs.py derives YoY/MoM.
+    # All revision-prone → added to the ALFRED vintage matrix (collectors/fred.py
+    # DEFAULT_VINTAGE_SERIES) so point-in-time backtests read what was knowable.
+    inflation_releases:
+      CPIAUCSL: headline_cpi      # CPI-U all items, SA index (the headline print)
+      CPILFESL: core_cpi          # CPI less food & energy, SA (core CPI)
+      PCEPI: headline_pce         # PCE price index, SA (headline PCE)
+      PCEPILFE: core_pce          # PCE less food & energy — the FOMC's 2% target gauge
+      PPIFIS: ppi_final_demand    # PPI final demand, SA (pipeline / margin pressure)
+      PPIFES: ppi_core            # PPI final demand less foods & energy (core PPI)
+      ECIALLCIV: eci_comp         # Employment Cost Index, total comp (quarterly, SA) — wage inflation
+      ECIWAG: eci_wages           # ECI wages & salaries (quarterly, SA)
+      CUSR0000SASLE: cpi_core_services  # CPI services less energy (the "core services" / sticky leg)
+      CUSR0000SAH1: cpi_shelter   # CPI shelter (the lagging rent component vs core services)
+    inflation_expectations:       # the market / survey / MODEL expectations triangle
+      # Market = breakevens (T5YIE/T10YIE/T5YIFR, in rates/inflation_extra above);
+      # Survey = UMich MICH (below). MODEL = Cleveland Fed expected-inflation curve.
+      EXPINF1YR: infl_exp_1y      # Cleveland model 1y expected inflation (%)
+      EXPINF5YR: infl_exp_5y      # Cleveland model 5y expected inflation (%)
+      EXPINF10YR: infl_exp_10y    # Cleveland model 10y expected inflation (%)
     survey:                       # consumer sentiment / household inflation expectations
       UMCSENT: umich_sentiment    # UMich consumer sentiment (monthly)
       MICH: umich_infl_exp        # UMich 1y inflation expectations (%)
@@ -172,7 +199,8 @@ yahoo:
   # All EOD adjusted closes, one parquet per ticker under data/yahoo/.
   tickers:
     sectors: [XLB, XLC, XLE, XLF, XLI, XLK, XLP, XLRE, XLU, XLV, XLY]
-    extras: [SMH, IWM, RSP, SPY, QQQ, "^DJI", "^RUT", IJH]   # ^RUT = true Russell 2000 index level; IJH = S&P MidCap 400 (mid-cap leg of the size spectrum)
+    extras: [SMH, IWM, RSP, SPY, QQQ, "^DJI", "^RUT", IJH,   # ^RUT = true Russell 2000 index level; IJH = S&P MidCap 400 (mid-cap leg of the size spectrum)
+             SOXX, IGV, XBI, IBB, GDX, GDXJ, KRE, KBE, ITB, XHB, XME, XOP, OIH, XRT, TAN]  # deep-history thematic ETFs (directional model — narrow purer-driver exposures)
     style: [IWF, IWD]             # Russell 1000 Growth / Value — style-rotation read (growth vs value leadership)
     factors: [MTUM, QUAL, USMV, SPHB, SPLV]
     ipo: [IPO, FPX]               # Renaissance IPO ETF + First Trust IPOX — aftermarket new-issue basket reality-check (IPO Radar; the "buy IPOs in the secondary market" trade)
@@ -481,6 +509,74 @@ eia:
     trend_window_d: 28             # ~4-week stocks/production change
     seasonal_years: 5              # trailing window for the same-week-of-year climatology z
     dos_window_weeks: 4            # trailing demand window for days-of-supply
+
+# =============================================================================
+# JODI-Oil World Database — monthly CLOSING oil stocks by country (keyless annual
+# CSVs, Jan-2002 → ~1-month-old). The cross-country inventory comparable the
+# US-only EIA SPR series lacks. NOTE: JODI = TOTAL national stocks (govt + industry
+# + commercial), not strategic-only; the Strategic Reserves page labels it as such
+# and pairs it with the curated strategic_reserves table below. See collectors/jodi.py.
+# =============================================================================
+jodi:
+  primary_url: https://www.jodidata.org/_resources/files/downloads/oil-data/annual-csv/primary/{year}.csv
+  current_year_url: https://www.jodidata.org/_resources/files/downloads/oil-data/annual-csv/primary/primaryyear{year}.csv
+  user_agent: "Mozilla/5.0 (macro-dashboard research)"
+  retries: 3
+  start_year: 2002                 # full-history floor (JODI begins Jan-2002)
+  recent_years: 2                  # incremental runs pull the last N annual files
+  flow: CLOSTLV                    # closing stock level
+  products: [CRUDEOIL]             # crude only (PRIMARY file; refined products live in JODI's secondary db). Level reconciled to kbbl.
+  countries: [US, CN, JP, KR, IN, DE, FR, IT, ES, GB, NL, CA, SA, AE, BR, MX, AU]
+
+# =============================================================================
+# Strategic Reserves page (site/spr.html) — DISPLAY-ONLY, never scored. US SPR is
+# live/weekly (EIA WCSSTUS1); JODI gives live monthly TOTAL stocks per country;
+# this curated table carries the strategic-reserve-specific figures no free feed
+# publishes consistently. Every figure dated + sourced. Update here, not in code.
+# Primary source: EIA "Today in Energy" id=67504 (Dec-2025) + ISPRL + IEA.
+# =============================================================================
+strategic_reserves:
+  spr_capacity_mb: 714             # US SPR authorized capacity (MMbbl), post cavern sales
+  price_lookback_years: 6          # SPR-vs-oil-price chart window
+  iea_public_mb: 1200              # IEA-member public emergency stocks (reference)
+  iea_industry_mb: 600             # industry stocks under govt mandate (reference)
+  iea_min_days: 90                 # IEA 90-day net-import obligation (reference floor)
+  countries:                       # ordered; per-country crude JODI auto-joins via iso -> crude_<iso>
+    - {iso: US, name: United States, name_zh: 美国, flag: "🇺🇸", live: spr,
+       strategic_mb: 413, strategic_type: government, capacity_mb: 714, days_cover: 125,
+       days_basis_en: "net crude imports", days_basis_zh: "原油净进口",
+       ownership_en: "Government — DOE Strategic Petroleum Reserve", ownership_zh: "政府 — 能源部战略石油储备",
+       source: "EIA / U.S. DOE", as_of: "2025-12"}
+    - {iso: CN, name: China, name_zh: 中国, flag: "🇨🇳", no_jodi: true,
+       strategic_mb: 360, total_mb: 1400, strategic_type: estimate,
+       ownership_en: "Government + commercial (opaque; not reported to JODI)", ownership_zh: "政府 + 商业（不透明；不向 JODI 报送）",
+       source: "EIA estimate (Vortexa / Kpler / Kayrros)", as_of: "2025-12"}
+    - {iso: JP, name: Japan, name_zh: 日本, flag: "🇯🇵",
+       strategic_mb: 263, industry_mb: 220, strategic_type: government, days_cover: 146,
+       days_basis_en: "domestic consumption (govt only)", days_basis_zh: "国内消费（仅政府）",
+       ownership_en: "Government 146d + ~70d industry-mandated", ownership_zh: "政府 146 天 + 约 70 天行业强制储备",
+       source: "IEA / Japan Oil Stockpiling Act", as_of: "2025-12"}
+    - {iso: KR, name: South Korea, name_zh: 韩国, flag: "🇰🇷",
+       strategic_mb: 79, strategic_type: government,
+       ownership_en: "Government + industry (IEA member, 90d obligation)", ownership_zh: "政府 + 行业（IEA 成员，90 天义务）",
+       source: "IEA / KNOC", as_of: "2025-12"}
+    - {iso: IN, name: India, name_zh: 印度, flag: "🇮🇳",
+       strategic_mb: 21.4, industry_mb: 3, strategic_type: government, days_cover: 9.5,
+       days_basis_en: "crude imports", days_basis_zh: "原油进口",
+       ownership_en: "Government (ISPRL) + 3 MMbbl ADNOC at Mangalore", ownership_zh: "政府（ISPRL）+ 阿布扎比国油在芒格洛尔 300 万桶",
+       source: "ISPRL Annual Report 2025", as_of: "2025-03"}
+    - {iso: DE, name: Germany, name_zh: 德国, flag: "🇩🇪",
+       strategic_type: industry,
+       ownership_en: "Industry-held under EBV mandate (~90d net imports)", ownership_zh: "行业按 EBV 强制持有（约 90 天净进口）",
+       source: "IEA / EBV", as_of: "2025-12"}
+    - {iso: OECDEU, name: OECD Europe (govt), name_zh: 经合组织欧洲（政府）, flag: "🇪🇺",
+       no_jodi: true, strategic_mb: 179, strategic_type: government,
+       ownership_en: "Aggregate government inventories across OECD Europe", ownership_zh: "经合组织欧洲各国政府库存合计",
+       source: "IEA", as_of: "2025-12"}
+    - {iso: SA, name: Saudi Arabia, name_zh: 沙特阿拉伯, flag: "🇸🇦",
+       strategic_mb: 82, strategic_type: commercial,
+       ownership_en: "On-land commercial inventories (no public SPR breakout)", ownership_zh: "境内商业库存（无公开战略储备拆分）",
+       source: "Vortexa / Kpler estimate", as_of: "2025-12"}
 
 # =============================================================================
 # OFR Financial Stress Index — daily 33-variable global stress with functional +
@@ -1434,6 +1530,40 @@ credit_cycle:
   countries:
     us: {gap: us_gap, dsr: us_dsr, label_en: "United States", label_zh: "美国"}
     cn: {gap: cn_gap, dsr: cn_dsr, label_en: "China",         label_zh: "中国"}
+
+# =============================================================================
+# Rate & inflation TRANSMISSION (engine/rate_inflation_transmission.py +
+# scripts/calibrate_rate_inflation.py). A DISPLAY-ONLY leaf that traces how the
+# interest-rate / rate-expectations / inflation (CPI, core PCE) state propagates —
+# first/second/third order — into per-asset-class headwind/tailwind, with honest
+# conditional scenarios. The per-asset pass-through COEFFICIENTS are MEASURED
+# (data/transmission/calibration.json: signed split-half forward IC); this block
+# holds only the tunables. NEVER scored: the calibrator's scored-leg gate found no
+# rate/inflation leg that beats the forward-drawdown bar with purged-CV robustness,
+# so every flag below defaults OFF (repricing is reactive; rate-of-change>level).
+transmission:
+  enabled: true
+  calibration:
+    split_date: "2015-01-01"         # split-half boundary for the forward-IC robustness check
+  z_cap: 2.5                         # clip a driver's current z at +/- this when scoring contribution
+  z_active: 0.7                      # |driver z| above this = "currently active / extended"
+  effect_cut: 0.06                   # |net contribution| above this = headwind/tailwind (else neutral)
+  min_ic: 0.04                       # ignore measured cells weaker than this when aggregating
+  # display-only conditional scenarios — the shock sizes the page projects per-asset
+  # moves for, using the MEASURED 63d sensitivity. Each is caveated (reactive, regime-
+  # dependent, not a forecast).
+  scenarios:
+    - {key: real_up50,   driver: real10y_chg63,  shock_bp: 50,  label_en: "Real 10y +50bp (persists a quarter)",  label_zh: "实际10年期收益率 +50基点（持续一季度）"}
+    - {key: real_dn50,   driver: real10y_chg63,  shock_bp: -50, label_en: "Real 10y -50bp (easing)",               label_zh: "实际10年期收益率 -50基点（宽松）"}
+    - {key: be_up30,     driver: be10y_chg63,     shock_bp: 30,  label_en: "Breakeven +30bp (inflation scare)",     label_zh: "盈亏平衡通胀 +30基点（通胀恐慌）"}
+    - {key: steepen,     driver: curve_tp_adj,    shock_bp: 50,  label_en: "Curve bull-steepens +50bp (cuts priced)", label_zh: "收益率曲线牛市变陡 +50基点（计入降息）"}
+  # SCORED-LEG GATE flags — a rate/inflation risk leg is wired into the macro-risk
+  # score ONLY if its flag is true AND it passed the calibrator's gate. All OFF: the
+  # 2026-06 calibration found NONE eligible (real-rate SPEED is the strongest but is
+  # regime-dependent / fails purged-CV). Flip on only after a refresh confirms.
+  scored_legs:
+    real_rate_shock: false           # real10y_chg63 -> MRS (DIRECTIONAL only, not robust)
+    sticky_inflation: false          # corepce_gap -> MRS
 
 # =============================================================================
 # Treasury auction RESULTS (collectors/treasury_auctions.py + engine/treasury_supply.py)

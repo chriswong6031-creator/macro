@@ -1,0 +1,345 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{% macro vg(verdict) -%}
+{%- if verdict == 'CONFIRMED' -%}<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span>
+{%- elif verdict == 'DIRECTIONAL' -%}<span class="lvg vg-directional" title="full-sample only">~</span>
+{%- elif verdict == 'INVERTED' -%}<span class="lvg vg-inverted" title="measured the opposite way">⤫</span>
+{%- else -%}<span class="lvg vg-context" title="weak / context only">·</span>{%- endif -%}
+{%- endmacro %}
+{% macro effchip(cell) -%}
+<span class="achip {{ 'ac-tail' if cell.effect=='tailwind' else 'ac-head' if cell.effect=='headwind' else 'ac-neut' }}">{{ cell.label }}{% if cell.ic is not none %} <b>{{ '%+.2f'|format(cell.ic) }}</b>{% endif %}{{ vg(cell.verdict) }}</span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>Rate & Inflation Transmission — {{ as_of }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:{{C.blue}}; --indigo:{{C.indigo}}; --ink:{{C.ink}}; --text:{{C.text}}; --muted:{{C.muted}};
+  --faint:{{C.faint}}; --red:{{C.red}}; --amber:{{C.amber}}; --green:{{C.green}}; --teal:{{C.teal}};
+  --grid:{{C.grid}}; --card:{{C.card}}; --bg:{{C.bg}};
+}
+*{box-sizing:border-box}
+html:not([data-lang="zh"]) .l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:var(--blue);text-decoration:none}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 0 14px;border-bottom:1px solid var(--grid);margin-bottom:24px;position:sticky;top:0;background:var(--bg);z-index:20}
+.nav-links{display:flex;align-items:center;gap:2px;flex-wrap:wrap}
+a.nav-link{padding:7px 11px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;white-space:nowrap;transition:color .18s,background .18s}
+a.nav-link:hover,a.nav-link.active{color:var(--ink);background:#eef1f6}
+html[data-theme="dark"] a.nav-link:hover,html[data-theme="dark"] a.nav-link.active{background:#222732}
+.nav-dd{position:relative;display:inline-flex}
+.nav-dd>a.nav-link .caret{display:inline-block;margin-left:3px;font-size:9px;opacity:.6;transition:transform .2s}
+.nav-dd:hover>a.nav-link .caret{transform:rotate(180deg)}
+.nav-dd::after{content:"";position:absolute;left:0;right:0;top:100%;height:9px}
+.nav-dd-menu{position:absolute;top:calc(100% + 7px);left:0;min-width:218px;background:var(--card);border:1px solid var(--grid);border-radius:13px;box-shadow:0 12px 34px rgba(16,24,40,.14);padding:6px;opacity:0;visibility:hidden;transform:translateY(-6px);transition:opacity .18s,transform .18s,visibility .18s;z-index:70}
+.nav-dd:hover>.nav-dd-menu,.nav-dd:focus-within>.nav-dd-menu{opacity:1;visibility:visible;transform:translateY(0)}
+.nav-dd-menu a{display:block;padding:9px 12px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--text);white-space:nowrap}
+.nav-dd-menu a .d{display:block;font-size:11px;font-weight:500;color:var(--faint);margin-top:1px}
+.nav-dd-menu a:hover{background:#eef1f6;color:var(--ink)}
+.nav-ctrls{display:flex;align-items:center;gap:10px;flex:none}
+.ai-brief-link{font-size:13px;font-weight:600;color:var(--blue);white-space:nowrap}
+.lang-toggle{display:inline-flex;position:relative;background:#eef1f6;border:1px solid var(--grid);border-radius:999px;padding:3px;cursor:pointer;flex:none}
+.lang-toggle .pill{position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);border-radius:999px;background:var(--blue);transition:transform .34s cubic-bezier(.34,1.4,.5,1)}
+html[data-lang="zh"] .lang-toggle .pill{transform:translateX(100%)}
+.lang-toggle .opt{position:relative;z-index:1;min-width:28px;text-align:center;padding:3px 9px;font-size:11.5px;font-weight:600;color:var(--muted);transition:color .25s;user-select:none}
+html:not([data-lang="zh"]) .lang-toggle .en-opt{color:#fff}
+html[data-lang="zh"] .lang-toggle .zh-opt{color:#fff}
+html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280}
+.theme-switch{width:56px;height:27px;border-radius:999px;background:#eef1f6;border:1px solid var(--grid);position:relative;cursor:pointer;padding:0;flex:none}
+html[data-theme="dark"] .theme-switch{background:#222732}
+.theme-switch .ic{position:absolute;top:50%;transform:translateY(-50%);font-size:10.5px;opacity:.5;line-height:1}
+.theme-switch .ic.sun{right:8px}.theme-switch .ic.moon{left:8px}
+.theme-switch .knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 5px rgba(0,0,0,.3);transform:translateX(29px);transition:transform .34s cubic-bezier(.34,1.45,.5,1),background .3s}
+.theme-switch .knob::before{content:"☀️"}
+html[data-theme="dark"] .theme-switch .knob{transform:translateX(0);background:#e8c15a}
+html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
+.grid{display:grid;gap:18px}
+.cols-2{grid-template-columns:1fr 1fr}.cols-3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:900px){.cols-2,.cols-3{grid-template-columns:1fr}}
+.sec-head{font-size:12px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.05em;margin:30px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--grid)}
+.card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:22px}
+.card h2{margin:0 0 4px;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.brand{font-weight:800;font-size:21px;color:var(--ink);letter-spacing:-.02em;margin:6px 0 2px}
+.brand .gn{color:var(--blue)}
+.lead{color:var(--muted);font-size:14px;margin:0 0 20px}
+.sub{font-size:13px;color:var(--muted)}.faint{color:var(--faint)}
+.state-val{font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1;margin:4px 0 6px}
+.state-val small{font-size:15px;color:var(--muted);font-weight:700}
+.band-chip{display:inline-block;padding:4px 12px;border-radius:999px;font-size:12.5px;font-weight:700;color:#fff;letter-spacing:.01em;margin:2px 0}
+.kpis{display:flex;gap:14px 20px;flex-wrap:wrap;margin-top:14px}
+.kpi{font-size:12px;color:var(--muted)}.kpi b{display:block;font-size:16px;color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;background:#eef1f6;color:var(--ink);margin:2px 4px 2px 0}
+html[data-theme="dark"] .pill{background:#222732}
+.flag{display:inline-block;padding:5px 11px;border-radius:8px;font-size:12.5px;font-weight:600;margin-top:10px;line-height:1.4}
+.flag.warn{background:rgba(245,173,66,.16);color:#9a6a10}
+.flag.alarm{background:rgba(211,11,11,.13);color:var(--red)}
+.flag.info{background:rgba(40,95,255,.10);color:var(--blue)}
+.flag.ok{background:rgba(26,127,67,.12);color:var(--green)}
+.note{font-size:13px;color:var(--muted);line-height:1.6}.note b{color:var(--ink)}
+.meta-foot{font-size:12px;color:var(--faint);margin-top:8px}
+.lvg{margin-left:4px;font-weight:800;font-size:11px;cursor:help}
+.vg-measured{color:var(--green)}.vg-directional{color:var(--amber)}.vg-context{color:var(--faint)}.vg-inverted{color:var(--indigo)}
+/* per-asset headwind/tailwind bars */
+.tbar{display:grid;grid-template-columns:150px 1fr 58px;align-items:center;gap:10px;font-size:12.5px;padding:5px 0}
+.tbar .tname{color:var(--text);font-weight:600}
+.tbar .ttrack{position:relative;height:9px;background:#eef1f6;border-radius:5px}
+html[data-theme="dark"] .tbar .ttrack{background:#222732}
+.tbar .tmid{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--faint);opacity:.5}
+.tbar .tfill{position:absolute;top:0;bottom:0;border-radius:5px}
+.tbar .tfill.head{right:50%;background:var(--red)}
+.tbar .tfill.tail{left:50%;background:var(--green)}
+.tbar .tval{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted);font-weight:600}
+.tdrv{font-size:11px;color:var(--faint);margin:1px 0 0 150px}
+/* chain cascade */
+.chain{margin-bottom:16px}
+.chain.dim{opacity:.55}
+.chain-head{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700;color:var(--ink);margin-bottom:4px}
+.chain-state{font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px}
+.chain-state.on{background:rgba(40,95,255,.12);color:var(--blue)}
+.chain-state.off{background:#eef1f6;color:var(--faint)}
+html[data-theme="dark"] .chain-state.off{background:#222732}
+.order{display:grid;grid-template-columns:30px 1fr;gap:12px;padding:10px 0;border-bottom:1px solid var(--grid)}
+.order:last-child{border-bottom:none}
+.order .onum{width:26px;height:26px;border-radius:50%;background:var(--blue);color:#fff;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+.order .otext{font-size:13.5px;color:var(--text);line-height:1.5}
+.order .ocells{margin-top:7px;display:flex;flex-wrap:wrap;gap:6px}
+.achip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:8px;font-size:11.5px;font-weight:600;background:#eef1f6;color:var(--text)}
+html[data-theme="dark"] .achip{background:#222732}
+.achip.ac-head{background:rgba(211,11,11,.10);color:var(--red)}
+.achip.ac-tail{background:rgba(26,127,67,.12);color:var(--green)}
+.achip b{font-variant-numeric:tabular-nums}
+/* scenario */
+.scen{border:1px solid var(--grid);border-radius:13px;padding:15px;margin-bottom:14px}
+.scen h3{margin:0 0 10px;font-size:14px;font-weight:700;color:var(--ink)}
+.scen-row{display:flex;flex-wrap:wrap;gap:14px}
+.scen-col{flex:1;min-width:180px}
+.scen-col .scl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+.scen-col.head .scl{color:var(--red)}.scen-col.tail .scl{color:var(--green)}
+.smv{display:flex;justify-content:space-between;font-size:12.5px;padding:2px 0}
+.smv b{font-variant-numeric:tabular-nums}
+.smv .neg{color:var(--red)}.smv .pos{color:var(--green)}
+/* decomposition */
+.decomp{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:6px}
+.decomp .dc{padding:11px 13px;border-radius:11px;background:#eef1f6}
+html[data-theme="dark"] .decomp .dc{background:#222732}
+.decomp .dc .dcl{font-size:11.5px;color:var(--muted);margin-bottom:3px}
+.decomp .dc .dcv{font-size:19px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+.decomp .dc .dcn{font-size:11px;color:var(--faint);margin-top:2px}
+.site-footer{max-width:1180px;margin:30px auto 0;padding:18px 20px;border-top:1px solid var(--grid);display:flex;justify-content:space-between;color:var(--muted);font-size:12.5px}
+table.gate{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
+table.gate th,table.gate td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--grid)}
+table.gate th{color:var(--muted);font-weight:700;text-transform:uppercase;font-size:10.5px;letter-spacing:.03em}
+table.gate td.num{text-align:right;font-variant-numeric:tabular-nums}
+</style>
+{% include "_vector_polish.html.j2" %}
+</head>
+<body>
+<div class="topbar">
+  <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;padding:0;border:none;margin:0 auto">
+      <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 {{ t('United States', '美国') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('Regime · growth · inflation · nowcast', '周期 · 增长 · 通胀 · 即时预测') }}</span></a>
+        <a href="us_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Standouts · sectors · flows', '精选 · 板块 · 资金') }}</span></a>
+        <a href="anticipation.html">🔮 {{ t('Anticipation', '预判') }}<span class="d">{{ t('Multi-horizon outcome cones', '多周期结果锥') }}</span></a>
+        <a href="strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
+        <a href="spvector.html">📐 {{ t('S&P / Macro Vector', '标普宏观向量') }}<span class="d">{{ t('Tactical equity↔cash', '战术股票↔现金') }}</span></a>
+        <a href="ipo.html">🆕 {{ t('IPO Radar', '新股雷达') }}<span class="d">{{ t('IPO window · aftermarket reality', '新股窗口 · 二级市场现实') }}</span></a>
+        <a href="baskets.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P', '等权主题篮子 vs 标普') }}</span></a>
+        <a href="allocation.html">🔄 {{ t('Narrative Rotation', '主题轮动') }}<span class="d">{{ t('Which theme to hold & when to rotate', '持有哪个主题 · 何时轮动') }}</span></a>
+        <a href="alerts.html">🚨 {{ t('Alert Center', '警报中心') }}<span class="d">{{ t('Ranked & triaged alerts', '分级分诊的警报') }}</span></a>
+        <a href="gex.html">🧲 {{ t('Options Magnets', '期权磁吸') }}<span class="d">{{ t('Dealer-gamma GEX levels', '做市商Gamma GEX价位') }}</span></a>
+        <a href="etfs.html">🐳 {{ t('ETF Flows', 'ETF资金流') }}<span class="d">{{ t('Fund flow monitor', '资金流监控') }}</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国') }}</a>
+    <a class="nav-link" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }}</a>
+    <a class="nav-link" href="canada.html">🇨🇦 {{ t('Canada', '加拿大') }}</a>
+    <a class="nav-link" href="intl.html">🌍 {{ t('International', '国际') }}</a>
+    <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin', '比特币') }}</a>
+    <a class="nav-link" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }}</a>
+    <a class="nav-link" href="forex.html">💱 {{ t('Forex', '外汇') }}</a>
+    <a class="nav-link" href="bonds.html">🏛️ {{ t('Bonds', '债券') }}</a>
+    <div class="nav-dd">
+      <a class="nav-link active" href="javascript:void(0)">🔬 {{ t('Research', '研究') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="transmission.html">🔀 {{ t('Rate & Inflation Transmission', '利率与通胀传导') }}<span class="d">{{ t('How rates & inflation move every asset', '利率与通胀如何驱动各类资产') }}</span></a>
+        <a href="masterminds.html">🧠 {{ t('Masterminds', '操盘大师') }}<span class="d">{{ t('Multi-asset active GTAA strategies', '多资产主动配置策略') }}</span></a>
+        <a href="crossasset.html">🧭 {{ t('Cross-Asset', '跨资产') }}<span class="d">{{ t('Correlations · trend · global liquidity', '相关性 · 趋势 · 全球流动性') }}</span></a>
+        <a href="signal_lab.html">🔬 {{ t('Signal Lab', '信号实验室') }}<span class="d">{{ t('Consolidated validation scorecard', '验证记分卡汇总') }}</span></a>
+        <a href="factors.html">🧮 {{ t('Factors & Seasonality', '因子 & 季节性') }}<span class="d">{{ t('Value · quality · low-vol · monthly calendar', '价值 · 质量 · 低波动 · 月历') }}</span></a>
+      </div>
+    </div>
+  </div>
+    <div class="nav-ctrls">
+      <a class="ai-brief-link" href="aibrief.html">🧠 {{ t('AI Daily Brief', 'AI每日简报') }}</a>
+      <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="brand">🔀 {{ t('Rate & Inflation', '利率与通胀') }} <span class="gn">{{ t('Transmission', '传导') }}</span></div>
+  <p class="lead">{{ t('How the interest-rate, rate-expectations and inflation (CPI · core PCE) state propagates — first, second and third order — into every asset class we track: the headwind / tailwind each one faces now, the causal chains behind it, and what a rate or inflation shock would imply. Coefficients are MEASURED (split-half forward IC); display-only, never a trade call — repricing is reactive.', '利率、利率预期与通胀（CPI · 核心PCE）的当前状态如何一阶、二阶、三阶地传导至我们跟踪的每一类资产：各资产当前面临的逆风/顺风、其背后的因果链，以及一次利率或通胀冲击意味着什么。系数均为实测（前后半段前瞻IC）；仅供展示，绝非交易建议——重定价是被动的。') }}
+  <span class="faint">· {{ t('As of', '截至') }} {{ as_of }}</span></p>
+
+  {% set S = tx.state %}
+  <!-- ===================== CURRENT STATE ===================== -->
+  <div class="grid cols-3" style="margin-bottom:6px">
+    <div class="card">
+      <h2>{{ t('Interest rates', '利率') }}</h2>
+      <div class="state-val">{{ '%.2f'|format(S.rates.real_10y) if S.rates.real_10y is not none else '—' }}<small>% {{ t('real 10y', '实际10年') }}</small></div>
+      {% set rr = S.rates.regime %}
+      <span class="band-chip" style="background:{{ C.red if rr=='restrictive' else C.green if rr=='accommodative' else C.muted }}">{{ t(rr, {'restrictive':'偏紧','accommodative':'宽松','neutral':'中性'}[rr]) }} · {{ t(S.rates.direction, {'rising':'上行','falling':'下行','stable':'平稳'}[S.rates.direction]) }}</span>
+      <div class="kpis">
+        <div class="kpi">{{ t('Nominal 10y','名义10年') }}<b>{{ '%.2f'|format(S.rates.nominal_10y) if S.rates.nominal_10y is not none else '—' }}%</b></div>
+        <div class="kpi">{{ t('2s10s curve','2-10年曲线') }}<b>{{ '%.2f'|format(S.rates.curve_2s10s) if S.rates.curve_2s10s is not none else '—' }}</b></div>
+        <div class="kpi">{{ t('Real 10y %ile','实际10年分位') }}<b>{{ (S.rates.real_10y_pctile*100)|round|int if S.rates.real_10y_pctile is not none else '—' }}</b></div>
+        <div class="kpi">{{ t('Policy gap (2y−ff)','政策缺口') }}<b>{{ '%.2f'|format(S.rates.policy_gap) if S.rates.policy_gap is not none else '—' }}</b></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>{{ t('Inflation', '通胀') }}</h2>
+      <div class="state-val">{{ '%.1f'|format(S.inflation.core_pce_yoy) if S.inflation.core_pce_yoy is not none else '—' }}<small>% {{ t('core PCE YoY', '核心PCE同比') }}</small></div>
+      {% set ir = S.inflation.regime %}
+      <span class="band-chip" style="background:{{ C.red if ir=='above target' else C.green if ir=='below target' else C.muted }}">{{ t(ir, {'above target':'高于目标','at target':'达标','below target':'低于目标'}[ir]) }} · {{ t(S.inflation.direction, {'re-accelerating':'再加速','cooling':'降温','steady':'平稳'}[S.inflation.direction]) }}</span>
+      <div class="kpis">
+        <div class="kpi">{{ t('Core CPI','核心CPI') }}<b>{{ '%.1f'|format(S.inflation.core_cpi_yoy) if S.inflation.core_cpi_yoy is not none else '—' }}%</b></div>
+        <div class="kpi">{{ t('Headline CPI','整体CPI') }}<b>{{ '%.1f'|format(S.inflation.headline_cpi_yoy) if S.inflation.headline_cpi_yoy is not none else '—' }}%</b></div>
+        <div class="kpi">{{ t('Core PPI','核心PPI') }}<b>{{ '%.1f'|format(S.inflation.ppi_core_yoy) if S.inflation.ppi_core_yoy is not none else '—' }}%</b></div>
+        <div class="kpi">{{ t('ECI wages','ECI薪酬') }}<b>{{ '%.1f'|format(S.inflation.eci_comp_yoy) if S.inflation.eci_comp_yoy is not none else '—' }}%</b></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>{{ t('Expectations', '通胀预期') }}</h2>
+      <div class="state-val">{{ '%.2f'|format(S.expectations.breakeven_5y5y) if S.expectations.breakeven_5y5y is not none else '—' }}<small>% {{ t('5y5y breakeven', '5年5年盈亏平衡') }}</small></div>
+      {% set an = S.expectations.anchoring %}
+      <span class="band-chip" style="background:{{ C.red if an=='drifting up' else C.amber if an=='drifting down' else C.green }}">{{ t(an, {'drifting up':'上行脱锚','drifting down':'下行','anchored':'锚定'}[an]) }}</span>
+      <div class="kpis">
+        <div class="kpi">{{ t('10y breakeven','10年盈亏平衡') }}<b>{{ '%.2f'|format(S.expectations.breakeven_10y) if S.expectations.breakeven_10y is not none else '—' }}%</b></div>
+        <div class="kpi">{{ t('Model 5y','模型5年') }}<b>{{ '%.2f'|format(S.expectations.model_5y) if S.expectations.model_5y is not none else '—' }}%</b></div>
+        <div class="kpi">{{ t('Survey 1y','调查1年') }}<b>{{ '%.1f'|format(S.expectations.survey_1y) if S.expectations.survey_1y is not none else '—' }}%</b></div>
+        <div class="kpi">{{ t('Mkt−model','市场−模型') }}<b>{{ S.expectations.market_minus_model_bp|round|int if S.expectations.market_minus_model_bp is not none else '—' }}bp</b></div>
+      </div>
+    </div>
+  </div>
+
+  {% set D = tx.inflation_decomposition %}
+  <div class="card" style="margin-top:12px">
+    <h2>{{ t('Inflation decomposition', '通胀分解') }}</h2>
+    <div class="decomp">
+      <div class="dc"><div class="dcl">{{ t('Headline − core CPI','整体−核心CPI') }}</div><div class="dcv">{{ '%+.2f'|format(D.headline_minus_core) if D.headline_minus_core is not none else '—' }}</div><div class="dcn">{{ t('food / energy push','食品/能源推动') }}</div></div>
+      <div class="dc"><div class="dcl">{{ t('Core services YoY','核心服务同比') }}</div><div class="dcv">{{ '%.2f'|format(D.core_services_yoy) if D.core_services_yoy is not none else '—' }}</div><div class="dcn">{{ t('the sticky leg','粘性部分') }}</div></div>
+      <div class="dc"><div class="dcl">{{ t('Shelter YoY','住房同比') }}</div><div class="dcv">{{ '%.2f'|format(D.shelter_yoy) if D.shelter_yoy is not none else '—' }}</div><div class="dcn">{{ t('lagging rent','滞后的租金') }}</div></div>
+      <div class="dc"><div class="dcl">{{ t('Core PCE − core CPI','核心PCE−核心CPI') }}</div><div class="dcv">{{ '%+.2f'|format(D.pce_minus_cpi) if D.pce_minus_cpi is not none else '—' }}</div><div class="dcn">{{ t('basket / weight gap','篮子/权重差') }}</div></div>
+      <div class="dc"><div class="dcl">{{ t('Actual − market-priced','实际−市场定价') }}</div><div class="dcv">{{ D.actual_vs_market_bp|round|int if D.actual_vs_market_bp is not none else '—' }}bp</div><div class="dcn">{{ t('core CPI vs 10y breakeven','核心CPI vs 10年盈亏平衡') }}</div></div>
+    </div>
+  </div>
+
+  <!-- ===================== CROSS-ASSET HEADWIND / TAILWIND ===================== -->
+  <div class="sec-head">{{ t('Cross-asset transmission — what each asset faces now', '跨资产传导 — 各资产当前所面对的') }}</div>
+  <div class="grid cols-2">
+    <div class="card">
+      <h2 style="color:var(--red)">{{ t('Headwinds', '逆风') }}</h2>
+      {% if tx.headwinds %}{% for h in tx.headwinds %}
+      <div class="tbar"><span class="tname"><span class="l-en">{{ h.label.en }}</span><span class="l-zh">{{ h.label.zh }}</span></span>
+        <span class="ttrack"><span class="tmid"></span><span class="tfill head" style="width:{{ [(h.net|abs)*90, 50]|min }}%"></span></span>
+        <span class="tval" style="color:var(--red)">{{ '%.2f'|format(h.net) }}</span></div>
+      <div class="tdrv">{% for p in h.top_drivers %}{{ p.label }}{{ vg(p.verdict) }}{% if not loop.last %} · {% endif %}{% endfor %}</div>
+      {% endfor %}{% else %}<p class="sub">{{ t('No clear rate/inflation headwind right now.', '当前无明显的利率/通胀逆风。') }}</p>{% endif %}
+    </div>
+    <div class="card">
+      <h2 style="color:var(--green)">{{ t('Tailwinds', '顺风') }}</h2>
+      {% if tx.tailwinds %}{% for h in tx.tailwinds %}
+      <div class="tbar"><span class="tname"><span class="l-en">{{ h.label.en }}</span><span class="l-zh">{{ h.label.zh }}</span></span>
+        <span class="ttrack"><span class="tmid"></span><span class="tfill tail" style="width:{{ [(h.net|abs)*90, 50]|min }}%"></span></span>
+        <span class="tval" style="color:var(--green)">{{ '%+.2f'|format(h.net) }}</span></div>
+      <div class="tdrv">{% for p in h.top_drivers %}{{ p.label }}{{ vg(p.verdict) }}{% if not loop.last %} · {% endif %}{% endfor %}</div>
+      {% endfor %}{% else %}<p class="sub">{{ t('No clear rate/inflation tailwind right now.', '当前无明显的利率/通胀顺风。') }}</p>{% endif %}
+    </div>
+  </div>
+  <p class="sub" style="margin-top:8px">{{ t('Net = the sum of each active driver’s current extension × its measured forward IC for that asset (the change / gap drivers only; raw levels are excluded as co-trend). ✓ confirmed split-half · ~ directional · ⤫ inverted (effect measured opposite the chain direction) · · context.', '净值＝各活跃驱动的当前偏离度 × 其对该资产的实测前瞻IC之和（仅取变动/缺口类驱动；原始水平因共趋势而剔除）。✓ 前后半段确认 · ~ 有方向 · ⤫ 反向（实测效应与链条方向相反）· · 仅背景。') }}</p>
+
+  <!-- ===================== TRANSMISSION CHAINS ===================== -->
+  <div class="sec-head">{{ t('Transmission chains — first → second → third order', '传导链 — 一阶 → 二阶 → 三阶') }}</div>
+  {% for ch in tx.chains %}
+  <div class="card chain {{ '' if ch.active else 'dim' }}" style="margin-bottom:14px">
+    <div class="chain-head">
+      <span><span class="l-en">{{ ch.title.en }}</span><span class="l-zh">{{ ch.title.zh }}</span></span>
+      <span class="chain-state {{ 'on' if ch.active else 'off' }}">{{ t('ACTIVE','活跃') if ch.active else t('dormant','静默') }}{% if ch.trigger_z is not none %} · {{ ch.trigger_label }} {{ '%+.1f'|format(ch.trigger_z) }}σ{% endif %}</span>
+    </div>
+    {% for o in ch.orders %}
+    <div class="order">
+      <span class="onum">{{ o.order }}</span>
+      <div>
+        <div class="otext"><span class="l-en">{{ o.text.en }}</span><span class="l-zh">{{ o.text.zh }}</span></div>
+        <div class="ocells">{% for c in o.assets %}{{ effchip(c) }}{% endfor %}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+
+  <!-- ===================== SCENARIOS ===================== -->
+  <div class="sec-head">{{ t('Conditional scenarios — if this shock holds a quarter', '情景推演 — 若该冲击持续一个季度') }}</div>
+  <div class="grid cols-2">
+  {% for sc in tx.scenarios %}
+    <div class="scen">
+      <h3><span class="l-en">{{ sc.label.en }}</span><span class="l-zh">{{ sc.label.zh }}</span></h3>
+      <div class="scen-row">
+        <div class="scen-col head"><div class="scl">{{ t('Pressured','承压') }}</div>
+          {% for m in sc.headwinds %}<div class="smv"><span><span class="l-en">{{ m.label.en }}</span><span class="l-zh">{{ m.label.zh }}</span></span><b class="neg">{{ '%.1f'|format(m.implied_move_pct) }}%</b></div>{% else %}<div class="sub">—</div>{% endfor %}
+        </div>
+        <div class="scen-col tail"><div class="scl">{{ t('Favoured','受益') }}</div>
+          {% for m in sc.tailwinds %}<div class="smv"><span><span class="l-en">{{ m.label.en }}</span><span class="l-zh">{{ m.label.zh }}</span></span><b class="pos">+{{ '%.1f'|format(m.implied_move_pct) }}%</b></div>{% else %}<div class="sub">—</div>{% endfor %}
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+  </div>
+  <p class="sub" style="margin-top:6px">{{ t('Implied move = the asset’s MEASURED contemporaneous 63-day beta to that driver × the shock. Illustrative & regime-dependent — not a forecast, and the shock must actually persist.', '隐含涨跌＝该资产对此驱动实测的同期63日beta × 冲击幅度。仅为示意且依赖状态——并非预测，且冲击须真实持续。') }}</p>
+
+  <!-- ===================== HONESTY / SCORED-LEG GATE ===================== -->
+  <div class="card" style="margin-top:22px">
+    <h2>{{ t('How this is graded · and what it is not', '如何评级 · 以及它不是什么') }}</h2>
+    <div class="flag info" style="display:block;margin-bottom:10px"><span class="l-en">{{ tx.scored_status.en }}</span><span class="l-zh">{{ tx.scored_status.zh }}</span></div>
+    {% if gate %}
+    <table class="gate">
+      <tr><th>{{ t('Candidate leg','候选腿') }}</th><th>{{ t('Verdict','判定') }}</th><th class="num">{{ t('IC dd (f/pre/post)','IC回撤(全/前/后)') }}</th><th class="num">{{ t('hi-tercile edge','高三分位超额') }}</th><th>{{ t('scored?','计分?') }}</th></tr>
+      {% for k, s in gate.items() %}
+      <tr><td>{{ s.label }}</td><td>{{ s.verdict }}</td><td class="num">{{ s.ic_dd_full }}/{{ s.ic_dd_pre }}/{{ s.ic_dd_post }}</td><td class="num">{{ s.conditional.high_edge_pp if s.conditional else '—' }}pp</td><td>{{ '✅' if s.scored_eligible else '—' }}</td></tr>
+      {% endfor %}
+    </table>
+    {% endif %}
+    <div class="note" style="margin-top:12px">
+      {% for c in tx.caveats %}<p>• <span class="l-en">{{ c.en }}</span><span class="l-zh">{{ c.zh }}</span></p>{% endfor %}
+      <p><b>{{ t('Data.','数据。') }}</b> {{ t('Free / keyless FRED: full Treasury curve, real yields (TIPS), 5y/10y/5y5y breakevens, term premium; headline & core CPI, headline & core PCE (the Fed’s 2% target gauge), PPI, ECI wage growth, shelter & core-services CPI; Cleveland model + UMich survey inflation expectations. All point-in-time vintaged for honest backtests.', '免费/无密钥的FRED：完整国债曲线、实际利率(TIPS)、5/10年与5年5年盈亏平衡、期限溢价；整体与核心CPI、整体与核心PCE（美联储2%目标）、PPI、ECI工资增长、住房与核心服务CPI；克利夫兰模型与密歇根调查通胀预期。均按时点存档以便诚实回测。') }}</p>
+      <p class="meta-foot">{{ t('Calibration','校准') }}: scripts/calibrate_rate_inflation.py · {{ t('report','报告') }} reports/rate-inflation-transmission-calibration.md · {{ t('History','历史') }} {{ span }} · {{ t('built','构建于') }} {{ built }}</p>
+    </div>
+  </div>
+</div>
+
+<script src="theme.js"></script>
+<footer class="site-footer">
+  <span>{{ t('Made with ❤️ in Canada', '用 ❤️ 在加拿大制作') }} · {{ t('Developed by', '开发者') }} Chris Wong</span>
+  <span class="faint">{{ t('Macro transmission context, not investment advice.', '宏观传导背景，非投资建议。') }}</span>
+</footer>
+</body>
+</html>

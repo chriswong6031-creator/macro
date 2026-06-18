@@ -21,10 +21,16 @@ import logging
 
 import pandas as pd
 
-from collectors.base import Adapter
+from collectors.base import Adapter, is_connection_error
 from lib import config
 
 log = logging.getLogger(__name__)
+
+# After this many CONSECUTIVE connection failures (timeout/refused — not a dead
+# series id), treat the keyless FRED frontend as unreachable from this runner and
+# skip the rest of the plan. Bounds a full outage to ~a couple of minutes instead
+# of 34 series x 3 retries x 30s ~= 56 min (every series produced nothing anyway).
+_ABORT_AFTER_CONSECUTIVE_CONN_ERRORS = 3
 
 
 class IntlMacroAdapter(Adapter):
@@ -39,7 +45,7 @@ class IntlMacroAdapter(Adapter):
 
     def _fetch_fred(self, fid: str) -> pd.DataFrame:
         r = self.http_get(self.cfg["fred_base_url"], params={"id": fid},
-                          retries=self.cfg["retries"], timeout=30)
+                          retries=self.cfg["retries"], timeout=15)
         raw = pd.read_csv(io.StringIO(r.text))
         date_col = raw.columns[0]          # observation_date (or DATE on older series)
         val_col = raw.columns[1]
@@ -61,11 +67,19 @@ class IntlMacroAdapter(Adapter):
             plan.append((col, fid))
 
         frames: dict[str, pd.DataFrame] = {}
-        for col, fid in plan:
+        conn_errors = 0   # consecutive connection failures (all series share one host)
+        for i, (col, fid) in enumerate(plan):
             try:
                 frames[col] = self._fetch_fred(fid).rename(columns={"_": col})
+                conn_errors = 0
             except Exception as e:  # noqa: BLE001 — one series down can't break the plane
                 log.warning("intl_macro %s (%s) failed: %s", col, fid, e)
+                conn_errors = conn_errors + 1 if is_connection_error(e) else 0
+                if conn_errors >= _ABORT_AFTER_CONSECUTIVE_CONN_ERRORS:
+                    log.error("intl_macro: FRED frontend unreachable (%d consecutive "
+                              "connection failures) — skipping the remaining %d series "
+                              "to fail fast", conn_errors, len(plan) - i - 1)
+                    break
 
         if not frames:
             raise RuntimeError("intl_macro: every FRED series failed (FRED unreachable?)")

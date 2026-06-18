@@ -1,0 +1,144 @@
+"""Build the Research Reports section -> site/reports.html + one page per report.
+
+A small, registry-driven blog/article system for in-depth market reports. Each entry
+in REPORTS points at a Jinja article template (extending article_base.html.j2) plus the
+metadata used to render the row-based index (reports.html.j2).
+
+Fully static and additive — depends on no live JSON, so it can never break the daily
+build. Bilingual (EN/中文) via the same l-en/l-zh spans as the rest of the site.
+
+------------------------------------------------------------------------------
+ADD A NEW REPORT (3 steps):
+  1. Copy the starter:  templates/_report_TEMPLATE.html.j2
+                  ->    templates/report_<slug>.html.j2   (it has inline docs)
+  2. Fill its art_kicker / art_toc / art_body blocks (bilingual via t()).
+  3. Append one dict to REPORTS below with a matching slug + template. See the
+     EXAMPLE entry (commented out) for every field. Date drives index sorting.
+Then:  python -m scripts.build_reports   (or let daily.yml run it).
+
+Tag chip colours are defined in report_base.html.j2 (.chip.tag-<key>); reuse an
+existing key (macro / fed / rates / equities / crypto / event) or add a CSS rule.
+------------------------------------------------------------------------------
+
+Usage: python -m scripts.build_reports
+"""
+from __future__ import annotations
+
+import logging
+import sys
+from datetime import datetime
+from pathlib import Path
+
+from jinja2 import Environment, FileSystemLoader
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from lib import config  # noqa: E402
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+log = logging.getLogger("build_reports")
+
+_MON = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
+_MON_FULL = ["January", "February", "March", "April", "May", "June",
+             "July", "August", "September", "October", "November", "December"]
+
+
+def _tag(key: str, en: str, zh: str) -> dict:
+    return {"key": key, "en": en, "zh": zh}
+
+
+# ---------------------------------------------------------------------------
+# Report registry — newest entries can go anywhere; the index sorts by date.
+# ---------------------------------------------------------------------------
+REPORTS: list[dict] = [
+    {
+        "slug": "report_warsh_fomc",
+        "template": "report_warsh_fomc.html.j2",
+        "date": "2026-06-17",
+        "read_min": 9,
+        "title_en": "The Warsh Shock",
+        "title_zh": "沃什冲击",
+        "dek_en": "Kevin Warsh's first FOMC as Fed Chair — the hawkish dot-plot turn, the "
+                  "press conference that removed forward guidance, the cross-asset reaction, "
+                  "and what it means for markets next.",
+        "dek_zh": "凯文·沃什出任美联储主席后的首次 FOMC —— 鹰派点阵图的转向、取消前瞻指引的发布会、"
+                  "跨资产反应，以及对后市的意义。",
+        "tags": [
+            _tag("fed", "Fed", "美联储"),
+            _tag("rates", "Rates", "利率"),
+            _tag("equities", "Equities", "股票"),
+            _tag("macro", "Macro", "宏观"),
+        ],
+    },
+    # ----------------------------------------------------------------------
+    # EXAMPLE — copy this block, uncomment, and edit to publish a new report.
+    # The `template` file must exist (copy templates/_report_TEMPLATE.html.j2).
+    # ----------------------------------------------------------------------
+    # {
+    #     "slug": "report_my_topic",                 # -> site/report_my_topic.html
+    #     "template": "report_my_topic.html.j2",     # copied from _report_TEMPLATE
+    #     "date": "2026-07-01",                       # YYYY-MM-DD; drives sort + date badge
+    #     "read_min": 6,                              # estimated minutes
+    #     "title_en": "Headline Here",
+    #     "title_zh": "标题",
+    #     "dek_en": "One-sentence standfirst shown on the index row and article hero.",
+    #     "dek_zh": "用于索引行与文章页眉的一句话导语。",
+    #     "tags": [                                    # reuse keys for chip colours
+    #         _tag("macro", "Macro", "宏观"),
+    #         _tag("rates", "Rates", "利率"),
+    #     ],
+    # },
+]
+
+
+def _enrich(r: dict) -> dict:
+    dt = datetime.strptime(r["date"], "%Y-%m-%d")
+    out = dict(r)
+    out["mon"] = _MON[dt.month - 1]
+    out["day"] = str(dt.day)
+    out["year"] = str(dt.year)
+    out["date_display"] = f"{_MON_FULL[dt.month - 1]} {dt.day}, {dt.year}"
+    return out
+
+
+def _all_tags(reports: list[dict]) -> list[dict]:
+    seen: dict[str, dict] = {}
+    for r in reports:
+        for tg in r["tags"]:
+            seen.setdefault(tg["key"], tg)
+    return list(seen.values())
+
+
+def main() -> int:
+    site = config.ROOT / "site"
+    site.mkdir(exist_ok=True)
+    env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
+
+    reports = [_enrich(r) for r in REPORTS]
+    # newest first for the index + prev/next chaining
+    reports.sort(key=lambda r: r["date"], reverse=True)
+    all_tags = _all_tags(reports)
+
+    # ---- index ----
+    idx = env.get_template("reports.html.j2").render(
+        reports=reports, all_tags=all_tags, active_section="research",
+    )
+    (site / "reports.html").write_text(idx)
+    log.info("wrote %s/reports.html (%d reports, %d KB)", site, len(reports), len(idx) // 1024)
+
+    # ---- one page per report ----
+    for i, r in enumerate(reports):
+        prev_r = reports[i - 1] if i > 0 else None           # newer
+        next_r = reports[i + 1] if i + 1 < len(reports) else None  # older
+        html = env.get_template(r["template"]).render(
+            report=r, reports=reports, prev_report=prev_r, next_report=next_r,
+            active_section="research",
+        )
+        (site / f"{r['slug']}.html").write_text(html)
+        log.info("wrote %s/%s.html (%d KB)", site, r["slug"], len(html) // 1024)
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

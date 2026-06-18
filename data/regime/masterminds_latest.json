@@ -1,0 +1,27 @@
+{
+  "n": 3,
+  "built": "2026-06-18 00:25 UTC",
+  "cards": [
+    {
+      "key": "mm_conservative",
+      "name": "Mastermind \u2014 Conservative",
+      "cagr": 7.93,
+      "sharpe": 1.13,
+      "maxdd": -17.3
+    },
+    {
+      "key": "mm_moderate",
+      "name": "Mastermind \u2014 Moderate",
+      "cagr": 11.5,
+      "sharpe": 1.07,
+      "maxdd": -24.1
+    },
+    {
+      "key": "mm_aggressive",
+      "name": "Mastermind \u2014 Aggressive",
+      "cagr": 17.35,
+      "sharpe": 1.0,
+      "maxdd": -34.9
+    }
+  ]
+}
