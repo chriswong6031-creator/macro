@@ -23,9 +23,13 @@ body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
 @keyframes livepulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,#22c55e 55%,transparent)}70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
 .h h1{font-size:clamp(30px,4.4vw,46px);font-weight:800;letter-spacing:-.035em;line-height:1.05;margin:0 0 9px;
  background:linear-gradient(176deg,var(--text) 28%,color-mix(in srgb,var(--text) 52%,var(--muted)));
- -webkit-background-clip:text;background-clip:text;color:transparent}
+ -webkit-background-clip:text;background-clip:text;color:transparent;
+ /* a soft --bg halo on the glyphs keeps the headline legible over the sun/moon
+    WITHOUT any rectangular scrim that would cut a line across the body */
+ filter:drop-shadow(0 1px 1px var(--bg)) drop-shadow(0 0 14px var(--bg)) drop-shadow(0 0 26px var(--bg))}
 html[data-lang="zh"] .h h1{letter-spacing:0}
-.h p{color:var(--muted);font-size:clamp(14px,2vw,16px);margin:0 auto;max-width:560px;line-height:1.5;text-wrap:balance}
+.h p{color:var(--muted);font-size:clamp(14px,2vw,16px);margin:0 auto;max-width:560px;line-height:1.5;text-wrap:balance;
+ text-shadow:0 1px 2px var(--bg),0 0 10px var(--bg),0 0 20px var(--bg)}
 
 /* ===== glass + accent primitives ===== */
 .glass{position:relative;border-radius:16px;overflow:hidden;isolation:isolate;
@@ -286,16 +290,10 @@ html[data-lang="zh"] .gd-r-cd .l-zh,html[data-lang="zh"] .gd-r-txt .l-zh{display
  animation:sky-breathe 7.5s ease-in-out infinite}
 @keyframes sky-spin{to{transform:rotate(360deg)}}
 @keyframes sky-breathe{0%,100%{opacity:.6}50%{opacity:.95}}
-/* keep the header headline legible when the sun/moon glow drifts behind it */
+/* headline legibility over the sun/moon is handled by a soft --bg glyph halo on
+   the text itself (see .h h1 / .h p) — no backdrop scrim, so nothing draws an
+   edge across the celestial body */
 .h{position:relative}
-.h::before{content:'';position:absolute;z-index:-1;left:50%;top:-26px;transform:translateX(-50%);
- width:min(880px,95vw);height:calc(100% + 104px);pointer-events:none;
- /* vertical wash: invisible at the top (so it never cuts a hard line across the
-    moon/sun) and ramping to a fully opaque --bg behind the lower text — a soft
-    fade, not an edge. Sides feathered so there's no vertical seam either. */
- background:linear-gradient(180deg,transparent 0%,color-mix(in srgb,var(--bg) 20%,transparent) 32%,color-mix(in srgb,var(--bg) 72%,transparent) 66%,var(--bg) 100%);
- -webkit-mask:radial-gradient(116% 96% at 50% 46%,#000 60%,transparent 100%);
- mask:radial-gradient(116% 96% at 50% 46%,#000 60%,transparent 100%)}
 @media (prefers-reduced-motion: reduce){
  #sky-sun,#sky-moon{transition:none}
  #sky-sun::before,#sky-sun::after,#sky-moon::after{animation:none}}
