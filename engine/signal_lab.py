@@ -346,20 +346,28 @@ REGISTRY: list[dict] = [
          source="spvector-phase4.md", horizon="allocation",
          wired="not shipped"),
 
-    # ---- SCORED (cont.) — the clean earnings-momentum win ------------------
+    # ---- DISPLAY (cont.) — SUE: the shallow-window survivor deep history killed ----
     _row("SUE — standardized unexpected earnings (earnings momentum)",
-         "SUE — 标准化超预期盈利（盈利动量）", "US S&P1500", "scored",
-         why="The one clean free earnings-momentum win. Built from a new EDGAR quarterly-EPS "
-             "pipeline (on-disk EDGAR is annual-only) and the only POSITIVE factor that survives "
-             "BH-FDR in the leak-free PIT panel (IC +0.035, q=0.077). Scored as a standalone leg "
-             "on factors.html.",
-         why_zh="唯一干净的免费盈利动量胜出。基于新的 EDGAR 季度 EPS 管线（磁盘 EDGAR 仅年度）构建，"
-                "是无泄漏时点面板中唯一为正且通过 BH-FDR 的因子（IC +0.035，q=0.077）。作为 factors.html 的独立腿计分。",
-         source="factor-ic-scorecard.md / PR #35 / sue-deep-history-phase0.md", horizon="63d",
-         ic=0.0354, t_hac=2.34, q_fdr=0.0768, fdr_survivor=True,
-         wired="factors.html scored leg",
-         extra=[("re-validated 2023-2026", "IC 0.038, q 0.047, L/S Sharpe 1.45 (lone FDR survivor)"),
-                ("deep-history (2008+)", "price-blocked: EPS+PIT deep, closes only ~3y → needs S&P1500 backfill")]),
+         "SUE — 标准化超预期盈利（盈利动量）", "US S&P1500", "display",
+         why="Looked like the one clean free earnings-momentum win: the strongest positive "
+             "factor and lone BH-FDR survivor on the SHALLOW 2023-2025 price window (IC +0.038, "
+             "q 0.05, L/S Sharpe 1.45). Once the price panel was backfilled, a DEEP 2011-2026 "
+             "re-validation COLLAPSES it — IC +0.0006, HAC t 0.06, q 0.95 over 60 quarters: no "
+             "edge, does not survive deep history. DEMOTED from scored to earnings-momentum "
+             "context. The deep panel is survivorship-biased (an optimistic bound), so even this "
+             "≈0 is generous. The lesson the whole factor panel now carries: a ~2.5y window "
+             "over-credits a factor; the honest test is deep.",
+         why_zh="曾看似唯一干净的免费盈利动量胜出：在浅窗口（2023-2025）为最强正向因子且唯一通过 BH-FDR"
+                "（IC +0.038，q 0.05，多空夏普 1.45）。价格面板回填后，2011-2026 深度复核使其崩塌 —"
+                "60 个季度 IC +0.0006、HAC t 0.06、q 0.95：无边际，深度历史不通过。已从“已计分”降级为"
+                "盈利动量背景。深度面板含幸存者偏差（乐观上界），故连这个≈0 都偏高。整组因子由此得到的教训："
+                "约 2.5 年窗口会高估因子，诚实的检验是深度历史。",
+         source="sue-deep-history-phase0.md / factor-ic-scorecard.md", horizon="63d",
+         ic=0.0006, ic_ir=0.01, t_hac=0.065, q_fdr=0.948, hit=0.52, n=60, fdr_survivor=False,
+         wired="factors.html (display context — no longer scored)",
+         extra=[("shallow 2023-2025", "IC +0.038, q 0.05, L/S Sharpe 1.45 (lone survivor)"),
+                ("deep 2011-2026 (survivorship-biased)", "IC +0.0006, HAC t 0.06, q 0.95 — collapsed"),
+                ("caveat", "deep panel excludes delisted names → optimistic bound")]),
 
     # ---- DISPLAY-ONLY (cont.) — origin cross-asset / macro leaves ----------
     _row("Cross-asset TSMOM trend (managed-futures style)",
@@ -462,6 +470,10 @@ def build_scorecard() -> dict:
                        "rebalances": ft.get("rebalances"),
                        "median_universe": ft.get("median_universe"),
                        "leak_free": ft.get("leak_free"),
+                       "universe": ft.get("universe"),
+                       "survivorship_biased": ft.get("survivorship_biased"),
+                       "caveat": ft.get("caveat"),
+                       "price_span": ft.get("price_span"),
                        "collinearity": ft.get("collinearity")}
 
     # survivor names (+ sign) so the page's prose adapts to whichever branch's

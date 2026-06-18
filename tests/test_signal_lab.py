@@ -1,7 +1,8 @@
 """Signal Lab — the consolidated honest validation scorecard (engine/signal_lab.py)
 + the signal_lab.html.j2 page render. The page's whole value is honesty, so these
 tests guard the structure, the source-citation discipline, and the load-bearing
-honest negatives (no cross-sectional factor survives FDR; the graveyard is shown).
+honest negatives (at most a lone, survivorship-biased factor survives deep-history
+FDR — SUE collapsed; the graveyard is shown).
 """
 from __future__ import annotations
 
@@ -66,14 +67,21 @@ def test_factor_cross_section_is_leak_free_and_data_driven():
     assert p["factor_meta"].get("leak_free") is True
 
 
-def test_sue_is_a_scored_positive_fdr_survivor():
-    """On the production branch SUE is the one POSITIVE factor that survives FDR
-    and is wired as a scored leg — promoted out of the 'pending' tier."""
+def test_sue_demoted_to_display_on_deep_history():
+    """SUE was the lone FDR survivor on the SHALLOW 2023-2025 window; the deep
+    2011-2026 re-validation collapses its IC to ~0 (HAC t 0.06), so it is demoted
+    scored->display and is no longer flagged an FDR survivor. The page must say so."""
     p = _payload()
+    # no longer in the scored tier
     scored = next(t for t in p["tiers"] if t["key"] == "scored")
-    sue = next((r for r in scored["rows"] if "SUE" in r["name"]), None)
-    assert sue is not None and sue["fdr_survivor"] is True
-    assert sue["ic"] is not None and sue["ic"] > 0              # the clean positive win
+    assert not any("SUE" in r["name"] for r in scored["rows"]), "SUE must be demoted out of scored"
+    # now shown as display-only context, flagged not-a-survivor with a collapsed IC
+    display = next(t for t in p["tiers"] if t["key"] == "display")
+    sue = next((r for r in display["rows"] if "SUE" in r["name"]), None)
+    assert sue is not None, "SUE should be shown as display-only earnings-momentum context"
+    assert sue["fdr_survivor"] is False
+    assert sue["ic"] is not None and abs(sue["ic"]) < 0.01      # collapsed to ~0 on deep history
+    assert "deep" in sue["why"].lower() and "demoted" in sue["why"].lower()
     assert not any(t["key"] == "pending" for t in p["tiers"])  # nothing left pending
 
 
