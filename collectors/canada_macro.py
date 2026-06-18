@@ -21,8 +21,13 @@ import logging
 import pandas as pd
 import requests
 
-from collectors.base import Adapter
+from collectors.base import Adapter, is_connection_error
 from lib import config
+
+# Skip a source's remaining series after this many CONSECUTIVE connection failures
+# (timeout/refused — not a dead series id). Per-source so a down FRED frontend never
+# starves the healthy BoC/StatsCan series. Bounds an outage to ~a couple of minutes.
+_ABORT_AFTER_CONSECUTIVE_CONN_ERRORS = 3
 
 log = logging.getLogger(__name__)
 
@@ -40,7 +45,7 @@ class CanadaMacroAdapter(Adapter):
     def _fetch_boc(self, series: str) -> pd.DataFrame:
         url = f"{self.cfg['boc_base_url']}/{series}/json"
         r = self.http_get(url, params={"recent": self.cfg.get("boc_recent", 6000)},
-                          retries=self.cfg["retries"], timeout=30)
+                          retries=self.cfg["retries"], timeout=15)
         obs = (r.json() or {}).get("observations") or []
         rows = {}
         for o in obs:
@@ -62,7 +67,7 @@ class CanadaMacroAdapter(Adapter):
         last_exc: Exception | None = None
         for _ in range(self.cfg["retries"]):
             try:
-                r = requests.post(self.cfg["statcan_url"], json=body, timeout=30,
+                r = requests.post(self.cfg["statcan_url"], json=body, timeout=15,
                                   headers={"Content-Type": "application/json"})
                 r.raise_for_status()
                 payload = r.json()
@@ -88,7 +93,7 @@ class CanadaMacroAdapter(Adapter):
 
     def _fetch_fred(self, fid: str) -> pd.DataFrame:
         r = self.http_get(self.cfg["fred_base_url"], params={"id": fid},
-                          retries=self.cfg["retries"], timeout=30)
+                          retries=self.cfg["retries"], timeout=15)
         raw = pd.read_csv(io.StringIO(r.text))
         date_col = raw.columns[0]          # observation_date (or DATE on older series)
         val_col = raw.columns[1]
@@ -109,14 +114,26 @@ class CanadaMacroAdapter(Adapter):
         if "fred" in self.enabled:
             plan += [("fred", col, fid) for col, fid in self.cfg.get("fred_series", {}).items()]
 
+        dead_sources: set[str] = set()   # hosts proven unreachable this run -> skip
+        conn_errors: dict[str, int] = {}  # consecutive connection failures per source
         for source, col, ref in plan:
+            if source in dead_sources:
+                continue
             try:
                 fetcher = {"boc": self._fetch_boc, "statcan": self._fetch_statcan,
                            "fred": self._fetch_fred}[source]
                 df = fetcher(ref)
                 frames[col] = df.rename(columns={"_": col})
+                conn_errors[source] = 0
             except Exception as e:  # noqa: BLE001 — one series down can't break the plane
                 log.warning("canada_macro %s/%s (%s) failed: %s", source, col, ref, e)
+                conn_errors[source] = (conn_errors.get(source, 0) + 1
+                                       if is_connection_error(e) else 0)
+                if conn_errors[source] >= _ABORT_AFTER_CONSECUTIVE_CONN_ERRORS:
+                    dead_sources.add(source)
+                    log.error("canada_macro: %s host unreachable (%d consecutive "
+                              "connection failures) — skipping its remaining series",
+                              source, conn_errors[source])
 
         if not frames:
             raise RuntimeError("canada_macro: every series failed")
