@@ -504,6 +504,9 @@ eia:
     refinery_inputs: WCRRIUS2      # refiner net input of crude (kbbl/d) — days-of-supply denom
     gasoline_supplied: WGFUPUS2    # product supplied of finished gasoline (kbbl/d) — demand
     distillate_supplied: WDIUPUS2  # product supplied of distillate (kbbl/d) — freight/industrial demand
+    crude_imports: WCEIMUS2        # weekly crude oil imports (kbbl/d)
+    crude_exports: WCREXUS2        # weekly crude oil exports (kbbl/d)
+    crude_net_imports: WCRNTUS2    # weekly NET crude imports (kbbl/d) — SPR days-of-import-cover denom
   supply:                          # oil-page PHYSICAL BALANCE read (display-only, never scored)
     range_lookback_d: 1825         # 5y range for the stocks z / percentile (legacy)
     trend_window_d: 28             # ~4-week stocks/production change
@@ -524,8 +527,11 @@ jodi:
   retries: 3
   start_year: 2002                 # full-history floor (JODI begins Jan-2002)
   recent_years: 2                  # incremental runs pull the last N annual files
-  flow: CLOSTLV                    # closing stock level
-  products: [CRUDEOIL]             # crude only (PRIMARY file; refined products live in JODI's secondary db). Level reconciled to kbbl.
+  products: [CRUDEOIL]             # crude only (PRIMARY file; refined products live in JODI's secondary db)
+  flows:                           # flow_code -> {prefix for the stored series, unit kind}
+    CLOSTLV:  {prefix: crude,   unit: stock}   # closing stock LEVEL -> kbbl (KBBL else KTONS*CONVBBL)
+    TOTIMPSB: {prefix: imports, unit: rate}    # total crude imports -> kbd
+    TOTEXPSB: {prefix: exports, unit: rate}    # total crude exports -> kbd
   countries: [US, CN, JP, KR, IN, DE, FR, IT, ES, GB, NL, CA, SA, AE, BR, MX, AU]
 
 # =============================================================================

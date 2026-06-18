@@ -152,6 +152,21 @@ def _us_spr_vm(spr_kbbl: pd.Series, scfg: dict) -> dict:
     ri = sr.series(store.read("eia", "refinery_inputs"))
     if ri is not None:
         vm["days_cover"] = sr.days_of_cover(last_kbbl, float(ri.iloc[-1]))
+    # LIVE days of net-import cover (SPR ÷ EIA net crude imports) + US oil-trade context.
+    # Weekly net imports are very noisy (the US is near crude-trade balance), so smooth the
+    # denominator + the displayed trade rates with a trailing 1y (52-week) mean.
+    ni = sr.series(store.read("eia", "crude_net_imports"))
+    if ni is not None:
+        ni_avg = float(ni.tail(52).mean())
+        if ni_avg > 0:
+            vm["import_cover_days"] = sr.days_of_cover(last_kbbl, ni_avg)
+            vm["net_imports_mbd"] = round(ni_avg / 1000, 2)
+    imp, exp = sr.series(store.read("eia", "crude_imports")), sr.series(store.read("eia", "crude_exports"))
+    if imp is not None:
+        vm["imports_mbd"] = round(float(imp.tail(52).mean()) / 1000, 2)
+    if exp is not None:
+        vm["exports_mbd"] = round(float(exp.tail(52).mean()) / 1000, 2)
+    vm["trade_basis"] = True   # values are 1y averages
     return vm
 
 
@@ -159,9 +174,13 @@ def _countries_vm(scfg: dict, us_level_mb: float | None) -> list[dict]:
     rows = []
     for cfg in scfg["countries"]:
         iso = cfg["iso"]
-        jodi = None if cfg.get("no_jodi") else store.read("jodi", f"crude_{iso.lower()}")
+        no_jodi = cfg.get("no_jodi")
+        jodi = None if no_jodi else store.read("jodi", f"crude_{iso.lower()}")
+        imp = None if no_jodi else store.read("jodi", f"imports_{iso.lower()}")
+        exp = None if no_jodi else store.read("jodi", f"exports_{iso.lower()}")
         live = us_level_mb if cfg.get("live") == "spr" else None
-        rows.append(sr.merge_country_row(cfg, jodi, live_level_mb=live))
+        rows.append(sr.merge_country_row(cfg, jodi, live_level_mb=live,
+                                         jodi_imports=imp, jodi_exports=exp))
     return rows
 
 
