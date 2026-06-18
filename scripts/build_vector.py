@@ -733,7 +733,8 @@ def build_landing(site: Path, vm: dict) -> None:
                     _watchlist_state(), _etf_state(), _hk_state(), _forex_state(),
                     _bonds_state(), _us_stocks_state(), _strategies_state(), _crossasset_state(),
                     _market_stocks_state("china"), _market_stocks_state("hk"),
-                    canada=_canada_state(), intl=_intl_state(), ipo=_ipo_state())
+                    canada=_canada_state(), intl=_intl_state(), ipo=_ipo_state(),
+                    spr=_spr_state())
     (site / "index.html").write_text(hub)
     log.info("wrote landing hub -> index.html")
 
@@ -815,6 +816,20 @@ def _commodities_state() -> dict:
     except Exception:
         return {"label": "—", "date": "", "favored": [],
                 "present": (site / "commodities.html").exists()}
+
+
+def _spr_state() -> dict:
+    """Strategic Petroleum Reserves read for the hub card (written by build_spr, which
+    runs before build_vector). `present` gates the card so the hub still works if the
+    SPR page wasn't built this run."""
+    site = config.ROOT / config.load()["storage"]["site_dir"]
+    try:
+        d = json.loads((config.data_dir() / "spr" / "latest.json").read_text())
+        return {"label": d.get("label", "—"), "fill": d.get("us_fill_pct"),
+                "date": d.get("date", ""), "present": (site / "spr.html").exists()}
+    except Exception:
+        return {"label": "—", "fill": None, "date": "",
+                "present": (site / "spr.html").exists()}
 
 
 def _forex_state() -> dict:
@@ -1108,7 +1123,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
               strategies: dict | None = None, crossasset: dict | None = None,
               china_stocks: dict | None = None, hk_stocks: dict | None = None,
               canada: dict | None = None, intl: dict | None = None,
-              ipo: dict | None = None) -> str:
+              ipo: dict | None = None, spr: dict | None = None) -> str:
     # Bilingual via the i18n layer when present, identity fallback when absent.
     try:
         from engine.i18n import t as T, tr as TR
@@ -1169,6 +1184,20 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
     <p>{T('Regime, allocation & shock-detection for gold, silver, oil & copper.', '黄金、白银、原油与铜的周期、配置与冲击检测。')}</p>
     <span class="stat">{T(commodities['label'], TR(commodities['label']))}{(' · ' + fav) if fav else ''}</span>
     <div class="go">{T('Open Commodity Vector →', '打开大宗商品向量 →')}</div>
+  </a>""")
+    spr = spr or {"present": False}
+    spr_fill = spr.get("fill")
+    # f-string FIRST to flatten the Markup to a plain str — `Markup + str` would escape
+    # the inner T('full') span (see the bonds card note above).
+    spr_label = f"{T(spr.get('label', '—'), TR(spr.get('label', '—')))}"
+    spr_stat = spr_label + (f" · {spr_fill:.0f}% {T('full', '已注满')}" if spr_fill is not None else "")
+    spr_card = ("" if not spr.get("present") else f"""
+  <a class="c c--commodity" href="spr.html">
+    <div class="ico">\U0001F6E2️</div>
+    <h2>{T('Strategic Reserves', '战略石油储备')}</h2>
+    <p>{T('SPR levels for the US (live, weekly) and major countries — fill, days of cover & national crude stocks against oil prices.', '美国（实时，每周）及主要国家的战略石油储备水平——注满率、可供天数与国家原油库存对照油价。')}</p>
+    <span class="stat">{spr_stat}</span>
+    <div class="go">{T('Open Strategic Reserves →', '打开战略储备 →')}</div>
   </a>""")
     forex = forex or {"present": False}
     fx_risk = forex.get("risk", "")
@@ -1474,7 +1503,7 @@ body{{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
   <p>{T('Market regime dashboards across every major asset class — one mechanical, backtested engine.', '覆盖各大类资产的市场周期仪表盘——一套机械化、经回测的引擎。')}</p>
 </div>
 <div class="cards-hero">{us_hero}{china_hero}{hk_hero}</div>
-<div class="cards-sub">{canada_card}{intl_card}{bitcoin_card}{strategies_card}{ipo_card}{commodities_card}{forex_card}{bonds_card}{crossasset_card}{etf_card}{watchlist_card}</div>
+<div class="cards-sub">{canada_card}{intl_card}{bitcoin_card}{strategies_card}{ipo_card}{commodities_card}{spr_card}{forex_card}{bonds_card}{crossasset_card}{etf_card}{watchlist_card}</div>
 <div class="feed">
   <div class="feed-h"><h3>{T('Latest Alerts', '最新警报')}</h3>
     <span class="n">{n_major} {T('major · from both feeds ·', '条重要 · 来自两个数据源 ·')} <a href="vector.html#timeline">{T('full Vector timeline →', '完整向量时间线 →')}</a></span></div>
