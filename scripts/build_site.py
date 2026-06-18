@@ -2436,6 +2436,7 @@ def main() -> int:
     # only when macro_news.enabled. News NEVER feeds any score.
     macro_catalysts, macro_news_data, macro_brief_data = [], None, None
     event_strip, catalyst_line = [], ""
+    event_risk = {"show": False}
     macro_news_disclaimer = macro_news_disclaimer_zh = ""
     try:
         from engine import event_calendar as _ec
@@ -2447,6 +2448,10 @@ def main() -> int:
         # text line fed to the LLM brief below (context only; never a scored input)
         event_strip = _ec.high_impact_strip(horizon_days=_horizon)
         catalyst_line = _ec.imminent_line(horizon_days=_horizon)
+        # NON-DIRECTIONAL event-risk banner: known catalyst date x measured fragility.
+        # Never a dampener / never scored (see engine/event_risk.py discipline note).
+        from engine import event_risk as _erisk
+        event_risk = _erisk.snapshot(latest, events=event_strip, horizon_days=_horizon)
         macro_news_data = _mnews.macro_headlines()
         macro_news_disclaimer = _mnews.DISCLAIMER_TEXT
         macro_news_disclaimer_zh = _mnews.DISCLAIMER_TEXT_ZH
@@ -2540,6 +2545,7 @@ def main() -> int:
         latest=latest,
         macro_catalysts=macro_catalysts,
         event_strip=event_strip,
+        event_risk=event_risk,
         prediction_markets=prediction_markets,
         narrative_regime=narrative_regime,
         ndi=ndi,
