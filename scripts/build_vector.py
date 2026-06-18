@@ -1349,6 +1349,7 @@ html[data-lang="zh"] .gd-r-cd .l-zh,html[data-lang="zh"] .gd-r-txt .l-zh{display
    but earlier in tree order) and BEHIND all page content. Sun parks on a
    time-of-day arc in light mode; a breathing starfield + moon take over in dark. */
 #sky{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;--cs:clamp(120px,13vw,214px)}
+@media(max-width:560px){#sky{--cs:clamp(92px,26vw,124px)}}  /* smaller disc on phones so it stays fully on-screen */
 #sky-stars{position:absolute;inset:0;width:100%;height:100%;display:block}
 #sky-sun,#sky-moon{position:absolute;width:var(--cs);height:var(--cs);border-radius:50%;
  transform:translate(-50%,calc(-50% + 80vh));opacity:0;
