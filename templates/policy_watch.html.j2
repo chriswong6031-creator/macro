@@ -111,9 +111,20 @@
     </div>
     {% endfor %}
   </div>
-  <div class="callout warn">
-    <span class="co-h">⚠ {{ t('Unverified priors (not facts)', '未核实的先验（非事实）') }}</span>
-    {{ bl(intel.administration.unverified_priors.en, intel.administration.unverified_priors.zh) }}
+  <h3 class="sub">{{ t('Geopolitical theaters', '地缘政治战区') }}</h3>
+  <div class="cards">
+    {% for th in intel.administration.theaters %}
+    <div class="card">
+      <div class="cn">{{ bl(th.title_en, th.title_zh) }}</div>
+      <div class="cmeta">
+        <span class="b {{ 'b-fact' if th.basis.startswith('FACT') else 'b-prior' }}">{{ th.basis }}</span>
+        <span class="conf">{{ th.confidence }}</span>
+      </div>
+      <div class="cch">{{ bl(th.facts_en, th.facts_zh) }}</div>
+      <div class="crp"><b>{{ t('Realpolitik', '现实政治') }}:</b> {{ bl(th.realpolitik_en, th.realpolitik_zh) }}</div>
+      <div class="cch" style="margin-top:6px"><b>💰 {{ t('Capital', '资本') }}:</b> {{ bl(th.capital_en, th.capital_zh) }}</div>
+    </div>
+    {% endfor %}
   </div>
 
   <!-- ================= CAPITAL ROTATION ================= -->
