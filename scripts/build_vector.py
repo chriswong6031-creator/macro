@@ -1378,9 +1378,14 @@ html[data-lang="zh"] .gd-r-cd .l-zh,html[data-lang="zh"] .gd-r-txt .l-zh{display
 @keyframes sky-breathe{0%,100%{opacity:.6}50%{opacity:.95}}
 /* keep the header headline legible when the sun/moon glow drifts behind it */
 .h{position:relative}
-.h::before{content:'';position:absolute;z-index:-1;left:50%;top:48%;transform:translate(-50%,-50%);
- width:min(840px,96vw);height:180%;pointer-events:none;
- background:radial-gradient(ellipse at center,var(--bg) 0%,color-mix(in srgb,var(--bg) 66%,transparent) 50%,transparent 80%)}
+.h::before{content:'';position:absolute;z-index:-1;left:50%;top:-26px;transform:translateX(-50%);
+ width:min(880px,95vw);height:calc(100% + 104px);pointer-events:none;
+ /* vertical wash: invisible at the top (so it never cuts a hard line across the
+    moon/sun) and ramping to a fully opaque --bg behind the lower text — a soft
+    fade, not an edge. Sides feathered so there's no vertical seam either. */
+ background:linear-gradient(180deg,transparent 0%,color-mix(in srgb,var(--bg) 20%,transparent) 32%,color-mix(in srgb,var(--bg) 72%,transparent) 66%,var(--bg) 100%);
+ -webkit-mask:radial-gradient(116% 96% at 50% 46%,#000 60%,transparent 100%);
+ mask:radial-gradient(116% 96% at 50% 46%,#000 60%,transparent 100%)}
 @media (prefers-reduced-motion: reduce){
  #sky-sun,#sky-moon{transition:none}
  #sky-sun::before,#sky-sun::after,#sky-moon::after{animation:none}}
