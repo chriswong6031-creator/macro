@@ -433,6 +433,86 @@ def _risk_tax(overlay: dict | None, rec: dict) -> float:
     return _RISK_TAX_MAX * s * _aggressiveness(rec) if s > 0 else 0.0
 
 
+# ---- lottery / recent single-day spike penalty (T5; Bali-Cakici-Whitelaw) ----
+# VALIDATED (deep+PIT 18y, scripts/risk_penalty_phase0): a top-momentum name whose biggest
+# single-day pop in the last 21d is extreme has a NEGATIVE median fwd-21d return (-2.6%), ~2x
+# the drawdown, and a sub-coin-flip hit rate — the radioactive lottery tail. Deciles 1-8 are
+# flat, so it is a TAIL penalty (kicks in only at the extreme), never a positive add.
+_LOTTERY_WARN = 12.0       # recent 21d single-day max return % where the penalty begins
+_LOTTERY_HARD = 20.0       # >= this = radioactive one-day spike -> full penalty
+
+
+def _lottery_penalty(rec: dict) -> float:
+    mx = _f(rec.get("lottery_max"))
+    if mx is None or mx <= _LOTTERY_WARN:
+        return 0.0
+    return float(np.clip(-(mx - _LOTTERY_WARN) / (_LOTTERY_HARD - _LOTTERY_WARN) * 0.9, -1.0, 0.0))
+
+
+# ---- idiosyncratic RISK axis + suggested position size (T5) -----------------
+# Compose the per-name risk descriptors (each VALIDATED as risk, not return) into one 0..1
+# idio-risk, then a SUBTRACT-ONLY tax on the composite (never divide — comp_z is a signed z
+# near 0, so 1/risk would explode/invert and destroy the honest tiering) + a bounded 1/risk
+# suggested position size. Extension dominates (the only hard per-name DD finding); gex is a
+# noisy single-name sign so it is small. risk_idio re-orders WITHIN a tier, never alone flips
+# a leader to low (cap 0.5 < macro 0.8 < a typical band gap).
+_IDIO_W = {"ext": 0.38, "cycle": 0.27, "lottery": 0.20, "gex": 0.10, "fragility": 0.05}
+_IDIO_TAX_MAX = 0.5
+_KNIFE_R = {"none": 0.0, "watch": 0.2, "elevated": 0.55, "high": 0.85}
+
+
+def _risk_idio(rec: dict) -> tuple[float, dict]:
+    """0..1 idiosyncratic risk + the present components (renormalized over what is present)."""
+    comps: dict[str, float] = {}
+    ext = rec.get("ext") or {}
+    ez = _f(ext.get("ext_z")); pv = _f((rec.get("tech") or {}).get("pct_vs_200dma"))
+    if ez is not None or pv is not None:
+        rex = max(_clip01((ez - 0.5) / 1.5) if ez is not None else 0.0,
+                  _clip01((pv - 25.0) / 20.0) if pv is not None else 0.0)
+        if ext.get("grade") == _PARABOLIC:
+            rex = max(rex, 0.9)
+        elif ext.get("grade") == "stretched":
+            rex = max(rex, 0.5)
+        comps["ext"] = rex
+    kn = (rec.get("ladder") or {}).get("bc_knife")
+    if kn in _KNIFE_R:
+        comps["cycle"] = _KNIFE_R[kn]
+    lm = _f(rec.get("lottery_max"))
+    if lm is not None:
+        comps["lottery"] = _clip01((lm - _LOTTERY_WARN) / (_LOTTERY_HARD - _LOTTERY_WARN))
+    gx = (rec.get("gex") or {}).get("gamma_regime")
+    if gx in ("short", "long"):
+        comps["gex"] = 0.6 if gx == "short" else 0.0
+    if rec.get("fragility"):
+        comps["fragility"] = 0.5
+    if not comps:
+        return 0.0, {}
+    num = sum(_IDIO_W[k] * v for k, v in comps.items())
+    den = sum(_IDIO_W[k] for k in comps)
+    return _clip01(num / den), {k: round(v, 2) for k, v in comps.items()}
+
+
+_SIZE_BUCKETS = [(0.66, "quarter", 25), (0.40, "half", 50), (0.20, "three-quarter", 75)]
+
+
+def _suggested_size(risk_total: float, *, blocked: bool, market: str,
+                    validated: bool) -> dict:
+    """Bounded, monotone-decreasing-in-risk position-size guidance. All gates SUBTRACT from
+    full; none inflate. Honest: 'context' (risk-budgeting), not a claimed alpha bet."""
+    if blocked:
+        return {"bucket": "avoid", "pct": 0, "risk": round(risk_total, 2),
+                "note": "cycle/extension blocks a buy"}
+    bucket, pct = "full", 100
+    for thr, b, p in _SIZE_BUCKETS:
+        if risk_total >= thr:
+            bucket, pct = b, p
+            break
+    if market.upper() == "HK" and pct > 50:          # HK is a screen, never a full buy
+        bucket, pct = "half", 50
+    return {"bucket": bucket, "pct": pct, "risk": round(risk_total, 2),
+            "tier": "validated" if validated else "context"}
+
+
 def _axis_entry(rec: dict) -> tuple[float | None, list[str], bool]:
     """Entry/timing axis + whether the cycle/extension BLOCKS a buy (caps the axis)."""
     present: list[str] = []
@@ -460,6 +540,9 @@ def _axis_entry(rec: dict) -> tuple[float | None, list[str], bool]:
     sp = _stretch_penalty(_f(tech.get("pct_vs_200dma")))   # absolute distance above the 200dma
     if sp is not None and sp < 0:
         parts.append(sp); present.append("over-200dma")
+    lp = _lottery_penalty(rec)                             # recent radioactive one-day spike
+    if lp < 0:
+        parts.append(lp); present.append("lottery-spike")
 
     z = _mean_avail(parts)
     # hard-block: downtrend / topping / exit / avoid / parabolic / OVER-EXTENDED (a chase)
@@ -704,8 +787,13 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
     overlay = ctx.get("risk_overlay") or {}
     stress = _macro_stress(overlay)
     rtax = _risk_tax(overlay, rec)
-    if comp_z is not None and rtax > 0:
-        comp_z = comp_z - rtax
+    # idiosyncratic RISK axis (T5): a second subtract-only haircut from the per-name risk
+    # descriptors (extension / knife / lottery / gex / fragility). Re-orders WITHIN a tier.
+    idio, idio_comps = _risk_idio(rec)
+    idio_tax = _IDIO_TAX_MAX * idio
+    if comp_z is not None:
+        comp_z = float(np.clip(comp_z - rtax - idio_tax, -_AXIS_Z_CLIP, _AXIS_Z_CLIP))
+    risk_total = max(idio, stress * _aggressiveness(rec))   # worst-of (distinct failure modes)
 
     # score: prefer the within-market percentile passed by the panel builder; else
     # the logistic skin (per-name fallback, flagged approximate).
@@ -727,9 +815,14 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
         "score": score,
         "band": band["band"], "band_en": band["en"], "band_zh": band["zh"],
         "composite_z": round(comp_z, 3) if comp_z is not None else None,
-        "risk": ({"stress": round(stress, 2), "tax": round(rtax, 3),
-                  "aggressiveness": round(_aggressiveness(rec), 2),
-                  "drivers": overlay.get("drivers")} if stress > 0 else None),
+        "risk": {"total": round(risk_total, 2), "idio": round(idio, 2),
+                 "components": idio_comps or None,
+                 "macro_stress": round(stress, 2) if stress > 0 else None,
+                 "macro_tax": round(rtax, 3) if rtax > 0 else None,
+                 "idio_tax": round(idio_tax, 3) if idio_tax > 0 else None,
+                 "drivers": overlay.get("drivers") if stress > 0 else None},
+        "size": _suggested_size(risk_total, blocked=blocked, market=m,
+                                validated=bool(ctx.get("gate_go"))),
         "verdict": vb["verdict"], "verdict_zh": vb["verdict_zh"],
         "drivers": vb["drivers"], "cautions": vb["cautions"],
         "trust_tier": trust_tier(m, bool(ctx.get("gate_go"))),
@@ -786,7 +879,8 @@ def normalize_rec(record: dict, market: str, *, rs_z: float | None = None,
                   quality_context_z: float | None = None,
                   fund_priors_z: float | None = None,
                   sector_rs: dict | None = None, basket: dict | None = None,
-                  asym: dict | None = None, ext: dict | None = None) -> dict:
+                  asym: dict | None = None, ext: dict | None = None,
+                  lottery_max: float | None = None) -> dict:
     """Build the normalized ``rec`` the engine consumes from a per-stock library
     ``record`` (the dict written to ``<mkt>stockdata/<T>.json``) plus the
     cross-sectional legs the build joins in. Missing legs stay absent (None) —
@@ -811,7 +905,7 @@ def normalize_rec(record: dict, market: str, *, rs_z: float | None = None,
         "factor": {"value": legs.get("value"), "profitability": legs.get("profitability"),
                    "quality": legs.get("quality"), "low_vol": legs.get("low_vol")} if legs else None,
         "quality_context_z": quality_context_z,
-        "sue": sue, "sue_fresh_days": sue_fresh_days,
+        "sue": sue, "sue_fresh_days": sue_fresh_days, "lottery_max": lottery_max,
         "insider_bps": insider_bps, "revision_z": revision_z,
         "fund_priors": {"z": fund_priors_z} if fund_priors_z is not None else None,
         "asym": asym,                      # downside-asymmetry DISPLAY read (risk shape, not scored)

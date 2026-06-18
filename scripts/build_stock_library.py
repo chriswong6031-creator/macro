@@ -668,15 +668,18 @@ def main() -> int:
     # grade), wired in EXACTLY as build_discovery does — this is what re-arms the validated
     # parabolic/stretched penalty in stock_score._axis_entry that was dead on this board
     # (every standout previously carried ext=None, so a +35%-over-200dma chase got no brake).
+    ext_map, lottery_map = {}, {}
     try:
         _ext_closes = pd.concat({t: c for (t, c, *_rest) in uni}, axis=1).sort_index()
         ext_map = extension_signals(_ext_closes)
-        log.info("extension read on %d names (%d parabolic, %d stretched)", len(ext_map),
-                 sum(1 for v in ext_map.values() if v.get("grade") == "parabolic"),
-                 sum(1 for v in ext_map.values() if v.get("grade") == "stretched"))
+        # recent single-day MAX return % over the last 21d — the lottery/spike penalty (T5):
+        # a top name with a radioactive one-day pop (>~18%) has a NEGATIVE fwd median + ~2x DD.
+        lottery_map = (_ext_closes.pct_change().tail(21).max() * 100.0).round(2).to_dict()
+        log.info("extension read on %d names (%d parabolic, %d stretched) · lottery on %d",
+                 len(ext_map), sum(1 for v in ext_map.values() if v.get("grade") == "parabolic"),
+                 sum(1 for v in ext_map.values() if v.get("grade") == "stretched"), len(lottery_map))
     except Exception as e:  # noqa: BLE001 — additive; absence just means no extension brake
-        log.warning("extension read failed (%s) — standouts run without the stretch brake", e)
-        ext_map = {}
+        log.warning("extension/lottery read failed (%s) — standouts run without the brakes", e)
     # Heaviest stretch of the whole site build: ~1500 independent _one() calls.
     # Fan them across processes (CI runner = 4 vCPU); the cheap post-processing
     # below (shared-map merges, setup scoring, JSON writes) stays serial and in
@@ -763,7 +766,8 @@ def main() -> int:
             rec["ext"] = ext_map[ticker]            # re-arms the parabolic/stretched entry brake
         norm = stock_score.normalize_rec(
             rec, "US", sue=sue_z.get(ticker), sue_fresh_days=sue_fresh.get(ticker),
-            insider_bps=ins_bps, revision_z=revision_z.get(ticker), basket=basket_tw.get(ticker))
+            insider_bps=ins_bps, revision_z=revision_z.get(ticker), basket=basket_tw.get(ticker),
+            lottery_max=lottery_map.get(ticker))
         prof = stock_score.conviction_profile(
             norm, "US", ctx={"as_of": alpha_asof, "gate_go": gate_go,
                              "regime": {"calm": calm}, "risk_overlay": risk_overlay})
@@ -829,14 +833,20 @@ def main() -> int:
         scored = [(t, p) for t, p in profiles.items()
                   if p.get("composite_z") is not None and t in row_by_t]
         scored.sort(key=lambda kv: -(kv[1]["composite_z"]))
-        # A name whose cycle/extension state BLOCKS a buy (downtrend / parabolic / over-
-        # extended chase like CASY) must NEVER appear in the BUY slice — its own verdict says
-        # "don't chase". Route strong-but-blocked names to a separate WATCH list ("leaders —
-        # wait for a pullback") so they are surfaced honestly, not sold as buys. (China's board
-        # does the same: it ranks buyable setups, not extended leaders.)
-        buyable = [(t, p) for t, p in scored if not p.get("cycle_blocked")]
+        # ENTRY-QUALITY GATE (China's discipline, T4-validated: poor-entry top-momentum names
+        # realize -0.7pp/mo and a -58% vs -41% worst drawdown). A name is BUYABLE only if its
+        # cycle/extension does NOT block (downtrend / parabolic / over-extended chase like CASY)
+        # AND its entry is constructive (entry_z > 0; an ABSENT entry is not "poor", so it
+        # stays). Strong-but-not-buyable names go to a WATCH list ("leaders — wait for a
+        # pullback") so they are surfaced honestly, never sold as buys.
+        def _buyable(p):
+            if p.get("cycle_blocked"):
+                return False
+            ez = ((p.get("axes") or {}).get("entry") or {}).get("z")
+            return ez is None or ez > 0
+        buyable = [(t, p) for t, p in scored if _buyable(p)]
         watch = [(t, p) for t, p in scored
-                 if p.get("cycle_blocked") and (p.get("composite_z") or 0) > 0]
+                 if not _buyable(p) and (p.get("composite_z") or 0) > 0]
         wide = {"as_of": alpha_asof, "rank_by": ("edge-validated" if gate_go else "conviction"),
                 "gate_go": gate_go,
                 "buy": [row_by_t[t] for t, _ in buyable[:120]],

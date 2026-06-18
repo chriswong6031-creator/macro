@@ -400,7 +400,11 @@ def test_calm_overlay_is_a_noop():
     rec = _rec()
     base = ss.conviction_profile(rec, "US")
     calm = ss.conviction_profile(rec, "US", ctx={"risk_overlay": {"stress": 0.0}})
-    assert base["composite_z"] == calm["composite_z"] and calm["risk"] is None
+    # a calm MACRO tape applies no macro tax; the composite is unchanged and the macro
+    # part of the risk block is null (the risk block itself always exists — it also carries
+    # the per-name idiosyncratic risk).
+    assert base["composite_z"] == calm["composite_z"]
+    assert calm["risk"]["macro_stress"] is None and calm["risk"]["macro_tax"] is None
 
 
 def test_stress_vetoes_high_conviction_on_a_chase():
@@ -415,3 +419,48 @@ def test_stress_vetoes_high_conviction_on_a_chase():
     assert "high-conviction" not in hot["verdict"].lower()       # stress -> vetoed
     assert "elevated-risk" in hot["verdict"].lower()
     assert hot["composite_z"] < calm["composite_z"]              # and taxed
+
+
+# --- reshape T5: lottery penalty + idiosyncratic risk axis + suggested size ----
+def test_lottery_penalty_tail_only():
+    assert ss._lottery_penalty({"lottery_max": 8.0}) == 0.0     # calm: no penalty
+    assert ss._lottery_penalty({"lottery_max": 12.0}) == 0.0    # at warn
+    assert ss._lottery_penalty({"lottery_max": 16.0}) < 0       # spike: penalised
+    assert ss._lottery_penalty({"lottery_max": 30.0}) <= -0.9   # radioactive: hard
+    assert ss._lottery_penalty({}) == 0.0                       # absent -> no penalty
+
+
+def test_lottery_spike_demotes_entry():
+    base = {"alpha": 1.5, "ladder": {"state": "RALLY ON", "entry": {"urgency": "now"}},
+            "tech": {"off_52w_high_pct": -5.0, "rsi14": 58.0, "pct_vs_200dma": 12.0}}
+    z0, p0, _ = ss._axis_entry(base)
+    z1, p1, _ = ss._axis_entry({**base, "lottery_max": 28.0})     # +28% one-day pop
+    assert z1 < z0 and "lottery-spike" in p1
+
+
+def test_risk_idio_chase_vs_clean():
+    chase = {"ext": {"ext_z": 2.4, "grade": "parabolic"}, "tech": {"pct_vs_200dma": 40.0},
+             "lottery_max": 25.0}
+    clean = {"ext": {"ext_z": 0.2}, "tech": {"pct_vs_200dma": 8.0}, "lottery_max": 3.0}
+    ic, comps = ss._risk_idio(chase)
+    ic2, _ = ss._risk_idio(clean)
+    assert ic > 0.6 and ic2 < 0.2 and "ext" in comps
+
+
+def test_idio_tax_reorders_risky_below_clean():
+    # two equal-edge names; the over-extended/spiking one ranks BELOW the clean one after tax
+    edge = {"sue": 2.0, "ladder": {"state": "RALLY ON", "entry": {"urgency": "soon"}},
+            "tech": {"off_52w_high_pct": -8.0, "rsi14": 55.0}}
+    clean = ss.conviction_profile({**edge, "tech": {**edge["tech"], "pct_vs_200dma": 8.0}}, "US")
+    risky = ss.conviction_profile({**edge, "tech": {**edge["tech"], "pct_vs_200dma": 22.0},
+                                   "lottery_max": 18.0}, "US")
+    assert risky["composite_z"] < clean["composite_z"]
+    assert risky["risk"]["idio"] > clean["risk"]["idio"]
+
+
+def test_suggested_size_monotone_and_gated():
+    assert ss._suggested_size(0.05, blocked=False, market="US", validated=False)["bucket"] == "full"
+    assert ss._suggested_size(0.5, blocked=False, market="US", validated=False)["bucket"] == "half"
+    assert ss._suggested_size(0.8, blocked=False, market="US", validated=False)["bucket"] == "quarter"
+    assert ss._suggested_size(0.05, blocked=True, market="US", validated=False)["bucket"] == "avoid"
+    assert ss._suggested_size(0.05, blocked=False, market="HK", validated=False)["pct"] <= 50
