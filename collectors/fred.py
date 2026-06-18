@@ -34,6 +34,11 @@ DEFAULT_VINTAGE_SERIES = [
     "RECPROUSM156N", "THREEFYTP10", "SAHMREALTIME",         # recession-risk model series
     "STICKCPIM157SFRBATL", "CORESTICKM157SFRBATL",          # inflation nowcasts (revised)
     "FLEXCPIM157SFRBATL", "MEDCPIM158SFRBCLE",
+    "CPIAUCSL", "CPILFESL", "PCEPI", "PCEPILFE",            # official CPI/PCE releases (revised; core PCE = Fed target)
+    "PPIFIS", "PPIFES", "ECIALLCIV", "ECIWAG",             # PPI + ECI wage growth (revised)
+    # DEFERRED — the Cleveland expected-inflation curve (EXPINF*) is a MODEL whose
+    # whole history re-revises each release (like NFCI below), so it is excluded from
+    # the bounded initial-release matrix.
     "STLFSI4",                                             # St. Louis financial-stress (revised)
     "UMCSENT", "MICH",                                      # surveys (revised)
     "ICSA", "IC4WSA", "CCSA",                              # jobless claims (revised the following week)
