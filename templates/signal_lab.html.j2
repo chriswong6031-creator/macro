@@ -218,14 +218,16 @@
     <span class="bl">{{ t(
       'The honest centerpiece. Quarterly cross-sectional rank-IC of each factor z-score vs the '
       ~ (factor_meta.horizon_d or 63) ~ 'd forward return, fully point-in-time (EDGAR + prices '
-      'truncated to as-of). '
+      'truncated to as-of), over ' ~ (factor_meta.span or '—') ~ ' (' ~ (factor_meta.rebalances or 0) ~ ' quarters). '
       ~ ('After the PIT fix, NONE survive Benjamini-Hochberg FDR at 10% — exactly the cost of refusing to look ahead.'
          if not surv else
-         ('Only ' ~ (snames|join(', ')) ~ ' survive BH-FDR at 10% — and mind the IC sign: a survivor with a NEGATIVE IC is anti-predictive, not tradeable.')),
-      '诚实的核心。每个因子 z 分对 ' ~ (factor_meta.horizon_d or 63) ~ '日前瞻收益的季度横截面秩相关 IC，完全时点（EDGAR 与价格截断至当时）。'
+         ('Only ' ~ (snames|join(', ')) ~ ' survive BH-FDR at 10% — and mind the IC sign: a survivor with a NEGATIVE IC is anti-predictive, not tradeable.'))
+      ~ (' This is the DEEP-history re-test: the price panel is survivorship-biased (delisted names absent → an optimistic bound), so a lone, marginal survivor is shown — not promoted to a scored leg. SUE, the shallow-2023-2025 survivor, collapses to IC≈0 here — the data-level reason it was demoted.' if factor_meta.survivorship_biased else ''),
+      '诚实的核心。每个因子 z 分对 ' ~ (factor_meta.horizon_d or 63) ~ '日前瞻收益的季度横截面秩相关 IC，完全时点（EDGAR 与价格截断至当时），区间 ' ~ (factor_meta.span or '—') ~ '（' ~ (factor_meta.rebalances or 0) ~ ' 个季度）。'
       ~ ('时点修正后，无一通过 10% 的 Benjamini-Hochberg FDR — 这正是拒绝前视的代价。'
          if not surv else
-         ('仅 ' ~ (snames|join(', ')) ~ ' 通过 10% 的 BH-FDR — 注意 IC 符号：负 IC 的“通过者”是反预测，不可交易。'))) }}</span>
+         ('仅 ' ~ (snames|join(', ')) ~ ' 通过 10% 的 BH-FDR — 注意 IC 符号：负 IC 的“通过者”是反预测，不可交易。'))
+      ~ ('这是深度历史复检：价格面板含幸存者偏差（已退市名缺失 → 乐观上界），故仅展示个别勉强通过者，并不据此计分。浅窗口（2023-2025）的幸存者 SUE 在此崩塌至 IC≈0 — 这正是其被降级的数据层面原因。' if factor_meta.survivorship_biased else '')) }}</span>
   </div>
   <div class="scroll"><table>
     <thead><tr>

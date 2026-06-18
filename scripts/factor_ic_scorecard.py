@@ -13,8 +13,15 @@ winners?" — and, post point-in-time fix, the spreads are expected to look weak
 than a naive latest-data backtest (that gap IS the look-ahead/survivorship bias
 being removed). Judge survivors against ~0 (an AQR/Fama-French-style null).
 
-Run: .venv/bin/python -m scripts.factor_ic_scorecard [--quick] [--horizon 63] [--start 2011]
+Run: .venv/bin/python -m scripts.factor_ic_scorecard [--quick] [--deep] [--horizon 63] [--start 2011]
   --quick : only the last 12 quarters (fast verification); full grid is offline/weekly.
+  --deep  : judge the whole zoo on the DEEP-history close panel (~2011-2026, data/edgar/
+            sue_deep_closes.parquet) instead of the ~3y rolling breadth cache, so the IC /
+            IC-IR / HAC-t / BH-FDR reflect >10y, not 2.5y. The deep panel is SURVIVORSHIP-
+            BIASED (delisted names absent → an optimistic bound) and FINRA short-interest
+            is dropped (no point-in-time history). Skips writing (keeps the committed deep
+            scorecard) when the offline deep cache is not present — so CI never clobbers it
+            with a shallow run. Backfill the cache with `python -m scripts.sue_deep_phase0`.
 """
 from __future__ import annotations
 
@@ -56,12 +63,22 @@ def quarter_grid(closes: pd.DataFrame, start_year: int, horizon: int) -> list:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--quick", action="store_true", help="last 12 quarters only")
+    ap.add_argument("--deep", action="store_true",
+                    help="judge the zoo on the deep-history (survivorship-biased) close panel")
     ap.add_argument("--horizon", type=int, default=63, help="forward return window (trading days)")
     ap.add_argument("--start", type=int, default=2011)
     args = ap.parse_args()
 
-    closes = _closes()
+    universe = "deep" if args.deep else "broad"
+    closes = _closes(universe)
     if closes.empty:
+        if args.deep:
+            # The deep close panel is an offline artifact (data/edgar/sue_deep_closes.parquet),
+            # not rebuilt in daily CI. Absent → keep the committed deep scorecard rather than
+            # overwriting it with a shallow run. Backfill with scripts.sue_deep_phase0.
+            print("deep close panel absent — keeping the committed deep ic_scorecard.json "
+                  "(backfill with: python -m scripts.sue_deep_phase0)")
+            return 0
         print("no close caches — run breadth collectors first")
         return 1
     fwd = closes.pct_change(args.horizon, fill_method=None).shift(-args.horizon)  # forward return per date
@@ -77,7 +94,7 @@ def main() -> int:
     n_names: list[int] = []
     last_table = None
     for d in grid:
-        fac = compute_factors(asof=d)
+        fac = compute_factors(asof=d, universe=universe)
         if not fac or not fac.get("table"):
             continue
         t = pd.DataFrame(fac["table"]).set_index("ticker")
@@ -115,14 +132,29 @@ def main() -> int:
             pd.to_numeric, errors="coerce")
         coll = overlap_diagnostics(legs)   # raw vs orthogonalized factor overlap + VIF
 
+    note = ("Point-in-time (EDGAR panel + prices truncated to asof); IC = quarterly "
+            "cross-sectional rank corr of factor z vs forward return; t_hac = Newey-West; "
+            "q_fdr = Benjamini-Hochberg across the factor panel. Survivors judged vs ~0.")
+    caveat = None
+    if args.deep:
+        caveat = ("Deep ~2011-2026 re-test on a SURVIVORSHIP-BIASED price panel: delisted "
+                  "names are absent (yahoo serves only currently-listed), so this is an "
+                  "OPTIMISTIC bound — a clean test needs delisting-recovered prices. FINRA "
+                  "short-interest is omitted (no point-in-time history). Fundamentals stay "
+                  "point-in-time from the EDGAR panel. Compare to the shallow 2023-2025 read: "
+                  "factors that survived on ~2.5y (notably SUE) weaken on deep history.")
+        note = caveat + " " + note
     report = {
         "horizon_d": args.horizon, "rebalances": len(grid),
         "span": f"{grid[0].date()}..{grid[-1].date()}",
         "median_universe": int(np.median(n_names)) if n_names else 0,
-        "leak_free": True, "factors": rows, "collinearity": coll,
-        "note": ("Point-in-time (EDGAR panel + prices truncated to asof); IC = quarterly "
-                 "cross-sectional rank corr of factor z vs forward return; t_hac = Newey-West; "
-                 "q_fdr = Benjamini-Hochberg across the factor panel. Survivors judged vs ~0."),
+        "leak_free": True,
+        "universe": universe,
+        "survivorship_biased": bool(args.deep),
+        "price_span": f"{closes.index.min().date()}..{closes.index.max().date()}",
+        "factors": rows, "collinearity": coll,
+        "caveat": caveat,
+        "note": note,
     }
     outdir = config.data_dir() / "edgar"
     outdir.mkdir(parents=True, exist_ok=True)
@@ -130,7 +162,8 @@ def main() -> int:
     _write_md(report)
 
     order = sorted(rows, key=lambda c: -(rows[c].get("ic_ir_ann") or -9))
-    print(f"\n=== Factor IC scorecard (leak-free) — {report['span']}, {len(grid)} quarterly "
+    tag = "DEEP/survivorship-biased" if args.deep else "shallow breadth cache"
+    print(f"\n=== Factor IC scorecard (leak-free, {tag}) — {report['span']}, {len(grid)} quarterly "
           f"rebalances, fwd {args.horizon}d, ~{report['median_universe']} names ===")
     print(f"{'factor':14s} {'meanIC':>7} {'IC-IR':>6} {'ICIRann':>8} {'t_HAC':>6} {'p':>6} "
           f"{'qFDR':>6} {'hit':>5} {'n':>3}")
@@ -145,10 +178,12 @@ def main() -> int:
 
 
 def _write_md(report: dict) -> None:
+    depth = ("**deep ~2011-2026, survivorship-biased**" if report.get("survivorship_biased")
+             else "shallow breadth cache (~3y)")
     L = ["# Factor IC scorecard (leak-free, point-in-time)", "",
          f"Span {report['span']} · {report['rebalances']} quarterly rebalances · "
          f"forward {report['horizon_d']}d · ~{report['median_universe']} names · "
-         f"point-in-time (no look-ahead).", "",
+         f"price panel {depth} · point-in-time (no look-ahead).", "",
          "IC = cross-sectional rank correlation of each factor's z-score vs the forward "
          "return, per rebalance. `t_HAC` is Newey-West (overlapping windows autocorrelate "
          "the IC series); `q_FDR` is Benjamini-Hochberg across the factor panel. Judge "

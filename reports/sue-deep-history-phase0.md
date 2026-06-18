@@ -4,6 +4,14 @@
 (survivorship-**optimistic**) collapses the cross-sectional IC to ~zero. **Recommend demoting
 SUE from `scored`** and reviewing the `factors.html` production leg.
 
+> **Update — now shipped at the DATA level.** The demotion is done (SUE → `display`), and the
+> whole factor zoo's `ic_scorecard.json` is now regenerated on this deep panel via
+> `scripts/factor_ic_scorecard.py --deep` (`engine.equity_factors._closes("deep")`): span
+> 2011-2026, 60 quarters, ~1,154 names. SUE no longer surfaces as an FDR survivor in the live
+> panel (IC ≈ 0); the lone, marginal, survivorship-biased survivor is now `payout` (q 0.072) —
+> shown, not promoted. FINRA short-interest is dropped from the deep panel (no point-in-time
+> history). So `factors.html` / `signal_lab.html` are honest at the data level, not just in prose.
+
 `DATA_SIGNAL_EXPANSION_2026.md #5` called the deep + PIT-survivorship re-validation "the
 honest follow-up." This run did it: `scripts/sue_deep_phase0.py` backfilled max-history
 adjusted closes for the 1,317-name EPS universe (1,313 fetched, 1,113 with >10y →
