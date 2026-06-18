@@ -395,6 +395,44 @@ def _overextended(rec: dict) -> bool:
     return pv is not None and pv >= _STRETCH_BLOCK
 
 
+# ---- macro/event RISK OVERLAY (T3) -----------------------------------------
+# A high-VIX / turning-point / drawdown-risk tape should tax a CHASE — but NOT a washed-out
+# reversal (that is exactly what works in stress, China's edge). So the haircut is
+# stress × aggressiveness: it punishes buying an extended momentum leader INTO a stressed
+# tape, and barely touches a constructive/washed-out name. Two-sided on sector (unlike the
+# legacy MRS tax that exempted defensive leaders). `stress=0` (calm tape) => zero effect, so
+# the overlay is silent in a normal week and only bites when the macro tape is genuinely hot.
+_RISK_TAX_MAX = 0.8        # max composite_z subtracted from a full-stress, full-chase name
+_RISK_VETO_STRESS = 0.5    # stress >= this AND aggressive => verb can't read "high-conviction"
+
+
+def _clip01(x: float | None) -> float:
+    return float(np.clip(x if x is not None else 0.0, 0.0, 1.0))
+
+
+def _aggressiveness(rec: dict) -> float:
+    """How much this name is a CHASE (what a stressed tape punishes): distance above the
+    200dma + own-history extension grade. 0 = constructive / washed-out, 1 = parabolic."""
+    pv = _f((rec.get("tech") or {}).get("pct_vs_200dma"))
+    agg = _clip01(((pv or 0.0) - 10.0) / 30.0)     # +10% over 200dma -> 0, +40% -> 1
+    grade = (rec.get("ext") or {}).get("grade")
+    if grade == _PARABOLIC:
+        agg = max(agg, 0.9)
+    elif grade == "stretched":
+        agg = max(agg, 0.5)
+    return _clip01(agg)
+
+
+def _macro_stress(overlay: dict | None) -> float:
+    return _clip01(_f((overlay or {}).get("stress")))
+
+
+def _risk_tax(overlay: dict | None, rec: dict) -> float:
+    """Subtract-only composite haircut = _RISK_TAX_MAX · macro_stress · aggressiveness."""
+    s = _macro_stress(overlay)
+    return _RISK_TAX_MAX * s * _aggressiveness(rec) if s > 0 else 0.0
+
+
 def _axis_entry(rec: dict) -> tuple[float | None, list[str], bool]:
     """Entry/timing axis + whether the cycle/extension BLOCKS a buy (caps the axis)."""
     present: list[str] = []
@@ -500,10 +538,12 @@ def _tier(z: float | None) -> str:
     return "flat"
 
 
-def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool) -> dict:
+def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool,
+            risk_stress: float = 0.0) -> dict:
     """Map the axes + cycle state to a single honest headline verb (EN + 中文),
     plus drivers/cautions. First-match-wins; the cycle block and accounting/parabolic
-    flags OVERRIDE any 'Buy' wording so a card never says BUY next to EXIT."""
+    flags OVERRIDE any 'Buy' wording so a card never says BUY next to EXIT. A stressed
+    macro tape (risk_stress) vetoes a 'high-conviction' verb on an AGGRESSIVE entry."""
     m = market.upper()
     sel = axes.get("selection", {}).get("z")
     ent = axes.get("entry", {}).get("z")
@@ -536,6 +576,9 @@ def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool) -> dict:
         _pv = _f((rec.get("tech") or {}).get("pct_vs_200dma"))
         cautions.append(f"extended +{_pv:.0f}% over 200dma — chasing" if _pv is not None
                         else "extended over 200dma — chasing")
+    _risk_veto = (risk_stress >= _RISK_VETO_STRESS and _aggressiveness(rec) >= 0.5)
+    if _risk_veto:
+        cautions.append("stressed tape — size down / confirm")
     if cycle_blocked:
         cautions.append("cycle: " + (lad.get("label") or state or "weak tape"))
 
@@ -572,6 +615,9 @@ def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool) -> dict:
     # ---- the constructive cases --------------------------------------------
     ent_ok = (ent is not None and ent > 0)
     if sel_t == "high" and ent_ok:
+        if _risk_veto:                         # stressed tape vetoes a high-conviction CHASE
+            return _v("Strong name · elevated-risk tape — smaller size, confirm",
+                      "强势个股 · 高风险行情 — 减小仓位并确认", drivers, cautions)
         if _tier(qz) == "low":                 # strong edge but weak fundamentals — flag the risk
             cautions.append("weak fundamentals")
             return _v("Leader · weak fundamentals — higher-risk",
@@ -654,6 +700,13 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
             den += w[k]
     comp_z = (num / den) if den > 0 else None
 
+    # macro/event RISK OVERLAY (T3): subtract-only haircut on a CHASE into a stressed tape.
+    overlay = ctx.get("risk_overlay") or {}
+    stress = _macro_stress(overlay)
+    rtax = _risk_tax(overlay, rec)
+    if comp_z is not None and rtax > 0:
+        comp_z = comp_z - rtax
+
     # score: prefer the within-market percentile passed by the panel builder; else
     # the logistic skin (per-name fallback, flagged approximate).
     score = ctx.get("score_pct")
@@ -661,7 +714,7 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
         score = _logistic_0_100(comp_z)
     score = int(round(score)) if score is not None else None
 
-    vb = verdict(axes, rec, m, cycle_blocked=blocked)
+    vb = verdict(axes, rec, m, cycle_blocked=blocked, risk_stress=stress)
     band = _band(score)
 
     # provenance — what is present vs missing, never read missing as neutral.
@@ -674,6 +727,9 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
         "score": score,
         "band": band["band"], "band_en": band["en"], "band_zh": band["zh"],
         "composite_z": round(comp_z, 3) if comp_z is not None else None,
+        "risk": ({"stress": round(stress, 2), "tax": round(rtax, 3),
+                  "aggressiveness": round(_aggressiveness(rec), 2),
+                  "drivers": overlay.get("drivers")} if stress > 0 else None),
         "verdict": vb["verdict"], "verdict_zh": vb["verdict_zh"],
         "drivers": vb["drivers"], "cautions": vb["cautions"],
         "trust_tier": trust_tier(m, bool(ctx.get("gate_go"))),

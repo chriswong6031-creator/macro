@@ -121,6 +121,44 @@ def current_vix_context() -> dict | None:
     return vctx or None
 
 
+def current_risk_overlay() -> dict:
+    """Macro/event STRESS read for the standout board's risk overlay (engine.stock_score's
+    subtract-only tax + verb veto on a CHASE into a stressed tape). Blends the live VIX
+    percentile + regime/latest.json risk leaves (drawdown_risk, systemic_stress, turning
+    point). Each component is ELEVATED-ONLY (0 until it crosses a genuinely-stressed
+    threshold), so a calm week (this one: VIX ~16/29th pct) returns stress ~0 and the overlay
+    is silent. Returns {stress in [0,1], drivers, vix_pct}."""
+    out = {"stress": 0.0, "drivers": []}
+
+    def _elev(x, lo, hi):
+        return None if x is None else max(0.0, min(1.0, (float(x) - lo) / (hi - lo)))
+    try:
+        d = json.loads((config.data_dir() / "regime" / "latest.json").read_text())
+        cond = d.get("conditions") or {}
+        tp = d.get("turning_point") or {}
+        comps = {}
+        vp = config.data_dir() / "yahoo" / "_VIX.parquet"
+        vix_pct = None
+        if vp.exists():
+            v = pd.read_parquet(vp)["close"]
+            vix_pct = float((v <= v.iloc[-1]).tail(252).mean())
+            comps["vix"] = _elev(vix_pct, 0.55, 0.90)             # only above the 55th pct
+        comps["drawdown"] = _elev((cond.get("drawdown_risk") or {}).get("score"), 25, 60)
+        comps["systemic"] = _elev((cond.get("systemic_stress") or {}).get("ofr_fsi_pctile"), 0.60, 0.95)
+        present = {k: c for k, c in comps.items() if c is not None}
+        tp_force = 1.0 if tp.get("active") else (0.6 if tp.get("raw_fire") else 0.0)
+        # any single GENUINELY-elevated risk signal (each already elevated-only) lifts stress;
+        # an active turning point dominates. Calm tape => all components 0 => stress 0.
+        stress = max([tp_force] + list(present.values())) if (present or tp_force) else 0.0
+        drivers = [k for k, c in present.items() if c > 0.3]
+        if tp_force >= 0.6:
+            drivers.append("turning point")
+        out = {"stress": round(float(stress), 3), "drivers": drivers, "vix_pct": vix_pct}
+    except Exception as e:  # noqa: BLE001 — additive; absence => no tax
+        log.warning("risk overlay read failed (%s) — standouts run without the macro tax", e)
+    return out
+
+
 def current_calm(bench: pd.Series | None) -> float | None:
     """The live `calm` regime score in [0,1] the Conviction EDGE axis uses to scale the
     residual-momentum leg (engine.stock_score._edge_weights). This is the SAME causal
@@ -490,8 +528,10 @@ def main() -> int:
     calm = current_calm(bench)
     asof_now = bench.index.max() if bench is not None and len(bench) else None
     sue_fresh = sue_freshness_days(asof_now)   # PEAD freshness per name (days since filing)
-    log.info("conviction regime: calm=%s · SUE freshness for %d names",
-             "n/a" if calm is None else f"{calm:.2f}", len(sue_fresh))
+    risk_overlay = current_risk_overlay()      # macro/event stress tax on a chase (T3)
+    log.info("conviction regime: calm=%s · SUE freshness for %d names · macro stress=%.2f %s",
+             "n/a" if calm is None else f"{calm:.2f}", len(sue_fresh),
+             risk_overlay.get("stress", 0.0), risk_overlay.get("drivers") or "")
     acfg = config.load().get("alerts", {})
     a_days = int(acfg.get("ticker_timeline_days", 120))
     a_max = int(acfg.get("ticker_max_events", 50))
@@ -725,7 +765,8 @@ def main() -> int:
             rec, "US", sue=sue_z.get(ticker), sue_fresh_days=sue_fresh.get(ticker),
             insider_bps=ins_bps, revision_z=revision_z.get(ticker), basket=basket_tw.get(ticker))
         prof = stock_score.conviction_profile(
-            norm, "US", ctx={"as_of": alpha_asof, "gate_go": gate_go, "regime": {"calm": calm}})
+            norm, "US", ctx={"as_of": alpha_asof, "gate_go": gate_go,
+                             "regime": {"calm": calm}, "risk_overlay": risk_overlay})
         rec["conviction"] = prof
         profiles[ticker] = prof
         _tech = rec.get("tech") or {}

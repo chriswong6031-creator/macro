@@ -379,3 +379,39 @@ def test_normal_extension_not_blocked():
            "tech": {"off_52w_high_pct": -7.0, "rsi14": 55.0, "pct_vs_200dma": 12.0}}
     z, present, blocked = ss._axis_entry(rec)
     assert blocked is False and "over-200dma" not in present
+
+
+# --- reshape T3: macro/event risk overlay (tax a chase into a stressed tape) ---
+def test_aggressiveness_chase_vs_washout():
+    assert ss._aggressiveness({"tech": {"pct_vs_200dma": 40.0}}) == pytest.approx(1.0)
+    assert ss._aggressiveness({"tech": {"pct_vs_200dma": -18.0}}) == 0.0   # washout
+    assert ss._aggressiveness({"tech": {}, "ext": {"grade": "parabolic"}}) >= 0.9
+
+
+def test_risk_tax_scales_with_stress_and_aggressiveness():
+    chase = {"tech": {"pct_vs_200dma": 40.0}}
+    wash = {"tech": {"pct_vs_200dma": -18.0}}
+    assert ss._risk_tax({"stress": 0.0}, chase) == 0.0          # calm tape -> no tax
+    assert ss._risk_tax({"stress": 0.8}, chase) > 0.4           # chase into stress -> taxed
+    assert ss._risk_tax({"stress": 0.8}, wash) == 0.0           # washout protected even in stress
+
+
+def test_calm_overlay_is_a_noop():
+    rec = _rec()
+    base = ss.conviction_profile(rec, "US")
+    calm = ss.conviction_profile(rec, "US", ctx={"risk_overlay": {"stress": 0.0}})
+    assert base["composite_z"] == calm["composite_z"] and calm["risk"] is None
+
+
+def test_stress_vetoes_high_conviction_on_a_chase():
+    # strong edge + good entry + moderately extended (aggressive, but <30% so not T1-blocked)
+    rec = {"sue": 2.6, "insider_bps": 30.0, "alpha": 1.2,
+           "ladder": {"state": "RALLY ON", "label": "UPTREND", "dir": "up",
+                      "entry": {"urgency": "now"}},
+           "tech": {"off_52w_high_pct": -5.0, "rsi14": 58.0, "pct_vs_200dma": 26.0}}
+    calm = ss.conviction_profile(rec, "US", ctx={"risk_overlay": {"stress": 0.0}})
+    hot = ss.conviction_profile(rec, "US", ctx={"risk_overlay": {"stress": 0.8}})
+    assert "high-conviction" in calm["verdict"].lower()          # calm -> high-conviction
+    assert "high-conviction" not in hot["verdict"].lower()       # stress -> vetoed
+    assert "elevated-risk" in hot["verdict"].lower()
+    assert hot["composite_z"] < calm["composite_z"]              # and taxed
