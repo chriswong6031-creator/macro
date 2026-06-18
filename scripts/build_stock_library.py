@@ -27,6 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from engine import ticker_alerts  # noqa: E402
 from engine.conditions import sector_macro_beta  # noqa: E402
 from engine.cycles import analyze, market_vix_context  # noqa: E402
+from engine.extension import extension_signals  # noqa: E402
 from engine.playbook import SECTOR_NAMES  # noqa: E402
 from engine.setups import US_ALPHA_WEIGHT, rank_setups, setup_score, sue_confirmer  # noqa: E402
 from engine import stock_score  # noqa: E402
@@ -119,6 +120,44 @@ def current_vix_context() -> dict | None:
     except Exception:  # noqa: BLE001
         return None
     return vctx or None
+
+
+def current_risk_overlay() -> dict:
+    """Macro/event STRESS read for the standout board's risk overlay (engine.stock_score's
+    subtract-only tax + verb veto on a CHASE into a stressed tape). Blends the live VIX
+    percentile + regime/latest.json risk leaves (drawdown_risk, systemic_stress, turning
+    point). Each component is ELEVATED-ONLY (0 until it crosses a genuinely-stressed
+    threshold), so a calm week (this one: VIX ~16/29th pct) returns stress ~0 and the overlay
+    is silent. Returns {stress in [0,1], drivers, vix_pct}."""
+    out = {"stress": 0.0, "drivers": []}
+
+    def _elev(x, lo, hi):
+        return None if x is None else max(0.0, min(1.0, (float(x) - lo) / (hi - lo)))
+    try:
+        d = json.loads((config.data_dir() / "regime" / "latest.json").read_text())
+        cond = d.get("conditions") or {}
+        tp = d.get("turning_point") or {}
+        comps = {}
+        vp = config.data_dir() / "yahoo" / "_VIX.parquet"
+        vix_pct = None
+        if vp.exists():
+            v = pd.read_parquet(vp)["close"]
+            vix_pct = float((v <= v.iloc[-1]).tail(252).mean())
+            comps["vix"] = _elev(vix_pct, 0.55, 0.90)             # only above the 55th pct
+        comps["drawdown"] = _elev((cond.get("drawdown_risk") or {}).get("score"), 25, 60)
+        comps["systemic"] = _elev((cond.get("systemic_stress") or {}).get("ofr_fsi_pctile"), 0.60, 0.95)
+        present = {k: c for k, c in comps.items() if c is not None}
+        tp_force = 1.0 if tp.get("active") else (0.6 if tp.get("raw_fire") else 0.0)
+        # any single GENUINELY-elevated risk signal (each already elevated-only) lifts stress;
+        # an active turning point dominates. Calm tape => all components 0 => stress 0.
+        stress = max([tp_force] + list(present.values())) if (present or tp_force) else 0.0
+        drivers = [k for k, c in present.items() if c > 0.3]
+        if tp_force >= 0.6:
+            drivers.append("turning point")
+        out = {"stress": round(float(stress), 3), "drivers": drivers, "vix_pct": vix_pct}
+    except Exception as e:  # noqa: BLE001 — additive; absence => no tax
+        log.warning("risk overlay read failed (%s) — standouts run without the macro tax", e)
+    return out
 
 
 def current_calm(bench: pd.Series | None) -> float | None:
@@ -493,8 +532,10 @@ def main() -> int:
     calm = current_calm(bench)
     asof_now = bench.index.max() if bench is not None and len(bench) else None
     sue_fresh = sue_freshness_days(asof_now)   # PEAD freshness per name (days since filing)
-    log.info("conviction regime: calm=%s · SUE freshness for %d names",
-             "n/a" if calm is None else f"{calm:.2f}", len(sue_fresh))
+    risk_overlay = current_risk_overlay()      # macro/event stress tax on a chase (T3)
+    log.info("conviction regime: calm=%s · SUE freshness for %d names · macro stress=%.2f %s",
+             "n/a" if calm is None else f"{calm:.2f}", len(sue_fresh),
+             risk_overlay.get("stress", 0.0), risk_overlay.get("drivers") or "")
     acfg = config.load().get("alerts", {})
     a_days = int(acfg.get("ticker_timeline_days", 120))
     a_max = int(acfg.get("ticker_max_events", 50))
@@ -637,6 +678,22 @@ def main() -> int:
     disp_map: dict[str, dict] = {}              # price / off-high / sparkline per name
     to_write: list[tuple[str, dict]] = []
     uni = universe()
+    # extension / exhaustion read over the WHOLE library universe (own-history ext_z +
+    # grade), wired in EXACTLY as build_discovery does — this is what re-arms the validated
+    # parabolic/stretched penalty in stock_score._axis_entry that was dead on this board
+    # (every standout previously carried ext=None, so a +35%-over-200dma chase got no brake).
+    ext_map, lottery_map = {}, {}
+    try:
+        _ext_closes = pd.concat({t: c for (t, c, *_rest) in uni}, axis=1).sort_index()
+        ext_map = extension_signals(_ext_closes)
+        # recent single-day MAX return % over the last 21d — the lottery/spike penalty (T5):
+        # a top name with a radioactive one-day pop (>~18%) has a NEGATIVE fwd median + ~2x DD.
+        lottery_map = (_ext_closes.pct_change().tail(21).max() * 100.0).round(2).to_dict()
+        log.info("extension read on %d names (%d parabolic, %d stretched) · lottery on %d",
+                 len(ext_map), sum(1 for v in ext_map.values() if v.get("grade") == "parabolic"),
+                 sum(1 for v in ext_map.values() if v.get("grade") == "stretched"), len(lottery_map))
+    except Exception as e:  # noqa: BLE001 — additive; absence just means no extension brake
+        log.warning("extension/lottery read failed (%s) — standouts run without the brakes", e)
     # Heaviest stretch of the whole site build: ~1500 independent _one() calls.
     # Fan them across processes (CI runner = 4 vCPU); the cheap post-processing
     # below (shared-map merges, setup scoring, JSON writes) stays serial and in
@@ -736,11 +793,15 @@ def main() -> int:
         # the cycle state is a HARD verb modifier (a downtrend caps entry + forbids a Buy verb).
         ins = insider_map.get(ticker) or {}
         ins_bps = ins.get("bps") if (ins.get("buyers", 0) >= 2 and (ins.get("net_mn") or 0) > 0) else None
+        if ext_map.get(ticker):
+            rec["ext"] = ext_map[ticker]            # re-arms the parabolic/stretched entry brake
         norm = stock_score.normalize_rec(
             rec, "US", sue=sue_z.get(ticker), sue_fresh_days=sue_fresh.get(ticker),
-            insider_bps=ins_bps, revision_z=revision_z.get(ticker), basket=basket_tw.get(ticker))
+            insider_bps=ins_bps, revision_z=revision_z.get(ticker), basket=basket_tw.get(ticker),
+            lottery_max=lottery_map.get(ticker))
         prof = stock_score.conviction_profile(
-            norm, "US", ctx={"as_of": alpha_asof, "gate_go": gate_go, "regime": {"calm": calm}})
+            norm, "US", ctx={"as_of": alpha_asof, "gate_go": gate_go,
+                             "regime": {"calm": calm}, "risk_overlay": risk_overlay})
         rec["conviction"] = prof
         profiles[ticker] = prof
         # ---- Macro sensitivity (display-only, never scored) -------------------
@@ -815,12 +876,27 @@ def main() -> int:
         scored = [(t, p) for t, p in profiles.items()
                   if p.get("composite_z") is not None and t in row_by_t]
         scored.sort(key=lambda kv: -(kv[1]["composite_z"]))
+        # ENTRY-QUALITY GATE (China's discipline, T4-validated: poor-entry top-momentum names
+        # realize -0.7pp/mo and a -58% vs -41% worst drawdown). A name is BUYABLE only if its
+        # cycle/extension does NOT block (downtrend / parabolic / over-extended chase like CASY)
+        # AND its entry is constructive (entry_z > 0; an ABSENT entry is not "poor", so it
+        # stays). Strong-but-not-buyable names go to a WATCH list ("leaders — wait for a
+        # pullback") so they are surfaced honestly, never sold as buys.
+        def _buyable(p):
+            if p.get("cycle_blocked"):
+                return False
+            ez = ((p.get("axes") or {}).get("entry") or {}).get("z")
+            return ez is None or ez > 0
+        buyable = [(t, p) for t, p in scored if _buyable(p)]
+        watch = [(t, p) for t, p in scored
+                 if not _buyable(p) and (p.get("composite_z") or 0) > 0]
         wide = {"as_of": alpha_asof, "rank_by": ("edge-validated" if gate_go else "conviction"),
                 "gate_go": gate_go,
-                "buy": [row_by_t[t] for t, _ in scored[:120]],
+                "buy": [row_by_t[t] for t, _ in buyable[:120]],
+                "watch": [row_by_t[t] for t, _ in watch[:24]],
                 "laggards": [row_by_t[t] for t, _ in scored[-12:][::-1]] if len(scored) > 24 else []}
-        eligible = sum(1 for _, p in scored if (p.get("composite_z") or 0) > 0)
-        for r in wide["buy"] + wide["laggards"]:
+        eligible = sum(1 for _, p in buyable if (p.get("composite_z") or 0) > 0)
+        for r in wide["buy"] + wide["watch"] + wide["laggards"]:
             t = r.get("ticker")
             r["conviction"] = profiles.get(t)
             r.update({k: v for k, v in (disp_map.get(t) or {}).items() if v is not None})
