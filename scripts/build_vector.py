@@ -1678,6 +1678,7 @@ def vector_timeline(sig: pd.DataFrame, ladder: pd.DataFrame) -> dict:
         "dates": [d.strftime("%Y-%m-%d") for d in df.index],
         "price": num(df["close"]),
         "phase": cat(df["cycle_phase"], "accumulation"),
+        "cphase": cat(df["cphase_phase"], ""),   # bottom-anchored 1064/364 phase (PIT)
         "stage": [None if pd.isna(v) else int(v) for v in stage],
         "regime": cat(lad["regime"], "neutral"),
         "ladder": cat(lad["ladder_state"], ""),
