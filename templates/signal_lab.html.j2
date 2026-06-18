@@ -158,7 +158,6 @@
         <a href="crossasset.html">🧭 {{ t('Cross-Asset', '跨资产') }}<span class="d">{{ t('Correlations · trend · global liquidity', '相关性 · 趋势 · 全球流动性') }}</span></a>
         <a class="active" href="signal_lab.html">🔬 {{ t('Signal Lab', '信号实验室') }}<span class="d">{{ t('Consolidated validation scorecard', '验证记分卡汇总') }}</span></a>
         <a href="factors.html">🧮 {{ t('Factors & Seasonality', '因子 & 季节性') }}<span class="d">{{ t('Value · quality · low-vol · monthly calendar', '价值 · 质量 · 低波动 · 月历') }}</span></a>
-        <a href="validation_timeline.html">🧪 {{ t('Validation Timeline', '验证时间线') }}<span class="d">{{ t('Full 2007→ walk-forward backtest', '2007→ 完整滚动回测') }}</span></a>
       </div>
     </div>
   </div>
@@ -341,10 +340,10 @@
      'Validation toolkit: engine/validation.py (deflated Sharpe, purged k-fold + embargo, block '
      'bootstrap, Newey-West HAC, Benjamini-Hochberg FDR, Brier/Platt calibration, cost-aware '
      'backtest). Verdicts are quoted from the named reports in reports/. The factor cross-section '
-     'reads live from data/edgar/ic_scorecard.json. See also the ',
+     'reads live from data/edgar/ic_scorecard.json.',
      '验证工具：engine/validation.py（去偏夏普、净化 k 折+隔离、分块自助、Newey-West HAC、'
      'Benjamini-Hochberg FDR、Brier/Platt 校准、含成本回测）。结论引自 reports/ 中具名报告；'
-     '因子横截面实时读取 data/edgar/ic_scorecard.json。另见 ') }}<a href="validation_timeline.html" style="color:var(--link)">{{ t('regime validation timeline','机制验证时间线') }}</a>{{ t('.','。') }}</p>
+     '因子横截面实时读取 data/edgar/ic_scorecard.json。') }}</p>
   <p class="src" style="margin:8px 0 0">
     {{ t('data span','数据区间') }} {{ factor_meta.span or '—' }} ·
     {{ t('dashboard updated','仪表盘更新') }} {{ generated_utc }} UTC ·
