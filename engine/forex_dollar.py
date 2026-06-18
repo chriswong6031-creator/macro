@@ -1,0 +1,419 @@
+"""Dollar Desk — a deepened, multi-signal read of the master variable (broad USD).
+
+The dollar routes ~89% of FX turnover, so it is the hub that conditions every pair
+on the board AND the cross-asset picture (commodities, equities, bonds, crypto).
+The existing master tile is thin (a 4-quad "smile" + a risk-off composite). This
+module adds the signals a real dollar desk watches, all from data already in the
+store but unused by the forex page:
+
+  real-rate regime   US 10y real yield (DFII10) + 10y breakeven (T10YIE) -> the
+                     dollar's structural anchor and which arm of the smile (real-led
+                     vs reflation) is driving.
+  Fed path           implied Fed-funds path from ZQ futures (the US leg of the rate
+                     differential) + its repricing momentum.
+  positioning        CFTC COT net-spec on the US Dollar Index (cot_dollar, 1995->) —
+                     a crowding / fragility gauge (NOT a timing signal).
+  valuation          US BIS REER vs its long-run mean — multi-year rich/cheap anchor.
+  trend stack        broad-USD trend across 21/63/126/252d — a breadth/coherence read.
+  liquidity          net Fed liquidity (WALCL - RRP) rate-of-change — scarcer dollars
+                     are USD-supportive (slow, regime-conditional).
+  smile confirmation tally how many independent legs corroborate the smile regime,
+                     plus a "triple-red" haven-loss flag (USD & stocks & bonds down
+                     together — the dollar NOT acting as a haven).
+
+HONESTY BAR (load-bearing): every signal here is DISPLAY-ONLY / never scored. FX
+violates UIP, the dollar move is often the tightening itself (coincident), and every
+forex conviction backtest fails the deflated-Sharpe bar (reports/forex-calibration.md).
+These are REGIME / CONTEXT reads, not trade calls. There is deliberately NO aggregate
+"USD score -> BUY/SELL" — a `lean` word summarizes the balance of context flags and
+says so. No literature magnitude constants are baked into outputs; everything is
+computed live from the store with rolling, causal windows.
+
+Pure module: every function guards missing data and returns None / a degraded dict
+rather than raising, so build_forex can never break the site.
+"""
+from __future__ import annotations
+
+import logging
+
+import numpy as np
+import pandas as pd
+
+from engine import commodity_signals as cs
+from engine import forex_signals as fxs
+
+log = logging.getLogger(__name__)
+
+
+# --------------------------------------------------------------------------- #
+# helpers
+# --------------------------------------------------------------------------- #
+def _last(s: pd.Series | None) -> float | None:
+    """Last finite value of a series, else None."""
+    if s is None or len(s) == 0:
+        return None
+    s = s.dropna()
+    return float(s.iloc[-1]) if len(s) else None
+
+
+def _roc(s: pd.Series, w: int) -> float | None:
+    if s is None or len(s) <= w:
+        return None
+    return _last(s.pct_change(w))
+
+
+# --------------------------------------------------------------------------- #
+# 1 · real-rate regime
+# --------------------------------------------------------------------------- #
+def real_rate_regime(real: pd.Series | None, breakeven: pd.Series | None,
+                     cfg: dict) -> dict | None:
+    """US 10y real yield level/direction + breakeven momentum -> a smile-arm regime.
+    Restrictive, rising real yields are USD-supportive; a reflationary (rising
+    breakeven) backdrop tends to soften the dollar. CONTEXT / coincident."""
+    if real is None or real.empty:
+        return None
+    lb, w = cfg["z_lookback_d"], cfg["chg_window_d"]
+    real = real.dropna()
+    real_z = _last(fxs._zclip(real, lb))
+    real_lvl = _last(real)
+    real_chg = _last(real.diff(w))
+    be_z = be_lvl = None
+    if breakeven is not None and not breakeven.empty:
+        be = breakeven.dropna()
+        be_lvl = _last(be)
+        be_z = _last(fxs._zclip(be.diff(w), lb))
+    if real_z is None:
+        return None
+    hi, lo = cfg["high_z"], cfg["low_z"]
+    rising = (real_chg or 0) > 0
+    if real_z >= hi:
+        regime, zh, lean = "Restrictive real yields", "实际利率偏紧", "supportive"
+    elif real_z <= lo:
+        regime, zh, lean = "Easy real yields", "实际利率宽松", "soft"
+    elif be_z is not None and be_z >= cfg.get("be_high_z", 0.3):
+        regime, zh, lean = "Reflation — rising breakevens", "再通胀 — 盈亏平衡上行", "soft"
+    elif be_z is not None and be_z <= cfg.get("be_low_z", -0.3):
+        regime, zh, lean = "Disinflation — falling breakevens", "去通胀 — 盈亏平衡下行", "neutral"
+    else:
+        regime, zh, lean = "Neutral real-rate backdrop", "实际利率中性", "neutral"
+    # restrictive AND rising = the cleanest dollar tailwind
+    if lean == "supportive" and not rising:
+        lean = "neutral"
+    return {"regime": regime, "regime_zh": zh, "lean": lean,
+            "real_yield": round(real_lvl, 2) if real_lvl is not None else None,
+            "real_z": round(real_z, 2),
+            "real_rising": bool(rising),
+            "breakeven": round(be_lvl, 2) if be_lvl is not None else None,
+            "be_z": round(be_z, 2) if be_z is not None else None}
+
+
+# --------------------------------------------------------------------------- #
+# 2 · Fed policy path (US leg of the rate differential)
+# --------------------------------------------------------------------------- #
+def fed_path(zq: pd.DataFrame | None, cfg: dict) -> dict | None:
+    """Implied Fed-funds path from ZQ futures: how many cuts/hikes are priced to 12m
+    and whether the path is repricing hawkish/dovish. This is the US leg of the rate
+    differential (no clean foreign OIS in the store) — priced expectations, coincident,
+    not a forecast edge."""
+    if zq is None or zq.empty:
+        return None
+    near, far = cfg.get("near", "m1"), cfg.get("far", "m12")
+    if near not in zq.columns or far not in zq.columns:
+        return None
+    n = zq[near].dropna()
+    f = zq[far].dropna()
+    if n.empty or f.empty:
+        return None
+    near_r, far_r = float(n.iloc[-1]), float(f.iloc[-1])
+    path_bps = round((far_r - near_r) * 100, 0)              # + = tightening priced to 12m, - = cuts
+    w = cfg.get("reprice_window_d", 21)
+    reprice = None
+    if len(f) > w:
+        reprice = round((float(f.iloc[-1]) - float(f.iloc[-1 - w])) * 100, 0)
+    thr = cfg.get("reprice_bps", 10)
+    if reprice is None:
+        lean, lean_label, zh = "steady", "path steady", "路径稳定"
+    elif reprice >= thr:
+        lean, lean_label, zh = "hawkish_repricing", "repricing hawkish", "鹰派重定价"
+    elif reprice <= -thr:
+        lean, lean_label, zh = "dovish_repricing", "repricing dovish", "鸽派重定价"
+    else:
+        lean, lean_label, zh = "steady", "path steady", "路径稳定"
+    return {"near_rate": round(near_r, 2), "far_rate": round(far_r, 2),
+            "path_bps": path_bps, "reprice_bps": reprice,
+            "lean": lean, "lean_label": lean_label, "lean_zh": zh}
+
+
+# --------------------------------------------------------------------------- #
+# 3 · USD positioning (CFTC COT net-spec on the dollar index)
+# --------------------------------------------------------------------------- #
+def positioning(cot_dollar: pd.Series | None, idx: pd.Index, cfg: dict) -> dict | None:
+    """Speculative net positioning on the USD index as a rolling percentile + a
+    crowding state. A crowding / fragility gauge — UNMEASURED for forward content,
+    contrarian-only at the tails, and lagged (Tue-as-of, Fri-released)."""
+    if cot_dollar is None or cot_dollar.empty:
+        return None
+    pcfg = {"pctile_lookback_d": cfg["pctile_lookback_d"],
+            "crowded_long_pctile": cfg["crowded_long_pctile"],
+            "crowded_short_pctile": cfg["crowded_short_pctile"]}
+    pos = cs.positioning(cot_dollar, idx, pcfg)
+    if pos.empty or "pos_pctile" not in pos:
+        return None
+    pct = _last(pos["pos_pctile"])
+    if pct is None:
+        return None
+    state = pos["pos_state"].dropna()
+    st = str(state.iloc[-1]) if len(state) else "neutral"
+    net = _last(pos["pos_net_pct_oi"]) if "pos_net_pct_oi" in pos else None
+    return {"pctile": round(pct, 0), "state": st,
+            "net_pct_oi": round(net, 1) if net is not None else None}
+
+
+# --------------------------------------------------------------------------- #
+# 4 · valuation (US REER vs long-run mean)
+# --------------------------------------------------------------------------- #
+def valuation(reer_us: pd.Series | None, cfg: dict, idx: pd.Index) -> dict | None:
+    """US BIS real-effective rate vs its ~5y log mean. + gap = the dollar is rich
+    (a multi-year mean-reversion anchor, never a tactical entry)."""
+    if reer_us is None or reer_us.empty:
+        return None
+    va = fxs.value_signal(reer_us, cfg, idx)
+    if va.empty or "reer_gap" not in va:
+        return None
+    gap = va["reer_gap"].dropna()
+    if gap.empty:
+        return None
+    gap_last = float(gap.iloc[-1])
+    z = _last(fxs._zraw(va["reer_gap"], cfg["z_lookback_d"]))
+    stretched = bool(z is not None and abs(z) >= cfg.get("stretch_z", 1.5))
+    rg = cfg.get("rich_gap", 0.01)
+    label = "rich" if gap_last > rg else ("cheap" if gap_last < -rg else "fair")
+    return {"gap_pct": round(100 * gap_last, 1),
+            "z": round(z, 2) if z is not None else None,
+            "stretched": stretched, "label": label}
+
+
+# --------------------------------------------------------------------------- #
+# 5 · broad-USD trend stack (breadth / coherence read)
+# --------------------------------------------------------------------------- #
+def trend_stack(broad: pd.Series | None, cfg: dict) -> dict | None:
+    """Broad-USD trend across multiple horizons. A breadth read — how many horizons
+    point the same way — NOT a forward signal (broad-dollar trend calibrates
+    INVERTED on most pairs; mean-reversion dominates)."""
+    if broad is None or broad.empty:
+        return None
+    broad = broad.dropna()
+    horizons = cfg.get("horizons_d", [21, 63, 126, 252])
+    rows, n_up = [], 0
+    for h in horizons:
+        roc = _roc(broad, h)
+        if roc is None:
+            continue
+        up = roc > 0
+        n_up += int(up)
+        rows.append({"d": h, "roc_pct": round(100 * roc, 1), "up": bool(up)})
+    if not rows:
+        return None
+    n_tot = len(rows)
+    up_frac = cfg.get("up_frac", 0.75)
+    label = "up" if n_up >= max(1, int(np.ceil(up_frac * n_tot))) else \
+            ("down" if n_up <= int(np.floor((1 - up_frac) * n_tot)) else "mixed")
+    zh = {"up": "走强", "down": "走软", "mixed": "分化"}[label]
+    return {"n_up": n_up, "n_tot": n_tot, "label": label, "label_zh": zh,
+            "horizons": rows}
+
+
+# --------------------------------------------------------------------------- #
+# 6 · USD liquidity (net Fed liquidity rate-of-change)
+# --------------------------------------------------------------------------- #
+def liquidity(fed_bs: pd.Series | None, on_rrp: pd.Series | None,
+              idx: pd.Index, cfg: dict) -> dict | None:
+    """Net Fed liquidity = WALCL ($mn) - RRP ($bn), as a rate-of-change. Falling net
+    liquidity drains dollars and is USD-supportive — slow, regime-conditional, context
+    only (the level<->dollar link is largely spurious; we use the de-trended RoC)."""
+    if fed_bs is None or fed_bs.empty:
+        return None
+    bs_bn = (fed_bs.reindex(idx).ffill() / 1000.0)            # millions -> billions
+    rrp_bn = on_rrp.reindex(idx).ffill() if on_rrp is not None else 0.0
+    net = (bs_bn - rrp_bn).dropna()
+    if net.empty:
+        return None
+    w = cfg.get("chg_window_d", 63)
+    chg = _last(net.diff(w))
+    z = _last(fxs._zraw(net.diff(w), cfg.get("z_lookback_d", 252)))
+    if chg is None:
+        return None
+    direction = "supportive" if chg < 0 else ("soft" if chg > 0 else "neutral")
+    return {"net_chg_bn": round(chg, 0), "z": round(z, 2) if z is not None else None,
+            "dir": direction, "window_d": w}
+
+
+# --------------------------------------------------------------------------- #
+# 7 · smile confirmation + triple-red haven-loss flag
+# --------------------------------------------------------------------------- #
+# smile regime -> the implied USD direction (strong/weak)
+_SMILE_USD = {"US growth premium": "strong", "Risk-off haven bid": "strong",
+              "Global reflation": "weak", "US-specific stress": "weak", "Neutral": None}
+
+
+def smile_confirm(dol: pd.DataFrame, real: dict | None, trend: dict | None,
+                  liq: dict | None, drivers: dict, cfg: dict) -> dict:
+    """How many independent legs corroborate the current smile regime's USD direction
+    + a triple-red haven-loss flag (USD & equities & Treasuries falling together = the
+    dollar is NOT acting as a safe haven). Descriptive only."""
+    last = dol.iloc[-1]
+    regime = last.get("smile_regime", "Neutral")
+    usd_dir = _SMILE_USD.get(regime)
+    confirms, against = [], []
+
+    def _vote(name_en, name_zh, leg_dir):
+        if usd_dir is None or leg_dir is None:
+            return
+        (confirms if leg_dir == usd_dir else against).append((name_en, name_zh))
+
+    if real:
+        _vote("real yields", "实际利率",
+              "strong" if real["lean"] == "supportive" else ("weak" if real["lean"] == "soft" else None))
+    if trend:
+        _vote("trend stack", "趋势栈",
+              "strong" if trend["label"] == "up" else ("weak" if trend["label"] == "down" else None))
+    if liq:
+        _vote("liquidity", "流动性",
+              "strong" if liq["dir"] == "supportive" else ("weak" if liq["dir"] == "soft" else None))
+
+    n = len(confirms)
+    conf = "high" if n >= 3 else ("medium" if n == 2 else ("low" if n == 1 else "none"))
+    conf_zh = {"high": "高", "medium": "中", "low": "低", "none": "无"}[conf]
+
+    # triple-red: USD down + SPY down + UST price down (10y yield UP) over the window
+    w = cfg.get("triple_red_window_d", 21)
+    broad = drivers.get("broad_dollar")
+    spy = drivers.get("spy")
+    us10y = drivers.get("us10y")
+    triple_red = False
+    if broad is not None and spy is not None and us10y is not None:
+        ud = _roc(broad.dropna(), w)
+        sd = _roc(spy.dropna(), w)
+        yd = _last(us10y.dropna().diff(w))                    # yield change; + = price down
+        if ud is not None and sd is not None and yd is not None:
+            triple_red = (ud < 0) and (sd < 0) and (yd > 0)
+    return {"regime": regime, "usd_dir": usd_dir, "confidence": conf,
+            "confidence_zh": conf_zh, "n_confirm": n,
+            "confirms": [c[0] for c in confirms], "confirms_zh": [c[1] for c in confirms],
+            "against": [a[0] for a in against],
+            "triple_red": bool(triple_red)}
+
+
+# --------------------------------------------------------------------------- #
+# assemble the desk
+# --------------------------------------------------------------------------- #
+def dollar_desk(dol: pd.DataFrame, drivers: dict, extra: dict, cfg: dict) -> dict:
+    """Full Dollar Desk read. Each leg degrades to None on missing data; the desk
+    never raises. `dol` = the _dollar master frame; `drivers` = the shared driver
+    series; `extra` = {cot_dollar: Series, zq_path: DataFrame}. `cfg` = forex config."""
+    try:
+        dcfg = cfg["dollar_desk"]
+        idx = dol.index
+        rr = real_rate_regime(drivers.get("us10y_real"), drivers.get("breakeven_10y"),
+                              dcfg["real_rate"])
+        fp = fed_path(extra.get("zq_path"), dcfg["fed_path"])
+        po = positioning(extra.get("cot_dollar"), idx, dcfg["positioning"])
+        va = valuation(drivers.get("reer_us"), dcfg["valuation"], idx)
+        tr = trend_stack(drivers.get("broad_dollar"), dcfg["trend"])
+        lq = liquidity(drivers.get("fed_bs"), drivers.get("on_rrp"), idx, dcfg["liquidity"])
+        sm = smile_confirm(dol, rr, tr, lq, drivers, dcfg["smile"])
+
+        # balance of context flags -> a descriptive LEAN word (explicitly NOT a score)
+        votes = []
+        if rr and rr["lean"] in ("supportive", "soft"):
+            votes.append(1 if rr["lean"] == "supportive" else -1)
+        if tr and tr["label"] in ("up", "down"):
+            votes.append(1 if tr["label"] == "up" else -1)
+        if lq and lq["dir"] in ("supportive", "soft"):
+            votes.append(1 if lq["dir"] == "supportive" else -1)
+        if fp and fp["lean"] in ("hawkish_repricing", "dovish_repricing"):
+            votes.append(1 if fp["lean"] == "hawkish_repricing" else -1)
+        net = sum(votes)
+        if not votes:
+            lean, lean_zh = "mixed", "分化"
+        elif net >= 2:
+            lean, lean_zh = "dollar-supportive backdrop", "偏多美元背景"
+        elif net <= -2:
+            lean, lean_zh = "dollar-soft backdrop", "偏空美元背景"
+        else:
+            lean, lean_zh = "mixed backdrop", "分化背景"
+
+        return {"real_rate": rr, "fed_path": fp, "positioning": po, "valuation": va,
+                "trend": tr, "liquidity": lq, "smile": sm,
+                "lean": lean, "lean_zh": lean_zh,
+                "lean_net": net, "lean_n": len(votes)}
+    except Exception as e:  # noqa: BLE001 — desk must never break the build
+        log.warning("dollar_desk failed (%s)", e)
+        return {}
+
+
+# --------------------------------------------------------------------------- #
+# currency strength meter
+# --------------------------------------------------------------------------- #
+# currency code -> (zh, is_em/managed flag) for display
+_CCY = {"USD": ("美元", False), "EUR": ("欧元", False), "JPY": ("日元", False),
+        "GBP": ("英镑", False), "AUD": ("澳元", False), "CAD": ("加元", False),
+        "CHF": ("瑞郎", False), "CNH": ("离岸人民币", True), "MXN": ("墨西哥比索", True),
+        "BRL": ("巴西雷亚尔", True)}
+
+
+def strength_meter(results: dict, cfg: dict, assets_cfg: dict) -> dict:
+    """Cross-currency strength, independent of any single pair. For each currency we
+    average its bilateral appreciation against every other currency (USD crosses make
+    the USD leg cancel cleanly), then standardize cross-sectionally per horizon. The
+    USD leg is anchored to the same basket so the meter and the desk never contradict.
+
+    DESCRIPTIVE trailing trend — green never means buy. Returns {horizons: {hk: rows},
+    default, order}. Each row: {ccy, ccy_zh, strength (z for the bar), vs_usd_pct, em}."""
+    try:
+        horizons = cfg.get("horizons_d", {"1w": 5, "1m": 21, "3m": 63})
+        # base currency -> its base-vs-USD close series (rising = base stronger vs USD)
+        base_close: dict[str, pd.Series] = {}
+        for pair, df in results.items():
+            if pair == "_dollar" or df is None or df.empty or "close" not in df:
+                continue
+            meta = assets_cfg.get(pair, {})
+            base = meta.get("base")
+            if not base:
+                continue
+            base_close[base] = df["close"].dropna()
+        if not base_close:
+            return {}
+        out_h: dict[str, list] = {}
+        for hk, w in horizons.items():
+            rets = {}                                         # ccy -> log return over w
+            for ccy, s in base_close.items():
+                if len(s) <= w:
+                    continue
+                r = float(np.log(s.iloc[-1] / s.iloc[-1 - w]))
+                if np.isfinite(r):
+                    rets[ccy] = r
+            if not rets:
+                continue
+            rets["USD"] = 0.0                                 # numeraire leg
+            grand = float(np.mean(list(rets.values())))
+            strength = {c: r - grand for c, r in rets.items()}   # excess over avg ccy (zero-sum)
+            sd = float(np.std(list(strength.values()))) or 1.0
+            rows = []
+            for c, v in strength.items():
+                zh, em = _CCY.get(c, (c, False))
+                vs_usd = 0.0 if c == "USD" else 100 * rets.get(c, 0.0)
+                rows.append({"ccy": c, "ccy_zh": zh, "em": em,
+                             "strength": round(float(np.clip(v / sd, -2.5, 2.5)) / 2.5, 3),
+                             "vs_usd_pct": round(vs_usd, 1)})
+            rows.sort(key=lambda r: -r["strength"])
+            out_h[hk] = rows
+        if not out_h:
+            return {}
+        default = cfg.get("default_horizon", "1m")
+        if default not in out_h:
+            default = next(iter(out_h))
+        return {"horizons": out_h, "default": default, "order": list(horizons.keys())}
+    except Exception as e:  # noqa: BLE001
+        log.warning("strength_meter failed (%s)", e)
+        return {}

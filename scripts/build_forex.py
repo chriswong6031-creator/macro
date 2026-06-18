@@ -29,7 +29,7 @@ from jinja2 import Environment, FileSystemLoader
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from lib import config  # noqa: E402
+from lib import config, store  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_forex")
@@ -215,6 +215,53 @@ def chart_dollar(dol: pd.DataFrame, years: float = 8) -> str:
     return _html(fig)
 
 
+def chart_real_rate(drivers: dict, years: float = 9) -> str:
+    """Broad USD (rebased) vs the US 10y real yield — the dollar's structural anchor."""
+    broad = drivers.get("broad_dollar")
+    real = drivers.get("us10y_real")
+    if broad is None or real is None:
+        return ""
+    cut = max(broad.index.max(), real.index.max()) - pd.Timedelta(days=int(365 * years))
+    b = broad[broad.index >= cut].dropna()
+    r = real[real.index >= cut].dropna()
+    if b.empty or r.empty:
+        return ""
+    fig = go.Figure()
+    rb = 100 * b / b.iloc[0]
+    pidx = _plot_idx(b.index)
+    fig.add_trace(go.Scatter(x=_dx(pidx), y=_plot_y(rb.reindex(pidx), 2), name="Broad USD",
+                             line={"color": C["ink"], "width": 1.8}))
+    pidx2 = _plot_idx(r.index)
+    fig.add_trace(go.Scatter(x=_dx(pidx2), y=_plot_y(r.reindex(pidx2), 2), name="US 10y real yield",
+                             line={"color": C["blue"], "width": 1.6}, yaxis="y2",
+                             hovertemplate="real %{y:.2f}%<extra></extra>"))
+    fig.update_layout(**{**PLOT, "height": 270,
+                         "yaxis": {"title": "Broad USD = 100", "gridcolor": C["grid"]},
+                         "yaxis2": {"overlaying": "y", "side": "right", "showgrid": False,
+                                    "title": "10y real %"}})
+    return _html(fig)
+
+
+def chart_transmission(tr: dict) -> str:
+    """Horizontal diverging bars of each asset's fast correlation to the broad dollar."""
+    rows = [r for r in tr.get("rows", []) if r.get("corr_fast") is not None]
+    if not rows:
+        return ""
+    rows = sorted(rows, key=lambda r: r["corr_fast"])     # most negative at bottom
+    labels = [r["label"] for r in rows]
+    vals = [r["corr_fast"] for r in rows]
+    colors = [C["green"] if v >= 0 else C["red"] for v in vals]
+    fig = go.Figure(go.Bar(x=vals, y=labels, orientation="h",
+                           marker={"color": colors}, width=0.62,
+                           hovertemplate="%{y}: corr %{x:.2f}<extra></extra>"))
+    fig.update_layout(**{**PLOT, "height": 30 + 30 * len(rows),
+                         "margin": {"l": 96, "r": 24, "t": 6, "b": 26},
+                         "xaxis": {"range": [-1, 1], "gridcolor": C["grid"], "zeroline": True,
+                                   "zerolinecolor": C["faint"], "title": "63d corr to broad USD"},
+                         "yaxis": {"gridcolor": "rgba(0,0,0,0)"}})
+    return _html(fig)
+
+
 # --------------------------------------------------------------------------- #
 # view-models
 # --------------------------------------------------------------------------- #
@@ -362,6 +409,72 @@ def _group_timeline(events: list[dict]) -> list[dict]:
 
 
 # --------------------------------------------------------------------------- #
+# dollar desk / transmission / strength assembly
+# --------------------------------------------------------------------------- #
+def _extra_inputs() -> dict:
+    """Multi-column / specially-named series the dollar desk needs (not in drivers)."""
+    extra: dict = {}
+    cotd = store.read("cot", "cot_dollar")
+    if cotd is not None and "net_spec_pct_oi" in cotd.columns:
+        s = pd.to_numeric(cotd["net_spec_pct_oi"], errors="coerce")
+        s.index = pd.to_datetime(s.index)
+        extra["cot_dollar"] = s[~s.index.duplicated(keep="last")].sort_index().dropna()
+    extra["zq_path"] = store.read("rate_futures", "zq_path")
+    return extra
+
+
+def _transmission_assets(cfg: dict) -> dict:
+    """Load each cross-asset series for the transmission map (close, or the level)."""
+    out: dict = {}
+    for key, spec in cfg["transmission"]["assets"].items():
+        grp, name = spec[0], spec[1]
+        df = store.read(grp, name)
+        if df is None or df.empty:
+            continue
+        s = df["close"] if "close" in df.columns else df.iloc[:, 0]
+        s = pd.to_numeric(s, errors="coerce").copy()
+        s.index = pd.to_datetime(s.index)
+        out[key] = s[~s.index.duplicated(keep="last")].sort_index().dropna()
+    return out
+
+
+def _desk_latest(desk: dict) -> dict:
+    """Compact, scalar-only dollar-desk summary for latest.json (auto-archived +
+    read by cross_asset_confirm / master_brain / the hub card)."""
+    if not desk:
+        return {}
+    rr, fp, po = desk.get("real_rate"), desk.get("fed_path"), desk.get("positioning")
+    va, trd, lq = desk.get("valuation"), desk.get("trend"), desk.get("liquidity")
+    sm = desk.get("smile") or {}
+    out = {"lean": desk.get("lean")}
+    if rr:
+        out.update(real_rate_regime=rr.get("regime"), real_rate_z=rr.get("real_z"))
+    if fp:
+        out.update(fed_path_bps=fp.get("path_bps"), fed_path_lean=fp.get("lean"))
+    if po:
+        out.update(usd_pos_pctile=po.get("pctile"), usd_pos_state=po.get("state"))
+    if va:
+        out.update(usd_reer_gap_pct=va.get("gap_pct"), usd_valuation=va.get("label"))
+    if trd:
+        out.update(trend=trd.get("label"), trend_n_up=trd.get("n_up"))
+    if lq:
+        out.update(liquidity_dir=lq.get("dir"))
+    out.update(smile_confidence=sm.get("confidence"), triple_red=sm.get("triple_red"))
+    return out
+
+
+def _transmission_latest(tr: dict) -> dict:
+    """Compact transmission summary for latest.json."""
+    if not tr:
+        return {}
+    return {"usd_dir": tr.get("usd_dir"),
+            "corr": {r["key"]: r.get("corr_fast") for r in tr.get("rows", [])},
+            "headwind_for": tr.get("headwind_for", []),
+            "tailwind_for": tr.get("tailwind_for", []),
+            "unstable": tr.get("unstable", [])}
+
+
+# --------------------------------------------------------------------------- #
 # main
 # --------------------------------------------------------------------------- #
 def main() -> int:
@@ -390,6 +503,39 @@ def main() -> int:
     sections = group_sections(pairs)
     ctable = carry_table(pairs)
 
+    # NEW — Dollar Desk, cross-asset transmission, strength meter, scorecards.
+    # Each degrades to {} on any failure (the page renders without the section).
+    from engine import forex_dollar, forex_transmission, forex_scorecards
+    drivers = next(iter(inputs.values()))["drivers"] if inputs else {}
+    try:
+        desk = forex_dollar.dollar_desk(dol, drivers, _extra_inputs(), cfg)
+    except Exception as e:  # noqa: BLE001
+        log.warning("dollar desk failed (%s)", e)
+        desk = {}
+    try:
+        tassets = _transmission_assets(cfg)
+        transmission = forex_transmission.transmission(
+            drivers.get("broad_dollar"), tassets, drivers.get("us10y_real"),
+            dol.get("risk_off"), cfg["transmission"])
+        if transmission:
+            transmission["chart"] = chart_transmission(transmission)
+    except Exception as e:  # noqa: BLE001
+        log.warning("transmission failed (%s)", e)
+        transmission = {}
+    try:
+        strength = forex_dollar.strength_meter(results, cfg["strength"], cfg["assets"])
+    except Exception as e:  # noqa: BLE001
+        log.warning("strength meter failed (%s)", e)
+        strength = {}
+    try:
+        dxy_df = store.read("yahoo", "DX-Y.NYB")
+        dxy_close = dxy_df["close"] if dxy_df is not None and "close" in dxy_df.columns else None
+        scorecards = forex_scorecards.scorecards(results, cfg["assets"], dxy_close, cfg["scorecards"])
+    except Exception as e:  # noqa: BLE001
+        log.warning("scorecards failed (%s)", e)
+        scorecards = []
+    real_rate_chart = chart_real_rate(drivers)
+
     # daily alert timeline (deterministic, recomputed each build; no intraday for FX)
     from engine import forex_alerts
     acfg = cfg["alerts"]
@@ -411,7 +557,9 @@ def main() -> int:
     env.globals.update(tr=tr, td=td)
     html = env.get_template("forex.html.j2").render(
         C=C, as_of=as_of, built=built, cal_span=cal_span,
-        dollar=dollar, pairs=pairs, sections=sections, carry_table=ctable, cot_ok=cot_ok,
+        dollar=dollar, desk=desk, real_rate_chart=real_rate_chart,
+        transmission=transmission, strength=strength, scorecards=scorecards,
+        pairs=pairs, sections=sections, carry_table=ctable, cot_ok=cot_ok,
         timeline=timeline, timeline_days=acfg["timeline_days"], n_alerts=len(recent_events))
     site = config.ROOT / config.load()["storage"]["site_dir"]
     (site / "forex.html").write_text(html)
@@ -425,7 +573,11 @@ def main() -> int:
               "pairs": {p["key"]: {"label": p["label"], "quote": p["quote"], "chg": p["chg"],
                                    "action": (p.get("conviction") or {}).get("action"),
                                    "score": (p.get("conviction") or {}).get("score")}
-                        for p in pairs}}
+                        for p in pairs},
+              # NEW — the deepened dollar read, so the dollar feeds the rest of the
+              # site (cross_asset_confirm / master_brain / hub card / signal archive).
+              "dollar_desk": _desk_latest(desk),
+              "transmission": _transmission_latest(transmission)}
     (outdir / "latest.json").write_text(json.dumps(latest, indent=2, default=str))
     return 0
 

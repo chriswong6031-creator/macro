@@ -287,6 +287,117 @@ def test_cnh_basis_sign_and_states():
     assert cnh_basis(pd.Series(7.00, index=idx), onshore, cfg)["cnh_basis_state"].iloc[-1] == "inflow"
 
 
+# --------------------------------------------------------------------------- #
+# Dollar Desk · transmission · strength · scorecards (the revamp)
+# --------------------------------------------------------------------------- #
+from engine import forex_dollar as FD          # noqa: E402
+from engine import forex_transmission as FT     # noqa: E402
+from engine import forex_scorecards as FSC      # noqa: E402
+
+DD = CFG["dollar_desk"]
+
+
+def test_real_rate_regime_quadrants():
+    """High & rising real yields -> Restrictive/USD-supportive; low -> Easy/USD-soft."""
+    idx = _idx(800)
+    rising = pd.Series(np.linspace(0.3, 3.0, 800), index=idx)
+    falling_be = pd.Series(np.linspace(2.6, 1.9, 800), index=idx)
+    hi = FD.real_rate_regime(rising, falling_be, DD["real_rate"])
+    assert hi and hi["real_rising"] is True and hi["lean"] == "supportive"
+    assert "Restrictive" in hi["regime"]
+    lo = FD.real_rate_regime(pd.Series(np.linspace(3.0, 0.3, 800), index=idx), falling_be, DD["real_rate"])
+    assert lo and lo["lean"] == "soft" and "Easy" in lo["regime"]
+
+
+def test_fed_path_tightening_sign():
+    """far (12m) above near (1m) implied rate -> positive path_bps (tightening priced)."""
+    idx = pd.date_range("2026-01-01", periods=60, freq="B")
+    zq = pd.DataFrame({"m1": 3.5, "m3": 3.6, "m6": 3.8, "m12": 4.0}, index=idx)
+    out = FD.fed_path(zq, DD["fed_path"])
+    assert out and out["path_bps"] == 50.0
+    cuts = FD.fed_path(pd.DataFrame({"m1": 4.0, "m3": 3.8, "m6": 3.5, "m12": 3.0}, index=idx), DD["fed_path"])
+    assert cuts["path_bps"] < 0      # cuts priced
+
+
+def test_dollar_positioning_crowded():
+    """A recent extreme in net spec -> high percentile + crowded_long."""
+    wk = pd.date_range("2015-01-06", periods=420, freq="W-TUE")   # COT reports as-of Tuesday (a weekday)
+    net = pd.Series(np.concatenate([np.full(400, -8.0), np.full(20, 45.0)]), index=wk)
+    daily = pd.date_range(wk[0], wk[-1], freq="B")                # daily span tracks the COT series
+    out = FD.positioning(net, daily, DD["positioning"])
+    assert out and out["pctile"] >= 80 and out["state"] == "crowded_long"
+
+
+def test_trend_stack_all_up():
+    idx = _idx(700)
+    broad = pd.Series(np.exp(np.linspace(0, 0.25, 700)), index=idx)   # steadily rising
+    out = FD.trend_stack(broad, DD["trend"])
+    assert out and out["label"] == "up" and out["n_up"] == out["n_tot"] == 4
+
+
+def test_strength_meter_zero_sum_and_usd():
+    """Strengths are excess vs the average currency -> ~zero-sum, and USD is included."""
+    idx = _idx(400)
+    rng = np.random.default_rng(1)
+    results, acfg = {}, {}
+    for p, base in [("EURUSD", "EUR"), ("USDJPY", "JPY"), ("AUDUSD", "AUD")]:
+        results[p] = pd.DataFrame({"close": np.exp(pd.Series(rng.normal(0, 0.005, 400), index=idx).cumsum())})
+        acfg[p] = {"base": base}
+    sm = FD.strength_meter(results, CFG["strength"], acfg)
+    rows = sm["horizons"][sm["default"]]
+    assert {"USD", "EUR", "JPY", "AUD"} == {r["ccy"] for r in rows}
+    assert abs(sum(r["strength"] for r in rows)) < 0.1          # zero-sum
+
+
+def test_transmission_known_inverse():
+    """An asset that is the exact inverse of the dollar -> corr ~ -1, stable, headwind."""
+    idx = _idx(400)
+    uret = pd.Series(np.random.default_rng(2).normal(0, 0.004, 400), index=idx)
+    broad = np.exp(uret.cumsum()) * 100
+    asset = np.exp((-uret).cumsum()) * 100
+    out = FT.transmission(broad, {"SPY": asset}, None, None, CFG["transmission"])
+    row = out["rows"][0]
+    assert row["corr_fast"] < -0.9 and row["stability"] == "stable" and row["effect"] == "headwind"
+
+
+def test_transmission_flipping_flag():
+    """A sign-flip between the slow and fast window -> flagged unstable/flipping."""
+    idx = _idx(400)
+    uret = pd.Series(np.random.default_rng(3).normal(0, 0.004, 400), index=idx)
+    aret = -uret.copy()
+    aret.iloc[-63:] = uret.iloc[-63:]                          # recent 63d positively correlated
+    broad = np.exp(uret.cumsum()) * 100
+    asset = np.exp(aret.cumsum()) * 100
+    out = FT.transmission(broad, {"SPY": asset}, None, None, CFG["transmission"])
+    assert out["rows"][0]["stability"] == "flipping" and "US equities" in out["unstable"]
+
+
+def test_scorecards_finite_and_maxdd_nonpositive():
+    idx = _idx(1500)
+    rng = np.random.default_rng(4)
+    results, acfg = {}, {}
+    carries = {"EUR": -1.0, "JPY": -2.0, "GBP": 0.5, "AUD": 2.0, "CAD": 1.0, "CHF": -1.5}
+    for p, base in [("EURUSD", "EUR"), ("USDJPY", "JPY"), ("GBPUSD", "GBP"),
+                    ("AUDUSD", "AUD"), ("USDCAD", "CAD"), ("USDCHF", "CHF")]:
+        df = pd.DataFrame({"close": np.exp(pd.Series(rng.normal(0, 0.005, len(idx)), index=idx).cumsum())})
+        df["carry_diff"] = carries[base]
+        results[p], acfg[p] = df, {"base": base}
+    c = FSC.g10_carry(results, acfg, CFG["scorecards"])
+    assert c and c["metrics"]["full"] and c["metrics"]["full"]["maxdd"] <= 0
+    assert len(c["longs"]) == 3 and len(c["shorts"]) == 3
+    dxy = np.exp(pd.Series(rng.normal(0, 0.005, len(idx)), index=idx).cumsum()) * 100
+    d = FSC.dollar_trend(dxy, CFG["scorecards"])
+    assert d and d["metrics"]["full"]["maxdd"] <= 0
+
+
+def test_dollar_desk_assembles_gracefully():
+    """The desk assembles a dict even when every data leg is missing (never raises)."""
+    idx = _idx(300)
+    dol = pd.DataFrame({"smile_regime": ["Neutral"] * 300, "risk_off": 0.0}, index=idx)
+    out = FD.dollar_desk(dol, {}, {}, CFG)
+    assert isinstance(out, dict) and "lean" in out and out["smile"]["confidence"] == "none"
+
+
 if __name__ == "__main__":
     for fn in [test_orthogonalize_strips_dollar_beta, test_carry_sign_and_vol_penalty,
                test_riskoff_factor_archetype_sign, test_factor_panel_naive_bullish_bounds,
@@ -296,7 +407,12 @@ if __name__ == "__main__":
                test_value_lag_has_no_lookahead,
                test_alerts_carry_flip_and_states, test_alerts_peg_approach_fires, test_mtf_runs_on_fx_close,
                test_forex_mtf_uses_measured_fx_preset, test_cnh_basis_sign_and_states,
-               test_calibrate_peg_mask_excises_zones, test_calibrate_pair_signs_inverted_and_normalizes]:
+               test_calibrate_peg_mask_excises_zones, test_calibrate_pair_signs_inverted_and_normalizes,
+               test_real_rate_regime_quadrants, test_fed_path_tightening_sign,
+               test_dollar_positioning_crowded, test_trend_stack_all_up,
+               test_strength_meter_zero_sum_and_usd, test_transmission_known_inverse,
+               test_transmission_flipping_flag, test_scorecards_finite_and_maxdd_nonpositive,
+               test_dollar_desk_assembles_gracefully]:
         fn()
         print(f"PASS {fn.__name__}")
     print("all forex engine tests passed")

@@ -843,12 +843,14 @@ def _forex_state() -> dict:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     try:
         d = json.loads((config.data_dir() / "forex" / "latest.json").read_text())
+        desk = d.get("dollar_desk") or {}
         return {"label": d.get("regime", "—"), "date": d.get("date", ""),
                 "favored": d.get("favored", []), "risk": d.get("risk", ""),
+                "desk_lean": desk.get("lean", ""), "real_rate": desk.get("real_rate_regime", ""),
                 "present": (site / "forex.html").exists()}
     except Exception:
-        return {"label": "—", "date": "", "favored": [], "risk": "",
-                "present": (site / "forex.html").exists()}
+        return {"label": "—", "date": "", "favored": [], "risk": "", "desk_lean": "",
+                "real_rate": "", "present": (site / "forex.html").exists()}
 
 
 def _bonds_state() -> dict:
@@ -1645,10 +1647,12 @@ def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = No
     # a string (Markup + str) escapes the spans and leaks literal <span> text.
     _fx_pill = T(forex.get("label", "—") + (f" · {fx_risk}" if fx_risk else ""),
                  TR(forex.get("label", "—")) + (f" · {TR(fx_risk)}" if fx_risk else ""))
+    _fx_lean = forex.get("desk_lean", "")
+    _fx_go = (T(_fx_lean, TR(_fx_lean)) if _fx_lean else T('Dollar Desk · transmission', '美元桌 · 传导'))
     forex_tile = "" if not forex.get("present") else f"""<a class="glass acc t fx s3" href="forex.html">
       <div class="t-top"><span class="t-ico" aria-hidden="true">💱</span><h3 class="t-h">{T('Forex Vector', '外汇向量')}</h3></div>
       <div class="t-pills"><span class="pill">{_fx_pill}</span></div>
-      <span class="t-go">{T('Dollar-smile board', '美元微笑面板')}</span>
+      <span class="t-go">{_fx_go}</span>
     </a>"""
     _ca_corr = crossasset.get("correlation", "")
     _xa_pill = T(crossasset.get("regime", "—") + (f" · {_ca_corr}" if _ca_corr else ""),
