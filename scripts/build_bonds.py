@@ -631,12 +631,20 @@ def main() -> int:
             log.warning("bonds chart %s failed (%s)", key, e)
             charts[key] = ""
 
+    # the 10y Treasury's contemporaneous correlation TO the dollar (the forex Dollar
+    # Desk's view; complements this page's bonds→dollar leg). Display-only; None if absent.
+    try:
+        from lib import forex_link
+        usd_link = forex_link.asset_corr("UST10")
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        usd_link = None
+
     from engine.i18n import tr, td
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     env.globals.update(tr=tr, td=td)
     html = env.get_template("bonds.html.j2").render(
         C=C, as_of=as_of_disp, built=built, span=span, vm=vm, charts=charts, credit_cycle=credit_cycle,
-        fed_path=fed_path, treasury_supply=treasury_supply,
+        fed_path=fed_path, treasury_supply=treasury_supply, usd_link=usd_link,
         intl=intl, compass=compass, xasset=xasset, xasset_vm=_xasset_vm(xasset),
         timeline=timeline, timeline_days=acfg["timeline_days"], n_alerts=len(recent))
     site = config.ROOT / config.load()["storage"]["site_dir"]

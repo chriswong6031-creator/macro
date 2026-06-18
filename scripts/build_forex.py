@@ -509,6 +509,14 @@ def main() -> int:
     drivers = next(iter(inputs.values()))["drivers"] if inputs else {}
     try:
         desk = forex_dollar.dollar_desk(dol, drivers, _extra_inputs(), cfg)
+        # attach the calibrated REER-value verdict to the valuation leg (display-only
+        # grade from scripts.calibrate_forex's dollar-index leg — CONFIRMED on IC but
+        # gated by deflated Sharpe; never wired into a score)
+        dcal = calib.get("dollar") or {}
+        if desk.get("valuation") and dcal:
+            desk["valuation"]["verdict"] = dcal.get("verdict")
+            desk["valuation"]["ic_full"] = dcal.get("ic_full")
+            desk["valuation"]["promotable"] = dcal.get("promotable")
     except Exception as e:  # noqa: BLE001
         log.warning("dollar desk failed (%s)", e)
         desk = {}
@@ -530,7 +538,8 @@ def main() -> int:
     try:
         dxy_df = store.read("yahoo", "DX-Y.NYB")
         dxy_close = dxy_df["close"] if dxy_df is not None and "close" in dxy_df.columns else None
-        scorecards = forex_scorecards.scorecards(results, cfg["assets"], dxy_close, cfg["scorecards"])
+        scorecards = forex_scorecards.scorecards(results, cfg["assets"], dxy_close,
+                                                 cfg["scorecards"], risk_off=dol.get("risk_off"))
     except Exception as e:  # noqa: BLE001
         log.warning("scorecards failed (%s)", e)
         scorecards = []

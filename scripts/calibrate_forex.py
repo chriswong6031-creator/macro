@@ -82,7 +82,10 @@ def _ic(factor: pd.Series, fwd: pd.DataFrame, idx: pd.Index, horizons: list[int]
     for h in horizons:
         pair = pd.concat([fac, fwd[h].reindex(idx)], axis=1).dropna()
         if len(pair) >= 60:
-            c = pair.iloc[:, 0].corr(pair.iloc[:, 1], method="spearman")
+            # Spearman IC = Pearson of ranks. Identical to method="spearman" for the
+            # continuous (tie-free) factor/return columns here, but scipy-free so the
+            # calibration runs in any environment (incl. the dollar-index leg below).
+            c = pair.iloc[:, 0].rank().corr(pair.iloc[:, 1].rank())
             if pd.notna(c):
                 ics.append(c)
     return float(np.mean(ics)) if ics else np.nan
@@ -220,6 +223,67 @@ def calibrate_pair(pair: str, sig: pd.DataFrame, meta: dict, cal: dict) -> dict:
             "allocation": allocation}
 
 
+def calibrate_dollar(inputs: dict, cal: dict, cfg: dict, n_trials: int) -> dict | None:
+    """Validate the BROAD-USD REER value factor against forward BROAD-USD returns.
+
+    REER value is the only factor with cross-half forward stability at the PAIR level
+    (EUR & AUD CONFIRMED). This tests whether that carries onto the dollar INDEX itself:
+    split-half Spearman-IC of the dollar's own naive-bullish REER-value factor (cheap =
+    bullish USD) vs forward broad-USD returns, PLUS a deflated-Sharpe gate on a
+    REER-only dollar long/short — counted as ONE additional trial so the haircut only
+    gets harder. Expected honest outcome: a labelled 'leans', not a promotable scored
+    leg. DISPLAY-ONLY regardless; promotion needs CONFIRMED in both halves AND DSR≥0.90."""
+    drivers = next(iter(inputs.values()))["drivers"] if inputs else {}
+    broad, reer = drivers.get("broad_dollar"), drivers.get("reer_us")
+    if broad is None or reer is None:
+        return None
+    broad = broad.dropna()
+    if cal.get("start_date"):
+        broad = broad.loc[cal["start_date"]:]
+    if len(broad) < MIN_OBS:
+        return None
+    horizons = cal["forward_days"]
+    va = forex_signals.value_signal(reer, cfg["dollar_desk"]["valuation"], broad.index)
+    if "value_score" not in va:
+        return None
+    factor = va["value_score"]                         # naive-bullish USD: cheap REER -> +
+    fwd = forward_returns(broad, horizons)
+    split = pd.Timestamp(cal["split_date"])
+    halves = {"full": broad.index, "pre": broad.index[broad.index < split],
+              "post": broad.index[broad.index >= split]}
+    ic = {k: _ic(factor, fwd, idx, horizons) for k, idx in halves.items()}
+    if pd.isna(ic["full"]):
+        return None
+    d = np.sign(ic["full"])
+    both = (np.sign(ic["pre"]) == d) and (np.sign(ic["post"]) == d) and d != 0
+    if abs(ic["full"]) < IC_NOISE:
+        verdict = "CONTEXT"
+    elif both and abs(ic["full"]) >= IC_STRONG:
+        verdict = "CONFIRMED" if d > 0 else "INVERTED"
+    elif abs(ic["full"]) >= IC_NOISE:
+        verdict = "DIRECTIONAL"
+    else:
+        verdict = "CONTEXT"
+    # DSR gate: a REER-only dollar long/short, NET of cost, deflated by N+1 trials
+    al = backtest_conviction(broad, factor.clip(-1, 1), cost_bps=float(cal.get("cost_bps", 2.0)))
+    dsr = None
+    if al:
+        ds = deflated_sharpe(al.get("sharpe_daily"), al.get("skew"), al.get("kurt"),
+                             al.get("n_obs"), n_trials + 1, sr_variance=None,
+                             trading_year=TRADING_YEAR)
+        if ds is not None:
+            ds["verdict"] = dsr_verdict(ds["dsr"])
+            dsr = ds
+    promotable = bool(verdict == "CONFIRMED" and dsr and (dsr.get("dsr") or 0) >= 0.90)
+    return {"factor": "value (REER)", "target": "broad USD (DTWEXBGS)",
+            "span": f"{broad.index.min().date()}..{broad.index.max().date()}", "rows": len(broad),
+            "ic_full": round(ic["full"], 3),
+            "ic_pre": None if pd.isna(ic["pre"]) else round(ic["pre"], 3),
+            "ic_post": None if pd.isna(ic["post"]) else round(ic["post"], 3),
+            "verdict": verdict, "allocation": al, "multiple_testing": dsr,
+            "promotable": promotable, "display_only": True}
+
+
 def main() -> int:
     cfg = config.load()["forex"]
     cal = cfg["calibration"]
@@ -265,6 +329,15 @@ def main() -> int:
                            "counterweight — a low DSR means the edge is likely selection bias.")
             a["multiple_testing"] = dsr
 
+    # ---- dollar-index leg: validate the broad-USD REER value factor (adds 1 trial) ----
+    try:
+        dollar = calibrate_dollar(inputs, cal, cfg, n_trials)
+    except Exception as e:  # noqa: BLE001 — never break the per-pair report
+        print(f"dollar calibration skipped ({e})")
+        dollar = None
+    if dollar:
+        report["dollar"] = dollar
+
     fams = sorted({f for a in report["assets"].values() for f in a.get("signals", {})})
     asof = max((results[p].index.max() for p in report["assets"]), default=None)
     report["trial_log"] = {
@@ -309,6 +382,15 @@ def _summary(report: dict) -> str:
         if mt and mt.get("dsr") is not None:
             L.append(f"    Deflated Sharpe: DSR={mt['dsr']} (SR {mt['sr_annual']} ann vs SR0 "
                      f"{mt['sr0_annual']} ann; N={mt['n_trials']}, T={mt['T']}d) => {mt['verdict']}")
+    dl = report.get("dollar")
+    if dl:
+        L.append(f"\n## DOLLAR INDEX — {dl['factor']} vs forward {dl['target']} ({dl['span']})")
+        L.append(f"    IC full/pre/post = {dl['ic_full']:+}/{dl['ic_pre']}/{dl['ic_post']}  "
+                 f"=> {dl['verdict']}")
+        mt = dl.get("multiple_testing")
+        if mt and mt.get("dsr") is not None:
+            L.append(f"    Deflated Sharpe: DSR={mt['dsr']} => {mt['verdict']}  "
+                     f"| promotable-to-scored: {dl['promotable']} (display-only either way)")
     return "\n".join(L)
 
 
@@ -347,6 +429,24 @@ def _write_markdown(report: dict) -> None:
                          f"DSR (P true Sharpe>0) = **{mt['dsr']}**; observed SR {mt['sr_annual']} ann "
                          f"vs haircut SR0 {mt['sr0_annual']} ann (N={mt['n_trials']} factor×pair trials, "
                          f"T={mt['T']}d, skew={mt['skew']}, kurt={mt['kurt']}).")
+    dl = report.get("dollar")
+    if dl:
+        lines.append(f"\n## DOLLAR INDEX — {dl['factor']} vs forward {dl['target']}\n")
+        lines.append(f"{dl['span']} ({dl['rows']} days). The dollar's own naive-bullish REER-value "
+                     f"factor (cheap = bullish USD) vs forward broad-USD returns, split at "
+                     f"{report['meta']['split']}.\n")
+        lines.append("| Factor | Verdict | IC full | IC pre | IC post | promotable |")
+        lines.append("|---|---|--:|--:|--:|:--|")
+        lines.append(f"| value (REER) | **{dl['verdict']}** | {dl['ic_full']:+} | {dl['ic_pre']} "
+                     f"| {dl['ic_post']} | {dl['promotable']} |")
+        mt = dl.get("multiple_testing")
+        if mt and mt.get("dsr") is not None:
+            lines.append(f"\n**Deflated Sharpe (REER-only dollar long/short, N+1 trials)**: "
+                         f"**{mt['verdict']}**. DSR = **{mt['dsr']}**; SR {mt.get('sr_annual')} ann "
+                         f"vs SR0 {mt.get('sr0_annual')} ann (N={mt.get('n_trials')}, T={mt.get('T')}d).")
+        lines.append(f"\n**DISPLAY-ONLY.** This grades the dollar's REER-value lean honestly; it is "
+                     f"NOT wired into any score. Promotion to a scored leg requires CONFIRMED in both "
+                     f"halves AND DSR≥0.90 — unlikely for FX, which is the honest expected outcome.")
     tl = report.get("trial_log")
     if tl:
         lines.append("\n## Trial log\n")
