@@ -321,7 +321,24 @@
     });
   }
 
+  // Wrap wide data tables in a horizontal-scroll container so they scroll WITHIN their
+  // card on narrow screens instead of bleeding past the viewport (mobile fix). Runs before
+  // tablesort (theme.js loads first) so the filter box lands above the wrapper, and again on
+  // load for any JS-rendered tables. Skips tooltip / nav tables and anything already wrapped.
+  function wrapTables(root) {
+    (root || document).querySelectorAll('table').forEach(function (t) {
+      if (t.closest('.tbl-scroll')) return;                       // already wrapped
+      if (t.closest('.tip, .help, .site-nav, .topbar, .nav-links, .nav-dd-menu')) return;
+      if (!t.parentNode) return;
+      var w = document.createElement('div');
+      w.className = 'tbl-scroll';
+      t.parentNode.insertBefore(w, t);
+      w.appendChild(t);
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
+    wrapTables();
     // legacy text buttons (Bitcoin Vector / hub / China — untouched pages)
     document.querySelectorAll('.theme-btn').forEach(function (b) {
       b.addEventListener('click', window.toggleTheme);
@@ -346,5 +363,5 @@
     themeCharts();
   });
   // charts may finish drawing after DOMContentLoaded; re-theme once more on load
-  window.addEventListener('load', themeCharts);
+  window.addEventListener('load', function () { themeCharts(); wrapTables(); });
 })();

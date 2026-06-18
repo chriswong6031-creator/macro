@@ -222,7 +222,7 @@
   .nbcard.nb-caution { border-left-color: var(--warn); }
   .nb-top { display: flex; align-items: baseline; gap: 6px; }
   .nb-tk { font-weight: 800; font-size: 14px; color: var(--text); letter-spacing: .01em; }
-  .nb-nm { font-size: 10px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+  .nb-nm { font-size: 10px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
   .nb-px { font-weight: 700; font-size: 13px; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .nb-sub { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); }
   .nbcard .nch { background: transparent; margin: 4px 0 2px; }
@@ -441,7 +441,7 @@
     {% if setups.laggards %}
     <p class="note" style="margin:13px 0 5px;text-transform:none;color:var(--down);font-weight:700">⚠ {{ t('Weakest relative strength (laggards) — distribution risk:', '相对强度最弱（落后股）— 派发风险：') }}</p>
     <p style="margin:0;line-height:2">
-      {% for r in setups.laggards %}<a href="hk_lookup.html#{{ r.ticker }}" style="margin-right:14px;white-space:nowrap"><b>{{ r.ticker }}</b> <span class="note">{{ r.name }}</span> <span class="neg">{{ '%+.2f'|format(r.alpha) }}</span></a>{% endfor %}
+      {% for r in setups.laggards %}<a href="hk_lookup.html#{{ r.ticker }}" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>{{ r.ticker }}</b> <span class="note">{{ r.name }}</span> <span class="neg">{{ '%+.2f'|format(r.alpha) }}</span></a>{% endfor %}
     </p>
     {% endif %}
     <p class="note" style="margin:8px 0 0;font-size:11px">{{ t('Relative strength is descriptive, not predictive: HK has no validated stock-picking edge (residual momentum is dead on a 40-year panel). For the validated read, use the global-risk exposure board below. A research surface to size and confirm — not a buy list.', '相对强度是描述性的，而非预测性的：香港没有经验证的选股优势（40年面板上残差动量无效）。已验证的读数请使用下方的全球风险敞口看板。用于研究、定仓与确认的面板 —— 而非买入清单。') }}</p>
