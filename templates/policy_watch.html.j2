@@ -63,6 +63,18 @@
 
 <div class="pw-wrap">
 
+  {% if scorecard %}
+  <div class="led-stat" style="margin-top:14px;font-size:13px">
+    <span><b>{{ scorecard.predictions.total }}</b> {{ t('predictions', '预测') }} ({{ scorecard.predictions.resolved }} {{ t('resolved', '已结') }}{% if scorecard.predictions.hit_rate is not none %}, {{ (scorecard.predictions.hit_rate*100)|round|int }}% {{ t('hit', '命中') }}{% endif %}{% if scorecard.predictions.overdue %}, <span class="r-neg">{{ scorecard.predictions.overdue }} {{ t('due', '待结') }}</span>{% endif %})</span>
+    <span>{{ t('rotation', '轮动') }}: <span class="r-pos">{{ scorecard.rotation.working }} {{ t('working', '达标') }}</span> · <span class="r-neg">{{ scorecard.rotation.lagging }} {{ t('lagging', '落后') }}</span></span>
+    {% if scorecard.stance %}<span>{{ t('Fed', '美联储') }}: <b>{{ scorecard.stance.current }}</b>{% if scorecard.stance.days is not none %} {{ scorecard.stance.days }}{{ t('d', '天') }}{% endif %}{% if scorecard.stance.changed_recently %} <span class="b b-open">{{ t('shifted', '转变') }}</span>{% endif %}</span>{% endif %}
+    <span>{{ t('intel', '情报') }}: {% if scorecard.intel.stale %}<span class="r-neg">{{ scorecard.intel.age_days }}{{ t('d old', '天') }}</span>{% else %}{{ t('fresh', '最新') }}{% endif %}</span>
+  </div>
+  {% if scorecard.rotation.sharpest_divergence %}
+  <div class="callout warn">⚠ <b>{{ t('Sharpest divergence', '最大背离') }}:</b> {{ t('the map targets', '地图看好') }} <b>{{ scorecard.rotation.sharpest_divergence.theme }}</b> {{ t('but it is lagging SPY by', '但其跑输标普') }} {{ '%.1f'|format(scorecard.rotation.sharpest_divergence.rel*100) }}% — {{ t('evidence against that leg of the rotation thesis.', '是对该轮动判断的反证。') }}</div>
+  {% endif %}
+  {% endif %}
+
   {% if dates and dates.staleness and dates.staleness.stale %}
   <div class="callout warn" style="margin-top:16px">⏳ <b>{{ t('Intel is', '情报已') }} {{ dates.staleness.age_days }} {{ t('days old', '天未更新') }}</b> — {{ t('re-verify before acting; this layer is time-sensitive (truces, ceasefires and pending rulings move).', '行动前请重新核实；该层具时效性（休战、停火与待决裁决随时变化）。') }}{% if dates.overdue_predictions %} · {{ dates.overdue_predictions }} {{ t('prediction(s) past check-by', '条预测已过核查日') }}{% endif %}</div>
   {% endif %}

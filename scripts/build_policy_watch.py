@@ -102,11 +102,20 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.warning("policy dates skipped: %s", e)
 
+    # unified accountability scorecard (predictions / rotation / stance / freshness) +
+    # the sharpest divergence (a targeted theme that is actually lagging worst).
+    scorecard = None
+    try:
+        from engine import policy_summary as _psum
+        scorecard = _psum.summarize(counts, rot, fed_hist, dates)
+    except Exception as e:  # noqa: BLE001
+        log.warning("scorecard skipped: %s", e)
+
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     html = env.get_template("policy_watch.html.j2").render(
         intel=intel, counts=counts, desk=desk, fed_stance=fed_stance, fed_hist=fed_hist,
-        rot=rot, rot_hist=rot_hist, dates=dates, generated_utc=built,
+        rot=rot, rot_hist=rot_hist, dates=dates, scorecard=scorecard, generated_utc=built,
         active_section="research", active_page="policy_watch",
     )
     (site / "policy_watch.html").write_text(html)
