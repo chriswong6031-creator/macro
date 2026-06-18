@@ -61,10 +61,19 @@ def main() -> int:
     resolved = counts["hit"] + counts["miss"]
     counts["hit_rate"] = (counts["hit"] / resolved) if resolved else None
 
+    # the LLM intent desk output (generated in CI by engine.policy_intent_desk; absent
+    # locally -> the section simply hides). Drop raw_text defensively.
+    desk = None
+    try:
+        dj = json.loads((site / "policy_intent.json").read_text())
+        desk = {k: v for k, v in dj.items() if k != "raw_text"}
+    except Exception:  # noqa: BLE001
+        desk = None
+
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     html = env.get_template("policy_watch.html.j2").render(
-        intel=intel, counts=counts, generated_utc=built,
+        intel=intel, counts=counts, desk=desk, generated_utc=built,
         active_section="research", active_page="policy_watch",
     )
     (site / "policy_watch.html").write_text(html)
