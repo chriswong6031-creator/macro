@@ -1,0 +1,231 @@
+{
+  "schema": "policy_intel.v1",
+  "as_of": "2026-06-18",
+  "lens": "realpolitik — revealed preference / interest-driven; non-partisan",
+  "is_context_only": true,
+  "thesis": {
+    "en": "A coordinated regime of low-real-yield engineering + strategic re-industrialization. The Fed under Warsh institutionalizes a narrower, more discretionary, framework-resetting central bank (strict 2% target, less unconventional easing, no self-binding forward guidance), while Treasury under Bessent runs explicit yield suppression via bill-heavy issuance, buybacks, dealer-intermediation reform, and a de-facto funding alignment with the Fed. Industrial policy (advanced-chip tariffs, nuclear-for-AI) steers capital toward strategic domestic capacity.",
+    "zh": "一个协调一致的“压低实际收益率 + 战略再工业化”政策体制。沃什治下的美联储将其制度化为一个更收窄、更具相机抉择、重置框架的央行（严格2%目标、减少非常规宽松、不再自缚式前瞻指引）；贝森特治下的财政部则通过偏短端发债、回购、做市商中介改革，以及与美联储事实上的融资协同，明确压低收益率。产业政策（先进芯片关税、为AI供电的核能）将资本引向战略性国内产能。"
+  },
+  "regime_read": {
+    "en": "The market-relevant divergence: the consensus narrative casts Warsh as a dovish Trump instrument (Warren's 'sock puppet'), yet his revealed debut was a hawkish hold with a possible-hike dot. The low-yield outcome the administration wants is being pursued STRUCTURALLY — framework reset, balance-sheet posture, and Treasury issuance — not via near-term cuts. Trade the structure, not the rhetoric.",
+    "zh": "对市场最关键的背离：主流叙事把沃什描绘成特朗普的鸽派工具（沃伦称其“提线木偶”），但他实际的首秀却是鹰派按兵不动、并暗示年内可能加息。政府想要的低收益率结果，是通过“结构性”手段实现的——框架重置、资产负债表姿态、财政部发债结构——而非近期降息。交易结构，而非言辞。"
+  },
+  "fed": {
+    "chair": "Kevin Warsh",
+    "debut": "2026-06-17",
+    "profile": {
+      "en": "Warsh's revealed agenda (CFR confirmation-hearing analysis + his June 17 debut): narrow the Fed's mandate, revert to a strict 2% target (abandoning 2020 flexible-average-inflation-targeting), cut reliance on unconventional tools (QE/balance sheet), and abandon forward guidance — potentially making the dot plot obsolete. He withheld his own dot, dropped guidance, issued a ~114-word statement, and chartered five reform task forces. Revealed interest: a personal institutional legacy / structural Fed redesign that outlasts any one president.",
+      "zh": "沃什的实际议程（CFR对其确认听证会的分析 + 6月17日首秀）：收窄美联储职责、回归严格2%目标（放弃2020年的灵活平均通胀目标制）、减少对非常规工具（QE/资产负债表）的依赖、并放弃前瞻指引——点阵图或将作废。他未提交自己的点位、取消指引、发布约114词的声明、并设立五个改革工作组。其真实利益：打造个人的制度遗产 / 一个能超越任一总统任期的结构性美联储重设。"
+    },
+    "task_forces": [
+      {
+        "id": "tf_comms", "name_en": "Communications", "name_zh": "沟通",
+        "charter_en": "Review Fed communications, the SEP/dot-plot, transcript release practice, and the press conference; recommendations due ~end-2026; the vote on changes is deferred until it reports.",
+        "charter_zh": "审查美联储沟通方式、SEP/点阵图、纪要发布做法及新闻发布会；建议约于2026年底出炉；相关变更的表决推迟至其汇报后。",
+        "realpolitik_en": "Institutionalizes killing forward guidance and the dot plot — more chair discretion, less market self-binding.",
+        "realpolitik_zh": "将“废除前瞻指引与点阵图”制度化——主席相机抉择空间更大，对市场的自我约束更少。",
+        "check_by": "2026-12-31", "status": "pending", "basis": "FACT (charter) · INFERENCE (read)", "confidence": "high"
+      },
+      {
+        "id": "tf_balance", "name_en": "Balance-sheet policy", "name_zh": "资产负债表政策",
+        "charter_en": "Reconsider the Fed's balance-sheet framework and tools.",
+        "charter_zh": "重新审视美联储的资产负债表框架与工具。",
+        "realpolitik_en": "Codifies a smaller, less-interventionist balance sheet and the 'bills-from-MBS' reinvestment that conveniently aids Treasury's bill-heavy funding (the Fed/Treasury nexus).",
+        "realpolitik_zh": "将“更小、更少干预的资产负债表”及“以MBS回流资金购买短期国库券”的再投资姿态制度化——恰好配合财政部偏短端的融资需求（美联储/财政部联结点）。",
+        "check_by": "2026-12-31", "status": "pending", "basis": "FACT (charter) · INFERENCE (read)", "confidence": "high"
+      },
+      {
+        "id": "tf_data", "name_en": "Data sources", "name_zh": "数据来源",
+        "charter_en": "Review the Fed's use of and reliance on existing data sources.",
+        "charter_zh": "审查美联储对现有数据来源的使用与依赖。",
+        "realpolitik_en": "Revisits which data the Fed trusts (deemphasizing soft/lagging series), widening interpretive latitude for policy.",
+        "realpolitik_zh": "重新界定美联储信任哪些数据（弱化软性/滞后序列），为政策解读拓宽空间。",
+        "check_by": "2026-12-31", "status": "pending", "basis": "FACT (charter) · INFERENCE (read)", "confidence": "medium"
+      },
+      {
+        "id": "tf_productivity", "name_en": "Productivity, jobs & AI", "name_zh": "生产率、就业与AI",
+        "charter_en": "Study productivity and jobs in an era of transformation (AI).",
+        "charter_zh": "研究AI变革时代下的生产率与就业。",
+        "realpolitik_en": "Builds the intellectual case that AI lifts productivity/potential growth — justification to tolerate stronger demand without hiking. A supply-side narrative aligned with the administration's AI-dominance agenda.",
+        "realpolitik_zh": "构建“AI提升生产率/潜在增长”的理论依据——为“容忍更强需求而不加息”背书。这一供给侧叙事与政府的AI主导议程一致。",
+        "check_by": "2026-12-31", "status": "pending", "basis": "FACT (charter) · INFERENCE (read)", "confidence": "medium"
+      },
+      {
+        "id": "tf_inflation", "name_en": "Inflation frameworks", "name_zh": "通胀框架",
+        "charter_en": "Re-examine the Fed's inflation frameworks.",
+        "charter_zh": "重新检视美联储的通胀框架。",
+        "realpolitik_en": "The vehicle to formally bury 2020 FAIT and lock in a strict 2% target — the doctrinal core of the reset.",
+        "realpolitik_zh": "正式埋葬2020年FAIT、锁定严格2%目标的载体——本次重置的教义核心。",
+        "check_by": "2026-12-31", "status": "pending", "basis": "FACT (charter) · INFERENCE (read)", "confidence": "high"
+      }
+    ],
+    "staffing_note": {
+      "en": "Each task force pairs internal Fed staff with external experts Warsh is 'still recruiting' — NO external members named as of the June 17 debut. First named member is itself a tracked signal.",
+      "zh": "每个工作组由美联储内部人员搭配外部专家组成，沃什表示仍在“招募中”——截至6月17日首秀尚无外部成员公布。首位公布的成员本身即是一个被追踪的信号。"
+    }
+  },
+  "administration": {
+    "decision_makers": ["Donald Trump (President)", "Scott Bessent (Treasury Secretary)", "DOE Sec. Chris Wright (energy/nuclear)"],
+    "grand_strategy": {
+      "en": "Treasury's revealed strategy under Bessent is yield suppression — 'Making America Affordable Again' — via short-end/bill-heavy funding rather than long-end coupons or deficit elimination, plus market-structure reform to expand dealer capacity to absorb Treasuries (eSLR reform, SEC central-clearing, buyback expansion). The objective Bessent states plainly: keep the risk-free rate low to lower mortgage and car payments. Pair this with concrete industrial policy (chip tariffs, nuclear-for-AI) and the picture is reflation-with-repression: hold real yields down while steering capital into strategic domestic capacity.",
+      "zh": "贝森特治下财政部的实际策略是压低收益率——“让美国重新负担得起”——通过偏短端/票据为主的发债（而非增加长端票息或消除赤字），并辅以扩大做市商承接国债能力的市场结构改革（eSLR改革、SEC中央清算、扩大回购）。贝森特直言其目标：压低无风险利率以降低房贷与车贷。再叠加具体的产业政策（芯片关税、为AI供电的核能），整体图景即“带金融抑制的再通胀”：压住实际收益率，同时把资本引向战略性国内产能。"
+    },
+    "verified_levers": [
+      {
+        "id": "lever_issuance",
+        "title_en": "Bill-heavy issuance ('Bessent put')", "title_zh": "偏短端发债（“贝森特托底”）",
+        "detail_en": "Treasury guided it likely will NOT change coupon auction sizes for several quarters, using T-bills as the issuance 'shock absorber' (SB0314, Nov 2025; held at Feb & May 2026 refundings).",
+        "detail_zh": "财政部已指引未来数个季度很可能不调整票息拍卖规模，以短期国库券作为发债的“减震器”（SB0314，2025年11月；并在2026年2月与5月再融资中维持）。",
+        "basis": "FACT", "confidence": "high"
+      },
+      {
+        "id": "lever_intermediation",
+        "title_en": "Dealer-intermediation reform", "title_zh": "做市商中介改革",
+        "detail_en": "Buyback program expanded (counterparty set widened H1 2026, final amendments Mar 30 2026), eSLR reform supported, SEC central-clearing backed — all to clear dealer balance-sheet capacity to absorb Treasuries.",
+        "detail_zh": "扩大回购计划（2026年上半年扩大交易对手范围，3月30日定稿修订）、支持eSLR改革、支持SEC中央清算——皆为释放做市商资产负债表空间以承接国债。",
+        "basis": "FACT", "confidence": "high"
+      },
+      {
+        "id": "lever_fed_nexus",
+        "title_en": "De-facto Fed/Treasury funding nexus", "title_zh": "事实上的美联储/财政部融资联结",
+        "detail_en": "Bessent explicitly cites the FOMC's shift to buying T-bills with MBS-runoff proceeds as a development that aids Treasury's bill-heavy funding. (FACT: the Fed reinvestment. INFERENCE: 'alignment' is the analyst's read.)",
+        "detail_zh": "贝森特明确将FOMC“以MBS回流资金购买短期国库券”列为有助于其偏短端融资的进展。（事实：美联储的再投资；推断：“协同”为分析判断。）",
+        "basis": "FACT + INFERENCE", "confidence": "medium-high"
+      },
+      {
+        "id": "lever_chips",
+        "title_en": "25% advanced-chip tariff", "title_zh": "25%先进芯片关税",
+        "detail_en": "Jan 14 2026 Section 232 25% tariff on certain advanced computing chips, naming NVIDIA H200 & AMD MI325X. NOTE: a reshoring exemption for fab-input chips was REFUTED — do not assume a clean domestic-fab carve-out.",
+        "detail_zh": "2026年1月14日依据232条款对部分先进计算芯片征收25%关税，点名英伟达H200与AMD MI325X。注意：所谓“为建厂进口芯片豁免”已被证伪——不要假设存在干净的国内建厂豁免。",
+        "basis": "FACT", "confidence": "high"
+      },
+      {
+        "id": "lever_nuclear",
+        "title_en": "Nuclear-for-AI build-out", "title_zh": "为AI供电的核能建设",
+        "detail_en": "EO 14299 (May 23 2025): quadruple nuclear to 400 GW by 2050; 3 pilot reactors to criticality by Jul 4 2026; ≥20 MT HALEU released for private/AI projects; AI/critical-infra reactor by Oct 2027; DoD reactor. CAVEAT: targets are aspirational and slipping (only 1–2 of 3 pilots may hit Jul 4; Antares Mark-0 reached criticality early June 2026).",
+        "detail_zh": "第14299号行政令（2025年5月23日）：到2050年将核电翻两番至400吉瓦；3座试点反应堆于2026年7月4日前达临界；释放≥20公吨HALEU用于私营/AI项目；2027年10月前建成AI/关键基础设施反应堆；国防部反应堆。警告：目标偏理想且在滑期（3座试点或仅1–2座能赶上7月4日；Antares Mark-0已于2026年6月初达临界）。",
+        "basis": "FACT (directive) · CAVEAT (execution slipping)", "confidence": "high"
+      }
+    ],
+    "unverified_priors": {
+      "en": "Requested but NOT covered by the verified claim set — treat as realpolitik PRIORS, not facts: China decoupling/export-control specifics, the 2026 Iran/Middle-East energy situation, NATO burden-sharing/defense-spending numbers, and the 'Mar-a-Lago Accord' / currency-realignment thesis. Flagged open; to be sourced in the next research pass.",
+    "zh": "用户要求但未被已核实claim集覆盖——按realpolitik“先验”而非事实对待：对华脱钩/出口管制细节、2026年伊朗/中东能源局势、北约分摊/国防开支数字，以及“海湖庄园协议”/货币重整论。标记为待解，将在下一轮研究中取证。"
+    }
+  },
+  "rotation": {
+    "targeted": [
+      {"theme_en": "Nuclear · uranium · HALEU/fuel cycle", "theme_zh": "核能·铀·HALEU燃料循环",
+       "mechanism_en": "EO 14299 quadruple-to-400GW; HALEU released for AI; DoD/pilot reactors", "mechanism_zh": "第14299号行政令翻两番至400吉瓦；为AI释放HALEU；国防部/试点反应堆",
+       "proxies": ["URA", "URNM", "NLR", "SMR", "OKLO", "CCJ", "LEU"], "basis": "FACT mechanism · INFERENCE proxies", "confidence": "high"},
+      {"theme_en": "Power · grid · datacenter capex (AI compute)", "theme_zh": "电力·电网·数据中心资本开支（AI算力）",
+       "mechanism_en": "AI build-out + nuclear-for-AI demand on the grid", "mechanism_zh": "AI建设 + 为AI供电对电网的需求",
+       "proxies": ["GEV", "VST", "CEG", "ETN", "PWR", "GRID"], "basis": "FACT mechanism · INFERENCE proxies", "confidence": "high"},
+      {"theme_en": "Domestic semiconductors / fabs", "theme_zh": "国内半导体/晶圆厂",
+       "mechanism_en": "25% Section-232 chip tariff pressures import channels (no verified fab-input exemption)", "mechanism_zh": "25%的232条款芯片关税挤压进口渠道（无已核实的建厂进口豁免）",
+       "proxies": ["SMH", "SOXX"], "basis": "FACT mechanism · INFERENCE proxies", "confidence": "medium-high"},
+      {"theme_en": "Financials / dealer banks", "theme_zh": "金融/做市商银行",
+       "mechanism_en": "eSLR reform + central-clearing + buyback expansion ease bank Treasury intermediation", "mechanism_zh": "eSLR改革+中央清算+扩大回购，缓解银行承接国债的约束",
+       "proxies": ["XLF", "KBE"], "basis": "FACT mechanism · INFERENCE proxies", "confidence": "high"},
+      {"theme_en": "Front-end Treasuries", "theme_zh": "短端美债",
+       "mechanism_en": "Bill-heavy issuance + yield suppression + Fed bills-from-MBS", "mechanism_zh": "偏短端发债+压低收益率+美联储以MBS资金购买短债",
+       "proxies": ["BIL", "SHV"], "basis": "FACT mechanism · INFERENCE proxies", "confidence": "high"},
+      {"theme_en": "Defense", "theme_zh": "国防",
+       "mechanism_en": "NATO burden-sharing / defense-spending posture (thinly sourced — PRIOR)", "mechanism_zh": "北约分摊/国防开支姿态（来源较薄——属先验）",
+       "proxies": ["ITA", "XAR", "PPA"], "basis": "PRIOR (thinly sourced)", "confidence": "low"},
+      {"theme_en": "Critical minerals / rare earths", "theme_zh": "关键矿产/稀土",
+       "mechanism_en": "Supply-chain de-risking (thinly sourced — PRIOR)", "mechanism_zh": "供应链去风险（来源较薄——属先验）",
+       "proxies": ["REMX", "MP"], "basis": "PRIOR (thinly sourced)", "confidence": "low"}
+    ],
+    "starved": [
+      {"theme_en": "Import-dependent advanced-chip channels", "theme_zh": "依赖进口的先进芯片渠道",
+       "mechanism_en": "25% tariff raises cost of imported compute (H200/MI325X named)", "mechanism_zh": "25%关税抬高进口算力成本（点名H200/MI325X）",
+       "proxies": [], "basis": "FACT mechanism", "confidence": "high"},
+      {"theme_en": "Long-duration / term-premium-sensitive", "theme_zh": "长久期/对期限溢价敏感",
+       "mechanism_en": "Assets that 'fight the Bessent put' if yield suppression holds (policy-contested, not a clean short)", "mechanism_zh": "若压低收益率持续，与“贝森特托底”对抗的资产（政策博弈中，并非干净的做空）",
+       "proxies": ["TLT"], "basis": "INFERENCE / PRIOR", "confidence": "low-medium"},
+      {"theme_en": "Old transparent-guidance rates-vol strategies", "theme_zh": "依赖透明指引的利率波动率策略",
+       "mechanism_en": "A less-predictable communications regime raises event-vol around a guidance-free Fed", "mechanism_zh": "更不可预测的沟通体制抬高了“无指引美联储”前后的事件性波动",
+       "proxies": [], "basis": "INFERENCE", "confidence": "medium"}
+    ]
+  },
+  "predictions": [
+    {"id": "P1", "thread": "fed", "tier": "policy-action", "confidence": "high", "check_by": "2026-12-31", "status": "open",
+     "text_en": "Fed releases a revised SEP/communications framework (new dot-plot format, or formal discontinuation, or transcript/presser changes).",
+     "text_zh": "美联储发布修订后的SEP/沟通框架（点阵图改版、正式停用、或纪要/发布会变更）。"},
+    {"id": "P2", "thread": "fed", "tier": "policy-action", "confidence": "high", "check_by": "2026-12-31", "status": "open",
+     "text_en": "Inflation-frameworks task force formally recommends abandoning 2020 FAIT for a strict 2% target.",
+     "text_zh": "通胀框架工作组正式建议放弃2020年FAIT、回归严格2%目标。"},
+    {"id": "P3", "thread": "fed", "tier": "policy-action", "confidence": "high", "check_by": "2026-09-30", "status": "open",
+     "text_en": "Warsh keeps withholding his own dot OR the dot plot is suspended over the next 2–3 meetings.",
+     "text_zh": "未来2–3次会议中，沃什继续不提交自己的点位，或点阵图被暂停。"},
+    {"id": "P4", "thread": "fed", "tier": "policy-action", "confidence": "medium", "check_by": "2026-09-30", "status": "open",
+     "text_en": "At least one named external task-force expert is announced.",
+     "text_zh": "至少公布一位具名的外部工作组专家。"},
+    {"id": "P5", "thread": "fed", "tier": "policy-action", "confidence": "high", "check_by": "2026-09-30", "status": "open",
+     "text_en": "The Fed does NOT cut at the July and September 2026 meetings (hold or hike). Falsified by any 2026 cut ahead of the median path.",
+     "text_zh": "美联储在2026年7月与9月会议上不降息（按兵或加息）。若年内先于中值路径降息则证伪。"},
+    {"id": "P6", "thread": "treasury", "tier": "policy-action", "confidence": "high", "check_by": "2026-08-31", "status": "open",
+     "text_en": "No coupon auction-size INCREASE at the Aug 2026 refunding (bills stay the shock absorber). Falsified by any coupon-size hike.",
+     "text_zh": "2026年8月再融资不上调票息拍卖规模（短债仍为减震器）。若上调票息规模则证伪。"},
+    {"id": "P7", "thread": "treasury", "tier": "policy-action", "confidence": "high", "check_by": "2026-12-31", "status": "open",
+     "text_en": "Treasury keeps publicly framing policy as keeping the risk-free rate low / affordability.",
+     "text_zh": "财政部继续公开将政策表述为压低无风险利率/可负担性。"},
+    {"id": "P8", "thread": "treasury", "tier": "policy-action", "confidence": "medium", "check_by": "2026-12-31", "status": "open",
+     "text_en": "Concrete eSLR-reform progress (a proposed or final rule from a banking regulator).",
+     "text_zh": "eSLR改革取得具体进展（银行监管机构出台拟议或最终规则）。"},
+    {"id": "P9", "thread": "treasury", "tier": "policy-action", "confidence": "medium", "check_by": "2026-12-31", "status": "open",
+     "text_en": "SEC advances Treasury central-clearing expansion (a rule or compliance milestone).",
+     "text_zh": "SEC推进国债中央清算扩容（规则或合规里程碑）。"},
+    {"id": "P10", "thread": "fed", "tier": "policy-action", "confidence": "high", "check_by": "2026-12-31", "status": "open",
+     "text_en": "The Fed keeps reinvesting MBS runoff into T-bills through 2026.",
+     "text_zh": "美联储在2026年内持续将MBS回流资金再投资于短期国库券。"},
+    {"id": "P11", "thread": "policy", "tier": "policy-action", "confidence": "high", "check_by": "2026-12-31", "status": "open",
+     "text_en": "The 25% advanced-chip tariff stays in force (not rescinded) and/or the covered list expands.",
+     "text_zh": "25%先进芯片关税继续生效（未被撤销）且/或覆盖清单扩大。"},
+    {"id": "P12", "thread": "policy", "tier": "policy-action", "confidence": "medium", "check_by": "2026-07-04", "status": "open",
+     "text_en": "At least one of the three pilot reactors reaches criticality (partial-pass already likely — Antares Mark-0, early June 2026).",
+     "text_zh": "三座试点反应堆中至少一座达临界（已可能部分达成——Antares Mark-0，2026年6月初）。"},
+    {"id": "P13", "thread": "policy", "tier": "policy-action", "confidence": "medium", "check_by": "2026-12-31", "status": "open",
+     "text_en": "DOE releases ≥20 MT HALEU into the fuel bank for private/AI projects.",
+     "text_zh": "美国能源部向燃料库释放≥20公吨HALEU用于私营/AI项目。"},
+    {"id": "P14", "thread": "policy", "tier": "policy-action", "confidence": "low", "check_by": "2027-10-31", "status": "open",
+     "text_en": "The AI/critical-infrastructure reactor program shows a contracted/sited project.",
+     "text_zh": "AI/关键基础设施反应堆计划出现已签约/选址的项目。"},
+    {"id": "P15", "thread": "rotation", "tier": "market-outcome", "confidence": "low", "check_by": "2026-12-31", "status": "open",
+     "text_en": "Nuclear/uranium proxies (URA/URNM/SMR/OKLO/CCJ) outperform the S&P 500 over the next 2 quarters. Falsified by sustained underperformance.",
+     "text_zh": "核能/铀代理（URA/URNM/SMR/OKLO/CCJ）未来两个季度跑赢标普500。若持续跑输则证伪。"},
+    {"id": "P16", "thread": "rotation", "tier": "market-outcome", "confidence": "medium", "check_by": "2026-08-31", "status": "open",
+     "text_en": "Front-end Treasury demand stays robust (bill auctions well-covered, no forced coupon shift).",
+     "text_zh": "短端美债需求保持强劲（票据拍卖认购充分，未被迫调整票息）。"},
+    {"id": "P17", "thread": "rotation", "tier": "market-outcome", "confidence": "low", "check_by": "2026-12-31", "status": "open",
+     "text_en": "Financials/dealer-bank proxies (XLF) benefit on eSLR-reform headlines.",
+     "text_zh": "金融/做市商银行代理（XLF）受益于eSLR改革相关消息。"},
+    {"id": "P18", "thread": "rotation", "tier": "market-outcome", "confidence": "low", "check_by": "2026-12-31", "status": "open",
+     "text_en": "Long-duration Treasuries (TLT) do NOT sustain a term-premium blowout that overrides the suppression campaign in H2 2026. Falsified by a disorderly long-end selloff.",
+     "text_zh": "长久期美债（TLT）在2026下半年不出现压过压制行动的期限溢价飙升。若长端无序抛售则证伪。"}
+  ],
+  "monitor": [
+    {"name": "FOMC statements · presser transcripts · SEP tables", "who": "Federal Reserve", "url": "https://www.federalreserve.gov/newsevents/pressreleases.htm", "cadence": "each meeting; task-force reports ~year-end 2026"},
+    {"name": "Treasury quarterly refunding + Bessent remarks + TBAC", "who": "US Treasury", "url": "https://home.treasury.gov/news/press-releases", "cadence": "quarterly (next Aug 2026) + ad hoc"},
+    {"name": "Section-232 chip-tariff modifications / covered-list changes", "who": "White House", "url": "https://www.whitehouse.gov/presidential-actions/", "cadence": "ad hoc"},
+    {"name": "Nuclear: pilot-reactor criticality · HALEU releases · reprocessing", "who": "DOE Office of Nuclear Energy", "url": "https://www.energy.gov/ne/listings/ne-articles", "cadence": "ad hoc"},
+    {"name": "eSLR reform rules", "who": "Fed / OCC / FDIC", "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg.htm", "cadence": "ad hoc"},
+    {"name": "Treasury central-clearing rulemaking", "who": "SEC", "url": "https://www.sec.gov/rules-regulations", "cadence": "ad hoc"},
+    {"name": "Principals to track for hawkish/dovish & policy drift", "who": "Warsh · Bessent · DOE Sec. Wright · FOMC dot participants", "url": "", "cadence": "continuous"}
+  ],
+  "sources": [
+    "https://www.federalreserve.gov/mediacenter/files/FOMCpresconf20260617.pdf",
+    "https://www.federalreserve.gov/monetarypolicy/files/fomcprojtabl20260617.pdf",
+    "https://www.cfr.org/articles/what-kevin-warshs-confirmation-hearing-revealed-about-the-future-of-the-fed",
+    "https://home.treasury.gov/news/press-releases/sb0314",
+    "https://www.whitehouse.gov/fact-sheets/2026/01/fact-sheet-president-donald-j-trump-takes-action-on-certain-advanced-computing-chips-to-protect-americas-economic-and-national-security/",
+    "https://www.energy.gov/ne/articles/9-key-takeaways-president-trumps-executive-orders-nuclear-energy",
+    "https://www.cnbc.com/2026/06/17/kevin-warsh-fed-interest-rates-risk-analysis.html",
+    "https://www.npr.org/2026/06/17/nx-s1-5860084/fed-chief-warsh-first-fomc-meeting"
+  ],
+  "caveats": {
+    "en": "Realpolitik reads, the 'de-facto Fed/Treasury alignment' framing, all ticker proxies, and market-outcome predictions (P15–P18) are INFERENCE, not source-endorsed fact. China/Iran/NATO/Mar-a-Lago threads are UNVERIFIED priors. Nuclear targets are aspirational and already slipping. The chip-tariff reshoring-exemption was REFUTED. Time-sensitive: anchored to June 17 2026; re-verify before trading. Context only — not investment advice.",
+    "zh": "realpolitik解读、“事实上的美联储/财政部协同”表述、所有代理标的、以及市场结果类预测（P15–P18）均为推断，而非来源背书的事实。中国/伊朗/北约/海湖庄园等线索为未核实的先验。核能目标偏理想且已在滑期。芯片关税的建厂豁免已被证伪。具时效性：锚定于2026年6月17日，交易前请重新核实。仅供参考，不构成投资建议。"
+  }
+}

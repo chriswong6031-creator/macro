@@ -121,7 +121,7 @@ def main() -> int:
 
     # ---- index ----
     idx = env.get_template("reports.html.j2").render(
-        reports=reports, all_tags=all_tags, active_section="research",
+        reports=reports, all_tags=all_tags, active_section="research", active_page="reports",
     )
     (site / "reports.html").write_text(idx)
     log.info("wrote %s/reports.html (%d reports, %d KB)", site, len(reports), len(idx) // 1024)
@@ -132,7 +132,7 @@ def main() -> int:
         next_r = reports[i + 1] if i + 1 < len(reports) else None  # older
         html = env.get_template(r["template"]).render(
             report=r, reports=reports, prev_report=prev_r, next_report=next_r,
-            active_section="research",
+            active_section="research", active_page="reports",
         )
         (site / f"{r['slug']}.html").write_text(html)
         log.info("wrote %s/%s.html (%d KB)", site, r["slug"], len(html) // 1024)
