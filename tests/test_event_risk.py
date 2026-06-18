@@ -89,3 +89,39 @@ def test_defensive_on_missing_or_none():
 def test_is_context_only_always():
     assert er.snapshot({}, events=[], today=TODAY)["is_context_only"] is True
     assert er.snapshot({}, events=[_ev("FOMC", "2026-06-17")], today=TODAY)["is_context_only"] is True
+
+
+# ---- scorecard + alert (fast-follow) ----
+
+def test_as_alert_shape_and_nondirectional():
+    snap = er.snapshot({}, events=[_ev("FOMC", "2026-06-17")], today=TODAY)
+    a = er.as_alert(snap)
+    assert set(a) == {"rule", "severity", "message", "message_zh"}
+    assert a["rule"] == "event_risk" and a["severity"] == "warn"
+    assert "not a sell signal" in a["message"].lower()
+    assert er.as_alert({"show": False}) is None
+
+
+def test_append_log_only_on_event_day_and_idempotent(tmp_path):
+    p = tmp_path / "log.jsonl"
+    far = er.snapshot({}, events=[_ev("FOMC", "2026-06-17")], today=TODAY)  # days_to=2
+    assert er.append_log(far, path=p) is False                              # not event day
+    day = er.snapshot({}, events=[_ev("FOMC", "2026-06-17")], today=date(2026, 6, 17))
+    assert day["days_to"] == 0
+    assert er.append_log(day, path=p) is True
+    assert er.append_log(day, path=p) is False                             # idempotent
+    assert er.track_record(path=p) == {"n": 0}                             # unresolved yet
+
+
+def test_resolve_and_track_record(tmp_path):
+    p = tmp_path / "log.jsonl"
+    day = er.snapshot({"turning_point": {"present": True}, "cross_asset": {"absorption_pctile_5y": 0.96},
+                       "fed_path": {"gap": {"gap_bp": 38}}},
+                      events=[_ev("FOMC", "2026-06-17")], today=date(2026, 6, 17))
+    er.append_log(day, path=p)
+    closes = {"2026-06-16": 100.0, "2026-06-17": 101.5}   # +1.5% on the event day
+    assert er.resolve(closes, path=p) == 1
+    assert er.resolve(closes, path=p) == 0                # already resolved
+    tr = er.track_record(path=p)
+    assert tr["n"] == 1 and tr["avg_abs"] == 1.5 and tr["up_rate"] == 1.0
+    assert tr["n_fragile"] == 1 and tr["avg_abs_fragile"] == 1.5
