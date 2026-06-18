@@ -1,0 +1,112 @@
+{# ===========================================================================
+   SINGLE SOURCE OF TRUTH for the site navigation menu.
+
+   Every page (both the .site-nav grid family AND the self-contained .topbar
+   "vector" family) includes this partial in place of a hand-copied
+   <div class="nav-links"> block, so the menu can never drift between pages
+   again. The surrounding chrome (the <nav>/<div class="topbar"> wrapper, the
+   search box, the theme/lang controls) stays per-page; only the link list is
+   shared.
+
+   • Self-contained t() macro — so it works whether or not the host page
+     defines its own (an {% include %} does not import the parent's macros).
+   • nav_prefix — optional. Pages rendered one directory deep (site/sectors/*)
+     set {% set nav_prefix = '../' %} before including so every link resolves
+     from the site root (a bare href="macro.html" would 404 as /sectors/...).
+   • No per-page `active` class — theme.js highlights the current page (and its
+     parent dropdown) by matching the URL, so highlighting stays consistent.
+
+   Structure: Home · United States · China · Hong Kong · Canada · International ·
+   Other Assets (3-tier: Bitcoin Vector ▸ / Commodities ▸ fly out; Forex, Bonds
+   are leaves) · Research.
+   =========================================================================== #}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
+{%- endmacro %}
+{% set NP = nav_prefix if (nav_prefix is defined and nav_prefix) else '' %}
+    <div class="nav-links">
+    <a class="nav-link" href="{{ NP }}index.html">🏠 {{ t('Home', '首页') }}</a>
+    <div class="nav-dd">
+      <a class="nav-link" href="{{ NP }}macro.html">🇺🇸 {{ t('United States', '美国') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="{{ NP }}macro.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('Regime · growth · inflation · nowcast', '周期 · 增长 · 通胀 · 即时预测') }}</span></a>
+        <a href="{{ NP }}us_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Standouts · sectors · flows', '精选 · 板块 · 资金') }}</span></a>
+        <a href="{{ NP }}anticipation.html">🔮 {{ t('Anticipation', '预判') }}<span class="d">{{ t('Multi-horizon outcome cones', '多周期结果锥') }}</span></a>
+        <a href="{{ NP }}strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
+        <a href="{{ NP }}ipo.html">🆕 {{ t('IPO Radar', '新股雷达') }}<span class="d">{{ t('IPO window · aftermarket reality', '新股窗口 · 二级市场现实') }}</span></a>
+        <a href="{{ NP }}baskets.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P', '等权主题篮子 vs 标普') }}</span></a>
+        <a href="{{ NP }}allocation.html">🔄 {{ t('Narrative Rotation', '主题轮动') }}<span class="d">{{ t('Which theme to hold & when to rotate', '持有哪个主题 · 何时轮动') }}</span></a>
+        <a href="{{ NP }}alerts.html">🚨 {{ t('Alert Center', '警报中心') }}<span class="d">{{ t('Ranked & triaged alerts', '分级分诊的警报') }}</span></a>
+        <a href="{{ NP }}gex.html">🧲 {{ t('Options Magnets', '期权磁吸') }}<span class="d">{{ t('Dealer-gamma GEX levels', '做市商Gamma GEX价位') }}</span></a>
+        <a href="{{ NP }}etfs.html">🐳 {{ t('ETF Flows', 'ETF资金流') }}<span class="d">{{ t('Fund flow monitor', '资金流监控') }}</span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="{{ NP }}china.html">🇨🇳 {{ t('China', '中国') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="{{ NP }}china.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('A-share regime · sectors · flows', 'A股周期 · 板块 · 资金') }}</span></a>
+        <a href="{{ NP }}china_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Standouts · alpha · setups', '精选 · 阿尔法 · 布局') }}</span></a>
+        <a href="{{ NP }}china_strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
+        <a href="{{ NP }}baskets_china.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs CSI 300', '等权主题篮子 vs 沪深300') }}</span></a>
+        <a href="{{ NP }}allocation_china.html">🔄 {{ t('Narrative Rotation', '主题轮动') }}<span class="d">{{ t('Which theme to hold & when to rotate', '持有哪个主题 · 何时轮动') }}</span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="{{ NP }}hk.html">🇭🇰 {{ t('Hong Kong', '香港') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="{{ NP }}hk.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('HSI · southbound · global risk', 'HSI · 南向 · 全球风险') }}</span></a>
+        <a href="{{ NP }}hk_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('HK-listed standouts · alpha', 'HK上市精选 · 阿尔法') }}</span></a>
+        <a href="{{ NP }}baskets_hk.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs HSI', '等权主题篮子 vs 恒指') }}</span></a>
+        <a href="{{ NP }}allocation_hk.html">🔄 {{ t('Narrative Rotation', '主题轮动') }}<span class="d">{{ t('Which theme to hold & when to rotate', '持有哪个主题 · 何时轮动') }}</span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="{{ NP }}canada.html">🇨🇦 {{ t('Canada', '加拿大') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="{{ NP }}canada.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('TSX · BoC · commodity overlay', 'TSX · 加央行 · 商品叠加') }}</span></a>
+        <a href="{{ NP }}canada_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('TSX standouts · sectors · alpha', 'TSX精选 · 板块 · 阿尔法') }}</span></a>
+        <a href="{{ NP }}baskets_canada.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P/TSX', '等权主题篮子 vs 标普/多伦多') }}</span></a>
+        <a href="{{ NP }}allocation_canada.html">🔄 {{ t('Narrative Rotation', '主题轮动') }}<span class="d">{{ t('Which theme to hold & when to rotate', '持有哪个主题 · 何时轮动') }}</span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="{{ NP }}intl.html">🌍 {{ t('International', '国际') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="{{ NP }}intl.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('JP · KR · TW · UK · EU compared', '日 · 韩 · 台 · 英 · 欧 对比') }}</span></a>
+        <a href="{{ NP }}intl_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Cross-market standouts · sectors', '跨市场精选 · 板块') }}</span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">💠 {{ t('Other Assets', '其他资产') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="{{ NP }}vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }} <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="{{ NP }}vector.html">📊 {{ t('Overview', '总览') }}<span class="d">{{ t('Market state · risk · momentum', '市场状态 · 风险 · 动量') }}</span></a>
+            <a href="{{ NP }}vector_allocation.html">◎ {{ t('Allocation Strategy', '仓位策略') }}<span class="d">{{ t('BTC · ETH · alts · cash', 'BTC · ETH · 山寨 · 现金') }}</span></a>
+          </div>
+        </div>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="{{ NP }}commodities.html">🛢 {{ t('Commodities', '大宗商品') }} <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="{{ NP }}commodities.html">📊 {{ t('Commodity Dashboard', '商品仪表盘') }}<span class="d">{{ t('Gold · silver · copper · oil · complex', '金 · 银 · 铜 · 油 · 综合') }}</span></a>
+            <a href="{{ NP }}commodity_strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Per-commodity tactical strategies', '分品种战术策略') }}</span></a>
+            <a href="{{ NP }}spr.html">🛢️ {{ t('Strategic Reserves', '战略储备') }}<span class="d">{{ t('SPR levels by country vs oil prices', '各国战略储备水平与油价') }}</span></a>
+          </div>
+        </div>
+        <a href="{{ NP }}forex.html">💱 {{ t('Forex', '外汇') }}<span class="d">{{ t('Dollar desk · G10 carry · pairs', '美元桌 · G10套息 · 货币对') }}</span></a>
+        <a href="{{ NP }}bonds.html">🏛️ {{ t('Bonds', '债券') }}<span class="d">{{ t('Curve · credit · duration compass', '曲线 · 信用 · 久期罗盘') }}</span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">🔬 {{ t('Research', '研究') }} <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="{{ NP }}reports.html">📰 {{ t('Research Reports', '研究报告') }}<span class="d">{{ t('In-depth market & macro reports', '深度市场与宏观报告') }}</span></a>
+        <a href="{{ NP }}policy_watch.html">🏛️ {{ t('Fed & Policy Watch', '美联储与政策观察') }}<span class="d">{{ t('Fed + Administration intent & capital rotation', '美联储+政府意图与资本轮动') }}</span></a>
+        <a href="{{ NP }}transmission.html">🔀 {{ t('Rate & Inflation Transmission', '利率与通胀传导') }}<span class="d">{{ t('How rates & inflation move every asset', '利率与通胀如何驱动各类资产') }}</span></a>
+        <a href="{{ NP }}crossasset.html">🧭 {{ t('Cross-Asset', '跨资产') }}<span class="d">{{ t('Correlations · trend · global liquidity', '相关性 · 趋势 · 全球流动性') }}</span></a>
+        <a href="{{ NP }}signal_lab.html">🔬 {{ t('Signal Lab', '信号实验室') }}<span class="d">{{ t('Consolidated validation scorecard', '验证记分卡汇总') }}</span></a>
+        <a href="{{ NP }}factors.html">🧮 {{ t('Factors & Seasonality', '因子 & 季节性') }}<span class="d">{{ t('Value · quality · low-vol · monthly calendar', '价值 · 质量 · 低波动 · 月历') }}</span></a>
+      </div>
+    </div>
+  </div>

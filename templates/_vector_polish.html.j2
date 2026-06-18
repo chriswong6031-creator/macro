@@ -38,6 +38,17 @@ html[data-theme="dark"] a.nav-link:hover,html[data-theme="dark"] a.nav-link.acti
 html[data-theme="dark"] .nav-dd-menu a:hover,html[data-theme="dark"] .nav-dd-menu a.active{
   background:color-mix(in srgb,var(--blue) 18%,var(--card));}
 
+/* 3rd-tier fly-out (Other Assets ▸ Bitcoin Vector / Commodities) — layout only,
+   palette inherited from the host page's inline nav-dd-menu. Loaded after the
+   page <style>, so these position overrides win. */
+.nav-dd-menu .nav-sub{display:block;position:relative;}
+.nav-dd-menu .nav-sub>a.nav-sub-trig{display:flex;align-items:center;}
+.nav-dd-menu .nav-sub>a.nav-sub-trig .caret-r{margin-left:auto;padding-left:12px;font-size:10px;
+  opacity:.55;flex:none;transition:transform .2s;}
+.nav-dd-menu .nav-sub:hover>a.nav-sub-trig .caret-r{opacity:.9;transform:translateX(2px);}
+.nav-dd-menu .nav-sub>.nav-dd-menu{top:-7px;left:100%;z-index:95;}
+.nav-dd-menu .nav-sub::after{content:"";position:absolute;top:0;left:100%;width:12px;height:100%;}
+
 /* toggles — subtle hover feedback (their slide animations are untouched) */
 .theme-switch,.lang-toggle{transition:border-color .18s ease,box-shadow .18s ease;}
 .theme-switch:hover,.lang-toggle:hover{border-color:color-mix(in srgb,var(--blue) 55%,var(--grid));
