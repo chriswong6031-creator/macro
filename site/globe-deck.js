@@ -399,10 +399,23 @@
         (m.macro_asof ? ' · ' + bilingual("as of " + m.macro_asof, m.macro_asof) : '') + '</div>' +
       '<a class="gd-tip-go" href="' + m.href + '">' + bilingual("Open dashboard →", "打开看板 →") + '</a>';
     tip.hidden = false;
-    var tw = tip.offsetWidth, th = tip.offsetHeight;
-    var x = cx + 14, y = cy + 14;
-    if (x + tw > window.innerWidth - 8) x = cx - tw - 14;
-    if (y + th > window.innerHeight - 8) y = Math.max(8, cy - th - 14);
+    var tw = tip.offsetWidth, th = tip.offsetHeight, pad = 10, x, y;
+    if (pinned) {
+      // a clicked country flies to the globe centre, so anchor the tooltip BESIDE
+      // the centre (whichever side has room) rather than at the click point — which
+      // may sit at the viewport edge and push the tooltip off-screen.
+      var sr = stage.getBoundingClientRect(), gx = sr.left + W / 2, gy = sr.top + H / 2;
+      x = gx + R * 0.55 + 14;
+      if (x + tw > window.innerWidth - pad) x = gx - R * 0.55 - tw - 14;
+      y = gy - th / 2;
+    } else {
+      x = cx + 14; y = cy + 14;
+      if (x + tw > window.innerWidth - pad) x = cx - tw - 14;
+      if (y + th > window.innerHeight - pad) y = cy - th - 14;
+    }
+    // hard clamp: the tooltip is ALWAYS fully on-screen (every edge, any size)
+    x = Math.max(pad, Math.min(x, window.innerWidth - tw - pad));
+    y = Math.max(pad, Math.min(y, window.innerHeight - th - pad));
     tip.style.left = x + "px"; tip.style.top = y + "px";
     tip.classList.toggle("pinned", !!pinned);
   }
