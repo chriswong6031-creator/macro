@@ -124,6 +124,17 @@
   }, 200);
 
   function touch() { blob.updated = nowISO(); persist(); }
+  // canonical signature of the user-meaningful state — everything EXCEPT `updated`.
+  // Lets a sync that changes nothing be a true no-op: without this, an identical
+  // peer doc re-bumps `updated` + re-persists on every storage event, so two open
+  // tabs ping-pong writes forever (the watchlist "spasm" — constant re-render +
+  // re-fetch as each tab's write retriggers the other's storage handler).
+  function stateSig(b) {
+    var its = b.items.map(function (it) {
+      return [it.t, it.added || '', it.note || ''];
+    }).sort(function (a, c) { return a[0] < c[0] ? -1 : a[0] > c[0] ? 1 : 0; });
+    return JSON.stringify([its, b.order || [], b.settings.sort, !!b.settings.buySoonOnly]);
+  }
   function has(t) { return blob.items.some(function (it) { return it.t === t; }); }
   function add(t) {
     if (!t || has(t)) return false;
@@ -142,7 +153,7 @@
   // wins order/settings. Shared by import, cross-tab sync, and the cloud adapter.
   function mergeInto(other) {
     if (!other || !Array.isArray(other.items)) return 0;
-    var before = blob.items.length, byT = {};
+    var before = blob.items.length, sigBefore = stateSig(blob), byT = {};
     blob.items.forEach(function (it) { byT[it.t] = it; });
     other.items.forEach(function (it) {
       if (!it || !it.t) return;
@@ -162,8 +173,12 @@
       sort: newer.settings.sort || blob.settings.sort,
       buySoonOnly: !!newer.settings.buySoonOnly
     };
-    blob.updated = nowISO();
-    persist();
+    // Persist + bump `updated` ONLY when the user-meaningful state actually moved.
+    // An identical peer doc (the common case for a cross-tab echo) leaves the
+    // signature unchanged → no write → no storage event back to the other tab →
+    // the ping-pong can't sustain. A genuinely different peer still converges in
+    // one extra round (both adopt the union, then the next echo is a no-op).
+    if (stateSig(blob) !== sigBefore) { blob.updated = nowISO(); persist(); }
     return blob.items.length - before;
   }
 
@@ -445,9 +460,9 @@
   // ---- cross-tab sync: another tab wrote -> reload + merge + render --------
   function onStorage(e) {
     if (e.key && e.key !== KEY) return;
-    var other = readStorage();
-    mergeInto(other);     // union, never blind-overwrite
-    render();
+    var sigBefore = stateSig(blob);
+    mergeInto(readStorage());     // union, never blind-overwrite
+    if (stateSig(blob) !== sigBefore) render();   // re-render only on a real peer change
   }
 
   // ---- public store API (the seam auth.js / cloud adapter plug into) -------
