@@ -175,6 +175,16 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("fed-path layer failed: %s", e)
         latest["fed_path"] = None
+    # Additive DISPLAY-only leaf (engine/fed_stance.py) — make monetary-policy STANCE an
+    # explicit regime dimension (hawkish/neutral/dovish) off fed_path + catalyst_tone,
+    # instead of leaving it implicit in the curve. PHASE-0 GATED: never scored, never an
+    # MRS leg; nothing in axes/regime/conditions reads it. Runs after fed_path/catalyst_tone.
+    try:
+        from engine.fed_stance import snapshot as fed_stance_snapshot
+        latest["fed_stance"] = fed_stance_snapshot(latest)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("fed-stance layer failed: %s", e)
+        latest["fed_stance"] = None
     # Rate & inflation TRANSMISSION (research/RATE_INFLATION_TRANSMISSION.md): how the
     # current rate / rate-expectations / inflation (CPI, core PCE) state propagates —
     # first/second/third order — into per-asset-class headwind/tailwind, with honest

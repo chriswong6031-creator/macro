@@ -861,6 +861,25 @@
   </div>
   {% endif %}
 
+  <!-- ===================== FED REACTION FUNCTION — explicit policy stance (display-only) ===================== -->
+  {% if latest.fed_stance and latest.fed_stance.stance and latest.fed_stance.stance != 'unknown' %}
+  {% set FS = latest.fed_stance %}
+  {% set fsc = 'var(--down)' if FS.color=='down' else ('var(--up)' if FS.color=='up' else 'var(--muted)') %}
+  <div class="panel span12" id="fed-stance" style="border-left:3px solid {{ fsc }}">
+    <h2>🏛️ {{ t('Fed reaction function', '美联储反应函数') }}:
+      <span style="color:{{ fsc }}">{{ t(FS.label_en, FS.label_zh) }}</span>
+      {{ help("An EXPLICIT read of monetary-policy stance (hawkish/neutral/dovish) off the market-implied path (fed_path) + the FOMC statement's guidance direction — so policy stance is stated, not left implicit in the curve. Display-only / never scored: a market price is reactive, not a forecast.", "对货币政策立场（鹰派/中性/鸽派）的显式读数，基于市场隐含路径（fed_path）+ FOMC 声明的指引方向——使政策立场被明确陈述，而非隐含于曲线中。仅供展示、从不计入评分：市场价格是被动反应而非预测。") }}
+    </h2>
+    <div class="grid">
+      <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-left:3px solid {{ fsc }};border-radius:8px;padding:12px 14px">
+        {% if FS.drivers_en %}<div><b>{{ t('Drivers', '驱动') }}:</b> <span class="l-en">{{ FS.drivers_en | join(' · ') }}</span><span class="l-zh">{{ FS.drivers_zh | join(' · ') }}</span></div>{% endif %}
+        <div class="sm muted" style="margin-top:7px">{{ t(FS.note_en, FS.note_zh) }}
+          → <a href="policy_watch.html" style="color:var(--link)">{{ t('Fed & Policy Watch: intent, theaters & capital rotation', '美联储与政策观察：意图、战区与资本轮动') }} →</a></div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
   <!-- ===================== SIGNAL STACK — consolidated cross-subsystem read ===================== -->
   {% if signal_stack %}
   <div class="panel span12" id="signal-stack">
