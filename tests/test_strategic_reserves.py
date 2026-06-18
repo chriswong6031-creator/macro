@@ -110,6 +110,32 @@ def _annual(values, start_year=2022):
     return pd.Series(values, index=idx, dtype="float64")
 
 
+def _monthly_flow(values, start="2024-01-01"):
+    idx = pd.date_range(start, periods=len(values), freq="MS")
+    return pd.DataFrame({"level": values, "assess": [1] * len(values)}, index=idx)
+
+
+def test_net_imports_smoothed():
+    imp = _monthly_flow([6000, 6200, 6400])     # kbd
+    exp = _monthly_flow([3000, 3400, 3800])
+    # trailing-window mean of imports − mean of exports
+    assert sr.net_imports(imp, exp, window=3) == round((6200) - (3400), 1)
+    assert sr.net_imports(imp, None, window=3) == 6200.0   # missing exports -> 0
+    assert sr.net_imports(None, exp) is None
+    # net exporter -> negative (caller skips import-cover)
+    assert sr.net_imports(_monthly_flow([100]), _monthly_flow([500])) == -400.0
+
+
+def test_merge_country_row_trade_cover():
+    cfg = {"iso": "JP", "name": "Japan", "flag": "🇯🇵"}
+    crude = _annual([300_000, 330_000])           # kbbl (reused annual helper ok)
+    imp = _monthly_flow([2700, 2730])             # kbd
+    exp = _monthly_flow([0, 0])
+    row = sr.merge_country_row(cfg, crude, jodi_imports=imp, jodi_exports=exp)
+    assert row["net_imports_kbd"] == 2715.0       # mean(2700,2730) − 0
+    assert row["stock_cover_days"] == sr.days_of_cover(330_000, 2715.0)
+
+
 def test_gold_value_share():
     assert sr.gold_value_share(100.0, 25.0) == {"value_usd": 75.0, "share_pct": 75.0}
     assert sr.gold_value_share(None, 25.0)["value_usd"] is None

@@ -102,6 +102,20 @@ def days_of_cover(level: float | None, daily_demand: float | None) -> float | No
     return round(float(level) / daily, 1)
 
 
+def net_imports(imports_s: pd.Series | pd.DataFrame | None,
+                exports_s: pd.Series | pd.DataFrame | None, window: int = 12) -> float | None:
+    """Net crude imports (kbd) = mean(imports) − mean(exports) over the trailing `window`
+    observations. Smoothed because single-period net trade is very noisy (weekly US net
+    imports swing through zero). Missing exports → 0. None if imports unavailable.
+    (Negative = net exporter → import-cover is undefined and callers should skip it.)"""
+    imp = series(imports_s)
+    if imp is None or imp.empty:
+        return None
+    exp = series(exports_s)
+    ni = float(imp.tail(window).mean()) - (float(exp.tail(window).mean()) if exp is not None and not exp.empty else 0.0)
+    return round(ni, 1)
+
+
 def trend_word(s: pd.Series | None, months: int = 6, eps_pct: float = 1.0) -> str:
     """Coarse rising/falling/flat over the last `months` (by % change). Neutral label."""
     pc = pct_change(s, months)
@@ -134,7 +148,9 @@ def global_aggregate(jodi_crude: dict[str, pd.Series | pd.DataFrame]) -> dict:
 
 
 def merge_country_row(cfg: dict, jodi_crude: pd.DataFrame | pd.Series | None,
-                      live_level_mb: float | None = None) -> dict:
+                      live_level_mb: float | None = None,
+                      jodi_imports: pd.DataFrame | pd.Series | None = None,
+                      jodi_exports: pd.DataFrame | pd.Series | None = None) -> dict:
     """Build one comparison-table row: curated strategic figure + live JODI TOTAL crude.
 
     `cfg` is one entry of config.strategic_reserves.countries.
@@ -173,6 +189,13 @@ def merge_country_row(cfg: dict, jodi_crude: pd.DataFrame | pd.Series | None,
         except Exception:  # noqa: BLE001
             code = None
         row["jodi_assess"] = None if code is None else int(code)
+        # live trade flows -> net imports + total-stocks days of import cover
+        if not cfg.get("no_jodi"):
+            ni = net_imports(jodi_imports, jodi_exports)
+            if ni is not None:
+                row["net_imports_kbd"] = ni
+                # days of cover on TOTAL crude stocks (not strategic): kbbl ÷ net-import kbd
+                row["stock_cover_days"] = days_of_cover(float(s.iloc[-1]), ni) if ni > 0 else None
     else:
         row["jodi_total_mb"] = None
     return row

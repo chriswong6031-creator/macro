@@ -171,7 +171,7 @@ html[data-theme="dark"] .iea-row .ie{background:var(--grid)}
       <div class="metric-row">
         <div class="m"><div class="k">{{ t('4-week','4周') }}</div><div class="v {{ 'up' if (us.chg_4w_mb or 0) > 0 else ('down' if (us.chg_4w_mb or 0) < 0 else '') }}">{{ '%+.1f'|format(us.chg_4w_mb) if us.chg_4w_mb is not none else '—' }}<small> M</small></div></div>
         <div class="m"><div class="k">{{ t('52-week','52周') }}</div><div class="v {{ 'up' if (us.chg_52w_mb or 0) > 0 else ('down' if (us.chg_52w_mb or 0) < 0 else '') }}">{{ '%+.0f'|format(us.chg_52w_mb) if us.chg_52w_mb is not none else '—' }}<small> M</small></div></div>
-        {% if us.days_cover is not none %}<div class="m"><div class="k">{{ t('Days cover','可供天数') }}</div><div class="v">{{ us.days_cover }}<small> {{ t('d','天') }}</small></div></div>{% endif %}
+        {% if us.import_cover_days is not none %}<div class="m"><div class="k">{{ t('Import cover','进口覆盖') }}</div><div class="v">{{ us.import_cover_days|round|int }}<small> {{ t('d','天') }}</small></div></div>{% elif us.days_cover is not none %}<div class="m"><div class="k">{{ t('Days cover','可供天数') }}</div><div class="v">{{ us.days_cover }}<small> {{ t('d','天') }}</small></div></div>{% endif %}
       </div>
     </div>
     <div class="card">
@@ -180,6 +180,8 @@ html[data-theme="dark"] .iea-row .ie{background:var(--grid)}
       <div class="sigline"><span class="l">{{ t('Below peak','低于峰值') }}</span><span class="r"><b class="down">−{{ mb(us.below_peak_mb) }} M</b></span></div>
       <div class="sigline"><span class="l">{{ t('Record low','历史低点') }}</span><span class="r"><b>{{ mb(us.low_mb) }} M</b> <span class="faint">{{ us.low_date }}</span></span></div>
       <div class="sigline"><span class="l">{{ t('Above low','高于低点') }}</span><span class="r"><b class="up">+{{ mb(us.above_low_mb) }} M</b></span></div>
+      {% if us.import_cover_days is not none %}<div class="sigline"><span class="l">{{ t('Days of net-import cover','净进口可供天数') }}</span><span class="r"><b>{{ us.import_cover_days|round|int }}</b> <span class="faint">{{ t('SPR ÷ net crude imports (EIA, live)','战略储备 ÷ 原油净进口（EIA，实时）') }}</span></span></div>{% endif %}
+      {% if us.imports_mbd is not none %}<div class="sigline"><span class="l">{{ t('US crude trade','美国原油贸易') }}</span><span class="r"><b>{{ us.imports_mbd }}</b> {{ t('imp','进') }} / <b>{{ us.exports_mbd }}</b> {{ t('exp','出') }}{% if us.net_imports_mbd is not none %} · <b>{{ us.net_imports_mbd }}</b> {{ t('net','净') }}{% endif %} <span class="faint">{{ t('Mb/d · 1y avg','百万桶/日 · 1年均') }}</span></span></div>{% endif %}
       <div class="sigline"><span class="l">{{ t('Days of US refinery runs','美国炼厂可供天数') }}</span><span class="r"><b>{{ us.days_cover if us.days_cover is not none else '—' }}</b> <span class="faint">{{ t('SPR alone','仅战略储备') }}</span></span></div>
       <div class="caveat" style="margin-top:14px">
         <div class="hd">{{ t('Read this as context, not a signal', '请作为背景而非信号解读') }}</div>
@@ -228,6 +230,7 @@ html[data-theme="dark"] .iea-row .ie{background:var(--grid)}
         <td class="r">
           {% if c.jodi_total_mb is not none %}<span class="num">{{ '{:,.0f}'.format(c.jodi_total_mb) }}</span> <span class="sm">M</span>{% if c.jodi_assess %}<span class="qbadge q{{ c.jodi_assess }}">{{ t(assess_word.get(c.jodi_assess,''), '') }}</span>{% endif %}
             {% if c.jodi_mom_mb is not none %}<div class="sm {{ 'up' if c.jodi_mom_mb > 0 else ('down' if c.jodi_mom_mb < 0 else '') }}">{{ '%+.1f'|format(c.jodi_mom_mb) }}M/mo · {{ c.jodi_as_of }}</div>{% endif %}
+            {% if c.net_imports_kbd is not none %}<div class="sm">{{ t('net imp','净进口') }} {{ (c.net_imports_kbd / 1000)|round(2) }}M/d{% if c.stock_cover_days is not none %} · ~{{ c.stock_cover_days|round|int }}d {{ t('cover','覆盖') }}{% endif %}</div>{% endif %}
           {% elif c.curated_total_mb %}<span class="num">~{{ '{:,.0f}'.format(c.curated_total_mb) }}</span> <span class="sm">M {{ t('est','估算') }}</span>{% else %}<span class="sm">{{ t('not reported to JODI','未向 JODI 报送') }}</span>{% endif %}
         </td>
         <td class="r">{% if c.days_cover is not none %}<span class="num">{{ c.days_cover }}</span><div class="sm">{{ t(c.days_basis_en, c.days_basis_zh) }}</div>{% else %}—{% endif %}</td>
