@@ -469,6 +469,10 @@ def build_scorecard() -> dict:
                        "rebalances": ft.get("rebalances"),
                        "median_universe": ft.get("median_universe"),
                        "leak_free": ft.get("leak_free"),
+                       "universe": ft.get("universe"),
+                       "survivorship_biased": ft.get("survivorship_biased"),
+                       "caveat": ft.get("caveat"),
+                       "price_span": ft.get("price_span"),
                        "collinearity": ft.get("collinearity")}
 
     # survivor names (+ sign) so the page's prose adapts to whichever branch's
