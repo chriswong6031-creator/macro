@@ -22,6 +22,26 @@
       .catch(function () { return null; });
   }
 
+  // theme-discovery radar (US only — the #td-candidates element exists only on that page)
+  var candEl = document.getElementById('td-candidates');
+  if (candEl) {
+    getJSON('theme_candidates.json').then(function (d) {
+      var cands = (d && Array.isArray(d.candidates)) ? d.candidates : [];
+      if (!cands.length) { candEl.innerHTML = L('No candidate themes flagged today.', '今日无候选主题。'); return; }
+      candEl.classList.remove('muted', 'sm');
+      candEl.innerHTML = cands.map(function (c) {
+        var names = (c.constituents || []).map(function (m) { return esc(m.ticker); }).join(', ');
+        var ipo = c.ipo_wave ? ' <span class="chip warn" style="margin:0">' + L('IPO wave', 'IPO 潮') + '</span>' : '';
+        return '<div class="pstance" style="margin:6px 0"><b>' + esc(c.label) + '</b> · ' +
+          esc(c.n) + ' ' + L('names', '只') + ' · ' + L('cohesion', '凝聚度') + ' ' + esc(c.cohesion) +
+          ' (↑' + esc(c.cohesion_chg) + ')' + ipo +
+          '<div class="muted" style="font-size:11.5px">' + names + '</div></div>';
+      }).join('') +
+        '<div class="muted" style="font-size:11px;margin-top:6px">' +
+        esc((d.phase0 && d.phase0.verdict) || d.verdict || '') + '</div>';
+    });
+  }
+
   Promise.all([getJSON('ai_desk_' + region + '.json'), getJSON('ai_desk_track.json')])
     .then(function (res) {
       var brief = res[0], track = res[1];
@@ -44,6 +64,18 @@
           tb.style.display = 'inline-block';
           tb.title = (track.calibration_note || '');
         }
+      }
+
+      // macro-narrative backdrop (coincident market-level GDELT flow — not per-theme)
+      var mn = brief && brief.macro_narrative;
+      var bdEl = document.getElementById('td-backdrop');
+      if (mn && mn.dominant_themes && mn.dominant_themes.length && bdEl) {
+        var themes = mn.dominant_themes.map(function (t) { return esc(t.theme) + ' (' + t.n + ')'; }).join(', ');
+        var us = (mn.unscheduled_share != null)
+          ? ' · ' + Math.round(mn.unscheduled_share * 100) + '% ' + L('unscheduled', '非预定') : '';
+        bdEl.innerHTML = '<b>🗞 ' + L('Macro backdrop', '宏观背景') + ':</b> ' + themes + us +
+          ' <span class="muted">' + L('(coincident market-level news flow, not per-theme)', '（同步的市场级新闻流，非个别主题）') + '</span>';
+        bdEl.style.display = 'block';
       }
 
       if (brief && brief.regime_context && regimeEl) {

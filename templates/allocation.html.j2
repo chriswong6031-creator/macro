@@ -404,6 +404,7 @@
   <p class="tagline" style="margin-top:0">{{ t(
     "The desk's fallible, falsifiable leans — each with a check-by date and graded against reality over time, so you learn whether to trust it. Never a buy list, never a size; the validated edge on this page is drawdown control.",
     '桌面给出的可证伪方向性判断 — 每条都有检验截止日，并随时间对照现实打分，让你判断是否值得信任。绝非买入清单、绝非仓位；本页验证过的优势是回撤控制。') }}</p>
+  <p id="td-backdrop" class="tagline" style="display:none;margin-top:2px"></p>
   <p id="td-regime" class="story" style="display:none;font-size:13.5px"></p>
   <div id="td-cards" class="cards-td"></div>
   <p id="td-watch" class="tagline" style="display:none;margin-top:8px"></p>
@@ -415,6 +416,16 @@
     'The live desk note has not been generated yet (the AI layer runs in the daily build). The contract above still governs what it may conclude.',
     '实时桌面简报尚未生成（AI 层在每日构建中运行）。上方契约仍约束其可下的结论。') }}</p>
 </div>
+
+{% if d.region == 'us' %}
+<!-- theme-discovery radar (US): coherent NEW name-groups not yet in a basket — for review -->
+<h2><span class="idx">06</span>{{ t('Candidate themes — discovery radar', '候选主题 — 发现雷达') }}
+  <span class="chip">{{ t('display-only · for human review', '仅展示 · 供人工审阅') }}</span></h2>
+<p class="sub">{{ t(
+  'Coherent, tightening groups of US names that move together but are NOT already in a basket — surfaced for you to consider curating. This is a brainstorm radar, deliberately noisy: only ~10% of flags stay a tight cluster and they carry NO forward edge (mildly negative vs the S&P). Use it as a watchlist / avoid-the-peak lens, never a buy list; an IPO wave RAISES the bar (hype reads late).',
+  '相互联动、正在收紧、但尚未纳入任何篮子的美股名称群 — 供你考虑是否整理收录。这是一个有意"噪声较大"的头脑风暴雷达：仅约10%的提示能维持紧密聚类，且无前瞻优势（相对标普略负）。用作关注/避免追高的视角，绝非买入清单；IPO 潮会抬高门槛（热度往往滞后）。') }}</p>
+<div class="panel"><div id="td-candidates" class="muted sm">{{ t('Loading…', '加载中…') }}</div></div>
+{% endif %}
 
 <footer>
   {{ t(
