@@ -32,20 +32,25 @@
   function hourNow() { var d = new Date(); return d.getHours() + d.getMinutes() / 60; }
   // The sun/moon ride a SHALLOW arc kept high in the page (top band) so they sit
   // near the top and never collide with the globe below. East→west by time of day.
+  // On a NARROW (mobile) viewport the body is large relative to the width, so the
+  // arc is tightened and raised → the whole disc stays on-screen, never half-clipped
+  // off the left/right edge and never reaching down into the globe.
+  function arcPos(f) {
+    var mob = window.innerWidth <= 560;
+    var x0 = mob ? 26 : 14, xw = mob ? 48 : 72;     // mobile 26%→74% : keeps the disc on-screen
+    var y0 = mob ? 13 : 20, ya = mob ? 3 : 6;       // mobile a touch higher + flatter
+    return { x: x0 + xw * f, y: y0 - ya * Math.sin(Math.PI * f) };
+  }
   function placeSun() {
-    var f = frac(hourNow(), 7, 19);                 // daylight window 07:00–19:00
-    var x = 14 + 72 * f;                            // 14%→86% : east(left)→west(right)
-    var y = 20 - 6 * Math.sin(Math.PI * f);         // ~20% at the edges, ~14% at noon (top band, clear of globe)
-    sunEl.style.left = x.toFixed(2) + '%';
-    sunEl.style.top = y.toFixed(2) + '%';
+    var p = arcPos(frac(hourNow(), 7, 19));         // daylight window 07:00–19:00
+    sunEl.style.left = p.x.toFixed(2) + '%';
+    sunEl.style.top = p.y.toFixed(2) + '%';
   }
   function placeMoon() {
     var nf = (((hourNow() - 19) + 24) % 24) / 12;   // night window 19:00→07:00 (12h)
-    nf = nf < 0 ? 0 : (nf > 1 ? 1 : nf);
-    var x = 14 + 72 * nf;
-    var y = 20 - 6 * Math.sin(Math.PI * nf);
-    moonEl.style.left = x.toFixed(2) + '%';
-    moonEl.style.top = y.toFixed(2) + '%';
+    var p = arcPos(nf < 0 ? 0 : (nf > 1 ? 1 : nf));
+    moonEl.style.left = p.x.toFixed(2) + '%';
+    moonEl.style.top = p.y.toFixed(2) + '%';
   }
 
   // --- starfield -----------------------------------------------------------
