@@ -410,6 +410,15 @@ def main(alpha: dict | None = None) -> dict | None:
     log.info("canada context attached: fund %d · earnings %d · factor-beta %d",
              len(fmap), len(earn), len(betas))
     (outdir / "index.json").write_text(json.dumps(index))
+    # Bespoke chart OHLC (close-only area series) read by canada_stock.html's chart.js —
+    # pure serialisation of canada_search closes; never break the library over the garnish.
+    try:
+        from scripts.build_chart_data import emit_close_only
+        nc = emit_close_only(outdir / "index.json", config.data_dir() / "canada_search" / "closes.parquet",
+                             outdir.parent / "canadaohlc", "canada")
+        log.info("canada chart data: %d ohlc files", nc)
+    except Exception as e:  # noqa: BLE001
+        log.warning("canada chart data step failed (%s)", e)
 
     cal = config.data_dir() / "canada_regime" / "ladder_calibration.json"
     if cal.exists():

@@ -172,12 +172,68 @@ def build_us(site: Path) -> tuple[int, int]:
     return (written, candles)
 
 
+def emit_close_only(index_file: Path, close_path: Path, outdir: Path, src_label: str) -> int:
+    """Emit close-only chart JSON (`site/<mkt>ohlc/<T>.json`) for a non-US market whose
+    price store is a single wide closes-cache parquet (China/Canada/International). Same
+    compact `o:0` schema as build_us's close-only path — chart.js draws an area series and
+    computes every indicator client-side. A 40-year deep cache (HK) is auto-trimmed to the
+    last MAX_BARS by `_bars_close`. Returns the count written; a missing index or source is
+    a no-op so a market that hasn't built yet never breaks the caller. Universes are ~94-100%
+    covered by their search-closes cache; the few names absent just fall back to "no chart".
+    """
+    if not index_file.exists() or not close_path.exists():
+        log.warning("%s chart data: index or source missing — skipped", src_label)
+        return 0
+    try:
+        universe = json.loads(index_file.read_text())
+        closes = pd.read_parquet(close_path)
+    except Exception as e:  # noqa: BLE001 — never break the market build over the chart garnish
+        log.warning("%s chart data: source unreadable (%s)", src_label, e)
+        return 0
+    tickers = [row["t"] for row in universe if isinstance(row, dict) and row.get("t")]
+    outdir.mkdir(parents=True, exist_ok=True)
+    n = 0
+    for t in tickers:
+        if t not in closes.columns:
+            continue
+        bars = _bars_close(closes[t])
+        if not bars:
+            continue
+        (outdir / f"{_safe(t)}.json").write_text(
+            json.dumps({"t": t, "o": 0, "src": src_label, "bars": bars}, separators=(",", ":")))
+        n += 1
+    return n
+
+
+# Non-US markets: (site-subdir, search-closes parquet under data/, src label). HK is
+# absent on purpose — its per-stock JSON already carries a `chart` close series that
+# hk_lookup.html feeds to chart.js inline, so it needs no separate ohlc dir.
+NONUS_MARKETS = {
+    "china": ("china_search/closes.parquet",),
+    "canada": ("canada_search/closes.parquet",),
+    "intl": ("intl_search/closes.parquet",),
+}
+
+
+def build_nonus(site: Path) -> dict[str, int]:
+    """Emit china/canada/intl ohlc dirs from their search-closes caches. Each reads the
+    market's already-built `site/<mkt>stockdata/index.json`. Safe to call standalone."""
+    out: dict[str, int] = {}
+    for mkt, (rel,) in NONUS_MARKETS.items():
+        n = emit_close_only(site / f"{mkt}stockdata" / "index.json",
+                            config.data_dir() / rel, site / f"{mkt}ohlc", mkt)
+        out[mkt] = n
+    return out
+
+
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     site = config.ROOT / config.load()["storage"]["site_dir"]
     written, candles = build_us(site)
     log.info("chart data: wrote %d US ohlc files (%d candle-capable, %d line-only)",
              written, candles, written - candles)
+    for mkt, n in build_nonus(site).items():
+        log.info("chart data: wrote %d %s ohlc files", n, mkt)
 
 
 if __name__ == "__main__":

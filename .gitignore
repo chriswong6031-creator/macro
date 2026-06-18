@@ -12,6 +12,9 @@ site/chinastockdata/
 site/hkstockdata/
 site/canadastockdata/
 site/intlstockdata/
+site/chinaohlc/
+site/canadaohlc/
+site/intlohlc/
 data/breadth/_closes_cache.parquet
 data/smallcap_breadth/_closes_cache.parquet
 data/midcap_breadth/_closes_cache.parquet
