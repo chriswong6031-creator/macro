@@ -1,11 +1,18 @@
 # Cross-asset TSMOM as a 60/40 diversifying overlay — Phase-0 verdict
 
-**VERDICT: CONFIRMER (validated diversifying overlay).** Standalone diversified trend
-stays DISPLAY (it ≈ buy&hold, the existing `cross-asset-phase0.md` finding); but blended
-as a ~30% overlay on a 60/40 book it is a robust, multiple-testing-survived **drawdown
-reducer** — the same drawdown-shaped payoff the S&P/Macro Vector is scored on. Not yet
-wired into a live allocation, so it ships as a confirmer; the promotion path to SCORED is
-a `masterminds.html` GTAA sleeve.
+**VERDICT: SCORED (wired via the masterminds GTAA).** Standalone diversified trend stays
+DISPLAY (it ≈ buy&hold, the existing `cross-asset-phase0.md` finding); but cross-asset trend
+is already the **0.45-weighted primary factor of the validated, served masterminds GTAA**
+(`engine/masterminds.py` → `cross_asset_trend.tsmom_alloc`), a live allocation that beats SPY
+on Sharpe (1.07 vs 0.62) and MaxDD (−24.1% vs −55.2%) over 19y with OOS-stable Sharpe in both
+halves (0.98 / 1.15). It is therefore wired into a number = scored. The overlay test below
+**independently confirms** that the diversified-trend sleeve is a robust, multiple-testing-
+survived drawdown reducer — the same drawdown-shaped payoff the S&P/Macro Vector is scored on.
+
+**Promotion note (2026-06-17).** Originally shipped as a confirmer pending wiring; on review
+the wiring already exists (masterminds TREND factor, W=0.45, live `site/masterminds.html` via
+`build_strategies.py`), so the `signal_lab` row was promoted confirmer → scored. No DBC/UUP/GLD
+collection was needed (the GTAA already uses GC=F/HG=F for the real-asset sleeve).
 
 Harness: `scripts/tsmom_phase0.py` (READ-ONLY). 12-1 (12-month, skip-1) time-series
 momentum, vol-targeted 10%/leg (3x cap), **monthly** rebalance, **2bps** one-way cost,

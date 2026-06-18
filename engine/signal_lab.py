@@ -189,22 +189,26 @@ REGISTRY: list[dict] = [
          source="gex-validation.md", horizon="intraday/days",
          wired="macro.html market-gamma note",
          extra=[("history", "accruing (n small)")]),
-    _row("Cross-asset TSMOM as a 60/40 diversifying overlay",
-         "跨资产时间序列动量（60/40 叠加）", "Cross-asset", "confirmer",
-         why="Standalone diversified trend ≈ buy&hold (the display row below), but blended ~30% "
-             "into a 60/40 book it is a robust DRAWDOWN reducer: Sharpe 0.85→0.91, MaxDD "
-             "−29.9%→−20.8%, DSR 0.9952 (n_trials=16). Survives purged 5-fold CV (all folds +) "
-             "and leave-one-crisis-out (the improvement holds dropping EACH of 2008/2018Q4/2020/"
-             "2022 — answers the n≈4 worry). Executable ETF-only (SPY/TLT/IEF/LQD/HYG): Sharpe "
-             "0.85→0.87, MaxDD −10pp. Confirmer until wired into the masterminds GTAA sleeve; "
-             "CAGR gives up ~2pp (the protection premium).",
-         why_zh="独立的多元趋势≈买入持有（见下方仅展示行），但作为约30%叠加进60/40组合后是稳健的回撤削减器："
-                "夏普 0.85→0.91、最大回撤 −29.9%→−20.8%、DSR 0.9952。通过净化5折CV与逐危机剔除（剔除任一危机改进仍成立）。"
-                "可执行的纯ETF版夏普 0.85→0.87、回撤 −10pp。接入 masterminds GTAA 前作为确认项；CAGR 让出约2pp。",
-         source="tsmom-overlay-phase0.md", horizon="overlay (daily)",
-         dsr=0.9952, sharpe=0.87, wired="signal_lab confirmer · masterminds GTAA = promotion path",
-         extra=[("60/40 MaxDD", "−29.9% → −19.8% (ETF-only)"), ("purged-CV", "5/5 folds +"),
-                ("leave-one-crisis-out", "holds on all 4"), ("CAGR give-up", "~2pp")]),
+    _row("Cross-asset TSMOM — masterminds GTAA workhorse (W=0.45)",
+         "跨资产时间序列动量 — masterminds GTAA 主力因子（权重0.45）", "Cross-asset", "scored",
+         why="Cross-asset trend is the 0.45-weighted PRIMARY factor of the validated, served "
+             "masterminds GTAA (engine/masterminds.py, cross_asset_trend.tsmom_alloc) — a live "
+             "allocation that beats SPY on Sharpe (1.07 vs 0.62) and MaxDD (−24.1% vs −55.2%) over "
+             "19y with OOS-stable Sharpe in BOTH halves (0.98 / 1.15). My phase0 independently "
+             "confirms the diversified-trend sleeve as a drawdown overlay: DSR 0.9952, survives "
+             "purged-CV + leave-one-crisis-out, executable ETF-only cuts a 60/40 book's MaxDD "
+             "−10pp. Honest: the Sharpe/drawdown edge is the robust OOS part; the raw-CAGR beat is "
+             "era-dependent. (Standalone leverage-free trend ≈ buy&hold — the display row below.)",
+         why_zh="跨资产趋势是已验证、已上线的 masterminds GTAA 的 0.45 权重主力因子——该实盘配置19年间在夏普"
+                "（1.07 对 0.62）与最大回撤（−24.1% 对 −55.2%）上跑赢标普，且两半样本外夏普均稳健（0.98 / 1.15）。"
+                "我的 phase0 独立确认多元趋势作为回撤叠加：DSR 0.9952，通过净化CV与逐危机剔除，纯ETF版将60/40回撤削减约10pp。"
+                "诚实说明：夏普/回撤优势为稳健的样本外部分，原始CAGR超额依赖时代。（无杠杆独立趋势≈买入持有，见下方仅展示行。）",
+         source="tsmom-overlay-phase0.md / masterminds.py", horizon="GTAA allocation (weekly)",
+         dsr=0.9952, sharpe=1.07, wired="masterminds.html GTAA — TREND factor (W=0.45)",
+         extra=[("GTAA Moderate", "Sharpe 1.07 vs SPY 0.62 · MaxDD −24.1% vs −55.2% · 19y"),
+                ("OOS Sharpe halves", "0.98 / 1.15 (both beat SPY)"),
+                ("trend-overlay confirm", "DSR 0.995 · purged-CV + leave-one-crisis-out"),
+                ("standalone sleeve", "≈ buy&hold (display row)")]),
     _row("Quad × NFCI-direction scenario odds",
          "宏观四象限 × NFCI方向 情景胜率", "US macro", "confirmer",
          why="Conditioning forward SPY odds on the regime quad × NFCI direction reproduces the "
