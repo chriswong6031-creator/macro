@@ -199,9 +199,21 @@ def _cond_up_prob(df: pd.DataFrame, cfg: dict, horizon: int):
     if macro is not None and pd.notna(macro.iloc[-1]):
         t = cfg["macro_tilt_pp"] / 100.0
         tilt = t if macro.iloc[-1] == "tailwind" else (-t if macro.iloc[-1] == "headwind" else 0.0)
-    # halving-cycle prior (orthogonal): accumulation phase tilts up, markdown down
+    # cycle-time prior (orthogonal): the bottom-anchored 1064/364 phase — markup tilts up,
+    # markdown down, FADING to the opposite sign inside the top/bottom reversal zone (so it
+    # backs off near a projected turn). Same +/-cycle_tilt_pp magnitude, never a trigger.
+    # Falls back to the halving phase if the bottom-anchored column is absent.
+    cph, cpct = df.get("cphase_phase"), df.get("cphase_pct")
     cyc = df.get("cycle_phase")
-    if cyc is not None and pd.notna(cyc.iloc[-1]) and cfg.get("cycle_tilt_pp"):
+    if cfg.get("cycle_tilt_pp") and cph is not None and pd.notna(cph.iloc[-1]):
+        ct = cfg["cycle_tilt_pp"] / 100.0
+        tz = cfg.get("cycle_top_zone", 0.85)
+        in_zone = cpct is not None and pd.notna(cpct.iloc[-1]) and cpct.iloc[-1] >= tz
+        if cph.iloc[-1] == "markup":
+            tilt += -ct if in_zone else ct
+        elif cph.iloc[-1] == "markdown":
+            tilt += ct if in_zone else -ct
+    elif cyc is not None and pd.notna(cyc.iloc[-1]) and cfg.get("cycle_tilt_pp"):
         ct = cfg["cycle_tilt_pp"] / 100.0
         tilt += ct if cyc.iloc[-1] == "accumulation" else (-ct if cyc.iloc[-1] == "markdown" else 0.0)
     p = min(max(p + tilt, cfg["prob_floor"]), cfg["prob_ceil"])
@@ -495,8 +507,8 @@ def _conviction_why(c: dict, cell, n, horizon: int):
               f"优势在周期，而非{near_zh}。")
         return en, zh
     dword, dword_zh = ("bull", "看多") if c["dir"] > 0 else ("bear", "看空")
-    drv = f"{c['tilt']:+d}pp macro+cycle tilt" if c["tilt"] else "the cell base-rate"
-    drv_zh = f"{c['tilt']:+d}pp 宏观+周期偏移" if c["tilt"] else "区间基准率"
+    drv = f"{c['tilt']:+d}pp macro + 1064/364-cycle tilt" if c["tilt"] else "the cell base-rate"
+    drv_zh = f"{c['tilt']:+d}pp 宏观+1064/364周期偏移" if c["tilt"] else "区间基准率"
     tf, tf_zh = ("weekly", "周线") if horizon >= 7 else ("daily", "日线")
     tape_en = (" Tape agrees." if c["tape"] == "confirm"
                else (f" But the {tf} tape disagrees — nimble only." if c["tape"] == "conflict" else ""))
@@ -1911,6 +1923,7 @@ def vector_timeline(sig: pd.DataFrame, ladder: pd.DataFrame) -> dict:
         "dates": [d.strftime("%Y-%m-%d") for d in df.index],
         "price": num(df["close"]),
         "phase": cat(df["cycle_phase"], "accumulation"),
+        "cphase": cat(df["cphase_phase"], ""),   # bottom-anchored 1064/364 phase (PIT)
         "stage": [None if pd.isna(v) else int(v) for v in stage],
         "regime": cat(lad["regime"], "neutral"),
         "ladder": cat(lad["ladder_state"], ""),
@@ -2198,6 +2211,17 @@ def main() -> int:
             "days": _r(last.get("days_since_halving"), 0),
             "vdd": _r(last.get("vdd_multiple"), 2),
             "vdd_pctile": _r(last.get("vdd_pctile"), 0),
+        },
+        "cycle_phase": {     # bottom-anchored 1064/364 clock (the chart's theory)
+            "phase": last.get("cphase_phase"),
+            "pct": _r(100 * last["cphase_pct"], 0) if pd.notna(last.get("cphase_pct")) else None,
+            "days_in": _r(last.get("cphase_days_in"), 0),
+            "len": _r(last.get("cphase_len"), 0),
+            "days_left": _r(last.get("cphase_days_left"), 0),
+            "next_pivot": last.get("cphase_next_pivot"),
+            "next_kind": last.get("cphase_next_kind"),
+            "status": last.get("cphase_status"),
+            "anchor": last.get("cphase_anchor_date"),
         },
         "positioning": {
             "cot_net_pct": _r(last.get("cot_net_pct"), 1),

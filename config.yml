@@ -2554,7 +2554,9 @@ vector:
     prob_floor: 0.30              # cap probabilities to [floor, ceil] (anti-overfit)
     prob_ceil: 0.70
     macro_tilt_pp: 5              # macro tailwind/headwind nudges the prob +/- this (pp)
-    cycle_tilt_pp: 5             # halving-phase prior: accumulation +, markdown - (pp)
+    cycle_tilt_pp: 5             # cycle-phase prior: markup +, markdown - (pp); now driven
+                                 # by the bottom-anchored 1064/364 phase (tighter than halving)
+    cycle_top_zone: 0.85         # last 15% of a leg = reversal zone -> the tilt flips sign
     atr_dvol_ref: 55              # DVOL ~= this -> ATR bands unscaled; higher widens them
     conv_band_pp: [3, 7]          # conviction cuts (pp from 50%): TOSS-UP <=3, LEAN <=7, EDGE >7.
                                   # Calibrated to the MEASURED reliable-cell up-rate spread
@@ -2571,6 +2573,17 @@ vector:
     accumulation_end: 0.22
     markup_end: 0.42
     markdown_end: 0.70
+
+  cycle_phase_clock:              # bottom-anchored 1064/364 time structure (the chart's
+    # "1064 days up / 364 days down" theory). A tighter view of the SAME ~4yr axis as
+    # cycle_clock, anchored on observed lows/highs. Measured fit vs our own price history:
+    # up 1067/1059/1050d, down 364/378d -> mean-abs-err 7.2d, but only n=3 (in-sample).
+    # CONTEXT + soft prior, never a trigger. Timing only — NOT amplitude, NO price target.
+    bottoms: ["2015-01-14", "2018-12-15", "2022-11-21"]   # observed cycle lows
+    tops:    ["2017-12-16", "2021-11-08", "2025-10-06"]   # observed cycle highs
+    up_days: 1064                 # markup leg length (mean of 1067/1059/1050)
+    down_days: 364                # markdown leg length (n=2: 364/378 — the weak leg)
+    overdue_pct: 1.10             # days_in > len*this w/o a new pivot -> status "overdue"
 
   positioning:                    # CME COT net-spec (already collected, now wired)
     z_window_d: 730               # ~2y z-score of net_spec_pct_oi (crowding extremes)
