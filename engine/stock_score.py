@@ -362,8 +362,41 @@ def _rsi_band(rsi: float | None) -> float | None:
     return 0.0
 
 
+# ABSOLUTE trend-extension brake — distance above the 200dma (research: the CASY failure).
+# The own-history ext_z (engine/extension) z-scores stretch vs the name's OWN trailing year,
+# so a PERSISTENT leader that is always ~30% above its 200dma reads ~0 (not extended vs
+# itself) and slips the parabolic flag. So we ALSO read the RAW stretch above the 200dma.
+# DATA (deep+PIT 18y, top-momentum-decile, forward 5/10/21d, returns clipped): names <25%
+# above their 200dma are HEALTHY (good median, shallow drawdown), but the >~35% cohort has the
+# WORST median forward return AND the deepest drawdowns at every horizon (the fat-tailed-mean
+# "lottery" chase). Drawdown is already elevated from ~25%. So we leave the healthy ≤_STRETCH_WARN
+# zone untouched and risk-conservatively HARD-BLOCK the chase at _STRETCH_BLOCK (cap the entry,
+# "don't chase" verb) — trading a little late-momentum upside for avoiding the drawdown, which
+# is the board's risk-discipline mandate. The own-history parabolic flag (ext_z>2, validated
+# -94% DD) still blocks independently.
+_STRETCH_WARN = 25.0       # % above 200dma where the graduated entry penalty begins (≤ this = healthy)
+_STRETCH_BLOCK = 30.0      # % above 200dma => over-extended chase (cap entry + "don't chase")
+
+
+def _stretch_penalty(pct_vs_200: float | None) -> float | None:
+    if pct_vs_200 is None:
+        return None
+    x = float(pct_vs_200)
+    if x <= _STRETCH_WARN:
+        return 0.0
+    if x <= _STRETCH_BLOCK:                 # 18..30 -> 0..-0.9
+        return -(x - _STRETCH_WARN) / (_STRETCH_BLOCK - _STRETCH_WARN) * 0.9
+    return float(np.clip(-0.9 - (x - _STRETCH_BLOCK) / 10.0 * 0.3, -1.2, -0.9))
+
+
+def _overextended(rec: dict) -> bool:
+    """True when price is far enough above its 200dma to be a chase (CASY: +35%)."""
+    pv = _f((rec.get("tech") or {}).get("pct_vs_200dma"))
+    return pv is not None and pv >= _STRETCH_BLOCK
+
+
 def _axis_entry(rec: dict) -> tuple[float | None, list[str], bool]:
-    """Entry/timing axis + whether the cycle BLOCKS a buy (caps the axis)."""
+    """Entry/timing axis + whether the cycle/extension BLOCKS a buy (caps the axis)."""
     present: list[str] = []
     lad = rec.get("ladder") or {}
     entry = (lad.get("entry") or {})
@@ -384,14 +417,17 @@ def _axis_entry(rec: dict) -> tuple[float | None, list[str], bool]:
     if rb is not None:
         parts.append(rb); present.append("rsi")
     grade = ext.get("grade")
-    if grade in _EXT_PENALTY:               # PENALTY only, never a positive add
+    if grade in _EXT_PENALTY:               # own-history extension PENALTY (never a positive add)
         parts.append(_EXT_PENALTY[grade]); present.append("extension")
+    sp = _stretch_penalty(_f(tech.get("pct_vs_200dma")))   # absolute distance above the 200dma
+    if sp is not None and sp < 0:
+        parts.append(sp); present.append("over-200dma")
 
     z = _mean_avail(parts)
-    # the cycle hard-block: downtrend / topping / exit / avoid / parabolic
+    # hard-block: downtrend / topping / exit / avoid / parabolic / OVER-EXTENDED (a chase)
     state = (lad.get("state") or "").upper()
     blocked = (state in _CYCLE_BLOCK_STATES or urg in _BLOCK_URGENCY
-               or grade == _PARABOLIC)
+               or grade == _PARABOLIC or _overextended(rec))
     if blocked and z is not None:
         z = min(z, _ENTRY_CAP_Z)
     # scale the small tilts up toward ~unit z for the composite
@@ -495,6 +531,11 @@ def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool) -> dict:
         cautions.append("accounting watch")
     if grade == _PARABOLIC:
         cautions.append("parabolic — extended")
+    _ovx = _overextended(rec)
+    if _ovx:
+        _pv = _f((rec.get("tech") or {}).get("pct_vs_200dma"))
+        cautions.append(f"extended +{_pv:.0f}% over 200dma — chasing" if _pv is not None
+                        else "extended over 200dma — chasing")
     if cycle_blocked:
         cautions.append("cycle: " + (lad.get("label") or state or "weak tape"))
 
@@ -509,8 +550,8 @@ def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool) -> dict:
 
     # ---- cycle hard-block: never 'Buy' regardless of the composite ----------
     if cycle_blocked:
-        # a parabolic blow-off is blocked too, but earns the more specific message
-        if grade == _PARABOLIC and sel_t in ("high", "mid"):
+        # a parabolic blow-off / over-extended chase is blocked — the specific message
+        if (grade == _PARABOLIC or _ovx) and sel_t in ("high", "mid"):
             return _v("Extended — don't chase; wait for a pullback",
                       "过度拉升 — 勿追高；等待回撤", drivers, cautions)
         if sel_t == "high":

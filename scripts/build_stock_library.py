@@ -27,6 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from engine import ticker_alerts  # noqa: E402
 from engine.conditions import sector_macro_beta  # noqa: E402
 from engine.cycles import analyze, market_vix_context  # noqa: E402
+from engine.extension import extension_signals  # noqa: E402
 from engine.playbook import SECTOR_NAMES  # noqa: E402
 from engine.setups import US_ALPHA_WEIGHT, rank_setups, setup_score, sue_confirmer  # noqa: E402
 from engine import stock_score  # noqa: E402
@@ -623,6 +624,19 @@ def main() -> int:
     disp_map: dict[str, dict] = {}              # price / off-high / sparkline per name
     to_write: list[tuple[str, dict]] = []
     uni = universe()
+    # extension / exhaustion read over the WHOLE library universe (own-history ext_z +
+    # grade), wired in EXACTLY as build_discovery does — this is what re-arms the validated
+    # parabolic/stretched penalty in stock_score._axis_entry that was dead on this board
+    # (every standout previously carried ext=None, so a +35%-over-200dma chase got no brake).
+    try:
+        _ext_closes = pd.concat({t: c for (t, c, *_rest) in uni}, axis=1).sort_index()
+        ext_map = extension_signals(_ext_closes)
+        log.info("extension read on %d names (%d parabolic, %d stretched)", len(ext_map),
+                 sum(1 for v in ext_map.values() if v.get("grade") == "parabolic"),
+                 sum(1 for v in ext_map.values() if v.get("grade") == "stretched"))
+    except Exception as e:  # noqa: BLE001 — additive; absence just means no extension brake
+        log.warning("extension read failed (%s) — standouts run without the stretch brake", e)
+        ext_map = {}
     # Heaviest stretch of the whole site build: ~1500 independent _one() calls.
     # Fan them across processes (CI runner = 4 vCPU); the cheap post-processing
     # below (shared-map merges, setup scoring, JSON writes) stays serial and in
@@ -705,6 +719,8 @@ def main() -> int:
         # the cycle state is a HARD verb modifier (a downtrend caps entry + forbids a Buy verb).
         ins = insider_map.get(ticker) or {}
         ins_bps = ins.get("bps") if (ins.get("buyers", 0) >= 2 and (ins.get("net_mn") or 0) > 0) else None
+        if ext_map.get(ticker):
+            rec["ext"] = ext_map[ticker]            # re-arms the parabolic/stretched entry brake
         norm = stock_score.normalize_rec(
             rec, "US", sue=sue_z.get(ticker), sue_fresh_days=sue_fresh.get(ticker),
             insider_bps=ins_bps, revision_z=revision_z.get(ticker), basket=basket_tw.get(ticker))
@@ -772,12 +788,21 @@ def main() -> int:
         scored = [(t, p) for t, p in profiles.items()
                   if p.get("composite_z") is not None and t in row_by_t]
         scored.sort(key=lambda kv: -(kv[1]["composite_z"]))
+        # A name whose cycle/extension state BLOCKS a buy (downtrend / parabolic / over-
+        # extended chase like CASY) must NEVER appear in the BUY slice — its own verdict says
+        # "don't chase". Route strong-but-blocked names to a separate WATCH list ("leaders —
+        # wait for a pullback") so they are surfaced honestly, not sold as buys. (China's board
+        # does the same: it ranks buyable setups, not extended leaders.)
+        buyable = [(t, p) for t, p in scored if not p.get("cycle_blocked")]
+        watch = [(t, p) for t, p in scored
+                 if p.get("cycle_blocked") and (p.get("composite_z") or 0) > 0]
         wide = {"as_of": alpha_asof, "rank_by": ("edge-validated" if gate_go else "conviction"),
                 "gate_go": gate_go,
-                "buy": [row_by_t[t] for t, _ in scored[:120]],
+                "buy": [row_by_t[t] for t, _ in buyable[:120]],
+                "watch": [row_by_t[t] for t, _ in watch[:24]],
                 "laggards": [row_by_t[t] for t, _ in scored[-12:][::-1]] if len(scored) > 24 else []}
-        eligible = sum(1 for _, p in scored if (p.get("composite_z") or 0) > 0)
-        for r in wide["buy"] + wide["laggards"]:
+        eligible = sum(1 for _, p in buyable if (p.get("composite_z") or 0) > 0)
+        for r in wide["buy"] + wide["watch"] + wide["laggards"]:
             t = r.get("ticker")
             r["conviction"] = profiles.get(t)
             r.update({k: v for k, v in (disp_map.get(t) or {}).items() if v is not None})

@@ -338,3 +338,44 @@ def test_sue_freshness_is_carried_as_display_only():
     assert cf["fresh_days"] == 8 and cs["fresh_days"] == 180   # but recency is shown
     # no fresh_days key when no filing date is known
     assert "fresh_days" not in next(x for x in ss._edge_basis({"sue": 2.0}, "US") if x["leg"] == "sue")
+
+
+# --- reshape T1: absolute trend-extension brake (the CASY fix) ----------------
+def test_stretch_penalty_bounds_and_monotone():
+    assert ss._stretch_penalty(None) is None
+    assert ss._stretch_penalty(10.0) == 0.0          # healthy trend, no penalty
+    assert ss._stretch_penalty(25.0) == 0.0          # ≤ warn = healthy, untouched (per the data)
+    # monotone-decreasing through the stretch zone, floored at -1.2
+    assert 0 > ss._stretch_penalty(27.0) > ss._stretch_penalty(30.0) >= ss._stretch_penalty(45.0)
+    assert ss._stretch_penalty(80.0) == pytest.approx(-1.2)
+
+
+def test_overextended_threshold():
+    assert ss._overextended({"tech": {"pct_vs_200dma": 31.0}}) is True
+    assert ss._overextended({"tech": {"pct_vs_200dma": 12.0}}) is False
+    assert ss._overextended({"tech": {}}) is False
+
+
+def test_overextended_name_is_blocked_and_dont_chase():
+    # a CASY-like name: strong momentum, shallow -7% dip, RSI 55, FRESH BUY, +31% over 200dma
+    rec = {"alpha": 2.4, "alpha_entry": "intact",
+           "ladder": {"state": "FRESH BUY", "label": "BUY ZONE", "dir": "up",
+                      "entry": {"urgency": "now"}},
+           "tech": {"off_52w_high_pct": -7.0, "rsi14": 55.0, "pct_vs_200dma": 31.3}}
+    z, present, blocked = ss._axis_entry(rec)
+    assert blocked is True and z is not None and z <= ss._ENTRY_CAP_Z * 1.6 + 1e-9
+    assert "over-200dma" in present
+    p = ss.conviction_profile(rec, "US")
+    assert "don't chase" in p["verdict"].lower() or "chase" in p["verdict"].lower()
+    assert any("extended" in c and "200dma" in c for c in p["cautions"])
+    assert "buy" not in p["verdict"].lower()
+
+
+def test_normal_extension_not_blocked():
+    # the SAME name only +12% over its 200dma is a healthy trend, not a chase
+    rec = {"alpha": 2.4, "alpha_entry": "pullback",
+           "ladder": {"state": "RALLY ON", "label": "UPTREND", "dir": "up",
+                      "entry": {"urgency": "now"}},
+           "tech": {"off_52w_high_pct": -7.0, "rsi14": 55.0, "pct_vs_200dma": 12.0}}
+    z, present, blocked = ss._axis_entry(rec)
+    assert blocked is False and "over-200dma" not in present
