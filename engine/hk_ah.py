@@ -39,7 +39,11 @@ def _series(s: pd.Series, last_days: int | None = None, ndigits: int = 3) -> dic
             "vals": [round(float(v), ndigits) for v in s]}
 
 
-def ah_basket() -> dict | None:
+def _per_pair_premiums() -> tuple[dict[str, pd.Series], list[dict]] | None:
+    """Shared core: per dual-listed pair, the computed A/H premium SERIES (1:1
+    share-equivalence; lean on trend/percentile, not the absolute level). Returns
+    (per_pair {H-ticker -> premium% series}, latest_rows) or None if the inputs are
+    missing. Single source of truth for ah_basket / ah_basket_series."""
     cfg = config.load().get("hk", {})
     pairs = cfg.get("ah_pairs") or {}
     names = cfg.get("names") or {}
@@ -96,7 +100,27 @@ def ah_basket() -> dict | None:
             "name": names.get(h, h),
             "premium_pct": round(float(prem.iloc[-1]), 1),
         })
+    return per_pair, latest_rows
 
+
+def ah_basket_series() -> pd.Series | None:
+    """The equal-weight computed A/H premium basket as a daily SERIES (the input the
+    hk_conditions RORO leg z-scores). None if fewer than 3 pairs resolve."""
+    res = _per_pair_premiums()
+    if res is None:
+        return None
+    per_pair, _ = res
+    if len(per_pair) < 3:
+        return None
+    basket = pd.concat(per_pair, axis=1).sort_index().mean(axis=1).dropna()
+    return basket if not basket.empty else None
+
+
+def ah_basket() -> dict | None:
+    res = _per_pair_premiums()
+    if res is None:
+        return None
+    per_pair, latest_rows = res
     if len(per_pair) < 3:
         return None
 
