@@ -236,10 +236,10 @@
       {
         "key": "dxy",
         "label": "US Dollar (DXY)",
-        "z": 0.87,
+        "z": 0.75,
         "sign": -1,
         "risk": "off",
-        "level": 100.28
+        "level": 100.09
       }
     ],
     "terms_of_trade": "deteriorating",

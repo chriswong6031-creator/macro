@@ -1,90 +1,11 @@
 {
   "schema": "ai_desk.v1",
   "is_context_only": true,
-  "generated_at": "2026-06-18T01:55:56.289196+00:00",
+  "generated_at": "2026-06-18T02:51:14.976577+00:00",
   "state_asof": "2026-06-17",
   "model": "deepseek-v4-pro",
-  "regime_context": "The flow detector is display-only (rank-IC ~0) with no validated directional edge. VIX is elevated at 18.4 (63rd percentile) and fear is rebuilding, while the regime snap is dormant with no relief signal. Sector cohesion is broadly low and declining, and the dominant cyclical cluster (Industrials\u2013Consumer Discretionary, 0.86 correlation) shows broad but thinning participation.",
-  "theses": [
-    {
-      "id": "2026-06-17-1",
-      "subject": "Information Technology",
-      "lean": "avoid",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Extreme RS percentile (96.4) and low, deteriorating cohesion (0.187) signal a single-name-driven spike (DELL, WDC, VSH) that is vulnerable to mean-reversion, despite the confirmed stage and high flow score.",
-      "evidence": [
-        "Flow sector IT: rs_pctile 0.964, cohesion 0.187, non-cohering",
-        "Leadership: DELL (alpha 1.12), VSH (alpha 1.13), WDC (alpha 2.77), HHI 0.01",
-        "Guardrails: display_only, no forward edge, ~20d horizon only"
-      ],
-      "dissent": "The flow detector has no validated predictive edge; a trending sector could persist beyond 20 days if momentum continues, and avoiding a leading sector with small single-name risk is unsupported by a reliable signal.",
-      "falsifier": {
-        "text": "If IT's 20-day relative strength decelerates by less than 1 standard deviation from its current z-score and cohesion rises above 0.3 within 20 days.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "XLK",
-          "vs": "SPY",
-          "op": ">",
-          "threshold": 0.05,
-          "horizon_d": 20
-        }
-      },
-      "check_by": "2026-07-15"
-    },
-    {
-      "id": "2026-06-17-2",
-      "subject": "Consumer Discretionary",
-      "lean": "avoid",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "High emerging flow score (1.687) masks a very low RS percentile (13.1) and sharply declining cohesion (\u22120.073), indicating the flow concentration is coincident and not translating into durable returns.",
-      "evidence": [
-        "Flow sector Consumer Discretionary: rs_pctile 0.131, cohesion 0.245, cohesion_chg -0.073",
-        "Leadership scatter with high-alpha names (VSXY 1.24, CBRL -0.90, NWL -0.63)",
-        "Dominant cluster pair with Industrials (0.86 corr) but cohesion trend negative"
-      ],
-      "dissent": "The flow detector is display-only with no edge; the sector is tightly correlated with Industrials and has broad leadership (HHI 0.009, 196 names), so a sudden cycle-on surge could lift it, making avoidance premature.",
-      "falsifier": {
-        "text": "If Consumer Discretionary's cohesion turns positive (\u0394 cohesion > +0.05) and RS percentile rises above 0.3 within 20 days.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "XLY",
-          "vs": "SPY",
-          "op": ">",
-          "threshold": 0.05,
-          "horizon_d": 20
-        }
-      },
-      "check_by": "2026-07-15"
-    },
-    {
-      "id": "2026-06-17-3",
-      "subject": "Industrials",
-      "lean": "underweight",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Strong flow score (1.505) and elevated RS percentile (73) conceal deteriorating cohesion (\u22120.046) and leadership concentrated in stocks with negative alpha (FWRD \u22120.96), pointing to dispersion rather than a durable broad trend.",
-      "evidence": [
-        "Flow sector Industrials: cohesion 0.224, cohesion_chg -0.046",
-        "Leadership: FWRD (alpha \u22120.96), CRS (alpha 0.82), ALGT (alpha 0.31)",
-        "Top pair with Consumer Discretionary, but cohesion declining; display-only verdict"
-      ],
-      "dissent": "The flow detector has no validated predictive edge, and Industrials is the anchor of the strongest cross-sector cluster (0.86 correlation with Consumer Discretionary); if cyclical rotation broadens, the underweight could miss a durable rally.",
-      "falsifier": {
-        "text": "If Industrials' cohesion turns positive (\u0394 cohesion > +0.05) and RS percentile stays above 0.5 with breadth maintained within 20 days.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "XLI",
-          "vs": "SPY",
-          "op": ">",
-          "threshold": 0.05,
-          "horizon_d": 20
-        }
-      },
-      "check_by": "2026-07-15"
-    }
-  ],
+  "regime_context": "The flow detector is display-only, showing concentrated cross-sectional flow in cyclical sectors (Consumer Discretionary, Industrials, Financials) with broad leadership but no cohering signal; its rank-IC is ~0 and any forward inference is forbidden. The regime snap is dormant, with fear rebuilding (0.504) and VIX elevated at 18.4, but no relief snap is in place.",
+  "theses": [],
   "source_verdicts": {
     "flow": "display_only",
     "regime_snap": "coincident"
@@ -93,7 +14,7 @@
     "schema": "ai_desk_track_record.v1",
     "as_of": "2026-06-18",
     "scored_total": 0,
-    "open": 5,
+    "open": 7,
     "unscored_soft": 0,
     "expired": 0,
     "overall": {
@@ -146,135 +67,165 @@
     "recent": []
   },
   "confidence": "low",
-  "raw_text": "{\n  \"regime_context\": \"The flow detector is display-only (rank-IC ~0) with no validated directional edge. VIX is elevated at 18.4 (63rd percentile) and fear is rebuilding, while the regime snap is dormant with no relief signal. Sector cohesion is broadly low and declining, and the dominant cyclical cluster (Industrials\u2013Consumer Discretionary, 0.86 correlation) shows broad but thinning participation.\",\n  \"theses\": [\n    {\n      \"subject\": \"Information Technology\",\n      \"lean\": \"avoid\",\n      \"conviction\": \"low\",\n      \"horizon_d\": 20,\n      \"thesis\": \"Extreme RS percentile (96.4) and low, deteriorating cohesion (0.187) signal a single-name-driven spike (DELL, WDC, VSH) that is vulnerable to mean-reversion, despite the confirmed stage and high flow score.\",\n      \"evidence\": [\n        \"Flow sector IT: rs_pctile 0.964, cohesion 0.187, non-cohering\",\n        \"Leadership: DELL (alpha 1.12), VSH (alpha 1.13), WDC (alpha 2.77), HHI 0.01\",\n        \"Guardrails: display_only, no forward edge, ~20d horizon only\"\n      ],\n      \"dissent\": \"The flow detector has no validated predictive edge; a trending sector could persist beyond 20 days if momentum continues, and avoiding a leading sector with small single-name risk is unsupported by a reliable signal.\",\n      \"falsifier_text\": \"If IT's 20-day relative strength decelerates by less than 1 standard deviation from its current z-score and cohesion rises above 0.3 within 20 days.\"\n    },\n    {\n      \"subject\": \"Consumer Discretionary\",\n      \"lean\": \"avoid\",\n      \"conviction\": \"low\",\n      \"horizon_d\": 20,\n      \"thesis\": \"High emerging flow score (1.687) masks a very low RS percentile (13.1) and sharply declining cohesion (\u22120.073), indicating the flow concentration is coincident and not translating into durable returns.\",\n      \"evidence\": [\n        \"Flow sector Consumer Discretionary: rs_pctile 0.131, cohesion 0.245, cohesion_chg -0.073\",\n        \"Leadership scatter with high-alpha names (VSXY 1.24, CBRL -0.90, NWL -0.63)\",\n        \"Dominant cluster pair with Industrials (0.86 corr) but cohesion trend negative\"\n      ],\n      \"dissent\": \"The flow detector is display-only with no edge; the sector is tightly correlated with Industrials and has broad leadership (HHI 0.009, 196 names), so a sudden cycle-on surge could lift it, making avoidance premature.\",\n      \"falsifier_text\": \"If Consumer Discretionary's cohesion turns positive (\u0394 cohesion > +0.05) and RS percentile rises above 0.3 within 20 days.\"\n    },\n    {\n      \"subject\": \"Industrials\",\n      \"lean\": \"underweight\",\n      \"conviction\": \"low\",\n      \"horizon_d\": 20,\n      \"thesis\": \"Strong flow score (1.505) and elevated RS percentile (73) conceal deteriorating cohesion (\u22120.046) and leadership concentrated in stocks with negative alpha (FWRD \u22120.96), pointing to dispersion rather than a durable broad trend.\",\n      \"evidence\": [\n        \"Flow sector Industrials: cohesion 0.224, cohesion_chg -0.046\",\n        \"Leadership: FWRD (alpha \u22120.96), CRS (alpha 0.82), ALGT (alpha 0.31)\",\n        \"Top pair with Consumer Discretionary, but cohesion declining; display-only verdict\"\n      ],\n      \"dissent\": \"The flow detector has no validated predictive edge, and Industrials is the anchor of the strongest cross-sector cluster (0.86 correlation with Consumer Discretionary); if cyclical rotation broadens, the underweight could miss a durable rally.\",\n      \"falsifier_text\": \"If Industrials' cohesion turns positive (\u0394 cohesion > +0.05) and RS percentile stays above 0.5 with breadth maintained within 20 days.\"\n    }\n  ],\n  \"confidence\": \"low\"\n}",
+  "raw_text": "{\n  \"regime_context\": \"The flow detector is display-only, showing concentrated cross-sectional flow in cyclical sectors (Consumer Discretionary, Industrials, Financials) with broad leadership but no cohering signal; its rank-IC is ~0 and any forward inference is forbidden. The regime snap is dormant, with fear rebuilding (0.504) and VIX elevated at 18.4, but no relief snap is in place.\",\n  \"theses\": [],\n  \"confidence\": \"low\"\n}",
   "degraded_reason": null,
   "disclaimer": "AI desk note \u2014 context only, never scored or sized. The detectors it reads are DISPLAY-ONLY (flow has no validated forward edge; the relief snap is coincident). Each lean is a fallible, FALSIFIABLE judgement with a check-by date, not a trade recommendation or a position size.",
   "panel": {
     "opportunity": {
-      "stance": "Flow is concentrating in Consumer Discretionary and Industrials with weak cohesion, while Energy flows are cooling. Elevated VIX and fear rebuilding without a relief snap suggests this rotation is fragile, warranting caution on cyclicals and near-term underweight on Energy.",
+      "stance": "Flow is concentrating in the cyclical cluster of Consumer Discretionary and Industrials, which are moving tightly together, while relief snap is dormant and VIX elevated but not flashing a fade-fear entry. This lens only identifies cross-sectional hot spots, not forward edges\u2014sustain caution.",
       "candidates": [
         {
           "subject": "Consumer Discretionary",
-          "lean": "avoid",
-          "rationale": "High flow concentration with declining cohesion and a very low RS percentile flags a crowded, low-conviction bounce that risks failing in a stressed regime.",
-          "strength": "moderate"
+          "lean": "overweight",
+          "rationale": "Highest flow concentration (1.687 score), broad leadership, and top pair with Industrials despite low cohesion; purely a concentration read, not a return forecast.",
+          "strength": "weak"
         },
         {
           "subject": "Industrials",
-          "lean": "avoid",
-          "rationale": "Strong flow score paired with deteriorating cohesion and an elevated RS percentile suggests the move is thinning and vulnerable to reversal if breadth narrows.",
-          "strength": "moderate"
+          "lean": "overweight",
+          "rationale": "Second-highest flow score (1.505), correlated +0.86 with Discretionary, broad participation\u2014reflects concentrated flow, not a directional edge.",
+          "strength": "weak"
+        },
+        {
+          "subject": "Materials",
+          "lean": "overweight",
+          "rationale": "Strong flow concentration (1.394) with rising cohesion and broad leadership; still directional confidence is low.",
+          "strength": "weak"
+        },
+        {
+          "subject": "Financials",
+          "lean": "overweight",
+          "rationale": "Dominant cluster member with broad breadth and high read quality (0.69), even though flow score trails peers\u2014cluster participation is the only signal.",
+          "strength": "weak"
         },
         {
           "subject": "Energy",
           "lean": "underweight",
-          "rationale": "Only sector in cooling with negative flow concentration; fading momentum and no cohesion recovery argue for further relative softness.",
-          "strength": "moderate"
+          "rationale": "Cooling stage with negative flow score, breadth collapsing\u2014concentration is leaving the sector; no forward edge, but flow avoiding it now.",
+          "strength": "weak"
         }
       ],
-      "key_risk": "A rapid drop in VIX accompanied by a broad surge in market breadth would validate the cyclical rotation, reversing the cautious read on Consumer Discretionary and Industrials."
+      "key_risk": "The flow concentration lens carries zero validated forward IC; the entire read collapses if this period's clustering is noise, as guardrails stress the pattern has no proven durability."
     },
     "skeptic": {
-      "stance": "The flow lens is display-only with no validated edge; emerging sectors with high flow scores suffer low or declining cohesion, suggesting dispersion, not accumulation. These are coincident snapshots likely to mean-revert, not opportunities to chase.",
+      "stance": "The flow lens is display-only, with zero validated forward edge; apparent opportunities in Consumer Discretionary, Industrials, and Materials are coincident concentration artifacts that historically mean-revert, especially given low cohesion and negative-alpha leadership.",
       "candidates": [
         {
-          "subject": "Information Technology",
+          "subject": "Consumer Discretionary",
           "lean": "avoid",
-          "rationale": "RS percentile at the 96th and cohesion only 0.187 point to a single-name-driven spike (DELL, WDC) rather than a sustainable sector theme, making it a mean-reversion candidate.",
+          "rationale": "High flow_score but declining cohesion and leadership dominated by negative-alpha names signal a narrow, non-thematic move likely to reverse.",
           "strength": "moderate"
         },
         {
           "subject": "Industrials",
-          "lean": "underweight",
-          "rationale": "High flow score and 73rd RS percentile mask deteriorating cohesion (-0.046) and dominance by a few high-alpha names; the sector is dispersing, not forming a durable trend.",
+          "lean": "avoid",
+          "rationale": "Strong cluster correlation with Consumer Discretionary is coincident, not predictive; both sectors show low cohesion and mean-reverting flow dynamics.",
           "strength": "moderate"
         },
         {
-          "subject": "Consumer Discretionary",
+          "subject": "Materials",
           "lean": "avoid",
-          "rationale": "Despite a high flow score, its RS percentile sits at just the 13th and cohesion is falling sharply (-0.073), indicating the apparent flow concentration is coincident and not translating into returns.",
-          "strength": "weak"
-        },
-        {
-          "subject": "VIX",
-          "lean": "avoid",
-          "rationale": "Fade-fear is a trap: the regime snap is dormant, fear is rebuilding, and VIX term structure remains elevated, offering no reliable snap-relief edge.",
+          "rationale": "Elevated flow_score with no cohering signal, narrow HHI, and mixed alpha leadership makes this a trap for overextrapolation of recent strength.",
           "strength": "weak"
         }
       ],
-      "key_risk": "A sudden regime shift where cohesion surges in Industrials/Discretionary and the flow score's historically null rank-IC turns positive would upend the trap thesis."
+      "key_risk": "A sudden VIX decline below 15 combined with a broad-based, positive-alpha cohesion surge would invalidate the mean-reversion thesis for these sectors."
     },
     "base_rate": {
-      "stance": "The flow lens is display-only (rank-IC ~0) and the regime snap is dormant with fear rebuilding but no relief signal, so the base-rate prior on any directional edge from this setup is near zero. No sector or VIX tilt is justified beyond neutral observation of concentration.",
+      "stance": "Flow lens is display-only with rank-IC ~0; it shows coincident concentration in Cyclicals and Tech but offers no forward edge. Elevated VIX and rebuilding fear are context, not a signal.",
       "candidates": [
+        {
+          "subject": "Financials",
+          "lean": "none",
+          "rationale": "Emerging concentration but flow score has no validated predictive power; base rates offer no edge.",
+          "strength": "weak"
+        },
+        {
+          "subject": "Materials",
+          "lean": "none",
+          "rationale": "High RS and emerging flow concentration, but flow edge is ~0; no forward inference.",
+          "strength": "weak"
+        },
         {
           "subject": "Consumer Discretionary",
           "lean": "none",
-          "rationale": "High flow score and top of emerging list, but cohesion is low and flow has no validated forward return edge.",
+          "rationale": "Top emerging concentration in flow lens, but no predictive edge; base rate of random walk.",
           "strength": "weak"
         },
         {
           "subject": "Industrials",
           "lean": "none",
-          "rationale": "Second-highest flow score with broad participation, yet non-cohering and display-only lens offers no directional signal.",
+          "rationale": "Emerging concentration with high RS, yet flow IC ~0; no directional lean warranted.",
           "strength": "weak"
         },
         {
-          "subject": "Financials",
+          "subject": "Information Technology",
           "lean": "none",
-          "rationale": "In the dominant cluster and emerging, but cohesion is declining and the flow read is coincident with no predictive power.",
+          "rationale": "Confirmed stage, high RS, but flow lens does not predict returns; base rates neutral.",
           "strength": "weak"
         },
         {
           "subject": "Real Estate",
           "lean": "none",
-          "rationale": "Cluster member with rising cohesion, but stage is quiet and the lens lacks any forward edge to support an overweight.",
+          "rationale": "Quiet stage, low RS; flow lens non-predictive, so no lean.",
           "strength": "weak"
         },
         {
-          "subject": "VIX",
+          "subject": "Health Care",
           "lean": "none",
-          "rationale": "Fear is rebuilding and VIX is elevated, but the dormant snap and coincident nature of the regime read give no reliable fade-fear trigger.",
+          "rationale": "Emerging concentration but no forward edge; base rates no skew.",
           "strength": "weak"
-        }
-      ],
-      "key_risk": "The read that no edge exists would break if flow_score unexpectedly demonstrates out-of-sample forward predictability or if the regime snap transitions to a confirmed relief event with high posterior probability."
-    },
-    "structural": {
-      "stance": "The cross-group cluster map reveals genuine co-movement, led by a tight Industrials\u2013Consumer Discretionary pair (0.86 correlation) with uniformly low leadership HHI and broad breadth. Financials and Real Estate participate, while Utilities shows a narrow, high-HHI leadership mirage.",
-      "candidates": [
-        {
-          "subject": "Industrials",
-          "lean": "overweight",
-          "rationale": "Top-pair leader with broad, low-HHI leadership (HHI 0.007, 253 names); genuine cyclical co-movement anchor.",
-          "strength": "strong"
         },
         {
-          "subject": "Consumer Discretionary",
-          "lean": "overweight",
-          "rationale": "Tightly correlated with Industrials (0.86), leadership HHI 0.009, 196 names; genuine theme, not a single-name mirage.",
-          "strength": "strong"
+          "subject": "Consumer Staples",
+          "lean": "none",
+          "rationale": "Emerging concentration, low RS; flow edge absent, lean none.",
+          "strength": "weak"
         },
         {
-          "subject": "Financials",
-          "lean": "overweight",
-          "rationale": "Member of dominant cluster with HHI 0.008, 255 names; broad participation supports co-movement read.",
-          "strength": "moderate"
+          "subject": "Communication Services",
+          "lean": "none",
+          "rationale": "Quiet stage, extremely low RS; no flow edge, lean none.",
+          "strength": "weak"
         },
         {
-          "subject": "Real Estate",
-          "lean": "overweight",
-          "rationale": "Included in dominant cluster, HHI 0.019, 106 names; broad enough to reinforce the cyclical theme.",
-          "strength": "moderate"
+          "subject": "Energy",
+          "lean": "none",
+          "rationale": "Cooling stage with negative flow score, but flow edge non-predictive; base rates neutral.",
+          "strength": "weak"
         },
         {
           "subject": "Utilities",
-          "lean": "avoid",
-          "rationale": "Narrow leadership (breadth 'narrow', HHI 0.057) flags a single-name mirage; not a genuine sector co-movement.",
-          "strength": "strong"
+          "lean": "none",
+          "rationale": "Emerging but lowest read quality; flow edge absent, lean none.",
+          "strength": "weak"
+        },
+        {
+          "subject": "VIX",
+          "lean": "none",
+          "rationale": "Fear rebuilding, VIX elevated but no relief snap; coincident only, no fade-fear edge.",
+          "strength": "weak"
         }
       ],
-      "key_risk": "A breakdown in the Industrials\u2013Consumer Discretionary correlation (e.g., a risk-off VIX spike above 25) would fracture the cluster and invalidate the co-movement read."
+      "key_risk": "Misinterpreting the coincident flow concentration as a directional signal, given the lens's proven rank-IC ~0, would generate purely noise-driven positions."
+    },
+    "structural": {
+      "stance": "The cross-group cluster map shows a tight cyclical co-movement (Consumer Discretionary, Industrials, Financials, Real Estate) with broad, low-HHI leadership throughout, led by Consumer Discretionary and Industrials in flow concentration. This is a genuine cyclical theme spread, not a single-name mirage.",
+      "candidates": [
+        {
+          "subject": "Consumer Discretionary",
+          "lean": "overweight",
+          "rationale": "Leads the cyclical cluster with the highest flow concentration, broadest leadership (HHI 0.009, n=196), and the strongest acceleration signal.",
+          "strength": "weak"
+        },
+        {
+          "subject": "Industrials",
+          "lean": "overweight",
+          "rationale": "Tightly co-moves with Consumer Discretionary (pair correlation 0.86) and ranks second in flow concentration, with equally broad leadership (HHI 0.007, n=253).",
+          "strength": "weak"
+        }
+      ],
+      "key_risk": "Breakdown of the cluster correlation\u2014if the tight co-movement among Consumer Discretionary, Industrials, Financials, and Real Estate dissipates, the theme-driven read dissolves."
     }
   }
 }
