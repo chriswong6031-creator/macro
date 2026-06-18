@@ -356,14 +356,16 @@ REGISTRY: list[dict] = [
          why="The one clean free earnings-momentum win. Built from a new EDGAR quarterly-EPS "
              "pipeline (on-disk EDGAR is annual-only) and the only POSITIVE factor that survives "
              "BH-FDR in the leak-free PIT panel (IC +0.035, q=0.077). Scored as a standalone leg "
-             "on factors.html.",
+             "on factors.html. ⚠️ DEEP RE-VAL (2011-2026, survivorship-OPTIMISTIC) COLLAPSES it — "
+             "IC 0.0005, t 0.06, L/S Sharpe 0.09 (a ~2.5y-window artifact; PEAD decay). FLAGGED FOR "
+             "DEMOTION; kept scored pending operator review of the factors.html production leg.",
          why_zh="唯一干净的免费盈利动量胜出。基于新的 EDGAR 季度 EPS 管线（磁盘 EDGAR 仅年度）构建，"
                 "是无泄漏时点面板中唯一为正且通过 BH-FDR 的因子（IC +0.035，q=0.077）。作为 factors.html 的独立腿计分。",
          source="factor-ic-scorecard.md / PR #35 / sue-deep-history-phase0.md", horizon="63d",
          ic=0.0354, t_hac=2.34, q_fdr=0.0768, fdr_survivor=True,
          wired="factors.html scored leg",
-         extra=[("re-validated 2023-2026", "IC 0.038, q 0.047, L/S Sharpe 1.45 (lone FDR survivor)"),
-                ("deep-history (2008+)", "price-blocked: EPS+PIT deep, closes only ~3y → needs S&P1500 backfill")]),
+         extra=[("shallow 2023-2025", "IC 0.038, q 0.047, L/S Sharpe 1.45 (lone FDR survivor)"),
+                ("deep 2011-2026 (surv-opt.)", "IC 0.0005 · t 0.06 · L/S Sharpe 0.09 → edge GONE, flagged for demotion")]),
 
     # ---- DISPLAY-ONLY (cont.) — origin cross-asset / macro leaves ----------
     _row("Cross-asset TSMOM trend (managed-futures style)",

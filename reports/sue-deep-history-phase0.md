@@ -1,54 +1,48 @@
 # SUE deep-history re-validation — Phase-0 follow-up
 
-**VERDICT: SUE STAYS SCORED (re-confirmed on the deepest-available window). The deep-history
-(2008+) re-validation the docs call for is BLOCKED by PRICE depth — not EPS depth.**
+**VERDICT: SUE's scored edge is a SHALLOW-WINDOW ARTIFACT.** A deep 2011→2026 re-validation
+(survivorship-**optimistic**) collapses the cross-sectional IC to ~zero. **Recommend demoting
+SUE from `scored`** and reviewing the `factors.html` production leg.
 
-`DATA_SIGNAL_EXPANSION_2026.md #5` flagged that SUE shipped "validated on the 2023-2025
-price window because the price-universe cache is shallow there … a deep-history +
-PIT-survivorship re-validation is the honest follow-up." This run characterizes that block
-precisely and re-confirms SUE on the full available window.
+`DATA_SIGNAL_EXPANSION_2026.md #5` called the deep + PIT-survivorship re-validation "the
+honest follow-up." This run did it: `scripts/sue_deep_phase0.py` backfilled max-history
+adjusted closes for the 1,317-name EPS universe (1,313 fetched, 1,113 with >10y →
+`data/edgar/sue_deep_closes.parquet`) and re-ran the SUE rank-IC / IC-IR / HAC-t /
+quintile-L/S over 2011-2026 with the SAME `engine.sue.sue_cross_section` + `rank_ic` /
+`ic_summary` the production scorecard uses. The only thing that changed is the price window.
 
-## Re-run (`scripts/validate_sue.py --start 2008`)
+## The result — the edge disappears with depth
 
-The grid still resolves to **2023-06-30 … 2025-12-31, 11 rebalances, ~842 SUE names** — the
-`--start 2008` request is silently capped because the *price* panel doesn't go back further.
+| window | quarters | names/q | mean IC | IC-IR(ann) | HAC t | hit | L/S Sharpe |
+|---|--:|--:|--:|--:|--:|--:|--:|
+| shallow 2023-2025 (production `ic_scorecard.json`) | 11 | ~842 | 0.0380 | 1.24 | 2.85 | 0.82 | 1.45 |
+| **deep 2011-2026 (this run)** | 61 | ~1039 | **0.0005** | **0.016** | **0.061** | 0.517 | **0.094** |
 
-| factor | meanIC | IC-IR(ann) | t_HAC | q_FDR | hit | n |
-|---|--:|--:|--:|--:|--:|--:|
-| **SUE** | **0.0380** | **1.24** | **2.85** | **0.047** | 0.82 | 22 |
-| value | 0.0307 | 0.61 | 1.03 | 0.47 | 0.64 | 11 |
-| composite | 0.0152 | 0.52 | 1.04 | 0.47 | 0.73 | 11 |
-| … | | | | | | |
-| accruals | −0.0209 | −1.00 | −2.02 | 0.24 | 0.36 | 11 |
+Over 15 years SUE's IC is **indistinguishable from zero** (HAC t 0.06), the quintile L/S
+Sharpe is ~0, and the hit-rate is a coin flip. The 2023-2025 sub-window (the source of the
+production IC 0.038) sits INSIDE this deep window, so the full-period null means SUE
+"worked" only in that recent ~2.5y stretch — textbook post-publication PEAD decay
+(McLean-Pontiff).
 
-SUE quintile L/S Sharpe (ann) **1.45**. **Survive BH-FDR(10%): SUE only.** This re-confirms
-the scored status (slightly stronger than the committed IC 0.035) — but on the *same ~3y
-window*, so it is **not** the deep test.
+## Why this is a STRONG (not weak) negative
 
-## The block (measured, not asserted)
+The deep panel is **survivorship-biased TOWARD an edge** — yahoo serves only currently-listed
+tickers, so delisted names are absent. Survivorship bias *inflates* apparent factor returns,
+yet even with that thumb on the scale the IC is ~0. A clean, delisting-recovered panel would,
+if anything, look worse. So the null is robust to the one bias that runs in SUE's favour.
 
-| component | depth | status |
-|---|---|---|
-| EPS panel (`data/edgar/eps_quarterly.parquet`) | 2008-03 → 2026-05, 65,208 rows, 1,317 tickers | **deep ✓** |
-| PIT membership (`data/breadth/sp1500_pit_membership.parquet`) | present | **available ✓** |
-| Broad-universe prices (`engine.equity_factors._closes()`) | **2023-05-09 → 2026-06-17, 780 days, 1,506 tickers** | **shallow ✗ — the binding constraint** |
+## Caveats (honest)
+- Survivorship-biased universe (optimistic) — strengthens, not weakens, the negative.
+- Identical SUE construction + validation primitives as production; only the window changed
+  (2.5y → 15y). So this is a like-for-like deepening, not a different test.
+- Cached: `data/edgar/sue_deep_closes.parquet` (re-runs instant); verdict
+  `data/edgar/sue_deep_phase0.json`.
 
-The EPS history and survivorship-clean membership are both there; only the broad-universe
-**daily-close panel** is shallow (~3y, a rolling breadth cache). You cannot compute a
-forward 63d return before mid-2023 for the cross-section, so the IC grid cannot extend back.
+## Recommendation (operator decision)
 
-## Path to a genuine deep test (a CI/data job, not an ad-hoc session step)
-
-1. Backfill deep daily closes for the **union of historical S&P1500 members**
-   (`sp1500_pit_membership.parquet` gives the roster per date) — ~1,500–2,000 tickers via the
-   existing `collectors/breadth.py` / yahoo machinery into the `data/breadth` close store.
-   This is a large, rate-limited network job → run it in `daily.yml` / CI, not inline.
-2. Re-run `scripts/validate_sue.py --start 2011` for a true **2011-2026 PIT + survivorship**
-   IC grid (the EPS panel already supports it), and refresh `ic_scorecard.json`.
-
-## Conclusion
-
-SUE remains the one scored cross-sectional factor that survives BH-FDR — re-confirmed here
-on the deepest data available. The deep-history strengthening is a **price-backfill data
-dependency**, now precisely scoped, not a modelling question. No change to the scored
-status; the `signal_lab` SUE row is annotated with this dependency.
+**Demote SUE `scored` → `display`/`confirmer` on `signal_lab`, and stop scoring it on
+`factors.html`** until a clean deep panel says otherwise. This is a production + tested-
+invariant change (`test_sue_is_a_scored_positive_fdr_survivor` asserts SUE is the scored
+win), so it is **flagged for the operator** rather than flipped unilaterally in this PR; the
+SUE row's prose carries the caveat in the interim. If kept, frame SUE explicitly as a
+recent-regime signal, not a validated standalone alpha.
