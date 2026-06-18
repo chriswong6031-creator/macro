@@ -214,7 +214,8 @@
     </div>
   </div>
 
-<script src="https://s3.tradingview.com/tv.js"></script>
+<script src="lightweight-charts-v5.js"></script>
+<script src="chart.js"></script>
 <script>
 (function () {
   var idx = [], cal = null, sel = -1, items = [];
@@ -552,15 +553,12 @@
       cbEl.style.display = 'block';
     } else { cbEl.style.display = 'none'; }
 
-    // TradingView embed (works for TSX; the chart is garnish — the analysis above stands alone).
-    document.getElementById('tvbox').innerHTML = '<div id="tvchart"></div>';
-    try {
-      new TradingView.widget({container_id: 'tvchart', symbol: d.tv || d.ticker,
-        interval: 'D', theme: (localStorage.getItem('theme') === 'light' ? 'light' : 'dark'),
-        style: '1', height: 430, width: '100%',
-        hide_side_toolbar: true, allow_symbol_change: true,
-        studies: ['RSI@tv-basicstudies', 'MACD@tv-basicstudies']});
-    } catch (e) { /* chart is garnish */ }
+    // Bespoke self-hosted chart (chart.js) from our own TSX closes (canadaohlc/<T>.json):
+    // area + client-side RSI/Stoch/MACD/Stoch-RSI/EMA, 1D/3D/1W. Garnish — fails quietly.
+    if (window.StockChart) {
+      try { window.StockChart.mount(document.getElementById('tvbox'), d.ticker, {name: d.name, ohlcDir: 'canadaohlc'}); }
+      catch (e) { /* chart is garnish */ }
+    }
   }
   document.addEventListener('themechange', function () {
     var h = (location.hash || '').slice(1); if (h) load(decodeURIComponent(h));
@@ -572,7 +570,7 @@
 </script>
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
-<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-18 06:55 UTC UTC · <span class="l-en">charts by TradingView · curated TSX universe, not exhaustive</span><span class="l-zh">图表由 TradingView 提供 · 精选 TSX 范围，非全市场</span></p>
+<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-18 08:04 UTC UTC · <span class="l-en">charts by TradingView · curated TSX universe, not exhaustive</span><span class="l-zh">图表由 TradingView 提供 · 精选 TSX 范围，非全市场</span></p>
 <footer class="site-footer">
   <span class="made"><span class="l-en">Made with ❤️ in Canada</span><span class="l-zh">用 ❤️ 在加拿大制作</span></span>
   <span class="dev"><span class="l-en">Developed by</span><span class="l-zh">开发者</span> Chris Wong</span>
