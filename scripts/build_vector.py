@@ -1260,8 +1260,8 @@ a:focus-visible,.links a:focus-visible{outline:2px solid var(--link);outline-off
  .card,.ico,.ha-item summary{transition:none} .card:hover{transform:none}}
 
 /* ===== flight deck ===== */
-.globe-deck{display:grid;grid-template-columns:minmax(0,2.05fr) minmax(0,1fr);gap:16px;align-items:stretch}
-@media(max-width:880px){.globe-deck{grid-template-columns:1fr}}
+.globe-deck{display:grid;grid-template-columns:minmax(0,2.05fr) minmax(0,1fr);gap:16px;align-items:stretch;max-width:100%}
+@media(max-width:880px){.globe-deck{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:520px){
  .gd-clock{padding:12px 11px 10px}
  .gd-row{gap:8px;padding:6px 7px}
@@ -1270,11 +1270,12 @@ a:focus-visible,.links a:focus-visible{outline:2px solid var(--link);outline-off
 }
 /* the globe is UNBOUNDED — no card; it floats on the page's aurora. The canvas is
    transparent outside the sphere, so body::before's aurora shows through. */
-.gd-stage{min-height:560px;display:flex;overflow:visible;background:none;border:none;box-shadow:none}
+.gd-stage{min-height:560px;display:flex;overflow:visible;background:none;border:none;box-shadow:none;min-width:0}
 @media(max-width:880px){.gd-stage{min-height:0;height:min(86vw,460px)}}
-.gd-canvas{width:100%;height:100%;display:block;touch-action:none;cursor:grab;outline:none}
+.gd-canvas{width:100%;max-width:100%;height:100%;display:block;touch-action:none;cursor:grab;outline:none}
 .gd-canvas:focus-visible{outline:2px solid var(--link);outline-offset:-2px}
 .gd-poster{position:absolute;inset:0;width:100%;height:100%;transition:opacity .6s ease;pointer-events:none}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap;margin:-1px;padding:0;border:0}
 .gd-legend{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap;margin:0;padding:0;border:0;list-style:none}
 .gd-leg{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--text);cursor:pointer;
  background:color-mix(in srgb,var(--panel) 70%,transparent);border:1px solid var(--line);border-radius:999px;padding:3px 9px;
@@ -1313,7 +1314,7 @@ a:focus-visible,.links a:focus-visible{outline:2px solid var(--link);outline-off
 .gd-tip .l-zh{display:none} html[data-lang="zh"] .gd-tip .l-en{display:none} html[data-lang="zh"] .gd-tip .l-zh{display:inline}
 
 /* ===== sidebar clock ===== */
-.gd-clock{display:flex;flex-direction:column;padding:14px 14px 12px}
+.gd-clock{display:flex;flex-direction:column;padding:14px 14px 12px;min-width:0;max-width:100%}
 .gd-clock>header{font-size:12px;font-weight:800;color:var(--text);letter-spacing:-.01em;margin:0 2px 11px;display:flex;gap:6px;align-items:baseline}
 .gd-clock>header .gd-utc{color:var(--muted);font-variant-numeric:tabular-nums;font-weight:600}
 .gd-clock ul{list-style:none;margin:0;padding:0;flex:1;display:flex;flex-direction:column;gap:3px}
