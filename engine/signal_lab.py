@@ -189,6 +189,38 @@ REGISTRY: list[dict] = [
          source="gex-validation.md", horizon="intraday/days",
          wired="macro.html market-gamma note",
          extra=[("history", "accruing (n small)")]),
+    _row("Cross-asset TSMOM as a 60/40 diversifying overlay",
+         "跨资产时间序列动量（60/40 叠加）", "Cross-asset", "confirmer",
+         why="Standalone diversified trend ≈ buy&hold (the display row below), but blended ~30% "
+             "into a 60/40 book it is a robust DRAWDOWN reducer: Sharpe 0.85→0.91, MaxDD "
+             "−29.9%→−20.8%, DSR 0.9952 (n_trials=16). Survives purged 5-fold CV (all folds +) "
+             "and leave-one-crisis-out (the improvement holds dropping EACH of 2008/2018Q4/2020/"
+             "2022 — answers the n≈4 worry). Executable ETF-only (SPY/TLT/IEF/LQD/HYG): Sharpe "
+             "0.85→0.87, MaxDD −10pp. Confirmer until wired into the masterminds GTAA sleeve; "
+             "CAGR gives up ~2pp (the protection premium).",
+         why_zh="独立的多元趋势≈买入持有（见下方仅展示行），但作为约30%叠加进60/40组合后是稳健的回撤削减器："
+                "夏普 0.85→0.91、最大回撤 −29.9%→−20.8%、DSR 0.9952。通过净化5折CV与逐危机剔除（剔除任一危机改进仍成立）。"
+                "可执行的纯ETF版夏普 0.85→0.87、回撤 −10pp。接入 masterminds GTAA 前作为确认项；CAGR 让出约2pp。",
+         source="tsmom-overlay-phase0.md", horizon="overlay (daily)",
+         dsr=0.9952, sharpe=0.87, wired="signal_lab confirmer · masterminds GTAA = promotion path",
+         extra=[("60/40 MaxDD", "−29.9% → −19.8% (ETF-only)"), ("purged-CV", "5/5 folds +"),
+                ("leave-one-crisis-out", "holds on all 4"), ("CAGR give-up", "~2pp")]),
+    _row("Quad × NFCI-direction scenario odds",
+         "宏观四象限 × NFCI方向 情景胜率", "US macro", "confirmer",
+         why="Conditioning forward SPY odds on the regime quad × NFCI direction reproduces the "
+             "measured split: Q1/Q2 with NFCI loosening 74.8% hit / +3.18% fwd-63d vs tightening "
+             "38.3% / −5.69% (HAC t on the loosening leg +7.0). A flat-when-tight overlay shows "
+             "DSR 0.9991 and cuts MaxDD −55%→−49% — BUT NFCI tight-and-tightening fires on ~5% of "
+             "days and ZERO times post-2012, so the effective-N is ~2 pre-2012 crises. Already "
+             "half-wired as the dial's NFCI rule; shipped as a scenario-odds CONFIRMER, not a "
+             "high-confidence standalone.",
+         why_zh="按宏观四象限×NFCI方向条件化前瞻标普胜率，复现既测分化：Q1/Q2 且 NFCI 宽松命中 74.8%/63日 +3.18%，"
+                "紧缩则 38.3%/−5.69%（宽松腿 HAC t +7.0）。但 NFCI 紧且收紧仅约5%交易日触发，2012年后从未触发 → "
+                "有效样本仅约2次危机。已部分接入仪表盘 NFCI 规则；作为情景胜率确认项上线，而非高置信独立信号。",
+         source="quad-nfci-phase0.md", horizon="63d",
+         hit=0.748, n=5700, wired="macro.html dial (NFCI rule) + signal_lab odds",
+         extra=[("Q1/Q2 loose vs tight hit", "74.8% vs 38.3%"), ("HAC t (loosening)", "+7.0"),
+                ("caveat", "tight fires ~5% days, 0 post-2012")]),
 
     # ---- DISPLAY-ONLY -------------------------------------------------------
     _row("US residual-alpha momentum (ranking)",
@@ -323,9 +355,11 @@ REGISTRY: list[dict] = [
              "on factors.html.",
          why_zh="唯一干净的免费盈利动量胜出。基于新的 EDGAR 季度 EPS 管线（磁盘 EDGAR 仅年度）构建，"
                 "是无泄漏时点面板中唯一为正且通过 BH-FDR 的因子（IC +0.035，q=0.077）。作为 factors.html 的独立腿计分。",
-         source="factor-ic-scorecard.md / PR #35", horizon="63d",
+         source="factor-ic-scorecard.md / PR #35 / sue-deep-history-phase0.md", horizon="63d",
          ic=0.0354, t_hac=2.34, q_fdr=0.0768, fdr_survivor=True,
-         wired="factors.html scored leg"),
+         wired="factors.html scored leg",
+         extra=[("re-validated 2023-2026", "IC 0.038, q 0.047, L/S Sharpe 1.45 (lone FDR survivor)"),
+                ("deep-history (2008+)", "price-blocked: EPS+PIT deep, closes only ~3y → needs S&P1500 backfill")]),
 
     # ---- DISPLAY-ONLY (cont.) — origin cross-asset / macro leaves ----------
     _row("Cross-asset TSMOM trend (managed-futures style)",
