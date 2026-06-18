@@ -243,8 +243,8 @@
     "dir_sign": -1,
     "confidence": "low",
     "confidence_zh": "\u4f4e",
-    "strength": 1.01,
-    "dominance_ratio": 1.06,
+    "strength": 1.02,
+    "dominance_ratio": 1.08,
     "agreement": 0.76,
     "runner_up": "ai_semis",
     "runner_up_label": "AI / semis leadership",
@@ -280,8 +280,8 @@
         "label": "Yuan (CNH) shock",
         "label_zh": "\u4eba\u6c11\u5e01(CNH)\u51b2\u51fb",
         "family": "fx",
-        "projection": -1.01,
-        "strength": 1.01,
+        "projection": -1.02,
+        "strength": 1.02,
         "direction": "yuan firming \u2014 CNH down, capital-inflow relief, equities supported"
       },
       {
@@ -307,8 +307,8 @@
         "label": "Stimulus tape",
         "label_zh": "\u523a\u6fc0\u884c\u60c5",
         "family": "growth",
-        "projection": 0.83,
-        "strength": 0.83,
+        "projection": 0.84,
+        "strength": 0.84,
         "direction": "stimulus-on \u2014 CSI300, brokers, property & copper/rebar lead up"
       },
       {
@@ -316,8 +316,8 @@
         "label": "Inflation / commodities",
         "label_zh": "\u901a\u80c0/\u5927\u5b97",
         "family": "inflation",
-        "projection": -0.59,
-        "strength": 0.59,
+        "projection": -0.57,
+        "strength": 0.57,
         "direction": "upstream disinflation \u2014 PPI, coal, nonferrous & oil lead down"
       },
       {
@@ -352,10 +352,10 @@
   },
   "conditions": {
     "roro": {
-      "roro": 0.182,
-      "roro_raw": 0.184,
+      "roro": 0.181,
+      "roro_raw": 0.183,
       "roro_state": "neutral",
-      "china_roro_copper_gold": 1.418,
+      "china_roro_copper_gold": 1.408,
       "china_roro_breadth": -0.952,
       "china_roro_southbound": -0.784,
       "china_roro_m1_m2": 0.024,
@@ -369,7 +369,7 @@
           "key": "copper_gold",
           "name_en": "Copper / Gold",
           "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-          "value": 1.418,
+          "value": 1.408,
           "lean": "risk-on"
         },
         {
@@ -2078,7 +2078,7 @@
           0.206,
           0.363,
           0.443,
-          0.182
+          0.181
         ]
       },
       "recession": {
@@ -6829,14 +6829,14 @@
     "fe_score": 79,
     "band": "Greed",
     "band_zh": "\u8d2a\u5a6a",
-    "roro": 0.182,
+    "roro": 0.181,
     "roro_state": "neutral",
     "legs": [
       {
         "key": "copper_gold",
         "name_en": "Copper / Gold",
         "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-        "value": 1.418,
+        "value": 1.408,
         "pct": 97,
         "lean": "risk-on"
       },

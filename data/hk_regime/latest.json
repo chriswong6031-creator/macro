@@ -22,7 +22,7 @@
   "global_score": 0.269,
   "risk_state": "Neutral",
   "peg_state": "weak-side (outflow)",
-  "peg_distance": 0.851,
+  "peg_distance": 0.826,
   "global_snapshot": {
     "score": 0.269,
     "state": "Neutral",
@@ -30,10 +30,10 @@
       {
         "key": "dxy",
         "label": "US Dollar (DXY)",
-        "z": 0.94,
+        "z": 0.91,
         "sign": -1,
         "risk": "off",
-        "level": 100.384
+        "level": 100.338
       },
       {
         "key": "vix",
@@ -54,7 +54,7 @@
       {
         "key": "copper_gold",
         "label": "Copper / Gold",
-        "z": 1.1,
+        "z": 1.09,
         "sign": 1.0,
         "risk": "on",
         "level": 0.0015
@@ -85,8 +85,8 @@
       }
     ],
     "peg": {
-      "level": 7.8351,
-      "distance": 0.85,
+      "level": 7.8326,
+      "distance": 0.83,
       "state": "weak-side (outflow)"
     },
     "asof": "2026-06-17"
@@ -261,8 +261,8 @@
       "chg_20d_pct": 3.15
     },
     "usdhkd": {
-      "level": 7.8351,
-      "chg_20d_pct": 0.03
+      "level": 7.8326,
+      "chg_20d_pct": -0.0
     }
   }
 }

@@ -1,5 +1,5 @@
 {
-  "date": "Jun 17, 2026",
+  "date": "Jun 18, 2026",
   "regime": "Global reflation",
   "favored": [
     "AUD",
@@ -10,59 +10,59 @@
   "pairs": {
     "EURUSD": {
       "label": "EUR/USD",
-      "quote": 1.1507,
-      "chg": -0.9,
+      "quote": 1.151,
+      "chg": -1.0,
       "action": "FLAT",
-      "score": 14.7
+      "score": 14.9
     },
     "GBPUSD": {
       "label": "GBP/USD",
-      "quote": 1.3296,
-      "chg": -0.7,
+      "quote": 1.3301,
+      "chg": -1.0,
       "action": "FLAT",
-      "score": 15.8
+      "score": 17.3
     },
     "USDJPY": {
       "label": "USD/JPY",
-      "quote": 160.534,
+      "quote": 160.578,
       "chg": 1.0,
       "action": "SHORT",
-      "score": -35.5
+      "score": -37.0
     },
     "USDCHF": {
       "label": "USD/CHF",
-      "quote": 0.7993,
+      "quote": 0.7994,
       "chg": 1.6,
       "action": "FLAT",
       "score": 19.6
     },
     "AUDUSD": {
       "label": "AUD/USD",
-      "quote": 0.7017,
-      "chg": -1.9,
+      "quote": 0.7021,
+      "chg": -1.8,
       "action": "SHORT",
-      "score": -26.9
+      "score": -29.2
     },
     "USDCAD": {
       "label": "USD/CAD",
-      "quote": 1.4095,
-      "chg": 2.5,
+      "quote": 1.4094,
+      "chg": 2.3,
       "action": "FLAT",
-      "score": 17.8
+      "score": 16.1
     },
     "USDMXN": {
       "label": "USD/MXN",
-      "quote": 17.2765,
-      "chg": -0.2,
+      "quote": 17.295,
+      "chg": -0.0,
       "action": "SHORT",
-      "score": -42.1
+      "score": -39.4
     },
     "USDBRL": {
       "label": "USD/BRL",
       "quote": 5.1049,
-      "chg": 1.9,
+      "chg": 1.8,
       "action": "FLAT",
-      "score": -8.4
+      "score": -9.3
     },
     "USDCNH": {
       "label": "USD/CNH",

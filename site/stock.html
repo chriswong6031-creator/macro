@@ -199,11 +199,6 @@
   .cvchip.band-neutral { color:var(--muted); } .cvchip.band-low { color:var(--down); }
   .chips { display:flex; flex-wrap:wrap; gap:6px; }
   .chip { padding:3px 9px; border-radius:8px; background:var(--panel2); border:1px solid var(--line); font-size:12px; }
-  .bk-chip { color:var(--link); border-color:color-mix(in srgb,var(--link) 30%,var(--line));
-             background:color-mix(in srgb,var(--link) 8%,transparent); text-decoration:none; }
-  .bk-chip:hover { background:color-mix(in srgb,var(--link) 16%,transparent); }
-  .bk-label { font-size:11px; color:var(--muted); font-weight:600; letter-spacing:.04em;
-              text-transform:uppercase; align-self:center; white-space:nowrap; }
   .srcline { color:var(--muted); font-size:11px; margin:8px 0 0; }
   .stub { color:var(--muted); font-size:13px; padding:11px 13px; border-radius:8px;
           background:var(--panel2); border:1px dashed var(--line); }
@@ -427,7 +422,6 @@
       <h2>🏢 <span class="l-en">Business profile</span><span class="l-zh">公司概况</span></h2>
       <p id="r_profile_desc" style="margin:0 0 8px"></p>
       <div id="r_profile_chips" class="chips"></div>
-      <div id="r_baskets" class="chips" style="display:none;margin-top:6px"></div>
       <p id="r_profile_src" class="srcline"></p>
     </div>
 
@@ -775,19 +769,6 @@
       if (prof.sic_description) pc.push('<span class="chip">' + esc(prof.sic_description) + '</span>');
       if (prof.exchange) pc.push('<span class="chip">' + esc(prof.exchange) + '</span>');
       el('r_profile_chips').innerHTML = pc.join('');
-      var bkEl = el('r_baskets'), bm = d.baskets_membership;
-      if (bkEl) {
-        if (bm && bm.length) {
-          var bchips = '<span class="bk-label">' + lz('Thematic baskets', '主题篮子') + '</span>' +
-            bm.map(function(b) {
-              var tip = esc(b.category + (b.theme ? ' · ' + b.theme : '') + (b.rationale ? '\n' + b.rationale : ''));
-              return '<a href="baskets.html" class="chip bk-chip" title="' + tip + '">' +
-                lz(b.name, b.name_zh) + '</a>';
-            }).join('');
-          bkEl.innerHTML = bchips;
-          bkEl.style.display = 'flex';
-        } else { bkEl.style.display = 'none'; }
-      }
       show('panel_profile', true);
     } else show('panel_profile', false);
 
@@ -1617,7 +1598,7 @@
   window.addEventListener('hashchange',load); load();
 })();
 </script>
-<p class="muted" style="font-size:12px">Generated 2026-06-17 23:12 UTC · charts by TradingView ·
+<p class="muted" style="font-size:12px">Generated 2026-06-18 00:10 UTC · charts by TradingView ·
 methodology &amp; caveats: see any sector page footer.</p>
 <footer class="site-footer">
   <span class="made">Made with ❤️ in Canada</span>
