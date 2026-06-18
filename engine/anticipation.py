@@ -263,6 +263,7 @@ def anticipate(close: pd.Series, high: pd.Series | None = None, low: pd.Series |
             "underpowered": bool(long_underpowered),
             "r_hat": (dh or {}).get("r_hat") if dir_scored else None,
             "oos_r2": (dh or {}).get("oos_r2") if dir_scored else None,
+            "dir_legs": (dh or {}).get("used") if dir_scored else None,
         }
 
     # vol cone width (annualized HAR-style estimate)

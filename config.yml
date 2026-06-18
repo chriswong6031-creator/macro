@@ -43,6 +43,9 @@ fred:
       BAMLHYH0A0HYM2TRIV: hy_total_return   # ICE BofA US HY TOTAL-RETURN index (1986->); engine.total_return.hy_tr auto-upgrades to it for a deeper Credit-Carry backtest
     risk:
       VIXCLS: vix_close
+      OVXCLS: ovx_oil             # CBOE oil VIX (2007->); energy-sector VRP leg (index_direction)
+    housing:
+      MORTGAGE30US: mortgage_30y  # 30y mortgage rate (weekly, 1971->); homebuilder affordability leg
     dollar:
       DTWEXBGS: broad_dollar      # broad trade-weighted USD (2006->); better commodity driver than DXY for copper/oil (EM/China weight)
     liquidity:

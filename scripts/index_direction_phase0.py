@@ -32,7 +32,7 @@ MIN_TRAIN = 2520                           # ~10y before the first OOS predictio
 # FROZEN multiple-testing count for the DSR haircut: every index+sector × candidate leg ×
 # horizon screened across the whole program (~15 assets × ~6 legs × 2 horizons). Counted from
 # first screen (critique #3 — no under-reporting). Asserted in tests so it cannot drift.
-N_TRIALS = 400
+N_TRIALS = 520
 DATA, REGIME = Path("data"), Path("data/regime")
 
 
@@ -177,8 +177,16 @@ def run_index(tkr: str, hname: str, h: int) -> dict:
     leg_gate = {}
     for leg, e in leg_res.items():
         q = (bh.get(leg) or {}).get("q")
-        leg_gate[leg] = "GO" if (e["oos_r2"] is not None and e["oos_r2"] > 0 and e["half_ok"]
-                                 and q is not None and q < 0.10) else "NEUTRAL"
+        ok = (e["oos_r2"] is not None and e["oos_r2"] > 0 and e["half_ok"]
+              and q is not None and q < 0.10)
+        # interaction legs must ADD OOS content beyond their parent legs (anti-spurious):
+        # a product of correlated covariates can look significant on its own.
+        if ok and leg in idr.INTERACTION_PARENTS:
+            par = [leg_res[p]["oos_r2"] for p in idr.INTERACTION_PARENTS[leg]
+                   if p in leg_res and leg_res[p]["oos_r2"] is not None]
+            if par and e["oos_r2"] <= max(par):
+                ok = False
+        leg_gate[leg] = "GO" if ok else "NEUTRAL"
     go = {leg for leg, g in leg_gate.items() if g == "GO"}
     # --- composite over the GO legs (fall back to ALL legs only for context timing/report) ---
     subset = go if go else set(weights)
