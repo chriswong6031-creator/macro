@@ -46,6 +46,7 @@ def all_adapters() -> dict:
         ("french", "collectors.french", "FrenchAdapter"),             # Ken French monthly factors -> deep-history factor seasonality
         ("eia", "collectors.eia", "EiaAdapter"),                       # petroleum supply (Weekly Petroleum Status)
         ("jodi", "collectors.jodi", "JodiAdapter"),                    # JODI monthly closing oil stocks by country (Strategic Reserves page)
+        ("worldbank", "collectors.worldbank", "WorldBankAdapter"),     # World Bank reserve assets -> gold value/share (Strategic Reserves page)
         ("ofr_fsi", "collectors.ofr_fsi", "OfrFsiAdapter"),            # OFR Financial Stress Index (functional + regional decomposition)
         ("rate_futures", "collectors.rate_futures", "RateFuturesAdapter"),  # ZQ/SR3 implied Fed-policy path (display-only, research/DATA_SIGNAL_EXPANSION_2026.md #2)
         ("uncertainty_indices", "collectors.uncertainty_indices", "UncertaintyIndicesAdapter"),  # EPU + GPR (threat/act) daily text-uncertainty (display-only, narrative-quant-framework P0)
