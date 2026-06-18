@@ -70,10 +70,27 @@ def main() -> int:
     except Exception:  # noqa: BLE001
         desk = None
 
+    # explicit Fed reaction-function read (display-only) from the regime latest.json
+    fed_stance = None
+    try:
+        from engine import fed_stance as _fs
+        latest = json.loads((config.data_dir() / "regime" / "latest.json").read_text())
+        fed_stance = _fs.snapshot(latest)
+    except Exception as e:  # noqa: BLE001
+        log.warning("fed_stance skipped: %s", e)
+
+    # rotation realized-check — grade each targeted theme's proxies vs SPY (coincident)
+    rot = None
+    try:
+        from engine import policy_rotation_check as _rotc
+        rot = _rotc.check(intel)
+    except Exception as e:  # noqa: BLE001
+        log.warning("rotation check skipped: %s", e)
+
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     html = env.get_template("policy_watch.html.j2").render(
-        intel=intel, counts=counts, desk=desk, generated_utc=built,
+        intel=intel, counts=counts, desk=desk, fed_stance=fed_stance, rot=rot, generated_utc=built,
         active_section="research", active_page="policy_watch",
     )
     (site / "policy_watch.html").write_text(html)

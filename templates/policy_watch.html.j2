@@ -112,6 +112,16 @@
   <h2 class="sec">🏦 {{ t('The Fed under Warsh', '沃什治下的美联储') }}</h2>
   <p class="lede">{{ bl(intel.fed.profile.en, intel.fed.profile.zh) }}</p>
 
+  {% if fed_stance and fed_stance.stance != 'unknown' %}
+  {% set scls = 'b-miss' if fed_stance.color=='down' else ('b-fact' if fed_stance.color=='up' else 'b-open') %}
+  <div class="callout">
+    <span class="co-h">{{ t('Reaction function (explicit, display-only)', '反应函数（显式，仅展示）') }}
+      <span class="b {{ scls }}">{{ bl(fed_stance.label_en, fed_stance.label_zh) }}</span></span>
+    {% if fed_stance.drivers_en %}<span class="l-en">{{ fed_stance.drivers_en | join(' · ') }}</span><span class="l-zh">{{ fed_stance.drivers_zh | join(' · ') }}</span>. {% endif %}
+    <span class="conf">{{ bl(fed_stance.note_en, fed_stance.note_zh) }}</span>
+  </div>
+  {% endif %}
+
   <h3 class="sub">{{ t('Reform task forces — dated, falsifiable', '改革工作组 — 有日期、可证伪') }}</h3>
   <div class="cards">
     {% for tf in intel.fed.task_forces %}
@@ -167,16 +177,18 @@
   <h2 class="sec">🧭 {{ t('Capital-rotation map', '资本轮动地图') }}</h2>
   <h3 class="sub">🎯 {{ t('Targeted / protected / subsidized', '受益 / 受保护 / 受补贴') }}</h3>
   <table class="data">
-    <tr><th>{{ t('Theme', '主题') }}</th><th>{{ t('Mechanism', '机制') }}</th><th>{{ t('Proxies', '代理标的') }}</th><th>{{ t('Basis', '依据') }}</th></tr>
+    <tr><th>{{ t('Theme', '主题') }}</th><th>{{ t('Mechanism', '机制') }}</th><th>{{ t('Proxies', '代理标的') }}</th><th>{{ t('Realized 63d vs SPY', '近63日 vs 标普') }}</th><th>{{ t('Basis', '依据') }}</th></tr>
     {% for r in intel.rotation.targeted %}
     <tr>
       <td><strong>{{ bl(r.theme_en, r.theme_zh) }}</strong></td>
       <td>{{ bl(r.mechanism_en, r.mechanism_zh) }}</td>
       <td class="prox">{{ r.proxies | join(' ') if r.proxies else '—' }}</td>
+      <td class="num">{% set rc = (rot.themes[r.theme_en] if rot and rot.themes and (r.theme_en in rot.themes) else None) %}{% if rc and rc.verdict != 'na' %}<span class="b {{ {'working':'b-fact','lagging':'b-miss','mixed':'b-open'}[rc.verdict] }}">{{ rc.verdict }}</span> {{ '%+.1f'|format(rc.avg_rel*100) }}%{% else %}<span class="conf">—</span>{% endif %}</td>
       <td><span class="b {{ 'b-prior' if 'PRIOR' in r.basis else ('b-fact' if 'FACT' in r.basis else 'b-inf') }}">{{ r.basis }}</span><br><span class="conf">{{ r.confidence }}</span></td>
     </tr>
     {% endfor %}
   </table>
+  {% if rot %}<p class="conf">{{ t('Realized = mean trailing-63d return of the theme&#39;s proxies minus SPY (coincident, display-only — a persistently lagging TARGETED theme is evidence against the rotation call).', '“近63日”= 该主题代理标的过去63个交易日相对标普的平均超额收益（同步、仅展示——长期跑输的受益主题即是对该轮动判断的反证）。') }}</p>{% endif %}
   <h3 class="sub">🥶 {{ t('Starved / pressured', '受冷落 / 承压') }}</h3>
   <table class="data">
     <tr><th>{{ t('Theme', '主题') }}</th><th>{{ t('Mechanism', '机制') }}</th><th>{{ t('Proxies', '代理标的') }}</th><th>{{ t('Basis', '依据') }}</th></tr>
