@@ -745,8 +745,7 @@ def build_landing(site: Path, vm: dict) -> None:
                     _watchlist_state(), _etf_state(), _hk_state(), _forex_state(),
                     _bonds_state(), _us_stocks_state(), _strategies_state(), _crossasset_state(),
                     _market_stocks_state("china"), _market_stocks_state("hk"),
-                    canada=_canada_state(), intl=_intl_state(), ipo=_ipo_state(),
-                    spr=_spr_state())
+                    canada=_canada_state())
     (site / "index.html").write_text(hub)
     log.info("wrote landing hub -> index.html")
 
@@ -2303,8 +2302,8 @@ def main() -> int:
         log.error("strategies pages (via build_vector) failed (%s)", e)
     try:  # IPO Radar (display-only, never-scored) — no dedicated daily.yml step (PAT lacks
           # `workflow` scope), built here AFTER build_spvector (it reuses the validated
-          # de-risk score from data/regime/spvector_latest.json) and before build_landing
-          # reads _ipo_state(). Refreshes the Nasdaq IPO calendar best-effort; never fatal.
+          # de-risk score from data/regime/spvector_latest.json) to render the standalone
+          # ipo.html. Refreshes the Nasdaq IPO calendar best-effort; never fatal.
         from scripts.build_ipo import build as _build_ipo
         _build_ipo()
     except Exception as e:  # noqa: BLE001
@@ -2336,7 +2335,7 @@ def main() -> int:
         log.error("canada dashboard (via build_vector) failed (%s)", e)
     try:  # International comparative dashboard (JP/KR/TW/UK/EU) — same hook pattern as
           # build_canada (PAT lacks `workflow` scope for a dedicated daily.yml step), built
-          # here before the landing hub reads _intl_state(). Self-sufficient + returns 0.
+          # here to render the standalone intl.html. Self-sufficient + returns 0.
           # TODO: promote to a proper daily.yml `build_intl` step once a workflow token exists.
         from scripts import build_intl as _build_intl
         _build_intl.main()
