@@ -10,391 +10,476 @@
 body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
  font-family:Inter,sans-serif;display:flex;flex-direction:column;align-items:center;
  padding:22px 20px 64px;position:relative;overflow-x:hidden}
-/* the ambient aurora backdrop now lives in theme.css (html body::before), shared
-   by every page with separate dark / light tunings */
-/* top bar — theme + language toggles pinned to the right of the content column */
-.hub-top{width:100%;max-width:1120px;display:flex;justify-content:flex-end;
- align-items:center;gap:10px;margin-bottom:8px}
-.h{text-align:center;margin:16px 0 38px}
-.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;
- color:var(--muted);background:color-mix(in srgb,var(--panel) 64%,transparent);
- border:1px solid var(--line);padding:6px 14px;border-radius:999px;margin-bottom:18px;
- -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.hub-top{width:100%;max-width:1200px;display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-bottom:10px}
+.h{width:100%;max-width:1200px;margin:6px 0 22px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--muted);
+ background:color-mix(in srgb,var(--panel) 64%,transparent);border:1px solid var(--line);padding:6px 14px;border-radius:999px;
+ margin-bottom:16px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 .eyebrow .live{width:7px;height:7px;border-radius:50%;background:#22c55e;
  box-shadow:0 0 0 0 color-mix(in srgb,#22c55e 55%,transparent);animation:livepulse 2.4s ease-out infinite}
-@keyframes livepulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,#22c55e 55%,transparent)}
- 70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
-.h h1{font-size:clamp(34px,5vw,52px);font-weight:800;letter-spacing:-.035em;line-height:1.04;margin:0 0 12px;
+@keyframes livepulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,#22c55e 55%,transparent)}70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.h h1{font-size:clamp(32px,4.6vw,50px);font-weight:800;letter-spacing:-.035em;line-height:1.04;margin:0 0 11px;
  background:linear-gradient(176deg,var(--text) 28%,color-mix(in srgb,var(--text) 52%,var(--muted)));
  -webkit-background-clip:text;background-clip:text;color:transparent}
-.h p{color:var(--muted);font-size:clamp(15px,2vw,18px);margin:0 auto;max-width:560px;line-height:1.5}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px;width:100%;max-width:1120px}
-@media(max-width:720px){.cards{grid-template-columns:1fr}}
-/* combined alert feed */
-.feed{width:100%;max-width:880px;margin-top:48px}
-.feed-h{display:flex;align-items:baseline;justify-content:space-between;margin:0 6px 14px;flex-wrap:wrap;gap:6px}
-.feed-h h3{font-size:17px;font-weight:800;color:var(--text);margin:0;letter-spacing:-.01em}
-.feed-h .n{font-size:13px;color:var(--muted);font-weight:600}
-.feed-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:6px 22px;
- box-shadow:0 1px 3px rgba(16,24,64,.04)}
-.ha-item{border-bottom:1px solid var(--line)}
+html[data-lang="zh"] .h h1{letter-spacing:0}
+.h p{color:var(--muted);font-size:clamp(14px,2vw,17px);margin:0 auto;max-width:580px;line-height:1.5;text-wrap:balance}
+
+.deck{display:flex;flex-direction:column;gap:18px;width:100%;max-width:1200px}
+.command{display:grid;grid-template-columns:minmax(0,2.05fr) minmax(0,1fr);gap:16px;align-items:stretch}
+.cmd-left{display:flex;flex-direction:column;gap:16px;min-width:0}
+.markets-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:16px}
+.markets-grid.mg-2{grid-template-columns:1fr 1fr}
+.markets-grid.mg-1{grid-template-columns:1fr}
+.vectors{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;grid-auto-rows:minmax(92px,auto)}
+.vectors .s3{grid-column:span 3} .vectors .s4{grid-column:span 4} .vectors .s6{grid-column:span 6}
+
+.glass{position:relative;border-radius:18px;overflow:hidden;isolation:isolate;
+ background:color-mix(in srgb,var(--panel) 80%,transparent);border:1px solid color-mix(in srgb,var(--line) 82%,transparent);
+ -webkit-backdrop-filter:blur(14px) saturate(1.08);backdrop-filter:blur(14px) saturate(1.08);
+ box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 6%,transparent),0 10px 30px -18px rgba(0,0,0,.5)}
+html[data-theme="light"] .glass{background:color-mix(in srgb,var(--panel) 88%,transparent);
+ border-color:color-mix(in srgb,var(--line) 92%,transparent);
+ -webkit-backdrop-filter:blur(10px) saturate(1.04);backdrop-filter:blur(10px) saturate(1.04);
+ box-shadow:0 1px 0 color-mix(in srgb,#fff 60%,transparent),0 8px 24px -16px rgba(20,30,50,.16)}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.glass{background:color-mix(in srgb,var(--panel) 96%,transparent)}}
+.acc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;z-index:2;
+ background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 22%,transparent));
+ transform:scaleX(0);transform-origin:left;transition:transform .32s cubic-bezier(.2,.7,.3,1)}
+.acc::after{content:'';position:absolute;inset:0;z-index:-1;opacity:0;
+ background:radial-gradient(420px 220px at 100% 0%,color-mix(in srgb,var(--accent) 13%,transparent),transparent 68%);transition:opacity .25s ease}
+
+.hero{--accent:#416aec;display:flex;flex-direction:column;padding:20px 22px 18px}
+.hero-wash{position:absolute;inset:0;z-index:-1;background:radial-gradient(620px 320px at 0% 0%,color-mix(in srgb,#416aec 11%,transparent),transparent 70%)}
+.hero-head{display:flex;align-items:center;gap:9px;margin-bottom:6px}
+.hero-eye{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+html[data-lang="zh"] .hero-eye{letter-spacing:0}
+.hero-body{display:flex;gap:20px;flex:1;align-items:stretch;flex-wrap:wrap}
+.pulse{flex:0 0 252px;min-width:228px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 0 2px}
+.gauge{position:relative;width:230px;max-width:100%}
+.gauge svg{display:block;width:100%;height:auto;filter:drop-shadow(0 4px 14px color-mix(in srgb,var(--accent) 22%,transparent))}
+.gauge-track{stroke:color-mix(in srgb,var(--line) 92%,transparent)}
+.gauge-val{position:absolute;left:0;right:0;top:46%;transform:translateY(-50%);text-align:center}
+.gauge-num{font-size:clamp(44px,5.4vw,60px);font-weight:800;line-height:.9;letter-spacing:-.04em;font-variant-numeric:tabular-nums;color:var(--text)}
+.gauge-band{margin-top:5px;font-size:12.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:color-mix(in srgb,var(--warn) 84%,var(--text))}
+.gauge-band.tone-off{color:color-mix(in srgb,var(--act) 84%,var(--text))}
+.gauge-band.tone-mix{color:color-mix(in srgb,var(--warn) 84%,var(--text))}
+.gauge-band.tone-on{color:color-mix(in srgb,var(--ok) 84%,var(--text))}
+html[data-lang="zh"] .gauge-band{letter-spacing:0}
+.gauge-ticks{display:flex;justify-content:space-between;width:200px;max-width:100%;margin:2px auto 0;font-size:10px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--muted)}
+.gauge-ticks .on{color:color-mix(in srgb,var(--warn) 80%,var(--text))}
+.gauge-ticks .on.tk-off{color:color-mix(in srgb,var(--act) 82%,var(--text))}
+.gauge-ticks .on.tk-mix{color:color-mix(in srgb,var(--warn) 82%,var(--text))}
+.gauge-ticks .on.tk-on{color:color-mix(in srgb,var(--ok) 82%,var(--text))}
+html[data-lang="zh"] .gauge-ticks{letter-spacing:0}
+.synth{margin-top:11px;text-align:center;font-size:12.5px;color:var(--muted);line-height:1.5;max-width:244px;text-wrap:balance}
+.synth b{color:var(--text);font-weight:700}
+.matrix{flex:1;min-width:260px;display:flex;flex-direction:column;justify-content:center;gap:7px;border-left:1px solid color-mix(in srgb,var(--line) 70%,transparent);padding-left:20px}
+.mx-eye{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+html[data-lang="zh"] .mx-eye{letter-spacing:0}
+.mx-row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;text-decoration:none;color:inherit;
+ border:1px solid transparent;border-radius:11px;padding:8px 11px;transition:background .16s ease,border-color .16s ease,transform .16s ease}
+.mx-row:hover{background:color-mix(in srgb,var(--mq) 8%,var(--panel2));border-color:color-mix(in srgb,var(--mq) 30%,var(--line));transform:translateX(2px)}
+.mx-flag{font-size:18px;line-height:1}
+.mx-mid{display:flex;flex-direction:column;gap:2px;min-width:0}
+.mx-name{font-size:14px;font-weight:700;color:var(--text);letter-spacing:-.01em}
+.mx-sec{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.mx-agree{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:700;color:color-mix(in srgb,var(--mq) 72%,var(--text));
+ background:color-mix(in srgb,var(--mq) 12%,var(--panel2));padding:1px 7px;border-radius:6px;border:1px solid color-mix(in srgb,var(--mq) 20%,transparent)}
+.mx-end{display:flex;align-items:center;gap:8px}
+.mx-chip{font-size:12px;font-weight:800;letter-spacing:-.01em;white-space:nowrap;color:color-mix(in srgb,var(--mq) 80%,var(--text));
+ background:color-mix(in srgb,var(--mq) 14%,var(--panel));padding:4px 11px;border-radius:8px;border:1px solid color-mix(in srgb,var(--mq) 26%,transparent)}
+.mx-arrow{font-size:13px;color:color-mix(in srgb,var(--mq) 60%,var(--muted));transition:transform .16s ease}
+.mx-row:hover .mx-arrow{transform:translateX(3px)}
+.q1{--mq:var(--q1)} .q2{--mq:var(--q2)} .q3{--mq:var(--q3)} .q4{--mq:var(--q4)}
+
+.rail{--accent:#6366f1;display:flex;flex-direction:column;padding:16px 16px 12px;min-height:0}
+.rail-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:0 2px 11px;flex-wrap:wrap}
+.rail-head h2{font-size:16px;font-weight:800;letter-spacing:-.015em;margin:0;color:var(--text)}
+html[data-lang="zh"] .rail-head h2{letter-spacing:0}
+.rail-link{font-size:11.5px;font-weight:700;white-space:nowrap}
+.mix{display:flex;height:6px;border-radius:999px;overflow:hidden;margin:0 2px 4px;background:color-mix(in srgb,var(--line) 60%,transparent)}
+.mix span{display:block;height:100%}
+.mix .m-high{background:var(--act)} .mix .m-med{background:var(--info)} .mix .m-info{background:var(--muted)}
+.mix-leg{display:flex;gap:13px;margin:0 2px 9px;font-size:10.5px;font-weight:700;color:var(--muted);flex-wrap:wrap}
+.mix-leg i{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle}
+.mix-leg .lh i{background:var(--act)} .mix-leg .lm i{background:var(--info)}
+.rail-list{flex:1;overflow-y:auto;margin:0 -4px;padding:0 4px;min-height:120px;scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--line) 80%,transparent) transparent}
+.rail-list::-webkit-scrollbar{width:6px}
+.rail-list::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--line) 80%,transparent);border-radius:3px}
+.ha-item{border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
 .ha-item:last-child{border-bottom:none}
-.ha-item summary{display:flex;align-items:center;gap:11px;padding:14px 0;cursor:pointer;
- list-style:none;flex-wrap:wrap;transition:padding-left .18s ease}
-.ha-item summary:hover{padding-left:5px}
+.ha-item[open]{background:color-mix(in srgb,var(--panel2) 40%,transparent);border-radius:12px;margin:2px 0;border-bottom:1px solid transparent}
+.ha-item.lead[open]{background:color-mix(in srgb,var(--act) 7%,var(--panel2))}
+.ha-item summary{display:flex;align-items:flex-start;gap:9px;padding:11px 8px;cursor:pointer;list-style:none;flex-wrap:wrap;transition:padding-left .16s ease}
+.ha-item summary:hover{padding-left:11px}
 .ha-item summary::-webkit-details-marker{display:none}
-.ha-dot{width:10px;height:10px;border-radius:50%;flex:none}
+.ha-dot{width:8px;height:8px;border-radius:50%;flex:none;margin-top:5px}
 .ha-dot.d-high{background:var(--act)} .ha-dot.d-medium{background:var(--info)} .ha-dot.d-info{background:var(--muted)}
-.ha-src{font-size:11px;font-weight:700;padding:3px 9px;border-radius:7px}
-.ha-src.s-macro{background:color-mix(in srgb,#6366f1 16%,var(--panel));color:color-mix(in srgb,#6366f1 78%,var(--text))}
-.ha-src.s-vector{background:color-mix(in srgb,var(--info) 16%,var(--panel));color:color-mix(in srgb,var(--info) 80%,var(--text))}
-.ha-src.s-commodity{background:color-mix(in srgb,var(--warn) 18%,var(--panel));color:color-mix(in srgb,var(--warn) 82%,var(--text))}
-.ha-head{flex:1;min-width:200px;font-weight:600;color:var(--text);font-size:14px}
-.ha-when{font-size:12px;color:var(--muted);font-weight:600}
-.ha-detail{padding:0 0 13px 21px;font-size:13px;color:var(--text);line-height:1.6}
+.ha-src{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;white-space:nowrap;flex:none}
+.ha-src.s-macro{background:color-mix(in srgb,#6366f1 16%,var(--panel));color:color-mix(in srgb,#6366f1 80%,var(--text))}
+.ha-src.s-vector{background:color-mix(in srgb,var(--info) 16%,var(--panel));color:color-mix(in srgb,var(--info) 82%,var(--text))}
+.ha-src.s-commodity{background:color-mix(in srgb,var(--warn) 18%,var(--panel));color:color-mix(in srgb,var(--warn) 84%,var(--text))}
+.ha-head{flex:1 1 100%;font-weight:600;color:var(--text);font-size:13px;line-height:1.4;order:3}
+.ha-when{font-size:10.5px;color:var(--muted);font-weight:600;margin-left:auto;white-space:nowrap;flex:none}
+.ha-detail{padding:0 8px 12px 25px;font-size:12.5px;color:var(--text);line-height:1.55}
 .ha-detail a{font-weight:700;white-space:nowrap}
-.ha-what{margin:7px 0 9px;padding-top:8px;border-top:1px solid var(--line);
- font-size:12.5px;color:var(--muted);line-height:1.55}
-.ha-edge{margin:4px 0 9px;font-size:12px;color:var(--text);line-height:1.5}
+.ha-what{margin:6px 0 8px;padding-top:7px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);font-size:12px;color:var(--muted);line-height:1.5}
+.ha-edge{margin:3px 0 8px;font-size:11.5px;color:var(--text);line-height:1.5}
 .ha-edge b{color:var(--muted);font-weight:600}
 .ha-open{display:inline-block;color:var(--link);font-weight:700}
-.ha-empty{padding:18px;text-align:center;color:var(--muted);font-size:14px}
-.c{--accent:#416aec;position:relative;background:var(--panel);border:1px solid var(--line);border-radius:18px;
- padding:22px;text-decoration:none;color:inherit;display:flex;flex-direction:column;overflow:hidden;isolation:isolate;
+.ha-empty{padding:18px;text-align:center;color:var(--muted);font-size:13px}
+
+.t{position:relative;display:flex;flex-direction:column;text-decoration:none;color:inherit;padding:16px 16px 14px;
  transition:transform .2s cubic-bezier(.2,.7,.3,1),box-shadow .2s ease,border-color .2s ease}
-.c::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
- background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 22%,transparent));
- transform:scaleX(0);transform-origin:left;transition:transform .3s cubic-bezier(.2,.7,.3,1)}
-.c::after{content:'';position:absolute;inset:0;z-index:-1;opacity:0;
- background:radial-gradient(360px 180px at 100% 0%,color-mix(in srgb,var(--accent) 12%,transparent),transparent 68%);
- transition:opacity .25s ease}
-.c:hover{transform:translateY(-4px);border-color:color-mix(in srgb,var(--accent) 50%,var(--line));
- box-shadow:0 18px 38px -14px color-mix(in srgb,var(--accent) 42%,transparent)}
-.c:hover::before{transform:scaleX(1)} .c:hover::after{opacity:1}
-.c--canada{--accent:#e5484d} .c--intl{--accent:#0d9488} .c--btc{--accent:#f7931a} .c--sp{--accent:#6366f1} .c--strat{--accent:#10b981} .c--ipo{--accent:#f59e0b}
-.c--commodity{--accent:#d4a12a} .c--forex{--accent:#14b8a6} .c--bonds{--accent:#0ea5e9}
-.c--crossasset{--accent:#8b5cf6} .c--etf{--accent:#3b82f6} .c--watch{--accent:#64748b}
-.c .ico{width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:22px;
- border-radius:12px;background:color-mix(in srgb,var(--accent) 15%,var(--panel2));
- border:1px solid color-mix(in srgb,var(--accent) 24%,var(--line));margin-bottom:13px;
+.t:hover{transform:translateY(-4px);border-color:color-mix(in srgb,var(--accent) 50%,var(--line));
+ box-shadow:0 20px 44px -16px color-mix(in srgb,var(--accent) 42%,transparent),inset 0 1px 0 color-mix(in srgb,#fff 6%,transparent)}
+.t:hover.acc::before{transform:scaleX(1)} .t:hover.acc::after{opacity:1}
+.t:focus-within.acc::before{transform:scaleX(1)}
+.t-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.t-ico{width:34px;height:34px;flex:none;display:flex;align-items:center;justify-content:center;font-size:18px;border-radius:10px;
+ background:color-mix(in srgb,var(--accent) 15%,var(--panel2));border:1px solid color-mix(in srgb,var(--accent) 24%,var(--line));
  transition:transform .2s cubic-bezier(.2,.7,.3,1)}
-.c:hover .ico{transform:scale(1.07) rotate(-4deg)}
-.c h2{font-size:18px;font-weight:800;color:var(--text);margin:0 0 6px;letter-spacing:-.02em}
-.c p{color:var(--muted);font-size:13px;margin:0 0 13px;line-height:1.5;flex:1}
-.stat{display:inline-block;padding:5px 10px;border-radius:8px;
- background:color-mix(in srgb,var(--accent) 11%,var(--panel2));
- color:color-mix(in srgb,var(--accent) 70%,var(--text));font-weight:700;font-size:12.5px;
- margin:0 6px 6px 0;border:1px solid color-mix(in srgb,var(--accent) 16%,transparent)}
-.stat.on{background:color-mix(in srgb,var(--info) 16%,var(--panel));color:color-mix(in srgb,var(--info) 80%,var(--text));border-color:color-mix(in srgb,var(--info) 22%,transparent)}
-.stat.off{background:color-mix(in srgb,var(--act) 16%,var(--panel));color:color-mix(in srgb,var(--act) 80%,var(--text));border-color:color-mix(in srgb,var(--act) 22%,transparent)}
-.go{margin-top:auto;padding-top:2px;font-weight:700;color:var(--accent);font-size:13px;transition:transform .2s ease}
-.c:hover .go{transform:translateX(3px)}
-/* row 1 — three core-market hero cards, each split macro / stocks */
-.cards-hero{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;width:100%;max-width:1120px;margin-bottom:20px}
-@media(max-width:860px){.cards-hero{grid-template-columns:1fr}}
-.c-hero{--accent:#416aec;position:relative;background:var(--panel);border:1px solid var(--line);
- border-radius:20px;padding:18px 18px 16px;display:flex;flex-direction:column;overflow:hidden;isolation:isolate;
- transition:transform .2s cubic-bezier(.2,.7,.3,1),box-shadow .2s ease,border-color .2s ease}
-.c-hero::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
- background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 22%,transparent));
- transform:scaleX(0);transform-origin:left;transition:transform .3s cubic-bezier(.2,.7,.3,1)}
-.c-hero:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--accent) 42%,var(--line));
- box-shadow:0 18px 40px -16px color-mix(in srgb,var(--accent) 40%,transparent)}
-.c-hero:hover::before{transform:scaleX(1)}
-.c-hero--china{--accent:#e35d6a} .c-hero--hk{--accent:#a855f7}
-.ch-title{font-size:21px;font-weight:800;color:var(--text);letter-spacing:-.02em;display:flex;align-items:center;gap:10px;margin-bottom:13px}
-.ch-title .ch-ico{width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:19px;
- border-radius:10px;background:color-mix(in srgb,var(--accent) 15%,var(--panel2));
- border:1px solid color-mix(in srgb,var(--accent) 24%,var(--line))}
-.c-half{display:block;text-decoration:none;color:inherit;border:1px solid var(--line);border-radius:13px;
- padding:13px 14px;background:color-mix(in srgb,var(--panel2) 45%,transparent);
- transition:transform .14s ease,border-color .14s ease,background .14s ease,box-shadow .14s ease}
-.c-half + .c-half{margin-top:10px}
-.c-half:hover{border-color:color-mix(in srgb,var(--accent) 55%,var(--line));
- background:color-mix(in srgb,var(--accent) 7%,var(--panel2));transform:translateY(-1px);
- box-shadow:0 8px 18px -10px color-mix(in srgb,var(--accent) 45%,transparent)}
-.ch-top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.ch-top b{font-size:15px;font-weight:700;color:var(--text)}
-.ch-tag{margin-left:auto;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
- color:color-mix(in srgb,var(--accent) 68%,var(--text));
- background:color-mix(in srgb,var(--accent) 12%,var(--panel2));padding:2px 8px;border-radius:6px}
-.ch-stat{display:inline-block;padding:5px 11px;border-radius:8px;
- background:color-mix(in srgb,var(--accent) 11%,var(--panel2));
- color:color-mix(in srgb,var(--accent) 72%,var(--text));font-weight:700;font-size:12.5px;
- border:1px solid color-mix(in srgb,var(--accent) 16%,transparent)}
-.ch-go{margin-top:9px;font-weight:700;color:var(--accent);font-size:13px}
-/* row 2 — smaller ancillary cards (styled via .c above, with per-card --accent) */
-.cards-sub{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:18px;width:100%;max-width:1120px}
-@media(max-width:720px){.cards-sub{grid-template-columns:1fr}}
-.foot{margin-top:40px;color:var(--muted);font-size:12px;text-align:center}
-.site-footer{width:100%;max-width:880px;margin:30px auto 0;padding-top:22px;
- border-top:1px solid var(--line);text-align:center;line-height:1.6}
+.t:hover .t-ico{transform:scale(1.07) rotate(-4deg)}
+.t-h{font-size:15px;font-weight:800;color:var(--text);margin:0;letter-spacing:-.015em;line-height:1.2}
+html[data-lang="zh"] .t-h{letter-spacing:0}
+.t-pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.pill{font-size:12px;font-weight:700;letter-spacing:-.005em;background:color-mix(in srgb,var(--accent) 12%,var(--panel2));
+ color:color-mix(in srgb,var(--accent) 74%,var(--text));padding:4px 10px;border-radius:8px;border:1px solid color-mix(in srgb,var(--accent) 18%,transparent)}
+.pill.q1{background:color-mix(in srgb,var(--q1) 13%,var(--panel2));color:color-mix(in srgb,var(--q1) 80%,var(--text));border-color:color-mix(in srgb,var(--q1) 24%,transparent)}
+.pill.q2{background:color-mix(in srgb,var(--q2) 13%,var(--panel2));color:color-mix(in srgb,var(--q2) 80%,var(--text));border-color:color-mix(in srgb,var(--q2) 24%,transparent)}
+.pill.q3{background:color-mix(in srgb,var(--q3) 13%,var(--panel2));color:color-mix(in srgb,var(--q3) 80%,var(--text));border-color:color-mix(in srgb,var(--q3) 24%,transparent)}
+.pill.q4{background:color-mix(in srgb,var(--q4) 13%,var(--panel2));color:color-mix(in srgb,var(--q4) 80%,var(--text));border-color:color-mix(in srgb,var(--q4) 24%,transparent)}
+.pill.on{background:color-mix(in srgb,var(--info) 15%,var(--panel));color:color-mix(in srgb,var(--info) 82%,var(--text));border-color:color-mix(in srgb,var(--info) 22%,transparent)}
+.pill.off{background:color-mix(in srgb,var(--act) 14%,var(--panel));color:color-mix(in srgb,var(--act) 82%,var(--text));border-color:color-mix(in srgb,var(--act) 22%,transparent)}
+.pill.neg{background:color-mix(in srgb,var(--down) 13%,var(--panel2));color:color-mix(in srgb,var(--down) 80%,var(--text));border-color:color-mix(in srgb,var(--down) 22%,transparent)}
+.t-go{margin-top:auto;font-weight:700;color:var(--accent);font-size:12.5px;transition:transform .2s ease}
+.t:hover .t-go{transform:translateX(3px)}
+.t-go::after{content:' →'}
+.bar{height:6px;border-radius:999px;background:color-mix(in srgb,var(--line) 70%,transparent);overflow:hidden;margin:1px 0 9px}
+.bar i{display:block;height:100%;border-radius:999px}
+.bar.b-risk i{background:linear-gradient(90deg,var(--act),var(--warn))}
+.bar.b-health i{background:linear-gradient(90deg,var(--warn),var(--ok))}
+
+.mkt{position:relative;display:flex;flex-direction:column;padding:16px}
+.mkt .t-top{margin-bottom:11px}
+.mkt .t-ico{width:36px;height:36px;font-size:19px}
+.mkt .t-h{font-size:16.5px}
+.mkt:hover.acc::before{transform:scaleX(1)} .mkt:focus-within.acc::before{transform:scaleX(1)}
+.halves{display:flex;flex-direction:column;gap:9px;flex:1}
+.half{display:flex;flex-direction:column;text-decoration:none;color:inherit;border:1px solid color-mix(in srgb,var(--line) 80%,transparent);border-radius:12px;
+ padding:11px 13px;background:color-mix(in srgb,var(--panel2) 42%,transparent);transition:transform .14s ease,border-color .14s ease,background .14s ease,box-shadow .14s ease}
+.half:hover{border-color:color-mix(in srgb,var(--accent) 52%,var(--line));background:color-mix(in srgb,var(--accent) 7%,var(--panel2));
+ transform:translateY(-1px);box-shadow:0 8px 18px -10px color-mix(in srgb,var(--accent) 45%,transparent)}
+.half-top{display:flex;align-items:center;gap:7px;margin-bottom:8px}
+.half-top b{font-size:13.5px;font-weight:700;color:var(--text)}
+.half-tag{margin-left:auto;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:color-mix(in srgb,var(--accent) 70%,var(--text));
+ background:color-mix(in srgb,var(--accent) 12%,var(--panel2));padding:2px 7px;border-radius:6px}
+html[data-lang="zh"] .half-tag{letter-spacing:0}
+.half-stat{align-self:flex-start;padding:4px 10px;border-radius:8px;font-weight:800;font-size:12px;letter-spacing:-.01em;
+ background:color-mix(in srgb,var(--accent) 12%,var(--panel2));color:color-mix(in srgb,var(--accent) 76%,var(--text));border:1px solid color-mix(in srgb,var(--accent) 18%,transparent)}
+.half-stat.q1{background:color-mix(in srgb,var(--q1) 13%,var(--panel2));color:color-mix(in srgb,var(--q1) 80%,var(--text));border-color:color-mix(in srgb,var(--q1) 24%,transparent)}
+.half-stat.q2{background:color-mix(in srgb,var(--q2) 13%,var(--panel2));color:color-mix(in srgb,var(--q2) 80%,var(--text));border-color:color-mix(in srgb,var(--q2) 24%,transparent)}
+.half-stat.q3{background:color-mix(in srgb,var(--q3) 13%,var(--panel2));color:color-mix(in srgb,var(--q3) 80%,var(--text));border-color:color-mix(in srgb,var(--q3) 24%,transparent)}
+.half-stat.q4{background:color-mix(in srgb,var(--q4) 13%,var(--panel2));color:color-mix(in srgb,var(--q4) 80%,var(--text));border-color:color-mix(in srgb,var(--q4) 24%,transparent)}
+.half-go{margin-top:8px;font-weight:700;color:var(--accent);font-size:12px}
+.half-go::after{content:' →'}
+
+.us{--accent:#416aec} .cn{--accent:#e35d6a} .hk{--accent:#a855f7} .ca{--accent:#e5484d} .btc{--accent:#f7931a}
+.com{--accent:#d4a12a} .fx{--accent:#14b8a6} .bd{--accent:#0ea5e9} .xa{--accent:#8b5cf6}
+.etf{--accent:#3b82f6} .str{--accent:#10b981} .wl{--accent:#64748b}
+
+.band{display:flex;align-items:center;gap:11px;margin:2px 2px -2px}
+.vectors .band{grid-column:1/-1;margin:4px 2px -4px}
+.band h2{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:0}
+html[data-lang="zh"] .band h2{letter-spacing:0}
+.band span{flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+
+.foot{width:100%;max-width:1200px;margin-top:36px;color:var(--muted);font-size:12px;text-align:center}
+.site-footer{width:100%;max-width:1200px;margin:26px auto 0;padding-top:22px;border-top:1px solid var(--line);text-align:center;line-height:1.6}
 .site-footer .made{display:block;font-size:13.5px;font-weight:700;color:var(--text);letter-spacing:.2px}
 .site-footer .dev{display:block;margin-top:1px;font-size:12px;color:var(--muted)}
-@media (prefers-reduced-motion: reduce){.eyebrow .live{animation:none}
- .c,.c .ico,.go,.c-hero,.c-half,.ha-item summary{transition:none}
- .c:hover,.c-hero:hover{transform:none}}
+a:focus-visible,.half:focus-visible,.mx-row:focus-visible,.ha-open:focus-visible,.rail-link:focus-visible{outline:2px solid var(--link);outline-offset:2px;border-radius:12px}
+
+@keyframes smReveal{from{opacity:0;transform:translateY(10px) scale(.99)}to{opacity:1;transform:none}}
+.reveal{animation:smReveal .5s cubic-bezier(.2,.7,.3,1) both}
+.command.reveal{animation-delay:0ms} .markets-grid.reveal{animation-delay:90ms} .vectors.reveal{animation-delay:150ms}
+@keyframes gaugeFill{from{stroke-dashoffset:298.5}}
+.gauge-arc{animation:gaugeFill 1.1s cubic-bezier(.2,.7,.3,1) both}
+.gauge-dot{filter:drop-shadow(0 0 5px color-mix(in srgb,var(--accent) 70%,transparent))}
+
+@media(max-width:980px){
+ .command{grid-template-columns:1fr}
+ .rail{max-height:430px}
+}
+@media(max-width:860px){
+ .hero-body{flex-direction:column}
+ .matrix{border-left:none;padding-left:0;padding-top:10px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+ .vectors{grid-template-columns:repeat(6,1fr)}
+ .vectors .s3{grid-column:span 3} .vectors .s4{grid-column:span 6} .vectors .s6{grid-column:1/-1}
+ .markets-grid{grid-template-columns:1fr 1fr}
+ .markets-grid .us{grid-column:1/-1}
+}
+@media(max-width:560px){
+ body{padding:18px 14px 56px} .deck{gap:14px}
+ .markets-grid{grid-template-columns:1fr} .markets-grid .us{grid-column:auto}
+ .vectors{grid-template-columns:1fr;gap:13px}
+ .vectors .s3,.vectors .s4,.vectors .s6{grid-column:1/-1}
+}
+@media (prefers-reduced-motion: reduce){
+ .eyebrow .live{animation:none} .reveal,.gauge-arc{animation:none}
+ .t,.t .t-ico,.t-go,.half,.mx-row,.ha-item summary{transition:none}
+ .t:hover,.mx-row:hover{transform:none} .gauge-dot{filter:none}}
 </style></head><body>
 <div class="hub-top">
-  <button class="theme-switch" aria-label="Toggle dark / light mode">
-    <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
-  </button>
-  <div class="lang-toggle" role="group" aria-label="Language">
-    <span class="pill"></span>
-    <span class="opt en-opt" data-l="en">EN</span>
-    <span class="opt zh-opt" data-l="zh">中文</span>
-  </div>
+  <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
+  <div class="lang-toggle" role="group" aria-label="Language"><span class="pill"></span><span class="opt en-opt" data-l="en">EN</span><span class="opt zh-opt" data-l="zh">中文</span></div>
 </div>
-<div class="h">
-  <span class="eyebrow"><span class="live"></span><span class="l-en">Live · zero-cost data engine · updated</span><span class="l-zh">实时 · 零成本数据引擎 · 更新于</span> 2026-06-18 02:39 UTC</span>
+<header class="h">
+  <span class="eyebrow"><span class="live"></span><span class="l-en">Live · zero-cost data engine · updated</span><span class="l-zh">实时 · 零成本数据引擎 · 更新于</span> 2026-06-18 03:17 UTC</span>
   <h1><span class="l-en">Market Intelligence</span><span class="l-zh">市场情报</span></h1>
-  <p><span class="l-en">Market regime dashboards across every major asset class — one mechanical, backtested engine.</span><span class="l-zh">覆盖各大类资产的市场周期仪表盘——一套机械化、经回测的引擎。</span></p>
-</div>
-<div class="cards-hero">
-  <div class="c-hero">
-    <div class="ch-title"><span class="ch-ico">🇺🇸</span><span class="l-en">United States</span><span class="l-zh">美国</span></div>
-    <div class="ch-halves">
-      <a class="c-half" href="macro.html">
-        <div class="ch-top"><span>🌍</span><b><span class="l-en">Macro regime</span><span class="l-zh">宏观周期</span></b><span class="ch-tag"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span></div>
-        <span class="ch-stat"><span class="l-en">Goldilocks</span><span class="l-zh">理想增长</span></span>
-        <div class="ch-go"><span class="l-en">Open macro dashboard →</span><span class="l-zh">打开宏观看板 →</span></div>
-      </a>
-      <a class="c-half" href="us_stocks.html">
-        <div class="ch-top"><span>📈</span><b><span class="l-en">US Stocks</span><span class="l-zh">美国个股</span></b><span class="ch-tag"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span></div>
-        <span class="ch-stat"><span class="l-en">120 standout setups</span><span class="l-zh">120 只精选个股</span></span>
-        <div class="ch-go"><span class="l-en">Open stock dashboard →</span><span class="l-zh">打开个股看板 →</span></div>
-      </a>
+  <p><span class="l-en">One mechanical, backtested engine reading the regime across every major asset class — the weather, then the route.</span><span class="l-zh">一套机械化、经回测的引擎，判读各大类资产的市场周期——先看天气，再选路线。</span></p>
+</header>
+<main class="deck">
+  <section class="command reveal">
+    <div class="cmd-left">
+      <section class="glass acc hero" aria-labelledby="hero-h">
+        <div class="hero-wash" aria-hidden="true"></div>
+        <div class="hero-head">
+          <span class="eyebrow" style="margin:0;padding:4px 11px;font-size:11px"><span class="live"></span><span class="l-en">Flight deck</span><span class="l-zh">驾驶舱</span></span>
+          <h2 id="hero-h" class="hero-eye" style="margin-left:2px"><span class="l-en">State of the markets</span><span class="l-zh">市场全景</span></h2>
+        </div>
+        <div class="hero-body">
+          <div class="pulse">
+            <div class="gauge" role="img" aria-label="Global risk pulse 56 of 100, Mixed. A descriptive blend of the live regime reads across markets.">
+              <svg viewBox="0 0 230 152" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <defs><linearGradient id="grisk" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0" stop-color="#e05555"/><stop offset="0.4" stop-color="#e0a030"/><stop offset="0.72" stop-color="#14b8a6"/><stop offset="1" stop-color="#2e9e4f"/></linearGradient></defs>
+                <path class="gauge-track" d="M 20 130 A 95 95 0 0 1 210 130" fill="none" stroke-width="15" stroke-linecap="round"/>
+                <path class="gauge-arc" d="M 20 130 A 95 95 0 0 1 210 130" fill="none" stroke="url(#grisk)" stroke-width="15" stroke-linecap="round" stroke-dasharray="298.5" stroke-dashoffset="131.3"/>
+                <circle class="gauge-dot" cx="132.8" cy="36.7" r="6" fill="var(--warn)" stroke="var(--panel)" stroke-width="3"/></svg>
+              <div class="gauge-val"><div class="gauge-num">56</div><div class="gauge-band tone-mix"><span class="l-en">Mixed</span><span class="l-zh">分化</span></div></div>
+            </div>
+            <div class="gauge-ticks">
+              <span class=""><span class="l-en">Risk-off</span><span class="l-zh">避险</span></span>
+              <span class="on tk-mix"><span class="l-en">Mixed</span><span class="l-zh">分化</span></span>
+              <span class=""><span class="l-en">Risk-on</span><span class="l-zh">偏好风险</span></span>
+            </div>
+            <p class="synth"><b><span class="l-en">Mixed across markets.</span><span class="l-zh">市场分化。</span></b> <span class="l-en">United States Goldilocks; China Stagflation; Hong Kong Reflation. Bitcoin risk off; bonds late-cycle.</span><span class="l-zh">美国理想增长；中国滞胀；香港再通胀。比特币风险关闭；债券晚周期。</span></p>
+          </div>
+          <div class="matrix">
+            <div class="mx-eye"><span class="l-en">Regime matrix · who&#39;s hot, who&#39;s cold</span><span class="l-zh">周期矩阵 · 谁热谁冷</span></div>
+            <a class="mx-row q1" href="macro.html">
+          <span class="mx-flag" aria-hidden="true">🇺🇸</span>
+          <span class="mx-mid"><span class="mx-name"><span class="l-en">United States</span><span class="l-zh">美国</span></span>
+            <span class="mx-sec"><span class="l-en">120 standout setups</span><span class="l-zh">120 只精选个股</span><span class="mx-agree"><span aria-hidden="true">🤝</span><span class="l-en">agrees 🇨🇦</span><span class="l-zh">与🇨🇦一致</span></span></span></span>
+          <span class="mx-end"><span class="mx-chip"><span class="l-en">Goldilocks</span><span class="l-zh">理想增长</span></span><span class="mx-arrow" aria-hidden="true">→</span></span></a>
+<a class="mx-row q3" href="china.html">
+          <span class="mx-flag" aria-hidden="true">🇨🇳</span>
+          <span class="mx-mid"><span class="mx-name"><span class="l-en">China · A-shares</span><span class="l-zh">中国 · A股</span></span>
+            <span class="mx-sec"><span class="l-en">110 setups · screener</span><span class="l-zh">110 形态 · 筛选</span></span></span>
+          <span class="mx-end"><span class="mx-chip"><span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></span><span class="mx-arrow" aria-hidden="true">→</span></span></a>
+<a class="mx-row q2" href="hk.html">
+          <span class="mx-flag" aria-hidden="true">🇭🇰</span>
+          <span class="mx-mid"><span class="mx-name"><span class="l-en">Hong Kong</span><span class="l-zh">香港</span></span>
+            <span class="mx-sec"><span class="l-en">24 beta exposures · Neutral overlay</span><span class="l-zh">24 个 beta 敞口 · 中性叠加</span></span></span>
+          <span class="mx-end"><span class="mx-chip"><span class="l-en">Reflation</span><span class="l-zh">再通胀</span></span><span class="mx-arrow" aria-hidden="true">→</span></span></a>
+<a class="mx-row q1" href="canada.html">
+          <span class="mx-flag" aria-hidden="true">🇨🇦</span>
+          <span class="mx-mid"><span class="mx-name"><span class="l-en">Canada · TSX</span><span class="l-zh">加拿大 · TSX</span></span>
+            <span class="mx-sec"><span class="l-en">Risk-off · commodity / CAD overlay</span><span class="l-zh">风险规避 · 大宗商品／加元叠加</span><span class="mx-agree"><span aria-hidden="true">🤝</span><span class="l-en">agrees 🇺🇸</span><span class="l-zh">与🇺🇸一致</span></span></span></span>
+          <span class="mx-end"><span class="mx-chip"><span class="l-en">Goldilocks</span><span class="l-zh">理想增长</span></span><span class="mx-arrow" aria-hidden="true">→</span></span></a>
+          </div>
+        </div>
+      </section>
+      <div class="band"><h2><span class="l-en">Markets</span><span class="l-zh">市场</span></h2><span></span></div>
+      <div class="markets-grid"><div class="glass acc mkt us">
+      <div class="t-top"><span class="t-ico" aria-hidden="true">🇺🇸</span><h3 class="t-h"><span class="l-en">United States</span><span class="l-zh">美国</span></h3></div>
+      <div class="halves">
+        <a class="half" href="macro.html">
+          <span class="half-top"><span aria-hidden="true">🌍</span><b><span class="l-en">Macro regime</span><span class="l-zh">宏观周期</span></b><span class="half-tag"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span></span>
+          <span class="half-stat q1"><span class="l-en">Goldilocks</span><span class="l-zh">理想增长</span></span>
+          <span class="half-go"><span class="l-en">Open macro dashboard</span><span class="l-zh">打开宏观看板</span></span></a>
+        <a class="half" href="us_stocks.html">
+          <span class="half-top"><span aria-hidden="true">📈</span><b><span class="l-en">US Stocks</span><span class="l-zh">美国个股</span></b><span class="half-tag"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span></span>
+          <span class="half-stat"><span class="l-en">120 standout setups</span><span class="l-zh">120 只精选个股</span></span>
+          <span class="half-go"><span class="l-en">Open stock dashboard</span><span class="l-zh">打开个股看板</span></span></a>
+      </div>
+    </div><div class="glass acc mkt cn">
+      <div class="t-top"><span class="t-ico" aria-hidden="true">🇨🇳</span><h3 class="t-h"><span class="l-en">China</span><span class="l-zh">中国</span></h3></div>
+      <div class="halves">
+        <a class="half" href="china.html">
+          <span class="half-top"><b><span class="l-en">Macro regime</span><span class="l-zh">宏观周期</span></b><span class="half-tag"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span></span>
+          <span class="half-stat q3"><span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></span>
+          <span class="half-go"><span class="l-en">A-share regime</span><span class="l-zh">A股周期</span></span></a>
+        <a class="half" href="china_stocks.html">
+          <span class="half-top"><b><span class="l-en">A-shares</span><span class="l-zh">A股个股</span></b><span class="half-tag"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span></span>
+          <span class="half-stat"><span class="l-en">110 setups · screener</span><span class="l-zh">110 形态 · 筛选</span></span>
+          <span class="half-go"><span class="l-en">Open screener</span><span class="l-zh">打开筛选</span></span></a>
+      </div>
+    </div><div class="glass acc mkt hk">
+      <div class="t-top"><span class="t-ico" aria-hidden="true">🇭🇰</span><h3 class="t-h"><span class="l-en">Hong Kong</span><span class="l-zh">香港</span></h3></div>
+      <div class="halves">
+        <a class="half" href="hk.html">
+          <span class="half-top"><b><span class="l-en">Macro regime</span><span class="l-zh">宏观周期</span></b><span class="half-tag"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span></span>
+          <span class="half-stat q2"><span class="l-en">Reflation · Neutral</span><span class="l-zh">再通胀 · 中性</span></span>
+          <span class="half-go"><span class="l-en">HK regime</span><span class="l-zh">香港周期</span></span></a>
+        <a class="half" href="hk_stocks.html">
+          <span class="half-top"><b><span class="l-en">HK stocks</span><span class="l-zh">港股</span></b><span class="half-tag"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span></span>
+          <span class="half-stat"><span class="l-en">24 beta exposures</span><span class="l-zh">24 个 beta 敞口</span></span>
+          <span class="half-go"><span class="l-en">Open board</span><span class="l-zh">打开看板</span></span></a>
+      </div>
+    </div></div>
     </div>
-  </div>
-  <div class="c-hero c-hero--china">
-    <div class="ch-title"><span class="ch-ico">🇨🇳</span><span class="l-en">China</span><span class="l-zh">中国</span></div>
-    <div class="ch-halves">
-      <a class="c-half" href="china.html">
-        <div class="ch-top"><span>📊</span><b><span class="l-en">Macro regime</span><span class="l-zh">宏观周期</span></b><span class="ch-tag"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span></div>
-        <span class="ch-stat"><span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></span>
-        <div class="ch-go"><span class="l-en">Open A-share regime →</span><span class="l-zh">打开A股周期 →</span></div>
-      </a>
-      <a class="c-half" href="china_stocks.html">
-        <div class="ch-top"><span>📈</span><b><span class="l-en">A-share stocks</span><span class="l-zh">A股个股</span></b><span class="ch-tag"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span></div>
-        <span class="ch-stat"><span class="l-en">110 setups · screener</span><span class="l-zh">110 形态 · 筛选</span></span>
-        <div class="ch-go"><span class="l-en">Open stock screener →</span><span class="l-zh">打开个股筛选 →</span></div>
-      </a>
-    </div>
-  </div>
-  <div class="c-hero c-hero--hk">
-    <div class="ch-title"><span class="ch-ico">🇭🇰</span><span class="l-en">Hong Kong</span><span class="l-zh">香港</span></div>
-    <div class="ch-halves">
-      <a class="c-half" href="hk.html">
-        <div class="ch-top"><span>📊</span><b><span class="l-en">Macro regime</span><span class="l-zh">宏观周期</span></b><span class="ch-tag"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span></div>
-        <span class="ch-stat"><span class="l-en">Reflation</span><span class="l-zh">再通胀</span> · <span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
-        <div class="ch-go"><span class="l-en">Open HK regime →</span><span class="l-zh">打开香港周期 →</span></div>
-      </a>
-      <a class="c-half" href="hk_stocks.html">
-        <div class="ch-top"><span>📈</span><b><span class="l-en">HK stocks &amp; exposure</span><span class="l-zh">港股与敞口</span></b><span class="ch-tag"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span></div>
-        <span class="ch-stat"><span class="l-en">24 beta exposures</span><span class="l-zh">24 个 beta 敞口</span></span>
-        <div class="ch-go"><span class="l-en">Open stock board →</span><span class="l-zh">打开个股看板 →</span></div>
-      </a>
-    </div>
-  </div></div>
-<div class="cards-sub">
-  <a class="c c--canada" href="canada.html">
-    <div class="ico">🇨🇦</div>
-    <h2><span class="l-en">Canada — S&amp;P/TSX</span><span class="l-zh">加拿大 — 标普/TSX</span></h2>
-    <p><span class="l-en">Regime, a commodity / CAD / BoC-vs-Fed overlay, sector rotation &amp; cycle read for the TSX.</span><span class="l-zh">TSX 的周期状态、大宗商品／加元／央行-美联储叠加、板块轮动与周期解读。</span></p>
-    <span class="stat"><span class="l-en">Goldilocks</span><span class="l-zh">理想增长</span> · <span class="l-en">Risk-off</span><span class="l-zh">风险规避</span></span>
-    <div class="go"><span class="l-en">Open Canada →</span><span class="l-zh">打开加拿大 →</span></div>
-  </a>
-  <a class="c c--intl" href="intl.html">
-    <div class="ico">🌍</div>
-    <h2><span class="l-en">International</span><span class="l-zh">国际经济体</span></h2>
-    <p><span class="l-en">Japan, South Korea, Taiwan, the UK &amp; Europe compared side-by-side — regime, recession &amp; equity-risk, plus cross-market stock standouts.</span><span class="l-zh">日本、韩国、台湾、英国与欧洲并排对比 — 周期、衰退与股市风险，以及跨市场个股精选。</span></p>
-    <span class="stat"><span class="l-en">5 economies · Goldilocks</span><span class="l-zh">5 economies · Goldilocks</span></span>
-    <div class="go"><span class="l-en">Open International →</span><span class="l-zh">打开国际 →</span></div>
-  </a>
-  <a class="c c--btc" href="vector.html">
-    <div class="ico">₿</div>
-    <h2><span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span></h2>
-    <p><span class="l-en">Risk regime, momentum, structure &amp; backtested allocation for Bitcoin.</span><span class="l-zh">比特币的风险状态、动量、结构与经回测的仓位策略。</span></p>
-    <span class="stat off"><span class="l-en">Risk</span><span class="l-zh">风险</span> <span class="l-en">OFF</span><span class="l-zh">关闭</span> · 36</span>
-    <span class="stat"><span class="l-en">Momentum</span><span class="l-zh">动量</span> -0.75</span>
-    <div class="go"><span class="l-en">Open Bitcoin Vector →</span><span class="l-zh">打开比特币向量 →</span></div>
-  </a>
-  <a class="c c--strat" href="strategies.html">
-    <div class="ico">🎛️</div>
-    <h2><span class="l-en">Strategy Scorecards</span><span class="l-zh">策略记分卡</span></h2>
-    <p><span class="l-en">Macro-factor tactical strategies — shift allocations on signals to lift risk-adjusted yield and dodge the drawdowns.</span><span class="l-zh">宏观因子战术策略——按信号切换配置，提升风险调整后收益并规避回撤。</span></p>
-    <span class="stat">27 <span class="l-en">strategies</span><span class="l-zh">个策略</span></span>
-    <div class="go"><span class="l-en">Open Strategy Scorecards →</span><span class="l-zh">打开策略记分卡 →</span></div>
-  </a>
-  <a class="c c--ipo" href="ipo.html">
-    <div class="ico">🆕</div>
-    <h2><span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span></h2>
-    <p><span class="l-en">Is the IPO window open — and is it worth chasing? The issuance-window read, the aftermarket reality check &amp; the deal calendar. Avoidance + context, never a buy signal.</span><span class="l-zh">新股窗口是否开启——值得追吗？发行窗口读数、二级市场现实检验与交易日历。规避与背景，绝非买入信号。</span></p>
-    <span class="stat"><span class="l-en">Window</span><span class="l-zh">窗口</span> <span class="l-en">OPEN</span><span class="l-zh">开启</span> · <span class="l-en">IPO ETF</span><span class="l-zh">新股ETF</span> -16pp/yr</span>
-    <div class="go"><span class="l-en">Open IPO Radar →</span><span class="l-zh">打开新股雷达 →</span></div>
-  </a>
-  <a class="c c--commodity" href="commodities.html">
-    <div class="ico">◆</div>
-    <h2><span class="l-en">Commodity Vector</span><span class="l-zh">大宗商品向量</span></h2>
-    <p><span class="l-en">Regime, allocation &amp; shock-detection for gold, silver, oil &amp; copper.</span><span class="l-zh">黄金、白银、原油与铜的周期、配置与冲击检测。</span></p>
-    <span class="stat"><span class="l-en">Goldilocks</span><span class="l-zh">理想增长</span> · Gold, Copper</span>
-    <div class="go"><span class="l-en">Open Commodity Vector →</span><span class="l-zh">打开大宗商品向量 →</span></div>
-  </a>
-  <a class="c c--commodity" href="spr.html">
-    <div class="ico">🛢️</div>
-    <h2><span class="l-en">Strategic Reserves</span><span class="l-zh">战略石油储备</span></h2>
-    <p><span class="l-en">SPR levels for the US (live, weekly) and major countries — fill, days of cover &amp; national crude stocks against oil prices.</span><span class="l-zh">美国（实时，每周）及主要国家的战略石油储备水平——注满率、可供天数与国家原油库存对照油价。</span></p>
-    <span class="stat"><span class="l-en">US SPR 340 MMbbl</span><span class="l-zh">US SPR 340 MMbbl</span> · 48% <span class="l-en">full</span><span class="l-zh">已注满</span></span>
-    <div class="go"><span class="l-en">Open Strategic Reserves →</span><span class="l-zh">打开战略储备 →</span></div>
-  </a>
-  <a class="c c--forex" href="forex.html">
-    <div class="ico">💱</div>
-    <h2><span class="l-en">Forex Vector</span><span class="l-zh">外汇向量</span></h2>
-    <p><span class="l-en">Dollar-first currency board — the dollar-smile regime plus risk-context signals on 9 pairs, each scored on its dollar-orthogonalized residual.</span><span class="l-zh">以美元为先的货币面板——美元微笑格局，以及9个货币对在剥离美元后的风险背景信号。</span></p>
-    <span class="stat"><span class="l-en">Global reflation</span><span class="l-zh">全球再通胀</span> · <span class="l-en">risk-on</span><span class="l-zh">偏好风险</span></span>
-    <div class="go"><span class="l-en">Open Forex Vector →</span><span class="l-zh">打开外汇向量 →</span></div>
-  </a>
-  <a class="c c--bonds" href="bonds.html">
-    <div class="ico">🏛️</div>
-    <h2><span class="l-en">Bonds &amp; Bond Health</span><span class="l-zh">债券与债券健康</span></h2>
-    <p><span class="l-en">What the curve, credit, real rates, rates-vol &amp; funding plumbing say about economic health, regime &amp; the cycle.</span><span class="l-zh">收益率曲线、信用利差、实际利率、利率波动与资金管道对经济健康、周期状态与所处阶段的判读。</span></p>
-    <span class="stat"><span class="l-en">Health</span><span class="l-zh">健康度</span> 86/100 · <span class="l-en">late</span><span class="l-zh">晚期</span></span>
-    <div class="go"><span class="l-en">Open Bonds →</span><span class="l-zh">打开债券 →</span></div>
-  </a>
-  <a class="c c--crossasset" href="crossasset.html">
-    <div class="ico">🧭</div>
-    <h2><span class="l-en">Cross-Asset Vector</span><span class="l-zh">跨资产向量</span></h2>
-    <p><span class="l-en">What is trending across equities, bonds, commodities, the dollar &amp; crypto — time-series momentum, intermarket ratios &amp; the correlation regime. A regime read, not a strategy.</span><span class="l-zh">股票、债券、商品、美元与加密货币之间在趋势什么——时间序列动量、跨市场比价与相关性体制。体制判读，而非策略。</span></p>
-    <span class="stat"><span class="l-en">mixed / no clear trend</span><span class="l-zh">mixed / no clear trend</span> · <span class="l-en">concentrated</span><span class="l-zh">集中</span></span>
-    <div class="go"><span class="l-en">Open Cross-Asset →</span><span class="l-zh">打开跨资产 →</span></div>
-  </a>
-  <a class="c c--etf" href="etfs.html">
-    <div class="ico">🐳</div>
-    <h2><span class="l-en">ETF Flow Radar</span><span class="l-zh">ETF 资金雷达</span></h2>
-    <p><span class="l-en">What funds are accumulating and trimming — flow-normalized share decisions across popular ETFs, tagged manager-conviction vs index-rebalance.</span><span class="l-zh">基金在增持与减持什么——主流 ETF 经资金流标准化的份额决策，并标注“经理人信念”与“指数再平衡”。</span></p>
-    <span class="stat"><span class="l-en">Manager and index flows</span><span class="l-zh">经理人与指数资金流</span></span>
-    <div class="go"><span class="l-en">Open ETF Flow Radar →</span><span class="l-zh">打开 ETF 资金雷达 →</span></div>
-  </a>
-  <a class="c c--watch" href="watchlist.html">
-    <div class="ico">📋</div>
-    <h2><span class="l-en">Watchlist</span><span class="l-zh">持仓清单</span></h2>
-    <p><span class="l-en">Track your own holdings — equities, ETFs, commodities and crypto — each with its live signal.</span><span class="l-zh">跟踪你自己的持仓——股票、ETF、大宗商品与加密货币——每个都附带实时信号。</span></p>
-    <span class="stat"><span class="l-en">Your holdings</span><span class="l-zh">你的持仓</span></span>
-    <div class="go"><span class="l-en">Open Watchlist →</span><span class="l-zh">打开持仓清单 →</span></div>
-  </a></div>
-<div class="feed">
-  <div class="feed-h"><h3><span class="l-en">Latest Alerts</span><span class="l-zh">最新警报</span></h3>
-    <span class="n">12 <span class="l-en">major · from both feeds ·</span><span class="l-zh">条重要 · 来自两个数据源 ·</span> <a href="vector.html#timeline"><span class="l-en">full Vector timeline →</span><span class="l-zh">完整向量时间线 →</span></a></span></div>
-  <div class="feed-card"><details class="ha-item">
-  <summary>
+    <aside class="glass acc rail" aria-labelledby="rail-h">
+      <div class="rail-head">
+        <h2 id="rail-h"><span class="l-en">What changed today</span><span class="l-zh">今日变化</span></h2>
+        <a class="rail-link" href="vector.html#timeline">12 <span class="l-en">signals · full timeline →</span><span class="l-zh">条信号 · 完整时间线 →</span></a>
+      </div>
+      <div class="mix" role="img" aria-label="Signal mix: 4 high, 8 medium, 0 low severity">
+        <span class="m-high" style="width:33%"></span><span class="m-med" style="width:67%"></span><span class="m-info" style="width:0%"></span></div>
+      <div class="mix-leg"><span class="lh"><i></i><span class="l-en">4 high</span><span class="l-zh">4 高</span></span><span class="lm"><i></i><span class="l-en">8 medium</span><span class="l-zh">8 中</span></span></div>
+      <div class="rail-list"><details class="ha-item lead" open><summary>
     <span class="ha-dot d-high"></span>
     <span class="ha-src s-macro"><span class="l-en">Macro Vector</span><span class="l-zh">宏观向量</span></span>
+    <span class="ha-when"><span class="l-en">1d</span><span class="l-zh">昨天</span></span>
     <span class="ha-head"><span class="l-en">🧭 Regime radar moved — the market “weather” may be shifting</span><span class="l-zh">🧭 转换雷达变动 — 市场“天气”可能正在转变</span></span>
-    <span class="ha-when"><span class="l-en">Jun 17</span><span class="l-zh">6月17日</span></span>
   </summary>
   <div class="ha-detail"><span class="l-en">Transition state WEAKENING -&gt; TRANSITIONING (3 flags active)</span><span class="l-zh">Transition state WEAKENING -&gt; TRANSITIONING (3 flags active)</span><div class="ha-what"><span class="l-en">Tracks whether the current market regime is holding or starting to break down, based on how many warning flags are stacking up. A change here is a cue to re-check your risk — not a trade on its own.</span><span class="l-zh">根据累积的预警旗数量，追踪当前市场周期是稳固还是开始瓦解。此处的变化是重新检视风险的提示 — 本身并非交易信号。</span></div><div class="ha-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">High — a regime shift re-prices everything downstream.</span><span class="l-zh">高 — 周期转变会重新定价其下游的一切。</span></div><a class="ha-open" href="macro.html#regime-radar"><span class="l-en">Open scorecard →</span><span class="l-zh">打开记分卡 →</span></a></div>
 </details>
-<details class="ha-item">
-  <summary>
+<details class="ha-item"><summary>
     <span class="ha-dot d-medium"></span>
     <span class="ha-src s-macro"><span class="l-en">Macro Vector</span><span class="l-zh">宏观向量</span></span>
+    <span class="ha-when"><span class="l-en">1d</span><span class="l-zh">昨天</span></span>
     <span class="ha-head"><span class="l-en">🧲 Options “gravity” flipped — bigger swings more likely</span><span class="l-zh">🧲 期权“引力”反转 — 波动可能加大</span></span>
-    <span class="ha-when"><span class="l-en">Jun 17</span><span class="l-zh">6月17日</span></span>
   </summary>
   <div class="ha-detail"><span class="l-en">GEX: net GEX changed sign (net -1bn, spot vs flip -4.9%)</span><span class="l-zh">GEX: net GEX changed sign (net -1bn, spot vs flip -4.9%)</span><div class="ha-what"><span class="l-en">Dealer gamma (GEX) measures how options hedging pushes the market around. Positive gamma damps moves (calmer); negative amplifies them (sharper swings, both ways). This flag means that backdrop just changed — expect the market to move more freely until it flips back.</span><span class="l-zh">做市商 gamma（GEX）衡量期权对冲如何推动市场。正 gamma 抑制波动（更平静）；负 gamma 放大波动（双向更剧烈）。此信号表示该背景刚刚改变 —在它再次反转前，市场可能波动得更自由。</span></div><div class="ha-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Medium — changes the volatility backdrop, not the direction.</span><span class="l-zh">中 — 改变的是波动背景，而非方向。</span></div><a class="ha-open" href="macro.html#positioning"><span class="l-en">Open scorecard →</span><span class="l-zh">打开记分卡 →</span></a></div>
 </details>
-<details class="ha-item">
-  <summary>
+<details class="ha-item"><summary>
     <span class="ha-dot d-medium"></span>
     <span class="ha-src s-macro"><span class="l-en">Macro Vector</span><span class="l-zh">宏观向量</span></span>
+    <span class="ha-when"><span class="l-en">1d</span><span class="l-zh">昨天</span></span>
     <span class="ha-head"><span class="l-en">🧲 Options “gravity” flipped — bigger swings more likely</span><span class="l-zh">🧲 期权“引力”反转 — 波动可能加大</span></span>
-    <span class="ha-when"><span class="l-en">Jun 17</span><span class="l-zh">6月17日</span></span>
   </summary>
   <div class="ha-detail"><span class="l-en">GEX: net GEX changed sign (net +17bn, spot vs flip -8.7%)</span><span class="l-zh">GEX: net GEX changed sign (net +17bn, spot vs flip -8.7%)</span><div class="ha-what"><span class="l-en">Dealer gamma (GEX) measures how options hedging pushes the market around. Positive gamma damps moves (calmer); negative amplifies them (sharper swings, both ways). This flag means that backdrop just changed — expect the market to move more freely until it flips back.</span><span class="l-zh">做市商 gamma（GEX）衡量期权对冲如何推动市场。正 gamma 抑制波动（更平静）；负 gamma 放大波动（双向更剧烈）。此信号表示该背景刚刚改变 —在它再次反转前，市场可能波动得更自由。</span></div><div class="ha-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Medium — changes the volatility backdrop, not the direction.</span><span class="l-zh">中 — 改变的是波动背景，而非方向。</span></div><a class="ha-open" href="macro.html#positioning"><span class="l-en">Open scorecard →</span><span class="l-zh">打开记分卡 →</span></a></div>
 </details>
-<details class="ha-item">
-  <summary>
+<details class="ha-item"><summary>
     <span class="ha-dot d-medium"></span>
     <span class="ha-src s-macro"><span class="l-en">Macro Vector</span><span class="l-zh">宏观向量</span></span>
-    <span class="ha-head"><span class="l-en">🧲 Options “gravity” flipped — bigger swings more likely</span><span class="l-zh">🧲 期权“引力”反转 — 波动可能加大</span></span>
-    <span class="ha-when"><span class="l-en">Jun 17</span><span class="l-zh">6月17日</span></span>
-  </summary>
-  <div class="ha-detail"><span class="l-en">GEX: net GEX changed sign (net +18bn, spot vs flip -8.4%)</span><span class="l-zh">GEX: net GEX changed sign (net +18bn, spot vs flip -8.4%)</span><div class="ha-what"><span class="l-en">Dealer gamma (GEX) measures how options hedging pushes the market around. Positive gamma damps moves (calmer); negative amplifies them (sharper swings, both ways). This flag means that backdrop just changed — expect the market to move more freely until it flips back.</span><span class="l-zh">做市商 gamma（GEX）衡量期权对冲如何推动市场。正 gamma 抑制波动（更平静）；负 gamma 放大波动（双向更剧烈）。此信号表示该背景刚刚改变 —在它再次反转前，市场可能波动得更自由。</span></div><div class="ha-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Medium — changes the volatility backdrop, not the direction.</span><span class="l-zh">中 — 改变的是波动背景，而非方向。</span></div><a class="ha-open" href="macro.html#positioning"><span class="l-en">Open scorecard →</span><span class="l-zh">打开记分卡 →</span></a></div>
-</details>
-<details class="ha-item">
-  <summary>
-    <span class="ha-dot d-medium"></span>
-    <span class="ha-src s-macro"><span class="l-en">Macro Vector</span><span class="l-zh">宏观向量</span></span>
+    <span class="ha-when"><span class="l-en">2d</span><span class="l-zh">2天</span></span>
     <span class="ha-head"><span class="l-en">🧭 Regime radar moved — the market “weather” may be shifting</span><span class="l-zh">🧭 转换雷达变动 — 市场“天气”可能正在转变</span></span>
-    <span class="ha-when"><span class="l-en">Jun 16</span><span class="l-zh">6月16日</span></span>
   </summary>
   <div class="ha-detail"><span class="l-en">Transition state TRANSITIONING -&gt; WEAKENING (2 flags active)</span><span class="l-zh">Transition state TRANSITIONING -&gt; WEAKENING (2 flags active)</span><div class="ha-what"><span class="l-en">Tracks whether the current market regime is holding or starting to break down, based on how many warning flags are stacking up. A change here is a cue to re-check your risk — not a trade on its own.</span><span class="l-zh">根据累积的预警旗数量，追踪当前市场周期是稳固还是开始瓦解。此处的变化是重新检视风险的提示 — 本身并非交易信号。</span></div><div class="ha-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">High — a regime shift re-prices everything downstream.</span><span class="l-zh">高 — 周期转变会重新定价其下游的一切。</span></div><a class="ha-open" href="macro.html#regime-radar"><span class="l-en">Open scorecard →</span><span class="l-zh">打开记分卡 →</span></a></div>
 </details>
-<details class="ha-item">
-  <summary>
+<details class="ha-item"><summary>
     <span class="ha-dot d-medium"></span>
     <span class="ha-src s-macro"><span class="l-en">Macro Vector</span><span class="l-zh">宏观向量</span></span>
+    <span class="ha-when"><span class="l-en">3d</span><span class="l-zh">3天</span></span>
     <span class="ha-head"><span class="l-en">💧 Fed liquidity tide changed direction</span><span class="l-zh">💧 美联储流动性潮汐转向</span></span>
-    <span class="ha-when"><span class="l-en">Jun 15</span><span class="l-zh">6月15日</span></span>
   </summary>
   <div class="ha-detail"><span class="l-en">Net liquidity 4-week RoC flipped negative (contracting) and held 2d: +1bn -&gt; -27bn</span><span class="l-zh">Net liquidity 4-week RoC flipped negative (contracting) and held 2d: +1bn -&gt; -27bn</span><div class="ha-what"><span class="l-en">Net liquidity is the cash the Fed leaves sloshing through markets (balance sheet − reverse-repo − the Treasury’s account). Its 4-week trend just flipped sign. Rising liquidity has historically been a tailwind for stocks; falling is a headwind. Use it to lean more or less cautious — it’s not a buy/sell button.</span><span class="l-zh">净流动性是美联储留在市场中流动的资金（资产负债表 − 逆回购 − 财政部账户）。其 4 周趋势刚刚反向。历史上流动性上升对股市是顺风，下降是逆风。据此调整谨慎程度 — 它不是买卖按钮。</span></div><div class="ha-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Medium — a documented tail/headwind, but the liquidity edge weakened post-2021 (ETF era). Lean on it, don&#39;t trade it.</span><span class="l-zh">中 — 有据可查的顺／逆风，但流动性优势在 2021 年后（ETF 时代）减弱。据此微调，而非直接交易。</span></div><a class="ha-open" href="macro.html#liquidity"><span class="l-en">Open scorecard →</span><span class="l-zh">打开记分卡 →</span></a></div>
 </details>
-<details class="ha-item">
-  <summary>
+<details class="ha-item"><summary>
     <span class="ha-dot d-medium"></span>
     <span class="ha-src s-vector"><span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span></span>
+    <span class="ha-when"><span class="l-en">3d</span><span class="l-zh">3天</span></span>
     <span class="ha-head"><span class="l-en">Market mode changed to Strategic</span><span class="l-zh">市场模式变为战略</span></span>
-    <span class="ha-when"><span class="l-en">Jun 15 · 00:00 UTC</span><span class="l-zh">6月15日 · 00:00 UTC</span></span>
   </summary>
   <div class="ha-detail"><span class="l-en">Trend efficiency shifted the regime Tactical → Strategic.</span><span class="l-zh">趋势效率使周期从 战术 转为 战略。</span><div class="ha-what"><span class="l-en">Flips 16% of the time historically (whipsaw rate).</span><span class="l-zh">历史上约 16% 的时间会反转（来回波动率）。</span></div><a class="ha-open" href="vector.html#allocation"><span class="l-en">Open →</span><span class="l-zh">打开 →</span></a></div>
 </details>
-<details class="ha-item">
-  <summary>
+<details class="ha-item lead" open><summary>
     <span class="ha-dot d-high"></span>
     <span class="ha-src s-commodity"><span class="l-en">Commodity Vector</span><span class="l-zh">大宗商品向量</span></span>
+    <span class="ha-when"><span class="l-en">3d</span><span class="l-zh">3天</span></span>
     <span class="ha-head"><span class="l-en">Oil: exogenous pressure detected</span><span class="l-zh">原油：检测到外生压力</span></span>
-    <span class="ha-when"><span class="l-en">Jun 15</span><span class="l-zh">6月15日</span></span>
   </summary>
   <div class="ha-detail"><span class="l-en">Oil moved beyond what its macro drivers explain (shock z -1.5). Historically FADES — war/supply premia mean-revert. Oil 80.75 $/bbl.</span><span class="l-zh">原油的走势超出其宏观驱动可解释的范围（冲击 z -1.5）。历史上会消退 — 战争/供给溢价均值回归。 原油 80.75 美元/桶。</span><a class="ha-open" href="commodities.html#timeline"><span class="l-en">Open →</span><span class="l-zh">打开 →</span></a></div>
 </details>
-<details class="ha-item">
-  <summary>
+<details class="ha-item"><summary>
     <span class="ha-dot d-medium"></span>
     <span class="ha-src s-macro"><span class="l-en">Macro Vector</span><span class="l-zh">宏观向量</span></span>
+    <span class="ha-when"><span class="l-en">6d</span><span class="l-zh">6天</span></span>
     <span class="ha-head"><span class="l-en">🧭 Regime radar moved — the market “weather” may be shifting</span><span class="l-zh">🧭 转换雷达变动 — 市场“天气”可能正在转变</span></span>
-    <span class="ha-when"><span class="l-en">Jun 12</span><span class="l-zh">6月12日</span></span>
   </summary>
   <div class="ha-detail"><span class="l-en">Transition state STABLE -&gt; WEAKENING (2 flags active)</span><span class="l-zh">Transition state STABLE -&gt; WEAKENING (2 flags active)</span><div class="ha-what"><span class="l-en">Tracks whether the current market regime is holding or starting to break down, based on how many warning flags are stacking up. A change here is a cue to re-check your risk — not a trade on its own.</span><span class="l-zh">根据累积的预警旗数量，追踪当前市场周期是稳固还是开始瓦解。此处的变化是重新检视风险的提示 — 本身并非交易信号。</span></div><div class="ha-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">High — a regime shift re-prices everything downstream.</span><span class="l-zh">高 — 周期转变会重新定价其下游的一切。</span></div><a class="ha-open" href="macro.html#regime-radar"><span class="l-en">Open scorecard →</span><span class="l-zh">打开记分卡 →</span></a></div>
 </details>
-<details class="ha-item">
-  <summary>
+<details class="ha-item"><summary>
     <span class="ha-dot d-medium"></span>
     <span class="ha-src s-macro"><span class="l-en">Macro Vector</span><span class="l-zh">宏观向量</span></span>
+    <span class="ha-when"><span class="l-en">7d</span><span class="l-zh">7天</span></span>
     <span class="ha-head"><span class="l-en">💧 Fed liquidity tide changed direction</span><span class="l-zh">💧 美联储流动性潮汐转向</span></span>
-    <span class="ha-when"><span class="l-en">Jun 11</span><span class="l-zh">6月11日</span></span>
   </summary>
   <div class="ha-detail"><span class="l-en">Net liquidity 4-week RoC flipped negative (contracting): +7bn -&gt; -0bn</span><span class="l-zh">Net liquidity 4-week RoC flipped negative (contracting): +7bn -&gt; -0bn</span><div class="ha-what"><span class="l-en">Net liquidity is the cash the Fed leaves sloshing through markets (balance sheet − reverse-repo − the Treasury’s account). Its 4-week trend just flipped sign. Rising liquidity has historically been a tailwind for stocks; falling is a headwind. Use it to lean more or less cautious — it’s not a buy/sell button.</span><span class="l-zh">净流动性是美联储留在市场中流动的资金（资产负债表 − 逆回购 − 财政部账户）。其 4 周趋势刚刚反向。历史上流动性上升对股市是顺风，下降是逆风。据此调整谨慎程度 — 它不是买卖按钮。</span></div><div class="ha-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Medium — a documented tail/headwind, but the liquidity edge weakened post-2021 (ETF era). Lean on it, don&#39;t trade it.</span><span class="l-zh">中 — 有据可查的顺／逆风，但流动性优势在 2021 年后（ETF 时代）减弱。据此微调，而非直接交易。</span></div><a class="ha-open" href="macro.html#liquidity"><span class="l-en">Open scorecard →</span><span class="l-zh">打开记分卡 →</span></a></div>
 </details>
-<details class="ha-item">
-  <summary>
+<details class="ha-item"><summary>
     <span class="ha-dot d-medium"></span>
     <span class="ha-src s-macro"><span class="l-en">Macro Vector</span><span class="l-zh">宏观向量</span></span>
+    <span class="ha-when"><span class="l-en">7d</span><span class="l-zh">7天</span></span>
     <span class="ha-head"><span class="l-en">🧲 Options “gravity” flipped — bigger swings more likely</span><span class="l-zh">🧲 期权“引力”反转 — 波动可能加大</span></span>
-    <span class="ha-when"><span class="l-en">Jun 11</span><span class="l-zh">6月11日</span></span>
   </summary>
   <div class="ha-detail"><span class="l-en">GEX: net GEX changed sign (net +19bn, spot vs flip -8.4%)</span><span class="l-zh">GEX: net GEX changed sign (net +19bn, spot vs flip -8.4%)</span><div class="ha-what"><span class="l-en">Dealer gamma (GEX) measures how options hedging pushes the market around. Positive gamma damps moves (calmer); negative amplifies them (sharper swings, both ways). This flag means that backdrop just changed — expect the market to move more freely until it flips back.</span><span class="l-zh">做市商 gamma（GEX）衡量期权对冲如何推动市场。正 gamma 抑制波动（更平静）；负 gamma 放大波动（双向更剧烈）。此信号表示该背景刚刚改变 —在它再次反转前，市场可能波动得更自由。</span></div><div class="ha-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Medium — changes the volatility backdrop, not the direction.</span><span class="l-zh">中 — 改变的是波动背景，而非方向。</span></div><a class="ha-open" href="macro.html#positioning"><span class="l-en">Open scorecard →</span><span class="l-zh">打开记分卡 →</span></a></div>
 </details>
-<details class="ha-item">
-  <summary>
+<details class="ha-item"><summary>
     <span class="ha-dot d-high"></span>
     <span class="ha-src s-commodity"><span class="l-en">Commodity Vector</span><span class="l-zh">大宗商品向量</span></span>
+    <span class="ha-when"><span class="l-en">7d</span><span class="l-zh">7天</span></span>
     <span class="ha-head"><span class="l-en">Silver: exogenous pressure detected</span><span class="l-zh">白银：检测到外生压力</span></span>
-    <span class="ha-when"><span class="l-en">Jun 11</span><span class="l-zh">6月11日</span></span>
   </summary>
   <div class="ha-detail"><span class="l-en">Silver moved beyond what its macro drivers explain (shock z -1.5). Washouts tend to bounce; upside shocks are noisier. Silver 63.88 $/oz.</span><span class="l-zh">白银的走势超出其宏观驱动可解释的范围（冲击 z -1.5）。急跌后往往反弹；上行冲击则更嘈杂。 白银 63.88 美元/盎司。</span><a class="ha-open" href="commodities.html#timeline"><span class="l-en">Open →</span><span class="l-zh">打开 →</span></a></div>
+</details>
+<details class="ha-item"><summary>
+    <span class="ha-dot d-high"></span>
+    <span class="ha-src s-commodity"><span class="l-en">Commodity Vector</span><span class="l-zh">大宗商品向量</span></span>
+    <span class="ha-when"><span class="l-en">8d</span><span class="l-zh">8天</span></span>
+    <span class="ha-head"><span class="l-en">Gold: exogenous pressure detected</span><span class="l-zh">黄金：检测到外生压力</span></span>
+  </summary>
+  <div class="ha-detail"><span class="l-en">Gold moved beyond what its macro drivers explain (shock z -1.8). Historically PERSISTS (central-bank-style bids have carried forward). Gold 4,108.20 $/oz.</span><span class="l-zh">黄金的走势超出其宏观驱动可解释的范围（冲击 z -1.8）。历史上会持续（央行式买盘往往延续）。 黄金 4,108.20 美元/盎司。</span><a class="ha-open" href="commodities.html#timeline"><span class="l-en">Open →</span><span class="l-zh">打开 →</span></a></div>
 </details></div>
-</div>
-<div class="foot"><span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-06-18 02:39 UTC · <span class="l-en">mechanical, backtested, free public data · not investment advice</span><span class="l-zh">机械化 · 经回测 · 免费公开数据 · 非投资建议</span></div>
+    </aside>
+  </section>
+  <section class="vectors reveal">
+    <div class="band"><h2><span class="l-en">Vectors</span><span class="l-zh">向量</span></h2><span></span></div>
+    <a class="glass acc t btc s4" href="vector.html">
+      <div class="t-top"><span class="t-ico" aria-hidden="true">₿</span><h3 class="t-h"><span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span></h3></div>
+      <div class="bar b-risk" role="meter" aria-valuenow="36" aria-valuemin="0" aria-valuemax="100" aria-label="Bitcoin risk index 36 of 100"><i style="width:36%"></i></div>
+      <div class="t-pills"><span class="pill off"><span class="l-en">Risk</span><span class="l-zh">风险</span> <span class="l-en">OFF</span><span class="l-zh">关闭</span> · 36</span><span class="pill neg"><span class="l-en">Momentum</span><span class="l-zh">动量</span> -0.75</span></div>
+      <span class="t-go"><span class="l-en">Risk, momentum &amp; allocation</span><span class="l-zh">风险、动量与配置</span></span>
+    </a><a class="glass acc t bd s4" href="bonds.html">
+      <div class="t-top"><span class="t-ico" aria-hidden="true">🏛️</span><h3 class="t-h"><span class="l-en">Bonds &amp; Bond Health</span><span class="l-zh">债券与债券健康</span></h3></div>
+      <div class="bar b-health" role="meter" aria-valuenow="86" aria-valuemin="0" aria-valuemax="100" aria-label="Bond health 86 of 100"><i style="width:86%"></i></div>
+      <div class="t-pills"><span class="pill"><span class="l-en">Health</span><span class="l-zh">健康度</span> 86 / 100</span><span class="pill"><span class="l-en">Late cycle</span><span class="l-zh">晚周期</span></span></div>
+      <span class="t-go"><span class="l-en">Curve, credit &amp; cycle clock</span><span class="l-zh">曲线、信用与周期时钟</span></span>
+    </a><a class="glass acc t com s4" href="commodities.html">
+      <div class="t-top"><span class="t-ico" aria-hidden="true">◆</span><h3 class="t-h"><span class="l-en">Commodity Vector</span><span class="l-zh">大宗商品向量</span></h3></div>
+      <div class="t-pills"><span class="pill q1"><span class="l-en">Goldilocks</span><span class="l-zh">理想增长</span></span><span class="pill"><span class="l-en">Favored: Gold, Copper</span><span class="l-zh">偏好：Gold, Copper</span></span></div>
+      <span class="t-go"><span class="l-en">Allocation &amp; shock detection</span><span class="l-zh">配置与冲击检测</span></span>
+    </a><a class="glass acc t fx s3" href="forex.html">
+      <div class="t-top"><span class="t-ico" aria-hidden="true">💱</span><h3 class="t-h"><span class="l-en">Forex Vector</span><span class="l-zh">外汇向量</span></h3></div>
+      <div class="t-pills"><span class="pill"><span class="l-en">Global reflation · risk-on</span><span class="l-zh">全球再通胀 · 偏好风险</span></span></div>
+      <span class="t-go"><span class="l-en">Dollar-smile board</span><span class="l-zh">美元微笑面板</span></span>
+    </a><a class="glass acc t xa s3" href="crossasset.html">
+      <div class="t-top"><span class="t-ico" aria-hidden="true">🧭</span><h3 class="t-h"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></h3></div>
+      <div class="t-pills"><span class="pill"><span class="l-en">mixed / no clear trend · concentrated</span><span class="l-zh">mixed / no clear trend · 集中</span></span></div>
+      <span class="t-go"><span class="l-en">Trend &amp; correlation regime</span><span class="l-zh">趋势与相关性体制</span></span>
+    </a><a class="glass acc t etf s3" href="etfs.html">
+      <div class="t-top"><span class="t-ico" aria-hidden="true">🐳</span><h3 class="t-h"><span class="l-en">ETF Flow Radar</span><span class="l-zh">ETF 资金雷达</span></h3></div>
+      <div class="t-pills"><span class="pill"><span class="l-en">Manager &amp; index flows</span><span class="l-zh">经理人与指数资金流</span></span></div>
+      <span class="t-go"><span class="l-en">Accumulation &amp; trims</span><span class="l-zh">增持与减持</span></span>
+    </a><a class="glass acc t ca s3" href="canada.html">
+      <div class="t-top"><span class="t-ico" aria-hidden="true">🇨🇦</span><h3 class="t-h"><span class="l-en">Canada · TSX</span><span class="l-zh">加拿大 · TSX</span></h3></div>
+      <div class="t-pills"><span class="pill q1"><span class="l-en">Goldilocks · Risk-off</span><span class="l-zh">理想增长 · 风险规避</span></span></div>
+      <span class="t-go"><span class="l-en">TSX regime &amp; overlay</span><span class="l-zh">TSX 周期与叠加</span></span>
+    </a><a class="glass acc t str s6" href="strategies.html">
+      <div class="t-top"><span class="t-ico" aria-hidden="true">🎛️</span><h3 class="t-h"><span class="l-en">Strategy Scorecards</span><span class="l-zh">策略记分卡</span></h3></div>
+      <div class="t-pills"><span class="pill">27 <span class="l-en">strategies</span><span class="l-zh">个策略</span></span><span class="pill"><span class="l-en">Lift risk-adjusted yield · dodge drawdowns</span><span class="l-zh">提升风险调整收益 · 规避回撤</span></span></div>
+      <span class="t-go"><span class="l-en">Macro-factor tactical strategies</span><span class="l-zh">宏观因子战术策略</span></span>
+    </a><a class="glass acc t wl s6" href="watchlist.html">
+      <div class="t-top"><span class="t-ico" aria-hidden="true">📋</span><h3 class="t-h"><span class="l-en">Watchlist</span><span class="l-zh">持仓清单</span></h3></div>
+      <div class="t-pills"><span class="pill"><span class="l-en">Your holdings · client-side</span><span class="l-zh">你的持仓 · 本地</span></span><span class="pill"><span class="l-en">Equities · ETFs · commodities · crypto</span><span class="l-zh">股票 · ETF · 大宗 · 加密</span></span></div>
+      <span class="t-go"><span class="l-en">Track your own holdings, each with its live signal</span><span class="l-zh">跟踪你的持仓，每个都附实时信号</span></span>
+    </a>
+  </section>
+</main>
+<div class="foot"><span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-06-18 03:17 UTC · <span class="l-en">mechanical, backtested, free public data · not investment advice</span><span class="l-zh">机械化 · 经回测 · 免费公开数据 · 非投资建议</span></div>
 <footer class="site-footer">
   <span class="made"><span class="l-en">Made with ❤️ in Canada</span><span class="l-zh">用 ❤️ 在加拿大制作</span></span>
   <span class="dev"><span class="l-en">Developed by</span><span class="l-zh">开发者</span> Chris Wong</span>
