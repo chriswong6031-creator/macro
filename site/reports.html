@@ -1,0 +1,308 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span> — <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span></title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  /* ---------- shared Research-Reports chrome ---------- */
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:0 18px 60px; }
+  a { color:var(--link); text-decoration:none; }
+  .wrap { max-width:1060px; margin:0 auto; }
+  /* unambiguous move colours (NOT tied to the zh red=up swap) */
+  .r-neg { color:#d23f3f; font-weight:600; }
+  .r-pos { color:#1f9a55; font-weight:600; }
+  html[data-theme="dark"] .r-neg { color:#ef6a6a; }
+  html[data-theme="dark"] .r-pos { color:#3fc07e; }
+  .mut { color:var(--muted); }
+  /* tags / chips */
+  .chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; line-height:1; padding:5px 10px; border-radius:999px;
+          background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+  .chip.tag-macro   { color:#5b8def; border-color:#5b8def55; }
+  .chip.tag-fed     { color:#c77dff; border-color:#c77dff55; }
+  .chip.tag-rates   { color:#3fb6c0; border-color:#3fb6c055; }
+  .chip.tag-equities{ color:#46b87a; border-color:#46b87a55; }
+  .chip.tag-crypto  { color:#e0973a; border-color:#e0973a55; }
+  .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
+  footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
+  
+  .rep-hero { max-width:1060px; margin:18px auto 0; }
+  .rep-hero .eyebrow { font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--link); font-weight:600; margin:0 0 8px; }
+  .rep-hero h1 { font-size:30px; margin:0 0 8px; letter-spacing:-.01em; }
+  .rep-hero .lede { font-size:15.5px; color:var(--text); opacity:.82; margin:0; max-width:78ch; }
+  html[data-lang="zh"] .rep-hero h1 { letter-spacing:0; }
+
+  .controls { max-width:1060px; margin:22px auto 0; display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center;
+              padding-bottom:14px; border-bottom:1px solid var(--line); }
+  .search-box { position:relative; flex:1 1 280px; min-width:200px; }
+  .search-box input { width:100%; background:var(--panel); border:1px solid var(--line); color:var(--text);
+              border-radius:10px; padding:10px 12px 10px 34px; font-size:13.5px; outline:none; transition:border-color .15s; }
+  .search-box input:focus { border-color:var(--link); }
+  .search-box .mag { position:absolute; left:11px; top:50%; transform:translateY(-50%); opacity:.6; font-size:13px; }
+  .sortsel { display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:var(--muted); }
+  .sortsel select { background:var(--panel); border:1px solid var(--line); color:var(--text); border-radius:9px; padding:8px 10px; font-size:13px; cursor:pointer; }
+  .tagbar { width:100%; display:flex; flex-wrap:wrap; gap:7px; }
+  .tagbar .chip { cursor:pointer; user-select:none; transition:transform .12s, border-color .15s, background .15s; }
+  .tagbar .chip:hover { transform:translateY(-1px); }
+  .tagbar .chip.on { background:var(--link); border-color:var(--link); color:#fff; }
+  .rescount { font-size:12px; color:var(--muted); margin-left:auto; white-space:nowrap; }
+
+  .report-list { max-width:1060px; margin:6px auto 0; display:flex; flex-direction:column; }
+  .report-row { display:grid; grid-template-columns:84px minmax(0,1fr) auto; gap:20px; align-items:center;
+                padding:20px 18px; border-bottom:1px solid var(--line); position:relative;
+                border-left:3px solid transparent; border-radius:10px; transition:background .15s, border-color .15s, transform .12s; }
+  .report-row:hover { background:var(--panel); border-left-color:var(--link); transform:translateX(2px); }
+  .rr-date { text-align:center; line-height:1; color:var(--muted); }
+  .rr-date .mo { display:block; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--link); font-weight:700; }
+  .rr-date .day { display:block; font-size:26px; font-weight:700; color:var(--text); margin:3px 0; font-variant-numeric:tabular-nums; }
+  .rr-date .yr { display:block; font-size:11px; }
+  .rr-title { font-size:18px; font-weight:680; color:var(--text); line-height:1.25; margin:0 0 5px; letter-spacing:-.005em; }
+  html[data-lang="zh"] .rr-title { letter-spacing:0; }
+  .report-row:hover .rr-title { color:var(--link); }
+  .rr-dek { font-size:13.5px; color:var(--muted); line-height:1.5; margin:0 0 9px; }
+  .rr-tags { display:flex; flex-wrap:wrap; gap:6px; }
+  .rr-aside { display:flex; flex-direction:column; align-items:flex-end; gap:8px; color:var(--muted); font-size:12px; white-space:nowrap; }
+  .rr-arrow { font-size:18px; color:var(--line); transition:color .15s, transform .15s; }
+  .report-row:hover .rr-arrow { color:var(--link); transform:translateX(3px); }
+
+  /* featured (latest) row */
+  .report-row.feat { background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--link);
+                     border-radius:14px; margin-bottom:10px; padding:24px 22px; box-shadow:var(--card-shadow); }
+  .report-row.feat .rr-title { font-size:22px; }
+  .report-row.feat .rr-dek { font-size:14.5px; color:var(--text); opacity:.82; }
+  .feat-badge { position:absolute; top:-9px; left:18px; background:var(--link); color:#fff; font-size:10px; font-weight:700;
+                letter-spacing:.1em; text-transform:uppercase; padding:3px 9px; border-radius:6px; }
+
+  .noresults { max-width:1060px; margin:30px auto; text-align:center; color:var(--muted); font-size:14px; display:none; }
+  @media (max-width:640px){
+    .report-row { grid-template-columns:58px minmax(0,1fr); }
+    .rr-aside { grid-column:2; flex-direction:row; align-items:center; gap:12px; }
+    .rr-date .day { font-size:21px; }
+  }
+
+</style>
+
+</head>
+<body>
+<nav class="site-nav">
+    <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 <span class="l-en">Home</span><span class="l-zh">首页</span></a>
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
+        <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <a href="anticipation.html">🔮 <span class="l-en">Anticipation</span><span class="l-zh">预判</span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></a>
+        <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="spvector.html">📐 <span class="l-en">S&P / Macro Vector</span><span class="l-zh">标普宏观向量</span><span class="d"><span class="l-en">Tactical equity↔cash</span><span class="l-zh">战术股票↔现金</span></span></a>
+        <a href="ipo.html">🆕 <span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></a>
+        <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
+        <a href="allocation.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+        <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
+        <a href="gex.html">🧲 <span class="l-en">Options Magnets</span><span class="l-zh">期权磁吸</span><span class="d"><span class="l-en">Dealer-gamma GEX levels</span><span class="l-zh">做市商Gamma GEX价位</span></span></a>
+        <a href="etfs.html">🐳 <span class="l-en">ETF Flows</span><span class="l-zh">ETF资金流</span><span class="d"><span class="l-en">Fund flow monitor</span><span class="l-zh">资金流监控</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
+        <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
+        <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300</span><span class="l-zh">等权主题篮子 vs 沪深300</span></span></a>
+        <a href="china_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">Income · gold · bonds</span><span class="l-zh">红利 · 黄金 · 国债</span></span></a>
+        <a href="allocation_china.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="hk.html">🇭🇰 <span class="l-en">Hong Kong</span><span class="l-zh">香港</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="hk.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">HSI · southbound · global risk</span><span class="l-zh">HSI · 南向 · 全球风险</span></span></a>
+        <a href="hk_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">HK-listed standouts · alpha</span><span class="l-zh">HK上市精选 · 阿尔法</span></span></a>
+        <a href="baskets_hk.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs HSI</span><span class="l-zh">等权主题篮子 vs 恒指</span></span></a>
+        <a href="allocation_hk.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="canada.html">🇨🇦 <span class="l-en">Canada</span><span class="l-zh">加拿大</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="canada.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">TSX · BoC · commodity overlay</span><span class="l-zh">TSX · 加央行 · 商品叠加</span></span></a>
+        <a href="canada_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">TSX standouts · sectors · alpha</span><span class="l-zh">TSX精选 · 板块 · 阿尔法</span></span></a>
+        <a href="baskets_canada.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P/TSX</span><span class="l-zh">等权主题篮子 vs 标普/多伦多</span></span></a>
+        <a href="allocation_canada.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="intl.html">🌍 <span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="intl.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        <a href="intl_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Cross-market standouts · sectors</span><span class="l-zh">跨市场精选 · 板块</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
+        <a href="vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
+        <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span></a>
+    <a class="nav-link" href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span></a>
+    <div class="nav-dd">
+      <a class="nav-link active" href="javascript:void(0)">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="reports.html" class="active">📰 <span class="l-en">Research Reports</span><span class="l-zh">研究报告</span><span class="d"><span class="l-en">In-depth market & macro reports</span><span class="l-zh">深度市场与宏观报告</span></span></a>
+        <a href="masterminds.html">🧠 <span class="l-en">Masterminds</span><span class="l-zh">操盘大师</span><span class="d"><span class="l-en">Multi-asset active GTAA strategies</span><span class="l-zh">多资产主动配置策略</span></span></a>
+        <a href="crossasset.html">🧭 <span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></a>
+        <a href="signal_lab.html">🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></a>
+        <a href="factors.html">🧮 <span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></a>
+        <a href="validation_timeline.html">🧪 <span class="l-en">Validation Timeline</span><span class="l-zh">验证时间线</span><span class="d"><span class="l-en">Full 2007→ walk-forward backtest</span><span class="l-zh">2007→ 完整滚动回测</span></span></a>
+      </div>
+    </div>
+  </div>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="aibrief.html">🧠 <span class="l-en">AI Daily Brief</span><span class="l-zh">AI每日简报</span></a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+
+<section class="rep-hero">
+  <p class="eyebrow">📰 <span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></p>
+  <h1><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></h1>
+  <p class="lede"><span class="l-en">In-depth, source-grounded reports on the market events that move the macro picture — FOMC days, regime shifts, cross-asset dislocations. Each is written from the dashboard’s own data plus primary sources, and read in either language.</span><span class="l-zh">围绕撼动宏观全局的市场事件，撰写有据可查的深度报告 —— FOMC 决议日、范式转变、跨资产错位。每篇均结合本仪表盘数据与一手来源，支持中英双语阅读。</span></p>
+</section>
+
+<div class="controls">
+  <div class="search-box">
+    <span class="mag">🔎</span>
+    <input id="repSearch" type="text" autocomplete="off"
+      placeholder="Search reports…" data-ph-en="Search reports…" data-ph-zh="搜索报告…" aria-label="Search reports">
+  </div>
+  <label class="sortsel"><span class="l-en">Sort</span><span class="l-zh">排序</span>
+    <select id="repSort">
+      <option value="new" data-en="Newest first" data-zh="最新优先">Newest first</option>
+      <option value="old" data-en="Oldest first" data-zh="最早优先">Oldest first</option>
+    </select>
+  </label>
+  <span class="rescount" id="repCount"></span>
+  <div class="tagbar" id="tagBar">
+    <span class="chip on" data-tag="all"><span class="l-en">All</span><span class="l-zh">全部</span></span>
+    <span class="chip tag-fed" data-tag="fed"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span><span class="chip tag-rates" data-tag="rates"><span class="l-en">Rates</span><span class="l-zh">利率</span></span><span class="chip tag-equities" data-tag="equities"><span class="l-en">Equities</span><span class="l-zh">股票</span></span><span class="chip tag-macro" data-tag="macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span>
+  </div>
+</div>
+
+<div class="report-list" id="reportList">
+  
+  <a class="report-row feat" href="report_warsh_fomc.html"
+     data-date="2026-06-17"
+     data-tags="fed rates equities macro"
+     data-search="the warsh shock kevin warsh&#39;s first fomc as fed chair — the hawkish dot-plot turn, the press conference that removed forward guidance, the cross-asset reaction, and what it means for markets next. 沃什冲击 凯文·沃什出任美联储主席后的首次 fomc —— 鹰派点阵图的转向、取消前瞻指引的发布会、跨资产反应，以及对后市的意义。">
+    <span class="feat-badge"><span class="l-en">Latest</span><span class="l-zh">最新</span></span>
+    <div class="rr-date"><span class="mo">JUN</span><span class="day">17</span><span class="yr">2026</span></div>
+    <div class="rr-main">
+      <div class="rr-title"><span class="l-en">The Warsh Shock</span><span class="l-zh">沃什冲击</span></div>
+      <div class="rr-dek"><span class="l-en">Kevin Warsh&#39;s first FOMC as Fed Chair — the hawkish dot-plot turn, the press conference that removed forward guidance, the cross-asset reaction, and what it means for markets next.</span><span class="l-zh">凯文·沃什出任美联储主席后的首次 FOMC —— 鹰派点阵图的转向、取消前瞻指引的发布会、跨资产反应，以及对后市的意义。</span></div>
+      <div class="rr-tags">
+        <span class="chip tag-fed"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span><span class="chip tag-rates"><span class="l-en">Rates</span><span class="l-zh">利率</span></span><span class="chip tag-equities"><span class="l-en">Equities</span><span class="l-zh">股票</span></span><span class="chip tag-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span>
+      </div>
+    </div>
+    <div class="rr-aside">
+      <span>⏱ 9 <span class="l-en">min</span><span class="l-zh">分钟</span></span>
+      <span class="rr-arrow">→</span>
+    </div>
+  </a>
+  
+</div>
+<div class="noresults" id="noResults"><span class="l-en">No reports match your filters.</span><span class="l-zh">没有符合筛选条件的报告。</span></div>
+
+
+<footer class="rfoot">
+  <span class="l-en">Research Reports are read-only analysis for informational purposes only — not investment advice. Figures are point-in-time and may be revised.</span><span class="l-zh">研究报告仅为信息性分析，不构成投资建议。数据为特定时点快照，可能被修订。</span>
+</footer>
+
+<script>
+(function(){
+  var list=document.getElementById('reportList');
+  if(!list) return;
+  var rows=[].slice.call(list.querySelectorAll('.report-row'));
+  var search=document.getElementById('repSearch');
+  var sortSel=document.getElementById('repSort');
+  var tagBar=document.getElementById('tagBar');
+  var count=document.getElementById('repCount');
+  var none=document.getElementById('noResults');
+  var activeTag='all', q='';
+
+  function isZh(){ return document.documentElement.getAttribute('data-lang')==='zh'; }
+  function langSync(){ // keep non-span UI (placeholder, <option>s) in sync with language
+    var zh=isZh();
+    search.placeholder=zh?(search.getAttribute('data-ph-zh')||''):(search.getAttribute('data-ph-en')||'');
+    [].forEach.call(sortSel.options,function(o){ o.textContent=zh?(o.getAttribute('data-zh')||o.textContent):(o.getAttribute('data-en')||o.textContent); });
+  }
+  function apply(){
+    var shown=0;
+    rows.forEach(function(r){
+      var tags=(r.getAttribute('data-tags')||'');
+      var hay=(r.getAttribute('data-search')||'');
+      var okTag=activeTag==='all'||tags.split(' ').indexOf(activeTag)>=0;
+      var okQ=!q||hay.indexOf(q)>=0;
+      var show=okTag&&okQ;
+      r.style.display=show?'':'none';
+      if(show) shown++;
+    });
+    // featured badge only meaningful in default (newest, no filter) view
+    var pristine=(activeTag==='all'&&!q&&sortSel.value==='new');
+    rows.forEach(function(r){ var b=r.querySelector('.feat-badge'); if(b) b.style.display=pristine?'':'none';
+      r.classList.toggle('feat', pristine && r===rows[0] && r.style.display!=='none'); });
+    none.style.display=shown?'none':'block';
+    if(count) count.textContent=isZh()?(shown+' 篇报告'):(shown+(shown===1?' report':' reports'));
+  }
+  function sortRows(){
+    var mode=sortSel.value;
+    var ordered=rows.slice().sort(function(a,b){
+      var da=a.getAttribute('data-date'), db=b.getAttribute('data-date');
+      return mode==='old' ? (da<db?-1:da>db?1:0) : (da>db?-1:da<db?1:0);
+    });
+    ordered.forEach(function(r){ list.appendChild(r); });
+  }
+  search.addEventListener('input',function(){ q=this.value.trim().toLowerCase(); apply(); });
+  sortSel.addEventListener('change',function(){ sortRows(); apply(); });
+  tagBar.addEventListener('click',function(e){
+    var c=e.target.closest('.chip'); if(!c) return;
+    activeTag=c.getAttribute('data-tag')||'all';
+    [].forEach.call(tagBar.querySelectorAll('.chip'),function(x){ x.classList.toggle('on',x===c); });
+    apply();
+  });
+  // re-sync non-span UI + count when the global language toggle flips
+  document.addEventListener('click',function(e){ if(e.target.closest('.lang-toggle')) setTimeout(function(){ langSync(); apply(); },0); });
+  langSync(); apply();
+})();
+</script>
+
+<script src="theme.js"></script>
+</body>
+</html>

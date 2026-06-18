@@ -1,0 +1,174 @@
+{% extends "report_base.html.j2" %}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
+{%- endmacro %}
+
+{% block title %}{{ t('Research Reports', '研究报告') }} — {{ t('Macro Dashboard', '宏观仪表盘') }}{% endblock %}
+
+{% block base_css %}
+  .rep-hero { max-width:1060px; margin:18px auto 0; }
+  .rep-hero .eyebrow { font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--link); font-weight:600; margin:0 0 8px; }
+  .rep-hero h1 { font-size:30px; margin:0 0 8px; letter-spacing:-.01em; }
+  .rep-hero .lede { font-size:15.5px; color:var(--text); opacity:.82; margin:0; max-width:78ch; }
+  html[data-lang="zh"] .rep-hero h1 { letter-spacing:0; }
+
+  .controls { max-width:1060px; margin:22px auto 0; display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center;
+              padding-bottom:14px; border-bottom:1px solid var(--line); }
+  .search-box { position:relative; flex:1 1 280px; min-width:200px; }
+  .search-box input { width:100%; background:var(--panel); border:1px solid var(--line); color:var(--text);
+              border-radius:10px; padding:10px 12px 10px 34px; font-size:13.5px; outline:none; transition:border-color .15s; }
+  .search-box input:focus { border-color:var(--link); }
+  .search-box .mag { position:absolute; left:11px; top:50%; transform:translateY(-50%); opacity:.6; font-size:13px; }
+  .sortsel { display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:var(--muted); }
+  .sortsel select { background:var(--panel); border:1px solid var(--line); color:var(--text); border-radius:9px; padding:8px 10px; font-size:13px; cursor:pointer; }
+  .tagbar { width:100%; display:flex; flex-wrap:wrap; gap:7px; }
+  .tagbar .chip { cursor:pointer; user-select:none; transition:transform .12s, border-color .15s, background .15s; }
+  .tagbar .chip:hover { transform:translateY(-1px); }
+  .tagbar .chip.on { background:var(--link); border-color:var(--link); color:#fff; }
+  .rescount { font-size:12px; color:var(--muted); margin-left:auto; white-space:nowrap; }
+
+  .report-list { max-width:1060px; margin:6px auto 0; display:flex; flex-direction:column; }
+  .report-row { display:grid; grid-template-columns:84px minmax(0,1fr) auto; gap:20px; align-items:center;
+                padding:20px 18px; border-bottom:1px solid var(--line); position:relative;
+                border-left:3px solid transparent; border-radius:10px; transition:background .15s, border-color .15s, transform .12s; }
+  .report-row:hover { background:var(--panel); border-left-color:var(--link); transform:translateX(2px); }
+  .rr-date { text-align:center; line-height:1; color:var(--muted); }
+  .rr-date .mo { display:block; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--link); font-weight:700; }
+  .rr-date .day { display:block; font-size:26px; font-weight:700; color:var(--text); margin:3px 0; font-variant-numeric:tabular-nums; }
+  .rr-date .yr { display:block; font-size:11px; }
+  .rr-title { font-size:18px; font-weight:680; color:var(--text); line-height:1.25; margin:0 0 5px; letter-spacing:-.005em; }
+  html[data-lang="zh"] .rr-title { letter-spacing:0; }
+  .report-row:hover .rr-title { color:var(--link); }
+  .rr-dek { font-size:13.5px; color:var(--muted); line-height:1.5; margin:0 0 9px; }
+  .rr-tags { display:flex; flex-wrap:wrap; gap:6px; }
+  .rr-aside { display:flex; flex-direction:column; align-items:flex-end; gap:8px; color:var(--muted); font-size:12px; white-space:nowrap; }
+  .rr-arrow { font-size:18px; color:var(--line); transition:color .15s, transform .15s; }
+  .report-row:hover .rr-arrow { color:var(--link); transform:translateX(3px); }
+
+  /* featured (latest) row */
+  .report-row.feat { background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--link);
+                     border-radius:14px; margin-bottom:10px; padding:24px 22px; box-shadow:var(--card-shadow); }
+  .report-row.feat .rr-title { font-size:22px; }
+  .report-row.feat .rr-dek { font-size:14.5px; color:var(--text); opacity:.82; }
+  .feat-badge { position:absolute; top:-9px; left:18px; background:var(--link); color:#fff; font-size:10px; font-weight:700;
+                letter-spacing:.1em; text-transform:uppercase; padding:3px 9px; border-radius:6px; }
+
+  .noresults { max-width:1060px; margin:30px auto; text-align:center; color:var(--muted); font-size:14px; display:none; }
+  @media (max-width:640px){
+    .report-row { grid-template-columns:58px minmax(0,1fr); }
+    .rr-aside { grid-column:2; flex-direction:row; align-items:center; gap:12px; }
+    .rr-date .day { font-size:21px; }
+  }
+{% endblock %}
+
+{% block content %}
+<section class="rep-hero">
+  <p class="eyebrow">📰 {{ t('Research Reports', '研究报告') }}</p>
+  <h1>{{ t('Research Reports', '研究报告') }}</h1>
+  <p class="lede">{{ t('In-depth, source-grounded reports on the market events that move the macro picture — FOMC days, regime shifts, cross-asset dislocations. Each is written from the dashboard’s own data plus primary sources, and read in either language.',
+        '围绕撼动宏观全局的市场事件，撰写有据可查的深度报告 —— FOMC 决议日、范式转变、跨资产错位。每篇均结合本仪表盘数据与一手来源，支持中英双语阅读。') }}</p>
+</section>
+
+<div class="controls">
+  <div class="search-box">
+    <span class="mag">🔎</span>
+    <input id="repSearch" type="text" autocomplete="off"
+      placeholder="Search reports…" data-ph-en="Search reports…" data-ph-zh="搜索报告…" aria-label="Search reports">
+  </div>
+  <label class="sortsel">{{ t('Sort', '排序') }}
+    <select id="repSort">
+      <option value="new" data-en="Newest first" data-zh="最新优先">Newest first</option>
+      <option value="old" data-en="Oldest first" data-zh="最早优先">Oldest first</option>
+    </select>
+  </label>
+  <span class="rescount" id="repCount"></span>
+  <div class="tagbar" id="tagBar">
+    <span class="chip on" data-tag="all">{{ t('All', '全部') }}</span>
+    {% for tg in all_tags %}<span class="chip tag-{{ tg.key }}" data-tag="{{ tg.key }}"><span class="l-en">{{ tg.en }}</span><span class="l-zh">{{ tg.zh }}</span></span>{% endfor %}
+  </div>
+</div>
+
+<div class="report-list" id="reportList">
+  {% for r in reports %}
+  <a class="report-row {{ 'feat' if loop.first }}" href="{{ r.slug }}.html"
+     data-date="{{ r.date }}"
+     data-tags="{{ r.tags | map(attribute='key') | join(' ') }}"
+     data-search="{{ (r.title_en ~ ' ' ~ r.dek_en ~ ' ' ~ r.title_zh ~ ' ' ~ r.dek_zh) | lower }}">
+    {% if loop.first %}<span class="feat-badge">{{ t('Latest', '最新') }}</span>{% endif %}
+    <div class="rr-date"><span class="mo">{{ r.mon }}</span><span class="day">{{ r.day }}</span><span class="yr">{{ r.year }}</span></div>
+    <div class="rr-main">
+      <div class="rr-title"><span class="l-en">{{ r.title_en }}</span><span class="l-zh">{{ r.title_zh }}</span></div>
+      <div class="rr-dek"><span class="l-en">{{ r.dek_en }}</span><span class="l-zh">{{ r.dek_zh }}</span></div>
+      <div class="rr-tags">
+        {% for tg in r.tags %}<span class="chip tag-{{ tg.key }}"><span class="l-en">{{ tg.en }}</span><span class="l-zh">{{ tg.zh }}</span></span>{% endfor %}
+      </div>
+    </div>
+    <div class="rr-aside">
+      <span>⏱ {{ r.read_min }} {{ t('min', '分钟') }}</span>
+      <span class="rr-arrow">→</span>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+<div class="noresults" id="noResults">{{ t('No reports match your filters.', '没有符合筛选条件的报告。') }}</div>
+{% endblock %}
+
+{% block body_scripts %}
+<script>
+(function(){
+  var list=document.getElementById('reportList');
+  if(!list) return;
+  var rows=[].slice.call(list.querySelectorAll('.report-row'));
+  var search=document.getElementById('repSearch');
+  var sortSel=document.getElementById('repSort');
+  var tagBar=document.getElementById('tagBar');
+  var count=document.getElementById('repCount');
+  var none=document.getElementById('noResults');
+  var activeTag='all', q='';
+
+  function isZh(){ return document.documentElement.getAttribute('data-lang')==='zh'; }
+  function langSync(){ // keep non-span UI (placeholder, <option>s) in sync with language
+    var zh=isZh();
+    search.placeholder=zh?(search.getAttribute('data-ph-zh')||''):(search.getAttribute('data-ph-en')||'');
+    [].forEach.call(sortSel.options,function(o){ o.textContent=zh?(o.getAttribute('data-zh')||o.textContent):(o.getAttribute('data-en')||o.textContent); });
+  }
+  function apply(){
+    var shown=0;
+    rows.forEach(function(r){
+      var tags=(r.getAttribute('data-tags')||'');
+      var hay=(r.getAttribute('data-search')||'');
+      var okTag=activeTag==='all'||tags.split(' ').indexOf(activeTag)>=0;
+      var okQ=!q||hay.indexOf(q)>=0;
+      var show=okTag&&okQ;
+      r.style.display=show?'':'none';
+      if(show) shown++;
+    });
+    // featured badge only meaningful in default (newest, no filter) view
+    var pristine=(activeTag==='all'&&!q&&sortSel.value==='new');
+    rows.forEach(function(r){ var b=r.querySelector('.feat-badge'); if(b) b.style.display=pristine?'':'none';
+      r.classList.toggle('feat', pristine && r===rows[0] && r.style.display!=='none'); });
+    none.style.display=shown?'none':'block';
+    if(count) count.textContent=isZh()?(shown+' 篇报告'):(shown+(shown===1?' report':' reports'));
+  }
+  function sortRows(){
+    var mode=sortSel.value;
+    var ordered=rows.slice().sort(function(a,b){
+      var da=a.getAttribute('data-date'), db=b.getAttribute('data-date');
+      return mode==='old' ? (da<db?-1:da>db?1:0) : (da>db?-1:da<db?1:0);
+    });
+    ordered.forEach(function(r){ list.appendChild(r); });
+  }
+  search.addEventListener('input',function(){ q=this.value.trim().toLowerCase(); apply(); });
+  sortSel.addEventListener('change',function(){ sortRows(); apply(); });
+  tagBar.addEventListener('click',function(e){
+    var c=e.target.closest('.chip'); if(!c) return;
+    activeTag=c.getAttribute('data-tag')||'all';
+    [].forEach.call(tagBar.querySelectorAll('.chip'),function(x){ x.classList.toggle('on',x===c); });
+    apply();
+  });
+  // re-sync non-span UI + count when the global language toggle flips
+  document.addEventListener('click',function(e){ if(e.target.closest('.lang-toggle')) setTimeout(function(){ langSync(); apply(); },0); });
+  langSync(); apply();
+})();
+</script>
+{% endblock %}
