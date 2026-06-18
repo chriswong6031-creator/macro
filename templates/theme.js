@@ -193,6 +193,13 @@
       ".has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu{max-height:600px;opacity:1;padding:0 0 6px 12px}",
       ".has-nav-toggle .nav-links .nav-dd-menu a{display:block;padding:9px 12px;font-size:14px;font-weight:500;white-space:normal}",
       ".has-nav-toggle .nav-links .nav-dd-menu a .d{display:block;font-size:11px;opacity:.65;font-weight:400}",
+      /* 3rd-tier accordion (Other Assets ▸ Bitcoin Vector / Commodities ▸ …):
+         the fly-out becomes a deeper-indented inline accordion; the ▸ caret
+         rotates to point down when its branch is open. */
+      ".has-nav-toggle .nav-links .nav-sub>a.nav-sub-trig{display:flex;align-items:center}",
+      ".has-nav-toggle .nav-links .nav-sub>a.nav-sub-trig .caret-r{margin-left:auto;display:inline-block;transition:transform .2s}",
+      ".has-nav-toggle .nav-links .nav-sub.open>a.nav-sub-trig .caret-r{transform:rotate(90deg)}",
+      ".has-nav-toggle .nav-links .nav-sub::after{display:none}",
     "}"
   ].join('');
 
@@ -231,16 +238,26 @@
       var open = nav.classList.toggle('nav-open');
       btn.setAttribute('aria-expanded', open ? 'true' : 'false');
     });
-    // accordion: tap dropdown parent to toggle submenu (mobile only)
+    // accordion: tap a dropdown parent to toggle its submenu (mobile only).
+    // Works at any depth (Other Assets ▸ Commodities ▸ …): tapping closes only
+    // SIBLINGS at that level — never the ancestor branch containing the tap —
+    // and collapsing a branch also collapses any descendants left open.
     links.querySelectorAll('.nav-dd').forEach(function(dd) {
-      var trigger = dd.querySelector(':scope > a.nav-link');
+      var trigger = dd.querySelector(':scope > a');   // .nav-link OR .nav-sub-trig
       if (!trigger) return;
       trigger.addEventListener('click', function(e) {
         if (window.innerWidth > 700) return;
         e.preventDefault(); e.stopPropagation();
         var wasOpen = dd.classList.contains('open');
-        links.querySelectorAll('.nav-dd.open').forEach(function(d) { d.classList.remove('open'); });
-        if (!wasOpen) dd.classList.add('open');
+        dd.parentElement.querySelectorAll(':scope > .nav-dd.open').forEach(function(d) {
+          if (d !== dd) d.classList.remove('open');
+        });
+        if (wasOpen) {
+          dd.querySelectorAll('.nav-dd.open').forEach(function(d) { d.classList.remove('open'); });
+          dd.classList.remove('open');
+        } else {
+          dd.classList.add('open');
+        }
       });
     });
     // close after a destination link is picked, on Escape, on outside tap, on widen
@@ -251,6 +268,31 @@
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeNav(); });
     document.addEventListener('click', function (e) { if (!nav.contains(e.target)) closeNav(); });
     window.addEventListener('resize', function () { if (window.innerWidth > 700) closeNav(); });
+  }
+
+  /* ---- highlight the current page in the nav ------------------------------
+     The link list is now one shared partial with no per-page `active` class,
+     so we mark the matching link (and every dropdown that contains it) here by
+     comparing filenames. Consistent on every page, no build-time plumbing, and
+     correct for nested items (e.g. on commodities.html the Commodities sub AND
+     the Other Assets parent both light up). */
+  function initActiveNav() {
+    var links = document.querySelector('.site-nav .nav-links, .topbar .nav-links');
+    if (!links) return;
+    var here = (location.pathname.split('/').pop() || '').toLowerCase() || 'index.html';
+    links.querySelectorAll('a[href]').forEach(function (a) {
+      var file = (a.getAttribute('href') || '').split('?')[0].split('#')[0].split('/').pop().toLowerCase();
+      if (!file || file !== here) return;
+      a.classList.add('active');
+      var p = a.parentElement;
+      while (p && p !== links) {
+        if (p.classList && p.classList.contains('nav-dd')) {
+          var trig = p.querySelector(':scope > a');
+          if (trig) trig.classList.add('active');
+        }
+        p = p.parentElement;
+      }
+    });
   }
 
   /* ---- progressive "show more" for standout-stock card grids ---------------
@@ -358,6 +400,7 @@
       o.addEventListener('click', function () { setLang(o.getAttribute('data-l')); });
     });
     initNavSearch();
+    initActiveNav();
     initMobileNav();
     initShowMore();
     themeCharts();

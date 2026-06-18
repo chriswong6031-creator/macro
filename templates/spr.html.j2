@@ -127,22 +127,7 @@ html[data-theme="dark"] .iea-row .ie{background:var(--grid)}
 </head>
 <body>
 <div class="topbar">
-  <div class="nav-links">
-    <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
-    <a class="nav-link" href="macro.html">🇺🇸 {{ t('United States', '美国') }}</a>
-    <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国') }}</a>
-    <a class="nav-link" href="intl.html">🌍 {{ t('International', '国际') }}</a>
-    <div class="nav-dd">
-      <a class="nav-link active" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }} <span class="caret">▾</span></a>
-      <div class="nav-dd-menu" role="menu">
-        <a href="commodities.html">📊 {{ t('Commodity Dashboard', '商品仪表盘') }}<span class="d">{{ t('Gold · silver · copper · oil · complex', '金 · 银 · 铜 · 油 · 综合') }}</span></a>
-        <a href="commodity_strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Per-commodity tactical strategies', '分品种战术策略') }}</span></a>
-        <a class="active" href="spr.html">🛢️ {{ t('Strategic Reserves', '战略储备') }}<span class="d">{{ t('SPR levels by country vs oil prices', '各国战略储备水平与油价') }}</span></a>
-      </div>
-    </div>
-    <a class="nav-link" href="forex.html">💱 {{ t('Forex', '外汇') }}</a>
-    <a class="nav-link" href="bonds.html">🏛️ {{ t('Bonds', '债券') }}</a>
-  </div>
+  {% include "_navlinks.html.j2" %}
   <div class="nav-ctrls">
     <a class="ai-brief-link" href="aibrief.html">🧠 {{ t('AI Daily Brief', 'AI每日简报') }}</a>
     <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
