@@ -2,11 +2,23 @@
 
 A small, registry-driven blog/article system for in-depth market reports. Each entry
 in REPORTS points at a Jinja article template (extending article_base.html.j2) plus the
-metadata used to render the row-based index (reports.html.j2). Adding a new report =
-author a `report_<slug>.html.j2` body template and append one dict to REPORTS.
+metadata used to render the row-based index (reports.html.j2).
 
 Fully static and additive — depends on no live JSON, so it can never break the daily
 build. Bilingual (EN/中文) via the same l-en/l-zh spans as the rest of the site.
+
+------------------------------------------------------------------------------
+ADD A NEW REPORT (3 steps):
+  1. Copy the starter:  templates/_report_TEMPLATE.html.j2
+                  ->    templates/report_<slug>.html.j2   (it has inline docs)
+  2. Fill its art_kicker / art_toc / art_body blocks (bilingual via t()).
+  3. Append one dict to REPORTS below with a matching slug + template. See the
+     EXAMPLE entry (commented out) for every field. Date drives index sorting.
+Then:  python -m scripts.build_reports   (or let daily.yml run it).
+
+Tag chip colours are defined in report_base.html.j2 (.chip.tag-<key>); reuse an
+existing key (macro / fed / rates / equities / crypto / event) or add a CSS rule.
+------------------------------------------------------------------------------
 
 Usage: python -m scripts.build_reports
 """
@@ -58,6 +70,24 @@ REPORTS: list[dict] = [
             _tag("macro", "Macro", "宏观"),
         ],
     },
+    # ----------------------------------------------------------------------
+    # EXAMPLE — copy this block, uncomment, and edit to publish a new report.
+    # The `template` file must exist (copy templates/_report_TEMPLATE.html.j2).
+    # ----------------------------------------------------------------------
+    # {
+    #     "slug": "report_my_topic",                 # -> site/report_my_topic.html
+    #     "template": "report_my_topic.html.j2",     # copied from _report_TEMPLATE
+    #     "date": "2026-07-01",                       # YYYY-MM-DD; drives sort + date badge
+    #     "read_min": 6,                              # estimated minutes
+    #     "title_en": "Headline Here",
+    #     "title_zh": "标题",
+    #     "dek_en": "One-sentence standfirst shown on the index row and article hero.",
+    #     "dek_zh": "用于索引行与文章页眉的一句话导语。",
+    #     "tags": [                                    # reuse keys for chip colours
+    #         _tag("macro", "Macro", "宏观"),
+    #         _tag("rates", "Rates", "利率"),
+    #     ],
+    # },
 ]
 
 
