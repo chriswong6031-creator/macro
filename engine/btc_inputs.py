@@ -82,7 +82,8 @@ def load_all() -> dict[str, pd.Series | pd.DataFrame | None]:
         "mcap": mcap,
         "active_addresses": _col("coinmetrics", "active_addresses"),
         "hashrate": _col("coinmetrics", "hashrate"),          # hash ribbons (2010->)
-        "issuance_usd": _col("coinmetrics", "issuance_usd"),  # Puell multiple (2010->)
+        "issuance_usd": _col("coinmetrics", "issuance_usd"),  # Puell multiple + hashprice margin (2010->)
+        "difficulty": _col("mempool", "difficulty"),          # difficulty-epoch shock (live trigger; shallow)
         "supply": _col("coinmetrics", "supply"),              # normalize supply_in_profit
         "sopr": _col("bgeo", "sopr"),
         "sth_sopr": _col("bgeo", "sth_sopr"),
@@ -104,6 +105,7 @@ def load_all() -> dict[str, pd.Series | pd.DataFrame | None]:
         "stablecoins": stables,
         "stablecoin_peg": _col("defillama", "stablecoin_peg"),  # peg-deviation veto (D-vec-PEG)
         "fear_greed": _col("sentiment_crypto", "fear_greed"),
+        "wiki_views": _col("wikipedia", "btc_pageviews"),     # retail-attention axis (Wikimedia, 2015->)
         "reserve_risk": _col("checkonchain", "reserve_risk"),  # deep cycle-bottom (2010->)
         "vdd_multiple": _col("checkonchain", "vdd_multiple"),  # spending-behaviour axis (2011->)
         "dvol": _col("deribit", "dvol", "dvol_close"),
@@ -121,6 +123,7 @@ def load_all() -> dict[str, pd.Series | pd.DataFrame | None]:
         # New-factor hunt: positioning + cross-asset (all on disk already)
         "cot_net_pct": _col("cot", "cot_bitcoin", "net_spec_pct_oi"),  # CME net-spec % of OI
         "spx": _col("yahoo", "SPY", "close"),
+        "ndx": _col("yahoo", "QQQ", "close"),    # NDX proxy — the ETF-era risk asset for conditional beta
         "gold": _col("yahoo", "GC_F", "close"),
         "btc_future": _col("yahoo", "BTC_F", "close"),   # CME front-month -> regulated basis (D-vec-CME)
         "us_m2": _col("fred", "M2SL", "us_m2"),                 # broad money (US, $bn)

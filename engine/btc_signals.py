@@ -991,6 +991,177 @@ def cross_asset_corr(inputs: dict, cfg: dict) -> pd.DataFrame:
 
 
 # --------------------------------------------------------------------------- #
+# miner economics: hashprice (margin) + hashrate/difficulty shock — the one deep
+# (2010->) NEW miner anchor (research/VECTOR_FACTOR_ROADMAP_2026 Tier-1)
+# --------------------------------------------------------------------------- #
+def miner_economics(inputs: dict, cfg: dict) -> pd.DataFrame:
+    """The miner PROFIT-MARGIN axis the model lacked. Puell / MPI / hash-ribbons all
+    read miner REVENUE or RESERVES; the missing primitive is the MARGIN (hashprice =
+    USD revenue per unit hashrate = revenue / work) and its TRIGGER (a hashrate flush /
+    difficulty drop = forced shutdown = capitulation in progress). Deep history
+    (CoinMetrics issuance_usd + hashrate, 2010->), so a real cycle-bottom anchor
+    candidate, not just context: a compressed hashprice percentile = squeezed margins =
+    miner-capitulation / bottoming zone; a sharp hashrate flush is the timestamped
+    capitulation trigger. PIT-safe: rolling percentile/z end at the current row."""
+    idx = inputs["price"].index
+    out = pd.DataFrame(index=idx)
+    iss, hr = inputs.get("issuance_usd"), inputs.get("hashrate")
+    if iss is None or hr is None:
+        return out
+    i = iss.reindex(idx).ffill(limit=7)
+    h = hr.reindex(idx).ffill(limit=7).replace(0, np.nan)
+    hp = i / h                                  # daily USD revenue per unit hashrate
+    out["hashprice"] = hp
+    lb = cfg.get("pctile_lookback_d", 1460)
+    out["hashprice_pctile"] = _pctile(hp, lb) * 100
+    out["hashprice_z"] = _zscore(np.log(hp.replace(0, np.nan)), cfg.get("z_window_d", 365))
+    n = cfg.get("shock_window_d", 14)
+    shock = h.pct_change(n) * 100               # hashrate flush = miners powering off
+    out["hashrate_shock"] = shock
+    diff = inputs.get("difficulty")
+    if diff is not None:
+        out["difficulty_shock"] = diff.reindex(idx).ffill(limit=20).pct_change(n) * 100
+    margin_stress = ((100 - out["hashprice_pctile"]) / 100).clip(0, 1)
+    flush = (-shock / cfg.get("shock_full", 15.0)).clip(0, 1)
+    out["miner_stress"] = (pd.concat([margin_stress, flush], axis=1)
+                           .mean(axis=1, skipna=True) * 100).clip(0, 100)
+    out["miner_econ_state"] = np.where(
+        (out["hashprice_pctile"] < cfg.get("capit_pctile", 15)) | (flush > 0.6), "capitulation",
+        np.where(out["hashprice_pctile"] > cfg.get("euphoria_pctile", 85), "euphoria",
+                 np.where(out["miner_stress"] > 55, "stress", "healthy")))
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# conditional (downside-vs-upside) beta to equities / gold — the asymmetry a
+# single Pearson correlation hides (research/VECTOR_FACTOR_ROADMAP_2026 Tier-2)
+# --------------------------------------------------------------------------- #
+def _masked_beta(b: pd.Series, m: pd.Series, mask: pd.Series, w: int, mp: int) -> pd.Series:
+    """Rolling beta of `b` on `m` over the trailing `w` window, restricted to the days
+    where `mask` is true (up-days or down-days). NaN-on-the-wrong-sign so E[xy]/E[x]/E[y]
+    all share the same paired subset; no look-ahead (window ends at the current row)."""
+    bm, mm = b.where(mask), m.where(mask)
+    exy = (bm * mm).rolling(w, min_periods=mp).mean()
+    ex = bm.rolling(w, min_periods=mp).mean()
+    ey = mm.rolling(w, min_periods=mp).mean()
+    eyy = (mm * mm).rolling(w, min_periods=mp).mean()
+    cov, var = exy - ex * ey, eyy - ey * ey
+    return cov / var.replace(0, np.nan)
+
+
+def conditional_beta(inputs: dict, cfg: dict) -> pd.DataFrame:
+    """DOWNSIDE-vs-UPSIDE beta to the equity risk proxy (NDX via QQQ) + gold. BTC
+    couples HARD to risk assets on the way DOWN and decouples on the way UP — a single
+    Pearson hides this, and the DOWNSIDE beta is what actually predicts forward
+    drawdown. beta_asym = up_beta - down_beta (< 0 = a drawdown amplifier). Pure compute
+    on Yahoo closes already on disk (deep). Scales the drawdown read; never a trigger."""
+    close = inputs["price"]["close"]
+    idx = close.index
+    r = close.pct_change()
+    w, mp = cfg.get("beta_window_d", 90), cfg.get("min_periods_d", 20)
+    out = pd.DataFrame(index=idx)
+    eq = inputs.get("ndx")
+    if eq is not None:
+        mr = eq.reindex(idx).ffill(limit=3).pct_change()
+        dn, up = mr < 0, mr > 0
+        db = _masked_beta(r, mr, dn, w, mp)
+        ub = _masked_beta(r, mr, up, w, mp)
+        out["down_beta"] = db
+        out["up_beta"] = ub
+        out["beta_asym"] = ub - db
+        out["down_beta_pctile"] = _pctile(db, cfg.get("pctile_lookback_d", 730)) * 100
+        hi = cfg.get("high_down_beta_pctile", 70)
+        out["beta_regime"] = np.where(out["down_beta_pctile"] > hi, "drawdown_amplifier",
+                             np.where(db < cfg.get("decoupled_beta", 0.15), "diversifier", "mixed"))
+    gold = inputs.get("gold")
+    if gold is not None:
+        gr = gold.reindex(idx).ffill(limit=3).pct_change()
+        out["down_beta_gold"] = _masked_beta(r, gr, gr < 0, w, mp)
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# holder spread: STH-vs-LTH realization (cycle-timing edge) — bgeo ~1-cycle =
+# CONTEXT/accrue-forward (research/VECTOR_FACTOR_ROADMAP_2026 Tier-1, on disk)
+# --------------------------------------------------------------------------- #
+def holder_spread(inputs: dict, cfg: dict) -> pd.DataFrame:
+    """STH-vs-LTH realization SPREAD — where cycle-timing edge concentrates. STH-SOPR
+    minus LTH-SOPR (who is realizing profit) and the STH realized-price PREMIUM over the
+    aggregate realized price (STH cost basis far above the whole market = late-cycle
+    distribution; below = early accumulation). bgeo cohort series are a ~4y window
+    (~1 cycle) so this ships as CONTEXT / accrue-forward, never a deep anchor."""
+    close = inputs["price"]["close"]
+    idx = close.index
+    out = pd.DataFrame(index=idx)
+    sth, lth = inputs.get("sth_sopr"), inputs.get("lth_sopr")
+    sm = cfg.get("smooth_d", 7)
+    if sth is not None and lth is not None:
+        s = _ema(sth.reindex(idx).ffill(limit=5), sm)
+        l = _ema(lth.reindex(idx).ffill(limit=5), sm)
+        out["sth_lth_sopr_spread"] = s - l
+    rp, srp = inputs.get("realized_price"), inputs.get("sth_realized_price")
+    if rp is not None and srp is not None:
+        out["sth_realized_premium"] = (srp.reindex(idx).ffill(limit=5)
+                                       / rp.reindex(idx).ffill(limit=5) - 1) * 100
+    if "sth_lth_sopr_spread" in out:
+        sp = out["sth_lth_sopr_spread"]
+        out["holder_state"] = np.where(sp > cfg.get("dist_thresh", 0.02), "distribution",
+                              np.where(sp < cfg.get("accum_thresh", -0.02), "accumulation", "neutral"))
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# attention: Wikipedia pageviews — the retail/attention axis the model lacked
+# (keyless, 2015-07->, the rare attention source that survives both halves)
+# --------------------------------------------------------------------------- #
+def attention(inputs: dict, cfg: dict) -> pd.DataFrame:
+    """Retail-ATTENTION axis (only F&G + dominance before). Wikipedia 'Bitcoin'
+    pageviews (Wikimedia REST, keyless, 2015-07->) = the rare attention source that
+    survives both split-halves. Attention predicts VOL / volume, NOT 7d direction
+    (Kristoufek), so it is read as an EXTREMES gauge: a mania spike = froth / blow-off
+    risk, apathy = disinterest bottoms. z-scored on log-views, EMA-smoothed."""
+    idx = inputs["price"]["close"].index
+    out = pd.DataFrame(index=idx)
+    wiki = inputs.get("wiki_views")
+    if wiki is None:
+        return out
+    sm = _ema(wiki.reindex(idx).ffill(limit=3), cfg.get("smooth_d", 7))
+    out["wiki_views"] = sm
+    z = _zscore(np.log1p(sm), cfg.get("z_window_d", 365)).clip(-4, 4)
+    out["wiki_views_z"] = z
+    out["attention_state"] = np.where(z > cfg.get("mania_z", 2.0), "mania",
+                            np.where(z < cfg.get("apathy_z", -1.0), "apathy", "normal"))
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# taker flow: aggressor CVD + price-vs-flow divergence (OKX rubik, shallow ->
+# DISPLAY/accrue-forward, never scored)
+# --------------------------------------------------------------------------- #
+def taker_flow(inputs: dict, cfg: dict) -> pd.DataFrame:
+    """The order-flow / aggressor-demand axis the model lacked (only a price-spread
+    premium + a volume percentile before). OKX taker buy-share buy/(buy+sell); > 0.5 =
+    net aggressive BUYING. CVD = rolling sum of the (share - 0.5) lean; the price-vs-CVD
+    divergence is a momentum-exhaustion tell the vote-ensemble structurally misses. OKX
+    rubik history is shallow (~6mo) so this is DISPLAY / accrue-forward context."""
+    close = inputs["price"]["close"]
+    idx = close.index
+    out = pd.DataFrame(index=idx)
+    tk = inputs.get("okx_taker_buy")
+    if tk is None:
+        return out
+    s = tk.reindex(idx).ffill(limit=3)
+    out["taker_buy_share"] = s
+    out["taker_cvd"] = (s - 0.5).rolling(cfg.get("cvd_window_d", 30), min_periods=5).sum()
+    out["taker_buy_z"] = _zscore(s, cfg.get("z_window_d", 90))
+    n = cfg.get("div_window_d", 14)
+    pc, fc = np.sign(close.pct_change(n)), np.sign(out["taker_cvd"].diff(n))
+    out["taker_divergence"] = np.where((pc > 0) & (fc < 0), "bearish",
+                              np.where((pc < 0) & (fc > 0), "bullish", "aligned"))
+    return out
+
+
+# --------------------------------------------------------------------------- #
 # IMPULSE: acceleration of momentum (Glassnode/Swissblock-style early detector)
 # --------------------------------------------------------------------------- #
 def impulse(inputs: dict, cfg: dict) -> pd.DataFrame:
@@ -1258,13 +1429,21 @@ def compute_all(inputs: dict | None = None) -> pd.DataFrame:
     gl = global_liquidity(inputs, cfg["global_liquidity"])
     sc = stablecoin_tide(inputs, cfg["global_liquidity"])  # crypto-native liquidity tide
     cm = cme_basis(inputs, cfg.get("cme_basis", {}))       # regulated institutional carry (context)
+    # Mastermind upgrade (research/VECTOR_FACTOR_ROADMAP_2026): deep miner-margin anchor +
+    # conditional downside/upside beta (both pure-compute, deep) + cohort/attention/flow context.
+    me = miner_economics(inputs, cfg.get("miner_econ", {}))
+    cba = conditional_beta(inputs, cfg.get("conditional_beta", {}))
+    hs = holder_spread(inputs, cfg.get("holder_spread", {}))
+    at = attention(inputs, cfg.get("attention", {}))
+    tf = taker_flow(inputs, cfg.get("taker_flow", {}))
     # Tier-1b: blend the confirmed valuation tails into allocation (gated by the
     # allocation backtest below). `close` enables the ENFORCED drawdown brake live.
     al = allocation(mom["momentum"], rk["risk_index"], cfg["allocation"], va,
                     close=inputs["price"]["close"])
 
     out = pd.concat([inputs["price"][["close"]], mom, rk, bf, st, gg, al,
-                     va, mn, cb, ex, op, lv, ma, oc, ef, im, cc, cp, po, xa, bh, gl, sc, cm], axis=1)
+                     va, mn, cb, ex, op, lv, ma, oc, ef, im, cc, cp, po, xa, bh, gl, sc, cm,
+                     me, cba, hs, at, tf], axis=1)
     out["cycle_position"] = cycle_stage(mom["momentum"], rk["risk_index"])
     alt = btc_vs_alts(inputs, cfg["btc_vs_alts"])
     if alt is not None:

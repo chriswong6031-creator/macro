@@ -130,6 +130,40 @@ class DefiLlamaAdapter(Adapter):
         return p[~p.index.duplicated(keep="last")]
 
 
+class WikipediaBtcAdapter(Adapter):
+    """Wikimedia REST daily pageviews for the 'Bitcoin' article — the keyless
+    retail-attention axis (2015-07->), the rare attention source that survives both
+    split-halves (research/VECTOR_FACTOR_ROADMAP_2026 Tier-1). One call returns the
+    whole range; upsert dedupes. Wikimedia requires a descriptive User-Agent."""
+    name = "wikipedia_btc"
+    group = "wikipedia"
+    stale_after_days = 4
+
+    def __init__(self) -> None:
+        self.cfg = config.load()["wikipedia"]
+
+    def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
+        start = self.cfg["earliest"]
+        end = datetime.now(timezone.utc).strftime("%Y%m%d") + "00"
+        url = self.cfg["pageviews_url"].format(
+            article=self.cfg.get("article", "Bitcoin"), start=start, end=end)
+        r = self.http_get(url, retries=self.cfg["retries"], timeout=60,
+                          headers={"User-Agent": self.cfg["user_agent"]})
+        items = r.json().get("items", [])
+        if not items:
+            raise ValueError("wikipedia: empty pageviews")
+        recs = []
+        for it in items:
+            ts, v = it.get("timestamp"), it.get("views")
+            if ts is None or v is None:
+                continue
+            recs.append((pd.to_datetime(str(ts)[:8], format="%Y%m%d"), float(v)))
+        df = pd.DataFrame(recs, columns=["date", "wiki_views"]).set_index("date")
+        if df.empty:
+            raise ValueError("wikipedia: no parsable rows")
+        return {"btc_pageviews": df.sort_index()}
+
+
 class MempoolAdapter(Adapter):
     """mempool.space — network state: fee snapshot (1 row/day) + hashrate/
     difficulty history (1m window daily; 3y on full-history/first run)."""

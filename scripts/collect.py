@@ -107,6 +107,7 @@ def all_adapters() -> dict:
         ("coingecko", "collectors.crypto_misc", "CoinGeckoAdapter"),
         ("defillama", "collectors.crypto_misc", "DefiLlamaAdapter"),
         ("mempool", "collectors.crypto_misc", "MempoolAdapter"),
+        ("wikipedia_btc", "collectors.crypto_misc", "WikipediaBtcAdapter"),  # keyless attention axis
     ]
     for key, mod, cls in specs:
         try:
