@@ -1,5 +1,5 @@
 {
-  "date": "2026-06-18",
+  "date": "2026-06-19",
   "summary": {
     "n": 5,
     "quad_counts": {
@@ -18,7 +18,7 @@
       "name_zh": "\u65e5\u672c",
       "flag": "\ud83c\uddef\ud83c\uddf5",
       "region": "Asia",
-      "date": "2026-06-18",
+      "date": "2026-06-19",
       "quad": "Q1",
       "quad_name": "Goldilocks",
       "growth_score": 0.714,
@@ -40,9 +40,9 @@
         "unemployment": 2.5,
         "unemployment_chg6m": -0.1,
         "m2_yoy": 4.22,
-        "fx": 160.698,
-        "fx_strength_3m": -0.92,
-        "realvol": 33.1,
+        "fx": 161.119,
+        "fx_strength_3m": -1.67,
+        "realvol": 32.1,
         "drawdown": 0.0
       },
       "macro_asof": {
@@ -52,13 +52,13 @@
         "yield_10y": "2026-05"
       },
       "equity": {
-        "price": 71053.49,
+        "price": 71313.37,
         "off_52w_high": 0.0,
         "above_50d": true,
         "above_200d": true,
-        "realvol": 33.1,
-        "rsi": 70.0,
-        "ext_z": 1.95,
+        "realvol": 32.1,
+        "rsi": 71.0,
+        "ext_z": 1.96,
         "ext_grade": "stretched",
         "drawdown_risk": 14.0,
         "drawdown_band": "low",
@@ -72,7 +72,7 @@
       "name_zh": "\u97e9\u56fd",
       "flag": "\ud83c\uddf0\ud83c\uddf7",
       "region": "Asia",
-      "date": "2026-06-18",
+      "date": "2026-06-19",
       "quad": "Q2",
       "quad_name": "Reflation",
       "growth_score": 0.143,
@@ -94,9 +94,9 @@
         "unemployment": 2.8,
         "unemployment_chg6m": -0.5,
         "m2_yoy": 5.73,
-        "fx": 1536.1801,
-        "fx_strength_3m": -2.13,
-        "realvol": 66.5,
+        "fx": 1536.88,
+        "fx_strength_3m": -3.47,
+        "realvol": 64.8,
         "drawdown": 0.0
       },
       "macro_asof": {
@@ -106,13 +106,13 @@
         "yield_10y": "2026-05"
       },
       "equity": {
-        "price": 9063.84,
+        "price": 9259.32,
         "off_52w_high": 0.0,
         "above_50d": true,
         "above_200d": true,
-        "realvol": 66.5,
-        "rsi": 66.0,
-        "ext_z": 2.38,
+        "realvol": 64.8,
+        "rsi": 68.0,
+        "ext_z": 2.51,
         "ext_grade": "parabolic",
         "drawdown_risk": 20.0,
         "drawdown_band": "low",
@@ -148,8 +148,8 @@
         "unemployment": null,
         "unemployment_chg6m": null,
         "m2_yoy": null,
-        "fx": 31.588,
-        "fx_strength_3m": 1.35,
+        "fx": 31.6384,
+        "fx_strength_3m": 1.2,
         "realvol": 32.5,
         "drawdown": 0.0
       },
@@ -187,7 +187,7 @@
       "inflation_score": -0.5,
       "confidence": 0.35,
       "liquidity": "unknown",
-      "recession_score": 18.0,
+      "recession_score": 19.0,
       "recession_band": "low",
       "macro": {
         "yield_10y": 4.94,
@@ -202,10 +202,10 @@
         "unemployment": 4.9,
         "unemployment_chg6m": -0.2,
         "m2_yoy": -3.66,
-        "fx": 1.3258,
-        "fx_strength_3m": -0.55,
-        "realvol": 10.5,
-        "drawdown": -4.6
+        "fx": 1.3301,
+        "fx_strength_3m": -0.23,
+        "realvol": 10.7,
+        "drawdown": -4.7
       },
       "macro_asof": {
         "cpi_yoy": "2025-03",
@@ -214,13 +214,13 @@
         "yield_10y": "2026-05"
       },
       "equity": {
-        "price": 10411.52,
-        "off_52w_high": -4.6,
-        "above_50d": true,
+        "price": 10399.7,
+        "off_52w_high": -4.7,
+        "above_50d": false,
         "above_200d": true,
-        "realvol": 10.5,
+        "realvol": 10.7,
         "rsi": 51.0,
-        "ext_z": -1.4,
+        "ext_z": -1.45,
         "ext_grade": "intrend",
         "drawdown_risk": 9.0,
         "drawdown_band": "low",
@@ -241,7 +241,7 @@
       "inflation_score": 0.333,
       "confidence": 0.383,
       "liquidity": "neutral",
-      "recession_score": 2.0,
+      "recession_score": 1.0,
       "recession_band": "low",
       "macro": {
         "yield_10y": 3.22,
@@ -256,10 +256,10 @@
         "unemployment": 6.7,
         "unemployment_chg6m": 0.1,
         "m2_yoy": 5.1,
-        "fx": 1.1494,
-        "fx_strength_3m": -0.57,
-        "realvol": 10.6,
-        "drawdown": -0.5
+        "fx": 1.1507,
+        "fx_strength_3m": -0.46,
+        "realvol": 10.5,
+        "drawdown": -0.3
       },
       "macro_asof": {
         "cpi_yoy": "2026-04",
@@ -268,13 +268,13 @@
         "yield_10y": "2026-01"
       },
       "equity": {
-        "price": 636.05,
-        "off_52w_high": -0.5,
+        "price": 637.14,
+        "off_52w_high": -0.3,
         "above_50d": true,
         "above_200d": true,
-        "realvol": 10.6,
-        "rsi": 63.0,
-        "ext_z": 0.78,
+        "realvol": 10.5,
+        "rsi": 65.0,
+        "ext_z": 0.85,
         "ext_grade": "steady",
         "drawdown_risk": 1.0,
         "drawdown_band": "low",
@@ -293,7 +293,7 @@
           "cc": "GB",
           "flag": "\ud83c\uddec\ud83c\udde7",
           "name": "United Kingdom",
-          "value": 18.0
+          "value": 19.0
         },
         {
           "cc": "KR",
@@ -302,15 +302,15 @@
           "value": 3.0
         },
         {
-          "cc": "EZ",
-          "flag": "\ud83c\uddea\ud83c\uddfa",
-          "name": "Eurozone",
-          "value": 2.0
-        },
-        {
           "cc": "JP",
           "flag": "\ud83c\uddef\ud83c\uddf5",
           "name": "Japan",
+          "value": 1.0
+        },
+        {
+          "cc": "EZ",
+          "flag": "\ud83c\uddea\ud83c\uddfa",
+          "name": "Eurozone",
           "value": 1.0
         },
         {
@@ -417,31 +417,31 @@
           "cc": "KR",
           "flag": "\ud83c\uddf0\ud83c\uddf7",
           "name": "South Korea",
-          "value": -2.13
+          "value": -3.47
         },
         {
           "cc": "JP",
           "flag": "\ud83c\uddef\ud83c\uddf5",
           "name": "Japan",
-          "value": -0.92
+          "value": -1.67
         },
         {
           "cc": "EZ",
           "flag": "\ud83c\uddea\ud83c\uddfa",
           "name": "Eurozone",
-          "value": -0.57
+          "value": -0.46
         },
         {
           "cc": "GB",
           "flag": "\ud83c\uddec\ud83c\udde7",
           "name": "United Kingdom",
-          "value": -0.55
+          "value": -0.23
         },
         {
           "cc": "TW",
           "flag": "\ud83c\uddf9\ud83c\uddfc",
           "name": "Taiwan",
-          "value": 1.35
+          "value": 1.2
         }
       ]
     },

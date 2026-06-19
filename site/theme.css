@@ -700,3 +700,29 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
 .sm-btn.sm-ghost { background: transparent; border-color: transparent; color: var(--muted); font-weight: 500; padding: 8px 12px; }
 .sm-btn.sm-ghost:hover { color: var(--link); background: var(--panel2); box-shadow: none; transform: none; }
 .sm-btn.sm-collapse .sm-ic { transform: rotate(180deg); }
+
+/* ---- sitewide theme-toggle flourish (theme.js skyToggleFx) ------------------
+   A compact, modern icon blooms in the centre of the screen on every page EXCEPT
+   the landing hub (which runs its own richer sun/moon choreography + sets
+   window.__skyDeck): a luminous sun (→ light) or a crescent moon (→ dark). It
+   pops in with a soft expanding ring, holds, and fades. Pure CSS, self-removing.
+   The crescent is mask-carved on .disc; the glow lives on .orb (unmasked). */
+.sky-fx { position: fixed; inset: 0; z-index: 2147483600; pointer-events: none;
+  display: grid; place-items: center; }
+.sky-fx .orb { position: relative; width: clamp(74px, 11vw, 104px); height: clamp(74px, 11vw, 104px);
+  border-radius: 50%; animation: skyfx-pop 1.05s cubic-bezier(.18,.9,.3,1) forwards; }
+.sky-fx .disc { position: absolute; inset: 0; border-radius: 50%; }
+.sky-fx .ring { position: absolute; inset: -7px; border-radius: 50%; border: 2px solid currentColor;
+  opacity: 0; animation: skyfx-ring 1.05s ease-out forwards; }
+.sky-fx.sun .orb { box-shadow: 0 0 40px 8px rgba(255,210,120,.55), 0 0 104px 34px rgba(255,180,80,.28); }
+.sky-fx.sun .disc { background: radial-gradient(circle at 50% 46%, #fffdf7 0%, #ffeeb8 26%, #ffc35a 58%, rgba(255,150,40,.3) 74%, transparent 82%); }
+.sky-fx.sun .ring { color: rgba(255,200,110,.6); }
+.sky-fx.moon .orb { box-shadow: 0 0 40px 8px rgba(160,190,245,.5), 0 0 104px 34px rgba(130,165,235,.26); }
+.sky-fx.moon .disc { background: radial-gradient(circle at 42% 38%, #f4f7ff 0%, #cbd6ee 64%, #9fb0d2 100%);
+  -webkit-mask: radial-gradient(circle at 70% 36%, transparent 0 41%, #000 42%);
+  mask: radial-gradient(circle at 70% 36%, transparent 0 41%, #000 42%); }
+.sky-fx.moon .ring { color: rgba(160,190,245,.55); }
+@keyframes skyfx-pop { 0% { transform: scale(.5); opacity: 0; } 26% { transform: scale(1.05); opacity: 1; }
+  40% { transform: scale(1); } 72% { opacity: 1; } 100% { transform: scale(1.02); opacity: 0; } }
+@keyframes skyfx-ring { 0% { transform: scale(.55); opacity: .55; } 70% { opacity: .12; } 100% { transform: scale(2.1); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .sky-fx { display: none !important; } }
