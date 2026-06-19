@@ -71,6 +71,30 @@
   .gx-read { background:var(--panel2); border:1px solid var(--line); border-left:3px solid var(--info); border-radius:9px; padding:11px 14px; margin-top:12px; font-size:13.5px; line-height:1.6; }
   .gx-read b { font-weight:700; }
 
+  /* ---- volatility hole ---- */
+  .vhole { border-left:3px solid var(--info); }
+  .vhole.vh-up { border-left-color:var(--up); } .vhole.vh-down { border-left-color:var(--down); }
+  .vhole.vh-neutral { border-left-color:var(--info); } .vhole.vh-volatile { border-left-color:var(--orange); }
+  .vh-badge { font-size:12.5px; font-weight:600; padding:4px 12px; border-radius:8px; border:1px solid var(--line); white-space:nowrap; }
+  .vh-badge.up { color:var(--up); border-color:var(--up); } .vh-badge.down { color:var(--down); border-color:var(--down); }
+  .vh-badge.neu { color:var(--info); border-color:var(--info); } .vh-badge.vol { color:var(--orange); border-color:var(--orange); }
+  .vh-badge.na { color:var(--muted); }
+  .vh-read { font-size:13.5px; line-height:1.62; margin-top:10px; } .vh-read b { font-weight:700; }
+  .vh-band { position:relative; height:52px; margin:16px 8px 8px; }
+  .vh-band .track { position:absolute; left:0; right:0; top:23px; height:8px; border-radius:5px; background:var(--panel2); border:1px solid var(--line); }
+  .vh-band .fill { position:absolute; top:0; bottom:0; border-radius:5px; opacity:.5; }
+  .vh-band .mk { position:absolute; top:14px; width:2px; height:26px; transform:translateX(-50%); }
+  .vh-band .mk.lo { background:var(--down); } .vh-band .mk.hi { background:var(--up); }
+  .vh-band .mk.spot { background:var(--text); top:8px; height:38px; width:2px; }
+  .vh-band .cap { position:absolute; font-size:10.5px; color:var(--muted); top:33px; transform:translateX(-50%); white-space:nowrap; text-align:center; }
+  .vh-band .cap.spot { top:-4px; color:var(--text); font-weight:600; }
+  .vh-band .cap .v { display:block; font-weight:600; color:var(--text); font-size:11px; }
+  .vh-stats { display:flex; flex-wrap:wrap; gap:6px 18px; font-size:12px; color:var(--muted); margin-top:8px; }
+  .vh-stats b { color:var(--text); font-weight:600; }
+  .vh-pill { font-size:10.5px; font-weight:600; padding:1px 7px; border-radius:6px; border:1px solid var(--line); white-space:nowrap; }
+  .vh-pill.up { color:var(--up); border-color:var(--up); } .vh-pill.down { color:var(--down); border-color:var(--down); }
+  .vh-pill.neu { color:var(--info); } .vh-pill.vol { color:var(--orange); border-color:var(--orange); } .vh-pill.na { color:var(--muted); }
+
   /* levels ruler — two label lanes (above / below the axis) to avoid collisions */
   .ruler { position:relative; height:88px; margin:14px 6px 4px; }
   .ruler .axis { position:absolute; left:0; right:0; top:44px; height:2px; background:var(--line); }
@@ -163,7 +187,7 @@
   </div>
   <div class="boardwrap">
     <div class="topline" style="justify-content:space-between">
-      <h2 style="margin:0">{{ t('Board — every name at a glance', '总览 — 所有标的一览') }} {{ help('Net GEX in $bn per 1% move; “Flip” is the % distance of spot to the zero-gamma level (negative = spot below flip = short-gamma regime); IV30 is the 30-day ATM implied vol; “Exp. move” is the IV-implied 1-day 1σ move. Click any row.', '净GEX为每1%波动的十亿美元；“翻转”为现价到零Gamma价位的百分比距离（负=现价在翻转之下=空头Gamma体制）；IV30为30天平值隐含波动；“预期波动”为隐含的单日1σ波动。点击任意行。') }}</h2>
+      <h2 style="margin:0">{{ t('Board — every name at a glance', '总览 — 所有标的一览') }} {{ help('Net GEX in $bn per 1% move; “Vol hole” is the dealer-gamma compression state (in-hole / coiled at a wall / broken out / expansion); “Flip” is the % distance of spot to the zero-gamma level (negative = spot below flip = short-gamma regime); IV30 is the 30-day ATM implied vol; “Exp. move” is the IV-implied 1-day 1σ move. Click any row.', '净GEX为每1%波动的十亿美元；“波动洞”为做市商Gamma压缩状态（洞内/贴墙蓄势/突破/扩张）；“翻转”为现价到零Gamma价位的百分比距离（负=现价在翻转之下=空头Gamma体制）；IV30为30天平值隐含波动；“预期波动”为隐含的单日1σ波动。点击任意行。') }}</h2>
       <button class="collapse-btn" id="gx-board-toggle">{{ t('hide', '隐藏') }}</button>
     </div>
     <div class="hm-scroll" id="gx-board-scroll">
@@ -172,6 +196,7 @@
           <th data-sort="key">{{ t('Symbol', '代码') }}</th>
           <th data-sort="spot">{{ t('Spot', '现价') }}</th>
           <th data-sort="regime">{{ t('Regime', '体制') }}</th>
+          <th data-sort="vh_state">{{ t('Vol hole', '波动洞') }}</th>
           <th data-sort="net_gex_bn">{{ t('Net GEX', '净GEX') }}</th>
           <th data-sort="dist_to_flip_pct">{{ t('Flip', '翻转') }}</th>
           <th data-sort="iv30">IV30</th>
