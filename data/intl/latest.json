@@ -40,10 +40,10 @@
         "unemployment": 2.5,
         "unemployment_chg6m": -0.1,
         "m2_yoy": 4.22,
-        "fx": 161.119,
-        "fx_strength_3m": -1.67,
+        "fx": 161.326,
+        "fx_strength_3m": -1.8,
         "realvol": 32.1,
-        "drawdown": 0.0
+        "drawdown": -0.0
       },
       "macro_asof": {
         "cpi_yoy": "2021-06",
@@ -52,13 +52,13 @@
         "yield_10y": "2026-05"
       },
       "equity": {
-        "price": 71313.37,
-        "off_52w_high": 0.0,
+        "price": 71030.48,
+        "off_52w_high": -0.0,
         "above_50d": true,
         "above_200d": true,
         "realvol": 32.1,
-        "rsi": 71.0,
-        "ext_z": 1.96,
+        "rsi": 70.0,
+        "ext_z": 1.89,
         "ext_grade": "stretched",
         "drawdown_risk": 14.0,
         "drawdown_band": "low",
@@ -94,8 +94,8 @@
         "unemployment": 2.8,
         "unemployment_chg6m": -0.5,
         "m2_yoy": 5.73,
-        "fx": 1536.88,
-        "fx_strength_3m": -3.47,
+        "fx": 1538.5,
+        "fx_strength_3m": -3.58,
         "realvol": 64.8,
         "drawdown": 0.0
       },
@@ -106,13 +106,13 @@
         "yield_10y": "2026-05"
       },
       "equity": {
-        "price": 9259.32,
+        "price": 9071.07,
         "off_52w_high": 0.0,
         "above_50d": true,
         "above_200d": true,
         "realvol": 64.8,
-        "rsi": 68.0,
-        "ext_z": 2.51,
+        "rsi": 66.0,
+        "ext_z": 2.3,
         "ext_grade": "parabolic",
         "drawdown_risk": 20.0,
         "drawdown_band": "low",
@@ -417,13 +417,13 @@
           "cc": "KR",
           "flag": "\ud83c\uddf0\ud83c\uddf7",
           "name": "South Korea",
-          "value": -3.47
+          "value": -3.58
         },
         {
           "cc": "JP",
           "flag": "\ud83c\uddef\ud83c\uddf5",
           "name": "Japan",
-          "value": -1.67
+          "value": -1.8
         },
         {
           "cc": "EZ",

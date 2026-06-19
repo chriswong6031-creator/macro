@@ -1,0 +1,122 @@
+{
+  "ai_infra": {
+    "label": "dominant",
+    "name": "AI Infrastructure",
+    "name_zh": "AI \u57fa\u7840\u8bbe\u65bd",
+    "rank": 1,
+    "reco": "hold",
+    "score": 77
+  },
+  "ai_software": {
+    "label": "deteriorating",
+    "name": "AI Software & Platforms",
+    "name_zh": "AI \u8f6f\u4ef6\u4e0e\u5e73\u53f0",
+    "rank": 12,
+    "reco": "avoid",
+    "score": 46
+  },
+  "crypto": {
+    "label": "dominant",
+    "name": "Crypto & Digital Assets",
+    "name_zh": "\u52a0\u5bc6\u4e0e\u6570\u5b57\u8d44\u4ea7",
+    "rank": 4,
+    "reco": "accumulate",
+    "score": 67
+  },
+  "defense": {
+    "label": "neutral",
+    "name": "Defense & Aerospace",
+    "name_zh": "\u56fd\u9632\u4e0e\u822a\u7a7a\u822a\u5929",
+    "rank": 13,
+    "reco": "hold",
+    "score": 41
+  },
+  "defensives": {
+    "label": "neutral",
+    "name": "Defensives",
+    "name_zh": "\u9632\u5fa1\u677f\u5757",
+    "rank": 14,
+    "reco": "hold",
+    "score": 38
+  },
+  "energy_complex": {
+    "label": "deteriorating",
+    "name": "US Energy Complex",
+    "name_zh": "\u7f8e\u56fd\u80fd\u6e90\u7efc\u5408",
+    "rank": 15,
+    "reco": "avoid",
+    "score": 32
+  },
+  "housing": {
+    "label": "dominant",
+    "name": "Housing Chain",
+    "name_zh": "\u4f4f\u623f\u4ea7\u4e1a\u94fe",
+    "rank": 5,
+    "reco": "hold",
+    "score": 63
+  },
+  "mag7": {
+    "label": "deteriorating",
+    "name": "Magnificent Seven",
+    "name_zh": "\u4e03\u5de8\u5934",
+    "rank": 10,
+    "reco": "avoid",
+    "score": 49
+  },
+  "managed_care": {
+    "label": "fading",
+    "name": "Managed Care & Insurers",
+    "name_zh": "\u7ba1\u7406\u5f0f\u533b\u7597\u4e0e\u4fdd\u9669",
+    "rank": 9,
+    "reco": "trim",
+    "score": 51
+  },
+  "payments_fintech": {
+    "label": "deteriorating",
+    "name": "Payments & Fintech",
+    "name_zh": "\u652f\u4ed8\u4e0e\u91d1\u878d\u79d1\u6280",
+    "rank": 11,
+    "reco": "avoid",
+    "score": 48
+  },
+  "power_grid": {
+    "label": "emerging",
+    "name": "Power & Grid Buildout",
+    "name_zh": "\u7535\u529b\u4e0e\u7535\u7f51",
+    "rank": 7,
+    "reco": "hold",
+    "score": 59
+  },
+  "regional_banks": {
+    "label": "neutral",
+    "name": "Regional Banks",
+    "name_zh": "\u533a\u57df\u94f6\u884c",
+    "rank": 6,
+    "reco": "hold",
+    "score": 60
+  },
+  "reshoring": {
+    "label": "dominant",
+    "name": "Reshoring & Industrial Capex",
+    "name_zh": "\u56de\u6d41\u4e0e\u5de5\u4e1a\u8d44\u672c\u5f00\u652f",
+    "rank": 3,
+    "reco": "hold",
+    "score": 67
+  },
+  "retail": {
+    "label": "neutral",
+    "name": "Retail",
+    "name_zh": "\u96f6\u552e",
+    "rank": 8,
+    "reco": "hold",
+    "score": 52
+  },
+  "travel": {
+    "label": "dominant",
+    "name": "Travel & Experiences",
+    "name_zh": "\u65c5\u884c\u4e0e\u4f53\u9a8c",
+    "rank": 2,
+    "reco": "accumulate",
+    "score": 69
+  }
+}
