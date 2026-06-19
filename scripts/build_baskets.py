@@ -77,9 +77,28 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("theme rotation desk failed: %s", e)
 
+    # 🔥 FORMING NARRATIVES (engine.narrative_emergence) — fuse the theme-discovery radar
+    # (coherent, TIGHTENING name-groups not yet in a basket) with the GDELT attention
+    # backdrop + the AI desk's emerging_watch into a ranked, surfaced read with clean-entry
+    # recommended tickers. engine.emergence_alerts diffs vs the prior snapshot and fires a
+    # "narrative_forming" event (picked up by alert_triage). Display-only, additive, noisy —
+    # a watchlist / avoid-the-peak lens, never a buy list. Never fatal.
+    emergence = None
+    try:
+        from engine.narrative_emergence import compute_emergence
+        emergence = compute_emergence("us")
+        if emergence:
+            from engine import emergence_alerts
+            emergence_alerts.rebuild(emergence, "us")
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("narrative emergence desk failed: %s", e)
+
     fdir = site / "basketdata"
     fdir.mkdir(parents=True, exist_ok=True)
     (fdir / "baskets.json").write_text(json.dumps(data, separators=(",", ":"), default=str))
+    if emergence:
+        (fdir / "narrative_emergence.json").write_text(
+            json.dumps(emergence, separators=(",", ":"), default=str))
 
     # Engine-1 FLOW LENS (display-only characterization + the AI-handoff payload). It
     # ranks where cross-sectional flow is CONCENTRATING (PIT sectors + baskets), maps the
@@ -131,6 +150,10 @@ def main() -> int:
     sc = config.ROOT / "templates" / "allocation_scorecard.js"
     if sc.exists():
         (site / "allocation_scorecard.js").write_text(sc.read_text())
+    # ship the Forming Narratives renderer (all baskets pages use it)
+    ne = config.ROOT / "templates" / "forming_narratives.js"
+    if ne.exists():
+        (site / "forming_narratives.js").write_text(ne.read_text())
     log.info("wrote %s/baskets.html (%d baskets, %d categories, %d KB)",
              site, len(data["baskets"]), len(data.get("categories", [])), len(html) // 1024)
 

@@ -116,6 +116,10 @@
 
   {% include "_baskets_desk.html.j2" %}
 
+  {# 🔥 Forming Narratives — emerging HK themes our models detect + clean-entry tickers. #}
+  {% set ne_base = "hkbasketdata/" %}
+  {% include "_forming_narratives.html.j2" %}
+
   <div id="content">
     <section id="table-section">
       <h2><span class="idx">01</span>{{ t('Performance table', '表现一览') }}</h2>
