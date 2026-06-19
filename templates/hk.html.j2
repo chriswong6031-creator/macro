@@ -292,6 +292,83 @@
   .ai-brief .mb-sec { margin: 10px 0; } .ai-brief .mb-h { font-weight: 600; color: var(--link); margin: 0 0 4px; }
   .ai-brief .mb-list { margin: 4px 0 0 18px; padding: 0; } .ai-brief .mb-list li { margin: 3px 0; }
   .ai-brief .mb-foot { margin-top: 12px; color: var(--muted); font-size: 12px; }
+
+  /* ============ HK STOCK DESK — command-center hero, flows desk, conviction chips ===== */
+  .deskhero { display: grid; grid-template-columns: 1.35fr 1fr; gap: 20px 26px; align-items: start; }
+  @media (max-width: 820px) { .deskhero { grid-template-columns: 1fr; } }
+  .desk-title { display: flex; align-items: center; gap: 11px; flex-wrap: wrap; }
+  .desk-title h1 { font-size: 22px; margin: 0; }
+  .desk-verdict { margin: 14px 0 0; padding: 12px 15px; border-radius: 11px; line-height: 1.5;
+      background: color-mix(in srgb, var(--c, var(--info)) 12%, var(--panel));
+      border: 1px solid color-mix(in srgb, var(--c, var(--info)) 30%, var(--line)); }
+  .desk-verdict.rv-on { --c: var(--up); } .desk-verdict.rv-off { --c: var(--down); } .desk-verdict.rv-neu { --c: var(--info); }
+  .desk-verdict b { color: var(--text); }
+  .desk-verdict .rv-lead { font-size: 13.5px; font-weight: 700; display: block; margin-bottom: 3px; color: var(--text); }
+  .desk-verdict .rv-body { font-size: 12.5px; color: var(--muted); }
+  /* exposure split bar (amplifiers vs cushions) */
+  .expo-wrap { margin: 4px 0 2px; }
+  .expo-bar { display: flex; height: 22px; border-radius: 7px; overflow: hidden; border: 1px solid var(--line); }
+  .expo-bar .amp { background: color-mix(in srgb, var(--down) 60%, var(--panel)); }
+  .expo-bar .mid { background: var(--panel2, color-mix(in srgb, var(--muted) 16%, var(--panel))); }
+  .expo-bar .cush { background: color-mix(in srgb, var(--up) 58%, var(--panel)); }
+  .expo-seg { display: flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: 800;
+      color: #fff; min-width: 0; white-space: nowrap; }
+  .expo-bar .mid .expo-seg { color: var(--muted); }
+  .expo-key { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--muted); margin-top: 5px; }
+  .expo-key b { color: var(--text); }
+  /* desk stat tiles */
+  .desk-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; }
+  @media (min-width: 560px) { .desk-stats { grid-template-columns: repeat(4, 1fr); } }
+  .deskhero .desk-stats { grid-template-columns: repeat(2, 1fr); }
+  .dstat { background: var(--panel2, color-mix(in srgb, var(--muted) 8%, var(--panel)));
+      border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; }
+  .dstat .dv { font-size: 19px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.05; }
+  .dstat .dk { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; margin-top: 2px; }
+  .desk-overlay { margin-top: 11px; font-size: 12px; color: var(--muted); }
+  .desk-overlay .ov-chip { display: inline-block; font-weight: 700; padding: 1px 8px; border-radius: 8px; margin-left: 4px;
+      background: color-mix(in srgb, var(--warn) 16%, var(--panel)); color: color-mix(in srgb, var(--warn) 85%, var(--text)); }
+  /* southbound + A/H conviction chips on the standout cards */
+  .nb-flow { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+  .nb-flow span { font-size: 9px; font-weight: 800; padding: 1px 6px; border-radius: 7px; letter-spacing: .01em;
+      border: 1px solid var(--line); color: var(--muted); background: var(--panel); white-space: nowrap; }
+  .nb-flow .fl-buy { color: var(--up); border-color: color-mix(in srgb, var(--up) 40%, var(--line));
+      background: color-mix(in srgb, var(--up) 10%, var(--panel)); }
+  .nb-flow .fl-sell { color: var(--down); border-color: color-mix(in srgb, var(--down) 40%, var(--line));
+      background: color-mix(in srgb, var(--down) 10%, var(--panel)); }
+  .nb-flow .fl-val { color: var(--info); border-color: color-mix(in srgb, var(--info) 40%, var(--line));
+      background: color-mix(in srgb, var(--info) 10%, var(--panel)); }
+  /* smart-money flows desk */
+  .flows-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 22px; }
+  @media (max-width: 760px) { .flows-grid { grid-template-columns: 1fr; } }
+  .flow-col h3 { margin: 0 0 7px; }
+  .flow-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--line); font-size: 12.5px; }
+  .flow-row:last-child { border-bottom: none; }
+  .flow-row .fr-tk { font-weight: 800; min-width: 64px; }
+  .flow-row .fr-nm { color: var(--muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .flow-row .fr-bar { flex: 0 0 88px; height: 8px; border-radius: 5px; background: var(--panel2); position: relative; overflow: hidden; }
+  .flow-row .fr-bar i { position: absolute; top: 0; height: 100%; border-radius: 5px; }
+  .flow-row .fr-v { flex: 0 0 56px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .flow-row .fr-own { flex: 0 0 44px; text-align: right; font-size: 10.5px; color: var(--muted); }
+  /* desk watch strip (strong-but-blocked) */
+  .watch-strip { margin: 14px 0 2px; padding: 11px 13px; border-radius: 10px;
+      background: color-mix(in srgb, var(--warn) 9%, var(--panel)); border: 1px solid color-mix(in srgb, var(--warn) 26%, var(--line)); }
+  .watch-strip .ws-h { font-size: 12px; font-weight: 800; color: color-mix(in srgb, var(--warn) 88%, var(--text)); margin: 0 0 7px; text-transform: uppercase; letter-spacing: .04em; }
+  .watch-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+  .watch-grid a { display: flex; flex-direction: column; gap: 1px; padding: 6px 10px; border-radius: 8px; min-width: 130px;
+      background: var(--panel); border: 1px solid var(--line); color: var(--text); transition: border-color .12s, transform .12s; }
+  .watch-grid a:hover { border-color: var(--link); transform: translateY(-1px); }
+  .watch-grid .wg-tk { font-weight: 800; font-size: 12.5px; }
+  .watch-grid .wg-v { font-size: 10px; color: var(--muted); line-height: 1.3; }
+  /* high-impact event-risk banner (macro) */
+  .evbanner { display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      padding: 10px 15px; border-radius: 11px; margin-bottom: 0;
+      background: color-mix(in srgb, var(--warn) 10%, var(--panel)); border: 1px solid color-mix(in srgb, var(--warn) 26%, var(--line)); }
+  .evbanner .ev-h { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: color-mix(in srgb, var(--warn) 88%, var(--text)); white-space: nowrap; }
+  .evbanner .ev-list { display: flex; flex-wrap: wrap; gap: 7px; }
+  .ev-chip { display: inline-flex; align-items: baseline; gap: 5px; font-size: 11.5px; padding: 3px 9px; border-radius: 8px;
+      background: var(--panel); border: 1px solid var(--line); }
+  .ev-chip b { color: var(--text); } .ev-chip .ev-d { font-weight: 800; color: var(--warn); font-variant-numeric: tabular-nums; }
+  .ev-chip .ev-rg { font-size: 9px; font-weight: 700; padding: 0 5px; border-radius: 6px; color: var(--muted); background: var(--panel2, color-mix(in srgb,var(--muted) 12%,var(--panel))); }
 </style>
 </head>
 <body>
@@ -319,15 +396,88 @@
 
 <div class="grid">
 
-  {% if mode == 'stocks' %}
-  <!-- ===================== HK STOCK & EXPOSURE BOARD HEADER ===================== -->
-  <div class="panel span12" id="stocks-header">
-    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
-      <h1 style="margin:0">🇭🇰 {{ t('HK Stock & Exposure Board', '港股与敞口看板') }}</h1>
-      <span class="quad-badge quad-{{ latest.quad }}">{{ td(latest.quad_name) }}</span>
-      {% if gv and gv.state %}<span class="risk-badge {{ 'c-up' if gv.state=='Risk-on' else ('c-down' if gv.state=='Risk-off' else 'c-muted') }}">{{ td(gv.state) }}</span>{% endif %}
+  <!-- ===================== HIGH-IMPACT EVENT-RISK BANNER (macro) ===================== -->
+  {% if mode != 'stocks' and event_strip %}
+  <div class="panel span12" style="padding:0;border:none;background:none">
+    <div class="evbanner">
+      <span class="ev-h">⏳ {{ t('Event risk · next 14d', '事件风险 · 未来14天') }}</span>
+      <span class="ev-list">
+        {% for ev in event_strip[:7] %}
+        <span class="ev-chip" title="{{ ev.date }} · {{ ev.category }}">
+          <span class="l-en">{{ ev.name_en }}</span><span class="l-zh">{{ ev.name_zh }}</span>
+          <span class="ev-rg">{{ ev.region }}</span>
+          <span class="ev-d">{% if ev.days_until <= 0 %}{{ t('today', '今日') }}{% else %}+{{ ev.days_until }}{{ t('d', '天') }}{% endif %}</span>
+        </span>
+        {% endfor %}
+      </span>
     </div>
-    <p class="note" style="margin:8px 0 0;text-transform:none"><b>{{ t('Exposure & risk context', '敞口与风险背景') }}</b> — {{ t('HK has no validated stock-picking edge; this is beta / sector positioning, not alpha. Each name is read by its beta to global risk and its sector, conditioned on the live risk state.', '香港没有经验证的选股优势；这是贝塔／板块定位，而非阿尔法。每只股票按其对全球风险的贝塔与所属板块解读，并结合实时风险状态。') }}
+  </div>
+  {% endif %}
+
+  {% if mode == 'stocks' %}
+  <!-- ===================== HK STOCK DESK — command-center hero ===================== -->
+  {% set RS = (hk_scoreboard.risk_state if hk_scoreboard else (gv.state if gv else 'unknown')) %}
+  {% set _rscls = 'rv-on' if RS=='Risk-on' else ('rv-off' if RS=='Risk-off' else 'rv-neu') %}
+  {% set M = (hk_scoreboard.modes if hk_scoreboard else {}) %}
+  {% set _nall = (M.all|length) if M and M.all else 0 %}
+  {% set _namp = (M.amplifiers|length) if M and M.amplifiers else 0 %}
+  {% set _ncush = (M.cushions|length) if M and M.cushions else 0 %}
+  {% set _nmid = (_nall - _namp - _ncush) if _nall else 0 %}
+  <div class="panel span12" id="stocks-header">
+    <div class="deskhero">
+      <div>
+        <div class="desk-title">
+          <h1>🇭🇰 {{ t('HK Stock Desk', '港股研判台') }}</h1>
+          <span class="quad-badge quad-{{ latest.quad }}">{{ td(latest.quad_name) }}</span>
+          {% if RS and RS != 'unknown' %}<span class="risk-badge {{ 'c-up' if RS=='Risk-on' else ('c-down' if RS=='Risk-off' else 'c-muted') }}">{{ td(RS) }}</span>{% endif %}
+          {{ help("HK has NO idiosyncratic stock-selection alpha — residual momentum is dead here (negative long-short Sharpe on a 40-year panel). So this desk does NOT fake a buy list. It fuses HK's three HONEST structural edges into one regime-conditioned conviction: <b>southbound smart-money flow</b> (is the mainland Connect crowd, HK's dominant marginal buyer, adding to this name?), <b>A/H value</b> (is its HK-listed H line cheap vs its mainland A twin?), and <b>beta-neutral relative strength</b> (genuine leadership once global-risk beta is stripped out — so an outlier high-beta rip no longer screens as a 'standout'). The live risk state re-weights the blend. A positioning / flow screen for SIZING within the validated regime — never a validated alpha (trust tier: screen).", "香港没有特异选股阿尔法 —— 残差动量在此无效（40年面板上多空夏普为负）。故本研判台不伪造买入清单，而是把香港三条诚实的结构性优势融合为一个随周期调整的确信度：<b>南向资金</b>（内地港股通这一主力边际买家是否在加仓该股？）、<b>A/H 价值</b>（其港股 H 相对 A 股孪生是否便宜？）、以及<b>贝塔中性相对强度</b>（剥离全球风险贝塔后的真实领先 —— 高贝塔暴涨不再被误判为“突出”）。实时风险状态会重新加权各腿。这是用于在已验证周期内定仓的资金／敞口筛选 —— 绝非已验证阿尔法（信任等级：筛选）。") }}
+        </div>
+        <div class="desk-verdict {{ _rscls }}">
+          {% if RS == 'Risk-off' %}
+          <span class="rv-lead">{{ t('Risk-off — lead with defense, value & flow', '风险规避 — 以防御、价值与资金为主') }}</span>
+          <span class="rv-body">{{ t('Favor <b>cushions</b> (low global-risk beta defensives), <b>cheap-A/H</b> H lines, and names the <b>mainland is accumulating</b>. High-beta amplifiers carry the biggest drawdown here.', '偏好<b>缓冲股</b>（低全球风险贝塔的防御股）、<b>A/H 折价</b>的 H 股，以及<b>内地正在加仓</b>的标的。高贝塔放大器在此回撤最大。') }}</span>
+          {% elif RS == 'Risk-on' %}
+          <span class="rv-lead">{{ t('Risk-on — lead with amplifiers & leaders', '风险偏好 — 以放大器与领先股为主') }}</span>
+          <span class="rv-body">{{ t('Favor <b>amplifiers</b> (high global-risk beta cyclicals) and <b>beta-neutral relative-strength</b> leaders. Cushions lag the rally. Southbound flow + A/H value still tilt the picks.', '偏好<b>放大器</b>（高全球风险贝塔的周期股）与<b>贝塔中性相对强度</b>领先股。缓冲股滞后于上涨。南向资金与 A/H 价值仍影响选择。') }}</span>
+          {% else %}
+          <span class="rv-lead">{{ t('Neutral tape — lean on flow & value for the edge', '中性行情 — 依靠资金与价值寻找优势') }}</span>
+          <span class="rv-body">{{ t('No regime tilt — these are exposures, not a direction. The idiosyncratic edge is <b>southbound accumulation</b> and <b>cheap-A/H</b> value; amplifiers will simply move more in EITHER direction when the regime turns.', '无周期倾向 —— 这是敞口而非方向。特异优势在于<b>南向加仓</b>与<b>A/H 折价</b>价值；当周期转向时放大器只是在任一方向波动更大。') }}</span>
+          {% endif %}
+        </div>
+        <div class="desk-overlay">
+          {{ t('Macro risk overlay', '宏观风险叠加') }}:
+          {% set _stress = (setups.overlay.stress if setups and setups.overlay else 0) %}
+          <b>{{ (_stress*100)|round|int }}%</b> {{ t('stress', '压力') }}
+          {% if setups and setups.overlay and setups.overlay.drivers %}{% for d in setups.overlay.drivers %}<span class="ov-chip">{{ d }}</span>{% endfor %}{% endif %}
+          {% if setups and setups.cohort and setups.cohort.state %} · {{ t('leadership', '领先股') }} <b>{{ setups.cohort.state }}</b>{% endif %}
+          — {{ t('a hot tape taxes a chase and caps size; it never gates the rank.', '过热行情会对追高征税并限制仓位；从不决定排名。') }}
+        </div>
+      </div>
+      <div>
+        {% if _nall %}
+        <div class="expo-wrap">
+          <div class="hg-l" style="margin-bottom:5px"><span>{{ t('Universe exposure split', '全体敞口分布') }} <span class="sub">({{ _nall }} {{ t('names', '只') }})</span></span></div>
+          <div class="expo-bar">
+            <div class="amp expo-seg" style="flex:{{ _namp or 1 }}" title="Amplifiers — high global-risk beta">{% if _namp %}{{ _namp }}{% endif %}</div>
+            <div class="mid expo-seg" style="flex:{{ _nmid or 1 }}" title="Neutral beta">{% if _nmid %}{{ _nmid }}{% endif %}</div>
+            <div class="cush expo-seg" style="flex:{{ _ncush or 1 }}" title="Cushions — low global-risk beta">{% if _ncush %}{{ _ncush }}{% endif %}</div>
+          </div>
+          <div class="expo-key">
+            <span>⚡ <b>{{ _namp }}</b> {{ t('amplifiers', '放大器') }}{% if RS=='Risk-on' %} ★{% endif %}</span>
+            <span>{{ _nmid }} {{ t('neutral', '中性') }}</span>
+            <span>{{ t('cushions', '缓冲') }} <b>{{ _ncush }}</b> 🛡{% if RS=='Risk-off' %} ★{% endif %}</span>
+          </div>
+        </div>
+        {% endif %}
+        <div class="desk-stats" style="margin-top:13px">
+          <div class="dstat"><div class="dv">{{ (setups.buy|length) if setups and setups.buy else 0 }}</div><div class="dk">{{ t('constructive entry', '建设性入场') }}</div></div>
+          <div class="dstat"><div class="dv">{{ (setups.watch|length) if setups and setups.watch else 0 }}</div><div class="dk">{{ t('on watch', '观察名单') }}</div></div>
+          {% if breadth %}<div class="dstat"><div class="dv {{ 'pos' if breadth.pct_above_50>=50 else 'neg' }}">{{ breadth.pct_above_50 }}%</div><div class="dk">{{ t('above 50-day', '50日上方') }}</div></div>{% endif %}
+          {% if internals and internals.southbound %}<div class="dstat"><div class="dv {{ 'pos' if internals.southbound.cum_20d>=0 else 'neg' }}">{{ '%+.0f'|format(internals.southbound.cum_20d) }}</div><div class="dk">{{ t('southbound 20d ¥B', '南向20日 亿') }}</div></div>{% endif %}
+        </div>
+      </div>
+    </div>
+    <p class="note" style="margin:11px 0 0;text-transform:none;font-size:11px">{{ t('A flow + value + exposure screen — never a validated buy list (HK has no selection alpha). The cycle state caps every verb; the size is risk-budgeting context.', '资金＋价值＋敞口筛选 —— 绝非已验证买入清单（香港无选股阿尔法）。周期状态封顶每个结论；仓位为风险预算背景。') }}
       <a href="hk.html" style="color:var(--link);font-weight:600">← {{ t('HK macro dashboard', '香港宏观看板') }}</a></p>
   </div>
   {% endif %}
@@ -335,11 +485,11 @@
   <!-- ===================== STANDOUT STOCKS (relative-strength cards) ===================== -->
   {% if mode == 'stocks' and setups and setups.buy %}
   <div class="panel span12" id="standouts">
-    <h2>{{ t('⚡ Standout individual stocks', '⚡ 表现突出的个股') }}
-      <span class="note" style="text-transform:none">· {{ t('strongest relative strength · exposure context, not a validated edge', '相对强度最强 · 敞口背景，非已验证优势') }}</span>
-      {{ help("The HK names with the strongest cross-sectional RELATIVE STRENGTH — each stock's ~3-month return z-scored against the HK universe. IMPORTANT: Hong Kong has <b>no validated stock-picking edge</b> (residual momentum is dead on a 40-year panel; research/CHINA_HK_STOCK_SIGNALS.md). So unlike the US / China boards this is NOT a selection-alpha shortlist — it is a relative-strength / exposure READ shown for parity, ranked by recent leadership with each name's price-cycle state for context. The <b>extended</b> tag (RSI≥70) flags a stretched name (reversal risk); <b>pullback</b> a leader that has cooled off. The validated HK read is the global-risk exposure board below. Context to size and confirm — never a buy list.", "相对强度最强的港股 —— 每只股票近3个月收益相对港股全体做 z 标准化。重要：香港<b>没有经验证的选股优势</b>（在40年面板上残差动量无效；research/CHINA_HK_STOCK_SIGNALS.md）。因此与美国／中国看板不同，这不是选股阿尔法名单 —— 而是为保持一致性展示的相对强度／敞口读数，按近期领先排序并标注各股价格周期状态作为背景。<b>extended</b>（RSI≥70）表示过热（反转风险）；<b>pullback</b> 表示已回落的强势股。香港已验证的读数是下方的全球风险敞口看板。用于定仓与确认的背景 —— 绝非买入清单。") }}
+    <h2>{{ t('⚡ Top conviction — the HK Stock Desk', '⚡ 最高确信 — 港股研判台') }}
+      <span class="note" style="text-transform:none">· {{ t('southbound flow + A/H value + beta-neutral RS · regime-conditioned', '南向资金 + A/H 价值 + 贝塔中性相对强度 · 随周期调整') }}</span>
+      {{ help("The HK names ranked by a UNIFIED, regime-conditioned conviction that fuses HK's three HONEST structural edges — NOT a raw relative-strength sort (that just re-discovered global-risk beta and crowned an outlier). Each card's EDGE axis is the fused z of: <b>southbound smart-money flow</b> (the mainland Connect crowd, HK's dominant marginal buyer, adding to this name), <b>A/H value</b> (its HK-listed H line cheap vs its mainland A twin), and <b>beta-neutral relative strength</b> (real leadership once global-risk beta is stripped). The live risk state re-weights the blend. Ranked by the GATED conviction composite, split into a BUY strip (a constructive entry) and a WATCH strip (strong edge but the cycle/extension blocks it — wait for a base). HK has <b>no selection alpha</b>, so the verdict never says 'Buy' and the trust tier reads 'screen' — a positioning / flow screen to size and confirm, not a validated buy list.", "按统一的、随周期调整的确信度排序的港股 —— 而非原始相对强度排序（那只是在重新发现全球风险贝塔并捧出一个离群股）。每张卡片的 EDGE 轴是三条诚实结构性优势的融合 z：<b>南向资金</b>（内地港股通这一主力边际买家在加仓该股）、<b>A/H 价值</b>（其港股 H 相对 A 股孪生便宜）、以及<b>贝塔中性相对强度</b>（剥离全球风险贝塔后的真实领先）。实时风险状态重新加权各腿。按门控后的确信度综合排序，分为买入区（入场点建设性）与观察区（优势强但周期／拉伸阻挡 —— 等待筑底）。香港<b>无选股阿尔法</b>，故结论永不显示“买入”、信任等级为“筛选” —— 用于定仓与确认的资金筛选，而非已验证买入清单。") }}
     </h2>
-    <p class="note" style="margin:0 0 2px;text-transform:none">{{ t('Ranked by ~3-month relative strength vs the HK universe; each card carries the unified Conviction profile (four axes + a single honest verdict). HK has no validated selection edge, so the trust tier reads "screen" and the verdict never says "Buy" — the cycle state caps it. Relative-strength / exposure context, not a buy list.', '按近3个月相对港股全体的相对强度排序；每张卡片附带统一确信度画像（四条维度＋一个诚实结论）。香港没有经验证的选股优势，故信任等级为“筛选”，结论永不显示“买入” —— 周期状态会封顶。相对强度／敞口背景，而非买入清单。') }}</p>
+    <p class="note" style="margin:0 0 2px;text-transform:none">{{ t('Ranked by the unified, regime-conditioned conviction (southbound flow + A/H value + beta-neutral relative strength). Each card shows the four-axis profile — <b>EDGE</b> is the fused HK signal — plus the mainland-flow and A/H-value chips. The cycle state caps every verdict; HK has no selection alpha so it never says "Buy".', '按统一的、随周期调整的确信度排序（南向资金 + A/H 价值 + 贝塔中性相对强度）。每张卡片展示四轴画像 —— <b>EDGE</b> 为融合后的香港信号 —— 并附内地资金与 A/H 价值标签。周期状态封顶每个结论；香港无选股阿尔法，故永不显示“买入”。') }}</p>
     <div class="nbgrid" data-showmore="12">
     {% for n in setups.buy %}
       {% set _d = n.dir or 'caution' %}
@@ -358,7 +508,7 @@
           <span class="nb-verdict"><span class="l-en">{{ c.verdict }}</span><span class="l-zh">{{ c.verdict_zh }}</span></span>
         </div>
         <div class="nb-axes">
-          {% for ax, lbl in [('selection','RS'),('entry','ENT'),('tailwind','TWD'),('quality','QUAL')] %}
+          {% for ax, lbl in [('selection','EDGE'),('entry','ENT'),('tailwind','TWD'),('quality','QUAL')] %}
           {% set a = c.axes[ax] %}
           <div class="nb-ax{{ ' ax-na' if a.pct is none else '' }}" title="{{ lbl }}{% if a.pct is not none %} {{ a.pct }}/100{% else %} — no data{% endif %}">
             <div class="axl">{{ lbl }}</div>
@@ -378,6 +528,17 @@
           {% elif n.alpha_entry == 'extended' %}<span class="nb-ent ent-warn" title="Stretched (RSI≥70) — short-term reversal risk · 过热（RSI≥70）— 短线反转风险">{{ t('extended', '过热') }}</span>{% endif %}
         </div>
         {% endif %}
+        {% if n.southbound or n.ah_value %}
+        <div class="nb-flow">
+          {% if n.southbound and n.southbound.accum_z is not none %}
+          {% set sbz = n.southbound.accum_z %}
+          <span class="{{ 'fl-buy' if sbz>=0.6 else ('fl-sell' if sbz<=-0.6 else '') }}" title="Southbound smart-money: the mainland Connect crowd is {{ n.southbound.label }} this name (accumulation z {{ '%+.2f'|format(sbz) }}{% if n.southbound.own_pct is not none %}; they hold {{ n.southbound.own_pct }}% of issued shares{% endif %}). HK's dominant marginal buyer. · 南向资金：内地港股通{{ '加仓' if sbz>=0.6 else ('减仓' if sbz<=-0.6 else '持平') }}（z {{ '%+.2f'|format(sbz) }}）。">🇨🇳 {{ t('SB', '南向') }} {{ '%+.1f'|format(sbz) }}{% if n.southbound.own_pct is not none %} · {{ n.southbound.own_pct }}%{% endif %}</span>
+          {% endif %}
+          {% if n.ah_value and n.ah_value.z is not none %}
+          <span class="{{ 'fl-val' if n.ah_value.cheap else '' }}" title="A/H value: the H/HK line trades at a {{ n.ah_value.premium_pct }}% discount to its mainland A twin (value z {{ '%+.2f'|format(n.ah_value.z) }}). A high premium = H is the cheaper way to own the same company. · A/H 价值：港股 H 相对 A 股孪生折价 {{ n.ah_value.premium_pct }}%（z {{ '%+.2f'|format(n.ah_value.z) }}）。">A/H {{ '%+.1f'|format(n.ah_value.z) }}{% if n.ah_value.cheap %} · {{ t('cheap H', 'H 便宜') }}{% endif %}</span>
+          {% endif %}
+        </div>
+        {% endif %}
         {% if c %}
         {% if c.cautions %}<div class="nb-cau">{% for cau in c.cautions %}<span>⚠ {{ cau }}</span>{% endfor %}</div>{% endif %}
         <div class="nb-tier"><span class="l-en">{{ c.trust_tier.en }}</span><span class="l-zh">{{ c.trust_tier.zh }}</span></div>
@@ -385,13 +546,67 @@
       </a>
     {% endfor %}
     </div>
+    {% if setups.watch %}
+    <div class="watch-strip">
+      <p class="ws-h">👁 {{ t('On watch — strong edge, blocked entry (wait for a base)', '观察名单 — 优势强但入场受阻（等待筑底）') }}</p>
+      <div class="watch-grid">
+        {% for w in setups.watch %}
+        {% set wc = w.conviction %}
+        <a href="hk_lookup.html#{{ w.ticker }}" title="{{ wc.verdict if wc else '' }}">
+          <span class="wg-tk">{{ w.ticker }} {% if wc and wc.score is not none %}<span class="note" style="font-weight:600">· {{ wc.score }}</span>{% endif %}</span>
+          <span class="wg-v">{{ w.name }}{% if wc %} — <span class="l-en">{{ wc.verdict }}</span><span class="l-zh">{{ wc.verdict_zh }}</span>{% endif %}</span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
     {% if setups.laggards %}
-    <p class="note" style="margin:13px 0 5px;text-transform:none;color:var(--down);font-weight:700">⚠ {{ t('Weakest relative strength (laggards) — distribution risk:', '相对强度最弱（落后股）— 派发风险：') }}</p>
+    <p class="note" style="margin:13px 0 5px;text-transform:none;color:var(--down);font-weight:700">⚠ {{ t('Weakest conviction (laggards) — distribution / avoid:', '确信度最弱（落后股）— 派发／回避：') }}</p>
     <p style="margin:0;line-height:2">
       {% for r in setups.laggards %}<a href="hk_lookup.html#{{ r.ticker }}" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>{{ r.ticker }}</b> <span class="note">{{ r.name }}</span> <span class="neg">{{ '%+.2f'|format(r.alpha) }}</span></a>{% endfor %}
     </p>
     {% endif %}
-    <p class="note" style="margin:8px 0 0;font-size:11px">{{ t('Relative strength is descriptive, not predictive: HK has no validated stock-picking edge (residual momentum is dead on a 40-year panel). For the validated read, use the global-risk exposure board below. A research surface to size and confirm — not a buy list.', '相对强度是描述性的，而非预测性的：香港没有经验证的选股优势（40年面板上残差动量无效）。已验证的读数请使用下方的全球风险敞口看板。用于研究、定仓与确认的面板 —— 而非买入清单。') }}</p>
+    <p class="note" style="margin:8px 0 0;font-size:11px">{{ t('The conviction is a flow + value + exposure screen, not a validated alpha: HK has no stock-selection edge (residual momentum is dead on a 40-year panel), so the edges that DO survive are structural — mainland flow, A/H value and global-risk exposure. A research surface to size and confirm — never a buy list.', '该确信度是资金＋价值＋敞口筛选，而非已验证阿尔法：香港没有选股优势（40年面板上残差动量无效），故真正存活的优势是结构性的 —— 内地资金、A/H 价值与全球风险敞口。用于研究、定仓与确认的面板 —— 绝非买入清单。') }}</p>
+  </div>
+  {% endif %}
+
+  <!-- ===================== SMART-MONEY FLOWS DESK (southbound per-name) ===================== -->
+  {% if mode == 'stocks' and setups and setups.southbound_summary %}
+  {% set SM = setups.southbound_summary %}
+  <div class="panel span12" id="smart-money">
+    <h2>🇨🇳 {{ t('Smart-money flows — where the mainland is buying', '聪明钱流向 — 内地在买什么') }}
+      <span class="note" style="text-transform:none">· {{ t('per-stock southbound Connect holdings', '个股港股通持股') }}{% if SM.as_of %} · {{ SM.as_of }}{% endif %}</span>
+      {{ help("Per-HK-name Southbound Stock-Connect holdings from the Eastmoney datacenter — the mainland Connect crowd is HK's dominant marginal buyer and this is, per research, a smart-money signal with no US analog. Names are ranked by the 5-day change in mainland holding VALUE (among holdings ≥¥0.5B so a micro-cap print can't top the board); the bar shows magnitude, the % is the 5-day move, and the right figure is mainland ownership as a share of issued stock. Accumulation is HK's clearest idiosyncratic edge — a flow confirmer for sizing, not a standalone alpha (flow-following carries crowding + reversal risk).", "来自东方财富数据中心的个股港股通持股 —— 内地港股通是香港主力边际买家，据研究是无美国对应物的聪明钱信号。按内地持股市值的5日变化排序（仅限持仓≥5亿，避免微盘扰动）；条形表示幅度，百分比为5日变动，右侧为内地持股占已发行股本比例。加仓是香港最清晰的特异优势 —— 用于定仓的资金确认，而非独立阿尔法（追逐资金流有拥挤与反转风险）。") }}
+    </h2>
+    <div class="flows-grid">
+      <div class="flow-col">
+        <h3 class="pos">↑ {{ t('Mainland accumulating', '内地加仓') }} <span class="note" style="text-transform:none">· {{ t('5-day holding growth', '5日持股增长') }}</span></h3>
+        {% set _mx = (SM.buying[0].chg5_pct if SM.buying and SM.buying[0].chg5_pct else 1) %}
+        {% for r in SM.buying %}
+        <div class="flow-row">
+          <a class="fr-tk" href="hk_lookup.html#{{ r.ticker }}">{{ r.ticker }}</a>
+          <span class="fr-nm">{{ r.name }}</span>
+          <span class="fr-bar"><i class="pos" style="left:0;width:{{ (([r.chg5_pct,_mx]|min)/_mx*100)|round|int if _mx else 0 }}%;background:var(--up)"></i></span>
+          <span class="fr-v pos">+{{ r.chg5_pct }}%</span>
+          <span class="fr-own">{% if r.own_pct is not none %}{{ r.own_pct }}%{% endif %}</span>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="flow-col">
+        <h3 class="neg">↓ {{ t('Mainland distributing', '内地减仓') }} <span class="note" style="text-transform:none">· {{ t('5-day holding decline', '5日持股下降') }}</span></h3>
+        {% set _mn = (SM.selling[0].chg5_pct if SM.selling and SM.selling[0].chg5_pct else -1) %}
+        {% for r in SM.selling %}
+        <div class="flow-row">
+          <a class="fr-tk" href="hk_lookup.html#{{ r.ticker }}">{{ r.ticker }}</a>
+          <span class="fr-nm">{{ r.name }}</span>
+          <span class="fr-bar"><i class="neg" style="right:0;width:{{ (([r.chg5_pct,_mn]|max)/_mn*100)|round|int if _mn else 0 }}%;background:var(--down)"></i></span>
+          <span class="fr-v neg">{{ r.chg5_pct }}%</span>
+          <span class="fr-own">{% if r.own_pct is not none %}{{ r.own_pct }}%{% endif %}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <p class="note" style="margin:9px 0 0;font-size:11px;text-transform:none">{{ t('Per-name southbound holdings across', '个股南向持股，覆盖') }} {{ SM.n_sized }} {{ t('sized HK names. The right figure is mainland ownership (% of issued shares). Display-only flow context — a confirmer for sizing, never a standalone signal.', '只有规模的港股。右侧为内地持股（占已发行股本%）。仅展示的资金背景 —— 用于定仓的确认，而非独立信号。') }}</p>
   </div>
   {% endif %}
 
@@ -815,6 +1030,28 @@
   </div>
   {% endif %}
 
+  <!-- ===================== SMART-MONEY NAMES (southbound per-stock, macro) ===================== -->
+  {% if setups and setups.southbound_summary %}
+  {% set SM = setups.southbound_summary %}
+  <div class="panel span6" id="smart-money-names">
+    <h2>🇨🇳 {{ t('Smart-money names', '聪明钱个股') }} <span class="note" style="text-transform:none">· {{ t('mainland is adding / trimming', '内地加仓／减仓') }}</span>
+      {{ help("WHICH HK names the mainland Connect crowd — HK's dominant marginal buyer — is adding to vs trimming, from per-stock Southbound holdings (Eastmoney datacenter). The aggregate flow above tells you HOW MUCH money is crossing; this tells you WHERE it is going. Ranked by the 5-day change in mainland holding value (sized holdings only). Display-only flow context; the full per-name desk is on the HK Stock board.", "内地港股通这一主力边际买家正在加仓与减仓哪些港股，来自个股南向持股（东方财富数据中心）。上方的总量告诉你有多少资金流入；这里告诉你资金流向何处。按内地持股市值的5日变化排序（仅限有规模持仓）。仅展示的资金背景；完整的个股研判台在港股看板。") }}
+    </h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 18px">
+      <div>
+        <div class="sub pos" style="font-weight:700;margin-bottom:3px">↑ {{ t('Adding', '加仓') }}</div>
+        {% for r in SM.buying[:5] %}<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0"><a href="hk_stocks.html">{{ r.ticker }}</a><span class="pos">+{{ r.chg5_pct }}%</span></div>{% endfor %}
+      </div>
+      <div>
+        <div class="sub neg" style="font-weight:700;margin-bottom:3px">↓ {{ t('Trimming', '减仓') }}</div>
+        {% for r in SM.selling[:5] %}<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0"><a href="hk_stocks.html">{{ r.ticker }}</a><span class="neg">{{ r.chg5_pct }}%</span></div>{% endfor %}
+      </div>
+    </div>
+    <p class="note" style="margin:8px 0 0;font-size:11px;text-transform:none">{{ t('Per-stock southbound holdings (5-day Δ). The where, not the how-much. Display-only — full desk on the', '个股南向持股（5日变化）。资金流向，而非流量。仅展示 —— 完整研判台见') }}
+      <a href="hk_stocks.html" style="color:var(--link);font-weight:600">{{ t('HK Stock Desk', '港股研判台') }}</a>.</p>
+  </div>
+  {% endif %}
+
   <!-- ===================== AI MASTER BRIEF (China & HK synthesis) ===================== -->
   {# Client-fetched from china_brief.json (engine/master_brain.py covers China + HK);
      hidden until a usable brief loads. Research context only — never a signal. #}
@@ -875,10 +1112,16 @@
           cell: function (r) { return r.beta_pct != null ? '<span class="note">' + Math.round(r.beta_pct) + '</span>' : '—'; } },
         tilt: { en: 'in this regime', zh: '当前状态下', l: true, key: null,
           cell: function (r) { var tk = TILT[r.tilt] || TILT.neutral; return '<span class="gb-tilt gb-' + (r.tilt || 'neutral') + '">' + bl(tk[0], tk[1]) + '</span>'; } },
+        sb: { en: 'Southbound', zh: '南向', key: function (r) { return r.sb_z; }, def: 'desc',
+          cell: function (r) { if (r.sb_z == null) return '—'; var cl = r.sb_z >= 0.6 ? 'pos' : (r.sb_z <= -0.6 ? 'neg' : ''); var own = r.sb_own != null ? ' <span class="note">' + r.sb_own + '%</span>' : ''; return '<span class="' + cl + '">' + (r.sb_z >= 0 ? '+' : '') + r.sb_z.toFixed(1) + '</span>' + own; } },
+        ah: { en: 'A/H val', zh: 'A/H', key: function (r) { return r.ah_z; }, def: 'desc',
+          cell: function (r) { if (r.ah_z == null) return '—'; var cl = r.ah_z >= 0.4 ? 'pos' : ''; return '<span class="' + cl + '">' + (r.ah_z >= 0 ? '+' : '') + r.ah_z.toFixed(1) + '</span>'; } },
+        conv: { en: 'Conv', zh: '确信', key: function (r) { return r.conv; }, def: 'desc',
+          cell: function (r) { return r.conv != null ? '<b>' + r.conv + '</b>' : '—'; } },
         cycle: { en: 'Cycle', zh: '周期', l: true, key: null,
           cell: function (r) { return r.cycle ? '<span class="lad ' + ladDir(r.cycle_dir) + '">' + bl(r.cycle, r.cycle_zh || r.cycle) + '</span>' : '—'; } }
       };
-      var ORDER = ['stock', 'sector', 'price', 'beta', 'pct', 'tilt', 'cycle'];
+      var ORDER = ['stock', 'sector', 'beta', 'pct', 'tilt', 'sb', 'ah', 'conv', 'cycle'];
       var MODES = {
         amplifiers: { def: 'desc',
           cap: bl('Highest global-risk beta — global cyclicals (tech, miners, CXO) that move MORE with the regime. The leveraged play in Risk-on; the most exposed in Risk-off. Exposure context, not a buy list.', '全球风险贝塔最高 —— 随风险状态波动更大的全球周期股（科技、矿业、CXO）。风险偏好时为杠杆首选；风险规避时敞口最大。敞口背景，而非买入清单。') },
