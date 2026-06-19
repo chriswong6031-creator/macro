@@ -204,7 +204,7 @@
   <div class="nav-search" data-lib="intlstockdata/index.json" data-target="intl_stock.html">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search international stocks"
-      placeholder="Search any JP / KR / TW / UK / EU stock…" data-ph-zh="搜索任意 日／韩／台／英／欧 个股…">
+      placeholder="Search any JP / KR / TW / IN / AU / UK / EU stock…" data-ph-zh="搜索任意 日／韩／台／印／澳／英／欧 个股…">
     <div class="nav-sugg"></div>
   </div>
   <div class="nav-ctrls">
@@ -226,7 +226,7 @@
     <span style="flex:1"></span>
     <span class="muted small">{{ t('data through', '数据截至') }} {{ latest.date }} · {{ t('built', '生成') }} {{ built }}</span>
   </div>
-  <p class="muted small" style="margin:6px 0 0">{{ t('Standout names pooled from the top constituents of Japan, South Korea, Taiwan, the UK and Europe — ranked by sector-neutral residual momentum computed WITHIN each market (a relative-strength lens, not a forward-edge claim). Each name is flagged by country. Search any name from the box above.', '汇集日本、韩国、台湾、英国与欧洲主要成分股中的精选个股 — 按各自市场内部的板块中性残差动量排名（相对强弱视角，非前瞻收益主张）。每只个股标注所属国家。可在上方搜索框查询。') }}
+  <p class="muted small" style="margin:6px 0 0">{{ t('Standout names pooled from the top constituents of Japan, South Korea, Taiwan, India, Australia, the UK (FTSE 100 + 250) and Europe — ranked by sector-neutral residual momentum computed WITHIN each market (a relative-strength lens, not a forward-edge claim). Each name is flagged by country. Search any name from the box above.', '汇集日本、韩国、台湾、印度、澳大利亚、英国（富时100＋250）与欧洲主要成分股中的精选个股 — 按各自市场内部的板块中性残差动量排名（相对强弱视角，非前瞻收益主张）。每只个股标注所属国家。可在上方搜索框查询。') }}
     <a href="intl.html" style="color:var(--link);font-weight:600">← {{ t('Macro comparison', '宏观对比') }}</a></p>
 </div>
 {% endif %}
@@ -474,7 +474,7 @@
 <!-- ===== Correlation & diversification heatmap ===== -->
 {% if CR %}
 <div class="panel">
-  <div class="sec-h"><h2>{{ t('Cross-market correlation', '跨市场相关性') }} {{ help('Pairwise correlation of the daily USD-return streams (the five international markets + the US) over the trailing window. High everywhere = these markets move together and offer little diversification; lower = real diversification on offer. The average off-diagonal is the one-number read.', '过去窗口内各市场每日美元收益的两两相关性（五个国际市场 + 美国）。处处偏高 = 同涨同跌、分散价值低；偏低 = 存在真正的分散空间。平均非对角值为单一读数。') }}</h2>
+  <div class="sec-h"><h2>{{ t('Cross-market correlation', '跨市场相关性') }} {{ help('Pairwise correlation of the daily USD-return streams (every international market + the US) over the trailing window. High everywhere = these markets move together and offer little diversification; lower = real diversification on offer. The average off-diagonal is the one-number read.', '过去窗口内各市场每日美元收益的两两相关性（所有国际市场 + 美国）。处处偏高 = 同涨同跌、分散价值低；偏低 = 存在真正的分散空间。平均非对角值为单一读数。') }}</h2>
     <span style="flex:1"></span>{% if CR.avg_offdiag is not none %}<span class="sub">{{ t('avg', '平均') }} <b style="color:var(--text)">{{ '%.2f'|format(CR.avg_offdiag) }}</b> · {{ CR.window_d }}d</span>{% endif %}</div>
   <div class="heatwrap">
     <table class="heat">
@@ -495,7 +495,7 @@
       </tbody>
     </table>
   </div>
-  <p class="caveat" style="margin-top:9px">{% if CR.read_en %}{{ t(CR.read_en, CR.read_zh) }} · {% endif %}{{ t('Redder = more correlated (less diversification); greener = lower correlation. USD weekly returns (week-end closes, so the five markets’ different holiday calendars line up without injecting spurious zero-return days). Display-only.', '越红 = 相关性越高（分散越少）；越绿 = 相关性越低。美元周度收益（采用周末收盘价，使五个市场不同的假期日历对齐，避免引入虚假的零收益日）。仅供展示。') }}</p>
+  <p class="caveat" style="margin-top:9px">{% if CR.read_en %}{{ t(CR.read_en, CR.read_zh) }} · {% endif %}{{ t('Redder = more correlated (less diversification); greener = lower correlation. USD weekly returns (week-end closes, so the markets’ different holiday calendars line up without injecting spurious zero-return days). Display-only.', '越红 = 相关性越高（分散越少）；越绿 = 相关性越低。美元周度收益（采用周末收盘价，使各市场不同的假期日历对齐，避免引入虚假的零收益日）。仅供展示。') }}</p>
 </div>
 {% endif %}
 
@@ -529,7 +529,7 @@
     <li>{{ t('USD performance rebuilds each price index in dollars (index × FX, or ÷ FX for USD-quoted pairs like USD/JPY); the equity and currency legs are both measured on the same calendar and sum exactly to the USD return. These are PRICE-return indices (no dividends) — fine for cross-market comparison, not a total-return claim.', '美元表现将每个价格指数以美元重建（指数 × 汇率，USD 报价对如美元／日元则 ÷ 汇率）；股票腿与货币腿在同一日历上计量，且精确相加等于美元收益。这些是价格指数（不含股息）—— 适合跨市场对比，非全收益主张。') }}</li>
     <li>{{ t('US-vs-world rotation & correlation use the S&P 500 PRICE index for an apples-to-apples comparison with the other price indices. Relative strength is a focus lens, not a scored signal.', '美国对全球轮动与相关性采用标普500价格指数，以与其他价格指数同口径对比。相对强弱是聚焦视角，非评分信号。') }}</li>
     <li>{{ t('Regime / recession / drawdown / bubble reads are descriptive and history-anchored — no forward edge is claimed and none drives a scored buy/sell.', '周期／衰退／回撤／泡沫读数均为描述性且以历史锚定 — 不主张前瞻优势，且不驱动评分买卖。') }}</li>
-    <li>{{ t('CPI: FRED OECD series are discontinued for Japan (2021) and lag for the UK/Korea — shown with as-of dates and dropped from scoring when stale. Eurozone uses current Eurostat HICP.', 'CPI：日本（2021 年）FRED OECD 序列已停更，英国／韩国滞后 — 标注截至日期并在过时时退出评分。欧元区采用当前 Eurostat HICP。') }}</li>
+    <li>{{ t('CPI: FRED OECD series are discontinued for Japan (2021) and lag for the UK/Korea/India/Australia (the latter quarterly) — shown with as-of dates and dropped from scoring when stale. Eurozone uses current Eurostat HICP.', 'CPI：日本（2021 年）FRED OECD 序列已停更，英国／韩国／印度／澳大利亚滞后（澳为季度）— 标注截至日期并在过时时退出评分。欧元区采用当前 Eurostat HICP。') }}</li>
     <li>{{ t('Taiwan has the thinnest keyless macro coverage (no yields/CPI on FRED) — flagged data-limited; its read leans on the equity tape. The liquidity impulse is ECB-only (the one clean keyless weekly CB series).', '台湾的免密钥宏观覆盖最薄（FRED 无收益率/CPI）— 标注数据有限；其读数依赖股市行情。流动性脉冲仅含欧央行（唯一干净的免密钥周度央行序列）。') }}</li>
     <li>{{ t('No keyless implied-vol (VSTOXX / Nikkei-VI / VKOSPI) is available, so equity risk uses realised vol + own-history extension.', '无免密钥隐含波动率（VSTOXX / 日经VI / VKOSPI），故股市风险采用已实现波动率 + 自身历史扩张度。') }}</li>
   </ul>
