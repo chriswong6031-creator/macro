@@ -527,8 +527,16 @@ jobs:
           # on main so the committed-tree deploy ships it (-f overrides the ignore).
           git add -f site/stockbrief 2>/dev/null || true
           git add data/catalyst/stockbrief_cache 2>/dev/null || true
+          # stock_desk (T9): the accountable-lean notes + the graded track record are written
+          # by build_stock_briefs in THIS job (after the engine job's force-add of site/stockdata
+          # already ran), so they must be force-added HERE or they never land on main → the
+          # aidesk_lean.js panel 404s. The ledger (data/stock_desk, NOT gitignored) must also be
+          # committed or the track record can never accumulate past-due leans. (Same gitignore/
+          # force-add trap as the per-market stock libraries.)
+          git add -f site/stockdata/ai_desk_notes.json site/stockdata/ai_desk_track.json 2>/dev/null || true
+          git add data/stock_desk 2>/dev/null || true
           if git diff --cached --quiet; then echo "no stock-brief changes"; exit 0; fi
-          git commit -m "stock-briefs: AI research briefs $(date -u +%F)"
+          git commit -m "stock-briefs: AI research briefs + accountable leans $(date -u +%F)"
           # best-effort push (own files → rebases clean against engine/factor_series)
           for i in 1 2 3 4 5; do
             if git pull --rebase -X theirs origin main && git push; then

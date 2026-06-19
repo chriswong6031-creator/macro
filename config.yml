@@ -2039,6 +2039,29 @@ ai_desk:
                                  # false = single analyst (cheaper: 1 LLM call vs 5).
 
 # =============================================================================
+# Stock desk — accountable AI JUDGMENT layer on the US standout top-picks
+# (engine/stock_desk.py; T9). The per-stock sibling of ai_desk: turns each top pick's
+# deterministic Conviction profile into a FALSIFIABLE LEAN (constructive/neutral/
+# cautious/avoid vs SPY over a horizon) that is SCORED against realized returns into a
+# track record. HONEST: the cross-sectional rank has no validated forward edge (the
+# deep+PIT event gate is NEUTRAL — reports/sue-insider-deep-phase0.md) — this is
+# accountability/explainability, not alpha. The model may NEVER overrule the risk reshape
+# (a name flagged extended/avoid or cycle_blocked is clamped out of 'constructive'); it
+# NEVER gives a size. One LLM call/build, gated. Run: `python -m engine.stock_desk --force`.
+# =============================================================================
+stock_desk:
+  enabled: true                   # MASTER SWITCH — nothing calls the model unless true
+  interval_days: 1                # regenerate leans every N days (1..7); 1 = every build
+  api_key_env: DEEPSEEK_API_KEY
+  llm_base_url: https://api.deepseek.com/anthropic
+  llm_model: deepseek-v4-pro      # reasoning tier; swap to claude-opus-4-8 later
+  max_tokens: 8000                # reasoning model — thinking tokens count vs cap
+  max_picks: 6                    # judge the top N board names (1..12; honesty over breadth)
+  default_horizon_d: 21           # trading-day horizon when the model omits one
+  falsifier_defaults:
+    rel_return: 0.05              # ±5% name-vs-SPY move = the wrong-way threshold
+
+# =============================================================================
 # Policy Intent Desk — the realpolitik LLM layer on the Fed/Admin intel substrate
 # (engine/policy_intent_desk.py). LEAF · NEVER-SCORED · no-op without DEEPSEEK_API_KEY.
 # Reads data/policy/intel.json + live market state -> dated, FALSIFIABLE intent leans
