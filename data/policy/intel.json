@@ -67,6 +67,7 @@
   },
   "administration": {
     "decision_makers": ["Donald Trump (President)", "Scott Bessent (Treasury Secretary)", "DOE Sec. Chris Wright (energy/nuclear)"],
+    "decision_makers_zh": ["特朗普（总统）", "贝森特（财政部长）", "能源部长赖特（能源/核能）"],
     "grand_strategy": {
       "en": "Treasury's revealed strategy under Bessent is yield suppression — 'Making America Affordable Again' — via short-end/bill-heavy funding rather than long-end coupons or deficit elimination, plus market-structure reform to expand dealer capacity to absorb Treasuries (eSLR reform, SEC central-clearing, buyback expansion). The objective Bessent states plainly: keep the risk-free rate low to lower mortgage and car payments. Pair this with concrete industrial policy (chip tariffs, nuclear-for-AI) and the picture is reflation-with-repression: hold real yields down while steering capital into strategic domestic capacity.",
       "zh": "贝森特治下财政部的实际策略是压低收益率——“让美国重新负担得起”——通过偏短端/票据为主的发债（而非增加长端票息或消除赤字），并辅以扩大做市商承接国债能力的市场结构改革（eSLR改革、SEC中央清算、扩大回购）。贝森特直言其目标：压低无风险利率以降低房贷与车贷。再叠加具体的产业政策（芯片关税、为AI供电的核能），整体图景即“带金融抑制的再通胀”：压住实际收益率，同时把资本引向战略性国内产能。"
@@ -280,13 +281,13 @@
      "text_zh": "在霍尔木兹未再关闭的情况下，油价不持续高于100美元/桶（停火作为反通胀杠杆维持）。"}
   ],
   "monitor": [
-    {"name": "FOMC statements · presser transcripts · SEP tables", "who": "Federal Reserve", "url": "https://www.federalreserve.gov/newsevents/pressreleases.htm", "cadence": "each meeting; task-force reports ~year-end 2026"},
-    {"name": "Treasury quarterly refunding + Bessent remarks + TBAC", "who": "US Treasury", "url": "https://home.treasury.gov/news/press-releases", "cadence": "quarterly (next Aug 2026) + ad hoc"},
-    {"name": "Section-232 chip-tariff modifications / covered-list changes", "who": "White House", "url": "https://www.whitehouse.gov/presidential-actions/", "cadence": "ad hoc"},
-    {"name": "Nuclear: pilot-reactor criticality · HALEU releases · reprocessing", "who": "DOE Office of Nuclear Energy", "url": "https://www.energy.gov/ne/listings/ne-articles", "cadence": "ad hoc"},
-    {"name": "eSLR reform rules", "who": "Fed / OCC / FDIC", "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg.htm", "cadence": "ad hoc"},
-    {"name": "Treasury central-clearing rulemaking", "who": "SEC", "url": "https://www.sec.gov/rules-regulations", "cadence": "ad hoc"},
-    {"name": "Principals to track for hawkish/dovish & policy drift", "who": "Warsh · Bessent · DOE Sec. Wright · FOMC dot participants", "url": "", "cadence": "continuous"}
+    {"name": "FOMC statements · presser transcripts · SEP tables", "name_zh": "FOMC声明 · 发布会纪要 · SEP预测表", "who": "Federal Reserve", "who_zh": "美联储", "url": "https://www.federalreserve.gov/newsevents/pressreleases.htm", "cadence": "each meeting; task-force reports ~year-end 2026", "cadence_zh": "每次会议；工作组报告约2026年底"},
+    {"name": "Treasury quarterly refunding + Bessent remarks + TBAC", "name_zh": "财政部季度再融资 + 贝森特讲话 + TBAC", "who": "US Treasury", "who_zh": "美国财政部", "url": "https://home.treasury.gov/news/press-releases", "cadence": "quarterly (next Aug 2026) + ad hoc", "cadence_zh": "每季度（下次2026年8月）+ 不定期"},
+    {"name": "Section-232 chip-tariff modifications / covered-list changes", "name_zh": "232条款芯片关税调整 / 覆盖清单变更", "who": "White House", "who_zh": "白宫", "url": "https://www.whitehouse.gov/presidential-actions/", "cadence": "ad hoc", "cadence_zh": "不定期"},
+    {"name": "Nuclear: pilot-reactor criticality · HALEU releases · reprocessing", "name_zh": "核能：试点反应堆临界 · HALEU释放 · 后处理", "who": "DOE Office of Nuclear Energy", "who_zh": "美国能源部核能办公室", "url": "https://www.energy.gov/ne/listings/ne-articles", "cadence": "ad hoc", "cadence_zh": "不定期"},
+    {"name": "eSLR reform rules", "name_zh": "eSLR改革规则", "who": "Fed / OCC / FDIC", "who_zh": "美联储 / OCC / FDIC", "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg.htm", "cadence": "ad hoc", "cadence_zh": "不定期"},
+    {"name": "Treasury central-clearing rulemaking", "name_zh": "国债中央清算规则制定", "who": "SEC", "who_zh": "SEC", "url": "https://www.sec.gov/rules-regulations", "cadence": "ad hoc", "cadence_zh": "不定期"},
+    {"name": "Principals to track for hawkish/dovish & policy drift", "name_zh": "需追踪的关键人物（鹰/鸽倾向与政策漂移）", "who": "Warsh · Bessent · DOE Sec. Wright · FOMC dot participants", "who_zh": "沃什 · 贝森特 · 能源部长赖特 · FOMC点阵图参与者", "url": "", "cadence": "continuous", "cadence_zh": "持续"}
   ],
   "sources": [
     "https://www.federalreserve.gov/mediacenter/files/FOMCpresconf20260617.pdf",

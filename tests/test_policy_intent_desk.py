@@ -25,6 +25,23 @@ def _fake_call(system, user, cfg):
     return _REPLY, None
 
 
+_REPLY_BILINGUAL = json.dumps({
+    "regime_context": "Low-yield engineering + re-industrialization.",
+    "regime_context_zh": "压低收益率 + 再工业化。",
+    "confidence": "medium",
+    "theses": [
+        {"actor": "admin", "subject": "XLE", "lean": "overweight", "conviction": "medium",
+         "horizon_d": 40, "thesis": "Energy theater", "thesis_zh": "能源战区",
+         "evidence": ["energy theater"], "dissent": "ceasefire holds", "dissent_zh": "停火维持",
+         "falsifier_text": "XLE lags SPY by 5%", "falsifier_text_zh": "XLE 跑输 SPY 5%"},
+    ],
+})
+
+
+def _fake_call_bilingual(system, user, cfg):
+    return _REPLY_BILINGUAL, None
+
+
 def test_derive_check_rel_return():
     ov = pid._derive_check("XLE", "overweight", 40, pid._cfg())
     assert ov["kind"] == "rel_return" and ov["op"] == "<" and ov["threshold"] == -0.05 and ov["vs"] == "SPY"
@@ -44,6 +61,26 @@ def test_synthesize_builds_and_validates_theses():
     assert xle["falsifier"]["check"]["kind"] == "rel_return"
     assert xle["check_by"] and xle["actor"] == "admin"
     assert brief["confidence"] == "medium"
+
+
+def test_synthesize_captures_bilingual_fields():
+    state = {"as_of": "2026-06-18", "allowed_subjects": sorted(pid._ALLOWED)}
+    brief = pid.synthesize(state, pid._cfg(), call=_fake_call_bilingual)
+    assert brief["regime_context_zh"] == "压低收益率 + 再工业化。"
+    assert brief["disclaimer_zh"] and "意图台" in brief["disclaimer_zh"]   # static zh disclaimer
+    th = brief["theses"][0]
+    assert th["thesis_zh"] == "能源战区" and th["dissent_zh"] == "停火维持"
+    assert th["falsifier"]["text_zh"] == "XLE 跑输 SPY 5%"
+
+
+def test_synthesize_zh_fields_degrade_to_none_when_absent():
+    # English-only reply (no *_zh keys) → zh fields are None; the template falls back to en.
+    state = {"as_of": "2026-06-18", "allowed_subjects": sorted(pid._ALLOWED)}
+    brief = pid.synthesize(state, pid._cfg(), call=_fake_call)
+    assert brief["regime_context_zh"] is None
+    assert brief["disclaimer_zh"]                                          # static, always present
+    assert brief["theses"][0]["thesis_zh"] is None
+    assert brief["theses"][0]["falsifier"]["text_zh"] is None
 
 
 def test_synthesize_degrades_without_key():
