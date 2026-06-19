@@ -736,10 +736,23 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("revision drip skipped (%s)", e)
     revision_z: dict[str, float] = {}
+    # raw analyst-revision fields, surfaced per-stock for the Demand Context panel (L1
+    # "consensus"): these are collected but were previously distilled only into the
+    # cross-sectional z below — the panel needs the unblended numbers to LABEL them as
+    # already-priced. See memory demand-desk-divergence (Phase 0).
+    revision_raw: dict[str, dict] = {}
     _rp = config.data_dir() / "revisions" / "latest.parquet"
     if _rp.exists():
         try:
             _rv = pd.read_parquet(_rp)
+
+            def _rf(x):  # NaN/inf-safe float for the JSON payload, else None
+                try:
+                    x = float(x)
+                except (TypeError, ValueError):
+                    return None
+                return x if x == x and x not in (float("inf"), float("-inf")) else None
+
             raw = {}
             for t, r in _rv.iterrows():
                 b = r.get("breadth"); e = r.get("est_chg_30d")
@@ -747,6 +760,10 @@ def main() -> int:
                       if x is not None and x == x]
                 if xs:
                     raw[t] = float(sum(xs) / len(xs))
+                rr = {"breadth": _rf(b), "est_chg_30d": _rf(e), "est_chg_90d": _rf(r.get("est_chg_90d")),
+                      "net_up_30d": _rf(r.get("net_up_30d")), "n_analysts": _rf(r.get("n_analysts"))}
+                if any(v is not None for v in rr.values()):
+                    revision_raw[str(t)] = rr
             if len(raw) >= 5:
                 s = pd.Series(raw); mu, sd = s.mean(), s.std(ddof=0) or 1.0
                 revision_z = ((s - mu) / sd).clip(-3, 3).round(3).to_dict()
@@ -870,6 +887,8 @@ def main() -> int:
             rec["fragility"] = fragility_map[ticker]
         if bsk_mem.get(ticker):
             rec["baskets_membership"] = bsk_mem[ticker]
+        if revision_raw.get(ticker):           # raw analyst-revision fields → Demand Context (L1 consensus)
+            rec["revisions"] = revision_raw[ticker]
         # ---- unified Conviction Profile (engine/stock_score) -----------------
         # The single block both the dashboard standout card AND this name's detail page
         # render, so the two can never structurally disagree. v2: the EDGE = the VALIDATED
