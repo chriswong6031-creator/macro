@@ -649,6 +649,47 @@ REGISTRY: list[dict] = [
          wired="not shipped",
          extra=[("vs dumb 200dma", "dominated on Sharpe AND MaxDD"), ("DD-reduction CI", "straddles 0"),
                 ("split-half Sharpe", "sign-flip")]),
+
+    # ---- DATA-CHASE for scored #7 (2026-06-19 — new commodity-xsec data; the wall held) ----
+    _row("Cross-sectional commodity momentum (19-asset, deep)",
+         "横截面商品动量（19资产，深度历史）", "Commodity", "killed",
+         why="The classic Gorton-Rouwenhorst commodity-momentum factor (12-1m, long-winners/short-losers "
+             "tercile L/S over 19 deep continuous fronts, 2002-2026) tested on freshly-collected NEW data — "
+             "and it is DEAD. Forward 21d rank-IC is NEGATIVE (−0.018, t −1.01, q=0.31, fails BH-FDR) — the "
+             "monthly commodity cross-section MEAN-REVERTS, the opposite of the trend prior. The L/S loses "
+             "money even GROSS (−91% cumulative; net Sharpe −0.23 vs EW-long +0.64 and a per-commodity 200dma "
+             "+0.18); DSR 0.0025; 1/7 gates (the lone pass is a trivially-both-negative split-half). Shorter "
+             "lookbacks reject FDR but in the WRONG (reversal) sign. Matches the documented post-2004 "
+             "financialization decay; only merit is crisis convexity from the short leg that bleeds back in "
+             "normal regimes. NO-GO — new data did not break the scored wall.",
+         why_zh="经典 Gorton-Rouwenhorst 商品动量因子（12-1月、多赢家空输家、19个深度连续合约、2002-2026）在新采数据上检验——已死。"
+                "前瞻21日秩相关 IC 为负（−0.018，未过 FDR），月度商品横截面均值回归。多空即使毛收益也亏（−91%），DSR 0.0025。"
+                "符合2004年后金融化衰减；唯一可取处是空头腿危机凸性，但常态回吐。NO-GO。",
+         source="commodity-xsec-mom-phase0.md + commodity-xsec-mom-refute.md (scripts/commodity_xsec_mom_phase0.py)",
+         horizon="21d / monthly", ic=-0.0181, t_hac=-1.01, q_fdr=0.314, dsr=0.0025, sharpe=-0.23, fdr_survivor=False,
+         wired="not shipped (no daily collector — momentum empirically dead)",
+         extra=[("fwd-IC", "−0.018 (mean-reverts, wrong sign)"), ("L/S net Sharpe", "−0.23 vs EW-long +0.64"),
+                ("gross", "also negative (−91% cum)"), ("only merit", "crisis convexity (bleeds back)")]),
+    _row("Cross-sectional commodity carry / basis",
+         "横截面商品 carry／基差", "Commodity", "display",
+         why="The storage-theory carry premium (long backwardation / short contango; ~81bps/mo t~4 in the "
+             "literature; the team's own note: total-return basis IC +0.15) is real — but UN-BACKTESTABLE on "
+             "free data, so NO edge is claimed here. yfinance DELETES expired dated contracts (CLZ24 → 404, "
+             "verified), so a clean continuous adjacent-month basis chain cannot be built; the only "
+             "constructible series uses a far/sticky ~24mo deferred leg whose basis is dominated by the front "
+             "PRICE LEVEL (which mean-reverts) — a confound whose forward IC is significant but WRONG-SIGN "
+             "(−0.16 @21d) and whose L/S loses to both dumb baselines. The clean deep EIA WTI c1-c4 (41y) "
+             "confirms carry is a CROSS-SECTIONAL premium, not single-name timing. A genuine test needs a "
+             "dated-history vendor (CME / Bloomberg / Quandl-Stevens) carrying expired contracts. Shown to "
+             "document the data gap + the path — not an edge.",
+         why_zh="仓储理论的 carry 溢价（多升水空贴水，文献 ~81bps/月；团队自有记录 总回报基差 IC +0.15）真实存在，"
+                "但在免费数据上无法回测，故此处不主张任何边际。yfinance 删除到期合约，无法构建干净的相邻月基差链；"
+                "唯一可构建的远月代理被前端价格水平混淆（符号相反）。真正检验需带历史到期合约的付费数据源。仅记录数据缺口与路径。",
+         source="commodity-xsec-carry-phase0.md (scripts/commodity_xsec_carry_phase0.py); EIA WTI c1-c4 41y",
+         horizon="—", wired="not shipped — un-backtestable on free data (needs dated-history vendor)",
+         extra=[("blocker", "yahoo deletes expired contracts → no clean basis chain"),
+                ("constructible proxy", "front-price-level confound, wrong-sign IC −0.16"),
+                ("path", "CME / Bloomberg / Quandl-Stevens expired-contract history")]),
 ]
 
 
