@@ -464,3 +464,28 @@ def test_suggested_size_monotone_and_gated():
     assert ss._suggested_size(0.8, blocked=False, market="US", validated=False)["bucket"] == "quarter"
     assert ss._suggested_size(0.05, blocked=True, market="US", validated=False)["bucket"] == "avoid"
     assert ss._suggested_size(0.05, blocked=False, market="HK", validated=False)["pct"] <= 50
+
+
+# --- reshape T7: forward event-calendar risk (earnings proximity) -------------
+def test_event_risk_earnings_proximity():
+    assert ss._event_risk({"earnings_days": 0.0}) == pytest.approx(0.8)
+    assert ss._event_risk({"earnings_days": 3.0}) == pytest.approx(0.5)
+    assert ss._event_risk({"earnings_days": 7.0}) == pytest.approx(0.15)
+    assert ss._event_risk({"earnings_days": 30.0}) == 0.0      # far out -> no effect
+    assert ss._event_risk({}) == 0.0                          # absent -> no effect
+
+
+def test_imminent_earnings_sizes_down_and_cautions():
+    # a strong, constructive, NON-extended name (would be high-conviction) reporting tomorrow
+    rec = {"sue": 2.6, "insider_bps": 30.0,
+           "ladder": {"state": "RALLY ON", "entry": {"urgency": "now"}},
+           "tech": {"off_52w_high_pct": -6.0, "rsi14": 56.0, "pct_vs_200dma": 10.0}}
+    base = ss.conviction_profile(rec, "US")
+    soon = ss.conviction_profile({**rec, "earnings_days": 1.0}, "US")
+    assert "high-conviction" in base["verdict"].lower()         # no event -> high-conviction
+    assert "earnings" in soon["verdict"].lower()                # event tomorrow -> not high-conviction
+    assert any("earnings" in c for c in soon["cautions"])
+    assert soon["size"]["pct"] < base["size"]["pct"]            # sized down
+    assert soon["risk"]["total"] >= 0.5
+    # earnings is a SIZE/verb concern, NOT a composite-rank tax (transient risk)
+    assert soon["composite_z"] == base["composite_z"]
