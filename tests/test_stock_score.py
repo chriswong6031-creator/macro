@@ -466,6 +466,32 @@ def test_suggested_size_monotone_and_gated():
     assert ss._suggested_size(0.05, blocked=False, market="HK", validated=False)["pct"] <= 50
 
 
+def test_size_capped_by_partial_conviction_entry():
+    # an explicit cap holds the size below the risk-budget bucket, subtract-only
+    full = ss._suggested_size(0.05, blocked=False, market="US", validated=False)
+    assert full["bucket"] == "full" and full["pct"] == 100
+    capped = ss._suggested_size(0.05, blocked=False, market="US", validated=False,
+                                conviction_cap=50)
+    assert capped["pct"] == 50 and capped["bucket"] == "half" and capped["capped_by_entry"]
+    # the cap is a ceiling only: when risk already sizes below it, risk still binds
+    risky = ss._suggested_size(0.8, blocked=False, market="US", validated=False,
+                               conviction_cap=50)
+    assert risky["pct"] == 25 and not risky.get("capped_by_entry")
+
+
+def test_half_size_entry_and_risk_budget_do_not_contradict():
+    # the reported bug: a low-risk name whose cycle says HALF SIZE (daily turn in,
+    # weekly unconfirmed) must not advertise a 100% "Full size" budget beside it.
+    rec = _rec(ladder={"state": "TURN SIGNALED", "label": "TURN", "dir": "up",
+                       "eq_dir": "up", "entry": {"urgency": "now", "tag": "HALF SIZE"}})
+    sz = ss.conviction_profile(rec, "US")["size"]
+    assert sz["pct"] <= 50 and sz.get("capped_by_entry")
+    # a fully-confirmed buy carries no such cap
+    buy = _rec(ladder={"state": "FRESH BUY", "label": "BUY", "dir": "up",
+                       "eq_dir": "up", "entry": {"urgency": "now", "tag": "BUY NOW"}})
+    assert not ss.conviction_profile(buy, "US")["size"].get("capped_by_entry")
+
+
 # --- reshape T7: forward event-calendar risk (earnings proximity) -------------
 def test_event_risk_earnings_proximity():
     assert ss._event_risk({"earnings_days": 0.0}) == pytest.approx(0.8)

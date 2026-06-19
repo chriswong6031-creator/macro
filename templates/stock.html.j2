@@ -1048,7 +1048,10 @@
       szbar = '<div class="cv-size" style="color:' + sc[0] + '"><span class="cv-szk">' +
         lz('Suggested size', '建议仓位') + '</span><span class="cv-szv">' + esc(lz(sc[1], sc[2])) +
         (sz.pct != null && sz.bucket !== 'avoid' ? ' · ' + sz.pct + '%' : '') + '</span>' +
-        (rk.length ? '<span class="cv-szt">' + lz('risk: ', '风险: ') + rk.join(', ') + '</span>' :
+        // when the cycle/timing read holds the size below what risk alone allows, say so —
+        // otherwise a HALF SIZE entry beside a "Full size" budget reads as a contradiction.
+        (sz.capped_by_entry ? '<span class="cv-szt">' + lz('held to entry conviction', '按入场信心封顶') + '</span>' :
+          rk.length ? '<span class="cv-szt">' + lz('risk: ', '风险: ') + rk.join(', ') + '</span>' :
           (sz.tier === 'context' ? '<span class="cv-szt">' + lz('risk-budget guide', '风险预算参考') + '</span>' : '')) +
         '</div>';
     }
