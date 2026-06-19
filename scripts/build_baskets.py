@@ -73,6 +73,16 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("group_flow lens failed: %s", e)
 
+    # THEME ROTATION DESK ADD-ONS (display-only context): ETF Pulse (style/risk/sector
+    # rotation), vol-regime + CBOE put/call chip, and per-theme ATR extension. Each writes
+    # its own basketdata/*.json, consumed client-side by site/theme_addons.js (the
+    # _theme_addons.html.j2 panel). Additive — never breaks the page.
+    try:
+        from scripts.build_theme_addons import main as _build_theme_addons
+        _build_theme_addons()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("theme add-ons failed: %s", e)
+
     # split the dense CHART (level matrix, for the interactive chart + live σ/sort table)
     # from the BASKETS metadata (thesis/members/rationale/perf/changelog/reference).
     chart = data.pop("chart")

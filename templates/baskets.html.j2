@@ -272,6 +272,11 @@
   </div>
   {% endif %}
 
+  {# Theme Rotation Desk add-ons (display-only): ETF Pulse (style/risk/sector rotation),
+     vol-regime + CBOE put/call chip, and per-theme ATR extension. Renders from
+     basketdata/{etf_pulse,vol_sentiment,theme_extension}.json via theme_addons.js. #}
+  {% include "_theme_addons.html.j2" %}
+
   <div id="content">
     <section id="table-section">
       <h2><span class="idx">01</span>{{ t('Performance table', '表现一览') }}</h2>

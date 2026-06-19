@@ -1,0 +1,11 @@
+{# Theme Rotation Desk ADD-ONS (display-only): vol-regime + put/call chip, ETF Pulse
+   (style/risk/sector rotation) and per-theme ATR extension.
+
+   DROP-IN: add `{% include "_theme_addons.html.j2" %}` to baskets.html.j2 just after the
+   flow-lens panel (and copy site/theme_addons.js into site/ in build_baskets.py, like
+   lightweight-charts.js). Reads basketdata/{vol_sentiment,etf_pulse,theme_extension}.json,
+   emitted by scripts/build_theme_addons.py. Self-contained: renders nothing (display:none)
+   if the JSON is absent, so it is always safe to include. region defaults to 'us'. #}
+<section id="theme-addons" class="panel pad" style="margin-top:10px"></section>
+<script src="theme_addons.js"></script>
+<script>renderThemeAddons({ base: "basketdata/", region: "{{ region | default('us') }}" });</script>
