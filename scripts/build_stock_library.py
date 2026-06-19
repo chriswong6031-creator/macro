@@ -32,6 +32,7 @@ from engine.playbook import SECTOR_NAMES  # noqa: E402
 from engine.setups import US_ALPHA_WEIGHT, rank_setups, setup_score, sue_confirmer  # noqa: E402
 from engine import stock_score  # noqa: E402
 from engine import stock_macro_sensitivity as macro_sens  # noqa: E402
+from engine import dannytrades_chip as dt_chip  # noqa: E402
 from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
@@ -850,6 +851,18 @@ def main() -> int:
                     rec["macro_sensitivity"] = ms
             except Exception as e:  # noqa: BLE001 — additive, never fatal
                 log.warning("macro-sensitivity for %s failed (%s)", ticker, e)
+        # ---- DannyTrades CONTRARIAN read (display-only) -----------------------
+        # extension flag (decile Spearman −0.88) + whale-fade; needs full OHLCV+volume
+        # (data/stocks names only — others silently skip). See research/DANNYTRADES_PHASE0.md.
+        try:
+            _ohlcv = store.read("stocks", ticker)
+            if _ohlcv is not None and {"low", "volume"} <= set(_ohlcv.columns):
+                dtc = dt_chip.assess(_ohlcv["close"], _ohlcv.get("high"),
+                                     _ohlcv.get("low"), _ohlcv.get("volume"))
+                if dtc:
+                    rec["dt_contra"] = dtc
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("dt-contra for %s failed (%s)", ticker, e)
         _tech = rec.get("tech") or {}
         disp_map[ticker] = {
             "price": _tech.get("price"), "off_high": _tech.get("off_52w_high_pct"),
