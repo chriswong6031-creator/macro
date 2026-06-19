@@ -1,12 +1,12 @@
-/* Theme Rotation Desk ADD-ONS renderer (display-only).
+/* Theme Rotation Desk ADD-ONS renderer — "Rotation context" (display-only).
  *
- * Renders three context panels from the JSON the standalone build emits
- * (basketdata/etf_pulse.json, vol_sentiment.json, theme_extension*.json):
- *   - a vol-regime + CBOE put/call chip
- *   - an ETF Pulse strip (style / risk / sector rotation)
- *   - a per-theme ATR "too hot" extension list
- * Bilingual via the site's .l-en/.l-zh spans. Used by both the standalone preview page
- * and (via templates/_theme_addons.html.j2) the baskets page. Pure render; no scoring.
+ * Three plain-language context panels that sit beside the Theme Rotation Desk, each built
+ * from the JSON the standalone build emits (basketdata/vol_sentiment.json, etf_pulse.json,
+ * theme_extension*.json):
+ *   - Volatility & sentiment  : vol-regime + CBOE put/call chip
+ *   - ETF rotation            : style / risk-on-off / sector leadership strips
+ *   - Theme stretch           : per-theme ATR extension above the 50-day trend (overbought read)
+ * Bilingual via the site's .l-en/.l-zh spans. Pure render; nothing here is scored.
  *
  *   renderThemeAddons({ base:'basketdata/', region:'us', mount:'#theme-addons' })
  */
@@ -33,7 +33,16 @@
     return fetch(url, { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
   }
 
-  // ---- vol-regime + put/call chip -----------------------------------------
+  // a titled section wrapper so each context block reads as its own card (not a wall of text)
+  function sect(icon, titleEn, titleZh, hintEn, hintZh, body) {
+    if (!body) return "";
+    return '<section class="ta-sect">' +
+      '<div class="ta-h"><span class="ta-ico">' + icon + "</span>" + bi(titleEn, titleZh) +
+      (hintEn ? '<span class="ta-hint">' + bi(hintEn, hintZh) + "</span>" : "") + "</div>" +
+      body + "</section>";
+  }
+
+  // ---- Volatility & sentiment : vol-regime + put/call chip -----------------
   function renderVol(vs) {
     if (!vs || (!vs.vol_regime && !vs.put_call)) return "";
     var v = vs.vol_regime, pc = vs.put_call, out = [];
@@ -49,20 +58,22 @@
     if (pc) {
       out.push(
         '<span class="ta-kv">' + bi("put/call", "看跌/看涨") + " <b>" + num(pc.equity_pc, 2) + "</b> " +
-        '<em style="color:var(--muted)">' + bi(pc.sentiment_en, pc.sentiment_zh) + "</em>" +
+        '<em>' + bi(pc.sentiment_en, pc.sentiment_zh) + "</em>" +
         (pc.young ? ' <span class="ta-young" title="short history">' + bi("young series", "数据较短") + "</span>" : "") +
         "</span>"
       );
     }
-    return '<div class="ta-chip-row">' + out.join("") + "</div>";
+    return sect("🌡️", "Volatility & sentiment", "波动率与情绪",
+      "how nervous the tape is right now", "当前市场紧张程度",
+      '<div class="ta-chip-row">' + out.join("") + "</div>");
   }
 
-  // ---- ETF pulse: style / risk / sector ------------------------------------
+  // ---- ETF rotation : style / risk / sector --------------------------------
   function renderPulse(ep) {
     if (!ep) return "";
     var h = [];
     if (ep.style && ep.style.length) {
-      h.push('<div class="ta-sub">' + bi("Style rotation", "风格轮动") + ' <span class="ta-dim">' + bi("20d ratio Δ", "20日比值Δ") + "</span></div>");
+      h.push('<div class="ta-lead">' + bi("Style", "风格") + ' <span class="ta-dim">' + bi("20d ratio Δ", "20日比值Δ") + "</span></div>");
       h.push('<div class="ta-strip">' + ep.style.map(function (s) {
         return '<span class="ta-pill"><b>' + esc(s.pair) + "</b> " +
           '<span style="color:' + signColor(s.chg_20d) + '">' + pct(s.chg_20d) + "</span> " +
@@ -71,8 +82,8 @@
     }
     if (ep.risk) {
       var r = ep.risk;
-      h.push('<div class="ta-sub">' + bi("Risk pulse", "风险脉搏") +
-        ' <span class="ta-badge" style="background:' + (r.tilt > 0.15 ? "var(--up)" : r.tilt < -0.15 ? "var(--down)" : "var(--muted)") + '">' +
+      h.push('<div class="ta-lead">' + bi("Risk-on / off", "风险偏好") +
+        ' <span class="ta-badge sm" style="background:' + (r.tilt > 0.15 ? "var(--up)" : r.tilt < -0.15 ? "var(--down)" : "var(--muted)") + '">' +
         bi(r.label_en, r.label_zh) + "</span></div>");
       h.push('<div class="ta-strip">' + (r.legs || []).map(function (l) {
         return '<span class="ta-pill"><b>' + esc(l.pair) + "</b> " + bi(l.label_en, l.label_zh) +
@@ -80,57 +91,80 @@
       }).join("") + "</div>");
     }
     if (ep.sector && ep.sector.rows) {
-      h.push('<div class="ta-sub">' + bi("Sector rotation", "行业轮动") + ' <span class="ta-dim">' + bi("RS, 60d mom vs SPY", "相对强度，60日动量") + "</span></div>");
+      h.push('<div class="ta-lead">' + bi("Sector leadership", "行业领先") + ' <span class="ta-dim">' + bi("60d momentum vs SPY", "相对SPY的60日动量") + "</span></div>");
       h.push('<div class="ta-strip">' + ep.sector.rows.map(function (s, i) {
         var lead = i < 3, lag = i >= ep.sector.rows.length - 3;
-        return '<span class="ta-pill ' + (lead ? "ta-lead" : lag ? "ta-lag" : "") + '" title="' + esc(s.label_en) + ' · pctile ' + num(s.pctile_252d, 0) + '">' +
+        return '<span class="ta-pill ' + (lead ? "ta-lead-p" : lag ? "ta-lag" : "") + '" title="' + esc(s.label_en) + ' · pctile ' + num(s.pctile_252d, 0) + '">' +
           "<b>" + esc(s.ticker) + "</b> " +
           '<span style="color:' + signColor(s.mom_60d) + '">' + pct(s.mom_60d, 1) + "</span></span>";
       }).join("") + "</div>");
     }
-    return h.join("");
+    return sect("🔁", "ETF rotation", "ETF 轮动",
+      "which styles, risk legs and sectors money is favouring", "资金正在偏好的风格、风险与行业",
+      h.join(""));
   }
 
-  // ---- per-theme ATR extension --------------------------------------------
+  // ---- Theme stretch : per-theme ATR extension above the 50-day trend ------
   function renderExt(te) {
     if (!te || !te.themes || !te.themes.length) return "";
-    var max = Math.max(5, Math.max.apply(null, te.themes.map(function (t) { return Math.abs(t.atr_ext || 0); })));
-    var rows = te.themes.map(function (t) {
-      var w = Math.min(100, Math.abs(t.atr_ext || 0) / max * 100);
+    var maxAbs = Math.max(2, Math.max.apply(null, te.themes.map(function (t) { return Math.abs(t.atr_ext || 0); })));
+    // sort most-stretched first so the overbought themes read at the top
+    var rows = te.themes.slice().sort(function (a, b) { return (b.atr_ext || 0) - (a.atr_ext || 0); }).map(function (t) {
+      var v = t.atr_ext || 0;
+      var w = Math.min(50, Math.abs(v) / maxAbs * 50);   // half-track %, diverging from the centre
       var col = toneVar(t.tone);
+      var left = v >= 0 ? 50 : (50 - w);
+      var bar = '<span class="ta-dbar"><i class="ta-zero"></i>' +
+        '<i class="ta-fill" style="left:' + left.toFixed(1) + "%;width:" + w.toFixed(1) + "%;background:" + col + '"></i></span>';
       return '<div class="ta-ext-row">' +
         '<span class="ta-ext-name">' + bi(t.name, t.name_zh) + "</span>" +
-        '<span class="ta-ext-bar"><span style="width:' + w.toFixed(0) + "%;background:" + col + '"></span></span>' +
-        '<span class="ta-ext-val" style="color:' + col + '">' + num(t.atr_ext, 1) + "</span>" +
+        bar +
+        '<span class="ta-ext-val" style="color:' + col + '">' + (v >= 0 ? "+" : "") + num(v, 1) + "σ</span>" +
         '<span class="ta-ext-band" style="color:' + col + '">' + bi(t.band_en, t.band_zh) + "</span>" +
-        '<span class="ta-dim">' + (t.pct_parabolic ? Math.round(t.pct_parabolic * 100) + "% " + bi("parabolic", "抛物") : "") + "</span>" +
+        '<span class="ta-dim ta-ext-par">' + (t.pct_parabolic ? Math.round(t.pct_parabolic * 100) + "% " + bi("parabolic", "抛物") : "") + "</span>" +
         "</div>";
     }).join("");
-    return '<div class="ta-sub">' + bi("Theme extension", "主题延展") +
-      ' <span class="ta-dim">' + bi("median member, ATRs above 50d trend (close-based)", "成员中位数，相对50日趋势的ATR倍数（基于收盘）") + "</span></div>" +
-      '<div class="ta-ext">' + rows + "</div>";
+    var explain = bi(
+      "How far the typical (median) stock in each theme has stretched ABOVE — or below — its 50-day trend, measured in ATR (one day's normal move). A high positive number means the theme is overbought and extended, so it carries more pullback risk; negative means it is trading below trend. It is a heat gauge, not a buy/sell signal.",
+      "每个主题中“典型”（中位数）个股相对其 50 日趋势向上（或向下）延展的幅度，以 ATR（一日的正常波动）为单位衡量。正值越高，说明该主题越超买、越延展，回调风险更大；负值表示位于趋势之下。这是过热温度计，并非买卖信号。");
+    return sect("📏", "Theme stretch", "主题延展", null, null,
+      '<p class="ta-explain">' + explain + "</p>" +
+      '<div class="ta-scale"><span>' + bi("below trend", "趋势下方") + "</span><span>" + bi("on trend", "趋于趋势") +
+      "</span><span>" + bi("overbought →", "超买 →") + "</span></div>" +
+      '<div class="ta-ext">' + rows + "</div>");
   }
 
   function STYLE() {
     return '<style>' +
-      "#theme-addons .ta-chip-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:2px 0 12px}" +
+      "#theme-addons .ta-sect{border-top:1px solid var(--line);padding:13px 0 4px;margin-top:4px}" +
+      "#theme-addons .ta-sect:first-of-type{border-top:0}" +
+      "#theme-addons .ta-h{display:flex;align-items:center;flex-wrap:wrap;gap:8px;font-size:13.5px;font-weight:700;margin:0 0 9px}" +
+      "#theme-addons .ta-ico{font-size:14px}" +
+      "#theme-addons .ta-hint{font-weight:400;color:var(--muted);font-size:11.5px}" +
+      "#theme-addons .ta-chip-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:2px 0}" +
       "#theme-addons .ta-badge{color:#fff;font-weight:700;font-size:11px;padding:2px 8px;border-radius:6px;letter-spacing:.3px}" +
+      "#theme-addons .ta-badge.sm{font-size:10px;padding:1px 6px}" +
       "#theme-addons .ta-kv{font-size:12px;color:var(--muted)}#theme-addons .ta-kv b{color:var(--text)}" +
+      "#theme-addons .ta-kv em{color:var(--muted);font-style:normal}" +
       "#theme-addons .ta-young{font-size:10px;color:var(--orange);border:1px solid var(--line);border-radius:4px;padding:0 4px}" +
-      "#theme-addons .ta-sub{font-size:12px;font-weight:700;margin:12px 0 6px;color:var(--text)}" +
+      "#theme-addons .ta-lead{font-size:11.5px;font-weight:650;margin:10px 0 5px;color:var(--text);display:flex;align-items:center;gap:7px}" +
+      "#theme-addons .ta-lead:first-child{margin-top:0}" +
       "#theme-addons .ta-dim{font-weight:400;color:var(--muted);font-size:11px}" +
       "#theme-addons .ta-strip{display:flex;flex-wrap:wrap;gap:6px}" +
       "#theme-addons .ta-pill{font-size:11.5px;border:1px solid var(--line);background:var(--panel2);border-radius:6px;padding:3px 8px;white-space:nowrap}" +
       "#theme-addons .ta-pill b{color:var(--text)}#theme-addons .ta-pill em{color:var(--muted);font-style:normal}" +
-      "#theme-addons .ta-pill.ta-lead{border-color:var(--up)}#theme-addons .ta-pill.ta-lag{border-color:var(--down);opacity:.85}" +
-      "#theme-addons .ta-ext{display:flex;flex-direction:column;gap:3px}" +
-      "#theme-addons .ta-ext-row{display:grid;grid-template-columns:minmax(120px,1.4fr) 2fr 36px 84px auto;gap:8px;align-items:center;font-size:12px}" +
+      "#theme-addons .ta-pill.ta-lead-p{border-color:var(--up)}#theme-addons .ta-pill.ta-lag{border-color:var(--down);opacity:.85}" +
+      "#theme-addons .ta-explain{font-size:11.5px;color:var(--muted);line-height:1.55;margin:0 0 9px;max-width:95ch}" +
+      "#theme-addons .ta-scale{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin:0 0 4px;padding:0 2px}" +
+      "#theme-addons .ta-ext{display:flex;flex-direction:column;gap:4px}" +
+      "#theme-addons .ta-ext-row{display:grid;grid-template-columns:minmax(110px,1.3fr) 2fr 52px 92px auto;gap:9px;align-items:center;font-size:12px}" +
       "#theme-addons .ta-ext-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}" +
-      "#theme-addons .ta-ext-bar{height:8px;background:var(--panel2);border-radius:4px;overflow:hidden}" +
-      "#theme-addons .ta-ext-bar span{display:block;height:100%}" +
+      "#theme-addons .ta-dbar{position:relative;display:block;height:9px;background:var(--panel2);border-radius:4px;overflow:hidden}" +
+      "#theme-addons .ta-zero{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--line)}" +
+      "#theme-addons .ta-fill{position:absolute;top:0;bottom:0;border-radius:3px}" +
       "#theme-addons .ta-ext-val{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}" +
       "#theme-addons .ta-ext-band{font-size:11px;font-weight:600}" +
-      "@media(max-width:640px){#theme-addons .ta-ext-row{grid-template-columns:minmax(90px,1.3fr) 1.4fr 32px 70px}#theme-addons .ta-ext-row .ta-dim{display:none}}" +
+      "@media(max-width:640px){#theme-addons .ta-ext-row{grid-template-columns:minmax(84px,1.2fr) 1.5fr 44px 70px}#theme-addons .ta-ext-par{display:none}}" +
       "</style>";
   }
 
@@ -154,9 +188,9 @@
         bi("⚡ Rotation context", "⚡ 轮动背景") +
         ' <span class="chip">' + bi("display-only", "仅展示") + "</span>" +
         (asof ? ' <span class="ta-dim" style="font-weight:400">' + esc(asof) + "</span>" : "") + "</h2>" +
-        '<p class="ta-dim" style="margin:0 0 6px">' +
-        bi("Style/risk/sector rotation, vol regime and per-theme extension — the tape context beside the Theme Rotation Desk. Never scored.",
-           "风格/风险/行业轮动、波动率制度与各主题延展 — 主题轮动台旁的市场背景。不计分。") + "</p>" +
+        '<p class="ta-dim" style="margin:0 0 4px;max-width:95ch">' +
+        bi("The tape context beside the Theme Rotation Desk — how jumpy volatility is, where ETF money is rotating, and how stretched each theme has become. Background only, never scored.",
+           "主题轮动台旁的市场背景 — 波动率是否紧张、ETF 资金在向何处轮动、各主题延展到何种程度。仅作背景，从不计分。") + "</p>" +
         renderVol(vs) + renderPulse(ep) + renderExt(te);
       mount.style.display = "";
     });
