@@ -1998,6 +1998,53 @@ def main() -> int:
         log.warning("crypto breadth view failed (%s)", e)
         breadth = {}
 
+    # Master Signal — the command-center synthesis (engine/btc_master.py). Transparent
+    # weighted regime read + the scannable Signal Board (every axis -> state + tone +
+    # MEASURED calibration grade + sparkline). Presentation-only; never break the build.
+    try:
+        from engine import btc_master
+        master = btc_master.synthesize(sig, calib)
+    except Exception as e:  # noqa: BLE001 — synthesis is optional; page renders without it
+        log.warning("master signal synthesis failed (%s)", e)
+        master = {"ok": False}
+
+    # New mastermind-upgrade factor panels (research/VECTOR_FACTOR_ROADMAP_2026).
+    newf = {
+        "miner": {
+            "hashprice": _r(last.get("hashprice"), 4),
+            "hashprice_pctile": _r(last.get("hashprice_pctile"), 0),
+            "hashprice_z": _r(last.get("hashprice_z"), 2),
+            "hashrate_shock": _r(last.get("hashrate_shock"), 1),
+            "difficulty_shock": _r(last.get("difficulty_shock"), 1),
+            "stress": _r(last.get("miner_stress"), 0),
+            "state": last.get("miner_econ_state"),
+        },
+        "cbeta": {
+            "down_beta": _r(last.get("down_beta"), 2),
+            "up_beta": _r(last.get("up_beta"), 2),
+            "asym": _r(last.get("beta_asym"), 2),
+            "down_beta_pctile": _r(last.get("down_beta_pctile"), 0),
+            "down_beta_gold": _r(last.get("down_beta_gold"), 2),
+            "regime": last.get("beta_regime"),
+        },
+        "holders": {
+            "sopr_spread": _r(last.get("sth_lth_sopr_spread"), 3),
+            "realized_premium": _r(last.get("sth_realized_premium"), 1),
+            "state": last.get("holder_state"),
+        },
+        "attention": {
+            "views": _r(last.get("wiki_views"), 0),
+            "z": _r(last.get("wiki_views_z"), 1),
+            "state": last.get("attention_state"),
+        },
+        "taker": {
+            "buy_share": _r(last.get("taker_buy_share"), 3),
+            "cvd": _r(last.get("taker_cvd"), 2),
+            "z": _r(last.get("taker_buy_z"), 1),
+            "divergence": last.get("taker_divergence"),
+        },
+    }
+
     vm = {
         "as_of": sig.index.max().strftime("%b %d, %Y"),
         "built": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
@@ -2183,6 +2230,8 @@ def main() -> int:
             "flow": round(100 * last["flow_pctile"]) if pd.notna(last["flow_pctile"]) else 50,
         },
         "breadth": breadth,
+        "master": master,
+        "newf": newf,
         "env": envd,
         "scn": scnd,
         "sizing": sizing,
