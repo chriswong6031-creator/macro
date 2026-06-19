@@ -94,7 +94,7 @@ def build_detail_pages(data: dict, site: Path, env, region: str = "us") -> int:
         bid = b["id"]
         members = [{**m, "conviction": _conviction(m["symbol"], sd_dir, cache),
                     "on_board": m["symbol"] in board} for m in b.get("members", [])]
-        th = tmap.get(bid, {})
+        th = {**tmap.get(bid, {}), "weights": ti.get("weights")}   # weights for the composition bar
         detail = {
             "basket": b, "members": members, "theme": th,
             "act_now": basket_score.act_now_stocks(members, th),

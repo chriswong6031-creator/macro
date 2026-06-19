@@ -28,16 +28,25 @@ import logging
 import numpy as np
 import pandas as pd
 
-from engine import basket_score, group_flow
+from engine import basket_index, basket_mtf, basket_score, basket_tape, group_flow
 from engine.baskets import _ew_level, _mtd_anchor, _perf
 from engine.equity_factors import _names_sectors
 from lib import config
 
 log = logging.getLogger(__name__)
 
-# Composite weights (sum of the positive legs = 1.0; crowding is a separate penalty).
+# Composite weights (all legs incl. the crowding penalty sum to 1.0; the score renormalises over
+# whichever legs are AVAILABLE, so a basket/region without a deep candle keeps the same scale).
 # Surfaced to the page so the score is never a black box.
-WEIGHTS = {"trend": 0.34, "breadth": 0.22, "impulse": 0.10, "macro": 0.20, "crowding": 0.14}
+#
+# `mtf` (multi-timeframe trend structure) and `volhole` (vol-compression regime resolution) are
+# the new legs from the consolidated candle. Phase-0 (scripts/basket_signals_phase0) measured ~0
+# forward-return IC for theme momentum and no edge for the vol-hole breakout — the ONE validated
+# content is the long-trend / drawdown-control channel. So these legs carry MODEST weight, are
+# fully transparent, and their real teeth are in the reco GATE below (a basket below its long-term
+# trend cannot be ENTER/ACCUMULATE), not in pretending to forecast returns.
+WEIGHTS = {"trend": 0.26, "breadth": 0.18, "impulse": 0.07, "macro": 0.18,
+           "mtf": 0.16, "volhole": 0.05, "crowding": 0.10}
 
 UP_DAY, DOWN_DAY = 0.03, -0.03   # the ±3% impulse thresholds (user spec)
 HI_LO_WINDOW = 252               # 52-week new-high / new-low window
@@ -306,8 +315,63 @@ def _crowding_pen(fp: dict, lead: dict, crowd: dict | None) -> tuple[float, list
     return float(np.clip(pen, 0, 1)), reasons
 
 
+# ------------------------------------------------- consolidated-candle signals
+_SIG_CACHE: dict[tuple, dict] = {}
+
+
+def _basket_signals(members: list[dict], conv_map: dict | None = None) -> dict:
+    """Build the basket's consolidated CANDLE (deep, current-membership) and run the MTF +
+    tape engines on it. Cached by membership so build_baskets reuses it for the detail pages.
+    {} when no member OHLCV resolves (e.g. non-US regions — the store is US-only today), in
+    which case the mtf/volhole legs renormalise out of the score cleanly."""
+    key = tuple(sorted(m.get("ticker", "") for m in members))
+    if key in _SIG_CACHE:
+        return _SIG_CACHE[key]
+    out: dict = {}
+    try:
+        idx = basket_index.deep_calendar(members)
+        if len(idx) >= 60:
+            cand, meta = basket_index.consolidated_candle(members, idx, "equal", conv_map, pit=False)
+            if cand is not None:
+                out = {"mtf": basket_mtf.basket_mtf(cand),
+                       "tape": basket_tape.basket_tape(cand, meta),
+                       "meta": meta}
+    except Exception as e:  # noqa: BLE001 — additive overlay
+        log.warning("basket signals failed: %s", e)
+        out = {}
+    _SIG_CACHE[key] = out
+    return out
+
+
+def _mtf_reasons(mtf: dict | None, tape: dict | None) -> list[str]:
+    """Short human reasons from the MTF confluence + vol-hole, for the theme card."""
+    out: list[str] = []
+    grade = ((mtf or {}).get("confluence") or {}).get("grade")
+    _g = {"TREND-FOLLOW": "all timeframes aligned up", "BUY-THE-DIP": "dip within an uptrend",
+          "CAUTION": "unconfirmed turn vs the bigger trend", "AVOID": "downtrend across timeframes"}
+    if grade and grade != "WAIT":
+        out.append(_g.get(grade, grade.lower()))
+    st = ((tape or {}).get("volhole") or {}).get("state")
+    if st == "EXPANSION_UP":
+        out.append("breaking out of the vol hole")
+    elif st == "EXPANSION_DOWN":
+        out.append("breaking down out of the vol hole")
+    elif st in ("IN_HOLE", "COILED_UP", "COILED_DOWN"):
+        out.append("coiled in a volatility hole")
+    return out
+
+
+def _long_below_trend(mtf: dict | None) -> bool:
+    """The validated drawdown-control gate: is the basket BELOW its long-term trend (monthly +
+    cycle governor pointing down)?  Phase-0: below-trend baskets drew ~1.5-2pp deeper forward
+    drawdowns at equal forward return — so we never recommend ENTER/ACCUMULATE against it."""
+    ls = ((mtf or {}).get("confluence") or {}).get("long_sign")
+    return ls is not None and ls < 0
+
+
 # --------------------------------------------------------------- labels / recos
-def _label(score: float, fp: dict, perf: dict, breadth: dict, delta_5d: float | None) -> str:
+def _label(score: float, fp: dict, perf: dict, breadth: dict, delta_5d: float | None,
+           mtf: dict | None = None, tape: dict | None = None) -> str:
     accel = fp.get("accel_z") or 0.0
     rs_p = fp.get("rs_pctile")
     extended = rs_p is not None and rs_p >= 0.80
@@ -318,27 +382,46 @@ def _label(score: float, fp: dict, perf: dict, breadth: dict, delta_5d: float | 
     breadth_ok = (pct50 is None or pct50 >= 0.5) and net_nh >= 0
     falling = (delta_5d or 0.0) < 0
     breaking = (pct50 is not None and pct50 < 0.4) or net_nh < 0 or accel < -0.5
+    vh_state = ((tape or {}).get("volhole") or {}).get("state")
+    long_dn = _long_below_trend(mtf)
+    long_up = (((mtf or {}).get("confluence") or {}).get("long_sign") or 0) > 0
 
     if (r20 or 0.0) < 0 and breaking:
         return "deteriorating"
+    if vh_state == "EXPANSION_DOWN" and long_dn:
+        return "deteriorating"
     if extended and accel < -0.3 and falling:
         return "fading"
-    if score >= 62 and mom_pos and breadth_ok and accel > -0.5:
+    if vh_state == "EXPANSION_DOWN":
+        return "fading"
+    if score >= 62 and mom_pos and breadth_ok and accel > -0.5 and not long_dn:
         return "dominant"
+    if ((accel > 0.4 or vh_state in ("EXPANSION_UP", "COILED_UP")) and long_up
+            and not extended and not falling and (r20 or 0.0) >= -0.005):
+        return "emerging"
     if accel > 0.4 and not extended and not falling and (r20 or 0.0) >= -0.005:
         return "emerging"
     return "neutral"
 
 
-def _reco(label: str, macro: float, crowd_pen: float, fp: dict) -> str:
+def _reco(label: str, macro: float, crowd_pen: float, fp: dict,
+          mtf: dict | None = None, tape: dict | None = None) -> str:
     rs_p = fp.get("rs_pctile") or 0.0
+    below_trend = _long_below_trend(mtf)         # drawdown-control gate (the validated channel)
+    vh_state = ((tape or {}).get("volhole") or {}).get("state")
     if label == "deteriorating":
         return "avoid"
     if label == "fading":
         return "trim"
+    if vh_state == "EXPANSION_DOWN":
+        return "trim"
     if label == "emerging":
+        if below_trend:
+            return "hold"
         return "enter" if (macro >= -0.25 and crowd_pen < 0.65) else "hold"
     if label == "dominant":
+        if below_trend:
+            return "hold"
         return "accumulate" if (rs_p < 0.85 and crowd_pen < 0.6 and macro >= -0.1) else "hold"
     return "hold"
 
@@ -444,15 +527,31 @@ def compute_theme_intel(region: str = "us") -> dict | None:
         macro, m_why = _macro_leg(bid, mc)
         crowd_pen, c_why = _crowding_pen(fp, lead, crowd)
 
-        raw = (WEIGHTS["trend"] * trend + WEIGHTS["breadth"] * breadth
-               + WEIGHTS["impulse"] * impulse + WEIGHTS["macro"] * macro
-               - WEIGHTS["crowding"] * crowd_pen)
+        # consolidated-candle legs (deep, current-membership): multi-timeframe trend structure +
+        # vol-compression regime. Whale/flow ride along as display-only context (not scored).
+        sig = _basket_signals(members)
+        mtf = sig.get("mtf") or {}
+        tape = sig.get("tape") or {}
+        mtf_leg = mtf.get("momentum_score")
+        volhole_leg = (tape.get("volhole") or {}).get("score")
+        mtf_why = _mtf_reasons(mtf, tape)
+
+        # score = weighted blend, RENORMALISED over the legs actually available (so a basket/
+        # region without a deep candle keeps the same scale as the original 4-leg score).
+        parts = {"trend": trend, "breadth": breadth, "impulse": impulse, "macro": macro}
+        if mtf_leg is not None:
+            parts["mtf"] = float(mtf_leg)
+        if volhole_leg is not None:
+            parts["volhole"] = float(volhole_leg)
+        wmass = sum(WEIGHTS[k] for k in parts) + WEIGHTS["crowding"]
+        raw = (sum(WEIGHTS[k] * v for k, v in parts.items())
+               - WEIGHTS["crowding"] * crowd_pen) / wmass
         score = int(round(50 + 50 * float(np.clip(raw, -1, 1))))
 
         delta_5d = (perf.get("5d") or {}).get("rel")
-        label = _label(score, fp, perf, breadth_d, delta_5d)
-        reco = _reco(label, macro, crowd_pen, fp)
-        reasons = (t_why + m_why + c_why)[:4] or ["mixed signals"]
+        label = _label(score, fp, perf, breadth_d, delta_5d, mtf, tape)
+        reco = _reco(label, macro, crowd_pen, fp, mtf, tape)
+        reasons = (t_why + mtf_why + m_why + c_why)[:4] or ["mixed signals"]
 
         # advanced display-only textures (bull age / overbought / clean entry / roll-over)
         textures = basket_score.theme_textures(lvl, fp, fp5, crowd, breadth_d, perf)
@@ -476,7 +575,11 @@ def compute_theme_intel(region: str = "us") -> dict | None:
             "category": b.get("category", "Other"),
             "score": score,
             "components": {"trend": _r(trend), "breadth": _r(breadth), "impulse": _r(impulse),
-                           "macro": _r(macro), "crowding": _r(crowd_pen)},
+                           "macro": _r(macro),
+                           **({"mtf": _r(parts["mtf"])} if "mtf" in parts else {}),
+                           **({"volhole": _r(parts["volhole"])} if "volhole" in parts else {}),
+                           "crowding": _r(crowd_pen)},
+            "mtf": mtf or None, "tape": tape or None,
             "label": label, "label_en": LABELS[label][0], "label_zh": LABELS[label][1],
             "reco": reco, "reco_en": RECOS[reco][0], "reco_zh": RECOS[reco][1],
             "reco_why_en": _RECO_WHY[reco][0], "reco_why_zh": _RECO_WHY[reco][1],
@@ -602,12 +705,20 @@ def compute_theme_intel(region: str = "us") -> dict | None:
         "bench_label": bench_label, "bench_label_zh": bench_label_zh,
         "disclaimer": {
             "en": ("Transparent decision-support, not a validated buy list. Every theme score "
-                   "decomposes into the legs shown (trend · breadth · impulse · macro · −crowding); "
-                   "the macro leg is a documented regime prior, and baskets are ~3y hindsight-curated. "
-                   "A focus/structure lens, like the Flow Lens — never an oracle."),
+                   "decomposes into the legs shown (trend · breadth · impulse · macro · MTF · "
+                   "vol-hole · −crowding); the macro leg is a documented regime prior, and baskets "
+                   "are ~3y hindsight-curated. The MTF (multi-timeframe trend) and vol-hole legs run "
+                   "on the basket's consolidated candle: Phase-0 measured ~0 forward-return edge for "
+                   "theme momentum, so they shape the READ and gate the recommendation against the "
+                   "long-term trend (drawdown control — the one validated channel), not a return "
+                   "forecast. Whale / volume / net-flow are display-only context. A focus/structure "
+                   "lens, like the Flow Lens — never an oracle."),
             "zh": ("透明的决策支持，并非经验证的买入清单。每个主题评分都拆解为所示各项（趋势·广度·"
-                   "脉冲·宏观·−拥挤）；宏观项为有据可查的周期先验，篮子为约3年事后筛选。这是聚焦/"
-                   "结构透镜，如资金流透视 — 绝非预言。"),
+                   "脉冲·宏观·多周期·波动洞·−拥挤）；宏观项为有据可查的周期先验，篮子为约3年事后筛选。"
+                   "多周期（趋势结构）与波动洞两项基于篮子的合成K线计算：Phase-0 实测主题动量对未来"
+                   "收益几乎无预测力，故它们用于刻画状态、并以长期趋势对建议进行回撤控制式约束（唯一"
+                   "经验证的渠道），而非收益预测。巨鲸/成交量/净流入仅作展示性背景。这是聚焦/结构透镜，"
+                   "如资金流透视 — 绝非预言。"),
         },
         "macro_context": mc["display"],
         "weights": WEIGHTS,

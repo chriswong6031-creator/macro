@@ -200,6 +200,18 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("basket extras step failed: %s", e)
 
+    # Baskets-only DEEP OHLCV store (data/baskets/ohlcv/<T>.parquet): full open/high/low/
+    # close/VOLUME per member, the candle the consolidated-index engines (basket_index ->
+    # basket_mtf + basket_tape) render whale accumulation / Chaikin money-flow / vol-hole on.
+    # The close-only extras store above can't feed volume. Separate per-ticker store, merged
+    # onto prior, additive, never fatal. See scripts/fetch_basket_ohlcv.py.
+    try:
+        from scripts.fetch_basket_ohlcv import main as fetch_basket_ohlcv
+        log.info("=== refreshing thematic-basket OHLCV (volume) ===")
+        fetch_basket_ohlcv([])
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("basket OHLCV step failed: %s", e)
+
     # Polygon options-OI accrual: snapshot the GEX universe's chains and store the RAW
     # per-strike open interest the Cboe path throws away (the one thing that can't be
     # backfilled — OI is point-in-time only). Foundation for the validate-gated GEX
