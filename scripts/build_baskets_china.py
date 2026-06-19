@@ -38,6 +38,20 @@ def main() -> int:
         log.warning("no china baskets (need data/baskets_china/membership.json + china_search cache) — skipping")
         return 0
 
+    # THEME ROTATION DESK (regionalized) — score/label/recommend + 5-day rotation + act-now +
+    # concentration, rides inside baskets_json; region alerts feed the page bell. Additive.
+    theme_alerts_recent = []
+    try:
+        from engine.theme_scoring import compute_theme_intel
+        ti = compute_theme_intel("china")
+        if ti:
+            data["theme_intel"] = ti
+            from engine import theme_alerts
+            theme_alerts.rebuild(ti, "china")
+            theme_alerts_recent = theme_alerts.recent(30, as_of=ti.get("as_of"), region="china")
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("china theme desk failed: %s", e)
+
     fdir = site / "chinabasketdata"
     fdir.mkdir(parents=True, exist_ok=True)
     (fdir / "baskets.json").write_text(json.dumps(data, separators=(",", ":"), default=str))
@@ -50,8 +64,18 @@ def main() -> int:
     html = env.get_template("baskets_china.html.j2").render(
         baskets_json=json.dumps(data, separators=(",", ":"), ensure_ascii=False),
         chart_json=json.dumps(chart, separators=(",", ":")),
+        theme_alerts_json=json.dumps(theme_alerts_recent, separators=(",", ":")),
         generated_utc=built)
     (site / "baskets_china.html").write_text(html)
+    # per-theme detail pages (site/basket_china/<id>.html) + the shared desk renderer
+    try:
+        from scripts.build_theme_detail import build_detail_pages
+        build_detail_pages(data, site, env, "china")
+        deskjs = config.ROOT / "templates" / "baskets_desk.js"
+        if deskjs.exists():
+            (site / "baskets_desk.js").write_text(deskjs.read_text())
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("china theme detail pages failed: %s", e)
     # ship the TradingView Lightweight Charts runtime (Apache-2.0) used by the page
     lwc = config.ROOT / "templates" / "lightweight-charts.js"
     if lwc.exists():

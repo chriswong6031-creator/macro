@@ -111,6 +111,8 @@
       '精选标普/多伦多主题股票篮子 — 每次成分调整均注明日期与理由；等权重、按月再平衡、调整间买入持有。以标普/多伦多综合指数为基准。若有相近行业 ETF，则按日交叉验证。仅作监测/结构参考，并非买入清单。') }}</p>
   </header>
 
+  {% include "_baskets_desk.html.j2" %}
+
   <!-- prevailing-narrative scorecard → the Narrative Rotation playbook (filled client-side) -->
   <section id="nr-scorecard" data-alloc="allocation_canada.json" data-page="allocation_canada.html"></section>
 
@@ -153,9 +155,13 @@
   </footer>
 
 <script src="lightweight-charts.js"></script>
+<script src="baskets_desk.js"></script>
 <script>
 const BASKETS = {{ baskets_json|safe }};
 const CHART   = {{ chart_json|safe }};
+const THEME   = BASKETS.theme_intel || null;
+const THEME_ALERTS = {{ theme_alerts_json|default('[]')|safe }};
+window.BASKET_BASE = 'basket_canada/';
 
 const TBL_COLS = ['1d','5d','20d','60d','MTD','YTD'];
 const RANGES = [['3M',63],['6M',126],['YTD','ytd'],['1Y',252],['All',0]];
@@ -359,8 +365,9 @@ function boot(){
   rel.querySelector('.rangeN').onchange=function(){ const n=Math.min(600,Math.max(5,parseInt(this.value,10)||252)); chartRange=n; rel.querySelectorAll('button').forEach(x=>x.classList.remove('on')); renderChart(); };
   renderTabs(document.getElementById('hz-tabs'), HZ_TABS.map(h=>[h,hzLabel(h)]), bhz, v=>{ bhz=v; localStorage.setItem('cnfw-hz',v); renderCards(); renderDetails(); });
   initChartDefaults();
-  renderStory(); renderBTable(); renderChart(); renderCards(); renderDetails();
+  renderStory(); renderBTable(); renderChart(); renderCards(); renderDetails(); deskBoot();
   if(location.hash.startsWith('#b-')) setTimeout(()=>openBasket(location.hash.slice(3)),200);
+  if(location.hash.startsWith('#theme-')) setTimeout(()=>openTheme(location.hash.slice(7)),250);
   document.addEventListener('langchange',()=>{ if(chart){chart.applyOptions(chartOpts());} renderAll(); });
   document.addEventListener('themechange',()=>{ if(chart){chart.applyOptions(chartOpts());} renderChart(); });
 }
