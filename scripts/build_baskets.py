@@ -39,6 +39,23 @@ def main() -> int:
         log.warning("no baskets (need data/baskets/membership.json + price caches) — skipping")
         return 0
 
+    # THEME ROTATION DESK (engine.theme_scoring) — score / label / recommend every theme,
+    # 5-day rotation, impulse + new-hi-lo scorecards. Rides inside baskets_json. Then
+    # engine.theme_alerts diffs vs the prior snapshot and fires change events into
+    # data/themes/alerts.jsonl (picked up by alert_triage -> alerts.html with zero new
+    # plumbing); recent events feed the page's bell dropdown. Additive — never fatal.
+    theme_alerts_recent = []
+    try:
+        from engine.theme_scoring import compute_theme_intel
+        ti = compute_theme_intel()
+        if ti:
+            data["theme_intel"] = ti
+            from engine import theme_alerts
+            theme_alerts.rebuild(ti)
+            theme_alerts_recent = theme_alerts.recent(30, as_of=ti.get("as_of"))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("theme rotation desk failed: %s", e)
+
     fdir = site / "basketdata"
     fdir.mkdir(parents=True, exist_ok=True)
     (fdir / "baskets.json").write_text(json.dumps(data, separators=(",", ":"), default=str))
@@ -64,6 +81,7 @@ def main() -> int:
     html = env.get_template("baskets.html.j2").render(
         baskets_json=json.dumps(data, separators=(",", ":")),
         chart_json=json.dumps(chart, separators=(",", ":")),
+        theme_alerts_json=json.dumps(theme_alerts_recent, separators=(",", ":")),
         flow=flow,
         generated_utc=built)
     (site / "baskets.html").write_text(html)
