@@ -566,7 +566,7 @@ ALERT_META: dict[str, dict] = {
                    "tilt before it confirms — not a trade on its own.",
         "what_zh": "增长／通胀象限由稳定标签加上一个需持续一周才翻转的「待定」读数构成。"
                    "证据正在累积指向新的象限。这是在确认前重新检视配置的提示 — 本身并非交易信号。",
-        "anchor": "regime-hero",
+        "anchor": "regime-radar",
     },
     "china_regime_confidence_floor": {
         "icon": "🎚️",
@@ -578,7 +578,7 @@ ALERT_META: dict[str, dict] = {
                    "conditions lens more than the label.",
         "what_zh": "置信度反映底层指标对象限的认同程度。它刚跌破可用阈值，目前标签混杂。"
                    "置信度低 = 缩小仓位，更依赖条件透镜而非标签。",
-        "anchor": "regime-hero",
+        "anchor": "regime-radar",
     },
     "china_growth_confidence_floor": {
         "icon": "🎚️",
@@ -589,7 +589,7 @@ ALERT_META: dict[str, dict] = {
                    "size down and trust the conditions lens more than the label.",
         "what_zh": "增长刻度盘的指标刚停止一致（置信度跌破可用阈值）。象限的增长一侧现已混杂 —"
                    "缩小仓位，相信条件透镜多于标签。",
-        "anchor": "regime-hero",
+        "anchor": "regime-radar",
     },
     "china_inflation_confidence_floor": {
         "icon": "🎚️",
@@ -600,7 +600,7 @@ ALERT_META: dict[str, dict] = {
                    "mixed — size down and trust the conditions lens more than the label.",
         "what_zh": "通胀刻度盘的指标刚停止一致（置信度跌破可用阈值）。象限的通胀一侧现已混杂 —"
                    "缩小仓位，相信条件透镜多于标签。",
-        "anchor": "regime-hero",
+        "anchor": "regime-radar",
     },
     "pboc_rrr_cut": {
         "icon": "💧",
