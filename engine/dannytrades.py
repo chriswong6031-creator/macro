@@ -99,6 +99,22 @@ def obv(close, volume) -> pd.Series:
     return (np.sign(close.diff().fillna(0.0)) * volume).fillna(0.0).cumsum()
 
 
+def whale_buy_fraction(high, low, close, volume, win: int = 63) -> pd.Series:
+    """A FAITHFUL "whale accumulation %" (vs the percentile proxy): the share of the
+    last `win` bars' volume that traded as BUYING — each bar's volume split by where
+    it closed in its range ((close-low)-(high-close))/(high-low) → buy fraction — then
+    summed and divided by total volume, 0–100. Unlike the percentile oscillator this
+    SATURATES toward 100 in sustained accumulation and toward 0 when 'green/retail'
+    selling dominates, mirroring Danny's 90s reads and his "green must disappear"."""
+    rng = (high - low).replace(0, np.nan)
+    mfm = ((close - low) - (high - close)) / rng            # -1..+1
+    buy_share = ((mfm + 1.0) / 2.0).clip(0, 1)              # 0..1 of the bar that's buying
+    mp = max(5, win // 3)
+    bv = (buy_share * volume).rolling(win, min_periods=mp).sum()
+    tv = volume.rolling(win, min_periods=mp).sum().replace(0, np.nan)
+    return (bv / tv * 100.0)
+
+
 def whale_accumulation(high, low, close, volume, cfg: dict | None = None) -> pd.Series:
     """Danny's Panel-3 "whale accumulation %" proxy, 0–100.
 
