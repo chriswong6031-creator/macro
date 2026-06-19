@@ -156,7 +156,7 @@ _SYNTH_FLOW = {
 def test_card_renders_honestly():
     html = _render_card(_SYNTH_FLOW)
     assert "Flow lens" in html and "display-only" in html
-    assert "NOT a forecast" in html                    # the honesty is on the card
-    assert "Cross-group structure" in html and "Cohesion gate" in html
+    assert "NOT a forecast" in html and "no forward edge" in html   # the honesty is on the card
+    assert "Co-movement" in html and "Dominant cluster" in html and "Cohesion gate" in html
     assert "Industrials" in html and "Retail" in html
     assert "{{" not in html and "{%" not in html       # no unrendered Jinja

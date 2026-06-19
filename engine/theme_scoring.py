@@ -265,8 +265,8 @@ def _impulse_leg(rets: pd.DataFrame, mc_closes: pd.DataFrame, i: int) -> tuple[f
     return float(_tanh(net, 2.0)), {"up3": up3, "down3": down3, "net": up3 - down3, "n": n}
 
 
-def _trend_leg(perf: dict, fp: dict) -> tuple[float, list[str]]:
-    """Relative-to-SPY momentum (5/20/60d) + acceleration."""
+def _trend_leg(perf: dict, fp: dict, bench: str = "S&P") -> tuple[float, list[str]]:
+    """Relative-to-benchmark momentum (5/20/60d) + acceleration."""
     def rel(h):
         v = (perf.get(h) or {}).get("rel")
         return float(v) if v is not None else None
@@ -284,7 +284,7 @@ def _trend_leg(perf: dict, fp: dict) -> tuple[float, list[str]]:
     leg = float(np.clip(np.average(parts, weights=wts), -1, 1)) if parts else 0.0
     reasons = []
     if r20 is not None:
-        reasons.append(f"20d {'+' if r20 >= 0 else ''}{r20 * 100:.1f}% vs S&P")
+        reasons.append(f"20d {'+' if r20 >= 0 else ''}{r20 * 100:.1f}% vs {bench}")
     if accel is not None and abs(accel) >= 0.5:
         reasons.append("accelerating" if accel > 0 else "decelerating")
     return leg, reasons
@@ -364,12 +364,14 @@ def compute_theme_intel(region: str = "us") -> dict | None:
     region drives the data plane: US uses group_flow._setup; CN/HK/CA reuse
     engine.narrative_rotation._setup (same regional close/bench/membership loaders).
     Returns None on shortfall (additive caller)."""
+    from engine import narrative_rotation as _nr
+    rcfg = _nr._region_cfg(region) or {}
+    bench_label = rcfg.get("bench_label", "S&P 500")
+    bench_label_zh = rcfg.get("bench_label_zh", "标普500")
     if region == "us":
         s = group_flow._setup()
     else:
-        from engine import narrative_rotation as _nr
-        cfg_r = _nr._region_cfg(region)
-        s = _nr._setup(cfg_r) if cfg_r else None
+        s = _nr._setup(rcfg) if rcfg else None
     if s is None:
         return None
     closes, rets, idx, bench = s["closes"], s["rets"], s["idx"], s["bench"]
@@ -396,6 +398,7 @@ def compute_theme_intel(region: str = "us") -> dict | None:
     items = bdict.items() if isinstance(bdict, dict) else [(b["id"], b) for b in bdict]
     themes: list[dict] = []
     uni_live: set[str] = set()                 # deduped live universe for the aggregate card
+    tk_meta: dict[str, dict] = {}              # ticker -> {name, theme, theme_zh, theme_id} for popups
 
     for bid, b in items:
         members = b.get("members", [])
@@ -435,7 +438,7 @@ def compute_theme_intel(region: str = "us") -> dict | None:
             except Exception:  # noqa: BLE001 — enrichment only
                 crowd = None
 
-        trend, t_why = _trend_leg(perf, fp)
+        trend, t_why = _trend_leg(perf, fp, bench_label)
         breadth, breadth_d = _breadth_leg(mc_closes, i, fp)
         impulse, impulse_d = _impulse_leg(rets, mc_closes, i)
         macro, m_why = _macro_leg(bid, mc)
@@ -458,9 +461,15 @@ def compute_theme_intel(region: str = "us") -> dict | None:
         adv_i = int((day_live > 0).sum())
         dec_i = int((day_live < 0).sum())
 
-        # new-high/low already counted in breadth_d; impulse counts in impulse_d
+        # new-high/low already counted in breadth_d; impulse counts in impulse_d.
+        # capture ticker -> display meta (name + home theme) for the scorecard popups.
+        nm_by_tk = {m["ticker"]: (m.get("name"), m.get("name_zh")) for m in members}
         for t in mc_closes.iloc[i].dropna().index:
             uni_live.add(t)
+            if t not in tk_meta:
+                nmt = nm_by_tk.get(t) or (None, None)
+                tk_meta[t] = {"name": nmt[0], "name_zh": nmt[1], "theme": b.get("name", bid),
+                              "theme_zh": b.get("name_zh", b.get("name", bid)), "theme_id": bid}
 
         themes.append({
             "id": bid, "name": b.get("name", bid), "name_zh": b.get("name_zh", b.get("name", bid)),
@@ -521,9 +530,28 @@ def compute_theme_intel(region: str = "us") -> dict | None:
     w = min(HI_LO_WINDOW, len(idx))
     block = closes[live].iloc[-w:] if live else pd.DataFrame()
     last = closes[live].iloc[i] if live else pd.Series(dtype=float)
-    nh = int((last >= block.max() * (1 - NEAR)).sum()) if live else 0
-    nl = int((last <= block.min() * (1 + NEAR)).sum()) if live else 0
+    hi_hit = (last >= block.max() * (1 - NEAR)) if live else pd.Series(dtype=bool)
+    lo_hit = (last <= block.min() * (1 + NEAR)) if live else pd.Series(dtype=bool)
+    nh = int(hi_hit.sum()) if live else 0
+    nl = int(lo_hit.sum()) if live else 0
     n_uni = len(live)
+
+    # named rosters behind each scorecard (for the click-to-open popups). Capped for payload size.
+    def _nm_row(t: str, r: float | None = None) -> dict:
+        m = tk_meta.get(t, {})
+        row = {"t": t, "n": m.get("name"), "n_zh": m.get("name_zh"), "th": m.get("theme"),
+               "th_zh": m.get("theme_zh"), "tid": m.get("theme_id")}
+        if r is not None:
+            row["r"] = _r(r, 4)
+        return row
+    up_rows = sorted(((t, float(day[t])) for t in live if pd.notna(day[t]) and day[t] >= UP_DAY),
+                     key=lambda x: -x[1])
+    down_rows = sorted(((t, float(day[t])) for t in live if pd.notna(day[t]) and day[t] <= DOWN_DAY),
+                       key=lambda x: x[1])
+    up_names = [_nm_row(t, r) for t, r in up_rows[:80]]
+    down_names = [_nm_row(t, r) for t, r in down_rows[:80]]
+    nh_names = [_nm_row(t) for t in live if bool(hi_hit.get(t, False))][:80]
+    nl_names = [_nm_row(t) for t in live if bool(lo_hit.get(t, False))][:80]
 
     recos: dict[str, list] = {k: [] for k in ("enter", "accumulate", "hold", "trim", "avoid")}
     for th in themes:
@@ -571,6 +599,7 @@ def compute_theme_intel(region: str = "us") -> dict | None:
 
     return {
         "as_of": idx.max().strftime("%Y-%m-%d"),
+        "bench_label": bench_label, "bench_label_zh": bench_label_zh,
         "disclaimer": {
             "en": ("Transparent decision-support, not a validated buy list. Every theme score "
                    "decomposes into the legs shown (trend · breadth · impulse · macro · −crowding); "
@@ -588,6 +617,8 @@ def compute_theme_intel(region: str = "us") -> dict | None:
             "up3": up3, "down3": down3, "net": up3 - down3, "n": n_uni,
             "nh": nh, "nl": nl, "net_hl": nh - nl,
             "up_thresh": UP_DAY, "hi_lo_window": HI_LO_WINDOW,
+            "up_names": up_names, "down_names": down_names,
+            "nh_names": nh_names, "nl_names": nl_names,
         },
         "market_concentration": basket_score.market_concentration(region),
         "breadth_leaders": breadth_leaders,
