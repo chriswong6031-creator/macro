@@ -42,6 +42,7 @@ log = logging.getLogger(__name__)
 
 # ---- parameters (priors from the literature + the 27y Phase-0; not curve-fit) -------
 N_HOLD = 4                       # core themes held (top-4 dual was the best-Sharpe config)
+MAX_PER_PARENT = 1               # de-overlap cap: ≤N held per parent super-theme (no "4 flavours of AI")
 LOOKBACKS_D = (63, 126, 252)     # ensemble momentum lookbacks (~3/6/12m)
 SKIP_D = 21                      # skip the most recent month (short-term reversal)
 SMA_TREND_D = 200                # absolute-trend gate MA
@@ -180,6 +181,7 @@ def _basket_preps(s: dict) -> list[dict]:
         out.append({
             "id": bid, "name": b.get("name", bid), "name_zh": b.get("name_zh", b.get("name", bid)),
             "category": b.get("category", "Other"), "thesis": b.get("thesis", ""),
+            "parent": b.get("parent", b.get("category", "Other")),
             "etf_proxy": b.get("etf_proxy"), "n_live": len(live), "live": live,
             "lvl": lvl, "rs": rs, "members_closes": s["closes"][live].where(mask[live]),
             "members_resid": resid,
@@ -442,7 +444,22 @@ def allocate(preps: list[dict], ranks: dict, crowd: dict, rot: dict,
     byid = {p["id"]: p for p in preps}
     eligible = [bid for bid, v in ranks.items() if v["eligible"] and v["score"] is not None]
     eligible.sort(key=lambda b: ranks[b]["rank"])
-    top = eligible[:N_HOLD]
+    # DE-OVERLAP by parent super-theme: greedily fill the top-N by rank but cap at
+    # MAX_PER_PARENT per parent, so the suggested book is diversified (not "4 flavours of
+    # AI"). The validated math (trend-gated, ranked by score, equal-weight) is unchanged —
+    # this only diversifies WHICH trending leaders fill the slots. Skipped leaders are
+    # surfaced so the displacement is transparent.
+    top, par_n, deoverlapped = [], {}, []
+    for bid in eligible:
+        if len(top) >= N_HOLD:
+            break
+        par = byid.get(bid, {}).get("parent") or "Other"
+        if par_n.get(par, 0) >= MAX_PER_PARENT:
+            deoverlapped.append({"id": bid, "name": byid.get(bid, {}).get("name", bid),
+                                 "parent": par, "rank": ranks[bid]["rank"]})
+            continue
+        top.append(bid)
+        par_n[par] = par_n.get(par, 0) + 1
 
     vols = {}
     for bid in top:
@@ -476,17 +493,21 @@ def allocate(preps: list[dict], ranks: dict, crowd: dict, rot: dict,
         cash = 1.0 - sum(weights.values())
 
     sugg = [{"id": b, "name": byid[b]["name"], "name_zh": byid[b]["name_zh"],
+             "category": byid[b].get("category"), "parent": byid[b].get("parent"),
              "weight": round(weights[b], 3), "rank": ranks[b]["rank"],
              "vol_ann": _r(vols.get(b)),
              "crowding_z": crowd.get(b, {}).get("crowding_z"),
              "crowded": crowd.get(b, {}).get("crowded", False)}
             for b in sorted(top, key=lambda x: ranks[x]["rank"])]
-    return {"weights": sugg, "cash": round(max(0.0, cash), 3),
+    cash = round(max(0.0, 1.0 - sum(s["weight"] for s in sugg)), 3)   # exact remainder of the rounded book
+    return {"weights": sugg, "cash": cash,
             "n_held": len(top), "crash_overlay": crash,
+            "de_overlapped": deoverlapped,
             "rule": (f"Equal-weight the top-{N_HOLD} themes above their own 200d trend "
-                     "(the validated dual-momentum book); idle slots sit in T-bills; "
-                     "crowded themes are trimmed toward cash; capped at "
-                     f"{int(POS_CAP*100)}%/theme."),
+                     "(the validated dual-momentum book), DE-OVERLAPPED to at most "
+                     f"{MAX_PER_PARENT} per parent super-theme so the book stays diversified; "
+                     "idle slots sit in T-bills; crowded themes are trimmed toward cash; "
+                     f"capped at {int(POS_CAP*100)}%/theme."),
             "directional": False}
 
 
