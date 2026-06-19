@@ -87,8 +87,8 @@
     var eta = '';
     if (m.macd_cross_up) eta = L('cu');
     else if (m.macd_cross_dn) eta = L('cd');
-    else if (m.macd_approaching_up && m.macd_bars_to_cross) eta = '≈' + Math.round(m.macd_bars_to_cross) + L('etaUp');
-    else if (m.macd_approaching_dn && m.macd_bars_to_cross) eta = '≈' + Math.round(m.macd_bars_to_cross) + L('etaDn');
+    else if (m.macd_approaching_up && m.macd_bars_to_cross) eta = '≈' + Math.round(m.macd_days_to_cross || m.macd_bars_to_cross) + L('etaUp');
+    else if (m.macd_approaching_dn && m.macd_bars_to_cross) eta = '≈' + Math.round(m.macd_days_to_cross || m.macd_bars_to_cross) + L('etaDn');
     var dot = m.macd_pos ? pos : neg;
     return '<div class="mtf-row"><span class="mtf-k">MACD</span>' + s +
            '<span class="mtf-v" style="color:' + dot + '">' + (m.macd_pos ? '▲' : '▼') +
