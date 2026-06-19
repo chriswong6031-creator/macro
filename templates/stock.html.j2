@@ -293,6 +293,19 @@
   .dc-na { color:var(--muted); font-size:12px; line-height:1.5; }
   .dc-foot { color:var(--muted); font-size:11.5px; line-height:1.5; margin:10px 0 0;
              padding-top:9px; border-top:1px solid var(--line); }
+  /* Demand chain (L3 customer-capex read) */
+  .dc-badge { display:inline-block; font-size:10.5px; font-weight:800; letter-spacing:.04em;
+              padding:2px 8px; border-radius:7px; border:1px solid var(--line); }
+  .dc-div-up { color:var(--up); background:color-mix(in srgb,var(--up) 14%,transparent);
+               border-color:color-mix(in srgb,var(--up) 40%,var(--line)); }
+  .dc-div-risk { color:var(--down); background:color-mix(in srgb,var(--down) 14%,transparent);
+                 border-color:color-mix(in srgb,var(--down) 40%,var(--line)); }
+  .dc-div-mut { color:var(--muted); background:var(--panel2); }
+  .dc-chainhead { font-size:12.5px; font-weight:600; margin-top:6px; line-height:1.4; }
+  .dc-arrow { color:var(--muted); align-self:center; font-size:12px; }
+  .dc-chainread { font-size:12.5px; line-height:1.5; margin-top:2px; }
+  .dc-cav { color:var(--muted); font-size:11px; line-height:1.45; margin-top:6px;
+            border-top:1px dotted var(--line); padding-top:5px; }
   @media (max-width:640px){ .dc-row { grid-template-columns:1fr; gap:6px; } .dc-rl { max-width:none; } }
   .valbar { display:grid; grid-template-columns:148px 72px 1fr; gap:10px; align-items:center; margin:6px 0; }
   .valbar .vlab { color:var(--muted); font-size:12.5px; }
@@ -826,8 +839,12 @@
   function renderDemandContext(d) {
     var box = el('r_demand'); if (!box) return;
     var prof = d.profile, val = d.valuation, fin = d.financials, an = d.analyst, ev = d.earnings || {}, rv = d.revisions;
+    var dch = d.demand_chain;
     var isEquity = !!(prof || val || fin || d.factors);
-    if (!isEquity) { show('panel_demand', false); return; }
+    // Show for equities, OR for any name carrying a demand-chain signal even without
+    // full SEC fundamentals (recent AI IPOs / foreign filers — exactly where the
+    // forward-demand read matters most). Hide only when there's nothing to say.
+    if (!isEquity && !(dch && dch.headline)) { show('panel_demand', false); return; }
     var r1 = function (n) { return n == null ? null : (Math.round(n * 10) / 10); };
     function sg(n, suf) {            // signed, rounded, colour-classed chip value
       if (n == null) return null;
@@ -863,22 +880,45 @@
     t2.push(chip(lz('Beat rate','超预期率'), (ev.summary && ev.summary.total) ? (ev.summary.beats + '/' + ev.summary.total) : null, 'dc-priced'));
     t2 = t2.filter(Boolean);
     if (!t2.length) t2 = ['<span class="dc-na">' + lz('no consensus / estimate data for this name','该标的暂无共识／预期数据') + '</span>'];
-    // L3 — Independent observable (variant?): Phase-0 empty slot, honest about what's coming
-    var t3 = '<span class="dc-na">' + lz(
-      'Not yet measured. This is where a management-independent read on forward demand — bookings / backlog &amp; RPO, customer-capex (e.g. hyperscaler → semis), hiring &amp; web-traffic — will be flagged ONLY where it diverges from the consensus above. Coming in the Demand Desk build (Phase 1).',
-      '尚未度量。此处将放置不依赖管理层口径的前瞻需求读数——订单/在手订单与RPO、客户资本开支（如云厂商→半导体）、招聘与网站流量——且仅在其与上方共识背离时标记。将于需求台第一阶段构建。') + '</span>';
+    // L3 — Independent observable (variant?): the customer-capex demand chain
+    // (engine/demand_chain) for AI-infra names (Phase 1); honest placeholder
+    // otherwise. The whole point: a MANAGEMENT-INDEPENDENT forward-demand read.
+    var t3;
+    if (dch && dch.headline) {
+      var DIVMAP = {
+        ahead_of_consensus: { cls:'dc-div-up',   en:'AHEAD OF CONSENSUS', zh:'领先共识' },
+        consensus_at_risk:  { cls:'dc-div-risk', en:'CONSENSUS AT RISK',  zh:'共识承压' },
+        aligned:            { cls:'dc-div-mut',  en:'IN THE PRICE',       zh:'已计入价格' },
+        signal_only:        { cls:'dc-div-mut',  en:'SIGNAL ONLY',        zh:'仅信号' } };
+      var dm = DIVMAP[dch.divergence] || DIVMAP.signal_only;
+      var ser = (dch.series || []).slice(-3).map(function (p) {
+        return '<span class="dc-chip">FY' + (p[0] % 100) + ' <span class="dc-cv">$' + p[1] + 'B</span></span>';
+      }).join('<span class="dc-arrow">→</span>');
+      t3 = '<div><span class="dc-badge ' + dm.cls + '">' + lz(dm.en, dm.zh) + '</span></div>' +
+        '<div class="dc-chainhead">' + esc(lz(dch.headline.en, dch.headline.zh)) + '</div>' +
+        '<div class="dc-vals" style="margin:7px 0">' + ser + '</div>' +
+        '<div class="dc-chainread">' + esc(lz(dch.read.en, dch.read.zh)) + '</div>' +
+        '<div class="dc-cav">' + esc(lz(dch.caveat.en, dch.caveat.zh)) + '</div>';
+    } else {
+      t3 = '<span class="dc-na">' + lz(
+        'Not yet measured for this name. This is where a management-independent read on forward demand — bookings / backlog &amp; RPO, customer-capex (e.g. hyperscaler → semis), hiring &amp; web-traffic — is flagged ONLY where it diverges from the consensus above. Live now for the AI-infrastructure chain; expanding from there.',
+        '该标的尚未度量。此处放置不依赖管理层口径的前瞻需求读数——订单/在手订单与RPO、客户资本开支（如云厂商→半导体）、招聘与网站流量——且仅在其与上方共识背离时标记。AI 基础设施链已上线，后续扩展。') + '</span>';
+    }
     var row = function (cls, n, lab, sub, body) {
       return '<div class="dc-row ' + cls + '"><div class="dc-rl"><span class="dc-rn">' + n + '</span>' +
         '<span class="dc-lab">' + lab + '</span><span class="dc-sub">' + sub + '</span></div>' +
         '<div class="dc-vals">' + body + '</div></div>';
     };
+    var foot = dch && dch.headline ? lz(
+      'Row 3 is an INDEPENDENT customer-demand read (the spenders\' own filings, not this company\'s guidance). Where it diverges from row 2 is where the rally may be mis-priced; where they agree, the demand is already in the price.',
+      '第3行是独立的客户需求读数（来自买方自身财报，而非本公司指引）。它与第2行背离之处，正是涨势可能被错误定价之处；二者一致时，需求已计入价格。') : lz(
+      'Rows 1–2 are backward-looking truth and already-priced consensus. Until row 3 is populated, this panel can only tell you what is already in the price — not that the rally is under-priced.',
+      '第1–2行是滞后的事实与已被定价的共识。在第3行填充之前，本面板只能告诉你价格里已包含什么——而非涨势是否被低估。');
     box.innerHTML =
       row('dc-l1', '1', lz('Trailing','历史'), lz('demand already delivered — backward-looking','已兑现的需求——本质滞后'), t1.join('')) +
       row('dc-l2', '2', lz('Consensus','共识'), lz('already in the price — agreeing is exposure, not edge','已计入价格——认同只是敞口而非优势'), t2.join('')) +
       row('dc-l3', '3', lz('Independent observable','独立观测'), lz('the only layer that can say a rally is MIS-priced','唯一能判断涨势被错误定价的层次'), t3) +
-      '<p class="dc-foot">' + lz(
-        'Rows 1–2 are backward-looking truth and already-priced consensus. Until row 3 is populated, this panel can only tell you what is already in the price — not that the rally is under-priced.',
-        '第1–2行是滞后的事实与已被定价的共识。在第3行填充之前，本面板只能告诉你价格里已包含什么——而非涨势是否被低估。') + '</p>';
+      '<p class="dc-foot">' + foot + '</p>';
     show('panel_demand', true);
   }
 
