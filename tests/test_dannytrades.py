@@ -99,6 +99,19 @@ def test_whale_responds_to_accelerating_accumulation():
     assert w.iloc[half:].mean() > w.iloc[:half].mean()   # responds in the right direction
 
 
+def test_whale_buy_fraction_saturates():
+    # closes pinned near the high every bar → buy fraction saturates high; near the
+    # low → saturates low; mid-range → ~50. Bounded 0-100, causal.
+    n = 200
+    idx = pd.bdate_range("2015-01-01", periods=n)
+    close = pd.Series(np.linspace(50, 90, n), index=idx)
+    vol = pd.Series(1e6, index=idx)
+    hot = dt.whale_buy_fraction(close * 1.001, close * 0.97, close, vol, 21).dropna()
+    cold = dt.whale_buy_fraction(close * 1.03, close * 0.999, close, vol, 21).dropna()
+    assert hot.iloc[-1] > 85 and cold.iloc[-1] < 15
+    assert dt.whale_buy_fraction(close * 1.01, close * 0.99, close, vol, 21).dropna().between(0, 100).all()
+
+
 def test_thin_input_degrades_gracefully():
     close, high, low, volume = _synth(n=40)               # below most windows
     s = dt.signals(close, high, low, volume)
