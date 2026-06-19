@@ -15,6 +15,13 @@
   var cx = canvas.getContext('2d');
   var sunEl = document.getElementById('sky-sun');
   var moonEl = document.getElementById('sky-moon');
+  // --- orbital satellite (dark mode only) ----------------------------------
+  var satEl = document.getElementById('sky-sat');
+  var globeCanvas = document.querySelector('.gd-canvas');   // the rendered "earth"
+  var satPhase = Math.PI;        // begin at the left of the globe, on the visible front arc
+  var SAT_SPEED = 0.27;          // rad/s along the bright front sweep (left → right)
+  var SAT_BACK = 2.35;           // angular speed-up behind the globe → a brief "off-screen" gap
+  var SAT_COSI = 0.70;           // cos(orbit-plane tilt) — vertical squash of the ellipse (~46°)
   var mq = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
   var motionOK = !mq.matches;
   var nowMs = function () { return (window.performance && performance.now) ? performance.now() : Date.now(); };
@@ -107,6 +114,41 @@
     cx.globalAlpha = 1;
   }
 
+  // --- satellite orbit -----------------------------------------------------
+  // A tilted 3-D ellipse anchored to the LIVE globe rect, so the satellite truly
+  // orbits the rendered earth (and tracks scroll). It sweeps left→right across the
+  // bright near arc, then speeds up + fades as it rounds the far arc behind the
+  // globe (a few seconds "off screen"), and re-enters from the left. Perspective is
+  // faked with scale + opacity — the ring stays clear of the disc, so no z-fighting.
+  function placeSat(dt) {
+    if (!satEl) return;
+    if (theme() !== 'dark' || !globeCanvas) { satEl.style.opacity = '0'; return; }
+    var r = globeCanvas.getBoundingClientRect();
+    if (r.width < 4 || r.bottom <= 0 || r.top >= H) { satEl.style.opacity = '0'; return; }
+    if (motionOK && dt) {
+      var s0 = Math.sin(satPhase);
+      satPhase -= SAT_SPEED * (s0 >= 0 ? 1 : SAT_BACK) * (dt / 1000);  // faster behind the globe
+      if (satPhase < -Math.PI) satPhase += 6.283185307;               // wrap, keep continuous
+    }
+    var c = Math.cos(satPhase), s = Math.sin(satPhase);
+    var gR = Math.min(r.width, r.height) * 0.34;     // matches globe-deck's fit radius
+    var rho = gR * 1.5;                               // orbit radius — a ring just clear of the disc
+    var lift = gR * 0.18;                             // raise the ellipse so the bright arc clears the disc top
+    var x = r.left + r.width / 2 + rho * c;
+    // near arc (s>0) rides OVER the globe — the lit sweep through the gap toward the
+    // moon; the far arc (s<0) sinks below/behind the earth, where it fades out.
+    var y = r.top + r.height / 2 - lift - rho * SAT_COSI * s;
+    var scale = 1 + 0.30 * s;                         // nearer (front) → larger
+    var bank = -c * 13;                               // gentle ±13° bank, level mid-sweep
+    var op;                                           // full in front; fade only deep behind
+    if (s >= -0.12) op = 1;
+    else if (s <= -0.9) op = 0;
+    else { var u = (s + 0.9) / 0.78; op = u * u * (3 - 2 * u); }
+    var sa = starAlpha < 0 ? 0 : (starAlpha > 1 ? 1 : starAlpha);   // fade in/out with the night
+    satEl.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) translate(-50%,-50%) rotate(' + bank.toFixed(2) + 'deg) scale(' + scale.toFixed(3) + ')';
+    satEl.style.opacity = (op * sa).toFixed(3);
+  }
+
   function frame(t) {
     if (!running) return;                 // ignore any stale/queued callback
     if (!lastT) lastT = t;
@@ -116,6 +158,7 @@
     starAlpha += (starTarget - starAlpha) * ka;
     entry += (entryTarget - entry) * ke;
     drawStars(t);
+    placeSat(dt);
 
     if (!motionOK) { running = false; raf = 0; return; }   // static single frame
     var settled = Math.abs(starAlpha - starTarget) < 0.004 && Math.abs(entry - entryTarget) < 0.004;
