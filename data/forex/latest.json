@@ -10,63 +10,63 @@
   "pairs": {
     "EURUSD": {
       "label": "EUR/USD",
-      "quote": 1.1432,
+      "quote": 1.144,
       "chg": -1.6,
       "action": "FLAT",
-      "score": -12.6
+      "score": -13.0
     },
     "GBPUSD": {
       "label": "GBP/USD",
-      "quote": 1.3171,
-      "chg": -1.9,
+      "quote": 1.3198,
+      "chg": -1.7,
       "action": "FLAT",
-      "score": 17.5
+      "score": 17.0
     },
     "USDJPY": {
       "label": "USD/JPY",
-      "quote": 161.364,
+      "quote": 161.348,
       "chg": 1.5,
       "action": "SHORT",
       "score": -40.0
     },
     "USDCHF": {
       "label": "USD/CHF",
-      "quote": 0.8084,
-      "chg": 3.3,
+      "quote": 0.807,
+      "chg": 3.2,
       "action": "LONG",
-      "score": 31.6
+      "score": 30.3
     },
     "AUDUSD": {
       "label": "AUD/USD",
-      "quote": 0.6995,
-      "chg": -2.3,
+      "quote": 0.7015,
+      "chg": -2.0,
       "action": "SHORT",
-      "score": -25.5
+      "score": -25.2
     },
     "USDCAD": {
       "label": "USD/CAD",
-      "quote": 1.4153,
-      "chg": 2.5,
+      "quote": 1.414,
+      "chg": 2.4,
       "action": "LONG",
-      "score": 25.6
+      "score": 25.3
     },
     "USDMXN": {
       "label": "USD/MXN",
-      "quote": 17.385,
-      "chg": 0.7,
+      "quote": 17.3665,
+      "chg": 0.6,
       "action": "SHORT",
-      "score": -31.3
+      "score": -32.4
     },
     "USDBRL": {
       "label": "USD/BRL",
-      "quote": 5.1681,
-      "chg": 2.8,
+      "quote": 5.1577,
+      "chg": 2.6,
       "action": "FLAT",
-      "score": 4.4
+      "score": 4.5
     },
     "USDCNH": {
       "label": "USD/CNH",
-      "quote": 6.7575,
+      "quote": 6.755,
       "chg": -0.5,
       "action": "FLAT",
       "score": 15.0
@@ -76,7 +76,7 @@
     "lean": "mixed backdrop",
     "real_rate_regime": "Restrictive real yields",
     "real_rate_z": 0.72,
-    "fed_path_bps": 47.0,
+    "fed_path_bps": 49.0,
     "fed_path_lean": "hawkish_repricing",
     "usd_pos_pctile": 42.0,
     "usd_pos_state": "neutral",
