@@ -1,33 +1,32 @@
 {
   "schema": "stock_desk.v1",
   "as_of": "2026-06-18",
-  "generated_at": "2026-06-19T13:59:10.059927+00:00",
+  "generated_at": "2026-06-19T23:07:23.282950+00:00",
   "degraded": null,
   "notes": [
     {
       "id": "2026-06-18-MCY-1",
       "ticker": "MCY",
       "name": "Mercury General",
-      "lean": "cautious",
+      "lean": "constructive",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "MCY is trading at its 52-week high with an entry signal that urges 'HOLD', suggesting the current rally is extended; the validated selection axes (SUE, revisions, momentum) are solid but the risk of chasing a fully priced name with macro headwinds limits upside relative to the S&P 500.",
+      "thesis": "The residual-alpha selection edge (SUE 1.26, revisions 1.99) identifies a fundamental momentum leader, and the risk control of an intact uptrend with moderate RSI supports a constructive lean.",
       "evidence": [
-        "entry z-score only 0.30, no pullback or urgency",
-        "off_52w_high_pct 0.0% (at highs)",
-        "board state 'RALLY ON' with HOLD action",
-        "macro: US net liquidity contracting \u2013 headwind on odds",
-        "selection axes present but entry timing not favorable"
+        "selection axis z 1.57, SUE 1.26 (19d fresh), revision 1.99",
+        "uptrend (RALLY ON), price above 50/200 DMAs, RSI 59, MACD positive",
+        "low-volatility/low-beta factor profile",
+        "no cycle blocking, high conviction verdict"
       ],
-      "dissent": "The uptrend could persist if the next earnings surprise extends the PEAD tailwind, pushing the stock even higher without a pullback.",
+      "dissent": "At 52-week highs with zero pullback, the low entry z (0.3) suggests limited timing edge; a macro liquidity contraction could trigger a sharp mean-reversion in a fully priced insurance name.",
       "falsifier": {
-        "text": "A pullback to the rising 10-day average that holds and resumes upward would falsify the cautious lean by showing the trend can absorb entries without underperforming.",
+        "text": "Close below the 50-day moving average (~$98) or break of the recent swing low would indicate trend failure and invalidate the constructive lean.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "MCY",
           "vs": "SPY",
-          "op": ">",
-          "threshold": 0.05,
+          "op": "<",
+          "threshold": -0.05,
           "horizon_d": 20
         }
       },
@@ -38,30 +37,29 @@
       "id": "2026-06-18-WT-2",
       "ticker": "WT",
       "name": "WisdomTree Investments, Inc.",
-      "lean": "constructive",
+      "lean": "cautious",
       "conviction": "low",
-      "horizon_d": 12,
-      "thesis": "A swing low has printed, price is back above the 10-DMA, and the selection axes (revisions z=1.36, momentum z=1.44) support a bottoming setup; the engine's BUY SETUP with 'now' urgency, along with a half-size tag, respects risk while allowing upside capture.",
+      "horizon_d": 15,
+      "thesis": "A buy setup with bottoming structure and strong revisions argues for potential upside, but the half-size risk control, mixed bigger picture, and macro-sensitive headwind warrant a cautious lean relative to SPX.",
       "evidence": [
-        "ladder_state 'TURN SIGNALED' (bottoming)",
-        "price above 10-DMA and swing low printed",
-        "revisions z=1.36, momentum alpha z=1.44",
-        "entry z=0.92, off-high -7.6%",
-        "no cycle_blocked flag"
+        "selection axis z 1.01, revision z 1.36, alpha z 1.45",
+        "entry z 0.92 with pullback/off-high characteristics",
+        "engine flags half size due to macro risk",
+        "not cycle blocked, TURN SIGNALED"
       ],
-      "dissent": "The weekly trend is still mixed, and macro headwinds (contracting liquidity, macro-sensitive name) could abort the bottom and resume the prior downtrend.",
+      "dissent": "Absence of SUE, mixed weekly trend, and explicit macro headwinds (liquidity contraction) could cause the bottoming attempt to fail before the cycle turns.",
       "falsifier": {
-        "text": "A close below the recent swing low of 16.77 would break the bottoming structure and invalidate the constructive lean.",
+        "text": "Close below the swing low at $16.77 would negate the bottoming formation and flip the cautious lean to avoid.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "WT",
           "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 12
+          "op": ">",
+          "threshold": 0.05,
+          "horizon_d": 15
         }
       },
-      "check_by": "2026-07-06",
+      "check_by": "2026-07-09",
       "engine_verdict": "High-conviction \u2014 leader with a good entry"
     },
     {
@@ -71,17 +69,16 @@
       "lean": "constructive",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "A fresh cycle low formed and price reclaimed the 10-DMA with weekly alignment; the selection axes are robust (SUE z=3.0, revision z=1.29, momentum z=1.21), providing a validated earnings-surprise tailwind that should support the bounce.",
+      "thesis": "A fresh buy signal in a bullish cycle, reinforced by an extremely strong SUE (3.0) and positive revisions, supports a constructive lean despite the near-term overbought risk.",
       "evidence": [
-        "ladder_state 'FRESH BUY' with BUY NOW urgency",
-        "swing low 8 days ago, back above rising 10-DMA",
-        "weekly timeframe agrees (with-trend bullish)",
-        "SUE z=3.0 (fresh 19 days), revision z=1.29",
-        "off_52w_high_pct only -2.0%"
+        "selection z 2.05: SUE 3.0 (19d fresh), revision 1.28, alpha 1.21",
+        "bullish bigger picture, price above key MAs, MACD positive",
+        "FRESH BUY state, entry urgency 'now'",
+        "no cautions, accounting clean"
       ],
-      "dissent": "HWM is macro-sensitive; contracting liquidity and elevated aggregate macro risk could stall the recovery, and 30.6% net income growth may already be priced in.",
+      "dissent": "Negative factor composite (-0.279), only 2% off 52-week high, and its industrial cyclically could reverse if growth expectations falter; the entry z (0.59) is only moderate.",
       "falsifier": {
-        "text": "A break below the recent swing low of 246.55 would negate the fresh buy signal and the constructive view.",
+        "text": "Close below the 50-day moving average (~$256) or swing low at $246.55 would break the bullish pattern and falsify the constructive lean.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "HWM",
@@ -100,81 +97,77 @@
       "name": "Atmos Energy",
       "lean": "cautious",
       "conviction": "low",
-      "horizon_d": 15,
-      "thesis": "Despite a strong SUE z=3.0, the daily rally is counter-trend within a bearish larger cycle, the prior cycle was left-translated (early top), and price remains below the 50/200 DMAs with a 'HOLD' entry signal; the accounting watch flag adds risk.",
+      "horizon_d": 20,
+      "thesis": "Despite a powerful SUE (3.0), the counter-trend rally in a bearish regime with a left-translated cycle, below-key-MAs positioning, and an accounting watch flag demand a cautious lean; the engine's HOLD aligns.",
       "evidence": [
-        "regime BEARISH (counter-trend for a daily long)",
-        "left-translated prior cycle (tiring trend)",
-        "price below 50-DMA and 200-DMA, RSI 42",
-        "entry urgency 'HOLD', z-score only 0.40",
-        "accounting watch flag in quality"
+        "selection SUE 3.0 but alpha momentum -0.17",
+        "bearish bigger picture, below 50/200 DMAs, last cycle left-translated",
+        "accounting watch caution",
+        "RALLY ON but ladder action HOLD"
       ],
-      "dissent": "An extremely high SUE could surprise to the upside again, breaking the bearish structure and pushing ATO above moving averages quickly.",
+      "dissent": "If the accounting flag proves benign and the stock reclaims the 200-day moving average, it could show surprising strength; the strong fundamental beat provides a safety net.",
       "falsifier": {
-        "text": "A daily close above the 50-DMA (approx 178.3) with the 10-DMA crossing above it would falsify the bearish regime call and the cautious lean.",
+        "text": "Close below the swing low from the current rally (approx $165) would confirm counter-trend failure and turn the stance bearish.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "ATO",
           "vs": "SPY",
           "op": ">",
           "threshold": 0.05,
-          "horizon_d": 15
+          "horizon_d": 20
         }
       },
-      "check_by": "2026-07-09",
+      "check_by": "2026-07-16",
       "engine_verdict": "High-conviction \u2014 leader with a good entry"
     },
     {
       "id": "2026-06-18-GNL-5",
       "ticker": "GNL",
       "name": "Global Net Lease, Inc.",
-      "lean": "neutral",
+      "lean": "constructive",
       "conviction": "low",
-      "horizon_d": 10,
-      "thesis": "The bottoming setup has a swing low and high revisions z-score (2.44), but price remains below the 10-DMA, MACD is negative, and the entry urgency is only 'imminent' (BUY SOON); until the 10-DMA is reclaimed, the direction is unclear relative to the market.",
+      "horizon_d": 20,
+      "thesis": "The engine's buy setup (BUY SOON) with swing low rejection and strong revisions (z 2.44) support a constructive lean, though the accounting watch and still-below-10-day MA make it contingent on confirmation.",
       "evidence": [
-        "still below 10-DMA per signal points",
-        "MACD negative, RSI 45",
-        "entry urgency 'imminent', not 'now'",
-        "accounting watch caution present",
-        "selection axes positive but not yet confirmed by price"
+        "selection z 1.38: SUE 1.04, revision 2.44",
+        "entry z 0.88 with pullback/off-high, urgency imminent",
+        "not cycle blocked, TURN SIGNALED",
+        "low-vol/low-beta factors present"
       ],
-      "dissent": "Once price breaks above the 10-DMA, the strong revisions momentum could trigger a sharp mean-reversion rally, quickly shifting the balance to constructive.",
+      "dissent": "Accounting watch, still below the short-term average, and macro-sensitive nature (real estate) could stall the reversal, especially given negative MACD.",
       "falsifier": {
-        "text": "A daily close above the 10-DMA (~9.4) would shift the setup to 'confirmed' and invalidate the neutral stance.",
+        "text": "Close below the recent swing low (near $9.00) or failure to reclaim and hold above the 10-day moving average within a week would invalidate the bottoming setup.",
         "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
+          "kind": "rel_return",
+          "subject_ticker": "GNL",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 20
         }
       },
-      "check_by": "2026-07-02",
+      "check_by": "2026-07-16",
       "engine_verdict": "High-conviction \u2014 leader with a good entry"
     },
     {
       "id": "2026-06-18-OFG-6",
       "ticker": "OFG",
       "name": "OFG Bancorp",
-      "lean": "cautious",
+      "lean": "neutral",
       "conviction": "low",
       "horizon_d": 15,
-      "thesis": "OFG has a powerful SUE (z=2.69) and clean accounting, but the engine's BOTTOM WATCH state with 'WAIT' urgency and price still below the 10-DMA suggests the entry is not ready; near-term underperformance or chop relative to the S&P 500 is likely.",
+      "thesis": "Despite a bullish bigger picture and strong SUE (2.69), the BOTTOM WATCH/WIAT state, low entry quality (z 0.27), and near-zero alpha momentum suggest no immediate edge; a neutral lean is warranted.",
       "evidence": [
-        "board state 'BOTTOM WATCH', urgency 'later'",
-        "price still below 10-DMA despite swing low",
-        "entry z=0.27, the lowest among the picks",
-        "positive SUE (2.69) and revisions (0.94) not yet acting on price",
-        "no cycle_blocked, but entry signal not green"
+        "selection SUE 2.69 but alpha 0.07",
+        "entry z 0.27, urgency 'later', ladder action WAIT",
+        "bullish bigger picture, above 50/200 DMAs but still not a buy"
       ],
-      "dissent": "If buyers quickly push the stock back above the 10-DMA, the strong earnings momentum could propel a swift up-move, proving the cautious stance wrong.",
+      "dissent": "A swift reclaim of the 10-day average with momentum could turn this into a high-conviction long; fundamentals remain strong and the pullback is only -2.9% from highs.",
       "falsifier": {
-        "text": "A close above the 10-DMA accompanied by RSI moving above 60 would falsify the cautious lean and signal a valid low.",
+        "text": "A close above $48 (resistance) with expanding RSI would signal a breakout and flip the neutral lean to constructive.",
         "check": {
-          "kind": "rel_return",
-          "subject_ticker": "OFG",
-          "vs": "SPY",
-          "op": ">",
-          "threshold": 0.05,
-          "horizon_d": 15
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
         }
       },
       "check_by": "2026-07-09",
