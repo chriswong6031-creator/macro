@@ -76,6 +76,80 @@
   footer { color:var(--muted); font-size:11.5px; margin-top:26px; border-top:1px solid var(--line); padding-top:12px; max-width:95ch; }
   .pfx { color:var(--muted); }
   .asof { font-size:12px; color:var(--muted); margin-left:auto; }
+
+  /* ---- Theme Rotation Desk ---- */
+  .mctx { display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; font-size:12.5px;
+    background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:8px 12px; margin:6px 0 12px; }
+  .mctx b { font-weight:650; }
+  .mctx .mc-k { color:var(--muted); }
+  .desk { display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:13px; }
+  .tcard { background:var(--panel); border:1px solid var(--line); border-left:4px solid var(--tc,#888);
+    border-radius:11px; padding:12px 13px 11px; scroll-margin-top:14px; transition:border-color .15s; }
+  .tcard:hover { border-color:var(--muted); }
+  .tcard .top { display:flex; align-items:center; gap:8px; }
+  .tcard .nm { font-weight:660; font-size:14.5px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tcard .sc { font-size:23px; font-weight:720; font-variant-numeric:tabular-nums; line-height:1; }
+  .tcard .sc small { font-size:11px; color:var(--muted); font-weight:500; }
+  .tlabel { font-size:10px; font-weight:700; letter-spacing:.05em; padding:2px 7px; border-radius:6px; text-transform:uppercase; white-space:nowrap; }
+  .treco { font-size:11px; font-weight:700; letter-spacing:.03em; padding:2px 9px; border-radius:7px; white-space:nowrap; }
+  .tcard .subrow { display:flex; align-items:center; gap:10px; margin:8px 0 7px; font-size:12px; color:var(--muted); }
+  .tcard .subrow .spark { margin-left:auto; }
+  .cbar { display:flex; height:7px; border-radius:5px; overflow:hidden; background:var(--line); margin:7px 0 6px; }
+  .cbar i { display:block; height:100%; }
+  .clegend { display:flex; flex-wrap:wrap; gap:3px 11px; font-size:10.5px; color:var(--muted); margin-bottom:6px; }
+  .clegend span b { color:var(--text); font-variant-numeric:tabular-nums; font-weight:600; }
+  .clegend .sw { display:inline-block; width:8px; height:8px; border-radius:2px; margin-right:3px; vertical-align:middle; }
+  .treason { font-size:11.5px; color:var(--text); opacity:.85; line-height:1.4; margin:2px 0 6px; }
+  .tstats { display:flex; flex-wrap:wrap; gap:4px 6px; font-size:10.5px; }
+  .tpill { background:var(--panel2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; color:var(--muted); }
+  .tpill b { color:var(--text); font-variant-numeric:tabular-nums; }
+  .tcard details > summary { font-size:11.5px; margin:6px 0 0; }
+  .tcard .why { font-size:11.5px; color:var(--muted); margin:5px 0 0; max-width:none; }
+
+  /* ---- 5-day rotation ---- */
+  .rotwrap { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:640px){ .rotwrap{ grid-template-columns:1fr; } }
+  .rotcol { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:10px 12px; }
+  .rotcol h4 { margin:0 0 6px; font-size:13px; display:flex; align-items:center; gap:6px; }
+  .rotrow { display:flex; align-items:center; gap:8px; padding:5px 0; border-top:1px solid var(--line); font-size:12.5px; }
+  .rotrow:first-of-type { border-top:0; }
+  .rotrow .rn { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rotrow .rv { font-variant-numeric:tabular-nums; font-weight:650; }
+  .rotrow .rk { font-size:10.5px; color:var(--muted); width:34px; text-align:right; }
+
+  /* ---- impulse / extremes scorecards ---- */
+  .scards { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:13px; }
+  .scard { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:13px 15px; }
+  .scard .sk { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+  .scard .bigrow { display:flex; align-items:baseline; gap:14px; margin:7px 0 8px; }
+  .scard .big { font-size:30px; font-weight:720; font-variant-numeric:tabular-nums; line-height:1; }
+  .scard .big.dn { color:var(--down); } .scard .big.up { color:var(--up); }
+  .scard .sublbl { font-size:11px; color:var(--muted); }
+  .duo { display:flex; height:9px; border-radius:6px; overflow:hidden; background:var(--line); margin-top:4px; }
+  .duo i { height:100%; display:block; }
+  .scard .net { font-size:12.5px; font-variant-numeric:tabular-nums; margin-top:7px; }
+
+  /* ---- bell dropdown ---- */
+  .bell { position:relative; }
+  .bell-btn { background:var(--panel); border:1px solid var(--line); border-radius:9px; cursor:pointer;
+    font-size:15px; line-height:1; padding:6px 9px; color:var(--text); position:relative; }
+  .bell-btn:hover { border-color:var(--muted); }
+  .bell-badge { position:absolute; top:-6px; right:-6px; background:var(--down); color:#fff; font-size:10px;
+    font-weight:700; min-width:16px; height:16px; border-radius:9px; padding:0 4px; display:none;
+    align-items:center; justify-content:center; }
+  .bell-badge.on { display:flex; }
+  .bell-menu { position:absolute; right:0; top:calc(100% + 8px); width:340px; max-width:86vw; max-height:60vh;
+    overflow-y:auto; background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    box-shadow:0 18px 44px rgba(0,0,0,.34); padding:8px; z-index:60; display:none; }
+  .bell-menu.open { display:block; }
+  .bell-menu .bhd { font-size:12px; font-weight:650; padding:4px 6px 7px; display:flex; align-items:center; gap:6px; border-bottom:1px solid var(--line); }
+  .bell-item { display:block; padding:8px 7px; border-radius:8px; border-bottom:1px solid var(--line); cursor:pointer; }
+  .bell-item:last-child { border-bottom:0; }
+  .bell-item:hover { background:var(--panel2); }
+  .bell-item .bi-hl { font-size:12.5px; font-weight:600; line-height:1.35; }
+  .bell-item .bi-dt { font-size:10.5px; color:var(--muted); margin-top:2px; }
+  .bell-empty { padding:14px 8px; color:var(--muted); font-size:12px; text-align:center; }
+  .sect-tag { font-size:11px; color:var(--muted); border:1px solid var(--line); border-radius:6px; padding:1px 6px; font-weight:600; }
 </style>
 </head>
 <body>
@@ -88,6 +162,10 @@
     <div class="nav-sugg"></div>
   </div>
   <div class="nav-ctrls">
+    <div class="bell" id="theme-bell">
+      <button class="bell-btn" id="bell-btn" aria-label="Theme alerts" title="Theme rotation alerts">🔔<span class="bell-badge" id="bell-badge"></span></button>
+      <div class="bell-menu" id="bell-menu" role="menu"></div>
+    </div>
     <a class="ai-brief-link" href="aibrief.html">🧠 {{ t('AI Daily Brief', 'AI每日简报') }}</a>
     <button class="theme-switch" aria-label="Toggle dark / light mode">
       <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
@@ -113,6 +191,35 @@
 
   <!-- prevailing-narrative scorecard → the Narrative Rotation playbook (filled client-side) -->
   <section id="nr-scorecard" data-alloc="allocation.json" data-page="allocation.html"></section>
+
+  <section id="theme-desk-section" style="margin-top:6px">
+    <h2><span class="idx">★</span>🧭 {{ t('Theme Rotation Desk', '主题轮动台') }}
+      <span class="sect-tag">{{ t('scored · labeled · actionable', '评分 · 标注 · 可执行') }}</span></h2>
+    <p class="sub">{{ t(
+      'Every theme scored 0–100 from transparent legs — trend, breadth, ±3% impulse, macro tailwind and a crowding penalty — then labeled (dominant / emerging / fading / deteriorating) with an actionable read. The verb accounts for dominant themes topping out vs less-dominant themes just emerging.',
+      '每个主题以透明分项打分 0–100 — 趋势、广度、±3% 脉冲、宏观顺风与拥挤惩罚 — 并标注（主导／新兴／退潮／走弱）及可执行结论。结论会区分见顶的主导主题与刚刚新兴的次主导主题。') }}</p>
+    <div class="mctx" id="macro-ctx"></div>
+    <p class="muted" id="theme-disclaimer" style="font-size:11.5px;margin:0 0 11px"></p>
+    <div class="desk" id="theme-desk"></div>
+  </section>
+
+  <section id="rotation-section">
+    <h2><span class="idx">★</span>📆 {{ t('5-Day Theme Rotation', '5日主题轮动') }}
+      <span class="sect-tag">{{ t('weekly climbers & fallers', '本周上升与下降') }}</span></h2>
+    <p class="sub">{{ t(
+      'Who moved this week — ranked by 5-day return relative to the S&P 500, with the change in 20-day relative-strength rank over the same 5 sessions. A fast read on which themes to lean into and which are losing the tape.',
+      '本周谁在动 — 以相对标普 500 的 5 日回报排名，并标注同期 20 日相对强度排名的变化。快速判断该倾向哪些主题、哪些正在失去走势。') }}</p>
+    <div class="rotwrap" id="rotation"></div>
+  </section>
+
+  <section id="impulse-section">
+    <h2><span class="idx">★</span>⚡ {{ t('Impulse & Extremes', '脉冲与极值') }}
+      <span class="sect-tag">{{ t('across the thematic universe', '覆盖全部主题成分') }}</span></h2>
+    <p class="sub">{{ t(
+      'Breadth of the daily move across every name in the baskets: how many jumped ≥3% vs fell ≥3% (impulse / volatility), and how many printed a fresh 52-week high vs low. Net counts read the tape\'s pressure at a glance.',
+      '篮子内所有个股当日波动的广度：多少只上涨≥3%、多少只下跌≥3%（脉冲／波动），以及多少只创 52 周新高对新低。净数一眼读出走势压力。') }}</p>
+    <div class="scards" id="scorecards"></div>
+  </section>
 
   {% if flow %}
   {% set SZH = {'Information Technology':'信息技术','Health Care':'医疗保健','Financials':'金融','Consumer Discretionary':'非必需消费','Communication Services':'通信服务','Industrials':'工业','Consumer Staples':'必需消费','Energy':'能源','Utilities':'公用事业','Real Estate':'房地产','Materials':'原材料'} %}
@@ -165,6 +272,11 @@
   </div>
   {% endif %}
 
+  {# Theme Rotation Desk add-ons (display-only): ETF Pulse (style/risk/sector rotation),
+     vol-regime + CBOE put/call chip, and per-theme ATR extension. Renders from
+     basketdata/{etf_pulse,vol_sentiment,theme_extension}.json via theme_addons.js. #}
+  {% include "_theme_addons.html.j2" %}
+
   <div id="content">
     <section id="table-section">
       <h2><span class="idx">01</span>{{ t('Performance table', '表现一览') }}</h2>
@@ -207,6 +319,9 @@
 <script>
 const BASKETS = {{ baskets_json|safe }};
 const CHART   = {{ chart_json|safe }};
+const THEME   = BASKETS.theme_intel || null;
+const THEME_ALERTS = {{ theme_alerts_json|safe }};
+const L = (en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`;
 
 const TBL_COLS = ['1d','5d','20d','60d','MTD','YTD'];
 const TBL_MODES = [['raw','Raw'],['rel','vs S&P'],['sigma','σ']];
@@ -379,8 +494,143 @@ function renderStory(){
     `${lead?dot(lead.id):''}<b>${esc(s.leader)}</b> leads the themes over 20 days (<span class="${cls(s.leader_rel)}">${fmtPct(s.leader_rel)}</span> vs S&amp;P) · ${lag?dot(lag.id):''}<b>${esc(s.laggard)}</b> lags (<span class="${cls(s.laggard_rel)}">${fmtPct(s.laggard_rel)}</span>) · <b>${s.n_baskets}</b> baskets across <b>${s.n_cats}</b> categories.`;
 }
 
+// ---- Theme Rotation Desk --------------------------------------------------
+const LABEL_COLOR = {
+  dominant:      ['rgba(250,204,21,.16)','rgba(250,204,21,.55)','#eab308'],
+  emerging:      ['rgba(74,222,128,.15)','rgba(74,222,128,.5)','#22c55e'],
+  fading:        ['rgba(251,146,60,.15)','rgba(251,146,60,.5)','#f97316'],
+  deteriorating: ['rgba(248,113,113,.15)','rgba(248,113,113,.5)','#ef4444'],
+  neutral:       ['var(--panel2)','var(--line)','var(--muted)'],
+};
+const RECO_COLOR = {
+  enter:      ['rgba(34,197,94,.20)','rgba(34,197,94,.65)','#16a34a'],
+  accumulate: ['rgba(74,222,128,.14)','rgba(74,222,128,.5)','#22c55e'],
+  hold:       ['var(--panel2)','var(--line)','var(--muted)'],
+  trim:       ['rgba(251,146,60,.15)','rgba(251,146,60,.55)','#f97316'],
+  avoid:      ['rgba(248,113,113,.16)','rgba(248,113,113,.6)','#ef4444'],
+};
+const badge = (cls,c,en,zh)=>`<span class="${cls}" style="background:${c[0]};border:1px solid ${c[1]};color:${c[2]}">${L(en,zh)}</span>`;
+const COMP_COLOR = {trend:'#5aa7ff',breadth:'#4ade80',impulse:'#a78bfa',macro:'#2dd4bf',crowding:'#fb7185'};
+const COMP_LBL = {trend:['trend','趋势'],breadth:['breadth','广度'],impulse:['impulse','脉冲'],macro:['macro','宏观'],crowding:['crowd','拥挤']};
+
+function compBar(c,w){
+  const parts=['trend','breadth','impulse','macro'].map(k=>({k,v:Math.max(0,(c[k]||0))*w[k]}));
+  parts.push({k:'crowding',v:(c.crowding||0)*w.crowding});
+  const tot=parts.reduce((a,p)=>a+Math.abs(p.v),0)||1;
+  const segs=parts.filter(p=>Math.abs(p.v)>0.001).map(p=>`<i style="width:${(Math.abs(p.v)/tot*100).toFixed(1)}%;background:${COMP_COLOR[p.k]};${p.k==='crowding'?'opacity:.55':''}"></i>`).join('');
+  return `<div class="cbar" title="contribution to the score">${segs}</div>`;
+}
+function compLegend(c){
+  return `<div class="clegend">`+['trend','breadth','impulse','macro','crowding'].map(k=>{
+    const v=c[k]; const s=(v==null)?'—':((k==='crowding'?'−':(v>=0?'+':''))+Math.abs(v).toFixed(2));
+    return `<span><span class="sw" style="background:${COMP_COLOR[k]}"></span>${L(COMP_LBL[k][0],COMP_LBL[k][1])} <b>${s}</b></span>`;
+  }).join('')+`</div>`;
+}
+function themeCard(t){
+  const lc=LABEL_COLOR[t.label]||LABEL_COLOR.neutral, rc=RECO_COLOR[t.reco]||RECO_COLOR.hold;
+  const r20=t.perf&&t.perf['20d']?t.perf['20d'].rel:null;
+  const spk=sparkTail(ratio(CHART.baskets[t.id]||[]),40);
+  const b=t.breadth||{}, im=t.impulse||{};
+  const top=(t.leadership&&t.leadership.top)||[];
+  return `<div class="tcard" id="theme-${t.id}" style="--tc:${lc[2]}">
+    <div class="top">
+      ${badge('tlabel',lc,t.label_en,t.label_zh)}
+      <span class="nm">${L(esc(t.name),esc(t.name_zh))}</span>
+      <span class="sc">${t.score}<small>/100</small></span>
+    </div>
+    <div class="subrow">
+      <span>#${t.rank}</span>
+      ${badge('treco',rc,t.reco_en,t.reco_zh)}
+      <span class="${cls(r20)}">${fmtPct(r20)} 20d</span>
+      <span class="spark">${sparkSvg(spk,{w:84,h:24,color:lc[2]})}</span>
+    </div>
+    ${compBar(t.components,(THEME&&THEME.weights)||{trend:.34,breadth:.22,impulse:.10,macro:.20,crowding:.14})}
+    <div class="treason">${esc((t.reasons||[]).join(' · '))}</div>
+    <div class="tstats">
+      <span class="tpill">${L('above 50d','站上50日')} <b>${b.pct50==null?'—':Math.round(b.pct50*100)+'%'}</b></span>
+      <span class="tpill">${L('+3% / −3%','+3% / −3%')} <b class="pos">${im.up3||0}</b>/<b class="neg">${im.down3||0}</b></span>
+      <span class="tpill">${L('new hi/lo','新高/低')} <b class="pos">${b.nh||0}</b>/<b class="neg">${b.nl||0}</b></span>
+    </div>
+    <details><summary>${L('why &amp; components','理由与分项')}</summary>
+      <div class="why">${L(esc(t.reco_why_en),esc(t.reco_why_zh))}</div>
+      ${compLegend(t.components)}
+      ${top.length?`<div class="why">${L('leaders','领涨')}: ${top.map(x=>esc(x.ticker)).join(', ')}${t.leadership.breadth==='narrow'?' ⚠':''}</div>`:''}
+    </details>
+  </div>`;
+}
+function renderThemeDesk(){
+  const sec=document.getElementById('theme-desk-section');
+  if(!THEME||!(THEME.themes||[]).length){ if(sec) sec.style.display='none'; return; }
+  document.getElementById('theme-desk').innerHTML=(THEME.themes||[]).map(themeCard).join('');
+  const d=THEME.disclaimer||{}; document.getElementById('theme-disclaimer').innerHTML=L(esc(d.en||''),esc(d.zh||''));
+}
+function renderMacroCtx(){
+  if(!THEME) return;
+  const m=THEME.macro_context||{};
+  const item=(en,zh,v)=>`<span><span class="mc-k">${L(en,zh)}:</span> <b>${esc(v==null?'—':v)}</b></span>`;
+  document.getElementById('macro-ctx').innerHTML=
+    `<span>${L('Macro backdrop','宏观背景')}: <b>${esc(m.quad_name||m.quad||'—')}</b></span>`
+    +item('cycle','周期',m.cycle)+item('Fed','美联储',m.fed_dir)
+    +item('NFCI','NFCI',(m.nfci_state||'—')+(m.nfci_trend?(' / '+m.nfci_trend):''))
+    +item('USD','美元',m.dollar_regime)+item('bonds','债券',m.bond_cycle);
+}
+function renderRotation(){
+  const sec=document.getElementById('rotation-section');
+  if(!THEME||!THEME.rotation_5d){ if(sec) sec.style.display='none'; return; }
+  const rot=THEME.rotation_5d;
+  const row=t=>{const ar=t.rank_5d>0?'▲':t.rank_5d<0?'▼':'·'; const ac=t.rank_5d>0?'pos':t.rank_5d<0?'neg':'muted';
+    return `<div class="rotrow"><span class="rn"><a href="#theme-${t.id}" onclick="openTheme('${t.id}');return false">${L(esc(t.name),esc(t.name_zh))}</a></span>
+      <span class="rv ${cls(t.delta_5d)}">${fmtPct(t.delta_5d)}</span>
+      <span class="rk ${ac}" title="20d RS rank change">${ar}${t.rank_5d?Math.abs(t.rank_5d):''}</span></div>`;};
+  const col=(en,zh,emo,arr)=>`<div class="rotcol"><h4>${emo} ${L(en,zh)}</h4>${arr.length?arr.map(row).join(''):`<div class="muted sm" style="padding:6px 0">${L('none','无')}</div>`}</div>`;
+  document.getElementById('rotation').innerHTML=col('Weekly climbers','本周上升','▲',rot.climbers||[])+col('Weekly fallers','本周下降','▽',rot.fallers||[]);
+}
+function renderScorecards(){
+  const sec=document.getElementById('impulse-section');
+  if(!THEME||!THEME.impulse_scorecard){ if(sec) sec.style.display='none'; return; }
+  const s=THEME.impulse_scorecard, rc=THEME.recommendations||{};
+  const duo=(a,b)=>{const t=(a+b)||1;return `<div class="duo"><i style="width:${a/t*100}%;background:var(--up)"></i><i style="width:${b/t*100}%;background:var(--down)"></i></div>`;};
+  const cnt=k=>(rc[k]||[]).length;
+  const c1=`<div class="scard"><div class="sk">${L('±3% daily impulse','±3% 当日脉冲')}</div>
+    <div class="bigrow"><div><div class="big up">${s.up3}</div><div class="sublbl">${L('up ≥3%','涨≥3%')}</div></div>
+    <div><div class="big dn">${s.down3}</div><div class="sublbl">${L('down ≥3%','跌≥3%')}</div></div></div>
+    ${duo(s.up3,s.down3)}<div class="net">${L('net','净')} <b class="${cls(s.net)}">${s.net>=0?'+':''}${s.net}</b> ${L('of '+s.n+' names',' ／共 '+s.n+' 只')}</div></div>`;
+  const c2=`<div class="scard"><div class="sk">${L('52-week extremes','52周极值')}</div>
+    <div class="bigrow"><div><div class="big up">${s.nh}</div><div class="sublbl">${L('new highs','新高')}</div></div>
+    <div><div class="big dn">${s.nl}</div><div class="sublbl">${L('new lows','新低')}</div></div></div>
+    ${duo(s.nh,s.nl)}<div class="net">${L('net','净')} <b class="${cls(s.net_hl)}">${s.net_hl>=0?'+':''}${s.net_hl}</b></div></div>`;
+  const c3=`<div class="scard"><div class="sk">${L('recommendation tally','建议统计')}</div>
+    <div class="bigrow" style="gap:12px;flex-wrap:wrap">
+      <div><div class="big up">${cnt('enter')+cnt('accumulate')}</div><div class="sublbl">${L('enter / add','建仓／加仓')}</div></div>
+      <div><div class="big" style="color:var(--muted)">${cnt('hold')}</div><div class="sublbl">${L('hold','持有')}</div></div>
+      <div><div class="big dn">${cnt('trim')+cnt('avoid')}</div><div class="sublbl">${L('trim / avoid','减仓／回避')}</div></div>
+    </div></div>`;
+  document.getElementById('scorecards').innerHTML=c1+c2+c3;
+}
+function openTheme(id){const d=document.getElementById('theme-'+id);if(!d)return;const det=d.querySelector('details');if(det)det.open=true;
+  d.scrollIntoView({behavior:'smooth',block:'center'});d.style.transition='box-shadow .3s';d.style.boxShadow='0 0 0 2px var(--link)';setTimeout(()=>{d.style.boxShadow='';},1200);}
+
+function renderBell(){
+  const wrap=document.getElementById('theme-bell'); if(!wrap) return;
+  const btn=document.getElementById('bell-btn'), menu=document.getElementById('bell-menu'), badgeEl=document.getElementById('bell-badge');
+  const evs=(THEME_ALERTS||[]).slice(0,12);
+  const SEEN='fw-theme-bell-seen', lastSeen=localStorage.getItem(SEEN)||'';
+  const unread=evs.filter(e=>e.ts>lastSeen).length;
+  if(unread>0){ badgeEl.textContent=unread>9?'9+':String(unread); badgeEl.classList.add('on'); }
+  const ago=ts=>{const dd=Math.floor((Date.now()-new Date(ts).getTime())/86400000);return dd<=0?L('today','今日'):dd===1?L('1d ago','1天前'):L(dd+'d ago',dd+'天前');};
+  menu.innerHTML=`<div class="bhd">🧺 ${L('Theme rotation alerts','主题轮动警报')}<span style="flex:1"></span><a href="alerts.html" class="muted" style="font-size:11px;text-decoration:underline">${L('Alert Center →','警报中心 →')}</a></div>`+
+    (evs.length?evs.map(e=>`<div class="bell-item" data-id="${esc(e.asset)}">
+      <div class="bi-hl">${L(esc(e.headline),esc(e.headline_zh||e.headline))}</div>
+      <div class="bi-dt">${ago(e.ts)}</div></div>`).join(''):`<div class="bell-empty">${L('No recent theme changes — recommendations are steady.','近期无主题变化 — 建议保持稳定。')}</div>`);
+  btn.onclick=ev=>{ev.stopPropagation();const open=menu.classList.toggle('open');
+    if(open){badgeEl.classList.remove('on'); if(evs.length) localStorage.setItem(SEEN,evs[0].ts);}};
+  menu.querySelectorAll('.bell-item').forEach(it=>it.onclick=()=>{menu.classList.remove('open');openTheme(it.dataset.id);});
+  document.addEventListener('click',e=>{ if(!wrap.contains(e.target)) menu.classList.remove('open'); });
+}
+
 function boot(){
   document.getElementById('asof').textContent=BASKETS.as_of||'—';
+  renderMacroCtx(); renderThemeDesk(); renderRotation(); renderScorecards(); renderBell();
   renderStory();
   renderTabs(document.getElementById('btbl-mode'), TBL_MODES, btblMode, v=>{ btblMode=v; localStorage.setItem('fw-btbl-mode',v); renderBTable(); });
   renderTabs(document.getElementById('chart-modes'), [['rel','vs S&P 500'],['abs','Absolute']], chartMode, v=>{ chartMode=v; renderChart(); });
@@ -392,6 +642,7 @@ function boot(){
   initChartDefaults();
   renderBTable(); renderChart(); renderCards(); renderDetails();
   if(location.hash.startsWith('#b-')) setTimeout(()=>openBasket(location.hash.slice(3)),200);
+  if(location.hash.startsWith('#theme-')) setTimeout(()=>openTheme(location.hash.slice(7)),250);
   document.addEventListener('langchange',()=>{ if(chart){chart.applyOptions(chartOpts());} renderChart(); });
   document.addEventListener('themechange',()=>{ if(chart){chart.applyOptions(chartOpts());} renderChart(); });
 }

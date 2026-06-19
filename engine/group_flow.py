@@ -184,29 +184,71 @@ def _stage(accel_z, rs_pctile, broadening_z, cfg) -> str:
     return "quiet"
 
 
-def _setup():
-    """Shared close matrix + SPY benchmark level, exactly as engine.baskets builds them."""
-    mem = _membership()
-    if not mem or not mem.get("baskets"):
+# Region aliases -> canonical key. US is the original path (S&P-1500 cache + extras + SPY);
+# the others swap the data plane to their regional baskets module. Sectors (the PIT GICS
+# frames) stay US-only — non-US callers get the thematic baskets, not sectors.
+_REGION_ALIASES = {"us": "us", "usa": "us", "cn": "cn", "china": "cn",
+                   "hk": "hk", "hongkong": "hk", "ca": "ca", "canada": "ca"}
+
+
+def _region_plane(region: str):
+    """(_membership, _closes, bench_group, bench_default) for a non-US region, lazily —
+    the regional baskets modules already expose exactly these loaders."""
+    from engine import baskets_canada, baskets_china, baskets_hk
+    planes = {
+        "cn": (baskets_china._membership, baskets_china._closes, "china", baskets_china.BENCHMARK_DEFAULT),
+        "hk": (baskets_hk._membership, baskets_hk._closes, "hk", baskets_hk.BENCHMARK_DEFAULT),
+        "ca": (baskets_canada._membership, baskets_canada._closes, "canada", baskets_canada.BENCHMARK_DEFAULT),
+    }
+    return planes.get(region)
+
+
+def _setup(region: str = "us"):
+    """Shared close matrix + benchmark LEVEL for a region's thematic baskets.
+
+    region='us' (default) is byte-identical to before: the S&P-1500 close cache unioned with
+    baskets/extras, benchmarked to SPY. 'cn'/'hk'/'ca' swap in that region's baskets
+    membership + search-cache closes + index benchmark (e.g. CSI 300 / HSI / TSX). The US-only
+    PIT GICS sector frames are NOT built for non-US regions (no PIT membership), so non-US
+    callers operate on the thematic baskets only."""
+    region = _REGION_ALIASES.get((region or "us").lower(), "us")
+    if region == "us":
+        mem = _membership()
+        if not mem or not mem.get("baskets"):
+            return None
+        closes = _closes()
+        if closes is None or closes.empty:
+            return None
+        extras = _basket_extras()
+        if extras is not None and not extras.empty:
+            add = [c for c in extras.columns if c not in closes.columns]
+            if add:
+                closes = closes.join(extras[add], how="left")
+        bench_df = store.read("yahoo", "SPY")
+    else:
+        plane = _region_plane(region)
+        if plane is None:
+            return None
+        mem_fn, closes_fn, bench_group, bench_default = plane
+        mem = mem_fn()
+        if not mem or not mem.get("baskets"):
+            return None
+        closes = closes_fn()
+        if closes is None or closes.empty:
+            return None
+        bench_df = store.read(bench_group, mem.get("benchmark", bench_default))
+    if bench_df is None or "close" not in bench_df.columns:
         return None
-    closes = _closes()
-    if closes is None or closes.empty:
-        return None
-    extras = _basket_extras()
-    if extras is not None and not extras.empty:
-        add = [c for c in extras.columns if c not in closes.columns]
-        if add:
-            closes = closes.join(extras[add], how="left")
     rets = closes.pct_change(fill_method=None)
     idx = rets.index
-    spy = store.read("yahoo", "SPY")
-    if spy is None or "close" not in spy.columns:
-        return None
-    spy_ret = spy["close"].reindex(idx).ffill().pct_change(fill_method=None)
+    bench_ret = bench_df["close"].reindex(idx).ffill().pct_change(fill_method=None)
     bench = pd.Series(np.nan, index=idx)
-    bf = spy_ret.first_valid_index()
-    bench.loc[bf:] = (1.0 + spy_ret.loc[bf:].fillna(0.0)).cumprod()
-    return {"mem": mem, "closes": closes, "rets": rets, "idx": idx, "bench": bench}
+    bf = bench_ret.first_valid_index()
+    if bf is None:
+        return None
+    bench.loc[bf:] = (1.0 + bench_ret.loc[bf:].fillna(0.0)).cumprod()
+    return {"mem": mem, "closes": closes, "rets": rets, "idx": idx, "bench": bench,
+            "region": region}
 
 
 def _pit_sector_frames(closes: pd.DataFrame, rets: pd.DataFrame,
