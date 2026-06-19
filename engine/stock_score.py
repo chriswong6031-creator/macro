@@ -505,6 +505,19 @@ def _risk_idio(rec: dict) -> tuple[float, dict]:
     return _clip01(num / den), {k: round(v, 2) for k, v in comps.items()}
 
 
+# ---- forward EVENT-calendar risk (T7) --------------------------------------
+# A name with a BINARY event imminent (its next earnings report) carries gap risk no setup
+# can price away — so SIZE DOWN ahead of it. This is RISK management, not a return forecast
+# (and not a composite/rank tax — the risk is transient, gone after the print): it feeds the
+# suggested SIZE + a caution + (the day before) blocks a "high-conviction" verb. Graceful:
+# `earnings_days` absent -> 0 (no effect), so it lights up only where the calendar is known.
+def _event_risk(rec: dict) -> float:
+    d = _f(rec.get("earnings_days"))
+    if d is None or d < 0 or d > 8:
+        return 0.0
+    return 0.8 if d <= 1 else 0.5 if d <= 3 else 0.3 if d <= 5 else 0.15
+
+
 _SIZE_BUCKETS = [(0.66, "quarter", 25), (0.40, "half", 50), (0.20, "three-quarter", 75)]
 
 
@@ -675,6 +688,11 @@ def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool,
     _risk_veto = (risk_stress >= _RISK_VETO_STRESS and _aggressiveness(rec) >= 0.5)
     if _risk_veto:
         cautions.append("stressed tape — size down / confirm")
+    _ed = _f(rec.get("earnings_days"))
+    _earn_imminent = _ed is not None and 0 <= _ed <= 8
+    if _earn_imminent:
+        cautions.append(f"earnings in {int(_ed)}d — binary event, size down"
+                        if _ed >= 1 else "earnings imminent — binary event, size down")
     if cycle_blocked:
         cautions.append("cycle: " + (lad.get("label") or state or "weak tape"))
 
@@ -711,6 +729,9 @@ def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool,
     # ---- the constructive cases --------------------------------------------
     ent_ok = (ent is not None and ent > 0)
     if sel_t == "high" and ent_ok:
+        if _ed is not None and 0 <= _ed <= 1:  # binary event tomorrow — not high-CONVICTION
+            return _v("Leader · earnings imminent — wait or size down",
+                      "领先 · 财报临近 — 等待或减小仓位", drivers, cautions)
         if _risk_veto:                         # stressed tape vetoes a high-conviction CHASE
             return _v("Strong name · elevated-risk tape — smaller size, confirm",
                       "强势个股 · 高风险行情 — 减小仓位并确认", drivers, cautions)
@@ -806,7 +827,12 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
     idio_tax = _IDIO_TAX_MAX * idio
     if comp_z is not None:
         comp_z = float(np.clip(comp_z - rtax - idio_tax, -_AXIS_Z_CLIP, _AXIS_Z_CLIP))
-    risk_total = max(idio, stress * _aggressiveness(rec))   # worst-of (distinct failure modes)
+    # forward EVENT risk (imminent earnings) — feeds SIZE only, not the composite rank (it is
+    # transient). risk_total = worst-of the distinct failure modes (structural / macro / event).
+    event = _event_risk(rec)
+    if event > 0:
+        idio_comps = {**(idio_comps or {}), "event": round(event, 2)}
+    risk_total = max(idio, stress * _aggressiveness(rec), event)
 
     # score: prefer the within-market percentile passed by the panel builder; else
     # the logistic skin (per-name fallback, flagged approximate).
@@ -893,7 +919,8 @@ def normalize_rec(record: dict, market: str, *, rs_z: float | None = None,
                   fund_priors_z: float | None = None,
                   sector_rs: dict | None = None, basket: dict | None = None,
                   asym: dict | None = None, ext: dict | None = None,
-                  lottery_max: float | None = None) -> dict:
+                  lottery_max: float | None = None,
+                  earnings_days: float | None = None) -> dict:
     """Build the normalized ``rec`` the engine consumes from a per-stock library
     ``record`` (the dict written to ``<mkt>stockdata/<T>.json``) plus the
     cross-sectional legs the build joins in. Missing legs stay absent (None) —
@@ -919,6 +946,7 @@ def normalize_rec(record: dict, market: str, *, rs_z: float | None = None,
                    "quality": legs.get("quality"), "low_vol": legs.get("low_vol")} if legs else None,
         "quality_context_z": quality_context_z,
         "sue": sue, "sue_fresh_days": sue_fresh_days, "lottery_max": lottery_max,
+        "earnings_days": earnings_days,
         "insider_bps": insider_bps, "revision_z": revision_z,
         "fund_priors": {"z": fund_priors_z} if fund_priors_z is not None else None,
         "asym": asym,                      # downside-asymmetry DISPLAY read (risk shape, not scored)

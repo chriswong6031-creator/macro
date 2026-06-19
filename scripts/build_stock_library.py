@@ -146,6 +146,18 @@ def current_risk_overlay() -> dict:
             comps["vix"] = _elev(vix_pct, 0.55, 0.90)             # only above the 55th pct
         comps["drawdown"] = _elev((cond.get("drawdown_risk") or {}).get("score"), 25, 60)
         comps["systemic"] = _elev((cond.get("systemic_stress") or {}).get("ofr_fsi_pctile"), 0.60, 0.95)
+        # imminent KNOWN MACRO event (FOMC) — a board-wide binary risk window. Within ~1d -> 0.7,
+        # ~3d -> 0.5, so T3's macro tax + verb veto fire into a Fed week even if VIX is still calm.
+        try:
+            import datetime as _dt
+            from engine.catalyst_tone import _FOMC_MEETINGS
+            today = _dt.date.today()
+            fut = sorted(d for d in (_dt.date.fromisoformat(x) for x in _FOMC_MEETINGS) if d >= today)
+            if fut:
+                dd_ev = (fut[0] - today).days
+                comps["fomc"] = 0.7 if dd_ev <= 1 else 0.5 if dd_ev <= 3 else 0.0
+        except Exception:  # noqa: BLE001
+            pass
         present = {k: c for k, c in comps.items() if c is not None}
         tp_force = 1.0 if tp.get("active") else (0.6 if tp.get("raw_fire") else 0.0)
         # any single GENUINELY-elevated risk signal (each already elevated-only) lifts stress;
@@ -533,9 +545,28 @@ def main() -> int:
     asof_now = bench.index.max() if bench is not None and len(bench) else None
     sue_fresh = sue_freshness_days(asof_now)   # PEAD freshness per name (days since filing)
     risk_overlay = current_risk_overlay()      # macro/event stress tax on a chase (T3)
-    log.info("conviction regime: calm=%s · SUE freshness for %d names · macro stress=%.2f %s",
+    # forward EARNINGS calendar (T7): days-until-next-report per name -> binary-event size-down.
+    import datetime as _dt
+    _earn_cal, _today = {}, _dt.date.today()
+    try:
+        from engine.stock_fundamentals import _load_earnings
+        _earn_cal = _load_earnings()
+    except Exception as e:  # noqa: BLE001 — additive; absence => no earnings gate
+        log.warning("earnings calendar unavailable (%s)", e)
+
+    def _edays(t):
+        nd = (_earn_cal.get(t) or {}).get("next_date")
+        if not nd:
+            return None
+        try:
+            dlt = (_dt.date.fromisoformat(str(nd)[:10]) - _today).days
+            return float(dlt) if 0 <= dlt <= 60 else None
+        except Exception:  # noqa: BLE001
+            return None
+    log.info("conviction regime: calm=%s · SUE freshness %d · macro stress=%.2f %s · earnings cal %d names",
              "n/a" if calm is None else f"{calm:.2f}", len(sue_fresh),
-             risk_overlay.get("stress", 0.0), risk_overlay.get("drivers") or "")
+             risk_overlay.get("stress", 0.0), risk_overlay.get("drivers") or "",
+             sum(1 for t in _earn_cal if _edays(t) is not None))
     acfg = config.load().get("alerts", {})
     a_days = int(acfg.get("ticker_timeline_days", 120))
     a_max = int(acfg.get("ticker_max_events", 50))
@@ -798,7 +829,7 @@ def main() -> int:
         norm = stock_score.normalize_rec(
             rec, "US", sue=sue_z.get(ticker), sue_fresh_days=sue_fresh.get(ticker),
             insider_bps=ins_bps, revision_z=revision_z.get(ticker), basket=basket_tw.get(ticker),
-            lottery_max=lottery_map.get(ticker))
+            lottery_max=lottery_map.get(ticker), earnings_days=_edays(ticker))
         prof = stock_score.conviction_profile(
             norm, "US", ctx={"as_of": alpha_asof, "gate_go": gate_go,
                              "regime": {"calm": calm}, "risk_overlay": risk_overlay})
